@@ -13,6 +13,7 @@ typedef struct rz_il_reg_binding_item_t {
 
 /**
  * An object that describes what registers are bound to variables in an RzILVM.
+ * Registers of size 1 are bound as boolean variables, others as bitvector ones.
  */
 typedef struct rz_il_reg_binding_t {
 	size_t regs_count;

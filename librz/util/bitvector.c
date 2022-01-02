@@ -1361,7 +1361,7 @@ ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x) {
  * \param x BitVector
  * \return  ut8 value
  */
-RZ_API ut8 rz_bv_to_ut8(RZ_NONNULL RzBitVector *x) {
+RZ_API ut8 rz_bv_to_ut8(RZ_NONNULL const RzBitVector *x) {
 	rz_return_val_if_fail(x, 0);
 	if (x->len <= 64) {
 		return (ut8)x->bits.small_u & UT8_MAX;
@@ -1380,7 +1380,7 @@ RZ_API ut8 rz_bv_to_ut8(RZ_NONNULL RzBitVector *x) {
  * \param x BitVector
  * \return ut16 value
  */
-RZ_API ut16 rz_bv_to_ut16(RZ_NONNULL RzBitVector *x) {
+RZ_API ut16 rz_bv_to_ut16(RZ_NONNULL const RzBitVector *x) {
 	rz_return_val_if_fail(x, 0);
 	if (x->len <= 64) {
 		return (ut16)x->bits.small_u & UT16_MAX;
@@ -1399,7 +1399,7 @@ RZ_API ut16 rz_bv_to_ut16(RZ_NONNULL RzBitVector *x) {
  * \param x BitVector
  * \return ut32 value
  */
-RZ_API ut32 rz_bv_to_ut32(RzBitVector *x) {
+RZ_API ut32 rz_bv_to_ut32(RZ_NONNULL const RzBitVector *x) {
 	rz_return_val_if_fail(x, 0);
 	if (x->len <= 64) {
 		return (ut32)x->bits.small_u & UT32_MAX;
@@ -1418,7 +1418,7 @@ RZ_API ut32 rz_bv_to_ut32(RzBitVector *x) {
  * \param x RzBitVector, pointer to the bitvector
  * \return ret ut64, num value of bitvector
  */
-RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL RzBitVector *x) {
+RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL const RzBitVector *x) {
 	rz_return_val_if_fail(x, 0);
 	if (x->len <= 64) {
 		return x->bits.small_u;

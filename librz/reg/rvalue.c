@@ -25,15 +25,20 @@ RZ_API RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *i
  */
 RZ_API bool rz_reg_set_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, RZ_NONNULL const RzBitVector *bv) {
 	rz_return_val_if_fail(reg && item && bv, false);
-	RzRegSet *regset = &reg->regset[item->arena];
-	if (item->offset % 8) {
-		// TODO: this needs a bit offset arg in rz_bv_set_to_bytes_be()
-		RZ_LOG_ERROR("rz_reg_set_bv() for non-byte-aligned regs not supported yet.\n");
-		return false;
-	}
 	if (rz_bv_len(bv) != item->size) {
 		return false;
 	}
+	if (item->offset % 8) {
+		// TODO: this needs a bit offset arg in rz_bv_set_to_bytes_be()
+		if (item->size == 1) {
+			// workaround for flags edge-case while the offset mentioned above is not implemented yet
+			rz_reg_set_value(reg, item, rz_bv_to_ut64(bv));
+			return true;
+		}
+		RZ_LOG_ERROR("rz_reg_set_bv() for non-byte-aligned regs not supported yet.\n");
+		return false;
+	}
+	RzRegSet *regset = &reg->regset[item->arena];
 	int boff = item->offset / 8;
 	if (reg->big_endian) {
 		rz_bv_set_to_bytes_be(bv, regset->arena->bytes + boff);

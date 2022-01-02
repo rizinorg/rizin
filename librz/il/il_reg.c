@@ -203,7 +203,11 @@ RZ_API void rz_il_vm_setup_reg_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RZ_OWN 
 	rz_return_if_fail(vm && rb && !vm->reg_binding);
 	vm->reg_binding = rb;
 	for (size_t i = 0; i < rb->regs_count; i++) {
-		rz_il_vm_add_reg(vm, rb->regs[i].name, rb->regs[i].size);
+		if (rb->regs[i].size == 1) {
+			rz_il_vm_add_bit_reg(vm, rb->regs[i].name, false);
+		} else {
+			rz_il_vm_add_reg(vm, rb->regs[i].name, rb->regs[i].size);
+		}
 	}
 }
 
@@ -252,7 +256,7 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
 			continue;
 		}
 		RzILVal *val = rz_il_hash_find_val_by_name(vm, item->name);
-		if (!val || val->type != RZIL_VAR_TYPE_BV) {
+		if (!val || (val->type != RZIL_VAR_TYPE_BV && val->type != RZIL_VAR_TYPE_BOOL)) {
 			perfect = false;
 			RzBitVector *bv = rz_bv_new_zero(ri->size);
 			if (!bv) {
@@ -265,15 +269,23 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
 			continue;
 		}
 		RzBitVector *dupped = NULL;
-		const RzBitVector *bv = val->data.bv;
-		if (rz_bv_len(bv) != ri->size) {
-			perfect = false;
-			dupped = rz_bv_new_zero(ri->size);
+		const RzBitVector *bv;
+		if (val->type == RZIL_VAR_TYPE_BV) {
+			bv = val->data.bv;
+			if (rz_bv_len(bv) != ri->size) {
+				perfect = false;
+				dupped = rz_bv_new_zero(ri->size);
+				if (!dupped) {
+					break;
+				}
+				rz_bv_copy_nbits(bv, 0, dupped, 0, RZ_MIN(rz_bv_len(bv), ri->size));
+				bv = dupped;
+			}
+		} else { // RZIL_VAR_TYPE_BOOL
+			bv = dupped = val->data.b->b ? rz_bv_new_one(ri->size) : rz_bv_new_zero(ri->size);
 			if (!dupped) {
 				break;
 			}
-			rz_bv_copy_nbits(bv, 0, dupped, 0, RZ_MIN(rz_bv_len(bv), ri->size));
-			bv = dupped;
 		}
 		perfect &= rz_reg_set_bv(reg, ri, bv);
 		rz_bv_free(dupped);
@@ -311,20 +323,25 @@ RZ_API void rz_il_vm_sync_from_reg(RzILVM *vm, RZ_NONNULL RzReg *reg) {
 			continue;
 		}
 		RzRegItem *ri = rz_reg_get(reg, item->name, RZ_REG_TYPE_ANY);
-		RzBitVector *bv = ri ? rz_reg_get_bv(reg, ri) : rz_bv_new_zero(item->size);
-		if (!bv) {
-			continue;
-		}
-		RzBitVector *dupped = NULL;
-		if (rz_bv_len(bv) != item->size) {
-			dupped = rz_bv_new_zero(item->size);
-			if (!dupped) {
-				break;
+		if (item->size == 1) {
+			bool b = ri ? rz_reg_get_value(reg, ri) != 0 : false;
+			rz_il_hash_bind(vm, var, rz_il_vm_fortify_bool(vm, b));
+		} else {
+			RzBitVector *bv = ri ? rz_reg_get_bv(reg, ri) : rz_bv_new_zero(item->size);
+			if (!bv) {
+				continue;
 			}
-			rz_bv_copy_nbits(bv, 0, dupped, 0, RZ_MIN(rz_bv_len(bv), item->size));
-			bv = dupped;
+			RzBitVector *dupped = NULL;
+			if (rz_bv_len(bv) != item->size) {
+				dupped = rz_bv_new_zero(item->size);
+				if (!dupped) {
+					break;
+				}
+				rz_bv_copy_nbits(bv, 0, dupped, 0, RZ_MIN(rz_bv_len(bv), item->size));
+				bv = dupped;
+			}
+			rz_il_hash_bind(vm, var, rz_il_vm_fortify_bitv(vm, bv));
+			rz_bv_free(dupped);
 		}
-		rz_il_hash_bind(vm, var, rz_il_vm_fortify_bitv(vm, bv));
-		rz_bv_free(dupped);
 	}
 }

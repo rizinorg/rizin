@@ -148,8 +148,10 @@ static bool test_il_vm_sync_to_reg() {
 		"gpr	r1	.32	8	0\n"
 		"gpr	r0	.64	0	0\n"
 		"gpr	r3	.64	24	0\n"
-		"gpr	pc	.64	32	0\n";
-	const char *bind[] = { "r0", "r1" };
+		"gpr	pc	.64	32	0\n"
+		"gpr	af	.1	40.0	0\n"
+		"gpr	bf	.1	40.1	0\n";
+	const char *bind[] = { "r0", "r1", "af", "bf" };
 
 	RzReg *reg = rz_reg_new();
 	rz_reg_set_profile_string(reg, profile);
@@ -157,6 +159,8 @@ static bool test_il_vm_sync_to_reg() {
 	rz_reg_setv(reg, "r1", 0x5678);
 	rz_reg_setv(reg, "r3", 0xc0ffee);
 	rz_reg_setv(reg, "pc", 0x0);
+	rz_reg_setv(reg, "af", 0);
+	rz_reg_setv(reg, "bf", 0);
 
 	RzILVM *vm = rz_il_vm_new(0, 64, false);
 	RzILRegBinding *rb = rz_il_reg_binding_exactly(reg, RZ_ARRAY_SIZE(bind), bind);
@@ -168,6 +172,12 @@ static bool test_il_vm_sync_to_reg() {
 	var = rz_il_find_var_by_name(vm, "r1");
 	mu_assert_notnull(var, "var");
 	rz_il_hash_bind(vm, var, rz_il_vm_fortify_bitv(vm, rz_bv_new_from_ut64(32, 0xfed134)));
+	var = rz_il_find_var_by_name(vm, "af");
+	mu_assert_notnull(var, "var");
+	rz_il_hash_bind(vm, var, rz_il_vm_fortify_bool(vm, false));
+	var = rz_il_find_var_by_name(vm, "bf");
+	mu_assert_notnull(var, "var");
+	rz_il_hash_bind(vm, var, rz_il_vm_fortify_bool(vm, true));
 
 	rz_bv_set_from_ut64(vm->pc, 0x10001);
 
@@ -175,6 +185,8 @@ static bool test_il_vm_sync_to_reg() {
 	mu_assert_eq(rz_reg_getv(reg, "r0"), 0x8247abc, "reg from vm");
 	mu_assert_eq(rz_reg_getv(reg, "r1"), 0xfed134, "reg from vm");
 	mu_assert_eq(rz_reg_getv(reg, "pc"), 0x10001, "reg from vm");
+	mu_assert_eq(rz_reg_getv(reg, "af"), 0, "reg from vm");
+	mu_assert_eq(rz_reg_getv(reg, "bf"), 1, "reg from vm");
 
 	rz_reg_free(reg);
 	rz_il_vm_free(vm);
@@ -187,8 +199,10 @@ static bool test_il_vm_sync_from_reg() {
 		"gpr	r1	.32	8	0\n"
 		"gpr	r0	.64	0	0\n"
 		"gpr	r3	.64	24	0\n"
-		"gpr	pc	.64	32	0\n";
-	const char *bind[] = { "r0", "r1" };
+		"gpr	pc	.64	32	0\n"
+		"gpr	af	.1	40.0	0\n"
+		"gpr	bf	.1	40.1	0\n";
+	const char *bind[] = { "r0", "r1", "af", "bf" };
 
 	RzReg *reg = rz_reg_new();
 	rz_reg_set_profile_string(reg, profile);
@@ -196,6 +210,8 @@ static bool test_il_vm_sync_from_reg() {
 	rz_reg_setv(reg, "r1", 0x5678);
 	rz_reg_setv(reg, "r3", 0xc0ffee);
 	rz_reg_setv(reg, "pc", 0x10001);
+	rz_reg_setv(reg, "af", 0);
+	rz_reg_setv(reg, "bf", 1);
 
 	RzILVM *vm = rz_il_vm_new(0, 64, false);
 	RzILRegBinding *rb = rz_il_reg_binding_exactly(reg, RZ_ARRAY_SIZE(bind), bind);
@@ -214,6 +230,14 @@ static bool test_il_vm_sync_from_reg() {
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x5678, "val val");
 	RzILVar *var = rz_il_find_var_by_name(vm, "r3");
 	mu_assert_null(var, "unbound");
+	val = rz_il_hash_find_val_by_name(vm, "af");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZIL_VAR_TYPE_BOOL, "val type");
+	mu_assert_false(val->data.b->b, "val val");
+	val = rz_il_hash_find_val_by_name(vm, "bf");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZIL_VAR_TYPE_BOOL, "val type");
+	mu_assert_true(val->data.b->b, "val val");
 
 	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x10001, "pc");
 
