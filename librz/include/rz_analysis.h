@@ -979,7 +979,7 @@ typedef struct rz_analysis_ref_char {
 #define ESIL_INTERNAL_PREFIX '$'
 #define ESIL_STACK_NAME      "esil.ram"
 #define ANALYSIS_ESIL        struct rz_analysis_esil_t
-#define ANALYSIS_RZ_IL        struct rz_analysis_rzil_t
+#define ANALYSIS_RZ_IL       struct rz_analysis_rzil_t
 
 typedef struct rz_analysis_esil_source_t {
 	ut32 id;
