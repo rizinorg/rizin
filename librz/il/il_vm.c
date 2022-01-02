@@ -133,6 +133,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 		vm->vm_global_value_set = NULL;
 	}
 	rz_pvector_fini(&vm->vm_global_variable_list);
+	rz_il_reg_binding_free(vm->reg_binding);
 	rz_pvector_fini(&vm->vm_local_variable_list);
 	rz_pvector_fini(&vm->vm_memory);
 
@@ -315,7 +316,6 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
 	rz_return_if_fail(vm && name && length > 0);
 	RzBitVector *bv = rz_bv_new_zero(length);
 	if (!bv) {
-		rz_warn_if_reached();
 		return;
 	}
 	RzILVar *var = rz_il_vm_create_global_variable(vm, name, RZIL_VAR_TYPE_BV, true);

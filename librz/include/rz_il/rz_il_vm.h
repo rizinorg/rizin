@@ -8,6 +8,7 @@
 #include <rz_il/definitions/definitions.h>
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_il/rz_il_events.h>
+#include <rz_il/rz_il_reg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +46,7 @@ typedef void (*RzILVmHook)(RzILVM *vm, RzILOpEffect *op);
 struct rz_il_vm_t {
 	RzILBag *vm_global_value_set; ///< Store all RzILVal instance
 	RzPVector /*<RzILVar*>*/ vm_global_variable_list; ///< Store all the global RzILVar instance
+	RZ_NULLABLE RzILRegBinding *reg_binding; ///< Optional, specifies which (global) variables are bound to registers
 	RzPVector /*<RzILVar*>*/ vm_local_variable_list; ///< Store all the local RzILVar instance
 	RzPVector /*<RzILMem*>*/ vm_memory; ///< Memories available in the VM, by their inded. May be sparse (contain NULLs).
 	ut32 val_count, lab_count; ///< count for VM predefined things
@@ -67,7 +69,7 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
 RZ_API void rz_il_vm_fini(RzILVM *vm);
 RZ_API void rz_il_vm_add_mem(RzILVM *vm, RzILMemIndex index, RZ_OWN RzILMem *mem);
 RZ_API RzILMem *rz_il_vm_get_mem(RzILVM *vm, RzILMemIndex index);
-RZ_API bool rz_il_vm_list_step(RzILVM *vm, RzILOpEffect *op, ut32 op_size);
+RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut32 op_size);
 
 // VM Event operations
 RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt);
