@@ -3026,91 +3026,6 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 	rz_analysis_esil_free(core->analysis->esil);
 }
 
-static void cmd_analysis_rzil(RzCore *core, const char *input) {
-	char *n;
-	int repeat_times = 0;
-	bool step_event = false;
-	PJ *pj = NULL;
-
-	switch (input[0]) {
-	case 's': // "aezs"
-		if (input[1] == 'e') { // "aezse"
-			step_event = true;
-			input++;
-			if (input[1] == 'j') { // "aezsej"
-				pj = pj_new();
-				pj_a(pj);
-				input++;
-			}
-		}
-		switch (input[1]) {
-		case '?': // "aezs?"
-			rz_cons_printf("Usage: aezs[ej] [n times] - steps n instructions in the VM (can output events)\n");
-			break;
-		case ' ': //"aezs [repeat num]"
-			n = strchr(input, ' ');
-			if (!(*(n + 1))) {
-				repeat_times = 1;
-			} else {
-				repeat_times = rz_num_math(core->num, n + 1);
-			}
-			for (int i = 0; i < repeat_times; ++i) {
-				if (step_event) {
-					rz_core_analysis_rzil_step_with_events(core, pj);
-				} else {
-					rz_core_rzil_step(core);
-				}
-			}
-			break;
-		// default addr
-		default:
-			if (step_event) {
-				rz_core_analysis_rzil_step_with_events(core, pj);
-			} else {
-				rz_core_rzil_step(core);
-			}
-			break;
-		}
-		if (pj) {
-			pj_end(pj);
-			char *output = pj_drain(pj);
-			rz_cons_println(output);
-			free(output);
-			pj = NULL;
-		}
-		break;
-	case 'i': // "aezi"
-		switch (input[1]) {
-		case '?': // "aezi?"
-			rz_cons_printf("Usage: aezi - (re)initialize Rizin IL VM\n");
-			break;
-		case 0: // "aezi"
-			rz_core_analysis_rzil_reinit(core);
-			break;
-		}
-		break;
-	case 'v': // "aezv"
-		switch (input[1]) {
-		case '?': // "aezv?"
-			rz_cons_printf("Usage: aezv - prints the current status of the Rizin IL VM\n");
-			break;
-		case 0: // "aezv"
-			rz_core_analysis_rzil_vm_status(core, input + 1, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		}
-		break;
-	case '?': // "aez?" see issue 1533
-		if (input[1] == '?') {
-			RZ_LOG_ERROR("see ae?\n");
-			break;
-		}
-	/* fallthrough */
-	default:
-		rz_core_cmd_help(core, help_msg_ae);
-		break;
-	}
-}
-
 static void cmd_analysis_esil(RzCore *core, const char *input) {
 	RzAnalysisEsil *esil = core->analysis->esil;
 	ut64 addr = core->offset;
@@ -3614,10 +3529,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			free(str2);
 		}
 		rz_analysis_op_fini(&aop);
-		break;
-	}
-	case 'z': { // "aez"
-		cmd_analysis_rzil(core, input + 1);
 		break;
 	}
 	case '?': // "ae?"

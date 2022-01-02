@@ -211,7 +211,7 @@ RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
  * \param op_list, a list of op roots.
  * \param op_size, how much the pc value has to increate of.
  */
-RZ_API bool rz_il_vm_list_step(RzILVM *vm, RzILOpEffect *op, ut32 op_size) {
+RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut32 op_size) {
 	rz_return_val_if_fail(vm && op, false);
 
 	rz_list_purge(vm->events);

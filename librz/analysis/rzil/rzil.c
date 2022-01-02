@@ -63,6 +63,40 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
 	return true;
 }
 
+static void setup_regs(RzAnalysis *a, RzAnalysisRzil *rzil) {
+	if (!a->cur->get_reg_profile) {
+		return;
+	}
+	// Explicitly use a new reg here!
+	// The a->reg might be changed by the user, but plugins expect exactly
+	// the register profile they supplied. Syncing will later adjust the register
+	// contents if necessary.
+	RzReg *reg = rz_reg_new();
+	if (!reg) {
+		return;
+	}
+	char *profile = a->cur->get_reg_profile(a);
+	if (!profile) {
+		goto new_real;
+	}
+	bool succ = rz_reg_set_profile_string(reg, profile);
+	free(profile);
+	if (!succ) {
+		goto new_real;
+	}
+	// for now, we always derive the bound automatically,
+	// but manual binding dictated by the plugin would be plausible too
+	// in the future.
+	RzILRegBinding *rb = rz_il_reg_binding_derive(reg);
+	if (!rb) {
+		goto new_real;
+	}
+	rz_il_vm_setup_reg_binding(rzil->vm, rb);
+new_real:
+	rz_reg_free(reg);
+	return;
+}
+
 /**
  * Init an empty RZIL
  * \param analysis RzAnalysis* pointer to RzAnalysis
@@ -81,6 +115,7 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
 	rzil->io_buf = rz_buf_new_with_io(&analysis->iob);
 	analysis->rzil = rzil;
 	analysis->cur->rzil_init(analysis);
+	setup_regs(analysis, rzil);
 	return true;
 }
 

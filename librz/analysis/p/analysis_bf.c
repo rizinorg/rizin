@@ -198,28 +198,6 @@ RzILOpEffect *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	return branch;
 }
 
-static bool bf_specific_init(RzAnalysisRzil *rzil) {
-	RzILVM *vm = rzil->vm;
-
-	// load reg
-	rz_il_vm_add_reg(vm, "ptr", BF_ADDR_SIZE);
-
-	// set ptr to BF_ADDR_MEM
-	RzILVal *ptr = rz_il_hash_find_val_by_name(vm, "ptr");
-	rz_bv_set_from_ut64(ptr->data.bv, BF_ADDR_MEM);
-
-	RzILEffectLabel *read_label = rz_il_vm_create_label_lazy(vm, "read");
-	RzILEffectLabel *write_label = rz_il_vm_create_label_lazy(vm, "write");
-	read_label->addr = (void *)bf_syscall_read;
-	write_label->addr = (void *)bf_syscall_write;
-	read_label->type = EFFECT_LABEL_SYSCALL;
-	write_label->type = EFFECT_LABEL_HOOK;
-
-	rzil->inited = true;
-
-	return true;
-}
-
 static void bf_free_kv(HtUPKv *kv) {
 	free(kv->value);
 }
@@ -249,10 +227,6 @@ static bool bf_fini_rzil(RzAnalysis *analysis) {
 
 	RzAnalysisRzil *rzil = analysis->rzil;
 	bf_context_free(rzil->user);
-
-	if (rzil->vm) {
-		rz_il_vm_fini(rzil->vm);
-	}
 
 	rzil->user = NULL;
 	rzil->inited = false;
@@ -294,8 +268,18 @@ static bool bf_init_rzil(RzAnalysis *analysis) {
 	// init bf RZIL user-defined context
 	rzil->user = bf_context_new();
 
-	// bf specific init things
-	return bf_specific_init(rzil);
+	// set ptr to BF_ADDR_MEM
+	rz_reg_setv(analysis->reg, "ptr", BF_ADDR_MEM);
+
+	RzILEffectLabel *read_label = rz_il_vm_create_label_lazy(rzil->vm, "read");
+	RzILEffectLabel *write_label = rz_il_vm_create_label_lazy(rzil->vm, "write");
+	read_label->addr = (void *)bf_syscall_read;
+	write_label->addr = (void *)bf_syscall_write;
+	read_label->type = EFFECT_LABEL_SYSCALL;
+	write_label->type = EFFECT_LABEL_HOOK;
+
+	rzil->inited = true;
+	return true;
 }
 
 #define BUFSIZE_INC 32
@@ -416,17 +400,14 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(
 		"=PC	pc\n"
-		"=BP	brk\n"
+		"=BP	ptr\n"
 		"=SP	ptr\n"
-		"=A0	rax\n"
-		"=A1	rbx\n"
-		"=A2	rcx\n"
-		"=A3	rdx\n"
-		"gpr	ptr	.32	0	0\n" // data pointer
-		"gpr	pc	.32	4	0\n" // program counter
-		"gpr	brk	.32	8	0\n" // brackets
-		"gpr	scr	.32	12	0\n" // screen
-		"gpr	kbd	.32	16	0\n" // keyboard
+		"=A0	ptr\n"
+		"=A1	ptr\n"
+		"=A2	ptr\n"
+		"=A3	ptr\n"
+		"gpr	ptr	.64	0	0\n" // data pointer
+		"gpr	pc	.64	8	0\n" // program counter
 	);
 }
 
