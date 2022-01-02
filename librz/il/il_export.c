@@ -493,109 +493,109 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 		return;
 	}
 	switch (op->code) {
-	case RZIL_OP_VAR:
+	case RZ_IL_OP_VAR:
 		il_opdmp_var(op, sb, pj);
 		return;
-	case RZIL_OP_UNK:
+	case RZ_IL_OP_UNK:
 		il_opdmp_unk(op, sb, pj);
 		return;
-	case RZIL_OP_ITE:
+	case RZ_IL_OP_ITE:
 		il_opdmp_ite(op, sb, pj);
 		return;
-	case RZIL_OP_B0:
+	case RZ_IL_OP_B0:
 		il_opdmp_bool_false(op, sb, pj);
 		return;
-	case RZIL_OP_B1:
+	case RZ_IL_OP_B1:
 		il_opdmp_bool_true(op, sb, pj);
 		return;
-	case RZIL_OP_INV:
+	case RZ_IL_OP_INV:
 		il_opdmp_bool_inv(op, sb, pj);
 		return;
-	case RZIL_OP_AND:
+	case RZ_IL_OP_AND:
 		il_opdmp_bool_and(op, sb, pj);
 		return;
-	case RZIL_OP_OR:
+	case RZ_IL_OP_OR:
 		il_opdmp_bool_or(op, sb, pj);
 		return;
-	case RZIL_OP_XOR:
+	case RZ_IL_OP_XOR:
 		il_opdmp_bool_xor(op, sb, pj);
 		return;
-	case RZIL_OP_BITV:
+	case RZ_IL_OP_BITV:
 		il_opdmp_bitv(op, sb, pj);
 		return;
-	case RZIL_OP_MSB:
+	case RZ_IL_OP_MSB:
 		il_opdmp_msb(op, sb, pj);
 		return;
-	case RZIL_OP_LSB:
+	case RZ_IL_OP_LSB:
 		il_opdmp_lsb(op, sb, pj);
 		return;
-	case RZIL_OP_IS_ZERO:
+	case RZ_IL_OP_IS_ZERO:
 		il_opdmp_is_zero(op, sb, pj);
 		return;
-	case RZIL_OP_NEG:
+	case RZ_IL_OP_NEG:
 		il_opdmp_neg(op, sb, pj);
 		return;
-	case RZIL_OP_LOGNOT:
+	case RZ_IL_OP_LOGNOT:
 		il_opdmp_lognot(op, sb, pj);
 		return;
-	case RZIL_OP_ADD:
+	case RZ_IL_OP_ADD:
 		il_opdmp_add(op, sb, pj);
 		return;
-	case RZIL_OP_SUB:
+	case RZ_IL_OP_SUB:
 		il_opdmp_sub(op, sb, pj);
 		return;
-	case RZIL_OP_MUL:
+	case RZ_IL_OP_MUL:
 		il_opdmp_mul(op, sb, pj);
 		return;
-	case RZIL_OP_DIV:
+	case RZ_IL_OP_DIV:
 		il_opdmp_div(op, sb, pj);
 		return;
-	case RZIL_OP_SDIV:
+	case RZ_IL_OP_SDIV:
 		il_opdmp_sdiv(op, sb, pj);
 		return;
-	case RZIL_OP_MOD:
+	case RZ_IL_OP_MOD:
 		il_opdmp_mod(op, sb, pj);
 		return;
-	case RZIL_OP_SMOD:
+	case RZ_IL_OP_SMOD:
 		il_opdmp_smod(op, sb, pj);
 		return;
-	case RZIL_OP_LOGAND:
+	case RZ_IL_OP_LOGAND:
 		il_opdmp_logand(op, sb, pj);
 		return;
-	case RZIL_OP_LOGOR:
+	case RZ_IL_OP_LOGOR:
 		il_opdmp_logor(op, sb, pj);
 		return;
-	case RZIL_OP_LOGXOR:
+	case RZ_IL_OP_LOGXOR:
 		il_opdmp_logxor(op, sb, pj);
 		return;
-	case RZIL_OP_SHIFTR:
+	case RZ_IL_OP_SHIFTR:
 		il_opdmp_shiftr(op, sb, pj);
 		return;
-	case RZIL_OP_SHIFTL:
+	case RZ_IL_OP_SHIFTL:
 		il_opdmp_shiftl(op, sb, pj);
 		return;
-	case RZIL_OP_EQ:
+	case RZ_IL_OP_EQ:
 		il_opdmp_eq(op, sb, pj);
 		return;
-	case RZIL_OP_SLE:
+	case RZ_IL_OP_SLE:
 		il_opdmp_sle(op, sb, pj);
 		return;
-	case RZIL_OP_ULE:
+	case RZ_IL_OP_ULE:
 		il_opdmp_ule(op, sb, pj);
 		return;
-	case RZIL_OP_CAST:
+	case RZ_IL_OP_CAST:
 		il_opdmp_cast(op, sb, pj);
 		return;
-	case RZIL_OP_CONCAT:
+	case RZ_IL_OP_CONCAT:
 		il_opdmp_concat(op, sb, pj);
 		return;
-	case RZIL_OP_APPEND:
+	case RZ_IL_OP_APPEND:
 		il_opdmp_append(op, sb, pj);
 		return;
-	case RZIL_OP_LOAD:
+	case RZ_IL_OP_LOAD:
 		il_opdmp_load(op, sb, pj);
 		return;
-	case RZIL_OP_LOADW:
+	case RZ_IL_OP_LOADW:
 		il_opdmp_loadw(op, sb, pj);
 		return;
 	default:
@@ -624,37 +624,37 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 		return;
 	}
 	switch (op->code) {
-	case RZIL_OP_STORE:
+	case RZ_IL_OP_STORE:
 		il_opdmp_store(op, sb, pj);
 		return;
-	case RZIL_OP_STOREW:
+	case RZ_IL_OP_STOREW:
 		il_opdmp_storew(op, sb, pj);
 		return;
-	case RZIL_OP_NOP:
+	case RZ_IL_OP_NOP:
 		il_opdmp_nop(op, sb, pj);
 		return;
-	case RZIL_OP_SET:
+	case RZ_IL_OP_SET:
 		il_opdmp_set(op, sb, pj);
 		return;
-	case RZIL_OP_LET:
+	case RZ_IL_OP_LET:
 		il_opdmp_let(op, sb, pj);
 		return;
-	case RZIL_OP_JMP:
+	case RZ_IL_OP_JMP:
 		il_opdmp_jmp(op, sb, pj);
 		return;
-	case RZIL_OP_GOTO:
+	case RZ_IL_OP_GOTO:
 		il_opdmp_goto(op, sb, pj);
 		return;
-	case RZIL_OP_SEQ:
+	case RZ_IL_OP_SEQ:
 		il_opdmp_seq(op, sb, pj);
 		return;
-	case RZIL_OP_BLK:
+	case RZ_IL_OP_BLK:
 		il_opdmp_blk(op, sb, pj);
 		return;
-	case RZIL_OP_REPEAT:
+	case RZ_IL_OP_REPEAT:
 		il_opdmp_repeat(op, sb, pj);
 		return;
-	case RZIL_OP_BRANCH:
+	case RZ_IL_OP_BRANCH:
 		il_opdmp_branch(op, sb, pj);
 		return;
 	default:
@@ -717,30 +717,30 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf
 	char *tmp0 = NULL, *tmp1 = NULL, *tmp2 = NULL;
 
 	switch (evt->type) {
-	case RZIL_EVENT_EXCEPTION:
+	case RZ_IL_EVENT_EXCEPTION:
 		rz_strbuf_appendf(sb, "exception(%s)", evt->data.exception);
 		break;
-	case RZIL_EVENT_PC_WRITE:
+	case RZ_IL_EVENT_PC_WRITE:
 		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc);
 		tmp1 = rz_bv_as_hex_string(evt->data.pc_write.new_pc);
 		rz_strbuf_appendf(sb, "pc_write(old: %s, new: %s)", tmp0, tmp1);
 		break;
-	case RZIL_EVENT_MEM_READ:
+	case RZ_IL_EVENT_MEM_READ:
 		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address);
 		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value) : NULL;
 		rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory");
 		break;
-	case RZIL_EVENT_VAR_READ:
+	case RZ_IL_EVENT_VAR_READ:
 		tmp1 = evt->data.var_read.value ? rz_bv_as_hex_string(evt->data.var_read.value) : NULL;
 		rz_strbuf_appendf(sb, "var_read(name: %s, value: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "uninitialized variable");
 		break;
-	case RZIL_EVENT_MEM_WRITE:
+	case RZ_IL_EVENT_MEM_WRITE:
 		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address);
 		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value) : NULL;
 		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value);
 		rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
 		break;
-	case RZIL_EVENT_VAR_WRITE:
+	case RZ_IL_EVENT_VAR_WRITE:
 		tmp1 = evt->data.var_write.old_value ? rz_bv_as_hex_string(evt->data.var_write.old_value) : NULL;
 		tmp2 = rz_bv_as_hex_string(evt->data.var_write.new_value);
 		rz_strbuf_appendf(sb, "var_write(name: %s, old: %s, new: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "uninitialized variable", tmp2);
@@ -761,13 +761,13 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 	char *tmp0 = NULL, *tmp1 = NULL, *tmp2 = NULL;
 
 	switch (evt->type) {
-	case RZIL_EVENT_EXCEPTION:
+	case RZ_IL_EVENT_EXCEPTION:
 		pj_o(pj);
 		pj_ks(pj, "type", "exception");
 		pj_ks(pj, "exception", evt->data.exception);
 		pj_end(pj);
 		break;
-	case RZIL_EVENT_PC_WRITE:
+	case RZ_IL_EVENT_PC_WRITE:
 		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc);
 		tmp1 = rz_bv_as_hex_string(evt->data.pc_write.new_pc);
 		pj_o(pj);
@@ -776,7 +776,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_ks(pj, "new", tmp1);
 		pj_end(pj);
 		break;
-	case RZIL_EVENT_MEM_READ:
+	case RZ_IL_EVENT_MEM_READ:
 		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address);
 		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value) : NULL;
 		pj_o(pj);
@@ -785,7 +785,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_ks(pj, "value", tmp1 ? tmp1 : "uninitialized memory");
 		pj_end(pj);
 		break;
-	case RZIL_EVENT_VAR_READ:
+	case RZ_IL_EVENT_VAR_READ:
 		tmp1 = evt->data.var_read.value ? rz_bv_as_hex_string(evt->data.var_read.value) : NULL;
 		pj_o(pj);
 		pj_ks(pj, "type", "var_read");
@@ -793,7 +793,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_ks(pj, "value", tmp1 ? tmp1 : "uninitialized variable");
 		pj_end(pj);
 		break;
-	case RZIL_EVENT_MEM_WRITE:
+	case RZ_IL_EVENT_MEM_WRITE:
 		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address);
 		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value) : NULL;
 		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value);
@@ -804,7 +804,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_ks(pj, "new", tmp2);
 		pj_end(pj);
 		break;
-	case RZIL_EVENT_VAR_WRITE:
+	case RZ_IL_EVENT_VAR_WRITE:
 		tmp1 = evt->data.var_write.old_value ? rz_bv_as_hex_string(evt->data.var_write.old_value) : NULL;
 		tmp2 = rz_bv_as_hex_string(evt->data.var_write.new_value);
 		pj_o(pj);

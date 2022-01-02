@@ -188,7 +188,7 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 		if (dbg->analysis->rzil) {
 			rz_analysis_rzil_collect_info(dbg->analysis, dbg->analysis->rzil, op, false);
 		} else {
-			RZ_LOG_ERROR("Run aeim to get RZIL initialized\n");
+			RZ_LOG_ERROR("Run aeim to get RzIL initialized\n");
 		}
 	}
 	if (oldpc != UT64_MAX) {

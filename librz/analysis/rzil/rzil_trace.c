@@ -4,7 +4,7 @@
 #include <rz_analysis.h>
 
 /**
- * RZIL trace should also these info
+ * IL trace should also these info
  * 1. mem.read address & data
  * 2. mem.write address & data
  * 3. reg.read name & data
@@ -18,7 +18,7 @@ static void htup_vector_free(HtUPKv *kv) {
 /**
  * Create a new trace to collect infos
  * \param analysis pointer to RzAnalysis
- * \param rzil RZIL instance
+ * \param rzil RZ_IL instance
  * \return pointer to RzilTrace
  */
 RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil) {
@@ -59,13 +59,13 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_
 	}
 	return trace;
 error:
-	eprintf("Fail to init RZIL trace\n");
+	eprintf("Fail to init IL trace\n");
 	rz_analysis_esil_trace_free(trace);
 	return NULL;
 }
 
 /**
- * Free an RZIL trace
+ * Free an IL trace
  * \param trace trace to be free
  */
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
@@ -85,11 +85,11 @@ RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
 }
 
 /**
- * This function should be called after executing the RZIL op
+ * This function should be called after executing the IL op
  * Collect trace info (target and data of mem/reg read/write)
  * \param analysis RzAnalysis
- * \param rzil RZIL instance
- * \param op RzAnalysisRzilOp, a general RZIL op structure (Designed for switching between different implementations of RZIL op struct)
+ * \param rzil IL instance
+ * \param op RzAnalysisRzilOp, a general IL op structure (Designed for switching between different implementations of IL op struct)
  */
 RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzAnalysisRzilOp *op) {
 	// TODO : rewrite this file when migrate to new op structure

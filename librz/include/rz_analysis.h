@@ -979,7 +979,7 @@ typedef struct rz_analysis_ref_char {
 #define ESIL_INTERNAL_PREFIX '$'
 #define ESIL_STACK_NAME      "esil.ram"
 #define ANALYSIS_ESIL        struct rz_analysis_esil_t
-#define ANALYSIS_RZIL        struct rz_analysis_rzil_t
+#define ANALYSIS_RZ_IL        struct rz_analysis_rzil_t
 
 typedef struct rz_analysis_esil_source_t {
 	ut32 id;
@@ -1106,16 +1106,16 @@ typedef RzAnalysisEsilTrace RzAnalysisRzilTrace;
 typedef struct rz_analysis_rzil_callbacks_t {
 	void *user;
 	/* callbacks */
-	int (*hook_flag_read)(ANALYSIS_RZIL *rzil, const char *flag, ut64 *num, RzAnalysis *analysis);
-	int (*hook_command)(ANALYSIS_RZIL *rzil, const char *op, RzAnalysis *analysis);
-	int (*hook_mem_read)(ANALYSIS_RZIL *rzil, ut64 addr, ut8 *buf, int len, RzAnalysis *analysis);
-	int (*mem_read)(ANALYSIS_RZIL *rzil, ut64 addr, ut8 *buf, int len, RzAnalysis *analysis);
-	int (*hook_mem_write)(ANALYSIS_RZIL *rzil, ut64 addr, const ut8 *buf, int len, RzAnalysis *analysis);
-	int (*mem_write)(ANALYSIS_RZIL *rzil, ut64 addr, const ut8 *buf, int len, RzAnalysis *analysis);
-	int (*hook_reg_read)(ANALYSIS_RZIL *rzil, const char *name, ut64 *res, int *size, RzAnalysis *analysis);
-	int (*reg_read)(ANALYSIS_RZIL *rzil, const char *name, ut64 *res, int *size, RzAnalysis *analysis);
-	int (*hook_reg_write)(ANALYSIS_RZIL *rzil, const char *name, ut64 *val, RzAnalysis *analysis);
-	int (*reg_write)(ANALYSIS_RZIL *rzil, const char *name, ut64 val, RzAnalysis *analysis);
+	int (*hook_flag_read)(ANALYSIS_RZ_IL *rzil, const char *flag, ut64 *num, RzAnalysis *analysis);
+	int (*hook_command)(ANALYSIS_RZ_IL *rzil, const char *op, RzAnalysis *analysis);
+	int (*hook_mem_read)(ANALYSIS_RZ_IL *rzil, ut64 addr, ut8 *buf, int len, RzAnalysis *analysis);
+	int (*mem_read)(ANALYSIS_RZ_IL *rzil, ut64 addr, ut8 *buf, int len, RzAnalysis *analysis);
+	int (*hook_mem_write)(ANALYSIS_RZ_IL *rzil, ut64 addr, const ut8 *buf, int len, RzAnalysis *analysis);
+	int (*mem_write)(ANALYSIS_RZ_IL *rzil, ut64 addr, const ut8 *buf, int len, RzAnalysis *analysis);
+	int (*hook_reg_read)(ANALYSIS_RZ_IL *rzil, const char *name, ut64 *res, int *size, RzAnalysis *analysis);
+	int (*reg_read)(ANALYSIS_RZ_IL *rzil, const char *name, ut64 *res, int *size, RzAnalysis *analysis);
+	int (*hook_reg_write)(ANALYSIS_RZ_IL *rzil, const char *name, ut64 *val, RzAnalysis *analysis);
+	int (*reg_write)(ANALYSIS_RZ_IL *rzil, const char *name, ut64 val, RzAnalysis *analysis);
 } RzAnalysisRzilCallbacks;
 
 typedef struct rz_analysis_rzil_t {

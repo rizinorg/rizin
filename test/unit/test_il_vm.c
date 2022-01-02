@@ -16,8 +16,8 @@ static bool test_rzil_vm_basic_operation() {
 	RzILVM *vm = rz_il_vm_new(0, 8, true);
 
 	// 1. create variables
-	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZIL_VAR_TYPE_UNK, true);
-	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZIL_VAR_TYPE_UNK, false);
+	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZ_IL_VAR_TYPE_UNK, true);
+	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZ_IL_VAR_TYPE_UNK, false);
 	mu_assert_notnull(var_r1, "Create var 1");
 	mu_assert_notnull(var_r2, "Create var 2");
 
@@ -26,8 +26,8 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_streq(var_r2->var_name, "r2", "var r2 name");
 
 	// check type
-	mu_assert_eq(var_r1->type, RZIL_VAR_TYPE_UNK, "var r1 type unk");
-	mu_assert_eq(var_r2->type, RZIL_VAR_TYPE_UNK, "var r2 type unk");
+	mu_assert_eq(var_r1->type, RZ_IL_VAR_TYPE_UNK, "var r1 type unk");
+	mu_assert_eq(var_r2->type, RZ_IL_VAR_TYPE_UNK, "var r2 type unk");
 
 	// check mutablity
 	mu_assert_eq(var_r1->is_mutable, true, "var r1 is mutable");
@@ -46,8 +46,8 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_notnull(val_r2, "Create val 2");
 
 	// check type
-	mu_assert_eq(val_r1->type, RZIL_VAR_TYPE_BV, "val 1 has type bitv");
-	mu_assert_eq(val_r2->type, RZIL_VAR_TYPE_BOOL, "val 2 has type bool");
+	mu_assert_eq(val_r1->type, RZ_IL_VAR_TYPE_BV, "val 1 has type bitv");
+	mu_assert_eq(val_r2->type, RZ_IL_VAR_TYPE_BOOL, "val 2 has type bool");
 
 	// 4. bind value to var
 	rz_il_hash_bind(vm, var_r1, val_r1);
@@ -120,8 +120,8 @@ static bool test_rzil_vm_operation() {
 
 	RzILVal *val_r0 = rz_il_hash_find_val_by_name(vm, "r0");
 	RzILVal *val_r1 = rz_il_hash_find_val_by_name(vm, "r1");
-	mu_assert_eq(val_r0->type, RZIL_VAR_TYPE_BV, "r0 is bitvector");
-	mu_assert_eq(val_r1->type, RZIL_VAR_TYPE_BV, "r1 is bitvector");
+	mu_assert_eq(val_r0->type, RZ_IL_VAR_TYPE_BV, "r0 is bitvector");
+	mu_assert_eq(val_r1->type, RZ_IL_VAR_TYPE_BV, "r1 is bitvector");
 
 	RzILVal *r0 = rz_il_hash_find_val_by_name(vm, "r0");
 	RzILVal *r1 = rz_il_hash_find_val_by_name(vm, "r1");
@@ -159,7 +159,7 @@ static bool test_rzil_vm_root_evaluation() {
 
 	// Evaluate the whole ite expression
 	RzILVal *ite_val = rz_il_evaluate_val(vm, ite_root);
-	mu_assert_eq(ite_val->type, RZIL_VAR_TYPE_BOOL, "Return a Bool Val");
+	mu_assert_eq(ite_val->type, RZ_IL_VAR_TYPE_BOOL, "Return a Bool Val");
 	mu_assert_eq(ite_val->data.b->b, true, "Return a True");
 	rz_il_value_free(ite_val);
 
@@ -264,8 +264,8 @@ static bool test_rzil_vm_op_signed() {
 static bool test_rzil_vm_op_set() {
 	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
-	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZIL_VAR_TYPE_UNK, true);
-	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZIL_VAR_TYPE_UNK, false);
+	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZ_IL_VAR_TYPE_UNK, true);
+	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZ_IL_VAR_TYPE_UNK, false);
 	rz_il_hash_bind(vm, var_r1, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
 	rz_il_hash_bind(vm, var_r2, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
 
@@ -276,7 +276,7 @@ static bool test_rzil_vm_op_set() {
 	RzILVal *val = rz_il_hash_find_val_by_name(vm, var_r2->var_name);
 	mu_assert_true(succ, "success");
 	mu_assert_notnull(val, "get val");
-	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "unchanged bv");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "unchanged bv");
 	mu_assert_eq(rz_bv_len(val->data.bv), 32, "unchanged bv len");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0, "unchanged bv val");
 
@@ -287,7 +287,7 @@ static bool test_rzil_vm_op_set() {
 	val = rz_il_hash_find_val_by_name(vm, var_r1->var_name);
 	mu_assert_true(succ, "success");
 	mu_assert_notnull(val, "get val");
-	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "set bv");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "set bv");
 	mu_assert_eq(rz_bv_len(val->data.bv), 24, "set bv len");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 42, "set bv val");
 
@@ -333,7 +333,7 @@ static void hook_test(RzILVM *vm, RzILOpEffect *op) {
 static bool test_rzil_vm_op_goto_hook() {
 	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
-	RzILVar *var = rz_il_vm_create_global_variable(vm, "myvar", RZIL_VAR_TYPE_UNK, true);
+	RzILVar *var = rz_il_vm_create_global_variable(vm, "myvar", RZ_IL_VAR_TYPE_UNK, true);
 	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
 
 	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x42);
@@ -349,7 +349,7 @@ static bool test_rzil_vm_op_goto_hook() {
 
 	// check the effect we implemented in hook_test
 	RzILVal *val = rz_il_hash_find_val_by_name(vm, "myvar");
-	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "val type");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "val type");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0xc0ffee, "val contents");
 
 	rz_il_vm_free(vm);
