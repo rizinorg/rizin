@@ -90,6 +90,55 @@ static bool test_il_reg_binding_derive() {
 	mu_assert_streq(rb->regs[3].name, "ah", "overlap multitype ah");
 	mu_assert_eq(rb->regs[3].size, 8, "bind size");
 	rz_il_reg_binding_free(rb);
+
+	// overlapping regs, but also flags
+	const char *profile_flags =
+		"gpr	rax	.64	0	0\n"
+		"gpr	eax	.32	0	0\n"
+		"gpr	ax	.16	0	0\n"
+		"gpr	al	.8	0	0\n"
+		"gpr	ah	.8	1	0\n"
+		"gpr	rbx	.64	8	0\n"
+		"gpr	ebx	.32	8	0\n"
+		"gpr	bx	.16	8	0\n"
+		"gpr	bl	.8	8	0\n"
+		"gpr	bh	.8	9	0\n"
+		"gpr	sreg	.8	40	0\n"
+		"gpr	cf	.1	40.0	0\n"
+		"gpr	zf	.1	40.1	0\n"
+		"gpr	nf	.1	40.2	0\n"
+		"gpr	vf	.1	40.3	0\n"
+		"gpr	hfsf	.2	40.4	0\n" // this one is two bits and covered, but should still be kept
+		"gpr	tf	.1	40.6	0\n"
+		"gpr	if	.1	40.7	0\n";
+	reg = rz_reg_new();
+	rz_reg_set_profile_string(reg, profile_flags);
+	rb = rz_il_reg_binding_derive(reg);
+	rz_reg_free(reg);
+	mu_assert_eq(rb->regs_count, 9, "overlap flags count");
+	// flags
+	mu_assert_streq(rb->regs[0].name, "cf", "overlap flags rax");
+	mu_assert_eq(rb->regs[0].size, 1, "bind size");
+	mu_assert_streq(rb->regs[1].name, "zf", "overlap flags rax");
+	mu_assert_eq(rb->regs[1].size, 1, "bind size");
+	mu_assert_streq(rb->regs[2].name, "nf", "overlap flags rax");
+	mu_assert_eq(rb->regs[2].size, 1, "bind size");
+	mu_assert_streq(rb->regs[3].name, "vf", "overlap flags rax");
+	mu_assert_eq(rb->regs[3].size, 1, "bind size");
+	mu_assert_streq(rb->regs[4].name, "tf", "overlap flags rax");
+	mu_assert_eq(rb->regs[4].size, 1, "bind size");
+	mu_assert_streq(rb->regs[5].name, "if", "overlap flags rax");
+	mu_assert_eq(rb->regs[5].size, 1, "bind size");
+	// regular regs
+	mu_assert_streq(rb->regs[6].name, "rax", "overlap flags rax");
+	mu_assert_eq(rb->regs[6].size, 64, "bind size");
+	mu_assert_streq(rb->regs[7].name, "rbx", "overlap flags rbx");
+	mu_assert_eq(rb->regs[7].size, 64, "bind size");
+	// still kept this one
+	mu_assert_streq(rb->regs[8].name, "hfsf", "overlap flags rbx");
+	mu_assert_eq(rb->regs[8].size, 2, "bind size");
+	rz_il_reg_binding_free(rb);
+
 	mu_end;
 }
 

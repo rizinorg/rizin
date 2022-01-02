@@ -17,14 +17,19 @@ static void reg_binding_item_fini(RzILRegBindingItem *item, void *unused) {
  * \brief Calculate a new binding of IL variables against the profile of the given RzReg
  *
  * Because registers can overlap, not all registers may get a binding.
- * Informally, only the "larger" ones, containing "smaller" ones are bound.
+ * Informally, only the "larger" ones, containing "smaller" ones are bound,
+ * except for 1-bit registers, which are always preferred.
  *
- * More formally, the set of registers to be bound is determined like this:
+ * More specifically, the set of registers to be bound is determined like this:
+ * First, bind all 1-bit registers (flags).
+ * Then, bind a (sub)set of the remaining registers like this:
  * * Begin with the set of all registers.
- * * Remove all registers that are covered entirely by another register and are smaller than it.
+ * * Remove all registers overlapping with an already-bound 1-bit register.
+ * * Remove all registers that are covered entirely by another register in the same set and are smaller than it.
  * * Remove the one marked with RZ_REG_NAME_PC, if it exists.
  * * While there still exists at least overlap, from the overlap of two registers at the lowest offset,
  *   remove the register with the higher offset.
+ *
  * If two registers have the same offset and size, the result is currently undefined.
  */
 RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
@@ -36,15 +41,71 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 	RzVector regs;
 	rz_vector_init(&regs, sizeof(RzILRegBindingItem), (RzVectorFree)reg_binding_item_fini, NULL);
 	for (int i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		RzList *items = rz_reg_filter_items_covered(reg->regset[i].regs);
+		// bind all flags (1-bit regs) unconditionally
+		RzRegItem *item;
+		RzListIter *iter;
+		RzList *flags = rz_list_new();
+		if (!flags) {
+			continue;
+		}
+		rz_list_foreach (reg->regset[i].regs, iter, item) {
+			if (item->size != 1) {
+				continue;
+			}
+			// check for same-offset flag
+			RzRegItem *item2;
+			RzListIter *iter2;
+			rz_list_foreach (flags, iter2, item2) {
+				if (item2->offset == item->offset) {
+					goto next_flag;
+				}
+			}
+			// all good, bind it
+			rz_list_push(flags, item);
+			char *name = strdup(item->name);
+			if (!name) {
+				rz_list_free(flags);
+				goto err;
+			}
+			RzILRegBindingItem *bitem = rz_vector_push(&regs, NULL);
+			if (!bitem) {
+				free(name);
+				rz_list_free(flags);
+				goto err;
+			}
+			bitem->name = name;
+			bitem->size = item->size;
+		next_flag:
+			continue;
+		}
+		// for the remaining regs, first filter regs that contain a flag
+		RzList *nonflags = rz_list_new();
+		if (!nonflags) {
+			rz_list_free(flags);
+			goto err;
+		}
+		rz_list_foreach (reg->regset[i].regs, iter, item) {
+			RzRegItem *flag;
+			RzListIter *fiter;
+			rz_list_foreach (flags, fiter, flag) {
+				if (flag->offset >= item->offset && flag->offset < item->offset + item->size) {
+					goto next_reg;
+				}
+			}
+			rz_list_push(nonflags, item);
+		next_reg:
+			continue;
+		}
+		// then bind the remaining regs, favoring larger ones on overlaps
+		RzList *items = rz_reg_filter_items_covered(nonflags);
+		rz_list_free(nonflags);
 		if (!items) {
+			rz_list_free(flags);
 			continue;
 		}
 		rz_list_sort(items, reg_offset_cmp);
 		const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 		RzRegItem *prev = NULL;
-		RzRegItem *item;
-		RzListIter *iter;
 		rz_list_foreach (items, iter, item) {
 			if (prev && prev->offset + prev->size > item->offset) {
 				// overlap where one reg is not fully contained in another.
@@ -57,12 +118,14 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 			}
 			char *name = strdup(item->name);
 			if (!name) {
+				rz_list_free(flags);
 				rz_list_free(items);
 				goto err;
 			}
 			RzILRegBindingItem *bitem = rz_vector_push(&regs, NULL);
 			if (!bitem) {
 				free(name);
+				rz_list_free(flags);
 				rz_list_free(items);
 				goto err;
 			}
@@ -71,6 +134,7 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 			prev = item;
 		}
 		rz_list_free(items);
+		rz_list_free(flags);
 	}
 	// from now on, the array should be treated immutable, so we deliberately don't use RzVector anymore.
 	rb->regs_count = rz_vector_len(&regs);
