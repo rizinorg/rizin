@@ -650,3 +650,60 @@ EXPECT=<<EOF
 0x00000064 1 base64:NotB64
 EOF
 RUN
+
+NAME=ft
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+ftl
+ftlj
+ftll
+ft bla "foo goo moo"
+f foo
+s main
+f goo
+ftl~bla
+ftll
+ftn bla
+EOF
+EXPECT=<<EOF
+fs
+env
+string
+threads
+network
+dylib
+alloc
+time
+process
+stdout
+["fs":[],"env":[],"string":[],"threads":[],"network":[],"dylib":[],"alloc":[],"time":[],"process":[],"stdout":[]]
+fs:
+env:
+string:
+threads:
+network:
+dylib:
+alloc:
+time:
+process:
+stdout:
+bla
+fs:
+dylib:
+process:
+stdout:
+network:
+alloc:
+env:
+string:
+time:
+bla:
+0x00400410  foo
+0x00400506  goo
+threads:
+0x00400410  foo
+0x00400506  goo
+EOF
+RUN
+
+

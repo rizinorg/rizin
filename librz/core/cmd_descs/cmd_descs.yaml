@@ -216,6 +216,7 @@ commands:
     cname: cmd_flag
     summary: Manage flags
     type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_flag
   - name: g
     summary: Generate shellcodes with rz_egg
     subcommands: cmd_egg

@@ -279,6 +279,8 @@ static const RzCmdDescArg eval_editor_args[2];
 static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
+static const RzCmdDescArg flag_tag_add_args[3];
+static const RzCmdDescArg flag_tag_search_args[2];
 static const RzCmdDescArg egg_compile_args[2];
 static const RzCmdDescArg egg_config_args[2];
 static const RzCmdDescArg egg_syscall_args[3];
@@ -6066,6 +6068,49 @@ static const RzCmdDescHelp eval_type_help = {
 static const RzCmdDescHelp cmd_flag_help = {
 	.summary = "Manage flags",
 };
+static const RzCmdDescHelp ft_help = {
+	.summary = "Flag tags",
+};
+static const RzCmdDescArg flag_tag_add_args[] = {
+	{
+		.name = "tag",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "words",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_tag_add_help = {
+	.summary = "Set a list of words for the given tag",
+	.args = flag_tag_add_args,
+};
+
+static const RzCmdDescArg flag_tag_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_tag_list_help = {
+	.summary = "List all flag tags",
+	.args = flag_tag_list_args,
+};
+
+static const RzCmdDescArg flag_tag_search_args[] = {
+	{
+		.name = "tag",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_tag_search_help = {
+	.summary = "Find all matching flag names for the given tag",
+	.args = flag_tag_search_args,
+};
 
 static const RzCmdDescHelp g_help = {
 	.summary = "Generate shellcodes with rz_egg",
@@ -11177,6 +11222,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_flag_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "f", rz_cmd_flag, &cmd_flag_help);
 	rz_warn_if_fail(cmd_flag_cd);
+	RzCmdDesc *ft_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "ft", rz_flag_tag_add_handler, &flag_tag_add_help, &ft_help);
+	rz_warn_if_fail(ft_cd);
+	RzCmdDesc *flag_tag_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ft_cd, "ftl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON, rz_flag_tag_list_handler, &flag_tag_list_help);
+	rz_warn_if_fail(flag_tag_list_cd);
+	rz_cmd_desc_set_default_mode(flag_tag_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_tag_search_cd = rz_cmd_desc_argv_new(core->rcmd, ft_cd, "ftn", rz_flag_tag_search_handler, &flag_tag_search_help);
+	rz_warn_if_fail(flag_tag_search_cd);
 
 	RzCmdDesc *g_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "g", rz_egg_compile_handler, &egg_compile_help, &g_help);
 	rz_warn_if_fail(g_cd);
