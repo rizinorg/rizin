@@ -186,13 +186,13 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 
 static int rz_debug_winkd_select(RzDebug *dbg, int pid, int tid) {
 	ut32 old = winkd_get_target(&kdctx->windctx);
-	int ret = winkd_set_target(&kdctx->windctx, pid);
+	int ret = winkd_set_target(&kdctx->windctx, pid, tid);
 	if (!ret) {
 		return false;
 	}
 	ut64 base = winkd_get_target_base(&kdctx->windctx);
 	if (!base) {
-		winkd_set_target(&kdctx->windctx, old);
+		winkd_set_target(&kdctx->windctx, old, tid);
 		return false;
 	}
 	eprintf("Process base is 0x%" PFMT64x "\n", base);

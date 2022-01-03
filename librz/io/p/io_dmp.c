@@ -78,10 +78,10 @@ static int dmp_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	int ret;
 	ut64 address = io->off;
 	if (!ctx->target == TARGET_PHYSICAL) {
-		WindProc *saved_proc = ctx->windctx.target;
+		WindProc saved_proc = ctx->windctx.target;
 		WindProc kernel_proc = { .dir_base_table = ctx->kernelDirectoryTable };
 		if (ctx->target == TARGET_KERNEL) {
-			ctx->windctx.target = &kernel_proc;
+			ctx->windctx.target = kernel_proc;
 		}
 		ret = winkd_write_at_uva(&ctx->windctx, buf, address, count);
 		ctx->windctx.target = saved_proc;
@@ -122,10 +122,10 @@ static int dmp_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	int ret;
 	ut64 address = io->off;
 	if (ctx->target != TARGET_PHYSICAL) {
-		WindProc *saved_proc = ctx->windctx.target;
+		WindProc saved_proc = ctx->windctx.target;
 		WindProc kernel_proc = { .dir_base_table = ctx->kernelDirectoryTable };
 		if (ctx->target == TARGET_KERNEL) {
-			ctx->windctx.target = &kernel_proc;
+			ctx->windctx.target = kernel_proc;
 		}
 		ret = winkd_read_at_uva(&ctx->windctx, buf, address, count);
 		ctx->windctx.target = saved_proc;
