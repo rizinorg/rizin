@@ -353,6 +353,20 @@ static bool test_rzil_vm_op_blk() {
 	mu_end;
 }
 
+/**
+ * \brief Test a loop
+ *
+ * Equivalent C code:
+ *
+ * ```c
+ * int leetbap = 0x42;
+ * while (leetbap - 1 != 0) {
+ *     leetbap = leetbap - 1;
+ * }
+ * ```
+ *
+ * In the end, leetbap == 1
+ */
 static bool test_rzil_vm_op_repeat() {
 	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
@@ -371,7 +385,7 @@ static bool test_rzil_vm_op_repeat() {
 	mu_assert_notnull(val, "val null");
 	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "type not bv");
 	mu_assert_eq(rz_bv_len(val->data.bv), 8, "len not correct");
-	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x00, "bitv not correct");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x01, "bitv not correct");
 
 	rz_il_vm_free(vm);
 	mu_end;
