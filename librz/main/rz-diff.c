@@ -75,6 +75,7 @@ typedef struct diff_context_t {
 	bool compare_addresses;
 	bool show_time;
 	bool colors;
+	bool analyze_all;
 	const char *architecture;
 	const char *input_a;
 	const char *input_b;
@@ -120,8 +121,8 @@ typedef struct diff_hex_view_t {
 	ut8 *buffer_b;
 	ut64 size_a;
 	ut64 size_b;
-	ut64 offset_a;
-	ut64 offset_b;
+	ut64 address_a;
+	ut64 address_b;
 	DiffIO *io_a;
 	DiffIO *io_b;
 	bool column_descr;
@@ -209,6 +210,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -v        show version information\n"
 		"  -e [k=v]  set an evaluable config variable\n"
 		"  -A        compare virtual and physical addresses\n"
+		"  -B        run 'aaa' when loading the bin\n"
 		"  -C        disable colors\n"
 		"  -T        show timestamp information\n"
 		"  -S [WxH]  sets the width and height of the terminal for visual mode\n"
@@ -264,12 +266,13 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hHjqvACTa:b:e:d:t:0:1:S:");
+	rz_getopt_init(&opt, argc, argv, "hHjqvABCTa:b:e:d:t:0:1:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
 		case '1': rz_diff_ctx_set_def(ctx, input_b, NULL, opt.arg); break;
 		case 'A': rz_diff_ctx_set_def(ctx, compare_addresses, false, true); break;
+		case 'B': rz_diff_ctx_set_def(ctx, analyze_all, false, true); break;
 		case 'C': rz_diff_ctx_set_def(ctx, colors, true, false); break;
 		case 'T': rz_diff_ctx_set_def(ctx, show_time, false, true); break;
 		case 'a': rz_diff_ctx_set_def(ctx, architecture, NULL, opt.arg); break;
@@ -602,11 +605,6 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 
 	rz_list_foreach (evars, it, config) {
 		rz_config_eval(core->config, config);
-	}
-
-	if (!rz_core_analysis_everything(core, false, NULL)) {
-		rz_diff_error("cannot set analyze binary '%s'\n", filename);
-		goto rz_diff_load_file_with_core_fail;
 	}
 
 	return cfile;
@@ -1264,6 +1262,10 @@ static char *execute_command(const char *command, const char *filename, DiffCont
 		return NULL;
 	}
 
+	if (ctx->analyze_all && !rz_core_analysis_everything(cfile->core, false, NULL)) {
+		rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
+	}
+
 	char *output = rz_core_cmd_str(cfile->core, command);
 	rz_core_free(cfile->core);
 	return output;
@@ -1424,24 +1426,54 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 	}
 
 	if (ctx->type == DIFF_TYPE_PLOTDIFF) {
-		ut64 offset_a = 0;
-		ut64 offset_b = 0;
+		ut64 address_a = 0;
+		ut64 address_b = 0;
 
-		if (!convert_offset_from_input(a->core, ctx->input_a, &offset_a)) {
+		if (!convert_offset_from_input(a->core, ctx->input_a, &address_a)) {
 			rz_diff_error("cannot convert '%s' into an offset\n", ctx->input_a);
 			goto rz_diff_graphs_files_bad;
 		}
 
-		if (!convert_offset_from_input(b->core, ctx->input_b, &offset_b)) {
+		if (!convert_offset_from_input(b->core, ctx->input_b, &address_b)) {
 			rz_diff_error("cannot convert '%s' into an offset\n", ctx->input_b);
 			goto rz_diff_graphs_files_bad;
 		}
-		if (!rz_core_gdiff_function_2_files(a->core, b->core, offset_a, offset_b)) {
+
+		if (ctx->analyze_all) {
+			if (!rz_core_analysis_everything(a->core, false, NULL)) {
+				rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
+				goto rz_diff_graphs_files_bad;
+			}
+			if (!rz_core_analysis_everything(b->core, false, NULL)) {
+				rz_diff_error("cannot analyze binary '%s'\n", ctx->file_b);
+				goto rz_diff_graphs_files_bad;
+			}
+		} else {
+			bool analyze_recursively = rz_config_get_i(a->core->config, "analysis.calls");
+			if (!rz_core_analysis_function_add(a->core, NULL, address_a, analyze_recursively)) {
+				rz_diff_error("cannot find function at '%s' in '%s' \n", ctx->input_a, ctx->file_a);
+				goto rz_diff_graphs_files_bad;
+			}
+			if (!rz_core_analysis_function_add(b->core, NULL, address_b, analyze_recursively)) {
+				rz_diff_error("cannot find function at '%s' in '%s' \n", ctx->input_b, ctx->file_b);
+				goto rz_diff_graphs_files_bad;
+			}
+		}
+
+		if (!rz_core_gdiff_function_2_files(a->core, b->core, address_a, address_b)) {
 			rz_diff_error("cannot diff graphs with inputs '%s' with '%s'\n", ctx->input_a, ctx->input_b);
 			goto rz_diff_graphs_files_bad;
 		}
-		rz_core_diff_show_function(a->core, b->core, offset_a, ctx->mode == DIFF_MODE_JSON);
+		rz_core_diff_show_function(a->core, b->core, address_a, ctx->mode == DIFF_MODE_JSON);
 	} else {
+		if (!rz_core_analysis_everything(a->core, false, NULL)) {
+			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
+			goto rz_diff_graphs_files_bad;
+		}
+		if (!rz_core_analysis_everything(b->core, false, NULL)) {
+			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_b);
+			goto rz_diff_graphs_files_bad;
+		}
 		if (!rz_core_gdiff_2_files(a->core, b->core)) {
 			rz_diff_error("cannot diff all graphs\n");
 			goto rz_diff_graphs_files_bad;
@@ -1465,19 +1497,74 @@ typedef enum diff_hex_len_t {
 	DIFF_HEX_32 = 154,
 } DiffHexLen;
 
-static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 pos, ssize_t read_a, ssize_t read_b) {
+static inline int diff_hexdump_partial(DiffHexView *hview, int hexlen, int lp, int lsize, const ut8 *bytes_a, const ut8 *bytes_b, ut64 address_a, ut64 address_b, ut64 size_a, ut64 size_b, ut64 pos, ssize_t read_a, ssize_t read_b, ssize_t skip_a, ssize_t skip_b) {
 	const char *number = hview->colors.number;
 	const char *match = hview->colors.match;
 	const char *unmatch = hview->colors.unmatch;
 	const char *reset = hview->colors.reset;
+	ssize_t i;
+	char *line = hview->line;
 
+#define P(x)                (IS_PRINTABLE(x) ? x : '.')
+#define printline(fmt, ...) snprintf(line + lp, RZ_MAX(lsize - lp, 0), fmt, ##__VA_ARGS__)
+	// write to buffer fileA offset + hex bytes
+	lp += printline("%s0x%016" PFMT64x "%s | ", number, address_a + pos, reset);
+	for (i = 0; i < hexlen && i < read_a; ++i) {
+		if (pos + i >= size_a || pos + i < skip_a) {
+			// if the byte is outside the range [0 - fileA size) then do not write any hex
+			memset(line + lp, ' ', 3);
+			lp += 3;
+		} else if (i < read_b && pos + i >= skip_b) {
+			// if the byte is inside the range [0 - fileA size) check bytes_b for match/mismatch
+			const char *color = bytes_a[pos + i] == bytes_b[pos + i] ? match : unmatch;
+			lp += printline("%s%02x%s ", color, bytes_a[pos + i], reset);
+		} else {
+			// if the byte is inside the range [0 - fileA size) but address_b
+			// is outside [0 - fileB size) then is a mismatch
+			lp += printline("%s%02x%s ", unmatch, bytes_a[pos + i], reset);
+		}
+	}
+	if (i < hexlen) {
+		// fill any missing space to have fileA bytes aligned
+		memset(line + lp, ' ', (hexlen - i) * 3);
+		lp += (hexlen - i) * 3;
+	}
+
+	// print now printable chars of the printed hex values
+	lp += printline(" | ");
+	for (i = 0; i < hexlen && i < read_a; ++i) {
+		if (pos + i >= size_a || pos + i < skip_a) {
+			// if the byte is outside the range [0 - fileA size) then do not write any hex
+			line[lp] = ' ';
+			lp++;
+		} else if (i < read_b && pos + i >= skip_b) {
+			// if the byte is inside the range [0 - fileA size) check bytes_b for match/mismatch
+			const char *color = bytes_a[pos + i] == bytes_b[pos + i] ? match : unmatch;
+			lp += printline("%s%c%s", color, P(bytes_a[pos + i]), reset);
+		} else {
+			// if the byte is inside the range [0 - fileA size) but address_b
+			// is outside [0 - fileB size) then is a mismatch
+			lp += printline("%s%c%s", unmatch, P(bytes_a[pos + i]), reset);
+		}
+	}
+	if (i < hexlen) {
+		// fill any missing space to have fileA bytes aligned
+		memset(line + lp, ' ', (hexlen - i));
+		lp += (hexlen - i);
+	}
+	return lp;
+#undef printline
+#undef P
+}
+
+static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 pos, ssize_t read_a, ssize_t read_b, ssize_t skip_a, ssize_t skip_b) {
 	int width = hview->screen.width;
 	int height = hview->screen.height;
 	char *line = hview->line;
 	const ut8 *buffer_a = hview->buffer_a;
 	const ut8 *buffer_b = hview->buffer_b;
-	ut64 offset_a = hview->offset_a;
-	ut64 offset_b = hview->offset_b;
+	ut64 address_a = hview->address_a;
+	ut64 address_b = hview->address_b;
 	int lp = 0;
 	int lsize = width * height;
 	int hexlen = 0;
@@ -1493,72 +1580,14 @@ static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 p
 		hexlen = 8;
 		break;
 	}
-	ssize_t i;
-	bool same = false;
 
-#define P(x)                (IS_PRINTABLE(x) ? x : '.')
 #define printline(fmt, ...) snprintf(line + lp, RZ_MAX(lsize - lp, 0), fmt, ##__VA_ARGS__)
-	lp = 0;
-	lp += printline("%s0x%016" PFMT64x "%s | ", number, offset_a + pos, reset);
-	for (i = 0; i < hexlen && i < read_a; ++i) {
-		if (i < read_b) {
-			same = buffer_a[pos + i] == buffer_b[pos + i];
-			lp += printline("%s%02x%s ", same ? match : unmatch, buffer_a[pos + i], reset);
-		} else {
-			lp += printline("%s%02x%s ", unmatch, buffer_a[pos + i], reset);
-		}
-	}
-	if (i < hexlen) {
-		memset(line + lp, ' ', (hexlen - i) * 3);
-		lp += (hexlen - i) * 3;
-	}
-
+	lp = diff_hexdump_partial(hview, hexlen, 0, lsize, buffer_a, buffer_b, address_a, address_b, hview->size_a, hview->size_b, pos, read_a, read_b, skip_a, skip_b);
 	lp += printline(" | ");
-	for (i = 0; i < hexlen && i < read_a; ++i) {
-		if (i < read_b) {
-			same = buffer_a[pos + i] == buffer_b[pos + i];
-			lp += printline("%s%c%s", same ? match : unmatch, P(buffer_a[pos + i]), reset);
-		} else {
-			lp += printline("%s%c%s", unmatch, P(buffer_a[pos + i]), reset);
-		}
-	}
-	if (i < hexlen) {
-		memset(line + lp, ' ', (hexlen - i));
-		lp += (hexlen - i);
-	}
-
-	lp += printline(" | %s0x%016" PFMT64x "%s | ", number, offset_b + pos, reset);
-	for (i = 0; i < hexlen && i < read_b; ++i) {
-		if (i < read_a) {
-			same = buffer_a[pos + i] == buffer_b[pos + i];
-			lp += printline("%s%02x%s ", same ? match : unmatch, buffer_b[pos + i], reset);
-		} else {
-			lp += printline("%s%02x%s ", unmatch, buffer_b[pos + i], reset);
-		}
-	}
-	if (i < hexlen) {
-		memset(line + lp, ' ', (hexlen - i) * 3);
-		lp += (hexlen - i) * 3;
-	}
-
-	lp += printline(" | ");
-	for (i = 0; i < hexlen && i < read_b; ++i) {
-		if (i < read_a) {
-			same = buffer_a[pos + i] == buffer_b[pos + i];
-			lp += printline("%s%c%s", same ? match : unmatch, P(buffer_b[pos + i]), reset);
-		} else {
-			lp += printline("%s%c%s", unmatch, P(buffer_b[pos + i]), reset);
-		}
-	}
-	if (i < hexlen) {
-		memset(line + lp, ' ', (hexlen - i));
-		lp += (hexlen - i);
-	}
-
+	lp = diff_hexdump_partial(hview, hexlen, lp, lsize, buffer_b, buffer_a, address_b, address_a, hview->size_b, hview->size_a, pos, read_b, read_a, skip_b, skip_a);
 	lp += printline(" |");
 #undef printline
 }
-#undef P
 
 static inline int len_draw_hexdump(DiffHexView *hview) {
 	int width = hview->screen.width;
@@ -1613,6 +1642,8 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	ut64 filesize_a = hview->io_a->filesize;
 	ut64 filesize_b = hview->io_b->filesize;
 	ut64 max_rows = height - 2;
+	ut64 skip_a = 0;
+	ut64 skip_b = 0;
 	RzConsCanvas *canvas = hview->canvas;
 	const char *reset = hview->colors.reset;
 	const char *legenda = hview->colors.legenda;
@@ -1649,23 +1680,44 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 		max_rows--;
 	}
 
-	read_a = rz_io_pread_at(io_a->io, hview->offset_a, hview->buffer_a, hview->size_a);
-	read_b = rz_io_pread_at(io_b->io, hview->offset_b, hview->buffer_b, hview->size_b);
+	if (hview->address_a > hview->size_a && (hview->address_a + hview->size_a) < hview->size_a) {
+		// underflow
+		ut64 size = hview->address_a + hview->size_a;
+		ut64 offset_p = hview->size_a - size;
+		read_a = rz_io_pread_at(io_a->io, 0, hview->buffer_a + offset_p, size);
+		if (read_a > 0) {
+			// include also excluded bytes from underflow
+			read_a += offset_p;
+			skip_a = offset_p;
+		}
+	} else {
+		read_a = rz_io_pread_at(io_a->io, hview->address_a, hview->buffer_a, hview->size_a);
+	}
+
+	if (hview->address_b > hview->size_b && (hview->address_b + hview->size_b) < hview->size_b) {
+		// underflow
+		ut64 size = hview->address_b + hview->size_b;
+		ut64 offset_p = hview->size_b - size;
+		read_b = rz_io_pread_at(io_b->io, 0, hview->buffer_b + offset_p, size);
+		if (read_b > 0) {
+			// include also excluded bytes from underflow
+			read_b += offset_p;
+			skip_b = offset_p;
+		}
+	} else {
+		read_b = rz_io_pread_at(io_b->io, hview->address_b, hview->buffer_b, hview->size_b);
+	}
 
 	rz_cons_goto_origin_reset();
 	rz_cons_clear();
 	rz_cons_canvas_clear(canvas);
 	shift = seek_min_shift(hview);
 	for (ut64 h = 0, pos = 0; h < max_rows; ++h) {
+		// draw hexadecimal values
 		pos = h << shift;
-		// 180
-		if (pos >= read_a && pos >= read_b) {
-			rz_cons_canvas_fill(canvas, xpos, h + 1, width, 0, ' ');
-		} else {
-			diff_hexdump_line(hview, hlen, pos, read_a - pos, read_b - pos);
-			rz_cons_canvas_gotoxy(canvas, xpos, h + (hview->column_descr ? 2 : 1));
-			rz_cons_canvas_write(canvas, line);
-		}
+		diff_hexdump_line(hview, hlen, pos, read_a - pos, read_b - pos, skip_a, skip_b);
+		rz_cons_canvas_gotoxy(canvas, xpos, h + (hview->column_descr ? 2 : 1));
+		rz_cons_canvas_write(canvas, line);
 	}
 
 	switch (len_draw_hexdump(hview)) {
@@ -1682,7 +1734,7 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	} else {
 		rz_cons_canvas_gotoxy(canvas, xpos, 0);
 	}
-	snprintf(line, lsize, " [%*" PFMT64x " | %*" PFMT64x "]( %.42s )", offlen, hview->offset_a, offlen, filesize_a, file_a);
+	snprintf(line, lsize, " [%*" PFMT64x "]( %.42s )", offlen, filesize_a, file_a);
 	rz_cons_canvas_write(canvas, line);
 
 	if (hview->column_descr) {
@@ -1692,7 +1744,7 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	} else {
 		rz_cons_canvas_gotoxy(canvas, xpos + hlen, 0);
 	}
-	snprintf(line, lsize, " [%*" PFMT64x " | %*" PFMT64x "]( %.42s )", offlen, hview->offset_b, offlen, filesize_b, file_b);
+	snprintf(line, lsize, " [%*" PFMT64x "]( %.42s )", offlen, filesize_b, file_b);
 	rz_cons_canvas_write(canvas, line);
 
 	// clang-format off
@@ -1807,32 +1859,16 @@ static void prompt_offset_and_seek(DiffHexView *hview, ut64 minseek) {
 			free(value);
 			return;
 		}
-		st64 number = strtoll((*p == '+') ? p + 1 : p, NULL, 0);
+		st64 number = strtoll((*p == '+' || *p == '-') ? p + 1 : p, NULL, 0);
 		if (*p == '-') {
-			if ((hview->offset_a - number) < hview->offset_a) {
-				hview->offset_a -= number;
-			} else if (hview->offset_a != hview->offset_b) {
-				hview->offset_a = RZ_MIN(hview->offset_a, hview->offset_b);
-			} else {
-				hview->offset_a = 0;
-			}
-			if ((hview->offset_b - number) < hview->offset_b) {
-				hview->offset_b -= number;
-			} else if (hview->offset_a != hview->offset_b) {
-				hview->offset_b = RZ_MIN(hview->offset_a, hview->offset_b);
-			} else {
-				hview->offset_b = 0;
-			}
+			hview->address_a -= number;
+			hview->address_b -= number;
 		} else if (*p == '+') {
-			if ((hview->offset_a + number) < hview->io_a->filesize) {
-				hview->offset_a += number;
-			}
-			if ((hview->offset_b + number) < hview->io_b->filesize) {
-				hview->offset_b += number;
-			}
+			hview->address_a += number;
+			hview->address_b += number;
 		} else {
-			hview->offset_a = RZ_MIN(number, hview->io_a->filesize - minseek);
-			hview->offset_b = RZ_MIN(number, hview->io_b->filesize - minseek);
+			hview->address_a = number;
+			hview->address_b = number;
 		}
 	}
 	free(value);
@@ -1846,36 +1882,24 @@ static void prompt_offset_and_seek_file(DiffHexView *hview, ut64 minseek, bool i
 			free(value);
 			return;
 		}
-		st64 number = strtoll((*p == '+') ? p + 1 : p, NULL, 0);
+		st64 number = strtoll((*p == '+' || *p == '-') ? p + 1 : p, NULL, 0);
 		if (*p == '-') {
 			if (is_file0) {
-				if ((hview->offset_a - number) < hview->offset_a) {
-					hview->offset_a -= number;
-				} else if (hview->offset_a != hview->offset_b) {
-					hview->offset_a = RZ_MIN(hview->offset_a, hview->offset_b);
-				} else {
-					hview->offset_a = 0;
-				}
+				hview->address_a -= number;
 			} else {
-				if ((hview->offset_b - number) < hview->offset_b) {
-					hview->offset_b -= number;
-				} else if (hview->offset_a != hview->offset_b) {
-					hview->offset_b = RZ_MIN(hview->offset_a, hview->offset_b);
-				} else {
-					hview->offset_b = 0;
-				}
+				hview->address_b -= number;
 			}
 		} else if (*p == '+') {
-			if (is_file0 && (hview->offset_a + number) < hview->io_a->filesize) {
-				hview->offset_a += number;
-			} else if (!is_file0 && (hview->offset_b + number) < hview->io_b->filesize) {
-				hview->offset_b += number;
+			if (is_file0) {
+				hview->address_a += number;
+			} else {
+				hview->address_b += number;
 			}
 		} else {
 			if (is_file0) {
-				hview->offset_a = RZ_MIN(number, hview->io_a->filesize - minseek);
+				hview->address_a = number;
 			} else {
-				hview->offset_b = RZ_MIN(number, hview->io_b->filesize - minseek);
+				hview->address_b = number;
 			}
 		}
 	}
@@ -1891,53 +1915,53 @@ static void find_next_diff(DiffHexView *hview, ut64 seek) {
 	DiffIO *io_b = hview->io_b;
 	ssize_t read_a = 0, read_b = 0;
 	ssize_t minread = 0, minseek = 0;
-	ut64 offset_a = hview->offset_a + seek;
-	ut64 offset_b = hview->offset_b + seek;
+	ut64 address_a = hview->address_a + seek;
+	ut64 address_b = hview->address_b + seek;
 	ut64 minsize = RZ_MIN(hview->size_a, hview->size_b);
 	if (RZ_MIN(io_a->filesize, io_b->filesize) < seek) {
-		hview->offset_a = 0;
-		hview->offset_b = 0;
+		hview->address_a = 0;
+		hview->address_b = 0;
 		return;
 	}
 	do {
-		read_a = rz_io_pread_at(io_a->io, offset_a, hview->buffer_a, minsize);
-		read_b = rz_io_pread_at(io_b->io, offset_b, hview->buffer_b, minsize);
+		read_a = rz_io_pread_at(io_a->io, address_a, hview->buffer_a, minsize);
+		read_b = rz_io_pread_at(io_b->io, address_b, hview->buffer_b, minsize);
 		if (read_a < 1 || read_b < 1) {
 			break;
 		}
 		minread = RZ_MIN(read_a, read_b);
 		if (minread != minsize && !memcmp(hview->buffer_a, hview->buffer_b, minread)) {
-			offset_a += RZ_MAX(minread - seek, 0);
-			offset_b += RZ_MAX(minread - seek, 0);
+			address_a += RZ_MAX(minread - seek, 0);
+			address_b += RZ_MAX(minread - seek, 0);
 			break;
 		} else if (minread == minsize && !memcmp(hview->buffer_a, hview->buffer_b, minsize)) {
-			offset_a += minsize;
-			offset_b += minsize;
+			address_a += minsize;
+			address_b += minsize;
 			continue;
 		}
 		minread = RZ_MIN(minsize, minread);
 		minseek = RZ_MIN(seek, minread);
 		for (ssize_t i = 0; i < minread; i += minseek) {
 			if (memcmp(&hview->buffer_a[i], &hview->buffer_b[i], minseek)) {
-				hview->offset_a = offset_a;
-				hview->offset_b = offset_b;
+				hview->address_a = address_a;
+				hview->address_b = address_b;
 				return;
 			}
-			offset_a += minseek;
-			offset_b += minseek;
+			address_a += minseek;
+			address_b += minseek;
 		}
 	} while (1);
 
-	if (offset_a >= io_a->filesize) {
-		offset_a = io_a->filesize - seek;
+	if (address_a >= io_a->filesize) {
+		address_a = io_a->filesize - seek;
 	}
 
-	if (offset_b >= io_b->filesize) {
-		offset_b = io_b->filesize - seek;
+	if (address_b >= io_b->filesize) {
+		address_b = io_b->filesize - seek;
 	}
 
-	hview->offset_a = offset_a;
-	hview->offset_b = offset_b;
+	hview->address_a = address_a;
+	hview->address_b = address_b;
 }
 
 static void find_prev_diff(DiffHexView *hview, ut64 seek) {
@@ -1948,32 +1972,32 @@ static void find_prev_diff(DiffHexView *hview, ut64 seek) {
 	DiffIO *io_a = hview->io_a;
 	DiffIO *io_b = hview->io_b;
 	ssize_t read_a = 0, read_b = 0;
-	st64 offset_a = hview->offset_a;
-	st64 offset_b = hview->offset_b;
+	st64 address_a = hview->address_a;
+	st64 address_b = hview->address_b;
 
 	do {
-		offset_a -= seek;
-		offset_b -= seek;
-		if (offset_a < 0) {
-			offset_a = 0;
+		address_a -= seek;
+		address_b -= seek;
+		if (address_a < 0) {
+			address_a = 0;
 		}
-		if (offset_b < 0) {
-			offset_b = 0;
+		if (address_b < 0) {
+			address_b = 0;
 		}
-		read_a = rz_io_pread_at(io_a->io, offset_a, hview->buffer_a, seek);
-		read_b = rz_io_pread_at(io_b->io, offset_b, hview->buffer_b, seek);
+		read_a = rz_io_pread_at(io_a->io, address_a, hview->buffer_a, seek);
+		read_b = rz_io_pread_at(io_b->io, address_b, hview->buffer_b, seek);
 		if (read_a < 1 || read_b < 1) {
 			break;
 		}
 		if (memcmp(hview->buffer_a, hview->buffer_b, seek)) {
 			break;
 		}
-		if (offset_a == 0 || offset_b == 0) {
+		if (address_a == 0 || address_b == 0) {
 			break;
 		}
 	} while (1);
-	hview->offset_a = RZ_MAX(offset_a, 0);
-	hview->offset_b = RZ_MAX(offset_b, 0);
+	hview->address_a = RZ_MAX(address_a, 0);
+	hview->address_b = RZ_MAX(address_b, 0);
 }
 
 static void rz_diff_resize_buffer(DiffHexView *hview) {
@@ -2089,8 +2113,8 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	hview.canvas = canvas;
 	hview.screen.width = width;
 	hview.screen.height = height;
-	hview.offset_a = 0;
-	hview.offset_b = 0;
+	hview.address_a = 0;
+	hview.address_b = 0;
 	hview.column_descr = true;
 	rz_diff_get_colors(&hview.colors, console->context, ctx->colors);
 
@@ -2132,23 +2156,21 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			prompt_offset_and_seek_file(&hview, seekmin, false);
 			break;
 		case '9':
-			hview.offset_a = hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
+			hview.address_a = hview.address_b = RZ_MIN(hview.address_a, hview.address_b);
 			break;
 		case 'G':
 		case 'g':
-			hview.offset_a = io_a->filesize > seekmin ? io_a->filesize - seekmin : 0;
-			hview.offset_b = io_b->filesize > seekmin ? io_b->filesize - seekmin : 0;
+			hview.address_a = io_a->filesize - seekmin;
+			hview.address_b = io_b->filesize - seekmin;
 			break;
 		case 'B':
 		case 'b':
-			hview.offset_a = 0;
-			hview.offset_b = 0;
+			hview.address_a = 0;
+			hview.address_b = 0;
 			break;
 		case 'A':
 		case 'a':
-			if (hview.offset_a > 0) {
-				hview.offset_a--;
-			}
+			hview.address_a--;
 			break;
 		case 'N':
 		case 'n':
@@ -2160,96 +2182,44 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case 'Z':
 		case 'z':
-			if ((hview.offset_a + 1) < hview.io_a->filesize) {
-				hview.offset_a++;
-			}
+			hview.address_a++;
 			break;
 		case 'D':
 		case 'd':
-			if (hview.offset_b > 0) {
-				hview.offset_b--;
-			}
+			hview.address_b--;
 			break;
 		case 'C':
 		case 'c':
-			if ((hview.offset_b + 1) < hview.io_b->filesize) {
-				hview.offset_b++;
-			}
+			hview.address_b++;
 			break;
 		/* ARROWS */
 		case '1':
-			if ((hview.offset_a - (seekmin * (height - 2))) < hview.offset_a) {
-				hview.offset_a -= (seekmin * (height - 2));
-			} else if (hview.offset_a != hview.offset_b) {
-				hview.offset_a = RZ_MIN(hview.offset_a, hview.offset_b);
-			} else {
-				hview.offset_a = 0;
-			}
-			if ((hview.offset_b - (seekmin * (height - 2))) < hview.offset_b) {
-				hview.offset_b -= (seekmin * (height - 2));
-			} else if (hview.offset_a != hview.offset_b) {
-				hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
-			} else {
-				hview.offset_b = 0;
-			}
+			hview.address_a -= (seekmin * (height - 2));
+			hview.address_b -= (seekmin * (height - 2));
 			break;
 		case '2':
-			if ((hview.offset_a + (seekmin * (height - 2))) > hview.offset_a &&
-				(hview.offset_a + (seekmin * (height - 2))) < hview.io_a->filesize) {
-				hview.offset_a += (seekmin * (height - 2));
-			}
-			if ((hview.offset_b + (seekmin * (height - 2))) > hview.offset_b &&
-				(hview.offset_b + (seekmin * (height - 2))) < hview.io_b->filesize) {
-				hview.offset_b += (seekmin * (height - 2));
-			}
+			hview.address_a += (seekmin * (height - 2));
+			hview.address_b += (seekmin * (height - 2));
 			break;
 		case 'K':
 		case 'k':
-			if ((hview.offset_a - seekmin) < hview.offset_a) {
-				hview.offset_a -= seekmin;
-			} else if (hview.offset_a != hview.offset_b) {
-				hview.offset_a = RZ_MIN(hview.offset_a, hview.offset_b);
-			} else {
-				hview.offset_a = 0;
-			}
-			if ((hview.offset_b - seekmin) < hview.offset_b) {
-				hview.offset_b -= seekmin;
-			} else if (hview.offset_a != hview.offset_b) {
-				hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
-			} else {
-				hview.offset_b = 0;
-			}
+			hview.address_a -= seekmin;
+			hview.address_b -= seekmin;
 			break;
 		case 'J':
 		case 'j':
-			if ((hview.offset_a + seekmin) > hview.offset_a &&
-				(hview.offset_a + seekmin) < hview.io_a->filesize) {
-				hview.offset_a += seekmin;
-			}
-			if ((hview.offset_b + seekmin) > hview.offset_b &&
-				(hview.offset_b + seekmin) < hview.io_b->filesize) {
-				hview.offset_b += seekmin;
-			}
+			hview.address_a += seekmin;
+			hview.address_b += seekmin;
 			break;
 		case 'L':
 		case 'l':
-			if (hview.offset_a > 0) {
-				hview.offset_a--;
-			}
-			if (hview.offset_b > 0) {
-				hview.offset_b--;
-			}
+			hview.address_a--;
+			hview.address_b--;
 			break;
 		case 'H':
 		case 'h':
-			if (hview.offset_a < UT64_MAX &&
-				(hview.offset_a + 1) < hview.io_a->filesize) {
-				hview.offset_a++;
-			}
-			if (hview.offset_b < UT64_MAX &&
-				(hview.offset_b + 1) < hview.io_b->filesize) {
-				hview.offset_b++;
-			}
+			hview.address_a++;
+			hview.address_b++;
 			break;
 		case -1: // EOF
 		case 'Q':
