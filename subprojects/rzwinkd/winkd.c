@@ -487,7 +487,7 @@ bool winkd_set_target(WindCtx *ctx, ut32 pid, ut32 tid) {
 					break;
 				}
 			}
-		} else {
+		} else if (is_cur_process) {
 			t = rz_list_first(l);
 			if (t) {
 				ctx->target_thread = *t;
@@ -709,6 +709,24 @@ RzList *winkd_list_threads(WindCtx *ctx) {
 		ptr = next;
 	} while (ptr != base);
 	return ret;
+}
+
+int winkd_trap_frame(WindCtx *ctx, ut8 *buf, int size) {
+	if (!ctx->target_thread.uniqueid) {
+		eprintf("No target thread\n");
+		return 0;
+	}
+
+	if (!ctx->target_thread.ethread) {
+		eprintf("No ETHREAD present\n");
+		return 0;
+	}
+	const int ktrap_frame_offset = ctx->is_arm
+		? ctx->is_64bit ? 0x88 : 0x68
+		: ctx->is_64bit ? 0x90
+				: 0x6C;
+	ut64 ptr = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread);
+	return ctx->read_at_kernel_virtual(ctx->user, ptr, buf, size);
 }
 
 bool winkd_read_ver(KdCtx *ctx) {

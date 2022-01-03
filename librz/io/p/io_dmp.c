@@ -3,6 +3,7 @@
 
 #include <rz_io.h>
 #include <winkd.h>
+#include "librz/bin/format/dmp/dmp_specs.h"
 
 static bool dmp_plugin_open(RzIO *io, const char *file, bool many) {
 	return (!strncmp(file, "dmp://", 6));
@@ -26,6 +27,13 @@ static int read_at_phys(ReadAtCtx *ctx, ut64 address, ut8 *buf, int len) {
 }
 
 static int read_at_kernel_virtual(ReadAtCtx *ctx, ut64 address, ut8 *buf, int len) {
+	if (ctx->ctx->type == DMP_DUMPTYPE_TRIAGE) {
+		int saved_va = ctx->io->va;
+		ctx->io->va = 1;
+		int ret = rz_io_nread_at(ctx->io, address, buf, len);
+		ctx->io->va = saved_va;
+		return ret;
+	} 
 	return rz_io_desc_read_at(ctx->fd, address, buf, len);
 }
 
@@ -145,6 +153,8 @@ static int dmp_close(RzIODesc *fd) {
 	DmpCtx *ctx = fd->data;
 	rz_io_desc_close(ctx->backend);
 	winkd_ctx_fini(&ctx->windctx);
+	free(ctx->context);
+	RZ_FREE(fd->data);
 	return true;
 }
 

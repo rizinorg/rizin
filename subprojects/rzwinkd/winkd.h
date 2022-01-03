@@ -104,9 +104,12 @@ typedef struct _KdCtx {
 
 typedef struct _DmpCtx {
 	WindCtx windctx;
+	ut32 type;
 	ut64 target; // TARGET_BACKEND, TARGET_PHYSICAL, or DirectoryTable
 	ut64 kernelDirectoryTable;
 	RzIODesc *backend;
+	ut8 *context;
+	size_t context_sz;
 } DmpCtx;
 
 static inline ut64 winkd_read_ptr_at(WindCtx *ctx, WindReadAt *read_at_func, ut64 at) {
