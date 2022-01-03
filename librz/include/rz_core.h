@@ -604,6 +604,7 @@ RZ_API RzCmdStatus rz_core_parser_plugins_print(RzParse *parser, RzCmdStateOutpu
 /* fortune */
 RZ_API void rz_core_fortune_list_types(void);
 RZ_API void rz_core_fortune_list(RzCore *core);
+RZ_API RZ_OWN char *rz_core_fortune_get_random(RzCore *core);
 RZ_API void rz_core_fortune_print_random(RzCore *core);
 
 #define RZ_CORE_FOREIGN_ADDR -1
