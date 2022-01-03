@@ -961,3 +961,21 @@ sym._Mbtowcx 0x8e70 [CODE] ?   R6 = ##0x3 ; R7 = add(R7,#1)
 sym._Mbtowcx 0x8e98 [CODE] ?   nop
 EOF
 RUN
+
+NAME=hexagon continue analysis after unmapped jumps
+FILE==
+CMDS=<<EOF
+wx 9852730118c00058824700e010406070
+e asm.arch=hexagon
+e analysis.arch=hexagon
+af
+pd 4
+EOF
+EXPECT=<<EOF
+/ fcn.00000000 ();
+|           0x00000000      ?       immext(##0x1734a600)
+|       ,=< 0x00000004      ?       jump 0x1734a60c
+|       |   0x00000008      /       R2 = +mpyi(R0,##0x3c)
+|       |   0x0000000c      |       R16 = R0
+EOF
+RUN
