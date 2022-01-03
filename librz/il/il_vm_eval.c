@@ -51,6 +51,8 @@ bool rz_il_handler_let(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_jmp(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_goto(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_seq(RzILVM *vm, RzILOpEffect *op);
+bool rz_il_handler_blk(RzILVM *vm, RzILOpEffect *op);
+bool rz_il_handler_repeat(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_branch(RzILVM *vm, RzILOpEffect *op);
 
 void *rz_il_handler_load(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
@@ -109,8 +111,8 @@ RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT
 	[RZ_IL_OP_JMP] = rz_il_handler_jmp,
 	[RZ_IL_OP_GOTO] = rz_il_handler_goto,
 	[RZ_IL_OP_SEQ] = rz_il_handler_seq,
-	[RZ_IL_OP_BLK] = rz_il_handler_effect_unimplemented, // &rz_il_handler_blk,
-	[RZ_IL_OP_REPEAT] = rz_il_handler_effect_unimplemented, // &rz_il_handler_repeat,
+	[RZ_IL_OP_BLK] = rz_il_handler_blk,
+	[RZ_IL_OP_REPEAT] = rz_il_handler_repeat,
 	[RZ_IL_OP_BRANCH] = rz_il_handler_branch,
 };
 
