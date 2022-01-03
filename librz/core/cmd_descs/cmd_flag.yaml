@@ -30,4 +30,36 @@ commands:
         args:
           - name: tag
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: fz
+    summary: Flag zones
+    subcommands:
+      - name: fz
+        cname: flag_zone_add
+        summary: Add new flagzone with [name]
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: fz-
+        cname: flag_zone_remove
+        summary: Remove the flag zone with [name]
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: fz-*
+        cname: flag_zone_remove_all
+        summary: Remove all flagzones
+        args: []
+      - name: fz.
+        cname: flag_zone_around
+        summary: Show around flag zone context
+        args: []
+      - name: fzl
+        cname: flag_zone_list
+        summary: List all flag zones
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
 

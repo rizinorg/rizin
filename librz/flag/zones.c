@@ -4,12 +4,10 @@
 #include <rz_flag.h>
 #include <rz_util.h>
 
-#define DB f->zones
-
 static RzFlagZoneItem *rz_flag_zone_get(RzFlag *f, const char *name) {
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
-	rz_list_foreach (DB, iter, zi) {
+	rz_list_foreach (f->zones, iter, zi) {
 		if (!strcmp(name, zi->name)) {
 			return zi;
 		}
@@ -20,7 +18,7 @@ static RzFlagZoneItem *rz_flag_zone_get(RzFlag *f, const char *name) {
 static RzFlagZoneItem *rz_flag_zone_get_inrange(RzFlag *f, ut64 from, ut64 to) {
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
-	rz_list_foreach (DB, iter, zi) {
+	rz_list_foreach (f->zones, iter, zi) {
 		if (RZ_BETWEEN(from, zi->from, to)) {
 			return zi;
 		}
@@ -39,13 +37,13 @@ RZ_API bool rz_flag_zone_add(RzFlag *f, const char *name, ut64 addr) {
 			zi->to = addr;
 		}
 	} else {
-		if (!DB) {
+		if (!f->zones) {
 			rz_flag_zone_reset(f);
 		}
 		zi = RZ_NEW0(RzFlagZoneItem);
 		zi->name = strdup(name);
 		zi->from = zi->to = addr;
-		rz_list_append(DB, zi);
+		rz_list_append(f->zones, zi);
 	}
 	return true;
 }
@@ -59,9 +57,9 @@ RZ_API bool rz_flag_zone_reset(RzFlag *f) {
 RZ_API bool rz_flag_zone_del(RzFlag *f, const char *name) {
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
-	rz_list_foreach (DB, iter, zi) {
+	rz_list_foreach (f->zones, iter, zi) {
 		if (!strcmp(name, zi->name)) {
-			rz_list_delete(DB, iter);
+			rz_list_delete(f->zones, iter);
 			return true;
 		}
 	}
@@ -80,7 +78,7 @@ RZ_API bool rz_flag_zone_around(RzFlag *f, ut64 addr, const char **prev, const c
 	*prev = *next = NULL;
 	ut64 h = UT64_MAX, l = 0LL;
 
-	rz_list_foreach (DB, iter, zi) {
+	rz_list_foreach (f->zones, iter, zi) {
 		if (zi->from > addr) {
 			if (h == UT64_MAX) {
 				h = zi->from;
@@ -142,20 +140,4 @@ RZ_API RzList *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows) 
 		from += bsize;
 	}
 	return list;
-}
-
-RZ_API bool rz_flag_zone_list(RzFlag *f, int mode) {
-	RzListIter *iter;
-	RzFlagZoneItem *zi;
-	rz_list_foreach (DB, iter, zi) {
-		if (mode == '*') {
-			f->cb_printf("fz %s @ 0x08%" PFMT64x "\n", zi->name, zi->from);
-			f->cb_printf("f %s %" PFMT64d " 0x08%" PFMT64x "\n", zi->name,
-				zi->to - zi->from, zi->from);
-		} else {
-			f->cb_printf("0x08%" PFMT64x "  0x%08" PFMT64x "  %s\n",
-				zi->from, zi->to, zi->name);
-		}
-	}
-	return true;
 }

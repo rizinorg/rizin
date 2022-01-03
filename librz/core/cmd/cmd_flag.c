@@ -92,17 +92,6 @@ static const char *help_msg_fs[] = {
 	NULL
 };
 
-static const char *help_msg_fz[] = {
-	"Usage: f", "[?|-name| name] [@addr]", " # Manage flagzones",
-	" fz", " math", "add new flagzone named 'math'",
-	" fz-", "math", "remove the math flagzone",
-	" fz-", "*", "remove all flagzones",
-	" fz.", "", "show around flagzone context",
-	" fz:", "", "show what's in scr.flagzone for visual",
-	" fz*", "", "dump into rizin commands, for projects",
-	NULL
-};
-
 static bool listFlag(RzFlagItem *flag, void *user) {
 	rz_list_append(user, flag);
 	return true;
@@ -351,63 +340,60 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 	}
 }
 
-static void cmd_fz(RzCore *core, const char *input) {
-	switch (*input) {
-	case '?': // "fz?"
-		rz_core_cmd_help(core, help_msg_fz);
-		break;
-	case '.': // "fz."
-	{
-		const char *a = NULL, *b = NULL;
-		rz_flag_zone_around(core->flags, core->offset, &a, &b);
-		rz_cons_printf("%s %s\n", a ? a : "~", b ? b : "~");
-	} break;
-	case ':': // "fz:"
-	{
-		const char *a, *b;
-		int a_len = 0;
-		int w = rz_cons_get_size(NULL);
-		rz_flag_zone_around(core->flags, core->offset, &a, &b);
-		if (a) {
-			rz_cons_printf("[<< %s]", a);
-			a_len = strlen(a) + 4;
-		}
-		int padsize = (w / 2) - a_len;
-		int title_size = 12;
-		if (a || b) {
-			char *title = rz_str_newf("[ 0x%08" PFMT64x " ]", core->offset);
-			title_size = strlen(title);
-			padsize -= strlen(title) / 2;
-			const char *halfpad = rz_str_pad(' ', padsize);
-			rz_cons_printf("%s%s", halfpad, title);
-			free(title);
-		}
-		if (b) {
-			padsize = (w / 2) - title_size - strlen(b) - 4;
-			const char *halfpad = padsize > 1 ? rz_str_pad(' ', padsize) : "";
-			rz_cons_printf("%s[%s >>]", halfpad, b);
-		}
-		if (a || b) {
-			rz_cons_newline();
-		}
-	} break;
-	case ' ':
-		rz_flag_zone_add(core->flags, rz_str_trim_head_ro(input + 1), core->offset);
-		break;
-	case '-':
-		if (input[1] == '*') {
-			rz_flag_zone_reset(core->flags);
-		} else {
-			rz_flag_zone_del(core->flags, input + 1);
-		}
-		break;
-	case '*':
-		rz_flag_zone_list(core->flags, '*');
-		break;
-	case 0:
-		rz_flag_zone_list(core->flags, 0);
-		break;
+static void flag_zone_list(RzFlag *f, RzCmdStateOutput *state) {
+	if (!f->zones) {
+		return;
 	}
+	RzListIter *iter;
+	RzFlagZoneItem *zi;
+	PJ *pj = state->d.pj;
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (f->zones, iter, zi) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(pj);
+			pj_ks(pj, "name", zi->name);
+			pj_ki(pj, "from", zi->from);
+			pj_ki(pj, "to", zi->to);
+			pj_end(pj);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("0x08%" PFMT64x "  0x%08" PFMT64x "  %s\n",
+				zi->from, zi->to, zi->name);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+}
+
+RZ_IPI RzCmdStatus rz_flag_zone_add_handler(RzCore *core, int argc, const char **argv) {
+	rz_flag_zone_add(core->flags, argv[1], core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_flag_zone_remove_handler(RzCore *core, int argc, const char **argv) {
+	rz_flag_zone_del(core->flags, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_flag_zone_remove_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_flag_zone_reset(core->flags);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_flag_zone_around_handler(RzCore *core, int argc, const char **argv) {
+	const char *a = NULL, *b = NULL;
+	rz_flag_zone_around(core->flags, core->offset, &a, &b);
+	rz_cons_printf("%s %s\n", a ? a : "~", b ? b : "~");
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_flag_zone_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	flag_zone_list(core->flags, state);
+	return RZ_CMD_STATUS_OK;
 }
 
 struct flagbar_t {
@@ -1141,9 +1127,6 @@ rep:
 		} else eprintf ("Missing arguments\n");
 		break;
 #endif
-	case 'z': // "fz"
-		cmd_fz(core, input + 1);
-		break;
 	case 'x':
 		if (input[1] == ' ') {
 			char cmd[128];
