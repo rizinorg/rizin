@@ -149,7 +149,7 @@ RZ_IPI int rz_core_seek_opcode(RzCore *core, int numinstr, bool silent);
 RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 addr);
 
 /* cmd_flag.c */
-RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzOutputMode mode);
+RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzCmdStateOutput *state);
 
 /* cmd_debug.c */
 RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core);

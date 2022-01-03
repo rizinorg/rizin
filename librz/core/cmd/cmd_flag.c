@@ -62,14 +62,6 @@ static const char *help_msg_fc[] = {
 	"fc", " flagname color", "Set color to a flag",
 	NULL
 };
-static const char *help_msg_fd[] = {
-	"Usage: fd[d]", " [offset|flag|expression]", " # Describe flags",
-	"fd", " $$", "# describe flag + delta for given offset",
-	"fd.", " $$", "# check flags in current address (no delta)",
-	"fdd", " $$", "# describe flag without space restrictions",
-	"fdw", " [string]", "# filter closest flag by string for current offset",
-	NULL
-};
 
 static const char *help_msg_fs[] = {
 	"Usage: fs", "[*] [+-][flagspace|addr]", " # Manage flagspaces",
@@ -288,56 +280,121 @@ static void spaces_list(RzSpaces *sp, RzOutputMode mode) {
 	}
 }
 
-RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzOutputMode mode) {
+static int cmpflag(const void *_a, const void *_b) {
+	const RzFlagItem *flag1 = _a, *flag2 = _b;
+	return (flag1->offset - flag2->offset);
+}
+
+RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzCmdStateOutput *state) {
 	RzFlagItem *f = rz_flag_get_at(core->flags, addr, !strict_offset);
-	if (f) {
+	if (!f) {
+		return;
+	}
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(pj);
+		pj_kn(pj, "offset", f->offset);
+		pj_ks(pj, "name", f->name);
+		// Print flag's real name if defined
+		if (f->realname) {
+			pj_ks(pj, "realname", f->realname);
+		}
+		pj_end(pj);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD: {
+		// Print realname if exists and asm.flags.real is enabled
+		const char *name = core->flags->realnames && f->realname ? f->realname : f->name;
 		if (f->offset != addr) {
-			if (mode == RZ_OUTPUT_MODE_JSON) {
-				PJ *pj = pj_new();
-				pj_o(pj);
-				pj_kn(pj, "offset", f->offset);
-				pj_ks(pj, "name", f->name);
-				// Print flag's real name if defined
-				if (f->realname) {
-					pj_ks(pj, "realname", f->realname);
-				}
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-				if (pj) {
-					pj_free(pj);
-				}
-			} else {
-				// Print realname if exists and asm.flags.real is enabled
-				if (core->flags->realnames && f->realname) {
-					rz_cons_printf("%s + %d\n", f->realname,
-						(int)(addr - f->offset));
-				} else {
-					rz_cons_printf("%s + %d\n", f->name,
-						(int)(addr - f->offset));
-				}
-			}
+			rz_cons_printf("%s + %d\n", name, (int)(addr - f->offset));
 		} else {
-			if (mode == RZ_OUTPUT_MODE_JSON) {
-				PJ *pj = pj_new();
-				pj_o(pj);
-				pj_ks(pj, "name", f->name);
-				// Print flag's real name if defined
-				if (f->realname) {
-					pj_ks(pj, "realname", f->realname);
-				}
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-				pj_free(pj);
-			} else {
-				// Print realname if exists and asm.flags.real is enabled
-				if (core->flags->realnames && f->realname) {
-					rz_cons_println(f->realname);
-				} else {
-					rz_cons_println(f->name);
-				}
+			rz_cons_println(name);
+		}
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+RZ_IPI RzCmdStatus rz_flag_describe_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_flag_describe(core, core->offset, false, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_flag_describe_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	const RzList *flags = rz_flag_get_list(core->flags, core->offset);
+	if (!flags) {
+		return RZ_CMD_STATUS_OK;
+	}
+	PJ *pj = state->d.pj;
+	rz_cmd_state_output_array_start(state);
+	RzFlagItem *flag;
+	RzListIter *iter;
+	// Sometimes an address has multiple flags assigned to, show them all
+	rz_list_foreach (flags, iter, flag) {
+		if (!flag) {
+			continue;
+		}
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(pj);
+			pj_ks(pj, "name", flag->name);
+			if (flag->realname) {
+				pj_ks(pj, "realname", flag->realname);
 			}
+			pj_end(pj);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			// Print realname if exists and asm.flags.real is enabled
+			if (core->flags->realnames && flag->realname) {
+				rz_cons_println(flag->realname);
+			} else {
+				rz_cons_println(flag->name);
+			}
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
 		}
 	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_flag_describe_closest_handler(RzCore *core, int argc, const char **argv) {
+	RzList *temp = rz_flag_all_list(core->flags, true);
+	if (!temp) {
+		return RZ_CMD_STATUS_OK;
+	}
+	ut64 loff = 0;
+	ut64 uoff = 0;
+	ut64 curseek = core->offset;
+	char *lmatch = NULL, *umatch = NULL;
+	RzFlagItem *flag;
+	RzListIter *iter;
+	rz_list_sort(temp, &cmpflag);
+	rz_list_foreach (temp, iter, flag) {
+		if (strstr(flag->name, argv[1]) != NULL) {
+			if (flag->offset < core->offset) {
+				loff = flag->offset;
+				lmatch = flag->name;
+				continue;
+			}
+			uoff = flag->offset;
+			umatch = flag->name;
+			break;
+		}
+	}
+	char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch;
+	if (match) {
+		if (*match) {
+			rz_cons_println(match);
+		}
+	}
+	rz_list_free(temp);
+	return RZ_CMD_STATUS_OK;
 }
 
 static void flag_zone_list(RzFlag *f, RzCmdStateOutput *state) {
@@ -594,11 +651,6 @@ static void flag_ordinals(RzCore *core, const char *str) {
 	struct rename_flag_t u = { .core = core, .pfx = pfx, .count = 0 };
 	rz_flag_foreach_glob(core->flags, glob, rename_flag_ordinal, &u);
 	free(pfx);
-}
-
-static int cmpflag(const void *_a, const void *_b) {
-	const RzFlagItem *flag1 = _a, *flag2 = _b;
-	return (flag1->offset - flag2->offset);
 }
 
 struct find_flag_t {
@@ -1445,129 +1497,6 @@ rep:
 			free(arg);
 		}
 		break;
-	case 'd': // "fd"
-	{
-		ut64 addr = core->offset;
-		char *arg = NULL;
-		bool strict_offset = false;
-		switch (input[1]) {
-		case '?':
-			rz_core_cmd_help(core, help_msg_fd);
-			if (str) {
-				free(str);
-			}
-			return false;
-		case '\0':
-			addr = core->offset;
-			break;
-		case 'd':
-			arg = strchr(input, ' ');
-			if (arg) {
-				addr = rz_num_math(core->num, arg + 1);
-			}
-			break;
-		case '.': // "fd." list all flags at given offset
-		{
-			RzFlagItem *flag;
-			RzListIter *iter;
-			bool isJson = false;
-			const RzList *flaglist;
-			arg = strchr(input, ' ');
-			if (arg) {
-				addr = rz_num_math(core->num, arg + 1);
-			}
-			flaglist = rz_flag_get_list(core->flags, addr);
-			isJson = strchr(input, 'j');
-			PJ *pj = pj_new();
-			if (isJson) {
-				pj_a(pj);
-			}
-
-			// Sometime an address has multiple flags assigned to, show them all
-			rz_list_foreach (flaglist, iter, flag) {
-				if (flag) {
-					if (isJson) {
-						pj_o(pj);
-						pj_ks(pj, "name", flag->name);
-						if (flag->realname) {
-							pj_ks(pj, "realname", flag->realname);
-						}
-						pj_end(pj);
-
-					} else {
-						// Print realname if exists and asm.flags.real is enabled
-						if (core->flags->realnames && flag->realname) {
-							rz_cons_println(flag->realname);
-						} else {
-							rz_cons_println(flag->name);
-						}
-					}
-				}
-			}
-
-			if (isJson) {
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-			}
-
-			if (pj) {
-				pj_free(pj);
-			}
-
-			return 0;
-		}
-		case 'w': {
-			arg = strchr(input, ' ');
-			if (!arg) {
-				return 0;
-			}
-			arg++;
-			if (!*arg) {
-				return 0;
-			}
-
-			RzFlag *f = core->flags;
-			RzList *temp = rz_flag_all_list(f, true);
-			ut64 loff = 0;
-			ut64 uoff = 0;
-			ut64 curseek = core->offset;
-			char *lmatch = NULL, *umatch = NULL;
-			RzFlagItem *flag;
-			RzListIter *iter;
-			rz_list_sort(temp, &cmpflag);
-			rz_list_foreach (temp, iter, flag) {
-				if (strstr(flag->name, arg) != NULL) {
-					if (flag->offset < core->offset) {
-						loff = flag->offset;
-						lmatch = flag->name;
-						continue;
-					}
-					uoff = flag->offset;
-					umatch = flag->name;
-					break;
-				}
-			}
-			char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch;
-			if (match) {
-				if (*match) {
-					rz_cons_println(match);
-				}
-			}
-			rz_list_free(temp);
-			return 0;
-		}
-		default:
-			arg = strchr(input, ' ');
-			if (arg) {
-				addr = rz_num_math(core->num, arg + 1);
-			}
-			break;
-		}
-		RzOutputMode mode = strchr(input, 'j')
-			? RZ_OUTPUT_MODE_JSON
-			: RZ_OUTPUT_MODE_STANDARD;
-		rz_core_flag_describe(core, addr, strict_offset, mode);
-	} break;
 	case '?':
 	default:
 		if (input[1]) {
