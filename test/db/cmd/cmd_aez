@@ -44,8 +44,8 @@ ar
 aezs
 ar
 ?e --
-ar pc=0x53
-aezs 2
+ar pc=0x54
+aezs 1
 aezv
 ar
 EOF
