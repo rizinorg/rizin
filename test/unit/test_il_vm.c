@@ -325,6 +325,86 @@ static bool test_rzil_vm_op_goto_addr() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_blk() {
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
+
+	RzILVar *var = rz_il_vm_create_global_variable(vm, "leetbap", RZ_IL_VAR_TYPE_UNK, true);
+	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(8, 0x42)));
+	RzILOpEffect *data_eff = rz_il_op_new_set("leetbap", rz_il_op_new_bitv_from_ut64(8, 0x13));
+
+	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x07);
+	rz_il_vm_create_label(vm, "beach", dst);
+	rz_bv_free(dst);
+	RzILOpEffect *ctrl_eff = rz_il_op_new_goto("beach");
+
+	RzILOpEffect *op = rz_il_op_new_blk("newblk", data_eff, ctrl_eff);
+	bool succ = rz_il_evaluate_effect(vm, op);
+	rz_il_op_effect_free(op);
+
+	mu_assert_true(succ, "op failed");
+	RzILVal *val = rz_il_hash_find_val_by_name(vm, var->var_name);
+	mu_assert_notnull(val, "val null");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "type not bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 8, "len not correct");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x13, "bitv not correct");
+	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x07, "wrong pc");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+/**
+ * \brief Test a loop
+ *
+ * Equivalent C code:
+ *
+ * ```c
+ * unsigned short leetbap = 42;
+ * unsigned char i = 7;
+ * while (i - 1 != 0) {
+ *     leetbap = leetbap * 3;
+ *     i = i - 1;
+ * }
+ * ```
+ *
+ * In the end, leetbap == 30618
+ */
+static bool test_rzil_vm_op_repeat() {
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
+
+	RzILVar *var = rz_il_vm_create_global_variable(vm, "leetbap", RZ_IL_VAR_TYPE_UNK, true);
+	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(16, 42)));
+	RzILVar *count = rz_il_vm_create_global_variable(vm, "i", RZ_IL_VAR_TYPE_UNK, true);
+	rz_il_hash_bind(vm, count, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(8, 7)));
+
+	RzILOpBitVector *sub = rz_il_op_new_sub(rz_il_op_new_var("i"), rz_il_op_new_bitv_from_ut64(8, 1));
+	RzILOpBitVector *mul = rz_il_op_new_mul(rz_il_op_new_var("leetbap"), rz_il_op_new_bitv_from_ut64(16, 3));
+
+	RzILOpEffect *mul_eff = rz_il_op_new_set("leetbap", rz_il_op_pure_dup(mul));
+	RzILOpEffect *sub_eff = rz_il_op_new_set("i", rz_il_op_pure_dup(sub));
+	RzILOpEffect *data_seq = rz_il_op_new_seq(mul_eff, sub_eff);
+	RzILOpBool *c = rz_il_op_new_non_zero(sub);
+
+	RzILOpEffect *op = rz_il_op_new_repeat(c, data_seq);
+	bool succ = rz_il_evaluate_effect(vm, op);
+	rz_il_op_effect_free(op);
+
+	mu_assert_true(succ, "op failed");
+	RzILVal *val = rz_il_hash_find_val_by_name(vm, var->var_name);
+	mu_assert_notnull(val, "leetbap null");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "leetbap type not bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 16, "leetbap len not correct");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 30618, "leetbap bitv not correct");
+	RzILVal *val2 = rz_il_hash_find_val_by_name(vm, count->var_name);
+	mu_assert_notnull(val2, "i null");
+	mu_assert_eq(val2->type, RZ_IL_VAR_TYPE_BV, "i type not bv");
+	mu_assert_eq(rz_bv_len(val2->data.bv), 8, "i len not correct");
+	mu_assert_eq(rz_bv_to_ut64(val2->data.bv), 1, "i bitv not correct");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 static void hook_test(RzILVM *vm, RzILOpEffect *op) {
 	RzILVar *var = rz_il_find_var_by_name(vm, "myvar");
 	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(32, 0xc0ffee)));
@@ -486,6 +566,8 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_jmp);
 	mu_run_test(test_rzil_vm_op_goto_addr);
 	mu_run_test(test_rzil_vm_op_goto_hook);
+	mu_run_test(test_rzil_vm_op_blk);
+	mu_run_test(test_rzil_vm_op_repeat);
 	mu_run_test(test_rzil_vm_op_load);
 	mu_run_test(test_rzil_vm_op_store);
 	mu_run_test(test_rzil_vm_op_loadw_le);

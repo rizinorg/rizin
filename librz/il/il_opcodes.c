@@ -237,7 +237,7 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_zero(RZ_NONNULL RzILOpPure *bv) {
 }
 
 /**
- *  [NON_ZERO] is_zero x holds if x is a bitvector of all zeros.
+ *  [NON_ZERO] non_zero x holds if x is not a bitvector of all zeroes.
  */
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_non_zero(RZ_NONNULL RzILOpPure *bv) {
 	rz_return_val_if_fail(bv, NULL);
@@ -269,7 +269,7 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ule(RZ_NONNULL RzILOpBitVector *x, RZ_NON
 /**
  *  \brief op structure for sle/ule ('a bitv -> 'a bitv -> bool)
  *
- *  [SLE] sle x y binary predicate for singed less than or equal
+ *  [SLE] sle x y binary predicate for signed less than or equal
  */
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
@@ -323,7 +323,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_neg(RZ_NONNULL RzILOpBitVector *bv) 
 /**
  *  \brief op structure for `not` ('s bitv -> 's bitv)
  *
- *  neg x is one-complement unary minus
+ *  not x is one-complement unary minus
  */
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_not(RZ_NONNULL RzILOpBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
@@ -611,10 +611,10 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seqn(ut32 n, ...) {
  *
  *  blk lbl data ctrl a labeled sequence of effects.
  */
-RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_blk(RZ_NONNULL RzILOpEffect *data_eff, RZ_NONNULL RzILOpEffect *ctrl_eff) {
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_blk(RZ_NONNULL const char *label, RZ_NONNULL RzILOpEffect *data_eff, RZ_NONNULL RzILOpEffect *ctrl_eff) {
 	rz_return_val_if_fail(data_eff && ctrl_eff, NULL);
 	RzILOpEffect *ret;
-	rz_il_op_new_2(Effect, RZ_IL_OP_BLK, RzILOpArgsBlk, blk, data_eff, ctrl_eff);
+	rz_il_op_new_3(Effect, RZ_IL_OP_BLK, RzILOpArgsBlk, blk, label, data_eff, ctrl_eff);
 	return ret;
 }
 
