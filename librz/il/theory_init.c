@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_il/rzil_opcodes.h>
-#include <rz_il/vm_layer.h>
-#include <rz_il/rzil_vm.h>
+#include <rz_il/rz_il_opcodes.h>
+#include <rz_il/rz_il_vm.h>
 
 static RzILEvent *il_event_new_read_from_name(RzILVM *vm, const char *name, RzILVal *value) {
 	rz_return_val_if_fail(vm && name, NULL);
@@ -24,7 +23,7 @@ static RzILEvent *il_event_new_read_from_name(RzILVM *vm, const char *name, RzIL
 void *rz_il_handler_ite(RzILVM *vm, RzILOpPure *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpArgsIte *op_ite = op->op.ite;
+	RzILOpArgsIte *op_ite = &op->op.ite;
 
 	RzILBool *condition = rz_il_evaluate_bool(vm, op_ite->condition);
 	if (!condition) {
@@ -44,7 +43,7 @@ void *rz_il_handler_var(RzILVM *vm, RzILOpPure *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	bool is_local = false;
 
-	RzILOpArgsVar *var_op = op->op.var;
+	RzILOpArgsVar *var_op = &op->op.var;
 	RzILVal *val = rz_il_hash_find_val_by_name(vm, var_op->v);
 	if (!val) {
 		val = rz_il_hash_find_local_val_by_name(vm, var_op->v);

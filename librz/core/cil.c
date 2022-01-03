@@ -663,7 +663,9 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	RzILOpEffect *ilop = op.rzil_op ? op.rzil_op->op : NULL;
 
 	if (ilop) {
-		rz_il_vm_list_step(vm, ilop, size > 0 ? size : 1);
+		rz_il_vm_sync_from_reg(vm, analysis->reg);
+		rz_il_vm_step(vm, ilop, size > 0 ? size : 1);
+		rz_il_vm_sync_to_reg(vm, analysis->reg);
 	} else {
 		RZ_LOG_ERROR("RzIL: invalid instruction detected or reach the end of code at address 0x%08" PFMT64x "\n", addr);
 	}

@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2022 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_flag
+commands:
+  - name: ft
+    summary: Flag tags
+    subcommands:
+      - name: ft
+        cname: flag_tag_add
+        summary: Set a list of words for the given tag
+        args:
+          - name: tag
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: words
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: ftl
+        cname: flag_tag_list
+        summary: List all flag tags
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: ftn
+        cname: flag_tag_search
+        summary: Find all matching flag names for the given tag
+        args:
+          - name: tag
+            type: RZ_CMD_ARG_TYPE_STRING
+

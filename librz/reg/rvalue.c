@@ -1,8 +1,52 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_reg.h>
 #include <rz_util.h>
+
+/**
+ * Read the value of the given register as a bit vector
+ */
+RZ_API RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item) {
+	rz_return_val_if_fail(reg && item, NULL);
+	RzRegSet *regset = &reg->regset[item->arena];
+	if (reg->big_endian) {
+		return rz_bv_new_from_bytes_be(regset->arena->bytes, item->offset, item->size);
+	} else {
+		return rz_bv_new_from_bytes_le(regset->arena->bytes, item->offset, item->size);
+	}
+}
+
+/**
+ * Set the value of the given register from the given bit vector
+ * \param bv bitvector of exactly item->len bits
+ * \return wether the write succeeded
+ */
+RZ_API bool rz_reg_set_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, RZ_NONNULL const RzBitVector *bv) {
+	rz_return_val_if_fail(reg && item && bv, false);
+	if (rz_bv_len(bv) != item->size) {
+		return false;
+	}
+	if (item->offset % 8) {
+		// TODO: this needs a bit offset arg in rz_bv_set_to_bytes_be()
+		if (item->size == 1) {
+			// workaround for flags edge-case while the offset mentioned above is not implemented yet
+			rz_reg_set_value(reg, item, rz_bv_to_ut64(bv));
+			return true;
+		}
+		RZ_LOG_ERROR("rz_reg_set_bv() for non-byte-aligned regs not supported yet.\n");
+		return false;
+	}
+	RzRegSet *regset = &reg->regset[item->arena];
+	int boff = item->offset / 8;
+	if (reg->big_endian) {
+		rz_bv_set_to_bytes_be(bv, regset->arena->bytes + boff);
+	} else {
+		rz_bv_set_to_bytes_le(bv, regset->arena->bytes + boff);
+	}
+	return true;
+}
 
 typedef ut32 ut27;
 static ut27 rz_read_me27(const ut8 *buf, int boff) {

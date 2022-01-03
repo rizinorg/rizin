@@ -127,10 +127,9 @@ rz_il_definitions_files = [
 install_headers(rz_il_definitions_files, install_dir: join_paths(rizin_incdir, 'rz_il', 'definitions'))
 
 rz_il_files = [
-  'rz_il/rzil_opcodes.h',
-  'rz_il/rzil_vm_events.h',
-  'rz_il/rzil_vm.h',
-  'rz_il/vm_layer.h',
+  'rz_il/rz_il_opcodes.h',
+  'rz_il/rz_il_events.h',
+  'rz_il/rz_il_vm.h'
 ]
 install_headers(rz_il_files, install_dir: join_paths(rizin_incdir, 'rz_il'))
 

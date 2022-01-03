@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-/** \file rzil_export.c
+/** \file
  * Outputs the IL statements & events in JSON or string format.
  * The string format of a statement looks like below:
  *    [store(key:var(v:ptr), value:add(x:load(key:var(v:ptr), mem:0), y:int(value:1, length:8)), mem:0)]
@@ -66,7 +66,7 @@
  * }
  */
 
-#include <rz_il/rzil_vm.h>
+#include <rz_il/rz_il_vm.h>
 
 static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj);
 static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
@@ -98,13 +98,13 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 	do { \
 		if (sb) { \
 			rz_strbuf_append(sb, name "(" #v0 ":"); \
-			il_op_pure_resolve(opx->v0, sb, pj); \
+			il_op_pure_resolve(opx.v0, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
 			pj_k(pj, #v0); \
-			il_op_pure_resolve(opx->v0, sb, pj); \
+			il_op_pure_resolve(opx.v0, sb, pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
@@ -113,17 +113,17 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 	do { \
 		if (sb) { \
 			rz_strbuf_append(sb, name "(" #v0 ":"); \
-			il_op_##sort0##_resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
 			rz_strbuf_append(sb, ", " #v1 ":"); \
-			il_op_##sort1##_resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
 			pj_k(pj, #v0); \
-			il_op_##sort0##_resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
 			pj_k(pj, #v1); \
-			il_op_##sort1##_resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
@@ -132,27 +132,27 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 	do { \
 		if (sb) { \
 			rz_strbuf_append(sb, name "(" #v0 ":"); \
-			il_op_##sort0##_resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
 			rz_strbuf_append(sb, ", " #v1 ":"); \
-			il_op_##sort1##_resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
 			rz_strbuf_append(sb, ", " #v2 ":"); \
-			il_op_##sort2##_resolve(opx->v2, sb, pj); \
+			il_op_##sort2##_resolve(opx.v2, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
 			pj_k(pj, #v0); \
-			il_op_##sort0##_resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
 			pj_k(pj, #v1); \
-			il_op_##sort1##_resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
 			pj_k(pj, #v2); \
-			il_op_##sort2##_resolve(opx->v2, sb, pj); \
+			il_op_##sort2##_resolve(opx.v2, sb, pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
 
 static void il_opdmp_var(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsVar *opx = op->op.var;
+	RzILOpArgsVar *opx = &op->op.var;
 	if (sb) {
 		rz_strbuf_appendf(sb, "var(v:%s)", opx->v);
 	} else {
@@ -216,7 +216,7 @@ static void il_opdmp_bool_xor(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_bitv(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsBv *opx = op->op.bitv;
+	RzILOpArgsBv *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value);
 	if (sb) {
 		rz_strbuf_appendf(sb, "bitv(bits:%s, len:%u)", num, opx->value->len);
@@ -311,18 +311,21 @@ static void il_opdmp_ule(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_cast(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsCast *opx = op->op.cast;
+	RzILOpArgsCast *opx = &op->op.cast;
 	if (sb) {
 		rz_strbuf_append(sb, "cast(val:");
 		il_op_pure_resolve(opx->val, sb, pj);
-		rz_strbuf_appendf(sb, ", length:%u, shift:%d)", opx->length, opx->shift);
+		rz_strbuf_appendf(sb, ", length:%u, fill:", opx->length);
+		il_op_pure_resolve(opx->fill, sb, pj);
+		rz_strbuf_append(sb, ")");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "cast");
 		pj_k(pj, "value");
 		il_op_pure_resolve(opx->val, sb, pj);
 		pj_kn(pj, "length", opx->length);
-		pj_kN(pj, "shift", opx->shift);
+		pj_k(pj, "fill");
+		il_op_pure_resolve(opx->fill, sb, pj);
 		pj_end(pj);
 	}
 }
@@ -336,9 +339,9 @@ static void il_opdmp_append(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsLoad *opx = op->op.load;
+	RzILOpArgsLoad *opx = &op->op.load;
 	if (sb) {
-		rz_strbuf_appendf(sb, "load(mem:%u, key:", (unsigned int)opx->mem);
+		rz_strbuf_appendf(sb, "load(mem:%u, key:", (ut32)opx->mem);
 		il_op_pure_resolve(opx->key, sb, pj);
 		rz_strbuf_append(sb, ")");
 	} else {
@@ -351,18 +354,56 @@ static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
+static void il_opdmp_loadw(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpArgsLoadW *opx = &op->op.loadw;
+	if (sb) {
+		rz_strbuf_appendf(sb, "loadw(mem:%u, key:", (ut32)opx->mem);
+		il_op_pure_resolve(opx->key, sb, pj);
+		rz_strbuf_appendf(sb, ", bits:%u)", (ut32)opx->n_bits);
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "loadw");
+		pj_kn(pj, "mem", opx->mem);
+		pj_k(pj, "key");
+		il_op_pure_resolve(opx->key, sb, pj);
+		pj_kn(pj, "bits", opx->n_bits);
+		pj_end(pj);
+	}
+}
+
 static void il_opdmp_store(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsStore *opx = op->op.store;
+	RzILOpArgsStore *opx = &op->op.store;
 
 	if (sb) {
-		rz_strbuf_appendf(sb, "store(mem:%u, key:", (unsigned int)opx->mem);
+		rz_strbuf_appendf(sb, "store(mem:%u, key:", (ut32)opx->mem);
 		il_op_pure_resolve(opx->key, sb, pj);
 		rz_strbuf_append(sb, ", value:");
 		il_op_pure_resolve(opx->value, sb, pj);
-		rz_strbuf_appendf(sb, ")");
+		rz_strbuf_append(sb, ")");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "store");
+		pj_kn(pj, "mem", opx->mem);
+		pj_k(pj, "key");
+		il_op_pure_resolve(opx->key, sb, pj);
+		pj_k(pj, "value");
+		il_op_pure_resolve(opx->value, sb, pj);
+		pj_end(pj);
+	}
+}
+
+static void il_opdmp_storew(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpArgsStore *opx = &op->op.store;
+
+	if (sb) {
+		rz_strbuf_appendf(sb, "storew(mem:%u, key:", (ut32)opx->mem);
+		il_op_pure_resolve(opx->key, sb, pj);
+		rz_strbuf_append(sb, ", value:");
+		il_op_pure_resolve(opx->value, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "storew");
 		pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_pure_resolve(opx->key, sb, pj);
@@ -377,7 +418,7 @@ static void il_opdmp_nop(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_set(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsSet *opx = op->op.set;
+	RzILOpArgsSet *opx = &op->op.set;
 	if (sb) {
 		rz_strbuf_appendf(sb, "set(v:%s, x:", opx->v);
 		il_op_pure_resolve(opx->x, sb, pj);
@@ -393,7 +434,7 @@ static void il_opdmp_set(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_let(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsLet *opx = op->op.let;
+	RzILOpArgsLet *opx = &op->op.let;
 	if (sb) {
 		rz_strbuf_appendf(sb, "let(v:%s, x:", opx->v);
 		il_op_pure_resolve(opx->x, sb, pj);
@@ -414,7 +455,7 @@ static void il_opdmp_jmp(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_goto(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsGoto *opx = op->op.goto_;
+	RzILOpArgsGoto *opx = &op->op.goto_;
 	if (sb) {
 		rz_strbuf_appendf(sb, "goto(lbl:%s)", opx->lbl);
 	} else {
@@ -554,6 +595,9 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	case RZIL_OP_LOAD:
 		il_opdmp_load(op, sb, pj);
 		return;
+	case RZIL_OP_LOADW:
+		il_opdmp_loadw(op, sb, pj);
+		return;
 	default:
 		rz_warn_if_reached();
 		if (sb) {
@@ -582,6 +626,9 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	switch (op->code) {
 	case RZIL_OP_STORE:
 		il_opdmp_store(op, sb, pj);
+		return;
+	case RZIL_OP_STOREW:
+		il_opdmp_storew(op, sb, pj);
 		return;
 	case RZIL_OP_NOP:
 		il_opdmp_nop(op, sb, pj);

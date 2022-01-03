@@ -2,9 +2,8 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_il/rzil_opcodes.h>
-#include <rz_il/vm_layer.h>
-#include <rz_il/rzil_vm.h>
+#include <rz_il/rz_il_opcodes.h>
+#include <rz_il/rz_il_vm.h>
 
 static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal *new_val) {
 	rz_return_val_if_fail(vm && var && new_val, NULL);
@@ -105,7 +104,7 @@ bool rz_il_handler_nop(RzILVM *vm, RzILOpEffect *op) {
 
 bool rz_il_handler_set(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
-	RzILOpArgsSet *set_op = op->op.set;
+	RzILOpArgsSet *set_op = &op->op.set;
 	RzILVal *val = rz_il_evaluate_val(vm, set_op->x);
 	if (!val) {
 		return false;
@@ -116,13 +115,13 @@ bool rz_il_handler_set(RzILVM *vm, RzILOpEffect *op) {
 
 bool rz_il_handler_let(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
-	RzILOpArgsLet *let_op = op->op.let;
+	RzILOpArgsLet *let_op = &op->op.let;
 	RzILVal *val = rz_il_evaluate_val(vm, let_op->x);
 	if (!val) {
 		return false;
 	}
 	rz_il_set(vm, let_op->v, true, let_op->mut, val);
-	return false;
+	return true;
 }
 
 static void perform_jump(RzILVM *vm, RZ_OWN RzBitVector *dst) {
@@ -133,7 +132,7 @@ static void perform_jump(RzILVM *vm, RZ_OWN RzBitVector *dst) {
 
 bool rz_il_handler_jmp(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
-	RzBitVector *dst = rz_il_evaluate_bitv(vm, op->op.jmp->dst);
+	RzBitVector *dst = rz_il_evaluate_bitv(vm, op->op.jmp.dst);
 	if (!dst) {
 		return false;
 	}
@@ -143,7 +142,7 @@ bool rz_il_handler_jmp(RzILVM *vm, RzILOpEffect *op) {
 
 bool rz_il_handler_goto(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
-	RzILOpArgsGoto *op_goto = op->op.goto_;
+	RzILOpArgsGoto *op_goto = &op->op.goto_;
 	const char *lname = op_goto->lbl;
 	RzILEffectLabel *label = rz_il_vm_find_label_by_name(vm, lname);
 	if (!label) {
@@ -160,14 +159,14 @@ bool rz_il_handler_goto(RzILVM *vm, RzILOpEffect *op) {
 
 bool rz_il_handler_seq(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
-	RzILOpArgsSeq *op_seq = op->op.seq;
+	RzILOpArgsSeq *op_seq = &op->op.seq;
 	return rz_il_evaluate_effect(vm, op_seq->x) && rz_il_evaluate_effect(vm, op_seq->y);
 }
 
 bool rz_il_handler_branch(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 
-	RzILOpArgsBranch *op_branch = op->op.branch;
+	RzILOpArgsBranch *op_branch = &op->op.branch;
 
 	RzILBool *condition = rz_il_evaluate_bool(vm, op_branch->condition);
 	if (!condition) {

@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 /**
- * \file rzil_opcodes.h
+ * \file
  * \brief signatures of core theory opcodes
  *
  * Modular Hierarchy of the whole core theory
@@ -134,8 +134,8 @@ typedef struct rz_il_op_args_cmp_t RzILOpArgsUle;
  *  \brief op structure for casting bitv
  */
 typedef struct rz_il_op_args_cast_t {
-	ut32 length; ///< new bits lenght
-	int shift; ///< shift old bits (positive is << and >> negative)
+	ut32 length; ///< new bits length
+	RzILOpBool *fill; ///< If m = size val - length > 0 then m fill-bits are prepended to the most significant part of the vector.
 	RzILOpBitVector *val; ///< value to cast
 } RzILOpArgsCast;
 
@@ -401,44 +401,45 @@ typedef enum {
 struct rz_il_op_pure_t {
 	RzILOpPureCode code;
 	union {
-		RzILOpArgsIte *ite;
-		RzILOpArgsVar *var;
+		RzILOpArgsIte ite;
+		RzILOpArgsVar var;
 
-		RzILOpArgsBoolAnd *booland;
-		RzILOpArgsBoolOr *boolor;
-		RzILOpArgsBoolXor *boolxor;
-		RzILOpArgsBoolInv *boolinv;
+		RzILOpArgsBoolAnd booland;
+		RzILOpArgsBoolOr boolor;
+		RzILOpArgsBoolXor boolxor;
+		RzILOpArgsBoolInv boolinv;
 
-		RzILOpArgsBv *bitv;
-		RzILOpArgsMsb *msb;
-		RzILOpArgsLsb *lsb;
-		RzILOpArgsIsZero *is_zero;
-		RzILOpArgsEq *eq;
-		RzILOpArgsUle *ule;
-		RzILOpArgsSle *sle;
-		RzILOpArgsCast *cast;
-		RzILOpArgsNeg *neg;
-		RzILOpArgsLogNot *lognot;
-		RzILOpArgsAdd *add;
-		RzILOpArgsSub *sub;
-		RzILOpArgsMul *mul;
-		RzILOpArgsDiv *div;
-		RzILOpArgsSdiv *sdiv;
-		RzILOpArgsSmod *smod;
-		RzILOpArgsMod *mod;
-		RzILOpArgsLogand *logand;
-		RzILOpArgsLogor *logor;
-		RzILOpArgsLogxor *logxor;
-		RzILOpArgsShiftLeft *shiftl;
-		RzILOpArgsShiftRight *shiftr;
-		RzILOpArgsAppend *append;
+		RzILOpArgsBv bitv;
+		RzILOpArgsMsb msb;
+		RzILOpArgsLsb lsb;
+		RzILOpArgsIsZero is_zero;
+		RzILOpArgsEq eq;
+		RzILOpArgsUle ule;
+		RzILOpArgsSle sle;
+		RzILOpArgsCast cast;
+		RzILOpArgsNeg neg;
+		RzILOpArgsLogNot lognot;
+		RzILOpArgsAdd add;
+		RzILOpArgsSub sub;
+		RzILOpArgsMul mul;
+		RzILOpArgsDiv div;
+		RzILOpArgsSdiv sdiv;
+		RzILOpArgsSmod smod;
+		RzILOpArgsMod mod;
+		RzILOpArgsLogand logand;
+		RzILOpArgsLogor logor;
+		RzILOpArgsLogxor logxor;
+		RzILOpArgsShiftLeft shiftl;
+		RzILOpArgsShiftRight shiftr;
+		RzILOpArgsAppend append;
 
-		RzILOpArgsLoad *load;
-		RzILOpArgsLoadW *loadw;
+		RzILOpArgsLoad load;
+		RzILOpArgsLoadW loadw;
 	} op;
 };
 
 RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
+RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
 
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_NULLABLE RzILOpPure *x, RZ_NULLABLE RzILOpPure *y);
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_unk();
@@ -459,7 +460,9 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_non_zero(RZ_NONNULL RzILOpPure *bv);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_eq(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ule(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, int shift, RZ_NONNULL RzILOpBitVector *val);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, RZ_NONNULL RzILOpBool *fill, RZ_NONNULL RzILOpBitVector *val);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_unsigned(ut32 length, RZ_NONNULL RzILOpBitVector *val); // "zero extension"
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_signed(ut32 length, RZ_NONNULL RzILOpBitVector *val); // "sign extension"
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_neg(RZ_NONNULL RzILOpBitVector *value);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_not(RZ_NONNULL RzILOpBitVector *value);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_add(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
@@ -472,8 +475,8 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_mod(RZ_NONNULL RzILOpBitVector *x, R
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_and(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_or(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_xor(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftl(RZ_NONNULL RzILOpBitVector *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr(RZ_NONNULL RzILOpBitVector *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftl(RZ_NONNULL RzILOpBool *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *sh);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr(RZ_NONNULL RzILOpBool *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *sh);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *high, RZ_NONNULL RzILOpBitVector *low);
 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key);
@@ -502,17 +505,17 @@ typedef enum {
 struct rz_il_op_effect_t {
 	RzILOpEffectCode code;
 	union {
-		RzILOpArgsSet *set;
-		RzILOpArgsLet *let;
-		RzILOpArgsJmp *jmp;
-		RzILOpArgsGoto *goto_;
-		RzILOpArgsSeq *seq;
-		RzILOpArgsBlk *blk;
-		RzILOpArgsRepeat *repeat;
-		RzILOpArgsBranch *branch;
+		RzILOpArgsSet set;
+		RzILOpArgsLet let;
+		RzILOpArgsJmp jmp;
+		RzILOpArgsGoto goto_;
+		RzILOpArgsSeq seq;
+		RzILOpArgsBlk blk;
+		RzILOpArgsRepeat repeat;
+		RzILOpArgsBranch branch;
 
-		RzILOpArgsStore *store;
-		RzILOpArgsStoreW *storew;
+		RzILOpArgsStore store;
+		RzILOpArgsStoreW storew;
 	} op;
 };
 

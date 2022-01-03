@@ -2,7 +2,211 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_il/rzil_vm.h>
+/**
+ * \file
+ * RzIL Virtual Machine Setup and Management
+ * For the actual evaluation (emulation), see il_vm_eval.c
+ */
+
+#include <rz_il/rz_il_vm.h>
+
+extern RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZIL_OP_PURE_MAX];
+extern RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZIL_OP_EFFECT_MAX];
+
+static void free_label_kv(HtPPKv *kv) {
+	free(kv->key);
+	RzILEffectLabel *lbl = kv->value;
+
+	if (lbl->type == EFFECT_LABEL_HOOK || lbl->type == EFFECT_LABEL_SYSCALL) {
+		lbl->addr = NULL;
+	}
+	rz_bv_free(lbl->addr);
+	free(lbl->label_id);
+	free(lbl);
+}
+
+static void free_bind_var(HtPPKv *kv) {
+	free(kv->key);
+}
+
+static void free_bind_var_val(HtPPKv *kv) {
+	free(kv->key);
+	rz_il_value_free(kv->value);
+}
+
+/**
+ * initiate an empty VM
+ * \param vm RzILVM, pointer to an empty VM
+ * \param start_addr ut64, initiation pc address
+ * \param addr_size  ut32, size of the address in VM
+ */
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian) {
+	rz_return_val_if_fail(vm, false);
+
+	rz_pvector_init(&vm->vm_global_variable_list, (RzPVectorFree)rz_il_variable_free);
+	rz_pvector_init(&vm->vm_local_variable_list, (RzPVectorFree)rz_il_variable_free);
+	rz_pvector_init(&vm->vm_memory, (RzPVectorFree)rz_il_mem_free);
+
+	vm->vm_global_value_set = rz_il_new_bag(RZ_IL_VM_MAX_VAL, (RzILBagFreeFunc)rz_il_value_free);
+	if (!vm->vm_global_value_set) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM value bag\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
+
+	// Key : string
+	// Val : RzILEffectLabel
+	// Do not dump it since its single signed here, and will be free in `close`
+	HtPPOptions lbl_options = { 0 };
+	lbl_options.cmp = (HtPPListComparator)strcmp;
+	lbl_options.hashfn = (HtPPHashFunction)sdb_hash;
+	lbl_options.dupkey = (HtPPDupKey)strdup;
+	lbl_options.dupvalue = NULL;
+	lbl_options.freefn = (HtPPKvFreeFunc)free_label_kv;
+	lbl_options.elem_size = sizeof(HtPPKv);
+	lbl_options.calcsizeK = (HtPPCalcSizeK)strlen;
+	vm->vm_global_label_table = ht_pp_new_opt(&lbl_options);
+	if (!vm->vm_global_label_table) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM label hashmap\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
+
+	// Binding Table for Variable and Value
+	HtPPOptions bind_options = { 0 };
+	bind_options.cmp = (HtPPListComparator)strcmp;
+	bind_options.hashfn = (HtPPHashFunction)sdb_hash;
+	bind_options.dupkey = (HtPPDupKey)strdup;
+	bind_options.dupvalue = NULL;
+	bind_options.freefn = (HtPPKvFreeFunc)free_bind_var;
+	bind_options.elem_size = sizeof(HtPPKv);
+	bind_options.calcsizeK = (HtPPCalcSizeK)strlen;
+	vm->vm_global_bind_table = ht_pp_new_opt(&bind_options);
+	if (!vm->vm_global_bind_table) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM global hashmap\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
+
+	bind_options.freefn = (HtPPKvFreeFunc)free_bind_var_val;
+	vm->vm_local_bind_table = ht_pp_new_opt(&bind_options);
+	if (!vm->vm_local_bind_table) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM local hashmap\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
+
+	vm->pc = rz_bv_new_from_ut64(addr_size, start_addr);
+	if (!vm->pc) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM program counter\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
+
+	// init jump table of labels
+	vm->op_handler_pure_table = RZ_NEWS0(RzILOpPureHandler, RZIL_OP_PURE_MAX);
+	memcpy(vm->op_handler_pure_table, rz_il_op_handler_pure_table_default, sizeof(RzILOpPureHandler) * RZIL_OP_PURE_MAX);
+	vm->op_handler_effect_table = RZ_NEWS0(RzILOpEffectHandler, RZIL_OP_EFFECT_MAX);
+	memcpy(vm->op_handler_effect_table, rz_il_op_handler_effect_table_default, sizeof(RzILOpEffectHandler) * RZIL_OP_EFFECT_MAX);
+
+	vm->lab_count = 0;
+	vm->val_count = 0;
+	vm->addr_size = addr_size;
+	vm->big_endian = big_endian;
+
+	vm->events = rz_list_newf((RzListFree)rz_il_event_free);
+	if (!vm->events) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM event list\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Close and clean vm
+ * \param vm RzILVM* pointer to VM
+ */
+RZ_API void rz_il_vm_fini(RzILVM *vm) {
+	if (vm->vm_global_value_set) {
+		rz_il_free_bag(vm->vm_global_value_set);
+		vm->vm_global_value_set = NULL;
+	}
+	rz_pvector_fini(&vm->vm_global_variable_list);
+	rz_il_reg_binding_free(vm->reg_binding);
+	rz_pvector_fini(&vm->vm_local_variable_list);
+	rz_pvector_fini(&vm->vm_memory);
+
+	ht_pp_free(vm->vm_global_bind_table);
+	vm->vm_global_bind_table = NULL;
+
+	ht_pp_free(vm->vm_local_bind_table);
+	vm->vm_local_bind_table = NULL;
+
+	ht_pp_free(vm->vm_global_label_table);
+	vm->vm_global_label_table = NULL;
+
+	free(vm->op_handler_pure_table);
+	vm->op_handler_pure_table = NULL;
+	free(vm->op_handler_effect_table);
+	vm->op_handler_effect_table = NULL;
+
+	rz_bv_free(vm->pc);
+	vm->pc = NULL;
+
+	rz_list_free(vm->events);
+	vm->events = NULL;
+}
+
+/**
+ * Create a new empty VM
+ * \param vm RzILVM, pointer to an empty VM
+ * \param start_addr ut64, initiation pc address
+ * \param addr_size  ut32, size of the address in VM
+ */
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian) {
+	RzILVM *vm = RZ_NEW0(RzILVM);
+	if (!vm) {
+		return NULL;
+	}
+	rz_il_vm_init(vm, start_addr, addr_size, big_endian);
+	return vm;
+}
+
+/**
+ * Close, clean and free vm
+ * \param vm RzILVM* pointer to VM
+ */
+RZ_API void rz_il_vm_free(RzILVM *vm) {
+	if (!vm) {
+		return;
+	}
+	rz_il_vm_fini(vm);
+	free(vm);
+}
+
+/**
+ * Add a memory to VM at the given index.
+ * Ownership of the memory is transferred to the VM.
+ */
+RZ_API void rz_il_vm_add_mem(RzILVM *vm, RzILMemIndex index, RZ_OWN RzILMem *mem) {
+	if (index < rz_pvector_len(&vm->vm_memory)) {
+		rz_mem_free(rz_pvector_at(&vm->vm_memory, index));
+	}
+	rz_pvector_reserve(&vm->vm_memory, index + 1);
+	// Fill up with NULLs until the given index
+	while (rz_pvector_len(&vm->vm_memory) < index + 1) {
+		rz_pvector_push(&vm->vm_memory, NULL);
+	}
+	rz_pvector_set(&vm->vm_memory, index, mem);
+}
+
+RZ_API RzILMem *rz_il_vm_get_mem(RzILVM *vm, RzILMemIndex index) {
+	if (index >= rz_pvector_len(&vm->vm_memory)) {
+		return NULL;
+	}
+	return rz_pvector_at(&vm->vm_memory, index);
+}
 
 /**
  * Create A new global variable in VM
@@ -112,7 +316,6 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
 	rz_return_if_fail(vm && name && length > 0);
 	RzBitVector *bv = rz_bv_new_zero(length);
 	if (!bv) {
-		rz_warn_if_reached();
 		return;
 	}
 	RzILVar *var = rz_il_vm_create_global_variable(vm, name, RZIL_VAR_TYPE_BV, true);
@@ -384,110 +587,4 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_update_label(RZ_NONNULL RzILVM *vm, R
 	lbl->addr = rz_bv_dup(addr);
 
 	return lbl;
-}
-
-static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILPureType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpPureHandler handler = vm->op_handler_pure_table[op->code];
-	rz_return_val_if_fail(handler, NULL);
-	return handler(vm, op, type);
-}
-
-static bool eval_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
-	rz_return_val_if_fail(vm && op, NULL);
-	RzILOpEffectHandler handler = vm->op_handler_effect_table[op->code];
-	rz_return_val_if_fail(handler, NULL);
-	return handler(vm, op);
-}
-
-static const char *pure_type_name(RzILPureType type) {
-	switch (type) {
-	case RZ_IL_PURE_TYPE_BITV:
-		return "bitvector";
-	case RZ_IL_PURE_TYPE_BOOL:
-		return "bool";
-	default:
-		return "unknown";
-	}
-}
-
-/**
- * Evaluate the given pure op, asserting it returns a bitvector.
- * \return value in bitvector, or NULL if an error occurred (e.g. the op returned some other type)
- */
-RZ_API RZ_NULLABLE RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpBitVector *op) {
-	rz_return_val_if_fail(vm && op, NULL);
-	// check type and auto convertion between bitv/bool/val
-	RzILPureType type = -1;
-	void *res = eval_pure(vm, op, &type);
-	if (!res) {
-		// propagate error
-		return NULL;
-	}
-	if (type != RZ_IL_PURE_TYPE_BITV) {
-		RZ_LOG_ERROR("RzIL: type error: expected bitvector, got %s\n", pure_type_name(type));
-		return NULL;
-	}
-	return res;
-}
-
-/**
- * Evaluate the given pure op, asserting it returns a bool.
- * \return value in bool, or NULL if an error occurred (e.g. the op returned some other type)
- */
-RZ_API RZ_NULLABLE RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpBool *op) {
-	rz_return_val_if_fail(vm && op, NULL);
-	// check type and auto convertion between bitv/bool/val
-	RzILPureType type = -1;
-	void *res = eval_pure(vm, op, &type);
-	if (!res) {
-		// propagate error
-		return NULL;
-	}
-	if (type != RZ_IL_PURE_TYPE_BOOL) {
-		RZ_LOG_ERROR("RzIL: type error: expected bool, got %s\n", pure_type_name(type));
-		return NULL;
-	}
-	return res;
-}
-
-/**
- * Evaluate the given pure op, returning the resulting bool or bitvector.
- * \return val, RzILVal*, RzILVal type value
- */
-RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op) {
-	rz_return_val_if_fail(vm && op, NULL);
-	// check type and auto convertion between bitv/bool/val
-	RzILPureType type = -1;
-	void *res = eval_pure(vm, op, &type);
-	if (!res) {
-		// propagate error
-		return NULL;
-	}
-	switch (type) {
-	case RZ_IL_PURE_TYPE_BOOL:
-		return rz_il_value_new_bool(res);
-	case RZ_IL_PURE_TYPE_BITV:
-		return rz_il_value_new_bitv(res);
-	default:
-		RZ_LOG_ERROR("RzIL: type error: expected bitvector, got %s\n", pure_type_name(type));
-		return NULL;
-	}
-}
-
-/**
- * Evaluate the given pure op, returning the resulting value and its type.
- */
-RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILPureType *type) {
-	rz_return_val_if_fail(vm && op, NULL);
-	return eval_pure(vm, op, type);
-}
-
-/**
- * Evaluate (execute) the given effect op
- * \return false if an error occured and the execution should be aborted
- */
-RZ_API bool rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
-	rz_return_val_if_fail(vm && op, false);
-	return eval_effect(vm, op);
 }

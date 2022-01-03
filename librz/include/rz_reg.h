@@ -4,6 +4,7 @@
 #include <rz_types.h>
 #include <rz_list.h>
 #include <rz_util/rz_hex.h>
+#include <rz_util/rz_bitvector.h>
 #include <rz_util/rz_assert.h>
 
 #ifdef __cplusplus
@@ -187,6 +188,10 @@ RZ_API bool rz_reg_cond_bits_set(RzReg *r, int type, RzRegFlags *f, bool v);
 RZ_API int rz_reg_cond_bits(RzReg *r, int type, RzRegFlags *f);
 RZ_API RzRegFlags *rz_reg_cond_retrieve(RzReg *r, RzRegFlags *);
 RZ_API int rz_reg_cond(RzReg *r, int type);
+
+/* bitvector, for everything */
+RZ_API RzBitVector *rz_reg_get_bv(RzReg *reg, RzRegItem *item);
+RZ_API bool rz_reg_set_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, RZ_NONNULL const RzBitVector *bv);
 
 /* integer value 8-64 bits */
 RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item);

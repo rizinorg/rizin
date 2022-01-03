@@ -604,6 +604,7 @@ RZ_API RzCmdStatus rz_core_parser_plugins_print(RzParse *parser, RzCmdStateOutpu
 /* fortune */
 RZ_API void rz_core_fortune_list_types(void);
 RZ_API void rz_core_fortune_list(RzCore *core);
+RZ_API RZ_OWN char *rz_core_fortune_get_random(RzCore *core);
 RZ_API void rz_core_fortune_print_random(RzCore *core);
 
 #define RZ_CORE_FOREIGN_ADDR -1
@@ -672,8 +673,8 @@ RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
 RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, bool verbose);
 RZ_API ut64 rz_core_analysis_address(RzCore *core, ut64 addr);
 RZ_API void rz_core_analysis_undefine(RzCore *core, ut64 off);
-RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, int mode);
-RZ_API void rz_core_analysis_hint_list(RzAnalysis *a, int mode);
+RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, RzCmdStateOutput *state);
+RZ_API void rz_core_analysis_hint_list_print(RzAnalysis *a, RzCmdStateOutput *state);
 RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int mode);
 RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, RzOutputMode out_mode);
 RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize);

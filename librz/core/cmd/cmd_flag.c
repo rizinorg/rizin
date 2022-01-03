@@ -103,18 +103,6 @@ static const char *help_msg_fz[] = {
 	NULL
 };
 
-static const char *help_msg_ft[] = {
-	"Usage: ft", "[?ln] [k] [v ...]", " # Flag tags",
-	"ft", " tag strcpy strlen ...", "set words for the 'string' tag",
-	"ft", " tag", "get offsets of all matching flags",
-	"ft", "", "list all tags",
-	"ftn", " tag", "get matching flagnames fot given tag",
-	"ftw", "", "flag tags within this file",
-	"ftj", "", "list all flagtags in JSON format",
-	"ft*", "", "list all flagtags in rizin commands",
-	NULL
-};
-
 static bool listFlag(RzFlagItem *flag, void *user) {
 	rz_list_append(user, flag);
 	return true;
@@ -516,100 +504,80 @@ static void cmd_flag_table(RzCore *core, const char *input) {
 	rz_table_free(t);
 }
 
-static void cmd_flag_tags(RzCore *core, const char *input) {
-	char mode = input[1];
-	for (; *input && !IS_WHITESPACE(*input); input++) {
-	}
-	char *inp = strdup(input);
-	char *arg = inp;
-	rz_str_trim(arg);
-	if (!*arg && !mode) {
-		const char *tag;
-		RzListIter *iter;
-		RzList *list = rz_flag_tags_list(core->flags, NULL);
-		rz_list_foreach (list, iter, tag) {
-			rz_cons_printf("%s\n", tag);
-		}
-		rz_list_free(list);
-		free(inp);
-		return;
-	}
-	if (mode == '?') {
-		rz_core_cmd_help(core, help_msg_ft);
-		free(inp);
-		return;
-	}
-	if (mode == 'w') { // "ftw"
-		const char *tag;
-		RzListIter *iter;
-		RzList *list = rz_flag_tags_list(core->flags, NULL);
-		rz_list_foreach (list, iter, tag) {
-			rz_cons_printf("%s:\n", tag);
-			rz_core_cmdf(core, "ftn %s", tag);
-		}
-		rz_list_free(list);
-		free(inp);
-		return;
-	}
-	if (mode == '*') { // "ft*"
-		RzListIter *iter;
-		const char *tag;
-		RzList *list = rz_flag_tags_list(core->flags, NULL);
-		rz_list_foreach (list, iter, tag) {
-			const char *flags = sdb_get(core->flags->tags, sdb_fmt("tag.%s", tag), NULL);
-			rz_cons_printf("ft %s %s\n", tag, flags);
-		}
-		rz_list_free(list);
-		free(inp);
-		return;
-	}
-	if (mode == 'j') { // "ftj"
-		RzListIter *iter, *iter2;
-		const char *tag, *flg;
-		PJ *pj = pj_new();
-		pj_o(pj);
-		RzList *list = rz_flag_tags_list(core->flags, NULL);
-		rz_list_foreach (list, iter, tag) {
-			pj_k(pj, tag);
-			pj_a(pj);
-			RzList *flags = rz_flag_tags_list(core->flags, tag);
-			rz_list_foreach (flags, iter2, flg) {
-				pj_s(pj, flg);
-			}
+RZ_IPI RzCmdStatus rz_flag_tag_add_handler(RzCore *core, int argc, const char **argv) {
+	rz_flag_tags_set(core->flags, argv[1], argv[2]);
+	return RZ_CMD_STATUS_OK;
+}
+
+static void flag_tag_print(RzCore *core, const char *tag, RzCmdStateOutput *state) {
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_k(pj, tag);
+		pj_a(pj);
+		RzList *flags = rz_flag_tags_get(core->flags, tag);
+		if (!flags) {
 			pj_end(pj);
-			rz_list_free(flags);
+			break;
 		}
-		pj_end(pj);
-		rz_list_free(list);
-		free(inp);
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
-		return;
-	}
-	char *arg1 = strchr(arg, ' ');
-	if (arg1) {
-		*arg1 = 0;
-		const char *a1 = rz_str_trim_head_ro(arg1 + 1);
-		rz_flag_tags_set(core->flags, arg, a1);
-	} else {
 		RzListIter *iter;
 		RzFlagItem *flag;
-		RzList *flags = rz_flag_tags_get(core->flags, arg);
-		switch (mode) {
-		case 'n':
-			rz_list_foreach (flags, iter, flag) {
-				// rz_cons_printf ("0x%08"PFMT64x"\n", flag->offset);
-				rz_cons_printf("0x%08" PFMT64x "  %s\n", flag->offset, flag->name);
-			}
-			break;
-		default:
-			rz_list_foreach (flags, iter, flag) {
-				rz_cons_printf("0x%08" PFMT64x "\n", flag->offset);
-			}
+		rz_list_foreach (flags, iter, flag) {
+			pj_s(pj, flag->name);
+		}
+		pj_end(pj);
+		rz_list_free(flags);
+		break;
+	}
+	case RZ_OUTPUT_MODE_LONG: {
+		rz_cons_printf("%s:\n", tag);
+		RzList *flags = rz_flag_tags_get(core->flags, tag);
+		if (!flags) {
 			break;
 		}
+		RzListIter *iter;
+		RzFlagItem *flag;
+		rz_list_foreach (flags, iter, flag) {
+			rz_cons_printf("0x%08" PFMT64x "  %s\n", flag->offset, flag->name);
+		}
+		rz_list_free(flags);
+		break;
 	}
-	free(inp);
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("%s\n", tag);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+RZ_IPI RzCmdStatus rz_flag_tag_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzList *list = rz_flag_tags_list(core->flags);
+	if (!list) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzListIter *iter;
+	const char *tag;
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (list, iter, tag) {
+		flag_tag_print(core, tag, state);
+	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_flag_tag_search_handler(RzCore *core, int argc, const char **argv) {
+	RzList *flags = rz_flag_tags_get(core->flags, argv[1]);
+	if (!flags) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzListIter *iter;
+	RzFlagItem *flag;
+	rz_list_foreach (flags, iter, flag) {
+		rz_cons_printf("0x%08" PFMT64x "  %s\n", flag->offset, flag->name);
+	}
+	return RZ_CMD_STATUS_OK;
 }
 
 struct rename_flag_t {
@@ -1193,9 +1161,6 @@ rep:
 		break;
 	case ',': // "f,"
 		cmd_flag_table(core, input);
-		break;
-	case 't': // "ft"
-		cmd_flag_tags(core, input);
 		break;
 	case 's': // "fs"
 		switch (input[1]) {

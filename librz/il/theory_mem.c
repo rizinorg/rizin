@@ -2,13 +2,12 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_il/rzil_vm.h>
-#include <rz_il/rzil_opcodes.h>
-#include <rz_il/vm_layer.h>
+#include <rz_il/rz_il_vm.h>
+#include <rz_il/rz_il_opcodes.h>
 
 void *rz_il_handler_load(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpArgsLoad *op_load = op->op.load;
+	RzILOpArgsLoad *op_load = &op->op.load;
 
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_load->key);
 	if (!addr) {
@@ -23,7 +22,7 @@ void *rz_il_handler_load(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 bool rz_il_handler_store(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, NULL);
 
-	RzILOpArgsStore *op_store = op->op.store;
+	RzILOpArgsStore *op_store = &op->op.store;
 
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_store->key);
 	RzBitVector *value = rz_il_evaluate_bitv(vm, op_store->value);
@@ -41,7 +40,7 @@ bool rz_il_handler_store(RzILVM *vm, RzILOpEffect *op) {
 
 void *rz_il_handler_loadw(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpArgsLoadW *op_loadw = op->op.loadw;
+	RzILOpArgsLoadW *op_loadw = &op->op.loadw;
 
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_loadw->key);
 	if (!addr) {
@@ -56,7 +55,7 @@ void *rz_il_handler_loadw(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 bool rz_il_handler_storew(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, NULL);
 
-	RzILOpArgsStoreW *op_storew = op->op.storew;
+	RzILOpArgsStoreW *op_storew = &op->op.storew;
 
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_storew->key);
 	RzBitVector *value = rz_il_evaluate_bitv(vm, op_storew->value);

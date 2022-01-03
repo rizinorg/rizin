@@ -1237,10 +1237,9 @@ static void print_hint_h_format(HintNode *node) {
 	}
 }
 
-// if mode == 'j', pj must be an existing PJ!
-static void hint_node_print(HintNode *node, int mode, PJ *pj) {
+static void hint_node_print(HintNode *node, RzOutputMode mode, PJ *pj) {
 	switch (mode) {
-	case '*':
+	case RZ_OUTPUT_MODE_RIZIN:
 #define HINTCMD_ADDR(hint, fmt, x) rz_cons_printf(fmt " @ 0x%" PFMT64x "\n", x, (hint)->addr)
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
@@ -1312,7 +1311,7 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 		}
 #undef HINTCMD_ADDR
 		break;
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RzAnalysisAddrHintRecord *record;
@@ -1443,16 +1442,15 @@ bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 	return true;
 }
 
-static void print_hint_tree(RBTree tree, int mode) {
-	PJ *pj = NULL;
-	if (mode == 'j') {
-		pj = pj_new();
+static void print_hint_tree(RBTree tree, RzCmdStateOutput *state) {
+	PJ *pj = state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL;
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
 #define END_ADDR \
 	if (pj) { \
 		pj_end(pj); \
-	} else if (mode != '*') { \
+	} else if (state->mode == RZ_OUTPUT_MODE_STANDARD) { \
 		rz_cons_newline(); \
 	}
 	RBIter it;
@@ -1469,11 +1467,11 @@ static void print_hint_tree(RBTree tree, int mode) {
 			if (pj) {
 				pj_o(pj);
 				pj_kn(pj, "addr", node->addr);
-			} else if (mode != '*') {
+			} else if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 				rz_cons_printf(" 0x%08" PFMT64x " =>", node->addr);
 			}
 		}
-		hint_node_print(node, mode, pj);
+		hint_node_print(node, state->mode, pj);
 	}
 	if (in_addr) {
 		END_ADDR
@@ -1482,22 +1480,22 @@ static void print_hint_tree(RBTree tree, int mode) {
 #undef END_ADDR
 	if (pj) {
 		pj_end(pj);
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
 	}
 }
 
-RZ_API void rz_core_analysis_hint_list(RzAnalysis *a, int mode) {
+RZ_API void rz_core_analysis_hint_list_print(RzAnalysis *a, RzCmdStateOutput *state) {
+	rz_return_if_fail(a && state);
 	RBTree tree = NULL;
 	// Collect all hints in the tree to sort them
 	rz_analysis_arch_hints_foreach(a, print_arch_hint_cb, &tree);
 	rz_analysis_bits_hints_foreach(a, print_bits_hint_cb, &tree);
 	rz_analysis_addr_hints_foreach(a, print_addr_hint_cb, &tree);
-	print_hint_tree(tree, mode);
+	print_hint_tree(tree, state);
 	rz_rbtree_free(tree, hint_node_free, NULL);
 }
 
-RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, int mode) {
+RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, RzCmdStateOutput *state) {
+	rz_return_if_fail(a && state);
 	RBTree tree = NULL;
 	ut64 hint_addr = UT64_MAX;
 	const char *arch = rz_analysis_hint_arch_at(a, addr, &hint_addr);
@@ -1512,7 +1510,7 @@ RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, int mode) {
 	if (addr_hints) {
 		print_addr_hint_cb(addr, addr_hints, &tree);
 	}
-	print_hint_tree(tree, mode);
+	print_hint_tree(tree, state);
 	rz_rbtree_free(tree, hint_node_free, NULL);
 }
 

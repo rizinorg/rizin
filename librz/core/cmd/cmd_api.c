@@ -1541,7 +1541,7 @@ RZ_API int rz_cmd_macro_add(RzCmdMacro *mac, const char *oname) {
 	rz_list_foreach (mac->macros, iter, m) {
 		if (!strcmp(name, m->name)) {
 			macro = m;
-			// keep macro->name
+			free(macro->name);
 			free(macro->code);
 			free(macro->args);
 			macro_update = 1;
@@ -1557,9 +1557,9 @@ RZ_API int rz_cmd_macro_add(RzCmdMacro *mac, const char *oname) {
 			free(name);
 			return 0;
 		}
-		macro->name = strdup(name);
 	}
 
+	macro->name = strdup(name);
 	macro->codelen = (pbody[0]) ? strlen(pbody) + 2 : 4096;
 	macro->code = (char *)malloc(macro->codelen);
 	*macro->code = '\0';
@@ -1837,7 +1837,7 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 		if (!strcmp(str, m->name)) {
 			char *ptr = m->code;
 			char *end = strchr(ptr, '\n');
-			if (m->nargs != 0 && nargs != m->nargs) {
+			if (nargs != m->nargs) {
 				eprintf("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
 				macro_level--;
 				free(str);

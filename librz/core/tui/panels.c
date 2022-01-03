@@ -3561,12 +3561,13 @@ int __break_points_cb(void *user) {
 
 int __watch_points_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	char addrBuf[128], rw[128];
+	char addrBuf[128], perm[128];
 	const char *addrPrompt = "addr: ", *rwPrompt = "<r/w/rw>: ";
 	__panel_prompt(addrPrompt, addrBuf, sizeof(addrBuf));
-	__panel_prompt(rwPrompt, rw, sizeof(rw));
+	__panel_prompt(rwPrompt, perm, sizeof(perm));
 	ut64 addr = rz_num_math(core->num, addrBuf);
-	rz_core_cmdf(core, "dbw 0x%08" PFMT64x " %s", addr, rw);
+	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
+	rz_core_debug_bp_add(core, addr, perm, hwbp, true);
 	return 0;
 }
 
@@ -3578,7 +3579,7 @@ int __references_cb(void *user) {
 
 int __fortune_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	char *s = rz_core_cmd_str(core, "fo");
+	char *s = rz_core_fortune_get_random(core);
 	rz_cons_message(s);
 	free(s);
 	return 0;
