@@ -2604,6 +2604,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	// rz_core_file_free (c->file);
 	// c->file = NULL;
 	RZ_FREE(c->table_query);
+	rz_io_free(c->io);
 	rz_list_free(c->files);
 	rz_list_free(c->watchers);
 	rz_list_free(c->scriptstack);
@@ -2617,7 +2618,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	c->bin = (rz_bin_free(c->bin), NULL);
 	c->lang = (rz_lang_free(c->lang), NULL);
 	c->dbg = (rz_debug_free(c->dbg), NULL);
-	rz_io_free(c->io);
 	rz_config_free(c->config);
 	/* after rz_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
