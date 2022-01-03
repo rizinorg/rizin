@@ -80,7 +80,8 @@ typedef struct _WindCtx {
 	bool is_64bit;
 	bool is_pae;
 	bool is_arm;
-	WindProc *target;
+	WindProc target;
+	WindThread target_thread;
 } WindCtx;
 
 typedef struct _KdCtx {
@@ -116,7 +117,6 @@ static inline ut64 winkd_read_ptr_at(WindCtx *ctx, WindReadAt *read_at_func, ut6
 }
 
 static inline void winkd_ctx_fini(WindCtx *ctx) {
-	free(ctx->target);
 	free(ctx->user);
 }
 
@@ -127,7 +127,10 @@ Profile *winkd_get_profile(int bits, int build, int sp);
 bool winkd_va_to_pa(WindCtx *ctx, ut64 directory_table, ut64 va, ut64 *pa);
 ut64 winkd_get_target_base(WindCtx *ctx);
 ut32 winkd_get_target(WindCtx *ctx);
-bool winkd_set_target(WindCtx *ctx, ut32 pid);
+ut32 winkd_get_target_thread(WindCtx *ctx);
+bool winkd_set_target(WindCtx *ctx, ut32 pid, ut32 tid);
+WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address);
+WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address);
 RzList *winkd_list_process(WindCtx *ctx);
 RzList *winkd_list_threads(WindCtx *ctx);
 RzList *winkd_list_modules(WindCtx *ctx);
