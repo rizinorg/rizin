@@ -179,11 +179,3 @@ RzParsePlugin rz_parse_plugin_att2intel = {
 	.fini = NULL,
 	.parse = &parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_att2intel,
-	.version = RZ_VERSION
-};
-#endif

@@ -8,8 +8,6 @@
 
 // https://www.renesas.com/us/en/doc/products/mpumcu/doc/v850/r01us0037ej0100_v850e2.pdf
 
-#include "parse_common.c"
-
 static RzList *v850_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar v850_lexicon[] = {
@@ -133,7 +131,7 @@ RzList *v850_tokenize(const char *assembly, size_t length) {
 }
 
 static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
-	return rz_pseudo_convert(&v850_config, assembly, sb);
+	return rz_parse_pseudo_convert(&v850_config, assembly, sb);
 }
 
 RzParsePlugin rz_parse_plugin_v850_pseudo = {
@@ -141,11 +139,3 @@ RzParsePlugin rz_parse_plugin_v850_pseudo = {
 	.desc = "v850 pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_v850_pseudo,
-	.version = RZ_VERSION
-};
-#endif

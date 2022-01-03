@@ -12,8 +12,6 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-#include "parse_common.c"
-
 static RzList *mips_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar mips_lexicon[] = {
@@ -138,7 +136,7 @@ RzList *mips_tokenize(const char *assembly, size_t length) {
 }
 
 static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
-	return rz_pseudo_convert(&mips_config, assembly, sb);
+	return rz_parse_pseudo_convert(&mips_config, assembly, sb);
 }
 
 static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
@@ -265,11 +263,3 @@ RzParsePlugin rz_parse_plugin_mips_pseudo = {
 	.parse = parse,
 	.subvar = subvar,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_mips_pseudo,
-	.version = RZ_VERSION
-};
-#endif

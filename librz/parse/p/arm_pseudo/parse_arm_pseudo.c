@@ -11,8 +11,6 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-#include "parse_common.c"
-
 static RzList *arm_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar arm_lexicon[] = {
@@ -202,7 +200,7 @@ RzList *arm_tokenize(const char *assembly, size_t length) {
 }
 
 static bool parse(RzParse *p, const char *assembly, RzStrBuf *sb) {
-	return rz_pseudo_convert(&arm_config, assembly, sb);
+	return rz_parse_pseudo_convert(&arm_config, assembly, sb);
 }
 
 static char *subs_var_string(RzParse *p, RzAnalysisVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
@@ -372,11 +370,3 @@ RzParsePlugin rz_parse_plugin_arm_pseudo = {
 	.parse = parse,
 	.subvar = &subvar,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_arm_pseudo,
-	.version = RZ_VERSION
-};
-#endif

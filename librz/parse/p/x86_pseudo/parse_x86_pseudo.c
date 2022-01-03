@@ -564,11 +564,3 @@ RzParsePlugin rz_parse_plugin_x86_pseudo = {
 	.parse = &parse,
 	.subvar = &subvar,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_x86_pseudo,
-	.version = RZ_VERSION
-};
-#endif

@@ -1,60 +1,24 @@
-parse_plugins = [
-  '6502_pseudo',
-  'arm_pseudo',
-  'att2intel',
-  'avr_pseudo',
-  'chip8_pseudo',
-  'tms320_pseudo',
-  'dalvik_pseudo',
-  'm68k_pseudo',
-  'mips_pseudo',
-  'ppc_pseudo',
-  'v850_pseudo',
-  'wasm_pseudo',
-  'x86_pseudo',
-]
-
-if get_option('use_gpl')
-  parse_plugins += [
-    'sh_pseudo',
-    'riscv_pseudo',
-    'z80_pseudo'
-  ]
-endif
-
-parse_enabled_static_plugins = parse_plugins
-
 rz_parse_sources = [
   'filter.c',
   'parse.c',
-  'p/parse_6502_pseudo.c',
-  'p/parse_arm_pseudo.c',
-  'p/parse_att2intel.c',
-  'p/parse_avr_pseudo.c',
-  'p/parse_chip8_pseudo.c',
-  'p/parse_dalvik_pseudo.c',
-  'p/parse_m68k_pseudo.c',
-  'p/parse_mips_pseudo.c',
-  'p/parse_ppc_pseudo.c',
-  'p/parse_sh_pseudo.c',
-  'p/parse_tms320_pseudo.c',
-  'p/parse_v850_pseudo.c',
-  'p/parse_wasm_pseudo.c',
-  'p/parse_x86_pseudo.c',
-  'p/parse_riscv_pseudo.c',
-  'p/parse_z80_pseudo.c'
+  'pseudo.c',
 ]
+
+rz_parse_dependencies = [
+  rz_util_dep,
+  rz_flag_dep,
+  rz_syscall_dep,
+  rz_reg_dep,
+  rz_cons_dep,
+]
+
+subdir('p')
 
 rz_parse = library('rz_parse', rz_parse_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
-  dependencies: [
-    rz_util_dep,
-    rz_flag_dep,
-    rz_syscall_dep,
-    rz_reg_dep,
-    rz_cons_dep,
-  ],
+  dependencies: rz_parse_dependencies,
+  link_with: parse_static_plugins,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -65,8 +29,29 @@ rz_parse = library('rz_parse', rz_parse_sources,
 )
 
 rz_parse_dep = declare_dependency(link_with: rz_parse,
-                                 include_directories: platform_inc)
+  include_directories: platform_inc,
+  dependencies: rz_parse_dependencies,
+)
 meson.override_dependency('rz_parse', rz_parse_dep)
+
+foreach p : parse_shared_plugins
+  side_plugin = configure_file(
+    input: '../shared_plugin.c.in',
+    output: 'shared_plugin_@0@.c'.format(p.name()),
+    configuration: {
+      'lib_type': 'RZ_LIB_TYPE_PARSE',
+      'plugin_type': 'RzParsePlugin',
+      'plugin_header': 'rz_parse.h',
+      'plugin_name': 'rz_parse_plugin_@0@'.format(p.name()),
+    },
+  )
+  shared_library('parse_' + p.name(), [side_plugin],
+    link_whole: p,
+    dependencies: [rz_parse_dep],
+    install: true,
+    install_dir: rizin_plugins,
+  )
+endforeach
 
 pkgconfig_mod.generate(rz_parse,
   subdirs: 'librz',

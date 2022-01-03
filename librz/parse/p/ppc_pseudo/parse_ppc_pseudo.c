@@ -1759,11 +1759,3 @@ RzParsePlugin rz_parse_plugin_ppc_pseudo = {
 	.desc = "PowerPC pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_ppc_pseudo,
-	.version = RZ_VERSION
-};
-#endif

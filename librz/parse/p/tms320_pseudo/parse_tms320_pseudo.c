@@ -7,8 +7,6 @@
 #include <rz_parse.h>
 
 // https://www.ti.com/lit/ug/spru732j/spru732j.pdf
-#include "parse_common.c"
-
 static RzList *tms320_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar tms320_lexicon[] = {
@@ -114,7 +112,7 @@ RzList *tms320_tokenize(const char *assembly, size_t length) {
 }
 
 static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
-	return rz_pseudo_convert(&tms320_config, assembly, sb);
+	return rz_parse_pseudo_convert(&tms320_config, assembly, sb);
 }
 
 RzParsePlugin rz_parse_plugin_tms320_pseudo = {
@@ -122,11 +120,3 @@ RzParsePlugin rz_parse_plugin_tms320_pseudo = {
 	.desc = "tms320 pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_tms320_pseudo,
-	.version = RZ_VERSION
-};
-#endif

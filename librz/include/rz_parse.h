@@ -42,6 +42,79 @@ typedef struct rz_parse_t {
 	RzAnalysisLabelAt label_get;
 } RzParse;
 
+typedef struct {
+	const char *mnemonic;
+	size_t mnemonic_length;
+	const char *grammar;
+} RzPseudoGrammar;
+
+typedef struct {
+	const char *expected;
+	const char *pseudo;
+} RzPseudoDirect;
+
+typedef struct {
+	const char *expected;
+	const char *replace;
+	int flag; // 0 for first match, 1 for all matches
+} RzPseudoReplace;
+
+typedef struct {
+	const RzPseudoDirect *direct;
+	size_t direct_length;
+	const RzPseudoReplace *replace;
+	size_t replace_length;
+	const RzPseudoGrammar *lexicon;
+	size_t lexicon_length;
+	int max_args;
+	RzList *(*tokenize)(const char *assembly, size_t length);
+} RzPseudoConfig;
+
+#define RZ_PSEUDO_DEFINE_GRAMMAR(x, y) \
+	{ .mnemonic = x, .mnemonic_length = sizeof(x) - 1, .grammar = y }
+
+#define RZ_PSEUDO_DEFINE_DIRECT(x, y) \
+	{ .expected = x, .pseudo = y }
+
+#define RZ_PSEUDO_DEFINE_REPLACE(x, y, f) \
+	{ .expected = x, .replace = y, .flag = f }
+
+#define RZ_PSEUDO_DEFINE_CONFIG(d, l, r, m, t) \
+	{ \
+		.direct = d, \
+		.direct_length = RZ_ARRAY_SIZE(d), \
+		.replace = r, \
+		.replace_length = RZ_ARRAY_SIZE(r), \
+		.lexicon = l, \
+		.lexicon_length = RZ_ARRAY_SIZE(l), \
+		.max_args = m, \
+		.tokenize = t, \
+	}
+
+#define RZ_PSEUDO_DEFINE_CONFIG_NO_DIRECT(l, r, m, t) \
+	{ \
+		.direct = NULL, \
+		.direct_length = 0, \
+		.replace = r, \
+		.replace_length = RZ_ARRAY_SIZE(r), \
+		.lexicon = l, \
+		.lexicon_length = RZ_ARRAY_SIZE(l), \
+		.max_args = m, \
+		.tokenize = t, \
+	}
+
+#define RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(l, m, t) \
+	{ \
+		.direct = NULL, \
+		.direct_length = 0, \
+		.replace = NULL, \
+		.replace_length = 0, \
+		.lexicon = l, \
+		.lexicon_length = RZ_ARRAY_SIZE(l), \
+		.max_args = m, \
+		.tokenize = t, \
+	}
+
 typedef struct rz_parse_plugin_t {
 	char *name;
 	char *desc;
@@ -70,6 +143,7 @@ RZ_API char *rz_parse_pseudocode(RzParse *p, const char *data);
 RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
 RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian);
 RZ_API bool rz_parse_subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+RZ_API bool rz_parse_pseudo_convert(const RzPseudoConfig *config, const char *assembly, RzStrBuf *sb);
 RZ_API char *rz_parse_immtrim(char *opstr);
 
 /* plugin pointers */

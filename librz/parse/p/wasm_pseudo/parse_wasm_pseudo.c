@@ -41,11 +41,3 @@ RzParsePlugin rz_parse_plugin_wasm_pseudo = {
 	.desc = "WASM pseudo syntax",
 	.subvar = &subvar,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_wasm_pseudo,
-	.version = RZ_VERSION
-};
-#endif

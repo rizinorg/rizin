@@ -11,8 +11,6 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-#include "parse_common.c"
-
 static RzList *_6502_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar _6502_lexicon[] = {
@@ -115,7 +113,7 @@ RzList *_6502_tokenize(const char *assembly, size_t length) {
 }
 
 static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
-	return rz_pseudo_convert(&_6502_config, assembly, sb);
+	return rz_parse_pseudo_convert(&_6502_config, assembly, sb);
 }
 
 RzParsePlugin rz_parse_plugin_6502_pseudo = {
@@ -123,11 +121,3 @@ RzParsePlugin rz_parse_plugin_6502_pseudo = {
 	.desc = "6502 pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_6502_pseudo,
-	.version = RZ_VERSION
-};
-#endif
