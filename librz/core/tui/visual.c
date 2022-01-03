@@ -3259,6 +3259,35 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 	return true;
 }
 
+static void visual_flagzone(RzCore *core) {
+	const char *a, *b;
+	int a_len = 0;
+	int w = rz_cons_get_size(NULL);
+	rz_flag_zone_around(core->flags, core->offset, &a, &b);
+	if (a) {
+		rz_cons_printf("[<< %s]", a);
+		a_len = strlen(a) + 4;
+	}
+	int padsize = (w / 2) - a_len;
+	int title_size = 12;
+	if (a || b) {
+		char *title = rz_str_newf("[ 0x%08" PFMT64x " ]", core->offset);
+		title_size = strlen(title);
+		padsize -= strlen(title) / 2;
+		const char *halfpad = rz_str_pad(' ', padsize);
+		rz_cons_printf("%s%s", halfpad, title);
+		free(title);
+	}
+	if (b) {
+		padsize = (w / 2) - title_size - strlen(b) - 4;
+		const char *halfpad = padsize > 1 ? rz_str_pad(' ', padsize) : "";
+		rz_cons_printf("%s[%s >>]", halfpad, b);
+	}
+	if (a || b) {
+		rz_cons_newline();
+	}
+}
+
 RZ_API void rz_core_visual_title(RzCore *core, int color) {
 	bool showDelta = rz_config_get_b(core->config, "scr.slow");
 	static ut64 oldpc = 0;
@@ -3305,7 +3334,7 @@ RZ_API void rz_core_visual_title(RzCore *core, int color) {
 		}
 	}
 	if (rz_config_get_i(core->config, "scr.scrollbar") == 2) {
-		rz_core_cmd(core, "fz:", 0);
+		visual_flagzone(core);
 	}
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		ut64 curpc = rz_debug_reg_get(core->dbg, "PC");
@@ -3518,7 +3547,7 @@ RZ_API void rz_core_print_scrollbar(RzCore *core) {
 
 	int scrollbar = rz_config_get_i(core->config, "scr.scrollbar");
 	if (scrollbar == 2) {
-		// already handled by rz_core_cmd("fz:") in visual.c
+		// already handled by the visual_flagzone()
 		return;
 	}
 	if (scrollbar > 2) {
