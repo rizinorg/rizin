@@ -1,11 +1,3 @@
-egg_plugins = [
-  'exec',
-  #'shya',
-  'xor'
-]
-
-egg_enabled_static_plugins = egg_plugins
-
 rz_egg_sources = [
   'egg.c',
   'egg_Cfile.c',
@@ -14,23 +6,22 @@ rz_egg_sources = [
   'emit_trace.c',
   'emit_x64.c',
   'emit_x86.c',
-  #'p/egg_bind.c',
-  #'p/egg_cb.c',
-  'p/egg_exec.c',
-  #'p/egg_reverse.c',
-  #'p/egg_shya.c',
-  'p/egg_xor.c'
 ]
+
+rz_egg_dependencies = [
+  rz_util_dep,
+  rz_syscall_dep,
+  rz_asm_dep,
+  mpc_dep
+]
+
+subdir('p')
 
 rz_egg = library('rz_egg', rz_egg_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [
-    rz_util_dep,
-    rz_syscall_dep,
-    rz_asm_dep,
-    mpc_dep
-  ],
+  dependencies: rz_egg_dependencies,
+  link_with: egg_static_plugins,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -41,8 +32,29 @@ rz_egg = library('rz_egg', rz_egg_sources,
 )
 
 rz_egg_dep = declare_dependency(link_with: rz_egg,
-                               include_directories: [platform_inc])
+  include_directories: [platform_inc],
+  dependencies: rz_egg_dependencies,
+)
 meson.override_dependency('rz_egg', rz_egg_dep)
+
+foreach p : egg_shared_plugins
+  side_plugin = configure_file(
+    input: '../shared_plugin.c.in',
+    output: 'shared_plugin_@0@.c'.format(p.name()),
+    configuration: {
+      'lib_type': 'RZ_LIB_TYPE_EGG',
+      'plugin_type': 'RzEggPlugin',
+      'plugin_header': 'rz_egg.h',
+      'plugin_name': 'rz_egg_plugin_@0@'.format(p.name()),
+    },
+  )
+  shared_library('egg_' + p.name(), [side_plugin],
+    link_whole: p,
+    dependencies: [rz_egg_dep],
+    install: true,
+    install_dir: rizin_plugins,
+  )
+endforeach
 
 pkgconfig_mod.generate(rz_egg,
   subdirs: 'librz',

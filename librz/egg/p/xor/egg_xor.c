@@ -107,13 +107,3 @@ RzEggPlugin rz_egg_plugin_xor = {
 	.desc = "xor encoder for shellcode",
 	.build = (void *)build
 };
-
-#if 0
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_EGG,
-	.data = &rz_egg_plugin_xor,
-	.version = RZ_VERSION
-};
-#endif
-#endif
