@@ -256,7 +256,7 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
 			continue;
 		}
 		RzILVal *val = rz_il_hash_find_val_by_name(vm, item->name);
-		if (!val || (val->type != RZIL_VAR_TYPE_BV && val->type != RZIL_VAR_TYPE_BOOL)) {
+		if (!val || (val->type != RZ_IL_VAR_TYPE_BV && val->type != RZ_IL_VAR_TYPE_BOOL)) {
 			perfect = false;
 			RzBitVector *bv = rz_bv_new_zero(ri->size);
 			if (!bv) {
@@ -270,7 +270,7 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
 		}
 		RzBitVector *dupped = NULL;
 		const RzBitVector *bv;
-		if (val->type == RZIL_VAR_TYPE_BV) {
+		if (val->type == RZ_IL_VAR_TYPE_BV) {
 			bv = val->data.bv;
 			if (rz_bv_len(bv) != ri->size) {
 				perfect = false;
@@ -281,7 +281,7 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
 				rz_bv_copy_nbits(bv, 0, dupped, 0, RZ_MIN(rz_bv_len(bv), ri->size));
 				bv = dupped;
 			}
-		} else { // RZIL_VAR_TYPE_BOOL
+		} else { // RZ_IL_VAR_TYPE_BOOL
 			bv = dupped = val->data.b->b ? rz_bv_new_one(ri->size) : rz_bv_new_zero(ri->size);
 			if (!dupped) {
 				break;

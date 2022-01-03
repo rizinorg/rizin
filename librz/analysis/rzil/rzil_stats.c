@@ -24,8 +24,7 @@
 /**
  * Record memory R/W address, register R/W names. similar to `trace`
  * \param analysis RzAnalysis
- * \param rzil RZIL instance
- * \param op  a general RZIL op structure (Designed for switching between different implementations of RZIL op struct)
+ * \param op  a general IL op structure (Designed for switching between different implementations of IL op struct)
  */
 RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op) {
 	// ready for rewriting this file

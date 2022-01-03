@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RZIL_OPCODES_H
-#define RZIL_OPCODES_H
+#ifndef RZ_IL_OPCODES_H
+#define RZ_IL_OPCODES_H
 
 #include <rz_il/definitions/definitions.h>
 
@@ -343,50 +343,50 @@ typedef struct rz_il_op_args_storew_t {
 
 typedef enum {
 	// Init
-	RZIL_OP_VAR,
-	RZIL_OP_UNK,
-	RZIL_OP_ITE,
+	RZ_IL_OP_VAR,
+	RZ_IL_OP_UNK,
+	RZ_IL_OP_ITE,
 
 	// RzILBool
-	RZIL_OP_B0,
-	RZIL_OP_B1,
-	RZIL_OP_INV,
-	RZIL_OP_AND,
-	RZIL_OP_OR,
-	RZIL_OP_XOR,
+	RZ_IL_OP_B0,
+	RZ_IL_OP_B1,
+	RZ_IL_OP_INV,
+	RZ_IL_OP_AND,
+	RZ_IL_OP_OR,
+	RZ_IL_OP_XOR,
 
 	// RzBitVector
-	RZIL_OP_BITV,
-	RZIL_OP_MSB,
-	RZIL_OP_LSB,
-	RZIL_OP_IS_ZERO,
-	RZIL_OP_NEG,
-	RZIL_OP_LOGNOT,
-	RZIL_OP_ADD,
-	RZIL_OP_SUB,
-	RZIL_OP_MUL,
-	RZIL_OP_DIV,
-	RZIL_OP_SDIV,
-	RZIL_OP_MOD,
-	RZIL_OP_SMOD,
-	RZIL_OP_LOGAND,
-	RZIL_OP_LOGOR,
-	RZIL_OP_LOGXOR,
-	RZIL_OP_SHIFTR,
-	RZIL_OP_SHIFTL,
-	RZIL_OP_EQ,
-	RZIL_OP_SLE,
-	RZIL_OP_ULE,
-	RZIL_OP_CAST,
-	RZIL_OP_CONCAT,
-	RZIL_OP_APPEND,
+	RZ_IL_OP_BITV,
+	RZ_IL_OP_MSB,
+	RZ_IL_OP_LSB,
+	RZ_IL_OP_IS_ZERO,
+	RZ_IL_OP_NEG,
+	RZ_IL_OP_LOGNOT,
+	RZ_IL_OP_ADD,
+	RZ_IL_OP_SUB,
+	RZ_IL_OP_MUL,
+	RZ_IL_OP_DIV,
+	RZ_IL_OP_SDIV,
+	RZ_IL_OP_MOD,
+	RZ_IL_OP_SMOD,
+	RZ_IL_OP_LOGAND,
+	RZ_IL_OP_LOGOR,
+	RZ_IL_OP_LOGXOR,
+	RZ_IL_OP_SHIFTR,
+	RZ_IL_OP_SHIFTL,
+	RZ_IL_OP_EQ,
+	RZ_IL_OP_SLE,
+	RZ_IL_OP_ULE,
+	RZ_IL_OP_CAST,
+	RZ_IL_OP_CONCAT,
+	RZ_IL_OP_APPEND,
 	// ...
 
 	// Memory
-	RZIL_OP_LOAD,
-	RZIL_OP_LOADW,
+	RZ_IL_OP_LOAD,
+	RZ_IL_OP_LOADW,
 
-	RZIL_OP_PURE_MAX
+	RZ_IL_OP_PURE_MAX
 } RzILOpPureCode;
 
 /**
@@ -486,20 +486,20 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL R
 // Opcodes of type 'a effect //
 
 typedef enum {
-	RZIL_OP_STORE,
-	RZIL_OP_STOREW,
+	RZ_IL_OP_STORE,
+	RZ_IL_OP_STOREW,
 
-	RZIL_OP_NOP,
-	RZIL_OP_SET,
-	RZIL_OP_LET,
-	RZIL_OP_JMP,
-	RZIL_OP_GOTO,
-	RZIL_OP_SEQ,
-	RZIL_OP_BLK,
-	RZIL_OP_REPEAT,
-	RZIL_OP_BRANCH,
+	RZ_IL_OP_NOP,
+	RZ_IL_OP_SET,
+	RZ_IL_OP_LET,
+	RZ_IL_OP_JMP,
+	RZ_IL_OP_GOTO,
+	RZ_IL_OP_SEQ,
+	RZ_IL_OP_BLK,
+	RZ_IL_OP_REPEAT,
+	RZ_IL_OP_BRANCH,
 
-	RZIL_OP_EFFECT_MAX
+	RZ_IL_OP_EFFECT_MAX
 } RzILOpEffectCode;
 
 struct rz_il_op_effect_t {
@@ -539,4 +539,4 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzI
 }
 #endif
 
-#endif // RZIL_OPCODES_H
+#endif // RZ_IL_OPCODES_H
