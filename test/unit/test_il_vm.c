@@ -360,7 +360,7 @@ static bool test_rzil_vm_op_blk() {
  *
  * ```c
  * unsigned short leetbap = 42;
- * char i = 7;
+ * unsigned char i = 7;
  * while (i - 1 != 0) {
  *     leetbap = leetbap * 3;
  *     i = i - 1;
@@ -391,10 +391,15 @@ static bool test_rzil_vm_op_repeat() {
 
 	mu_assert_true(succ, "op failed");
 	RzILVal *val = rz_il_hash_find_val_by_name(vm, var->var_name);
-	mu_assert_notnull(val, "val null");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "type not bv");
-	mu_assert_eq(rz_bv_len(val->data.bv), 16, "len not correct");
-	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 30618, "bitv not correct");
+	mu_assert_notnull(val, "leetbap null");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "leetbap type not bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 16, "leetbap len not correct");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 30618, "leetbap bitv not correct");
+	RzILVal *val2 = rz_il_hash_find_val_by_name(vm, count->var_name);
+	mu_assert_notnull(val2, "i null");
+	mu_assert_eq(val2->type, RZ_IL_VAR_TYPE_BV, "i type not bv");
+	mu_assert_eq(rz_bv_len(val2->data.bv), 8, "i len not correct");
+	mu_assert_eq(rz_bv_to_ut64(val2->data.bv), 1, "i bitv not correct");
 
 	rz_il_vm_free(vm);
 	mu_end;
