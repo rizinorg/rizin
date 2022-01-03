@@ -3548,7 +3548,7 @@ static const RzCmdDescHelp basefind_compute_help = {
 };
 
 static const RzCmdDescHelp c_help = {
-	.summary = "Compare block with given data",
+	.summary = "Compare commands",
 };
 static const RzCmdDescArg cmd_cmp_string_args[] = {
 	{
