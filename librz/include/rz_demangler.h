@@ -41,6 +41,13 @@ RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemangler *demangler, RZ_NONNUL
 RZ_API RZ_BORROW const RzDemanglerPlugin *rz_demangler_plugin_get(RZ_NONNULL RzDemangler *demangler, RZ_NONNULL const char *language);
 RZ_API bool rz_demangler_resolve(RZ_NONNULL RzDemangler *demangler, RZ_NULLABLE const char *symbol, RZ_NONNULL const char *language, RZ_NONNULL RZ_OWN char **output);
 
+extern RzDemanglerPlugin rz_demangler_plugin_java;
+extern RzDemanglerPlugin rz_demangler_plugin_msvc;
+extern RzDemanglerPlugin rz_demangler_plugin_objc;
+extern RzDemanglerPlugin rz_demangler_plugin_cpp;
+extern RzDemanglerPlugin rz_demangler_plugin_rust;
+extern RzDemanglerPlugin rz_demangler_plugin_swift;
+
 #ifdef __cplusplus
 }
 #endif

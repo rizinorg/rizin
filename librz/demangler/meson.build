@@ -1,29 +1,16 @@
-demangler_plugins = [
-  'java',
-  'msvc',
-  'objc',
-]
-
-if get_option('use_gpl')
-  demangler_plugins += ['cpp', 'rust']
-endif
-
-if get_option('use_swift_demangler')
-  demangler_plugins += 'swift'
-endif
-
-demangler_enabled_static_plugins = demangler_plugins
-
 rz_demangler_sources = [
   'demangler.c'
 ]
 
-dependencies = [rz_util_dep, libdemangle_dep]
+rz_demangler_dependencies = [rz_util_dep, libdemangle_dep]
+
+subdir('p')
 
 rz_demangler = library('rz_demangler', rz_demangler_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: dependencies,
+  dependencies: rz_demangler_dependencies,
+  link_with: demangler_static_plugins,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -33,8 +20,30 @@ rz_demangler = library('rz_demangler', rz_demangler_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_demangler_dep = declare_dependency(link_with: rz_demangler, include_directories: [platform_inc])
+rz_demangler_dep = declare_dependency(link_with: rz_demangler,
+  include_directories: [platform_inc],
+  dependencies: rz_demangler_dependencies,
+)
 meson.override_dependency('rz_demangler', rz_demangler_dep)
+
+foreach p : demangler_shared_plugins
+  side_plugin = configure_file(
+    input: '../shared_plugin.c.in',
+    output: 'shared_plugin_@0@.c'.format(p.name()),
+    configuration: {
+      'lib_type': 'RZ_LIB_TYPE_DEMANGLER',
+      'plugin_type': 'RzDemanglerPlugin',
+      'plugin_header': 'rz_demangler.h',
+      'plugin_name': 'rz_demangler_plugin_@0@'.format(p.name()),
+    },
+  )
+  shared_library('demangler_' + p.name(), [side_plugin],
+    link_whole: p,
+    dependencies: [rz_demangler_dep],
+    install: true,
+    install_dir: rizin_plugins,
+  )
+endforeach
 
 pkgconfig_mod.generate(rz_demangler,
   subdirs: 'librz',
