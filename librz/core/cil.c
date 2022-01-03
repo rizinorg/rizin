@@ -416,7 +416,7 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	rz_analysis_rzil_setup(core->analysis);
 	if (core->analysis->rzil) {
 		// initialize the program counter with the current offset
-		rz_bv_set_from_ut64(core->analysis->rzil->vm->pc, core->offset);
+		rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, core->offset);
 	}
 }
 
@@ -652,6 +652,8 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 		return;
 	}
 
+	rz_il_vm_sync_from_reg(vm, analysis->reg);
+
 	ut64 addr = rz_bv_to_ut64(vm->pc);
 
 	// try load from vm
@@ -663,11 +665,10 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	RzILOpEffect *ilop = op.rzil_op ? op.rzil_op->op : NULL;
 
 	if (ilop) {
-		rz_il_vm_sync_from_reg(vm, analysis->reg);
 		rz_il_vm_step(vm, ilop, size > 0 ? size : 1);
 		rz_il_vm_sync_to_reg(vm, analysis->reg);
 	} else {
-		RZ_LOG_ERROR("RzIL: invalid instruction detected or reach the end of code at address 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("RzIL: invalid instruction detected or reached the end of code at address 0x%08" PFMT64x "\n", addr);
 	}
 
 	rz_analysis_op_fini(&op);
