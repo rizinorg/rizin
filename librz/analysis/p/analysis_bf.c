@@ -32,20 +32,28 @@ typedef struct bf_context_t {
 	ut64 op_count;
 } BfContext;
 
-#define bf_il_ptr()      rz_il_op_new_var("ptr")
-#define bf_il_set_ptr(x) rz_il_op_new_set("ptr", x)
+#define bf_il_ptr()      rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL)
+#define bf_il_set_ptr(x) rz_il_op_new_set("ptr", false, x)
 #define bf_il_one(l)     rz_il_op_new_bitv_from_ut64(l, 1)
 
 static void bf_syscall_read(RzILVM *vm, RzILOpEffect *op) {
 	ut8 c = getc(stdin);
 	RzBitVector *bv = rz_bv_new_from_ut64(BF_BYTE_SIZE, c);
-	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
-	rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
+	RzILVal *ptr_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "ptr");
+	if (ptr_val->type == RZ_IL_TYPE_PURE_BITVECTOR) {
+		rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
+	} else {
+		rz_warn_if_reached();
+	}
 	rz_bv_free(bv);
 }
 
 static void bf_syscall_write(RzILVM *vm, RzILOpEffect *op) {
-	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
+	RzILVal *ptr_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "ptr");
+	if (ptr_val->type != RZ_IL_TYPE_PURE_BITVECTOR) {
+		rz_warn_if_reached();
+		return;
+	}
 	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	ut32 c = rz_bv_to_ut32(bv);
 	putchar(c);
@@ -148,7 +156,7 @@ RzILOpEffect *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	free(dst_lbl_name);
 	free(to_free);
 
-	RzILOpBitVector *var = rz_il_op_new_var("ptr");
+	RzILOpBitVector *var = rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL);
 	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
 
 	// goto ]
@@ -185,7 +193,7 @@ RzILOpEffect *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	rz_return_val_if_fail(dst_lbl_name, NULL);
 	dst_label = rz_il_vm_find_label_by_name(vm, dst_lbl_name);
 
-	RzILOpBitVector *var = rz_il_op_new_var("ptr");
+	RzILOpBitVector *var = rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL);
 	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
 
 	// goto [

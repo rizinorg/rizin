@@ -166,18 +166,10 @@ static bool test_il_vm_sync_to_reg() {
 	RzILRegBinding *rb = rz_il_reg_binding_exactly(reg, RZ_ARRAY_SIZE(bind), bind);
 	rz_il_vm_setup_reg_binding(vm, rb);
 
-	RzILVar *var = rz_il_find_var_by_name(vm, "r0");
-	mu_assert_notnull(var, "var");
-	rz_il_hash_bind(vm, var, rz_il_vm_fortify_bitv(vm, rz_bv_new_from_ut64(64, 0x8247abc)));
-	var = rz_il_find_var_by_name(vm, "r1");
-	mu_assert_notnull(var, "var");
-	rz_il_hash_bind(vm, var, rz_il_vm_fortify_bitv(vm, rz_bv_new_from_ut64(32, 0xfed134)));
-	var = rz_il_find_var_by_name(vm, "af");
-	mu_assert_notnull(var, "var");
-	rz_il_hash_bind(vm, var, rz_il_vm_fortify_bool(vm, false));
-	var = rz_il_find_var_by_name(vm, "bf");
-	mu_assert_notnull(var, "var");
-	rz_il_hash_bind(vm, var, rz_il_vm_fortify_bool(vm, true));
+	rz_il_vm_set_global_var(vm, "r0", rz_il_value_new_bitv(rz_bv_new_from_ut64(64, 0x8247abc)));
+	rz_il_vm_set_global_var(vm, "r1", rz_il_value_new_bitv(rz_bv_new_from_ut64(32, 0xfed134)));
+	rz_il_vm_set_global_var(vm, "af", rz_il_value_new_bool(rz_il_bool_new(false)));
+	rz_il_vm_set_global_var(vm, "bf", rz_il_value_new_bool(rz_il_bool_new(true)));
 
 	rz_bv_set_from_ut64(vm->pc, 0x10001);
 
@@ -189,6 +181,39 @@ static bool test_il_vm_sync_to_reg() {
 	mu_assert_eq(rz_reg_getv(reg, "bf"), 1, "reg from vm");
 
 	rz_reg_free(reg);
+
+	// adjustments after profile change
+	const char *profile2 =
+		"=PC	pc\n"
+		"gpr	r1	.64	8	0\n"
+		"gpr	r0	.32	0	0\n"
+		"gpr	r3	.64	24	0\n"
+		"gpr	pc	.64	32	0\n"
+		"gpr	af	.8	40	0\n"
+		"gpr	bf	.1	41.0	0\n";
+	reg = rz_reg_new();
+	rz_reg_set_profile_string(reg, profile2);
+	rz_il_vm_sync_to_reg(vm, reg);
+	mu_assert_eq(rz_reg_getv(reg, "r0"), 0x8247abc, "reg from vm");
+	mu_assert_eq(rz_reg_getv(reg, "r1"), 0xfed134, "reg from vm");
+	mu_assert_eq(rz_reg_getv(reg, "pc"), 0x10001, "reg from vm");
+	mu_assert_eq(rz_reg_getv(reg, "af"), 0, "reg from vm");
+	mu_assert_eq(rz_reg_getv(reg, "bf"), 1, "reg from vm");
+	rz_reg_free(reg);
+
+	// even harder adjustments
+	const char *profile3 =
+		"=PC	pc\n"
+		"gpr	r1	.1	8	0\n"
+		"gpr	r42	.64	24	0\n"
+		"gpr	pc	.64	32	0\n";
+	reg = rz_reg_new();
+	rz_reg_set_profile_string(reg, profile3);
+	rz_il_vm_sync_to_reg(vm, reg);
+	mu_assert_eq(rz_reg_getv(reg, "r1"), 1, "reg from vm");
+	mu_assert_eq(rz_reg_getv(reg, "pc"), 0x10001, "reg from vm");
+	rz_reg_free(reg);
+
 	rz_il_vm_free(vm);
 	mu_end;
 }
@@ -218,30 +243,116 @@ static bool test_il_vm_sync_from_reg() {
 	rz_il_vm_setup_reg_binding(vm, rb);
 
 	rz_il_vm_sync_from_reg(vm, reg);
-	RzILVal *val = rz_il_hash_find_val_by_name(vm, "r0");
+	RzILVal *val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r0");
 	mu_assert_notnull(val, "val");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "val type");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
 	mu_assert_eq(rz_bv_len(val->data.bv), 64, "val len");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x1234, "val val");
-	val = rz_il_hash_find_val_by_name(vm, "r1");
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
 	mu_assert_notnull(val, "val");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "val type");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
 	mu_assert_eq(rz_bv_len(val->data.bv), 32, "val len");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x5678, "val val");
-	RzILVar *var = rz_il_find_var_by_name(vm, "r3");
+	RzILVar *var = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, "r3");
 	mu_assert_null(var, "unbound");
-	val = rz_il_hash_find_val_by_name(vm, "af");
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "af");
 	mu_assert_notnull(val, "val");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BOOL, "val type");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BOOL, "val type");
 	mu_assert_false(val->data.b->b, "val val");
-	val = rz_il_hash_find_val_by_name(vm, "bf");
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "bf");
 	mu_assert_notnull(val, "val");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BOOL, "val type");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BOOL, "val type");
 	mu_assert_true(val->data.b->b, "val val");
 
+	mu_assert_eq(rz_bv_len(vm->pc), 64, "pc len");
 	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x10001, "pc");
 
 	rz_reg_free(reg);
+
+	// adjustments after profile change
+	const char *profile2 =
+		"=PC	pc\n"
+		"gpr	r1	.64	8	0\n"
+		"gpr	r0	.32	0	0\n"
+		"gpr	r3	.64	24	0\n"
+		"gpr	pc	.64	32	0\n"
+		"gpr	af	.8	40	0\n"
+		"gpr	bf	.1	41.0	0\n";
+	reg = rz_reg_new();
+	rz_reg_set_profile_string(reg, profile2);
+	rz_reg_setv(reg, "r0", 0x5678);
+	rz_reg_setv(reg, "r1", 0x0123456789abcdef);
+	rz_reg_setv(reg, "r3", 1);
+	rz_reg_setv(reg, "pc", 0x10001);
+	rz_reg_setv(reg, "af", 42);
+	rz_reg_setv(reg, "bf", 0);
+
+	rz_il_vm_sync_from_reg(vm, reg);
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r0");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
+	mu_assert_eq(rz_bv_len(val->data.bv), 64, "val len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x5678, "val val");
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
+	mu_assert_eq(rz_bv_len(val->data.bv), 32, "val len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x89abcdef, "val val");
+	var = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, "r3");
+	mu_assert_null(var, "unbound");
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "af");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BOOL, "val type");
+	mu_assert_true(val->data.b->b, "val val");
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "bf");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BOOL, "val type");
+	mu_assert_false(val->data.b->b, "val val");
+
+	mu_assert_eq(rz_bv_len(vm->pc), 64, "pc len");
+	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x10001, "pc");
+
+	rz_reg_free(reg);
+
+	// even harder adjustments
+	const char *profile3 =
+		"=PC	pc\n"
+		"gpr	r1	.1	8	0\n"
+		"gpr	r42	.64	24	0\n"
+		"gpr	pc	.64	32	0\n";
+	reg = rz_reg_new();
+	rz_reg_set_profile_string(reg, profile3);
+	rz_reg_setv(reg, "r1", 1);
+	rz_reg_setv(reg, "r32", 0x0123456789abcdef);
+	rz_reg_setv(reg, "pc", 0x10002);
+
+	rz_il_vm_sync_from_reg(vm, reg);
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r0");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
+	mu_assert_eq(rz_bv_len(val->data.bv), 64, "val len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0, "val val");
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
+	mu_assert_eq(rz_bv_len(val->data.bv), 32, "val len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 1, "val val");
+	var = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, "r3");
+	mu_assert_null(var, "unbound");
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "af");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BOOL, "val type");
+	mu_assert_false(val->data.b->b, "val val");
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "bf");
+	mu_assert_notnull(val, "val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BOOL, "val type");
+	mu_assert_false(val->data.b->b, "val val");
+
+	mu_assert_eq(rz_bv_len(vm->pc), 64, "pc len");
+	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x10002, "pc");
+
+	rz_reg_free(reg);
+
 	rz_il_vm_free(vm);
 	mu_end;
 }

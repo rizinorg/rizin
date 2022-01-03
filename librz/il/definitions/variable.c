@@ -8,23 +8,20 @@
 #include <stdlib.h>
 
 /**
- * New a variable with RzILVarType
- * \param name string, name of variable
- * \return var RzILVar, pointer to this variable
+ * Create a new variable description
  */
-RZ_API RZ_OWN RzILVar *rz_il_variable_new(RZ_NONNULL const char *name, RzILVarType type, bool is_mutable) {
+RZ_API RZ_OWN RzILVar *rz_il_variable_new(RZ_NONNULL const char *name, RzILSortPure sort) {
 	rz_return_val_if_fail(name, NULL);
 	RzILVar *ret = RZ_NEW0(RzILVar);
 	if (!ret) {
 		return NULL;
 	}
-	ret->var_name = strdup(name);
-	if (!ret->var_name) {
+	ret->name = strdup(name);
+	if (!ret->name) {
 		free(ret);
 		return NULL;
 	}
-	ret->is_mutable = is_mutable;
-	ret->type = type;
+	ret->sort = sort;
 	return ret;
 }
 
@@ -36,6 +33,118 @@ RZ_API void rz_il_variable_free(RZ_NULLABLE RzILVar *var) {
 	if (!var) {
 		return;
 	}
-	free(var->var_name);
+	free(var->name);
 	free(var);
+}
+
+// Variable Set
+
+static void var_ht_free(HtPPKv *kv) {
+	free(kv->key);
+	rz_il_variable_free(kv->value);
+}
+
+static void val_ht_free(HtPPKv *kv) {
+	free(kv->key);
+	rz_il_value_free(kv->value);
+}
+
+RZ_API bool rz_il_var_set_init(RzILVarSet *vs) {
+	rz_return_val_if_fail(vs, false);
+	memset(vs, 0, sizeof(*vs));
+	vs->vars = ht_pp_new(NULL, var_ht_free, NULL);
+	if (!vs->vars) {
+		return false;
+	}
+	vs->contents = ht_pp_new(NULL, val_ht_free, NULL);
+	if (!vs->contents) {
+		ht_pp_free(vs->vars);
+		vs->vars = NULL;
+		return false;
+	}
+	return true;
+}
+
+RZ_API void rz_il_var_set_fini(RzILVarSet *vs) {
+	ht_pp_free(vs->vars);
+	ht_pp_free(vs->contents);
+}
+
+RZ_API void rz_il_var_set_reset(RzILVarSet *vs) {
+	rz_il_var_set_fini(vs);
+	rz_il_var_set_init(vs);
+}
+
+/**
+ * Create a new variable of the given name and sort.
+ * If a variable of this name already exists, nothing happens.
+ */
+RZ_API RZ_BORROW RzILVar *rz_il_var_set_create_var(RzILVarSet *vs, const char *name, RzILSortPure sort) {
+	rz_return_val_if_fail(vs && name, NULL);
+	if (ht_pp_find(vs->vars, name, NULL)) {
+		return NULL;
+	}
+	RzILVar *var = rz_il_variable_new(name, sort);
+	if (!var) {
+		return NULL;
+	}
+	ht_pp_insert(vs->vars, name, var);
+	return var;
+}
+
+/**
+ * Remove a variable, if it exists
+ * \return the variable's variable, to be freed by the caller
+ */
+RZ_API RZ_OWN RZ_NULLABLE RzILVal *rz_il_var_set_remove_var(RzILVarSet *vs, const char *name) {
+	rz_return_val_if_fail(vs && name, NULL);
+	ht_pp_delete(vs->vars, name);
+	HtPPKv *kv = ht_pp_find_kv(vs->contents, name, NULL);
+	if (!kv) {
+		return NULL;
+	}
+	RzILVal *r = kv->value;
+	kv->value = NULL;
+	ht_pp_delete(vs->contents, name);
+	return r;
+}
+
+RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal *val) {
+	rz_return_val_if_fail(vs && name && val, NULL);
+	RzILVar *var = ht_pp_find(vs->vars, name, NULL);
+	if (!var || !rz_il_sort_pure_eq(var->sort, rz_il_value_get_sort(val))) {
+		if (!var) {
+			RZ_LOG_ERROR("Attempted to bind value to non-existent variable \"%s\"\n", name);
+		} else {
+			RZ_LOG_ERROR("Attempted to bind mis-sorted value to variable \"%s\"\n", name);
+		}
+		rz_il_value_free(val);
+		return false;
+	}
+	ht_pp_update(vs->contents, name, val);
+	return true;
+}
+
+RZ_API RZ_BORROW RzILVar *rz_il_var_set_get(RzILVarSet *vs, const char *name) {
+	return ht_pp_find(vs->vars, name, NULL);
+}
+
+static bool vars_collect_cb(void *user, const void *k, const void *v) {
+	rz_pvector_push(user, (void *)v);
+	return true;
+}
+
+RZ_API RZ_OWN RzPVector /* <RzILVar> */ *rz_il_var_set_get_all(RzILVarSet *vs) {
+	rz_return_val_if_fail(vs, NULL);
+	RzPVector *r = rz_pvector_new(NULL);
+	if (!r) {
+		return NULL;
+	}
+	ht_pp_foreach(vs->vars, vars_collect_cb, r);
+	return r;
+}
+
+RZ_API RZ_BORROW RzILVal *rz_il_var_set_get_value(RzILVarSet *vs, const char *name) {
+	rz_return_val_if_fail(vs && name, NULL);
+	return ht_pp_find(vs->contents, name, NULL);
 }
