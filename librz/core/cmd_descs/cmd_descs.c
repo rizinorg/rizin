@@ -273,6 +273,7 @@ static const RzCmdDescArg eval_editor_args[2];
 static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
+static const RzCmdDescArg flag_describe_closest_args[2];
 static const RzCmdDescArg flag_tag_add_args[3];
 static const RzCmdDescArg flag_tag_search_args[2];
 static const RzCmdDescArg flag_zone_add_args[2];
@@ -6022,6 +6023,39 @@ static const RzCmdDescHelp eval_type_help = {
 static const RzCmdDescHelp cmd_flag_help = {
 	.summary = "Manage flags",
 };
+static const RzCmdDescHelp fd_help = {
+	.summary = "Describe flag",
+};
+static const RzCmdDescArg flag_describe_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_describe_help = {
+	.summary = "Describe flag + delta for the current offset",
+	.args = flag_describe_args,
+};
+
+static const RzCmdDescArg flag_describe_at_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_describe_at_help = {
+	.summary = "Describe flags for the current offset",
+	.args = flag_describe_at_args,
+};
+
+static const RzCmdDescArg flag_describe_closest_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_describe_closest_help = {
+	.summary = "Describe closest flag by string for the current offset",
+	.args = flag_describe_closest_args,
+};
+
 static const RzCmdDescHelp ft_help = {
 	.summary = "Flag tags",
 };
@@ -11231,6 +11265,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_flag_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "f", rz_cmd_flag, &cmd_flag_help);
 	rz_warn_if_fail(cmd_flag_cd);
+	RzCmdDesc *fd_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_flag_cd, "fd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_describe_handler, &flag_describe_help, &fd_help);
+	rz_warn_if_fail(fd_cd);
+	rz_cmd_desc_set_default_mode(fd_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *flag_describe_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, fd_cd, "fd.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_describe_at_handler, &flag_describe_at_help);
+	rz_warn_if_fail(flag_describe_at_cd);
+	rz_cmd_desc_set_default_mode(flag_describe_at_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_describe_closest_cd = rz_cmd_desc_argv_new(core->rcmd, fd_cd, "fdw", rz_flag_describe_closest_handler, &flag_describe_closest_help);
+	rz_warn_if_fail(flag_describe_closest_cd);
+
 	RzCmdDesc *ft_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "ft", rz_flag_tag_add_handler, &flag_tag_add_help, &ft_help);
 	rz_warn_if_fail(ft_cd);
 	RzCmdDesc *flag_tag_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ft_cd, "ftl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON, rz_flag_tag_list_handler, &flag_tag_list_help);

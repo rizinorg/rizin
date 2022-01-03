@@ -278,7 +278,7 @@ NAME=fd
 FILE=malloc://1024
 CMDS=<<EOF
 fe a
-fd 0x100
+fd @ 0x100
 EOF
 EXPECT=<<EOF
 a.0 + 256
@@ -292,7 +292,7 @@ wx 9090909090909090
 f flag1 @ 0x5
 f flag2 @ 0x5
 f flag3 @ 0x5
-fd. 0x5
+fd. @ 0x5
 EOF
 EXPECT=<<EOF
 flag1

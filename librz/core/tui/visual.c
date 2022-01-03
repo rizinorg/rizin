@@ -1365,8 +1365,12 @@ repeat:
 		int h, w = rz_cons_get_size(&h);
 		bool asm_bytes = rz_config_get_b(core->config, "asm.bytes");
 		rz_config_set_b(core->config, "asm.bytes", false);
-		rz_core_flag_describe(core, core->offset, false, RZ_OUTPUT_MODE_STANDARD);
-
+		RzCmdStateOutput state;
+		if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD)) {
+			return RZ_CMD_STATUS_INVALID;
+		}
+		rz_core_flag_describe(core, core->offset, false, &state);
+		rz_cmd_state_output_fini(&state);
 		int maxcount = 9;
 		int rows, cols = rz_cons_get_size(&rows);
 		count = 0;
