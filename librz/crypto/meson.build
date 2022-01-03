@@ -1,52 +1,16 @@
-crypto_plugins = [
-  'aes',
-  'aes_cbc',
-  'base64',
-  'base91',
-  'blowfish',
-  'cps2',
-  'des',
-  'punycode',
-  'rc2',
-  'rc4',
-  'rc6',
-  'rol',
-  'ror',
-  'rot',
-  'serpent',
-  'xor',
-]
-
-crypto_enabled_static_plugins = crypto_plugins
-
 rz_crypto_sources = [
   'des.c',
   'crypto.c',
-  'p/crypto_aes.c',
-  'p/crypto_aes_cbc.c',
-  'p/crypto_base64.c',
-  'p/crypto_base91.c',
-  'p/crypto_blowfish.c',
-  'p/crypto_cps2.c',
-  'p/crypto_des.c',
-  'p/crypto_punycode.c',
-  'p/crypto_rc2.c',
-  'p/crypto_rc4.c',
-  'p/crypto_rc6.c',
-  'p/crypto_rol.c',
-  'p/crypto_ror.c',
-  'p/crypto_rot.c',
-  'p/crypto_serpent.c',
-  'p/crypto_serpent_algo.c',
-  'p/crypto_xor.c',
 ]
 
-nettle_proj = subproject('nettle')
-aes_dep = nettle_proj.get_variable('aes_dep')
+rz_crypto_dependencies = [rz_util_dep]
+
+subdir('p')
 
 rz_crypto = library('rz_crypto', rz_crypto_sources,
   include_directories: [platform_inc],
-  dependencies: [rz_util_dep, aes_dep],
+  dependencies: rz_crypto_dependencies,
+  link_with: crypto_static_plugins,
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
@@ -58,8 +22,29 @@ rz_crypto = library('rz_crypto', rz_crypto_sources,
 )
 
 rz_crypto_dep = declare_dependency(link_with: rz_crypto,
-                                  include_directories: [platform_inc])
+  include_directories: [platform_inc],
+  dependencies: rz_crypto_dependencies,
+)
 meson.override_dependency('rz_crypto', rz_crypto_dep)
+
+foreach p : crypto_shared_plugins
+  side_plugin = configure_file(
+    input: '../shared_plugin.c.in',
+    output: 'shared_plugin_@0@.c'.format(p.name()),
+    configuration: {
+      'lib_type': 'RZ_LIB_TYPE_CRYPTO',
+      'plugin_type': 'RzCryptoPlugin',
+      'plugin_header': 'rz_crypto.h',
+      'plugin_name': 'rz_crypto_plugin_@0@'.format(p.name()),
+    },
+  )
+  shared_library('crypto_' + p.name(), [side_plugin],
+    link_whole: p,
+    dependencies: [rz_crypto_dep],
+    install: true,
+    install_dir: rizin_plugins,
+  )
+endforeach
 
 pkgconfig_mod.generate(rz_crypto,
   subdirs: 'librz',

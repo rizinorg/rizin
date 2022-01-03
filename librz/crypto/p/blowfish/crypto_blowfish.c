@@ -357,28 +357,3 @@ RzCryptoPlugin rz_crypto_plugin_blowfish = {
 	.init = blowfish_init,
 	.fini = blowfish_fini,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_CRYPTO,
-	.data = &rz_crypto_plugin_blowfish,
-	.version = RZ_VERSION
-};
-#endif
-
-#if 0
-int main() {
-	ut8 out[16];
-	struct blowfish_state st;
-
-	/* encrypt */
-	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_crypt (&st, (const ut8*)"helloworld123456", out, sizeof(out));
-
-	/* decrypt */
-	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_decrypt (&st, out, out, sizeof(out));
-
-	eprintf ("%s\n", (const char *)out); // must print "helloworld123456"
-}
-#endif

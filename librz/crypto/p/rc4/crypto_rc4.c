@@ -135,11 +135,3 @@ RzCryptoPlugin rz_crypto_plugin_rc4 = {
 	.init = rc4_init,
 	.fini = rc4_fini,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_CRYPTO,
-	.data = &rz_crypto_plugin_rc4,
-	.version = RZ_VERSION
-};
-#endif

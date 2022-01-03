@@ -99,11 +99,3 @@ RzCryptoPlugin rz_crypto_plugin_xor = {
 	.init = xor_init,
 	.fini = xor_fini,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_CRYPTO,
-	.data = &rz_crypto_plugin_xor,
-	.version = RZ_VERSION
-};
-#endif

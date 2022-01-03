@@ -2950,11 +2950,3 @@ RzCryptoPlugin rz_crypto_plugin_cps2 = {
 	.init = cps2_init,
 	.fini = cps2_fini,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_CRYPTO,
-	.data = &rz_crypto_plugin_rol,
-	.version = RZ_VERSION
-};
-#endif

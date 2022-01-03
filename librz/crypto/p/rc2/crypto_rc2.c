@@ -266,11 +266,3 @@ RzCryptoPlugin rz_crypto_plugin_rc2 = {
 	.init = rc2_init,
 	.fini = rc2_fini,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_CRYPTO,
-	.data = &rz_crypto_plugin_rc2,
-	.version = RZ_VERSION
-};
-#endif
