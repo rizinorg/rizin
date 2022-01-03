@@ -706,4 +706,29 @@ threads:
 EOF
 RUN
 
+NAME=fz
+FILE==
+CMDS=<<EOF
+fzl
+fzlj
+fz bla
+fzl
+fzlj
+fz.
+sd +5
+fz.
+fz- bla
+fzl
+fz bla
+fz-*
+fzl
+EOF
+EXPECT=<<EOF
+
+0x080  0x00000000  bla
+[{"name":"bla","from":0,"to":0}]
+bla ~
+bla ~
+EOF
+RUN
 

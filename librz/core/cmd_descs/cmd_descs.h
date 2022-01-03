@@ -452,6 +452,11 @@ RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_flag_tag_add_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_flag_tag_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_flag_tag_search_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_flag_zone_add_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_flag_zone_remove_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_flag_zone_remove_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_flag_zone_around_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_flag_zone_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI int rz_cmd_flag(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_egg_compile_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_egg_config_handler(RzCore *core, int argc, const char **argv);

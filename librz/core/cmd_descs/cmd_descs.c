@@ -290,6 +290,8 @@ static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg flag_tag_add_args[3];
 static const RzCmdDescArg flag_tag_search_args[2];
+static const RzCmdDescArg flag_zone_add_args[2];
+static const RzCmdDescArg flag_zone_remove_args[2];
 static const RzCmdDescArg egg_compile_args[2];
 static const RzCmdDescArg egg_config_args[2];
 static const RzCmdDescArg egg_syscall_args[3];
@@ -6387,6 +6389,61 @@ static const RzCmdDescHelp flag_tag_search_help = {
 	.args = flag_tag_search_args,
 };
 
+static const RzCmdDescHelp fz_help = {
+	.summary = "Flag zones",
+};
+static const RzCmdDescArg flag_zone_add_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_zone_add_help = {
+	.summary = "Add new flagzone with [name]",
+	.args = flag_zone_add_args,
+};
+
+static const RzCmdDescArg flag_zone_remove_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_zone_remove_help = {
+	.summary = "Remove the flag zone with [name]",
+	.args = flag_zone_remove_args,
+};
+
+static const RzCmdDescArg flag_zone_remove_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_zone_remove_all_help = {
+	.summary = "Remove all flagzones",
+	.args = flag_zone_remove_all_args,
+};
+
+static const RzCmdDescArg flag_zone_around_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_zone_around_help = {
+	.summary = "Show around flag zone context",
+	.args = flag_zone_around_args,
+};
+
+static const RzCmdDescArg flag_zone_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_zone_list_help = {
+	.summary = "List all flag zones",
+	.args = flag_zone_list_args,
+};
+
 static const RzCmdDescHelp g_help = {
 	.summary = "Generate shellcodes with rz_egg",
 };
@@ -11549,6 +11606,21 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *flag_tag_search_cd = rz_cmd_desc_argv_new(core->rcmd, ft_cd, "ftn", rz_flag_tag_search_handler, &flag_tag_search_help);
 	rz_warn_if_fail(flag_tag_search_cd);
+
+	RzCmdDesc *fz_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "fz", rz_flag_zone_add_handler, &flag_zone_add_help, &fz_help);
+	rz_warn_if_fail(fz_cd);
+	RzCmdDesc *flag_zone_remove_cd = rz_cmd_desc_argv_new(core->rcmd, fz_cd, "fz-", rz_flag_zone_remove_handler, &flag_zone_remove_help);
+	rz_warn_if_fail(flag_zone_remove_cd);
+
+	RzCmdDesc *flag_zone_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, fz_cd, "fz-*", rz_flag_zone_remove_all_handler, &flag_zone_remove_all_help);
+	rz_warn_if_fail(flag_zone_remove_all_cd);
+
+	RzCmdDesc *flag_zone_around_cd = rz_cmd_desc_argv_new(core->rcmd, fz_cd, "fz.", rz_flag_zone_around_handler, &flag_zone_around_help);
+	rz_warn_if_fail(flag_zone_around_cd);
+
+	RzCmdDesc *flag_zone_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, fz_cd, "fzl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_zone_list_handler, &flag_zone_list_help);
+	rz_warn_if_fail(flag_zone_list_cd);
+	rz_cmd_desc_set_default_mode(flag_zone_list_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *g_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "g", rz_egg_compile_handler, &egg_compile_help, &g_help);
 	rz_warn_if_fail(g_cd);
