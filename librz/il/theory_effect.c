@@ -12,7 +12,7 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 	RzBitVector *oldnum = NULL;
 	RzBitVector *newnum = NULL;
 
-	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
+	if (new_val->type == RZ_IL_VAR_TYPE_BOOL) {
 		newnum = rz_bv_new_from_ut64(1, new_val->data.b->b);
 	} else {
 		newnum = new_val->data.bv;
@@ -20,7 +20,7 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 
 	old_val = rz_il_hash_find_val_by_var(vm, var);
 	if (old_val) {
-		if (old_val->type == RZIL_VAR_TYPE_BOOL) {
+		if (old_val->type == RZ_IL_VAR_TYPE_BOOL) {
 			oldnum = rz_bv_new_from_ut64(1, old_val->data.b->b);
 		} else {
 			oldnum = old_val->data.bv;
@@ -28,10 +28,10 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 	}
 
 	evt = rz_il_event_var_write_new(var->var_name, oldnum, newnum);
-	if (old_val && old_val->type == RZIL_VAR_TYPE_BOOL) {
+	if (old_val && old_val->type == RZ_IL_VAR_TYPE_BOOL) {
 		rz_bv_free(oldnum);
 	}
-	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
+	if (new_val->type == RZ_IL_VAR_TYPE_BOOL) {
 		rz_bv_free(newnum);
 	}
 	return evt;
@@ -64,12 +64,12 @@ static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, bool is_m
 	}
 
 	// enforce var type to val except if var is unk, because unk type can be set to any type.
-	if (var && var->type == RZIL_VAR_TYPE_BV && val->type == RZIL_VAR_TYPE_BOOL) {
+	if (var && var->type == RZ_IL_VAR_TYPE_BV && val->type == RZ_IL_VAR_TYPE_BOOL) {
 		RzBitVector *bv = rz_bv_new_from_ut64(1, val->data.b->b);
 		RzILVal *cast = rz_il_value_new_bitv(bv);
 		rz_il_value_free(val);
 		val = cast;
-	} else if (var && var->type == RZIL_VAR_TYPE_BOOL && val->type == RZIL_VAR_TYPE_BV) {
+	} else if (var && var->type == RZ_IL_VAR_TYPE_BOOL && val->type == RZ_IL_VAR_TYPE_BV) {
 		RzILBool *b = rz_il_bool_new(!rz_bv_is_zero_vector(val->data.bv));
 		RzILVal *cast = rz_il_value_new_bool(b);
 		rz_il_value_free(val);

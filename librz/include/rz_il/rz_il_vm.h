@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RZIL_VM_H
-#define RZIL_VM_H
+#ifndef RZ_IL_VM_H
+#define RZ_IL_VM_H
 
 #include <rz_il/definitions/definitions.h>
 #include <rz_il/rz_il_opcodes.h>
@@ -137,4 +137,4 @@ RZ_API RZ_OWN void *rz_il_parse_op_root(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp
 }
 #endif
 
-#endif // RZIL_VM_H
+#endif // RZ_IL_VM_H

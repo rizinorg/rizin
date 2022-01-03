@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RZIL_VM_EVENTS_H
-#define RZIL_VM_EVENTS_H
+#ifndef RZ_IL_VM_EVENTS_H
+#define RZ_IL_VM_EVENTS_H
 
 #include <rz_il/definitions/definitions.h>
 
@@ -17,12 +17,12 @@ extern "C" {
  */
 
 typedef enum rz_il_event_id_t {
-	RZIL_EVENT_EXCEPTION = 0,
-	RZIL_EVENT_PC_WRITE,
-	RZIL_EVENT_MEM_READ,
-	RZIL_EVENT_VAR_READ,
-	RZIL_EVENT_MEM_WRITE,
-	RZIL_EVENT_VAR_WRITE,
+	RZ_IL_EVENT_EXCEPTION = 0,
+	RZ_IL_EVENT_PC_WRITE,
+	RZ_IL_EVENT_MEM_READ,
+	RZ_IL_EVENT_VAR_READ,
+	RZ_IL_EVENT_MEM_WRITE,
+	RZ_IL_EVENT_VAR_WRITE,
 } RzILEventId;
 
 typedef struct rz_il_vm_event_mem_read_t {
@@ -76,4 +76,4 @@ RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt);
 }
 #endif
 
-#endif // RZIL_VM_EVENTS_H
+#endif // RZ_IL_VM_EVENTS_H

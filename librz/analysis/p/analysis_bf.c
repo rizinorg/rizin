@@ -265,7 +265,6 @@ static bool bf_init_rzil(RzAnalysis *analysis) {
 	}
 	rz_il_vm_add_mem(rzil->vm, 0, mem);
 
-	// init bf RZIL user-defined context
 	rzil->user = bf_context_new();
 
 	// set ptr to BF_ADDR_MEM

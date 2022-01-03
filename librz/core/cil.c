@@ -458,14 +458,14 @@ RZ_IPI bool rz_core_analysis_rzil_vm_set(RzCore *core, const char *var_name, ut6
 			found = true;
 			oldval = rz_il_hash_find_val_by_var(rzil->vm, var);
 			switch (oldval->type) {
-			case RZIL_VAR_TYPE_BV:
+			case RZ_IL_VAR_TYPE_BV:
 				bv = rz_bv_new_from_ut64(oldval->data.bv->len, value);
 				newval = rz_il_vm_create_value_bitv(rzil->vm, bv);
 				break;
-			case RZIL_VAR_TYPE_BOOL:
+			case RZ_IL_VAR_TYPE_BOOL:
 				newval = rz_il_vm_create_value_bool(rzil->vm, value);
 				break;
-			case RZIL_VAR_TYPE_UNK:
+			case RZ_IL_VAR_TYPE_UNK:
 				RZ_LOG_ERROR("RzIL: cannot set an Unknown type via command line\n");
 				break;
 			default:
@@ -583,13 +583,13 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *var_name, 
 		p.name = var->var_name;
 		RzILVal *val = rz_il_hash_find_val_by_var(rzil->vm, var);
 		switch (val->type) {
-		case RZIL_VAR_TYPE_BV:
+		case RZ_IL_VAR_TYPE_BV:
 			rzil_print_register_bitv(val->data.bv, &p);
 			break;
-		case RZIL_VAR_TYPE_BOOL:
+		case RZ_IL_VAR_TYPE_BOOL:
 			rzil_print_register_bool(val->data.b->b, &p);
 			break;
-		case RZIL_VAR_TYPE_UNK:
+		case RZ_IL_VAR_TYPE_UNK:
 			rzil_print_register_unk(&p);
 			break;
 		default:
@@ -699,9 +699,9 @@ RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {
 		sb = rz_strbuf_new("");
 	}
 	rz_list_foreach (vm->events, it, evt) {
-		if (!evt_read && (evt->type == RZIL_EVENT_MEM_READ || evt->type == RZIL_EVENT_VAR_READ)) {
+		if (!evt_read && (evt->type == RZ_IL_EVENT_MEM_READ || evt->type == RZ_IL_EVENT_VAR_READ)) {
 			continue;
-		} else if (!evt_write && (evt->type != RZIL_EVENT_MEM_READ && evt->type != RZIL_EVENT_VAR_READ)) {
+		} else if (!evt_write && (evt->type != RZ_IL_EVENT_MEM_READ && evt->type != RZ_IL_EVENT_VAR_READ)) {
 			continue;
 		}
 		if (!pj) {

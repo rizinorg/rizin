@@ -220,23 +220,23 @@ static bool test_il_vm_sync_from_reg() {
 	rz_il_vm_sync_from_reg(vm, reg);
 	RzILVal *val = rz_il_hash_find_val_by_name(vm, "r0");
 	mu_assert_notnull(val, "val");
-	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "val type");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "val type");
 	mu_assert_eq(rz_bv_len(val->data.bv), 64, "val len");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x1234, "val val");
 	val = rz_il_hash_find_val_by_name(vm, "r1");
 	mu_assert_notnull(val, "val");
-	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "val type");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "val type");
 	mu_assert_eq(rz_bv_len(val->data.bv), 32, "val len");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x5678, "val val");
 	RzILVar *var = rz_il_find_var_by_name(vm, "r3");
 	mu_assert_null(var, "unbound");
 	val = rz_il_hash_find_val_by_name(vm, "af");
 	mu_assert_notnull(val, "val");
-	mu_assert_eq(val->type, RZIL_VAR_TYPE_BOOL, "val type");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BOOL, "val type");
 	mu_assert_false(val->data.b->b, "val val");
 	val = rz_il_hash_find_val_by_name(vm, "bf");
 	mu_assert_notnull(val, "val");
-	mu_assert_eq(val->type, RZIL_VAR_TYPE_BOOL, "val type");
+	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BOOL, "val type");
 	mu_assert_true(val->data.b->b, "val val");
 
 	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x10001, "pc");

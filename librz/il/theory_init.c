@@ -7,14 +7,14 @@
 static RzILEvent *il_event_new_read_from_name(RzILVM *vm, const char *name, RzILVal *value) {
 	rz_return_val_if_fail(vm && name, NULL);
 	RzBitVector *num = NULL;
-	if (value->type == RZIL_VAR_TYPE_BOOL) {
+	if (value->type == RZ_IL_VAR_TYPE_BOOL) {
 		num = rz_bv_new_from_ut64(1, value->data.b->b);
 	} else {
 		num = value->data.bv;
 	}
 
 	RzILEvent *evt = rz_il_event_var_read_new(name, num);
-	if (value->type == RZIL_VAR_TYPE_BOOL) {
+	if (value->type == RZ_IL_VAR_TYPE_BOOL) {
 		rz_bv_free(num);
 	}
 	return evt;
@@ -60,11 +60,11 @@ void *rz_il_handler_var(RzILVM *vm, RzILOpPure *op, RzILPureType *type) {
 
 	void *ret = NULL;
 	switch (val->type) {
-	case RZIL_VAR_TYPE_BOOL:
+	case RZ_IL_VAR_TYPE_BOOL:
 		*type = RZ_IL_PURE_TYPE_BOOL;
 		ret = rz_il_bool_new(val->data.b->b);
 		break;
-	case RZIL_VAR_TYPE_BV:
+	case RZ_IL_VAR_TYPE_BV:
 		*type = RZ_IL_PURE_TYPE_BITV;
 		ret = rz_bv_dup(val->data.bv);
 		break;

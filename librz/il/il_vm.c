@@ -10,8 +10,8 @@
 
 #include <rz_il/rz_il_vm.h>
 
-extern RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZIL_OP_PURE_MAX];
-extern RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZIL_OP_EFFECT_MAX];
+extern RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX];
+extern RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT_MAX];
 
 static void free_label_kv(HtPPKv *kv) {
 	free(kv->key);
@@ -104,10 +104,10 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
 	}
 
 	// init jump table of labels
-	vm->op_handler_pure_table = RZ_NEWS0(RzILOpPureHandler, RZIL_OP_PURE_MAX);
-	memcpy(vm->op_handler_pure_table, rz_il_op_handler_pure_table_default, sizeof(RzILOpPureHandler) * RZIL_OP_PURE_MAX);
-	vm->op_handler_effect_table = RZ_NEWS0(RzILOpEffectHandler, RZIL_OP_EFFECT_MAX);
-	memcpy(vm->op_handler_effect_table, rz_il_op_handler_effect_table_default, sizeof(RzILOpEffectHandler) * RZIL_OP_EFFECT_MAX);
+	vm->op_handler_pure_table = RZ_NEWS0(RzILOpPureHandler, RZ_IL_OP_PURE_MAX);
+	memcpy(vm->op_handler_pure_table, rz_il_op_handler_pure_table_default, sizeof(RzILOpPureHandler) * RZ_IL_OP_PURE_MAX);
+	vm->op_handler_effect_table = RZ_NEWS0(RzILOpEffectHandler, RZ_IL_OP_EFFECT_MAX);
+	memcpy(vm->op_handler_effect_table, rz_il_op_handler_effect_table_default, sizeof(RzILOpEffectHandler) * RZ_IL_OP_EFFECT_MAX);
 
 	vm->lab_count = 0;
 	vm->val_count = 0;
@@ -318,7 +318,7 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
 	if (!bv) {
 		return;
 	}
-	RzILVar *var = rz_il_vm_create_global_variable(vm, name, RZIL_VAR_TYPE_BV, true);
+	RzILVar *var = rz_il_vm_create_global_variable(vm, name, RZ_IL_VAR_TYPE_BV, true);
 	RzILVal *val = rz_il_vm_create_value_bitv(vm, bv);
 	rz_il_hash_bind(vm, var, val);
 }
@@ -331,7 +331,7 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
  */
 RZ_API void rz_il_vm_add_bit_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, bool value) {
 	rz_return_if_fail(vm && name);
-	RzILVar *var = rz_il_vm_create_global_variable(vm, name, RZIL_VAR_TYPE_BOOL, true);
+	RzILVar *var = rz_il_vm_create_global_variable(vm, name, RZ_IL_VAR_TYPE_BOOL, true);
 	RzILVal *val = rz_il_vm_create_value_bool(vm, value);
 	rz_il_hash_bind(vm, var, val);
 }

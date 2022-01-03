@@ -12,7 +12,7 @@
  */
 RZ_API RZ_OWN RzILVal *rz_il_value_new_bitv(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
-	RzILVal *ret = rz_il_value_new(RZIL_VAR_TYPE_BV);
+	RzILVal *ret = rz_il_value_new(RZ_IL_VAR_TYPE_BV);
 	if (!ret) {
 		return NULL;
 	}
@@ -27,7 +27,7 @@ RZ_API RZ_OWN RzILVal *rz_il_value_new_bitv(RZ_NONNULL RzBitVector *bv) {
  */
 RZ_API RZ_OWN RzILVal *rz_il_value_new_bool(RZ_NONNULL RzILBool *b) {
 	rz_return_val_if_fail(b, NULL);
-	RzILVal *ret = rz_il_value_new(RZIL_VAR_TYPE_BOOL);
+	RzILVal *ret = rz_il_value_new(RZ_IL_VAR_TYPE_BOOL);
 	if (!ret) {
 		return NULL;
 	}
@@ -61,13 +61,13 @@ RZ_API RZ_OWN RzILVal *rz_il_value_dup(RZ_NONNULL RzILVal *val) {
 	RzBitVector *bv = NULL;
 
 	switch (val->type) {
-	case RZIL_VAR_TYPE_BOOL:
+	case RZ_IL_VAR_TYPE_BOOL:
 		b = rz_il_bool_new(val->data.b->b);
 		return b ? rz_il_value_new_bool(b) : NULL;
-	case RZIL_VAR_TYPE_BV:
+	case RZ_IL_VAR_TYPE_BV:
 		bv = rz_bv_dup(val->data.bv);
 		return bv ? rz_il_value_new_bitv(bv) : NULL;
-	case RZIL_VAR_TYPE_UNK:
+	case RZ_IL_VAR_TYPE_UNK:
 		return rz_il_value_new_unk();
 	default:
 		rz_warn_if_reached();
@@ -85,13 +85,13 @@ RZ_API void rz_il_value_free(RZ_NULLABLE RzILVal *val) {
 	}
 
 	switch (val->type) {
-	case RZIL_VAR_TYPE_BOOL:
+	case RZ_IL_VAR_TYPE_BOOL:
 		rz_il_bool_free(val->data.b);
 		break;
-	case RZIL_VAR_TYPE_BV:
+	case RZ_IL_VAR_TYPE_BV:
 		rz_bv_free(val->data.bv);
 		break;
-	case RZIL_VAR_TYPE_UNK:
+	case RZ_IL_VAR_TYPE_UNK:
 	default:
 		break;
 	}

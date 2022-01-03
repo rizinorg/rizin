@@ -62,60 +62,60 @@ bool rz_il_handler_storew(RzILVM *vm, RzILOpEffect *op);
 void *rz_il_handler_pure_unimplemented(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
 bool rz_il_handler_effect_unimplemented(RzILVM *vm, RzILOpEffect *op);
 
-RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZIL_OP_PURE_MAX] = {
-	[RZIL_OP_VAR] = rz_il_handler_var,
-	[RZIL_OP_UNK] = rz_il_handler_unk,
-	[RZIL_OP_ITE] = rz_il_handler_ite,
-	[RZIL_OP_B0] = rz_il_handler_bool_false,
-	[RZIL_OP_B1] = rz_il_handler_bool_true,
-	[RZIL_OP_INV] = rz_il_handler_bool_inv,
-	[RZIL_OP_AND] = rz_il_handler_bool_and,
-	[RZIL_OP_OR] = rz_il_handler_bool_or,
-	[RZIL_OP_XOR] = rz_il_handler_bool_xor,
-	[RZIL_OP_BITV] = rz_il_handler_bitv,
-	[RZIL_OP_MSB] = rz_il_handler_msb,
-	[RZIL_OP_LSB] = rz_il_handler_lsb,
-	[RZIL_OP_IS_ZERO] = rz_il_handler_is_zero,
-	[RZIL_OP_NEG] = rz_il_handler_neg,
-	[RZIL_OP_LOGNOT] = rz_il_handler_logical_not,
-	[RZIL_OP_ADD] = rz_il_handler_add,
-	[RZIL_OP_SUB] = rz_il_handler_sub,
-	[RZIL_OP_MUL] = rz_il_handler_mul,
-	[RZIL_OP_DIV] = rz_il_handler_div,
-	[RZIL_OP_MOD] = rz_il_handler_mod,
-	[RZIL_OP_SDIV] = rz_il_handler_sdiv,
-	[RZIL_OP_SMOD] = rz_il_handler_smod,
-	[RZIL_OP_LOGAND] = rz_il_handler_logical_and,
-	[RZIL_OP_LOGOR] = rz_il_handler_logical_or,
-	[RZIL_OP_LOGXOR] = rz_il_handler_logical_xor,
-	[RZIL_OP_SHIFTR] = rz_il_handler_shiftr,
-	[RZIL_OP_SHIFTL] = rz_il_handler_shiftl,
-	[RZIL_OP_EQ] = rz_il_handler_eq,
-	[RZIL_OP_SLE] = rz_il_handler_sle,
-	[RZIL_OP_ULE] = rz_il_handler_ule,
-	[RZIL_OP_CAST] = rz_il_handler_cast,
-	[RZIL_OP_CONCAT] = rz_il_handler_pure_unimplemented,
-	[RZIL_OP_APPEND] = rz_il_handler_append,
-	[RZIL_OP_LOAD] = rz_il_handler_load,
-	[RZIL_OP_LOADW] = rz_il_handler_loadw,
+RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] = {
+	[RZ_IL_OP_VAR] = rz_il_handler_var,
+	[RZ_IL_OP_UNK] = rz_il_handler_unk,
+	[RZ_IL_OP_ITE] = rz_il_handler_ite,
+	[RZ_IL_OP_B0] = rz_il_handler_bool_false,
+	[RZ_IL_OP_B1] = rz_il_handler_bool_true,
+	[RZ_IL_OP_INV] = rz_il_handler_bool_inv,
+	[RZ_IL_OP_AND] = rz_il_handler_bool_and,
+	[RZ_IL_OP_OR] = rz_il_handler_bool_or,
+	[RZ_IL_OP_XOR] = rz_il_handler_bool_xor,
+	[RZ_IL_OP_BITV] = rz_il_handler_bitv,
+	[RZ_IL_OP_MSB] = rz_il_handler_msb,
+	[RZ_IL_OP_LSB] = rz_il_handler_lsb,
+	[RZ_IL_OP_IS_ZERO] = rz_il_handler_is_zero,
+	[RZ_IL_OP_NEG] = rz_il_handler_neg,
+	[RZ_IL_OP_LOGNOT] = rz_il_handler_logical_not,
+	[RZ_IL_OP_ADD] = rz_il_handler_add,
+	[RZ_IL_OP_SUB] = rz_il_handler_sub,
+	[RZ_IL_OP_MUL] = rz_il_handler_mul,
+	[RZ_IL_OP_DIV] = rz_il_handler_div,
+	[RZ_IL_OP_MOD] = rz_il_handler_mod,
+	[RZ_IL_OP_SDIV] = rz_il_handler_sdiv,
+	[RZ_IL_OP_SMOD] = rz_il_handler_smod,
+	[RZ_IL_OP_LOGAND] = rz_il_handler_logical_and,
+	[RZ_IL_OP_LOGOR] = rz_il_handler_logical_or,
+	[RZ_IL_OP_LOGXOR] = rz_il_handler_logical_xor,
+	[RZ_IL_OP_SHIFTR] = rz_il_handler_shiftr,
+	[RZ_IL_OP_SHIFTL] = rz_il_handler_shiftl,
+	[RZ_IL_OP_EQ] = rz_il_handler_eq,
+	[RZ_IL_OP_SLE] = rz_il_handler_sle,
+	[RZ_IL_OP_ULE] = rz_il_handler_ule,
+	[RZ_IL_OP_CAST] = rz_il_handler_cast,
+	[RZ_IL_OP_CONCAT] = rz_il_handler_pure_unimplemented,
+	[RZ_IL_OP_APPEND] = rz_il_handler_append,
+	[RZ_IL_OP_LOAD] = rz_il_handler_load,
+	[RZ_IL_OP_LOADW] = rz_il_handler_loadw,
 };
 
-RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZIL_OP_EFFECT_MAX] = {
-	[RZIL_OP_STORE] = rz_il_handler_store,
-	[RZIL_OP_STOREW] = rz_il_handler_storew,
-	[RZIL_OP_NOP] = rz_il_handler_nop,
-	[RZIL_OP_SET] = rz_il_handler_set,
-	[RZIL_OP_LET] = rz_il_handler_let,
-	[RZIL_OP_JMP] = rz_il_handler_jmp,
-	[RZIL_OP_GOTO] = rz_il_handler_goto,
-	[RZIL_OP_SEQ] = rz_il_handler_seq,
-	[RZIL_OP_BLK] = rz_il_handler_effect_unimplemented, // &rz_il_handler_blk,
-	[RZIL_OP_REPEAT] = rz_il_handler_effect_unimplemented, // &rz_il_handler_repeat,
-	[RZIL_OP_BRANCH] = rz_il_handler_branch,
+RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT_MAX] = {
+	[RZ_IL_OP_STORE] = rz_il_handler_store,
+	[RZ_IL_OP_STOREW] = rz_il_handler_storew,
+	[RZ_IL_OP_NOP] = rz_il_handler_nop,
+	[RZ_IL_OP_SET] = rz_il_handler_set,
+	[RZ_IL_OP_LET] = rz_il_handler_let,
+	[RZ_IL_OP_JMP] = rz_il_handler_jmp,
+	[RZ_IL_OP_GOTO] = rz_il_handler_goto,
+	[RZ_IL_OP_SEQ] = rz_il_handler_seq,
+	[RZ_IL_OP_BLK] = rz_il_handler_effect_unimplemented, // &rz_il_handler_blk,
+	[RZ_IL_OP_REPEAT] = rz_il_handler_effect_unimplemented, // &rz_il_handler_repeat,
+	[RZ_IL_OP_BRANCH] = rz_il_handler_branch,
 };
 
 /**
- * Load data from memory by given key and generates an RZIL_EVENT_MEM_READ event
+ * Load data from memory by given key and generates an RZ_IL_EVENT_MEM_READ event
  * \param  vm     RzILVM, pointer to VM
  * \param  key    RzBitVector, aka address, a key to load data from memory
  * \return val    Bitvector, data at the address, has `vm->min_unit_size` length
@@ -135,7 +135,7 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVecto
 /**
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed; also generates
- * an RZIL_EVENT_MEM_WRITE event
+ * an RZ_IL_EVENT_MEM_WRITE event
  * \param  vm    RzILVM* pointer to VM
  * \param  key   RzBitVector, aka address, a key to store data from memory
  * \param  value RzBitVector, aka value to store in memory
@@ -154,7 +154,7 @@ RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzILMemIndex index, RzBitVector *key,
 }
 
 /**
- * Load data from memory by given key and generates an RZIL_EVENT_MEM_READ event
+ * Load data from memory by given key and generates an RZ_IL_EVENT_MEM_READ event
  * \param  vm     RzILVM, pointer to VM
  * \param  key    RzBitVector, aka address, a key to load data from memory
  * \return val    Bitvector, data at the address, has `vm->min_unit_size` length
@@ -174,7 +174,7 @@ RZ_API RzBitVector *rz_il_vm_mem_loadw(RzILVM *vm, RzILMemIndex index, RzBitVect
 /**
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed; also generates
- * an RZIL_EVENT_MEM_WRITE event
+ * an RZ_IL_EVENT_MEM_WRITE event
  * \param  vm    RzILVM* pointer to VM
  * \param  key   RzBitVector, aka address, a key to store data from memory
  * \param  value RzBitVector, aka value to store in memory

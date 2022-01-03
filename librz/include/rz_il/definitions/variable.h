@@ -14,9 +14,9 @@ extern "C" {
 #endif
 
 typedef enum {
-	RZIL_VAR_TYPE_BV,
-	RZIL_VAR_TYPE_BOOL,
-	RZIL_VAR_TYPE_UNK, // Unkown value
+	RZ_IL_VAR_TYPE_BV,
+	RZ_IL_VAR_TYPE_BOOL,
+	RZ_IL_VAR_TYPE_UNK, // Unkown value
 } RzILVarType;
 
 /**

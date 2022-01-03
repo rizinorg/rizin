@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RZIL_REG_H
-#define RZIL_REG_H
+#ifndef RZ_IL_REG_H
+#define RZ_IL_REG_H
 
 #include <rz_reg.h>
 
