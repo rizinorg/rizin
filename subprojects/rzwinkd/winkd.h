@@ -122,6 +122,7 @@ static inline ut64 winkd_read_ptr_at(WindCtx *ctx, WindReadAt *read_at_func, ut6
 
 static inline void winkd_ctx_fini(WindCtx *ctx) {
 	free(ctx->user);
+	free(ctx->profile);
 }
 
 // grep -e "^winkd_" subprojects/rzwinkd/winkd.c | sed -e 's/ {$/;/' -e 's/^/int /'

@@ -73,7 +73,12 @@ Profile *winkd_get_profile(int bits, int build, int sp) {
 		if (p_table[i]->bits != bits) {
 			continue;
 		}
-		return p_table[i];
+		Profile *p = RZ_NEW0(Profile);
+		if (!p) {
+			return NULL;
+		}
+		*p = *p_table[i];
+		return p;
 	}
 	return NULL;
 }
@@ -143,6 +148,7 @@ void winkd_kdctx_free(KdCtx **ctx) {
 	desc->iob->close(desc->fp);
 	RZ_FREE(desc);
 	rz_th_lock_free((*ctx)->dontmix);
+	winkd_ctx_fini(&(*ctx)->windctx);
 	RZ_FREE(*ctx);
 }
 

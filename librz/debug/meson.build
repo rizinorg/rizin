@@ -65,7 +65,8 @@ rz_debug_deps = [
   rz_bp_dep,
   rz_syscall_dep,
   rz_egg_dep,
-  rz_analysis_dep
+  rz_analysis_dep,
+  rz_type_dep
 ]
 
 if get_option('use_gpl')

@@ -8,6 +8,48 @@
 #include <pe_specs.h>
 #include <winkd.h>
 
+// rz_type_db_struct_member_offset() does packed offsets only, we want aligned
+static int struct_offset(RzTypeDB *db, const char *struct_name, const char *member_name) {
+	RzBaseType *s = rz_type_db_get_struct(db, struct_name);
+	if (!s) {
+		eprintf("%s not found\n", struct_name);
+		return 0;
+	}
+	RzTypeStructMember *member;
+	rz_vector_foreach(&s->struct_data.members, member) {
+		if (!strcmp(member->name, member_name)) {
+			return member->offset;
+		}
+	}
+	eprintf("Offset of %s.%s not found\n", struct_name, member_name);
+	return 0;
+}
+
+// TODO: Move this so debug_winkd.c can use it too
+static void winkd_build_profile(WindCtx *ctx, RzTypeDB *db) {
+	ctx->profile = RZ_NEW0(Profile);
+	if (!ctx->profile) {
+		return;
+	}
+#define O_(n) ctx->profile->f[n]
+	O_(E_ActiveProcessLinks) = struct_offset(db, "_EPROCESS", "ActiveProcessLinks");
+	O_(E_UniqueProcessId) = struct_offset(db, "_EPROCESS", "UniqueProcessId");
+	O_(E_Peb) = struct_offset(db, "_EPROCESS", "Peb");
+	O_(E_ImageFileName) = struct_offset(db, "_EPROCESS", "ImageFileName");
+	O_(E_VadRoot) = struct_offset(db, "_EPROCESS", "VadRoot");
+	O_(E_ThreadListHead) = struct_offset(db, "_EPROCESS", "ThreadListHead");
+	O_(K_DirectoryTableBase) = struct_offset(db, "_KPROCESS", "DirectoryTableBase");
+	O_(P_ImageBaseAddress) = struct_offset(db, "_PEB", "ImageBaseAddress");
+	O_(P_ProcessParameters) = struct_offset(db, "_PEB", "ProcessParameters");
+	O_(RZ_ImagePathName) = struct_offset(db, "_RTL_USER_PROCESS_PARAMETERS", "ImagePathName");
+	O_(ET_Tcb) = struct_offset(db, "_ETHREAD", "Tcb");
+	O_(ET_ThreadListEntry) = struct_offset(db, "_ETHREAD", "ThreadListEntry");
+	O_(ET_Win32StartAddress) = struct_offset(db, "_ETHREAD", "Win32StartAddress");
+	O_(ET_Cid) = struct_offset(db, "_ETHREAD", "Cid");
+	O_(C_UniqueThread) = struct_offset(db, "_CLIENT_ID", "UniqueThread");
+#undef O_
+}
+
 static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	RzCore *core = dbg->corebind.core;
 	RzIODesc *desc = core->io->desc;
@@ -127,6 +169,9 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 			dbg->corebind.cmdf(dbg->corebind.core, "idp %s", pdbpath);
 			free(exepath);
 			free(pdbpath);
+			if (!ctx->windctx.profile) {
+				winkd_build_profile(&ctx->windctx, dbg->analysis->typedb);
+			}
 		}
 	}
 
