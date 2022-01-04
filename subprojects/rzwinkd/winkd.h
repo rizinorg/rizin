@@ -45,7 +45,7 @@ enum {
 	E_ImageFileName, // EPROCESS
 	E_VadRoot, // EPROCESS
 	E_ThreadListHead, // EPROCESS
-	P_DirectoryTableBase, // PCB
+	K_DirectoryTableBase, // KPROCESS
 	P_ImageBaseAddress, // PEB
 	P_ProcessParameters, // PEB
 	RZ_ImagePathName, // RTL_USER_PROCESS_PARAMETERS
@@ -108,6 +108,9 @@ typedef struct _DmpCtx {
 	ut64 target; // TARGET_BACKEND, TARGET_PHYSICAL, or DirectoryTable
 	ut64 kernelDirectoryTable;
 	RzIODesc *backend;
+	RzVector /*<ut64>*/ KiProcessorBlock;
+	ut32 kprcb_context_offset; // nt!_KPRCB ProcessorState.ContextFrame
+	ut32 kthread_switch_frame_offset; // nt!_KTHREAD SwitchFrame.Fp
 	ut8 *context;
 	size_t context_sz;
 } DmpCtx;

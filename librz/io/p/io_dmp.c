@@ -49,6 +49,7 @@ static RzIODesc *dmp_open(RzIO *io, const char *file, int rw, int mode) {
 	if (!ctx) {
 		return NULL;
 	}
+	rz_vector_init(&ctx->KiProcessorBlock, sizeof(ut64), NULL, NULL);
 	ctx->backend = p->open(io, file + 6, rw, mode);
 	if (!ctx->backend) {
 		free(ctx);
@@ -153,6 +154,7 @@ static int dmp_close(RzIODesc *fd) {
 	DmpCtx *ctx = fd->data;
 	rz_io_desc_close(ctx->backend);
 	winkd_ctx_fini(&ctx->windctx);
+	rz_vector_fini(&ctx->KiProcessorBlock);
 	free(ctx->context);
 	RZ_FREE(fd->data);
 	return true;
