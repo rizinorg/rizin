@@ -656,18 +656,17 @@ WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address) {
 		eprintf("Failed to read UniqueThread at: 0x%" PFMT64x "\n", address + O_(ET_Cid) + O_(C_UniqueThread));
 		return NULL;
 	}
-	if (uniqueid) {
-		WindThread *thread = calloc(1, sizeof(WindThread));
-		if (!thread) {
-			return NULL;
-		}
-		thread->uniqueid = uniqueid;
-		thread->status = 's';
-		thread->runnable = true;
-		thread->ethread = address;
-		thread->entrypoint = entrypoint;
-		return thread;
+	WindThread *thread = calloc(1, sizeof(WindThread));
+	if (!thread) {
+		return NULL;
 	}
+	thread->uniqueid = uniqueid;
+	thread->status = 's';
+	thread->runnable = true;
+	thread->ethread = address;
+	thread->entrypoint = entrypoint;
+	return thread;
+
 	return NULL;
 }
 

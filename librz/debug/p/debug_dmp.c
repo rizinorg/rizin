@@ -297,9 +297,8 @@ static int rz_debug_dmp_select(RzDebug *dbg, int pid, int tid) {
 		dbg->tid = ctx->windctx.target_thread.uniqueid;
 		return ctx->windctx.target_thread.uniqueid;
 	}
-	if (pid == 0) {
-		ctx->target = TARGET_PHYSICAL;
-	} else if (winkd_set_target(&ctx->windctx, pid, tid)) {
+	
+	if (winkd_set_target(&ctx->windctx, pid, tid)) {
 		ctx->target = TARGET_VIRTUAL;
 	}
 	dbg->pid = ctx->windctx.target.uniqueid;
