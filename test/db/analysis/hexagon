@@ -355,27 +355,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=hexagon string search
-FILE==
-CMDS=<<EOF
-e asm.sub.varmin=0
-e asm.arch=hexagon
-e analysis.arch=hexagon
-e analysis.strings=true
-wx 81c100781cc0513c00c09f5257686572652069732057616c6c793f0054686572652069732057616c6c792100
-aar
-pd 2
-fs strings
-f
-EOF
-EXPECT=<<EOF
-            0x00000000      ?       R1 = ##0xc                         ; "Where is Wally?"
-            0x00000004      [   memw(R17+#0x0) = ##0x1c                ; "There is Wally!"
-0x0000000c 1 str.Where_is_Wally
-0x0000001c 1 str.There_is_Wally
-EOF
-RUN
-
 NAME=hexagon analysis.jmp.after endloop
 FILE==
 CMDS=<<EOF
@@ -896,10 +875,10 @@ EOF
 EXPECT=<<EOF
 / sym.sys_deinit_tls ();
 |           0x00005344      ?       R2 = UGP
-|           0x00005348      /       immext(##0x1100)
-|           0x0000534c      |       R3 = memw(GP+##0x1110)
-|           0x00005350      |       immext(##0x1100)
-|           0x00005354      \       R4 = memw(GP+##0x1108)
+|           0x00005348      /       immext(##0x1100)                   ; loc.CoreDump
+|           0x0000534c      |       R3 = memw(GP+##0x1110)             ; loc._TLSEnd
+|           0x00005350      |       immext(##0x1100)                   ; loc.CoreDump
+|           0x00005354      \       R4 = memw(GP+##0x1108)             ; loc._TLSStart
 |           0x00005358      [   R2 = sub(R2,R3)
 |       ,=< 0x0000535c      /       jump sym.free
 |       |   0x00005360      \       R0 = add(R2,R4)
