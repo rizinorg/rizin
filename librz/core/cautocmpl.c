@@ -36,6 +36,7 @@ struct autocmplt_data_t {
 	RzLineNSCompletionResult *res; ///< Result returned to RzCons API to provide possible suggestions
 	const RzCmdDesc *cd; ///< Used if type is \p AUTOCMPLT_CMD_ARG to describe the related command
 	size_t i_arg; ///< Used if type is \p AUTOCMPLT_CMD_ARG to describe the argument that will be autocompleted
+	RzCmdEscape quoting; ///< The type of escaping that shall be used to unescape the argument
 };
 
 /**
@@ -673,11 +674,25 @@ static size_t get_arg_number(TSNode arg) {
  * Fill \p res with all the available options for the argument i_arg-th of the
  * command \p cd . This is based on the type of argument a command may accept.
  */
-static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const RzCmdDesc *cd, size_t i_arg, const char *s, size_t len) {
+static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const RzCmdDesc *cd, size_t i_arg, const char *s, size_t len, RzCmdEscape quoting) {
 	const RzCmdDescArg *arg = rz_cmd_desc_get_arg(core->rcmd, cd, i_arg);
 	if (!arg) {
 		return;
 	}
+
+	char *tmp = rz_str_ndup(s, len);
+	if (!tmp) {
+		return;
+	}
+	eprintf("tmp = '%s' len = %d\n", tmp, len);
+	char *unescaped = rz_cmd_unescape_arg(tmp, quoting);
+	free(tmp);
+	if (!unescaped) {
+		return;
+	}
+	len = strlen(unescaped);
+	s = unescaped;
+	eprintf("unescaped = '%s', len = %d\n", unescaped, len);
 
 	RzCmdArgType arg_type = arg->type;
 	switch (arg_type) {
@@ -741,6 +756,8 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 	default:
 		break;
 	}
+
+	free(unescaped);
 }
 
 static bool fill_autocmplt_data(struct autocmplt_data_t *ad, enum autocmplt_type_t type, ut32 start, ut32 end) {
@@ -769,7 +786,15 @@ static bool fill_autocmplt_data_cmdarg(struct autocmplt_data_t *ad, ut32 start, 
 		return false;
 	}
 
+	const char *node_type = ts_node_type(node);
 	ad->i_arg = get_arg_number(node);
+	ad->quoting = RZ_CMD_ESCAPE_ONE_ARG;
+	if (!strcmp(node_type, "single_quoted_arg")) {
+		ad->quoting = RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG;
+	}
+	if (!strcmp(node_type, "double_quoted_arg")) {
+		ad->quoting = RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG;
+	}
 
 	const RzCmdDescArg *arg = rz_cmd_desc_get_arg(core->rcmd, ad->cd, ad->i_arg);
 	if (!arg) {
@@ -1071,6 +1096,18 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 		return res;
 	}
 
+	bool remove_last_escape = false;
+	if (buf->data[buf->length - 1] == '\\' && buf->length < RZ_LINE_BUFSIZE - 1 && buf->length >= 0) {
+		buf->data[buf->length + 1] = buf->data[buf->length];
+		buf->data[buf->length] = '\\';
+		if (buf->index == buf->length) {
+			buf->index++;
+		}
+		buf->length++;
+		remove_last_escape = true;
+	}
+	eprintf("buf->data = '%s', buf->length = %d\n", buf->data, buf->length);
+
 	struct autocmplt_data_t ad = { 0 };
 	TSParser *parser = ts_parser_new();
 	ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
@@ -1099,7 +1136,7 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 			autocmplt_cmdidentifier(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		case AUTOCMPLT_CMD_ARG:
-			autocmplt_cmd_arg(core, ad.res, ad.cd, ad.i_arg, buf->data + ad.res->start, ad.res->end - ad.res->start);
+			autocmplt_cmd_arg(core, ad.res, ad.cd, ad.i_arg, buf->data + ad.res->start, ad.res->end - ad.res->start, ad.quoting);
 			break;
 		case AUTOCMPLT_AT_STMT:
 			autocmplt_at_stmt(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
@@ -1136,6 +1173,10 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 		}
 	}
 
+	if (remove_last_escape) {
+		buf->data[buf->length] = buf->data[buf->length + 1];
+		buf->length--;
+	}
 err:
 	ts_tree_delete(tree);
 	ts_parser_delete(parser);
