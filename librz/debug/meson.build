@@ -67,7 +67,8 @@ rz_debug_deps = [
   rz_bp_dep,
   rz_syscall_dep,
   rz_egg_dep,
-  rz_analysis_dep
+  rz_analysis_dep,
+  rz_type_dep
 ]
 
 if get_option('use_gpl')
@@ -157,7 +158,8 @@ pkgconfig_mod.generate(rz_debug,
     'rz_bin',
     'rz_bp',
     'rz_cons',
-    'rz_egg'
+    'rz_egg',
+    'rz_type'
   ],
   description: 'rizin foundation libraries',
   variables: [
@@ -170,7 +172,7 @@ if not is_static_libs_only
   conf = configuration_data()
   conf.set('RZ_VERSION', rizin_version)
   conf.set('RIZIN_MODULE', rz_debug.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_hash', 'rz_reg', 'rz_syscall', 'rz_analysis', 'rz_io', 'rz_bin', 'rz_bp', 'rz_cons', 'rz_egg']))
+  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_hash', 'rz_reg', 'rz_syscall', 'rz_analysis', 'rz_io', 'rz_bin', 'rz_bp', 'rz_cons', 'rz_egg', 'rz_type']))
   conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
   conf.set('INSTALL_INCDIR', rizin_incdir)
   conf.set('INSTALL_LIBDIR', rizin_libdir)

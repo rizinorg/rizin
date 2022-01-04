@@ -7,6 +7,7 @@
 #include <dmp64.h>
 #include <pe_specs.h>
 #include <winkd.h>
+#include "common_winkd.h"
 
 static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	RzCore *core = dbg->corebind.core;
@@ -122,6 +123,9 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 			dbg->corebind.cmdf(dbg->corebind.core, "idp %s", pdbpath);
 			free(exepath);
 			free(pdbpath);
+			if (!ctx->windctx.profile) {
+				winkd_build_profile(&ctx->windctx, dbg->analysis->typedb);
+			}
 		}
 	}
 
