@@ -77,14 +77,8 @@ static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg cmd_help_search_args[2];
 static const RzCmdDescArg push_escaped_args[2];
-static const RzCmdDescArg analysis_function_blocks_list_args[2];
 static const RzCmdDescArg analysis_function_blocks_add_args[7];
-static const RzCmdDescArg analysis_function_blocks_del_args[2];
-static const RzCmdDescArg analysis_function_blocks_del_all_args[2];
 static const RzCmdDescArg analysis_function_blocks_edge_args[3];
-static const RzCmdDescArg analysis_function_returns_args[2];
-static const RzCmdDescArg analysis_function_blocks_asciiart_args[2];
-static const RzCmdDescArg analysis_function_blocks_info_args[2];
 static const RzCmdDescArg analysis_function_blocks_color_args[3];
 static const RzCmdDescArg analysis_function_setbits_args[2];
 static const RzCmdDescArg analysis_function_signature_args[2];
@@ -1018,13 +1012,6 @@ static const RzCmdDescHelp afb_help = {
 	.summary = "Basic blocks commands",
 };
 static const RzCmdDescArg analysis_function_blocks_list_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_function_blocks_list_help = {
@@ -1076,13 +1063,6 @@ static const RzCmdDescHelp analysis_function_blocks_add_help = {
 };
 
 static const RzCmdDescArg analysis_function_blocks_del_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_function_blocks_del_help = {
@@ -1091,13 +1071,6 @@ static const RzCmdDescHelp analysis_function_blocks_del_help = {
 };
 
 static const RzCmdDescArg analysis_function_blocks_del_all_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_function_blocks_del_all_help = {
@@ -1125,13 +1098,6 @@ static const RzCmdDescHelp analysis_function_blocks_edge_help = {
 };
 
 static const RzCmdDescArg analysis_function_returns_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_function_returns_help = {
@@ -1140,13 +1106,6 @@ static const RzCmdDescHelp analysis_function_returns_help = {
 };
 
 static const RzCmdDescArg analysis_function_blocks_asciiart_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_function_blocks_asciiart_help = {
@@ -1155,13 +1114,6 @@ static const RzCmdDescHelp analysis_function_blocks_asciiart_help = {
 };
 
 static const RzCmdDescArg analysis_function_blocks_info_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_function_blocks_info_help = {

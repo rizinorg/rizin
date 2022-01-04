@@ -2452,7 +2452,7 @@ NAME=noreturn of reloc-functions
 FILE=bins/elf/ls
 CMDS=<<EOF
 aaa
-afbr 0x80b0
+afbr @ 0x80b0
 EOF
 EXPECT=<<EOF
 0x000081cb
@@ -3277,7 +3277,7 @@ f~case.
 C~Cd 4
 ahl
 axf @ 0x59d
-afb 0x59d
+afb @ 0x59d
 EOF
 EXPECT=<<EOF
 0x0000059d 1 switch.0x0000059d
