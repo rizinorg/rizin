@@ -177,49 +177,51 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		}
 	}
 
-	if (ctx->type == DMP_DUMPTYPE_TRIAGE) {
-		// Map EPROCESS into address space
-		RzIOMap *map = rz_io_map_new(core->io, desc->fd, RZ_PERM_R, ProcessOffset, 0, ThreadOffset - ProcessOffset);
-		map->name = strdup("kernel.target.eprocess");
-		WindProc *target = winkd_get_process_at(&ctx->windctx, 0);
-		RzList *l = winkd_list_process(&ctx->windctx);
-		RzListIter *it;
-		WindProc *p;
-		rz_list_foreach (l, it, p) {
-			if (p->uniqueid == target->uniqueid) {
-				rz_io_map_remap(core->io, map->id, p->eprocess);
-				rz_io_map_depriorize(core->io, map->id);
-				ctx->windctx.target = *p;
-				memcpy(ctx->windctx.target.name, target->name, sizeof(ctx->windctx.target.name));
-				break;
-			}
-		}
-		free(target);
-		rz_list_free(l);
+	ctx->kthread_process_offset = struct_offset(dbg->analysis->typedb, "_KTHREAD", "Process");
+	const ut64 state_offset = struct_offset(dbg->analysis->typedb, "_KPRCB", "ProcessorState");
+	ctx->kprcb_context_offset = state_offset + struct_offset(dbg->analysis->typedb, "_KPROCESSOR_STATE", "ContextFrame");
+	if (ctx->windctx.is_arm) {
+		const ut64 switch_frame_offset = struct_offset(dbg->analysis->typedb, "_KTHREAD", "SwitchFrame");
+		ctx->kthread_switch_frame_offset = switch_frame_offset + struct_offset(dbg->analysis->typedb, "_KSWITCH_FRAME", "Fp");
+	}
 
+	const ut64 KiProcessorBlock = dbg->corebind.numGet(dbg->corebind.core, "pdb.KiProcessorBlock");
+	int i;
+	for (i = 0; i < NumberProcessors; i++) {
+		ut64 address = KiProcessorBlock + i * (ctx->windctx.is_64bit ? 8 : 4);
+		ut64 kprcb = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, address);
+		rz_vector_push(&ctx->KiProcessorBlock, &kprcb);
+	}
+
+	if (ctx->type == DMP_DUMPTYPE_TRIAGE) {
 		// Map ETHREAD into address space
 		const ut64 address = 0x1000;
 		map = rz_io_map_new(core->io, desc->fd, RZ_PERM_R, ThreadOffset, address, CallStackOffset - ThreadOffset);
-		rz_io_map_depriorize(core->io, map->id);
 		map->name = strdup("kernel.target.ethread");
 		WindThread *target_thread = winkd_get_thread_at(&ctx->windctx, address);
-		ctx->windctx.target_thread = *target_thread;
+
 		ctx->windctx.target_thread.ethread = address;
+		const ut64 current_thread_offset = ctx->windctx.is_64bit ? 8 : 4;
+		ut64 *kprcb;
+		rz_vector_foreach(&ctx->KiProcessorBlock, kprcb) {
+			const ut64 current_thread = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, *kprcb + current_thread_offset);
+			WindThread *thread = winkd_get_thread_at(&ctx->windctx, current_thread);
+			if (thread && thread->uniqueid == target_thread->uniqueid) {
+				// Map EPROCESS into address space
+				const ut64 current_process = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, thread->ethread + ctx->kthread_process_offset);
+				RzIOMap *map = rz_io_map_new(core->io, desc->fd, RZ_PERM_R, ProcessOffset, current_process, ThreadOffset - ProcessOffset);
+				map->name = strdup("kernel.target.eprocess");
+				WindProc *process = winkd_get_process_at(&ctx->windctx, current_process);
+				ctx->windctx.target = *process;
+				ctx->windctx.target_thread = *thread;
+				free(process);
+				free(thread);
+				break;
+			}
+			free(thread);
+		}
+		rz_io_map_remap(core->io, map->id, ctx->windctx.target_thread.ethread);
 		free(target_thread);
-	} else {
-		const ut64 state_offset = struct_offset(dbg->analysis->typedb, "_KPRCB", "ProcessorState");
-		ctx->kprcb_context_offset = state_offset + struct_offset(dbg->analysis->typedb, "_KPROCESSOR_STATE", "ContextFrame");
-		if (ctx->windctx.is_arm) {
-			const ut64 switch_frame_offset = struct_offset(dbg->analysis->typedb, "_KTHREAD", "SwitchFrame");
-			ctx->kthread_switch_frame_offset = switch_frame_offset + struct_offset(dbg->analysis->typedb, "_KSWITCH_FRAME", "Fp");
-		}
-		const ut64 KiProcessorBlock = dbg->corebind.numGet(dbg->corebind.core, "pdb.KiProcessorBlock");
-		int i;
-		for (i = 0; i < NumberProcessors; i++) {
-			ut64 address = KiProcessorBlock + i * (ctx->windctx.is_64bit ? 8 : 4);
-			ut64 kprcb = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, address);
-			rz_vector_push(&ctx->KiProcessorBlock, &kprcb);
-		}
 	}
 
 	return true;
@@ -234,7 +236,6 @@ static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
 		return dbg->pid;
 	}
 	const ut64 current_thread_offset = ctx->windctx.is_64bit ? 8 : 4;
-	const int process_offset = struct_offset(dbg->analysis->typedb, "_KTHREAD", "Process");
 	ut64 *kprcb;
 	rz_vector_foreach_prev(&ctx->KiProcessorBlock, kprcb) {
 		const ut64 current_thread = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, *kprcb + current_thread_offset);
@@ -242,7 +243,7 @@ static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
 		if (!thread) {
 			continue;
 		}
-		const ut64 current_process = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, thread->ethread + process_offset);
+		const ut64 current_process = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, thread->ethread + ctx->kthread_process_offset);
 		WindProc *process = winkd_get_process_at(&ctx->windctx, current_process);
 		if (!process) {
 			free(thread);

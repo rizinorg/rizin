@@ -111,6 +111,7 @@ typedef struct _DmpCtx {
 	RzVector /*<ut64>*/ KiProcessorBlock;
 	ut32 kprcb_context_offset; // nt!_KPRCB ProcessorState.ContextFrame
 	ut32 kthread_switch_frame_offset; // nt!_KTHREAD SwitchFrame.Fp
+	ut32 kthread_process_offset; // nt!_KTHREAD Process
 	ut8 *context;
 	size_t context_sz;
 } DmpCtx;
