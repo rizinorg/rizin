@@ -417,45 +417,42 @@ cleanup:
 static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type) {
 	rz_return_val_if_fail(typedb && stream && type, NULL);
 
-	if (rz_bin_pdb_type_is_fwdref(type)) {
-		return NULL;
-	}
-	RzBaseType *base_type;
+	RzBaseType *base_type = NULL;
 	char *name = rz_bin_pdb_get_type_name(type);
 	if (name) {
 		base_type = rz_type_db_get_base_type(typedb, name);
 		if (base_type && base_type->type) {
+			if (rz_bin_pdb_type_is_fwdref(type) || base_type->attrs != RZ_TYPE_TYPECLASS_INVALID) {
+				return rz_type_clone(base_type->type);
+			}
+		}
+	}
+
+	if (!base_type) {
+		base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
+		if (!base_type) {
+			return NULL;
+		}
+
+		RzType *typ = RZ_NEW0(RzType);
+		if (!typ) {
+			rz_type_base_type_free(base_type);
+			return NULL;
+		}
+		typ->kind = RZ_TYPE_KIND_IDENTIFIER;
+		typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
+		typ->identifier.name = strdup(name);
+		base_type->type = typ;
+		base_type->name = name ? strdup(name) : create_type_name_from_offset(type->type_index);
+		rz_type_db_save_base_type(typedb, base_type);
+
+		if (rz_bin_pdb_type_is_fwdref(type)) {
+			base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 			return rz_type_clone(base_type->type);
 		}
 	}
 
-	base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
-	if (!base_type) {
-		return NULL;
-	}
-	bool to_free_name = false;
-	if (!name) {
-		name = create_type_name_from_offset(type->type_index);
-		to_free_name = true;
-	}
-	RzType *typ = RZ_NEW0(RzType);
-	if (!typ) {
-		rz_type_base_type_free(base_type);
-		base_type = NULL;
-		goto cleanup;
-	}
-	typ->kind = RZ_TYPE_KIND_IDENTIFIER;
-	typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
-	typ->identifier.name = strdup(name);
-	base_type->type = typ;
-	ut64 size = rz_bin_pdb_get_type_val(type);
-
 	RzList *members = rz_bin_pdb_get_type_members(stream, type);
-	if (!members) {
-		rz_type_base_type_free(base_type);
-		base_type = NULL;
-		goto cleanup;
-	}
 	RzListIter *it;
 	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
@@ -466,19 +463,12 @@ static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 		void *element = rz_vector_push(&base_type->struct_data.members, struct_member);
 		if (!element) {
 			rz_type_base_struct_member_free(struct_member, NULL);
-			rz_type_base_type_free(base_type);
-			base_type = NULL;
-			goto cleanup;
+			return NULL;
 		}
 	}
-	base_type->name = strdup(name);
-	base_type->size = size;
-	rz_type_db_save_base_type(typedb, base_type);
+	base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
+	base_type->size = rz_bin_pdb_get_type_val(type);
 	rz_list_append(stream->print_type, base_type);
-cleanup:
-	if (to_free_name) {
-		RZ_FREE(name);
-	}
 	return base_type ? base_type->type : NULL;
 }
 
@@ -542,46 +532,43 @@ cleanup:
  */
 static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type) {
 	rz_return_val_if_fail(typedb && stream && type, NULL);
-	if (rz_bin_pdb_type_is_fwdref(type)) {
-		return NULL;
-	}
 
-	RzBaseType *base_type;
+	RzBaseType *base_type = NULL;
 	char *name = rz_bin_pdb_get_type_name(type);
 	if (name) {
 		base_type = rz_type_db_get_base_type(typedb, name);
 		if (base_type && base_type->type) {
+			if (rz_bin_pdb_type_is_fwdref(type) || base_type->attrs != RZ_TYPE_TYPECLASS_INVALID) {
+				return rz_type_clone(base_type->type);
+			}
+		}
+	}
+
+	if (!base_type) {
+		base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_UNION);
+		if (!base_type) {
+			return NULL;
+		}
+
+		RzType *typ = RZ_NEW0(RzType);
+		if (!typ) {
+			rz_type_base_type_free(base_type);
+			return NULL;
+		}
+		typ->kind = RZ_TYPE_KIND_IDENTIFIER;
+		typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
+		typ->identifier.name = strdup(name);
+		base_type->type = typ;
+		base_type->name = name ? strdup(name) : create_type_name_from_offset(type->type_index);
+		rz_type_db_save_base_type(typedb, base_type);
+
+		if (rz_bin_pdb_type_is_fwdref(type)) {
+			base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 			return rz_type_clone(base_type->type);
 		}
 	}
 
-	base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_UNION);
-	if (!base_type) {
-		free(name);
-		return NULL;
-	}
-	bool to_free_name = false;
-	if (!name) {
-		name = create_type_name_from_offset(type->type_index);
-		to_free_name = true;
-	}
-	RzType *typ = RZ_NEW0(RzType);
-	if (!typ) {
-		rz_type_base_type_free(base_type);
-		base_type = NULL;
-		goto cleanup;
-	}
-	typ->kind = RZ_TYPE_KIND_IDENTIFIER;
-	typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
-	typ->identifier.name = strdup(name);
-	base_type->type = typ;
-
 	RzList *members = rz_bin_pdb_get_type_members(stream, type);
-	if (!members) {
-		rz_type_base_type_free(base_type);
-		base_type = NULL;
-		goto cleanup;
-	}
 	RzListIter *it;
 	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
@@ -592,20 +579,12 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 		void *element = rz_vector_push(&base_type->union_data.members, union_member);
 		if (!element) {
 			rz_type_base_union_member_free(union_member, NULL);
-			rz_type_base_type_free(base_type);
-			base_type = NULL;
-			goto cleanup;
+			return NULL;
 		}
 	}
-	base_type->name = strdup(name);
-	ut64 size = rz_bin_pdb_get_type_val(type);
-	base_type->size = size;
-	rz_type_db_save_base_type(typedb, base_type);
+	base_type->size = rz_bin_pdb_get_type_val(type);
+	base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
 	rz_list_append(stream->print_type, base_type);
-cleanup:
-	if (to_free_name) {
-		RZ_FREE(name);
-	}
 	return base_type ? base_type->type : NULL;
 }
 
@@ -644,41 +623,45 @@ static RzType *parse_enum(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 	rz_return_val_if_fail(typedb && type, NULL);
 	Tpi_LF_Enum *lf_enum = type->type_data;
 	// assert all member functions we need info from
-	RzBaseType *base_type;
+	RzBaseType *base_type = NULL;
 	char *name = rz_bin_pdb_get_type_name(type);
 	if (name) {
 		base_type = rz_type_db_get_base_type(typedb, name);
 		if (base_type && base_type->type) {
+			if (rz_bin_pdb_type_is_fwdref(type) || base_type->attrs != RZ_TYPE_TYPECLASS_INVALID) {
+				return rz_type_clone(base_type->type);
+			}
+		}
+	}
+
+	if (!base_type) {
+		base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
+		if (!base_type) {
+			return NULL;
+		}
+
+		RzPdbTpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_enum->utype);
+		if (!utype) {
+			rz_type_base_type_free(base_type);
+			return NULL;
+		}
+		RzType *btype = parse_type(typedb, stream, utype, NULL);
+		if (!btype) {
+			rz_type_base_type_free(base_type);
+			return NULL;
+		}
+		base_type->name = name ? strdup(name) : create_type_name_from_offset(type->type_index);
+		base_type->size = rz_type_db_get_bitsize(typedb, btype);
+		base_type->type = btype;
+		rz_type_db_save_base_type(typedb, base_type);
+
+		if (rz_bin_pdb_type_is_fwdref(type)) {
+			base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 			return rz_type_clone(base_type->type);
 		}
 	}
 
-	base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
-	if (!base_type) {
-		return NULL;
-	}
-
-	bool to_free_name = false;
-	if (!name) {
-		name = create_type_name_from_offset(type->type_index);
-		to_free_name = true;
-	}
-	RzPdbTpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_enum->utype);
-	if (!utype) {
-		goto cleanup;
-	}
-	RzType *btype = parse_type(typedb, stream, utype, NULL);
-	if (!btype) {
-		goto cleanup;
-	}
-	int size = rz_type_db_get_bitsize(typedb, btype);
 	RzList *members = rz_bin_pdb_get_type_members(stream, type);
-	if (!members) {
-		rz_type_base_type_free(base_type);
-		base_type = NULL;
-		goto cleanup;
-	}
-
 	RzListIter *it;
 	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
@@ -689,20 +672,11 @@ static RzType *parse_enum(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 		void *element = rz_vector_push(&base_type->struct_data.members, enum_case);
 		if (!element) {
 			rz_type_base_enum_case_free(enum_case, NULL);
-			rz_type_base_type_free(base_type);
-			base_type = NULL;
-			goto cleanup;
+			return NULL;
 		}
 	}
-	base_type->name = strdup(name);
-	base_type->size = size;
-	base_type->type = btype;
-	rz_type_db_save_base_type(typedb, base_type);
+	base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
 	rz_list_append(stream->print_type, base_type);
-cleanup:
-	if (to_free_name) {
-		RZ_FREE(name);
-	}
 	return base_type ? base_type->type : NULL;
 }
 
@@ -716,9 +690,6 @@ cleanup:
 static void parse_types(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type) {
 	rz_return_if_fail(typedb && type);
 
-	if (rz_bin_pdb_type_is_fwdref(type)) {
-		return;
-	}
 	switch (type->leaf_type) {
 	case LF_CLASS:
 	case LF_CLASS_19:
