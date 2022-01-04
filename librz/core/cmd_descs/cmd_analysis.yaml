@@ -21,10 +21,7 @@ commands:
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_TABLE
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afb+
             summary: Add basic block by hand
             cname: analysis_function_blocks_add
@@ -48,17 +45,11 @@ commands:
           - name: afb-
             summary: Remove basic block from function
             cname: analysis_function_blocks_del
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afb-*
             summary: Remove all basic blocks from function
             cname: analysis_function_blocks_del_all
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afbe
             summary: Add basic-block edge for switch-cases
             cname: analysis_function_blocks_edge
@@ -70,17 +61,11 @@ commands:
           - name: afbr
             summary: Show addresses of instructions which leave the function
             cname: analysis_function_returns
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afb=
             summary: Display ascii-art bars for basic block regions
             cname: analysis_function_blocks_asciiart
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afbi
             summary: Print single basic block information
             cname: analysis_function_blocks_info
@@ -92,10 +77,7 @@ commands:
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_TABLE
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afbc
             summary: Set a color for the basic block at a given address
             cname: analysis_function_blocks_color
