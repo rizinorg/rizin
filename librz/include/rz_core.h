@@ -676,7 +676,7 @@ RZ_API void rz_core_analysis_undefine(RzCore *core, ut64 off);
 RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, RzCmdStateOutput *state);
 RZ_API void rz_core_analysis_hint_list_print(RzAnalysis *a, RzCmdStateOutput *state);
 RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int mode);
-RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, int rad);
+RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, RzOutputMode out_mode);
 RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize);
 RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr);
 RZ_API void rz_core_analysis_coderefs(RzCore *core, ut64 addr);

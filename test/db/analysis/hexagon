@@ -355,6 +355,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=hexagon string search
+FILE==
+CMDS=<<EOF
+e asm.sub.varmin=0
+e asm.arch=hexagon
+e analysis.arch=hexagon
+e analysis.strings=true
+wx 81c100781cc0513c00c09f5257686572652069732057616c6c793f0054686572652069732057616c6c792100
+aar
+pd 2
+fs strings
+f
+EOF
+EXPECT=<<EOF
+            0x00000000      ?       R1 = ##0xc                         ; "Where is Wally?"
+            0x00000004      [   memw(R17+#0x0) = ##0x1c                ; "There is Wally!"
+0x0000000c 1 str.Where_is_Wally
+0x0000001c 1 str.There_is_Wally
+EOF
+RUN
+
 NAME=hexagon regs
 FILE=
 CMDS=<<EOF
