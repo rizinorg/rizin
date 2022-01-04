@@ -211,14 +211,18 @@ static int rz_debug_dmp_select(RzDebug *dbg, int pid, int tid) {
 		if (pid != ctx->windctx.target.uniqueid || tid != ctx->windctx.target_thread.uniqueid) {
 			eprintf("Cannot select other targets on a triage dump\n");
 		}
-		return tid;
+		dbg->pid = ctx->windctx.target.uniqueid;
+		dbg->tid = ctx->windctx.target_thread.uniqueid;
+		return ctx->windctx.target_thread.uniqueid;
 	}
 	if (pid == 0) {
 		ctx->target = TARGET_PHYSICAL;
 	} else if (winkd_set_target(&ctx->windctx, pid, tid)) {
 		ctx->target = TARGET_VIRTUAL;
 	}
-	return tid;
+	dbg->pid = ctx->windctx.target.uniqueid;
+	dbg->tid = ctx->windctx.target_thread.uniqueid;
+	return ctx->windctx.target_thread.uniqueid;
 }
 
 static inline bool is_kernel_address_present(WindCtx *ctx, ut64 at) {

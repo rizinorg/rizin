@@ -478,16 +478,16 @@ bool winkd_set_target(WindCtx *ctx, ut32 pid, ut32 tid) {
 		return false;
 	}
 	const bool is_cur_thread = ctx->target_thread.uniqueid && (ctx->target_thread.uniqueid == tid);
-	if (!is_cur_thread) {
+	if (!is_cur_thread || !is_cur_process) {
 		l = winkd_list_threads(ctx);
-		if (tid) {
+		if (is_cur_process) {
 			rz_list_foreach (l, it, t) {
 				if (t->uniqueid == tid) {
 					ctx->target_thread = *t;
 					break;
 				}
 			}
-		} else if (is_cur_process) {
+		} else {
 			t = rz_list_first(l);
 			if (t) {
 				ctx->target_thread = *t;
