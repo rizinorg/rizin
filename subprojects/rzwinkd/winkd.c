@@ -373,7 +373,7 @@ WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address) {
 	proc->vadroot = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, address + O_(E_VadRoot));
 	proc->uniqueid = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, address + O_(E_UniqueProcessId));
 	proc->peb = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, address + O_(E_Peb));
-	proc->dir_base_table = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, address + O_(P_DirectoryTableBase));
+	proc->dir_base_table = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, address + O_(K_DirectoryTableBase));
 	return proc;
 }
 

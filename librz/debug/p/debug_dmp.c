@@ -31,17 +31,19 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	ctx->context_sz = ret;
 	rz_hex_str2bin(core->bin->cur->o->regstate, ctx->context);
 
-	int MachineImageType = 0; // Windows Architecture (IMAGE_FILE_MACHINE)
-	int MinorVersion = 0; // Windows Version
-	int ServicePackBuild = 0;
-	int ProcessOffset = 0;
-	int ThreadOffset = 0;
-	int CallStackOffset = 0;
+	ut32 MachineImageType = 0; // Windows Architecture (IMAGE_FILE_MACHINE)
+	ut32 MinorVersion = 0; // Windows Version
+	ut32 ServicePackBuild = 0;
+	ut32 ProcessOffset = 0;
+	ut32 ThreadOffset = 0;
+	ut32 CallStackOffset = 0;
+	ut32 NumberProcessors = 0;
 	RzBuffer *b = rz_buf_new_with_io(&dbg->iob);
 	rz_buf_read_le64_at(b, offsetof(dmp64_header, DirectoryTableBase), &ctx->kernelDirectoryTable);
 	rz_buf_read_le64_at(b, offsetof(dmp64_header, PsActiveProcessHead), &ctx->windctx.PsActiveProcessHead);
 	rz_buf_read_le64_at(b, offsetof(dmp64_header, PsLoadedModuleList), &ctx->windctx.PsLoadedModuleList);
 	rz_buf_read_le64_at(b, offsetof(dmp64_header, KdDebuggerDataBlock), &ctx->windctx.KdDebuggerDataBlock);
+	rz_buf_read_le32_at(b, offsetof(dmp64_header, NumberProcessors), &NumberProcessors);
 	rz_buf_read_le32_at(b, offsetof(dmp64_header, DumpType), &ctx->type);
 	rz_buf_read_le32_at(b, offsetof(dmp64_header, MachineImageType), &MachineImageType);
 	rz_buf_read_le32_at(b, offsetof(dmp64_header, MinorVersion), &MinorVersion);
@@ -158,23 +160,57 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		ctx->windctx.target_thread = *target_thread;
 		ctx->windctx.target_thread.ethread = address;
 		free(target_thread);
+	} else {
+		ctx->kprcb_context_offset = rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KPRCB", "Context");
+		if (ctx->windctx.is_arm) {
+			const ut64 switch_frame_offset = rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KTHREAD", "SwitchFrame");
+			ctx->kthread_switch_frame_offset = switch_frame_offset + rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KSWITCH_FRAME", "Fp");
+		}
+		const ut64 KiProcessorBlock = dbg->corebind.numGet(dbg->corebind.core, "pdb.KiProcessorBlock");
+		int i;
+		for (i = 0; i < NumberProcessors; i++) {
+			ut64 address = KiProcessorBlock + i * (ctx->windctx.is_64bit ? 8 : 4);
+			ut64 kprcb = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, address);
+			rz_vector_push(&ctx->KiProcessorBlock, &kprcb);
+		}
 	}
-	// TODO: Use RzTypesDB to build profile
+
 	return true;
 }
 
 static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
-	RzCore *core = dbg->corebind.core;
 	DmpCtx *ctx = dbg->plugin_data;
 	if (ctx->type == DMP_DUMPTYPE_TRIAGE) {
 		dbg->pid = ctx->windctx.target.uniqueid;
 		dbg->tid = ctx->windctx.target_thread.uniqueid;
 		return dbg->pid;
 	}
-	dbg->pid = 4;
-	dbg->tid = 0;
-	winkd_set_target(&ctx->windctx, 4, 0);
-	return 4;
+	const ut64 current_thread_offset = ctx->windctx.is_64bit ? 8 : 4;
+	const int process_offset = rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KTHREAD", "Process");
+	ut64 *kprcb;
+	rz_vector_foreach_prev(&ctx->KiProcessorBlock, kprcb) {
+		const ut64 current_thread = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, *kprcb + current_thread_offset);
+		WindThread *thread = winkd_get_thread_at(&ctx->windctx, current_thread);
+		if (!thread) {
+			continue;
+		}
+		const ut64 current_process = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, thread->ethread + process_offset);
+		WindProc *process = winkd_get_process_at(&ctx->windctx, current_process);
+		if (!process || (!process->uniqueid && !strncmp(process->name, "Idle", sizeof(process->name)))) {
+			free(thread);
+			free(process);
+			continue;
+		}
+		ctx->windctx.target = *process;
+		ctx->windctx.target_thread = *thread;
+		free(thread);
+		free(process);
+		break;
+	}
+
+	dbg->pid = ctx->windctx.target.uniqueid;
+	dbg->tid = ctx->windctx.target_thread.uniqueid;
+	return ctx->windctx.target.uniqueid;
 }
 
 static RzList *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
@@ -232,33 +268,38 @@ static inline bool is_kernel_address_present(WindCtx *ctx, ut64 at) {
 }
 
 static int rz_debug_dmp_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
-	RzCore *core = dbg->corebind.core;
 	DmpCtx *dmp = dbg->plugin_data;
 	WindCtx *ctx = &dmp->windctx;
-	memcpy(buf, dmp->context, RZ_MIN(size, dmp->context_sz));
-	if (dmp->type == DMP_DUMPTYPE_TRIAGE || !ctx->target_thread.uniqueid) {
-		return size;
-	}
 	if (!is_kernel_address_present(ctx, ctx->target_thread.ethread)) {
 		return 0;
+	}
+	const ut64 current_thread_offset = ctx->is_64bit ? 8 : 4;
+	ut64 *kprcb;
+	rz_vector_foreach(&dmp->KiProcessorBlock, kprcb) {
+		const ut64 current_thread = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, *kprcb + current_thread_offset);
+		if (current_thread == ctx->target_thread.ethread) {
+			const ut64 current_context = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, *kprcb + dmp->kprcb_context_offset);
+			if (current_context) {
+				return ctx->read_at_kernel_virtual(ctx->user, current_context, buf, size);
+			}
+			RZ_LOG_WARN("Failed to get KPRCB Context pointer at 0x%" PFMT64x "\n", current_context);
+		}
+	}
+	if (dmp->type == DMP_DUMPTYPE_TRIAGE || !ctx->target_thread.uniqueid) {
+		memcpy(buf, dmp->context, RZ_MIN(size, dmp->context_sz));
+		return size;
 	}
 	const int kernel_stack_offset = ctx->is_64bit ? 0x58 : 0x48;
 	if (ctx->is_arm) {
 		if (ctx->is_64bit) {
 			struct context_type_arm64 *regs = (struct context_type_arm64 *)buf;
-			const int switch_frame_offset = 0x210 + 0x10; // nt!_KTHREAD SwitchFrame->Fp
-			regs->Fp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + switch_frame_offset);
 			regs->Sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
-			regs->Lr = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + switch_frame_offset + 8);
+			regs->Fp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset);
+			regs->Pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 8);
 		} else {
-			return 0;
-			/*
 			struct context_type_arm *regs = (struct context_type_arm *)buf;
-			const int switch_frame_offset = 0x???; // TODO: Find switch_frame_offset
-			const int kernel_stack_offset = 0x48;
 			regs->sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
-			regs->lr = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + switch_frame_offset);
-			*/
+			regs->pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 4);
 		}
 	} else {
 		if (ctx->is_64bit) {
@@ -316,7 +357,7 @@ static RzList *rz_debug_dmp_threads(RzDebug *dbg, int pid) {
 
 static RzList *rz_debug_dmp_modules(RzDebug *dbg) {
 	DmpCtx *ctx = dbg->plugin_data;
-	RzList *ret = rz_list_newf(rz_debug_map_free);
+	RzList *ret = rz_list_newf((RzListFree)rz_debug_map_free);
 	if (!ret) {
 		return NULL;
 	}
