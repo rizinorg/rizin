@@ -4,6 +4,30 @@
 #include "common_winkd.h"
 #include <bin/pdb/pdb_downloader.h>
 
+void winkd_build_profile(WindCtx *ctx, RzTypeDB *db) {
+	ctx->profile = RZ_NEW0(Profile);
+	if (!ctx->profile) {
+		return;
+	}
+#define O_(n) ctx->profile->f[n]
+	O_(E_ActiveProcessLinks) = rz_type_db_struct_member_offset(db, "_EPROCESS", "ActiveProcessLinks");
+	O_(E_UniqueProcessId) = rz_type_db_struct_member_offset(db, "_EPROCESS", "UniqueProcessId");
+	O_(E_Peb) = rz_type_db_struct_member_offset(db, "_EPROCESS", "Peb");
+	O_(E_ImageFileName) = rz_type_db_struct_member_offset(db, "_EPROCESS", "ImageFileName");
+	O_(E_VadRoot) = rz_type_db_struct_member_offset(db, "_EPROCESS", "VadRoot");
+	O_(E_ThreadListHead) = rz_type_db_struct_member_offset(db, "_EPROCESS", "ThreadListHead");
+	O_(K_DirectoryTableBase) = rz_type_db_struct_member_offset(db, "_KPROCESS", "DirectoryTableBase");
+	O_(P_ImageBaseAddress) = rz_type_db_struct_member_offset(db, "_PEB", "ImageBaseAddress");
+	O_(P_ProcessParameters) = rz_type_db_struct_member_offset(db, "_PEB", "ProcessParameters");
+	O_(RZ_ImagePathName) = rz_type_db_struct_member_offset(db, "_RTL_USER_PROCESS_PARAMETERS", "ImagePathName");
+	O_(ET_Tcb) = rz_type_db_struct_member_offset(db, "_ETHREAD", "Tcb");
+	O_(ET_ThreadListEntry) = rz_type_db_struct_member_offset(db, "_ETHREAD", "ThreadListEntry");
+	O_(ET_Win32StartAddress) = rz_type_db_struct_member_offset(db, "_ETHREAD", "Win32StartAddress");
+	O_(ET_Cid) = rz_type_db_struct_member_offset(db, "_ETHREAD", "Cid");
+	O_(C_UniqueThread) = rz_type_db_struct_member_offset(db, "_CLIENT_ID", "UniqueThread");
+#undef O_
+}
+
 static char *download_pdb(const char *path, const char *symserver, const char *symstore) {
 	PJ *pj = pj_new();
 	if (!pj) {
