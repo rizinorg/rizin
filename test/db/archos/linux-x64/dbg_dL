@@ -4,13 +4,14 @@ CMDS=dL
 EXPECT=<<EOF
 0  ---  bf       LGPL3
 1  ---  bochs    LGPL3
-2  ---  esil     LGPL3
-3  ---  gdb      LGPL3
-4  ---  io       MIT
-5  dbg  native   LGPL3
-6  ---  null     MIT
-7  ---  rap      LGPL3
-8  ---  winkd    LGPL3
-9  ---  qnx      LGPL3
+2  ---  dmp      LGPL3
+3  ---  esil     LGPL3
+4  ---  gdb      LGPL3
+5  ---  io       MIT
+6  dbg  native   LGPL3
+7  ---  null     MIT
+8  ---  rap      LGPL3
+9  ---  winkd    LGPL3
+10  ---  qnx      LGPL3
 EOF
 RUN
