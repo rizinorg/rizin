@@ -297,7 +297,6 @@ EXPECT=<<EOF
 pf d int
 EOF
 EXPECT_ERR=<<EOF
-Cannot find base type "int"
 Cannot find 'int' type
 EOF
 RUN
@@ -348,9 +347,7 @@ union xoo {
 };
 EOF
 EXPECT_ERR=<<EOF
-Cannot find base type "xoo"
 Cannot find 'xoo' type
-Cannot find base type "xoo"
 ERROR: Cannot find "xoo" union type
 EOF
 RUN
