@@ -203,11 +203,8 @@ RZ_API void rz_il_vm_setup_reg_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RZ_OWN 
 	rz_return_if_fail(vm && rb && !vm->reg_binding);
 	vm->reg_binding = rb;
 	for (size_t i = 0; i < rb->regs_count; i++) {
-		if (rb->regs[i].size == 1) {
-			rz_il_vm_add_bit_reg(vm, rb->regs[i].name, false);
-		} else {
-			rz_il_vm_add_reg(vm, rb->regs[i].name, rb->regs[i].size);
-		}
+		rz_il_vm_create_global_var(vm, rb->regs[i].name,
+			rb->regs[i].size == 1 ? rz_il_sort_pure_bool() : rz_il_sort_pure_bv(rb->regs[i].size));
 	}
 }
 
@@ -255,8 +252,8 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
 			perfect = false;
 			continue;
 		}
-		RzILVal *val = rz_il_hash_find_val_by_name(vm, item->name);
-		if (!val || (val->type != RZ_IL_VAR_TYPE_BV && val->type != RZ_IL_VAR_TYPE_BOOL)) {
+		RzILVal *val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, item->name);
+		if (!val) {
 			perfect = false;
 			RzBitVector *bv = rz_bv_new_zero(ri->size);
 			if (!bv) {
@@ -270,7 +267,7 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
 		}
 		RzBitVector *dupped = NULL;
 		const RzBitVector *bv;
-		if (val->type == RZ_IL_VAR_TYPE_BV) {
+		if (val->type == RZ_IL_TYPE_PURE_BITVECTOR) {
 			bv = val->data.bv;
 			if (rz_bv_len(bv) != ri->size) {
 				perfect = false;
@@ -278,7 +275,11 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
 				if (!dupped) {
 					break;
 				}
-				rz_bv_copy_nbits(bv, 0, dupped, 0, RZ_MIN(rz_bv_len(bv), ri->size));
+				if (ri->size > 1) {
+					rz_bv_copy_nbits(bv, 0, dupped, 0, RZ_MIN(rz_bv_len(bv), ri->size));
+				} else {
+					rz_bv_set_from_ut64(dupped, rz_bv_is_zero_vector(bv) ? 0 : 1);
+				}
 				bv = dupped;
 			}
 		} else { // RZ_IL_VAR_TYPE_BOOL
@@ -317,7 +318,7 @@ RZ_API void rz_il_vm_sync_from_reg(RzILVM *vm, RZ_NONNULL RzReg *reg) {
 	}
 	for (size_t i = 0; i < rb->regs_count; i++) {
 		RzILRegBindingItem *item = &rb->regs[i];
-		RzILVar *var = rz_il_find_var_by_name(vm, item->name);
+		RzILVar *var = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, item->name);
 		if (!var) {
 			RZ_LOG_ERROR("IL Variable \"%s\" does not exist for bound register of the same name.\n", item->name);
 			continue;
@@ -325,7 +326,7 @@ RZ_API void rz_il_vm_sync_from_reg(RzILVM *vm, RZ_NONNULL RzReg *reg) {
 		RzRegItem *ri = rz_reg_get(reg, item->name, RZ_REG_TYPE_ANY);
 		if (item->size == 1) {
 			bool b = ri ? rz_reg_get_value(reg, ri) != 0 : false;
-			rz_il_hash_bind(vm, var, rz_il_vm_fortify_bool(vm, b));
+			rz_il_vm_set_global_var(vm, var->name, rz_il_value_new_bool(rz_il_bool_new(b)));
 		} else {
 			RzBitVector *bv = ri ? rz_reg_get_bv(reg, ri) : rz_bv_new_zero(item->size);
 			if (!bv) {
@@ -333,14 +334,16 @@ RZ_API void rz_il_vm_sync_from_reg(RzILVM *vm, RZ_NONNULL RzReg *reg) {
 			}
 			RzBitVector *dupped = NULL;
 			if (rz_bv_len(bv) != item->size) {
-				dupped = rz_bv_new_zero(item->size);
-				if (!dupped) {
+				RzBitVector *nbv = rz_bv_new_zero(item->size);
+				if (!nbv) {
+					rz_bv_free(bv);
 					break;
 				}
-				rz_bv_copy_nbits(bv, 0, dupped, 0, RZ_MIN(rz_bv_len(bv), item->size));
-				bv = dupped;
+				rz_bv_copy_nbits(bv, 0, nbv, 0, RZ_MIN(rz_bv_len(bv), item->size));
+				dupped = bv;
+				bv = nbv;
 			}
-			rz_il_hash_bind(vm, var, rz_il_vm_fortify_bitv(vm, bv));
+			rz_il_vm_set_global_var(vm, var->name, rz_il_value_new_bitv(bv));
 			rz_bv_free(dupped);
 		}
 	}

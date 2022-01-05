@@ -12,63 +12,56 @@ static bool test_rzil_vm_init() {
 	mu_end;
 }
 
-static bool test_rzil_vm_basic_operation() {
+static bool test_rzil_vm_global_vars() {
 	RzILVM *vm = rz_il_vm_new(0, 8, true);
 
 	// 1. create variables
-	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZ_IL_VAR_TYPE_UNK, true);
-	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZ_IL_VAR_TYPE_UNK, false);
+	RzILVar *var_r1 = rz_il_vm_create_global_var(vm, "r1", rz_il_sort_pure_bool());
+	RzILVar *var_r2 = rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
 	mu_assert_notnull(var_r1, "Create var 1");
 	mu_assert_notnull(var_r2, "Create var 2");
 
 	// check name
-	mu_assert_streq(var_r1->var_name, "r1", "var r1 name");
-	mu_assert_streq(var_r2->var_name, "r2", "var r2 name");
+	mu_assert_streq(var_r1->name, "r1", "var r1 name");
+	mu_assert_streq(var_r2->name, "r2", "var r2 name");
 
 	// check type
-	mu_assert_eq(var_r1->type, RZ_IL_VAR_TYPE_UNK, "var r1 type unk");
-	mu_assert_eq(var_r2->type, RZ_IL_VAR_TYPE_UNK, "var r2 type unk");
+	mu_assert_true(rz_il_sort_pure_eq(var_r1->sort, rz_il_sort_pure_bool()), "var r1 sort");
+	mu_assert_true(rz_il_sort_pure_eq(var_r2->sort, rz_il_sort_pure_bv(32)), "var r2 sort");
 
-	// check mutablity
-	mu_assert_eq(var_r1->is_mutable, true, "var r1 is mutable");
-	mu_assert_eq(var_r2->is_mutable, false, "var r2 is not mutable");
-
-	// 2. find vars from vm
-	RzILVar *find_var_r1 = rz_il_find_var_by_name(vm, "r1");
-	RzILVar *find_var_r2 = rz_il_find_var_by_name(vm, "r2");
+	// find vars from vm
+	RzILVar *find_var_r1 = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
+	RzILVar *find_var_r2 = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, "r2");
 	mu_assert_eq(var_r1, find_var_r1, "Store and find r1");
 	mu_assert_eq(var_r2, find_var_r2, "Store and find r2");
 
-	// 3. create value
-	RzILVal *val_r1 = rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32));
-	RzILVal *val_r2 = rz_il_vm_create_value_bool(vm, false);
-	mu_assert_notnull(val_r1, "Create val 1");
-	mu_assert_notnull(val_r2, "Create val 2");
+	// initial contents
+	RzILVal *val_r1 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
+	mu_assert_eq(val_r1->type, RZ_IL_TYPE_PURE_BOOL, "val type");
+	mu_assert_false(val_r1->data.b->b, "val content");
+	RzILVal *val_r2 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r2");
+	mu_assert_eq(val_r2->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
+	mu_assert_eq(rz_bv_len(val_r2->data.bv), 32, "val bv len");
+	mu_assert_eq(rz_bv_to_ut64(val_r2->data.bv), 0, "val bv content");
 
-	// check type
-	mu_assert_eq(val_r1->type, RZ_IL_VAR_TYPE_BV, "val 1 has type bitv");
-	mu_assert_eq(val_r2->type, RZ_IL_VAR_TYPE_BOOL, "val 2 has type bool");
+	// bind value to var
+	rz_il_vm_set_global_var(vm, "r1", rz_il_value_new_bool(rz_il_bool_new(true)));
+	rz_il_vm_set_global_var(vm, "r2", rz_il_value_new_bitv(rz_bv_new_from_ut64(32, 123)));
+	val_r1 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
+	mu_assert_eq(val_r1->type, RZ_IL_TYPE_PURE_BOOL, "val type");
+	mu_assert_true(val_r1->data.b->b, "val content");
+	val_r2 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r2");
+	mu_assert_eq(val_r2->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
+	mu_assert_eq(rz_bv_len(val_r2->data.bv), 32, "val bv len");
+	mu_assert_eq(rz_bv_to_ut64(val_r2->data.bv), 123, "val bv content");
 
-	// 4. bind value to var
-	rz_il_hash_bind(vm, var_r1, val_r1);
-	rz_il_hash_bind(vm, var_r2, val_r2);
-	RzILVal *find_val_r1 = rz_il_hash_find_val_by_name(vm, "r1");
-	RzILVal *find_val_r2 = rz_il_hash_find_val_by_name(vm, "r2");
-	mu_assert_eq(val_r1, find_val_r1, "Bind and find");
-	mu_assert_eq(val_r2, find_val_r2, "Bind and find");
+	rz_il_vm_free(vm);
+	mu_end;
+}
 
-	// 5. cancel binding
-	rz_il_hash_cancel_binding(vm, var_r1);
-	RzILVal *null_val = rz_il_hash_find_val_by_name(vm, "r1");
-	mu_assert_null(null_val, "Cancel binding");
-
-	// 6. bind to another one
-	rz_il_hash_bind(vm, var_r1, val_r2);
-	RzILVal *cur_var_r1_value = rz_il_hash_find_val_by_name(vm, "r1");
-	RzILVal *cur_var_r2_value = rz_il_hash_find_val_by_name(vm, "r2");
-	mu_assert_eq(cur_var_r1_value, cur_var_r2_value, "Bind to the same value");
-
-	// 7. create label
+static bool test_rzil_vm_labels() {
+	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	// create label
 	RzBitVector *addr = rz_bv_new_from_ut64(16, 233);
 	RzILEffectLabel *blackhole = rz_il_vm_create_label(vm, "blackhole", addr);
 
@@ -87,7 +80,7 @@ static bool test_rzil_vm_basic_operation() {
 	is_equal_bv = rz_bv_cmp(find_addr, addr) == 0 ? true : false;
 	mu_assert("Find address equal", is_equal_bv);
 
-	// 8. create label lazy (without giving an address)
+	// create label lazy (without giving an address)
 	RzILEffectLabel *lazy = rz_il_vm_create_label_lazy(vm, "lazy");
 	RzILEffectLabel *find_lazy = rz_il_vm_find_label_by_name(vm, "lazy");
 	mu_assert_eq(lazy, find_lazy, "Find lazy label");
@@ -95,43 +88,13 @@ static bool test_rzil_vm_basic_operation() {
 	RzBitVector *lazy_addr = rz_il_hash_find_addr_by_lblname(vm, "lazy");
 	mu_assert_null(lazy_addr, "Lazy label have NULL address");
 
-	// 9. update the address of lazy label
+	// update the address of lazy label
 	rz_il_vm_update_label(vm, "lazy", addr);
 	lazy_addr = rz_il_hash_find_addr_by_lblname(vm, "lazy");
 	is_equal_bv = rz_bv_cmp(lazy_addr, addr) == 0 ? true : false;
 	mu_assert_true(is_equal_bv, "Update lazy label successfully");
 
 	rz_bv_free(addr);
-	rz_il_vm_free(vm);
-	mu_end;
-}
-
-static bool test_rzil_vm_operation() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
-
-	// 1. create register r0 and r1
-	rz_il_vm_add_reg(vm, "r0", 8);
-	rz_il_vm_add_reg(vm, "r1", 8);
-
-	RzILVar *reg_r0 = rz_il_find_var_by_name(vm, "r0");
-	RzILVar *reg_r1 = rz_il_find_var_by_name(vm, "r1");
-	mu_assert_streq(reg_r0->var_name, "r0", "register name r0");
-	mu_assert_streq(reg_r1->var_name, "r1", "register name r1");
-
-	RzILVal *val_r0 = rz_il_hash_find_val_by_name(vm, "r0");
-	RzILVal *val_r1 = rz_il_hash_find_val_by_name(vm, "r1");
-	mu_assert_eq(val_r0->type, RZ_IL_VAR_TYPE_BV, "r0 is bitvector");
-	mu_assert_eq(val_r1->type, RZ_IL_VAR_TYPE_BV, "r1 is bitvector");
-
-	RzILVal *r0 = rz_il_hash_find_val_by_name(vm, "r0");
-	RzILVal *r1 = rz_il_hash_find_val_by_name(vm, "r1");
-
-	bool is_zero = rz_bv_is_zero_vector(r0->data.bv);
-	mu_assert("Init r0 as all zero bitvector", is_zero);
-
-	is_zero = rz_bv_is_zero_vector(r1->data.bv);
-	mu_assert("Init r1 as all zero bitvector", is_zero);
-
 	rz_il_vm_free(vm);
 	mu_end;
 }
@@ -159,11 +122,57 @@ static bool test_rzil_vm_root_evaluation() {
 
 	// Evaluate the whole ite expression
 	RzILVal *ite_val = rz_il_evaluate_val(vm, ite_root);
-	mu_assert_eq(ite_val->type, RZ_IL_VAR_TYPE_BOOL, "Return a Bool Val");
+	mu_assert_eq(ite_val->type, RZ_IL_TYPE_PURE_BOOL, "Return a Bool Val");
 	mu_assert_eq(ite_val->data.b->b, true, "Return a True");
 	rz_il_value_free(ite_val);
 
 	rz_il_op_pure_free(ite_root);
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_let() {
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
+
+	// simple case:
+	//   let preanswer = 41 in preanswer + 1
+	RzILOpBitVector *op = rz_il_op_new_let("preanswer",
+		rz_il_op_new_bitv_from_ut64(16, 41),
+		rz_il_op_new_add(rz_il_op_new_var("preanswer", RZ_IL_VAR_KIND_LOCAL_PURE), rz_il_op_new_bitv_from_ut64(16, 1)));
+	RzBitVector *r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 16, "eval len");
+	mu_assert_eq(rz_bv_to_ut64(r), 42, "eval val");
+	rz_bv_free(r);
+	RzPVector *vars = rz_il_var_set_get_all(&vm->local_pure_vars);
+	mu_assert_notnull(vars, "vars vector");
+	mu_assert_eq(rz_pvector_len(vars), 0, "cleanup");
+	rz_pvector_free(vars);
+
+	// complex case with shadowing
+	// let y = 0x23 in
+	//   let x = 0xaaaa in
+	//     y + cast 8 (let y = x + 0x2212 in y - x)
+	op = rz_il_op_new_let("y", rz_il_op_new_bitv_from_ut64(8, 0x23),
+		rz_il_op_new_let("x", rz_il_op_new_bitv_from_ut64(16, 0xaaaa),
+			rz_il_op_new_add(
+				rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL_PURE),
+				rz_il_op_new_cast(8, rz_il_op_new_b0(),
+					rz_il_op_new_let("y",
+						rz_il_op_new_add(rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE), rz_il_op_new_bitv_from_ut64(16, 0x2212)),
+						rz_il_op_new_sub(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL_PURE), rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE)))))));
+	r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 8, "eval len");
+	mu_assert_eq(rz_bv_to_ut64(r), 0x35, "eval val");
+	rz_bv_free(r);
+	vars = rz_il_var_set_get_all(&vm->local_pure_vars);
+	mu_assert_notnull(vars, "vars vector");
+	mu_assert_eq(rz_pvector_len(vars), 0, "cleanup");
+	rz_pvector_free(vars);
+
 	rz_il_vm_free(vm);
 	mu_end;
 }
@@ -264,32 +273,41 @@ static bool test_rzil_vm_op_signed() {
 static bool test_rzil_vm_op_set() {
 	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
-	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZ_IL_VAR_TYPE_UNK, true);
-	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZ_IL_VAR_TYPE_UNK, false);
-	rz_il_hash_bind(vm, var_r1, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
-	rz_il_hash_bind(vm, var_r2, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
+	RzILVar *var_r1 = rz_il_vm_create_global_var(vm, "r1", rz_il_sort_pure_bv(32));
+	rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
 
-	// try to set immutable and fail
-	RzILOpEffect *op = rz_il_op_new_set("r2", rz_il_op_new_bitv_from_ut64(24, 42));
+	// set global
+	RzILOpEffect *op = rz_il_op_new_set("r1", false, rz_il_op_new_bitv_from_ut64(32, 42));
 	bool succ = rz_il_evaluate_effect(vm, op);
 	rz_il_op_effect_free(op);
-	RzILVal *val = rz_il_hash_find_val_by_name(vm, var_r2->var_name);
+	RzILVal *val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var_r1->name);
 	mu_assert_true(succ, "success");
 	mu_assert_notnull(val, "get val");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "unchanged bv");
-	mu_assert_eq(rz_bv_len(val->data.bv), 32, "unchanged bv len");
-	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0, "unchanged bv val");
-
-	// set mutable
-	op = rz_il_op_new_set("r1", rz_il_op_new_bitv_from_ut64(24, 42));
-	succ = rz_il_evaluate_effect(vm, op);
-	rz_il_op_effect_free(op);
-	val = rz_il_hash_find_val_by_name(vm, var_r1->var_name);
-	mu_assert_true(succ, "success");
-	mu_assert_notnull(val, "get val");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "set bv");
-	mu_assert_eq(rz_bv_len(val->data.bv), 24, "set bv len");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "set bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 32, "set bv len");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 42, "set bv val");
+	RzPVector *vars = rz_il_var_set_get_all(&vm->local_vars);
+	mu_assert_notnull(vars, "vars vector");
+	mu_assert_eq(rz_pvector_len(vars), 0, "cleanup");
+	rz_pvector_free(vars);
+
+	// set local temporarily
+	op = rz_il_op_new_seq(
+		rz_il_op_new_set("r1", true, rz_il_op_new_bitv_from_ut64(32, 2)),
+		rz_il_op_new_set("r1", false,
+			rz_il_op_new_div(rz_il_op_new_var("r1", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_var("r1", RZ_IL_VAR_KIND_LOCAL))));
+	succ = rz_il_vm_step(vm, op, 1);
+	rz_il_op_effect_free(op);
+	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var_r1->name);
+	mu_assert_true(succ, "success");
+	mu_assert_notnull(val, "get val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "set bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 32, "set bv len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 21, "set bv val");
+	vars = rz_il_var_set_get_all(&vm->local_vars);
+	mu_assert_notnull(vars, "vars vector");
+	mu_assert_eq(rz_pvector_len(vars), 0, "cleanup");
+	rz_pvector_free(vars);
 
 	rz_il_vm_free(vm);
 	mu_end;
@@ -328,9 +346,9 @@ static bool test_rzil_vm_op_goto_addr() {
 static bool test_rzil_vm_op_blk() {
 	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
-	RzILVar *var = rz_il_vm_create_global_variable(vm, "leetbap", RZ_IL_VAR_TYPE_UNK, true);
-	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(8, 0x42)));
-	RzILOpEffect *data_eff = rz_il_op_new_set("leetbap", rz_il_op_new_bitv_from_ut64(8, 0x13));
+	RzILVar *var = rz_il_vm_create_global_var(vm, "leetbap", rz_il_sort_pure_bv(8));
+	rz_il_vm_set_global_var(vm, var->name, rz_il_value_new_bitv(rz_bv_new_from_ut64(8, 0x42)));
+	RzILOpEffect *data_eff = rz_il_op_new_set("leetbap", false, rz_il_op_new_bitv_from_ut64(8, 0x13));
 
 	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x07);
 	rz_il_vm_create_label(vm, "beach", dst);
@@ -342,9 +360,9 @@ static bool test_rzil_vm_op_blk() {
 	rz_il_op_effect_free(op);
 
 	mu_assert_true(succ, "op failed");
-	RzILVal *val = rz_il_hash_find_val_by_name(vm, var->var_name);
+	RzILVal *val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var->name);
 	mu_assert_notnull(val, "val null");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "type not bv");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "type not bv");
 	mu_assert_eq(rz_bv_len(val->data.bv), 8, "len not correct");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0x13, "bitv not correct");
 	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x07, "wrong pc");
@@ -372,16 +390,16 @@ static bool test_rzil_vm_op_blk() {
 static bool test_rzil_vm_op_repeat() {
 	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
-	RzILVar *var = rz_il_vm_create_global_variable(vm, "leetbap", RZ_IL_VAR_TYPE_UNK, true);
-	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(16, 42)));
-	RzILVar *count = rz_il_vm_create_global_variable(vm, "i", RZ_IL_VAR_TYPE_UNK, true);
-	rz_il_hash_bind(vm, count, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(8, 7)));
+	RzILVar *var = rz_il_vm_create_global_var(vm, "leetbap", rz_il_sort_pure_bv(16));
+	rz_il_vm_set_global_var(vm, var->name, rz_il_value_new_bitv(rz_bv_new_from_ut64(16, 42)));
+	RzILVar *count = rz_il_vm_create_global_var(vm, "i", rz_il_sort_pure_bv(8));
+	rz_il_vm_set_global_var(vm, count->name, rz_il_value_new_bitv(rz_bv_new_from_ut64(8, 7)));
 
-	RzILOpBitVector *sub = rz_il_op_new_sub(rz_il_op_new_var("i"), rz_il_op_new_bitv_from_ut64(8, 1));
-	RzILOpBitVector *mul = rz_il_op_new_mul(rz_il_op_new_var("leetbap"), rz_il_op_new_bitv_from_ut64(16, 3));
+	RzILOpBitVector *sub = rz_il_op_new_sub(rz_il_op_new_var("i", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_bitv_from_ut64(8, 1));
+	RzILOpBitVector *mul = rz_il_op_new_mul(rz_il_op_new_var("leetbap", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_bitv_from_ut64(16, 3));
 
-	RzILOpEffect *mul_eff = rz_il_op_new_set("leetbap", rz_il_op_pure_dup(mul));
-	RzILOpEffect *sub_eff = rz_il_op_new_set("i", rz_il_op_pure_dup(sub));
+	RzILOpEffect *mul_eff = rz_il_op_new_set("leetbap", false, mul);
+	RzILOpEffect *sub_eff = rz_il_op_new_set("i", false, rz_il_op_pure_dup(sub));
 	RzILOpEffect *data_seq = rz_il_op_new_seq(mul_eff, sub_eff);
 	RzILOpBool *c = rz_il_op_new_non_zero(sub);
 
@@ -390,14 +408,14 @@ static bool test_rzil_vm_op_repeat() {
 	rz_il_op_effect_free(op);
 
 	mu_assert_true(succ, "op failed");
-	RzILVal *val = rz_il_hash_find_val_by_name(vm, var->var_name);
+	RzILVal *val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var->name);
 	mu_assert_notnull(val, "leetbap null");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "leetbap type not bv");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "leetbap type not bv");
 	mu_assert_eq(rz_bv_len(val->data.bv), 16, "leetbap len not correct");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 30618, "leetbap bitv not correct");
-	RzILVal *val2 = rz_il_hash_find_val_by_name(vm, count->var_name);
+	RzILVal *val2 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, count->name);
 	mu_assert_notnull(val2, "i null");
-	mu_assert_eq(val2->type, RZ_IL_VAR_TYPE_BV, "i type not bv");
+	mu_assert_eq(val2->type, RZ_IL_TYPE_PURE_BITVECTOR, "i type not bv");
 	mu_assert_eq(rz_bv_len(val2->data.bv), 8, "i len not correct");
 	mu_assert_eq(rz_bv_to_ut64(val2->data.bv), 1, "i bitv not correct");
 
@@ -406,15 +424,13 @@ static bool test_rzil_vm_op_repeat() {
 }
 
 static void hook_test(RzILVM *vm, RzILOpEffect *op) {
-	RzILVar *var = rz_il_find_var_by_name(vm, "myvar");
-	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(32, 0xc0ffee)));
+	rz_il_vm_set_global_var(vm, "myvar", rz_il_value_new_bitv(rz_bv_new_from_ut64(32, 0xc0ffee)));
 }
 
 static bool test_rzil_vm_op_goto_hook() {
 	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
-	RzILVar *var = rz_il_vm_create_global_variable(vm, "myvar", RZ_IL_VAR_TYPE_UNK, true);
-	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
+	rz_il_vm_create_global_var(vm, "myvar", rz_il_sort_pure_bv(32));
 
 	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x42);
 	RzILEffectLabel *label = rz_il_vm_create_label_lazy(vm, "beach");
@@ -428,8 +444,8 @@ static bool test_rzil_vm_op_goto_hook() {
 	mu_assert_true(succ, "success");
 
 	// check the effect we implemented in hook_test
-	RzILVal *val = rz_il_hash_find_val_by_name(vm, "myvar");
-	mu_assert_eq(val->type, RZ_IL_VAR_TYPE_BV, "val type");
+	RzILVal *val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "myvar");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0xc0ffee, "val contents");
 
 	rz_il_vm_free(vm);
@@ -450,6 +466,7 @@ static bool test_rzil_vm_op_load() {
 	mu_assert_notnull(res, "eval res");
 	mu_assert_eq(rz_bv_len(res), 8, "res byte size");
 	mu_assert_eq(rz_bv_to_ut64(res), 0x42, "res value");
+	rz_bv_free(res);
 
 	op = rz_il_op_new_load(0, rz_il_op_new_bitv_from_ut64(16, 100));
 	res = rz_il_evaluate_bitv(vm, op);
@@ -457,6 +474,7 @@ static bool test_rzil_vm_op_load() {
 	mu_assert_notnull(res, "eval res");
 	mu_assert_eq(rz_bv_len(res), 8, "res byte size");
 	mu_assert_eq(rz_bv_to_ut64(res), 0xaa, "res value (overflow)");
+	rz_bv_free(res);
 
 	rz_il_vm_free(vm);
 	mu_end;
@@ -494,6 +512,7 @@ static bool test_rzil_vm_op_loadw_le() {
 	mu_assert_notnull(res, "eval res");
 	mu_assert_eq(rz_bv_len(res), 16, "res byte size");
 	mu_assert_eq(rz_bv_to_ut64(res), 0x442, "res value");
+	rz_bv_free(res);
 
 	rz_il_vm_free(vm);
 	mu_end;
@@ -531,6 +550,7 @@ static bool test_rzil_vm_op_loadw_be() {
 	mu_assert_notnull(res, "eval res");
 	mu_assert_eq(rz_bv_len(res), 16, "res byte size");
 	mu_assert_eq(rz_bv_to_ut64(res), 0x4204, "res value");
+	rz_bv_free(res);
 
 	rz_il_vm_free(vm);
 	mu_end;
@@ -571,9 +591,10 @@ static bool test_rzil_vm_op_append() {
 
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
-	mu_run_test(test_rzil_vm_basic_operation);
-	mu_run_test(test_rzil_vm_operation);
+	mu_run_test(test_rzil_vm_global_vars);
+	mu_run_test(test_rzil_vm_labels);
 	mu_run_test(test_rzil_vm_root_evaluation);
+	mu_run_test(test_rzil_vm_op_let);
 	mu_run_test(test_rzil_vm_op_cast);
 	mu_run_test(test_rzil_vm_op_unsigned);
 	mu_run_test(test_rzil_vm_op_signed);

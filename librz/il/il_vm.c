@@ -25,15 +25,6 @@ static void free_label_kv(HtPPKv *kv) {
 	free(lbl);
 }
 
-static void free_bind_var(HtPPKv *kv) {
-	free(kv->key);
-}
-
-static void free_bind_var_val(HtPPKv *kv) {
-	free(kv->key);
-	rz_il_value_free(kv->value);
-}
-
 /**
  * initiate an empty VM
  * \param vm RzILVM, pointer to an empty VM
@@ -43,16 +34,19 @@ static void free_bind_var_val(HtPPKv *kv) {
 RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian) {
 	rz_return_val_if_fail(vm, false);
 
-	rz_pvector_init(&vm->vm_global_variable_list, (RzPVectorFree)rz_il_variable_free);
-	rz_pvector_init(&vm->vm_local_variable_list, (RzPVectorFree)rz_il_variable_free);
-	rz_pvector_init(&vm->vm_memory, (RzPVectorFree)rz_il_mem_free);
-
-	vm->vm_global_value_set = rz_il_new_bag(RZ_IL_VM_MAX_VAL, (RzILBagFreeFunc)rz_il_value_free);
-	if (!vm->vm_global_value_set) {
-		RZ_LOG_ERROR("RzIL: cannot allocate VM value bag\n");
+	if (!rz_il_var_set_init(&vm->global_vars)) {
 		rz_il_vm_fini(vm);
 		return false;
 	}
+	if (!rz_il_var_set_init(&vm->local_vars)) {
+		rz_il_vm_fini(vm);
+		return false;
+	}
+	if (!rz_il_var_set_init(&vm->local_pure_vars)) {
+		rz_il_vm_fini(vm);
+		return false;
+	}
+	rz_pvector_init(&vm->vm_memory, (RzPVectorFree)rz_il_mem_free);
 
 	// Key : string
 	// Val : RzILEffectLabel
@@ -68,30 +62,6 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
 	vm->vm_global_label_table = ht_pp_new_opt(&lbl_options);
 	if (!vm->vm_global_label_table) {
 		RZ_LOG_ERROR("RzIL: cannot allocate VM label hashmap\n");
-		rz_il_vm_fini(vm);
-		return false;
-	}
-
-	// Binding Table for Variable and Value
-	HtPPOptions bind_options = { 0 };
-	bind_options.cmp = (HtPPListComparator)strcmp;
-	bind_options.hashfn = (HtPPHashFunction)sdb_hash;
-	bind_options.dupkey = (HtPPDupKey)strdup;
-	bind_options.dupvalue = NULL;
-	bind_options.freefn = (HtPPKvFreeFunc)free_bind_var;
-	bind_options.elem_size = sizeof(HtPPKv);
-	bind_options.calcsizeK = (HtPPCalcSizeK)strlen;
-	vm->vm_global_bind_table = ht_pp_new_opt(&bind_options);
-	if (!vm->vm_global_bind_table) {
-		RZ_LOG_ERROR("RzIL: cannot allocate VM global hashmap\n");
-		rz_il_vm_fini(vm);
-		return false;
-	}
-
-	bind_options.freefn = (HtPPKvFreeFunc)free_bind_var_val;
-	vm->vm_local_bind_table = ht_pp_new_opt(&bind_options);
-	if (!vm->vm_local_bind_table) {
-		RZ_LOG_ERROR("RzIL: cannot allocate VM local hashmap\n");
 		rz_il_vm_fini(vm);
 		return false;
 	}
@@ -128,20 +98,12 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
  * \param vm RzILVM* pointer to VM
  */
 RZ_API void rz_il_vm_fini(RzILVM *vm) {
-	if (vm->vm_global_value_set) {
-		rz_il_free_bag(vm->vm_global_value_set);
-		vm->vm_global_value_set = NULL;
-	}
-	rz_pvector_fini(&vm->vm_global_variable_list);
+	rz_il_var_set_fini(&vm->global_vars);
+	rz_il_var_set_fini(&vm->local_vars);
+	rz_il_var_set_fini(&vm->local_pure_vars);
+
 	rz_il_reg_binding_free(vm->reg_binding);
-	rz_pvector_fini(&vm->vm_local_variable_list);
 	rz_pvector_fini(&vm->vm_memory);
-
-	ht_pp_free(vm->vm_global_bind_table);
-	vm->vm_global_bind_table = NULL;
-
-	ht_pp_free(vm->vm_local_bind_table);
-	vm->vm_local_bind_table = NULL;
 
 	ht_pp_free(vm->vm_global_label_table);
 	vm->vm_global_label_table = NULL;
@@ -209,306 +171,100 @@ RZ_API RzILMem *rz_il_vm_get_mem(RzILVM *vm, RzILMemIndex index) {
 }
 
 /**
- * Create A new global variable in VM
- * \param  vm         RzILVM, pointer to VM
- * \param  name       string, name of this variable
- * \param  is_mutable bool, sets if variable is const or not
- * \return var        RzILVar, pointer to the new variable in VM
+ * Create a new global variable of the given sort and assign it to all-zero/false
  */
-RZ_API RZ_BORROW RzILVar *rz_il_vm_create_global_variable(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILVarType type, bool is_mutable) {
+RZ_API RZ_BORROW RzILVar *rz_il_vm_create_global_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILSortPure sort) {
 	rz_return_val_if_fail(vm && name, NULL);
-	if (rz_pvector_len(&vm->vm_global_variable_list) >= RZ_IL_VM_MAX_VAR) {
-		RZ_LOG_ERROR("RzIL: reached max number of variables that the VM can handle.\n");
+	RzILVar *var = rz_il_var_set_create_var(&vm->global_vars, name, sort);
+	if (!var) {
 		return NULL;
 	}
-
-	// create , store, update count
-	RzILVar *var = rz_il_variable_new(name, type, is_mutable);
-	rz_pvector_push(&vm->vm_global_variable_list, var);
+	RzILVal *val = rz_il_value_new_zero_of(sort);
+	if (!val) {
+		return NULL;
+	}
+	rz_il_var_set_bind(&vm->global_vars, name, val);
 	return var;
 }
 
 /**
- * Create A new local variable in VM
- * \param  vm         RzILVM, pointer to VM
- * \param  name       string, name of this variable
- * \param  is_mutable bool, sets if variable is const or not
- * \return var        RzILVar, pointer to the new variable in VM
+ * Set the value of a global variable to the given value.
+ * The variable must already exist.
  */
-RZ_API RZ_BORROW RzILVar *rz_il_vm_create_local_variable(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILVarType type, bool is_mutable) {
-	rz_return_val_if_fail(vm && name, NULL);
-	if (rz_pvector_len(&vm->vm_global_variable_list) >= RZ_IL_VM_MAX_VAR) {
-		RZ_LOG_ERROR("RzIL: reached max number of variables that the VM can handle.\n");
-		return NULL;
-	}
-
-	// create , store, update count
-	RzILVar *var = rz_il_variable_new(name, type, is_mutable);
-	rz_pvector_push(&vm->vm_local_variable_list, var);
-	return var;
+RZ_API void rz_il_vm_set_global_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RZ_OWN RzILVal *val) {
+	rz_return_if_fail(vm && name && val);
+	rz_il_var_set_bind(&vm->global_vars, name, val);
 }
 
 /**
- * Create a new value in VM (BitVector type)
- * \param vm RzILVM, pointer to VM
- * \param bitv RzBitVector, enum to specify the type of this value
- * \return val RzILVal, pointer to the new value in VM
+ * Set the value of a local variable to the given value.
+ * The variable is created with the sort of \p val if it does not already exist.
  */
-RZ_API RZ_BORROW RzILVal *rz_il_vm_create_value_bitv(RZ_NONNULL RzILVM *vm, RZ_NULLABLE RzBitVector *bitv) {
-	rz_return_val_if_fail(vm && bitv, NULL);
-	if (vm->val_count >= RZ_IL_VM_MAX_VAL) {
-		RZ_LOG_ERROR("No More Values\n");
-		return NULL;
-	}
-
-	RzILVal *val = rz_il_value_new_bitv(bitv);
-	rz_il_add_to_bag(vm->vm_global_value_set, val);
-	return val;
+RZ_API void rz_il_vm_set_local_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RZ_OWN RzILVal *val) {
+	rz_return_if_fail(vm && name && val);
+	rz_il_var_set_create_var(&vm->local_vars, name, rz_il_value_get_sort(val));
+	rz_il_var_set_bind(&vm->local_vars, name, val);
 }
 
 /**
- * Create a new value in VM (Boolean type)
- * \param vm RzILVM, pointer to VM
- * \param type RzILVarType, enum to specify the type of this value
- * \return val RzILVal, pointer to the new value in VM
+ * \brief Create and assign a new local let binding.
+ *
+ * This is meant to be called right before evaluating the body of a let expression. Inside the body, \p name will then be bound to \p val.
+ * Because there might already exist an outer binding of the same name shadowing this one, the previous value is returned.
+ * After evaluating the body, call rz_il_vm_pop_local_pure_var(), passing this value.
  */
-RZ_API RZ_BORROW RzILVal *rz_il_vm_create_value_bool(RZ_NONNULL RzILVM *vm, bool value) {
-	rz_return_val_if_fail(vm, NULL);
-	if (vm->val_count >= RZ_IL_VM_MAX_VAL) {
-		RZ_LOG_ERROR("No More Values\n");
-		return NULL;
-	}
-	RzILBool *b = rz_il_bool_new(value);
-	if (!b) {
-		rz_warn_if_reached();
-		return NULL;
-	}
-	RzILVal *val = rz_il_value_new_bool(b);
-	rz_il_add_to_bag(vm->vm_global_value_set, val);
-	return val;
+RZ_API RzILLocalPurePrev rz_il_vm_push_local_pure_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILVal *val) {
+	rz_return_val_if_fail(vm && name && val, NULL);
+	RzILVal *r = rz_il_var_set_remove_var(&vm->local_pure_vars, name);
+	rz_il_var_set_create_var(&vm->local_pure_vars, name, rz_il_value_get_sort(val));
+	rz_il_var_set_bind(&vm->local_pure_vars, name, val);
+	return r;
 }
 
 /**
- * Create a new value in VM with (Unknown type)
- * \param vm RzILVM, pointer to VM
- * \param type RzILVarType, enum to specify the type of this value
- * \return val RzILVal, pointer to the new value in VM
+ * \brief Remove a local let binding and restore the state for the outer context.
+ * \param prev pass here the return value of rz_il_vm_push_local_pure_var()
  */
-RZ_API RZ_BORROW RzILVal *rz_il_vm_create_value_unk(RZ_NONNULL RzILVM *vm) {
-	rz_return_val_if_fail(vm, NULL);
-	if (vm->val_count >= RZ_IL_VM_MAX_VAL) {
-		RZ_LOG_ERROR("No More Values\n");
-		return NULL;
-	}
-
-	RzILVal *val = rz_il_value_new_unk();
-	rz_il_add_to_bag(vm->vm_global_value_set, val);
-	return val;
-}
-
-/**
- * Add a register in VM (create a variable and value, and then bind value to variable)
- * \param vm RzILVM, pointer to this vm
- * \param name string, the name of register
- * \param length ut32, width of register
- */
-RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, ut32 length) {
-	rz_return_if_fail(vm && name && length > 0);
-	RzBitVector *bv = rz_bv_new_zero(length);
-	if (!bv) {
-		return;
-	}
-	RzILVar *var = rz_il_vm_create_global_variable(vm, name, RZ_IL_VAR_TYPE_BV, true);
-	RzILVal *val = rz_il_vm_create_value_bitv(vm, bv);
-	rz_il_hash_bind(vm, var, val);
-}
-
-/**
- * Add a register in VM (create a variable and value, and then bind value to variable)
- * \param vm RzILVM, pointer to this vm
- * \param name string, the name of register
- * \param value bool, value of the bit register
- */
-RZ_API void rz_il_vm_add_bit_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, bool value) {
+RZ_API void rz_il_vm_pop_local_pure_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILLocalPurePrev prev) {
 	rz_return_if_fail(vm && name);
-	RzILVar *var = rz_il_vm_create_global_variable(vm, name, RZ_IL_VAR_TYPE_BOOL, true);
-	RzILVal *val = rz_il_vm_create_value_bool(vm, value);
-	rz_il_hash_bind(vm, var, val);
-}
-
-/**
- * Make a temporary value (type `RzILVal`) inside vm become a value store in VM
- * \param vm RzILVM, pointer to VM
- * \param temp_val_index int, the index of temporary value you attempt to fortify
- * \return val RzILVal, pointer to the fortified value
- */
-RZ_API RZ_BORROW RzILVal *rz_il_vm_fortify_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVal *val) {
-	rz_return_val_if_fail(vm && val, NULL);
-	rz_il_add_to_bag(vm->vm_global_value_set, val);
-	return val;
-}
-
-/**
- * Make a temporary value (type `RzBitVector`) inside vm become a value store in VM
- * \param vm RzILVM, pointer to VM
- * \param temp_val_index int, the index of temporary value you attempt to fortify
- * \return val RzILVal, pointer to the fortified value
- */
-RZ_API RZ_BORROW RzILVal *rz_il_vm_fortify_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzBitVector *bitv) {
-	rz_return_val_if_fail(vm && bitv, NULL);
-	RzILVal *val = rz_il_value_new_bitv(bitv);
-	if (!val) {
-		return NULL;
+	RzILVal *r = rz_il_var_set_remove_var(&vm->local_pure_vars, name);
+	rz_warn_if_fail(r); // the var should always be bound when calling this function
+	rz_il_value_free(r);
+	if (prev) {
+		rz_il_var_set_create_var(&vm->local_pure_vars, name, rz_il_value_get_sort(prev));
+		rz_il_var_set_bind(&vm->local_pure_vars, name, prev);
 	}
-	rz_il_add_to_bag(vm->vm_global_value_set, val);
-	return val;
 }
 
-/**
- * Make a temporary value (type `RzILBool`) inside vm become a value store in VM
- * \param vm RzILVM, pointer to VM
- * \param temp_val_index int, the index of temporary value you attempt to fortify
- * \return val RzILVal, pointer to the fortified value
- */
-RZ_API RZ_BORROW RzILVal *rz_il_vm_fortify_bool(RZ_NONNULL RzILVM *vm, bool value) {
+static RzILVarSet *var_set_of_kind(RzILVM *vm, RzILVarKind kind) {
+	switch (kind) {
+	case RZ_IL_VAR_KIND_GLOBAL:
+		return &vm->global_vars;
+	case RZ_IL_VAR_KIND_LOCAL:
+		return &vm->local_vars;
+	case RZ_IL_VAR_KIND_LOCAL_PURE:
+		return &vm->local_pure_vars;
+	}
+	rz_warn_if_reached();
+	return NULL;
+}
+
+RZ_API RZ_BORROW RzILVar *rz_il_vm_get_var(RZ_NONNULL RzILVM *vm, RzILVarKind kind, const char *name) {
+	rz_return_val_if_fail(vm && name, NULL);
+	return rz_il_var_set_get(var_set_of_kind(vm, kind), name);
+}
+
+RZ_API RZ_OWN RzPVector /* <RzILVar> */ *rz_il_vm_get_all_vars(RZ_NONNULL RzILVM *vm, RzILVarKind kind) {
 	rz_return_val_if_fail(vm, NULL);
-	RzILBool *b = rz_il_bool_new(value);
-	if (!b) {
-		rz_warn_if_reached();
-		return NULL;
-	}
-	RzILVal *val = rz_il_value_new_bool(b);
-	if (!val) {
-		return NULL;
-	}
-	rz_il_add_to_bag(vm->vm_global_value_set, val);
-	return val;
+	return rz_il_var_set_get_all(var_set_of_kind(vm, kind));
 }
 
 /**
- * Find the global value bind to the given variable
- * \param vm RzILVM, pointer to VM
- * \param var RzILVar, pointer to a variable
- * \return val RzILVal, pointer to the value of variable
+ * Get the current value of the variable identified by its \p name and \p kind.
  */
-RZ_API RZ_BORROW RzILVal *rz_il_hash_find_val_by_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var) {
-	rz_return_val_if_fail(vm && var, NULL);
-	return rz_il_hash_find_val_by_name(vm, var->var_name);
-}
-
-/**
- * Find the global value by variable name
- * \param vm RzILVM, pointer to VM
- * \param var_name string, the name of variable
- * \return val RzILVal, pointer to the value of variable with name `var_name`
- */
-RZ_API RZ_BORROW RzILVal *rz_il_hash_find_val_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name) {
-	rz_return_val_if_fail(vm && var_name, NULL);
-	return ht_pp_find(vm->vm_global_bind_table, var_name, NULL);
-}
-
-/**
- * Find the local value bind to the given variable
- * \param vm RzILVM, pointer to VM
- * \param var RzILVar, pointer to a variable
- * \return val RzILVal, pointer to the value of variable
- */
-RZ_API RZ_BORROW RzILVal *rz_il_hash_find_local_val_by_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var) {
-	rz_return_val_if_fail(vm && var, NULL);
-	return rz_il_hash_find_local_val_by_name(vm, var->var_name);
-}
-
-/**
- * Find the local value by variable name
- * \param vm RzILVM, pointer to VM
- * \param var_name string, the name of variable
- * \return val RzILVal, pointer to the value of variable with name `var_name`
- */
-RZ_API RZ_BORROW RzILVal *rz_il_hash_find_local_val_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name) {
-	rz_return_val_if_fail(vm && var_name, NULL);
-	return ht_pp_find(vm->vm_local_bind_table, var_name, NULL);
-}
-
-/**
- * Find the global variable by variable name
- * \param vm RzILVM, pointer to VM
- * \param var_name string, the name of variable
- * \return var RzILVar, pointer to the variable
- */
-RZ_API RZ_BORROW RzILVar *rz_il_find_var_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name) {
-	rz_return_val_if_fail(vm && var_name, NULL);
-	RzILVar *var;
-	void **it;
-	rz_pvector_foreach (&vm->vm_global_variable_list, it) {
-		var = (RzILVar *)*it;
-		if (!strcmp(var_name, var->var_name)) {
-			return var;
-		}
-	}
-	return NULL;
-}
-
-/**
- * Find the local variable by variable name
- * \param vm RzILVM, pointer to VM
- * \param var_name string, the name of variable
- * \return var RzILVar, pointer to the variable
- */
-RZ_API RZ_BORROW RzILVar *rz_il_find_local_var_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name) {
-	rz_return_val_if_fail(vm && var_name, NULL);
-	RzILVar *var;
-	void **it;
-	rz_pvector_foreach (&vm->vm_local_variable_list, it) {
-		var = (RzILVar *)*it;
-		if (!strcmp(var_name, var->var_name)) {
-			return var;
-		}
-	}
-	return NULL;
-}
-
-/**
- * Cancel the binding between global var and its val, make it available to bind another value
- * \param vm pointer to VM
- * \param var RzILVar, variable you want to cancel its original binding
- */
-RZ_API void rz_il_hash_cancel_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var) {
-	rz_return_if_fail(vm && var);
-	RzILVal *val = rz_il_hash_find_val_by_name(vm, var->var_name);
-	rz_il_rm_from_bag(vm->vm_global_value_set, val);
-	ht_pp_delete(vm->vm_global_bind_table, var->var_name);
-}
-
-/**
- * Bind global variable and value
- * \param vm pointer to VM
- * \param var RzILVar, variable
- * \param val RzILVal, value
- */
-RZ_API void rz_il_hash_bind(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var, RZ_NONNULL RzILVal *val) {
-	rz_return_if_fail(vm && var && val);
-	ht_pp_update(vm->vm_global_bind_table, var->var_name, val);
-}
-
-/**
- * Cancel the binding between local var and its val, make it available to bind another value
- * \param vm pointer to VM
- * \param var RzILVar, variable you want to cancel its original binding
- */
-RZ_API void rz_il_hash_cancel_local_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var) {
-	rz_return_if_fail(vm && var);
-	ht_pp_delete(vm->vm_local_bind_table, var->var_name);
-}
-
-/**
- * Bind local variable and value
- * \param vm pointer to VM
- * \param var RzILVar, variable
- * \param val RzILVal, value
- */
-RZ_API void rz_il_hash_local_bind(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var, RZ_NONNULL RzILVal *val) {
-	rz_return_if_fail(vm && var && val);
-	ht_pp_update(vm->vm_local_bind_table, var->var_name, val);
+RZ_API RZ_BORROW RzILVal *rz_il_vm_get_var_value(RZ_NONNULL RzILVM *vm, RzILVarKind kind, const char *name) {
+	rz_return_val_if_fail(vm && name, NULL);
+	return rz_il_var_set_get_value(var_set_of_kind(vm, kind), name);
 }
 
 /**
