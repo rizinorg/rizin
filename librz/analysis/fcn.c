@@ -533,7 +533,24 @@ static int analyze_function_locally(RzAnalysis *analysis, RzAnalysisFunction *fc
 	return ret;
 }
 
-static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
+static inline void set_bb_branches(RZ_OUT RzAnalysisBlock *bb, const ut64 jump, const ut64 fail) {
+	bb->jump = jump;
+	bb->fail = fail;
+}
+
+/**
+ * \brief Analyses the given task item \p item for branches.
+ *
+ * Analysis starts for all instructions from \p item->start_address. If a branch is
+ * encountered a new task item is added to the list \p tasks.
+ * If an end of a basic function block is encountered (e.g. an invalid instruction),
+ * the cause for it is returned.
+ *
+ * \param item The task item with the parent function and start address to start analysing from.
+ * \param tasks The task list to append the new task items to.
+ * \return RzAnalysisBBEndCause Cause a basic block ended.
+ */
+static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 	rz_return_val_if_fail(item && tasks, RZ_ANALYSIS_RET_ERROR);
 	RzAnalysis *analysis = item->fcn->analysis;
 	RzAnalysisFunction *fcn = item->fcn;
@@ -546,7 +563,7 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 	char *movbasereg = NULL;
 	RzAnalysisBlock *bb = item->block;
 	RzAnalysisBlock *bbg = NULL;
-	int ret = RZ_ANALYSIS_RET_END, skip_ret = 0;
+	RzAnalysisBBEndCause ret = RZ_ANALYSIS_RET_END, skip_ret = 0;
 	bool overlapped = false;
 	RzAnalysisOp op = { 0 };
 	int oplen, idx = 0;
@@ -569,6 +586,7 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 	bool is_x86 = is_arm ? false : analysis->cur->arch && !strncmp(analysis->cur->arch, "x86", 3);
 	bool is_amd64 = is_x86 ? fcn->cc && !strcmp(fcn->cc, "amd64") : false;
 	bool is_dalvik = is_x86 ? false : analysis->cur->arch && !strncmp(analysis->cur->arch, "dalvik", 6);
+	bool is_hexagon = is_x86 ? false : analysis->cur->arch && !strncmp(analysis->cur->arch, "hexagon", 7);
 	RzRegItem *variadic_reg = NULL;
 	if (is_amd64) {
 		variadic_reg = rz_reg_get(analysis->reg, "rax", RZ_REG_TYPE_GPR);
@@ -887,6 +905,7 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 			rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA);
 		}
 		analyze_retpoline(analysis, &op);
+
 		switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
 		case RZ_ANALYSIS_OP_TYPE_CMOV:
 		case RZ_ANALYSIS_OP_TYPE_MOV:
@@ -1019,6 +1038,9 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 		case RZ_ANALYSIS_OP_TYPE_ILL:
 			gotoBeach(RZ_ANALYSIS_RET_END);
 		case RZ_ANALYSIS_OP_TYPE_TRAP:
+			if (analysis->opt.aftertrap) {
+				continue;
+			}
 			gotoBeach(RZ_ANALYSIS_RET_END);
 		case RZ_ANALYSIS_OP_TYPE_NOP:
 			// do nothing, because the nopskip goes before this switch
@@ -1043,6 +1065,14 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			if (rz_analysis_noreturn_at(analysis, op.jump)) {
+				if (continue_after_jump && is_hexagon) {
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+					if (!overlapped) {
+						set_bb_branches(bb, op.jump, op.addr + op.size);
+					}
+					gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+				}
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			{
@@ -1052,6 +1082,14 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 					must_eob = (op.jump < map->itv.addr || op.jump >= map->itv.addr + map->itv.size);
 				}
 				if (must_eob) {
+					if (continue_after_jump && is_hexagon) {
+						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+						if (!overlapped) {
+							set_bb_branches(bb, op.jump, op.addr + op.size);
+						}
+						gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+					}
 					op.jump = UT64_MAX;
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
@@ -1063,10 +1101,13 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 			gotoBeach(RZ_ANALYSIS_RET_END);
 #else
 			if (!overlapped) {
-				bb->jump = op.jump;
-				bb->fail = UT64_MAX;
+				set_bb_branches(bb, op.jump, UT64_MAX);
 			}
 			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+			if (continue_after_jump && is_hexagon) {
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+			}
 			int tc = analysis->opt.tailcall;
 			if (tc) {
 				// eprintf ("TAIL CALL AT 0x%llx\n", op.addr);
@@ -1108,12 +1149,30 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 		case RZ_ANALYSIS_OP_TYPE_MCJMP:
 		case RZ_ANALYSIS_OP_TYPE_RCJMP:
 		case RZ_ANALYSIS_OP_TYPE_UCJMP:
+			if (op.prefix & RZ_ANALYSIS_OP_PREFIX_HWLOOP_END) {
+				if (op.jump != 0) {
+					rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE);
+				}
+				if (op.fail != 0) {
+					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_REF_TYPE_CODE);
+				}
+				if (continue_after_jump) {
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+				}
+				if (!overlapped) {
+					// If it is an endloop01 instruction the jump to the inner loop is not added yet.
+					set_bb_branches(bb, op.jump, op.addr + op.size);
+				}
+				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+			}
 			if (analysis->opt.cjmpref) {
-				(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE);
+				rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE);
+				if (is_hexagon) {
+					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_REF_TYPE_CODE);
+				}
 			}
 			if (!overlapped) {
-				bb->jump = op.jump;
-				bb->fail = op.fail;
+				set_bb_branches(bb, op.jump, op.fail);
 			}
 			if (bb->cond) {
 				bb->cond->type = op.cond;
@@ -1150,6 +1209,13 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 			}
 			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail);
 			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+			if (continue_after_jump && is_hexagon) {
+				if (op.type == RZ_ANALYSIS_OP_TYPE_RCJMP) {
+					break;
+				}
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+			}
 			if (!continue_after_jump) {
 				if (op.jump < fcn->addr) {
 					if (!overlapped) {
@@ -1199,6 +1265,16 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 			break;
 		case RZ_ANALYSIS_OP_TYPE_UJMP:
 		case RZ_ANALYSIS_OP_TYPE_RJMP:
+			if (is_hexagon) {
+				if (op.analysis_vals[0].plugin_specific == 31) {
+					// jumpr Rs instruction which uses R31.
+					// This is a return, but not typed as such.
+					gotoBeach(RZ_ANALYSIS_RET_END);
+				} else {
+					// Ignore
+					break;
+				}
+			}
 			if (is_arm && last_is_mov_lr_pc) {
 				break;
 			}
@@ -1363,6 +1439,12 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			break;
+		case RZ_ANALYSIS_OP_TYPE_CRET:
+			if (continue_after_jump && is_hexagon) {
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+				set_bb_branches(bb, op.addr + op.size, UT64_MAX);
+				gotoBeach(RZ_ANALYSIS_RET_COND);
+			}
 		}
 		if (op.type != RZ_ANALYSIS_OP_TYPE_MOV && op.type != RZ_ANALYSIS_OP_TYPE_CMOV && op.type != RZ_ANALYSIS_OP_TYPE_LEA) {
 			last_is_reg_mov_lea = false;
@@ -1439,10 +1521,11 @@ RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector *tasks) {
 		rz_vector_pop(tasks, &item);
 		int r = run_basic_block_analysis(&item, tasks);
 		switch (r) {
+		case RZ_ANALYSIS_RET_BRANCH:
+		case RZ_ANALYSIS_RET_COND:
+			continue;
 		case RZ_ANALYSIS_RET_NOP:
 		case RZ_ANALYSIS_RET_ERROR:
-		case RZ_ANALYSIS_RET_DUP:
-		case RZ_ANALYSIS_RET_NEW:
 			if (ret != RZ_ANALYSIS_RET_END) {
 				ret = r;
 			}
