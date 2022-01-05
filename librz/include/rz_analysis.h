@@ -353,7 +353,8 @@ typedef enum {
 	RZ_ANALYSIS_OP_PREFIX_REPNE = 1 << 2,
 	RZ_ANALYSIS_OP_PREFIX_LOCK = 1 << 3,
 	RZ_ANALYSIS_OP_PREFIX_LIKELY = 1 << 4,
-	RZ_ANALYSIS_OP_PREFIX_UNLIKELY = 1 << 5
+	RZ_ANALYSIS_OP_PREFIX_UNLIKELY = 1 << 5,
+	RZ_ANALYSIS_OP_PREFIX_HWLOOP_END = 1 << 6, /* Hexagon specific. Last instruction in a hardware loop */
 	/* TODO: add segment override typemods? */
 } RzAnalysisOpPrefix;
 
@@ -471,13 +472,13 @@ enum {
 	RZ_ANALYSIS_REFLINE_TYPE_MIDDLE_AFTER = 8 /* as above but for lines after disasm */
 };
 
-enum {
+typedef enum {
 	RZ_ANALYSIS_RET_NOP = 0,
-	RZ_ANALYSIS_RET_ERROR = -1,
-	RZ_ANALYSIS_RET_DUP = -2,
-	RZ_ANALYSIS_RET_NEW = -3,
-	RZ_ANALYSIS_RET_END = -4
-};
+	RZ_ANALYSIS_RET_ERROR = -1, // Basic block ended because of analysis error.
+	RZ_ANALYSIS_RET_END = -4, // Basic block ended because of return instruction.
+	RZ_ANALYSIS_RET_BRANCH = -5, // Basic block ended because of branch instruction.
+	RZ_ANALYSIS_RET_COND = -6, // Basic block ended because of conditional return.
+} RzAnalysisBBEndCause;
 
 typedef struct rz_analysis_case_obj_t {
 	ut64 addr;
@@ -523,6 +524,7 @@ typedef struct rz_analysis_options_t {
 	bool trycatch;
 	bool norevisit;
 	int afterjmp; // continue analysis after jmp eax or forward jmp // option
+	int aftertrap; // continue analysis after trap instructions
 	int recont; // continue on recurse analysis mode
 	int noncode;
 	int nopskip; // skip nops at the beginning of functions
@@ -785,6 +787,7 @@ typedef struct rz_analysis_value_t {
 	RzRegItem *seg; // segment selector register
 	RzRegItem *reg; // register / register base used (-1 if no reg)
 	RzRegItem *regdelta; // register index used (-1 if no reg)
+	ut64 plugin_specific; // Can be used differently by each analysis plugin.
 } RzAnalysisValue;
 
 typedef enum {
