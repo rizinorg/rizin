@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 /**
+ * \file
  * \brief Type and Sort identifiers for values in the IL
  *
  * Our notion:

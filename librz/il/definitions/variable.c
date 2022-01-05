@@ -49,6 +49,14 @@ static void val_ht_free(HtPPKv *kv) {
 	rz_il_value_free(kv->value);
 }
 
+/**
+ * Initialize \p vs as an empty variable set
+ *
+ * This makes sure that if a failure occurs, the contents are still zeroed out,
+ * so it is safe (but not required) to call rz_il_var_set_fini(), even if the init failed.
+ *
+ * \return whether the initialization succeeded
+ */
 RZ_API bool rz_il_var_set_init(RzILVarSet *vs) {
 	rz_return_val_if_fail(vs, false);
 	memset(vs, 0, sizeof(*vs));
@@ -109,6 +117,15 @@ RZ_API RZ_OWN RZ_NULLABLE RzILVal *rz_il_var_set_remove_var(RzILVarSet *vs, cons
 	return r;
 }
 
+/**
+ * Set the contents of the variable called \p name to \p val
+ *
+ * In order for this to succeed, a variable called \p name must already exist
+ * and the sort of \p val must match the variable's sort. Checking this is done
+ * inside this function, so calling it with invalid args in that sense is fine.
+ *
+ * \return whether the value was successfully bound
+ */
 RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal *val) {
 	rz_return_val_if_fail(vs && name && val, NULL);
 	RzILVar *var = ht_pp_find(vs->vars, name, NULL);
@@ -125,6 +142,9 @@ RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal 
 	return true;
 }
 
+/**
+ * Get the definition of the variable called \p name
+ */
 RZ_API RZ_BORROW RzILVar *rz_il_var_set_get(RzILVarSet *vs, const char *name) {
 	return ht_pp_find(vs->vars, name, NULL);
 }
@@ -134,6 +154,9 @@ static bool vars_collect_cb(void *user, const void *k, const void *v) {
 	return true;
 }
 
+/**
+ * Get a list of all variable definitions in the given set
+ */
 RZ_API RZ_OWN RzPVector /* <RzILVar> */ *rz_il_var_set_get_all(RzILVarSet *vs) {
 	rz_return_val_if_fail(vs, NULL);
 	RzPVector *r = rz_pvector_new(NULL);
@@ -144,6 +167,9 @@ RZ_API RZ_OWN RzPVector /* <RzILVar> */ *rz_il_var_set_get_all(RzILVarSet *vs) {
 	return r;
 }
 
+/**
+ * Get the current value of the variable called \p name
+ */
 RZ_API RZ_BORROW RzILVal *rz_il_var_set_get_value(RzILVarSet *vs, const char *name) {
 	rz_return_val_if_fail(vs && name, NULL);
 	return ht_pp_find(vs->contents, name, NULL);

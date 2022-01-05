@@ -121,6 +121,9 @@ RZ_API void rz_il_value_free(RZ_NULLABLE RzILVal *val) {
 	free(val);
 }
 
+/**
+ * Get the sort that \p val belongs to
+ */
 RZ_API RzILSortPure rz_il_value_get_sort(RZ_NONNULL RzILVal *val) {
 	RzILSortPure r = { 0 };
 	r.type = val->type;
