@@ -9,45 +9,45 @@
 #include <rz_il/rz_il_vm.h>
 
 // Handler for core theory opcodes
-void *rz_il_handler_ite(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_var(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_unk(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
+void *rz_il_handler_ite(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_var(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_let(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_unk(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 
-void *rz_il_handler_bitv(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_msb(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_lsb(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_is_zero(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_eq(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_ule(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_sle(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_neg(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_logical_not(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_add(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_sub(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_mul(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_div(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_sdiv(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_mod(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_smod(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_shiftl(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_shiftr(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_logical_and(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_logical_or(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_logical_xor(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
+void *rz_il_handler_bitv(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_msb(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_lsb(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_is_zero(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_eq(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_ule(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_sle(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_neg(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_logical_not(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_add(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_sub(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_mul(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_div(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_sdiv(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_mod(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_smod(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_shiftl(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_shiftr(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_logical_and(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_logical_or(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_logical_xor(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 
-void *rz_il_handler_bool_false(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_bool_true(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_bool_and(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_bool_or(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_bool_xor(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_bool_inv(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
+void *rz_il_handler_bool_false(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_bool_true(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_bool_and(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_bool_or(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_bool_xor(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_bool_inv(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 
-void *rz_il_handler_cast(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
-void *rz_il_handler_append(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
+void *rz_il_handler_cast(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_append(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 
 bool rz_il_handler_nop(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_set(RzILVM *vm, RzILOpEffect *op);
-bool rz_il_handler_let(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_jmp(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_goto(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_seq(RzILVM *vm, RzILOpEffect *op);
@@ -55,19 +55,20 @@ bool rz_il_handler_blk(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_repeat(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_branch(RzILVM *vm, RzILOpEffect *op);
 
-void *rz_il_handler_load(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
+void *rz_il_handler_load(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 bool rz_il_handler_store(RzILVM *vm, RzILOpEffect *op);
-void *rz_il_handler_loadw(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
+void *rz_il_handler_loadw(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 bool rz_il_handler_storew(RzILVM *vm, RzILOpEffect *op);
 
 // TODO: remove me when all the handlers are implemented
-void *rz_il_handler_pure_unimplemented(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
+void *rz_il_handler_pure_unimplemented(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 bool rz_il_handler_effect_unimplemented(RzILVM *vm, RzILOpEffect *op);
 
 RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] = {
 	[RZ_IL_OP_VAR] = rz_il_handler_var,
 	[RZ_IL_OP_UNK] = rz_il_handler_unk,
 	[RZ_IL_OP_ITE] = rz_il_handler_ite,
+	[RZ_IL_OP_LET] = rz_il_handler_let,
 	[RZ_IL_OP_B0] = rz_il_handler_bool_false,
 	[RZ_IL_OP_B1] = rz_il_handler_bool_true,
 	[RZ_IL_OP_INV] = rz_il_handler_bool_inv,
@@ -107,7 +108,6 @@ RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT
 	[RZ_IL_OP_STOREW] = rz_il_handler_storew,
 	[RZ_IL_OP_NOP] = rz_il_handler_nop,
 	[RZ_IL_OP_SET] = rz_il_handler_set,
-	[RZ_IL_OP_LET] = rz_il_handler_let,
 	[RZ_IL_OP_JMP] = rz_il_handler_jmp,
 	[RZ_IL_OP_GOTO] = rz_il_handler_goto,
 	[RZ_IL_OP_SEQ] = rz_il_handler_seq,
@@ -227,17 +227,12 @@ RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut32 op_size) {
 	rz_bv_free(step);
 	vm->pc = next_pc;
 
-	// remove any local defined variable
-	void **it;
-	rz_pvector_foreach (&vm->vm_local_variable_list, it) {
-		RzILVar *var = *it;
-		rz_il_hash_cancel_local_binding(vm, var);
-	}
-	rz_pvector_clear(&vm->vm_local_variable_list);
+	// remove any local defined variable (local pure vars are unbound automatically)
+	rz_il_var_set_reset(&vm->local_vars);
 	return succ;
 }
 
-static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILPureType *type) {
+static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	RzILOpPureHandler handler = vm->op_handler_pure_table[op->code];
 	rz_return_val_if_fail(handler, NULL);
@@ -251,11 +246,11 @@ static bool eval_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
 	return handler(vm, op);
 }
 
-static const char *pure_type_name(RzILPureType type) {
+static const char *pure_type_name(RzILTypePure type) {
 	switch (type) {
-	case RZ_IL_PURE_TYPE_BITV:
+	case RZ_IL_TYPE_PURE_BITVECTOR:
 		return "bitvector";
-	case RZ_IL_PURE_TYPE_BOOL:
+	case RZ_IL_TYPE_PURE_BOOL:
 		return "bool";
 	default:
 		return "unknown";
@@ -269,13 +264,13 @@ static const char *pure_type_name(RzILPureType type) {
 RZ_API RZ_NULLABLE RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpBitVector *op) {
 	rz_return_val_if_fail(vm && op, NULL);
 	// check type and auto convertion between bitv/bool/val
-	RzILPureType type = -1;
+	RzILTypePure type = -1;
 	void *res = eval_pure(vm, op, &type);
 	if (!res) {
 		// propagate error
 		return NULL;
 	}
-	if (type != RZ_IL_PURE_TYPE_BITV) {
+	if (type != RZ_IL_TYPE_PURE_BITVECTOR) {
 		RZ_LOG_ERROR("RzIL: type error: expected bitvector, got %s\n", pure_type_name(type));
 		return NULL;
 	}
@@ -289,13 +284,13 @@ RZ_API RZ_NULLABLE RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm
 RZ_API RZ_NULLABLE RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpBool *op) {
 	rz_return_val_if_fail(vm && op, NULL);
 	// check type and auto convertion between bitv/bool/val
-	RzILPureType type = -1;
+	RzILTypePure type = -1;
 	void *res = eval_pure(vm, op, &type);
 	if (!res) {
 		// propagate error
 		return NULL;
 	}
-	if (type != RZ_IL_PURE_TYPE_BOOL) {
+	if (type != RZ_IL_TYPE_PURE_BOOL) {
 		RZ_LOG_ERROR("RzIL: type error: expected bool, got %s\n", pure_type_name(type));
 		return NULL;
 	}
@@ -309,16 +304,16 @@ RZ_API RZ_NULLABLE RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, R
 RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op) {
 	rz_return_val_if_fail(vm && op, NULL);
 	// check type and auto convertion between bitv/bool/val
-	RzILPureType type = -1;
+	RzILTypePure type = -1;
 	void *res = eval_pure(vm, op, &type);
 	if (!res) {
 		// propagate error
 		return NULL;
 	}
 	switch (type) {
-	case RZ_IL_PURE_TYPE_BOOL:
+	case RZ_IL_TYPE_PURE_BOOL:
 		return rz_il_value_new_bool(res);
-	case RZ_IL_PURE_TYPE_BITV:
+	case RZ_IL_TYPE_PURE_BITVECTOR:
 		return rz_il_value_new_bitv(res);
 	default:
 		RZ_LOG_ERROR("RzIL: type error: expected bitvector, got %s\n", pure_type_name(type));
@@ -329,7 +324,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_
 /**
  * Evaluate the given pure op, returning the resulting value and its type.
  */
-RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILPureType *type) {
+RZ_API RZ_NULLABLE RZ_OWN void *rz_il_evaluate_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op, NULL);
 	return eval_pure(vm, op, type);
 }

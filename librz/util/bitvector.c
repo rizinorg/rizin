@@ -1010,7 +1010,7 @@ RZ_API bool rz_bv_lsb(RZ_NONNULL RzBitVector *bv) {
  * \param x RzBitVector, pointer to bv
  * \return ret bool, return true if bv is a zero bitvector, false if not
  */
-RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL RzBitVector *x) {
+RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL const RzBitVector *x) {
 	rz_return_val_if_fail(x, false);
 
 	if (x->len <= 64) {

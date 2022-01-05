@@ -6298,8 +6298,7 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, addr);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -6308,8 +6307,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int ar
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
+	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 	if (!b) {
 		eprintf("Cannot find basic block\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -6320,8 +6318,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_handler(RzCore *core, int arg
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_all_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, addr);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -6345,8 +6342,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_edge_handler(RzCore *core, int ar
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_returns_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, addr);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -6355,8 +6351,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_returns_handler(RzCore *core, int argc, 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_asciiart_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, addr);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -6365,13 +6360,12 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_asciiart_handler(RzCore *core, in
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
+	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 	if (!bb) {
 		eprintf("No basic block at 0x%" PFMT64x, core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_analysis_bb_info_print(core, bb, addr, state);
+	rz_core_analysis_bb_info_print(core, bb, core->offset, state);
 	return RZ_CMD_STATUS_OK;
 }
 

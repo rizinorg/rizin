@@ -164,24 +164,25 @@ typedef struct rz_il_op_args_shift_t RzILOpArgsShiftLeft;
 typedef struct rz_il_op_args_shift_t RzILOpArgsShiftRight;
 
 /**
- *  \brief op structure for `set` ('a var -> 'a pure -> data eff)
+ * \brief op structure for `set` ('a var -> 'a pure -> data eff)
  *
- *  set v x changes the value stored in v to the value of x.
+ * set v x changes the value stored in v to the value of x.
  */
 typedef struct rz_il_op_args_set_t {
 	const char *v; ///< name of variable, const one
+	bool is_local; ///< whether a global variable should be set or a local optionally created and set
 	RzILOpPure *x; ///< value to set the variable to
 } RzILOpArgsSet;
 
 /**
- *  \brief op structure for `set` ('a var -> 'a pure -> data eff)
+ * \brief op structure for `let_ : 'a var -> 'a pure -> 'b pure -> 'b pure`
  *
- *  set v x changes the value stored in v to the value of x.
+ * `let_ v exp body` binds the value of exp to v body.
  */
 typedef struct rz_il_op_args_let_t {
-	const char *v; ///< name of variable, const one
-	bool mut; ///< define is local variable is const or not
-	RzILOpPure *x; ///< value to set the variable to
+	const char *name; ///< name of variable
+	RzILOpPure *exp; ///< value/expression to bind the variable to
+	RzILOpPure *body; ///< body in which the variable will be bound and that produces the result
 } RzILOpArgsLet;
 
 /**
@@ -262,6 +263,7 @@ typedef struct rz_il_op_args_ite_t {
  */
 typedef struct rz_il_op_args_var_t {
 	const char *v; ///< name of variable, const one
+	RzILVarKind kind; ///< set of variables to pick from
 } RzILOpArgsVar;
 
 /**
@@ -347,6 +349,7 @@ typedef enum {
 	RZ_IL_OP_VAR,
 	RZ_IL_OP_UNK,
 	RZ_IL_OP_ITE,
+	RZ_IL_OP_LET,
 
 	// RzILBool
 	RZ_IL_OP_B0,
@@ -404,6 +407,7 @@ struct rz_il_op_pure_t {
 	union {
 		RzILOpArgsIte ite;
 		RzILOpArgsVar var;
+		RzILOpArgsLet let;
 
 		RzILOpArgsBoolAnd booland;
 		RzILOpArgsBoolOr boolor;
@@ -444,7 +448,8 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
 
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_NULLABLE RzILOpPure *x, RZ_NULLABLE RzILOpPure *y);
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_unk();
-RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *var);
+RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *var, RzILVarKind kind);
+RZ_API RZ_OWN RzILOpPure *rz_il_op_new_let(RZ_NONNULL const char *name, RZ_NONNULL RzILOpPure *exp, RZ_NONNULL RzILOpPure *body);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_b0();
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_b1();
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bool_and(RZ_NONNULL RzILOpBool *x, RZ_NONNULL RzILOpBool *y);
@@ -492,7 +497,6 @@ typedef enum {
 
 	RZ_IL_OP_NOP,
 	RZ_IL_OP_SET,
-	RZ_IL_OP_LET,
 	RZ_IL_OP_JMP,
 	RZ_IL_OP_GOTO,
 	RZ_IL_OP_SEQ,
@@ -507,7 +511,6 @@ struct rz_il_op_effect_t {
 	RzILOpEffectCode code;
 	union {
 		RzILOpArgsSet set;
-		RzILOpArgsLet let;
 		RzILOpArgsJmp jmp;
 		RzILOpArgsGoto goto_;
 		RzILOpArgsSeq seq;
@@ -523,8 +526,7 @@ struct rz_il_op_effect_t {
 RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op);
 
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_nop();
-RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *var, RZ_NONNULL RzILOpPure *x);
-RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_let(RZ_NONNULL const char *var, RZ_NONNULL RzILOpPure *x, bool is_mutable);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, bool is_local, RZ_NONNULL RzILOpPure *x);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_jmp(RZ_NONNULL RzILOpBitVector *dst);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_goto(RZ_NONNULL const char *label);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seq(RZ_NONNULL RzILOpEffect *x, RZ_NONNULL RzILOpEffect *y);

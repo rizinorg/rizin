@@ -116,7 +116,6 @@ rz_util_files = [
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
 rz_il_definitions_files = [
-  'rz_il/definitions/bag.h',
   'rz_il/definitions/bool.h',
   'rz_il/definitions/definitions.h',
   'rz_il/definitions/label.h',

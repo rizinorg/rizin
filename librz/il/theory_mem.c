@@ -5,7 +5,7 @@
 #include <rz_il/rz_il_vm.h>
 #include <rz_il/rz_il_opcodes.h>
 
-void *rz_il_handler_load(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
+void *rz_il_handler_load(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	RzILOpArgsLoad *op_load = &op->op.load;
 
@@ -15,7 +15,7 @@ void *rz_il_handler_load(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 	}
 	RzBitVector *ret = rz_il_vm_mem_load(vm, op_load->mem, addr);
 	rz_bv_free(addr);
-	*type = RZ_IL_PURE_TYPE_BITV;
+	*type = RZ_IL_TYPE_PURE_BITVECTOR;
 	return ret;
 }
 
@@ -38,7 +38,7 @@ bool rz_il_handler_store(RzILVM *vm, RzILOpEffect *op) {
 	return ret;
 }
 
-void *rz_il_handler_loadw(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
+void *rz_il_handler_loadw(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	RzILOpArgsLoadW *op_loadw = &op->op.loadw;
 
@@ -48,7 +48,7 @@ void *rz_il_handler_loadw(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 	}
 	RzBitVector *ret = rz_il_vm_mem_loadw(vm, op_loadw->mem, addr, op_loadw->n_bits);
 	rz_bv_free(addr);
-	*type = RZ_IL_PURE_TYPE_BITV;
+	*type = RZ_IL_TYPE_PURE_BITVECTOR;
 	return ret;
 }
 

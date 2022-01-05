@@ -177,6 +177,26 @@ static void il_opdmp_ite(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_3("ite", op->op.ite, pure, condition, pure, x, pure, y);
 }
 
+static void il_opdmp_let(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpArgsLet *opx = &op->op.let;
+	if (sb) {
+		rz_strbuf_appendf(sb, "let(v:%s, exp:", opx->name);
+		il_op_pure_resolve(opx->exp, sb, pj);
+		rz_strbuf_append(sb, ", body:");
+		il_op_pure_resolve(opx->body, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "let");
+		pj_ks(pj, "dst", opx->name);
+		pj_k(pj, "exp");
+		il_op_pure_resolve(opx->exp, sb, pj);
+		pj_k(pj, "body");
+		il_op_pure_resolve(opx->body, sb, pj);
+		pj_end(pj);
+	}
+}
+
 static void il_opdmp_bool_false(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	if (sb) {
 		rz_strbuf_append(sb, "bool(false)");
@@ -433,23 +453,6 @@ static void il_opdmp_set(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
-static void il_opdmp_let(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsLet *opx = &op->op.let;
-	if (sb) {
-		rz_strbuf_appendf(sb, "let(v:%s, x:", opx->v);
-		il_op_pure_resolve(opx->x, sb, pj);
-		rz_strbuf_append(sb, opx->mut ? ")" : ", const)");
-	} else {
-		pj_o(pj);
-		pj_ks(pj, "opcode", "let");
-		pj_ks(pj, "dst", opx->v);
-		pj_kb(pj, "const", !opx->mut);
-		pj_k(pj, "src");
-		il_op_pure_resolve(opx->x, sb, pj);
-		pj_end(pj);
-	}
-}
-
 static void il_opdmp_jmp(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_1("jmp", op->op.jmp, dst);
 }
@@ -516,6 +519,9 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 		return;
 	case RZ_IL_OP_ITE:
 		il_opdmp_ite(op, sb, pj);
+		return;
+	case RZ_IL_OP_LET:
+		il_opdmp_let(op, sb, pj);
 		return;
 	case RZ_IL_OP_B0:
 		il_opdmp_bool_false(op, sb, pj);
@@ -650,9 +656,6 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 		return;
 	case RZ_IL_OP_SET:
 		il_opdmp_set(op, sb, pj);
-		return;
-	case RZ_IL_OP_LET:
-		il_opdmp_let(op, sb, pj);
 		return;
 	case RZ_IL_OP_JMP:
 		il_opdmp_jmp(op, sb, pj);
