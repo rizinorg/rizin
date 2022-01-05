@@ -437,48 +437,30 @@ RZ_IPI bool rz_core_analysis_rzil_vm_set(RzCore *core, const char *var_name, ut6
 		return false;
 	}
 
-	bool found = false;
-	RzBitVector *bv = NULL;
-
 	if (!strcmp(var_name, "PC")) {
-		found = true;
-		bv = rz_bv_new_from_ut64(rzil->vm->pc->len, value);
+		RzBitVector *bv = rz_bv_new_from_ut64(rzil->vm->pc->len, value);
 		rz_bv_free(rzil->vm->pc);
 		rzil->vm->pc = bv;
-	} else {
-		RzILVal *oldval = NULL;
-		RzILVal *newval = NULL;
-		RzILVar *var = NULL;
-		void **it = NULL;
-		rz_pvector_foreach (&rzil->vm->vm_global_variable_list, it) {
-			var = *it;
-			if (var_name && strcmp(var_name, var->var_name)) {
-				continue;
-			}
-			found = true;
-			oldval = rz_il_hash_find_val_by_var(rzil->vm, var);
-			switch (oldval->type) {
-			case RZ_IL_VAR_TYPE_BV:
-				bv = rz_bv_new_from_ut64(oldval->data.bv->len, value);
-				newval = rz_il_vm_create_value_bitv(rzil->vm, bv);
-				break;
-			case RZ_IL_VAR_TYPE_BOOL:
-				newval = rz_il_vm_create_value_bool(rzil->vm, value);
-				break;
-			case RZ_IL_VAR_TYPE_UNK:
-				RZ_LOG_ERROR("RzIL: cannot set an Unknown type via command line\n");
-				break;
-			default:
-				rz_warn_if_reached();
-				break;
-			}
-
-			rz_il_hash_cancel_binding(rzil->vm, var);
-			rz_il_hash_bind(rzil->vm, var, newval);
-			break;
-		}
+		return true;
 	}
-	return found;
+
+	RzILVar *var = rz_il_vm_get_var(rzil->vm, RZ_IL_VAR_KIND_GLOBAL, var_name);
+	if (!var) {
+		return false;
+	}
+	RzILVal *val = NULL;
+	switch (var->sort.type) {
+	case RZ_IL_TYPE_PURE_BITVECTOR:
+		val = rz_il_value_new_bitv(rz_bv_new_from_ut64(var->sort.props.bv.length, value));
+		break;
+	case RZ_IL_TYPE_PURE_BOOL:
+		val = rz_il_value_new_bool(rz_il_bool_new(value != 0));
+		break;
+	}
+	if (val) {
+		rz_il_vm_set_global_var(rzil->vm, var_name, val);
+	}
+	return true;
 }
 
 typedef struct il_print_t {
@@ -526,23 +508,6 @@ static void rzil_print_register_bitv(RzBitVector *number, ILPrint *p) {
 	free(hex);
 }
 
-static void rzil_print_register_unk(ILPrint *p) {
-	switch (p->mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_strbuf_appendf(p_sb(p->ptr), " %s: unk", p->name);
-		break;
-	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(p_tbl(p->ptr), "sss", p->name, "unkn", "");
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		pj_knull(p_pj(p->ptr), p->name);
-		break;
-	default:
-		rz_cons_printf("unknown\n");
-		break;
-	}
-}
-
 RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *var_name, RzOutputMode mode) {
 	RzAnalysisRzil *rzil = core->analysis->rzil;
 	if (!rzil || !rzil->vm) {
@@ -574,35 +539,39 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *var_name, 
 		rzil_print_register_bitv(rzil->vm->pc, &p);
 	}
 
-	void **it;
-	rz_pvector_foreach (&rzil->vm->vm_global_variable_list, it) {
-		RzILVar *var = *it;
-		if (var_name && strcmp(var_name, var->var_name)) {
-			continue;
+	RzPVector *global_vars = rz_il_vm_get_all_vars(rzil->vm, RZ_IL_VAR_KIND_GLOBAL);
+	if (global_vars) {
+		void **it;
+		rz_pvector_foreach (global_vars, it) {
+			RzILVar *var = *it;
+			if (var_name && strcmp(var_name, var->name)) {
+				continue;
+			}
+			p.name = var->name;
+			RzILVal *val = rz_il_vm_get_var_value(rzil->vm, RZ_IL_VAR_KIND_GLOBAL, var->name);
+			if (!val) {
+				continue;
+			}
+			switch (val->type) {
+			case RZ_IL_TYPE_PURE_BITVECTOR:
+				rzil_print_register_bitv(val->data.bv, &p);
+				break;
+			case RZ_IL_TYPE_PURE_BOOL:
+				rzil_print_register_bool(val->data.b->b, &p);
+				break;
+			default:
+				rz_warn_if_reached();
+				break;
+			}
+			if (var_name) {
+				break;
+			}
+			if (rz_strbuf_length(p_sb(p.ptr)) > 95) {
+				rz_cons_printf("%s\n", rz_strbuf_get(p_sb(p.ptr)));
+				rz_strbuf_fini(p_sb(p.ptr));
+			}
 		}
-		p.name = var->var_name;
-		RzILVal *val = rz_il_hash_find_val_by_var(rzil->vm, var);
-		switch (val->type) {
-		case RZ_IL_VAR_TYPE_BV:
-			rzil_print_register_bitv(val->data.bv, &p);
-			break;
-		case RZ_IL_VAR_TYPE_BOOL:
-			rzil_print_register_bool(val->data.b->b, &p);
-			break;
-		case RZ_IL_VAR_TYPE_UNK:
-			rzil_print_register_unk(&p);
-			break;
-		default:
-			rz_warn_if_reached();
-			break;
-		}
-		if (var_name) {
-			break;
-		}
-		if (rz_strbuf_length(p_sb(p.ptr)) > 95) {
-			rz_cons_printf("%s\n", rz_strbuf_get(p_sb(p.ptr)));
-			rz_strbuf_fini(p_sb(p.ptr));
-		}
+		rz_pvector_free(global_vars);
 	}
 
 	char *out = NULL;

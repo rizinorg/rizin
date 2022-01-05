@@ -9,7 +9,6 @@
 #include <rz_il/definitions/bool.h>
 #include <rz_il/definitions/value.h>
 #include <rz_il/definitions/variable.h>
-#include <rz_il/definitions/bag.h>
 #include <rz_il/definitions/mem.h>
 
 #endif // RZ_IL_DEFINITIONS_H

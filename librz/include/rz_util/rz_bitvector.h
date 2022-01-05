@@ -80,7 +80,7 @@ RZ_API ut16 rz_bv_to_ut16(RZ_NONNULL const RzBitVector *x);
 RZ_API ut32 rz_bv_to_ut32(RZ_NONNULL const RzBitVector *x);
 RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL const RzBitVector *x);
 // misc
-RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL RzBitVector *x);
+RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL const RzBitVector *x);
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_ut64(ut32 length, ut64 value);
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_st64(ut32 length, st64 value);
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);

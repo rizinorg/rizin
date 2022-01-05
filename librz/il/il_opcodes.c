@@ -71,10 +71,20 @@ RZ_API RZ_OWN RzILOpPure *rz_il_op_new_unk() {
  *
  *  var v is the value of the variable v.
  */
-RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *v) {
+RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *v, RzILVarKind kind) {
 	rz_return_val_if_fail(v, NULL);
 	RzILOpPure *ret;
-	rz_il_op_new_1(Pure, RZ_IL_OP_VAR, RzILOpArgsVar, var, v);
+	rz_il_op_new_2(Pure, RZ_IL_OP_VAR, RzILOpArgsVar, var, v, kind);
+	return ret;
+}
+
+/**
+ * `let_ v exp body` binds the value of exp to v body.
+ */
+RZ_API RZ_OWN RzILOpPure *rz_il_op_new_let(RZ_NONNULL const char *name, RZ_NONNULL RzILOpPure *exp, RZ_NONNULL RzILOpPure *body) {
+	rz_return_val_if_fail(name && exp && body, NULL);
+	RzILOpPure *ret;
+	rz_il_op_new_3(Pure, RZ_IL_OP_LET, RzILOpArgsLet, let, name, exp, body);
 	return ret;
 }
 
@@ -497,23 +507,10 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_nop() {
  *
  *  set v x changes the value stored in v to the value of x.
  */
-RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, RZ_NONNULL RzILOpPure *x) {
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, bool is_local, RZ_NONNULL RzILOpPure *x) {
 	rz_return_val_if_fail(v && x, NULL);
 	RzILOpEffect *ret;
-	rz_il_op_new_2(Effect, RZ_IL_OP_SET, RzILOpArgsSet, set, v, x);
-	return ret;
-}
-
-/**
- *  \brief op structure for `let` ('a var -> 'a pure -> 'b pure -> 'b pure -> data eff)
- *
- *  let v exp body bind the value of exp to v body.
- *  essentially allows you to create a local variable
- */
-RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_let(RZ_NONNULL const char *v, RZ_NONNULL RzILOpPure *x, bool mut) {
-	rz_return_val_if_fail(v && x, NULL);
-	RzILOpEffect *ret;
-	rz_il_op_new_3(Effect, RZ_IL_OP_LET, RzILOpArgsLet, let, v, x, mut);
+	rz_il_op_new_3(Effect, RZ_IL_OP_SET, RzILOpArgsSet, set, v, is_local, x);
 	return ret;
 }
 
@@ -741,6 +738,10 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 	case RZ_IL_OP_ITE:
 		DUP_OP3(ite, condition, x, y);
 		break;
+	case RZ_IL_OP_LET:
+		r->op.let.name = op->op.let.name;
+		DUP_OP2(let, exp, body);
+		break;
 	case RZ_IL_OP_B0:
 		break;
 	case RZ_IL_OP_B1:
@@ -873,6 +874,9 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	case RZ_IL_OP_ITE:
 		rz_il_op_free_3(pure, ite, condition, x, y);
 		break;
+	case RZ_IL_OP_LET:
+		rz_il_op_free_2(pure, let, exp, body);
+		break;
 	case RZ_IL_OP_B0:
 	case RZ_IL_OP_B1:
 		break;
@@ -949,7 +953,7 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		rz_il_op_free_2(pure, ule, x, y);
 		break;
 	case RZ_IL_OP_CAST:
-		rz_il_op_free_1(pure, cast, val);
+		rz_il_op_free_2(pure, cast, fill, val);
 		break;
 	case RZ_IL_OP_CONCAT:
 		rz_warn_if_reached();
@@ -986,9 +990,6 @@ RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op) {
 		break;
 	case RZ_IL_OP_SET:
 		rz_il_op_free_1(pure, set, x);
-		break;
-	case RZ_IL_OP_LET:
-		rz_il_op_free_1(pure, let, x);
 		break;
 	case RZ_IL_OP_JMP:
 		rz_il_op_free_1(pure, jmp, dst);
