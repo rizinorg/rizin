@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+// LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
+// LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
+// Date of code generation: 2022-01-05 11:54:26-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -612,8 +615,8 @@ char *hex_get_sys_regs(int opcode_reg) {
 		return "BADVA";
 	case HEX_REG_SYS_REGS_IMASK:
 		return "IMASK";
-	case HEX_REG_SYS_REGS_GEVB:
-		return "GEVB";
+	case HEX_REG_SYS_REGS_S11:
+		return "S11";
 	case HEX_REG_SYS_REGS_S12:
 		return "S12";
 	case HEX_REG_SYS_REGS_S13:
@@ -622,26 +625,26 @@ char *hex_get_sys_regs(int opcode_reg) {
 		return "S14";
 	case HEX_REG_SYS_REGS_S15:
 		return "S15";
+	case HEX_REG_SYS_REGS_S19:
+		return "S19";
+	case HEX_REG_SYS_REGS_S23:
+		return "S23";
+	case HEX_REG_SYS_REGS_S25:
+		return "S25";
 	case HEX_REG_SYS_REGS_EVB:
 		return "EVB";
 	case HEX_REG_SYS_REGS_MODECTL:
 		return "MODECTL";
 	case HEX_REG_SYS_REGS_SYSCFG:
 		return "SYSCFG";
-	case HEX_REG_SYS_REGS_S19:
-		return "S19";
-	case HEX_REG_SYS_REGS_IPENDAD:
-		return "IPENDAD";
+	case HEX_REG_SYS_REGS_S20:
+		return "S20";
 	case HEX_REG_SYS_REGS_VID:
 		return "VID";
-	case HEX_REG_SYS_REGS_VID1:
-		return "VID1";
-	case HEX_REG_SYS_REGS_BESTWAIT:
-		return "BESTWAIT";
+	case HEX_REG_SYS_REGS_S22:
+		return "S22";
 	case HEX_REG_SYS_REGS_S24:
 		return "S24";
-	case HEX_REG_SYS_REGS_SCHEDCFG:
-		return "SCHEDCFG";
 	case HEX_REG_SYS_REGS_S26:
 		return "S26";
 	case HEX_REG_SYS_REGS_CFGBASE:
@@ -650,18 +653,18 @@ char *hex_get_sys_regs(int opcode_reg) {
 		return "DIAG";
 	case HEX_REG_SYS_REGS_REV:
 		return "REV";
-	case HEX_REG_SYS_REGS_PCYCLELO:
-		return "PCYCLELO";
 	case HEX_REG_SYS_REGS_PCYCLEHI:
 		return "PCYCLEHI";
+	case HEX_REG_SYS_REGS_PCYCLELO:
+		return "PCYCLELO";
 	case HEX_REG_SYS_REGS_ISDBST:
 		return "ISDBST";
 	case HEX_REG_SYS_REGS_ISDBCFG0:
 		return "ISDBCFG0";
 	case HEX_REG_SYS_REGS_ISDBCFG1:
 		return "ISDBCFG1";
-	case HEX_REG_SYS_REGS_LIVELOCK:
-		return "LIVELOCK";
+	case HEX_REG_SYS_REGS_S35:
+		return "S35";
 	case HEX_REG_SYS_REGS_BRKPTPC0:
 		return "BRKPTPC0";
 	case HEX_REG_SYS_REGS_BRKPTCFG0:
@@ -678,14 +681,14 @@ char *hex_get_sys_regs(int opcode_reg) {
 		return "ISDBEN";
 	case HEX_REG_SYS_REGS_ISDBGPR:
 		return "ISDBGPR";
-	case HEX_REG_SYS_REGS_PMUCNT4:
-		return "PMUCNT4";
-	case HEX_REG_SYS_REGS_PMUCNT5:
-		return "PMUCNT5";
-	case HEX_REG_SYS_REGS_PMUCNT6:
-		return "PMUCNT6";
-	case HEX_REG_SYS_REGS_PMUCNT7:
-		return "PMUCNT7";
+	case HEX_REG_SYS_REGS_S44:
+		return "S44";
+	case HEX_REG_SYS_REGS_S45:
+		return "S45";
+	case HEX_REG_SYS_REGS_S46:
+		return "S46";
+	case HEX_REG_SYS_REGS_S47:
+		return "S47";
 	case HEX_REG_SYS_REGS_PMUCNT0:
 		return "PMUCNT0";
 	case HEX_REG_SYS_REGS_PMUCNT1:
@@ -696,16 +699,16 @@ char *hex_get_sys_regs(int opcode_reg) {
 		return "PMUCNT3";
 	case HEX_REG_SYS_REGS_PMUEVTCFG:
 		return "PMUEVTCFG";
-	case HEX_REG_SYS_REGS_S53:
-		return "S53";
-	case HEX_REG_SYS_REGS_PMUEVTCFG1:
-		return "PMUEVTCFG1";
-	case HEX_REG_SYS_REGS_PMUSTID1:
-		return "PMUSTID1";
-	case HEX_REG_SYS_REGS_TIMERLO:
-		return "TIMERLO";
-	case HEX_REG_SYS_REGS_TIMERHI:
-		return "TIMERHI";
+	case HEX_REG_SYS_REGS_PMUCFG:
+		return "PMUCFG";
+	case HEX_REG_SYS_REGS_S54:
+		return "S54";
+	case HEX_REG_SYS_REGS_S55:
+		return "S55";
+	case HEX_REG_SYS_REGS_S56:
+		return "S56";
+	case HEX_REG_SYS_REGS_S57:
+		return "S57";
 	case HEX_REG_SYS_REGS_S58:
 		return "S58";
 	case HEX_REG_SYS_REGS_S59:
@@ -718,40 +721,40 @@ char *hex_get_sys_regs(int opcode_reg) {
 		return "S62";
 	case HEX_REG_SYS_REGS_S63:
 		return "S63";
-	case HEX_REG_SYS_REGS_COMMIT1T:
-		return "COMMIT1T";
-	case HEX_REG_SYS_REGS_COMMIT2T:
-		return "COMMIT2T";
-	case HEX_REG_SYS_REGS_COMMIT3T:
-		return "COMMIT3T";
-	case HEX_REG_SYS_REGS_COMMIT4T:
-		return "COMMIT4T";
-	case HEX_REG_SYS_REGS_COMMIT5T:
-		return "COMMIT5T";
-	case HEX_REG_SYS_REGS_COMMIT6T:
-		return "COMMIT6T";
-	case HEX_REG_SYS_REGS_PCYCLE1T:
-		return "PCYCLE1T";
-	case HEX_REG_SYS_REGS_PCYCLE2T:
-		return "PCYCLE2T";
-	case HEX_REG_SYS_REGS_PCYCLE3T:
-		return "PCYCLE3T";
-	case HEX_REG_SYS_REGS_PCYCLE4T:
-		return "PCYCLE4T";
-	case HEX_REG_SYS_REGS_PCYCLE5T:
-		return "PCYCLE5T";
-	case HEX_REG_SYS_REGS_PCYCLE6T:
-		return "PCYCLE6T";
-	case HEX_REG_SYS_REGS_STFINST:
-		return "STFINST";
-	case HEX_REG_SYS_REGS_ISDBCMD:
-		return "ISDBCMD";
-	case HEX_REG_SYS_REGS_ISDBVER:
-		return "ISDBVER";
-	case HEX_REG_SYS_REGS_BRKPTINFO:
-		return "BRKPTINFO";
-	case HEX_REG_SYS_REGS_RGDR3:
-		return "RGDR3";
+	case HEX_REG_SYS_REGS_S64:
+		return "S64";
+	case HEX_REG_SYS_REGS_S65:
+		return "S65";
+	case HEX_REG_SYS_REGS_S66:
+		return "S66";
+	case HEX_REG_SYS_REGS_S67:
+		return "S67";
+	case HEX_REG_SYS_REGS_S68:
+		return "S68";
+	case HEX_REG_SYS_REGS_S69:
+		return "S69";
+	case HEX_REG_SYS_REGS_S70:
+		return "S70";
+	case HEX_REG_SYS_REGS_S71:
+		return "S71";
+	case HEX_REG_SYS_REGS_S72:
+		return "S72";
+	case HEX_REG_SYS_REGS_S73:
+		return "S73";
+	case HEX_REG_SYS_REGS_S74:
+		return "S74";
+	case HEX_REG_SYS_REGS_S75:
+		return "S75";
+	case HEX_REG_SYS_REGS_S76:
+		return "S76";
+	case HEX_REG_SYS_REGS_S77:
+		return "S77";
+	case HEX_REG_SYS_REGS_S78:
+		return "S78";
+	case HEX_REG_SYS_REGS_S79:
+		return "S79";
+	case HEX_REG_SYS_REGS_S80:
+		return "S80";
 	}
 }
 
@@ -759,7 +762,7 @@ char *hex_get_sys_regs64(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
 		return "<err>";
-	case HEX_REG_SYS_REGS64_S1_0:
+	case HEX_REG_SYS_REGS64_SGP1_0:
 		return "S1:0";
 	case HEX_REG_SYS_REGS64_S3_2:
 		return "S3:2";
