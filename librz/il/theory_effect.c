@@ -12,88 +12,39 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 	RzBitVector *oldnum = NULL;
 	RzBitVector *newnum = NULL;
 
-	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
+	if (new_val->type == RZ_IL_TYPE_PURE_BOOL) {
 		newnum = rz_bv_new_from_ut64(1, new_val->data.b->b);
 	} else {
 		newnum = new_val->data.bv;
 	}
 
-	old_val = rz_il_hash_find_val_by_var(vm, var);
+	old_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var->name);
 	if (old_val) {
-		if (old_val->type == RZIL_VAR_TYPE_BOOL) {
+		if (old_val->type == RZ_IL_TYPE_PURE_BOOL) {
 			oldnum = rz_bv_new_from_ut64(1, old_val->data.b->b);
 		} else {
 			oldnum = old_val->data.bv;
 		}
 	}
 
-	evt = rz_il_event_var_write_new(var->var_name, oldnum, newnum);
-	if (old_val && old_val->type == RZIL_VAR_TYPE_BOOL) {
+	evt = rz_il_event_var_write_new(var->name, oldnum, newnum);
+	if (old_val && old_val->type == RZ_IL_TYPE_PURE_BOOL) {
 		rz_bv_free(oldnum);
 	}
-	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
+	if (new_val->type == RZ_IL_TYPE_PURE_BOOL) {
 		rz_bv_free(newnum);
 	}
 	return evt;
 }
 
-static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, bool is_mutable, RZ_OWN RzILVal *val) {
-	RzILVar *var = NULL;
-	RzILEvent *evt = NULL;
+static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, RZ_OWN RzILVal *val) {
 	if (is_local) {
-		var = rz_il_find_local_var_by_name(vm, var_name);
+		rz_il_vm_set_local_var(vm, var_name, val);
 	} else {
-		var = rz_il_find_var_by_name(vm, var_name);
-	}
-	if (!var && !is_local) {
-		// it's a set to a global variable which has not been defined.
-		char *message = rz_str_newf("unknown global variable '%s'.", var_name);
-		evt = rz_il_event_exception_new(message);
-		free(message);
-		rz_il_value_free(val);
+		RzILVar *var = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, var_name);
+		RzILEvent *evt = il_event_new_write_from_var(vm, var, val);
 		rz_il_vm_event_add(vm, evt);
-		return;
-	} else if (var && !var->is_mutable) {
-		// forbid changing an immutable type
-		char *message = rz_str_newf("cannot change %s variable '%s' because is not mutable.", is_local ? "local" : "global", var_name);
-		evt = rz_il_event_exception_new(message);
-		free(message);
-		rz_il_value_free(val);
-		rz_il_vm_event_add(vm, evt);
-		return;
-	}
-
-	// enforce var type to val except if var is unk, because unk type can be set to any type.
-	if (var && var->type == RZIL_VAR_TYPE_BV && val->type == RZIL_VAR_TYPE_BOOL) {
-		RzBitVector *bv = rz_bv_new_from_ut64(1, val->data.b->b);
-		RzILVal *cast = rz_il_value_new_bitv(bv);
-		rz_il_value_free(val);
-		val = cast;
-	} else if (var && var->type == RZIL_VAR_TYPE_BOOL && val->type == RZIL_VAR_TYPE_BV) {
-		RzILBool *b = rz_il_bool_new(!rz_bv_is_zero_vector(val->data.bv));
-		RzILVal *cast = rz_il_value_new_bool(b);
-		rz_il_value_free(val);
-		val = cast;
-	}
-
-	if (is_local) {
-		// add/update local variable
-		if (var) {
-			// update mutable local variable
-			rz_il_hash_cancel_local_binding(vm, var);
-		} else {
-			// first set of an mutable/immutable local variable
-			var = rz_il_vm_create_local_variable(vm, var_name, val->type, is_mutable);
-		}
-		rz_il_hash_local_bind(vm, var, val);
-	} else {
-		// update global variable
-		evt = il_event_new_write_from_var(vm, var, val);
-		rz_il_hash_cancel_binding(vm, var);
-		rz_il_hash_bind(vm, var, val);
-
-		rz_il_vm_fortify_val(vm, val);
-		rz_il_vm_event_add(vm, evt);
+		rz_il_vm_set_global_var(vm, var_name, val);
 	}
 }
 
@@ -109,18 +60,7 @@ bool rz_il_handler_set(RzILVM *vm, RzILOpEffect *op) {
 	if (!val) {
 		return false;
 	}
-	rz_il_set(vm, set_op->v, false, true, val);
-	return true;
-}
-
-bool rz_il_handler_let(RzILVM *vm, RzILOpEffect *op) {
-	rz_return_val_if_fail(vm && op, false);
-	RzILOpArgsLet *let_op = &op->op.let;
-	RzILVal *val = rz_il_evaluate_val(vm, let_op->x);
-	if (!val) {
-		return false;
-	}
-	rz_il_set(vm, let_op->v, true, let_op->mut, val);
+	rz_il_set(vm, set_op->v, set_op->is_local, val);
 	return true;
 }
 
@@ -161,6 +101,35 @@ bool rz_il_handler_seq(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 	RzILOpArgsSeq *op_seq = &op->op.seq;
 	return rz_il_evaluate_effect(vm, op_seq->x) && rz_il_evaluate_effect(vm, op_seq->y);
+}
+
+bool rz_il_handler_blk(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
+
+	RzILOpArgsBlk *op_blk = &op->op.blk;
+	if (op_blk->label) {
+		rz_il_vm_create_label(vm, op_blk->label, vm->pc); // create the label if `blk` is labelled
+	}
+
+	return rz_il_evaluate_effect(vm, op_blk->data_eff) && rz_il_evaluate_effect(vm, op_blk->ctrl_eff);
+}
+
+bool rz_il_handler_repeat(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, NULL);
+
+	RzILOpArgsRepeat *op_repeat = &op->op.repeat;
+	bool res = true;
+	RzILBool *condition;
+	while ((condition = rz_il_evaluate_bool(vm, op_repeat->condition))) {
+		if (!condition->b) {
+			break;
+		}
+		res = res && rz_il_evaluate_effect(vm, op_repeat->data_eff);
+		rz_il_bool_free(condition);
+	}
+	rz_il_bool_free(condition);
+
+	return res;
 }
 
 bool rz_il_handler_branch(RzILVM *vm, RzILOpEffect *op) {

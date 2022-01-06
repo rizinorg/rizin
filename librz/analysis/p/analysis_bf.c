@@ -32,20 +32,28 @@ typedef struct bf_context_t {
 	ut64 op_count;
 } BfContext;
 
-#define bf_il_ptr()      rz_il_op_new_var("ptr")
-#define bf_il_set_ptr(x) rz_il_op_new_set("ptr", x)
+#define bf_il_ptr()      rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL)
+#define bf_il_set_ptr(x) rz_il_op_new_set("ptr", false, x)
 #define bf_il_one(l)     rz_il_op_new_bitv_from_ut64(l, 1)
 
 static void bf_syscall_read(RzILVM *vm, RzILOpEffect *op) {
 	ut8 c = getc(stdin);
 	RzBitVector *bv = rz_bv_new_from_ut64(BF_BYTE_SIZE, c);
-	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
-	rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
+	RzILVal *ptr_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "ptr");
+	if (ptr_val->type == RZ_IL_TYPE_PURE_BITVECTOR) {
+		rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
+	} else {
+		rz_warn_if_reached();
+	}
 	rz_bv_free(bv);
 }
 
 static void bf_syscall_write(RzILVM *vm, RzILOpEffect *op) {
-	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
+	RzILVal *ptr_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "ptr");
+	if (ptr_val->type != RZ_IL_TYPE_PURE_BITVECTOR) {
+		rz_warn_if_reached();
+		return;
+	}
 	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	ut32 c = rz_bv_to_ut32(bv);
 	putchar(c);
@@ -148,7 +156,7 @@ RzILOpEffect *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	free(dst_lbl_name);
 	free(to_free);
 
-	RzILOpBitVector *var = rz_il_op_new_var("ptr");
+	RzILOpBitVector *var = rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL);
 	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
 
 	// goto ]
@@ -185,7 +193,7 @@ RzILOpEffect *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	rz_return_val_if_fail(dst_lbl_name, NULL);
 	dst_label = rz_il_vm_find_label_by_name(vm, dst_lbl_name);
 
-	RzILOpBitVector *var = rz_il_op_new_var("ptr");
+	RzILOpBitVector *var = rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL);
 	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
 
 	// goto [
@@ -196,28 +204,6 @@ RzILOpEffect *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 
 	free(to_free);
 	return branch;
-}
-
-static bool bf_specific_init(RzAnalysisRzil *rzil) {
-	RzILVM *vm = rzil->vm;
-
-	// load reg
-	rz_il_vm_add_reg(vm, "ptr", BF_ADDR_SIZE);
-
-	// set ptr to BF_ADDR_MEM
-	RzILVal *ptr = rz_il_hash_find_val_by_name(vm, "ptr");
-	rz_bv_set_from_ut64(ptr->data.bv, BF_ADDR_MEM);
-
-	RzILEffectLabel *read_label = rz_il_vm_create_label_lazy(vm, "read");
-	RzILEffectLabel *write_label = rz_il_vm_create_label_lazy(vm, "write");
-	read_label->addr = (void *)bf_syscall_read;
-	write_label->addr = (void *)bf_syscall_write;
-	read_label->type = EFFECT_LABEL_SYSCALL;
-	write_label->type = EFFECT_LABEL_HOOK;
-
-	rzil->inited = true;
-
-	return true;
 }
 
 static void bf_free_kv(HtUPKv *kv) {
@@ -249,10 +235,6 @@ static bool bf_fini_rzil(RzAnalysis *analysis) {
 
 	RzAnalysisRzil *rzil = analysis->rzil;
 	bf_context_free(rzil->user);
-
-	if (rzil->vm) {
-		rz_il_vm_fini(rzil->vm);
-	}
 
 	rzil->user = NULL;
 	rzil->inited = false;
@@ -291,11 +273,20 @@ static bool bf_init_rzil(RzAnalysis *analysis) {
 	}
 	rz_il_vm_add_mem(rzil->vm, 0, mem);
 
-	// init bf RZIL user-defined context
 	rzil->user = bf_context_new();
 
-	// bf specific init things
-	return bf_specific_init(rzil);
+	// set ptr to BF_ADDR_MEM
+	rz_reg_setv(analysis->reg, "ptr", BF_ADDR_MEM);
+
+	RzILEffectLabel *read_label = rz_il_vm_create_label_lazy(rzil->vm, "read");
+	RzILEffectLabel *write_label = rz_il_vm_create_label_lazy(rzil->vm, "write");
+	read_label->addr = (void *)bf_syscall_read;
+	write_label->addr = (void *)bf_syscall_write;
+	read_label->type = EFFECT_LABEL_SYSCALL;
+	write_label->type = EFFECT_LABEL_HOOK;
+
+	rzil->inited = true;
+	return true;
 }
 
 #define BUFSIZE_INC 32
@@ -416,17 +407,14 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(
 		"=PC	pc\n"
-		"=BP	brk\n"
+		"=BP	ptr\n"
 		"=SP	ptr\n"
-		"=A0	rax\n"
-		"=A1	rbx\n"
-		"=A2	rcx\n"
-		"=A3	rdx\n"
-		"gpr	ptr	.32	0	0\n" // data pointer
-		"gpr	pc	.32	4	0\n" // program counter
-		"gpr	brk	.32	8	0\n" // brackets
-		"gpr	scr	.32	12	0\n" // screen
-		"gpr	kbd	.32	16	0\n" // keyboard
+		"=A0	ptr\n"
+		"=A1	ptr\n"
+		"=A2	ptr\n"
+		"=A3	ptr\n"
+		"gpr	ptr	.64	0	0\n" // data pointer
+		"gpr	pc	.64	8	0\n" // program counter
 	);
 }
 

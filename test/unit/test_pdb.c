@@ -428,17 +428,16 @@ bool test_pdb_type_save(void) {
 	// mu_assert_false(has_struct_member(test_class, "noSuchMember"), "no such struct member");
 	// Check the structure presence and validity
 
-	// Forward defined structure, not handled. https://github.com/rizinorg/rizin/issues/1377
-	// RzBaseType *localeinfo = rz_type_db_get_base_type(analysis->typedb, "localeinfo_struct");
-	// mu_assert_eq(localeinfo->kind, RZ_BASE_TYPE_KIND_STRUCT, "localeinfo_struct is struct");
-	// mu_assert_true(has_struct_member(localeinfo, "locinfo"), "locinfo");
-	// mu_assert_true(has_struct_member(localeinfo, "mbcinfo"), "mbcinfo");
-	// // Test member types also
-	// mu_assert_true(has_struct_member_type(analysis->typedb, localeinfo, "locinfo", "struct threadlocaleinfostruct *"), "locinfo type");
-	// // FIXME: For some reason this type doesn't load from PDB
-	// //mu_assert_true(has_struct_member_type(analysis->typedb, localeinfo, "mbcinfo", "struct threadmbcinfostruct *"), "mbcinfo type");
+	// Forward defined structure
+	RzBaseType *localeinfo = rz_type_db_get_base_type(analysis->typedb, "localeinfo_struct");
+	mu_assert_eq(localeinfo->kind, RZ_BASE_TYPE_KIND_STRUCT, "localeinfo_struct is struct");
+	mu_assert_true(has_struct_member(localeinfo, "locinfo"), "locinfo");
+	mu_assert_true(has_struct_member(localeinfo, "mbcinfo"), "mbcinfo");
+	// Test member types also
+	mu_assert_true(has_struct_member_type(analysis->typedb, localeinfo, "locinfo", "struct threadlocaleinfostruct *"), "locinfo type");
+	mu_assert_true(has_struct_member_type(analysis->typedb, localeinfo, "mbcinfo", "struct threadmbcinfostruct *"), "mbcinfo type");
 
-	// mu_assert_false(has_struct_member(localeinfo, "noSuchMember"), "no such struct member");
+	mu_assert_false(has_struct_member(localeinfo, "noSuchMember"), "no such struct member");
 
 	rz_analysis_free(analysis);
 	mu_end;

@@ -46,7 +46,7 @@ RZ_API void rz_core_fortune_list(RzCore *core) {
 	free(file);
 }
 
-static char *getrandomline(RzCore *core) {
+RZ_API RZ_OWN char *rz_core_fortune_get_random(RzCore *core) {
 	int lines = 0;
 	const char *types = (char *)rz_config_get(core->config, "cfg.fortunes.file");
 
@@ -58,9 +58,9 @@ static char *getrandomline(RzCore *core) {
 }
 
 RZ_API void rz_core_fortune_print_random(RzCore *core) {
-	char *line = getrandomline(core);
+	char *line = rz_core_fortune_get_random(core);
 	if (!line) {
-		line = getrandomline(core);
+		line = rz_core_fortune_get_random(core);
 	}
 	if (line) {
 		if (rz_config_get_i(core->config, "cfg.fortunes.clippy")) {

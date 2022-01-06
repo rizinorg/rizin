@@ -8,8 +8,13 @@ e analysis.arch=bf
 s 0
 aezi
 aezs 390
+aezv
+ar
 EOF
 EXPECT=<<EOF
+ PC: 0x000000000000006f ptr: 0x0000000000010004
+ptr = 0x00010004
+pc = 0x0000006f
 Hello World!
 EOF
 RUN

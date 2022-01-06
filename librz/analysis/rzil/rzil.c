@@ -34,7 +34,7 @@ RZ_API void rz_analysis_rzil_free(RZ_NULLABLE RzAnalysisRzil *rzil) {
 }
 
 /**
- * Cleanup RZIL instance : clean VM, clean arch-specific user_data, and RZIL itself
+ * Cleanup IL instance : clean VM, clean arch-specific user_data, and IL itself
  * \param analysis pointer to rizin's RzAnalysis
  */
 RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis) {
@@ -50,7 +50,7 @@ RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis) {
 }
 
 /**
- * Set instruction pointer for the current RZIL VM session
+ * Set instruction pointer for the current IL VM session
  * \param rzil RzAnalysis* pointer to RzAnalysisRzil instance
  * \param addr ut64 address of new pc
  * \return true if set successfully, else return false
@@ -63,8 +63,42 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
 	return true;
 }
 
+static void setup_regs(RzAnalysis *a, RzAnalysisRzil *rzil) {
+	if (!a->cur->get_reg_profile) {
+		return;
+	}
+	// Explicitly use a new reg here!
+	// The a->reg might be changed by the user, but plugins expect exactly
+	// the register profile they supplied. Syncing will later adjust the register
+	// contents if necessary.
+	RzReg *reg = rz_reg_new();
+	if (!reg) {
+		return;
+	}
+	char *profile = a->cur->get_reg_profile(a);
+	if (!profile) {
+		goto new_real;
+	}
+	bool succ = rz_reg_set_profile_string(reg, profile);
+	free(profile);
+	if (!succ) {
+		goto new_real;
+	}
+	// for now, we always derive the bound automatically,
+	// but manual binding dictated by the plugin would be plausible too
+	// in the future.
+	RzILRegBinding *rb = rz_il_reg_binding_derive(reg);
+	if (!rb) {
+		goto new_real;
+	}
+	rz_il_vm_setup_reg_binding(rzil->vm, rb);
+new_real:
+	rz_reg_free(reg);
+	return;
+}
+
 /**
- * Init an empty RZIL
+ * Init an empty IL
  * \param analysis RzAnalysis* pointer to RzAnalysis
  * \return true if setup, else return false
  */
@@ -81,13 +115,14 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
 	rzil->io_buf = rz_buf_new_with_io(&analysis->iob);
 	analysis->rzil = rzil;
 	analysis->cur->rzil_init(analysis);
+	setup_regs(analysis, rzil);
 	return true;
 }
 
 static void rz_analysis_rzil_parse_root(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *ops) {
 	rz_return_if_fail(analysis && rzil);
 
-	// RZIL disabled
+	// IL disabled
 	if (!ops) {
 		return;
 	}
@@ -113,7 +148,7 @@ RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *
 	if (!rzil->trace) {
 		rzil->trace = rz_analysis_rzil_trace_new(analysis, rzil);
 		if (!rzil->trace) {
-			RZ_LOG_ERROR("Unable to init RZIL trace\n");
+			RZ_LOG_ERROR("Unable to init IL trace\n");
 			return;
 		}
 	}
@@ -132,7 +167,7 @@ RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *
 
 	// TODO : Add register change for sync with analysis->register
 
-	// Parse and emulate RZIL opcode, and collect `trace` and `stats` info
+	// Parse and emulate IL opcode, and collect `trace` and `stats` info
 	// Use new op struct for parsing
 	rz_analysis_rzil_parse_root(analysis, rzil, op->rzil_op);
 }

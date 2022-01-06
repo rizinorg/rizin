@@ -203,7 +203,7 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 			}
 			rz_analysis_set_reg_profile(analysis);
 
-			// default : init and enable RZIL if defined rzil_init
+			// default : init and enable RzIL if defined rzil_init
 			if (h->rzil_init) {
 				if (analysis->rzil) {
 					rz_analysis_rzil_cleanup(analysis);
@@ -228,7 +228,6 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
 		: NULL;
 }
 
-// deprecate.. or at least reuse get_reg_profile...
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
 	bool ret = false;
 	char *p = rz_analysis_get_reg_profile(analysis);
