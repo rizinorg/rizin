@@ -17,11 +17,13 @@ extern "C" {
 
 typedef char *RzILValidateReport;
 
-typedef struct rz_il_validate_context_t RzILValidateContext;
+typedef struct rz_il_validate_global_context_t RzILValidateGlobalContext;
 
-RZ_API RzILValidateContext *rz_il_validate_context_new_from_vm(RzILVM *vm);
-RZ_API void rz_il_validate_context_free(RzILValidateContext *ctx);
-RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NULLABLE RZ_OUT RzILSortPure *sort_out, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out);
+RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_empty();
+RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_from_vm(RzILVM *vm);
+RZ_API void rz_il_validate_global_context_free(RzILValidateGlobalContext *ctx);
+RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
+	RZ_NULLABLE RZ_OUT RzILSortPure *sort_out, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out);
 RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out);
 
 #ifdef __cplusplus

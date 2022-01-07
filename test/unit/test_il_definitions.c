@@ -9,7 +9,7 @@ static bool is_equal_bool(RzILBool *x, RzILBool *y) {
 	return x->b == y->b;
 }
 
-bool test_rzil_bool_init(void) {
+bool test_il_bool_init(void) {
 	RzILBool *b = rz_il_bool_new(true);
 	mu_assert_notnull(b, "New RzILBool");
 	mu_assert_eq(b->b, true, "bool is true");
@@ -17,7 +17,7 @@ bool test_rzil_bool_init(void) {
 	mu_end;
 }
 
-bool test_rzil_bool_logic(void) {
+bool test_il_bool_logic(void) {
 	RzILBool *t = rz_il_bool_new(true);
 	RzILBool *f = rz_il_bool_new(false);
 	RzILBool *result;
@@ -86,7 +86,7 @@ bool test_rzil_bool_logic(void) {
 	mu_end;
 }
 
-static bool test_rzil_mem_load() {
+static bool test_il_mem_load() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x42, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
@@ -122,7 +122,7 @@ static bool test_rzil_mem_load() {
 	mu_end;
 }
 
-static bool test_rzil_mem_store() {
+static bool test_il_mem_store() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x42, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	RzILMem *mem = rz_il_mem_new(buf, 16);
@@ -160,7 +160,7 @@ static bool test_rzil_mem_store() {
 	mu_end;
 }
 
-static bool test_rzil_mem_loadw() {
+static bool test_il_mem_loadw() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x13, 0x37, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
@@ -204,7 +204,7 @@ static bool test_rzil_mem_loadw() {
 	mu_end;
 }
 
-static bool test_rzil_mem_storew() {
+static bool test_il_mem_storew() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	RzILMem *mem = rz_il_mem_new(buf, 32);
@@ -240,7 +240,7 @@ static bool test_rzil_mem_storew() {
 	mu_end;
 }
 
-static bool test_rzil_seqn() {
+static bool test_il_seqn() {
 	// n = 0 ==> just a nop
 	RzILOpEffect *s = rz_il_op_new_seqn(0);
 	mu_assert_notnull(s, "seqn 0");
@@ -299,14 +299,29 @@ static bool test_rzil_seqn() {
 	mu_end;
 }
 
+static bool test_il_sort_pure_eq() {
+	bool r = rz_il_sort_pure_eq(rz_il_sort_pure_bool(), rz_il_sort_pure_bool());
+	mu_assert_true(r, "sort eq");
+	r = rz_il_sort_pure_eq(rz_il_sort_pure_bv(32), rz_il_sort_pure_bv(32));
+	mu_assert_true(r, "sort eq");
+	r = rz_il_sort_pure_eq(rz_il_sort_pure_bv(32), rz_il_sort_pure_bv(31));
+	mu_assert_false(r, "sort eq");
+	r = rz_il_sort_pure_eq(rz_il_sort_pure_bool(), rz_il_sort_pure_bv(32));
+	mu_assert_false(r, "sort eq");
+	r = rz_il_sort_pure_eq(rz_il_sort_pure_bv(32), rz_il_sort_pure_bool());
+	mu_assert_false(r, "sort eq");
+	mu_end;
+}
+
 bool all_tests() {
-	mu_run_test(test_rzil_bool_init);
-	mu_run_test(test_rzil_bool_logic);
-	mu_run_test(test_rzil_mem_load);
-	mu_run_test(test_rzil_mem_store);
-	mu_run_test(test_rzil_mem_loadw);
-	mu_run_test(test_rzil_mem_storew);
-	mu_run_test(test_rzil_seqn);
+	mu_run_test(test_il_bool_init);
+	mu_run_test(test_il_bool_logic);
+	mu_run_test(test_il_mem_load);
+	mu_run_test(test_il_mem_store);
+	mu_run_test(test_il_mem_loadw);
+	mu_run_test(test_il_mem_storew);
+	mu_run_test(test_il_seqn);
+	mu_run_test(test_il_sort_pure_eq);
 	return tests_passed != tests_run;
 }
 
