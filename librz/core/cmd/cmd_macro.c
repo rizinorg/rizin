@@ -9,11 +9,13 @@ static const char *help_msg_lparen[] = {
 	"(foo args;..;..)()", "", "define and call a macro",
 	"(-foo)", "", "remove a macro",
 	".(foo)", "", "to call it",
+	"..(foo)", "", "to call it multiple times",
 	"()", "", "break inside macro",
 	"(*", "", "list all defined macros",
 	"", "Argument support:", "",
 	"(foo x y; $0 @ $1)", "", "define fun with args (x - $0; y - $1)",
 	".(foo 128 0x804800)", "", "call it with args",
+	"..(foo 128 0x804800 256 0x804801)", "", "call it with args multiple times",
 	NULL
 };
 

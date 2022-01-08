@@ -54,3 +54,17 @@ commands:
         optional: true
       - name: )
         type: RZ_CMD_ARG_TYPE_FAKE
+  - name: ..(
+    cname: interpret_macro_multiple
+    summary: Interpret output of macro multiple times with different args
+    args_str: "<macro-name> [<set1-arg1> <set1-arg2> ...] [<set2-arg1> <set2-arg2> ...] ...)"
+    args:
+      - name: macro-name
+        type: RZ_CMD_ARG_TYPE_MACRO
+        no_space: true
+      - name: macro-arg-set
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+      - name: )
+        type: RZ_CMD_ARG_TYPE_FAKE

@@ -268,6 +268,7 @@ module.exports = grammar({
           ),
           seq(field("command", alias(/\.[ ]+/, $.cmd_identifier)), field("args", optional($.args))),
           seq(field("command", alias(".(", $.cmd_identifier)), field("args", $.macro_call_content)),
+          seq(field("command", alias("..(", $.cmd_identifier)), field("args", $.macro_call_content)),
           seq(field("command", alias($._interpret_search_identifier, $.cmd_identifier)), field("args", $.args)),
           prec.right(1, seq(field("args", $._simple_stmt), field("command", "|.")))
         )

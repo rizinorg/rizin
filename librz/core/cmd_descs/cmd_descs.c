@@ -66,6 +66,7 @@ static const RzCmdDescArg interpret_script_args[2];
 static const RzCmdDescArg interpret_output_args[2];
 static const RzCmdDescArg interpret_pipe_args[2];
 static const RzCmdDescArg interpret_macro_args[4];
+static const RzCmdDescArg interpret_macro_multiple_args[4];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
@@ -799,6 +800,33 @@ static const RzCmdDescArg interpret_macro_args[] = {
 static const RzCmdDescHelp interpret_macro_help = {
 	.summary = "Interpret output of macro",
 	.args = interpret_macro_args,
+};
+
+static const RzCmdDescArg interpret_macro_multiple_args[] = {
+	{
+		.name = "macro-name",
+		.type = RZ_CMD_ARG_TYPE_MACRO,
+		.no_space = true,
+
+	},
+	{
+		.name = "macro-arg-set",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{
+		.name = ")",
+		.type = RZ_CMD_ARG_TYPE_FAKE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp interpret_macro_multiple_help = {
+	.summary = "Interpret output of macro multiple times with different args",
+	.args_str = "<macro-name> [<set1-arg1> <set1-arg2> ...] [<set2-arg1> <set2-arg2> ...] ...)",
+	.args = interpret_macro_multiple_args,
 };
 
 static const RzCmdDescHelp cmd_search_help = {
@@ -10432,6 +10460,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *interpret_macro_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, ".(", rz_interpret_macro_handler, &interpret_macro_help);
 	rz_warn_if_fail(interpret_macro_cd);
+
+	RzCmdDesc *interpret_macro_multiple_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, "..(", rz_interpret_macro_multiple_handler, &interpret_macro_multiple_help);
+	rz_warn_if_fail(interpret_macro_multiple_cd);
 
 	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "/", rz_cmd_search, &cmd_search_help);
 	rz_warn_if_fail(cmd_search_cd);

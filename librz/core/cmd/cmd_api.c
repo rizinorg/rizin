@@ -1912,6 +1912,144 @@ out_clean:
 	return true;
 }
 
+RZ_API int rz_cmd_macro_call_multiple(RzCmdMacro *mac, const char *name) {
+	char *args;
+	int nargs = 0;
+	char *str, *ptr, *ptr2;
+	RzListIter *iter;
+	static int macro_level = 0;
+	RzCmdMacroItem *m;
+	/* labels */
+	int labels_n = 0;
+	struct rz_cmd_macro_label_t labels[MACRO_LABELS];
+
+	str = strdup(name);
+	if (!str) {
+		perror("strdup");
+		return false;
+	}
+	ptr = strchr(str, ')');
+	if (!ptr) {
+		eprintf("Missing end ')' parenthesis.\n");
+		free(str);
+		return false;
+	} else {
+		*ptr = '\0';
+	}
+
+	args = strchr(str, ' ');
+	if (args) {
+		*args = '\0';
+		args++;
+		nargs = rz_str_word_set0(args);
+	}
+
+	macro_level++;
+	if (macro_level > MACRO_LIMIT) {
+		eprintf("Maximum macro recursivity reached.\n");
+		macro_level--;
+		free(str);
+		return 0;
+	}
+	ptr = strchr(str, ';');
+	if (ptr) {
+		*ptr = 0;
+	}
+
+	rz_cons_break_push(NULL, NULL);
+	rz_list_foreach (mac->macros, iter, m) {
+		if (!strcmp(str, m->name)) {
+			char *ptr = m->code;
+			char *end = strchr(ptr, '\n');
+			char *init_ptr = ptr;
+			char *init_end = end;
+			if ((m->nargs == 0 && nargs != m->nargs) ||
+				(m->nargs != 0 && (nargs % m->nargs != 0 || nargs == 0))) {
+				if (m->nargs == 0 || nargs == 0) {
+					eprintf("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
+				} else {
+					eprintf("Macro '%s' expects %d args and %d is not a multiple of %d\n",
+						m->name, m->nargs, nargs, m->nargs);
+				}
+				macro_level--;
+				free(str);
+				rz_cons_break_pop();
+				return false;
+			}
+			mac->brk = 0;
+			int args_processed = 0;
+			do {
+				if (end) {
+					*end = '\0';
+				}
+				if (rz_cons_is_breaked()) {
+					eprintf("Interrupted at (%s)\n", ptr);
+					if (end) {
+						*end = '\n';
+					}
+					free(str);
+					rz_cons_break_pop();
+					return false;
+				}
+				rz_cons_flush();
+				/* Label handling */
+				ptr2 = rz_cmd_macro_label_process(mac, &(labels[0]), &labels_n, ptr);
+				if (!ptr2) {
+					eprintf("Oops. invalid label name\n");
+					break;
+				} else if (ptr != ptr2) {
+					ptr = ptr2;
+					if (end) {
+						*end = '\n';
+					}
+					end = strchr(ptr, '\n');
+					continue;
+				}
+				/* Command execution */
+				if (*ptr) {
+					mac->num->value = value;
+					int r = rz_cmd_macro_cmd_args(mac, ptr, args, nargs);
+					// TODO: handle quit? r == 0??
+					// quit, exits the macro. like a break
+					value = mac->num->value;
+					if (r < 0) {
+						free(str);
+						rz_cons_break_pop();
+						return r;
+					}
+				}
+				if (end) {
+					*end = '\n';
+					ptr = end + 1;
+					/* Fetch next command */
+					end = strchr(ptr, '\n');
+				} else {
+					args_processed += m->nargs;
+					if (args_processed >= nargs) {
+						macro_level--;
+						free(str);
+						goto out_clean;
+					}
+					args = (char *)rz_str_word_get0(args, m->nargs);
+					ptr = init_ptr;
+					end = init_end;
+				}
+			} while (!mac->brk);
+			if (mac->brk) {
+				macro_level--;
+				free(str);
+				goto out_clean;
+			}
+		}
+	}
+	eprintf("No macro named '%s'\n", str);
+	macro_level--;
+	free(str);
+out_clean:
+	rz_cons_break_pop();
+	return true;
+}
+
 RZ_API int rz_cmd_macro_break(RzCmdMacro *mac, const char *value) {
 	mac->brk = 1;
 	mac->brk_value = NULL;
