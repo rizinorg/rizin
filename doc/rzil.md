@@ -1,9 +1,9 @@
 RzIL
 ====
 
-RzIL is Rizin's new intermediate language, primarily for representing the
-semantics of machine code. It is designed as a clone of BAP's [Core
-Theory](http://binaryanalysisplatform.github.io/bap/api/master/bap-core-theory/Bap_core_theory/),
+RzIL is the new intermediate language in Rizin, primarily intended for
+representing the semantics of machine code. It is designed as a clone of BAP's
+[Core Theory](http://binaryanalysisplatform.github.io/bap/api/master/bap-core-theory/Bap_core_theory/),
 with minor deviations where necessary.
 
 Background
@@ -11,19 +11,19 @@ Background
 
 RzIL was introduced as a consequence of dissatisfaction with certain properties
 of ESIL, in particular its highly ambiguous and weak typing, requiring [major
-hacks](https://github.com/rizinorg/rizin/blob/2e065789a70edd20909aadcdf7f9c45b9af699fb/librz/analysis/esil/esil.c#L1025-L1032)
-to determine the bit-width of a value required for further calculations, for
-example.
+hacks](https://github.com/rizinorg/rizin/blob/2e065789a70edd20909aadcdf7f9c45b9af699fb/librz/analysis/esil/esil.c#L1025-L1032),
+for example to determine the bit-width of a value required for further
+calculations.
 
-At this point, the two options to proceed were to either enhance ESIL and
-redesign some aspects for it, such as introducing static typing, or starting
+At this point, two options to proceed were to either enhance ESIL and
+redesign some aspects of it, such as introducing static typing, or starting
 from scratch with a new language, preferably reusing an already existing
-field-tested one. It was decided for the latter approach, the language was
+field-tested one. It was decided for the latter approach, and the language was
 chosen to be BAP Core Theory. The initial implementation was then carried out as
 part of the Rizin Summer of Code 2021 by heersin.
 
-Design
-------
+Language Design
+---------------
 
 An expression, or "op", in RzIL forms a tree, optionally composed from multiple
 sub-ops. All these ops are statically typed and are divided into pure ops and
@@ -31,8 +31,8 @@ effects at the highest level.
 
 ### Pure Ops
 
-As the name suggests, pure ops, stored by `RzILOpPure`, are computiations that
-are free from side-effects and evaluate to a value. The types of values
+As the name suggests, pure ops, stored by `RzILOpPure`, are computations that
+are free from side-effects and evaluate to a single value. The types of values
 supported at the moment are booleans and bitvectors.
 
 ### Effect Ops and State
@@ -53,6 +53,10 @@ Core Theory is very tightly integrated into the BAP ecosystem and while
 theoretically being reusable outside as-is, has certain properties that do not
 translate well to our C implementation, which is where some deliberate
 deviations were made.
+The following paragraphs dive deeply into certain implementation details of BAP,
+in order to distinguish them from RzIL, so basic knowledge of OCaml or other
+ML-like languages is required. This chapter may not be relevant to users only
+interested in RzIL.
 
 ### Typing
 
@@ -79,16 +83,17 @@ known in the code. Further splitting is not possible while keeping ops like
 
 So far, this is only an implementation detail, but does not actually affect the
 language itself. However, as there are also certain limitations of OCaml's type
-system, our dynamic typing opens up other possibilities.
+system, our dynamic typing does open up other possibilities.
 
 For instance, the `append` op is used for appending two bitvectors of arbitrary
 sizes. Intuitively, the result's size would be the operands' numbers of bits
 added together, motivating a signature that would look somewhat like this:
 `append : 'b bitv -> 'c bitv -> ('b + 'c) bitv`. This however is simply not
 possible in OCaml, so BAP resorts to specify the result size explicitly as an
-argument and defines `append` to apply an extra cast after appending: `append :
-'a Bitv.t Value.sort -> 'b bitv -> 'c bitv -> 'a bitv` This solves the problem
-of typing, but makes the op's semantics somewhat more complicated.
+argument and defines `append`'s semantics to apply an extra cast after
+appending: `append : 'a Bitv.t Value.sort -> 'b bitv -> 'c bitv -> 'a bitv`.
+This solves the problem of typing, but makes the op's semantics somewhat
+more complicated.
 
 In contrast, RzIL's `append` always has the resulting size as the sum of the
 operand sizes, simplifying the semantics.
@@ -130,3 +135,13 @@ occurences of `set` ops for their names. Their scope is generally limited to a
 single lifted instruction. Even though they are defined implcitly by `set` ops,
 they are still typed statically and code with multiple `set` ops assigning
 values of different types to the same identifier is considered invalid.
+
+### Omitted Ops
+
+Not every single Core Theory op has been implemented in RzIL so far. Some may be
+implemented later when needed, others do not exist as "real" ops, but only have
+a constructor function, composing it from other ops, like the current
+implementation of [`unsigned`](https://github.com/rizinorg/rizin/blob/4487d7e1ac8ec0346f0f0b6f14dfdc7d5e424b34/librz/il/il_opcodes.c#L306-L309).
+And some may be omitted completely, such as
+[`concat`](http://binaryanalysisplatform.github.io/bap/api/master/bap-core-theory/Bap_core_theory/Theory/module-type-Basic/index.html#val-concat),
+as list operands would be rather awkward to handle in C.
