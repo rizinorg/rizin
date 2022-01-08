@@ -18,7 +18,6 @@ static const char *help_msg_a[] = {
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[?] [addr]", "analyze block",
-	"ac", "[?]", "manage classes",
 	"aC", "[?]", "analyze function call",
 	"aCe", "[?]", "same as aC, but uses esil with abte to emulate the function",
 	"ad", "[?]", "analyze data trampoline (wip)",
@@ -116,27 +115,6 @@ static const char *help_msg_abt[] = {
 	"abt", " [addr] [num]", "find num paths from current offset to addr",
 	"abte", " [addr]", "emulate from beginning of function to the given address",
 	"abtj", " [addr] [num]", "display paths in JSON",
-	NULL
-};
-
-static const char *help_msg_ac[] = {
-	"Usage:", "ac", "analysis classes commands",
-	"acl[j*]", "", "list all classes",
-	"acll[j]", " (class_name)", "list all or single class detailed",
-	"ac", " [class name]", "add class",
-	"ac-", " [class name]", "delete class",
-	"acn", " [class name] [new class name]", "rename class",
-	"acv", " [class name] [addr] ([offset]) ([size])", "add vtable address to class",
-	"acvf", " [offset] ([class name])", "lookup function address on vtable offset",
-	"acv-", " [class name] [vtable id]", "delete vtable by id (from acv [class name])",
-	"acb", " [class name]", "list bases of class",
-	"acb", " [class name] [base class name] ([offset])", "add base class",
-	"acb-", " [class name] [base class id]", "delete base by id (from acb [class name])",
-	"acm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
-	"acm-", " [class name] [method name]", "delete method",
-	"acmn", " [class name] [method name] [new name]", "rename method",
-	"acg", "", "print inheritance ascii graph",
-	"ac?", "", "show this help",
 	NULL
 };
 
@@ -5540,362 +5518,6 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 	return RZ_CMD_STATUS_OK;
 }
 
-static void cmd_analysis_class_method(RzCore *core, const char *input) {
-	RzAnalysisClassErr err = RZ_ANALYSIS_CLASS_ERR_SUCCESS;
-	char c = input[0];
-	switch (c) {
-	case ' ': // "acm"
-	case '-': // "acm-"
-	case 'n': { // "acmn"
-		const char *str = rz_str_trim_head_ro(input + 1);
-		if (!*str) {
-			eprintf("No class name given.\n");
-			break;
-		}
-		char *cstr = strdup(str);
-		if (!cstr) {
-			break;
-		}
-		char *end = strchr(cstr, ' ');
-		if (!end) {
-			eprintf("No method name given.\n");
-			free(cstr);
-			break;
-		}
-		*end = '\0';
-		char *name_str = end + 1;
-
-		if (c == ' ' || c == 'n') {
-			end = strchr(name_str, ' ');
-			if (!end) {
-				if (c == ' ') {
-					eprintf("No offset given.\n");
-				} else if (c == 'n') {
-					eprintf("No new method name given.\n");
-				}
-				free(cstr);
-				break;
-			}
-			*end = '\0';
-		}
-
-		if (c == ' ') {
-			char *addr_str = end + 1;
-			end = strchr(addr_str, ' ');
-			if (end) {
-				*end = '\0';
-			}
-
-			RzAnalysisMethod meth;
-			meth.name = name_str;
-			meth.real_name = rz_str_new(name_str);
-			meth.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT;
-			meth.addr = rz_num_get(core->num, addr_str);
-			meth.vtable_offset = -1;
-			if (end) {
-				meth.vtable_offset = (int)rz_num_get(core->num, end + 1);
-			}
-			err = rz_analysis_class_method_set(core->analysis, cstr, &meth);
-		} else if (c == 'n') {
-			char *new_name_str = end + 1;
-			end = strchr(new_name_str, ' ');
-			if (end) {
-				*end = '\0';
-			}
-
-			err = rz_analysis_class_method_rename(core->analysis, cstr, name_str, new_name_str);
-		} else if (c == '-') {
-			err = rz_analysis_class_method_delete(core->analysis, cstr, name_str);
-		}
-
-		free(cstr);
-		break;
-	}
-	default:
-		rz_core_cmd_help(core, help_msg_ac);
-		break;
-	}
-
-	switch (err) {
-	case RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS:
-		eprintf("Class does not exist.\n");
-		break;
-	case RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_ATTR:
-		eprintf("Method does not exist.\n");
-		break;
-	default:
-		break;
-	}
-}
-
-static void cmd_analysis_class_base(RzCore *core, const char *input) {
-	RzAnalysisClassErr err = RZ_ANALYSIS_CLASS_ERR_SUCCESS;
-	char c = input[0];
-	switch (c) {
-	case ' ': // "acb"
-	case '-': { // "acb-"
-		const char *str = rz_str_trim_head_ro(input + 1);
-		if (!*str) {
-			eprintf("No class name given.\n");
-			return;
-		}
-		char *cstr = strdup(str);
-		if (!cstr) {
-			break;
-		}
-		char *end = strchr(cstr, ' ');
-		if (end) {
-			*end = '\0';
-			end++;
-		}
-
-		if (!end || *end == '\0') {
-			if (c == ' ') {
-				rz_analysis_class_list_bases(core->analysis, cstr);
-			} else /*if (c == '-')*/ {
-				eprintf("No base id given.\n");
-			}
-			free(cstr);
-			break;
-		}
-
-		char *base_str = end;
-		end = strchr(base_str, ' ');
-		if (end) {
-			*end = '\0';
-		}
-
-		if (c == '-') {
-			err = rz_analysis_class_base_delete(core->analysis, cstr, base_str);
-			free(cstr);
-			break;
-		}
-
-		RzAnalysisBaseClass base;
-		base.id = NULL;
-		base.offset = 0;
-		base.class_name = base_str;
-
-		if (end) {
-			base.offset = rz_num_get(core->num, end + 1);
-		}
-
-		err = rz_analysis_class_base_set(core->analysis, cstr, &base);
-		free(base.id);
-		free(cstr);
-		break;
-	}
-	default:
-		rz_core_cmd_help(core, help_msg_ac);
-		break;
-	}
-
-	if (err == RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS) {
-		eprintf("Class does not exist.\n");
-	}
-}
-
-static void cmd_analysis_class_vtable(RzCore *core, const char *input) {
-	RzAnalysisClassErr err = RZ_ANALYSIS_CLASS_ERR_SUCCESS;
-	char c = input[0];
-	switch (c) {
-	case 'f': { // "acvf" [offset] ([class_name])
-		const char *str = rz_str_trim_head_ro(input + 1);
-		if (!*str) {
-			eprintf("No offset given\n");
-			return;
-		}
-		char *cstr = strdup(str);
-		if (!cstr || !isdigit(cstr[0])) {
-			break;
-		}
-		char *end = strchr(cstr, ' ');
-		if (end) {
-			*end = '\0';
-			end++;
-		}
-		ut64 offset_arg = rz_num_get(core->num, cstr);
-		char *class_arg = NULL;
-		if (end) {
-			class_arg = (char *)rz_str_trim_head_ro(end);
-		}
-
-		if (class_arg) {
-			end = (char *)rz_str_trim_head_wp(class_arg); // in case of extra unwanted stuff at the cmd end
-			*end = '\0';
-		}
-		rz_analysis_class_list_vtable_offset_functions(core->analysis, class_arg, offset_arg);
-
-		free(cstr);
-		break;
-	}
-	case ' ': // "acv"
-	case '-': { // "acv-"
-		const char *str = rz_str_trim_head_ro(input + 1);
-		if (!*str) {
-			eprintf("No class name given.\n");
-			return;
-		}
-		char *cstr = strdup(str);
-		if (!cstr) {
-			break;
-		}
-		char *end = strchr(cstr, ' ');
-		if (end) {
-			*end = '\0';
-			end++;
-		}
-
-		if (!end || *end == '\0') {
-			if (c == ' ') {
-				rz_analysis_class_list_vtables(core->analysis, cstr);
-			} else /*if (c == '-')*/ {
-				eprintf("No vtable id given. See acv [class name].\n");
-			}
-			free(cstr);
-			break;
-		}
-
-		char *arg1_str = end;
-
-		if (c == '-') {
-			err = rz_analysis_class_vtable_delete(core->analysis, cstr, arg1_str);
-			free(cstr);
-			break;
-		}
-
-		end = strchr(arg1_str, ' ');
-		if (end) {
-			*end = '\0';
-		}
-
-		RzAnalysisVTable vtable;
-		vtable.id = NULL;
-		vtable.addr = rz_num_get(core->num, arg1_str);
-		vtable.offset = 0;
-		vtable.size = 0;
-
-		char *arg3_str = NULL;
-		if (end) {
-			vtable.offset = rz_num_get(core->num, end + 1);
-			// end + 1 won't work on extra whitespace between arguments, TODO
-			arg3_str = strchr(end + 1, ' ');
-		}
-
-		if (arg3_str) {
-			vtable.size = rz_num_get(core->num, arg3_str + 1);
-		}
-
-		err = rz_analysis_class_vtable_set(core->analysis, cstr, &vtable);
-		free(vtable.id);
-		free(cstr);
-		break;
-	}
-	default:
-		rz_core_cmd_help(core, help_msg_ac);
-		break;
-	}
-
-	if (err == RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS) {
-		eprintf("Class does not exist.\n");
-	}
-}
-
-static void cmd_analysis_classes(RzCore *core, const char *input) {
-	switch (input[0]) {
-	case 'l': // "acl"
-		if (input[1] == 'l') { // "acll" (name)
-			char mode = 0;
-			int arg_offset = 2;
-			if (input[2] == 'j') {
-				arg_offset++;
-				mode = 'j';
-			}
-			const char *arg = rz_str_trim_head_ro(input + arg_offset);
-			if (*arg) { // if there is an argument
-				char *class_name = strdup(arg);
-				if (!class_name) {
-					break;
-				}
-				char *name_end = (char *)rz_str_trim_head_wp(class_name);
-				*name_end = 0; // trim the whitespace around the name
-				if (mode == 'j') {
-					PJ *pj = pj_new();
-					rz_analysis_class_json(core->analysis, pj, class_name);
-					rz_cons_printf("%s\n", pj_string(pj));
-					pj_free(pj);
-				} else {
-					rz_analysis_class_print(core->analysis, class_name, true);
-				}
-				free(class_name);
-				break;
-			}
-		}
-		rz_analysis_class_list(core->analysis, input[1]);
-		break;
-	case ' ': // "ac"
-	case '-': // "ac-"
-	case 'n': { // "acn"
-		const char *str = rz_str_trim_head_ro(input + 1);
-		if (!*str) {
-			break;
-		}
-		char *cstr = strdup(str);
-		if (!cstr) {
-			break;
-		}
-		char *end = strchr(cstr, ' ');
-		if (end) {
-			*end = '\0';
-		}
-		if (input[0] == '-') {
-			rz_analysis_class_delete(core->analysis, cstr);
-		} else if (input[0] == 'n') {
-			if (!end) {
-				eprintf("No new class name given.\n");
-			} else {
-				char *new_name = end + 1;
-				end = strchr(new_name, ' ');
-				if (end) {
-					*end = '\0';
-				}
-				RzAnalysisClassErr err = rz_analysis_class_rename(core->analysis, cstr, new_name);
-				if (err == RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS) {
-					eprintf("Class does not exist.\n");
-				} else if (err == RZ_ANALYSIS_CLASS_ERR_CLASH) {
-					eprintf("A class with this name already exists.\n");
-				}
-			}
-		} else {
-			rz_analysis_class_create(core->analysis, cstr);
-		}
-		free(cstr);
-		break;
-	}
-	case 'v': // "acv"
-		cmd_analysis_class_vtable(core, input + 1);
-		break;
-	case 'b': // "acb"
-		cmd_analysis_class_base(core, input + 1);
-		break;
-	case 'm': // "acm"
-		cmd_analysis_class_method(core, input + 1);
-		break;
-	case 'g': { // "acg"
-		RzGraph *graph = rz_analysis_class_get_inheritance_graph(core->analysis);
-		if (!graph) {
-			eprintf("Couldn't create graph");
-			break;
-		}
-		rz_core_graph_print(core, graph, -1, false, input + 1);
-		rz_graph_free(graph);
-	} break;
-	default: // "ac?"
-		rz_core_cmd_help(core, help_msg_ac);
-		break;
-	}
-}
-
 static void show_reg_args(RzCore *core, int nargs, RzStrBuf *sb) {
 	int i;
 	char regname[8];
@@ -6153,9 +5775,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_ab);
 			break;
 		}
-		break;
-	case 'c': // "ac"
-		cmd_analysis_classes(core, input + 1);
 		break;
 	case 'C': // "aC"
 		cmd_analysis_aC(core, input + 1);
@@ -8704,5 +8323,490 @@ RZ_IPI RzCmdStatus rz_analysis_list_struct_offsets_handler(RzCore *core, int arg
 		rz_cons_printf("%s\n", ty->path);
 	}
 	rz_list_free(typeoffs);
+	return RZ_CMD_STATUS_OK;
+}
+
+static void analysis_class_print(RzAnalysis *analysis, const char *class_name, bool detailed) {
+	rz_cons_printf("[%s", class_name);
+
+	RzVector *bases = rz_analysis_class_base_get_all(analysis, class_name);
+	if (bases) {
+		RzAnalysisBaseClass *base;
+		bool first = true;
+		rz_vector_foreach(bases, base) {
+			if (first) {
+				rz_cons_print(": ");
+				first = false;
+			} else {
+				rz_cons_print(", ");
+			}
+			rz_cons_print(base->class_name);
+		}
+		rz_vector_free(bases);
+	}
+
+	rz_cons_print("]\n");
+
+	if (detailed) {
+		RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
+		if (vtables) {
+			RzAnalysisVTable *vtable;
+			rz_vector_foreach(vtables, vtable) {
+				rz_cons_printf("  (vtable at 0x%" PFMT64x, vtable->addr);
+				if (vtable->offset > 0) {
+					rz_cons_printf(" in class at +0x%" PFMT64x ")\n", vtable->offset);
+				} else {
+					rz_cons_print(")\n");
+				}
+			}
+			rz_vector_free(vtables);
+		}
+
+		RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
+		if (methods && rz_vector_len(methods) > 0) {
+			RzTable *table = rz_table_new();
+			rz_table_set_columnsf(table, "dsxxs", "nth", "name", "addr", "vt_offset", "type");
+			rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
+			char *method_type[] = { "DEFAULT", "VIRTUAL", "V_DESTRUCTOR", "DESTRUCTOR", "CONSTRUCTOR" };
+			RzAnalysisMethod *meth;
+			int i = 1;
+			rz_vector_foreach(methods, meth) {
+				RzList *row_list = rz_list_newf(free);
+				rz_list_append(row_list, rz_str_newf("%d", i++));
+				rz_list_append(row_list, rz_str_new(meth->real_name));
+				rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, meth->addr));
+				if (meth->vtable_offset >= 0) {
+					rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, meth->vtable_offset));
+				} else {
+					rz_list_append(row_list, rz_str_new("-1"));
+				}
+				rz_list_append(row_list, rz_str_new(method_type[meth->method_type]));
+				rz_table_add_row_list(table, row_list);
+			}
+			char *s = rz_table_tostring(table);
+			rz_cons_printf("%s\n", s);
+			free(s);
+			rz_table_free(table);
+		}
+		rz_vector_free(methods);
+	}
+}
+
+static void analysis_class_print_to_json(RzAnalysis *analysis, PJ *pj, const char *class_name) {
+	pj_o(pj);
+	pj_ks(pj, "name", class_name);
+
+	pj_k(pj, "bases");
+	pj_a(pj);
+	RzVector *bases = rz_analysis_class_base_get_all(analysis, class_name);
+	if (bases) {
+		RzAnalysisBaseClass *base;
+		rz_vector_foreach(bases, base) {
+			pj_o(pj);
+			pj_ks(pj, "id", base->id);
+			pj_ks(pj, "name", base->class_name);
+			pj_kn(pj, "offset", base->offset);
+			pj_end(pj);
+		}
+		rz_vector_free(bases);
+	}
+	pj_end(pj);
+
+	pj_k(pj, "vtables");
+	pj_a(pj);
+	RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
+	if (vtables) {
+		RzAnalysisVTable *vtable;
+		rz_vector_foreach(vtables, vtable) {
+			pj_o(pj);
+			pj_ks(pj, "id", vtable->id);
+			pj_kn(pj, "addr", vtable->addr);
+			pj_kn(pj, "offset", vtable->offset);
+			pj_end(pj);
+		}
+	}
+	pj_end(pj);
+
+	pj_k(pj, "methods");
+	pj_a(pj);
+	RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
+	if (methods) {
+		char *method_type[] = { "DEFAULT", "VIRTUAL", "V_DESTRUCTOR", "DESTRUCTOR", "CONSTRUCTOR" };
+		RzAnalysisMethod *meth;
+		rz_vector_foreach(methods, meth) {
+			pj_o(pj);
+			pj_ks(pj, "name", meth->real_name);
+			pj_kn(pj, "addr", meth->addr);
+			pj_ks(pj, "type", method_type[meth->method_type]);
+			if (meth->vtable_offset >= 0) {
+				pj_kn(pj, "vtable_offset", (ut64)meth->vtable_offset);
+			}
+			pj_end(pj);
+		}
+		rz_vector_free(methods);
+	}
+	pj_end(pj);
+
+	pj_end(pj);
+}
+
+typedef struct {
+	RzAnalysis *analysis;
+	PJ *pj;
+} ListJsonCtx;
+
+static bool analysis_class_print_to_json_cb(void *user, const char *k, const char *v) {
+	ListJsonCtx *ctx = user;
+	analysis_class_print_to_json(ctx->analysis, ctx->pj, k);
+	return true;
+}
+
+static void analysis_class_list_print_to_json(RzAnalysis *analysis, PJ *pj) {
+	ListJsonCtx ctx;
+	ctx.analysis = analysis;
+	ctx.pj = pj;
+	pj_a(pj);
+	rz_analysis_class_foreach(analysis, analysis_class_print_to_json_cb, &ctx);
+	pj_end(pj);
+	return;
+}
+
+static void analysis_class_print_as_cmd(RzAnalysis *analysis, const char *class_name) {
+	RzVector *bases = rz_analysis_class_base_get_all(analysis, class_name);
+	if (bases) {
+		RzAnalysisBaseClass *base;
+		rz_vector_foreach(bases, base) {
+			rz_cons_printf("acb %s %s %" PFMT64u "\n", class_name, base->class_name, base->offset);
+		}
+		rz_vector_free(bases);
+	}
+
+	RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
+	if (vtables) {
+		RzAnalysisVTable *vtable;
+		rz_vector_foreach(vtables, vtable) {
+			rz_cons_printf("acv %s 0x%" PFMT64x " %" PFMT64u "\n", class_name, vtable->addr, vtable->offset);
+		}
+		rz_vector_free(vtables);
+	}
+
+	RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
+	if (methods) {
+		RzAnalysisMethod *meth;
+		rz_vector_foreach(methods, meth) {
+			rz_cons_printf("acm %s %s 0x%" PFMT64x " %" PFMT64d "\n", class_name, meth->name, meth->addr, meth->vtable_offset);
+		}
+		rz_vector_free(methods);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		analysis_class_list_print_to_json(core->analysis, state->d.pj);
+		return RZ_CMD_STATUS_OK;
+	}
+
+	SdbList *classes = rz_analysis_class_get_all(core->analysis, state->mode != RZ_OUTPUT_MODE_RIZIN);
+	SdbListIter *iter;
+	SdbKv *kv;
+	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
+		ls_foreach (classes, iter, kv) {
+			// need to create all classes first, so they can be referenced
+			rz_cons_printf("ac %s\n", sdbkv_key(kv));
+		}
+		ls_foreach (classes, iter, kv) {
+			analysis_class_print_as_cmd(core->analysis, sdbkv_key(kv));
+		}
+	} else {
+		ls_foreach (classes, iter, kv) {
+			analysis_class_print(core->analysis, sdbkv_key(kv), state->mode == RZ_OUTPUT_MODE_LONG);
+		}
+	}
+	ls_free(classes);
+	return RZ_CMD_STATUS_OK;
+}
+
+static inline void log_err_nonexist_class() {
+	RZ_LOG_ERROR("Class does not exist.\n");
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	const char *class_name = argv[1];
+	if (!rz_analysis_class_exists(core->analysis, class_name)) {
+		log_err_nonexist_class();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+	case RZ_OUTPUT_MODE_LONG:
+		analysis_class_print(core->analysis, class_name, state->mode == RZ_OUTPUT_MODE_LONG);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		analysis_class_print_to_json(core->analysis, state->d.pj, class_name);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus class_error(RzAnalysisClassErr err) {
+	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
+	switch (err) {
+	case RZ_ANALYSIS_CLASS_ERR_SUCCESS:
+		status = RZ_CMD_STATUS_OK;
+		break;
+	case RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS:
+		log_err_nonexist_class();
+		break;
+	case RZ_ANALYSIS_CLASS_ERR_CLASH:
+		RZ_LOG_ERROR("A class with this name already exists.\n");
+		break;
+	default:
+		break;
+	}
+	return status;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_add_handler(RzCore *core, int argc, const char **argv) {
+	const char *class_name = argv[1];
+	if (strchr(class_name, ' ')) {
+		RZ_LOG_ERROR("Invalid class name.\n");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	RzAnalysisClassErr err = rz_analysis_class_create(core->analysis, class_name);
+	return class_error(err);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_del_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_class_delete(core->analysis, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_rename_handler(RzCore *core, int argc, const char **argv) {
+	const char *old_name = argv[1];
+	const char *new_name = argv[2];
+	if (strchr(new_name, ' ')) {
+		RZ_LOG_ERROR("Invalid class name.\n");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	RzAnalysisClassErr err = rz_analysis_class_rename(core->analysis, old_name, new_name);
+	return class_error(err);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_graph_handler(RzCore *core, int argc, const char **argv) {
+	RzGraph *graph = rz_analysis_class_get_inheritance_graph(core->analysis);
+	if (!graph) {
+		RZ_LOG_ERROR("Couldn't create graph.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_graph_print(core, graph, -1, false, "");
+	rz_graph_free(graph);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus class_method_error(RzAnalysisClassErr err) {
+	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
+	switch (err) {
+	case RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_ATTR:
+		RZ_LOG_ERROR("Method does not exist.\n");
+		break;
+	case RZ_ANALYSIS_CLASS_ERR_CLASH:
+		RZ_LOG_ERROR("Method already exists.\n");
+		break;
+	default:
+		status = class_error(err);
+		break;
+	}
+	return status;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_method_add_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisMethod meth;
+	meth.name = strdup(argv[2]);
+	meth.real_name = strdup(argv[2]);
+	meth.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT;
+	meth.addr = rz_num_math(core->num, argv[3]);
+	meth.vtable_offset = -1;
+	if (argc == 5) {
+		meth.vtable_offset = (st64)rz_num_math(core->num, argv[4]);
+	}
+	RzAnalysisClassErr err = rz_analysis_class_method_set(core->analysis, argv[1], &meth);
+	rz_analysis_class_method_fini(&meth);
+	return class_method_error(err);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_method_del_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisClassErr err = rz_analysis_class_method_delete(core->analysis, argv[1], argv[2]);
+	return class_method_error(err);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_method_rename_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisClassErr err = rz_analysis_class_method_rename(core->analysis, argv[1], argv[2], argv[3]);
+	return class_method_error(err);
+}
+
+static RzCmdStatus class_base_error(RzAnalysisClassErr err) {
+	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
+	switch (err) {
+	case RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_ATTR:
+		RZ_LOG_ERROR("Base class does not exist.\n");
+		break;
+	case RZ_ANALYSIS_CLASS_ERR_CLASH:
+		RZ_LOG_ERROR("Base class already exists.\n");
+		break;
+	default:
+		status = class_error(err);
+		break;
+	}
+	return status;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_base_add_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisBaseClass base;
+	base.id = NULL;
+	base.offset = 0;
+	base.class_name = strdup(argv[2]);
+	if (argc == 4) {
+		base.offset = rz_num_math(core->num, argv[3]);
+	}
+	RzAnalysisClassErr err = rz_analysis_class_base_set(core->analysis, argv[1], &base);
+	rz_analysis_class_base_fini(&base);
+	return class_base_error(err);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_base_del_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisClassErr err = rz_analysis_class_base_delete(core->analysis, argv[1], argv[2]);
+	return class_base_error(err);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_base_list_handler(RzCore *core, int argc, const char **argv) {
+	const char *class_name = argv[1];
+	if (!rz_analysis_class_exists(core->analysis, class_name)) {
+		log_err_nonexist_class();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *class_name_sanitized = rz_str_sanitize_sdb_key(class_name);
+	if (!class_name_sanitized) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("%s:\n", class_name_sanitized);
+	free(class_name_sanitized);
+
+	RzVector *bases = rz_analysis_class_base_get_all(core->analysis, class_name);
+	RzAnalysisBaseClass *base;
+	rz_vector_foreach(bases, base) {
+		rz_cons_printf("  %4s %s @ +0x%" PFMT64x "\n", base->id, base->class_name, base->offset);
+	}
+	rz_vector_free(bases);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus class_vtable_error(RzAnalysisClassErr err) {
+	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
+	switch (err) {
+	case RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_ATTR:
+		RZ_LOG_ERROR("Vtable does not exist.\n");
+		break;
+	case RZ_ANALYSIS_CLASS_ERR_CLASH:
+		RZ_LOG_ERROR("Vtable already exists.\n");
+		break;
+	default:
+		status = class_error(err);
+		break;
+	}
+	return status;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_vtable_add_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisVTable vtable;
+	vtable.id = NULL;
+	vtable.addr = rz_num_math(core->num, argv[2]);
+	vtable.offset = 0;
+	vtable.size = 0;
+	if (argc >= 4) {
+		vtable.offset = rz_num_math(core->num, argv[3]);
+	}
+	if (argc == 5) {
+		vtable.size = rz_num_math(core->num, argv[4]);
+	}
+	RzAnalysisClassErr err = rz_analysis_class_vtable_set(core->analysis, argv[1], &vtable);
+	rz_analysis_class_vtable_fini(&vtable);
+	return class_vtable_error(err);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_vtable_del_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisClassErr err = rz_analysis_class_vtable_delete(core->analysis, argv[1], argv[2]);
+	return class_vtable_error(err);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_vtable_list_handler(RzCore *core, int argc, const char **argv) {
+	const char *class_name = argv[1];
+	if (!rz_analysis_class_exists(core->analysis, class_name)) {
+		log_err_nonexist_class();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *class_name_sanitized = rz_str_sanitize_sdb_key(class_name);
+	if (!class_name_sanitized) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("%s:\n", class_name_sanitized);
+	free(class_name_sanitized);
+
+	RzVector *vtables = rz_analysis_class_vtable_get_all(core->analysis, class_name);
+	if (vtables) {
+		RzAnalysisVTable *vtable;
+		rz_vector_foreach(vtables, vtable) {
+			rz_cons_printf("  %4s vtable 0x%" PFMT64x " @ +0x%" PFMT64x " size:+0x%" PFMT64x "\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
+		}
+		rz_vector_free(vtables);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+static void list_all_functions_at_vtable_offset(RzAnalysis *analysis, const char *class_name, ut64 offset) {
+	RVTableContext vtableContext;
+	rz_analysis_vtable_begin(analysis, &vtableContext);
+	ut8 function_ptr_size = vtableContext.word_size;
+	RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
+
+	if (!vtables) {
+		return;
+	}
+
+	RzAnalysisVTable *vtable;
+	rz_vector_foreach(vtables, vtable) {
+		if (vtable->size < offset + function_ptr_size || offset % function_ptr_size) {
+			continue;
+		}
+		ut64 func_address;
+		if (vtableContext.read_addr(analysis, vtable->addr + offset, &func_address)) {
+			rz_cons_printf("Function address: 0x%08" PFMT64x ", in %s vtable %s\n", func_address, class_name, vtable->id);
+		}
+	}
+	rz_vector_free(vtables);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_class_vtable_lookup_handler(RzCore *core, int argc, const char **argv) {
+	ut64 offset = rz_num_math(core->num, argv[1]);
+	const char *class_name = argc == 3 ? argv[2] : NULL;
+	if (class_name && !rz_analysis_class_exists(core->analysis, class_name)) {
+		log_err_nonexist_class();
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (class_name) {
+		list_all_functions_at_vtable_offset(core->analysis, class_name, offset);
+		return RZ_CMD_STATUS_OK;
+	}
+	SdbList *classes = rz_analysis_class_get_all(core->analysis, true);
+	SdbListIter *iter;
+	SdbKv *kv;
+	ls_foreach (classes, iter, kv) {
+		const char *name = sdbkv_key(kv);
+		list_all_functions_at_vtable_offset(core->analysis, name, offset);
+	}
+	ls_free(classes);
 	return RZ_CMD_STATUS_OK;
 }

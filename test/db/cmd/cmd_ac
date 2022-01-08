@@ -19,7 +19,7 @@ FILE==
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
-acll
+acil Flatline
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
@@ -268,7 +268,7 @@ acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-acb Flatline
+acbl Flatline
 EOF
 EXPECT=<<EOF
 [Flatline: PeripherySong, NiceSong]
@@ -296,13 +296,13 @@ ac NiceSong
 ac Flatline
 acb Flatline PeripherySong
 acb Flatline NiceSong 0x42
-acb Flatline
+acbl Flatline
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
 ?e --
 acb- Flatline 0
-acb Flatline
+acbl Flatline
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
@@ -580,7 +580,6 @@ acvf 0x8 A
 acvf 0x0 C
 acvf 0x10 ABC
 acvf -10
-acvf abc
 EOF
 EXPECT=<<EOF
 Function address: 0x00400ac8, in A vtable 0
@@ -600,7 +599,6 @@ acvf 0x8 B
 acvf 0x10 C
 acvf 0x18 ABC
 acvf -20
-acvf abc
 EOF
 EXPECT=<<EOF
 Function address: 0x100005f1c, in A vtable 0
