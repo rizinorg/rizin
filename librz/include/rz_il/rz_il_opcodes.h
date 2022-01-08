@@ -67,22 +67,18 @@ typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsLsb;
 typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsIsZero;
 
 /**
- *  \brief op structure for `neg` ('s bitv -> 's bitv)
- *
- *  neg x is two-complement unary minus
+ * op structure for
+ * `not` ('s bitv -> 's bitv)
+ *   not x is one-complement negation.
+ * `neg` ('s bitv -> 's bitv)
+ *   neg x is two-complement unary minus
  */
-typedef struct rz_il_op_args_neg_t {
+struct rz_il_op_args_bv_unop_t {
 	RzILOpBitVector *bv; ///< unary operand
-} RzILOpArgsNeg;
+};
 
-/**
- *  \brief op structure for `not` ('s bitv -> 's bitv)
- *
- *  not x is one-complement negation.
- */
-typedef struct rz_il_op_args_logical_not_t {
-	RzILOpBitVector *bv; ///< unary operand
-} RzILOpArgsLogNot;
+typedef struct rz_il_op_args_bv_unop_t RzILOpArgsLogNot;
+typedef struct rz_il_op_args_bv_unop_t RzILOpArgsNeg;
 
 /**
  *  \brief op structure for two-operand algorithm and logical operations ('s bitv -> 's bitv -> 's bitv)
@@ -381,7 +377,6 @@ typedef enum {
 	RZ_IL_OP_SLE,
 	RZ_IL_OP_ULE,
 	RZ_IL_OP_CAST,
-	RZ_IL_OP_CONCAT,
 	RZ_IL_OP_APPEND,
 	// ...
 

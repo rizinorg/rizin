@@ -95,7 +95,6 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_SLE] = rz_il_handler_sle,
 	[RZ_IL_OP_ULE] = rz_il_handler_ule,
 	[RZ_IL_OP_CAST] = rz_il_handler_cast,
-	[RZ_IL_OP_CONCAT] = rz_il_handler_pure_unimplemented,
 	[RZ_IL_OP_APPEND] = rz_il_handler_append,
 	[RZ_IL_OP_LOAD] = rz_il_handler_load,
 	[RZ_IL_OP_LOADW] = rz_il_handler_loadw,

@@ -340,10 +340,6 @@ static void il_opdmp_cast(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
-static void il_opdmp_concat(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_unimplemented("concat");
-}
-
 static void il_opdmp_append(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_2("append", op->op.append, pure, high, pure, low);
 }
@@ -593,9 +589,6 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 		return;
 	case RZ_IL_OP_CAST:
 		il_opdmp_cast(op, sb, pj);
-		return;
-	case RZ_IL_OP_CONCAT:
-		il_opdmp_concat(op, sb, pj);
 		return;
 	case RZ_IL_OP_APPEND:
 		il_opdmp_append(op, sb, pj);
@@ -896,8 +889,6 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "ule";
 	case RZ_IL_OP_CAST:
 		return "cast";
-	case RZ_IL_OP_CONCAT:
-		return "concat";
 	case RZ_IL_OP_APPEND:
 		return "append";
 	case RZ_IL_OP_LOAD:
@@ -908,4 +899,14 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		break;
 	}
 	return "invalid";
+}
+
+RZ_API char *rz_il_sort_pure_stringify(RzILSortPure sort) {
+	switch (sort.type) {
+	case RZ_IL_TYPE_PURE_BITVECTOR:
+		return rz_str_newf("bitvector:%u", (unsigned int)sort.props.bv.length);
+	case RZ_IL_TYPE_PURE_BOOL:
+		return strdup("bool");
+	}
+	return strdup("invalid");
 }

@@ -814,9 +814,6 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		r->op.cast.length = op->op.cast.length;
 		DUP_OP2(cast, fill, val);
 		break;
-	case RZ_IL_OP_CONCAT:
-		rz_warn_if_reached();
-		break;
 	case RZ_IL_OP_APPEND:
 		DUP_OP2(append, high, low);
 		break;
@@ -941,9 +938,6 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		break;
 	case RZ_IL_OP_CAST:
 		rz_il_op_free_2(pure, cast, fill, val);
-		break;
-	case RZ_IL_OP_CONCAT:
-		rz_warn_if_reached();
 		break;
 	case RZ_IL_OP_APPEND:
 		rz_il_op_free_2(pure, append, high, low);
