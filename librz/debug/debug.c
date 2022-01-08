@@ -430,6 +430,7 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 		rz_analysis_op_free(dbg->cur_op);
 		dbg->trace = NULL;
 		rz_egg_free(dbg->egg);
+		rz_reg_free(dbg->reg);
 		free(dbg->arch);
 		free(dbg->glob_libs);
 		free(dbg->glob_unlibs);
