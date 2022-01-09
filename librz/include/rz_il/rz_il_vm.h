@@ -58,6 +58,8 @@ RZ_API void rz_il_vm_free(RzILVM *vm);
 RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian);
 RZ_API void rz_il_vm_fini(RzILVM *vm);
 
+RZ_API ut32 rz_il_vm_get_pc_len(RzILVM *vm);
+
 // VM Event operations
 RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt);
 
