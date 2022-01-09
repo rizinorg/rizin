@@ -98,14 +98,11 @@ RUN
 NAME=rz-bin -S, -SS, -rS and -rSS file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-!rz-bin -S ${RZ_FILE}|wc -l|awk "{print \$1}"
-!rz-bin -SS ${RZ_FILE}|wc -l|awk "{print \$1}"
-!env RZ_BIN_PREFIX=prixfixe rz-bin -S ${RZ_FILE}
-!env RZ_BIN_PREFIX=prixfixe rz-bin -SS ${RZ_FILE}
+%RZ_BIN_PREFIX=prixfixe
+!rz-bin -S ${RZ_FILE}
+!rz-bin -SS ${RZ_FILE}
 EOF
 EXPECT=<<EOF
-34
-13
 [Sections]
 paddr      size  vaddr      vsize align perm name                        type       flags         
 --------------------------------------------------------------------------------------------------
