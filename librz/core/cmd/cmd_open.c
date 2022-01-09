@@ -565,7 +565,6 @@ static void rz_core_cmd_omt(RzCore *core, const char *arg) {
 
 RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
-	ut64 fd = 0LL;
 	ut32 id = 0;
 	ut64 addr = 0;
 	char *s = NULL, *p = NULL, *q = NULL;
@@ -623,39 +622,6 @@ RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 			rz_core_cmd0(core, "om `oq.` $B $s r");
 		}
 		rz_core_cmd0(core, "ompd `omq.`");
-		break;
-	case 'p':
-		switch (input[1]) {
-		case 'd': // "ompf"
-			id = rz_num_math(core->num, input + 2); // mapid
-			if (rz_io_map_exists_for_id(core->io, id)) {
-				rz_io_map_depriorize(core->io, id);
-			} else {
-				eprintf("Cannot find any map with mapid %d\n", id);
-			}
-			break;
-		case 'f': // "ompf"
-			fd = rz_num_math(core->num, input + 2);
-			if (!rz_io_map_priorize_for_fd(core->io, (int)fd)) {
-				eprintf("Cannot prioritize any map for fd %d\n", (int)fd);
-			}
-			break;
-		case 'b': // "ompb"
-			id = (ut32)rz_num_math(core->num, input + 3);
-			if (!rz_bin_file_set_cur_by_id(core->bin, id)) {
-				eprintf("Cannot prioritize bin with fd %d\n", id);
-			}
-			break;
-		case ' ': // "omp"
-			id = rz_num_math(core->num, input + 2); // mapid
-			if (rz_io_map_exists_for_id(core->io, id)) {
-				rz_io_map_priorize(core->io, id);
-				rz_core_block_read(core);
-			} else {
-				eprintf("Cannot find any map with mapid %d\n", id);
-			}
-			break;
-		}
 		break;
 	case 't': // "omt"
 		switch (input[1]) {
@@ -1567,6 +1533,46 @@ RZ_IPI RzCmdStatus rz_open_maps_resize_handler(RzCore *core, int argc, const cha
 	ut64 size = rz_num_math(core->num, argv[2]);
 	if (!rz_io_map_resize(core->io, map_id, size)) {
 		RZ_LOG_ERROR("Could not resize map with id %d to %" PFMT64x "\n", map_id, size);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_prioritize_handler(RzCore *core, int argc, const char **argv) {
+	ut32 id = (ut32)rz_num_math(core->num, argv[1]);
+	if (!rz_io_map_exists_for_id(core->io, id)) {
+		RZ_LOG_ERROR("Cannot find any map with mapid %d\n", id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_map_priorize(core->io, id);
+	rz_core_block_read(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_prioritize_binid_handler(RzCore *core, int argc, const char **argv) {
+	ut32 id = (ut32)rz_num_math(core->num, argv[1]);
+	if (!rz_bin_file_set_cur_by_id(core->bin, id)) {
+		RZ_LOG_ERROR("Cannot prioritize bin with fd %d\n", id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_deprioritize_handler(RzCore *core, int argc, const char **argv) {
+	ut32 id = (ut32)rz_num_math(core->num, argv[1]);
+	if (!rz_io_map_exists_for_id(core->io, id)) {
+		RZ_LOG_ERROR("Cannot find any map with mapid %d\n", id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_map_depriorize(core->io, id);
+	rz_core_block_read(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_prioritize_fd_handler(RzCore *core, int argc, const char **argv) {
+	int fd = (int)rz_num_math(core->num, argv[1]);
+	if (!rz_io_map_priorize_for_fd(core->io, fd)) {
+		RZ_LOG_ERROR("Cannot prioritize any map for fd %d\n", fd);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;

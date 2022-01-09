@@ -117,3 +117,30 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
           - name: newsize
             type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: omp
+        summary: Prioritize maps
+        subcommands:
+          - name: omp
+            cname: open_maps_prioritize
+            summary: Prioritize map with the corresponding id
+            args:
+              - name: id
+                type: RZ_CMD_ARG_TYPE_NUM
+          - name: ompb
+            cname: open_maps_prioritize_binid
+            summary: Prioritize maps of the bin associated with the binid
+            args:
+              - name: fd
+                type: RZ_CMD_ARG_TYPE_NUM
+          - name: ompd
+            cname: open_maps_deprioritize
+            summary: Deprioritize map with the corresponding id
+            args:
+              - name: id
+                type: RZ_CMD_ARG_TYPE_NUM
+          - name: ompf
+            cname: open_maps_prioritize_fd
+            summary: Prioritize map by fd
+            args:
+              - name: fd
+                type: RZ_CMD_ARG_TYPE_NUM
