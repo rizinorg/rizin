@@ -21,6 +21,10 @@ static void var_kv_free(HtPPKv *kv) {
 	free(kv->value);
 }
 
+static void var_kv_unown_free(HtPPKv *kv) {
+	free(kv->key);
+}
+
 /**
  * Create a new global context for validation
  * Vars and mems can be added manually with rz_il_validate_global_context_add_* functions.
@@ -117,7 +121,7 @@ static bool local_context_init(LocalContext *ctx, const RzILValidateGlobalContex
 	if (!ctx->local_vars_known) {
 		return false;
 	}
-	ctx->local_vars_available = ht_pp_new(NULL, NULL, NULL);
+	ctx->local_vars_available = ht_pp_new(NULL, var_kv_unown_free, NULL);
 	if (!ctx->local_vars_available) {
 		ht_pp_free(ctx->local_vars_known);
 		return false;

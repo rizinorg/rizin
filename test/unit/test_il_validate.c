@@ -187,7 +187,7 @@ static bool test_il_validate_pure_var() {
 	val = rz_il_validate_effect(eop, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
-	rz_il_op_pure_free(op);
+	rz_il_op_effect_free(eop);
 
 	op = rz_il_op_new_var("x", RZ_IL_VAR_KIND_GLOBAL);
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
@@ -207,7 +207,7 @@ static bool test_il_validate_pure_var() {
 	val = rz_il_validate_effect(eop, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Length of dst operand (23) of jmp op is not equal to pc length 24.", "report");
-	rz_il_op_pure_free(op);
+	rz_il_op_effect_free(eop);
 
 	rz_il_validate_global_context_free(ctx);
 	mu_end;
