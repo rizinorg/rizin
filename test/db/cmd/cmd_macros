@@ -189,6 +189,7 @@ CMDS=<<EOF
 (foo2 fst snd; ?e foo2_0 $0; ?e foo2_1 $1)
 .(foo0 1)
 .(foo1)
+.(foo1 1 2)
 ..(foo0 1)
 ..(foo1)
 ..(foo2 1)
@@ -197,6 +198,7 @@ EOF
 EXPECT_ERR=<<EOF
 Macro 'foo0' expects 0 args, not 1
 Macro 'foo1' expects 1 args, not 0
+Macro 'foo1' expects 1 args, not 2
 Macro 'foo0' expects 0 args, not 1
 Macro 'foo1' expects 1 args, not 0
 Macro 'foo2' expects 2 args and 1 is not a multiple of 2
