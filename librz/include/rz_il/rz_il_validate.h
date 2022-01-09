@@ -17,6 +17,14 @@ extern "C" {
 
 typedef char *RzILValidateReport;
 
+/**
+ * Global context for validation, defining:
+ *  * all global variables with their sorts
+ *  * all mems with their key and value lengths
+ * Validation can only be performes when this context is known,
+ * as for example the type of a var op referring to a global var
+ * depends on this.
+ */
 typedef struct rz_il_validate_global_context_t RzILValidateGlobalContext;
 
 RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_empty(ut32 pc_len);
@@ -26,8 +34,9 @@ RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_from_vm(RZ_N
 RZ_API void rz_il_validate_global_context_free(RzILValidateGlobalContext *ctx);
 RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
 	RZ_NULLABLE RZ_OUT RzILSortPure *sort_out, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out);
-RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_OUT RZ_NULLABLE HtPP /* <const char *, RzILSortPure *> */ **local_var_sorts_out,
-	RZ_NONNULL RzILValidateGlobalContext *ctx, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out);
+RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
+	RZ_NULLABLE RZ_OUT HtPP /* <const char *, RzILSortPure *> */ **local_var_sorts_out,
+	RZ_NULLABLE RZ_OUT RzILValidateReport *report_out);
 
 #ifdef __cplusplus
 }

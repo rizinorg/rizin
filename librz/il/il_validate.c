@@ -21,6 +21,10 @@ static void var_kv_free(HtPPKv *kv) {
 	free(kv->value);
 }
 
+/**
+ * Create a new global context for validation
+ * Vars and mems can be added manually with rz_il_validate_global_context_add_* functions.
+ */
 RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_empty(ut32 pc_len) {
 	RzILValidateGlobalContext *ctx = RZ_NEW0(RzILValidateGlobalContext);
 	if (!ctx) {
@@ -538,6 +542,14 @@ static bool validate_pure(VALIDATOR_PURE_ARGS) {
 	return validator(op, sort_out, report_builder, ctx, local_pure_var_stack);
 }
 
+/**
+ * Run validation (type-checking and other checks) on a pure expression and determine its sort.
+ * \p op the op to be checked. May be null, which will always be reported as invalid.
+ * \p ctx global context, defining available global vars and mems
+ * \p sort_out optionally returns the sort of the expression, if it is valid
+ * \p report_out optionally returns a readable report containing details about why the validation failed
+ * \return whether the given op is valid under \p ctx
+ */
 RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
 	RZ_NULLABLE RZ_OUT RzILSortPure *sort_out, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
 	LocalContext local_ctx;
@@ -748,8 +760,17 @@ static bool validate_effect(VALIDATOR_EFFECT_ARGS) {
 	return validator(op, report_builder, ctx);
 }
 
-RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_OUT RZ_NULLABLE HtPP /* <const char *, RzILSortPure *> */ **local_var_sorts_out,
-	RZ_NONNULL RzILValidateGlobalContext *ctx, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
+/**
+ * Run validation (type-checking and other checks) on an effect.
+ * \p op the op to be checked. May be null, which will always be reported as invalid.
+ * \p ctx global context, defining available global vars and mems
+ * \p local_var_sorts_out optionally returns a map of local variable names defined in the effect to their sorts
+ * \p report_out optionally returns a readable report containing details about why the validation failed
+ * \return whether the given op is valid under \p ctx
+ */
+RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
+	RZ_NULLABLE RZ_OUT HtPP /* <const char *, RzILSortPure *> */ **local_var_sorts_out,
+	RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
 	LocalContext local_ctx;
 	if (!local_context_init(&local_ctx, ctx)) {
 		if (report_out) {

@@ -29,6 +29,19 @@ static bool test_il_validate_pure_bool() {
 	mu_end;
 }
 
+static bool test_il_validate_pure_null() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILSortPure sort;
+	RzILValidateReport report;
+	bool val = rz_il_validate_pure(NULL, ctx, &sort, &report);
+	mu_assert_false(val, "valid");
+	mu_assert_streq_free(report, "Encountered NULL for pure op.", "no report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 static bool test_il_validate_pure_bitv() {
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 
@@ -171,7 +184,7 @@ static bool test_il_validate_pure_var() {
 	RzILOpEffect *eop = rz_il_op_new_seq(
 		rz_il_op_new_set("y", true, rz_il_op_new_bitv_from_ut64(24, 0x1234)),
 		rz_il_op_new_jmp(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL)));
-	val = rz_il_validate_effect(eop, NULL, ctx, &report);
+	val = rz_il_validate_effect(eop, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_pure_free(op);
@@ -191,7 +204,7 @@ static bool test_il_validate_pure_var() {
 	eop = rz_il_op_new_seq(
 		rz_il_op_new_set("y", true, rz_il_op_new_bitv_from_ut64(23, 0x1234)),
 		rz_il_op_new_jmp(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL)));
-	val = rz_il_validate_effect(eop, NULL, ctx, &report);
+	val = rz_il_validate_effect(eop, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Length of dst operand (23) of jmp op is not equal to pc length 24.", "report");
 	rz_il_op_pure_free(op);
@@ -564,12 +577,24 @@ static bool test_il_validate_pure_loadw() {
 	mu_end;
 }
 
+static bool test_il_validate_effect_null() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILValidateReport report;
+	bool val = rz_il_validate_effect(NULL, ctx, NULL, &report);
+	mu_assert_false(val, "valid");
+	mu_assert_streq_free(report, "Encountered NULL for effect op.", "no report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 static bool test_il_validate_effect_nop() {
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 
 	RzILOpEffect *op = rz_il_op_new_nop();
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
@@ -586,7 +611,7 @@ static bool test_il_validate_effect_store() {
 		rz_il_op_new_bitv_from_ut64(16, 123),
 		rz_il_op_new_bitv_from_ut64(9, 42));
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
@@ -594,7 +619,7 @@ static bool test_il_validate_effect_store() {
 	op = rz_il_op_new_store(0,
 		rz_il_op_new_bitv_from_ut64(16, 123),
 		rz_il_op_new_bitv_from_ut64(9, 42));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Mem 0 referenced by store op does not exist.", "report");
 	rz_il_op_effect_free(op);
@@ -602,7 +627,7 @@ static bool test_il_validate_effect_store() {
 	op = rz_il_op_new_store(1,
 		rz_il_op_new_bitv_from_ut64(12, 123),
 		rz_il_op_new_bitv_from_ut64(9, 42));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Length of key operand (12) of store op is not equal to key length 16 of mem 1.", "report");
 	rz_il_op_effect_free(op);
@@ -610,7 +635,7 @@ static bool test_il_validate_effect_store() {
 	op = rz_il_op_new_store(1,
 		rz_il_op_new_b0(),
 		rz_il_op_new_bitv_from_ut64(9, 42));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Key operand of store op is not a bitvector.", "report");
 	rz_il_op_effect_free(op);
@@ -618,7 +643,7 @@ static bool test_il_validate_effect_store() {
 	op = rz_il_op_new_store(1,
 		rz_il_op_new_bitv_from_ut64(16, 123),
 		rz_il_op_new_bitv_from_ut64(8, 42));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Length of value operand (8) of store op is not equal to value length 9 of mem 1.", "report");
 	rz_il_op_effect_free(op);
@@ -626,7 +651,7 @@ static bool test_il_validate_effect_store() {
 	op = rz_il_op_new_store(1,
 		rz_il_op_new_bitv_from_ut64(16, 123),
 		rz_il_op_new_b0());
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Value operand of store op is not a bitvector.", "report");
 	rz_il_op_effect_free(op);
@@ -643,7 +668,7 @@ static bool test_il_validate_effect_storew() {
 		rz_il_op_new_bitv_from_ut64(16, 123),
 		rz_il_op_new_bitv_from_ut64(42, 42));
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
@@ -651,7 +676,7 @@ static bool test_il_validate_effect_storew() {
 	op = rz_il_op_new_storew(0,
 		rz_il_op_new_bitv_from_ut64(16, 123),
 		rz_il_op_new_bitv_from_ut64(9, 42));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Mem 0 referenced by storew op does not exist.", "report");
 	rz_il_op_effect_free(op);
@@ -659,7 +684,7 @@ static bool test_il_validate_effect_storew() {
 	op = rz_il_op_new_storew(1,
 		rz_il_op_new_bitv_from_ut64(12, 123),
 		rz_il_op_new_bitv_from_ut64(9, 42));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Length of key operand (12) of storew op is not equal to key length 16 of mem 1.", "report");
 	rz_il_op_effect_free(op);
@@ -667,7 +692,7 @@ static bool test_il_validate_effect_storew() {
 	op = rz_il_op_new_storew(1,
 		rz_il_op_new_b0(),
 		rz_il_op_new_bitv_from_ut64(9, 42));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Key operand of storew op is not a bitvector.", "report");
 	rz_il_op_effect_free(op);
@@ -675,7 +700,7 @@ static bool test_il_validate_effect_storew() {
 	op = rz_il_op_new_storew(1,
 		rz_il_op_new_bitv_from_ut64(16, 123),
 		rz_il_op_new_b0());
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Value operand of storew op is not a bitvector.", "report");
 	rz_il_op_effect_free(op);
@@ -691,26 +716,26 @@ static bool test_il_validate_effect_set() {
 	// global
 	RzILOpEffect *op = rz_il_op_new_set("x", false, rz_il_op_new_bitv_from_ut64(42, 0));
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_set("y", false, rz_il_op_new_bitv_from_ut64(42, 0));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"y\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_set("x", false, rz_il_op_new_bitv_from_ut64(41, 0));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of global variable \"x\" and set op do not agree: bitvector:42 vs. bitvector:41.", "report");
 	rz_il_op_effect_free(op);
 
 	// local
 	op = rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(20, 0));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
@@ -718,7 +743,7 @@ static bool test_il_validate_effect_set() {
 	op = rz_il_op_new_seq(
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(22, 0)),
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(22, 42)));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
@@ -726,7 +751,7 @@ static bool test_il_validate_effect_set() {
 	op = rz_il_op_new_seq(
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(22, 0)),
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(21, 42)));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of local variable \"x\" and set op do not agree: bitvector:22 vs. bitvector:21.", "report");
 	rz_il_op_effect_free(op);
@@ -740,19 +765,19 @@ static bool test_il_validate_effect_jmp() {
 
 	RzILOpEffect *op = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x1000));
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(42, 0x1000));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Length of dst operand (42) of jmp op is not equal to pc length 24.", "report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_jmp(rz_il_op_new_b0());
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Dst operand of jmp op is not a bitvector.", "report");
 	rz_il_op_effect_free(op);
@@ -766,7 +791,7 @@ static bool test_il_validate_effect_goto() {
 
 	RzILOpEffect *op = rz_il_op_new_goto("beach");
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
@@ -780,19 +805,19 @@ static bool test_il_validate_effect_seq() {
 
 	RzILOpEffect *op = rz_il_op_new_seq(rz_il_op_new_nop(), rz_il_op_new_nop());
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_seq(rz_il_op_new_set("nexist", false, rz_il_op_new_b0()), rz_il_op_new_nop());
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_seq(rz_il_op_new_nop(), rz_il_op_new_set("nexist", false, rz_il_op_new_b0()));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
@@ -806,7 +831,7 @@ static bool test_il_validate_effect_blk() {
 
 	RzILOpEffect *op = rz_il_op_new_blk(NULL, rz_il_op_new_nop(), rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x1000)));
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
@@ -814,7 +839,7 @@ static bool test_il_validate_effect_blk() {
 	op = rz_il_op_new_blk(NULL,
 		rz_il_op_new_set("nexist", false, rz_il_op_new_b0()),
 		rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x1000)));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
@@ -822,7 +847,7 @@ static bool test_il_validate_effect_blk() {
 	op = rz_il_op_new_blk(NULL,
 		rz_il_op_new_nop(),
 		rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(23, 0x1000)));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Length of dst operand (23) of jmp op is not equal to pc length 24.", "report");
 	rz_il_op_effect_free(op);
@@ -836,19 +861,19 @@ static bool test_il_validate_effect_repeat() {
 
 	RzILOpEffect *op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_nop());
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_repeat(rz_il_op_new_bitv_from_ut64(16, 0), rz_il_op_new_nop());
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Condition of repeat op is not boolean.", "report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("nexist", false, rz_il_op_new_b0()));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
@@ -859,7 +884,7 @@ static bool test_il_validate_effect_repeat() {
 	// types remembered from the loop
 	op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)));
 	HtPP *local_var_sorts;
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
@@ -876,7 +901,7 @@ static bool test_il_validate_effect_repeat() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
 		rz_il_op_new_set("y", true, rz_il_op_new_ite(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL), rz_il_op_new_b0(), rz_il_op_new_b1())));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
@@ -896,7 +921,7 @@ static bool test_il_validate_effect_repeat() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 32)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
@@ -916,7 +941,7 @@ static bool test_il_validate_effect_repeat() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(13, 32)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of local variable \"x\" and set op do not agree: bitvector:14 vs. bitvector:13.", "report");
 	rz_il_op_effect_free(op);
@@ -926,7 +951,7 @@ static bool test_il_validate_effect_repeat() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
 		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Local variable \"x\" is not available at var op.", "report");
 	rz_il_op_effect_free(op);
@@ -940,25 +965,25 @@ static bool test_il_validate_effect_branch() {
 
 	RzILOpEffect *op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_nop());
 	RzILValidateReport report;
-	bool val = rz_il_validate_effect(op, NULL, ctx, &report);
+	bool val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_branch(rz_il_op_new_bitv_from_ut64(8, 0), rz_il_op_new_nop(), rz_il_op_new_nop());
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Condition of branch op is not boolean.", "report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("nexist", false, rz_il_op_new_b0()), rz_il_op_new_nop());
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("nexist", false, rz_il_op_new_b0()));
-	val = rz_il_validate_effect(op, NULL, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
@@ -971,7 +996,7 @@ static bool test_il_validate_effect_branch() {
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)),
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()));
 	HtPP *local_var_sorts;
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
@@ -991,7 +1016,7 @@ static bool test_il_validate_effect_branch() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_nop()),
 		rz_il_op_new_set("y", true, rz_il_op_new_ite(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL), rz_il_op_new_b0(), rz_il_op_new_b1())));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
@@ -1008,7 +1033,7 @@ static bool test_il_validate_effect_branch() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 32)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
@@ -1027,7 +1052,7 @@ static bool test_il_validate_effect_branch() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)), rz_il_op_new_nop()),
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 32)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
@@ -1049,7 +1074,7 @@ static bool test_il_validate_effect_branch() {
 			rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)),
 			rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 42))),
 		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
@@ -1069,7 +1094,7 @@ static bool test_il_validate_effect_branch() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(13, 32)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of local variable \"x\" and set op do not agree: bitvector:14 vs. bitvector:13.", "report");
 	rz_il_op_effect_free(op);
@@ -1078,7 +1103,7 @@ static bool test_il_validate_effect_branch() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)), rz_il_op_new_nop()),
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(13, 32)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of local variable \"x\" and set op do not agree: bitvector:14 vs. bitvector:13.", "report");
 	rz_il_op_effect_free(op);
@@ -1088,7 +1113,7 @@ static bool test_il_validate_effect_branch() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
 		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Local variable \"x\" is not available at var op.", "report");
 	rz_il_op_effect_free(op);
@@ -1097,7 +1122,7 @@ static bool test_il_validate_effect_branch() {
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)), rz_il_op_new_nop()),
 		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Local variable \"x\" is not available at var op.", "report");
 	rz_il_op_effect_free(op);
@@ -1109,7 +1134,7 @@ static bool test_il_validate_effect_branch() {
 			rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(13, 0)),
 			rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 42))),
 		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
-	val = rz_il_validate_effect(op, &local_var_sorts, ctx, &report);
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report,
 		"Control flow paths from branch op do not agree on the type of local variable \"x\": bitvector:14 vs. bitvector:13.", "report");
@@ -1120,6 +1145,7 @@ static bool test_il_validate_effect_branch() {
 }
 
 bool all_tests() {
+	mu_run_test(test_il_validate_pure_null);
 	mu_run_test(test_il_validate_pure_bitv);
 	mu_run_test(test_il_validate_pure_bool);
 	mu_run_test(test_il_validate_pure_ite);
@@ -1136,6 +1162,7 @@ bool all_tests() {
 	mu_run_test(test_il_validate_pure_append);
 	mu_run_test(test_il_validate_pure_load);
 	mu_run_test(test_il_validate_pure_loadw);
+	mu_run_test(test_il_validate_effect_null);
 	mu_run_test(test_il_validate_effect_nop);
 	mu_run_test(test_il_validate_effect_store);
 	mu_run_test(test_il_validate_effect_storew);
