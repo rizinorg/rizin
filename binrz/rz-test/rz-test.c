@@ -735,6 +735,27 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 			}
 		}
 		// TODO: assembly
+		if (result->test->asm_test->il) {
+			const char *expect = result->test->asm_test->il;
+			const char *actual = result->asm_out->il;
+			const char *report = result->asm_out->il_report;
+			bool il_printed = false;
+			const char *hdr = "-- IL\n";
+			if (expect && actual && strcmp(actual, expect)) {
+				printf("%s", hdr);
+				il_printed = true;
+				print_diff(actual, expect, NULL);
+			}
+			if (report) {
+				if (!il_printed) {
+					printf("%s", hdr);
+					if (actual) {
+						printf("%s\n", actual);
+					}
+				}
+				printf(Color_RED "%s" Color_RESET "\n", report);
+			}
+		}
 		break;
 	case RZ_TEST_TYPE_JSON:
 		break;
