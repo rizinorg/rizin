@@ -324,6 +324,7 @@ static const RzCmdDescArg open_maps_remove_args[2];
 static const RzCmdDescArg open_maps_all_fd_args[2];
 static const RzCmdDescArg open_maps_relocate_args[3];
 static const RzCmdDescArg open_maps_relocate_current_args[2];
+static const RzCmdDescArg open_maps_map_fd_args[2];
 static const RzCmdDescArg open_maps_name_args[2];
 static const RzCmdDescArg open_maps_name_id_args[3];
 static const RzCmdDescArg open_maps_name_id_del_args[2];
@@ -7442,6 +7443,20 @@ static const RzCmdDescHelp open_maps_relocate_current_help = {
 	.args = open_maps_relocate_current_args,
 };
 
+static const RzCmdDescArg open_maps_map_fd_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_map_fd_help = {
+	.summary = "Create default map for given <fd> or current one",
+	.args = open_maps_map_fd_args,
+};
+
 static const RzCmdDescHelp omn_help = {
 	.summary = "Handle maps names",
 };
@@ -12061,6 +12076,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_maps_relocate_current_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omb.", rz_open_maps_relocate_current_handler, &open_maps_relocate_current_help);
 	rz_warn_if_fail(open_maps_relocate_current_cd);
+
+	RzCmdDesc *open_maps_map_fd_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omm", rz_open_maps_map_fd_handler, &open_maps_map_fd_help);
+	rz_warn_if_fail(open_maps_map_fd_cd);
 
 	RzCmdDesc *omn_cd = rz_cmd_desc_group_new(core->rcmd, om_oldinput_cd, "omn", rz_open_maps_name_handler, &open_maps_name_help, &omn_help);
 	rz_warn_if_fail(omn_cd);

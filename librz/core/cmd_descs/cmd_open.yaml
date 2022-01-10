@@ -109,6 +109,13 @@ commands:
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: omm
+        cname: open_maps_map_fd
+        summary: Create default map for given <fd> or current one
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
       - name: omn
         summary: Handle maps names
         subcommands:

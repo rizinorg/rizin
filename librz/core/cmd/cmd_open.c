@@ -688,18 +688,6 @@ RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 		}
 		RZ_FREE(s);
 		break;
-	case 'm': // "omm"
-	{
-		ut32 fd = input[1] ? rz_num_math(core->num, input + 1) : rz_io_fd_get_current(core->io);
-		RzIODesc *desc = rz_io_desc_get(core->io, fd);
-		if (desc) {
-			ut64 size = rz_io_desc_size(desc);
-			map = rz_io_map_add(core->io, fd, desc->perm, 0, 0, size);
-			rz_io_map_set_name(map, desc->name);
-		} else {
-			eprintf("Usage: omm [fd]\n");
-		}
-	} break;
 	case 'f': // "omf"
 		switch (input[1]) {
 		case 'g': // "omfg"
@@ -1555,5 +1543,22 @@ RZ_IPI RzCmdStatus rz_open_maps_name_id_del_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_io_map_del_name(map);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_map_fd_handler(RzCore *core, int argc, const char **argv) {
+	ut32 fd = argc > 1 ? rz_num_math(NULL, argv[1]) : rz_io_fd_get_current(core->io);
+	RzIODesc *desc = rz_io_desc_get(core->io, fd);
+	if (!desc) {
+		RZ_LOG_ERROR("Cannot find any descriptor with fd %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 size = rz_io_desc_size(desc);
+	RzIOMap *map = rz_io_map_add(core->io, fd, desc->perm, 0, 0, size);
+	if (!map) {
+		RZ_LOG_ERROR("Cannot create new map for fd %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_map_set_name(map, desc->name);
 	return RZ_CMD_STATUS_OK;
 }
