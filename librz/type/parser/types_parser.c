@@ -427,7 +427,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		TSNode field_type = ts_node_child_by_field_name(child, "type", 4);
 		TSNode field_declarator = ts_node_child_by_field_name(child, "declarator", 10);
 		if (ts_node_is_null(field_type) || ts_node_is_null(field_declarator)) {
-			parser_error(state, "ERROR: Struct field AST shoudl contain type and declarator items");
+			parser_error(state, "ERROR: Struct field AST should contain type and declarator items");
 			node_malformed_error(state, child, text, "struct field");
 			result = -1;
 			goto srnexit;
@@ -717,7 +717,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		TSNode field_type = ts_node_child_by_field_name(child, "type", 4);
 		TSNode field_declarator = ts_node_child_by_field_name(child, "declarator", 10);
 		if (ts_node_is_null(field_type) || ts_node_is_null(field_declarator)) {
-			parser_error(state, "ERROR: Union field AST shoudl contain type and declarator items");
+			parser_error(state, "ERROR: Union field AST should contain type and declarator items");
 			node_malformed_error(state, child, text, "union field");
 			result = -1;
 			goto urnexit;
