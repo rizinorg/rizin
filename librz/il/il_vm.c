@@ -148,6 +148,13 @@ RZ_API void rz_il_vm_free(RzILVM *vm) {
 }
 
 /**
+ * Get the number of bits of the program counter bitvector
+ */
+RZ_API ut32 rz_il_vm_get_pc_len(RzILVM *vm) {
+	return rz_bv_len(vm->pc);
+}
+
+/**
  * Add a memory to VM at the given index.
  * Ownership of the memory is transferred to the VM.
  */

@@ -163,16 +163,6 @@ static void il_opdmp_var(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
-static void il_opdmp_unk(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	if (sb) {
-		rz_strbuf_append(sb, "unk");
-	} else {
-		pj_o(pj);
-		pj_ks(pj, "opcode", "unk");
-		pj_end(pj);
-	}
-}
-
 static void il_opdmp_ite(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_3("ite", op->op.ite, pure, condition, pure, x, pure, y);
 }
@@ -350,10 +340,6 @@ static void il_opdmp_cast(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
-static void il_opdmp_concat(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_unimplemented("concat");
-}
-
 static void il_opdmp_append(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_2("append", op->op.append, pure, high, pure, low);
 }
@@ -514,9 +500,6 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	case RZ_IL_OP_VAR:
 		il_opdmp_var(op, sb, pj);
 		return;
-	case RZ_IL_OP_UNK:
-		il_opdmp_unk(op, sb, pj);
-		return;
 	case RZ_IL_OP_ITE:
 		il_opdmp_ite(op, sb, pj);
 		return;
@@ -606,9 +589,6 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 		return;
 	case RZ_IL_OP_CAST:
 		il_opdmp_cast(op, sb, pj);
-		return;
-	case RZ_IL_OP_CONCAT:
-		il_opdmp_concat(op, sb, pj);
 		return;
 	case RZ_IL_OP_APPEND:
 		il_opdmp_append(op, sb, pj);
@@ -843,4 +823,98 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 	free(tmp0);
 	free(tmp1);
 	free(tmp2);
+}
+
+/**
+ * Get a readable representation of \p code
+ * \return constant string, must not be freed
+ */
+RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) {
+	switch (code) {
+	case RZ_IL_OP_VAR:
+		return "var";
+	case RZ_IL_OP_ITE:
+		return "ite";
+	case RZ_IL_OP_LET:
+		return "let";
+	case RZ_IL_OP_B0:
+		return "b0";
+	case RZ_IL_OP_B1:
+		return "b1";
+	case RZ_IL_OP_INV:
+		return "inv";
+	case RZ_IL_OP_AND:
+		return "and";
+	case RZ_IL_OP_OR:
+		return "or";
+	case RZ_IL_OP_XOR:
+		return "xor";
+	case RZ_IL_OP_BITV:
+		return "bitv";
+	case RZ_IL_OP_MSB:
+		return "msb";
+	case RZ_IL_OP_LSB:
+		return "lsb";
+	case RZ_IL_OP_IS_ZERO:
+		return "is_zero";
+	case RZ_IL_OP_NEG:
+		return "neg";
+	case RZ_IL_OP_LOGNOT:
+		return "lognot";
+	case RZ_IL_OP_ADD:
+		return "add";
+	case RZ_IL_OP_SUB:
+		return "sub";
+	case RZ_IL_OP_MUL:
+		return "mul";
+	case RZ_IL_OP_DIV:
+		return "div";
+	case RZ_IL_OP_SDIV:
+		return "sdiv";
+	case RZ_IL_OP_MOD:
+		return "mod";
+	case RZ_IL_OP_SMOD:
+		return "smod";
+	case RZ_IL_OP_LOGAND:
+		return "logand";
+	case RZ_IL_OP_LOGOR:
+		return "logor";
+	case RZ_IL_OP_LOGXOR:
+		return "logxor";
+	case RZ_IL_OP_SHIFTR:
+		return "shiftr";
+	case RZ_IL_OP_SHIFTL:
+		return "shiftl";
+	case RZ_IL_OP_EQ:
+		return "eq";
+	case RZ_IL_OP_SLE:
+		return "sle";
+	case RZ_IL_OP_ULE:
+		return "ule";
+	case RZ_IL_OP_CAST:
+		return "cast";
+	case RZ_IL_OP_APPEND:
+		return "append";
+	case RZ_IL_OP_LOAD:
+		return "load";
+	case RZ_IL_OP_LOADW:
+		return "loadw";
+	case RZ_IL_OP_PURE_MAX:
+		break;
+	}
+	return "invalid";
+}
+
+/**
+ * Get a readable representation of \p sort
+ * \return dynamically allocated string, to be freed by the caller
+ */
+RZ_API RZ_OWN char *rz_il_sort_pure_stringify(RzILSortPure sort) {
+	switch (sort.type) {
+	case RZ_IL_TYPE_PURE_BITVECTOR:
+		return rz_str_newf("bitvector:%u", (unsigned int)sort.props.bv.length);
+	case RZ_IL_TYPE_PURE_BOOL:
+		return strdup("bool");
+	}
+	return strdup("invalid");
 }

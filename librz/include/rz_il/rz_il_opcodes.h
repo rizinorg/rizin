@@ -67,22 +67,18 @@ typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsLsb;
 typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsIsZero;
 
 /**
- *  \brief op structure for `neg` ('s bitv -> 's bitv)
- *
- *  neg x is two-complement unary minus
+ * op structure for
+ * `not` ('s bitv -> 's bitv)
+ *   not x is one-complement negation.
+ * `neg` ('s bitv -> 's bitv)
+ *   neg x is two-complement unary minus
  */
-typedef struct rz_il_op_args_neg_t {
+struct rz_il_op_args_bv_unop_t {
 	RzILOpBitVector *bv; ///< unary operand
-} RzILOpArgsNeg;
+};
 
-/**
- *  \brief op structure for `not` ('s bitv -> 's bitv)
- *
- *  not x is one-complement negation.
- */
-typedef struct rz_il_op_args_logical_not_t {
-	RzILOpBitVector *bv; ///< unary operand
-} RzILOpArgsLogNot;
+typedef struct rz_il_op_args_bv_unop_t RzILOpArgsLogNot;
+typedef struct rz_il_op_args_bv_unop_t RzILOpArgsNeg;
 
 /**
  *  \brief op structure for two-operand algorithm and logical operations ('s bitv -> 's bitv -> 's bitv)
@@ -347,7 +343,6 @@ typedef struct rz_il_op_args_storew_t {
 typedef enum {
 	// Init
 	RZ_IL_OP_VAR,
-	RZ_IL_OP_UNK,
 	RZ_IL_OP_ITE,
 	RZ_IL_OP_LET,
 
@@ -382,7 +377,6 @@ typedef enum {
 	RZ_IL_OP_SLE,
 	RZ_IL_OP_ULE,
 	RZ_IL_OP_CAST,
-	RZ_IL_OP_CONCAT,
 	RZ_IL_OP_APPEND,
 	// ...
 
@@ -447,7 +441,6 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
 RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
 
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_NULLABLE RzILOpPure *x, RZ_NULLABLE RzILOpPure *y);
-RZ_API RZ_OWN RzILOpPure *rz_il_op_new_unk();
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *var, RzILVarKind kind);
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_let(RZ_NONNULL const char *name, RZ_NONNULL RzILOpPure *exp, RZ_NONNULL RzILOpPure *body);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_b0();
@@ -537,6 +530,15 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_branch(RZ_NONNULL RzILOpBool *condition
 
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, RZ_NONNULL RzILOpBitVector *value);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, RZ_NONNULL RzILOpBitVector *value);
+
+// Printing/Export
+RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code);
+
+RZ_API void rz_il_op_pure_stringify(RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL RzStrBuf *sb);
+
+RZ_API void rz_il_op_pure_json(RZ_NONNULL RzILOpPure *op, RZ_NONNULL PJ *pj);
+RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj);
 
 #ifdef __cplusplus
 }

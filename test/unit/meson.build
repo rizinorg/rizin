@@ -63,6 +63,7 @@ if get_option('enable_tests')
     'inflate_deflate',
     'il_definitions',
     'il_reg',
+    'il_validate',
     'il_vm',
     'intervaltree',
     'io',
