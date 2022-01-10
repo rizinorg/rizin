@@ -353,6 +353,31 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		rz_pvector_pop(&args);
 		rz_subprocess_free(proc);
 	}
+	if (test->il) {
+		char *hex = rz_hex_bin2strdup(test->bytes, test->bytes_size);
+		if (!hex) {
+			goto beach;
+		}
+		rz_pvector_push(&args, "-I");
+		rz_pvector_push(&args, hex);
+		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
+			rz_subprocess_kill(proc);
+			out->il_timeout = true;
+		} else {
+			char *il = (char *)remove_cr(rz_subprocess_out(proc, NULL));
+			rz_str_trim(il);
+			char *il_err = (char *)remove_cr(rz_subprocess_err(proc, NULL));
+			rz_str_trim(il_err);
+			out->il = il;
+			out->il_report = il_err;
+			out->il_failed = rz_subprocess_ret(proc) != 0;
+		}
+		free(hex);
+		rz_pvector_pop(&args);
+		rz_pvector_pop(&args);
+		rz_subprocess_free(proc);
+	}
 
 beach:
 	rz_pvector_clear(&args);
@@ -379,6 +404,16 @@ RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test) {
 			return false;
 		}
 	}
+	if (test->il) {
+		// expect some IL, no failure, no report and no timeout
+		if (!out->il || out->il_failed || (out->il_report && *out->il_report) || out->il_timeout) {
+			return false;
+		}
+		// IL must also be correct
+		if (strcmp(out->il, test->il) != 0) {
+			return false;
+		}
+	}
 	return true;
 }
 
@@ -388,6 +423,8 @@ RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out) {
 	}
 	free(out->disasm);
 	free(out->bytes);
+	free(out->il);
+	free(out->il_report);
 	free(out);
 }
 
@@ -464,7 +501,7 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		success = rz_test_check_asm_test(out, asm_test);
 		ret->asm_out = out;
 		if (out) {
-			ret->timeout = out->as_timeout || out->disas_timeout;
+			ret->timeout = out->as_timeout || out->disas_timeout || out->il_timeout;
 		}
 		ret->run_failed = !out;
 		break;
