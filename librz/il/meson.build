@@ -13,6 +13,7 @@ rz_il_sources = [
    'il_export.c',
    'il_events.c',
    'il_reg.c',
+   'il_validate.c',
    'il_vm.c',
    'il_vm_eval.c',
 ]
