@@ -411,9 +411,7 @@ RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg) {
 
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 	if (dbg) {
-		// TODO: free it correctly.. we must ensure this is an instance and not a reference..
 		rz_bp_free(dbg->bp);
-		// rz_reg_free(&dbg->reg);
 		free(dbg->snap_path);
 		rz_list_free(dbg->maps);
 		rz_list_free(dbg->maps_user);
