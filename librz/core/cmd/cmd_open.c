@@ -535,17 +535,6 @@ RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'r': // "omr"
-		if (input[1] != ' ') {
-			break;
-		}
-		P = strchr(input + 2, ' ');
-		if (P) {
-			id = (ut32)rz_num_math(core->num, input + 2); // mapid
-			new = rz_num_math(core->num, P + 1);
-			rz_io_map_resize(core->io, id, new);
-		}
-		break;
 	case 'o': // "omo"
 		if (input[1] == ' ') {
 			rz_core_cmdf(core, "om %s 0x%08" PFMT64x " $s r omo", input + 1, core->offset);
