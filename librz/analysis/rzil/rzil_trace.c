@@ -91,6 +91,6 @@ RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
  * \param rzil IL instance
  * \param op RzAnalysisRzilOp, a general IL op structure (Designed for switching between different implementations of IL op struct)
  */
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzAnalysisRzilOp *op) {
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzAnalysisLiftedILOp op) {
 	// TODO : rewrite this file when migrate to new op structure
 }

@@ -119,7 +119,7 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
 	return true;
 }
 
-static void rz_analysis_rzil_parse_root(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *ops) {
+static void rz_analysis_rzil_parse_root(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisLiftedILOp ops) {
 	rz_return_if_fail(analysis && rzil);
 
 	// IL disabled
@@ -169,5 +169,5 @@ RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *
 
 	// Parse and emulate IL opcode, and collect `trace` and `stats` info
 	// Use new op struct for parsing
-	rz_analysis_rzil_parse_root(analysis, rzil, op->rzil_op);
+	rz_analysis_rzil_parse_root(analysis, rzil, op->il_op);
 }
