@@ -49,7 +49,7 @@ static const char *system_apply_env_var(const char *env, const char *value, cons
 	return *alloc_str;
 }
 
-static bool system_exec(RzCore *core, int argc, const char **argv, char **output, int *length) {
+static int system_exec(RzCore *core, int argc, const char **argv, char **output, int *length, int *ret) {
 	char file_size[32];
 	char core_offset[32];
 	char block_size[32];
@@ -64,7 +64,6 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	const char *scr_color = rz_config_get(core->config, "scr.color");
 	const char *endian = rz_str_bool(core->rasm->big_endian);
 	char *cfg_path = config_path(core);
-	int ret = -1;
 
 	rz_strf(file_size, "%" PFMT64u, core->file ? rz_io_fd_size(core->io, core->file->fd) : 0);
 	rz_strf(core_offset, "%" PFMT64u, core->offset);
@@ -102,6 +101,8 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 		cfg_debug,
 		rz_str_get(cfg_path)
 	};
+
+	bool success = false;
 
 	RzList *alloc = rz_list_newf(free);
 	if (!alloc) {
@@ -160,11 +161,12 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	}
 
 	rz_subprocess_wait(proc, UT64_MAX);
-	ret = rz_subprocess_ret(proc);
+	*ret = rz_subprocess_ret(proc);
 
 	if (output) {
 		*output = (char *)rz_subprocess_out(proc, length);
 	}
+	success = true;
 
 	rz_subprocess_free(proc);
 proc_start_err:
@@ -177,7 +179,7 @@ alloc_err:
 	rz_file_rm(cfg_path);
 	free(cfg_path);
 
-	return ret >= 0;
+	return success;
 }
 
 static RzCmdStatus system_common_handler(RzCore *core, bool force_rzcons, int argc, const char **argv) {
@@ -185,14 +187,15 @@ static RzCmdStatus system_common_handler(RzCore *core, bool force_rzcons, int ar
 	int length = 0;
 	void *bed = rz_cons_sleep_begin();
 	bool need_rzcons = force_rzcons || core->is_pipe;
-	bool ret = system_exec(core, argc - 1, &argv[1], need_rzcons ? &out : NULL, &length);
+	int ret = -1;
+	bool succ = system_exec(core, argc - 1, &argv[1], need_rzcons ? &out : NULL, &length, &ret);
 	rz_cons_sleep_end(bed);
 	if (need_rzcons) {
 		rz_cons_memcat(out, length);
 	}
 	free(out);
-
-	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	core->num->value = (ut64)ret;
+	return succ ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_system_handler(RzCore *core, int argc, const char **argv) {

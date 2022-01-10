@@ -266,6 +266,7 @@ RZ_API void rz_test_asm_test_free(RzAsmTest *test) {
 	}
 	free(test->disasm);
 	free(test->bytes);
+	free(test->il);
 	free(test);
 }
 
@@ -343,6 +344,7 @@ RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char
 			continue;
 		}
 
+		// mode flags
 		int mode = 0;
 		while (*line && *line != ' ') {
 			switch (*line) {
@@ -369,6 +371,7 @@ RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char
 			continue;
 		}
 
+		// disasm
 		char *disasm = strchr(line, '"');
 		if (!disasm) {
 			eprintf(LINEFMT "Error: Expected \" to begin disassembly.\n", file, linenum);
@@ -384,14 +387,30 @@ RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char
 		hex++;
 		rz_str_trim(disasm);
 
+		// hex
 		while (*hex && *hex == ' ') {
 			hex++;
 		}
 
+		// remove comment at the end of the line
+		char *latecmt = strchr(hex, '#');
+		if (latecmt) {
+			*latecmt = '\0';
+		}
+
+		// offset (optional)
 		char *offset = strchr(hex, ' ');
+		char *il = NULL;
 		if (offset) {
 			*offset = '\0';
 			offset++;
+
+			// IL (optional, the entire rest)
+			il = strchr(offset, ' ');
+			if (il) {
+				*il = '\0';
+				il++;
+			}
 		}
 
 		size_t hexlen = strlen(hex);
@@ -425,10 +444,17 @@ RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char
 		test->arch = arch;
 		test->cpu = cpu;
 		test->mode = mode;
-		test->offset = offset ? (ut64)strtoull(offset, NULL, 0) : 0;
+		char *endptr = NULL;
+		test->offset = offset ? (ut64)strtoull(offset, &endptr, 0) : 0;
+		if (endptr && *endptr) {
+			eprintf(LINEFMT "Error: Invalid offset string: \"%s\"\n", file, linenum, offset);
+			free(bytes);
+			goto fail;
+		}
 		test->disasm = strdup(disasm);
 		test->bytes = bytes;
 		test->bytes_size = (size_t)bytesz;
+		test->il = il ? strdup(il) : NULL;
 		rz_pvector_push(ret, test);
 	} while ((line = nextline));
 

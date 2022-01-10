@@ -59,6 +59,8 @@ static inline RzILSortPure rz_il_sort_pure_bv(ut32 length) {
 	return r;
 }
 
+RZ_API RZ_OWN char *rz_il_sort_pure_stringify(RzILSortPure sort);
+
 #ifdef __cplusplus
 }
 #endif

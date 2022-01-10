@@ -58,6 +58,8 @@ RZ_API void rz_il_vm_free(RzILVM *vm);
 RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian);
 RZ_API void rz_il_vm_fini(RzILVM *vm);
 
+RZ_API ut32 rz_il_vm_get_pc_len(RzILVM *vm);
+
 // VM Event operations
 RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt);
 
@@ -87,16 +89,6 @@ RZ_API void rz_il_vm_pop_local_pure_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL const 
 RZ_API RZ_BORROW RzILVar *rz_il_vm_get_var(RZ_NONNULL RzILVM *vm, RzILVarKind kind, const char *name);
 RZ_API RZ_OWN RzPVector /* <RzILVar> */ *rz_il_vm_get_all_vars(RZ_NONNULL RzILVM *vm, RzILVarKind kind);
 RZ_API RZ_BORROW RzILVal *rz_il_vm_get_var_value(RZ_NONNULL RzILVM *vm, RzILVarKind kind, const char *name);
-
-// Printing/Export
-RZ_API void rz_il_op_pure_stringify(RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzStrBuf *sb);
-RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL RzStrBuf *sb);
-
-RZ_API void rz_il_op_pure_json(RZ_NONNULL RzILOpPure *op, RZ_NONNULL PJ *pj);
-RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj);
-
-RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf *sb);
-RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj);
 
 // Evaluation (Emulation)
 RZ_API RZ_NULLABLE RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpBitVector *op);
