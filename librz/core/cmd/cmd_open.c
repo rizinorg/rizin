@@ -468,73 +468,6 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 	}
 }
 
-static void cmd_omfg(RzCore *core, const char *input) {
-	input = rz_str_trim_head_ro(input);
-	if (input) {
-		int perm = *input
-			? (*input == '+' || *input == '-')
-				? rz_str_rwx(input + 1)
-				: rz_str_rwx(input)
-			: 7;
-		void **it;
-		RzPVector *maps = rz_io_maps(core->io);
-		switch (*input) {
-		case '+':
-			rz_pvector_foreach (maps, it) {
-				RzIOMap *map = *it;
-				map->perm |= perm;
-			}
-			break;
-		case '-':
-			rz_pvector_foreach (maps, it) {
-				RzIOMap *map = *it;
-				map->perm &= ~perm;
-			}
-			break;
-		default:
-			rz_pvector_foreach (maps, it) {
-				RzIOMap *map = *it;
-				map->perm = perm;
-			}
-			break;
-		}
-	}
-}
-
-static void cmd_omf(RzCore *core, const char *input) {
-	char *arg = strdup(rz_str_trim_head_ro(input));
-	if (!arg) {
-		return;
-	}
-	char *sp = strchr(arg, ' ');
-	RzPVector *maps = rz_io_maps(core->io);
-	if (sp) {
-		// change perms of Nth map
-		*sp++ = 0;
-		int id = rz_num_math(core->num, arg);
-		int perm = (*sp) ? rz_str_rwx(sp) : RZ_PERM_RWX;
-		void **it;
-		rz_pvector_foreach (maps, it) {
-			RzIOMap *map = *it;
-			if (map->id == id) {
-				map->perm = perm;
-				break;
-			}
-		}
-	} else {
-		// change perms of current map
-		int perm = (arg && *arg) ? rz_str_rwx(arg) : RZ_PERM_RWX;
-		void **it;
-		rz_pvector_foreach (maps, it) {
-			RzIOMap *map = *it;
-			if (rz_itv_contain(map->itv, core->offset)) {
-				map->perm = perm;
-			}
-		}
-	}
-	free(arg);
-}
-
 static void rz_core_cmd_omt(RzCore *core, const char *arg) {
 	RzTable *t = rz_table_new();
 
@@ -687,19 +620,6 @@ RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 			}
 		}
 		RZ_FREE(s);
-		break;
-	case 'f': // "omf"
-		switch (input[1]) {
-		case 'g': // "omfg"
-			cmd_omfg(core, input + 2);
-			break;
-		case ' ': // "omf"
-			cmd_omf(core, input + 2);
-			break;
-		default:
-			rz_core_cmd_help(core, help_msg_om);
-			break;
-		}
 		break;
 	case '\0': // "om"
 	case 'j': // "omj"
@@ -1560,5 +1480,61 @@ RZ_IPI RzCmdStatus rz_open_maps_map_fd_handler(RzCore *core, int argc, const cha
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_io_map_set_name(map, desc->name);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_flags_handler(RzCore *core, int argc, const char **argv) {
+	int perm = rz_str_rwx(argv[1]);
+	RzIOMap *map = NULL;
+	if (argc > 2) {
+		ut32 id = rz_num_math(NULL, argv[2]);
+		map = rz_io_map_resolve(core->io, id);
+		if (!map) {
+			RZ_LOG_ERROR("Cannot find any map with id %d\n", id);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		map = rz_io_map_get(core->io, core->offset);
+		if (!map) {
+			RZ_LOG_ERROR("Cannot find any map at the current address %" PFMT64x "\n", core->offset);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+
+	map->perm = perm;
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_flags_global_handler(RzCore *core, int argc, const char **argv) {
+	const char *arg = argv[1];
+	enum mode {
+		ADD,
+		DEL,
+		SET,
+	} mode = SET;
+	if (arg[0] == '+') {
+		mode = ADD;
+		arg++;
+	} else if (arg[0] == '-') {
+		mode = DEL;
+		arg++;
+	}
+	int perm = rz_str_rwx(arg);
+	RzPVector *maps = rz_io_maps(core->io);
+	void **it;
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		switch (mode) {
+		case ADD:
+			map->perm |= perm;
+			break;
+		case DEL:
+			map->perm &= ~perm;
+			break;
+		case SET:
+			map->perm = perm;
+			break;
+		}
+	}
 	return RZ_CMD_STATUS_OK;
 }

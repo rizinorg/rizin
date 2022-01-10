@@ -324,6 +324,8 @@ static const RzCmdDescArg open_maps_remove_args[2];
 static const RzCmdDescArg open_maps_all_fd_args[2];
 static const RzCmdDescArg open_maps_relocate_args[3];
 static const RzCmdDescArg open_maps_relocate_current_args[2];
+static const RzCmdDescArg open_maps_flags_args[3];
+static const RzCmdDescArg open_maps_flags_global_args[2];
 static const RzCmdDescArg open_maps_map_fd_args[2];
 static const RzCmdDescArg open_maps_name_args[2];
 static const RzCmdDescArg open_maps_name_id_args[3];
@@ -7443,6 +7445,40 @@ static const RzCmdDescHelp open_maps_relocate_current_help = {
 	.args = open_maps_relocate_current_args,
 };
 
+static const RzCmdDescArg open_maps_flags_args[] = {
+	{
+		.name = "flags",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_flags_help = {
+	.summary = "Change flags/perms for map with given <id> or current one",
+	.args = open_maps_flags_args,
+};
+
+static const RzCmdDescArg open_maps_flags_global_args[] = {
+	{
+		.name = "flags",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_flags_global_help = {
+	.summary = "Change flags/perms for all maps",
+	.description = "Update flags of all maps. If <flags> starts with a +, the specified flags are added to the maps. If <flags> starts with a -, the specified flags are removed from the maps. Otherwise, the exact <flags> are set for each map.",
+	.args = open_maps_flags_global_args,
+};
+
 static const RzCmdDescArg open_maps_map_fd_args[] = {
 	{
 		.name = "fd",
@@ -12076,6 +12112,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_maps_relocate_current_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omb.", rz_open_maps_relocate_current_handler, &open_maps_relocate_current_help);
 	rz_warn_if_fail(open_maps_relocate_current_cd);
+
+	RzCmdDesc *open_maps_flags_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omf", rz_open_maps_flags_handler, &open_maps_flags_help);
+	rz_warn_if_fail(open_maps_flags_cd);
+
+	RzCmdDesc *open_maps_flags_global_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omfg", rz_open_maps_flags_global_handler, &open_maps_flags_global_help);
+	rz_warn_if_fail(open_maps_flags_global_cd);
 
 	RzCmdDesc *open_maps_map_fd_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omm", rz_open_maps_map_fd_handler, &open_maps_map_fd_help);
 	rz_warn_if_fail(open_maps_map_fd_cd);

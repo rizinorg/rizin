@@ -109,6 +109,26 @@ commands:
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: omf
+        cname: open_maps_flags
+        summary: Change flags/perms for map with given <id> or current one
+        args:
+          - name: flags
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: id
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: omfg
+        cname: open_maps_flags_global
+        summary: Change flags/perms for all maps
+        description: >
+          Update flags of all maps. If <flags> starts with a +, the specified flags
+          are added to the maps. If <flags> starts with a -, the specified flags
+          are removed from the maps. Otherwise, the exact <flags> are set for
+          each map.
+        args:
+          - name: flags
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: omm
         cname: open_maps_map_fd
         summary: Create default map for given <fd> or current one
