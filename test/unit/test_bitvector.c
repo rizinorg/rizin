@@ -26,7 +26,7 @@ bool test_rz_bv_init32(void) {
 	s = rz_bv_as_string(bits);
 	mu_assert_streq_free(s, "00000000000000000000000001100100", "string bit value of bv");
 
-	s = rz_bv_as_hex_string(bits);
+	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0x00000064", "string hex value of bv");
 
 	rz_bv_free(bits);
@@ -52,7 +52,7 @@ bool test_rz_bv_init64(void) {
 	RzBitVector *bits_dup = rz_bv_dup(bits);
 	mu_assert("dup from bits 64", is_equal_bv(bits_dup, bits));
 
-	s = rz_bv_as_hex_string(bits);
+	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0x0000000000000064", "string hex value of bv");
 
 	s = rz_bv_as_string(bits);
@@ -84,7 +84,7 @@ bool test_rz_bv_init128(void) {
 	s = rz_bv_as_string(bits);
 	mu_assert_streq_free(s, "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001100100", "string bit value of bv");
 
-	s = rz_bv_as_hex_string(bits);
+	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0x00000000000000000000000000000064", "string hex value of bv");
 
 	rz_bv_free(bits);
@@ -101,7 +101,7 @@ bool test_rz_bv_init_signed(void) {
 	bits = rz_bv_new_from_st64(10, -100);
 	s = rz_bv_as_string(bits);
 	mu_assert_streq_free(s, "1110011100", "string bit value of bv");
-	s = rz_bv_as_hex_string(bits);
+	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0x39c", "string hex value of bv");
 	rz_bv_free(bits);
 
@@ -109,7 +109,7 @@ bool test_rz_bv_init_signed(void) {
 	bits = rz_bv_new_from_st64(16, -100);
 	s = rz_bv_as_string(bits);
 	mu_assert_streq_free(s, "1111111110011100", "string bit value of bv");
-	s = rz_bv_as_hex_string(bits);
+	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0xff9c", "string hex value of bv");
 	rz_bv_free(bits);
 
@@ -117,7 +117,7 @@ bool test_rz_bv_init_signed(void) {
 	bits = rz_bv_new_from_st64(24, -100);
 	s = rz_bv_as_string(bits);
 	mu_assert_streq_free(s, "111111111111111110011100", "string bit value of bv");
-	s = rz_bv_as_hex_string(bits);
+	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0xffff9c", "string hex value of bv");
 	rz_bv_free(bits);
 
@@ -125,7 +125,7 @@ bool test_rz_bv_init_signed(void) {
 	bits = rz_bv_new_from_st64(32, -100);
 	s = rz_bv_as_string(bits);
 	mu_assert_streq_free(s, "11111111111111111111111110011100", "string bit value of bv");
-	s = rz_bv_as_hex_string(bits);
+	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0xffffff9c", "string hex value of bv");
 	rz_bv_free(bits);
 
@@ -133,7 +133,7 @@ bool test_rz_bv_init_signed(void) {
 	bits = rz_bv_new_from_st64(64, -100);
 	s = rz_bv_as_string(bits);
 	mu_assert_streq_free(s, "1111111111111111111111111111111111111111111111111111111110011100", "string bit value of bv");
-	s = rz_bv_as_hex_string(bits);
+	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0xffffffffffffff9c", "string hex value of bv");
 	rz_bv_free(bits);
 
@@ -141,7 +141,7 @@ bool test_rz_bv_init_signed(void) {
 	bits = rz_bv_new_from_st64(128, -100);
 	s = rz_bv_as_string(bits);
 	mu_assert_streq_free(s, "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111110011100", "string bit value of bv");
-	s = rz_bv_as_hex_string(bits);
+	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0xffffffffffffffffffffffffffffff9c", "string hex value of bv");
 	rz_bv_free(bits);
 	mu_end;
@@ -432,7 +432,7 @@ bool test_rz_bv_operation(void) {
 	mu_assert("prepend 3 zero", is_equal_bv(res, prep));
 	s = rz_bv_as_string(res);
 	mu_assert_streq_free(s, "00000001000", "string bit value of bv");
-	s = rz_bv_as_hex_string(res);
+	s = rz_bv_as_hex_string(res, true);
 	mu_assert_streq_free(s, "0x008", "string hex value of bv");
 	rz_bv_free(res);
 
@@ -440,7 +440,7 @@ bool test_rz_bv_operation(void) {
 	mu_assert("append 5 zero", is_equal_bv(res, append));
 	s = rz_bv_as_string(res);
 	mu_assert_streq_free(s, "0000100000000", "string bit value of bv");
-	s = rz_bv_as_hex_string(res);
+	s = rz_bv_as_hex_string(res, true);
 	mu_assert_streq_free(s, "0x0100", "string hex value of bv");
 	rz_bv_free(res);
 
@@ -448,7 +448,7 @@ bool test_rz_bv_operation(void) {
 	mu_assert("cut head 2 zero", is_equal_bv(res, cut_h));
 	s = rz_bv_as_string(res);
 	mu_assert_streq_free(s, "001000", "string bit value of bv");
-	s = rz_bv_as_hex_string(res);
+	s = rz_bv_as_hex_string(res, true);
 	mu_assert_streq_free(s, "0x08", "string hex value of bv");
 	rz_bv_free(res);
 
@@ -456,7 +456,7 @@ bool test_rz_bv_operation(void) {
 	mu_assert("cut tail 4 zero", is_equal_bv(res, cut_t));
 	s = rz_bv_as_string(res);
 	mu_assert_streq_free(s, "0000", "string bit value of bv");
-	s = rz_bv_as_hex_string(res);
+	s = rz_bv_as_hex_string(res, true);
 	mu_assert_streq_free(s, "0x0", "string hex value of bv");
 	rz_bv_free(res);
 
@@ -464,7 +464,7 @@ bool test_rz_bv_operation(void) {
 	mu_assert("append x and y", is_equal_bv(res, concat));
 	s = rz_bv_as_string(res);
 	mu_assert_streq_free(s, "000010001011", "string bit value of bv");
-	s = rz_bv_as_hex_string(res);
+	s = rz_bv_as_hex_string(res, true);
 	mu_assert_streq_free(s, "0x08b", "string hex value of bv");
 	rz_bv_free(res);
 
@@ -498,79 +498,79 @@ bool test_rz_bv_set_from_bytes_be(void) {
 	RzBitVector bv;
 	rz_bv_init(&bv, 64);
 	rz_bv_set_from_bytes_be(&bv, data, 0, 64);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xefcdab8967452301", "aligned 64");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xefcdab8967452301", "aligned 64");
 	rz_bv_set_from_bytes_be(&bv, data, 0, 62);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xefcdab8967452300", "aligned 64, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xefcdab8967452300", "aligned 64, padding");
 	rz_bv_set_from_bytes_be(&bv, data, 0, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xefcdab8967452301", "aligned 64, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xefcdab8967452301", "aligned 64, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 42);
 	rz_bv_set_from_bytes_be(&bv, data, 0, 42);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x3bf36ae259d", "aligned 42");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x3bf36ae259d", "aligned 42");
 	rz_bv_set_from_bytes_be(&bv, data, 0, 40);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x3bf36ae259c", "aligned 42, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x3bf36ae259c", "aligned 42, padding");
 	rz_bv_set_from_bytes_be(&bv, data, 0, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x3bf36ae259d", "aligned 42, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x3bf36ae259d", "aligned 42, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 80);
 	rz_bv_set_from_bytes_be(&bv, data, 0, 80);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xefcdab89674523011032", "aligned 80");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xefcdab89674523011032", "aligned 80");
 	rz_bv_set_from_bytes_be(&bv, data, 0, 78);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xefcdab89674523011030", "aligned 80, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xefcdab89674523011030", "aligned 80, padding");
 	rz_bv_set_from_bytes_be(&bv, data, 0, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xefcdab89674523011032", "aligned 80, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xefcdab89674523011032", "aligned 80, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 64);
 	rz_bv_set_from_bytes_be(&bv, data, 1, 64);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xdf9b5712ce8a4602", "off+1 64");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xdf9b5712ce8a4602", "off+1 64");
 	rz_bv_set_from_bytes_be(&bv, data, 1, 62);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xdf9b5712ce8a4600", "off+1, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xdf9b5712ce8a4600", "off+1, padding");
 	rz_bv_set_from_bytes_be(&bv, data, 1, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xdf9b5712ce8a4602", "off+1 64, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xdf9b5712ce8a4602", "off+1 64, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 42);
 	rz_bv_set_from_bytes_be(&bv, data, 1, 42);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x37e6d5c4b3a", "off+1 42");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x37e6d5c4b3a", "off+1 42");
 	rz_bv_set_from_bytes_be(&bv, data, 1, 40);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x37e6d5c4b38", "off+1 42, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x37e6d5c4b38", "off+1 42, padding");
 	rz_bv_set_from_bytes_be(&bv, data, 1, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x37e6d5c4b3a", "off+1 42, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x37e6d5c4b3a", "off+1 42, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 80);
 	rz_bv_set_from_bytes_be(&bv, data, 1, 80);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xdf9b5712ce8a46022064", "off+1 80");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xdf9b5712ce8a46022064", "off+1 80");
 	rz_bv_set_from_bytes_be(&bv, data, 1, 78);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xdf9b5712ce8a46022064", "off+1 80, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xdf9b5712ce8a46022064", "off+1 80, padding");
 	rz_bv_set_from_bytes_be(&bv, data, 1, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xdf9b5712ce8a46022064", "off+1 80, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xdf9b5712ce8a46022064", "off+1 80, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 64);
 	rz_bv_set_from_bytes_be(&bv, data, 7, 64);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xe6d5c4b3a2918088", "off+7 64");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xe6d5c4b3a2918088", "off+7 64");
 	rz_bv_set_from_bytes_be(&bv, data, 7, 62);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xe6d5c4b3a2918088", "off+7, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xe6d5c4b3a2918088", "off+7, padding");
 	rz_bv_set_from_bytes_be(&bv, data, 7, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xe6d5c4b3a2918088", "off+7 64, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xe6d5c4b3a2918088", "off+7 64, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 42);
 	rz_bv_set_from_bytes_be(&bv, data, 7, 42);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x39b5712ce8a", "off+7 42");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x39b5712ce8a", "off+7 42");
 	rz_bv_set_from_bytes_be(&bv, data, 7, 40);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x39b5712ce88", "off+7 42, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x39b5712ce88", "off+7 42, padding");
 	rz_bv_set_from_bytes_be(&bv, data, 7, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x39b5712ce8a", "off+7 42, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x39b5712ce8a", "off+7 42, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 80);
 	rz_bv_set_from_bytes_be(&bv, data, 7, 80);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xe6d5c4b3a2918088192a", "off+7 80");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xe6d5c4b3a2918088192a", "off+7 80");
 	rz_bv_set_from_bytes_be(&bv, data, 7, 78);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xe6d5c4b3a29180881928", "off+7 80, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xe6d5c4b3a29180881928", "off+7 80, padding");
 	rz_bv_set_from_bytes_be(&bv, data, 7, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xe6d5c4b3a2918088192a", "off+7 80, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xe6d5c4b3a2918088192a", "off+7 80, cut off");
 	rz_bv_fini(&bv);
 
 	RzBitVector *hbv = rz_bv_new_from_bytes_be(data, 0, 64);
-	mu_assert_streq_free(rz_bv_as_hex_string(hbv), "0xefcdab8967452301", "aligned 64");
+	mu_assert_streq_free(rz_bv_as_hex_string(hbv, true), "0xefcdab8967452301", "aligned 64");
 	rz_bv_free(hbv);
 
 	mu_end;
@@ -584,81 +584,119 @@ bool test_rz_bv_set_from_bytes_le(void) {
 	RzBitVector bv;
 	rz_bv_init(&bv, 64);
 	rz_bv_set_from_bytes_le(&bv, data, 0, 64);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xefcdab8967452301", "aligned 64");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xefcdab8967452301", "aligned 64");
 	rz_bv_set_from_bytes_le(&bv, data, 0, 62);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x2fcdab8967452301", "aligned 64, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x2fcdab8967452301", "aligned 64, padding");
 	rz_bv_set_from_bytes_le(&bv, data, 0, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xefcdab8967452301", "aligned 64, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xefcdab8967452301", "aligned 64, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 42);
 	rz_bv_set_from_bytes_le(&bv, data, 0, 42);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x38967452301", "aligned 42");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x38967452301", "aligned 42");
 	rz_bv_set_from_bytes_le(&bv, data, 0, 40);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x08967452301", "aligned 42, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x08967452301", "aligned 42, padding");
 	rz_bv_set_from_bytes_le(&bv, data, 0, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x38967452301", "aligned 42, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x38967452301", "aligned 42, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 80);
 	rz_bv_set_from_bytes_le(&bv, data, 0, 80);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xdcfeefcdab8967452301", "aligned 80");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xdcfeefcdab8967452301", "aligned 80");
 	rz_bv_set_from_bytes_le(&bv, data, 0, 78);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x1cfeefcdab8967452301", "aligned 80, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x1cfeefcdab8967452301", "aligned 80, padding");
 	rz_bv_set_from_bytes_le(&bv, data, 0, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xdcfeefcdab8967452301", "aligned 80, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xdcfeefcdab8967452301", "aligned 80, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 64);
 	rz_bv_set_from_bytes_le(&bv, data, 1, 64);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x77e6d5c4b3a29180", "off+1 64");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x77e6d5c4b3a29180", "off+1 64");
 	rz_bv_set_from_bytes_le(&bv, data, 1, 62);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x37e6d5c4b3a29180", "off+1, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x37e6d5c4b3a29180", "off+1, padding");
 	rz_bv_set_from_bytes_le(&bv, data, 1, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x77e6d5c4b3a29180", "off+1 64, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x77e6d5c4b3a29180", "off+1 64, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 42);
 	rz_bv_set_from_bytes_le(&bv, data, 1, 42);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x1c4b3a29180", "off+1 42");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x1c4b3a29180", "off+1 42");
 	rz_bv_set_from_bytes_le(&bv, data, 1, 40);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x0c4b3a29180", "off+1 42, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x0c4b3a29180", "off+1 42, padding");
 	rz_bv_set_from_bytes_le(&bv, data, 1, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x1c4b3a29180", "off+1 42, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x1c4b3a29180", "off+1 42, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 80);
 	rz_bv_set_from_bytes_le(&bv, data, 1, 80);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x6e7f77e6d5c4b3a29180", "off+1 80");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x6e7f77e6d5c4b3a29180", "off+1 80");
 	rz_bv_set_from_bytes_le(&bv, data, 1, 78);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x2e7f77e6d5c4b3a29180", "off+1 80, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x2e7f77e6d5c4b3a29180", "off+1 80, padding");
 	rz_bv_set_from_bytes_le(&bv, data, 1, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x6e7f77e6d5c4b3a29180", "off+1 80, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x6e7f77e6d5c4b3a29180", "off+1 80, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 64);
 	rz_bv_set_from_bytes_le(&bv, data, 7, 64);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xfddf9b5712ce8a46", "off+7 64");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xfddf9b5712ce8a46", "off+7 64");
 	rz_bv_set_from_bytes_le(&bv, data, 7, 62);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x3ddf9b5712ce8a46", "off+7, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x3ddf9b5712ce8a46", "off+7, padding");
 	rz_bv_set_from_bytes_le(&bv, data, 7, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0xfddf9b5712ce8a46", "off+7 64, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xfddf9b5712ce8a46", "off+7 64, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 42);
 	rz_bv_set_from_bytes_le(&bv, data, 7, 42);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x35712ce8a46", "off+7 42");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x35712ce8a46", "off+7 42");
 	rz_bv_set_from_bytes_le(&bv, data, 7, 40);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x05712ce8a46", "off+7 42, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x05712ce8a46", "off+7 42, padding");
 	rz_bv_set_from_bytes_le(&bv, data, 7, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x35712ce8a46", "off+7 42, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x35712ce8a46", "off+7 42, cut off");
 	rz_bv_fini(&bv);
 	rz_bv_init(&bv, 80);
 	rz_bv_set_from_bytes_le(&bv, data, 7, 80);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x75b9fddf9b5712ce8a46", "off+7 80");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x75b9fddf9b5712ce8a46", "off+7 80");
 	rz_bv_set_from_bytes_le(&bv, data, 7, 78);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x35b9fddf9b5712ce8a46", "off+7 80, padding");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x35b9fddf9b5712ce8a46", "off+7 80, padding");
 	rz_bv_set_from_bytes_le(&bv, data, 7, 100);
-	mu_assert_streq_free(rz_bv_as_hex_string(&bv), "0x75b9fddf9b5712ce8a46", "off+7 80, cut off");
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x75b9fddf9b5712ce8a46", "off+7 80, cut off");
 	rz_bv_fini(&bv);
 
 	RzBitVector *hbv = rz_bv_new_from_bytes_le(data, 0, 64);
-	mu_assert_streq_free(rz_bv_as_hex_string(hbv), "0xefcdab8967452301", "aligned 64");
+	mu_assert_streq_free(rz_bv_as_hex_string(hbv, true), "0xefcdab8967452301", "aligned 64");
 	rz_bv_free(hbv);
 
+	mu_end;
+}
+
+bool test_rz_bv_as_hex_string(void) {
+	char *s = NULL;
+
+	// small
+	RzBitVector *bv = rz_bv_new_from_ut64(32, 42);
+	s = rz_bv_as_hex_string(bv, true);
+	mu_assert_streq_free(s, "0x0000002a", "string hex value of bv");
+	s = rz_bv_as_hex_string(bv, false);
+	mu_assert_streq_free(s, "0x2a", "string hex value of bv");
+
+	rz_bv_set_from_ut64(bv, 0x32a);
+	s = rz_bv_as_hex_string(bv, true);
+	mu_assert_streq_free(s, "0x0000032a", "string hex value of bv");
+	s = rz_bv_as_hex_string(bv, false);
+	mu_assert_streq_free(s, "0x32a", "string hex value of bv");
+
+	// big
+	bv = rz_bv_new_from_ut64(128, 100);
+	rz_bv_set(bv, 2, true);
+	rz_bv_set(bv, 5, true);
+	rz_bv_set(bv, 6, true);
+
+	s = rz_bv_as_hex_string(bv, true);
+	mu_assert_streq_free(s, "0x00000000000000000000000000000064", "string hex value of bv");
+	s = rz_bv_as_hex_string(bv, false);
+	mu_assert_streq_free(s, "0x64", "string hex value of bv");
+
+	rz_bv_set(bv, 16, true);
+
+	s = rz_bv_as_hex_string(bv, true);
+	mu_assert_streq_free(s, "0x00000000000000000000000000010064", "string hex value of bv");
+	s = rz_bv_as_hex_string(bv, false);
+	mu_assert_streq_free(s, "0x10064", "string hex value of bv");
+
+	rz_bv_free(bv);
 	mu_end;
 }
 
@@ -675,6 +713,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_algorithm128);
 	mu_run_test(test_rz_bv_set_from_bytes_le);
 	mu_run_test(test_rz_bv_set_from_bytes_be);
+	mu_run_test(test_rz_bv_as_hex_string);
 	return tests_passed != tests_run;
 }
 

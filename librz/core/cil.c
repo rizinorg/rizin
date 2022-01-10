@@ -490,7 +490,7 @@ static void rzil_print_register_bool(bool value, ILPrint *p) {
 }
 
 static void rzil_print_register_bitv(RzBitVector *number, ILPrint *p) {
-	char *hex = rz_bv_as_hex_string(number);
+	char *hex = rz_bv_as_hex_string(number, true);
 	switch (p->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_strbuf_appendf(p_sb(p->ptr), " %s: %s", p->name, hex);

@@ -4,29 +4,20 @@
 
 /** \file
  * Outputs the IL statements & events in JSON or string format.
- * The string format of a statement looks like below:
- *    [store(key:var(v:ptr), value:add(x:load(key:var(v:ptr), mem:0), y:int(value:1, length:8)), mem:0)]
+ * The string format of a statement is composed simply of s-expressions and looks like below:
+ *    (store 0 (var ptr) (+ (load 0 (var ptr)) (bv 8 0x1)))
  * which can be deconstructed like below
- * [
- *     store(
- *         key:var(
- *             v:ptr
- *         ),
- *         value:add(
- *             x:load(
- *                 key:var(
- *                     v:ptr
- *                 ),
- *                 mem:0
- *             ),
- *             y:int(
- *                 value:1,
- *                 length:8
- *             )
- *         ),
- *         mem:0
+ * (store
+ *     0
+ *     (var ptr)
+ *     (+
+ *         (load
+ *             0
+ *             (var ptr)
+ *         )
+ *         (bv 8 0x1)
  *     )
- * ]
+ * )
  *
  * The json format of a statement looks like below:
  * [
@@ -86,7 +77,7 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 #define il_op_param_0(name) \
 	do { \
 		if (sb) { \
-			rz_strbuf_append(sb, name "()"); \
+			rz_strbuf_append(sb, name); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
@@ -97,7 +88,7 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 #define il_op_param_1(name, opx, v0) \
 	do { \
 		if (sb) { \
-			rz_strbuf_append(sb, name "(" #v0 ":"); \
+			rz_strbuf_append(sb, "(" name " "); \
 			il_op_pure_resolve(opx.v0, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
@@ -112,9 +103,9 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 #define il_op_param_2(name, opx, sort0, v0, sort1, v1) \
 	do { \
 		if (sb) { \
-			rz_strbuf_append(sb, name "(" #v0 ":"); \
+			rz_strbuf_append(sb, "(" name " "); \
 			il_op_##sort0##_resolve(opx.v0, sb, pj); \
-			rz_strbuf_append(sb, ", " #v1 ":"); \
+			rz_strbuf_append(sb, " "); \
 			il_op_##sort1##_resolve(opx.v1, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
@@ -131,11 +122,11 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 #define il_op_param_3(name, opx, sort0, v0, sort1, v1, sort2, v2) \
 	do { \
 		if (sb) { \
-			rz_strbuf_append(sb, name "(" #v0 ":"); \
+			rz_strbuf_append(sb, "(" name " "); \
 			il_op_##sort0##_resolve(opx.v0, sb, pj); \
-			rz_strbuf_append(sb, ", " #v1 ":"); \
+			rz_strbuf_append(sb, " "); \
 			il_op_##sort1##_resolve(opx.v1, sb, pj); \
-			rz_strbuf_append(sb, ", " #v2 ":"); \
+			rz_strbuf_append(sb, " "); \
 			il_op_##sort2##_resolve(opx.v2, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
@@ -154,7 +145,7 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 static void il_opdmp_var(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsVar *opx = &op->op.var;
 	if (sb) {
-		rz_strbuf_appendf(sb, "var(v:%s)", opx->v);
+		rz_strbuf_appendf(sb, "(var %s)", opx->v);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "var");
@@ -170,9 +161,9 @@ static void il_opdmp_ite(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_let(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsLet *opx = &op->op.let;
 	if (sb) {
-		rz_strbuf_appendf(sb, "let(v:%s, exp:", opx->name);
+		rz_strbuf_appendf(sb, "(let %s ", opx->name);
 		il_op_pure_resolve(opx->exp, sb, pj);
-		rz_strbuf_append(sb, ", body:");
+		rz_strbuf_append(sb, " ");
 		il_op_pure_resolve(opx->body, sb, pj);
 		rz_strbuf_append(sb, ")");
 	} else {
@@ -189,7 +180,7 @@ static void il_opdmp_let(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 
 static void il_opdmp_bool_false(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	if (sb) {
-		rz_strbuf_append(sb, "bool(false)");
+		rz_strbuf_append(sb, "false");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "bool");
@@ -200,7 +191,7 @@ static void il_opdmp_bool_false(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 
 static void il_opdmp_bool_true(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	if (sb) {
-		rz_strbuf_append(sb, "bool(true)");
+		rz_strbuf_append(sb, "true");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "bool");
@@ -210,26 +201,26 @@ static void il_opdmp_bool_true(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_bool_inv(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_1("inv", op->op.boolinv, x);
+	il_op_param_1("!", op->op.boolinv, x);
 }
 
 static void il_opdmp_bool_and(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("booland", op->op.booland, pure, x, pure, y);
+	il_op_param_2("&&", op->op.booland, pure, x, pure, y);
 }
 
 static void il_opdmp_bool_or(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("boolor", op->op.boolor, pure, x, pure, y);
+	il_op_param_2("||", op->op.boolor, pure, x, pure, y);
 }
 
 static void il_opdmp_bool_xor(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("boolxor", op->op.boolxor, pure, x, pure, y);
+	il_op_param_2("^^", op->op.boolxor, pure, x, pure, y);
 }
 
 static void il_opdmp_bitv(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsBv *opx = &op->op.bitv;
-	char *num = rz_bv_as_hex_string(opx->value);
+	char *num = rz_bv_as_hex_string(opx->value, false);
 	if (sb) {
-		rz_strbuf_appendf(sb, "bitv(bits:%s, len:%u)", num, opx->value->len);
+		rz_strbuf_appendf(sb, "(bv %u %s)", opx->value->len, num);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "bitv");
@@ -253,7 +244,7 @@ static void il_opdmp_is_zero(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_neg(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_1("neg", op->op.neg, bv);
+	il_op_param_1("~", op->op.neg, bv);
 }
 
 static void il_opdmp_lognot(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
@@ -261,15 +252,15 @@ static void il_opdmp_lognot(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_add(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("add", op->op.add, pure, x, pure, y);
+	il_op_param_2("+", op->op.add, pure, x, pure, y);
 }
 
 static void il_opdmp_sub(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("sub", op->op.sub, pure, x, pure, y);
+	il_op_param_2("-", op->op.sub, pure, x, pure, y);
 }
 
 static void il_opdmp_mul(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("mul", op->op.mul, pure, x, pure, y);
+	il_op_param_2("*", op->op.mul, pure, x, pure, y);
 }
 
 static void il_opdmp_div(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
@@ -289,27 +280,27 @@ static void il_opdmp_smod(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_logand(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("logand", op->op.logand, pure, x, pure, y);
+	il_op_param_2("&", op->op.logand, pure, x, pure, y);
 }
 
 static void il_opdmp_logor(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("logor", op->op.logor, pure, x, pure, y);
+	il_op_param_2("|", op->op.logor, pure, x, pure, y);
 }
 
 static void il_opdmp_logxor(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("logxor", op->op.logxor, pure, x, pure, y);
+	il_op_param_2("^", op->op.logxor, pure, x, pure, y);
 }
 
 static void il_opdmp_shiftr(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_3("shiftr", op->op.shiftr, pure, x, pure, y, pure, fill_bit);
+	il_op_param_3(">>", op->op.shiftr, pure, x, pure, y, pure, fill_bit);
 }
 
 static void il_opdmp_shiftl(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_3("shiftl", op->op.shiftl, pure, x, pure, y, pure, fill_bit);
+	il_op_param_3("<<", op->op.shiftl, pure, x, pure, y, pure, fill_bit);
 }
 
 static void il_opdmp_eq(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("eq", op->op.ule, pure, x, pure, y);
+	il_op_param_2("==", op->op.ule, pure, x, pure, y);
 }
 
 static void il_opdmp_sle(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
@@ -323,10 +314,10 @@ static void il_opdmp_ule(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_cast(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsCast *opx = &op->op.cast;
 	if (sb) {
-		rz_strbuf_append(sb, "cast(val:");
-		il_op_pure_resolve(opx->val, sb, pj);
-		rz_strbuf_appendf(sb, ", length:%u, fill:", opx->length);
+		rz_strbuf_appendf(sb, "(cast %u ", opx->length);
 		il_op_pure_resolve(opx->fill, sb, pj);
+		rz_strbuf_append(sb, " ");
+		il_op_pure_resolve(opx->val, sb, pj);
 		rz_strbuf_append(sb, ")");
 	} else {
 		pj_o(pj);
@@ -347,7 +338,7 @@ static void il_opdmp_append(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsLoad *opx = &op->op.load;
 	if (sb) {
-		rz_strbuf_appendf(sb, "load(mem:%u, key:", (ut32)opx->mem);
+		rz_strbuf_appendf(sb, "(load %u ", (ut32)opx->mem);
 		il_op_pure_resolve(opx->key, sb, pj);
 		rz_strbuf_append(sb, ")");
 	} else {
@@ -363,9 +354,9 @@ static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_loadw(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsLoadW *opx = &op->op.loadw;
 	if (sb) {
-		rz_strbuf_appendf(sb, "loadw(mem:%u, key:", (ut32)opx->mem);
+		rz_strbuf_appendf(sb, "(loadw %u %u ", (ut32)opx->mem, (ut32)opx->n_bits);
 		il_op_pure_resolve(opx->key, sb, pj);
-		rz_strbuf_appendf(sb, ", bits:%u)", (ut32)opx->n_bits);
+		rz_strbuf_append(sb, ")");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "loadw");
@@ -381,9 +372,9 @@ static void il_opdmp_store(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsStore *opx = &op->op.store;
 
 	if (sb) {
-		rz_strbuf_appendf(sb, "store(mem:%u, key:", (ut32)opx->mem);
+		rz_strbuf_appendf(sb, "(store %u ", (ut32)opx->mem);
 		il_op_pure_resolve(opx->key, sb, pj);
-		rz_strbuf_append(sb, ", value:");
+		rz_strbuf_append(sb, " ");
 		il_op_pure_resolve(opx->value, sb, pj);
 		rz_strbuf_append(sb, ")");
 	} else {
@@ -402,9 +393,9 @@ static void il_opdmp_storew(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsStore *opx = &op->op.store;
 
 	if (sb) {
-		rz_strbuf_appendf(sb, "storew(mem:%u, key:", (ut32)opx->mem);
+		rz_strbuf_appendf(sb, "(storew %u ", (ut32)opx->mem);
 		il_op_pure_resolve(opx->key, sb, pj);
-		rz_strbuf_append(sb, ", value:");
+		rz_strbuf_append(sb, " ");
 		il_op_pure_resolve(opx->value, sb, pj);
 		rz_strbuf_append(sb, ")");
 	} else {
@@ -426,7 +417,7 @@ static void il_opdmp_nop(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_set(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsSet *opx = &op->op.set;
 	if (sb) {
-		rz_strbuf_appendf(sb, "set(v:%s, x:", opx->v);
+		rz_strbuf_appendf(sb, "(set %s ", opx->v);
 		il_op_pure_resolve(opx->x, sb, pj);
 		rz_strbuf_append(sb, ")");
 	} else {
@@ -446,7 +437,7 @@ static void il_opdmp_jmp(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_goto(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsGoto *opx = &op->op.goto_;
 	if (sb) {
-		rz_strbuf_appendf(sb, "goto(lbl:%s)", opx->lbl);
+		rz_strbuf_appendf(sb, "(goto %s)", opx->lbl);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "goto");
@@ -462,9 +453,9 @@ static void il_opdmp_seq(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_blk(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsBlk *opx = &op->op.blk;
 	if (sb) {
-		rz_strbuf_appendf(sb, "blk(lbl:%s, data:", opx->label);
+		rz_strbuf_appendf(sb, "(blk %s ", opx->label);
 		il_op_effect_resolve(opx->data_eff, sb, pj);
-		rz_strbuf_append(sb, ", ctrl:");
+		rz_strbuf_append(sb, " ");
 		il_op_effect_resolve(opx->ctrl_eff, sb, pj);
 		rz_strbuf_append(sb, ")");
 	} else {
@@ -719,28 +710,28 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf
 		rz_strbuf_appendf(sb, "exception(%s)", evt->data.exception);
 		break;
 	case RZ_IL_EVENT_PC_WRITE:
-		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc);
-		tmp1 = rz_bv_as_hex_string(evt->data.pc_write.new_pc);
+		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc, false);
+		tmp1 = rz_bv_as_hex_string(evt->data.pc_write.new_pc, false);
 		rz_strbuf_appendf(sb, "pc_write(old: %s, new: %s)", tmp0, tmp1);
 		break;
 	case RZ_IL_EVENT_MEM_READ:
-		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address);
-		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value) : NULL;
+		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address, false);
+		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value, false) : NULL;
 		rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory");
 		break;
 	case RZ_IL_EVENT_VAR_READ:
-		tmp1 = evt->data.var_read.value ? rz_bv_as_hex_string(evt->data.var_read.value) : NULL;
+		tmp1 = evt->data.var_read.value ? rz_bv_as_hex_string(evt->data.var_read.value, false) : NULL;
 		rz_strbuf_appendf(sb, "var_read(name: %s, value: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "uninitialized variable");
 		break;
 	case RZ_IL_EVENT_MEM_WRITE:
-		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address);
-		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value) : NULL;
-		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value);
+		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address, false);
+		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value, false) : NULL;
+		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value, false);
 		rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
 		break;
 	case RZ_IL_EVENT_VAR_WRITE:
-		tmp1 = evt->data.var_write.old_value ? rz_bv_as_hex_string(evt->data.var_write.old_value) : NULL;
-		tmp2 = rz_bv_as_hex_string(evt->data.var_write.new_value);
+		tmp1 = evt->data.var_write.old_value ? rz_bv_as_hex_string(evt->data.var_write.old_value, false) : NULL;
+		tmp2 = rz_bv_as_hex_string(evt->data.var_write.new_value, false);
 		rz_strbuf_appendf(sb, "var_write(name: %s, old: %s, new: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "uninitialized variable", tmp2);
 		break;
 	default:
@@ -766,8 +757,8 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZ_IL_EVENT_PC_WRITE:
-		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc);
-		tmp1 = rz_bv_as_hex_string(evt->data.pc_write.new_pc);
+		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc, false);
+		tmp1 = rz_bv_as_hex_string(evt->data.pc_write.new_pc, false);
 		pj_o(pj);
 		pj_ks(pj, "type", "pc_write");
 		pj_ks(pj, "old", tmp0);
@@ -775,8 +766,8 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZ_IL_EVENT_MEM_READ:
-		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address);
-		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value) : NULL;
+		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address, false);
+		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value, false) : NULL;
 		pj_o(pj);
 		pj_ks(pj, "type", "mem_read");
 		pj_ks(pj, "address", tmp0);
@@ -784,7 +775,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZ_IL_EVENT_VAR_READ:
-		tmp1 = evt->data.var_read.value ? rz_bv_as_hex_string(evt->data.var_read.value) : NULL;
+		tmp1 = evt->data.var_read.value ? rz_bv_as_hex_string(evt->data.var_read.value, false) : NULL;
 		pj_o(pj);
 		pj_ks(pj, "type", "var_read");
 		pj_ks(pj, "name", evt->data.var_read.variable);
@@ -792,9 +783,9 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZ_IL_EVENT_MEM_WRITE:
-		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address);
-		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value) : NULL;
-		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value);
+		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address, false);
+		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value, false) : NULL;
+		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value, false);
 		pj_o(pj);
 		pj_ks(pj, "type", "mem_write");
 		pj_ks(pj, "address", tmp0);
@@ -803,8 +794,8 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZ_IL_EVENT_VAR_WRITE:
-		tmp1 = evt->data.var_write.old_value ? rz_bv_as_hex_string(evt->data.var_write.old_value) : NULL;
-		tmp2 = rz_bv_as_hex_string(evt->data.var_write.new_value);
+		tmp1 = evt->data.var_write.old_value ? rz_bv_as_hex_string(evt->data.var_write.old_value, false) : NULL;
+		tmp2 = rz_bv_as_hex_string(evt->data.var_write.new_value, false);
 		pj_o(pj);
 		pj_ks(pj, "type", "var_write");
 		pj_ks(pj, "name", evt->data.var_write.variable);
