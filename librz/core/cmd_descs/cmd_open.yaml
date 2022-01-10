@@ -70,10 +70,53 @@ commands:
         summary: Prioritize next file in the list (go back to first if on the last)
         args: []
   - name: om
-    cname: om_oldinput
     summary: Handle IO maps
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands:
+      - name: om
+        cname: open_maps_map
+        summary: Create a new map
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: vaddr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: paddr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: flags
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: oml
+        cname: open_maps_list
+        summary: List maps of all file descriptor or only the specified <fd>
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_QUIETEST
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: oml.
+        cname: open_maps_list_cur
+        summary: Show map at the current offset
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_QUIETEST
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: om-
         cname: open_maps_remove
         summary: Remove the IO map with corresponding <id>
