@@ -1710,11 +1710,10 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		free(real_ident);
 
 		// Check if this paren has a declarator
-		TSNode paren_declarator = ts_node_child_by_field_name(node, "declarator", 10);
+		TSNode paren_declarator = ts_node_named_child(node, 0);
 		if (ts_node_is_null(paren_declarator)) {
-			parser_error(state, "ERROR: Parenthesized declarator AST should contain at least one node!\n");
 			parser_debug(state, "Empty parenthesiszed declarator encountered\n");
-			return -1;
+			return 0;
 		}
 
 		const char *declarator_type = ts_node_type(paren_declarator);
