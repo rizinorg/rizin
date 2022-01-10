@@ -53,10 +53,8 @@ RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op) {
 	rz_analysis_switch_op_free(op->switch_op);
 	op->switch_op = NULL;
 	RZ_FREE(op->mnemonic);
-	if (op->rzil_op) {
-		rz_il_op_effect_free(op->rzil_op->op);
-		RZ_FREE(op->rzil_op);
-	}
+	rz_il_op_effect_free(op->il_op);
+	op->il_op = NULL;
 	return true;
 }
 

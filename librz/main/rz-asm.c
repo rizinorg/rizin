@@ -183,6 +183,7 @@ static int rasm_show_help(int v) {
 		       " -C           Output in C format\n"
 		       " -d, -D       Disassemble from hexpair bytes (-D show hexpairs)\n"
 		       " -e           Use big endian instead of little endian\n"
+		       " -I           Display lifted RzIL code (same input as in -d, IL is also validated)\n"
 		       " -E           Display ESIL expression (same input as in -d)\n"
 		       " -f [file]    Read data from file\n"
 		       " -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
@@ -217,7 +218,54 @@ static int rasm_show_help(int v) {
 	return 0;
 }
 
-static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, int hex) {
+typedef enum {
+	DISASM_MODE_DONT = 0,
+	DISASM_MODE_DEFAULT,
+	DISASM_MODE_WITH_BYTES,
+	DISASM_MODE_ESIL,
+	DISASM_MODE_IL
+} DisasmMode;
+
+static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
+	if (op->size < 1 || !op->il_op) {
+		eprintf("Invalid instruction of lifting not implemented.\n");
+		return false;
+	}
+	rz_analysis_rzil_cleanup(as->analysis);
+	rz_analysis_rzil_setup(as->analysis);
+	if (!as->analysis->rzil || !as->analysis->rzil->vm) {
+		eprintf("Failed to initialize IL VM for this architecture.\n");
+		return false;
+	}
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(as->analysis->rzil->vm);
+	if (!ctx) {
+		eprintf("Failed to derive context from IL VM.\n");
+		return false;
+	}
+	bool ret = true;
+	RzILOpEffect *il_op = op->il_op;
+	if (il_op) {
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		rz_il_op_effect_stringify(il_op, &sb);
+		printf("%s\n", rz_strbuf_get(&sb));
+		fflush(stdout); // to appear before validation report
+		rz_strbuf_fini(&sb);
+	}
+	char *report;
+	if (!rz_il_validate_effect(il_op, ctx, NULL, &report)) {
+		ret = false;
+		eprintf("IL Validation failed%c\n", report ? ':' : '.');
+	}
+	if (report) {
+		eprintf("%s\n", report);
+		free(report);
+	}
+	rz_il_validate_global_context_free(ctx);
+	return ret;
+}
+
+static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, DisasmMode mode) {
 	RzAsmCode *acode;
 	ut8 *data = NULL;
 	int ret = 0;
@@ -245,7 +293,8 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		len = clen;
 	}
 
-	if (hex == 2) {
+	switch (mode) {
+	case DISASM_MODE_ESIL: {
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
@@ -259,7 +308,28 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 			ret += aop.size;
 			rz_analysis_op_fini(&aop);
 		}
-	} else if (hex) {
+		break;
+	}
+	case DISASM_MODE_IL: {
+		RzAnalysisOp aop = { 0 };
+		while (ret < len) {
+			aop.size = 0;
+			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_ALL) <= 0) {
+				eprintf("Invalid\n");
+				ret = 0;
+				break;
+			}
+			if (!print_and_check_il(as, &aop)) {
+				rz_analysis_op_fini(&aop);
+				ret = 0;
+				break;
+			}
+			ret += aop.size;
+			rz_analysis_op_fini(&aop);
+		}
+		break;
+	}
+	case DISASM_MODE_WITH_BYTES: {
 		RzAsmOp op;
 		rz_asm_set_pc(as->a, addr);
 		while ((len - ret) > 0) {
@@ -276,7 +346,9 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 			ret += op.size;
 			rz_asm_set_pc(as->a, addr + ret);
 		}
-	} else {
+		break;
+	}
+	default: {
 		rz_asm_set_pc(as->a, addr);
 		if (!(acode = rz_asm_mdisassemble(as->a, data, len))) {
 			goto beach;
@@ -289,6 +361,8 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		}
 		ret = acode->len;
 		rz_asm_code_free(acode);
+		break;
+	}
 	}
 beach:
 	if (data && data != (ut8 *)buf) {
@@ -444,7 +518,8 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	bool use_spp = false;
 	bool hexwords = false;
 	ut64 offset = 0;
-	int fd = -1, dis = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
+	int fd = -1, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
+	DisasmMode dis = DISASM_MODE_DONT;
 	int help = 0;
 	ut64 len = 0, idx = 0, skip = 0;
 	bool analinfo = false;
@@ -468,7 +543,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx");
+	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:L@:o:O:pqrs:vwx");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -490,16 +565,19 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			as->coutput = true;
 			break;
 		case 'd':
-			dis = 1;
+			dis = DISASM_MODE_DEFAULT;
 			break;
 		case 'D':
-			dis = 2;
+			dis = DISASM_MODE_WITH_BYTES;
 			break;
 		case 'e':
 			isbig = true;
 			break;
 		case 'E':
-			dis = 3;
+			dis = DISASM_MODE_ESIL;
+			break;
+		case 'I':
+			dis = DISASM_MODE_IL;
 			break;
 		case 'f':
 			file = opt.arg;
@@ -674,7 +752,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 						length -= skip;
 					}
 				}
-				ret = rasm_disasm(as, offset, (char *)buf, len, as->a->bits, bin, dis - 1);
+				ret = rasm_disasm(as, offset, (char *)buf, len, as->a->bits, bin, dis);
 			} else if (analinfo) {
 				ret = show_analinfo(as, (const char *)buf, offset);
 			} else {
@@ -702,7 +780,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 					}
 					if (dis) {
 						ret = rasm_disasm(as, offset, content,
-							length, as->a->bits, bin, dis - 1);
+							length, as->a->bits, bin, dis);
 					} else if (analinfo) {
 						ret = show_analinfo(as, (const char *)content, offset);
 					} else {
@@ -746,7 +824,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 					}
 				}
 				if (dis) {
-					ret = rasm_disasm(as, offset, (char *)buf, length, as->a->bits, bin, dis - 1);
+					ret = rasm_disasm(as, offset, (char *)buf, length, as->a->bits, bin, dis);
 				} else if (analinfo) {
 					ret = show_analinfo(as, (const char *)buf, offset);
 				} else {
@@ -781,17 +859,13 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 				printf("e asm.bits=%d\n", bits);
 				printf("\"wa ");
 			}
-			ret = rasm_disasm(as, offset, (char *)usrstr, len,
-				as->a->bits, bin, dis - 1);
+			ret = rasm_disasm(as, offset, (char *)usrstr, len, as->a->bits, bin, dis);
 			free(usrstr);
 		} else if (analinfo) {
 			ret = show_analinfo(as, (const char *)opt.argv[opt.ind], offset);
 		} else {
 			ret = print_assembly_output(as, opt.argv[opt.ind], offset, len, as->a->bits,
 				bin, use_spp, rad, hexwords, arch);
-		}
-		if (!ret) {
-			eprintf("invalid\n");
 		}
 		ret = !ret;
 	}

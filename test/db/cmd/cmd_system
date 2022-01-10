@@ -62,3 +62,18 @@ EXPECT=<<EOF
 test
 EOF
 RUN
+
+NAME=! return
+FILE=
+CMDS=<<EOF
+!true
+?v $?
+!false
+?v $?
+EOF
+EXPECT=<<EOF
+0x0
+0x1
+EOF
+EXPECT_ERR=
+RUN

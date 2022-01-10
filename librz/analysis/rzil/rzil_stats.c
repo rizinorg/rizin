@@ -26,6 +26,6 @@
  * \param analysis RzAnalysis
  * \param op  a general IL op structure (Designed for switching between different implementations of IL op struct)
  */
-RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op) {
+RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisLiftedILOp op) {
 	// ready for rewriting this file
 }
