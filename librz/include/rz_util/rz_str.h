@@ -155,7 +155,7 @@ RZ_API char *rz_str_trim_lines(char *str);
 RZ_API void rz_str_trim_head(char *str);
 RZ_API const char *rz_str_trim_head_ro(const char *str);
 RZ_API const char *rz_str_trim_head_wp(const char *str);
-RZ_API char *rz_str_trim_tail(char *str);
+RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str);
 RZ_API ut32 rz_str_hash(const char *str);
 RZ_API ut64 rz_str_hash64(const char *str);
 RZ_API char *rz_str_trim_nc(char *str);

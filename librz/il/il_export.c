@@ -825,6 +825,10 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 	free(tmp2);
 }
 
+/**
+ * Get a readable representation of \p code
+ * \return constant string, must not be freed
+ */
 RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) {
 	switch (code) {
 	case RZ_IL_OP_VAR:
@@ -901,7 +905,11 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 	return "invalid";
 }
 
-RZ_API char *rz_il_sort_pure_stringify(RzILSortPure sort) {
+/**
+ * Get a readable representation of \p sort
+ * \return dynamically allocated string, to be freed by the caller
+ */
+RZ_API RZ_OWN char *rz_il_sort_pure_stringify(RzILSortPure sort) {
 	switch (sort.type) {
 	case RZ_IL_TYPE_PURE_BITVECTOR:
 		return rz_str_newf("bitvector:%u", (unsigned int)sort.props.bv.length);

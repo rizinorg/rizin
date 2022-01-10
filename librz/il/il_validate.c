@@ -30,6 +30,7 @@ static void var_kv_unown_free(HtPPKv *kv) {
  * Vars and mems can be added manually with rz_il_validate_global_context_add_* functions.
  */
 RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_empty(ut32 pc_len) {
+	rz_return_val_if_fail(pc_len, NULL);
 	RzILValidateGlobalContext *ctx = RZ_NEW0(RzILValidateGlobalContext);
 	if (!ctx) {
 		return NULL;
@@ -52,9 +53,12 @@ RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_empty(ut32 p
 /**
  * Define a new global variable in \p ctx
  */
-RZ_API void rz_il_validate_global_context_add_var(RzILValidateGlobalContext *ctx, const char *name, RzILSortPure sort) {
+RZ_API void rz_il_validate_global_context_add_var(RzILValidateGlobalContext *ctx, RZ_NONNULL const char *name, RzILSortPure sort) {
 	rz_return_if_fail(ctx && name);
 	RzILSortPure *hts = RZ_NEW(RzILSortPure);
+	if (!hts) {
+		return;
+	}
 	*hts = sort;
 	ht_pp_update(ctx->global_vars, name, hts);
 }
@@ -134,7 +138,7 @@ static void local_context_fini(LocalContext *ctx) {
 	ht_pp_free(ctx->local_vars_available);
 }
 
-static bool local_var_copy_known_cb(void *user, const void *k, const void *v) {
+static bool local_var_copy_known_cb(RZ_NONNULL void *user, const void *k, const void *v) {
 	LocalContext *dst = user;
 	RzILSortPure *sort = RZ_NEW(RzILSortPure);
 	if (!sort) {
@@ -145,7 +149,7 @@ static bool local_var_copy_known_cb(void *user, const void *k, const void *v) {
 	return true;
 }
 
-static bool local_var_copy_avail_cb(void *user, const void *k, const void *v) {
+static bool local_var_copy_avail_cb(RZ_NONNULL void *user, const void *k, const void *v) {
 	LocalContext *dst = user;
 	RzILSortPure *sort = ht_pp_find(dst->local_vars_known, k, NULL);
 	// known is superset of avail, so we can assert this:
@@ -172,7 +176,7 @@ typedef struct {
 } LocalContextMeet;
 
 // called on src, take the union of the known types or fail if they don't agree
-static bool local_var_meet_known_cb(void *user, const void *k, const void *v) {
+static bool local_var_meet_known_cb(RZ_NONNULL void *user, const void *k, const void *v) {
 	LocalContextMeet *meet = user;
 	RzILSortPure src_sort = *(RzILSortPure *)v;
 	RzILSortPure *dst_sort = ht_pp_find(meet->dst->local_vars_known, k, NULL);
@@ -199,7 +203,7 @@ static bool local_var_meet_known_cb(void *user, const void *k, const void *v) {
 }
 
 // called on dst, remove all vars from dst that do not appear in src (intersection)
-static bool local_var_meet_avail_cb(void *user, const void *k, const void *v) {
+static bool local_var_meet_avail_cb(RZ_NONNULL void *user, const void *k, const void *v) {
 	LocalContextMeet *meet = user;
 	RzILSortPure *src_sort = ht_pp_find(meet->src->local_vars_available, k, NULL);
 	if (!src_sort) {
@@ -238,7 +242,10 @@ static bool local_context_meet(RZ_INOUT LocalContext *a, RZ_IN LocalContext *b, 
 }
 
 /////////////////////////////////////////////////////////
-// ------------------------ pure ------------------------
+/**
+ * \name Pure
+ * @{
+ */
 
 /**
  * Linked list (stack) of let-bound vars
@@ -252,14 +259,18 @@ typedef struct local_pure_var_t {
 	struct local_pure_var_t *next;
 } LocalPureVar;
 
+// clang-format off
 #define VALIDATOR_PURE_ARGS \
 	RZ_NULLABLE RzILOpPure *op, \
-		RZ_NONNULL RzILSortPure *sort_out, \
-		RZ_NONNULL RzStrBuf *report_builder, \
-		RZ_NONNULL const LocalContext *ctx, \
-		RZ_NULLABLE LocalPureVar *local_pure_var_stack
+	RZ_NONNULL RzILSortPure *sort_out, \
+	RZ_NONNULL RzStrBuf *report_builder, \
+	RZ_NONNULL const LocalContext *ctx, \
+	RZ_NULLABLE LocalPureVar *local_pure_var_stack
+// clang-format on
+
 static bool validate_pure(VALIDATOR_PURE_ARGS);
 typedef bool (*ValidatePureFn)(VALIDATOR_PURE_ARGS);
+
 #define VALIDATOR_PURE_NAME(op) validate_pure_##op
 #define VALIDATOR_PURE(op)      static bool VALIDATOR_PURE_NAME(op)(VALIDATOR_PURE_ARGS)
 #define VALIDATOR_ASSERT(condition, ...) \
@@ -323,6 +334,10 @@ VALIDATOR_PURE(bitv) {
 	return true;
 }
 
+/**
+ * 'a bitv -> 'a bitv -> 'a bitv ops
+ * e.g. add, sub, mul, div, ...
+ */
 VALIDATOR_PURE(bitv_binop) {
 	RzILOpPure *x = op->op.add.x; // just add is fine, all ops in here use the same struct
 	RzILOpPure *y = op->op.add.y;
@@ -384,6 +399,10 @@ VALIDATOR_PURE(inv) {
 	return true;
 }
 
+/**
+ * bool -> bool -> bool ops
+ * e.g. and, or, ...
+ */
 VALIDATOR_PURE(bool_binop) {
 	RzILOpPure *x = op->op.booland.x; // just booland is fine, all ops in here use the same struct
 	RzILOpPure *y = op->op.booland.y;
@@ -397,6 +416,10 @@ VALIDATOR_PURE(bool_binop) {
 	return true;
 }
 
+/**
+ * 'a bitv -> bool ops
+ * e.g. msb, lsb
+ */
 VALIDATOR_PURE(bitv_bool_unop) {
 	RzILOpPure *x = op->op.msb.bv; // just msb is fine, all ops in here use the same struct
 	RzILSortPure sx;
@@ -406,6 +429,10 @@ VALIDATOR_PURE(bitv_bool_unop) {
 	return true;
 }
 
+/**
+ * 'a bitv -> 'a bitv ops
+ * e.g. bitwise negation
+ */
 VALIDATOR_PURE(bitv_unop) {
 	RzILOpPure *x = op->op.lognot.bv; // just lognot is fine, all ops in here use the same struct
 	RzILSortPure sx;
@@ -578,20 +605,29 @@ RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValid
 	return valid;
 }
 
+/// @}
+
 /////////////////////////////////////////////////////////
-// ----------------------- effect -----------------------
+/**
+ * \name Effect
+ * @{
+ */
 
 #undef VALIDATOR_PURE_ARGS
 #undef VALIDATOR_PURE_NAME
 #undef VALIDATOR_PURE
 #undef VALIDATOR_DESCEND
 
+// clang-format off
 #define VALIDATOR_EFFECT_ARGS \
 	RZ_NULLABLE RzILOpEffect *op, \
-		RZ_NONNULL RzStrBuf *report_builder, \
-		RZ_NONNULL LocalContext *ctx
+	RZ_NONNULL RzStrBuf *report_builder, \
+	RZ_NONNULL LocalContext *ctx
+// clang-format on
+
 static bool validate_effect(VALIDATOR_EFFECT_ARGS);
 typedef bool (*ValidateEffectFn)(VALIDATOR_EFFECT_ARGS);
+
 #define VALIDATOR_EFFECT_NAME(op) validate_effect_##op
 #define VALIDATOR_EFFECT(op)      static bool VALIDATOR_EFFECT_NAME(op)(VALIDATOR_EFFECT_ARGS)
 #define VALIDATOR_DESCEND_PURE(op, sort) \
@@ -796,3 +832,5 @@ RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILV
 	rz_strbuf_fini(&report_builder);
 	return valid;
 }
+
+/// @}

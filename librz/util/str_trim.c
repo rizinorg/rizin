@@ -113,7 +113,7 @@ RZ_API void rz_str_trim_head(char *str) {
  * Remove whitespace chars from the tail of the string, replacing them with null bytes. The string is changed in-place.
  * \return the string itself
  */
-RZ_API char *rz_str_trim_tail(char *str) {
+RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str) {
 	rz_return_val_if_fail(str, str);
 	size_t length = strlen(str);
 	while (length-- > 0) {
