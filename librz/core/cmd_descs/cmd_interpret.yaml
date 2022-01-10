@@ -43,7 +43,7 @@ commands:
         type: RZ_CMD_ARG_TYPE_FILE
   - name: .(
     cname: interpret_macro
-    summary: Interpret output of macro
+    summary: Call macro
     args:
       - name: macro-name
         type: RZ_CMD_ARG_TYPE_MACRO
@@ -56,7 +56,10 @@ commands:
         type: RZ_CMD_ARG_TYPE_FAKE
   - name: ..(
     cname: interpret_macro_multiple
-    summary: Interpret output of macro multiple times with different args
+    summary: Call macro multiple times
+    description: >
+      Call a macro multiple times with arguments taken n at a time, where n is
+      the number of macro arguments
     args_str: "<macro-name> [<set1-arg1> <set1-arg2> ...] [<set2-arg1> <set2-arg2> ...] ...)"
     args:
       - name: macro-name
@@ -68,3 +71,12 @@ commands:
         optional: true
       - name: )
         type: RZ_CMD_ARG_TYPE_FAKE
+    details:
+      - name: Example
+        entries:
+          - text: (
+            arg_str: "wv2 word addr; wv2 $0 @ $1)"
+            comment: Define wv2 macro with word($0) and addr($1) args
+          - text: ..(
+            arg_str: "wv2 128 0x804800 256 0x804900)"
+            comment: Write 2 words at 2 different addresses

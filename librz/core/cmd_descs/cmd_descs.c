@@ -11,6 +11,7 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
 static const RzCmdDescDetail analysis_hint_set_arch_details[2];
@@ -798,10 +799,19 @@ static const RzCmdDescArg interpret_macro_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp interpret_macro_help = {
-	.summary = "Interpret output of macro",
+	.summary = "Call macro",
 	.args = interpret_macro_args,
 };
 
+static const RzCmdDescDetailEntry interpret_macro_multiple_Example_detail_entries[] = {
+	{ .text = "(", .arg_str = "wv2 word addr; wv2 $0 @ $1)", .comment = "Define wv2 macro with word($0) and addr($1) args" },
+	{ .text = "..(", .arg_str = "wv2 128 0x804800 256 0x804900)", .comment = "Write 2 words at 2 different addresses" },
+	{ 0 },
+};
+static const RzCmdDescDetail interpret_macro_multiple_details[] = {
+	{ .name = "Example", .entries = interpret_macro_multiple_Example_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg interpret_macro_multiple_args[] = {
 	{
 		.name = "macro-name",
@@ -824,8 +834,10 @@ static const RzCmdDescArg interpret_macro_multiple_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp interpret_macro_multiple_help = {
-	.summary = "Interpret output of macro multiple times with different args",
+	.summary = "Call macro multiple times",
+	.description = "Call a macro multiple times with arguments taken n at a time, where n is the number of macro arguments",
 	.args_str = "<macro-name> [<set1-arg1> <set1-arg2> ...] [<set2-arg1> <set2-arg2> ...] ...)",
+	.details = interpret_macro_multiple_details,
 	.args = interpret_macro_multiple_args,
 };
 
