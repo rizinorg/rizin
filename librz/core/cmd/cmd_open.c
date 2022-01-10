@@ -97,8 +97,7 @@ static const char *help_msg_om[] = {
 	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
 	"omj", "", "list all maps in json format",
 	"omm", " [fd]", "create default map for given fd. (omm `oq`)",
-	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
-	"omn.", "([-|name])", "show/set/delete name for current map",
+	"omn", " [name]", "set/delete name for map which spans current offset",
 	"omni", " mapid [name]", "set/delete name for map with mapid",
 	"omo", " fd", "map the given fd with lowest priority",
 	"omp", " mapid", "prioritize map with corresponding id",
@@ -566,8 +565,7 @@ static void rz_core_cmd_omt(RzCore *core, const char *arg) {
 RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut32 id = 0;
-	ut64 addr = 0;
-	char *s = NULL, *p = NULL, *q = NULL;
+	char *s = NULL;
 	ut64 new;
 	RzIOMap *map = NULL;
 	const char *P;
@@ -689,66 +687,6 @@ RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 			}
 		}
 		RZ_FREE(s);
-		break;
-	case 'n': // "omn"
-		if (input[1] == '.') { // "omn."
-			RzIOMap *map = rz_io_map_get(core->io, core->offset);
-			if (map) {
-				switch (input[2]) {
-				case '-':
-					rz_io_map_del_name(map);
-					break;
-				case 0:
-					rz_cons_printf("%s\n", map->name);
-					break;
-				default:
-					rz_io_map_set_name(map, rz_str_trim_head_ro(input + 2));
-					break;
-				}
-			}
-		} else {
-			bool use_id = (input[1] == 'i') ? true : false;
-			s = strdup(use_id ? &input[2] : &input[1]);
-			if (!s) {
-				break;
-			}
-			p = s;
-
-			while (*s == ' ') {
-				s++;
-			}
-			if (*s == '\0') {
-				s = p;
-				break;
-			}
-			if (!(q = strchr(s, ' '))) {
-				if (use_id) {
-					id = (ut32)rz_num_math(core->num, s);
-					map = rz_io_map_resolve(core->io, id);
-				} else {
-					addr = rz_num_math(core->num, s);
-					map = rz_io_map_get(core->io, addr);
-				}
-				rz_io_map_del_name(map);
-				s = p;
-				break;
-			}
-			*q = '\0';
-			q++;
-			if (use_id) {
-				id = (ut32)rz_num_math(core->num, s);
-				map = rz_io_map_resolve(core->io, id);
-			} else {
-				addr = rz_num_math(core->num, s);
-				map = rz_io_map_get(core->io, addr);
-			}
-			if (*q) {
-				rz_io_map_set_name(map, q);
-			} else {
-				rz_io_map_del_name(map);
-			}
-			s = p;
-		}
 		break;
 	case 'm': // "omm"
 	{
@@ -1575,5 +1513,47 @@ RZ_IPI RzCmdStatus rz_open_maps_prioritize_fd_handler(RzCore *core, int argc, co
 		RZ_LOG_ERROR("Cannot prioritize any map for fd %d\n", fd);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_name_handler(RzCore *core, int argc, const char **argv) {
+	RzIOMap *map = rz_io_map_get(core->io, core->offset);
+	if (!map) {
+		RZ_LOG_ERROR("Cannot find any map at address %" PFMT64x "d\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_map_set_name(map, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_name_del_handler(RzCore *core, int argc, const char **argv) {
+	RzIOMap *map = rz_io_map_get(core->io, core->offset);
+	if (!map) {
+		RZ_LOG_ERROR("Cannot find any map at address %" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_map_del_name(map);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_name_id_handler(RzCore *core, int argc, const char **argv) {
+	ut32 id = rz_num_math(core->num, argv[1]);
+	RzIOMap *map = rz_io_map_resolve(core->io, id);
+	if (!map) {
+		RZ_LOG_ERROR("Cannot find any map with id %d\n", id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_map_set_name(map, argv[2]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_name_id_del_handler(RzCore *core, int argc, const char **argv) {
+	ut32 id = rz_num_math(core->num, argv[1]);
+	RzIOMap *map = rz_io_map_resolve(core->io, id);
+	if (!map) {
+		RZ_LOG_ERROR("Cannot find any map with id %d\n", id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_map_del_name(map);
 	return RZ_CMD_STATUS_OK;
 }

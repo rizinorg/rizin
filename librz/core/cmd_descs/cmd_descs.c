@@ -324,6 +324,9 @@ static const RzCmdDescArg open_maps_remove_args[2];
 static const RzCmdDescArg open_maps_all_fd_args[2];
 static const RzCmdDescArg open_maps_relocate_args[3];
 static const RzCmdDescArg open_maps_relocate_current_args[2];
+static const RzCmdDescArg open_maps_name_args[2];
+static const RzCmdDescArg open_maps_name_id_args[3];
+static const RzCmdDescArg open_maps_name_id_del_args[2];
 static const RzCmdDescArg open_maps_resize_args[3];
 static const RzCmdDescArg open_maps_prioritize_args[2];
 static const RzCmdDescArg open_maps_prioritize_binid_args[2];
@@ -7439,6 +7442,63 @@ static const RzCmdDescHelp open_maps_relocate_current_help = {
 	.args = open_maps_relocate_current_args,
 };
 
+static const RzCmdDescHelp omn_help = {
+	.summary = "Handle maps names",
+};
+static const RzCmdDescArg open_maps_name_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_name_help = {
+	.summary = "Set name of map which spans current seek",
+	.args = open_maps_name_args,
+};
+
+static const RzCmdDescArg open_maps_name_del_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_name_del_help = {
+	.summary = "Delete name of map which spans current seek",
+	.args = open_maps_name_del_args,
+};
+
+static const RzCmdDescArg open_maps_name_id_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_name_id_help = {
+	.summary = "Set name of map with map <id>",
+	.args = open_maps_name_id_args,
+};
+
+static const RzCmdDescArg open_maps_name_id_del_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_name_id_del_help = {
+	.summary = "Delete name of map with map <id>",
+	.args = open_maps_name_id_del_args,
+};
+
 static const RzCmdDescArg open_maps_resize_args[] = {
 	{
 		.name = "id",
@@ -12001,6 +12061,17 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_maps_relocate_current_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omb.", rz_open_maps_relocate_current_handler, &open_maps_relocate_current_help);
 	rz_warn_if_fail(open_maps_relocate_current_cd);
+
+	RzCmdDesc *omn_cd = rz_cmd_desc_group_new(core->rcmd, om_oldinput_cd, "omn", rz_open_maps_name_handler, &open_maps_name_help, &omn_help);
+	rz_warn_if_fail(omn_cd);
+	RzCmdDesc *open_maps_name_del_cd = rz_cmd_desc_argv_new(core->rcmd, omn_cd, "omn-", rz_open_maps_name_del_handler, &open_maps_name_del_help);
+	rz_warn_if_fail(open_maps_name_del_cd);
+
+	RzCmdDesc *open_maps_name_id_cd = rz_cmd_desc_argv_new(core->rcmd, omn_cd, "omni", rz_open_maps_name_id_handler, &open_maps_name_id_help);
+	rz_warn_if_fail(open_maps_name_id_cd);
+
+	RzCmdDesc *open_maps_name_id_del_cd = rz_cmd_desc_argv_new(core->rcmd, omn_cd, "omni-", rz_open_maps_name_id_del_handler, &open_maps_name_id_del_help);
+	rz_warn_if_fail(open_maps_name_id_del_cd);
 
 	RzCmdDesc *open_maps_resize_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omr", rz_open_maps_resize_handler, &open_maps_resize_help);
 	rz_warn_if_fail(open_maps_resize_cd);

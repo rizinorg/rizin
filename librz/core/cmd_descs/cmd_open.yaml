@@ -109,6 +109,33 @@ commands:
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: omn
+        summary: Handle maps names
+        subcommands:
+          - name: omn
+            cname: open_maps_name
+            summary: Set name of map which spans current seek
+            args:
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: omn-
+            cname: open_maps_name_del
+            summary: Delete name of map which spans current seek
+            args: []
+          - name: omni
+            cname: open_maps_name_id
+            summary: Set name of map with map <id>
+            args:
+              - name: id
+                type: RZ_CMD_ARG_TYPE_NUM
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: omni-
+            cname: open_maps_name_id_del
+            summary: Delete name of map with map <id>
+            args:
+              - name: id
+                type: RZ_CMD_ARG_TYPE_NUM
       - name: omr
         cname: open_maps_resize
         summary: Resize map with corresponding <id>
