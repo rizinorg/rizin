@@ -123,7 +123,8 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv, bool pad) {
 
 	str[0] = '0';
 	str[1] = 'x';
-	for (ut32 i = 0, j = 2; i < bv->_elem_len; i++) {
+	ut32 j = 2;
+	for (ut32 i = 0; i < bv->_elem_len; i++) {
 		ut8 b8 = bv->bits.large_a[i];
 		b8 = reverse_byte(b8);
 		ut8 high = b8 >> 4;
@@ -137,7 +138,7 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv, bool pad) {
 			pad = true; // pad means "print all" from now on
 		}
 	}
-	str[str_len - 1] = '\0';
+	str[j] = '\0';
 
 	return str;
 }

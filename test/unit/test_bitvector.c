@@ -677,6 +677,7 @@ bool test_rz_bv_as_hex_string(void) {
 	mu_assert_streq_free(s, "0x0000032a", "string hex value of bv");
 	s = rz_bv_as_hex_string(bv, false);
 	mu_assert_streq_free(s, "0x32a", "string hex value of bv");
+	rz_bv_free(bv);
 
 	// big
 	bv = rz_bv_new_from_ut64(128, 100);
