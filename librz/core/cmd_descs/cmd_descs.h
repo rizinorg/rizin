@@ -543,9 +543,9 @@ RZ_IPI RzCmdStatus rz_open_prioritize_next_rotate_handler(RzCore *core, int argc
 RZ_IPI RzCmdStatus rz_open_maps_map_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_maps_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_open_maps_list_cur_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_open_maps_list_ascii_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_maps_remove_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_maps_remove_all_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_open_maps_ascii_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_maps_all_fd_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_maps_relocate_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_maps_relocate_current_handler(RzCore *core, int argc, const char **argv);

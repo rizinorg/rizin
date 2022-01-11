@@ -997,7 +997,7 @@ RZ_IPI RzCmdStatus rz_open_maps_remove_all_handler(RzCore *core, int argc, const
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_open_maps_ascii_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_open_maps_list_ascii_handler(RzCore *core, int argc, const char **argv) {
 	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
 	if (!list) {
 		return RZ_CMD_STATUS_ERROR;

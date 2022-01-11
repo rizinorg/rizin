@@ -7436,6 +7436,14 @@ static const RzCmdDescHelp open_maps_list_cur_help = {
 	.args = open_maps_list_cur_args,
 };
 
+static const RzCmdDescArg open_maps_list_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_list_ascii_help = {
+	.summary = "List IO maps in ASCII art",
+	.args = open_maps_list_ascii_args,
+};
+
 static const RzCmdDescArg open_maps_remove_args[] = {
 	{
 		.name = "id",
@@ -7455,14 +7463,6 @@ static const RzCmdDescArg open_maps_remove_all_args[] = {
 static const RzCmdDescHelp open_maps_remove_all_help = {
 	.summary = "Remove all IO maps",
 	.args = open_maps_remove_all_args,
-};
-
-static const RzCmdDescArg open_maps_ascii_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp open_maps_ascii_help = {
-	.summary = "List IO maps in ASCII art",
-	.args = open_maps_ascii_args,
 };
 
 static const RzCmdDescArg open_maps_all_fd_args[] = {
@@ -12168,14 +12168,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *open_maps_list_cur_cd = rz_cmd_desc_argv_state_new(core->rcmd, om_cd, "oml.", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_open_maps_list_cur_handler, &open_maps_list_cur_help);
 	rz_warn_if_fail(open_maps_list_cur_cd);
 
+	RzCmdDesc *open_maps_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "oml=", rz_open_maps_list_ascii_handler, &open_maps_list_ascii_help);
+	rz_warn_if_fail(open_maps_list_ascii_cd);
+
 	RzCmdDesc *open_maps_remove_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "om-", rz_open_maps_remove_handler, &open_maps_remove_help);
 	rz_warn_if_fail(open_maps_remove_cd);
 
 	RzCmdDesc *open_maps_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "om-*", rz_open_maps_remove_all_handler, &open_maps_remove_all_help);
 	rz_warn_if_fail(open_maps_remove_all_cd);
-
-	RzCmdDesc *open_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "om=", rz_open_maps_ascii_handler, &open_maps_ascii_help);
-	rz_warn_if_fail(open_maps_ascii_cd);
 
 	RzCmdDesc *open_maps_all_fd_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "oma", rz_open_maps_all_fd_handler, &open_maps_all_fd_help);
 	rz_warn_if_fail(open_maps_all_fd_cd);
