@@ -1149,6 +1149,27 @@ static void replace_asm_test(RZ_NONNULL const char *path, ut64 line_idx,
 	free(line);
 }
 
+/**
+ * Check if both assembly and disassembly passes failed,
+ * making it non-trivial to repair automatically.
+ */
+static bool asm_test_failed_both_ways(RzAsmTest *test, RzAsmTestOutput *out) {
+	// check that both ways are requested
+	if (!(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) || !(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE)) {
+		return false;
+	}
+	// check that disasm is wrong
+	if (out->disasm && !strcmp(test->disasm, out->disasm)) {
+		return false;
+	}
+	// check that asm is wrong too
+	if (out->bytes && out->bytes_size == test->bytes_size && !memcmp(out->bytes, test->bytes, test->bytes_size)) {
+		return false;
+	}
+	// determined that both ways are broken
+	return true;
+}
+
 static bool interact_fix_asm(RzTestResultInfo *result) {
 	assert(result->test->type == RZ_TEST_TYPE_ASM);
 	RzAsmTest *test = result->test->asm_test;
@@ -1172,7 +1193,7 @@ static bool interact_fix_asm(RzTestResultInfo *result) {
 		return false;
 	}
 
-	if ((test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) && (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) && strcmp(disasm, test->disasm) && (bytes_sz != test->bytes_size || memcmp(bytes, test->bytes, bytes_sz))) {
+	if (asm_test_failed_both_ways(test, out)) {
 		// both disasm and asm failed, so trying to fix here would likely only make things worse
 		return false;
 	}
