@@ -8,7 +8,7 @@ RUN
 
 NAME=zimg maps
 FILE=bins/zimg/arm32
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x00000000 - 0x000003ff r-x 
 EOF

@@ -1,7 +1,7 @@
 NAME=invalid codesize DEX file
 FILE=bins/dex/Call.dex
 CMDS=<<EOF
-om
+oml
 s
 EOF
 EXPECT=<<EOF
@@ -1477,7 +1477,7 @@ RUN
 NAME=FakeMultiDex.apk
 FILE=apk://bins/dex/FakeMultiDex.apk
 CMDS=<<EOF
-om
+oml
 o
 EOF
 EXPECT=<<EOF

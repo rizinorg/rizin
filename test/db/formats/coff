@@ -76,7 +76,7 @@ NAME=tiny coff2
 FILE=bins/coff/coff2.obj
 CMDS=<<EOF
 e asm.bytes=true
-om
+oml
 iS
 is
 s sym.__1FooBar__QAE_XZ

@@ -81,7 +81,7 @@ RUN
 
 NAME=: DMP BMP Page maps
 FILE=bins/dmp/bmp.dmp
-CMDS=om~?
+CMDS=oml~?
 EXPECT=<<EOF
 21579
 EOF

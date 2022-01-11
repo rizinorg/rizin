@@ -3,7 +3,7 @@ FILE=bins/pe/65535sects.exe
 TIMEOUT=2040
 CMDS=<<EOF
 aa
-om~?
+oml~?
 s
 pi 1
 q!
