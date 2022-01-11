@@ -222,7 +222,7 @@ RUN
 NAME=fatmach0 sections
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 64
-CMDS=om~?
+CMDS=oml~?
 EXPECT=<<EOF
 4
 EOF

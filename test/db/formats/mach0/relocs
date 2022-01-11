@@ -6,7 +6,7 @@ i~type
 ir
 ?e --
 o
-om
+oml
 pd 4 @ 0x0000d008
 ?e -- x86 UNSIGNED reloc
 s 0x00001338
@@ -355,7 +355,7 @@ i~type
 ir
 ?e --
 o
-om
+oml
 pd 4 @ 0x0000d008
 ?e -- x86 UNSIGNED reloc
 s 0x00001338
@@ -704,7 +704,7 @@ i~type
 ir
 ?e --
 o
-om
+oml
 ?e -- arm64 reloc
 s 0x0000c000
 p8 8
@@ -1048,7 +1048,7 @@ i~type
 ir
 ?e --
 o
-om
+oml
 ?e -- arm64 reloc
 s 0x0000c000
 p8 8
@@ -1392,7 +1392,7 @@ i~type
 ir
 ?e --
 o
-om
+oml
 EOF
 EXPECT=<<EOF
 arch     arm
@@ -1419,7 +1419,7 @@ i~type
 ir
 ?e --
 o
-om
+oml
 ?e --
 s 0x00004074
 p8 8

@@ -103,7 +103,7 @@ RUN
 NAME=pyc maps
 FILE=bins/pyc/py37.pyc
 CMDS=<<EOF
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x00000000 - 0x00002be5 r-x 

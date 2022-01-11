@@ -21,7 +21,7 @@ RUN
 
 NAME=Gameboy: Maps
 FILE=bins/gbc/a.gb
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x00000000 - 0x00003fff r-x fmap.rombank00
  2 fd: 3 +0x00004000 0x00004000 - 0x00007fff r-x fmap.rombank01
