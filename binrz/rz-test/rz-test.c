@@ -728,6 +728,13 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 	case RZ_TEST_TYPE_ASM: {
 		RzAsmTest *test = result->test->asm_test;
 		RzAsmTestOutput *out = result->asm_out;
+		char *expect_hex = rz_hex_bin2strdup(test->bytes, test->bytes_size);
+		printf("-- <asm> " Color_YELLOW "%s %c--%c %s%s" Color_RESET "\n",
+			test->disasm,
+			test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE ? '<' : '-',
+			test->mode & RZ_ASM_TEST_MODE_ASSEMBLE ? '>' : '-',
+			expect_hex ? expect_hex : "",
+			test->il ? " ---> <IL>" : "");
 		if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
 			const char *expect = test->disasm;
 			const char *actual = out->disasm;
@@ -738,11 +745,9 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		}
 		if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 			printf("-- assembly\n");
-			if (test->bytes && out->bytes && (out->bytes_size != test->bytes_size || memcmp(out->bytes, test->bytes, out->bytes_size))) {
-				char *expect = rz_hex_bin2strdup(test->bytes, test->bytes_size);
+			if (out->bytes && (out->bytes_size != test->bytes_size || memcmp(out->bytes, test->bytes, out->bytes_size))) {
 				char *actual = rz_hex_bin2strdup(out->bytes, out->bytes_size);
-				print_diff(actual ? actual : "", expect ? expect : "", NULL);
-				free(expect);
+				print_diff(actual ? actual : "", expect_hex ? expect_hex : "", NULL);
 				free(actual);
 			}
 		}
@@ -767,6 +772,7 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 				printf(Color_RED "%s" Color_RESET "\n", report);
 			}
 		}
+		free(expect_hex);
 		break;
 	}
 	case RZ_TEST_TYPE_JSON:
