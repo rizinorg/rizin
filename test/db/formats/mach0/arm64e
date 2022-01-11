@@ -1,7 +1,7 @@
 NAME=macOS arm64
 FILE=bins/mach0/hello-macos-arm64
 CMDS=<<EOF
-om
+oml
 ?e --
 ?e regular got
 pxQ 0x28 @ 0x100008000
@@ -47,7 +47,7 @@ RUN
 NAME=macOS arm64e with BIND_OPCODE_THREADED
 FILE=bins/mach0/hello-macos-arm64e
 CMDS=<<EOF
-om
+oml
 ?e --
 ?e __auth_got (auth, bind)
 pxQ 0x28 @ 0x100004000

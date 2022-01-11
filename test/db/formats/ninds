@@ -8,7 +8,7 @@ RUN
 
 NAME=NDS: Maps
 FILE=bins/nds/bin
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00000200 0x02000000 - 0x021b0863 r-x fmap.arm9
  2 fd: 3 +0x001b0c00 0x037f8000 - 0x03805b4f r-x fmap.arm7

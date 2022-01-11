@@ -27,7 +27,7 @@ RUN
 
 NAME=maps of qnx
 FILE=bins/qnx/test.x
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00000044 0x00000044 - 0x00000139 --- fmap.LMF_LOAD
  2 fd: 3 +0x00000152 0x00000152 - 0x00000814 --- fmap.LMF_LOAD

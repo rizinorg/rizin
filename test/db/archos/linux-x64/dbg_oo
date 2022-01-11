@@ -57,10 +57,10 @@ NAME=ood & om
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
-om
+oml
 ?e
 ood > /dev/null
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x00000000 - 0x7ffffffffffffffe rwx 

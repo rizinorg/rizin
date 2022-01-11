@@ -3351,7 +3351,7 @@ NAME=Indirect jump table case detection
 FILE=--
 CMDS=<<EOF
 o malloc://0x500 0x401000
-omf 1 rwx
+omf rwx 1
 s 0x401000
 e asm.arch=x86
 e asm.bits=32
@@ -3442,8 +3442,8 @@ NAME=tiny1 aae non-start-bb first
 FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
 e io.cache=true
-$orig_end=?e `omtq:va_end`
-omr 1 `omtq:size`+2
+$orig_end=?e `omlt:va_end:quiet`
+omr 1 `omlt:size:quiet`+2
 s `$orig_end`
 wa jmp entry0
 aF
