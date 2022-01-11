@@ -1,3 +1,3 @@
-d "inc ptr" 3e 0 set(v:ptr, x:add(x:var(v:ptr), y:bitv(bits:0x0000000000000001, len:64)))
-d "dec ptr" 3c 0 set(v:ptr, x:sub(x:var(v:ptr), y:bitv(bits:0x0000000000000001, len:64)))
-d "out [ptr]" 2e 0 goto(lbl:write)
+d "inc ptr" 3e 0 (set ptr (+ (var ptr) (bv 64 0x1)))
+d "dec ptr" 3c 0 (set ptr (- (var ptr) (bv 64 0x1)))
+d "out [ptr]" 2e 0 (goto write)
