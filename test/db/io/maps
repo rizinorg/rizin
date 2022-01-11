@@ -1,7 +1,7 @@
 NAME=omp twice bug
 FILE=malloc://1024
 CMDS=<<EOF
-omf 1 rw
+omf rw 1
 wx 9090
 p8 2
 on malloc://1024
@@ -96,9 +96,9 @@ CMDS=<<EOF
 e scr.null=true
 o malloc://32 0x400
 e scr.null=false
-omfg-rwx
+omfg -rwx
 om~rwx
-omfg
+omfg rwx
 om~rwx~?
 EOF
 EXPECT=<<EOF
@@ -124,13 +124,13 @@ RUN
 NAME=omf one mapping
 FILE==
 CMDS=<<EOF
-omf 1 rwx
+omf rwx 1
 om~rwx~?
-omf 1 r-x
+omf r-x 1
 om~r-x~?
-omf 1 --x
+omf --x 1
 om~--x~?
-omf 1 -w-
+omf -w- 1
 om~-w-~?
 EOF
 EXPECT=<<EOF
