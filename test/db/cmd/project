@@ -347,14 +347,14 @@ NAME=raw file permissions after reload
 FILE=bins/other/0x3
 CMDS=<<EOF
 e cfg.oldshell=false
-om
+oml
 Ps .tmp_perms.rzdb
 o--
 ?e --
-om
+oml
 ?e --
 Po .tmp_perms.rzdb
-om
+oml
 rm .tmp_perms.rzdb
 EOF
 EXPECT=<<EOF

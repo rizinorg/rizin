@@ -15,16 +15,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=omt & omtq
+NAME=omlt
 FILE=bins/elf/ls
 CMDS=<<EOF
-omt
+omlt
 ?e
-omtq
+omlt:quiet
 ?e
-omt:size
+omlt:size
 ?e
-omtq:name/str/fmap.LOAD3:size
+omlt:name/str/fmap.LOAD3:size:quiet
 EOF
 EXPECT=<<EOF
 .------------------------------------------------------------------------------------------------.

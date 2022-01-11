@@ -1301,9 +1301,9 @@ static void open_maps_show(RzCore *core, RzCmdStateOutput *state, RzIOMap *map) 
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "ddXXXss",
-			map->id, map->fd, map->delta, rz_io_map_get_from(map),
-			rz_itv_end(map->itv), rz_str_rwx_i(map->perm), rz_str_get(map->name));
+		rz_table_add_rowf(state->d.t, "ddxxxxxss",
+			map->id, map->fd, map->delta, map->delta + rz_itv_size(map->itv), rz_itv_size(map->itv),
+			rz_io_map_get_from(map), rz_itv_end(map->itv), rz_str_rwx_i(map->perm), rz_str_get(map->name));
 		break;
 	default:
 		rz_cons_printf("%2d fd: %i +0x%08" PFMT64x " 0x%08" PFMT64x " - 0x%08" PFMT64x " %s %s\n",
@@ -1319,7 +1319,10 @@ static void open_maps_list(RzCore *core, RzCmdStateOutput *state, int fd) {
 	void **it;
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "ddXXXss", "id", "fd", "delta", "from", "to", "perm", "name");
+	rz_cmd_state_output_set_columnsf(state, "ddxxxxxss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name");
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		state->d.t->showFancy = true;
+	}
 	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
 		if (fd >= 0 && map->fd != fd) {
@@ -1342,7 +1345,10 @@ RZ_IPI RzCmdStatus rz_open_maps_list_cur_handler(RzCore *core, int argc, const c
 		RZ_LOG_ERROR("Cannot find any map at the current address %" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cmd_state_output_set_columnsf(state, "ddXXXss", "id", "fd", "delta", "from", "to", "perm", "name");
+	rz_cmd_state_output_set_columnsf(state, "ddxxxxxss", "id", "fd", "pa", "pa_end", "va", "va_end", "perm", "name");
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		state->d.t->showFancy = true;
+	}
 	open_maps_show(core, state, map);
 	return RZ_CMD_STATUS_OK;
 }
