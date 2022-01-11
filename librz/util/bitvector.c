@@ -98,15 +98,20 @@ RZ_API RZ_OWN char *rz_bv_as_string(RZ_NONNULL RzBitVector *bv) {
 /**
  * Return bitvector string in hexadecimal format
  * \param bv RzBitVector, pointer to bitvector
+ * \param pad whether to prepend leading zeroes to indicate the bitvector size
  * \return str char*, bitvector string in hexadecimal format
  */
-RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv) {
+RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv, bool pad) {
 	rz_return_val_if_fail(bv, NULL);
 
 	if (bv->len <= 64) {
-		char format[32] = { 0 };
-		rz_strf(format, "0x%%0%d" PFMT64x, (bv->len + 3) / 4);
-		return rz_str_newf(format, bv->bits.small_u);
+		if (pad) {
+			char format[32] = { 0 };
+			rz_strf(format, "0x%%0%d" PFMT64x, (bv->len + 3) / 4);
+			return rz_str_newf(format, bv->bits.small_u);
+		} else {
+			return rz_str_newf("0x%" PFMT64x, bv->bits.small_u);
+		}
 	}
 
 	const char *hex = "0123456789abcdef";
@@ -118,13 +123,22 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv) {
 
 	str[0] = '0';
 	str[1] = 'x';
-	for (ut32 i = 0, j = 2; i < bv->_elem_len; i++, j += 2) {
+	ut32 j = 2;
+	for (ut32 i = 0; i < bv->_elem_len; i++) {
 		ut8 b8 = bv->bits.large_a[i];
 		b8 = reverse_byte(b8);
-		str[j + 0] = hex[b8 >> 4];
-		str[j + 1] = hex[b8 & 15];
+		ut8 high = b8 >> 4;
+		ut8 low = b8 & 15;
+		if (pad || high) {
+			str[j++] = hex[high];
+			pad = true; // pad means "print all" from now on
+		}
+		if (pad || low) {
+			str[j++] = hex[low];
+			pad = true; // pad means "print all" from now on
+		}
 	}
-	str[str_len - 1] = '\0';
+	str[j] = '\0';
 
 	return str;
 }
