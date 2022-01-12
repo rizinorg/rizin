@@ -196,12 +196,12 @@ CMDS=<<EOF
 ..(foo2)
 EOF
 EXPECT_ERR=<<EOF
-Macro 'foo0' expects 0 args, not 1
-Macro 'foo1' expects 1 args, not 0
-Macro 'foo1' expects 1 args, not 2
-Macro 'foo0' expects 0 args, not 1
-Macro 'foo1' expects 1 args, not 0
-Macro 'foo2' expects 2 args and 1 is not a multiple of 2
-Macro 'foo2' expects 2 args, not 0
+ERROR: Macro 'foo0' expects 0 args, not 1
+ERROR: Macro 'foo1' expects 1 args, not 0
+ERROR: Macro 'foo1' expects 1 args, not 2
+ERROR: Macro 'foo0' expects 0 args, not 1
+ERROR: Macro 'foo1' expects 1 args, not 0
+ERROR: Macro 'foo2' expects 2 args and 1 is not a multiple of 2
+ERROR: Macro 'foo2' expects 2 args, not 0
 EOF
 RUN

@@ -1806,7 +1806,7 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 	}
 	ptr = strchr(str, ')');
 	if (!ptr) {
-		eprintf("Missing end ')' parenthesis.\n");
+		RZ_LOG_ERROR("Missing end ')' parenthesis.\n");
 		free(str);
 		return false;
 	} else {
@@ -1822,7 +1822,7 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 
 	macro_level++;
 	if (macro_level > MACRO_LIMIT) {
-		eprintf("Maximum macro recursivity reached.\n");
+		RZ_LOG_ERROR("Maximum macro recursivity reached.\n");
 		macro_level--;
 		free(str);
 		return 0;
@@ -1844,9 +1844,9 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 					((multiple && (nargs % m->nargs != 0 || nargs == 0)) ||
 						(!multiple && nargs != m->nargs)))) {
 				if (!multiple || m->nargs == 0 || nargs == 0) {
-					eprintf("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
+					RZ_LOG_ERROR("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
 				} else {
-					eprintf("Macro '%s' expects %d args and %d is not a multiple of %d\n",
+					RZ_LOG_ERROR("Macro '%s' expects %d args and %d is not a multiple of %d\n",
 						m->name, m->nargs, nargs, m->nargs);
 				}
 				macro_level--;
@@ -1861,7 +1861,7 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 					*end = '\0';
 				}
 				if (rz_cons_is_breaked()) {
-					eprintf("Interrupted at (%s)\n", ptr);
+					RZ_LOG_ERROR("Interrupted at (%s)\n", ptr);
 					if (end) {
 						*end = '\n';
 					}
@@ -1873,7 +1873,7 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 				/* Label handling */
 				ptr2 = rz_cmd_macro_label_process(mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {
-					eprintf("Oops. invalid label name\n");
+					RZ_LOG_ERROR("Oops. invalid label name\n");
 					break;
 				} else if (ptr != ptr2) {
 					ptr = ptr2;
@@ -1920,7 +1920,7 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 			}
 		}
 	}
-	eprintf("No macro named '%s'\n", str);
+	RZ_LOG_ERROR("No macro named '%s'\n", str);
 	macro_level--;
 	free(str);
 out_clean:
