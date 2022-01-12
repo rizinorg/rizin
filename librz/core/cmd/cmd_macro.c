@@ -5,17 +5,17 @@
 
 static const char *help_msg_lparen[] = {
 	"Usage:", "(foo args;cmd1;cmd2;..)", "Aliases",
-	"(foo args;..;..)", "", "define a macro",
-	"(foo args;..;..)()", "", "define and call a macro",
-	"(-foo)", "", "remove a macro",
-	".(foo)", "", "to call it",
-	"..(foo)", "", "to call it multiple times",
+	"(foo args;..;..)", "", "define macro foo",
+	"(foo args;..;..)(args)", "", "define macro foo and call it",
+	"(-foo)", "", "remove macro foo",
+	".(foo args)", "", "call macro foo",
+	"..(foo args1 args2 args3)", "", "call macro foo 3 times",
 	"()", "", "break inside macro",
 	"(*", "", "list all defined macros",
 	"", "Argument support:", "",
-	"(foo x y; $0 @ $1)", "", "define fun with args (x - $0; y - $1)",
+	"(foo x y; $0 @ $1)", "", "define macro foo with args x($0) and y($1)",
 	".(foo 128 0x804800)", "", "call it with args",
-	"..(foo 128 0x804800 256 0x804801)", "", "call it with args multiple times",
+	"..(foo 128 0x804800 256 0x804801)", "", "call it with args twice",
 	NULL
 };
 
