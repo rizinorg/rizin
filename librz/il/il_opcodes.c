@@ -58,15 +58,6 @@ RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_
 }
 
 /**
- * \brief op structure for unknown
- */
-RZ_API RZ_OWN RzILOpPure *rz_il_op_new_unk() {
-	RzILOpPure *ret;
-	rz_il_op_new_0(Pure, RZ_IL_OP_UNK);
-	return ret;
-}
-
-/**
  *  \brief op structure for `var` ('a var -> 'a pure)
  *
  *  var v is the value of the variable v.
@@ -733,8 +724,6 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 	case RZ_IL_OP_VAR:
 		r->op.var.v = op->op.var.v;
 		break;
-	case RZ_IL_OP_UNK:
-		break;
 	case RZ_IL_OP_ITE:
 		DUP_OP3(ite, condition, x, y);
 		break;
@@ -825,9 +814,6 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		r->op.cast.length = op->op.cast.length;
 		DUP_OP2(cast, fill, val);
 		break;
-	case RZ_IL_OP_CONCAT:
-		rz_warn_if_reached();
-		break;
 	case RZ_IL_OP_APPEND:
 		DUP_OP2(append, high, low);
 		break;
@@ -868,8 +854,6 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	}
 	switch (op->code) {
 	case RZ_IL_OP_VAR:
-		break;
-	case RZ_IL_OP_UNK:
 		break;
 	case RZ_IL_OP_ITE:
 		rz_il_op_free_3(pure, ite, condition, x, y);
@@ -954,9 +938,6 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		break;
 	case RZ_IL_OP_CAST:
 		rz_il_op_free_2(pure, cast, fill, val);
-		break;
-	case RZ_IL_OP_CONCAT:
-		rz_warn_if_reached();
 		break;
 	case RZ_IL_OP_APPEND:
 		rz_il_op_free_2(pure, append, high, low);

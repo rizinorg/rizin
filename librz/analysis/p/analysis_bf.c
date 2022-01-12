@@ -304,17 +304,11 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 
 	BfContext *ctx = analysis->rzil->user;
 	RzILVM *vm = analysis->rzil->vm;
-	RzILOpEffect *ilop = NULL;
-	op->rzil_op = RZ_NEW0(RzAnalysisRzilOp);
-	if (!op->rzil_op) {
-		RZ_LOG_ERROR("Fail to init rzil op\n");
-		return -1;
-	}
 	ut64 dst = 0LL;
 
 	switch (buf[0]) {
 	case '[':
-		ilop = bf_llimit(vm, ctx, op->id, addr);
+		op->il_op = bf_llimit(vm, ctx, op->id, addr);
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->fail = addr + 1;
 		buf = rz_mem_dup((void *)buf, len);
@@ -361,31 +355,31 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		free((ut8 *)buf);
 		break;
 	case ']':
-		ilop = bf_rlimit(vm, ctx, op->id, addr);
+		op->il_op = bf_rlimit(vm, ctx, op->id, addr);
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		break;
 	case '>':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		ilop = bf_right_arrow(vm, op->id);
+		op->il_op = bf_right_arrow(vm, op->id);
 		break;
 	case '<':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		ilop = bf_left_arrow(vm, op->id);
+		op->il_op = bf_left_arrow(vm, op->id);
 		break;
 	case '+':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		ilop = bf_inc(vm, op->id);
+		op->il_op = bf_inc(vm, op->id);
 		break;
 	case '-':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		ilop = bf_dec(vm, op->id);
+		op->il_op = bf_dec(vm, op->id);
 		break;
 	case '.':
-		ilop = bf_out(vm, op->id);
+		op->il_op = bf_out(vm, op->id);
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case ',':
-		ilop = bf_in(vm, op->id);
+		op->il_op = bf_in(vm, op->id);
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 	case 0x00:
@@ -394,11 +388,8 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	default:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-		ilop = rz_il_op_new_nop();
+		op->il_op = rz_il_op_new_nop();
 		break;
-	}
-	if (ilop) {
-		op->rzil_op->op = ilop;
 	}
 	ctx->op_count++;
 	return op->size;

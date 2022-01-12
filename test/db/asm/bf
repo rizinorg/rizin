@@ -1,0 +1,3 @@
+d "inc ptr" 3e 0 (set ptr (+ (var ptr) (bv 64 0x1)))
+d "dec ptr" 3c 0 (set ptr (- (var ptr) (bv 64 0x1)))
+d "out [ptr]" 2e 0 (goto write)

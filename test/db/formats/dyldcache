@@ -5,7 +5,7 @@ i
 is
 iS
 iH
-om
+oml
 pi 4@ sym._what_is_cool
 EOF
 EXPECT=<<EOF
@@ -86,7 +86,7 @@ i
 is
 iS
 iH
-om
+oml
 pi 4@ sym._what_is_cool
 EOF
 EXPECT=<<EOF

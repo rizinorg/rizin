@@ -22,6 +22,7 @@ rz_main_deps = [
   rz_cons_dep,
   rz_hash_dep,
   rz_crypto_dep,
+  rz_il_dep,
   rz_io_dep,
   rz_reg_dep,
   rz_bp_dep,

@@ -490,7 +490,7 @@ static void rzil_print_register_bool(bool value, ILPrint *p) {
 }
 
 static void rzil_print_register_bitv(RzBitVector *number, ILPrint *p) {
-	char *hex = rz_bv_as_hex_string(number);
+	char *hex = rz_bv_as_hex_string(number, true);
 	switch (p->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_strbuf_appendf(p_sb(p->ptr), " %s: %s", p->name, hex);
@@ -631,7 +631,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	// analysis current data to trigger rzil_set_op_code
 	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
 	int size = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
-	RzILOpEffect *ilop = op.rzil_op ? op.rzil_op->op : NULL;
+	RzILOpEffect *ilop = op.il_op;
 
 	if (ilop) {
 		rz_il_vm_step(vm, ilop, size > 0 ? size : 1);

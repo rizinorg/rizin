@@ -1369,7 +1369,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_block_size(r, rz_io_desc_size(iod));
 	}
 	if (perms & RZ_PERM_W) {
-		rz_core_cmd0(r, "omfg+w");
+		RzPVector *maps = rz_io_maps(r->io);
+		void **it;
+		rz_pvector_foreach (maps, it) {
+			RzIOMap *map = *it;
+			map->perm |= RZ_PERM_W;
+		}
 	}
 	ret = run_commands(r, cmds, files, quiet, do_analysis);
 	rz_list_free(cmds);

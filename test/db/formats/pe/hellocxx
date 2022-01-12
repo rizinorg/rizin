@@ -13,7 +13,7 @@ RUN
 
 NAME=PE: hello cxx - sections
 FILE=bins/pe/hellocxx-mingw32.exe
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x00440c00 - 0x00440fff r-x mmap..text
  2 fd: 3 +0x00000400 0x00401000 - 0x00440bff r-x fmap..text

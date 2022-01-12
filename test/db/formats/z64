@@ -18,7 +18,7 @@ RUN
 
 NAME=z64: maps
 FILE=bins/z64/demo.z64
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00001000 0x80001000 - 0x8013ffff r-x fmap.text
 EOF

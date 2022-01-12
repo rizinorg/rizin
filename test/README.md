@@ -58,7 +58,7 @@ A test can have one of the following results:
 Tests for the assembly and disassembly (in `db/asm/*`) have a different format:
 General format:
 ```
-type "assembly" opcode [offset]
+type "assembly" opcode [offset] [IL]
 ```
 where type can be any of:
 * **a** meaning "assemble"
@@ -78,6 +78,21 @@ d "ret" c3
 a "nop" 90 # Assembly is correct
 dB "nopppp" 90 # Disassembly test is broken
 ```
+
+#### IL
+
+To also test lifting an instruction to RzIL, you can append the readable IL
+representation like so:
+```
+d "inc ptr" 3e 0 set(v:ptr, x:add(x:var(v:ptr), y:bitv(bits:0x0000000000000001, len:64)))
+```
+
+This means that rz-test will also perform the lifting from bytes to RzIL,
+run the validation pass on the result and compare it against the given string.
+
+In this case, passing an offset is mandatory, otherwise the argument would be ambiguous.
+
+#### General hints
 
 You can merge lines:
 ```

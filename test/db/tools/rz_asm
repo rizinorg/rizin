@@ -129,33 +129,27 @@ RUN
 NAME=rz-asm #1900 (detect syntax error - case 1)
 FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov hello, eax"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 Cannot assemble 'mov hello, eax' at line 3
-invalid
 EOF
 RUN
 
 NAME=rz-asm #1900 (detect syntax error - case 2)
 FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov 33, eax"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 Cannot assemble 'mov 33, eax' at line 3
-invalid
 EOF
 RUN
 
 NAME=rz-asm #1900 (detect syntax error - case 3)
 FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov eax, hello"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 Cannot assemble 'mov eax, hello' at line 3
-invalid
 EOF
 RUN
 
@@ -165,7 +159,6 @@ CMDS=!rz-asm -a x86 -b 32 "mov eax, 0x1122334455"
 EXPECT=
 EXPECT_ERR=<<EOF
 Cannot assemble 'mov eax, 0x1122334455' at line 3
-invalid
 EOF
 RUN
 
@@ -178,9 +171,7 @@ EOF
 EXPECT=
 EXPECT_ERR=<<EOF
 Cannot assemble 'mov rax, 0x112233445566778899' at line 3
-invalid
 Cannot assemble 'mov eax, 0x1122334455' at line 3
-invalid
 EOF
 RUN
 
@@ -570,5 +561,32 @@ BROKEN=1
 CMDS=!rz-asm -a arm.as -b 64 "sub sp, sp, 16"
 EXPECT=<<EOF
 ff4300d1
+EOF
+RUN
+
+NAME=rz-asm RzIL
+FILE=
+CMDS=<<EOF
+!rz-asm -a bf -I 3e
+?v $?
+EOF
+EXPECT=<<EOF
+(set ptr (+ (var ptr) (bv 64 0x1)))
+0x0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rz-asm RzIL failure
+FILE=
+CMDS=<<EOF
+!rz-asm -a bf -I 00
+?v $?
+EOF
+EXPECT=<<EOF
+0x1
+EOF
+EXPECT_ERR=<<EOF
+Invalid instruction of lifting not implemented.
 EOF
 RUN

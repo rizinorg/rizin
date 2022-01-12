@@ -97,7 +97,7 @@ NAME=ELF: no patching when bin.relocs=0
 FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
 ARGS=-e bin.relocs=false
 CMDS=<<EOF
-om
+oml
 ?e --
 e asm.flags.real=false
 e asm.bytes=true
@@ -125,7 +125,7 @@ RUN
 NAME=ELF: reloc flags
 FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
 CMDS=<<EOF
-om
+oml
 ?e --
 e asm.flags.real=false
 f@F:relocs
@@ -257,7 +257,7 @@ CMDS=<<EOF
 mkdir .tmp
 cp bins/elf/analysis/filetime.c-clang-x64-O0.o .tmp/elf-reloc-patchee
 o+ .tmp/elf-reloc-patchee
-om~vmap
+oml~vmap
 ?e -- original
 px 0x10 @ 0x0800006a
 px 0x10 @ 0x0800064d

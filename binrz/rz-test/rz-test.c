@@ -54,7 +54,7 @@ static RzThreadFunctionRet worker_th(RzThread *th);
 static void print_state(RzTestState *state, ut64 prev_completed);
 static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(RzTestState *state);
-static void interact_fix(RzTestResultInfo *result, RzPVector *fixup_results);
+static bool interact_fix(RzTestResultInfo *result, RzPVector *fixup_results);
 static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results);
 static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results);
 
@@ -725,17 +725,56 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		}
 		break;
 	}
-	case RZ_TEST_TYPE_ASM:
-		if (result->test->asm_test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
-			const char *expect = result->test->asm_test->disasm;
-			const char *actual = result->asm_out->disasm;
+	case RZ_TEST_TYPE_ASM: {
+		RzAsmTest *test = result->test->asm_test;
+		RzAsmTestOutput *out = result->asm_out;
+		char *expect_hex = rz_hex_bin2strdup(test->bytes, test->bytes_size);
+		printf("-- <asm> " Color_YELLOW "%s %c--%c %s%s" Color_RESET "\n",
+			test->disasm,
+			test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE ? '<' : '-',
+			test->mode & RZ_ASM_TEST_MODE_ASSEMBLE ? '>' : '-',
+			expect_hex ? expect_hex : "",
+			test->il ? " ---> <IL>" : "");
+		if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
+			const char *expect = test->disasm;
+			const char *actual = out->disasm;
 			if (expect && actual && strcmp(actual, expect)) {
 				printf("-- disassembly\n");
 				print_diff(actual, expect, NULL);
 			}
 		}
-		// TODO: assembly
+		if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
+			printf("-- assembly\n");
+			if (out->bytes && (out->bytes_size != test->bytes_size || memcmp(out->bytes, test->bytes, out->bytes_size))) {
+				char *actual = rz_hex_bin2strdup(out->bytes, out->bytes_size);
+				print_diff(actual ? actual : "", expect_hex ? expect_hex : "", NULL);
+				free(actual);
+			}
+		}
+		if (test->il) {
+			const char *expect = test->il;
+			const char *actual = out->il;
+			const char *report = out->il_report;
+			bool il_printed = false;
+			const char *hdr = "-- IL\n";
+			if (expect && actual && strcmp(actual, expect)) {
+				printf("%s", hdr);
+				il_printed = true;
+				print_diff(actual, expect, NULL);
+			}
+			if (report) {
+				if (!il_printed) {
+					printf("%s", hdr);
+					if (actual) {
+						printf("%s\n", actual);
+					}
+				}
+				printf(Color_RED "%s" Color_RESET "\n", report);
+			}
+		}
+		free(expect_hex);
 		break;
+	}
 	case RZ_TEST_TYPE_JSON:
 		break;
 	case RZ_TEST_TYPE_FUZZ:
@@ -863,20 +902,21 @@ static void interact(RzTestState *state) {
 
 	rz_pvector_foreach (&failed_results, it) {
 		RzTestResultInfo *result = *it;
-		if (result->test->type != RZ_TEST_TYPE_CMD) {
-			// TODO: other types of tests
+		if (result->test->type != RZ_TEST_TYPE_CMD && result->test->type != RZ_TEST_TYPE_ASM) {
 			continue;
 		}
 
 		printf("#####################\n\n");
 		print_result_diff(&state->run_config, result);
+		bool have_commands = result->test->type == RZ_TEST_TYPE_CMD;
 	menu:
 		printf("Wat do?    "
 		       "(f)ix " UTF8_WHITE_HEAVY_CHECK_MARK UTF8_VS16 UTF8_VS16 UTF8_VS16 "    "
 		       "(i)gnore " UTF8_SEE_NO_EVIL_MONKEY "    "
 		       "(b)roken " UTF8_SKULL_AND_CROSSBONES UTF8_VS16 UTF8_VS16 UTF8_VS16 "    "
-		       "(c)ommands " UTF8_KEYBOARD UTF8_VS16 "    "
-		       "(q)uit " UTF8_DOOR "\n");
+		       "%s"
+		       "(q)uit " UTF8_DOOR "\n",
+			have_commands ? "(c)ommands " UTF8_KEYBOARD UTF8_VS16 "    " : "");
 		printf("> ");
 		char buf[0x30];
 		if (!fgets(buf, sizeof(buf), stdin)) {
@@ -887,11 +927,10 @@ static void interact(RzTestState *state) {
 		}
 		switch (buf[0]) {
 		case 'f':
-			if (result->run_failed || result->proc_out->ret != 0) {
+			if (!interact_fix(result, &failed_results)) {
 				printf("This test has failed too hard to be fixed.\n");
 				goto menu;
 			}
-			interact_fix(result, &failed_results);
 			break;
 		case 'i':
 			break;
@@ -899,8 +938,11 @@ static void interact(RzTestState *state) {
 			interact_break(result, &failed_results);
 			break;
 		case 'c':
-			interact_commands(result, &failed_results);
-			break;
+			if (have_commands) {
+				interact_commands(result, &failed_results);
+				break;
+			}
+			goto menu;
 		case 'q':
 			goto beach;
 		default:
@@ -1001,6 +1043,24 @@ static void fixup_tests(RzPVector *results, const char *edited_file, ut64 start_
 	}
 }
 
+static char *read_test_file_for_fix(const char *path) {
+	char *content = rz_file_slurp(path, NULL);
+	if (!content) {
+		eprintf("Failed to read file \"%s\"\n", path);
+	}
+	return content;
+}
+
+static void save_test_file_for_fix(const char *path, const char *newc) {
+	if (rz_file_dump(path, (const ut8 *)newc, -1, false)) {
+#if __UNIX__
+		sync();
+#endif
+	} else {
+		eprintf("Failed to write file \"%s\"\n", path);
+	}
+}
+
 static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RzPVector *fixup_results) {
 	char *kv = format_cmd_kv(key, value);
 	if (!kv) {
@@ -1022,9 +1082,8 @@ static char *replace_cmd_kv(const char *path, const char *content, size_t line_b
 }
 
 static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RzPVector *fixup_results) {
-	char *content = rz_file_slurp(path, NULL);
+	char *content = read_test_file_for_fix(path);
 	if (!content) {
-		eprintf("Failed to read file \"%s\"\n", path);
 		return;
 	}
 	char *newc = replace_cmd_kv(path, content, line_begin, line_end, key, value, fixup_results);
@@ -1032,18 +1091,15 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	if (!newc) {
 		return;
 	}
-	if (rz_file_dump(path, (const ut8 *)newc, -1, false)) {
-#if __UNIX__
-		sync();
-#endif
-	} else {
-		eprintf("Failed to write file \"%s\"\n", path);
-	}
+	save_test_file_for_fix(path, newc);
 	free(newc);
 }
 
-static void interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
+static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
+	if (result->run_failed || result->proc_out->ret != 0) {
+		return false;
+	}
 	RzCmdTest *test = result->test->cmd_test;
 	RzSubprocessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
@@ -1052,9 +1108,117 @@ static void interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
 	if (test->expect_err.value && out->err) {
 		replace_cmd_kv_file(result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", (char *)out->err, fixup_results);
 	}
+	return true;
 }
 
-static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results) {
+static void replace_file_line(const char *path, ut64 line_idx, const char *line_new) {
+	char *content = read_test_file_for_fix(path);
+	if (!content) {
+		return;
+	}
+	char *newc = replace_lines(content, line_idx, line_idx + 1, line_new);
+	free(content);
+	if (!newc) {
+		return;
+	}
+	save_test_file_for_fix(path, newc);
+	free(newc);
+}
+
+static void replace_asm_test(RZ_NONNULL const char *path, ut64 line_idx,
+	int mode, RZ_NONNULL const char *disasm, RZ_NONNULL const ut8 *bytes, size_t bytes_sz, ut64 offset, RZ_NULLABLE const char *il) {
+	char *hex = rz_hex_bin2strdup(bytes, bytes_sz);
+	if (!hex) {
+		return;
+	}
+	char offset_str[0x20];
+	if ((!offset && !il) || snprintf(offset_str, sizeof(offset_str), " 0x%" PFMT64x, offset) < 0) {
+		*offset_str = '\0';
+	}
+	char *line = rz_str_newf("%s%s%s%s \"%s\" %s%s%s%s",
+		(mode & RZ_ASM_TEST_MODE_ASSEMBLE) ? "a" : "",
+		(mode & RZ_ASM_TEST_MODE_DISASSEMBLE) ? "d" : "",
+		(mode & RZ_ASM_TEST_MODE_BIG_ENDIAN) ? "E" : "",
+		(mode & RZ_ASM_TEST_MODE_BROKEN) ? "B" : "",
+		disasm, hex, offset_str, il ? " " : "", il ? il : "");
+	free(hex);
+	if (!line) {
+		return;
+	}
+	replace_file_line(path, line_idx, line);
+	free(line);
+}
+
+/**
+ * Check if both assembly and disassembly passes failed,
+ * making it non-trivial to repair automatically.
+ */
+static bool asm_test_failed_both_ways(RzAsmTest *test, RzAsmTestOutput *out) {
+	// check that both ways are requested
+	if (!(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) || !(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE)) {
+		return false;
+	}
+	// check that disasm is wrong
+	if (out->disasm && !strcmp(test->disasm, out->disasm)) {
+		return false;
+	}
+	// check that asm is wrong too
+	if (out->bytes && out->bytes_size == test->bytes_size && !memcmp(out->bytes, test->bytes, test->bytes_size)) {
+		return false;
+	}
+	// determined that both ways are broken
+	return true;
+}
+
+static bool interact_fix_asm(RzTestResultInfo *result) {
+	assert(result->test->type == RZ_TEST_TYPE_ASM);
+	RzAsmTest *test = result->test->asm_test;
+	RzAsmTestOutput *out = result->asm_out;
+
+	const char *disasm = test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE ? out->disasm : test->disasm;
+	if (!disasm) {
+		return false;
+	}
+
+	const ut8 *bytes;
+	size_t bytes_sz;
+	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
+		bytes = out->bytes;
+		bytes_sz = out->bytes_size;
+	} else {
+		bytes = test->bytes;
+		bytes_sz = test->bytes_size;
+	}
+	if (!bytes) {
+		return false;
+	}
+
+	if (asm_test_failed_both_ways(test, out)) {
+		// both disasm and asm failed, so trying to fix here would likely only make things worse
+		return false;
+	}
+
+	if (test->il && (out->il_failed || !out->il)) {
+		// IL wasn't lifted or validation failed, this can only be fixed in code
+		return false;
+	}
+
+	replace_asm_test(result->test->path, test->line, test->mode, disasm, bytes, bytes_sz, test->offset, out->il);
+	return true;
+}
+
+static bool interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
+	switch (result->test->type) {
+	case RZ_TEST_TYPE_CMD:
+		return interact_fix_cmd(result, fixup_results);
+	case RZ_TEST_TYPE_ASM:
+		return interact_fix_asm(result);
+	default:
+		return false;
+	}
+}
+
+static void interact_break_cmd(RzTestResultInfo *result, RzPVector *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	RzCmdTest *test = result->test->cmd_test;
 	ut64 line_begin;
@@ -1066,6 +1230,26 @@ static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results) {
 		line_begin = line_end = test->run_line;
 	}
 	replace_cmd_kv_file(result->test->path, line_begin, line_end, "BROKEN", "1", fixup_results);
+}
+
+static void interact_break_asm(RzTestResultInfo *result) {
+	assert(result->test->type == RZ_TEST_TYPE_ASM);
+	RzAsmTest *test = result->test->asm_test;
+	replace_asm_test(result->test->path, test->line,
+		test->mode | RZ_ASM_TEST_MODE_BROKEN, test->disasm, test->bytes, test->bytes_size, test->offset, test->il);
+}
+
+static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results) {
+	switch (result->test->type) {
+	case RZ_TEST_TYPE_CMD:
+		interact_break_cmd(result, fixup_results);
+		break;
+	case RZ_TEST_TYPE_ASM:
+		interact_break_asm(result);
+		break;
+	default:
+		break;
+	}
 }
 
 static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results) {

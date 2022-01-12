@@ -810,9 +810,7 @@ typedef enum rz_analysis_data_type_t {
 	RZ_ANALYSIS_DATATYPE_FLOAT,
 } RzAnalysisDataType;
 
-typedef struct rz_analysis_rzil_op_t {
-	RzILOpEffect *op;
-} RzAnalysisRzilOp;
+typedef RzILOpEffect *RzAnalysisLiftedILOp;
 
 typedef struct rz_analysis_op_t {
 	char *mnemonic; /* mnemonic.. it actually contains the args too, we should replace rasm with this */
@@ -847,7 +845,7 @@ typedef struct rz_analysis_op_t {
 	RzList *access; /* RzAnalysisValue access information */
 	RzStrBuf esil;
 	RzStrBuf opex;
-	RzAnalysisRzilOp *rzil_op;
+	RzAnalysisLiftedILOp il_op;
 	const char *reg; /* destination register */
 	const char *ireg; /* register used for indirect memory computation*/
 	int scale;
@@ -1577,12 +1575,12 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr);
 RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis);
 RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis);
 RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist);
-RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op);
+RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisLiftedILOp op);
 
 /* trace */
 RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzAnalysisRzil *rzil);
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op);
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisLiftedILOp op);
 RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisOp *op, bool use_new);
 
 RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis);
