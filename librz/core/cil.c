@@ -630,14 +630,17 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	ut8 code[32];
 	// analysis current data to trigger rzil_set_op_code
 	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
-	int size = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
-	RzILOpEffect *ilop = op.il_op;
+	int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
+	RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
 
 	if (ilop) {
-		rz_il_vm_step(vm, ilop, size > 0 ? size : 1);
+		bool succ = rz_il_vm_step(vm, ilop, addr + (op.size > 0 ? op.size : 1));
+		if (!succ) {
+			RZ_LOG_ERROR("RzIL: stepping failed.\n");
+		}
 		rz_il_vm_sync_to_reg(vm, analysis->reg);
 	} else {
-		RZ_LOG_ERROR("RzIL: invalid instruction detected or reached the end of code at address 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("RzIL: invalid instruction or lifting not implemented at address 0x%08" PFMT64x "\n", addr);
 	}
 
 	rz_analysis_op_fini(&op);
