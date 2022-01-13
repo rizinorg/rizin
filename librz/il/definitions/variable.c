@@ -174,3 +174,19 @@ RZ_API RZ_BORROW RzILVal *rz_il_var_set_get_value(RzILVarSet *vs, const char *na
 	rz_return_val_if_fail(vs && name, NULL);
 	return ht_pp_find(vs->contents, name, NULL);
 }
+
+/**
+ * Get a readable string representation of \p kind
+ */
+const char *rz_il_var_kind_name(RzILVarKind kind) {
+	switch (kind) {
+	case RZ_IL_VAR_KIND_GLOBAL:
+		return "global";
+	case RZ_IL_VAR_KIND_LOCAL:
+		return "local";
+	case RZ_IL_VAR_KIND_LOCAL_PURE:
+		return "local pure";
+	default:
+		return "invalid";
+	}
+}

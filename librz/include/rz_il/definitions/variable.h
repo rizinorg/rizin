@@ -49,6 +49,8 @@ typedef enum {
 	RZ_IL_VAR_KIND_LOCAL_PURE ///< local pure var, bound only by let expressions, scope is limited to the let's pure body, thus it's immutable.
 } RzILVarKind;
 
+const char *rz_il_var_kind_name(RzILVarKind kind);
+
 #ifdef __cplusplus
 }
 #endif
