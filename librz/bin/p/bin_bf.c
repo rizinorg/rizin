@@ -37,7 +37,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->machine = strdup("brainfuck");
 	ret->arch = strdup("bf");
 	ret->has_va = 1;
-	ret->bits = 32; // 16?
+	ret->bits = 64; // RzIL emulation of bf uses 64bit values
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	/* TODO: move this somewhere else */
