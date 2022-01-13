@@ -253,7 +253,7 @@ static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
 		rz_strbuf_fini(&sb);
 	}
 	char *report;
-	if (!rz_il_validate_effect(il_op, ctx, NULL, &report)) {
+	if (!rz_il_validate_effect(il_op, ctx, NULL, NULL, &report)) {
 		ret = false;
 		eprintf("IL Validation failed%c\n", report ? ':' : '.');
 	}

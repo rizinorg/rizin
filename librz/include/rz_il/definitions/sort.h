@@ -61,6 +61,12 @@ static inline RzILSortPure rz_il_sort_pure_bv(ut32 length) {
 
 RZ_API RZ_OWN char *rz_il_sort_pure_stringify(RzILSortPure sort);
 
+typedef enum {
+	RZ_IL_TYPE_EFFECT_NONE = 0, ///< nop
+	RZ_IL_TYPE_EFFECT_DATA = (1 << 0), ///< mutating mems, vars, etc.
+	RZ_IL_TYPE_EFFECT_CTRL = (1 << 1) ///< jmp/goto
+} RzILTypeEffect;
+
 #ifdef __cplusplus
 }
 #endif
