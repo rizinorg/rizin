@@ -604,11 +604,14 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *var_name, 
 #undef p_tbl
 #undef p_pj
 
-// step a list of ct_opcode at a given address
-RZ_IPI void rz_core_rzil_step(RzCore *core) {
+/**
+ * Perform a single step at the PC given by analysis->reg in RzIL
+ * \return false if an error occured (e.g. invalid op)
+ */
+RZ_IPI bool rz_core_rzil_step(RzCore *core) {
 	if (!core->analysis || !core->analysis->rzil) {
 		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
-		return;
+		return false;
 	}
 
 	RzAnalysis *analysis = core->analysis;
@@ -619,7 +622,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 
 	if (!cur) {
 		// No analysis plugin
-		return;
+		return false;
 	}
 
 	rz_il_vm_sync_from_reg(vm, analysis->reg);
@@ -634,8 +637,9 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
 	RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
 
+	bool succ = false;
 	if (ilop) {
-		bool succ = rz_il_vm_step(vm, ilop, addr + (op.size > 0 ? op.size : 1));
+		succ = rz_il_vm_step(vm, ilop, addr + (op.size > 0 ? op.size : 1));
 		if (!succ) {
 			RZ_LOG_ERROR("RzIL: stepping failed.\n");
 		}
@@ -646,6 +650,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	}
 
 	rz_analysis_op_fini(&op);
+	return succ;
 }
 
 RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {
