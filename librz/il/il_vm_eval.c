@@ -312,7 +312,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_
 	case RZ_IL_TYPE_PURE_BITVECTOR:
 		return rz_il_value_new_bitv(res);
 	default:
-		RZ_LOG_ERROR("RzIL: type error: expected bitvector, got %s\n", pure_type_name(type));
+		RZ_LOG_ERROR("RzIL: type error: got %s\n", pure_type_name(type));
 		return NULL;
 	}
 }

@@ -280,6 +280,26 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpBitVector *x, RZ_NON
 }
 
 /**
+ * unsigned strict less than
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ult(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	return rz_il_op_new_bool_and(
+		rz_il_op_new_ule(x, y),
+		rz_il_op_new_bool_inv(rz_il_op_new_eq(rz_il_op_pure_dup(x), rz_il_op_pure_dup(y))));
+}
+
+/**
+ * signed strict less than
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_slt(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	return rz_il_op_new_bool_and(
+		rz_il_op_new_sle(x, y),
+		rz_il_op_new_bool_inv(rz_il_op_new_eq(rz_il_op_pure_dup(x), rz_il_op_pure_dup(y))));
+}
+
+/**
  *  \brief op structure for casting bitv
  */
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, RZ_NONNULL RzILOpBool *fill, RZ_NONNULL RzILOpBitVector *val) {
@@ -723,6 +743,7 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 	switch (op->code) {
 	case RZ_IL_OP_VAR:
 		r->op.var.v = op->op.var.v;
+		r->op.var.kind = op->op.var.kind;
 		break;
 	case RZ_IL_OP_ITE:
 		DUP_OP3(ite, condition, x, y);
