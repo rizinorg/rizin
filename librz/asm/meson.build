@@ -79,7 +79,6 @@ rz_asm_sources = [
   'acode.c',
   'binutils_as.c',
   'p/asm_6502.c',
-  'p/asm_6502_cs.c',
   'p/asm_8051.c',
   'p/asm_amd29k.c',
   'p/asm_arm_as.c',

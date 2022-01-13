@@ -107,7 +107,6 @@ rz_analysis_sources = [
   'vtable.c',
   'xrefs.c',
   'p/analysis_6502.c',
-  'p/analysis_6502_cs.c',
   'p/analysis_8051.c',
   'p/analysis_amd29k.c',
   'p/analysis_arm_cs.c',
