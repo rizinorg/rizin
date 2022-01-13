@@ -59,6 +59,8 @@ Macro statements
 (_foo x y; p8 $0 @ $1)
 (-foo)
 (foo x y; p8 $0 @ $1)(10 0x10)
+.(foo 10 0x10)
+..(foo 10 0x10 20 0x20)
 (pdstr bits; s $0; .(pdenc guess); .(pdenc utf$0le); .(pdenc utf$0be))
 (foo; pd 10~this is special\))
 (
@@ -98,6 +100,20 @@ Macro statements
 	  (args
 	    (arg (arg_identifier))
 	    (arg (arg_identifier)))))))
+  (arged_stmt (cmd_identifier)
+   (macro_call_content
+    (args
+     (arg (arg_identifier))
+     (arg (arg_identifier))
+     (arg (arg_identifier)))))
+  (arged_stmt (cmd_identifier)
+   (macro_call_content
+    (args
+     (arg (arg_identifier))
+     (arg (arg_identifier))
+     (arg (arg_identifier))
+     (arg (arg_identifier))
+     (arg (arg_identifier)))))
   (arged_stmt (cmd_identifier)
     (macro_args
       (macro_content
