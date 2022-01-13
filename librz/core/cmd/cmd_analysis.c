@@ -8038,7 +8038,9 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_until_addr_handler(RzCore *core, int argc, co
 			rz_cons_printf("CTRL+C was pressed.\n");
 			break;
 		}
-		rz_core_rzil_step(core);
+		if (!rz_core_rzil_step(core)) {
+			break;
+		}
 		pc = rz_bv_to_ut64(vm->pc);
 	}
 	return RZ_CMD_STATUS_OK;
