@@ -621,6 +621,7 @@ RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValid
 // clang-format off
 #define VALIDATOR_EFFECT_ARGS \
 	RZ_NULLABLE RzILOpEffect *op, \
+	RZ_NONNULL RzILTypeEffect *type_out, \
 	RZ_NONNULL RzStrBuf *report_builder, \
 	RZ_NONNULL LocalContext *ctx
 // clang-format on
@@ -636,14 +637,15 @@ typedef bool (*ValidateEffectFn)(VALIDATOR_EFFECT_ARGS);
 			return false; \
 		} \
 	} while (0)
-#define VALIDATOR_DESCEND_EFFECT(op, ectx, cleanup) \
+#define VALIDATOR_DESCEND_EFFECT(op, etype, ectx, cleanup) \
 	do { \
-		if (!validate_effect(op, report_builder, ectx)) { \
+		if (!validate_effect(op, etype, report_builder, ectx)) { \
 			cleanup return false; \
 		} \
 	} while (0)
 
 VALIDATOR_EFFECT(nop) {
+	*type_out = RZ_IL_TYPE_EFFECT_NONE;
 	return true;
 }
 
@@ -664,6 +666,7 @@ VALIDATOR_EFFECT(store) {
 	VALIDATOR_ASSERT(sv.type == RZ_IL_TYPE_PURE_BITVECTOR, "Value operand of store op is not a bitvector.\n");
 	VALIDATOR_ASSERT(sv.props.bv.length == val_len, "Length of value operand (%u) of store op is not equal to value length %u of mem %u.\n",
 		(unsigned int)sv.props.bv.length, (unsigned int)val_len, (unsigned int)args->mem);
+	*type_out = RZ_IL_TYPE_EFFECT_DATA;
 	return true;
 }
 
@@ -681,6 +684,7 @@ VALIDATOR_EFFECT(storew) {
 	RzILSortPure sv;
 	VALIDATOR_DESCEND_PURE(args->value, &sv);
 	VALIDATOR_ASSERT(sv.type == RZ_IL_TYPE_PURE_BITVECTOR, "Value operand of storew op is not a bitvector.\n");
+	*type_out = RZ_IL_TYPE_EFFECT_DATA;
 	return true;
 }
 
@@ -713,6 +717,7 @@ VALIDATOR_EFFECT(set) {
 		}
 		ht_pp_update(ctx->local_vars_available, args->v, sort);
 	}
+	*type_out = RZ_IL_TYPE_EFFECT_DATA;
 	return true;
 }
 
@@ -724,6 +729,7 @@ VALIDATOR_EFFECT(jmp) {
 	VALIDATOR_ASSERT(sd.props.bv.length == ctx->global_ctx->pc_len,
 		"Length of dst operand (%u) of jmp op is not equal to pc length %u.\n",
 		(unsigned int)sd.props.bv.length, (unsigned int)ctx->global_ctx->pc_len);
+	*type_out = RZ_IL_TYPE_EFFECT_CTRL;
 	return true;
 }
 
@@ -731,21 +737,35 @@ VALIDATOR_EFFECT(goto) {
 	RzILOpArgsGoto *args = &op->op.goto_;
 	VALIDATOR_ASSERT(args->lbl, "Label of goto op is NULL.\n");
 	// So far, no restrictions on goto because labels are dynamically created. This might change in the future.
+	*type_out = RZ_IL_TYPE_EFFECT_CTRL;
 	return true;
 }
 
 VALIDATOR_EFFECT(seq) {
 	RzILOpArgsSeq *args = &op->op.seq;
-	VALIDATOR_DESCEND_EFFECT(args->x, ctx, {});
-	VALIDATOR_DESCEND_EFFECT(args->y, ctx, {});
+	RzILTypeEffect tx;
+	VALIDATOR_DESCEND_EFFECT(args->x, &tx, ctx, {});
+	RzILTypeEffect ty;
+	VALIDATOR_DESCEND_EFFECT(args->y, &ty, ctx, {});
+	// Code after a jmp/goto makes no sense because the jmp naturally jumps somewhere else already.
+	// Intuitively, this could be considered just dead code and valid, but because it is not practically useful,
+	// we reject such code completely for now, which gives us more freedom if in the future we do want to define
+	// semantics for code after ctrl in some way.
+	VALIDATOR_ASSERT(!(tx & RZ_IL_TYPE_EFFECT_CTRL) || !ty, "Encountered further effects after a ctrl effect in seq op.");
+	*type_out = tx | ty;
 	return true;
 }
 
 VALIDATOR_EFFECT(blk) {
 	RzILOpArgsBlk *args = &op->op.blk;
 	// Semantics of blk are still somewhat undefined in RzIL
-	VALIDATOR_DESCEND_EFFECT(args->data_eff, ctx, {});
-	VALIDATOR_DESCEND_EFFECT(args->ctrl_eff, ctx, {});
+	RzILTypeEffect td;
+	VALIDATOR_DESCEND_EFFECT(args->data_eff, &td, ctx, {});
+	VALIDATOR_ASSERT((td | RZ_IL_TYPE_EFFECT_DATA) == RZ_IL_TYPE_EFFECT_DATA, "Data effect operand of blk op does not only perform data effects.");
+	RzILTypeEffect tc;
+	VALIDATOR_DESCEND_EFFECT(args->ctrl_eff, &tc, ctx, {});
+	VALIDATOR_ASSERT((tc | RZ_IL_TYPE_EFFECT_CTRL) == RZ_IL_TYPE_EFFECT_CTRL, "Control effect operand of blk op does not only perform control effects.");
+	*type_out = td | tc;
 	return true;
 }
 
@@ -758,9 +778,14 @@ VALIDATOR_EFFECT(repeat) {
 	if (!local_context_copy(&loop_ctx, ctx)) {
 		return false;
 	}
-	VALIDATOR_DESCEND_EFFECT(args->data_eff, ctx, { local_context_fini(&loop_ctx); });
+	RzILTypeEffect t;
+	VALIDATOR_DESCEND_EFFECT(args->data_eff, &t, ctx, { local_context_fini(&loop_ctx); });
+	// Enforce (by overapproximation) that there are no effects after a ctrl effect, like in seq.
+	// In a loop, we just reject ctrl completely. This also matches BAP's `repeat : bool -> data eff -> data eff`.
+	VALIDATOR_ASSERT((t | RZ_IL_TYPE_EFFECT_DATA) == RZ_IL_TYPE_EFFECT_DATA, "Body operand of repeat op does not only perform data effects.");
 	bool val = local_context_meet(ctx, &loop_ctx, report_builder, "repeat");
 	local_context_fini(&loop_ctx);
+	*type_out = t;
 	return val;
 }
 
@@ -773,10 +798,13 @@ VALIDATOR_EFFECT(branch) {
 	if (!local_context_copy(&false_ctx, ctx)) {
 		return false;
 	}
-	VALIDATOR_DESCEND_EFFECT(args->true_eff, ctx, { local_context_fini(&false_ctx); });
-	VALIDATOR_DESCEND_EFFECT(args->false_eff, &false_ctx, { local_context_fini(&false_ctx); });
+	RzILTypeEffect tt;
+	VALIDATOR_DESCEND_EFFECT(args->true_eff, &tt, ctx, { local_context_fini(&false_ctx); });
+	RzILTypeEffect tf;
+	VALIDATOR_DESCEND_EFFECT(args->false_eff, &tf, &false_ctx, { local_context_fini(&false_ctx); });
 	bool val = local_context_meet(ctx, &false_ctx, report_builder, "branch");
 	local_context_fini(&false_ctx);
+	*type_out = tt | tf;
 	return val;
 }
 
@@ -797,7 +825,7 @@ static bool validate_effect(VALIDATOR_EFFECT_ARGS) {
 	VALIDATOR_ASSERT(op, "Encountered NULL for effect op.\n");
 	ValidateEffectFn validator = validate_effect_table[op->code];
 	rz_return_val_if_fail(validator, false);
-	return validator(op, report_builder, ctx);
+	return validator(op, type_out, report_builder, ctx);
 }
 
 /**
@@ -805,11 +833,13 @@ static bool validate_effect(VALIDATOR_EFFECT_ARGS) {
  * \p op the op to be checked. May be null, which will always be reported as invalid.
  * \p ctx global context, defining available global vars and mems
  * \p local_var_sorts_out optionally returns a map of local variable names defined in the effect to their sorts
+ * \p type_put optionally returns the type of effects that the ops perform, i.e. ctrl, data, both or none
  * \p report_out optionally returns a readable report containing details about why the validation failed
  * \return whether the given op is valid under \p ctx
  */
 RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
 	RZ_NULLABLE RZ_OUT HtPP /* <const char *, RzILSortPure *> */ **local_var_sorts_out,
+	RZ_NULLABLE RZ_OUT RzILTypeEffect *type_out,
 	RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
 	LocalContext local_ctx;
 	if (!local_context_init(&local_ctx, ctx)) {
@@ -818,14 +848,18 @@ RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILV
 		}
 		return false;
 	}
+	RzILTypeEffect type = RZ_IL_TYPE_EFFECT_NONE;
 	RzStrBuf report_builder;
 	rz_strbuf_init(&report_builder);
-	bool valid = validate_effect(op, &report_builder, &local_ctx);
+	bool valid = validate_effect(op, &type, &report_builder, &local_ctx);
 	if (valid && local_var_sorts_out) {
 		*local_var_sorts_out = local_ctx.local_vars_known;
 		local_ctx.local_vars_known = NULL;
 	}
 	local_context_fini(&local_ctx);
+	if (type_out) {
+		*type_out = type;
+	}
 	if (report_out) {
 		*report_out = rz_strbuf_is_empty(&report_builder) ? NULL : rz_str_trim_tail(rz_strbuf_drain_nofree(&report_builder));
 	}
