@@ -44,36 +44,6 @@ static const char *help_msg_o_star[] = {
 	"o*", "", "list opened files in rizin commands", NULL
 };
 
-static const char *help_msg_oa[] = {
-	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
-	"oba", " [addr]", "Open bin info from the given address",
-	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
-	"oba", " [addr] [/abs/filename]", "Open file and load bin info at given address",
-	NULL
-};
-
-static const char *help_msg_ob[] = {
-	"Usage:", "ob", " # List open binary files backed by fd",
-	"ob", " [bfid]", "Switch to open given objid",
-	"ob", "", "List opened binary files and objid",
-	"ob*", "", "List opened binary files and objid (rizin commands)",
-	"ob-", "*", "Delete all binfiles",
-	"ob-", "[objid]", "Delete binfile by binobjid",
-	"ob.", " ([addr])", "Show bfid at current address",
-	"ob=", "", "Show ascii art table having the list of open files",
-	"obL", "", "Same as iL or Li",
-	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
-	"oba", " [addr] [filename]", "Open file and load bin info at given address",
-	"oba", " [addr]", "Open bin info from the given address",
-	"obf", " ([file])", "Load bininfo for current file (useful for rizin -n)",
-	"obj", "", "List opened binary files and objid (JSON format)",
-	"obn", " [name]", "Select binfile by name",
-	"obo", " [fd]", "Switch to open binfile by fd number",
-	"obr", " [baddr]", "Rebase current bin object",
-	"obR", " [baddr]", "Reload the current buffer for setting of the bin (use once only)",
-	NULL
-};
-
 static const char *help_msg_oj[] = {
 	"Usage:", "oj [~{}]", " # Use ~{} to indent the JSON",
 	"oj", "", "list opened files in JSON format", NULL
@@ -141,225 +111,6 @@ static bool core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
 	}
 	rz_core_bin_apply_all_info(r, nbf);
 	return true;
-}
-
-// HONOR bin.at
-static void cmd_open_bin(RzCore *core, const char *input) {
-	const char *value = NULL;
-	ut32 binfile_num = -1;
-	RzCmdStateOutput state = { 0 };
-
-	switch (input[1]) {
-	case 'L': // "obL"
-		state.mode = RZ_OUTPUT_MODE_STANDARD;
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-		rz_core_bin_plugins_print(core->bin, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		break;
-	case '\0': // "ob"
-	case 'q': // "obj"
-	case 'j': // "obj"
-	case '*': // "ob*"
-		rz_core_bin_list(core, input[1]);
-		if (input[1] == 'j') {
-			rz_cons_newline();
-		}
-		break;
-	case '.': // "ob."
-	{
-		const char *arg = rz_str_trim_head_ro(input + 2);
-		ut64 at = core->offset;
-		if (*arg) {
-			at = rz_num_math(core->num, arg);
-			if (at == 0 && *arg != '0') {
-				at = core->offset;
-			}
-		}
-		RzBinFile *bf = rz_bin_file_at(core->bin, at);
-		if (bf) {
-			rz_cons_printf("%d\n", bf->id);
-		}
-	} break;
-	case 'a': // "oba"
-		if ('?' == input[2]) {
-			rz_core_cmd_help(core, help_msg_oa);
-			break;
-		}
-		if (input[2] && input[3]) {
-			char *arg = strdup(input + 3);
-			char *filename = strchr(arg, ' ');
-			if (filename && *filename && (filename[1] == '/' || filename[1] == '.')) {
-				int saved_fd = rz_io_fd_get_current(core->io);
-				RzIODesc *desc = rz_io_open(core->io, filename + 1, RZ_PERM_R, 0);
-				if (desc) {
-					*filename = 0;
-					ut64 addr = rz_num_math(core->num, arg);
-					RzBinOptions opt;
-					rz_core_bin_options_init(core, &opt, desc->fd, addr, 0);
-					RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
-					rz_io_desc_close(desc);
-					rz_core_bin_apply_all_info(core, bf);
-					rz_io_use_fd(core->io, saved_fd);
-				} else {
-					eprintf("Cannot open %s\n", filename + 1);
-				}
-			} else if (filename && *filename) {
-				ut64 baddr = rz_num_math(core->num, filename);
-				ut64 addr = rz_num_math(core->num, input + 2); // mapaddr
-				int fd = rz_io_fd_get_current(core->io);
-				RzIODesc *desc = rz_io_desc_get(core->io, fd);
-				if (desc) {
-					RzBinOptions opt;
-					opt.sz = 1024 * 1024 * 1;
-					rz_core_bin_options_init(core, &opt, desc->fd, baddr, addr);
-					RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
-					rz_core_bin_apply_all_info(core, bf);
-				} else {
-					eprintf("No file to load bin from?\n");
-				}
-			} else {
-				ut64 addr = rz_num_math(core->num, input + 2);
-				int fd = rz_io_fd_get_current(core->io);
-				RzIODesc *desc = rz_io_desc_get(core->io, fd);
-				if (desc) {
-					RzBinOptions opt;
-					opt.sz = 1024 * 1024 * 1;
-					rz_core_bin_options_init(core, &opt, desc->fd, addr, addr);
-					RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
-					rz_core_bin_apply_all_info(core, bf);
-				} else {
-					eprintf("No file to load bin from?\n");
-				}
-			}
-			free(arg);
-		} else {
-			RzList *ofiles = rz_id_storage_list(core->io->files);
-			RzIODesc *desc;
-			RzListIter *iter;
-			RzList *files = rz_list_newf(NULL);
-			rz_list_foreach (ofiles, iter, desc) {
-				rz_list_append(files, (void *)(size_t)desc->fd);
-			}
-
-			void *_fd;
-			rz_list_foreach (files, iter, _fd) {
-				int fd = (size_t)_fd;
-				RzBinOptions opt;
-				rz_core_bin_options_init(core, &opt, fd, core->offset, 0);
-				RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
-				rz_core_bin_apply_all_info(core, bf);
-				break;
-			}
-			rz_list_free(files);
-		}
-		break;
-	case ' ': // "ob "
-	{
-		ut32 id;
-		int n;
-		const char *tmp;
-		char *v;
-		v = input[2] ? strdup(input + 2) : NULL;
-		if (!v) {
-			eprintf("Invalid arguments");
-			break;
-		}
-		n = rz_str_word_set0(v);
-		if (n < 1 || n > 2) {
-			eprintf("Usage: ob [file|objid]\n");
-			free(v);
-			break;
-		}
-		tmp = rz_str_word_get0(v, 0);
-		id = *v && rz_is_valid_input_num_value(core->num, tmp)
-			? rz_get_input_num_value(core->num, tmp)
-			: UT32_MAX;
-		if (n != 2) {
-			binfile_num = id;
-		}
-		rz_core_bin_raise(core, binfile_num);
-		free(v);
-		break;
-	}
-	case 'r': // "obr"
-		rz_core_bin_rebase(core, rz_num_math(core->num, input + 3));
-		rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
-		break;
-	case 'R': // "obR"
-		// XXX: this will reload the bin using the buffer.
-		// An assumption is made that assumes there is an underlying
-		// plugin that will be used to load the bin (e.g. malloc://)
-		// TODO: Might be nice to reload a bin at a specified offset?
-		core_bin_reload(core, NULL, input[2] ? rz_num_math(core->num, input + 3) : 0);
-		rz_core_block_read(core);
-		break;
-	case 'f':
-		if (input[2] == ' ') {
-			rz_core_cmdf(core, "oba 0 %s", input + 3);
-		} else {
-			rz_core_bin_load(core, NULL, UT64_MAX);
-		}
-		break;
-	case 'o': // "obo"
-		if (input[2] == ' ') {
-			ut32 fd = rz_num_math(core->num, input + 3);
-			RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, fd);
-			if (!bf || !rz_core_bin_raise(core, bf->id)) {
-				eprintf("Invalid RzBinFile.id number.\n");
-			}
-		} else {
-			eprintf("Usage: obb [bfid]\n");
-		}
-		break;
-	case '-': // "ob-"
-		if (input[2] == '*') {
-			rz_bin_file_delete_all(core->bin);
-		} else {
-			ut32 id;
-			value = rz_str_trim_head_ro(input + 2);
-			if (!value) {
-				eprintf("Invalid argument\n");
-				break;
-			}
-			id = (*value && rz_is_valid_input_num_value(core->num, value)) ? rz_get_input_num_value(core->num, value) : UT32_MAX;
-			RzBinFile *bf = rz_bin_file_find_by_id(core->bin, id);
-			if (!bf || !rz_core_bin_delete(core, bf)) {
-				eprintf("Cannot find an RzBinFile associated with that id.\n");
-			}
-		}
-		break;
-	case '=': // "ob="
-	{
-		RzListIter *iter;
-		RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
-		RzBinFile *bf = NULL;
-		RzBin *bin = core->bin;
-		if (!bin) {
-			return;
-		}
-		rz_list_foreach (bin->binfiles, iter, bf) {
-			char temp[64];
-			RzInterval inter = (RzInterval){ bf->o->opts.baseaddr, bf->o->size };
-			RzListInfo *info = rz_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
-			if (!info) {
-				break;
-			}
-			rz_list_append(list, info);
-		}
-		RzTable *table = rz_core_table(core);
-		rz_table_visual_list(table, list, core->offset, core->blocksize,
-			rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
-		char *table_text = rz_table_tostring(table);
-		rz_cons_printf("\n%s\n", table_text);
-		rz_free(table_text);
-		rz_table_free(table);
-		rz_list_free(list);
-	} break;
-	case '?': // "ob?"
-		rz_core_cmd_help(core, help_msg_ob);
-		break;
-	}
 }
 
 static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
@@ -663,9 +414,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			break;
 			rz_core_file_print(core, RZ_OUTPUT_MODE_STANDARD);
 		}
-		break;
-	case 'b': // "ob"
-		cmd_open_bin(core, input);
 		break;
 	case '.': // "o."
 		if (input[1] == 'q') { // "o.q" // same as oq
@@ -1350,5 +1098,156 @@ RZ_IPI RzCmdStatus rz_open_maps_list_cur_handler(RzCore *core, int argc, const c
 		state->d.t->showFancy = true;
 	}
 	open_maps_show(core, state, map);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_select_id_handler(RzCore *core, int argc, const char **argv) {
+	ut32 id = (ut32)rz_num_math(NULL, argv[1]);
+	if (!rz_core_bin_raise(core, id)) {
+		RZ_LOG_ERROR("Could not select binary file with id %d\n", id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_select_fd_handler(RzCore *core, int argc, const char **argv) {
+	ut32 fd = rz_num_math(NULL, argv[1]);
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, fd);
+	if (!bf) {
+		RZ_LOG_ERROR("Could not find any binary file for fd %d.\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_core_bin_raise(core, bf->id)) {
+		eprintf("Could not select the binary file for fd %d.\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_del_handler(RzCore *core, int argc, const char **argv) {
+	ut32 id = (ut32)rz_num_math(NULL, argv[1]);
+	RzBinFile *bf = rz_bin_file_find_by_id(core->bin, id);
+	if (!bf) {
+		RZ_LOG_ERROR("Could not find any binary file with id %d.\n", id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_core_binfiles_delete(core, bf)) {
+		RZ_LOG_ERROR("Could not delete binary file with id %d\n", id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_del_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_bin_file_delete_all(core->bin);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_binfiles_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_show_handler(RzCore *core, int argc, const char **argv) {
+	RzBinFile *bf = rz_bin_file_at(core->bin, core->offset);
+	if (bf) {
+		rz_cons_printf("%d\n", bf->id);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, const char **argv) {
+	RzListIter *iter;
+	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
+	RzBinFile *bf = NULL;
+	RzBin *bin = core->bin;
+	if (!bin) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_list_foreach (bin->binfiles, iter, bf) {
+		char temp[64];
+		RzInterval inter = (RzInterval){ bf->o->opts.baseaddr, bf->o->size };
+		RzListInfo *info = rz_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
+		if (!info) {
+			break;
+		}
+		rz_list_append(list, info);
+	}
+	RzTable *table = rz_core_table(core);
+	rz_table_visual_list(table, list, core->offset, core->blocksize,
+		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
+	char *table_text = rz_table_tostring(table);
+	rz_cons_printf("\n%s\n", table_text);
+	rz_free(table_text);
+	rz_table_free(table);
+	rz_list_free(list);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_add_handler(RzCore *core, int argc, const char **argv) {
+	ut64 loadaddr = rz_num_math(core->num, argv[1]);
+	int fd = rz_io_fd_get_current(core->io);
+	RzIODesc *desc = rz_io_desc_get(core->io, fd);
+	if (!desc) {
+		RZ_LOG_ERROR("Could not determine any opened file with fd %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzBinOptions opt;
+	opt.sz = 1024 * 1024 * 1;
+	rz_core_bin_options_init(core, &opt, desc->fd, core->offset, loadaddr);
+	RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+	rz_core_bin_apply_all_info(core, bf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_file_handler(RzCore *core, int argc, const char **argv) {
+	int saved_fd = rz_io_fd_get_current(core->io);
+	RzList *files = rz_list_newf(NULL);
+	RzListIter *iter;
+
+	RzIODesc *desc = NULL;
+	if (argc > 1) {
+		desc = rz_io_open(core->io, argv[1], RZ_PERM_R, 0);
+		if (!desc) {
+			RZ_LOG_ERROR("Could not open file %s\n", argv[1]);
+			rz_list_free(files);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_list_append(files, (void *)(size_t)desc->fd);
+	} else {
+		RzList *ofiles = rz_id_storage_list(core->io->files);
+		RzIODesc *desc;
+		rz_list_foreach (ofiles, iter, desc) {
+			rz_list_append(files, (void *)(size_t)desc->fd);
+		}
+	}
+
+	void *_fd;
+	rz_list_foreach (files, iter, _fd) {
+		RzBinOptions opt;
+		int fd = (size_t)_fd;
+		rz_core_bin_options_init(core, &opt, fd, core->offset, 0);
+		RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+		rz_core_bin_apply_all_info(core, bf);
+	}
+
+	rz_io_desc_close(desc);
+	rz_io_use_fd(core->io, saved_fd);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_rebase_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_bin_rebase(core, rz_num_math(core->num, argv[1]));
+	rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const char **argv) {
+	// XXX: this will reload the bin using the buffer.
+	// An assumption is made that assumes there is an underlying
+	// plugin that will be used to load the bin (e.g. malloc://)
+	// TODO: Might be nice to reload a bin at a specified offset?
+	core_bin_reload(core, NULL, rz_num_math(core->num, argv[1]));
+	rz_core_block_read(core);
 	return RZ_CMD_STATUS_OK;
 }

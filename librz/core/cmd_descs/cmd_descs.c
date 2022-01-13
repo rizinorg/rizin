@@ -320,6 +320,13 @@ static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
+static const RzCmdDescArg open_binary_select_id_args[2];
+static const RzCmdDescArg open_binary_select_fd_args[2];
+static const RzCmdDescArg open_binary_del_args[2];
+static const RzCmdDescArg open_binary_add_args[2];
+static const RzCmdDescArg open_binary_file_args[2];
+static const RzCmdDescArg open_binary_rebase_args[2];
+static const RzCmdDescArg open_binary_reload_args[2];
 static const RzCmdDescArg open_use_args[2];
 static const RzCmdDescArg open_prioritize_args[2];
 static const RzCmdDescArg open_maps_map_args[7];
@@ -7286,7 +7293,7 @@ static const RzCmdDescHelp plugins_parser_print_help = {
 };
 
 static const RzCmdDescHelp cmd_open_help = {
-	.summary = "Open file at optional address",
+	.summary = "Open files and handle opened files",
 };
 static const RzCmdDescArg open_close_args[] = {
 	{
@@ -7353,6 +7360,138 @@ static const RzCmdDescArg open_arch_bits_args[] = {
 static const RzCmdDescHelp open_arch_bits_help = {
 	.summary = "Specify <arch> and <bits> for the file <filename> or the current one if none is specified",
 	.args = open_arch_bits_args,
+};
+
+static const RzCmdDescHelp ob_help = {
+	.summary = "Handle binary files",
+};
+static const RzCmdDescArg open_binary_select_id_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_select_id_help = {
+	.summary = "Switch to binary file with the given <id>",
+	.args = open_binary_select_id_args,
+};
+
+static const RzCmdDescArg open_binary_select_fd_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_select_fd_help = {
+	.summary = "Switch to binary file with the given <fd>",
+	.args = open_binary_select_fd_args,
+};
+
+static const RzCmdDescArg open_binary_del_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_del_help = {
+	.summary = "Delete binary file with the given <id>",
+	.args = open_binary_del_args,
+};
+
+static const RzCmdDescArg open_binary_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_del_all_help = {
+	.summary = "Delete all binary files",
+	.args = open_binary_del_all_args,
+};
+
+static const RzCmdDescArg open_binary_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_list_help = {
+	.summary = "List opened binary files",
+	.args = open_binary_list_args,
+};
+
+static const RzCmdDescArg open_binary_list_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_list_ascii_help = {
+	.summary = "List opened binary files in ASCII art",
+	.args = open_binary_list_ascii_args,
+};
+
+static const RzCmdDescArg open_binary_show_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_show_help = {
+	.summary = "Show id of binary file current address",
+	.args = open_binary_show_args,
+};
+
+static const RzCmdDescArg open_binary_add_args[] = {
+	{
+		.name = "loadaddr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.default_value = "0",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_add_help = {
+	.summary = "Open binary file for current file and load binary info with baseaddr at current offset",
+	.args = open_binary_add_args,
+};
+
+static const RzCmdDescArg open_binary_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_file_help = {
+	.summary = "Load binary info for the given file or current one with baseaddr at current offset",
+	.args = open_binary_file_args,
+};
+
+static const RzCmdDescArg open_binary_rebase_args[] = {
+	{
+		.name = "baddr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_rebase_help = {
+	.summary = "Rebase current bin object",
+	.args = open_binary_rebase_args,
+};
+
+static const RzCmdDescArg open_binary_reload_args[] = {
+	{
+		.name = "baddr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.default_value = "0",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_reload_help = {
+	.summary = "Reload the current buffer for setting of the bin (use once only)",
+	.args = open_binary_reload_args,
 };
 
 static const RzCmdDescArg open_use_args[] = {
@@ -12188,6 +12327,38 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_arch_bits_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "oa", rz_open_arch_bits_handler, &open_arch_bits_help);
 	rz_warn_if_fail(open_arch_bits_cd);
+
+	RzCmdDesc *ob_cd = rz_cmd_desc_group_new(core->rcmd, cmd_open_cd, "ob", rz_open_binary_select_id_handler, &open_binary_select_id_help, &ob_help);
+	rz_warn_if_fail(ob_cd);
+	RzCmdDesc *open_binary_select_fd_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obo", rz_open_binary_select_fd_handler, &open_binary_select_fd_help);
+	rz_warn_if_fail(open_binary_select_fd_cd);
+
+	RzCmdDesc *open_binary_del_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "ob-", rz_open_binary_del_handler, &open_binary_del_help);
+	rz_warn_if_fail(open_binary_del_cd);
+
+	RzCmdDesc *open_binary_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "ob-*", rz_open_binary_del_all_handler, &open_binary_del_all_help);
+	rz_warn_if_fail(open_binary_del_all_cd);
+
+	RzCmdDesc *open_binary_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ob_cd, "obl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_open_binary_list_handler, &open_binary_list_help);
+	rz_warn_if_fail(open_binary_list_cd);
+
+	RzCmdDesc *open_binary_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obl=", rz_open_binary_list_ascii_handler, &open_binary_list_ascii_help);
+	rz_warn_if_fail(open_binary_list_ascii_cd);
+
+	RzCmdDesc *open_binary_show_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "ob.", rz_open_binary_show_handler, &open_binary_show_help);
+	rz_warn_if_fail(open_binary_show_cd);
+
+	RzCmdDesc *open_binary_add_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "oba", rz_open_binary_add_handler, &open_binary_add_help);
+	rz_warn_if_fail(open_binary_add_cd);
+
+	RzCmdDesc *open_binary_file_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obf", rz_open_binary_file_handler, &open_binary_file_help);
+	rz_warn_if_fail(open_binary_file_cd);
+
+	RzCmdDesc *open_binary_rebase_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obr", rz_open_binary_rebase_handler, &open_binary_rebase_help);
+	rz_warn_if_fail(open_binary_rebase_cd);
+
+	RzCmdDesc *open_binary_reload_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obR", rz_open_binary_reload_handler, &open_binary_reload_help);
+	rz_warn_if_fail(open_binary_reload_cd);
 
 	RzCmdDesc *open_use_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "ou", rz_open_use_handler, &open_use_help);
 	rz_warn_if_fail(open_use_cd);

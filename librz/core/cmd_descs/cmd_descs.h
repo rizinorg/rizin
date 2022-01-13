@@ -536,6 +536,17 @@ RZ_IPI RzCmdStatus rz_open_close_all_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_arch_bits_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_select_id_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_select_fd_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_del_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_del_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_show_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_add_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_file_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_rebase_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_use_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_prioritize_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_prioritize_next_handler(RzCore *core, int argc, const char **argv);

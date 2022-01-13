@@ -516,3 +516,19 @@ block   0x100
 type    
 EOF
 RUN
+
+NAME=ob
+FILE=bins/elf/true32
+CMDS=<<EOF
+ob.
+obf bins/elf/ls
+ob.
+ob 0
+ob.
+EOF
+EXPECT=<<EOF
+0
+1
+0
+EOF
+RUN
