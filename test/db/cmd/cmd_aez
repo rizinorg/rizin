@@ -48,6 +48,7 @@ ar pc=0x54
 aezs 1
 aezv
 ar
+f @F:registers
 EOF
 EXPECT=<<EOF
 ptr = 0x00010000
@@ -58,5 +59,20 @@ pc = 0x00000001
  PC: 0x0000000000000055 ptr: 0x0000000000010001
 ptr = 0x00010001
 pc = 0x00000055
+0x00000055 8 pc
+0x00010001 8 ptr
+EOF
+RUN
+
+NAME=aezi pc and flags
+FILE=bins/bf/hello-ok.bf
+CMDS=<<EOF
+s 0x100
+aezi
+f @F:registers
+EOF
+EXPECT=<<EOF
+0x00000100 8 pc
+0x00010000 8 ptr
 EOF
 RUN

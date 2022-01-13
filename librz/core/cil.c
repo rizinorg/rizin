@@ -417,6 +417,7 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	if (core->analysis->rzil) {
 		// initialize the program counter with the current offset
 		rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, core->offset);
+		rz_core_reg_update_flags(core);
 	}
 }
 
@@ -639,6 +640,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 			RZ_LOG_ERROR("RzIL: stepping failed.\n");
 		}
 		rz_il_vm_sync_to_reg(vm, analysis->reg);
+		rz_core_reg_update_flags(core);
 	} else {
 		RZ_LOG_ERROR("RzIL: invalid instruction or lifting not implemented at address 0x%08" PFMT64x "\n", addr);
 	}
