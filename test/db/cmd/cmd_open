@@ -359,12 +359,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=obj
+NAME=oblj
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-obj~{}
+oblj~{}
 EOF
 EXPECT=<<EOF
 [
