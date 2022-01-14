@@ -302,7 +302,7 @@ bins/elf/libverifyPass.so
 bins/elf/libc.so.6
 EOF
 CMDS=<<EOF
-ob~[0-1]
+obl~[0-1]
 ?e
 ob 1; i~^fd
 ob 2; i~^fd
@@ -352,19 +352,19 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 oC 1024
-ob
+obl
 EOF
 EXPECT=<<EOF
 0 3 x86-64 ba:0x00000000 sz:1024 malloc://1024
 EOF
 RUN
 
-NAME=obj
+NAME=oblj
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-obj~{}
+oblj~{}
 EOF
 EXPECT=<<EOF
 [
@@ -415,11 +415,11 @@ e asm.arch=x86
 e asm.bits=64
 o =
 o~?
-ob
+obl
 ?e --
 o--
 o~?
-ob
+obl
 EOF
 EXPECT=<<EOF
 2
@@ -438,7 +438,7 @@ e asm.bits=64
 o =
 o- 3
 o~?
-ob
+obl
 EOF
 EXPECT=<<EOF
 1
@@ -449,11 +449,11 @@ RUN
 NAME=oc
 FILE=bins/elf/true32
 CMDS=<<EOF
-ob~?
+obl~?
 i
 oc =
 ?e --
-ob~?
+obl~?
 i
 EOF
 EXPECT=<<EOF
@@ -514,5 +514,21 @@ format  any
 iorw    true
 block   0x100
 type    
+EOF
+RUN
+
+NAME=ob
+FILE=bins/elf/true32
+CMDS=<<EOF
+ob.
+obf bins/elf/ls
+ob.
+ob 0
+ob.
+EOF
+EXPECT=<<EOF
+0
+1
+0
 EOF
 RUN

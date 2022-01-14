@@ -1151,9 +1151,15 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 			if (mapaddr) {
 				if (rz_config_get_i(r->config, "file.info")) {
-					eprintf("Warning: using oba to load the syminfo from different mapaddress.\n");
-					// load symbols when using rz -m 0x1000 /bin/ls
-					rz_core_cmdf(r, "oba 0 0x%" PFMT64x, mapaddr);
+					int fd = rz_io_fd_get_current(r->io);
+					RzIODesc *desc = rz_io_desc_get(r->io, fd);
+					if (desc) {
+						RzBinOptions opt;
+						opt.sz = 1024 * 1024 * 1;
+						rz_core_bin_options_init(r, &opt, desc->fd, mapaddr, 0);
+						RzBinFile *bf = rz_bin_open_io(r->bin, &opt);
+						rz_core_bin_apply_all_info(r, bf);
+					}
 				}
 			}
 		} else {
