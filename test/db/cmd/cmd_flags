@@ -55,7 +55,7 @@ NAME=1: fs *
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs *
-fs~?^*
+fsl~?^*
 EOF
 EXPECT=<<EOF
 0
@@ -66,7 +66,7 @@ NAME=2: fs *
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs *
-fs~?*
+fsl~?*
 EOF
 EXPECT=<<EOF
 8
@@ -94,44 +94,30 @@ NAME=fs test_flagspace
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs test_flagspace
-fs~?test_flagspace
+fsl~?test_flagspace
 EOF
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=fs-test_flagspace
+NAME=fs- test_flagspace
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs test_flagspace
-fs-test_flagspace
-fs~?test_flagspace
+fs- test_flagspace
+fsl~?test_flagspace
 EOF
 EXPECT=<<EOF
 0
 EOF
 RUN
 
-NAME=fs-test_flagspace
+NAME=fs-* test_flagspace
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs-*
-fs~?0
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
-NAME=fs-.
-FILE=malloc://1024
-CMDS=<<EOF
-fs test_flagspace
-fs test_bloh
-fs test_blah
-fs-.
-fs~?test_blah
+fsl~?0
 EOF
 EXPECT=<<EOF
 0
@@ -143,8 +129,8 @@ FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs-*
 fs test
-fsm str.Hello_World test
-fs
+fsm @ str.Hello_World
+fsl
 EOF
 EXPECT=<<EOF
     1 * test
@@ -156,9 +142,8 @@ FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs-*
 fs test
-fs test
 fsr test2
-fs
+fsl
 EOF
 EXPECT=<<EOF
     0 * test2
