@@ -35,7 +35,7 @@ NAME=ELF_ABI : gcc O0 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O0
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    89 * functions
@@ -46,7 +46,7 @@ NAME=ELF_ABI : gcc O1 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O1
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    68 * functions
@@ -57,7 +57,7 @@ NAME=ELF_ABI : gcc O2 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O2
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    51 * functions
@@ -68,7 +68,7 @@ NAME=ELF_ABI : gcc O3 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O3
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    44 * functions
@@ -79,7 +79,7 @@ NAME=ELF_ABI : gcc Of flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_Of
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    45 * functions
@@ -90,7 +90,7 @@ NAME=ELF_ABI : gcc Os flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_Os
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    85 * functions

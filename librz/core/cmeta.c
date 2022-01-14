@@ -6,6 +6,43 @@
 
 #include <rz_core.h>
 
+RZ_IPI void rz_core_spaces_print(RzCore *core, RzSpaces *spaces, RzCmdStateOutput *state) {
+	const RzSpace *cur = rz_spaces_current(spaces);
+	rz_cmd_state_output_array_start(state);
+	RzSpace *s;
+	PJ *pj = state->d.pj;
+	RzSpaceIter it;
+	rz_spaces_foreach(spaces, it, s) {
+		int count = rz_spaces_count(spaces, s->name);
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(pj);
+			pj_ks(pj, "name", s->name);
+			pj_ki(pj, "count", count);
+			pj_kb(pj, "selected", cur == s);
+			pj_end(pj);
+			break;
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_cons_printf("%s\n", s->name);
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_cons_printf("%s %s\n", spaces->name, s->name);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("%5d %c %s\n", count,
+				(!cur || cur == s) ? '*' : '.', s->name);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	if (state->mode == RZ_OUTPUT_MODE_RIZIN && rz_spaces_current(spaces)) {
+		rz_cons_printf("%s %s # current\n", spaces->name, rz_spaces_current_name(spaces));
+	}
+}
+
 static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 	char *esc_str = NULL;
 	RzStrEscOptions opt = { 0 };

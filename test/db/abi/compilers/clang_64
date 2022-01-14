@@ -35,7 +35,7 @@ NAME=ELF_ABI : Clang O0 flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_O0
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    87 * functions
@@ -46,7 +46,7 @@ NAME=ELF_ABI : Clang O1 flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_O1
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    95 * functions
@@ -57,7 +57,7 @@ NAME=ELF_ABI : Clang O2 flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_O2
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    50 * functions
@@ -68,7 +68,7 @@ NAME=ELF_ABI : Clang O3 flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_O3
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    49 * functions
@@ -79,7 +79,7 @@ NAME=ELF_ABI : Clang Of flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_Of
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    51 * functions
@@ -90,7 +90,7 @@ NAME=ELF_ABI : Clang Os flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_Os
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    87 * functions

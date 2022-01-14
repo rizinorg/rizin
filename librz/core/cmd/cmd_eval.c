@@ -5,10 +5,6 @@
 #include <stdbool.h>
 #include "rz_core.h"
 
-static RzCmdStatus bool2status(bool val) {
-	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
-}
-
 static bool load_theme(RzCore *core, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;

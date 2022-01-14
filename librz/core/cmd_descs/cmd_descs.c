@@ -291,6 +291,10 @@ static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg flag_describe_closest_args[2];
+static const RzCmdDescArg flag_space_add_args[2];
+static const RzCmdDescArg flag_space_remove_args[2];
+static const RzCmdDescArg flag_space_rename_args[2];
+static const RzCmdDescArg flag_space_stack_push_args[2];
 static const RzCmdDescArg flag_tag_add_args[3];
 static const RzCmdDescArg flag_tag_search_args[2];
 static const RzCmdDescArg flag_zone_add_args[2];
@@ -6438,6 +6442,108 @@ static const RzCmdDescHelp flag_describe_closest_help = {
 	.args = flag_describe_closest_args,
 };
 
+static const RzCmdDescHelp fs_help = {
+	.summary = "Manage flagspaces",
+};
+static const RzCmdDescArg flag_space_add_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_add_help = {
+	.summary = "Add the flagspace",
+	.args = flag_space_add_args,
+};
+
+static const RzCmdDescArg flag_space_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_list_help = {
+	.summary = "Display flagspaces",
+	.args = flag_space_list_args,
+};
+
+static const RzCmdDescArg flag_space_remove_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_remove_help = {
+	.summary = "Remove the flagspace",
+	.args = flag_space_remove_args,
+};
+
+static const RzCmdDescArg flag_space_remove_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_remove_all_help = {
+	.summary = "Remove all flagspaces",
+	.args = flag_space_remove_all_args,
+};
+
+static const RzCmdDescArg flag_space_move_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_move_help = {
+	.summary = "Move the flags at the current address to the current flagspace",
+	.args = flag_space_move_args,
+};
+
+static const RzCmdDescArg flag_space_rename_args[] = {
+	{
+		.name = "newname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_rename_help = {
+	.summary = "Rename the flag space",
+	.args = flag_space_rename_args,
+};
+
+static const RzCmdDescHelp fss_help = {
+	.summary = "Manage the flagspace stack",
+};
+static const RzCmdDescArg flag_space_stack_push_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_stack_push_help = {
+	.summary = "Push the flagspace to the stack",
+	.args = flag_space_stack_push_args,
+};
+
+static const RzCmdDescArg flag_space_stack_pop_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_stack_pop_help = {
+	.summary = "Pop the flagspace from the stack",
+	.args = flag_space_stack_pop_args,
+};
+
+static const RzCmdDescArg flag_space_stack_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_stack_list_help = {
+	.summary = "Display flagspace stack",
+	.args = flag_space_stack_list_args,
+};
+
 static const RzCmdDescHelp ft_help = {
 	.summary = "Flag tags",
 };
@@ -12060,6 +12166,36 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *flag_describe_closest_cd = rz_cmd_desc_argv_new(core->rcmd, fd_cd, "fdw", rz_flag_describe_closest_handler, &flag_describe_closest_help);
 	rz_warn_if_fail(flag_describe_closest_cd);
+
+	RzCmdDesc *fs_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "fs", rz_flag_space_add_handler, &flag_space_add_help, &fs_help);
+	rz_warn_if_fail(fs_cd);
+	RzCmdDesc *flag_space_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, fs_cd, "fsl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_flag_space_list_handler, &flag_space_list_help);
+	rz_warn_if_fail(flag_space_list_cd);
+	rz_cmd_desc_set_default_mode(flag_space_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_space_remove_cd = rz_cmd_desc_argv_new(core->rcmd, fs_cd, "fs-", rz_flag_space_remove_handler, &flag_space_remove_help);
+	rz_warn_if_fail(flag_space_remove_cd);
+
+	RzCmdDesc *flag_space_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, fs_cd, "fs-*", rz_flag_space_remove_all_handler, &flag_space_remove_all_help);
+	rz_warn_if_fail(flag_space_remove_all_cd);
+
+	RzCmdDesc *flag_space_move_cd = rz_cmd_desc_argv_new(core->rcmd, fs_cd, "fsm", rz_flag_space_move_handler, &flag_space_move_help);
+	rz_warn_if_fail(flag_space_move_cd);
+
+	RzCmdDesc *flag_space_rename_cd = rz_cmd_desc_argv_new(core->rcmd, fs_cd, "fsr", rz_flag_space_rename_handler, &flag_space_rename_help);
+	rz_warn_if_fail(flag_space_rename_cd);
+
+	RzCmdDesc *fss_cd = rz_cmd_desc_group_new(core->rcmd, fs_cd, "fss", NULL, NULL, &fss_help);
+	rz_warn_if_fail(fss_cd);
+	RzCmdDesc *flag_space_stack_push_cd = rz_cmd_desc_argv_new(core->rcmd, fss_cd, "fss+", rz_flag_space_stack_push_handler, &flag_space_stack_push_help);
+	rz_warn_if_fail(flag_space_stack_push_cd);
+
+	RzCmdDesc *flag_space_stack_pop_cd = rz_cmd_desc_argv_new(core->rcmd, fss_cd, "fss-", rz_flag_space_stack_pop_handler, &flag_space_stack_pop_help);
+	rz_warn_if_fail(flag_space_stack_pop_cd);
+
+	RzCmdDesc *flag_space_stack_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, fss_cd, "fssl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_space_stack_list_handler, &flag_space_stack_list_help);
+	rz_warn_if_fail(flag_space_stack_list_cd);
+	rz_cmd_desc_set_default_mode(flag_space_stack_list_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *ft_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "ft", rz_flag_tag_add_handler, &flag_tag_add_help, &ft_help);
 	rz_warn_if_fail(ft_cd);
