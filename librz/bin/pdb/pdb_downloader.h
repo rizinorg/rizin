@@ -30,7 +30,7 @@ typedef struct SPDBDownloaderOpt {
 typedef struct SPDBDownloader {
 	SPDBDownloaderOpt *opt;
 
-	int (*download)(struct SPDBDownloader *pdb_downloader);
+	char *(*download)(struct SPDBDownloader *pdb_downloader);
 } SPDBDownloader;
 
 /**

@@ -13,10 +13,13 @@ NAME=PDB downloader json
 FILE==
 CMDS=<<EOF
 %RZ_CURL=1
-!rz-bin -PPj bins/pdb/user32.dll
+!rz-bin -PPj bins/pdb/user32.dll~{}>$pdb
+$pdb~file,guid,download
 EOF
 EXPECT=<<EOF
-{"pdb":{"file":"user32.pdb","download":true}}
+    "file": "user32.pdb",
+    "guid": "15F778B3671D4EFDBDCDE79905308B792",
+    "download": true
 EOF
 RUN
 
@@ -24,10 +27,13 @@ NAME=idpdj
 FILE=bins/pdb/user32.dll
 CMDS=<<EOF
 %RZ_CURL=1
-idpdj
+idpdj~{}>$pdb
+$pdb~file,guid,download
 EOF
 EXPECT=<<EOF
-{"pdb":{"file":"user32.pdb","download":true}}
+    "file": "user32.pdb",
+    "guid": "15F778B3671D4EFDBDCDE79905308B792",
+    "download": true
 EOF
 RUN
 

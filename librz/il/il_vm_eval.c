@@ -208,21 +208,20 @@ RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
  * Execute the opcodes uplifted from raw instructions.A list may contain multiple opcode trees
  * \param vm pointer to VM
  * \param op_list, a list of op roots.
- * \param op_size, how much the pc value has to increate of.
+ * \param fallthrough_addr initial address to set PC to. Thus also the address to "step to" if no explicit jump occurs.
  */
-RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut32 op_size) {
+RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr) {
 	rz_return_val_if_fail(vm && op, false);
 
 	rz_list_purge(vm->events);
 
-	bool succ = rz_il_evaluate_effect(vm, op);
-
-	RzBitVector *step = rz_bv_new_from_ut64(vm->pc->len, op_size);
-	RzBitVector *next_pc = rz_bv_add(vm->pc, step, NULL);
+	// Set the successor pc **before** evaluating. Any jmp/goto may then overwrite it again.
+	RzBitVector *next_pc = rz_bv_new_from_ut64(vm->pc->len, fallthrough_addr);
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, next_pc));
 	rz_bv_free(vm->pc);
-	rz_bv_free(step);
 	vm->pc = next_pc;
+
+	bool succ = rz_il_evaluate_effect(vm, op);
 
 	// remove any local defined variable (local pure vars are unbound automatically)
 	rz_il_var_set_reset(&vm->local_vars);
