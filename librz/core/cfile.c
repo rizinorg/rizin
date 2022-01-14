@@ -1048,7 +1048,11 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			}
 		}
 
-		rz_core_cmd0(r, "ob 0; s entry0");
+		rz_core_bin_raise(r, 0);
+		ut64 ocurr = r->offset;
+		ut64 entry0addr = rz_num_math(r->num, "entry0");
+		rz_core_seek(r, entry0addr, true);
+
 		rz_config_set_b(r->config, "bin.at", true);
 		RZ_LOG_INFO("Linking imports...\n");
 		RzBinImport *imp;
@@ -1076,6 +1080,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			}
 			free(name);
 		}
+		rz_core_seek(r, ocurr, true);
 	}
 
 	// If type == RZ_BIN_TYPE_CORE, we need to create all the maps
@@ -1579,7 +1584,7 @@ RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
 			ut64 orig_baddr = core->bin->cur->o->baddr_shift;
 			RzList *orig_sections = __save_old_sections(core);
 
-			rz_core_cmd0(core, "ob-*");
+			rz_bin_file_delete_all(core->bin);
 			rz_io_close_all(core->io);
 			rz_config_set_b(core->config, "cfg.debug", false);
 			rz_core_cmdf(core, "o %s", file);

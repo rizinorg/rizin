@@ -42,6 +42,76 @@ commands:
       - name: filename
         type: RZ_CMD_ARG_TYPE_FILE
         optional: true
+  - name: ob
+    summary: Handle binary files
+    subcommands:
+      - name: ob
+        cname: open_binary_select_id
+        summary: Switch to binary file with the given <id>
+        args:
+          - name: id
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: obo
+        cname: open_binary_select_fd
+        summary: Switch to binary file with the given <fd>
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ob-
+        cname: open_binary_del
+        summary: Delete binary file with the given <id>
+        args:
+          - name: id
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ob-*
+        cname: open_binary_del_all
+        summary: Delete all binary files
+        args: []
+      - name: obl
+        cname: open_binary_list
+        summary: List opened binary files
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args: []
+      - name: obl=
+        cname: open_binary_list_ascii
+        summary: List opened binary files in ASCII art
+        args: []
+      - name: ob.
+        cname: open_binary_show
+        summary: Show id of binary file current address
+        args: []
+      - name: oba
+        cname: open_binary_add
+        summary: Open binary file for current file and load binary info with baseaddr at current offset
+        args:
+          - name: loadaddr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 0
+      - name: obf
+        cname: open_binary_file
+        summary: Load binary info for the given file or current one with baseaddr at current offset
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+            optional: true
+      - name: obr
+        cname: open_binary_rebase
+        summary: Rebase current bin object
+        args:
+          - name: baddr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: obR
+        cname: open_binary_reload
+        summary: Reload the current buffer for setting of the bin (use once only)
+        args:
+          - name: baddr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 0
   - name: ou
     cname: open_use
     summary: Use specified <fd>
