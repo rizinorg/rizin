@@ -6336,6 +6336,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	}
 	rz_core_seek(core, seek, true);
 	rz_reg_arena_pop(core->analysis->reg);
+	rz_core_analysis_esil_init_mem_del(core, NULL, UT64_MAX, UT32_MAX);
 	rz_config_hold_restore(hold);
 	rz_config_hold_free(hold);
 	free(saved_arena);
