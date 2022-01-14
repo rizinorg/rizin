@@ -1889,34 +1889,8 @@
                 "content": {
                   "type": "ALIAS",
                   "content": {
-                    "type": "STRING",
-                    "value": ".("
-                  },
-                  "named": true,
-                  "value": "cmd_identifier"
-                }
-              },
-              {
-                "type": "FIELD",
-                "name": "args",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "macro_call_content"
-                }
-              }
-            ]
-          },
-          {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "FIELD",
-                "name": "command",
-                "content": {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "STRING",
-                    "value": "..("
+                    "type": "PATTERN",
+                    "value": "\\.\\.?\\("
                   },
                   "named": true,
                   "value": "cmd_identifier"
