@@ -651,31 +651,31 @@ ccr
 htid
 badva
 imask
-gevb
+s11
 s12
 s13
 s14
 s15
+s19
+s23
+s25
 evb
 modectl
 syscfg
-s19
-ipendad
+s20
 vid
-vid1
-bestwait
+s22
 s24
-schedcfg
 s26
 cfgbase
 diag
 rev
-pcyclelo
 pcyclehi
+pcyclelo
 isdbst
 isdbcfg0
 isdbcfg1
-livelock
+s35
 brkptpc0
 brkptcfg0
 brkptpc1
@@ -684,43 +684,43 @@ isdbmbxin
 isdbmbxout
 isdben
 isdbgpr
-pmucnt4
-pmucnt5
-pmucnt6
-pmucnt7
+s44
+s45
+s46
+s47
 pmucnt0
 pmucnt1
 pmucnt2
 pmucnt3
 pmuevtcfg
-s53
-pmuevtcfg1
-pmustid1
-timerlo
-timerhi
+pmucfg
+s54
+s55
+s56
+s57
 s58
 s59
 s60
 s61
 s62
 s63
-commit1t
-commit2t
-commit3t
-commit4t
-commit5t
-commit6t
-pcycle1t
-pcycle2t
-pcycle3t
-pcycle4t
-pcycle5t
-pcycle6t
-stfinst
-isdbcmd
-isdbver
-brkptinfo
-rgdr3
+s64
+s65
+s66
+s67
+s68
+s69
+s70
+s71
+s72
+s73
+s74
+s75
+s76
+s77
+s78
+s79
+s80
 s1:0
 s3:2
 s5:4
@@ -956,5 +956,26 @@ EXPECT=<<EOF
 |       ,=< 0x00000004      ?       jump 0x1734a60c
 |       |   0x00000008      /       R2 = +mpyi(R0,##0x3c)
 |       |   0x0000000c      |       R16 = R0
+EOF
+RUN
+
+NAME=hexagon string search
+FILE==
+CMDS=<<EOF
+e asm.sub.varmin=0
+e asm.arch=hexagon
+e analysis.arch=hexagon
+e analysis.strings=true
+wx 81c100781cc0513c00c09f5257686572652069732057616c6c793f0054686572652069732057616c6c792100
+aar
+pd 2
+fs strings
+f
+EOF
+EXPECT=<<EOF
+            0x00000000      ?       R1 = ##0xc                         ; "Where is Wally?"
+            0x00000004      [   memw(R17+#0x0) = ##0x1c                ; "There is Wally!"
+0x0000000c 1 str.Where_is_Wally
+0x0000001c 1 str.There_is_Wally
 EOF
 RUN
