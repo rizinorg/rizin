@@ -2205,7 +2205,6 @@ RZ_API RzList /*<RzAnalysisSignature>*/ *rz_analysis_sigdb_load_database(RZ_NONN
 /* plugin pointers */
 extern RzAnalysisPlugin rz_analysis_plugin_null;
 extern RzAnalysisPlugin rz_analysis_plugin_6502;
-extern RzAnalysisPlugin rz_analysis_plugin_6502_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_8051;
 extern RzAnalysisPlugin rz_analysis_plugin_amd29k;
 extern RzAnalysisPlugin rz_analysis_plugin_arc;

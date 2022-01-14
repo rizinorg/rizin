@@ -131,6 +131,39 @@ static bool test_rzil_vm_root_evaluation() {
 	mu_end;
 }
 
+static bool test_rzil_vm_step() {
+	RzILVM *vm = rz_il_vm_new(0, 16, false);
+
+	RzILVar *var_r1 = rz_il_vm_create_global_var(vm, "r1", rz_il_sort_pure_bv(32));
+	rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
+
+	// fallthrough
+	RzILOpEffect *op = rz_il_op_new_set("r1", false, rz_il_op_new_bitv_from_ut64(32, 42));
+	bool succ = rz_il_vm_step(vm, op, 0x321);
+	rz_il_op_effect_free(op);
+	mu_assert_true(succ, "success");
+	RzILVal *val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var_r1->name);
+	mu_assert_notnull(val, "get val");
+	mu_assert_eq(val->type, RZ_IL_TYPE_PURE_BITVECTOR, "set bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 32, "set bv len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 42, "set bv val");
+	RzBitVector *pc = vm->pc;
+	mu_assert_notnull(pc, "pc");
+	mu_assert_eq(rz_bv_to_ut64(pc), 0x321, "fallthrough pc");
+
+	// jump overriding fallthrough
+	op = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(16, 0x678));
+	succ = rz_il_vm_step(vm, op, 0x123);
+	rz_il_op_effect_free(op);
+	mu_assert_true(succ, "success");
+	pc = vm->pc;
+	mu_assert_notnull(pc, "pc");
+	mu_assert_eq(rz_bv_to_ut64(pc), 0x678, "jumped pc");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 static bool test_rzil_vm_op_let() {
 	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
@@ -594,6 +627,7 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_global_vars);
 	mu_run_test(test_rzil_vm_labels);
 	mu_run_test(test_rzil_vm_root_evaluation);
+	mu_run_test(test_rzil_vm_step);
 	mu_run_test(test_rzil_vm_op_let);
 	mu_run_test(test_rzil_vm_op_cast);
 	mu_run_test(test_rzil_vm_op_unsigned);
