@@ -34,7 +34,7 @@ NAME=ELF_ABI : gcc m32 O0 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O0
 ARGS=-A
 CMDS=<<EOF
-fs~symbols$
+fsl~symbols$
 EOF
 EXPECT=<<EOF
   137 * symbols
@@ -45,7 +45,7 @@ NAME=ELF_ABI : gcc m32 O1 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O1
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    67 * functions
@@ -56,7 +56,7 @@ NAME=ELF_ABI : gcc m32 O2 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O2
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    51 * functions
@@ -67,7 +67,7 @@ NAME=ELF_ABI : gcc m32 O3 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O3
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    43 * functions
@@ -78,7 +78,7 @@ NAME=ELF_ABI : gcc m32 Of flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_Of
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    45 * functions
@@ -89,7 +89,7 @@ NAME=ELF_ABI : gcc m32 Os flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_Os
 ARGS=-A
 CMDS=<<EOF
-fs~functions
+fsl~functions
 EOF
 EXPECT=<<EOF
    85 * functions
