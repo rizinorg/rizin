@@ -92,8 +92,8 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
-f times=5
-(times_stop;?e Loop `?vi times`;f times=`?vi times-1`;?= times)
+f+ times @ 5
+(times_stop;?e Loop `?vi times`;f+ times @ `?vi times-1`;?= times)
 db @ 0x4000ce
 dbC .(times_stop) @ 0x4000ce
 dc
@@ -115,7 +115,7 @@ CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
-(break_rax;f reg_rax=`dr rax`;f test=`?vi reg_rax-0x31c0`;?= test)
+(break_rax;f+ reg_rax @ `drq rax`;f+ test @ `?vi reg_rax-0x31c0`;?= test)
 db @ 0x4000ce
 dbC .(break_rax) @ 0x4000ce
 dc
@@ -136,7 +136,7 @@ CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
-(trace_rax;dr rax;f reg_rax=`dr rax`;f test=`?vi reg_rax-0x0440`;?= test)
+(trace_rax;dr rax;f+ reg_rax @ `drq rax`;f+ test @ `?vi reg_rax-0x0440`;?= test)
 db @ 0x4000ce
 dbC .(trace_rax) @ 0x4000ce
 dc

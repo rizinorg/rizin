@@ -6033,7 +6033,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
 		{ "d", "debugger operations", rz_cmd_debug },
-		{ "f", "get/set flags", rz_cmd_flag },
 		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
@@ -6042,7 +6041,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "v", "enter visual mode", rz_cmd_panels },
 		{ "w", "write bytes", rz_cmd_write },
 		{ "x", "alias for px", rz_cmd_hexdump },
-		{ "z", "zignatures", rz_cmd_zign },
 	};
 
 	core->rcmd = rz_core_cmd_new(!!core->cons);

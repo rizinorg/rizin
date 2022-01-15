@@ -416,7 +416,7 @@ RUN
 
 NAME=flags (total)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=f~?
+CMDS=fl~?
 EXPECT=<<EOF
 107
 EOF
@@ -424,7 +424,7 @@ RUN
 
 NAME=flags
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=f
+CMDS=fl
 EXPECT=<<EOF
 0x00000000 0 section.
 0x00000000 17 section..comment

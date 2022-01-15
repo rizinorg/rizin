@@ -41,13 +41,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	/* TODO: move this somewhere else */
-	eprintf("f input 128 0x3000\n");
+	eprintf("f input 128 @ 0x3000\n");
 	eprintf("o malloc://128 0x3000\n");
-	eprintf("f screen 80*25 0x4000\n");
+	eprintf("f screen 80*25 @ 0x4000\n");
 	eprintf("o malloc://80*25 0x4000\n");
-	eprintf("f stack 0x200 0x5000\n");
+	eprintf("f stack 0x200 @ 0x5000\n");
 	eprintf("o malloc://0x200 0x5000\n");
-	eprintf("f data 0x1000 0x6000\n");
+	eprintf("f data 0x1000 @ 0x6000\n");
 	eprintf("o malloc://0x1000 0x6000\n");
 	eprintf("ar\n"); // hack to init
 	eprintf("ar brk=stack\n");

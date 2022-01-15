@@ -571,7 +571,7 @@ arf
 ?e --
 .arf
 fsl
-f
+fl
 ?e --
 arf-
 ?e --------
@@ -581,24 +581,24 @@ arf- rax
 EOF
 EXPECT=<<EOF
 fss+ registers
-f rax @ 0x0
-f rbx @ 0x0
-f rcx @ 0x0
-f rdx @ 0x0
-f rsi @ 0x0
-f rdi @ 0x0
-f r8 @ 0x0
-f r9 @ 0x0
-f r10 @ 0x0
-f r11 @ 0x0
-f r12 @ 0x0
-f r13 @ 0x0
-f r14 @ 0x0
-f r15 @ 0x0
-f rip @ 0x0
-f rbp @ 0x0
-f rflags @ 0x0
-f rsp @ 0x0
+f+ rax @ 0x0
+f+ rbx @ 0x0
+f+ rcx @ 0x0
+f+ rdx @ 0x0
+f+ rsi @ 0x0
+f+ rdi @ 0x0
+f+ r8 @ 0x0
+f+ r9 @ 0x0
+f+ r10 @ 0x0
+f+ r11 @ 0x0
+f+ r12 @ 0x0
+f+ r13 @ 0x0
+f+ r14 @ 0x0
+f+ r15 @ 0x0
+f+ rip @ 0x0
+f+ rbp @ 0x0
+f+ rflags @ 0x0
+f+ rsp @ 0x0
 fss-
 --
     0 * classes
@@ -645,7 +645,7 @@ f- rflags
 f- rsp
 --------
 fss+ registers
-f rax @ 0x0
+f+ rax @ 0x0
 fss-
 --
 f- rax
@@ -933,16 +933,16 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 ?e -- initial flags
-f
+fl
 ?e --
 ar rax=0x1234
-f
+fl
 ?e --
 ar rbx=0x4321
-f
+fl
 ?e --
 ara0
-f
+fl
 EOF
 EXPECT=<<EOF
 -- initial flags

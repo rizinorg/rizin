@@ -165,3 +165,7 @@ commands:
     args:
       - name: command
         type: RZ_CMD_ARG_TYPE_STRING
+  - name: fortune
+    summary: Show the random fortune message
+    cname: cmd_shell_fortune
+    args: []

@@ -290,7 +290,27 @@ static const RzCmdDescArg eval_editor_args[2];
 static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
+static const RzCmdDescArg flag_add_args[4];
+static const RzCmdDescArg flag_append_args[4];
+static const RzCmdDescArg flag_local_add_args[2];
+static const RzCmdDescArg flag_local_remove_args[2];
+static const RzCmdDescArg flag_remove_args[2];
+static const RzCmdDescArg flag_alias_args[3];
+static const RzCmdDescArg flag_base_args[3];
+static const RzCmdDescArg flag_exists_args[2];
+static const RzCmdDescArg flag_distance_args[2];
+static const RzCmdDescArg flag_graph_args[2];
+static const RzCmdDescArg flag_range_args[2];
+static const RzCmdDescArg flag_length_args[2];
+static const RzCmdDescArg flag_realname_args[3];
+static const RzCmdDescArg flag_list_ascii_args[2];
+static const RzCmdDescArg flag_color_args[3];
+static const RzCmdDescArg flag_comment_args[3];
 static const RzCmdDescArg flag_describe_closest_args[2];
+static const RzCmdDescArg flag_move_args[2];
+static const RzCmdDescArg flag_ordinals_args[2];
+static const RzCmdDescArg flag_rename_args[3];
+static const RzCmdDescArg flag_relocate_args[4];
 static const RzCmdDescArg flag_space_add_args[2];
 static const RzCmdDescArg flag_space_remove_args[2];
 static const RzCmdDescArg flag_space_rename_args[2];
@@ -299,6 +319,7 @@ static const RzCmdDescArg flag_tag_add_args[3];
 static const RzCmdDescArg flag_tag_search_args[2];
 static const RzCmdDescArg flag_zone_add_args[2];
 static const RzCmdDescArg flag_zone_remove_args[2];
+static const RzCmdDescArg flag_hexdump_args[2];
 static const RzCmdDescArg egg_compile_args[2];
 static const RzCmdDescArg egg_config_args[2];
 static const RzCmdDescArg egg_syscall_args[3];
@@ -6406,9 +6427,337 @@ static const RzCmdDescHelp eval_type_help = {
 	.args = eval_type_args,
 };
 
-static const RzCmdDescHelp cmd_flag_help = {
+static const RzCmdDescHelp f_help = {
 	.summary = "Manage flags",
 };
+static const RzCmdDescArg flag_add_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "comment",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_add_help = {
+	.summary = "Add the flag if there are no existing flags",
+	.description = "Adds the flag to the current offset only if no flag exists at this offset already.",
+	.args = flag_add_args,
+};
+
+static const RzCmdDescArg flag_append_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "comment",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_append_help = {
+	.summary = "Add the flag",
+	.description = "Add the flag like the 'f' command but in any case, even if one or multiple flags already exist.",
+	.args = flag_append_args,
+};
+
+static const RzCmdDescHelp f_dot__help = {
+	.summary = "Local flags (per function)",
+};
+static const RzCmdDescArg flag_local_add_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_local_add_help = {
+	.summary = "Add the local flag",
+	.args = flag_local_add_args,
+};
+
+static const RzCmdDescArg flag_local_remove_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_local_remove_help = {
+	.summary = "Remove the local flag",
+	.args = flag_local_remove_args,
+};
+
+static const RzCmdDescArg flag_local_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_local_list_help = {
+	.summary = "List the local flags for the function",
+	.args = flag_local_list_args,
+};
+
+static const RzCmdDescArg flag_local_list_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_local_list_all_help = {
+	.summary = "List the local flags for all functions",
+	.args = flag_local_list_all_args,
+};
+
+static const RzCmdDescArg flag_remove_args[] = {
+	{
+		.name = "glob",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_remove_help = {
+	.summary = "Remove the flag",
+	.description = "If the glob is supplied it removes just flag items matching the pattern. Otherwise, it removes all flags at the current offset.",
+	.args = flag_remove_args,
+};
+
+static const RzCmdDescArg flag_remove_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_remove_all_help = {
+	.summary = "Remove all flags",
+	.args = flag_remove_all_args,
+};
+
+static const RzCmdDescArg flag_alias_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+
+	},
+	{
+		.name = "alias",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_alias_help = {
+	.summary = "Alias a flag to evaluate an expression",
+	.args = flag_alias_args,
+};
+
+static const RzCmdDescArg flag_base_args[] = {
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "glob",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_base_help = {
+	.summary = "Set base address for flags",
+	.args = flag_base_args,
+};
+
+static const RzCmdDescArg flag_exists_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_exists_help = {
+	.summary = "Check if flag exists",
+	.args = flag_exists_args,
+};
+
+static const RzCmdDescArg flag_distance_args[] = {
+	{
+		.name = "glob",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_distance_help = {
+	.summary = "Distance in bytes to reach the next flag",
+	.args = flag_distance_args,
+};
+
+static const RzCmdDescArg flag_graph_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_graph_help = {
+	.summary = "Show the flag graph",
+	.args = flag_graph_args,
+};
+
+static const RzCmdDescArg flag_range_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_range_help = {
+	.summary = "Show the flags in the block or custom range",
+	.args = flag_range_args,
+};
+
+static const RzCmdDescArg flag_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_list_help = {
+	.summary = "List all flags",
+	.args = flag_list_args,
+};
+
+static const RzCmdDescArg flag_list_at_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_list_at_help = {
+	.summary = "List all flags at the current offset",
+	.args = flag_list_at_args,
+};
+
+static const RzCmdDescArg flag_length_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_length_help = {
+	.summary = "Show the flag length / Set the flag length",
+	.args = flag_length_args,
+};
+
+static const RzCmdDescArg flag_realname_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+		.optional = true,
+
+	},
+	{
+		.name = "realname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_realname_help = {
+	.summary = "Show the realname of the flag / Set the realname of the flag",
+	.args = flag_realname_args,
+};
+
+static const RzCmdDescArg flag_list_ascii_args[] = {
+	{
+		.name = "glob",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_list_ascii_help = {
+	.summary = "List range bars with flag offsets and sizes",
+	.args = flag_list_ascii_args,
+};
+
+static const RzCmdDescArg flag_color_args[] = {
+	{
+		.name = "flag",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+
+	},
+	{
+		.name = "color",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_color_help = {
+	.summary = "Set a comment for the given flag / Show a comment for the given flag",
+	.args = flag_color_args,
+};
+
+static const RzCmdDescArg flag_comment_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+
+	},
+	{
+		.name = "comment",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_comment_help = {
+	.summary = "Set a comment for the given flag / Show a comment for the given flag",
+	.args = flag_comment_args,
+};
+
 static const RzCmdDescHelp fd_help = {
 	.summary = "Describe flag",
 };
@@ -6440,6 +6789,78 @@ static const RzCmdDescArg flag_describe_closest_args[] = {
 static const RzCmdDescHelp flag_describe_closest_help = {
 	.summary = "Describe closest flag by string for the current offset",
 	.args = flag_describe_closest_args,
+};
+
+static const RzCmdDescArg flag_move_args[] = {
+	{
+		.name = "newaddress",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_move_help = {
+	.summary = "Move a flag to the new address",
+	.args = flag_move_args,
+};
+
+static const RzCmdDescArg flag_ordinals_args[] = {
+	{
+		.name = "glob",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_ordinals_help = {
+	.summary = "Flag as ordinals (sym.* func.* method.*)",
+	.args = flag_ordinals_args,
+};
+
+static const RzCmdDescArg flag_rename_args[] = {
+	{
+		.name = "old",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+
+	},
+	{
+		.name = "new",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_rename_help = {
+	.summary = "Rename flag",
+	.args = flag_rename_args,
+};
+
+static const RzCmdDescArg flag_relocate_args[] = {
+	{
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "to",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "mask",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_relocate_help = {
+	.summary = "Relocate flags",
+	.args = flag_relocate_args,
 };
 
 static const RzCmdDescHelp fs_help = {
@@ -6641,6 +7062,19 @@ static const RzCmdDescArg flag_zone_list_args[] = {
 static const RzCmdDescHelp flag_zone_list_help = {
 	.summary = "List all flag zones",
 	.args = flag_zone_list_args,
+};
+
+static const RzCmdDescArg flag_hexdump_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_hexdump_help = {
+	.summary = "Show hexdump of flag:flagsize",
+	.args = flag_hexdump_args,
 };
 
 static const RzCmdDescHelp g_help = {
@@ -10890,6 +11324,14 @@ static const RzCmdDescHelp cmd_shell_which_help = {
 	.args = cmd_shell_which_args,
 };
 
+static const RzCmdDescArg cmd_shell_fortune_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_fortune_help = {
+	.summary = "Show the random fortune message",
+	.args = cmd_shell_fortune_args,
+};
+
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
@@ -12157,9 +12599,74 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *eval_type_cd = rz_cmd_desc_argv_new(core->rcmd, e_cd, "et", rz_eval_type_handler, &eval_type_help);
 	rz_warn_if_fail(eval_type_cd);
 
-	RzCmdDesc *cmd_flag_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "f", rz_cmd_flag, &cmd_flag_help);
-	rz_warn_if_fail(cmd_flag_cd);
-	RzCmdDesc *fd_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_flag_cd, "fd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_describe_handler, &flag_describe_help, &fd_help);
+	RzCmdDesc *f_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "f", rz_flag_add_handler, &flag_add_help, &f_help);
+	rz_warn_if_fail(f_cd);
+	RzCmdDesc *flag_append_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "f+", rz_flag_append_handler, &flag_append_help);
+	rz_warn_if_fail(flag_append_cd);
+
+	RzCmdDesc *f_dot__cd = rz_cmd_desc_group_new(core->rcmd, f_cd, "f.", rz_flag_local_add_handler, &flag_local_add_help, &f_dot__help);
+	rz_warn_if_fail(f_dot__cd);
+	RzCmdDesc *flag_local_remove_cd = rz_cmd_desc_argv_new(core->rcmd, f_dot__cd, "f.-", rz_flag_local_remove_handler, &flag_local_remove_help);
+	rz_warn_if_fail(flag_local_remove_cd);
+
+	RzCmdDesc *flag_local_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, f_dot__cd, "f.l", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_flag_local_list_handler, &flag_local_list_help);
+	rz_warn_if_fail(flag_local_list_cd);
+	rz_cmd_desc_set_default_mode(flag_local_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_local_list_all_cd = rz_cmd_desc_argv_state_new(core->rcmd, f_dot__cd, "f.l*", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_flag_local_list_all_handler, &flag_local_list_all_help);
+	rz_warn_if_fail(flag_local_list_all_cd);
+	rz_cmd_desc_set_default_mode(flag_local_list_all_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_remove_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "f-", rz_flag_remove_handler, &flag_remove_help);
+	rz_warn_if_fail(flag_remove_cd);
+
+	RzCmdDesc *flag_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "f-*", rz_flag_remove_all_handler, &flag_remove_all_help);
+	rz_warn_if_fail(flag_remove_all_cd);
+
+	RzCmdDesc *flag_alias_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fa", rz_flag_alias_handler, &flag_alias_help);
+	rz_warn_if_fail(flag_alias_cd);
+
+	RzCmdDesc *flag_base_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fb", rz_flag_base_handler, &flag_base_help);
+	rz_warn_if_fail(flag_base_cd);
+
+	RzCmdDesc *flag_exists_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fe", rz_flag_exists_handler, &flag_exists_help);
+	rz_warn_if_fail(flag_exists_cd);
+
+	RzCmdDesc *flag_distance_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "ff", rz_flag_distance_handler, &flag_distance_help);
+	rz_warn_if_fail(flag_distance_cd);
+
+	RzCmdDesc *flag_graph_cd = rz_cmd_desc_argv_state_new(core->rcmd, f_cd, "fg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_flag_graph_handler, &flag_graph_help);
+	rz_warn_if_fail(flag_graph_cd);
+	rz_cmd_desc_set_default_mode(flag_graph_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_range_cd = rz_cmd_desc_argv_state_new(core->rcmd, f_cd, "fi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_flag_range_handler, &flag_range_help);
+	rz_warn_if_fail(flag_range_cd);
+	rz_cmd_desc_set_default_mode(flag_range_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, f_cd, "fl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_flag_list_handler, &flag_list_help);
+	rz_warn_if_fail(flag_list_cd);
+	rz_cmd_desc_set_default_mode(flag_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_list_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, f_cd, "fl.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_flag_list_at_handler, &flag_list_at_help);
+	rz_warn_if_fail(flag_list_at_cd);
+	rz_cmd_desc_set_default_mode(flag_list_at_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_length_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fL", rz_flag_length_handler, &flag_length_help);
+	rz_warn_if_fail(flag_length_cd);
+
+	RzCmdDesc *flag_realname_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fN", rz_flag_realname_handler, &flag_realname_help);
+	rz_warn_if_fail(flag_realname_cd);
+
+	RzCmdDesc *flag_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fl=", rz_flag_list_ascii_handler, &flag_list_ascii_help);
+	rz_warn_if_fail(flag_list_ascii_cd);
+
+	RzCmdDesc *flag_color_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fc", rz_flag_color_handler, &flag_color_help);
+	rz_warn_if_fail(flag_color_cd);
+
+	RzCmdDesc *flag_comment_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fC", rz_flag_comment_handler, &flag_comment_help);
+	rz_warn_if_fail(flag_comment_cd);
+
+	RzCmdDesc *fd_cd = rz_cmd_desc_group_state_new(core->rcmd, f_cd, "fd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_describe_handler, &flag_describe_help, &fd_help);
 	rz_warn_if_fail(fd_cd);
 	rz_cmd_desc_set_default_mode(fd_cd, RZ_OUTPUT_MODE_STANDARD);
 	RzCmdDesc *flag_describe_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, fd_cd, "fd.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_describe_at_handler, &flag_describe_at_help);
@@ -12169,7 +12676,19 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *flag_describe_closest_cd = rz_cmd_desc_argv_new(core->rcmd, fd_cd, "fdw", rz_flag_describe_closest_handler, &flag_describe_closest_help);
 	rz_warn_if_fail(flag_describe_closest_cd);
 
-	RzCmdDesc *fs_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "fs", rz_flag_space_add_handler, &flag_space_add_help, &fs_help);
+	RzCmdDesc *flag_move_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fm", rz_flag_move_handler, &flag_move_help);
+	rz_warn_if_fail(flag_move_cd);
+
+	RzCmdDesc *flag_ordinals_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fO", rz_flag_ordinals_handler, &flag_ordinals_help);
+	rz_warn_if_fail(flag_ordinals_cd);
+
+	RzCmdDesc *flag_rename_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fr", rz_flag_rename_handler, &flag_rename_help);
+	rz_warn_if_fail(flag_rename_cd);
+
+	RzCmdDesc *flag_relocate_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fR", rz_flag_relocate_handler, &flag_relocate_help);
+	rz_warn_if_fail(flag_relocate_cd);
+
+	RzCmdDesc *fs_cd = rz_cmd_desc_group_new(core->rcmd, f_cd, "fs", rz_flag_space_add_handler, &flag_space_add_help, &fs_help);
 	rz_warn_if_fail(fs_cd);
 	RzCmdDesc *flag_space_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, fs_cd, "fsl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_flag_space_list_handler, &flag_space_list_help);
 	rz_warn_if_fail(flag_space_list_cd);
@@ -12199,7 +12718,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(flag_space_stack_list_cd);
 	rz_cmd_desc_set_default_mode(flag_space_stack_list_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *ft_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "ft", rz_flag_tag_add_handler, &flag_tag_add_help, &ft_help);
+	RzCmdDesc *ft_cd = rz_cmd_desc_group_new(core->rcmd, f_cd, "ft", rz_flag_tag_add_handler, &flag_tag_add_help, &ft_help);
 	rz_warn_if_fail(ft_cd);
 	RzCmdDesc *flag_tag_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ft_cd, "ftl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON, rz_flag_tag_list_handler, &flag_tag_list_help);
 	rz_warn_if_fail(flag_tag_list_cd);
@@ -12208,7 +12727,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *flag_tag_search_cd = rz_cmd_desc_argv_new(core->rcmd, ft_cd, "ftn", rz_flag_tag_search_handler, &flag_tag_search_help);
 	rz_warn_if_fail(flag_tag_search_cd);
 
-	RzCmdDesc *fz_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "fz", rz_flag_zone_add_handler, &flag_zone_add_help, &fz_help);
+	RzCmdDesc *fz_cd = rz_cmd_desc_group_new(core->rcmd, f_cd, "fz", rz_flag_zone_add_handler, &flag_zone_add_help, &fz_help);
 	rz_warn_if_fail(fz_cd);
 	RzCmdDesc *flag_zone_remove_cd = rz_cmd_desc_argv_new(core->rcmd, fz_cd, "fz-", rz_flag_zone_remove_handler, &flag_zone_remove_help);
 	rz_warn_if_fail(flag_zone_remove_cd);
@@ -12222,6 +12741,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *flag_zone_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, fz_cd, "fzl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_zone_list_handler, &flag_zone_list_help);
 	rz_warn_if_fail(flag_zone_list_cd);
 	rz_cmd_desc_set_default_mode(flag_zone_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_hexdump_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fx", rz_flag_hexdump_handler, &flag_hexdump_help);
+	rz_warn_if_fail(flag_hexdump_cd);
 
 	RzCmdDesc *g_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "g", rz_egg_compile_handler, &egg_compile_help, &g_help);
 	rz_warn_if_fail(g_cd);
@@ -13066,10 +13588,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *zign_space_rename_cd = rz_cmd_desc_argv_new(core->rcmd, zs_cd, "zsr", rz_zign_space_rename_handler, &zign_space_rename_help);
 	rz_warn_if_fail(zign_space_rename_cd);
 
-	RzCmdDesc *zi_cd = rz_cmd_desc_group_modes_new(core->rcmd, z_cd, "zi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_zign_info_handler, &zign_info_help, &zi_help);
+	RzCmdDesc *zi_cd = rz_cmd_desc_group_state_new(core->rcmd, z_cd, "zi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_zign_info_handler, &zign_info_help, &zi_help);
 	rz_warn_if_fail(zi_cd);
-	RzCmdDesc *zign_info_range_cd = rz_cmd_desc_argv_new(core->rcmd, zi_cd, "zii", rz_zign_info_range_handler, &zign_info_range_help);
+	rz_cmd_desc_set_default_mode(zi_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *zign_info_range_cd = rz_cmd_desc_argv_state_new(core->rcmd, zi_cd, "zii", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_zign_info_range_handler, &zign_info_range_help);
 	rz_warn_if_fail(zign_info_range_cd);
+	rz_cmd_desc_set_default_mode(zign_info_range_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *tmp_modifiers_cd = rz_cmd_desc_fake_new(core->rcmd, root_cd, "@", &tmp_modifiers_help);
 	rz_warn_if_fail(tmp_modifiers_cd);
@@ -13144,5 +13668,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_which_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "which", rz_cmd_shell_which_handler, &cmd_shell_which_help);
 	rz_warn_if_fail(cmd_shell_which_cd);
+
+	RzCmdDesc *cmd_shell_fortune_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "fortune", rz_cmd_shell_fortune_handler, &cmd_shell_fortune_help);
+	rz_warn_if_fail(cmd_shell_fortune_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

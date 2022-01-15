@@ -740,7 +740,7 @@ FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
 aaa
-f
+fl
 EOF
 EXPECT=<<EOF
 0x00000000 2 x

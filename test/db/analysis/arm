@@ -442,7 +442,7 @@ e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
-f sym.callback=0x315
+f sym.callback @ 0x315
 pd 1
 EOF
 EXPECT=<<EOF
@@ -459,7 +459,7 @@ e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
-f sym.callback=0x14
+f sym.callback @ 0x14
 pd 1
 e asm.sub.varmin=0
 pd 1
@@ -574,7 +574,7 @@ NAME=ELF ARM: aa
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
 aa
-f~sym?
+fl~sym?
 afl~?
 EOF
 EXPECT=<<EOF
@@ -863,7 +863,7 @@ CMDS=<<EOF
 e asm.cpu=arm1176
 e asm.platform=bcm2835
 aa
-f~AUX
+fl~AUX
 CCl~Broadcom
 EOF
 EXPECT=<<EOF
@@ -990,7 +990,7 @@ NAME=arm jmptbl flags and comments
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 af@ sym.__gcc_personality_v0
-f~switch.,case.
+fl~switch.,case.
 CCl~switch
 EOF
 EXPECT=<<EOF

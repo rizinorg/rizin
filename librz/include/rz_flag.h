@@ -51,7 +51,6 @@ typedef struct rz_flag_t {
 	RzNum *num;
 	RzSkipList *by_off; /* flags sorted by offset, value=RzFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RzFlagItem * */
-	PrintfCallback cb_printf;
 	RzList *zones;
 } RzFlag;
 
@@ -94,7 +93,6 @@ RZ_API void rz_flag_bind(RzFlag *io, RzFlagBind *bnd);
 #ifdef RZ_API
 RZ_API RzFlag *rz_flag_new(void);
 RZ_API RzFlag *rz_flag_free(RzFlag *f);
-RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx);
 RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name);
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off);
@@ -106,6 +104,7 @@ RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off);
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item);
 RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name);
 RZ_API bool rz_flag_unset_off(RzFlag *f, ut64 addr);
+RZ_API bool rz_flag_unset_all_off(RzFlag *f, ut64 off);
 RZ_API void rz_flag_unset_all(RzFlag *f);
 RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name);
 RZ_API RzFlagItem *rz_flag_set(RzFlag *fo, const char *name, ut64 addr, ut32 size);

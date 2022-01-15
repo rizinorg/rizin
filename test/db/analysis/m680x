@@ -8,10 +8,10 @@ afb*
 EOF
 EXPECT=<<EOF
 fs blocks
-f bb.00000 = 0x00000000
-f bb.00024 = 0x00000024
-f bb.00027 = 0x00000027
-f bb.0002c = 0x0000002c
+f bb.00000 @ 0x00000000
+f bb.00024 @ 0x00000024
+f bb.00027 @ 0x00000027
+f bb.0002c @ 0x0000002c
 EOF
 RUN
 

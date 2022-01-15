@@ -433,8 +433,8 @@ EXPECT=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 6a00
-f entry = $$
-f label.main = $$ + 1
+f entry @ $$
+f label.main @ $$ + 1
 EOF
 RUN
 

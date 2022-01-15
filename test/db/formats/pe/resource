@@ -77,7 +77,7 @@ RUN
 
 NAME=PE resources flags
 FILE=bins/pe/standard.exe
-CMDS=f@F:resources
+CMDS=fl @F:resources
 EXPECT=<<EOF
 0x00401180 5672 resource.0
 0x004027b0 20 resource.2

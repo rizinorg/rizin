@@ -101,7 +101,7 @@ oml
 ?e --
 e asm.flags.real=false
 e asm.bytes=true
-f@F:relocs
+fl @F:relocs
 pd 1 @ 0x08000079
 pd 1 @ 0x080000a2
 pd 1 @ reloc.target.strcmp
@@ -128,13 +128,13 @@ CMDS=<<EOF
 oml
 ?e --
 e asm.flags.real=false
-f@F:relocs
+fl @F:relocs
 pd 1 @ 0x08000079
 pd 1 @ 0x080000a2
 pd 1 @ reloc.target.strcmp
 ?e --
 e asm.flags.real=true
-f@F:relocs
+fl @F:relocs
 pd 1 @ 0x08000079
 pd 1 @ 0x080000a2
 pd 1 @ reloc.target.strcmp

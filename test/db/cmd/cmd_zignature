@@ -300,7 +300,7 @@ CMDS=<<EOF
 za date_string b 323030362d30312d30322031353a30343a30352e393939393939393939202d30373030204d535400
 za sym.fmt.Println b 653b2530000000724b53b834e7150883ec188b15401c22088d4c24048b5c242083ec08ff742434ff742434ff742434525051e829ffffff8b44242089038b4424248943048b44242889430889d883c4345bc204006a106a1ce85e350700c20400
 fs sign
-f~?
+fl~?
 e io.va=0
 e search.in=file
 z/
@@ -308,7 +308,7 @@ e io.va=1
 ?v sign.bytes.date_string_0
 ?v sign.bytes.sym.fmt.Println_0
 f-*
-f~?
+fl~?
 e search.in=bin.sections.x
 z/
 ?v sign.bytes.elf_header_0
@@ -334,10 +334,10 @@ e zign.mincc=0
 fs *
 e search.align=2
 z/
-f~?
+fl~?
 e search.align=1
 z/
-f~?
+fl~?
 EOF
 EXPECT=<<EOF
 0
@@ -354,7 +354,7 @@ za b b bbccddee
 e zign.minsz=0
 e zign.mincc=0
 fs *
-f~?
+fl~?
 e search.in=raw
 e search.from=0x0
 e search.to=0x8
@@ -362,7 +362,7 @@ z/
 ?v sign.bytes.a_0
 ?v sign.bytes.b_0
 f-*
-f~?
+fl~?
 e search.from=0x8
 e search.to=0xf
 z/
@@ -387,11 +387,11 @@ za foo b 11223344
 e zign.minsz=0
 fs *
 z/
-f~?
+fl~?
 f-*
 e zign.minsz=5
 z/
-f~?
+fl~?
 EOF
 EXPECT=<<EOF
 1
@@ -642,14 +642,14 @@ fs sign
 e zign.match.bytes=true
 e zign.match.graph=false
 z/
-f~sign.bytes.sym.print?
-f~sign.graph.sym.print?
+fl~sign.bytes.sym.print?
+fl~sign.graph.sym.print?
 f-*
 e zign.match.bytes=false
 e zign.match.graph=true
 z/
-f~sign.bytes.sym.print?
-f~sign.graph.sym.print?
+fl~sign.bytes.sym.print?
+fl~sign.graph.sym.print?
 EOF
 EXPECT=<<EOF
 1
@@ -671,14 +671,14 @@ fs sign
 e zign.match.bytes=true
 e zign.match.graph=false
 z. @ 0x400536
-f~sign.bytes.sym.print?
-f~sign.graph.sym.print?
+fl~sign.bytes.sym.print?
+fl~sign.graph.sym.print?
 f-*
 e zign.match.bytes=false
 e zign.match.graph=true
 z. @ 0x400536
-f~sign.bytes.sym.print?
-f~sign.graph.sym.print?
+fl~sign.bytes.sym.print?
+fl~sign.graph.sym.print?
 EOF
 EXPECT=<<EOF
 1
@@ -787,7 +787,7 @@ FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aac
 zfs bins/other/sigs/libc6_2.27-3ubuntu1_amd64.sig~silence
-f@F:flirt
+fl @F:flirt
 EOF
 EXPECT=<<EOF
 0x004004d1 86 flirt.__malloc_assert.constprop.13

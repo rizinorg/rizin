@@ -9,7 +9,7 @@ e asm.cmt.col=0
 wx 66b801000000b90f006683fb02e2fa66bb01000000c3
 af+ 0000:0000 fcn1
 afb+ 0 0 22
-f .loop1 @ 0000:0009
+f. loop1 @ 0000:0009
 pd 1 @ 0000:000d
 EOF
 EXPECT=<<EOF
@@ -27,7 +27,7 @@ e asm.nbytes=2
 wx 66b801000000b90f006683fb02e2fa66bb01000000c3
 af+ 0 fnc1
 afb+ 0 0 22
-f .loop1 @ 9
+f. loop1 @ 9
 pd 1 @ 9
 EOF
 EXPECT=<<EOF

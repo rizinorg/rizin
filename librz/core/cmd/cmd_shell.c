@@ -227,3 +227,9 @@ RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char
 	free(solved);
 	return RZ_CMD_STATUS_OK;
 }
+
+// fortune
+RZ_IPI RzCmdStatus rz_cmd_shell_fortune_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_fortune_print_random(core);
+	return RZ_CMD_STATUS_OK;
+}

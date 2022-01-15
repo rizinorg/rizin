@@ -4,7 +4,7 @@ ARGS=-d
 CMDS=<<EOF
 .dr*
 s rip
-f a=rip
+f+ a @ rip
 wx 90
 pi 1 # hack this shouldnt be here
 ds

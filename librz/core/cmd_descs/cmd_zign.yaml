@@ -288,6 +288,8 @@ commands:
         cname: zign_info
         summary: Show zignatures matching information
         args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -296,6 +298,11 @@ commands:
       - name: zii
         cname: zign_info_range
         summary: Show zignatures matching information in range
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: from
             type: RZ_CMD_ARG_TYPE_NUM

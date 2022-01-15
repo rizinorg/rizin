@@ -53,10 +53,10 @@ FILE==
 CMDS=<<EOF
 e bin.baddr=0
 idp bins/pdb/Project1.pdb
-f~pdb:1
+fl~pdb:1
 e bin.baddr=0x800000
 idp bins/pdb/Project1.pdb
-f~pdb:1
+fl~pdb:1
 EOF
 EXPECT=<<EOF
 0x00011000 0 pdb.__enc_textbss_end
