@@ -15,14 +15,7 @@ extern RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP
 
 static void free_label_kv(HtPPKv *kv) {
 	free(kv->key);
-	RzILEffectLabel *lbl = kv->value;
-
-	if (lbl->type == EFFECT_LABEL_HOOK || lbl->type == EFFECT_LABEL_SYSCALL) {
-		lbl->addr = NULL;
-	}
-	rz_bv_free(lbl->addr);
-	free(lbl->label_id);
-	free(lbl);
+	rz_il_effect_label_free(kv->value);
 }
 
 /**
@@ -102,7 +95,6 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	rz_il_var_set_fini(&vm->local_vars);
 	rz_il_var_set_fini(&vm->local_pure_vars);
 
-	rz_il_reg_binding_free(vm->reg_binding);
 	rz_pvector_fini(&vm->vm_memory);
 
 	ht_pp_free(vm->vm_global_label_table);
@@ -301,6 +293,11 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_find_label_by_name(RZ_NONNULL RzILVM 
 	return ht_pp_find(vm->vm_global_label_table, lbl_name, NULL);
 }
 
+RZ_API void rz_il_vm_add_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILEffectLabel *label) {
+	rz_return_if_fail(vm && label);
+	ht_pp_update(vm->vm_global_label_table, label->label_id, label);
+}
+
 /**
  * Create a label in VM
  * \param vm RzILVM, pointer to VM
@@ -310,11 +307,9 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_find_label_by_name(RZ_NONNULL RzILVM 
  */
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzBitVector *addr) {
 	rz_return_val_if_fail(vm && name && addr, NULL);
-	HtPP *lbl_table = vm->vm_global_label_table;
-
 	RzILEffectLabel *lbl = rz_il_effect_label_new(name, EFFECT_LABEL_ADDR);
 	lbl->addr = rz_bv_dup(addr);
-	ht_pp_insert(lbl_table, name, lbl);
+	rz_il_vm_add_label(vm, lbl);
 	return lbl;
 }
 
@@ -326,12 +321,9 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label(RZ_NONNULL RzILVM *vm, R
  */
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label_lazy(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(vm && name, NULL);
-	HtPP *lbl_table = vm->vm_global_label_table;
-
 	RzILEffectLabel *lbl = rz_il_effect_label_new(name, EFFECT_LABEL_ADDR);
 	lbl->addr = NULL;
-	ht_pp_insert(lbl_table, name, lbl);
-
+	rz_il_vm_add_label(vm, lbl);
 	return lbl;
 }
 
@@ -348,6 +340,5 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_update_label(RZ_NONNULL RzILVM *vm, R
 		rz_bv_free(lbl->addr);
 	}
 	lbl->addr = rz_bv_dup(addr);
-
 	return lbl;
 }

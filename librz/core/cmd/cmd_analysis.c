@@ -7987,22 +7987,22 @@ RZ_IPI RzCmdStatus rz_analysis_function_strings_handler(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_rzil_vm_initialize_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_analysis_rzil_reinit(core);
+RZ_IPI RzCmdStatus rz_il_vm_initialize_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_il_reinit(core);
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_rzil_vm_step_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_il_vm_step_handler(RzCore *core, int argc, const char **argv) {
 	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
 	for (ut64 i = 0; i < repeat_times; ++i) {
-		if (!rz_core_rzil_step(core)) {
+		if (!rz_core_il_step(core)) {
 			break;
 		}
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_il_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
 	PJ *pj = NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -8014,7 +8014,7 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, c
 		pj_a(pj);
 	}
 	for (ut64 i = 0; i < repeat_times; ++i) {
-		if (!rz_core_analysis_rzil_step_with_events(core, pj)) {
+		if (!rz_core_analysis_il_step_with_events(core, pj)) {
 			break;
 		}
 	}
@@ -8026,15 +8026,14 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_rzil_vm_step_until_addr_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, const char **argv) {
 	ut64 address = rz_num_math(core->num, argv[1]);
 
-	if (!core->analysis->rzil || !core->analysis->rzil->vm) {
+	if (!core->analysis->il_vm) {
 		RZ_LOG_ERROR("RzIL: the VM is not initialized.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	RzILVM *vm = core->analysis->rzil->vm;
+	RzILVM *vm = core->analysis->il_vm->vm;
 
 	ut64 pc = rz_bv_to_ut64(vm->pc);
 	while (pc != address) {
@@ -8042,7 +8041,7 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_until_addr_handler(RzCore *core, int argc, co
 			rz_cons_printf("CTRL+C was pressed.\n");
 			break;
 		}
-		if (!rz_core_rzil_step(core)) {
+		if (!rz_core_il_step(core)) {
 			break;
 		}
 		pc = rz_bv_to_ut64(vm->pc);
@@ -8050,15 +8049,15 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_until_addr_handler(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_rzil_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 3) {
 		ut64 value = rz_num_math(core->num, argv[2]);
-		if (rz_core_analysis_rzil_vm_set(core, argv[1], value)) {
+		if (rz_core_analysis_il_vm_set(core, argv[1], value)) {
 			rz_cons_printf("%s = 0x%" PFMT64x "\n", argv[1], value);
 		}
 	} else {
 		// print variable or all variables
-		rz_core_analysis_rzil_vm_status(core, argc == 2 ? argv[1] : NULL, mode);
+		rz_core_analysis_il_vm_status(core, argc == 2 ? argv[1] : NULL, mode);
 	}
 	return RZ_CMD_STATUS_OK;
 }

@@ -1071,30 +1071,8 @@ static int address_bits(RzAnalysis *analysis, int bits) {
 	return 16;
 }
 
-static bool il_6502_init(RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis && analysis->rzil, false);
-	RzAnalysisRzil *rzil = analysis->rzil;
-	if (rzil->inited) {
-		RZ_LOG_ERROR("RzIL: 6502: already initialized\n");
-		return true;
-	}
-	RzILVM *vm = rzil->vm;
-	if (!rz_il_vm_init(rzil->vm, 0, 16, 8)) {
-		RZ_LOG_ERROR("RzIL: 6502: failed to initialize VM\n");
-		return false;
-	}
-
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(rzil->io_buf, 16));
-
-	return true;
-}
-
-static bool il_6502_fini(RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis && analysis->rzil, false);
-	RzAnalysisRzil *rzil = analysis->rzil;
-	rzil->user = NULL;
-	rzil->inited = false;
-	return true;
+static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+	return rz_analysis_il_config_new(16, false, 16);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_6502 = {
@@ -1109,8 +1087,7 @@ RzAnalysisPlugin rz_analysis_plugin_6502 = {
 	.esil = true,
 	.esil_init = esil_6502_init,
 	.esil_fini = esil_6502_fini,
-	.rzil_init = il_6502_init,
-	.rzil_fini = il_6502_fini
+	.il_config = il_config
 };
 
 #ifndef RZ_PLUGIN_INCORE

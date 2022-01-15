@@ -111,11 +111,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_rename_handler(RzCore *core, int argc, c
 RZ_IPI RzCmdStatus rz_analysis_function_autoname_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_function_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input);
-RZ_IPI RzCmdStatus rz_rzil_vm_initialize_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_rzil_vm_step_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
-RZ_IPI RzCmdStatus rz_rzil_vm_step_until_addr_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_rzil_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_il_vm_initialize_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_il_vm_step_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_il_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_analysis_regs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_analysis_regs_columns_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_regs_references_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
