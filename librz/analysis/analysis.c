@@ -124,7 +124,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	}
 	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);
 	analysis->global_var_tree = NULL;
-	analysis->rzil = NULL;
+	analysis->il_vm = NULL;
 	return analysis;
 }
 
@@ -145,7 +145,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 	plugin_fini(a);
 
-	rz_analysis_rzil_cleanup(a);
+	rz_analysis_il_vm_cleanup(a);
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
 	ht_pp_free(a->ht_name_fun);
@@ -202,19 +202,8 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 				return false;
 			}
 			rz_analysis_set_reg_profile(analysis);
-
-			// default : init and enable RzIL if defined rzil_init
-			if (h->rzil_init) {
-				if (analysis->rzil) {
-					rz_analysis_rzil_cleanup(analysis);
-					analysis->rzil = NULL;
-				}
-				rz_analysis_rzil_setup(analysis);
-			} else {
-				// create it to make analysis_tp go right
-				if (!analysis->rzil) {
-					analysis->rzil = rz_analysis_rzil_new();
-				}
+			if (analysis->il_vm) {
+				rz_analysis_il_vm_setup(analysis);
 			}
 			return true;
 		}

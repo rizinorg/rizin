@@ -197,11 +197,10 @@ RZ_API void rz_il_reg_binding_free(RzILRegBinding *rb) {
 
 /**
  * Setup variables to bind against registers
- * \p rb the binding for which to create variables, ownership is transferred to the vm.
+ * \p rb the binding for which to create variables
  */
-RZ_API void rz_il_vm_setup_reg_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RZ_OWN RzILRegBinding *rb) {
-	rz_return_if_fail(vm && rb && !vm->reg_binding);
-	vm->reg_binding = rb;
+RZ_API void rz_il_vm_setup_reg_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RZ_BORROW RzILRegBinding *rb) {
+	rz_return_if_fail(vm && rb);
 	for (size_t i = 0; i < rb->regs_count; i++) {
 		rz_il_vm_create_global_var(vm, rb->regs[i].name,
 			rb->regs[i].size == 1 ? rz_il_sort_pure_bool() : rz_il_sort_pure_bv(rb->regs[i].size));
@@ -219,8 +218,8 @@ RZ_API void rz_il_vm_setup_reg_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RZ_OWN 
  *
  * \return whether the sync was cleanly applied without errors or adjustments
  */
-RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
-	rz_return_val_if_fail(vm && reg, false);
+RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBinding *rb, RZ_NONNULL RzReg *reg) {
+	rz_return_val_if_fail(vm && rb && reg, false);
 	bool perfect = true;
 	const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 	if (pc) {
@@ -240,10 +239,6 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
 		}
 	} else {
 		perfect = false;
-	}
-	RzILRegBinding *rb = vm->reg_binding;
-	if (!vm->reg_binding) {
-		return false;
 	}
 	for (size_t i = 0; i < rb->regs_count; i++) {
 		RzILRegBindingItem *item = &rb->regs[i];
@@ -298,8 +293,8 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzReg *reg) {
  * Set the values of all variables in \p vm that are bound to registers and PC to the respective contents from \p reg.
  * Contents of variables that are not bound to a register are left unchanged.
  */
-RZ_API void rz_il_vm_sync_from_reg(RzILVM *vm, RZ_NONNULL RzReg *reg) {
-	rz_return_if_fail(vm && reg);
+RZ_API void rz_il_vm_sync_from_reg(RzILVM *vm, RZ_NONNULL RzILRegBinding *rb, RZ_NONNULL RzReg *reg) {
+	rz_return_if_fail(vm && rb && reg);
 	const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 	if (pc) {
 		RzRegItem *ri = rz_reg_get(reg, pc, RZ_REG_TYPE_ANY);
@@ -311,10 +306,6 @@ RZ_API void rz_il_vm_sync_from_reg(RzILVM *vm, RZ_NONNULL RzReg *reg) {
 				rz_bv_free(pcbv);
 			}
 		}
-	}
-	RzILRegBinding *rb = vm->reg_binding;
-	if (!vm->reg_binding) {
-		return;
 	}
 	for (size_t i = 0; i < rb->regs_count; i++) {
 		RzILRegBindingItem *item = &rb->regs[i];

@@ -150,59 +150,21 @@ RzILOpEffect *bf_rlimit(RzAnalysis *analysis, ut64 addr, ut64 target) {
 	return branch;
 }
 
-static bool bf_fini_rzil(RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis && analysis->rzil, false);
-
-	RzAnalysisRzil *rzil = analysis->rzil;
-	rzil->user = NULL;
-	rzil->inited = false;
-	return true;
-}
-
-static bool bf_init_rzil(RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis && analysis->rzil, false);
-	RzAnalysisRzil *rzil = analysis->rzil;
-
-	if (rzil->inited) {
-		RZ_LOG_ERROR("RzIL: brainfuck: already initialized\n");
-		return true;
+static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(64, false, 64);
+	cfg->init_state = rz_analysis_il_init_state_new();
+	if (!cfg->init_state) {
+		rz_analysis_il_config_free(cfg);
+		return NULL;
 	}
-
-	// TODO : get some arguments from rizin, predefined some for now.
-	ut32 addrsize = BF_ADDR_SIZE;
-	ut64 start_addr = 0;
-
-	// create core theory VM
-	if (!rz_il_vm_init(rzil->vm, start_addr, addrsize, false)) {
-		RZ_LOG_ERROR("RzIL: brainfuck: failed to initialize VM\n");
-		return false;
-	}
-
-	RzBuffer *buf = rz_buf_new_sparse_overlay(rzil->io_buf, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
-	if (!buf) {
-		rz_il_vm_fini(rzil->vm);
-		return false;
-	}
-	RzILMem *mem = rz_il_mem_new(buf, 64);
-	if (!mem) {
-		rz_buf_free(buf);
-		rz_il_vm_fini(rzil->vm);
-		return false;
-	}
-	rz_il_vm_add_mem(rzil->vm, 0, mem);
-
-	// set ptr to BF_ADDR_MEM
-	rz_reg_setv(analysis->reg, "ptr", BF_ADDR_MEM);
-
-	RzILEffectLabel *read_label = rz_il_vm_create_label_lazy(rzil->vm, "read");
-	RzILEffectLabel *write_label = rz_il_vm_create_label_lazy(rzil->vm, "write");
-	read_label->addr = (void *)bf_syscall_read;
-	write_label->addr = (void *)bf_syscall_write;
-	read_label->type = EFFECT_LABEL_SYSCALL;
-	write_label->type = EFFECT_LABEL_HOOK;
-
-	rzil->inited = true;
-	return true;
+	rz_analysis_il_init_state_set_var(cfg->init_state, "ptr", rz_il_value_new_bitv(rz_bv_new_from_ut64(64, BF_ADDR_MEM)));
+	RzILEffectLabel *read_label = rz_il_effect_label_new("read", EFFECT_LABEL_SYSCALL);
+	read_label->hook = bf_syscall_read;
+	rz_analysis_il_config_add_label(cfg, read_label);
+	RzILEffectLabel *write_label = rz_il_effect_label_new("write", EFFECT_LABEL_HOOK);
+	write_label->hook = bf_syscall_write;
+	rz_analysis_il_config_add_label(cfg, write_label);
+	return cfg;
 }
 
 static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
@@ -286,8 +248,7 @@ RzAnalysisPlugin rz_analysis_plugin_bf = {
 	.bits = 64, // RzIL emulation of bf and the reg definitions above use 64bit values
 	.op = &bf_op,
 	.get_reg_profile = get_reg_profile,
-	.rzil_init = bf_init_rzil,
-	.rzil_fini = bf_fini_rzil
+	.il_config = il_config
 };
 
 #ifndef RZ_PLUGIN_INCORE

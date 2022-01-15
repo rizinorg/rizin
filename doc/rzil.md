@@ -145,3 +145,23 @@ implementation of [`unsigned`](https://github.com/rizinorg/rizin/blob/4487d7e1ac
 And some may be omitted completely, such as
 [`concat`](http://binaryanalysisplatform.github.io/bap/api/master/bap-core-theory/Bap_core_theory/Theory/module-type-Basic/index.html#val-concat),
 as list operands would be rather awkward to handle in C.
+
+Execution of real machine code
+------------------------------
+
+The bare IL described above is located in the `il` module. It comes with a
+reference interpreter implemented as `RzILVM`, which may be used to evaluate
+arbitrary pure and effect ops on a state of variables and memories. At this
+point the IL does not have any connection to real architectures yet.
+
+The `analysis` module then bridges exactly this gap. It provides the extended
+`RzAnalysisILVM`, which directly builds on top of `RzILVM`, but adds the
+connection to `RzIO` for memories, binding of IL variables to machine registers
+and other related aspects.
+
+An `RzAnalysisPlugin`, which is used to disassemble instructions of a specific
+architecture, may also implement lifting from its raw machine code to RzIL in
+its `op` callback.
+In addition, it declaratively describes any architecture-specific info about
+the global context in which this lifted code is meant to be executed by
+implementing the `il_config` callback.
