@@ -4,7 +4,7 @@ CMDS=<<EOF
 i~format,os,subsys,PIE,endian
 iS
 iSS
-om
+oml
 EOF
 EXPECT=<<EOF
 format   bflt
@@ -151,7 +151,7 @@ ARGS=-B0x6908000
 CMDS=<<EOF
 iS
 iSS
-om
+oml
 ir
 px 4 @ 0x6908000+0x74 # text -> text reloc
 pv4 @ 0x6908000+0x74 # same, but endian-sensitive
@@ -403,7 +403,7 @@ ARGS=-B0x6908000
 CMDS=<<EOF
 iS
 iSS
-om
+oml
 ir
 px 4 @ 0x6908000+0x74 # text -> text reloc
 pv4 @ 0x6908000+0x74 # same, but endian-sensitive

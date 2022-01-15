@@ -11,6 +11,7 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
 static const RzCmdDescDetail analysis_hint_set_arch_details[2];
@@ -66,6 +67,7 @@ static const RzCmdDescArg interpret_script_args[2];
 static const RzCmdDescArg interpret_output_args[2];
 static const RzCmdDescArg interpret_pipe_args[2];
 static const RzCmdDescArg interpret_macro_args[4];
+static const RzCmdDescArg interpret_macro_multiple_args[4];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
@@ -289,6 +291,10 @@ static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg flag_describe_closest_args[2];
+static const RzCmdDescArg flag_space_add_args[2];
+static const RzCmdDescArg flag_space_remove_args[2];
+static const RzCmdDescArg flag_space_rename_args[2];
+static const RzCmdDescArg flag_space_stack_push_args[2];
 static const RzCmdDescArg flag_tag_add_args[3];
 static const RzCmdDescArg flag_tag_search_args[2];
 static const RzCmdDescArg flag_zone_add_args[2];
@@ -318,13 +324,32 @@ static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
+static const RzCmdDescArg open_binary_select_id_args[2];
+static const RzCmdDescArg open_binary_select_fd_args[2];
+static const RzCmdDescArg open_binary_del_args[2];
+static const RzCmdDescArg open_binary_add_args[2];
+static const RzCmdDescArg open_binary_file_args[2];
+static const RzCmdDescArg open_binary_rebase_args[2];
+static const RzCmdDescArg open_binary_reload_args[2];
 static const RzCmdDescArg open_use_args[2];
 static const RzCmdDescArg open_prioritize_args[2];
+static const RzCmdDescArg open_maps_map_args[7];
+static const RzCmdDescArg open_maps_list_args[2];
 static const RzCmdDescArg open_maps_remove_args[2];
 static const RzCmdDescArg open_maps_all_fd_args[2];
 static const RzCmdDescArg open_maps_relocate_args[3];
 static const RzCmdDescArg open_maps_relocate_current_args[2];
+static const RzCmdDescArg open_maps_flags_args[3];
+static const RzCmdDescArg open_maps_flags_global_args[2];
+static const RzCmdDescArg open_maps_map_fd_args[2];
+static const RzCmdDescArg open_maps_name_args[2];
+static const RzCmdDescArg open_maps_name_id_args[3];
+static const RzCmdDescArg open_maps_name_id_del_args[2];
 static const RzCmdDescArg open_maps_resize_args[3];
+static const RzCmdDescArg open_maps_prioritize_args[2];
+static const RzCmdDescArg open_maps_prioritize_binid_args[2];
+static const RzCmdDescArg open_maps_deprioritize_args[2];
+static const RzCmdDescArg open_maps_prioritize_fd_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -797,8 +822,46 @@ static const RzCmdDescArg interpret_macro_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp interpret_macro_help = {
-	.summary = "Interpret output of macro",
+	.summary = "Call macro",
 	.args = interpret_macro_args,
+};
+
+static const RzCmdDescDetailEntry interpret_macro_multiple_Example_detail_entries[] = {
+	{ .text = "(", .arg_str = "wv2 word addr; wv2 $0 @ $1)", .comment = "Define wv2 macro with word($0) and addr($1) args" },
+	{ .text = "..(", .arg_str = "wv2 128 0x804800 256 0x804900)", .comment = "Write 2 words at 2 different addresses" },
+	{ 0 },
+};
+static const RzCmdDescDetail interpret_macro_multiple_details[] = {
+	{ .name = "Example", .entries = interpret_macro_multiple_Example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg interpret_macro_multiple_args[] = {
+	{
+		.name = "macro-name",
+		.type = RZ_CMD_ARG_TYPE_MACRO,
+		.no_space = true,
+
+	},
+	{
+		.name = "macro-arg-set",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{
+		.name = ")",
+		.type = RZ_CMD_ARG_TYPE_FAKE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp interpret_macro_multiple_help = {
+	.summary = "Call macro multiple times",
+	.description = "Call a macro multiple times with arguments taken n at a time, where n is the number of macro arguments",
+	.args_str = "<macro-name> [<set1-arg1> <set1-arg2> ...] [<set2-arg1> <set2-arg2> ...] ...)",
+	.details = interpret_macro_multiple_details,
+	.args = interpret_macro_multiple_args,
 };
 
 static const RzCmdDescHelp cmd_search_help = {
@@ -6379,6 +6442,108 @@ static const RzCmdDescHelp flag_describe_closest_help = {
 	.args = flag_describe_closest_args,
 };
 
+static const RzCmdDescHelp fs_help = {
+	.summary = "Manage flagspaces",
+};
+static const RzCmdDescArg flag_space_add_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_add_help = {
+	.summary = "Add the flagspace",
+	.args = flag_space_add_args,
+};
+
+static const RzCmdDescArg flag_space_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_list_help = {
+	.summary = "Display flagspaces",
+	.args = flag_space_list_args,
+};
+
+static const RzCmdDescArg flag_space_remove_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_remove_help = {
+	.summary = "Remove the flagspace",
+	.args = flag_space_remove_args,
+};
+
+static const RzCmdDescArg flag_space_remove_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_remove_all_help = {
+	.summary = "Remove all flagspaces",
+	.args = flag_space_remove_all_args,
+};
+
+static const RzCmdDescArg flag_space_move_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_move_help = {
+	.summary = "Move the flags at the current address to the current flagspace",
+	.args = flag_space_move_args,
+};
+
+static const RzCmdDescArg flag_space_rename_args[] = {
+	{
+		.name = "newname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_rename_help = {
+	.summary = "Rename the flag space",
+	.args = flag_space_rename_args,
+};
+
+static const RzCmdDescHelp fss_help = {
+	.summary = "Manage the flagspace stack",
+};
+static const RzCmdDescArg flag_space_stack_push_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_stack_push_help = {
+	.summary = "Push the flagspace to the stack",
+	.args = flag_space_stack_push_args,
+};
+
+static const RzCmdDescArg flag_space_stack_pop_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_stack_pop_help = {
+	.summary = "Pop the flagspace from the stack",
+	.args = flag_space_stack_pop_args,
+};
+
+static const RzCmdDescArg flag_space_stack_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flag_space_stack_list_help = {
+	.summary = "Display flagspace stack",
+	.args = flag_space_stack_list_args,
+};
+
 static const RzCmdDescHelp ft_help = {
 	.summary = "Flag tags",
 };
@@ -7234,7 +7399,7 @@ static const RzCmdDescHelp plugins_parser_print_help = {
 };
 
 static const RzCmdDescHelp cmd_open_help = {
-	.summary = "Open file at optional address",
+	.summary = "Open files and handle opened files",
 };
 static const RzCmdDescArg open_close_args[] = {
 	{
@@ -7303,6 +7468,138 @@ static const RzCmdDescHelp open_arch_bits_help = {
 	.args = open_arch_bits_args,
 };
 
+static const RzCmdDescHelp ob_help = {
+	.summary = "Handle binary files",
+};
+static const RzCmdDescArg open_binary_select_id_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_select_id_help = {
+	.summary = "Switch to binary file with the given <id>",
+	.args = open_binary_select_id_args,
+};
+
+static const RzCmdDescArg open_binary_select_fd_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_select_fd_help = {
+	.summary = "Switch to binary file with the given <fd>",
+	.args = open_binary_select_fd_args,
+};
+
+static const RzCmdDescArg open_binary_del_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_del_help = {
+	.summary = "Delete binary file with the given <id>",
+	.args = open_binary_del_args,
+};
+
+static const RzCmdDescArg open_binary_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_del_all_help = {
+	.summary = "Delete all binary files",
+	.args = open_binary_del_all_args,
+};
+
+static const RzCmdDescArg open_binary_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_list_help = {
+	.summary = "List opened binary files",
+	.args = open_binary_list_args,
+};
+
+static const RzCmdDescArg open_binary_list_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_list_ascii_help = {
+	.summary = "List opened binary files in ASCII art",
+	.args = open_binary_list_ascii_args,
+};
+
+static const RzCmdDescArg open_binary_show_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_show_help = {
+	.summary = "Show id of binary file current address",
+	.args = open_binary_show_args,
+};
+
+static const RzCmdDescArg open_binary_add_args[] = {
+	{
+		.name = "loadaddr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.default_value = "0",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_add_help = {
+	.summary = "Open binary file for current file and load binary info with baseaddr at current offset",
+	.args = open_binary_add_args,
+};
+
+static const RzCmdDescArg open_binary_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_file_help = {
+	.summary = "Load binary info for the given file or current one with baseaddr at current offset",
+	.args = open_binary_file_args,
+};
+
+static const RzCmdDescArg open_binary_rebase_args[] = {
+	{
+		.name = "baddr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_rebase_help = {
+	.summary = "Rebase current bin object",
+	.args = open_binary_rebase_args,
+};
+
+static const RzCmdDescArg open_binary_reload_args[] = {
+	{
+		.name = "baddr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.default_value = "0",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_binary_reload_help = {
+	.summary = "Reload the current buffer for setting of the bin (use once only)",
+	.args = open_binary_reload_args,
+};
+
 static const RzCmdDescArg open_use_args[] = {
 	{
 		.name = "fd",
@@ -7356,9 +7653,82 @@ static const RzCmdDescHelp open_prioritize_next_rotate_help = {
 	.args = open_prioritize_next_rotate_args,
 };
 
-static const RzCmdDescHelp om_oldinput_help = {
+static const RzCmdDescHelp om_help = {
 	.summary = "Handle IO maps",
 };
+static const RzCmdDescArg open_maps_map_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "vaddr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "paddr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "flags",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_map_help = {
+	.summary = "Create a new map",
+	.args = open_maps_map_args,
+};
+
+static const RzCmdDescArg open_maps_list_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_list_help = {
+	.summary = "List maps of all file descriptor or only the specified <fd>",
+	.args = open_maps_list_args,
+};
+
+static const RzCmdDescArg open_maps_list_cur_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_list_cur_help = {
+	.summary = "Show map at the current offset",
+	.args = open_maps_list_cur_args,
+};
+
+static const RzCmdDescArg open_maps_list_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_list_ascii_help = {
+	.summary = "List IO maps in ASCII art",
+	.args = open_maps_list_ascii_args,
+};
+
 static const RzCmdDescArg open_maps_remove_args[] = {
 	{
 		.name = "id",
@@ -7378,14 +7748,6 @@ static const RzCmdDescArg open_maps_remove_all_args[] = {
 static const RzCmdDescHelp open_maps_remove_all_help = {
 	.summary = "Remove all IO maps",
 	.args = open_maps_remove_all_args,
-};
-
-static const RzCmdDescArg open_maps_ascii_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp open_maps_ascii_help = {
-	.summary = "List IO maps in ASCII art",
-	.args = open_maps_ascii_args,
 };
 
 static const RzCmdDescArg open_maps_all_fd_args[] = {
@@ -7435,6 +7797,111 @@ static const RzCmdDescHelp open_maps_relocate_current_help = {
 	.args = open_maps_relocate_current_args,
 };
 
+static const RzCmdDescArg open_maps_flags_args[] = {
+	{
+		.name = "flags",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_flags_help = {
+	.summary = "Change flags/perms for map with given <id> or current one",
+	.args = open_maps_flags_args,
+};
+
+static const RzCmdDescArg open_maps_flags_global_args[] = {
+	{
+		.name = "flags",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_flags_global_help = {
+	.summary = "Change flags/perms for all maps",
+	.description = "Update flags of all maps. If <flags> starts with a +, the specified flags are added to the maps. If <flags> starts with a -, the specified flags are removed from the maps. Otherwise, the exact <flags> are set for each map.",
+	.args = open_maps_flags_global_args,
+};
+
+static const RzCmdDescArg open_maps_map_fd_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_map_fd_help = {
+	.summary = "Create default map for given <fd> or current one",
+	.args = open_maps_map_fd_args,
+};
+
+static const RzCmdDescHelp omn_help = {
+	.summary = "Handle maps names",
+};
+static const RzCmdDescArg open_maps_name_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_name_help = {
+	.summary = "Set name of map which spans current seek",
+	.args = open_maps_name_args,
+};
+
+static const RzCmdDescArg open_maps_name_del_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_name_del_help = {
+	.summary = "Delete name of map which spans current seek",
+	.args = open_maps_name_del_args,
+};
+
+static const RzCmdDescArg open_maps_name_id_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_name_id_help = {
+	.summary = "Set name of map with map <id>",
+	.args = open_maps_name_id_args,
+};
+
+static const RzCmdDescArg open_maps_name_id_del_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_name_id_del_help = {
+	.summary = "Delete name of map with map <id>",
+	.args = open_maps_name_id_del_args,
+};
+
 static const RzCmdDescArg open_maps_resize_args[] = {
 	{
 		.name = "id",
@@ -7452,6 +7919,61 @@ static const RzCmdDescArg open_maps_resize_args[] = {
 static const RzCmdDescHelp open_maps_resize_help = {
 	.summary = "Resize map with corresponding <id>",
 	.args = open_maps_resize_args,
+};
+
+static const RzCmdDescHelp omp_help = {
+	.summary = "Prioritize maps",
+};
+static const RzCmdDescArg open_maps_prioritize_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_prioritize_help = {
+	.summary = "Prioritize map with the corresponding id",
+	.args = open_maps_prioritize_args,
+};
+
+static const RzCmdDescArg open_maps_prioritize_binid_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_prioritize_binid_help = {
+	.summary = "Prioritize maps of the bin associated with the binid",
+	.args = open_maps_prioritize_binid_args,
+};
+
+static const RzCmdDescArg open_maps_deprioritize_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_deprioritize_help = {
+	.summary = "Deprioritize map with the corresponding id",
+	.args = open_maps_deprioritize_args,
+};
+
+static const RzCmdDescArg open_maps_prioritize_fd_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_prioritize_fd_help = {
+	.summary = "Prioritize map by fd",
+	.args = open_maps_prioritize_fd_args,
 };
 
 static const RzCmdDescHelp cmd_print_help = {
@@ -10433,6 +10955,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *interpret_macro_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, ".(", rz_interpret_macro_handler, &interpret_macro_help);
 	rz_warn_if_fail(interpret_macro_cd);
 
+	RzCmdDesc *interpret_macro_multiple_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, "..(", rz_interpret_macro_multiple_handler, &interpret_macro_multiple_help);
+	rz_warn_if_fail(interpret_macro_multiple_cd);
+
 	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "/", rz_cmd_search, &cmd_search_help);
 	rz_warn_if_fail(cmd_search_cd);
 
@@ -11642,6 +12167,36 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *flag_describe_closest_cd = rz_cmd_desc_argv_new(core->rcmd, fd_cd, "fdw", rz_flag_describe_closest_handler, &flag_describe_closest_help);
 	rz_warn_if_fail(flag_describe_closest_cd);
 
+	RzCmdDesc *fs_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "fs", rz_flag_space_add_handler, &flag_space_add_help, &fs_help);
+	rz_warn_if_fail(fs_cd);
+	RzCmdDesc *flag_space_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, fs_cd, "fsl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_flag_space_list_handler, &flag_space_list_help);
+	rz_warn_if_fail(flag_space_list_cd);
+	rz_cmd_desc_set_default_mode(flag_space_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *flag_space_remove_cd = rz_cmd_desc_argv_new(core->rcmd, fs_cd, "fs-", rz_flag_space_remove_handler, &flag_space_remove_help);
+	rz_warn_if_fail(flag_space_remove_cd);
+
+	RzCmdDesc *flag_space_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, fs_cd, "fs-*", rz_flag_space_remove_all_handler, &flag_space_remove_all_help);
+	rz_warn_if_fail(flag_space_remove_all_cd);
+
+	RzCmdDesc *flag_space_move_cd = rz_cmd_desc_argv_new(core->rcmd, fs_cd, "fsm", rz_flag_space_move_handler, &flag_space_move_help);
+	rz_warn_if_fail(flag_space_move_cd);
+
+	RzCmdDesc *flag_space_rename_cd = rz_cmd_desc_argv_new(core->rcmd, fs_cd, "fsr", rz_flag_space_rename_handler, &flag_space_rename_help);
+	rz_warn_if_fail(flag_space_rename_cd);
+
+	RzCmdDesc *fss_cd = rz_cmd_desc_group_new(core->rcmd, fs_cd, "fss", NULL, NULL, &fss_help);
+	rz_warn_if_fail(fss_cd);
+	RzCmdDesc *flag_space_stack_push_cd = rz_cmd_desc_argv_new(core->rcmd, fss_cd, "fss+", rz_flag_space_stack_push_handler, &flag_space_stack_push_help);
+	rz_warn_if_fail(flag_space_stack_push_cd);
+
+	RzCmdDesc *flag_space_stack_pop_cd = rz_cmd_desc_argv_new(core->rcmd, fss_cd, "fss-", rz_flag_space_stack_pop_handler, &flag_space_stack_pop_help);
+	rz_warn_if_fail(flag_space_stack_pop_cd);
+
+	RzCmdDesc *flag_space_stack_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, fss_cd, "fssl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_space_stack_list_handler, &flag_space_stack_list_help);
+	rz_warn_if_fail(flag_space_stack_list_cd);
+	rz_cmd_desc_set_default_mode(flag_space_stack_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
 	RzCmdDesc *ft_cd = rz_cmd_desc_group_new(core->rcmd, cmd_flag_cd, "ft", rz_flag_tag_add_handler, &flag_tag_add_help, &ft_help);
 	rz_warn_if_fail(ft_cd);
 	RzCmdDesc *flag_tag_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ft_cd, "ftl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON, rz_flag_tag_list_handler, &flag_tag_list_help);
@@ -11909,6 +12464,38 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *open_arch_bits_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "oa", rz_open_arch_bits_handler, &open_arch_bits_help);
 	rz_warn_if_fail(open_arch_bits_cd);
 
+	RzCmdDesc *ob_cd = rz_cmd_desc_group_new(core->rcmd, cmd_open_cd, "ob", rz_open_binary_select_id_handler, &open_binary_select_id_help, &ob_help);
+	rz_warn_if_fail(ob_cd);
+	RzCmdDesc *open_binary_select_fd_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obo", rz_open_binary_select_fd_handler, &open_binary_select_fd_help);
+	rz_warn_if_fail(open_binary_select_fd_cd);
+
+	RzCmdDesc *open_binary_del_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "ob-", rz_open_binary_del_handler, &open_binary_del_help);
+	rz_warn_if_fail(open_binary_del_cd);
+
+	RzCmdDesc *open_binary_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "ob-*", rz_open_binary_del_all_handler, &open_binary_del_all_help);
+	rz_warn_if_fail(open_binary_del_all_cd);
+
+	RzCmdDesc *open_binary_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ob_cd, "obl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_open_binary_list_handler, &open_binary_list_help);
+	rz_warn_if_fail(open_binary_list_cd);
+
+	RzCmdDesc *open_binary_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obl=", rz_open_binary_list_ascii_handler, &open_binary_list_ascii_help);
+	rz_warn_if_fail(open_binary_list_ascii_cd);
+
+	RzCmdDesc *open_binary_show_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "ob.", rz_open_binary_show_handler, &open_binary_show_help);
+	rz_warn_if_fail(open_binary_show_cd);
+
+	RzCmdDesc *open_binary_add_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "oba", rz_open_binary_add_handler, &open_binary_add_help);
+	rz_warn_if_fail(open_binary_add_cd);
+
+	RzCmdDesc *open_binary_file_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obf", rz_open_binary_file_handler, &open_binary_file_help);
+	rz_warn_if_fail(open_binary_file_cd);
+
+	RzCmdDesc *open_binary_rebase_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obr", rz_open_binary_rebase_handler, &open_binary_rebase_help);
+	rz_warn_if_fail(open_binary_rebase_cd);
+
+	RzCmdDesc *open_binary_reload_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obR", rz_open_binary_reload_handler, &open_binary_reload_help);
+	rz_warn_if_fail(open_binary_reload_cd);
+
 	RzCmdDesc *open_use_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "ou", rz_open_use_handler, &open_use_help);
 	rz_warn_if_fail(open_use_cd);
 
@@ -11923,28 +12510,65 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *open_prioritize_next_rotate_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opr", rz_open_prioritize_next_rotate_handler, &open_prioritize_next_rotate_help);
 	rz_warn_if_fail(open_prioritize_next_rotate_cd);
 
-	RzCmdDesc *om_oldinput_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_open_cd, "om", rz_om_oldinput, &om_oldinput_help);
-	rz_warn_if_fail(om_oldinput_cd);
-	RzCmdDesc *open_maps_remove_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "om-", rz_open_maps_remove_handler, &open_maps_remove_help);
+	RzCmdDesc *om_cd = rz_cmd_desc_group_new(core->rcmd, cmd_open_cd, "om", rz_open_maps_map_handler, &open_maps_map_help, &om_help);
+	rz_warn_if_fail(om_cd);
+	RzCmdDesc *open_maps_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, om_cd, "oml", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_open_maps_list_handler, &open_maps_list_help);
+	rz_warn_if_fail(open_maps_list_cd);
+
+	RzCmdDesc *open_maps_list_cur_cd = rz_cmd_desc_argv_state_new(core->rcmd, om_cd, "oml.", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_open_maps_list_cur_handler, &open_maps_list_cur_help);
+	rz_warn_if_fail(open_maps_list_cur_cd);
+
+	RzCmdDesc *open_maps_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "oml=", rz_open_maps_list_ascii_handler, &open_maps_list_ascii_help);
+	rz_warn_if_fail(open_maps_list_ascii_cd);
+
+	RzCmdDesc *open_maps_remove_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "om-", rz_open_maps_remove_handler, &open_maps_remove_help);
 	rz_warn_if_fail(open_maps_remove_cd);
 
-	RzCmdDesc *open_maps_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "om-*", rz_open_maps_remove_all_handler, &open_maps_remove_all_help);
+	RzCmdDesc *open_maps_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "om-*", rz_open_maps_remove_all_handler, &open_maps_remove_all_help);
 	rz_warn_if_fail(open_maps_remove_all_cd);
 
-	RzCmdDesc *open_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "om=", rz_open_maps_ascii_handler, &open_maps_ascii_help);
-	rz_warn_if_fail(open_maps_ascii_cd);
-
-	RzCmdDesc *open_maps_all_fd_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "oma", rz_open_maps_all_fd_handler, &open_maps_all_fd_help);
+	RzCmdDesc *open_maps_all_fd_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "oma", rz_open_maps_all_fd_handler, &open_maps_all_fd_help);
 	rz_warn_if_fail(open_maps_all_fd_cd);
 
-	RzCmdDesc *open_maps_relocate_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omb", rz_open_maps_relocate_handler, &open_maps_relocate_help);
+	RzCmdDesc *open_maps_relocate_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "omb", rz_open_maps_relocate_handler, &open_maps_relocate_help);
 	rz_warn_if_fail(open_maps_relocate_cd);
 
-	RzCmdDesc *open_maps_relocate_current_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omb.", rz_open_maps_relocate_current_handler, &open_maps_relocate_current_help);
+	RzCmdDesc *open_maps_relocate_current_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "omb.", rz_open_maps_relocate_current_handler, &open_maps_relocate_current_help);
 	rz_warn_if_fail(open_maps_relocate_current_cd);
 
-	RzCmdDesc *open_maps_resize_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omr", rz_open_maps_resize_handler, &open_maps_resize_help);
+	RzCmdDesc *open_maps_flags_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "omf", rz_open_maps_flags_handler, &open_maps_flags_help);
+	rz_warn_if_fail(open_maps_flags_cd);
+
+	RzCmdDesc *open_maps_flags_global_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "omfg", rz_open_maps_flags_global_handler, &open_maps_flags_global_help);
+	rz_warn_if_fail(open_maps_flags_global_cd);
+
+	RzCmdDesc *open_maps_map_fd_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "omm", rz_open_maps_map_fd_handler, &open_maps_map_fd_help);
+	rz_warn_if_fail(open_maps_map_fd_cd);
+
+	RzCmdDesc *omn_cd = rz_cmd_desc_group_new(core->rcmd, om_cd, "omn", rz_open_maps_name_handler, &open_maps_name_help, &omn_help);
+	rz_warn_if_fail(omn_cd);
+	RzCmdDesc *open_maps_name_del_cd = rz_cmd_desc_argv_new(core->rcmd, omn_cd, "omn-", rz_open_maps_name_del_handler, &open_maps_name_del_help);
+	rz_warn_if_fail(open_maps_name_del_cd);
+
+	RzCmdDesc *open_maps_name_id_cd = rz_cmd_desc_argv_new(core->rcmd, omn_cd, "omni", rz_open_maps_name_id_handler, &open_maps_name_id_help);
+	rz_warn_if_fail(open_maps_name_id_cd);
+
+	RzCmdDesc *open_maps_name_id_del_cd = rz_cmd_desc_argv_new(core->rcmd, omn_cd, "omni-", rz_open_maps_name_id_del_handler, &open_maps_name_id_del_help);
+	rz_warn_if_fail(open_maps_name_id_del_cd);
+
+	RzCmdDesc *open_maps_resize_cd = rz_cmd_desc_argv_new(core->rcmd, om_cd, "omr", rz_open_maps_resize_handler, &open_maps_resize_help);
 	rz_warn_if_fail(open_maps_resize_cd);
+
+	RzCmdDesc *omp_cd = rz_cmd_desc_group_new(core->rcmd, om_cd, "omp", rz_open_maps_prioritize_handler, &open_maps_prioritize_help, &omp_help);
+	rz_warn_if_fail(omp_cd);
+	RzCmdDesc *open_maps_prioritize_binid_cd = rz_cmd_desc_argv_new(core->rcmd, omp_cd, "ompb", rz_open_maps_prioritize_binid_handler, &open_maps_prioritize_binid_help);
+	rz_warn_if_fail(open_maps_prioritize_binid_cd);
+
+	RzCmdDesc *open_maps_deprioritize_cd = rz_cmd_desc_argv_new(core->rcmd, omp_cd, "ompd", rz_open_maps_deprioritize_handler, &open_maps_deprioritize_help);
+	rz_warn_if_fail(open_maps_deprioritize_cd);
+
+	RzCmdDesc *open_maps_prioritize_fd_cd = rz_cmd_desc_argv_new(core->rcmd, omp_cd, "ompf", rz_open_maps_prioritize_fd_handler, &open_maps_prioritize_fd_help);
+	rz_warn_if_fail(open_maps_prioritize_fd_cd);
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);

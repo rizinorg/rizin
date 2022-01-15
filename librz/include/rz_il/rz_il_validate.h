@@ -36,6 +36,7 @@ RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValid
 	RZ_NULLABLE RZ_OUT RzILSortPure *sort_out, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out);
 RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
 	RZ_NULLABLE RZ_OUT HtPP /* <const char *, RzILSortPure *> */ **local_var_sorts_out,
+	RZ_NULLABLE RZ_OUT RzILTypeEffect *type_out,
 	RZ_NULLABLE RZ_OUT RzILValidateReport *report_out);
 
 #ifdef __cplusplus

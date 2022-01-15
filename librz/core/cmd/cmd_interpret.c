@@ -68,3 +68,8 @@ RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char
 	rz_cmd_macro_call(&core->rcmd->macro, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_interpret_macro_multiple_handler(RzCore *core, int argc, const char **argv) {
+	rz_cmd_macro_call_multiple(&core->rcmd->macro, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}

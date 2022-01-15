@@ -80,7 +80,7 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 					break;
 				}
 				case DYLD_CHAINED_PTR_64_KERNEL_CACHE:
-				case DYLD_CHAINED_PTR_ARM64E_KERNEL:
+				case DYLD_CHAINED_PTR_ARM64E_KERNEL: {
 					stride = 4;
 					if (is_auth) {
 						struct dyld_chained_ptr_arm64e_cache_auth_rebase *p =
@@ -95,7 +95,8 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 						ptr_value += obj->baddr;
 					}
 					break;
-				case DYLD_CHAINED_PTR_64_OFFSET:
+				}
+				case DYLD_CHAINED_PTR_64_OFFSET: {
 					stride = 4;
 					struct dyld_chained_ptr_64_bind *bind =
 						(struct dyld_chained_ptr_64_bind *)&raw_ptr;
@@ -108,6 +109,28 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 						ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
 					}
 					break;
+				}
+				case DYLD_CHAINED_PTR_ARM64E_USERLAND24: {
+					stride = 8;
+					struct dyld_chained_ptr_arm64e_bind24 *bind =
+						(struct dyld_chained_ptr_arm64e_bind24 *)&raw_ptr;
+					if (bind->bind) {
+						delta = bind->next;
+					} else {
+						if (bind->auth) {
+							struct dyld_chained_ptr_arm64e_auth_rebase *p =
+								(struct dyld_chained_ptr_arm64e_auth_rebase *)&raw_ptr;
+							delta = p->next;
+							ptr_value = p->target + obj->baddr;
+						} else {
+							struct dyld_chained_ptr_arm64e_rebase *p =
+								(struct dyld_chained_ptr_arm64e_rebase *)&raw_ptr;
+							delta = p->next;
+							ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
+						}
+					}
+					break;
+				}
 				default:
 					RZ_LOG_WARN("Unsupported Mach-O pointer format: %u at paddr 0x%" PFMT64x "\n",
 						obj->chained_starts[i]->pointer_format, cursor);

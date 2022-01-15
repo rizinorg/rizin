@@ -11,6 +11,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aezsu: RzIL step until failure
+FILE==
+ARGS=-a bf
+TIMEOUT=4
+CMDS=<<EOF
+w ">>>>"
+aezi
+aezsu 0x10
+ar
+EOF
+EXPECT=<<EOF
+ptr = 0x00010004
+pc = 0x00000004
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RzIL: invalid instruction or lifting not implemented at address 0x00000004
+EOF
+RUN
+
 NAME=aezv: RzIL var set
 FILE=bins/bf/hello-ok.bf
 CMDS=<<EOF
@@ -48,6 +70,7 @@ ar pc=0x54
 aezs 1
 aezv
 ar
+f @F:registers
 EOF
 EXPECT=<<EOF
 ptr = 0x00010000
@@ -58,5 +81,20 @@ pc = 0x00000001
  PC: 0x0000000000000055 ptr: 0x0000000000010001
 ptr = 0x00010001
 pc = 0x00000055
+0x00000055 8 pc
+0x00010001 8 ptr
+EOF
+RUN
+
+NAME=aezi pc and flags
+FILE=bins/bf/hello-ok.bf
+CMDS=<<EOF
+s 0x100
+aezi
+f @F:registers
+EOF
+EXPECT=<<EOF
+0x00000100 8 pc
+0x00010000 8 ptr
 EOF
 RUN

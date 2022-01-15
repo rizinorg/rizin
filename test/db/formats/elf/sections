@@ -72,7 +72,7 @@ RUN
 
 NAME=also map ehdr if ET_REL
 FILE=bins/elf/pngrutil_o
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x0800870c - 0x080090c7 r-- vmap.reloc-targets
  2 fd: 3 +0x00000034 0x08000034 - 0x080055c7 r-x fmap..text

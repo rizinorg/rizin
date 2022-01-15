@@ -152,16 +152,56 @@ Hello 1
 EOF
 RUN
 
+NAME=..(
+FILE==
+CMDS=<<EOF
+(foo1 fst; ?e $0)
+(foo2 fst snd; ?e $0; ?v $1)
+..(foo1 xyz)
+?e -----
+..(foo1 abc def)
+?e -----
+..(foo2 xyz 11)
+?e -----
+..(foo2 abc 10 def 9)
+EOF
+EXPECT=<<EOF
+xyz
+-----
+abc
+def
+-----
+xyz
+0xb
+-----
+abc
+0xa
+def
+0x9
+EOF
+RUN
+
 NAME=arity errors
 FILE==
 CMDS=<<EOF
 (foo0; ?e foo0)
 (foo1 fst; ?e foo1 $0)
+(foo2 fst snd; ?e foo2_0 $0; ?e foo2_1 $1)
 .(foo0 1)
 .(foo1)
+.(foo1 1 2)
+..(foo0 1)
+..(foo1)
+..(foo2 1)
+..(foo2)
 EOF
 EXPECT_ERR=<<EOF
-Macro 'foo0' expects 0 args, not 1
-Macro 'foo1' expects 1 args, not 0
+ERROR: Macro 'foo0' expects 0 args, not 1
+ERROR: Macro 'foo1' expects 1 args, not 0
+ERROR: Macro 'foo1' expects 1 args, not 2
+ERROR: Macro 'foo0' expects 0 args, not 1
+ERROR: Macro 'foo1' expects 1 args, not 0
+ERROR: Macro 'foo2' expects 2 args and 1 is not a multiple of 2
+ERROR: Macro 'foo2' expects 2 args, not 0
 EOF
 RUN

@@ -484,6 +484,16 @@ static int cmdOpen(void *data, const char *input) {
 	return true;
 }
 
+static RzCmdStatus print_zign_spaces(RzCore *core, RzSpaces *zs, RzOutputMode mode) {
+	RzCmdStateOutput state;
+	if (!rz_cmd_state_output_init(&state, mode)) {
+		return RZ_CMD_STATUS_INVALID;
+	}
+	rz_core_spaces_print(core, zs, &state);
+	rz_cmd_state_output_fini(&state);
+	return RZ_CMD_STATUS_OK;
+}
+
 static int cmdSpace(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	RzSpaces *zs = &core->analysis->zign_spaces;
@@ -512,10 +522,14 @@ static int cmdSpace(void *data, const char *input) {
 			rz_spaces_unset(zs, input + 1);
 		}
 		break;
-	case 'j':
-	case '*':
 	case '\0':
-		spaces_list(zs, input[0]);
+		print_zign_spaces(core, zs, RZ_OUTPUT_MODE_STANDARD);
+		break;
+	case 'j':
+		print_zign_spaces(core, zs, RZ_OUTPUT_MODE_JSON);
+		break;
+	case '*':
+		print_zign_spaces(core, zs, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case ' ':
 		if (!input[1]) {
@@ -815,7 +829,7 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 	bool metsearch = fill_search_metrics(&sm, core, (void *)&metsearch_ctx);
 
 	if (rad) {
-		rz_cons_printf("fs+%s\n", zign_prefix);
+		rz_cons_printf("fss+ %s\n", zign_prefix);
 	} else {
 		if (!rz_flag_space_push(core->flags, zign_prefix)) {
 			eprintf("error: cannot create flagspace\n");
@@ -1153,7 +1167,7 @@ static int cmdCheck(void *data, const char *input) {
 	bool metsearch = fill_search_metrics(&sm, core, (void *)&metsearch_ctx);
 
 	if (rad) {
-		rz_cons_printf("fs+%s\n", zign_prefix);
+		rz_cons_printf("fss+ %s\n", zign_prefix);
 	} else {
 		if (!rz_flag_space_push(core->flags, zign_prefix)) {
 			eprintf("error: cannot create flagspace\n");
@@ -1489,19 +1503,7 @@ RZ_IPI RzCmdStatus rz_zign_cmp_diff_name_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_zign_space_select_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 1) {
-		switch (mode) {
-		case RZ_OUTPUT_MODE_STANDARD:
-			spaces_list(&core->analysis->zign_spaces, '\0');
-			break;
-		case RZ_OUTPUT_MODE_JSON:
-			spaces_list(&core->analysis->zign_spaces, 'j');
-			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			spaces_list(&core->analysis->zign_spaces, '*');
-			break;
-		default:
-			return RZ_CMD_STATUS_ERROR;
-		}
+		return print_zign_spaces(core, &core->analysis->zign_spaces, mode);
 	} else {
 		rz_spaces_set(&core->analysis->zign_spaces, argv[1]);
 	}

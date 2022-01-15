@@ -911,7 +911,6 @@ static const char *rizin_argv[] = {
 	"f?", "f", "f.", "f*", "f-", "f--", "f+", "f=", "fa", "fb", "fc?", "fc", "fC", "fe-", "fe",
 	"ff", "fi", "fg", "fj",
 	"fl", "fla", "fm", "fn", "fnj", "fo", "fO", "fr", "fR", "fR?",
-	"fs?", "fs", "fs*", "fsj", "fs-", "fs+", "fs-.", "fsq", "fsm", "fss", "fss*", "fssj", "fsr",
 	"fV", "fx", "fq",
 	"g?", "g", "gw", "gc", "gl?", "gl", "gs", "gi", "gp", "ge", "gr", "gS",
 	"i?", "i", "ij", "iA", "ia", "ib", "ic", "icc", "iC",

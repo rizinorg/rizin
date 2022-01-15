@@ -8,7 +8,7 @@ RUN
 
 NAME=Menuet: maps
 FILE=bins/menuet/dosbox
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00000024 0x00000024 - 0x0011b023 r-x fmap.text
  2 fd: 4 +0x00000000 0xffb8000c - 0xffb80817 r-- mmap.idata

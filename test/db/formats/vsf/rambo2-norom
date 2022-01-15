@@ -16,7 +16,7 @@ RUN
 
 NAME=VSF: Rambo II- ROMs
 FILE=bins/vsf/c64-rambo2-norom.vsf
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00000084 0x00000000 - 0x0000ffff r-x fmap.RAM
 EOF

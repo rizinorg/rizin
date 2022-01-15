@@ -5,8 +5,8 @@ on malloc://256
 on malloc://256 0x300
 omni 1 aaaaaa
 omni 2 bbbbbb
-om
-om. @ 0x300
+oml
+oml. @ 0x300
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x00000000 - 0x000000ff rw- aaaaaa
@@ -15,16 +15,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=omt & omtq
+NAME=omlt
 FILE=bins/elf/ls
 CMDS=<<EOF
-omt
+omlt
 ?e
-omtq
+omlt:quiet
 ?e
-omt:size
+omlt:size
 ?e
-omtq:name/str/fmap.LOAD3:size
+omlt:name/str/fmap.LOAD3:size:quiet
 EOF
 EXPECT=<<EOF
 .------------------------------------------------------------------------------------------------.

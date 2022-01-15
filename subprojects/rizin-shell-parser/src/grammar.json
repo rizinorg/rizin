@@ -1889,8 +1889,8 @@
                 "content": {
                   "type": "ALIAS",
                   "content": {
-                    "type": "STRING",
-                    "value": ".("
+                    "type": "PATTERN",
+                    "value": "\\.\\.?\\("
                   },
                   "named": true,
                   "value": "cmd_identifier"

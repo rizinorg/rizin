@@ -32,7 +32,7 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core);
 RZ_IPI bool rz_core_analysis_rzil_vm_set(RzCore *core, const char *var_name, ut64 value);
 RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
-RZ_IPI void rz_core_rzil_step(RzCore *core);
+RZ_IPI bool rz_core_rzil_step(RzCore *core);
 RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
@@ -52,6 +52,7 @@ RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
 
 /* cmeta.c */
+RZ_IPI void rz_core_spaces_print(RzCore *core, RzSpaces *spaces, RzCmdStateOutput *state);
 RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, ut64 size, bool show_full, RzCmdStateOutput *state);
 RZ_IPI void rz_core_meta_print_list_at(RzCore *core, ut64 addr, RzCmdStateOutput *state);
 RZ_IPI void rz_core_meta_print_list_all(RzCore *core, int type, RzCmdStateOutput *state);

@@ -23,8 +23,13 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 		free(dir);
 		return false;
 	}
-	char *url = rz_str_newf("%s/%s/%s/%s", opt->symbol_server, opt->dbg_file, opt->guid, file);
 	char *path = rz_str_newf("%s%s%s", dir, RZ_SYS_DIR, opt->dbg_file);
+	if (rz_file_exists(path)) {
+		free(dir);
+		free(path);
+		return true;
+	}
+	char *url = rz_str_newf("%s/%s/%s/%s", opt->symbol_server, opt->dbg_file, opt->guid, file);
 #if __WINDOWS__
 	if (rz_str_startswith(url, "\\\\")) { // Network path
 		wchar_t *origin = rz_utf8_to_utf16(url);
@@ -57,14 +62,14 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	return true;
 }
 
-static int download(struct SPDBDownloader *pd) {
+static char *download(struct SPDBDownloader *pd) {
 	SPDBDownloaderOpt *opt = pd->opt;
-	int res = 0;
+	int res = 1;
 	int cmd_ret;
 
 	if (!opt->dbg_file || !*opt->dbg_file) {
 		// no pdb debug file
-		return 0;
+		return NULL;
 	}
 
 	char *abspath_to_file = rz_str_newf("%s%s%s%s%s%s%s",
@@ -75,8 +80,7 @@ static int download(struct SPDBDownloader *pd) {
 
 	if (rz_file_exists(abspath_to_file)) {
 		eprintf("File already downloaded.\n");
-		free(abspath_to_file);
-		return 1;
+		return abspath_to_file;
 	}
 
 	if (checkExtract() || opt->extract == 0) {
@@ -128,8 +132,7 @@ static int download(struct SPDBDownloader *pd) {
 		eprintf("Attempting to download uncompressed pdb in %s\n", abspath_to_file);
 		res = download_and_write(opt, opt->dbg_file);
 	}
-	free(abspath_to_file);
-	return res;
+	return res ? abspath_to_file : NULL;
 }
 
 void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
@@ -199,24 +202,30 @@ int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *option
 	opt.extract = options->extract;
 	char *symbol_server = strdup(options->symbol_server);
 	char *server = strtok(symbol_server, ";");
-	while (server && ret) {
+	char *path = NULL;
+	while (server && !path) {
 		opt.symbol_server = server;
 		init_pdb_downloader(&opt, &pdb_downloader);
-		ret = pdb_downloader.download ? pdb_downloader.download(&pdb_downloader) : 1;
+		if (!pdb_downloader.download) {
+			break;
+		}
+		path = pdb_downloader.download(&pdb_downloader);
 		deinit_pdb_downloader(&pdb_downloader);
 		server = strtok(NULL, ";");
 	}
-	free(symbol_server);
-
 	if (isradjson) {
 		pj_ko(pj, "pdb");
 		pj_ks(pj, "file", opt.dbg_file);
+		pj_ks(pj, "guid", opt.guid);
+		pj_ks(pj, "path", path);
 		pj_kb(pj, "download", (bool)ret);
 		pj_end(pj);
 	} else {
 		rz_cons_printf("PDB \"%s\" download %s\n",
 			opt.dbg_file, ret ? "success" : "failed");
 	}
+	free(symbol_server);
+	free(path);
 
 	return !ret;
 }

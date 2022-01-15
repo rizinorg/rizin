@@ -139,7 +139,7 @@ RUN
 
 NAME=sega megadrive maps
 FILE=bins/smd/LiquidSpaceDodgerV3.bin
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x00000000 - 0x000000ff r-- fmap.vtable
  2 fd: 3 +0x00000100 0x00000100 - 0x000001ff r-- fmap.header
