@@ -231,18 +231,18 @@ static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
 		eprintf("Invalid instruction of lifting not implemented.\n");
 		return false;
 	}
-	rz_analysis_rzil_cleanup(as->analysis);
-	rz_analysis_rzil_setup(as->analysis);
-	if (!as->analysis->rzil || !as->analysis->rzil->vm) {
+	RzAnalysisILVM *vm = rz_analysis_il_vm_new(as->analysis, NULL);
+	if (!vm) {
 		eprintf("Failed to initialize IL VM for this architecture.\n");
 		return false;
 	}
-	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(as->analysis->rzil->vm);
+	bool ret = true;
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
 	if (!ctx) {
 		eprintf("Failed to derive context from IL VM.\n");
-		return false;
+		ret = false;
+		goto error_vm;
 	}
-	bool ret = true;
 	RzILOpEffect *il_op = op->il_op;
 	if (il_op) {
 		RzStrBuf sb;
@@ -262,6 +262,8 @@ static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
 		free(report);
 	}
 	rz_il_validate_global_context_free(ctx);
+error_vm:
+	rz_analysis_il_vm_free(vm);
 	return ret;
 }
 

@@ -10,7 +10,7 @@
 #define LOOP_MAX 10
 
 static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et, RzAnalysisRzilTrace **rt) {
-	if (!core->analysis->esil || !core->analysis->rzil) {
+	if (!core->analysis->esil) {
 		return false;
 	}
 	*dt = core->dbg->trace;
@@ -18,7 +18,6 @@ static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt
 
 	core->dbg->trace = rz_debug_trace_new();
 	core->analysis->esil->trace = rz_analysis_esil_trace_new(core->analysis->esil);
-	core->analysis->rzil->trace = rz_analysis_rzil_trace_new(core->analysis, core->analysis->rzil);
 
 	rz_config_hold_i(hc, "esil.romem", "dbg.trace",
 		"esil.nonull", "dbg.follow", NULL);
@@ -41,16 +40,6 @@ static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *
 	rz_config_hold_free(hc);
 	rz_debug_trace_free(core->dbg->trace);
 	rz_analysis_esil_trace_free(core->analysis->esil->trace);
-	if (!core->analysis->rzil) {
-		// not enable rzil or be freed ?
-		if (core->analysis->cur->rzil_init) {
-			// enable but be freed ??
-			rz_warn_if_reached();
-		}
-	} else {
-		rz_analysis_rzil_trace_free(core->analysis->rzil->trace);
-		core->analysis->rzil->trace = rt;
-	}
 	core->analysis->esil->trace = et;
 	core->dbg->trace = dt;
 }

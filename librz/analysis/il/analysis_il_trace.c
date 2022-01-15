@@ -21,7 +21,7 @@ static void htup_vector_free(HtUPKv *kv) {
  * \param rzil RZ_IL instance
  * \return pointer to RzilTrace
  */
-RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil) {
+RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil) {
 	rz_return_val_if_fail(rzil, NULL);
 	size_t i;
 	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
@@ -91,6 +91,6 @@ RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
  * \param rzil IL instance
  * \param op RzAnalysisRzilOp, a general IL op structure (Designed for switching between different implementations of IL op struct)
  */
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzAnalysisLiftedILOp op) {
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil, RZ_NONNULL RzAnalysisLiftedILOp op) {
 	// TODO : rewrite this file when migrate to new op structure
 }
