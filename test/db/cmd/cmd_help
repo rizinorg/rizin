@@ -464,6 +464,7 @@ EXPECT=<<EOF
 | zi*                  # Show zignatures matching information (rizin mode)
 | ziq                  # Show zignatures matching information (quiet mode)
 | zii <from> <to>      # Show zignatures matching information in range
+| ziij <from> <to>     # Show zignatures matching information in range (JSON mode)
 EOF
 RUN
 
@@ -507,7 +508,7 @@ CMDS=<<EOF
 ?*j zi
 EOF
 EXPECT=<<EOF
-{"zi":{"cmd":"zi","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
+{"zi":{"cmd":"zi","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv_state","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"},"ziij":{"cmd":"ziij","type":"argv_state","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range (JSON mode)"}}
 EOF
 RUN
 
@@ -522,6 +523,7 @@ EXPECT=<<EOF
 | zi*                  # Show zignatures matching information (rizin mode)
 | ziq                  # Show zignatures matching information (quiet mode)
 | zii <from> <to>      # Show zignatures matching information in range
+| ziij <from> <to>     # Show zignatures matching information in range (JSON mode)
 EOF
 RUN
 
@@ -531,7 +533,7 @@ CMDS=<<EOF
 zi?*j
 EOF
 EXPECT=<<EOF
-{"zi":{"cmd":"zi","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
+{"zi":{"cmd":"zi","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv_state","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"},"ziij":{"cmd":"ziij","type":"argv_state","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range (JSON mode)"}}
 EOF
 RUN
 

@@ -591,7 +591,7 @@ NAME=calc switch table
 FILE=bins/elf/calc.file
 CMDS=<<EOF
 af@ 0x8049203
-f~?switch
+fl~?switch
 EOF
 EXPECT=<<EOF
 7
@@ -602,7 +602,7 @@ NAME=mac-ls switch count
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 aaa
-f~?switch
+fl~?switch
 EOF
 EXPECT=<<EOF
 3
@@ -613,8 +613,8 @@ NAME=mac-ls main switch
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 s main;af
-f~switch
-f~?case
+fl~switch
+fl~?case
 EOF
 EXPECT=<<EOF
 0x1000011b5 1 switch.0x1000011b5
@@ -626,7 +626,7 @@ NAME=mac-ls switch count2
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 aaa
-f~?case
+fl~?case
 EOF
 EXPECT=<<EOF
 91
@@ -950,8 +950,8 @@ NAME=clang_3.8_32 switch/case flags
 FILE=bins/jmptbl/test_clang_3.8_32.out
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x080483fd 1 switch.0x080483fd
@@ -977,8 +977,8 @@ NAME=clang_5.0_32 switch/case flags
 FILE=bins/jmptbl/test_clang_5.0_32.out
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x080483fd 1 switch.0x080483fd
@@ -1004,8 +1004,8 @@ NAME=msvc_1900_32 switch/case flags
 FILE=bins/jmptbl/test_msvc_1900_32.exe
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x0040100e 1 switch.0x0040100e
@@ -1049,8 +1049,8 @@ NAME=msvc_1913_32 switch/case flags
 FILE=bins/jmptbl/test_msvc_1913_32.exe
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x0040100e 1 switch.0x0040100e
@@ -1093,8 +1093,8 @@ NAME=cmu_binary_bomb switch case detection
 FILE=bins/jmptbl/cmu_binary_bomb
 CMDS=<<EOF
 aa
-f~switch
-f~case
+fl~switch
+fl~case
 EOF
 EXPECT=<<EOF
 0x08048bd6 1 switch.0x08048bd6
@@ -3357,7 +3357,7 @@ e asm.arch=x86
 e asm.bits=32
 wx 568b74240856ff15c02040004e83c40483fe270f87df0000000fb6863c114000ff24850c114000b8f820400050ff15b420400083c40433c05ec3b80021400050ff15b420400083c40433c05ec3b80821400050ff15b420400083c40433c05ec3b81021400050ff15b420400083c40433c05ec3b81821400050ff15b420400083c40433c05ec3b82021400050ff15b420400083c40433c05ec3b82821400050ff15b420400083c40433c05ec3b83021400050ff15b420400083c40433c05ec3b83821400050ff15b420400083c40433c05ec3b84021400050ff15b420400083c40433c05ec3b84821400050ff15b420400083c40433c05ec38b44240850ff15b420400083c40433c05ec36690271040003a1040004d104000e510400060104000731040008610400099104000d2104000bf104000ac104000f81040000001020b0b0b0b0b0b03020b040b05060b0b07080b0b0b0b0b0b0b0b0b090b0b0b0b0b0a0b0a0a0a
 af
-f~case
+fl~case
 EOF
 EXPECT=<<EOF
 0x00401027 1 case.0x401020.1

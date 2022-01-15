@@ -1709,14 +1709,14 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 			break;
 		case '+':
 			if (menu == 1) {
-				rz_core_cmdf(core, "f %s=%s+1", fs2, fs2);
+				rz_core_cmdf(core, "f %s @ %s+1", fs2, fs2);
 			} else {
 				rz_core_block_size(core, core->blocksize + 1);
 			}
 			break;
 		case '-':
 			if (menu == 1) {
-				rz_core_cmdf(core, "f %s=%s-1", fs2, fs2);
+				rz_core_cmdf(core, "f %s @ %s-1", fs2, fs2);
 			} else {
 				rz_core_block_size(core, core->blocksize - 1);
 			}

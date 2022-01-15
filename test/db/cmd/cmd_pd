@@ -7,7 +7,7 @@ e asm.sub.var=0
 pd 1
 e asm.sub.var=1
 pd 1
-f fin.dus=0x1000054d0
+f+ fin.dus @ 0x1000054d0
 pd 1
 e asm.sub.rel=0
 pd 1
@@ -105,7 +105,7 @@ RUN
 
 NAME=pd foo-33
 FILE=malloc://128
-CMDS=f foo=33;pd foo-33
+CMDS=f foo @ 33;pd foo-33
 EXPECT=<<EOF
 EOF
 RUN
@@ -208,7 +208,7 @@ e asm.lines.fcn=false
 e asm.calls=false
 e asm.functions=false
 e scr.color=false
-f-rip
+f- rip
 pd 1
 EOF
 EXPECT=<<EOF

@@ -30,12 +30,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af localflag
+NAME=af localflag disasm
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 e asm.bytes=true
 af
-f.foobar=0x100001216
+f. foobar @ 0x100001216
 pd 20~foo
 EOF
 EXPECT=<<EOF

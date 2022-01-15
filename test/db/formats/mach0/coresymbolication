@@ -45,8 +45,8 @@ RUN
 NAME=Xcode symbols cache (segment and sections)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
 CMDS=<<EOF
-f~segment
-f~section
+fl~segment
+fl~section
 EOF
 EXPECT=<<EOF
 0x00000000 0 segment.PAGEZERO
@@ -96,8 +96,8 @@ RUN
 NAME=Xcode symbols cache new (segment and sections)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
 CMDS=<<EOF
-f~segment
-f~section
+fl~segment
+fl~section
 EOF
 EXPECT=<<EOF
 0x00000000 0 segment.PAGEZERO

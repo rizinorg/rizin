@@ -123,9 +123,9 @@ traced: true
   }
 ]
 fs blocks
-f bb.007aa = 0x000007aa
-f bb.00806 = 0x00000806
-f bb.00844 = 0x00000844
+f bb.007aa @ 0x000007aa
+f bb.00806 @ 0x00000806
+f bb.00844 @ 0x00000844
 0x00000846
 EOF
 RUN

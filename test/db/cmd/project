@@ -206,17 +206,17 @@ FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 e cfg.oldshell=false
 fr sym.main sym.renamedmain
-f~?
-f~main
+fl~?
+fl~main
 Ps .tmp_flags.rzdb
 ?e --
 o--
-f
+fl
 ?e --
 Poo .tmp_flags.rzdb
 rm .tmp_flags.rzdb
-f~?
-f~main
+fl~?
+fl~main
 EOF
 EXPECT=<<EOF
 117

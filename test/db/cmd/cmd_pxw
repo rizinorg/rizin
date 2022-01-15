@@ -122,8 +122,8 @@ RUN
 NAME=pxq foo-bar
 FILE==
 CMDS=<<EOF
-f foo=10
-f bar=2
+f foo @ 10
+f bar @ 2
 pxq foo-bar~?
 EOF
 EXPECT=<<EOF
