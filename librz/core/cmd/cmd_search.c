@@ -353,7 +353,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_string_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	char *search_term = rz_str_new(argv[1]);
+	char *search_term = RZ_STR_DUP(argv[1]);
 	int len = rz_str_unescape(search_term);
 
 	struct search_parameters param;
