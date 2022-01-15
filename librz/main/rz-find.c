@@ -123,7 +123,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			ro->comma, addr, type, str);
 		ro->comma = ",";
 	} else if (ro->rad) {
-		printf("f hit%d_%d 0x%08" PFMT64x " ; %s\n", 0, kw->count, addr, ro->curfile);
+		printf("f hit%d_%d @ 0x%08" PFMT64x " ; %s\n", 0, kw->count, addr, ro->curfile);
 	} else {
 		if (ro->showstr) {
 			printf("0x%" PFMT64x " %s\n", addr, str);

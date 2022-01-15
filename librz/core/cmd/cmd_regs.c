@@ -656,7 +656,7 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	rz_list_foreach (ritems, iter, item) {
 		if (!unset) {
 			ut64 v = rz_reg_get_value(reg, item);
-			rz_cons_printf("f %s @ 0x%" PFMT64x "\n", item->name, v);
+			rz_cons_printf("f+ %s @ 0x%" PFMT64x "\n", item->name, v);
 		} else {
 			rz_cons_printf("f- %s\n", item->name);
 		}

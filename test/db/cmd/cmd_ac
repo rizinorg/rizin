@@ -23,7 +23,7 @@ acil Flatline
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 EOF
 EXPECT=<<EOF
 [Flatline]
@@ -50,21 +50,21 @@ acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 ?e --
 acm- Flatline PrayerPosition
 acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 ?e --
 acm- Flatline RemainIndoors
 acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 EOF
 EXPECT=<<EOF
 [Flatline]
@@ -109,14 +109,14 @@ acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 ?e --
 acmn Flatline PrayerPosition Marigold
 acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 EOF
 EXPECT=<<EOF
 [Flatline]
@@ -160,7 +160,7 @@ acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 
 ?e --
 ac- Album
@@ -168,21 +168,21 @@ acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 
 ?e --
 acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 ?e --
 ac- Flatline
 acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 EOF
 EXPECT=<<EOF
 [Album]
@@ -342,7 +342,7 @@ acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 EOF
 EXPECT=<<EOF
 [Deadwing]
@@ -371,11 +371,11 @@ acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 ?e --
 acv- Deadwing 0
 acll
-f@F:classes
+fl @F:classes
 EOF
 EXPECT=<<EOF
 [Deadwing]
@@ -415,14 +415,14 @@ acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 ?e --
 acn PorcupineTreeAlbum Masterpiece
 acll
 k analysis/classes/*
 ?e -
 k analysis/classes/attrs/*
-f@F:classes
+fl @F:classes
 EOF
 EXPECT=<<EOF
 [Album]

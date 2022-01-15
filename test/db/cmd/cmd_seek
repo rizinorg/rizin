@@ -73,7 +73,7 @@ NAME=seek local flag
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 af@ main
-f.foo@ main+4
+f. foo @ main+4
 s main+.foo
 s
 s main+.foo

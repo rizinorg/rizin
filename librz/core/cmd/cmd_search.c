@@ -225,7 +225,7 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 				// eprintf ("0x%08"PFMT64x" %s\n", from+i, s);
 				if (!strcmp(s, hashstr)) {
 					eprintf("Found at 0x%" PFMT64x "\n", from + i);
-					rz_cons_printf("f hash.%s.%s = 0x%" PFMT64x "\n",
+					rz_cons_printf("f hash.%s.%s @ 0x%" PFMT64x "\n",
 						hashname, hashstr, from + i);
 					free(s);
 					free(buf);
@@ -511,7 +511,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			if (searchflags) {
 				rz_cons_printf("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
 			} else {
-				rz_cons_printf("f %s%d_%d %d 0x%08" PFMT64x "\n", searchprefix,
+				rz_cons_printf("f %s%d_%d %d @ 0x%08" PFMT64x "\n", searchprefix,
 					kw->kwidx, kw->count, keyword_len, base_addr + addr);
 			}
 		}
@@ -2186,7 +2186,7 @@ static void do_section_search(RzCore *core, struct search_parameters *param, con
 			end = at + buf_size;
 			if (diff > threshold) {
 				if (r2mode) {
-					rz_cons_printf("f entropy_section_%d 0x%08" PFMT64x " 0x%08" PFMT64x "\n", index, end - begin, begin);
+					rz_cons_printf("f entropy_section_%d 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", index, end - begin, begin);
 				} else {
 					rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x " ~ %lf\n", begin, end, e);
 				}
@@ -2202,7 +2202,7 @@ static void do_section_search(RzCore *core, struct search_parameters *param, con
 	}
 	if (begin != UT64_MAX && lastBlock) {
 		if (r2mode) {
-			rz_cons_printf("f entropy_section_%d 0x%08" PFMT64x " 0x%08" PFMT64x "\n", index, end - begin, begin);
+			rz_cons_printf("f entropy_section_%d 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", index, end - begin, begin);
 		} else {
 			rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x " ~ %d .. last\n", begin, end, 0);
 		}
@@ -2277,7 +2277,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 					pj_end(param->pj);
 					break;
 				case RZ_MODE_RIZINCMD:
-					rz_cons_printf("f %s%d_%i = 0x%08" PFMT64x "\n",
+					rz_cons_printf("f %s%d_%i @ 0x%08" PFMT64x "\n",
 						searchprefix, kwidx, count, hit->addr);
 					break;
 				default:
@@ -2608,8 +2608,8 @@ void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, void *user) 
 		pj_kN(param->pj, "value", to);
 		pj_end(param->pj);
 	}
-	rz_core_cmdf(core, "f %s.value.0x%08" PFMT64x " %d = 0x%08" PFMT64x " \n", prefix, to, vsize, to); // flag at value of hit
-	rz_core_cmdf(core, "f %s.offset.0x%08" PFMT64x " %d = 0x%08" PFMT64x " \n", prefix, from, vsize, from); // flag at offset of hit
+	rz_core_cmdf(core, "f %s.value.0x%08" PFMT64x " %d @ 0x%08" PFMT64x " \n", prefix, to, vsize, to); // flag at value of hit
+	rz_core_cmdf(core, "f %s.offset.0x%08" PFMT64x " %d @ 0x%08" PFMT64x " \n", prefix, from, vsize, from); // flag at offset of hit
 	const char *cmdHit = rz_config_get(core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
 		ut64 addr = core->offset;

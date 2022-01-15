@@ -446,7 +446,7 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		rz_table_add_rowf(t, "xdxx", bb->addr, bb->size, bb->jump, bb->fail);
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n", bb->addr & 0xFFFFF, bb->addr);
+		rz_cons_printf("f bb.%05" PFMT64x " @ 0x%08" PFMT64x "\n", bb->addr & 0xFFFFF, bb->addr);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("0x%08" PFMT64x "\n", bb->addr);
@@ -3368,7 +3368,7 @@ static void print_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
 			if (str_flagname) {
 				ut64 str_addr = xref_to;
 				rz_name_filter(str_flagname, -1, true);
-				rz_cons_printf("f str.%s=0x%" PFMT64x "\n", str_flagname, str_addr);
+				rz_cons_printf("f str.%s @ 0x%" PFMT64x "\n", str_flagname, str_addr);
 				rz_cons_printf("Cs %d @ 0x%" PFMT64x "\n", len, str_addr);
 				free(str_flagname);
 			}

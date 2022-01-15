@@ -3,10 +3,10 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 # create flag
 an test_label1 @ 0x804
-fi 0x844 0x845
+fi 1 @ 0x844
 # rename flag
 an test_label2 @ 0x804
-fi 0x844 0x845
+fi 1 @ 0x844
 anj @ 0x804
 EOF
 EXPECT=<<EOF
