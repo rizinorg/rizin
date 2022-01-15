@@ -241,6 +241,7 @@ RZ_API void rz_str_truncate_cmd(char *string);
 RZ_API char *rz_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 	const char *key, const char *val, int g);
 RZ_API bool rz_str_glob(const char *str, const char *glob);
+RZ_API char *rz_str_extract_printable(const char *str, int len);
 RZ_API int rz_str_binstr2bin(const char *str, ut8 *out, int outlen);
 RZ_API char *rz_str_between(const char *str, const char *prefix, const char *suffix);
 RZ_API bool rz_str_startswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle);
