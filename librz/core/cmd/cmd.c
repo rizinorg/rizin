@@ -5580,7 +5580,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		RzCmdCb cb;
 	} cmds[] = {
 		{ "$", "alias", rz_cmd_alias },
-		{ "/", "search kw, pattern aes", rz_cmd_search },
 		{ "?", "help message", rz_cmd_help },
 		{ "a", "analysis", rz_cmd_analysis },
 		{ "k", "perform sdb query", rz_cmd_kuery },

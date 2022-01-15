@@ -85,6 +85,7 @@ static const RzCmdDescArg interpret_output_args[2];
 static const RzCmdDescArg interpret_pipe_args[2];
 static const RzCmdDescArg interpret_macro_args[4];
 static const RzCmdDescArg interpret_macro_multiple_args[4];
+static const RzCmdDescArg cmd_search_string_args[2];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
@@ -1175,8 +1176,21 @@ static const RzCmdDescHelp interpret_macro_multiple_help = {
 	.args = interpret_macro_multiple_args,
 };
 
-static const RzCmdDescHelp cmd_search_help = {
-	.summary = "Search for bytes, regexps, patterns, ..",
+static const RzCmdDescHelp slash__help = {
+	.summary = "Search for bytes, regexps, patterns, ...",
+};
+static const RzCmdDescArg cmd_search_string_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_string_help = {
+	.summary = "Search for <string>",
+	.args = cmd_search_string_args,
 };
 
 static const RzCmdDescHelp R_help = {
@@ -16543,8 +16557,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *interpret_macro_multiple_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, "..(", rz_interpret_macro_multiple_handler, &interpret_macro_multiple_help);
 	rz_warn_if_fail(interpret_macro_multiple_cd);
 
-	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "/", rz_cmd_search, &cmd_search_help);
-	rz_warn_if_fail(cmd_search_cd);
+	RzCmdDesc *slash__cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_string_handler, &cmd_search_string_help, &slash__help);
+	rz_warn_if_fail(slash__cd);
 
 	RzCmdDesc *R_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "R", rz_remote_handler, &remote_help, &R_help);
 	rz_warn_if_fail(R_cd);
