@@ -1,6 +1,7 @@
 debug_plugins = [
   'bf',
   'bochs',
+  'dmp',
   'esil',
   'gdb',
   'io',
@@ -35,6 +36,7 @@ rz_debug_sources = [
   'p/common_winkd.c',
   'p/debug_bf.c',
   'p/debug_bochs.c',
+  'p/debug_dmp.c',
   'p/debug_esil.c',
   'p/debug_gdb.c',
   'p/debug_io.c',
@@ -116,7 +118,10 @@ endif
 rz_debug_inc = [
   platform_inc,
   include_directories(
-    '../bin/format/elf'
+    '../bin/format/elf',
+    '../bin/format/dmp',
+    '../bin/format/mdmp',
+    '../bin/format/pe',
   )
 ]
 
