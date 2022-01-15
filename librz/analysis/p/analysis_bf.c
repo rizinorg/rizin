@@ -142,7 +142,7 @@ RzILOpEffect *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 		cur_label = rz_il_vm_find_label_by_name(vm, cur_lbl_name);
 		if (!cur_label) {
 			// should always reach here if enter "!cur_lbl_name" branch
-			cur_addr = rz_bv_new_from_ut64(vm->addr_size, addr);
+			cur_addr = rz_bv_new_from_ut64(vm->addr_size, addr + 1);
 			rz_il_vm_create_label(vm, cur_lbl_name, cur_addr);
 			rz_bv_free(cur_addr);
 		}
@@ -182,7 +182,7 @@ RzILOpEffect *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	}
 
 	if (!rz_il_hash_find_addr_by_lblname(vm, cur_lbl_name)) {
-		RzBitVector *cur_bv_addr = rz_bv_new_from_ut64(vm->addr_size, addr);
+		RzBitVector *cur_bv_addr = rz_bv_new_from_ut64(vm->addr_size, addr + 1);
 		rz_il_vm_update_label(vm, cur_lbl_name, cur_bv_addr);
 		rz_bv_free(cur_bv_addr);
 	}
@@ -414,7 +414,7 @@ RzAnalysisPlugin rz_analysis_plugin_bf = {
 	.desc = "brainfuck code analysis plugin",
 	.license = "LGPL3",
 	.arch = "bf",
-	.bits = 8,
+	.bits = 64, // RzIL emulation of bf and the reg definitions above use 64bit values
 	.op = &bf_op,
 	.get_reg_profile = get_reg_profile,
 	.rzil_init = bf_init_rzil,

@@ -67,33 +67,6 @@ static char *__filterQuotedShell(const char *arg) {
 	*b = 0;
 	return a;
 }
-// TODO: move into librz/util/name.c
-static char *__filterShell(const char *arg) {
-	rz_return_val_if_fail(arg, NULL);
-	char *a = malloc(strlen(arg) + 1);
-	if (!a) {
-		return NULL;
-	}
-	char *b = a;
-	while (*arg) {
-		char ch = *arg;
-		switch (ch) {
-		case '@':
-		case '`':
-		case '|':
-		case ';':
-		case '=':
-		case '\n':
-			break;
-		default:
-			*b++ = ch;
-			break;
-		}
-		arg++;
-	}
-	*b = 0;
-	return a;
-}
 
 #define STR(x) (x) ? (x) : ""
 RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile);
@@ -4451,7 +4424,14 @@ RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid) {
 	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
 }
 
-RZ_API bool rz_core_bin_delete(RzCore *core, RzBinFile *bf) {
+/**
+ * \brief Close an opened binary file
+ *
+ * \param core Reference to RzCore instance
+ * \param bf Reference to RzBinFile to delete
+ * \return true if the file was closed, false otherwise
+ */
+RZ_API bool rz_core_binfiles_delete(RzCore *core, RzBinFile *bf) {
 	rz_bin_file_delete(core->bin, bf);
 	bf = rz_bin_file_at(core->bin, core->offset);
 	if (bf) {
@@ -4460,86 +4440,71 @@ RZ_API bool rz_core_bin_delete(RzCore *core, RzBinFile *bf) {
 	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
 }
 
-static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, PJ *pj, int mode) {
-	rz_return_val_if_fail(core && bf && bf->o, false);
+static void core_bin_file_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
+	rz_return_if_fail(core && bf && bf->o);
+
 	const char *name = bf ? bf->file : NULL;
 	(void)rz_bin_get_info(core->bin); // XXX is this necssary for proper iniitialization
 	ut32 bin_sz = bf ? bf->size : 0;
-	// TODO: handle mode to print in json and r2 commands
+	RzBinObject *obj = bf->o;
+	RzBinInfo *info = obj->info;
+	ut8 bits = info ? info->bits : 0;
+	const char *asmarch = rz_config_get(core->config, "asm.arch");
+	const char *arch = info ? info->arch ? info->arch : asmarch : "unknown";
 
-	switch (mode) {
-	case '*': {
-		char *n = __filterShell(name);
-		rz_cons_printf("oba 0x%08" PFMT64x " %s # %d\n", bf->o->boffset, n, bf->id);
-		free(n);
-		break;
-	}
-	case 'q':
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("%d\n", bf->id);
 		break;
-	case 'j': {
-		pj_o(pj);
-		pj_ks(pj, "name", name ? name : "");
-		pj_ki(pj, "iofd", bf->fd);
-		pj_ki(pj, "bfid", bf->id);
-		pj_ki(pj, "size", bin_sz);
-		pj_ko(pj, "obj");
-		RzBinObject *obj = bf->o;
-		RzBinInfo *info = obj->info;
-		ut8 bits = info ? info->bits : 0;
-		const char *asmarch = rz_config_get(core->config, "asm.arch");
-		const char *arch = info
-			? info->arch
-				? info->arch
-				: asmarch
-			: "unknown";
-		pj_ks(pj, "arch", arch);
-		pj_ki(pj, "bits", bits);
-		pj_kN(pj, "binoffset", obj->boffset);
-		pj_kN(pj, "objsize", obj->obj_size);
-		pj_end(pj);
-		pj_end(pj);
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(state->d.pj);
+		pj_ks(state->d.pj, "name", name ? name : "");
+		pj_ki(state->d.pj, "iofd", bf->fd);
+		pj_ki(state->d.pj, "bfid", bf->id);
+		pj_ki(state->d.pj, "size", bin_sz);
+		pj_ko(state->d.pj, "obj");
+		pj_ks(state->d.pj, "arch", arch);
+		pj_ki(state->d.pj, "bits", bits);
+		pj_kN(state->d.pj, "binoffset", obj->boffset);
+		pj_kN(state->d.pj, "objsize", obj->obj_size);
+		pj_end(state->d.pj);
+		pj_end(state->d.pj);
 		break;
-	}
-	default: {
-		RzBinInfo *info = bf->o->info;
-		ut8 bits = info ? info->bits : 0;
-		const char *asmarch = rz_config_get(core->config, "asm.arch");
-		const char *arch = info ? info->arch ? info->arch : asmarch : "unknown";
+	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("%d %d %s-%d ba:0x%08" PFMT64x " sz:%" PFMT64d " %s\n",
 			bf->id, bf->fd, arch, bits, bf->o->opts.baseaddr, bf->o->size, name);
-	} break;
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(state->d.t, "ddsXxs", bf->id, bf->fd,
+			arch, bf->o->opts.baseaddr, bf->o->size, name);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
 	}
-	return true;
 }
 
-RZ_API int rz_core_bin_list(RzCore *core, int mode) {
-	// list all binfiles and there objects and there archs
-	int count = 0;
+/**
+ * \brief Print all the opened binary files according to \p state
+ *
+ * \param core Reference to RzCore instance
+ * \param state Reference to RzCmdStateOutput containing all the data to print
+ *              data in the right format
+ * \return true if everything was alright, false otherwise
+ */
+RZ_API bool rz_core_binfiles_print(RzCore *core, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && state, false);
+
 	RzListIter *iter;
-	RzBinFile *binfile = NULL; //, *cur_bf = rz_bin_cur (core->bin) ;
-	RzBin *bin = core->bin;
-	const RzList *binfiles = bin ? bin->binfiles : NULL;
-	if (!binfiles) {
-		return false;
-	}
-	PJ *pj = NULL;
-	if (mode == 'j') {
-		pj = pj_new();
-		if (!pj) {
-			return 0;
-		}
-		pj_a(pj);
-	}
+	RzBinFile *binfile = NULL;
+	const RzList *binfiles = core->bin ? core->bin->binfiles : NULL;
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "ddsXxs", "id", "fd", "arch", "baddr", "size", "name");
 	rz_list_foreach (binfiles, iter, binfile) {
-		rz_core_bin_file_print(core, binfile, pj, mode);
+		core_bin_file_print(core, binfile, state);
 	}
-	if (mode == 'j') {
-		pj_end(pj);
-		rz_cons_print(pj_string(pj));
-		pj_free(pj);
-	}
-	return count;
+	rz_cmd_state_output_array_end(state);
+	return true;
 }
 
 static void resolve_method_flags(RzStrBuf *buf, ut64 flags) {

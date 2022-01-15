@@ -772,8 +772,8 @@ RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name);
 RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *file_uri, ut64 base_addr);
 RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr);
 RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
-RZ_API int rz_core_bin_list(RzCore *core, int mode);
-RZ_API bool rz_core_bin_delete(RzCore *core, RzBinFile *bf);
+RZ_API bool rz_core_binfiles_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API bool rz_core_binfiles_delete(RzCore *core, RzBinFile *bf);
 RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name);
 RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 size, RzList *digests);
 

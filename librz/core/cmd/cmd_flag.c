@@ -63,27 +63,6 @@ static const char *help_msg_fc[] = {
 	NULL
 };
 
-static const char *help_msg_fs[] = {
-	"Usage: fs", "[*] [+-][flagspace|addr]", " # Manage flagspaces",
-	"fs", "", "display flagspaces",
-	"fs*", "", "display flagspaces as rizin commands",
-	"fsj", "", "display flagspaces in JSON",
-	"fs", " *", "select all flagspaces",
-	"fs", " flagspace", "select flagspace or create if it doesn't exist",
-	"fs", "-flagspace", "remove flagspace",
-	"fs", "-*", "remove all flagspaces",
-	"fs", "+foo", "push previous flagspace and set",
-	"fs", "-", "pop to the previous flagspace",
-	"fs", "-.", "remove the current flagspace",
-	"fsq", "", "list flagspaces in quiet mode",
-	"fsm", " [addr]", "move flags at given address to the current flagspace",
-	"fss", "", "display flagspaces stack",
-	"fss*", "", "display flagspaces stack in rizin commands",
-	"fssj", "", "display flagspaces stack in JSON",
-	"fsr", " newname", "rename selected flagspace",
-	NULL
-};
-
 static bool listFlag(RzFlagItem *flag, void *user) {
 	rz_list_append(user, flag);
 	return true;
@@ -242,42 +221,6 @@ static void __flag_graph(RzCore *core, const char *input, int mode) {
 	rz_flag_foreach_space(core->flags, rz_flag_space_cur(core->flags), listFlag, flags);
 	__printRecursive(core, flags, input, mode, 0);
 	rz_list_free(flags);
-}
-
-static void spaces_list(RzSpaces *sp, RzOutputMode mode) {
-	RzSpaceIter it;
-	RzSpace *s;
-	const RzSpace *cur = rz_spaces_current(sp);
-	PJ *pj = NULL;
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
-		pj_a(pj);
-	}
-	rz_spaces_foreach(sp, it, s) {
-		int count = rz_spaces_count(sp, s->name);
-		if (mode == RZ_OUTPUT_MODE_JSON) {
-			pj_o(pj);
-			pj_ks(pj, "name", s->name);
-			pj_ki(pj, "count", count);
-			pj_kb(pj, "selected", cur == s);
-			pj_end(pj);
-		} else if (mode == RZ_OUTPUT_MODE_QUIET) {
-			rz_cons_printf("%s\n", s->name);
-		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			rz_cons_printf("%s %s\n", sp->name, s->name);
-		} else {
-			rz_cons_printf("%5d %c %s\n", count, (!cur || cur == s) ? '*' : '.',
-				s->name);
-		}
-	}
-	if (mode == RZ_OUTPUT_MODE_RIZIN && rz_spaces_current(sp)) {
-		rz_cons_printf("%s %s # current\n", sp->name, rz_spaces_current_name(sp));
-	}
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(pj);
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
-	}
 }
 
 static int cmpflag(const void *_a, const void *_b) {
@@ -686,54 +629,25 @@ static bool adjust_offset(RzFlagItem *flag, void *user) {
 	return true;
 }
 
-static void print_space_stack(RzFlag *f, int ordinal, const char *name, bool selected, PJ *pj, int mode) {
-	bool first = ordinal == 0;
-	switch (mode) {
-	case 'j': {
+static void print_space_stack(RzFlag *f, int ordinal, const char *name, bool selected, RzCmdStateOutput *state) {
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON: {
 		char *ename = rz_str_escape(name);
 		if (!ename) {
 			return;
 		}
-
-		pj_o(pj);
-		pj_ki(pj, "ordinal", ordinal);
-		pj_ks(pj, "name", ename);
-		pj_kb(pj, "selected", selected);
-		pj_end(pj);
+		pj_o(state->d.pj);
+		pj_ki(state->d.pj, "ordinal", ordinal);
+		pj_ks(state->d.pj, "name", ename);
+		pj_kb(state->d.pj, "selected", selected);
+		pj_end(state->d.pj);
 		free(ename);
-		break;
-	}
-	case '*': {
-		const char *fmt = first ? "fs %s\n" : "fs+%s\n";
-		rz_cons_printf(fmt, name);
 		break;
 	}
 	default:
 		rz_cons_printf("%-2d %s%s\n", ordinal, name, selected ? " (selected)" : "");
 		break;
 	}
-}
-
-static int flag_space_stack_list(RzFlag *f, int mode) {
-	RzListIter *iter;
-	char *space;
-	int i = 0;
-	PJ *pj = NULL;
-	if (mode == 'j') {
-		pj = pj_new();
-		pj_a(pj);
-	}
-	rz_list_foreach (f->spaces.spacestack, iter, space) {
-		print_space_stack(f, i++, space, false, pj, mode);
-	}
-	const char *cur_name = rz_flag_space_cur_name(f);
-	print_space_stack(f, i++, cur_name, true, pj, mode);
-	if (mode == 'j') {
-		pj_end(pj);
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
-	}
-	return i;
 }
 
 typedef struct {
@@ -807,6 +721,62 @@ static void print_function_labels(RzAnalysis *analysis, RzAnalysisFunction *fcn,
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
+}
+
+RZ_IPI RzCmdStatus rz_flag_space_add_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_flag_space_set(core->flags, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_flag_space_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_spaces_print(core, &core->flags->spaces, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_flag_space_move_handler(RzCore *core, int argc, const char **argv) {
+	RzFlagItem *f = rz_flag_get_i(core->flags, core->offset);
+	if (!f) {
+		RZ_LOG_ERROR("Cannot find any flag at 0x%" PFMT64x ".\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	f->space = rz_flag_space_cur(core->flags);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_flag_space_remove_handler(RzCore *core, int argc, const char **argv) {
+	const RzSpace *sp = rz_flag_space_cur(core->flags);
+	if (!sp) {
+		RZ_LOG_ERROR("No flag space currently selected.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return bool2status(rz_flag_space_unset(core->flags, sp->name));
+}
+
+RZ_IPI RzCmdStatus rz_flag_space_remove_all_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_flag_space_unset(core->flags, NULL));
+}
+
+RZ_IPI RzCmdStatus rz_flag_space_rename_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_flag_space_rename(core->flags, NULL, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_flag_space_stack_push_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_flag_space_push(core->flags, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_flag_space_stack_pop_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_flag_space_pop(core->flags));
+}
+
+RZ_IPI RzCmdStatus rz_flag_space_stack_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzListIter *iter;
+	char *space;
+	int i = 0;
+	rz_list_foreach (core->flags->spaces.spacestack, iter, space) {
+		print_space_stack(core->flags, i++, space, false, state);
+	}
+	const char *cur_name = rz_flag_space_cur_name(core->flags);
+	print_space_stack(core->flags, i++, cur_name, true, state);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI int rz_cmd_flag(void *data, const char *input) {
@@ -1196,89 +1166,6 @@ rep:
 		break;
 	case ',': // "f,"
 		cmd_flag_table(core, input);
-		break;
-	case 's': // "fs"
-		switch (input[1]) {
-		case '?':
-			rz_core_cmd_help(core, help_msg_fs);
-			break;
-		case '+': {
-			char *name = strdup(input + 2);
-			if (!name) {
-				return 0;
-			}
-			rz_str_trim(name);
-			rz_flag_space_push(core->flags, name);
-			free(name);
-			break;
-		}
-		case 'r':
-			if (input[2] == ' ') {
-				char *newname = strdup(input + 3);
-				rz_str_trim(newname);
-				rz_flag_space_rename(core->flags, NULL, newname);
-				free(newname);
-			} else {
-				eprintf("Usage: fsr [newname]\n");
-			}
-			break;
-		case 's':
-			flag_space_stack_list(core->flags, input[2]);
-			break;
-		case '-':
-			switch (input[2]) {
-			case '*':
-				rz_flag_space_unset(core->flags, NULL);
-				break;
-			case '.': {
-				const RzSpace *sp = rz_flag_space_cur(core->flags);
-				if (sp) {
-					rz_flag_space_unset(core->flags, sp->name);
-				}
-				break;
-			}
-			case 0:
-				rz_flag_space_pop(core->flags);
-				break;
-			default:
-				rz_flag_space_unset(core->flags, input + 2);
-				break;
-			}
-			break;
-		case ' ': {
-			char *name = strdup(input + 2);
-			rz_str_trim(name);
-			rz_flag_space_set(core->flags, name);
-			free(name);
-			break;
-		}
-		case 'm': {
-			RzFlagItem *f;
-			ut64 off = core->offset;
-			if (input[2] == ' ') {
-				off = rz_num_math(core->num, input + 2);
-			}
-			f = rz_flag_get_i(core->flags, off);
-			if (f) {
-				f->space = rz_flag_space_cur(core->flags);
-			} else {
-				eprintf("Cannot find any flag at 0x%" PFMT64x ".\n", off);
-			}
-		} break;
-		case 'j':
-			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_JSON);
-			break;
-		case '*':
-			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_RIZIN);
-			break;
-		case 'q':
-			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_QUIET);
-			break;
-		case '\0':
-		default:
-			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		}
 		break;
 	case 'g': // "fg"
 		switch (input[1]) {

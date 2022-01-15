@@ -571,7 +571,7 @@ CMDS=<<EOF
 ?v $?
 EOF
 EXPECT=<<EOF
-set(v:ptr, x:add(x:var(v:ptr), y:bitv(bits:0x0000000000000001, len:64)))
+(set ptr (+ (var ptr) (bv 64 0x1)))
 0x0
 EOF
 EXPECT_ERR=

@@ -101,7 +101,7 @@ ARGS=-e asm.cpu=ATTiny48
 CMDS=<<EOF
 aa
 pd 5 @ 0x0
-fs~reg
+fsl~reg
 EOF
 EXPECT=<<EOF
         ,=< 0x00000000  ~   jmp   entry0

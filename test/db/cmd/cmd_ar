@@ -570,7 +570,7 @@ e asm.bits=64
 arf
 ?e --
 .arf
-fs
+fsl
 f
 ?e --
 arf-
@@ -580,7 +580,7 @@ arf rax
 arf- rax
 EOF
 EXPECT=<<EOF
-fs+ registers
+fss+ registers
 f rax @ 0x0
 f rbx @ 0x0
 f rcx @ 0x0
@@ -599,7 +599,7 @@ f rip @ 0x0
 f rbp @ 0x0
 f rflags @ 0x0
 f rsp @ 0x0
-fs-
+fss-
 --
     0 * classes
    18 * registers
@@ -644,9 +644,9 @@ f- rbp
 f- rflags
 f- rsp
 --------
-fs+ registers
+fss+ registers
 f rax @ 0x0
-fs-
+fss-
 --
 f- rax
 EOF

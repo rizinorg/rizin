@@ -417,6 +417,7 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	if (core->analysis->rzil) {
 		// initialize the program counter with the current offset
 		rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, core->offset);
+		rz_core_reg_update_flags(core);
 	}
 }
 
@@ -490,7 +491,7 @@ static void rzil_print_register_bool(bool value, ILPrint *p) {
 }
 
 static void rzil_print_register_bitv(RzBitVector *number, ILPrint *p) {
-	char *hex = rz_bv_as_hex_string(number);
+	char *hex = rz_bv_as_hex_string(number, true);
 	switch (p->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_strbuf_appendf(p_sb(p->ptr), " %s: %s", p->name, hex);
@@ -603,11 +604,14 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *var_name, 
 #undef p_tbl
 #undef p_pj
 
-// step a list of ct_opcode at a given address
-RZ_IPI void rz_core_rzil_step(RzCore *core) {
+/**
+ * Perform a single step at the PC given by analysis->reg in RzIL
+ * \return false if an error occured (e.g. invalid op)
+ */
+RZ_IPI bool rz_core_rzil_step(RzCore *core) {
 	if (!core->analysis || !core->analysis->rzil) {
 		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
-		return;
+		return false;
 	}
 
 	RzAnalysis *analysis = core->analysis;
@@ -618,7 +622,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 
 	if (!cur) {
 		// No analysis plugin
-		return;
+		return false;
 	}
 
 	rz_il_vm_sync_from_reg(vm, analysis->reg);
@@ -630,17 +634,23 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	ut8 code[32];
 	// analysis current data to trigger rzil_set_op_code
 	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
-	int size = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
-	RzILOpEffect *ilop = op.il_op;
+	int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
+	RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
 
+	bool succ = false;
 	if (ilop) {
-		rz_il_vm_step(vm, ilop, size > 0 ? size : 1);
+		succ = rz_il_vm_step(vm, ilop, addr + (op.size > 0 ? op.size : 1));
+		if (!succ) {
+			RZ_LOG_ERROR("RzIL: stepping failed.\n");
+		}
 		rz_il_vm_sync_to_reg(vm, analysis->reg);
+		rz_core_reg_update_flags(core);
 	} else {
-		RZ_LOG_ERROR("RzIL: invalid instruction detected or reached the end of code at address 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("RzIL: invalid instruction or lifting not implemented at address 0x%08" PFMT64x "\n", addr);
 	}
 
 	rz_analysis_op_fini(&op);
+	return succ;
 }
 
 RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {

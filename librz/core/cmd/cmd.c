@@ -74,6 +74,10 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 
 static bool lastcmd_repeat(RzCore *core, int next);
 
+static inline RzCmdStatus bool2status(bool val) {
+	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
 #include "cmd_block.c"
 #include "cmd_quit.c"
 #include "cmd_hash.c"

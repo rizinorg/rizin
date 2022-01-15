@@ -643,7 +643,7 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 		}
 	}
 	if (!unset) {
-		rz_cons_print("fs+ " RZ_FLAGS_FS_REGISTERS "\n");
+		rz_cons_print("fss+ " RZ_FLAGS_FS_REGISTERS "\n");
 		bool failed;
 		SYNC_READ_LIST(ritems, failed);
 		if (failed) {
@@ -662,7 +662,7 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 		}
 	}
 	if (!unset) {
-		rz_cons_print("fs-\n");
+		rz_cons_print("fss-\n");
 	}
 	rz_list_free(ritems);
 	return RZ_CMD_STATUS_OK;

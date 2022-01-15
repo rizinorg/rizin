@@ -18,7 +18,7 @@ RUN
 
 NAME=psx: sqrxz4 - maps
 FILE=bins/psx/HITPSX.EXE
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00000800 0x80010000 - 0x8018ffff r-x fmap.TEXT
 EOF

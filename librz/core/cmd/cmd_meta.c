@@ -320,7 +320,7 @@ RZ_IPI RzCmdStatus rz_meta_space_handler(RzCore *core, int argc, const char **ar
 
 RZ_IPI RzCmdStatus rz_meta_space_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzSpaces *ms = &core->analysis->meta_spaces;
-	spaces_list(ms, state->mode);
+	rz_core_spaces_print(core, ms, state);
 	return RZ_CMD_STATUS_OK;
 }
 

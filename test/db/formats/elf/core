@@ -63,7 +63,7 @@ RUN
 NAME=core maps linux x86
 FILE=bins/elf/core/core-linux-x86
 CMDS=<<EOF
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00001000 0x56621000 - 0x56621fff r-- fmap./home/florian/dev/crash/crash-linux-x86
@@ -113,7 +113,7 @@ RUN
 NAME=core maps linux x86_64
 FILE=bins/elf/core/core-linux-x86_64
 CMDS=<<EOF
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
@@ -171,7 +171,7 @@ RUN
 NAME=core maps linux arm64
 FILE=bins/elf/core/core-linux-arm64
 CMDS=<<EOF
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap./home/alarm/crash/crash-linux-arm64
@@ -278,7 +278,7 @@ RUN
 NAME=core maps linux arm32
 FILE=bins/elf/core/core-linux-arm32
 CMDS=<<EOF
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00001000 0x00010000 - 0x00010fff r-x fmap./home/pi/crash/crash-linux-arm32

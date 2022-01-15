@@ -203,7 +203,6 @@ RZ_API ut8 *rz_asm_op_get_buf(RzAsmOp *op);
 
 /* plugin pointers */
 extern RzAsmPlugin rz_asm_plugin_6502;
-extern RzAsmPlugin rz_asm_plugin_6502_cs;
 extern RzAsmPlugin rz_asm_plugin_8051;
 extern RzAsmPlugin rz_asm_plugin_amd29k;
 extern RzAsmPlugin rz_asm_plugin_arc;

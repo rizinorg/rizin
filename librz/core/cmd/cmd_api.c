@@ -1788,7 +1788,7 @@ RZ_API char *rz_cmd_macro_label_process(RzCmdMacro *mac, RzCmdMacroLabel *labels
 }
 
 /* TODO: add support for spaced arguments */
-RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
+static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 	char *args;
 	int nargs = 0;
 	char *str, *ptr, *ptr2;
@@ -1806,7 +1806,7 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 	}
 	ptr = strchr(str, ')');
 	if (!ptr) {
-		eprintf("Missing end ')' parenthesis.\n");
+		RZ_LOG_ERROR("Missing end ')' parenthesis.\n");
 		free(str);
 		return false;
 	} else {
@@ -1822,7 +1822,7 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 
 	macro_level++;
 	if (macro_level > MACRO_LIMIT) {
-		eprintf("Maximum macro recursivity reached.\n");
+		RZ_LOG_ERROR("Maximum macro recursivity reached.\n");
 		macro_level--;
 		free(str);
 		return 0;
@@ -1837,20 +1837,31 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 		if (!strcmp(str, m->name)) {
 			char *ptr = m->code;
 			char *end = strchr(ptr, '\n');
-			if (nargs != m->nargs) {
-				eprintf("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
+			char *init_ptr = ptr;
+			char *init_end = end;
+			if ((m->nargs == 0 && nargs != m->nargs) ||
+				(m->nargs != 0 &&
+					((multiple && (nargs % m->nargs != 0 || nargs == 0)) ||
+						(!multiple && nargs != m->nargs)))) {
+				if (!multiple || m->nargs == 0 || nargs == 0) {
+					RZ_LOG_ERROR("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
+				} else {
+					RZ_LOG_ERROR("Macro '%s' expects %d args and %d is not a multiple of %d\n",
+						m->name, m->nargs, nargs, m->nargs);
+				}
 				macro_level--;
 				free(str);
 				rz_cons_break_pop();
 				return false;
 			}
 			mac->brk = 0;
+			int args_processed = 0;
 			do {
 				if (end) {
 					*end = '\0';
 				}
 				if (rz_cons_is_breaked()) {
-					eprintf("Interrupted at (%s)\n", ptr);
+					RZ_LOG_ERROR("Interrupted at (%s)\n", ptr);
 					if (end) {
 						*end = '\n';
 					}
@@ -1862,7 +1873,7 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 				/* Label handling */
 				ptr2 = rz_cmd_macro_label_process(mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {
-					eprintf("Oops. invalid label name\n");
+					RZ_LOG_ERROR("Oops. invalid label name\n");
 					break;
 				} else if (ptr != ptr2) {
 					ptr = ptr2;
@@ -1888,14 +1899,19 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 				if (end) {
 					*end = '\n';
 					ptr = end + 1;
+					/* Fetch next command */
+					end = strchr(ptr, '\n');
 				} else {
-					macro_level--;
-					free(str);
-					goto out_clean;
+					args_processed += m->nargs;
+					if (!multiple || args_processed >= nargs) {
+						macro_level--;
+						free(str);
+						goto out_clean;
+					}
+					args = (char *)rz_str_word_get0(args, m->nargs);
+					ptr = init_ptr;
+					end = init_end;
 				}
-
-				/* Fetch next command */
-				end = strchr(ptr, '\n');
 			} while (!mac->brk);
 			if (mac->brk) {
 				macro_level--;
@@ -1904,12 +1920,20 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 			}
 		}
 	}
-	eprintf("No macro named '%s'\n", str);
+	RZ_LOG_ERROR("No macro named '%s'\n", str);
 	macro_level--;
 	free(str);
 out_clean:
 	rz_cons_break_pop();
 	return true;
+}
+
+RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
+	return macro_call(mac, name, false);
+}
+
+RZ_API int rz_cmd_macro_call_multiple(RzCmdMacro *mac, const char *name) {
+	return macro_call(mac, name, true);
 }
 
 RZ_API int rz_cmd_macro_break(RzCmdMacro *mac, const char *value) {

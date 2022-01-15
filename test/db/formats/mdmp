@@ -88,7 +88,7 @@ RUN
 
 NAME=mdmp maps
 FILE=bins/mdmp/calc.dmp
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x000043ac 0x0398f9b8 - 0x0398ffff r-- fmap.memory.0x398f9b8
  2 fd: 3 +0x000049f4 0x77639dea - 0x77639ee9 r-- fmap.memory.0x77639dea
@@ -104,7 +104,7 @@ RUN
 
 NAME=mdmp memory64 maps
 FILE=bins/mdmp/hello64.dmp
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00002c8f 0x00010000 - 0x0001ffff r-- fmap.memory64.0x10000
  2 fd: 3 +0x00012c8f 0x00020000 - 0x0002ffff r-- fmap.memory64.0x20000
