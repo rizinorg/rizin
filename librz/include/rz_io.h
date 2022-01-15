@@ -462,6 +462,7 @@ extern RzIOPlugin rz_io_plugin_w32dbg;
 extern RzIOPlugin rz_io_plugin_windbg;
 extern RzIOPlugin rz_io_plugin_mach;
 extern RzIOPlugin rz_io_plugin_debug;
+extern RzIOPlugin rz_io_plugin_dmp;
 extern RzIOPlugin rz_io_plugin_shm;
 extern RzIOPlugin rz_io_plugin_gdb;
 extern RzIOPlugin rz_io_plugin_rap;
