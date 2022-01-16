@@ -3437,6 +3437,12 @@ static void ds_print_sysregs(RDisasmState *ds) {
 			// TODO: add register description description
 			ds->has_description = true;
 		}
+		sr = rz_arch_platform_add_comments_references(core->analysis->platform_target, ds->analop.dereferenced_mmio_address);
+		if (sr) {
+			CMT_ALIGN;
+			ds_comment(ds, true, "; MMIO %s - %s", sr, "");
+			ds->has_description = true;
+		}
 	} break;
 	}
 }
@@ -4017,6 +4023,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			ut64 num = rz_read_ble(msg, core->print->big_endian, refptr * 8);
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
+			ds->analop.dereferenced_mmio_address = num;
 			if (ds->analop.type == RZ_ANALYSIS_OP_TYPE_LEA) {
 				char str[128] = { 0 };
 				f = rz_flag_get_i(core->flags, refaddr);

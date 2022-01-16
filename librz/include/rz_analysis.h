@@ -843,6 +843,7 @@ typedef struct rz_analysis_op_t {
 	st64 stackptr; /* stack pointer */
 	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
 	ut64 mmio_address; // mmio address
+	ut64 dereferenced_mmio_address; // dereferenced mmio address
 	RzAnalysisValue *src[3];
 	RzAnalysisValue *dst;
 	RzList *access; /* RzAnalysisValue access information */
