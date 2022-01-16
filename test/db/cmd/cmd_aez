@@ -33,6 +33,58 @@ ERROR: RzIL: invalid instruction or lifting not implemented at address 0x0000000
 EOF
 RUN
 
+NAME=aezs: RzIL step many failure
+FILE==
+ARGS=-a bf
+TIMEOUT=4
+CMDS=<<EOF
+w ">>>>"
+aezi
+aezs 9001
+ar
+EOF
+EXPECT=<<EOF
+ptr = 0x00010004
+pc = 0x00000004
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RzIL: invalid instruction or lifting not implemented at address 0x00000004
+EOF
+RUN
+
+NAME=aezse: RzIL step with events many failure
+FILE==
+ARGS=-a bf
+TIMEOUT=4
+CMDS=<<EOF
+w ">>>>"
+aezi
+aezse 9001
+ar
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x0, new: 0x1)
+var_write(name: ptr, old: 0x10000, new: 0x10001)
+pc_write(old: 0x1, new: 0x2)
+var_write(name: ptr, old: 0x10001, new: 0x10002)
+pc_write(old: 0x2, new: 0x3)
+var_write(name: ptr, old: 0x10002, new: 0x10003)
+pc_write(old: 0x3, new: 0x4)
+var_write(name: ptr, old: 0x10003, new: 0x10004)
+ptr = 0x00010004
+pc = 0x00000004
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RzIL: invalid instruction or lifting not implemented at address 0x00000004
+EOF
+RUN
+
 NAME=aezv: RzIL var set
 FILE=bins/bf/hello-ok.bf
 CMDS=<<EOF
