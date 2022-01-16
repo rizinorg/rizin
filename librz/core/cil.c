@@ -653,11 +653,17 @@ RZ_IPI bool rz_core_rzil_step(RzCore *core) {
 	return succ;
 }
 
-RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {
-	rz_core_rzil_step(core);
+/**
+ * Perform a single step at the PC given by analysis->reg in RzIL and print any events that happened
+ * \return false if an error occured (e.g. invalid op)
+ */
+RZ_IPI bool rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {
+	if (!rz_core_rzil_step(core)) {
+		return false;
+	}
 
 	if (!core->analysis || !core->analysis->rzil || !core->analysis->rzil->vm) {
-		return;
+		return false;
 	}
 
 	RzILVM *vm = core->analysis->rzil->vm;
@@ -672,7 +678,7 @@ RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {
 	if (!evt_read && !evt_write) {
 		RZ_LOG_ERROR("RzIL: cannot print events when all the events are disabled.");
 		RZ_LOG_ERROR("RzIL: please set 'rzil.step.events.read' or/and 'rzil.step.events.write' to true and try again.");
-		return;
+		return false;
 	}
 
 	if (!pj) {
@@ -695,4 +701,5 @@ RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {
 		rz_cons_print(rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
+	return true;
 }
