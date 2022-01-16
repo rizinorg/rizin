@@ -86,8 +86,8 @@ opcode: inc [ptr]
 rzil: (store 0 (var ptr) (+ (load 0 (var ptr)) (bv 8 0x1)))
 {"opcode":"store","mem":0,"key":{"opcode":"var","value":"ptr"},"value":{"opcode":"+","x":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}},"y":{"opcode":"bitv","bits":"0x1","len":8}}}
 opcode: while [ptr]
-rzil: (branch (! (is_zero (load 0 (var ptr)))) nop (goto ]8))
-{"opcode":"branch","condition":{"opcode":"!","x":{"opcode":"is_zero","bv":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}}}},"true_eff":{"opcode":"nop"},"false_eff":{"opcode":"goto","label":"]8"}}
+rzil: (branch (! (is_zero (load 0 (var ptr)))) nop (jmp (bv 64 0x31)))
+{"opcode":"branch","condition":{"opcode":"!","x":{"opcode":"is_zero","bv":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}}}},"true_eff":{"opcode":"nop"},"false_eff":{"opcode":"jmp","dst":{"opcode":"bitv","bits":"0x31","len":64}}}
 opcode: inc ptr
 rzil: (set ptr (+ (var ptr) (bv 64 0x1)))
 {"opcode":"set","dst":"ptr","src":{"opcode":"+","x":{"opcode":"var","value":"ptr"},"y":{"opcode":"bitv","bits":"0x1","len":64}}}
@@ -98,8 +98,8 @@ opcode: dec [ptr]
 rzil: (store 0 (var ptr) (- (load 0 (var ptr)) (bv 8 0x1)))
 {"opcode":"store","mem":0,"key":{"opcode":"var","value":"ptr"},"value":{"opcode":"-","x":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}},"y":{"opcode":"bitv","bits":"0x1","len":8}}}
 opcode: loop
-rzil: (branch (! (is_zero (load 0 (var ptr)))) (goto [14) nop)
-{"opcode":"branch","condition":{"opcode":"!","x":{"opcode":"is_zero","bv":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}}}},"true_eff":{"opcode":"goto","label":"[14"},"false_eff":{"opcode":"nop"}}
+rzil: (branch (! (is_zero (load 0 (var ptr)))) (jmp (bv 64 0xf)) nop)
+{"opcode":"branch","condition":{"opcode":"!","x":{"opcode":"is_zero","bv":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}}}},"true_eff":{"opcode":"jmp","dst":{"opcode":"bitv","bits":"0xf","len":64}},"false_eff":{"opcode":"nop"}}
 opcode: out [ptr]
 rzil: (goto write)
 {"opcode":"goto","label":"write"}
