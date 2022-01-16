@@ -7995,7 +7995,9 @@ RZ_IPI RzCmdStatus rz_rzil_vm_initialize_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_rzil_vm_step_handler(RzCore *core, int argc, const char **argv) {
 	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
 	for (ut64 i = 0; i < repeat_times; ++i) {
-		rz_core_rzil_step(core);
+		if (!rz_core_rzil_step(core)) {
+			break;
+		}
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -8012,7 +8014,9 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, c
 		pj_a(pj);
 	}
 	for (ut64 i = 0; i < repeat_times; ++i) {
-		rz_core_analysis_rzil_step_with_events(core, pj);
+		if (!rz_core_analysis_rzil_step_with_events(core, pj)) {
+			break;
+		}
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
