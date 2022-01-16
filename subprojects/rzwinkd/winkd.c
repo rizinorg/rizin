@@ -172,8 +172,8 @@ ut32 winkd_get_target_thread(WindCtx *ctx) {
 ut64 winkd_get_target_base(WindCtx *ctx) {
 	ut64 base = 0;
 
-	if (!winkd_read_at_uva(ctx, (uint8_t *)&base,
-		    ctx->target.peb + O_(P_ImageBaseAddress), 4 << ctx->is_64bit)) {
+	if (!winkd_read_at_uva(ctx, ctx->target.peb + O_(P_ImageBaseAddress),
+		    (uint8_t *)&base, 4 << ctx->is_64bit)) {
 		return 0;
 	}
 
@@ -415,7 +415,7 @@ RzList *winkd_list_process(WindCtx *ctx) {
 	return ret;
 }
 
-int winkd_op_at_uva(WindCtx *ctx, uint8_t *buf, ut64 address, int count, bool write) {
+int winkd_op_at_uva(WindCtx *ctx, ut64 address, uint8_t *buf, int count, bool write) {
 	ut32 total = 0;
 	ut32 offset = 0;
 	const ut64 end = address + count;
@@ -443,12 +443,12 @@ int winkd_op_at_uva(WindCtx *ctx, uint8_t *buf, ut64 address, int count, bool wr
 	return total;
 }
 
-int winkd_read_at_uva(WindCtx *ctx, uint8_t *buf, ut64 address, int count) {
-	return winkd_op_at_uva(ctx, buf, address, count, false);
+int winkd_read_at_uva(WindCtx *ctx, ut64 address, uint8_t *buf, int count) {
+	return winkd_op_at_uva(ctx, address, buf, count, false);
 }
 
-int winkd_write_at_uva(WindCtx *ctx, const uint8_t *buf, ut64 address, int count) {
-	return winkd_op_at_uva(ctx, (uint8_t *)buf, address, count, true);
+int winkd_write_at_uva(WindCtx *ctx, ut64 address, const uint8_t *buf, int count) {
+	return winkd_op_at_uva(ctx, address, (uint8_t *)buf, count, true);
 }
 
 RzList *winkd_list_modules(WindCtx *ctx) {
@@ -467,7 +467,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 		}
 		ptr = ctx->PsLoadedModuleList;
 		base = ptr;
-		if (!winkd_read_at_uva(ctx, (uint8_t *)&ptr, ptr, 4 << ctx->is_64bit)) {
+		if (!winkd_read_at_uva(ctx, ptr, (uint8_t *)&ptr, 4 << ctx->is_64bit)) {
 			eprintf("PsLoadedModuleList not present\n");
 		}
 		if (ptr == base) {
@@ -482,7 +482,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 		}
 
 		// Grab the _PEB_LDR_DATA from PEB
-		if (!winkd_read_at_uva(ctx, (uint8_t *)&ptr, ctx->target.peb + ldroff, 4 << ctx->is_64bit)) {
+		if (!winkd_read_at_uva(ctx, ctx->target.peb + ldroff, (uint8_t *)&ptr, 4 << ctx->is_64bit)) {
 			eprintf("PEB not present in target mappings\n");
 			return NULL;
 		}
@@ -494,7 +494,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 
 		base = ptr + mlistoff;
 
-		winkd_read_at_uva(ctx, (uint8_t *)&ptr, base, 4 << ctx->is_64bit);
+		winkd_read_at_uva(ctx, base, (uint8_t *)&ptr, 4 << ctx->is_64bit);
 	}
 
 	WIND_DBG eprintf("InMemoryOrderModuleList : 0x%016" PFMT64x "\n", ptr);
@@ -511,7 +511,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 	do {
 
 		ut64 next = 0;
-		winkd_read_at_uva(ctx, (uint8_t *)&next, ptr, 4 << ctx->is_64bit);
+		winkd_read_at_uva(ctx, ptr, (uint8_t *)&next, 4 << ctx->is_64bit);
 
 		WIND_DBG eprintf("_LDR_DATA_TABLE_ENTRY : 0x%016" PFMT64x "\n", next);
 		if (!next || next == UT64_MAX) {
@@ -525,23 +525,23 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 		if (!mod) {
 			break;
 		}
-		winkd_read_at_uva(ctx, (uint8_t *)&mod->addr, ptr + baseoff, 4 << ctx->is_64bit);
-		winkd_read_at_uva(ctx, (uint8_t *)&mod->size, ptr + sizeoff, 4);
-		winkd_read_at_uva(ctx, (uint8_t *)&mod->timestamp, ptr + timestampoff, 4);
+		winkd_read_at_uva(ctx, ptr + baseoff, (uint8_t *)&mod->addr, 4 << ctx->is_64bit);
+		winkd_read_at_uva(ctx, ptr + sizeoff, (uint8_t *)&mod->size, 4);
+		winkd_read_at_uva(ctx, ptr + timestampoff, (uint8_t *)&mod->timestamp, 4);
 
 		ut16 length;
-		winkd_read_at_uva(ctx, (uint8_t *)&length, ptr + nameoff, sizeof(ut16));
+		winkd_read_at_uva(ctx, ptr + nameoff, (uint8_t *)&length, sizeof(ut16));
 
 		ut64 bufferaddr = 0;
 		int align = ctx->is_64bit ? sizeof(ut64) : sizeof(ut32);
-		winkd_read_at_uva(ctx, (uint8_t *)&bufferaddr, ptr + nameoff + align, 4 << ctx->is_64bit);
+		winkd_read_at_uva(ctx, ptr + nameoff + align, (uint8_t *)&bufferaddr, 4 << ctx->is_64bit);
 
 		wchar_t *unname = calloc((ut64)length + 2, 1);
 		if (!unname) {
 			break;
 		}
 
-		winkd_read_at_uva(ctx, (uint8_t *)unname, bufferaddr, length);
+		winkd_read_at_uva(ctx, bufferaddr, (uint8_t *)unname, length);
 
 		mod->name = calloc((ut64)length + 1, 1);
 		if (!mod->name) {
@@ -786,7 +786,7 @@ bool winkd_read_ver(KdCtx *ctx) {
 	ctx->windctx.is_64bit = (rr->rz_ver.machine == KD_MACH_AMD64);
 
 	ut64 ptr = 0;
-	if (!winkd_read_at(ctx, (uint8_t *)&ptr, rr->rz_ver.dbg_addr, 4 << ctx->windctx.is_64bit)) {
+	if (!winkd_read_at(ctx, rr->rz_ver.dbg_addr, (uint8_t *)&ptr, 4 << ctx->windctx.is_64bit)) {
 		free(pkt);
 		return false;
 	}
@@ -797,7 +797,7 @@ bool winkd_read_ver(KdCtx *ctx) {
 
 	// Thanks to this we don't have to find a way to read the cr4
 	uint16_t pae_enabled;
-	if (!winkd_read_at(ctx, (uint8_t *)&pae_enabled, ctx->windctx.KdDebuggerDataBlock + K_PaeEnabled, sizeof(uint16_t))) {
+	if (!winkd_read_at(ctx, ctx->windctx.KdDebuggerDataBlock + K_PaeEnabled, (uint8_t *)&pae_enabled, sizeof(uint16_t))) {
 		free(pkt);
 		return false;
 	}
@@ -1210,7 +1210,7 @@ error:
 	return 0;
 }
 
-int winkd_read_at(KdCtx *ctx, uint8_t *buf, const ut64 offset, const int count) {
+int winkd_read_at(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) {
 	kd_req_t *rr, req = { 0 };
 	kd_packet_t *pkt;
 	int ret;
@@ -1263,7 +1263,7 @@ error:
 	return 0;
 }
 
-int winkd_write_at(KdCtx *ctx, const uint8_t *buf, const ut64 offset, const int count) {
+int winkd_write_at(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int count) {
 	kd_packet_t *pkt;
 	kd_req_t req = {
 		0
@@ -1317,7 +1317,7 @@ error:
 	return 0;
 }
 
-int winkd_write_at_phys(KdCtx *ctx, const uint8_t *buf, const ut64 offset, const int count) {
+int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int count) {
 	kd_packet_t *pkt;
 	kd_req_t req;
 	int ret;

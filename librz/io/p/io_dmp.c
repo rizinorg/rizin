@@ -106,7 +106,7 @@ static int dmp_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 		if (ctx->target == TARGET_KERNEL) {
 			ctx->windctx.target = kernel_proc;
 		}
-		int ret = winkd_write_at_uva(&ctx->windctx, buf, address, count);
+		int ret = winkd_write_at_uva(&ctx->windctx, address, buf, count);
 		ctx->windctx.target = saved_proc;
 		return ret;
 	}
@@ -142,7 +142,7 @@ static int dmp_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 		if (ctx->target == TARGET_KERNEL) {
 			ctx->windctx.target = kernel_proc;
 		}
-		int ret = winkd_read_at_uva(&ctx->windctx, buf, address, count);
+		int ret = winkd_read_at_uva(&ctx->windctx, address, buf, count);
 		ctx->windctx.target = saved_proc;
 		return ret;
 	}
