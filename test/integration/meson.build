@@ -3,6 +3,7 @@ if get_option('enable_tests')
     'bin_vfiles',
     'cpu_platform_profiles',
     'open_analyse_save_load_project',
+    'analysis_il',
   ]
 
   unit_test_env = environment()

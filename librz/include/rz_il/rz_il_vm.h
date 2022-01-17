@@ -32,11 +32,9 @@ typedef bool (*RzILOpEffectHandler)(RzILVM *vm, RzILOpEffect *op);
 typedef void (*RzILVmHook)(RzILVM *vm, RzILOpEffect *op);
 
 /**
- *  \struct rz_il_vm_t
- *  \brief core theory VM structure
+ * \brief Low-level VM to execute raw IL code
  */
 struct rz_il_vm_t {
-	RZ_NULLABLE RzILRegBinding *reg_binding; ///< Optional, specifies which (global) variables are bound to registers
 	RzILVarSet global_vars; ///< All global variables (usually bound to registers)
 	RzILVarSet local_vars; ///< All local variables, created by local set ops
 	RzILVarSet local_pure_vars; ///< All local variables, during execution temporarily bound by let, only usable in pure expressions and immutable
@@ -75,6 +73,7 @@ RZ_API void rz_il_vm_mem_storew(RzILVM *vm, RzILMemIndex index, RzBitVector *key
 // Labels
 RZ_API RZ_BORROW RzBitVector *rz_il_hash_find_addr_by_lblname(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *lbl_name);
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_find_label_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *lbl_name);
+RZ_API void rz_il_vm_add_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILEffectLabel *label);
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzBitVector *addr);
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label_lazy(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name);
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_update_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL char *name, RZ_NONNULL RZ_BORROW RzBitVector *addr);

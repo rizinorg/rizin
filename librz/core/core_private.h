@@ -29,11 +29,11 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
-RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core);
-RZ_IPI bool rz_core_analysis_rzil_vm_set(RzCore *core, const char *var_name, ut64 value);
-RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
-RZ_IPI bool rz_core_rzil_step(RzCore *core);
-RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj);
+RZ_IPI void rz_core_analysis_il_reinit(RzCore *core);
+RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value);
+RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
+RZ_IPI bool rz_core_il_step(RzCore *core);
+RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);

@@ -112,10 +112,10 @@ static const RzCmdDescArg analysis_function_import_list_args[2];
 static const RzCmdDescArg analysis_function_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_rename_args[2];
-static const RzCmdDescArg rzil_vm_step_args[2];
-static const RzCmdDescArg rzil_vm_step_with_events_args[2];
-static const RzCmdDescArg rzil_vm_step_until_addr_args[2];
-static const RzCmdDescArg rzil_vm_status_args[3];
+static const RzCmdDescArg il_vm_step_args[2];
+static const RzCmdDescArg il_vm_step_with_events_args[2];
+static const RzCmdDescArg il_vm_step_until_addr_args[2];
+static const RzCmdDescArg il_vm_status_args[3];
 static const RzCmdDescArg analysis_regs_args[2];
 static const RzCmdDescArg analysis_regs_columns_args[2];
 static const RzCmdDescArg analysis_regs_references_args[2];
@@ -1906,15 +1906,15 @@ static const RzCmdDescHelp analysis_function_strings_help = {
 static const RzCmdDescHelp aez_help = {
 	.summary = "RzIL Emulation",
 };
-static const RzCmdDescArg rzil_vm_initialize_args[] = {
+static const RzCmdDescArg il_vm_initialize_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp rzil_vm_initialize_help = {
+static const RzCmdDescHelp il_vm_initialize_help = {
 	.summary = "Initialize the RzIL Virtual Machine at the current offset",
-	.args = rzil_vm_initialize_args,
+	.args = il_vm_initialize_args,
 };
 
-static const RzCmdDescArg rzil_vm_step_args[] = {
+static const RzCmdDescArg il_vm_step_args[] = {
 	{
 		.name = "n_times",
 		.type = RZ_CMD_ARG_TYPE_NUM,
@@ -1923,12 +1923,12 @@ static const RzCmdDescArg rzil_vm_step_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp rzil_vm_step_help = {
+static const RzCmdDescHelp il_vm_step_help = {
 	.summary = "Step N instructions within the RzIL Virtual Machine",
-	.args = rzil_vm_step_args,
+	.args = il_vm_step_args,
 };
 
-static const RzCmdDescArg rzil_vm_step_with_events_args[] = {
+static const RzCmdDescArg il_vm_step_with_events_args[] = {
 	{
 		.name = "n_times",
 		.type = RZ_CMD_ARG_TYPE_NUM,
@@ -1937,12 +1937,12 @@ static const RzCmdDescArg rzil_vm_step_with_events_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp rzil_vm_step_with_events_help = {
+static const RzCmdDescHelp il_vm_step_with_events_help = {
 	.summary = "Step N instructions within the RzIL VM and output VM changes (read & write)",
-	.args = rzil_vm_step_with_events_args,
+	.args = il_vm_step_with_events_args,
 };
 
-static const RzCmdDescArg rzil_vm_step_until_addr_args[] = {
+static const RzCmdDescArg il_vm_step_until_addr_args[] = {
 	{
 		.name = "address",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -1951,12 +1951,12 @@ static const RzCmdDescArg rzil_vm_step_until_addr_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp rzil_vm_step_until_addr_help = {
+static const RzCmdDescHelp il_vm_step_until_addr_help = {
 	.summary = "Step until PC equals given address",
-	.args = rzil_vm_step_until_addr_args,
+	.args = il_vm_step_until_addr_args,
 };
 
-static const RzCmdDescArg rzil_vm_status_args[] = {
+static const RzCmdDescArg il_vm_status_args[] = {
 	{
 		.name = "var_name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -1972,9 +1972,9 @@ static const RzCmdDescArg rzil_vm_status_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp rzil_vm_status_help = {
+static const RzCmdDescHelp il_vm_status_help = {
 	.summary = "Print or modify the current status of the RzIL Virtual Machine",
-	.args = rzil_vm_status_args,
+	.args = il_vm_status_args,
 };
 
 static const RzCmdDescDetailEntry ar_Register_space_Filter_detail_entries[] = {
@@ -11182,20 +11182,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aez_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aez", NULL, NULL, &aez_help);
 	rz_warn_if_fail(aez_cd);
-	RzCmdDesc *rzil_vm_initialize_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezi", rz_rzil_vm_initialize_handler, &rzil_vm_initialize_help);
-	rz_warn_if_fail(rzil_vm_initialize_cd);
+	RzCmdDesc *il_vm_initialize_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezi", rz_il_vm_initialize_handler, &il_vm_initialize_help);
+	rz_warn_if_fail(il_vm_initialize_cd);
 
-	RzCmdDesc *rzil_vm_step_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezs", rz_rzil_vm_step_handler, &rzil_vm_step_help);
-	rz_warn_if_fail(rzil_vm_step_cd);
+	RzCmdDesc *il_vm_step_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezs", rz_il_vm_step_handler, &il_vm_step_help);
+	rz_warn_if_fail(il_vm_step_cd);
 
-	RzCmdDesc *rzil_vm_step_with_events_cd = rz_cmd_desc_argv_modes_new(core->rcmd, aez_cd, "aezse", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_rzil_vm_step_with_events_handler, &rzil_vm_step_with_events_help);
-	rz_warn_if_fail(rzil_vm_step_with_events_cd);
+	RzCmdDesc *il_vm_step_with_events_cd = rz_cmd_desc_argv_modes_new(core->rcmd, aez_cd, "aezse", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_il_vm_step_with_events_handler, &il_vm_step_with_events_help);
+	rz_warn_if_fail(il_vm_step_with_events_cd);
 
-	RzCmdDesc *rzil_vm_step_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezsu", rz_rzil_vm_step_until_addr_handler, &rzil_vm_step_until_addr_help);
-	rz_warn_if_fail(rzil_vm_step_until_addr_cd);
+	RzCmdDesc *il_vm_step_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezsu", rz_il_vm_step_until_addr_handler, &il_vm_step_until_addr_help);
+	rz_warn_if_fail(il_vm_step_until_addr_cd);
 
-	RzCmdDesc *rzil_vm_status_cd = rz_cmd_desc_argv_modes_new(core->rcmd, aez_cd, "aezv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_rzil_vm_status_handler, &rzil_vm_status_help);
-	rz_warn_if_fail(rzil_vm_status_cd);
+	RzCmdDesc *il_vm_status_cd = rz_cmd_desc_argv_modes_new(core->rcmd, aez_cd, "aezv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_il_vm_status_handler, &il_vm_status_help);
+	rz_warn_if_fail(il_vm_status_cd);
 
 	RzCmdDesc *ar_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ar", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_regs_handler, &analysis_regs_help, &ar_help);
 	rz_warn_if_fail(ar_cd);

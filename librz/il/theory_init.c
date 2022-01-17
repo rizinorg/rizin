@@ -45,6 +45,8 @@ void *rz_il_handler_var(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzILOpArgsVar *var_op = &op->op.var;
 	RzILVal *val = rz_il_vm_get_var_value(vm, var_op->kind, var_op->v);
 	if (!val) {
+		RZ_LOG_ERROR("RzIL: reading value of variable \"%s\" of kind %s failed.\n",
+			var_op->v, rz_il_var_kind_name(var_op->kind));
 		return NULL;
 	}
 
