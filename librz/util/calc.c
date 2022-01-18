@@ -84,7 +84,15 @@ static inline RzNumCalcValue Nmul(RzNumCalcValue n, RzNumCalcValue v) {
 	n.n *= v.n;
 	return n;
 }
-
+static inline RzNumCalcValue Nexp(RzNumCalcValue n, RzNumCalcValue v) {
+	double temp_d = n.d;
+	unsigned long long temp_n = n.n;
+	for (int i = 1; i < v.n; i++) {
+		n.d *= temp_d;
+		n.n *= temp_n;
+	}
+	return n;
+}
 static inline RzNumCalcValue Nshl(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d += v.d;
 	n.n <<= v.n;
@@ -186,6 +194,8 @@ static RzNumCalcValue term(RzNum *num, RzNumCalc *nc, int get) {
 				return d;
 			}
 			left = Ndiv(left, d);
+		} else if (nc->curr_tok == RNCEXP) {
+			left = Nexp(left, prim(num, nc, 1));
 		} else {
 			return left;
 		}
@@ -245,6 +255,7 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 	case RNCMOD:
 	case RNCMUL:
 	case RNCDIV:
+	case RNCEXP:
 	case RNCPRINT:
 	case RNCASSIGN:
 	case RNCRIGHTP:
@@ -379,6 +390,7 @@ static RzNumCalcToken get_token(RzNum *num, RzNumCalc *nc) {
 	case '&':
 	case '|':
 	case '*':
+	case '!':
 	case '%':
 	case '/':
 	case '(':
