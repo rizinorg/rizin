@@ -342,6 +342,7 @@ static const RzCmdDescArg plugins_load_args[2];
 static const RzCmdDescArg plugins_unload_args[2];
 static const RzCmdDescArg plugins_debug_print_args[2];
 static const RzCmdDescArg plugins_io_print_args[2];
+static const RzCmdDescArg open_args[4];
 static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
@@ -7832,9 +7833,49 @@ static const RzCmdDescHelp plugins_parser_print_help = {
 	.args = plugins_parser_print_args,
 };
 
-static const RzCmdDescHelp cmd_open_help = {
+static const RzCmdDescHelp o_help = {
 	.summary = "Open files and handle opened files",
 };
+static const RzCmdDescArg open_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "perm",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_help = {
+	.summary = "Open files",
+	.args = open_args,
+};
+
+static const RzCmdDescArg open_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_list_help = {
+	.summary = "List opened files",
+	.args = open_list_args,
+};
+
+static const RzCmdDescArg open_show_current_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_show_current_help = {
+	.summary = "Show currently opened file",
+	.args = open_show_current_args,
+};
+
 static const RzCmdDescArg open_close_args[] = {
 	{
 		.name = "fd",
@@ -12970,25 +13011,31 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *plugins_parser_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_parser_print_handler, &plugins_parser_print_help);
 	rz_warn_if_fail(plugins_parser_print_cd);
 
-	RzCmdDesc *cmd_open_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "o", rz_cmd_open, &cmd_open_help);
-	rz_warn_if_fail(cmd_open_cd);
-	RzCmdDesc *open_close_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "o-", rz_open_close_handler, &open_close_help);
+	RzCmdDesc *o_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "o", rz_open_handler, &open_help, &o_help);
+	rz_warn_if_fail(o_cd);
+	RzCmdDesc *open_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, o_cd, "ol", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_open_list_handler, &open_list_help);
+	rz_warn_if_fail(open_list_cd);
+
+	RzCmdDesc *open_show_current_cd = rz_cmd_desc_argv_state_new(core->rcmd, o_cd, "ol.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_open_show_current_handler, &open_show_current_help);
+	rz_warn_if_fail(open_show_current_cd);
+
+	RzCmdDesc *open_close_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "o-", rz_open_close_handler, &open_close_help);
 	rz_warn_if_fail(open_close_cd);
 
-	RzCmdDesc *open_close_all_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "o--", rz_open_close_all_handler, &open_close_all_help);
+	RzCmdDesc *open_close_all_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "o--", rz_open_close_all_handler, &open_close_all_help);
 	rz_warn_if_fail(open_close_all_cd);
 
-	RzCmdDesc *open_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_open_cd, "oL", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_plugins_io_print_handler, &open_plugins_help);
+	RzCmdDesc *open_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, o_cd, "oL", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_plugins_io_print_handler, &open_plugins_help);
 	rz_warn_if_fail(open_plugins_cd);
 	rz_cmd_desc_set_default_mode(open_plugins_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *open_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "o=", rz_open_list_ascii_handler, &open_list_ascii_help);
+	RzCmdDesc *open_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "o=", rz_open_list_ascii_handler, &open_list_ascii_help);
 	rz_warn_if_fail(open_list_ascii_cd);
 
-	RzCmdDesc *open_arch_bits_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "oa", rz_open_arch_bits_handler, &open_arch_bits_help);
+	RzCmdDesc *open_arch_bits_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "oa", rz_open_arch_bits_handler, &open_arch_bits_help);
 	rz_warn_if_fail(open_arch_bits_cd);
 
-	RzCmdDesc *ob_cd = rz_cmd_desc_group_new(core->rcmd, cmd_open_cd, "ob", rz_open_binary_select_id_handler, &open_binary_select_id_help, &ob_help);
+	RzCmdDesc *ob_cd = rz_cmd_desc_group_new(core->rcmd, o_cd, "ob", rz_open_binary_select_id_handler, &open_binary_select_id_help, &ob_help);
 	rz_warn_if_fail(ob_cd);
 	RzCmdDesc *open_binary_select_fd_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obo", rz_open_binary_select_fd_handler, &open_binary_select_fd_help);
 	rz_warn_if_fail(open_binary_select_fd_cd);
@@ -13020,10 +13067,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *open_binary_reload_cd = rz_cmd_desc_argv_new(core->rcmd, ob_cd, "obR", rz_open_binary_reload_handler, &open_binary_reload_help);
 	rz_warn_if_fail(open_binary_reload_cd);
 
-	RzCmdDesc *open_use_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "ou", rz_open_use_handler, &open_use_help);
+	RzCmdDesc *open_use_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "ou", rz_open_use_handler, &open_use_help);
 	rz_warn_if_fail(open_use_cd);
 
-	RzCmdDesc *op_cd = rz_cmd_desc_group_new(core->rcmd, cmd_open_cd, "op", rz_open_prioritize_handler, &open_prioritize_help, &op_help);
+	RzCmdDesc *op_cd = rz_cmd_desc_group_new(core->rcmd, o_cd, "op", rz_open_prioritize_handler, &open_prioritize_help, &op_help);
 	rz_warn_if_fail(op_cd);
 	RzCmdDesc *open_prioritize_next_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opn", rz_open_prioritize_next_handler, &open_prioritize_next_help);
 	rz_warn_if_fail(open_prioritize_next_cd);
@@ -13034,7 +13081,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *open_prioritize_next_rotate_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opr", rz_open_prioritize_next_rotate_handler, &open_prioritize_next_rotate_help);
 	rz_warn_if_fail(open_prioritize_next_rotate_cd);
 
-	RzCmdDesc *om_cd = rz_cmd_desc_group_new(core->rcmd, cmd_open_cd, "om", rz_open_maps_map_handler, &open_maps_map_help, &om_help);
+	RzCmdDesc *om_cd = rz_cmd_desc_group_new(core->rcmd, o_cd, "om", rz_open_maps_map_handler, &open_maps_map_help, &om_help);
 	rz_warn_if_fail(om_cd);
 	RzCmdDesc *open_maps_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, om_cd, "oml", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_open_maps_list_handler, &open_maps_list_help);
 	rz_warn_if_fail(open_maps_list_cd);

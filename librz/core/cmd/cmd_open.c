@@ -39,16 +39,6 @@ static const char *help_msg_o[] = {
 	NULL
 };
 
-static const char *help_msg_o_star[] = {
-	"Usage:", "o* [> files.rz]", "",
-	"o*", "", "list opened files in rizin commands", NULL
-};
-
-static const char *help_msg_oj[] = {
-	"Usage:", "oj [~{}]", " # Use ~{} to indent the JSON",
-	"oj", "", "list opened files in JSON format", NULL
-};
-
 static const char *help_msg_oo[] = {
 	"Usage:", "oo[-] [arg]", " # map opened files",
 	"oo", "", "reopen current file",
@@ -186,13 +176,6 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-static bool desc_list_quiet2_cb(void *user, void *data, ut32 id) {
-	RzPrint *p = (RzPrint *)user;
-	RzIODesc *desc = (RzIODesc *)data;
-	p->cb_printf("%d\n", desc->fd);
-	return false;
-}
-
 static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
 	RzPrint *p = (RzPrint *)user;
 	RzIODesc *desc = (RzIODesc *)data;
@@ -222,6 +205,14 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	pj_kb(pj, "writable", desc->perm & RZ_PERM_W);
 	pj_kN(pj, "size", rz_io_desc_size(desc));
 	pj_end(pj);
+	return true;
+}
+
+static bool desc_list_table_cb(void *user, void *data, ut32 id) {
+	RzTable *t = (RzTable *)user;
+	RzIODesc *desc = (RzIODesc *)data;
+	rz_table_add_rowf(t, "dbsXs", desc->fd, desc->io && (desc->io->desc == desc),
+		rz_str_rwx_i(desc->perm), rz_io_desc_size(desc), desc->uri);
 	return true;
 }
 
@@ -345,35 +336,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	}
 
 	switch (*input) {
-	case 'q': // "oq"
-		if (input[1] == '.') {
-			rz_id_storage_foreach(core->io->files, desc_list_quiet2_cb, core->print);
-		} else {
-			rz_id_storage_foreach(core->io->files, desc_list_quiet_cb, core->print);
-		}
-		break;
-	case '\0': // "o"
-		rz_id_storage_foreach(core->io->files, desc_list_cb, core->print);
-		break;
-	case '*': // "o*"
-		if ('?' == input[1]) {
-			rz_core_cmd_help(core, help_msg_o_star);
-			break;
-		}
-		rz_core_file_print(core, RZ_OUTPUT_MODE_RIZIN);
-		break;
-	case 'j': // "oj"
-		if ('?' == input[1]) {
-			rz_core_cmd_help(core, help_msg_oj);
-			break;
-		}
-		PJ *pj = pj_new();
-		pj_a(pj);
-		rz_id_storage_foreach(core->io->files, desc_list_json_cb, pj);
-		pj_end(pj);
-		core->print->cb_printf("%s\n", pj_string(pj));
-		pj_free(pj);
-		break;
 	case 'i': // "oi"
 		switch (input[1]) {
 		case ' ': // "oi "
@@ -413,22 +375,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		case 0: // "oi"
 			break;
 			rz_core_file_print(core, RZ_OUTPUT_MODE_STANDARD);
-		}
-		break;
-	case '.': // "o."
-		if (input[1] == 'q') { // "o.q" // same as oq
-			RzIOMap *map = rz_io_map_get(core->io, core->offset);
-			if (map) {
-				rz_cons_printf("%d\n", map->fd);
-			}
-		} else {
-			RzIOMap *map = rz_io_map_get(core->io, core->offset);
-			if (map) {
-				RzIODesc *desc = rz_io_desc_get(core->io, map->fd);
-				if (desc) {
-					rz_cons_printf("%s\n", desc->uri);
-				}
-			}
 		}
 		break;
 	case 'C': // "oC"
@@ -1249,5 +1195,65 @@ RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const c
 	// TODO: Might be nice to reload a bin at a specified offset?
 	core_bin_reload(core, NULL, rz_num_math(core->num, argv[1]));
 	rz_core_block_read(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_handler(RzCore *core, int argc, const char **argv) {
+	// TODO: implement me
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "dbsXs", "fd", "raised", "perm", "size", "uri");
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_id_storage_foreach(core->io->files, desc_list_cb, core->print);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		rz_id_storage_foreach(core->io->files, desc_list_json_cb, state->d.pj);
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_id_storage_foreach(core->io->files, desc_list_table_cb, state->d.t);
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_id_storage_foreach(core->io->files, desc_list_quiet_cb, core->print);
+		break;
+	default:
+		break;
+	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_show_current_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzIOMap *map = rz_io_map_get(core->io, core->offset);
+	if (!map) {
+		RZ_LOG_ERROR("Could not find any map at current address %" PFMT64x ".\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzIODesc *desc = rz_io_desc_get(core->io, map->fd);
+	if (!desc) {
+		RZ_LOG_ERROR("Could not find file for map fd %d.\n", map->fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_cmd_state_output_set_columnsf(state, "dbsXs", "fd", "raised", "perm", "size", "uri");
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		desc_list_cb(core->print, desc, 0);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		desc_list_json_cb(state->d.pj, desc, 0);
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		desc_list_table_cb(state->d.t, desc, 0);
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		desc_list_quiet_cb(core->print, desc, 0);
+		break;
+	default:
+		break;
+	}
 	return RZ_CMD_STATUS_OK;
 }
