@@ -84,6 +84,7 @@ static inline RzNumCalcValue Nmul(RzNumCalcValue n, RzNumCalcValue v) {
 	n.n *= v.n;
 	return n;
 }
+
 static inline RzNumCalcValue Nshl(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d += v.d;
 	n.n <<= v.n;
