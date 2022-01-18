@@ -84,15 +84,6 @@ static inline RzNumCalcValue Nmul(RzNumCalcValue n, RzNumCalcValue v) {
 	n.n *= v.n;
 	return n;
 }
-static inline RzNumCalcValue Nexp(RzNumCalcValue n, RzNumCalcValue v) {
-	double temp_d = n.d;
-	unsigned long long temp_n = n.n;
-	for (int i = 1; i < v.n; i++) {
-		n.d *= temp_d;
-		n.n *= temp_n;
-	}
-	return n;
-}
 static inline RzNumCalcValue Nshl(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d += v.d;
 	n.n <<= v.n;
@@ -195,7 +186,19 @@ static RzNumCalcValue term(RzNum *num, RzNumCalc *nc, int get) {
 			}
 			left = Ndiv(left, d);
 		} else if (nc->curr_tok == RNCEXP) {
-			left = Nexp(left, prim(num, nc, 1));
+			RzNumCalcValue d = prim(num, nc, 1);
+			RzNumCalcValue exp_left = left;
+			if (d.n > 0) {
+				for (int i = 1; i < d.n; i++) {
+					left = Nmul(exp_left, left);
+				}
+			}
+			else if (d.n < 0) {
+				RZ_LOG_WARN("Negative Powers not Supported!")
+			}
+			else {
+				left = Ndiv(exp_left, left);
+			}
 		} else {
 			return left;
 		}
