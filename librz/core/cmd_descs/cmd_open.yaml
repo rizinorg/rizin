@@ -341,3 +341,11 @@ commands:
             args:
               - name: fd
                 type: RZ_CMD_ARG_TYPE_NUM
+  - name: ox
+    cname: open_exchange
+    summary: Exchange the descs of <fd> and <fdx> and keep the mapping
+    args:
+      - name: fd
+        type: RZ_CMD_ARG_TYPE_NUM
+      - name: fdx
+        type: RZ_CMD_ARG_TYPE_NUM

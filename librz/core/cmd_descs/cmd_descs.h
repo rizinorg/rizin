@@ -610,6 +610,7 @@ RZ_IPI RzCmdStatus rz_open_maps_prioritize_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_open_maps_prioritize_binid_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_maps_deprioritize_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_maps_prioritize_fd_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_exchange_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_add_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_print_as_rizin_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_remove_handler(RzCore *core, int argc, const char **argv);

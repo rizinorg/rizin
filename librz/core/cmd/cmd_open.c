@@ -530,28 +530,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			eprintf("Missing argument\n");
 		}
 		break;
-	case 'x': // "ox"
-		if (input[1] && input[1] != '?') {
-			int fd, fdx;
-			fd = fdx = -1;
-			char *ptr, *inp = strdup(input);
-			if ((ptr = strrchr(inp, ' '))) {
-				fdx = (int)rz_num_math(core->num, ptr + 1);
-				*ptr = '\0';
-				if ((ptr = strchr(inp, ' '))) {
-					fd = rz_num_math(core->num, ptr + 1);
-				}
-			}
-			free(inp);
-			if ((fdx == -1) || (fd == -1) || (fdx == fd)) {
-				break;
-			}
-			rz_io_desc_exchange(core->io, fd, fdx);
-			rz_core_block_read(core);
-		} else {
-			eprintf("Usage: ox [fd] [fdx] - exchange two file descriptors\n");
-		}
-		break;
 	case '?': // "o?"
 	default:
 		rz_core_cmd_help(core, help_msg_o);
@@ -1255,5 +1233,17 @@ RZ_IPI RzCmdStatus rz_open_show_current_handler(RzCore *core, int argc, const ch
 	default:
 		break;
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_exchange_handler(RzCore *core, int argc, const char **argv) {
+	int fd = (int)rz_num_math(NULL, argv[1]);
+	int fdx = (int)rz_num_math(NULL, argv[2]);
+	if ((fdx == -1) || (fd == -1) || (fdx == fd)) {
+		RZ_LOG_ERROR("Could not exchange file descriptor %d and %d.\n", fd, fdx);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_desc_exchange(core->io, fd, fdx);
+	rz_core_block_read(core);
 	return RZ_CMD_STATUS_OK;
 }
