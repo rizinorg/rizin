@@ -233,6 +233,63 @@ trits   0t22
 EOF
 RUN
 
+NAME="? 10**-2"
+FILE=--
+CMDS=? 10**-2
+EXPECT=<<EOF
+int32   0
+uint32  0
+hex     0x0
+octal   00
+unit    0
+segment 0000:0000
+string  "\0"
+fvalue  0.1
+float   0.000000f
+double  0.000000
+binary  0b00000000
+trits   0t0
+EOF
+RUN
+
+NAME="? 1024**0"
+FILE=--
+CMDS=? 1024**0
+EXPECT=<<EOF
+int32   1
+uint32  1
+hex     0x1
+octal   01
+unit    1
+segment 0000:0001
+string  "\x01"
+fvalue  1.0
+float   0.000000f
+double  0.000000
+binary  0b00000001
+trits   0t1
+EOF
+RUN
+
+NAME="? 2**4.5"
+FILE=--
+CMDS=? 2**4.5
+EXPECT=<<EOF
+int32   16
+uint32  16
+hex     0x10
+octal   020
+unit    16
+segment 0000:0010
+string  "\x10"
+fvalue  16.0
+float   0.000000f
+double  0.000000
+binary  0b00010000
+trits   0t121
+EOF
+RUN
+
 NAME="base help"
 FILE==
 CMDS=<<EOF
