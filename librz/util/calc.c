@@ -188,16 +188,19 @@ static RzNumCalcValue term(RzNum *num, RzNumCalc *nc, int get) {
 		} else if (nc->curr_tok == RNCEXP) {
 			RzNumCalcValue d = prim(num, nc, 1);
 			RzNumCalcValue exp_left = left;
-			if (d.n > 0) {
-				for (int i = 1; i < d.n; i++) {
+			if (d.d - (int)d.d) {
+				RZ_LOG_WARN("floating point powers not yet supported")
+			}
+			if ((int)d.d > 0) {
+				for (int i = 1; i < (int)d.d; i++) {
 					left = Nmul(exp_left, left);
 				}
-			}
-			else if (d.n < 0) {
-				RZ_LOG_WARN("Negative Powers not Supported!")
-			}
-			else {
-				left = Ndiv(exp_left, left);
+			} else if ((int)d.d < 0) {
+				for (int i = -1; i >= (int)d.d; i--) {
+					left = Ndiv(left, exp_left);
+				}
+			} else {
+				left = Ndiv(left, exp_left);
 			}
 		} else {
 			return left;
