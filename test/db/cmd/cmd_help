@@ -214,6 +214,25 @@ trits   0t2
 EOF
 RUN
 
+NAME="? 2!3"
+FILE=--
+CMDS=? 2!3
+EXPECT=<<EOF
+int32   8
+uint32  8
+hex     0x8
+octal   010
+unit    8
+segment 0000:0008
+string  "\b"
+fvalue  8.0
+float   0.000000f
+double  0.000000
+binary  0b00001000
+trits   0t22
+EOF
+RUN
+
 NAME="base help"
 FILE==
 CMDS=<<EOF
