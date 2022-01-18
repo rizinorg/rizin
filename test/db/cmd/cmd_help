@@ -214,9 +214,9 @@ trits   0t2
 EOF
 RUN
 
-NAME="? 2!3"
+NAME="? 2**3"
 FILE=--
-CMDS=? 2!3
+CMDS=? 2**3
 EXPECT=<<EOF
 int32   8
 uint32  8
