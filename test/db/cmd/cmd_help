@@ -290,6 +290,82 @@ trits   0t121
 EOF
 RUN
 
+NAME="? 10 ** 2 * 3"
+FILE=--
+CMDS=? 10 ** 2 * 3
+EXPECT=<<EOF
+int32   300
+uint32  300
+hex     0x12c
+octal   0454
+unit    300
+segment 0000:012c
+string  ",\x01"
+fvalue  300.0
+float   0.000000f
+double  0.000000
+binary  0b0000000100101100
+trits   0t102010
+EOF
+RUN
+
+NAME="? 10 ** 2 / 3"
+FILE=--
+CMDS=? 10 ** 2 / 3
+EXPECT=<<EOF
+int32   33
+uint32  33
+hex     0x21
+octal   041
+unit    33
+segment 0000:0021
+string  "!"
+fvalue  33.3
+float   0.000000f
+double  0.000000
+binary  0b00100001
+trits   0t1020
+EOF
+RUN
+
+NAME="? 10 ** 2 + 3"
+FILE=--
+CMDS=? 10 ** 2 + 3
+EXPECT=<<EOF
+int32   103
+uint32  103
+hex     0x67
+octal   0147
+unit    103
+segment 0000:0067
+string  "g"
+fvalue  103.0
+float   0.000000f
+double  0.000000
+binary  0b01100111
+trits   0t10211
+EOF
+RUN
+
+NAME="? 10 - 2 ** 3"
+FILE=--
+CMDS=? 10 - 2 ** 3
+EXPECT=<<EOF
+int32   2
+uint32  2
+hex     0x2
+octal   02
+unit    2
+segment 0000:0002
+string  "\x02"
+fvalue  2.0
+float   0.000000f
+double  0.000000
+binary  0b00000010
+trits   0t2
+EOF
+RUN
+
 NAME="base help"
 FILE==
 CMDS=<<EOF
