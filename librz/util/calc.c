@@ -405,7 +405,7 @@ static RzNumCalcToken get_token(RzNum *num, RzNumCalc *nc) {
 			return nc->curr_tok = RNCEXP;
 		}
 		cin_putback(num, nc, c);
-		return nc->curr_tok = (RzNumCalcToken)ch;
+		return nc->curr_tok = RNCMUL;
 	case '%':
 	case '/':
 	case '(':
