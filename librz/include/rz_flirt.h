@@ -242,7 +242,7 @@ typedef struct rz_signature_database_entry_t {
 	const char *short_path; ///< Short path without sigdb path
 	char *file_path; ///< full path to the signature file
 	char *details; ///< signature name / description (only for .sig files)
-	ut32 n_modules;
+	ut32 n_modules; ///< signature number of modules
 } RzSigDBEntry;
 
 RZ_API RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_path, bool with_details);
