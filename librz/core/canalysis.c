@@ -6003,11 +6003,12 @@ RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
 	RzList *sigdb = rz_sign_sigdb_load_database(sigdb_path, true);
 	RzSigDBEntry *sig = NULL;
 	RzListIter *iter = NULL;
-	ut64 bits;
+	ut64 bits, nmods;
 
 	rz_list_foreach (sigdb, iter, sig) {
 		bits = sig->arch_bits;
-		rz_table_add_rowf(table, "ssnsns", sig->bin_name, sig->arch_name, bits, sig->base_name, sig->n_modules, sig->details);
+		nmods = sig->n_modules;
+		rz_table_add_rowf(table, "ssnsns", sig->bin_name, sig->arch_name, bits, sig->base_name, nmods, sig->details);
 	}
 
 	char *output = rz_table_tostring(table);
