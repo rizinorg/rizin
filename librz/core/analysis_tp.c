@@ -922,7 +922,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	rz_pvector_foreach (&fcn->vars, vit) {
 		// maybe fcn->vars has changed
 		if (vit >= (void **)fcn->vars.v.a + fcn->vars.v.len) {
-			return;
+			break;
 		}
 		RzAnalysisVar *rvar = *vit;
 		if (rvar->kind == RZ_ANALYSIS_VAR_KIND_REG) {
