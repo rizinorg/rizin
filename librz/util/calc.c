@@ -133,6 +133,25 @@ static inline RzNumCalcValue Ndiv(RzNumCalcValue n, RzNumCalcValue v) {
 	return n;
 }
 
+static inline RzNumCalcValue Nexp(RzNumCalcValue n, RzNumCalcValue v) {
+	RzNumCalcValue exp_n = n;
+	if (v.d - (int)v.d) {
+		RZ_LOG_WARN("floating point powers not yet supported")
+	}
+	if ((int)v.d > 0) {
+		for (int i = 1; i < (int)v.d; i++) {
+			n = Nmul(exp_n, n);
+		}
+	} else if ((int)v.d < 0) {
+		for (int i = -1; i >= (int)v.d; i--) {
+			n = Ndiv(n, exp_n);
+		}
+	} else {
+		n = Ndiv(n, exp_n);
+	}
+	return n;
+}
+
 static RzNumCalcValue expr(RzNum *, RzNumCalc *, int);
 static RzNumCalcValue term(RzNum *, RzNumCalc *, int);
 static void error(RzNum *, RzNumCalc *, const char *);
@@ -187,22 +206,7 @@ static RzNumCalcValue term(RzNum *num, RzNumCalc *nc, int get) {
 			}
 			left = Ndiv(left, d);
 		} else if (nc->curr_tok == RNCEXP) {
-			RzNumCalcValue d = prim(num, nc, 1);
-			RzNumCalcValue exp_left = left;
-			if (d.d - (int)d.d) {
-				RZ_LOG_WARN("floating point powers not yet supported")
-			}
-			if ((int)d.d > 0) {
-				for (int i = 1; i < (int)d.d; i++) {
-					left = Nmul(exp_left, left);
-				}
-			} else if ((int)d.d < 0) {
-				for (int i = -1; i >= (int)d.d; i--) {
-					left = Ndiv(left, exp_left);
-				}
-			} else {
-				left = Ndiv(left, exp_left);
-			}
+			left = Nexp(left, prim(num, nc, 1));
 		} else {
 			return left;
 		}
