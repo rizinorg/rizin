@@ -917,13 +917,11 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			rz_list_free(fcns);
 		}
 	}
+
 	// Type propagation for register based args
+	RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&fcn->vars);
 	void **vit;
-	rz_pvector_foreach (&fcn->vars, vit) {
-		// maybe fcn->vars has changed
-		if (vit >= (void **)fcn->vars.v.a + fcn->vars.v.len) {
-			break;
-		}
+	rz_pvector_foreach (cloned_vars, vit) {
 		RzAnalysisVar *rvar = *vit;
 		if (rvar->kind == RZ_ANALYSIS_VAR_KIND_REG) {
 			RzAnalysisVar *lvar = rz_analysis_var_get_dst_var(rvar);
@@ -941,6 +939,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			}
 		}
 	}
+	rz_pvector_free(cloned_vars);
 out_function:
 	free(retctx.ret_reg);
 	ht_up_free(op_cache);
