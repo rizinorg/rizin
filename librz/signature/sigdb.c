@@ -101,7 +101,7 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL 
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(sigdb_path), NULL);
 	char glob[1024];
 	if (!rz_file_is_directory(sigdb_path)) {
-		RZ_LOG_ERROR("Cannot sigdb path is unknown or invalid (path: %s)\n", sigdb_path);
+		RZ_LOG_ERROR("sigdb path is unknown or invalid (path: %s)\n", sigdb_path);
 		return NULL;
 	}
 	size_t path_len = strlen(sigdb_path) + 1; // ignoring also the filesystem separator
