@@ -135,15 +135,15 @@ static inline RzNumCalcValue Ndiv(RzNumCalcValue n, RzNumCalcValue v) {
 
 static inline RzNumCalcValue Nexp(RzNumCalcValue n, RzNumCalcValue v) {
 	RzNumCalcValue exp_n = n;
-	if (v.d - (int)v.d) {
-		RZ_LOG_WARN("floating point powers not yet supported")
+	if (v.d - (int)v.n) {
+		RZ_LOG_WARN("floating point powers not yet supported\n");
 	}
-	if ((int)v.d > 0) {
-		for (int i = 1; i < (int)v.d; i++) {
+	if ((int)v.n > 0) {
+		for (int i = 1; i < (int)v.n; i++) {
 			n = Nmul(exp_n, n);
 		}
-	} else if ((int)v.d < 0) {
-		for (int i = -1; i >= (int)v.d; i--) {
+	} else if ((int)v.n < 0) {
+		for (int i = 1; i > (int)v.n; i--) {
 			n = Ndiv(n, exp_n);
 		}
 	} else {

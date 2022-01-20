@@ -244,7 +244,7 @@ octal   00
 unit    0
 segment 0000:0000
 string  "\0"
-fvalue  0.1
+fvalue  0.0
 float   0.000000f
 double  0.000000
 binary  0b00000000
@@ -363,6 +363,25 @@ float   0.000000f
 double  0.000000
 binary  0b00000010
 trits   0t2
+EOF
+RUN
+
+NAME="? 2**-1+4"
+FILE=--
+CMDS=? 2**-1+4
+EXPECT=<<EOF
+int32   4
+uint32  4
+hex     0x4
+octal   04
+unit    4
+segment 0000:0004
+string  "\x04"
+fvalue  4.5
+float   0.000000f
+double  0.000000
+binary  0b00000100
+trits   0t11
 EOF
 RUN
 
