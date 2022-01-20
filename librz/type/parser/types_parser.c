@@ -1712,7 +1712,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		// Check if this paren has a declarator
 		TSNode paren_declarator = ts_node_named_child(node, 0);
 		if (ts_node_is_null(paren_declarator)) {
-			parser_debug(state, "Empty parenthesiszed declarator encountered\n");
+			parser_debug(state, "Empty parenthesized declarator encountered\n");
 			return 0;
 		}
 
