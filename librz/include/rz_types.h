@@ -217,16 +217,12 @@ typedef int socklen_t;
 extern "C" {
 #endif
 
-// TODO: FS or RZ_SYS_DIR ??
-#undef FS
 #if __WINDOWS__
-#define FS            "\\"
 #define RZ_SYS_DIR    "\\"
 #define RZ_SYS_ENVSEP ";"
 #define RZ_SYS_HOME   "USERPROFILE"
 #define RZ_SYS_TMP    "TEMP"
 #else
-#define FS            "/"
 #define RZ_SYS_DIR    "/"
 #define RZ_SYS_ENVSEP ":"
 #define RZ_SYS_HOME   "HOME"
