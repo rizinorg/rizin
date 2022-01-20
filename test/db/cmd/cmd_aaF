@@ -5,10 +5,10 @@ e flirt.sigdb.path=bins/sigdb/fake-db
 aaFl
 EOF
 EXPECT=<<EOF
-bin arch bits name          
-----------------------------
-elf x86  64   match.sig
-elf x86  64   not-match.pat
+bin arch bits name          modules details                    
+---------------------------------------------------------------
+elf x86  64   match.sig     1       Built with rizin 0.4.0-git
+elf x86  64   not-match.pat 1       
 EOF
 RUN
 

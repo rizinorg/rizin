@@ -234,6 +234,19 @@ RZ_API bool rz_sign_flirt_write_compressed_pattern_to_buffer(RZ_NONNULL const Rz
 RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut32 optimization, RZ_NULLABLE RzFlirtInfo *info);
 RZ_API bool rz_sign_flirt_write_string_pattern_to_buffer(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBuffer *buffer);
 
+typedef struct rz_signature_database_entry_t {
+	char *bin_name; ///< RzBinPlugin name (elf64 and pe64 are named as elf and pe)
+	char *arch_name; ///< RzAsmPlugin name
+	ut32 arch_bits; ///< Architecture bits
+	const char *base_name; ///< basename of file
+	const char *short_path; ///< Short path without sigdb path
+	char *file_path; ///< full path to the signature file
+	char *details; ///< signature name / description (only for .sig files)
+	ut32 n_modules; ///< signature number of modules
+} RzSigDBEntry;
+
+RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_path, bool with_details);
+
 #ifdef __cplusplus
 }
 #endif

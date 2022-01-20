@@ -1,9 +1,10 @@
 rz_sign_sources = [
+   'create.c',
    'flirt.c',
    'pat.c',
-   'create.c',
-   'zignature.c',
+   'sigdb.c',
    'sign.c',
+   'zignature.c',
 ]
 
 rz_sign_inc = [
