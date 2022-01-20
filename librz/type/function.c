@@ -398,13 +398,13 @@ RZ_API bool rz_type_is_callable_ptr(RZ_NONNULL const RzType *type) {
  */
 RZ_API bool rz_type_is_callable_ptr_nested(RZ_NONNULL const RzType *type) {
 	rz_return_val_if_fail(type, false);
-	if (type->kind != RZ_TYPE_KIND_POINTER) {
+	if (type->kind != RZ_TYPE_KIND_POINTER && type->kind != RZ_TYPE_KIND_ARRAY) {
 		return false;
 	}
 	// There should not exist pointers to the empty types
 	RzType *ptr = type->pointer.type;
 	rz_return_val_if_fail(ptr, false);
-	if (ptr->kind == RZ_TYPE_KIND_POINTER) {
+	if (ptr->kind == RZ_TYPE_KIND_POINTER || ptr->kind == RZ_TYPE_KIND_ARRAY) {
 		return rz_type_is_callable_ptr_nested(ptr);
 	}
 	return ptr->kind == RZ_TYPE_KIND_CALLABLE;
@@ -419,23 +419,25 @@ static const RzCallable *callable_ptr_unwrap(RZ_NONNULL const RzType *type, size
 	return type->kind == RZ_TYPE_KIND_CALLABLE ? type->callable : NULL;
 }
 
-static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, size_t ptr_depth) {
-	if (ptr_depth > 0) {
+static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, size_t ptr_depth, const char *pointer_str, const char *array_str) {
+	RzStrBuf *callable_buf = rz_strbuf_new("");
+	bool has_paren = ptr_depth > 0 || strlen(pointer_str) != 0;
+	if (has_paren) {
 		// Due to the portability issues with other solutions we use this hack to repeat the '*' character
-		return rz_str_newf("(%.*s%s)", (int)ptr_depth, "****************", rz_str_get(callable->name));
-	} else {
-		return strdup(rz_str_get(callable->name));
+		rz_strbuf_appendf(callable_buf, "(%.*s%s", (int)ptr_depth, "****************", pointer_str);
 	}
+	rz_strbuf_appendf(callable_buf, "%s%s%s", rz_str_get(callable->name), array_str, has_paren ? ")" : "");
+	return rz_strbuf_drain(callable_buf);
 }
 
-static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, size_t ptr_depth) {
+static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, size_t ptr_depth, const char *pointer_str, const char *array_str) {
 	rz_return_val_if_fail(buf && typedb && callable, false);
 
 	if (callable->noret) {
 		rz_strbuf_append(buf, "__attribute__((noreturn)) ");
 	}
 	char *ret_str = callable->ret ? rz_type_as_string(typedb, callable->ret) : NULL;
-	char *callable_name = callable_name_or_ptr(callable, ptr_depth);
+	char *callable_name = callable_name_or_ptr(callable, ptr_depth, pointer_str, array_str);
 	rz_strbuf_appendf(buf, "%s %s(", ret_str ? ret_str : "void", callable_name);
 	free(ret_str);
 	free(callable_name);
@@ -460,8 +462,10 @@ static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL
  *
  * \param typedb Types Database instance
  * \param callable RzCallable instance
+ * \param pointer_str String containing pointer data of the type (pass NULL if in doubt)
+ * \param array_str String containing array data of the type (pass NULL if in doubt)
  */
-RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
+RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_BORROW RZ_NULLABLE const char *pointer_str, RZ_BORROW RZ_NULLABLE const char *array_str) {
 	rz_return_val_if_fail(typedb && type, NULL);
 	rz_return_val_if_fail(type->kind == RZ_TYPE_KIND_POINTER, NULL);
 
@@ -471,7 +475,7 @@ RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NO
 		return NULL;
 	}
 	RzStrBuf *buf = rz_strbuf_new("");
-	if (!callable_as_string(buf, typedb, callable, ptr_depth)) {
+	if (!callable_as_string(buf, typedb, callable, ptr_depth, pointer_str, array_str)) {
 		rz_strbuf_free(buf);
 		return NULL;
 	}
@@ -483,11 +487,13 @@ RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NO
  *
  * \param typedb Types Database instance
  * \param callable RzCallable instance
+ * \param pointer_str String containing pointer data of the type (pass NULL if in doubt)
+ * \param array_str String containing array data of the type (pass NULL if in doubt)
  */
-RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable) {
+RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_BORROW RZ_NULLABLE const char *pointer_str, RZ_BORROW RZ_NULLABLE const char *array_str) {
 	rz_return_val_if_fail(typedb && callable, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
-	if (!callable_as_string(buf, typedb, callable, 0)) {
+	if (!callable_as_string(buf, typedb, callable, 0, pointer_str, array_str)) {
 		rz_strbuf_free(buf);
 		return NULL;
 	}
