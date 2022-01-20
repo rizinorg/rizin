@@ -901,16 +901,27 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 	}
 	case RZ_TYPE_KIND_POINTER:
 		if (rz_type_is_callable_ptr_nested(type)) { // function pointers
-			char *typestr = rz_type_callable_ptr_as_string(typedb, type);
+			char *ptr_buf = rz_strbuf_get(phbuf.pointerbuf);
+			char *arr_buf = rz_strbuf_get(phbuf.arraybuf);
+			char *typestr = rz_type_callable_ptr_as_string(typedb, type, ptr_buf, arr_buf);
 			rz_strbuf_append(phbuf.typename, typestr);
+			// clear arraybuf and pointerbuf since they are encapsulated in the typename
+			rz_strbuf_clear(phbuf.pointerbuf);
+			rz_strbuf_clear(phbuf.arraybuf);
 			free(typestr);
 		} else {
+			bool use_paren = type->pointer.type->kind == RZ_TYPE_KIND_ARRAY;
 			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon, show_typedefs);
+			if (use_paren) {
+				// if pointer to an array, then use parentheses
+				rz_strbuf_append(phbuf.pointerbuf, "(");
+				rz_strbuf_prepend(phbuf.arraybuf, ")");
+			}
 			rz_strbuf_append(phbuf.pointerbuf, "*");
-			rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? " const " : "");
+			rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? "const " : "");
 		}
 		break;
-	case RZ_TYPE_KIND_ARRAY:
+	case RZ_TYPE_KIND_ARRAY: {
 		if (type->array.count) {
 			rz_strbuf_appendf(phbuf.arraybuf, "[%" PFMT64d "]", type->array.count);
 		} else { // variable length arrays
@@ -918,9 +929,15 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		}
 		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon, show_typedefs);
 		break;
+	}
 	case RZ_TYPE_KIND_CALLABLE: {
-		char *callstr = rz_type_callable_as_string(typedb, type->callable);
+		char *ptr_buf = rz_strbuf_get(phbuf.pointerbuf);
+		char *arr_buf = rz_strbuf_get(phbuf.arraybuf);
+		char *callstr = rz_type_callable_as_string(typedb, type->callable, ptr_buf, arr_buf);
 		rz_strbuf_append(phbuf.typename, callstr);
+		// clear arraybuf and pointerbuf since they are encapsulated in the typename
+		rz_strbuf_clear(phbuf.pointerbuf);
+		rz_strbuf_clear(phbuf.arraybuf);
 		free(callstr);
 		break;
 	}
@@ -979,7 +996,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		rz_strbuf_free(array_buf);
 		return NULL;
 	}
-	if (self_ref) { // in case of self referntial type
+	if (self_ref) { // in case of self referential type
 		unfold_level = 0; // no unfold
 		unfold_anon = unfold_all = false;
 	} else if (self_ref_typename) {
@@ -990,7 +1007,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
 		is_anon = !strncmp(type->identifier.name, "anonymous ", 10);
 		btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-	} else if ((type->kind == RZ_TYPE_KIND_POINTER && rz_type_is_callable_ptr_nested(type)) || type->kind == RZ_TYPE_KIND_CALLABLE) {
+	} else if (rz_type_is_callable_ptr_nested(type) || type->kind == RZ_TYPE_KIND_CALLABLE) {
 		identifier = NULL; // no need to separately print identifier for function pointers or functions
 	}
 	char *typename_str = rz_strbuf_drain(phbuf.typename);
