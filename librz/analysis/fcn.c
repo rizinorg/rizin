@@ -1913,7 +1913,7 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunc
 	if (!callable) {
 		return NULL;
 	}
-	char *signature = rz_type_callable_as_string(a->typedb, callable);
+	char *signature = rz_type_callable_as_string(a->typedb, callable, NULL, NULL);
 	rz_type_callable_free(callable);
 	char *result = rz_str_newf("%s;", signature);
 	free(signature);

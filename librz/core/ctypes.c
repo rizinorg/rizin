@@ -459,7 +459,7 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 		pj_end(pj);
 	} break;
 	default: {
-		char *str = rz_type_callable_as_string(typedb, callable);
+		char *str = rz_type_callable_as_string(typedb, callable, NULL, NULL);
 		rz_cons_printf("%s;\n", str);
 		free(str);
 	} break;
