@@ -46,14 +46,16 @@ static inline bool rz_il_sort_pure_eq(RzILSortPure a, RzILSortPure b) {
 
 static inline RzILSortPure rz_il_sort_pure_bool() {
 	RzILSortPure r = {
-		.type = RZ_IL_TYPE_PURE_BOOL
+		RZ_IL_TYPE_PURE_BOOL,
+		{ { 0 } },
 	};
 	return r;
 }
 
 static inline RzILSortPure rz_il_sort_pure_bv(ut32 length) {
 	RzILSortPure r = {
-		.type = RZ_IL_TYPE_PURE_BITVECTOR
+		RZ_IL_TYPE_PURE_BITVECTOR,
+		{ { 0 } },
 	};
 	r.props.bv.length = length;
 	return r;
