@@ -97,7 +97,7 @@ skip_details:
  * \param  with_details  When true, opens each signature within the db for extra details
  * \return List of entries
  */
-RZ_API RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_path, bool with_details) {
+RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_path, bool with_details) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(sigdb_path), NULL);
 	char glob[1024];
 	if (!rz_file_is_directory(sigdb_path)) {

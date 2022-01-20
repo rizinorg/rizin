@@ -245,7 +245,7 @@ typedef struct rz_signature_database_entry_t {
 	ut32 n_modules; ///< signature number of modules
 } RzSigDBEntry;
 
-RZ_API RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_path, bool with_details);
+RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_path, bool with_details);
 
 #ifdef __cplusplus
 }
