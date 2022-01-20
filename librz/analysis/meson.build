@@ -96,7 +96,6 @@ rz_analysis_sources = [
   'il/analysis_il_trace.c',
   'serialize_analysis.c',
   'serialize_typelink.c',
-  'sigdb.c',
   'switch.c',
   'type_pdb.c',
   'typelink.c',
