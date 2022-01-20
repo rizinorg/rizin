@@ -1172,9 +1172,9 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ
 
 	if (info && ret) {
 		info->type = RZ_FLIRT_FILE_TYPE_SIG;
-		info->u.sig.version = rz_sign_flirt_node_count_nodes(ret);
+		info->u.sig.version = ps.version;
 		info->u.sig.architecture = header->arch;
-		info->u.sig.n_modules = ps.version;
+		info->u.sig.n_modules = rz_sign_flirt_node_count_nodes(ret);
 		info->u.sig.name = (char *)name;
 		name = NULL;
 	}
