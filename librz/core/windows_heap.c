@@ -322,7 +322,6 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	if (!rz_file_exists(pdb_path)) {
 		// Download ntdll.pdb
 		SPDBOptions opts;
-		opts.user_agent = rz_config_get(core->config, "pdb.useragent");
 		opts.extract = rz_config_get_i(core->config, "pdb.extract");
 		opts.symbol_store_path = rz_config_get(core->config, "pdb.symstore");
 		opts.symbol_server = rz_config_get(core->config, "pdb.server");
