@@ -532,7 +532,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_download_handler(RzCore *core, int argc, cons
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 	}
-	int r = rz_bin_pdb_download(core, state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL, state->mode == RZ_OUTPUT_MODE_JSON, &pdbopts);
+	int r = rz_bin_pdb_download(core->bin, state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL, state->mode == RZ_OUTPUT_MODE_JSON, &pdbopts);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
