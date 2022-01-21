@@ -2939,7 +2939,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #endif
 	SETCB("cmd.times", "", &cb_cmdtimes, "Run when a command is repeated (number prefix)");
 	/* pdb */
-	SETPREF("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
 	{
 		char *pdb_path = rz_path_home_prefix(RZ_PDB);

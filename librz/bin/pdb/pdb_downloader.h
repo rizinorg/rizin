@@ -12,14 +12,12 @@ extern "C" {
 #endif
 
 typedef struct SPDBOptions {
-	const char *user_agent;
 	const char *symbol_server;
 	const char *symbol_store_path;
 	ut64 extract;
 } SPDBOptions;
 
 typedef struct SPDBDownloaderOpt {
-	const char *user_agent;
 	const char *symbol_server;
 	const char *dbg_file;
 	const char *guid;
