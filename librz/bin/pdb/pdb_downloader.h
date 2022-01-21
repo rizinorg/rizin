@@ -5,7 +5,7 @@
 #define PDB_DOWNLOADER_H
 
 #include <rz_types.h>
-#include <rz_core.h>
+#include <rz_bin.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ void deinit_pdb_downloader(SPDBDownloader *pdb_downloader);
 /**
  * \brief download PDB file
  */
-RZ_API int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *options);
+RZ_API int rz_bin_pdb_download(RzBin *bin, PJ *pj, int isradjson, SPDBOptions *options);
 
 #ifdef __cplusplus
 }
