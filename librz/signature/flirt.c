@@ -978,6 +978,7 @@ static int parse_v5_header(RzBuffer *buf, idasig_v5_t *header) {
 
 static int parse_v6_v7_header(RzBuffer *buf, idasig_v6_v7_t *header) {
 	if (rz_buf_read(buf, (unsigned char *)&header->n_functions, sizeof(header->n_functions)) != sizeof(header->n_functions)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v6/v7 header).\n");
 		return false;
 	}
 
@@ -986,6 +987,7 @@ static int parse_v6_v7_header(RzBuffer *buf, idasig_v6_v7_t *header) {
 
 static int parse_v8_v9_header(RzBuffer *buf, idasig_v8_v9_t *header) {
 	if (rz_buf_read(buf, (unsigned char *)&header->pattern_size, sizeof(header->pattern_size)) != sizeof(header->pattern_size)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v8/v9 header).\n");
 		return false;
 	}
 
@@ -994,6 +996,7 @@ static int parse_v8_v9_header(RzBuffer *buf, idasig_v8_v9_t *header) {
 
 static int parse_v10_header(RzBuffer *buf, idasig_v10_t *header) {
 	if (rz_buf_read(buf, (unsigned char *)&header->unknown, sizeof(header->unknown)) != sizeof(header->unknown)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v10 header).\n");
 		return false;
 	}
 
@@ -1016,14 +1019,17 @@ static ut8 flirt_parse_version(RzBuffer *buffer) {
 	}
 
 	if (rz_buf_read(buffer, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v5 header magic).\n");
 		goto exit;
 	}
 
 	if (strncmp((const char *)header->magic, "IDASGN", 6)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig magic.\n");
 		goto exit;
 	}
 
 	if (rz_buf_read(buffer, &header->version, sizeof(header->version)) != sizeof(header->version)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v5 header version).\n");
 		goto exit;
 	}
 
@@ -1077,6 +1083,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ
 	parse_v5_header(flirt_buf, header);
 
 	if (expected_arch != RZ_FLIRT_SIG_ARCH_ANY && header->arch != expected_arch) {
+		RZ_LOG_ERROR("FLIRT: the binary architecture did not match the .sig one.\n");
 		goto exit;
 	}
 
