@@ -216,7 +216,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 RZ_API void rz_sign_flirt_node_free(RZ_NULLABLE RzFlirtNode *node);
 RZ_API void rz_sign_flirt_info_fini(RZ_NULLABLE RzFlirtInfo *info);
 
-RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file, ut8 expected_arch);
+RZ_API bool rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file, ut8 expected_arch);
 
 typedef struct rz_flirt_compressed_options_t {
 	ut8 version; ///< FLIRT version (supported only from v5 to v10)
