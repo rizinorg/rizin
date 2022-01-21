@@ -1241,7 +1241,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	if (action & RZ_BIN_REQ_PDB_DWNLD) {
 		SPDBOptions pdbopts;
-		pdbopts.user_agent = (char *)rz_config_get(core.config, "pdb.useragent");
 		pdbopts.symbol_server = (char *)rz_config_get(core.config, "pdb.server");
 		pdbopts.extract = rz_config_get_i(core.config, "pdb.extract");
 

@@ -145,7 +145,6 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt->dbg_file = strdup(opt->dbg_file);
 	pd->opt->guid = strdup(opt->guid);
 	pd->opt->symbol_server = strdup(opt->symbol_server);
-	pd->opt->user_agent = strdup(opt->user_agent);
 	pd->opt->symbol_store_path = strdup(opt->symbol_store_path);
 	pd->opt->extract = opt->extract;
 	pd->download = download;
@@ -155,7 +154,6 @@ void deinit_pdb_downloader(SPDBDownloader *pd) {
 	RZ_FREE(pd->opt->dbg_file);
 	RZ_FREE(pd->opt->guid);
 	RZ_FREE(pd->opt->symbol_server);
-	RZ_FREE(pd->opt->user_agent);
 	RZ_FREE(pd->opt->symbol_store_path);
 	RZ_FREE(pd->opt);
 	pd->download = 0;
@@ -190,14 +188,13 @@ int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *option
 		return 1;
 	}
 
-	if (!options || !options->symbol_server || !options->user_agent) {
+	if (!options || !options->symbol_server || !options->symbol_store_path) {
 		eprintf("Can't retrieve pdb configurations\n");
 		return 1;
 	}
 
 	opt.dbg_file = rz_file_basename(info->debug_file_name);
 	opt.guid = info->guid;
-	opt.user_agent = options->user_agent;
 	opt.symbol_store_path = options->symbol_store_path;
 	opt.extract = options->extract;
 	char *symbol_server = strdup(options->symbol_server);
