@@ -1200,28 +1200,29 @@ exit:
 /**
  * \brief Parses the FLIRT file and applies the signatures
  *
- * \param analysis    The RzAnalysis structure
- * \param flirt_file  The FLIRT file to parse
+ * \param  analysis    The RzAnalysis structure
+ * \param  flirt_file  The FLIRT file to parse
+ * \return true if the signatures were sucessfully applied to the file
  */
-RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file, ut8 expected_arch) {
+RZ_API bool rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file, ut8 expected_arch) {
 	rz_return_if_fail(analysis && RZ_STR_ISNOTEMPTY(flirt_file));
 	RzBuffer *flirt_buf = NULL;
 	RzFlirtNode *node = NULL;
 
 	if (expected_arch > RZ_FLIRT_SIG_ARCH_ANY) {
 		RZ_LOG_ERROR("FLIRT: unknown architecture %u\n", expected_arch);
-		return;
+		return false;
 	}
 
 	const char *extension = rz_str_lchr(flirt_file, '.');
 	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pat") != 0)) {
 		RZ_LOG_ERROR("FLIRT: unknown extension '%s'\n", extension);
-		return;
+		return false;
 	}
 
 	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
 		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
-		return;
+		return false;
 	}
 
 	if (!strcmp(extension, ".pat")) {
@@ -1236,9 +1237,10 @@ RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 			RZ_LOG_ERROR("FLIRT: Error while scanning the file %s\n", flirt_file);
 		}
 		rz_sign_flirt_node_free(node);
-		return;
+		return true;
 	}
 	RZ_LOG_ERROR("FLIRT: We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
+	return false;
 }
 
 /**
