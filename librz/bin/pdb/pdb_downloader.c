@@ -172,11 +172,11 @@ static bool is_valid_guid(const char *guid) {
 	return i >= 33; // len of GUID and age
 }
 
-int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *options) {
+int rz_bin_pdb_download(RzBin *bin, PJ *pj, int isradjson, SPDBOptions *options) {
 	int ret = 1;
 	SPDBDownloaderOpt opt;
 	SPDBDownloader pdb_downloader;
-	RzBinInfo *info = rz_bin_get_info(core->bin);
+	RzBinInfo *info = rz_bin_get_info(bin);
 
 	if (!info || !info->debug_file_name) {
 		eprintf("Can't find debug filename\n");
