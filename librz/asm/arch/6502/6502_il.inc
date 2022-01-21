@@ -128,14 +128,14 @@ static RzILOpEffect *status_byte_apply(RzILOpBitVector *sb) {
 
 static RzILOpEffect *stack_push(RzILOpBitVector *v) {
 	return SEQ2(
-		SETG("sp", SUB(VARG("sp"), U8(1))),
-		STORE(APPEND(U8(1), VARG("sp")), v));
+		STORE(APPEND(U8(1), VARG("sp")), v),
+		SETG("sp", SUB(VARG("sp"), U8(1))));
 }
 
 static RzILOpEffect *stack_pop(const char *varname) {
 	return SEQ2(
-		SETL(varname, LOAD(APPEND(U8(1), VARG("sp")))),
-		SETG("sp", ADD(VARG("sp"), U8(1))));
+		SETG("sp", ADD(VARG("sp"), U8(1))),
+		SETL(varname, LOAD(APPEND(U8(1), VARG("sp")))));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -399,7 +399,7 @@ static RzILOpEffect *_6502_il_op_jsr(ut16 target, ut64 offset) {
  * rti
  */
 static RzILOpEffect *_6502_il_op_rti() {
-	return SEQ(3,
+	return SEQ(5,
 		stack_pop("sr"),
 		status_byte_apply(VARL("sr")),
 		stack_pop("pcl"),
