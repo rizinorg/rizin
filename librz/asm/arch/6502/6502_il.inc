@@ -263,9 +263,10 @@ static RzILOpEffect *_6502_il_op_sbc(_6502ILAddr *addr) {
 	return SEQ(7,
 		SETL("src", do_load(addr)),
 		SETL("res", SUB(
-			UNSIGNED(9, VARG("a")),
-			SUB(UNSIGNED(9, VARL("src")),
-				ITE(VARG("C"), UN(9, 0), UN(9, 1))))),
+			SUB(
+				UNSIGNED(9, VARG("a")),
+				UNSIGNED(9, VARL("src"))),
+			ITE(VARG("C"), UN(9, 0), UN(9, 1)))),
 		SETG("C", INV(MSB(VARL("res")))),
 		SETL("res8", UNSIGNED(8, VARL("res"))),
 		update_flags_nz(VARL("res8")),
@@ -295,7 +296,7 @@ static RzILOpEffect *_6502_il_op_asl(_6502ILAddr *addr) {
  */
 static RzILOpEffect *_6502_il_op_lsr(_6502ILAddr *addr) {
 	RzILOpEffect *load = SETL("tmp", do_load(addr));
-	return SEQ(5,
+	return SEQ(6,
 		load,
 		SETG("C", LSB(VARL("tmp"))),
 		SETL("tmp", SHIFTR0(VARL("tmp"), UN(3, 1))),
