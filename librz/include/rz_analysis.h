@@ -2226,17 +2226,6 @@ RZ_API bool rz_serialize_analysis_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnaly
 RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
-typedef struct rz_analysis_signature_t {
-	char *bin_name; ///< RzBinPlugin name (elf64 and pe64 are named as elf and pe)
-	char *arch_name; ///< RzAsmPlugin name
-	ut32 arch_bits; ///< Architecture bits
-	const char *base_name; ///< basename of file
-	const char *short_path; ///< Short path without sigdb path
-	char *file_path; ///< full path to the signature file
-} RzAnalysisSignature;
-
-RZ_API RzList /*<RzAnalysisSignature>*/ *rz_analysis_sigdb_load_database(RZ_NONNULL const char *sigdb_path);
-
 /* plugin pointers */
 extern RzAnalysisPlugin rz_analysis_plugin_null;
 extern RzAnalysisPlugin rz_analysis_plugin_6502;
