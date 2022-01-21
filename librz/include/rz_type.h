@@ -302,6 +302,7 @@ RZ_API st64 rz_type_offset_by_path(const RzTypeDB *typedb, RZ_NONNULL const char
 RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset);
 RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset);
 RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
+RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
 
 // Type parser low-level API
 
