@@ -1205,7 +1205,7 @@ exit:
  * \return true if the signatures were sucessfully applied to the file
  */
 RZ_API bool rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file, ut8 expected_arch) {
-	rz_return_if_fail(analysis && RZ_STR_ISNOTEMPTY(flirt_file));
+	rz_return_val_if_fail(analysis && RZ_STR_ISNOTEMPTY(flirt_file), false);
 	RzBuffer *flirt_buf = NULL;
 	RzFlirtNode *node = NULL;
 
