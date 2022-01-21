@@ -16,7 +16,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		return false;
 	}
 	if (strcmp(desc->plugin->name, "dmp")) {
-		eprintf("Open a file with dmp:// to use the 'dmp' debug plugin\n");
+		RZ_LOG_ERROR("Open a file with dmp:// to use the 'dmp' debug plugin\n");
 		return false;
 	}
 
@@ -129,12 +129,12 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 				winkd_build_profile(&ctx->windctx, dbg->analysis->typedb);
 			}
 		} else {
-			eprintf("Failed to download ntoskrnl.pdb, many things won't work.\n");
+			RZ_LOG_WARN("Failed to download ntoskrnl.pdb, many things won't work.\n");
 		}
 	}
 
 	if (!ctx->windctx.profile) {
-		eprintf("Could not find a profile for this Windows: %s %" PFMT32d "-bit %" PFMT32u " SP %" PFMT32u "\n",
+		RZ_LOG_ERROR("Could not find a profile for this Windows: %s %" PFMT32d "-bit %" PFMT32u " SP %" PFMT32u "\n",
 			ctx->windctx.is_arm ? "ARM" : "x86", dbg->bits * 8, MinorVersion, ServicePackBuild);
 		return false;
 	}
@@ -253,7 +253,7 @@ static int rz_debug_dmp_select(RzDebug *dbg, int pid, int tid) {
 	DmpCtx *ctx = dbg->plugin_data;
 	if (ctx->type == DMP_DUMPTYPE_TRIAGE) {
 		if (pid != ctx->windctx.target.uniqueid || tid != ctx->windctx.target_thread.uniqueid) {
-			eprintf("Cannot select other targets on a triage dump\n");
+			RZ_LOG_ERROR("Cannot select other targets on a triage dump\n");
 		}
 		dbg->pid = ctx->windctx.target.uniqueid;
 		dbg->tid = ctx->windctx.target_thread.uniqueid;

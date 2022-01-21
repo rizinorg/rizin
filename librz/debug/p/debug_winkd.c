@@ -90,7 +90,7 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 
 	// Handshake
 	if (!winkd_sync(kdctx)) {
-		eprintf("Could not connect to winkd\n");
+		RZ_LOG_ERROR("Could not connect to winkd\n");
 		return false;
 	}
 	if (!winkd_read_ver(kdctx)) {
