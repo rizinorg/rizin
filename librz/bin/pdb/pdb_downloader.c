@@ -175,7 +175,6 @@ static bool is_valid_guid(const char *guid) {
 int rz_bin_pdb_download(RzBin *bin, PJ *pj, int isradjson, SPDBOptions *options) {
 	int ret = 1;
 	SPDBDownloaderOpt opt;
-	SPDBDownloader pdb_downloader;
 	RzBinInfo *info = rz_bin_get_info(bin);
 
 	if (!info || !info->debug_file_name) {
@@ -195,21 +194,12 @@ int rz_bin_pdb_download(RzBin *bin, PJ *pj, int isradjson, SPDBOptions *options)
 
 	opt.dbg_file = rz_file_basename(info->debug_file_name);
 	opt.guid = info->guid;
+	opt.symbol_server = options->symbol_server;
 	opt.symbol_store_path = options->symbol_store_path;
 	opt.extract = options->extract;
-	char *symbol_server = strdup(options->symbol_server);
-	char *server = strtok(symbol_server, ";");
-	char *path = NULL;
-	while (server && !path) {
-		opt.symbol_server = server;
-		init_pdb_downloader(&opt, &pdb_downloader);
-		if (!pdb_downloader.download) {
-			break;
-		}
-		path = pdb_downloader.download(&pdb_downloader);
-		deinit_pdb_downloader(&pdb_downloader);
-		server = strtok(NULL, ";");
-	}
+
+	char *path = rz_bin_symserver_download(&opt);
+
 	if (isradjson) {
 		pj_ko(pj, "pdb");
 		pj_ks(pj, "file", opt.dbg_file);
@@ -221,8 +211,26 @@ int rz_bin_pdb_download(RzBin *bin, PJ *pj, int isradjson, SPDBOptions *options)
 		rz_cons_printf("PDB \"%s\" download %s\n",
 			opt.dbg_file, ret ? "success" : "failed");
 	}
-	free(symbol_server);
 	free(path);
-
 	return !ret;
+}
+
+char *rz_bin_symserver_download(const SPDBDownloaderOpt *options) {
+	SPDBDownloader downloader;
+	SPDBDownloaderOpt opt = *options;
+	char *path = NULL;
+	char *symbol_server = strdup(options->symbol_server);
+	char *server = strtok(symbol_server, ";");
+	while (server && !path) {
+		opt.symbol_server = server;
+		init_pdb_downloader(&opt, &downloader);
+		if (!downloader.download) {
+			break;
+		}
+		path = downloader.download(&downloader);
+		deinit_pdb_downloader(&downloader);
+		server = strtok(NULL, ";");
+	}
+	free(symbol_server);
+	return path;
 }

@@ -48,6 +48,12 @@ void deinit_pdb_downloader(SPDBDownloader *pdb_downloader);
  * \brief download PDB file
  */
 RZ_API int rz_bin_pdb_download(RzBin *bin, PJ *pj, int isradjson, SPDBOptions *options);
+/**
+ * \brief downloads file from symbol server
+ * \param options options for downloading file
+ * \return char* is the path that file was downloaded to or NULL in case of failure
+ */
+RZ_API char *rz_bin_symserver_download(const SPDBDownloaderOpt *options);
 
 #ifdef __cplusplus
 }
