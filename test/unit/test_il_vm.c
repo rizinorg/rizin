@@ -622,6 +622,56 @@ static bool test_rzil_vm_op_append() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_shiftr() {
+	RzILVM *vm = rz_il_vm_new(0, 8, true);
+
+	RzILOpPure *op = rz_il_op_new_shiftr(rz_il_op_new_b0(),
+		rz_il_op_new_bitv_from_ut64(16, 0xc0ff), rz_il_op_new_bitv_from_ut64(4, 3));
+	RzBitVector *r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 16, "eval len");
+	mu_assert_eq(rz_bv_to_ut64(r), 0xc0ff >> 3, "eval val");
+	rz_bv_free(r);
+
+	op = rz_il_op_new_shiftr(rz_il_op_new_b1(),
+		rz_il_op_new_bitv_from_ut64(16, 0xc0ff), rz_il_op_new_bitv_from_ut64(4, 3));
+	r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 16, "eval len");
+	mu_assert_eq(rz_bv_to_ut64(r), (0xc0ff >> 3) | (uint16_t)(0xffff << (16 - 3)), "eval val");
+	rz_bv_free(r);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_shiftl() {
+	RzILVM *vm = rz_il_vm_new(0, 8, true);
+
+	RzILOpPure *op = rz_il_op_new_shiftl(rz_il_op_new_b0(),
+		rz_il_op_new_bitv_from_ut64(16, 0xc0ff), rz_il_op_new_bitv_from_ut64(4, 3));
+	RzBitVector *r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 16, "eval len");
+	mu_assert_eq(rz_bv_to_ut64(r), (uint16_t)(0xc0ff << 3), "eval val");
+	rz_bv_free(r);
+
+	op = rz_il_op_new_shiftl(rz_il_op_new_b1(),
+		rz_il_op_new_bitv_from_ut64(16, 0xc0ff), rz_il_op_new_bitv_from_ut64(4, 3));
+	r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 16, "eval len");
+	mu_assert_eq(rz_bv_to_ut64(r), (uint16_t)(0xc0ff << 3) | (0xffff >> (16 - 3)), "eval val");
+	rz_bv_free(r);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_global_vars);
@@ -645,6 +695,8 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_loadw_be);
 	mu_run_test(test_rzil_vm_op_storew_be);
 	mu_run_test(test_rzil_vm_op_append);
+	mu_run_test(test_rzil_vm_op_shiftr);
+	mu_run_test(test_rzil_vm_op_shiftl);
 	return tests_passed != tests_run;
 }
 
