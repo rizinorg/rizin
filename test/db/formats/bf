@@ -1,0 +1,7 @@
+NAME=bf with comments
+FILE=bins/bf/2+5.bf
+CMDS=i~^format
+EXPECT=<<EOF
+format   bf
+EOF
+RUN

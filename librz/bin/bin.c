@@ -404,6 +404,24 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	return NULL;
 }
 
+RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin) {
+	RzBinPlugin *plugin;
+	RzListIter *it;
+
+	rz_return_val_if_fail(bin, NULL);
+
+	const char *filename = strrchr(bin->file, RZ_SYS_DIR[0]);
+	filename = filename ? filename + 1 : bin->file;
+	rz_list_foreach (bin->plugins, it, plugin) {
+		if (plugin->check_filename) {
+			if (plugin->check_filename(filename)) {
+				return plugin;
+			}
+		}
+	}
+	return NULL;
+}
+
 RZ_IPI RzBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RzBin *bin, const char *name) {
 	RzBinXtrPlugin *xtr;
 	RzListIter *it;
