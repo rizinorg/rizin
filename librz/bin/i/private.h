@@ -20,6 +20,7 @@ RZ_IPI bool rz_bin_file_set_bytes(RzBinFile *binfile, const ut8 *bytes, ut64 sz,
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_any(RzBin *bin);
 RZ_IPI RzBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RzBin *bin, const char *name);
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name);
+RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin);
 
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 
