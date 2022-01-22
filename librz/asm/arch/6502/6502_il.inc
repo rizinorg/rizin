@@ -106,7 +106,7 @@ static RzILOpEffect *update_flags_nz(RzILOpPure *val) {
 
 static RzILOpBitVector *status_byte(bool b) {
 	RzILOpBitVector *r = LOGOR(
-		ITE(VARG("N"), U8(0x80), U8(0)),
+		ITE(VARG("N"), U8(0xb0), U8(0x30)), // "unused" bit is always set
 		LOGOR(ITE(VARG("V"), U8(0x40), U8(0)),
 		LOGOR(ITE(VARG("D"), U8(0x08), U8(0)),
 		LOGOR(ITE(VARG("I"), U8(0x04), U8(0)),
@@ -272,7 +272,7 @@ static RzILOpEffect *_6502_il_op_sbc(_6502ILAddr *addr) {
 		update_flags_nz(VARL("res8")),
 		SETG("V",
 			AND(
-				XOR(MSB(VARG("a")), MSB(VARL("res"))),
+				XOR(MSB(VARG("a")), MSB(VARL("res8"))),
 				XOR(MSB(VARG("a")), MSB(VARL("src"))))),
 		SETG("a", VARL("res8")));
 }
