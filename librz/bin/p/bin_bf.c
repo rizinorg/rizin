@@ -93,6 +93,10 @@ static bool check_buffer(RzBuffer *buf) {
 	return true;
 }
 
+static bool check_filename(const char *filename) {
+	return rz_str_endswith(filename, ".bf");
+}
+
 static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
@@ -149,6 +153,7 @@ RzBinPlugin rz_bin_plugin_bf = {
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
+	.check_filename = &check_filename,
 	.baddr = &baddr,
 	.entries = entries,
 	.strings = &strings,

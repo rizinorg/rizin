@@ -2,6 +2,6 @@ NAME=bf with comments
 FILE=db/formats/2+5.bf
 CMDS=i~^format
 EXPECT=<<EOF
-format  any
+format   bf
 EOF
 RUN
