@@ -150,3 +150,22 @@ RZ_API RZ_OWN RzBitVector *rz_il_value_to_bv(RZ_NONNULL const RzILVal *val) {
 		return NULL;
 	}
 }
+
+/**
+ * Check if two IL values are of equal sort and contents
+ */
+RZ_API bool rz_il_value_eq(RZ_NONNULL const RzILVal *a, RZ_NONNULL const RzILVal *b) {
+	rz_return_val_if_fail(a && b, false);
+	if (a->type != b->type) {
+		return false;
+	}
+	switch (a->type) {
+	case RZ_IL_TYPE_PURE_BOOL:
+		return a->data.b->b == b->data.b->b;
+	case RZ_IL_TYPE_PURE_BITVECTOR:
+		return rz_bv_eq(a->data.bv, b->data.bv);
+	default:
+		rz_warn_if_reached();
+		return false;
+	}
+}
