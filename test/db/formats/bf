@@ -1,5 +1,5 @@
 NAME=bf with comments
-FILE=2+5.bf
+FILE=db/2+5.bf
 CMDS=i~^format
 EXPECT=<<EOF
 format   bf
