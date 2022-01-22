@@ -394,6 +394,27 @@ bool test_rz_bv_cmp(void) {
 	mu_end;
 }
 
+bool test_rz_bv_eq(void) {
+	RzBitVector *x = rz_bv_new_from_ut64(8, 42);
+	RzBitVector *y = rz_bv_new_from_ut64(8, 42);
+	bool r = rz_bv_eq(x, y);
+	mu_assert_true(r, "equal");
+	rz_bv_free(y);
+
+	y = rz_bv_new_from_ut64(8, 41);
+	r = rz_bv_eq(x, y);
+	mu_assert_false(r, "not equal");
+	rz_bv_free(y);
+
+	y = rz_bv_new_from_ut64(16, 42);
+	r = rz_bv_eq(x, y);
+	mu_assert_false(r, "not equal");
+	rz_bv_free(y);
+
+	rz_bv_free(x);
+	mu_end;
+}
+
 bool test_rz_bv_operation(void) {
 	RzBitVector *x, *y, *res, *prep, *append, *cut_h, *cut_t, *concat;
 	char *s;
@@ -707,6 +728,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_init128);
 	mu_run_test(test_rz_bv_init_signed);
 	mu_run_test(test_rz_bv_cmp);
+	mu_run_test(test_rz_bv_eq);
 	mu_run_test(test_rz_bv_cast);
 	mu_run_test(test_rz_bv_operation);
 	mu_run_test(test_rz_bv_logic);
