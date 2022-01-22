@@ -94,7 +94,7 @@ static bool check_buffer(RzBuffer *buf) {
 }
 
 static bool check_filename(const char *filename) {
-	return rz_str_endswith(filename, ".bf");
+	return rz_str_endswith_icase(filename, ".bf");
 }
 
 static RzList *entries(RzBinFile *bf) {
