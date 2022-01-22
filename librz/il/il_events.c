@@ -26,7 +26,7 @@ RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt) {
 		break;
 	case RZ_IL_EVENT_VAR_READ:
 		free(evt->data.var_read.variable);
-		rz_bv_free(evt->data.var_read.value);
+		rz_il_value_free(evt->data.var_read.value);
 		break;
 	case RZ_IL_EVENT_MEM_WRITE:
 		rz_bv_free(evt->data.mem_write.address);
@@ -35,8 +35,8 @@ RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt) {
 		break;
 	case RZ_IL_EVENT_VAR_WRITE:
 		free(evt->data.var_write.variable);
-		rz_bv_free(evt->data.var_write.old_value);
-		rz_bv_free(evt->data.var_write.new_value);
+		rz_il_value_free(evt->data.var_write.old_value);
+		rz_il_value_free(evt->data.var_write.new_value);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -95,10 +95,10 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_pc_write_new(RZ_NONNULL const RzBitVector *
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_MEM_READ
  * \param addr, RzBitVector, address of the memory where the read op has occurred
- * \param value, RzBitVector, value read from the variable (could be null, i.e. garbage value)
+ * \param value, RzBitVector, value read from the variable
  */
 RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RZ_NONNULL const RzBitVector *address, RZ_NULLABLE const RzBitVector *value) {
-	rz_return_val_if_fail(address, NULL);
+	rz_return_val_if_fail(address && value, NULL);
 
 	RzILEvent *evt = RZ_NEW(RzILEvent);
 	if (!evt) {
@@ -107,8 +107,8 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RZ_NONNULL const RzBitVector *
 
 	evt->type = RZ_IL_EVENT_MEM_READ;
 	evt->data.mem_read.address = rz_bv_dup(address);
-	evt->data.mem_read.value = value ? rz_bv_dup(value) : NULL;
-	if (!evt->data.mem_read.address || (value && !evt->data.mem_read.value)) {
+	evt->data.mem_read.value = rz_bv_dup(value);
+	if (!evt->data.mem_read.address || !evt->data.mem_read.value) {
 		rz_il_event_free(evt);
 		return NULL;
 	}
@@ -119,11 +119,11 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RZ_NONNULL const RzBitVector *
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_MEM_WRITE
  * \param addr, RzBitVector, address of the memory that has changed
- * \param old_v, RzBitVector, old value before the change (could be null, i.e. garbage value)
+ * \param old_v, RzBitVector, old value before the change
  * \param new_v, RzBitVector, new value after the change
  */
-RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RZ_NONNULL const RzBitVector *addr, RZ_NULLABLE const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v) {
-	rz_return_val_if_fail(addr && new_v, NULL);
+RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RZ_NONNULL const RzBitVector *addr, RZ_NONNULL const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v) {
+	rz_return_val_if_fail(addr && old_v && new_v, NULL);
 
 	RzILEvent *evt = RZ_NEW(RzILEvent);
 	if (!evt) {
@@ -132,10 +132,10 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RZ_NONNULL const RzBitVector 
 
 	evt->type = RZ_IL_EVENT_MEM_WRITE;
 	evt->data.mem_write.address = rz_bv_dup(addr);
-	evt->data.mem_write.old_value = old_v ? rz_bv_dup(old_v) : NULL;
+	evt->data.mem_write.old_value = rz_bv_dup(old_v);
 	evt->data.mem_write.new_value = rz_bv_dup(new_v);
 	if (!evt->data.mem_write.address ||
-		(old_v && !evt->data.mem_write.old_value) ||
+		!evt->data.mem_write.old_value ||
 		!evt->data.mem_write.new_value) {
 		rz_il_event_free(evt);
 		return NULL;
@@ -146,11 +146,11 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RZ_NONNULL const RzBitVector 
 
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_VAR_READ
- * \param name, const char, register name that has changed
- * \param value, RzBitVector, value read from the variable (could be null, i.e. garbage value)
+ * \param name register name that has changed
+ * \param value value read from the variable
  */
-RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzBitVector *value) {
-	rz_return_val_if_fail(name, NULL);
+RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzILVal *value) {
+	rz_return_val_if_fail(name && value, NULL);
 
 	RzILEvent *evt = RZ_NEW(RzILEvent);
 	if (!evt) {
@@ -159,8 +159,8 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, R
 
 	evt->type = RZ_IL_EVENT_VAR_READ;
 	evt->data.var_read.variable = strdup(name);
-	evt->data.var_read.value = value ? rz_bv_dup(value) : NULL;
-	if (!evt->data.var_read.variable || (value && !evt->data.var_read.value)) {
+	evt->data.var_read.value = rz_il_value_dup(value);
+	if (!evt->data.var_read.variable || !evt->data.var_read.value) {
 		rz_il_event_free(evt);
 		return NULL;
 	}
@@ -170,12 +170,12 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, R
 
 /**
  * Creates an RzILEvent of type RZ_IL_EVENT_VAR_WRITE
- * \param name, const char, register name that has changed
- * \param old_v, RzBitVector, old value before the change (could be null, i.e. garbage value)
- * \param new_v, RzBitVector, new value after the change
+ * \param name register name that has changed
+ * \param old_v old value before the change
+ * \param new_v new value after the change
  */
-RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v) {
-	rz_return_val_if_fail(name && new_v, NULL);
+RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzILVal *old_v, RZ_NONNULL const RzILVal *new_v) {
+	rz_return_val_if_fail(name && old_v && new_v, NULL);
 
 	RzILEvent *evt = RZ_NEW(RzILEvent);
 	if (!evt) {
@@ -184,10 +184,10 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, 
 
 	evt->type = RZ_IL_EVENT_VAR_WRITE;
 	evt->data.var_write.variable = strdup(name);
-	evt->data.var_write.old_value = old_v ? rz_bv_dup(old_v) : NULL;
-	evt->data.var_write.new_value = rz_bv_dup(new_v);
+	evt->data.var_write.old_value = rz_il_value_dup(old_v);
+	evt->data.var_write.new_value = rz_il_value_dup(new_v);
 	if (!evt->data.var_write.variable ||
-		(old_v && !evt->data.var_write.old_value) ||
+		!evt->data.var_write.old_value ||
 		!evt->data.var_write.new_value) {
 		rz_il_event_free(evt);
 		return NULL;

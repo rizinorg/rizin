@@ -7,34 +7,11 @@
 
 static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal *new_val) {
 	rz_return_val_if_fail(vm && var && new_val, NULL);
-	RzILVal *old_val = NULL;
-	RzILEvent *evt = NULL;
-	RzBitVector *oldnum = NULL;
-	RzBitVector *newnum = NULL;
-
-	if (new_val->type == RZ_IL_TYPE_PURE_BOOL) {
-		newnum = rz_bv_new_from_ut64(1, new_val->data.b->b);
-	} else {
-		newnum = new_val->data.bv;
+	RzILVal *old_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var->name);
+	if (!old_val) {
+		return NULL;
 	}
-
-	old_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var->name);
-	if (old_val) {
-		if (old_val->type == RZ_IL_TYPE_PURE_BOOL) {
-			oldnum = rz_bv_new_from_ut64(1, old_val->data.b->b);
-		} else {
-			oldnum = old_val->data.bv;
-		}
-	}
-
-	evt = rz_il_event_var_write_new(var->name, oldnum, newnum);
-	if (old_val && old_val->type == RZ_IL_TYPE_PURE_BOOL) {
-		rz_bv_free(oldnum);
-	}
-	if (new_val->type == RZ_IL_TYPE_PURE_BOOL) {
-		rz_bv_free(newnum);
-	}
-	return evt;
+	return rz_il_event_var_write_new(var->name, old_val, new_val);
 }
 
 static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, RZ_OWN RzILVal *val) {
