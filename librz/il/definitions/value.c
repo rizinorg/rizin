@@ -82,7 +82,7 @@ RZ_API RZ_OWN RzILVal *rz_il_value_new_zero_of(RzILSortPure sort) {
  * \param  val  RzILVal, pointer to the value you want to dump
  * \return dump RzILVal, pointer to the dumped value
  */
-RZ_API RZ_OWN RzILVal *rz_il_value_dup(RZ_NONNULL RzILVal *val) {
+RZ_API RZ_OWN RzILVal *rz_il_value_dup(RZ_NONNULL const RzILVal *val) {
 	rz_return_val_if_fail(val, NULL);
 	RzILBool *b = NULL;
 	RzBitVector *bv = NULL;
@@ -131,4 +131,22 @@ RZ_API RzILSortPure rz_il_value_get_sort(RZ_NONNULL RzILVal *val) {
 		r.props.bv.length = rz_bv_len(val->data.bv);
 	}
 	return r;
+}
+
+/**
+ * Convert the value's contents to a bitvector.
+ * For bitvector values, this is simply a copy of the value,
+ * for boolean it is a 1-bit bitvector of 1 or 0.
+ */
+RZ_API RZ_OWN RzBitVector *rz_il_value_to_bv(RZ_NONNULL const RzILVal *val) {
+	rz_return_val_if_fail(val, NULL);
+	switch (val->type) {
+	case RZ_IL_TYPE_PURE_BOOL:
+		return rz_bv_new_from_ut64(1, val->data.b->b ? 1 : 0);
+	case RZ_IL_TYPE_PURE_BITVECTOR:
+		return rz_bv_dup(val->data.bv);
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
 }
