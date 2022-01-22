@@ -1,0 +1,7 @@
+NAME=bf with comments
+FILE=db/formats/2+5.bf
+CMDS=i~^format
+EXPECT=<<EOF
+format  any
+EOF
+RUN
