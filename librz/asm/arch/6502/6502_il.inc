@@ -116,7 +116,7 @@ static RzILOpBitVector *status_byte(bool b) {
 }
 
 static RzILOpEffect *status_byte_apply(RzILOpBitVector *sb) {
-	return SEQ(6,
+	return SEQ6(
 		SETG("N", MSB(sb)),
 		SETG("V", INV(IS_ZERO(LOGAND(DUP(sb), U8(0x40))))),
 		SETG("D", INV(IS_ZERO(LOGAND(DUP(sb), U8(0x08))))),
@@ -241,7 +241,7 @@ static RzILOpEffect *_6502_il_op_eor(_6502ILAddr *addr) {
  */
 static RzILOpEffect *_6502_il_op_adc(_6502ILAddr *addr) {
 	// TODO: bcd if D
-	return SEQ(6,
+	return SEQ6(
 		SETL("src", do_load(addr)),
 		SETL("res", ADD(
 			ITE(VARG("C"), U8(1), U8(0)),
@@ -260,7 +260,7 @@ static RzILOpEffect *_6502_il_op_adc(_6502ILAddr *addr) {
  */
 static RzILOpEffect *_6502_il_op_sbc(_6502ILAddr *addr) {
 	// TODO: bcd if D
-	return SEQ(7,
+	return SEQ7(
 		SETL("src", do_load(addr)),
 		SETL("res", SUB(
 			SUB(
@@ -282,7 +282,7 @@ static RzILOpEffect *_6502_il_op_sbc(_6502ILAddr *addr) {
  */
 static RzILOpEffect *_6502_il_op_asl(_6502ILAddr *addr) {
 	RzILOpEffect *load = SETL("tmp", do_load(addr));
-	return SEQ(5,
+	return SEQ5(
 		load,
 		SETG("C", MSB(VARL("tmp"))),
 		SETL("tmp", SHIFTL0(VARL("tmp"), UN(3, 1))),
@@ -296,7 +296,7 @@ static RzILOpEffect *_6502_il_op_asl(_6502ILAddr *addr) {
  */
 static RzILOpEffect *_6502_il_op_lsr(_6502ILAddr *addr) {
 	RzILOpEffect *load = SETL("tmp", do_load(addr));
-	return SEQ(6,
+	return SEQ6(
 		load,
 		SETG("C", LSB(VARL("tmp"))),
 		SETL("tmp", SHIFTR0(VARL("tmp"), UN(3, 1))),
@@ -375,7 +375,7 @@ static RzILOpEffect *_6502_il_op_jmp(ut16 target, bool indir) {
  */
 static RzILOpEffect *_6502_il_op_brk(ut16 offset) {
 	offset += 2;
-	return SEQ(6,
+	return SEQ6(
 		stack_push(U8((ut8)(offset >> 8))),
 		stack_push(U8((ut8)offset)),
 		stack_push(status_byte(true)),
@@ -390,7 +390,7 @@ static RzILOpEffect *_6502_il_op_brk(ut16 offset) {
  */
 static RzILOpEffect *_6502_il_op_jsr(ut16 target, ut64 offset) {
 	offset += 2; // yes, this is **inside** the jsr.
-	return SEQ(3,
+	return SEQ3(
 		stack_push(U8((ut8)(offset >> 8))),
 		stack_push(U8((ut8)offset)),
 		JMP(U16(target)));
@@ -400,7 +400,7 @@ static RzILOpEffect *_6502_il_op_jsr(ut16 target, ut64 offset) {
  * rti
  */
 static RzILOpEffect *_6502_il_op_rti() {
-	return SEQ(5,
+	return SEQ5(
 		stack_pop("sr"),
 		status_byte_apply(VARL("sr")),
 		stack_pop("pcl"),
@@ -412,7 +412,7 @@ static RzILOpEffect *_6502_il_op_rti() {
  * rts
  */
 static RzILOpEffect *_6502_il_op_rts() {
-	return SEQ(3,
+	return SEQ3(
 		stack_pop("pcl"),
 		stack_pop("pch"),
 		JMP(ADD(APPEND(VARL("pch"), VARL("pcl")), U16(1))));
@@ -422,7 +422,7 @@ static RzILOpEffect *_6502_il_op_rts() {
  * bit
  */
 static RzILOpEffect *_6502_il_op_bit(_6502ILAddr *addr) {
-	return SEQ(4,
+	return SEQ4(
 		SETL("tmp", do_load(addr)),
 		SETG("N", MSB(VARL("tmp"))),
 		SETG("V", MSB(UNSIGNED(7, VARL("tmp")))),
@@ -477,7 +477,7 @@ static RzILOpEffect *_6502_il_op_flag(_6502FlagOp op) {
  * cpy
  */
 static RzILOpEffect *_6502_il_op_cmp(const char *reg, _6502ILAddr *addr) {
-	return SEQ(3,
+	return SEQ3(
 		SETL("tmp", SUB(UNSIGNED(9, VARG(reg)), UNSIGNED(9, do_load(addr)))),
 		SETG("C", INV(MSB(VARL("tmp")))),
 		update_flags_nz(UNSIGNED(8, VARL("tmp")))
@@ -504,7 +504,7 @@ static RzILOpEffect *_6502_il_op_inc_reg(const char *reg, bool inc) {
  */
 static RzILOpEffect *_6502_il_op_inc(_6502ILAddr *addr, bool inc) {
 	RzILOpBitVector *v = inc ? ADD(do_load(addr), U8(1)) : SUB(do_load(addr), U8(1));
-	return SEQ(3,
+	return SEQ3(
 		SETL("tmp", v),
 		do_store(dup_addr(addr), VARL("tmp")),
 		update_flags_nz(VARL("tmp"))
@@ -529,7 +529,7 @@ static RzILOpEffect *_6502_il_op_php() {
  * pla
  */
 static RzILOpEffect *_6502_il_op_pla() {
-	return SEQ(3,
+	return SEQ3(
 		stack_pop("tmp"),
 		SETG("a", VARL("tmp")),
 		update_flags_nz(VARL("tmp")));
@@ -549,7 +549,7 @@ static RzILOpEffect *_6502_il_op_plp() {
  */
 static RzILOpEffect *_6502_il_op_rol(_6502ILAddr *addr) {
 	RzILOpEffect *load = SETL("tmp", do_load(addr));
-	return SEQ(5,
+	return SEQ5(
 		load,
 		SETL("res", LOGOR(SHIFTL0(VARL("tmp"), UN(3, 1)), ITE(VARG("C"), U8(1), U8(0)))),
 		SETG("C", MSB(VARL("tmp"))),
@@ -562,7 +562,7 @@ static RzILOpEffect *_6502_il_op_rol(_6502ILAddr *addr) {
  */
 static RzILOpEffect *_6502_il_op_ror(_6502ILAddr *addr) {
 	RzILOpEffect *load = SETL("tmp", do_load(addr));
-	return SEQ(5,
+	return SEQ5(
 		load,
 		SETL("res", LOGOR(SHIFTR0(VARL("tmp"), UN(3, 1)), ITE(VARG("C"), U8(0x80), U8(0)))),
 		SETG("C", LSB(VARL("tmp"))),
