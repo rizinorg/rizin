@@ -51,8 +51,15 @@
 #undef APPEND
 #undef DUP
 
-#undef SEQ
 #undef SEQ2
+#undef SEQ2
+#undef SEQ3
+#undef SEQ4
+#undef SEQ5
+#undef SEQ6
+#undef SEQ7
+#undef SEQ8
+
 #undef NOP
 #undef BRANCH
 #undef JMP
