@@ -121,6 +121,20 @@ static inline ut64 rz_num_align_delta(ut64 v, ut64 alignment) {
 	return alignment - excess;
 }
 
+/**
+ * \brief Get the 64-bit value that has exactly its \p width lowest bits set to 1.
+ * e.g.
+ *     rz_num_bitmask(2) == 0b11
+ *     rz_num_bitmask(3) == 0b111
+ *     ...
+ */
+static inline ut64 rz_num_bitmask(ut8 width) {
+	if (width >= 64) {
+		return 0xffffffffffffffffull;
+	}
+	return (1ull << (ut64)width) - 1;
+}
+
 #define CONVERT_TO_TWO_COMPLEMENT(x) \
 	static inline st##x convert_to_two_complement_##x(ut##x value) { \
 		if (value <= ST##x##_MAX) { \

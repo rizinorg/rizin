@@ -7,21 +7,6 @@
 #include "arm_cs.h"
 #include "arm_accessors.h"
 
-// TODO: duplicated in arm_esil64.c
-static const ut64 bitmask_by_width[] = {
-	0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
-	0xfff, 0x1fff, 0x3fff, 0x7fff, 0xffff, 0x1ffff, 0x3ffff, 0x7ffff,
-	0xfffff, 0x1fffff, 0x3fffff, 0x7fffff, 0xffffff, 0x1ffffffLL, 0x3ffffffLL,
-	0x7ffffffLL, 0xfffffffLL, 0x1fffffffLL, 0x3fffffffLL, 0x7fffffffLL, 0xffffffffLL,
-	0x1ffffffffLL, 0x3ffffffffLL, 0x7ffffffffLL, 0xfffffffffLL, 0x1fffffffffLL,
-	0x3fffffffffLL, 0x7fffffffffLL, 0xffffffffffLL, 0x1ffffffffffLL, 0x3ffffffffffLL,
-	0x7ffffffffffLL, 0xfffffffffffLL, 0x1fffffffffffLL, 0x3fffffffffffLL, 0x7fffffffffffLL,
-	0xffffffffffffLL, 0x1ffffffffffffLL, 0x3ffffffffffffLL, 0x7ffffffffffffLL,
-	0xfffffffffffffLL, 0x1fffffffffffffLL, 0x3fffffffffffffLL, 0x7fffffffffffffLL,
-	0xffffffffffffffLL, 0x1ffffffffffffffLL, 0x3ffffffffffffffLL, 0x7ffffffffffffffLL,
-	0xfffffffffffffffLL, 0x1fffffffffffffffLL, 0x3fffffffffffffffLL, 0x7fffffffffffffffLL, 0xffffffffffffffffLL
-};
-
 static const char *decode_shift(arm_shifter shift) {
 	const char *E_OP_SR = ">>";
 	const char *E_OP_SL = "<<";
@@ -896,7 +881,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_UBFX:
 		if (IMM(3) > 0 && IMM(3) <= 32 - IMM(2)) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,%d,%" PFMT64u ",<<,&,>>,%s,=",
-				IMM(2), REG(1), IMM(2), (ut64)bitmask_by_width[IMM(3) - 1], REG(0));
+				IMM(2), REG(1), IMM(2), rz_num_bitmask((ut8)IMM(3)), REG(0));
 		}
 		break;
 	case ARM_INS_UXTB:
@@ -942,7 +927,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_BFI: {
 		if (OPCOUNT() >= 3 && ISIMM(3) && IMM(3) > 0 && IMM(3) < 64) {
-			ut64 mask = bitmask_by_width[IMM(3) - 1];
+			ut64 mask = rz_num_bitmask((ut8)IMM(3));
 			ut64 shift = IMM(2);
 			ut64 notmask = ~(mask << shift);
 			// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
@@ -953,7 +938,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	}
 	case ARM_INS_BFC: {
 		if (OPCOUNT() >= 2 && ISIMM(2) && IMM(2) > 0 && IMM(2) < 64) {
-			ut64 mask = bitmask_by_width[IMM(2) - 1];
+			ut64 mask = rz_num_bitmask((ut8)IMM(2));
 			ut64 shift = IMM(1);
 			ut64 notmask = ~(mask << shift);
 			// notmask,dst,&,dst,=

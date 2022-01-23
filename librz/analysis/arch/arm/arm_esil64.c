@@ -7,21 +7,6 @@
 #include "arm_cs.h"
 #include "arm_accessors.h"
 
-// TODO: duplicated in arm_esil.c
-static const ut64 bitmask_by_width[] = {
-	0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
-	0xfff, 0x1fff, 0x3fff, 0x7fff, 0xffff, 0x1ffff, 0x3ffff, 0x7ffff,
-	0xfffff, 0x1fffff, 0x3fffff, 0x7fffff, 0xffffff, 0x1ffffffLL, 0x3ffffffLL,
-	0x7ffffffLL, 0xfffffffLL, 0x1fffffffLL, 0x3fffffffLL, 0x7fffffffLL, 0xffffffffLL,
-	0x1ffffffffLL, 0x3ffffffffLL, 0x7ffffffffLL, 0xfffffffffLL, 0x1fffffffffLL,
-	0x3fffffffffLL, 0x7fffffffffLL, 0xffffffffffLL, 0x1ffffffffffLL, 0x3ffffffffffLL,
-	0x7ffffffffffLL, 0xfffffffffffLL, 0x1fffffffffffLL, 0x3fffffffffffLL, 0x7fffffffffffLL,
-	0xffffffffffffLL, 0x1ffffffffffffLL, 0x3ffffffffffffLL, 0x7ffffffffffffLL,
-	0xfffffffffffffLL, 0x1fffffffffffffLL, 0x3fffffffffffffLL, 0x7fffffffffffffLL,
-	0xffffffffffffffLL, 0x1ffffffffffffffLL, 0x3ffffffffffffffLL, 0x7ffffffffffffffLL,
-	0xfffffffffffffffLL, 0x1fffffffffffffffLL, 0x3fffffffffffffffLL, 0x7fffffffffffffffLL, 0xffffffffffffffffLL
-};
-
 static int arm64_reg_width(int reg) {
 	switch (reg) {
 	case ARM64_REG_W0:
@@ -154,11 +139,11 @@ static void shifted_reg64_append(RzStrBuf *sb, csh *handle, cs_insn *insn, int n
 			}
 		} else {
 			/* ASR: add the missing ones if negative */
-			int index = LSHIFT2_64(n) - 1;
-			if (index < 0) {
+			ut8 index = LSHIFT2_64(n);
+			if (!index) {
 				return;
 			}
-			ut64 missing_ones = bitmask_by_width[index] << (REGSIZE64(n) * 8 - LSHIFT2_64(n));
+			ut64 missing_ones = rz_num_bitmask(index) << (REGSIZE64(n) * 8 - LSHIFT2_64(n));
 			if (signext) {
 				rz_strbuf_appendf(sb, "%d,%d,%s,~,%s,1,%d,%s,~,<<<,1,&,?{,%" PFMT64u ",}{,0,},|",
 					LSHIFT2_64(n), signext, rn, DECODE_SHIFT64(n), signext, REG64(n), (ut64)missing_ones);
@@ -1029,7 +1014,7 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case ARM64_INS_BFI: // bfi w8, w8, 2, 1
 	case ARM64_INS_BFXIL: {
 		if (OPCOUNT64() >= 3 && ISIMM64(3) && IMM64(3) > 0) {
-			ut64 mask = bitmask_by_width[IMM64(3) - 1];
+			ut64 mask = rz_num_bitmask((ut8)IMM64(3));
 			ut64 shift = IMM64(2);
 			ut64 notmask = ~(mask << shift);
 			// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
@@ -1041,25 +1026,25 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case ARM64_INS_SBFIZ:
 		if (IMM64(3) > 0 && IMM64(3) <= 64 - IMM64(2)) {
 			rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%" PFMT64u ",&,~,<<,%s,=",
-				IMM64(2), IMM64(3), REG64(1), (ut64)bitmask_by_width[IMM64(3) - 1], REG64(0));
+				IMM64(2), IMM64(3), REG64(1), rz_num_bitmask((ut8)IMM64(3)), REG64(0));
 		}
 		break;
 	case ARM64_INS_UBFIZ:
 		if (IMM64(3) > 0 && IMM64(3) <= 64 - IMM64(2)) {
 			rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,%" PFMT64u ",&,<<,%s,=",
-				IMM64(2), REG64(1), (ut64)bitmask_by_width[IMM64(3) - 1], REG64(0));
+				IMM64(2), REG64(1), rz_num_bitmask((ut8)IMM64(3)), REG64(0));
 		}
 		break;
 	case ARM64_INS_SBFX:
 		if (IMM64(3) > 0 && IMM64(3) <= 64 - IMM64(2)) {
 			rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%" PFMT64d ",%" PFMT64u ",<<,&,>>,~,%s,=",
-				IMM64(3), IMM64(2), REG64(1), IMM64(2), (ut64)bitmask_by_width[IMM64(3) - 1], REG64(0));
+				IMM64(3), IMM64(2), REG64(1), IMM64(2), rz_num_bitmask((ut8)IMM64(3)), REG64(0));
 		}
 		break;
 	case ARM64_INS_UBFX:
 		if (IMM64(3) > 0 && IMM64(3) <= 64 - IMM64(2)) {
 			rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,%" PFMT64d ",%" PFMT64u ",<<,&,>>,%s,=",
-				IMM64(2), REG64(1), IMM64(2), (ut64)bitmask_by_width[IMM64(3) - 1], REG64(0));
+				IMM64(2), REG64(1), IMM64(2), rz_num_bitmask((ut8)IMM64(3)), REG64(0));
 		}
 		break;
 	case ARM64_INS_NEG:
