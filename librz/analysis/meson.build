@@ -148,6 +148,8 @@ rz_analysis_sources = [
   'p/analysis_xap.c',
   'p/analysis_xcore_cs.c',
   #'arch/gb/meta_gb_cmt.c',
+  'arch/arm/arm_esil32.c',
+  'arch/arm/arm_esil64.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cr16/cr16_disas.c',
