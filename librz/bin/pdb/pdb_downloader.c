@@ -135,6 +135,12 @@ static char *download(struct SPDBDownloader *pd) {
 	return res ? abspath_to_file : NULL;
 }
 
+/**
+ * \brief initialization of pdb downloader by SPDBDownloaderOpt
+ *
+ * \param opt PDB options
+ * \param pdb_downloader PDB downloader that will be initialized
+ */
 void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt = RZ_NEW0(SPDBDownloaderOpt);
 	if (!pd->opt) {
@@ -150,6 +156,11 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->download = download;
 }
 
+/**
+ * \brief deinitialization of PDB downloader
+ *
+ * \param pdb_downloader PDB downloader that will be deinitialized
+ */
 void deinit_pdb_downloader(SPDBDownloader *pd) {
 	RZ_FREE(pd->opt->dbg_file);
 	RZ_FREE(pd->opt->guid);
@@ -172,23 +183,31 @@ static bool is_valid_guid(const char *guid) {
 	return i >= 33; // len of GUID and age
 }
 
-int rz_bin_pdb_download(RzBin *bin, PJ *pj, int isradjson, SPDBOptions *options) {
+/**
+ * \brief Download PDB file for currently opened RzBin file
+ * \param bin RzBin instance
+ * \param pj Optional PJ instance for json output
+ * \param isradjson Use pj for json output
+ * \param options symbol server options for downloading the PDB file
+ */
+RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int isradjson, RZ_NONNULL SPDBOptions *options) {
+	rz_return_val_if_fail(bin && options, 1);
 	int ret = 1;
 	SPDBDownloaderOpt opt;
 	RzBinInfo *info = rz_bin_get_info(bin);
 
 	if (!info || !info->debug_file_name) {
-		eprintf("Can't find debug filename\n");
+		RZ_LOG_ERROR("Can't find debug filename\n");
 		return 1;
 	}
 
 	if (!is_valid_guid(info->guid)) {
-		eprintf("Invalid GUID for file\n");
+		RZ_LOG_ERROR("Invalid GUID for file\n");
 		return 1;
 	}
 
-	if (!options || !options->symbol_server || !options->symbol_store_path) {
-		eprintf("Can't retrieve pdb configurations\n");
+	if (!options->symbol_server || !options->symbol_store_path) {
+		RZ_LOG_ERROR("Can't retrieve pdb configurations\n");
 		return 1;
 	}
 
@@ -215,7 +234,13 @@ int rz_bin_pdb_download(RzBin *bin, PJ *pj, int isradjson, SPDBOptions *options)
 	return !ret;
 }
 
-char *rz_bin_symserver_download(const SPDBDownloaderOpt *options) {
+/**
+ * \brief downloads file from symbol server
+ * \param options options for downloading file
+ * \return char* is the path that file was downloaded to or NULL in case of failure
+ */
+RZ_API RZ_OWN char *rz_bin_symserver_download(RZ_NONNULL const SPDBDownloaderOpt *options) {
+	rz_return_val_if_fail(options, NULL);
 	SPDBDownloader downloader;
 	SPDBDownloaderOpt opt = *options;
 	char *path = NULL;
