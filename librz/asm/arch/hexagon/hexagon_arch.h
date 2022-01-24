@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-01-21 03:37:58-05:00
+// Date of code generation: 2022-01-24 07:53:55-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -12,6 +12,17 @@
 #define HEXAGON_ARCH_H
 
 #include "hexagon.h"
+
+// The packet position indicators added to the instruction mnemonic.
+typedef enum {
+	SINGLE_IN_PKT,
+	FIRST_IN_PKT,
+	MID_IN_PKT,
+	LAST_IN_PKT,
+	ELOOP_0_PKT,
+	ELOOP_1_PKT,
+	ELOOP_01_PKT,
+} HexPktSyntaxIndicator;
 
 // The type of opcode reversing which is be done on the opcode.
 typedef enum {
@@ -31,9 +42,13 @@ typedef struct {
 
 #define HEX_PKT_UNK           "?   "
 #define HEX_PKT_SINGLE        "[   "
+#define HEX_PKT_SINGLE_UTF8   "[     "
 #define HEX_PKT_FIRST_UTF8    "┌   "
 #define HEX_PKT_MID_UTF8      "│   "
 #define HEX_PKT_LAST_UTF8     "└   "
+#define HEX_PKT_FIRST_SDK     "{   "
+#define HEX_PKT_SDK_PADDING   "   "
+#define HEX_PKT_LAST_SDK      " }"
 #define HEX_PKT_FIRST         "/   "
 #define HEX_PKT_MID           "|   "
 #define HEX_PKT_LAST          "\\   "
@@ -43,6 +58,9 @@ typedef struct {
 #define HEX_PKT_ELOOP_01      "     < endloop01"
 #define HEX_PKT_ELOOP_1       "     < endloop1"
 #define HEX_PKT_ELOOP_0       "     < endloop0"
+#define HEX_PKT_ELOOP_01_SDK  ":endloop01"
+#define HEX_PKT_ELOOP_1_SDK   ":endloop1"
+#define HEX_PKT_ELOOP_0_SDK   ":endloop0"
 
 RZ_API void hex_insn_free(HexInsn *i);
 RZ_API void hex_const_ext_free(HexConstExt *ce);

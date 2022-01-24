@@ -2531,6 +2531,13 @@ static bool cb_bindbginfo(void *user, void *data) {
 	return true;
 }
 
+static bool cb_hexsdk(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->rasm->hex_sdk = (bool)node->i_value;
+	return true;
+}
+
 static bool cb_binprefix(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3277,6 +3284,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETCB("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
+
+	/* plugins */
+	SETCB("plugins.hexagon.sdk", "false", &cb_hexsdk, "Print packet syntax in objdump style. Hexagon only.");
 
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");
