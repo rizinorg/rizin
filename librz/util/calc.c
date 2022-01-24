@@ -143,12 +143,9 @@ static inline RzNumCalcValue Nexp(RzNumCalcValue n, RzNumCalcValue v) {
 			n = Nmul(exp_n, n);
 		}
 	} else if ((st64)v.n < 0) {
-		for (st64 i = -1; i > (st64)v.n; i--) {
-			n = Nmul(n, exp_n);
+		for (st64 i = 1; i > (st64)v.n; i--) {
+			n = Ndiv(n, exp_n);
 		}
-		exp_n.d = 1.0;
-		exp_n.n = 1;
-		n = Ndiv(exp_n, n);
 	} else {
 		n = Ndiv(n, exp_n);
 	}
