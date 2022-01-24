@@ -141,7 +141,7 @@ typedef struct rz_bin_reloc_formular_symbols_t {
 	ut64 B; // Base address
 	ut64 G; // Offset into GOT for symbol entry.
 	ut64 GOT; // Address of entry zero in GOT.
-	ut64 L; // Offset into POT for symbo, entry.
+	ut64 L; // Offset into POT for symbol entry.
 	ut64 P; // Place address of the field being relocated.
 	ut64 S; // Value of symbol.
 	ut64 TLS; // Thread-pointer-relative offset to a thread-local symbol.

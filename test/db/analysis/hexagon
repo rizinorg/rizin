@@ -1359,3 +1359,19 @@ sys S75:74_tmp
 sys S77:76_tmp
 EOF
 RUN
+
+NAME=hexagon relocation tests I
+FILE=bins/elf/analysis/hexagon-llvm-reloc-test.bin
+CMDS=<<EOF
+pi 7
+EOF
+EXPECT=<<EOF
+?   callr R31
+[   R0.h = #0
+[   R0.l = #0
+[   R0.h = #0
+[   R0.l = #0
+[   if (p0) call 0x14
+[   call 0x18
+EOF
+RUN
