@@ -36,7 +36,6 @@ static bool check_if_search_possible(RzCore *core) {
 	return true;
 }
 
-
 static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	struct search_parameters *param = user;
 	RzCore *core = param->core;
@@ -106,7 +105,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 				}
 				*p = 0;
 			} else {
-				RZ_LOG_ERROR("core: Cannot allocate %d\n", mallocsize);
+				RZ_LOG_ERROR("Cannot allocate %d\n", mallocsize);
 			}
 			s = str;
 			str = NULL;
@@ -161,10 +160,10 @@ static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_
 		return;
 	}
 	if (rz_cons_singleton()->columns < 50) {
-		eprintf("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
+		RZ_LOG_ERROR("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
 			at, n, (progress % 2) ? "[ #]" : "[# ]");
 	} else {
-		eprintf("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
+		RZ_LOG_ERROR("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
 			at, to, n, (progress % 2) ? "[ #]" : "[# ]");
 	}
 }
@@ -215,7 +214,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 				RzSearchKeyword *kw = rz_list_first(core->search->kws);
 				int lenstr = kw ? kw->keyword_length : 0;
 				const char *bytestr = lenstr > 1 ? "bytes" : "byte";
-				eprintf("Searching %d %s in [0x%" PFMT64x "-0x%" PFMT64x "]\n",
+				RZ_LOG_ERROR("Searching %d %s in [0x%" PFMT64x "-0x%" PFMT64x "]\n",
 					kw ? kw->keyword_length : 0, bytestr, itv.addr, rz_itv_end(itv));
 			}
 			if (!core->search->bckwrds) {
@@ -233,7 +232,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
 				print_search_progress(at, to1, search->nhits, param);
 				if (rz_cons_is_breaked()) {
-					eprintf("\n\n");
+					RZ_LOG_ERROR("\n\n");
 					break;
 				}
 				if (search->bckwrds) {
@@ -270,14 +269,14 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 			rz_cons_clear_line(1);
 			core->num->value = search->nhits;
 			if (param->outmode != RZ_MODE_JSON) {
-				eprintf("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
+				RZ_LOG_ERROR("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
 		}
 	done:
 		rz_cons_break_pop();
 		free(buf);
 	} else {
-		RZ_LOG_ERROR("core: No keywords defined\n");
+		RZ_LOG_ERROR("No keywords defined\n");
 	}
 
 	if (param->outmode == RZ_MODE_JSON) {
