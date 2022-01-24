@@ -3979,6 +3979,8 @@ CMDS=<<EOF
 aaa
 EOF
 EXPECT=<<EOF
+EOF
+RUN
 
 NAME=x86_64 int64_t variable overlapping removal
 FILE=bins/elf/arch-x86_64-ls
