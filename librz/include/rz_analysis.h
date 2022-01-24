@@ -442,12 +442,13 @@ typedef enum {
 
 typedef enum {
 	RZ_ANALYSIS_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
-	RZ_ANALYSIS_OP_MASK_ESIL = 1, // It fills RzAnalysisop->esil info
-	RZ_ANALYSIS_OP_MASK_VAL = 2, // It fills RzAnalysisop->dst/src info
-	RZ_ANALYSIS_OP_MASK_HINT = 4, // It calls rz_analysis_op_hint to override analysis options
-	RZ_ANALYSIS_OP_MASK_OPEX = 8, // It fills RzAnalysisop->opex info
-	RZ_ANALYSIS_OP_MASK_DISASM = 16, // It fills RzAnalysisop->mnemonic // should be RzAnalysisOp->disasm // only from rz_core_analysis_op()
-	RZ_ANALYSIS_OP_MASK_ALL = 1 | 2 | 4 | 8 | 16
+	RZ_ANALYSIS_OP_MASK_ESIL = (1 << 0), // It fills RzAnalysisop->esil info
+	RZ_ANALYSIS_OP_MASK_VAL = (1 << 1), // It fills RzAnalysisop->dst/src info
+	RZ_ANALYSIS_OP_MASK_HINT = (1 << 2), // It calls rz_analysis_op_hint to override analysis options
+	RZ_ANALYSIS_OP_MASK_OPEX = (1 << 3), // It fills RzAnalysisop->opex info
+	RZ_ANALYSIS_OP_MASK_DISASM = (1 << 4), // It fills RzAnalysisop->mnemonic // should be RzAnalysisOp->disasm // only from rz_core_analysis_op()
+	RZ_ANALYSIS_OP_MASK_IL = (1 << 5), // It fills RzAnalysisop->il_op
+	RZ_ANALYSIS_OP_MASK_ALL = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL
 } RzAnalysisOpMask;
 
 typedef enum {
