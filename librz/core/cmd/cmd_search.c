@@ -347,11 +347,17 @@ static bool setup_params(RzCore *core, struct search_parameters *param) {
 	return true;
 }
 
+#define UPDATE_LASTSEARCH(x) \
+	free(core->lastsearch); \
+	core->lastsearch = RZ_STR_DUP(x);
+
 // /
 RZ_IPI RzCmdStatus rz_cmd_search_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (!check_if_search_possible(core)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+
+	UPDATE_LASTSEARCH(argv[1]);
 
 	char *search_term = RZ_STR_DUP(argv[1]);
 	int len = rz_str_unescape(search_term);
