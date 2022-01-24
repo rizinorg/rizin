@@ -6457,7 +6457,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc
 		free(error_msg);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_set_type(v, v_type);
+	rz_analysis_var_set_type(v, v_type, true);
 	return RZ_CMD_STATUS_OK;
 }
 

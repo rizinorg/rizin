@@ -74,7 +74,7 @@ static inline bool var_overlap(RzAnalysisVar *a, RzAnalysisVar *b, ut64 a_size) 
 
 // Search for all variables that are located at the offset
 // overlapped by var and remove them
-static void resolve_var_overlaps(RzAnalysisVar *var) {
+RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 	// We do not touch variables stored in registers
 	// or arguments
 	if (!var->type || var->isarg || var->kind == RZ_ANALYSIS_VAR_KIND_REG) {
@@ -163,15 +163,17 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 	var->kind = kind;
 	var->isarg = isarg;
 	var->delta = delta;
-	resolve_var_overlaps(var);
+	rz_analysis_var_resolve_overlaps(var);
 	return var;
 }
 
-RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type) {
+RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type,bool resolve_overlaps) {
 	// We do not free the old type here because the new type can contain
 	// the old one, for example it can wrap the old type as a pointer or an array
 	var->type = type;
-	resolve_var_overlaps(var);
+	if(resolve_overlaps){
+		rz_analysis_var_resolve_overlaps(var);
+	}
 }
 
 static void var_free(RzAnalysisVar *var) {
