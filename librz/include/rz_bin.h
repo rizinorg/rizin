@@ -544,6 +544,7 @@ typedef struct rz_bin_plugin_t {
 	void (*destroy)(RzBinFile *bf);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
 	bool (*check_buffer)(RzBuffer *buf);
+	bool (*check_filename)(const char *filename);
 	ut64 (*baddr)(RzBinFile *bf);
 	ut64 (*boffset)(RzBinFile *bf);
 	RzList /*<RzBinVirtualFile>*/ *(*virtual_files)(RzBinFile *bf);

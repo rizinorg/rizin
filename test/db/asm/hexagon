@@ -6,7 +6,7 @@ d "?   R0 = ##0x101" 20e00078 0x0
 d "?   R5 = add(clb(R31),#0xffffffff)" 05ff3f8c 0x0
 d "?   R4 = add(R19,##0x33)" 64c613b0 0x0
 
-d "?   nop" 00c0007f 0x10000000
+d "?   nop"  00c0007f 0x10000000
 d "?   R31 = add(R0,##0x2)" 5f4000b0 0x0
 
 d "?   P0 = tstbit(R6,#0); if (!P0.new) jump:t 0x14" 04e3c611 0xc

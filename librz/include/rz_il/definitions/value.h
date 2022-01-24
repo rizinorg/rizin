@@ -29,9 +29,13 @@ typedef struct rz_il_val_t {
 RZ_API RZ_OWN RzILVal *rz_il_value_new_bitv(RZ_NONNULL RzBitVector *bv);
 RZ_API RZ_OWN RzILVal *rz_il_value_new_bool(RZ_NONNULL RzILBool *b);
 RZ_API RZ_OWN RzILVal *rz_il_value_new_zero_of(RzILSortPure sort);
-RZ_API RZ_OWN RzILVal *rz_il_value_dup(RZ_NONNULL RzILVal *val);
+RZ_API RZ_OWN RzILVal *rz_il_value_dup(RZ_NONNULL const RzILVal *val);
 RZ_API void rz_il_value_free(RZ_NULLABLE RzILVal *val);
 RZ_API RzILSortPure rz_il_value_get_sort(RZ_NONNULL RzILVal *val);
+RZ_API RZ_OWN RzBitVector *rz_il_value_to_bv(RZ_NONNULL const RzILVal *val);
+RZ_API bool rz_il_value_eq(RZ_NONNULL const RzILVal *a, RZ_NONNULL const RzILVal *b);
+
+RZ_API char *rz_il_value_stringify(RZ_NONNULL const RzILVal *val);
 
 #ifdef __cplusplus
 }

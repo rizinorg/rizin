@@ -4,22 +4,6 @@
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_il/rz_il_vm.h>
 
-static RzILEvent *il_event_new_read_from_name(RzILVM *vm, const char *name, RzILVal *value) {
-	rz_return_val_if_fail(vm && name, NULL);
-	RzBitVector *num = NULL;
-	if (value->type == RZ_IL_TYPE_PURE_BOOL) {
-		num = rz_bv_new_from_ut64(1, value->data.b->b);
-	} else {
-		num = value->data.bv;
-	}
-
-	RzILEvent *evt = rz_il_event_var_read_new(name, num);
-	if (value->type == RZ_IL_TYPE_PURE_BOOL) {
-		rz_bv_free(num);
-	}
-	return evt;
-}
-
 void *rz_il_handler_ite(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
@@ -51,7 +35,7 @@ void *rz_il_handler_var(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	}
 
 	if (var_op->kind == RZ_IL_VAR_KIND_GLOBAL) {
-		rz_il_vm_event_add(vm, il_event_new_read_from_name(vm, var_op->v, val));
+		rz_il_vm_event_add(vm, rz_il_event_var_read_new(var_op->v, val));
 	}
 
 	void *ret = NULL;

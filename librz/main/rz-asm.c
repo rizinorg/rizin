@@ -316,7 +316,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
-			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_ALL) <= 0) {
+			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_IL) <= 0) {
 				eprintf("Invalid\n");
 				ret = 0;
 				break;

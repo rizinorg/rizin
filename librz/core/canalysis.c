@@ -5987,22 +5987,28 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
  * \param core The RzCore instance
  */
 RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
+	const char *sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
+	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
+		RZ_LOG_ERROR("Invalid signature database path (flirt.sigdb.path)\n");
+		return;
+	}
+
 	RzTable *table = rz_table_new();
 	if (!table) {
 		rz_warn_if_reached();
 		return;
 	}
-	rz_table_set_columnsf(table, "ssns", "bin", "arch", "bits", "name");
+	rz_table_set_columnsf(table, "ssnsns", "bin", "arch", "bits", "name", "modules", "details");
 
-	const char *sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
-	RzList *sigdb = rz_analysis_sigdb_load_database(sigdb_path);
-	RzAnalysisSignature *sig = NULL;
+	RzList *sigdb = rz_sign_sigdb_load_database(sigdb_path, true);
+	RzSigDBEntry *sig = NULL;
 	RzListIter *iter = NULL;
-	ut64 bits;
+	ut64 bits, nmods;
 
 	rz_list_foreach (sigdb, iter, sig) {
 		bits = sig->arch_bits;
-		rz_table_add_rowf(table, "ssns", sig->bin_name, sig->arch_name, bits, sig->base_name);
+		nmods = sig->n_modules;
+		rz_table_add_rowf(table, "ssnsns", sig->bin_name, sig->arch_name, bits, sig->base_name, nmods, sig->details);
 	}
 
 	char *output = rz_table_tostring(table);
@@ -6011,6 +6017,7 @@ RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
 		free(output);
 	}
 	rz_list_free(sigdb);
+	rz_table_free(table);
 }
 
 /**
@@ -6027,7 +6034,7 @@ RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const cha
 	const char *bin = NULL;
 	const char *arch = NULL;
 	ut64 bits = 32;
-	RzAnalysisSignature *sig = NULL;
+	RzSigDBEntry *sig = NULL;
 	RzList *sigdb = NULL;
 	RzListIter *iter = NULL;
 	RzBinObject *obj = NULL;
@@ -6037,7 +6044,7 @@ RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const cha
 
 	sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
 	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
-		RZ_LOG_INFO("Cannot apply signatures due unknown sigdb path\n");
+		RZ_LOG_INFO("Invalid signature database path (flirt.sigdb.path)\n");
 		return false;
 	}
 
@@ -6063,7 +6070,7 @@ RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const cha
 		return false;
 	}
 
-	sigdb = rz_analysis_sigdb_load_database(sigdb_path);
+	sigdb = rz_sign_sigdb_load_database(sigdb_path, false);
 	n_flags_old = rz_flag_count(core->flags, "flirt");
 	rz_list_foreach (sigdb, iter, sig) {
 		if (RZ_STR_ISEMPTY(filter)) {

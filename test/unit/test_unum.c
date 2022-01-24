@@ -143,6 +143,32 @@ bool test_rz_num_align_delta() {
 	mu_end;
 }
 
+bool test_rz_num_bitmask() {
+	static const ut64 expect_masks[] = {
+		0x0, 0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
+		0xfff, 0x1fff, 0x3fff, 0x7fff, 0xffff, 0x1ffff, 0x3ffff, 0x7ffff,
+		0xfffff, 0x1fffff, 0x3fffff, 0x7fffff, 0xffffff, 0x1ffffffLL, 0x3ffffffLL,
+		0x7ffffffLL, 0xfffffffLL, 0x1fffffffLL, 0x3fffffffLL, 0x7fffffffLL, 0xffffffffLL,
+		0x1ffffffffLL, 0x3ffffffffLL, 0x7ffffffffLL, 0xfffffffffLL, 0x1fffffffffLL,
+		0x3fffffffffLL, 0x7fffffffffLL, 0xffffffffffLL, 0x1ffffffffffLL, 0x3ffffffffffLL,
+		0x7ffffffffffLL, 0xfffffffffffLL, 0x1fffffffffffLL, 0x3fffffffffffLL, 0x7fffffffffffLL,
+		0xffffffffffffLL, 0x1ffffffffffffLL, 0x3ffffffffffffLL, 0x7ffffffffffffLL,
+		0xfffffffffffffLL, 0x1fffffffffffffLL, 0x3fffffffffffffLL, 0x7fffffffffffffLL,
+		0xffffffffffffffLL, 0x1ffffffffffffffLL, 0x3ffffffffffffffLL, 0x7ffffffffffffffLL,
+		0xfffffffffffffffLL, 0x1fffffffffffffffLL, 0x3fffffffffffffffLL, 0x7fffffffffffffffLL, 0xffffffffffffffffLL
+	};
+
+	for (ut16 width = 0; width < 256; width++) {
+		ut64 actual = rz_num_bitmask((ut8)width);
+		ut64 expect = expect_masks[RZ_MIN(width, 64)];
+		char msg[0x100];
+		snprintf(msg, sizeof(msg), "bitmask of %u bits\n", (unsigned int)width);
+		mu_assert_eq(actual, expect, msg);
+	}
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_num_units);
 	mu_run_test(test_rz_num_minmax_swap_i);
@@ -152,6 +178,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_str_split);
 	mu_run_test(test_rz_num_str_split_list);
 	mu_run_test(test_rz_num_align_delta);
+	mu_run_test(test_rz_num_bitmask);
 	return tests_passed != tests_run;
 }
 

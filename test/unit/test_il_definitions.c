@@ -313,6 +313,36 @@ static bool test_il_sort_pure_eq() {
 	mu_end;
 }
 
+static bool test_il_value_eq() {
+	RzILVal *b0 = rz_il_value_new_bool(rz_il_bool_new(false));
+	RzILVal *b0_dup = rz_il_value_new_bool(rz_il_bool_new(false));
+	RzILVal *b1 = rz_il_value_new_bool(rz_il_bool_new(true));
+	RzILVal *bv16_42 = rz_il_value_new_bitv(rz_bv_new_from_ut64(16, 42));
+	RzILVal *bv16_42_dup = rz_il_value_new_bitv(rz_bv_new_from_ut64(16, 42));
+	RzILVal *bv16_43 = rz_il_value_new_bitv(rz_bv_new_from_ut64(16, 43));
+	RzILVal *bv8_42 = rz_il_value_new_bitv(rz_bv_new_from_ut64(8, 42));
+
+	mu_assert_true(rz_il_value_eq(b0, b0), "eq");
+	mu_assert_true(rz_il_value_eq(b0, b0_dup), "eq");
+	mu_assert_true(rz_il_value_eq(bv16_42, bv16_42), "eq");
+	mu_assert_true(rz_il_value_eq(bv16_42, bv16_42_dup), "eq");
+
+	mu_assert_false(rz_il_value_eq(b0, b1), "not eq");
+	mu_assert_false(rz_il_value_eq(b0, bv16_42), "not eq");
+	mu_assert_false(rz_il_value_eq(bv16_42, bv16_43), "not eq");
+	mu_assert_false(rz_il_value_eq(bv16_42, bv8_42), "not eq");
+
+	rz_il_value_free(b0);
+	rz_il_value_free(b0_dup);
+	rz_il_value_free(b1);
+	rz_il_value_free(bv16_42);
+	rz_il_value_free(bv16_42_dup);
+	rz_il_value_free(bv16_43);
+	rz_il_value_free(bv8_42);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_il_bool_init);
 	mu_run_test(test_il_bool_logic);
@@ -322,6 +352,7 @@ bool all_tests() {
 	mu_run_test(test_il_mem_storew);
 	mu_run_test(test_il_seqn);
 	mu_run_test(test_il_sort_pure_eq);
+	mu_run_test(test_il_value_eq);
 	return tests_passed != tests_run;
 }
 

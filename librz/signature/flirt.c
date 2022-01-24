@@ -978,6 +978,7 @@ static int parse_v5_header(RzBuffer *buf, idasig_v5_t *header) {
 
 static int parse_v6_v7_header(RzBuffer *buf, idasig_v6_v7_t *header) {
 	if (rz_buf_read(buf, (unsigned char *)&header->n_functions, sizeof(header->n_functions)) != sizeof(header->n_functions)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v6/v7 header).\n");
 		return false;
 	}
 
@@ -986,6 +987,7 @@ static int parse_v6_v7_header(RzBuffer *buf, idasig_v6_v7_t *header) {
 
 static int parse_v8_v9_header(RzBuffer *buf, idasig_v8_v9_t *header) {
 	if (rz_buf_read(buf, (unsigned char *)&header->pattern_size, sizeof(header->pattern_size)) != sizeof(header->pattern_size)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v8/v9 header).\n");
 		return false;
 	}
 
@@ -994,6 +996,7 @@ static int parse_v8_v9_header(RzBuffer *buf, idasig_v8_v9_t *header) {
 
 static int parse_v10_header(RzBuffer *buf, idasig_v10_t *header) {
 	if (rz_buf_read(buf, (unsigned char *)&header->unknown, sizeof(header->unknown)) != sizeof(header->unknown)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v10 header).\n");
 		return false;
 	}
 
@@ -1016,14 +1019,17 @@ static ut8 flirt_parse_version(RzBuffer *buffer) {
 	}
 
 	if (rz_buf_read(buffer, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v5 header magic).\n");
 		goto exit;
 	}
 
 	if (strncmp((const char *)header->magic, "IDASGN", 6)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig magic.\n");
 		goto exit;
 	}
 
 	if (rz_buf_read(buffer, &header->version, sizeof(header->version)) != sizeof(header->version)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v5 header version).\n");
 		goto exit;
 	}
 
@@ -1077,6 +1083,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ
 	parse_v5_header(flirt_buf, header);
 
 	if (expected_arch != RZ_FLIRT_SIG_ARCH_ANY && header->arch != expected_arch) {
+		RZ_LOG_ERROR("FLIRT: the binary architecture did not match the .sig one.\n");
 		goto exit;
 	}
 
@@ -1172,9 +1179,9 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ
 
 	if (info && ret) {
 		info->type = RZ_FLIRT_FILE_TYPE_SIG;
-		info->u.sig.version = rz_sign_flirt_node_count_nodes(ret);
+		info->u.sig.version = ps.version;
 		info->u.sig.architecture = header->arch;
-		info->u.sig.n_modules = ps.version;
+		info->u.sig.n_modules = rz_sign_flirt_node_count_nodes(ret);
 		info->u.sig.name = (char *)name;
 		name = NULL;
 	}
@@ -1193,28 +1200,29 @@ exit:
 /**
  * \brief Parses the FLIRT file and applies the signatures
  *
- * \param analysis    The RzAnalysis structure
- * \param flirt_file  The FLIRT file to parse
+ * \param  analysis    The RzAnalysis structure
+ * \param  flirt_file  The FLIRT file to parse
+ * \return true if the signatures were sucessfully applied to the file
  */
-RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file, ut8 expected_arch) {
-	rz_return_if_fail(analysis && RZ_STR_ISNOTEMPTY(flirt_file));
+RZ_API bool rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file, ut8 expected_arch) {
+	rz_return_val_if_fail(analysis && RZ_STR_ISNOTEMPTY(flirt_file), false);
 	RzBuffer *flirt_buf = NULL;
 	RzFlirtNode *node = NULL;
 
 	if (expected_arch > RZ_FLIRT_SIG_ARCH_ANY) {
 		RZ_LOG_ERROR("FLIRT: unknown architecture %u\n", expected_arch);
-		return;
+		return false;
 	}
 
 	const char *extension = rz_str_lchr(flirt_file, '.');
 	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pat") != 0)) {
 		RZ_LOG_ERROR("FLIRT: unknown extension '%s'\n", extension);
-		return;
+		return false;
 	}
 
 	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
 		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
-		return;
+		return false;
 	}
 
 	if (!strcmp(extension, ".pat")) {
@@ -1229,9 +1237,10 @@ RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 			RZ_LOG_ERROR("FLIRT: Error while scanning the file %s\n", flirt_file);
 		}
 		rz_sign_flirt_node_free(node);
-		return;
+		return true;
 	}
 	RZ_LOG_ERROR("FLIRT: We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
+	return false;
 }
 
 /**
