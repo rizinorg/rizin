@@ -379,7 +379,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_string_handler(RzCore *core, int argc, const ch
 		rz_search_kw_add(core->search, search_kw);
 	} else {
 		RZ_LOG_ERROR("Invalid search keyword\n");
-		return RZ_CMD_STATUS_ERROR;
+		goto beach;
 	}
 	rz_search_begin(core->search);
 	rz_config_set_i(core->config, "search.kwidx", core->search->n_kws);
