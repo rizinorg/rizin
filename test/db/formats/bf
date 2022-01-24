@@ -5,3 +5,16 @@ EXPECT=<<EOF
 format   bf
 EOF
 RUN
+
+NAME=2＋5.BF
+FILE=bins/bf/2＋5.BF
+CMDS=<<EOF
+(i key; i~^$0)
+..(i file format size)
+EOF
+EXPECT=<<EOF
+file     bins/bf/2＋5.BF
+format   bf
+size     0x2af
+EOF
+RUN
