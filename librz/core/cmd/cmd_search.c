@@ -298,6 +298,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 static bool setup_params(RzCore *core, struct search_parameters *param) {
 	param->core = core;
 	param->cmd_hit = rz_config_get(core->config, "cmd.hit");
+	param->cmd_hit = param->cmd_hit ? param->cmd_hit : "";
 	param->outmode = 0;
 	param->inverse = false;
 	param->aes_search = false;
@@ -360,6 +361,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_string_handler(RzCore *core, int argc, const ch
 		goto beach;
 	}
 	param.pj = state->d.pj;
+	param.outmode = state->mode;
 
 	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
 	rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
