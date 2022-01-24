@@ -857,34 +857,34 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 		return true;
 	}
 	bool found;
-	RzAnalysisBlock *pred = ht_up_find(ctx->predecessors, (ut64)block, &found);
+	RzAnalysisBlock *pred = ht_up_find(ctx->predecessors, (ut64)(size_t)block, &found);
 	if (found) {
 		if (pred) {
 			// only one predecessor found so far, but we are the second so there are multiple now
-			ht_up_update(ctx->predecessors, (ut64)block, NULL);
+			ht_up_update(ctx->predecessors, (ut64)(size_t)block, NULL);
 		} // else: already found multiple predecessors, nothing to do
 	} else {
 		// no predecessor found yet, this is the only one until now
-		ht_up_insert(ctx->predecessors, (ut64)block, ctx->cur_pred);
+		ht_up_insert(ctx->predecessors, (ut64)(size_t)block, ctx->cur_pred);
 	}
 	return true;
 }
 
 static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *v) {
 	AutomergeCtx *ctx = user;
-	const RzAnalysisFunction *fcn = (const RzAnalysisFunction *)k;
+	const RzAnalysisFunction *fcn = (const RzAnalysisFunction *)(size_t)k;
 	RzListIter *it;
 	RzAnalysisBlock *block;
 	rz_list_foreach (fcn->bbs, it, block) {
 		bool already_visited;
-		ht_up_find(ctx->visited_blocks, (ut64)block, &already_visited);
+		ht_up_find(ctx->visited_blocks, (ut64)(size_t)block, &already_visited);
 		if (already_visited) {
 			continue;
 		}
 		ctx->cur_pred = block;
 		ctx->cur_succ_count = 0;
 		rz_analysis_block_successor_addrs_foreach(block, automerge_predecessor_successor_cb, ctx);
-		ht_up_insert(ctx->visited_blocks, (ut64)block, (void *)ctx->cur_succ_count);
+		ht_up_insert(ctx->visited_blocks, (ut64)(size_t)block, (void *)ctx->cur_succ_count);
 	}
 	return true;
 }
@@ -912,7 +912,7 @@ RZ_API void rz_analysis_block_automerge(RzList *blocks) {
 		RzListIter *fit;
 		RzAnalysisFunction *fcn;
 		rz_list_foreach (block->fcns, fit, fcn) {
-			ht_up_insert(relevant_fcns, (ut64)fcn, NULL);
+			ht_up_insert(relevant_fcns, (ut64)(size_t)fcn, NULL);
 		}
 		ht_up_insert(ctx.blocks, block->addr, block);
 	}
@@ -923,11 +923,11 @@ RZ_API void rz_analysis_block_automerge(RzList *blocks) {
 	// Now finally do the merging
 	RzListIter *tmp;
 	rz_list_foreach_safe (blocks, it, tmp, block) {
-		RzAnalysisBlock *predecessor = ht_up_find(ctx.predecessors, (ut64)block, NULL);
+		RzAnalysisBlock *predecessor = ht_up_find(ctx.predecessors, (ut64)(size_t)block, NULL);
 		if (!predecessor) {
 			continue;
 		}
-		size_t pred_succs_count = (size_t)ht_up_find(ctx.visited_blocks, (ut64)predecessor, NULL);
+		size_t pred_succs_count = (size_t)ht_up_find(ctx.visited_blocks, (ut64)(size_t)predecessor, NULL);
 		if (pred_succs_count != 1) {
 			// we can only merge this predecessor if it has exactly one successor
 			continue;
@@ -939,7 +939,7 @@ RZ_API void rz_analysis_block_automerge(RzList *blocks) {
 		RzListIter *bit;
 		RzAnalysisBlock *clock;
 		for (bit = it->n; bit && (clock = bit->data, 1); bit = bit->n) {
-			RzAnalysisBlock *fixup_pred = ht_up_find(ctx.predecessors, (ut64)clock, NULL);
+			RzAnalysisBlock *fixup_pred = ht_up_find(ctx.predecessors, (ut64)(size_t)clock, NULL);
 			if (fixup_pred == block) {
 				rz_list_push(fixup_candidates, clock);
 			}
@@ -950,10 +950,10 @@ RZ_API void rz_analysis_block_automerge(RzList *blocks) {
 			// Update number of successors of the predecessor
 			ctx.cur_succ_count = 0;
 			rz_analysis_block_successor_addrs_foreach(predecessor, count_successors_cb, &ctx);
-			ht_up_update(ctx.visited_blocks, (ut64)predecessor, (void *)ctx.cur_succ_count);
+			ht_up_update(ctx.visited_blocks, (ut64)(size_t)predecessor, (void *)(size_t)ctx.cur_succ_count);
 			rz_list_foreach (fixup_candidates, bit, clock) {
 				// Make sure all previous pointers to block now go to predecessor
-				ht_up_update(ctx.predecessors, (ut64)clock, predecessor);
+				ht_up_update(ctx.predecessors, (ut64)(size_t)clock, predecessor);
 			}
 			// Remove it from the list
 			rz_list_split_iter(blocks, it);
