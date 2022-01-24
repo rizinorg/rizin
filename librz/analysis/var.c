@@ -167,11 +167,11 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 	return var;
 }
 
-RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type,bool resolve_overlaps) {
+RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps) {
 	// We do not free the old type here because the new type can contain
 	// the old one, for example it can wrap the old type as a pointer or an array
 	var->type = type;
-	if(resolve_overlaps){
+	if (resolve_overlaps) {
 		rz_analysis_var_resolve_overlaps(var);
 	}
 }
