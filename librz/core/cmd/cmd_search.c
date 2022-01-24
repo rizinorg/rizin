@@ -368,6 +368,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_string_handler(RzCore *core, int argc, const ch
 	}
 	param.pj = state->d.pj;
 	param.outmode = state->mode;
+	pj_o(param.pj);
 
 	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
 	rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
@@ -389,7 +390,7 @@ beach:
 	core->in_search = false;
 	rz_flag_space_pop(core->flags);
 	if (param.outmode == RZ_MODE_JSON) {
-		rz_cons_println(pj_string(param.pj));
+		pj_end(param.pj);
 	}
 	rz_list_free(param.boundaries);
 	rz_search_kw_reset(core->search);
