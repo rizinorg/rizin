@@ -3987,8 +3987,10 @@ FILE=bins/elf/arch-x86_64-ls
 CMDS=<<EOF
 s 0x10270
 af
+afs
 afv
 aaft
+afs
 afv
 EOF
 EXPECT=<<EOF
