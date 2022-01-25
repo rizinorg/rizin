@@ -100,7 +100,7 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 		case SIGTRAP: {
 			if (dbg->glob_libs || dbg->glob_unlibs) {
 				ut64 pc_addr = rz_debug_reg_get(dbg, "PC");
-				RzBreakpointItem *b = rz_bp_get_at(dbg->bp, pc_addr - dbg->bpsize);
+				RzBreakpointItem *b = rz_bp_get_ending_at(dbg->bp, pc_addr);
 				if (b && b->internal) {
 					char *p = strstr(b->data, "dbg.");
 					if (p) {

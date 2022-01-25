@@ -262,7 +262,6 @@ typedef struct rz_debug_t {
 	/* dbg.* config options (see e?dbg)
 	 * NOTE: some settings are checked inline instead of tracked here.
 	 */
-	int bpsize; /* size of a breakpoint */
 	char *btalgo; /* select backtrace algorithm */
 	int btdepth; /* backtrace depth */
 	int regcols; /* display columns */
