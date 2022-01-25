@@ -166,10 +166,39 @@ static void unlinkBreakpoint(RzBreakpoint *bp, RzBreakpointItem *b) {
 	rz_list_delete_data(bp->bps, b);
 }
 
+/**
+ * Put an allocated RzBreakpointItem into the RzBreakpoint's list and give it an index
+ */
+RZ_IPI void rz_bp_item_insert(RzBreakpoint *bp, RzBreakpointItem *b) {
+	int i;
+	/* find empty slot */
+	for (i = 0; i < bp->bps_idx_count; i++) {
+		if (!bp->bps_idx[i]) {
+			break;
+		}
+	}
+	if (i == bp->bps_idx_count) {
+		/* allocate new slot */
+		bp->bps_idx_count += 16; // allocate space for 16 more bps
+		RzBreakpointItem **newbps = realloc(bp->bps_idx, bp->bps_idx_count * sizeof(RzBreakpointItem *));
+		if (newbps) {
+			bp->bps_idx = newbps;
+			for (int j = i; j < bp->bps_idx_count; j++) {
+				bp->bps_idx[j] = NULL;
+			}
+		} else {
+			bp->bps_idx_count -= 16; // allocate space for 16 more bps
+			i = 0; // avoid oob below
+		}
+	}
+	/* empty slot */
+	bp->bps_idx[i] = b;
+	bp->nbps++;
+	rz_list_append(bp->bps, b);
+}
+
 /* TODO: detect overlapping of breakpoints */
 static RzBreakpointItem *rz_bp_add(RzBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int perm) {
-	int ret;
-	RzBreakpointItem *b;
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;
 	}
@@ -177,7 +206,7 @@ static RzBreakpointItem *rz_bp_add(RzBreakpoint *bp, const ut8 *obytes, ut64 add
 		RZ_LOG_ERROR("Breakpoint already set at this address.\n");
 		return NULL;
 	}
-	b = rz_bp_item_new(bp);
+	RzBreakpointItem *b = RZ_NEW0(RzBreakpointItem);
 	if (!b) {
 		return NULL;
 	}
@@ -198,26 +227,28 @@ static RzBreakpointItem *rz_bp_add(RzBreakpoint *bp, const ut8 *obytes, ut64 add
 	if (!hw) {
 		b->bbytes = calloc(size + 16, 1);
 		if (!b->bbytes) {
-			return NULL;
+			goto err;
 		}
 		if (obytes) {
 			b->obytes = malloc(size);
 			if (!b->obytes) {
-				free(b->bbytes);
-				return NULL;
+				goto err;
 			}
 			memcpy(b->obytes, obytes, size);
 		} else {
 			b->obytes = NULL;
 		}
-		ret = rz_bp_get_bytes(bp, b->addr, b->bbytes, size);
+		int ret = rz_bp_get_bytes(bp, b->addr, b->bbytes, size);
 		if (ret != size) {
-			eprintf("Cannot get breakpoint bytes. No architecture selected?\n");
+			RZ_LOG_ERROR("Cannot get breakpoint bytes. Incorrect architecture/bits selected for software breakpoints?\n");
+			goto err;
 		}
 	}
-	bp->nbps++;
-	rz_list_append(bp->bps, b);
+	rz_bp_item_insert(bp, b);
 	return b;
+err:
+	rz_bp_item_free(b);
+	return NULL;
 }
 
 RZ_API int rz_bp_add_fault(RzBreakpoint *bp, ut64 addr, int size, int perm) {
@@ -289,30 +320,6 @@ RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set) {
 		b->trace = set;
 	}
 	return true;
-}
-
-RZ_API RzBreakpointItem *rz_bp_item_new(RzBreakpoint *bp) {
-	int i, j;
-	/* find empty slot */
-	for (i = 0; i < bp->bps_idx_count; i++) {
-		if (!bp->bps_idx[i]) {
-			goto return_slot;
-		}
-	}
-	/* allocate new slot */
-	bp->bps_idx_count += 16; // allocate space for 16 more bps
-	RzBreakpointItem **newbps = realloc(bp->bps_idx, bp->bps_idx_count * sizeof(RzBreakpointItem *));
-	if (newbps) {
-		bp->bps_idx = newbps;
-	} else {
-		bp->bps_idx_count -= 16; // allocate space for 16 more bps
-	}
-	for (j = i; j < bp->bps_idx_count; j++) {
-		bp->bps_idx[j] = NULL;
-	}
-return_slot:
-	/* empty slot */
-	return (bp->bps_idx[i] = RZ_NEW0(RzBreakpointItem));
 }
 
 RZ_API RzBreakpointItem *rz_bp_get_index(RzBreakpoint *bp, int idx) {
