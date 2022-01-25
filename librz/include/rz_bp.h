@@ -65,13 +65,23 @@ typedef struct rz_bp_item_t {
 struct rz_bp_t;
 typedef int (*RzBreakpointCallback)(struct rz_bp_t *bp, RzBreakpointItem *b, bool set);
 
+/**
+ * \brief Outer context of mappings/etc. in which the RzBreakpoint instance will operate in.
+ * In practical Rizin, this is implemented by RzCore.
+ */
+typedef struct rz_bp_context_t {
+	void *user;
+	bool (*is_mapped)(ut64 addr, int perm, void *user); ///< check if the address is mapped and has the given permissions
+	void (*maps_sync)(void *user); ///< synchronize any maps from the debugee
+} RzBreakpointContext;
+
 typedef struct rz_bp_t {
 	void *user;
+	RzBreakpointContext ctx;
 	int stepcont;
 	int endian;
 	int bits;
 	bool bpinmaps; /* Only enable breakpoints inside a valid map */
-	RzCoreBind corebind;
 	RzIOBind iob; // compile time dependency
 	RzBreakpointPlugin *cur;
 	RzList *traces; // XXX
@@ -99,7 +109,7 @@ typedef struct rz_bp_trace_t {
 } RzBreakpointTrace;
 
 #ifdef RZ_API
-RZ_API RzBreakpoint *rz_bp_new(void);
+RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx);
 RZ_API RzBreakpoint *rz_bp_free(RzBreakpoint *bp);
 
 RZ_API bool rz_bp_del(RzBreakpoint *bp, ut64 addr);

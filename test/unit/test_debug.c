@@ -16,7 +16,8 @@ bool test_rz_debug_use(void) {
 	RzDebug *dbg;
 	bool res;
 
-	dbg = rz_debug_new(true);
+	RzBreakpointContext bp_ctx = { 0 };
+	dbg = rz_debug_new(&bp_ctx);
 	mu_assert_notnull(dbg, "rz_debug_new () failed");
 
 	res = rz_debug_use(dbg, "null");

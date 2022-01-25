@@ -423,7 +423,7 @@ typedef struct rz_debug_pid_t {
 } RzDebugPid;
 
 #ifdef RZ_API
-RZ_API RzDebug *rz_debug_new(int hard);
+RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
 
 RZ_API int rz_debug_attach(RzDebug *dbg, int pid);
