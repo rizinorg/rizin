@@ -483,7 +483,7 @@ bool test_rz_analysis_block_query() {
 
 bool addr_list_cb(ut64 addr, void *user) {
 	RzList *list = user;
-	rz_list_push(list, (void *)addr);
+	rz_list_push(list, (void *)(size_t)addr);
 	return true;
 }
 

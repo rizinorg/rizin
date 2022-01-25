@@ -98,7 +98,7 @@ for:
       - copy C:\Python38-x64\python.exe C:\Python38-x64\python3.exe
       - python3 -m pip install "git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"
       - cd test
-      - git clone -q --depth 1 https://github.com/rizinorg/rizin-testbins bins
+      - git clone -q --depth 1 -c core.symlinks=true https://github.com/rizinorg/rizin-testbins bins
       - cd ..
       - "%PYTHON%\\Scripts\\meson test -C build -t 10"
       - cd test

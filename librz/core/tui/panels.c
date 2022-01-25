@@ -2502,7 +2502,7 @@ void __fix_layout_w(RzCore *core) {
 	for (; i < panels->n_panels - 1; i++) {
 		RzPanel *p = __get_panel(panels, i);
 		int64_t t = p->view->pos.x + p->view->pos.w;
-		rz_list_append(list, (void *)(t));
+		rz_list_append(list, (void *)(size_t)t);
 	}
 	RzListIter *iter;
 	for (i = 0; i < panels->n_panels; i++) {
@@ -2516,14 +2516,15 @@ void __fix_layout_w(RzCore *core) {
 		bool found = false;
 		void *num = NULL;
 		rz_list_foreach (list, iter, num) {
-			if ((int64_t)num - 1 == tx) {
+			int64_t numi = (int64_t)(size_t)num;
+			if (numi - 1 == tx) {
 				found = true;
 				break;
 			}
-			int sub = (int64_t)num - tx;
+			int sub = numi - tx;
 			if (min > RZ_ABS(sub)) {
 				min = RZ_ABS(sub);
-				target_num = (int64_t)num;
+				target_num = numi;
 			}
 		}
 		if (!found) {
@@ -2543,7 +2544,7 @@ void __fix_layout_h(RzCore *core) {
 	for (; i < panels->n_panels - 1; i++) {
 		RzPanel *p = __get_panel(panels, i);
 		int64_t t = p->view->pos.y + p->view->pos.h;
-		rz_list_append(list, (void *)(t));
+		rz_list_append(list, (void *)(size_t)t);
 	}
 	RzListIter *iter;
 	for (i = 0; i < panels->n_panels; i++) {
@@ -2558,14 +2559,15 @@ void __fix_layout_h(RzCore *core) {
 		bool found = false;
 		void *num = NULL;
 		rz_list_foreach (list, iter, num) {
-			if ((int64_t)num - 1 == ty) {
+			int64_t numi = (int64_t)(size_t)num;
+			if (numi - 1 == ty) {
 				found = true;
 				break;
 			}
-			int sub = (int64_t)num - ty;
+			int sub = numi - ty;
 			if (min > RZ_ABS(sub)) {
 				min = RZ_ABS(sub);
-				target_num = (int64_t)num;
+				target_num = numi;
 			}
 		}
 		if (!found) {
