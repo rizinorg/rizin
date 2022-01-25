@@ -273,36 +273,6 @@ static ut64 numget(RzCore *core, const char *k) {
 	return rz_num_math(core->num, k);
 }
 
-static bool __isMapped(RzCore *core, ut64 addr, int perm) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		// RzList *maps = core->dbg->maps;
-		RzDebugMap *map = NULL;
-		RzListIter *iter = NULL;
-
-		rz_list_foreach (core->dbg->maps, iter, map) {
-			if (addr >= map->addr && addr < map->addr_end) {
-				if (perm > 0) {
-					if (map->perm & perm) {
-						return true;
-					}
-				} else {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	return rz_io_map_is_mapped(core->io, addr);
-}
-
-static bool __syncDebugMaps(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		return rz_debug_map_sync(core->dbg);
-	}
-	return false;
-}
-
 static const RzList *__flagsGet(RzCore *core, ut64 offset) {
 	return rz_flag_get_list(core->flags, offset);
 }
@@ -323,8 +293,6 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->cfggeti = (RzCoreConfigGetI)cfggeti;
 	bnd->cfgGet = (RzCoreConfigGet)cfgget;
 	bnd->numGet = (RzCoreNumGet)numget;
-	bnd->isMapped = (RzCoreIsMapped)__isMapped;
-	bnd->syncDebugMaps = (RzCoreDebugMapsSync)__syncDebugMaps;
 	bnd->flagsGet = (RzCoreFlagsGet)__flagsGet;
 	return true;
 }
@@ -2295,6 +2263,34 @@ static int win_eprintf(const char *format, ...) {
 }
 #endif
 
+static bool bp_is_mapped(ut64 addr, int perm, void *user) {
+	RzCore *core = user;
+	if (rz_core_is_debug(core)) {
+		// RzList *maps = core->dbg->maps;
+		RzDebugMap *map = NULL;
+		RzListIter *iter = NULL;
+
+		rz_list_foreach (core->dbg->maps, iter, map) {
+			if (addr < map->addr || addr >= map->addr_end) {
+				continue;
+			}
+			if (perm <= 0 || (map->perm & perm)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	return rz_io_map_is_mapped(core->io, addr);
+}
+
+static void bp_maps_sync(void *user) {
+	RzCore *core = user;
+	if (rz_core_is_debug(core)) {
+		rz_debug_map_sync(core->dbg);
+	}
+}
+
 static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 	RzCore *core = user;
 	RzEventIOWrite *iow = data;
@@ -2502,12 +2498,16 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_cmd_init(core);
 	rz_core_plugin_init(core);
 
-	core->dbg = rz_debug_new(true);
+	RzBreakpointContext bp_ctx = {
+		.user = core,
+		.is_mapped = bp_is_mapped,
+		.maps_sync = bp_maps_sync
+	};
+	core->dbg = rz_debug_new(&bp_ctx);
 
 	rz_io_bind(core->io, &(core->dbg->iob));
 	rz_io_bind(core->io, &(core->dbg->bp->iob));
 	rz_core_bind(core, &core->dbg->corebind);
-	rz_core_bind(core, &core->dbg->bp->corebind);
 	rz_core_bind(core, &core->io->corebind);
 	core->dbg->analysis = core->analysis; // XXX: dupped instance.. can cause lost pointerz
 	// rz_debug_use (core->dbg, "native");
