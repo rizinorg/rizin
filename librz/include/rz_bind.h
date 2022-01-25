@@ -16,8 +16,6 @@ typedef char *(*RzCoreCmdStr)(void *core, const char *cmd);
 typedef char *(*RzCoreCmdStrF)(void *core, const char *cmd, ...);
 typedef void (*RzCorePuts)(const char *cmd);
 typedef void (*RzCoreSetArchBits)(void *core, const char *arch, int bits);
-typedef bool (*RzCoreIsMapped)(void *core, ut64 addr, int perm);
-typedef bool (*RzCoreDebugMapsSync)(void *core);
 typedef const char *(*RzCoreGetName)(void *core, ut64 off);
 typedef char *(*RzCoreGetNameDelta)(void *core, ut64 off);
 typedef void (*RzCoreSeekArchBits)(void *core, ut64 addr);
@@ -42,8 +40,6 @@ typedef struct rz_core_bind_t {
 	RzCoreConfigGetI cfggeti;
 	RzCoreConfigGet cfgGet;
 	RzCoreNumGet numGet;
-	RzCoreIsMapped isMapped;
-	RzCoreDebugMapsSync syncDebugMaps;
 	RzCoreFlagsGet flagsGet;
 } RzCoreBind;
 

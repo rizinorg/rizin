@@ -19,13 +19,18 @@ static void rz_bp_item_free(RzBreakpointItem *b) {
 	free(b);
 }
 
-RZ_API RzBreakpoint *rz_bp_new(void) {
+/**
+ * Construct a new RzBreakpoint instance
+ * \param ctx global context in which the instance will operate (giving mappings, etc)
+ */
+RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	int i;
 	RzBreakpointPlugin *static_plugin;
 	RzBreakpoint *bp = RZ_NEW0(RzBreakpoint);
 	if (!bp) {
 		return NULL;
 	}
+	bp->ctx = *ctx;
 	bp->bps_idx_count = 16;
 	bp->bps_idx = RZ_NEWS0(RzBreakpointItem *, bp->bps_idx_count);
 	bp->stepcont = RZ_BP_CONT_NORMAL;
@@ -78,7 +83,7 @@ RZ_API int rz_bp_get_bytes(RzBreakpoint *bp, ut8 *buf, int len, int endian, int 
 		/* if not found try to pad with the first one */
 		b = &bp->cur->bps[0];
 		if (len % b->length) {
-			eprintf("No matching bpsize\n");
+			RZ_LOG_ERROR("No matching bpsize\n");
 			return 0;
 		}
 		for (i = 0; i < len; i++) {
@@ -163,7 +168,7 @@ static RzBreakpointItem *rz_bp_add(RzBreakpoint *bp, const ut8 *obytes, ut64 add
 		return NULL;
 	}
 	if (rz_bp_get_in(bp, addr, perm)) {
-		eprintf("Breakpoint already set at this address.\n");
+		RZ_LOG_ERROR("Breakpoint already set at this address.\n");
 		return NULL;
 	}
 	b = rz_bp_item_new(bp);
@@ -172,11 +177,11 @@ static RzBreakpointItem *rz_bp_add(RzBreakpoint *bp, const ut8 *obytes, ut64 add
 	}
 	b->addr = addr + bp->delta;
 	if (bp->baddr > addr) {
-		eprintf("base addr should not be larger than the breakpoint address.\n");
+		RZ_LOG_ERROR("base addr should not be larger than the breakpoint address.\n");
 	}
 	if (bp->bpinmaps && !rz_bp_is_valid(bp, b)) {
-		eprintf("WARNING: Breakpoint won't be placed since it's not in a valid map.\n"
-			"You can bypass this check by setting dbg.bpinmaps to false.\n");
+		RZ_LOG_WARN("Breakpoint won't be placed since it's not in a valid map.\n"
+			    "You can bypass this check by setting dbg.bpinmaps to false.\n");
 	}
 	b->delta = addr - bp->baddr;
 	b->size = size;
@@ -353,8 +358,10 @@ RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b) {
 	if (!bp->bpinmaps) {
 		return true;
 	}
-
-	return bp->corebind.isMapped(bp->corebind.core, b->addr, b->perm);
+	if (!bp->ctx.is_mapped) {
+		return false;
+	}
+	return bp->ctx.is_mapped(b->addr, b->perm, bp->ctx.user);
 }
 
 /**
