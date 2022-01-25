@@ -300,7 +300,7 @@ void *rz_il_handler_shiftl(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) 
 	RzBitVector *result = NULL;
 	if (bv && shift && fill_bit) {
 		result = rz_bv_dup(bv);
-		rz_bv_lshift_fill(result, rz_bv_to_ut32(shift), fill_bit);
+		rz_bv_lshift_fill(result, rz_bv_to_ut32(shift), fill_bit->b);
 	}
 	rz_bv_free(shift);
 	rz_bv_free(bv);
@@ -322,7 +322,7 @@ void *rz_il_handler_shiftr(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) 
 	RzBitVector *result = NULL;
 	if (bv && shift && fill_bit) {
 		result = rz_bv_dup(bv);
-		rz_bv_rshift_fill(result, rz_bv_to_ut32(shift), fill_bit);
+		rz_bv_rshift_fill(result, rz_bv_to_ut32(shift), fill_bit->b);
 	}
 
 	rz_bv_free(shift);

@@ -876,7 +876,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 		rz_asm_set_pc(core->rasm, addr);
 		hint = rz_analysis_hint_get(core->analysis, addr);
 		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
-			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
+			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx);
 		esilstr = RZ_STRBUF_SAFEGET(&op.esil);
 		opexstr = RZ_STRBUF_SAFEGET(&op.opex);

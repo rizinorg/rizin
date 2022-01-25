@@ -180,38 +180,54 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		// If not found this returns UT64_MAX, so this overflows to 0, which is considered the "invalid"
 		// value for RzAnalysisOp, so it's fine.
 		op->jump = find_matching_bracket(analysis, addr, 1) + 1;
-		op->il_op = bf_llimit(analysis, addr, op->jump);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_llimit(analysis, addr, op->jump);
+		}
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->fail = addr + 1;
 		break;
 	case ']':
 		// same idea for target as above
 		op->jump = find_matching_bracket(analysis, addr, -1) + 1;
-		op->il_op = bf_rlimit(analysis, addr, op->jump);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_rlimit(analysis, addr, op->jump);
+		}
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		break;
 	case '>':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		op->il_op = bf_right_arrow();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_right_arrow();
+		}
 		break;
 	case '<':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->il_op = bf_left_arrow();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_left_arrow();
+		}
 		break;
 	case '+':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		op->il_op = bf_inc();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_inc();
+		}
 		break;
 	case '-':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->il_op = bf_dec();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_dec();
+		}
 		break;
 	case '.':
-		op->il_op = bf_out();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_out();
+		}
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case ',':
-		op->il_op = bf_in();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_in();
+		}
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 	case 0x00:
@@ -220,7 +236,9 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	default:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-		op->il_op = rz_il_op_new_nop();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = rz_il_op_new_nop();
+		}
 		break;
 	}
 	return op->size;

@@ -135,6 +135,12 @@ static char *download(struct SPDBDownloader *pd) {
 	return res ? abspath_to_file : NULL;
 }
 
+/**
+ * \brief initialization of pdb downloader by SPDBDownloaderOpt
+ *
+ * \param opt PDB options
+ * \param pdb_downloader PDB downloader that will be initialized
+ */
 void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt = RZ_NEW0(SPDBDownloaderOpt);
 	if (!pd->opt) {
@@ -145,17 +151,20 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt->dbg_file = strdup(opt->dbg_file);
 	pd->opt->guid = strdup(opt->guid);
 	pd->opt->symbol_server = strdup(opt->symbol_server);
-	pd->opt->user_agent = strdup(opt->user_agent);
 	pd->opt->symbol_store_path = strdup(opt->symbol_store_path);
 	pd->opt->extract = opt->extract;
 	pd->download = download;
 }
 
+/**
+ * \brief deinitialization of PDB downloader
+ *
+ * \param pdb_downloader PDB downloader that will be deinitialized
+ */
 void deinit_pdb_downloader(SPDBDownloader *pd) {
 	RZ_FREE(pd->opt->dbg_file);
 	RZ_FREE(pd->opt->guid);
 	RZ_FREE(pd->opt->symbol_server);
-	RZ_FREE(pd->opt->user_agent);
 	RZ_FREE(pd->opt->symbol_store_path);
 	RZ_FREE(pd->opt);
 	pd->download = 0;
@@ -174,45 +183,42 @@ static bool is_valid_guid(const char *guid) {
 	return i >= 33; // len of GUID and age
 }
 
-int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *options) {
+/**
+ * \brief Download PDB file for currently opened RzBin file
+ * \param bin RzBin instance
+ * \param pj Optional PJ instance for json output
+ * \param isradjson Use pj for json output
+ * \param options symbol server options for downloading the PDB file
+ */
+RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int isradjson, RZ_NONNULL SPDBOptions *options) {
+	rz_return_val_if_fail(bin && options, 1);
 	int ret = 1;
 	SPDBDownloaderOpt opt;
-	SPDBDownloader pdb_downloader;
-	RzBinInfo *info = rz_bin_get_info(core->bin);
+	RzBinInfo *info = rz_bin_get_info(bin);
 
 	if (!info || !info->debug_file_name) {
-		eprintf("Can't find debug filename\n");
+		RZ_LOG_ERROR("Can't find debug filename\n");
 		return 1;
 	}
 
 	if (!is_valid_guid(info->guid)) {
-		eprintf("Invalid GUID for file\n");
+		RZ_LOG_ERROR("Invalid GUID for file\n");
 		return 1;
 	}
 
-	if (!options || !options->symbol_server || !options->user_agent) {
-		eprintf("Can't retrieve pdb configurations\n");
+	if (!options->symbol_server || !options->symbol_store_path) {
+		RZ_LOG_ERROR("Can't retrieve pdb configurations\n");
 		return 1;
 	}
 
 	opt.dbg_file = rz_file_basename(info->debug_file_name);
 	opt.guid = info->guid;
-	opt.user_agent = options->user_agent;
+	opt.symbol_server = options->symbol_server;
 	opt.symbol_store_path = options->symbol_store_path;
 	opt.extract = options->extract;
-	char *symbol_server = strdup(options->symbol_server);
-	char *server = strtok(symbol_server, ";");
-	char *path = NULL;
-	while (server && !path) {
-		opt.symbol_server = server;
-		init_pdb_downloader(&opt, &pdb_downloader);
-		if (!pdb_downloader.download) {
-			break;
-		}
-		path = pdb_downloader.download(&pdb_downloader);
-		deinit_pdb_downloader(&pdb_downloader);
-		server = strtok(NULL, ";");
-	}
+
+	char *path = rz_bin_symserver_download(&opt);
+
 	if (isradjson) {
 		pj_ko(pj, "pdb");
 		pj_ks(pj, "file", opt.dbg_file);
@@ -224,8 +230,32 @@ int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *option
 		rz_cons_printf("PDB \"%s\" download %s\n",
 			opt.dbg_file, ret ? "success" : "failed");
 	}
-	free(symbol_server);
 	free(path);
-
 	return !ret;
+}
+
+/**
+ * \brief downloads file from symbol server
+ * \param options options for downloading file
+ * \return char* is the path that file was downloaded to or NULL in case of failure
+ */
+RZ_API RZ_OWN char *rz_bin_symserver_download(RZ_NONNULL const SPDBDownloaderOpt *options) {
+	rz_return_val_if_fail(options, NULL);
+	SPDBDownloader downloader;
+	SPDBDownloaderOpt opt = *options;
+	char *path = NULL;
+	char *symbol_server = strdup(options->symbol_server);
+	char *server = strtok(symbol_server, ";");
+	while (server && !path) {
+		opt.symbol_server = server;
+		init_pdb_downloader(&opt, &downloader);
+		if (!downloader.download) {
+			break;
+		}
+		path = downloader.download(&downloader);
+		deinit_pdb_downloader(&downloader);
+		server = strtok(NULL, ";");
+	}
+	free(symbol_server);
+	return path;
 }

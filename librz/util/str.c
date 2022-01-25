@@ -1211,6 +1211,9 @@ RZ_API int rz_str_unescape(char *buf) {
 			buf[i] = (ch << 4) + ch2;
 			esc_seq_len = 4;
 			break;
+		case '\0':
+			buf[i] = '\0';
+			return i;
 		default:
 			if (IS_OCTAL(buf[i + 1])) {
 				int num_digits = 1;
@@ -3144,7 +3147,14 @@ RZ_API bool rz_str_startswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const
 	return !rz_str_ncasecmp(str, needle, strlen(needle));
 }
 
-RZ_API bool rz_str_endswith(const char *str, const char *needle) {
+/**
+ * \brief Checks if a string ends with a specifc sequence of characters (case sensitive)
+ * \param str C-string to be scanned
+ * \param needle C-string containing the sequence of characters to match
+ * \return True if \p needle is found at the end of \p str and false otherwise
+ * \see rz_str_endswith_icase()
+ */
+RZ_API bool rz_str_endswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle) {
 	rz_return_val_if_fail(str && needle, false);
 	if (!*needle) {
 		return true;
@@ -3155,6 +3165,26 @@ RZ_API bool rz_str_endswith(const char *str, const char *needle) {
 		return false;
 	}
 	return !strcmp(str + (slen - nlen), needle);
+}
+
+/**
+ * \brief Checks if a string ends with a specifc sequence of characters (case insensitive)
+ * \param str C-string to be scanned
+ * \param needle C-string containing the sequence of characters to match
+ * \return True if \p needle is found at the end of \p str and false otherwise
+ * \see rz_str_endswith()
+ */
+RZ_API bool rz_str_endswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const char *needle) {
+	rz_return_val_if_fail(str && needle, false);
+	if (!*needle) {
+		return true;
+	}
+	int slen = strlen(str);
+	int nlen = strlen(needle);
+	if (!slen || !nlen || slen < nlen) {
+		return false;
+	}
+	return !rz_str_ncasecmp(str + (slen - nlen), needle, nlen);
 }
 
 static RzList *str_split_list_common(char *str, const char *c, int n, bool trim, bool dup) {

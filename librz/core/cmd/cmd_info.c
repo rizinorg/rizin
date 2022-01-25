@@ -526,14 +526,13 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const ch
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_download_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	SPDBOptions pdbopts;
-	pdbopts.user_agent = rz_config_get(core->config, "pdb.useragent");
 	pdbopts.extract = rz_config_get_i(core->config, "pdb.extract");
 	pdbopts.symbol_store_path = rz_config_get(core->config, "pdb.symstore");
 	pdbopts.symbol_server = rz_config_get(core->config, "pdb.server");
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 	}
-	int r = rz_bin_pdb_download(core, state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL, state->mode == RZ_OUTPUT_MODE_JSON, &pdbopts);
+	int r = rz_bin_pdb_download(core->bin, state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL, state->mode == RZ_OUTPUT_MODE_JSON, &pdbopts);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}

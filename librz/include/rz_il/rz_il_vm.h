@@ -60,6 +60,7 @@ RZ_API ut32 rz_il_vm_get_pc_len(RzILVM *vm);
 
 // VM Event operations
 RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt);
+RZ_API void rz_il_vm_clear_events(RzILVM *vm);
 
 // Memory operations
 RZ_API void rz_il_vm_add_mem(RzILVM *vm, RzILMemIndex index, RZ_OWN RzILMem *mem);

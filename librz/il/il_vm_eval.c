@@ -205,6 +205,13 @@ RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
 }
 
 /**
+ * Remove any recorded events from `vm->events`
+ */
+RZ_API void rz_il_vm_clear_events(RzILVM *vm) {
+	rz_list_purge(vm->events);
+}
+
+/**
  * Execute the opcodes uplifted from raw instructions.A list may contain multiple opcode trees
  * \param vm pointer to VM
  * \param op_list, a list of op roots.
@@ -213,7 +220,7 @@ RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
 RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr) {
 	rz_return_val_if_fail(vm && op, false);
 
-	rz_list_purge(vm->events);
+	rz_il_vm_clear_events(vm);
 
 	// Set the successor pc **before** evaluating. Any jmp/goto may then overwrite it again.
 	RzBitVector *next_pc = rz_bv_new_from_ut64(vm->pc->len, fallthrough_addr);

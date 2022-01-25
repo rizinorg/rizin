@@ -390,6 +390,10 @@ static RzBinPlugin *get_plugin_from_buffer(RzBin *bin, const char *pluginname, R
 	if (plugin) {
 		return plugin;
 	}
+	plugin = rz_bin_get_binplugin_by_filename(bin);
+	if (plugin) {
+		return plugin;
+	}
 	return rz_bin_get_binplugin_by_name(bin, "any");
 }
 
