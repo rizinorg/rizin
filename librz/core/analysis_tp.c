@@ -109,7 +109,7 @@ static bool var_type_simple_to_complex(const RzTypeDB *typedb, RzType *a, RzType
 }
 
 // TODO: Handle also non-atomic types here
-static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzType *type, bool ref) {
+static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzType *type, bool ref, bool resolve_overlaps) {
 	rz_return_if_fail(analysis && var && type);
 	RzTypeDB *typedb = analysis->typedb;
 	// removing this return makes 64bit vars become 32bit
@@ -137,11 +137,22 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 			eprintf("Cannot convert the type for the variable \"%s.%s\" into pointer\n", var->fcn->name, var->name);
 			return;
 		}
-		rz_analysis_var_set_type(var, ptrtype);
+		rz_analysis_var_set_type(var, ptrtype, resolve_overlaps);
 		return;
 	}
 
-	rz_analysis_var_set_type(var, cloned);
+	rz_analysis_var_set_type(var, cloned, resolve_overlaps);
+}
+
+static void var_type_set_resolve_overlaps(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzType *type, bool ref) {
+	var_type_set(analysis, var, type, ref, true);
+}
+
+static void vars_resolve_overlaps(RzPVector *vars) {
+	for (size_t i = 0; i < rz_pvector_len(vars); i++) {
+		RzAnalysisVar *var = rz_pvector_at(vars, i);
+		rz_analysis_var_resolve_overlaps(var);
+	}
 }
 
 static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const char *type, bool ref) {
@@ -153,7 +164,7 @@ static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const cha
 		free(error_msg);
 		return;
 	}
-	var_type_set(analysis, var, realtype, ref);
+	var_type_set_resolve_overlaps(analysis, var, realtype, ref);
 	// Since we clone the type here, free it
 	rz_type_free(realtype);
 }
@@ -247,7 +258,7 @@ static void retype_callee_arg(RzAnalysis *analysis, const char *callee_name, boo
 		if (!var) {
 			return;
 		}
-		var_type_set(analysis, var, type, false);
+		var_type_set_resolve_overlaps(analysis, var, type, false);
 	} else {
 		RzRegItem *item = rz_reg_get(analysis->reg, place, -1);
 		if (!item) {
@@ -257,10 +268,10 @@ static void retype_callee_arg(RzAnalysis *analysis, const char *callee_name, boo
 		if (!rvar) {
 			return;
 		}
-		var_type_set(analysis, rvar, type, false);
+		var_type_set_resolve_overlaps(analysis, rvar, type, false);
 		RzAnalysisVar *lvar = rz_analysis_var_get_dst_var(rvar);
 		if (lvar) {
-			var_type_set(analysis, lvar, type, false);
+			var_type_set_resolve_overlaps(analysis, lvar, type, false);
 		}
 	}
 }
@@ -455,7 +466,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				if (var) {
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
-						var_type_set(analysis, var, type, memref);
+						var_type_set_resolve_overlaps(analysis, var, type, memref);
 						var_rename(analysis, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
@@ -472,7 +483,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				if (var) {
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
-						var_type_set(analysis, var, type, memref);
+						var_type_set_resolve_overlaps(analysis, var, type, memref);
 						var_rename(analysis, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
@@ -498,7 +509,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				ut64 ptr = get_addr(analysis, tmp, j);
 				if (ptr == xaddr) {
 					if (type) {
-						var_type_set(analysis, var, type, memref);
+						var_type_set_resolve_overlaps(analysis, var, type, memref);
 					} else {
 						var_type_set_str(analysis, var, "int", memref);
 					}
@@ -569,8 +580,9 @@ static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVe
 		if (used_vars && !rz_pvector_empty(used_vars)) {
 			rz_pvector_foreach (used_vars, uvit) {
 				RzAnalysisVar *var = *uvit;
-				var_type_set(core->analysis, var, ctx->ret_type, true);
+				var_type_set(core->analysis, var, ctx->ret_type, true, false);
 			}
+			vars_resolve_overlaps(used_vars);
 		}
 	}
 }
@@ -592,8 +604,9 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 		if (used_vars && !rz_pvector_empty(used_vars) && aop->direction == RZ_ANALYSIS_OP_DIR_WRITE) {
 			rz_pvector_foreach (used_vars, uvit) {
 				RzAnalysisVar *var = *uvit;
-				var_type_set(core->analysis, var, ctx->ret_type, false);
+				var_type_set(core->analysis, var, ctx->ret_type, false, false);
 			}
+			vars_resolve_overlaps(used_vars);
 			ctx->resolved = true;
 		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV) {
 			RZ_FREE(ctx->ret_reg);
@@ -718,7 +731,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 				}
 				if (prop && match && prev_var && prev_type) {
 					// Here we clone the type
-					var_type_set(core->analysis, var, prev_type, false);
+					var_type_set(core->analysis, var, prev_type, false, false);
 				}
 			}
 			if (chk_constraint && var && (type == RZ_ANALYSIS_OP_TYPE_CMP && aop->disp != UT64_MAX) && next_op && next_op->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
@@ -749,6 +762,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 				rz_analysis_var_add_constraint(var, &constr);
 			}
 		}
+		vars_resolve_overlaps(used_vars);
 	}
 	prev_var = (used_vars && !rz_pvector_empty(used_vars) && aop->direction == RZ_ANALYSIS_OP_DIR_READ);
 	ctx->str_flag = false;
@@ -917,6 +931,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			rz_list_free(fcns);
 		}
 	}
+
 	// Type propagation for register based args
 	void **vit;
 	rz_pvector_foreach (&fcn->vars, vit) {
@@ -927,16 +942,17 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			if (!i) {
 				continue;
 			}
-			// Note that every `var_type_set()` call could remove some variables
+			// Note that every `var_type_set_resolve_overlaps()` call could remove some variables
 			// due to the overlaps resolution
 			if (lvar) {
 				// Propagate local var type = to => register-based var
-				var_type_set(analysis, rvar, lvar->type, false);
+				var_type_set(analysis, rvar, lvar->type, false, false);
 				// Propagate local var type <= from = register-based var
-				var_type_set(analysis, lvar, rvar->type, false);
+				var_type_set(analysis, lvar, rvar->type, false, false);
 			}
 		}
 	}
+	vars_resolve_overlaps(&fcn->vars);
 out_function:
 	free(retctx.ret_reg);
 	ht_up_free(op_cache);

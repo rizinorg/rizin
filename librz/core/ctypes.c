@@ -661,7 +661,7 @@ static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *
 				// if (strcmp(var->name, vlink) && !*resolved) {
 				if (!*resolved) {
 					*resolved = true;
-					rz_analysis_var_set_type(ctx->var, vlink->typ);
+					rz_analysis_var_set_type(ctx->var, vlink->typ, true);
 					rz_analysis_var_rename(ctx->var, vlink->typ->identifier.name, false);
 				}
 			}
