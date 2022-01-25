@@ -725,8 +725,8 @@ static bool cb_asmbits(void *user, void *data) {
 		update_syscall_ns(core);
 		__setsegoff(core->config, asmarch, core->analysis->bits);
 		if (core->dbg) {
-			rz_bp_use(core->dbg->bp, asmarch, core->analysis->bits);
-			rz_config_set_i(core->config, "dbg.bpsize", rz_bp_size(core->dbg->bp));
+			rz_bp_use(core->dbg->bp, asmarch);
+			rz_config_set_i(core->config, "dbg.bpsize", rz_bp_size(core->dbg->bp, core->analysis->bits));
 		}
 		/* set pcalign */
 		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);

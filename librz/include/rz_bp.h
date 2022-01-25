@@ -73,6 +73,7 @@ typedef struct rz_bp_context_t {
 	void *user;
 	bool (*is_mapped)(ut64 addr, int perm, void *user); ///< check if the address is mapped and has the given permissions
 	void (*maps_sync)(void *user); ///< synchronize any maps from the debugee
+	int (*bits_at)(ut64 addr, void *user); ///< get the arch-bitness to use at the given address (e.g. thumb or 32)
 } RzBreakpointContext;
 
 typedef struct rz_bp_t {
@@ -80,7 +81,6 @@ typedef struct rz_bp_t {
 	RzBreakpointContext ctx;
 	int stepcont;
 	int endian;
-	int bits;
 	bool bpinmaps; /* Only enable breakpoints inside a valid map */
 	RzIOBind iob; // compile time dependency
 	RzBreakpointPlugin *cur;
@@ -94,7 +94,6 @@ typedef struct rz_bp_t {
 	RzList *bps; // list of breakpoints
 	RzBreakpointItem **bps_idx;
 	int bps_idx_count;
-	st64 delta;
 	ut64 baddr;
 } RzBreakpoint;
 
@@ -116,15 +115,16 @@ RZ_API bool rz_bp_del(RzBreakpoint *bp, ut64 addr);
 RZ_API bool rz_bp_del_all(RzBreakpoint *bp);
 
 RZ_API int rz_bp_plugin_add(RzBreakpoint *bp, RzBreakpointPlugin *foo);
-RZ_API int rz_bp_use(RzBreakpoint *bp, const char *name, int bits);
+RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name);
 RZ_API int rz_bp_plugin_del(RzBreakpoint *bp, const char *name);
 RZ_API void rz_bp_plugin_list(RzBreakpoint *bp);
 
 RZ_API int rz_bp_in(RzBreakpoint *bp, ut64 addr, int perm);
-RZ_API int rz_bp_size(RzBreakpoint *bp);
+RZ_API int rz_bp_size(RZ_NONNULL RzBreakpoint *bp, int bits);
+RZ_API int rz_bp_size_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
 
 /* bp item attribs setters */
-RZ_API int rz_bp_get_bytes(RzBreakpoint *bp, ut8 *buf, int len, int endian, int idx);
+RZ_API int rz_bp_get_bytes(RZ_NONNULL RzBreakpoint *bp, ut64 addr, RZ_NONNULL ut8 *buf, int len);
 RZ_API int rz_bp_set_trace(RzBreakpoint *bp, ut64 addr, int set);
 RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set);
 RZ_API RzBreakpointItem *rz_bp_enable(RzBreakpoint *bp, ut64 addr, int set, int count);

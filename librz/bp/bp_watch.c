@@ -20,7 +20,7 @@ RZ_API RzBreakpointItem *rz_bp_watch_add(RzBreakpoint *bp, ut64 addr, int size, 
 		return NULL;
 	}
 	b = rz_bp_item_new(bp);
-	b->addr = addr + bp->delta;
+	b->addr = addr;
 	b->size = size;
 	b->enabled = true;
 	b->perm = perm;
