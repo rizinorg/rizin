@@ -2291,6 +2291,13 @@ static void bp_maps_sync(void *user) {
 	}
 }
 
+static int bp_bits_at(ut64 addr, void *user) {
+	RzCore *core = user;
+	int r = 0;
+	rz_core_arch_bits_at(core, addr, &r, NULL);
+	return r ? r : core->analysis->bits;
+}
+
 static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 	RzCore *core = user;
 	RzEventIOWrite *iow = data;
@@ -2501,7 +2508,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 	RzBreakpointContext bp_ctx = {
 		.user = core,
 		.is_mapped = bp_is_mapped,
-		.maps_sync = bp_maps_sync
+		.maps_sync = bp_maps_sync,
+		.bits_at = bp_bits_at
 	};
 	core->dbg = rz_debug_new(&bp_ctx);
 
@@ -2534,7 +2542,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		}
 	}
 	rz_config_set(core->config, "asm.arch", RZ_SYS_ARCH);
-	rz_bp_use(core->dbg->bp, RZ_SYS_ARCH, core->analysis->bits);
+	rz_bp_use(core->dbg->bp, RZ_SYS_ARCH);
 	update_sdb(core);
 	{
 		char *a = rz_path_system(RZ_FLAGS);

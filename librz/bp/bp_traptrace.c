@@ -103,7 +103,7 @@ RZ_API int rz_bp_traptrace_add(RzBreakpoint *bp, ut64 from, ut64 to) {
 	// TODO: check return value
 	bp->iob.read_at(bp->iob.io, from, buf, len);
 	memset(bits, 0x00, bitlen);
-	rz_bp_get_bytes(bp, trap, len, bp->endian, 0);
+	rz_bp_get_bytes(bp, from, trap, len);
 
 	trace = RZ_NEW(RzBreakpointTrace);
 	if (!trace) {

@@ -39,9 +39,12 @@ RZ_API int rz_bp_plugin_add(RzBreakpoint *bp, RzBreakpointPlugin *foo) {
 	return true;
 }
 
-RZ_API int rz_bp_use(RzBreakpoint *bp, const char *name, int bits) {
+/**
+ * Switch to the registered breakpoint plugin called \p name
+ */
+RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(bp && name, false);
 	RzListIter *iter;
-	bp->bits = bits;
 	RzBreakpointPlugin *h;
 	rz_list_foreach (bp->plugins, iter, h) {
 		if (!strcmp(h->name, name)) {
