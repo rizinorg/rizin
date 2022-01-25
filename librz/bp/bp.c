@@ -100,11 +100,32 @@ repeat:
 	return b->length;
 }
 
-RZ_API RzBreakpointItem *rz_bp_get_at(RzBreakpoint *bp, ut64 addr) {
+/**
+ * \brief Get the breakpoint at exactly \p addr
+ */
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr) {
+	rz_return_val_if_fail(bp, NULL);
 	RzListIter *iter;
 	RzBreakpointItem *b;
 	rz_list_foreach (bp->bps, iter, b) {
 		if (b->addr == addr) {
+			return b;
+		}
+	}
+	return NULL;
+}
+
+/**
+ * \brief Get the breakpoint b that fulfills `b->addr + b-> size == addr`
+ * After hitting a (usually software) breakpoint, the program counter will be directly after it.
+ * This way we can trace back the breakpoint matching this program counter.
+ */
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_ending_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr) {
+	rz_return_val_if_fail(bp, NULL);
+	RzListIter *iter;
+	RzBreakpointItem *b;
+	rz_list_foreach (bp->bps, iter, b) {
+		if (!b->hw && b->addr + b->size == addr) {
 			return b;
 		}
 	}
@@ -256,11 +277,16 @@ RZ_API int rz_bp_add_fault(RzBreakpoint *bp, ut64 addr, int size, int perm) {
 	return false;
 }
 
-RZ_API RzBreakpointItem *rz_bp_add_sw(RzBreakpoint *bp, ut64 addr, int size, int perm) {
+/**
+ * \brief Add a software breakpoint
+ * \p size preferred size of the breakpoint, or 0 to determine automatically
+ */
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_add_sw(RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int perm) {
+	rz_return_val_if_fail(bp, NULL);
 	RzBreakpointItem *item;
 	ut8 *bytes;
 	if (size < 1) {
-		size = 1;
+		size = rz_bp_size_at(bp, addr);
 	}
 	if (!(bytes = calloc(1, size))) {
 		return NULL;

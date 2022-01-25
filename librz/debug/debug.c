@@ -102,10 +102,9 @@ static int rz_debug_bp_hit(RzDebug *dbg, RzRegItem *pc_ri, ut64 pc, RzBreakpoint
 		return true;
 	}
 #else
-	int pc_off = dbg->bpsize;
 	/* see if we really have a breakpoint here... */
 	if (!dbg->pc_at_bp_set) {
-		b = rz_bp_get_at(dbg->bp, pc - dbg->bpsize);
+		b = rz_bp_get_ending_at(dbg->bp, pc);
 		if (!b) { /* we don't. nothing left to do */
 			/* Some targets set pc to breakpoint */
 			b = rz_bp_get_at(dbg->bp, pc);
@@ -132,18 +131,21 @@ static int rz_debug_bp_hit(RzDebug *dbg, RzRegItem *pc_ri, ut64 pc, RzBreakpoint
 		eprintf("failed to determine position of pc after breakpoint");
 	}
 
+	int pc_off = 0;
 	if (dbg->pc_at_bp) {
-		pc_off = 0;
 		b = rz_bp_get_at(dbg->bp, pc);
 	} else {
-		b = rz_bp_get_at(dbg->bp, pc - dbg->bpsize);
+		b = rz_bp_get_ending_at(dbg->bp, pc);
+		if (b) {
+			pc_off = b->size;
+		}
 	}
 
 	if (!b) {
 		return true;
 	}
 
-	b = rz_bp_get_at(dbg->bp, pc - dbg->bpsize);
+	b = rz_bp_get_ending_at(dbg->bp, pc);
 	if (!b) { /* we don't. nothing left to do */
 		/* Some targets set pc to breakpoint */
 		b = rz_bp_get_at(dbg->bp, pc);
@@ -374,7 +376,6 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->trace_execs = 0;
 	dbg->analysis = NULL;
 	dbg->pid = -1;
-	dbg->bpsize = 1;
 	dbg->tid = -1;
 	dbg->tree = rz_tree_new();
 	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
@@ -530,7 +531,7 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 		dbg->iob.read_at(dbg->iob.io, rpc, backup, len);
 		dbg->iob.read_at(dbg->iob.io, rsp, stackbackup, len);
 
-		rz_bp_add_sw(dbg->bp, rpc + len, dbg->bpsize, RZ_PERM_X);
+		rz_bp_add_sw(dbg->bp, rpc + len, 0, RZ_PERM_X);
 
 		/* execute code here */
 		dbg->iob.write_at(dbg->iob.io, rpc, buf, len);
@@ -885,7 +886,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		if (align > 1) {
 			next[i] = next[i] - (next[i] % align);
 		}
-		RzBreakpointItem *bpi = rz_bp_add_sw(dbg->bp, next[i], dbg->bpsize, RZ_PERM_X);
+		RzBreakpointItem *bpi = rz_bp_add_sw(dbg->bp, next[i], 0, RZ_PERM_X);
 		if (bpi) {
 			bpi->swstep = true;
 		}
@@ -1402,7 +1403,7 @@ static int rz_debug_continue_until_internal(RzDebug *dbg, ut64 addr, bool block)
 	// Check if there was another breakpoint set at addr
 	bool has_bp = rz_bp_get_in(dbg->bp, addr, RZ_PERM_X) != NULL;
 	if (!has_bp) {
-		rz_bp_add_sw(dbg->bp, addr, dbg->bpsize, RZ_PERM_X);
+		rz_bp_add_sw(dbg->bp, addr, 0, RZ_PERM_X);
 	}
 
 	// Continue until the bp is reached
