@@ -837,6 +837,7 @@ static bool test_pvector_remove_at(void) {
 	mu_end;
 }
 
+// clang-format off
 static bool test_pvector_insert(void) {
 	RzPVector v;
 
@@ -992,6 +993,7 @@ static bool test_pvector_pop_front(void) {
 
 	mu_end;
 }
+// clang-format on
 
 static bool test_pvector_push(void) {
 	RzPVector v;
