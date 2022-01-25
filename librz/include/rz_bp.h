@@ -135,7 +135,8 @@ RZ_API int rz_bp_del_index(RzBreakpoint *bp, int idx);
 RZ_API RzBreakpointItem *rz_bp_get_index(RzBreakpoint *bp, int idx);
 RZ_API int rz_bp_get_index_at(RzBreakpoint *bp, ut64 addr);
 
-RZ_API RzBreakpointItem *rz_bp_get_at(RzBreakpoint *bp, ut64 addr);
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_ending_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
 RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int perm);
 
 RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b);
@@ -148,7 +149,7 @@ RZ_API int rz_bp_add_cond(RzBreakpoint *bp, const char *cond);
 RZ_API int rz_bp_del_cond(RzBreakpoint *bp, int idx);
 RZ_API int rz_bp_add_fault(RzBreakpoint *bp, ut64 addr, int size, int perm);
 
-RZ_API RzBreakpointItem *rz_bp_add_sw(RzBreakpoint *bp, ut64 addr, int size, int perm);
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_add_sw(RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int perm);
 RZ_API RzBreakpointItem *rz_bp_add_hw(RzBreakpoint *bp, ut64 addr, int size, int perm);
 RZ_API void rz_bp_restore_one(RzBreakpoint *bp, RzBreakpointItem *b, bool set);
 RZ_API int rz_bp_restore(RzBreakpoint *bp, bool set);
