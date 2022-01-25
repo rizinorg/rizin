@@ -25,7 +25,6 @@ static void rz_bp_item_free(RzBreakpointItem *b) {
  */
 RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	int i;
-	RzBreakpointPlugin *static_plugin;
 	RzBreakpoint *bp = RZ_NEW0(RzBreakpoint);
 	if (!bp) {
 		return NULL;
@@ -40,10 +39,7 @@ RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	bp->plugins = rz_list_newf((RzListFree)free);
 	bp->nhwbps = 0;
 	for (i = 0; bp_static_plugins[i]; i++) {
-		static_plugin = RZ_NEW(RzBreakpointPlugin);
-		memcpy(static_plugin, bp_static_plugins[i],
-			sizeof(RzBreakpointPlugin));
-		rz_bp_plugin_add(bp, static_plugin);
+		rz_bp_plugin_add(bp, bp_static_plugins[i]);
 	}
 	memset(&bp->iob, 0, sizeof(bp->iob));
 	return bp;
