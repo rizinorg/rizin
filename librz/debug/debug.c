@@ -266,7 +266,8 @@ static int rz_debug_recoil(RzDebug *dbg, RzDebugRecoilMode rc_mode) {
 }
 
 /* add a breakpoint with some typical values */
-RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, const char *module, st64 m_delta) {
+RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, RZ_NULLABLE const char *module, st64 m_delta) {
+	rz_return_val_if_fail(dbg, NULL);
 	int bpsz = rz_bp_size_at(dbg->bp, addr);
 	RzBreakpointItem *bpi;
 	const char *module_name = module;
