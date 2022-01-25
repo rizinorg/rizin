@@ -134,7 +134,6 @@ RZ_API bool rz_bp_enable_all(RzBreakpoint *bp, int set);
 RZ_API int rz_bp_del_index(RzBreakpoint *bp, int idx);
 RZ_API RzBreakpointItem *rz_bp_get_index(RzBreakpoint *bp, int idx);
 RZ_API int rz_bp_get_index_at(RzBreakpoint *bp, ut64 addr);
-RZ_API RzBreakpointItem *rz_bp_item_new(RzBreakpoint *bp);
 
 RZ_API RzBreakpointItem *rz_bp_get_at(RzBreakpoint *bp, ut64 addr);
 RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int perm);
@@ -168,7 +167,7 @@ RZ_API RzList *rz_bp_traptrace_new(void);
 RZ_API void rz_bp_traptrace_enable(RzBreakpoint *bp, int enable);
 
 /* watchpoint */
-RZ_API RzBreakpointItem *rz_bp_watch_add(RzBreakpoint *bp, ut64 addr, int size, int hw, int rw);
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_watch_add(RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int hw, int perm);
 
 /* serialize */
 typedef void *RzSerializeBpParser;
