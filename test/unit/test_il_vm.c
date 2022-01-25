@@ -32,8 +32,8 @@ static bool test_rzil_vm_global_vars() {
 	// find vars from vm
 	RzILVar *find_var_r1 = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
 	RzILVar *find_var_r2 = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, "r2");
-	mu_assert_eq(var_r1, find_var_r1, "Store and find r1");
-	mu_assert_eq(var_r2, find_var_r2, "Store and find r2");
+	mu_assert_ptreq(var_r1, find_var_r1, "Store and find r1");
+	mu_assert_ptreq(var_r2, find_var_r2, "Store and find r2");
 
 	// initial contents
 	RzILVal *val_r1 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
@@ -74,7 +74,7 @@ static bool test_rzil_vm_labels() {
 
 	// find label
 	RzILEffectLabel *find_blackhole = rz_il_vm_find_label_by_name(vm, "blackhole");
-	mu_assert_eq(blackhole, find_blackhole, "Find Label");
+	mu_assert_ptreq(blackhole, find_blackhole, "Find Label");
 
 	RzBitVector *find_addr = rz_il_hash_find_addr_by_lblname(vm, "blackhole");
 	is_equal_bv = rz_bv_cmp(find_addr, addr) == 0 ? true : false;
@@ -83,7 +83,7 @@ static bool test_rzil_vm_labels() {
 	// create label lazy (without giving an address)
 	RzILEffectLabel *lazy = rz_il_vm_create_label_lazy(vm, "lazy");
 	RzILEffectLabel *find_lazy = rz_il_vm_find_label_by_name(vm, "lazy");
-	mu_assert_eq(lazy, find_lazy, "Find lazy label");
+	mu_assert_ptreq(lazy, find_lazy, "Find lazy label");
 
 	RzBitVector *lazy_addr = rz_il_hash_find_addr_by_lblname(vm, "lazy");
 	mu_assert_null(lazy_addr, "Lazy label have NULL address");
