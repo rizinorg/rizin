@@ -249,10 +249,6 @@ RZ_API bool rz_core_bin_load_structs(RZ_NONNULL RzCore *core, RZ_NONNULL const c
 		eprintf("Cannot open bin '%s'\n", file);
 		return false;
 	}
-	if (!bf) {
-		eprintf("Cannot open bin '%s'\n", file);
-		return false;
-	}
 	rz_core_bin_export_info(core, RZ_MODE_SET);
 	rz_bin_file_delete(core->bin, bf);
 	return true;
