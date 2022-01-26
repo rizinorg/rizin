@@ -139,7 +139,7 @@ static RzList *maps(RzBinFile *bf) {
 	map->paddr = 0;
 	map->vaddr = 0x10000;
 	map->psize = 0;
-	map->vsize = 0x10000;
+	map->vsize = 30000;
 	map->perm = RZ_PERM_RW;
 	map->name = strdup("mem");
 	rz_list_append(ret, map);

@@ -23,6 +23,6 @@ NAME=30,000 nulls
 FILE=bins/bf/2+5.bf
 CMDS=o~null
 EXPECT=<<EOF
- 4 - rw- 0x00010000 null://65536
+ 4 - rw- 0x00007530 null://30000
 EOF
 RUN
