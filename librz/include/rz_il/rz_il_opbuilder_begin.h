@@ -13,7 +13,7 @@
  *     #include <rz_il/rz_il_opbuilder_begin.h>
  *
  *     RzILOpEffect *lift_my_op() {
- *         return SEQ(3,
+ *         return SEQ3(
  *             SETG("a", U8(42)),
  *             SETG("x", U8(123)),
  *             STORE(0xcafe, VARG("a")));
@@ -83,8 +83,14 @@
 #define APPEND(high, low) rz_il_op_new_append(high, low)
 #define DUP(op)           rz_il_op_pure_dup(op)
 
-#define SEQ(n, ...)     rz_il_op_new_seqn(n, __VA_ARGS__)
-#define SEQ2(e0, e1)    rz_il_op_new_seq(e0, e1)
+#define SEQ2(e0, e1)                         rz_il_op_new_seq(e0, e1)
+#define SEQ3(e0, e1, e2)                     rz_il_op_new_seqn(3, e0, e1, e2)
+#define SEQ4(e0, e1, e2, e3)                 rz_il_op_new_seqn(4, e0, e1, e2, e3)
+#define SEQ5(e0, e1, e2, e3, e4)             rz_il_op_new_seqn(5, e0, e1, e2, e3, e4)
+#define SEQ6(e0, e1, e2, e3, e4, e5)         rz_il_op_new_seqn(6, e0, e1, e2, e3, e4, e5)
+#define SEQ7(e0, e1, e2, e3, e4, e5, e6)     rz_il_op_new_seqn(7, e0, e1, e2, e3, e4, e5, e6)
+#define SEQ8(e0, e1, e2, e3, e4, e5, e6, e7) rz_il_op_new_seqn(8, e0, e1, e2, e3, e4, e5, e6, e7)
+
 #define NOP             rz_il_op_new_nop()
 #define BRANCH(c, t, f) rz_il_op_new_branch(c, t, f)
 #define JMP(tgt)        rz_il_op_new_jmp(tgt)

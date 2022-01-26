@@ -49,7 +49,7 @@ static void _6502_analysis_esil_update_flags(RzAnalysisOp *op, int flags) {
 /* ORA, AND, EOR, ADC, STA, LDA, CMP and SBC share this pattern */
 static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *data, size_t len,
 	RZ_NULLABLE char *esiladdr_out, int esiladdr_size,
-	_6502ILAddr *il_out) {
+	RZ_NULLABLE _6502ILAddr *il_out) {
 	if (len < 1) {
 		return;
 	}
@@ -62,7 +62,9 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 		if (esiladdr_out) {
 			snprintf(esiladdr_out, esiladdr_size, "0x%02x", (unsigned int)imm);
 		}
-		_6502_il_immediate(il_out, imm);
+		if (il_out) {
+			_6502_il_immediate(il_out, imm);
+		}
 		break;
 	case 0x05: // op $ff
 		op->cycles = 3;
@@ -70,7 +72,9 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 		if (esiladdr_out) {
 			snprintf(esiladdr_out, esiladdr_size, "0x%02x", (unsigned int)imm);
 		}
-		_6502_il_addr_absolute(il_out, imm);
+		if (il_out) {
+			_6502_il_addr_absolute(il_out, imm);
+		}
 		break;
 	case 0x15: // op $ff,x
 		op->cycles = 4;
@@ -78,7 +82,9 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 		if (esiladdr_out) {
 			snprintf(esiladdr_out, esiladdr_size, "x,0x%02x,+", (unsigned int)imm);
 		}
-		_6502_il_addr_zero_page_reg(il_out, imm, "x");
+		if (il_out) {
+			_6502_il_addr_zero_page_reg(il_out, imm, "x");
+		}
 		break;
 	case 0x0d: // op $ffff
 		op->cycles = 4;
@@ -86,7 +92,9 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 		if (esiladdr_out) {
 			snprintf(esiladdr_out, esiladdr_size, "0x%04x", (unsigned int)imm);
 		}
-		_6502_il_addr_absolute(il_out, imm);
+		if (il_out) {
+			_6502_il_addr_absolute(il_out, imm);
+		}
 		break;
 	case 0x1d: // op $ffff,x
 		// FIXME: Add 1 if page boundary is crossed.
@@ -95,7 +103,9 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 		if (esiladdr_out) {
 			snprintf(esiladdr_out, esiladdr_size, "x,0x%04x,+", (unsigned int)imm);
 		}
-		_6502_il_addr_reg(il_out, imm, "x");
+		if (il_out) {
+			_6502_il_addr_reg(il_out, imm, "x");
+		}
 		break;
 	case 0x19: // op $ffff,y
 		// FIXME: Add 1 if page boundary is crossed.
@@ -104,7 +114,9 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 		if (esiladdr_out) {
 			snprintf(esiladdr_out, esiladdr_size, "y,0x%04x,+", (unsigned int)imm);
 		}
-		_6502_il_addr_reg(il_out, imm, "y");
+		if (il_out) {
+			_6502_il_addr_reg(il_out, imm, "y");
+		}
 		break;
 	case 0x01: // op ($ff,x)
 		op->cycles = 6;
@@ -112,7 +124,9 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 		if (esiladdr_out) {
 			snprintf(esiladdr_out, esiladdr_size, "x,0x%02x,+,[2]", (unsigned int)imm);
 		}
-		_6502_il_addr_indirect_x(il_out, imm);
+		if (il_out) {
+			_6502_il_addr_indirect_x(il_out, imm);
+		}
 		break;
 	case 0x11: // op ($ff),y
 		// FIXME: Add 1 if page boundary is crossed.
@@ -121,7 +135,9 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 		if (esiladdr_out) {
 			snprintf(esiladdr_out, esiladdr_size, "y,0x%02x,[2],+", (unsigned int)imm);
 		}
-		_6502_il_addr_indirect_y(il_out, imm);
+		if (il_out) {
+			_6502_il_addr_indirect_y(il_out, imm);
+		}
 		break;
 	}
 }
@@ -129,7 +145,7 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 /* ASL, ROL, LSR, ROR, STX, LDX, DEC and INC share this pattern */
 static void _6502_analysis_esil_get_addr_pattern2(RzAnalysisOp *op, const ut8 *data, size_t len,
 	char *addrbuf, int addrsize, const char *reg,
-	_6502ILAddr *il_out) {
+	RZ_NULLABLE _6502ILAddr *il_out) {
 	// turn off bits 5, 6 and 7
 	if (len < 1) {
 		return;
@@ -140,36 +156,48 @@ static void _6502_analysis_esil_get_addr_pattern2(RzAnalysisOp *op, const ut8 *d
 		op->cycles = 2;
 		imm = (len > 1) ? data[1] : 0;
 		snprintf(addrbuf, addrsize, "0x%02x", (unsigned int)imm);
-		_6502_il_immediate(il_out, imm);
+		if (il_out) {
+			_6502_il_immediate(il_out, imm);
+		}
 		break;
 	case 0x0a: // op a
 		op->cycles = 2;
 		snprintf(addrbuf, addrsize, "a");
-		_6502_il_accumulator(il_out);
+		if (il_out) {
+			_6502_il_accumulator(il_out);
+		}
 		break;
 	case 0x06: // op $ff
 		op->cycles = 5;
 		imm = (len > 1) ? data[1] : 0;
 		snprintf(addrbuf, addrsize, "0x%02x", (unsigned int)imm);
-		_6502_il_addr_absolute(il_out, imm);
+		if (il_out) {
+			_6502_il_addr_absolute(il_out, imm);
+		}
 		break;
 	case 0x16: // op $ff,x (or op $ff,y)
 		op->cycles = 6;
 		imm = (len > 1) ? data[1] : 0;
 		snprintf(addrbuf, addrsize, "%s,0x%02x,+", reg, imm);
-		_6502_il_addr_zero_page_reg(il_out, imm, reg);
+		if (il_out) {
+			_6502_il_addr_zero_page_reg(il_out, imm, reg);
+		}
 		break;
 	case 0x0e: // op $ffff
 		op->cycles = 6;
 		imm = (len > 2) ? data[1] | data[2] << 8 : 0;
 		snprintf(addrbuf, addrsize, "0x%04x", imm);
-		_6502_il_addr_absolute(il_out, imm);
+		if (il_out) {
+			_6502_il_addr_absolute(il_out, imm);
+		}
 		break;
 	case 0x1e: // op $ffff,x (or op $ffff,y)
 		op->cycles = 7;
 		imm = (len > 2) ? data[1] | data[2] << 8 : 0;
 		snprintf(addrbuf, addrsize, "%s,0x%04x,+", reg, imm);
-		_6502_il_addr_reg(il_out, imm, reg);
+		if (il_out) {
+			_6502_il_addr_reg(il_out, imm, reg);
+		}
 		break;
 	}
 }
@@ -177,7 +205,7 @@ static void _6502_analysis_esil_get_addr_pattern2(RzAnalysisOp *op, const ut8 *d
 /* BIT, JMP, JMP(), STY, LDY, CPY, and CPX share this pattern */
 static void _6502_analysis_esil_get_addr_pattern3(RzAnalysisOp *op, const ut8 *data, size_t len,
 	char *addrbuf, int addrsize, const char *reg,
-	_6502ILAddr *il_out) {
+	RZ_NULLABLE _6502ILAddr *il_out) {
 	// turn off bits 5, 6 and 7
 	if (len < 1) {
 		return;
@@ -188,36 +216,48 @@ static void _6502_analysis_esil_get_addr_pattern3(RzAnalysisOp *op, const ut8 *d
 		op->cycles = 2;
 		imm = (len > 1) ? data[1] : 0;
 		snprintf(addrbuf, addrsize, "0x%02x", imm);
-		_6502_il_immediate(il_out, imm);
+		if (il_out) {
+			_6502_il_immediate(il_out, imm);
+		}
 		break;
 	case 0x08: // op a
 		op->cycles = 2;
 		snprintf(addrbuf, addrsize, "a");
-		_6502_il_accumulator(il_out);
+		if (il_out) {
+			_6502_il_accumulator(il_out);
+		}
 		break;
 	case 0x04: // op $ff
 		op->cycles = 5;
 		imm = (len > 1) ? data[1] : 0;
 		snprintf(addrbuf, addrsize, "0x%02x", imm);
-		_6502_il_addr_absolute(il_out, imm);
+		if (il_out) {
+			_6502_il_addr_absolute(il_out, imm);
+		}
 		break;
 	case 0x14: // op $ff,x
 		op->cycles = 6;
 		imm = (len > 1) ? data[1] : 0;
 		snprintf(addrbuf, addrsize, "%s,0x%02x,+", reg, imm);
-		_6502_il_addr_zero_page_reg(il_out, imm, reg);
+		if (il_out) {
+			_6502_il_addr_zero_page_reg(il_out, imm, reg);
+		}
 		break;
 	case 0x0c: // op $ffff
 		op->cycles = 6;
 		imm = (len > 2) ? data[1] | data[2] << 8 : 0;
 		snprintf(addrbuf, addrsize, "0x%04x", imm);
-		_6502_il_addr_absolute(il_out, imm);
+		if (il_out) {
+			_6502_il_addr_absolute(il_out, imm);
+		}
 		break;
 	case 0x1c: // op $ffff,x
 		op->cycles = 7;
 		imm = (len > 2) ? data[1] | data[2] << 8 : 0;
 		snprintf(addrbuf, addrsize, "%s,0x%04x,+", reg, imm);
-		_6502_il_addr_reg(il_out, imm, reg);
+		if (il_out) {
+			_6502_il_addr_reg(il_out, imm, reg);
+		}
 		break;
 	}
 }
@@ -385,6 +425,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	op->id = data[0];
 	rz_strbuf_init(&op->esil);
 	_6502ILAddr il_addr = { 0 };
+	_6502ILAddr *il_addr_ptr = (mask & RZ_ANALYSIS_OP_MASK_IL) ? &il_addr : NULL;
 	switch (data[0]) {
 	case 0x02:
 	case 0x03:
@@ -507,7 +548,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// PC was already incremented by one at this point. Needs to incremented once more
 		// New PC is Interrupt Vector: $fffe. (FIXME: Confirm this is valid for all 6502)
 		rz_strbuf_set(&op->esil, ",1,I,=,0,D,=,flags,0x10,|,0x100,sp,+,=[1],pc,1,+,0xfe,sp,+,=[2],3,sp,-=,0xfffe,[2],pc,=");
-		op->il_op = _6502_il_op_brk((ut16)addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_brk((ut16)addr);
+		}
 		break;
 
 	// FLAGS
@@ -522,15 +565,19 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// FIXME: what opcode for this?
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		_6502_analysis_esil_flags(op, data[0]);
-		op->il_op = _6502_il_op_flag(data[0]);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_flag(data[0]);
+		}
 		break;
 	// BIT
 	case 0x24: // bit $ff
 	case 0x2c: // bit $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, NULL, &il_addr);
+		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, NULL, il_addr_ptr);
 		rz_strbuf_setf(&op->esil, "%s,[1],0x80,&,!,!,N,=,%s,[1],0x40,&,!,!,V,=,a,%s,[1],&,0xff,&,!,Z,=", addrbuf, addrbuf, addrbuf);
-		op->il_op = _6502_il_op_bit(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_bit(il_addr_ptr);
+		}
 		break;
 	// ADC
 	case 0x69: // adc #$ff
@@ -544,7 +591,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// FIXME: update V
 		// FIXME: support BCD mode
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, &il_addr);
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		if (data[0] == 0x69) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,a,+=,7,$c,C,a,+=,7,$c,|,C,:=", addrbuf);
 		} else {
@@ -553,7 +600,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
 		// fix Z
 		rz_strbuf_append(&op->esil, ",a,a,=,$z,Z,:=");
-		op->il_op = _6502_il_op_adc(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_adc(il_addr_ptr);
+		}
 		break;
 	// SBC
 	case 0xe9: // sbc #$ff
@@ -567,7 +616,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// FIXME: update V
 		// FIXME: support BCD mode
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, &il_addr);
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		if (data[0] == 0xe9) { // immediate mode
 			rz_strbuf_setf(&op->esil, "C,!,%s,+,a,-=", addrbuf);
 		} else {
@@ -576,7 +625,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_BNZ);
 		// fix Z and revert C
 		rz_strbuf_append(&op->esil, ",a,a,=,$z,Z,:=,C,!=");
-		op->il_op = _6502_il_op_sbc(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_sbc(il_addr_ptr);
+		}
 		break;
 	// ORA
 	case 0x09: // ora #$ff
@@ -588,7 +639,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x01: // ora ($ff,x)
 	case 0x11: { // ora ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
-		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, &il_addr);
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		bool is_immediate = data[0] == 0x09;
 		if (is_immediate) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,a,|=", addrbuf);
@@ -596,7 +647,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			rz_strbuf_setf(&op->esil, "%s,[1],a,|=", addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_ora(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_ora(il_addr_ptr);
+		}
 		break;
 	}
 	// AND
@@ -609,7 +662,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x21: // and ($ff,x)
 	case 0x31: // and ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
-		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, &il_addr);
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		bool is_immediate = data[0] == 0x29;
 		if (is_immediate) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,a,&=", addrbuf);
@@ -617,7 +670,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			rz_strbuf_setf(&op->esil, "%s,[1],a,&=", addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_and(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_and(il_addr_ptr);
+		}
 		break;
 	// EOR
 	case 0x49: // eor #$ff
@@ -629,14 +684,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x41: // eor ($ff,x)
 	case 0x51: // eor ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, &il_addr);
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		if (data[0] == 0x49) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,a,^=", addrbuf);
 		} else {
 			rz_strbuf_setf(&op->esil, "%s,[1],a,^=", addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_eor(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_eor(il_addr_ptr);
+		}
 		break;
 	// ASL
 	case 0x0a: // asl a
@@ -645,14 +702,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x0e: // asl $ffff
 	case 0x1e: // asl $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
-		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", &il_addr);
+		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", il_addr_ptr);
 		if (data[0] == 0x0a) {
 			rz_strbuf_set(&op->esil, "1,a,<<=,7,$c,C,:=,a,a,=");
 		} else {
 			rz_strbuf_setf(&op->esil, "1,%s,[1],<<,%s,=[1],7,$c,C,:=", addrbuf, addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_asl(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_asl(il_addr_ptr);
+		}
 		break;
 	// LSR
 	case 0x4a: // lsr a
@@ -661,14 +720,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x4e: // lsr $ffff
 	case 0x5e: // lsr $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
-		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", &il_addr);
+		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", il_addr_ptr);
 		if (data[0] == 0x4a) {
 			rz_strbuf_set(&op->esil, "1,a,&,C,=,1,a,>>=");
 		} else {
 			rz_strbuf_setf(&op->esil, "1,%s,[1],&,C,=,1,%s,[1],>>,%s,=[1]", addrbuf, addrbuf, addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_lsr(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_lsr(il_addr_ptr);
+		}
 		break;
 	// ROL
 	case 0x2a: // rol a
@@ -677,14 +738,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x2e: // rol $ffff
 	case 0x3e: // rol $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", &il_addr);
+		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", il_addr_ptr);
 		if (data[0] == 0x2a) {
 			rz_strbuf_set(&op->esil, "1,a,<<,C,|,a,=,7,$c,C,:=,a,a,=");
 		} else {
 			rz_strbuf_setf(&op->esil, "1,%s,[1],<<,C,|,%s,=[1],7,$c,C,:=", addrbuf, addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_rol(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_rol(il_addr_ptr);
+		}
 		break;
 	// ROR
 	case 0x6a: // ror a
@@ -695,14 +758,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// uses N as temporary to hold C value. but in fact,
 		// it is not temporary since in all ROR ops, N will have the value of C
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
-		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", &il_addr);
+		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", il_addr_ptr);
 		if (data[0] == 0x6a) {
 			rz_strbuf_set(&op->esil, "C,N,=,1,a,&,C,=,1,a,>>,7,N,<<,|,a,=");
 		} else {
 			rz_strbuf_setf(&op->esil, "C,N,=,1,%s,[1],&,C,=,1,%s,[1],>>,7,N,<<,|,%s,=[1]", addrbuf, addrbuf, addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_ror(&il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_ror(il_addr_ptr);
+		}
 		break;
 	// INC
 	case 0xe6: // inc $ff
@@ -710,10 +775,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xee: // inc $ffff
 	case 0xfe: // inc $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", &il_addr);
+		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", il_addr_ptr);
 		rz_strbuf_setf(&op->esil, "%s,++=[1]", addrbuf);
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_inc(&il_addr, true);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_inc(il_addr_ptr, true);
+		}
 		break;
 	// DEC
 	case 0xc6: // dec $ff
@@ -721,10 +788,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xce: // dec $ffff
 	case 0xde: // dec $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", &il_addr);
+		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "x", il_addr_ptr);
 		rz_strbuf_setf(&op->esil, "%s,--=[1]", addrbuf);
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_inc(&il_addr, false);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_inc(il_addr_ptr, false);
+		}
 		break;
 	// INX, INY
 	case 0xe8: // inx
@@ -732,7 +801,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->cycles = 2;
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		_6502_analysis_esil_inc_reg(op, data[0], "+");
-		op->il_op = _6502_il_op_inc_reg(data[0] == 0xe8 ? "x" : "y", true);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_inc_reg(data[0] == 0xe8 ? "x" : "y", true);
+		}
 		break;
 	// DEX, DEY
 	case 0xca: // dex
@@ -740,7 +811,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->cycles = 2;
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		_6502_analysis_esil_inc_reg(op, data[0], "-");
-		op->il_op = _6502_il_op_inc_reg(data[0] == 0xca ? "x" : "y", false);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_inc_reg(data[0] == 0xca ? "x" : "y", false);
+		}
 		break;
 	// CMP
 	case 0xc9: // cmp #$ff
@@ -752,7 +825,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xc1: // cmp ($ff,x)
 	case 0xd1: // cmp ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, &il_addr);
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		if (data[0] == 0xc9) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,a,==", addrbuf);
 		} else {
@@ -761,14 +834,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_BNZ);
 		// invert C, since C=1 when A-M >= 0
 		rz_strbuf_append(&op->esil, ",C,!,C,=");
-		op->il_op = _6502_il_op_cmp("a", &il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_cmp("a", il_addr_ptr);
+		}
 		break;
 	// CPX
 	case 0xe0: // cpx #$ff
 	case 0xe4: // cpx $ff
 	case 0xec: // cpx $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, NULL, &il_addr);
+		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, NULL, il_addr_ptr);
 		if (data[0] == 0xe0) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,x,==", addrbuf);
 		} else {
@@ -777,14 +852,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_BNZ);
 		// invert C, since C=1 when A-M >= 0
 		rz_strbuf_append(&op->esil, ",C,!,C,=");
-		op->il_op = _6502_il_op_cmp("x", &il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_cmp("x", il_addr_ptr);
+		}
 		break;
 	// CPY
 	case 0xc0: // cpy #$ff
 	case 0xc4: // cpy $ff
 	case 0xcc: // cpy $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, NULL, &il_addr);
+		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, NULL, il_addr_ptr);
 		if (data[0] == 0xc0) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,y,==", addrbuf);
 		} else {
@@ -793,7 +870,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_BNZ);
 		// invert C, since C=1 when A-M >= 0
 		rz_strbuf_append(&op->esil, ",C,!,C,=");
-		op->il_op = _6502_il_op_cmp("y", &il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_cmp("y", il_addr_ptr);
+		}
 		break;
 	// BRANCHES
 	case 0x10: // bpl $ffff
@@ -822,7 +901,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// FIXME: add a type of conditional
 		// op->cond = RZ_TYPE_COND_LE;
 		_6502_analysis_esil_ccall(op, data[0]);
-		op->il_op = _6502_il_op_branch(data[0], op->jump);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_branch(data[0], op->jump);
+		}
 		break;
 	// JSR
 	case 0x20: // jsr $ffff
@@ -835,7 +916,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// control to the following address
 		// stack is on page one and sp is an 8-bit reg: operations must be done like: sp + 0x100
 		rz_strbuf_setf(&op->esil, "1,pc,-,0xff,sp,+,=[2],0x%04" PFMT64x ",pc,=,2,sp,-=", op->jump);
-		op->il_op = _6502_il_op_jsr(op->jump, addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_jsr(op->jump, addr);
+		}
 		break;
 	// JMP
 	case 0x4c: // jmp $ffff
@@ -843,14 +926,18 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = (len > 2) ? data[1] | data[2] << 8 : 0;
 		rz_strbuf_setf(&op->esil, "0x%04" PFMT64x ",pc,=", op->jump);
-		op->il_op = _6502_il_op_jmp(op->jump, false);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_jmp(op->jump, false);
+		}
 		break;
 	case 0x6c: { // jmp ($ffff)
 		op->cycles = 5;
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		ut16 imm = len > 2 ? data[1] | data[2] << 8 : 0;
 		rz_strbuf_setf(&op->esil, "0x%04x,[2],pc,=", imm);
-		op->il_op = _6502_il_op_jmp(imm, true);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_jmp(imm, true);
+		}
 		break;
 	}
 	// RTS
@@ -863,7 +950,9 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// Operation:  PC from Stack, PC + 1 -> PC
 		// stack is on page one and sp is an 8-bit reg: operations must be done like: sp + 0x100
 		rz_strbuf_set(&op->esil, "0x101,sp,+,[2],pc,=,pc,++=,2,sp,+=");
-		op->il_op = _6502_il_op_rts();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_rts();
+		}
 		break;
 	// RTI
 	case 0x40: // rti
@@ -875,13 +964,17 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// Operation: P from Stack, PC from Stack
 		// stack is on page one and sp is an 8-bit reg: operations must be done like: sp + 0x100
 		rz_strbuf_set(&op->esil, "0x101,sp,+,[1],flags,=,0x102,sp,+,[2],pc,=,3,sp,+=");
-		op->il_op = _6502_il_op_rti();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_rti();
+		}
 		break;
 	// NOP
 	case 0xea: // nop
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->cycles = 2;
-		op->il_op = rz_il_op_new_nop();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = rz_il_op_new_nop();
+		}
 		break;
 	// LDA
 	case 0xa9: // lda #$ff
@@ -893,14 +986,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xa1: // lda ($ff,x)
 	case 0xb1: // lda ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, &il_addr);
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		if (data[0] == 0xa9) {
 			rz_strbuf_setf(&op->esil, "%s,a,=", addrbuf);
 		} else {
 			rz_strbuf_setf(&op->esil, "%s,[1],a,=", addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_ld("a", &il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_ld("a", il_addr_ptr);
+		}
 		break;
 	// LDX
 	case 0xa2: // ldx #$ff
@@ -909,14 +1004,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xae: // ldx $ffff
 	case 0xbe: // ldx $ffff,y
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "y", &il_addr);
+		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "y", il_addr_ptr);
 		if (data[0] == 0xa2) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,x,=", addrbuf);
 		} else {
 			rz_strbuf_setf(&op->esil, "%s,[1],x,=", addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_ld("x", &il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_ld("x", il_addr_ptr);
+		}
 		break;
 	// LDY
 	case 0xa0: // ldy #$ff
@@ -925,14 +1022,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xac: // ldy $ffff
 	case 0xbc: // ldy $ffff,x
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, "x", &il_addr);
+		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, "x", il_addr_ptr);
 		if (data[0] == 0xa0) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,y,=", addrbuf);
 		} else {
 			rz_strbuf_setf(&op->esil, "%s,[1],y,=", addrbuf);
 		}
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
-		op->il_op = _6502_il_op_ld("y", &il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_ld("y", il_addr_ptr);
+		}
 		break;
 	// STA
 	case 0x85: // sta $ff
@@ -943,27 +1042,33 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x81: // sta ($ff,x)
 	case 0x91: // sta ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, &il_addr);
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		rz_strbuf_setf(&op->esil, "a,%s,=[1]", addrbuf);
-		op->il_op = _6502_il_op_st("a", &il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_st("a", il_addr_ptr);
+		}
 		break;
 	// STX
 	case 0x86: // stx $ff
 	case 0x96: // stx $ff,y
 	case 0x8e: // stx $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "y", &il_addr);
+		_6502_analysis_esil_get_addr_pattern2(op, data, len, addrbuf, buffsize, "y", il_addr_ptr);
 		rz_strbuf_setf(&op->esil, "x,%s,=[1]", addrbuf);
-		op->il_op = _6502_il_op_st("x", &il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_st("x", il_addr_ptr);
+		}
 		break;
 	// STY
 	case 0x84: // sty $ff
 	case 0x94: // sty $ff,x
 	case 0x8c: // sty $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, "x", &il_addr);
+		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, "x", il_addr_ptr);
 		rz_strbuf_setf(&op->esil, "y,%s,=[1]", addrbuf);
-		op->il_op = _6502_il_op_st("y", &il_addr);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_st("y", il_addr_ptr);
+		}
 		break;
 	// PHP/PHA
 	case 0x08: // php
@@ -973,10 +1078,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = 1;
 		_6502_analysis_esil_push(op, data[0]);
-		if (data[0] == 0x08) {
-			op->il_op = _6502_il_op_php();
-		} else {
-			op->il_op = _6502_il_op_pha();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			if (data[0] == 0x08) {
+				op->il_op = _6502_il_op_php();
+			} else {
+				op->il_op = _6502_il_op_pha();
+			}
 		}
 		break;
 	// PLP,PLA
@@ -987,10 +1094,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -1;
 		_6502_analysis_esil_pop(op, data[0]);
-		if (data[0] == 0x28) {
-			op->il_op = _6502_il_op_plp();
-		} else {
-			op->il_op = _6502_il_op_pla();
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			if (data[0] == 0x28) {
+				op->il_op = _6502_il_op_plp();
+			} else {
+				op->il_op = _6502_il_op_pla();
+			}
 		}
 		break;
 	// TAX,TYA,...
@@ -1001,10 +1110,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->cycles = 2;
 		_6502_analysis_esil_mov(op, data[0]);
-		op->il_op = _6502_il_op_transfer(
-			data[0] == 0xaa ? "x" : (data[0] == 0xa8 ? "y" : "a"),
-			data[0] == 0x8a ? "x" : (data[0] == 0x98 ? "y" : "a"),
-			true);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_transfer(
+				data[0] == 0xaa ? "x" : (data[0] == 0xa8 ? "y" : "a"),
+				data[0] == 0x8a ? "x" : (data[0] == 0x98 ? "y" : "a"),
+				true);
+		}
 		break;
 	case 0x9a: // txs
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
@@ -1013,14 +1124,18 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// FIXME: should I get register X a place it here?
 		// op->stackptr = get_register_x();
 		_6502_analysis_esil_mov(op, data[0]);
-		op->il_op = _6502_il_op_transfer("sp", "x", false);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_transfer("sp", "x", false);
+		}
 		break;
 	case 0xba: // tsx
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->cycles = 2;
 		op->stackop = RZ_ANALYSIS_STACK_GET;
 		_6502_analysis_esil_mov(op, data[0]);
-		op->il_op = _6502_il_op_transfer("x", "sp", true);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = _6502_il_op_transfer("x", "sp", true);
+		}
 		break;
 	}
 	return op->size;

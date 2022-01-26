@@ -2227,7 +2227,7 @@ static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *t
 	RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, type, NULL);
 	rz_list_foreach (list, iter, var) {
 		if (vindex == 0) {
-			rz_analysis_var_set_type(var, ttype);
+			rz_analysis_var_set_type(var, ttype, true);
 			break;
 		}
 		vindex--;
