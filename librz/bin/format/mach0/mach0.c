@@ -2751,12 +2751,12 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 			RZ_FREE(next);
 			goto beach;
 		}
-		if (SZT_ADD_OVFCHK((size_t)tr, (size_t)trie) || (size_t)tr + trie >= end) {
+		if (tr >= size) {
 			RZ_LOG_ERROR("malformed export trie\n");
 			RZ_FREE(next);
 			goto beach;
 		}
-		next->node = (size_t)tr + trie;
+		next->node = trie + (size_t)tr;
 		{
 			// avoid loops
 			RzListIter *it;
