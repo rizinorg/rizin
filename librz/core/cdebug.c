@@ -164,7 +164,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 		rz_cons_break_pop();
 		return true;
 	}
-	RZ_LOG_ERROR("Continue until 0x%08" PFMT64x "\n", addr);
+	eprintf("Continue until 0x%08" PFMT64x "\n", addr);
 	rz_reg_arena_swap(core->dbg->reg, true);
 	if (rz_bp_add_sw(core->dbg->bp, addr, 0, RZ_PERM_X)) {
 		if (rz_debug_is_dead(core->dbg)) {
