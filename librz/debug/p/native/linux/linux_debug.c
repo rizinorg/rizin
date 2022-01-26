@@ -100,7 +100,7 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 		case SIGTRAP: {
 			if (dbg->glob_libs || dbg->glob_unlibs) {
 				ut64 pc_addr = rz_debug_reg_get(dbg, "PC");
-				RzBreakpointItem *b = rz_bp_get_at(dbg->bp, pc_addr - dbg->bpsize);
+				RzBreakpointItem *b = rz_bp_get_ending_at(dbg->bp, pc_addr);
 				if (b && b->internal) {
 					char *p = strstr(b->data, "dbg.");
 					if (p) {
@@ -865,7 +865,7 @@ RzList *linux_thread_list(RzDebug *dbg, int pid, RzList *list) {
 		struct dirent *de;
 		DIR *dh = opendir(buf);
 		// Update the process' memory maps to set correct paths
-		dbg->corebind.syncDebugMaps(dbg->corebind.core);
+		rz_debug_map_sync(dbg);
 		while ((de = readdir(dh))) {
 			if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..")) {
 				continue;

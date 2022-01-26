@@ -652,13 +652,6 @@ static bool cb_asmarch(void *user, void *data) {
 	return true;
 }
 
-static bool cb_dbgbpsize(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->dbg->bpsize = node->i_value;
-	return true;
-}
-
 static bool cb_dbgbtdepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -725,8 +718,7 @@ static bool cb_asmbits(void *user, void *data) {
 		update_syscall_ns(core);
 		__setsegoff(core->config, asmarch, core->analysis->bits);
 		if (core->dbg) {
-			rz_bp_use(core->dbg->bp, asmarch, core->analysis->bits);
-			rz_config_set_i(core->config, "dbg.bpsize", rz_bp_size(core->dbg->bp));
+			rz_bp_use(core->dbg->bp, asmarch);
 		}
 		/* set pcalign */
 		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
@@ -3453,12 +3445,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	rz_config_set_getter(cfg, "dbg.swstep", (RzConfigCallback)__dbg_swstep_getter);
 
-// TODO: This should be specified at first by the debug backend when attaching
-#if __arm__ || __mips__
-	SETICB("dbg.bpsize", 4, &cb_dbgbpsize, "Size of software breakpoints");
-#else
-	SETICB("dbg.bpsize", 1, &cb_dbgbpsize, "Size of software breakpoints");
-#endif
 	SETBPREF("dbg.bpsysign", "false", "Ignore system breakpoints");
 	SETICB("dbg.btdepth", 128, &cb_dbgbtdepth, "Depth of backtrace");
 	SETCB("dbg.trace", "false", &cb_trace, "Trace program execution (see asm.trace)");

@@ -21,27 +21,32 @@ RZ_API int rz_bp_plugin_del(RzBreakpoint *bp, const char *name) {
 	return false;
 }
 
-RZ_API int rz_bp_plugin_add(RzBreakpoint *bp, RzBreakpointPlugin *foo) {
+RZ_API bool rz_bp_plugin_add(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpointPlugin *plugin) {
+	rz_return_val_if_fail(bp && plugin, false);
 	RzListIter *iter;
 	RzBreakpointPlugin *h;
-	if (!bp) {
-		eprintf("Cannot add plugin because dbg->bp is null and/or plugin is null\n");
-		return false;
-	}
 	/* avoid dupped plugins */
 	rz_list_foreach (bp->bps, iter, h) {
-		if (!strcmp(h->name, foo->name)) {
+		if (!strcmp(h->name, plugin->name)) {
 			return false;
 		}
 	}
+	RzBreakpointPlugin *dup = RZ_NEW(RzBreakpointPlugin);
+	if (!dup) {
+		return false;
+	}
+	memcpy(dup, plugin, sizeof(RzBreakpointPlugin));
 	bp->nbps++;
-	rz_list_append(bp->plugins, foo);
+	rz_list_append(bp->plugins, dup);
 	return true;
 }
 
-RZ_API int rz_bp_use(RzBreakpoint *bp, const char *name, int bits) {
+/**
+ * Switch to the registered breakpoint plugin called \p name
+ */
+RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(bp && name, false);
 	RzListIter *iter;
-	bp->bits = bits;
 	RzBreakpointPlugin *h;
 	rz_list_foreach (bp->plugins, iter, h) {
 		if (!strcmp(h->name, name)) {

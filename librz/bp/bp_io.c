@@ -39,8 +39,8 @@ RZ_API bool rz_bp_restore_except(RzBreakpoint *bp, bool set, ut64 addr) {
 	RzListIter *iter;
 	RzBreakpointItem *b;
 
-	if (set && bp->bpinmaps) {
-		bp->corebind.syncDebugMaps(bp->corebind.core);
+	if (set && bp->bpinmaps && bp->ctx.maps_sync) {
+		bp->ctx.maps_sync(bp->ctx.user);
 	}
 
 	rz_list_foreach (bp->bps, iter, b) {
