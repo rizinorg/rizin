@@ -12,11 +12,13 @@
 #include <rz_cons.h>
 #include <rz_lib.h>
 #include <rz_io.h>
+#include <rz_bin.h>
 
 typedef struct {
 	bool showstr;
 	bool rad;
 	bool identify;
+	bool import; // search within import table
 	bool quiet;
 	bool hexstr;
 	bool widestr;
@@ -139,7 +141,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(const char *argv0, int line) {
-	printf("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] -|file|dir ..\n", argv0);
+	printf("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S|I] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
@@ -158,6 +160,7 @@ static int show_help(const char *argv0, int line) {
 		" -r         print using rizin commands\n"
 		" -s [str]   search for a specific string (can be used multiple times)\n"
 		" -S [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
+		" -I [str]   search for a specific function in import table.\n"
 		" -t [to]    stop search at address 'to'\n"
 		" -q         quiet - do not show headings (filenames) above matching contents (default for searching a single file)\n"
 		" -v         print version and exit\n"
@@ -188,6 +191,45 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		free(cmd);
 		free(efile);
 		return 0;
+	}
+
+	if (ro->import) {
+		RzBin *bin = rz_bin_new();
+		RzIO *rio = rz_io_new();
+		if (!bin || !rio) {
+			result = 1;
+			goto import_end;
+		}
+		rz_io_bind(rio, &bin->iob);
+
+		RzBinOptions opt = { 0 };
+		rz_bin_options_init(&opt, 0, 0, 0, false, false);
+
+		RzBinFile *bf = rz_bin_open(bin, file, &opt);
+		if (!bf) {
+			result = 1;
+			goto import_end;
+		}
+
+		RzBinObject *obj = rz_bin_cur_object(bin);
+		const RzList *imports = rz_bin_object_get_imports(obj);
+		RzBinImport *import;
+		RzListIter *it;
+
+		rz_list_foreach (imports, it, import) {
+			rz_list_foreach (ro->keywords, iter, kw) {
+				if (!strcmp(import->name, kw)) {
+					printf("ordinal: %d %s\n", import->ordinal, import->name);
+				}
+			}
+		}
+		result = 0;
+
+	import_end:
+		rz_bin_free(bin);
+		rz_io_free(rio);
+		free(efile);
+		return result;
 	}
 
 	RzIO *io = rz_io_new();
@@ -357,7 +399,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	const char *file = NULL;
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:S:x:Xzf:F:t:E:rqnhvZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:S:I:x:Xzf:F:t:E:rqnhvZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -397,6 +439,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.mode = RZ_SEARCH_KEYWORD;
 			ro.hexstr = false;
 			ro.widestr = true;
+			rz_list_append(ro.keywords, (void *)opt.arg);
+			break;
+		case 'I':
+			ro.import = true;
 			rz_list_append(ro.keywords, (void *)opt.arg);
 			break;
 		case 'b':
