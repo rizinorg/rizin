@@ -2632,7 +2632,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 	ut8 *trie = NULL;
 	RzList *states = NULL;
 	ut64 size = bin->dyld_info->export_size;
-	if (!size) {
+	if (!size || size >= SIZE_MAX) {
 		return count;
 	}
 	trie = calloc(size + 1, 1);
