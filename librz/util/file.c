@@ -924,7 +924,7 @@ static RzMmap *file_mmap(RzMmap *m) {
 	m->len = lseek(m->fd, (off_t)0, SEEK_END);
 	if (m->len) {
 		bool is_write = (m->perm & O_WRONLY) || (m->perm & O_RDWR);
-		m->buf = mmap((void *)m->base,
+		m->buf = mmap((void *)(size_t)m->base,
 			m->len,
 			is_write ? PROT_READ | PROT_WRITE : PROT_READ,
 			MAP_SHARED, m->fd, 0);

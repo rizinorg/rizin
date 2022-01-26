@@ -3981,3 +3981,56 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=x86_64 int64_t variable overlapping removal
+FILE=bins/elf/arch-x86_64-ls
+CMDS=<<EOF
+s 0x10270
+af
+afs
+afv
+aaft
+afs
+afv
+EOF
+EXPECT=<<EOF
+void fcn.00010270(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5);
+var int64_t var_10h_2 @ rsp+0x10
+var int64_t var_8h @ rsp+0x18
+var int64_t var_10h @ rsp+0x20
+var int64_t var_18h @ rsp+0x28
+var int64_t var_20h @ rsp+0x30
+var int64_t var_30h @ rsp+0x40
+var int64_t var_34h @ rsp+0x44
+var int64_t var_38h @ rsp+0x48
+var int64_t var_40h @ rsp+0x50
+var int64_t var_48h @ rsp+0x58
+var int64_t var_4ch @ rsp+0x5c
+var int64_t var_4eh @ rsp+0x5e
+var int64_t var_50h @ rsp+0x60
+var int64_t var_88h @ rsp+0x98
+arg int64_t arg5 @ r8
+arg int64_t arg4 @ rcx
+arg int64_t arg3 @ rdx
+arg int64_t arg2 @ rsi
+arg int64_t arg1 @ rdi
+void fcn.00010270(int64_t arg1, int64_t arg2, const char **s, int64_t arg4, int64_t arg5);
+var const char * var_10h_2 @ rsp+0x10
+var void ** s1 @ rsp+0x18
+var uint64_t var_10h @ rsp+0x20
+var int64_t var_18h @ rsp+0x28
+var int64_t var_20h @ rsp+0x30
+var uint64_t var_30h @ rsp+0x40
+var int64_t var_34h @ rsp+0x44
+var int64_t var_38h @ rsp+0x48
+var int64_t var_40h @ rsp+0x50
+var const char ** var_48h @ rsp+0x58
+var int64_t var_50h @ rsp+0x60
+var int64_t var_88h @ rsp+0x98
+arg int64_t arg5 @ r8
+arg int64_t arg4 @ rcx
+arg const char ** s @ rdx
+arg int64_t arg2 @ rsi
+arg int64_t arg1 @ rdi
+EOF
+RUN
