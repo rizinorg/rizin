@@ -400,18 +400,18 @@ static RzNumCalcToken get_token(RzNum *num, RzNumCalc *nc) {
 	case '^':
 	case '&':
 	case '|':
-	case '*':
-		if (cin_get(num, nc, &c) && c == '*') {
-			return nc->curr_tok = RNCEXP;
-		}
-		cin_putback(num, nc, c);
-		return nc->curr_tok = RNCMUL;
 	case '%':
 	case '/':
 	case '(':
 	case ')':
 	case '=':
 		return nc->curr_tok = (RzNumCalcToken)ch;
+	case '*':
+		if (cin_get(num, nc, &c) && c == '*') {
+			return nc->curr_tok = RNCEXP;
+		}
+		cin_putback(num, nc, c);
+		return nc->curr_tok = RNCMUL;
 	case '0':
 	case '1':
 	case '2':
