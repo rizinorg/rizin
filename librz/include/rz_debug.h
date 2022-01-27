@@ -262,7 +262,6 @@ typedef struct rz_debug_t {
 	/* dbg.* config options (see e?dbg)
 	 * NOTE: some settings are checked inline instead of tracked here.
 	 */
-	int bpsize; /* size of a breakpoint */
 	char *btalgo; /* select backtrace algorithm */
 	int btdepth; /* backtrace depth */
 	int regcols; /* display columns */
@@ -423,7 +422,7 @@ typedef struct rz_debug_pid_t {
 } RzDebugPid;
 
 #ifdef RZ_API
-RZ_API RzDebug *rz_debug_new(int hard);
+RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
 
 RZ_API int rz_debug_attach(RzDebug *dbg, int pid);
@@ -534,7 +533,7 @@ RZ_API bool rz_debug_is_dead(RzDebug *dbg);
 RZ_API int rz_debug_map_protect(RzDebug *dbg, ut64 addr, int size, int perms);
 
 /* breakpoints (most in rz_bp, this calls those) */
-RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, const char *module, st64 m_delta);
+RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, RZ_NULLABLE const char *module, st64 m_delta);
 RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base);
 RZ_API void rz_debug_bp_update(RzDebug *dbg);
 

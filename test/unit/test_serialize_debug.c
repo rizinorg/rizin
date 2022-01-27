@@ -6,19 +6,6 @@
 #include "minunit.h"
 #include "test_sdb.h"
 
-static char tmp_path[1000];
-
-const char *get_auxiliary_path(const char *s) {
-	char *p = rz_sys_pid_to_path(rz_sys_getpid());
-	char *pp = (char *)rz_str_lchr(p, RZ_SYS_DIR[0]);
-	if (pp) {
-		*pp = '\0';
-	}
-	snprintf(tmp_path, sizeof(tmp_path), "%s%s%s%s%s", p, RZ_SYS_DIR, "auxiliary", RZ_SYS_DIR, s);
-	free(p);
-	return tmp_path;
-}
-
 Sdb *get_ref_sdb() {
 	Sdb *ref_sdb = sdb_new0();
 
@@ -26,7 +13,7 @@ Sdb *get_ref_sdb() {
 	sdb_set(bp_sdb, "0x1337", "{\"cond\":\"bp_cond\",\"data\":\"bp_data\",\"delta\":2,\"enabled\":3,"
 				  "\"expr\":\"bp_expr\",\"hits\":4,\"hw\":0,\"internal\":5,\"module_delta\":42,"
 				  "\"module_name\":\"hax\",\"name\":\"spectre\",\"perm\":3,\"pids\":[0,1,2,3,4,5,6,7,8,9],"
-				  "\"size\":16,\"swstep\":false,\"togglehits\":11,\"trace\":2}",
+				  "\"size\":1,\"swstep\":false,\"togglehits\":11,\"trace\":2}",
 		0);
 
 	return ref_sdb;
@@ -35,7 +22,9 @@ Sdb *get_ref_sdb() {
 bool test_debug_serialize_save() {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core null");
-	rz_core_file_open(core, get_auxiliary_path("subprocess-helloworld"), RZ_PERM_R, 0);
+	rz_core_file_open(core, "malloc://0x3000", RZ_PERM_R, 0);
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set(core->config, "asm.bits", "64");
 	RzDebug *debug = core->dbg;
 	mu_assert_notnull(debug, "debug null");
 
@@ -57,7 +46,6 @@ bool test_debug_serialize_save() {
 	for (int i = 0; i < RZ_BP_MAXPIDS; i++) {
 		bp_item->pids[i] = i;
 	}
-	bp_item->size = 0x10;
 	bp_item->swstep = false;
 	bp_item->togglehits = 11;
 	bp_item->trace = 2;
@@ -80,7 +68,9 @@ bool test_debug_serialize_save() {
 bool test_debug_serialize_load() {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core null");
-	rz_core_file_open(core, get_auxiliary_path("subprocess-helloworld"), RZ_PERM_R, 0);
+	rz_core_file_open(core, "malloc://0x3000", RZ_PERM_R, 0);
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set(core->config, "asm.bits", "64");
 	RzDebug *debug = core->dbg;
 	mu_assert_notnull(debug, "debug null");
 
@@ -102,7 +92,7 @@ bool test_debug_serialize_load() {
 	for (int i = 0; i < RZ_BP_MAXPIDS; i++) {
 		mu_assert_eq(bp_item->pids[i], i, "pid not equal");
 	}
-	mu_assert_eq(bp_item->size, 0x10, "size not equal");
+	mu_assert_eq(bp_item->size, 1, "size not equal");
 	mu_assert_eq(bp_item->swstep, false, "swstep not equal");
 	mu_assert_eq(bp_item->togglehits, 11, "togglehits not equal");
 	mu_assert_eq(bp_item->trace, 2, "trace not equal");
