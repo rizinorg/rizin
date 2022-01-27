@@ -149,13 +149,16 @@ static inline const char *rz_str_word_get_next0(const char *str) {
 }
 RZ_API const char *rz_str_word_get0(const char *str, int idx);
 RZ_API char *rz_str_word_get_first(const char *string);
-RZ_API void rz_str_trim(char *str);
+RZ_API RZ_BORROW void rz_str_trim(RZ_INOUT char *str);
+RZ_API RZ_BORROW void rz_str_trim_char(RZ_INOUT char *str, const char c);
 RZ_API char *rz_str_trim_dup(const char *str);
 RZ_API char *rz_str_trim_lines(char *str);
 RZ_API void rz_str_trim_head(char *str);
+RZ_API RZ_BORROW void rz_str_trim_head_char(RZ_INOUT char *str, const char c);
 RZ_API const char *rz_str_trim_head_ro(const char *str);
 RZ_API const char *rz_str_trim_head_wp(const char *str);
 RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str);
+RZ_API RZ_BORROW void rz_str_trim_tail_char(RZ_INOUT char *str, const char c);
 RZ_API ut32 rz_str_hash(const char *str);
 RZ_API ut64 rz_str_hash64(const char *str);
 RZ_API char *rz_str_trim_nc(char *str);

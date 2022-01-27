@@ -1198,6 +1198,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		free(ds->opstr);
 		ds->opstr = asm_str;
 	}
+	rz_str_trim_char(ds->opstr, '\n');
 	// updates ds->opstr
 	__replaceImports(ds);
 	if (ds->show_color) {
