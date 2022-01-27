@@ -12,10 +12,10 @@ aezv
 ar
 EOF
 EXPECT=<<EOF
+Hello World!
  PC: 0x000000000000006f ptr: 0x0000000000010004
 ptr = 0x00010004
 pc = 0x0000006f
-Hello World!
 EOF
 RUN
 
@@ -1714,5 +1714,17 @@ var_read(name: ptr, value: 0x10002)
 var_read(name: ptr, value: 0x10002)
 mem_read(addr: 0x10002, value: 0x22)
 mem_write(addr: 0x10002, old: 0x22, new: 0x23)
+EOF
+RUN
+
+NAME=2+5.bf
+FILE=bins/bf/2+5.bf
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu 0x2af; ?e
+EOF
+EXPECT=<<EOF
+7
 EOF
 RUN

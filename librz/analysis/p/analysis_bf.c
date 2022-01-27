@@ -7,6 +7,7 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
+#include <rz_cons.h>
 
 static int getid(char ch) {
 	const char *keys = "[]<>+-,.";
@@ -44,7 +45,9 @@ static void bf_syscall_write(RzILVM *vm, RzILOpEffect *op) {
 	}
 	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	ut32 c = rz_bv_to_ut32(bv);
-	putchar(c);
+	if (c) {
+		rz_cons_printf("%c", c);
+	}
 	rz_bv_free(bv);
 }
 
