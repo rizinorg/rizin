@@ -257,4 +257,10 @@ EXPECT=<<EOF
 0x400574
 Hello world
 EOF
+REGEXP_FILTER_ERR=<<EOF
+Continue[ a-zA-Z0-9]+
+EOF
+EXPECT_ERR=<<EOF
+Continue until 0x00400574
+EOF
 RUN

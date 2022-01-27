@@ -3564,7 +3564,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const 
 	if (argc == 1) {
 		rz_bp_plugin_list(core->dbg->bp);
 	} else if (argc == 2) {
-		if (!rz_bp_use(core->dbg->bp, argv[1], core->analysis->bits)) {
+		if (!rz_bp_use(core->dbg->bp, argv[1])) {
 			RZ_LOG_ERROR("Failed to set breakpoint plugin handler to %s\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
