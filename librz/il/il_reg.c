@@ -149,7 +149,7 @@ err:
 
 /**
  * Create a new binding that binds exactly the given register names, querying \p reg for any additionally needed info
- * \param regs array of \p regs_count names of registers. Each of these must be part of \p reg.
+ * \param regs array of \p regs_count names of registers. Each of these must be part of \p reg and they must not overlap.
  */
 RZ_API RzILRegBinding *rz_il_reg_binding_exactly(RZ_NONNULL RzReg *reg, size_t regs_count, RZ_NONNULL RZ_BORROW const char **regs) {
 	rz_return_val_if_fail(reg && regs, NULL);
@@ -158,13 +158,30 @@ RZ_API RzILRegBinding *rz_il_reg_binding_exactly(RZ_NONNULL RzReg *reg, size_t r
 		return NULL;
 	}
 	rb->regs_count = regs_count;
-	rb->regs = calloc(regs_count, sizeof(RzILRegBindingItem));
+	rb->regs = RZ_NEWS0(RzILRegBindingItem, regs_count);
 	if (!rb->regs) {
 		goto err_rb;
+	}
+	// all bound items to check for overlaps
+	RzRegItem **items = RZ_NEWS(RzRegItem *, regs_count);
+	if (!items) {
+		goto err_regs;
 	}
 	for (size_t i = 0; i < regs_count; i++) {
 		RzRegItem *ri = rz_reg_get(reg, regs[i], RZ_REG_TYPE_ANY);
 		if (!ri) {
+			goto err_regs;
+		}
+		// Check if this item overlaps any already bound registers.
+		// Overlaps must not happen because they will confuse the VM and analysis.
+		for (size_t j = 0; j < i; j++) {
+			if (items[j]->type != ri->type) {
+				continue;
+			}
+			if (items[j]->offset + items[j]->size <= ri->offset || items[j]->offset >= ri->offset + ri->size) {
+				continue;
+			}
+			// overlap detected
 			goto err_regs;
 		}
 		rb->regs[i].name = strdup(regs[i]);
@@ -172,13 +189,16 @@ RZ_API RzILRegBinding *rz_il_reg_binding_exactly(RZ_NONNULL RzReg *reg, size_t r
 			goto err_regs;
 		}
 		rb->regs[i].size = ri->size;
+		items[i] = ri;
 	}
+	free(items);
 	return rb;
 err_regs:
 	for (size_t i = 0; i < regs_count; i++) {
 		reg_binding_item_fini(&rb->regs[i], NULL);
 	}
 	free(rb->regs);
+	free(items);
 err_rb:
 	free(rb);
 	return NULL;
