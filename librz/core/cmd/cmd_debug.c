@@ -2247,6 +2247,66 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_pers_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_star_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_reset_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_equal_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_addr_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_dtc_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_delete_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_graph_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_graph_star_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_interactive_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_debug_start_trace_session_handler(RzCore *core, int argc, const char **argv) {
 	if (rz_debug_is_dead(core->dbg)) {
 		eprintf("Cannot start session outside of debug mode, run ood?\n");
@@ -2294,6 +2354,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_trace_session_mmap_handler(RzCore *core, in
 	if (core->dbg->session) {
 		rz_debug_session_list_memory(core->dbg);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_tag_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2681,52 +2745,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			} break;
 			default:
 				rz_core_cmd_help(core, help_msg_dte);
-			}
-			break;
-		case 's': // "dts"
-			switch (input[2]) {
-			case '+': // "dts+"
-				if (rz_debug_is_dead(core->dbg)) {
-					eprintf("Cannot start session outside of debug mode, run ood?\n");
-					break;
-				}
-				if (core->dbg->session) {
-					eprintf("Session already started\n");
-					break;
-				}
-				core->dbg->session = rz_debug_session_new();
-				rz_debug_add_checkpoint(core->dbg);
-				break;
-			case '-': // "dts-"
-				if (!core->dbg->session) {
-					eprintf("No session started\n");
-					break;
-				}
-				rz_debug_session_free(core->dbg->session);
-				core->dbg->session = NULL;
-				break;
-			case 't': // "dtst"
-				if (!core->dbg->session) {
-					eprintf("No session started\n");
-					break;
-				}
-				rz_debug_session_save(core->dbg->session, input + 4);
-				break;
-			case 'f': // "dtsf"
-				if (core->dbg->session) {
-					rz_debug_session_free(core->dbg->session);
-					core->dbg->session = NULL;
-				}
-				core->dbg->session = rz_debug_session_new();
-				rz_debug_session_load(core->dbg, input + 4);
-				break;
-			case 'm': // "dtsm"
-				if (core->dbg->session) {
-					rz_debug_session_list_memory(core->dbg);
-				}
-				break;
-			default:
-				rz_core_cmd_help(core, help_msg_dts);
 			}
 			break;
 		case '?':
@@ -4017,6 +4035,210 @@ RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
 	}
 	rz_cons_break_pop();
 	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dd_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_fd_close_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_list_fd_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_fd_seek_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dup2_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_fd_read_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_fd_write_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_list_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_delete_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_continue_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_step_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_until_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_core_gen_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_handler_new_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_info_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_diff_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_set_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_resolver_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_ko_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_kox_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_handler_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_process_open_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_process_dor_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_process_doo_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_process_doof_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_attachable_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_detach_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_sel_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_attach_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_forked_sel_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_forked_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_exec_path_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_f_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_kill_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_process_new_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_thread_new_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_threads_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_thread_attach_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_prompt_until_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_window_process_list_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_window_identify_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_assemble_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_egg_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_restore_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_syscall_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -205,9 +205,7 @@ commands:
     summary: Code metadata (comments, format, hints, ..)
     subcommands: cmd_meta
   - name: d
-    cname: cmd_debug
     summary: Debugger commands
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_debug
   - name: e
     summary: List/get/set config evaluable vars

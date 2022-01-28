@@ -9,16 +9,16 @@ commands:
       - name: db
         summary: Add breakpoint at current offset
         cname: cmd_debug_add_bp
-        args: []
+        args: [ ]
       - name: dbl
         summary: List all breakpoints
         cname: cmd_debug_list_bp
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         default_mode: RZ_OUTPUT_MODE_TABLE
         modes:
-           - RZ_OUTPUT_MODE_RIZIN
-           - RZ_OUTPUT_MODE_JSON
-           - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
         details:
           - name: Apply a command to all breakpoints
             entries:
@@ -28,23 +28,23 @@ commands:
                 comment: "dbe @@c:dblq"
               - text: "Toggle all the breakpoints"
                 comment: "dbs @@c:dblq"
-        args: []
+        args: [ ]
       - name: dbH
         summary: Add hardware breakpoint at current offset
         cname: cmd_debug_add_hw_bp
-        args: []
+        args: [ ]
       - name: db-
         summary: Remove breakpoint at current offset
         cname: cmd_debug_remove_bp
-        args: []
+        args: [ ]
       - name: db-*
         summary: Remove all breakpoints
         cname: cmd_debug_remove_all_bp
-        args: []
+        args: [ ]
       - name: db.
         summary: Show breakpoint info at current offset
         cname: cmd_debug_show_cur_bp
-        args: []
+        args: [ ]
       - name: dbc
         summary: Set a command <cmd> to be run when the breakpoint at the current offset is hit
         cname: cmd_debug_command_bp
@@ -65,19 +65,19 @@ commands:
       - name: dbd
         summary: Disable breakpoint at current offset
         cname: cmd_debug_disable_bp
-        args: []
+        args: [ ]
       - name: dbe
         summary: Enable breakpoint at current offset
         cname: cmd_debug_enable_bp
-        args: []
+        args: [ ]
       - name: dbs
         summary: Toggle breakpoint at current offset
         cname: cmd_debug_toggle_bp
-        args: []
+        args: [ ]
       - name: dbf
         summary: Put a breakpoint into every no-return function
         cname: cmd_debug_add_bp_noreturn_func
-        args: []
+        args: [ ]
       - name: dbm
         summary: Add a breakpoint at an offset from a module's base
         cname: cmd_debug_add_bp_module
@@ -99,11 +99,11 @@ commands:
           - name: dbi
             summary: Show breakpoint index at current offset
             cname: cmd_debug_show_bp_index
-            args: []
+            args: [ ]
           - name: dbil
             summary: List breakpoints indexes
             cname: cmd_debug_list_bp_indexes
-            args: []
+            args: [ ]
           - name: dbi-
             summary: Remove breakpoint by index
             cname: cmd_debug_remove_bp_index
@@ -187,7 +187,7 @@ commands:
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_QUIET
-            args: []
+            args: [ ]
           - name: dbt=
             summary: Display backtrace in one line (see dbt= s and dbt= b for sp or bp)
             cname: cmd_debug_display_bt_oneline
@@ -198,23 +198,23 @@ commands:
           - name: dbtv
             summary: Display backtrace with local vars if any
             cname: cmd_debug_display_bt_local_vars
-            args: []
+            args: [ ]
           - name: dbta
             summary: Display ascii-art representation of the stack backtrace
             cname: cmd_debug_display_bt_ascii
-            args: []
+            args: [ ]
           - name: dbte
             summary: Enable breakpoint trace at current offset
             cname: cmd_debug_bt_enable_bp_trace
-            args: []
+            args: [ ]
           - name: dbtd
             summary: Disable breakpoint trace at current offset
             cname: cmd_debug_bt_disable_bp_trace
-            args: []
+            args: [ ]
           - name: dbts
             summary: Toggle breakpoint trace at current offset
             cname: cmd_debug_bt_toggle_bp_trace
-            args: []
+            args: [ ]
       - name: dbx
         summary: View expression for all the breakpoints / Set expression for breakpoint at current offset
         cname: cmd_debug_bp_set_expr_cur_offset
@@ -263,23 +263,23 @@ commands:
       - name: dcb
         summary: Continue back until breakpoint
         cname: cmd_debug_continue_back
-        args: []
+        args: [ ]
       - name: dcc
         summary: Continue until call (use step into)
         cname: cmd_debug_continue_call
-        args: []
+        args: [ ]
       - name: dccu
         summary: Continue until unknown call (call reg)
         cname: cmd_debug_continue_unknown_call
-        args: []
+        args: [ ]
       - name: dce
         summary: Continue execution (pass exception to program) (Windows only)
         cname: cmd_debug_continue_exception
-        args: []
+        args: [ ]
       - name: dcf
         summary: Continue until fork
         cname: cmd_debug_continue_fork
-        args: []
+        args: [ ]
       - name: dck
         summary: Continue sending signal to process
         cname: cmd_debug_continue_send_signal
@@ -292,11 +292,11 @@ commands:
       - name: dcp
         summary: Continue until program code (mapped io section)
         cname: cmd_debug_continue_mapped_io
-        args: []
+        args: [ ]
       - name: dcr
         summary: Continue until ret (uses step over)
         cname: cmd_debug_continue_ret
-        args: []
+        args: [ ]
       - name: dcs
         summary: Continue until syscall
         cname: cmd_debug_continue_syscall
@@ -312,78 +312,179 @@ commands:
         summary: Debug continue until
         cname: cmd_debug_continue_until
         type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: ds
-    summary: Debug step commands
-    cname: cmd_debug_step
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: dd
+    summary: File descriptors (!fd in r1)
     subcommands:
-      - name: dsu
-        summary: Debug step until commands
-        subcommands:
-          - name: dsu
-            cname: cmd_debug_step_until
-            summary: Step until <addr>
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-          - name: dsui
-            cname: cmd_debug_step_until_instr
-            summary: Step until an instruction that matches <instr>
-            args:
-              - name: instr
-                type: RZ_CMD_ARG_TYPE_STRING
-          - name: dsuir
-            cname: cmd_debug_step_until_instr_regex
-            summary: Step until an instruction that matches <regex>
-            args:
-              - name: regex
-                type: RZ_CMD_ARG_TYPE_STRING
-          - name: dsuo
-            cname: cmd_debug_step_until_optype
-            summary: Step until an instruction matches one of the <optype>s
-            args:
-              - name: optype
-                type: RZ_CMD_ARG_TYPE_STRING
-                flags: RZ_CMD_ARG_FLAG_ARRAY
-          - name: dsue
-            cname: cmd_debug_step_until_esil
-            summary: Step until <esil> expression matches
-            args:
-              - name: esil
-                type: RZ_CMD_ARG_TYPE_STRING
-          - name: dsuf
-            cname: cmd_debug_step_until_flag
-            summary: Step until pc == <flag> matching name
-            args:
-              - name: flag
-                type: RZ_CMD_ARG_TYPE_FLAG
-  - name: dts
-    summary: Debug trace session commands
+      - name: dd
+        summary: >
+          List file descriptors or Open and map that file into the UI
+          / Open and map that file into the UI
+        cname: cmd_debug_dd
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+            optional: true
+      - name: dd-
+        summary: Close stdout fd
+        cname: cmd_debug_fd_close
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: dd*
+        summary: List file descriptors (in rizin commands)
+        cname: cmd_debug_list_fd
+        args: [ ]
+      - name: dds
+        summary: Seek given fd
+        cname: cmd_debug_fd_seek
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddd
+        summary: Dup2 from fd1 to fd2
+        cname: cmd_debug_dup2
+        args:
+          - name: fd1
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: fd2
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddr
+        summary: Read N bytes from fd
+        cname: cmd_debug_fd_read
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: size
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddw
+        summary: Write N bytes to fd
+        cname: cmd_debug_fd_write
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: hexpair
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: de
+    summary: Debug with ESIL (see de?)
     subcommands:
-      - name: dts+
-        summary: Start trace session
-        cname: cmd_debug_start_trace_session
-        args: []
-      - name: dts-
-        summary: Stop trace session
-        cname: cmd_debug_stop_trace_session
-        args: []
-      - name: dtst
-        cname: cmd_debug_save_trace_session
-        summary: Save trace sessions to disk
+      - name: de
+        summary: List esil watchpoints
+        cname: cmd_debug_esil_list
+        args: [ ]
+      - name: de-*
+        summary: Delete all esil watchpoints
+        cname: cmd_debug_esil_delete
+        args: [ ]
+      - name: dec
+        summary: Continue execution until matching expression
+        cname: cmd_debug_esil_continue
+        args: [ ]
+      - name: des
+        summary: Step-in N instructions with esildebug
+        cname: cmd_debug_esil_step
         args:
-          - name: dir
-            type: RZ_CMD_ARG_TYPE_FILE
-      - name: dtsf
-        cname: cmd_debug_load_trace_session
-        summary: Load trace sessions to disk
+          - name: n
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: desu
+        summary: Esildebug until specific address
+        cname: cmd_debug_esil_until
         args:
-          - name: dir
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  - name: dg
+    summary: Generate a core-file (WIP)
+    cname: cmd_debug_core_gen
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: dH
+    summary: Transplant process to a new handler
+    cname: cmd_debug_handler_new
+    args:
+      - name: handler
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: di
+    summary: Show debugger backend information (See dh)
+    subcommands:
+      - name: di
+        summary: Show debugger target information
+        cname: cmd_debug_info
+        args: [ ]
+      - name: dif
+        summary: Compare two files (or $alias files)
+        cname: cmd_debug_diff
+        args:
+          - name: a
             type: RZ_CMD_ARG_TYPE_FILE
-      - name: dtsm
-        cname: cmd_debug_list_trace_session_mmap
-        summary: List current memory map and hash
-        args: []
+            optional: true
+          - name: b
+            type: RZ_CMD_ARG_TYPE_FILE
+            optional: true
+  - name: dk
+    summary: List, send, get, set, signal handlers of child
+    subcommands:
+      - name: dk
+        summary: >
+          List all signal handlers of child process
+          / Send KILL signal to child
+        cname: cmd_debug_signal_list
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dk=
+        summary: Set signal handler for <signal> in child
+        cname: cmd_debug_signal_set
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dk?
+        summary: Name/signum resolver
+        cname: cmd_debug_signal_resolver
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dko
+        summary: >
+          Reset skip or cont options for given signal
+          / On signal SKIP handler or CONT into
+        cname: cmd_debug_ko
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            optional: true
+            choices:
+              - skip
+              - cont
+      - name: dko?
+        summary: cont options for given signal
+        cname: cmd_debug_kox
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: dL
+    summary: List or set debugger handler
+    cname: cmd_debug_handler
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args:
+      - name: handler
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
   - name: dm
     summary: Memory map commands
     subcommands:
@@ -397,7 +498,7 @@ commands:
           - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
-        args: []
+        args: [ ]
       - name: dm+
         cname: cmd_debug_allocate_maps
         summary: >
@@ -408,11 +509,11 @@ commands:
       - name: dm=
         cname: cmd_debug_list_maps_ascii
         summary: List memory maps of current process with ASCII art bars
-        args: []
+        args: [ ]
       - name: dm.
         cname: cmd_debug_map_current
         summary: Show map name of current address
-        args: []
+        args: [ ]
       - name: dmm
         summary: Module memory map commands
         subcommands:
@@ -424,18 +525,18 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
-            args: []
+            args: [ ]
           - name: dmm.
             cname: cmd_debug_current_modules
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN
             summary: List memory map of current module
-            args: []
+            args: [ ]
       - name: dm-
         summary: Deallocate memory map at current offset
         cname: cmd_debug_deallocate_map
-        args: []
+        args: [ ]
       - name: dmd
         summary: Dump debug map regions to a file (from-to.dmp)
         subcommands:
@@ -449,11 +550,11 @@ commands:
           - name: dmda
             cname: cmd_debug_dump_maps_all
             summary: Dump all debug maps
-            args: []
+            args: [ ]
           - name: dmdw
             cname: cmd_debug_dump_maps_writable
             summary: Dump writable debug maps
-            args: []
+            args: [ ]
       - name: dmh
         summary: Glibc heap commands
         subcommands: cmd_heap_glibc
@@ -507,7 +608,7 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
-            args: []
+            args: [ ]
           - name: dmwb
             summary: List allocated heap blocks
             cname: cmd_debug_process_heap_block
@@ -521,12 +622,354 @@ commands:
           - name: dmwbf
             summary: Create flags for each allocated heap block
             cname: cmd_debug_heap_block_flag
-            args: []
+            args: [ ]
       - name: dmx
         summary: Jemalloc heap commands
         cname: cmd_debug_heap_jemalloc
         type: RZ_CMD_DESC_TYPE_OLDINPUT
-        args: []
+        args: [ ]
+  - name: do
+    summary: Debug (re)open commands
+    subcommands:
+      - name: do
+        summary: Open process (reload, alias for 'oo')
+        cname: cmd_debug_process_open
+        args: [ ]
+      - name: dor
+        summary: Comma separated list of k=v rz-run profile options (e dbg.profile)
+        cname: cmd_debug_process_dor
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: doe
+        summary: Show rz-run startup profile
+        cname: cmd_debug_process_profile
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: doe!
+        summary: Edit rz-run startup profile with $EDITOR
+        cname: cmd_debug_process_profile_edit
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: doo
+        summary: Reopen in debug mode with args (alias for 'ood')
+        cname: cmd_debug_process_doo
+        args:
+          - name: args
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: doof
+        summary: Reopen in debug mode from file (alias for 'oodf')
+        cname: cmd_debug_process_doof
+        args:
+          - name: args
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: doc
+        summary: Close debug session
+        cname: cmd_debug_process_close
+        args: [ ]
+  - name: dp
+    summary: List, attach to process or thread id
+    subcommands:
+      - name: dp
+        summary: List current pid and children
+        cname: cmd_debug_pid_list
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dpl
+        summary: List all attachable pids
+        cname: cmd_debug_pid_attachable
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: [ ]
+      - name: dp-
+        summary: Detach select pid
+        cname: cmd_debug_pid_detach
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dp=
+        summary: Select pid
+        cname: cmd_debug_pid_sel
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dpa
+        summary: Attach and select pid
+        cname: cmd_debug_pid_attach
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dpc
+        summary: Select forked pid (see dbg.forks)
+        cname: cmd_debug_pid_forked_sel
+        args: [ ]
+      - name: dpc*
+        summary: Display forked pid (see dbg.forks)
+        cname: cmd_debug_pid_forked
+        args: [ ]
+      - name: dpe
+        summary: Show path to executable
+        cname: cmd_debug_exec_path
+        args: [ ]
+      - name: dpf
+        summary: Attach to pid like file fd // HACK
+        cname: cmd_debug_pid_f
+        args: [ ]
+      - name: dpk
+        summary: Send signal to process (default 0)
+        cname: cmd_debug_pid_kill
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpn
+        summary: Create new process (fork)
+        cname: cmd_debug_process_new
+        args: [ ]
+      - name: dptn
+        summary: Create new thread (clone)
+        cname: cmd_debug_thread_new
+        args: [ ]
+      - name: dpt
+        summary: List threads of current pid
+        cname: cmd_debug_threads_list
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpt=
+        summary: Attach to thread
+        cname: cmd_debug_thread_attach
+        args:
+          - name: thread
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  - name: ds
+    summary: Debug step commands
+    cname: cmd_debug_step
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: dsu
+        summary: Debug step until commands
+        subcommands:
+          - name: dsu
+            cname: cmd_debug_step_until
+            summary: Step until <addr>
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: dsui
+            cname: cmd_debug_step_until_instr
+            summary: Step until an instruction that matches <instr>
+            args:
+              - name: instr
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: dsuir
+            cname: cmd_debug_step_until_instr_regex
+            summary: Step until an instruction that matches <regex>
+            args:
+              - name: regex
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: dsuo
+            cname: cmd_debug_step_until_optype
+            summary: Step until an instruction matches one of the <optype>s
+            args:
+              - name: optype
+                type: RZ_CMD_ARG_TYPE_STRING
+                flags: RZ_CMD_ARG_FLAG_ARRAY
+          - name: dsue
+            cname: cmd_debug_step_until_esil
+            summary: Step until <esil> expression matches
+            args:
+              - name: esil
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: dsuf
+            cname: cmd_debug_step_until_flag
+            summary: Step until pc == <flag> matching name
+            args:
+              - name: flag
+                type: RZ_CMD_ARG_TYPE_FLAG
+  - name: dt
+    summary: Trace commands
+    subcommands:
+      - name: dt
+        summary: List all traces (at address)
+        cname: cmd_debug_traces
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dt%
+        summary: TODO
+        cname: cmd_debug_trace_pers
+        args: [ ]
+      - name: dt*
+        summary: List all traced opcode offsets
+        cname: cmd_debug_trace_star
+        args: [ ]
+      - name: dt+
+        summary: Add trace for address N times
+        cname: cmd_debug_trace_add
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: times
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dt-
+        summary: Reset traces (instruction/calls)
+        cname: cmd_debug_traces_reset
+        args: [ ]
+      - name: dt=
+        summary: Show ascii-art color bars with the debug trace ranges
+        cname: cmd_debug_trace_equal
+        args: [ ]
+      - name: dta
+        summary: Only trace given addresses
+        cname: cmd_debug_trace_addr
+        args: [ ]
+      - name: dtc
+        summary: Trace call/ret
+        cname: cmd_debug_trace_dtc
+        args: [ ]
+      - name: dtd
+        summary: List all traced disassembled (quiet, instructions)
+        cname: cmd_debug_traces_dtd
+        args:
+          - name: qi
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: nth
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dte
+        summary: Esil trace logs
+        subcommands:
+          - name: dte
+            summary: Esil trace log for a single instruction (for that index log)
+            cname: cmd_debug_traces_esil
+            args:
+              - name: idx
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: dte-*
+            summary: Delete all esil traces
+            cname: cmd_debug_traces_esil_delete
+            args: [ ]
+          - name: dtei
+            summary: Esil trace log for a single instruction
+            cname: cmd_debug_traces_esil_i
+            args: [ ]
+        args: [ ]
+      - name: dtg
+        summary: Graph call/ret trace
+        subcommands:
+          - name: dtg
+            summary: Graph call/ret trace
+            cname: cmd_debug_trace_graph
+            args: [ ]
+          - name: dtg*
+            summary: Graph in agn/age commands. use .dtg*;aggi for visual
+            cname: cmd_debug_trace_graph_star
+            args: [ ]
+          - name: dtgi
+            summary: Interactive debug trace
+            cname: cmd_debug_trace_interactive
+            args: [ ]
+      - name: dts
+        summary: Debug trace session commands
+        subcommands:
+          - name: dts+
+            summary: Start trace session
+            cname: cmd_debug_start_trace_session
+            args: [ ]
+          - name: dts-
+            summary: Stop trace session
+            cname: cmd_debug_stop_trace_session
+            args: [ ]
+          - name: dtst
+            cname: cmd_debug_save_trace_session
+            summary: Save trace sessions to disk
+            args:
+              - name: dir
+                type: RZ_CMD_ARG_TYPE_FILE
+          - name: dtsf
+            cname: cmd_debug_load_trace_session
+            summary: Load trace sessions to disk
+            args:
+              - name: dir
+                type: RZ_CMD_ARG_TYPE_FILE
+          - name: dtsm
+            cname: cmd_debug_list_trace_session_mmap
+            summary: List current memory map and hash
+            args: [ ]
+      - name: dtt
+        summary: Select trace tag (no arg unsets)
+        cname: cmd_debug_trace_tag
+        args:
+          - name: tag
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: dw
+    summary: Block prompt until pid dies
+    cname: cmd_debug_prompt_until
+    args:
+      - name: pid
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: dW
+    summary: List process windows
+    subcommands:
+      - name: dW
+        summary: List process windows
+        cname: cmd_debug_window_process_list
+        args: [ ]
+      - name: dWi
+        summary: Identify window under cursor
+        cname: cmd_debug_window_identify
+        args: [ ]
+  - name: dx
+    summary: Code injection commands
+    subcommands:
+      - name: dx
+        summary: Inject opcodes
+        cname: cmd_debug_inject
+        args:
+          - name: opcodes
+            type: RZ_CMD_ARG_TYPE_NUM
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+            optional: true
+      - name: dxa
+        summary: Assemble code and inject
+        cname: cmd_debug_inject_assemble
+        args: [ ]
+      - name: dxe
+        summary: Compile egg expression and inject it
+        cname: cmd_debug_inject_egg
+        args: [ ]
+      - name: dxr
+        summary: Inject opcodes and restore state
+        cname: cmd_debug_inject_restore
+        args:
+          - name: opcodes
+            type: RZ_CMD_ARG_TYPE_NUM
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+            optional: true
+      - name: dxs
+        summary: Syscall injection (see gs)
+        cname: cmd_debug_inject_syscall
+        args: [ ]
   #####################################################
   # Keep this in sync with ar in cmd_analysis.yaml from here...
   - name: dr
@@ -600,21 +1043,21 @@ commands:
         summary: Show values of default function drgument registers (A0, A1, A2, ...) with telescoping
         cname: debug_regs_args
         type: RZ_CMD_DESC_TYPE_ARGV_MODES
-        details: [] # Explicitly empty to not show parent ones
+        details: [ ] # Explicitly empty to not show parent ones
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-        args: []
+        args: [ ]
       - name: drcc
         summary: Show calling convention defined by registers
         cname: debug_reg_cc
-        args: []
-        details: [] # Explicitly empty to not show parent ones
+        args: [ ]
+        details: [ ] # Explicitly empty to not show parent ones
       - name: drd
         summary: Show register differences from previous contents
         cname: debug_regs_diff
-        args: []
-        details: [] # Explicitly empty to not show parent ones
+        args: [ ]
+        details: [ ] # Explicitly empty to not show parent ones
       - name: dro
         summary: Show previous register contents
         cname: debug_regs_prev
@@ -659,28 +1102,28 @@ commands:
                 optional: true
       - name: dra
         summary: Register arena commands (underlying binary data)
-        details: [] # Explicitly empty to not show parent ones
+        details: [ ] # Explicitly empty to not show parent ones
         subcommands:
           - name: dra
             summary: Show all currently allocated register arenas
             cname: debug_reg_arenas
-            args: []
+            args: [ ]
           - name: dra+
             summary: Push a new set of arenas to the stack
             cname: debug_reg_arenas_push
-            args: []
+            args: [ ]
           - name: dra-
             summary: Pop a set of arenas from the stack
             cname: debug_reg_arenas_pop
-            args: []
+            args: [ ]
           - name: draS
             summary: Show number of stack elements
             cname: debug_reg_arenas_stack_size
-            args: []
+            args: [ ]
           - name: dras
             summary: Swap last two register arenas on the stack
             cname: debug_reg_arenas_swap
-            args: []
+            args: [ ]
           - name: dra0
             summary: Reset the specified or all arena contents to 0
             cname: debug_reg_arenas_zero
@@ -706,12 +1149,12 @@ commands:
                 optional: true
       - name: drp
         summary: Register profile commands (defining available registers)
-        details: [] # Explicitly empty to not show parent ones
+        details: [ ] # Explicitly empty to not show parent ones
         subcommands:
           - name: drp
             summary: Show the current register profile
             cname: debug_reg_profile
-            args: []
+            args: [ ]
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
@@ -719,7 +1162,7 @@ commands:
           - name: drpc
             summary: Show register profile comments
             cname: debug_reg_profile_comments
-            args: []
+            args: [ ]
           - name: drpo
             summary: Load a new register profile from file
             cname: debug_reg_profile_open
@@ -735,7 +1178,7 @@ commands:
       - name: drc
         summary: Conditional flags (aliases to processor flags)
         cname: debug_reg_cond
-        args: []
+        args: [ ]
         details:
           - name: Basic
             entries:
@@ -785,18 +1228,18 @@ commands:
       - name: drT
         summary: List all register types
         cname: debug_reg_types
-        details: [] # Explicitly empty to not show parent ones
-        args: []
+        details: [ ] # Explicitly empty to not show parent ones
+        args: [ ]
       - name: drR
         summary: List all register roles
         cname: debug_reg_roles
-        details: [] # Explicitly empty to not show parent ones
-        args: []
-  # ... to here
-  #####################################################
+        details: [ ] # Explicitly empty to not show parent ones
+        args: [ ]
+      # ... to here
+      #####################################################
       - name: drx # this is under registers but debug-specific so should not be sync with cmd_analysis.yaml
         summary: Show hardware breakpoint registers
-        details: []
+        details: [ ]
         subcommands:
           - name: drx
             summary: Show or modify hardware breakpoint registers
