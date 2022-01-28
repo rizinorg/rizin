@@ -5,7 +5,11 @@
 #include <capstone.h>
 
 #include "arm_cs.h"
-#include "arm_accessors.h"
+#include "arm_accessors32.h"
+
+#define REG(x)      rz_str_get_null(cs_reg_name(*handle, insn->detail->arm.operands[x].reg))
+#define MEMBASE(x)  rz_str_get_null(cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base))
+#define MEMINDEX(x) rz_str_get_null(cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index))
 
 static const char *decode_shift(arm_shifter shift) {
 	const char *E_OP_SR = ">>";
