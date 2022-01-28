@@ -214,6 +214,215 @@ trits   0t2
 EOF
 RUN
 
+NAME="? 2**3"
+FILE=--
+CMDS=? 2**3
+EXPECT=<<EOF
+int32   8
+uint32  8
+hex     0x8
+octal   010
+unit    8
+segment 0000:0008
+string  "\b"
+fvalue  8.0
+float   0.000000f
+double  0.000000
+binary  0b00001000
+trits   0t22
+EOF
+RUN
+
+NAME="? -25**3"
+FILE=--
+CMDS=? -25**3
+EXPECT=<<EOF
+int64   -15625
+uint64  18446744073709535991
+hex     0xffffffffffffc2f7
+octal   01777777777777777741367
+unit    16.0E
+segment fffff000:02f7
+string  "\xf7\xc2\xff\xff\xff\xff\xff\xff"
+fvalue  -15625.0
+float   nanf
+double  nan
+binary  0b1111111111111111111111111111111111111111111111111100001011110111
+trits   0t11112220022122120101211020120210000102020
+EOF
+RUN
+
+NAME="? -76**2"
+FILE=--
+CMDS=? -76**2
+EXPECT=<<EOF
+int32   5776
+uint32  5776
+hex     0x1690
+octal   013220
+unit    5.6K
+segment 0000:0690
+string  "\x90\x16"
+fvalue  5776.0
+float   0.000000f
+double  0.000000
+binary  0b0001011010010000
+trits   0t21220221
+EOF
+RUN
+
+NAME="? 10**-2"
+FILE=--
+CMDS=? 10**-2
+EXPECT=<<EOF
+int32   0
+uint32  0
+hex     0x0
+octal   00
+unit    0
+segment 0000:0000
+string  "\0"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00000000
+trits   0t0
+EOF
+RUN
+
+NAME="? 1024**0"
+FILE=--
+CMDS=? 1024**0
+EXPECT=<<EOF
+int32   1
+uint32  1
+hex     0x1
+octal   01
+unit    1
+segment 0000:0001
+string  "\x01"
+fvalue  1.0
+float   0.000000f
+double  0.000000
+binary  0b00000001
+trits   0t1
+EOF
+RUN
+
+NAME="? 2**4.5"
+FILE=--
+CMDS=? 2**4.5
+EXPECT=<<EOF
+int32   16
+uint32  16
+hex     0x10
+octal   020
+unit    16
+segment 0000:0010
+string  "\x10"
+fvalue  16.0
+float   0.000000f
+double  0.000000
+binary  0b00010000
+trits   0t121
+EOF
+RUN
+
+NAME="? 10 ** 2 * 3"
+FILE=--
+CMDS=? 10 ** 2 * 3
+EXPECT=<<EOF
+int32   300
+uint32  300
+hex     0x12c
+octal   0454
+unit    300
+segment 0000:012c
+string  ",\x01"
+fvalue  300.0
+float   0.000000f
+double  0.000000
+binary  0b0000000100101100
+trits   0t102010
+EOF
+RUN
+
+NAME="? 10 ** 2 / 3"
+FILE=--
+CMDS=? 10 ** 2 / 3
+EXPECT=<<EOF
+int32   33
+uint32  33
+hex     0x21
+octal   041
+unit    33
+segment 0000:0021
+string  "!"
+fvalue  33.3
+float   0.000000f
+double  0.000000
+binary  0b00100001
+trits   0t1020
+EOF
+RUN
+
+NAME="? 10 ** 2 + 3"
+FILE=--
+CMDS=? 10 ** 2 + 3
+EXPECT=<<EOF
+int32   103
+uint32  103
+hex     0x67
+octal   0147
+unit    103
+segment 0000:0067
+string  "g"
+fvalue  103.0
+float   0.000000f
+double  0.000000
+binary  0b01100111
+trits   0t10211
+EOF
+RUN
+
+NAME="? 10 - 2 ** 3"
+FILE=--
+CMDS=? 10 - 2 ** 3
+EXPECT=<<EOF
+int32   2
+uint32  2
+hex     0x2
+octal   02
+unit    2
+segment 0000:0002
+string  "\x02"
+fvalue  2.0
+float   0.000000f
+double  0.000000
+binary  0b00000010
+trits   0t2
+EOF
+RUN
+
+NAME="? 2**-1+4"
+FILE=--
+CMDS=? 2**-1+4
+EXPECT=<<EOF
+int32   4
+uint32  4
+hex     0x4
+octal   04
+unit    4
+segment 0000:0004
+string  "\x04"
+fvalue  4.5
+float   0.000000f
+double  0.000000
+binary  0b00000100
+trits   0t11
+EOF
+RUN
+
 NAME="base help"
 FILE==
 CMDS=<<EOF

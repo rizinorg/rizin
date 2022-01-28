@@ -23,6 +23,7 @@ typedef enum {
 	RNCPLUS = '+',
 	RNCMINUS = '-',
 	RNCMUL = '*',
+	RNCEXP = 'E',
 	RNCDIV = '/',
 	RNCMOD = '%',
 	// RNCXOR='^', RNCOR='|', RNCAND='&',
