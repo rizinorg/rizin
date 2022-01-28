@@ -18,7 +18,8 @@ typedef struct {
 	bool showstr;
 	bool rad;
 	bool identify;
-	bool import; // search within import table
+	bool import; /* search within import table */
+	bool symbol; /* search within symbol table */
 	bool quiet;
 	bool hexstr;
 	bool widestr;
@@ -141,7 +142,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(const char *argv0, int line) {
-	printf("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S|I] str] [-x hex] -|file|dir ..\n", argv0);
+	printf("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
@@ -159,8 +160,9 @@ static int show_help(const char *argv0, int line) {
 		" -n         do not stop on read errors\n"
 		" -r         print using rizin commands\n"
 		" -s [str]   search for a specific string (can be used multiple times)\n"
-		" -S [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
+		" -w [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
 		" -I [str]   search for a specific function in import table.\n"
+		" -S [str]   search for a specific function in symbol table.\n"
 		" -t [to]    stop search at address 'to'\n"
 		" -q         quiet - do not show headings (filenames) above matching contents (default for searching a single file)\n"
 		" -v         print version and exit\n"
@@ -193,39 +195,61 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		return 0;
 	}
 
-	if (ro->import) {
+	if (ro->import || ro->symbol) {
+		RzBinFile *bf;
+		const RzList *symbols, *imports;
+		RzListIter *iter, *it;
+		RzBinSymbol *symbol;
+		RzBinImport *import;
 		RzBin *bin = rz_bin_new();
 		RzIO *rio = rz_io_new();
+		RzBinOptions opt = { 0 };
+
 		if (!bin || !rio) {
 			result = 1;
-			goto import_end;
+			goto sym_end;
 		}
-		rz_io_bind(rio, &bin->iob);
 
-		RzBinOptions opt = { 0 };
+		rz_io_bind(rio, &bin->iob);
 		rz_bin_options_init(&opt, 0, 0, 0, false, false);
 
-		RzBinFile *bf = rz_bin_open(bin, file, &opt);
+		bf = rz_bin_open(bin, file, &opt);
 		if (!bf) {
 			result = 1;
-			goto import_end;
+			goto sym_end;
 		}
 
-		RzBinObject *obj = rz_bin_cur_object(bin);
-		const RzList *imports = rz_bin_object_get_imports(obj);
-		RzBinImport *import;
-		RzListIter *it;
-
-		rz_list_foreach (imports, it, import) {
+		if (ro->import) {
+			imports = rz_bin_get_imports(bin);
 			rz_list_foreach (ro->keywords, iter, kw) {
-				if (!strcmp(import->name, kw)) {
-					printf("ordinal: %d %s\n", import->ordinal, import->name);
+				rz_list_foreach (imports, it, import) {
+					if (!strcmp(import->name, kw)) {
+						printf("ordinal: %d %s\n", import->ordinal, kw);
+						break;
+					}
 				}
 			}
 		}
+
+		if (ro->symbol) {
+			symbols = rz_bin_get_symbols(bin);
+			rz_list_foreach (ro->keywords, iter, kw) {
+				rz_list_foreach (symbols, it, symbol) {
+					if (!symbol->name) {
+						continue;
+					}
+
+					if (!strcmp(symbol->type, "FUNC") && !strcmp(symbol->name, kw)) {
+						printf("paddr: 0x%08" PFMT64x " vaddr: 0x%08" PFMT64x " %s\n", symbol->paddr, symbol->vaddr, symbol->name);
+						break;
+					}
+				}
+			}
+		}
+
 		result = 0;
 
-	import_end:
+	sym_end:
 		rz_bin_free(bin);
 		rz_io_free(rio);
 		free(efile);
@@ -399,7 +423,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	const char *file = NULL;
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:S:I:x:Xzf:F:t:E:rqnhvZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -435,7 +459,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.widestr = false;
 			rz_list_append(ro.keywords, (void *)opt.arg);
 			break;
-		case 'S':
+		case 'w':
 			ro.mode = RZ_SEARCH_KEYWORD;
 			ro.hexstr = false;
 			ro.widestr = true;
@@ -443,6 +467,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			break;
 		case 'I':
 			ro.import = true;
+			rz_list_append(ro.keywords, (void *)opt.arg);
+			break;
+		case 'S':
+			ro.symbol = true;
 			rz_list_append(ro.keywords, (void *)opt.arg);
 			break;
 		case 'b':
