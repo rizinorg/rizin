@@ -615,7 +615,7 @@ static char *getrange(char *s) {
 static int getreg(const char *str) {
 	int i;
 	char *ep;
-	const char *aliases[] = { "sl", "fp", "ip", "sp", "lr", "pc", NULL };
+	const char *aliases[] = { "sb", "sl", "fp", "ip", "sp", "lr", "pc", NULL };
 	if (!str || !*str) {
 		return -1;
 	}
@@ -630,7 +630,7 @@ static int getreg(const char *str) {
 	}
 	for (i = 0; aliases[i]; i++) {
 		if (!strcmpnull(str, aliases[i])) {
-			return 10 + i;
+			return 9 + i;
 		}
 	}
 	return -1;
