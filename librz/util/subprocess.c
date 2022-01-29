@@ -19,6 +19,9 @@ struct rz_subprocess_t {
 };
 
 static volatile long pipe_id = 0;
+static DWORD mode_stdin;
+static DWORD mode_stdout;
+static DWORD mode_stderr;
 
 static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURITY_ATTRIBUTES attrs, DWORD sz, DWORD read_mode, DWORD write_mode) {
 	// see https://stackoverflow.com/a/419736
@@ -42,10 +45,18 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 }
 
 RZ_API bool rz_subprocess_init(void) {
+	// Save current console mode
+	GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &mode_stdin);
+	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode_stdout);
+	GetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), &mode_stderr);
 	return true;
 }
 RZ_API void rz_subprocess_fini(void) {
 	SetEnvironmentVariableW(L"RZ_PIPE_PATH", NULL);
+	// Restore console mode
+	SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), mode_stdin);
+	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode_stdout);
+	SetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), mode_stderr);
 }
 
 // Create an env block that inherits the current vars but overrides the given ones
