@@ -160,7 +160,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		return NULL;
 	}
 
-	if (!rz_file_exists(opt->file) && NeedCurrentDirectoryForExePathW(file)) {
+	if (!rz_file_exists(opt->file)) {
 		DWORD len;
 		if ((len = SearchPathW(NULL, file, L".exe", _countof(cmd_exe), cmd_exe, &lpFilePart)) < 1) {
 			RZ_LOG_DEBUG("SearchPath failed for %s\n", opt->file);
