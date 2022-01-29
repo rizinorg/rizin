@@ -5,7 +5,11 @@
 #include <capstone.h>
 
 #include "arm_cs.h"
-#include "arm_accessors.h"
+#include "arm_accessors64.h"
+
+#define REG64(x)      rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].reg))
+#define MEMBASE64(x)  rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
+#define MEMINDEX64(x) rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
 
 static int arm64_reg_width(int reg) {
 	switch (reg) {
@@ -69,6 +73,8 @@ static int decode_sign_ext(arm64_extender extender) {
 
 	return 0;
 }
+
+#define EXT64(x) decode_sign_ext(insn->detail->arm64.operands[x].ext)
 
 static const char *decode_shift_64(arm64_shifter shift) {
 	const char *E_OP_SR = ">>";
@@ -384,7 +390,7 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case ARM64_INS_UDIV:
 		/* TODO: support WZR XZR to specify 32, 64bit op */
 		if ISREG64 (2) {
-			rz_strbuf_setf(&op->esil, "%s,%s,/,%s,=", REG(2), REG64(1), REG64(0));
+			rz_strbuf_setf(&op->esil, "%s,%s,/,%s,=", REG64(2), REG64(1), REG64(0));
 		} else {
 			rz_strbuf_setf(&op->esil, "%s,%s,/=", REG64(1), REG64(0));
 		}
