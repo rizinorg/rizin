@@ -9,6 +9,7 @@ a "bl -0x2a" fff7e9ff
 d "bl 0xffffffd6" fff7e9ff
 ad "mov fp, r1" 8b46
 a "mov r9, r1" 8946
+ad "mov sb, r1" 8946
 a "mov r4, r1" 0c46
 ad "add sp, 0x10" 04b0
 a "add sp, 0x16" 0df1160d

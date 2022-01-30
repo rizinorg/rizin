@@ -446,8 +446,33 @@ static void il_opdmp_goto(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
+static void il_opdmp_seq_inner(RzILOpEffect *op, RzStrBuf *sb) {
+	RzILOpArgsSeq *seq = &op->op.seq;
+	if (seq->x->code == RZ_IL_OP_SEQ) {
+		il_opdmp_seq_inner(seq->x, sb);
+	} else {
+		il_op_effect_resolve(seq->x, sb, NULL);
+	}
+	rz_strbuf_append(sb, " ");
+	if (seq->y->code == RZ_IL_OP_SEQ) {
+		il_opdmp_seq_inner(seq->y, sb);
+	} else {
+		il_op_effect_resolve(seq->y, sb, NULL);
+	}
+}
+
 static void il_opdmp_seq(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("seq", op->op.seq, effect, x, effect, y);
+	if (sb) {
+		// print things like
+		//     (seq (...) (seq (...) (...)))
+		// as just
+		//     (seq (...) (...) (...))
+		rz_strbuf_append(sb, "(seq ");
+		il_opdmp_seq_inner(op, sb);
+		rz_strbuf_append(sb, ")");
+	} else {
+		il_op_param_2("seq", op->op.seq, effect, x, effect, y);
+	}
 }
 
 static void il_opdmp_blk(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {

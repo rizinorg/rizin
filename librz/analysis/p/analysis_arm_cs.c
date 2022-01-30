@@ -11,7 +11,8 @@
 #include "./analysis_arm_hacks.inc"
 
 #include "../arch/arm/arm_cs.h"
-#include "../arch/arm/arm_accessors.h"
+#include "../arch/arm/arm_accessors32.h"
+#include "../arch/arm/arm_accessors64.h"
 
 typedef struct arm_cs_context_t {
 	HtUU *ht_itblock;

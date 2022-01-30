@@ -132,7 +132,7 @@ RZ_API void rz_analysis_il_vm_free(RZ_NULLABLE RzAnalysisILVM *vm) {
 	free(vm);
 }
 
-static bool setup_regs(RzAnalysis *a, RzAnalysisILVM *vm) {
+static bool setup_regs(RzAnalysis *a, RzAnalysisILVM *vm, RzAnalysisILConfig *cfg) {
 	if (!a->cur->get_reg_profile) {
 		return false;
 	}
@@ -155,10 +155,15 @@ static bool setup_regs(RzAnalysis *a, RzAnalysisILVM *vm) {
 	if (!succ) {
 		goto new_real;
 	}
-	// for now, we always derive the bound automatically,
-	// but manual binding dictated by the plugin would be plausible too
-	// in the future.
-	vm->reg_binding = rz_il_reg_binding_derive(reg);
+	if (cfg->reg_bindings) {
+		size_t count = 0;
+		while (cfg->reg_bindings[count]) {
+			count++;
+		}
+		vm->reg_binding = rz_il_reg_binding_exactly(reg, count, cfg->reg_bindings);
+	} else {
+		vm->reg_binding = rz_il_reg_binding_derive(reg);
+	}
 	if (!vm->reg_binding) {
 		succ = false;
 		goto new_real;
@@ -174,7 +179,7 @@ static void setup_vm_from_config(RzAnalysis *analysis, RzAnalysisILVM *vm, RzAna
 	if (!vm->vm) {
 		return;
 	}
-	if (!setup_regs(analysis, vm)) { // regs are currently always derived
+	if (!setup_regs(analysis, vm, cfg)) {
 		rz_il_vm_free(vm->vm);
 		vm->vm = NULL;
 		return;
