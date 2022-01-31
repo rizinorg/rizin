@@ -1722,7 +1722,7 @@ FILE=bins/bf/2+5.bf
 CMDS=<<EOF
 e io.cache=1
 aezi
-aezsu 0x2af; ?e
+aezsu $s; ?e
 EOF
 EXPECT=<<EOF
 7
