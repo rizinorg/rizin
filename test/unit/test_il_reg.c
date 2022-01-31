@@ -142,6 +142,41 @@ static bool test_il_reg_binding_derive() {
 	mu_end;
 }
 
+static bool test_il_reg_binding_exactly() {
+	const char *profile =
+		"gpr	rax	.64	0	0\n"
+		"gpr	eax	.32	0	0\n"
+		"gpr	ax	.16	0	0\n"
+		"gpr	al	.8	0	0\n"
+		"gpr	ah	.8	1	0\n"
+		"gpr	rbx	.64	8	0\n"
+		"gpr	ebx	.32	8	0\n"
+		"gpr	bx	.16	8	0\n"
+		"gpr	bl	.8	8	0\n"
+		"gpr	bh	.8	9	0\n";
+	RzReg *reg = rz_reg_new();
+	rz_reg_set_profile_string(reg, profile);
+
+	// success
+	const char *regs[] = { "rax", "ebx" };
+	RzILRegBinding *rb = rz_il_reg_binding_exactly(reg, 2, regs);
+	mu_assert_notnull(rb, "bound");
+	mu_assert_eq(rb->regs_count, 2, "overlap classic count");
+	mu_assert_streq(rb->regs[0].name, "rax", "overlap classic rax");
+	mu_assert_eq(rb->regs[0].size, 64, "bind size");
+	mu_assert_streq(rb->regs[1].name, "ebx", "overlap classic rbx");
+	mu_assert_eq(rb->regs[1].size, 32, "bind size");
+	rz_il_reg_binding_free(rb);
+
+	// failure from overlap
+	const char *regs2[] = { "rax", "ax" };
+	rb = rz_il_reg_binding_exactly(reg, 2, regs2);
+	mu_assert_null(rb, "not bound");
+
+	rz_reg_free(reg);
+	mu_end;
+}
+
 static bool test_il_vm_sync_to_reg() {
 	const char *profile =
 		"=PC	pc\n"
@@ -361,6 +396,7 @@ static bool test_il_vm_sync_from_reg() {
 
 bool all_tests() {
 	mu_run_test(test_il_reg_binding_derive);
+	mu_run_test(test_il_reg_binding_exactly);
 	mu_run_test(test_il_vm_sync_to_reg);
 	mu_run_test(test_il_vm_sync_from_reg);
 	return tests_passed != tests_run;
