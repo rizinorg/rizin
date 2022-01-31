@@ -187,7 +187,7 @@ RZ_API void rz_str_trim_char(RZ_NONNULL RZ_INOUT char *str, const char c) {
  *
  * \param str The string to trim.
  */
-RZ_API RZ_BORROW void rz_str_trim(RZ_INOUT char *str) {
+RZ_API void rz_str_trim(RZ_NONNULL RZ_INOUT char *str) {
 	rz_str_trim_head(str);
 	rz_str_trim_tail(str);
 }
