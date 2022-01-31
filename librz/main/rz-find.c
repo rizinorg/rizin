@@ -322,7 +322,7 @@ static int rzfind_open_dir(RzfindOptions *ro, const char *dir) {
 			if (*fname == '.') {
 				continue;
 			}
-			fullpath = rz_str_newf("%s" RZ_SYS_DIR "%s", dir, fname);
+			fullpath = rz_file_path_join(dir, fname);
 			(void)rzfind_open(ro, fullpath);
 			free(fullpath);
 		}

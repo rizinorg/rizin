@@ -1135,17 +1135,22 @@ typedef struct rz_analysis_il_init_state_t {
  * * Size of the program counter: given explicitly in `pc_size`
  * * Endian: given explicitly in `big_endian`
  * * Memories: currently always one memory with index 0 bound against IO, with key size given by `mem_key_size` and value size of 8
- * * Registers: currently implicit, derived from the register profile with `rz_il_reg_binding_derive()`
+ * * Registers: given explicitly in `reg_bindings` or derived from the register profile with `rz_il_reg_binding_derive()`
  * * Labels: given explicitly in `labels`
  * * Initial State of Variables: optionally given in `init_state`
  */
 typedef struct rz_analysis_il_config_t {
 	ut32 pc_size; ///< size of the program counter in bits
 	bool big_endian;
+	/**
+	 * Optional null-terminated array of registers to bind to global vars of the same name.
+	 * If not specified, rz_il_reg_binding_derive will be used.
+	 */
+	RZ_NULLABLE const char **reg_bindings;
 	ut32 mem_key_size; ///< address size for memory 0, bound against IO
 	RzPVector /* <RzILEffectLabel> */ labels; ///< global labels, primarily for syscall/hook callbacks
 	RZ_NULLABLE RzAnalysisILInitState *init_state; ///< optional, initial contents for variables/registers, etc.
-	// more information might go in here, for example additional memories, register bindings, etc.
+	// more information might go in here, for example additional memories, etc.
 } RzAnalysisILConfig;
 
 /**
