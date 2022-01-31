@@ -141,7 +141,7 @@ RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str) {
  * \param str The string.
  * \param c The character to be removed.
  */
-RZ_API RZ_BORROW void rz_str_trim_head_char(RZ_INOUT char *str, const char c) {
+RZ_API void rz_str_trim_head_char(RZ_NONNULL RZ_INOUT char *str, const char c) {
 	rz_return_if_fail(str);
 	char *p = str;
 	for (; *p && (*p == c); p++) {
