@@ -176,7 +176,7 @@ RZ_API void rz_str_trim_tail_char(RZ_NONNULL RZ_INOUT char *str, const char c) {
  * \param str The string to trim.
  * \param c The character to remove.
  */
-RZ_API RZ_BORROW void rz_str_trim_char(RZ_INOUT char *str, const char c) {
+RZ_API void rz_str_trim_char(RZ_NONNULL RZ_INOUT char *str, const char c) {
 	rz_str_trim_head_char(str, c);
 	rz_str_trim_tail_char(str, c);
 }
