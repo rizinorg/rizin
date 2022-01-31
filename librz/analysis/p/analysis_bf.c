@@ -7,7 +7,6 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
-#include <rz_cons.h>
 
 static int getid(char ch) {
 	const char *keys = "[]<>+-,.";
@@ -37,6 +36,8 @@ static void bf_syscall_read(RzILVM *vm, RzILOpEffect *op) {
 	rz_bv_free(bv);
 }
 
+static PrintfCallback cb_printf = NULL;
+
 static void bf_syscall_write(RzILVM *vm, RzILOpEffect *op) {
 	RzILVal *ptr_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "ptr");
 	if (ptr_val->type != RZ_IL_TYPE_PURE_BITVECTOR) {
@@ -45,8 +46,8 @@ static void bf_syscall_write(RzILVM *vm, RzILOpEffect *op) {
 	}
 	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	ut32 c = rz_bv_to_ut32(bv);
-	if (c) {
-		rz_cons_printf("%c", c);
+	if (c && cb_printf) {
+		cb_printf("%c", c);
 	}
 	rz_bv_free(bv);
 }
@@ -154,6 +155,7 @@ RzILOpEffect *bf_rlimit(RzAnalysis *analysis, ut64 addr, ut64 target) {
 }
 
 static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+	cb_printf = analysis->cb_printf;
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(64, false, 64);
 	cfg->init_state = rz_analysis_il_init_state_new();
 	if (!cfg->init_state) {
