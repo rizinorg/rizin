@@ -571,6 +571,7 @@ RZ_IPI RzCmdStatus rz_open_list_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_open_show_current_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_open_close_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_close_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_core_file_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_arch_bits_handler(RzCore *core, int argc, const char **argv);

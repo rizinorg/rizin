@@ -219,7 +219,6 @@ static bool desc_list_table_cb(void *user, void *data, ut32 id) {
 RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int perms = RZ_PERM_R;
-	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
 	ut64 addr = 0LL;
 	int argc, fd = -1;
 	RzCoreFile *file;
@@ -452,28 +451,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		default:
 			rz_core_cmd_help(core, help_msg_oo);
 			break;
-		}
-		break;
-	case 'c': // "oc"
-		if (input[1] == '?') {
-			eprintf("Usage: oc [file]\n");
-		} else if (input[1] && input[2]) {
-			if (core->tasks.current_task != core->tasks.main_task) {
-				eprintf("This command can only be executed on the main task!\n");
-				return 0;
-			}
-			// memleak? loses all settings
-			// if load fails does not fallbacks to previous file
-			rz_core_task_sync_end(&core->tasks);
-			rz_core_fini(core);
-			rz_core_init(core);
-			rz_core_task_sync_begin(&core->tasks);
-			if (!rz_core_file_open(core, input + 2, RZ_PERM_R, 0)) {
-				eprintf("Cannot open file\n");
-			}
-			(void)rz_core_bin_load(core, NULL, baddr);
-		} else {
-			eprintf("Missing argument\n");
 		}
 		break;
 	case '?': // "o?"
@@ -1230,4 +1207,21 @@ RZ_IPI RzCmdStatus rz_open_exchange_handler(RzCore *core, int argc, const char *
 	rz_io_desc_exchange(core->io, fd, fdx);
 	rz_core_block_read(core);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_core_file_handler(RzCore *core, int argc, const char **argv) {
+	if (core->tasks.current_task != core->tasks.main_task) {
+		RZ_LOG_ERROR("This command can only be executed on the main task!\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_task_sync_end(&core->tasks);
+	rz_core_fini(core);
+	rz_core_init(core);
+	rz_core_task_sync_begin(&core->tasks);
+	if (!rz_core_file_open(core, argv[1], RZ_PERM_R, 0)) {
+		RZ_LOG_ERROR("Cannot open file '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
+	return bool2status(rz_core_bin_load(core, NULL, baddr));
 }

@@ -57,6 +57,12 @@ commands:
     cname: open_close_all
     summary: Close all files
     args: []
+  - name: oc
+    cname: open_core_file
+    summary: Close all opened files and open <file>, like relaunching rizin
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
   - name: oL
     cname: open_plugins
     handler: plugins_io_print

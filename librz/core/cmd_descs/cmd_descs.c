@@ -345,6 +345,7 @@ static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg open_args[4];
 static const RzCmdDescArg open_write_args[4];
 static const RzCmdDescArg open_close_args[2];
+static const RzCmdDescArg open_core_file_args[2];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
 static const RzCmdDescArg open_binary_select_id_args[2];
@@ -7927,6 +7928,19 @@ static const RzCmdDescHelp open_close_all_help = {
 	.args = open_close_all_args,
 };
 
+static const RzCmdDescArg open_core_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_core_file_help = {
+	.summary = "Close all opened files and open <file>, like relaunching rizin",
+	.args = open_core_file_args,
+};
+
 static const RzCmdDescArg open_plugins_args[] = {
 	{
 		.name = "path",
@@ -13075,6 +13089,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_close_all_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "o--", rz_open_close_all_handler, &open_close_all_help);
 	rz_warn_if_fail(open_close_all_cd);
+
+	RzCmdDesc *open_core_file_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "oc", rz_open_core_file_handler, &open_core_file_help);
+	rz_warn_if_fail(open_core_file_cd);
 
 	RzCmdDesc *open_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, o_cd, "oL", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_plugins_io_print_handler, &open_plugins_help);
 	rz_warn_if_fail(open_plugins_cd);
