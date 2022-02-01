@@ -219,65 +219,8 @@ static bool desc_list_table_cb(void *user, void *data, ut32 id) {
 RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int perms = RZ_PERM_R;
-	ut64 addr = 0LL;
-	int argc, fd = -1;
-	RzIODesc *desc;
-	bool write = false;
+	int argc;
 	const char *ptr = NULL;
-	char **argv = NULL;
-
-	switch (*input) {
-	case 'n': // "on"
-		if (input[1] == '*') {
-			rz_core_raw_file_print(core);
-			return 0;
-		}
-		if (input[1] == '+') { // "on+"
-			write = true;
-			perms |= RZ_PERM_W;
-			if (input[2] != ' ') {
-				eprintf("Usage: on+ file [addr] [rwx]\n");
-				return 0;
-			}
-			ptr = input + 3;
-		} else if (input[1] == ' ') {
-			ptr = input + 2;
-		} else {
-			eprintf("Usage: on file [addr] [rwx]\n");
-			return 0;
-		}
-		argv = rz_str_argv(ptr, &argc);
-		if (!argc) {
-			eprintf("Usage: on%s file [addr] [rwx]\n", write ? "+" : "");
-			rz_str_argv_free(argv);
-			return 0;
-		}
-		ptr = argv[0];
-		if (argc == 2) {
-			if (rz_num_is_valid_input(core->num, argv[1])) {
-				addr = rz_num_math(core->num, argv[1]);
-			} else {
-				perms = rz_str_rwx(argv[1]);
-			}
-		}
-		if (argc == 3) {
-			addr = rz_num_math(core->num, argv[1]);
-			perms = rz_str_rwx(argv[2]);
-		}
-		if (!strcmp(ptr, "-")) {
-			ptr = "malloc://512";
-		}
-		if ((desc = rz_io_open_at(core->io, ptr, perms, 0644, addr, NULL))) {
-			fd = desc->fd;
-		}
-		if (fd == -1) {
-			eprintf("Cannot open file '%s'\n", ptr);
-		}
-		rz_str_argv_free(argv);
-		core->num->value = fd;
-		rz_core_block_read(core);
-		return 0;
-	}
 
 	switch (*input) {
 	case 'o': // "oo"
@@ -1033,7 +976,7 @@ RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int perms, bool write_mode) {
+static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int perms, bool load_bin, bool write_mode) {
 	RzCoreFile *cfile = rz_core_file_open(core, filepath, perms, addr);
 	if (!cfile) {
 		RZ_LOG_ERROR("Cannot open file '%s'\n", filepath);
@@ -1044,7 +987,9 @@ static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int 
 	if (addr == 0) { // if no baddr defined, use the one provided by the file
 		addr = UT64_MAX;
 	}
-	rz_core_bin_load(core, filepath, addr);
+	if (load_bin) {
+		rz_core_bin_load(core, filepath, addr);
+	}
 	if (write_mode) {
 		RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
 		if (!desc || !(desc->perm & RZ_PERM_W)) {
@@ -1066,14 +1011,14 @@ RZ_IPI RzCmdStatus rz_open_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[1]) : 0;
 	int perms = argc > 3 ? rz_str_rwx(argv[2]) : RZ_PERM_R;
 
-	return open_file(core, argv[1], addr, perms, false);
+	return open_file(core, argv[1], addr, perms, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_open_write_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[1]) : 0;
 	int perms = argc > 3 ? rz_str_rwx(argv[2]) : RZ_PERM_RW;
 
-	return open_file(core, argv[1], addr, perms, true);
+	return open_file(core, argv[1], addr, perms, true, true);
 }
 
 RZ_IPI RzCmdStatus rz_open_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1192,4 +1137,18 @@ RZ_IPI RzCmdStatus rz_open_malloc_handler(RzCore *core, int argc, const char **a
 err:
 	free(data);
 	return res;
+}
+
+RZ_IPI RzCmdStatus rz_open_nobin_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[1]) : 0;
+	int perms = argc > 3 ? rz_str_rwx(argv[2]) : RZ_PERM_R;
+
+	return open_file(core, argv[1], addr, perms, false, false);
+}
+
+RZ_IPI RzCmdStatus rz_open_nobin_write_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[1]) : 0;
+	int perms = argc > 3 ? rz_str_rwx(argv[2]) : RZ_PERM_RW;
+
+	return open_file(core, argv[1], addr, perms, false, true);
 }

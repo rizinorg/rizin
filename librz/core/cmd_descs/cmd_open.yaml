@@ -69,6 +69,33 @@ commands:
     args:
       - name: len
         type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: "on"
+    summary: Open files without parsing binary info
+    subcommands:
+      - name: "on"
+        cname: open_nobin
+        summary: Open <file> without parsing binary info
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: perm
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: on+
+        cname: open_nobin_write
+        summary: Open <file> in write mode, without parsing binary info
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: perm
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
   - name: oL
     cname: open_plugins
     handler: plugins_io_print

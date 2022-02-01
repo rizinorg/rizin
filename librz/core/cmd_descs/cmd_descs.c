@@ -347,6 +347,8 @@ static const RzCmdDescArg open_write_args[4];
 static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_core_file_args[2];
 static const RzCmdDescArg open_malloc_args[2];
+static const RzCmdDescArg open_nobin_args[4];
+static const RzCmdDescArg open_nobin_write_args[4];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
 static const RzCmdDescArg open_binary_select_id_args[2];
@@ -7956,6 +7958,61 @@ static const RzCmdDescHelp open_malloc_help = {
 	.args = open_malloc_args,
 };
 
+static const RzCmdDescHelp on_help = {
+	.summary = "Open files without parsing binary info",
+};
+static const RzCmdDescArg open_nobin_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "perm",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_nobin_help = {
+	.summary = "Open <file> without parsing binary info",
+	.args = open_nobin_args,
+};
+
+static const RzCmdDescArg open_nobin_write_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "perm",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_nobin_write_help = {
+	.summary = "Open <file> in write mode, without parsing binary info",
+	.args = open_nobin_write_args,
+};
+
 static const RzCmdDescArg open_plugins_args[] = {
 	{
 		.name = "path",
@@ -13110,6 +13167,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_malloc_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "oC", rz_open_malloc_handler, &open_malloc_help);
 	rz_warn_if_fail(open_malloc_cd);
+
+	RzCmdDesc *on_cd = rz_cmd_desc_group_new(core->rcmd, o_cd, "on", rz_open_nobin_handler, &open_nobin_help, &on_help);
+	rz_warn_if_fail(on_cd);
+	RzCmdDesc *open_nobin_write_cd = rz_cmd_desc_argv_new(core->rcmd, on_cd, "on+", rz_open_nobin_write_handler, &open_nobin_write_help);
+	rz_warn_if_fail(open_nobin_write_cd);
 
 	RzCmdDesc *open_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, o_cd, "oL", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_plugins_io_print_handler, &open_plugins_help);
 	rz_warn_if_fail(open_plugins_cd);
