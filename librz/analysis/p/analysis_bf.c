@@ -44,7 +44,10 @@ static void bf_syscall_write(RzILVM *vm, RzILOpEffect *op) {
 	}
 	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	ut32 c = rz_bv_to_ut32(bv);
-	putchar(c);
+	if (c) {
+		putchar(c);
+		fflush(stdout);
+	}
 	rz_bv_free(bv);
 }
 
