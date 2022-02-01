@@ -343,6 +343,7 @@ static const RzCmdDescArg plugins_unload_args[2];
 static const RzCmdDescArg plugins_debug_print_args[2];
 static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg open_args[4];
+static const RzCmdDescArg open_write_args[4];
 static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
@@ -7846,19 +7847,47 @@ static const RzCmdDescArg open_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
 
 	},
 	{
 		.name = "perm",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp open_help = {
-	.summary = "Open files",
+	.summary = "Open <file>",
 	.args = open_args,
+};
+
+static const RzCmdDescArg open_write_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "perm",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_write_help = {
+	.summary = "Open <file> in write mode",
+	.args = open_write_args,
 };
 
 static const RzCmdDescArg open_list_args[] = {
@@ -13032,6 +13061,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *o_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "o", rz_open_handler, &open_help, &o_help);
 	rz_warn_if_fail(o_cd);
+	RzCmdDesc *open_write_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "o+", rz_open_write_handler, &open_write_help);
+	rz_warn_if_fail(open_write_cd);
+
 	RzCmdDesc *open_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, o_cd, "ol", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_open_list_handler, &open_list_help);
 	rz_warn_if_fail(open_list_cd);
 

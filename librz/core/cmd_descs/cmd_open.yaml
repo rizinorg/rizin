@@ -5,14 +5,28 @@ name: cmd_open
 commands:
   - name: o
     cname: open
-    summary: Open files
+    summary: Open <file>
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
       - name: perm
         type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: o+
+    cname: open_write
+    summary: Open <file> in write mode
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+      - name: perm
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
   - name: ol
     cname: open_list
     summary: List opened files
