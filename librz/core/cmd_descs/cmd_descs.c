@@ -346,6 +346,7 @@ static const RzCmdDescArg open_args[4];
 static const RzCmdDescArg open_write_args[4];
 static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_core_file_args[2];
+static const RzCmdDescArg open_malloc_args[2];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
 static const RzCmdDescArg open_binary_select_id_args[2];
@@ -7941,6 +7942,20 @@ static const RzCmdDescHelp open_core_file_help = {
 	.args = open_core_file_args,
 };
 
+static const RzCmdDescArg open_malloc_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_malloc_help = {
+	.summary = "Open a 'malloc://<len>' file, copying the bytes from current offset",
+	.args = open_malloc_args,
+};
+
 static const RzCmdDescArg open_plugins_args[] = {
 	{
 		.name = "path",
@@ -13092,6 +13107,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_core_file_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "oc", rz_open_core_file_handler, &open_core_file_help);
 	rz_warn_if_fail(open_core_file_cd);
+
+	RzCmdDesc *open_malloc_cd = rz_cmd_desc_argv_new(core->rcmd, o_cd, "oC", rz_open_malloc_handler, &open_malloc_help);
+	rz_warn_if_fail(open_malloc_cd);
 
 	RzCmdDesc *open_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, o_cd, "oL", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_plugins_io_print_handler, &open_plugins_help);
 	rz_warn_if_fail(open_plugins_cd);

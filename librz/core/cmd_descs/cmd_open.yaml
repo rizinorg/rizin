@@ -63,6 +63,12 @@ commands:
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
+  - name: oC
+    cname: open_malloc
+    summary: Open a 'malloc://<len>' file, copying the bytes from current offset
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
   - name: oL
     cname: open_plugins
     handler: plugins_io_print

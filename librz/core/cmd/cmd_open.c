@@ -221,7 +221,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	int perms = RZ_PERM_R;
 	ut64 addr = 0LL;
 	int argc, fd = -1;
-	RzCoreFile *file;
 	RzIODesc *desc;
 	bool write = false;
 	const char *ptr = NULL;
@@ -322,30 +321,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			rz_core_file_print(core, RZ_OUTPUT_MODE_STANDARD);
 		}
 		break;
-	case 'C': // "oC"
-	{
-		int len = rz_num_math(core->num, input + 1);
-		if (len < 1) {
-			len = core->blocksize;
-		}
-		char *uri = rz_str_newf("malloc://%d", len);
-		ut8 *data = calloc(len, 1);
-		rz_io_read_at(core->io, core->offset, data, len);
-		if ((file = rz_core_file_open(core, uri, RZ_PERM_RWX, 0))) {
-			fd = file->fd;
-			core->num->value = fd;
-			rz_core_bin_load(core, uri, 0);
-			RzIODesc *desc = rz_io_desc_get(core->io, fd);
-			if (desc) {
-				// TODO: why rz_io_desc_write() fails?
-				rz_io_desc_write_at(desc, 0, data, len);
-			}
-		} else {
-			eprintf("Cannot %s\n", uri);
-		}
-		free(uri);
-		free(data);
-	} break;
 	case 'o': // "oo"
 		switch (input[1]) {
 		case 'm': // "oom"
@@ -1224,4 +1199,38 @@ RZ_IPI RzCmdStatus rz_open_core_file_handler(RzCore *core, int argc, const char 
 	}
 	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
 	return bool2status(rz_core_bin_load(core, NULL, baddr));
+}
+
+RZ_IPI RzCmdStatus rz_open_malloc_handler(RzCore *core, int argc, const char **argv) {
+	int len = (int)rz_num_math(core->num, argv[1]);
+	if (len < 0) {
+		RZ_LOG_ERROR("Invalid length %d.\n", len);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
+	ut8 *data = RZ_NEWS(ut8, len);
+	if (!data) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_read_at(core->io, core->offset, data, len);
+
+	char uri[100];
+	rz_strf(uri, "malloc://%d", len);
+	RzCoreFile *cfile = rz_core_file_open(core, uri, RZ_PERM_RWX, 0);
+	if (!cfile) {
+		RZ_LOG_ERROR("Cannot open '%s'.\n", uri);
+		goto err;
+	}
+
+	rz_core_bin_load(core, uri, 0);
+
+	RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
+	rz_warn_if_fail(desc);
+	rz_io_desc_write_at(desc, 0, data, len);
+	res = RZ_CMD_STATUS_OK;
+
+err:
+	free(data);
+	return res;
 }
