@@ -10570,6 +10570,8 @@ static const RzCmdDescDetailEntry specifiers_Table_space_format_space_specifiers
 	{ .text = "<col>/ne/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is not equal to <val>." },
 	{ .text = "<col|*>/uniq", .arg_str = NULL, .comment = "Only get the first row where column <col> or all columns are unique." },
 	{ .text = "*/page/<n_page>/<page_size>", .arg_str = NULL, .comment = "Show <page_size> rows starting from the page number <n_page>." },
+	{ .text = "*/head/<n_rows>", .arg_str = NULL, .comment = "Show the first <n_rows> rows." },
+	{ .text = "*/tail/<n_rows>", .arg_str = NULL, .comment = "Show the last <n_rows> rows." },
 	{ .text = "<col>/str/<value>", .arg_str = NULL, .comment = "Grep rows where string <value> is a substring of column <col>." },
 	{ .text = "<col>/strlen/<value>", .arg_str = NULL, .comment = "Grep rows where the length of column <col> is <value>." },
 	{ .text = "<col>/minlen/<value>", .arg_str = NULL, .comment = "Grep rows where the length of column <col> is greater than <value>." },
