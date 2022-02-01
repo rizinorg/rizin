@@ -70,20 +70,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=oi-
-FILE=malloc://1024
-CMDS=oi-
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=oi-2
-FILE=--
-CMDS=o bins/mach0/fatmach0-3true
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=o-[0]
 FILE=malloc://1024
 CMDS=o- `o~[0]`;o
@@ -95,17 +81,6 @@ NAME=oj-
 FILE=malloc://1024
 CMDS=o- `oj~{[0].fd}`;o
 EXPECT=<<EOF
-EOF
-RUN
-
-NAME=oij-pj
-FILE=<<EOF
-bins/elf/crackme0x05
-bins/elf/crackme0x00b
-EOF
-CMDS=oij
-EXPECT=<<EOF
-[{"raised":false,"fd":3,"uri":"bins/elf/crackme0x05","from":0,"writable":false,"size":7656},{"raised":true,"fd":6,"uri":"bins/elf/crackme0x00b","from":0,"writable":false,"size":7375}]
 EOF
 RUN
 

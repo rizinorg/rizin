@@ -280,47 +280,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	}
 
 	switch (*input) {
-	case 'i': // "oi"
-		switch (input[1]) {
-		case ' ': // "oi "
-		{
-			RzListIter *iter = NULL;
-			RzCoreFile *f;
-			int nth = rz_num_math(core->num, input + 2);
-			int count = 0;
-			rz_list_foreach (core->files, iter, f) {
-				if (count == nth) {
-					rz_io_use_fd(core->io, f->fd);
-					break;
-				}
-				count++;
-			}
-		} break;
-		case '-': // "oi-"
-		{
-			RzListIter *iter = NULL;
-			RzCoreFile *f;
-			int nth = rz_num_math(core->num, input + 2);
-			int count = 0;
-			rz_list_foreach (core->files, iter, f) {
-				if (count == nth) {
-					rz_core_file_close_fd(core, f->fd);
-					break;
-				}
-				count++;
-			}
-		} break;
-		case 'j': // "oij"
-			rz_core_file_print(core, RZ_OUTPUT_MODE_JSON);
-			break;
-		case '*': // "oi*"
-			rz_core_file_print(core, RZ_OUTPUT_MODE_RIZIN);
-			break;
-		case 0: // "oi"
-			break;
-			rz_core_file_print(core, RZ_OUTPUT_MODE_STANDARD);
-		}
-		break;
 	case 'o': // "oo"
 		switch (input[1]) {
 		case 'm': // "oom"
