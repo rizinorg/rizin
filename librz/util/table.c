@@ -676,7 +676,7 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 			match = (nv <= uv);
 			break;
 		case '=':
-			if (nv == 0) {
+			if (nv == 0 && nn != NULL) {
 				match = !strcmp(nn, un);
 			} else {
 				match = (nv == uv);
