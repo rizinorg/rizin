@@ -2366,19 +2366,19 @@ RZ_API void rz_str_filter(char *str) {
 }
 
 /**
- * \brief Exttract all printable characters in \p str, and return a string of maximum length \p len
+ * \brief Extract all printable characters in \p str, and return a string of maximum length \p len
  * 
  * \param str String to extract printable characters from
  * \param len The maximum length of the resulting string
  * \return char* Extracted printable string
  */
-RZ_API char *rz_str_extract_printable(const char *str, int len) {
+RZ_API RZ_OWN char *rz_str_extract_printable(RZ_NONNULL const char *str, int len) {
 	rz_return_val_if_fail(str && len >= 0, NULL);
 	char *r, *res = malloc(len + 1);
-	int i;
 	if (!res) {
 		return NULL;
 	}
+	int i;
 	for (i = 0, r = res; i < len; str++, i++) {
 		if (IS_PRINTABLE(*str)) {
 			*r++ = *str;
