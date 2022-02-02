@@ -403,7 +403,7 @@ RZ_API int rz_str_delta(char *p, char a, char b) {
  * Replaces all instances of \p ch in \p str with a NULL byte and it returns
  * the number of split strings.
  */
-RZ_API size_t rz_str_split(char *str, char ch) {
+RZ_API size_t rz_str_split(RZ_NONNULL char *str, char ch) {
 	rz_return_val_if_fail(str, 0);
 	size_t i;
 	char *p;
@@ -826,7 +826,7 @@ RZ_API const char *rz_str_rstr(const char *base, const char *p) {
 	return r;
 }
 
-RZ_API const char *rz_str_rchr(const char *base, const char *p, int ch) {
+RZ_API const char *rz_str_rchr(RZ_NONNULL const char *base, const char *p, int ch) {
 	rz_return_val_if_fail(base, NULL);
 	if (!p) {
 		return strrchr(base, ch);
@@ -894,7 +894,7 @@ RZ_API char *rz_str_trunc_ellipsis(const char *str, int len) {
 	return buf;
 }
 
-RZ_API char *rz_str_newf(const char *fmt, ...) {
+RZ_API char *rz_str_newf(RZ_NONNULL const char *fmt, ...) {
 	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
@@ -920,7 +920,7 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
  *
  * 	This API behaves like strlcpy or strscpy.
  */
-RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
+RZ_API size_t rz_str_ncpy(RZ_NONNULL char *dst, RZ_NONNULL const char *src, size_t dst_size) {
 	rz_return_val_if_fail(dst && src, 0);
 
 	// do not do anything if dst_size is 0
@@ -938,7 +938,7 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
-RZ_API bool rz_str_ccmp(const char *dst, const char *src, int ch) {
+RZ_API bool rz_str_ccmp(RZ_NONNULL const char *dst, RZ_NONNULL const char *src, int ch) {
 	rz_return_val_if_fail(dst && src, false);
 	int i;
 	for (i = 0; src[i] && src[i] != ch; i++) {
@@ -1079,7 +1079,7 @@ RZ_API char *rz_str_append(char *ptr, const char *string) {
 	return ptr;
 }
 
-RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) {
+RZ_API char *rz_str_appendf(char *ptr, RZ_NONNULL const char *fmt, ...) {
 	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
@@ -1157,7 +1157,7 @@ RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g) 
 	return str;
 }
 
-RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
+RZ_API char *rz_str_replace_icase(RZ_NONNULL char *str, RZ_NONNULL const char *key, RZ_NONNULL const char *val, int g, int keep_case) {
 	rz_return_val_if_fail(str && key && val, NULL);
 
 	int off, i, klen, vlen, slen;
@@ -1557,7 +1557,7 @@ RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf) {
 }
 
 // Return MUST BE surrounded by double-quotes
-RZ_API char *rz_str_escape_sh(const char *buf) {
+RZ_API char *rz_str_escape_sh(RZ_NONNULL const char *buf) {
 	rz_return_val_if_fail(buf, NULL);
 	char *new_buf = malloc(1 + strlen(buf) * 2);
 	if (!new_buf) {
@@ -1946,7 +1946,7 @@ RZ_API size_t rz_str_ansi_len(const char *str) {
 	return rz_str_ansi_nlen(str, 0);
 }
 
-RZ_API size_t rz_str_nlen(const char *str, size_t n) {
+RZ_API size_t rz_str_nlen(RZ_NONNULL const char *str, size_t n) {
 	rz_return_val_if_fail(str, 0);
 #if HAVE_STRNLEN
 	return strnlen(str, n);
@@ -2295,7 +2295,7 @@ RZ_API bool rz_str_char_fullwidth(const char *s, size_t left) {
  * Returns 1 in case of ASCII
  * str - Pointer to buffer
  */
-RZ_API size_t rz_str_utf8_charsize(const char *str) {
+RZ_API size_t rz_str_utf8_charsize(RZ_NONNULL const char *str) {
 	rz_return_val_if_fail(str, 0);
 	size_t size = 0;
 	size_t length = strlen(str);
@@ -2314,7 +2314,7 @@ RZ_API size_t rz_str_utf8_charsize(const char *str) {
  * str - Pointer to leading utf8 char
  * prev_len - Length in bytes of the buffer until str
  */
-RZ_API size_t rz_str_utf8_charsize_prev(const char *str, int prev_len) {
+RZ_API size_t rz_str_utf8_charsize_prev(RZ_NONNULL const char *str, int prev_len) {
 	rz_return_val_if_fail(str, 0);
 	int pos = 0;
 	size_t size = 0, minsize = RZ_MIN(5, prev_len);
@@ -2332,7 +2332,7 @@ RZ_API size_t rz_str_utf8_charsize_prev(const char *str, int prev_len) {
  * Returns 1 in case of ASCII
  * str - Pointer to buffer
  */
-RZ_API size_t rz_str_utf8_charsize_last(const char *str) {
+RZ_API size_t rz_str_utf8_charsize_last(RZ_NONNULL const char *str) {
 	rz_return_val_if_fail(str, 0);
 	size_t len = strlen(str);
 	return rz_str_utf8_charsize_prev(str + len, len);
@@ -3433,7 +3433,7 @@ static RzList /*<char *>*/ *str_split_list_common_regex(RZ_BORROW char *str, RZ_
  * \param c Delimiter string used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
  */
-RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n) {
+RZ_API RzList /*<char *>*/ *rz_str_split_list(RZ_NONNULL char *str, RZ_NONNULL const char *c, int n) {
 	rz_return_val_if_fail(str && c, NULL);
 	return str_split_list_common(str, c, n, true, false);
 }
@@ -3468,7 +3468,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str,
  * \param c Delimiter string used to split \p str
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
+RZ_API RzList /*<char *>*/ *rz_str_split_duplist(RZ_NONNULL const char *_str, RZ_NONNULL const char *c, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
 	char *str = strdup(_str);
 	RzList *res = str_split_list_common(str, c, 0, trim, true);
@@ -3489,7 +3489,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *_str, const char *c
  * \param n If > 0 at most this number of delimiters are considered.
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char *c, int n, bool trim) {
+RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(RZ_NONNULL const char *_str, RZ_NONNULL const char *c, int n, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
 	char *str = strdup(_str);
 	RzList *res = str_split_list_common(str, c, n, trim, true);
@@ -3530,7 +3530,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const
  * \param str Input string to split
  * \param count Pointer to a size_t variable that can hold the number of lines.
  */
-RZ_API size_t *rz_str_split_lines(char *str, size_t *count) {
+RZ_API size_t *rz_str_split_lines(RZ_NONNULL char *str, size_t *count) {
 	rz_return_val_if_fail(str, NULL);
 	RzList *l = str_split_list_common(str, "\n", 0, false, false);
 	if (!l) {
@@ -3899,7 +3899,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 	return join;
 }
 
-RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {
+RZ_API const char *rz_str_str_xy(RZ_NONNULL const char *s, RZ_NONNULL const char *word, const char *prev, RZ_NONNULL int *x, RZ_NONNULL int *y) {
 	rz_return_val_if_fail(s && word && x && y, NULL);
 	rz_return_val_if_fail(word[0] != '\0' && word[0] != '\n', NULL);
 	const char *src = prev ? prev + 1 : s;
@@ -3931,7 +3931,11 @@ RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *pr
  * \param width the maximum size of each line. It will be respected only if
  *              possible, as the function won't split words.
  */
-RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width) {
+<<<<<<< HEAD
+RZ_API RzList /*<char *>*/ *rz_str_wrap(RZ_NONNULL char *str, size_t width) {
+=======
+RZ_API RzList *rz_str_wrap(RZ_NONNULL char *str, size_t width) {
+>>>>>>> 04ffa57ecf (Add `RZ_NONNULL` decoration for function arguments in `str.c`)
 	rz_return_val_if_fail(str, NULL);
 
 	RzList *res = rz_list_new();
