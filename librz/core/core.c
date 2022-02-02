@@ -3765,7 +3765,7 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 			append_bound(list, core->io, search_itv, from, size, 5);
 		} else {
 			RZ_LOG_ERROR("WARNING: search.in = ( analysis.bb | analysis.fcn )"
-				"requires to seek into a valid function\n");
+				     "requires to seek into a valid function\n");
 			append_bound(list, core->io, search_itv, core->offset, 1, 5);
 		}
 	} else if (!strncmp(mode, "dbg.", 4)) {

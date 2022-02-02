@@ -2367,7 +2367,7 @@ RZ_API void rz_str_filter(char *str) {
 
 /**
  * \brief Extract all printable characters in \p str, and return a string of maximum length \p len
- * 
+ *
  * \param str String to extract printable characters from
  * \param len The maximum length of the resulting string
  * \return char* Extracted printable string
