@@ -9,10 +9,6 @@ static RzMagic *ck = NULL; // XXX: Use RzCore->magic
 static char *ofile = NULL;
 static int kw_count = 0;
 
-static void rz_core_magic_reset(RzCore *core) {
-	kw_count = 0;
-}
-
 static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth, int v, PJ *pj, int *hits) {
 	const char *fmt;
 	char *q, *p;

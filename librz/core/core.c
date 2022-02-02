@@ -2025,7 +2025,11 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 			case 2:
 				r = rz_utf8_encode_str((const RzRune *)buf, widebuf, sizeof(widebuf) - 1);
 				if (r == -1) {
+<<<<<<< HEAD
 					RZ_LOG_ERROR("core: something was wrong with refs\n");
+=======
+					RZ_LOG_ERROR("Something was wrong with refs\n");
+>>>>>>> 1222d09384 (Rearrange functions and remove "currently" unused functions)
 				} else {
 					if (pj) {
 						pj_ks(pj, "string", (const char *)widebuf);
@@ -3398,7 +3402,7 @@ RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *
 			rz_core_autocomplete_free(ac);
 			RzCoreAutocomplete **updated = realloc(parent->subcmds, (parent->n_subcmds - 1) * sizeof(RzCoreAutocomplete *));
 			if (!updated && (parent->n_subcmds - 1) > 0) {
-				RZ_LOG_ERROR("core: autocomplete: something really bad has happen.. this should never ever happen..\n");
+				RZ_LOG_ERROR("core: autocomplete: something really bad has happened, this should never ever happen...\n");
 				return false;
 			}
 			parent->subcmds = updated;
@@ -3462,4 +3466,530 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 	}
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
+}
+
+static void append_bound(RzList *list, RzIO *io, RzInterval search_itv, ut64 from, ut64 size, int perms) {
+	RzIOMap *map = RZ_NEW0(RzIOMap);
+	if (!map) {
+		return;
+	}
+	if (io && io->desc) {
+		map->fd = rz_io_fd_get_current(io);
+	}
+
+	map->perm = perms;
+	RzInterval itv = { from, size };
+	if (size == -1) {
+		RZ_LOG_ERROR("Warning: Invalid range. Use different search.in=? or analysis.in=dbg.maps.x\n");
+		free(map);
+		return;
+	}
+	// TODO UT64_MAX is a valid address. search.from and search.to are not specified
+	if (search_itv.addr == UT64_MAX && !search_itv.size) {
+		map->itv = itv;
+		rz_list_append(list, map);
+	} else if (rz_itv_overlap(itv, search_itv)) {
+		map->itv = rz_itv_intersect(itv, search_itv);
+		if (map->itv.size) {
+			rz_list_append(list, map);
+		} else {
+			free(map);
+		}
+	} else {
+		free(map);
+	}
+}
+
+static bool mask_matches(int perm, int mask, bool only) {
+	if (mask) {
+		if (only) {
+			return ((perm & 7) != mask);
+		}
+		return (perm & mask) != mask;
+	}
+	return false;
+}
+
+RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
+	rz_return_val_if_fail(core, NULL);
+
+	RzList *list = rz_list_newf(free); // XXX rz_io_map_free);
+	if (!list) {
+		return NULL;
+	}
+
+	char bound_in[32];
+	char bound_from[32];
+	char bound_to[32];
+	snprintf(bound_in, sizeof(bound_in), "%s.%s", prefix, "in");
+	snprintf(bound_from, sizeof(bound_from), "%s.%s", prefix, "from");
+	snprintf(bound_to, sizeof(bound_to), "%s.%s", prefix, "to");
+	const ut64 search_from = rz_config_get_i(core->config, bound_from),
+		   search_to = rz_config_get_i(core->config, bound_to);
+	const RzInterval search_itv = { search_from, search_to - search_from };
+	if (!mode) {
+		mode = rz_config_get(core->config, bound_in);
+	}
+	if (!rz_config_get_b(core->config, "cfg.debug") && !core->io->va) {
+		append_bound(list, core->io, search_itv, 0, rz_io_size(core->io), 7);
+	} else if (!strcmp(mode, "file")) {
+		append_bound(list, core->io, search_itv, 0, rz_io_size(core->io), 7);
+	} else if (!strcmp(mode, "block")) {
+		append_bound(list, core->io, search_itv, core->offset, core->blocksize, 7);
+	} else if (!strcmp(mode, "io.map")) {
+		RzIOMap *m = rz_io_map_get(core->io, core->offset);
+		if (m) {
+			append_bound(list, core->io, search_itv, m->itv.addr, m->itv.size, m->perm);
+		}
+	} else if (!strcmp(mode, "io.maps")) { // Non-overlapping RzIOMap parts not overridden by others (skyline)
+		ut64 begin = UT64_MAX;
+		ut64 end = UT64_MAX;
+#define USE_SKYLINE 0
+#if USE_SKYLINE
+		const RzPVector *skyline = &core->io->map_skyline;
+		size_t i;
+		for (i = 0; i < rz_pvector_len(skyline); i++) {
+			const RzIOMapSkyline *part = rz_pvector_at(skyline, i);
+			ut64 from = rz_itv_begin(part->itv);
+			ut64 to = rz_itv_end(part->itv);
+			// XXX skyline's fake map perms are wrong
+			RzIOMap *m = rz_io_map_get(core->io, from);
+			int rwx = m ? m->perm : part->map->perm;
+#else
+		void **it;
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
+			RzIOMap *map = *it;
+			ut64 from = rz_itv_begin(map->itv);
+			ut64 to = rz_itv_end(map->itv);
+			int rwx = map->perm;
+#endif
+			if (begin == UT64_MAX) {
+				begin = from;
+			}
+			if (end == UT64_MAX) {
+				end = to;
+			} else {
+				if (end == from) {
+					end = to;
+				} else {
+					append_bound(list, NULL, search_itv,
+						begin, end - begin, rwx);
+					begin = from;
+					end = to;
+				}
+			}
+		}
+		if (end != UT64_MAX) {
+			append_bound(list, NULL, search_itv, begin, end - begin, 7);
+		}
+	} else if (rz_str_startswith(mode, "io.maps.")) {
+		int len = strlen("io.maps.");
+		int mask = (mode[len - 1] == '.') ? rz_str_rwx(mode + len) : 0;
+		// bool only = (bool)(size_t)strstr (mode, ".only");
+
+		void **it;
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
+			RzIOMap *map = *it;
+			ut64 from = rz_itv_begin(map->itv);
+			// ut64 to = rz_itv_end (map->itv);
+			int rwx = map->perm;
+			if ((rwx & mask) != mask) {
+				continue;
+			}
+			append_bound(list, core->io, search_itv, from, rz_itv_size(map->itv), rwx);
+		}
+	} else if (rz_str_startswith(mode, "io.sky.")) {
+		int len = strlen("io.sky.");
+		int mask = (mode[len - 1] == '.') ? rz_str_rwx(mode + len) : 0;
+		bool only = (bool)(size_t)strstr(mode, ".only");
+		RzVector *skyline = &core->io->map_skyline.v;
+		ut64 begin = UT64_MAX;
+		ut64 end = UT64_MAX;
+		size_t i;
+		for (i = 0; i < rz_vector_len(skyline); i++) {
+			const RzSkylineItem *part = rz_vector_index_ptr(skyline, i);
+			ut64 from = part->itv.addr;
+			ut64 to = part->itv.addr + part->itv.size;
+			int perm = ((RzIOMap *)part->user)->perm;
+			if (mask_matches(perm, mask, only)) {
+				continue;
+			}
+			if (begin == UT64_MAX) {
+				begin = from;
+			}
+			if (end == UT64_MAX) {
+				end = to;
+			} else {
+				if (end == from) {
+					end = to;
+				} else {
+					append_bound(list, NULL, search_itv, begin, end - begin, perm);
+					begin = from;
+					end = to;
+				}
+			}
+		}
+		if (end != UT64_MAX) {
+			append_bound(list, NULL, search_itv, begin, end - begin, 7);
+		}
+	} else if (rz_str_startswith(mode, "bin.segments")) {
+		int len = strlen("bin.segments.");
+		int mask = (mode[len - 1] == '.') ? rz_str_rwx(mode + len) : 0;
+		bool only = (bool)(size_t)strstr(mode, ".only");
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		if (obj) {
+			RzBinSection *s;
+			RzListIter *iter;
+			rz_list_foreach (obj->sections, iter, s) {
+				if (!s->is_segment) {
+					continue;
+				}
+				if (mask_matches(s->perm, mask, only)) {
+					continue;
+				}
+				ut64 addr = core->io->va ? s->vaddr : s->paddr;
+				ut64 size = core->io->va ? s->vsize : s->size;
+				append_bound(list, core->io, search_itv, addr, size, s->perm);
+			}
+		}
+	} else if (rz_str_startswith(mode, "code")) {
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		if (obj) {
+			ut64 from = UT64_MAX;
+			ut64 to = 0;
+			RzBinSection *s;
+			RzListIter *iter;
+			rz_list_foreach (obj->sections, iter, s) {
+				if (s->is_segment) {
+					continue;
+				}
+				if (mask_matches(s->perm, 1, false)) {
+					continue;
+				}
+				ut64 addr = core->io->va ? s->vaddr : s->paddr;
+				ut64 size = core->io->va ? s->vsize : s->size;
+				from = RZ_MIN(addr, from);
+				to = RZ_MAX(to, addr + size);
+			}
+			if (from == UT64_MAX) {
+				int mask = 1;
+				void **it;
+				RzPVector *maps = rz_io_maps(core->io);
+				rz_pvector_foreach (maps, it) {
+					RzIOMap *map = *it;
+					ut64 from = rz_itv_begin(map->itv);
+					ut64 size = rz_itv_size(map->itv);
+					int rwx = map->perm;
+					if ((rwx & mask) != mask) {
+						continue;
+					}
+					append_bound(list, core->io, search_itv, from, size, rwx);
+				}
+			}
+			append_bound(list, core->io, search_itv, from, to - from, 1);
+		}
+	} else if (rz_str_startswith(mode, "bin.sections")) {
+		int len = strlen("bin.sections.");
+		int mask = (mode[len - 1] == '.') ? rz_str_rwx(mode + len) : 0;
+		bool only = (bool)(size_t)strstr(mode, ".only");
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		if (obj) {
+			RzBinSection *s;
+			RzListIter *iter;
+			rz_list_foreach (obj->sections, iter, s) {
+				if (s->is_segment) {
+					continue;
+				}
+				if (mask_matches(s->perm, mask, only)) {
+					continue;
+				}
+				ut64 addr = core->io->va ? s->vaddr : s->paddr;
+				ut64 size = core->io->va ? s->vsize : s->size;
+				append_bound(list, core->io, search_itv, addr, size, s->perm);
+			}
+		}
+	} else if (!strcmp(mode, "bin.segment")) {
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		if (obj) {
+			RzBinSection *s;
+			RzListIter *iter;
+			rz_list_foreach (obj->sections, iter, s) {
+				if (!s->is_segment) {
+					continue;
+				}
+				ut64 addr = core->io->va ? s->vaddr : s->paddr;
+				ut64 size = core->io->va ? s->vsize : s->size;
+				if (RZ_BETWEEN(addr, core->offset, addr + size)) {
+					append_bound(list, core->io, search_itv, addr, size, s->perm);
+				}
+			}
+		}
+	} else if (!strcmp(mode, "bin.section")) {
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		if (obj) {
+			RzBinSection *s;
+			RzListIter *iter;
+			rz_list_foreach (obj->sections, iter, s) {
+				if (s->is_segment) {
+					continue;
+				}
+				ut64 addr = core->io->va ? s->vaddr : s->paddr;
+				ut64 size = core->io->va ? s->vsize : s->size;
+				if (RZ_BETWEEN(addr, core->offset, addr + size)) {
+					append_bound(list, core->io, search_itv, addr, size, s->perm);
+				}
+			}
+		}
+	} else if (!strcmp(mode, "analysis.fcn") || !strcmp(mode, "analysis.bb")) {
+		RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
+			RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
+		if (f) {
+			ut64 from = f->addr, size = rz_analysis_function_size_from_entry(f);
+
+			/* Search only inside the basic block */
+			if (!strcmp(mode, "analysis.bb")) {
+				RzListIter *iter;
+				RzAnalysisBlock *bb;
+
+				rz_list_foreach (f->bbs, iter, bb) {
+					ut64 at = core->offset;
+					if ((at >= bb->addr) && (at < (bb->addr + bb->size))) {
+						from = bb->addr;
+						size = bb->size;
+						break;
+					}
+				}
+			}
+			append_bound(list, core->io, search_itv, from, size, 5);
+		} else {
+			RZ_LOG_ERROR("WARNING: search.in = ( analysis.bb | analysis.fcn )"
+				"requires to seek into a valid function\n");
+			append_bound(list, core->io, search_itv, core->offset, 1, 5);
+		}
+	} else if (!strncmp(mode, "dbg.", 4)) {
+		if (core->bin->is_debugger) {
+			int mask = 0;
+			int add = 0;
+			bool heap = false;
+			bool stack = false;
+			bool all = false;
+			bool first = false;
+			RzListIter *iter;
+			RzDebugMap *map;
+
+			rz_debug_map_sync(core->dbg);
+
+			if (!strcmp(mode, "dbg.map")) {
+				int perm = 0;
+				ut64 from = core->offset;
+				ut64 to = core->offset;
+				rz_list_foreach (core->dbg->maps, iter, map) {
+					if (from >= map->addr && from < map->addr_end) {
+						from = map->addr;
+						to = map->addr_end;
+						perm = map->perm;
+						break;
+					}
+				}
+				if (perm) {
+					RzIOMap *nmap = RZ_NEW0(RzIOMap);
+					if (nmap) {
+						// nmap->fd = core->io->desc->fd;
+						nmap->itv.addr = from;
+						nmap->itv.size = to - from;
+						nmap->perm = perm;
+						nmap->delta = 0;
+						rz_list_append(list, nmap);
+					}
+				}
+			} else {
+				bool only = false;
+				mask = 0;
+				if (!strcmp(mode, "dbg.program")) {
+					first = true;
+					mask = RZ_PERM_X;
+				} else if (!strcmp(mode, "dbg.maps")) {
+					all = true;
+				} else if (rz_str_startswith(mode, "dbg.maps.")) {
+					mask = rz_str_rwx(mode + 9);
+					only = (bool)(size_t)strstr(mode, ".only");
+				} else if (!strcmp(mode, "dbg.heap")) {
+					heap = true;
+				} else if (!strcmp(mode, "dbg.stack")) {
+					stack = true;
+				}
+
+				ut64 from = UT64_MAX;
+				ut64 to = 0;
+				rz_list_foreach (core->dbg->maps, iter, map) {
+					if (!all && mask_matches(map->perm, mask, only)) {
+						continue;
+					}
+					add = (stack && strstr(map->name, "stack")) ? 1 : 0;
+					if (!add && (heap && (map->perm & RZ_PERM_W)) && strstr(map->name, "heap")) {
+						add = 1;
+					}
+					if ((mask && (map->perm & mask)) || add || all) {
+						if (!list) {
+							list = rz_list_newf(free);
+						}
+						RzIOMap *nmap = RZ_NEW0(RzIOMap);
+						if (!nmap) {
+							break;
+						}
+						nmap->itv.addr = map->addr;
+						nmap->itv.size = map->addr_end - map->addr;
+						if (nmap->itv.addr) {
+							from = RZ_MIN(from, nmap->itv.addr);
+							to = RZ_MAX(to - 1, rz_itv_end(nmap->itv) - 1) + 1;
+						}
+						nmap->perm = map->perm;
+						nmap->delta = 0;
+						rz_list_append(list, nmap);
+						if (first) {
+							break;
+						}
+					}
+				}
+			}
+		}
+	} else {
+		/* obey temporary seek if defined '/x 8080 @ addr:len' */
+		if (core->tmpseek) {
+			append_bound(list, core->io, search_itv, core->offset, core->blocksize, 5);
+		} else {
+			// TODO: repeat last search doesnt works for /a
+			ut64 from = rz_config_get_i(core->config, bound_from);
+			if (from == UT64_MAX) {
+				from = core->offset;
+			}
+			ut64 to = rz_config_get_i(core->config, bound_to);
+			if (to == UT64_MAX) {
+				if (core->io->va) {
+					/* TODO: section size? */
+				} else {
+					if (core->file) {
+						to = rz_io_fd_size(core->io, core->file->fd);
+					}
+				}
+			}
+			append_bound(list, core->io, search_itv, from, to - from, 5);
+		}
+	}
+	return list;
+}
+
+static int preludecnt = 0;
+
+static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
+	RzCore *core = (RzCore *)user;
+	int depth = rz_config_get_i(core->config, "analysis.depth");
+	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
+	rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth);
+	preludecnt++;
+	return 1;
+}
+
+RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
+	ut64 at;
+	ut8 *b = (ut8 *)malloc(core->blocksize);
+	if (!b) {
+		return 0;
+	}
+	// TODO: handle sections ?
+	if (from >= to) {
+		eprintf("aap: Invalid search range 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", from, to);
+		free(b);
+		return 0;
+	}
+	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+	rz_search_kw_add(core->search, rz_search_keyword_new(buf, blen, mask, mlen, NULL));
+	rz_search_begin(core->search);
+	rz_search_set_callback(core->search, &__prelude_cb_hit, core);
+	preludecnt = 0;
+	for (at = from; at < to; at += core->blocksize) {
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		if (!rz_io_is_valid_offset(core->io, at, 0)) {
+			break;
+		}
+		(void)rz_io_read_at(core->io, at, b, core->blocksize);
+		if (rz_search_update(core->search, at, b, core->blocksize) == -1) {
+			eprintf("search: update read error at 0x%08" PFMT64x "\n", at);
+			break;
+		}
+	}
+	// rz_search_reset might also benifet from having an if(s->data) RZ_FREE(s->data), but im not sure.
+	// add a commit that puts it in there to this PR if it wouldn't break anything. (don't have to worry about this happening again, since all searches start by resetting core->search)
+	// For now we will just use rz_search_kw_reset
+	rz_search_kw_reset(core->search);
+	free(b);
+	return preludecnt;
+}
+
+RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
+	int ret = -1;
+	const char *prelude = rz_config_get(core->config, "analysis.prelude");
+	ut64 from = UT64_MAX;
+	ut64 to = UT64_MAX;
+	const char *where = rz_config_get(core->config, "analysis.in");
+
+	RzList *list = rz_core_get_boundaries_prot(core, RZ_PERM_X, where, "search");
+	RzListIter *iter;
+	RzIOMap *p;
+
+	if (!list) {
+		return -1;
+	}
+
+	int fc0 = rz_list_length(core->analysis->fcns);
+	rz_list_foreach (list, iter, p) {
+		if (log) {
+			RZ_LOG_ERROR("\r[>] Scanning %s 0x%" PFMT64x " - 0x%" PFMT64x " ",
+				rz_str_rwx_i(p->perm), p->itv.addr, rz_itv_end(p->itv));
+			if (!(p->perm & RZ_PERM_X)) {
+				RZ_LOG_ERROR("skip\n");
+				continue;
+			}
+		}
+		from = p->itv.addr;
+		to = rz_itv_end(p->itv);
+		if (prelude && *prelude) {
+			ut8 *kw = malloc(strlen(prelude) + 1);
+			int kwlen = rz_hex_str2bin(prelude, kw);
+			ret = rz_core_search_prelude(core, from, to, kw, kwlen, NULL, 0);
+			free(kw);
+		} else {
+			RzList *preds = rz_analysis_preludes(core->analysis);
+			if (preds) {
+				RzListIter *iter;
+				RzSearchKeyword *kw;
+				rz_list_foreach (preds, iter, kw) {
+					ret = rz_core_search_prelude(core, from, to,
+						kw->bin_keyword, kw->keyword_length,
+						kw->bin_binmask, kw->binmask_length);
+				}
+			} else {
+				if (log) {
+					RZ_LOG_ERROR("ap: Unsupported asm.arch and asm.bits\n");
+				}
+			}
+		}
+		if (log) {
+			RZ_LOG_ERROR("done\n");
+		}
+	}
+	int fc1 = rz_list_length(core->analysis->fcns);
+	if (log) {
+		if (list) {
+			RZ_LOG_ERROR("Analyzed %d functions based on preludes\n", fc1 - fc0);
+		} else {
+			RZ_LOG_ERROR("No executable section found, cannot analyze anything. Use 'S' to change or define permissions of sections\n");
+		}
+	}
+	rz_list_free(list);
+	return ret;
 }
