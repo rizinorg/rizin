@@ -1727,3 +1727,44 @@ EXPECT=<<EOF
 7
 EOF
 RUN
+
+NAME=repeat emu run after reset everything
+FILE=bins/bf/2+5.bf
+CMDS=<<EOF
+e io.cache=1
+w + @ 2
+aezi
+ara+
+aezsu $s; ?e
+aezv
+?e --- Reset everything ---
+ara-
+aezi  # Shouldn't be necessary
+aezv
+wcr
+aezsu $s; ?e
+EOF
+EXPECT=<<EOF
+8
+ PC: 0x00000000000002af ptr: 0x0000000000010000
+--- Reset everything ---
+ PC: 0x0000000000000000 ptr: 0x0000000000010000
+7
+EOF
+RUN
+
+NAME=ar pc=1 before aezi
+FILE=bins/bf/2+5.bf
+BROKEN=1
+CMDS=<<EOF
+e io.cache=1
+ar pc=1
+aezi
+aezv
+aezsu $s; ?e
+EOF
+EXPECT=<<EOF
+ PC: 0x0000000000000001 ptr: 0x0000000000010000
+6
+EOF
+RUN
