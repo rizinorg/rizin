@@ -108,21 +108,7 @@ rzil: nop
 EOF
 RUN
 
-
-NAME=loopy hello world
-FILE=bins/bf/hello-loops.bf
-ARGS=-eio.cache=1
-CMDS=<<EOF
-s 0
-aezi
-aezs 906
-EOF
-EXPECT=<<EOF
-Hello World!
-EOF
-RUN
-
-NAME=instructions
+NAME=instruction event trace
 FILE=bins/bf/hello-loops.bf
 ARGS=-eio.cache=1
 CMDS=<<EOF
