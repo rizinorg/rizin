@@ -963,6 +963,21 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		}
 		break;
 	}
+	case EM_386:
+		switch (rel->type) {
+		case RZ_386_32:
+		case RZ_386_PC32:
+			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+			val = rz_read_le32(buf) + S + A;
+			if (rel->type == RZ_386_PC32) {
+				val -= P;
+			}
+			rz_write_le32(buf, val);
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+		default:
+			break;
+		}
+		break;
 	case EM_X86_64: {
 		int word = 0;
 		switch (rel->type) {
