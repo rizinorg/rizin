@@ -590,6 +590,10 @@ commands:
             comment: Only get the first row where column <col> or all columns are unique.
           - text: "*/page/<n_page>/<page_size>"
             comment: Show <page_size> rows starting from the page number <n_page>.
+          - text: "*/head/<n_rows>"
+            comment: Show the first <n_rows> rows.
+          - text: "*/tail/<n_rows>"
+            comment: Show the last <n_rows> rows.
           - text: "<col>/str/<value>"
             comment: Grep rows where string <value> is a substring of column <col>.
           - text: "<col>/strlen/<value>"

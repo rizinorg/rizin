@@ -1,6 +1,6 @@
 NAME=hello world
 FILE=bins/bf/hello-ok.bf
-ARGS=-b32 -eio.cache=1
+ARGS=-eio.cache=1
 CMDS=<<EOF
 e asm.arch=bf
 e asm.bytes=true
@@ -12,16 +12,15 @@ aezv
 ar
 EOF
 EXPECT=<<EOF
+Hello World!
  PC: 0x000000000000006f ptr: 0x0000000000010004
 ptr = 0x00010004
 pc = 0x0000006f
-Hello World!
 EOF
 RUN
 
 NAME=hello world - unbalanced loop
 FILE=bins/bf/hello-unbalanced-loop.bf
-ARGS=-b32
 CMDS=<<EOF
 e asm.arch=bf
 e asm.bytes=true
@@ -39,7 +38,7 @@ RUN
 
 NAME=loopy hello world
 FILE=bins/bf/hello-loops.bf
-ARGS=-b32 -eio.cache=1
+ARGS=-eio.cache=1
 CMDS=<<EOF
 s 0
 aezi
@@ -52,7 +51,7 @@ RUN
 
 NAME=instructions
 FILE=bins/bf/hello-loops.bf
-ARGS=-b32 -eio.cache=1
+ARGS=-eio.cache=1
 CMDS=<<EOF
 e asm.arch=bf
 e analysis.arch=bf
@@ -109,23 +108,9 @@ rzil: nop
 EOF
 RUN
 
-
-NAME=loopy hello world
+NAME=instruction event trace
 FILE=bins/bf/hello-loops.bf
-ARGS=-b32 -eio.cache=1
-CMDS=<<EOF
-s 0
-aezi
-aezs 906
-EOF
-EXPECT=<<EOF
-Hello World!
-EOF
-RUN
-
-NAME=instructions
-FILE=bins/bf/hello-loops.bf
-ARGS=-b32 -eio.cache=1
+ARGS=-eio.cache=1
 CMDS=<<EOF
 e asm.arch=bf
 e analysis.arch=bf
@@ -1714,5 +1699,61 @@ var_read(name: ptr, value: 0x10002)
 var_read(name: ptr, value: 0x10002)
 mem_read(addr: 0x10002, value: 0x22)
 mem_write(addr: 0x10002, old: 0x22, new: 0x23)
+EOF
+RUN
+
+NAME=2+5.bf
+FILE=bins/bf/2+5.bf
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu $s; ?e
+EOF
+EXPECT=<<EOF
+7
+EOF
+RUN
+
+NAME=repeat emu run after reset everything
+FILE=bins/bf/2+5.bf
+CMDS=<<EOF
+e io.cache=1
+w + @ 2
+aezi
+ara+
+aezsu $s; ?e
+ar
+?e --- Reset everything ---
+ara-
+wcr
+ar
+aezi  # Shouldn't be necessary
+aezsu $s; ?e
+EOF
+EXPECT=<<EOF
+8
+ptr = 0x00010000
+pc = 0x000002af
+--- Reset everything ---
+ptr = 0x00010000
+pc = 0x00000000
+7
+EOF
+RUN
+
+NAME=ar pc=1 before aezi
+FILE=bins/bf/2+5.bf
+BROKEN=1
+CMDS=<<EOF
+e io.cache=1
+ar pc=1
+aezi
+ar
+aezsu $s; ?e
+EOF
+EXPECT=<<EOF
+ptr = 0x00010000
+pc = 0x00000001
+6
 EOF
 RUN

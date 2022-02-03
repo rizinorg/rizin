@@ -382,3 +382,34 @@ EXPECT=<<EOF
 \   ,=====< 0x080000b0      jmp   reloc.target.getPageLengthEE         ; RELOC 32 getPageLengthEE
 EOF
 RUN
+
+NAME=x86 32bit relocs in kernel module
+FILE=bins/elf/linux-example-x86-32.ko
+CMDS=<<EOF
+s 0x0800007c
+pi 15
+px 0x26
+EOF
+EXPECT=<<EOF
+call reloc.target.__fentry
+push ebp
+mov ebp, esp
+push reloc.target..rodata.str1.1
+call reloc.target.printk
+xor eax, eax
+leave
+ret
+push ebp
+mov ebp, esp
+push str.Ulu_mulu
+call reloc.target.printk
+pop eax
+leave
+ret
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800007c  e8d7 c802 0055 89e5 68a2 0000 08e8 cec8  .....U..h.......
+0x0800008c  0200 31c0 c9c3 5589 e568 b100 0008 e8bd  ..1...U..h......
+0x0800009c  c802 0058 c9c3                           ...X..
+EOF
+RUN
+
