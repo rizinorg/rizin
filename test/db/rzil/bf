@@ -1722,19 +1722,21 @@ w + @ 2
 aezi
 ara+
 aezsu $s; ?e
-aezv
+ar
 ?e --- Reset everything ---
 ara-
-aezi  # Shouldn't be necessary
-aezv
 wcr
+ar
+aezi  # Shouldn't be necessary
 aezsu $s; ?e
 EOF
 EXPECT=<<EOF
 8
- PC: 0x00000000000002af ptr: 0x0000000000010000
+ptr = 0x00010000
+pc = 0x000002af
 --- Reset everything ---
- PC: 0x0000000000000000 ptr: 0x0000000000010000
+ptr = 0x00010000
+pc = 0x00000000
 7
 EOF
 RUN
@@ -1746,11 +1748,12 @@ CMDS=<<EOF
 e io.cache=1
 ar pc=1
 aezi
-aezv
+ar
 aezsu $s; ?e
 EOF
 EXPECT=<<EOF
- PC: 0x0000000000000001 ptr: 0x0000000000010000
+ptr = 0x00010000
+pc = 0x00000001
 6
 EOF
 RUN
