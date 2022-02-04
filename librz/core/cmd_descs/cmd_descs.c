@@ -349,6 +349,12 @@ static const RzCmdDescArg open_core_file_args[2];
 static const RzCmdDescArg open_malloc_args[2];
 static const RzCmdDescArg open_nobin_args[4];
 static const RzCmdDescArg open_nobin_write_args[4];
+static const RzCmdDescArg reopen_args[2];
+static const RzCmdDescArg reopen_write_args[2];
+static const RzCmdDescArg reopen_binary_args[2];
+static const RzCmdDescArg reopen_debug_args[2];
+static const RzCmdDescArg reopen_debug_file_args[3];
+static const RzCmdDescArg reopen_debug_rzrun_args[2];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
 static const RzCmdDescArg open_binary_select_id_args[2];
@@ -8013,6 +8019,151 @@ static const RzCmdDescHelp open_nobin_write_help = {
 	.args = open_nobin_write_args,
 };
 
+static const RzCmdDescHelp oo_help = {
+	.summary = "Reopen current file",
+};
+static const RzCmdDescArg reopen_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_help = {
+	.summary = "Reopen current file or file <fd>",
+	.args = reopen_args,
+};
+
+static const RzCmdDescArg reopen_write_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_write_help = {
+	.summary = "Reopen current file or file <fd> in write mode",
+	.args = reopen_write_args,
+};
+
+static const RzCmdDescArg reopen_binary_args[] = {
+	{
+		.name = "baddr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_binary_help = {
+	.summary = "Reopen current file and reload binary information",
+	.args = reopen_binary_args,
+};
+
+static const RzCmdDescArg reopen_core_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_core_help = {
+	.summary = "Reopen current file as if restarting rizin",
+	.args = reopen_core_args,
+};
+
+static const RzCmdDescHelp ood_help = {
+	.summary = "Reopen current file in debug mode",
+};
+static const RzCmdDescArg reopen_debug_args[] = {
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_debug_help = {
+	.summary = "Reopen current file in debug mode",
+	.args = reopen_debug_args,
+};
+
+static const RzCmdDescArg reopen_debug_file_args[] = {
+	{
+		.name = "uri",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_debug_file_help = {
+	.summary = "Open <uri> in debug mode",
+	.args = reopen_debug_file_args,
+};
+
+static const RzCmdDescArg reopen_debug_rzrun_args[] = {
+	{
+		.name = "rz-run-directives",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_debug_rzrun_help = {
+	.summary = "Reopen current file in debug mode with given rz-run directives",
+	.args = reopen_debug_rzrun_args,
+};
+
+static const RzCmdDescArg reopen_malloc_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_malloc_help = {
+	.summary = "Reopen curent file in malloc://",
+	.args = reopen_malloc_args,
+};
+
+static const RzCmdDescArg reopen_nobin_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_nobin_help = {
+	.summary = "Reopen curent file without loading binary information",
+	.args = reopen_nobin_args,
+};
+
+static const RzCmdDescArg reopen_nobin_write_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_nobin_write_help = {
+	.summary = "Reopen curent file in write-mode without loading binary information",
+	.args = reopen_nobin_write_args,
+};
+
+static const RzCmdDescArg reopen_nobin_headers_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_nobin_headers_help = {
+	.summary = "Reopen curent file without loading binary information but with header flags",
+	.args = reopen_nobin_headers_args,
+};
+
+static const RzCmdDescArg reopen_nobin_write_headers_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp reopen_nobin_write_headers_help = {
+	.summary = "Reopen curent file in write-mode without loading binary information but with header flags",
+	.args = reopen_nobin_write_headers_args,
+};
+
 static const RzCmdDescArg open_plugins_args[] = {
 	{
 		.name = "path",
@@ -13172,6 +13323,40 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(on_cd);
 	RzCmdDesc *open_nobin_write_cd = rz_cmd_desc_argv_new(core->rcmd, on_cd, "on+", rz_open_nobin_write_handler, &open_nobin_write_help);
 	rz_warn_if_fail(open_nobin_write_cd);
+
+	RzCmdDesc *oo_cd = rz_cmd_desc_group_new(core->rcmd, o_cd, "oo", rz_reopen_handler, &reopen_help, &oo_help);
+	rz_warn_if_fail(oo_cd);
+	RzCmdDesc *reopen_write_cd = rz_cmd_desc_argv_new(core->rcmd, oo_cd, "oo+", rz_reopen_write_handler, &reopen_write_help);
+	rz_warn_if_fail(reopen_write_cd);
+
+	RzCmdDesc *reopen_binary_cd = rz_cmd_desc_argv_new(core->rcmd, oo_cd, "oob", rz_reopen_binary_handler, &reopen_binary_help);
+	rz_warn_if_fail(reopen_binary_cd);
+
+	RzCmdDesc *reopen_core_cd = rz_cmd_desc_argv_new(core->rcmd, oo_cd, "ooc", rz_reopen_core_handler, &reopen_core_help);
+	rz_warn_if_fail(reopen_core_cd);
+
+	RzCmdDesc *ood_cd = rz_cmd_desc_group_new(core->rcmd, oo_cd, "ood", rz_reopen_debug_handler, &reopen_debug_help, &ood_help);
+	rz_warn_if_fail(ood_cd);
+	RzCmdDesc *reopen_debug_file_cd = rz_cmd_desc_argv_new(core->rcmd, ood_cd, "oodf", rz_reopen_debug_file_handler, &reopen_debug_file_help);
+	rz_warn_if_fail(reopen_debug_file_cd);
+
+	RzCmdDesc *reopen_debug_rzrun_cd = rz_cmd_desc_argv_new(core->rcmd, ood_cd, "oodr", rz_reopen_debug_rzrun_handler, &reopen_debug_rzrun_help);
+	rz_warn_if_fail(reopen_debug_rzrun_cd);
+
+	RzCmdDesc *reopen_malloc_cd = rz_cmd_desc_argv_new(core->rcmd, oo_cd, "oom", rz_reopen_malloc_handler, &reopen_malloc_help);
+	rz_warn_if_fail(reopen_malloc_cd);
+
+	RzCmdDesc *reopen_nobin_cd = rz_cmd_desc_argv_new(core->rcmd, oo_cd, "oon", rz_reopen_nobin_handler, &reopen_nobin_help);
+	rz_warn_if_fail(reopen_nobin_cd);
+
+	RzCmdDesc *reopen_nobin_write_cd = rz_cmd_desc_argv_new(core->rcmd, oo_cd, "oon+", rz_reopen_nobin_write_handler, &reopen_nobin_write_help);
+	rz_warn_if_fail(reopen_nobin_write_cd);
+
+	RzCmdDesc *reopen_nobin_headers_cd = rz_cmd_desc_argv_new(core->rcmd, oo_cd, "oonn", rz_reopen_nobin_headers_handler, &reopen_nobin_headers_help);
+	rz_warn_if_fail(reopen_nobin_headers_cd);
+
+	RzCmdDesc *reopen_nobin_write_headers_cd = rz_cmd_desc_argv_new(core->rcmd, oo_cd, "oonn+", rz_reopen_nobin_write_headers_handler, &reopen_nobin_write_headers_help);
+	rz_warn_if_fail(reopen_nobin_write_headers_cd);
 
 	RzCmdDesc *open_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, o_cd, "oL", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_plugins_io_print_handler, &open_plugins_help);
 	rz_warn_if_fail(open_plugins_cd);

@@ -184,7 +184,7 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 	rz_debug_bp_rebase(core->dbg, old_base, new_base);
 }
 
-RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr) {
+RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr) {
 	RzCoreFile *ofile = core->file;
 	RzIODesc *desc;
 	RzCoreFile *file;

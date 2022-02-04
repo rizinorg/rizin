@@ -541,7 +541,7 @@ RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallb
 RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);
 RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int binload);
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args);
-RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr);
+RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr);
 RZ_API bool rz_core_file_resize(RzCore *core, ut64 newsize);
 RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta);
 RZ_API RzCoreFile *rz_core_file_find_by_fd(RzCore *core, ut64 fd);

@@ -96,6 +96,79 @@ commands:
           - name: perm
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+  - name: oo
+    summary: Reopen current file
+    subcommands:
+      - name: oo
+        cname: reopen
+        summary: Reopen current file or file <fd>
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: oo+
+        cname: reopen_write
+        summary: Reopen current file or file <fd> in write mode
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: oob
+        cname: reopen_binary
+        summary: Reopen current file and reload binary information
+        args:
+          - name: baddr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ooc
+        cname: reopen_core
+        summary: Reopen current file as if restarting rizin
+        args: []
+      - name: ood
+        summary: Reopen current file in debug mode
+        subcommands:
+          - name: ood
+            cname: reopen_debug
+            summary: Reopen current file in debug mode
+            args:
+              - name: args
+                type: RZ_CMD_ARG_TYPE_STRING
+                flags: RZ_CMD_ARG_FLAG_ARRAY
+          - name: oodf
+            cname: reopen_debug_file
+            summary: Open <uri> in debug mode
+            args:
+              - name: uri
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: oodr
+            cname: reopen_debug_rzrun
+            summary: Reopen current file in debug mode with given rz-run directives
+            args:
+              - name: rz-run-directives
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: oom
+        cname: reopen_malloc
+        summary: Reopen curent file in malloc://
+        args: []
+      - name: oon
+        cname: reopen_nobin
+        summary: Reopen curent file without loading binary information
+        args: []
+      - name: oon+
+        cname: reopen_nobin_write
+        summary: Reopen curent file in write-mode without loading binary information
+        args: []
+      - name: oonn
+        cname: reopen_nobin_headers
+        summary: Reopen curent file without loading binary information but with header flags
+        args: []
+      - name: oonn+
+        cname: reopen_nobin_write_headers
+        summary: Reopen curent file in write-mode without loading binary information but with header flags
+        args: []
   - name: oL
     cname: open_plugins
     handler: plugins_io_print

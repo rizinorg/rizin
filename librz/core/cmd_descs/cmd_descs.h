@@ -575,6 +575,18 @@ RZ_IPI RzCmdStatus rz_open_core_file_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_open_malloc_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_nobin_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_nobin_write_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_write_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_binary_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_core_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_debug_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_debug_file_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_debug_rzrun_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_malloc_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_nobin_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_nobin_write_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_nobin_headers_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reopen_nobin_write_headers_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_arch_bits_handler(RzCore *core, int argc, const char **argv);
