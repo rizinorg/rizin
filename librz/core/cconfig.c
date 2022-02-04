@@ -3300,7 +3300,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	p = rz_sys_getenv("RZ_CFG_OLDSHELL");
 	SETCB("cfg.oldshell", p ? "true" : "false", &cb_oldshell, "Use old radare2 parser");
 	free(p);
-	SETCB("cfg.oldshell.autocompletion", "true", &cb_oldshell_autocompletion, "Use old radare2 autocompletion");
+	SETCB("cfg.oldshell.autocompletion", "false", &cb_oldshell_autocompletion, "Use old radare2 autocompletion");
 	SETI("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */
