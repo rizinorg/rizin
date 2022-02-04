@@ -779,7 +779,7 @@ RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int perms, bool load_bin, bool write_mode) {
+static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int perms, bool write_mode) {
 	RzCoreFile *cfile = rz_core_file_open(core, filepath, perms, addr);
 	if (!cfile) {
 		RZ_LOG_ERROR("Cannot open file '%s'\n", filepath);
@@ -790,9 +790,7 @@ static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int 
 	if (addr == 0) { // if no baddr defined, use the one provided by the file
 		addr = UT64_MAX;
 	}
-	if (load_bin) {
-		rz_core_bin_load(core, filepath, addr);
-	}
+	rz_core_bin_load(core, filepath, addr);
 	if (write_mode) {
 		RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
 		if (!desc || !(desc->perm & RZ_PERM_W)) {
@@ -814,14 +812,14 @@ RZ_IPI RzCmdStatus rz_open_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[1]) : 0;
 	int perms = argc > 3 ? rz_str_rwx(argv[2]) : RZ_PERM_R;
 
-	return open_file(core, argv[1], addr, perms, true, false);
+	return open_file(core, argv[1], addr, perms, false);
 }
 
 RZ_IPI RzCmdStatus rz_open_write_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[1]) : 0;
 	int perms = argc > 3 ? rz_str_rwx(argv[2]) : RZ_PERM_RW;
 
-	return open_file(core, argv[1], addr, perms, true, true);
+	return open_file(core, argv[1], addr, perms, true);
 }
 
 RZ_IPI RzCmdStatus rz_open_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -946,18 +944,32 @@ err:
 	return res;
 }
 
-RZ_IPI RzCmdStatus rz_open_nobin_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[1]) : 0;
-	int perms = argc > 3 ? rz_str_rwx(argv[2]) : RZ_PERM_R;
+static RzCmdStatus open_nobin_file(RzCore *core, const char *uri, ut64 addr, int perms) {
+	if (!strcmp(uri, "=")) {
+		uri = "malloc://512";
+	}
 
-	return open_file(core, argv[1], addr, perms, false, false);
+	RzIODesc *desc = rz_io_open_at(core->io, uri, perms, 0644, addr, NULL);
+	if (!desc || desc->fd == -1) {
+		RZ_LOG_ERROR("Cannot open '%s' at %" PFMT64x ".\n", uri, addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	core->num->value = desc->fd;
+	rz_core_block_read(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_nobin_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : 0;
+	int perms = argc > 3 ? rz_str_rwx(argv[3]) : RZ_PERM_R;
+	return open_nobin_file(core, argv[1], addr, perms);
 }
 
 RZ_IPI RzCmdStatus rz_open_nobin_write_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[1]) : 0;
-	int perms = argc > 3 ? rz_str_rwx(argv[2]) : RZ_PERM_RW;
-
-	return open_file(core, argv[1], addr, perms, false, true);
+	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : 0;
+	int perms = argc > 3 ? rz_str_rwx(argv[3]) : RZ_PERM_RW;
+	return open_nobin_file(core, argv[1], addr, perms);
 }
 
 RZ_IPI RzCmdStatus rz_reopen_handler(RzCore *core, int argc, const char **argv) {
