@@ -611,8 +611,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			/* binary and floating point */
 			rz_str_bits64(out, n);
 			f = d = core->num->fvalue;
-			memcpy(&f, &n, sizeof(f));
-			memcpy(&d, &n, sizeof(d));
 			/* adjust sign for nan floats, different libcs are confused */
 			if (isnan(f) && signbit(f)) {
 				f = -f;
