@@ -96,61 +96,6 @@ RZ_IPI int rz_equal_H_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI int rz_cmd_remote(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	switch (*input) {
-	case '\0': // "R"
-		rz_core_rtr_list(core);
-		break;
-	case 'j': // "Rj"
-		eprintf("TODO: list connections in json\n");
-		break;
-	case '!': // "R!"
-		if (input[1] == 'q') {
-			RZ_FREE(core->cmdremote);
-		} else if (input[1] == '=') { // R!=0 or R!= for iosystem
-			RZ_FREE(core->cmdremote);
-			core->cmdremote = rz_str_trim_dup(input + 2);
-		} else {
-			char *res = rz_io_system(core->io, input + 1);
-			if (res) {
-				rz_cons_printf("%s\n", res);
-				free(res);
-			}
-		}
-		break;
-	case '+': // "R+"
-		rz_core_rtr_add(core, input + 1);
-		break;
-	case '-': // "R-"
-		rz_core_rtr_remove(core, input + 1);
-		break;
-	// case ':': rz_core_rtr_cmds (core, input + 1); break;
-	case '<': // "R<"
-		rz_core_rtr_pushout(core, input + 1);
-		break;
-	case '=': // "R="
-		rz_core_rtr_session(core, input + 1);
-		break;
-	case 'g': // "Rg"
-		rz_equal_g_handler_old(core, input + 1);
-		break;
-	case 'h': // "Rh"
-		rz_equal_h_handler_old(core, input + 1);
-		break;
-	case 'H': // "RH"
-		rz_equal_H_handler_old(core, input + 1);
-		break;
-	case '?': // "R?"
-		rz_core_cmd_help(core, help_msg_equal);
-		break;
-	default:
-		rz_core_rtr_cmd(core, input);
-		break;
-	}
-	return 0;
-}
-
 RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_core_rtr_list(core);

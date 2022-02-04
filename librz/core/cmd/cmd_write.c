@@ -7,39 +7,6 @@
 #include "rz_core.h"
 #include "rz_io.h"
 
-static const char *help_msg_w[] = {
-	"Usage:", "w[x] [str] [<file] [<<EOF] [@addr]", "",
-	"w", "[1248][+-][n]", "increment/decrement byte,word..",
-	"w", " foobar", "write string 'foobar'",
-	"w0", " [len]", "write 'len' bytes with value 0x00",
-	"w6", "[de] base64/hex", "write base64 [d]ecoded or [e]ncoded string",
-	"wa", "[?] push ebp", "write opcode, separated by ';' (use '\"' around the command)",
-	"waf", " f.asm", "assemble file and write bytes",
-	"waF", " f.asm", "assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
-	"wao", "[?] op", "modify opcode (change conditional of jump. nop, etc)",
-	"wA", "[?] r 0", "alter/modify opcode at current seek (see wA?)",
-	"wb", " 010203", "fill current block with cyclic hexpairs",
-	"wB", "[-]0xVALUE", "set or unset bits with given value",
-	"wc", "", "list all write changes",
-	"wc", "[?][jir+-*?]", "write cache undo/commit/reset/list (io.cache)",
-	"wd", " [off] [n]", "duplicate N bytes from offset at current seek (memcpy) (see y?)",
-	"we", "[?] [nNsxX] [arg]", "extend write operations (insert instead of replace)",
-	"wf", "[fs] -|file", "write contents of file at current offset",
-	"wh", " rizin", "whereis/which shell command",
-	"wm", " f0ff", "set binary mask hexpair to be used as cyclic write mask",
-	"wo", "[?] hex", "write in block with operation. 'wo?' fmi",
-	"wp", "[?] -|file", "apply rizin patch file. See wp? fmi",
-	"wr", " 10", "write 10 random bytes",
-	"ws", " pstring", "write 1 byte for length and then the string",
-	"wt[f]", "[?] file [sz]", "write to file (from current seek, blocksize or sz bytes)",
-	"wts", " host:port [sz]", "send data to remote host:port via tcp://",
-	"ww", " foobar", "write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
-	"wx", "[?][fs] 9090", "write two intel nops (from wxfile or wxseek)",
-	"wv", "[?] eip+34", "write 32-64 bit value honoring cfg.bigendian",
-	"wz", " string", "write zero terminated string (like w + \\x00)",
-	NULL
-};
-
 static const char *help_msg_wa[] = {
 	"Usage:", "wa[of*] [arg]", "",
 	"wa", " nop", "write nopcode using asm.arch and asm.bits",
@@ -141,14 +108,6 @@ static const char *help_msg_wf[] = {
 	NULL
 };
 
-static const char *help_msg_wv[] = {
-	"Usage:", "wv[size] [value]", " Write value of given size",
-	"wv", " 0x834002", "write dword with this value",
-	"wv1", " 234", "write one byte with this value",
-	"Supported sizes are:", "1, 2, 4, 8", "",
-	NULL
-};
-
 static void cmd_write_fail(RzCore *core) {
 	eprintf("Failed to write\n");
 	core->num->value = 1;
@@ -225,35 +184,6 @@ static void cmd_write_bits(RzCore *core, int set, ut64 val) {
 		ret = orig & (~(val));
 	}
 	if (!rz_core_write_at(core, core->offset, (const ut8 *)&ret, sizeof(ret))) {
-		cmd_write_fail(core);
-	}
-}
-
-static void cmd_write_inc(RzCore *core, int size, st64 num) {
-	ut64 *v64;
-	ut32 *v32;
-	ut16 *v16;
-	ut8 *v8;
-	switch (size) {
-	case 1:
-		v8 = (ut8 *)core->block;
-		*v8 += num;
-		break;
-	case 2:
-		v16 = (ut16 *)core->block;
-		*v16 += num;
-		break;
-	case 4:
-		v32 = (ut32 *)core->block;
-		*v32 += num;
-		break;
-	case 8:
-		v64 = (ut64 *)core->block;
-		*v64 += num;
-		break;
-	}
-	// TODO: obey endian here
-	if (!rz_core_write_at(core, core->offset, core->block, size)) {
 		cmd_write_fail(core);
 	}
 }
@@ -412,71 +342,6 @@ RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
 #define WSEEK(x, y) \
 	if (wseek) \
 	rz_core_seek_delta(x, y, true)
-
-static void rz_cmd_write_value(RzCore *core, const char *input) {
-	int type = 0;
-	ut64 off = 0LL;
-	ut8 buf[sizeof(ut64)];
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	bool be = rz_config_get_i(core->config, "cfg.bigendian");
-
-	core->num->value = 0;
-
-	switch (input[0]) {
-	case '?':
-		rz_core_cmd_help(core, help_msg_wv);
-		return;
-	case '1': type = 1; break;
-	case '2': type = 2; break;
-	case '4': type = 4; break;
-	case '8': type = 8; break;
-	}
-	if (input[0] && input[1]) {
-		off = rz_num_math(core->num, input + 1);
-	}
-	if (core->file) {
-		rz_io_use_fd(core->io, core->file->fd);
-	}
-	ut64 res = rz_io_seek(core->io, core->offset, RZ_IO_SEEK_SET);
-	if (res == UT64_MAX)
-		return;
-	if (type == 0)
-		type = (off & UT64_32U) ? 8 : 4;
-	switch (type) {
-	case 1:
-		rz_write_ble8(buf, (ut8)(off & UT8_MAX));
-		if (!rz_io_write(core->io, buf, 1)) {
-			cmd_write_fail(core);
-		} else {
-			WSEEK(core, 1);
-		}
-		break;
-	case 2:
-		rz_write_ble16(buf, (ut16)(off & UT16_MAX), be);
-		if (!rz_io_write(core->io, buf, 2)) {
-			cmd_write_fail(core);
-		} else {
-			WSEEK(core, 2);
-		}
-		break;
-	case 4:
-		rz_write_ble32(buf, (ut32)(off & UT32_MAX), be);
-		if (!rz_io_write(core->io, buf, 4)) {
-			cmd_write_fail(core);
-		} else {
-			WSEEK(core, 4);
-		}
-		break;
-	case 8:
-		rz_write_ble64(buf, off, be);
-		if (!rz_io_write(core->io, buf, 8)) {
-			cmd_write_fail(core);
-		} else {
-			WSEEK(core, 8);
-		}
-		break;
-	}
-}
 
 static RzCmdStatus common_write_value_handler(RzCore *core, const char *valstr, size_t sz) {
 	ut64 value = rz_num_math(core->num, valstr);
@@ -984,25 +849,6 @@ RZ_IPI RzCmdStatus rz_write_zero_handler(RzCore *core, int argc, const char **ar
 	free(buf);
 
 	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
-}
-
-static int rz_w_incdec_handler_old(void *data, const char *input, int inc) {
-	RzCore *core = (RzCore *)data;
-	st64 num = 1;
-	if (input[0] && input[1]) {
-		num = rz_num_math(core->num, input + 1);
-	}
-	switch (input[0]) {
-	case '+':
-		cmd_write_inc(core, inc, num);
-		break;
-	case '-':
-		cmd_write_inc(core, inc, -num);
-		break;
-	default:
-		eprintf("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
-	}
-	return 0;
 }
 
 static RzCmdStatus w_incdec_handler(RzCore *core, int argc, const char **argv, int inc_size) {
@@ -1907,81 +1753,4 @@ RZ_IPI int rz_wd_handler_old(void *data, const char *input) {
 
 RZ_IPI RzCmdStatus rz_write_length_string_handler(RzCore *core, int argc, const char **argv) {
 	return rz_core_write_length_string_at(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
-}
-
-/* TODO: simplify using rz_write */
-RZ_IPI int rz_cmd_write(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-
-	if (!input) {
-		return 0;
-	}
-
-	switch (*input) {
-	case 'B': // "wB"
-		rz_wB_handler_old(data, input + 1);
-		break;
-	case '0': // "w0"
-		rz_w0_handler_old(data, input + 1);
-		break;
-	case '1': // "w1"
-	case '2': // "w2"
-	case '4': // "w4"
-	case '8': // "w8"
-		rz_w_incdec_handler_old(data, input + 1, *input - '0');
-		break;
-	case '6': // "w6"
-		rz_w6_handler_old(core, input + 1);
-		break;
-	case 'e': // "we"
-		rz_we_handler_old(core, input + 1);
-		break;
-	case 'u': // "wu"
-		rz_wu_handler_old(core, input + 1);
-		break;
-	case 'A': // "wA"
-		rz_wA_handler_old(core, input + 1);
-		break;
-	case 'c': // "wc"
-		rz_wc_handler_old(core, input + 1);
-		break;
-	case ' ': // "w"
-		rz_w_handler_old(core, input + 1);
-		break;
-	case 'z': // "wz"
-		rz_wz_handler_old(core, input + 1);
-		break;
-	case 't': // "wt"
-		rz_wt_handler_old(core, input + 1);
-		break;
-	case 'f': // "wf"
-		rz_wf_handler_old(core, input + 1);
-		break;
-	case 'w': // "ww"
-		rz_ww_handler_old(core, input + 1);
-		break;
-	case 'a': // "wa"
-		rz_wa_handler_old(core, input + 1);
-		break;
-	case 'b': // "wb"
-		rz_wb_handler_old(core, input + 1);
-		break;
-	case 'm': // "wm"
-		rz_wm_handler_old(core, input + 1);
-		break;
-	case 'v': // "wv"
-		rz_cmd_write_value(core, input + 1);
-		break;
-	case 'o': // "wo"
-		rz_wo_handler_old(core, input + 1);
-		break;
-	case 'd': // "wd"
-		rz_wd_handler_old(core, input + 1);
-		break;
-	default:
-	case '?': // "w?"
-		rz_core_cmd_help(core, help_msg_w);
-		break;
-	}
-	return 0;
 }

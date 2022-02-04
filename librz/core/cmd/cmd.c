@@ -672,145 +672,6 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 	return ret;
 }
 
-RZ_IPI int rz_cmd_interpret(void *data, const char *input) {
-	char *str, *ptr, *eol, *rbuf, *filter, *inp;
-	const char *host, *port, *cmd;
-	RzCore *core = (RzCore *)data;
-
-	if (!strcmp(input, "?")) {
-		rz_core_cmd_help(core, help_msg_dot);
-		return 0;
-	}
-	switch (*input) {
-	case '\0': // "."
-		lastcmd_repeat(core, 0);
-		break;
-	case ':': // ".:"
-		if ((ptr = strchr(input + 1, ' '))) {
-			/* .:port cmd */
-			/* .:host:port cmd */
-			cmd = ptr + 1;
-			*ptr = 0;
-			eol = strchr(input + 1, ':');
-			if (eol) {
-				*eol = 0;
-				host = input + 1;
-				port = eol + 1;
-			} else {
-				host = "localhost";
-				port = input + ((input[1] == ':') ? 2 : 1);
-			}
-			rbuf = rz_core_rtr_cmds_query(core, host, port, cmd);
-			if (rbuf) {
-				rz_cons_print(rbuf);
-				free(rbuf);
-			}
-		} else {
-			rz_core_rtr_cmds(core, input + 1);
-		}
-		break;
-	case '.': // ".." same as \n
-		if (input[1] == '.') { // "..." run the last command repeated
-			// same as \n with e cmd.repeat=true
-			lastcmd_repeat(core, 1);
-		} else if (input[1]) {
-			char *str = rz_core_cmd_str_pipe(core, rz_str_trim_head_ro(input));
-			if (str) {
-				rz_core_cmd(core, str, 0);
-				free(str);
-			}
-		} else {
-			eprintf("Usage: .. ([file])\n");
-		}
-		break;
-	case '*': // ".*"
-	{
-		const char *a = rz_str_trim_head_ro(input + 1);
-		char *s = strdup(a);
-		char *sp = strchr(s, ' ');
-		if (sp) {
-			*sp = 0;
-		}
-		if (RZ_STR_ISNOTEMPTY(s)) {
-			rz_core_run_script(core, s);
-		}
-		free(s);
-	} break;
-	case '-': // ".-"
-		if (input[1] == '?') {
-			rz_cons_printf("Usage: '-' '.-' '. -' do the same\n");
-		} else {
-			rz_core_run_script(core, "-");
-		}
-		break;
-	case ' ': // ". "
-	{
-		const char *script_file = rz_str_trim_head_ro(input + 1);
-		if (*script_file == '$') {
-			rz_core_cmd0(core, script_file);
-		} else {
-			if (!rz_core_run_script(core, script_file)) {
-				eprintf("Cannot find script '%s'\n", script_file);
-				core->num->value = 1;
-			} else {
-				core->num->value = 0;
-			}
-		}
-	} break;
-	case '!': // ".!"
-		/* from command */
-		rz_core_cmd_command(core, input + 1);
-		break;
-	case '(': // ".("
-		rz_cmd_macro_call(&core->rcmd->macro, input + 1);
-		break;
-	default:
-		if (*input >= 0 && *input <= 9) {
-			eprintf("|ERROR| No .[0..9] to avoid infinite loops\n");
-			break;
-		}
-		inp = strdup(input);
-		filter = strchr(inp, '~');
-		if (filter) {
-			*filter = 0;
-		}
-		int tmp_html = rz_cons_singleton()->is_html;
-		rz_cons_singleton()->is_html = 0;
-		ptr = str = rz_core_cmd_str(core, inp);
-		rz_cons_singleton()->is_html = tmp_html;
-
-		if (filter) {
-			*filter = '~';
-		}
-		rz_cons_break_push(NULL, NULL);
-		if (ptr) {
-			for (;;) {
-				if (rz_cons_is_breaked()) {
-					break;
-				}
-				eol = strchr(ptr, '\n');
-				if (eol) {
-					*eol = '\0';
-				}
-				if (*ptr) {
-					char *p = rz_str_append(strdup(ptr), filter);
-					rz_core_cmd0(core, p);
-					free(p);
-				}
-				if (!eol) {
-					break;
-				}
-				ptr = eol + 1;
-			}
-		}
-		rz_cons_break_pop();
-		free(str);
-		free(inp);
-		break;
-	}
-	return 0;
-}
-
 static bool callback_foreach_kv(void *user, const char *k, const char *v) {
 	rz_cons_printf("%s=%s\n", k, v);
 	return true;
@@ -1104,90 +965,12 @@ RZ_IPI int rz_cmd_visual(void *data, const char *input) {
 	return rz_core_visual((RzCore *)data, input);
 }
 
-RZ_IPI int rz_cmd_pipein(void *user, const char *input) {
-	char *buf = strdup(input);
-	int len = rz_str_unescape(buf);
-	rz_cons_readpush(buf, len);
-	free(buf);
-	return 0;
-}
-
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv) {
 	char *input = rz_str_array_join(argv + 1, argc - 1, " ");
-	RzCmdStatus res = rz_cmd_int2status(rz_cmd_pipein(core, input));
+	int len = rz_str_unescape(input);
+	rz_cons_readpush(input, len);
 	free(input);
-	return res;
-}
-
-RZ_IPI int rz_cmd_tasks(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	switch (input[0]) {
-	case '\0': // "&"
-	case 'j': // "&j"
-		rz_core_task_list(core, *input);
-		break;
-	case 'b': { // "&b"
-		int tid = rz_num_math(core->num, input + 1);
-		task_break(core, tid);
-		break;
-	}
-	case '&': { // "&&"
-		int tid = rz_num_math(core->num, input + 1);
-		rz_core_task_join(&core->tasks, core->tasks.current_task, tid ? tid : -1);
-		break;
-	}
-	case '=': { // "&="
-		int tid = rz_num_math(core->num, input + 1);
-		task_output(core, tid);
-		break;
-	}
-	case '-': // "&-"
-		if (input[1] == '*') {
-			rz_core_task_del_all_done(core);
-		} else {
-			rz_core_task_del(&core->tasks, rz_num_math(core->num, input + 1));
-		}
-		break;
-	case '?': // "&?"
-	default:
-		helpCmdTasks(core);
-		break;
-	case ' ': // "& "
-	case '_': // "&_"
-	case 't': { // "&t"
-		task_enqueue(core, input + 1, input[0] == 't');
-		break;
-	}
-	}
-	return 0;
-}
-
-RZ_IPI int rz_cmd_pointer(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int ret = true;
-	char *str, *eq;
-	input = rz_str_trim_head_ro(input);
-	while (*input == ' ') {
-		input++;
-	}
-	if (!*input || *input == '?') {
-		rz_core_cmd_help(core, help_msg_star);
-		return ret;
-	}
-	str = strdup(input);
-	eq = strchr(str, '=');
-	if (eq) {
-		*eq++ = 0;
-		if (!strncmp(eq, "0x", 2)) {
-			ret = rz_core_cmdf(core, "wv %s @ %s", eq, str);
-		} else {
-			ret = rz_core_cmdf(core, "wx %s @ %s", eq, str);
-		}
-	} else {
-		ret = rz_core_cmdf(core, "?v [%s]", input);
-	}
-	free(str);
-	return ret;
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_pointer_handler(RzCore *core, int argc, const char **argv) {
@@ -1206,30 +989,6 @@ RZ_IPI RzCmdStatus rz_pointer_handler(RzCore *core, int argc, const char **argv)
 	default:
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-}
-
-RZ_IPI int rz_cmd_env(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int ret = true;
-	switch (*input) {
-	case '?':
-		cmd_help_percent(core);
-		break;
-	default:
-		ret = rz_core_cmdf(core, "env %s", input);
-	}
-	return ret;
-}
-
-RZ_IPI int rz_cmd_last(void *data, const char *input) {
-	switch (*input) {
-	case 0:
-		rz_cons_last();
-		break;
-	default:
-		eprintf("Usage: _  print last output\n");
-	}
-	return 0;
 }
 
 RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **argv) {
@@ -6018,28 +5777,18 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		const char *description;
 		RzCmdCb cb;
 	} cmds[] = {
-		{ "_", "print last output", rz_cmd_last },
-		{ "#", "calculate hash", rz_cmd_hash },
 		{ "$", "alias", rz_cmd_alias },
-		{ "%", "short version of 'env' command", rz_cmd_env },
-		{ "&", "tasks", rz_cmd_tasks },
 		{ "(", "macro", rz_cmd_macro },
-		{ "*", "pointer read/write", rz_cmd_pointer },
-		{ ".", "interpret", rz_cmd_interpret },
 		{ "/", "search kw, pattern aes", rz_cmd_search },
-		{ "R", "io pipe", rz_cmd_remote },
 		{ "?", "help message", rz_cmd_help },
-		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
 		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
 		{ "d", "debugger operations", rz_cmd_debug },
 		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
-		{ "q", "exit program session", rz_cmd_quit },
 		{ "V", "enter visual mode", rz_cmd_visual },
 		{ "v", "enter visual mode", rz_cmd_panels },
-		{ "w", "write bytes", rz_cmd_write },
 		{ "x", "alias for px", rz_cmd_hexdump },
 	};
 
