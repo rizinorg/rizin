@@ -4,7 +4,7 @@
 #define USE_BB_STACKPTR 0
 #define USE_BB_LINEAR   1
 
-static void ds_update_stackptr(RDisasmState *ds, RzAnalysisOp *op) {
+static void ds_update_stackptr(RzDisasmState *ds, RzAnalysisOp *op) {
 	if (!ds->show_stackptr) {
 		return;
 	}
@@ -28,7 +28,7 @@ static void ds_update_stackptr(RDisasmState *ds, RzAnalysisOp *op) {
 	}
 }
 
-static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stackptr, int *ostackptr) {
+static int _stackptr_range(RzDisasmState *ds, ut64 addr, ut64 addr_end, int stackptr, int *ostackptr) {
 	ut64 at = addr;
 	ut64 end = addr_end;
 	while (at < end) {
@@ -57,7 +57,7 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 	return stackptr;
 }
 
-static int ds_ostackptr_atfcn(RDisasmState *ds, int *ostackptr) {
+static int ds_ostackptr_atfcn(RzDisasmState *ds, int *ostackptr) {
 	if (!ds->show_stackptr) {
 		return 0;
 	}
@@ -92,7 +92,7 @@ static int ds_ostackptr_atfcn(RDisasmState *ds, int *ostackptr) {
 #endif
 }
 
-static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
+static int ds_ostackptr_at(RzDisasmState *ds, int *ostackptr) {
 #if USE_BB_STACKPTR
 	// XXX doesnt works because bb->stackptr returns the maximum increment of the bb instead of the initial stackptr value
 	*ostackptr = ds->ostackptr;
@@ -115,15 +115,15 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 #endif
 }
 
-static void ds_print_stackptr(RDisasmState *ds) {
+static void ds_print_stackptr(RzDisasmState *ds) {
 	int ostackptr = 0;
 	int stackptr = ds_ostackptr_at(ds, &ostackptr);
 	if (ds->show_stackptr) {
 		rz_cons_printf("%5d%s", stackptr,
-			ds->analop.type == RZ_ANALYSIS_OP_TYPE_CALL ? ">" : ds->analop.stackop == RZ_ANALYSIS_STACK_ALIGN ? "="
-				: stackptr > ostackptr                                                                    ? "+"
-				: stackptr < ostackptr                                                                    ? "-"
-															  : " ");
-		ds_update_stackptr(ds, &ds->analop);
+			ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_CALL ? ">" : ds->analysis_op.stackop == RZ_ANALYSIS_STACK_ALIGN ? "="
+				: stackptr > ostackptr                                                                              ? "+"
+				: stackptr < ostackptr                                                                              ? "-"
+																    : " ");
+		ds_update_stackptr(ds, &ds->analysis_op);
 	}
 }
