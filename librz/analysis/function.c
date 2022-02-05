@@ -30,23 +30,23 @@ static bool __fcn_exists(RzAnalysis *analysis, const char *name, ut64 addr) {
 	// check if name is already registered
 	bool found = false;
 	if (addr == UT64_MAX) {
-		eprintf("Invalid function address (-1) '%s'\n", name);
+		RZ_LOG_ERROR("Invalid function address (-1) '%s'\n", name);
 		return true;
 	}
 	if (!name) {
-		eprintf("TODO: Empty function name, we must auto generate one\n");
+		RZ_LOG_INFO("Empty function name, we must auto generate one\n");
 		return true;
 	}
 	RzAnalysisFunction *f = ht_pp_find(analysis->ht_name_fun, name, &found);
 	if (f && found) {
-		eprintf("Invalid function name '%s' at 0x%08" PFMT64x "\n", name, addr);
+		RZ_LOG_ERROR("Invalid function name '%s' at 0x%08" PFMT64x "\n", name, addr);
 		return true;
 	}
 	// check if there's a function already in the given address
 	found = false;
 	f = ht_up_find(analysis->ht_addr_fun, addr, &found);
 	if (f && found) {
-		eprintf("Function already defined in 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("Function already defined in 0x%08" PFMT64x "\n", addr);
 		return true;
 	}
 	return false;
