@@ -114,7 +114,7 @@ RZ_API char *rz_analysis_data_to_string(RzAnalysisData *d, RzConsPrintablePalett
 		return NULL;
 	}
 	if (!rz_strbuf_reserve(sb, mallocsz)) {
-		eprintf("Cannot allocate %d byte(s)\n", mallocsz);
+		RZ_LOG_ERROR("Cannot allocate %d byte(s)\n", mallocsz);
 		rz_strbuf_free(sb);
 		return NULL;
 	}
@@ -230,7 +230,7 @@ RZ_API RzAnalysisData *rz_analysis_data_new_string(ut64 addr, const char *p, int
 		ad->buf = malloc(len + 1);
 		if (!ad->buf) {
 			rz_analysis_data_free(ad);
-			eprintf("Cannot allocate %d byte(s)\n", len + 1);
+			RZ_LOG_ERROR("Cannot allocate %d byte(s)\n", len + 1);
 			return NULL;
 		}
 		memcpy(ad->buf, ad->str, len + 1);
