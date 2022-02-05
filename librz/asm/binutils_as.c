@@ -10,7 +10,7 @@ int binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, co
 		as = user_as;
 	}
 	if (RZ_STR_ISEMPTY(as)) {
-		eprintf("Please set %s env to define a %s assembler program\n", env, a->cur->arch);
+		RZ_LOG_ERROR("Please set '%s' env to define a '%s' assembler program\n", env, a->cur->arch);
 		return 1;
 	}
 
@@ -59,7 +59,7 @@ int binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, co
 		begin = rz_mem_mem(obuf, len, (const ut8 *)"BEGINMARK", 9);
 		end = rz_mem_mem(obuf, len, (const ut8 *)"ENDMARK", 7);
 		if (!begin || !end) {
-			eprintf("Cannot find water marks\n");
+			RZ_LOG_ERROR("Cannot find water marks BEGINMARK or/and ENDMARK\n");
 			len = 0;
 		} else {
 			len = (int)(size_t)(end - begin - 9);
@@ -71,7 +71,7 @@ int binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, co
 		}
 		res = op->size = len;
 	} else {
-		eprintf("Error running: %s", cmd);
+		RZ_LOG_ERROR("Failed to run command: '%s'\n", cmd);
 	}
 
 beach:
