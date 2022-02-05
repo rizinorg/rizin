@@ -160,7 +160,8 @@ typedef struct {
 	int cmtcol;
 	bool show_calls;
 	bool show_cmtflgrefs;
-	bool show_cmtesil;
+	bool show_cmt_esil;
+	bool show_cmt_il;
 	bool show_cycles;
 	bool show_refptr;
 	bool show_stackptr;
@@ -778,7 +779,8 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_calls = rz_config_get_b(core->config, "asm.calls");
 	ds->show_family = rz_config_get_b(core->config, "asm.family");
 	ds->cmtcol = rz_config_get_i(core->config, "asm.cmt.col");
-	ds->show_cmtesil = rz_config_get_b(core->config, "asm.cmt.esil");
+	ds->show_cmt_esil = rz_config_get_b(core->config, "asm.cmt.esil");
+	ds->show_cmt_il = rz_config_get_b(core->config, "asm.cmt.il");
 	ds->show_cmtflgrefs = rz_config_get_b(core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = rz_config_get_b(core->config, "asm.cycles");
 	ds->show_stackptr = rz_config_get_b(core->config, "asm.stackptr");
@@ -4216,6 +4218,27 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 #endif
 }
 
+static void ds_print_cmt_esil(RzDisasmState *ds) {
+	if (!ds->show_cmt_esil || !ds->analysis_op.il_op) {
+		return;
+	}
+	const char *esil = RZ_STRBUF_SAFEGET(&ds->analysis_op.esil);
+	ds_begin_comment(ds);
+	ds_comment(ds, true, "; %s", esil);
+}
+
+static void ds_print_cmt_il(RzDisasmState *ds) {
+	if (!ds->show_cmt_il || !ds->analysis_op.il_op) {
+		return;
+	}
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_il_op_effect_stringify(ds->analysis_op.il_op, &sb);
+	ds_begin_comment(ds);
+	ds_comment(ds, true, "; %s", rz_strbuf_get(&sb));
+	rz_strbuf_fini(&sb);
+}
+
 static void ds_print_demangled(RzDisasmState *ds) {
 	if (!ds->show_comments || !ds->asm_demangle) {
 		return;
@@ -5306,23 +5329,6 @@ toro:
 				continue;
 			}
 		}
-		if (!ds->show_comment_right) {
-			if (ds->show_cmtesil) {
-				const char *esil = RZ_STRBUF_SAFEGET(&ds->analysis_op.esil);
-				// ds_begin_line (ds);
-				ds_pre_line(ds);
-				ds_setup_print_pre(ds, false, false);
-				rz_cons_strcat("      ");
-				ds_print_lines_left(ds);
-				ds_begin_comment(ds);
-				if (ds->show_color) {
-					ds_comment(ds, true, "; %s%s%s",
-						ds->pal_comment, esil, Color_RESET);
-				} else {
-					ds_comment(ds, true, "; %s", esil);
-				}
-			}
-		}
 		rz_core_seek_arch_bits(core, ds->at); // slow but safe
 		ds->has_description = false;
 		ds->hint = rz_core_hint_begin(core, ds->hint, ds->at);
@@ -5438,6 +5444,8 @@ toro:
 		if (ds->show_comments && !ds->show_comment_right) {
 			ds_show_refs(ds);
 			ds_build_op_str(ds, false);
+			ds_print_cmt_esil(ds);
+			ds_print_cmt_il(ds);
 			ds_print_ptr(ds, len + 256, idx);
 			ds_print_sysregs(ds);
 			ds_print_fcn_name(ds);
@@ -5553,15 +5561,8 @@ toro:
 
 			ds_cdiv_optimization(ds);
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
-				if (ds->show_cmtesil) {
-					const char *esil = RZ_STRBUF_SAFEGET(&ds->analysis_op.esil);
-					if (ds->show_color) {
-						ds_comment(ds, true, "; %s%s%s",
-							ds->pal_comment, esil, Color_RESET);
-					} else {
-						ds_comment(ds, true, "; %s", esil);
-					}
-				}
+				ds_print_cmt_esil(ds);
+				ds_print_cmt_il(ds);
 				ds_print_ptr(ds, len + 256, idx);
 				ds_print_sysregs(ds);
 				ds_print_fcn_name(ds);
