@@ -234,7 +234,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	} else {
 		opcode = armass_assemble(buf, a->pc, is_thumb);
 		if (a->bits != 32 && a->bits != 16) {
-			eprintf("Error: ARM assembler only supports 16 or 32 bits\n");
+			RZ_LOG_ERROR("assembler: arm: cannot assemble instruction due invalid 'asm.bits' value (accepted only 16 or 32 bits).\n");
 			return -1;
 		}
 	}
