@@ -8,7 +8,7 @@
 
 int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	if (!analysis->cpu) {
-		eprintf("Warning : no version info\n");
+		RZ_LOG_ERROR("Cannot get lua version\n");
 		return 0;
 	}
 	if (strcmp(analysis->cpu, "5.4") == 0) {
@@ -16,7 +16,7 @@ int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 	} else if (strcmp(analysis->cpu, "5.3") == 0) {
 		return lua53_anal_op(analysis, op, addr, data, len);
 	} else {
-		eprintf("Warning : no matched version\n");
+		RZ_LOG_ERROR("Cannot find a suitable lua version to handle lua analysis\n");
 	}
 	return 0;
 }
