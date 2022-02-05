@@ -9,7 +9,7 @@
 LuaOpNameList get_lua54_opnames(void) {
 	LuaOpNameList list = RZ_NEWS(char *, LUA_NUM_OPCODES + 1);
 	if (list == NULL) {
-		eprintf("No Op Names\n");
+		RZ_LOG_ERROR("Cannot allocate lua54 opcode list.\n");
 		return NULL;
 	}
 

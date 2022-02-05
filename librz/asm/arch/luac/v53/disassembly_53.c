@@ -6,6 +6,7 @@
 
 int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 	if (len < 4) {
+		RZ_LOG_DEBUG("Cannot disassemble lua53 opcode (truncated).\n");
 		return 0;
 	}
 	ut32 instruction = lua_build_instruction(buf);
