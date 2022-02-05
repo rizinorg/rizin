@@ -158,7 +158,7 @@ static RzType *parse_type(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 		char *error_msg = NULL;
 		typ = rz_type_parse_string_single(typedb->parser, simple_type->type, &error_msg);
 		if (error_msg) {
-			eprintf("%s : Error parsing complex type member \"%s\" type:\n%s\n", __FUNCTION__, simple_type->type, error_msg);
+			RZ_LOG_ERROR("%s : Error parsing complex type member \"%s\" type:\n%s\n", __FUNCTION__, simple_type->type, error_msg);
 			RZ_FREE(error_msg);
 		}
 		return typ;
@@ -386,7 +386,7 @@ static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, RzPdbTpiS
 		// For structure, we don't need vtable for now
 		goto cleanup;
 	default:
-		eprintf("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
+		RZ_LOG_ERROR("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
 		goto cleanup;
 	}
 	if (!type) {
@@ -503,7 +503,7 @@ static RzTypeUnionMember *parse_union_member(const RzTypeDB *typedb, RzPdbTpiStr
 		break;
 	}
 	default:
-		eprintf("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
+		RZ_LOG_ERROR("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
 		goto cleanup;
 	}
 	if (!type) {
@@ -707,7 +707,7 @@ static void parse_types(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpi
 	default:
 		// shouldn't happen, happens when someone modifies leafs that get here
 		// but not how they should be parsed
-		eprintf("Unknown type record");
+		RZ_LOG_ERROR("Unknown type record");
 		break;
 	}
 }
