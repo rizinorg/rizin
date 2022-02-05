@@ -55,14 +55,14 @@ RZ_API int rz_analysis_esil_fire_interrupt(RzAnalysisEsil *esil, ut32 intr_num) 
 	}
 
 	if (!esil->interrupts) {
-		eprintf("no interrupts initialized\n");
+		RZ_LOG_ERROR("no interrupts initialized\n");
 		return false;
 	}
 	RzAnalysisEsilInterrupt *intr = ht_up_find(esil->interrupts, intr_num, NULL);
 #if 0
 	// we don't want this warning
 	if (!intr) {
-		eprintf ("Warning no interrupt handler registered for 0x%x\n", intr_num);
+		RZ_LOG_WARN("no interrupt handler registered for 0x%x\n", intr_num);
 	}
 #endif
 	return (intr && intr->handler && intr->handler->cb) ? intr->handler->cb(esil, intr_num, intr->user) : false;
