@@ -684,7 +684,7 @@ capstone bug
 		} else if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {
 			SET_SRC_DST_2_REGS(op);
 		} else {
-			eprintf("Unknown div at 0x%08" PFMT64x "\n", op->addr);
+			RZ_LOG_ERROR("mips: unknown div opcode at 0x%08" PFMT64x "\n", op->addr);
 		}
 		break;
 	}
