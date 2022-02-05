@@ -244,11 +244,11 @@ static void il_opdmp_is_zero(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_neg(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_1("~", op->op.neg, bv);
+	il_op_param_1("~-", op->op.neg, bv);
 }
 
 static void il_opdmp_lognot(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_1("lognot", op->op.lognot, bv);
+	il_op_param_1("~", op->op.lognot, bv);
 }
 
 static void il_opdmp_add(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
