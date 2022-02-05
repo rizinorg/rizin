@@ -8,7 +8,7 @@ int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	int r = 0;
 
 	if (!a->cpu) {
-		eprintf("Warning : no version info, specify it with `-c` option\n");
+		RZ_LOG_ERROR("disassembler: lua: no version info, specify it with `asm.cpu` option\n");
 		return -1;
 	}
 
@@ -19,7 +19,7 @@ int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 		oplist = get_lua53_opnames();
 		r = lua53_disasm(opstruct, buf, len, oplist);
 	} else {
-		eprintf("Warning : version %s is not supported\n", a->cpu);
+		RZ_LOG_ERROR("disassembler: lua: version %s is not supported\n", a->cpu);
 		return -1;
 	}
 
@@ -34,7 +34,7 @@ int rz_luac_asm(RzAsm *a, RzAsmOp *opstruct, const char *str) {
 	ut8 buffer[4];
 
 	if (!a->cpu) {
-		eprintf("Warning : no version info, specify it with `-c` option\n");
+		RZ_LOG_ERROR("assembler: lua: no version info, specify it with `asm.cpu` option\n");
 		return -1;
 	}
 
@@ -47,7 +47,7 @@ int rz_luac_asm(RzAsm *a, RzAsmOp *opstruct, const char *str) {
 			return -1;
 		}
 	} else {
-		eprintf("Warning : version %s is not supported\n", a->cpu);
+		RZ_LOG_ERROR("assembler: lua: version %s is not supported\n", a->cpu);
 		return -1;
 	}
 
