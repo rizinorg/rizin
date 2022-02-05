@@ -675,6 +675,10 @@ bool test_rz_bv_set_from_bytes_le(void) {
 	rz_bv_set_from_bytes_le(&bv, data, 7, 100);
 	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x75b9fddf9b5712ce8a46", "off+7 80, cut off");
 	rz_bv_fini(&bv);
+	rz_bv_init(&bv, 1);
+	rz_bv_set_from_bytes_le(&bv, data, 0, 1);
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x1", "off+0 1");
+	rz_bv_fini(&bv);
 
 	RzBitVector *hbv = rz_bv_new_from_bytes_le(data, 0, 64);
 	mu_assert_streq_free(rz_bv_as_hex_string(hbv, true), "0xefcdab8967452301", "aligned 64");
