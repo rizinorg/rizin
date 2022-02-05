@@ -7,7 +7,7 @@
 
 #define fail_if_no_enough_buffer_or_set(bytecode, jvm, n) \
 	if ((jvm->size - jvm->current) < n) { \
-		eprintf("%u < %u", jvm->size - jvm->current, n); \
+		RZ_LOG_DEBUG("java: buffer is not big enough (available: %u, needed: %u)\n", jvm->size - jvm->current, n); \
 		return false; \
 	} \
 	bytecode->size = n
