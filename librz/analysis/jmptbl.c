@@ -10,8 +10,7 @@
 #include <rz_types_overflow.h>
 
 #define aprintf(format, ...) \
-	if (analysis->verbose) \
-	eprintf(format, __VA_ARGS__)
+	RZ_LOG_DEBUG(format, __VA_ARGS__)
 
 static void apply_case(RzAnalysis *analysis, RzAnalysisBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
@@ -81,15 +80,15 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
 		params->table_count = analysis->opt.jmptbl_maxcount;
 	}
 	if (params->jmptbl_loc == UT64_MAX) {
-		aprintf("Warning: Invalid JumpTable location 0x%08" PFMT64x "\n", params->jmptbl_loc);
+		aprintf("Invalid jump table location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
 	if (params->casetbl_loc == UT64_MAX) {
-		aprintf("Warning: Invalid CaseTable location 0x%08" PFMT64x "\n", params->jmptbl_loc);
+		aprintf("Invalid case table location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
 	if (jmptable_size_is_invalid(params)) {
-		aprintf("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", params->jmp_address);
+		aprintf("Invalid jump table size at 0x%08" PFMT64x "\n", params->jmp_address);
 		return false;
 	}
 	ut64 jmpptr, case_idx, jmpptr_idx;
@@ -181,11 +180,11 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 		params->table_count = analysis->opt.jmptbl_maxcount;
 	}
 	if (params->jmptbl_loc == UT64_MAX) {
-		aprintf("Warning: Invalid JumpTable location 0x%08" PFMT64x "\n", params->jmptbl_loc);
+		aprintf("Invalid jump table location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
 	if (jmptable_size_is_invalid(params)) {
-		aprintf("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", params->jmp_address);
+		aprintf("Invalid jump table size at 0x%08" PFMT64x "\n", params->jmp_address);
 		return false;
 	}
 	ut64 jmpptr, offs;
@@ -476,7 +475,7 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		aprintf("Warning: [analysis.jmp.tbl] Missing predecesessor cjmp bb at 0x%08" PFMT64x "\n", jmp_address);
+		aprintf("Missing predecesessor on basic block conditional jump at 0x%08" PFMT64x ", required by jump table\n", jmp_address);
 		return false;
 	}
 
