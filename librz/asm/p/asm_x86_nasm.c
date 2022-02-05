@@ -7,7 +7,7 @@
 static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	if (a->syntax != RZ_ASM_SYNTAX_INTEL) {
-		eprintf("asm.x86.nasm does not support non-intel syntax\n");
+		RZ_LOG_ERROR("assembler: x86.nasm: the assembler does not support non-intel syntax\n");
 		return -1;
 	}
 
@@ -35,7 +35,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 		op->size = read(ofd, buf, sizeof(buf));
 		rz_asm_op_set_buf(op, buf, op->size);
 	} else {
-		eprintf("Error running 'nasm'\n");
+		RZ_LOG_ERROR("assembler: x86.nasm: failed to run command 'nasm %s -o %s'\n", ipath, opath);
 	}
 
 	close(ofd);
