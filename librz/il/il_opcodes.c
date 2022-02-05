@@ -817,10 +817,10 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		DUP_OP2(logxor, x, y);
 		break;
 	case RZ_IL_OP_SHIFTR:
-		DUP_OP2(shiftr, x, y);
+		DUP_OP3(shiftr, x, y, fill_bit);
 		break;
 	case RZ_IL_OP_SHIFTL:
-		DUP_OP2(shiftl, x, y);
+		DUP_OP3(shiftl, x, y, fill_bit);
 		break;
 	case RZ_IL_OP_EQ:
 		DUP_OP2(eq, x, y);
