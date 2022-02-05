@@ -482,7 +482,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, addr, -1);
 		RzFlagItem *fi = analysis->flb.get_at(analysis->flb.f, addr, false);
 		if (!fcn && !fi) {
-			eprintf("Can't find Function at given address\n");
+			RZ_LOG_ERROR("Cannot find function and flag at address 0x%" PFMT64x "\n", addr);
 			return false;
 		}
 		tmp_name = fcn ? fcn->name : fi->name;
@@ -497,10 +497,10 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 			if (name) {
 				sdb_bool_set(NDB, K_NORET_FUNC(name), true, 0);
 			} else {
-				eprintf("Can't find prototype for: %s\n", tmp_name);
+				RZ_LOG_ERROR("Cannot find prototype for: %s\n", tmp_name);
 			}
 		} else {
-			eprintf("Can't find prototype for: %s\n", tmp_name);
+			RZ_LOG_ERROR("Cannot find prototype for: %s\n", tmp_name);
 		}
 		// return false;
 	}
@@ -563,7 +563,7 @@ static bool noreturn_recurse(RzAnalysis *analysis, ut64 addr) {
 	ut8 bbuf[0x10] = { 0 };
 	ut64 recurse_addr = UT64_MAX;
 	if (!analysis->iob.read_at(analysis->iob.io, addr, bbuf, sizeof(bbuf))) {
-		eprintf("Couldn't read buffer\n");
+		RZ_LOG_ERROR("Cannot read buffer at 0x%" PFMT64x "\n", addr);
 		return false;
 	}
 	if (rz_analysis_op(analysis, &op, addr, bbuf, sizeof(bbuf), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_VAL) < 1) {
