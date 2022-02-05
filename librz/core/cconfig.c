@@ -2473,13 +2473,6 @@ static bool cb_zoombyte(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analverbose(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->verbose = node->i_value;
-	return true;
-}
-
 static bool cb_binverbose(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2952,7 +2945,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.cc", analysiscc ? analysiscc : "", (RzConfigCallback)&cb_analysiscc, "Specify default calling convention");
 	const char *analysissyscc = rz_analysis_syscc_default(core->analysis);
 	SETCB("analysis.syscc", analysissyscc ? analysissyscc : "", (RzConfigCallback)&cb_analysissyscc, "Specify default syscall calling convention");
-	SETCB("analysis.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
 	SETCB("analysis.roregs", "gp,zero", (RzConfigCallback)&cb_analysis_roregs, "Comma separated list of register names to be readonly");
 	SETICB("analysis.gp", 0, (RzConfigCallback)&cb_analysis_gp, "Set the value of the GP register (MIPS)");
 	SETBPREF("analysis.gpfixed", "true", "Set gp register to analysis.gp before emulating each instruction in aae");

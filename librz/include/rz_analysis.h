@@ -619,7 +619,6 @@ typedef struct rz_analysis_t {
 	int stackptr;
 	bool (*log)(struct rz_analysis_t *analysis, const char *msg);
 	bool (*read_at)(struct rz_analysis_t *analysis, ut64 addr, ut8 *buf, int len);
-	bool verbose;
 	int seggrn;
 	RzFlagGetAtAddr flag_get;
 	RzEvent *ev;
