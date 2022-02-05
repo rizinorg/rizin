@@ -34,7 +34,7 @@ static RZ_OWN RzType *var_type_clone_or_default_type(RzAnalysis *analysis, RZ_BO
 	char *error_msg = NULL;
 	RzType *result = rz_type_parse_string_single(analysis->typedb->parser, typestr, &error_msg);
 	if (!result || error_msg) {
-		eprintf("Invalid var type: %s\n%s", typestr, error_msg);
+		RZ_LOG_ERROR("Invalid var type: %s\n%s", typestr, error_msg);
 		free(error_msg);
 		return NULL;
 	}
@@ -125,13 +125,13 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 	case RZ_ANALYSIS_VAR_KIND_REG: // registers args
 		break;
 	default:
-		eprintf("Invalid var kind '%c'\n", kind);
+		RZ_LOG_ERROR("Invalid var kind '%c'\n", kind);
 		return NULL;
 	}
 	if (kind == RZ_ANALYSIS_VAR_KIND_REG) {
 		reg = rz_reg_index_get(fcn->analysis->reg, RZ_ABS(delta));
 		if (!reg) {
-			eprintf("Register wasn't found at the given delta\n");
+			RZ_LOG_ERROR("Register wasn't found at the given delta\n");
 			return NULL;
 		}
 	}
@@ -353,7 +353,7 @@ RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, boo
 	RzAnalysisVar *v1 = rz_analysis_function_get_var_byname(var->fcn, new_name);
 	if (v1) {
 		if (verbose) {
-			eprintf("variable or arg with name `%s` already exist\n", new_name);
+			RZ_LOG_WARN("variable or arg with name `%s` already exist\n", new_name);
 		}
 		return false;
 	}
@@ -711,9 +711,7 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 				const char *bp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
 				const char *rn = op->dst->reg ? op->dst->reg->name : NULL;
 				if (rn && ((bp && !strcmp(bp, rn)) || (sp && !strcmp(sp, rn)))) {
-					if (analysis->verbose) {
-						eprintf("Warning: Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".\n", op->addr);
-					}
+					RZ_LOG_DEBUG("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".\n", op->addr);
 					goto beach;
 				}
 			}
@@ -738,8 +736,8 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 		}
 	}
 
-	if (analysis->verbose && (!op->src[0] || !op->dst)) {
-		eprintf("Warning: Analysis didn't fill op->src/dst at 0x%" PFMT64x ".\n", op->addr);
+	if (!op->src[0] || !op->dst) {
+		RZ_LOG_DEBUG("Analysis didn't fill op->src/dst at 0x%" PFMT64x ".\n", op->addr);
 	}
 
 	int rw = (op->direction == RZ_ANALYSIS_OP_DIR_WRITE) ? RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE : RZ_ANALYSIS_VAR_ACCESS_TYPE_READ;
@@ -1236,7 +1234,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 			if (kind == RZ_ANALYSIS_VAR_KIND_REG) { // registers
 				RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
 				if (!i) {
-					eprintf("Register not found");
+					RZ_LOG_ERROR("Register not found");
 					free(vartype);
 					break;
 				}
@@ -1277,7 +1275,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 			case RZ_ANALYSIS_VAR_KIND_REG: {
 				RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
 				if (!i) {
-					eprintf("Register not found");
+					RZ_LOG_ERROR("Register not found");
 					break;
 				}
 				char *vartype = rz_type_as_string(analysis->typedb, var->type);
@@ -1332,7 +1330,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 			case RZ_ANALYSIS_VAR_KIND_REG: {
 				RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
 				if (!i) {
-					eprintf("Register not found");
+					RZ_LOG_ERROR("Register not found");
 					break;
 				}
 				char *vartype = rz_type_as_string(analysis->typedb, var->type);
@@ -1436,7 +1434,7 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 			RzType *type = rz_type_func_args_type(analysis->typedb, type_fcn_name, i);
 			const char *name = rz_type_func_args_name(analysis->typedb, type_fcn_name, i);
 			if (!type || !name) {
-				eprintf("Missing type for %s\n", type_fcn_name);
+				RZ_LOG_ERROR("Missing type for %s\n", type_fcn_name);
 				goto beach;
 			}
 			char *type_str = rz_type_as_string(analysis->typedb, type);
