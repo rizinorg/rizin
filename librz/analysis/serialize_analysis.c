@@ -726,7 +726,6 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			break;
 		case VAR_FIELD_DELTA:
 			if (child->type != RZ_JSON_INTEGER) {
-				eprintf("delta nop\n");
 				break;
 			}
 			delta = child->num.s_value;
@@ -840,7 +839,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	char *error_msg = NULL;
 	RzType *vartype = rz_type_parse_string_single(fcn->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
-		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		RZ_LOG_ERROR("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
 		RZ_FREE(error_msg);
 		goto beach;
 	}
@@ -1014,7 +1013,7 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	char *error_msg = NULL;
 	RzType *vartype = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
-		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		RZ_LOG_ERROR("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
 		RZ_FREE(error_msg);
 		goto beach;
 	}
