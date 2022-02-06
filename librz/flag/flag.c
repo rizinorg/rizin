@@ -755,6 +755,7 @@ RZ_API void rz_flag_bind(RzFlag *f, RzFlagBind *fb) {
 	fb->exist_at = rz_flag_exist_at;
 	fb->get = rz_flag_get;
 	fb->get_at = rz_flag_get_at;
+	fb->get_at_by_spaces = rz_flag_get_by_spaces;
 	fb->get_list = rz_flag_get_list;
 	fb->set = rz_flag_set;
 	fb->unset = rz_flag_unset;
@@ -763,6 +764,7 @@ RZ_API void rz_flag_bind(RzFlag *f, RzFlagBind *fb) {
 	fb->set_fs = rz_flag_space_set;
 	fb->push_fs = rz_flag_space_push;
 	fb->pop_fs = rz_flag_space_pop;
+	fb->rename = rz_flag_rename;
 }
 
 static bool flag_count_foreach(RzFlagItem *fi, void *user) {
