@@ -60,6 +60,7 @@ typedef bool (*RzFlagExistAt)(RzFlag *f, const char *flag_prefix, ut16 fp_size, 
 typedef RzFlagItem *(*RzFlagGet)(RzFlag *f, const char *name);
 typedef RzFlagItem *(*RzFlagGetAtAddr)(RzFlag *f, ut64);
 typedef RzFlagItem *(*RzFlagGetAt)(RzFlag *f, ut64 addr, bool closest);
+typedef RzFlagItem *(*RzFlagGetAtBySpaces)(RzFlag *f, ut64 off, ...);
 typedef const RzList *(*RzFlagGetList)(RzFlag *f, ut64 addr);
 typedef RzFlagItem *(*RzFlagSet)(RzFlag *f, const char *name, ut64 addr, ut32 size);
 typedef bool (*RzFlagUnset)(RzFlag *f, RzFlagItem *item);
@@ -77,6 +78,7 @@ typedef struct rz_flag_bind_t {
 	RzFlagExistAt exist_at;
 	RzFlagGet get;
 	RzFlagGetAt get_at;
+	RzFlagGetAtBySpaces get_at_by_spaces;
 	RzFlagGetList get_list;
 	RzFlagSet set;
 	RzFlagUnset unset;
