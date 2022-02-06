@@ -214,9 +214,7 @@ static void core_objc_free(RzCoreObjc *o) {
 static bool objc_find_refs(RzCore *core) {
 	RzCoreObjc *objc = core_objc_new(core);
 	if (!objc) {
-		if (core->analysis->verbose) {
-			eprintf("Could not find necessary Objective-C sections...\n");
-		}
+		RZ_LOG_DEBUG("Could not find necessary Objective-C sections...\n");
 		return false;
 	}
 

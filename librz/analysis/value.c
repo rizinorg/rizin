@@ -56,7 +56,7 @@ RZ_API ut64 rz_analysis_value_to_ut64(RzAnalysis *analysis, RzAnalysisValue *val
 	case 4:
 	case 8:
 		// analysis->bio ...
-		eprintf("TODO: memref for to_ut64 not supported\n");
+		RZ_LOG_DEBUG("memref for to_ut64 not supported\n");
 		break;
 	}
 	return num;
@@ -70,7 +70,7 @@ RZ_API int rz_analysis_value_set_ut64(RzAnalysis *analysis, RzAnalysisValue *val
 			rz_mem_set_num(data, val->memref, num);
 			analysis->iob.write_at(analysis->iob.io, addr, data, val->memref);
 		} else {
-			eprintf("No IO binded to rz_analysis\n");
+			RZ_LOG_ERROR("No IO binded to rz_analysis\n");
 		}
 	} else {
 		if (val->reg) {

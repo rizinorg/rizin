@@ -128,7 +128,7 @@ int lua_load_next_arg_start(const char *raw_string, char *recv_buf) {
 
 bool lua_is_valid_num_value_string(const char *str) {
 	if (!rz_is_valid_input_num_value(NULL, str)) {
-		eprintf("luac_assembler: %s is not a valid number argument\n", str);
+		RZ_LOG_ERROR("assembler: lua: %s is not a valid number argument\n", str);
 		return false;
 	}
 	return true;
