@@ -69,6 +69,7 @@ typedef bool (*RzFlagUnsetOff)(RzFlag *f, ut64 addr);
 typedef RzSpace *(*RzFlagSetSpace)(RzFlag *f, const char *name);
 typedef bool (*RzFlagPopSpace)(RzFlag *f);
 typedef bool (*RzFlagPushSpace)(RzFlag *f, const char *name);
+typedef int (*RzFlagRename)(RzFlag *f, RzFlagItem *item, const char *name);
 
 typedef bool (*RzFlagItemCb)(RzFlagItem *fi, void *user);
 
@@ -87,6 +88,7 @@ typedef struct rz_flag_bind_t {
 	RzFlagSetSpace set_fs;
 	RzFlagPushSpace push_fs;
 	RzFlagPopSpace pop_fs;
+	RzFlagRename rename;
 } RzFlagBind;
 
 #define rz_flag_bind_init(x) memset(&x, 0, sizeof(x))

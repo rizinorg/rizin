@@ -433,9 +433,12 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 
 			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "fcn.", "func.", NULL);
 			if (fit) {
-				analysis->flb.unset(analysis->flb.f, fit);
+				// rename old fcn.xxxx to flirt.yyyyy
+				analysis->flb.rename(analysis->flb.f, fit, name);
+			} else {
+				// best effort, add flag..
+				analysis->flb.set(analysis->flb.f, name, next_module_function->addr, next_module_function_size);
 			}
-			analysis->flb.set(analysis->flb.f, name, next_module_function->addr, next_module_function_size);
 			RZ_LOG_DEBUG("FLIRT: Found %s\n", next_module_function->name);
 		}
 	}

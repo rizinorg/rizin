@@ -764,6 +764,7 @@ RZ_API void rz_flag_bind(RzFlag *f, RzFlagBind *fb) {
 	fb->set_fs = rz_flag_space_set;
 	fb->push_fs = rz_flag_space_push;
 	fb->pop_fs = rz_flag_space_pop;
+	fb->rename = rz_flag_rename;
 }
 
 static bool flag_count_foreach(RzFlagItem *fi, void *user) {
