@@ -507,3 +507,209 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=ox
+FILE=bins/elf/true32
+CMDS=<<EOF
+ol
+oml
+ox 3 4
+ol
+oml
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0000560c bins/elf/true32
+ 4 - r-x 0x000000b0 vfile://0/reloc-targets
+ 5 - rw- 0x00000184 null://388
+ 1 fd: 4 +0x00000000 0x0804e248 - 0x0804e2f7 r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x08048000 - 0x0804c657 r-x fmap.LOAD0
+ 3 fd: 5 +0x00000000 0x0804e0bc - 0x0804e23f rw- mmap.LOAD1
+ 4 fd: 3 +0x00004ef0 0x0804def0 - 0x0804e0bb r-- fmap.LOAD1
+ 3 - r-x 0x000000b0 vfile://0/reloc-targets
+ 4 * r-x 0x0000560c bins/elf/true32
+ 5 - rw- 0x00000184 null://388
+ 1 fd: 4 +0x00000000 0x0804e248 - 0x0804e2f7 r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x08048000 - 0x0804c657 r-x fmap.LOAD0
+ 3 fd: 5 +0x00000000 0x0804e0bc - 0x0804e23f rw- mmap.LOAD1
+ 4 fd: 3 +0x00004ef0 0x0804def0 - 0x0804e0bb r-- fmap.LOAD1
+EOF
+RUN
+
+NAME=ol quiet
+FILE=bins/elf/true32
+CMDS=<<EOF
+olq
+ol.
+ol.q
+EOF
+EXPECT=<<EOF
+3
+4
+5
+ 3 * r-x 0x0000560c bins/elf/true32
+3
+EOF
+RUN
+
+NAME=on+
+FILE=bins/elf/true32
+ARGS=-n
+CMDS=<<EOF
+cp `ol.t:uri:quiet` .true32-copy
+on+ .true32-copy
+p8 2
+wx 9090
+p8 2
+rm .true32-copy
+EOF
+EXPECT=<<EOF
+7f45
+9090
+EOF
+RUN
+
+NAME=o=
+FILE=bins/elf/true32
+CMDS=<<EOF
+o=
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0000560c [#########################] bins/elf/true32
+ 4 - r-x 0x000000b0 [-------------------------] vfile://0/reloc-targets
+ 5 - rw- 0x00000184 [-------------------------] null://388
+EOF
+RUN
+
+NAME=oa
+FILE=bins/elf/true32
+BROKEN=1
+CMDS=<<EOF
+pd 3
+oa arm 64
+pd 3
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=open priority
+FILE=bins/elf/true32
+CMDS=<<EOF
+o bins/elf/true
+op 3
+ol~*
+opn
+opn
+ol~*
+opp
+ol~*
+opr
+opr
+ol~*
+opr
+ol~*
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0000560c bins/elf/true32
+ 5 * rw- 0x00000184 null://388
+ 4 * r-x 0x000000b0 vfile://0/reloc-targets
+11 * r-x 0x000087c0 vfile://1/patched
+ 3 * r-x 0x0000560c bins/elf/true32
+EOF
+RUN
+
+NAME=open maps all VA
+FILE=bins/elf/true32
+CMDS=<<EOF
+oml~true32
+oma 3
+oml~true32
+EOF
+EXPECT=<<EOF
+ 5 fd: 3 +0x00000000 0x00000000 - 0xfffffffffffffffe r-x bins/elf/true32
+EOF
+RUN
+
+NAME=maps relocation
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 9090
+pi 2
+oml
+omb 1 0x3000
+oml
+pi 2
+pi 2 @ 0x3000
+EOF
+EXPECT=<<EOF
+nop
+nop
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
+ 1 fd: 3 +0x00000000 0x00003000 - 0x000031ff rwx 
+invalid
+invalid
+nop
+nop
+EOF
+RUN
+
+NAME=maps cur relocation and priority
+FILE==
+CMDS=<<EOF
+o malloc://512
+o malloc://512
+o malloc://512
+e asm.arch=x86
+e asm.bits=64
+omp 1
+wx 9090
+omp 2
+wx c3c3
+ompd 2
+pi 2
+oml
+omb. 0x3000
+omp 2
+oml
+pi 2
+pi 2 @ 0x3000
+EOF
+EXPECT=<<EOF
+nop
+nop
+ 2 fd: 4 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 3 fd: 5 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 4 fd: 6 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
+ 3 fd: 5 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 4 fd: 6 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 1 fd: 3 +0x00000000 0x00003000 - 0x000031ff rwx 
+ 2 fd: 4 +0x00000000 0x00000000 - 0x000001ff rw- 
+ret
+ret
+nop
+nop
+EOF
+RUN
+
+NAME=maps_names
+FILE==
+CMDS=<<EOF
+omn HelloMap
+oml
+omn-
+oml
+omni 1 HelloMap1
+oml
+omni- 1
+oml
+EOF
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx HelloMap
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx HelloMap1
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
+EOF
+RUN

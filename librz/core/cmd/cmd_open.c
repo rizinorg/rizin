@@ -335,8 +335,8 @@ RZ_IPI RzCmdStatus rz_open_maps_relocate_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_open_maps_relocate_current_handler(RzCore *core, int argc, const char **argv) {
-	if (!rz_num_is_valid_input(core->num, argv[2])) {
-		RZ_LOG_ERROR("Invalid address '%s'\n", argv[2]);
+	if (!rz_num_is_valid_input(core->num, argv[1])) {
+		RZ_LOG_ERROR("Invalid address '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzIOMap *map = rz_io_map_get(core->io, core->offset);
@@ -344,7 +344,7 @@ RZ_IPI RzCmdStatus rz_open_maps_relocate_current_handler(RzCore *core, int argc,
 		RZ_LOG_ERROR("Could not find any IO map at current offset\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	ut64 addr = rz_num_math(core->num, argv[2]);
+	ut64 addr = rz_num_math(core->num, argv[1]);
 	if (!rz_io_map_remap(core->io, map->id, addr)) {
 		RZ_LOG_ERROR("Could not relocate map with id %d to %" PFMT64x "\n", map->id, addr);
 		return RZ_CMD_STATUS_ERROR;
