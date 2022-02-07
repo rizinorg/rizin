@@ -6034,7 +6034,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "a", "analysis", rz_cmd_analysis },
 		{ "d", "debugger operations", rz_cmd_debug },
 		{ "k", "perform sdb query", rz_cmd_kuery },
-		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
 		{ "q", "exit program session", rz_cmd_quit },
 		{ "V", "enter visual mode", rz_cmd_visual },
