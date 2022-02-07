@@ -4,7 +4,7 @@ bins/elf/ls
 bins/elf/ls-cet
 bins/elf/ls.odd
 EOF
-CMDS=o~ls
+CMDS=ol~ls
 EXPECT=<<EOF
  3 - r-x 0x000219a8 bins/elf/ls
  7 - r-x 0x00027868 bins/elf/ls-cet

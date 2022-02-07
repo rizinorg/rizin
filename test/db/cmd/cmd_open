@@ -2,7 +2,7 @@ NAME=oon
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 oon
-o
+ol
 EOF
 EXPECT=<<EOF
  4 * r-- 0x00009730 bins/mach0/mac-ls2
@@ -15,7 +15,7 @@ CMDS=<<EOF
 pf.~?
 oonn
 pf.~?
-o~?
+ol~?
 EOF
 EXPECT=<<EOF
 41
@@ -60,9 +60,9 @@ RUN
 NAME=oom
 FILE=bins/elf/libmagic.so
 CMDS=<<EOF
-o~?
+ol~?
 oom
-o~malloc?
+ol~malloc?
 EOF
 EXPECT=<<EOF
 4
@@ -89,7 +89,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e file.nowarn=true
 e file.loadmethod=append
-o =;o~?
+o =;ol~?
 EOF
 EXPECT=<<EOF
 2
@@ -99,7 +99,7 @@ RUN
 NAME=om
 FILE=malloc://1024
 CMDS=<<EOF
-om `o~[0]` 0x4000
+om `ol~[0]` 0x4000
 oml~?
 EOF
 EXPECT=<<EOF
@@ -110,8 +110,8 @@ RUN
 NAME=om2
 FILE=malloc://1024
 CMDS=<<EOF
-om `o~[0]` 0x4000
-om `o~[0]` 0x4000
+om `ol~[0]` 0x4000
+om `ol~[0]` 0x4000
 oml~?
 EOF
 EXPECT=<<EOF
@@ -260,7 +260,7 @@ o bins/elf/true32
 e scr.null=false
 isq~?
 # raise back
-op `o~:0[0]`
+op `ol~:0[0]`
 isq~?
 EOF
 EXPECT=<<EOF
@@ -301,7 +301,7 @@ wx 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021222324252
 s 0x10
 px 16~:1
 ?e
-oC
+oC $b
 px 16~:1
 ?e
 oml
@@ -389,11 +389,11 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 o =
-o~?
+ol~?
 obl
 ?e --
 o--
-o~?
+ol~?
 obl
 EOF
 EXPECT=<<EOF
@@ -412,7 +412,7 @@ e asm.arch=x86
 e asm.bits=64
 o =
 o- 3
-o~?
+ol~?
 obl
 EOF
 EXPECT=<<EOF
