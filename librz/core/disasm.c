@@ -5217,7 +5217,7 @@ RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, i
 	int continueoninvbreak = (len == l) && invbreak;
 	RzAnalysisFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
-	int ret, i, inc = 0, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
+	int ret, inc = 0, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
 	ut8 *nbuf = NULL;
 	const int addrbytes = core->io->addrbytes;
 
@@ -5265,7 +5265,7 @@ RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, i
 		if (p) {
 			core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;
 			core->asmqjmps = p;
-			for (i = 0; i < RZ_CORE_ASMQJMPS_NUM; i++) {
+			for (int i = 0; i < RZ_CORE_ASMQJMPS_NUM; i++) {
 				core->asmqjmps[i] = UT64_MAX;
 			}
 		}
@@ -5303,7 +5303,7 @@ toro:
 		ds->l = core->blocksize;
 	}
 	rz_cons_break_push(NULL, NULL);
-	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
+	for (idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = rz_core_pava(core, ds->at);
 		if (rz_cons_is_breaked()) {
