@@ -1022,8 +1022,7 @@ RZ_IPI RzCmdStatus rz_reopen_write_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_reopen_binary_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_file_reopen(core, argv[1], 0, 2);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_file_reopen(core, argv[1], 0, 2));
 }
 
 RZ_IPI RzCmdStatus rz_reopen_core_handler(RzCore *core, int argc, const char **argv) {
