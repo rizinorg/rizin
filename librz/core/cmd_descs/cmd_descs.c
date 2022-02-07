@@ -8081,6 +8081,7 @@ static const RzCmdDescArg reopen_debug_args[] = {
 		.name = "args",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
 
 	},
 	{ 0 },

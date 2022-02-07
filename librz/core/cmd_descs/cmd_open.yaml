@@ -134,6 +134,7 @@ commands:
               - name: args
                 type: RZ_CMD_ARG_TYPE_STRING
                 flags: RZ_CMD_ARG_FLAG_ARRAY
+                optional: true
           - name: oodf
             cname: reopen_debug_file
             summary: Open <uri> in debug mode
