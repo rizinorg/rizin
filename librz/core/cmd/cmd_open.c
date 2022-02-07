@@ -790,7 +790,10 @@ static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int 
 	if (addr == 0) { // if no baddr defined, use the one provided by the file
 		addr = UT64_MAX;
 	}
-	rz_core_bin_load(core, filepath, addr);
+	if (!rz_core_bin_load(core, filepath, addr)) {
+		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", filepath);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	if (write_mode) {
 		RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
 		if (!desc || !(desc->perm & RZ_PERM_W)) {
@@ -922,7 +925,10 @@ RZ_IPI RzCmdStatus rz_open_malloc_handler(RzCore *core, int argc, const char **a
 	if (!data) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_io_read_at(core->io, core->offset, data, len);
+	if (!rz_io_read_at(core->io, core->offset, data, len)) {
+		RZ_LOG_ERROR("Cannot read %d bytes from current offset.\n", len);
+		goto err;
+	}
 
 	char uri[100];
 	rz_strf(uri, "malloc://%d", len);
@@ -932,7 +938,10 @@ RZ_IPI RzCmdStatus rz_open_malloc_handler(RzCore *core, int argc, const char **a
 		goto err;
 	}
 
-	rz_core_bin_load(core, uri, 0);
+	if (!rz_core_bin_load(core, uri, 0)) {
+		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", uri);
+		goto err;
+	}
 
 	RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
 	rz_warn_if_fail(desc);
@@ -976,6 +985,10 @@ RZ_IPI RzCmdStatus rz_reopen_handler(RzCore *core, int argc, const char **argv) 
 	int fd;
 	if (argc > 1) {
 		fd = (int)rz_num_math(NULL, argv[1]);
+		if (fd < 0) {
+			RZ_LOG_ERROR("Invalid negative fd %d\n", fd);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	} else {
 		if (!core->io || !core->io->desc) {
 			RZ_LOG_ERROR("Cannot find current file.\n");
@@ -992,6 +1005,10 @@ RZ_IPI RzCmdStatus rz_reopen_write_handler(RzCore *core, int argc, const char **
 	int perms = RZ_PERM_RW;
 	if (argc > 1) {
 		fd = (int)rz_num_math(NULL, argv[1]);
+		if (fd < 0) {
+			RZ_LOG_ERROR("Invalid negative fd %d\n", fd);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	} else {
 		if (!core->io || !core->io->desc) {
 			RZ_LOG_ERROR("Cannot find current file.\n");
@@ -1064,13 +1081,11 @@ RZ_IPI RzCmdStatus rz_reopen_malloc_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_reopen_nobin_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_file_reopen(core, NULL, 0, 0);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_file_reopen(core, NULL, 0, 0));
 }
 
 RZ_IPI RzCmdStatus rz_reopen_nobin_write_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_file_reopen(core, NULL, RZ_PERM_RW, 0);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_file_reopen(core, NULL, RZ_PERM_RW, 0));
 }
 
 static RzCmdStatus reopen_nobin_headers(RzCore *core, int add_perms) {
@@ -1084,10 +1099,12 @@ static RzCmdStatus reopen_nobin_headers(RzCore *core, int add_perms) {
 	if (!fname) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_bin_load_structs(core, fname);
-	rz_core_file_reopen(core, fname, perms, 0);
+	if (!rz_core_bin_load_structs(core, fname)) {
+		RZ_LOG_WARN("Could not load file format information for '%s'.\n", fname);
+	}
+	bool res = rz_core_file_reopen(core, fname, perms, 0);
 	free(fname);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(res);
 }
 
 RZ_IPI RzCmdStatus rz_reopen_nobin_headers_handler(RzCore *core, int argc, const char **argv) {

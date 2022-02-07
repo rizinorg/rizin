@@ -284,7 +284,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	free(binpath);
 }
 
-RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loadbin) {
+RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = rz_config_get_b(core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = rz_config_get_i(core->config, "bin.laddr");
