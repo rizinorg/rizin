@@ -6,7 +6,7 @@ o malloc://512
 p8 64
 o malloc://32 0x10 rw
 oml~?
-o~?
+ol~?
 p8 64
 e io.va=false
 wox 0x90

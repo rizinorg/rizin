@@ -232,9 +232,7 @@ commands:
     summary: List, unload, load rizin plugins
     subcommands: cmd_plugins
   - name: o
-    cname: cmd_open
     summary: Open files and handle opened files
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_open
   - name: p
     cname: cmd_print

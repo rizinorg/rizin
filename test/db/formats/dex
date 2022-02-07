@@ -1478,7 +1478,7 @@ NAME=FakeMultiDex.apk
 FILE=apk://bins/dex/FakeMultiDex.apk
 CMDS=<<EOF
 oml
-o
+ol
 EOF
 EXPECT=<<EOF
  1 fd: 4 +0x000001a4 0x000001a4 - 0x000001af r-x fmap.code.Hello.<init>
