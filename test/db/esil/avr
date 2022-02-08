@@ -1132,7 +1132,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
 aei
-(adiw h l x; ?e ======== $0:$1 + $2 ========; wa adiw r27:r26, $2; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+(adiw h l x; ?e ======== $0:$1 + $2 ========; wa "adiw r27:r26, $2"; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
 .(adiw 0xca 0xfe 0x3f)
 .(adiw 0x0a 0xfe 0x3f)
 .(adiw 0xff 0xff 0x01)
@@ -1206,7 +1206,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
 aei
-(sbiw h l x; ?e ======== $0:$1 - $2 ========; wa sbiw r27:r26, $2; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+(sbiw h l x; ?e ======== $0:$1 - $2 ========; wa "sbiw r27:r26, $2"; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
 .(sbiw 0xca 0x21 0x3f)
 .(sbiw 0x00 0x10 0x3f)
 .(sbiw 0x80 0x00 0x01)

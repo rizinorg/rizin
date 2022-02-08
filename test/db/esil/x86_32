@@ -8,7 +8,7 @@ aei
 aeim
 ar esp=0x00108000
 .arf
-"wa mov eax, 0x1234;push eax"
+wa "mov eax, 0x1234;push eax"
 2aes
 .arf
 ar esp
@@ -1232,7 +1232,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmova eax, ecx
+wa "cmova eax, ecx"
 aes
 ar eax
 EOF
@@ -1280,7 +1280,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovae eax, ecx
+wa "cmovae eax, ecx"
 aes
 ar eax
 EOF
@@ -1328,7 +1328,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovb eax, ecx
+wa "cmovb eax, ecx"
 aes
 ar eax
 EOF
@@ -1360,7 +1360,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovbe eax, ecx
+wa "cmovbe eax, ecx"
 aes
 ar eax
 EOF
@@ -1392,7 +1392,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovc eax, ecx
+wa "cmovc eax, ecx"
 aes
 ar eax
 EOF
@@ -1424,7 +1424,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmove eax, ecx
+wa "cmove eax, ecx"
 aes
 ar eax
 EOF
@@ -1440,7 +1440,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovg eax, ecx
+wa "cmovg eax, ecx"
 aes
 ar eax
 EOF
@@ -1472,7 +1472,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovge eax, ecx
+wa "cmovge eax, ecx"
 aes
 ar eax
 EOF
@@ -1504,7 +1504,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovl eax, ecx
+wa "cmovl eax, ecx"
 aes
 ar eax
 EOF
@@ -1536,7 +1536,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmovle eax, ecx
+wa "cmovle eax, ecx"
 aes
 ar eax
 EOF
@@ -1552,7 +1552,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovle eax, ecx
+wa "cmovle eax, ecx"
 aes
 ar eax
 EOF
@@ -1584,7 +1584,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovna eax, ecx
+wa "cmovna eax, ecx"
 aes
 ar eax
 EOF
@@ -1600,7 +1600,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmovna eax, ecx
+wa "cmovna eax, ecx"
 aes
 ar eax
 EOF
@@ -1632,7 +1632,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovnae eax, ecx
+wa "cmovnae eax, ecx"
 aes
 ar eax
 EOF
@@ -1664,7 +1664,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnb eax, ecx
+wa "cmovnb eax, ecx"
 aes
 ar eax
 EOF
@@ -1728,7 +1728,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnbe eax, ecx
+wa "cmovnbe eax, ecx"
 aes
 ar eax
 EOF
@@ -1760,7 +1760,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnc eax, ecx
+wa "cmovnc eax, ecx"
 aes
 ar eax
 EOF
@@ -1792,7 +1792,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovne eax, ecx
+wa "cmovne eax, ecx"
 aes
 ar eax
 EOF
@@ -1808,7 +1808,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmovng eax, ecx
+wa "cmovng eax, ecx"
 aes
 ar eax
 EOF
@@ -1824,7 +1824,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovng eax, ecx
+wa "cmovng eax, ecx"
 aes
 ar eax
 EOF
@@ -1856,7 +1856,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovnge eax, ecx
+wa "cmovnge eax, ecx"
 aes
 ar eax
 EOF
@@ -1904,7 +1904,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnl eax, ecx
+wa "cmovnl eax, ecx"
 aes
 ar eax
 EOF
@@ -1920,7 +1920,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnle eax, ecx
+wa "cmovnle eax, ecx"
 aes
 ar eax
 EOF
@@ -1968,7 +1968,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovno eax, ecx
+wa "cmovno eax, ecx"
 aes
 ar eax
 EOF
@@ -2000,7 +2000,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnp eax, ecx
+wa "cmovnp eax, ecx"
 aes
 ar eax
 EOF
@@ -2032,7 +2032,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovns eax, ecx
+wa "cmovns eax, ecx"
 aes
 ar eax
 EOF
@@ -2064,7 +2064,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnz eax, ecx
+wa "cmovnz eax, ecx"
 aes
 ar eax
 EOF
@@ -2080,7 +2080,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar of=1
-wa cmovo eax, ecx
+wa "cmovo eax, ecx"
 aes
 ar eax
 EOF
@@ -2112,7 +2112,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar pf=1
-wa cmovp eax, ecx
+wa "cmovp eax, ecx"
 aes
 ar eax
 EOF
@@ -2144,7 +2144,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar pf=1
-wa cmovpe eax, ecx
+wa "cmovpe eax, ecx"
 aes
 ar eax
 EOF
@@ -2192,7 +2192,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovpo eax, ecx
+wa "cmovpo eax, ecx"
 aes
 ar eax
 EOF
@@ -2208,7 +2208,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovs eax, ecx
+wa "cmovs eax, ecx"
 aes
 ar eax
 EOF
@@ -2240,7 +2240,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmovz eax, ecx
+wa "cmovz eax, ecx"
 aes
 ar eax
 EOF
@@ -2428,7 +2428,7 @@ e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-"wa cmc"
+wa cmc
 ar eflags
 aes
 ar eflags
