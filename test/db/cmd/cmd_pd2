@@ -908,7 +908,7 @@ EXPECT=<<EOF
 |       ,=< 0x0000104b      7403           je    0x1050
 |      @=-> 0x0000104d      ebfe           jmp   0x104d
 ..
-|       `-> 0x00001050      31c0           nop
+|       `-> 0x00001050      31c0           xor   eax, eax
 \           0x00001052      c3             ret
 EOF
 RUN
