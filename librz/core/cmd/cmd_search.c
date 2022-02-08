@@ -160,10 +160,10 @@ static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_
 		return;
 	}
 	if (rz_cons_singleton()->columns < 50) {
-		RZ_LOG_ERROR("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
+		rz_cons_printf("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
 			at, n, (progress % 2) ? "[ #]" : "[# ]");
 	} else {
-		RZ_LOG_ERROR("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
+		rz_cons_printf("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
 			at, to, n, (progress % 2) ? "[ #]" : "[# ]");
 	}
 }
@@ -214,7 +214,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 				RzSearchKeyword *kw = rz_list_first(core->search->kws);
 				int lenstr = kw ? kw->keyword_length : 0;
 				const char *bytestr = lenstr > 1 ? "bytes" : "byte";
-				RZ_LOG_ERROR("Searching %d %s in [0x%" PFMT64x "-0x%" PFMT64x "]\n",
+				rz_cons_printf("Searching %d %s in [0x%" PFMT64x "-0x%" PFMT64x "]\n",
 					kw ? kw->keyword_length : 0, bytestr, itv.addr, rz_itv_end(itv));
 			}
 			if (!core->search->bckwrds) {
@@ -232,7 +232,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
 				print_search_progress(at, to1, search->nhits, param);
 				if (rz_cons_is_breaked()) {
-					RZ_LOG_ERROR("\n\n");
+					rz_cons_printf("\n\n");
 					break;
 				}
 				if (search->bckwrds) {
@@ -269,7 +269,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 			rz_cons_clear_line(1);
 			core->num->value = search->nhits;
 			if (param->outmode != RZ_MODE_JSON) {
-				RZ_LOG_ERROR("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
+				rz_cons_printf("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
 		}
 	done:
@@ -309,6 +309,7 @@ static bool setup_params(RzCore *core, struct search_parameters *param) {
 	}
 
 	core->in_search = true;
+	param->search_itv = NULL;
 	rz_flag_space_push(core->flags, "search");
 	const ut64 search_from = rz_config_get_i(core->config, "search.from");
 	const ut64 search_to = rz_config_get_i(core->config, "search.to");
@@ -322,7 +323,7 @@ static bool setup_params(RzCore *core, struct search_parameters *param) {
 	search_itv->size = search_to - search_from;
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
 	if (empty_search_itv) {
-		RZ_LOG_ERROR("WARNING from == to?\n");
+		RZ_LOG_WARN("WARNING from == to?\n");
 		return false;
 	}
 	// TODO full address cannot be represented, shrink 1 byte to [0, UT64_MAX)
@@ -330,6 +331,8 @@ static bool setup_params(RzCore *core, struct search_parameters *param) {
 		search_itv->addr = 0;
 		search_itv->size = UT64_MAX;
 	}
+
+	param->search_itv = search_itv;
 
 	progress = 0;
 
@@ -368,7 +371,9 @@ RZ_IPI RzCmdStatus rz_cmd_search_string_handler(RzCore *core, int argc, const ch
 	}
 	param.pj = state->d.pj;
 	param.outmode = state->mode;
-	pj_o(param.pj);
+	if (param.outmode == RZ_MODE_JSON) {
+		pj_o(param.pj);
+	}
 
 	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
 	rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
