@@ -351,7 +351,7 @@ EXPECT=<<EOF
 |           ;-- case 12:                                               ; from 0x800005e
 |           ;-- case 26:                                               ; from 0x800005e
 |           ;-- case 33:                                               ; from 0x800005e
-|           0x08000068      nop     dword [rax + rax]                  ; arg1
+|           0x08000068      mov   rsi, rdi                             ; arg1
 |           0x0800006b      mov   edi, 1
 |       ,=< 0x08000070      jmp   reloc.target.getPageLengthNV         ; RELOC 32 getPageLengthNV
 ..
@@ -359,25 +359,25 @@ EXPECT=<<EOF
 |       |   ;-- case 9:                                                ; from 0x800005e
 |       |   ;-- case 15:                                               ; from 0x800005e
 |       |   ;-- case 19:                                               ; from 0x800005e
-|       |   0x08000078      nop     dword [rax]                        ; arg1
+|       |   0x08000078      mov   rsi, rdi                             ; arg1
 |       |   0x0800007b      mov   edi, 1
 |      ,==< 0x08000080      jmp   reloc.target.getPageLengthEPROM      ; RELOC 32 getPageLengthEPROM
 ..
 |      ||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
 |      ||   ;-- case 51:                                               ; from 0x800005e
-|      ||   0x08000088      nop     dword [rax]                        ; arg1
+|      ||   0x08000088      mov   rsi, rdi                             ; arg1
 |      ||   0x0800008b      mov   edi, 1
 |     ,===< 0x08000090      jmp   reloc.target.getPageLengthSHAEE      ; RELOC 32 getPageLengthSHAEE
 ..
 |     |||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
 |     |||   ;-- case 55:                                               ; from 0x800005e
-|     |||   0x08000098      nop     dword [rax]                        ; arg1
+|     |||   0x08000098      mov   rsi, rdi                             ; arg1
 |     |||   0x0800009b      mov   edi, 1
 |    ,====< 0x080000a0      jmp   reloc.target.getPageLengthEE77       ; RELOC 32 getPageLengthEE77
 ..
 |    ||||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
 |    ||||   ;-- case 20:                                               ; from 0x800005e
-|    ||||   0x080000a8      nop     dword [rax]                        ; arg1
+|    ||||   0x080000a8      mov   rsi, rdi                             ; arg1
 |    ||||   0x080000ab      mov   edi, 1
 \   ,=====< 0x080000b0      jmp   reloc.target.getPageLengthEE         ; RELOC 32 getPageLengthEE
 EOF
