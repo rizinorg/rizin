@@ -890,3 +890,25 @@ EXPECT=<<EOF
 |       `=< 0x004014a3      jmp   0x401322
 EOF
 RUN
+
+NAME=pdf '..' fix (#2288)
+FILE=bins/elf/infinite-loop.bf
+CMDS=<<EOF
+e asm.bytes=1
+s main
+aF
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+/ int main (int argc, char **argv, char **envp);
+|           0x00001040      f30f1efa       endbr64                     ; [14] -r-x section size 389 named .text
+|           0x00001044      8005f52f0000.  add   byte [obj.array], 1   ; [0x4040:1]=0
+|       ,=< 0x0000104b      7403           je    0x1050
+|      @=-> 0x0000104d      ebfe           jmp   0x104d
+..
+|       `-> 0x00001050      31c0           nop
+\           0x00001052      c3             ret
+EOF
+RUN
