@@ -1072,11 +1072,7 @@ RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	bool x_msb = rz_bv_msb(x);
 	bool y_msb = rz_bv_msb(y);
 
-	if (x_msb && y_msb) {
-		return !rz_bv_ule(x, y);
-	}
-
-	if (!x_msb && !y_msb) {
+	if (x_msb == y_msb) {
 		return rz_bv_ule(x, y);
 	}
 
