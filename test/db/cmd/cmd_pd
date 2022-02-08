@@ -525,7 +525,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-wa jmp rax
+wa "jmp rax"
 af
 afi~size[1]
 EOF
@@ -1942,7 +1942,7 @@ s 0x1000
 "wz path\"C:\\Program\n"
 f ansi_str
 s 0x2000
-"wa mov eax, 0x1000"
+wa "mov eax, 0x1000"
 e str.escbslash=true
 pd 1
 pdJ 1
@@ -1953,7 +1953,7 @@ s 0x3000
 "ww path\"C:\\Program\r"
 f wide_str
 s 0x4000
-"wa mov ebx, 0x3000"
+wa "mov ebx, 0x3000"
 e bin.str.enc=guess
 pd 1
 pdJ 1
