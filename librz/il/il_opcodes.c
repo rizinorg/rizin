@@ -300,6 +300,42 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_slt(RZ_NONNULL RzILOpPure *x, RZ_NONNULL 
 }
 
 /**
+ * unsigned greater or equal
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_uge(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	return rz_il_op_new_bool_or(
+		rz_il_op_new_bool_inv(rz_il_op_new_ule(x, y)),
+		rz_il_op_new_eq(rz_il_op_pure_dup(x), rz_il_op_pure_dup(y)));
+}
+
+/**
+ * signed greater or equal
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sge(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	return rz_il_op_new_bool_or(
+		rz_il_op_new_bool_inv(rz_il_op_new_sle(x, y)),
+		rz_il_op_new_eq(rz_il_op_pure_dup(x), rz_il_op_pure_dup(y)));
+}
+
+/**
+ * unsigned strictly greater than
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ugt(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	return rz_il_op_new_bool_inv(rz_il_op_new_ule(x, y));
+}
+
+/**
+ * signed strictly greater than
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sgt(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	return rz_il_op_new_bool_inv(rz_il_op_new_sle(x, y));
+}
+
+/**
  *  \brief op structure for casting bitv
  */
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, RZ_NONNULL RzILOpBool *fill, RZ_NONNULL RzILOpBitVector *val) {
