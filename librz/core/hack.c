@@ -78,6 +78,7 @@ RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp 
 	}
 	return true;
 }
+
 RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *analop) {
 	const int bits = core->rasm->bits;
 	const ut8 *b = core->block;
@@ -267,7 +268,18 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 	return true;
 }
 
+/**
+ * \brief Write/Modify instructions at current offset based on \p op.
+ *
+ * See specific functions rz_core_hack_<arch> for what they accept as \p op .
+ *
+ * \param core RzCore instance
+ * \param op A string representing one of the operation that can be performed on the current offset
+ * \return true if the write was done correctly, false otherwise
+ */
 RZ_API bool rz_core_hack(RzCore *core, const char *op) {
+	// TODO: op should not be an unstructered string
+	// TODO: asm/analysis plugins should provide the operations, instead of doing this here
 	bool (*hack)(RzCore * core, const char *op, const RzAnalysisOp *analop) = NULL;
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
 	const int asmbits = core->rasm->bits;

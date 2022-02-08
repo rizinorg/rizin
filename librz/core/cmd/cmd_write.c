@@ -1707,6 +1707,9 @@ RZ_IPI RzCmdStatus rz_write_hex_from_file_handler(RzCore *core, int argc, const 
 
 RZ_IPI RzCmdStatus rz_write_assembly_handler(RzCore *core, int argc, const char **argv) {
 	char *instructions = rz_str_array_join(argv + 1, argc - 1, "\n");
+	if (!instructions) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	int res = rz_core_write_assembly(core, core->offset, instructions);
 	free(instructions);
 	return res >= 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
@@ -1714,6 +1717,9 @@ RZ_IPI RzCmdStatus rz_write_assembly_handler(RzCore *core, int argc, const char 
 
 RZ_IPI RzCmdStatus rz_write_assembly_inside_handler(RzCore *core, int argc, const char **argv) {
 	char *instructions = rz_str_array_join(argv + 1, argc - 1, "\n");
+	if (!instructions) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	int res = rz_core_write_assembly_fill(core, core->offset, instructions);
 	free(instructions);
 	return res >= 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
@@ -1721,6 +1727,10 @@ RZ_IPI RzCmdStatus rz_write_assembly_inside_handler(RzCore *core, int argc, cons
 
 RZ_IPI RzCmdStatus rz_write_assembly_file_handler(RzCore *core, int argc, const char **argv) {
 	char *instructions = rz_file_slurp(argv[1], NULL);
+	if (!instructions) {
+		RZ_LOG_ERROR("Cannot read file '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	int res = rz_core_write_assembly(core, core->offset, instructions);
 	free(instructions);
 	return res >= 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;

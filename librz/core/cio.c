@@ -503,6 +503,8 @@ err:
  * \return Returns the length of the written data or -1 in case of error
  */
 RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions) {
+	rz_return_val_if_fail(core && instructions, -1);
+
 	int ret = -1;
 
 	rz_asm_set_pc(core->rasm, core->offset);
@@ -543,6 +545,8 @@ err:
  * \return Returns the length of the written data or -1 in case of error (e.g. the new instruction does not fit)
  */
 RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *instructions) {
+	rz_return_val_if_fail(core && instructions, -1);
+
 	int ret = -1;
 
 	rz_asm_set_pc(core->rasm, core->offset);
