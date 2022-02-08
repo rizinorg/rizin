@@ -561,7 +561,7 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *inst
 		goto err;
 	}
 	if (op.size < acode->len) {
-		RZ_LOG_ERROR("Instructions do not fit at %" PFMT64x "\n", instructions, core->offset);
+		RZ_LOG_ERROR("Instructions do not fit at %" PFMT64x "\n", core->offset);
 		goto err;
 	}
 	rz_core_hack(core, "nop");
