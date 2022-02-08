@@ -371,23 +371,45 @@ bool test_rz_bv_cmp(void) {
 	rz_bv_set(x, 1, true);
 	rz_bv_set(x, 2, true);
 	rz_bv_set(x, 7, true);
-
 	y = rz_bv_new(8);
 	rz_bv_set(y, 0, true);
 	rz_bv_set(y, 1, true);
 	rz_bv_set(y, 2, true);
-
 	// get msb and lsb of y
 	bool msb, lsb;
 	msb = rz_bv_msb(y);
 	lsb = rz_bv_lsb(y);
-
 	mu_assert("msb", msb == false);
 	mu_assert("lsb", lsb == true);
+	mu_assert_false(rz_bv_ule(x, y), "ule of -/+");
+	mu_assert_true(rz_bv_ule(y, x), "ule of +/-");
+	mu_assert_true(rz_bv_sle(x, y), "sle of -/+");
+	mu_assert_false(rz_bv_sle(y, x), "sle of +/-");
+	rz_bv_free(x);
+	rz_bv_free(y);
 
-	mu_assert("Unsigned : x > y", !rz_bv_ule(x, y));
-	mu_assert("Signed : x < y", rz_bv_sle(x, y));
+	x = rz_bv_new_from_st64(32, -42);
+	y = rz_bv_new_from_st64(32, -20);
+	mu_assert_true(rz_bv_sle(x, y), "sle of -/-");
+	mu_assert_false(rz_bv_sle(y, x), "sle of -/-");
+	mu_assert_true(rz_bv_ule(x, y), "sle of -/-");
+	mu_assert_false(rz_bv_ule(y, x), "sle of -/-");
+	rz_bv_free(x);
+	rz_bv_free(y);
 
+	x = rz_bv_new_from_st64(32, 42);
+	y = rz_bv_new_from_st64(32, 20);
+	mu_assert_false(rz_bv_sle(x, y), "sle of +/+");
+	mu_assert_true(rz_bv_sle(y, y), "sle of +/+");
+	mu_assert_false(rz_bv_ule(x, y), "ule of +/+");
+	mu_assert_true(rz_bv_ule(y, y), "ule of +/+");
+	rz_bv_free(x);
+	rz_bv_free(y);
+
+	x = rz_bv_new_from_st64(32, 42);
+	y = rz_bv_new_from_st64(32, 42);
+	mu_assert_true(rz_bv_sle(x, y), "sle of ==");
+	mu_assert_true(rz_bv_ule(x, y), "ule of ==");
 	rz_bv_free(x);
 	rz_bv_free(y);
 
