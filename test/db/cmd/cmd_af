@@ -148,7 +148,7 @@ EXPECT=<<EOF
 |      ||   0x08048442      leave
 |      ||   0x08048443      ret
 ..
-\      ``-> 0x08048448      lea     esi, [esi]
+\      ``-> 0x08048448      ret
 EOF
 RUN
 
