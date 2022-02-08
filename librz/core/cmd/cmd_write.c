@@ -40,19 +40,6 @@ static const char *help_msg_w[] = {
 	NULL
 };
 
-static const char *help_msg_wa[] = {
-	"Usage:", "wa[of*] [arg]", "",
-	"wa", " nop", "write nopcode using asm.arch and asm.bits",
-	"wai", " jmp 0x8080", "write inside this op (fill with nops or error if doesnt fit)",
-	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
-	"\"wa nop;nop\"", "", "assemble more than one instruction (note the quotes)",
-	"waf", " f.asm", "assemble file and write bytes",
-	"waF", " f.asm", "assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
-	"waF*", " f.asm", "assemble file and show 'wx' op with hexpair bytes of assembled code",
-	"wao?", "", "show help for assembler operation on current opcode (hack)",
-	NULL
-};
-
 static const char *help_msg_wA[] = {
 	"Usage:", " wA", "[type] [value]",
 	"Types", "", "",
@@ -1718,109 +1705,29 @@ RZ_IPI RzCmdStatus rz_write_hex_from_file_handler(RzCore *core, int argc, const 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int rz_wa_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	switch (input[0]) {
-	case 'o': // "wao"
-		if (input[1] == ' ') {
-			char *op = rz_str_trim_dup(input + 2);
-			if (op) {
-				rz_core_hack(core, op);
-				free(op);
-			}
-		} else {
-			rz_core_hack_help(core);
-		}
-		break;
-	case ' ':
-	case 'i':
-	case '*': {
-		bool pad = input[0] == 'i'; // "wai"
-		bool pretend = input[0] == '*'; // "wa*"
-		const char *instructions = rz_str_trim_head_ro(input + 1);
-		rz_core_write_assembly(core, core->offset, instructions, pretend, pad);
-	} break;
-	case 'f': // "waf"
-		if ((input[1] == ' ' || input[1] == '*')) {
-			const char *file = input + ((input[1] == '*') ? 3 : 2);
-			rz_asm_set_pc(core->rasm, core->offset);
+RZ_IPI RzCmdStatus rz_write_assembly_handler(RzCore *core, int argc, const char **argv) {
+	char *instructions = rz_str_array_join(argv + 1, argc - 1, "\n");
+	int res = rz_core_write_assembly(core, core->offset, instructions);
+	free(instructions);
+	return res >= 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
 
-			char *src = rz_file_slurp(file, NULL);
-			if (src) {
-				ut64 addr = core->offset, nextaddr = addr;
-				char *a, *b = src;
-				do {
-					a = strstr(b, ".offset ");
-					if (a) {
-						*a = 0;
-						a += strlen(".offset ");
-						nextaddr = rz_num_math(core->num, a);
-						char *nl = strchr(a, '\n');
-						if (nl) {
-							*nl = 0;
-							a = nl + 1;
-						} else {
-							break;
-						}
-					}
-					if (*b) {
-						RzAsmCode *ac = rz_asm_massemble(core->rasm, b);
-						if (ac) {
-							rz_io_write_at(core->io, addr, ac->bytes, ac->len);
-							rz_asm_code_free(ac);
-						}
-					}
-					b = a;
-					addr = nextaddr;
-				} while (a);
-				free(src);
-			} else {
-				eprintf("Cannot open '%s'\n", file);
-			}
-		} else {
-			eprintf("Wrong argument\n");
-		}
-		break;
-	case 'F': // "waF"
-		if ((input[1] == ' ' || input[1] == '*')) {
-			const char *file = input + ((input[1] == '*') ? 3 : 2);
-			rz_asm_set_pc(core->rasm, core->offset);
-			char *f = rz_file_slurp(file, NULL);
-			if (f) {
-				RzAsmCode *acode = rz_asm_massemble(core->rasm, f);
-				if (acode) {
-					char *hex = rz_asm_code_get_hex(acode);
-					if (input[1] == '*') {
-						rz_cons_printf("wx %s\n", hex);
-					} else {
-						if (rz_config_get_i(core->config, "scr.prompt")) {
-							eprintf("Written %d byte(s) (%s)=wx %s\n", acode->len, input, hex);
-						}
-						if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
-							cmd_write_fail(core);
-						} else {
-							WSEEK(core, acode->len);
-						}
-						rz_core_block_read(core);
-					}
-					free(hex);
-					rz_asm_code_free(acode);
-				} else {
-					eprintf("Cannot assemble file\n");
-				}
-			} else {
-				eprintf("Cannot slurp '%s'\n", file);
-			}
-		} else {
-			eprintf("Wrong argument\n");
-		}
-		break;
-	default:
-		rz_core_cmd_help(core, help_msg_wa);
-		break;
-	}
-	return 0;
+RZ_IPI RzCmdStatus rz_write_assembly_inside_handler(RzCore *core, int argc, const char **argv) {
+	char *instructions = rz_str_array_join(argv + 1, argc - 1, "\n");
+	int res = rz_core_write_assembly_fill(core, core->offset, instructions);
+	free(instructions);
+	return res >= 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_write_assembly_file_handler(RzCore *core, int argc, const char **argv) {
+	char *instructions = rz_file_slurp(argv[1], NULL);
+	int res = rz_core_write_assembly(core, core->offset, instructions);
+	free(instructions);
+	return res >= 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_write_assembly_opcode_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_core_hack(core, argv[1]));
 }
 
 RZ_IPI int rz_wb_handler_old(void *data, const char *input) {
@@ -1959,9 +1866,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 		break;
 	case 'w': // "ww"
 		rz_ww_handler_old(core, input + 1);
-		break;
-	case 'a': // "wa"
-		rz_wa_handler_old(core, input + 1);
 		break;
 	case 'b': // "wb"
 		rz_wb_handler_old(core, input + 1);

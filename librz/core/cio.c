@@ -500,57 +500,83 @@ err:
  * \param core RzCore reference
  * \param addr Address to where to write
  * \param instructions List of instructions to assemble as a string
- * \param pretend Don't write but emit the sequence of `wx` commands
- * \param pad Fit the instruction inside the current instruction, fill with nops to pad
  * \return Returns the length of the written data or -1 in case of error
  */
-RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad) {
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions) {
+	int ret = -1;
+
 	rz_asm_set_pc(core->rasm, core->offset);
 	RzAsmCode *acode = rz_asm_massemble(core->rasm, instructions);
 	if (!acode) {
 		return -1;
 	}
+	if (acode->len <= 0) {
+		ret = 0;
+		goto err;
+	}
+
+	if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
+		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
+		core->num->value = 1;
+		goto err;
+	}
+	ret = acode->len;
+
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, ret, true);
+	}
+err:
+	rz_asm_code_free(acode);
+	return ret;
+}
+
+/**
+ * \brief Assemble instructions and write the resulting data inside the current instruction.
+ *
+ * Assemble one or more instructions and write the resulting data inside the
+ * current instruction, if the new instructions fit. Fill the rest of the bytes
+ * of the old instruction with NOP
+ *
+ * \param core RzCore reference
+ * \param addr Address to where to write
+ * \param instructions List of instructions to assemble as a string
+ * \return Returns the length of the written data or -1 in case of error (e.g. the new instruction does not fit)
+ */
+RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *instructions) {
 	int ret = -1;
-	RzAnalysisOp op = { 0 };
-	if (pad) { // "wai"
-		if (!rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
-			RZ_LOG_ERROR("Invalid instruction?\n");
-			goto exit;
-		}
-		if (op.size < acode->len) {
-			RZ_LOG_ERROR("Doesnt fit\n");
-			goto exit;
-		}
-		rz_core_hack(core, "nop");
+
+	rz_asm_set_pc(core->rasm, core->offset);
+	RzAsmCode *acode = rz_asm_massemble(core->rasm, instructions);
+	if (!acode) {
+		return -1;
 	}
 	if (acode->len <= 0) {
 		ret = 0;
-		goto exit;
+		goto err;
 	}
-	char *hex = rz_asm_code_get_hex(acode);
-	if (pretend) {
-		rz_cons_printf("wx %s\n", hex);
-	} else {
-		if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
-			RZ_LOG_ERROR("Failed to write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
-			core->num->value = 1;
-			free(hex);
-			goto exit;
-		} else {
-			if (rz_config_get_i(core->config, "scr.prompt")) {
-				RZ_LOG_INFO("Written %d byte(s) (%s) = wx %s\n", acode->len, instructions, hex);
-			}
-			if (wseek) {
-				rz_core_seek_delta(core, acode->len, true);
-			}
-		}
-		rz_core_block_read(core);
+
+	RzAnalysisOp op = { 0 };
+	if (!rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
+		RZ_LOG_ERROR("Invalid instruction at %" PFMT64x "\n", core->offset);
+		goto err;
 	}
-	free(hex);
+	if (op.size < acode->len) {
+		RZ_LOG_ERROR("Instructions do not fit at %" PFMT64x "\n", instructions, core->offset);
+		goto err;
+	}
+	rz_core_hack(core, "nop");
+
+	if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
+		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
+		core->num->value = 1;
+		goto err;
+	}
 	ret = acode->len;
-exit:
-	rz_analysis_op_fini(&op);
+
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, ret, true);
+	}
+err:
 	rz_asm_code_free(acode);
 	return ret;
 }

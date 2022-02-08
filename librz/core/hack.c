@@ -67,11 +67,11 @@ RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp 
 		eprintf("TODO: use jnz or jz\n");
 		return false;
 	} else if (!strcmp(op, "ret1")) {
-		rz_core_write_assembly(core, core->offset, "mov x0, 1,,ret", false, false);
+		rz_core_write_assembly(core, core->offset, "mov x0, 1,,ret");
 	} else if (!strcmp(op, "ret0")) {
-		rz_core_write_assembly(core, core->offset, "mov x0, 0,,ret", false, false);
+		rz_core_write_assembly(core, core->offset, "mov x0, 0,,ret");
 	} else if (!strcmp(op, "retn")) {
-		rz_core_write_assembly(core, core->offset, "mov x0, -1,,ret", false, false);
+		rz_core_write_assembly(core, core->offset, "mov x0, -1,,ret");
 	} else {
 		eprintf("Invalid operation '%s'\n", op);
 		return false;
@@ -267,7 +267,7 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 	return true;
 }
 
-RZ_API int rz_core_hack(RzCore *core, const char *op) {
+RZ_API bool rz_core_hack(RzCore *core, const char *op) {
 	bool (*hack)(RzCore * core, const char *op, const RzAnalysisOp *analop) = NULL;
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
 	const int asmbits = core->rasm->bits;
