@@ -36,6 +36,7 @@ static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cw_details[2];
+static const RzCmdDescDetail cmd_cmp_hexpair_string_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
@@ -5766,6 +5767,14 @@ static const RzCmdDescHelp cmd_cmp_remove_watcher_help = {
 	.args = cmd_cmp_remove_watcher_args,
 };
 
+static const RzCmdDescDetailEntry cmd_cmp_hexpair_string_Ignoring_space_bytes_detail_entries[] = {
+	{ .text = "Ignore specific bytes while comparing by using '.'", .arg_str = NULL, .comment = "cx 1ee7..0f....d34d" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_cmp_hexpair_string_details[] = {
+	{ .name = "Ignoring bytes", .entries = cmd_cmp_hexpair_string_Ignoring_space_bytes_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg cmd_cmp_hexpair_string_args[] = {
 	{
 		.name = "hexpair",
@@ -5777,6 +5786,7 @@ static const RzCmdDescArg cmd_cmp_hexpair_string_args[] = {
 };
 static const RzCmdDescHelp cmd_cmp_hexpair_string_help = {
 	.summary = "Compare data at current offset with a hexpair string <hexpair> (also return in $?)",
+	.details = cmd_cmp_hexpair_string_details,
 	.args = cmd_cmp_hexpair_string_args,
 };
 
