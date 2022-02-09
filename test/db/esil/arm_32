@@ -37,7 +37,7 @@ e asm.arch=arm
 e asm.bits=32
 ar r2=0
 ar cpsr=0
-wa ands r2, r2
+wa "ands r2, r2"
 aes
 ar cpsr
 EOF
@@ -53,7 +53,7 @@ e asm.arch=arm
 e asm.bits=32
 ar r2=5
 ar cpsr=0x40000000
-wa ands r2, r2
+wa "ands r2, r2"
 aes
 ar cpsr
 EOF
@@ -101,7 +101,7 @@ e asm.arch=arm
 e asm.bits=32
 ar r2=0
 ar cpsr=0
-wa orrs r2, r2
+wa "orrs r2, r2"
 aes
 ar cpsr
 EOF
@@ -117,7 +117,7 @@ e asm.arch=arm
 e asm.bits=32
 ar r2=5
 ar cpsr=0x40000000
-wa orrs r2, r2
+wa "orrs r2, r2"
 aes
 ar cpsr
 EOF
@@ -197,7 +197,7 @@ e asm.arch=arm
 e asm.bits=32
 ar r2=0
 ar cpsr=0
-wa adds r2, r2
+wa "adds r2, r2"
 aes
 ar cpsr
 EOF
@@ -214,7 +214,7 @@ e asm.bits=32
 ar r2=2
 ar r1=5
 ar cpsr=0x40000000
-wa adds r1,r2 
+wa "adds r1,r2"
 aes
 ar cpsr
 EOF
@@ -296,7 +296,7 @@ e asm.arch=arm
 e asm.bits=32
 ar r2=1
 ar cpsr=0
-wa eors r2, r2
+wa "eors r2, r2"
 aes
 ar cpsr
 EOF
@@ -313,7 +313,7 @@ e asm.bits=32
 ar r2=2
 ar r1=5
 ar cpsr=0x40000000
-wa eors r1,r2 
+wa "eors r1,r2"
 aes
 ar cpsr
 EOF
@@ -362,7 +362,7 @@ e asm.arch=arm
 e asm.bits=32
 ar r2=1
 ar cpsr=0
-wa subs r2, r2, 1
+wa "subs r2, r2, 1"
 aes
 ar cpsr
 EOF
@@ -378,7 +378,7 @@ e asm.arch=arm
 e asm.bits=32
 ar r2=2
 ar cpsr=0x40000000
-wa subs r2, r2, 1
+wa "subs r2, r2, 1"
 aes
 ar cpsr
 EOF
@@ -428,7 +428,7 @@ aei
 aeim
 ar sp=0x00108000
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -447,7 +447,7 @@ aeim
 ar sp=0x00108000
 ar cpsr=0xffffffff
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -467,7 +467,7 @@ ar sp=0x00108000
 ar r1=0x10
 ar cpsr=0x40000000
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -486,7 +486,7 @@ aeim
 ar sp=0x00108000
 ar cpsr=0xffffffff
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF

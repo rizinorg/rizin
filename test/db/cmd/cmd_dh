@@ -7,7 +7,7 @@ aeim
 aeip
 ar esp=0x00108000
 .arf
-"wa mov eax, 0x1234;push eax"
+wa "mov eax, 0x1234;push eax"
 ds 2
 .arf
 ar esp

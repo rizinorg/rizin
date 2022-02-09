@@ -111,7 +111,7 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bytes=true
 e asm.bits=32
-wa mov r0, r0
+wa "mov r0, r0"
 pi 1
 pd 1
 ahb 32
@@ -157,11 +157,11 @@ FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e cfg.bigendian=1
-wa blx 0x33b8
+wa "blx 0x33b8"
 p8 4
 pi 1
 e cfg.bigendian=0
-wa blx 0x33b8
+wa "blx 0x33b8"
 p8 4
 pi 1
 EOF

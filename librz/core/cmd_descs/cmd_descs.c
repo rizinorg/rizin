@@ -44,6 +44,7 @@ static const RzCmdDescDetail w2_details[2];
 static const RzCmdDescDetail w4_details[2];
 static const RzCmdDescDetail w8_details[2];
 static const RzCmdDescDetail w6_details[2];
+static const RzCmdDescDetail write_assembly_opcode_details[2];
 static const RzCmdDescDetail zign_add_details[5];
 static const RzCmdDescDetail tmp_modifiers_details[2];
 static const RzCmdDescDetail iterators_details[2];
@@ -469,6 +470,10 @@ static const RzCmdDescArg write_from_file_args[4];
 static const RzCmdDescArg write_from_socket_args[3];
 static const RzCmdDescArg write_hex_args[2];
 static const RzCmdDescArg write_hex_from_file_args[2];
+static const RzCmdDescArg write_assembly_args[2];
+static const RzCmdDescArg write_assembly_inside_args[2];
+static const RzCmdDescArg write_assembly_file_args[2];
+static const RzCmdDescArg write_assembly_opcode_args[2];
 static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
@@ -10535,8 +10540,83 @@ static const RzCmdDescHelp write_hex_from_file_help = {
 	.args = write_hex_from_file_args,
 };
 
-static const RzCmdDescHelp wa_handler_old_help = {
-	.summary = "Write opcode, separated by ';'",
+static const RzCmdDescHelp wa_help = {
+	.summary = "Write opcodes",
+};
+static const RzCmdDescArg write_assembly_args[] = {
+	{
+		.name = "instructions",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_assembly_help = {
+	.summary = "Assemble instruction(s) and write bytes at current offset",
+	.description = "Assemble the <instructions> provided as argument considering the current architecture and bits in asm.arch/asm.bits and write the resulting bytes at the current offset.",
+	.args = write_assembly_args,
+};
+
+static const RzCmdDescArg write_assembly_inside_args[] = {
+	{
+		.name = "instructions",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_assembly_inside_help = {
+	.summary = "Assemble instruction(s) and write bytes inside the current instruction",
+	.description = "Assemble the <instructions> provided as argument considering the current architecture and bits in asm.arch/asm.bits and write the resulting bytes \"inside\" the current instruction, by filling the remaining bytes of the old instruction with nop bytes.",
+	.args = write_assembly_inside_args,
+};
+
+static const RzCmdDescArg write_assembly_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_assembly_file_help = {
+	.summary = "Assemble file and write bytes at current offset",
+	.description = "Assemble the assembly file <file> provided as argument considering the current architecture and bits in asm.arch/asm.bits and write the resulting bytes at the current offset.",
+	.args = write_assembly_file_args,
+};
+
+static const RzCmdDescDetailEntry write_assembly_opcode_Operators_detail_entries[] = {
+	{ .text = "wao", .arg_str = " nop", .comment = "Make the current instruction a no operation" },
+	{ .text = "wao", .arg_str = " jinf", .comment = "Assemble an infinite loop" },
+	{ .text = "wao", .arg_str = " jz", .comment = "Make the current conditional instruction a jump-if-zero" },
+	{ .text = "wao", .arg_str = " jnz", .comment = "Make the current conditional instruction a jump-if-not-zero" },
+	{ .text = "wao", .arg_str = " ret1", .comment = "Make the current instruction return 1" },
+	{ .text = "wao", .arg_str = " ret0", .comment = "Make the current instruction return 0" },
+	{ .text = "wao", .arg_str = " retn", .comment = "Make the current instruction return -1" },
+	{ .text = "wao", .arg_str = " nocj", .comment = "Make the current conditional instruction unconditional" },
+	{ .text = "wao", .arg_str = " trap", .comment = "Make the current instruction a trap (e.g. int3 in x86)" },
+	{ .text = "wao", .arg_str = " recj", .comment = "Swap the condition of the current conditional instruction" },
+	{ 0 },
+};
+static const RzCmdDescDetail write_assembly_opcode_details[] = {
+	{ .name = "Operators", .entries = write_assembly_opcode_Operators_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg write_assembly_opcode_args[] = {
+	{
+		.name = "op",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_assembly_opcode_help = {
+	.summary = "Write on the current opcode",
+	.details = write_assembly_opcode_details,
+	.args = write_assembly_opcode_args,
 };
 
 static const RzCmdDescHelp wb_handler_old_help = {
@@ -13853,8 +13933,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_hex_from_file_cd = rz_cmd_desc_argv_new(core->rcmd, wx_cd, "wxf", rz_write_hex_from_file_handler, &write_hex_from_file_help);
 	rz_warn_if_fail(write_hex_from_file_cd);
 
-	RzCmdDesc *wa_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wa", rz_wa_handler_old, &wa_handler_old_help);
-	rz_warn_if_fail(wa_handler_old_cd);
+	RzCmdDesc *wa_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wa", rz_write_assembly_handler, &write_assembly_help, &wa_help);
+	rz_warn_if_fail(wa_cd);
+	RzCmdDesc *write_assembly_inside_cd = rz_cmd_desc_argv_new(core->rcmd, wa_cd, "wai", rz_write_assembly_inside_handler, &write_assembly_inside_help);
+	rz_warn_if_fail(write_assembly_inside_cd);
+
+	RzCmdDesc *write_assembly_file_cd = rz_cmd_desc_argv_new(core->rcmd, wa_cd, "waf", rz_write_assembly_file_handler, &write_assembly_file_help);
+	rz_warn_if_fail(write_assembly_file_cd);
+
+	RzCmdDesc *write_assembly_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, wa_cd, "wao", rz_write_assembly_opcode_handler, &write_assembly_opcode_help);
+	rz_warn_if_fail(write_assembly_opcode_cd);
 
 	RzCmdDesc *wb_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wb", rz_wb_handler_old, &wb_handler_old_help);
 	rz_warn_if_fail(wb_handler_old_cd);

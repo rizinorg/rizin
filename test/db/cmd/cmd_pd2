@@ -585,8 +585,8 @@ s 0x000041e0
 .(insn_tests)
 ?e
 e io.cache=true
-"wa mov rdx, [rip + 0x17792]; mov rsi, [rip + 0x1d84b]" @ 0x000041e7
-"wa mov rdi, [rip + 0x147f6]" @ 0x00004225
+wa "mov rdx, [rip + 0x17792]; mov rsi, [rip + 0x1d84b]" @ 0x000041e7
+wa "mov rdi, [rip + 0x147f6]" @ 0x00004225
 .(insn_tests)
 ?e
 wx 483b1592770100483b354bd80100 @ 0x000041e7  # cmp rdx, [rip + 0x17792]; cmp rsi, [rip + 0x1d84b]

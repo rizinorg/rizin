@@ -250,7 +250,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-wa mov eax, 4
+wa "mov eax, 4"
 e asm.esil=true
 pd 1
 EOF

@@ -3,7 +3,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"wa nop;nop";pi 3
+wa "nop;nop";pi 3
 EOF
 EXPECT=<<EOF
 nop
@@ -17,7 +17,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-p8 1;"wa nop;nop";pi 3
+p8 1;wa nop nop;pi 3
 EOF
 EXPECT=<<EOF
 00
@@ -32,7 +32,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"w hello;world";"wa inc eax;inc eax";psz
+"w hello;world";wa "inc eax;inc eax";psz
 EOF
 EXPECT=<<EOF
 @@llo;world

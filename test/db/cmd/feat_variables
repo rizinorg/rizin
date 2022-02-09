@@ -151,11 +151,11 @@ CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
 e analysis.arch=x86
-wa jmp 0x30
+wa "jmp 0x30"
 ?v $j
-wa jz 0x01
+wa "jz 0x01"
 ?v $j
-wa xor eax, eax
+wa "xor eax, eax"
 ?v $j
 ?e
 EOF
@@ -192,9 +192,9 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-wa mov eax, [0x500]
+wa "mov eax, [0x500]"
 ?v $m
-wa mov eax, ebx
+wa "mov eax, ebx"
 ?v $m
 ?e
 EOF
@@ -211,9 +211,9 @@ CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
 e analysis.arch=x86
-wa xor eax, eax
+wa "xor eax, eax"
 ?v $l
-wa mov esp, 0x1
+wa "mov esp, 0x1"
 ?v $l
 wx c3
 ?v $l
@@ -230,13 +230,13 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-wa inc eax
+wa "inc eax"
 ?v $e
-wa jmp 0x01
+wa "jmp 0x01"
 ?v $e
 wa ret
 ?v $e
-wa call 0x01
+wa "call 0x01"
 ?v $e
 EOF
 EXPECT=<<EOF
