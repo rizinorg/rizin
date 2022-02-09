@@ -51,7 +51,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"wa push 10;ret;nop;nop;nop;nop;nop;nop;nop;ret"
+wa "push 10;ret;nop;nop;nop;nop;nop;nop;nop;ret"
 e analysis.pushret=true
 af
 afi~size
@@ -3234,7 +3234,7 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
 e emu.str=true
-wa jmp 0x100
+wa "jmp 0x100"
 w hello @ 0x100
 pd 1
 EOF
@@ -3445,7 +3445,7 @@ e io.cache=true
 $orig_end=?e `omlt:va_end:quiet`
 omr 1 `omlt:size:quiet`+2
 s `$orig_end`
-wa jmp entry0
+wa "jmp entry0"
 aF
 aae
 agf
@@ -3489,7 +3489,7 @@ NAME=push [esp + 8] variable detection
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"wa push ebp; mov esp, ebp; sub esp, 64; mov [esp+4], 4; mov [esp+8], 8; mov [esp+0xC], 0xC; push dword [esp+8]; ret"
+wa "push ebp; mov esp, ebp; sub esp, 64; mov [esp+4], 4; mov [esp+8], 8; mov [esp+0xC], 0xC; push dword [esp+8]; ret"
 af
 pdf
 EOF
