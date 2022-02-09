@@ -5428,6 +5428,7 @@ toro:
 					}
 				}
 				rz_analysis_op_fini(&ds->analysis_op);
+				RZ_FREE(ds->opstr);
 				if (!sparse) {
 					rz_cons_printf("..\n");
 					sparse = true;
