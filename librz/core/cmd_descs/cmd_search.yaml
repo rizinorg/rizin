@@ -13,3 +13,22 @@ commands:
     args:
       - name: string
         type: RZ_CMD_ARG_TYPE_STRING
+  - name: /x
+    summary: Search for hexadecimal string <hex>
+    cname: cmd_search_hex_string
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: hex
+        type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Ignoring bytes
+        entries:
+          - text: "Ignore specific bytes while searching by using '.'"
+            comment: "/x 1ee7..0f....d34d"
+      - name: Making bytes
+        entries:
+          - text: "Mask bytes while searching by using :"
+            comment: "/x ff43:ffd0"

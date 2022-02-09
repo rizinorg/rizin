@@ -18,6 +18,7 @@ static const RzCmdDescDetail analyze_all_preludes_details[2];
 static const RzCmdDescDetail analysis_functions_merge_details[2];
 static const RzCmdDescDetail analysis_appcall_details[2];
 static const RzCmdDescDetail ag_details[2];
+static const RzCmdDescDetail cmd_search_hex_string_details[3];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
 static const RzCmdDescDetail analysis_hint_set_arch_details[2];
@@ -87,6 +88,7 @@ static const RzCmdDescArg interpret_pipe_args[2];
 static const RzCmdDescArg interpret_macro_args[4];
 static const RzCmdDescArg interpret_macro_multiple_args[4];
 static const RzCmdDescArg cmd_search_string_args[2];
+static const RzCmdDescArg cmd_search_hex_string_args[2];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
@@ -1192,6 +1194,35 @@ static const RzCmdDescArg cmd_search_string_args[] = {
 static const RzCmdDescHelp cmd_search_string_help = {
 	.summary = "Search for <string>",
 	.args = cmd_search_string_args,
+};
+
+static const RzCmdDescDetailEntry cmd_search_hex_string_Ignoring_space_bytes_detail_entries[] = {
+	{ .text = "Ignore specific bytes while searching by using '.'", .arg_str = NULL, .comment = "/x 1ee7..0f....d34d" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_search_hex_string_Making_space_bytes_detail_entries[] = {
+	{ .text = "Mask bytes while searching by using :", .arg_str = NULL, .comment = "/x ff43:ffd0" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_search_hex_string_details[] = {
+	{ .name = "Ignoring bytes", .entries = cmd_search_hex_string_Ignoring_space_bytes_detail_entries },
+	{ .name = "Making bytes", .entries = cmd_search_hex_string_Making_space_bytes_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_search_hex_string_args[] = {
+	{
+		.name = "hex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_hex_string_help = {
+	.summary = "Search for hexadecimal string <hex>",
+	.details = cmd_search_hex_string_details,
+	.args = cmd_search_hex_string_args,
 };
 
 static const RzCmdDescHelp R_help = {
@@ -16569,6 +16600,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *slash__cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_string_handler, &cmd_search_string_help, &slash__help);
 	rz_warn_if_fail(slash__cd);
+	RzCmdDesc *cmd_search_hex_string_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/x", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_hex_string_handler, &cmd_search_hex_string_help);
+	rz_warn_if_fail(cmd_search_hex_string_cd);
 
 	RzCmdDesc *R_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "R", rz_remote_handler, &remote_help, &R_help);
 	rz_warn_if_fail(R_cd);
