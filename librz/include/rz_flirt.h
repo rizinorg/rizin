@@ -94,6 +94,7 @@ enum rz_flirt_sig_arch_t {
 	RZ_FLIRT_SIG_ARCH_XTENSA, // Tensilica Xtensa
 	RZ_FLIRT_SIG_ARCH_RISCV, // RISC-V
 	RZ_FLIRT_SIG_ARCH_RL78, // Renesas RL78.
+	RZ_FLIRT_SIG_ARCH_RX, // Renesas RX.
 	RZ_FLIRT_SIG_ARCH_ANY,
 };
 
