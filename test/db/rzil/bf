@@ -1725,7 +1725,7 @@ aezsu $s; ?e
 ar
 ?e --- Reset everything ---
 ara-
-wcr
+wc-*
 ar
 aezi  # Shouldn't be necessary
 aezsu $s; ?e

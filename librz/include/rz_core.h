@@ -575,6 +575,8 @@ RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len);
 RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
+RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdStateOutput *state);
 
 /* creg.c */
 RZ_API RzReg *rz_core_reg_default(RzCore *core);

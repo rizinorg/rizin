@@ -963,3 +963,104 @@ err:
 	free(buf);
 	return res;
 }
+
+RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && core->io, RZ_CMD_STATUS_ERROR);
+
+	size_t i, j = 0;
+	void **iter;
+	RzIOCache *c;
+
+	rz_pvector_foreach (&core->io->cache, iter) {
+		c = *iter;
+		const ut64 dataSize = rz_itv_size(c->itv);
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("idx=%" PFMTSZu " addr=0x%08" PFMT64x " size=%" PFMT64u " ", j, rz_itv_begin(c->itv), dataSize);
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", c->odata[i]);
+			}
+			rz_cons_printf(" -> ");
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", c->data[i]);
+			}
+			rz_cons_printf(" %s\n", c->written ? "(written)" : "(not written)");
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "idx", j);
+			pj_kn(state->d.pj, "addr", rz_itv_begin(c->itv));
+			pj_kn(state->d.pj, "size", dataSize);
+			char *hex = rz_hex_bin2strdup(c->odata, dataSize);
+			pj_ks(state->d.pj, "before", hex);
+			free(hex);
+			hex = rz_hex_bin2strdup(c->data, dataSize);
+			pj_ks(state->d.pj, "after", hex);
+			free(hex);
+			pj_kb(state->d.pj, "written", c->written);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_cons_printf("wx ");
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", (ut8)(c->data[i] & 0xff));
+			}
+			rz_cons_printf(" @ 0x%08" PFMT64x, rz_itv_begin(c->itv));
+			rz_cons_printf(" # replaces: ");
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", (ut8)(c->odata[i] & 0xff));
+			}
+			rz_cons_printf("\n");
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		j++;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && core->io, RZ_CMD_STATUS_ERROR);
+	rz_return_val_if_fail(desc, RZ_CMD_STATUS_ERROR);
+
+	RzList *caches = rz_io_desc_cache_list(desc);
+	RzListIter *iter;
+	RzIOCache *c;
+
+	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
+		rz_cons_printf("e io.va = false\n");
+	}
+	rz_list_foreach (caches, iter, c) {
+		const int cacheSize = rz_itv_size(c->itv);
+		int i;
+
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("0x%08" PFMT64x ": %02x",
+				rz_itv_begin(c->itv), c->odata[0]);
+			for (i = 1; i < cacheSize; i++) {
+				rz_cons_printf("%02x", c->odata[i]);
+			}
+			rz_cons_printf(" -> %02x", c->data[0]);
+			for (i = 1; i < cacheSize; i++) {
+				rz_cons_printf("%02x", c->data[i]);
+			}
+			rz_cons_printf("\n");
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_cons_printf("wx %02x", c->data[0]);
+			for (i = 1; i < cacheSize; i++) {
+				rz_cons_printf("%02x", c->data[i]);
+			}
+			rz_cons_printf(" @ 0x%08" PFMT64x " \n", rz_itv_begin(c->itv));
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_list_free(caches);
+	return RZ_CMD_STATUS_OK;
+}
