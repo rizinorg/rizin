@@ -278,9 +278,62 @@ commands:
     summary: Alter/modify opcode at current seek (see wA?)
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wc
-    cname: wc_handler_old
     summary: Write cache commands
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: wc
+        cname: write_cache_list
+        summary: List all write changes in the cache
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: wc-
+        cname: write_cache_remove
+        summary: Remove write operation at current offset or in the given range
+        args:
+          - name: from
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: to
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wc-*
+        cname: write_cache_remove_all
+        summary: Reset the cache
+        args: []
+      - name: wc+
+        cname: write_cache_commit
+        summary: Commit cache from address <from> up to <to> or one blocksize
+        args:
+          - name: from
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: to
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wci
+        cname: write_cache_commit_all
+        summary: Commit the cache
+        args: []
+      - name: wcp
+        cname: write_pcache_list
+        summary: List all write changes in the p-cache
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: wcpi
+        cname: write_pcache_commit
+        summary: Commit p-cache for specified <fd> or current file
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
   - name: wz
     cname: wz_handler_old
     summary: Write zero-terminated string

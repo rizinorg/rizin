@@ -464,6 +464,10 @@ static const RzCmdDescArg write_8_dec_args[2];
 static const RzCmdDescArg write_base64_decode_args[2];
 static const RzCmdDescArg write_base64_encode_args[2];
 static const RzCmdDescArg write_random_args[2];
+static const RzCmdDescArg write_cache_remove_args[3];
+static const RzCmdDescArg write_cache_commit_args[3];
+static const RzCmdDescArg write_pcache_list_args[2];
+static const RzCmdDescArg write_pcache_commit_args[2];
 static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
@@ -10407,8 +10411,100 @@ static const RzCmdDescHelp wA_handler_old_help = {
 	.summary = "Alter/modify opcode at current seek (see wA?)",
 };
 
-static const RzCmdDescHelp wc_handler_old_help = {
+static const RzCmdDescHelp wc_help = {
 	.summary = "Write cache commands",
+};
+static const RzCmdDescArg write_cache_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_cache_list_help = {
+	.summary = "List all write changes in the cache",
+	.args = write_cache_list_args,
+};
+
+static const RzCmdDescArg write_cache_remove_args[] = {
+	{
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "to",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_cache_remove_help = {
+	.summary = "Remove write operation at current offset or in the given range",
+	.args = write_cache_remove_args,
+};
+
+static const RzCmdDescArg write_cache_remove_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_cache_remove_all_help = {
+	.summary = "Reset the cache",
+	.args = write_cache_remove_all_args,
+};
+
+static const RzCmdDescArg write_cache_commit_args[] = {
+	{
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "to",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_cache_commit_help = {
+	.summary = "Commit cache from address <from> up to <to> or one blocksize",
+	.args = write_cache_commit_args,
+};
+
+static const RzCmdDescArg write_cache_commit_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_cache_commit_all_help = {
+	.summary = "Commit the cache",
+	.args = write_cache_commit_all_args,
+};
+
+static const RzCmdDescArg write_pcache_list_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_pcache_list_help = {
+	.summary = "List all write changes in the p-cache",
+	.args = write_pcache_list_args,
+};
+
+static const RzCmdDescArg write_pcache_commit_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_pcache_commit_help = {
+	.summary = "Commit p-cache for specified <fd> or current file",
+	.args = write_pcache_commit_args,
 };
 
 static const RzCmdDescHelp wz_handler_old_help = {
@@ -13905,8 +14001,25 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *wA_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wA", rz_wA_handler_old, &wA_handler_old_help);
 	rz_warn_if_fail(wA_handler_old_cd);
 
-	RzCmdDesc *wc_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wc", rz_wc_handler_old, &wc_handler_old_help);
-	rz_warn_if_fail(wc_handler_old_cd);
+	RzCmdDesc *wc_cd = rz_cmd_desc_group_state_new(core->rcmd, w_cd, "wc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_write_cache_list_handler, &write_cache_list_help, &wc_help);
+	rz_warn_if_fail(wc_cd);
+	RzCmdDesc *write_cache_remove_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wc-", rz_write_cache_remove_handler, &write_cache_remove_help);
+	rz_warn_if_fail(write_cache_remove_cd);
+
+	RzCmdDesc *write_cache_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wc-*", rz_write_cache_remove_all_handler, &write_cache_remove_all_help);
+	rz_warn_if_fail(write_cache_remove_all_cd);
+
+	RzCmdDesc *write_cache_commit_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wc+", rz_write_cache_commit_handler, &write_cache_commit_help);
+	rz_warn_if_fail(write_cache_commit_cd);
+
+	RzCmdDesc *write_cache_commit_all_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wci", rz_write_cache_commit_all_handler, &write_cache_commit_all_help);
+	rz_warn_if_fail(write_cache_commit_all_cd);
+
+	RzCmdDesc *write_pcache_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, wc_cd, "wcp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_write_pcache_list_handler, &write_pcache_list_help);
+	rz_warn_if_fail(write_pcache_list_cd);
+
+	RzCmdDesc *write_pcache_commit_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wcpi", rz_write_pcache_commit_handler, &write_pcache_commit_help);
+	rz_warn_if_fail(write_pcache_commit_cd);
 
 	RzCmdDesc *wz_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wz", rz_wz_handler_old, &wz_handler_old_help);
 	rz_warn_if_fail(wz_handler_old_cd);
