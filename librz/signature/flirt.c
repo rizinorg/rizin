@@ -362,7 +362,6 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 	RzListIter *tail_byte_it, *flirt_func_it;
 	RzFlirtTailByte *tail_byte;
 	ut32 name_index = 0;
-	char name[RZ_FLIRT_NAME_MAX];
 
 	if (32 + module->crc_length < buf_size &&
 		module->crc16 != flirt_crc16(b + 32, module->crc_length)) {
@@ -425,18 +424,32 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			rz_name_filter(flirt_func->name, -1, true);
 
 			// verify that the name is unique
-			rz_strf(name, "flirt.%s", flirt_func->name);
-			while (!rz_analysis_function_rename(next_module_function, name)) {
-				name_index++;
-				rz_strf(name, "flirt.%s_%u", flirt_func->name, name_index);
+			char *name = rz_str_newf("flirt.%s", flirt_func->name);
+			if (!name) {
+				RZ_LOG_ERROR("FLIRT: cannot allocate string buffer for name\n");
+				return false;
 			}
 
+			while (!rz_analysis_function_rename(next_module_function, name)) {
+				free(name);
+				name_index++;
+				name = rz_str_newf("flirt.%s_%u", flirt_func->name, name_index);
+				if (!name) {
+					RZ_LOG_ERROR("FLIRT: cannot allocate string buffer for name\n");
+					return false;
+				}
+			}
+
+			// remove old flag
 			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "fcn.", "func.", NULL);
 			if (fit) {
 				analysis->flb.unset(analysis->flb.f, fit);
 			}
+
+			// set new flag
 			analysis->flb.set(analysis->flb.f, name, next_module_function->addr, next_module_function_size);
 			RZ_LOG_DEBUG("FLIRT: Found %s\n", next_module_function->name);
+			free(name);
 		}
 	}
 	return true;
