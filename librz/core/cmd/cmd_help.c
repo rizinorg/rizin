@@ -1009,19 +1009,16 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			rz_cons_printf("0x%08" PFMT64x "\n", core->offset);
 		}
 		break;
-	case 'p': // "?p" virtual to physical address conversion
-		if (core->io->va) {
-			ut64 n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
-			ut64 paddr = rz_io_v2p(core->io, n);
-			if (paddr == UT64_MAX) {
-				rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
-			} else {
-				rz_cons_printf("0x%08" PFMT64x "\n", paddr);
-			}
+	case 'p': { // "?p" virtual to physical address conversion
+		ut64 n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
+		ut64 paddr = rz_io_v2p(core->io, n);
+		if (paddr == UT64_MAX) {
+			rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x "\n", core->offset);
+			rz_cons_printf("0x%08" PFMT64x "\n", paddr);
 		}
 		break;
+	}
 	case '_': // "?_" hud input
 		rz_core_yank_hud_file(core, input + 1);
 		break;
