@@ -696,6 +696,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		goto beach;
 	}
 	rz_asm_set_cpu(as->a, cpu);
+	rz_analysis_set_cpu(as->analysis, cpu);
 	rz_asm_set_bits(as->a, (env_bits && *env_bits) ? atoi(env_bits) : bits);
 	rz_analysis_set_bits(as->analysis, (env_bits && *env_bits) ? atoi(env_bits) : bits);
 	as->a->syscall = rz_syscall_new();
