@@ -548,3 +548,15 @@ EXPECT=<<EOF
 | .(<macro-name> [<macro-arg1> <macro-arg2> ...]) # Call macro
 EOF
 RUN
+
+NAME=?p ignores io.va
+FILE=bins/elf/analysis/ls2
+CMDS=<<EOF
+?p main @e:io.va=true
+?p main @e:io.va=false
+EOF
+EXPECT=<<EOF
+0x000028a0
+0x000028a0
+EOF
+RUN
