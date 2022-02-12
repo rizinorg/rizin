@@ -549,14 +549,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=?p ignores io.va
+NAME=?p and ?P ignore io.va
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
 ?p main @e:io.va=true
 ?p main @e:io.va=false
+?v main
+?P 0x28a0 @e:io.va=1
+?P 0x28a0 @e:io.va=0
 EOF
 EXPECT=<<EOF
 0x000028a0
 0x000028a0
+0x4028a0
+0x004028a0
+0x004028a0
 EOF
 RUN
