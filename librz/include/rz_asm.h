@@ -118,6 +118,7 @@ typedef struct rz_asm_t {
 	bool immdisp; // Display immediates with # symbol (for arm/hexagon architectures). false = show hashs
 	bool immsign; // Print signed immediates as negative values, not their unsigned representation.
 	bool utf8; // Flag for plugins: Use utf-8 characters.
+	bool hex_sdk; // Hexagon arch only. Print packet syntax in hexagon-objdump style.
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;

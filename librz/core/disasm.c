@@ -1196,12 +1196,11 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		free(ds->opstr);
 		ds->opstr = strdup(ds->str);
 	} else {
-		rz_str_trim(ds->opstr); // trim before coloring git
 		char *asm_str = colorize_asm_string(core, ds, print_color);
 		free(ds->opstr);
 		ds->opstr = asm_str;
 	}
-	rz_str_trim(ds->opstr);
+	rz_str_trim_char(ds->opstr, '\n');
 	// updates ds->opstr
 	__replaceImports(ds);
 	if (ds->show_color) {

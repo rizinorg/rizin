@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-01-21 03:37:58-05:00
+// Date of code generation: 2022-01-24 07:53:55-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -247,6 +247,121 @@ static inline bool is_pkt_full(const HexPkt *p) {
 }
 
 /**
+ * \brief Get the pkt indicator string.
+ *
+ * \param utf8 True: Return UTF8 string. False: Return ASCII.
+ * \param sdk True: Return SDK conforming string ('{', '}', ':endloop0' etc.).
+ * False: Returns a non SDK conforming string
+ * \param prefix True: Return the prefix indicator. False: Return the postfix.
+ * If there is no prefix/postfix for a given indicator type (e.g. for the utf8 version of 'endloop01')
+ * it returns an empty string.
+ * \param ind_type The
+ * \param prefix
+ * \return char* The indicator string according to the given flags.
+ */
+static char *get_pkt_indicator(const bool utf8, const bool sdk, const bool prefix, HexPktSyntaxIndicator ind_type) {
+	switch (ind_type) {
+	default:
+		return "";
+	case SINGLE_IN_PKT:
+		if (prefix) {
+			if (sdk) {
+				return HEX_PKT_FIRST_SDK;
+			} else {
+				return utf8 ? HEX_PKT_SINGLE_UTF8 : HEX_PKT_SINGLE;
+			}
+		} else {
+			if (sdk) {
+				return HEX_PKT_LAST_SDK;
+			}
+		}
+		break;
+	case FIRST_IN_PKT:
+		if (!prefix) {
+			break;
+		}
+		if (sdk) {
+			return HEX_PKT_FIRST_SDK;
+		}
+		if (utf8) {
+			return HEX_PKT_FIRST_UTF8;
+		} else {
+			return HEX_PKT_FIRST;
+		}
+		break;
+	case MID_IN_PKT:
+		if (!prefix) {
+			break;
+		}
+		if (sdk) {
+			return HEX_PKT_SDK_PADDING;
+		}
+		if (utf8) {
+			return HEX_PKT_MID_UTF8;
+		} else {
+			return HEX_PKT_MID;
+		}
+		break;
+	case LAST_IN_PKT:
+		if (prefix) {
+			if (sdk) {
+				return HEX_PKT_SDK_PADDING;
+			}
+			if (utf8) {
+				return HEX_PKT_LAST_UTF8;
+			} else {
+				return HEX_PKT_LAST;
+			}
+		} else {
+			if (sdk) {
+				return HEX_PKT_LAST_SDK;
+			}
+		}
+		break;
+	case ELOOP_0_PKT:
+		if (prefix) {
+			break;
+		}
+		if (sdk) {
+			return HEX_PKT_ELOOP_0_SDK;
+		}
+		if (utf8) {
+			return HEX_PKT_ELOOP_0_UTF8;
+		} else {
+			return HEX_PKT_ELOOP_0;
+		}
+		break;
+	case ELOOP_1_PKT:
+		if (prefix) {
+			break;
+		}
+		if (sdk) {
+			return HEX_PKT_ELOOP_1_SDK;
+		}
+		if (utf8) {
+			return HEX_PKT_ELOOP_1_UTF8;
+		} else {
+			return HEX_PKT_ELOOP_1;
+		}
+		break;
+	case ELOOP_01_PKT:
+		if (prefix) {
+			break;
+		}
+		if (sdk) {
+			return HEX_PKT_ELOOP_01_SDK;
+		}
+		if (utf8) {
+			return HEX_PKT_ELOOP_01_UTF8;
+		} else {
+			return HEX_PKT_ELOOP_01;
+		}
+		break;
+	}
+	return "";
+}
+
+/**
  * \brief Sets the packet related information in an instruction.
  *
  * \param hi The instruction.
@@ -263,9 +378,11 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 	if (is_first && is_last_instr(hi->parse_bits)) { // Single instruction packet.
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = true;
-		// TODO No indent in visual mode for "[" without spaces.
 		if (p->is_valid) {
-			strncpy(hi_pi->mnem_prefix, HEX_PKT_SINGLE, 8);
+			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, true, SINGLE_IN_PKT), 8);
+			if (rz_asm->hex_sdk) {
+				strncpy(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, SINGLE_IN_PKT), 8);
+			}
 		} else {
 			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
 		}
@@ -273,7 +390,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = false;
 		if (p->is_valid) {
-			strncpy(hi_pi->mnem_prefix, rz_asm->utf8 ? HEX_PKT_FIRST_UTF8 : HEX_PKT_FIRST, 8);
+			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, true, FIRST_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
 		}
@@ -281,19 +398,22 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = true;
 		if (p->is_valid) {
-			strncpy(hi_pi->mnem_prefix, rz_asm->utf8 ? HEX_PKT_LAST_UTF8 : HEX_PKT_LAST, 8);
+			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, true, LAST_IN_PKT), 8);
+			if (rz_asm->hex_sdk) {
+				strncpy(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, LAST_IN_PKT), 8);
+			}
 
 			switch (hex_get_loop_flag(p)) {
 			default:
 				break;
 			case HEX_LOOP_01:
-				strncpy(hi_pi->mnem_postfix, rz_asm->utf8 ? HEX_PKT_ELOOP_01_UTF8 : HEX_PKT_ELOOP_01, 24);
+				strncat(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, ELOOP_01_PKT), 23 - strlen(hi_pi->mnem_postfix));
 				break;
 			case HEX_LOOP_0:
-				strncpy(hi_pi->mnem_postfix, rz_asm->utf8 ? HEX_PKT_ELOOP_0_UTF8 : HEX_PKT_ELOOP_0, 24);
+				strncat(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, ELOOP_0_PKT), 23 - strlen(hi_pi->mnem_postfix));
 				break;
 			case HEX_LOOP_1:
-				strncpy(hi_pi->mnem_postfix, rz_asm->utf8 ? HEX_PKT_ELOOP_1_UTF8 : HEX_PKT_ELOOP_1, 24);
+				strncat(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, ELOOP_1_PKT), 23 - strlen(hi_pi->mnem_postfix));
 				break;
 			}
 		} else {
@@ -303,7 +423,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = false;
 		if (p->is_valid) {
-			strncpy(hi_pi->mnem_prefix, rz_asm->utf8 ? HEX_PKT_MID_UTF8 : HEX_PKT_MID, 8);
+			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, true, MID_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
 		}
