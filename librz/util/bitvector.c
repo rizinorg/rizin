@@ -133,7 +133,7 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv, bool pad) {
 			str[j++] = hex[high];
 			pad = true; // pad means "print all" from now on
 		}
-		if (pad || low) {
+		if (pad || low || i == bv->_elem_len - 1) {
 			str[j++] = hex[low];
 			pad = true; // pad means "print all" from now on
 		}
