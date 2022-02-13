@@ -93,6 +93,35 @@ bool test_rz_bv_init128(void) {
 	mu_end;
 }
 
+bool test_rz_bv_init70(void) {
+	char *s = NULL;
+
+	// create by given unsigned 70 bits
+	RzBitVector *bits = rz_bv_new_from_ut64(70, 100);
+	RzBitVector *bits_cmp = rz_bv_new(70);
+
+	// 100 = 64 + 32 + 4 == 0b 0000 0000 0000 0000 0000 0000 0110 0100
+	rz_bv_set(bits_cmp, 2, true);
+	rz_bv_set(bits_cmp, 5, true);
+	rz_bv_set(bits_cmp, 6, true);
+	mu_assert("new from 70", is_equal_bv(bits, bits_cmp));
+
+	// dup
+	RzBitVector *bits_dup = rz_bv_dup(bits);
+	mu_assert("dup from bits 70", is_equal_bv(bits_dup, bits));
+
+	s = rz_bv_as_string(bits);
+	mu_assert_streq_free(s, "0000000000000000000000000000000000000000000000000000000000000001100100", "string bit value of bv");
+
+	s = rz_bv_as_hex_string(bits, true);
+	mu_assert_streq_free(s, "0x000000000000000064", "string hex value of bv");
+
+	rz_bv_free(bits);
+	rz_bv_free(bits_cmp);
+	rz_bv_free(bits_dup);
+	mu_end;
+}
+
 bool test_rz_bv_init_signed(void) {
 	char *s = NULL;
 	RzBitVector *bits = NULL;
@@ -763,6 +792,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
 	mu_run_test(test_rz_bv_init128);
+	mu_run_test(test_rz_bv_init70);
 	mu_run_test(test_rz_bv_init_signed);
 	mu_run_test(test_rz_bv_cmp);
 	mu_run_test(test_rz_bv_eq);
