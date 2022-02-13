@@ -788,6 +788,49 @@ bool test_rz_bv_as_hex_string(void) {
 	mu_end;
 }
 
+bool test_rz_bv_clz(void) {
+#define TEST_CLZ(bva, expect) \
+	do { \
+		RzBitVector *a = bva; \
+		ut32 r = rz_bv_clz(a); \
+		mu_assert_eq(r, expect, "clz"); \
+		rz_bv_free(a); \
+	} while (0)
+
+	TEST_CLZ(rz_bv_new_from_ut64(32, 0x2a), 26);
+	TEST_CLZ(rz_bv_new_from_ut64(32, 0x0), 32);
+	TEST_CLZ(rz_bv_new_from_ut64(32, 0xffffffff), 0);
+	TEST_CLZ(rz_bv_new_from_ut64(64, 0xffffffffffffffff), 0);
+	TEST_CLZ(rz_bv_new_from_ut64(64, 0x2a), 58);
+	TEST_CLZ(rz_bv_new_from_ut64(74, 0x2a), 68);
+	TEST_CLZ(rz_bv_new_from_st64(74, -1), 0);
+	TEST_CLZ(rz_bv_new_from_ut64(74, 0), 74);
+
+#undef TEST_CLZ
+	mu_end;
+}
+
+bool test_rz_bv_ctz(void) {
+#define TEST_CTZ(bva, expect) \
+	do { \
+		RzBitVector *a = bva; \
+		ut32 r = rz_bv_ctz(a); \
+		mu_assert_eq(r, expect, "clz"); \
+		rz_bv_free(a); \
+	} while (0)
+
+	TEST_CTZ(rz_bv_new_from_ut64(32, 0x1), 0);
+	TEST_CTZ(rz_bv_new_from_ut64(32, 0x0), 32);
+	TEST_CTZ(rz_bv_new_from_ut64(32, 0xffffff00), 8);
+	TEST_CTZ(rz_bv_new_from_ut64(64, 0xfffffffffffff800), 11);
+	TEST_CTZ(rz_bv_new_from_ut64(74, 0x8), 3);
+	TEST_CTZ(rz_bv_new_from_st64(74, -1), 0);
+	TEST_CTZ(rz_bv_new_from_ut64(74, 0), 74);
+
+#undef TEST_CTZ
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
@@ -804,6 +847,8 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_set_from_bytes_le);
 	mu_run_test(test_rz_bv_set_from_bytes_be);
 	mu_run_test(test_rz_bv_as_hex_string);
+	mu_run_test(test_rz_bv_clz);
+	mu_run_test(test_rz_bv_ctz);
 	return tests_passed != tests_run;
 }
 
