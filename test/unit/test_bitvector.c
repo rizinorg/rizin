@@ -724,6 +724,12 @@ bool test_rz_bv_as_hex_string(void) {
 	mu_assert_streq_free(s, "0x0000032a", "string hex value of bv");
 	s = rz_bv_as_hex_string(bv, false);
 	mu_assert_streq_free(s, "0x32a", "string hex value of bv");
+
+	rz_bv_set_from_ut64(bv, 0x0);
+	s = rz_bv_as_hex_string(bv, true);
+	mu_assert_streq_free(s, "0x00000000", "string hex value of bv");
+	s = rz_bv_as_hex_string(bv, false);
+	mu_assert_streq_free(s, "0x0", "string hex value of bv");
 	rz_bv_free(bv);
 
 	// big
@@ -738,11 +744,16 @@ bool test_rz_bv_as_hex_string(void) {
 	mu_assert_streq_free(s, "0x64", "string hex value of bv");
 
 	rz_bv_set(bv, 16, true);
-
 	s = rz_bv_as_hex_string(bv, true);
 	mu_assert_streq_free(s, "0x00000000000000000000000000010064", "string hex value of bv");
 	s = rz_bv_as_hex_string(bv, false);
 	mu_assert_streq_free(s, "0x10064", "string hex value of bv");
+
+	rz_bv_set_from_ut64(bv, 0x0);
+	s = rz_bv_as_hex_string(bv, true);
+	mu_assert_streq_free(s, "0x00000000000000000000000000000000", "string hex value of bv");
+	s = rz_bv_as_hex_string(bv, false);
+	mu_assert_streq_free(s, "0x0", "string hex value of bv");
 
 	rz_bv_free(bv);
 	mu_end;
