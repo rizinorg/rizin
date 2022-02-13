@@ -130,11 +130,11 @@ static bool rz_bin_dmp64_init_triage_drivers(struct rz_bin_dmp64_obj_t *obj) {
 			break;
 		}
 		ut32 name_offset = 0;
-		const ut64 kldr_entry_addr = address + offsetof(dmp_driver_entry64, LdrEntry);
-		rz_buf_read_le32_at(obj->b, kldr_entry_addr + offsetof(dmp_kldr_data_table_entry64, SizeOfImage), &driver->size);
-		rz_buf_read_le32_at(obj->b, kldr_entry_addr + offsetof(dmp_kldr_data_table_entry64, TimeDateStamp), &driver->timestamp);
-		rz_buf_read_le64_at(obj->b, kldr_entry_addr + offsetof(dmp_kldr_data_table_entry64, DllBase), &driver->base);
-		rz_buf_read_le32_at(obj->b, address + offsetof(dmp_driver_entry64, DriverNameOffset), &name_offset);
+		const ut64 kldr_entry_addr = address + rz_offsetof(dmp_driver_entry64, LdrEntry);
+		rz_buf_read_le32_at(obj->b, kldr_entry_addr + rz_offsetof(dmp_kldr_data_table_entry64, SizeOfImage), &driver->size);
+		rz_buf_read_le32_at(obj->b, kldr_entry_addr + rz_offsetof(dmp_kldr_data_table_entry64, TimeDateStamp), &driver->timestamp);
+		rz_buf_read_le64_at(obj->b, kldr_entry_addr + rz_offsetof(dmp_kldr_data_table_entry64, DllBase), &driver->base);
+		rz_buf_read_le32_at(obj->b, address + rz_offsetof(dmp_driver_entry64, DriverNameOffset), &name_offset);
 
 		dmp_string str = { 0 };
 		rz_buf_seek(obj->b, name_offset, SEEK_SET);
@@ -257,7 +257,7 @@ static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 		rz_sys_perror("RZ_NEW0 (dmp_bmp_header)");
 		return false;
 	}
-	if (rz_buf_read_at(obj->b, sizeof(dmp64_header), (ut8 *)obj->bmp_header, offsetof(dmp_bmp_header, Bitmap)) < 0) {
+	if (rz_buf_read_at(obj->b, sizeof(dmp64_header), (ut8 *)obj->bmp_header, rz_offsetof(dmp_bmp_header, Bitmap)) < 0) {
 		eprintf("Warning: read bmp_header\n");
 		return false;
 	}
@@ -268,7 +268,7 @@ static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 	}
 	ut64 bitmapsize = obj->bmp_header->Pages / 8;
 	obj->bitmap = calloc(1, bitmapsize);
-	if (rz_buf_read_at(obj->b, sizeof(dmp64_header) + offsetof(dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
+	if (rz_buf_read_at(obj->b, sizeof(dmp64_header) + rz_offsetof(dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
 		eprintf("Warning: read bitmap\n");
 		return false;
 	}
