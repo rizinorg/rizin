@@ -1446,11 +1446,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 beach:
 	rz_analysis_op_fini(&op);
 	RZ_FREE(last_reg_mov_lea_name);
-	if (bb && bb->size == 0) {
-		rz_analysis_function_remove_block(fcn, bb);
+	if (bb) {
+		if (bb->size) {
+			rz_analysis_block_update_hash(bb);
+		} else {
+			rz_analysis_function_remove_block(fcn, bb);
+		}
+		rz_analysis_block_unref(bb);
 	}
-	rz_analysis_block_update_hash(bb);
-	rz_analysis_block_unref(bb);
 	free(movbasereg);
 	return ret;
 }
