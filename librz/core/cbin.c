@@ -219,7 +219,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			*flagname = 0;
 			flagname = dup;
 			if (IS_MODE_RZCMD(mode)) {
-				rz_cons_printf("fl %s %s\n", flagname, v);
+				rz_cons_printf("fL %s %s\n", flagname, v);
 			} else if (IS_MODE_SET(mode)) {
 				RzFlagItem *fi = rz_flag_get(core->flags, flagname);
 				if (fi) {
@@ -3619,14 +3619,14 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	// class
 	char *fn = rz_core_bin_class_build_flag_name(c);
 	if (fn) {
-		rz_cons_printf("\"f %s = 0x%" PFMT64x "\"\n", fn, at_min);
+		rz_cons_printf("\"f %s @ 0x%" PFMT64x "\"\n", fn, at_min);
 		free(fn);
 	}
 
 	// super class
 	fn = rz_core_bin_super_build_flag_name(c);
 	if (fn) {
-		rz_cons_printf("\"f %s = %d\"\n", fn, c->index);
+		rz_cons_printf("\"f %s @ %d\"\n", fn, c->index);
 		free(fn);
 	}
 
@@ -3634,7 +3634,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	rz_list_foreach (c->fields, iter2, f) {
 		char *fn = rz_core_bin_field_build_flag_name(c, f);
 		if (fn) {
-			rz_cons_printf("\"f %s = 0x%08" PFMT64x "\"\n", fn, f->vaddr);
+			rz_cons_printf("\"f %s @ 0x%08" PFMT64x "\"\n", fn, f->vaddr);
 			free(fn);
 		}
 	}
@@ -3643,7 +3643,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	rz_list_foreach (c->methods, iter2, sym) {
 		char *fn = rz_core_bin_method_build_flag_name(c, sym);
 		if (fn) {
-			rz_cons_printf("\"f %s = 0x%" PFMT64x "\"\n", fn, sym->vaddr);
+			rz_cons_printf("\"f %s @ 0x%" PFMT64x "\"\n", fn, sym->vaddr);
 			free(fn);
 		}
 	}
@@ -4039,9 +4039,12 @@ static int bin_trycatch(RzCore *core, PJ *pj, int mode) {
 	int idx = 0;
 	// FIXME: json mode
 	rz_list_foreach (trycatch, iter, tc) {
-		rz_cons_printf("f try.%d.%" PFMT64x ".from=0x%08" PFMT64x "\n", idx, tc->source, tc->from);
-		rz_cons_printf("f try.%d.%" PFMT64x ".to=0x%08" PFMT64x "\n", idx, tc->source, tc->to);
-		rz_cons_printf("f try.%d.%" PFMT64x ".catch=0x%08" PFMT64x "\n", idx, tc->source, tc->handler);
+		rz_cons_printf("f+ try.%d.%" PFMT64x ".from @ 0x%08" PFMT64x "\n", idx, tc->source, tc->from);
+		rz_cons_printf("f+ try.%d.%" PFMT64x ".to @ 0x%08" PFMT64x "\n", idx, tc->source, tc->to);
+		rz_cons_printf("f+ try.%d.%" PFMT64x ".catch @ 0x%08" PFMT64x "\n", idx, tc->source, tc->handler);
+		if (tc->filter) {
+			rz_cons_printf("f+ try.%d.%" PFMT64x ".filter @ 0x%08" PFMT64x "\n", idx, tc->source, tc->filter);
+		}
 		idx++;
 	}
 	return true;

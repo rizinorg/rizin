@@ -446,7 +446,7 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		rz_table_add_rowf(t, "xdxx", bb->addr, bb->size, bb->jump, bb->fail);
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n", bb->addr & 0xFFFFF, bb->addr);
+		rz_cons_printf("f bb.%05" PFMT64x " @ 0x%08" PFMT64x "\n", bb->addr & 0xFFFFF, bb->addr);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("0x%08" PFMT64x "\n", bb->addr);
@@ -921,9 +921,7 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 			rz_analysis_set_stringrefs(core, fcn);
 		}
 		if (fcnlen == 0) {
-			if (core->analysis->verbose) {
-				eprintf("Analyzed function size is 0 at 0x%08" PFMT64x "\n", at + delta);
-			}
+			RZ_LOG_DEBUG("Analyzed function has size of 0 at 0x%08" PFMT64x "\n", at + delta);
 			goto error;
 		}
 		if (fcnlen < 0) {
@@ -935,7 +933,7 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 			case RZ_ANALYSIS_RET_BRANCH:
 				continue;
 			default:
-				eprintf("Oops. Negative fcnsize at 0x%08" PFMT64x " (%d)\n", at, fcnlen);
+				RZ_LOG_ERROR("Found negative function size at 0x%08" PFMT64x " (%d)\n", at, fcnlen);
 				continue;
 			}
 		}
@@ -1127,9 +1125,7 @@ RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask) {
 	// TODO This code block must be deleted when all the analysis plugins support disasm
 	if (!op->mnemonic && mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 		RzAsmOp asmop;
-		if (core->analysis->verbose) {
-			eprintf("WARNING: Implement RzAnalysisOp.MASK_DISASM for current analysis.arch. Using the sluggish RzAsmOp fallback for now.\n");
-		}
+		RZ_LOG_DEBUG("Unimplemented RZ_ANALYSIS_OP_MASK_DISASM for current analysis.arch. Using the RzAsmOp as fallback for now.\n");
 		rz_asm_set_pc(core->rasm, addr);
 		rz_asm_op_init(&asmop);
 		if (rz_asm_disassemble(core->rasm, &asmop, ptr, len) > 0) {
@@ -2083,9 +2079,7 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
  * reference to that fcn */
 RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (from == UT64_MAX && is_skippable_addr(core, at)) {
-		if (core->analysis->verbose) {
-			RZ_LOG_WARN("invalid address for function 0x%08" PFMT64x "\n", at);
-		}
+		RZ_LOG_DEBUG("invalid address for function 0x%08" PFMT64x "\n", at);
 		return 0;
 	}
 
@@ -2098,9 +2092,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 
 	if (core->io->va) {
 		if (!rz_io_is_valid_offset(core->io, at, !core->analysis->opt.noncode)) {
-			if (core->analysis->verbose) {
-				RZ_LOG_WARN("address not mapped or not executable at 0x%08" PFMT64x "\n", at);
-			}
+			RZ_LOG_DEBUG("address not mapped or not executable at 0x%08" PFMT64x "\n", at);
 			return false;
 		}
 	}
@@ -2113,9 +2105,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 		return false;
 	}
 	if (depth < 0) {
-		if (core->analysis->verbose) {
-			RZ_LOG_WARN("analysis depth reached\n");
-		}
+		RZ_LOG_DEBUG("analysis depth reached\n");
 		return false;
 	}
 	if (rz_cons_is_breaked()) {
@@ -3368,7 +3358,7 @@ static void print_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
 			if (str_flagname) {
 				ut64 str_addr = xref_to;
 				rz_name_filter(str_flagname, -1, true);
-				rz_cons_printf("f str.%s=0x%" PFMT64x "\n", str_flagname, str_addr);
+				rz_cons_printf("f str.%s @ 0x%" PFMT64x "\n", str_flagname, str_addr);
 				rz_cons_printf("Cs %d @ 0x%" PFMT64x "\n", len, str_addr);
 				free(str_flagname);
 			}
@@ -5331,10 +5321,7 @@ RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 a
 		}
 		rz_analysis_fcn_vars_add_types(core->analysis, fcn);
 	} else {
-		if (core->analysis->verbose) {
-			eprintf("Warning: Unable to analyze function at 0x%08" PFMT64x "\n", addr);
-			return false;
-		}
+		RZ_LOG_DEBUG("Unable to analyze function at 0x%08" PFMT64x "\n", addr);
 	}
 	if (analyze_recursively) {
 		fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0); /// XXX wrong in case of nopskip
@@ -5394,11 +5381,9 @@ RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 a
 			}
 		}
 	}
-	if (name) {
-		if (*name && !rz_core_analysis_function_rename(core, addr, name)) {
-			eprintf("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
-			return false;
-		}
+	if (RZ_STR_ISNOTEMPTY(name) && !rz_core_analysis_function_rename(core, addr, name)) {
+		RZ_LOG_ERROR("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
+		return false;
 	}
 	rz_core_analysis_propagate_noreturn(core, addr);
 	rz_core_analysis_flag_every_function(core);
@@ -6449,9 +6434,7 @@ static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *use
 			if (!itsFine) {
 				return;
 			}
-			if (core->analysis->verbose) {
-				eprintf("Warning: aav: false positive in 0x%08" PFMT64x "\n", from);
-			}
+			RZ_LOG_DEBUG("Warning: aav: false positive in 0x%08" PFMT64x "\n", from);
 		}
 	}
 	if (!vinfun) {

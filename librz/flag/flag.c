@@ -228,7 +228,6 @@ RZ_API RzFlag *rz_flag_new(void) {
 		return NULL;
 	}
 	f->base = 0;
-	f->cb_printf = (PrintfCallback)printf;
 	f->zones = NULL;
 	f->tags = sdb_new0();
 	f->ht_name = ht_pp_new(NULL, ht_free_flag, NULL);
@@ -279,188 +278,6 @@ RZ_API RzFlag *rz_flag_free(RzFlag *f) {
 	rz_list_free(f->zones);
 	free(f);
 	return NULL;
-}
-
-static bool print_flag_name(RzFlagItem *fi, void *user) {
-	RzFlag *flag = (RzFlag *)user;
-	flag->cb_printf("%s\n", fi->name);
-	return true;
-}
-
-struct print_flag_t {
-	RzFlag *f;
-	PJ *pj;
-	bool in_range;
-	ut64 range_from;
-	ut64 range_to;
-	RzSpace *fs;
-	bool real;
-};
-
-static bool print_flag_json(RzFlagItem *flag, void *user) {
-	struct print_flag_t *u = (struct print_flag_t *)user;
-	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
-		return true;
-	}
-	pj_o(u->pj);
-	pj_ks(u->pj, "name", flag->name);
-	if (flag->name != flag->realname) {
-		pj_ks(u->pj, "realname", flag->realname);
-	}
-	pj_ki(u->pj, "size", flag->size);
-	if (flag->alias) {
-		pj_ks(u->pj, "alias", flag->alias);
-	} else {
-		pj_kn(u->pj, "offset", flag->offset);
-	}
-	if (flag->comment) {
-		pj_ks(u->pj, "comment", flag->comment);
-	}
-	pj_end(u->pj);
-	return true;
-}
-
-static bool print_flag_rad(RzFlagItem *flag, void *user) {
-	struct print_flag_t *u = (struct print_flag_t *)user;
-	char *comment_b64 = NULL, *tmp = NULL;
-	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
-		return true;
-	}
-	if (!u->fs || flag->space != u->fs) {
-		u->fs = flag->space;
-		u->f->cb_printf("fs %s\n", u->fs ? u->fs->name : "*");
-	}
-	if (flag->comment && *flag->comment) {
-		comment_b64 = rz_base64_encode_dyn((const ut8 *)flag->comment, strlen(flag->comment));
-		// prefix the armored string with "base64:"
-		if (comment_b64) {
-			tmp = rz_str_newf("base64:%s", comment_b64);
-			free(comment_b64);
-			comment_b64 = tmp;
-		}
-	}
-	if (flag->alias) {
-		u->f->cb_printf("fa %s %s\n", flag->name, flag->alias);
-		if (comment_b64) {
-			u->f->cb_printf("\"fC %s %s\"\n",
-				flag->name, comment_b64 ? comment_b64 : "");
-		}
-	} else {
-		u->f->cb_printf("f %s %" PFMT64d " 0x%08" PFMT64x " %s\n",
-			flag->name, flag->size, flag->offset,
-			comment_b64 ? comment_b64 : "");
-	}
-
-	free(comment_b64);
-	return true;
-}
-
-static bool print_flag_orig_name(RzFlagItem *flag, void *user) {
-	struct print_flag_t *u = (struct print_flag_t *)user;
-	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
-		return true;
-	}
-	if (flag->alias) {
-		const char *n = u->real ? flag->realname : flag->name;
-		u->f->cb_printf("%s %" PFMT64d " %s\n", flag->alias, flag->size, n);
-	} else {
-		const char *n = u->real ? flag->realname : (u->f->realnames ? flag->realname : flag->name);
-		u->f->cb_printf("0x%08" PFMT64x " %" PFMT64d " %s\n", flag->offset, flag->size, n);
-	}
-	return true;
-}
-
-/* print with rz_cons the flag items in the flag f, given as a parameter */
-RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx) {
-	rz_return_if_fail(f);
-	bool in_range = false;
-	ut64 range_from = UT64_MAX;
-	ut64 range_to = UT64_MAX;
-	if (rad == 'i') {
-		char *sp, *arg = strdup(pfx + 1);
-		sp = strchr(arg, ' ');
-		if (sp) {
-			*sp++ = 0;
-			range_from = rz_num_math(f->num, arg);
-			range_to = rz_num_math(f->num, sp);
-		} else {
-			const int bsize = 4096;
-			range_from = rz_num_math(f->num, arg);
-			range_to = range_from + bsize;
-		}
-		in_range = true;
-		free(arg);
-		rad = pfx[0];
-		pfx = NULL;
-	}
-
-	if (pfx && !*pfx) {
-		pfx = NULL;
-	}
-
-	switch (rad) {
-	case 'q':
-		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_name, f);
-		break;
-	case 'j': {
-		PJ *pj = pj_new();
-		struct print_flag_t u = {
-			.f = f,
-			.pj = pj,
-			.in_range = in_range,
-			.range_from = range_from,
-			.range_to = range_to,
-			.real = false
-		};
-		pj_a(pj);
-		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_json, &u);
-		pj_end(pj);
-		f->cb_printf("%s\n", pj_string(pj));
-		pj_free(pj);
-		break;
-	}
-	case 1:
-	case '*': {
-		struct print_flag_t u = {
-			.f = f,
-			.in_range = in_range,
-			.range_from = range_from,
-			.range_to = range_to,
-			.fs = NULL,
-		};
-		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_rad, &u);
-		break;
-	}
-	default:
-	case 'n': {
-		if (!pfx || pfx[0] != 'j') { // show original name
-			struct print_flag_t u = {
-				.f = f,
-				.in_range = in_range,
-				.range_from = range_from,
-				.range_to = range_to,
-				.real = (rad == 'n')
-			};
-			rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_orig_name, &u);
-		} else {
-			PJ *pj = pj_new();
-			struct print_flag_t u = {
-				.f = f,
-				.pj = pj,
-				.in_range = in_range,
-				.range_from = range_from,
-				.range_to = range_to,
-				.real = true
-			};
-			pj_a(pj);
-			rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_json, &u);
-			pj_end(pj);
-			f->cb_printf("%s\n", pj_string(pj));
-			pj_free(pj);
-		}
-		break;
-	}
-	}
 }
 
 static RzFlagItem *evalFlag(RzFlag *f, RzFlagItem *item) {
@@ -772,10 +589,11 @@ RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name) {
 	return update_flag_item_name(f, item, name, false);
 }
 
-/* unset the given flag item.
- * returns true if the item is successfully unset, false otherwise.
+/* \brief unset the given flag \p item.
  *
- * NOTE: the item is freed. */
+ * return true if the item is successfully unset, false otherwise.
+ * NOTE: the item is freed.
+ */
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item) {
 	rz_return_val_if_fail(f && item, false);
 	remove_offsetmap(f, item);
@@ -783,8 +601,10 @@ RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item) {
 	return true;
 }
 
-/* unset the first flag item found at offset off.
- * return true if such a flag is found and unset, false otherwise. */
+/* \brief unset the first flag item found at offset \p off.
+ *
+ * return true if such a flag is found and unset, false otherwise.
+ */
 RZ_API bool rz_flag_unset_off(RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, false);
 	RzFlagItem *item = rz_flag_get_i(f, off);
@@ -792,6 +612,31 @@ RZ_API bool rz_flag_unset_off(RzFlag *f, ut64 off) {
 		return true;
 	}
 	return false;
+}
+
+struct unset_off_foreach_t {
+	RzFlag *f;
+	ut64 offset;
+};
+
+static bool unset_off_foreach(void *user, const void *k, const void *v) {
+	struct unset_off_foreach_t *u = (struct unset_off_foreach_t *)user;
+	RzFlagItem *fi = (RzFlagItem *)v;
+	if (u->offset == fi->offset) {
+		rz_flag_unset(u->f, fi);
+	}
+	return true;
+}
+
+/* \brief unset the all flag items found at offset \p off.
+ *
+ * return true if at least one flag is found and unset, false otherwise.
+ */
+RZ_API bool rz_flag_unset_all_off(RzFlag *f, ut64 off) {
+	rz_return_val_if_fail(f, false);
+	struct unset_off_foreach_t u = { f, off };
+	ht_pp_foreach(f->ht_name, unset_off_foreach, &u);
+	return true;
 }
 
 struct unset_foreach_t {
@@ -910,6 +755,7 @@ RZ_API void rz_flag_bind(RzFlag *f, RzFlagBind *fb) {
 	fb->exist_at = rz_flag_exist_at;
 	fb->get = rz_flag_get;
 	fb->get_at = rz_flag_get_at;
+	fb->get_at_by_spaces = rz_flag_get_by_spaces;
 	fb->get_list = rz_flag_get_list;
 	fb->set = rz_flag_set;
 	fb->unset = rz_flag_unset;
@@ -918,6 +764,7 @@ RZ_API void rz_flag_bind(RzFlag *f, RzFlagBind *fb) {
 	fb->set_fs = rz_flag_space_set;
 	fb->push_fs = rz_flag_space_push;
 	fb->pop_fs = rz_flag_space_pop;
+	fb->rename = rz_flag_rename;
 }
 
 static bool flag_count_foreach(RzFlagItem *fi, void *user) {

@@ -36,7 +36,7 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	if (!opcodes_cache || !pyc_opcodes_equal(opcodes_cache, a->cpu)) {
 		opcodes_cache = get_opcode_by_version(a->cpu);
 		if (opcodes_cache == NULL) {
-			eprintf("[x]Require Info from code object, use rizin instead\n");
+			RZ_LOG_ERROR("disassembler: pyc: unsupported pyc opcode cpu/version (asm.cpu=%s).\n", a->cpu);
 			return len;
 		}
 		opcodes_cache->bits = a->bits;

@@ -478,7 +478,8 @@ RZ_API int rz_core_block_read(RzCore *core);
 RZ_API bool rz_core_block_size(RzCore *core, ut32 bsize);
 RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset);
 RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
-RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad);
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);
+RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
@@ -539,9 +540,9 @@ RZ_API void rz_core_visual_mark_reset(RzCore *core);
 
 RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallback cb);
 RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);
-RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int binload);
+RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int binload);
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args);
-RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr);
+RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr);
 RZ_API bool rz_core_file_resize(RzCore *core, ut64 newsize);
 RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta);
 RZ_API RzCoreFile *rz_core_file_find_by_fd(RzCore *core, ut64 fd);
@@ -574,6 +575,8 @@ RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len);
 RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
+RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdStateOutput *state);
 
 /* creg.c */
 RZ_API RzReg *rz_core_reg_default(RzCore *core);
@@ -988,7 +991,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 RZ_API RzList * /*<RzIOMap*>*/ rz_core_get_boundaries_prot(RzCore *core, int protection, const char *mode, const char *prefix);
 
 RZ_API void rz_core_hack_help(const RzCore *core);
-RZ_API int rz_core_hack(RzCore *core, const char *op);
+RZ_API bool rz_core_hack(RzCore *core, const char *op);
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append);
 RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);

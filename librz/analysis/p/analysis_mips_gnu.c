@@ -1062,7 +1062,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	// Be endian aware
 	opcode = rz_read_ble32(b, analysis->big_endian);
 
-	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], analysis->big_endian);
+	// RZ_LOG_DEBUG("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], analysis->big_endian);
 	if (opcode == 0) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return oplen;
@@ -1138,7 +1138,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 			break;
 		case 8: // jr
-			// eprintf ("%llx jr\n", addr);
+			// RZ_LOG_DEBUG("%" PFMT64x " jr\n", addr);
 			//  TODO: check return value
 			op->delay = 1;
 			insn.id = MIPS_INS_JR;
@@ -1153,7 +1153,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			}
 			break;
 		case 9: // jalr
-			// eprintf ("%llx jalr\n", addr);
+			// RZ_LOG_DEBUG("%" PFMT64x " jalr\n", addr);
 			op->delay = 1;
 			insn.id = MIPS_INS_JALR;
 			if (rs == 25) {
@@ -1251,7 +1251,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			insn.id = MIPS_INS_SLTU;
 			break;
 		default:
-			//	eprintf ("%llx %d\n", addr, optype);
+			//	RZ_LOG_DEBUG("%" PFMT64x " %d\n", addr, optype);
 			break;
 		}
 		// family = 'R';

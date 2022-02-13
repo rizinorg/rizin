@@ -19,6 +19,9 @@ struct rz_subprocess_t {
 };
 
 static volatile long pipe_id = 0;
+static DWORD mode_stdin;
+static DWORD mode_stdout;
+static DWORD mode_stderr;
 
 static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURITY_ATTRIBUTES attrs, DWORD sz, DWORD read_mode, DWORD write_mode) {
 	// see https://stackoverflow.com/a/419736
@@ -42,10 +45,18 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 }
 
 RZ_API bool rz_subprocess_init(void) {
+	// Save current console mode
+	GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &mode_stdin);
+	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode_stdout);
+	GetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), &mode_stderr);
 	return true;
 }
 RZ_API void rz_subprocess_fini(void) {
 	SetEnvironmentVariableW(L"RZ_PIPE_PATH", NULL);
+	// Restore console mode
+	SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), mode_stdin);
+	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode_stdout);
+	SetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), mode_stderr);
 }
 
 // Create an env block that inherits the current vars but overrides the given ones
@@ -142,30 +153,34 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	HANDLE stdout_write = GetStdHandle(STD_OUTPUT_HANDLE);
 	HANDLE stderr_write = GetStdHandle(STD_ERROR_HANDLE);
 	LPWSTR lpFilePart;
-	WCHAR cmd_exe[MAX_PATH];
+	PWCHAR cmd_exe = RZ_NEWS0(WCHAR, MAX_PATH);
 
 	PWCHAR file = rz_utf8_to_utf16(opt->file);
 	if (!file) {
 		return NULL;
 	}
 
-	if (!rz_file_exists(opt->file) && NeedCurrentDirectoryForExePathW(file)) {
+	if (!rz_file_exists(opt->file)) {
 		DWORD len;
-		if ((len = SearchPathW(NULL, file, L".exe", _countof(cmd_exe), cmd_exe, &lpFilePart)) < 1) {
+		if ((len = SearchPathW(NULL, file, L".exe", MAX_PATH, cmd_exe, &lpFilePart)) < 1) {
 			RZ_LOG_DEBUG("SearchPath failed for %s\n", opt->file);
 			free(file);
 			return NULL;
 		}
-	} else {
-		WCHAR *tmp = rz_utf8_to_utf16(opt->file);
-		if (!tmp) {
-			free(file);
-			return NULL;
+		if (len > MAX_PATH) {
+			PWCHAR tmp = realloc(cmd_exe, sizeof(WCHAR) * len);
+			if (!tmp) {
+				free(cmd_exe);
+				free(file);
+				return NULL;
+			}
+			cmd_exe = tmp;
+			SearchPathW(NULL, file, L".exe", len, cmd_exe, &lpFilePart);
 		}
-		_snwprintf_s(cmd_exe, _countof(cmd_exe), sizeof(cmd_exe), L"%s", tmp);
-		free(tmp);
+		free(file);
+	} else {
+		cmd_exe = file;
 	}
-	free(file);
 
 	char **argv = calloc(opt->args_size + 1, sizeof(char *));
 	if (!argv) {
@@ -279,6 +294,7 @@ beach:
 	if (stdout_write && stdout_write != GetStdHandle(STD_OUTPUT_HANDLE)) {
 		CloseHandle(stdout_write);
 	}
+	free(cmd_exe);
 	free(cmdline);
 	return proc;
 error:

@@ -500,57 +500,87 @@ err:
  * \param core RzCore reference
  * \param addr Address to where to write
  * \param instructions List of instructions to assemble as a string
- * \param pretend Don't write but emit the sequence of `wx` commands
- * \param pad Fit the instruction inside the current instruction, fill with nops to pad
  * \return Returns the length of the written data or -1 in case of error
  */
-RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad) {
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions) {
+	rz_return_val_if_fail(core && instructions, -1);
+
+	int ret = -1;
+
 	rz_asm_set_pc(core->rasm, core->offset);
 	RzAsmCode *acode = rz_asm_massemble(core->rasm, instructions);
 	if (!acode) {
 		return -1;
 	}
+	if (acode->len <= 0) {
+		ret = 0;
+		goto err;
+	}
+
+	if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
+		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
+		core->num->value = 1;
+		goto err;
+	}
+	ret = acode->len;
+
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, ret, true);
+	}
+err:
+	rz_asm_code_free(acode);
+	return ret;
+}
+
+/**
+ * \brief Assemble instructions and write the resulting data inside the current instruction.
+ *
+ * Assemble one or more instructions and write the resulting data inside the
+ * current instruction, if the new instructions fit. Fill the rest of the bytes
+ * of the old instruction with NOP
+ *
+ * \param core RzCore reference
+ * \param addr Address to where to write
+ * \param instructions List of instructions to assemble as a string
+ * \return Returns the length of the written data or -1 in case of error (e.g. the new instruction does not fit)
+ */
+RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *instructions) {
+	rz_return_val_if_fail(core && instructions, -1);
+
 	int ret = -1;
-	RzAnalysisOp op = { 0 };
-	if (pad) { // "wai"
-		if (!rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
-			RZ_LOG_ERROR("Invalid instruction?\n");
-			goto exit;
-		}
-		if (op.size < acode->len) {
-			RZ_LOG_ERROR("Doesnt fit\n");
-			goto exit;
-		}
-		rz_core_hack(core, "nop");
+
+	rz_asm_set_pc(core->rasm, core->offset);
+	RzAsmCode *acode = rz_asm_massemble(core->rasm, instructions);
+	if (!acode) {
+		return -1;
 	}
 	if (acode->len <= 0) {
 		ret = 0;
-		goto exit;
+		goto err;
 	}
-	char *hex = rz_asm_code_get_hex(acode);
-	if (pretend) {
-		rz_cons_printf("wx %s\n", hex);
-	} else {
-		if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
-			RZ_LOG_ERROR("Failed to write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
-			core->num->value = 1;
-			free(hex);
-			goto exit;
-		} else {
-			if (rz_config_get_i(core->config, "scr.prompt")) {
-				RZ_LOG_INFO("Written %d byte(s) (%s) = wx %s\n", acode->len, instructions, hex);
-			}
-			if (wseek) {
-				rz_core_seek_delta(core, acode->len, true);
-			}
-		}
-		rz_core_block_read(core);
+
+	RzAnalysisOp op = { 0 };
+	if (!rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
+		RZ_LOG_ERROR("Invalid instruction at %" PFMT64x "\n", core->offset);
+		goto err;
 	}
-	free(hex);
+	if (op.size < acode->len) {
+		RZ_LOG_ERROR("Instructions do not fit at %" PFMT64x "\n", core->offset);
+		goto err;
+	}
+	rz_core_hack(core, "nop");
+
+	if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
+		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
+		core->num->value = 1;
+		goto err;
+	}
 	ret = acode->len;
-exit:
-	rz_analysis_op_fini(&op);
+
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, ret, true);
+	}
+err:
 	rz_asm_code_free(acode);
 	return ret;
 }
@@ -932,4 +962,105 @@ RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len) {
 err:
 	free(buf);
 	return res;
+}
+
+RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && core->io, RZ_CMD_STATUS_ERROR);
+
+	size_t i, j = 0;
+	void **iter;
+	RzIOCache *c;
+
+	rz_pvector_foreach (&core->io->cache, iter) {
+		c = *iter;
+		const ut64 dataSize = rz_itv_size(c->itv);
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("idx=%" PFMTSZu " addr=0x%08" PFMT64x " size=%" PFMT64u " ", j, rz_itv_begin(c->itv), dataSize);
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", c->odata[i]);
+			}
+			rz_cons_printf(" -> ");
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", c->data[i]);
+			}
+			rz_cons_printf(" %s\n", c->written ? "(written)" : "(not written)");
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "idx", j);
+			pj_kn(state->d.pj, "addr", rz_itv_begin(c->itv));
+			pj_kn(state->d.pj, "size", dataSize);
+			char *hex = rz_hex_bin2strdup(c->odata, dataSize);
+			pj_ks(state->d.pj, "before", hex);
+			free(hex);
+			hex = rz_hex_bin2strdup(c->data, dataSize);
+			pj_ks(state->d.pj, "after", hex);
+			free(hex);
+			pj_kb(state->d.pj, "written", c->written);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_cons_printf("wx ");
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", (ut8)(c->data[i] & 0xff));
+			}
+			rz_cons_printf(" @ 0x%08" PFMT64x, rz_itv_begin(c->itv));
+			rz_cons_printf(" # replaces: ");
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", (ut8)(c->odata[i] & 0xff));
+			}
+			rz_cons_printf("\n");
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		j++;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && core->io, RZ_CMD_STATUS_ERROR);
+	rz_return_val_if_fail(desc, RZ_CMD_STATUS_ERROR);
+
+	RzList *caches = rz_io_desc_cache_list(desc);
+	RzListIter *iter;
+	RzIOCache *c;
+
+	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
+		rz_cons_printf("e io.va = false\n");
+	}
+	rz_list_foreach (caches, iter, c) {
+		const int cacheSize = rz_itv_size(c->itv);
+		int i;
+
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("0x%08" PFMT64x ": %02x",
+				rz_itv_begin(c->itv), c->odata[0]);
+			for (i = 1; i < cacheSize; i++) {
+				rz_cons_printf("%02x", c->odata[i]);
+			}
+			rz_cons_printf(" -> %02x", c->data[0]);
+			for (i = 1; i < cacheSize; i++) {
+				rz_cons_printf("%02x", c->data[i]);
+			}
+			rz_cons_printf("\n");
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_cons_printf("wx %02x", c->data[0]);
+			for (i = 1; i < cacheSize; i++) {
+				rz_cons_printf("%02x", c->data[i]);
+			}
+			rz_cons_printf(" @ 0x%08" PFMT64x " \n", rz_itv_begin(c->itv));
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_list_free(caches);
+	return RZ_CMD_STATUS_OK;
 }

@@ -213,9 +213,7 @@ commands:
     summary: List/get/set config evaluable vars
     subcommands: cmd_eval
   - name: f
-    cname: cmd_flag
     summary: Manage flags
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_flag
   - name: g
     summary: Generate shellcodes with rz_egg
@@ -234,9 +232,7 @@ commands:
     summary: List, unload, load rizin plugins
     subcommands: cmd_plugins
   - name: o
-    cname: cmd_open
     summary: Open files and handle opened files
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_open
   - name: p
     cname: cmd_print

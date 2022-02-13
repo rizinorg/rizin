@@ -148,8 +148,8 @@ unit    1
 segment 0000:0001
 string  "\x01"
 fvalue  1.0
-float   0.000000f
-double  0.000000
+float   1.000000f
+double  1.000000
 binary  0b00000001
 trits   0t1
 1
@@ -188,8 +188,8 @@ unit    16E
 segment fffff000:0fff
 string  "\xff\xff\xff\xff\xff\xff\xff\xff"
 fvalue  -1.0
-float   nanf
-double  nan
+float   -1.000000f
+double  -1.000000
 binary  0b1111111111111111111111111111111111111111111111111111111111111111
 trits   0t11112220022122120101211020120210210211220
 EOF
@@ -207,8 +207,8 @@ unit    2
 segment 0000:0002
 string  "\x02"
 fvalue  3.0
-float   0.000000f
-double  0.000000
+float   3.000000f
+double  3.000000
 binary  0b00000010
 trits   0t2
 EOF
@@ -226,8 +226,8 @@ unit    8
 segment 0000:0008
 string  "\b"
 fvalue  8.0
-float   0.000000f
-double  0.000000
+float   8.000000f
+double  8.000000
 binary  0b00001000
 trits   0t22
 EOF
@@ -245,8 +245,8 @@ unit    16.0E
 segment fffff000:02f7
 string  "\xf7\xc2\xff\xff\xff\xff\xff\xff"
 fvalue  -15625.0
-float   nanf
-double  nan
+float   -15625.000000f
+double  -15625.000000
 binary  0b1111111111111111111111111111111111111111111111111100001011110111
 trits   0t11112220022122120101211020120210000102020
 EOF
@@ -264,8 +264,8 @@ unit    5.6K
 segment 0000:0690
 string  "\x90\x16"
 fvalue  5776.0
-float   0.000000f
-double  0.000000
+float   5776.000000f
+double  5776.000000
 binary  0b0001011010010000
 trits   0t21220221
 EOF
@@ -283,8 +283,8 @@ unit    0
 segment 0000:0000
 string  "\0"
 fvalue  0.0
-float   0.000000f
-double  0.000000
+float   0.010000f
+double  0.010000
 binary  0b00000000
 trits   0t0
 EOF
@@ -302,8 +302,8 @@ unit    1
 segment 0000:0001
 string  "\x01"
 fvalue  1.0
-float   0.000000f
-double  0.000000
+float   1.000000f
+double  1.000000
 binary  0b00000001
 trits   0t1
 EOF
@@ -321,8 +321,8 @@ unit    16
 segment 0000:0010
 string  "\x10"
 fvalue  16.0
-float   0.000000f
-double  0.000000
+float   16.000000f
+double  16.000000
 binary  0b00010000
 trits   0t121
 EOF
@@ -340,8 +340,8 @@ unit    300
 segment 0000:012c
 string  ",\x01"
 fvalue  300.0
-float   0.000000f
-double  0.000000
+float   300.000000f
+double  300.000000
 binary  0b0000000100101100
 trits   0t102010
 EOF
@@ -359,8 +359,8 @@ unit    33
 segment 0000:0021
 string  "!"
 fvalue  33.3
-float   0.000000f
-double  0.000000
+float   33.333332f
+double  33.333333
 binary  0b00100001
 trits   0t1020
 EOF
@@ -378,8 +378,8 @@ unit    103
 segment 0000:0067
 string  "g"
 fvalue  103.0
-float   0.000000f
-double  0.000000
+float   103.000000f
+double  103.000000
 binary  0b01100111
 trits   0t10211
 EOF
@@ -397,8 +397,8 @@ unit    2
 segment 0000:0002
 string  "\x02"
 fvalue  2.0
-float   0.000000f
-double  0.000000
+float   2.000000f
+double  2.000000
 binary  0b00000010
 trits   0t2
 EOF
@@ -416,8 +416,8 @@ unit    4
 segment 0000:0004
 string  "\x04"
 fvalue  4.5
-float   0.000000f
-double  0.000000
+float   4.500000f
+double  4.500000
 binary  0b00000100
 trits   0t11
 EOF
@@ -464,6 +464,7 @@ EXPECT=<<EOF
 | zi*                  # Show zignatures matching information (rizin mode)
 | ziq                  # Show zignatures matching information (quiet mode)
 | zii <from> <to>      # Show zignatures matching information in range
+| ziij <from> <to>     # Show zignatures matching information in range (JSON mode)
 EOF
 RUN
 
@@ -507,7 +508,7 @@ CMDS=<<EOF
 ?*j zi
 EOF
 EXPECT=<<EOF
-{"zi":{"cmd":"zi","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
+{"zi":{"cmd":"zi","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv_state","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"},"ziij":{"cmd":"ziij","type":"argv_state","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range (JSON mode)"}}
 EOF
 RUN
 
@@ -522,6 +523,7 @@ EXPECT=<<EOF
 | zi*                  # Show zignatures matching information (rizin mode)
 | ziq                  # Show zignatures matching information (quiet mode)
 | zii <from> <to>      # Show zignatures matching information in range
+| ziij <from> <to>     # Show zignatures matching information in range (JSON mode)
 EOF
 RUN
 
@@ -531,7 +533,7 @@ CMDS=<<EOF
 zi?*j
 EOF
 EXPECT=<<EOF
-{"zi":{"cmd":"zi","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
+{"zi":{"cmd":"zi","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_state","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv_state","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"},"ziij":{"cmd":"ziij","type":"argv_state","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range (JSON mode)"}}
 EOF
 RUN
 
@@ -544,5 +546,23 @@ EOF
 EXPECT=<<EOF
 | #![<interpreter-name> [<arg1> <arg2> ...]] # List all available interpreters / Run interpreter
 | .(<macro-name> [<macro-arg1> <macro-arg2> ...]) # Call macro
+EOF
+RUN
+
+NAME=?p and ?P ignore io.va
+FILE=bins/elf/analysis/ls2
+CMDS=<<EOF
+?p main @e:io.va=true
+?p main @e:io.va=false
+?v main
+?P 0x28a0 @e:io.va=1
+?P 0x28a0 @e:io.va=0
+EOF
+EXPECT=<<EOF
+0x000028a0
+0x000028a0
+0x4028a0
+0x004028a0
+0x004028a0
 EOF
 RUN

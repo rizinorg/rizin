@@ -810,7 +810,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 	if (op->operands[0].type == ARM_GPR) {
 		data |= encode1reg(op);
 	} else {
-		eprintf("Usage: adrp x0, addr\n");
+		RZ_LOG_ERROR("assembler: arm64: adrp: invalid assembly. valid usage: adrp x0, addr\n");
 		return UT32_MAX;
 	}
 	if (op->operands[1].type == ARM_CONSTANT) {
@@ -818,7 +818,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 		at = op->operands[1].immediate - addr;
 		at /= 4;
 	} else {
-		eprintf("Usage: adrp, x0, addr\n");
+		RZ_LOG_ERROR("assembler: arm64: adrp: invalid assembly. valid usage: adrp x0, addr\n");
 		return UT32_MAX;
 	}
 	ut8 b0 = at;
@@ -996,7 +996,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 			token++;
 		}
 		if (operand >= MAX_OPERANDS) {
-			eprintf("Too many operands\n");
+			RZ_LOG_ERROR("assembler: arm64: maximum number of operands reached.\n");
 			return false;
 		}
 		op->operands[operand].type = ARM_NOTYPE;

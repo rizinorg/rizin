@@ -125,15 +125,14 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv, bool pad) {
 	str[1] = 'x';
 	ut32 j = 2;
 	for (ut32 i = 0; i < bv->_elem_len; i++) {
-		ut8 b8 = bv->bits.large_a[i];
-		b8 = reverse_byte(b8);
+		ut8 b8 = bv->bits.large_a[bv->_elem_len - i - 1];
 		ut8 high = b8 >> 4;
 		ut8 low = b8 & 15;
 		if (pad || high) {
 			str[j++] = hex[high];
 			pad = true; // pad means "print all" from now on
 		}
-		if (pad || low) {
+		if (pad || low || i == bv->_elem_len - 1) {
 			str[j++] = hex[low];
 			pad = true; // pad means "print all" from now on
 		}
@@ -334,7 +333,6 @@ RZ_API bool rz_bv_set(RZ_NONNULL RzBitVector *bv, ut32 pos, bool b) {
 	}
 	rz_return_val_if_fail(bv->bits.large_a, false);
 
-	pos = bv->len - pos - 1;
 	if (b) {
 		bv->bits.large_a[pos / BV_ELEM_SIZE] |= (1u << (pos % BV_ELEM_SIZE));
 	} else {
@@ -359,13 +357,13 @@ RZ_API bool rz_bv_set_all(RZ_NONNULL RzBitVector *bv, bool b) {
 
 	rz_return_val_if_fail(bv->bits.large_a, false);
 	if (b) {
-		for (ut32 i = 0; i < bv->_elem_len; ++i) {
-			bv->bits.large_a[i] = 0xff;
+		memset(bv->bits.large_a, 0xff, bv->_elem_len);
+		ut32 mod = bv->len % BV_ELEM_SIZE;
+		if (mod) {
+			bv->bits.large_a[bv->len / BV_ELEM_SIZE] = rz_num_bitmask(mod);
 		}
 	} else {
-		for (ut32 i = 0; i < bv->_elem_len; ++i) {
-			bv->bits.large_a[i] = 0;
-		}
+		memset(bv->bits.large_a, 0, bv->_elem_len);
 	}
 
 	return b;
@@ -418,7 +416,6 @@ RZ_API bool rz_bv_get(RZ_NONNULL const RzBitVector *bv, ut32 pos) {
 	}
 
 	rz_return_val_if_fail(bv->bits.large_a, false);
-	pos = bv->len - pos - 1;
 	return ((bv->bits.large_a)[pos / BV_ELEM_SIZE] & (1u << (pos % BV_ELEM_SIZE)));
 }
 
@@ -785,100 +782,80 @@ int bv_unsigned_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 /**
  * Result of (x / y) mod 2^length
  * Both operands must have the same length.
- * \param x RzBitVector, Operand
- * \param y RzBitVector, Operand
- * \return ret RzBitVector, point to the new bitvector
+ * If \p y is a zero vector, the result defined as a vector of all ones.
+ *
+ * \param x dividend
+ * \param y divisor
+ * \return ret quotient, of the same length as the operands
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_div(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
-	rz_return_val_if_fail(x && y, NULL);
-	if (x->len != y->len) {
-		rz_warn_if_reached();
-		return NULL;
-	}
+	rz_return_val_if_fail(x && y && x->len == y->len, NULL);
 
 	if (rz_bv_is_zero_vector(y)) {
 		RzBitVector *ret = rz_bv_new(y->len);
 		rz_bv_set_all(ret, true);
-		RZ_LOG_ERROR("RzIL: can't divide by zero\n");
 		return ret;
 	}
 
-	int compare_result = bv_unsigned_cmp(x, y);
+	if (x->len <= 64) {
+		return rz_bv_new_from_ut64(x->len, rz_bv_to_ut64(x) / rz_bv_to_ut64(y));
+	}
 
+	int compare_result = bv_unsigned_cmp(x, y);
 	// dividend < divisor
 	// remainder = dividend, quotient = 0
 	if (compare_result < 0) {
 		return rz_bv_new(x->len);
 	}
-
 	// dividend == divisor
-	// remainder = 0, quotient = dividend
+	// remainder = 0, quotient = 1
 	if (compare_result == 0) {
-		return rz_bv_dup(x);
+		return rz_bv_new_one(rz_bv_len(x));
 	}
 
 	// dividend > divisor
-	RzBitVector *dividend = rz_bv_dup(x);
-	RzBitVector *tmp;
-	ut32 count = 0;
-
-	while (bv_unsigned_cmp(dividend, y) >= 0) {
-		count += 1;
-		tmp = rz_bv_sub(dividend, y, NULL);
-		rz_bv_free(dividend);
-		dividend = tmp;
+	// do typical division by shift and subtract
+	RzBitVector *dend = rz_bv_dup(x);
+	RzBitVector *sor = rz_bv_dup(y);
+	// shift the divisor left to align both highest bits
+	ut32 sorlz = rz_bv_clz(sor);
+	ut32 shift = sorlz - rz_bv_clz(dend);
+	rz_bv_lshift(sor, shift);
+	RzBitVector *quot = rz_bv_new_zero(rz_bv_len(x));
+	for (ut32 b = shift + 1; b; b--) {
+		if (rz_bv_ule(sor, dend)) {
+			rz_bv_set(quot, b - 1, true);
+			RzBitVector *tmp = rz_bv_sub(dend, sor, NULL);
+			rz_bv_free(dend);
+			dend = tmp;
+		}
+		rz_bv_rshift(sor, 1);
 	}
-
-	RzBitVector *remainder = dividend;
-	RzBitVector *quotient = rz_bv_new_from_ut64(x->len, count);
-	rz_bv_free(remainder);
-	return quotient;
+	rz_bv_free(dend);
+	rz_bv_free(sor);
+	return quot;
 }
 
 /**
  * Result of (x mod y) mod 2^length
  * Both operands must have the same length.
- * \param x RzBitVector, Operand
- * \param y RzBitVector, Operand
- * \return ret RzBitVector, point to the new bitvector
+ * If \p y == 0, the result is \p x
+ *
+ * \param x dividend
+ * \param y divisor
+ * \return x - ((x / y) * y)
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
-	rz_return_val_if_fail(x && y, NULL);
-	if (x->len != y->len) {
-		rz_warn_if_reached();
-		return NULL;
-	}
-
+	rz_return_val_if_fail(x && y && x->len == y->len, NULL);
 	if (rz_bv_is_zero_vector(y)) {
 		return rz_bv_dup(x);
 	}
-
-	int compare_result = bv_unsigned_cmp(x, y);
-
-	// dividend < divisor
-	// remainder = dividend, quotient = 0
-	if (compare_result < 0) {
-		return rz_bv_dup(x);
-	}
-
-	// dividend == divisor
-	// remainder = 0, quotient = dividend
-	if (compare_result == 0) {
-		return rz_bv_new(x->len);
-	}
-
-	// dividend > divisor
-	RzBitVector *dividend = rz_bv_dup(x);
-	RzBitVector *tmp;
-
-	while (bv_unsigned_cmp(dividend, y) >= 0) {
-		tmp = rz_bv_sub(dividend, y, NULL);
-		rz_bv_free(dividend);
-		dividend = tmp;
-	}
-
-	RzBitVector *remainder = dividend;
-	return remainder;
+	RzBitVector *quot = rz_bv_div(x, y);
+	RzBitVector *remul = rz_bv_mul(quot, y);
+	RzBitVector *r = rz_bv_sub(x, remul, NULL);
+	rz_bv_free(quot);
+	rz_bv_free(remul);
+	return r;
 }
 
 /**
@@ -1072,11 +1049,7 @@ RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	bool x_msb = rz_bv_msb(x);
 	bool y_msb = rz_bv_msb(y);
 
-	if (x_msb && y_msb) {
-		return !rz_bv_ule(x, y);
-	}
-
-	if (!x_msb && !y_msb) {
+	if (x_msb == y_msb) {
 		return rz_bv_ule(x, y);
 	}
 
@@ -1108,6 +1081,38 @@ RZ_API bool rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	}
 
 	return false;
+}
+
+/**
+ * Count leading (most significant) zeroes
+ * All bits are considered leading zeroes for a zero bitvector.
+ */
+RZ_API ut32 rz_bv_clz(RZ_NONNULL RzBitVector *bv) {
+	rz_return_val_if_fail(bv, 0);
+	ut32 r = 0;
+	for (ut32 i = rz_bv_len(bv); i; i--) {
+		if (rz_bv_get(bv, i - 1)) {
+			break;
+		}
+		r++;
+	}
+	return r;
+}
+
+/**
+ * Count trailing (least significant) zeroes
+ * All bits are considered trailing zeroes for a zero bitvector.
+ */
+RZ_API ut32 rz_bv_ctz(RZ_NONNULL RzBitVector *bv) {
+	rz_return_val_if_fail(bv, 0);
+	ut32 r = 0;
+	for (ut32 i = 0; i < rz_bv_len(bv); i++) {
+		if (rz_bv_get(bv, i)) {
+			break;
+		}
+		r++;
+	}
+	return r;
 }
 
 /**

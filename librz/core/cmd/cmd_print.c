@@ -3324,17 +3324,17 @@ static void cmd_print_pv(RzCore *core, const char *input, bool useBytes) {
 			ut8 *b = block + (i * n);
 			switch (n) {
 			case 1:
-				rz_cons_printf("f pval.0x%08" PFMT64x "=%d\n", at, rz_read_ble8(b));
+				rz_cons_printf("f pval.0x%08" PFMT64x " @ %d\n", at, rz_read_ble8(b));
 				break;
 			case 2:
-				rz_cons_printf("f pval.0x%08" PFMT64x "=%d\n", at, rz_read_ble16(b, be));
+				rz_cons_printf("f pval.0x%08" PFMT64x " @ %d\n", at, rz_read_ble16(b, be));
 				break;
 			case 4:
-				rz_cons_printf("f pval.0x%08" PFMT64x "=%d\n", at, rz_read_ble32(b, be));
+				rz_cons_printf("f pval.0x%08" PFMT64x " @ %d\n", at, rz_read_ble32(b, be));
 				break;
 			case 8:
 			default:
-				rz_cons_printf("f pval.0x%08" PFMT64x "=%" PFMT64d "\n", at, rz_read_ble64(b, be));
+				rz_cons_printf("f pval.0x%08" PFMT64x " @ %" PFMT64d "\n", at, rz_read_ble64(b, be));
 				break;
 			}
 		}
@@ -4215,15 +4215,15 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		case '.':
 			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
 			rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, origin, "switch table");
-			rz_core_cmdf(core, "f switch.0x%08" PFMT64x "=0x%08" PFMT64x "\n", origin, origin);
-			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); // origin, origin);
+			rz_core_cmdf(core, "f switch.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", origin, origin);
+			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", offset, offset); // origin, origin);
 			rz_analysis_xrefs_set(core->analysis, offset, origin, RZ_ANALYSIS_REF_TYPE_DATA);
 			break;
 		}
 	} else if (mode == '.') {
 		rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, offset, "switch basic block");
-		rz_core_cmdf(core, "f switch.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); // basic block @ 0x%08"PFMT64x "\n", offset);
+		rz_core_cmdf(core, "f switch.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", offset, offset); // basic block @ 0x%08"PFMT64x "\n", offset);
 	}
 	int n = 0;
 	for (i = 0; (i + sizeof(st32)) <= len; i += step, n++) {
@@ -4854,7 +4854,7 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 			}
 			if (mode == '*' && RZ_STR_ISNOTEMPTY(refs)) {
 				// Show only the mapped ones?
-				rz_cons_printf("f pxr.%" PFMT64x "=0x%" PFMT64x "\n", val, addr);
+				rz_cons_printf("f pxr.%" PFMT64x " @ 0x%" PFMT64x "\n", val, addr);
 			} else if (mode == 'q' && RZ_STR_ISNOTEMPTY(refs)) {
 				rz_cons_printf("%s\n", refs);
 			}

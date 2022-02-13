@@ -111,7 +111,7 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bytes=true
 e asm.bits=32
-wa mov r0, r0
+wa "mov r0, r0"
 pi 1
 pd 1
 ahb 32
@@ -157,11 +157,11 @@ FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e cfg.bigendian=1
-wa blx 0x33b8
+wa "blx 0x33b8"
 p8 4
 pi 1
 e cfg.bigendian=0
-wa blx 0x33b8
+wa "blx 0x33b8"
 p8 4
 pi 1
 EOF
@@ -442,7 +442,7 @@ e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
-f sym.callback=0x315
+f sym.callback @ 0x315
 pd 1
 EOF
 EXPECT=<<EOF
@@ -459,7 +459,7 @@ e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
-f sym.callback=0x14
+f sym.callback @ 0x14
 pd 1
 e asm.sub.varmin=0
 pd 1
@@ -574,7 +574,7 @@ NAME=ELF ARM: aa
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
 aa
-f~sym?
+fl~sym?
 afl~?
 EOF
 EXPECT=<<EOF
@@ -863,7 +863,7 @@ CMDS=<<EOF
 e asm.cpu=arm1176
 e asm.platform=bcm2835
 aa
-f~AUX
+fl~AUX
 CCl~Broadcom
 EOF
 EXPECT=<<EOF
@@ -990,7 +990,7 @@ NAME=arm jmptbl flags and comments
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 af@ sym.__gcc_personality_v0
-f~switch.,case.
+fl~switch.,case.
 CCl~switch
 EOF
 EXPECT=<<EOF
@@ -1096,5 +1096,20 @@ axt @ str.Hello_world
 EOF
 EXPECT=<<EOF
 main 0x512 [DATA] add r3, pc
+EOF
+RUN
+
+NAME=arm pcalign
+FILE=
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e asm.pcalign
+e asm.bits=16
+e asm.pcalign
+EOF
+EXPECT=<<EOF
+4
+2
 EOF
 RUN

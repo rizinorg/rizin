@@ -30,12 +30,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af localflag
+NAME=af localflag disasm
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 e asm.bytes=true
 af
-f.foobar=0x100001216
+f. foobar @ 0x100001216
 pd 20~foo
 EOF
 EXPECT=<<EOF
@@ -148,7 +148,7 @@ EXPECT=<<EOF
 |      ||   0x08048442      leave
 |      ||   0x08048443      ret
 ..
-\      ``-> 0x08048448      lea     esi, [esi]
+\      ``-> 0x08048448      ret
 EOF
 RUN
 
@@ -386,9 +386,9 @@ EXPECT=<<EOF
 0x00001337    0 0            func
 EOF
 EXPECT_ERR=<<EOF
-Invalid function name 'func' at 0x00001337
+ERROR: Invalid function name 'func' at 0x00001337
 Cannot add function (duplicated)
-Invalid function name 'func' at 0x00001337
+ERROR: Invalid function name 'func' at 0x00001337
 Cannot add function (duplicated)
 EOF
 RUN

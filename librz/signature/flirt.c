@@ -382,7 +382,6 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 
 		next_module_function = rz_analysis_get_function_at((RzAnalysis *)analysis, address + flirt_func->offset);
 		if (next_module_function) {
-			char *name;
 			ut32 next_module_function_size;
 
 			// get function size from flirt signature
@@ -421,25 +420,34 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 				rz_analysis_trim_jmprefs((RzAnalysis *)analysis, next_module_function);
 			}
 
-			// remove old name from map
-			ht_pp_delete(analysis->ht_name_fun, next_module_function->name);
-
-			name = rz_name_filter2(flirt_func->name, true);
-			free(next_module_function->name);
-			next_module_function->name = rz_str_newf("flirt.%s", name);
+			// filter name
+			rz_name_filter(flirt_func->name, -1, true);
 
 			// verify that the name is unique
-			while (ht_pp_find(analysis->ht_name_fun, next_module_function->name, NULL)) {
-				name_index++;
-				free(next_module_function->name);
-				next_module_function->name = rz_str_newf("flirt.%s_%u", name, name_index);
+			char *name = rz_str_newf("flirt.%s", flirt_func->name);
+			if (!name) {
+				RZ_LOG_ERROR("FLIRT: cannot allocate string buffer for name\n");
+				return false;
 			}
 
-			// insert new name into the map
-			ht_pp_insert(analysis->ht_name_fun, next_module_function->name, next_module_function);
+			while (!rz_analysis_function_rename(next_module_function, name)) {
+				free(name);
+				name_index++;
+				name = rz_str_newf("flirt.%s_%u", flirt_func->name, name_index);
+				if (!name) {
+					RZ_LOG_ERROR("FLIRT: cannot allocate string buffer for name\n");
+					return false;
+				}
+			}
 
-			analysis->flb.set(analysis->flb.f, next_module_function->name,
-				next_module_function->addr, next_module_function_size);
+			// remove old flag
+			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "fcn.", "func.", NULL);
+			if (fit) {
+				analysis->flb.unset(analysis->flb.f, fit);
+			}
+
+			// set new flag
+			analysis->flb.set(analysis->flb.f, name, next_module_function->addr, next_module_function_size);
 			RZ_LOG_DEBUG("FLIRT: Found %s\n", next_module_function->name);
 			free(name);
 		}

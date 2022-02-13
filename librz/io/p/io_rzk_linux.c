@@ -726,12 +726,12 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 					nextstart > 0 && nextstart - 1 < buffsize) {
 					break;
 				}
-				io->cb_printf("f pid.%d.%s.%d.start=0x%" PFMT64x "\n", proc_data.pid, (char *)&(proc_data.vmareastruct[i + 7]), j, (ut64)proc_data.vmareastruct[i]);
-				io->cb_printf("f pid.%d.%s.%d.end=0x%" PFMT64x "\n", proc_data.pid, (char *)&(proc_data.vmareastruct[i + 7]), j, (ut64)proc_data.vmareastruct[i + 1]);
+				io->cb_printf("f pid.%d.%s.%d.start @ 0x%" PFMT64x "\n", proc_data.pid, (char *)&(proc_data.vmareastruct[i + 7]), j, (ut64)proc_data.vmareastruct[i]);
+				io->cb_printf("f pid.%d.%s.%d.end @ 0x%" PFMT64x "\n", proc_data.pid, (char *)&(proc_data.vmareastruct[i + 7]), j, (ut64)proc_data.vmareastruct[i + 1]);
 				j += 1;
 				i = nextstart;
 			}
-			io->cb_printf("f pid.%d.task_struct = 0x%08zu\n", proc_data.pid, proc_data.task);
+			io->cb_printf("f pid.%d.task_struct @ 0x%08zu\n", proc_data.pid, proc_data.task);
 		} else {
 			io->cb_printf("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
 			io->cb_printf("task_struct = 0x%08zu\n", proc_data.task);

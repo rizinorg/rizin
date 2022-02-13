@@ -77,12 +77,12 @@ RZ_API char *rz_analysis_cc_get(RzAnalysis *analysis, const char *name) {
 	int i;
 	// get cc by name and print the expr
 	if (rz_str_cmp(sdb_const_get(DB, name, 0), "cc", -1)) {
-		eprintf("This is not a valid calling convention name\n");
+		RZ_LOG_ERROR("'%s' is not a valid calling convention name\n", name);
 		return NULL;
 	}
 	const char *ret = sdb_const_get(DB, sdb_fmt("cc.%s.ret", name), 0);
 	if (!ret) {
-		eprintf("Cannot find return key\n");
+		RZ_LOG_ERROR("Cannot find return key in calling convention named '%s'\n", name);
 		return NULL;
 	}
 	RzStrBuf *sb = rz_strbuf_new(NULL);

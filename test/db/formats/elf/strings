@@ -2,7 +2,7 @@ NAME=pdf dwarf
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs *
-f~str.
+fl~str.
 EOF
 EXPECT=<<EOF
 0x004005c4 12 str.Hello_World

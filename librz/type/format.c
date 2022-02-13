@@ -2292,16 +2292,16 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 					newname = fieldname = rz_str_newf("pf.%" PFMT64u, seeki);
 				}
 				if (mode & RZ_PRINT_UNIONMODE) {
-					rz_strbuf_appendf(outbuf, "f %s=0x%08" PFMT64x "\n", formatname, seeki);
+					rz_strbuf_appendf(outbuf, "f %s @ 0x%08" PFMT64x "\n", formatname, seeki);
 					goto beach;
 				} else if (tmp == '?') {
 					rz_strbuf_appendf(outbuf, "f %s.%s_", fmtname, fieldname);
 				} else if (tmp == 'E') {
-					rz_strbuf_appendf(outbuf, "f %s=0x%08" PFMT64x "\n", fieldname, seeki);
+					rz_strbuf_appendf(outbuf, "f %s @ 0x%08" PFMT64x "\n", fieldname, seeki);
 				} else if (slide / STRUCTFLAG > 0 && idx == 1) {
-					rz_strbuf_appendf(outbuf, "%s=0x%08" PFMT64x "\n", fieldname, seeki);
+					rz_strbuf_appendf(outbuf, "%s @ 0x%08" PFMT64x "\n", fieldname, seeki);
 				} else {
-					rz_strbuf_appendf(outbuf, "f %s=0x%08" PFMT64x "\n", fieldname, seeki);
+					rz_strbuf_appendf(outbuf, "f %s @ 0x%08" PFMT64x "\n", fieldname, seeki);
 				}
 				if (newname) {
 					RZ_FREE(newname);
@@ -2675,7 +2675,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 			if (mode & RZ_PRINT_SEEFLAGS && isptr != NULLPTR) {
 				int sz = i - oi;
 				if (sz > 1) {
-					rz_strbuf_appendf(outbuf, "fl %d @ 0x%08" PFMT64x "\n", sz, seeki);
+					rz_strbuf_appendf(outbuf, "fL %d @ 0x%08" PFMT64x "\n", sz, seeki);
 					rz_strbuf_appendf(outbuf, "Cd %d @ 0x%08" PFMT64x "\n", sz, seeki);
 				}
 			}

@@ -3,6 +3,50 @@
 ---
 name: cmd_open
 commands:
+  - name: o
+    cname: open
+    summary: Open <file>
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+      - name: perm
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: o+
+    cname: open_write
+    summary: Open <file> in write mode
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+      - name: perm
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: ol
+    cname: open_list
+    summary: List opened files
+    args: []
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+  - name: ol.
+    cname: open_show_current
+    summary: Show currently opened file
+    args: []
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
   - name: o-
     cname: open_close
     summary: Close file descriptor
@@ -13,6 +57,119 @@ commands:
     cname: open_close_all
     summary: Close all files
     args: []
+  - name: oc
+    cname: open_core_file
+    summary: Close all opened files and open <file>, like relaunching rizin
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: oC
+    cname: open_malloc
+    summary: Open a 'malloc://<len>' file, copying the bytes from current offset
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: "on"
+    summary: Open files without parsing binary info
+    subcommands:
+      - name: "on"
+        cname: open_nobin
+        summary: Open <file> without parsing binary info
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: perm
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: on+
+        cname: open_nobin_write
+        summary: Open <file> in write mode, without parsing binary info
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: perm
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+  - name: oo
+    summary: Reopen current file
+    subcommands:
+      - name: oo
+        cname: reopen
+        summary: Reopen current file or file <fd>
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: oo+
+        cname: reopen_write
+        summary: Reopen current file or file <fd> in write mode
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: oob
+        cname: reopen_binary
+        summary: Reopen current file and reload binary information
+        args:
+          - name: baddr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ooc
+        cname: reopen_core
+        summary: Reopen current file as if restarting rizin
+        args: []
+      - name: ood
+        summary: Reopen current file in debug mode
+        subcommands:
+          - name: ood
+            cname: reopen_debug
+            summary: Reopen current file in debug mode
+            args:
+              - name: args
+                type: RZ_CMD_ARG_TYPE_STRING
+                flags: RZ_CMD_ARG_FLAG_ARRAY
+                optional: true
+          - name: oodf
+            cname: reopen_debug_file
+            summary: Open <uri> in debug mode
+            args:
+              - name: uri
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: oodr
+            cname: reopen_debug_rzrun
+            summary: Reopen current file in debug mode with given rz-run directives
+            args:
+              - name: rz-run-directives
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: oom
+        cname: reopen_malloc
+        summary: Reopen curent file in malloc://
+        args: []
+      - name: oon
+        cname: reopen_nobin
+        summary: Reopen curent file without loading binary information
+        args: []
+      - name: oon+
+        cname: reopen_nobin_write
+        summary: Reopen curent file in write-mode without loading binary information
+        args: []
+      - name: oonn
+        cname: reopen_nobin_headers
+        summary: Reopen curent file without loading binary information but with header flags
+        args: []
+      - name: oonn+
+        cname: reopen_nobin_write_headers
+        summary: Reopen curent file in write-mode without loading binary information but with header flags
+        args: []
   - name: oL
     cname: open_plugins
     handler: plugins_io_print
@@ -311,3 +468,11 @@ commands:
             args:
               - name: fd
                 type: RZ_CMD_ARG_TYPE_NUM
+  - name: ox
+    cname: open_exchange
+    summary: Exchange the descs of <fd> and <fdx> and keep the mapping
+    args:
+      - name: fd
+        type: RZ_CMD_ARG_TYPE_NUM
+      - name: fdx
+        type: RZ_CMD_ARG_TYPE_NUM

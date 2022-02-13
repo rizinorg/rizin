@@ -5,7 +5,7 @@ e asm.arch=m68k
 e asm.bits=32
 wx 33fc010000a10000
 pi 1
-f foo.bar = 0xa10000
+f foo.bar @ 0xa10000
 pi 1
 EOF
 EXPECT=<<EOF
@@ -21,7 +21,7 @@ e asm.arch=m68k
 e asm.bits=32
 wx 33fc010000a10000
 pi 1
-f foo.bar = 0x100
+f foo.bar @ 0x100
 pi 1
 EOF
 EXPECT=<<EOF

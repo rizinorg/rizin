@@ -136,15 +136,15 @@ e asm.bytes=true
 e cfg.oldshell=false
 f a_nice_refreshing_un-moisten @ 0x080483d8
 Ps .tmp_load_without_file.rzdb
-o
+ol
 ?e --
 o--
-o
+ol
 pdi 3 @ 0x080483d8
 ?e --
 Poo .tmp_load_without_file.rzdb
 rm .tmp_load_without_file.rzdb
-o
+ol
 ?e --
 pdi 3 @ 0x080483d8
 EOF
@@ -172,10 +172,10 @@ e cfg.oldshell=false
 e asm.bytes=true
 f a_nice_refreshing_un-moisten @ 0x080483d8
 Ps .tmp_load_on_top_of_file.rzdb
-o
+ol
 ?e --
 o--
-o
+ol
 pdi 3 @ 0x080483d8
 ?e --
 o bins/elf/crackme0x00b
@@ -206,17 +206,17 @@ FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 e cfg.oldshell=false
 fr sym.main sym.renamedmain
-f~?
-f~main
+fl~?
+fl~main
 Ps .tmp_flags.rzdb
 ?e --
 o--
-f
+fl
 ?e --
 Poo .tmp_flags.rzdb
 rm .tmp_flags.rzdb
-f~?
-f~main
+fl~?
+fl~main
 EOF
 EXPECT=<<EOF
 117
@@ -392,7 +392,7 @@ acm Claaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 Ps .tmp_longkeys.rzdb
 ?e --
 o--
-o
+ol
 ?e --
 Po .tmp_longkeys.rzdb
 rm .tmp_longkeys.rzdb

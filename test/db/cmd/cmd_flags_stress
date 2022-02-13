@@ -3,7 +3,7 @@ FILE==
 CMDS=<<EOF
 f patata
 f-*
-f~?
+fl~?
 EOF
 EXPECT=<<EOF
 0
@@ -16,7 +16,7 @@ CMDS=<<EOF
 f patata
 fs *
 f-*
-f~?
+fl~?
 EOF
 EXPECT=<<EOF
 0
@@ -31,7 +31,7 @@ e asm.bits=64
 e asm.bytes=true
 f foo
 fr foo bar
-f
+fl
 pd 1
 EOF
 EXPECT=<<EOF

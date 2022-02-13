@@ -5037,7 +5037,7 @@ static void cmd_analysis_abt(RzCore *core, const char *input) {
 			RzList *path;
 			RzListIter *pathi;
 			RzListIter *bbi;
-			rz_cons_printf("f orip=`dr?PC`\n");
+			rz_cons_printf("f+ orip @ `drq PC`\n");
 			rz_list_foreach (paths, pathi, path) {
 				rz_list_foreach (path, bbi, bb) {
 					rz_cons_printf("# 0x%08" PFMT64x "\n", bb->addr);
@@ -7267,7 +7267,7 @@ static void function_list_print_as_cmd(RzCore *core, RzList *list) {
 	rz_list_foreach (list, it, fcn) {
 		const char *defaultCC = rz_analysis_cc_default(core->analysis);
 		char *name = rz_core_analysis_fcn_name(core, fcn);
-		rz_cons_printf("\"f %s %" PFMT64u " 0x%08" PFMT64x "\"\n", name, rz_analysis_function_linear_size(fcn), fcn->addr);
+		rz_cons_printf("\"f %s %" PFMT64u " @ 0x%08" PFMT64x "\"\n", name, rz_analysis_function_linear_size(fcn), fcn->addr);
 		rz_cons_printf("\"af+ 0x%08" PFMT64x " %s %c %c\"\n",
 			fcn->addr, name, // rz_analysis_fcn_size (fcn), name,
 			function_type_to_char(fcn),

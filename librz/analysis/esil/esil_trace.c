@@ -34,14 +34,17 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	}
 	trace->registers = ht_up_new(NULL, htup_vector_free, NULL);
 	if (!trace->registers) {
+		RZ_LOG_ERROR("esil: Cannot allocate hashmap for trace registers\n");
 		goto error;
 	}
 	trace->memory = ht_up_new(NULL, htup_vector_free, NULL);
 	if (!trace->memory) {
+		RZ_LOG_ERROR("esil: Cannot allocate hashmap for trace memory\n");
 		goto error;
 	}
 	trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
 	if (!trace->instructions) {
+		RZ_LOG_ERROR("esil: Cannot allocate vector for trace instructions\n");
 		goto error;
 	}
 	// Save initial ESIL stack memory
@@ -49,6 +52,7 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	trace->stack_size = esil->stack_size;
 	trace->stack_data = malloc(esil->stack_size);
 	if (!trace->stack_data) {
+		RZ_LOG_ERROR("esil: Cannot allocate stack for trace\n");
 		goto error;
 	}
 	esil->analysis->iob.read_at(esil->analysis->iob.io, trace->stack_addr,
@@ -58,6 +62,7 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 		RzRegArena *a = esil->analysis->reg->regset[i].arena;
 		RzRegArena *b = rz_reg_arena_new(a->size);
 		if (!b) {
+			RZ_LOG_ERROR("esil: Cannot allocate register arena for trace\n");
 			goto error;
 		}
 		if (b->bytes && a->bytes && b->size > 0) {
@@ -67,7 +72,6 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	}
 	return trace;
 error:
-	eprintf("error\n");
 	rz_analysis_esil_trace_free(trace);
 	return NULL;
 }
@@ -94,7 +98,7 @@ static void add_reg_change(RzAnalysisEsilTrace *trace, int idx, RzRegItem *ri, u
 	if (!vreg) {
 		vreg = rz_vector_new(sizeof(RzAnalysisEsilRegChange), NULL, NULL);
 		if (!vreg) {
-			eprintf("Error: creating a register vector.\n");
+			RZ_LOG_ERROR("Creating a register vector.\n");
 			return;
 		}
 		ht_up_insert(trace->registers, addr, vreg);
@@ -108,7 +112,7 @@ static void add_mem_change(RzAnalysisEsilTrace *trace, int idx, ut64 addr, ut8 d
 	if (!vmem) {
 		vmem = rz_vector_new(sizeof(RzAnalysisEsilMemChange), NULL, NULL);
 		if (!vmem) {
-			eprintf("Error: creating a memory vector.\n");
+			RZ_LOG_ERROR("Creating a memory vector.\n");
 			return;
 		}
 		ht_up_insert(trace->memory, addr, vmem);
@@ -120,7 +124,7 @@ static void add_mem_change(RzAnalysisEsilTrace *trace, int idx, ut64 addr, ut8 d
 static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	if (*name == '0') {
-		// eprintf ("Register not found in profile\n");
+		// RZ_LOG_WARN("Register not found in profile\n");
 		return 0;
 	}
 	if (ocbs.hook_reg_read) {
@@ -285,7 +289,7 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysi
 	/* save old callbacks */
 	int esil_verbose = esil->verbose;
 	if (ocbs_set) {
-		eprintf("cannot call recursively\n");
+		RZ_LOG_ERROR("esil: Cannot call recursively\n");
 	}
 	ocbs = esil->cb;
 	ocbs_set = true;
@@ -451,7 +455,6 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
  */
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 	rz_return_if_fail(esil);
-	printf("Trace Show : WIP\n");
 	if (!esil->trace) {
 		return;
 	}

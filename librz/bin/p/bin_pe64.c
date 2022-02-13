@@ -363,7 +363,6 @@ static RzList *trycatch(RzBinFile *bf) {
 	ut64 baseAddr = bf->o->opts.baseaddr;
 	int i;
 	ut64 offset;
-	ut32 c_handler = 0;
 
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	PE_(image_data_directory) *expdir = &bin->optional_header->DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION];
@@ -434,21 +433,7 @@ static RzList *trycatch(RzBinFile *bf) {
 		if (!rz_io_read_at_mapped(io, exceptionDataOff, (ut8 *)&handler, sizeof(handler))) {
 			continue;
 		}
-		if (c_handler && c_handler != handler) {
-			continue;
-		}
 		exceptionDataOff += sizeof(ut32);
-
-		if (!c_handler) {
-			ut32 magic, rva_to_fcninfo;
-			if (rz_io_read_at_mapped(io, exceptionDataOff, (ut8 *)&rva_to_fcninfo, sizeof(rva_to_fcninfo)) &&
-				rz_io_read_at_mapped(io, baseAddr + rva_to_fcninfo, (ut8 *)&magic, sizeof(magic))) {
-				if (magic >= 0x19930520 && magic <= 0x19930522) {
-					// __CxxFrameHandler3 or __GSHandlerCheck_EH
-					continue;
-				}
-			}
-		}
 
 		PE64_SCOPE_TABLE tbl;
 		if (!rz_io_read_at_mapped(io, exceptionDataOff, (ut8 *)&tbl, sizeof(tbl))) {
@@ -469,7 +454,8 @@ static RzList *trycatch(RzBinFile *bf) {
 			}
 			if (!scope.JumpTarget) {
 				// scope.HandlerAddress == __finally block
-				continue;
+				scope.JumpTarget = scope.HandlerAddress;
+				scope.HandlerAddress = 1;
 			}
 			ut64 handlerAddr = scope.HandlerAddress == 1 ? 0 : scope.HandlerAddress + baseAddr;
 			RzBinTrycatch *tc = rz_bin_trycatch_new(
@@ -478,7 +464,6 @@ static RzList *trycatch(RzBinFile *bf) {
 				scope.EndAddress + baseAddr,
 				scope.JumpTarget + baseAddr,
 				handlerAddr);
-			c_handler = handler;
 			rz_list_append(tclist, tc);
 			scopeRecOff += sizeof(PE64_SCOPE_RECORD);
 		}

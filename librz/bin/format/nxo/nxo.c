@@ -105,7 +105,7 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 			}
 			sym->paddr = pltSym - 8;
 			sym->vaddr = sym->paddr + baddr;
-			eprintf("f sym.imp.%s = 0x%" PFMT64x "\n", symName, pltSym - 8);
+			eprintf("f sym.imp.%s @ 0x%" PFMT64x "\n", symName, pltSym - 8);
 		} else {
 			sym->name = symName;
 			if (!sym->name) {
@@ -114,7 +114,7 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 			}
 			sym->paddr = addr;
 			sym->vaddr = sym->paddr + baddr;
-			eprintf("f sym.%s %" PFMT64u "0x%" PFMT64x "\n", symName, size, addr);
+			eprintf("f sym.%s %" PFMT64u " @ 0x%" PFMT64x "\n", symName, size, addr);
 		}
 		rz_list_append(bin->methods_list, sym);
 		i += 8 - 1;

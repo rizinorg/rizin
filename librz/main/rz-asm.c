@@ -69,14 +69,10 @@ static char *stackop2str(int type) {
 	return strdup("unknown");
 }
 
-static int showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
-	int ret = rz_analysis_op(as->analysis, op, offset, buf, len, RZ_ANALYSIS_OP_MASK_ESIL);
-	if (ret < 1) {
-		return ret;
-	}
+static void showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
 	char *stackop = stackop2str(op->stackop);
 	const char *optype = rz_analysis_optype_to_string(op->type);
-	char *bytes = rz_hex_bin2strdup(buf, ret);
+	char *bytes = rz_hex_bin2strdup(buf, RZ_MIN(len, op->size));
 	if (as->json) {
 		pj_o(pj);
 		pj_kn(pj, "opcode", offset);
@@ -121,32 +117,34 @@ static int showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf,
 	}
 	free(stackop);
 	free(bytes);
-	return ret;
 }
 
 // TODO: add israw/len
 static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	ut8 *buf = (ut8 *)strdup((const char *)arg);
 	int ret, len = rz_hex_str2bin((char *)buf, buf);
-	PJ *pj = pj_new();
-	if (!pj) {
-		free(buf);
-		return 0;
+	PJ *pj = NULL;
+	if (as->json) {
+		pj = pj_new();
+		if (!pj) {
+			free(buf);
+			return 0;
+		}
 	}
 
 	RzAnalysisOp aop = { 0 };
 
-	if (as->json) {
+	if (pj) {
 		pj_a(pj);
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
-		if (rz_analysis_op(as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
+		if (rz_analysis_op(as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 			eprintf("Error analyzing instruction at 0x%08" PFMT64x "\n", offset);
 			break;
 		}
 		if (aop.size < 1) {
-			if (as->json) {
+			if (pj) {
 				pj_o(pj);
 				pj_ks(pj, "bytes", rz_hex_bin2strdup(buf, ret));
 				pj_ks(pj, "type", "Invalid");
@@ -160,7 +158,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 		ret += aop.size;
 		rz_analysis_op_fini(&aop);
 	}
-	if (as->json) {
+	if (pj) {
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
@@ -391,7 +389,7 @@ static void print_buf(RzAsmState *as, char *str) {
 }
 
 static bool print_label(void *user, const void *k, const void *v) {
-	printf("f label.%s = %s\n", (const char *)k, (const char *)v);
+	printf("f label.%s @ %s\n", (const char *)k, (const char *)v);
 	return true;
 }
 
@@ -471,8 +469,8 @@ static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, u
 	}
 	int ret = rasm_asm(as, (char *)buf, offset, len, as->a->bits, bin, use_spp, hexwords);
 	if (rad) {
-		printf("f entry = $$\n");
-		printf("f label.main = $$ + 1\n");
+		printf("f entry @ $$\n");
+		printf("f label.main @ $$ + 1\n");
 		ht_pp_foreach(as->a->flags, print_label, NULL);
 	}
 	return ret;
@@ -696,6 +694,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		goto beach;
 	}
 	rz_asm_set_cpu(as->a, cpu);
+	rz_analysis_set_cpu(as->analysis, cpu);
 	rz_asm_set_bits(as->a, (env_bits && *env_bits) ? atoi(env_bits) : bits);
 	rz_analysis_set_bits(as->analysis, (env_bits && *env_bits) ? atoi(env_bits) : bits);
 	as->a->syscall = rz_syscall_new();

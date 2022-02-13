@@ -278,9 +278,62 @@ commands:
     summary: Alter/modify opcode at current seek (see wA?)
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wc
-    cname: wc_handler_old
     summary: Write cache commands
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: wc
+        cname: write_cache_list
+        summary: List all write changes in the cache
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: wc-
+        cname: write_cache_remove
+        summary: Remove write operation at current offset or in the given range
+        args:
+          - name: from
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: to
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wc-*
+        cname: write_cache_remove_all
+        summary: Reset the cache
+        args: []
+      - name: wc+
+        cname: write_cache_commit
+        summary: Commit cache from address <from> up to <to> or one blocksize
+        args:
+          - name: from
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: to
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wci
+        cname: write_cache_commit_all
+        summary: Commit the cache
+        args: []
+      - name: wcp
+        cname: write_pcache_list
+        summary: List all write changes in the p-cache
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: wcpi
+        cname: write_pcache_commit
+        summary: Commit p-cache for specified <fd> or current file
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
   - name: wz
     cname: wz_handler_old
     summary: Write zero-terminated string
@@ -349,9 +402,80 @@ commands:
           - name: file|-
             type: RZ_CMD_ARG_TYPE_FILE
   - name: wa
-    cname: wa_handler_old
-    summary: Write opcode, separated by ';'
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Write opcodes
+    subcommands:
+      - name: wa
+        cname: write_assembly
+        summary: Assemble instruction(s) and write bytes at current offset
+        description: >
+          Assemble the <instructions> provided as argument considering the
+          current architecture and bits in asm.arch/asm.bits and write the
+          resulting bytes at the current offset.
+        args:
+          - name: instructions
+            type: RZ_CMD_ARG_TYPE_STRING
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+      - name: wai
+        cname: write_assembly_inside
+        summary: Assemble instruction(s) and write bytes inside the current instruction
+        description: >
+          Assemble the <instructions> provided as argument considering the
+          current architecture and bits in asm.arch/asm.bits and write the
+          resulting bytes "inside" the current instruction, by filling the
+          remaining bytes of the old instruction with nop bytes.
+        args:
+          - name: instructions
+            type: RZ_CMD_ARG_TYPE_STRING
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+      - name: waf
+        cname: write_assembly_file
+        summary: Assemble file and write bytes at current offset
+        description: >
+          Assemble the assembly file <file> provided as argument considering the
+          current architecture and bits in asm.arch/asm.bits and write the
+          resulting bytes at the current offset.
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: wao
+        cname: write_assembly_opcode
+        summary: Write on the current opcode
+        args:
+          - name: op
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Operators
+            entries:
+              - text: wao
+                arg_str: " nop"
+                comment: Make the current instruction a no operation
+              - text: wao
+                arg_str: " jinf"
+                comment: Assemble an infinite loop
+              - text: wao
+                arg_str: " jz"
+                comment: Make the current conditional instruction a jump-if-zero
+              - text: wao
+                arg_str: " jnz"
+                comment: Make the current conditional instruction a jump-if-not-zero
+              - text: wao
+                arg_str: " ret1"
+                comment: Make the current instruction return 1
+              - text: wao
+                arg_str: " ret0"
+                comment: Make the current instruction return 0
+              - text: wao
+                arg_str: " retn"
+                comment: Make the current instruction return -1
+              - text: wao
+                arg_str: " nocj"
+                comment: Make the current conditional instruction unconditional
+              - text: wao
+                arg_str: " trap"
+                comment: Make the current instruction a trap (e.g. int3 in x86)
+              - text: wao
+                arg_str: " recj"
+                comment: Swap the condition of the current conditional instruction
   - name: wb
     cname: wb_handler_old
     summary: Write in current block with cyclic hexstring
