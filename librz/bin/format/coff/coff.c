@@ -13,6 +13,9 @@
 RZ_API bool rz_coff_supported_arch(const ut8 *buf) {
 	ut16 arch = *(ut16 *)buf;
 	switch (arch) {
+	case COFF_FILE_MACHINE_MIPS16:
+	case COFF_FILE_MACHINE_MIPSFPU:
+	case COFF_FILE_MACHINE_MIPSFPU16:
 	case COFF_FILE_MACHINE_AMD64:
 	case COFF_FILE_MACHINE_I386:
 	case COFF_FILE_MACHINE_H8300:

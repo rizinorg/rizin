@@ -414,6 +414,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 
 	switch (obj->hdr.f_magic) {
+	case COFF_FILE_MACHINE_MIPS16:
+	case COFF_FILE_MACHINE_MIPSFPU:
+	case COFF_FILE_MACHINE_MIPSFPU16:
+		ret->machine = strdup("mips");
+		ret->arch = strdup("mips");
+		ret->bits = 32;
+		break;
 	case COFF_FILE_MACHINE_I386:
 		ret->machine = strdup("i386");
 		ret->arch = strdup("x86");
