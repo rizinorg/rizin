@@ -1104,6 +1104,38 @@ RZ_API bool rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 }
 
 /**
+ * Count leading (most significant) zeroes
+ * All bits are considered leading zeroes for a zero bitvector.
+ */
+RZ_API ut32 rz_bv_clz(RZ_NONNULL RzBitVector *bv) {
+	rz_return_val_if_fail(bv, 0);
+	ut32 r = 0;
+	for (ut32 i = rz_bv_len(bv); i; i--) {
+		if (rz_bv_get(bv, i - 1)) {
+			break;
+		}
+		r++;
+	}
+	return r;
+}
+
+/**
+ * Count trailing (least significant) zeroes
+ * All bits are considered trailing zeroes for a zero bitvector.
+ */
+RZ_API ut32 rz_bv_ctz(RZ_NONNULL RzBitVector *bv) {
+	rz_return_val_if_fail(bv, 0);
+	ut32 r = 0;
+	for (ut32 i = 0; i < rz_bv_len(bv); i++) {
+		if (rz_bv_get(bv, i)) {
+			break;
+		}
+		r++;
+	}
+	return r;
+}
+
+/**
  * Get the length of bitvector in bits
  * \param bv RzBitVector
  * \return len ut32, length of bitvector in bits
