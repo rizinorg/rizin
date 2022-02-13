@@ -761,6 +761,22 @@ bool test_rz_bv_as_hex_string(void) {
 	mu_assert_streq_free(s, "0x0", "string hex value of bv");
 	rz_bv_free(bv);
 
+	bv = rz_bv_new_from_ut64(1, 1);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, true), "0x1", "string hex value of bv");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x1", "string hex value of bv");
+	rz_bv_set_from_ut64(bv, 0);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, true), "0x0", "string hex value of bv");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "string hex value of bv");
+	rz_bv_free(bv);
+
+	bv = rz_bv_new_from_ut64(7, 0x7f);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, true), "0x7f", "string hex value of bv");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x7f", "string hex value of bv");
+	rz_bv_set_from_ut64(bv, 0x70);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, true), "0x70", "string hex value of bv");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x70", "string hex value of bv");
+	rz_bv_free(bv);
+
 	// big
 	bv = rz_bv_new_from_ut64(128, 100);
 	rz_bv_set(bv, 2, true);
@@ -783,8 +799,16 @@ bool test_rz_bv_as_hex_string(void) {
 	mu_assert_streq_free(s, "0x00000000000000000000000000000000", "string hex value of bv");
 	s = rz_bv_as_hex_string(bv, false);
 	mu_assert_streq_free(s, "0x0", "string hex value of bv");
-
 	rz_bv_free(bv);
+
+	bv = rz_bv_new_from_st64(64 + 7, -1);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, true), "0x7fffffffffffffffff", "string hex value of bv");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x7fffffffffffffffff", "string hex value of bv");
+	rz_bv_set_from_ut64(bv, 0);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, true), "0x000000000000000000", "string hex value of bv");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "string hex value of bv");
+	rz_bv_free(bv);
+
 	mu_end;
 }
 
@@ -831,6 +855,79 @@ bool test_rz_bv_ctz(void) {
 	mu_end;
 }
 
+bool test_rz_bv_div(void) {
+#define TEST_DIV(bva, bvb, sr) \
+	do { \
+		RzBitVector *a = bva; \
+		RzBitVector *b = bvb; \
+		RzBitVector *r = rz_bv_div(a, b); \
+		mu_assert_notnull(r, "division succes"); \
+		mu_assert_eq(rz_bv_len(r), rz_bv_len(a), "division result len"); \
+		mu_assert_streq_free(rz_bv_as_hex_string(r, false), sr, "division result"); \
+		rz_bv_free(a); \
+		rz_bv_free(b); \
+		rz_bv_free(r); \
+	} while (0)
+
+	// small
+	TEST_DIV(rz_bv_new_from_ut64(32, 42), rz_bv_new_from_ut64(32, 3), "0xe");
+	TEST_DIV(rz_bv_new_from_ut64(32, 42), rz_bv_new_from_ut64(32, 0), "0xffffffff");
+	TEST_DIV(rz_bv_new_from_ut64(32, 0), rz_bv_new_from_ut64(32, 0), "0xffffffff");
+	TEST_DIV(rz_bv_new_from_ut64(32, 0xffffffd6), rz_bv_new_from_ut64(32, 42), "0x6186185");
+	TEST_DIV(rz_bv_new_from_ut64(32, 42), rz_bv_new_from_ut64(32, 42), "0x1");
+
+	// big
+	TEST_DIV(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 3), "0xe");
+	TEST_DIV(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 0), "0x3fffffffffffffffff");
+	TEST_DIV(rz_bv_new_from_ut64(70, 0), rz_bv_new_from_ut64(70, 0), "0x3fffffffffffffffff");
+	TEST_DIV(rz_bv_new_from_ut64(70, 0xffffffd6), rz_bv_new_from_ut64(70, 42), "0x6186185");
+	TEST_DIV(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 42), "0x1");
+	RzBitVector *superbig = rz_bv_new_from_ut64(80, 42);
+	rz_bv_lshift(superbig, 70);
+	TEST_DIV(superbig, rz_bv_new_from_ut64(80, 2), "0x5400000000000000000");
+
+#undef TEST_DIV
+	mu_end;
+}
+
+bool test_rz_bv_mod(void) {
+#define TEST_MOD(bva, bvb, sr) \
+	do { \
+		RzBitVector *a = bva; \
+		RzBitVector *b = bvb; \
+		RzBitVector *r = rz_bv_mod(a, b); \
+		mu_assert_notnull(r, "division succes"); \
+		mu_assert_eq(rz_bv_len(r), rz_bv_len(a), "division result len"); \
+		mu_assert_streq_free(rz_bv_as_hex_string(r, false), sr, "division result"); \
+		rz_bv_free(a); \
+		rz_bv_free(b); \
+		rz_bv_free(r); \
+	} while (0)
+
+	// small
+	TEST_MOD(rz_bv_new_from_ut64(32, 42), rz_bv_new_from_ut64(32, 3), "0x0");
+	TEST_MOD(rz_bv_new_from_ut64(32, 42), rz_bv_new_from_ut64(32, 0), "0x2a");
+	TEST_MOD(rz_bv_new_from_ut64(32, 0), rz_bv_new_from_ut64(32, 0), "0x0");
+	TEST_MOD(rz_bv_new_from_ut64(32, 0xffffffd6), rz_bv_new_from_ut64(32, 42), "0x4");
+	TEST_MOD(rz_bv_new_from_ut64(32, 42), rz_bv_new_from_ut64(32, 42), "0x0");
+
+	// big
+	TEST_MOD(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 3), "0x0");
+	TEST_MOD(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 0), "0x2a");
+	TEST_MOD(rz_bv_new_from_ut64(70, 0), rz_bv_new_from_ut64(70, 0), "0x0");
+	TEST_MOD(rz_bv_new_from_ut64(70, 0xffffffd6), rz_bv_new_from_ut64(70, 42), "0x4");
+	TEST_MOD(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 42), "0x0");
+	RzBitVector *superbig = rz_bv_new_from_ut64(80, 42);
+	rz_bv_lshift(superbig, 70);
+	TEST_MOD(rz_bv_dup(superbig), rz_bv_new_from_ut64(80, 2), "0x0");
+	rz_bv_set(superbig, 0, true);
+	rz_bv_set(superbig, 1, true);
+	TEST_MOD(superbig, rz_bv_new_from_ut64(80, 64), "0x3");
+
+#undef TEST_DIV
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
@@ -849,6 +946,8 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_as_hex_string);
 	mu_run_test(test_rz_bv_clz);
 	mu_run_test(test_rz_bv_ctz);
+	mu_run_test(test_rz_bv_div);
+	mu_run_test(test_rz_bv_mod);
 	return tests_passed != tests_run;
 }
 
