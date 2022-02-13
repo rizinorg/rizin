@@ -279,6 +279,8 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 		if (analysis->bits != bits) {
 			bool is_hack = is_arm_thumb_hack(analysis, bits);
 			analysis->bits = bits;
+			int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+			analysis->pcalign = RZ_MAX(0, v);
 			rz_type_db_set_bits(analysis->typedb, bits);
 			if (!is_hack) {
 				char *types_dir = rz_path_system(RZ_SDB_TYPES);

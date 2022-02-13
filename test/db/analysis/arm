@@ -1098,3 +1098,18 @@ EXPECT=<<EOF
 main 0x512 [DATA] add r3, pc
 EOF
 RUN
+
+NAME=arm pcalign
+FILE=
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e asm.pcalign
+e asm.bits=16
+e asm.pcalign
+EOF
+EXPECT=<<EOF
+4
+2
+EOF
+RUN
