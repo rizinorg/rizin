@@ -414,6 +414,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 
 	switch (obj->hdr.f_magic) {
+	case COFF_FILE_MACHINE_R4000:
 	case COFF_FILE_MACHINE_MIPS16:
 	case COFF_FILE_MACHINE_MIPSFPU:
 	case COFF_FILE_MACHINE_MIPSFPU16:
