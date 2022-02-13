@@ -795,6 +795,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						if (bb->size == 0) {
 							rz_analysis_function_remove_block(fcn, bb);
 						}
+						rz_analysis_block_update_hash(bb);
 						rz_analysis_block_unref(bb);
 						bb = fcn_append_basic_block(analysis, fcn, addr);
 						if (!bb) {
