@@ -797,7 +797,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						}
 						rz_analysis_block_update_hash(bb);
 						rz_analysis_block_unref(bb);
-						bb = fcn_append_basic_block(analysis, fcn, addr);
+						bb = fcn_append_basic_block(analysis, fcn, bb->jump);
 						if (!bb) {
 							gotoBeach(RZ_ANALYSIS_RET_ERROR);
 						}
