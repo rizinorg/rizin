@@ -792,6 +792,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					ut64 from_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
 					handle = rz_str_replace(handle, ".from", ".catch", 0);
 					ut64 handle_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
+					handle = rz_str_replace(handle, ".catch", ".filter", 0);
+					ut64 filter_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
+					if (filter_addr) {
+						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_REF_TYPE_CALL);
+					}
 					bb->jump = at + oplen;
 					if (from_addr != bb->addr) {
 						bb->fail = handle_addr;
@@ -799,8 +804,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						if (bb->size == 0) {
 							rz_analysis_function_remove_block(fcn, bb);
 						}
+						rz_analysis_block_update_hash(bb);
 						rz_analysis_block_unref(bb);
-						bb = fcn_append_basic_block(analysis, fcn, addr);
+						bb = fcn_append_basic_block(analysis, fcn, bb->jump);
 						if (!bb) {
 							gotoBeach(RZ_ANALYSIS_RET_ERROR);
 						}
@@ -1455,11 +1461,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 beach:
 	rz_analysis_op_fini(&op);
 	RZ_FREE(last_reg_mov_lea_name);
-	if (bb && bb->size == 0) {
-		rz_analysis_function_remove_block(fcn, bb);
+	if (bb) {
+		if (bb->size) {
+			rz_analysis_block_update_hash(bb);
+		} else {
+			rz_analysis_function_remove_block(fcn, bb);
+		}
+		rz_analysis_block_unref(bb);
 	}
-	rz_analysis_block_update_hash(bb);
-	rz_analysis_block_unref(bb);
 	free(movbasereg);
 	return ret;
 }
