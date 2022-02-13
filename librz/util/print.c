@@ -1821,7 +1821,6 @@ RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, 
 	if (is_jmp) {
 		return strdup(p);
 	}
-	rz_str_trim(p);
 	if (opcode_sz > COLORIZE_BUFSIZE) {
 		/* return same string in case of error */
 		return strdup(p);
