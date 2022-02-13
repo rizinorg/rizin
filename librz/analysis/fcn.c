@@ -783,6 +783,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					ut64 from_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
 					handle = rz_str_replace(handle, ".from", ".catch", 0);
 					ut64 handle_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
+					handle = rz_str_replace(handle, ".catch", ".filter", 0);
+					ut64 filter_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
+					if (filter_addr) {
+						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_REF_TYPE_CALL);
+					}
 					bb->jump = at + oplen;
 					if (from_addr != bb->addr) {
 						bb->fail = handle_addr;
