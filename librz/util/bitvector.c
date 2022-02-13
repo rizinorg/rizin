@@ -125,8 +125,7 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv, bool pad) {
 	str[1] = 'x';
 	ut32 j = 2;
 	for (ut32 i = 0; i < bv->_elem_len; i++) {
-		ut8 b8 = bv->bits.large_a[i];
-		b8 = reverse_byte(b8);
+		ut8 b8 = bv->bits.large_a[bv->_elem_len - i - 1];
 		ut8 high = b8 >> 4;
 		ut8 low = b8 & 15;
 		if (pad || high) {
@@ -334,7 +333,6 @@ RZ_API bool rz_bv_set(RZ_NONNULL RzBitVector *bv, ut32 pos, bool b) {
 	}
 	rz_return_val_if_fail(bv->bits.large_a, false);
 
-	pos = bv->len - pos - 1;
 	if (b) {
 		bv->bits.large_a[pos / BV_ELEM_SIZE] |= (1u << (pos % BV_ELEM_SIZE));
 	} else {
@@ -418,7 +416,6 @@ RZ_API bool rz_bv_get(RZ_NONNULL const RzBitVector *bv, ut32 pos) {
 	}
 
 	rz_return_val_if_fail(bv->bits.large_a, false);
-	pos = bv->len - pos - 1;
 	return ((bv->bits.large_a)[pos / BV_ELEM_SIZE] & (1u << (pos % BV_ELEM_SIZE)));
 }
 
