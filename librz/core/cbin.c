@@ -4039,9 +4039,9 @@ static int bin_trycatch(RzCore *core, PJ *pj, int mode) {
 	int idx = 0;
 	// FIXME: json mode
 	rz_list_foreach (trycatch, iter, tc) {
-		rz_cons_printf("f try.%d.%" PFMT64x ".from @ 0x%08" PFMT64x "\n", idx, tc->source, tc->from);
-		rz_cons_printf("f try.%d.%" PFMT64x ".to @ 0x%08" PFMT64x "\n", idx, tc->source, tc->to);
-		rz_cons_printf("f try.%d.%" PFMT64x ".catch @ 0x%08" PFMT64x "\n", idx, tc->source, tc->handler);
+		rz_cons_printf("f+ try.%d.%" PFMT64x ".from @ 0x%08" PFMT64x "\n", idx, tc->source, tc->from);
+		rz_cons_printf("f+ try.%d.%" PFMT64x ".to @ 0x%08" PFMT64x "\n", idx, tc->source, tc->to);
+		rz_cons_printf("f+ try.%d.%" PFMT64x ".catch @ 0x%08" PFMT64x "\n", idx, tc->source, tc->handler);
 		idx++;
 	}
 	return true;
