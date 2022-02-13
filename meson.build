@@ -177,8 +177,11 @@ if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) 
   library_linkflags += '-shared-libasan'
 endif
 
-
-rizin_prefix = get_option('prefix')
+if get_option('portable_prefix') != '' and get_option('portable') == true
+  rizin_prefix = get_option('portable_prefix')
+else
+  rizin_prefix = get_option('prefix')
+endif
 rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
 rizin_cmakedir = rizin_libdir / 'cmake'
