@@ -271,6 +271,12 @@ RZ_IPI RzCmdStatus rz_analyse_name_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_analysis_basic_block_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_analysis_basic_block_find_paths_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_analysis_syscall_show_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_syscall_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_analysis_syscall_dump_assembly_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_syscall_dump_c_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_syscall_name_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_syscall_number_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_analysis(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_block_decrease_handler(RzCore *core, int argc, const char **argv);
