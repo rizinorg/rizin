@@ -74,6 +74,10 @@ RZ_API bool rz_bv_lsb(RZ_NONNULL RzBitVector *bv);
 RZ_API bool rz_bv_eq(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API bool rz_bv_ule(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+
+RZ_API ut32 rz_bv_clz(RZ_NONNULL RzBitVector *bv);
+RZ_API ut32 rz_bv_ctz(RZ_NONNULL RzBitVector *bv);
+
 // some convert functions
 RZ_API ut8 rz_bv_to_ut8(RZ_NONNULL const RzBitVector *x);
 RZ_API ut16 rz_bv_to_ut16(RZ_NONNULL const RzBitVector *x);
