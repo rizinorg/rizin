@@ -459,3 +459,47 @@ beach:
 
 	return RZ_CMD_STATUS_OK;
 }
+
+// /a
+RZ_IPI RzCmdStatus rz_cmd_search_assembly_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
+	if (!check_if_search_possible(core)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	UPDATE_LASTSEARCH(argv[1]);
+
+	struct search_parameters param;
+	if (!setup_params(core, &param)) {
+		goto beach;
+	}
+	param.pj = state->d.pj;
+	param.outmode = state->mode == RZ_OUTPUT_MODE_JSON ? RZ_MODE_JSON : RZ_MODE_PRINT;
+	if (param.outmode == RZ_MODE_JSON) {
+		pj_o(param.pj);
+	}
+
+	char *assembled = rz_core_asm_search(core, argv[1]);
+	if (!assembled) {
+		goto beach;
+	}
+	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
+	rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
+	rz_search_kw_add(core->search, rz_search_keyword_new_hexmask(assembled, NULL));
+	free(assembled);
+	rz_config_set_i(core->config, "search.kwidx", core->search->n_kws);
+	do_string_search(core, &param);
+
+beach:
+	core->num->value = core->search->nhits;
+	core->in_search = false;
+	rz_flag_space_pop(core->flags);
+	if (param.outmode == RZ_MODE_JSON) {
+		pj_end(param.pj);
+	}
+	rz_list_free(param.boundaries);
+	rz_search_kw_reset(core->search);
+	rz_free(param.search_itv);
+
+	return ret;
+}

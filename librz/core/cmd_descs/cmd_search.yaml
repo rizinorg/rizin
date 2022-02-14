@@ -32,3 +32,16 @@ commands:
         entries:
           - text: "Mask bytes while searching by using :"
             comment: "/x ff43:ffd0"
+  - name: /a
+    summary: Search for assembly instructions
+    subcommands:
+      - name: /a
+        summary: Assemble <instr> and search the bytes
+        cname: cmd_search_assembly
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: instr
+            type: RZ_CMD_ARG_TYPE_STRING

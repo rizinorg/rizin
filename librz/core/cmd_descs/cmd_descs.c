@@ -89,6 +89,7 @@ static const RzCmdDescArg interpret_macro_args[4];
 static const RzCmdDescArg interpret_macro_multiple_args[4];
 static const RzCmdDescArg cmd_search_string_args[2];
 static const RzCmdDescArg cmd_search_hex_string_args[2];
+static const RzCmdDescArg cmd_search_assembly_args[2];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
@@ -1223,6 +1224,23 @@ static const RzCmdDescHelp cmd_search_hex_string_help = {
 	.summary = "Search for hexadecimal string <hex>",
 	.details = cmd_search_hex_string_details,
 	.args = cmd_search_hex_string_args,
+};
+
+static const RzCmdDescHelp slash_a_help = {
+	.summary = "Search for assembly instructions",
+};
+static const RzCmdDescArg cmd_search_assembly_args[] = {
+	{
+		.name = "instr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_assembly_help = {
+	.summary = "Assemble <instr> and search the bytes",
+	.args = cmd_search_assembly_args,
 };
 
 static const RzCmdDescHelp R_help = {
@@ -16602,6 +16620,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(slash__cd);
 	RzCmdDesc *cmd_search_hex_string_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash__cd, "/x", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_hex_string_handler, &cmd_search_hex_string_help);
 	rz_warn_if_fail(cmd_search_hex_string_cd);
+
+	RzCmdDesc *slash_a_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/a", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assembly_handler, &cmd_search_assembly_help, &slash_a_help);
+	rz_warn_if_fail(slash_a_cd);
 
 	RzCmdDesc *R_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "R", rz_remote_handler, &remote_help, &R_help);
 	rz_warn_if_fail(R_cd);
