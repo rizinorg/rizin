@@ -8,3 +8,16 @@ EXPECT=<<EOF
 lang     freepascal
 EOF
 RUN
+
+NAME=LANGUAGES: freepascal main detection
+FILE=bins/abi_bins/elf/languages/freepascal/pick_random
+BROKEN=1 # EXPECT must have output, EXPECT_ERR must be empty
+CMDS=<<EOF
+s main
+pdf
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
