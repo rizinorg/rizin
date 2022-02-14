@@ -323,9 +323,10 @@ static ut64 get_main_offset_linux_64_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 			if (vmain >> 16 == ventry >> 16) {
 				return (ut64)vmain;
 			}
-		} else if (0xc7) { // mov rdi, 0xADDR
+		} else if (ch == 0xc7) { // mov rdi, 0xADDR
 			ut8 *p = buf + bo + 3;
-			return (ut64)(ut32)rz_read_le32(p);
+			ut64 addr = (ut64)rz_read_le32(p);
+			return Elf_(rz_bin_elf_v2p_new)(bin, addr);
 		}
 	}
 
