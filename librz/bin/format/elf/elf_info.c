@@ -321,7 +321,7 @@ static ut64 get_main_offset_linux_64_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 			ut64 vmain = (ut64)(entry + bo + maindelta) + 7;
 			ut64 ventry = Elf_(rz_bin_elf_p2v_new)(bin, entry);
 			if (vmain >> 16 == ventry >> 16) {
-				return (ut64)vmain;
+				return Elf_(rz_bin_elf_v2p_new)(bin, vmain);
 			}
 		} else if (ch == 0xc7) { // mov rdi, 0xADDR
 			ut8 *p = buf + bo + 3;
