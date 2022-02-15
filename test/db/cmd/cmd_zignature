@@ -1857,3 +1857,104 @@ EXPECT=<<EOF
 209
 EOF
 RUN
+
+NAME=FLIRT verify correctness of main (PAT)
+FILE=bins/flirt/elf-x86/test.stripped
+CMDS=<<EOF
+aaa
+zfs bins/flirt/elf-x86/test.symbols.pat~silence
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from flirt.entry0 @ 0x401791
+/ int main (int argc, char **argv, char **envp);
+|           ; var int64_t var_18h @ rbp-0x18
+|           ; var int64_t var_dh @ rbp-0xd
+|           ; var int64_t var_8h @ rbp-0x8
+|           0x00401895      push  rbp
+|           0x00401896      mov   rbp, rsp
+|           0x00401899      sub   rsp, 0x20
+|           0x0040189d      mov   rax, qword fs:[0x28]
+|           0x004018a6      mov   qword [var_8h], rax
+|           0x004018aa      xor   eax, eax
+|           0x004018ac      lea   rax, [0x00482004]                    ; "r"
+|           0x004018b3      mov   rsi, rax                             ; int64_t arg2
+|           0x004018b6      lea   rax, str.test                        ; 0x482006 ; "test"
+|           0x004018bd      mov   rdi, rax                             ; int64_t arg1
+|           0x004018c0      call  flirt.IO_fopen64
+|           0x004018c5      mov   qword [var_18h], rax
+|           0x004018c9      mov   rax, qword [var_18h]
+|           0x004018cd      mov   edx, 1                               ; int64_t arg3
+|           0x004018d2      mov   esi, 5                               ; int64_t arg2
+|           0x004018d7      mov   rdi, rax                             ; uint64_t arg1
+|           0x004018da      call  flirt.fseek
+|           0x004018df      mov   rdx, qword [var_18h]
+|           0x004018e3      lea   rax, [var_dh]
+|           0x004018e7      mov   rcx, rdx                             ; int64_t arg4
+|           0x004018ea      mov   edx, 1                               ; int64_t arg3
+|           0x004018ef      mov   esi, 5                               ; int64_t arg2
+|           0x004018f4      mov   rdi, rax                             ; int64_t arg1
+|           0x004018f7      call  flirt.IO_fread
+|           0x004018fc      mov   rax, qword [var_18h]
+|           0x00401900      mov   rdi, rax                             ; int64_t arg1
+|           0x00401903      call  flirt.IO_fclose
+|           0x00401908      mov   eax, 0
+|           0x0040190d      mov   rdx, qword [var_8h]
+|           0x00401911      sub   rdx, qword fs:[0x28]
+|       ,=< 0x0040191a      je    0x401921
+|       |   0x0040191c      call  flirt.chk_fail
+|       `-> 0x00401921      leave
+\           0x00401922      ret
+EOF
+RUN
+
+
+NAME=FLIRT verify correctness of main (SIG)
+FILE=bins/flirt/elf-x86/test.stripped
+CMDS=<<EOF
+aaa
+zfs bins/flirt/elf-x86/test.symbols.sig~silence
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from flirt.entry0 @ 0x401791
+/ int main (int argc, char **argv, char **envp);
+|           ; var int64_t var_18h @ rbp-0x18
+|           ; var int64_t var_dh @ rbp-0xd
+|           ; var int64_t var_8h @ rbp-0x8
+|           0x00401895      push  rbp
+|           0x00401896      mov   rbp, rsp
+|           0x00401899      sub   rsp, 0x20
+|           0x0040189d      mov   rax, qword fs:[0x28]
+|           0x004018a6      mov   qword [var_8h], rax
+|           0x004018aa      xor   eax, eax
+|           0x004018ac      lea   rax, [0x00482004]                    ; "r"
+|           0x004018b3      mov   rsi, rax                             ; int64_t arg2
+|           0x004018b6      lea   rax, str.test                        ; 0x482006 ; "test"
+|           0x004018bd      mov   rdi, rax                             ; int64_t arg1
+|           0x004018c0      call  flirt.IO_fopen64
+|           0x004018c5      mov   qword [var_18h], rax
+|           0x004018c9      mov   rax, qword [var_18h]
+|           0x004018cd      mov   edx, 1                               ; int64_t arg3
+|           0x004018d2      mov   esi, 5                               ; int64_t arg2
+|           0x004018d7      mov   rdi, rax                             ; uint64_t arg1
+|           0x004018da      call  flirt.fseek
+|           0x004018df      mov   rdx, qword [var_18h]
+|           0x004018e3      lea   rax, [var_dh]
+|           0x004018e7      mov   rcx, rdx                             ; int64_t arg4
+|           0x004018ea      mov   edx, 1                               ; int64_t arg3
+|           0x004018ef      mov   esi, 5                               ; int64_t arg2
+|           0x004018f4      mov   rdi, rax                             ; int64_t arg1
+|           0x004018f7      call  flirt.IO_fread
+|           0x004018fc      mov   rax, qword [var_18h]
+|           0x00401900      mov   rdi, rax                             ; int64_t arg1
+|           0x00401903      call  flirt.IO_fclose
+|           0x00401908      mov   eax, 0
+|           0x0040190d      mov   rdx, qword [var_8h]
+|           0x00401911      sub   rdx, qword fs:[0x28]
+|       ,=< 0x0040191a      je    0x401921
+|       |   0x0040191c      call  flirt.chk_fail
+|       `-> 0x00401921      leave
+\           0x00401922      ret
+EOF
+RUN
