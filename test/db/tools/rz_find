@@ -189,6 +189,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-find -S ascii
+FILE==
+CMDS=!rz-find -S QueryPerformanceCounter bins/pe/testapp-msvc64.exe
+EXPECT=<<EOF
+paddr: 0x0000c000 vaddr: 0x14000d000 type: FUNC QueryPerformanceCounter
+EOF
+RUN
+
+NAME=rz-find -I ascii
+FILE==
+CMDS=!rz-find -I QueryPerformanceCounter bins/pe/testapp-msvc64.exe
+EXPECT=<<EOF
+ordinal: 1 QueryPerformanceCounter
+EOF
+RUN
+
 NAME=rz-find -Z
 FILE==
 CMDS=!rz-find -Z -s 250382 bins/elf/ioli/crackme0x00
