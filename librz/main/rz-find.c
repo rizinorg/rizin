@@ -220,7 +220,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		}
 
 		if (ro->import) {
-			imports = rz_bin_get_imports(bin);
+			imports = rz_bin_object_get_imports(bf->o);
 			rz_list_foreach (ro->keywords, iter, kw) {
 				rz_list_foreach (imports, it, import) {
 					if (!strcmp(import->name, kw)) {
@@ -231,7 +231,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		}
 
 		if (ro->symbol) {
-			symbols = rz_bin_get_symbols(bin);
+			symbols = rz_bin_object_get_symbols(bf->o);
 			rz_list_foreach (ro->keywords, iter, kw) {
 				rz_list_foreach (symbols, it, symbol) {
 					if (!symbol->name) {
