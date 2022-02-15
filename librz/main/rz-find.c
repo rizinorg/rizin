@@ -161,8 +161,8 @@ static int show_help(const char *argv0, int line) {
 		" -r         print using rizin commands\n"
 		" -s [str]   search for a specific string (can be used multiple times)\n"
 		" -w [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
-		" -I [str]   search for a specific function in import table.\n"
-		" -S [str]   search for a specific function in symbol table.\n"
+		" -I [str]   search for an entry in import table.\n"
+		" -S [str]   search for a symbol in symbol table.\n"
 		" -t [to]    stop search at address 'to'\n"
 		" -q         quiet - do not show headings (filenames) above matching contents (default for searching a single file)\n"
 		" -v         print version and exit\n"
@@ -238,8 +238,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 						continue;
 					}
 
-					if (!strcmp(symbol->type, "FUNC") && !strcmp(symbol->name, kw)) {
-						printf("paddr: 0x%08" PFMT64x " vaddr: 0x%08" PFMT64x " %s\n", symbol->paddr, symbol->vaddr, symbol->name);
+					if (!strcmp(symbol->name, kw)) {
+						printf("paddr: 0x%08" PFMT64x " vaddr: 0x%08" PFMT64x " type: %s %s\n", symbol->paddr, symbol->vaddr, symbol->type, symbol->name);
 					}
 				}
 			}
