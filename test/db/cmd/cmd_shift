@@ -1,10 +1,10 @@
-NAME=wes 0 10
+NAME=wes 10
 FILE==
 CMDS=<<EOF
 w aaaaaaaaaa
 pf z @ 0x0
 px
-wes 0 10
+wes 10
 pf z @ 0x0
 pf z @ 0xa
 px
@@ -50,13 +50,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wes 8 -4
+NAME=wes -4
 FILE==
 CMDS=<<EOF
 w aaaaaaaaaa @ 8
 pf z @ 0x8
 px
-wes 8 -4
+wes -4 @ 8
 pf z @ 0x4
 pf z @ 0xa
 px
@@ -127,7 +127,7 @@ CMDS=<<EOF
 w aaaaaaaaaa @ 8
 pf z @ 0x8
 px
-wes 8 -8
+wes -8 @ 8
 pf z @ 0x8
 pf z @ 0x0
 px

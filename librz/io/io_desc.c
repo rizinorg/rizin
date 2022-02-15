@@ -347,13 +347,6 @@ RZ_API int rz_io_desc_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, int le
 	return 0;
 }
 
-RZ_API int rz_io_desc_extend(RzIODesc *desc, ut64 size) {
-	if (desc && desc->plugin && desc->plugin->extend) {
-		return desc->plugin->extend(desc->io, desc, size);
-	}
-	return 0;
-}
-
 /* lifecycle */
 
 // TODO: move into io.c : rz_io_init

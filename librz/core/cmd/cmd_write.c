@@ -52,16 +52,6 @@ static const char *help_msg_wA[] = {
 	NULL
 };
 
-static const char *help_msg_we[] = {
-	"Usage", "", "write extend # resize the file",
-	"wen", " <num>", "extend the underlying file inserting NUM null bytes at current offset",
-	"weN", " <addr> <len>", "extend current file and insert bytes at address",
-	"wes", " <addr>  <dist> <block_size>", "shift a blocksize left or write in the editor",
-	"wex", " <hex_bytes>", "insert bytes at current offset by extending the file",
-	"weX", " <addr> <hex_bytes>", "insert bytes at address by extending the file",
-	NULL
-};
-
 static const char *help_msg_wo[] = {
 	"Usage:", "wo[asmdxoArl24]", " [hexpairs] @ addr[!bsize]",
 	"wo[24aAdlmorwx]", "", "without hexpair values, clipboard is used",
@@ -1019,143 +1009,6 @@ RZ_IPI int rz_w6_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI int rz_we_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	ut64 addr = 0, len = 0, b_size = 0;
-	st64 dist = 0;
-	ut8 *bytes = NULL;
-	int cmd_suc = false;
-	char *input_shadow = NULL, *p = NULL;
-
-	switch (input[0]) {
-	case 'n': // "wen"
-		if (input[1] == ' ') {
-			len = *input ? rz_num_math(core->num, input + 2) : 0;
-			if (len > 0) {
-				const ut64 cur_off = core->offset;
-				cmd_suc = rz_core_extend_at(core, core->offset, len);
-				if (cmd_suc) {
-					core->offset = cur_off;
-					rz_core_block_read(core);
-				} else {
-					eprintf("rz_io_extend failed\n");
-					cmd_suc = true;
-				}
-			}
-		} else {
-			eprintf("Usage: wen [len]\n");
-			cmd_suc = true;
-		}
-		break;
-	case 'N': // "weN"
-		if (input[1] == ' ') {
-			input += 2;
-			while (*input && *input == ' ')
-				input++;
-			addr = rz_num_math(core->num, input);
-			while (*input && *input != ' ')
-				input++;
-			input++;
-			len = *input ? rz_num_math(core->num, input) : 0;
-			if (len > 0) {
-				ut64 cur_off = core->offset;
-				cmd_suc = rz_core_extend_at(core, addr, len);
-				if (cmd_suc) {
-					rz_core_seek(core, cur_off, true);
-					core->offset = addr;
-					rz_core_block_read(core);
-				} else {
-					eprintf("rz_io_extend failed\n");
-				}
-			}
-			cmd_suc = true;
-		}
-		break;
-	case 'x': // "wex"
-		if (input[1] == ' ') {
-			input += 1;
-			len = *input ? strlen(input) : 0;
-			bytes = len > 1 ? malloc(len + 1) : NULL;
-			len = bytes ? rz_hex_str2bin(input, bytes) : 0;
-			if (len > 0) {
-				ut64 cur_off = core->offset;
-				cmd_suc = rz_core_extend_at(core, cur_off, len);
-				if (cmd_suc) {
-					if (!rz_core_write_at(core, cur_off, bytes, len)) {
-						cmd_write_fail(core);
-					}
-				}
-				core->offset = cur_off;
-				rz_core_block_read(core);
-			}
-			free(bytes);
-		}
-		break;
-	case 's': // "wes"
-		input += 2;
-		while (*input && *input == ' ') {
-			input++;
-		}
-		len = strlen(input);
-
-		// since the distance can be negative,
-		// the rz_num_math will perform an unwanted operation
-		// the solution is to tokenize the string :/
-		if (len > 0) {
-			input_shadow = strdup(input);
-			p = strtok(input_shadow, " ");
-			addr = p && *p ? rz_num_math(core->num, p) : 0;
-
-			p = strtok(NULL, " ");
-			dist = p && *p ? rz_num_math(core->num, p) : 0;
-
-			p = strtok(NULL, " ");
-			b_size = p && *p ? rz_num_math(core->num, p) : 0;
-			if (dist != 0) {
-				rz_core_shift_block(core, addr, b_size, dist);
-				rz_core_seek(core, addr, true);
-				cmd_suc = true;
-			}
-		}
-		free(input_shadow);
-		break;
-	case 'X': // "weX"
-		if (input[1] == ' ') {
-			addr = rz_num_math(core->num, input + 2);
-			input += 2;
-			while (*input && *input != ' ')
-				input++;
-			input++;
-			len = *input ? strlen(input) : 0;
-			bytes = len > 1 ? malloc(len + 1) : NULL;
-			len = bytes ? rz_hex_str2bin(input, bytes) : 0;
-			if (len > 0) {
-				// ut64 cur_off = core->offset;
-				cmd_suc = rz_core_extend_at(core, addr, len);
-				if (cmd_suc) {
-					if (!rz_core_write_at(core, addr, bytes, len)) {
-						cmd_write_fail(core);
-					}
-				} else {
-					eprintf("rz_io_extend failed\n");
-				}
-				core->offset = addr;
-				rz_core_block_read(core);
-			}
-			free(bytes);
-		}
-		break;
-	case '?': // "we?"
-	default:
-		cmd_suc = false;
-		break;
-	}
-	if (cmd_suc == false) {
-		rz_core_cmd_help(core, help_msg_we);
-	}
-	return 0;
-}
-
 RZ_IPI int rz_wu_handler_old(void *data, const char *input) {
 	// TODO: implement it in an API RzCore.write_unified_hexpatch() is ETOOLONG
 	if (input[0] == ' ') {
@@ -1682,9 +1535,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 	case '6': // "w6"
 		rz_w6_handler_old(core, input + 1);
 		break;
-	case 'e': // "we"
-		rz_we_handler_old(core, input + 1);
-		break;
 	case 'u': // "wu"
 		rz_wu_handler_old(core, input + 1);
 		break;
@@ -1796,4 +1646,41 @@ RZ_IPI RzCmdStatus rz_write_pcache_commit_handler(RzCore *core, int argc, const 
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return bool2status(rz_io_desc_cache_commit(desc));
+}
+
+RZ_IPI RzCmdStatus rz_write_extend_zero_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = rz_num_math(core->num, argv[1]);
+	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
+	return bool2status(rz_core_extend_at(core, addr, len));
+}
+
+RZ_IPI RzCmdStatus rz_write_extend_shift_handler(RzCore *core, int argc, const char **argv) {
+	ut64 dist = rz_num_math(core->num, argv[1]);
+	ut64 block_size = argc > 2 ? rz_num_math(core->num, argv[2]) : 0;
+	if (dist == 0) {
+		RZ_LOG_ERROR("Cannot use '%s' as distance.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return bool2status(rz_core_shift_block(core, core->offset, block_size, dist));
+}
+
+RZ_IPI RzCmdStatus rz_write_extend_hexbytes_handler(RzCore *core, int argc, const char **argv) {
+	ut8 *bytes = RZ_NEWS(ut8, (strlen(argv[1]) + 1) / 2);
+	if (!bytes) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	int len = rz_hex_str2bin(argv[1], bytes);
+	if (len <= 0) {
+		RZ_LOG_ERROR("Cannot convert '%s' to bytes values.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
+	bool res = rz_core_extend_at(core, addr, len);
+	if (!res) {
+		RZ_LOG_ERROR("Cannot extend the file.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return bool2status(rz_core_write_at(core, addr, bytes, len));
 }

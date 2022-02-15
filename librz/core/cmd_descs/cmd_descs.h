@@ -741,7 +741,9 @@ RZ_IPI RzCmdStatus rz_write_8_inc_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_write_8_dec_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_base64_decode_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_base64_encode_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_we_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_write_extend_zero_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_write_extend_shift_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_write_extend_hexbytes_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_wu_handler_old(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_write_random_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_wA_handler_old(void *data, const char *input);
