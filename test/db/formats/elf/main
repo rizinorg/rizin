@@ -166,3 +166,11 @@ EXPECT=<<EOF
 0x4d80
 EOF
 RUN
+
+NAME=main graalvm java (#2072)
+FILE=bins/elf/analysis/graalvm-example-truncated
+CMDS=?v main
+EXPECT=<<EOF
+0x424250
+EOF
+RUN
