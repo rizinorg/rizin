@@ -225,7 +225,6 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 				rz_list_foreach (imports, it, import) {
 					if (!strcmp(import->name, kw)) {
 						printf("ordinal: %d %s\n", import->ordinal, kw);
-						break;
 					}
 				}
 			}
@@ -241,7 +240,6 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 					if (!strcmp(symbol->type, "FUNC") && !strcmp(symbol->name, kw)) {
 						printf("paddr: 0x%08" PFMT64x " vaddr: 0x%08" PFMT64x " %s\n", symbol->paddr, symbol->vaddr, symbol->name);
-						break;
 					}
 				}
 			}
