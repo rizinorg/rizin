@@ -1262,28 +1262,19 @@ RZ_IPI RzCmdStatus rz_write_assembly_opcode_handler(RzCore *core, int argc, cons
 	return bool2status(rz_core_hack(core, argv[1]));
 }
 
-RZ_IPI int rz_wb_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int len = strlen(input);
-	ut8 *buf = malloc(len + 2);
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	if (buf) {
-		len = rz_hex_str2bin(input, buf);
-		if (len > 0) {
-			rz_mem_copyloop(core->block, buf, core->blocksize, len);
-			if (!rz_core_write_at(core, core->offset, core->block, core->blocksize)) {
-				cmd_write_fail(core);
-			} else {
-				WSEEK(core, core->blocksize);
-			}
-			rz_core_block_read(core);
-		} else
-			eprintf("Wrong argument\n");
-		free(buf);
-	} else {
-		eprintf("Cannot malloc %d\n", len + 1);
+RZ_IPI RzCmdStatus rz_write_block_handler(RzCore *core, int argc, const char **argv) {
+	ut8 *hex = RZ_NEWS0(ut8, (strlen(argv[1]) + 1) / 2);
+	if (!hex) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-	return 0;
+
+	int len = rz_hex_str2bin(argv[1], hex);
+	if (len <= 0) {
+		RZ_LOG_ERROR("Cannot convert '%s' to hex data.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	return bool2status(rz_core_write_block(core, core->offset, hex, len));
 }
 
 RZ_IPI int rz_wm_handler_old(void *data, const char *input) {
@@ -1368,9 +1359,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 		break;
 	case 'w': // "ww"
 		rz_ww_handler_old(core, input + 1);
-		break;
-	case 'b': // "wb"
-		rz_wb_handler_old(core, input + 1);
 		break;
 	case 'm': // "wm"
 		rz_wm_handler_old(core, input + 1);
