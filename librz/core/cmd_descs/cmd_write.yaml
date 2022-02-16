@@ -310,10 +310,6 @@ commands:
     args:
       - name: len
         type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: wA
-    cname: wA_handler_old
-    summary: Alter/modify opcode at current seek (see wA?)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wc
     summary: Write cache commands
     subcommands:
