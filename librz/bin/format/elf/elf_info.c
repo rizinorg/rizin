@@ -315,14 +315,15 @@ static ut64 get_main_offset_linux_64_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	}
 	if (buf[bo] == 0x48) {
 		ut8 ch = buf[bo + 1];
-		if (ch == 0x8d) { // lea rdi, qword [rip-0x21c4]
+		if (ch == 0x8d) { // lea rdi, qword [rip + MAINDELTA]
 			ut8 *p = buf + bo + 3;
 			st32 maindelta = (st32)rz_read_le32(p);
-			ut64 vmain = (ut64)(entry + bo + maindelta) + 7;
 			ut64 ventry = Elf_(rz_bin_elf_p2v_new)(bin, entry);
-			if (vmain >> 16 == ventry >> 16) {
-				return (ut64)vmain;
+			if (ventry == UT64_MAX) {
+				return UT64_MAX;
 			}
+			ut64 vmain = (ut64)(ventry + bo + maindelta) + 7;
+			return Elf_(rz_bin_elf_v2p_new)(bin, vmain);
 		} else if (ch == 0xc7) { // mov rdi, 0xADDR
 			ut8 *p = buf + bo + 3;
 			ut64 addr = (ut64)rz_read_le32(p);
