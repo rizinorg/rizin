@@ -16,21 +16,24 @@ RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path) {
 #if RZ_IS_PORTABLE
 	char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
 	if (pid_to_path) {
-		char *t = rz_file_dirname(pid_to_path);
+		char *it = rz_file_dirname(pid_to_path);
 		free(pid_to_path);
-		// When rz_path_prefix is called from a unit test or from a
-		// not-yet-instazled rizin binary this would return the wrong path.
-		// In those cases, just return RZ_PREFIX.
-		char *result = NULL;
-		if (rz_str_endswith(t, RZ_SYS_DIR RZ_BINDIR)) {
-			char *r = rz_file_dirname(t);
-			result = rz_file_path_join(r, path);
-			free(r);
+
+		for (int i = 0; i < RZ_BINDIR_DEPTH; i++) {
+			char *tmp = it;
+			it = rz_file_dirname(tmp);
+			free(tmp);
 		}
-		free(t);
-		if (result) {
+
+		// When rz_path_prefix is called from a unit test or from a
+		// not-yet-installed rizin binary this would return the wrong path.
+		// In those cases, just return RZ_PREFIX.
+		if (rz_file_is_directory(it)) {
+			char *result = rz_file_path_join(it, path);
+			free(it);
 			return result;
 		}
+		free(it);
 	}
 #endif
 	return rz_file_path_join(RZ_PREFIX, path);

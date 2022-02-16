@@ -177,11 +177,8 @@ if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) 
   library_linkflags += '-shared-libasan'
 endif
 
-if get_option('portable_prefix') != '' and get_option('portable') == true
-  rizin_prefix = get_option('portable_prefix')
-else
-  rizin_prefix = get_option('prefix')
-endif
+
+rizin_prefix = get_option('prefix')
 rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
 rizin_cmakedir = rizin_libdir / 'cmake'
@@ -211,6 +208,12 @@ else
   rizin_plugins = rizin_libdir / 'rizin' / 'plugins'
   rizin_bindings = rizin_libdir / 'rizin-bindings'
 endif
+
+# Calcualte BINDIR's depth to be able to find the root directory during runtime
+# in portable builds
+py_cmd = 'import os; print(len(os.path.normpath(r"@0@").split(os.sep)) - len(os.path.normpath(r"@1@").split(os.sep)))'.format(rizin_prefix / rizin_bindir, rizin_prefix)
+py_cmd = run_command(py3_exe, '-c', py_cmd)
+bindir_depth = py_cmd.stdout().strip()
 
 opts_overwrite = [
   'rizin_wwwroot',
@@ -377,6 +380,7 @@ userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', rizin_prefix)
 userconf.set('BINDIR', rizin_bindir)
+userconf.set('BINDIR_DEPTH', bindir_depth)
 userconf.set('LIBDIR', rizin_libdir)
 userconf.set('INCLUDEDIR', rizin_incdir)
 userconf.set('DATADIR_RZ', rizin_datdir_rz)
