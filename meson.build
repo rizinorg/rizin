@@ -195,6 +195,7 @@ if host_machine.system() == 'windows'
   rizin_wwwroot = rizin_datdir / 'www'
   rizin_sdb = rizin_datdir / ''
   rizin_zigns = rizin_datdir / 'zigns'
+  rizin_sigdb = rizin_datdir / 'sigdb'
   rizin_themes = rizin_datdir / 'cons'
   rizin_fortunes = rizin_datdir / 'fortunes'
   rizin_flags = rizin_datdir / 'flag'
@@ -206,6 +207,7 @@ else
   rizin_wwwroot = rizin_datdir_rz / 'www'
   rizin_sdb = rizin_datdir_rz
   rizin_zigns = rizin_datdir_rz / 'zigns'
+  rizin_sigdb = rizin_datdir_rz / 'sigdb'
   rizin_themes = rizin_datdir_rz / 'cons'
   rizin_fortunes = rizin_datdir_rz / 'fortunes'
   rizin_flags = rizin_datdir_rz / 'flag'
@@ -224,6 +226,7 @@ opts_overwrite = [
   'rizin_wwwroot',
   'rizin_sdb',
   'rizin_zigns',
+  'rizin_sigdb',
   'rizin_themes',
   'rizin_fortunes',
   'rizin_flags',
@@ -364,6 +367,14 @@ use_ptrace_wrap = use_ptrace_wrap and has_debugger
 message('HAVE_PTRACE: @0@'.format(have_ptrace))
 message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
 
+if get_option('install_sigdb')
+  r = run_command(py3_exe, check_meson_subproject_py, 'sigdb')
+  if r.returncode() == 1 and get_option('subprojects_check')
+    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  endif
+  subproject('sigdb', default_options: ['install_dir=@0@'.format(get_option('prefix') / rizin_sigdb)])
+endif
+
 checks_level = get_option('checks_level')
 if checks_level == 9999
   if get_option('buildtype') == 'release'
@@ -395,6 +406,7 @@ userconf.set('DATADIR', rizin_datdir)
 userconf.set('WWWROOT', rizin_wwwroot)
 userconf.set('SDB', rizin_sdb)
 userconf.set('ZIGNS', rizin_zigns)
+userconf.set('SIGDB', rizin_sigdb)
 userconf.set('THEMES', rizin_themes)
 userconf.set('FORTUNES', rizin_fortunes)
 userconf.set('FLAGS', rizin_flags)
@@ -704,6 +716,7 @@ summary({
   'wwwroot': rizin_wwwroot,
   'sdb': rizin_sdb,
   'zigns': rizin_zigns,
+  'sigdb': rizin_sigdb,
   'themes': rizin_themes,
   'fortunes': rizin_fortunes,
   'flags': rizin_flags,
@@ -714,6 +727,7 @@ summary({
 
 summary({
   'GPL code': get_option('use_gpl'),
+  'Install sigdb': get_option('install_sigdb'),
   'Swift demangler': get_option('use_swift_demangler'),
   'Debugger enabled': has_debugger,
   'Capstone version': capstone_dep.version(),
