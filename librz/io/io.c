@@ -488,7 +488,7 @@ RZ_API bool rz_io_extend_at(RzIO *io, ut64 addr, ut64 size) {
 		int sz = rz_io_pread_at(io, tmp, buffer, IO_EXTEND_BLOCK_SZ);
 		rz_io_pwrite_at(io, tmp + size, buffer, sz);
 
-		tmp = tmp - IO_EXTEND_BLOCK_SZ;
+		tmp = tmp - IO_EXTEND_BLOCK_SZ > addr ? tmp - IO_EXTEND_BLOCK_SZ : addr;
 		remaining = remaining > sz ? remaining - sz : 0;
 	}
 	free(buffer);
