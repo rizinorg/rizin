@@ -10480,10 +10480,6 @@ static const RzCmdDescHelp write_random_help = {
 	.args = write_random_args,
 };
 
-static const RzCmdDescHelp wA_handler_old_help = {
-	.summary = "Alter/modify opcode at current seek (see wA?)",
-};
-
 static const RzCmdDescHelp wc_help = {
 	.summary = "Write cache commands",
 };
@@ -14078,9 +14074,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *write_random_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wr", rz_write_random_handler, &write_random_help);
 	rz_warn_if_fail(write_random_cd);
-
-	RzCmdDesc *wA_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wA", rz_wA_handler_old, &wA_handler_old_help);
-	rz_warn_if_fail(wA_handler_old_cd);
 
 	RzCmdDesc *wc_cd = rz_cmd_desc_group_state_new(core->rcmd, w_cd, "wc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_write_cache_list_handler, &write_cache_list_help, &wc_help);
 	rz_warn_if_fail(wc_cd);
