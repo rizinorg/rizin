@@ -91,14 +91,6 @@ static const char *help_msg_wf[] = {
 	NULL
 };
 
-static const char *help_msg_wv[] = {
-	"Usage:", "wv[size] [value]", " Write value of given size",
-	"wv", " 0x834002", "write dword with this value",
-	"wv1", " 234", "write one byte with this value",
-	"Supported sizes are:", "1, 2, 4, 8", "",
-	NULL
-};
-
 static void cmd_write_fail(RzCore *core) {
 	eprintf("Failed to write\n");
 	core->num->value = 1;
@@ -175,35 +167,6 @@ static void cmd_write_bits(RzCore *core, int set, ut64 val) {
 		ret = orig & (~(val));
 	}
 	if (!rz_core_write_at(core, core->offset, (const ut8 *)&ret, sizeof(ret))) {
-		cmd_write_fail(core);
-	}
-}
-
-static void cmd_write_inc(RzCore *core, int size, st64 num) {
-	ut64 *v64;
-	ut32 *v32;
-	ut16 *v16;
-	ut8 *v8;
-	switch (size) {
-	case 1:
-		v8 = (ut8 *)core->block;
-		*v8 += num;
-		break;
-	case 2:
-		v16 = (ut16 *)core->block;
-		*v16 += num;
-		break;
-	case 4:
-		v32 = (ut32 *)core->block;
-		*v32 += num;
-		break;
-	case 8:
-		v64 = (ut64 *)core->block;
-		*v64 += num;
-		break;
-	}
-	// TODO: obey endian here
-	if (!rz_core_write_at(core, core->offset, core->block, size)) {
 		cmd_write_fail(core);
 	}
 }
@@ -362,71 +325,6 @@ RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
 #define WSEEK(x, y) \
 	if (wseek) \
 	rz_core_seek_delta(x, y, true)
-
-static void rz_cmd_write_value(RzCore *core, const char *input) {
-	int type = 0;
-	ut64 off = 0LL;
-	ut8 buf[sizeof(ut64)];
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	bool be = rz_config_get_i(core->config, "cfg.bigendian");
-
-	core->num->value = 0;
-
-	switch (input[0]) {
-	case '?':
-		rz_core_cmd_help(core, help_msg_wv);
-		return;
-	case '1': type = 1; break;
-	case '2': type = 2; break;
-	case '4': type = 4; break;
-	case '8': type = 8; break;
-	}
-	if (input[0] && input[1]) {
-		off = rz_num_math(core->num, input + 1);
-	}
-	if (core->file) {
-		rz_io_use_fd(core->io, core->file->fd);
-	}
-	ut64 res = rz_io_seek(core->io, core->offset, RZ_IO_SEEK_SET);
-	if (res == UT64_MAX)
-		return;
-	if (type == 0)
-		type = (off & UT64_32U) ? 8 : 4;
-	switch (type) {
-	case 1:
-		rz_write_ble8(buf, (ut8)(off & UT8_MAX));
-		if (!rz_io_write(core->io, buf, 1)) {
-			cmd_write_fail(core);
-		} else {
-			WSEEK(core, 1);
-		}
-		break;
-	case 2:
-		rz_write_ble16(buf, (ut16)(off & UT16_MAX), be);
-		if (!rz_io_write(core->io, buf, 2)) {
-			cmd_write_fail(core);
-		} else {
-			WSEEK(core, 2);
-		}
-		break;
-	case 4:
-		rz_write_ble32(buf, (ut32)(off & UT32_MAX), be);
-		if (!rz_io_write(core->io, buf, 4)) {
-			cmd_write_fail(core);
-		} else {
-			WSEEK(core, 4);
-		}
-		break;
-	case 8:
-		rz_write_ble64(buf, off, be);
-		if (!rz_io_write(core->io, buf, 8)) {
-			cmd_write_fail(core);
-		} else {
-			WSEEK(core, 8);
-		}
-		break;
-	}
-}
 
 static RzCmdStatus common_write_value_handler(RzCore *core, const char *valstr, size_t sz) {
 	ut64 value = rz_num_math(core->num, valstr);
@@ -871,25 +769,6 @@ RZ_IPI RzCmdStatus rz_write_zero_handler(RzCore *core, int argc, const char **ar
 	free(buf);
 
 	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
-}
-
-static int rz_w_incdec_handler_old(void *data, const char *input, int inc) {
-	RzCore *core = (RzCore *)data;
-	st64 num = 1;
-	if (input[0] && input[1]) {
-		num = rz_num_math(core->num, input + 1);
-	}
-	switch (input[0]) {
-	case '+':
-		cmd_write_inc(core, inc, num);
-		break;
-	case '-':
-		cmd_write_inc(core, inc, -num);
-		break;
-	default:
-		eprintf("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
-	}
-	return 0;
 }
 
 static RzCmdStatus w_incdec_handler(RzCore *core, int argc, const char **argv, int inc_size) {
@@ -1478,35 +1357,14 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 	}
 
 	switch (*input) {
-	case 'B': // "wB"
-		rz_wB_handler_old(data, input + 1);
-		break;
-	case '0': // "w0"
-		rz_w0_handler_old(data, input + 1);
-		break;
-	case '1': // "w1"
-	case '2': // "w2"
-	case '4': // "w4"
-	case '8': // "w8"
-		rz_w_incdec_handler_old(data, input + 1, *input - '0');
-		break;
-	case '6': // "w6"
-		rz_w6_handler_old(core, input + 1);
-		break;
 	case 'u': // "wu"
 		rz_wu_handler_old(core, input + 1);
-		break;
-	case ' ': // "w"
-		rz_w_handler_old(core, input + 1);
 		break;
 	case 'z': // "wz"
 		rz_wz_handler_old(core, input + 1);
 		break;
 	case 't': // "wt"
 		rz_wt_handler_old(core, input + 1);
-		break;
-	case 'f': // "wf"
-		rz_wf_handler_old(core, input + 1);
 		break;
 	case 'w': // "ww"
 		rz_ww_handler_old(core, input + 1);
@@ -1516,9 +1374,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 		break;
 	case 'm': // "wm"
 		rz_wm_handler_old(core, input + 1);
-		break;
-	case 'v': // "wv"
-		rz_cmd_write_value(core, input + 1);
 		break;
 	case 'o': // "wo"
 		rz_wo_handler_old(core, input + 1);
