@@ -20,6 +20,7 @@ rz_util_sources = [
   'ebcdic.c',
   'event.c',
   'file.c',
+  'float.c',
   'getopt.c',
   'graph.c',
   'graph_drawable.c',
