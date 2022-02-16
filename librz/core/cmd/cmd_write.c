@@ -40,18 +40,6 @@ static const char *help_msg_w[] = {
 	NULL
 };
 
-static const char *help_msg_wA[] = {
-	"Usage:", " wA", "[type] [value]",
-	"Types", "", "",
-	"r", "", "raw write value",
-	"v", "", "set value (taking care of current address)",
-	"d", "", "destination register",
-	"0", "", "1st src register",
-	"1", "", "2nd src register",
-	"Example:", "wA r 0", "# e800000000",
-	NULL
-};
-
 static const char *help_msg_wo[] = {
 	"Usage:", "wo[asmdxoArl24]", " [hexpairs] @ addr[!bsize]",
 	"wo[24aAdlmorwx]", "", "without hexpair values, clipboard is used",
@@ -1078,36 +1066,6 @@ RZ_IPI RzCmdStatus rz_write_random_handler(RzCore *core, int argc, const char **
 	return rz_core_write_random_at(core, core->offset, length) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-RZ_IPI int rz_wA_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	int len;
-	switch (input[0]) {
-	case ' ':
-		if (input[1] && input[2] == ' ') {
-			rz_asm_set_pc(core->rasm, core->offset);
-			eprintf("modify (%c)=%s\n", input[1], input + 3);
-			len = rz_asm_modify(core->rasm, core->block, input[1],
-				rz_num_math(core->num, input + 3));
-			eprintf("len=%d\n", len);
-			if (len > 0) {
-				if (!rz_core_write_at(core, core->offset, core->block, len)) {
-					cmd_write_fail(core);
-				}
-				WSEEK(core, len);
-			} else
-				eprintf("rz_asm_modify = %d\n", len);
-		} else
-			eprintf("Usage: wA [type] [value]\n");
-		break;
-	case '?':
-	default:
-		rz_core_cmd_help(core, help_msg_wA);
-		break;
-	}
-	return 0;
-}
-
 static void w_handler_common(RzCore *core, const char *input) {
 	int wseek = rz_config_get_i(core->config, "cfg.wseek");
 	char *str = strdup(input);
@@ -1537,9 +1495,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 		break;
 	case 'u': // "wu"
 		rz_wu_handler_old(core, input + 1);
-		break;
-	case 'A': // "wA"
-		rz_wA_handler_old(core, input + 1);
 		break;
 	case ' ': // "w"
 		rz_w_handler_old(core, input + 1);
