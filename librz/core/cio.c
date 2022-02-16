@@ -501,6 +501,40 @@ err:
 }
 
 /**
+ * Writes the bytes \p data at address \p addr cyclically until it fills the whole block
+ *
+ * It repeats the data \p data with length \p len until it fills an entire block
+ * starting at \p addr.
+ *
+ * \param core RzCore reference
+ * \param addr Address to where to write
+ * \param data Array of bytes to cyclically write in the block at \p addr
+ * \param len Length of \p data
+ */
+RZ_API bool rz_core_write_block(RzCore *core, ut64 addr, ut8 *data, size_t len) {
+	rz_return_val_if_fail(core && data, 0);
+
+	ut8 *buf = RZ_NEWS(ut8, core->blocksize);
+	if (!buf) {
+		return false;
+	}
+
+	bool res = false;
+	rz_mem_copyloop(buf, data, core->blocksize, len);
+	if (!rz_core_write_at(core, addr, buf, core->blocksize)) {
+		RZ_LOG_ERROR("Could not write cyclic data (%d bytes) at %" PFMT64x "\n", core->blocksize, addr);
+		goto err;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, core->blocksize, true);
+	}
+	res = true;
+err:
+	free(buf);
+	return res;
+}
+
+/**
  * \brief Assembles instructions and writes the resulting data at the given offset.
  *
  * \param core RzCore reference

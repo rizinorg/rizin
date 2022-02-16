@@ -766,7 +766,7 @@ RZ_IPI RzCmdStatus rz_write_assembly_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_write_assembly_inside_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_assembly_file_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_assembly_opcode_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_wb_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_write_block_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_wm_handler_old(void *data, const char *input);
 RZ_IPI int rz_wo_handler_old(void *data, const char *input);
 RZ_IPI int rz_wd_handler_old(void *data, const char *input);
