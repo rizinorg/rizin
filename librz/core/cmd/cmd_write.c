@@ -1658,7 +1658,7 @@ RZ_IPI RzCmdStatus rz_write_extend_shift_handler(RzCore *core, int argc, const c
 	ut64 dist = rz_num_math(core->num, argv[1]);
 	ut64 block_size = argc > 2 ? rz_num_math(core->num, argv[2]) : 0;
 	if (dist == 0) {
-		RZ_LOG_ERROR("Cannot use '%s' as distance.\n", argv[1]);
+		RZ_LOG_ERROR("Cannot use '%s' as a distance.\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return bool2status(rz_core_shift_block(core, core->offset, block_size, dist));
