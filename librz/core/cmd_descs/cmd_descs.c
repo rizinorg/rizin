@@ -482,6 +482,7 @@ static const RzCmdDescArg write_assembly_args[2];
 static const RzCmdDescArg write_assembly_inside_args[2];
 static const RzCmdDescArg write_assembly_file_args[2];
 static const RzCmdDescArg write_assembly_opcode_args[2];
+static const RzCmdDescArg write_block_args[2];
 static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
@@ -10784,8 +10785,18 @@ static const RzCmdDescHelp write_assembly_opcode_help = {
 	.args = write_assembly_opcode_args,
 };
 
-static const RzCmdDescHelp wb_handler_old_help = {
-	.summary = "Write in current block with cyclic hexstring",
+static const RzCmdDescArg write_block_args[] = {
+	{
+		.name = "hex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_block_help = {
+	.summary = "Write in current block an hexstring cyclically",
+	.args = write_block_args,
 };
 
 static const RzCmdDescHelp wm_handler_old_help = {
@@ -14131,8 +14142,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_assembly_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, wa_cd, "wao", rz_write_assembly_opcode_handler, &write_assembly_opcode_help);
 	rz_warn_if_fail(write_assembly_opcode_cd);
 
-	RzCmdDesc *wb_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wb", rz_wb_handler_old, &wb_handler_old_help);
-	rz_warn_if_fail(wb_handler_old_cd);
+	RzCmdDesc *write_block_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wb", rz_write_block_handler, &write_block_help);
+	rz_warn_if_fail(write_block_cd);
 
 	RzCmdDesc *wm_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wm", rz_wm_handler_old, &wm_handler_old_help);
 	rz_warn_if_fail(wm_handler_old_cd);

@@ -510,9 +510,11 @@ commands:
                 arg_str: " recj"
                 comment: Swap the condition of the current conditional instruction
   - name: wb
-    cname: wb_handler_old
-    summary: Write in current block with cyclic hexstring
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    cname: write_block
+    summary: Write in current block an hexstring cyclically
+    args:
+      - name: hex
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: wm
     cname: wm_handler_old
     summary: Set binary mask hexpair to be used as cyclic write mask
