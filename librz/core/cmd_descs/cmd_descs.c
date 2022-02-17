@@ -476,6 +476,7 @@ static const RzCmdDescArg write_cache_remove_args[3];
 static const RzCmdDescArg write_cache_commit_args[3];
 static const RzCmdDescArg write_pcache_list_args[2];
 static const RzCmdDescArg write_pcache_commit_args[2];
+static const RzCmdDescArg write_zero_string_args[2];
 static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
@@ -10632,8 +10633,18 @@ static const RzCmdDescHelp write_pcache_commit_help = {
 	.args = write_pcache_commit_args,
 };
 
-static const RzCmdDescHelp wz_handler_old_help = {
+static const RzCmdDescArg write_zero_string_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_zero_string_help = {
 	.summary = "Write zero-terminated string",
+	.args = write_zero_string_args,
 };
 
 static const RzCmdDescHelp wt_handler_old_help = {
@@ -14170,8 +14181,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_pcache_commit_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wcpi", rz_write_pcache_commit_handler, &write_pcache_commit_help);
 	rz_warn_if_fail(write_pcache_commit_cd);
 
-	RzCmdDesc *wz_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wz", rz_wz_handler_old, &wz_handler_old_help);
-	rz_warn_if_fail(wz_handler_old_cd);
+	RzCmdDesc *write_zero_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wz", rz_write_zero_string_handler, &write_zero_string_help);
+	rz_warn_if_fail(write_zero_string_cd);
 
 	RzCmdDesc *wt_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wt", rz_wt_handler_old, &wt_handler_old_help);
 	rz_warn_if_fail(wt_handler_old_cd);

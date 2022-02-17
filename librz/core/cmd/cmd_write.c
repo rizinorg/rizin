@@ -965,29 +965,11 @@ RZ_IPI int rz_w_handler_old(void *data, const char *input) {
 }
 
 RZ_IPI RzCmdStatus rz_write_handler(RzCore *core, int argc, const char **argv) {
-	return rz_core_write_string_at(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return bool2status(rz_core_write_string_at(core, core->offset, argv[1]));
 }
 
-RZ_IPI int rz_wz_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	char *str = strdup(input);
-	/* write zero-terminated string */
-	int len = rz_str_unescape(str);
-	if (!rz_core_write_at(core, core->offset, (const ut8 *)str + 1, len)) {
-		cmd_write_fail(core);
-	}
-	if (len > 0) {
-		core->num->value = len;
-	} else {
-		core->num->value = 0;
-	}
-#if 0
-		rz_io_use_desc (core->io, core->file->desc);
-#endif
-	WSEEK(core, len + 1);
-	rz_core_block_read(core);
-	return 0;
+RZ_IPI RzCmdStatus rz_write_zero_string_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_core_write_string_zero_at(core, core->offset, argv[1]));
 }
 
 RZ_IPI int rz_wt_handler_old(void *data, const char *input) {
@@ -1350,9 +1332,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 	switch (*input) {
 	case 'u': // "wu"
 		rz_wu_handler_old(core, input + 1);
-		break;
-	case 'z': // "wz"
-		rz_wz_handler_old(core, input + 1);
 		break;
 	case 't': // "wt"
 		rz_wt_handler_old(core, input + 1);

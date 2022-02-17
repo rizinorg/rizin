@@ -366,6 +366,9 @@ RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size) 
 	if (addr >= core->offset && addr <= core->offset + core->blocksize - 1) {
 		rz_core_block_read(core);
 	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, size, true);
+	}
 	return ret;
 }
 
@@ -492,9 +495,6 @@ RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs) {
 		RZ_LOG_ERROR("Could not write hexpair '%s' at %" PFMT64x "\n", pairs, addr);
 		goto err;
 	}
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, len, true);
-	}
 err:
 	free(buf);
 	return len;
@@ -524,9 +524,6 @@ RZ_API bool rz_core_write_block(RzCore *core, ut64 addr, ut8 *data, size_t len) 
 	if (!rz_core_write_at(core, addr, buf, core->blocksize)) {
 		RZ_LOG_ERROR("Could not write cyclic data (%d bytes) at %" PFMT64x "\n", core->blocksize, addr);
 		goto err;
-	}
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, core->blocksize, true);
 	}
 	res = true;
 err:
@@ -563,10 +560,6 @@ RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructi
 		goto err;
 	}
 	ret = acode->len;
-
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, ret, true);
-	}
 err:
 	rz_asm_code_free(acode);
 	return ret;
@@ -616,10 +609,6 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *inst
 		goto err;
 	}
 	ret = acode->len;
-
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, ret, true);
-	}
 err:
 	rz_asm_code_free(acode);
 	return ret;
@@ -761,10 +750,6 @@ RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz) 
 		core->num->value = 1;
 		return false;
 	}
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, sz, true);
-	}
-
 	return true;
 }
 
@@ -822,10 +807,6 @@ RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int 
 		RZ_LOG_ERROR("Could not write %d bytes at %" PFMT64x "\n", sz, addr);
 		return false;
 	}
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, sz, true);
-	}
-
 	return true;
 }
 
@@ -849,9 +830,6 @@ RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, const char *s) {
 		RZ_LOG_ERROR("Could not write '%s' at %" PFMT64x "\n", s, addr);
 		free(str);
 		return false;
-	}
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, len, true);
 	}
 	free(str);
 	return true;
@@ -880,9 +858,6 @@ RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *
 		RZ_LOG_ERROR("Could not write length+'%s' at %" PFMT64x "\n", s, addr);
 		free(str);
 		return false;
-	}
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, len, true);
 	}
 	free(str);
 	return true;
@@ -927,11 +902,7 @@ RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, const char *s) {
 		RZ_LOG_ERROR("Could not write base64 encoded string '%s' at %" PFMT64x "\n", s, addr);
 		goto err;
 	}
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, len, true);
-	}
 	res = true;
-
 err:
 	free(buf);
 	return res;
@@ -959,11 +930,7 @@ RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, const char *s) {
 		RZ_LOG_ERROR("Could not write base64 decoded string '%s' at %" PFMT64x "\n", s, addr);
 		goto err;
 	}
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, len, true);
-	}
 	res = true;
-
 err:
 	free(buf);
 	return res;
@@ -994,11 +961,7 @@ RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len) {
 		RZ_LOG_ERROR("Could not write random data of length %zd at %" PFMT64x "\n", len, addr);
 		goto err;
 	}
-	if (rz_config_get_i(core->config, "cfg.wseek")) {
-		rz_core_seek_delta(core, len, true);
-	}
 	res = true;
-
 err:
 	free(buf);
 	return res;
@@ -1103,4 +1066,29 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 	}
 	rz_list_free(caches);
 	return RZ_CMD_STATUS_OK;
+}
+
+/**
+ * \brief Write a given string \p s, followed by the zero terminator, at the specified \p addr
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the string
+ * \param s String to write. The string is unescaped, meaning that if there is `\n` it becomes 0x0a
+ */
+RZ_API bool rz_core_write_string_zero_at(RzCore *core, ut64 addr, const char *s) {
+	rz_return_val_if_fail(core && s, false);
+
+	char *str = strdup(s);
+	if (!str) {
+		return false;
+	}
+
+	int len = rz_str_unescape(str);
+	if (!rz_core_write_at(core, addr, (const ut8 *)str, len + 1)) {
+		RZ_LOG_ERROR("Could not write '%s' at %" PFMT64x "\n", s, addr);
+		free(str);
+		return false;
+	}
+	free(str);
+	return true;
 }
