@@ -489,6 +489,7 @@ static const RzCmdDescArg write_assembly_inside_args[2];
 static const RzCmdDescArg write_assembly_file_args[2];
 static const RzCmdDescArg write_assembly_opcode_args[2];
 static const RzCmdDescArg write_block_args[2];
+static const RzCmdDescArg write_mask_set_args[2];
 static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
@@ -10877,8 +10878,30 @@ static const RzCmdDescHelp write_block_help = {
 	.args = write_block_args,
 };
 
-static const RzCmdDescHelp wm_handler_old_help = {
+static const RzCmdDescHelp wm_help = {
 	.summary = "Set binary mask hexpair to be used as cyclic write mask",
+};
+static const RzCmdDescArg write_mask_set_args[] = {
+	{
+		.name = "hex_mask",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_mask_set_help = {
+	.summary = "Set a write mask",
+	.description = "Set a write mask that is applied whenever a following write operation is performed. Data will be masked as if the first byte of data is in arithmetic AND (&) with the first byte of the mask, the second byte of data with the second byte of the mask, and so on.",
+	.args = write_mask_set_args,
+};
+
+static const RzCmdDescArg write_mask_reset_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_mask_reset_help = {
+	.summary = "Remove the write mask",
+	.args = write_mask_reset_args,
 };
 
 static const RzCmdDescHelp wo_handler_old_help = {
@@ -14229,8 +14252,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_block_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wb", rz_write_block_handler, &write_block_help);
 	rz_warn_if_fail(write_block_cd);
 
-	RzCmdDesc *wm_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wm", rz_wm_handler_old, &wm_handler_old_help);
-	rz_warn_if_fail(wm_handler_old_cd);
+	RzCmdDesc *wm_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wm", rz_write_mask_set_handler, &write_mask_set_help, &wm_help);
+	rz_warn_if_fail(wm_cd);
+	RzCmdDesc *write_mask_reset_cd = rz_cmd_desc_argv_new(core->rcmd, wm_cd, "wm-", rz_write_mask_reset_handler, &write_mask_reset_help);
+	rz_warn_if_fail(write_mask_reset_cd);
 
 	RzCmdDesc *wo_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wo", rz_wo_handler_old, &wo_handler_old_help);
 	rz_warn_if_fail(wo_handler_old_cd);

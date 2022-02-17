@@ -516,9 +516,23 @@ commands:
       - name: hex
         type: RZ_CMD_ARG_TYPE_STRING
   - name: wm
-    cname: wm_handler_old
     summary: Set binary mask hexpair to be used as cyclic write mask
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: wm
+        cname: write_mask_set
+        summary: Set a write mask
+        description: >
+          Set a write mask that is applied whenever a following write operation
+          is performed. Data will be masked as if the first byte of data is in
+          arithmetic AND (&) with the first byte of the mask, the second byte of
+          data with the second byte of the mask, and so on.
+        args:
+          - name: hex_mask
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: wm-
+        cname: write_mask_reset
+        summary: Remove the write mask
+        args: []
   - name: wo
     cname: wo_handler_old
     summary: Write in block with operation

@@ -1050,38 +1050,17 @@ RZ_IPI RzCmdStatus rz_write_block_handler(RzCore *core, int argc, const char **a
 	return bool2status(rz_core_write_block(core, core->offset, hex, len));
 }
 
-RZ_IPI int rz_wm_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	char *str = strdup(input);
-	int size = rz_hex_str2bin(input, (ut8 *)str);
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	switch (input[0]) {
-	case '\0':
-		eprintf("TODO: Display current write mask");
-		break;
-	case '?':
-		break;
-	case '-':
-		rz_io_set_write_mask(core->io, 0, 0);
-		eprintf("Write mask disabled\n");
-		break;
-	case ' ':
-		if (size > 0) {
-			rz_io_use_fd(core->io, core->file->fd);
-			rz_io_set_write_mask(core->io, (const ut8 *)str, size);
-			WSEEK(core, size);
-			eprintf("Write mask set to '");
-			size_t i;
-			for (i = 0; i < size; i++) {
-				eprintf("%02x", str[i]);
-			}
-			eprintf("'\n");
-		} else {
-			eprintf("Invalid string\n");
-		}
-		break;
+RZ_IPI RzCmdStatus rz_write_mask_set_handler(RzCore *core, int argc, const char **argv) {
+	ut8 *buf = RZ_NEWS(ut8, strlen(argv[1]) / 2);
+	if (!buf) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-	return 0;
+	int size = rz_hex_str2bin(argv[1], buf);
+	return bool2status(rz_io_set_write_mask(core->io, buf, size));
+}
+
+RZ_IPI RzCmdStatus rz_write_mask_reset_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_io_set_write_mask(core->io, NULL, 0));
 }
 
 RZ_IPI int rz_wd_handler_old(void *data, const char *input) {
@@ -1123,9 +1102,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 	switch (*input) {
 	case 'u': // "wu"
 		rz_wu_handler_old(core, input + 1);
-		break;
-	case 'm': // "wm"
-		rz_wm_handler_old(core, input + 1);
 		break;
 	case 'o': // "wo"
 		rz_wo_handler_old(core, input + 1);
