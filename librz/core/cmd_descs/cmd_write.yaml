@@ -538,9 +538,13 @@ commands:
     summary: Write in block with operation
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wd
-    cname: wd_handler_old
-    summary: Duplicate N bytes from offset at current seek
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Duplicate <len> bytes from <src> offset to current seek
+    cname: write_duplicate
+    args:
+      - name: src
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
   - name: ws
     cname: write_length_string
     summary: Write 1 byte for length and then the string

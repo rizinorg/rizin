@@ -490,6 +490,7 @@ static const RzCmdDescArg write_assembly_file_args[2];
 static const RzCmdDescArg write_assembly_opcode_args[2];
 static const RzCmdDescArg write_block_args[2];
 static const RzCmdDescArg write_mask_set_args[2];
+static const RzCmdDescArg write_duplicate_args[3];
 static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
@@ -10908,8 +10909,23 @@ static const RzCmdDescHelp wo_handler_old_help = {
 	.summary = "Write in block with operation",
 };
 
-static const RzCmdDescHelp wd_handler_old_help = {
-	.summary = "Duplicate N bytes from offset at current seek",
+static const RzCmdDescArg write_duplicate_args[] = {
+	{
+		.name = "src",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_duplicate_help = {
+	.summary = "Duplicate <len> bytes from <src> offset to current seek",
+	.args = write_duplicate_args,
 };
 
 static const RzCmdDescArg write_length_string_args[] = {
@@ -14260,8 +14276,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *wo_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wo", rz_wo_handler_old, &wo_handler_old_help);
 	rz_warn_if_fail(wo_handler_old_cd);
 
-	RzCmdDesc *wd_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wd", rz_wd_handler_old, &wd_handler_old_help);
-	rz_warn_if_fail(wd_handler_old_cd);
+	RzCmdDesc *write_duplicate_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wd", rz_write_duplicate_handler, &write_duplicate_help);
+	rz_warn_if_fail(write_duplicate_cd);
 
 	RzCmdDesc *write_length_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "ws", rz_write_length_string_handler, &write_length_string_help);
 	rz_warn_if_fail(write_length_string_cd);

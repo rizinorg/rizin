@@ -1063,28 +1063,25 @@ RZ_IPI RzCmdStatus rz_write_mask_reset_handler(RzCore *core, int argc, const cha
 	return bool2status(rz_io_set_write_mask(core->io, NULL, 0));
 }
 
-RZ_IPI int rz_wd_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] && input[0] == ' ') {
-		char *arg, *inp = strdup(input + 1);
-		arg = strchr(inp, ' ');
-		if (arg) {
-			*arg = 0;
-			ut64 addr = rz_num_math(core->num, input + 1);
-			ut64 len = rz_num_math(core->num, arg + 1);
-			ut8 *data = malloc(len);
-			rz_io_read_at(core->io, addr, data, len);
-			if (!rz_io_write_at(core->io, core->offset, data, len)) {
-				eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-			}
-			free(data);
-		} else {
-			eprintf("See wd?\n");
-		}
-		free(inp);
-	} else
-		eprintf("Usage: wd [source-offset] [length] @ [dest-offset]\n");
-	return 0;
+RZ_IPI RzCmdStatus rz_write_duplicate_handler(RzCore *core, int argc, const char **argv) {
+	ut64 src = rz_num_math(core->num, argv[1]);
+	ut64 len = rz_num_math(core->num, argv[2]);
+	ut8 *data = RZ_NEWS(ut8, len);
+	if (!data) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	int n = rz_io_nread_at(core->io, src, data, len);
+	if (n < 0) {
+		free(data);
+		RZ_LOG_ERROR("Cannot read data from %" PFMT64x ".\n", src);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_core_write_at(core, core->offset, data, n)) {
+		RZ_LOG_ERROR("Cannot write %d bytes to %" PFMT64x ".\n", n, core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_write_length_string_handler(RzCore *core, int argc, const char **argv) {
@@ -1105,9 +1102,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 		break;
 	case 'o': // "wo"
 		rz_wo_handler_old(core, input + 1);
-		break;
-	case 'd': // "wd"
-		rz_wd_handler_old(core, input + 1);
 		break;
 	default:
 	case '?': // "w?"
