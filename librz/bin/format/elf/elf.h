@@ -221,8 +221,8 @@ struct Elf_(rz_bin_elf_obj_t) {
 // elf.c
 RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, RZ_NONNULL RzBinObjectLoadOptions *options);
 void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin);
-ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
-ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
+ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
+ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 
 // elf_arm.c
 #define rz_bin_elf_fix_arm_thumb_object_dispatch(object) \

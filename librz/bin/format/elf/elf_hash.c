@@ -69,7 +69,7 @@ bool Elf_(rz_bin_elf_get_gnu_hash_table)(RZ_NONNULL ELFOBJ *bin, RzBinElfGnuHash
 		return false;
 	}
 
-	result->offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	result->offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (result->offset == UT64_MAX) {
 		return false;
 	}
@@ -90,7 +90,7 @@ bool Elf_(rz_bin_elf_get_hash_table)(RZ_NONNULL ELFOBJ *bin, RzBinElfHashTable *
 		return false;
 	}
 
-	result->offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	result->offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (result->offset == UT64_MAX) {
 		return false;
 	}
