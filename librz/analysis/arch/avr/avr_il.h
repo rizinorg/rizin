@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2022 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2022 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZIL_ANALYSIS_AVR_H
