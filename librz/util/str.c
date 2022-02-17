@@ -66,7 +66,6 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 }
 
 RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
-	int res;
 #ifdef _MSC_VER
 	return stricmp(s1, s2);
 #else
