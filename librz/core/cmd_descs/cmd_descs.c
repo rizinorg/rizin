@@ -481,6 +481,7 @@ static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
 static const RzCmdDescArg write_from_socket_args[3];
+static const RzCmdDescArg write_wide_string_args[2];
 static const RzCmdDescArg write_hex_args[2];
 static const RzCmdDescArg write_hex_from_file_args[2];
 static const RzCmdDescArg write_assembly_args[2];
@@ -10734,8 +10735,23 @@ static const RzCmdDescHelp write_from_socket_help = {
 	.args = write_from_socket_args,
 };
 
+<<<<<<< HEAD
 static const RzCmdDescHelp ww_handler_old_help = {
 	.summary = "Write wide 16 little endian string",
+=======
+static const RzCmdDescArg write_wide_string_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_wide_string_help = {
+	.summary = "Write wide string",
+	.args = write_wide_string_args,
+>>>>>>> 5b81d9c6d7 (Convert 'ww' command to rzshell)
 };
 
 static const RzCmdDescHelp wx_help = {
@@ -14191,8 +14207,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_from_socket_cd = rz_cmd_desc_argv_new(core->rcmd, wf_cd, "wfs", rz_write_from_socket_handler, &write_from_socket_help);
 	rz_warn_if_fail(write_from_socket_cd);
 
-	RzCmdDesc *ww_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "ww", rz_ww_handler_old, &ww_handler_old_help);
-	rz_warn_if_fail(ww_handler_old_cd);
+	RzCmdDesc *write_wide_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "ww", rz_write_wide_string_handler, &write_wide_string_help);
+	rz_warn_if_fail(write_wide_string_cd);
 
 	RzCmdDesc *wx_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wx", rz_write_hex_handler, &write_hex_help, &wx_help);
 	rz_warn_if_fail(wx_cd);

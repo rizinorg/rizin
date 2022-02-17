@@ -414,9 +414,11 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
   - name: ww
-    cname: ww_handler_old
+    cname: write_wide_string
     summary: Write wide 16 little endian string
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: wx
     summary: Write hexadecimal data
     subcommands:

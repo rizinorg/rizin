@@ -587,6 +587,7 @@ RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz);
 RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int sz);
 RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_string_zero_at(RzCore *core, ut64 addr, const char *s);
+RZ_API bool rz_core_write_string_wide_at(RzCore *core, ut64 addr, const char *s);
 RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *s);
 RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);

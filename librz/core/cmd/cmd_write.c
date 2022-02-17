@@ -962,40 +962,8 @@ RZ_IPI RzCmdStatus rz_write_zero_string_handler(RzCore *core, int argc, const ch
 	return bool2status(rz_core_write_string_zero_at(core, core->offset, argv[1]));
 }
 
-RZ_IPI int rz_ww_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	char *str = strdup(input);
-	int len = rz_str_unescape(str);
-	if (len < 1) {
-		return 0;
-	}
-	len++;
-	str++;
-	len = (len - 1) << 1;
-	char *tmp = (len > 0) ? malloc(len + 1) : NULL;
-	if (tmp) {
-		int i;
-		for (i = 0; i < len; i++) {
-			if (i % 2)
-				tmp[i] = 0;
-			else
-				tmp[i] = str[i >> 1];
-		}
-		str = tmp;
-		if (core->file) {
-			rz_io_use_fd(core->io, core->file->fd);
-		}
-		if (!rz_io_write_at(core->io, core->offset, (const ut8 *)str, len)) {
-			eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-		}
-		WSEEK(core, len);
-		rz_core_block_read(core);
-		free(tmp);
-	} else {
-		eprintf("Cannot malloc %d\n", len);
-	}
-	return 0;
+RZ_IPI RzCmdStatus rz_write_wide_string_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_core_write_string_wide_at(core, core->offset, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_write_hex_handler(RzCore *core, int argc, const char **argv) {
@@ -1155,9 +1123,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 	switch (*input) {
 	case 'u': // "wu"
 		rz_wu_handler_old(core, input + 1);
-		break;
-	case 'w': // "ww"
-		rz_ww_handler_old(core, input + 1);
 		break;
 	case 'm': // "wm"
 		rz_wm_handler_old(core, input + 1);

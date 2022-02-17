@@ -836,6 +836,48 @@ RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, const char *s) {
 }
 
 /**
+ * \brief Write a given string \p s as a wide string at the specified \p addr
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the string
+ * \param s String to write. The string is unescaped, meaning that if there is `\n` it becomes 0x0a
+ */
+RZ_API bool rz_core_write_string_wide_at(RzCore *core, ut64 addr, const char *s) {
+	rz_return_val_if_fail(core && s, false);
+
+	bool res = false;
+	char *str = strdup(s);
+	if (!str) {
+		return false;
+	}
+
+	int len = rz_str_unescape(str);
+	if (len < 1) {
+		goto str_err;
+	}
+
+	len++; // Consider for the terminator char
+	char *tmp = RZ_NEWS(char, len * 2);
+	if (!tmp) {
+		goto str_err;
+	}
+
+	for (int i = 0; i < len; i++) {
+		tmp[i * 2] = str[i];
+		tmp[i * 2 + 1] = 0;
+	}
+
+	if (!rz_core_write_at(core, addr, (const ut8 *)tmp, len * 2)) {
+		RZ_LOG_ERROR("Could not write wide string '%s' at %" PFMT64x "\n", s, addr);
+		free(str);
+		return false;
+	}
+	res = true;
+str_err:
+	free(str);
+	return res;
+}
+/**
  * \brief Write at the specified \p addr the length of the string in one byte,
  * followed by the given string \p s
  *
