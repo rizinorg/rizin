@@ -301,9 +301,11 @@ commands:
                 arg_str: " 414243"
                 comment: Insert the characters "ABC" at the current offset and extend the file
   - name: wu
-    cname: wu_handler_old
+    cname: write_unified_patch
     summary: Apply unified hex patch (see output of cu)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
   - name: wr
     cname: write_random
     summary: Write <len> random bytes

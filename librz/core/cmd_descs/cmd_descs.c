@@ -471,6 +471,7 @@ static const RzCmdDescArg write_base64_encode_args[2];
 static const RzCmdDescArg write_extend_zero_args[3];
 static const RzCmdDescArg write_extend_shift_args[3];
 static const RzCmdDescArg write_extend_hexbytes_args[3];
+static const RzCmdDescArg write_unified_patch_args[2];
 static const RzCmdDescArg write_random_args[2];
 static const RzCmdDescArg write_cache_remove_args[3];
 static const RzCmdDescArg write_cache_commit_args[3];
@@ -10522,8 +10523,17 @@ static const RzCmdDescHelp write_extend_hexbytes_help = {
 	.args = write_extend_hexbytes_args,
 };
 
-static const RzCmdDescHelp wu_handler_old_help = {
+static const RzCmdDescArg write_unified_patch_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_unified_patch_help = {
 	.summary = "Apply unified hex patch (see output of cu)",
+	.args = write_unified_patch_args,
 };
 
 static const RzCmdDescArg write_random_args[] = {
@@ -14206,8 +14216,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_extend_hexbytes_cd = rz_cmd_desc_argv_new(core->rcmd, we_cd, "wex", rz_write_extend_hexbytes_handler, &write_extend_hexbytes_help);
 	rz_warn_if_fail(write_extend_hexbytes_cd);
 
-	RzCmdDesc *wu_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wu", rz_wu_handler_old, &wu_handler_old_help);
-	rz_warn_if_fail(wu_handler_old_cd);
+	RzCmdDesc *write_unified_patch_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wu", rz_write_unified_patch_handler, &write_unified_patch_help);
+	rz_warn_if_fail(write_unified_patch_cd);
 
 	RzCmdDesc *write_random_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wr", rz_write_random_handler, &write_random_help);
 	rz_warn_if_fail(write_random_cd);

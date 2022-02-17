@@ -866,63 +866,67 @@ RZ_IPI int rz_w6_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI int rz_wu_handler_old(void *data, const char *input) {
+RZ_IPI RzCmdStatus rz_write_unified_patch_handler(RzCore *core, int argc, const char **argv) {
 	// TODO: implement it in an API RzCore.write_unified_hexpatch() is ETOOLONG
-	if (input[0] == ' ') {
-		char *data = rz_file_slurp(input + 1, NULL);
-		if (data) {
-			int i;
-			char sign = ' ';
-			int line = 0, offs = 0, hexa = 0;
-			int newline = 1;
-			for (i = 0; data[i]; i++) {
-				switch (data[i]) {
-				case '+':
-					if (newline)
-						sign = 1;
-					break;
-				case '-':
-					if (newline) {
-						sign = 0;
-						offs = i + ((data[i + 1] == ' ') ? 2 : 1);
-					}
-					break;
-				case ' ':
-					data[i] = 0;
-					if (sign) {
-						if (!line)
-							line = i + 1;
-						else if (!hexa)
-							hexa = i + 1;
-					}
-					break;
-				case '\r':
-					break;
-				case '\n':
-					newline = 1;
-					if (sign == ' ') {
-						offs = 0;
-						line = 0;
-						hexa = 0;
-					} else if (sign) {
-						if (offs && hexa) {
-							rz_cons_printf("wx %s @ %s\n", data + hexa, data + offs);
-						} else
-							eprintf("food\n");
-						offs = 0;
-						line = 0;
-					} else
-						hexa = 0;
-					sign = -1;
-					continue;
-				}
-				newline = 0;
-			}
-			free(data);
-		}
-	} else {
-		eprintf("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
+	char *data = rz_file_slurp(argv[1], NULL);
+	if (!data) {
+		RZ_LOG_ERROR("Cannot read data from %s.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
 	}
+	int i;
+	char sign = ' ';
+	int line = 0, offs = 0, hexa = 0;
+	int newline = 1;
+	for (i = 0; data[i]; i++) {
+		switch (data[i]) {
+		case '+':
+			if (newline)
+				sign = 1;
+			break;
+		case '-':
+			if (newline) {
+				sign = 0;
+				offs = i + ((data[i + 1] == ' ') ? 2 : 1);
+			}
+			break;
+		case ' ':
+			data[i] = 0;
+			if (sign) {
+				if (!line)
+					line = i + 1;
+				else if (!hexa)
+					hexa = i + 1;
+			}
+			break;
+		case '\r':
+			break;
+		case '\n':
+			newline = 1;
+			if (sign == ' ') {
+				offs = 0;
+				line = 0;
+				hexa = 0;
+			} else if (sign) {
+				if (offs && hexa) {
+					ut64 dst = rz_num_math(core->num, data + offs);
+					ut8 *buf = RZ_NEWS(ut8, strlen(data + hexa));
+					if (buf) {
+						int len = rz_hex_str2bin(data + hexa, buf);
+						rz_core_write_at(core, dst, buf, len);
+					}
+				} else {
+					eprintf("food\n");
+				}
+				offs = 0;
+				line = 0;
+			} else
+				hexa = 0;
+			sign = -1;
+			continue;
+		}
+		newline = 0;
+	}
+	free(data);
 	return 0;
 }
 
@@ -1097,9 +1101,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 	}
 
 	switch (*input) {
-	case 'u': // "wu"
-		rz_wu_handler_old(core, input + 1);
-		break;
 	case 'o': // "wo"
 		rz_wo_handler_old(core, input + 1);
 		break;
