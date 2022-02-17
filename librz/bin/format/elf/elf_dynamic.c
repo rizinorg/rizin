@@ -76,7 +76,7 @@ static bool init_dt_dynamic(ELFOBJ *bin, RzBinElfDtDynamic *ptr) {
 		return false;
 	}
 
-	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, segment->data.p_vaddr);
+	ut64 offset = Elf_(rz_bin_elf_v2p)(bin, segment->data.p_vaddr);
 	if (offset == UT64_MAX) {
 		RZ_LOG_WARN("Failed to convert PT_DYNAMIC segment p_vaddr to a physical offset.\n")
 		return false;

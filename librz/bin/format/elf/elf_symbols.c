@@ -79,8 +79,8 @@ static Elf_(Word) get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
 		return 0;
 	}
 
-	ut64 symtab_offset = Elf_(rz_bin_elf_v2p_new)(bin, symtab_addr);
-	ut64 strtab_offset = Elf_(rz_bin_elf_v2p_new)(bin, strtab_addr);
+	ut64 symtab_offset = Elf_(rz_bin_elf_v2p)(bin, symtab_addr);
+	ut64 strtab_offset = Elf_(rz_bin_elf_v2p)(bin, strtab_addr);
 	if (symtab_offset == UT64_MAX || strtab_offset == UT64_MAX) {
 		return 0;
 	}
@@ -221,10 +221,10 @@ static bool convert_elf_symbol_entry(ELFOBJ *bin, struct symbols_segment *segmen
 
 	if (Elf_(rz_bin_elf_is_relocatable)(bin) && section) {
 		elf_symbol->paddr = section->offset + symbol->st_value;
-		elf_symbol->vaddr = Elf_(rz_bin_elf_p2v_new)(bin, elf_symbol->paddr);
+		elf_symbol->vaddr = Elf_(rz_bin_elf_p2v)(bin, elf_symbol->paddr);
 	} else {
 		elf_symbol->vaddr = symbol->st_value;
-		elf_symbol->paddr = Elf_(rz_bin_elf_v2p_new)(bin, elf_symbol->vaddr);
+		elf_symbol->paddr = Elf_(rz_bin_elf_v2p)(bin, elf_symbol->vaddr);
 	}
 
 	if (!set_elf_symbol_name(bin, segment, elf_symbol, symbol, section)) {
@@ -299,7 +299,7 @@ static bool get_dynamic_elf_symbols(ELFOBJ *bin, RzVector *result, RzBinElfSymbo
 		return true;
 	}
 
-	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	ut64 offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (offset == UT64_MAX) {
 		return true;
 	}
