@@ -66,7 +66,7 @@ static const struct flag_translation flag_translation_table[] = {
 static bool create_section_from_phdr(ELFOBJ *bin, RzVector *result, const char *name, ut64 addr, ut64 sz) {
 	RzBinElfSection section = { 0 };
 
-	section.offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	section.offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (section.offset == UT64_MAX) {
 		RZ_LOG_WARN("Failed to convert section virtual address to physical address.\n")
 		return false;

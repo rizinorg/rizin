@@ -133,7 +133,7 @@ static RzBinAddr *rz_bin_addr_new_aux(ELFOBJ *bin, ut64 paddr, ut64 vaddr) {
 }
 
 static RzBinAddr *rz_bin_addr_new_from_paddr(ELFOBJ *bin, ut64 paddr) {
-	ut64 vaddr = Elf_(rz_bin_elf_p2v_new)(bin, paddr);
+	ut64 vaddr = Elf_(rz_bin_elf_p2v)(bin, paddr);
 	if (vaddr == UT64_MAX) {
 		vaddr = paddr;
 	}
@@ -142,7 +142,7 @@ static RzBinAddr *rz_bin_addr_new_from_paddr(ELFOBJ *bin, ut64 paddr) {
 }
 
 static RzBinAddr *rz_bin_addr_new_from_vaddr(ELFOBJ *bin, ut64 vaddr) {
-	ut64 paddr = Elf_(rz_bin_elf_v2p_new)(bin, vaddr);
+	ut64 paddr = Elf_(rz_bin_elf_v2p)(bin, vaddr);
 
 	return rz_bin_addr_new_aux(bin, paddr, vaddr);
 }
@@ -161,7 +161,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 }
 
 static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzList *result) {
-	ut64 constructor_offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	ut64 constructor_offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (constructor_offset == UT64_MAX) {
 		return;
 	}
@@ -887,7 +887,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	ut64 val = 0;
 	ut64 A = rel->addend, P = rel->vaddr;
 	RzBinRelocFormularSymbols formular_sym = { .A = A, .B = B, .GOT = GOT, .L = L, .S = S, .P = P, .MB = 0, .G = 0, .GP = 0, .T = 0, .TLS = 0 };
-	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p_new)(obj, rel->vaddr);
+	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(obj, rel->vaddr);
 	ut8 buf[8];
 	switch (e_machine) {
 	case EM_QDSP6:
