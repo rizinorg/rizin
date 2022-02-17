@@ -68,14 +68,10 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
 	int res;
 #ifdef _MSC_VER
-	res = stricmp(s1, s2);
+	return stricmp(s1, s2);
 #else
-	res = strcasecmp(s1, s2);
+	return strcasecmp(s1, s2);
 #endif
-	if (res == 0) {
-		res = strcmp(s1, s2);
-	}
-	return res;
 }
 
 RZ_API int rz_str_ncasecmp(const char *s1, const char *s2, size_t n) {
