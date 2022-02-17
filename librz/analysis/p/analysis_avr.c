@@ -18,7 +18,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <rz_analysis.h>
 
 #include "../../asm/arch/avr/disassembler.h"
-#include "../rzil/avr/il_avr.h"
+#include "../arch/avr/avr_il.h"
 
 typedef struct _cpu_const_tag {
 	const char *const key;
@@ -155,6 +155,9 @@ CPU_MODEL cpu_models[] = {
 static CPU_MODEL *get_cpu_model(char *model);
 
 static CPU_MODEL *__get_cpu_model_recursive(char *model) {
+	if (!model) {
+		return &cpu_models[0];
+	}
 	CPU_MODEL *cpu = NULL;
 
 	for (cpu = cpu_models; cpu < cpu_models + ((sizeof(cpu_models) / sizeof(CPU_MODEL))) - 1; cpu++) {
@@ -175,6 +178,9 @@ static CPU_MODEL *__get_cpu_model_recursive(char *model) {
 }
 
 static CPU_MODEL *get_cpu_model(char *model) {
+	if (!model) {
+		return &cpu_models[0];
+	}
 	static CPU_MODEL *cpu = NULL;
 	// cached value?
 	if (cpu && !rz_str_casecmp(model, cpu->model)) {
@@ -1608,7 +1614,7 @@ static OPCODE_DESC *avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 
 			op->addr = addr;
 
 			// start void esil expression
-			rz_strbuf_setf(&op->esil, "%s", "");
+			rz_strbuf_set(&op->esil, "");
 
 			// handle opcode
 			opcode_desc->handler(analysis, op, buf, len, &fail, cpu);
@@ -1666,7 +1672,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	cpu = get_cpu_model(analysis->cpu);
 
 	// set RzIL
-	avr_rzil_opcode(analysis, op, addr, &aop);
+	rz_avr_il_opcode(analysis, op, addr, &aop);
 
 	// process opcode
 	avr_op_analyze(analysis, op, addr, buf, len, cpu);
@@ -2096,8 +2102,7 @@ RzAnalysisPlugin rz_analysis_plugin_avr = {
 	.address_bits = address_bits,
 	.op = &avr_op,
 	.get_reg_profile = &get_reg_profile,
-	.rzil_init = avr_rzil_init,
-	.rzil_fini = avr_rzil_fini,
+	.il_config = rz_avr_il_config,
 	.analysis_mask = analysis_mask_avr,
 };
 
