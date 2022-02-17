@@ -6,6 +6,10 @@
 #include <rz_util/rz_sys.h>
 #include <rz_util/rz_str.h>
 
+// NOTE: This path is for internal use and it's only valid in non-portable binaries,
+// rz_path_bindir should be used to find the prefix during runtime.
+#define RZ_BINDIR_PREFIXED RZ_JOIN_2_PATHS(RZ_PREFIX, RZ_BINDIR)
+
 /**
  * \brief Return \p path prefixed by the Rizin install prefix
  *
@@ -15,19 +19,29 @@
 RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path) {
 #if RZ_IS_PORTABLE
 	char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
-	if (pid_to_path) {
-		char *it = rz_file_dirname(pid_to_path);
-		free(pid_to_path);
+	if (!pid_to_path) {
+		goto prefix;
+	}
+	char *bindir = rz_path_realpath(RZ_BINDIR_PREFIXED);
+	if (!bindir) {
+		goto prefix;
+	}
 
+	char *it = rz_file_dirname(pid_to_path);
+	free(pid_to_path);
+
+	bool in_bindir = rz_str_endswith(it, rz_file_basename(bindir));
+	free(bindir);
+	// When rz_path_prefix is called from a unit test or from a
+	// not-yet-installed rizin binary this would return the wrong path.
+	// In those cases, just return RZ_PREFIX.
+	if (in_bindir) {
 		for (int i = 0; i < RZ_BINDIR_DEPTH; i++) {
 			char *tmp = it;
 			it = rz_file_dirname(tmp);
 			free(tmp);
 		}
 
-		// When rz_path_prefix is called from a unit test or from a
-		// not-yet-installed rizin binary this would return the wrong path.
-		// In those cases, just return RZ_PREFIX.
 		if (rz_file_is_directory(it)) {
 			char *result = rz_file_path_join(it, path);
 			free(it);
@@ -35,6 +49,7 @@ RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path) {
 		}
 		free(it);
 	}
+prefix:
 #endif
 	return rz_file_path_join(RZ_PREFIX, path);
 }
@@ -182,4 +197,30 @@ RZ_API RZ_OWN char *rz_path_home_expand(RZ_NULLABLE const char *path) {
 	}
 
 	return rz_path_home(path + 1);
+}
+
+/**
+ * \brief Return a canonicalized absolute path. Expands all symbolic links and resolves
+ * references to /./, /../ and extra '/' characters.
+ *
+ * \param path Original file path.
+ * \return New canonicalized absolute path.
+ */
+RZ_API RZ_OWN char *rz_path_realpath(RZ_NULLABLE const char *path) {
+#if __UNIX__
+	char buf[PATH_MAX] = { 0 };
+	const char *rp = realpath(path, buf);
+	if (rp) {
+		return strdup(rp);
+	}
+#elif __WINDOWS__
+	char buf[MAX_PATH] = { 0 };
+	char *basename;
+
+	DWORD len = GetFullPathName(path, MAX_PATH, buf, &basename);
+	if (len != 0 && len < MAX_PATH - 1)
+		return strdup(buf);
+}
+#endif
+	return NULL;
 }

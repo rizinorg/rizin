@@ -26,6 +26,8 @@ RZ_API RZ_OWN char *rz_path_home_history(void);
 
 RZ_API RZ_OWN char *rz_path_home_expand(RZ_NULLABLE const char *path);
 
+RZ_API RZ_OWN char *rz_path_realpath(RZ_NULLABLE const char *path);
+
 #ifdef __cplusplus
 }
 #endif
