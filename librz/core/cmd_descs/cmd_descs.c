@@ -10647,10 +10647,6 @@ static const RzCmdDescHelp write_zero_string_help = {
 	.args = write_zero_string_args,
 };
 
-static const RzCmdDescHelp wt_handler_old_help = {
-	.summary = "Write to file",
-};
-
 static const RzCmdDescHelp wf_help = {
 	.summary = "Write data from file, socket, offset",
 };
@@ -14183,9 +14179,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *write_zero_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wz", rz_write_zero_string_handler, &write_zero_string_help);
 	rz_warn_if_fail(write_zero_string_cd);
-
-	RzCmdDesc *wt_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wt", rz_wt_handler_old, &wt_handler_old_help);
-	rz_warn_if_fail(wt_handler_old_cd);
 
 	RzCmdDesc *wf_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wf", rz_write_from_io_handler, &write_from_io_help, &wf_help);
 	rz_warn_if_fail(wf_cd);

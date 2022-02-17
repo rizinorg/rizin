@@ -759,7 +759,6 @@ RZ_IPI RzCmdStatus rz_write_cache_commit_all_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_write_pcache_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_write_pcache_commit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_zero_string_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_wt_handler_old(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_write_from_io_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_from_file_handler(RzCore *core, int argc, const char **argv);

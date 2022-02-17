@@ -4105,7 +4105,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 
 	// extract the string of the filename we need to write to
 	TSNode arg = ts_node_child_by_field_name(node, "arg", strlen("arg"));
-	char *arg_str = ts_node_sub_string(arg, state->input);
+	char *arg_str = ts_node_handle_arg(state, node, arg, 2);
 
 	if (arg_str[0] == '$') {
 		// redirect output of command to an alias variable

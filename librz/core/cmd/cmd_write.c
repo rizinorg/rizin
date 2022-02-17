@@ -72,16 +72,6 @@ static const char *help_msg_wop[] = {
 	NULL
 };
 
-static const char *help_msg_wt[] = {
-	"Usage:", "wt[a] file [size]", " Write 'size' bytes in current block to 'file'",
-	"wta", " [filename]", "append to 'filename'",
-	"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
-	"wtf!", " [filename]", "write to file from current address to eof",
-	"wtff", " [prefix]", "write block from current seek to [prefix]-[offset]",
-	"wts", " host:port [sz]", "send data to remote host:port via tcp://",
-	NULL
-};
-
 static const char *help_msg_wf[] = {
 	"Usage:", "wf[fs] [-|args ..]", " Write from (file, swap, offset)",
 	"wf", " 10 20", "write 20 bytes from offset 10 into current seek",
@@ -972,173 +962,6 @@ RZ_IPI RzCmdStatus rz_write_zero_string_handler(RzCore *core, int argc, const ch
 	return bool2status(rz_core_write_string_zero_at(core, core->offset, argv[1]));
 }
 
-RZ_IPI int rz_wt_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	char *str = strdup(input);
-	char *ostr = str;
-	const char *filename = "";
-	char _fn[32];
-	_fn[0] = 0;
-	char *tmp;
-	if (*str == 's') { // "wts"
-		if (str[1] == ' ') {
-			eprintf("Write to server\n");
-			st64 sz = rz_io_size(core->io);
-			if (sz > 0) {
-				ut64 addr = 0;
-				char *host = str + 2;
-				char *port = strchr(host, ':');
-				if (port) {
-					*port++ = 0;
-					char *space = strchr(port, ' ');
-					if (space) {
-						*space++ = 0;
-						sz = rz_num_math(core->num, space);
-						addr = core->offset;
-					}
-					ut8 *buf = calloc(1, sz);
-					rz_io_read_at(core->io, addr, buf, sz);
-					RzSocket *s = rz_socket_new(false);
-					if (rz_socket_connect(s, host, port, RZ_SOCKET_PROTO_TCP, 0)) {
-						int done = 0;
-						eprintf("Transfering file to the end-point...\n");
-						while (done < sz) {
-							int rc = rz_socket_write(s, buf + done, sz - done);
-							if (rc < 1) {
-								eprintf("oops\n");
-								break;
-							}
-							done += rc;
-						}
-					} else {
-						eprintf("Cannot connect\n");
-					}
-					rz_socket_free(s);
-					free(buf);
-				} else {
-					eprintf("Usage wts host:port [sz]\n");
-				}
-			} else {
-				eprintf("Unknown file size\n");
-			}
-		} else {
-			eprintf("Usage wts host:port [sz]\n");
-		}
-	} else if (*str == '?' || *str == '\0') {
-		rz_core_cmd_help(core, help_msg_wt);
-		free(ostr);
-		return 0;
-	} else {
-		bool append = false;
-		bool toend = false;
-		st64 sz = core->blocksize;
-		ut64 poff = core->offset;
-		if (*str == 'f') { // "wtf"
-			str++;
-			if (*str == '?') {
-				rz_core_cmd_help(core, help_msg_wt);
-				return 0;
-			}
-			if (*str == '!') {
-				if (str[1] == '?') {
-					rz_core_cmd_help(core, help_msg_wt);
-					return 0;
-				}
-				RzIOMap *map = rz_io_map_get(core->io, poff);
-				toend = true;
-				// use physical address
-				poff = map ? poff - map->itv.addr + map->delta : poff;
-				str++;
-			}
-			if (*str == 'f') { // "wtff"
-				if (str[1] == '?') {
-					rz_core_cmd_help(core, help_msg_wt);
-					return 0;
-				}
-				const char *prefix = rz_str_trim_head_ro(str + 2);
-				if (!*prefix) {
-					prefix = "dump";
-				}
-				str++;
-				filename = rz_str_newf("%s-0x%08" PFMT64x, prefix, core->offset);
-			} else {
-				if (*str) {
-					if (str[1] == '?') {
-						rz_core_cmd_help(core, help_msg_wt);
-						return 0;
-					}
-					filename = rz_str_trim_head_ro(str);
-				} else {
-					filename = "";
-				}
-			}
-		} else if (*str == 'a') { // "wta"
-			append = 1;
-			str++;
-			if (str[0] == ' ') {
-				filename = str + 1;
-			} else {
-				const char *prefix = rz_config_get(core->config, "cfg.prefixdump");
-				snprintf(_fn, sizeof(_fn), "%s.0x%08" PFMT64x, prefix, poff);
-				filename = _fn;
-			}
-		} else if (*str != ' ') {
-			const char *prefix = rz_config_get(core->config, "cfg.prefixdump");
-			snprintf(_fn, sizeof(_fn), "%s.0x%08" PFMT64x, prefix, poff);
-			filename = _fn;
-		} else {
-			filename = str + 1;
-		}
-		tmp = *str ? strchr(str + 1, ' ') : NULL;
-		if (!filename || !*filename) {
-			const char *prefix = rz_config_get(core->config, "cfg.prefixdump");
-			snprintf(_fn, sizeof(_fn), "%s.0x%08" PFMT64x, prefix, poff);
-			filename = _fn;
-		}
-		if (tmp) {
-			if (toend) {
-				sz = rz_io_fd_size(core->io, core->file->fd) - core->offset;
-				if (sz < 0) {
-					eprintf("Warning: File size is unknown.");
-				}
-			} else {
-				sz = (st64)rz_num_math(core->num, tmp + 1);
-				*tmp = 0;
-			}
-			if ((st64)sz < 1) {
-				sz = 0;
-			} else if (!rz_core_dump(core, filename, poff, (ut64)sz, append)) {
-				sz = -1;
-			}
-		} else {
-			if (toend) {
-				sz = rz_io_fd_size(core->io, core->file->fd);
-				if (sz < 0) {
-					eprintf("Warning: File size is unknown.");
-				}
-				if (sz != -1 && core->offset <= sz) {
-					sz -= core->offset;
-					if (!rz_core_dump(core, filename, core->offset, (ut64)sz, append)) {
-						sz = -1;
-					}
-				} else {
-					sz = -1;
-				}
-			} else {
-				sz = core->blocksize;
-				if (!rz_file_dump(filename, core->block, sz, append)) {
-					sz = -1;
-				}
-			}
-		}
-		if (sz >= 0) {
-			eprintf("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x " into %s\n",
-				sz, poff, filename);
-		}
-	}
-	return 0;
-}
-
 RZ_IPI int rz_ww_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int wseek = rz_config_get_i(core->config, "cfg.wseek");
@@ -1332,9 +1155,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 	switch (*input) {
 	case 'u': // "wu"
 		rz_wu_handler_old(core, input + 1);
-		break;
-	case 't': // "wt"
-		rz_wt_handler_old(core, input + 1);
 		break;
 	case 'w': // "ww"
 		rz_ww_handler_old(core, input + 1);

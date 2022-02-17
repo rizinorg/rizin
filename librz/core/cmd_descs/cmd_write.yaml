@@ -373,10 +373,6 @@ commands:
     args:
       - name: string
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: wt
-    cname: wt_handler_old
-    summary: Write to file
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wf
     summary: Write data from file, socket, offset
     subcommands:
