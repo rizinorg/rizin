@@ -617,7 +617,6 @@ static ut32 avr_kkkddddkkkk_store16(cchar* name, AVROpMnem id, ut16 data[2], ut6
 }
 
 
-
 static const AvrInstruction instructions[] = {
 	{ "adc", AVR_OP_ADC /*       000111rdddddrrrr                  */, 2, 0x1C00, 0xFC00, 2, avr_rdddddrrrr },
 	{ "add", AVR_OP_ADD /*       000011rdddddrrrr                  */, 2, 0x0C00, 0xFC00, 2, avr_rdddddrrrr },
@@ -763,7 +762,8 @@ ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, AVRO
 
 	ut16 masked;
 	ut16 data[2] = {0};
-	data[0] = be ? rz_read_be16(buffer) : rz_read_le16(buffer);
+
+	data[0] = rz_read_ble16(buffer, be);
 
 	memset(aop, 0, sizeof(AVROp));
 	for (ut32 i = 0; i < RZ_ARRAY_SIZE(instructions); ++i) {
@@ -778,6 +778,7 @@ ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, AVRO
 			const char *name = instructions[i].name;
 			AVROpMnem id = instructions[i].id;
 			aop->size = instructions[i].decode(name, id, data, pc, aop, sb);
+			aop->mask = instructions[i].mbits;
 			return aop->size;
 		}
 	}

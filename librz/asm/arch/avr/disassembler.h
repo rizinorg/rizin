@@ -127,6 +127,7 @@ typedef enum {
 
 typedef struct avr_opcode_t {
 	AVROpMnem mnemonic;
+	ut16 mask;
 	ut16 param[4];
 	ut16 cycles;
 	ut16 size;
