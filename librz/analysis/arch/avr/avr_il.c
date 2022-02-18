@@ -133,12 +133,12 @@ static RzILOpEffect *avr_il_update_indirect_address_reg(const char *local, ut16 
 	return SEQ2(_high, _low);
 }
 
-static inline RzILOpEffect *avr_il_jump_relative(AVROp *aop, RzAnalysis *analysis, ut32 where) {
+static inline RzILOpEffect *avr_il_jump_relative(AVROp *aop, RzAnalysis *analysis, ut64 where) {
 	RzILOpBitVector *_loc = UN(AVR_ADDR_SIZE, where - aop->size);
 	return JMP(_loc);
 }
 
-static inline RzILOpEffect *avr_il_branch_when(AVROp *aop, RzAnalysis *analysis, ut16 where, RzILOpBool *when, bool cond) {
+static inline RzILOpEffect *avr_il_branch_when(AVROp *aop, RzAnalysis *analysis, ut64 where, RzILOpBool *when, bool cond) {
 	RzILOpEffect *_jmp = avr_il_jump_relative(aop, analysis, where);
 	if (cond) {
 		return BRANCH(when, _jmp, NULL);
@@ -545,15 +545,15 @@ static RzILOpEffect *avr_il_check_signess_flag() {
 
 /* ops */
 
-static RzILOpEffect *avr_il_unk(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_unk(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	return NULL; // rz_il_op_new_nop();
 }
 
-static RzILOpEffect *avr_il_nop(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_nop(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	return NOP;
 }
 
-static RzILOpEffect *avr_il_adc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_adc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *adc, *let, *H, *S, *V, *N, *Z, *C;
 	// Rd = Rd + Rr + C
@@ -610,7 +610,7 @@ static RzILOpEffect *avr_il_adc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ8(let, H, V, N, Z, C, S, adc);
 }
 
-static RzILOpEffect *avr_il_add(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_add(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *adc, *let, *H, *S, *V, *N, *Z, *C;
 	// Rd = Rd + Rr
@@ -667,7 +667,7 @@ static RzILOpEffect *avr_il_add(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ8(let, H, V, N, Z, C, S, adc);
 }
 
-static RzILOpEffect *avr_il_adiw(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_adiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *imm;
 	RzILOpEffect *let, *adiw, *Z, *S, *V, *N, *C;
 	// Rd+1:Rd = Rd+1:Rd + K
@@ -712,7 +712,7 @@ static RzILOpEffect *avr_il_adiw(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ7(let, adiw, Z, V, N, C, S);
 }
 
-static RzILOpEffect *avr_il_and(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_and(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *and0, *S, *V, *N, *Z;
 	// Rd = Rd & Rr
@@ -747,7 +747,7 @@ static RzILOpEffect *avr_il_and(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ5(and0, V, N, Z, S);
 }
 
-static RzILOpEffect *avr_il_andi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_andi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *andi, *S, *V, *N, *Z;
 	// Rd = Rd & K
@@ -782,7 +782,7 @@ static RzILOpEffect *avr_il_andi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ5(andi, V, N, Z, S);
 }
 
-static RzILOpEffect *avr_il_asr(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_asr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *asr, *S, *V, *N, *Z, *C;
 	// Rd >>= 1
@@ -827,7 +827,7 @@ static RzILOpEffect *avr_il_asr(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ6(C, asr, N, Z, S, V);
 }
 
-static RzILOpEffect *avr_il_bld(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_bld(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Copies the T Flag in the SREG (Status Register) to bit b in register Rd
 	// all the other bits are unchanged
 	ut16 Rd = aop->param[0];
@@ -847,7 +847,7 @@ static RzILOpEffect *avr_il_bld(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SETG(avr_registers[Rd], res);
 }
 
-static RzILOpEffect *avr_il_brcc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brcc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if C = 0
 	ut16 k = aop->param[0];
 
@@ -855,7 +855,7 @@ static RzILOpEffect *avr_il_brcc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, false);
 }
 
-static RzILOpEffect *avr_il_brcs(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brcs(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if C = 1
 	ut16 k = aop->param[0];
 
@@ -863,7 +863,7 @@ static RzILOpEffect *avr_il_brcs(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
-static RzILOpEffect *avr_il_breq(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_breq(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if Z = 1
 	ut16 k = aop->param[0];
 
@@ -871,7 +871,7 @@ static RzILOpEffect *avr_il_breq(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
-static RzILOpEffect *avr_il_brge(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brge(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if N ^ V = 0
 	ut16 k = aop->param[0];
 
@@ -881,7 +881,7 @@ static RzILOpEffect *avr_il_brge(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, false);
 }
 
-static RzILOpEffect *avr_il_brhc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brhc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if H = 0
 	ut16 k = aop->param[0];
 
@@ -889,7 +889,7 @@ static RzILOpEffect *avr_il_brhc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, false);
 }
 
-static RzILOpEffect *avr_il_brhs(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brhs(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if H = 1
 	ut16 k = aop->param[0];
 
@@ -897,7 +897,7 @@ static RzILOpEffect *avr_il_brhs(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
-static RzILOpEffect *avr_il_brid(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brid(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if I = 0
 	ut16 k = aop->param[0];
 
@@ -905,7 +905,7 @@ static RzILOpEffect *avr_il_brid(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, false);
 }
 
-static RzILOpEffect *avr_il_brie(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brie(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if I = 1
 	ut16 k = aop->param[0];
 
@@ -913,7 +913,7 @@ static RzILOpEffect *avr_il_brie(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
-static RzILOpEffect *avr_il_brlt(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brlt(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if N ^ V = 1
 	ut16 k = aop->param[0];
 
@@ -923,7 +923,7 @@ static RzILOpEffect *avr_il_brlt(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
-static RzILOpEffect *avr_il_brmi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brmi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if N = 1
 	ut16 k = aop->param[0];
 
@@ -931,7 +931,7 @@ static RzILOpEffect *avr_il_brmi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
-static RzILOpEffect *avr_il_brne(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brne(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if Z = 0
 	ut16 k = aop->param[0];
 
@@ -939,7 +939,7 @@ static RzILOpEffect *avr_il_brne(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, false);
 }
 
-static RzILOpEffect *avr_il_brpl(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brpl(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if N = 0
 	ut16 k = aop->param[0];
 
@@ -947,7 +947,7 @@ static RzILOpEffect *avr_il_brpl(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, false);
 }
 
-static RzILOpEffect *avr_il_brtc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brtc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if T = 0
 	ut16 k = aop->param[0];
 
@@ -955,7 +955,7 @@ static RzILOpEffect *avr_il_brtc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, false);
 }
 
-static RzILOpEffect *avr_il_brts(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brts(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if T = 1
 	ut16 k = aop->param[0];
 
@@ -963,7 +963,7 @@ static RzILOpEffect *avr_il_brts(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
-static RzILOpEffect *avr_il_brvc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brvc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if V = 0
 	ut16 k = aop->param[0];
 
@@ -971,7 +971,7 @@ static RzILOpEffect *avr_il_brvc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, false);
 }
 
-static RzILOpEffect *avr_il_brvs(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_brvs(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if V = 1
 	ut16 k = aop->param[0];
 
@@ -979,7 +979,7 @@ static RzILOpEffect *avr_il_brvs(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
-static RzILOpEffect *avr_il_bst(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_bst(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Stores bit b from Rd to the T Flag in SREG (Status Register)
 	ut16 Rd = aop->param[0];
 	ut16 b = aop->param[1];
@@ -993,7 +993,7 @@ static RzILOpEffect *avr_il_bst(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SETG(AVR_SREG_T, bit);
 }
 
-static RzILOpEffect *avr_il_call(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_call(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// PC = k
 	ut32 k = aop->param[0];
 	k <<= 16;
@@ -1017,7 +1017,7 @@ static RzILOpEffect *avr_il_call(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ3(push, sub, jmp);
 }
 
-static RzILOpEffect *avr_il_cbi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_cbi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Clears a specified bit in an I/O Register.
 	ut16 A = aop->param[0];
 	ut16 b = aop->param[1];
@@ -1035,27 +1035,27 @@ static RzILOpEffect *avr_il_cbi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SETG(reg, result);
 }
 
-static RzILOpEffect *avr_il_clc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_clc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// C = 0
 	return avr_il_assign_bool(AVR_SREG_C, false);
 }
 
-static RzILOpEffect *avr_il_clh(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_clh(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// H = 0
 	return avr_il_assign_bool(AVR_SREG_H, false);
 }
 
-static RzILOpEffect *avr_il_cli(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_cli(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// I = 0
 	return avr_il_assign_bool(AVR_SREG_I, false);
 }
 
-static RzILOpEffect *avr_il_cln(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_cln(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// N = 0
 	return avr_il_assign_bool(AVR_SREG_N, false);
 }
 
-static RzILOpEffect *avr_il_clr(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_clr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = Rd ^ Rd -> S=0, V=0, N=0, Z=1
 	ut16 Rd = aop->param[0];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
@@ -1070,27 +1070,27 @@ static RzILOpEffect *avr_il_clr(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ5(clr, S, V, N, Z);
 }
 
-static RzILOpEffect *avr_il_cls(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_cls(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// S = 0
 	return avr_il_assign_bool(AVR_SREG_S, false);
 }
 
-static RzILOpEffect *avr_il_clt(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_clt(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// T = 0
 	return avr_il_assign_bool(AVR_SREG_T, false);
 }
 
-static RzILOpEffect *avr_il_clv(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_clv(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// V = 0
 	return avr_il_assign_bool(AVR_SREG_V, false);
 }
 
-static RzILOpEffect *avr_il_clz(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_clz(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Z = 0
 	return avr_il_assign_bool(AVR_SREG_Z, false);
 }
 
-static RzILOpEffect *avr_il_com(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_com(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = 0xFF - Rd
 	// changes S|V|N|Z|C with V = 0 and C = 1
 	ut16 Rd = aop->param[0];
@@ -1127,7 +1127,7 @@ static RzILOpEffect *avr_il_com(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ6(set, C, V, Z, N, S);
 }
 
-static RzILOpEffect *avr_il_cpi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_cpi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// compare Rd with Imm and sets the SREG flags
 	// changes H|S|V|N|Z|C
 	ut16 Rd = aop->param[0];
@@ -1174,7 +1174,55 @@ static RzILOpEffect *avr_il_cpi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ7(let, Z, H, V, N, C, S);
 }
 
-static RzILOpEffect *avr_il_cp(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_cpse(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// branch if If Rd == Rr
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+
+	RzILOpBool *when = EQ(AVR_REG(Rd), AVR_REG(Rr));
+	return avr_il_branch_when(aop, analysis, pc + next_op->size, when, true);
+}
+
+static RzILOpEffect *avr_il_dec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect *dec, *S, *V, *N, *Z;
+	// Rd -= 1
+	// changes S|V|N|Z
+	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	// V: Rd == 0x80
+	x = AVR_REG(Rd);
+	y = AVR_IMM(0x80);
+	x = EQ(x, y);
+	V = SETG(AVR_SREG_V, x);
+
+	// Rd -= 1
+	x = AVR_REG(Rd);
+	y = AVR_ONE();
+	x = SUB(x, y);
+	dec = SETG(avr_registers[Rd], x);
+
+	// perform shift since we need the result for the SREG flags.
+	// N: Res7
+	x = AVR_REG(Rd);
+	y = AVR_IMM(1u << 7);
+	x = LOGAND(x, y);
+	x = NON_ZERO(x); // cast to bool
+	N = SETG(AVR_SREG_N, x);
+
+	// Z: !Res
+	x = AVR_REG(Rd);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ5(V, dec, N, Z, S);
+}
+
+static RzILOpEffect *avr_il_cp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// compare Rd with Rr and sets the SREG flags
 	// changes H|S|V|N|Z|C
 	ut16 Rd = aop->param[0];
@@ -1225,7 +1273,7 @@ static RzILOpEffect *avr_il_cp(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ7(let, Z, H, V, N, C, S);
 }
 
-static RzILOpEffect *avr_il_cpc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_cpc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// compare Rd with Rr with Carry and sets the SREG flags
 	// changes H|S|V|N|Z|C
 	ut16 Rd = aop->param[0];
@@ -1279,7 +1327,7 @@ static RzILOpEffect *avr_il_cpc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ7(let, Z, H, V, N, C, S);
 }
 
-static RzILOpEffect *avr_il_ijmp(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_ijmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *loc, *one;
 	// PC = Z << 1
 	loc = AVR_Z();
@@ -1289,14 +1337,14 @@ static RzILOpEffect *avr_il_ijmp(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return JMP(loc);
 }
 
-static RzILOpEffect *avr_il_jmp(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_jmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// PC = PC + k + 1
 	ut16 k = aop->param[0];
 
 	return avr_il_jump_relative(aop, analysis, k);
 }
 
-static RzILOpEffect *avr_il_ldi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_ldi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = K
 	ut16 Rd = aop->param[0];
 	ut16 K = aop->param[1];
@@ -1305,7 +1353,7 @@ static RzILOpEffect *avr_il_ldi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_assign_imm(avr_registers[Rd], K);
 }
 
-static RzILOpEffect *avr_il_lpm(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_lpm(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// R0 = *((ut8*)Z) where Z = (r31 << 8) | r30;
 	// when Z+, Z is incremented after the execution.
 	// LPM r30, Z+ and LPM r31, Z+ have an undefined behaviour per ISA
@@ -1332,7 +1380,7 @@ static RzILOpEffect *avr_il_lpm(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ3(lpm, let, zpp);
 }
 
-static RzILOpEffect *avr_il_lsl(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_lsl(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *lsl, *H, *S, *V, *N, *Z, *C;
 	// Rd <<= 1
@@ -1384,7 +1432,7 @@ static RzILOpEffect *avr_il_lsl(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ7(H, C, lsl, N, Z, S, V);
 }
 
-static RzILOpEffect *avr_il_mov(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_mov(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = Rr
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
@@ -1392,7 +1440,7 @@ static RzILOpEffect *avr_il_mov(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_assign_reg(avr_registers[Rd], avr_registers[Rr]);
 }
 
-static RzILOpEffect *avr_il_movw(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_movw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x;
 
 	RzILOpEffect *let, *movw;
@@ -1407,7 +1455,7 @@ static RzILOpEffect *avr_il_movw(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ2(let, movw);
 }
 
-static RzILOpEffect *avr_il_out(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_out(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// I/O(A) = Rr -> None
 	ut16 A = aop->param[0];
 	ut16 Rr = aop->param[1];
@@ -1442,7 +1490,7 @@ static RzILOpEffect *avr_il_out(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_assign_reg(reg, avr_registers[Rr]);
 }
 
-static RzILOpEffect *avr_il_rol(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *rol, *H, *S, *V, *N, *Z, *C;
 	// Rd = rot_left(Rd, 1)
@@ -1495,7 +1543,7 @@ static RzILOpEffect *avr_il_rol(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ7(H, C, rol, N, Z, S, V);
 }
 
-static RzILOpEffect *avr_il_sbiw(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *imm;
 	RzILOpEffect *let, *sbiw, *Z, *S, *V, *N, *C;
 	// Rd+1:Rd = Rd+1:Rd - K
@@ -1540,27 +1588,27 @@ static RzILOpEffect *avr_il_sbiw(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ7(let, sbiw, Z, V, N, C, S);
 }
 
-static RzILOpEffect *avr_il_sec(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_sec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// C = 0
 	return avr_il_assign_bool(AVR_SREG_C, true);
 }
 
-static RzILOpEffect *avr_il_seh(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_seh(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// H = 0
 	return avr_il_assign_bool(AVR_SREG_H, true);
 }
 
-static RzILOpEffect *avr_il_sei(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_sei(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// I = 0
 	return avr_il_assign_bool(AVR_SREG_I, true);
 }
 
-static RzILOpEffect *avr_il_sen(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_sen(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// N = 0
 	return avr_il_assign_bool(AVR_SREG_N, true);
 }
 
-static RzILOpEffect *avr_il_ser(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_ser(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = $FF
 	ut16 Rd = aop->param[0];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
@@ -1568,27 +1616,27 @@ static RzILOpEffect *avr_il_ser(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_assign_imm(avr_registers[Rd], 0xFF);
 }
 
-static RzILOpEffect *avr_il_ses(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_ses(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// S = 0
 	return avr_il_assign_bool(AVR_SREG_S, true);
 }
 
-static RzILOpEffect *avr_il_set(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_set(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// T = 0
 	return avr_il_assign_bool(AVR_SREG_T, true);
 }
 
-static RzILOpEffect *avr_il_sev(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_sev(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// V = 0
 	return avr_il_assign_bool(AVR_SREG_V, true);
 }
 
-static RzILOpEffect *avr_il_sez(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_sez(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Z = 0
 	return avr_il_assign_bool(AVR_SREG_Z, true);
 }
 
-static RzILOpEffect *avr_il_st(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_st(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpBitVector *addr;
 	RzILOpPure *src;
 	RzILOpEffect *st, *post_op, *let;
@@ -1651,7 +1699,7 @@ static RzILOpEffect *avr_il_st(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ3(st, let, post_op);
 }
 
-static RzILOpEffect *avr_il_sub(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_sub(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = Rd - Rr
 	// changes H|S|V|N|Z|C
 	ut16 Rd = aop->param[0];
@@ -1702,7 +1750,7 @@ static RzILOpEffect *avr_il_sub(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ8(let, Z, H, V, N, C, S, subt);
 }
 
-static RzILOpEffect *avr_il_subi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *avr_il_subi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = Rd - K
 	// changes H|S|V|N|Z|C
 	ut16 Rd = aop->param[0];
@@ -1753,7 +1801,7 @@ static RzILOpEffect *avr_il_subi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ8(let, Z, H, V, N, C, S, subt);
 }
 
-typedef RzILOpEffect *(*avr_il_op)(AVROp *aop, ut64 pc, RzAnalysis *analysis);
+typedef RzILOpEffect *(*avr_il_op)(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis);
 
 static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_unk, /* AVR_OP_INVALID */
@@ -1799,8 +1847,8 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_cp,
 	avr_il_cpc,
 	avr_il_cpi,
-	avr_il_unk, /* AVR_OP_CPSE */
-	avr_il_unk, /* AVR_OP_DEC */
+	avr_il_cpse,
+	avr_il_dec,
 	avr_il_unk, /* AVR_OP_DES */
 	avr_il_unk, /* AVR_OP_EICALL */
 	avr_il_unk, /* AVR_OP_EIJMP */
@@ -1872,7 +1920,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_unk, /* AVR_OP_XCH */
 };
 
-RZ_IPI bool rz_avr_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, AVROp *aop) {
+RZ_IPI bool rz_avr_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, AVROp *aop, AVROp *next_op) {
 	rz_return_val_if_fail(analysis, false);
 	if (aop->mnemonic >= AVR_OP_SIZE) {
 		RZ_LOG_ERROR("RzIL: AVR: out of bounds op\n");
@@ -1880,7 +1928,7 @@ RZ_IPI bool rz_avr_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, AV
 	}
 
 	avr_il_op create_op = avr_ops[aop->mnemonic];
-	op->il_op = create_op(aop, pc, analysis);
+	op->il_op = create_op(aop, next_op, pc, analysis);
 
 	return true;
 }

@@ -101,9 +101,13 @@ ad "cpc r0, r1" 0104 0x0 (seq (set RES (- (- (var r0) (var r1)) (ite (var cf) (b
 ad "cpc r25, r18" 9207 0x0 (seq (set RES (- (- (var r25) (var r18)) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (set zf (&& (is_zero (var RES)) (var zf))) (set hf (! (is_zero (& (| (| (& (~ (var r25)) (var r18)) (& (var r18) (var RES))) (& (var RES) (~ (var r25)))) (bv 8 0x8))))) (set vf (! (is_zero (& (| (& (& (var r25) (~ (var r18))) (~ (var RES))) (& (& (~ (var r25)) (var r18)) (var RES))) (bv 8 0x80))))) (set nf (! (is_zero (& (var RES) (bv 8 0x80))))) (set cf (! (is_zero (& (| (| (& (~ (var r25)) (var r18)) (& (var r18) (var RES))) (& (var RES) (~ (var r25)))) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))))
 ad "cpi r16, 0x00" 0030 0x0 (seq (set RES (- (var r16) (bv 8 0x0))) (set zf (is_zero (var RES))) (set hf (! (is_zero (& (| (| (& (~ (var r16)) (bv 8 0x0)) (& (bv 8 0x0) (var RES))) (& (var RES) (~ (var r16)))) (bv 8 0x8))))) (set vf (! (is_zero (& (| (& (& (var r16) (~ (bv 8 0x0))) (~ (var RES))) (& (& (~ (var r16)) (bv 8 0x0)) (var RES))) (bv 8 0x80))))) (set nf (! (is_zero (& (var RES) (bv 8 0x80))))) (set cf (! (is_zero (& (| (| (& (~ (var r16)) (bv 8 0x0)) (& (bv 8 0x0) (var RES))) (& (var RES) (~ (var r16)))) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))))
 ad "cpi r24, 0xf5" 853f 0x0 (seq (set RES (- (var r24) (bv 8 0xf5))) (set zf (is_zero (var RES))) (set hf (! (is_zero (& (| (| (& (~ (var r24)) (bv 8 0xf5)) (& (bv 8 0xf5) (var RES))) (& (var RES) (~ (var r24)))) (bv 8 0x8))))) (set vf (! (is_zero (& (| (& (& (var r24) (~ (bv 8 0xf5))) (~ (var RES))) (& (& (~ (var r24)) (bv 8 0xf5)) (var RES))) (bv 8 0x80))))) (set nf (! (is_zero (& (var RES) (bv 8 0x80))))) (set cf (! (is_zero (& (| (| (& (~ (var r24)) (bv 8 0xf5)) (& (bv 8 0xf5) (var RES))) (& (var RES) (~ (var r24)))) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))))
-ad "cpse r0, r0" 0010 0x0
-ad "dec r0" 0a94 0x0
-ad "dec r0" 0A94 0x0
+
+# this instruction is expecting to have an extra instruction after it but we cannot test this.
+# the result is anyway correct because all jumps are (PC - 2) since the next instruction is of size 0
+ad "cpse r0, r0" 0010 0x10 (branch (== (var r0) (var r0)) (jmp (bv 32 0xe)) nop)
+
+ad "dec r0" 0a94 0x0 (seq (set vf (== (var r0) (bv 8 0x80))) (set r0 (- (var r0) (bv 8 0x1))) (set nf (! (is_zero (& (var r0) (bv 8 0x80))))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
+ad "dec r8" 8A94 0x0 (seq (set vf (== (var r8) (bv 8 0x80))) (set r8 (- (var r8) (bv 8 0x1))) (set nf (! (is_zero (& (var r8) (bv 8 0x80))))) (set zf (is_zero (var r8))) (set sf (^^ (var nf) (var vf))))
 ad "des 0x00" 0B94 0x0
 ad "eicall" 1995 0x0
 ad "eijmp" 1994 0x0

@@ -20,12 +20,11 @@ static void set_invalid_op(RzAnalysisOp *op, ut64 addr) {
 	rz_strbuf_set(&op->esil, "1,$");
 }
 
-static void handle_skip_next_instruction(RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, bool big_endian) {
+static void handle_skip_next_instruction(RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, bool big_endian, AVROp *aop) {
 	RzStrBuf sb = { 0 };
-	AVROp aop = { 0 };
 	rz_strbuf_init(&sb);
-	if (len > 1 && avr_disassembler(buf, len, addr, big_endian, &aop, &sb)) {
-		op->jump = op->addr + aop.size + 2;
+	if (len > 1 && avr_disassembler(buf, len, addr, big_endian, aop, &sb)) {
+		op->jump = op->addr + aop->size + 2;
 		op->fail = op->addr + 2;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	}
@@ -34,6 +33,7 @@ static void handle_skip_next_instruction(RzAnalysisOp *op, ut64 addr, const ut8 
 
 static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	AVROp aop = { 0 };
+	AVROp next_op = { 0 };
 
 	set_invalid_op(op, addr);
 
@@ -122,7 +122,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case AVR_OP_CPSE:
 		// cpse skips the next instruction when Rr != Rd
-		handle_skip_next_instruction(op, addr, buf + aop.size, len - aop.size, analysis->big_endian);
+		handle_skip_next_instruction(op, addr, buf + aop.size, len - aop.size, analysis->big_endian, &next_op);
 		break;
 	case AVR_OP_DES:
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
@@ -207,7 +207,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		/* fall through*/
 	case AVR_OP_SBIS:
 		// skip next instruction if bit in i/o register is set
-		handle_skip_next_instruction(op, addr, buf + aop.size, len - aop.size, analysis->big_endian);
+		handle_skip_next_instruction(op, addr, buf + aop.size, len - aop.size, analysis->big_endian, &next_op);
 		op->type2 = 0;
 		op->val = aop.param[0]; // A
 		op->family = RZ_ANALYSIS_OP_FAMILY_IO;
@@ -220,7 +220,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		/* fall through*/
 	case AVR_OP_SBRS:
 		// skip next instruction if bit register is set
-		handle_skip_next_instruction(op, addr, buf + aop.size, len - aop.size, analysis->big_endian);
+		handle_skip_next_instruction(op, addr, buf + aop.size, len - aop.size, analysis->big_endian, &next_op);
 		break;
 	case AVR_OP_STS:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
@@ -231,7 +231,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	}
 
 	// set RzIL
-	rz_avr_il_opcode(analysis, op, addr, &aop);
+	rz_avr_il_opcode(analysis, op, addr, &aop, &next_op);
 
 	// process opcode
 	rz_avr_esil_opcode(analysis, op, addr, buf, len);
