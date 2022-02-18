@@ -1128,6 +1128,57 @@ static RzILOpEffect *avr_il_com(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return SEQ6(set, C, V, Z, N, S);
 }
 
+static RzILOpEffect *avr_il_cp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// compare Rd with Rr and sets the SREG flags
+	// changes H|S|V|N|Z|C
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	RzILOpPure *x, *y;
+	RzILOpEffect *let, *Z, *H, *S, *V, *N, *C;
+	RzILOpBitVector *sub;
+
+	// result local variable
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	sub = SUB(x, y);
+	let = SETL(AVR_LET_RES, sub);
+
+	// set Z to 1 if !(x - y)
+	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
+
+	// Res = Rd - Rr
+	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
+	// Set if there was a borrow from bit 3; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	H = avr_il_check_half_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// Res = Rd - Rr
+	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
+	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	V = avr_il_check_two_complement_overflow_flag_subtraction(AVR_LET_RES, x, y);
+
+	// Res = Rd - Rr
+	// N: Res7
+	// Set if MSB of the result is set; cleared otherwise.
+	N = avr_il_check_negative_flag(AVR_LET_RES);
+
+	// Res = Rd - Rr
+	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
+	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	C = avr_il_check_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ7(let, Z, H, V, N, C, S);
+}
+
 static RzILOpEffect *avr_il_cpi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// compare Rd with Imm and sets the SREG flags
 	// changes H|S|V|N|Z|C
@@ -1167,6 +1218,60 @@ static RzILOpEffect *avr_il_cpi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
 	x = AVR_REG(Rd);
 	y = AVR_IMM(K);
+	C = avr_il_check_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ7(let, Z, H, V, N, C, S);
+}
+
+static RzILOpEffect *avr_il_cpc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// compare Rd with Rr with Carry and sets the SREG flags
+	// changes H|S|V|N|Z|C
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	RzILOpPure *x, *y, *carry;
+	RzILOpEffect *let, *Z, *H, *S, *V, *N, *C;
+	RzILOpBitVector *sub;
+
+	// result local variable
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	carry = VARG(AVR_SREG_C);
+	carry = rz_il_op_new_ite(carry, AVR_ONE(), AVR_ZERO());
+	sub = SUB(x, y);
+	sub = SUB(sub, carry);
+	let = SETL(AVR_LET_RES, sub);
+
+	// set Z to 1 if !(x - y - C)
+	Z = avr_il_check_zero_flag(AVR_LET_RES, true);
+
+	// Res = Rd - Rr - C
+	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
+	// Set if there was a borrow from bit 3; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	H = avr_il_check_half_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// Res = Rd - Rr - C
+	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
+	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	V = avr_il_check_two_complement_overflow_flag_subtraction(AVR_LET_RES, x, y);
+
+	// Res = Rd - Rr - C
+	// N: Res7
+	// Set if MSB of the result is set; cleared otherwise.
+	N = avr_il_check_negative_flag(AVR_LET_RES);
+
+	// Res = Rd - Rr - C
+	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
+	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
 	C = avr_il_check_carry_flag_subtraction(AVR_LET_RES, x, y);
 
 	// S: N ^ V, For signed tests.
@@ -1310,111 +1415,6 @@ static RzILOpEffect *avr_il_elpm(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	reg30 = AVR_REG_SET(30, x);
 
 	return SEQ5(load, local, rampz, reg31, reg30);
-}
-
-static RzILOpEffect *avr_il_cp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// compare Rd with Rr and sets the SREG flags
-	// changes H|S|V|N|Z|C
-	ut16 Rd = aop->param[0];
-	ut16 Rr = aop->param[1];
-	avr_return_val_if_invalid_gpr(Rd, NULL);
-	RzILOpPure *x, *y;
-	RzILOpEffect *let, *Z, *H, *S, *V, *N, *C;
-	RzILOpBitVector *sub;
-
-	// result local variable
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	sub = SUB(x, y);
-	let = SETL(AVR_LET_RES, sub);
-
-	// set Z to 1 if !(x - y)
-	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
-
-	// Res = Rd - Rr
-	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
-	// Set if there was a borrow from bit 3; cleared otherwise
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	H = avr_il_check_half_carry_flag_subtraction(AVR_LET_RES, x, y);
-
-	// Res = Rd - Rr
-	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
-	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	V = avr_il_check_two_complement_overflow_flag_subtraction(AVR_LET_RES, x, y);
-
-	// Res = Rd - Rr
-	// N: Res7
-	// Set if MSB of the result is set; cleared otherwise.
-	N = avr_il_check_negative_flag(AVR_LET_RES);
-
-	// Res = Rd - Rr
-	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
-	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	C = avr_il_check_carry_flag_subtraction(AVR_LET_RES, x, y);
-
-	// S: N ^ V, For signed tests.
-	S = avr_il_check_signess_flag();
-
-	return SEQ7(let, Z, H, V, N, C, S);
-}
-
-static RzILOpEffect *avr_il_cpc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// compare Rd with Rr with Carry and sets the SREG flags
-	// changes H|S|V|N|Z|C
-	ut16 Rd = aop->param[0];
-	ut16 Rr = aop->param[1];
-	avr_return_val_if_invalid_gpr(Rd, NULL);
-	RzILOpPure *x, *y, *carry;
-	RzILOpEffect *let, *Z, *H, *S, *V, *N, *C;
-	RzILOpBitVector *sub;
-
-	// result local variable
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	carry = VARG(AVR_SREG_C);
-	carry = rz_il_op_new_ite(carry, AVR_ONE(), AVR_ZERO());
-	sub = SUB(x, y);
-	sub = SUB(sub, carry);
-	let = SETL(AVR_LET_RES, sub);
-
-	// set Z to 1 if !(x - y - C)
-	Z = avr_il_check_zero_flag(AVR_LET_RES, true);
-
-	// Res = Rd - Rr - C
-	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
-	// Set if there was a borrow from bit 3; cleared otherwise
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	H = avr_il_check_half_carry_flag_subtraction(AVR_LET_RES, x, y);
-
-	// Res = Rd - Rr - C
-	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
-	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	V = avr_il_check_two_complement_overflow_flag_subtraction(AVR_LET_RES, x, y);
-
-	// Res = Rd - Rr - C
-	// N: Res7
-	// Set if MSB of the result is set; cleared otherwise.
-	N = avr_il_check_negative_flag(AVR_LET_RES);
-
-	// Res = Rd - Rr - C
-	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
-	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	C = avr_il_check_carry_flag_subtraction(AVR_LET_RES, x, y);
-
-	// S: N ^ V, For signed tests.
-	S = avr_il_check_signess_flag();
-
-	return SEQ7(let, Z, H, V, N, C, S);
 }
 
 static RzILOpEffect *avr_il_ijmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
