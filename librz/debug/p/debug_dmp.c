@@ -284,6 +284,8 @@ static int rz_debug_dmp_select(RzDebug *dbg, int pid, int tid) {
 
 	if (winkd_set_target(&ctx->windctx, pid, tid)) {
 		ctx->target = TARGET_VIRTUAL;
+	} else {
+		ctx->target = TARGET_PHYSICAL;
 	}
 	dbg->pid = ctx->windctx.target.uniqueid;
 	dbg->tid = ctx->windctx.target_thread.uniqueid;
@@ -374,6 +376,7 @@ static RzList *rz_debug_dmp_threads(RzDebug *dbg, int pid) {
 	rz_list_foreach (threads, it, t) {
 		RzDebugPid *newpid = RZ_NEW0(RzDebugPid);
 		if (!newpid) {
+			rz_list_free(threads);
 			rz_list_free(ret);
 			return NULL;
 		}
