@@ -25,6 +25,9 @@
 			(r)->ret); \
 	}
 
+#define KOBJECT_PROCESS 3
+#define KOBJECT_THREAD  6
+
 bool winkd_lock_enter(KdCtx *ctx) {
 	rz_cons_break_push(winkd_break, ctx);
 	rz_th_lock_enter(ctx->dontmix);
@@ -368,6 +371,15 @@ int winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent) {
 #endif
 
 WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address) {
+	ut8 type;
+	if (!ctx->read_at_kernel_virtual(ctx->user, address, &type, 1)) {
+		RZ_LOG_WARN("Failed to read DISPACHER_HEAD.Type at: 0x%" PFMT64x "\n", address);
+		return NULL;
+	}
+	if ((type & 0x7f) != KOBJECT_PROCESS) {
+		RZ_LOG_WARN("KOBJECT at 0x%" PFMT64x " is not a process.\n", address);
+		return NULL;
+	}
 	WindProc *proc = RZ_NEW0(WindProc);
 	if (!proc) {
 		return NULL;
@@ -560,6 +572,15 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 }
 
 WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address) {
+	ut8 type = 0;
+	if (!ctx->read_at_kernel_virtual(ctx->user, address, &type, 1)) {
+		RZ_LOG_WARN("Failed to read DISPACHER_HEAD.Type at: 0x%" PFMT64x "\n", address);
+		return NULL;
+	}
+	if ((type & 0x7f) != KOBJECT_THREAD) {
+		RZ_LOG_WARN("KOBJECT at 0x%" PFMT64x " is not a thread.\n", address);
+		return NULL;
+	}
 	ut64 entrypoint = 0;
 	if (!ctx->read_at_kernel_virtual(ctx->user, address + O_(ET_Win32StartAddress), (uint8_t *)&entrypoint, 4 << ctx->is_64bit)) {
 		RZ_LOG_WARN("Failed to read Win32StartAddress at: 0x%" PFMT64x "\n", address + O_(ET_Win32StartAddress));
