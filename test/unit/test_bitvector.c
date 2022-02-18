@@ -928,6 +928,30 @@ bool test_rz_bv_mod(void) {
 	mu_end;
 }
 
+static bool test_rz_bv_len_bytes(void) {
+#define TEST_LEN_BYTES(bits, bytes) \
+	do { \
+		RzBitVector *bv = rz_bv_new_from_ut64(bits, 0); \
+		mu_assert_eq(rz_bv_len_bytes(bv), bytes, "len"); \
+		rz_bv_free(bv); \
+	} while (0);
+	TEST_LEN_BYTES(1, 1);
+	TEST_LEN_BYTES(2, 1);
+	TEST_LEN_BYTES(3, 1);
+	TEST_LEN_BYTES(4, 1);
+	TEST_LEN_BYTES(5, 1);
+	TEST_LEN_BYTES(6, 1);
+	TEST_LEN_BYTES(7, 1);
+	TEST_LEN_BYTES(8, 1);
+	TEST_LEN_BYTES(9, 2);
+	TEST_LEN_BYTES(0x10, 2);
+	TEST_LEN_BYTES(0x11, 3);
+	TEST_LEN_BYTES(128, 16);
+	TEST_LEN_BYTES(129, 17);
+#undef TEST_LEN_BYTES
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
@@ -948,6 +972,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_ctz);
 	mu_run_test(test_rz_bv_div);
 	mu_run_test(test_rz_bv_mod);
+	mu_run_test(test_rz_bv_len_bytes);
 	return tests_passed != tests_run;
 }
 
