@@ -1542,7 +1542,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_bld,
 	avr_il_brcc,
 	avr_il_brcs,
-	avr_il_unk, /* AVR_OP_BREAK */
+	avr_il_nop, /* AVR_OP_BREAK - the CPU treats the BREAK instruction as a NOP when not in JTAG mode */
 	avr_il_breq,
 	avr_il_unk, /* AVR_OP_BRGE */
 	avr_il_unk, /* AVR_OP_BRHC */
