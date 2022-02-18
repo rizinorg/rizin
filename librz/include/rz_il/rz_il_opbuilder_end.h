@@ -22,12 +22,6 @@
 #undef INV
 #undef XOR
 #undef AND
-#undef OR
-
-#undef UNSIGNED
-#undef SIGNED
-#undef APPEND
-#undef DUP
 
 #undef ADD
 #undef SUB
