@@ -1622,7 +1622,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_brmi,
 	avr_il_brne,
 	avr_il_brpl,
-	avr_il_unk, /* AVR_OP_BRSH */
+	avr_il_brcc, /* AVR_OP_BRSH - alias of brcc */
 	avr_il_unk, /* AVR_OP_BRTC */
 	avr_il_unk, /* AVR_OP_BRTS */
 	avr_il_unk, /* AVR_OP_BRVC */
