@@ -116,11 +116,7 @@ bool winkd_set_target(WindCtx *ctx, ut32 pid, ut32 tid) {
 	WindThread *t;
 	RzList *l;
 	RzListIter *it;
-	if (!pid) {
-		ctx->target.uniqueid = 0;
-		return true;
-	}
-	const bool is_cur_process = ctx->target.uniqueid && (ctx->target.uniqueid == pid);
+	const bool is_cur_process = ctx->target.eprocess && (ctx->target.uniqueid == pid);
 	bool found = false;
 	if (!is_cur_process) {
 		l = winkd_list_process(ctx);
@@ -132,11 +128,13 @@ bool winkd_set_target(WindCtx *ctx, ut32 pid, ut32 tid) {
 			}
 		}
 		rz_list_free(l);
+		if (!found) {
+			ctx->target.eprocess = 0;
+			ctx->target.uniqueid = 0;
+			return false;
+		}
 	}
-	if (!found) {
-		return false;
-	}
-	const bool is_cur_thread = ctx->target_thread.uniqueid && (ctx->target_thread.uniqueid == tid);
+	const bool is_cur_thread = ctx->target_thread.ethread && (ctx->target_thread.uniqueid == tid);
 	found = false;
 	if (!is_cur_thread || !is_cur_process) {
 		l = winkd_list_threads(ctx);
@@ -156,9 +154,11 @@ bool winkd_set_target(WindCtx *ctx, ut32 pid, ut32 tid) {
 			}
 		}
 		rz_list_free(l);
-	}
-	if (!found) {
-		return false;
+		if (!found) {
+			ctx->target_thread.ethread = 0;
+			ctx->target_thread.uniqueid = 0;
+			return false;
+		}
 	}
 	return true;
 }
@@ -459,13 +459,8 @@ int winkd_write_at_uva(WindCtx *ctx, ut64 address, const uint8_t *buf, int count
 
 RzList *winkd_list_modules(WindCtx *ctx) {
 	ut64 ptr, base;
-
-	if (!ctx->target.uniqueid) {
-		RZ_LOG_ERROR("No target process\n");
-		return NULL;
-	}
 	int list_entry_off = 0;
-	const bool is_target_kernel = ctx->target.uniqueid == 4;
+	const bool is_target_kernel = ctx->target.uniqueid <= 4;
 	if (is_target_kernel) {
 		if (!ctx->PsLoadedModuleList) {
 			RZ_LOG_ERROR("No PsLoadedModuleList\n");
@@ -590,11 +585,6 @@ WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address) {
 RzList *winkd_list_threads(WindCtx *ctx) {
 	RzList *ret;
 	ut64 ptr, base;
-
-	if (!ctx->target.uniqueid) {
-		RZ_LOG_ERROR("No target process\n");
-		return NULL;
-	}
 
 	ptr = ctx->target.eprocess;
 	if (!ptr) {
@@ -881,7 +871,7 @@ int winkd_sync(KdCtx *ctx) {
 	kd_stc_64 *stc64 = (kd_stc_64 *)s->data;
 	ctx->cpu = stc64->cpu;
 	ctx->cpu_count = stc64->cpu_count;
-	ctx->windctx.target.uniqueid = 0;
+	ctx->windctx.target.eprocess = 0;
 	rz_list_free(ctx->plist_cache);
 	ctx->plist_cache = NULL;
 	rz_list_free(ctx->tlist_cache);
