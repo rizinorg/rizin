@@ -823,6 +823,26 @@ static RzILOpEffect *avr_il_asr(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ6(C, asr, N, Z, S, V);
 }
 
+static RzILOpEffect *avr_il_bld(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	// Copies the T Flag in the SREG (Status Register) to bit b in register Rd
+	// all the other bits are unchanged
+	ut16 Rd = aop->param[0];
+	ut16 b = aop->param[1];
+
+	RzILOpPure *reg, *add_bit, *remove_bit, *bit, *res;
+
+	reg = AVR_REG(Rd);
+	bit = AVR_IMM(1u << b);
+	add_bit = LOGOR(reg, bit);
+
+	bit = AVR_IMM(~(1u << b));
+	reg = AVR_REG(Rd);
+	remove_bit = LOGAND(reg, bit);
+
+	res = ITE(VARG(AVR_SREG_T), add_bit, remove_bit);
+	return SETG(avr_registers[Rd], res);
+}
+
 static RzILOpEffect *avr_il_brcc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// branch if C = 0
 	ut16 k = aop->param[0];
@@ -1519,7 +1539,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_and,
 	avr_il_andi,
 	avr_il_asr,
-	avr_il_unk, /* AVR_OP_BLD */
+	avr_il_bld,
 	avr_il_brcc,
 	avr_il_brcs,
 	avr_il_unk, /* AVR_OP_BREAK */
