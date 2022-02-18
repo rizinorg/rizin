@@ -48,7 +48,8 @@
 #define AVR_SH(sh)           U32((sh))
 #define AVR_IMM(imm)         UN(AVR_REG_SIZE, (imm))
 #define AVR_IMM16(imm)       U16((imm))
-#define AVR_REG(reg)         VARG(avr_registers[(reg)])
+#define AVR_REG(reg)         VARG(avr_registers[reg])
+#define AVR_REG_SET(reg, x)  SETG(avr_registers[reg], x)
 #define AVR_ONE()            UN(AVR_REG_SIZE, 1)
 #define AVR_ZERO()           UN(AVR_REG_SIZE, 0)
 #define AVR_X()              avr_il_get_indirect_address_reg(27, 26)
@@ -570,7 +571,7 @@ static RzILOpEffect *avr_il_adc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// Rd = TMP
 	x = VARL(AVR_LET_RES);
-	adc = SETG(avr_registers[Rd], x);
+	adc = AVR_REG_SET(Rd, x);
 
 	// H: (Rd3 & Rr3) | (Rr3 & !R3) | (!R3 & Rd3)
 	x = AVR_REG(Rd);
@@ -625,7 +626,7 @@ static RzILOpEffect *avr_il_add(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// Rd = TMP
 	x = VARL(AVR_LET_RES);
-	adc = SETG(avr_registers[Rd], x);
+	adc = AVR_REG_SET(Rd, x);
 
 	// H: (Rd3 & Rr3) | (Rr3 & !R3) | (!R3 & Rd3)
 	x = AVR_REG(Rd);
@@ -723,7 +724,7 @@ static RzILOpEffect *avr_il_and(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = AVR_REG(Rd);
 	y = AVR_REG(Rr);
 	x = LOGAND(x, y);
-	and0 = SETG(avr_registers[Rd], x);
+	and0 = AVR_REG_SET(Rd, x);
 
 	// V: 0 (Cleared)
 	x = rz_il_op_new_b0();
@@ -758,7 +759,7 @@ static RzILOpEffect *avr_il_andi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	x = AVR_REG(Rd);
 	y = AVR_IMM(K);
 	x = LOGAND(x, y);
-	andi = SETG(avr_registers[Rd], x);
+	andi = AVR_REG_SET(Rd, x);
 
 	// V: 0 (Cleared)
 	x = rz_il_op_new_b0();
@@ -793,7 +794,7 @@ static RzILOpEffect *avr_il_asr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = AVR_REG(Rd);
 	y = AVR_SH(1);
 	x = SHIFTR0(x, y);
-	asr = SETG(avr_registers[Rd], x);
+	asr = AVR_REG_SET(Rd, x);
 
 	// C: Rd0
 	x = AVR_REG(Rd);
@@ -844,7 +845,7 @@ static RzILOpEffect *avr_il_bld(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	remove_bit = LOGAND(reg, bit);
 
 	res = ITE(VARG(AVR_SREG_T), add_bit, remove_bit);
-	return SETG(avr_registers[Rd], res);
+	return AVR_REG_SET(Rd, res);
 }
 
 static RzILOpEffect *avr_il_brcc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -1101,7 +1102,7 @@ static RzILOpEffect *avr_il_com(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = AVR_REG(Rd);
 	y = AVR_IMM(0xFF);
 	sub = SUB(y, x);
-	set = SETG(avr_registers[Rd], sub);
+	set = AVR_REG_SET(Rd, sub);
 
 	// C = 1
 	C = avr_il_assign_bool(AVR_SREG_C, true);
@@ -1201,7 +1202,7 @@ static RzILOpEffect *avr_il_dec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = AVR_REG(Rd);
 	y = AVR_ONE();
 	x = SUB(x, y);
-	dec = SETG(avr_registers[Rd], x);
+	dec = AVR_REG_SET(Rd, x);
 
 	// perform shift since we need the result for the SREG flags.
 	// N: Res7
@@ -1258,6 +1259,57 @@ static RzILOpEffect *avr_il_eijmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 	// extend to max PC address size
 	x = EXTZERO(AVR_ADDR_SIZE, x);
 	return JMP(x);
+}
+
+static RzILOpEffect *avr_il_elpm(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Rd = *(RAMPZ:Z)   # RAMPZ:Z: Unchanged
+	// Rd = *(RAMPZ:Z++) # RAMPZ:Z: Post incremented
+	ut16 Rd = aop->param[0];
+	RzILOpPure *x, *y;
+	RzILOpEffect *load, *rampz, *reg30, *reg31, *local;
+
+	// RAMPZ:Z
+	x = VARG(AVR_RAMPZ);
+	y = AVR_Z();
+	x = APPEND(x, y);
+	// extend to max PC address size
+	x = EXTZERO(AVR_ADDR_SIZE, x);
+
+	// Rd = *(RAMPZ:Z)
+	y = LOADW(AVR_REG_SIZE, x);
+	load = AVR_REG_SET(Rd, y);
+
+	if (aop->param[2] != '+') {
+		// do not need to post increment
+		return load;
+	}
+
+	// RES = (RAMPZ:Z) + 1
+	x = DUP(x);
+	y = AVR_PC(1);
+	x = ADD(x, y);
+	local = SETL(AVR_LET_RES, x);
+
+	// RAMPZ = (ut8)(RES >> 16)
+	x = VARL(AVR_LET_RES);
+	y = AVR_SH(AVR_IND_SIZE);
+	x = SHIFTR0(x, y);
+	x = EXTZERO(AVR_REG_SIZE, x);
+	rampz = SETG(AVR_RAMPZ, x);
+
+	// R31 = (ut8)(RES >> 8)
+	x = VARL(AVR_LET_RES);
+	y = AVR_SH(AVR_REG_SIZE);
+	x = SHIFTR0(x, y);
+	x = EXTZERO(AVR_REG_SIZE, x);
+	reg31 = AVR_REG_SET(31, x);
+
+	// R30 = (ut8)(RES)
+	x = VARL(AVR_LET_RES);
+	x = EXTZERO(AVR_REG_SIZE, x);
+	reg30 = AVR_REG_SET(30, x);
+
+	return SEQ5(load, local, rampz, reg31, reg30);
 }
 
 static RzILOpEffect *avr_il_cp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -1407,7 +1459,7 @@ static RzILOpEffect *avr_il_lpm(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	z = AVR_Z();
 	z = AVR_ADDR(z);
 	load = rz_il_op_new_loadw(0, z, AVR_REG_SIZE);
-	lpm = SETG(avr_registers[Rd], load);
+	lpm = AVR_REG_SET(Rd, load);
 
 	if (!post_inc) {
 		return lpm;
@@ -1429,7 +1481,7 @@ static RzILOpEffect *avr_il_lsl(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = AVR_REG(Rd);
 	y = AVR_REG(Rd);
 	x = ADD(x, y);
-	lsl = SETG(avr_registers[Rd], x);
+	lsl = AVR_REG_SET(Rd, x);
 
 	// H: Rd3
 	x = AVR_REG(Rd);
@@ -1540,7 +1592,7 @@ static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = ADD(x, y);
 	y = avr_il_sreg_bit_as_imm(AVR_SREG_C, 1);
 	x = ADD(x, y);
-	rol = SETG(avr_registers[Rd], x);
+	rol = AVR_REG_SET(Rd, x);
 
 	// H: Rd3
 	x = AVR_REG(Rd);
@@ -1755,7 +1807,7 @@ static RzILOpEffect *avr_il_sub(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// Rd = TMP
 	x = VARL(AVR_LET_RES);
-	subt = SETG(avr_registers[Rd], x);
+	subt = AVR_REG_SET(Rd, x);
 
 	// set Z to 1 if !(x - y)
 	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
@@ -1806,7 +1858,7 @@ static RzILOpEffect *avr_il_subi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 
 	// Rd = TMP
 	x = VARL(AVR_LET_RES);
-	subt = SETG(avr_registers[Rd], x);
+	subt = AVR_REG_SET(Rd, x);
 
 	// set Z to 1 if !(x - y)
 	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
@@ -1890,7 +1942,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_unk, /* AVR_OP_DES */
 	avr_il_eicall,
 	avr_il_eijmp,
-	avr_il_unk, /* AVR_OP_ELPM */
+	avr_il_elpm,
 	avr_il_unk, /* AVR_OP_EOR */
 	avr_il_unk, /* AVR_OP_FMUL */
 	avr_il_unk, /* AVR_OP_FMULS */
