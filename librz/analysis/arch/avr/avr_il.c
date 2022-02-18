@@ -1423,7 +1423,7 @@ static RzILOpEffect *avr_il_eor(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
 
-	// TMP = Rd + Rr
+	// Rd = Rd + Rr
 	x = AVR_REG(Rd);
 	y = AVR_REG(Rr);
 	x = LOGXOR(x, y);
@@ -1448,6 +1448,38 @@ static RzILOpEffect *avr_il_eor(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	S = avr_il_check_signess_flag();
 
 	return SEQ5(eor, V, N, Z, S);
+}
+
+static RzILOpEffect *avr_il_fmul(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect *let, *mul, *Z, *C;
+	// R1:R0 = Rd * Rr
+	// changes Z|C
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+
+	// RES = (ut16)Rd * (ut16)Rr
+	x = AVR_REG(Rd);
+	x = EXTZERO(AVR_IND_SIZE, x); // (ut16)Rd
+	y = AVR_REG(Rr);
+	y = EXTZERO(AVR_IND_SIZE, y); // (ut16)Rr
+	x = MUL(x, y);
+	let = SETL(AVR_LET_RES, x);
+
+	// R1:R0 = RES
+	mul = avr_il_update_indirect_address_reg(AVR_LET_RES, 1, 0, 0, false);
+
+	// set Z to 1 if !(RES)
+	x = VARL(AVR_LET_RES);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// C = Res16
+	x = VARL(AVR_LET_RES);
+	x = MSB(x); // most significant bit
+	C = SETG(AVR_SREG_C, x);
+
+	return SEQ4(let, mul, Z, C);
 }
 
 static RzILOpEffect *avr_il_ijmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -1977,8 +2009,8 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_eijmp,
 	avr_il_elpm,
 	avr_il_eor,
-	avr_il_unk, /* AVR_OP_FMUL */
-	avr_il_unk, /* AVR_OP_FMULS */
+	avr_il_fmul,
+	avr_il_fmuls,
 	avr_il_unk, /* AVR_OP_FMULSU */
 	avr_il_unk, /* AVR_OP_ICALL */
 	avr_il_ijmp,
