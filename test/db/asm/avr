@@ -133,7 +133,7 @@ ad "jmp 0x246" 0c942301 0x0 (jmp (bv 32 0x242))
 ad "jmp 0x2c0246" bc942301 0x0 (jmp (bv 32 0x2c0242))
 ad "jmp 0x400246" 0c952301 0x0 (jmp (bv 32 0x400242))
 ad "lac Z, r0" 0692 0x0 (seq (set RES (- (bv 8 0xff) (var r0))) (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (storew 0 (cast 32 false (append (var r31) (var r30))) (var RES)))
-ad "las Z, r0" 0592 0x0
+ad "las Z, r0" 0592 0x0 (seq (set RES (var r0)) (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (storew 0 (cast 32 false (append (var r31) (var r30))) (var RES)))
 ad "lat Z, r0" 0792 0x0
 ad "ld r0, -X" 0E90 0x0
 ad "ld r0, -Y" 0A90 0x0
