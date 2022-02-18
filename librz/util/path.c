@@ -5,6 +5,7 @@
 #include <rz_util/rz_file.h>
 #include <rz_util/rz_sys.h>
 #include <rz_util/rz_str.h>
+#include <rz_util/rz_utf8.h>
 
 // NOTE: This path is for internal use and it's only valid in non-portable binaries,
 // rz_path_bindir should be used to find the prefix during runtime.
@@ -47,8 +48,8 @@ RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path) {
 			free(it);
 			return result;
 		}
-		free(it);
 	}
+	free(it);
 prefix:
 #endif
 	return rz_file_path_join(RZ_PREFIX, path);
@@ -207,6 +208,9 @@ RZ_API RZ_OWN char *rz_path_home_expand(RZ_NULLABLE const char *path) {
  * \return New canonicalized absolute path.
  */
 RZ_API RZ_OWN char *rz_path_realpath(RZ_NULLABLE const char *path) {
+	if (!path) {
+		return NULL;
+	}
 #if __UNIX__
 	char buf[PATH_MAX] = { 0 };
 	const char *rp = realpath(path, buf);
@@ -214,13 +218,14 @@ RZ_API RZ_OWN char *rz_path_realpath(RZ_NULLABLE const char *path) {
 		return strdup(rp);
 	}
 #elif __WINDOWS__
-	char buf[MAX_PATH] = { 0 };
-	char *basename;
+	wchar_t buf[MAX_PATH] = { 0 };
 
-	DWORD len = GetFullPathName(path, MAX_PATH, buf, &basename);
-	if (len != 0 && len < MAX_PATH - 1)
-		return strdup(buf);
-}
+	wchar_t *wpath = rz_utf8_to_utf16(path);
+	DWORD len = GetFullPathNameW(wpath, MAX_PATH, buf, NULL);
+	free(wpath);
+	if (len != 0 && len < MAX_PATH - 1) {
+		return rz_utf16_to_utf8_l(buf, len);
+	}
 #endif
 	return NULL;
 }
