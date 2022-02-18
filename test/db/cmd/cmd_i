@@ -4969,7 +4969,6 @@ RUN
 NAME=iee elf Cd (64-bit)
 FILE=bins/elf/analysis/ls-linux64
 CMDS=<<EOF
-e scr.interactive=true
 s section..preinit_array
 ?e
 pD $SS @ section..init_array
@@ -4987,7 +4986,7 @@ EXPECT=<<EOF
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
-Cannot seek to unknown address 'section..preinit_array'
+ERROR: Cannot seek to unknown address 'section..preinit_array'
 EOF
 RUN
 
