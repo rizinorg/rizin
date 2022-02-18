@@ -127,6 +127,10 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 			free(pdbpath);
 			if (!ctx->windctx.profile) {
 				winkd_build_profile(&ctx->windctx, dbg->analysis->typedb);
+				if (ctx->windctx.profile) {
+					ctx->windctx.profile->build = MinorVersion;
+					ctx->windctx.profile->sp = ServicePackBuild;
+				}
 			}
 		} else {
 			RZ_LOG_WARN("Failed to download ntoskrnl.pdb, many things won't work.\n");
