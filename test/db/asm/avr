@@ -59,9 +59,9 @@ ad "brne 0xffffffffffffff84" 09f6 0x0 (branch (var zf) nop (jmp (bv 32 0xff82)))
 ad "brpl 0x2" 02F4 0x0 (branch (var nf) nop (jmp (bv 32 0x0)))
 ad "brpl 0x8" 0af4 4 (branch (var nf) nop (jmp (bv 32 0x6)))
 ad "brpl 0xffffffffffffff84" 0af6 0x0 (branch (var nf) nop (jmp (bv 32 0xff82)))
-ad "brtc 0x10" 0ef4 0xc
-ad "brtc 0x2" 06F4 0x0
-ad "brtc 0xffffffffffffff84" 0ef6 0x0
+ad "brtc 0x10" 0ef4 0xc (branch (var tf) nop (jmp (bv 32 0xe)))
+ad "brtc 0x2" 06F4 0x0 (branch (var tf) nop (jmp (bv 32 0x0)))
+ad "brtc 0xffffffffffffff84" 0ef6 0x0 (branch (var tf) nop (jmp (bv 32 0xff82)))
 ad "brts 0x10" 0ef0 0xc
 ad "brts 0x2" 06F0 0x0
 ad "brts 0xffffffffffffff84" 0ef2 0x0
