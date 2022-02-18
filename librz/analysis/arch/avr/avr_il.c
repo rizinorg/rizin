@@ -1090,6 +1090,43 @@ static RzILOpEffect *avr_il_clz(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_assign_bool(AVR_SREG_Z, false);
 }
 
+static RzILOpEffect *avr_il_com(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	// Rd = 0xFF - Rd
+	// changes S|V|N|Z|C with V = 0 and C = 1
+	ut16 Rd = aop->param[0];
+
+	RzILOpPure *x, *y, *sub;
+	RzILOpEffect *set, *S, *V, *N, *Z, *C;
+
+	x = AVR_REG(Rd);
+	y = AVR_IMM(0xFF);
+	sub = SUB(y, x);
+	set = SETG(avr_registers[Rd], sub);
+
+	// C = 1
+	C = avr_il_assign_bool(AVR_SREG_C, true);
+
+	// V = 0
+	V = avr_il_assign_bool(AVR_SREG_V, false);
+
+	// set Z to 1 if !(0xFF - Rd)
+	x = AVR_REG(Rd);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// N = Res7
+	x = AVR_REG(Rd);
+	y = AVR_IMM(1u << 7);
+	x = LOGAND(x, y);
+	x = NON_ZERO(x); // cast to bool
+	N = SETG(AVR_SREG_N, x);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ6(set, C, V, Z, N, S);
+}
+
 static RzILOpEffect *avr_il_cpi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// compare Rd with Imm and sets the SREG flags
 	// changes H|S|V|N|Z|C
@@ -1707,7 +1744,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_clt,
 	avr_il_clv,
 	avr_il_clz,
-	avr_il_unk, /* AVR_OP_COM */
+	avr_il_com,
 	avr_il_unk, /* AVR_OP_CP */
 	avr_il_cpc,
 	avr_il_cpi,

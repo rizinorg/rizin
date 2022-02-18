@@ -93,8 +93,8 @@ ad "cls" C894 0x0 (set sf false)
 ad "clt" E894 0x0 (set tf false)
 ad "clv" B894 0x0 (set vf false)
 ad "clz" 9894 0x0 (set zf false)
-ad "com r0" 0094 0x0
-ad "com r24" 8095 0x0
+ad "com r0" 0094 0x0 (seq (set r0 (- (bv 8 0xff) (var r0))) (set cf true) (set vf false) (set zf (is_zero (var r0))) (set nf (! (is_zero (& (var r0) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))))
+ad "com r24" 8095 0x0 (seq (set r24 (- (bv 8 0xff) (var r24))) (set cf true) (set vf false) (set zf (is_zero (var r24))) (set nf (! (is_zero (& (var r24) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))))
 ad "cp r0, r1" 0114 0x0
 ad "cp r18, r24" 2817 0x0
 ad "cpc r0, r1" 0104 0x0 (seq (set RES (- (- (var r0) (var r1)) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (set zf (&& (is_zero (var RES)) (var zf))) (set hf (! (is_zero (& (| (| (& (~ (var r0)) (var r1)) (& (var r1) (var RES))) (& (var RES) (~ (var r0)))) (bv 8 0x8))))) (set vf (! (is_zero (& (| (& (& (var r0) (~ (var r1))) (~ (var RES))) (& (& (~ (var r0)) (var r1)) (var RES))) (bv 8 0x80))))) (set nf (! (is_zero (& (var RES) (bv 8 0x80))))) (set cf (! (is_zero (& (| (| (& (~ (var r0)) (var r1)) (& (var r1) (var RES))) (& (var RES) (~ (var r0)))) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))))
