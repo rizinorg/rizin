@@ -32,9 +32,9 @@ ad "break" 9895 0x0 nop
 ad "breq 0x2" 01F0 0x0 (branch (var zf) (jmp (bv 32 0x0)) nop)
 ad "breq 0x6" 09f0 2 (branch (var zf) (jmp (bv 32 0x4)) nop)
 ad "breq 0xffffffffffffff84" 09f2 0x0 (branch (var zf) (jmp (bv 32 0xff82)) nop)
-ad "brge 0x2" 04F4 0x0
-ad "brge 0xc" 0cf4 8
-ad "brge 0xffffffffffffff84" 0cf6 0x0
+ad "brge 0x2" 04F4 0x0 (branch (^^ (var nf) (var vf)) nop (jmp (bv 32 0x0)))
+ad "brge 0xc" 0cf4 8 (branch (^^ (var nf) (var vf)) nop (jmp (bv 32 0xa)))
+ad "brge 0xffffffffffffff84" 0cf6 0x0 (branch (^^ (var nf) (var vf)) nop (jmp (bv 32 0xff82)))
 ad "brhc 0x2" 05F4 0x0
 ad "brhc 0xe" 0df4 0xa
 ad "brhc 0xffffffffffffff84" 0df6 0x0

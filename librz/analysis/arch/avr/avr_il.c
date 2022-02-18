@@ -867,6 +867,16 @@ static RzILOpEffect *avr_il_breq(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
+static RzILOpEffect *avr_il_brge(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	// branch if N ^ V = 0
+	ut16 k = aop->param[0];
+
+	RzILOpBool *N = VARG(AVR_SREG_N);
+	RzILOpBool *V = VARG(AVR_SREG_V);
+	RzILOpPure *when = XOR(N, V);
+	return avr_il_branch_when(aop, analysis, k, when, false);
+}
+
 static RzILOpEffect *avr_il_brne(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// branch if Z = 0
 	ut16 k = aop->param[0];
@@ -1544,7 +1554,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_brcs,
 	avr_il_nop, /* AVR_OP_BREAK - the CPU treats the BREAK instruction as a NOP when not in JTAG mode */
 	avr_il_breq,
-	avr_il_unk, /* AVR_OP_BRGE */
+	avr_il_brge, /* AVR_OP_BRGE */
 	avr_il_unk, /* AVR_OP_BRHC */
 	avr_il_unk, /* AVR_OP_BRHS */
 	avr_il_unk, /* AVR_OP_BRID */
