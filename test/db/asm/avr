@@ -115,8 +115,8 @@ ad "elpm r0, Z" 0690 0x0 (set r0 (loadw 0 8 (cast 32 false (append (var rampz) (
 ad "elpm r1, Z+" 1790 0x0 (seq (set r1 (loadw 0 8 (cast 32 false (append (var rampz) (append (var r31) (var r30)))))) (set RES (+ (cast 32 false (append (var rampz) (append (var r31) (var r30)))) (bv 32 0x1))) (set rampz (cast 8 false (>> (var RES) (bv 32 0x10) false))) (set r31 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r30 (cast 8 false (var RES))))
 ad "elpm r16, Z+" 0791 0x0 (seq (set r16 (loadw 0 8 (cast 32 false (append (var rampz) (append (var r31) (var r30)))))) (set RES (+ (cast 32 false (append (var rampz) (append (var r31) (var r30)))) (bv 32 0x1))) (set rampz (cast 8 false (>> (var RES) (bv 32 0x10) false))) (set r31 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r30 (cast 8 false (var RES))))
 ad "elpm" D895 0x0
-ad "eor r0, r1" 0124 0x0
-ad "eor r24, r25" 8927 0x0
+ad "eor r0, r1" 0124 0x0 (seq (set r0 (^ (var r0) (var r1))) (set vf false) (set nf (! (is_zero (& (var r0) (bv 8 0x80))))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
+ad "eor r24, r25" 8927 0x0 (seq (set r24 (^ (var r24) (var r25))) (set vf false) (set nf (! (is_zero (& (var r24) (bv 8 0x80))))) (set zf (is_zero (var r24))) (set sf (^^ (var nf) (var vf))))
 ad "fmul r16, r16" 0803 0x0
 ad "fmuls r16, r16" 8003 0x0
 ad "fmulsu r16, r16" 8803 0x0

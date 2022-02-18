@@ -1415,6 +1415,41 @@ static RzILOpEffect *avr_il_elpm(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	return SEQ5(load, local, rampz, reg31, reg30);
 }
 
+static RzILOpEffect *avr_il_eor(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect *eor, *S, *V, *N, *Z;
+	// Rd = Rd ^ Rr
+	// changes S|V|N|Z
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+
+	// TMP = Rd + Rr
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	x = LOGXOR(x, y);
+	eor = AVR_REG_SET(Rd, x);
+
+	// V: cleared (0)
+	V = avr_il_assign_bool(AVR_SREG_V, false);
+
+	// N: Res7
+	x = AVR_REG(Rd);
+	y = AVR_IMM(1u << 7);
+	x = LOGAND(x, y);
+	x = NON_ZERO(x); // cast to bool
+	N = SETG(AVR_SREG_N, x);
+
+	// Z: !Res
+	x = AVR_REG(Rd);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ5(eor, V, N, Z, S);
+}
+
 static RzILOpEffect *avr_il_ijmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *loc, *one;
 	// PC = Z << 1
@@ -1941,7 +1976,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_eicall,
 	avr_il_eijmp,
 	avr_il_elpm,
-	avr_il_unk, /* AVR_OP_EOR */
+	avr_il_eor,
 	avr_il_unk, /* AVR_OP_FMUL */
 	avr_il_unk, /* AVR_OP_FMULS */
 	avr_il_unk, /* AVR_OP_FMULSU */
