@@ -153,8 +153,8 @@ ad "ldd r0, Z+7" 0780 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r3
 ad "ldd r9, Z+1" 9180 0x0 (seq (set r9 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x1)))))
 ad "ldi r16, 0x00" 00E0 0x0 (set r16 (bv 8 0x0))
 ad "ldi r25, 0x07" 97e0 0x0 (set r25 (bv 8 0x7))
-ad "lds r0, 0x00" 00900000 0x0
-ad "lds r24, 0x102" 80910201 0x0
+ad "lds r0, 0x00" 00900000 0x0 (set r0 (loadw 0 8 (bv 32 0x0)))
+ad "lds r24, 0x102" 80910201 0x0 (set r24 (loadw 0 8 (bv 32 0x102)))
 ad "lpm r0, Z" 0490 0x0 (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30)))))
 ad "lpm r0, Z+" 0590 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x1)))))
 ad "lpm" C895 0x0 (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30)))))

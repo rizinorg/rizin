@@ -1842,6 +1842,15 @@ static RzILOpEffect *avr_il_ldi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return avr_il_assign_imm(avr_registers[Rd], K);
 }
 
+static RzILOpEffect *avr_il_lds(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Rd = *(k)
+	ut16 Rd = aop->param[0];
+	ut16 k = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	return avr_il_load_reg(k, avr_registers[Rd], AVR_REG_SIZE);
+}
+
 static RzILOpEffect *avr_il_lpm(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// R0 = *((ut8*)Z) where Z = (r31 << 8) | r30;
 	// when Z+, Z is incremented after the execution.
@@ -2364,7 +2373,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_ld,
 	avr_il_ld, /* AVR_OP_LDD - like ld */
 	avr_il_ldi,
-	avr_il_unk, /* AVR_OP_LDS */
+	avr_il_lds,
 	avr_il_lpm,
 	avr_il_lsl,
 	avr_il_unk, /* AVR_OP_LSR */
