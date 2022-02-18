@@ -893,6 +893,14 @@ static RzILOpEffect *avr_il_brhs(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
+static RzILOpEffect *avr_il_brid(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	// branch if I = 0
+	ut16 k = aop->param[0];
+
+	RzILOpBool *when = VARG(AVR_SREG_I);
+	return avr_il_branch_when(aop, analysis, k, when, false);
+}
+
 static RzILOpEffect *avr_il_brne(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// branch if Z = 0
 	ut16 k = aop->param[0];
@@ -1573,7 +1581,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_brge,
 	avr_il_brhc,
 	avr_il_brhs,
-	avr_il_unk, /* AVR_OP_BRID */
+	avr_il_brid,
 	avr_il_unk, /* AVR_OP_BRIE */
 	avr_il_unk, /* AVR_OP_BRLO */
 	avr_il_unk, /* AVR_OP_BRLT */
