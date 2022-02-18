@@ -572,6 +572,12 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 }
 
 WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address) {
+	int running_offset;
+	if (ctx->profile->build < 9200) {
+		running_offset = ctx->is_64bit ? 0x49 : 0x39;
+	} else {
+		running_offset = ctx->is_64bit ? 0x71 : 0x55;
+	}
 	ut8 type = 0;
 	if (!ctx->read_at_kernel_virtual(ctx->user, address, &type, 1)) {
 		RZ_LOG_WARN("Failed to read DISPACHER_HEAD.Type at: 0x%" PFMT64x "\n", address);
@@ -591,12 +597,17 @@ WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address) {
 		RZ_LOG_WARN("Failed to read UniqueThread at: 0x%" PFMT64x "\n", address + O_(ET_Cid) + O_(C_UniqueThread));
 		return NULL;
 	}
+	bool running = false;
+	if (!ctx->read_at_kernel_virtual(ctx->user, address + running_offset, (uint8_t *)&running, 1)) {
+		RZ_LOG_WARN("Failed to read KTHREAD.Running at: 0x%" PFMT64x "\n", address + running_offset);
+		return NULL;
+	}
 	WindThread *thread = calloc(1, sizeof(WindThread));
 	if (!thread) {
 		return NULL;
 	}
 	thread->uniqueid = uniqueid;
-	thread->status = 's';
+	thread->status = running ? 'r' : 's';
 	thread->runnable = true;
 	thread->ethread = address;
 	thread->entrypoint = entrypoint;
