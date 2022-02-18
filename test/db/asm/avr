@@ -122,8 +122,9 @@ ad "fmuls r16, r16" 8003 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)
 ad "fmulsu r16, r16" 8803 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)) (cast 16 false (var r16)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
 ad "icall" 0995 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x4))) (jmp (<< (cast 32 false (append (var r31) (var r30))) (bv 32 0x1) false)))
 ad "ijmp" 0994 0x0 (jmp (<< (cast 32 false (append (var r31) (var r30))) (bv 32 0x1) false))
-ad "in r0, 0x00" 00B0 0x0
-ad "in r28, 0x3d" cdb7 0x0
+ad "in r0, 0x00" 00B0 0x0 (set r0 (var r0))
+ad "in r16, 0x16" 06b3 0x0 (set r16 (var r22))
+ad "in r28, 0x3d" cdb7 0x0 (set r28 (loadw 0 8 (bv 32 0x3d)))
 ad "inc r0" 0394 0x0
 ad "inc r14" e394 0x0
 ad "jmp 0x0" 0C940000 0x0

@@ -171,6 +171,12 @@ static inline RzILOpEffect *avr_il_store_reg(ut64 addr, const char *reg) {
 	return avr_il_store_pure(addr, _var);
 }
 
+static inline RzILOpEffect *avr_il_load_reg(ut64 addr, const char *reg, ut16 size) {
+	RzILOpBitVector *_loc = UN(AVR_ADDR_SIZE, addr);
+	RzILOpBitVector *_val = LOADW(size, _loc);
+	return SETG(reg, _val);
+}
+
 static inline RzILOpEffect *avr_il_set16_from_reg(const char *dst, const char *src, ut16 mask, ut16 sh) {
 	RzILOpPure *_dst = VARG(dst);
 	RzILOpBitVector *_mask = UN(16, mask);
@@ -1585,6 +1591,55 @@ static RzILOpEffect *avr_il_ijmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	return JMP(loc);
 }
 
+static RzILOpEffect *avr_il_in(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Rd = I/O(A)
+	ut16 Rd = aop->param[0];
+	ut16 A = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	const char *reg = resolve_mmio(analysis, A);
+	if (!reg && A < 32) {
+		// profiles that does not map registers between 0 and 31 have MMIO regs at this range
+		return avr_il_assign_reg(avr_registers[Rd], avr_registers[A]);
+	} else if (!reg) {
+		// memory read
+		return avr_il_load_reg(A, avr_registers[Rd], AVR_REG_SIZE);
+	} else if (!rz_str_ncasecmp(reg, AVR_SPL, strlen(AVR_SPL))) {
+		// zeros low 8 bits and OR new value
+		RzILOpPure *x = VARG(AVR_SP);
+		x = EXTZERO(AVR_REG_SIZE, x);
+		return AVR_REG_SET(Rd, x);
+	} else if (!rz_str_ncasecmp(reg, AVR_SPH, strlen(AVR_SPH))) {
+		// zeros high 8 bits and OR new value
+		RzILOpPure *x = VARG(AVR_SP);
+		RzILOpPure *y = AVR_SH(AVR_REG_SIZE);
+		x = SHIFTR0(x, y);
+		x = EXTZERO(AVR_REG_SIZE, x);
+		return AVR_REG_SET(Rd, x);
+	} else if (!rz_str_ncasecmp(reg, AVR_SREG, strlen(AVR_SREG))) {
+		// this could be optimized to just be Rd = SREG
+		RzILOpBitVector *x, *I, *T, *H, *S, *V, *N, *Z, *C;
+		I = avr_il_sreg_bit_as_imm(AVR_SREG_I, AVR_SREG_I_BIT);
+		T = avr_il_sreg_bit_as_imm(AVR_SREG_T, AVR_SREG_T_BIT);
+		H = avr_il_sreg_bit_as_imm(AVR_SREG_H, AVR_SREG_H_BIT);
+		S = avr_il_sreg_bit_as_imm(AVR_SREG_S, AVR_SREG_S_BIT);
+		V = avr_il_sreg_bit_as_imm(AVR_SREG_V, AVR_SREG_V_BIT);
+		N = avr_il_sreg_bit_as_imm(AVR_SREG_N, AVR_SREG_N_BIT);
+		Z = avr_il_sreg_bit_as_imm(AVR_SREG_Z, AVR_SREG_Z_BIT);
+		C = avr_il_sreg_bit_as_imm(AVR_SREG_C, AVR_SREG_C_BIT);
+		x = LOGOR(I, T);
+		x = LOGOR(x, H);
+		x = LOGOR(x, S);
+		x = LOGOR(x, V);
+		x = LOGOR(x, N);
+		x = LOGOR(x, Z);
+		x = LOGOR(x, C);
+		return AVR_REG_SET(Rd, x);
+	}
+	// assign the register value.
+	return avr_il_assign_reg(avr_registers[Rd], reg);
+}
+
 static RzILOpEffect *avr_il_jmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// PC = PC + k + 1
 	ut16 k = aop->param[0];
@@ -2107,7 +2162,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_fmulsu,
 	avr_il_icall,
 	avr_il_ijmp,
-	avr_il_unk, /* AVR_OP_IN */
+	avr_il_in,
 	avr_il_unk, /* AVR_OP_INC */
 	avr_il_jmp, /* AVR_OP_JMP - same as rjmp */
 	avr_il_unk, /* AVR_OP_LAC */
