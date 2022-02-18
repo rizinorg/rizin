@@ -1681,7 +1681,9 @@ static RzILOpEffect *avr_il_inc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 static RzILOpEffect *avr_il_jmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// PC = PC + k + 1
-	ut16 k = aop->param[0];
+	st32 k = aop->param[0];
+	k <<= 16;
+	k |= aop->param[1];
 
 	return avr_il_jump_relative(aop, analysis, k);
 }
@@ -1830,6 +1832,13 @@ static RzILOpEffect *avr_il_out(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	}
 	// assign the register value.
 	return avr_il_assign_reg(reg, avr_registers[Rr]);
+}
+
+static RzILOpEffect *avr_il_rjmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// PC = PC + k + 1
+	st32 k = (st16)aop->param[0];
+
+	return avr_il_jump_relative(aop, analysis, k);
 }
 
 static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2203,7 +2212,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_ijmp,
 	avr_il_in,
 	avr_il_inc,
-	avr_il_jmp, /* AVR_OP_JMP - same as rjmp */
+	avr_il_jmp,
 	avr_il_unk, /* AVR_OP_LAC */
 	avr_il_unk, /* AVR_OP_LAS */
 	avr_il_unk, /* AVR_OP_LAT */
@@ -2229,7 +2238,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_unk, /* AVR_OP_RCALL */
 	avr_il_unk, /* AVR_OP_RET */
 	avr_il_unk, /* AVR_OP_RETI */
-	avr_il_jmp, /* AVR_OP_RJMP - same as jmp */
+	avr_il_rjmp,
 	avr_il_rol,
 	avr_il_unk, /* AVR_OP_ROR */
 	avr_il_unk, /* AVR_OP_SBC */
