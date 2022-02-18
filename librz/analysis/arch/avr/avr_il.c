@@ -1640,6 +1640,45 @@ static RzILOpEffect *avr_il_in(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *
 	return avr_il_assign_reg(avr_registers[Rd], reg);
 }
 
+static RzILOpEffect *avr_il_inc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect *inc, *S, *V, *N, *Z;
+	// Rd += 1
+	// changes S|V|N|Z
+	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	// V: Rd == 0x7F
+	x = AVR_REG(Rd);
+	y = AVR_IMM(0x7F);
+	x = EQ(x, y);
+	V = SETG(AVR_SREG_V, x);
+
+	// Rd -= 1
+	x = AVR_REG(Rd);
+	y = AVR_ONE();
+	x = SUB(x, y);
+	inc = AVR_REG_SET(Rd, x);
+
+	// perform shift since we need the result for the SREG flags.
+	// N: Res7
+	x = AVR_REG(Rd);
+	y = AVR_IMM(1u << 7);
+	x = LOGAND(x, y);
+	x = NON_ZERO(x); // cast to bool
+	N = SETG(AVR_SREG_N, x);
+
+	// Z: !Res
+	x = AVR_REG(Rd);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ5(V, inc, N, Z, S);
+}
+
 static RzILOpEffect *avr_il_jmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// PC = PC + k + 1
 	ut16 k = aop->param[0];
@@ -2163,7 +2202,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_icall,
 	avr_il_ijmp,
 	avr_il_in,
-	avr_il_unk, /* AVR_OP_INC */
+	avr_il_inc,
 	avr_il_jmp, /* AVR_OP_JMP - same as rjmp */
 	avr_il_unk, /* AVR_OP_LAC */
 	avr_il_unk, /* AVR_OP_LAS */

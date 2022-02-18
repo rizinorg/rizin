@@ -125,8 +125,8 @@ ad "ijmp" 0994 0x0 (jmp (<< (cast 32 false (append (var r31) (var r30))) (bv 32 
 ad "in r0, 0x00" 00B0 0x0 (set r0 (var r0))
 ad "in r16, 0x16" 06b3 0x0 (set r16 (var r22))
 ad "in r28, 0x3d" cdb7 0x0 (set r28 (loadw 0 8 (bv 32 0x3d)))
-ad "inc r0" 0394 0x0
-ad "inc r14" e394 0x0
+ad "inc r0" 0394 0x0 (seq (set vf (== (var r0) (bv 8 0x7f))) (set r0 (- (var r0) (bv 8 0x1))) (set nf (! (is_zero (& (var r0) (bv 8 0x80))))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
+ad "inc r14" e394 0x0 (seq (set vf (== (var r14) (bv 8 0x7f))) (set r14 (- (var r14) (bv 8 0x1))) (set nf (! (is_zero (& (var r14) (bv 8 0x80))))) (set zf (is_zero (var r14))) (set sf (^^ (var nf) (var vf))))
 ad "jmp 0x0" 0C940000 0x0
 ad "jmp 0x20246" 0d942301 0x0
 ad "jmp 0x246" 0c942301 0x0
