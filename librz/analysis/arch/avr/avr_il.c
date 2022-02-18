@@ -1770,6 +1770,69 @@ static RzILOpEffect *avr_il_lat(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return SEQ3(local, store, load);
 }
 
+static RzILOpEffect *avr_il_ld(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *src;
+	RzILOpEffect *ld, *post_op, *let;
+	// Rd = *((ut8*)X) where X = (r27 << 8) | r26;
+	// Rd = *((ut8*)Y) where Y = (r29 << 8) | r28;
+	// Rd = *((ut8*)Z) where Z = (r31 << 8) | r30;
+	// When Z+ , Z is incremented by 1 after the execution (applies also to X and Y).
+	// When -X , X is decremented by 1 after the execution (applies also to Z and Y).
+	// When Y+q, Y is incremented by q after the execution (applies also to X and Z).
+
+	// undefined behaviour per ISA below
+	// ld r26, X+
+	// ld r27, X+
+	// ld r26, -X
+	// ld r27, -X
+
+	ut16 Rd = aop->param[0];
+	char Rr = (char)aop->param[1]; // 'X' or 'Y' or 'Z'
+	char Op = (char)aop->param[2]; //  0  or '+' or '-'
+	ut16 q = aop->param[3];
+
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_indirect_address(Rr, NULL);
+
+	switch (Rr) {
+	case 'X':
+		src = AVR_X();
+		break;
+	case 'Y':
+		src = AVR_Y();
+		break;
+	default: // 'Z'
+		src = AVR_Z();
+		break;
+	}
+
+	src = AVR_ADDR(src);
+	src = LOADW(AVR_REG_SIZE, src);
+	ld = AVR_REG_SET(Rd, src);
+
+	if (Op != '+' && Op != '-') {
+		return ld;
+	}
+
+	switch (Rr) {
+	case 'X':
+		src = AVR_X();
+		post_op = AVR_SET_X(AVR_LET_IND, q, Op == '+');
+		break;
+	case 'Y':
+		src = AVR_Y();
+		post_op = AVR_SET_Y(AVR_LET_IND, q, Op == '+');
+		break;
+	default: // 'Z'
+		src = AVR_Z();
+		post_op = AVR_SET_Z(AVR_LET_IND, q, Op == '+');
+		break;
+	}
+
+	let = SETL(AVR_LET_IND, src);
+	return SEQ3(ld, let, post_op);
+}
+
 static RzILOpEffect *avr_il_ldi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = K
 	ut16 Rd = aop->param[0];
@@ -2298,7 +2361,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_lac,
 	avr_il_las,
 	avr_il_lat,
-	avr_il_unk, /* AVR_OP_LD */
+	avr_il_ld,
 	avr_il_unk, /* AVR_OP_LDD */
 	avr_il_ldi,
 	avr_il_unk, /* AVR_OP_LDS */
