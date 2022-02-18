@@ -778,6 +778,51 @@ static RzILOpEffect *avr_il_andi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ5(andi, V, N, Z, S);
 }
 
+static RzILOpEffect *avr_il_asr(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect *asr, *S, *V, *N, *Z, *C;
+	// Rd >>= 1
+	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	// simplified by adding itself
+	x = AVR_REG(Rd);
+	y = AVR_SH(1);
+	x = SHIFTR0(x, y);
+	asr = SETG(avr_registers[Rd], x);
+
+	// C: Rd0
+	x = AVR_REG(Rd);
+	y = AVR_IMM(1u << 0);
+	x = LOGAND(x, y);
+	x = NON_ZERO(x); // cast to bool
+	C = SETG(AVR_SREG_C, x);
+
+	// perform shift since we need the result for the SREG flags.
+	// N: Res7
+	x = AVR_REG(Rd);
+	y = AVR_IMM(1u << 7);
+	x = LOGAND(x, y);
+	x = NON_ZERO(x); // cast to bool
+	N = SETG(AVR_SREG_N, x);
+
+	// Z: !Res
+	x = AVR_REG(Rd);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	// V: N ^ C, For N and C after the shift
+	x = VARG(AVR_SREG_N);
+	y = VARG(AVR_SREG_C);
+	x = XOR(x, y);
+	V = SETG(AVR_SREG_V, x);
+
+	return SEQ6(C, asr, N, Z, S, V);
+}
+
 static RzILOpEffect *avr_il_brcc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// branch if C = 0
 	ut16 k = aop->param[0];
@@ -1473,7 +1518,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_adiw,
 	avr_il_and,
 	avr_il_andi,
-	avr_il_unk, /* AVR_OP_ASR */
+	avr_il_asr,
 	avr_il_unk, /* AVR_OP_BLD */
 	avr_il_brcc,
 	avr_il_brcs,
