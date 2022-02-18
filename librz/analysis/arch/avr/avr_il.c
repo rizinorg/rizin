@@ -1174,6 +1174,57 @@ static RzILOpEffect *avr_il_cpi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ7(let, Z, H, V, N, C, S);
 }
 
+static RzILOpEffect *avr_il_cp(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	// compare Rd with Rr and sets the SREG flags
+	// changes H|S|V|N|Z|C
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	RzILOpPure *x, *y;
+	RzILOpEffect *let, *Z, *H, *S, *V, *N, *C;
+	RzILOpBitVector *sub;
+
+	// result local variable
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	sub = SUB(x, y);
+	let = SETL(AVR_LET_RES, sub);
+
+	// set Z to 1 if !(x - y)
+	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
+
+	// Res = Rd - Rr
+	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
+	// Set if there was a borrow from bit 3; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	H = avr_il_check_half_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// Res = Rd - Rr
+	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
+	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	V = avr_il_check_two_complement_overflow_flag_subtraction(AVR_LET_RES, x, y);
+
+	// Res = Rd - Rr
+	// N: Res7
+	// Set if MSB of the result is set; cleared otherwise.
+	N = avr_il_check_negative_flag(AVR_LET_RES);
+
+	// Res = Rd - Rr
+	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
+	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	C = avr_il_check_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ7(let, Z, H, V, N, C, S);
+}
+
 static RzILOpEffect *avr_il_cpc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// compare Rd with Rr with Carry and sets the SREG flags
 	// changes H|S|V|N|Z|C
@@ -1745,7 +1796,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_clv,
 	avr_il_clz,
 	avr_il_com,
-	avr_il_unk, /* AVR_OP_CP */
+	avr_il_cp,
 	avr_il_cpc,
 	avr_il_cpi,
 	avr_il_unk, /* AVR_OP_CPSE */
