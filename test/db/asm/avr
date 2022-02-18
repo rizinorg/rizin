@@ -75,10 +75,10 @@ a  "bset 7" 7894
 a  "bset 2" 2894
 ad "bst r0, 0" 00FA 0x0 (set tf (! (is_zero (& (var r0) (bv 8 0x1)))))
 ad "bst r0, 4" 04FA 0x0 (set tf (! (is_zero (& (var r0) (bv 8 0x10)))))
-ad "call 0x0" 0E940000 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x2))) (jmp (bv 32 0xfffffffc)))
-ad "call 0x16" 0e940b00 0x2d0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x2d0)) (set sp (- (var sp) (bv 16 0x2))) (jmp (bv 32 0x12)))
-ad "call 0x2016" 0e940b10 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x2))) (jmp (bv 32 0x2012)))
-ad "call 0x3ffffe" FF94FFFF 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x2))) (jmp (bv 32 0x3ffffa)))
+ad "call 0x0" 0E940000 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0xfffffffc)))
+ad "call 0x16" 0e940b00 0x2d0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x2d0)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0x12)))
+ad "call 0x2016" 0e940b10 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0x2012)))
+ad "call 0x3ffffe" FF94FFFF 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0x3ffffa)))
 ad "cbi 0x00, 0" 0098 0x0 (set r0 (& (bv 8 0xfe) (var r0)))
 ad "cbi 0x10, 4" 8498 0x0 (set r16 (& (bv 8 0xef) (var r16)))
 a  "cbr r16, 0xf0" 0f70
@@ -109,7 +109,7 @@ ad "cpse r0, r0" 0010 0x10 (branch (== (var r0) (var r0)) (jmp (bv 32 0xe)) nop)
 ad "dec r0" 0a94 0x0 (seq (set vf (== (var r0) (bv 8 0x80))) (set r0 (- (var r0) (bv 8 0x1))) (set nf (! (is_zero (& (var r0) (bv 8 0x80))))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
 ad "dec r8" 8A94 0x0 (seq (set vf (== (var r8) (bv 8 0x80))) (set r8 (- (var r8) (bv 8 0x1))) (set nf (! (is_zero (& (var r8) (bv 8 0x80))))) (set zf (is_zero (var r8))) (set sf (^^ (var nf) (var vf))))
 ad "des 0x00" 0B94 0x0
-ad "eicall" 1995 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x2))) (jmp (<< (cast 32 false (append (var eind) (append (var r31) (var r30)))) (bv 32 0x1) false)))
+ad "eicall" 1995 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x4))) (jmp (<< (cast 32 false (append (var eind) (append (var r31) (var r30)))) (bv 32 0x1) false)))
 ad "eijmp" 1994 0x0 (jmp (<< (cast 32 false (append (var eind) (append (var r31) (var r30)))) (bv 32 0x1) false))
 ad "elpm r0, Z" 0690 0x0 (set r0 (loadw 0 8 (cast 32 false (append (var rampz) (append (var r31) (var r30))))))
 ad "elpm r1, Z+" 1790 0x0 (seq (set r1 (loadw 0 8 (cast 32 false (append (var rampz) (append (var r31) (var r30)))))) (set RES (+ (cast 32 false (append (var rampz) (append (var r31) (var r30)))) (bv 32 0x1))) (set rampz (cast 8 false (>> (var RES) (bv 32 0x10) false))) (set r31 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r30 (cast 8 false (var RES))))
@@ -120,7 +120,7 @@ ad "eor r24, r25" 8927 0x0 (seq (set r24 (^ (var r24) (var r25))) (set vf false)
 ad "fmul r16, r16" 0803 0x0 (seq (set RES (* (cast 16 false (var r16)) (cast 16 false (var r16)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
 ad "fmuls r16, r16" 8003 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)) (cast 16 (msb (var r16)) (var r16)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
 ad "fmulsu r16, r16" 8803 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)) (cast 16 false (var r16)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
-ad "icall" 0995 0x0
+ad "icall" 0995 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x4))) (jmp (<< (cast 32 false (append (var r31) (var r30))) (bv 32 0x1) false)))
 ad "ijmp" 0994 0x0 (jmp (<< (cast 32 false (append (var r31) (var r30))) (bv 32 0x1) false))
 ad "in r0, 0x00" 00B0 0x0
 ad "in r28, 0x3d" cdb7 0x0

@@ -1008,7 +1008,7 @@ static RzILOpEffect *avr_il_call(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	val = AVR_ADDR(val);
 	push = STOREW(val, num);
 
-	num = AVR_IMM16(2);
+	num = AVR_IMM16(AVR_ADDR_SIZE / 8);
 	val = VARG(AVR_SP);
 	val = SUB(val, num);
 	sub = SETG(AVR_SP, val);
@@ -1346,7 +1346,7 @@ static RzILOpEffect *avr_il_eicall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalys
 	y = AVR_ADDR(y);
 	push = STOREW(y, x);
 
-	x = AVR_IMM16(2);
+	x = AVR_IMM16(AVR_ADDR_SIZE / 8);
 	y = VARG(AVR_SP);
 	y = SUB(y, x);
 	sub = SETG(AVR_SP, y);
@@ -1548,6 +1548,31 @@ static RzILOpEffect *avr_il_fmulsu(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalys
 	C = SETG(AVR_SREG_C, x);
 
 	return SEQ4(let, mul, Z, C);
+}
+
+static RzILOpEffect *avr_il_icall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// *(SP--) = PC
+	// PC = Z << 1
+	RzILOpPure *x, *y;
+	RzILOpEffect *jmp, *push, *sub;
+
+	x = AVR_Z();
+	x = EXTZERO(AVR_ADDR_SIZE, x);
+	y = AVR_SH(1);
+	x = SHIFTL0(x, y);
+	jmp = JMP(x);
+
+	x = AVR_PC(pc);
+	y = VARG(AVR_SP);
+	y = AVR_ADDR(y);
+	push = STOREW(y, x);
+
+	x = AVR_IMM16(AVR_ADDR_SIZE / 8);
+	y = VARG(AVR_SP);
+	y = SUB(y, x);
+	sub = SETG(AVR_SP, y);
+
+	return SEQ3(push, sub, jmp);
 }
 
 static RzILOpEffect *avr_il_ijmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2080,7 +2105,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_fmul,
 	avr_il_fmuls,
 	avr_il_fmulsu,
-	avr_il_unk, /* AVR_OP_ICALL */
+	avr_il_icall,
 	avr_il_ijmp,
 	avr_il_unk, /* AVR_OP_IN */
 	avr_il_unk, /* AVR_OP_INC */
