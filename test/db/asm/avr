@@ -145,12 +145,12 @@ ad "ld r0, Y+" 0990 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r29)
 ad "ld r0, Z" 0080 0x0 (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30)))))
 ad "ld r0, Z+" 0190 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x1)))))
 ad "ld r24, Z" 8081 0x0 (set r24 (loadw 0 8 (cast 32 false (append (var r31) (var r30)))))
-ad "ldd r0, Y+63" 0FAC 0x0
-ad "ldd r0, Y+7" 0F80 0x0
-ad "ldd r0, Z+48" 00A8 0x0
-ad "ldd r0, Z+63" 07AC 0x0
-ad "ldd r0, Z+7" 0780 0x0
-ad "ldd r9, Z+1" 9180 0x0
+ad "ldd r0, Y+63" 0FAC 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r29) (var r28))))) (set IND (append (var r29) (var r28))) (set r29 (cast 8 false (>> (+ (var IND) (bv 16 0x3f)) (bv 32 0x8) false))) (set r28 (cast 8 false (+ (var IND) (bv 16 0x3f)))))
+ad "ldd r0, Y+7" 0F80 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r29) (var r28))))) (set IND (append (var r29) (var r28))) (set r29 (cast 8 false (>> (+ (var IND) (bv 16 0x7)) (bv 32 0x8) false))) (set r28 (cast 8 false (+ (var IND) (bv 16 0x7)))))
+ad "ldd r0, Z+48" 00A8 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x30)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x30)))))
+ad "ldd r0, Z+63" 07AC 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x3f)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x3f)))))
+ad "ldd r0, Z+7" 0780 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x7)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x7)))))
+ad "ldd r9, Z+1" 9180 0x0 (seq (set r9 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x1)))))
 ad "ldi r16, 0x00" 00E0 0x0 (set r16 (bv 8 0x0))
 ad "ldi r25, 0x07" 97e0 0x0 (set r25 (bv 8 0x7))
 ad "lds r0, 0x00" 00900000 0x0

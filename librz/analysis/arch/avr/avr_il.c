@@ -2362,7 +2362,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_las,
 	avr_il_lat,
 	avr_il_ld,
-	avr_il_unk, /* AVR_OP_LDD */
+	avr_il_ld, /* AVR_OP_LDD - like ld */
 	avr_il_ldi,
 	avr_il_unk, /* AVR_OP_LDS */
 	avr_il_lpm,
