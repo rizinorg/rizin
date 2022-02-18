@@ -1688,6 +1688,34 @@ static RzILOpEffect *avr_il_jmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return avr_il_jump_relative(aop, analysis, k);
 }
 
+static RzILOpEffect *avr_il_lac(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// it's swap like op
+	// *(Z) = 0xFF – Rd and Rd = *(Z)
+	st32 Rd = aop->param[0];
+	RzILOpPure *x, *y;
+	RzILOpEffect *local, *load, *store;
+
+	// RES = 0xFF – Rd
+	x = AVR_IMM(0xFF);
+	y = AVR_REG(Rd);
+	x = SUB(x, y);
+	local = SETL(AVR_LET_RES, x);
+
+	// Rd = *(Z)
+	x = AVR_Z();
+	x = EXTZERO(AVR_ADDR_SIZE, x);
+	x = LOADW(AVR_REG_SIZE, x);
+	load = AVR_REG_SET(Rd, x);
+
+	// *(Z) = RES
+	x = AVR_Z();
+	x = EXTZERO(AVR_ADDR_SIZE, x);
+	y = VARL(AVR_LET_RES);
+	store = STOREW(x, y);
+
+	return SEQ3(local, load, store);
+}
+
 static RzILOpEffect *avr_il_ldi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = K
 	ut16 Rd = aop->param[0];
@@ -2213,7 +2241,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_in,
 	avr_il_inc,
 	avr_il_jmp,
-	avr_il_unk, /* AVR_OP_LAC */
+	avr_il_lac,
 	avr_il_unk, /* AVR_OP_LAS */
 	avr_il_unk, /* AVR_OP_LAT */
 	avr_il_unk, /* AVR_OP_LD */
