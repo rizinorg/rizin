@@ -631,6 +631,9 @@ RzList *winkd_list_threads(WindCtx *ctx) {
 			RZ_LOG_WARN("Corrupted ThreadListEntry found at: 0x%" PFMT64x "\n", ptr);
 			break;
 		}
+		if (next == base) {
+			break;
+		}
 
 		// Adjust the ptr so that it points to the ETHREAD base
 		ptr -= O_(ET_ThreadListEntry);
@@ -640,7 +643,7 @@ RzList *winkd_list_threads(WindCtx *ctx) {
 			rz_list_append(ret, thread);
 		}
 		ptr = next;
-	} while (ptr != base);
+	} while (true);
 	return ret;
 }
 
