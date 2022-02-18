@@ -68,9 +68,9 @@ ad "brts 0xffffffffffffff84" 0ef2 0x0 (branch (var tf) (jmp (bv 32 0xff82)) nop)
 ad "brvc 0x2" 03F4 0x0 (branch (var vf) nop (jmp (bv 32 0x0)))
 ad "brvc 0xa" 0bf4 6 (branch (var vf) nop (jmp (bv 32 0x8)))
 ad "brvc 0xffffffffffffff84" 0bf6 0x0 (branch (var vf) nop (jmp (bv 32 0xff82)))
-ad "brvs 0x2" 03F0 0x0
-ad "brvs 0xa" 0bf0 6
-ad "brvs 0xffffffffffffff84" 0bf2 0x0
+ad "brvs 0x2" 03F0 0x0 (branch (var vf) (jmp (bv 32 0x0)) nop)
+ad "brvs 0xa" 0bf0 6 (branch (var vf) (jmp (bv 32 0x8)) nop)
+ad "brvs 0xffffffffffffff84" 0bf2 0x0 (branch (var vf) (jmp (bv 32 0xff82)) nop)
 a  "bset 7" 7894
 a  "bset 2" 2894
 ad "bst r0, 0" 00FA 0x0
