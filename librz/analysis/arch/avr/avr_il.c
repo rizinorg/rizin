@@ -160,10 +160,14 @@ static inline RzILOpEffect *avr_il_assign_reg(const char *dst, const char *src) 
 	return SETG(dst, _var);
 }
 
-static inline RzILOpEffect *avr_il_store_reg(ut64 addr, const char *reg) {
+static inline RzILOpEffect *avr_il_store_pure(ut64 addr, RzILOpPure *var) {
 	RzILOpBitVector *_loc = UN(AVR_ADDR_SIZE, addr);
+	return STOREW(_loc, var);
+}
+
+static inline RzILOpEffect *avr_il_store_reg(ut64 addr, const char *reg) {
 	RzILOpPure *_var = VARG(reg);
-	return STOREW(_loc, _var);
+	return avr_il_store_pure(addr, _var);
 }
 
 static inline RzILOpEffect *avr_il_set16_from_reg(const char *dst, const char *src, ut16 mask, ut16 sh) {
@@ -1013,6 +1017,24 @@ static RzILOpEffect *avr_il_call(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return SEQ3(push, sub, jmp);
 }
 
+static RzILOpEffect *avr_il_cbi(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	// Clears a specified bit in an I/O Register.
+	ut16 A = aop->param[0];
+	ut16 b = aop->param[1];
+
+	RzILOpPure *clearb, *target, *result;
+	const char *reg = resolve_mmio(analysis, A);
+	if (!reg && A < 32) {
+		// profiles that does not map registers between 0 and 31 have MMIO regs at this range
+		reg = avr_registers[A];
+	}
+
+	clearb = AVR_IMM(~(1u << b));
+	target = VARG(reg);
+	result = LOGAND(clearb, target);
+	return SETG(reg, result);
+}
+
 static RzILOpEffect *avr_il_clc(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// C = 0
 	return avr_il_assign_bool(AVR_SREG_C, false);
@@ -1675,7 +1697,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_brvs,
 	avr_il_bst,
 	avr_il_call,
-	avr_il_unk, /* AVR_OP_CBI */
+	avr_il_cbi,
 	avr_il_clc,
 	avr_il_clh,
 	avr_il_cli,
