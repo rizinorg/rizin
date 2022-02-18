@@ -655,15 +655,13 @@ static RzILOpEffect *avr_il_add(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = IS_ZERO(x);
 	Z = SETG(AVR_SREG_Z, x);
 
-	// C: // C: (Rd7 & Rr7) | (Rr7 & !R7) | (!R7 & Rd7)
+	// C: (Rd7 & Rr7) | (Rr7 & !R7) | (!R7 & Rd7)
 	x = AVR_REG(Rd);
 	y = AVR_REG(Rr);
 	C = avr_il_check_carry_flag_addition(AVR_LET_RES, x, y);
 
 	// S: N ^ V, For signed tests.
 	S = avr_il_check_signess_flag();
-
-	// update SREG based on flags
 
 	return SEQ8(let, H, V, N, Z, C, S, adc);
 }
