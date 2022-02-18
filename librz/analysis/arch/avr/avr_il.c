@@ -909,6 +909,16 @@ static RzILOpEffect *avr_il_brie(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
+static RzILOpEffect *avr_il_brlt(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	// branch if N ^ V = 1
+	ut16 k = aop->param[0];
+
+	RzILOpBool *N = VARG(AVR_SREG_N);
+	RzILOpBool *V = VARG(AVR_SREG_V);
+	RzILOpPure *when = XOR(N, V);
+	return avr_il_branch_when(aop, analysis, k, when, true);
+}
+
 static RzILOpEffect *avr_il_brne(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// branch if Z = 0
 	ut16 k = aop->param[0];
@@ -1592,7 +1602,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_brid,
 	avr_il_brie,
 	avr_il_brcs, /* AVR_OP_BRLO - alias of brcs */
-	avr_il_unk, /* AVR_OP_BRLT */
+	avr_il_brlt,
 	avr_il_unk, /* AVR_OP_BRMI */
 	avr_il_brne,
 	avr_il_unk, /* AVR_OP_BRPL */

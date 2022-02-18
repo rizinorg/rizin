@@ -47,9 +47,9 @@ ad "brid 0xffffffffffffff84" 0ff6 0x0 (branch (var if) nop (jmp (bv 32 0xff82)))
 ad "brie 0x12" 0ff0 0xe (branch (var if) (jmp (bv 32 0x10)) nop)
 ad "brie 0x2" 07F0 0x0 (branch (var if) (jmp (bv 32 0x0)) nop)
 ad "brie 0xffffffffffffff84" 0ff2 0x0 (branch (var if) (jmp (bv 32 0xff82)) nop)
-ad "brlt 0x2" 04F0 0x0
-ad "brlt 0xc" 0cf0 8
-ad "brlt 0xffffffffffffff84" 0cf2 0x0
+ad "brlt 0x2" 04F0 0x0 (branch (^^ (var nf) (var vf)) (jmp (bv 32 0x0)) nop)
+ad "brlt 0xc" 0cf0 8 (branch (^^ (var nf) (var vf)) (jmp (bv 32 0xa)) nop)
+ad "brlt 0xffffffffffffff84" 0cf2 0x0 (branch (^^ (var nf) (var vf)) (jmp (bv 32 0xff82)) nop)
 ad "brmi 0x2" 02F0 0x0
 ad "brmi 0x8" 0af0 4
 ad "brmi 0xffffffffffffff84" 0af2 0x0
