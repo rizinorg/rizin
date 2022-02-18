@@ -223,7 +223,7 @@ RZ_API RZ_OWN char *rz_path_realpath(RZ_NULLABLE const char *path) {
 	wchar_t *wpath = rz_utf8_to_utf16(path);
 	DWORD len = GetFullPathNameW(wpath, MAX_PATH, buf, NULL);
 	free(wpath);
-	if (len != 0 && len < MAX_PATH - 1) {
+	if (len > 0 && len < MAX_PATH - 1) {
 		return rz_utf16_to_utf8_l(buf, len);
 	}
 #endif
