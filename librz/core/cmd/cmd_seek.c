@@ -174,9 +174,7 @@ RZ_IPI RzCmdStatus rz_seek_handler(RzCore *core, int argc, const char **argv) {
 
 	ut64 addr = rz_num_math(core->num, argv[1]);
 	if (core->num->nc.errors) {
-		if (rz_cons_singleton()->context->is_interactive) {
-			eprintf("Cannot seek to unknown address '%s'\n", core->num->nc.calc_buf);
-		}
+		RZ_LOG_ERROR("Cannot seek to unknown address '%s'\n", core->num->nc.calc_buf);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return bool2cmdstatus(rz_core_seek_and_save(core, addr, true));
