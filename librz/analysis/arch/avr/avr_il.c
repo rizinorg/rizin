@@ -312,6 +312,30 @@ static RzILOpEffect *avr_il_check_two_complement_overflow_flag_addition(const ch
 	return SETG(AVR_SREG_V, and0);
 }
 
+static RzILOpEffect *avr_il_check_two_complement_overflow_flag_addition_wide(const char *local, RzILOpPure *Rdh) {
+	RzILOpBool *ovf;
+	RzILOpBitVector *bit, *Res;
+	// Rdh = X, Res = Rd+1:Rd
+	// V: !Rdh7 & Res15
+	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
+
+	// extract bit 7 from Rdh
+	bit = AVR_IMM(1u << 7);
+	Rdh = LOGNOT(Rdh); // !Rdh
+	Rdh = LOGAND(Rdh, bit); // !Rdh7
+
+	// extract bit 15 from Res
+	Res = VARL(local);
+	bit = UN(AVR_IND_SIZE, 1u << 15);
+	Res = LOGAND(Res, bit); // !Res15
+
+	// boolean and (not logical)
+	Rdh = NON_ZERO(Rdh); // cast to bool
+	Res = NON_ZERO(Res); // cast to bool
+	ovf = AND(Rdh, Res); // !Rdh7 & Res15
+	return SETG(AVR_SREG_V, ovf);
+}
+
 static RzILOpEffect *avr_il_check_two_complement_overflow_flag_subtraction(const char *local, RzILOpPure *x, RzILOpPure *y) {
 	RzILOpBitVector *Rd, *Rr, *bit, *not0, *not1, *Res, *and0, *and1, *or0;
 	// Rd = X, Rr = Y, Res = Rd - Rr or Res = Rd - Rr - C
@@ -427,6 +451,29 @@ static RzILOpEffect *avr_il_check_carry_flag_addition(const char *local, RzILOpP
 	return SETG(AVR_SREG_H, and0);
 }
 
+static RzILOpEffect *avr_il_check_carry_flag_addition_wide(const char *local, RzILOpPure *Rdh) {
+	RzILOpBitVector *crr, *bit, *Res;
+	// Res = Rd+1:Rd
+	// !Res15 & Rdh7
+	// Set if the absolute value of K is larger than the absolute value of Rd; cleared otherwise
+
+	// extract bit 7 from Rdh
+	bit = AVR_IMM(1u << 7);
+	Rdh = LOGAND(Rdh, bit);
+
+	// extract bit 15 from Res
+	Res = VARL(local);
+	Res = LOGNOT(Res); // !Res
+	bit = UN(AVR_IND_SIZE, 1u << 15);
+	Res = LOGAND(Res, bit); // !Res15
+
+	// boolean and (not logical)
+	Res = NON_ZERO(Res); // cast to bool
+	Rdh = NON_ZERO(Rdh); // cast to bool
+	crr = AND(Res, Rdh); // !Res15 & Rdh7
+	return SETG(AVR_SREG_C, crr);
+}
+
 static RzILOpEffect *avr_il_check_carry_flag_subtraction(const char *local, RzILOpPure *x, RzILOpPure *y) {
 	RzILOpBitVector *Rd, *Rr, *bit, *not0, *Res, *and0, *and1, *and2, *or0;
 	// Rd = X, Rr = Y, Res = Rd - Rr or Res = Rd - Rr - C
@@ -469,8 +516,8 @@ static RzILOpEffect *avr_il_check_carry_flag_subtraction_wide(const char *local,
 
 	// extract bit 7 from Rdh
 	bit = AVR_IMM(1u << 7);
-	Rdh = LOGAND(Rdh, bit);
 	Rdh = LOGNOT(Rdh); // !Rdh
+	Rdh = LOGAND(Rdh, bit); // !Rdh7
 
 	// extract bit 15 from Res
 	Res = VARL(local);
@@ -480,7 +527,7 @@ static RzILOpEffect *avr_il_check_carry_flag_subtraction_wide(const char *local,
 	// boolean and (not logical)
 	Res = NON_ZERO(Res); // cast to bool
 	Rdh = NON_ZERO(Rdh); // cast to bool
-	crr = AND(Res, Rdh); // Res15 & Rdh7
+	crr = AND(Res, Rdh); // Res15 & !Rdh7
 	return SETG(AVR_SREG_C, crr);
 }
 
@@ -614,6 +661,51 @@ static RzILOpEffect *avr_il_add(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// update SREG based on flags
 
 	return SEQ8(let, H, V, N, Z, C, S, adc);
+}
+
+static RzILOpEffect *avr_il_adiw(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *imm;
+	RzILOpEffect *let, *adiw, *Z, *S, *V, *N, *C;
+	// Rd+1:Rd = Rd+1:Rd + K
+	// Rd can be only 24,26,28,30
+	ut16 Rdh = aop->param[0];
+	ut16 Rdl = aop->param[1];
+	ut16 K = aop->param[2];
+	avr_return_val_if_invalid_gpr(Rdh, NULL);
+	avr_return_val_if_invalid_gpr(Rdl, NULL);
+
+	// IND = Rd+1:Rd + K
+	imm = UN(AVR_IND_SIZE, K);
+	x = avr_il_get_indirect_address_reg(Rdh, Rdl);
+	x = ADD(x, imm);
+	let = SETL(AVR_LET_IND, x);
+
+	// Rd+1:Rd = IND
+	adiw = avr_il_update_indirect_address_reg(AVR_LET_IND, Rdh, Rdl, 0, false);
+
+	// set Z to 1 if !IND
+	Z = avr_il_check_zero_flag(AVR_LET_IND, false);
+
+	// Res = IND
+	// V: !Rdh7 & Res15
+	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
+	x = AVR_REG(Rdh);
+	V = avr_il_check_two_complement_overflow_flag_addition_wide(AVR_LET_IND, x);
+
+	// Res = IND
+	// N: Res15
+	// Set if MSB of the result is set; cleared otherwise.
+	N = avr_il_check_negative_flag_wide(AVR_LET_IND);
+
+	// Res = IND
+	// C: !Res15 & Rdh7
+	x = AVR_REG(Rdh);
+	C = avr_il_check_carry_flag_addition_wide(AVR_LET_IND, x);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ7(let, adiw, Z, V, N, C, S);
 }
 
 static RzILOpEffect *avr_il_and(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
@@ -1144,7 +1236,7 @@ static RzILOpEffect *avr_il_sbiw(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	V = avr_il_check_two_complement_overflow_flag_subtraction_wide(AVR_LET_IND, x);
 
 	// Res = IND
-	// N: Res7
+	// N: Res15
 	// Set if MSB of the result is set; cleared otherwise.
 	N = avr_il_check_negative_flag_wide(AVR_LET_IND);
 
@@ -1378,7 +1470,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_unk, /* AVR_OP_INVALID */
 	avr_il_adc,
 	avr_il_add,
-	avr_il_unk, /* AVR_OP_ADIW */
+	avr_il_adiw,
 	avr_il_and,
 	avr_il_andi,
 	avr_il_unk, /* AVR_OP_ASR */
