@@ -232,6 +232,16 @@ static RzList *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
 	if (!ret) {
 		return NULL;
 	}
+	RzVector procs;
+	rz_vector_init(&procs, sizeof(ut64), NULL, NULL);
+	const ut64 current_thread_offset = ctx->windctx.is_64bit ? 8 : 4;
+	ut64 *kprcb;
+	// Get currently running processes
+	rz_vector_foreach_prev(&ctx->KiProcessorBlock, kprcb) {
+		const ut64 current_thread = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, *kprcb + current_thread_offset);
+		ut64 current_process = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, current_thread + ctx->kthread_process_offset);
+		rz_vector_push(&procs, &current_process);
+	}
 
 	RzList *pids = winkd_list_process(&ctx->windctx);
 	RzListIter *it;
@@ -239,6 +249,7 @@ static RzList *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
 	rz_list_foreach (pids, it, p) {
 		RzDebugPid *newpid = RZ_NEW0(RzDebugPid);
 		if (!newpid) {
+			rz_vector_fini(&procs);
 			rz_list_free(ret);
 			rz_list_free(pids);
 			return NULL;
@@ -247,8 +258,15 @@ static RzList *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
 		newpid->pid = p->uniqueid;
 		newpid->status = 's';
 		newpid->runnable = true;
+		ut64 *process;
+		rz_vector_foreach(&procs, process) {
+			if (*process == p->eprocess) {
+				newpid->status = 'r';
+			}
+		}
 		rz_list_append(ret, newpid);
 	}
+	rz_vector_fini(&procs);
 	rz_list_free(pids);
 	return ret;
 }
