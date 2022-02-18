@@ -1337,6 +1337,8 @@ static RzILOpEffect *avr_il_eicall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalys
 	x = APPEND(x, y);
 	// extend to max PC address size
 	x = EXTZERO(AVR_ADDR_SIZE, x);
+	y = AVR_PC(1);
+	x = SHIFTL0(x, y);
 	jmp = JMP(x);
 
 	x = AVR_PC(pc);
@@ -1361,6 +1363,8 @@ static RzILOpEffect *avr_il_eijmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 	x = APPEND(x, y);
 	// extend to max PC address size
 	x = EXTZERO(AVR_ADDR_SIZE, x);
+	y = AVR_PC(1);
+	x = SHIFTL0(x, y);
 	return JMP(x);
 }
 
