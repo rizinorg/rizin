@@ -975,6 +975,20 @@ static RzILOpEffect *avr_il_brvs(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	return avr_il_branch_when(aop, analysis, k, when, true);
 }
 
+static RzILOpEffect *avr_il_bst(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
+	// Stores bit b from Rd to the T Flag in SREG (Status Register)
+	ut16 Rd = aop->param[0];
+	ut16 b = aop->param[1];
+
+	RzILOpPure *reg, *bit;
+
+	reg = AVR_REG(Rd);
+	bit = AVR_IMM(1u << b);
+	bit = LOGAND(reg, bit);
+	bit = NON_ZERO(bit);
+	return SETG(AVR_SREG_T, bit);
+}
+
 static RzILOpEffect *avr_il_call(AVROp *aop, ut64 pc, RzAnalysis *analysis) {
 	// PC = k
 	ut32 k = aop->param[0];
@@ -1659,7 +1673,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_brts,
 	avr_il_brvc,
 	avr_il_brvs,
-	avr_il_unk, /* AVR_OP_BST */
+	avr_il_bst,
 	avr_il_call,
 	avr_il_unk, /* AVR_OP_CBI */
 	avr_il_clc,

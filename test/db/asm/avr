@@ -73,7 +73,8 @@ ad "brvs 0xa" 0bf0 6 (branch (var vf) (jmp (bv 32 0x8)) nop)
 ad "brvs 0xffffffffffffff84" 0bf2 0x0 (branch (var vf) (jmp (bv 32 0xff82)) nop)
 a  "bset 7" 7894
 a  "bset 2" 2894
-ad "bst r0, 0" 00FA 0x0
+ad "bst r0, 0" 00FA 0x0 (set tf (! (is_zero (& (var r0) (bv 8 0x1)))))
+ad "bst r0, 4" 04FA 0x0 (set tf (! (is_zero (& (var r0) (bv 8 0x10)))))
 ad "call 0x0" 0E940000 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x2))) (jmp (bv 32 0xfffffffc)))
 ad "call 0x16" 0e940b00 0x2d0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x2d0)) (set sp (- (var sp) (bv 16 0x2))) (jmp (bv 32 0x12)))
 ad "call 0x2016" 0e940b10 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x2))) (jmp (bv 32 0x2012)))
