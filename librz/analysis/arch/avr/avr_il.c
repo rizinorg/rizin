@@ -1222,6 +1222,31 @@ static RzILOpEffect *avr_il_dec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return SEQ5(V, dec, N, Z, S);
 }
 
+static RzILOpEffect *avr_il_eicall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// PC = (EIND << 16) | Z
+	RzILOpPure *x, *y;
+	RzILOpEffect *jmp, *push, *sub;
+
+	x = VARG(AVR_EIND);
+	y = AVR_Z();
+	x = APPEND(x, y);
+	// extend to max PC address size
+	x = EXTZERO(AVR_ADDR_SIZE, x);
+	jmp = JMP(x);
+
+	x = AVR_PC(pc);
+	y = VARG(AVR_SP);
+	y = AVR_ADDR(y);
+	push = STOREW(y, x);
+
+	x = AVR_IMM16(2);
+	y = VARG(AVR_SP);
+	y = SUB(y, x);
+	sub = SETG(AVR_SP, y);
+
+	return SEQ3(push, sub, jmp);
+}
+
 static RzILOpEffect *avr_il_cp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// compare Rd with Rr and sets the SREG flags
 	// changes H|S|V|N|Z|C
@@ -1850,7 +1875,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_cpse,
 	avr_il_dec,
 	avr_il_unk, /* AVR_OP_DES */
-	avr_il_unk, /* AVR_OP_EICALL */
+	avr_il_eicall, /* AVR_OP_EICALL */
 	avr_il_unk, /* AVR_OP_EIJMP */
 	avr_il_unk, /* AVR_OP_ELPM */
 	avr_il_unk, /* AVR_OP_EOR */

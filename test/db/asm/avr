@@ -109,7 +109,7 @@ ad "cpse r0, r0" 0010 0x10 (branch (== (var r0) (var r0)) (jmp (bv 32 0xe)) nop)
 ad "dec r0" 0a94 0x0 (seq (set vf (== (var r0) (bv 8 0x80))) (set r0 (- (var r0) (bv 8 0x1))) (set nf (! (is_zero (& (var r0) (bv 8 0x80))))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
 ad "dec r8" 8A94 0x0 (seq (set vf (== (var r8) (bv 8 0x80))) (set r8 (- (var r8) (bv 8 0x1))) (set nf (! (is_zero (& (var r8) (bv 8 0x80))))) (set zf (is_zero (var r8))) (set sf (^^ (var nf) (var vf))))
 ad "des 0x00" 0B94 0x0
-ad "eicall" 1995 0x0
+ad "eicall" 1995 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x2))) (jmp (cast 32 false (append (var eind) (append (var r31) (var r30))))))
 ad "eijmp" 1994 0x0
 ad "elpm r0, Z" 0690 0x0
 ad "elpm r0, Z+" 0790 0x0
