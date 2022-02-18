@@ -396,6 +396,8 @@ WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address) {
 }
 
 RzList *winkd_list_process(WindCtx *ctx) {
+	RzList *ret = NULL;
+	bool current_process_found = false;
 	// Grab the PsActiveProcessHead from _KDDEBUGGER_DATA64
 	ctx->PsActiveProcessHead = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->KdDebuggerDataBlock + K_PsActiveProcessHead);
 
@@ -405,9 +407,13 @@ RzList *winkd_list_process(WindCtx *ctx) {
 	// Check for empty list
 	if (ptr == 0 || ptr == UT64_MAX) {
 		RZ_LOG_ERROR("NULL value at PsActiveProcessHead\n");
+		if (ctx->target.eprocess) {
+			ret = rz_list_newf(free);
+			goto get_cur_process;
+		}
 		return NULL;
 	}
-	RzList *ret = rz_list_newf(free);
+	ret = rz_list_newf(free);
 
 	do {
 		ut64 next;
@@ -426,10 +432,20 @@ RzList *winkd_list_process(WindCtx *ctx) {
 
 		WindProc *proc = winkd_get_process_at(ctx, ptr);
 		if (proc) {
+			if (proc->eprocess == ctx->target.eprocess) {
+				current_process_found = true;
+			}
 			rz_list_append(ret, proc);
 		}
 		ptr = next;
 	} while (ptr != ctx->PsActiveProcessHead);
+get_cur_process:
+	if (!current_process_found && ctx->target.eprocess) {
+		WindProc *proc = winkd_get_process_at(ctx, ctx->target.eprocess);
+		if (proc) {
+			rz_list_append(ret, proc);
+		}
+	}
 	return ret;
 }
 
@@ -441,6 +457,7 @@ int winkd_op_at_uva(WindCtx *ctx, ut64 address, uint8_t *buf, int count, bool wr
 		ut64 pa;
 		const ut32 restOfPage = 0x1000 - (address & 0xfff);
 		if (!winkd_va_to_pa(ctx, ctx->target.dir_base_table, address, &pa)) {
+			RZ_LOG_DEBUG("0x%" PFMT64x " not mapped\n", address);
 			if (UT64_ADD_OVFCHK(address, restOfPage)) {
 				break;
 			}
@@ -617,16 +634,25 @@ WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address) {
 RzList *winkd_list_threads(WindCtx *ctx) {
 	RzList *ret;
 	ut64 ptr, base;
-
+	bool current_thread_found = false;
 	ptr = ctx->target.eprocess;
 	if (!ptr) {
 		RZ_LOG_ERROR("No _EPROCESS for target\n");
+		if (ctx->target_thread.ethread) {
+			ret = rz_list_newf(free);
+			goto get_cur_thread;
+		}
 		return NULL;
 	}
 
 	// Grab the ThreadListHead from _EPROCESS
 	ctx->read_at_kernel_virtual(ctx->user, ptr + O_(E_ThreadListHead), (uint8_t *)&ptr, 4 << ctx->is_64bit);
 	if (!ptr) {
+		RZ_LOG_ERROR("No ThreadListHead for target\n");
+		if (ctx->target_thread.ethread) {
+			ret = rz_list_newf(free);
+			goto get_cur_thread;
+		}
 		return NULL;
 	}
 
@@ -651,10 +677,20 @@ RzList *winkd_list_threads(WindCtx *ctx) {
 
 		WindThread *thread = winkd_get_thread_at(ctx, ptr);
 		if (thread) {
+			if (thread->ethread == ctx->target_thread.ethread) {
+				current_thread_found = true;
+			}
 			rz_list_append(ret, thread);
 		}
 		ptr = next;
 	} while (true);
+get_cur_thread:
+	if (!current_thread_found && ctx->target_thread.ethread) {
+		WindThread *thread = winkd_get_thread_at(ctx, ctx->target_thread.ethread);
+		if (thread) {
+			rz_list_append(ret, thread);
+		}
+	}
 	return ret;
 }
 
