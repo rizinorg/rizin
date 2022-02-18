@@ -1223,6 +1223,7 @@ static RzILOpEffect *avr_il_dec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 }
 
 static RzILOpEffect *avr_il_eicall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// *(SP--) = PC
 	// PC = (EIND << 16) | Z
 	RzILOpPure *x, *y;
 	RzILOpEffect *jmp, *push, *sub;
@@ -1245,6 +1246,18 @@ static RzILOpEffect *avr_il_eicall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalys
 	sub = SETG(AVR_SP, y);
 
 	return SEQ3(push, sub, jmp);
+}
+
+static RzILOpEffect *avr_il_eijmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// PC = (EIND << 16) | Z
+	RzILOpPure *x, *y;
+
+	x = VARG(AVR_EIND);
+	y = AVR_Z();
+	x = APPEND(x, y);
+	// extend to max PC address size
+	x = EXTZERO(AVR_ADDR_SIZE, x);
+	return JMP(x);
 }
 
 static RzILOpEffect *avr_il_cp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -1875,8 +1888,8 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_cpse,
 	avr_il_dec,
 	avr_il_unk, /* AVR_OP_DES */
-	avr_il_eicall, /* AVR_OP_EICALL */
-	avr_il_unk, /* AVR_OP_EIJMP */
+	avr_il_eicall,
+	avr_il_eijmp,
 	avr_il_unk, /* AVR_OP_ELPM */
 	avr_il_unk, /* AVR_OP_EOR */
 	avr_il_unk, /* AVR_OP_FMUL */
