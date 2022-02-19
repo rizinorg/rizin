@@ -1132,14 +1132,7 @@ RZ_API ut32 rz_bv_len(RZ_NONNULL const RzBitVector *bv) {
  */
 RZ_API ut32 rz_bv_len_bytes(RZ_NONNULL const RzBitVector *bv) {
 	rz_return_val_if_fail(bv, 0);
-	if (bv->len > 64) {
-		return bv->_elem_len;
-	}
-	ut32 align = bv->len;
-	if (align & 3) {
-		align += 8 - (align & 3);
-	}
-	return align >> 3;
+	return (bv->len + 7) >> 3;
 }
 
 /**

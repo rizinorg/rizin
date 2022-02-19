@@ -51,7 +51,7 @@ RUN
 NAME=quoted comments bug
 FILE=malloc://1024
 CMDS=<<EOF
-"w hello # world"
+w "hello # world"
 ps
 EOF
 EXPECT=<<EOF

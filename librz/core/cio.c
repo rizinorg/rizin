@@ -369,27 +369,44 @@ RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size) 
 	return ret;
 }
 
-RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, int size) {
-	if (!core->io || !core->file || size < 1) {
-		return false;
-	}
+/**
+ * \brief Extend the file at current offset by inserting \p size 0 bytes at \p addr
+ *
+ * \p addr is an physical/virtual address based on the value of eval "io.va".
+ * When virtual it is translated to a physical address according to the IO map
+ * at the current offset
+ *
+ * \param core Reference to RzCore instance
+ * \param addr Address where to insert new 0 bytes.
+ * \param size Number of 0 bytes to insert
+ * \return true if extend operation was successful, false otherwise
+ */
+RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, ut64 size) {
+	rz_return_val_if_fail(core, false);
+
 	int io_va = rz_config_get_i(core->config, "io.va");
 	if (io_va) {
 		RzIOMap *map = rz_io_map_get(core->io, core->offset);
 		if (map) {
 			addr = addr - map->itv.addr + map->delta;
 		}
-		rz_config_set_i(core->config, "io.va", false);
 	}
-	int ret = rz_io_extend_at(core->io, addr, size);
-	if (addr >= core->offset && addr <= core->offset + core->blocksize) {
-		rz_core_block_read(core);
-	}
-	rz_config_set_i(core->config, "io.va", io_va);
+	bool ret = rz_io_extend_at(core->io, addr, size);
+	rz_core_block_read(core);
 	return ret;
 }
 
-RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) {
+/**
+ * \brief Shift a block of data from \p addr of size \p b_size left or right based on \p dist.
+ *
+ * \param core Reference to RzCore instance
+ * \param addr Address of the block of data to move
+ * \param b_size Size of the block of data to move
+ * \param dist Where to shift the data, whether backward or forward and how
+ *             distant from the original position
+ * \return true if the shift operation was succesful, false otherwise
+ */
+RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	// bstart - block start, fstart file start
 	ut64 fend = 0, fstart = 0, bstart = 0, file_sz = 0;
 	ut8 *shift_buf = NULL;
@@ -420,19 +437,8 @@ RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) 
 		return false;
 	}
 
-	// cases
-	// addr + b_size + dist > file_end
-	// if ( (addr+b_size) + dist > file_end ) {
-	//	res = false;
-	//}
-	// addr + b_size + dist < file_start (should work since dist is signed)
-	// else if ( (addr+b_size) + dist < 0 ) {
-	//	res = false;
-	//}
-	// addr + dist < file_start
 	if (addr + dist < fstart) {
 		res = false;
-		// addr + dist > file_end
 	} else if ((addr) + dist > fend) {
 		res = false;
 	} else {
@@ -492,6 +498,40 @@ RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs) {
 err:
 	free(buf);
 	return len;
+}
+
+/**
+ * Writes the bytes \p data at address \p addr cyclically until it fills the whole block
+ *
+ * It repeats the data \p data with length \p len until it fills an entire block
+ * starting at \p addr.
+ *
+ * \param core RzCore reference
+ * \param addr Address to where to write
+ * \param data Array of bytes to cyclically write in the block at \p addr
+ * \param len Length of \p data
+ */
+RZ_API bool rz_core_write_block(RzCore *core, ut64 addr, ut8 *data, size_t len) {
+	rz_return_val_if_fail(core && data, 0);
+
+	ut8 *buf = RZ_NEWS(ut8, core->blocksize);
+	if (!buf) {
+		return false;
+	}
+
+	bool res = false;
+	rz_mem_copyloop(buf, data, core->blocksize, len);
+	if (!rz_core_write_at(core, addr, buf, core->blocksize)) {
+		RZ_LOG_ERROR("Could not write cyclic data (%d bytes) at %" PFMT64x "\n", core->blocksize, addr);
+		goto err;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, core->blocksize, true);
+	}
+	res = true;
+err:
+	free(buf);
+	return res;
 }
 
 /**

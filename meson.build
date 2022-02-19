@@ -79,7 +79,12 @@ endif
 if host_machine.system() == 'windows'
   rizinbirth = run_command('cmd', '/c', 'echo %date%__%time%')
 else
-  rizinbirth = run_command('date', '+%Y-%m-%d__%H:%M:%S')
+  rizinbirth = run_command('sh', '-c', '''
+      SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}";
+      FORMAT="+%Y-%m-%d__%H:%M:%S";
+      date -u -d "@$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
+      date -u -r  "$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
+      date -u "$FORMAT"''')
 endif
 if rizinbirth.returncode() != 0
   rizinbirth = ''

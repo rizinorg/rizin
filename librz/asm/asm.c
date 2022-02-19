@@ -1036,10 +1036,6 @@ fail:
 	return rz_asm_code_free(acode);
 }
 
-RZ_API bool rz_asm_modify(RzAsm *a, ut8 *buf, int field, ut64 val) {
-	return (a->cur && a->cur->modify) ? a->cur->modify(a, buf, field, val) : false;
-}
-
 RZ_API int rz_asm_get_offset(RzAsm *a, int type, int idx) { // link to rbin
 	if (a && a->binb.bin && a->binb.get_offset) {
 		return a->binb.get_offset(a->binb.bin, type, idx);

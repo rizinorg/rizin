@@ -441,50 +441,68 @@ RZ_API bool rz_io_close(RzIO *io) {
 	return io ? rz_io_desc_close(io->desc) : false;
 }
 
-RZ_API int rz_io_extend_at(RzIO *io, ut64 addr, ut64 size) {
-	ut64 cur_size, tmp_size;
-	ut8 *buffer;
-	if (!io || !io->desc || !io->desc->plugin || !size) {
+/**
+ * \brief Extend the RzIODesc at \p addr by inserting \p size 0 bytes
+ *
+ * \param io Reference to RzIO instance
+ * \param addr Address where to insert new 0 bytes
+ * \param size Number of 0 bytes to insert
+ * \return true if extend operation was successful, false otherwise
+ */
+RZ_API bool rz_io_extend_at(RzIO *io, ut64 addr, ut64 size) {
+#define IO_EXTEND_BLOCK_SZ 256
+	rz_return_val_if_fail(io, false);
+
+	if (!io->desc || !io->desc->plugin) {
 		return false;
 	}
-	if (io->desc->plugin->extend) {
-		int ret;
-		ut64 cur_off = io->off;
-		rz_io_seek(io, addr, RZ_IO_SEEK_SET);
-		ret = rz_io_desc_extend(io->desc, size);
-		// no need to seek here
-		io->off = cur_off;
-		return ret;
+	if (size == 0) {
+		return true;
 	}
+
 	if ((io->desc->perm & RZ_PERM_RW) != RZ_PERM_RW) {
 		return false;
 	}
-	cur_size = rz_io_desc_size(io->desc);
+	ut64 cur_size = rz_io_desc_size(io->desc);
 	if (addr > cur_size) {
 		return false;
 	}
-	if ((UT64_MAX - size) < cur_size) {
+
+	// Extend the file to include the additional <size> bytes
+	if (UT64_ADD_OVFCHK(cur_size, size)) {
 		return false;
 	}
 	if (!rz_io_resize(io, cur_size + size)) {
 		return false;
 	}
-	if ((tmp_size = cur_size - addr) == 0LL) {
-		return true;
-	}
-	if (!(buffer = calloc(1, (size_t)tmp_size + 1))) {
+
+	// Shift old data to make space for the zero bytes
+	ut64 tmp = cur_size >= IO_EXTEND_BLOCK_SZ ? RZ_MAX(cur_size - IO_EXTEND_BLOCK_SZ, addr) : addr;
+	ut64 remaining = cur_size - addr;
+
+	ut8 *buffer = RZ_NEWS(ut8, IO_EXTEND_BLOCK_SZ);
+	if (!buffer) {
 		return false;
 	}
-	rz_io_pread_at(io, addr, buffer, (int)tmp_size);
-	/* fill with null bytes */
-	ut8 *empty = calloc(1, size);
-	if (empty) {
-		rz_io_pwrite_at(io, addr, empty, size);
-		free(empty);
+	while (remaining) {
+		int sz = rz_io_pread_at(io, tmp, buffer, IO_EXTEND_BLOCK_SZ);
+		rz_io_pwrite_at(io, tmp + size, buffer, sz);
+
+		tmp = tmp - IO_EXTEND_BLOCK_SZ > addr ? tmp - IO_EXTEND_BLOCK_SZ : addr;
+		remaining = remaining > sz ? remaining - sz : 0;
 	}
-	rz_io_pwrite_at(io, addr + size, buffer, (int)tmp_size);
 	free(buffer);
+
+	// Put the zero bytes at the right place
+	ut8 *empty = RZ_NEWS0(ut8, size);
+	if (!empty) {
+		return false;
+	}
+	rz_io_pwrite_at(io, addr, empty, size);
+	free(empty);
+
 	return true;
+#undef IO_EXTEND_BLOCK_SZ
 }
 
 RZ_API bool rz_io_set_write_mask(RzIO *io, const ut8 *mask, int len) {

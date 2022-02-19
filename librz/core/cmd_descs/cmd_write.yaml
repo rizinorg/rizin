@@ -260,9 +260,46 @@ commands:
             arg_str: " 48656c6c6f576f726c64"
             comment: Write the string "SGVsbG9Xb3JsZAo=" (without quotes) at current offset.
   - name: we
-    cname: we_handler_old
     summary: Extend write operations (insert bytes instead of replacing)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: wen
+        cname: write_extend_zero
+        summary: Insert <len> null bytes at <addr> or current offset and extend the file at current offset
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wes
+        cname: write_extend_shift
+        summary: Shift <len> bytes at current offset left or right based on <dist>
+        description: >
+          Shift the bytes at current offset left or right, based on the value of
+          <dist>. Positive <dist> shifts the data right, negative <dist> shifts
+          the data left. The amount of data to be shifted is either <len>, if
+          specified, or the whole remaining file otherwise.
+        args:
+          - name: dist
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wex
+        cname: write_extend_hexbytes
+        summary: Insert <hex_bytes> at <addr> or current offset and extend the file at current offset
+        args:
+          - name: bytes
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: wex
+                arg_str: " 414243"
+                comment: Insert the characters "ABC" at the current offset and extend the file
   - name: wu
     cname: wu_handler_old
     summary: Apply unified hex patch (see output of cu)
@@ -273,10 +310,6 @@ commands:
     args:
       - name: len
         type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: wA
-    cname: wA_handler_old
-    summary: Alter/modify opcode at current seek (see wA?)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wc
     summary: Write cache commands
     subcommands:
@@ -477,9 +510,11 @@ commands:
                 arg_str: " recj"
                 comment: Swap the condition of the current conditional instruction
   - name: wb
-    cname: wb_handler_old
-    summary: Write in current block with cyclic hexstring
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    cname: write_block
+    summary: Write in current block an hexstring cyclically
+    args:
+      - name: hex
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: wm
     cname: wm_handler_old
     summary: Set binary mask hexpair to be used as cyclic write mask

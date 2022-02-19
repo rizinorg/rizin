@@ -32,7 +32,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"w hello;world";wa "inc eax;inc eax";psz
+w "hello;world";wa "inc eax;inc eax";psz
 EOF
 EXPECT=<<EOF
 @@llo;world

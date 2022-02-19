@@ -44,6 +44,7 @@ static const RzCmdDescDetail w2_details[2];
 static const RzCmdDescDetail w4_details[2];
 static const RzCmdDescDetail w8_details[2];
 static const RzCmdDescDetail w6_details[2];
+static const RzCmdDescDetail write_extend_hexbytes_details[2];
 static const RzCmdDescDetail write_assembly_opcode_details[2];
 static const RzCmdDescDetail zign_add_details[5];
 static const RzCmdDescDetail tmp_modifiers_details[2];
@@ -463,6 +464,9 @@ static const RzCmdDescArg write_8_inc_args[2];
 static const RzCmdDescArg write_8_dec_args[2];
 static const RzCmdDescArg write_base64_decode_args[2];
 static const RzCmdDescArg write_base64_encode_args[2];
+static const RzCmdDescArg write_extend_zero_args[3];
+static const RzCmdDescArg write_extend_shift_args[3];
+static const RzCmdDescArg write_extend_hexbytes_args[3];
 static const RzCmdDescArg write_random_args[2];
 static const RzCmdDescArg write_cache_remove_args[3];
 static const RzCmdDescArg write_cache_commit_args[3];
@@ -478,6 +482,7 @@ static const RzCmdDescArg write_assembly_args[2];
 static const RzCmdDescArg write_assembly_inside_args[2];
 static const RzCmdDescArg write_assembly_file_args[2];
 static const RzCmdDescArg write_assembly_opcode_args[2];
+static const RzCmdDescArg write_block_args[2];
 static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
@@ -10385,8 +10390,77 @@ static const RzCmdDescHelp write_base64_encode_help = {
 	.args = write_base64_encode_args,
 };
 
-static const RzCmdDescHelp we_handler_old_help = {
+static const RzCmdDescHelp we_help = {
 	.summary = "Extend write operations (insert bytes instead of replacing)",
+};
+static const RzCmdDescArg write_extend_zero_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_extend_zero_help = {
+	.summary = "Insert <len> null bytes at <addr> or current offset and extend the file at current offset",
+	.args = write_extend_zero_args,
+};
+
+static const RzCmdDescArg write_extend_shift_args[] = {
+	{
+		.name = "dist",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_extend_shift_help = {
+	.summary = "Shift <len> bytes at current offset left or right based on <dist>",
+	.description = "Shift the bytes at current offset left or right, based on the value of <dist>. Positive <dist> shifts the data right, negative <dist> shifts the data left. The amount of data to be shifted is either <len>, if specified, or the whole remaining file otherwise.",
+	.args = write_extend_shift_args,
+};
+
+static const RzCmdDescDetailEntry write_extend_hexbytes_Examples_detail_entries[] = {
+	{ .text = "wex", .arg_str = " 414243", .comment = "Insert the characters \"ABC\" at the current offset and extend the file" },
+	{ 0 },
+};
+static const RzCmdDescDetail write_extend_hexbytes_details[] = {
+	{ .name = "Examples", .entries = write_extend_hexbytes_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg write_extend_hexbytes_args[] = {
+	{
+		.name = "bytes",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_extend_hexbytes_help = {
+	.summary = "Insert <hex_bytes> at <addr> or current offset and extend the file at current offset",
+	.details = write_extend_hexbytes_details,
+	.args = write_extend_hexbytes_args,
 };
 
 static const RzCmdDescHelp wu_handler_old_help = {
@@ -10405,10 +10479,6 @@ static const RzCmdDescArg write_random_args[] = {
 static const RzCmdDescHelp write_random_help = {
 	.summary = "Write <len> random bytes",
 	.args = write_random_args,
-};
-
-static const RzCmdDescHelp wA_handler_old_help = {
-	.summary = "Alter/modify opcode at current seek (see wA?)",
 };
 
 static const RzCmdDescHelp wc_help = {
@@ -10715,8 +10785,18 @@ static const RzCmdDescHelp write_assembly_opcode_help = {
 	.args = write_assembly_opcode_args,
 };
 
-static const RzCmdDescHelp wb_handler_old_help = {
-	.summary = "Write in current block with cyclic hexstring",
+static const RzCmdDescArg write_block_args[] = {
+	{
+		.name = "hex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_block_help = {
+	.summary = "Write in current block an hexstring cyclically",
+	.args = write_block_args,
 };
 
 static const RzCmdDescHelp wm_handler_old_help = {
@@ -13989,17 +14069,22 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_base64_encode_cd = rz_cmd_desc_argv_new(core->rcmd, w6_cd, "w6e", rz_write_base64_encode_handler, &write_base64_encode_help);
 	rz_warn_if_fail(write_base64_encode_cd);
 
-	RzCmdDesc *we_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "we", rz_we_handler_old, &we_handler_old_help);
-	rz_warn_if_fail(we_handler_old_cd);
+	RzCmdDesc *we_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "we", NULL, NULL, &we_help);
+	rz_warn_if_fail(we_cd);
+	RzCmdDesc *write_extend_zero_cd = rz_cmd_desc_argv_new(core->rcmd, we_cd, "wen", rz_write_extend_zero_handler, &write_extend_zero_help);
+	rz_warn_if_fail(write_extend_zero_cd);
+
+	RzCmdDesc *write_extend_shift_cd = rz_cmd_desc_argv_new(core->rcmd, we_cd, "wes", rz_write_extend_shift_handler, &write_extend_shift_help);
+	rz_warn_if_fail(write_extend_shift_cd);
+
+	RzCmdDesc *write_extend_hexbytes_cd = rz_cmd_desc_argv_new(core->rcmd, we_cd, "wex", rz_write_extend_hexbytes_handler, &write_extend_hexbytes_help);
+	rz_warn_if_fail(write_extend_hexbytes_cd);
 
 	RzCmdDesc *wu_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wu", rz_wu_handler_old, &wu_handler_old_help);
 	rz_warn_if_fail(wu_handler_old_cd);
 
 	RzCmdDesc *write_random_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wr", rz_write_random_handler, &write_random_help);
 	rz_warn_if_fail(write_random_cd);
-
-	RzCmdDesc *wA_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wA", rz_wA_handler_old, &wA_handler_old_help);
-	rz_warn_if_fail(wA_handler_old_cd);
 
 	RzCmdDesc *wc_cd = rz_cmd_desc_group_state_new(core->rcmd, w_cd, "wc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_write_cache_list_handler, &write_cache_list_help, &wc_help);
 	rz_warn_if_fail(wc_cd);
@@ -14057,8 +14142,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_assembly_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, wa_cd, "wao", rz_write_assembly_opcode_handler, &write_assembly_opcode_help);
 	rz_warn_if_fail(write_assembly_opcode_cd);
 
-	RzCmdDesc *wb_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wb", rz_wb_handler_old, &wb_handler_old_help);
-	rz_warn_if_fail(wb_handler_old_cd);
+	RzCmdDesc *write_block_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wb", rz_write_block_handler, &write_block_help);
+	rz_warn_if_fail(write_block_cd);
 
 	RzCmdDesc *wm_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wm", rz_wm_handler_old, &wm_handler_old_help);
 	rz_warn_if_fail(wm_handler_old_cd);
