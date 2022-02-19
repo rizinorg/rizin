@@ -13,10 +13,10 @@
 #include "../arch/arm/arm_cs.h"
 #include "../arch/arm/arm_accessors32.h"
 #include "../arch/arm/arm_accessors64.h"
+#include "../../asm/arch/arm/arm_it.h"
 
 typedef struct arm_cs_context_t {
-	HtUU *ht_itblock;
-	HtUU *ht_it;
+	RzArmITContext it;
 	csh handle;
 	int omode;
 	int obits;
@@ -1014,42 +1014,11 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	}
 }
 
-static void analysis_itblock(ArmCSContext *ctx, cs_insn *insn) {
-	size_t i, size = rz_str_nlen(insn->mnemonic, 5);
-	ht_uu_update(ctx->ht_itblock, insn->address, size);
-	for (i = 1; i < size; i++) {
-		switch (insn->mnemonic[i]) {
-		case 0x74: //'t'
-			ht_uu_update(ctx->ht_it, insn->address + (i * insn->size), insn->detail->arm.cc);
-			break;
-		case 0x65: //'e'
-			ht_uu_update(ctx->ht_it, insn->address + (i * insn->size), (insn->detail->arm.cc % 2) ? insn->detail->arm.cc + 1 : insn->detail->arm.cc - 1);
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-static void check_itblock(ArmCSContext *ctx, cs_insn *insn) {
-	size_t x;
-	bool found;
-	ut64 itlen = ht_uu_find(ctx->ht_itblock, insn->address, &found);
-	if (found) {
-		for (x = 1; x < itlen; x++) {
-			ht_uu_delete(ctx->ht_it, insn->address + (x * insn->size));
-		}
-		ht_uu_delete(ctx->ht_itblock, insn->address);
-	}
-}
-
 static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
 	const ut64 addr = op->addr;
 	const int pcdelta = thumb ? 4 : 8;
 	int i;
-	bool found = 0;
-	ut64 itcond;
 
 	op->cond = cond_cs2r2(insn->detail->arm.cc);
 	if (op->cond == RZ_TYPE_COND_NV) {
@@ -1079,7 +1048,7 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 	}
 
 	if (insn->id != ARM_INS_IT) {
-		check_itblock(ctx, insn);
+		rz_arm_it_update_nonblock(&ctx->it, insn);
 	}
 
 	switch (insn->id) {
@@ -1117,7 +1086,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_IT:
-		analysis_itblock(ctx, insn);
+		rz_arm_it_update_block(&ctx->it, insn);
 		op->cycles = 2;
 		break;
 	case ARM_INS_BKPT:
@@ -1517,16 +1486,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		RZ_LOG_DEBUG("ARM analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
 		break;
 	}
-	itcond = ht_uu_find(ctx->ht_it, addr, &found);
-	if (found) {
-		insn->detail->arm.cc = itcond;
-		insn->detail->arm.update_flags = 0;
+	if (thumb && rz_arm_it_apply_cond(&ctx->it, insn)) {
 		op->mnemonic = rz_str_newf("%s%s%s%s",
 			rz_analysis_optype_to_string(op->type),
-			cc_name(itcond),
+			cc_name(insn->detail->arm.cc),
 			insn->op_str[0] ? " " : "",
 			insn->op_str);
-		op->cond = itcond;
+		op->cond = (RzTypeCond)insn->detail->arm.cc;
 	}
 }
 
@@ -2384,8 +2350,7 @@ static bool init(void **user) {
 	if (!ctx) {
 		return false;
 	}
-	ctx->ht_it = ht_uu_new0();
-	ctx->ht_itblock = ht_uu_new0();
+	rz_arm_it_context_init(&ctx->it);
 	ctx->handle = 0;
 	ctx->omode = -1;
 	ctx->obits = 32;
@@ -2397,8 +2362,7 @@ static bool fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	ArmCSContext *ctx = (ArmCSContext *)user;
 	cs_close(&ctx->handle);
-	ht_uu_free(ctx->ht_itblock);
-	ht_uu_free(ctx->ht_it);
+	rz_arm_it_context_fini(&ctx->it);
 	free(ctx);
 	return true;
 }

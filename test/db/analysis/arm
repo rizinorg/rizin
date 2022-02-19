@@ -1113,3 +1113,40 @@ EXPECT=<<EOF
 2
 EOF
 RUN
+
+NAME=arm thumb it tracking
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+s 0x100
+wx 54bf53f8182c52181846
+pi 4
+ao @ 0x102~mnemonic
+ao @ 0x106~mnemonic
+ao @ 0x108~mnemonic
+?e -- Update after code change
+wx 1846
+pi 4
+ao @ 0x102~mnemonic
+ao @ 0x106~mnemonic
+ao @ 0x108~mnemonic
+EOF
+EXPECT=<<EOF
+ite pl
+ldrpl r2, [r3, -0x18]
+addmi r2, r2, r1
+mov r0, r3
+mnemonic: ldrpl
+mnemonic: addmi
+mnemonic: mov
+-- Update after code change
+mov r0, r3
+ldr r2, [r3, -0x18]
+adds r2, r2, r1
+mov r0, r3
+mnemonic: ldr
+mnemonic: adds
+mnemonic: mov
+EOF
+RUN
