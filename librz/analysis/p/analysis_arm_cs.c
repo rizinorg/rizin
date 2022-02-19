@@ -1772,6 +1772,9 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				rz_arm_cs_analysis_op_32_esil(a, op, addr, buf, len, &ctx->handle, insn, thumb);
 			}
+			if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+				op->il_op = rz_arm_cs_32_il(&ctx->handle, insn, thumb);
+			}
 		}
 		set_opdir(op);
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
@@ -2367,6 +2370,14 @@ static bool fini(void *user) {
 	return true;
 }
 
+static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+	if (analysis->bits == 64) {
+		// not yet implemented
+		return NULL;
+	}
+	return rz_arm_cs_32_il_config(analysis->big_endian);
+}
+
 RzAnalysisPlugin rz_analysis_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM analyzer",
@@ -2380,6 +2391,7 @@ RzAnalysisPlugin rz_analysis_plugin_arm_cs = {
 	.bits = 16 | 32 | 64,
 	.address_bits = address_bits,
 	.op = &analysis_op,
+	.il_config = il_config,
 	.init = &init,
 	.fini = &fini,
 };
