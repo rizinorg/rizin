@@ -231,7 +231,7 @@ RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 		ret = tmp;
 	}
 #endif
-#if __UNIX__
+#if HAVE_REALPATH
 	char rp[PATH_MAX] = { 0 };
 	char *abspath = realpath(ret, rp); // second arg == NULL is only an extension
 	if (abspath) {
