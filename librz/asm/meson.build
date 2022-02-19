@@ -135,6 +135,7 @@ rz_asm_sources = [
   'arch/8051/8051_ass.c',
   'arch/arm/armass.c',
   'arch/arm/armass64.c',
+  'arch/arm/arm_it.c',
   'arch/avr/disassembler.c',
   'arch/avr/assembler.c',
   'arch/cr16/cr16_disas.c',
