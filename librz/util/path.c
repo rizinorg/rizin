@@ -211,7 +211,7 @@ RZ_API RZ_OWN char *rz_path_realpath(RZ_NULLABLE const char *path) {
 	if (!path) {
 		return NULL;
 	}
-#if __UNIX__
+#if HAVE_REALPATH
 	char buf[PATH_MAX] = { 0 };
 	const char *rp = realpath(path, buf);
 	if (rp) {

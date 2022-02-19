@@ -20,6 +20,7 @@
 #define HAVE_EXECVP                 @HAVE_EXECVP@
 #define HAVE_EXECL                  @HAVE_EXECL@
 #define HAVE_SYSTEM                 @HAVE_SYSTEM@
+#define HAVE_REALPATH               @HAVE_REALPATH@
 #define HAVE_PIPE2                  @HAVE_PIPE2@
 #define HAVE_ENVIRON                @HAVE_ENVIRON@
 #define HAVE_OPENPTY                @HAVE_OPENPTY@

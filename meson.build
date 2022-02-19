@@ -458,6 +458,7 @@ foreach item : [
     ['execvp', '#include <unistd.h>', []],
     ['execl', '#include <unistd.h>', []],
     ['system', '#include <stdlib.h>', []],
+    ['realpath', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
     ['nice', '#include <unistd.h>', []],
     ['copyfile', '#include <copyfile.h>', []],
