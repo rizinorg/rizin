@@ -927,12 +927,12 @@ pd 4 @ 0x104b
 EOF
 EXPECT=<<EOF
 │       ┌─< 0x0000104b      je    0x1050
-│       ──> 0x0000104d      jmp   0x104d
+│      @──> 0x0000104d      jmp   0x104d
         │   0x0000104f      nop
 │       └─> 0x00001050      xor   eax, eax
 
 │       ╭─< 0x0000104b      je    0x1050
-│       ──> 0x0000104d      jmp   0x104d
+│      @──> 0x0000104d      jmp   0x104d
         │   0x0000104f      nop
 │       ╰─> 0x00001050      xor   eax, eax
 EOF
