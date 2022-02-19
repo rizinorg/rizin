@@ -1930,6 +1930,44 @@ static RzILOpEffect *avr_il_lsl(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return SEQ7(H, C, lsl, N, Z, S, V);
 }
 
+static RzILOpEffect *avr_il_lsr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect *lsr, *S, *V, *N, *Z, *C;
+	// Rd >>= 1
+	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	x = AVR_REG(Rd);
+	y = AVR_SH(1);
+	x = SHIFTR0(x, y);
+	lsr = AVR_REG_SET(Rd, x);
+
+	// C: Rd0
+	x = AVR_REG(Rd);
+	x = LSB(x);
+	C = SETG(AVR_SREG_C, x);
+
+	// perform shift since we need the result for the SREG flags.
+	// N: 0
+	N = avr_il_assign_bool(AVR_SREG_N, false);
+
+	// Z: !Res
+	x = AVR_REG(Rd);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	// V: N ^ C, For N and C after the shift
+	x = VARG(AVR_SREG_N);
+	y = VARG(AVR_SREG_C);
+	x = XOR(x, y);
+	V = SETG(AVR_SREG_V, x);
+
+	return SEQ6(C, N, lsr, Z, S, V);
+}
+
 static RzILOpEffect *avr_il_mov(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = Rr
 	ut16 Rd = aop->param[0];
@@ -2094,22 +2132,22 @@ static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 }
 
 static RzILOpEffect *avr_il_sec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// C = 0
+	// C = 1
 	return avr_il_assign_bool(AVR_SREG_C, true);
 }
 
 static RzILOpEffect *avr_il_seh(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// H = 0
+	// H = 1
 	return avr_il_assign_bool(AVR_SREG_H, true);
 }
 
 static RzILOpEffect *avr_il_sei(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// I = 0
+	// I = 1
 	return avr_il_assign_bool(AVR_SREG_I, true);
 }
 
 static RzILOpEffect *avr_il_sen(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// N = 0
+	// N = 1
 	return avr_il_assign_bool(AVR_SREG_N, true);
 }
 
@@ -2122,22 +2160,22 @@ static RzILOpEffect *avr_il_ser(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 }
 
 static RzILOpEffect *avr_il_ses(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// S = 0
+	// S = 1
 	return avr_il_assign_bool(AVR_SREG_S, true);
 }
 
 static RzILOpEffect *avr_il_set(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// T = 0
+	// T = 1
 	return avr_il_assign_bool(AVR_SREG_T, true);
 }
 
 static RzILOpEffect *avr_il_sev(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// V = 0
+	// V = 1
 	return avr_il_assign_bool(AVR_SREG_V, true);
 }
 
 static RzILOpEffect *avr_il_sez(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// Z = 0
+	// Z = 1
 	return avr_il_assign_bool(AVR_SREG_Z, true);
 }
 
@@ -2376,7 +2414,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_lds,
 	avr_il_lpm,
 	avr_il_lsl,
-	avr_il_unk, /* AVR_OP_LSR */
+	avr_il_lsr,
 	avr_il_mov,
 	avr_il_movw,
 	avr_il_unk, /* AVR_OP_MUL */

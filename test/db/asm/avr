@@ -159,7 +159,7 @@ ad "lpm r0, Z" 0490 0x0 (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var
 ad "lpm r0, Z+" 0590 0x0 (seq (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30))))) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x1)))))
 ad "lpm" C895 0x0 (set r0 (loadw 0 8 (cast 32 false (append (var r31) (var r30)))))
 ad "lsl r24" 880f 0x0 (seq (set hf (! (is_zero (& (var r24) (bv 8 0x8))))) (set cf (! (is_zero (& (var r24) (bv 8 0x80))))) (set r24 (+ (var r24) (var r24))) (set nf (! (is_zero (& (var r24) (bv 8 0x80))))) (set zf (is_zero (var r24))) (set sf (^^ (var nf) (var vf))) (set vf (^^ (var nf) (var cf))))
-ad "lsr r0" 0694 0x0
+ad "lsr r0" 0694 0x0 (seq (set cf (lsb (var r0))) (set nf false) (set r0 (>> (var r0) (bv 32 0x1) false)) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))) (set vf (^^ (var nf) (var cf))))
 ad "mov r0, r0" 002C 0x0 (set r0 (var r0))
 ad "mov r0, r31" 0f2e 0x0 (set r0 (var r31))
 ad "movw r0, r0" 0001 0x0 (seq (set IND (append (var r1) (var r0))) (set r1 (cast 8 false (>> (var IND) (bv 32 0x8) false))) (set r0 (cast 8 false (var IND))))
