@@ -31,6 +31,7 @@ static const char *rz_vline_a[] = {
 	"`", // LDWN_CORNER
 	"->", // ARROW_RIGHT
 	"=<", // ARROW_LEFT
+	"@", // SELF_LOOP
 };
 
 static const char *rz_vline_u[] = {
@@ -46,6 +47,7 @@ static const char *rz_vline_u[] = {
 	"┐", // LDWN_CORNER
 	">", // ARROW_RIGHT
 	"<", // ARROW_LEFT
+	"@", // SELF_LOOP
 };
 
 static const char *rz_vline_uc[] = {
@@ -62,6 +64,7 @@ static const char *rz_vline_uc[] = {
 	"╮", // LDWN_CORNER
 	">", // ARROW_RIGHT
 	"<", // ARROW_LEFT
+	"@", // SELF_LOOP
 };
 
 #define DS_PRE_NONE       0
@@ -377,6 +380,7 @@ static const char *get_utf8_char(const char line, RzDisasmState *ds) {
 	case ',': return ds->core->cons->vline[CORNER_TL];
 	case '.': return ds->core->cons->vline[CORNER_TR];
 	case '`': return ds->core->cons->vline[CORNER_BL];
+	case '@': return ds->core->cons->vline[SELF_LOOP];
 	default: return " ";
 	}
 }
