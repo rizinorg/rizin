@@ -465,6 +465,7 @@ static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 			rz_type_base_struct_member_free(struct_member, NULL);
 			return NULL;
 		}
+		free(struct_member);
 	}
 	base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
 	base_type->size = rz_bin_pdb_get_type_val(type);
@@ -581,6 +582,7 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 			rz_type_base_union_member_free(union_member, NULL);
 			return NULL;
 		}
+		free(union_member);
 	}
 	base_type->size = rz_bin_pdb_get_type_val(type);
 	base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
@@ -674,6 +676,7 @@ static RzType *parse_enum(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 			rz_type_base_enum_case_free(enum_case, NULL);
 			return NULL;
 		}
+		free(enum_case);
 	}
 	base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
 	rz_list_append(stream->print_type, base_type);
