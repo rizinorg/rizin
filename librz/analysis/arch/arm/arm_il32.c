@@ -1078,8 +1078,8 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 	if (!op_count) {
 		return NOP;
 	}
-	RzILOpBitVector *ptr = REG_VAL(ptr_reg);
-	if (!ptr) {
+	RzILOpBitVector *ptr_initial = REG_VAL(ptr_reg);
+	if (!ptr_initial) {
 		return NULL;
 	}
 	RzILOpEffect *eff = NULL;
@@ -1097,21 +1097,21 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 	if (writeback) {
 		RzILOpEffect *wb = write_reg(ptr_reg,
 			decrement
-				? SUB(DUP(ptr), U32(op_count * regsize))
-				: ADD(DUP(ptr), U32(op_count * regsize)));
+				? SUB(VARL("base"), U32(op_count * regsize))
+				: ADD(VARL("base"), U32(op_count * regsize)));
 		eff = eff ? SEQ2(wb, eff) : wb;
 	}
 	for (size_t i = 0; i < op_count; i++) {
 		size_t idx = op_first + (op_count - 1 - i);
 		if (!ISREG(idx)) {
-			rz_il_op_pure_free(ptr);
+			rz_il_op_pure_free(ptr_initial);
 			rz_il_op_effect_free(eff);
 			return NULL;
 		}
 		RzILOpPure *val = LOADW(regsize * 8,
 			decrement
-				? SUB(DUP(ptr), U32((i + (before ? 1 : 0)) * regsize))
-				: ADD(DUP(ptr), U32((op_count - i - (before ? 0 : 1)) * regsize)));
+				? SUB(VARL("base"), U32((i + (before ? 1 : 0)) * regsize))
+				: ADD(VARL("base"), U32((op_count - i - (before ? 0 : 1)) * regsize)));
 		RzILOpEffect *load;
 		if (REGID(idx) == ARM_REG_PC) {
 			load = SETL("tgt", val);
@@ -1120,8 +1120,7 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 		}
 		eff = eff ? SEQ2(load, eff) : load;
 	}
-	rz_il_op_pure_free(ptr);
-	return eff;
+	return SEQ2(SETL("base", ptr_initial), eff);
 }
 
 /**
