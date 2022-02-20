@@ -2154,6 +2154,39 @@ static RzILOpEffect *avr_il_neg(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return SEQ8(let, neg, H, V, N, C, Z, S);
 }
 
+static RzILOpEffect *avr_il_or(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect * or, *S, *V, *N, *Z;
+	// Rd = Rd | Rr
+	// changes S|V|N|Z
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+
+	// Rd |= Rr
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	x = LOGOR(x, y);
+	or = AVR_REG_SET(Rd, x);
+
+	// V: 0
+	V = avr_il_assign_bool(AVR_SREG_V, false);
+
+	// N: Res7
+	x = AVR_REG(Rd);
+	x = MSB(x);
+	N = SETG(AVR_SREG_N, x);
+
+	// Z: Res == 0x00
+	x = AVR_REG(Rd); // Rd is now Res
+	x = IS_ZERO(x); // Rd == 0x00
+	Z = SETG(AVR_SREG_Z, x);
+
+	// S: N ^ V
+	S = avr_il_check_signess_flag();
+
+	return SEQ5(or, V, N, Z, S);
+}
+
 static RzILOpEffect *avr_il_out(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// I/O(A) = Rr -> None
 	ut16 A = aop->param[0];
@@ -2585,7 +2618,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_mulsu,
 	avr_il_neg,
 	avr_il_nop,
-	avr_il_unk, /* AVR_OP_OR */
+	avr_il_or,
 	avr_il_unk, /* AVR_OP_ORI */
 	avr_il_out,
 	avr_il_unk, /* AVR_OP_POP */

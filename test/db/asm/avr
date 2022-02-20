@@ -170,7 +170,7 @@ ad "mulsu r16, r16" 0003 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)
 ad "muls r16, r17" 0102 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)) (cast 16 (msb (var r17)) (var r17)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
 ad "neg r0" 0194 0x0 (seq (set IND (var r0)) (set r0 (ite (== (var r0) (bv 8 0x80)) (var r0) (- (bv 8 0x0) (var r0)))) (set hf (! (is_zero (& (| (var r0) (var IND)) (bv 8 0x8))))) (set vf (== (var r0) (bv 8 0x80))) (set nf (! (is_zero (& (var r0) (bv 8 0x80))))) (set cf (! (is_zero (var r0)))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
 ad "nop" 0000 0x0 nop
-ad "or r0, r0" 0028 0x0
+ad "or r0, r0" 0028 0x0 (seq (set r0 (| (var r0) (var r0))) (set vf false) (set nf (msb (var r0))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
 ad "ori r16, 0x00" 0060 0x0
 ad "ori r24, 0x01" 8160 0x0
 ad "out 0x00, r0" 00B8 0x0 (set r0 (var r0))
