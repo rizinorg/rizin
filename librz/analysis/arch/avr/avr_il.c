@@ -532,6 +532,27 @@ static RzILOpEffect *avr_il_check_nc_overflow_flag() {
 	return SETG(AVR_SREG_V, _xor);
 }
 
+static RzILOpPure *avr_subtract_if(ut32 bitsize, ut64 limit, RzILOpPure *minuend, ut64 subtrahend, bool invert) {
+	RzILOpPure *x, *y, *cmp;
+
+	// cmp = minuend > limit
+	x = UN(bitsize, limit);
+	y = DUP(minuend);
+	cmp = UGT(y, x);
+
+	x = DUP(minuend);
+	y = UN(bitsize, subtrahend);
+	if (invert) {
+		// x = subtrahend - minuend
+		x = SUB(y, x);
+	} else {
+		// x = minuend - subtrahend
+		x = SUB(x, y);
+	}
+
+	return ITE(cmp, x, minuend);
+}
+
 /* ops */
 
 static RzILOpEffect *avr_il_unk(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -1395,21 +1416,39 @@ static RzILOpEffect *avr_il_eor(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 static RzILOpEffect *avr_il_fmul(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
-	RzILOpEffect *let, *mul, *Z, *C;
-	// R1:R0 = ((signed)Rd * (signed)Rr) / 2
+	RzILOpEffect *ind, *res, *mul, *Z, *C;
+	// Rd and Rr are floating points that are in 1.7 format that
+	// has values between [0, 2) and results in 1.15 format in R1:R0
+	// bits 7      0
+	// Rd = xxxxxxxx
+	//      |||||||`-- 2^-7 = 0.0078125
+	//      ||||||`--- 2^-6 = 0.015625
+	//      |||||`---- 2^-5 = 0.03125
+	//      ||||`----- 2^-4 = 0.0625
+	//      |||`------ 2^-3 = 0.125
+	//      ||`------- 2^-2 = 0.25
+	//      |`-------- 2^-1 = 0.5
+	//      `--------- 2^0  = 1
+	//      01001100 = 0.5 + 0.0625 + 0.03125 = 0.59375
+	// R1:R0 = ((unsigned)Rd * (unsigned)Rr)
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
 
-	// RES = (signed)Rd * (signed)Rr
+	// IND = Rd * Rr
 	x = AVR_REG(Rd);
-	x = EXTZERO(AVR_IND_SIZE, x); // (unsigned)Rd
+	x = EXTZERO(AVR_IND_SIZE, x);
 	y = AVR_REG(Rr);
-	y = EXTZERO(AVR_IND_SIZE, y); // (unsigned)Rr
+	y = EXTZERO(AVR_IND_SIZE, y);
 	x = MUL(x, y);
-	y = AVR_SH(1);
-	x = SHIFTR0(x, y); // >>= 1
-	let = SETL(AVR_LET_RES, x);
+	ind = SETL(AVR_LET_IND, x);
+
+	// RES = ((IND > 0x7FFF) ? (IND - 0x8000) : IND) << 1
+	x = VARL(AVR_LET_IND);
+	x = avr_subtract_if(16, 0x7FFF, x, 0x8000, false);
+	y = AVR_ONE();
+	x = SHIFTL0(x, y);
+	res = SETL(AVR_LET_RES, x);
 
 	// R1:R0 = RES
 	mul = avr_il_update_indirect_address_reg(AVR_LET_RES, 1, 0, 0, false);
@@ -1424,75 +1463,145 @@ static RzILOpEffect *avr_il_fmul(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	x = MSB(x); // most significant bit
 	C = SETG(AVR_SREG_C, x);
 
-	return SEQ4(let, mul, Z, C);
+	return SEQ5(ind, res, mul, Z, C);
 }
 
 static RzILOpEffect *avr_il_fmuls(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *x, *y;
-	RzILOpEffect *let, *mul, *Z, *C;
-	// R1:R0 = ((signed)Rd * (signed)Rr) / 2
+	RzILOpPure *x, *y, *z;
+	RzILOpEffect *ind, *res, *high, *low, *Z, *C;
+	// Rd and Rr are floating points that are in 1.7 format
+	// R1:R0 = ((signed)Rd * (signed)Rr)
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
 
-	// RES = (signed)Rd * (signed)Rr
+	// IND = (Rd > 0x7F ? 0 - Rd : Rd) * (Rr > 0x7F ? 0 - Rr : Rr)
 	x = AVR_REG(Rd);
-	x = EXTSIGN(AVR_IND_SIZE, x); // (signed)Rd
+	x = avr_subtract_if(AVR_REG_SIZE, 0x7F, x, 0, true);
+	x = EXTZERO(AVR_IND_SIZE, x);
+
 	y = AVR_REG(Rr);
-	y = EXTSIGN(AVR_IND_SIZE, y); // (signed)Rr
+	y = avr_subtract_if(AVR_REG_SIZE, 0x7F, y, 0, true);
+	y = EXTZERO(AVR_IND_SIZE, y);
+
 	x = MUL(x, y);
-	y = AVR_SH(1);
-	x = SHIFTR0(x, y); // >>= 1
-	let = SETL(AVR_LET_RES, x);
+	ind = SETL(AVR_LET_IND, x);
 
-	// R1:R0 = RES
-	mul = avr_il_update_indirect_address_reg(AVR_LET_RES, 1, 0, 0, false);
+	// checking if one of the original values are negative
+	x = AVR_REG(Rd);
+	x = MSB(x);
+	y = AVR_REG(Rr);
+	y = MSB(y);
+	z = XOR(x, y);
 
-	// set Z to 1 if !(RES)
-	x = VARL(AVR_LET_RES);
+	// RES = ((IND > 0x3FFF) ? (IND - 0x4000) : IND) << 1
+	x = VARL(AVR_LET_IND);
+	x = avr_subtract_if(16, 0x3FFF, x, 0x4000, false);
+	y = AVR_ONE();
+	x = SHIFTL0(x, y);
+	res = SETL(AVR_LET_RES, x);
+
+	// R1 = (ut8)((z ? (0 - RES) : RES) >> 8)
+	x = AVR_IMM16(0);
+	y = VARL(AVR_LET_RES);
+	x = SUB(x, y);
+	y = VARL(AVR_LET_RES);
+	x = ITE(z, x, y);
+	y = AVR_SH(AVR_REG_SIZE);
+	x = SHIFTR0(x, y);
+	x = EXTZERO(AVR_REG_SIZE, x);
+	high = SETG("r1", x);
+
+	// R0 = (ut8)(z ? (0 - RES) : RES)
+	x = AVR_IMM16(0);
+	y = VARL(AVR_LET_RES);
+	x = SUB(x, y);
+	y = VARL(AVR_LET_RES);
+	z = DUP(z);
+	x = ITE(z, x, y);
+	x = EXTZERO(AVR_REG_SIZE, x);
+	low = SETG("r0", x);
+
+	// set Z to 1 if !(r0:r1)
+	x = VARG("r0");
 	x = IS_ZERO(x);
+	y = VARG("r1");
+	y = IS_ZERO(y);
+	x = AND(x, y);
 	Z = SETG(AVR_SREG_Z, x);
 
-	// C = Res16
-	x = VARL(AVR_LET_RES);
+	// C = Res16 = r1
+	x = VARG("r1");
 	x = MSB(x); // most significant bit
 	C = SETG(AVR_SREG_C, x);
 
-	return SEQ4(let, mul, Z, C);
+	return SEQ6(ind, res, high, low, Z, C);
 }
 
 static RzILOpEffect *avr_il_fmulsu(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *x, *y;
-	RzILOpEffect *let, *mul, *Z, *C;
-	// R1:R0 = ((signed)Rd * (unsigned)Rr) / 2
+	RzILOpPure *x, *y, *z;
+	RzILOpEffect *ind, *res, *high, *low, *Z, *C;
+	// Rd and Rr are floating points that are in 1.7 format
+	// R1:R0 = ((signed)Rd * (unsigned)Rr)
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
 
-	// RES = (signed)Rd * (unsigned)Rr
+	// IND = (Rd > 0x7F ? Rd - 0x80 : Rd) * Rr
 	x = AVR_REG(Rd);
-	x = EXTSIGN(AVR_IND_SIZE, x); // (signed)Rd
+	x = EXTZERO(AVR_IND_SIZE, x);
+	x = avr_subtract_if(AVR_IND_SIZE, 0x7F, x, 0x80, false);
 	y = AVR_REG(Rr);
-	y = EXTZERO(AVR_IND_SIZE, y); // (unsigned)Rr
+	y = EXTZERO(AVR_IND_SIZE, y);
 	x = MUL(x, y);
-	y = AVR_SH(1);
-	x = SHIFTR0(x, y); // >>= 1
-	let = SETL(AVR_LET_RES, x);
+	ind = SETL(AVR_LET_IND, x);
 
-	// R1:R0 = RES
-	mul = avr_il_update_indirect_address_reg(AVR_LET_RES, 1, 0, 0, false);
+	// checking if Rd is negative
+	x = AVR_REG(Rd);
+	z = MSB(x);
 
-	// set Z to 1 if !(RES)
-	x = VARL(AVR_LET_RES);
+	// RES = ((IND > 0x3FFF) ? (IND - 0x4000) : IND) << 1
+	x = VARL(AVR_LET_IND);
+	x = avr_subtract_if(16, 0x3FFF, x, 0x4000, false);
+	y = AVR_ONE();
+	x = SHIFTL0(x, y);
+	res = SETL(AVR_LET_RES, x);
+
+	// R1 = (ut8)((z ? (0 - RES) : RES) >> 8)
+	x = AVR_IMM16(0);
+	y = VARL(AVR_LET_RES);
+	x = SUB(x, y);
+	y = VARL(AVR_LET_RES);
+	x = ITE(z, x, y);
+	y = AVR_SH(AVR_REG_SIZE);
+	x = SHIFTR0(x, y);
+	x = EXTZERO(AVR_REG_SIZE, x);
+	high = SETG("r1", x);
+
+	// R0 = (ut8)(z ? (0 - RES) : RES)
+	x = AVR_IMM16(0);
+	y = VARL(AVR_LET_RES);
+	x = SUB(x, y);
+	y = VARL(AVR_LET_RES);
+	z = DUP(z);
+	x = ITE(z, x, y);
+	x = EXTZERO(AVR_REG_SIZE, x);
+	low = SETG("r0", x);
+
+	// set Z to 1 if !(r0:r1)
+	x = VARG("r0");
 	x = IS_ZERO(x);
+	y = VARG("r1");
+	y = IS_ZERO(y);
+	x = AND(x, y);
 	Z = SETG(AVR_SREG_Z, x);
 
-	// C = Res16
-	x = VARL(AVR_LET_RES);
+	// C = Res16 = r1
+	x = VARG("r1");
 	x = MSB(x); // most significant bit
 	C = SETG(AVR_SREG_C, x);
 
-	return SEQ4(let, mul, Z, C);
+	return SEQ6(ind, res, high, low, Z, C);
 }
 
 static RzILOpEffect *avr_il_icall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {

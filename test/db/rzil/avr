@@ -1,10 +1,125 @@
-NAME=Emulation on main
-FILE=bins/firmware/main.avr
+NAME=fmul 1.5 * 1.25
+FILE=malloc://512
 CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r16, 0xC0 ; ldi r17, 0xA0 ; fmul r16, r17"
 aezi
-aezv
-aezs 1
+aezse 3
 EOF
 EXPECT=<<EOF
+pc_write(old: 0x0, new: 0x2)
+var_write(name: r16, old: 0x0, new: 0xc0)
+pc_write(old: 0x2, new: 0x4)
+var_write(name: r17, old: 0x0, new: 0xa0)
+pc_write(old: 0x4, new: 0x6)
+var_write(name: r1, old: 0x0, new: 0xf0)
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: cf, old: 0x0, new: 0x1)
+EOF
+RUN
+
+NAME==fmul test 2
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r16, 0xec ; ldi r17, 0x17 ; fmul r16, r17"
+aezi
+aezse 3
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x0, new: 0x2)
+var_write(name: r16, old: 0x0, new: 0xec)
+pc_write(old: 0x2, new: 0x4)
+var_write(name: r17, old: 0x0, new: 0x17)
+pc_write(old: 0x4, new: 0x6)
+var_write(name: r1, old: 0x0, new: 0x2a)
+var_write(name: r0, old: 0x0, new: 0x68)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: cf, old: 0x0, new: 0x0)
+EOF
+RUN
+
+NAME=fmuls -0.75 * -0.125
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r16, 0xA0 ; ldi r17, 0xF0 ; fmuls r16, r17"
+aezi
+aezse 3
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x0, new: 0x2)
+var_write(name: r16, old: 0x0, new: 0xa0)
+pc_write(old: 0x2, new: 0x4)
+var_write(name: r17, old: 0x0, new: 0xf0)
+pc_write(old: 0x4, new: 0x6)
+var_write(name: r1, old: 0x0, new: 0xc)
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: cf, old: 0x0, new: 0x0)
+EOF
+RUN
+
+NAME==fmuls test 2
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r16, 0x0f ; ldi r17, 0x1f ; fmuls r16, r17"
+aezi
+aezse 3
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x0, new: 0x2)
+var_write(name: r16, old: 0x0, new: 0xf)
+pc_write(old: 0x2, new: 0x4)
+var_write(name: r17, old: 0x0, new: 0x1f)
+pc_write(old: 0x4, new: 0x6)
+var_write(name: r1, old: 0x0, new: 0x3)
+var_write(name: r0, old: 0x0, new: 0xa2)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: cf, old: 0x0, new: 0x0)
+EOF
+RUN
+
+NAME=fmulsu -0.5 * 0.75
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r16, 0xc0 ; ldi r17, 0x60 ; fmulsu r16, r17"
+aezi
+aezse 3
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x0, new: 0x2)
+var_write(name: r16, old: 0x0, new: 0xc0)
+pc_write(old: 0x2, new: 0x4)
+var_write(name: r17, old: 0x0, new: 0x60)
+pc_write(old: 0x4, new: 0x6)
+var_write(name: r1, old: 0x0, new: 0xd0)
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: cf, old: 0x0, new: 0x1)
+EOF
+RUN
+
+NAME==fmulsu test 2
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r16, 0xff ; ldi r17, 0x50 ; fmulsu r16, r17"
+aezi
+aezse 3
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x0, new: 0x2)
+var_write(name: r16, old: 0x0, new: 0xff)
+pc_write(old: 0x2, new: 0x4)
+var_write(name: r17, old: 0x0, new: 0x50)
+pc_write(old: 0x4, new: 0x6)
+var_write(name: r1, old: 0x0, new: 0xb0)
+var_write(name: r0, old: 0x0, new: 0xa0)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: cf, old: 0x0, new: 0x1)
 EOF
 RUN
