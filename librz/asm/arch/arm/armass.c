@@ -45,7 +45,9 @@ enum {
 	TYPE_MUL = 18,
 	TYPE_CLZ = 19,
 	TYPE_REV = 20,
-	TYPE_NEG = 21
+	TYPE_NEG = 21,
+	TYPE_BFC = 22,
+	TYPE_BFI = 23
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -89,6 +91,9 @@ static ArmOp ops[] = {
 	{ "strd", 0xf000c0e1, TYPE_MEM },
 	{ "strh", 0xb00080e1, TYPE_MEM },
 	{ "str", 0x8000, TYPE_MEM },
+
+	{ "bfc", 0x1f00c007, TYPE_BFC },
+	{ "bfi", 0x1000c007, TYPE_BFI },
 
 	{ "blx", 0x30ff2fe1, TYPE_BRR },
 	{ "bx", 0x10ff2fe1, TYPE_BRR },
@@ -5716,8 +5721,9 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		if (!strncmp(ao->op, ops[i].name, strlen(ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond(ao, strlen(ops[i].name));
-			if (ao->a[0] || ops[i].type == TYPE_BKP) {
-				switch (ops[i].type) {
+			int type = ops[i].type;
+			if (ao->a[0] || type == TYPE_BKP) {
+				switch (type) {
 				case TYPE_MEM:
 					if (!strncmp(ops[i].name, "strex", 5)) {
 						rex = 1;
@@ -6186,6 +6192,43 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					strncpy(ao->op, "rsbs", 5);
 					arm_assemble(ao, off, str); // rsbs reg0, reg1, #0
 					break;
+				case TYPE_BFC:
+				case TYPE_BFI: {
+					size_t argoff = 0;
+					if (type == TYPE_BFI) {
+						ut32 rn = getreg(ao->a[1]);
+						if (rn >= 0xf) {
+							return 0;
+						}
+						ao->o |= rn << 24;
+						argoff = 1;
+					}
+					if (!ao->a[0] || !ao->a[argoff + 1] || !ao->a[argoff + 2]) {
+						return 0;
+					}
+					reg = getreg(ao->a[0]);
+					if (reg == -1 || reg > 15) {
+						return 0;
+					}
+					ut64 lsb = getnum(ao->a[argoff + 1]);
+					if (lsb > 0x1f) {
+						RZ_LOG_ERROR("assembler: arm: %s: lsb out of bounds\n", ops[i].name);
+						return 0;
+					}
+					ut64 width = getnum(ao->a[argoff + 2]);
+					ut64 msb = lsb + width - 1;
+					if (width < 1 || width > 0x20 || msb > 0x1f) {
+						RZ_LOG_ERROR("assembler: arm: %s: lsb + width out of bounds\n", ops[i].name);
+						return 0;
+					}
+					ut32 tmp;
+					rz_mem_swapendian((ut8 *)(void *)&tmp, (const ut8 *)(void *)&ao->o, sizeof(tmp));
+					tmp |= lsb << 7;
+					tmp |= msb << 16;
+					tmp |= reg << 12;
+					rz_mem_swapendian((ut8 *)(void *)&ao->o, (const ut8 *)(void *)&tmp, sizeof(tmp));
+					break;
+				}
 				}
 			}
 			return 1;
