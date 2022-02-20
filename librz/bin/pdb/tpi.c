@@ -66,7 +66,7 @@ static TpiSimpleTypeMode get_simple_type_mode(ut32 type) {
   |+32                        |+12   |+8        |+0
   */
 	// because mode is only number between 0-7, 1 byte is enough
-	return (type & 0x0000000000F00);
+	return (type & 0x0000000000F00) >> 8;
 }
 
 static TpiSimpleTypeKind get_simple_type_kind(ut32 type) {
