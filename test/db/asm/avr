@@ -117,9 +117,9 @@ ad "elpm r16, Z+" 0791 0x0 (seq (set r16 (loadw 0 8 (cast 32 false (append (var 
 ad "elpm" D895 0x0
 ad "eor r0, r1" 0124 0x0 (seq (set r0 (^ (var r0) (var r1))) (set vf false) (set nf (! (is_zero (& (var r0) (bv 8 0x80))))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
 ad "eor r24, r25" 8927 0x0 (seq (set r24 (^ (var r24) (var r25))) (set vf false) (set nf (! (is_zero (& (var r24) (bv 8 0x80))))) (set zf (is_zero (var r24))) (set sf (^^ (var nf) (var vf))))
-ad "fmul r16, r16" 0803 0x0 (seq (set RES (* (cast 16 false (var r16)) (cast 16 false (var r16)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
-ad "fmuls r16, r16" 8003 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)) (cast 16 (msb (var r16)) (var r16)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
-ad "fmulsu r16, r16" 8803 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)) (cast 16 false (var r16)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
+ad "fmul r16, r16" 0803 0x0 (seq (set RES (>> (* (cast 16 false (var r16)) (cast 16 false (var r16))) (bv 32 0x1) false)) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
+ad "fmuls r16, r16" 8003 0x0 (seq (set RES (>> (* (cast 16 (msb (var r16)) (var r16)) (cast 16 (msb (var r16)) (var r16))) (bv 32 0x1) false)) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
+ad "fmulsu r16, r16" 8803 0x0 (seq (set RES (>> (* (cast 16 (msb (var r16)) (var r16)) (cast 16 false (var r16))) (bv 32 0x1) false)) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
 ad "icall" 0995 0x0 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x0)) (set sp (- (var sp) (bv 16 0x4))) (jmp (<< (cast 32 false (append (var r31) (var r30))) (bv 32 0x1) false)))
 ad "ijmp" 0994 0x0 (jmp (<< (cast 32 false (append (var r31) (var r30))) (bv 32 0x1) false))
 ad "in r0, 0x00" 00B0 0x0 (set r0 (var r0))
@@ -164,10 +164,10 @@ ad "mov r0, r0" 002C 0x0 (set r0 (var r0))
 ad "mov r0, r31" 0f2e 0x0 (set r0 (var r31))
 ad "movw r0, r0" 0001 0x0 (seq (set IND (append (var r1) (var r0))) (set r1 (cast 8 false (>> (var IND) (bv 32 0x8) false))) (set r0 (cast 8 false (var IND))))
 ad "movw r22, r18" b901 0x0 (seq (set IND (append (var r19) (var r18))) (set r23 (cast 8 false (>> (var IND) (bv 32 0x8) false))) (set r22 (cast 8 false (var IND))))
-ad "mul r0, r0" 009C 0x0
-ad "muls r16, r16" 0002 0x0
-ad "mulsu r16, r16" 0003 0x0
-ad "muls r16, r17" 0102 0x0
+ad "mul r0, r0" 009C 0x0 (seq (set RES (* (cast 16 false (var r0)) (cast 16 false (var r0)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
+ad "muls r16, r16" 0002 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)) (cast 16 (msb (var r16)) (var r16)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
+ad "mulsu r16, r16" 0003 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)) (cast 16 false (var r16)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
+ad "muls r16, r17" 0102 0x0 (seq (set RES (* (cast 16 (msb (var r16)) (var r16)) (cast 16 (msb (var r17)) (var r17)))) (set r1 (cast 8 false (>> (var RES) (bv 32 0x8) false))) (set r0 (cast 8 false (var RES))) (set zf (is_zero (var RES))) (set cf (msb (var RES))))
 ad "neg r0" 0194 0x0
 ad "nop" 0000 0x0 nop
 ad "or r0, r0" 0028 0x0

@@ -1463,7 +1463,7 @@ static RzILOpEffect *avr_il_eor(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 static RzILOpEffect *avr_il_fmul(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *let, *mul, *Z, *C;
-	// R1:R0 = (signed)Rd * (signed)Rr
+	// R1:R0 = ((signed)Rd * (signed)Rr) / 2
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
@@ -1474,6 +1474,8 @@ static RzILOpEffect *avr_il_fmul(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	y = AVR_REG(Rr);
 	y = EXTZERO(AVR_IND_SIZE, y); // (unsigned)Rr
 	x = MUL(x, y);
+	y = AVR_SH(1);
+	x = SHIFTR0(x, y); // >>= 1
 	let = SETL(AVR_LET_RES, x);
 
 	// R1:R0 = RES
@@ -1495,7 +1497,7 @@ static RzILOpEffect *avr_il_fmul(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 static RzILOpEffect *avr_il_fmuls(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *let, *mul, *Z, *C;
-	// R1:R0 = (signed)Rd * (signed)Rr
+	// R1:R0 = ((signed)Rd * (signed)Rr) / 2
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
@@ -1506,6 +1508,8 @@ static RzILOpEffect *avr_il_fmuls(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 	y = AVR_REG(Rr);
 	y = EXTSIGN(AVR_IND_SIZE, y); // (signed)Rr
 	x = MUL(x, y);
+	y = AVR_SH(1);
+	x = SHIFTR0(x, y); // >>= 1
 	let = SETL(AVR_LET_RES, x);
 
 	// R1:R0 = RES
@@ -1527,7 +1531,7 @@ static RzILOpEffect *avr_il_fmuls(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 static RzILOpEffect *avr_il_fmulsu(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *y;
 	RzILOpEffect *let, *mul, *Z, *C;
-	// R1:R0 = (signed)Rd * (unsigned)Rr
+	// R1:R0 = ((signed)Rd * (unsigned)Rr) / 2
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
@@ -1538,6 +1542,8 @@ static RzILOpEffect *avr_il_fmulsu(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalys
 	y = AVR_REG(Rr);
 	y = EXTZERO(AVR_IND_SIZE, y); // (unsigned)Rr
 	x = MUL(x, y);
+	y = AVR_SH(1);
+	x = SHIFTR0(x, y); // >>= 1
 	let = SETL(AVR_LET_RES, x);
 
 	// R1:R0 = RES
@@ -1991,6 +1997,102 @@ static RzILOpEffect *avr_il_movw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	return SEQ2(let, movw);
 }
 
+static RzILOpEffect *avr_il_mul(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect *let, *mul, *Z, *C;
+	// R1:R0 = (signed)Rd * (signed)Rr
+	// changes Z|C
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+
+	// RES = (signed)Rd * (signed)Rr
+	x = AVR_REG(Rd);
+	x = EXTZERO(AVR_IND_SIZE, x); // (unsigned)Rd
+	y = AVR_REG(Rr);
+	y = EXTZERO(AVR_IND_SIZE, y); // (unsigned)Rr
+	x = MUL(x, y);
+	let = SETL(AVR_LET_RES, x);
+
+	// R1:R0 = RES
+	mul = avr_il_update_indirect_address_reg(AVR_LET_RES, 1, 0, 0, false);
+
+	// set Z to 1 if !(RES)
+	x = VARL(AVR_LET_RES);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// C = Res16
+	x = VARL(AVR_LET_RES);
+	x = MSB(x); // most significant bit
+	C = SETG(AVR_SREG_C, x);
+
+	return SEQ4(let, mul, Z, C);
+}
+
+static RzILOpEffect *avr_il_muls(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect *let, *mul, *Z, *C;
+	// R1:R0 = (signed)Rd * (signed)Rr
+	// changes Z|C
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+
+	// RES = (signed)Rd * (signed)Rr
+	x = AVR_REG(Rd);
+	x = EXTSIGN(AVR_IND_SIZE, x); // (signed)Rd
+	y = AVR_REG(Rr);
+	y = EXTSIGN(AVR_IND_SIZE, y); // (signed)Rr
+	x = MUL(x, y);
+	let = SETL(AVR_LET_RES, x);
+
+	// R1:R0 = RES
+	mul = avr_il_update_indirect_address_reg(AVR_LET_RES, 1, 0, 0, false);
+
+	// set Z to 1 if !(RES)
+	x = VARL(AVR_LET_RES);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// C = Res16
+	x = VARL(AVR_LET_RES);
+	x = MSB(x); // most significant bit
+	C = SETG(AVR_SREG_C, x);
+
+	return SEQ4(let, mul, Z, C);
+}
+
+static RzILOpEffect *avr_il_mulsu(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y;
+	RzILOpEffect *let, *mul, *Z, *C;
+	// R1:R0 = (signed)Rd * (unsigned)Rr
+	// changes Z|C
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+
+	// RES = (signed)Rd * (unsigned)Rr
+	x = AVR_REG(Rd);
+	x = EXTSIGN(AVR_IND_SIZE, x); // (signed)Rd
+	y = AVR_REG(Rr);
+	y = EXTZERO(AVR_IND_SIZE, y); // (unsigned)Rr
+	x = MUL(x, y);
+	let = SETL(AVR_LET_RES, x);
+
+	// R1:R0 = RES
+	mul = avr_il_update_indirect_address_reg(AVR_LET_RES, 1, 0, 0, false);
+
+	// set Z to 1 if !(RES)
+	x = VARL(AVR_LET_RES);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// C = Res16
+	x = VARL(AVR_LET_RES);
+	x = MSB(x); // most significant bit
+	C = SETG(AVR_SREG_C, x);
+
+	return SEQ4(let, mul, Z, C);
+}
+
 static RzILOpEffect *avr_il_out(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// I/O(A) = Rr -> None
 	ut16 A = aop->param[0];
@@ -2417,9 +2519,9 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_lsr,
 	avr_il_mov,
 	avr_il_movw,
-	avr_il_unk, /* AVR_OP_MUL */
-	avr_il_unk, /* AVR_OP_MULS */
-	avr_il_unk, /* AVR_OP_MULSU */
+	avr_il_mul,
+	avr_il_muls,
+	avr_il_mulsu,
 	avr_il_unk, /* AVR_OP_NEG */
 	avr_il_nop,
 	avr_il_unk, /* AVR_OP_OR */
