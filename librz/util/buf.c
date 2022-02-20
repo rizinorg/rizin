@@ -464,7 +464,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_buf(RzBuffer *b) {
  * passed as argument. The bytes parameter can be NULL, but the length should
  * be set to 0.
  */
-RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_OWN const ut8 *bytes, ut64 len) {
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_BORROW const ut8 *bytes, ut64 len) {
 	rz_return_val_if_fail(bytes || !len, NULL); // if bytes == NULL, then len must be 0
 
 	struct buf_bytes_user u = { 0 };
