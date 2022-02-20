@@ -1707,6 +1707,26 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 	}
 }
 
+static void patch_capstone_bugs(cs_insn *insn, int bits, bool big_endian) {
+	if (!insn->detail) {
+		return;
+	}
+	if (bits == 32) {
+		cs_arm *detail = &insn->detail->arm;
+
+		// b40071e0    ldrht r0, [r1], -4
+		// has operand 2 as immediate 4 (positive) and subtracted as false from capstone.
+		// This is wrong and makes it impossible to distinguish from b400f1e0 ldrht r0, [r1], 4.
+		// We just read the respective bit from the encoding.
+		if (insn->id == ARM_INS_LDRHT && ISREG(0) && ISMEM(1) && ISIMM(2)) {
+			ut32 op = rz_read_ble32(insn->bytes, big_endian);
+			if (!(op & (1 << 23))) {
+				detail->operands[2].subtracted = true;
+			}
+		}
+	}
+}
+
 static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
 
@@ -1746,6 +1766,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 			op->mnemonic = strdup("invalid");
 		}
 	} else {
+		patch_capstone_bugs(insn, a->bits, a->big_endian);
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = rz_str_newf("%s%s%s",
 				insn->mnemonic,

@@ -351,6 +351,7 @@ d "ldrt r0, [r1], 0" 0000b1e4 0x0 (seq (set r0 (loadw 0 32 (var r1))) (set r1 (+
 d "ldrt r0, [r1], 4" 0400b1e4 0x0 (seq (set r0 (loadw 0 32 (var r1))) (set r1 (+ (var r1) (bv 32 0x4))))
 d "ldrbt r0, [r1], 4" 0400f1e4 0x0 (seq (set r0 (cast 32 false (load 0 (var r1)))) (set r1 (+ (var r1) (bv 32 0x4))))
 d "ldrht r0, [r1], 4" b400f1e0 0x0 (seq (set r0 (cast 32 false (loadw 0 16 (var r1)))) (set r1 (+ (var r1) (bv 32 0x4))))
+d "ldrht r0, [r1], -4" b40071e0 0x0 (seq (set r0 (cast 32 false (loadw 0 16 (var r1)))) (set r1 (- (var r1) (bv 32 0x4))))
 d "ldr pc, [r1], 4" 04f091e4 0x0 (seq (set tgt (loadw 0 32 (var r1))) (set r1 (+ (var r1) (bv 32 0x4))) (jmp (var tgt)))
 d "ldr pc, [r1], -4" 04f011e4 0x0 (seq (set tgt (loadw 0 32 (var r1))) (set r1 (- (var r1) (bv 32 0x4))) (jmp (var tgt)))
 d "ldr pc, [r1, 4]" 04f091e5 0x0 (jmp (loadw 0 32 (+ (var r1) (bv 32 0x4))))
