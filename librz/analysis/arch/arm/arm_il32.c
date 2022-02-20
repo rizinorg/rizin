@@ -16,7 +16,8 @@ static const char *regs_bound_32[] = {
 	"lr", "sp",
 	"qf", "vf", "cf", "zf", "nf", "gef",
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12",
-	"q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15",
+	"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15",
+	"d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31",
 	NULL
 };
 
@@ -27,22 +28,38 @@ static const char *reg_var_name(arm_reg reg) {
 	switch (reg) {
 	case ARM_REG_LR: return "lr";
 	case ARM_REG_SP: return "sp";
-	case ARM_REG_Q0: return "q0";
-	case ARM_REG_Q1: return "q1";
-	case ARM_REG_Q2: return "q2";
-	case ARM_REG_Q3: return "q3";
-	case ARM_REG_Q4: return "q4";
-	case ARM_REG_Q5: return "q5";
-	case ARM_REG_Q6: return "q6";
-	case ARM_REG_Q7: return "q7";
-	case ARM_REG_Q8: return "q8";
-	case ARM_REG_Q9: return "q9";
-	case ARM_REG_Q10: return "q10";
-	case ARM_REG_Q11: return "q11";
-	case ARM_REG_Q12: return "q12";
-	case ARM_REG_Q13: return "q13";
-	case ARM_REG_Q14: return "q14";
-	case ARM_REG_Q15: return "q15";
+	case ARM_REG_D0: return "d0";
+	case ARM_REG_D1: return "d1";
+	case ARM_REG_D2: return "d2";
+	case ARM_REG_D3: return "d3";
+	case ARM_REG_D4: return "d4";
+	case ARM_REG_D5: return "d5";
+	case ARM_REG_D6: return "d6";
+	case ARM_REG_D7: return "d7";
+	case ARM_REG_D8: return "d8";
+	case ARM_REG_D9: return "d9";
+	case ARM_REG_D10: return "d10";
+	case ARM_REG_D11: return "d11";
+	case ARM_REG_D12: return "d12";
+	case ARM_REG_D13: return "d13";
+	case ARM_REG_D14: return "d14";
+	case ARM_REG_D15: return "d15";
+	case ARM_REG_D16: return "d16";
+	case ARM_REG_D17: return "d17";
+	case ARM_REG_D18: return "d18";
+	case ARM_REG_D19: return "d19";
+	case ARM_REG_D20: return "d20";
+	case ARM_REG_D21: return "d21";
+	case ARM_REG_D22: return "d22";
+	case ARM_REG_D23: return "d23";
+	case ARM_REG_D24: return "d24";
+	case ARM_REG_D25: return "d25";
+	case ARM_REG_D26: return "d26";
+	case ARM_REG_D27: return "d27";
+	case ARM_REG_D28: return "d28";
+	case ARM_REG_D29: return "d29";
+	case ARM_REG_D30: return "d30";
+	case ARM_REG_D31: return "d31";
 	case ARM_REG_R0: return "r0";
 	case ARM_REG_R1: return "r1";
 	case ARM_REG_R2: return "r2";
@@ -77,15 +94,10 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
 	if (reg == ARM_REG_PC) {
 		return U32(pc);
 	}
-	if (reg >= ARM_REG_D0 && reg <= ARM_REG_D31) {
-		ut32 idx = reg - ARM_REG_D0;
-		RzILOpBitVector *var = VARG(reg_var_name(ARM_REG_Q0 + idx / 2));
-		return UNSIGNED(64, idx % 2 ? SHIFTR0(var, UN(7, 64)) : var);
-	}
 	if (reg >= ARM_REG_S0 && reg <= ARM_REG_S31) {
 		ut32 idx = reg - ARM_REG_S0;
-		RzILOpBitVector *var = VARG(reg_var_name(ARM_REG_Q0 + idx / 4));
-		return UNSIGNED(32, idx % 4 ? SHIFTR0(var, UN(7, 32 * (idx % 4))) : var);
+		RzILOpBitVector *var = VARG(reg_var_name(ARM_REG_D0 + idx / 2));
+		return UNSIGNED(32, idx % 2 ? SHIFTR0(var, UN(7, 64)) : var);
 	}
 	const char *var = reg_var_name(reg);
 	return var ? VARG(var) : NULL;
@@ -102,29 +114,15 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
  */
 static RzILOpEffect *write_reg(arm_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector *v) {
 	rz_return_val_if_fail(v, NULL);
-	if (reg >= ARM_REG_D0 && reg <= ARM_REG_D31) {
-		ut32 idx = reg - ARM_REG_D0;
-		arm_reg qreg = ARM_REG_Q0 + idx / 2;
-		ut64 mask[2] = { UT64_MAX, UT64_MAX };
-		mask[idx % 2] = 0;
-		RzILOpBitVector *masked = LOGAND(read_reg(0, qreg), rz_il_op_new_bitv(rz_bv_new_from_bytes_le((const ut8 *)mask, 0, 128)));
-		v = UNSIGNED(128, v);
-		if (idx % 2) {
-			v = SHIFTL0(v, UN(7, 64));
-		}
-		return SETG(reg_var_name(qreg), LOGOR(masked, v));
-	}
 	if (reg >= ARM_REG_S0 && reg <= ARM_REG_S31) {
 		ut32 idx = reg - ARM_REG_S0;
-		arm_reg qreg = ARM_REG_Q0 + idx / 4;
-		ut32 mask[4] = { UT32_MAX, UT32_MAX, UT32_MAX, UT32_MAX };
-		mask[idx % 4] = 0;
-		RzILOpBitVector *masked = LOGAND(read_reg(0, qreg), rz_il_op_new_bitv(rz_bv_new_from_bytes_le((const ut8 *)mask, 0, 128)));
-		v = UNSIGNED(128, v);
-		if (idx % 4) {
-			v = SHIFTL0(v, UN(7, 32 * (idx % 4)));
+		arm_reg dreg = ARM_REG_D0 + idx / 2;
+		RzILOpBitVector *masked = LOGAND(read_reg(0, dreg), U64(idx % 2 ? 0xffffffffull : 0xffffffff00000000ull));
+		v = UNSIGNED(64, v);
+		if (idx % 2) {
+			v = SHIFTL0(v, UN(6, 32));
 		}
-		return SETG(reg_var_name(qreg), LOGOR(masked, v));
+		return SETG(reg_var_name(dreg), LOGOR(masked, v));
 	}
 	const char *var = reg_var_name(reg);
 	if (!var) {
@@ -1110,7 +1108,7 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 			rz_il_op_effect_free(eff);
 			return NULL;
 		}
-		RzILOpPure *val = LOADW(32,
+		RzILOpPure *val = LOADW(regsize * 8,
 			decrement
 				? SUB(DUP(ptr), U32((i + (before ? 1 : 0)) * regsize))
 				: ADD(DUP(ptr), U32((op_count - i - (before ? 0 : 1)) * regsize)));
