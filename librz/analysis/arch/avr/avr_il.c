@@ -2753,7 +2753,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_push,
 	avr_il_rcall,
 	avr_il_ret,
-	avr_il_unk, /* AVR_OP_RETI */
+	avr_il_ret, /* AVR_OP_RETI - works same way as ret */
 	avr_il_rjmp,
 	avr_il_rol,
 	avr_il_unk, /* AVR_OP_ROR */

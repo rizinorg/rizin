@@ -182,8 +182,7 @@ ad "push r29" df93 0x0 (seq (storew 0 (cast 32 false (var sp)) (var r29)) (set s
 ad "rcall 0x12" 00D0 0x10 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x10)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0x10)))
 ad "rcall 0x14" 01d0 0x10 (seq (storew 0 (cast 32 false (var sp)) (bv 32 0x10)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0x12)))
 ad "ret" 0895 0x0 (seq (set sp (+ (var sp) (bv 16 0x4))) (jmp (loadw 0 32 (cast 32 false (var sp)))))
-ad "reti" 1895 0x0
-ad "reti" 1895 0x0
+ad "reti" 1895 0x0 (seq (set sp (+ (var sp) (bv 16 0x4))) (jmp (loadw 0 32 (cast 32 false (var sp)))))
 ad "rjmp 0x12" 00C0 0x10 (jmp (bv 32 0x10))
 ad "rjmp 0x14" 01c0 0x10 (jmp (bv 32 0x12))
 ad "rjmp 0xfffffffffffff002" 00c8 0x0 (jmp (bv 32 0xfffff000))
