@@ -2093,6 +2093,67 @@ static RzILOpEffect *avr_il_mulsu(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 	return SEQ4(let, mul, Z, C);
 }
 
+static RzILOpEffect *avr_il_neg(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y, *cmp;
+	RzILOpEffect *let, *neg, *H, *S, *V, *N, *Z, *C;
+	// Rd = 0x00 - Rd (when Rd == 0x80 it stays 0x80)
+	// changes H|S|V|N|Z|C
+	ut16 Rd = aop->param[0];
+
+	// IND = Rd
+	let = SETL(AVR_LET_IND, AVR_REG(Rd));
+
+	// Rd = (Rd == 0x80) ? Rd : (0x00 - Rd)
+	x = AVR_REG(Rd);
+	y = AVR_IMM(0x80);
+	cmp = EQ(x, y); // Rd == 0x80
+
+	x = AVR_ZERO();
+	y = AVR_REG(Rd);
+	x = SUB(x, y); // 0x00 - Rd
+
+	y = AVR_REG(Rd); // Rd
+	x = ITE(cmp, y, x); // (Rd == 0x80) ? Rd : (0x00 - Rd)
+	neg = AVR_REG_SET(Rd, x); // Rd = (Rd == 0x80) ? Rd : (0x00 - Rd)
+
+	// H: Res3 | Rd3
+	x = AVR_REG(Rd); // Rd is now Res
+	y = VARL(AVR_LET_IND); // IND is the old Rd
+	x = LOGOR(x, y); // Rd | IND
+	y = AVR_IMM(1u << 3);
+	x = LOGAND(x, y); // extract bit 3
+	x = NON_ZERO(x); // cast to bool
+	H = SETG(AVR_SREG_H, x);
+
+	// V: Res == 0x80 (after operation)
+	x = AVR_REG(Rd); // Rd is now Res
+	y = AVR_IMM(0x80);
+	x = EQ(x, y); // Rd == 0x80
+	V = SETG(AVR_SREG_V, x);
+
+	// N: Res7
+	x = AVR_REG(Rd);
+	y = AVR_IMM(1u << 7);
+	x = LOGAND(x, y); // extract bit 7
+	x = NON_ZERO(x); // cast to bool
+	N = SETG(AVR_SREG_N, x);
+
+	// C: Res != 0x00
+	x = AVR_REG(Rd); // Rd is now Res
+	x = NON_ZERO(x); // Rd != 0x00
+	C = SETG(AVR_SREG_C, x);
+
+	// Z: Res == 0x00
+	x = AVR_REG(Rd); // Rd is now Res
+	x = IS_ZERO(x); // Rd == 0x00
+	Z = SETG(AVR_SREG_Z, x);
+
+	// S: N ^ V
+	S = avr_il_check_signess_flag();
+
+	return SEQ8(let, neg, H, V, N, C, Z, S);
+}
+
 static RzILOpEffect *avr_il_out(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// I/O(A) = Rr -> None
 	ut16 A = aop->param[0];
@@ -2522,7 +2583,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_mul,
 	avr_il_muls,
 	avr_il_mulsu,
-	avr_il_unk, /* AVR_OP_NEG */
+	avr_il_neg,
 	avr_il_nop,
 	avr_il_unk, /* AVR_OP_OR */
 	avr_il_unk, /* AVR_OP_ORI */
