@@ -1597,19 +1597,19 @@ static RzILOpEffect *rbit(cs_insn *insn, bool is_thumb) {
 	if (!v) {
 		return NULL;
 	}
-	RzILOpEffect *eff = write_reg(REGID(0), VARL("v"));
+	RzILOpEffect *eff = write_reg(REGID(0), VARL("r"));
 	if (!eff) {
 		return NULL;
 	}
 	return SEQ5(
 		SETL("v", v),
 		SETL("i", U32(0x20)),
-		SETL("r", U32(0x20)),
+		SETL("r", U32(0x0)),
 		REPEAT(INV(IS_ZERO(VARL("v"))),
 			SEQ3(
-				SETL("r", LOGAND(VARL("r"), ITE(LSB(VARL("v")), SHIFTL0(U32(1), VARL("v")), U32(0)))),
-				SETL("v", SHIFTR0(VARL("v"), UN(5, 1))),
-				SETL("i", SUB(VARL("i"), U32(1))))),
+				SETL("i", SUB(VARL("i"), U32(1))),
+				SETL("r", LOGOR(VARL("r"), ITE(LSB(VARL("v")), SHIFTL0(U32(1), VARL("i")), U32(0)))),
+				SETL("v", SHIFTR0(VARL("v"), UN(5, 1))))),
 		eff);
 }
 
