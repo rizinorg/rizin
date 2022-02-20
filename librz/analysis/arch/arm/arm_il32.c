@@ -97,7 +97,7 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
 	if (reg >= ARM_REG_S0 && reg <= ARM_REG_S31) {
 		ut32 idx = reg - ARM_REG_S0;
 		RzILOpBitVector *var = VARG(reg_var_name(ARM_REG_D0 + idx / 2));
-		return UNSIGNED(32, idx % 2 ? SHIFTR0(var, UN(7, 64)) : var);
+		return UNSIGNED(32, idx % 2 ? SHIFTR0(var, UN(7, 32)) : var);
 	}
 	const char *var = reg_var_name(reg);
 	return var ? VARG(var) : NULL;
@@ -2345,6 +2345,22 @@ static RzILOpEffect *tbb(cs_insn *insn, bool is_thumb) {
 }
 
 /**
+ * Capstone: ARM_INS_VMOV
+ * ARM: vmov
+ */
+static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() != 2 || !ISREG(0) || !ISREG(1)) {
+		// for now, only support vmov rt, rn
+		return NULL;
+	}
+	RzILOpBitVector *val = ARG(1);
+	if (!val) {
+		return NULL;
+	}
+	return write_reg(REGID(0), val);
+}
+
+/**
  * Lift an ARM instruction to RzIL, without considering its condition
  *
  * Currently unimplemented:
@@ -2648,6 +2664,8 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VLDMDB:
 	case ARM_INS_VPOP:
 		return ldm(insn, is_thumb);
+	case ARM_INS_VMOV:
+		return vmov(insn, is_thumb);
 
 	default:
 		return NULL;
