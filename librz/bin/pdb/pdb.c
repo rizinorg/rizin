@@ -231,6 +231,10 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 			RZ_FREE(msd);
 			goto error;
 		}
+		if (stream_size == UT32_MAX) {
+			msd->StreamSizes[i] = 0;
+			continue;
+		}
 		msd->StreamSizes[i] = stream_size;
 		ut32 blocks = count_blocks(stream_size, pdb->super_block->block_size);
 		total_blocks += blocks;
