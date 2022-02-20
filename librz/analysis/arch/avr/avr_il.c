@@ -59,6 +59,15 @@
 #define AVR_SET_Y(l, n, add) avr_il_update_indirect_address_reg(l, 29, 28, n, add)
 #define AVR_SET_Z(l, n, add) avr_il_update_indirect_address_reg(l, 31, 30, n, add)
 
+#define AVR_SREG_I_SET(x) avr_il_assign_bool(AVR_SREG_I, x)
+#define AVR_SREG_T_SET(x) avr_il_assign_bool(AVR_SREG_T, x)
+#define AVR_SREG_H_SET(x) avr_il_assign_bool(AVR_SREG_H, x)
+#define AVR_SREG_S_SET(x) avr_il_assign_bool(AVR_SREG_S, x)
+#define AVR_SREG_V_SET(x) avr_il_assign_bool(AVR_SREG_V, x)
+#define AVR_SREG_N_SET(x) avr_il_assign_bool(AVR_SREG_N, x)
+#define AVR_SREG_Z_SET(x) avr_il_assign_bool(AVR_SREG_Z, x)
+#define AVR_SREG_C_SET(x) avr_il_assign_bool(AVR_SREG_C, x)
+
 #define avr_return_val_if_invalid_gpr(x, v) \
 	if (x >= 32) { \
 		RZ_LOG_ERROR("RzIL: AVR: invalid register R%u\n", x); \
@@ -213,7 +222,7 @@ static inline const char *resolve_mmio(RzAnalysis *analysis, ut16 address) {
 	return rz_arch_profile_resolve_mmio(profile, address);
 }
 
-static RzILOpEffect *avr_il_check_zero_flag(const char *local, bool and_zero) {
+static RzILOpEffect *avr_il_check_zero_flag_local(const char *local, bool and_zero) {
 	// set Z to 1 if !(x - y) or !(x - y - C)
 	RzILOpPure *_alu = VARL(local);
 	RzILOpBool *_is_zero = IS_ZERO(_alu);
@@ -222,6 +231,12 @@ static RzILOpEffect *avr_il_check_zero_flag(const char *local, bool and_zero) {
 		_is_zero = AND(_is_zero, Z);
 	}
 	return SETG(AVR_SREG_Z, _is_zero);
+}
+
+static RzILOpEffect *avr_il_check_zero_flag_reg(ut16 reg) {
+	RzILOpPure *x = AVR_REG(reg);
+	x = IS_ZERO(x);
+	return SETG(AVR_SREG_Z, x);
 }
 
 static RzILOpEffect *avr_il_check_half_carry_flag_addition(const char *local, RzILOpPure *x, RzILOpPure *y) {
@@ -293,7 +308,7 @@ static RzILOpEffect *avr_il_check_half_carry_flag_subtraction(const char *local,
 }
 
 static RzILOpEffect *avr_il_check_two_complement_overflow_flag_addition(const char *local, RzILOpPure *x, RzILOpPure *y) {
-	RzILOpBitVector *Rd, *Rr, *bit, *not0, *not1, *Res, *and0, *and1, *or0;
+	RzILOpBitVector *Rd, *Rr, *not0, *not1, *Res, *and0, *and1, *or0;
 	// Rd = X, Rr = Y, Res = Rd - Rr or Res = Rd - Rr - C
 	// V: (Rd7 & Rr7 & !Res7) | (!Rd7 & !Rr7 & Res7)
 	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
@@ -317,38 +332,28 @@ static RzILOpEffect *avr_il_check_two_complement_overflow_flag_addition(const ch
 	or0 = LOGOR(and0, and1);
 
 	// extract bit 7 from or
-	bit = AVR_IMM(1u << 7);
-	and0 = LOGAND(or0, bit);
-	and0 = NON_ZERO(and0); // cast to bool
-	return SETG(AVR_SREG_V, and0);
+	return SETG(AVR_SREG_V, MSB(or0));
 }
 
-static RzILOpEffect *avr_il_check_two_complement_overflow_flag_addition_wide(const char *local, RzILOpPure *Rdh) {
-	RzILOpBool *ovf;
-	RzILOpBitVector *bit, *Res;
+static RzILOpEffect *avr_il_check_two_complement_overflow_flag_addition_wide(const char *local, ut16 reg) {
+	RzILOpPure *ovf, *Rdh, *Res;
 	// Rdh = X, Res = Rd+1:Rd
 	// V: !Rdh7 & Res15
 	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
 
-	// extract bit 7 from Rdh
-	bit = AVR_IMM(1u << 7);
-	Rdh = LOGNOT(Rdh); // !Rdh
-	Rdh = LOGAND(Rdh, bit); // !Rdh7
+	Rdh = AVR_REG(reg);
+	Rdh = MSB(Rdh); // Rdh7
+	Rdh = INV(Rdh); // !Rdh7
 
-	// extract bit 15 from Res
 	Res = VARL(local);
-	bit = UN(AVR_IND_SIZE, 1u << 15);
-	Res = LOGAND(Res, bit); // !Res15
+	Res = MSB(Res); // Res15
 
-	// boolean and (not logical)
-	Rdh = NON_ZERO(Rdh); // cast to bool
-	Res = NON_ZERO(Res); // cast to bool
 	ovf = AND(Rdh, Res); // !Rdh7 & Res15
 	return SETG(AVR_SREG_V, ovf);
 }
 
 static RzILOpEffect *avr_il_check_two_complement_overflow_flag_subtraction(const char *local, RzILOpPure *x, RzILOpPure *y) {
-	RzILOpBitVector *Rd, *Rr, *bit, *not0, *not1, *Res, *and0, *and1, *or0;
+	RzILOpBitVector *Rd, *Rr, *not0, *not1, *Res, *and0, *and1, *or0;
 	// Rd = X, Rr = Y, Res = Rd - Rr or Res = Rd - Rr - C
 	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
 	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
@@ -371,65 +376,46 @@ static RzILOpEffect *avr_il_check_two_complement_overflow_flag_subtraction(const
 	// or = and0 | and1
 	or0 = LOGOR(and0, and1);
 
-	// extract bit 7 from or
-	bit = AVR_IMM(1u << 7);
-	and0 = LOGAND(or0, bit);
-	and0 = NON_ZERO(and0); // cast to bool
-	return SETG(AVR_SREG_V, and0);
+	return SETG(AVR_SREG_V, MSB(or0));
 }
 
-static RzILOpEffect *avr_il_check_two_complement_overflow_flag_subtraction_wide(const char *local, RzILOpPure *Rdh) {
-	RzILOpBool *ovf;
-	RzILOpBitVector *bit, *Res;
+static RzILOpEffect *avr_il_check_two_complement_overflow_flag_subtraction_wide(const char *local, ut16 reg) {
+	RzILOpPure *ovf, *Rdh, *Res;
 	// Rdh = X, Res = Rd+1:Rd
 	// V: Rdh7 & !Res15
 	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
 
 	// extract bit 7 from Rdh
-	bit = AVR_IMM(1u << 7);
-	Rdh = LOGAND(Rdh, bit);
+	Rdh = AVR_REG(reg); // Rdh
+	Rdh = MSB(Rdh); // Rdh7
 
 	// extract bit 15 from Res
 	Res = VARL(local);
-	Res = LOGNOT(Res); // !Res
-	bit = UN(AVR_IND_SIZE, 1u << 15);
-	Res = LOGAND(Res, bit); // !Res15
+	Res = MSB(Res); // Res15
+	Res = INV(Res); // !Res15
 
-	// boolean and (not logical)
-	Rdh = NON_ZERO(Rdh); // cast to bool
-	Res = NON_ZERO(Res); // cast to bool
 	ovf = AND(Rdh, Res); // Rdh7 & !Res15
 	return SETG(AVR_SREG_V, ovf);
 }
 
-static RzILOpEffect *avr_il_check_negative_flag(const char *local) {
-	// Res = Rd - Rr
-	// N: Res7 is set
-	// Set if MSB of the result is set; cleared otherwise.
-
+static RzILOpEffect *avr_il_check_negative_flag_local(const char *local) {
+	// N: Res7 is set, AKA MSB
 	// extract bit 7 from Res
-	RzILOpPure *Res = VARL(local);
-	RzILOpBitVector *bit = AVR_IMM(1u << 7);
-	RzILOpBitVector *and = LOGAND(Res, bit);
-	and = NON_ZERO(and); // cast to bool
-	return SETG(AVR_SREG_N, and);
+	RzILOpPure *x = VARL(local);
+	x = MSB(x);
+	return SETG(AVR_SREG_N, x);
 }
 
-static RzILOpEffect *avr_il_check_negative_flag_wide(const char *local) {
-	// Res = Rd+1:Rd
-	// N: Res15 is set
-	// Set if MSB of the result is set; cleared otherwise.
-
-	// extract bit 15 from Res
-	RzILOpBitVector *Res = VARL(local);
-	RzILOpBitVector *bit = UN(AVR_IND_SIZE, 1u << 15);
-	RzILOpBitVector *and = LOGAND(Res, bit);
-	and = NON_ZERO(and); // cast to bool
-	return SETG(AVR_SREG_N, and);
+static RzILOpEffect *avr_il_check_negative_flag_reg(ut16 reg) {
+	// N: Res7 is set, AKA MSB
+	// extract bit 7 from Res
+	RzILOpPure *x = AVR_REG(reg);
+	x = MSB(x);
+	return SETG(AVR_SREG_N, x);
 }
 
 static RzILOpEffect *avr_il_check_carry_flag_addition(const char *local, RzILOpPure *x, RzILOpPure *y) {
-	RzILOpBitVector *Rd, *Rr, *bit, *not0, *Res, *and0, *and1, *and2, *or0;
+	RzILOpBitVector *Rd, *Rr, *not0, *Res, *and0, *and1, *and2, *or0;
 	// Rd = X, Rr = Y, Res = Rd + Rr or Res = Rd + Rr + C
 	// H: (Rd7 & Rr7) | (Rr7 & !Res7) | (!Res7 & Rd7)
 	// Set if there was a carry from bit 7; cleared otherwise
@@ -455,34 +441,26 @@ static RzILOpEffect *avr_il_check_carry_flag_addition(const char *local, RzILOpP
 	// or |= and2
 	or0 = LOGOR(or0, and2);
 
-	// extract bit 7 from or
-	bit = AVR_IMM(1u << 7);
-	and0 = LOGAND(or0, bit);
-	and0 = NON_ZERO(and0); // cast to bool
-	return SETG(AVR_SREG_H, and0);
+	return SETG(AVR_SREG_H, MSB(or0));
 }
 
-static RzILOpEffect *avr_il_check_carry_flag_addition_wide(const char *local, RzILOpPure *Rdh) {
-	RzILOpBitVector *crr, *bit, *Res;
+static RzILOpEffect *avr_il_check_carry_flag_addition_wide(const char *local, ut16 reg) {
+	RzILOpBitVector *carry, *Rdh, *Res;
 	// Res = Rd+1:Rd
 	// !Res15 & Rdh7
 	// Set if the absolute value of K is larger than the absolute value of Rd; cleared otherwise
 
 	// extract bit 7 from Rdh
-	bit = AVR_IMM(1u << 7);
-	Rdh = LOGAND(Rdh, bit);
+	Rdh = AVR_REG(reg); // Rdh
+	Rdh = MSB(Rdh); // Rdh7
 
 	// extract bit 15 from Res
 	Res = VARL(local);
-	Res = LOGNOT(Res); // !Res
-	bit = UN(AVR_IND_SIZE, 1u << 15);
-	Res = LOGAND(Res, bit); // !Res15
+	Res = MSB(Res); // Res15
+	Res = INV(Res); // !Res15
 
-	// boolean and (not logical)
-	Res = NON_ZERO(Res); // cast to bool
-	Rdh = NON_ZERO(Rdh); // cast to bool
-	crr = AND(Res, Rdh); // !Res15 & Rdh7
-	return SETG(AVR_SREG_C, crr);
+	carry = AND(Res, Rdh); // !Res15 & Rdh7
+	return SETG(AVR_SREG_C, carry);
 }
 
 static RzILOpEffect *avr_il_check_carry_flag_subtraction(const char *local, RzILOpPure *x, RzILOpPure *y) {
@@ -519,27 +497,23 @@ static RzILOpEffect *avr_il_check_carry_flag_subtraction(const char *local, RzIL
 	return SETG(AVR_SREG_C, and0);
 }
 
-static RzILOpEffect *avr_il_check_carry_flag_subtraction_wide(const char *local, RzILOpPure *Rdh) {
-	RzILOpBitVector *crr, *bit, *Res;
+static RzILOpEffect *avr_il_check_carry_flag_subtraction_wide(const char *local, ut16 reg) {
+	RzILOpBitVector *carry, *Rdh, *Res;
 	// Res = Rd+1:Rd
 	// Res15 & !Rdh7
 	// Set if the absolute value of K is larger than the absolute value of Rd; cleared otherwise
 
 	// extract bit 7 from Rdh
-	bit = AVR_IMM(1u << 7);
-	Rdh = LOGNOT(Rdh); // !Rdh
-	Rdh = LOGAND(Rdh, bit); // !Rdh7
+	Rdh = AVR_REG(reg); // Rdh
+	Rdh = MSB(Rdh); // Rdh7
+	Rdh = INV(Rdh); // !Rdh7
 
 	// extract bit 15 from Res
 	Res = VARL(local);
-	bit = UN(AVR_IND_SIZE, 1u << 15);
-	Res = LOGAND(Res, bit); // Res15
+	Res = MSB(Res); // Res15
 
-	// boolean and (not logical)
-	Res = NON_ZERO(Res); // cast to bool
-	Rdh = NON_ZERO(Rdh); // cast to bool
-	crr = AND(Res, Rdh); // Res15 & !Rdh7
-	return SETG(AVR_SREG_C, crr);
+	carry = AND(Res, Rdh); // Res15 & !Rdh7
+	return SETG(AVR_SREG_C, carry);
 }
 
 static RzILOpEffect *avr_il_check_signess_flag() {
@@ -548,6 +522,14 @@ static RzILOpEffect *avr_il_check_signess_flag() {
 	RzILOpPure *V = VARG(AVR_SREG_V);
 	RzILOpBool *_xor = XOR(N, V);
 	return SETG(AVR_SREG_S, _xor);
+}
+
+static RzILOpEffect *avr_il_check_nc_overflow_flag() {
+	// V: N ^ C, Overflow with negative xor carry
+	RzILOpPure *N = VARG(AVR_SREG_N);
+	RzILOpPure *C = VARG(AVR_SREG_C);
+	RzILOpBool *_xor = XOR(N, C);
+	return SETG(AVR_SREG_V, _xor);
 }
 
 /* ops */
@@ -595,16 +577,10 @@ static RzILOpEffect *avr_il_adc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	H = avr_il_check_half_carry_flag_addition(AVR_LET_RES, x, y);
 
 	// N: Res7
-	x = VARL(AVR_LET_RES);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_local(AVR_LET_RES);
 
 	// Z: !Res
-	x = VARL(AVR_LET_RES);
-	x = IS_ZERO(x);
-	Z = SETG(AVR_SREG_Z, x);
+	Z = avr_il_check_zero_flag_local(AVR_LET_RES, false);
 
 	// C: (Rd7 & Rr7) | (Rr7 & !R7) | (!R7 & Rd7)
 	x = AVR_REG(Rd);
@@ -650,16 +626,10 @@ static RzILOpEffect *avr_il_add(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	H = avr_il_check_half_carry_flag_addition(AVR_LET_RES, x, y);
 
 	// N: Res7
-	x = VARL(AVR_LET_RES);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_local(AVR_LET_RES);
 
 	// Z: !Res
-	x = VARL(AVR_LET_RES);
-	x = IS_ZERO(x);
-	Z = SETG(AVR_SREG_Z, x);
+	Z = avr_il_check_zero_flag_local(AVR_LET_RES, false);
 
 	// C: (Rd7 & Rr7) | (Rr7 & !R7) | (!R7 & Rd7)
 	x = AVR_REG(Rd);
@@ -693,23 +663,21 @@ static RzILOpEffect *avr_il_adiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	adiw = avr_il_update_indirect_address_reg(AVR_LET_IND, Rdh, Rdl, 0, false);
 
 	// set Z to 1 if !IND
-	Z = avr_il_check_zero_flag(AVR_LET_IND, false);
+	Z = avr_il_check_zero_flag_local(AVR_LET_IND, false);
 
 	// Res = IND
 	// V: !Rdh7 & Res15
 	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
-	x = AVR_REG(Rdh);
-	V = avr_il_check_two_complement_overflow_flag_addition_wide(AVR_LET_IND, x);
+	V = avr_il_check_two_complement_overflow_flag_addition_wide(AVR_LET_IND, Rdh);
 
 	// Res = IND
 	// N: Res15
 	// Set if MSB of the result is set; cleared otherwise.
-	N = avr_il_check_negative_flag_wide(AVR_LET_IND);
+	N = avr_il_check_negative_flag_local(AVR_LET_IND);
 
 	// Res = IND
 	// C: !Res15 & Rdh7
-	x = AVR_REG(Rdh);
-	C = avr_il_check_carry_flag_addition_wide(AVR_LET_IND, x);
+	C = avr_il_check_carry_flag_addition_wide(AVR_LET_IND, Rdh);
 
 	// S: N ^ V, For signed tests.
 	S = avr_il_check_signess_flag();
@@ -731,20 +699,13 @@ static RzILOpEffect *avr_il_and(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	and0 = AVR_REG_SET(Rd, x);
 
 	// V: 0 (Cleared)
-	x = rz_il_op_new_b0();
-	V = SETG(AVR_SREG_V, x);
+	V = AVR_SREG_V_SET(false);
 
 	// N: Res7
-	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: !Res
-	x = AVR_REG(Rd);
-	x = IS_ZERO(x);
-	Z = SETG(AVR_SREG_Z, x);
+	Z = avr_il_check_zero_flag_reg(Rd);
 
 	// S: N ^ V, For signed tests.
 	S = avr_il_check_signess_flag();
@@ -766,20 +727,13 @@ static RzILOpEffect *avr_il_andi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	andi = AVR_REG_SET(Rd, x);
 
 	// V: 0 (Cleared)
-	x = rz_il_op_new_b0();
-	V = SETG(AVR_SREG_V, x);
+	V = AVR_SREG_V_SET(false);
 
 	// N: Res7
-	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: !Res
-	x = AVR_REG(Rd);
-	x = IS_ZERO(x);
-	Z = SETG(AVR_SREG_Z, x);
+	Z = avr_il_check_zero_flag_reg(Rd);
 
 	// S: N ^ V, For signed tests.
 	S = avr_il_check_signess_flag();
@@ -802,32 +756,20 @@ static RzILOpEffect *avr_il_asr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// C: Rd0
 	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 0);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
+	x = LSB(x);
 	C = SETG(AVR_SREG_C, x);
 
-	// perform shift since we need the result for the SREG flags.
 	// N: Res7
-	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: !Res
-	x = AVR_REG(Rd);
-	x = IS_ZERO(x);
-	Z = SETG(AVR_SREG_Z, x);
+	Z = avr_il_check_zero_flag_reg(Rd);
 
 	// S: N ^ V, For signed tests.
 	S = avr_il_check_signess_flag();
 
 	// V: N ^ C, For N and C after the shift
-	x = VARG(AVR_SREG_N);
-	y = VARG(AVR_SREG_C);
-	x = XOR(x, y);
-	V = SETG(AVR_SREG_V, x);
+	V = avr_il_check_nc_overflow_flag();
 
 	return SEQ6(C, asr, N, Z, S, V);
 }
@@ -1042,22 +984,22 @@ static RzILOpEffect *avr_il_cbi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 static RzILOpEffect *avr_il_clc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// C = 0
-	return avr_il_assign_bool(AVR_SREG_C, false);
+	return AVR_SREG_C_SET(false);
 }
 
 static RzILOpEffect *avr_il_clh(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// H = 0
-	return avr_il_assign_bool(AVR_SREG_H, false);
+	return AVR_SREG_H_SET(false);
 }
 
 static RzILOpEffect *avr_il_cli(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// I = 0
-	return avr_il_assign_bool(AVR_SREG_I, false);
+	return AVR_SREG_I_SET(false);
 }
 
 static RzILOpEffect *avr_il_cln(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// N = 0
-	return avr_il_assign_bool(AVR_SREG_N, false);
+	return AVR_SREG_N_SET(false);
 }
 
 static RzILOpEffect *avr_il_clr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -1067,32 +1009,32 @@ static RzILOpEffect *avr_il_clr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	RzILOpEffect *clr, *S, *V, *N, *Z;
 	clr = avr_il_assign_imm(avr_registers[Rd], 0);
-	S = avr_il_assign_bool(AVR_SREG_S, false);
-	V = avr_il_assign_bool(AVR_SREG_V, false);
-	N = avr_il_assign_bool(AVR_SREG_N, false);
-	Z = avr_il_assign_bool(AVR_SREG_Z, true);
+	S = AVR_SREG_S_SET(false);
+	V = AVR_SREG_V_SET(false);
+	N = AVR_SREG_N_SET(false);
+	Z = AVR_SREG_Z_SET(true);
 
 	return SEQ5(clr, S, V, N, Z);
 }
 
 static RzILOpEffect *avr_il_cls(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// S = 0
-	return avr_il_assign_bool(AVR_SREG_S, false);
+	return AVR_SREG_S_SET(false);
 }
 
 static RzILOpEffect *avr_il_clt(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// T = 0
-	return avr_il_assign_bool(AVR_SREG_T, false);
+	return AVR_SREG_T_SET(false);
 }
 
 static RzILOpEffect *avr_il_clv(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// V = 0
-	return avr_il_assign_bool(AVR_SREG_V, false);
+	return AVR_SREG_V_SET(false);
 }
 
 static RzILOpEffect *avr_il_clz(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Z = 0
-	return avr_il_assign_bool(AVR_SREG_Z, false);
+	return AVR_SREG_Z_SET(false);
 }
 
 static RzILOpEffect *avr_il_com(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -1109,10 +1051,10 @@ static RzILOpEffect *avr_il_com(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	set = AVR_REG_SET(Rd, sub);
 
 	// C = 1
-	C = avr_il_assign_bool(AVR_SREG_C, true);
+	C = AVR_SREG_C_SET(true);
 
 	// V = 0
-	V = avr_il_assign_bool(AVR_SREG_V, false);
+	V = AVR_SREG_V_SET(false);
 
 	// set Z to 1 if !(0xFF - Rd)
 	x = AVR_REG(Rd);
@@ -1149,7 +1091,7 @@ static RzILOpEffect *avr_il_cp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *
 	let = SETL(AVR_LET_RES, sub);
 
 	// set Z to 1 if !(x - y)
-	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
+	Z = avr_il_check_zero_flag_local(AVR_LET_RES, false);
 
 	// Res = Rd - Rr
 	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
@@ -1168,7 +1110,7 @@ static RzILOpEffect *avr_il_cp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *
 	// Res = Rd - Rr
 	// N: Res7
 	// Set if MSB of the result is set; cleared otherwise.
-	N = avr_il_check_negative_flag(AVR_LET_RES);
+	N = avr_il_check_negative_flag_local(AVR_LET_RES);
 
 	// Res = Rd - Rr
 	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
@@ -1200,7 +1142,7 @@ static RzILOpEffect *avr_il_cpi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	let = SETL(AVR_LET_RES, sub);
 
 	// set Z to 1 if !(x - y)
-	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
+	Z = avr_il_check_zero_flag_local(AVR_LET_RES, false);
 
 	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
 	// Set if there was a borrow from bit 3; cleared otherwise
@@ -1216,7 +1158,7 @@ static RzILOpEffect *avr_il_cpi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// N: Res7
 	// Set if MSB of the result is set; cleared otherwise.
-	N = avr_il_check_negative_flag(AVR_LET_RES);
+	N = avr_il_check_negative_flag_local(AVR_LET_RES);
 
 	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
 	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
@@ -1250,7 +1192,7 @@ static RzILOpEffect *avr_il_cpc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	let = SETL(AVR_LET_RES, sub);
 
 	// set Z to 1 if !(x - y - C)
-	Z = avr_il_check_zero_flag(AVR_LET_RES, true);
+	Z = avr_il_check_zero_flag_local(AVR_LET_RES, true);
 
 	// Res = Rd - Rr - C
 	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
@@ -1269,7 +1211,7 @@ static RzILOpEffect *avr_il_cpc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Res = Rd - Rr - C
 	// N: Res7
 	// Set if MSB of the result is set; cleared otherwise.
-	N = avr_il_check_negative_flag(AVR_LET_RES);
+	N = avr_il_check_negative_flag_local(AVR_LET_RES);
 
 	// Res = Rd - Rr - C
 	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
@@ -1313,13 +1255,8 @@ static RzILOpEffect *avr_il_dec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = SUB(x, y);
 	dec = AVR_REG_SET(Rd, x);
 
-	// perform shift since we need the result for the SREG flags.
 	// N: Res7
-	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: !Res
 	x = AVR_REG(Rd);
@@ -1440,14 +1377,10 @@ static RzILOpEffect *avr_il_eor(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	eor = AVR_REG_SET(Rd, x);
 
 	// V: cleared (0)
-	V = avr_il_assign_bool(AVR_SREG_V, false);
+	V = AVR_SREG_V_SET(false);
 
 	// N: Res7
-	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: !Res
 	x = AVR_REG(Rd);
@@ -1666,13 +1599,8 @@ static RzILOpEffect *avr_il_inc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = SUB(x, y);
 	inc = AVR_REG_SET(Rd, x);
 
-	// perform shift since we need the result for the SREG flags.
 	// N: Res7
-	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: !Res
 	x = AVR_REG(Rd);
@@ -1911,13 +1839,8 @@ static RzILOpEffect *avr_il_lsl(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = NON_ZERO(x); // cast to bool
 	C = SETG(AVR_SREG_C, x);
 
-	// perform shift since we need the result for the SREG flags.
 	// N: Res7
-	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: !Res
 	x = AVR_REG(Rd);
@@ -1928,10 +1851,7 @@ static RzILOpEffect *avr_il_lsl(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	S = avr_il_check_signess_flag();
 
 	// V: N ^ C, For N and C after the shift
-	x = VARG(AVR_SREG_N);
-	y = VARG(AVR_SREG_C);
-	x = XOR(x, y);
-	V = SETG(AVR_SREG_V, x);
+	V = avr_il_check_nc_overflow_flag();
 
 	return SEQ7(H, C, lsl, N, Z, S, V);
 }
@@ -1955,7 +1875,7 @@ static RzILOpEffect *avr_il_lsr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// perform shift since we need the result for the SREG flags.
 	// N: 0
-	N = avr_il_assign_bool(AVR_SREG_N, false);
+	N = AVR_SREG_N_SET(false);
 
 	// Z: !Res
 	x = AVR_REG(Rd);
@@ -1966,10 +1886,7 @@ static RzILOpEffect *avr_il_lsr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	S = avr_il_check_signess_flag();
 
 	// V: N ^ C, For N and C after the shift
-	x = VARG(AVR_SREG_N);
-	y = VARG(AVR_SREG_C);
-	x = XOR(x, y);
-	V = SETG(AVR_SREG_V, x);
+	V = avr_il_check_nc_overflow_flag();
 
 	return SEQ6(C, N, lsr, Z, S, V);
 }
@@ -2132,11 +2049,7 @@ static RzILOpEffect *avr_il_neg(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	V = SETG(AVR_SREG_V, x);
 
 	// N: Res7
-	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y); // extract bit 7
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// C: Res != 0x00
 	x = AVR_REG(Rd); // Rd is now Res
@@ -2169,12 +2082,10 @@ static RzILOpEffect *avr_il_or(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *
 	or = AVR_REG_SET(Rd, x);
 
 	// V: 0
-	V = avr_il_assign_bool(AVR_SREG_V, false);
+	V = AVR_SREG_V_SET(false);
 
 	// N: Res7
-	x = AVR_REG(Rd);
-	x = MSB(x);
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: Res == 0x00
 	x = AVR_REG(Rd); // Rd is now Res
@@ -2202,12 +2113,10 @@ static RzILOpEffect *avr_il_ori(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	or = AVR_REG_SET(Rd, x);
 
 	// V: 0
-	V = avr_il_assign_bool(AVR_SREG_V, false);
+	V = AVR_SREG_V_SET(false);
 
 	// N: Res7
-	x = AVR_REG(Rd);
-	x = MSB(x);
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: Res == 0x00
 	x = AVR_REG(Rd); // Rd is now Res
@@ -2290,13 +2199,8 @@ static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = NON_ZERO(x); // cast to bool
 	C = SETG(AVR_SREG_C, x);
 
-	// perform rotation since we need the result for the SREG flags.
 	// N: Res7
-	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
-	N = SETG(AVR_SREG_N, x);
+	N = avr_il_check_negative_flag_reg(Rd);
 
 	// Z: !Res
 	x = AVR_REG(Rd);
@@ -2307,10 +2211,7 @@ static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	S = avr_il_check_signess_flag();
 
 	// V: N ^ C, For N and C after the shift
-	x = VARG(AVR_SREG_N);
-	y = VARG(AVR_SREG_C);
-	x = XOR(x, y);
-	V = SETG(AVR_SREG_V, x);
+	V = avr_il_check_nc_overflow_flag();
 
 	return SEQ7(H, C, rol, N, Z, S, V);
 }
@@ -2336,23 +2237,21 @@ static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	sbiw = avr_il_update_indirect_address_reg(AVR_LET_IND, Rdh, Rdl, 0, false);
 
 	// set Z to 1 if !IND
-	Z = avr_il_check_zero_flag(AVR_LET_IND, false);
+	Z = avr_il_check_zero_flag_local(AVR_LET_IND, false);
 
 	// Res = IND
 	// V: Rdh7 & !Res15
 	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
-	x = AVR_REG(Rdh);
-	V = avr_il_check_two_complement_overflow_flag_subtraction_wide(AVR_LET_IND, x);
+	V = avr_il_check_two_complement_overflow_flag_subtraction_wide(AVR_LET_IND, Rdh);
 
 	// Res = IND
 	// N: Res15
 	// Set if MSB of the result is set; cleared otherwise.
-	N = avr_il_check_negative_flag_wide(AVR_LET_IND);
+	N = avr_il_check_negative_flag_local(AVR_LET_IND);
 
 	// Res = IND
 	// C: !Rdh7 & Res15
-	x = AVR_REG(Rdh);
-	C = avr_il_check_carry_flag_subtraction_wide(AVR_LET_IND, x);
+	C = avr_il_check_carry_flag_subtraction_wide(AVR_LET_IND, Rdh);
 
 	// S: N ^ V, For signed tests.
 	S = avr_il_check_signess_flag();
@@ -2362,22 +2261,22 @@ static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 
 static RzILOpEffect *avr_il_sec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// C = 1
-	return avr_il_assign_bool(AVR_SREG_C, true);
+	return AVR_SREG_C_SET(true);
 }
 
 static RzILOpEffect *avr_il_seh(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// H = 1
-	return avr_il_assign_bool(AVR_SREG_H, true);
+	return AVR_SREG_H_SET(true);
 }
 
 static RzILOpEffect *avr_il_sei(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// I = 1
-	return avr_il_assign_bool(AVR_SREG_I, true);
+	return AVR_SREG_I_SET(true);
 }
 
 static RzILOpEffect *avr_il_sen(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// N = 1
-	return avr_il_assign_bool(AVR_SREG_N, true);
+	return AVR_SREG_N_SET(true);
 }
 
 static RzILOpEffect *avr_il_ser(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2390,22 +2289,22 @@ static RzILOpEffect *avr_il_ser(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 static RzILOpEffect *avr_il_ses(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// S = 1
-	return avr_il_assign_bool(AVR_SREG_S, true);
+	return AVR_SREG_S_SET(true);
 }
 
 static RzILOpEffect *avr_il_set(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// T = 1
-	return avr_il_assign_bool(AVR_SREG_T, true);
+	return AVR_SREG_T_SET(true);
 }
 
 static RzILOpEffect *avr_il_sev(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// V = 1
-	return avr_il_assign_bool(AVR_SREG_V, true);
+	return AVR_SREG_V_SET(true);
 }
 
 static RzILOpEffect *avr_il_sez(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Z = 1
-	return avr_il_assign_bool(AVR_SREG_Z, true);
+	return AVR_SREG_Z_SET(true);
 }
 
 static RzILOpEffect *avr_il_st(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2492,7 +2391,7 @@ static RzILOpEffect *avr_il_sub(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	subt = AVR_REG_SET(Rd, x);
 
 	// set Z to 1 if !(x - y)
-	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
+	Z = avr_il_check_zero_flag_local(AVR_LET_RES, false);
 
 	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
 	// Set if there was a borrow from bit 3; cleared otherwise
@@ -2508,7 +2407,7 @@ static RzILOpEffect *avr_il_sub(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// N: Res7
 	// Set if MSB of the result is set; cleared otherwise.
-	N = avr_il_check_negative_flag(AVR_LET_RES);
+	N = avr_il_check_negative_flag_local(AVR_LET_RES);
 
 	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
 	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
@@ -2543,7 +2442,7 @@ static RzILOpEffect *avr_il_subi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	subt = AVR_REG_SET(Rd, x);
 
 	// set Z to 1 if !(x - y)
-	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
+	Z = avr_il_check_zero_flag_local(AVR_LET_RES, false);
 
 	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
 	// Set if there was a borrow from bit 3; cleared otherwise
@@ -2559,7 +2458,7 @@ static RzILOpEffect *avr_il_subi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 
 	// N: Res7
 	// Set if MSB of the result is set; cleared otherwise.
-	N = avr_il_check_negative_flag(AVR_LET_RES);
+	N = avr_il_check_negative_flag_local(AVR_LET_RES);
 
 	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
 	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
