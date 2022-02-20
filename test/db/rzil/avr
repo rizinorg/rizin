@@ -123,3 +123,42 @@ var_write(name: zf, old: 0x0, new: 0x0)
 var_write(name: cf, old: 0x0, new: 0x1)
 EOF
 RUN
+
+NAME=push & pop
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r16, 0xC0 ; ldi r17, 0xA0 ; push r16 ; push r17 ; pop r16 ; pop r17"
+aezi
+ar SP=0x3F
+aezs 2
+ar r16
+ar r17
+aezs 1
+ar sp
+px 16 @ 0x30
+aezs 1
+ar sp
+px 16 @ 0x30
+aezs 1
+ar r16
+ar sp
+aezs 1
+ar r17
+ar sp
+EOF
+EXPECT=<<EOF
+r16 = 0x000000c0
+r17 = 0x000000a0
+sp = 0x0000003e
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000030  0000 0000 0000 0000 0000 0000 0000 00c0  ................
+sp = 0x0000003d
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000030  0000 0000 0000 0000 0000 0000 0000 a0c0  ................
+r16 = 0x000000a0
+sp = 0x0000003e
+r17 = 0x000000c0
+sp = 0x0000003f
+EOF
+RUN
