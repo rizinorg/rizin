@@ -456,6 +456,15 @@ static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	RzListIter *it;
 	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
+		if (member_info->leaf_type == LF_INDEX) {
+			type = rz_bin_pdb_get_type_by_index(stream, rz_bin_pdb_get_type_val(member_info));
+			members = rz_bin_pdb_get_type_members(stream, type);
+			it = rz_list_head(members);
+			if (!it) {
+				break;
+			}
+			member_info = rz_list_first(members);
+		}
 		RzTypeStructMember *struct_member = parse_struct_member(typedb, stream, member_info);
 		if (!struct_member) {
 			continue; // skip the failure
@@ -573,6 +582,15 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 	RzListIter *it;
 	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
+		if (member_info->leaf_type == LF_INDEX) {
+			type = rz_bin_pdb_get_type_by_index(stream, rz_bin_pdb_get_type_val(member_info));
+			members = rz_bin_pdb_get_type_members(stream, type);
+			it = rz_list_head(members);
+			if (!it) {
+				break;
+			}
+			member_info = rz_list_first(members);
+		}
 		RzTypeUnionMember *union_member = parse_union_member(typedb, stream, member_info);
 		if (!union_member) {
 			continue; // skip the failure
@@ -667,6 +685,15 @@ static RzType *parse_enum(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 	RzListIter *it;
 	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
+		if (member_info->leaf_type == LF_INDEX) {
+			type = rz_bin_pdb_get_type_by_index(stream, rz_bin_pdb_get_type_val(member_info));
+			members = rz_bin_pdb_get_type_members(stream, type);
+			it = rz_list_head(members);
+			if (!it) {
+				break;
+			}
+			member_info = rz_list_first(members);
+		}
 		RzTypeEnumCase *enum_case = parse_enumerate(member_info);
 		if (!enum_case) {
 			continue; // skip it, move forward

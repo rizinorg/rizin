@@ -537,6 +537,10 @@ RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type) {
 		Tpi_LF_Union *lf_union = type->type_data;
 		return get_numeric_val(&lf_union->size);
 	}
+	case LF_INDEX: {
+		Tpi_LF_Index *lf_index = type->type_data;
+		return lf_index->index;
+	}
 	default:
 		return 0;
 	}
@@ -679,6 +683,8 @@ static void free_tpi_type(void *type_info) {
 	case LF_MFUNCTION:
 		break;
 	case LF_BITFIELD:
+		break;
+	case LF_INDEX:
 		break;
 	case LF_VFUNCTAB:
 		break;
@@ -861,6 +867,28 @@ static Tpi_LF_Enumerate *parse_type_enumerate(RzBuffer *buf, ut16 len, ut16 *rea
 	parse_type_string(buf, &enumerate->name, len, read_len);
 	skip_padding(buf, len, read_len, false);
 	return enumerate;
+}
+
+static Tpi_LF_Index *parse_type_index(RzBuffer *buf, ut16 len, ut16 *read_len) {
+	rz_return_val_if_fail(buf, NULL);
+	Tpi_LF_Index *index = RZ_NEW0(Tpi_LF_Index);
+	if (!index) {
+		return NULL;
+	}
+	ut16 fldattr;
+	if (!rz_buf_read_le16(buf, &fldattr)) {
+		RZ_FREE(index);
+		return NULL;
+	}
+	parse_codeview_fld_attribute(&index->fldattr, fldattr);
+	*read_len += sizeof(ut16);
+	if (!rz_buf_read_le32(buf, &index->index)) {
+		RZ_FREE(index);
+		return NULL;
+	}
+	*read_len += sizeof(ut32);
+	skip_padding(buf, len, read_len, false);
+	return index;
 }
 
 static Tpi_LF_NestType *parse_type_nesttype(RzBuffer *buf, ut16 len, ut16 *read_len) {
@@ -1138,6 +1166,9 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 			break;
 		case LF_STMEMBER:
 			type->type_data = parse_type_staticmember(buf, len, &read_len);
+			break;
+		case LF_INDEX:
+			type->type_data = parse_type_index(buf, len, &read_len);
 			break;
 		default:
 			RZ_LOG_ERROR("%s: Unsupported leaf type 0x%" PFMT32x "\n", __FUNCTION__,

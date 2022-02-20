@@ -551,6 +551,12 @@ typedef struct {
 typedef struct {
 	TpiCVFldattr fldattr;
 	ut32 index;
+	ut8 pad;
+} Tpi_LF_Index;
+
+typedef struct {
+	TpiCVFldattr fldattr;
+	ut32 index;
 	ut32 offset_in_vtable;
 	Tpi_Type_String name;
 	ut8 pad;
