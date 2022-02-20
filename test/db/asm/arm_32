@@ -458,7 +458,7 @@ d "lsl r2, r2, r8" 1228a0e1 0x0 (set r2 (<< (var r2) (cast 8 false (var r8)) fal
 d "lsls r2, r2, r8" 1228b0e1 0x0 (seq (set cf (msb (<< (append (ite (var cf) (bv 1 0x1) (bv 1 0x0)) (var r2)) (cast 8 false (var r8)) false))) (set r2 (<< (var r2) (cast 8 false (var r8)) false)) (set zf (is_zero (var r2))) (set nf (msb (var r2))))
 d "lsrs r2, r3, r8" 3328b0e1 0x0 (seq (set cf (lsb (>> (append (var r3) (ite (var cf) (bv 1 0x1) (bv 1 0x0))) (cast 8 false (var r8)) false))) (set r2 (>> (var r3) (cast 8 false (var r8)) false)) (set zf (is_zero (var r2))) (set nf (msb (var r2))))
 d "asr r2, r7, r3" 5723a0e1 0x0 (set r2 (>> (var r7) (cast 8 false (var r3)) (msb (var r7))))
-d "asrs r2, r7, r3" 5723b0e1 0x0 (seq (set cf (lsb (>> (append (var r7) (ite (var cf) (bv 1 0x1) (bv 1 0x0))) (cast 8 false (var r3)) false))) (set r2 (>> (var r7) (cast 8 false (var r3)) (msb (var r7)))) (set zf (is_zero (var r2))) (set nf (msb (var r2))))
+d "asrs r2, r7, r3" 5723b0e1 0x0 (seq (set cf (lsb (>> (append (var r7) (ite (var cf) (bv 1 0x1) (bv 1 0x0))) (cast 8 false (var r3)) (msb (append (var r7) (ite (var cf) (bv 1 0x1) (bv 1 0x0))))))) (set r2 (>> (var r7) (cast 8 false (var r3)) (msb (var r7)))) (set zf (is_zero (var r2))) (set nf (msb (var r2))))
 d "ror r2, r7, r3" 7723a0e1 0x0 (set r2 (| (>> (var r7) (cast 5 false (var r3)) false) (<< (var r7) (~- (cast 5 false (var r3))) false)))
 d "rors r2, r7, r3" 7723b0e1 0x0 (seq (set cf (ite (is_zero (cast 5 false (var r3))) (var cf) (msb (<< (var r7) (~- (cast 5 false (var r3))) false)))) (set r2 (| (>> (var r7) (cast 5 false (var r3)) false) (<< (var r7) (~- (cast 5 false (var r3))) false))) (set zf (is_zero (var r2))) (set nf (msb (var r2))))
 d "rrx r2, r3" 6320a0e1 0x0 (set r2 (>> (var r3) (bv 5 0x1) (var cf)))

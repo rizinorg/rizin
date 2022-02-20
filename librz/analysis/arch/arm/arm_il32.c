@@ -193,7 +193,7 @@ static RZ_NULLABLE RzILOpBitVector *shift(RzILOpBitVector *val, RZ_NULLABLE RzIL
 			return val;
 		}
 		if (carry_out) {
-			*carry_out = LSB(SHIFTR0(APPEND(DUP(val), ITE(VARG("cf"), UN(1, 1), UN(1, 0))), DUP(dist)));
+			*carry_out = LSB(SHIFTRA(APPEND(DUP(val), ITE(VARG("cf"), UN(1, 1), UN(1, 0))), DUP(dist)));
 		}
 		return SHIFTRA(val, dist);
 	case ARM_SFT_LSL:
