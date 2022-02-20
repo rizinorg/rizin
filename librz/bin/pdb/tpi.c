@@ -1323,6 +1323,25 @@ static Tpi_LF_Pointer *parse_type_pointer(RzBuffer *buf, ut16 len) {
 	}
 	parse_codeview_pointer_attribute(&pointer->ptr_attr, ptrattr);
 	read_bytes += sizeof(ut32);
+	if (pointer->ptr_attr.bits.ptrmode == PTR_MODE_PMFUNC ||
+		pointer->ptr_attr.bits.ptrmode == PTR_MODE_PMEM) {
+		read_bytes += sizeof(ut32);
+		if (!rz_buf_read_le32(buf, &pointer->pmember.pmclass)) {
+			RZ_FREE(pointer);
+			return NULL;
+		}
+		read_bytes += sizeof(ut16);
+		if (!rz_buf_read_le16(buf, &pointer->pmember.pmtype)) {
+			RZ_FREE(pointer);
+			return NULL;
+		}
+	} else if (pointer->ptr_attr.bits.ptrtype == PTR_BASE_TYPE) {
+		read_bytes += sizeof(ut32);
+		if (!rz_buf_read_le32(buf, &pointer->pbase.index)) {
+			RZ_FREE(pointer);
+			return NULL;
+		}
+	}
 	skip_padding(buf, len, &read_bytes, true);
 	return pointer;
 }
