@@ -2317,6 +2317,28 @@ static RzILOpEffect *avr_il_push(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	return SEQ2(push, dec);
 }
 
+static RzILOpEffect *avr_il_rcall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// PC = PC + k + 1
+	st32 k = (st16)aop->param[0];
+
+	RzILOpPure *val, *num;
+	RzILOpEffect *jmp, *push, *sub;
+
+	jmp = avr_il_jump_relative(aop, analysis, k);
+
+	num = AVR_PC(pc);
+	val = VARG(AVR_SP);
+	val = AVR_ADDR(val);
+	push = STOREW(val, num);
+
+	num = AVR_IMM16(AVR_ADDR_SIZE / 8);
+	val = VARG(AVR_SP);
+	val = SUB(val, num);
+	sub = SETG(AVR_SP, val);
+
+	return SEQ3(push, sub, jmp);
+}
+
 static RzILOpEffect *avr_il_rjmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// PC = PC + k + 1
 	st32 k = (st16)aop->param[0];
@@ -2708,7 +2730,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_out,
 	avr_il_pop,
 	avr_il_push,
-	avr_il_unk, /* AVR_OP_RCALL */
+	avr_il_rcall,
 	avr_il_unk, /* AVR_OP_RET */
 	avr_il_unk, /* AVR_OP_RETI */
 	avr_il_rjmp,
