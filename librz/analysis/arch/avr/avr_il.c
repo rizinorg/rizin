@@ -2164,6 +2164,28 @@ static RzILOpEffect *avr_il_out(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return avr_il_assign_reg(reg, avr_registers[Rr]);
 }
 
+static RzILOpEffect *avr_il_pop(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Rd = *(SP)
+	// SP++
+	st32 Rd = aop->param[0];
+	RzILOpPure *x, *y;
+	RzILOpEffect *pop, *inc;
+
+	// Rd = *(SP)
+	y = VARG(AVR_SP);
+	y = EXTZERO(AVR_ADDR_SIZE, y);
+	x = LOADW(AVR_REG_SIZE, y);
+	pop = AVR_REG_SET(Rd, x);
+
+	// SP++
+	x = VARG(AVR_SP);
+	y = AVR_IMM16(1);
+	x = ADD(x, y);
+	inc = SETG(AVR_SP, x);
+
+	return SEQ2(pop, inc);
+}
+
 static RzILOpEffect *avr_il_rjmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// PC = PC + k + 1
 	st32 k = (st16)aop->param[0];
@@ -2553,7 +2575,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_or,
 	avr_il_ori,
 	avr_il_out,
-	avr_il_unk, /* AVR_OP_POP */
+	avr_il_pop,
 	avr_il_unk, /* AVR_OP_PUSH */
 	avr_il_unk, /* AVR_OP_RCALL */
 	avr_il_unk, /* AVR_OP_RET */
