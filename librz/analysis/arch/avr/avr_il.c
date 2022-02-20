@@ -2280,17 +2280,17 @@ static RzILOpEffect *avr_il_pop(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	RzILOpPure *x, *y;
 	RzILOpEffect *pop, *inc;
 
-	// Rd = *(SP)
-	y = VARG(AVR_SP);
-	y = EXTZERO(AVR_ADDR_SIZE, y);
-	x = LOADW(AVR_REG_SIZE, y);
-	pop = AVR_REG_SET(Rd, x);
-
 	// SP++
 	x = VARG(AVR_SP);
 	y = AVR_IMM16(1);
 	x = ADD(x, y);
 	inc = SETG(AVR_SP, x);
+
+	// Rd = *(SP)
+	y = VARG(AVR_SP);
+	y = EXTZERO(AVR_ADDR_SIZE, y);
+	x = LOADW(AVR_REG_SIZE, y);
+	pop = AVR_REG_SET(Rd, x);
 
 	return SEQ2(inc, pop);
 }
@@ -2337,6 +2337,27 @@ static RzILOpEffect *avr_il_rcall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 	sub = SETG(AVR_SP, val);
 
 	return SEQ3(push, sub, jmp);
+}
+
+static RzILOpEffect *avr_il_ret(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// SP += PC_SIZE
+	// Rd = *(SP)
+	RzILOpPure *x, *y;
+	RzILOpEffect *jmp, *inc;
+
+	// SP += PC_SIZE
+	x = VARG(AVR_SP);
+	y = AVR_IMM16(AVR_ADDR_SIZE / 8);
+	x = ADD(x, y);
+	inc = SETG(AVR_SP, x);
+
+	// Rd = *(SP)
+	y = VARG(AVR_SP);
+	y = EXTZERO(AVR_ADDR_SIZE, y);
+	x = LOADW(AVR_ADDR_SIZE, y);
+	jmp = JMP(x);
+
+	return SEQ2(inc, jmp);
 }
 
 static RzILOpEffect *avr_il_rjmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2731,7 +2752,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_pop,
 	avr_il_push,
 	avr_il_rcall,
-	avr_il_unk, /* AVR_OP_RET */
+	avr_il_ret,
 	avr_il_unk, /* AVR_OP_RETI */
 	avr_il_rjmp,
 	avr_il_rol,
