@@ -92,7 +92,7 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
 }
 
 #define PC(addr, is_thumb)      (addr + (is_thumb ? 4 : 8))
-#define PCALIGN(addr, is_thumb) (PC(addr, is_thumb) & ~3)
+#define PCALIGN(addr, is_thumb) (PC(addr, is_thumb) & ~3ul)
 #define REG_VAL(id)             read_reg(PC(insn->address, is_thumb), id)
 #define REG(n)                  REG_VAL(REGID(n))
 #define MEMBASE(x)              REG_VAL(insn->detail->arm.operands[x].mem.base)
@@ -1136,7 +1136,7 @@ static RzILOpEffect *bl(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	return SEQ2(
-		SETG("lr", U32(((insn->address + insn->size) & ~1) | (is_thumb ? 1 : 0))),
+		SETG("lr", U32(((insn->address + insn->size) & ~1ul) | (is_thumb ? 1 : 0))),
 		JMP(tgt));
 }
 
@@ -1874,23 +1874,17 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	if (set_ge) {
+		ut64 tval = is_signed ? 0 : 1;
+		ut64 fval = 1 - tval;
 		eff = SEQ2(
 			SETL("gef",
-				is_signed
-					? APPEND(
-						  APPEND(
-							  ITE(INV(MSB(VARL("res3"))), UN(1, 1), UN(1, 0)),
-							  ITE(INV(MSB(VARL("res2"))), UN(1, 1), UN(1, 0))),
-						  APPEND(
-							  ITE(INV(MSB(VARL("res1"))), UN(1, 1), UN(1, 0)),
-							  ITE(INV(MSB(VARL("res0"))), UN(1, 1), UN(1, 0))))
-					: APPEND(
-						  APPEND(
-							  ITE(MSB(VARL("res3")), UN(1, 1), UN(1, 0)),
-							  ITE(MSB(VARL("res2")), UN(1, 1), UN(1, 0))),
-						  APPEND(
-							  ITE(MSB(VARL("res1")), UN(1, 1), UN(1, 0)),
-							  ITE(MSB(VARL("res0")), UN(1, 1), UN(1, 0))))),
+				APPEND(
+					APPEND(
+						ITE(MSB(VARL("res3")), UN(1, tval), UN(1, fval)),
+						ITE(MSB(VARL("res2")), UN(1, tval), UN(1, fval))),
+					APPEND(
+						ITE(MSB(VARL("res1")), UN(1, tval), UN(1, fval)),
+						ITE(MSB(VARL("res0")), UN(1, tval), UN(1, fval))))),
 			eff);
 	}
 	return SEQ5(
