@@ -1775,7 +1775,7 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 		if (!parse_tpi_types(buf, type) || !type->type_data) {
 			RZ_LOG_ERROR("Parse TPI type error. idx in stream: 0x%" PFMT32x "\n", i);
 			RZ_FREE(type);
-			exit(0);
+			return false;
 		}
 		rz_rbtree_insert(&s->types, &type->type_index, &type->rb, tpi_type_node_cmp, NULL);
 	}
