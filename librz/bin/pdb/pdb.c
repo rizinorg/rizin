@@ -149,7 +149,7 @@ static RzList *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfStreamDirectory *msd) {
 			rz_buf_seek(pdb->buf, (long long)block_idx * pdb->super_block->block_size, RZ_BUF_SET);
 			rz_buf_read(pdb->buf, stream_data + j * pdb->super_block->block_size, pdb->super_block->block_size);
 		}
-		stream->stream_data = rz_buf_new_with_bytes(stream_data, stream->stream_size);
+		stream->stream_data = rz_buf_new_with_pointers(stream_data, stream->stream_size, true);
 		if (!stream->stream_data) {
 			RZ_FREE(stream);
 			RZ_FREE(stream_data);
@@ -202,7 +202,7 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 		rz_buf_seek(pdb->buf, (long long)block_map[i] * pdb->super_block->block_size, RZ_BUF_SET);
 		rz_buf_read(pdb->buf, stream_directory + i * pdb->super_block->block_size, pdb->super_block->block_size);
 	}
-	RzBuffer *sd = rz_buf_new_with_bytes(stream_directory, stream_directory_len);
+	RzBuffer *sd = rz_buf_new_with_pointers(stream_directory, stream_directory_len, true);
 	if (!sd) {
 		RZ_FREE(stream_directory);
 		RZ_FREE(block_map);
@@ -356,5 +356,7 @@ RZ_API void rz_bin_pdb_free(RzPdb *pdb) {
 	RZ_FREE(pdb->s_omap);
 	free_tpi_stream(pdb->s_tpi);
 	RZ_FREE(pdb->s_tpi);
+	free_pe_stream(pdb->s_pe);
+	RZ_FREE(pdb->s_pe);
 	RZ_FREE(pdb);
 }

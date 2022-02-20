@@ -595,11 +595,6 @@ static void free_tpi_type(void *type_info) {
 	}
 	case LF_FIELDLIST: {
 		Tpi_LF_FieldList *lf_fieldlist = (Tpi_LF_FieldList *)type->type_data;
-		RzListIter *it;
-		RzPdbTpiType *ftype = 0;
-		rz_list_foreach (lf_fieldlist->substructs, it, ftype) {
-			free_tpi_type(ftype);
-		}
 		rz_list_free(lf_fieldlist->substructs);
 		break;
 	}
@@ -691,13 +686,14 @@ static void free_tpi_type(void *type_info) {
 		rz_warn_if_reached();
 		break;
 	}
+	free(type->type_data);
+	free(type);
 }
 
 static void free_tpi_rbtree(RBNode *node, void *user) {
 	rz_return_if_fail(node);
 	RzPdbTpiType *type = container_of(node, RzPdbTpiType, rb);
 	free_tpi_type(type);
-	RZ_FREE(type);
 }
 
 RZ_IPI void free_tpi_stream(RzPdbTpiStream *stream) {
@@ -1094,7 +1090,7 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 	if (!fieldlist) {
 		return NULL;
 	}
-	fieldlist->substructs = rz_list_new();
+	fieldlist->substructs = rz_list_newf((RzListFree)free_tpi_type);
 	if (!fieldlist->substructs) {
 		goto error;
 	}
