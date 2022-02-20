@@ -1706,6 +1706,14 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	RzILOpBitVector *ah = UNSIGNED(16, SHIFTR0(DUP(a), UN(5, 16)));
 	RzILOpBitVector *bl = UNSIGNED(16, b);
 	RzILOpBitVector *bh = UNSIGNED(16, SHIFTR0(DUP(b), UN(5, 16)));
+	bool is_signed = insn->id == ARM_INS_SADD16 || insn->id == ARM_INS_SHADD16 || insn->id == ARM_INS_SASX ||
+		insn->id == ARM_INS_SSAX || insn->id == ARM_INS_SHASX || insn->id == ARM_INS_SHSAX ||
+		insn->id == ARM_INS_SSUB16 || insn->id == ARM_INS_SHSUB16;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	al = cast(17, al);
+	ah = cast(17, ah);
+	bl = cast(17, bl);
+	bh = cast(17, bh);
 	RzILOpBitVector *l, *h;
 	bool halve = false;
 	switch (insn->id) {
@@ -1745,20 +1753,8 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 		break;
 	}
 	bool set_ge = !halve;
-	bool is_signed = insn->id == ARM_INS_SADD16 || insn->id == ARM_INS_SHADD16 || insn->id == ARM_INS_SASX ||
-		insn->id == ARM_INS_SSAX || insn->id == ARM_INS_SHASX || insn->id == ARM_INS_SHSAX ||
-		insn->id == ARM_INS_SSUB16 || insn->id == ARM_INS_SHSUB16;
-	if (set_ge) {
-		// Retroactively patch the ops to extend to 17 before the calculation because this is needed for ge
-		// Note: add/sub members here use the same structure, so using just `.add` is fine.
-		RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
-		l->op.add.x = cast(17, l->op.add.x);
-		l->op.add.y = cast(17, l->op.add.y);
-		h->op.add.x = cast(17, h->op.add.x);
-		h->op.add.y = cast(17, h->op.add.y);
-	}
 	RzILOpBitVector *res = halve
-		? APPEND(SHIFTRA(VARL("res1"), UN(4, 1)), SHIFTRA(VARL("res0"), UN(4, 1)))
+		? APPEND(UNSIGNED(16, SHIFTRA(VARL("res1"), UN(4, 1))), UNSIGNED(16, SHIFTRA(VARL("res0"), UN(4, 1))))
 		: APPEND(UNSIGNED(16, VARL("res1")), UNSIGNED(16, VARL("res0")));
 	RzILOpEffect *eff = write_reg(REGID(0), res);
 	if (!eff) {
@@ -1767,15 +1763,13 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	if (set_ge) {
+		ut64 tval = is_signed ? 0 : 3;
+		ut64 fval = 3 - tval;
 		eff = SEQ2(
 			SETL("gef",
-				is_signed
-					? APPEND(
-						  ITE(INV(MSB(VARL("res1"))), UN(2, 3), UN(2, 0)),
-						  ITE(INV(MSB(VARL("res0"))), UN(2, 3), UN(2, 0)))
-					: APPEND(
-						  ITE(MSB(VARL("res1")), UN(2, 3), UN(2, 0)),
-						  ITE(MSB(VARL("res0")), UN(2, 3), UN(2, 0)))),
+				APPEND(
+					ITE(MSB(VARL("res1")), UN(2, tval), UN(2, fval)),
+					ITE(MSB(VARL("res0")), UN(2, tval), UN(2, fval)))),
 			eff);
 	}
 	return SEQ3(SETL("res0", l), SETL("res1", h), eff);
