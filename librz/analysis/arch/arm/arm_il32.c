@@ -449,7 +449,7 @@ static RzILOpEffect *mov(cs_insn *insn, bool is_thumb) {
 	if (update_flags) {
 		RzILOpEffect *zn = update_flags_zn(REG(0));
 		return carry
-			? SEQ3(SETG("cf", carry), eff, zn)
+			? SEQ4(SETL("cf_tmp", carry), eff, SETG("cf", VARL("cf_tmp")), zn) // rrxs still needs the old carry
 			: SEQ2(eff, zn);
 	}
 	return eff;

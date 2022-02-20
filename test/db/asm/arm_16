@@ -423,7 +423,7 @@ d "lsls.w r6, sl, 0x1c" 5fea0a76
 a "lsls r6, r10, 0x1c" 5fea0a76
 d "lsl.w r2, r1, 3" 4feac102
 a "lsl.w r2, r1, 0x3" 4feac102
-d "lsls r1, r2" 9140 0x0 (seq (set cf (msb (<< (append (ite (var cf) (bv 1 0x1) (bv 1 0x0)) (var r1)) (cast 8 false (var r2)) false))) (set r1 (<< (var r1) (cast 8 false (var r2)) false)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
+d "lsls r1, r2" 9140 0x0 (seq (set cf_tmp (msb (<< (append (ite (var cf) (bv 1 0x1) (bv 1 0x0)) (var r1)) (cast 8 false (var r2)) false))) (set r1 (<< (var r1) (cast 8 false (var r2)) false)) (set cf (var cf_tmp)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
 a "lsl r1, r2" 9140
 d "lsl.w r5, sb, r3" 09fa03f5 0x0 (set r5 (<< (var r9) (cast 8 false (var r3)) false))
 a "lsl r5, r9, r3" 09fa03f5 0x0 (set r5 (<< (var r9) (cast 8 false (var r3)) false))
