@@ -167,45 +167,6 @@ NAME=Subtract r17:r16 from r31:r30
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
-wa "ldi r17, 0x72 ; ldi r16, 0x50 ; ldi r31, 0x11 ; ldi r30, 0xEE ; sub r30, r16 ; sbc r31, r17"
-aezi
-aezs 4
-ar r17
-ar r16
-ar r31
-ar r30
-aezse 2~name
-ar r31
-ar r30
-EOF
-EXPECT=<<EOF
-r17 = 0x00000072
-r16 = 0x00000050
-r31 = 0x00000011
-r30 = 0x000000ee
-var_write(name: zf, old: 0x0, new: 0x0)
-var_write(name: hf, old: 0x0, new: 0x0)
-var_write(name: vf, old: 0x0, new: 0x0)
-var_write(name: nf, old: 0x0, new: 0x1)
-var_write(name: cf, old: 0x0, new: 0x0)
-var_write(name: sf, old: 0x0, new: 0x1)
-var_write(name: r30, old: 0xee, new: 0x9e)
-var_write(name: zf, old: 0x0, new: 0x0)
-var_write(name: hf, old: 0x0, new: 0x1)
-var_write(name: vf, old: 0x0, new: 0x0)
-var_write(name: nf, old: 0x0, new: 0x1)
-var_write(name: cf, old: 0x0, new: 0x1)
-var_write(name: sf, old: 0x0, new: 0x1)
-var_write(name: r31, old: 0x11, new: 0x9f)
-r31 = 0x0000009f
-r30 = 0x0000009e
-EOF
-RUN
-
-NAME=Subtract r17:r16 from r31:r30
-FILE=malloc://512
-CMDS=<<EOF
-e asm.arch=avr
 wa "ldi r31, 0x11 ; ldi r30, 0xEE ; subi r30, 0x50 ; sbci r31, 0x72"
 aezi
 aezs 2
@@ -228,9 +189,9 @@ var_write(name: r30, old: 0xee, new: 0x9e)
 var_write(name: zf, old: 0x0, new: 0x0)
 var_write(name: hf, old: 0x0, new: 0x1)
 var_write(name: vf, old: 0x0, new: 0x0)
-var_write(name: nf, old: 0x0, new: 0x1)
+var_write(name: nf, old: 0x1, new: 0x1)
 var_write(name: cf, old: 0x0, new: 0x1)
-var_write(name: sf, old: 0x0, new: 0x1)
+var_write(name: sf, old: 0x1, new: 0x1)
 var_write(name: r31, old: 0x11, new: 0x9f)
 r31 = 0x0000009f
 r30 = 0x0000009e
@@ -389,13 +350,13 @@ pc_write(old: 0x8, new: 0xa)
 var_write(name: hf, old: 0x0, new: 0x1)
 var_write(name: cf, old: 0x0, new: 0x1)
 var_write(name: r17, old: 0xfe, new: 0xfc)
-var_write(name: nf, old: 0x0, new: 0x1)
+var_write(name: nf, old: 0x1, new: 0x1)
 var_write(name: zf, old: 0x0, new: 0x0)
-var_write(name: sf, old: 0x0, new: 0x1)
-var_write(name: vf, old: 0x0, new: 0x0)
+var_write(name: sf, old: 0x1, new: 0x0)
+var_write(name: vf, old: 0x1, new: 0x0)
 pc_write(old: 0xa, new: 0xc)
 var_write(name: cf, old: 0x1, new: 0x0)
-var_write(name: nf, old: 0x0, new: 0x0)
+var_write(name: nf, old: 0x1, new: 0x0)
 var_write(name: r16, old: 0x8, new: 0x4)
 var_write(name: zf, old: 0x0, new: 0x0)
 var_write(name: sf, old: 0x0, new: 0x0)
@@ -403,3 +364,32 @@ var_write(name: vf, old: 0x0, new: 0x0)
 EOF
 RUN
 
+NAME=Status regs & bit Manipulations
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r16, 0x4" @ 0
+# Store bit 2 of r16 in T Flag
+wa "bst r16, 2" @ 2
+# Load T Flag into bit 4 of r0
+wa "bld r0, 4" @ 4
+aezi
+aezs
+ar r16
+aezse 1
+ar tf
+aezse 1
+ar r0
+ar tf
+EOF
+EXPECT=<<EOF
+r16 = 0x00000004
+pc_write(old: 0x2, new: 0x4)
+var_write(name: tf, old: 0x0, new: 0x1)
+tf = 0x00000001
+pc_write(old: 0x4, new: 0x6)
+var_write(name: r0, old: 0x0, new: 0x10)
+r0 = 0x00000010
+tf = 0x00000001
+EOF
+RUN
