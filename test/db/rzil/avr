@@ -316,3 +316,29 @@ var_write(name: r31, old: 0x11, new: 0x91)
 EOF
 RUN
 
+NAME=Add Immediate to Word
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "adiw r25:r24, 1 ; adiw r31:r30, 63"
+aezi
+aezse 2~name
+EOF
+EXPECT=<<EOF
+var_write(name: r25, old: 0x0, new: 0x0)
+var_write(name: r24, old: 0x0, new: 0x1)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: vf, old: 0x0, new: 0x0)
+var_write(name: nf, old: 0x0, new: 0x0)
+var_write(name: cf, old: 0x0, new: 0x0)
+var_write(name: sf, old: 0x0, new: 0x0)
+var_write(name: r31, old: 0x0, new: 0x0)
+var_write(name: r30, old: 0x0, new: 0x3f)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: vf, old: 0x0, new: 0x0)
+var_write(name: nf, old: 0x0, new: 0x0)
+var_write(name: cf, old: 0x0, new: 0x0)
+var_write(name: sf, old: 0x0, new: 0x0)
+EOF
+RUN
+
