@@ -1702,10 +1702,10 @@ static RzILOpEffect *avr_il_inc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = EQ(x, y);
 	V = SETG(AVR_SREG_V, x);
 
-	// Rd -= 1
+	// Rd += 1
 	x = AVR_REG(Rd);
 	y = AVR_ONE();
-	x = SUB(x, y);
+	x = ADD(x, y);
 	inc = AVR_REG_SET(Rd, x);
 
 	// N: Res7
@@ -2908,6 +2908,37 @@ static RzILOpEffect *avr_il_subi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	return SEQ8(let, Z, H, V, N, C, S, subt);
 }
 
+static RzILOpEffect *avr_il_swap(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Swaps high and low nibbles in a register.
+	// R(7:4) = Rd(3:0), R(3:0) = Rd(7:4)
+	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	RzILOpPure *x, *y, *z;
+	RzILOpEffect *let, *swap;
+
+	// copy Rd
+	x = AVR_REG(Rd);
+	let = SETL(AVR_LET_RES, x);
+
+	// Rd <<= 4
+	x = AVR_REG(Rd);
+	y = AVR_SH(4);
+	x = SHIFTL0(x, y);
+
+	// Rd |= RES >> 4
+	z = VARL(AVR_LET_RES);
+	y = AVR_SH(4);
+	z = SHIFTR0(z, y);
+
+	// Rd = (Rd << 4) | (RES >> 4)
+	x = LOGOR(x, z);
+	swap = AVR_REG_SET(Rd, x);
+
+	return SEQ2(let, swap);
+}
+
+#include <rz_il/rz_il_opbuilder_end.h>
+
 typedef RzILOpEffect *(*avr_il_op)(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis);
 
 static avr_il_op avr_ops[AVR_OP_SIZE] = {
@@ -3021,7 +3052,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_sts,
 	avr_il_sub,
 	avr_il_subi,
-	avr_il_unk, /* AVR_OP_SWAP */
+	avr_il_swap,
 	avr_il_and, /* AVR_OP_TST - same as and */
 	avr_il_nop, /* AVR_OP_WDR - is a NOP for RzIL */
 	avr_il_unk, /* AVR_OP_XCH */
@@ -3039,8 +3070,6 @@ RZ_IPI bool rz_avr_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, AV
 
 	return true;
 }
-
-#include <rz_il/rz_il_opbuilder_end.h>
 
 RZ_IPI RzAnalysisILConfig *rz_avr_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);

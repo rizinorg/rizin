@@ -125,8 +125,8 @@ ad "ijmp" 0994 0x0 (jmp (<< (cast 32 false (append (var r31) (var r30))) (bv 32 
 ad "in r0, 0x00" 00B0 0x0 (set r0 (var r0))
 ad "in r16, 0x16" 06b3 0x0 (set r16 (var r22))
 ad "in r28, 0x3d" cdb7 0x0 (set r28 (loadw 0 8 (bv 32 0x3d)))
-ad "inc r0" 0394 0x0 (seq (set vf (== (var r0) (bv 8 0x7f))) (set r0 (- (var r0) (bv 8 0x1))) (set nf (msb (var r0))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
-ad "inc r14" e394 0x0 (seq (set vf (== (var r14) (bv 8 0x7f))) (set r14 (- (var r14) (bv 8 0x1))) (set nf (msb (var r14))) (set zf (is_zero (var r14))) (set sf (^^ (var nf) (var vf))))
+ad "inc r0" 0394 0x0 (seq (set vf (== (var r0) (bv 8 0x7f))) (set r0 (+ (var r0) (bv 8 0x1))) (set nf (msb (var r0))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
+ad "inc r14" e394 0x0 (seq (set vf (== (var r14) (bv 8 0x7f))) (set r14 (+ (var r14) (bv 8 0x1))) (set nf (msb (var r14))) (set zf (is_zero (var r14))) (set sf (^^ (var nf) (var vf))))
 ad "jmp 0x0" 0C940000 0x0 (jmp (bv 32 0xfffffffc))
 ad "jmp 0x20246" 0d942301 0x0 (jmp (bv 32 0x20242))
 ad "jmp 0x246" 0c942301 0x0 (jmp (bv 32 0x242))
@@ -247,7 +247,7 @@ ad "sub r0, r0" 0018 0x0 (seq (set RES (- (var r0) (var r0))) (set zf (is_zero (
 ad "sub r18, r24" 281b 0x0 (seq (set RES (- (var r18) (var r24))) (set zf (is_zero (var RES))) (set hf (! (is_zero (& (| (| (& (~ (var r18)) (var r24)) (& (var r24) (var RES))) (& (var RES) (~ (var r18)))) (bv 8 0x8))))) (set vf (msb (| (& (& (var r18) (~ (var r24))) (~ (var RES))) (& (& (~ (var r18)) (var r24)) (var RES))))) (set nf (msb (var RES))) (set cf (! (is_zero (& (| (| (& (~ (var r18)) (var r24)) (& (var r24) (var RES))) (& (var RES) (~ (var r18)))) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))) (set r18 (var RES)))
 ad "subi r16, 0x00" 0050 0x0 (seq (set RES (- (var r16) (bv 8 0x0))) (set zf (is_zero (var RES))) (set hf (! (is_zero (& (| (| (& (~ (var r16)) (bv 8 0x0)) (& (bv 8 0x0) (var RES))) (& (var RES) (~ (var r16)))) (bv 8 0x8))))) (set vf (msb (| (& (& (var r16) (~ (bv 8 0x0))) (~ (var RES))) (& (& (~ (var r16)) (bv 8 0x0)) (var RES))))) (set nf (msb (var RES))) (set cf (! (is_zero (& (| (| (& (~ (var r16)) (bv 8 0x0)) (& (bv 8 0x0) (var RES))) (& (var RES) (~ (var r16)))) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))) (set r16 (var RES)))
 ad "subi r18, 0xff" 2f5f 0x0 (seq (set RES (- (var r18) (bv 8 0xff))) (set zf (is_zero (var RES))) (set hf (! (is_zero (& (| (| (& (~ (var r18)) (bv 8 0xff)) (& (bv 8 0xff) (var RES))) (& (var RES) (~ (var r18)))) (bv 8 0x8))))) (set vf (msb (| (& (& (var r18) (~ (bv 8 0xff))) (~ (var RES))) (& (& (~ (var r18)) (bv 8 0xff)) (var RES))))) (set nf (msb (var RES))) (set cf (! (is_zero (& (| (| (& (~ (var r18)) (bv 8 0xff)) (& (bv 8 0xff) (var RES))) (& (var RES) (~ (var r18)))) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))) (set r18 (var RES)))
-ad "swap r0" 0294 0x0
+ad "swap r0" 0294 0x0 (seq (set RES (var r0)) (set r0 (| (<< (var r0) (bv 32 0x4) false) (>> (var RES) (bv 32 0x4) false))))
 ad "tst r0" 0020 0x0 (seq (set r0 (& (var r0) (var r0))) (set vf false) (set nf (msb (var r0))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
 ad "tst r24" 8823 0x0 (seq (set r24 (& (var r24) (var r24))) (set vf false) (set nf (msb (var r24))) (set zf (is_zero (var r24))) (set sf (^^ (var nf) (var vf))))
 ad "wdr" A895 0x0 nop

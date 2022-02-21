@@ -236,3 +236,39 @@ r31 = 0x0000009f
 r30 = 0x0000009e
 EOF
 RUN
+
+NAME=Perform SWAP
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "inc r1 ; swap r1 ; inc r1 ; swap r1 ; inc r1"
+aezi
+?e increase r1
+aezs
+ar r1
+?e swap nibbles
+aezs
+ar r1
+?e increase r1
+aezs
+ar r1
+?e swap nibbles
+aezs
+ar r1
+?e increase r1
+aezs
+ar r1
+EOF
+EXPECT=<<EOF
+increase r1
+r1 = 0x00000001
+swap nibbles
+r1 = 0x00000010
+increase r1
+r1 = 0x00000011
+swap nibbles
+r1 = 0x00000011
+increase r1
+r1 = 0x00000012
+EOF
+RUN
