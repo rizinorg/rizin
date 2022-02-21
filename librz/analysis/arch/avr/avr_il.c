@@ -2368,17 +2368,20 @@ static RzILOpEffect *avr_il_rjmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 }
 
 static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *x, *y;
-	RzILOpEffect *rol, *H, *S, *V, *N, *Z, *C;
+	RzILOpPure *x, *y, *carry;
+	RzILOpEffect *let, *rol, *H, *S, *V, *N, *Z, *C;
 	// Rd = rot_left(Rd, 1)
 	ut16 Rd = aop->param[0];
 
-	// simplified by adding itself with Carry
+	// copy C into RES
+	carry = VARG(AVR_SREG_C);
+	let = SETL(AVR_LET_RES, carry);
+
 	x = AVR_REG(Rd);
-	y = AVR_REG(Rd);
-	x = ADD(x, y);
-	y = avr_il_sreg_bit_as_imm(AVR_SREG_C, 1);
-	x = ADD(x, y);
+	y = AVR_SH(1);
+	// Use carry as bit filler
+	carry = VARL(AVR_LET_RES);
+	x = rz_il_op_new_shiftl(carry, x, y);
 	rol = AVR_REG_SET(Rd, x);
 
 	// H: Rd3
@@ -2390,9 +2393,7 @@ static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// C: Rd7
 	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
+	x = MSB(x);
 	C = SETG(AVR_SREG_C, x);
 
 	// N: Res7
@@ -2409,7 +2410,46 @@ static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// V: N ^ C, For N and C after the shift
 	V = avr_il_check_nc_overflow_flag();
 
-	return SEQ7(H, C, rol, N, Z, S, V);
+	return SEQ8(let, H, C, rol, N, Z, S, V);
+}
+
+static RzILOpEffect *avr_il_ror(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *x, *y, *carry;
+	RzILOpEffect *let, *ror, *S, *V, *N, *Z, *C;
+	// Rd = rot_right(Rd, 1)
+	ut16 Rd = aop->param[0];
+
+	// copy C into RES
+	carry = VARG(AVR_SREG_C);
+	let = SETL(AVR_LET_RES, carry);
+
+	x = AVR_REG(Rd);
+	y = AVR_SH(1);
+	// Use carry as bit filler
+	carry = VARL(AVR_LET_RES);
+	x = rz_il_op_new_shiftr(carry, x, y);
+	ror = AVR_REG_SET(Rd, x);
+
+	// C: Rd0
+	x = AVR_REG(Rd);
+	x = LSB(x);
+	C = SETG(AVR_SREG_C, x);
+
+	// N: Res7
+	N = avr_il_check_negative_flag_reg(Rd);
+
+	// Z: !Res
+	x = AVR_REG(Rd);
+	x = IS_ZERO(x);
+	Z = SETG(AVR_SREG_Z, x);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	// V: N ^ C, For N and C after the shift
+	V = avr_il_check_nc_overflow_flag();
+
+	return SEQ7(let, C, ror, N, Z, S, V);
 }
 
 static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2756,7 +2796,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_ret, /* AVR_OP_RETI - works same way as ret */
 	avr_il_rjmp,
 	avr_il_rol,
-	avr_il_unk, /* AVR_OP_ROR */
+	avr_il_ror,
 	avr_il_unk, /* AVR_OP_SBC */
 	avr_il_unk, /* AVR_OP_SBCI */
 	avr_il_unk, /* AVR_OP_SBI */
