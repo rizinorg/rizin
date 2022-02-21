@@ -960,51 +960,7 @@ static st32 getshiftmemend(const char *input) {
 	return res;
 }
 
-void collect_list(char *input[]) {
-	if (input[0] == NULL) {
-		return;
-	}
-	char *temp = malloc(500);
-	if (!temp) {
-		return;
-	}
-	temp[0] = 0;
-	int i;
-	int conc = 0;
-	int start = 0, end = 0;
-	int arrsz;
-	for (arrsz = 1; input[arrsz] != NULL; arrsz++) {
-		;
-	}
-
-	for (i = 0; input[i]; i++) {
-		if (conc) {
-			strcat(temp, ", ");
-			strcat(temp, input[i]);
-		}
-		if (input[i][0] == '{') {
-			conc = 1;
-			strcat(temp, input[i]);
-			start = i;
-		}
-		if ((conc) & (input[i][strlen(input[i]) - 1] == '}')) {
-			conc = 0;
-			end = i;
-		}
-	}
-	if (end == 0) {
-		free(temp);
-		return;
-	}
-	input[start] = temp;
-	for (i = start + 1; i < arrsz; i++) {
-		input[i] = input[(end - start) + i];
-	}
-	input[i] = NULL;
-}
-
 static ut64 thumb_selector(char *args[]) {
-	collect_list(args);
 	ut64 res = 0;
 	ut8 i;
 	for (i = 0; i < 15; i++) {
@@ -1141,30 +1097,43 @@ static ut32 getshift(const char *str) {
 }
 
 static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
-	int i;
 	memset(ao, 0, sizeof(ArmOpcode));
 	if (strlen(str) + 1 >= sizeof(ao->op)) {
 		return;
 	}
 	strncpy(ao->op, str, sizeof(ao->op) - 1);
 	strcpy(ao->opstr, ao->op);
-	ao->a[0] = strchr(ao->op, ' ');
-	for (i = 0; i < 15; i++) {
-		if (ao->a[i]) {
-			*ao->a[i] = 0;
-			ao->a[i + 1] = strchr(++ao->a[i], ',');
-		} else {
+	char *c = strchr(ao->op, ' ');
+	if (!c) {
+		return;
+	}
+	for (size_t i = 0; i < 16; i++) {
+		while (*c == ' ') {
+			*c++ = '\0';
+		}
+		if (!*c) {
 			break;
 		}
-	}
-	if (ao->a[i]) {
-		*ao->a[i] = 0;
-		ao->a[i]++;
-	}
-	for (i = 0; i < 16; i++) {
-		while (ao->a[i] && *ao->a[i] == ' ') {
-			ao->a[i]++;
+		// found start of new argument
+		ao->a[i] = c;
+		// find end of new argument
+		while (*c && *c != ',') {
+			if (*c == '{') {
+				// reglists like "{r0, r1, r2}" should be a single arg
+				c = strchr(c, '}');
+				if (!c) {
+					return;
+				}
+			}
+			c++;
 		}
+		if (!*c) {
+			rz_str_trim_tail(ao->a[i]);
+			break;
+		}
+		*c = '\0';
+		rz_str_trim_tail(ao->a[i]);
+		c++;
 	}
 }
 
@@ -5819,17 +5788,14 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 					break;
 				case TYPE_IMM:
-					if (*ao->a[0]++ == '{') {
+					if (*ao->a[0] == '{') {
+						st32 reg = getreglist(ao->a[0]);
 						for (j = 0; j < 16; j++) {
-							if (ao->a[j] && *ao->a[j]) {
-								getrange(ao->a[j]); // XXX filter regname string
-								reg = getreg(ao->a[j]);
-								if (reg != -1) {
-									if (reg < 8) {
-										ao->o |= 1 << (24 + reg);
-									} else {
-										ao->o |= 1 << (8 + reg);
-									}
+							if (reg & (1 << j)) {
+								if (j < 8) {
+									ao->o |= 1 << (24 + j);
+								} else {
+									ao->o |= 1 << (8 + j);
 								}
 							}
 						}
