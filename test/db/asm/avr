@@ -208,8 +208,8 @@ a "sbiw r24, 0x00" 0097
 a "sbiw r24, 0x01" 0197
 a "sbiw r26, 0x01" 1197
 a "sbiw r26, 63" df97
-ad "sbrc r0, 0" 00FC 0x0
-ad "sbrs r0, 0" 00FE 0x0
+ad "sbrc r0, 0" 00FC 0x0 (branch (is_zero (& (bv 8 0xfe) (var r0))) (jmp (bv 32 0xfffffffe)) nop)
+ad "sbrs r0, 0" 00FE 0x0 (branch (is_zero (& (bv 8 0xfe) (var r0))) nop (jmp (bv 32 0xfffffffe)))
 ad "sec" 0894 0x0 (set cf true)
 ad "seh" 5894 0x0 (set hf true)
 ad "sei" 7894 0x0 (set if true)

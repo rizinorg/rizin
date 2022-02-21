@@ -2656,6 +2656,36 @@ static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	return SEQ7(let, sbiw, Z, V, N, C, S);
 }
 
+static RzILOpEffect *avr_il_sbrc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Skip if Bit in Register is Cleared.
+	ut16 Rd = aop->param[0];
+	ut16 b = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	RzILOpPure *clearb, *target, *result;
+
+	clearb = AVR_IMM(~(1u << b));
+	target = AVR_REG(Rd);
+	result = LOGAND(clearb, target);
+	result = IS_ZERO(result);
+	return avr_il_branch_when(aop, analysis, pc + next_op->size, result, true);
+}
+
+static RzILOpEffect *avr_il_sbrs(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Skip if Bit in Register is Set.
+	ut16 Rd = aop->param[0];
+	ut16 b = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	RzILOpPure *clearb, *target, *result;
+
+	clearb = AVR_IMM(~(1u << b));
+	target = AVR_REG(Rd);
+	result = LOGAND(clearb, target);
+	result = IS_ZERO(result);
+	return avr_il_branch_when(aop, analysis, pc + next_op->size, result, false);
+}
+
 static RzILOpEffect *avr_il_sec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// C = 1
 	return AVR_SREG_C_SET(true);
@@ -2964,8 +2994,8 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_sbic,
 	avr_il_sbis,
 	avr_il_sbiw,
-	avr_il_unk, /* AVR_OP_SBRC */
-	avr_il_unk, /* AVR_OP_SBRS */
+	avr_il_sbrc,
+	avr_il_sbrs,
 	avr_il_sec,
 	avr_il_seh,
 	avr_il_sei,
