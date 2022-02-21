@@ -779,7 +779,8 @@ static RzILOpEffect *avr_il_andi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 }
 
 static RzILOpEffect *avr_il_asr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *x, *y;
+	// Arithmetic Signed Shift Right
+	RzILOpPure *x, *y, *z;
 	RzILOpEffect *asr, *S, *V, *N, *Z, *C;
 	// Rd >>= 1
 	ut16 Rd = aop->param[0];
@@ -787,8 +788,10 @@ static RzILOpEffect *avr_il_asr(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// simplified by adding itself
 	x = AVR_REG(Rd);
+	z = MSB(x);
+	x = AVR_REG(Rd);
 	y = AVR_SH(1);
-	x = SHIFTR0(x, y);
+	x = SHIFTR(z, x, y);
 	asr = AVR_REG_SET(Rd, x);
 
 	// C: Rd0

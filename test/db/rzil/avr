@@ -342,3 +342,64 @@ var_write(name: sf, old: 0x0, new: 0x0)
 EOF
 RUN
 
+NAME=Shifts
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+# Load decimal 16 into r16
+wa "ldi r16, 0x10" @ 0
+# r16 /= 2
+wa "asr r16" @ 2
+# Load -4 in r17
+wa "ldi r17, 0xFC" @ 4
+# r17 /= 2       
+wa "asr r17" @ 6
+# r17 *= 2
+wa "lsl r17" @ 8
+# r16 /= 2
+wa "lsr r16" @ 10
+aezi
+?e Arithmetic Signed Shift Right
+aezse 4
+?e Logical Shift Left & Right
+aezse 2
+EOF
+EXPECT=<<EOF
+Arithmetic Signed Shift Right
+pc_write(old: 0x0, new: 0x2)
+var_write(name: r16, old: 0x0, new: 0x10)
+pc_write(old: 0x2, new: 0x4)
+var_write(name: cf, old: 0x0, new: 0x0)
+var_write(name: r16, old: 0x10, new: 0x8)
+var_write(name: nf, old: 0x0, new: 0x0)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: sf, old: 0x0, new: 0x0)
+var_write(name: vf, old: 0x0, new: 0x0)
+pc_write(old: 0x4, new: 0x6)
+var_write(name: r17, old: 0x0, new: 0xfc)
+pc_write(old: 0x6, new: 0x8)
+var_write(name: cf, old: 0x0, new: 0x0)
+var_write(name: r17, old: 0xfc, new: 0xfe)
+var_write(name: nf, old: 0x0, new: 0x1)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: sf, old: 0x0, new: 0x1)
+var_write(name: vf, old: 0x0, new: 0x1)
+Logical Shift Left & Right
+pc_write(old: 0x8, new: 0xa)
+var_write(name: hf, old: 0x0, new: 0x1)
+var_write(name: cf, old: 0x0, new: 0x1)
+var_write(name: r17, old: 0xfe, new: 0xfc)
+var_write(name: nf, old: 0x0, new: 0x1)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: sf, old: 0x0, new: 0x1)
+var_write(name: vf, old: 0x0, new: 0x0)
+pc_write(old: 0xa, new: 0xc)
+var_write(name: cf, old: 0x1, new: 0x0)
+var_write(name: nf, old: 0x0, new: 0x0)
+var_write(name: r16, old: 0x8, new: 0x4)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: sf, old: 0x0, new: 0x0)
+var_write(name: vf, old: 0x0, new: 0x0)
+EOF
+RUN
+
