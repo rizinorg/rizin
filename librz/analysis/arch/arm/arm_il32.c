@@ -1440,8 +1440,8 @@ static RzILOpEffect *ssat16(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	return SEQ3(
-		saturate_signed(is_signed, "rl", IMM(1), UNSIGNED(16, src), 16, false),
-		saturate_signed(is_signed, "rh", IMM(1), UNSIGNED(16, SHIFTR0(DUP(src), UN(5, 16))), 16, false),
+		saturate_signed(is_signed, "rl", IMM(1), UNSIGNED(16, src), 16, true),
+		saturate_signed(is_signed, "rh", IMM(1), UNSIGNED(16, SHIFTR0(DUP(src), UN(5, 16))), 16, true),
 		eff);
 }
 
