@@ -450,7 +450,7 @@ static RzILOpEffect *avr_il_check_carry_flag_addition(const char *local, RzILOpP
 	// or |= and2
 	or0 = LOGOR(or0, and2);
 
-	return SETG(AVR_SREG_H, MSB(or0));
+	return SETG(AVR_SREG_C, MSB(or0));
 }
 
 static RzILOpEffect *avr_il_check_carry_flag_addition_wide(const char *local, ut16 reg) {
