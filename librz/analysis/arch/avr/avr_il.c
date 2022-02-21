@@ -2821,7 +2821,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_subi,
 	avr_il_unk, /* AVR_OP_SWAP */
 	avr_il_and, /* AVR_OP_TST - same as and */
-	avr_il_unk, /* AVR_OP_WDR */
+	avr_il_nop, /* AVR_OP_WDR - is a NOP for RzIL */
 	avr_il_unk, /* AVR_OP_XCH */
 };
 

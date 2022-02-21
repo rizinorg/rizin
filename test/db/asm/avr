@@ -250,7 +250,7 @@ ad "subi r18, 0xff" 2f5f 0x0 (seq (set RES (- (var r18) (bv 8 0xff))) (set zf (i
 ad "swap r0" 0294 0x0
 ad "tst r0" 0020 0x0 (seq (set r0 (& (var r0) (var r0))) (set vf false) (set nf (msb (var r0))) (set zf (is_zero (var r0))) (set sf (^^ (var nf) (var vf))))
 ad "tst r24" 8823 0x0 (seq (set r24 (& (var r24) (var r24))) (set vf false) (set nf (msb (var r24))) (set zf (is_zero (var r24))) (set sf (^^ (var nf) (var vf))))
-ad "wdr" A895 0x0
+ad "wdr" A895 0x0 nop
 ad "xch Z, r0" 0492 0x0
 d "invalid" 0e 0x0
 d "invalid" ffff 2
