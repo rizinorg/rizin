@@ -1,7 +1,7 @@
 project('rizin', 'c',
   version: 'v0.4.0-git',
   license: 'LGPL3',
-  meson_version: '>=0.55.3',
+  meson_version: '>=0.58.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
@@ -618,7 +618,13 @@ rpath_exe = ''
 rpath_lib = ''
 rpath_summary = 'disabled'
 if use_rpath
-  rpath_exe = '$ORIGIN/../' + get_option('libdir')
+  # Use bindir depth to create a path to the rootdir from bindir
+  path_to_rootdir=''
+  foreach i : range(bindir_depth.to_int())
+    path_to_rootdir += '../'
+  endforeach
+
+  rpath_exe = '$ORIGIN/' + path_to_rootdir + get_option('libdir')
   rpath_lib = '$ORIGIN'
   rpath_summary = 'relative'
 elif use_rpath_absolute

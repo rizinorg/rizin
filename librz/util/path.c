@@ -7,10 +7,6 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_utf8.h>
 
-// NOTE: This path is for internal use and it's only valid in non-portable binaries,
-// rz_path_bindir should be used to find the prefix during runtime.
-#define RZ_BINDIR_PREFIXED RZ_JOIN_2_PATHS(RZ_PREFIX, RZ_BINDIR)
-
 /**
  * \brief Return \p path prefixed by the Rizin install prefix
  *
@@ -23,7 +19,7 @@ RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path) {
 	if (!pid_to_path) {
 		goto prefix;
 	}
-	char *bindir = rz_path_realpath(RZ_BINDIR_PREFIXED);
+	char *bindir = rz_path_realpath(RZ_JOIN_2_PATHS(RZ_PREFIX, RZ_BINDIR));
 	if (!bindir) {
 		goto prefix;
 	}
