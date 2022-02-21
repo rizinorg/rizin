@@ -667,13 +667,14 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 			break;
 		}
 		if (REGID(0) == ARM_REG_PC) {
-			eff = JMP(data);
 			if (writeback_post) {
 				// can't have writeback after the jmp, so need to handle this special case with a local var
 				return SEQ3(
 					SETL("tgt", data),
 					writeback_eff,
 					JMP(VARL("tgt")));
+			} else {
+				eff = JMP(data);
 			}
 		} else {
 			eff = write_reg(REGID(0), data);
