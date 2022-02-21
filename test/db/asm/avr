@@ -235,12 +235,12 @@ ad "st Y, r15" F882 0x0 (storew 0 (cast 32 false (append (var r29) (var r28))) (
 ad "st Z+1, r0" 0192 0x0 (seq (storew 0 (cast 32 false (append (var r31) (var r30))) (var r0)) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x1)))))
 ad "st Z, r0" 0082 0x0 (storew 0 (cast 32 false (append (var r31) (var r30))) (var r0))
 ad "st Z, r1" 1082 0x0 (storew 0 (cast 32 false (append (var r31) (var r30))) (var r1))
-ad "std Y+1, r0" 0982 0x0
-ad "std Y+63, r0" 0FAE 0x0
-ad "std Y+7, r0" 0F82 0x0
-ad "std Z+1, r0" 0182 0x0
-ad "std Z+1, r1" 1182 0x0
-ad "std Z+63, r0" 07AE 0x0
+ad "std Y+1, r0" 0982 0x0 (seq (storew 0 (cast 32 false (append (var r29) (var r28))) (var r0)) (set IND (append (var r29) (var r28))) (set r29 (cast 8 false (>> (+ (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r28 (cast 8 false (+ (var IND) (bv 16 0x1)))))
+ad "std Y+63, r0" 0FAE 0x0 (seq (storew 0 (cast 32 false (append (var r29) (var r28))) (var r0)) (set IND (append (var r29) (var r28))) (set r29 (cast 8 false (>> (+ (var IND) (bv 16 0x3f)) (bv 32 0x8) false))) (set r28 (cast 8 false (+ (var IND) (bv 16 0x3f)))))
+ad "std Y+7, r0" 0F82 0x0 (seq (storew 0 (cast 32 false (append (var r29) (var r28))) (var r0)) (set IND (append (var r29) (var r28))) (set r29 (cast 8 false (>> (+ (var IND) (bv 16 0x7)) (bv 32 0x8) false))) (set r28 (cast 8 false (+ (var IND) (bv 16 0x7)))))
+ad "std Z+1, r0" 0182 0x0 (seq (storew 0 (cast 32 false (append (var r31) (var r30))) (var r0)) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x1)))))
+ad "std Z+1, r1" 1182 0x0 (seq (storew 0 (cast 32 false (append (var r31) (var r30))) (var r1)) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x1)))))
+ad "std Z+63, r0" 07AE 0x0 (seq (storew 0 (cast 32 false (append (var r31) (var r30))) (var r0)) (set IND (append (var r31) (var r30))) (set r31 (cast 8 false (>> (+ (var IND) (bv 16 0x3f)) (bv 32 0x8) false))) (set r30 (cast 8 false (+ (var IND) (bv 16 0x3f)))))
 ad "sts 0x00, r0" 00920000 0x0
 ad "sts 0x7c0, r25" 9093c007 0x0
 ad "sub r0, r0" 0018 0x0 (seq (set RES (- (var r0) (var r0))) (set zf (is_zero (var RES))) (set hf (! (is_zero (& (| (| (& (~ (var r0)) (var r0)) (& (var r0) (var RES))) (& (var RES) (~ (var r0)))) (bv 8 0x8))))) (set vf (msb (| (& (& (var r0) (~ (var r0))) (~ (var RES))) (& (& (~ (var r0)) (var r0)) (var RES))))) (set nf (msb (var RES))) (set cf (! (is_zero (& (| (| (& (~ (var r0)) (var r0)) (& (var r0) (var RES))) (& (var RES) (~ (var r0)))) (bv 8 0x80))))) (set sf (^^ (var nf) (var vf))) (set r0 (var RES)))

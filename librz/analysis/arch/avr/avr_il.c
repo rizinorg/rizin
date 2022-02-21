@@ -3008,7 +3008,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_nop, /* AVR_OP_SLEEP - is a NOP for RzIL */
 	avr_il_unk, /* AVR_OP_SPM */
 	avr_il_st,
-	avr_il_unk, /* AVR_OP_STD */
+	avr_il_st, /* AVR_OP_STD - same as ST */
 	avr_il_unk, /* AVR_OP_STS */
 	avr_il_sub,
 	avr_il_subi,
