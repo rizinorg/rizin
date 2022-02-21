@@ -1,4 +1,4 @@
-project('tree-sitter-c', version: 'f05e279aedde06a25801c3f2b2cc8ac17fac52ae', default_options: ['werror=false'])
+project('tree-sitter-c', 'c', version: 'f05e279aedde06a25801c3f2b2cc8ac17fac52ae', default_options: ['werror=false'])
 
 ts_c_files = [
   'src/parser.c'

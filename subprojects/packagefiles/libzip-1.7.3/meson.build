@@ -1,4 +1,4 @@
-project('libzip', ['c'],
+project('libzip', 'c',
   default_options : ['c_std=c99', 'buildtype=release'],
   version: '1.7.3')
 
