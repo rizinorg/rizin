@@ -1945,7 +1945,7 @@ static RzILOpEffect *sdiv(cs_insn *insn, bool is_thumb) {
 	}
 	return write_reg(REGID(0),
 		ITE(EQ(b, U32(0)), U32(0),
-			ITE(AND(EQ(DUP(a), U32(0x80000000)), EQ(DUP(b), U32(0xffffffff))),
+			ITE(AND(EQ(a, U32(0x80000000)), EQ(DUP(b), U32(0xffffffff))),
 				U32(0x80000000),
 				SDIV(DUP(a), DUP(b)))));
 }
