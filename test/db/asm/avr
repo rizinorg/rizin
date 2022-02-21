@@ -221,7 +221,7 @@ ad "ses" 4894 0x0 (set sf true)
 ad "set" 6894 0x0 (set tf true)
 ad "sev" 3894 0x0 (set vf true)
 ad "sez" 1894 0x0 (set zf true)
-ad "sleep" 8895 0x0
+ad "sleep" 8895 0x0 nop
 ad "spm Z+" F895 0x0
 ad "spm" E895 0x0
 ad "st -X, r0" 0E92 0x0 (seq (storew 0 (cast 32 false (append (var r27) (var r26))) (var r0)) (set IND (append (var r27) (var r26))) (set r27 (cast 8 false (>> (- (var IND) (bv 16 0x1)) (bv 32 0x8) false))) (set r26 (cast 8 false (- (var IND) (bv 16 0x1)))))
