@@ -2451,11 +2451,12 @@ static RzILOpEffect *avr_il_ror(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 }
 
 static RzILOpEffect *avr_il_sbc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// Rd = Rd - Rr
+	// Rd = Rd - Rr - C
 	// changes H|S|V|N|Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 	RzILOpPure *x, *y;
 	RzILOpEffect *let, *subt, *Z, *H, *S, *V, *N, *C;
 	RzILOpBitVector *sub;
@@ -2495,6 +2496,59 @@ static RzILOpEffect *avr_il_sbc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
 	x = AVR_REG(Rd);
 	y = AVR_REG(Rr);
+	C = avr_il_check_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ8(let, Z, H, V, N, C, S, subt);
+}
+
+static RzILOpEffect *avr_il_sbci(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Rd = Rd - K - C
+	// changes H|S|V|N|Z|C
+	ut16 Rd = aop->param[0];
+	ut16 K = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	RzILOpPure *x, *y;
+	RzILOpEffect *let, *subt, *Z, *H, *S, *V, *N, *C;
+	RzILOpBitVector *sub;
+
+	// TMP = Rd - K - C
+	x = AVR_REG(Rd);
+	y = AVR_IMM(K);
+	sub = SUB(x, y);
+	y = avr_il_sreg_bit_as_imm(AVR_SREG_C, 1);
+	x = SUB(x, y);
+	let = SETL(AVR_LET_RES, sub);
+
+	// Rd = TMP
+	x = VARL(AVR_LET_RES);
+	subt = AVR_REG_SET(Rd, x);
+
+	// set Z to 1 if !(x - y - C)
+	Z = avr_il_check_zero_flag_local(AVR_LET_RES, true);
+
+	// H: (!Rd3 & K3) | (K3 & Res3) | (Res3 & !Rd3)
+	// Set if there was a borrow from bit 3; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_IMM(K);
+	H = avr_il_check_half_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// V: (Rd7 & !K7 & !Res7) | (!Rd7 & K7 & Res7)
+	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
+	x = AVR_REG(Rd);
+	y = AVR_IMM(K);
+	V = avr_il_check_two_complement_overflow_flag_subtraction(AVR_LET_RES, x, y);
+
+	// N: Res7
+	// Set if MSB of the result is set; cleared otherwise.
+	N = avr_il_check_negative_flag_local(AVR_LET_RES);
+
+	// C: (!Rd7 & K7) | (K7 & Res7) | (Res7 & !Rd7)
+	// Set if the absolute value of K is larger than the absolute value of Rd; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_IMM(K);
 	C = avr_il_check_carry_flag_subtraction(AVR_LET_RES, x, y);
 
 	// S: N ^ V, For signed tests.
@@ -2849,7 +2903,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_rol,
 	avr_il_ror,
 	avr_il_sbc,
-	avr_il_unk, /* AVR_OP_SBCI */
+	avr_il_sbci,
 	avr_il_unk, /* AVR_OP_SBI */
 	avr_il_unk, /* AVR_OP_SBIC */
 	avr_il_unk, /* AVR_OP_SBIS */

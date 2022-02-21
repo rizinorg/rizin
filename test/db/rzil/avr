@@ -201,3 +201,38 @@ r31 = 0x0000009f
 r30 = 0x0000009e
 EOF
 RUN
+
+NAME=Subtract r17:r16 from r31:r30
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r31, 0x11 ; ldi r30, 0xEE ; subi r30, 0x50 ; sbci r31, 0x72"
+aezi
+aezs 2
+ar r31
+ar r30
+aezse 2~name
+ar r31
+ar r30
+EOF
+EXPECT=<<EOF
+r31 = 0x00000011
+r30 = 0x000000ee
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: hf, old: 0x0, new: 0x0)
+var_write(name: vf, old: 0x0, new: 0x0)
+var_write(name: nf, old: 0x0, new: 0x1)
+var_write(name: cf, old: 0x0, new: 0x0)
+var_write(name: sf, old: 0x0, new: 0x1)
+var_write(name: r30, old: 0xee, new: 0x9e)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: hf, old: 0x0, new: 0x1)
+var_write(name: vf, old: 0x0, new: 0x0)
+var_write(name: nf, old: 0x0, new: 0x1)
+var_write(name: cf, old: 0x0, new: 0x1)
+var_write(name: sf, old: 0x0, new: 0x1)
+var_write(name: r31, old: 0x11, new: 0x9f)
+r31 = 0x0000009f
+r30 = 0x0000009e
+EOF
+RUN
