@@ -2937,6 +2937,33 @@ static RzILOpEffect *avr_il_swap(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	return SEQ2(let, swap);
 }
 
+static RzILOpEffect *avr_il_xch(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Swaps the register content with the contents pointed by Z.
+	// *(Z) = Rd and Rd = *(Z)
+	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	RzILOpPure *x, *y;
+	RzILOpEffect *let, *set, *store;
+
+	// copy Rd
+	x = AVR_REG(Rd);
+	let = SETL(AVR_LET_RES, x);
+
+	// Rd = *(Z)
+	x = AVR_Z();
+	x = EXTZERO(AVR_ADDR_SIZE, x);
+	x = LOADW(AVR_REG_SIZE, x);
+	set = AVR_REG_SET(Rd, x);
+
+	// *(Z) = RES
+	x = AVR_Z();
+	x = EXTZERO(AVR_ADDR_SIZE, x);
+	y = VARL(AVR_LET_RES);
+	store = STOREW(x, y);
+
+	return SEQ3(let, set, store);
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*avr_il_op)(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis);
@@ -3046,7 +3073,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_sev,
 	avr_il_sez,
 	avr_il_nop, /* AVR_OP_SLEEP - is a NOP for RzIL */
-	avr_il_unk, /* AVR_OP_SPM */
+	avr_il_unk, /* AVR_OP_SPM - this cannot be implemented. */
 	avr_il_st,
 	avr_il_st, /* AVR_OP_STD - same as ST */
 	avr_il_sts,
@@ -3055,7 +3082,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_swap,
 	avr_il_and, /* AVR_OP_TST - same as and */
 	avr_il_nop, /* AVR_OP_WDR - is a NOP for RzIL */
-	avr_il_unk, /* AVR_OP_XCH */
+	avr_il_xch,
 };
 
 RZ_IPI bool rz_avr_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, AVROp *aop, AVROp *next_op) {
