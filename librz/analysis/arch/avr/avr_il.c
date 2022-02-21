@@ -2797,6 +2797,15 @@ static RzILOpEffect *avr_il_st(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *
 	return SEQ3(st, let, post_op);
 }
 
+static RzILOpEffect *avr_il_sts(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Rd = *(k)
+	ut16 k = aop->param[0];
+	ut16 Rd = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	return avr_il_store_reg(k, avr_registers[Rd]);
+}
+
 static RzILOpEffect *avr_il_sub(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// Rd = Rd - Rr
 	// changes H|S|V|N|Z|C
@@ -3009,7 +3018,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_unk, /* AVR_OP_SPM */
 	avr_il_st,
 	avr_il_st, /* AVR_OP_STD - same as ST */
-	avr_il_unk, /* AVR_OP_STS */
+	avr_il_sts,
 	avr_il_sub,
 	avr_il_subi,
 	avr_il_unk, /* AVR_OP_SWAP */
