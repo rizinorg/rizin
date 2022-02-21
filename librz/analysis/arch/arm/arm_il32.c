@@ -2114,8 +2114,8 @@ static RzILOpEffect *smlabb(cs_insn *insn, bool is_thumb) {
 	}
 	return SEQ3(
 		SETL("res", ADD(product, SIGNED(extend_bits, acc))),
-		BRANCH(INV(EQ(VARL("res"), SIGNED(extend_bits, REG(0)))), SETG("qf", IL_TRUE), NULL),
-		eff);
+		eff,
+		BRANCH(INV(EQ(VARL("res"), SIGNED(extend_bits, REG(0)))), SETG("qf", IL_TRUE), NULL));
 }
 
 /**
