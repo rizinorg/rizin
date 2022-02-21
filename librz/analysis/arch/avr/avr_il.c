@@ -1943,9 +1943,7 @@ static RzILOpEffect *avr_il_lsl(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 	// C: Rd7
 	x = AVR_REG(Rd);
-	y = AVR_IMM(1u << 7);
-	x = LOGAND(x, y);
-	x = NON_ZERO(x); // cast to bool
+	x = MSB(x);
 	C = SETG(AVR_SREG_C, x);
 
 	// N: Res7
