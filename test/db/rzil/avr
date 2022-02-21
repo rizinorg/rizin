@@ -19,7 +19,7 @@ var_write(name: cf, old: 0x0, new: 0x1)
 EOF
 RUN
 
-NAME==fmul test 2
+NAME=fmul test 2
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
@@ -61,7 +61,7 @@ var_write(name: cf, old: 0x0, new: 0x0)
 EOF
 RUN
 
-NAME==fmuls test 2
+NAME=fmuls test 2
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
@@ -103,7 +103,7 @@ var_write(name: cf, old: 0x0, new: 0x1)
 EOF
 RUN
 
-NAME==fmulsu test 2
+NAME=fmulsu test 2
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
@@ -160,5 +160,44 @@ r16 = 0x000000a0
 sp = 0x0000003e
 r17 = 0x000000c0
 sp = 0x0000003f
+EOF
+RUN
+
+NAME=Subtract r17:r16 from r31:r30
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "ldi r17, 0x72 ; ldi r16, 0x50 ; ldi r31, 0x11 ; ldi r30, 0xEE ; sub r30, r16 ; sbc r31, r17"
+aezi
+aezs 4
+ar r17
+ar r16
+ar r31
+ar r30
+aezse 2~name
+ar r31
+ar r30
+EOF
+EXPECT=<<EOF
+r17 = 0x00000072
+r16 = 0x00000050
+r31 = 0x00000011
+r30 = 0x000000ee
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: hf, old: 0x0, new: 0x0)
+var_write(name: vf, old: 0x0, new: 0x0)
+var_write(name: nf, old: 0x0, new: 0x1)
+var_write(name: cf, old: 0x0, new: 0x0)
+var_write(name: sf, old: 0x0, new: 0x1)
+var_write(name: r30, old: 0xee, new: 0x9e)
+var_write(name: zf, old: 0x0, new: 0x0)
+var_write(name: hf, old: 0x0, new: 0x1)
+var_write(name: vf, old: 0x0, new: 0x0)
+var_write(name: nf, old: 0x0, new: 0x1)
+var_write(name: cf, old: 0x0, new: 0x1)
+var_write(name: sf, old: 0x0, new: 0x1)
+var_write(name: r31, old: 0x11, new: 0x9f)
+r31 = 0x0000009f
+r30 = 0x0000009e
 EOF
 RUN

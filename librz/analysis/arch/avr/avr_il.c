@@ -2450,6 +2450,59 @@ static RzILOpEffect *avr_il_ror(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return SEQ7(let, C, ror, N, Z, S, V);
 }
 
+static RzILOpEffect *avr_il_sbc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Rd = Rd - Rr
+	// changes H|S|V|N|Z|C
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	RzILOpPure *x, *y;
+	RzILOpEffect *let, *subt, *Z, *H, *S, *V, *N, *C;
+	RzILOpBitVector *sub;
+
+	// TMP = Rd - Rr - C
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	sub = SUB(x, y);
+	y = avr_il_sreg_bit_as_imm(AVR_SREG_C, 1);
+	x = SUB(x, y);
+	let = SETL(AVR_LET_RES, sub);
+
+	// Rd = TMP
+	x = VARL(AVR_LET_RES);
+	subt = AVR_REG_SET(Rd, x);
+
+	// set Z to 1 if !(x - y - C)
+	Z = avr_il_check_zero_flag_local(AVR_LET_RES, true);
+
+	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
+	// Set if there was a borrow from bit 3; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	H = avr_il_check_half_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
+	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	V = avr_il_check_two_complement_overflow_flag_subtraction(AVR_LET_RES, x, y);
+
+	// N: Res7
+	// Set if MSB of the result is set; cleared otherwise.
+	N = avr_il_check_negative_flag_local(AVR_LET_RES);
+
+	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
+	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
+	x = AVR_REG(Rd);
+	y = AVR_REG(Rr);
+	C = avr_il_check_carry_flag_subtraction(AVR_LET_RES, x, y);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	return SEQ8(let, Z, H, V, N, C, S, subt);
+}
+
 static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *imm;
 	RzILOpEffect *let, *sbiw, *Z, *S, *V, *N, *C;
@@ -2795,7 +2848,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_rjmp,
 	avr_il_rol,
 	avr_il_ror,
-	avr_il_unk, /* AVR_OP_SBC */
+	avr_il_sbc,
 	avr_il_unk, /* AVR_OP_SBCI */
 	avr_il_unk, /* AVR_OP_SBI */
 	avr_il_unk, /* AVR_OP_SBIC */
