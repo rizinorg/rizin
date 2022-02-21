@@ -2557,6 +2557,24 @@ static RzILOpEffect *avr_il_sbci(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	return SEQ8(let, Z, H, V, N, C, S, subt);
 }
 
+static RzILOpEffect *avr_il_sbi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Sets a specified bit in an I/O Register.
+	ut16 A = aop->param[0];
+	ut16 b = aop->param[1];
+
+	RzILOpPure *clearb, *target, *result;
+	const char *reg = resolve_mmio(analysis, A);
+	if (!reg && A < 32) {
+		// profiles that does not map registers between 0 and 31 have MMIO regs at this range
+		reg = avr_registers[A];
+	}
+
+	clearb = AVR_IMM(1u << b);
+	target = VARG(reg);
+	result = LOGOR(clearb, target);
+	return SETG(reg, result);
+}
+
 static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *x, *imm;
 	RzILOpEffect *let, *sbiw, *Z, *S, *V, *N, *C;
@@ -2904,7 +2922,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_ror,
 	avr_il_sbc,
 	avr_il_sbci,
-	avr_il_unk, /* AVR_OP_SBI */
+	avr_il_sbi,
 	avr_il_unk, /* AVR_OP_SBIC */
 	avr_il_unk, /* AVR_OP_SBIS */
 	avr_il_sbiw,
