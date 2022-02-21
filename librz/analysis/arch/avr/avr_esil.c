@@ -6,13 +6,15 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "avr_esil.h"
-
-#if 0
-http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
-https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
-#endif
-
 #include <rz_crypto.h>
+
+/** \file avr_esil.c
+ * Converts AVR instructions into ESIL statements
+ *
+ * references:
+ * - http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
+ * - https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
+ */
 
 typedef struct _cpu_const_tag {
 	const char *const key;

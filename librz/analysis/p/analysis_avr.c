@@ -353,14 +353,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
-	if (q == RZ_ANALYSIS_ARCHINFO_ALIGN) {
-		return 2;
-	}
 	if (q == RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE) {
 		return 4;
-	}
-	if (q == RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE) {
-		return 2;
 	}
 	return 2;
 }

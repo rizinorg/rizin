@@ -5,25 +5,34 @@
 #include "avr_il.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
+/** \file avr_il.c
+ * Converts AVR instructions into RzIL statements
+ * references:
+ * - https://www.da.isy.liu.se/vanheden/pdf/avr_instr_set.pdf (no errors but old and missing some instructions)
+ * - https://ww1.microchip.com/downloads/en/devicedoc/atmel-0856-avr-instruction-set-manual.pdf (contains many errors but complete)
+ */
+
 #define AVR_REG_SIZE  8
 #define AVR_SREG_SIZE 8
 #define AVR_MMIO_SIZE 8
 #define AVR_SP_SIZE   16
 #define AVR_IND_SIZE  16
 #define AVR_ADDR_SIZE 32 // should be 22 bits max, but we can ignore this
-#define AVR_SREG      "sreg"
-#define AVR_SP        "sp"
-#define AVR_SPH       "spl"
-#define AVR_SPL       "sph"
-#define AVR_RAMPX     "rampx"
-#define AVR_RAMPY     "rampy"
-#define AVR_RAMPZ     "rampz"
-#define AVR_RAMPD     "rampd"
-#define AVR_EIND      "eind"
-#define AVR_SPMCSR    "spmcsr"
-#define AVR_LET_RES   "RES"
-#define AVR_LET_IND   "IND"
 
+#define AVR_SREG    "sreg"
+#define AVR_SP      "sp"
+#define AVR_SPH     "spl"
+#define AVR_SPL     "sph"
+#define AVR_RAMPX   "rampx"
+#define AVR_RAMPY   "rampy"
+#define AVR_RAMPZ   "rampz"
+#define AVR_RAMPD   "rampd"
+#define AVR_EIND    "eind"
+#define AVR_SPMCSR  "spmcsr"
+#define AVR_LET_RES "RES"
+#define AVR_LET_IND "IND"
+
+// Below is described the status register
 // SREG = I|T|H|S|V|N|Z|C
 // bits   7|6|5|4|3|2|1|0
 #define AVR_SREG_I_BIT ((ut8)(1u << 7))
@@ -569,6 +578,8 @@ static RzILOpEffect *avr_il_adc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Rd = Rd + Rr + C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// TMP = Rd + Rr + C
 	x = AVR_REG(Rd);
@@ -620,6 +631,8 @@ static RzILOpEffect *avr_il_add(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Rd = Rd + Rr
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// TMP = Rd + Rr
 	x = AVR_REG(Rd);
@@ -712,6 +725,8 @@ static RzILOpEffect *avr_il_and(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Rd = Rd & Rr
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// Rd = Rd & Rr
 	x = AVR_REG(Rd);
@@ -740,6 +755,7 @@ static RzILOpEffect *avr_il_andi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	// Rd = Rd & K
 	ut16 Rd = aop->param[0];
 	ut16 K = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 
 	// Rd = Rd & K
 	x = AVR_REG(Rd);
@@ -800,6 +816,7 @@ static RzILOpEffect *avr_il_bld(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// all the other bits are unchanged
 	ut16 Rd = aop->param[0];
 	ut16 b = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 
 	RzILOpPure *reg, *add_bit, *remove_bit, *bit, *res;
 
@@ -951,6 +968,7 @@ static RzILOpEffect *avr_il_bst(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Stores bit b from Rd to the T Flag in SREG (Status Register)
 	ut16 Rd = aop->param[0];
 	ut16 b = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 
 	RzILOpPure *reg, *bit;
 
@@ -1062,6 +1080,7 @@ static RzILOpEffect *avr_il_com(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Rd = 0xFF - Rd
 	// changes S|V|N|Z|C with V = 0 and C = 1
 	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 
 	RzILOpPure *x, *y, *sub;
 	RzILOpEffect *set, *S, *V, *N, *Z, *C;
@@ -1101,6 +1120,7 @@ static RzILOpEffect *avr_il_cp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 	RzILOpPure *x, *y;
 	RzILOpEffect *let, *Z, *H, *S, *V, *N, *C;
 	RzILOpBitVector *sub;
@@ -1199,6 +1219,7 @@ static RzILOpEffect *avr_il_cpc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 	RzILOpPure *x, *y, *carry;
 	RzILOpEffect *let, *Z, *H, *S, *V, *N, *C;
 	RzILOpBitVector *sub;
@@ -1336,6 +1357,7 @@ static RzILOpEffect *avr_il_elpm(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	// Rd = *(RAMPZ:Z)   # RAMPZ:Z: Unchanged
 	// Rd = *(RAMPZ:Z++) # RAMPZ:Z: Post incremented
 	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 	RzILOpPure *x, *y;
 	RzILOpEffect *load, *rampz, *reg30, *reg31, *local;
 
@@ -1390,6 +1412,8 @@ static RzILOpEffect *avr_il_eor(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// changes S|V|N|Z
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// Rd = Rd + Rr
 	x = AVR_REG(Rd);
@@ -1434,6 +1458,8 @@ static RzILOpEffect *avr_il_fmul(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// IND = Rd * Rr
 	x = AVR_REG(Rd);
@@ -1474,6 +1500,8 @@ static RzILOpEffect *avr_il_fmuls(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// IND = (Rd > 0x7F ? 0 - Rd : Rd) * (Rr > 0x7F ? 0 - Rr : Rr)
 	x = AVR_REG(Rd);
@@ -1546,6 +1574,8 @@ static RzILOpEffect *avr_il_fmulsu(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalys
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// IND = (Rd > 0x7F ? Rd - 0x80 : Rd) * Rr
 	x = AVR_REG(Rd);
@@ -1735,6 +1765,7 @@ static RzILOpEffect *avr_il_lac(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// it's swap like op but clears the bits
 	// *(Z) = 0xFF – Rd and Rd = *(Z)
 	st32 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 	RzILOpPure *x, *y;
 	RzILOpEffect *local, *load, *store;
 
@@ -1763,6 +1794,7 @@ static RzILOpEffect *avr_il_las(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// it's swap like op
 	// *(Z) = Rd and Rd = *(Z)
 	st32 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 	RzILOpPure *x, *y;
 	RzILOpEffect *local, *load, *store;
 
@@ -1789,6 +1821,7 @@ static RzILOpEffect *avr_il_lat(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// it's swap like op but xor the memory value
 	// *(Z) ^= Rd and Rd = *(Z)
 	st32 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 	RzILOpPure *x, *y;
 	RzILOpEffect *local, *load, *store;
 
@@ -2002,6 +2035,8 @@ static RzILOpEffect *avr_il_mov(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Rd = Rr
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	return avr_il_assign_reg(avr_registers[Rd], avr_registers[Rr]);
 }
@@ -2013,6 +2048,8 @@ static RzILOpEffect *avr_il_movw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	// Rd+1:Rd = Rr+1:Rr
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	x = avr_il_get_indirect_address_reg(Rr + 1, Rr);
 	let = SETL(AVR_LET_IND, x);
@@ -2028,6 +2065,8 @@ static RzILOpEffect *avr_il_mul(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// RES = (signed)Rd * (signed)Rr
 	x = AVR_REG(Rd);
@@ -2060,6 +2099,8 @@ static RzILOpEffect *avr_il_muls(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// RES = (signed)Rd * (signed)Rr
 	x = AVR_REG(Rd);
@@ -2092,6 +2133,8 @@ static RzILOpEffect *avr_il_mulsu(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 	// changes Z|C
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// RES = (signed)Rd * (unsigned)Rr
 	x = AVR_REG(Rd);
@@ -2123,6 +2166,7 @@ static RzILOpEffect *avr_il_neg(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Rd = 0x00 - Rd (when Rd == 0x80 it stays 0x80)
 	// changes H|S|V|N|Z|C
 	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 
 	// IND = Rd
 	let = SETL(AVR_LET_IND, AVR_REG(Rd));
@@ -2181,6 +2225,8 @@ static RzILOpEffect *avr_il_or(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *
 	// changes S|V|N|Z
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 
 	// Rd |= Rr
 	x = AVR_REG(Rd);
@@ -2212,6 +2258,7 @@ static RzILOpEffect *avr_il_ori(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// changes S|V|N|Z
 	ut16 Rd = aop->param[0];
 	ut16 K = aop->param[1];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 
 	// Rd |= K
 	x = AVR_REG(Rd);
@@ -2275,6 +2322,7 @@ static RzILOpEffect *avr_il_pop(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// SP++
 	// Rd = *(SP)
 	st32 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 	RzILOpPure *x, *y;
 	RzILOpEffect *pop, *inc;
 
@@ -2297,6 +2345,7 @@ static RzILOpEffect *avr_il_push(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	// *(SP) = Rd
 	// SP--
 	st32 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 	RzILOpPure *x, *y;
 	RzILOpEffect *push, *dec;
 
@@ -2339,7 +2388,7 @@ static RzILOpEffect *avr_il_rcall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 
 static RzILOpEffect *avr_il_ret(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// SP += PC_SIZE
-	// Rd = *(SP)
+	// PC = *(SP)
 	RzILOpPure *x, *y;
 	RzILOpEffect *jmp, *inc;
 
@@ -2349,7 +2398,7 @@ static RzILOpEffect *avr_il_ret(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = ADD(x, y);
 	inc = SETG(AVR_SP, x);
 
-	// Rd = *(SP)
+	// PC = *(SP)
 	y = VARG(AVR_SP);
 	y = EXTZERO(AVR_ADDR_SIZE, y);
 	x = LOADW(AVR_ADDR_SIZE, y);
@@ -2370,6 +2419,7 @@ static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	RzILOpEffect *let, *rol, *H, *S, *V, *N, *Z, *C;
 	// Rd = rot_left(Rd, 1)
 	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 
 	// copy C into RES
 	carry = VARG(AVR_SREG_C);
@@ -2416,6 +2466,7 @@ static RzILOpEffect *avr_il_ror(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	RzILOpEffect *let, *ror, *S, *V, *N, *Z, *C;
 	// Rd = rot_right(Rd, 1)
 	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
 
 	// copy C into RES
 	carry = VARG(AVR_SREG_C);
@@ -2812,6 +2863,7 @@ static RzILOpEffect *avr_il_sub(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_gpr(Rr, NULL);
 	RzILOpPure *x, *y;
 	RzILOpEffect *let, *subt, *Z, *H, *S, *V, *N, *C;
 	RzILOpBitVector *sub;
@@ -3086,7 +3138,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 };
 
 RZ_IPI bool rz_avr_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, AVROp *aop, AVROp *next_op) {
-	rz_return_val_if_fail(analysis, false);
+	rz_return_val_if_fail(analysis && op && aop && next_op, false);
 	if (aop->mnemonic >= AVR_OP_SIZE) {
 		RZ_LOG_ERROR("RzIL: AVR: out of bounds op\n");
 		return false;

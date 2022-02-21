@@ -4,6 +4,22 @@
 #include "disassembler.h"
 #include "common.h"
 
+/** \file disassembler.c
+ * Disassembles AVR instructions
+ * Each instruction is decoded comparing the applied bitmask result with constants bits
+ * legenda for function decoders names:
+ * - r = Rr
+ * - d = Rd
+ * - K, k = immediate value
+ * - b = bit offset
+ * - A = i/o address
+ * - c = constant value (see cbits)
+ * - x, xp, xm = X, X+, -X
+ * - y, yp, ym = Y, Y+, -Y
+ * - z, zp, zm = Z, Z+, -Z
+ * - q = displacement const
+ */
+
 typedef ut32 (*Decode)(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb);
 
 typedef struct avr_decoder_t {
