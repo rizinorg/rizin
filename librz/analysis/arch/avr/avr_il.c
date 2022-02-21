@@ -2562,6 +2562,24 @@ static RzILOpEffect *avr_il_sbi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	ut16 A = aop->param[0];
 	ut16 b = aop->param[1];
 
+	RzILOpPure *setb, *target, *result;
+	const char *reg = resolve_mmio(analysis, A);
+	if (!reg && A < 32) {
+		// profiles that does not map registers between 0 and 31 have MMIO regs at this range
+		reg = avr_registers[A];
+	}
+
+	setb = AVR_IMM(1u << b);
+	target = VARG(reg);
+	result = LOGOR(setb, target);
+	return SETG(reg, result);
+}
+
+static RzILOpEffect *avr_il_sbic(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
+	// Skip if Bit in I/O Register is Cleared.
+	ut16 A = aop->param[0];
+	ut16 b = aop->param[1];
+
 	RzILOpPure *clearb, *target, *result;
 	const char *reg = resolve_mmio(analysis, A);
 	if (!reg && A < 32) {
@@ -2569,10 +2587,11 @@ static RzILOpEffect *avr_il_sbi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 		reg = avr_registers[A];
 	}
 
-	clearb = AVR_IMM(1u << b);
+	clearb = AVR_IMM(~(1u << b));
 	target = VARG(reg);
-	result = LOGOR(clearb, target);
-	return SETG(reg, result);
+	result = LOGAND(clearb, target);
+	result = IS_ZERO(result);
+	return avr_il_branch_when(aop, analysis, pc + next_op->size, result, true);
 }
 
 static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2923,7 +2942,7 @@ static avr_il_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_sbc,
 	avr_il_sbci,
 	avr_il_sbi,
-	avr_il_unk, /* AVR_OP_SBIC */
+	avr_il_sbic,
 	avr_il_unk, /* AVR_OP_SBIS */
 	avr_il_sbiw,
 	avr_il_unk, /* AVR_OP_SBRC */
