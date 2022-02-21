@@ -2119,9 +2119,9 @@ static RzILOpEffect *smlabb(cs_insn *insn, bool is_thumb) {
 }
 
 /**
- * Capstone: ARM_INS_SMLAL, ARM_INS_SMLABB, ARM_INS_SMLABT, ARM_INS_SMLATB, ARM_INS_SMLATT, ARM_INS_SMLALD, ARM_INS_SMLALDX,
- *           ARM_INS_SMLSLD, ARM_INS_SMLSLDX, ARM_INS_SMLAL
- * ARM: smlal, smlals, smlabb, smlabt, smlatb, smlatt, smlald, smlaldx, umlal, umlals
+ * Capstone: ARM_INS_SMLAL, ARM_INS_SMLALBB, ARM_INS_SMLALBT, ARM_INS_SMLALTB, ARM_INS_SMLALTT, ARM_INS_SMLALD, ARM_INS_SMLALDX,
+ *           ARM_INS_SMLSLD, ARM_INS_SMLSLDX, ARM_INS_UMLAL
+ * ARM: smlal, smlals, smlalbb, smlalbt, smlaltb, smlaltt, smlald, smlaldx, smlsld, smlsldx, umlal, umlals
  */
 static RzILOpEffect *smlal(cs_insn *insn, bool is_thumb) {
 	if (!ISREG(0) || !ISREG(1)) {
@@ -2151,8 +2151,9 @@ static RzILOpEffect *smlal(cs_insn *insn, bool is_thumb) {
 	if (insn->id == ARM_INS_SMLALBT || insn->id == ARM_INS_SMLALTT || exchange_b) {
 		b = SHIFTR0(rb, UN(5, 16));
 	}
-	if (insn->id == ARM_INS_SMLABB || insn->id == ARM_INS_SMLABT || insn->id == ARM_INS_SMLATB ||
-		insn->id == ARM_INS_SMLATT || insn->id == ARM_INS_SMLALD || insn->id == ARM_INS_SMLALDX) {
+	if (insn->id == ARM_INS_SMLALBB || insn->id == ARM_INS_SMLALBT || insn->id == ARM_INS_SMLALTB ||
+		insn->id == ARM_INS_SMLALTT || insn->id == ARM_INS_SMLALD || insn->id == ARM_INS_SMLALDX ||
+		insn->id == ARM_INS_SMLSLD || insn->id == ARM_INS_SMLSLDX) {
 		a = UNSIGNED(16, a);
 		b = UNSIGNED(16, b);
 	}
@@ -2164,10 +2165,10 @@ static RzILOpEffect *smlal(cs_insn *insn, bool is_thumb) {
 		b = SIGNED(64, b);
 	}
 	RzILOpBitVector *product;
-	if (insn->id == ARM_INS_SMLAD || insn->id == ARM_INS_SMLADX || insn->id == ARM_INS_SMLSD || insn->id == ARM_INS_SMLSDX) {
+	if (insn->id == ARM_INS_SMLALD || insn->id == ARM_INS_SMLALDX || insn->id == ARM_INS_SMLSLD || insn->id == ARM_INS_SMLSLDX) {
 		RzILOpBitVector *ah = SIGNED(64, UNSIGNED(16, SHIFTR0(DUP(ra), UN(5, 16))));
 		RzILOpBitVector *bh = SIGNED(64, UNSIGNED(16, exchange_b ? DUP(rb) : SHIFTR0(DUP(rb), UN(5, 16))));
-		product = insn->id == ARM_INS_SMLSD || insn->id == ARM_INS_SMLSDX
+		product = insn->id == ARM_INS_SMLSLD || insn->id == ARM_INS_SMLSLDX
 			? SUB(MUL(a, b), MUL(ah, bh))
 			: ADD(MUL(a, b), MUL(ah, bh));
 	} else {
@@ -2201,10 +2202,10 @@ static RzILOpEffect *smlaw(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	a = SIGNED(64, a);
-	b = SIGNED(64, insn->id == ARM_INS_SMLAWT ? SHIFTR0(b, UN(5, 16)) : b);
+	b = SIGNED(64, insn->id == ARM_INS_SMLAWT ? SHIFTRA(b, UN(5, 16)) : UNSIGNED(16, b));
 	acc = SIGNED(64, acc);
 	return SEQ3(
-		SETL("res", SHIFTR0(ADD(MUL(a, b), acc), UN(6, 16))),
+		SETL("res", ADD(SHIFTR0(MUL(a, b), UN(6, 16)), acc)),
 		eff,
 		BRANCH(INV(EQ(UNSIGNED(48, VARL("res")), SIGNED(48, rres))), SETG("qf", IL_TRUE), NULL));
 }
