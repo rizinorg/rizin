@@ -1,7 +1,7 @@
 project('rizin', 'c',
   version: 'v0.4.0-git',
   license: 'LGPL3',
-  meson_version: '>=0.55.3',
+  meson_version: '>=0.58.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
@@ -214,6 +214,12 @@ else
   rizin_bindings = rizin_libdir / 'rizin-bindings'
 endif
 
+# Calcualte BINDIR's depth to be able to find the root directory during runtime
+# in portable builds
+py_cmd = 'import os; print(len(os.path.normpath(r"@0@").split(os.sep)) - len(os.path.normpath(r"@1@").split(os.sep)))'.format(rizin_prefix / rizin_bindir, rizin_prefix)
+py_cmd = run_command(py3_exe, '-c', py_cmd)
+bindir_depth = py_cmd.stdout().strip()
+
 opts_overwrite = [
   'rizin_wwwroot',
   'rizin_sdb',
@@ -379,6 +385,7 @@ userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', rizin_prefix)
 userconf.set('BINDIR', rizin_bindir)
+userconf.set('BINDIR_DEPTH', bindir_depth)
 userconf.set('LIBDIR', rizin_libdir)
 userconf.set('INCLUDEDIR', rizin_incdir)
 userconf.set('DATADIR_RZ', rizin_datdir_rz)
@@ -456,6 +463,7 @@ foreach item : [
     ['execvp', '#include <unistd.h>', []],
     ['execl', '#include <unistd.h>', []],
     ['system', '#include <stdlib.h>', []],
+    ['realpath', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
     ['nice', '#include <unistd.h>', []],
     ['copyfile', '#include <copyfile.h>', []],
@@ -610,7 +618,13 @@ rpath_exe = ''
 rpath_lib = ''
 rpath_summary = 'disabled'
 if use_rpath
-  rpath_exe = '$ORIGIN/../' + get_option('libdir')
+  # Use bindir depth to create a path to the rootdir from bindir
+  path_to_rootdir=''
+  foreach i : range(bindir_depth.to_int())
+    path_to_rootdir += '../'
+  endforeach
+
+  rpath_exe = '$ORIGIN/' + path_to_rootdir + get_option('libdir')
   rpath_lib = '$ORIGIN'
   rpath_summary = 'relative'
 elif use_rpath_absolute
