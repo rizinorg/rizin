@@ -229,6 +229,7 @@ typedef struct rz_flirt_compressed_options_t {
 	const char *libname;
 } RzFlirtCompressedOptions;
 
+RZ_API RZ_OWN bool rz_sign_flirt_parse_header_compressed_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, RZ_NONNULL RzFlirtInfo *info);
 RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut8 expected_arch, RZ_NULLABLE RzFlirtInfo *info);
 RZ_API bool rz_sign_flirt_write_compressed_pattern_to_buffer(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBuffer *buffer, RzFlirtCompressedOptions *options);
 

@@ -59,9 +59,9 @@ static bool sigdb_signature_resolve_details(RzSigDBEntry *entry, size_t path_len
 	}
 
 	if (rz_str_endswith(entry->base_name, ".sig")) {
-		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY, &info);
+		bool success = rz_sign_flirt_parse_header_compressed_pattern_from_buffer(buffer, &info);
 		rz_buf_free(buffer);
-		if (!node) {
+		if (!success) {
 			return false;
 		}
 

@@ -942,7 +942,7 @@ err_exit:
 	return false;
 }
 
-static int parse_v5_header(RzBuffer *buf, idasig_v5_t *header) {
+static bool parse_v5_header(RzBuffer *buf, idasig_v5_t *header) {
 	rz_buf_seek(buf, 0, RZ_BUF_SET);
 	if (rz_buf_read(buf, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
 		return false;
@@ -1031,7 +1031,7 @@ static ut8 flirt_parse_version(RzBuffer *buffer) {
 		goto exit;
 	}
 
-	if (strncmp((const char *)header->magic, "IDASGN", 6)) {
+	if (memcmp((const char *)header->magic, "IDASGN", 6)) {
 		RZ_LOG_ERROR("FLIRT: invalid sig magic.\n");
 		goto exit;
 	}
@@ -1046,6 +1046,80 @@ static ut8 flirt_parse_version(RzBuffer *buffer) {
 exit:
 	free(header);
 	return ret;
+}
+
+/**
+ * \brief Parses the RzBuffer containing a FLIRT structure and returns an RzFlirtInfo
+ *
+ * Parses the RzBuffer containing a FLIRT structure and returns an RzFlirtNode if expected_arch
+ * matches the id or RZ_FLIRT_SIG_ARCH_ANY is set.
+ *
+ * \param  flirt_buf     The buffer to read
+ * \param  expected_arch The expected arch to be used for the buffer
+ * \param  info          Pointer to a RzFlirtInfo that can be used to get info about the sig file
+ * \return               Parsed FLIRT node
+ */
+RZ_API RZ_OWN bool rz_sign_flirt_parse_header_compressed_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, RZ_NONNULL RzFlirtInfo *info) {
+	rz_return_val_if_fail(flirt_buf && info, false);
+
+	bool res = false;
+	ut8 *name = NULL;
+	idasig_v5_t v5 = { 0 };
+	idasig_v6_v7_t v6_v7 = { 0 };
+	idasig_v8_v9_t v8_v9 = { 0 };
+	idasig_v10_t v10 = { 0 };
+
+	if (!parse_v5_header(flirt_buf, &v5)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig header.\n");
+		goto exit;
+	}
+
+	if (memcmp((const char *)v5.magic, "IDASGN", 6)) {
+		RZ_LOG_ERROR("FLIRT: invalid sig magic.\n");
+		goto exit;
+	}
+
+	if (v5.version < 5 || v5.version > 10) {
+		RZ_LOG_ERROR("FLIRT: Unsupported flirt signature version\n");
+		goto exit;
+	}
+
+	if (v5.version >= 6 && !parse_v6_v7_header(flirt_buf, &v6_v7)) {
+		goto exit;
+	}
+
+	if (v5.version >= 8 && !parse_v8_v9_header(flirt_buf, &v8_v9)) {
+		goto exit;
+	}
+
+	if (v5.version >= 10 && !parse_v10_header(flirt_buf, &v10)) {
+		goto exit;
+	}
+
+	name = malloc(v5.library_name_len + 1);
+	if (!name) {
+		RZ_LOG_ERROR("FLIRT: failed to allocate library name\n");
+		goto exit;
+	}
+
+	if (rz_buf_read(flirt_buf, name, v5.library_name_len) != v5.library_name_len) {
+		RZ_LOG_ERROR("FLIRT: failed to read library name\n");
+		goto exit;
+	}
+
+	name[v5.library_name_len] = '\0';
+
+	info->type = RZ_FLIRT_FILE_TYPE_SIG;
+	info->u.sig.version = v5.version;
+	info->u.sig.architecture = v5.arch;
+	info->u.sig.n_modules = v5.version < 6 ? v5.old_n_functions : v6_v7.n_functions;
+	info->u.sig.name = (char *)name;
+	name = NULL;
+	res = true;
+
+exit:
+	free(name);
+	return res;
 }
 
 /**

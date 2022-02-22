@@ -413,7 +413,7 @@ static bool meta_string_8bit_add(RzCore *core, ut64 addr, size_t limit, ut8 **na
 		return false;
 	}
 	if (!rz_io_read_at(core->io, addr, *name, limit)) {
-		free(*name);
+		RZ_FREE(*name);
 		return false;
 	}
 	(*name)[limit] = '\0';
