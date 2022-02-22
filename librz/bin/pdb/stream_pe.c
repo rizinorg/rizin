@@ -51,5 +51,9 @@ RZ_IPI bool parse_pe_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	return true;
 }
 RZ_IPI void free_pe_stream(RzPdbPeStream *stream) {
+	if (!stream) {
+		return;
+	}
 	rz_list_free(stream->sections_hdrs);
+	free(stream);
 };
