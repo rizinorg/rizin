@@ -70,7 +70,7 @@
 #define SHIFTR(f, v, dist) rz_il_op_new_shiftr(f, v, dist)
 #define SHIFTL0(v, dist)   SHIFTL(IL_FALSE, v, dist)
 #define SHIFTR0(v, dist)   SHIFTR(IL_FALSE, v, dist)
-#define SHIFTRA(v, dist)   SHIFTR(MSB(DUP(v)), v, dist)
+#define SHIFTRA(v, dist)   rz_il_op_new_shiftr_arith(v, dist)
 #define LOGAND(x, y)       rz_il_op_new_log_and(x, y)
 #define LOGOR(x, y)        rz_il_op_new_log_or(x, y)
 #define LOGXOR(x, y)       rz_il_op_new_log_xor(x, y)
