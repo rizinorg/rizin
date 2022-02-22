@@ -5,6 +5,9 @@
 #include "pdb.h"
 
 RZ_IPI void free_dbi_stream(RzPdbDbiStream *stream) {
+	if (!stream) {
+		return;
+	}
 	RzPdbDbiStreamExHdr *ex_hdr;
 	RzListIter *it;
 	rz_list_foreach (stream->ex_hdrs, it, ex_hdr) {
@@ -13,6 +16,7 @@ RZ_IPI void free_dbi_stream(RzPdbDbiStream *stream) {
 		RZ_FREE(ex_hdr);
 	}
 	rz_list_free(stream->ex_hdrs);
+	free(stream);
 }
 
 static bool parse_dbi_stream_header(RzPdbDbiStream *s, RzBuffer *buf) {
