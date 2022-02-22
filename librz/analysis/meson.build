@@ -150,6 +150,7 @@ rz_analysis_sources = [
   #'arch/gb/meta_gb_cmt.c',
   'arch/arm/arm_esil32.c',
   'arch/arm/arm_esil64.c',
+  'arch/arm/arm_il32.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cr16/cr16_disas.c',

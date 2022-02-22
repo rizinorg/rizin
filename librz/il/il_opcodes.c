@@ -534,6 +534,14 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr(RZ_NONNULL RzILOpBool *fill_b
 }
 
 /**
+ *  \brief alias for shiftr (msb x) x d, right-shift filling up with the left operand's msb
+ */
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr_arith(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	return rz_il_op_new_shiftr(rz_il_op_new_msb(rz_il_op_pure_dup(x)), x, y);
+}
+
+/**
  *  \brief op structure for appending 2 bitv: MSB:LSB high:low
  */
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *high, RZ_NONNULL RzILOpBitVector *low) {

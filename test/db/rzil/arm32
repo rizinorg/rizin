@@ -1,0 +1,192 @@
+NAME=arm cmp
+FILE=malloc://0x100
+ARGS=-aarm -b32
+CMDS=<<EOF
+wx 0f0053e3
+aezi
+ar r3=0
+?e -- 0x0 - 0xf
+aezs
+ar 1
+?e -- 0xf - 0xf
+ar pc=0
+ar r3=0xf
+aezs
+ar 1
+?e -- 0x10 - 0xf
+ar pc=0
+ar r3=0x10
+aezs
+ar 1
+EOF
+EXPECT=<<EOF
+-- 0x0 - 0xf
+tf = 0x00000000
+ef = 0x00000000
+jf = 0x00000000
+qf = 0x00000000
+vf = 0x00000000
+cf = 0x00000000
+zf = 0x00000000
+nf = 0x00000001
+-- 0xf - 0xf
+tf = 0x00000000
+ef = 0x00000000
+jf = 0x00000000
+qf = 0x00000000
+vf = 0x00000000
+cf = 0x00000001
+zf = 0x00000001
+nf = 0x00000000
+-- 0x10 - 0xf
+tf = 0x00000000
+ef = 0x00000000
+jf = 0x00000000
+qf = 0x00000000
+vf = 0x00000000
+cf = 0x00000001
+zf = 0x00000000
+nf = 0x00000000
+EOF
+RUN
+
+NAME=emulateme
+FILE=bins/elf/emulateme.arm32
+TIMEOUT=4
+CMDS=<<EOF
+s sym.decrypt
+e asm.bits=32
+aezi
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+# oC 0x10 @ obj.seckrit # TODO: does not work
+e io.cache=1 # TODO: replace this by oC above
+w AnyColourYouLike @ 0x50000
+ar sp=0x41000
+ar r0=0x50000
+aezsu 0x00010594
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=arm sdiv
+FILE=malloc://0x100
+ARGS=-aarm -b32
+CMDS=<<EOF
+wx 10f110e7
+aezi
+ar r0=42
+ar r1=5
+?e -- 42 / 5
+aezs
+ar r0
+?e -- 42 / 0
+ar pc=0
+ar r0=42
+ar r1=0
+aezs
+ar r0
+?e -- 0 / 0
+ar pc=0
+ar r0=0
+ar r1=0
+aezs
+ar r0
+?e -- -2^31 / -1
+ar pc=0
+ar r0=0x80000000
+ar r1=0xffffffff
+aezs
+ar r0
+?e -- -42 / 5
+ar pc=0
+ar r0=0xffffffd6
+ar r1=5
+aezs
+ar r0
+?e -- -42 / -5
+ar pc=0
+ar r0=0xffffffd6
+ar r1=0xfffffffb
+aezs
+ar r0
+EOF
+EXPECT=<<EOF
+-- 42 / 5
+r0 = 0x00000008
+-- 42 / 0
+r0 = 0x00000000
+-- 0 / 0
+r0 = 0x00000000
+-- -2^31 / -1
+r0 = 0x80000000
+-- -42 / 5
+r0 = 0xfffffff8
+-- -42 / -5
+r0 = 0x00000008
+EOF
+RUN
+
+NAME=arm udiv
+FILE=malloc://0x100
+ARGS=-aarm -b32
+CMDS=<<EOF
+wx 10f130e7
+aezi
+ar r0=42
+ar r1=5
+?e -- 42 / 5
+aezs
+ar r0
+?e -- 42 / 0
+ar pc=0
+ar r0=42
+ar r1=0
+aezs
+ar r0
+?e -- 0 / 0
+ar pc=0
+ar r0=0
+ar r1=0
+aezs
+ar r0
+?e -- -2^31 / -1
+ar pc=0
+ar r0=0x80000000
+ar r1=0xffffffff
+aezs
+ar r0
+?e -- -42 / 5
+ar pc=0
+ar r0=0xffffffd6
+ar r1=5
+aezs
+ar r0
+?e -- -42 / -5
+ar pc=0
+ar r0=0xffffffd6
+ar r1=0xfffffffb
+aezs
+ar r0
+EOF
+EXPECT=<<EOF
+-- 42 / 5
+r0 = 0x00000008
+-- 42 / 0
+r0 = 0x00000000
+-- 0 / 0
+r0 = 0x00000000
+-- -2^31 / -1
+r0 = 0x00000000
+-- -42 / 5
+r0 = 0x3333332a
+-- -42 / -5
+r0 = 0x00000000
+EOF
+TIMEOUT=10
+RUN
+
