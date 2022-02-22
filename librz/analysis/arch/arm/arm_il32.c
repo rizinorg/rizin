@@ -1172,6 +1172,7 @@ static void label_svc(RzILVM *vm, RzILOpEffect *op) {
 	// stub, nothing to do here
 }
 
+#if CS_API_MAJOR > 3
 /**
  * Capstone: ARM_INS_HVC
  * ARM: hvc
@@ -1179,6 +1180,7 @@ static void label_svc(RzILVM *vm, RzILOpEffect *op) {
 static RzILOpEffect *hvc(cs_insn *insn, bool is_thumb) {
 	return GOTO("hvc");
 }
+#endif
 
 static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
 	// stub, nothing to do here
@@ -2506,8 +2508,10 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return clz(insn, is_thumb);
 	case ARM_INS_SVC:
 		return svc(insn, is_thumb);
+#if CS_API_MAJOR > 3
 	case ARM_INS_HVC:
 		return hvc(insn, is_thumb);
+#endif
 	case ARM_INS_BFC:
 		return bfc(insn, is_thumb);
 	case ARM_INS_BFI:
