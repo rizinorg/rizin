@@ -1786,6 +1786,9 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				rz_arm_cs_analysis_op_64_esil(a, op, addr, buf, len, &ctx->handle, insn);
 			}
+			if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+				op->il_op = rz_arm_cs_64_il(&ctx->handle, insn, thumb);
+			}
 		} else {
 			anop32(a, ctx->handle, op, insn, thumb, (ut8 *)buf, len);
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
@@ -2394,8 +2397,7 @@ static bool fini(void *user) {
 
 static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
 	if (analysis->bits == 64) {
-		// not yet implemented
-		return NULL;
+		return rz_arm_cs_64_il_config(analysis->big_endian);
 	}
 	return rz_arm_cs_32_il_config(analysis->big_endian);
 }
