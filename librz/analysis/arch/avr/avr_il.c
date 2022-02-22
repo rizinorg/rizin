@@ -153,7 +153,7 @@ static RzILOpEffect *avr_il_update_indirect_address_reg(const char *local, ut16 
 }
 
 static inline RzILOpEffect *avr_il_jump_relative(AVROp *aop, RzAnalysis *analysis, ut64 where) {
-	RzILOpBitVector *_loc = UN(AVR_ADDR_SIZE, where - aop->size);
+	RzILOpBitVector *_loc = UN(AVR_ADDR_SIZE, where);
 	return JMP(_loc);
 }
 
@@ -993,9 +993,11 @@ static RzILOpEffect *avr_il_call(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 
 	jmp = avr_il_jump_relative(aop, analysis, k);
 
-	num = AVR_PC(pc);
 	val = VARG(AVR_SP);
 	val = AVR_ADDR(val);
+	num = AVR_PC((AVR_ADDR_SIZE / 8) - 1);
+	val = SUB(val, num);
+	num = AVR_PC(pc + aop->size);
 	push = STOREW(val, num);
 
 	num = AVR_IMM16(AVR_ADDR_SIZE / 8);
@@ -1329,10 +1331,12 @@ static RzILOpEffect *avr_il_eicall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalys
 	x = SHIFTL0(x, y);
 	jmp = JMP(x);
 
-	x = AVR_PC(pc);
-	y = VARG(AVR_SP);
-	y = AVR_ADDR(y);
-	push = STOREW(y, x);
+	x = VARG(AVR_SP);
+	x = AVR_ADDR(x);
+	y = AVR_PC((AVR_ADDR_SIZE / 8) - 1);
+	x = SUB(x, y);
+	y = AVR_PC(pc + aop->size);
+	push = STOREW(x, y);
 
 	x = AVR_IMM16(AVR_ADDR_SIZE / 8);
 	y = VARG(AVR_SP);
@@ -1649,10 +1653,12 @@ static RzILOpEffect *avr_il_icall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 	x = SHIFTL0(x, y);
 	jmp = JMP(x);
 
-	x = AVR_PC(pc);
-	y = VARG(AVR_SP);
-	y = AVR_ADDR(y);
-	push = STOREW(y, x);
+	x = VARG(AVR_SP);
+	x = AVR_ADDR(x);
+	y = AVR_PC((AVR_ADDR_SIZE / 8) - 1);
+	x = SUB(x, y);
+	y = AVR_PC(pc + aop->size);
+	push = STOREW(x, y);
 
 	x = AVR_IMM16(AVR_ADDR_SIZE / 8);
 	y = VARG(AVR_SP);
@@ -2376,9 +2382,11 @@ static RzILOpEffect *avr_il_rcall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 
 	jmp = avr_il_jump_relative(aop, analysis, k);
 
-	num = AVR_PC(pc);
 	val = VARG(AVR_SP);
 	val = AVR_ADDR(val);
+	num = AVR_PC((AVR_ADDR_SIZE / 8) - 1);
+	val = SUB(val, num);
+	num = AVR_PC(pc + aop->size);
 	push = STOREW(val, num);
 
 	num = AVR_IMM16(AVR_ADDR_SIZE / 8);
@@ -2391,21 +2399,23 @@ static RzILOpEffect *avr_il_rcall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 
 static RzILOpEffect *avr_il_ret(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// SP += PC_SIZE
-	// PC = *(SP)
+	// PC = *(SP - PC_SIZE + 1)
 	RzILOpPure *x, *y;
 	RzILOpEffect *jmp, *inc;
+
+	// PC = *(SP - PC_SIZE + 1)
+	y = VARG(AVR_SP);
+	y = UNSIGNED(AVR_ADDR_SIZE, y);
+	x = AVR_PC((AVR_ADDR_SIZE / 8) - 1);
+	y = SUB(y, x);
+	x = LOADW(AVR_ADDR_SIZE, y);
+	jmp = JMP(x);
 
 	// SP += PC_SIZE
 	x = VARG(AVR_SP);
 	y = AVR_IMM16(AVR_ADDR_SIZE / 8);
 	x = ADD(x, y);
 	inc = SETG(AVR_SP, x);
-
-	// PC = *(SP)
-	y = VARG(AVR_SP);
-	y = UNSIGNED(AVR_ADDR_SIZE, y);
-	x = LOADW(AVR_ADDR_SIZE, y);
-	jmp = JMP(x);
 
 	return SEQ2(inc, jmp);
 }

@@ -373,23 +373,174 @@ wa "ldi r16, 0x4" @ 0
 wa "bst r16, 2" @ 2
 # Load T Flag into bit 4 of r0
 wa "bld r0, 4" @ 4
+# Set vf
+wa "bset 3" @ 6
+# Set if
+wa "bset 7" @ 8
+# clear if
+wa "bclr 7" @ 10
+# clear tf
+wa "bclr 6" @ 12
+# clear vf
+wa "bclr 3" @ 14
+
 aezi
 aezs
 ar r16
-aezse 1
+aezse 1~name
 ar tf
-aezse 1
+aezse 1~name
 ar r0
 ar tf
+aezse 1~name
+ar vf
+aezse 1~name
+ar if
+aezse 1~name
+ar if
+aezse 1~name
+ar tf
+aezse 1~name
+ar vf
 EOF
 EXPECT=<<EOF
 r16 = 0x00000004
-pc_write(old: 0x2, new: 0x4)
 var_write(name: tf, old: 0x0, new: 0x1)
 tf = 0x00000001
-pc_write(old: 0x4, new: 0x6)
 var_write(name: r0, old: 0x0, new: 0x10)
 r0 = 0x00000010
 tf = 0x00000001
+var_write(name: vf, old: 0x0, new: 0x1)
+vf = 0x00000001
+var_write(name: if, old: 0x0, new: 0x1)
+if = 0x00000001
+var_write(name: if, old: 0x1, new: 0x0)
+if = 0x00000000
+var_write(name: tf, old: 0x1, new: 0x0)
+tf = 0x00000000
+var_write(name: vf, old: 0x1, new: 0x0)
+vf = 0x00000000
+EOF
+RUN
+
+NAME=Status regs clear and set
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wa "sei ; set ; seh ; ses ; sev ; sen ; sez ; sec"
+aezi
+aezs 8
+ar sreg
+wa "cli ; clt ; clh ; cls ; clv ; cln ; clz ; clc"
+aezi
+aezs 8
+ar sreg
+EOF
+EXPECT=<<EOF
+sreg = 0x000000ff
+sreg = 0x00000000
+EOF
+RUN
+
+NAME=Simple call & ret
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+wx "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" @ 0x70
+wa "ldi r16, 0x7F" @ 0
+wa "ldi r17, 0xFC" @ 2
+# set stack to 0x7F
+wa "out 0x3e, r16" @ 4
+# call subroutine at 16
+wa "call 0x10" @ 6
+
+# clear r17 subroutine using r16
+wa "push r16" @ 16
+wa "andi r16, 0x08" @ 18
+wa "and r17, r16" @ 20
+wa "pop r16" @ 22
+wa "ret" @ 24
+
+?e instructions
+pdi 5
+pdi 5 @ 16
+?e
+?e initial machine status
+px 16 @ 0x70
+aezi
+aezs 3
+ar pc
+ar sp
+ar r16
+ar r17
+?e
+?e call subroutine & stack pointer
+aezse 1
+ar pc
+ar sp
+px 16 @ 0x70
+?e
+?e execute subroutine
+aezs 4
+ar pc
+ar sp
+ar r16
+ar r17
+px 16 @ 0x70
+?e
+?e execute return
+aezs
+ar pc
+ar sp
+ar r16
+ar r17
+px 16 @ 0x70
+EOF
+EXPECT=<<EOF
+instructions
+0x00000000 ldi r16, 0x7f
+0x00000002 ldi r17, 0xfc
+0x00000004 out 0x3e, r16
+0x00000006 call 0x10
+0x0000000a nop
+0x00000010 push r16
+0x00000012 andi r16, 0x08
+0x00000014 and r17, r16
+0x00000016 pop r16
+0x00000018 ret
+
+initial machine status
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000070  eeee eeee eeee eeee eeee eeee eeee eeee  ................
+pc = 0x00000006
+sp = 0x0000007f
+r16 = 0x0000007f
+r17 = 0x000000fc
+
+call subroutine & stack pointer
+pc_write(old: 0x6, new: 0xa)
+mem_write(addr: 0x7c, old: 0xeeeeeeee, new: 0xa)
+var_write(name: sp, old: 0x7f, new: 0x7b)
+pc_write(old: 0xa, new: 0x10)
+pc = 0x00000010
+sp = 0x0000007b
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000070  eeee eeee eeee eeee eeee eeee 0a00 0000  ................
+
+execute subroutine
+pc = 0x00000018
+sp = 0x0000007b
+r16 = 0x0000007f
+r17 = 0x00000008
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000070  eeee eeee eeee eeee eeee ee7f 0a00 0000  ................
+
+execute return
+pc = 0x0000000a
+sp = 0x0000007f
+r16 = 0x0000007f
+r17 = 0x00000008
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000070  eeee eeee eeee eeee eeee ee7f 0a00 0000  ................
 EOF
 RUN
