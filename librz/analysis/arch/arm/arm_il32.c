@@ -292,7 +292,7 @@ static RzILOpBitVector *arg(cs_insn *insn, bool is_thumb, int n, RZ_NULLABLE RzI
 			// * capstone disassembles to something like "movs r0, 0x4000000" without the third operand,
 			//   but we can see that the value is larger than 8 bits, so there must be a shift.
 			if (ISIMM(n + 1) || imm > 0xff) {
-				*carry_out = (imm & (1 << 31)) ? IL_TRUE : IL_FALSE;
+				*carry_out = (imm & (1ul << 31)) ? IL_TRUE : IL_FALSE;
 			}
 		}
 		return U32(imm);
@@ -332,11 +332,11 @@ static RzILOpEffect *update_flags_zn(RzILOpBitVector *v) {
  */
 static RzILOpEffect *update_flags_from_cpsr(RzILOpBitVector *val, bool f, bool s) {
 	RzILOpEffect *setf = f ? SEQ5(
-					 SETG("nf", INV(IS_ZERO(LOGAND(val, U32(1 << 31))))),
-					 SETG("zf", INV(IS_ZERO(LOGAND(DUP(val), U32(1 << 30))))),
-					 SETG("cf", INV(IS_ZERO(LOGAND(DUP(val), U32(1 << 29))))),
-					 SETG("vf", INV(IS_ZERO(LOGAND(DUP(val), U32(1 << 28))))),
-					 SETG("qf", INV(IS_ZERO(LOGAND(DUP(val), U32(1 << 27))))))
+					 SETG("nf", INV(IS_ZERO(LOGAND(val, U32(1ul << 31))))),
+					 SETG("zf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 30))))),
+					 SETG("cf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 29))))),
+					 SETG("vf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 28))))),
+					 SETG("qf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 27))))))
 			       : NULL;
 	RzILOpEffect *sets = s ? SETG("gef", UNSIGNED(4, SHIFTR0(setf ? DUP(val) : val, UN(5, 16)))) : NULL;
 	return setf && sets ? SEQ2(sets, setf) : (setf ? setf : sets);
@@ -1286,11 +1286,11 @@ static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
 	}
 	// There are more bits in ARM, but this is all we have:
 	return write_reg(REGID(0),
-		LOGOR(ITE(VARG("nf"), U32(1 << 31), U32(0)),
-			LOGOR(ITE(VARG("zf"), U32(1 << 30), U32(0)),
-				LOGOR(ITE(VARG("cf"), U32(1 << 29), U32(0)),
-					LOGOR(ITE(VARG("vf"), U32(1 << 28), U32(0)),
-						LOGOR(ITE(VARG("qf"), U32(1 << 27), U32(0)),
+		LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
+			LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
+				LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
+					LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
+						LOGOR(ITE(VARG("qf"), U32(1ul << 27), U32(0)),
 							SHIFTL0(UNSIGNED(32, VARG("gef")), UN(5, 16))))))));
 }
 
