@@ -1212,7 +1212,7 @@ static bool init_debug_info(RzBinDwarfDebugInfo *inf) {
 wurzelbert_lookup_table:
 	ht_up_free(inf->lookup_table);
 wurzelbert_comp_units:
-	free(inf->comp_units);
+	RZ_FREE(inf->comp_units);
 	return false;
 }
 
