@@ -4,15 +4,20 @@
 // code to support natively debugging mach binaries
 /*   _
     _\)/_
-   /     \
-   \     /
+   /    /
+   \    \
     \_._/
 */
 #ifndef _XNU_DEBUG_H
 #define _XNU_DEBUG_H
 
-#define MACH_ERROR_STRING(ret) \
-	(mach_error_string(ret) ? rz_str_get_null(mach_error_string(ret)) : "(unknown)")
+#include <rz_util/rz_log.h>
+
+#define LOG_MACH_ERROR(name, rc) \
+	do { \
+		const char *str = mach_error_string(rc); \
+		RZ_LOG_ERROR("%s/%s: %s\n", __FUNCTION__, name, str ? str : "(unknown)"); \
+	} while (0)
 
 #if TARGET_OS_IPHONE
 // no ptrace
