@@ -259,3 +259,57 @@ EXPECT=<<EOF
 0x000820c4  0  .rdata  ??_C@_1BK@FIHMCKAM@?$AAs?$AAo?$AAu?$AAt?$AAh?$AA?5?$AAa?$AAf?$AAr?$AAi?$AAc?$AAa@
 EOF
 RUN
+
+NAME=LF_INDEX parsing
+FILE=bins/pdb/exceptions-test.exe
+CMDS=<<EOF
+idp
+te CV_HREG_e~?
+EOF
+EXPECT=<<EOF
+3218
+EOF
+RUN
+
+NAME=Type redefinition
+FILE=bins/pdb/exceptions-test.exe
+CMDS=<<EOF
+tsc _NT_TIB
+idp
+tsc _NT_TIB
+tsc _TP_CALLBACK_ENVIRON_V3
+EOF
+EXPECT=<<EOF
+struct _NT_TIB {
+	struct _EXCEPTION_REGISTRATION_RECORD *ExceptionList;
+	void *StackBase;
+	void *StackLimit;
+	void *SubSystemTib;
+	unsigned long Version;
+	void *ArbitraryUserPointer;
+	struct _NT_TIB *Self;
+};
+struct _NT_TIB {
+	struct _EXCEPTION_REGISTRATION_RECORD *ExceptionList;
+	void *StackBase;
+	void *StackLimit;
+	void *SubSystemTib;
+	void *FiberData;
+	uint32_t Version;
+	void *ArbitraryUserPointer;
+	struct _NT_TIB *Self;
+};
+struct _TP_CALLBACK_ENVIRON_V3 {
+	uint32_t Version;
+	struct _TP_POOL *Pool;
+	struct _TP_CLEANUP_GROUP *CleanupGroup;
+	void (*CleanupGroupCancelCallback)(void *arg0, void *arg1);
+	void *RaceDll;
+	struct _ACTIVATION_CONTEXT *ActivationContext;
+	void (*FinalizationCallback)(struct _TP_CALLBACK_INSTANCE *arg0, void *arg1);
+	union type_0x1e89 u;
+	int32_t CallbackPriority;
+	uint32_t Size;
+};
+EOF
+RUN
