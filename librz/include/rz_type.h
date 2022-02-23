@@ -246,6 +246,7 @@ RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 
 RZ_API void rz_type_base_type_free(RzBaseType *type);
 RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind);
+RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kind);
 
 RZ_API void rz_type_base_enum_case_free(void *e, void *user);
 RZ_API void rz_type_base_struct_member_free(void *e, void *user);
