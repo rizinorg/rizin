@@ -48,6 +48,23 @@ static RzCmdDescHelp s_help = {
 	.args = s_args,
 };
 
+static char **z_args_choices_cb(RzCore *core) {
+	char **res = RZ_NEWS0(char *, 3);
+	res[0] = strdup("Hello");
+	res[1] = strdup("World");
+	return res;
+}
+
+static RzCmdDescArg z_args[] = {
+	{ .name = "v1", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices_cb = z_args_choices_cb },
+	{ 0 },
+};
+
+static RzCmdDescHelp z_help = {
+	.summary = "z summary",
+	.args = z_args,
+};
+
 static RzCmdStatus x_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
@@ -73,6 +90,8 @@ static RzCore *fake_core_new(void) {
 	mu_assert_notnull(p, "p");
 	RzCmdDesc *s = rz_cmd_desc_argv_new(cmd, root, "s", x_handler, &s_help);
 	mu_assert_notnull(s, "s");
+	RzCmdDesc *z = rz_cmd_desc_argv_new(cmd, root, "z", x_handler, &z_help);
+	mu_assert_notnull(z, "z");
 	core->rcmd = cmd;
 	rz_core_cmd(core, "", 0);
 	return core;
@@ -140,11 +159,12 @@ static bool test_autocmplt_newcommand(void) {
 	mu_assert_notnull(r, "r should be returned");
 	mu_assert_eq(r->start, 0, "should autocomplete starting from 0");
 	mu_assert_eq(r->end, 0, "should autocomplete ending at 0");
-	mu_assert_eq(rz_pvector_len(&r->options), 4, "there are 4 commands available");
+	mu_assert_eq(rz_pvector_len(&r->options), 5, "there are 4 commands available");
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "p", "one is p");
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "s", "one is s");
 	mu_assert_streq(rz_pvector_at(&r->options, 2), "xd", "one is xd");
 	mu_assert_streq(rz_pvector_at(&r->options, 3), "xe", "one is xe");
+	mu_assert_streq(rz_pvector_at(&r->options, 4), "z", "one is z");
 	rz_line_ns_completion_result_free(r);
 
 	strcpy(buf->data, "p @@c:");
@@ -155,11 +175,12 @@ static bool test_autocmplt_newcommand(void) {
 	mu_assert_notnull(r, "result should be there");
 	mu_assert_eq(r->start, buf->length, "start should be ok");
 	mu_assert_eq(r->end, buf->length, "end should be ok");
-	mu_assert_eq(rz_pvector_len(&r->options), 4, "there are 4 commands available");
+	mu_assert_eq(rz_pvector_len(&r->options), 5, "there are 4 commands available");
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "p", "one is p");
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "s", "one is s");
 	mu_assert_streq(rz_pvector_at(&r->options, 2), "xd", "one is xd");
 	mu_assert_streq(rz_pvector_at(&r->options, 3), "xe", "one is xe");
+	mu_assert_streq(rz_pvector_at(&r->options, 4), "z", "one is z");
 	rz_line_ns_completion_result_free(r);
 
 	rz_core_free(core);
@@ -590,6 +611,30 @@ static bool test_autocmplt_tmp_arch(void) {
 	mu_end;
 }
 
+static bool test_autocmplt_choices_cb_arg(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_notnull(core, "core should be created");
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	const char *s = "z ";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, buf->length, "should autocomplete starting after space");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 choices from cb");
+
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "Hello", "hello choice is there");
+	mu_assert_streq(rz_pvector_at(&r->options, 1), "World", "world choice is there");
+	rz_line_ns_completion_result_free(r);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_autocmplt_cmdid);
 	mu_run_test(test_autocmplt_newcommand);
@@ -604,6 +649,7 @@ bool all_tests() {
 	mu_run_test(test_autocmplt_tmp_seek);
 	mu_run_test(test_autocmplt_tmp_config);
 	mu_run_test(test_autocmplt_tmp_arch);
+	mu_run_test(test_autocmplt_choices_cb_arg);
 	return tests_passed != tests_run;
 }
 

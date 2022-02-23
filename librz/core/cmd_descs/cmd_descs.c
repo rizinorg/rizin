@@ -7425,12 +7425,11 @@ static const RzCmdDescHelp cmd_info_pdb_download_help = {
 static const RzCmdDescHelp iD_help = {
 	.summary = "Demangle symbol for given language",
 };
-static const char *cmd_info_demangle_lang_choices[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
 static const RzCmdDescArg cmd_info_demangle_args[] = {
 	{
 		.name = "lang",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.choices = cmd_info_demangle_lang_choices,
+		.choices_cb = rz_cmd_info_demangle_lang_choices,
 
 	},
 	{

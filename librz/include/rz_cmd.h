@@ -211,6 +211,11 @@ typedef struct rz_cmd_desc_detail_t {
 typedef RZ_OWN RzCmdDescDetail *(*RzCmdDescDetailCb)(RzCore *core, int argc, const char **argv);
 
 /**
+ * Callback used to dynamically generate the choices of an argument with type \p RZ_CMD_ARG_TYPE_CHOICES
+ */
+typedef RZ_OWN char **(*RzCmdArgChoiceCb)(RzCore *core);
+
+/**
  * A description of an argument of a RzCmdDesc.
  */
 typedef struct rz_cmd_desc_arg_t {
@@ -254,7 +259,7 @@ typedef struct rz_cmd_desc_arg_t {
 	int flags;
 	/**
 	 * Default value for the argument, if it is not specified. This field
-	 * shall be used only when /p optional is true.
+	 * shall be used only when \p optional is true.
 	 */
 	const char *default_value;
 	/**
@@ -262,9 +267,14 @@ typedef struct rz_cmd_desc_arg_t {
 	 */
 	union {
 		/**
-		 * List of possible values in case /p type is RZ_CMD_ARG_TYPE_CHOICES.
+		 * List of possible values in case \p type is RZ_CMD_ARG_TYPE_CHOICES.
 		 */
 		const char **choices;
+		/**
+		 * Callback used to generate a list of possible values in case \p type is RZ_CMD_ARG_TYPE_CHOICES.
+		 * When this is specified, \p choices is ignored.
+		 */
+		RzCmdArgChoiceCb choices_cb;
 	};
 } RzCmdDescArg;
 

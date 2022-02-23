@@ -1320,7 +1320,7 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedA
 	return NULL;
 }
 
-static void fill_args_json(const RzCmdDesc *cd, PJ *j) {
+static void fill_args_json(const RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 	const RzCmdDescArg *arg;
 	bool has_array = false;
 	pj_ka(j, "args");
@@ -1382,11 +1382,17 @@ static void fill_args_json(const RzCmdDesc *cd, PJ *j) {
 		}
 		if (arg->type == RZ_CMD_ARG_TYPE_CHOICES) {
 			pj_ka(j, "choices");
-			const char **choice = arg->choices;
-			for (; *choice; choice++) {
+			char **ochoice = arg->choices_cb ? arg->choices_cb(cmd->data) : (char **)arg->choices;
+			for (char **choice = ochoice; *choice; choice++) {
 				pj_s(j, *choice);
 			}
 			pj_end(j);
+			if (arg->choices_cb) {
+				for (char **choice = ochoice; *choice; choice++) {
+					free(*choice);
+				}
+				free(ochoice);
+			}
 		}
 		pj_end(j);
 	}
@@ -1434,7 +1440,7 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 		pj_ks(j, "args_str", args);
 		free(args);
 	}
-	fill_args_json(cd, j);
+	fill_args_json(cmd, cd, j);
 	pj_ks(j, "description", cd->help->description ? cd->help->description : "");
 	pj_ks(j, "summary", cd->help->summary ? cd->help->summary : "");
 	pj_end(j);
