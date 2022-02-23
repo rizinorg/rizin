@@ -1787,7 +1787,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 				rz_arm_cs_analysis_op_64_esil(a, op, addr, buf, len, &ctx->handle, insn);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-				op->il_op = rz_arm_cs_64_il(&ctx->handle, insn, thumb);
+				op->il_op = rz_arm_cs_64_il(&ctx->handle, insn);
 			}
 		} else {
 			anop32(a, ctx->handle, op, insn, thumb, (ut8 *)buf, len);
