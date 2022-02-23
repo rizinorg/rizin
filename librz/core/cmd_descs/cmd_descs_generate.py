@@ -97,10 +97,11 @@ DESC_HELP_TEMPLATE_USAGE = "\t.usage = {usage},\n"
 DESC_HELP_TEMPLATE_SORT_SUBCOMMANDS = "\t.sort_subcommands = {sort_subcommands},\n"
 DESC_HELP_TEMPLATE_OPTIONS = "\t.options = {options},\n"
 DESC_HELP_TEMPLATE_DETAILS = "\t.details = {details},\n"
+DESC_HELP_TEMPLATE_DETAILS_CB = "\t.details_cb = {details_cb},\n"
 DESC_HELP_TEMPLATE_ARGS = "\t.args = {args},\n"
 DESC_HELP_TEMPLATE = """static const RzCmdDescHelp {cname} = {{
 \t.summary = {summary},
-{description}{args_str}{usage}{options}{details}{args}{sort_subcommands}}};
+{description}{args_str}{usage}{options}{details}{details_cb}{args}{sort_subcommands}}};
 """
 
 DEFINE_OLDINPUT_TEMPLATE = """
@@ -182,7 +183,8 @@ class Arg:
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
             return self.cd.cname + "_" + compute_cname(self.name) + "_choices"
 
-        raise Exception("_get_choices_cname should be called on ARG_TYPE_CHOICES only")
+        raise Exception(
+            "_get_choices_cname should be called on ARG_TYPE_CHOICES only")
 
     def _get_union(self):
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
@@ -300,6 +302,8 @@ class CmdDesc:
             self.details = [Detail(self, x) for x in c.pop("details", [])]
         elif "details" in c and isinstance(c["details"], str):
             self.details_alias = c.pop("details")
+        if "details_cb" in c and isinstance(c["details_cb"], str):
+            self.details_cb = c.pop("details_cb")
 
     def _process_args(self, c):
         if "args" in c and isinstance(c["args"], list):
@@ -388,6 +392,7 @@ class CmdDesc:
 
         self.details = None
         self.details_alias = None
+        self.details_cb = None
         self._process_details(c)
 
         self.args = None
@@ -410,7 +415,8 @@ class CmdDesc:
 
     def _validate(self, c):
         if c.keys():
-            print("Command %s has unrecognized properties: %s." % (self.name, c.keys()))
+            print("Command %s has unrecognized properties: %s." %
+                  (self.name, c.keys()))
             sys.exit(1)
 
         if self.type not in CD_VALID_TYPES:
@@ -446,7 +452,8 @@ class CmdDesc:
             sys.exit(1)
 
         if self.cname in CmdDesc.c_cds:
-            print("Another command already has the same cname as %s" % (self.cname,))
+            print("Another command already has the same cname as %s" %
+                  (self.cname,))
             sys.exit(1)
 
         if (
@@ -487,7 +494,8 @@ class CmdDesc:
             out += "\n".join([d.get_cstructure() for d in self.details])
             out += DESC_HELP_DETAILS_TEMPLATE.format(
                 cname=CmdDesc.get_detail_cname(self),
-                details=",\n".join([str(d) for d in self.details] + ["\t{ 0 },"]),
+                details=",\n".join([str(d)
+                                    for d in self.details] + ["\t{ 0 },"]),
             )
             details_cname = CmdDesc.get_detail_cname(self)
         elif self.details_alias is not None:
@@ -495,7 +503,8 @@ class CmdDesc:
 
         if self.args is not None:
             out += "\n".join(
-                [a.get_cstructure() for a in self.args if a.get_cstructure() != ""]
+                [a.get_cstructure()
+                 for a in self.args if a.get_cstructure() != ""]
             )
             out += DESC_HELP_ARGS_TEMPLATE.format(
                 cname=CmdDesc.get_arg_cname(self),
@@ -513,7 +522,8 @@ class CmdDesc:
             else ""
         )
         args_str = (
-            DESC_HELP_TEMPLATE_ARGS_STR.format(args_str=strornull(self.args_str))
+            DESC_HELP_TEMPLATE_ARGS_STR.format(
+                args_str=strornull(self.args_str))
             if self.args_str is not None
             else ""
         )
@@ -539,6 +549,11 @@ class CmdDesc:
             if details_cname is not None
             else ""
         )
+        details_cb = (
+            DESC_HELP_TEMPLATE_DETAILS_CB.format(details_cb=self.details_cb)
+            if self.details_cb is not None
+            else ""
+        )
         arguments = (
             DESC_HELP_TEMPLATE_ARGS.format(args=args_cname)
             if args_cname is not None
@@ -552,6 +567,7 @@ class CmdDesc:
             usage=usage,
             options=options,
             details=details,
+            details_cb=details_cb,
             args=arguments,
             sort_subcommands=sort_subcommands,
         )
@@ -622,14 +638,17 @@ def createcd_typegroup(cd):
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
-            handler_cname=(cd.exec_cd and cd.exec_cd.get_handler_cname()) or "NULL",
-            help_cname_ref=(cd.exec_cd and "&" + cd.exec_cd.get_help_cname()) or "NULL",
+            handler_cname=(
+                cd.exec_cd and cd.exec_cd.get_handler_cname()) or "NULL",
+            help_cname_ref=(cd.exec_cd and "&" +
+                            cd.exec_cd.get_help_cname()) or "NULL",
             group_help_cname=cd.get_help_cname(),
         )
         subcommands = (
             cd.exec_cd and cd.subcommands and cd.subcommands[1:]
         ) or cd.subcommands
-        formatted_string += "\n".join([createcd(child) for child in subcommands or []])
+        formatted_string += "\n".join([createcd(child)
+                                       for child in subcommands or []])
 
     return formatted_string
 
@@ -721,25 +740,30 @@ def detail2decl(cd):
     )
 
 
-def handler2decl(cd_type, handler_name):
+def handler2decl(cd, cd_type, handler_name):
+    out = []
     if cd_type == CD_TYPE_ARGV:
-        return "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv);" % (
+        out.append("RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv);" % (
             handler_name,
-        )
+        ))
     if cd_type == CD_TYPE_ARGV_MODES:
-        return (
+        out.append(
             "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzOutputMode mode);"
             % (handler_name,)
         )
     if cd_type == CD_TYPE_ARGV_STATE:
-        return (
+        out.append(
             "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);"
             % (handler_name,)
         )
     if cd_type == CD_TYPE_OLDINPUT:
-        return "RZ_IPI int %s(void *data, const char *input);" % (handler_name,)
+        out.append("RZ_IPI int %s(void *data, const char *input);" % (handler_name,))
 
-    return None
+    if cd.details_cb is not None:
+        out.append("RZ_IPI RzCmdDescDetail *%s(RzCore *core, int argc, const char **argv);" % (
+            cd.details_cb,))
+
+    return '\n'.join(out) if out != [] else None
 
 
 parser = argparse.ArgumentParser(
@@ -748,7 +772,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "--src-output-dir", type=str, required=False, help="Source output directory"
 )
-parser.add_argument("--output-dir", type=str, required=True, help="Output directory")
+parser.add_argument("--output-dir", type=str,
+                    required=True, help="Output directory")
 parser.add_argument(
     "yaml_files",
     type=argparse.FileType("r"),
@@ -783,12 +808,13 @@ if args.src_output_dir:
         f.write(cf_text)
 
 handlers_decls = filter(
-    lambda th: th[1] is not None,
-    [(cd.type, cd.get_handler_cname()) for cd in CmdDesc.c_cds.values()],
+    lambda th: th[2] is not None,
+    [(cd, cd.type, cd.get_handler_cname()) for cd in CmdDesc.c_cds.values()],
 )
 
 hf_text = CMDDESCS_H_TEMPLATE.format(
-    handlers_declarations="\n".join([handler2decl(t, h) for t, h in handlers_decls]),
+    handlers_declarations="\n".join(
+        [handler2decl(cd, t, h) for cd, t, h in handlers_decls]),
 )
 with open(os.path.join(args.output_dir, "cmd_descs.h"), "w", encoding="utf8") as f:
     f.write(hf_text)

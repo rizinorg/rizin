@@ -1135,7 +1135,7 @@ static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd,
 	}
 }
 
-const RzCmdDescDetail *get_cd_details(RzCmdDesc *cd) {
+static const RzCmdDescDetail *get_cd_details(RzCmdDesc *cd) {
 	do {
 		if (cd->help->details) {
 			return cd->help->details;
@@ -1145,12 +1145,18 @@ const RzCmdDescDetail *get_cd_details(RzCmdDesc *cd) {
 	return NULL;
 }
 
-static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
-	const RzCmdDescDetail *detail_it = get_cd_details(cd);
-	if (!detail_it) {
-		return;
-	}
+static RzCmdDescDetail *get_cd_details_cb(RzCmd *cmd, RzCmdDesc *cd) {
+	do {
+		if (cd->help->details || cd->help->details_cb) {
+			const char *argv[] = { cd->name, NULL };
+			return cd->help->details_cb ? cd->help->details_cb(cmd->data, 1, argv) : NULL;
+		}
+		cd = cd->parent;
+	} while (cd);
+	return NULL;
+}
 
+static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrBuf *sb, bool use_color) {
 	const char *pal_help_color = "",
 		   *pal_input_color = "",
 		   *pal_label_color = "",
@@ -1171,7 +1177,7 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 		}
 		const RzCmdDescDetailEntry *entry_it = detail_it->entries;
 		size_t max_len = 0, min_len = SIZE_MAX;
-		while (entry_it->text) {
+		while (entry_it && entry_it->text) {
 			size_t len = strlen(entry_it->text) + strlen0(entry_it->arg_str);
 			if (max_len < len) {
 				max_len = len;
@@ -1186,7 +1192,7 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 		}
 
 		entry_it = detail_it->entries;
-		while (entry_it->text) {
+		while (entry_it && entry_it->text) {
 			size_t len = strlen(entry_it->text) + strlen0(entry_it->arg_str);
 			int padding = len < max_len ? max_len - len : 0;
 			const char *arg_str = entry_it->arg_str ? entry_it->arg_str : "";
@@ -1203,6 +1209,28 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 		}
 		detail_it++;
 	}
+}
+
+static void fill_details_static(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
+	const RzCmdDescDetail *detail_it = get_cd_details(cd);
+	if (!detail_it) {
+		return;
+	}
+	fill_details_do(cmd, detail_it, sb, use_color);
+}
+
+static void fill_details_cb(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
+	RzCmdDescDetail *detail_it = get_cd_details_cb(cmd, cd);
+	if (!detail_it) {
+		return;
+	}
+	fill_details_do(cmd, detail_it, sb, use_color);
+	rz_cmd_desc_details_free(detail_it);
+}
+
+static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
+	fill_details_static(cmd, cd, sb, use_color);
+	fill_details_cb(cmd, cd, sb, use_color);
 }
 
 static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color) {
@@ -2618,4 +2646,33 @@ RZ_API void rz_cmd_state_output_print(RzCmdStateOutput *state) {
 	default:
 		break;
 	}
+}
+
+/**
+ * \brief Free an array of \p RzCmdDescDetail sections
+ *
+ * Usually command handlers do not need to free the \p details sections because
+ * they are const, but due to \p details_cb those sections could be dynamically
+ * generated. In that case all the data within the details should be dynamically
+ * allocated memory, even the one marked as const, as they are going to be freed
+ * anyway.
+ *
+ * \param entries Pointer to the array of RzCmdDescDetails
+ */
+RZ_API void rz_cmd_desc_details_free(RzCmdDescDetail *details) {
+	RzCmdDescDetail *detail_it = details;
+	while (detail_it->name) {
+		free((char *)detail_it->name);
+		RzCmdDescDetailEntry *oentry, *entry;
+		oentry = entry = (RzCmdDescDetailEntry *)detail_it->entries;
+		while (entry && entry->text) {
+			free((char *)entry->text);
+			free((char *)entry->comment);
+			free((char *)entry->arg_str);
+			entry++;
+		}
+		free(oentry);
+		detail_it++;
+	}
+	free(details);
 }
