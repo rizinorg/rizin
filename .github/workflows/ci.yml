@@ -67,7 +67,7 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Dbuildtype=release --werror --wimplicit-fallthrough
+            meson_options: -Dbuildtype=release --werror
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'clang')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
             allow_failure: false
@@ -76,7 +76,7 @@ jobs:
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Dbuildtype=release --werror  --wimplicit-fallthrough
+            meson_options: -Dbuildtype=release --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
@@ -86,7 +86,7 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Dbuildtype=release --werror  --wimplicit-fallthrough
+            meson_options: -Dbuildtype=release --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
             allow_failure: false
@@ -94,7 +94,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
+            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp -Wimplicit-fallthrough"
             meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror
             asan: true
             asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
@@ -106,7 +106,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: clang
-            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
+            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp -Wimplicit-fallthrough"
             meson_options: -Dbuildtype=debugoptimized -Db_lundef=false -Db_sanitize=address,undefined --werror
             asan: true
             asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
@@ -119,7 +119,7 @@ jobs:
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Dbuildtype=debug -Db_coverage=true --werror --wimplicit-fallthrough
+            meson_options: -Dbuildtype=debug -Db_coverage=true --werror
             coverage: true
             enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 60
@@ -129,7 +129,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Dbuildtype=release -Duse_capstone_version=v3 --werror --wimplicit-fallthrough
+            meson_options: -Dbuildtype=release -Duse_capstone_version=v3 --werror
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
@@ -139,7 +139,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Dbuildtype=release -Duse_capstone_version=next --werror --wimplicit-fallthrough
+            meson_options: -Dbuildtype=release -Duse_capstone_version=next --werror
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
@@ -149,7 +149,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Dbuildtype=release -Duse_gpl=false --werror --wimplicit-fallthrough
+            meson_options: -Dbuildtype=release -Duse_gpl=false --werror
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'gpl')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
