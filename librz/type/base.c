@@ -26,6 +26,29 @@ RZ_API void rz_type_base_union_member_free(void *e, void *user) {
 }
 
 /**
+ * \brief Returns string representing the kind of base type
+ *
+ * \param kind RzBaseTypeKind to return string representation of
+ */
+RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kind) {
+	switch (kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT:
+		return "struct";
+	case RZ_BASE_TYPE_KIND_UNION:
+		return "union";
+	case RZ_BASE_TYPE_KIND_ENUM:
+		return "enum";
+	case RZ_BASE_TYPE_KIND_TYPEDEF:
+		return "typedef";
+	case RZ_BASE_TYPE_KIND_ATOMIC:
+		return "atomic";
+	default:
+		rz_warn_if_reached();
+		return "unknown";
+	}
+}
+
+/**
  * \brief Searches for the RzBaseType in the types database given the name
  *
  * \param typedb Type Database instance
