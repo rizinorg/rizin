@@ -274,7 +274,10 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 		return REG(n);
 	}
 	case ARM64_OP_IMM: {
-		return U64(IMM(n));
+		if (!bits_requested) {
+			return NULL;
+		}
+		return UN(bits_requested, IMM(n));
 	}
 	case ARM64_OP_MEM: {
 		return NULL;
