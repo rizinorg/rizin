@@ -60,44 +60,10 @@ static arm64_reg xreg(ut8 idx) {
 	case 28: return ARM64_REG_X28;
 	case 29: return ARM64_REG_X29;
 	case 30: return ARM64_REG_X30;
-	default: return ARM64_REG_INVALID;
-	}
-}
-
-static ut8 xreg_idx(arm64_reg reg) {
-	switch (idx) {
-	case 0: return ARM64_REG_X0;
-	case 1: return ARM64_REG_X1;
-	case 2: return ARM64_REG_X2;
-	case 3: return ARM64_REG_X3;
-	case 4: return ARM64_REG_X4;
-	case 5: return ARM64_REG_X5;
-	case 6: return ARM64_REG_X6;
-	case 7: return ARM64_REG_X7;
-	case 8: return ARM64_REG_X8;
-	case 9: return ARM64_REG_X9;
-	case 10: return ARM64_REG_X10;
-	case 11: return ARM64_REG_X11;
-	case 12: return ARM64_REG_X12;
-	case 13: return ARM64_REG_X13;
-	case 14: return ARM64_REG_X14;
-	case 15: return ARM64_REG_X15;
-	case 16: return ARM64_REG_X16;
-	case 17: return ARM64_REG_X17;
-	case 18: return ARM64_REG_X18;
-	case 19: return ARM64_REG_X19;
-	case 20: return ARM64_REG_X20;
-	case 21: return ARM64_REG_X21;
-	case 22: return ARM64_REG_X22;
-	case 23: return ARM64_REG_X23;
-	case 24: return ARM64_REG_X24;
-	case 25: return ARM64_REG_X25;
-	case 26: return ARM64_REG_X26;
-	case 27: return ARM64_REG_X27;
-	case 28: return ARM64_REG_X28;
-	case 29: return ARM64_REG_X29;
-	case 30: return ARM64_REG_X30;
-	default: return ARM64_REG_INVALID;
+	case 31: return ARM64_REG_SP;
+	default:
+		rz_warn_if_reached();
+		return ARM64_REG_INVALID;
 	}
 }
 
@@ -141,17 +107,72 @@ static bool is_xreg(arm64_reg reg) {
 	}
 }
 
+static ut8 xreg_idx(arm64_reg reg) {
+	switch (reg) {
+	case ARM64_REG_X0: return 0;
+	case ARM64_REG_X1: return 1;
+	case ARM64_REG_X2: return 2;
+	case ARM64_REG_X3: return 3;
+	case ARM64_REG_X4: return 4;
+	case ARM64_REG_X5: return 5;
+	case ARM64_REG_X6: return 6;
+	case ARM64_REG_X7: return 7;
+	case ARM64_REG_X8: return 8;
+	case ARM64_REG_X9: return 9;
+	case ARM64_REG_X10: return 10;
+	case ARM64_REG_X11: return 11;
+	case ARM64_REG_X12: return 12;
+	case ARM64_REG_X13: return 13;
+	case ARM64_REG_X14: return 14;
+	case ARM64_REG_X15: return 15;
+	case ARM64_REG_X16: return 16;
+	case ARM64_REG_X17: return 17;
+	case ARM64_REG_X18: return 18;
+	case ARM64_REG_X19: return 19;
+	case ARM64_REG_X20: return 20;
+	case ARM64_REG_X21: return 21;
+	case ARM64_REG_X22: return 22;
+	case ARM64_REG_X23: return 23;
+	case ARM64_REG_X24: return 24;
+	case ARM64_REG_X25: return 25;
+	case ARM64_REG_X26: return 26;
+	case ARM64_REG_X27: return 27;
+	case ARM64_REG_X28: return 28;
+	case ARM64_REG_X29: return 29;
+	case ARM64_REG_X30: return 30;
+	case ARM64_REG_SP: return 31;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
 static arm64_reg wreg(ut8 idx) {
-	rz_return_val_if_fail(idx <= 30, ARM64_REG_INVALID);
-	return ARM64_REG_W0 + idx;
+	rz_return_val_if_fail(idx <= 31, ARM64_REG_INVALID);
+	return idx == 31 ? ARM64_REG_WSP : ARM64_REG_W0 + idx;
+}
+
+static ut8 wreg_idx(arm64_reg reg) {
+	if (reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30) {
+		return reg - ARM64_REG_W0;
+	}
+	if (reg == ARM64_REG_WSP) {
+		return 31;
+	}
+	rz_warn_if_reached();
+	return 0;
+}
+
+static bool is_wreg(arm64_reg reg) {
+	return (reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30) || reg == ARM64_REG_WSP;
 }
 
 /**
  * Variable name for a register given by cs
  */
 static const char *reg_var_name(arm64_reg reg) {
-	if (reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30) {
-		reg = ARM64_REG_X0 + (reg - ARM64_REG_W0);
+	if (is_wreg(reg)) {
+		reg = xreg(wreg_idx(reg));
 	}
 	switch (reg) {
 	case ARM64_REG_X0: return "x0";
@@ -191,8 +212,11 @@ static const char *reg_var_name(arm64_reg reg) {
 }
 
 static ut32 reg_bits(arm64_reg reg) {
-	if (reg >= ARM64_REG_X0 && reg <= ARM64_REG_X30) {
+	if (is_xreg(reg)) {
 		return 64;
+	}
+	if (is_wreg(reg)) {
+		return 32;
 	}
 	return 0;
 }
@@ -200,17 +224,24 @@ static ut32 reg_bits(arm64_reg reg) {
 /**
  * IL to read the given capstone reg
  */
-static RzILOpBitVector *read_reg(/*ut64 pc, */arm64_reg reg, ut32 *bits_out) {
+static RzILOpBitVector *read_reg(/*ut64 pc, */arm64_reg reg) {
 	// if (reg == ARM64_REG_PC) {
 	// 	return U32(pc);
 	// }
 	const char *var = reg_var_name(reg);
-	return var ? VARG(var) : NULL;
+	if (!var) {
+		return NULL;
+	}
+	if (is_wreg(reg)) {
+		return UNSIGNED(32, VARG(var));
+	}
+	return VARG(var);
 }
 
 // #define PC(addr)      (addr)
 #define REG_VAL(id)   read_reg(/*PC(insn->address), */id)
 #define REG(n)        REG_VAL(REGID(n))
+#define REGBITS(n)    reg_bits(REGID(n))
 // #define MEMBASE(x)    REG_VAL(insn->detail->arm64.operands[x].mem.base)
 
 /**
@@ -223,6 +254,9 @@ static RzILOpEffect *write_reg(arm64_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector 
 		rz_il_op_pure_free(v);
 		return NULL;
 	}
+	if (is_wreg(reg)) {
+		v = UNSIGNED(64, v);
+	}
 	return SETG(var, v);
 }
 
@@ -230,10 +264,13 @@ static RzILOpEffect *write_reg(arm64_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector 
  * IL to retrieve the value of the \p n -th arg of \p insn
  */
 static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
+	ut32 bits_requested = bits_inout ? *bits_inout : 0;
 	cs_arm64_op *op = &insn->detail->arm64.operands[n];
 	switch (op->type) {
 	case ARM64_OP_REG: {
-		ut32 reg_bits = 0;
+		if (bits_requested && REGBITS(n) != bits_requested) {
+			return NULL;
+		}
 		return REG(n);
 	}
 	case ARM64_OP_IMM: {
@@ -248,7 +285,7 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 	return NULL;
 }
 
-#define ARG(n)          arg(insn, n)
+#define ARG(n, bits)          arg(insn, n, bits)
 
 /**
  * Capstone: ARM64_INS_ADD
@@ -258,8 +295,9 @@ static RzILOpEffect *add(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
-	RzILOpBitVector *a = ARG(1);
-	RzILOpBitVector *b = ARG(2);
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *a = ARG(1, &bits);
+	RzILOpBitVector *b = ARG(2, &bits);
 	if (!a || !b) {
 		rz_il_op_pure_free(a);
 		rz_il_op_pure_free(b);

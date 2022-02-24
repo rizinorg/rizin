@@ -378,4 +378,6 @@ a "add x0, x0, x1, asr 12" 0030818b
 d "add x0, x0, 1" 00040091 0x0 (set x0 (+ (var x0) (bv 64 0x1)))
 d "add x1, x2, 0x42" 41080191 0x0 (set x1 (+ (var x2) (bv 64 0x42)))
 d "add x1, x2, x3" 4100038b 0x0 (set x1 (+ (var x2) (var x3)))
-# TODO: adds with w-regs
+d "add sp, sp, x5" ff63258b 0x0 (set sp (+ (var sp) (var x5)))
+d "add w2, w3, w4" 6200040b 0x0 (set x2 (cast 64 false (+ (cast 32 false (var x3)) (cast 32 false (var x4)))))
+d "add wsp, wsp, w4" ff43240b 0x0 (set sp (cast 64 false (+ (cast 32 false (var sp)) (cast 32 false (var x4)))))
