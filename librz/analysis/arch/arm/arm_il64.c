@@ -24,6 +24,128 @@ static const char *regs_bound[] = {
 	NULL
 };
 
+
+static arm64_reg xreg(ut8 idx) {
+	// for some reason, the ARM64_REG_X0...ARM64_REG_X30 enum values are not contiguous,
+	// so use switch here and let the compiler optimize:
+	switch (idx) {
+	case 0: return ARM64_REG_X0;
+	case 1: return ARM64_REG_X1;
+	case 2: return ARM64_REG_X2;
+	case 3: return ARM64_REG_X3;
+	case 4: return ARM64_REG_X4;
+	case 5: return ARM64_REG_X5;
+	case 6: return ARM64_REG_X6;
+	case 7: return ARM64_REG_X7;
+	case 8: return ARM64_REG_X8;
+	case 9: return ARM64_REG_X9;
+	case 10: return ARM64_REG_X10;
+	case 11: return ARM64_REG_X11;
+	case 12: return ARM64_REG_X12;
+	case 13: return ARM64_REG_X13;
+	case 14: return ARM64_REG_X14;
+	case 15: return ARM64_REG_X15;
+	case 16: return ARM64_REG_X16;
+	case 17: return ARM64_REG_X17;
+	case 18: return ARM64_REG_X18;
+	case 19: return ARM64_REG_X19;
+	case 20: return ARM64_REG_X20;
+	case 21: return ARM64_REG_X21;
+	case 22: return ARM64_REG_X22;
+	case 23: return ARM64_REG_X23;
+	case 24: return ARM64_REG_X24;
+	case 25: return ARM64_REG_X25;
+	case 26: return ARM64_REG_X26;
+	case 27: return ARM64_REG_X27;
+	case 28: return ARM64_REG_X28;
+	case 29: return ARM64_REG_X29;
+	case 30: return ARM64_REG_X30;
+	default: return ARM64_REG_INVALID;
+	}
+}
+
+static ut8 xreg_idx(arm64_reg reg) {
+	switch (idx) {
+	case 0: return ARM64_REG_X0;
+	case 1: return ARM64_REG_X1;
+	case 2: return ARM64_REG_X2;
+	case 3: return ARM64_REG_X3;
+	case 4: return ARM64_REG_X4;
+	case 5: return ARM64_REG_X5;
+	case 6: return ARM64_REG_X6;
+	case 7: return ARM64_REG_X7;
+	case 8: return ARM64_REG_X8;
+	case 9: return ARM64_REG_X9;
+	case 10: return ARM64_REG_X10;
+	case 11: return ARM64_REG_X11;
+	case 12: return ARM64_REG_X12;
+	case 13: return ARM64_REG_X13;
+	case 14: return ARM64_REG_X14;
+	case 15: return ARM64_REG_X15;
+	case 16: return ARM64_REG_X16;
+	case 17: return ARM64_REG_X17;
+	case 18: return ARM64_REG_X18;
+	case 19: return ARM64_REG_X19;
+	case 20: return ARM64_REG_X20;
+	case 21: return ARM64_REG_X21;
+	case 22: return ARM64_REG_X22;
+	case 23: return ARM64_REG_X23;
+	case 24: return ARM64_REG_X24;
+	case 25: return ARM64_REG_X25;
+	case 26: return ARM64_REG_X26;
+	case 27: return ARM64_REG_X27;
+	case 28: return ARM64_REG_X28;
+	case 29: return ARM64_REG_X29;
+	case 30: return ARM64_REG_X30;
+	default: return ARM64_REG_INVALID;
+	}
+}
+
+static bool is_xreg(arm64_reg reg) {
+	switch (reg) {
+	case ARM64_REG_X0:
+	case ARM64_REG_X1:
+	case ARM64_REG_X2:
+	case ARM64_REG_X3:
+	case ARM64_REG_X4:
+	case ARM64_REG_X5:
+	case ARM64_REG_X6:
+	case ARM64_REG_X7:
+	case ARM64_REG_X8:
+	case ARM64_REG_X9:
+	case ARM64_REG_X10:
+	case ARM64_REG_X11:
+	case ARM64_REG_X12:
+	case ARM64_REG_X13:
+	case ARM64_REG_X14:
+	case ARM64_REG_X15:
+	case ARM64_REG_X16:
+	case ARM64_REG_X17:
+	case ARM64_REG_X18:
+	case ARM64_REG_X19:
+	case ARM64_REG_X20:
+	case ARM64_REG_X21:
+	case ARM64_REG_X22:
+	case ARM64_REG_X23:
+	case ARM64_REG_X24:
+	case ARM64_REG_X25:
+	case ARM64_REG_X26:
+	case ARM64_REG_X27:
+	case ARM64_REG_X28:
+	case ARM64_REG_X29:
+	case ARM64_REG_X30:
+	case ARM64_REG_SP:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static arm64_reg wreg(ut8 idx) {
+	rz_return_val_if_fail(idx <= 30, ARM64_REG_INVALID);
+	return ARM64_REG_W0 + idx;
+}
+
 /**
  * Variable name for a register given by cs
  */
@@ -68,10 +190,17 @@ static const char *reg_var_name(arm64_reg reg) {
 	}
 }
 
+static ut32 reg_bits(arm64_reg reg) {
+	if (reg >= ARM64_REG_X0 && reg <= ARM64_REG_X30) {
+		return 64;
+	}
+	return 0;
+}
+
 /**
  * IL to read the given capstone reg
  */
-static RzILOpBitVector *read_reg(/*ut64 pc, */arm64_reg reg) {
+static RzILOpBitVector *read_reg(/*ut64 pc, */arm64_reg reg, ut32 *bits_out) {
 	// if (reg == ARM64_REG_PC) {
 	// 	return U32(pc);
 	// }
@@ -100,10 +229,11 @@ static RzILOpEffect *write_reg(arm64_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector 
 /**
  * IL to retrieve the value of the \p n -th arg of \p insn
  */
-static RzILOpBitVector *arg(cs_insn *insn, int n) {
+static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 	cs_arm64_op *op = &insn->detail->arm64.operands[n];
 	switch (op->type) {
 	case ARM64_OP_REG: {
+		ut32 reg_bits = 0;
 		return REG(n);
 	}
 	case ARM64_OP_IMM: {
