@@ -6019,7 +6019,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		RzCmdCb cb;
 	} cmds[] = {
 		{ "_", "print last output", rz_cmd_last },
-		{ "#", "calculate hash", rz_cmd_hash },
 		{ "$", "alias", rz_cmd_alias },
 		{ "%", "short version of 'env' command", rz_cmd_env },
 		{ "&", "tasks", rz_cmd_tasks },

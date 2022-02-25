@@ -204,6 +204,13 @@ typedef struct rz_cmd_desc_detail_t {
 } RzCmdDescDetail;
 
 /**
+ * Callback used to dynamically generate the details sections in the help of a command.
+ * NOTE: The array of RzCmdDescDetail returned will be freed, so all fields
+ * within need to be dynamically allocated even if they are marked as `const`.
+ */
+typedef RZ_OWN RzCmdDescDetail *(*RzCmdDescDetailCb)(RzCore *core, int argc, const char **argv);
+
+/**
  * A description of an argument of a RzCmdDesc.
  */
 typedef struct rz_cmd_desc_arg_t {
@@ -317,6 +324,15 @@ typedef struct rz_cmd_desc_help_t {
 	 * Optional.
 	 */
 	const RzCmdDescDetail *details;
+	/**
+	 * Function that returns an array of details sections used to better explain
+	 * how to use the command. This is shown together with the long description
+	 * and can be used in addition or in alternative of \p details , when the
+	 * output needs to be generated dynamically.
+	 *
+	 * Optional.
+	 */
+	RzCmdDescDetailCb details_cb;
 	/**
 	 * Description of the arguments accepted by this command.
 	 */
@@ -548,6 +564,8 @@ RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *begin, RzCmdForeachNam
 RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(RzCmd *cmd, const RzCmdDesc *cd, size_t i);
 
 #define rz_cmd_desc_children_foreach(root, it_cd) rz_pvector_foreach (&root->children, it_cd)
+
+RZ_API void rz_cmd_desc_details_free(RzCmdDescDetail *details);
 
 /* RzCmdParsedArgs */
 RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_new(const char *cmd, int n_args, char **args);
