@@ -837,7 +837,7 @@ static RzThreadFunctionRet rz_core_rtr_rap_thread(RzThread *th) {
 	if (!th) {
 		return false;
 	}
-	RapThread *rt = th->user;
+	RapThread *rt = rz_th_get_user(th);
 	if (!rt || !rt->core) {
 		return false;
 	}

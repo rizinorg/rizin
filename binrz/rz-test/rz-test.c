@@ -589,7 +589,7 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 }
 
 static RzThreadFunctionRet worker_th(RzThread *th) {
-	RzTestState *state = th->user;
+	RzTestState *state = rz_th_get_user(th);
 	rz_th_lock_enter(state->lock);
 	while (true) {
 		if (rz_pvector_empty(&state->queue)) {

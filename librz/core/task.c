@@ -370,7 +370,7 @@ nonstart:
 }
 
 static RzThreadFunctionRet task_run_thread(RzThread *th) {
-	RzCoreTask *task = (RzCoreTask *)th->user;
+	RzCoreTask *task = (RzCoreTask *)rz_th_get_user(th);
 	return task_run(task);
 }
 
