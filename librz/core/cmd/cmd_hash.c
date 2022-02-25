@@ -41,101 +41,60 @@ static void handle_entropy(const char *name, const ut8 *block, int len) {
 	free(digest);
 }
 
-static int cmd_hash_bang(RzCore *core, const char *input) {
-	int ac;
-	char **av = rz_str_argv(input + 1, &ac);
-	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-	if (ac > 0) {
-		RzLangPlugin *p = rz_lang_get_by_name(core->lang, av[0]);
-		if (p) {
-			// I see no point in using rz_lang_use here, as we already haz a ptr to the pluging in our handz
-			// Maybe add rz_lang_use_plugin in rz_lang api?
-			core->lang->cur = p;
-			if (ac > 1) {
-				if (!strcmp(av[1], "-e")) {
-					char *run_str = strstr(input + 2, "-e") + 2;
-					rz_lang_run_string(core->lang, run_str);
-				} else {
-					if (rz_lang_set_argv(core->lang, ac - 1, &av[1])) {
-						rz_lang_run_file(core->lang, av[1]);
-					} else {
-						char *run_str = strstr(input + 2, av[1]);
-						rz_lang_run_file(core->lang, run_str);
-					}
-				}
-			} else {
-				if (rz_cons_is_interactive()) {
-					rz_lang_prompt(core->lang);
-				} else {
-					eprintf("Error: scr.interactive required to run the rlang prompt\n");
-				}
-			}
-		} else if (av[0][0] == '?' || av[0][0] == '*') {
-			rz_core_lang_plugins_print(core->lang, &state);
+RZ_IPI RzCmdDescDetail *rz_hash_bang_details_cb(RzCore *core, int argc, const char **argv) {
+	RzListIter *iter;
+	RzLangPlugin *lp;
+	RzCmdDescDetail *details = RZ_NEWS0(RzCmdDescDetail, 2);
+	if (!details) {
+		return NULL;
+	}
+	details[0].name = (const char *)strdup("Available interpreters");
+	if (!details->name) {
+		goto err;
+	}
+	RzCmdDescDetailEntry *entries = RZ_NEWS0(RzCmdDescDetailEntry, rz_list_length(core->lang->langs) + 1);
+	details[0].entries = (const RzCmdDescDetailEntry *)entries;
+	if (!entries) {
+		goto err;
+	}
+	int i = 0;
+	rz_list_foreach (core->lang->langs, iter, lp) {
+		entries[i].text = (char *)strdup("#!");
+		entries[i].arg_str = (char *)strdup(lp->name);
+		entries[i].comment = (char *)rz_str_newf("%s (%s)", lp->desc, lp->license);
+		if (!entries[i].text || !entries[i].arg_str || !entries[i].comment) {
+			goto err;
 		}
-	} else {
-		rz_core_lang_plugins_print(core->lang, &state);
+		i++;
 	}
-	rz_cmd_state_output_print(&state);
-	rz_cmd_state_output_fini(&state);
-	rz_str_argv_free(av);
-	return true;
-}
-
-RZ_IPI int rz_cmd_hash(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-
-	if (*input == '!') {
-		return cmd_hash_bang(core, input);
-	}
-	if (*input == '?') {
-		const char *helpmsg3[] = {
-			"Usage #!interpreter [<args>] [<file] [<<eof]", "", "",
-			" #", "", "comment - do nothing",
-			" #!", "", "list all available interpreters",
-			" #!python", "", "run python commandline",
-			" #!python", " foo.py", "run foo.py python script (same as '. foo.py')",
-			//" #!python <<EOF        get python code until 'EOF' mark\n"
-			" #!python", " arg0 a1 <<q", "set arg0 and arg1 and read until 'q'",
-			NULL
-		};
-		rz_core_cmd_help(core, helpmsg3);
-		return false;
-	}
-	/* this should not be reached, see rz_core_cmd_subst() */
-	return 0;
+	details->entries = (const RzCmdDescDetailEntry *)entries;
+	return details;
+err:
+	rz_cmd_desc_details_free(details);
+	return NULL;
 }
 
 RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv) {
-	if (argc == 1) {
-		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-		rz_core_lang_plugins_print(core->lang, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-	} else {
-		RzLangPlugin *p = rz_lang_get_by_name(core->lang, argv[1]);
-		if (!p) {
-			eprintf("No interpreter with name '%s'\n", argv[1]);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		core->lang->cur = p;
-		if (argc > 2) {
-			if (rz_lang_set_argv(core->lang, argc - 2, (char **)&argv[2])) {
-				rz_lang_run_file(core->lang, argv[2]);
-			} else {
-				char *run_str = rz_str_array_join(argv + 2, argc - 2, " ");
-				rz_lang_run_file(core->lang, run_str);
-				free(run_str);
-			}
+	RzLangPlugin *p = rz_lang_get_by_name(core->lang, argv[1]);
+	if (!p) {
+		RZ_LOG_ERROR("No interpreter with name '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	core->lang->cur = p;
+	if (argc > 2) {
+		if (rz_lang_set_argv(core->lang, argc - 2, (char **)&argv[2])) {
+			rz_lang_run_file(core->lang, argv[2]);
 		} else {
-			if (rz_cons_is_interactive()) {
-				rz_lang_prompt(core->lang);
-			} else {
-				eprintf("Error: scr.interactive required to run the rlang prompt\n");
-				return RZ_CMD_STATUS_ERROR;
-			}
+			char *run_str = rz_str_array_join(argv + 2, argc - 2, " ");
+			rz_lang_run_file(core->lang, run_str);
+			free(run_str);
+		}
+	} else {
+		if (rz_cons_is_interactive()) {
+			rz_lang_prompt(core->lang);
+		} else {
+			RZ_LOG_ERROR("scr.interactive required to run the rlang prompt\n");
+			return RZ_CMD_STATUS_ERROR;
 		}
 	}
 	return RZ_CMD_STATUS_OK;

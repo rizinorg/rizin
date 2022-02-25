@@ -614,7 +614,6 @@ static const RzCmdDescArg hash_bang_args[] = {
 	{
 		.name = "interpreter-name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = true,
 		.no_space = true,
 
 	},
@@ -628,8 +627,9 @@ static const RzCmdDescArg hash_bang_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp hash_bang_help = {
-	.summary = "List all available interpreters / Run interpreter",
+	.summary = "Run interpreter",
 	.details = hash_bang_details,
+	.details_cb = rz_hash_bang_details_cb,
 	.args = hash_bang_args,
 };
 

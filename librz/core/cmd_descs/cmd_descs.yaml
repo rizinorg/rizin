@@ -72,11 +72,10 @@ commands:
     args: []
   - name: "#!"
     cname: hash_bang
-    summary: List all available interpreters / Run interpreter
+    summary: Run interpreter
     args:
       - name: interpreter-name
         type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
         no_space: true
       - name: arg
         type: RZ_CMD_ARG_TYPE_STRING
@@ -94,6 +93,7 @@ commands:
           - text: "#!"
             arg_str: "python foo.py arg1"
             comment: Run foo.py python script and pass it arg1 as argument
+    details_cb: rz_hash_bang_details_cb
   - name: $
     cname: cmd_alias
     summary: Alias commands and strings
