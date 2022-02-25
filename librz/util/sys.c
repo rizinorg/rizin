@@ -70,7 +70,7 @@ extern char **environ;
 #endif
 #if __WINDOWS__
 #include <io.h>
-#include <winbase.h>
+#include <rz_windows.h>
 #include <signal.h>
 #define TMP_BUFSIZE 4096
 #ifdef _MSC_VER

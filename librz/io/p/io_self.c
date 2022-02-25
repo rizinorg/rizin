@@ -44,6 +44,7 @@ bool bsd_proc_vmmaps(RzIO *io, int pid);
 #include <libproc.h>
 #endif
 #ifdef _MSC_VER
+#include <rz_windows.h>
 #include <process.h> // to compile getpid for msvc windows
 #include <psapi.h>
 #endif

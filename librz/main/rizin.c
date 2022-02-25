@@ -4,11 +4,6 @@
 #define USE_THREADS       1
 #define ALLOW_THREADED    0
 #define UNCOLORIZE_NONTTY 0
-#ifdef _MSC_VER
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#endif
 
 #include <rz_core.h>
 #include <rz_demangler.h>

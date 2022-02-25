@@ -655,7 +655,7 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 	}
 
 	// LFH
-	byte numBuckets = _countof(segheapHeader.LfhContext.Buckets);
+	size_t numBuckets = _countof(segheapHeader.LfhContext.Buckets);
 	int j;
 	for (j = 0; j < numBuckets; j++) {
 		if ((WPARAM)segheapHeader.LfhContext.Buckets[j] & 1) {

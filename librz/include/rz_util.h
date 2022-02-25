@@ -22,7 +22,7 @@
 #include <openssl/bn.h>
 #endif
 #ifdef _MSC_VER
-#include <windows.h>
+struct timeval;
 int gettimeofday(struct timeval *p, void *tz);
 #endif
 #include "rz_util/rz_event.h"

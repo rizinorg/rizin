@@ -8,7 +8,7 @@
 
 #include "rz_list.h"
 #include <rz_util.h>
-#include "rz_socket.h"
+#include <rz_bind.h>
 #include "rz_vector.h"
 #include "rz_skyline.h"
 
@@ -27,10 +27,6 @@
 #if DEBUGGER && HAVE_PTRACE
 #include <sys/ptrace.h>
 #endif
-#endif
-
-#if __WINDOWS__
-#include <w32dbg_wrap.h>
 #endif
 
 #if (defined(__GLIBC__) && defined(__linux__))

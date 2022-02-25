@@ -6,6 +6,7 @@
 #include <rz_util/rz_sys.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_utf8.h>
+#include <rz_windows.h>
 
 /**
  * \brief Return \p path prefixed by the Rizin install prefix

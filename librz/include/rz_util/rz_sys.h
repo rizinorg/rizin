@@ -1,7 +1,7 @@
 #ifndef RZ_SYS_H
 #define RZ_SYS_H
 
-#include <rz_list.h>
+#include <rz_types.h>
 
 #if __WINDOWS__
 #define RZ_SYS_DEVNULL "nul"
@@ -118,6 +118,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 #define rz_sys_conv_win_to_utf8(buf)        rz_acp_to_utf8(buf)
 #define rz_sys_conv_win_to_utf8_l(buf, len) rz_acp_to_utf8_l(buf, len)
 #endif
+typedef void *HANDLE;
 RZ_API char *rz_sys_get_src_dir_w32(void);
 RZ_API bool rz_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err);
 RZ_API char **rz_sys_utf8_argv_new(int argc, const wchar_t **argv);

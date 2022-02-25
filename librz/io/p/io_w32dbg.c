@@ -1,17 +1,11 @@
 // SPDX-FileCopyrightText: 2008-2016 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_userconf.h>
-
-#include <rz_io.h>
-#include <rz_lib.h>
+#include <rz_types.h>
 
 #if __WINDOWS__
-#include <windows.h>
-#include <tlhelp32.h>
-#include <w32dbg_wrap.h>
 #include <rz_core.h>
-#include <rz_debug.h>
+#include <w32dbg_wrap.h>
 
 static ut64 __find_next_valid_addr(HANDLE h, ut64 from, ut64 to) {
 	// Align to next page and try to get to next valid addr

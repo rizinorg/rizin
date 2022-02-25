@@ -9,6 +9,7 @@
 #include "io_private.h"
 
 #if __WINDOWS__
+#include <rz_windows.h>
 #include <w32dbg_wrap.h>
 #endif
 

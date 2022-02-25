@@ -48,10 +48,6 @@
 #endif
 
 #if __WINDOWS__
-#include <windows.h>
-#include <tlhelp32.h>
-#include <winbase.h>
-#include <psapi.h>
 #include <w32dbg_wrap.h>
 #endif
 

@@ -5,6 +5,7 @@
 
 #include <rz_types.h>
 #include <rz_util.h>
+#include <rz_windows.h>
 
 static const struct { ut32 from, to; } nonprintable_ranges[] = {
 	{ 0x0000, 0x001F }, { 0x007F, 0x009F }, { 0x034F, 0x034F },

@@ -4,7 +4,7 @@
 #if __UNIX__
 #include <unistd.h>
 #elif __WINDOWS__
-#include <windows.h>
+#include <rz_windows.h>
 #endif
 #include "spp.h"
 #include "rz_api.h"
