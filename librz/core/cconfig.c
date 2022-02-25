@@ -1886,7 +1886,7 @@ static bool cb_hexstride(void *user, void *data) {
 static bool cb_search_kwidx(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->n_kws = node->i_value;
+	core->search->params.n_kws = node->i_value;
 	return true;
 }
 
@@ -2256,14 +2256,14 @@ static bool cb_scrrows(void *user, void *data) {
 static bool cb_contiguous(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->contiguous = node->i_value;
+	core->search->params.contiguous = node->i_value;
 	return true;
 }
 
 static bool cb_searchalign(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->align = node->i_value;
+	core->search->params.align = node->i_value;
 	core->print->addrmod = node->i_value;
 	return true;
 }
@@ -3564,6 +3564,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8");
 	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
 	SETI("search.distance", 0, "Search string distance");
+	SETI("search.minlength", 3, "Minimum length of search string");
+	SETI("search.maxlength", 255, "Maximum length of search string");
 	SETBPREF("search.flags", "true", "All search results are flagged, otherwise only printed");
 	SETBPREF("search.overlap", "false", "Look for overlapped search hits");
 	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");

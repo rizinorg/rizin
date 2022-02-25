@@ -111,7 +111,7 @@ RZ_IPI int rz_seek_search(void *data, const char *input) {
 	const char *pfx = rz_config_get(core->config, "search.prefix");
 	const ut64 saved_from = rz_config_get_i(core->config, "search.from");
 	const ut64 saved_maxhits = rz_config_get_i(core->config, "search.maxhits");
-	int kwidx = core->search->n_kws; // (int)rz_config_get_i (core->config, "search.kwidx")-1;
+	int kwidx = core->search->params.n_kws; // (int)rz_config_get_i (core->config, "search.kwidx")-1;
 	if (kwidx < 0) {
 		kwidx = 0;
 	}

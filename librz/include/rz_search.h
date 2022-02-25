@@ -51,27 +51,41 @@ typedef struct rz_search_hit_t {
 
 typedef int (*RzSearchCallback)(RzSearchKeyword *kw, void *user, ut64 where);
 
-typedef struct rz_search_t {
-	int n_kws; // hit${n_kws}_${count}
-	int mode;
-	ut32 pattern_size;
+struct rz_search_t;
+
+typedef struct rz_search_parameters_t {
+	RzList *boundaries;
+	const char *cmd_hit;
+	bool inverse;
+	bool aes_search;
+	bool privkey_search;
+	bool search_flags;
+	bool search_show;
 	ut32 string_min; // max length of strings for RZ_SEARCH_STRING
 	ut32 string_max; // min length of strings for RZ_SEARCH_STRING
-	void *data; // data used by search algorithm
-	void *user; // user data passed to callback
-	RzSearchCallback callback;
-	ut64 nhits;
+	const char *search_prefix;
+	RzInterval *search_itv;
+	int search_mode;
+	int n_kws; // hit${n_kws}_${count}
+	ut32 pattern_size;
 	ut64 maxhits; // search.maxhits
-	RzList /*<RzSearchHit *>*/ *hits;
-	int distance;
-	int inverse;
+	int search_distance;
 	bool overlap; // whether two matches can overlap
-	int contiguous;
+	bool contiguous;
 	int align;
 	int (*update)(struct rz_search_t *s, ut64 from, const ut8 *buf, int len);
 	RzList /*<RzSearchKeyword *>*/ *kws; // TODO: Use rz_search_kw_new ()
 	RzIOBind iob;
-	char bckwrds;
+	bool backwards;
+} RzSearchParameters;
+
+typedef struct rz_search_t {
+	void *data; // data used by search algorithm
+	void *user; // user data passed to callback
+	RzSearchCallback callback;
+	ut64 nhits;
+	RzList /*<RzSearchHit>*/ *hits;
+	RzSearchParameters params;
 } RzSearch;
 
 #ifdef RZ_API

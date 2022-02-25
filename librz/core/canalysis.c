@@ -1916,7 +1916,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	// TODO: get current section range here
 	// ???
 	// XXX must read bytes correctly
-	do_bckwrd_srch = bckwrds = core->search->bckwrds;
+	do_bckwrd_srch = bckwrds = core->search->params.backwards;
 	if (core->file) {
 		rz_io_use_fd(core->io, core->file->fd);
 	}
@@ -3716,7 +3716,7 @@ static bool stringAt(RzCore *core, ut64 addr) {
 
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut64 vmin,
 	ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
-	int i, align = core->search->align, hitctr = 0;
+	int i, align = core->search->params.align, hitctr = 0;
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
 	bool vinfunr = rz_config_get_b(core->config, "analysis.vinfunrange");
 	bool analyze_strings = rz_config_get_b(core->config, "analysis.strings");

@@ -42,7 +42,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	const RzSearch *search = core->search;
 	ut64 base_addr = 0;
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	int keyword_len = kw ? kw->keyword_length + (search->mode == RZ_SEARCH_DELTAKEY) : 0;
+	int keyword_len = kw ? kw->keyword_length + (search->params.search_mode == RZ_SEARCH_DELTAKEY) : 0;
 
 	if (param->searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
@@ -181,12 +181,12 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 	if (!param->searchflags && param->outmode != RZ_MODE_JSON) {
 		rz_cons_printf("fs hits\n");
 	}
-	core->search->inverse = param->inverse;
+	core->search->params.inverse = param->inverse;
 	// TODO Bad but is to be compatible with the legacy behavior
 	if (param->inverse) {
-		core->search->maxhits = 1;
+		core->search->params.maxhits = 1;
 	}
-	if (core->search->n_kws > 0) {
+	if (core->search->params.n_kws > 0) {
 		/* set callback */
 		/* TODO: handle last block of data */
 		/* TODO: handle ^C */
@@ -196,7 +196,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 		if (!(buf = malloc(core->blocksize))) {
 			return;
 		}
-		if (search->bckwrds) {
+		if (search->params.backwards) {
 			rz_search_string_prepare_backward(search);
 		}
 		rz_cons_break_push(NULL, NULL);
@@ -211,31 +211,31 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 				break;
 			}
 			if (param->outmode != RZ_MODE_JSON) {
-				RzSearchKeyword *kw = rz_list_first(core->search->kws);
+				RzSearchKeyword *kw = rz_list_first(core->search->params.kws);
 				int lenstr = kw ? kw->keyword_length : 0;
 				const char *bytestr = lenstr > 1 ? "bytes" : "byte";
 				rz_cons_printf("Searching %d %s in [0x%" PFMT64x "-0x%" PFMT64x "]\n",
 					kw ? kw->keyword_length : 0, bytestr, itv.addr, rz_itv_end(itv));
 			}
-			if (!core->search->bckwrds) {
+			if (!core->search->params.backwards) {
 				RzListIter *it;
 				RzSearchKeyword *kw;
-				rz_list_foreach (core->search->kws, it, kw) {
+				rz_list_foreach (core->search->params.kws, it, kw) {
 					kw->last = 0;
 				}
 			}
 
 			const ut64 from = itv.addr, to = rz_itv_end(itv),
-				   from1 = search->bckwrds ? to : from,
-				   to1 = search->bckwrds ? from : to;
+				   from1 = search->params.backwards ? to : from,
+				   to1 = search->params.backwards ? from : to;
 			ut64 len;
-			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
+			for (at = from1; at != to1; at = search->params.backwards ? at - len : at + len) {
 				print_search_progress(at, to1, search->nhits, param);
 				if (rz_cons_is_breaked()) {
 					rz_cons_printf("\n\n");
 					break;
 				}
-				if (search->bckwrds) {
+				if (search->params.backwards) {
 					len = RZ_MIN(core->blocksize, at - from);
 					// TODO prefix_read_at
 					if (!rz_io_is_valid_offset(core->io, at - len, 0)) {
@@ -261,7 +261,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 						len -= PRIVATE_KEY_SEARCH_LENGTH - 1;
 					}
 				}
-				if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
+				if (core->search->params.maxhits > 0 && core->search->nhits >= core->search->params.maxhits) {
 					goto done;
 				}
 			}
@@ -340,12 +340,12 @@ static bool setup_params(RzCore *core, struct search_parameters *param) {
 	param->mode = rz_config_get(core->config, "search.in");
 	param->boundaries = rz_core_get_boundaries_prot(core, -1, param->mode, "search");
 
-	core->search->align = rz_config_get_i(core->config, "search.align");
+	core->search->params.align = rz_config_get_i(core->config, "search.align");
 	param->searchflags = rz_config_get_i(core->config, "search.flags");
-	core->search->maxhits = rz_config_get_i(core->config, "search.maxhits");
+	core->search->params.maxhits = rz_config_get_i(core->config, "search.maxhits");
 	param->searchprefix = rz_config_get(core->config, "search.prefix");
-	core->search->overlap = rz_config_get_i(core->config, "search.overlap");
-	core->search->bckwrds = false;
+	core->search->params.overlap = rz_config_get_i(core->config, "search.overlap");
+	core->search->params.backwards = false;
 
 	return true;
 }
@@ -387,7 +387,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_string_handler(RzCore *core, int argc, const ch
 		goto beach;
 	}
 	rz_search_begin(core->search);
-	rz_config_set_i(core->config, "search.kwidx", core->search->n_kws);
+	rz_config_set_i(core->config, "search.kwidx", core->search->params.n_kws);
 	do_string_search(core, &param);
 
 beach:
@@ -443,7 +443,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_hex_string_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	rz_config_set_i(core->config, "search.kwidx", core->search->n_kws);
+	rz_config_set_i(core->config, "search.kwidx", core->search->params.n_kws);
 	do_string_search(core, &param);
 
 beach:
@@ -487,8 +487,18 @@ RZ_IPI RzCmdStatus rz_cmd_search_assembly_handler(RzCore *core, int argc, const 
 	rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 	rz_search_kw_add(core->search, rz_search_keyword_new_hexmask(assembled, NULL));
 	free(assembled);
-	rz_config_set_i(core->config, "search.kwidx", core->search->n_kws);
+	rz_config_set_i(core->config, "search.kwidx", core->search->params.n_kws);
 	do_string_search(core, &param);
+
+	if (param.outmode == RZ_MODE_JSON) {
+		RzListIter *itr;
+		RzSearchHit *hit;
+		rz_list_foreach (core->search->hits, itr, hit) {
+			pj_kn(param.pj, "addr", hit->addr);
+			pj_kn(param.pj, "size", hit->kw->keyword_length);
+			pj_ks(param.pj, "opstr", argv[1]);
+		}
+	}
 
 beach:
 	core->num->value = core->search->nhits;

@@ -311,7 +311,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		result = 1;
 		goto err;
 	}
-	rs->align = ro->align;
+	rs->params.align = ro->align;
 	rz_search_set_callback(rs, &hit, ro);
 	ut64 to = ro->to;
 	if (to == -1) {

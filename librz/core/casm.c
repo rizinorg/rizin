@@ -186,7 +186,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 	RzList *hits;
 	ut64 at, toff = core->offset;
 	ut8 *buf;
-	int align = core->search->align;
+	int align = core->search->params.align;
 	RzRegex *rx = NULL;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
 	int idx, tidx = 0, len = 0;

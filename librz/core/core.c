@@ -2500,7 +2500,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_bin_bind(core->bin, &(core->analysis->binb));
 	rz_bin_bind(core->bin, &(core->analysis->binb));
 
-	rz_io_bind(core->io, &(core->search->iob));
+	rz_io_bind(core->io, &(core->search->params.iob));
 	rz_io_bind(core->io, &(core->print->iob));
 	rz_io_bind(core->io, &(core->analysis->iob));
 	rz_io_bind(core->io, &(core->analysis->typedb->iob));
