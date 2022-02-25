@@ -59,6 +59,7 @@
 #       flags: same as RzCmdDescArg.flags
 #       default_value: same as RzCmdDescArg.default_value
 #       choices: same as RzCmdDescArg.choices (only valid if type is RZ_CMD_ARG_TYPE_CHOICES)
+#       choices_cb: same as RzCmdDescArg.choices_cb (only valid if type is RZ_CMD_ARG_TYPE_CHOICES)
 #
 ---
 name: root
