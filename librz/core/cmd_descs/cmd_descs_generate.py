@@ -757,7 +757,7 @@ def handler2decl(cd, cd_type, handler_name):
             % (cd.details_cb,)
         )
 
-    return "\n".join(out) if out != [] else None
+    return "\n".join(out) if out else None
 
 
 parser = argparse.ArgumentParser(
