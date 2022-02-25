@@ -76,6 +76,7 @@ DECL_DESC_HELP_DETAILS_TEMPLATE = "static const RzCmdDescDetail {cname}[{size}];
 
 DESC_HELP_ARG_CHOICES = "static const char *{cname}[] = {{ {choices} }};\n"
 DESC_HELP_ARG_UNION_CHOICES = "\t\t.choices = {choices},\n"
+DESC_HELP_ARG_UNION_CHOICES_CB = "\t\t.choices_cb = {choices_cb},\n"
 DESC_HELP_ARG_TEMPLATE_FLAGS = "\t\t.flags = {flags},\n"
 DESC_HELP_ARG_TEMPLATE_OPTIONAL = "\t\t.optional = {optional},\n"
 DESC_HELP_ARG_TEMPLATE_NO_SPACE = "\t\t.no_space = {no_space},\n"
@@ -165,6 +166,7 @@ class Arg:
             str(c.pop("default_value")) if "default_value" in c else None
         )
         self.choices = c.pop("choices", None)
+        self.choices_cb = c.pop("choices_cb", None)
         if c.keys():
             print(
                 "Argument %s for command %s has unrecognized properties: %s."
@@ -187,7 +189,12 @@ class Arg:
 
     def _get_union(self):
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
-            return DESC_HELP_ARG_UNION_CHOICES.format(choices=self._get_choices_cname())
+            if self.choices_cb is None:
+                return DESC_HELP_ARG_UNION_CHOICES.format(
+                    choices=self._get_choices_cname()
+                )
+            return DESC_HELP_ARG_UNION_CHOICES_CB.format(choices_cb=self.choices_cb)
+
         return ""
 
     def __str__(self):
@@ -228,7 +235,7 @@ class Arg:
         )
 
     def get_cstructure(self):
-        if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
+        if self.type == "RZ_CMD_ARG_TYPE_CHOICES" and self.choices_cb is None:
             return DESC_HELP_ARG_CHOICES.format(
                 cname=self._get_choices_cname(),
                 choices=", ".join(
@@ -239,6 +246,11 @@ class Arg:
                 ),
             )
         return ""
+
+    def decl(self):
+        if self.type == "RZ_CMD_ARG_TYPE_CHOICES" and self.choices_cb is not None:
+            return "RZ_IPI char **%s(RzCore *core);" % (self.choices_cb,)
+        return None
 
 
 def format_detail_entry(c):
@@ -756,6 +768,12 @@ def handler2decl(cd, cd_type, handler_name):
             "RZ_IPI RzCmdDescDetail *%s(RzCore *core, int argc, const char **argv);"
             % (cd.details_cb,)
         )
+
+    if isinstance(cd.args, list):
+        for arg in cd.args:
+            d = arg.decl()
+            if d is not None:
+                out.append(d)
 
     return "\n".join(out) if out else None
 

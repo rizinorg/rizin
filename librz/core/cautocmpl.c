@@ -533,12 +533,19 @@ static void autocmplt_cmd_arg_zign_space(RzCore *core, RzLineNSCompletionResult 
 	}
 }
 
-static void autocmplt_cmd_arg_choices(RzLineNSCompletionResult *res, const char *s, size_t len, const RzCmdDescArg *arg) {
-	const char **c;
-	for (c = arg->choices; *c; c++) {
+static void autocmplt_cmd_arg_choices(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len, const RzCmdDescArg *arg) {
+	char **oc, **c;
+	oc = c = arg->choices_cb ? arg->choices_cb(core) : (char **)arg->choices;
+	for (c = oc; *c; c++) {
 		if (!strncmp(*c, s, len)) {
 			rz_line_ns_completion_result_add(res, *c);
 		}
+	}
+	if (arg->choices_cb) {
+		for (c = oc; *c; c++) {
+			free(*c);
+		}
+		free(oc);
 	}
 }
 
@@ -691,7 +698,7 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		autocmplt_cmd_arg_zign_space(core, res, s, len);
 		break;
 	case RZ_CMD_ARG_TYPE_CHOICES:
-		autocmplt_cmd_arg_choices(res, s, len, arg);
+		autocmplt_cmd_arg_choices(core, res, s, len, arg);
 		break;
 	case RZ_CMD_ARG_TYPE_FCN:
 		autocmplt_cmd_arg_fcn(core, res, s, len);
