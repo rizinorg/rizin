@@ -418,8 +418,8 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_ADR
- * ARM: adr
+ * Capstone: ARM64_INS_ADR, ARM64_INS_ADRP
+ * ARM: adr, adrp
  */
 static RzILOpEffect *adr(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -447,6 +447,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SBC:
 		return add_sub(insn);
 	case ARM64_INS_ADR:
+	case ARM64_INS_ADRP:
 		return adr(insn);
 	default:
 		break;
