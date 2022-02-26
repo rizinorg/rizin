@@ -2381,6 +2381,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->print->get_comments = get_comments_cb;
 	core->print->get_section_name = get_section_name;
 	core->print->use_comments = false;
+	rz_core_rtr_init(core);
 	core->rtr_n = 0;
 	core->blocksize_max = RZ_CORE_BLOCKSIZE_MAX;
 	rz_core_task_scheduler_init(&core->tasks, rz_core_task_ctx_switch, NULL, rz_core_task_break_cb, NULL);
@@ -2641,6 +2642,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_parse_free(c->parser);
 	free(c->times);
 	rz_core_seek_free(c);
+	free(c->rtr_host);
 	RZ_FREE(c->curtheme);
 }
 
