@@ -3797,9 +3797,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"pe", "pilot", "srec", "w32run", "zip", "all", "none", NULL);
 	SETB("flirt.sig.deflate", false, "enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
 	SETI("flirt.node.optimize", RZ_FLIRT_NODE_OPTIMIZE_MAX, "FLIRT optimization option when creating a signature file (none: 0, normal: 1, smallest: 2)");
-	char *home_sigdb = rz_path_system(RZ_SIGDB);
-	SETPREF("flirt.sigdb.path", home_sigdb, "Rizin sigdb location on the filesystem.");
-	free(home_sigdb);
+	SETPREF("flirt.sigdb.path", "", "Additional user defined rizin sigdb location to load on the filesystem.");
 
 	rz_config_lock(cfg, true);
 	return true;
