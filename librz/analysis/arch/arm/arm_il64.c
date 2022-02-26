@@ -417,6 +417,28 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 	return set;
 }
 
+/**
+ * Capstone: ARM64_INS_ADR
+ * ARM: adr
+ */
+static RzILOpEffect *adr(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	return write_reg(REGID(0), U64(IMM(1)));
+}
+
+/**
+ * Lift an AArch64 instruction to RzIL
+ *
+ * Currently unimplemented:
+ *
+ * - FEAT_MTE/FEAT_MTE2/FEAT_MTE3: Memory Tagging Extension
+ *   Plausible to represent by adding another memory with a 60bit keys and 4bit values to hold the memory tags.
+ *   Instructions:
+ *   - ADDG
+ *
+ */
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
 	case ARM64_INS_ADD:
@@ -424,6 +446,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SUB:
 	case ARM64_INS_SBC:
 		return add_sub(insn);
+	case ARM64_INS_ADR:
+		return adr(insn);
+	default:
 		break;
 	}
 	return NULL;

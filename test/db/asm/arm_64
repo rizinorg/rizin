@@ -426,3 +426,4 @@ d "add x1, x2, x2, asr 15" 413c828b 0x0 (set x1 (+ (var x2) (>> (var x2) (bv 6 0
 d "add w1, w2, w2, lsl 10" 4128020b 0x0 (set x1 (cast 64 false (+ (cast 32 false (var x2)) (<< (cast 32 false (var x2)) (bv 6 0xa) false))))
 d "add w1, w2, w2, lsr 12" 4130420b 0x0 (set x1 (cast 64 false (+ (cast 32 false (var x2)) (>> (cast 32 false (var x2)) (bv 6 0xc) false))))
 d "add w1, w2, w2, asr 31" 417c820b 0x0 (set x1 (cast 64 false (+ (cast 32 false (var x2)) (>> (cast 32 false (var x2)) (bv 6 0x1f) (msb (cast 32 false (var x2)))))))
+d "adr x2, 0x10042" 02020050 0x10000 (set x2 (bv 64 0x10042))
