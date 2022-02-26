@@ -242,7 +242,7 @@ static RzILOpBitVector *read_reg(/*ut64 pc, */arm64_reg reg) {
 	return VARG(var);
 }
 
-static RzILOpBitVector *extend(ut32 dst_bits, arm64_extender ext, ut32 shift, RZ_OWN RzILOpBitVector *v) {
+static RzILOpBitVector *extend(ut32 dst_bits, arm64_extender ext, RZ_OWN RzILOpBitVector *v) {
 	bool is_signed = false;
 	ut32 src_bits;
 	switch (ext) {
@@ -280,11 +280,23 @@ static RzILOpBitVector *extend(ut32 dst_bits, arm64_extender ext, ut32 shift, RZ
 	} else {
 		v = UNSIGNED(src_bits, v);
 	}
-	v = is_signed ? SIGNED(dst_bits, v) : UNSIGNED(dst_bits, v);
-	if (shift) {
-		return SHIFTL0(v, UN(dst_bits == 32 ? 5 : 6, shift));
+	return is_signed ? SIGNED(dst_bits, v) : UNSIGNED(dst_bits, v);
+}
+
+static RzILOpBitVector *shift(arm64_shifter sft, ut32 dist, RZ_OWN RzILOpBitVector *v) {
+	if (!dist) {
+		return v;
 	}
-	return v;
+	switch (sft) {
+	case ARM64_SFT_LSL:
+		return SHIFTL0(v, UN(6, dist));
+	case ARM64_SFT_LSR:
+		return SHIFTR0(v, UN(6, dist));
+	case ARM64_SFT_ASR:
+		return SHIFTRA(v, UN(6, dist));
+	default:
+		return v;
+	}
 }
 
 // #define PC(addr)      (addr)
@@ -324,7 +336,7 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 		if (!r || !bits_requested) {
 			return NULL;
 		}
-		return extend(bits_requested, op->ext, op->shift.type == ARM64_SFT_LSL ? op->shift.value : 0, r);
+		return shift(op->shift.type, op->shift.value, extend(bits_requested, op->ext, r));
 	}
 	case ARM64_OP_IMM: {
 		if (!bits_requested) {
