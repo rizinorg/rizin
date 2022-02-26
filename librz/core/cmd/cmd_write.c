@@ -6,6 +6,7 @@
 #include "rz_cons.h"
 #include "rz_core.h"
 #include "rz_io.h"
+#include <rz_socket.h>
 
 static const char *help_msg_w[] = {
 	"Usage:", "w[x] [str] [<file] [<<EOF] [@addr]", "",

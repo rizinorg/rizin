@@ -4,6 +4,8 @@
 #include <string.h>
 #include <rz_util.h>
 #include <rz_core.h>
+#include <rz_windows.h>
+#include <rz_socket.h>
 #include "pdb_downloader.h"
 
 static bool checkExtract(void) {

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_windows.h>
 #include <rz_core.h>
 #include <TlHelp32.h>
 #include <windows_heap.h>

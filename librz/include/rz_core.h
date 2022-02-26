@@ -5,7 +5,6 @@
 #define RZ_CORE_H
 
 #include <rz_main.h>
-#include <rz_socket.h>
 #include <rz_types.h>
 #include <rz_magic.h>
 #include <rz_agraph.h>

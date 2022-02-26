@@ -7,6 +7,7 @@
 #include <rz_util.h>
 #include <rz_cons.h>
 #include <rz_core.h>
+#include <rz_socket.h>
 #include <rz_debug.h> /* only used for BSD PTRACE redefinitions */
 #include <string.h>
 
@@ -48,6 +49,7 @@
 #endif
 
 #if __WINDOWS__
+#include <rz_windows.h>
 #include <w32dbg_wrap.h>
 #endif
 

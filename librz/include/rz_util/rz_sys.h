@@ -2,6 +2,7 @@
 #define RZ_SYS_H
 
 #include <rz_types.h>
+#include <rz_list.h>
 
 #if __WINDOWS__
 #define RZ_SYS_DEVNULL "nul"

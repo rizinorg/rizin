@@ -8,6 +8,10 @@
 #include <rz_util/rz_utf8.h>
 #include <rz_windows.h>
 
+#if __WINDOWS__
+#include <rz_windows.h>
+#endif
+
 /**
  * \brief Return \p path prefixed by the Rizin install prefix
  *

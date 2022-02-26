@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <rz_cons.h>
 #include <rz_main.h>
+#include <rz_windows.h>
 
 #define Color_INSERT   Color_BGREEN
 #define Color_DELETE   Color_BRED

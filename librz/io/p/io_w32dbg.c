@@ -4,6 +4,7 @@
 #include <rz_types.h>
 
 #if __WINDOWS__
+#include <rz_windows.h>
 #include <rz_core.h>
 #include <w32dbg_wrap.h>
 

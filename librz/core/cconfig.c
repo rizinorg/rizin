@@ -5,6 +5,7 @@
 #include <rz_cons.h>
 #include <rz_basefind.h>
 #include <rz_th.h>
+#include <rz_windows.h>
 
 #include "core_private.h"
 

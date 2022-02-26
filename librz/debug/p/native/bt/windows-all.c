@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2021 GustavoLCR <gugulcr@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_windows.h>
 #include <DbgHelp.h>
 #include <w32dbg_wrap.h>
 
