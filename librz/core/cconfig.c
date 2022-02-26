@@ -1886,7 +1886,7 @@ static bool cb_hexstride(void *user, void *data) {
 static bool cb_search_kwidx(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->params.n_kws = node->i_value;
+	core->search->params->n_kws = node->i_value;
 	return true;
 }
 
@@ -2256,14 +2256,14 @@ static bool cb_scrrows(void *user, void *data) {
 static bool cb_contiguous(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->params.contiguous = node->i_value;
+	core->search->params->search_contiguous = node->i_value;
 	return true;
 }
 
 static bool cb_searchalign(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->search->params.align = node->i_value;
+	core->search->params->search_align = node->i_value;
 	core->print->addrmod = node->i_value;
 	return true;
 }

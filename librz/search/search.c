@@ -16,36 +16,64 @@ typedef struct {
 	ut8 data[];
 } RzSearchLeftover;
 
-RZ_API RzSearch *rz_search_new(int mode) {
+RZ_API RzSearchParams *rz_search_params_new(RzSearchMode mode) {
+	RzSearchParams *params = RZ_NEW0(RzSearchParams);
+	if (!params) {
+		return NULL;
+	}
+	if (!rz_search_params_set_mode(params, mode)) {
+		free(params);
+		eprintf("Cannot init search params for mode %d\n", mode);
+		return false;
+	}
+
+	params->pattern_size = 0;
+	params->aes_search = false;
+	params->privkey_search = false;
+	params->inverse = false;
+	params->backwards = false;
+
+	params->search_align = 0;
+	params->search_distance = 0;
+	params->search_contiguous = false;
+	params->search_overlap = false;
+	params->search_maxlength = 255;
+	params->search_minlength = 0;
+	params->search_maxhits = 0;
+
+	params->itv.addr = params->search_from;
+	params->itv.size = params->search_from - params->search_to;
+	params->kws = rz_list_newf((RzListFree)rz_search_keyword_free);
+	if (!params->kws) {
+		goto bad;
+	}
+	params->n_kws = 0;
+
+	return params;
+
+bad:
+	rz_search_params_free(params);
+	return NULL;
+}
+
+RZ_API void rz_search_params_free(RzSearchParams *params) {
+	if (!params) {
+		return;
+	}
+	rz_list_free(params->boundaries);
+	rz_list_free(params->kws);
+}
+
+RZ_API RzSearch *rz_search_new(RZ_NONNULL RzSearchParams *params) {
 	RzSearch *s = RZ_NEW0(RzSearch);
 	if (!s) {
 		return NULL;
 	}
-	if (!rz_search_set_mode(s, mode)) {
-		free(s);
-		eprintf("Cannot init search for mode %d\n", mode);
-		return false;
-	}
-	s->params.inverse = false;
 	s->data = NULL;
 	s->user = NULL;
 	s->callback = NULL;
-	s->params.inverse = false;
-	s->params.search_distance = 0; // rz_config_get_i(core, "search.distance");
-	s->params.contiguous = 0;
-	s->params.overlap = false;
-	s->params.pattern_size = 0;
-	s->params.string_max = 255;
-	s->params.string_min = 3;
 	s->hits = rz_list_newf(free);
-	s->params.maxhits = 0;
-	// TODO: review those mempool sizes. ensure never gets NULL
-	s->params.kws = rz_list_newf(free);
-	if (!s->params.kws) {
-		rz_search_free(s);
-		return NULL;
-	}
-	s->params.kws->free = (RzListFree)rz_search_keyword_free;
+	s->params = params;
 	return s;
 }
 
@@ -54,7 +82,7 @@ RZ_API RzSearch *rz_search_free(RzSearch *s) {
 		return NULL;
 	}
 	rz_list_free(s->hits);
-	rz_list_free(s->params.kws);
+	rz_search_params_free(s->params);
 	// rz_io_free(s->iob.io); this is supposed to be a weak reference
 	free(s->data);
 	free(s);
@@ -65,8 +93,8 @@ RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max) {
 	if (max < min) {
 		return false;
 	}
-	s->params.string_min = min;
-	s->params.string_max = max;
+	s->params->search_minlength = min;
+	s->params->search_maxlength = max;
 	return true;
 }
 
@@ -75,19 +103,19 @@ RZ_API int rz_search_magic_update(RzSearch *s, ut64 from, const ut8 *buf, int le
 	return false;
 }
 
-RZ_API int rz_search_set_mode(RzSearch *s, int mode) {
-	s->params.update = NULL;
+RZ_API int rz_search_params_set_mode(RzSearchParams *params, RzSearchMode mode) {
 	switch (mode) {
-	case RZ_SEARCH_KEYWORD: s->params.update = rz_search_mybinparse_update; break;
-	case RZ_SEARCH_REGEXP: s->params.update = rz_search_regexp_update; break;
-	case RZ_SEARCH_AES: s->params.update = rz_search_aes_update; break;
-	case RZ_SEARCH_PRIV_KEY: s->params.update = rz_search_privkey_update; break;
-	case RZ_SEARCH_STRING: s->params.update = rz_search_strings_update; break;
-	case RZ_SEARCH_DELTAKEY: s->params.update = rz_search_deltakey_update; break;
-	case RZ_SEARCH_MAGIC: s->params.update = rz_search_magic_update; break;
+	case RZ_SEARCH_KEYWORD: params->update = rz_search_mybinparse_update; break;
+	case RZ_SEARCH_REGEXP: params->update = rz_search_regexp_update; break;
+	case RZ_SEARCH_AES: params->update = rz_search_aes_update; break;
+	case RZ_SEARCH_PRIV_KEY: params->update = rz_search_privkey_update; break;
+	case RZ_SEARCH_STRING: params->update = rz_search_strings_update; break;
+	case RZ_SEARCH_DELTAKEY: params->update = rz_search_deltakey_update; break;
+	case RZ_SEARCH_MAGIC: params->update = rz_search_magic_update; break;
+	default: params->update = NULL;
 	}
-	if (s->params.update || mode == RZ_SEARCH_PATTERN) {
-		s->params.search_mode = mode;
+	if (params->update || mode == RZ_SEARCH_PATTERN) {
+		params->mode = mode;
 		return true;
 	}
 	return false;
@@ -96,7 +124,7 @@ RZ_API int rz_search_set_mode(RzSearch *s, int mode) {
 RZ_API int rz_search_begin(RzSearch *s) {
 	RzListIter *iter;
 	RzSearchKeyword *kw;
-	rz_list_foreach (s->params.kws, iter, kw) {
+	rz_list_foreach (s->params->kws, iter, kw) {
 		kw->count = 0;
 		kw->last = 0;
 	}
@@ -105,28 +133,28 @@ RZ_API int rz_search_begin(RzSearch *s) {
 
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr) {
-	if (s->params.inverse && (addr % s->params.inverse)) {
+	if (s->params->inverse && (addr % s->params->inverse)) {
 		eprintf("0x%08" PFMT64x " unaligned\n", addr);
 		return 1;
 	}
-	if (!s->params.contiguous) {
+	if (!s->params->search_contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
-			kw->last = s->params.backwards ? addr : addr + kw->keyword_length;
+			kw->last = s->params->backwards ? addr : addr + kw->keyword_length;
 			eprintf("0x%08" PFMT64x " Sequential hit ignored.\n", addr);
 			return 1;
 		}
 	}
 	// kw->last is used by string search, the right endpoint of last match (forward search), to honor search.overlap
-	kw->last = s->params.backwards ? addr : addr + kw->keyword_length;
+	kw->last = s->params->backwards ? addr : addr + kw->keyword_length;
 
 	if (s->callback) {
 		int ret = s->callback(kw, s->user, addr);
 		kw->count++;
 		s->nhits++;
 		// If callback returns 0 or larger than 1, forwards it; otherwise returns 2 if search.maxhits is reached
-		return !ret || ret > 1 ? ret : s->params.maxhits && s->nhits >= s->params.maxhits ? 2
-												  : 1;
+		return !ret || ret > 1 ? ret : s->params->search_maxhits && s->nhits >= s->params->search_maxhits ? 2
+														  : 1;
 	}
 	kw->count++;
 	s->nhits++;
@@ -136,7 +164,7 @@ RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr) {
 		hit->addr = addr;
 		rz_list_append(s->hits, hit);
 	}
-	return s->params.maxhits && s->nhits >= s->params.maxhits ? 2 : 1;
+	return s->params->search_maxhits && s->nhits >= s->params->search_maxhits ? 2 : 1;
 }
 
 // TODO support search across block boundaries
@@ -147,7 +175,7 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 	RzSearchKeyword *kw;
 	RzSearchLeftover *left;
 	const int old_nhits = s->nhits;
-	rz_list_foreach (s->params.kws, iter, kw) {
+	rz_list_foreach (s->params->kws, iter, kw) {
 		longest = RZ_MAX(longest, kw->keyword_length + 1);
 	}
 	if (!longest) {
@@ -165,8 +193,8 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 		}
 		s->data = left;
 		left->len = 0;
-		if (s->params.backwards) {
-			rz_list_foreach (s->params.kws, iter, kw) {
+		if (s->params->backwards) {
+			rz_list_foreach (s->params->kws, iter, kw) {
 				ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
 				for (; i < j; i++) {
 					*i = -*i;
@@ -174,7 +202,7 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 			}
 		}
 	}
-	if (s->params.backwards) {
+	if (s->params->backwards) {
 		// XXX Change function signature from const ut8 * to ut8 *
 		ut8 *i = (ut8 *)buf, *j = i + len;
 		while (i < j) {
@@ -186,11 +214,11 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 
 	ut64 len1 = left->len + RZ_MIN(longest - 1, len);
 	memcpy(left->data + left->len, buf, len1 - left->len);
-	rz_list_foreach (s->params.kws, iter, kw) {
+	rz_list_foreach (s->params->kws, iter, kw) {
 		ut8 *a = kw->bin_keyword;
-		i = s->params.overlap || !kw->count ? 0 : s->params.backwards ? kw->last - from < left->len ? from + left->len - kw->last : 0
-			: from - kw->last < left->len                         ? kw->last + left->len - from
-									      : 0;
+		i = s->params->search_overlap || !kw->count ? 0 : s->params->backwards ? kw->last - from < left->len ? from + left->len - kw->last : 0
+			: from - kw->last < left->len                                  ? kw->last + left->len - from
+										       : 0;
 		for (; i + kw->keyword_length < len1 && i < left->len; i++) {
 			if ((ut8)(left->data[i + 1] - left->data[i]) == a[0]) {
 				j = 1;
@@ -198,23 +226,23 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 					j++;
 				}
 				if (j == kw->keyword_length) {
-					int t = rz_search_hit_new(s, kw, s->params.backwards ? from - kw->keyword_length - 1 - i + left->len : from + i - left->len);
-					kw->last += s->params.backwards ? 0 : 1;
+					int t = rz_search_hit_new(s, kw, s->params->backwards ? from - kw->keyword_length - 1 - i + left->len : from + i - left->len);
+					kw->last += s->params->backwards ? 0 : 1;
 					if (!t) {
 						return -1;
 					}
 					if (t > 1) {
 						return s->nhits - old_nhits;
 					}
-					if (!s->params.overlap) {
+					if (!s->params->search_overlap) {
 						i += kw->keyword_length;
 					}
 				}
 			}
 		}
-		i = s->params.overlap || !kw->count ? 0 : s->params.backwards ? from > kw->last ? from - kw->last : 0
-			: from < kw->last                                     ? kw->last - from
-									      : 0;
+		i = s->params->search_overlap || !kw->count ? 0 : s->params->backwards ? from > kw->last ? from - kw->last : 0
+			: from < kw->last                                              ? kw->last - from
+										       : 0;
 		for (; i + kw->keyword_length < len; i++) {
 			if ((ut8)(buf[i + 1] - buf[i]) == a[0]) {
 				j = 1;
@@ -222,15 +250,15 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 					j++;
 				}
 				if (j == kw->keyword_length) {
-					int t = rz_search_hit_new(s, kw, s->params.backwards ? from - kw->keyword_length - 1 - i : from + i);
-					kw->last += s->params.backwards ? 0 : 1;
+					int t = rz_search_hit_new(s, kw, s->params->backwards ? from - kw->keyword_length - 1 - i : from + i);
+					kw->last += s->params->backwards ? 0 : 1;
 					if (!t) {
 						return -1;
 					}
 					if (t > 1) {
 						return s->nhits - old_nhits;
 					}
-					if (!s->params.overlap) {
+					if (!s->params->search_overlap) {
 						i += kw->keyword_length;
 					}
 				}
@@ -248,7 +276,7 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 		left->len = longest - 1;
 		memcpy(left->data, buf + len - longest + 1, longest - 1);
 	}
-	left->end = s->params.backwards ? from - len : from + len;
+	left->end = s->params->backwards ? from - len : from + len;
 
 	return s->nhits - old_nhits;
 }
@@ -284,7 +312,7 @@ static int rz_search_horspool(RzSearch *s, RzSearchKeyword *kw, ut64 from, const
 				}
 				kw->count++;
 				count++;
-				if (!s->params.overlap) {
+				if (!s->params->overlap) {
 					i += kw->keyword_length;
 					goto next;
 				}
@@ -300,7 +328,7 @@ static int rz_search_horspool(RzSearch *s, RzSearchKeyword *kw, ut64 from, const
 
 static bool brute_force_match(RzSearch *s, RzSearchKeyword *kw, const ut8 *buf, int i) {
 	int j = 0;
-	if (s->params.search_distance) { // slow path, more work in the loop
+	if (s->params->search_distance) { // slow path, more work in the loop
 		int dist = 0;
 		if (kw->binmask_length > 0) {
 			for (; j < kw->keyword_length; j++) {
@@ -327,7 +355,7 @@ static bool brute_force_match(RzSearch *s, RzSearchKeyword *kw, const ut8 *buf, 
 				}
 			}
 		}
-		return dist <= s->params.search_distance;
+		return dist <= s->params->search_distance;
 	}
 
 	if (kw->binmask_length > 0) {
@@ -363,7 +391,7 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 	int longest = 0, i;
 	const int old_nhits = s->nhits;
 
-	rz_list_foreach (s->params.kws, iter, kw) {
+	rz_list_foreach (s->params->kws, iter, kw) {
 		longest = RZ_MAX(longest, kw->keyword_length);
 	}
 	if (!longest) {
@@ -382,7 +410,7 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 		s->data = left;
 		left->len = 0;
 	}
-	if (s->params.backwards) {
+	if (s->params->backwards) {
 		// XXX Change function signature from const ut8 * to ut8 *
 		ut8 *i = (ut8 *)buf, *j = i + len;
 		while (i < j) {
@@ -394,37 +422,37 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 
 	ut64 len1 = left->len + RZ_MIN(longest - 1, len);
 	memcpy(left->data + left->len, buf, len1 - left->len);
-	rz_list_foreach (s->params.kws, iter, kw) {
-		i = s->params.overlap || !kw->count ? 0 : s->params.backwards ? kw->last - from < left->len ? from + left->len - kw->last : 0
-			: from - kw->last < left->len                         ? kw->last + left->len - from
-									      : 0;
+	rz_list_foreach (s->params->kws, iter, kw) {
+		i = s->params->search_overlap || !kw->count ? 0 : s->params->backwards ? kw->last - from < left->len ? from + left->len - kw->last : 0
+			: from - kw->last < left->len                                  ? kw->last + left->len - from
+										       : 0;
 		for (; i + kw->keyword_length <= len1 && i < left->len; i++) {
-			if (brute_force_match(s, kw, left->data, i) != s->params.inverse) {
-				int t = rz_search_hit_new(s, kw, s->params.backwards ? from - kw->keyword_length - i + left->len : from + i - left->len);
+			if (brute_force_match(s, kw, left->data, i) != s->params->inverse) {
+				int t = rz_search_hit_new(s, kw, s->params->backwards ? from - kw->keyword_length - i + left->len : from + i - left->len);
 				if (!t) {
 					return -1;
 				}
 				if (t > 1) {
 					return s->nhits - old_nhits;
 				}
-				if (!s->params.overlap) {
+				if (!s->params->search_overlap) {
 					i += kw->keyword_length - 1;
 				}
 			}
 		}
-		i = s->params.overlap || !kw->count ? 0 : s->params.backwards ? from > kw->last ? from - kw->last : 0
-			: from < kw->last                                     ? kw->last - from
-									      : 0;
+		i = s->params->search_overlap || !kw->count ? 0 : s->params->backwards ? from > kw->last ? from - kw->last : 0
+			: from < kw->last                                              ? kw->last - from
+										       : 0;
 		for (; i + kw->keyword_length <= len; i++) {
-			if (brute_force_match(s, kw, buf, i) != s->params.inverse) {
-				int t = rz_search_hit_new(s, kw, s->params.backwards ? from - kw->keyword_length - i : from + i);
+			if (brute_force_match(s, kw, buf, i) != s->params->inverse) {
+				int t = rz_search_hit_new(s, kw, s->params->backwards ? from - kw->keyword_length - i : from + i);
 				if (!t) {
 					return -1;
 				}
 				if (t > 1) {
 					return s->nhits - old_nhits;
 				}
-				if (!s->params.overlap) {
+				if (!s->params->search_overlap) {
 					i += kw->keyword_length - 1;
 				}
 			}
@@ -441,7 +469,7 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 		left->len = longest - 1;
 		memcpy(left->data, buf + len - longest + 1, longest - 1);
 	}
-	left->end = s->params.backwards ? from - len : from + len;
+	left->end = s->params->backwards ? from - len : from + len;
 
 	return s->nhits - old_nhits;
 }
@@ -449,15 +477,15 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 RZ_API void rz_search_set_distance(RzSearch *s, int dist) {
 	if (dist >= RZ_SEARCH_DISTANCE_MAX) {
 		eprintf("Invalid distance\n");
-		s->params.search_distance = 0;
+		s->params->search_distance = 0;
 	} else {
-		s->params.search_distance = (dist > 0) ? dist : 0;
+		s->params->search_distance = (dist > 0) ? dist : 0;
 	}
 }
 
-// deprecate? or standarize with ->params.inverse ??
+// deprecate? or standarize with ->params->inverse ??
 RZ_API void rz_search_pattern_size(RzSearch *s, int size) {
-	s->params.pattern_size = size;
+	s->params->pattern_size = size;
 }
 
 RZ_API void rz_search_set_callback(RzSearch *s, RzSearchCallback(callback), void *user) {
@@ -469,11 +497,11 @@ RZ_API void rz_search_set_callback(RzSearch *s, RzSearchCallback(callback), void
 // forward search: from points to the left endpoint
 RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len) {
 	int ret = -1;
-	if (s->params.update) {
-		if (s->params.maxhits && s->nhits >= s->params.maxhits) {
+	if (s->params->update) {
+		if (s->params->search_maxhits && s->nhits >= s->params->search_maxhits) {
 			return 0;
 		}
-		ret = s->params.update(s, from, buf, len);
+		ret = s->params->update(s, from, buf, len);
 	} else {
 		eprintf("rz_search_update: No search method defined\n");
 	}
@@ -507,8 +535,8 @@ RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw) {
 	if (!kw || !kw->keyword_length) {
 		return false;
 	}
-	kw->kwidx = s->params.n_kws++;
-	rz_list_append(s->params.kws, kw);
+	kw->kwidx = s->params->n_kws++;
+	rz_list_append(s->params->kws, kw);
 	return true;
 }
 
@@ -517,7 +545,7 @@ RZ_API void rz_search_string_prepare_backward(RzSearch *s) {
 	RzListIter *iter;
 	RzSearchKeyword *kw;
 	// Precondition: !kw->binmask_length || kw->keyword_length % kw->binmask_length == 0
-	rz_list_foreach (s->params.kws, iter, kw) {
+	rz_list_foreach (s->params->kws, iter, kw) {
 		ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
 		while (i < j) {
 			ut8 t = *i;
@@ -536,13 +564,13 @@ RZ_API void rz_search_string_prepare_backward(RzSearch *s) {
 
 RZ_API void rz_search_reset(RzSearch *s, int mode) {
 	s->nhits = 0;
-	if (!rz_search_set_mode(s, mode)) {
+	if (!rz_search_params_set_mode(s->params, mode)) {
 		eprintf("Cannot init search for mode %d\n", mode);
 	}
 }
 
 RZ_API void rz_search_kw_reset(RzSearch *s) {
-	rz_list_purge(s->params.kws);
+	rz_list_purge(s->params->kws);
 	rz_list_purge(s->hits);
 	RZ_FREE(s->data);
 }

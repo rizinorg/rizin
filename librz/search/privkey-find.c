@@ -81,7 +81,7 @@ RZ_API int rz_search_privkey_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 		return -1;
 	}
 
-	rz_list_foreach (s->params.kws, iter, kw) {
+	rz_list_foreach (s->params->kws, iter, kw) {
 		// Iteration until the remaining length is too small to contain a key.
 		for (i = 2; i < len - PRIVKEY_SEARCH_MIN_LENGTH; i++) {
 			if (memcmp(buf + i, rsa_versionmarker, sizeof(rsa_versionmarker)) &&

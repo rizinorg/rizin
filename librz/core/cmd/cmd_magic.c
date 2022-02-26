@@ -34,8 +34,8 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 		}
 #endif
 	}
-	if (core->search->params.align) {
-		int mod = addr % core->search->params.align;
+	if (core->search->params->search_align) {
+		int mod = addr % core->search->params->search_align;
 		if (mod) {
 			RZ_LOG_ERROR("core: Unaligned search at %d\n", mod);
 			ret = mod;
@@ -97,7 +97,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 #else
 		if (!v && (!strcmp(str, "data"))) {
 #endif
-			int mod = core->search->params.align;
+			int mod = core->search->params->search_align;
 			if (mod < 1) {
 				mod = 1;
 			}
@@ -172,7 +172,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 	ck = NULL;
 #endif
 	{
-		int mod = core->search->params.align;
+		int mod = core->search->params->search_align;
 		if (mod) {
 			ret = mod; // adelta%addr + deR_ABS(mod-adelta)+1;
 			goto seek_exit;

@@ -299,7 +299,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		rz_io_write_at(io, 0, data, datalen);
 	}
 
-	rs = rz_search_new(ro->mode);
+	rs = rz_search_new(rz_search_params_new(ro->mode));
 	if (!rs) {
 		result = 1;
 		goto err;
@@ -311,7 +311,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		result = 1;
 		goto err;
 	}
-	rs->params.align = ro->align;
+	rs->params->search_align = ro->align;
 	rz_search_set_callback(rs, &hit, ro);
 	ut64 to = ro->to;
 	if (to == -1) {

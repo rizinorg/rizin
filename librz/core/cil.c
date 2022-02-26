@@ -363,7 +363,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 				(void)rz_analysis_esil_parse(esil, e);
 			}
 		}
-		int inc = (core->search->params.align > 0) ? core->search->params.align - 1 : ret - 1;
+		int inc = (core->search->params->search_align > 0) ? core->search->params->search_align - 1 : ret - 1;
 		if (inc < 0) {
 			inc = minopcode;
 		}

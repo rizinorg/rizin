@@ -46,7 +46,7 @@ RZ_API int rz_search_aes_update(RzSearch *s, ut64 from, const ut8 *buf, int len)
 	RzSearchKeyword *kw;
 	const int old_nhits = s->nhits;
 
-	rz_list_foreach (s->params.kws, iter, kw) {
+	rz_list_foreach (s->params->kws, iter, kw) {
 		if (last >= 0) {
 			for (i = 0; i < last; i++) {
 				if (aes128_key_test(buf + i)) {

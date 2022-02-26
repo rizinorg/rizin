@@ -13,7 +13,7 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 	const int old_nhits = s->nhits;
 	int ret = 0;
 
-	rz_list_foreach (s->params.kws, iter, kw) {
+	rz_list_foreach (s->params->kws, iter, kw) {
 		int reflags = RZ_REGEX_EXTENDED;
 
 		if (kw->icase) {

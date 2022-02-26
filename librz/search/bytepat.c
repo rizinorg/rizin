@@ -62,7 +62,7 @@ RZ_API int rz_search_pattern(RzSearch *s, ut64 from, ut64 to) {
 	ut8 block[BSIZE + MAX_PATLEN], sblk[BSIZE + MAX_PATLEN + 1];
 	ut64 addr, bact, bytes, intaddr, rb, bproc = 0;
 	int nr, i, moar = 0, pcnt, cnt = 0, k = 0;
-	int patlen = s->params.pattern_size;
+	int patlen = s->params->pattern_size;
 	fnditem *root;
 
 	eprintf("Searching patterns between 0x%08" PFMT64x " and 0x%08" PFMT64x "\n", from, to);
@@ -90,7 +90,7 @@ RZ_API int rz_search_pattern(RzSearch *s, ut64 from, ut64 to) {
 		// XXX bytepattern should be used with a read callback
 		nr = ((bytes - bproc) < BSIZE) ? (bytes - bproc) : BSIZE;
 		// XXX	rizin_read_at(bact, sblk, patlen);
-		s->params.iob.read_at(s->params.iob.io, addr, sblk, nr);
+		s->params->iob.read_at(s->params->iob.io, addr, sblk, nr);
 		sblk[patlen] = 0; // XXX
 
 		intaddr = bact;
@@ -99,7 +99,7 @@ RZ_API int rz_search_pattern(RzSearch *s, ut64 from, ut64 to) {
 			// TODO: handle ^C here
 			nr = ((bytes - bproc) < BSIZE) ? (bytes - bproc) : BSIZE;
 			nr += (patlen - (nr % patlen)); // tamany de bloc llegit multiple superior de tamany busqueda
-			rb = s->params.iob.read_at(s->params.iob.io, bproc, block, nr);
+			rb = s->params->iob.read_at(s->params->iob.io, bproc, block, nr);
 			if (rb < 1) {
 				break;
 			}

@@ -66,7 +66,7 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 	RzListIter *iter;
 	RzSearchKeyword *kw;
 
-	rz_list_foreach (s->params.kws, iter, kw) {
+	rz_list_foreach (s->params->kws, iter, kw) {
 		for (i = 0; i < len; i++) {
 			char ch = buf[i];
 			// non-cp850 encoded
@@ -81,7 +81,7 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 					return 1; // widechar
 				}
 				/* check if the length fits on our request */
-				if (matches >= s->params.string_min && (s->params.string_max == 0 || matches <= s->params.string_max)) {
+				if (matches >= s->params->search_minlength && (s->params->search_maxlength == 0 || matches <= s->params->search_maxlength)) {
 					str[matches] = '\0';
 					int len = strlen(str);
 					if (len > 2) {
