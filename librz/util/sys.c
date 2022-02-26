@@ -655,10 +655,9 @@ RZ_API bool rz_sys_mkdir(const char *dir) {
 	bool ret;
 
 #if __WINDOWS__
-	LPTSTR dir_ = rz_sys_conv_utf8_to_win(dir);
-
-	ret = CreateDirectory(dir_, NULL) != 0;
-	free(dir_);
+	wchar_t *dir_utf16 = rz_utf8_to_utf16(dir);
+	ret = _wmkdir(dir_utf16) != -1;
+	free(dir_utf16);
 #else
 	ret = mkdir(dir, 0755) != -1;
 #endif
