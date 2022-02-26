@@ -115,13 +115,6 @@ typedef struct {
 	void *data;
 } RzIODescData;
 
-// Move somewhere else?
-typedef struct {
-	RzSocket *fd;
-	RzSocket *client;
-	bool listener;
-} RzIORap;
-
 typedef struct rz_io_plugin_t {
 	const char *name;
 	const char *desc;

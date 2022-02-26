@@ -2870,6 +2870,12 @@ RZ_API RzAnalysisOp *rz_core_op_analysis(RzCore *core, ut64 addr, RzAnalysisOpMa
 	return op;
 }
 
+typedef struct {
+	RzSocket *fd;
+	RzSocket *client;
+	bool listener;
+} RzIORap;
+
 static void rap_break(void *u) {
 	RzIORap *rior = (RzIORap *)u;
 	if (u) {
