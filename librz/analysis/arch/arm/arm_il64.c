@@ -242,6 +242,51 @@ static RzILOpBitVector *read_reg(/*ut64 pc, */arm64_reg reg) {
 	return VARG(var);
 }
 
+static RzILOpBitVector *extend(ut32 dst_bits, arm64_extender ext, ut32 shift, RZ_OWN RzILOpBitVector *v) {
+	bool is_signed = false;
+	ut32 src_bits;
+	switch (ext) {
+	case ARM64_EXT_SXTB:
+		is_signed = true;
+	case ARM64_EXT_UXTB:
+		src_bits = 8;
+		break;
+
+	case ARM64_EXT_SXTH:
+		is_signed = true;
+	case ARM64_EXT_UXTH:
+		src_bits = 16;
+		break;
+
+	case ARM64_EXT_SXTW:
+		is_signed = true;
+	case ARM64_EXT_UXTW:
+		src_bits = 32;
+		break;
+
+	case ARM64_EXT_SXTX:
+		is_signed = true;
+	case ARM64_EXT_UXTX:
+		src_bits = 64;
+		break;
+
+	default:
+		return v;
+	}
+
+	if (v->code == RZ_IL_OP_CAST) {
+		// coming from UNSIGNED(32, ... in read_reg, reuse the existing cast
+		v->op.cast.length = src_bits;
+	} else {
+		v = UNSIGNED(src_bits, v);
+	}
+	v = is_signed ? SIGNED(dst_bits, v) : UNSIGNED(dst_bits, v);
+	if (shift) {
+		return SHIFTL0(v, UN(dst_bits == 32 ? 5 : 6, shift));
+	}
+	return v;
+}
+
 // #define PC(addr)      (addr)
 #define REG_VAL(id)   read_reg(/*PC(insn->address), */id)
 #define REG(n)        REG_VAL(REGID(n))
@@ -272,10 +317,14 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 	cs_arm64_op *op = &insn->detail->arm64.operands[n];
 	switch (op->type) {
 	case ARM64_OP_REG: {
-		if (bits_requested && REGBITS(n) != bits_requested) {
+		if (bits_requested && op->ext == ARM64_SFT_INVALID && REGBITS(n) != bits_requested) {
 			return NULL;
 		}
-		return REG(n);
+		RzILOpBitVector *r = REG(n);
+		if (!r || !bits_requested) {
+			return NULL;
+		}
+		return extend(bits_requested, op->ext, op->shift.type == ARM64_SFT_LSL ? op->shift.value : 0, r);
 	}
 	case ARM64_OP_IMM: {
 		if (!bits_requested) {
