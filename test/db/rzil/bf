@@ -1741,13 +1741,11 @@ pc = 0x00000000
 EOF
 RUN
 
-NAME=ar pc=1 before aezi
+NAME=aezi @ 1
 FILE=bins/bf/2+5.bf
-BROKEN=1
 CMDS=<<EOF
 e io.cache=1
-ar pc=1
-aezi
+aezi @ 1
 ar
 aezsu $s; ?e
 EOF
