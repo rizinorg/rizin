@@ -136,7 +136,6 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int idx);
 RZ_API void rz_print_hex_from_base2(RzPrint *p, char *bin_str);
 RZ_API RzPrint *rz_print_new(void);
 RZ_API RzPrint *rz_print_free(RzPrint *p);
-RZ_API bool rz_print_mute(RzPrint *p, int x);
 RZ_API void rz_print_set_flags(RzPrint *p, int _flags);
 RZ_API void rz_print_unset_flags(RzPrint *p, int flags);
 RZ_API void rz_print_addr(RzPrint *p, ut64 addr);
