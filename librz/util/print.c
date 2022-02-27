@@ -134,22 +134,6 @@ RZ_API void rz_print_set_is_interrupted_cb(RzPrintIsInterruptedCallback cb) {
 	is_interrupted_cb = cb;
 }
 
-RZ_API bool rz_print_mute(RzPrint *p, int x) {
-	if (x) {
-		if (p->cb_printf == &nullprinter) {
-			return false;
-		}
-		p->oprintf = p->cb_printf;
-		p->cb_printf = nullprinter;
-		return true;
-	}
-	if (p->cb_printf == nullprinter) {
-		p->cb_printf = p->oprintf;
-		return true;
-	}
-	return false;
-}
-
 RZ_API RzPrint *rz_print_new(void) {
 	RzPrint *p = RZ_NEW0(RzPrint);
 	if (!p) {
