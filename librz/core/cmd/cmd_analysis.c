@@ -8033,10 +8033,12 @@ RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, cons
 		RZ_LOG_ERROR("RzIL: the VM is not initialized.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzILVM *vm = core->analysis->il_vm->vm;
 
-	ut64 pc = rz_bv_to_ut64(vm->pc);
-	while (pc != address) {
+	while (1) {
+		ut64 pc = rz_reg_get_value_by_role(core->analysis->reg, RZ_REG_NAME_PC);
+		if (pc == address) {
+			break;
+		}
 		if (rz_cons_is_breaked()) {
 			rz_cons_printf("CTRL+C was pressed.\n");
 			break;
@@ -8044,7 +8046,6 @@ RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, cons
 		if (!rz_core_il_step(core)) {
 			break;
 		}
-		pc = rz_bv_to_ut64(vm->pc);
 	}
 	return RZ_CMD_STATUS_OK;
 }
