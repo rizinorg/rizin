@@ -914,17 +914,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			rz_cons_newline();
 			break;
 		}
-		case 'b': { // "?eb"
-			char *arg = strdup(rz_str_trim_head_ro(input + 2));
-			int n = rz_str_split(arg, ' ');
-			ut64 *portions = calloc(n, sizeof(ut64));
-			for (i = 0; i < n; i++) {
-				portions[i] = rz_num_math(core->num, rz_str_word_get0(arg, i));
-			}
-			rz_print_portionbar(core->print, portions, n);
-			free(arg);
-			break;
-		}
 		case 'c': // "?ec" column
 			rz_cons_column(rz_num_math(core->num, input + 2));
 			break;
