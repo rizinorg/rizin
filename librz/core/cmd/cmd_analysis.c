@@ -8035,7 +8035,7 @@ RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, cons
 	}
 	RzILVM *vm = core->analysis->il_vm->vm;
 
-	ut64 pc = rz_bv_to_ut64(vm->pc);
+	ut64 pc = rz_reg_get_value_by_role(core->analysis->reg, RZ_REG_NAME_PC);
 	while (pc != address) {
 		if (rz_cons_is_breaked()) {
 			rz_cons_printf("CTRL+C was pressed.\n");
