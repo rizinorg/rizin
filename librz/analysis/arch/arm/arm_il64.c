@@ -242,7 +242,20 @@ static RzILOpBitVector *read_reg(/*ut64 pc, */arm64_reg reg) {
 	return VARG(var);
 }
 
-static RzILOpBitVector *extend(ut32 dst_bits, arm64_extender ext, RZ_OWN RzILOpBitVector *v) {
+/**
+ * Perform an unsigned cast of v or adjust an already existing one
+ */
+static RzILOpBitVector *adjust_unsigned(ut32 bits, RZ_OWN RzILOpBitVector *v) {
+	if (v->code == RZ_IL_OP_CAST) {
+		// reuse any existing cast
+		v->op.cast.length = bits;
+	} else {
+		v = UNSIGNED(bits, v);
+	}
+	return v;
+}
+
+static RzILOpBitVector *extend(ut32 dst_bits, arm64_extender ext, RZ_OWN RzILOpBitVector *v, ut32 v_bits) {
 	bool is_signed = false;
 	ut32 src_bits;
 	switch (ext) {
@@ -271,15 +284,14 @@ static RzILOpBitVector *extend(ut32 dst_bits, arm64_extender ext, RZ_OWN RzILOpB
 		break;
 
 	default:
-		return v;
+		if (dst_bits == v_bits) {
+			return v;
+		} else {
+			return adjust_unsigned(dst_bits, v);
+		}
 	}
 
-	if (v->code == RZ_IL_OP_CAST) {
-		// coming from UNSIGNED(32, ... in read_reg, reuse the existing cast
-		v->op.cast.length = src_bits;
-	} else {
-		v = UNSIGNED(src_bits, v);
-	}
+	v = adjust_unsigned(src_bits, v);
 	return is_signed ? SIGNED(dst_bits, v) : UNSIGNED(dst_bits, v);
 }
 
@@ -329,14 +341,17 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 	cs_arm64_op *op = &insn->detail->arm64.operands[n];
 	switch (op->type) {
 	case ARM64_OP_REG: {
-		if (bits_requested && op->ext == ARM64_SFT_INVALID && REGBITS(n) != bits_requested) {
-			return NULL;
+		if (!bits_requested) {
+			bits_requested = REGBITS(n);
+			if (bits_inout) {
+				*bits_inout = bits_requested;
+			}
 		}
 		RzILOpBitVector *r = REG(n);
-		if (!r || !bits_requested) {
+		if (!r) {
 			return NULL;
 		}
-		return shift(op->shift.type, op->shift.value, extend(bits_requested, op->ext, r));
+		return shift(op->shift.type, op->shift.value, extend(bits_requested, op->ext, r, REGBITS(n)));
 	}
 	case ARM64_OP_IMM: {
 		if (!bits_requested) {
@@ -459,6 +474,28 @@ static RzILOpEffect *and(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_ASR
+ * ARM: asr, asrv
+ */
+static RzILOpEffect *asr(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *a = ARG(1, &bits);
+	if (!bits) {
+		return NULL;
+	}
+	bits = bits == 32 ? 5 : 6; // cast to log2(bits) to perform exactly mod bits
+	RzILOpBitVector *b = ARG(2, &bits);
+	if (!b) {
+		rz_il_op_pure_free(a);
+		return NULL;
+	}
+	return write_reg(REGID(0), SHIFTRA(a, b));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -481,6 +518,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return adr(insn);
 	case ARM64_INS_AND:
 		return and(insn);
+	case ARM64_INS_ASR:
+		return asr(insn);
 	default:
 		break;
 	}
