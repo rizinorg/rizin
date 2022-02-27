@@ -419,6 +419,19 @@ static RzILOpEffect *update_flags_zn(RzILOpBitVector *v) {
 }
 
 /**
+ * zf := v == 0
+ * nf := msb v
+ * cf := 0
+ * vf := 0
+ */
+static RzILOpEffect *update_flags_zn00(RzILOpBitVector *v) {
+	return SEQ3(
+		update_flags_zn(v),
+		SETG("cf", IL_FALSE),
+		SETG("vf", IL_FALSE));
+}
+
+/**
  * Capstone: ARM64_INS_ADD, ARM64_INS_ADC, ARM64_INS_SUB, ARM64_INS_SBC
  * ARM: add, adds, adc, adcs, sub, subs, sbc
  */
@@ -514,11 +527,7 @@ static RzILOpEffect * and (cs_insn * insn) {
 		return NULL;
 	}
 	if (insn->detail->arm64.update_flags) {
-		return SEQ4(
-			eff,
-			update_flags_zn(REG(0)),
-			SETG("cf", IL_FALSE),
-			SETG("vf", IL_FALSE));
+		return SEQ2(eff, update_flags_zn00(REG(0)));
 	}
 	return eff;
 }
@@ -559,6 +568,21 @@ static RzILOpEffect *branch(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_BL, ARM64_INS_BLR, ARM64_INS_BLRAA, ARM64_INS_BLRAAZ, ARM64_INS_BLRAB, ARM64_INS_BLRABZ
+ * ARM: bl, blr, blraa, blraaz, blrab, blrabz
+ */
+static RzILOpEffect *bl(cs_insn *insn) {
+	ut32 bits = 64;
+	RzILOpBitVector *a = ARG(0, &bits);
+	if (!a) {
+		return NULL;
+	}
+	return SEQ2(
+		SETG("x30", U64(insn->address + 4)),
+		JMP(a));
+}
+
+/**
  * Capstone: ARM64_INS_BFM, ARM64_INS_BFI, ARM64_INS_BFXIL
  * ARM: bfm, bfc, bfi, bfxil
  */
@@ -566,7 +590,7 @@ static RzILOpEffect *bfm(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
-	ut32 bits = REGBITS(0);
+	ut32 bits = 0;
 	RzILOpBitVector *a = ARG(0, &bits);
 	if (!a) {
 		return NULL;
@@ -587,6 +611,32 @@ static RzILOpEffect *bfm(cs_insn *insn) {
 	}
 	// insn->id == ARM64_INS_BFXIL
 	return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask_base)), SHIFTR0(LOGAND(b, UN(bits, mask)), UN(6, IMM(2)))));
+}
+
+/**
+ * Capstone: ARM64_INS_BIC, ARM64_INS_BICS
+ * ARM: bic
+ */
+static RzILOpEffect *bic(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *a = ARG(1, &bits);
+	RzILOpBitVector *b = ARG(2, &bits);
+	if (!a || !b) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
+		return NULL;
+	}
+	RzILOpEffect *eff = write_reg(REGID(0), LOGAND(a, LOGNOT(b)));
+	if (!eff) {
+		return NULL;
+	}
+	if (insn->detail->arm64.update_flags) {
+		return SEQ2(eff, update_flags_zn00(REG(0)));
+	}
+	return eff;
 }
 
 /**
@@ -618,11 +668,18 @@ static RzILOpEffect *bfm(cs_insn *insn) {
  * - PACGA
  * - PACIA, PACIA1716, PACIASP, PACIAZ, PACIZA
  * - PACIB, PACIB1716, PACIBSP, PACIBZ, PACIZB
+ * - BLRAA, BLRAAZ, BLRAB, BLRABZ
+ * - BRAA, BRAAZ, BRAB, BRABZ
  *
  * Cache maintenance, tlb maintenance and address translation
  * ----------------------------------------------------------
  * - AT
  * - SYS
+ *
+ * Miscellaneous
+ * -------------
+ * - BRK: causes a breakpoint instruction exception
+ * - BTI: FEAT_BTI/Branch Target Identification
  *
  * Not supported by capstone
  * -------------------------
@@ -652,11 +709,26 @@ RZ_IPI RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn) {
 	case ARM64_INS_ASR:
 		return asr(insn);
 	case ARM64_INS_B:
+	case ARM64_INS_BR:
+	case ARM64_INS_BRAA:
+	case ARM64_INS_BRAAZ:
+	case ARM64_INS_BRAB:
+	case ARM64_INS_BRABZ:
 		return branch(insn);
+	case ARM64_INS_BL:
+	case ARM64_INS_BLR:
+	case ARM64_INS_BLRAA:
+	case ARM64_INS_BLRAAZ:
+	case ARM64_INS_BLRAB:
+	case ARM64_INS_BLRABZ:
+		return bl(insn);
 	case ARM64_INS_BFM:
 	case ARM64_INS_BFI:
 	case ARM64_INS_BFXIL:
 		return bfm(insn);
+	case ARM64_INS_BIC:
+	case ARM64_INS_BICS:
+		return bic(insn);
 	default:
 		break;
 	}
