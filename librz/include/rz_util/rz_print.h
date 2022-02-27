@@ -192,7 +192,6 @@ RZ_API int rz_print_date_get_now(RzPrint *p, char *str);
 RZ_API void rz_print_zoom(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 RZ_API void rz_print_progressbar(RzPrint *pr, int pc, int _cols);
-RZ_API void rz_print_portionbar(RzPrint *p, const ut64 *portions, int n_portions);
 RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
 RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
 RZ_API void rz_print_2bpp_row(RzPrint *p, ut8 *buf);

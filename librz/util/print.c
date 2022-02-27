@@ -30,42 +30,6 @@ static int libc_eprintf(const char *format, ...) {
 
 static RzPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
-RZ_API void rz_print_portionbar(RzPrint *p, const ut64 *portions, int n_portions) {
-	const int use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
-	int i, j;
-	ut64 total = 0LL;
-	for (i = 0; i < n_portions; i++) {
-		ut64 sum = total + portions[i];
-		if (total > sum) {
-			eprintf("portionbar overflow aborted\n");
-			return;
-		}
-		total = sum;
-	}
-	p->cb_printf("[");
-	if (total == 0) {
-		total = 1;
-	}
-	for (i = 0; i < n_portions; i++) {
-		int pc = portions[i] * 100 / total;
-		// adjust pc to screen columns
-		pc = pc * p->width / 100;
-		if (use_color) {
-			p->cb_printf("\x1b[%dm", 31 + (i % 8));
-		}
-		if (pc == 0) {
-			pc = 1;
-		}
-		for (j = 0; j < pc; j++) {
-			p->cb_printf("%c", 'A' + i);
-		}
-		if (use_color) {
-			p->cb_printf(Color_RESET);
-		}
-	}
-	p->cb_printf("]\n");
-}
-
 RZ_API void rz_print_columns(RzPrint *p, const ut8 *buf, int len, int height) {
 #define cb_print(x) p->cb_printf("%s", x)
 	size_t i, j;
