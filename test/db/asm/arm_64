@@ -452,5 +452,11 @@ ad "b.gt 0x11234" ac910054 0x10000 (branch (! (|| (^^ (var nf) (var vf)) (var zf
 ad "b.le 0x11234" ad910054 0x10000 (branch (|| (^^ (var nf) (var vf)) (var zf)) (jmp (bv 64 0x11234)) nop)
 ad "b.al 0x11234" ae910054 0x10000 (jmp (bv 64 0x11234))
 ad "b.nv 0x11234" af910054 0x10000 (jmp (bv 64 0x11234))
-a "b.cs 0x11234" a2910054 0x10000 # same as b.hs
-a "b.cc 0x11234" a3910054 0x10000 # same as b.lo
+a "b.cs 0x11234" a2910054 0x10000# same as b.hs
+a "b.cc 0x11234" a3910054 0x10000# same as b.lo
+d "bfc x1, 3, 5" e1137db3 0x0 (set x1 (& (var x1) (bv 64 0xf8)))
+d "bfc w1, 3, 5" e1131d33 0x0 (set x1 (cast 64 false (& (cast 32 false (var x1)) (bv 32 0xf8))))
+d "bfi x1, x2, 0x16, 0xe" 41346ab3 0x0 (set x1 (| (& (var x1) (bv 64 0xfffffff0003fffff)) (<< (& (var x2) (bv 64 0x3fff)) (bv 6 0x16) false)))
+d "bfi w1, w2, 0xa, 0xe" 41341633 0x0 (set x1 (cast 64 false (| (& (cast 32 false (var x1)) (bv 32 0xff0003ff)) (<< (& (cast 32 false (var x2)) (bv 32 0x3fff)) (bv 6 0xa) false))))
+d "bfxil x1, x2, 0xd, 0x1e" 41a84db3 0x0 (set x1 (| (& (var x1) (bv 64 0xffffffffc0000000)) (>> (& (var x2) (bv 64 0x7ffffffe000)) (bv 6 0xd) false)))
+d "bfxil w1, w2, 0xd, 0xa" 41580d33 0x0 (set x1 (cast 64 false (| (& (cast 32 false (var x1)) (bv 32 0xfffffc00)) (>> (& (cast 32 false (var x2)) (bv 32 0x7fe000)) (bv 6 0xd) false))))

@@ -559,6 +559,37 @@ static RzILOpEffect *branch(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_BFM, ARM64_INS_BFI, ARM64_INS_BFXIL
+ * ARM: bfm, bfc, bfi, bfxil
+ */
+static RzILOpEffect *bfm(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *a = ARG(0, &bits);
+	if (!a) {
+		return NULL;
+	}
+	if (ISIMM(1) && ISIMM(2)) {
+		// bfc
+		ut64 mask = rz_num_bitmask(IMM(2)) << RZ_MIN(63, IMM(1));
+		return write_reg(REGID(0), LOGAND(a, UN(bits, mask)));
+	}
+	RzILOpBitVector *b = ARG(1, &bits);
+	if (!b) {
+		return NULL;
+	}
+	ut64 mask_base = rz_num_bitmask(IMM(3));
+	ut64 mask = mask_base << RZ_MIN(63, IMM(2));
+	if (insn->id == ARM64_INS_BFI) {
+		return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask)), SHIFTL0(LOGAND(b, UN(bits, mask_base)), UN(6, IMM(2)))));
+	}
+	// insn->id == ARM64_INS_BFXIL
+	return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask_base)), SHIFTR0(LOGAND(b, UN(bits, mask)), UN(6, IMM(2)))));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL, without considering its condition
  *
  * Currently unimplemented:
@@ -622,6 +653,10 @@ RZ_IPI RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn) {
 		return asr(insn);
 	case ARM64_INS_B:
 		return branch(insn);
+	case ARM64_INS_BFM:
+	case ARM64_INS_BFI:
+	case ARM64_INS_BFXIL:
+		return bfm(insn);
 	default:
 		break;
 	}
