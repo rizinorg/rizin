@@ -429,6 +429,36 @@ static RzILOpEffect *adr(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_AND
+ * ARM: and
+ */
+static RzILOpEffect *and(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *a = ARG(1, &bits);
+	RzILOpBitVector *b = ARG(2, &bits);
+	if (!a || !b) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
+		return NULL;
+	}
+	RzILOpEffect *eff = write_reg(REGID(0), LOGAND(a, b));
+	if (!eff) {
+		return NULL;
+	}
+	if (insn->detail->arm64.update_flags) {
+		return SEQ4(
+			eff,
+			update_flags_zn(REG(0)),
+			SETG("cf", IL_FALSE),
+			SETG("vf", IL_FALSE));
+	}
+	return eff;
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -449,6 +479,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_ADR:
 	case ARM64_INS_ADRP:
 		return adr(insn);
+	case ARM64_INS_AND:
+		return and(insn);
 	default:
 		break;
 	}
