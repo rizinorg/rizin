@@ -28,6 +28,44 @@ static const char *regs_bound[] = {
 	NULL
 };
 
+/**
+ * IL for arm64 condition
+ * unconditional is returned as NULL (rather than true), for simpler code
+ */
+static RzILOpBool *cond(arm64_cc c) {
+	switch (c) {
+	case ARM64_CC_EQ:
+		return VARG("zf");
+	case ARM64_CC_NE:
+		return INV(VARG("zf"));
+	case ARM64_CC_HS:
+		return VARG("cf");
+	case ARM64_CC_LO:
+		return INV(VARG("cf"));
+	case ARM64_CC_MI:
+		return VARG("nf");
+	case ARM64_CC_PL:
+		return INV(VARG("nf"));
+	case ARM64_CC_VS:
+		return VARG("vf");
+	case ARM64_CC_VC:
+		return INV(VARG("vf"));
+	case ARM64_CC_HI:
+		return AND(VARG("vf"), INV(VARG("zf")));
+	case ARM64_CC_LS:
+		return OR(INV(VARG("vf")), VARG("zf"));
+	case ARM64_CC_GE:
+		return INV(XOR(VARG("nf"), VARG("vf")));
+	case ARM64_CC_LT:
+		return XOR(VARG("nf"), VARG("vf"));
+	case ARM64_CC_GT:
+		return INV(OR(XOR(VARG("nf"), VARG("vf")), VARG("zf")));
+	case ARM64_CC_LE:
+		return OR(XOR(VARG("nf"), VARG("vf")), VARG("zf"));
+	default:
+		return NULL;
+	}
+}
 
 static arm64_reg xreg(ut8 idx) {
 	// for some reason, the ARM64_REG_X0...ARM64_REG_X30 enum values are not contiguous,
@@ -521,7 +559,7 @@ static RzILOpEffect *branch(cs_insn *insn) {
 }
 
 /**
- * Lift an AArch64 instruction to RzIL
+ * Lift an AArch64 instruction to RzIL, without considering its condition
  *
  * Currently unimplemented:
  *
@@ -559,7 +597,7 @@ static RzILOpEffect *branch(cs_insn *insn) {
  * -------------------------
  * - AXFLAG
  */
-RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
+RZ_IPI RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC:
@@ -588,6 +626,18 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		break;
 	}
 	return NULL;
+}
+
+RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
+	RzILOpEffect *eff = il_unconditional(handle, insn);
+	if (!eff) {
+		return NULL;
+	}
+	RzILOpBool *c = cond(insn->detail->arm64.cc);
+	if (c) {
+		return BRANCH(c, eff, NOP);
+	}
+	return eff;
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
