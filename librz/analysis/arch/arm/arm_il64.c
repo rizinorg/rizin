@@ -395,7 +395,11 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 		return adr(insn, is_thumb);
 	}
 #endif
-	bool is_sub = insn->id == ARM64_INS_SUB || insn->id == ARM64_INS_SBC;
+	bool is_sub = insn->id == ARM64_INS_SUB || insn->id == ARM64_INS_SBC
+#if CS_API_MAJOR > 4
+		|| insn->id == ARM64_INS_SUBS || insn->id == ARM64_INS_SBCS
+#endif
+	;
 	ut32 bits = REGBITS(0);
 	RzILOpBitVector *a = ARG(1, &bits);
 	RzILOpBitVector *b = ARG(2, &bits);
@@ -411,10 +415,18 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 	}
 	RzILOpBitVector *res = is_sub ? SUB(a, b) : ADD(a, b);
 	bool with_carry = false;
-	if (insn->id == ARM64_INS_ADC) {
+	if (insn->id == ARM64_INS_ADC
+#if CS_API_MAJOR > 4
+		|| insn->id == ARM64_INS_ADCS
+#endif
+			) {
 		res = ADD(res, ITE(VARG("cf"), UN(bits, 1), UN(bits, 0)));
 		with_carry = true;
-	} else if (insn->id == ARM64_INS_SBC) {
+	} else if (insn->id == ARM64_INS_SBC
+#if CS_API_MAJOR > 4
+		|| insn->id == ARM64_INS_SBCS
+#endif
+			) {
 		res = SUB(res, ITE(VARG("cf"), UN(bits, 0), UN(bits, 1)));
 		with_carry = true;
 	}
@@ -483,7 +495,7 @@ static RzILOpEffect *asr(cs_insn *insn) {
 	}
 	ut32 bits = REGBITS(0);
 	RzILOpBitVector *a = ARG(1, &bits);
-	if (!bits) {
+	if (!a) {
 		return NULL;
 	}
 	bits = bits == 32 ? 5 : 6; // cast to log2(bits) to perform exactly mod bits
@@ -496,15 +508,56 @@ static RzILOpEffect *asr(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_B
+ * ARM: b, b.cond
+ */
+static RzILOpEffect *branch(cs_insn *insn) {
+	ut32 bits = 64;
+	RzILOpBitVector *a = ARG(0, &bits);
+	if (!a) {
+		return NULL;
+	}
+	return JMP(a);
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
  *
- * - FEAT_MTE/FEAT_MTE2/FEAT_MTE3: Memory Tagging Extension
- *   Plausible to represent by adding another memory with a 60bit keys and 4bit values to hold the memory tags.
- *   Instructions:
- *   - ADDG
+ * FEAT_MTE/FEAT_MTE2/FEAT_MTE3: Memory Tagging Extension
+ * ------------------------------------------------------
+ * Plausible to represent by adding another memory with a 60bit keys and 4bit values to hold the memory tags.
+ * Instructions:
+ * - ADDG
  *
+ * FEAT_PAuth: Pointer Authentication
+ * ----------------------------------
+ * Extremely complex internal calculations. Different options to implement it include:
+ * - Fully implementing it in IL (probably theoretically possible, but may not be worth it)
+ * - Implementing the complex parts in uninterpreted functions and the simpler ones (e.g. stripping of auth bits) in IL.
+ *   Might be a very good final solution since all data flow is correctly represented.
+ * - Implementing only stripping in IL and leaving everything else as nop.
+ *   Might be useful as an interims solution to be able to strip pointers, but always unconditionally succeed authentication.
+ * Instructions:
+ * - AUTDA, AUTDZA
+ * - AUTDB, AUTDZB
+ * - AUTIA, AUTIA1716, AUTIASP, AUTIAZ, AUTIZA
+ * - AUTIB, AUTIB1716, AUTIBSP, AUTIBZ, AUTIZB
+ * - PACDA, PACDZA
+ * - PACDB, PACDZB
+ * - PACGA
+ * - PACIA, PACIA1716, PACIASP, PACIAZ, PACIZA
+ * - PACIB, PACIB1716, PACIBSP, PACIBZ, PACIZB
+ *
+ * Cache maintenance, tlb maintenance and address translation
+ * ----------------------------------------------------------
+ * - AT
+ * - SYS
+ *
+ * Not supported by capstone
+ * -------------------------
+ * - AXFLAG
  */
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
@@ -512,14 +565,25 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_ADC:
 	case ARM64_INS_SUB:
 	case ARM64_INS_SBC:
+#if CS_API_MAJOR > 4
+	case ARM64_INS_ADDS:
+	case ARM64_INS_SUBS:
+	case ARM64_INS_ADCS:
+	case ARM64_INS_SBCS:
+#endif
 		return add_sub(insn);
 	case ARM64_INS_ADR:
 	case ARM64_INS_ADRP:
 		return adr(insn);
 	case ARM64_INS_AND:
+#if CS_API_MAJOR > 4
+	case ARM64_INS_ANDS:
+#endif
 		return and(insn);
 	case ARM64_INS_ASR:
 		return asr(insn);
+	case ARM64_INS_B:
+		return branch(insn);
 	default:
 		break;
 	}
@@ -529,7 +593,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 #include <rz_il/rz_il_opbuilder_end.h>
 
 RZ_IPI RzAnalysisILConfig *rz_arm_cs_64_il_config(bool big_endian) {
-	RzAnalysisILConfig *r = rz_analysis_il_config_new(32, big_endian, 32);
+	RzAnalysisILConfig *r = rz_analysis_il_config_new(64, big_endian, 64);
 	r->reg_bindings = regs_bound;
 	return r;
 }

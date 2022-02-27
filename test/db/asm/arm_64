@@ -435,3 +435,4 @@ d "ands w1, w2, w3" 4100036a 0x0 (seq (set x1 (cast 64 false (& (cast 32 false (
 d "asr x1, x2, x3" 4128c39a 0x0 (set x1 (>> (var x2) (cast 6 false (var x3)) (msb (var x2))))
 d "asr w1, w2, w3" 4128c31a 0x0 (set x1 (cast 64 false (>> (cast 32 false (var x2)) (cast 5 false (var x3)) (msb (cast 32 false (var x2))))))
 d "asr w1, w2, 3" 417c0313 0x0 (set x1 (cast 64 false (>> (cast 32 false (var x2)) (bv 5 0x3) (msb (cast 32 false (var x2))))))
+d "b 0x1c0ffe0" f83f3014 0x1000000 (jmp (bv 64 0x1c0ffe0))
