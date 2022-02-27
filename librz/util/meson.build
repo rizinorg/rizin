@@ -28,7 +28,6 @@ rz_util_sources = [
   'log.c',
   'mem.c',
   'name.c',
-  'pie.c',
   'seven.c',
   'path.c',
   'print.c',

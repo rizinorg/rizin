@@ -943,20 +943,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			free(newmsg);
 			break;
 		}
-		case 'p': {
-			char *word, *str = strdup(input + 2);
-			RzList *list = rz_str_split_list(str, " ", 0);
-			ut64 *nums = calloc(sizeof(ut64), rz_list_length(list));
-			int i = 0;
-			rz_list_foreach (list, iter, word) {
-				nums[i] = rz_num_math(core->num, word);
-				;
-				i++;
-			}
-			int size = rz_config_get_i(core->config, "hex.cols");
-			rz_print_pie(core->print, nums, rz_list_length(list), size);
-			rz_list_free(list);
-		} break;
 		case ' ': {
 			const char *msg = rz_str_trim_head_ro(input + 1);
 			// TODO: replace all ${flagname} by its value in hexa
