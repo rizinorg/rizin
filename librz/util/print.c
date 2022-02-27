@@ -30,63 +30,6 @@ static int libc_eprintf(const char *format, ...) {
 
 static RzPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
-RZ_API void rz_print_columns(RzPrint *p, const ut8 *buf, int len, int height) {
-#define cb_print(x) p->cb_printf("%s", x)
-	size_t i, j;
-	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
-	int rows = height > 0 ? height : 10;
-	// int realrows = rows * 2;
-	bool colors = p->flags & RZ_PRINT_FLAGS_COLOR;
-	RzConsPrintablePalette *pal = &p->cons->context->pal;
-	const char *vline = p->cons->use_utf8 ? RUNE_LINE_VERT : "|";
-	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
-	const char *kol[5];
-	kol[0] = pal->call;
-	kol[1] = pal->jmp;
-	kol[2] = pal->cjmp;
-	kol[3] = pal->mov;
-	kol[4] = pal->nop;
-	if (colors) {
-		for (i = 0; i < rows; i++) {
-			size_t threshold = i * (0xff / rows);
-			size_t koli = i * 5 / rows;
-			for (j = 0; j < cols; j++) {
-				int realJ = j * len / cols;
-				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					if (p->histblock) {
-						p->cb_printf("%s%s%s", kol[koli], block, Color_RESET);
-					} else {
-						p->cb_printf("%s%s%s", kol[koli], vline, Color_RESET);
-					}
-				} else {
-					cb_print(" ");
-				}
-			}
-			cb_print("\n");
-		}
-		return;
-	}
-
-	for (i = 0; i < rows; i++) {
-		size_t threshold = i * (0xff / rows);
-		for (j = 0; j < cols; j++) {
-			size_t realJ = j * len / cols;
-			if (255 - buf[realJ] < threshold) {
-				if (p->histblock) {
-					p->cb_printf("%s%s%s", Color_BGGRAY, block, Color_RESET);
-				} else {
-					cb_print(vline);
-				}
-			} else if (i + 1 == rows) {
-				cb_print("_");
-			} else {
-				cb_print(" ");
-			}
-		}
-		cb_print("\n");
-	}
-}
-
 RZ_API bool rz_print_is_interrupted(void) {
 	if (is_interrupted_cb) {
 		return is_interrupted_cb();
