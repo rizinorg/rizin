@@ -8,7 +8,7 @@
 
 #include "arm_accessors64.h"
 // This source file is 64-bit specific, so avoid having to type 64 all the time:
-#define IMM IMM64
+#define IMM   IMM64
 #define REGID REGID64
 #define ISIMM ISIMM64
 #define ISREG ISREG64
@@ -266,7 +266,7 @@ static ut32 reg_bits(arm64_reg reg) {
 /**
  * IL to read the given capstone reg
  */
-static RzILOpBitVector *read_reg(/*ut64 pc, */arm64_reg reg) {
+static RzILOpBitVector *read_reg(/*ut64 pc, */ arm64_reg reg) {
 	// if (reg == ARM64_REG_PC) {
 	// 	return U32(pc);
 	// }
@@ -350,9 +350,9 @@ static RzILOpBitVector *shift(arm64_shifter sft, ut32 dist, RZ_OWN RzILOpBitVect
 }
 
 // #define PC(addr)      (addr)
-#define REG_VAL(id)   read_reg(/*PC(insn->address), */id)
-#define REG(n)        REG_VAL(REGID(n))
-#define REGBITS(n)    reg_bits(REGID(n))
+#define REG_VAL(id) read_reg(/*PC(insn->address), */ id)
+#define REG(n)      REG_VAL(REGID(n))
+#define REGBITS(n)  reg_bits(REGID(n))
 // #define MEMBASE(x)    REG_VAL(insn->detail->arm64.operands[x].mem.base)
 
 /**
@@ -406,7 +406,7 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 	return NULL;
 }
 
-#define ARG(n, bits)          arg(insn, n, bits)
+#define ARG(n, bits) arg(insn, n, bits)
 
 /**
  * zf := v == 0
@@ -437,7 +437,7 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 #if CS_API_MAJOR > 4
 		|| insn->id == ARM64_INS_SUBS || insn->id == ARM64_INS_SBCS
 #endif
-	;
+		;
 	ut32 bits = REGBITS(0);
 	RzILOpBitVector *a = ARG(1, &bits);
 	RzILOpBitVector *b = ARG(2, &bits);
@@ -457,14 +457,14 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 #if CS_API_MAJOR > 4
 		|| insn->id == ARM64_INS_ADCS
 #endif
-			) {
+	) {
 		res = ADD(res, ITE(VARG("cf"), UN(bits, 1), UN(bits, 0)));
 		with_carry = true;
 	} else if (insn->id == ARM64_INS_SBC
 #if CS_API_MAJOR > 4
 		|| insn->id == ARM64_INS_SBCS
 #endif
-			) {
+	) {
 		res = SUB(res, ITE(VARG("cf"), UN(bits, 0), UN(bits, 1)));
 		with_carry = true;
 	}
@@ -497,7 +497,7 @@ static RzILOpEffect *adr(cs_insn *insn) {
  * Capstone: ARM64_INS_AND
  * ARM: and
  */
-static RzILOpEffect *and(cs_insn *insn) {
+static RzILOpEffect * and (cs_insn * insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
