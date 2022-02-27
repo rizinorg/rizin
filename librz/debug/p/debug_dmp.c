@@ -38,6 +38,8 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	ut32 ThreadOffset = 0;
 	ut32 CallStackOffset = 0;
 	ut32 NumberProcessors = 0;
+	ctx->target = TARGET_BACKEND;
+	dbg->corebind.cmd(dbg->corebind.core, "e io.va=0");
 	RzBuffer *b = rz_buf_new_with_io(&dbg->iob);
 	rz_buf_read_le64_at(b, rz_offsetof(dmp64_header, DirectoryTableBase), &ctx->kernelDirectoryTable);
 	rz_buf_read_le64_at(b, rz_offsetof(dmp64_header, PsActiveProcessHead), &ctx->windctx.PsActiveProcessHead);
