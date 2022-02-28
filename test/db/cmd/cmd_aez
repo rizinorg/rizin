@@ -151,3 +151,23 @@ EXPECT=<<EOF
 0x00010000 8 ptr
 EOF
 RUN
+
+NAME=double aezsu with different start pc
+FILE=bins/bf/2+5.bf
+CMDS=<<EOF
+e io.cache=1
+aezi
+(emu_pc pc; ar pc=$0; ar; aezsu $s; ?e)
+.(emu_pc 1)
+wv1 0 @ ptr
+.(emu_pc 0)
+EOF
+EXPECT=<<EOF
+ptr = 0x00010000
+pc = 0x00000001
+6
+ptr = 0x00010000
+pc = 0x00000000
+7
+EOF
+RUN
