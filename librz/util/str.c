@@ -2379,9 +2379,13 @@ RZ_API RZ_OWN char *rz_str_extract_printable(RZ_NONNULL const char *str, int len
 		return NULL;
 	}
 	int i;
-	for (i = 0, r = res; i < len; str++, i++) {
+	for (i = 0, r = res; i < len; str++) {
+		if (*str == 0x0) { // NULL terminator
+			break;
+		}
 		if (IS_PRINTABLE(*str)) {
 			*r++ = *str;
+			i++;
 		}
 	}
 	*r = 0;
