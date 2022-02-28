@@ -723,6 +723,22 @@ static RzILOpEffect *casp(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_CBZ, ARM64_INS_CBNZ
+ * ARM: cbz, cbnz
+ */
+static RzILOpEffect *cbz(cs_insn *insn) {
+	RzILOpBitVector *v = ARG(0, NULL);
+	ut32 bits = 64;
+	RzILOpBitVector *tgt = ARG(1, &bits);
+	if (!v || !tgt) {
+		rz_il_op_pure_free(v);
+		rz_il_op_pure_free(tgt);
+		return NULL;
+	}
+	return BRANCH(insn->id == ARM64_INS_CBNZ ? INV(IS_ZERO(v)) : IS_ZERO(v), JMP(tgt), NULL);
+}
+
+/**
  * Lift an AArch64 instruction to RzIL, without considering its condition
  *
  * Currently unimplemented:
@@ -836,6 +852,9 @@ RZ_IPI RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn) {
 	case ARM64_INS_CASPAL:
 	case ARM64_INS_CASPL:
 		return casp(insn);
+	case ARM64_INS_CBZ:
+	case ARM64_INS_CBNZ:
+		return cbz(insn);
 	default:
 		break;
 	}
