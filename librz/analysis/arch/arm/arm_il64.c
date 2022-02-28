@@ -817,6 +817,53 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_CLS
+ * ARM: cls
+ */
+static RzILOpEffect *cls(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = 0;
+	RzILOpBitVector *v = ARG(1, &bits);
+	if (!v) {
+		return NULL;
+	}
+	return SEQ5(
+		SETL("v", v),
+		SETL("i", SN(bits, -1)),
+		SETL("msb", MSB(VARL("v"))),
+		REPEAT(INV(XOR(MSB(VARL("v")), VARL("msb"))),
+			SEQ2(
+				SETL("v", SHIFTL(INV(VARL("msb")), VARL("v"), UN(6, 1))),
+				SETL("i", ADD(VARL("i"), UN(bits, 1))))),
+		write_reg(REGID(0), VARL("i")));
+}
+
+/**
+ * Capstone: ARM64_INS_CLZ
+ * ARM: clz
+ */
+static RzILOpEffect *clz(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = 0;
+	RzILOpBitVector *v = ARG(1, &bits);
+	if (!v) {
+		return NULL;
+	}
+	return SEQ4(
+		SETL("v", v),
+		SETL("i", UN(bits, bits)),
+		REPEAT(INV(IS_ZERO(VARL("v"))),
+			SEQ2(
+				SETL("v", SHIFTR0(VARL("v"), UN(6, 1))),
+				SETL("i", SUB(VARL("i"), UN(bits, 1))))),
+		write_reg(REGID(0), VARL("i")));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -858,6 +905,7 @@ static RzILOpEffect *csinc(cs_insn *insn) {
  * -------------
  * - BRK: causes a breakpoint instruction exception
  * - BTI: FEAT_BTI/Branch Target Identification
+ * - CLREX: clears the local monitor
  *
  * Not supported by capstone
  * -------------------------
@@ -948,6 +996,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_CNEG:
 	case ARM64_INS_CSNEG:
 		return csinc(insn);
+	case ARM64_INS_CLS:
+		return cls(insn);
+	case ARM64_INS_CLZ:
+		return clz(insn);
 	default:
 		break;
 	}

@@ -1,0 +1,75 @@
+NAME=arm cls
+FILE=malloc://0x100
+ARGS=-aarm -b64
+CMDS=<<EOF
+wx 6214c0da
+aezi
+?e -- 0x00800000
+ar x3=0x00800000
+aezs
+ar x2
+?e -- 0xffffffffff800000
+ar pc=0
+ar x3=0xffffffffff800000
+aezs
+ar x2
+?e -- 0xffffffffffffffff
+ar pc=0
+ar x3=0xffffffffffffffff
+aezs
+ar x2
+?e -- 0x0
+ar pc=0
+ar x3=0x0
+aezs
+ar x2
+EOF
+EXPECT=<<EOF
+-- 0x00800000
+x2 = 0x00000027
+-- 0xffffffffff800000
+x2 = 0x00000028
+-- 0xffffffffffffffff
+x2 = 0x0000003f
+-- 0x0
+x2 = 0x0000003f
+EOF
+RUN
+
+NAME=arm clz
+FILE=malloc://0x100
+ARGS=-aarm -b64
+CMDS=<<EOF
+wx 6210c0da
+aezi
+?e -- 0x00800000
+ar x3=0x00800000
+aezs
+ar x2
+?e -- 0xffffffffff800000
+ar pc=0
+ar x3=0xffffffffff800000
+aezs
+ar x2
+?e -- 0xffffffffffffffff
+ar pc=0
+ar x3=0xffffffffffffffff
+aezs
+ar x2
+?e -- 0x0
+ar pc=0
+ar x3=0x0
+aezs
+ar x2
+EOF
+EXPECT=<<EOF
+-- 0x00800000
+x2 = 0x00000028
+-- 0xffffffffff800000
+x2 = 0x00000000
+-- 0xffffffffffffffff
+x2 = 0x00000000
+-- 0x0
+x2 = 0x00000040
+EOF
+RUN

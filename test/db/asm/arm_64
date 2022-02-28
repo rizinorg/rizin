@@ -515,3 +515,7 @@ d "csinv x0, x1, x2, mi" 204082da 0x0 (set x0 (ite (var nf) (~ (var x2)) (var x1
 d "csinv w0, w1, w2, pl" 2050825a 0x0 (set x0 (cast 64 false (ite (! (var nf)) (~ (cast 32 false (var x2))) (cast 32 false (var x1)))))
 d "csneg w0, w1, w2, vs" 2064825a 0x0 (set x0 (cast 64 false (ite (var vf) (~- (cast 32 false (var x2))) (cast 32 false (var x1)))))
 d "cneg x0, x1, vc" 206481da 0x0 (set x0 (ite (! (var vf)) (~- (var x1)) (var x1)))
+d "cls x2, x3" 6214c0da 0x0 (seq (set v (var x3)) (set i (bv 64 0xffffffffffffffff)) (set msb (msb (var v))) (repeat (! (^^ (msb (var v)) (var msb))) (seq (set v (<< (var v) (bv 6 0x1) (! (var msb)))) (set i (+ (var i) (bv 64 0x1))))) (set x2 (var i)))
+d "cls w2, w3" 6214c05a 0x0 (seq (set v (cast 32 false (var x3))) (set i (bv 32 0xffffffff)) (set msb (msb (var v))) (repeat (! (^^ (msb (var v)) (var msb))) (seq (set v (<< (var v) (bv 6 0x1) (! (var msb)))) (set i (+ (var i) (bv 32 0x1))))) (set x2 (cast 64 false (var i))))
+d "clz x2, x3" 6210c0da 0x0 (seq (set v (var x3)) (set i (bv 64 0x40)) (repeat (! (is_zero (var v))) (seq (set v (>> (var v) (bv 6 0x1) false)) (set i (- (var i) (bv 64 0x1))))) (set x2 (var i)))
+d "clz w2, w3" 6210c05a 0x0 (seq (set v (cast 32 false (var x3))) (set i (bv 32 0x20)) (repeat (! (is_zero (var v))) (seq (set v (>> (var v) (bv 6 0x1) false)) (set i (- (var i) (bv 32 0x1))))) (set x2 (cast 64 false (var i))))
