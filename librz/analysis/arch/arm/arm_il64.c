@@ -353,7 +353,7 @@ static RzILOpBitVector *shift(arm64_shifter sft, ut32 dist, RZ_OWN RzILOpBitVect
 #define REG_VAL(id) read_reg(/*PC(insn->address), */ id)
 #define REG(n)      REG_VAL(REGID(n))
 #define REGBITS(n)  reg_bits(REGID(n))
-// #define MEMBASE(x)    REG_VAL(insn->detail->arm64.operands[x].mem.base)
+#define MEMBASE(x)  REG_VAL(insn->detail->arm64.operands[x].mem.base)
 
 /**
  * IL to write a value to the given capstone reg
@@ -398,7 +398,8 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 		return UN(bits_requested, IMM(n));
 	}
 	case ARM64_OP_MEM: {
-		return NULL;
+		RzILOpBitVector *addr = MEMBASE(n);
+		return addr;
 	}
 	default:
 		break;
@@ -640,6 +641,88 @@ static RzILOpEffect *bic(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_CAS, ARM64_INS_CASA, ARM64_INS_CASAL, ARM64_INS_CASL,
+ *           ARM64_INS_CASB, ARM64_INS_CASAB, ARM64_INS_CASALB, ARM64_INS_CASLB,
+ *           ARM64_INS_CASH, ARM64_INS_CASAH, ARM64_INS_CASALH, ARM64_INS_CASLH:
+ * ARM: cas, casa, casal, casl, casb, casab, casalb, caslb, cash, casah, casalh, caslh
+ */
+static RzILOpEffect *cas(cs_insn *insn) {
+	if (!ISREG(0) || !ISMEM(2)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	switch (insn->id) {
+	case ARM64_INS_CASB:
+	case ARM64_INS_CASAB:
+	case ARM64_INS_CASALB:
+	case ARM64_INS_CASLB:
+		bits = 8;
+		break;
+	case ARM64_INS_CASH:
+	case ARM64_INS_CASAH:
+	case ARM64_INS_CASALH:
+	case ARM64_INS_CASLH:
+		bits = 16;
+		break;
+	default:
+		break;
+	}
+	RzILOpBitVector *addr = ARG(2, NULL);
+	RzILOpBitVector *cmpval = ARG(0, &bits);
+	RzILOpBitVector *newval = ARG(1, &bits);
+	RzILOpEffect *write_old_eff = write_reg(REGID(0), VARL("old"));
+	if (!addr || !cmpval || !newval || !write_old_eff) {
+		rz_il_op_pure_free(addr);
+		rz_il_op_pure_free(cmpval);
+		rz_il_op_pure_free(newval);
+		rz_il_op_effect_free(write_old_eff);
+		return NULL;
+	}
+	return SEQ3(
+		SETL("old", bits == 8 ? LOAD(addr) : LOADW(bits, addr)),
+		BRANCH(EQ(VARL("old"), cmpval), bits == 8 ? STORE(DUP(addr), newval) : STOREW(DUP(addr), newval), NULL),
+		write_old_eff);
+}
+
+/**
+ * Capstone: ARM64_INS_CASP, ARM64_INS_CASPA, ARM64_INS_CASPAL, ARM64_INS_CASPL
+ * ARM: casp, caspa, caspal, caspl
+ */
+static RzILOpEffect *casp(cs_insn *insn) {
+	if (!ISREG(0) || !ISREG(1) || !ISMEM(4)) {
+		return NULL;
+	}
+	RzILOpBitVector *addr = ARG(4, NULL);
+	ut32 bits = 0;
+	RzILOpBitVector *cmpval0 = ARG(0, &bits);
+	RzILOpBitVector *cmpval1 = ARG(1, &bits);
+	RzILOpBitVector *newval0 = ARG(2, &bits);
+	RzILOpBitVector *newval1 = ARG(3, &bits);
+	RzILOpEffect *write_old0_eff = write_reg(REGID(0), VARL("old0"));
+	RzILOpEffect *write_old1_eff = write_reg(REGID(1), VARL("old1"));
+	if (!addr || !cmpval0 || !cmpval1 || !newval0 || !newval1 || !write_old0_eff || !write_old1_eff) {
+		rz_il_op_pure_free(addr);
+		rz_il_op_pure_free(cmpval0);
+		rz_il_op_pure_free(cmpval1);
+		rz_il_op_pure_free(newval0);
+		rz_il_op_pure_free(newval1);
+		rz_il_op_effect_free(write_old0_eff);
+		rz_il_op_effect_free(write_old1_eff);
+		return NULL;
+	}
+	return SEQ5(
+		SETL("old0", LOADW(bits, addr)),
+		SETL("old1", LOADW(bits, ADD(DUP(addr), U64(bits / 8)))),
+		BRANCH(AND(EQ(VARL("old0"), cmpval0), EQ(VARL("old1"), cmpval1)),
+			SEQ2(
+				STOREW(DUP(addr), newval0),
+				STOREW(ADD(DUP(addr), U64(bits / 8)), newval1)),
+			NULL),
+		write_old0_eff,
+		write_old1_eff);
+}
+
+/**
  * Lift an AArch64 instruction to RzIL, without considering its condition
  *
  * Currently unimplemented:
@@ -735,6 +818,24 @@ RZ_IPI RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn) {
 	case ARM64_INS_BICS:
 #endif
 		return bic(insn);
+	case ARM64_INS_CAS:
+	case ARM64_INS_CASA:
+	case ARM64_INS_CASAL:
+	case ARM64_INS_CASL:
+	case ARM64_INS_CASB:
+	case ARM64_INS_CASAB:
+	case ARM64_INS_CASALB:
+	case ARM64_INS_CASLB:
+	case ARM64_INS_CASH:
+	case ARM64_INS_CASAH:
+	case ARM64_INS_CASALH:
+	case ARM64_INS_CASLH:
+		return cas(insn);
+	case ARM64_INS_CASP:
+	case ARM64_INS_CASPA:
+	case ARM64_INS_CASPAL:
+	case ARM64_INS_CASPL:
+		return casp(insn);
 	default:
 		break;
 	}
