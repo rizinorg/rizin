@@ -1740,18 +1740,3 @@ pc = 0x00000000
 7
 EOF
 RUN
-
-NAME=aezi @ 1
-FILE=bins/bf/2+5.bf
-CMDS=<<EOF
-e io.cache=1
-aezi @ 1
-ar
-aezsu $s; ?e
-EOF
-EXPECT=<<EOF
-ptr = 0x00010000
-pc = 0x00000001
-6
-EOF
-RUN
