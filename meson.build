@@ -678,7 +678,7 @@ if get_option('install_sigdb')
   if r.returncode() == 1 and get_option('subprojects_check')
     error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
   endif
-  subproject('sigdb', default_options: ['install_dir=@0@'.format(get_option('prefix') / rizin_sigdb)])
+  subproject('sigdb', default_options: ['sigdb_path=@0@'.format(get_option('prefix') / rizin_sigdb)])
 endif
 
 cli_option = get_option('cli')
