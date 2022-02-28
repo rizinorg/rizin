@@ -785,35 +785,41 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(dst_idx);
+	RzILOpBitVector *src0 = ARG(src0_idx, &bits);
+	if (!src0) {
+		return NULL;
+	}
+	RzILOpBool *c = cond(insn->detail->arm64.cc);
+	if (!c) {
+		// al/nv conditions, only possible in cs(inc|inv|neg)
+		return write_reg(REGID(dst_idx), src0);
+	}
 	RzILOpBitVector *src1 = ARG(src1_idx, &bits);
 	if (!src1) {
+		rz_il_op_pure_free(src0);
+		rz_il_op_pure_free(c);
 		return NULL;
 	}
 	RzILOpBitVector *res;
+	bool invert_cond = false;
 	switch (insn->id) {
-	case ARM64_INS_CINV:
 	case ARM64_INS_CSINV:
+		invert_cond = true;
+	case ARM64_INS_CINV:
 		res = LOGNOT(src1);
 		break;
-	case ARM64_INS_CNEG:
 	case ARM64_INS_CSNEG:
+		invert_cond = true;
+	case ARM64_INS_CNEG:
 		res = NEG(src1);
 		break;
+	case ARM64_INS_CSINC:
+		invert_cond = true;
 	default: // ARM64_INS_CINC, ARM64_INS_CSINC
 		res = ADD(src1, UN(bits, 1));
 		break;
 	}
-	RzILOpBool *c = cond(insn->detail->arm64.cc);
-	if (!c) {
-		return write_reg(REGID(dst_idx), res);
-	}
-	RzILOpBitVector *src0 = ARG(src0_idx, &bits);
-	if (!src0) {
-		rz_il_op_pure_free(res);
-		rz_il_op_pure_free(c);
-		return NULL;
-	}
-	return write_reg(REGID(dst_idx), ITE(c, res, src0));
+	return write_reg(REGID(dst_idx), invert_cond ? ITE(c, src0, res) : ITE(c, res, src0));
 }
 
 /**
