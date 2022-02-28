@@ -73,10 +73,8 @@ static const char *help_msg_question_e[] = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
-	"?eb", " 10 20 30", "proportional segments bar",
 	"?eg", " 10 20", "move cursor to column 10, row 20",
 	"?en", " nonl", "echo message without ending newline",
-	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
 	"?et", " msg", "change terminal title",
 	NULL
 };
