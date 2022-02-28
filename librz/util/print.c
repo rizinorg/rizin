@@ -1324,66 +1324,6 @@ RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64
 	p->cb_printf("|");
 }
 
-RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
-	static int mode = -1;
-	ut8 *bufz = NULL, *bufz2 = NULL;
-	int i, j = 0;
-	ut64 size = (to - from);
-	size = len ? size / len : 0;
-
-	if (maxlen < 2) {
-		maxlen = 1024 * 1024;
-	}
-	if (size > maxlen) {
-		size = maxlen;
-	}
-	if (size < 1) {
-		size = 1;
-	}
-	if (len < 1) {
-		len = 1;
-	}
-
-	if (mode != p->zoom->mode || from != p->zoom->from || to != p->zoom->to || size != p->zoom->size) {
-		mode = p->zoom->mode;
-		bufz = (ut8 *)calloc(1, len);
-		if (!bufz) {
-			return;
-		}
-		bufz2 = (ut8 *)calloc(1, size);
-		if (!bufz2) {
-			free(bufz);
-			return;
-		}
-
-		// TODO: memoize blocks
-		for (i = 0; i < len; i++) {
-			if (p->cons->context->breaked) {
-				break;
-			}
-			p->iob.read_at(p->iob.io, from + j, bufz2, size);
-			bufz[i] = cb(user, p->zoom->mode, from + j, bufz2, size);
-			j += size;
-		}
-		free(bufz2);
-		// memoize
-		free(p->zoom->buf);
-		p->zoom->buf = bufz;
-		p->zoom->from = from;
-		p->zoom->to = to;
-		p->zoom->size = len; // size;
-	}
-}
-
-RZ_API void rz_print_zoom(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
-	ut64 size = (to - from);
-	rz_print_zoom_buf(p, user, cb, from, to, len, maxlen);
-	size = len ? size / len : 0;
-	p->flags &= ~RZ_PRINT_FLAGS_HEADER;
-	rz_print_hexdump(p, from, p->zoom->buf, p->zoom->size, 16, 1, size);
-	p->flags |= RZ_PRINT_FLAGS_HEADER;
-}
-
 static inline void printHistBlock(RzPrint *p, int k, int cols) {
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";

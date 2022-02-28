@@ -903,7 +903,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
-		case 't': // "?e=t newtitle"
+		case 't': // "?et newtitle"
 			rz_cons_set_title(rz_str_trim_head_ro(input + 2));
 			break;
 		case '=': { // "?e="

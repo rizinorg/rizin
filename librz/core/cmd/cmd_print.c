@@ -14,7 +14,6 @@
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR       "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
-static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
@@ -548,23 +547,6 @@ static const char *help_msg_px[] = {
 	NULL
 };
 
-const char *help_msg_pz[] = {
-	"Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
-	"e ", "zoom.maxsz", "max size of block",
-	"e ", "zoom.from", "start address",
-	"e ", "zoom.to", "end address",
-	"e ", "zoom.byte", "specify how to calculate each byte",
-	"pzp", "", "number of printable chars",
-	"pzf", "", "count of flags in block",
-	"pzs", "", "strings in range",
-	"pz0", "", "number of bytes with value '0'",
-	"pzF", "", "number of bytes with value 0xFF",
-	"pze", "", "calculate entropy and expand to 0-255 range",
-	"pzh", "", "head (first byte value); This is the default mode",
-	// "WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
-	NULL
-};
-
 const char *help_msg_pxA[] = {
 	"Usage: pxA [len]", "", "show op analysis color map",
 	"$$", "", "int/swi/trap/new\n",
@@ -897,122 +879,6 @@ static void cmd_prc(RzCore *core, const ut8 *block, int len) {
 				int brightness = ((color_val & 0xff0000) >> 16) + 2 * ((color_val & 0xff00) >> 8) + (color_val & 0xff) / 3;
 				char *str = rz_str_newf("rgb:%s rgb:%06x",
 					brightness <= 0x7f * 3 ? "fff" : "000", color_val);
-				color = rz_cons_pal_parse(str, NULL);
-				free(str);
-				if (show_cursor && core->print->cur == j) {
-					ch = '_';
-				} else {
-					ch = ' ';
-				}
-			} else {
-				color = strdup("");
-				if (show_cursor && core->print->cur == j) {
-					ch = '_';
-				} else {
-					const int idx = ((float)block[j] / 255) * (strlen(chars) - 1);
-					ch = chars[idx];
-				}
-			}
-			if (show_unalloc &&
-				!core->print->iob.is_valid_offset(core->print->iob.io, core->offset + j, false)) {
-				ch = core->print->io_unalloc_ch;
-				if (show_color) {
-					free(color);
-					color = strdup(Color_RESET);
-					if (ch == ' ') {
-						ch = '.';
-					}
-				} else {
-					ch = strchr(chars, ch) ? '?' : ch;
-				}
-			}
-			if (square) {
-				if (show_flags) {
-					RzFlagItem *fi = rz_flag_get_i(core->flags, core->offset + j);
-					if (fi) {
-						if (fi->name[1]) {
-							ch = fi->name[0];
-							ch2 = fi->name[1];
-						} else {
-							ch = ' ';
-							ch2 = fi->name[0];
-						}
-					} else {
-						ch2 = ch;
-					}
-				} else {
-					ch2 = ch;
-				}
-				rz_cons_printf("%s%c%c", color, ch, ch2);
-			} else {
-				rz_cons_printf("%s%c", color, ch);
-			}
-			free(color);
-		}
-		if (show_color) {
-			rz_cons_printf(Color_RESET);
-		}
-		rz_cons_newline();
-	}
-}
-
-static void cmd_prc_zoom(RzCore *core, const char *input) {
-	const char *chars = " .,:;!O@#";
-	bool square = rz_config_get_i(core->config, "scr.square");
-	int i, j;
-	char ch, ch2, *color;
-	int cols = rz_config_get_i(core->config, "hex.cols");
-	bool show_color = rz_config_get_i(core->config, "scr.color");
-	bool show_flags = rz_config_get_i(core->config, "asm.flags");
-	bool show_cursor = core->print->cur_enabled;
-	bool show_offset = rz_config_get_i(core->config, "hex.offset");
-	bool show_unalloc = core->print->flags & RZ_PRINT_FLAGS_UNALLOC;
-	ut8 *block = core->block;
-	int len = core->blocksize;
-	ut64 from = 0;
-	ut64 to = 0;
-	RzIOMap *map;
-	RzListIter *iter;
-
-	if (cols < 1 || cols > 0xfffff) {
-		cols = 32;
-	}
-	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "zoom");
-	if (list && rz_list_length(list) > 0) {
-		RzListIter *iter1 = list->head;
-		RzIOMap *map1 = iter1->data;
-		from = map1->itv.addr;
-		rz_list_foreach (list, iter, map) {
-			to = rz_itv_end(map->itv);
-		}
-	} else {
-		from = core->offset;
-		to = from + core->blocksize;
-	}
-
-	core->print->zoom->mode = (input && *input) ? input[1] : 'e';
-	rz_print_zoom_buf(core->print, core, printzoomcallback, from, to, len, len);
-	block = core->print->zoom->buf;
-	switch (core->print->zoom->mode) {
-	case 'f':
-		// scale buffer for proper visualization of small numbers as colors
-		for (i = 0; i < core->print->zoom->size; i++) {
-			block[i] *= 8;
-		}
-		break;
-	}
-
-	for (i = 0; i < len; i += cols) {
-		ut64 ea = core->offset + i;
-		if (show_offset) {
-			rz_print_addr(core->print, ea);
-		}
-		for (j = i; j < i + cols; j++) {
-			if (j >= len) {
-				break;
-			}
-			if (show_color) {
-				char *str = rz_str_newf("rgb:fff rgb:%06x", colormap[block[j]]);
 				color = rz_cons_pal_parse(str, NULL);
 				free(str);
 				if (show_cursor && core->print->cur == j) {
@@ -2420,105 +2286,6 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 		rz_core_cmdf(core, "pid %d @ 0x%" PFMT64x, count, addr);
 		break;
 	}
-}
-
-struct count_pz_t {
-	RzSpace *flagspace;
-	ut64 addr;
-	ut64 size;
-	int *ret;
-};
-
-static bool count_pzs(RzFlagItem *fi, void *u) {
-	struct count_pz_t *user = (struct count_pz_t *)u;
-	if (fi->space == user->flagspace &&
-		((user->addr <= fi->offset && fi->offset < user->addr + user->size) ||
-			(user->addr <= fi->offset + fi->size && fi->offset + fi->size < user->addr + user->size))) {
-		(*user->ret)++;
-	}
-
-	return true;
-}
-static bool count_pzf(RzFlagItem *fi, void *u) {
-	struct count_pz_t *user = (struct count_pz_t *)u;
-	if (fi->offset <= user->addr && user->addr < fi->offset + fi->size) {
-		(*user->ret)++;
-	}
-	return true;
-}
-
-static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
-	RzCore *core = (RzCore *)user;
-	int j, ret = 0;
-	struct count_pz_t u;
-
-	switch (mode) {
-	case 'a': {
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-		int value = 0;
-		if (fcn) {
-			value = rz_list_length(fcn->bbs);
-		}
-		return value;
-	} break;
-	case 'A': {
-		RzCoreAnalStats *as = rz_core_analysis_get_stats(core, addr, addr + size * 2, size);
-		int i;
-		int value = 0;
-		for (i = 0; i < 1; i++) {
-			value += as->block[i].functions;
-			value += as->block[i].in_functions;
-			value += as->block[i].comments;
-			value += as->block[i].symbols;
-			value += as->block[i].flags;
-			value += as->block[i].strings;
-			value += as->block[i].blocks;
-			value *= 20;
-		}
-		rz_core_analysis_stats_free(as);
-		return value;
-	} break;
-	case '0': // "pz0"
-		for (j = 0; j < size; j++) {
-			if (bufz[j] == 0) {
-				ret++;
-			}
-		}
-		break;
-	case 'e': // "pze"
-		ret = (ut8)(rz_hash_entropy_fraction(bufz, size) * 255);
-		break;
-	case 'f': // "pzf"
-		u.addr = addr;
-		u.ret = &ret;
-		rz_flag_foreach(core->flags, count_pzf, &u);
-		break;
-	case 'F': // "pzF"
-		for (j = 0; j < size; j++) {
-			if (bufz[j] == 0xff) {
-				ret++;
-			}
-		}
-		break;
-	case 'p': // "pzp"
-		for (j = 0; j < size; j++) {
-			if (IS_PRINTABLE(bufz[j])) {
-				ret++;
-			}
-		}
-		break;
-	case 's': // "pzs"
-		u.flagspace = rz_flag_space_get(core->flags, RZ_FLAGS_FS_STRINGS);
-		u.addr = addr;
-		u.size = size;
-		u.ret = &ret;
-		rz_flag_foreach(core->flags, count_pzs, &u);
-		break;
-	case 'h': // "pzh" head
-	default:
-		ret = *bufz;
-	}
-	return ret;
 }
 
 RZ_API void rz_core_print_cmp(RzCore *core, ut64 from, ut64 to) {
@@ -4959,11 +4726,10 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	int i, len, ret;
 	ut8 *block;
 	ut32 tbs = core->blocksize;
-	ut64 n, off, from, to;
+	ut64 n, off;
 	ut64 tmpseek = UT64_MAX;
 	const size_t addrbytes = core->io->addrbytes;
 	ret = 0;
-	to = 0;
 	PJ *pj = NULL;
 
 	rz_print_init_rowoffsets(core->print);
@@ -6212,18 +5978,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	case 'r': // "pr"
 		switch (input[1]) {
 		case 'c': // "prc" // color raw dump
-			if (input[2] == '?') {
-				rz_cons_printf("prc=e # colorblocks of entropy\n");
-				rz_core_cmd0(core, "pz?");
-			} else if (input[2] == '=') {
-				if (input[3] == '?') {
-					rz_core_cmd_help(core, help_msg_p_equal);
-				} else {
-					cmd_prc_zoom(core, input + 2);
-				}
-			} else {
-				cmd_prc(core, block, len);
-			}
+			cmd_prc(core, block, len);
 			break;
 		case '?':
 			rz_core_cmd_help(core, help_msg_pr);
@@ -6938,48 +6693,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_io_read_at(core->io, offset0, core->block, len);
 			core->offset = offset0;
 			rz_cons_printf("\n");
-		}
-		break;
-	case 'z': // "pz"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_pz);
-		} else {
-			RzIOMap *map;
-			RzListIter *iter;
-			RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "zoom");
-			if (list && rz_list_length(list) > 0) {
-				RzListIter *iter1 = list->head;
-				RzIOMap *map1 = iter1->data;
-				from = map1->itv.addr;
-				rz_list_foreach (list, iter, map) {
-					to = rz_itv_end(map->itv);
-				}
-			} else {
-				from = core->offset;
-				to = from + core->blocksize;
-			}
-			ut64 maxsize = rz_config_get_i(core->config, "zoom.maxsz");
-			int oldva = core->io->va;
-			char *oldmode = NULL;
-			bool do_zoom = true;
-
-			core->io->va = 0;
-			if (input[1] && input[1] != ' ') {
-				oldmode = strdup(rz_config_get(core->config, "zoom.byte"));
-				if (!rz_config_set(core->config, "zoom.byte", input + 1)) {
-					do_zoom = false;
-				}
-			}
-			if (do_zoom && l > 0) {
-				rz_print_zoom(core->print, core, printzoomcallback,
-					from, to, l, (int)maxsize);
-			}
-			if (oldmode) {
-				rz_config_set(core->config, "zoom.byte", oldmode);
-			}
-			core->io->va = oldva;
-			RZ_FREE(oldmode);
-			rz_list_free(list);
 		}
 		break;
 	default:
