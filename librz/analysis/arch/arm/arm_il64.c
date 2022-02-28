@@ -615,7 +615,7 @@ static RzILOpEffect *bfm(cs_insn *insn) {
 
 /**
  * Capstone: ARM64_INS_BIC, ARM64_INS_BICS
- * ARM: bic
+ * ARM: bic, bics
  */
 static RzILOpEffect *bic(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -710,24 +710,30 @@ RZ_IPI RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn) {
 		return asr(insn);
 	case ARM64_INS_B:
 	case ARM64_INS_BR:
+#if CS_API_MAJOR > 4
 	case ARM64_INS_BRAA:
 	case ARM64_INS_BRAAZ:
 	case ARM64_INS_BRAB:
 	case ARM64_INS_BRABZ:
+#endif
 		return branch(insn);
 	case ARM64_INS_BL:
 	case ARM64_INS_BLR:
+#if CS_API_MAJOR > 4
 	case ARM64_INS_BLRAA:
 	case ARM64_INS_BLRAAZ:
 	case ARM64_INS_BLRAB:
 	case ARM64_INS_BLRABZ:
+#endif
 		return bl(insn);
 	case ARM64_INS_BFM:
 	case ARM64_INS_BFI:
 	case ARM64_INS_BFXIL:
 		return bfm(insn);
 	case ARM64_INS_BIC:
+#if CS_API_MAJOR > 4
 	case ARM64_INS_BICS:
+#endif
 		return bic(insn);
 	default:
 		break;
