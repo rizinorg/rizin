@@ -172,17 +172,17 @@ pc = 0x00000000
 EOF
 RUN
 
-NAME=aezi @ 1
+NAME=double aezi with different offsets
 FILE=bins/bf/2+5.bf
 CMDS=<<EOF
 e io.cache=1
-aezi @ 1
-ar
-aezsu $s; ?e
+(emu_start start; aezi @ $0; aezsu $s; ?e)
+.(emu_start 1)
+w0 1 @ ptr
+.(emu_start 2)
 EOF
 EXPECT=<<EOF
-ptr = 0x00010000
-pc = 0x00000001
 6
+5
 EOF
 RUN
