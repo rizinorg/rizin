@@ -460,11 +460,6 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 		rz_il_op_pure_free(b);
 		return NULL;
 	}
-	if (!a || !b) {
-		rz_il_op_pure_free(a);
-		rz_il_op_pure_free(b);
-		return NULL;
-	}
 	RzILOpBitVector *res = is_sub ? SUB(a, b) : ADD(a, b);
 	bool with_carry = false;
 	if (insn->id == ARM64_INS_ADC
@@ -564,6 +559,10 @@ static RzILOpEffect *branch(cs_insn *insn) {
 	RzILOpBitVector *a = ARG(0, &bits);
 	if (!a) {
 		return NULL;
+	}
+	RzILOpBool *c = cond(insn->detail->arm64.cc);
+	if (c) {
+		return BRANCH(c, JMP(a), NOP);
 	}
 	return JMP(a);
 }
@@ -739,7 +738,42 @@ static RzILOpEffect *cbz(cs_insn *insn) {
 }
 
 /**
- * Lift an AArch64 instruction to RzIL, without considering its condition
+ * Capstone: ARM64_INS_CMP, ARM64_INS_CMN, ARM64_INS_CCMP, ARM64_INS_CCMN
+ * ARM: cmp, cmn, ccmp, ccmn
+ */
+static RzILOpEffect *cmp(cs_insn *insn) {
+	ut32 bits = 0;
+	RzILOpBitVector *a = ARG(0, &bits);
+	RzILOpBitVector *b = ARG(1, &bits);
+	if (!a || !b) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
+		return NULL;
+	}
+	bool is_neg = insn->id == ARM64_INS_CMN || insn->id == ARM64_INS_CCMN;
+	RzILOpEffect *eff = SEQ6(
+		SETL("a", DUP(a)),
+		SETL("b", DUP(b)),
+		SETL("r", is_neg ? ADD(VARL("a"), VARL("b")) : SUB(VARL("a"), VARL("b"))),
+		SETG("cf", (is_neg ? add_carry : sub_carry)(VARL("a"), VARL("b"), false)),
+		SETG("vf", (is_neg ? add_overflow : sub_overflow)(VARL("a"), VARL("b"), VARL("r"))),
+		update_flags_zn(VARL("r")));
+	RzILOpBool *c = cond(insn->detail->arm64.cc);
+	if (c) {
+		ut64 imm = IMM(2);
+		return BRANCH(c,
+			eff,
+			SEQ4(
+				SETG("nf", imm & (1 << 3) ? IL_TRUE : IL_FALSE),
+				SETG("zf", imm & (1 << 2) ? IL_TRUE : IL_FALSE),
+				SETG("cf", imm & (1 << 1) ? IL_TRUE : IL_FALSE),
+				SETG("vf", imm & (1 << 0) ? IL_TRUE : IL_FALSE)));
+	}
+	return eff;
+}
+
+/**
+ * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
  *
@@ -784,7 +818,7 @@ static RzILOpEffect *cbz(cs_insn *insn) {
  * -------------------------
  * - AXFLAG
  */
-RZ_IPI RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn) {
+RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC:
@@ -855,22 +889,15 @@ RZ_IPI RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn) {
 	case ARM64_INS_CBZ:
 	case ARM64_INS_CBNZ:
 		return cbz(insn);
+	case ARM64_INS_CMP:
+	case ARM64_INS_CMN:
+	case ARM64_INS_CCMP:
+	case ARM64_INS_CCMN:
+		return cmp(insn);
 	default:
 		break;
 	}
 	return NULL;
-}
-
-RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
-	RzILOpEffect *eff = il_unconditional(handle, insn);
-	if (!eff) {
-		return NULL;
-	}
-	RzILOpBool *c = cond(insn->detail->arm64.cc);
-	if (c) {
-		return BRANCH(c, eff, NOP);
-	}
-	return eff;
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
