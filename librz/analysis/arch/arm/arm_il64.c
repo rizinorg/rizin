@@ -8,11 +8,11 @@
 
 #include "arm_accessors64.h"
 // This source file is 64-bit specific, so avoid having to type 64 all the time:
-#define IMM   IMM64
-#define REGID REGID64
-#define ISIMM ISIMM64
-#define ISREG ISREG64
-#define ISMEM ISMEM64
+#define IMM     IMM64
+#define REGID   REGID64
+#define ISIMM   ISIMM64
+#define ISREG   ISREG64
+#define ISMEM   ISMEM64
 #define OPCOUNT OPCOUNT64
 
 #include <rz_il/rz_il_opbuilder_begin.h>
