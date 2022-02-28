@@ -367,14 +367,6 @@ use_ptrace_wrap = use_ptrace_wrap and has_debugger
 message('HAVE_PTRACE: @0@'.format(have_ptrace))
 message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
 
-if get_option('install_sigdb')
-  r = run_command(py3_exe, check_meson_subproject_py, 'sigdb')
-  if r.returncode() == 1 and get_option('subprojects_check')
-    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-  endif
-  subproject('sigdb', default_options: ['install_dir=@0@'.format(get_option('prefix') / rizin_sigdb)])
-endif
-
 checks_level = get_option('checks_level')
 if checks_level == 9999
   if get_option('buildtype') == 'release'
@@ -680,6 +672,14 @@ if host_machine.system() == 'windows'
 endif
 
 subdir('librz')
+
+if get_option('install_sigdb')
+  r = run_command(py3_exe, check_meson_subproject_py, 'sigdb')
+  if r.returncode() == 1 and get_option('subprojects_check')
+    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  endif
+  subproject('sigdb', default_options: ['install_dir=@0@'.format(get_option('prefix') / rizin_sigdb)])
+endif
 
 cli_option = get_option('cli')
 cli_enabled = cli_option.auto() ? not meson.is_subproject() : cli_option.enabled()
