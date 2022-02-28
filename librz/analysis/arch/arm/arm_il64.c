@@ -13,6 +13,7 @@
 #define ISIMM ISIMM64
 #define ISREG ISREG64
 #define ISMEM ISMEM64
+#define OPCOUNT OPCOUNT64
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
@@ -773,6 +774,49 @@ static RzILOpEffect *cmp(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_CINC, ARM64_INS_CSINC, ARM64_INS_CINV, ARM64_INS_CSINV, ARM64_INS_CNEG, ARM64_INS_CSNEG
+ * ARM: cinc, csinc, cinv, csinv, cneg, csneg
+ */
+static RzILOpEffect *csinc(cs_insn *insn) {
+	size_t dst_idx = 0;
+	size_t src0_idx = 1;
+	size_t src1_idx = OPCOUNT() > 2 ? 2 : 1;
+	if (!ISREG(dst_idx)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(dst_idx);
+	RzILOpBitVector *src1 = ARG(src1_idx, &bits);
+	if (!src1) {
+		return NULL;
+	}
+	RzILOpBitVector *res;
+	switch (insn->id) {
+	case ARM64_INS_CINV:
+	case ARM64_INS_CSINV:
+		res = LOGNOT(src1);
+		break;
+	case ARM64_INS_CNEG:
+	case ARM64_INS_CSNEG:
+		res = NEG(src1);
+		break;
+	default: // ARM64_INS_CINC, ARM64_INS_CSINC
+		res = ADD(src1, UN(bits, 1));
+		break;
+	}
+	RzILOpBool *c = cond(insn->detail->arm64.cc);
+	if (!c) {
+		return write_reg(REGID(dst_idx), res);
+	}
+	RzILOpBitVector *src0 = ARG(src0_idx, &bits);
+	if (!src0) {
+		rz_il_op_pure_free(res);
+		rz_il_op_pure_free(c);
+		return NULL;
+	}
+	return write_reg(REGID(dst_idx), ITE(c, res, src0));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -807,6 +851,7 @@ static RzILOpEffect *cmp(cs_insn *insn) {
  * Cache maintenance, tlb maintenance and address translation
  * ----------------------------------------------------------
  * - AT
+ * - CFP
  * - SYS
  *
  * Miscellaneous
@@ -894,6 +939,15 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
 		return cmp(insn);
+	case ARM64_INS_CFINV:
+		return SETG("cf", INV(VARG("cf")));
+	case ARM64_INS_CINC:
+	case ARM64_INS_CSINC:
+	case ARM64_INS_CINV:
+	case ARM64_INS_CSINV:
+	case ARM64_INS_CNEG:
+	case ARM64_INS_CSNEG:
+		return csinc(insn);
 	default:
 		break;
 	}
