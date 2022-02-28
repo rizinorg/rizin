@@ -873,6 +873,8 @@ static RzILOpEffect *clz(cs_insn *insn) {
  * Plausible to represent by adding another memory with a 60bit keys and 4bit values to hold the memory tags.
  * Instructions:
  * - ADDG
+ * - CMPP
+ * - SUBPS
  *
  * FEAT_PAuth: Pointer Authentication
  * ----------------------------------
@@ -899,6 +901,7 @@ static RzILOpEffect *clz(cs_insn *insn) {
  * ----------------------------------------------------------
  * - AT
  * - CFP
+ * - CPP
  * - SYS
  *
  * Miscellaneous
@@ -906,10 +909,13 @@ static RzILOpEffect *clz(cs_insn *insn) {
  * - BRK: causes a breakpoint instruction exception
  * - BTI: FEAT_BTI/Branch Target Identification
  * - CLREX: clears the local monitor
+ * - CRC32B, CRC32H, CRC32W, CRC32X, CRC32CB, CRC32CH, CRC32CW, CRC32CX: does crc32
+ * - CSDB: synchronization, memory barriers
  *
  * Not supported by capstone
  * -------------------------
  * - AXFLAG
+ * - FEAT_MTE (see above)
  */
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
