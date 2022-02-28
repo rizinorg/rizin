@@ -34,7 +34,6 @@ extern "C" {
 #define RZ_PRINT_FLAGS_BGFILL   0x00100000
 #define RZ_PRINT_FLAGS_SECTION  0x00200000
 
-typedef int (*RzPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RzPrintNameCallback)(void *user, ut64 addr);
 typedef int (*RzPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RzPrintCommentCallback)(void *user, ut64 addr);
@@ -188,8 +187,6 @@ RZ_API int rz_print_date_hfs(RzPrint *p, const ut8 *buf, int len);
 RZ_API int rz_print_date_w32(RzPrint *p, const ut8 *buf, int len);
 RZ_API int rz_print_date_unix(RzPrint *p, const ut8 *buf, int len);
 RZ_API int rz_print_date_get_now(RzPrint *p, char *str);
-RZ_API void rz_print_zoom(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
-RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 RZ_API void rz_print_progressbar(RzPrint *pr, int pc, int _cols);
 RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
 RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
