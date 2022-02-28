@@ -70,6 +70,7 @@ pkgconfig_mod.generate(rz_crypto,
   description: 'rizin foundation libraries',
   variables: [
     'plugindir=@0@'.format(rizin_plugins),
+    'datdir=@0@'.format(rizin_datdir_rz),
   ],
 )
 

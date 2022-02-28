@@ -52,9 +52,9 @@ static bool sigdb_signature_resolve_details(RzSigDBEntry *entry, size_t path_len
 		goto skip_details;
 	}
 
-	buffer = rz_buf_new_slurp(entry->file_path);
+	buffer = rz_buf_new_file(entry->file_path, O_RDONLY, 0);
 	if (!buffer) {
-		RZ_LOG_WARN("sigdb: cannot open .sig file '%s'.\n", entry->file_path);
+		RZ_LOG_WARN("sigdb: cannot open signature file '%s'.\n", entry->file_path);
 		return false;
 	}
 

@@ -30,7 +30,10 @@ pkgconfig_mod.generate(rz_diff,
   requires: [
     'rz_util'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'datdir=@0@'.format(rizin_datdir_rz),
+  ],
 )
 
 if not is_static_libs_only
