@@ -48,7 +48,8 @@ try:
                     os.path.join(subproject_git_dir, "HEAD"), "r", encoding="utf8"
                 ) as f:
                     head = f.read().strip()
-                if head != revision:
+                # when using a branch name, head is 'refs/heads/<branch>'
+                if head != revision and revision not in head:
                     sys.exit(1)
 
         if not patch_directory:

@@ -5966,26 +5966,55 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	return true;
 }
 
+static int core_sigdb_sorter(const RzSigDBEntry *a, const RzSigDBEntry *b) {
+	return strcmp(a->short_path, b->short_path);
+}
+
+static RzList *core_load_all_signatures_from_sigdb(RzCore *core, bool with_details) {
+	RzList *sysdb = NULL, *userdb = NULL;
+	char *system_sigdb = rz_path_system(RZ_SIGDB);
+	if (RZ_STR_ISNOTEMPTY(system_sigdb)) {
+		sysdb = rz_sign_sigdb_load_database(system_sigdb, with_details);
+	}
+	free(system_sigdb);
+
+	const char *user_sigdb = rz_config_get(core->config, "flirt.sigdb.path");
+	if (RZ_STR_ISEMPTY(user_sigdb)) {
+		return sysdb;
+	} else if (!rz_file_is_directory(user_sigdb)) {
+		RZ_LOG_ERROR("Invalid signature database path (flirt.sigdb.path)\n");
+		return sysdb;
+	} else {
+		userdb = rz_sign_sigdb_load_database(user_sigdb, with_details);
+	}
+	if (sysdb && userdb) {
+		rz_list_join(userdb, sysdb);
+		rz_list_free(sysdb);
+		rz_list_sort(userdb, (RzListComparator)core_sigdb_sorter);
+		sysdb = NULL;
+	}
+	return userdb ? userdb : sysdb;
+}
+
 /**
  * \brief Outputs the list of signatures found in the flirt.sigdb.path
  *
  * \param core The RzCore instance
  */
 RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
-	const char *sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
-	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
-		RZ_LOG_ERROR("Invalid signature database path (flirt.sigdb.path)\n");
+	RzList *sigdb = core_load_all_signatures_from_sigdb(core, true);
+	if (!sigdb) {
 		return;
 	}
 
 	RzTable *table = rz_table_new();
 	if (!table) {
+		rz_list_free(sigdb);
 		rz_warn_if_reached();
 		return;
 	}
 	rz_table_set_columnsf(table, "ssnsns", "bin", "arch", "bits", "name", "modules", "details");
 
-	RzList *sigdb = rz_sign_sigdb_load_database(sigdb_path, true);
 	RzSigDBEntry *sig = NULL;
 	RzListIter *iter = NULL;
 	ut64 bits, nmods;
@@ -6015,7 +6044,6 @@ RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
  */
 RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const char *filter) {
 	rz_return_val_if_fail(core, false);
-	const char *sigdb_path = NULL;
 	const char *bin = NULL;
 	const char *arch = NULL;
 	ut64 bits = 32;
@@ -6026,12 +6054,6 @@ RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const cha
 
 	int n_flags_new, n_flags_old;
 	ut8 arch_id = RZ_FLIRT_SIG_ARCH_ANY;
-
-	sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
-	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
-		RZ_LOG_INFO("Invalid signature database path (flirt.sigdb.path)\n");
-		return false;
-	}
 
 	if (RZ_STR_ISEMPTY(filter)) {
 		obj = core->bin ? rz_bin_cur_object(core->bin) : NULL;
@@ -6055,7 +6077,11 @@ RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const cha
 		return false;
 	}
 
-	sigdb = rz_sign_sigdb_load_database(sigdb_path, false);
+	sigdb = core_load_all_signatures_from_sigdb(core, false);
+	if (!sigdb) {
+		return false;
+	}
+
 	n_flags_old = rz_flag_count(core->flags, "flirt");
 	rz_list_foreach (sigdb, iter, sig) {
 		if (RZ_STR_ISEMPTY(filter)) {

@@ -3754,6 +3754,62 @@ static ut8 *analBars(RzCore *core, size_t type, size_t nblocks, size_t blocksize
 	return ptr;
 }
 
+static void core_print_columns(RzCore *core, const ut8 *buf, ut32 len, ut32 height) {
+	size_t i, j;
+	bool colors = rz_config_get_i(core->config, "scr.color") > 0;
+	RzCons *cons = rz_cons_singleton();
+	RzConsPrintablePalette *pal = &cons->context->pal;
+	ut32 cols = 78;
+	ut32 rows = height > 0 ? height : 10;
+	const char *vline = cons->use_utf8 ? RUNE_LINE_VERT : "|";
+	const char *block = cons->use_utf8 ? UTF_BLOCK : "#";
+	const char *kol[5];
+	kol[0] = pal->call;
+	kol[1] = pal->jmp;
+	kol[2] = pal->cjmp;
+	kol[3] = pal->mov;
+	kol[4] = pal->nop;
+	if (colors) {
+		for (i = 0; i < rows; i++) {
+			size_t threshold = i * (0xff / rows);
+			size_t koli = i * 5 / rows;
+			for (j = 0; j < cols; j++) {
+				int realJ = j * len / cols;
+				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
+					if (core->print->histblock) {
+						rz_cons_printf("%s%s%s", kol[koli], block, Color_RESET);
+					} else {
+						rz_cons_printf("%s%s%s", kol[koli], vline, Color_RESET);
+					}
+				} else {
+					rz_cons_print(" ");
+				}
+			}
+			rz_cons_print("\n");
+		}
+		return;
+	}
+
+	for (i = 0; i < rows; i++) {
+		size_t threshold = i * (0xff / rows);
+		for (j = 0; j < cols; j++) {
+			size_t realJ = j * len / cols;
+			if (255 - buf[realJ] < threshold) {
+				if (core->print->histblock) {
+					rz_cons_printf("%s%s%s", Color_BGGRAY, block, Color_RESET);
+				} else {
+					rz_cons_printf("%s", vline);
+				}
+			} else if (i + 1 == rows) {
+				rz_cons_print("_");
+			} else {
+				rz_cons_print(" ");
+			}
+		}
+		rz_cons_print("\n");
+	}
+}
+
 static void cmd_print_bars(RzCore *core, const char *input) {
 	bool print_bars = false;
 	ut8 *ptr = NULL;
@@ -3935,7 +3991,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 					}
 					ptr[i] = 256 * k / blocksize;
 				}
-			rz_print_columns(core->print, ptr, nblocks, 14);
+			core_print_columns(core, ptr, nblocks, 14);
 			free(p);
 		} break;
 		case 'e': // "p=e"
@@ -3959,10 +4015,10 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 				ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(p, blocksize));
 			}
 			free(p);
-			rz_print_columns(core->print, ptr, nblocks, 14);
+			core_print_columns(core, ptr, nblocks, 14);
 		} break;
 		default:
-			rz_print_columns(core->print, core->block, core->blocksize, 14);
+			core_print_columns(core, core->block, core->blocksize, 14);
 			break;
 		}
 		break;

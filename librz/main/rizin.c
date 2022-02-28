@@ -156,6 +156,7 @@ static int main_help(int line) {
 		char *home_plugins = rz_path_home_prefix(RZ_PLUGINS);
 		char *system_plugins = rz_path_system(RZ_PLUGINS);
 		char *home_zigns = rz_path_home_prefix(RZ_ZIGNS);
+		char *system_sigdb = rz_path_system(RZ_SIGDB);
 		char *dirPrefix = rz_path_prefix(NULL);
 		// clang-format off
 		printf(
@@ -181,6 +182,7 @@ static int main_help(int line) {
 			" RZ_PREFIX    %s\n"
 			" RZ_INCDIR    %s\n"
 			" RZ_LIBDIR    %s\n"
+			" RZ_SIGDB     %s\n"
 			" RZ_LIBEXT    " RZ_LIB_EXT "\n",
 			system_rc,
 			home_rc, home_config_rc, home_config_rcdir,
@@ -193,7 +195,8 @@ static int main_help(int line) {
 			datahome,
 			dirPrefix,
 			incdir,
-			libdir);
+			libdir,
+			system_sigdb);
 		// clang-format on
 		free(datahome);
 		free(incdir);
@@ -208,6 +211,7 @@ static int main_help(int line) {
 		free(home_plugins);
 		free(system_plugins);
 		free(home_zigns);
+		free(system_sigdb);
 		free(dirPrefix);
 	}
 	return 0;
@@ -223,6 +227,7 @@ static int main_print_var(const char *var_name) {
 	char *cachehome = rz_path_home_cache();
 	char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
 	char *homezigns = rz_path_home_prefix(RZ_ZIGNS);
+	char *sigdbdir = rz_path_system(RZ_SIGDB);
 	char *plugins = rz_path_system(RZ_PLUGINS);
 	char *magicpath = rz_path_system(RZ_SDB_MAGIC);
 	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
@@ -235,6 +240,7 @@ static int main_print_var(const char *var_name) {
 		{ "RZ_MAGICPATH", magicpath },
 		{ "RZ_INCDIR", incdir },
 		{ "RZ_LIBDIR", libdir },
+		{ "RZ_SIGDB", sigdbdir },
 		{ "RZ_LIBEXT", RZ_LIB_EXT },
 		{ "RZ_RCONFIGHOME", confighome },
 		{ "RZ_RDATAHOME", datahome },
@@ -270,6 +276,7 @@ static int main_print_var(const char *var_name) {
 	free(cachehome);
 	free(homeplugins);
 	free(homezigns);
+	free(sigdbdir);
 	free(plugins);
 	free(magicpath);
 	free(prefix);

@@ -44,7 +44,10 @@ pkgconfig_mod.generate(rz_magic,
   requires: [
     'rz_util'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'datdir=@0@'.format(rizin_datdir_rz),
+  ],
 )
 pkgconfig_magic_requires = ['rz_magic']
 
