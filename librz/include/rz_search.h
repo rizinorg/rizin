@@ -93,8 +93,6 @@ typedef struct rz_search_t {
 	RzSearchParams *params;
 } RzSearch;
 
-typedef struct rz_core_t RzCore;
-
 #ifdef RZ_API
 
 #define RZ_SEARCH_AES_BOX_SIZE 31
