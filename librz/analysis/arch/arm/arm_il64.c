@@ -14,6 +14,8 @@
 #define ISREG   ISREG64
 #define ISMEM   ISMEM64
 #define OPCOUNT OPCOUNT64
+#undef MEMDISP64 // the original one casts to ut64 which we don't want here
+#define MEMDISP(x) insn->detail->arm64.operands[x].mem.disp
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
@@ -294,7 +296,7 @@ static RzILOpBitVector *adjust_unsigned(ut32 bits, RZ_OWN RzILOpBitVector *v) {
 	if (v->code == RZ_IL_OP_CAST) {
 		// reuse any existing cast
 		v->op.cast.length = bits;
-	} else if (v->code != RZ_IL_OP_BITV || rz_bv_len(v->op.bitv.value) != bits){
+	} else if (v->code != RZ_IL_OP_BITV || rz_bv_len(v->op.bitv.value) != bits) {
 		v = UNSIGNED(bits, v);
 	}
 	return v;
@@ -357,10 +359,11 @@ static RzILOpBitVector *shift(arm64_shifter sft, ut32 dist, RZ_OWN RzILOpBitVect
 }
 
 // #define PC(addr)      (addr)
-#define REG_VAL(id) read_reg(/*PC(insn->address), */ id)
-#define REG(n)      REG_VAL(REGID(n))
-#define REGBITS(n)  reg_bits(REGID(n))
-#define MEMBASE(x)  REG_VAL(insn->detail->arm64.operands[x].mem.base)
+#define REG_VAL(id)  read_reg(/*PC(insn->address), */ id)
+#define REG(n)       REG_VAL(REGID(n))
+#define REGBITS(n)   reg_bits(REGID(n))
+#define MEMBASEID(x) insn->detail->arm64.operands[x].mem.base
+#define MEMBASE(x)   REG_VAL(MEMBASEID(x))
 
 /**
  * IL to write a value to the given capstone reg
@@ -406,6 +409,12 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 	}
 	case ARM64_OP_MEM: {
 		RzILOpBitVector *addr = MEMBASE(n);
+		st64 disp = MEMDISP(n);
+		if (disp > 0) {
+			addr = ADD(addr, U64(disp));
+		} else if (disp < 0) {
+			addr = SUB(addr, U64(-disp));
+		}
 		return addr;
 	}
 	default:
@@ -513,7 +522,7 @@ static RzILOpEffect *adr(cs_insn *insn) {
  * Capstone: ARM64_INS_AND, ARM64_INS_EON, ARM64_INS_EOR
  * ARM: and, eon, eor
  */
-static RzILOpEffect *bitwise(cs_insn * insn) {
+static RzILOpEffect *bitwise(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
@@ -860,7 +869,6 @@ static RzILOpEffect *cset(cs_insn *insn) {
 	return write_reg(REGID(0), ITE(c, SN(bits, insn->id == ARM64_INS_CSETM ? -1 : 1), SN(bits, 0)));
 }
 
-
 /**
  * Capstone: ARM64_INS_CLS
  * ARM: cls
@@ -954,6 +962,55 @@ static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
 	// stub, nothing to do here
 }
 
+/**
+ * Capstone: ARM_INS_LDR
+ * ARM: ldr
+ */
+static RzILOpEffect *ldr(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = 64;
+	size_t addr_op = 1;
+	RzILOpBitVector *addr = ARG(addr_op, &bits);
+	if (!addr) {
+		return NULL;
+	}
+	ut64 loadsz = 64;
+	arm64_reg dstreg = REGID(0);
+	if (is_wreg(dstreg)) {
+		dstreg = xreg(wreg_idx(dstreg));
+		loadsz = 32;
+	}
+	RzILOpBitVector *val = LOADW(loadsz, addr);
+	if (loadsz != 64) {
+		val = UNSIGNED(64, val);
+	}
+	RzILOpEffect *eff = write_reg(dstreg, val);
+	if (!eff) {
+		return NULL;
+	}
+	bool writeback = insn->detail->arm64.writeback;
+	if (writeback && is_xreg(MEMBASEID(addr_op))) {
+		RzILOpBitVector *wbaddr = DUP(addr);
+		if (ISIMM(addr_op + 1)) {
+			// post-index
+			st64 disp = IMM(addr_op + 1);
+			if (disp > 0) {
+				wbaddr = ADD(wbaddr, U64(disp));
+			} else if (disp < 0) {
+				wbaddr = SUB(wbaddr, U64(-disp));
+			}
+		}
+		RzILOpEffect *wb_eff = write_reg(MEMBASEID(addr_op), wbaddr);
+		if (!wb_eff) {
+			rz_il_op_effect_free(eff);
+			return NULL;
+		}
+		eff = SEQ2(eff, wb_eff);
+	}
+	return eff;
+}
 
 /**
  * Lift an AArch64 instruction to RzIL
@@ -1120,6 +1177,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return hvc(insn);
 	case ARM64_INS_SVC:
 		return svc(insn);
+	case ARM64_INS_LDR:
+		return ldr(insn);
 	default:
 		break;
 	}
