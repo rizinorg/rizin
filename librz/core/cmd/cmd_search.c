@@ -160,10 +160,10 @@ static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_
 		return;
 	}
 	if (rz_cons_singleton()->columns < 50) {
-		rz_cons_printf("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
+		RZ_LOG_INFO("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
 			at, n, (progress % 2) ? "[ #]" : "[# ]");
 	} else {
-		rz_cons_printf("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
+		RZ_LOG_INFO("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
 			at, to, n, (progress % 2) ? "[ #]" : "[# ]");
 	}
 }
@@ -214,7 +214,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 				RzSearchKeyword *kw = rz_list_first(core->search->params->kws);
 				int lenstr = kw ? kw->keyword_length : 0;
 				const char *bytestr = lenstr > 1 ? "bytes" : "byte";
-				rz_cons_printf("Searching %d %s in [0x%" PFMT64x "-0x%" PFMT64x "]\n",
+				RZ_LOG_INFO("Searching %d %s in [0x%" PFMT64x "-0x%" PFMT64x "]\n",
 					kw ? kw->keyword_length : 0, bytestr, itv.addr, rz_itv_end(itv));
 			}
 			if (!core->search->params->backwards) {
