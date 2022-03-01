@@ -827,6 +827,20 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_CSET
+ * ARM: cset
+ */
+static RzILOpEffect *cset(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	RzILOpBool *c = cond(insn->detail->arm64.cc);
+	ut32 bits = REGBITS(0);
+	return write_reg(REGID(0), c ? ITE(c, UN(bits, 1), UN(bits, 0)) : UN(bits, 0));
+}
+
+
+/**
  * Capstone: ARM64_INS_CLS
  * ARM: cls
  */
@@ -1013,6 +1027,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_CSNEG:
 	case ARM64_INS_CSEL:
 		return csinc(insn);
+	case ARM64_INS_CSET:
+		return cset(insn);
 	case ARM64_INS_CLS:
 		return cls(insn);
 	case ARM64_INS_CLZ:
