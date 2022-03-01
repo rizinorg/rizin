@@ -381,6 +381,16 @@ static RzILOpEffect *write_reg(arm64_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector 
 	return SETG(var, v);
 }
 
+static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm64_op *op) {
+	if (op->mem.index != ARM_REG_INVALID) {
+		RzILOpBitVector *index = read_reg(op->mem.index);
+		index = extend(64, op->ext, index, reg_bits(op->mem.index));
+		index = shift(op->shift.type, op->shift.value, index);
+		return ADD(base_plus_disp, index);
+	}
+	return base_plus_disp;
+}
+
 /**
  * IL to retrieve the value of the \p n -th arg of \p insn
  */
@@ -415,7 +425,7 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 		} else if (disp < 0) {
 			addr = SUB(addr, U64(-disp));
 		}
-		return addr;
+		return arg_mem(addr, &insn->detail->arm64.operands[n]);
 	}
 	default:
 		break;
@@ -976,13 +986,25 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	if (!addr) {
 		return NULL;
 	}
-	ut64 loadsz = 64;
 	arm64_reg dstreg = REGID(0);
+	ut64 loadsz;
+	switch (insn->id) {
+	case ARM64_INS_LDRB:
+	case ARM64_INS_LDURB:
+		loadsz = 8;
+		break;
+	case ARM64_INS_LDRH:
+	case ARM64_INS_LDURH:
+		loadsz = 16;
+		break;
+	default: // ARM64_INS_LDR, ARM64_INS_LDRU
+		loadsz = is_wreg(dstreg) ? 32 : 64;
+		break;
+	}
 	if (is_wreg(dstreg)) {
 		dstreg = xreg(wreg_idx(dstreg));
-		loadsz = 32;
 	}
-	RzILOpBitVector *val = LOADW(loadsz, addr);
+	RzILOpBitVector *val = loadsz == 8 ? LOAD(addr) : LOADW(loadsz, addr);
 	if (loadsz != 64) {
 		val = UNSIGNED(64, val);
 	}
@@ -1178,6 +1200,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SVC:
 		return svc(insn);
 	case ARM64_INS_LDR:
+	case ARM64_INS_LDRB:
+	case ARM64_INS_LDRH:
+	case ARM64_INS_LDUR:
+	case ARM64_INS_LDURB:
+	case ARM64_INS_LDURH:
 		return ldr(insn);
 	default:
 		break;
