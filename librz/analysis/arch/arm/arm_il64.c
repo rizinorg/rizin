@@ -909,6 +909,28 @@ static RzILOpEffect *clz(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_EXTR
+ * ARM: extr
+ */
+static RzILOpEffect *extr(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *h = ARG(1, &bits);
+	RzILOpBitVector *l = ARG(2, &bits);
+	ut32 dist_bits = 6;
+	RzILOpBitVector *dist = ARG(3, &dist_bits);
+	if (!h || !l || !dist) {
+		rz_il_op_pure_free(h);
+		rz_il_op_pure_free(l);
+		rz_il_op_pure_free(dist);
+		return NULL;
+	}
+	return write_reg(REGID(0), UNSIGNED(bits, SHIFTR0(APPEND(h, l), dist)));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -957,8 +979,9 @@ static RzILOpEffect *clz(cs_insn *insn) {
  * - BTI: FEAT_BTI/Branch Target Identification
  * - CLREX: clears the local monitor
  * - CRC32B, CRC32H, CRC32W, CRC32X, CRC32CB, CRC32CH, CRC32CW, CRC32CX: does crc32
- * - CSDB, DMB, DSB: synchronization, memory barriers
+ * - CSDB, DMB, DSB, ESB: synchronization, memory barriers
  * - DCPS1, DCPS2, DCPS3, DRPS: debug
+ * - ERET, ERETAA, ERETAB: exception return
  *
  * Not supported by capstone
  * -------------------------
@@ -1061,6 +1084,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return cls(insn);
 	case ARM64_INS_CLZ:
 		return clz(insn);
+	case ARM64_INS_EXTR:
+		return extr(insn);
 	default:
 		break;
 	}
