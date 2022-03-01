@@ -212,13 +212,18 @@ static bool is_wreg(arm64_reg reg) {
 	return (reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30) || reg == ARM64_REG_WSP;
 }
 
+static arm64_reg xreg_of_reg(arm64_reg reg) {
+	if (is_wreg(reg)) {
+		return xreg(wreg_idx(reg));
+	}
+	return reg;
+}
+
 /**
  * Variable name for a register given by cs
  */
 static const char *reg_var_name(arm64_reg reg) {
-	if (is_wreg(reg)) {
-		reg = xreg(wreg_idx(reg));
-	}
+	reg = xreg_of_reg(reg);
 	switch (reg) {
 	case ARM64_REG_X0: return "x0";
 	case ARM64_REG_X1: return "x1";
@@ -975,7 +980,7 @@ static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
 /**
  * Capstone: ARM64_INS_LDR, ARM64_INS_LDRB, ARM64_INS_LDRH, ARM64_INS_LDRU, ARM64_INS_LDRUB, ARM64_INS_LDRUH,
  *           ARM64_INS_LDRSW, ARM64_INS_LDRSB, ARM64_INS_LDRSH, ARM64_INS_LDURSW, ARM64_INS_LDURSB, ARM64_INS_LDURSH
- * ARM: ldr, ldrb, ldrh, ldru, ldrub, ldruh
+ * ARM: ldr, ldrb, ldrh, ldru, ldrub, ldruh, ldrsw, ldrsb, ldrsh, ldursw, ldurwb, ldursh
  */
 static RzILOpEffect *ldr(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -1026,9 +1031,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 			val = UNSIGNED(64, val);
 		}
 	}
-	if (is_wreg(dstreg)) {
-		dstreg = xreg(wreg_idx(dstreg));
-	}
+	dstreg = xreg_of_reg(dstreg);
 	RzILOpEffect *eff = write_reg(dstreg, val);
 	if (!eff) {
 		return NULL;
@@ -1051,6 +1054,81 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 			return NULL;
 		}
 		eff = SEQ2(eff, wb_eff);
+	}
+	return eff;
+}
+
+/**
+ * Capstone: ARM64_INS_LDADD, ARM64_INS_LDADDA, ARM64_INS_LDADDAL, ARM64_INS_LDADDL,
+ *           ARM64_INS_LDADDB, ARM64_INS_LDADDAB, ARM64_INS_LDADDALB, ARM64_INS_LDADDLB,
+ *           ARM64_INS_LDADDH, ARM64_INS_LDADDAH, ARM64_INS_LDADDALH, ARM64_INS_LDADDLH,
+ *           ARM64_INS_STADD, ARM64_INS_STADDL, ARM64_INS_STADDB, ARM64_INS_STADDLB, ARM64_INS_STADDH, ARM64_INS_STADDLH
+ * ARM: ldadd, ldadda, ldaddal, ldaddl, ldaddb, ldaddab, ldaddalb, ldaddlb, ldaddh, ldaddah, ldaddalh, ldaddlh,
+ *      stadd, staddl, staddb, staddlb, stadd
+ */
+static RzILOpEffect *ldadd(cs_insn *insn) {
+	size_t addr_op = OPCOUNT() == 3 ? 2 : 1;
+	if (!ISMEM(addr_op)) {
+		return NULL;
+	}
+	arm64_reg addend_reg = REGID(0);
+	ut64 loadsz;
+	switch (insn->id) {
+	case ARM64_INS_LDADDB:
+	case ARM64_INS_LDADDAB:
+	case ARM64_INS_LDADDALB:
+	case ARM64_INS_LDADDLB:
+	case ARM64_INS_STADDB:
+	case ARM64_INS_STADDLB:
+		loadsz = 8;
+		break;
+	case ARM64_INS_LDADDH:
+	case ARM64_INS_LDADDAH:
+	case ARM64_INS_LDADDALH:
+	case ARM64_INS_LDADDLH:
+	case ARM64_INS_STADDH:
+	case ARM64_INS_STADDLH:
+		loadsz = 16;
+		break;
+	default: // ARM64_INS_LDADD, ARM64_INS_LDADDA, ARM64_INS_LDADDAL, ARM64_INS_LDADDL, ARM64_INS_STADD, ARM64_INS_STADDL
+		loadsz = is_wreg(addend_reg) ? 32 : 64;
+		break;
+	}
+	ut32 bits = 64;
+	RzILOpBitVector *addr = ARG(addr_op, &bits);
+	if (!addr) {
+		return NULL;
+	}
+	addend_reg = xreg_of_reg(addend_reg);
+	RzILOpEffect *ld_eff = NULL;
+	if (OPCOUNT() == 3) {
+		// LDADD... instead of STADD, which does not have a dst reg
+		if (!ISREG(1)) {
+			rz_il_op_pure_free(addr);
+			return NULL;
+		}
+		arm64_reg dst_reg = REGID(1);
+		dst_reg = xreg_of_reg(dst_reg);
+		ld_eff = write_reg(dst_reg, loadsz != 64 ? UNSIGNED(64, VARL("old")) : VARL("old"));
+		if (!ld_eff) {
+			rz_il_op_pure_free(addr);
+			return NULL;
+		}
+	}
+	RzILOpBitVector *res = read_reg(addend_reg);
+	if (!res) {
+		rz_il_op_effect_free(ld_eff);
+		return NULL;
+	}
+	if (loadsz != 64) {
+		res = UNSIGNED(loadsz, res);
+	}
+	res = ADD(VARL("old"), res);
+	RzILOpEffect *eff = SEQ2(
+		SETL("old", loadsz == 8 ? LOAD(addr) : LOADW(loadsz, addr)),
+		loadsz == 8 ? STORE(DUP(addr), res) : STOREW(DUP(addr), res));
+	if (ld_eff) {
+		eff = SEQ2(eff, ld_eff);
 	}
 	return eff;
 }
@@ -1116,6 +1194,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
  * - AXFLAG
  * - FEAT_MTE (see above)
  * - DGH
+ * - LD64B
  */
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
@@ -1233,6 +1312,25 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_LDURSB:
 	case ARM64_INS_LDURSH:
 		return ldr(insn);
+	case ARM64_INS_LDADD:
+	case ARM64_INS_LDADDA:
+	case ARM64_INS_LDADDAL:
+	case ARM64_INS_LDADDL:
+	case ARM64_INS_LDADDB:
+	case ARM64_INS_LDADDAB:
+	case ARM64_INS_LDADDALB:
+	case ARM64_INS_LDADDLB:
+	case ARM64_INS_LDADDH:
+	case ARM64_INS_LDADDAH:
+	case ARM64_INS_LDADDALH:
+	case ARM64_INS_LDADDLH:
+	case ARM64_INS_STADD:
+	case ARM64_INS_STADDL:
+	case ARM64_INS_STADDB:
+	case ARM64_INS_STADDLB:
+	case ARM64_INS_STADDH:
+	case ARM64_INS_STADDLH:
+		return ldadd(insn);
 	default:
 		break;
 	}
