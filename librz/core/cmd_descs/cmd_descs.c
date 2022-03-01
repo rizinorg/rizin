@@ -5816,12 +5816,12 @@ static const RzCmdDescHelp cmd_cmp_remove_watcher_help = {
 	.args = cmd_cmp_remove_watcher_args,
 };
 
-static const RzCmdDescDetailEntry cmd_cmp_hexpair_string_Ignoring_space_bytes_detail_entries[] = {
-	{ .text = "Ignore specific bytes while comparing by using '.'", .arg_str = NULL, .comment = "cx 1ee7..0f....d34d" },
+static const RzCmdDescDetailEntry cmd_cmp_hexpair_string_Examples_detail_entries[] = {
+	{ .text = "cx", .arg_str = " 1ee7..0f....d34d", .comment = "Ignore specific bytes while comparing by using '.'" },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_cmp_hexpair_string_details[] = {
-	{ .name = "Ignoring bytes", .entries = cmd_cmp_hexpair_string_Ignoring_space_bytes_detail_entries },
+	{ .name = "Examples", .entries = cmd_cmp_hexpair_string_Examples_detail_entries },
 	{ 0 },
 };
 static const RzCmdDescArg cmd_cmp_hexpair_string_args[] = {

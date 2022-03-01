@@ -169,10 +169,11 @@ commands:
       - name: hexpair
         type: RZ_CMD_ARG_TYPE_STRING
     details:
-      - name: Ignoring bytes
+      - name: Examples
         entries:
-          - text: "Ignore specific bytes while comparing by using '.'"
-            comment: "cx 1ee7..0f....d34d"
+          - text: "cx"
+            arg_str: " 1ee7..0f....d34d"
+            comment: "Ignore specific bytes while comparing by using '.'"
   - name: cX
     summary: Compare hexdump of data of block size at <addr> with the data at current offset using hexdiff output
     cname: cmd_cmp_hex_block_hexdiff
