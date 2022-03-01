@@ -973,8 +973,9 @@ static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
 }
 
 /**
- * Capstone: ARM_INS_LDR
- * ARM: ldr
+ * Capstone: ARM64_INS_LDR, ARM64_INS_LDRB, ARM64_INS_LDRH, ARM64_INS_LDRU, ARM64_INS_LDRUB, ARM64_INS_LDRUH,
+ *           ARM64_INS_LDRSW, ARM64_INS_LDRSB, ARM64_INS_LDRSH, ARM64_INS_LDURSW, ARM64_INS_LDURSB, ARM64_INS_LDURSH
+ * ARM: ldr, ldrb, ldrh, ldru, ldrub, ldruh
  */
 static RzILOpEffect *ldr(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -988,25 +989,45 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	}
 	arm64_reg dstreg = REGID(0);
 	ut64 loadsz;
+	bool is_signed = false;
 	switch (insn->id) {
+	case ARM64_INS_LDRSB:
+	case ARM64_INS_LDURSB:
+		is_signed = true;
 	case ARM64_INS_LDRB:
 	case ARM64_INS_LDURB:
 		loadsz = 8;
 		break;
+	case ARM64_INS_LDRSH:
+	case ARM64_INS_LDURSH:
+		is_signed = true;
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDURH:
 		loadsz = 16;
+		break;
+	case ARM64_INS_LDRSW:
+	case ARM64_INS_LDURSW:
+		is_signed = true;
+		loadsz = 32;
 		break;
 	default: // ARM64_INS_LDR, ARM64_INS_LDRU
 		loadsz = is_wreg(dstreg) ? 32 : 64;
 		break;
 	}
-	if (is_wreg(dstreg)) {
-		dstreg = xreg(wreg_idx(dstreg));
-	}
 	RzILOpBitVector *val = loadsz == 8 ? LOAD(addr) : LOADW(loadsz, addr);
 	if (loadsz != 64) {
-		val = UNSIGNED(64, val);
+		if (is_signed) {
+			if (is_wreg(dstreg)) {
+				val = UNSIGNED(64, SIGNED(32, val));
+			} else {
+				val = SIGNED(64, val);
+			}
+		} else {
+			val = UNSIGNED(64, val);
+		}
+	}
+	if (is_wreg(dstreg)) {
+		dstreg = xreg(wreg_idx(dstreg));
 	}
 	RzILOpEffect *eff = write_reg(dstreg, val);
 	if (!eff) {
@@ -1205,6 +1226,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDURB:
 	case ARM64_INS_LDURH:
+	case ARM64_INS_LDRSW:
+	case ARM64_INS_LDRSB:
+	case ARM64_INS_LDRSH:
+	case ARM64_INS_LDURSW:
+	case ARM64_INS_LDURSB:
+	case ARM64_INS_LDURSH:
 		return ldr(insn);
 	default:
 		break;
