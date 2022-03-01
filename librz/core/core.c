@@ -2483,7 +2483,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_event_hook(core->io->event, RZ_EVENT_IO_DESC_CLOSE, ev_iodescclose_cb, core);
 	rz_event_hook(core->io->event, RZ_EVENT_IO_MAP_DEL, ev_iomapdel_cb, core);
 	core->io->ff = 1;
-	core->search = rz_search_new(rz_core_search_params_new(core, RZ_SEARCH_KEYWORD));
+	core->search = rz_search_new(rz_search_params_new(RZ_SEARCH_KEYWORD));
 	core->flags = rz_flag_new();
 	core->graph = rz_agraph_new(rz_cons_canvas_new(1, 1));
 	core->graph->need_reload_nodes = false;
@@ -3992,58 +3992,4 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 	}
 	rz_list_free(list);
 	return ret;
-}
-
-RZ_API RzSearchParams *rz_core_search_params_new(RzCore *core, RzSearchMode mode) {
-	rz_return_val_if_fail(core, NULL);
-
-	RzSearchParams *params = RZ_NEW0(RzSearchParams);
-	if (!params) {
-		return NULL;
-	}
-	if (!rz_search_params_set_mode(params, mode)) {
-		free(params);
-		eprintf("Cannot init search params for mode %d\n", mode);
-		return false;
-	}
-
-	params->pattern_size = 0;
-	params->aes_search = false;
-	params->privkey_search = false;
-	params->inverse = false;
-	params->backwards = false;
-
-	const char *search_in = rz_config_get(core->config, "search.in");
-	params->boundaries = rz_core_get_boundaries_prot(core, -1, search_in, "search");
-	if (!params->boundaries) {
-		goto bad;
-	}
-	params->cmd_hit = rz_config_get(core->config, "cmd.hit");
-
-	params->search_align = rz_config_get_i(core->config, "search.align");
-	params->search_contiguous = rz_config_get_b(core->config, "search.contiguous");
-	params->search_distance = rz_config_get_i(core->config, "search.distance");
-	params->search_flags = rz_config_get_i(core->config, "search.flags");
-	params->search_from = rz_config_get_i(core->config, "search.from");
-	params->search_to = rz_config_get_i(core->config, "search.to");
-	params->search_maxhits = rz_config_get_i(core->config, "search.maxhits");
-	params->search_maxlength = rz_config_get_i(core->config, "search.mamaxlength");
-	params->search_minlength = rz_config_get_i(core->config, "search.minlength");
-	params->search_overlap = rz_config_get_b(core->config, "search.overlap");
-	params->search_prefix = rz_config_get(core->config, "search.prefix");
-	params->search_show = rz_config_get_b(core->config, "search.show");
-
-	params->itv.addr = params->search_from;
-	params->itv.size = params->search_from - params->search_to;
-	params->kws = rz_list_newf((RzListFree)rz_search_keyword_free);
-	if (!params->kws) {
-		goto bad;
-	}
-	params->n_kws = 0;
-
-	return params;
-
-bad:
-	rz_search_params_free(params);
-	return NULL;
 }
