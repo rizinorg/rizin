@@ -255,10 +255,10 @@ static const char *reg_var_name(arm64_reg reg) {
 }
 
 static ut32 reg_bits(arm64_reg reg) {
-	if (is_xreg(reg)) {
+	if (is_xreg(reg) || reg == ARM64_REG_XZR) {
 		return 64;
 	}
-	if (is_wreg(reg)) {
+	if (is_wreg(reg) || reg == ARM64_REG_WZR) {
 		return 32;
 	}
 	return 0;
@@ -271,6 +271,12 @@ static RzILOpBitVector *read_reg(/*ut64 pc, */ arm64_reg reg) {
 	// if (reg == ARM64_REG_PC) {
 	// 	return U32(pc);
 	// }
+	if (reg == ARM64_REG_XZR) {
+		return U64(0);
+	}
+	if (reg == ARM64_REG_WZR) {
+		return U32(0);
+	}
 	const char *var = reg_var_name(reg);
 	if (!var) {
 		return NULL;
@@ -288,7 +294,7 @@ static RzILOpBitVector *adjust_unsigned(ut32 bits, RZ_OWN RzILOpBitVector *v) {
 	if (v->code == RZ_IL_OP_CAST) {
 		// reuse any existing cast
 		v->op.cast.length = bits;
-	} else {
+	} else if (v->code != RZ_IL_OP_BITV || rz_bv_len(v->op.bitv.value) != bits){
 		v = UNSIGNED(bits, v);
 	}
 	return v;
@@ -827,16 +833,19 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_CSET
- * ARM: cset
+ * Capstone: ARM64_INS_CSET, ARM64_INS_CSETM
+ * ARM: cset, csetm
  */
 static RzILOpEffect *cset(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
 	RzILOpBool *c = cond(insn->detail->arm64.cc);
+	if (!c) {
+		return NULL;
+	}
 	ut32 bits = REGBITS(0);
-	return write_reg(REGID(0), c ? ITE(c, UN(bits, 1), UN(bits, 0)) : UN(bits, 0));
+	return write_reg(REGID(0), ITE(c, SN(bits, insn->id == ARM64_INS_CSETM ? -1 : 1), SN(bits, 0)));
 }
 
 
@@ -1028,6 +1037,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_CSEL:
 		return csinc(insn);
 	case ARM64_INS_CSET:
+	case ARM64_INS_CSETM:
 		return cset(insn);
 	case ARM64_INS_CLS:
 		return cls(insn);
