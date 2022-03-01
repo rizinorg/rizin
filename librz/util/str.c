@@ -2367,7 +2367,7 @@ RZ_API void rz_str_filter(char *str) {
 
 /**
  * \brief Extract all printable characters in \p str, and return a string of maximum length \p len
- *
+ * 
  * \param str String to extract printable characters from
  * \param len The maximum length of the resulting string
  * \return char* Extracted printable string
@@ -2379,13 +2379,9 @@ RZ_API RZ_OWN char *rz_str_extract_printable(RZ_NONNULL const char *str, int len
 		return NULL;
 	}
 	int i;
-	for (i = 0, r = res; i < len; str++) {
-		if (*str == 0x0) { // NULL terminator
-			break;
-		}
+	for (i = 0, r = res; i < len; str++, i++) {
 		if (IS_PRINTABLE(*str)) {
 			*r++ = *str;
-			i++;
 		}
 	}
 	*r = 0;
@@ -3935,11 +3931,7 @@ RZ_API const char *rz_str_str_xy(RZ_NONNULL const char *s, RZ_NONNULL const char
  * \param width the maximum size of each line. It will be respected only if
  *              possible, as the function won't split words.
  */
-<<<<<<< HEAD
 RZ_API RzList /*<char *>*/ *rz_str_wrap(RZ_NONNULL char *str, size_t width) {
-=======
-RZ_API RzList *rz_str_wrap(RZ_NONNULL char *str, size_t width) {
->>>>>>> 04ffa57ecf (Add `RZ_NONNULL` decoration for function arguments in `str.c`)
 	rz_return_val_if_fail(str, NULL);
 
 	RzList *res = rz_list_new();
