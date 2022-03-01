@@ -1727,7 +1727,6 @@ ar
 ara-
 wc-*
 ar
-aezi  # Shouldn't be necessary
 aezsu $s; ?e
 EOF
 EXPECT=<<EOF
