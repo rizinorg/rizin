@@ -510,10 +510,10 @@ static RzILOpEffect *adr(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_AND
- * ARM: and
+ * Capstone: ARM64_INS_AND, ARM64_INS_EON, ARM64_INS_EOR
+ * ARM: and, eon, eor
  */
-static RzILOpEffect * and (cs_insn * insn) {
+static RzILOpEffect *bitwise(cs_insn * insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
@@ -525,7 +525,19 @@ static RzILOpEffect * and (cs_insn * insn) {
 		rz_il_op_pure_free(b);
 		return NULL;
 	}
-	RzILOpEffect *eff = write_reg(REGID(0), LOGAND(a, b));
+	RzILOpBitVector *res;
+	switch (insn->id) {
+	case ARM64_INS_EOR:
+		res = LOGXOR(a, b);
+		break;
+	case ARM64_INS_EON:
+		res = LOGXOR(a, LOGNOT(b));
+		break;
+	default: // ARM64_INS_AND
+		res = LOGAND(a, b);
+		break;
+	}
+	RzILOpEffect *eff = write_reg(REGID(0), res);
 	if (!eff) {
 		return NULL;
 	}
@@ -936,6 +948,8 @@ static RzILOpEffect *clz(cs_insn *insn) {
  * - CFP
  * - CPP
  * - SYS
+ * - DC
+ * - DVP
  *
  * Miscellaneous
  * -------------
@@ -943,12 +957,14 @@ static RzILOpEffect *clz(cs_insn *insn) {
  * - BTI: FEAT_BTI/Branch Target Identification
  * - CLREX: clears the local monitor
  * - CRC32B, CRC32H, CRC32W, CRC32X, CRC32CB, CRC32CH, CRC32CW, CRC32CX: does crc32
- * - CSDB: synchronization, memory barriers
+ * - CSDB, DMB, DSB: synchronization, memory barriers
+ * - DCPS1, DCPS2, DCPS3, DRPS: debug
  *
  * Not supported by capstone
  * -------------------------
  * - AXFLAG
  * - FEAT_MTE (see above)
+ * - DGH
  */
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
@@ -970,7 +986,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 #if CS_API_MAJOR > 4
 	case ARM64_INS_ANDS:
 #endif
-		return and(insn);
+	case ARM64_INS_EOR:
+	case ARM64_INS_EON:
+		return bitwise(insn);
 	case ARM64_INS_ASR:
 		return asr(insn);
 	case ARM64_INS_B:
