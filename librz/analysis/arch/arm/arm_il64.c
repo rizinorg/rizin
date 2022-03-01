@@ -774,8 +774,8 @@ static RzILOpEffect *cmp(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_CINC, ARM64_INS_CSINC, ARM64_INS_CINV, ARM64_INS_CSINV, ARM64_INS_CNEG, ARM64_INS_CSNEG
- * ARM: cinc, csinc, cinv, csinv, cneg, csneg
+ * Capstone: ARM64_INS_CINC, ARM64_INS_CSINC, ARM64_INS_CINV, ARM64_INS_CSINV, ARM64_INS_CNEG, ARM64_INS_CSNEG, ARM64_INS_CSEL
+ * ARM: cinc, csinc, cinv, csinv, cneg, csneg, csel
  */
 static RzILOpEffect *csinc(cs_insn *insn) {
 	size_t dst_idx = 0;
@@ -803,6 +803,10 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 	RzILOpBitVector *res;
 	bool invert_cond = false;
 	switch (insn->id) {
+	case ARM64_INS_CSEL:
+		invert_cond = true;
+		res = src1;
+		break;
 	case ARM64_INS_CSINV:
 		invert_cond = true;
 	case ARM64_INS_CINV:
@@ -1007,6 +1011,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_CSINV:
 	case ARM64_INS_CNEG:
 	case ARM64_INS_CSNEG:
+	case ARM64_INS_CSEL:
 		return csinc(insn);
 	case ARM64_INS_CLS:
 		return cls(insn);
