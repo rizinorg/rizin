@@ -931,6 +931,31 @@ static RzILOpEffect *extr(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM_INS_SVC
+ * ARM: svc
+ */
+static RzILOpEffect *svc(cs_insn *insn) {
+	return GOTO("svc");
+}
+
+static void label_svc(RzILVM *vm, RzILOpEffect *op) {
+	// stub, nothing to do here
+}
+
+/**
+ * Capstone: ARM64_INS_HVC
+ * ARM: hvc
+ */
+static RzILOpEffect *hvc(cs_insn *insn) {
+	return GOTO("hvc");
+}
+
+static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
+	// stub, nothing to do here
+}
+
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -942,6 +967,8 @@ static RzILOpEffect *extr(cs_insn *insn) {
  * - ADDG
  * - CMPP
  * - SUBPS
+ * - GMI
+ * - IRG
  *
  * FEAT_PAuth: Pointer Authentication
  * ----------------------------------
@@ -972,6 +999,7 @@ static RzILOpEffect *extr(cs_insn *insn) {
  * - SYS
  * - DC
  * - DVP
+ * - IC
  *
  * Miscellaneous
  * -------------
@@ -979,8 +1007,8 @@ static RzILOpEffect *extr(cs_insn *insn) {
  * - BTI: FEAT_BTI/Branch Target Identification
  * - CLREX: clears the local monitor
  * - CRC32B, CRC32H, CRC32W, CRC32X, CRC32CB, CRC32CH, CRC32CW, CRC32CX: does crc32
- * - CSDB, DMB, DSB, ESB: synchronization, memory barriers
- * - DCPS1, DCPS2, DCPS3, DRPS: debug
+ * - CSDB, DMB, DSB, ESB, ISB: synchronization, memory barriers
+ * - DCPS1, DCPS2, DCPS3, DRPS, HLT: debug
  * - ERET, ERETAA, ERETAB: exception return
  *
  * Not supported by capstone
@@ -1086,6 +1114,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return clz(insn);
 	case ARM64_INS_EXTR:
 		return extr(insn);
+	case ARM64_INS_HINT:
+		return NOP;
+	case ARM64_INS_HVC:
+		return hvc(insn);
+	case ARM64_INS_SVC:
+		return svc(insn);
 	default:
 		break;
 	}
@@ -1097,5 +1131,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 RZ_IPI RzAnalysisILConfig *rz_arm_cs_64_il_config(bool big_endian) {
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(64, big_endian, 64);
 	r->reg_bindings = regs_bound;
+	RzILEffectLabel *svc_label = rz_il_effect_label_new("svc", EFFECT_LABEL_SYSCALL);
+	svc_label->hook = label_svc;
+	rz_analysis_il_config_add_label(r, svc_label);
+	RzILEffectLabel *hvc_label = rz_il_effect_label_new("hvc", EFFECT_LABEL_SYSCALL);
+	hvc_label->hook = label_hvc;
+	rz_analysis_il_config_add_label(r, hvc_label);
 	return r;
 }
