@@ -977,25 +977,48 @@ static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
 	// stub, nothing to do here
 }
 
+static RzILOpEffect *load_effect(ut32 bits, bool is_signed, arm64_reg dst_reg, RZ_OWN RzILOpBitVector *addr) {
+	RzILOpBitVector *val = bits == 8 ? LOAD(addr) : LOADW(bits, addr);
+	if (bits != 64) {
+		if (is_signed) {
+			if (is_wreg(dst_reg)) {
+				val = UNSIGNED(64, SIGNED(32, val));
+			} else {
+				val = SIGNED(64, val);
+			}
+		} else {
+			val = UNSIGNED(64, val);
+		}
+	}
+	dst_reg = xreg_of_reg(dst_reg);
+	return write_reg(dst_reg, val);
+}
+
 /**
  * Capstone: ARM64_INS_LDR, ARM64_INS_LDRB, ARM64_INS_LDRH, ARM64_INS_LDRU, ARM64_INS_LDRUB, ARM64_INS_LDRUH,
  *           ARM64_INS_LDRSW, ARM64_INS_LDRSB, ARM64_INS_LDRSH, ARM64_INS_LDURSW, ARM64_INS_LDURSB, ARM64_INS_LDURSH,
  *           ARM64_INS_LDAPR, ARM64_INS_LDAPRB, ARM64_INS_LDAPRH, ARM64_INS_LDAPUR, ARM64_INS_LDAPURB, ARM64_INS_LDAPURH,
- *           ARM64_INS_LDAPURSB, ARM64_INS_LDAPURSH, ARM64_INS_LDAPURSW, ARM64_INS_LDAR, ARM64_INS_LDARB, ARM64_INS_LDARH
+ *           ARM64_INS_LDAPURSB, ARM64_INS_LDAPURSH, ARM64_INS_LDAPURSW, ARM64_INS_LDAR, ARM64_INS_LDARB, ARM64_INS_LDARH,
+ *           ARM64_INS_LDAXP, ARM64_INS_LDXP, ARM64_INS_LDAXR, ARM64_INS_LDAXRB, ARM64_INS_LDAXRH
  * ARM: ldr, ldrb, ldrh, ldru, ldrub, ldruh, ldrsw, ldrsb, ldrsh, ldursw, ldurwb, ldursh,
- *      ldapr, ldaprb, ldaprh, ldapur, ldapurb, ldapurh, ldapursb, ldapursh, ldapursw
+ *      ldapr, ldaprb, ldaprh, ldapur, ldapurb, ldapurh, ldapursb, ldapursh, ldapursw,
+ *      ldaxp, ldxp, ldaxr, ldaxrb, ldaxrh
  */
 static RzILOpEffect *ldr(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
+	bool pair = insn->id == ARM64_INS_LDAXP || insn->id == ARM64_INS_LDXP;
+	if (pair && !ISREG(1)) {
+		return NULL;
+	}
 	ut32 bits = 64;
-	size_t addr_op = 1;
+	size_t addr_op = pair ? 2 : 1;
 	RzILOpBitVector *addr = ARG(addr_op, &bits);
 	if (!addr) {
 		return NULL;
 	}
-	arm64_reg dstreg = REGID(0);
+	arm64_reg dst_reg = REGID(0);
 	ut64 loadsz;
 	bool is_signed = false;
 	switch (insn->id) {
@@ -1008,6 +1031,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDAPRB:
 	case ARM64_INS_LDAPURB:
 	case ARM64_INS_LDARB:
+	case ARM64_INS_LDAXRB:
 		loadsz = 8;
 		break;
 	case ARM64_INS_LDRSH:
@@ -1019,6 +1043,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDAPRH:
 	case ARM64_INS_LDAPURH:
 	case ARM64_INS_LDARH:
+	case ARM64_INS_LDAXRH:
 		loadsz = 16;
 		break;
 	case ARM64_INS_LDRSW:
@@ -1027,26 +1052,21 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 		is_signed = true;
 		loadsz = 32;
 		break;
-	default: // ARM64_INS_LDR, ARM64_INS_LDRU, ARM64_INS_LDAPR, ARM64_INS_LDAPUR, ARM64_INS_LDAR
-		loadsz = is_wreg(dstreg) ? 32 : 64;
+	default: // ARM64_INS_LDR, ARM64_INS_LDRU, ARM64_INS_LDAPR, ARM64_INS_LDAPUR, ARM64_INS_LDAR, ARM64_INS_LDAXR
+		loadsz = is_wreg(dst_reg) ? 32 : 64;
 		break;
 	}
-	RzILOpBitVector *val = loadsz == 8 ? LOAD(addr) : LOADW(loadsz, addr);
-	if (loadsz != 64) {
-		if (is_signed) {
-			if (is_wreg(dstreg)) {
-				val = UNSIGNED(64, SIGNED(32, val));
-			} else {
-				val = SIGNED(64, val);
-			}
-		} else {
-			val = UNSIGNED(64, val);
-		}
-	}
-	dstreg = xreg_of_reg(dstreg);
-	RzILOpEffect *eff = write_reg(dstreg, val);
+	RzILOpEffect *eff = load_effect(loadsz, is_signed, dst_reg, addr);
 	if (!eff) {
 		return NULL;
+	}
+	if (pair) {
+		RzILOpEffect *eff1 = load_effect(loadsz, is_signed, REGID(1), ADD(DUP(addr), U64(loadsz / 8)));
+		if (!eff1) {
+			rz_il_op_effect_free(eff);
+			return NULL;
+		}
+		eff = SEQ2(eff, eff1);
 	}
 	bool writeback = insn->detail->arm64.writeback;
 	if (writeback && is_xreg(MEMBASEID(addr_op))) {
@@ -1335,6 +1355,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_LDAR:
 	case ARM64_INS_LDARB:
 	case ARM64_INS_LDARH:
+	case ARM64_INS_LDAXP:
+	case ARM64_INS_LDXP:
+	case ARM64_INS_LDAXR:
+	case ARM64_INS_LDAXRB:
+	case ARM64_INS_LDAXRH:
 		return ldr(insn);
 	case ARM64_INS_LDADD:
 	case ARM64_INS_LDADDA:
