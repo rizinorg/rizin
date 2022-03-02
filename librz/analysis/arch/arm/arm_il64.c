@@ -1467,6 +1467,51 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 #endif
 
 /**
+ * Capstone: ARM64_INS_MADD, ARM64_INS_MSUB
+ * ARM: madd, msub
+ */
+static RzILOpEffect *madd(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *ma = ARG(1, &bits);
+	RzILOpBitVector *mb = ARG(2, &bits);
+	RzILOpBitVector *addend = ARG(3, &bits);
+	if (!ma || !mb || !addend) {
+		return NULL;
+	}
+	RzILOpBitVector *res;
+	if (insn->id == ARM64_INS_MSUB) {
+		res = SUB(addend, MUL(ma, mb));
+	} else {
+		res = ADD(MUL(ma, mb), addend);
+	}
+	return write_reg(REGID(0), res);
+}
+
+/**
+ * Capstone: ARM64_INS_MUL, ARM64_INS_MNEG
+ * ARM: mul, mneg
+ */
+static RzILOpEffect *mul(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *ma = ARG(1, &bits);
+	RzILOpBitVector *mb = ARG(2, &bits);
+	if (!ma || !mb) {
+		return NULL;
+	}
+	RzILOpBitVector *res = MUL(ma, mb);
+	if (insn->id == ARM64_INS_MNEG) {
+		res = NEG(res);
+	}
+	return write_reg(REGID(0), res);
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -1838,6 +1883,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STUMINLH:
 		return ldadd(insn);
 #endif
+	case ARM64_INS_MADD:
+	case ARM64_INS_MSUB:
+		return madd(insn);
+	case ARM64_INS_MUL:
+	case ARM64_INS_MNEG:
+		return mul(insn);
 	default:
 		break;
 	}
