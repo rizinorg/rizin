@@ -803,3 +803,7 @@ d "ldtrsb x0, [x1]" 20088038 0x0 (set x0 (cast 64 (msb (load 0 (var x1))) (load 
 d "ldtrsh x0, [x1]" 20088078 0x0 (set x0 (cast 64 (msb (loadw 0 16 (var x1))) (loadw 0 16 (var x1))))
 d "ldtrsb w0, [x1]" 2008c038 0x0 (set x0 (cast 64 false (cast 32 (msb (load 0 (var x1))) (load 0 (var x1)))))
 d "ldtrsh w0, [x1]" 2008c078 0x0 (set x0 (cast 64 false (cast 32 (msb (loadw 0 16 (var x1))) (loadw 0 16 (var x1)))))
+d "ldxr x0, [x1]" 207c5fc8 0x0 (set x0 (loadw 0 64 (var x1)))
+d "ldxr w0, [x1]" 207c5f88 0x0 (set x0 (cast 64 false (loadw 0 32 (var x1))))
+d "ldxrb w0, [x1]" 207c5f08 0x0 (set x0 (cast 64 false (load 0 (var x1))))
+d "ldxrh w0, [x1]" 207c5f48 0x0 (set x0 (cast 64 false (loadw 0 16 (var x1))))

@@ -1003,12 +1003,13 @@ static RzILOpEffect *load_effect(ut32 bits, bool is_signed, arm64_reg dst_reg, R
  *           ARM64_INS_LDLAR, ARM64_INS_LDLARB, ARM64_INS_LDLARH,
  *           ARM64_INS_LDP, ARM64_INS_LDNP, ARM64_INS_LDPSW,
  *           ARM64_INS_LDRAA, ARM64_INS_LDRAB,
- *           ARM64_INS_LDTR, ARM64_INS_LDTRB, ARM64_INS_LDTRH, ARM64_INS_LDTRSW, ARM64_INS_LDTRSB, ARM64_INS_LDTRSH
+ *           ARM64_INS_LDTR, ARM64_INS_LDTRB, ARM64_INS_LDTRH, ARM64_INS_LDTRSW, ARM64_INS_LDTRSB, ARM64_INS_LDTRSH,
+ *           ARM64_INS_LDXR, ARM64_INS_LDXRB, ARM64_INS_LDXRH
  * ARM: ldr, ldrb, ldrh, ldru, ldrub, ldruh, ldrsw, ldrsb, ldrsh, ldursw, ldurwb, ldursh,
  *      ldapr, ldaprb, ldaprh, ldapur, ldapurb, ldapurh, ldapursb, ldapursh, ldapursw,
  *      ldaxp, ldxp, ldaxr, ldaxrb, ldaxrh, ldar, ldarb, ldarh,
  *      ldp, ldnp,
- *      ldtr, ldtrb, ldtrh, ldtrsw, ldtrsb, ldtrsh
+ *      ldtr, ldtrb, ldtrh, ldtrsw, ldtrsb, ldtrsh, ldxr, ldxrb, ldxrh
  */
 static RzILOpEffect *ldr(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -1042,6 +1043,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDAXRB:
 	case ARM64_INS_LDLARB:
 	case ARM64_INS_LDTRB:
+	case ARM64_INS_LDXRB:
 		loadsz = 8;
 		break;
 	case ARM64_INS_LDRSH:
@@ -1057,6 +1059,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDAXRH:
 	case ARM64_INS_LDLARH:
 	case ARM64_INS_LDTRH:
+	case ARM64_INS_LDXRH:
 		loadsz = 16;
 		break;
 	case ARM64_INS_LDRSW:
@@ -1069,7 +1072,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 		break;
 	default:
 		// ARM64_INS_LDR, ARM64_INS_LDRU, ARM64_INS_LDAPR, ARM64_INS_LDAPUR, ARM64_INS_LDAR, ARM64_INS_LDAXR, ARM64_INS_LDLAR,
-		// ARM64_INS_LDP, ARM64_INS_LDNP, ARM64_INS_LDRAA, ARM64_INS_LDRAB, ARM64_INS_LDTR
+		// ARM64_INS_LDP, ARM64_INS_LDNP, ARM64_INS_LDRAA, ARM64_INS_LDRAB, ARM64_INS_LDTR, ARM64_INS_LDXR
 		loadsz = is_wreg(dst_reg) ? 32 : 64;
 		break;
 	}
@@ -1650,6 +1653,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_LDTRSW:
 	case ARM64_INS_LDTRSB:
 	case ARM64_INS_LDTRSH:
+	case ARM64_INS_LDXR:
+	case ARM64_INS_LDXRB:
+	case ARM64_INS_LDXRH:
 		return ldr(insn);
 	case ARM64_INS_LDADD:
 	case ARM64_INS_LDADDA:
