@@ -1108,17 +1108,41 @@ static RzILOpEffect *ldr(cs_insn *insn) {
  *           ARM64_INS_LDCLRB, ARM64_INS_LDCLRAB, ARM64_INS_LDCLRALB, ARM64_INS_LDCLRLB,
  *           ARM64_INS_LDCLRH, ARM64_INS_LDCLRAH, ARM64_INS_LDCLRALH, ARM64_INS_LDCLRLH
  *           ARM64_INS_LDCLR, ARM64_INS_LDCLRA, ARM64_INS_LDCLRAL, ARM64_INS_LDCLRL,
- *           ARM64_INS_STSETB, ARM64_INS_STSETLB, ARM64_INS_STSETH, ARM64_INS_STSETLH, ARM64_INS_STSET, ARM64_INS_STSETL
+ *           ARM64_INS_STSETB, ARM64_INS_STSETLB, ARM64_INS_STSETH, ARM64_INS_STSETLH, ARM64_INS_STSET, ARM64_INS_STSETL,
  *           ARM64_INS_LDSETB, ARM64_INS_LDSETAB, ARM64_INS_LDSETALB, ARM64_INS_LDSETLB,
  *           ARM64_INS_LDSETH, ARM64_INS_LDSETAH, ARM64_INS_LDSETALH, ARM64_INS_LDSETLH
  *           ARM64_INS_LDSET, ARM64_INS_LDSETA, ARM64_INS_LDSETAL, ARM64_INS_LDSETL,
- *           ARM64_INS_STSETB, ARM64_INS_STSETLB, ARM64_INS_STSETH, ARM64_INS_STSETLH, ARM64_INS_STSET, ARM64_INS_STSETL
+ *           ARM64_INS_STSETB, ARM64_INS_STSETLB, ARM64_INS_STSETH, ARM64_INS_STSETLH, ARM64_INS_STSET, ARM64_INS_STSETL,
+ *           ARM64_INS_LDSMAXB, ARM64_INS_LDSMAXAB, ARM64_INS_LDSMAXALB, ARM64_INS_LDSMAXLB,
+ *           ARM64_INS_LDSMAXH, ARM64_INS_LDSMAXAH, ARM64_INS_LDSMAXALH, ARM64_INS_LDSMAXLH
+ *           ARM64_INS_LDSMAX, ARM64_INS_LDSMAXA, ARM64_INS_LDSMAXAL, ARM64_INS_LDSMAXL,
+ *           ARM64_INS_STSMAXB, ARM64_INS_STSMAXLB, ARM64_INS_STSMAXH, ARM64_INS_STSMAXLH, ARM64_INS_STSMAX, ARM64_INS_STSMAXL,
+ *           ARM64_INS_LDSMINB, ARM64_INS_LDSMINAB, ARM64_INS_LDSMINALB, ARM64_INS_LDSMINLB,
+ *           ARM64_INS_LDSMINH, ARM64_INS_LDSMINAH, ARM64_INS_LDSMINALH, ARM64_INS_LDSMINLH
+ *           ARM64_INS_LDSMIN, ARM64_INS_LDSMINA, ARM64_INS_LDSMINAL, ARM64_INS_LDSMINL,
+ *           ARM64_INS_STSMINB, ARM64_INS_STSMINLB, ARM64_INS_STSMINH, ARM64_INS_STSMINLH, ARM64_INS_STSMIN, ARM64_INS_STSMINL,
+ *           ARM64_INS_LDUMAXB, ARM64_INS_LDUMAXAB, ARM64_INS_LDUMAXALB, ARM64_INS_LDUMAXLB,
+ *           ARM64_INS_LDUMAXH, ARM64_INS_LDUMAXAH, ARM64_INS_LDUMAXALH, ARM64_INS_LDUMAXLH
+ *           ARM64_INS_LDUMAX, ARM64_INS_LDUMAXA, ARM64_INS_LDUMAXAL, ARM64_INS_LDUMAXL,
+ *           ARM64_INS_STUMAXB, ARM64_INS_STUMAXLB, ARM64_INS_STUMAXH, ARM64_INS_STUMAXLH, ARM64_INS_STUMAX, ARM64_INS_STUMAXL,
+ *           ARM64_INS_LDUMINB, ARM64_INS_LDUMINAB, ARM64_INS_LDUMINALB, ARM64_INS_LDUMINLB,
+ *           ARM64_INS_LDUMINH, ARM64_INS_LDUMINAH, ARM64_INS_LDUMINALH, ARM64_INS_LDUMINLH
+ *           ARM64_INS_LDUMIN, ARM64_INS_LDUMINA, ARM64_INS_LDUMINAL, ARM64_INS_LDUMINL,
+ *           ARM64_INS_STUMINB, ARM64_INS_STUMINLB, ARM64_INS_STUMINH, ARM64_INS_STUMINLH, ARM64_INS_STUMIN, ARM64_INS_STUMINL
  * ARM: ldadd, ldadda, ldaddal, ldaddl, ldaddb, ldaddab, ldaddalb, ldaddlb, ldaddh, ldaddah, ldaddalh, ldaddlh,
  *      stadd, staddl, staddb, staddlb, stadd,
  *      ldclr, ldclra, ldclral, ldclrl, ldclrb, ldclrab, ldclralb, ldclrlb, ldclrh, ldclrah, ldclralh, ldclrlh,
  *      stclr, stclrl, stclrb, stclrlb, stclr,
  *      ldset, ldseta, ldsetal, ldsetl, ldsetb, ldsetab, ldsetalb, ldsetlb, ldseth, ldsetah, ldsetalh, ldsetlh,
- *      stset, stsetl, stsetb, stsetlb, stset
+ *      stset, stsetl, stsetb, stsetlb, stset,
+ *      ldsmax, ldsmaxa, ldsmaxal, ldsmaxl, ldsmaxb, ldsmaxab, ldsmaxalb, ldsmaxlb, ldsmaxh, ldsmaxah, ldsmaxalh, ldsmaxlh,
+ *      stsmax, stsmaxl, stsmaxb, stsmaxlb, stsmax,
+ *      ldsmin, ldsmina, ldsminal, ldsminl, ldsminb, ldsminab, ldsminalb, ldsminlb, ldsminh, ldsminah, ldsminalh, ldsminlh,
+ *      stsmin, stsminl, stsminb, stsminlb, stsmin,
+ *      ldumax, ldumaxa, ldumaxal, ldumaxl, ldumaxb, ldumaxab, ldumaxalb, ldumaxlb, ldumaxh, ldumaxah, ldumaxalh, ldumaxlh,
+ *      stumax, stumaxl, stumaxb, stumaxlb, stumax,
+ *      ldumin, ldumina, lduminal, lduminl, lduminb, lduminab, lduminalb, lduminlb, lduminh, lduminah, lduminalh, lduminlh,
+ *      stumin, stuminl, stuminb, stuminlb, stumin
  */
 static RzILOpEffect *ldadd(cs_insn *insn) {
 	size_t addr_op = OPCOUNT() == 3 ? 2 : 1;
@@ -1131,7 +1155,11 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 		OP_ADD,
 		OP_CLR,
 		OP_EOR,
-		OP_SET
+		OP_SET,
+		OP_SMAX,
+		OP_SMIN,
+		OP_UMAX,
+		OP_UMIN
 	} op = OP_ADD;
 	switch (insn->id) {
 	case ARM64_INS_LDCLRB:
@@ -1159,6 +1187,42 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case ARM64_INS_STSETB:
 	case ARM64_INS_STSETLB:
 		op = OP_SET;
+		loadsz = 8;
+		break;
+	case ARM64_INS_LDSMAXB:
+	case ARM64_INS_LDSMAXAB:
+	case ARM64_INS_LDSMAXALB:
+	case ARM64_INS_LDSMAXLB:
+	case ARM64_INS_STSMAXB:
+	case ARM64_INS_STSMAXLB:
+		op = OP_SMAX;
+		loadsz = 8;
+		break;
+	case ARM64_INS_LDSMINB:
+	case ARM64_INS_LDSMINAB:
+	case ARM64_INS_LDSMINALB:
+	case ARM64_INS_LDSMINLB:
+	case ARM64_INS_STSMINB:
+	case ARM64_INS_STSMINLB:
+		op = OP_SMIN;
+		loadsz = 8;
+		break;
+	case ARM64_INS_LDUMAXB:
+	case ARM64_INS_LDUMAXAB:
+	case ARM64_INS_LDUMAXALB:
+	case ARM64_INS_LDUMAXLB:
+	case ARM64_INS_STUMAXB:
+	case ARM64_INS_STUMAXLB:
+		op = OP_UMAX;
+		loadsz = 8;
+		break;
+	case ARM64_INS_LDUMINB:
+	case ARM64_INS_LDUMINAB:
+	case ARM64_INS_LDUMINALB:
+	case ARM64_INS_LDUMINLB:
+	case ARM64_INS_STUMINB:
+	case ARM64_INS_STUMINLB:
+		op = OP_UMIN;
 		loadsz = 8;
 		break;
 	case ARM64_INS_LDADDB:
@@ -1197,6 +1261,42 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 		op = OP_SET;
 		loadsz = 16;
 		break;
+	case ARM64_INS_LDSMAXH:
+	case ARM64_INS_LDSMAXAH:
+	case ARM64_INS_LDSMAXALH:
+	case ARM64_INS_LDSMAXLH:
+	case ARM64_INS_STSMAXH:
+	case ARM64_INS_STSMAXLH:
+		op = OP_SMAX;
+		loadsz = 16;
+		break;
+	case ARM64_INS_LDSMINH:
+	case ARM64_INS_LDSMINAH:
+	case ARM64_INS_LDSMINALH:
+	case ARM64_INS_LDSMINLH:
+	case ARM64_INS_STSMINH:
+	case ARM64_INS_STSMINLH:
+		op = OP_SMIN;
+		loadsz = 16;
+		break;
+	case ARM64_INS_LDUMAXH:
+	case ARM64_INS_LDUMAXAH:
+	case ARM64_INS_LDUMAXALH:
+	case ARM64_INS_LDUMAXLH:
+	case ARM64_INS_STUMAXH:
+	case ARM64_INS_STUMAXLH:
+		op = OP_UMAX;
+		loadsz = 16;
+		break;
+	case ARM64_INS_LDUMINH:
+	case ARM64_INS_LDUMINAH:
+	case ARM64_INS_LDUMINALH:
+	case ARM64_INS_LDUMINLH:
+	case ARM64_INS_STUMINH:
+	case ARM64_INS_STUMINLH:
+		op = OP_UMIN;
+		loadsz = 16;
+		break;
 	case ARM64_INS_LDADDH:
 	case ARM64_INS_LDADDAH:
 	case ARM64_INS_LDADDALH:
@@ -1230,6 +1330,37 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case ARM64_INS_STSETL:
 		op = OP_SET;
 		goto size_from_reg;
+	case ARM64_INS_LDSMAX:
+	case ARM64_INS_LDSMAXA:
+	case ARM64_INS_LDSMAXAL:
+	case ARM64_INS_LDSMAXL:
+	case ARM64_INS_STSMAX:
+	case ARM64_INS_STSMAXL:
+		op = OP_SMAX;
+		goto size_from_reg;
+	case ARM64_INS_LDSMIN:
+	case ARM64_INS_LDSMINA:
+	case ARM64_INS_LDSMINAL:
+	case ARM64_INS_LDSMINL:
+	case ARM64_INS_STSMIN:
+	case ARM64_INS_STSMINL:
+		op = OP_SMIN;
+		goto size_from_reg;
+	case ARM64_INS_LDUMAX:
+	case ARM64_INS_LDUMAXA:
+	case ARM64_INS_LDUMAXAL:
+	case ARM64_INS_LDUMAXL:
+	case ARM64_INS_STUMAX:
+	case ARM64_INS_STUMAXL:
+		op = OP_UMAX;
+		goto size_from_reg;
+	case ARM64_INS_LDUMIN:
+	case ARM64_INS_LDUMINA:
+	case ARM64_INS_LDUMINAL:
+	case ARM64_INS_LDUMINL:
+	case ARM64_INS_STUMIN:
+	case ARM64_INS_STUMINL:
+		op = OP_UMIN;
 	size_from_reg:
 	default: // ARM64_INS_LDADD, ARM64_INS_LDADDA, ARM64_INS_LDADDAL, ARM64_INS_LDADDL, ARM64_INS_STADD, ARM64_INS_STADDL
 		loadsz = is_wreg(addend_reg) ? 32 : 64;
@@ -1273,6 +1404,18 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 		break;
 	case OP_SET:
 		res = LOGOR(VARL("old"), res);
+		break;
+	case OP_SMAX:
+		res = LET("r", res, ITE(SLE(VARL("old"), VARLP("r")), VARLP("r"), VARL("old")));
+		break;
+	case OP_SMIN:
+		res = LET("r", res, ITE(SLE(VARL("old"), VARLP("r")), VARL("old"), VARLP("r")));
+		break;
+	case OP_UMAX:
+		res = LET("r", res, ITE(ULE(VARL("old"), VARLP("r")), VARLP("r"), VARL("old")));
+		break;
+	case OP_UMIN:
+		res = LET("r", res, ITE(ULE(VARL("old"), VARLP("r")), VARL("old"), VARLP("r")));
 		break;
 	default: // OP_ADD
 		res = ADD(VARL("old"), res);
@@ -1567,6 +1710,78 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STSETLB:
 	case ARM64_INS_STSETH:
 	case ARM64_INS_STSETLH:
+	case ARM64_INS_LDSMAXB:
+	case ARM64_INS_LDSMAXAB:
+	case ARM64_INS_LDSMAXALB:
+	case ARM64_INS_LDSMAXLB:
+	case ARM64_INS_LDSMAXH:
+	case ARM64_INS_LDSMAXAH:
+	case ARM64_INS_LDSMAXALH:
+	case ARM64_INS_LDSMAXLH:
+	case ARM64_INS_LDSMAX:
+	case ARM64_INS_LDSMAXA:
+	case ARM64_INS_LDSMAXAL:
+	case ARM64_INS_LDSMAXL:
+	case ARM64_INS_STSMAX:
+	case ARM64_INS_STSMAXL:
+	case ARM64_INS_STSMAXB:
+	case ARM64_INS_STSMAXLB:
+	case ARM64_INS_STSMAXH:
+	case ARM64_INS_STSMAXLH:
+	case ARM64_INS_LDSMINB:
+	case ARM64_INS_LDSMINAB:
+	case ARM64_INS_LDSMINALB:
+	case ARM64_INS_LDSMINLB:
+	case ARM64_INS_LDSMINH:
+	case ARM64_INS_LDSMINAH:
+	case ARM64_INS_LDSMINALH:
+	case ARM64_INS_LDSMINLH:
+	case ARM64_INS_LDSMIN:
+	case ARM64_INS_LDSMINA:
+	case ARM64_INS_LDSMINAL:
+	case ARM64_INS_LDSMINL:
+	case ARM64_INS_STSMIN:
+	case ARM64_INS_STSMINL:
+	case ARM64_INS_STSMINB:
+	case ARM64_INS_STSMINLB:
+	case ARM64_INS_STSMINH:
+	case ARM64_INS_STSMINLH:
+	case ARM64_INS_LDUMAXB:
+	case ARM64_INS_LDUMAXAB:
+	case ARM64_INS_LDUMAXALB:
+	case ARM64_INS_LDUMAXLB:
+	case ARM64_INS_LDUMAXH:
+	case ARM64_INS_LDUMAXAH:
+	case ARM64_INS_LDUMAXALH:
+	case ARM64_INS_LDUMAXLH:
+	case ARM64_INS_LDUMAX:
+	case ARM64_INS_LDUMAXA:
+	case ARM64_INS_LDUMAXAL:
+	case ARM64_INS_LDUMAXL:
+	case ARM64_INS_STUMAX:
+	case ARM64_INS_STUMAXL:
+	case ARM64_INS_STUMAXB:
+	case ARM64_INS_STUMAXLB:
+	case ARM64_INS_STUMAXH:
+	case ARM64_INS_STUMAXLH:
+	case ARM64_INS_LDUMINB:
+	case ARM64_INS_LDUMINAB:
+	case ARM64_INS_LDUMINALB:
+	case ARM64_INS_LDUMINLB:
+	case ARM64_INS_LDUMINH:
+	case ARM64_INS_LDUMINAH:
+	case ARM64_INS_LDUMINALH:
+	case ARM64_INS_LDUMINLH:
+	case ARM64_INS_LDUMIN:
+	case ARM64_INS_LDUMINA:
+	case ARM64_INS_LDUMINAL:
+	case ARM64_INS_LDUMINL:
+	case ARM64_INS_STUMIN:
+	case ARM64_INS_STUMINL:
+	case ARM64_INS_STUMINB:
+	case ARM64_INS_STUMINLB:
+	case ARM64_INS_STUMINH:
+	case ARM64_INS_STUMINLH:
 		return ldadd(insn);
 	default:
 		break;
