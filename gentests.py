@@ -6,7 +6,7 @@
 import itertools
 import subprocess
 
-op = "clr"
+op = "eor"
 bitness = ["", "w", "b", "h"]
 acc = ["", "a", "al", "l"]
 
