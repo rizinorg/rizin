@@ -347,7 +347,7 @@ static RzILOpBitVector *extend(ut32 dst_bits, arm64_extender ext, RZ_OWN RzILOpB
 	return is_signed ? SIGNED(dst_bits, v) : UNSIGNED(dst_bits, v);
 }
 
-static RzILOpBitVector *shift(arm64_shifter sft, ut32 dist, RZ_OWN RzILOpBitVector *v) {
+static RzILOpBitVector *apply_shift(arm64_shifter sft, ut32 dist, RZ_OWN RzILOpBitVector *v) {
 	if (!dist) {
 		return v;
 	}
@@ -390,7 +390,7 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm64_op *op
 	if (op->mem.index != ARM64_REG_INVALID) {
 		RzILOpBitVector *index = read_reg(op->mem.index);
 		index = extend(64, op->ext, index, reg_bits(op->mem.index));
-		index = shift(op->shift.type, op->shift.value, index);
+		index = apply_shift(op->shift.type, op->shift.value, index);
 		return ADD(base_plus_disp, index);
 	}
 	return base_plus_disp;
@@ -414,7 +414,7 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 		if (!r) {
 			return NULL;
 		}
-		return shift(op->shift.type, op->shift.value, extend(bits_requested, op->ext, r, REGBITS(n)));
+		return apply_shift(op->shift.type, op->shift.value, extend(bits_requested, op->ext, r, REGBITS(n)));
 	}
 	case ARM64_OP_IMM: {
 		if (!bits_requested) {
@@ -572,10 +572,10 @@ static RzILOpEffect *bitwise(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_ASR
- * ARM: asr, asrv
+ * Capstone: ARM64_INS_ASR, ARM64_INS_LSL, ARM64_INS_LSR
+ * ARM: asr, asrv, lsl, lslv, lsr, lsrv
  */
-static RzILOpEffect *asr(cs_insn *insn) {
+static RzILOpEffect *shift(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
@@ -590,7 +590,19 @@ static RzILOpEffect *asr(cs_insn *insn) {
 		rz_il_op_pure_free(a);
 		return NULL;
 	}
-	return write_reg(REGID(0), SHIFTRA(a, b));
+	RzILOpBitVector *res;
+	switch (insn->id) {
+	case ARM64_INS_ASR:
+		res = SHIFTRA(a, b);
+		break;
+	case ARM64_INS_LSR:
+		res = SHIFTR0(a, b);
+		break;
+	default: // ARM64_INS_LSL
+		res = SHIFTL0(a, b);
+		break;
+	}
+	return write_reg(REGID(0), res);
 }
 
 /**
@@ -1545,7 +1557,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_EON:
 		return bitwise(insn);
 	case ARM64_INS_ASR:
-		return asr(insn);
+	case ARM64_INS_LSL:
+	case ARM64_INS_LSR:
+		return shift(insn);
 	case ARM64_INS_B:
 	case ARM64_INS_BR:
 #if CS_API_MAJOR > 4
