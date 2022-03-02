@@ -568,18 +568,18 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 		int align = ctx->is_64bit ? sizeof(ut64) : sizeof(ut32);
 		winkd_read_at_uva(ctx, ptr + nameoff + align, (uint8_t *)&bufferaddr, 4 << ctx->is_64bit);
 
-		wchar_t *unname = calloc((ut64)length + 2, 1);
+		ut8 *unname = calloc((ut64)length + 2, 1);
 		if (!unname) {
 			break;
 		}
 
-		winkd_read_at_uva(ctx, bufferaddr, (uint8_t *)unname, length);
+		winkd_read_at_uva(ctx, bufferaddr, unname, length);
 
 		mod->name = calloc((ut64)length + 1, 1);
 		if (!mod->name) {
 			break;
 		}
-		wcstombs(mod->name, unname, length);
+		rz_str_utf16_to_utf8((ut8 *)mod->name, length + 1, unname, length + 2, true);
 		free(unname);
 		rz_list_append(ret, mod);
 
