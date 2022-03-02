@@ -603,3 +603,7 @@ d "ldapursb x0, [x1]" 20008019 0x0 (set x0 (cast 64 (msb (load 0 (var x1))) (loa
 d "ldapursh x0, [x1]" 20008059 0x0 (set x0 (cast 64 (msb (loadw 0 16 (var x1))) (loadw 0 16 (var x1))))
 d "ldapursb w0, [x1]" 2000c019 0x0 (set x0 (cast 64 false (cast 32 (msb (load 0 (var x1))) (load 0 (var x1)))))
 d "ldapursh w0, [x1]" 2000c059 0x0 (set x0 (cast 64 false (cast 32 (msb (loadw 0 16 (var x1))) (loadw 0 16 (var x1)))))
+d "ldar x0, [x1]" 20fcdfc8 0x0 (set x0 (loadw 0 64 (var x1)))
+d "ldar w0, [x1]" 20fcdf88 0x0 (set x0 (cast 64 false (loadw 0 32 (var x1))))
+d "ldarb w0, [x1]" 20fcdf08 0x0 (set x0 (cast 64 false (load 0 (var x1))))
+d "ldarh w0, [x1]" 20fcdf48 0x0 (set x0 (cast 64 false (loadw 0 16 (var x1))))
