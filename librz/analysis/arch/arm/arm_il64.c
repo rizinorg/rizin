@@ -1094,9 +1094,14 @@ static RzILOpEffect *ldr(cs_insn *insn) {
  * Capstone: ARM64_INS_LDADD, ARM64_INS_LDADDA, ARM64_INS_LDADDAL, ARM64_INS_LDADDL,
  *           ARM64_INS_LDADDB, ARM64_INS_LDADDAB, ARM64_INS_LDADDALB, ARM64_INS_LDADDLB,
  *           ARM64_INS_LDADDH, ARM64_INS_LDADDAH, ARM64_INS_LDADDALH, ARM64_INS_LDADDLH,
- *           ARM64_INS_STADD, ARM64_INS_STADDL, ARM64_INS_STADDB, ARM64_INS_STADDLB, ARM64_INS_STADDH, ARM64_INS_STADDLH
+ *           ARM64_INS_STADD, ARM64_INS_STADDL, ARM64_INS_STADDB, ARM64_INS_STADDLB, ARM64_INS_STADDH, ARM64_INS_STADDLH,
+ *           ARM64_INS_LDCLRB, ARM64_INS_LDCLRAB, ARM64_INS_LDCLRALB, ARM64_INS_LDCLRLB,
+ *           ARM64_INS_LDCLRH, ARM64_INS_LDCLRAH, ARM64_INS_LDCLRALH, ARM64_INS_LDCLRLH
+ *           ARM64_INS_LDCLR, ARM64_INS_LDCLRA, ARM64_INS_LDCLRAL, ARM64_INS_LDCLRL,
+ *           ARM64_INS_STCLRB, ARM64_INS_STCLRLB, ARM64_INS_STCLRH, ARM64_INS_STCLRLH, ARM64_INS_STCLR, ARM64_INS_STCLRL
  * ARM: ldadd, ldadda, ldaddal, ldaddl, ldaddb, ldaddab, ldaddalb, ldaddlb, ldaddh, ldaddah, ldaddalh, ldaddlh,
- *      stadd, staddl, staddb, staddlb, stadd
+ *      stadd, staddl, staddb, staddlb, stadd,
+ *      ldclrb, ldclrab, ldclralb, ldclrlb, ldclrh, ldclrah, ldclralh, ldclrlh, ldclr, ldclra, ldclral, ldclrl
  */
 static RzILOpEffect *ldadd(cs_insn *insn) {
 	size_t addr_op = OPCOUNT() == 3 ? 2 : 1;
@@ -1105,7 +1110,18 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	}
 	arm64_reg addend_reg = REGID(0);
 	ut64 loadsz;
+	enum {
+		OP_ADD,
+		OP_CLR
+	} op = OP_ADD;
 	switch (insn->id) {
+	case ARM64_INS_LDCLRB:
+	case ARM64_INS_LDCLRAB:
+	case ARM64_INS_LDCLRALB:
+	case ARM64_INS_LDCLRLB:
+	case ARM64_INS_STCLRB:
+	case ARM64_INS_STCLRLB:
+		op = OP_CLR;
 	case ARM64_INS_LDADDB:
 	case ARM64_INS_LDADDAB:
 	case ARM64_INS_LDADDALB:
@@ -1114,6 +1130,13 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case ARM64_INS_STADDLB:
 		loadsz = 8;
 		break;
+	case ARM64_INS_LDCLRH:
+	case ARM64_INS_LDCLRAH:
+	case ARM64_INS_LDCLRALH:
+	case ARM64_INS_LDCLRLH:
+	case ARM64_INS_STCLRH:
+	case ARM64_INS_STCLRLH:
+		op = OP_CLR;
 	case ARM64_INS_LDADDH:
 	case ARM64_INS_LDADDAH:
 	case ARM64_INS_LDADDALH:
@@ -1122,6 +1145,13 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case ARM64_INS_STADDLH:
 		loadsz = 16;
 		break;
+	case ARM64_INS_LDCLR:
+	case ARM64_INS_LDCLRA:
+	case ARM64_INS_LDCLRAL:
+	case ARM64_INS_LDCLRL:
+	case ARM64_INS_STCLR:
+	case ARM64_INS_STCLRL:
+		op = OP_CLR;
 	default: // ARM64_INS_LDADD, ARM64_INS_LDADDA, ARM64_INS_LDADDAL, ARM64_INS_LDADDL, ARM64_INS_STADD, ARM64_INS_STADDL
 		loadsz = is_wreg(addend_reg) ? 32 : 64;
 		break;
@@ -1155,7 +1185,14 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	if (loadsz != 64) {
 		res = UNSIGNED(loadsz, res);
 	}
-	res = ADD(VARL("old"), res);
+	switch (op) {
+	case OP_CLR:
+		res = LOGAND(VARL("old"), LOGNOT(res));
+		break;
+	default: // OP_ADD
+		res = ADD(VARL("old"), res);
+		break;
+	}
 	RzILOpEffect *eff = SEQ2(
 		SETL("old", loadsz == 8 ? LOAD(addr) : LOADW(loadsz, addr)),
 		loadsz == 8 ? STORE(DUP(addr), res) : STOREW(DUP(addr), res));
@@ -1379,6 +1416,24 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STADDLB:
 	case ARM64_INS_STADDH:
 	case ARM64_INS_STADDLH:
+	case ARM64_INS_LDCLRB:
+	case ARM64_INS_LDCLRAB:
+	case ARM64_INS_LDCLRALB:
+	case ARM64_INS_LDCLRLB:
+	case ARM64_INS_LDCLRH:
+	case ARM64_INS_LDCLRAH:
+	case ARM64_INS_LDCLRALH:
+	case ARM64_INS_LDCLRLH:
+	case ARM64_INS_LDCLR:
+	case ARM64_INS_LDCLRA:
+	case ARM64_INS_LDCLRAL:
+	case ARM64_INS_LDCLRL:
+	case ARM64_INS_STCLR:
+	case ARM64_INS_STCLRL:
+	case ARM64_INS_STCLRB:
+	case ARM64_INS_STCLRLB:
+	case ARM64_INS_STCLRH:
+	case ARM64_INS_STCLRLH:
 		return ldadd(insn);
 	default:
 		break;
