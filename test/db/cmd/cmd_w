@@ -331,6 +331,16 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 Command 'wv8@10' does not exist.
+Displaying the help of command 'wv8'.
+
+Usage: wv8 <value>   # Write value of 8 byte
+
+Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable
+
+Examples:
+| wv 0xdeadbeef # Write the value 0xdeadbeef at current offset
+| wv2 0xdead    # Write the word 0xdead at current offset
+| wv1 0xde      # Write the byte 0xde at current offset
 EOF
 RUN
 
