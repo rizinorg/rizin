@@ -1002,11 +1002,13 @@ static RzILOpEffect *load_effect(ut32 bits, bool is_signed, arm64_reg dst_reg, R
  *           ARM64_INS_LDAXP, ARM64_INS_LDXP, ARM64_INS_LDAXR, ARM64_INS_LDAXRB, ARM64_INS_LDAXRH,
  *           ARM64_INS_LDLAR, ARM64_INS_LDLARB, ARM64_INS_LDLARH,
  *           ARM64_INS_LDP, ARM64_INS_LDNP, ARM64_INS_LDPSW,
- *           ARM64_INS_LDRAA, ARM64_INS_LDRAB
+ *           ARM64_INS_LDRAA, ARM64_INS_LDRAB,
+ *           ARM64_INS_LDTR, ARM64_INS_LDTRB, ARM64_INS_LDTRH, ARM64_INS_LDTRSW, ARM64_INS_LDTRSB, ARM64_INS_LDTRSH
  * ARM: ldr, ldrb, ldrh, ldru, ldrub, ldruh, ldrsw, ldrsb, ldrsh, ldursw, ldurwb, ldursh,
  *      ldapr, ldaprb, ldaprh, ldapur, ldapurb, ldapurh, ldapursb, ldapursh, ldapursw,
  *      ldaxp, ldxp, ldaxr, ldaxrb, ldaxrh, ldar, ldarb, ldarh,
- *      ldp, ldnp
+ *      ldp, ldnp,
+ *      ldtr, ldtrb, ldtrh, ldtrsw, ldtrsb, ldtrsh
  */
 static RzILOpEffect *ldr(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -1030,6 +1032,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDRSB:
 	case ARM64_INS_LDURSB:
 	case ARM64_INS_LDAPURSB:
+	case ARM64_INS_LDTRSB:
 		is_signed = true;
 	case ARM64_INS_LDRB:
 	case ARM64_INS_LDURB:
@@ -1038,11 +1041,13 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDARB:
 	case ARM64_INS_LDAXRB:
 	case ARM64_INS_LDLARB:
+	case ARM64_INS_LDTRB:
 		loadsz = 8;
 		break;
 	case ARM64_INS_LDRSH:
 	case ARM64_INS_LDURSH:
 	case ARM64_INS_LDAPURSH:
+	case ARM64_INS_LDTRSH:
 		is_signed = true;
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDURH:
@@ -1051,18 +1056,20 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDARH:
 	case ARM64_INS_LDAXRH:
 	case ARM64_INS_LDLARH:
+	case ARM64_INS_LDTRH:
 		loadsz = 16;
 		break;
 	case ARM64_INS_LDRSW:
 	case ARM64_INS_LDURSW:
 	case ARM64_INS_LDAPURSW:
 	case ARM64_INS_LDPSW:
+	case ARM64_INS_LDTRSW:
 		is_signed = true;
 		loadsz = 32;
 		break;
 	default:
 		// ARM64_INS_LDR, ARM64_INS_LDRU, ARM64_INS_LDAPR, ARM64_INS_LDAPUR, ARM64_INS_LDAR, ARM64_INS_LDAXR, ARM64_INS_LDLAR,
-		// ARM64_INS_LDP, ARM64_INS_LDNP, ARM64_INS_LDRAA, ARM64_INS_LDRAB
+		// ARM64_INS_LDP, ARM64_INS_LDNP, ARM64_INS_LDRAA, ARM64_INS_LDRAB, ARM64_INS_LDTR
 		loadsz = is_wreg(dst_reg) ? 32 : 64;
 		break;
 	}
@@ -1637,6 +1644,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_LDPSW:
 	case ARM64_INS_LDRAA:
 	case ARM64_INS_LDRAB:
+	case ARM64_INS_LDTR:
+	case ARM64_INS_LDTRB:
+	case ARM64_INS_LDTRH:
+	case ARM64_INS_LDTRSW:
+	case ARM64_INS_LDTRSB:
+	case ARM64_INS_LDTRSH:
 		return ldr(insn);
 	case ARM64_INS_LDADD:
 	case ARM64_INS_LDADDA:
