@@ -980,6 +980,7 @@ static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
 /**
  * Capstone: ARM64_INS_LDR, ARM64_INS_LDRB, ARM64_INS_LDRH, ARM64_INS_LDRU, ARM64_INS_LDRUB, ARM64_INS_LDRUH,
  *           ARM64_INS_LDRSW, ARM64_INS_LDRSB, ARM64_INS_LDRSH, ARM64_INS_LDURSW, ARM64_INS_LDURSB, ARM64_INS_LDURSH
+ *           ARM64_INS_LDAPR, ARM64_INS_LDAPRB, ARM64_INS_LDAPRH, ARM64_INS_LDAPUR, ARM64_INS_LDAPURB, ARM64_INS_LDAPURH
  * ARM: ldr, ldrb, ldrh, ldru, ldrub, ldruh, ldrsw, ldrsb, ldrsh, ldursw, ldurwb, ldursh
  */
 static RzILOpEffect *ldr(cs_insn *insn) {
@@ -1001,6 +1002,8 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 		is_signed = true;
 	case ARM64_INS_LDRB:
 	case ARM64_INS_LDURB:
+	case ARM64_INS_LDAPRB:
+	case ARM64_INS_LDAPURB:
 		loadsz = 8;
 		break;
 	case ARM64_INS_LDRSH:
@@ -1008,6 +1011,8 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 		is_signed = true;
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDURH:
+	case ARM64_INS_LDAPRH:
+	case ARM64_INS_LDAPURH:
 		loadsz = 16;
 		break;
 	case ARM64_INS_LDRSW:
@@ -1015,7 +1020,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 		is_signed = true;
 		loadsz = 32;
 		break;
-	default: // ARM64_INS_LDR, ARM64_INS_LDRU
+	default: // ARM64_INS_LDR, ARM64_INS_LDRU, ARM64_INS_LDAPR, ARM64_INS_LDAPUR
 		loadsz = is_wreg(dstreg) ? 32 : 64;
 		break;
 	}
@@ -1311,6 +1316,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_LDURSW:
 	case ARM64_INS_LDURSB:
 	case ARM64_INS_LDURSH:
+	case ARM64_INS_LDAPR:
+	case ARM64_INS_LDAPRB:
+	case ARM64_INS_LDAPRH:
+	case ARM64_INS_LDAPUR:
+	case ARM64_INS_LDAPURB:
+	case ARM64_INS_LDAPURH:
 		return ldr(insn);
 	case ARM64_INS_LDADD:
 	case ARM64_INS_LDADDA:
