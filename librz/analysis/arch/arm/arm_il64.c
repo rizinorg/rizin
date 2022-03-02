@@ -999,16 +999,21 @@ static RzILOpEffect *load_effect(ut32 bits, bool is_signed, arm64_reg dst_reg, R
  *           ARM64_INS_LDRSW, ARM64_INS_LDRSB, ARM64_INS_LDRSH, ARM64_INS_LDURSW, ARM64_INS_LDURSB, ARM64_INS_LDURSH,
  *           ARM64_INS_LDAPR, ARM64_INS_LDAPRB, ARM64_INS_LDAPRH, ARM64_INS_LDAPUR, ARM64_INS_LDAPURB, ARM64_INS_LDAPURH,
  *           ARM64_INS_LDAPURSB, ARM64_INS_LDAPURSH, ARM64_INS_LDAPURSW, ARM64_INS_LDAR, ARM64_INS_LDARB, ARM64_INS_LDARH,
- *           ARM64_INS_LDAXP, ARM64_INS_LDXP, ARM64_INS_LDAXR, ARM64_INS_LDAXRB, ARM64_INS_LDAXRH
+ *           ARM64_INS_LDAXP, ARM64_INS_LDXP, ARM64_INS_LDAXR, ARM64_INS_LDAXRB, ARM64_INS_LDAXRH,
+ *           ARM64_INS_LDLAR, ARM64_INS_LDLARB, ARM64_INS_LDLARH,
+ *           ARM64_INS_LDP, ARM64_INS_LDNP, ARM64_INS_LDPSW,
+ *           ARM64_INS_LDRAA, ARM64_INS_LDRAB
  * ARM: ldr, ldrb, ldrh, ldru, ldrub, ldruh, ldrsw, ldrsb, ldrsh, ldursw, ldurwb, ldursh,
  *      ldapr, ldaprb, ldaprh, ldapur, ldapurb, ldapurh, ldapursb, ldapursh, ldapursw,
- *      ldaxp, ldxp, ldaxr, ldaxrb, ldaxrh
+ *      ldaxp, ldxp, ldaxr, ldaxrb, ldaxrh, ldar, ldarb, ldarh,
+ *      ldp, ldnp
  */
 static RzILOpEffect *ldr(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
-	bool pair = insn->id == ARM64_INS_LDAXP || insn->id == ARM64_INS_LDXP;
+	bool pair = insn->id == ARM64_INS_LDAXP || insn->id == ARM64_INS_LDXP ||
+		insn->id == ARM64_INS_LDP || insn->id == ARM64_INS_LDNP || insn->id == ARM64_INS_LDPSW;
 	if (pair && !ISREG(1)) {
 		return NULL;
 	}
@@ -1032,6 +1037,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDAPURB:
 	case ARM64_INS_LDARB:
 	case ARM64_INS_LDAXRB:
+	case ARM64_INS_LDLARB:
 		loadsz = 8;
 		break;
 	case ARM64_INS_LDRSH:
@@ -1044,15 +1050,19 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDAPURH:
 	case ARM64_INS_LDARH:
 	case ARM64_INS_LDAXRH:
+	case ARM64_INS_LDLARH:
 		loadsz = 16;
 		break;
 	case ARM64_INS_LDRSW:
 	case ARM64_INS_LDURSW:
 	case ARM64_INS_LDAPURSW:
+	case ARM64_INS_LDPSW:
 		is_signed = true;
 		loadsz = 32;
 		break;
-	default: // ARM64_INS_LDR, ARM64_INS_LDRU, ARM64_INS_LDAPR, ARM64_INS_LDAPUR, ARM64_INS_LDAR, ARM64_INS_LDAXR
+	default:
+		// ARM64_INS_LDR, ARM64_INS_LDRU, ARM64_INS_LDAPR, ARM64_INS_LDAPUR, ARM64_INS_LDAR, ARM64_INS_LDAXR, ARM64_INS_LDLAR,
+		// ARM64_INS_LDP, ARM64_INS_LDNP, ARM64_INS_LDRAA, ARM64_INS_LDRAB
 		loadsz = is_wreg(dst_reg) ? 32 : 64;
 		break;
 	}
@@ -1098,11 +1108,17 @@ static RzILOpEffect *ldr(cs_insn *insn) {
  *           ARM64_INS_LDCLRB, ARM64_INS_LDCLRAB, ARM64_INS_LDCLRALB, ARM64_INS_LDCLRLB,
  *           ARM64_INS_LDCLRH, ARM64_INS_LDCLRAH, ARM64_INS_LDCLRALH, ARM64_INS_LDCLRLH
  *           ARM64_INS_LDCLR, ARM64_INS_LDCLRA, ARM64_INS_LDCLRAL, ARM64_INS_LDCLRL,
- *           ARM64_INS_STCLRB, ARM64_INS_STCLRLB, ARM64_INS_STCLRH, ARM64_INS_STCLRLH, ARM64_INS_STCLR, ARM64_INS_STCLRL
+ *           ARM64_INS_STSETB, ARM64_INS_STSETLB, ARM64_INS_STSETH, ARM64_INS_STSETLH, ARM64_INS_STSET, ARM64_INS_STSETL
+ *           ARM64_INS_LDSETB, ARM64_INS_LDSETAB, ARM64_INS_LDSETALB, ARM64_INS_LDSETLB,
+ *           ARM64_INS_LDSETH, ARM64_INS_LDSETAH, ARM64_INS_LDSETALH, ARM64_INS_LDSETLH
+ *           ARM64_INS_LDSET, ARM64_INS_LDSETA, ARM64_INS_LDSETAL, ARM64_INS_LDSETL,
+ *           ARM64_INS_STSETB, ARM64_INS_STSETLB, ARM64_INS_STSETH, ARM64_INS_STSETLH, ARM64_INS_STSET, ARM64_INS_STSETL
  * ARM: ldadd, ldadda, ldaddal, ldaddl, ldaddb, ldaddab, ldaddalb, ldaddlb, ldaddh, ldaddah, ldaddalh, ldaddlh,
  *      stadd, staddl, staddb, staddlb, stadd,
  *      ldclr, ldclra, ldclral, ldclrl, ldclrb, ldclrab, ldclralb, ldclrlb, ldclrh, ldclrah, ldclralh, ldclrlh,
  *      stclr, stclrl, stclrb, stclrlb, stclr,
+ *      ldset, ldseta, ldsetal, ldsetl, ldsetb, ldsetab, ldsetalb, ldsetlb, ldseth, ldsetah, ldsetalh, ldsetlh,
+ *      stset, stsetl, stsetb, stsetlb, stset
  */
 static RzILOpEffect *ldadd(cs_insn *insn) {
 	size_t addr_op = OPCOUNT() == 3 ? 2 : 1;
@@ -1114,7 +1130,8 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	enum {
 		OP_ADD,
 		OP_CLR,
-		OP_EOR
+		OP_EOR,
+		OP_SET
 	} op = OP_ADD;
 	switch (insn->id) {
 	case ARM64_INS_LDCLRB:
@@ -1133,6 +1150,15 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case ARM64_INS_STEORB:
 	case ARM64_INS_STEORLB:
 		op = OP_EOR;
+		loadsz = 8;
+		break;
+	case ARM64_INS_LDSETB:
+	case ARM64_INS_LDSETAB:
+	case ARM64_INS_LDSETALB:
+	case ARM64_INS_LDSETLB:
+	case ARM64_INS_STSETB:
+	case ARM64_INS_STSETLB:
+		op = OP_SET;
 		loadsz = 8;
 		break;
 	case ARM64_INS_LDADDB:
@@ -1162,6 +1188,15 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 		op = OP_EOR;
 		loadsz = 16;
 		break;
+	case ARM64_INS_LDSETH:
+	case ARM64_INS_LDSETAH:
+	case ARM64_INS_LDSETALH:
+	case ARM64_INS_LDSETLH:
+	case ARM64_INS_STSETH:
+	case ARM64_INS_STSETLH:
+		op = OP_SET;
+		loadsz = 16;
+		break;
 	case ARM64_INS_LDADDH:
 	case ARM64_INS_LDADDAH:
 	case ARM64_INS_LDADDALH:
@@ -1186,6 +1221,15 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case ARM64_INS_STEOR:
 	case ARM64_INS_STEORL:
 		op = OP_EOR;
+		goto size_from_reg;
+	case ARM64_INS_LDSET:
+	case ARM64_INS_LDSETA:
+	case ARM64_INS_LDSETAL:
+	case ARM64_INS_LDSETL:
+	case ARM64_INS_STSET:
+	case ARM64_INS_STSETL:
+		op = OP_SET;
+		goto size_from_reg;
 	size_from_reg:
 	default: // ARM64_INS_LDADD, ARM64_INS_LDADDA, ARM64_INS_LDADDAL, ARM64_INS_LDADDL, ARM64_INS_STADD, ARM64_INS_STADDL
 		loadsz = is_wreg(addend_reg) ? 32 : 64;
@@ -1227,6 +1271,9 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case OP_EOR:
 		res = LOGXOR(VARL("old"), res);
 		break;
+	case OP_SET:
+		res = LOGOR(VARL("old"), res);
+		break;
 	default: // OP_ADD
 		res = ADD(VARL("old"), res);
 		break;
@@ -1254,6 +1301,8 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
  * - SUBPS
  * - GMI
  * - IRG
+ * - LDG
+ * - LDGM
  *
  * FEAT_PAuth: Pointer Authentication
  * ----------------------------------
@@ -1263,7 +1312,7 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
  *   Might be a very good final solution since all data flow is correctly represented.
  * - Implementing only stripping in IL and leaving everything else as nop.
  *   Might be useful as an interims solution to be able to strip pointers, but always unconditionally succeed authentication.
- * Instructions:
+ * Unimplemented Instructions:
  * - AUTDA, AUTDZA
  * - AUTDB, AUTDZB
  * - AUTIA, AUTIA1716, AUTIASP, AUTIAZ, AUTIZA
@@ -1275,6 +1324,8 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
  * - PACIB, PACIB1716, PACIBSP, PACIBZ, PACIZB
  * - BLRAA, BLRAAZ, BLRAB, BLRABZ
  * - BRAA, BRAAZ, BRAB, BRABZ
+ * Stub-implemented Instructions:
+ * - LDRAA, LDRAB: currently behave like regular ldr
  *
  * Cache maintenance, tlb maintenance and address translation
  * ----------------------------------------------------------
@@ -1435,6 +1486,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_LDAXR:
 	case ARM64_INS_LDAXRB:
 	case ARM64_INS_LDAXRH:
+	case ARM64_INS_LDLAR:
+	case ARM64_INS_LDLARB:
+	case ARM64_INS_LDLARH:
+	case ARM64_INS_LDP:
+	case ARM64_INS_LDNP:
+	case ARM64_INS_LDPSW:
+	case ARM64_INS_LDRAA:
+	case ARM64_INS_LDRAB:
 		return ldr(insn);
 	case ARM64_INS_LDADD:
 	case ARM64_INS_LDADDA:
@@ -1490,6 +1549,24 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STEORLB:
 	case ARM64_INS_STEORH:
 	case ARM64_INS_STEORLH:
+	case ARM64_INS_LDSETB:
+	case ARM64_INS_LDSETAB:
+	case ARM64_INS_LDSETALB:
+	case ARM64_INS_LDSETLB:
+	case ARM64_INS_LDSETH:
+	case ARM64_INS_LDSETAH:
+	case ARM64_INS_LDSETALH:
+	case ARM64_INS_LDSETLH:
+	case ARM64_INS_LDSET:
+	case ARM64_INS_LDSETA:
+	case ARM64_INS_LDSETAL:
+	case ARM64_INS_LDSETL:
+	case ARM64_INS_STSET:
+	case ARM64_INS_STSETL:
+	case ARM64_INS_STSETB:
+	case ARM64_INS_STSETLB:
+	case ARM64_INS_STSETH:
+	case ARM64_INS_STSETLH:
 		return ldadd(insn);
 	default:
 		break;
