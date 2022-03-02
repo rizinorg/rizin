@@ -302,7 +302,7 @@ RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd) {
 	}
 }
 
-RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
+static RzCmdDesc *cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier, bool best_match) {
 	rz_return_val_if_fail(cmd && cmd_identifier, NULL);
 	char *cmdid = strdup(cmd_identifier);
 	char *end_cmdid = cmdid + strlen(cmdid);
@@ -319,7 +319,7 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
 			case RZ_CMD_DESC_TYPE_FAKE:
 			case RZ_CMD_DESC_TYPE_ARGV_MODES:
 			case RZ_CMD_DESC_TYPE_ARGV_STATE:
-				if (!is_exact_match && !is_valid_argv_modes(rz_cmd_desc_get_exec(cd), last_letter)) {
+				if (!best_match && (!is_exact_match && !is_valid_argv_modes(rz_cmd_desc_get_exec(cd), last_letter))) {
 					break;
 				}
 				res = cd;
@@ -341,6 +341,38 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
 out:
 	free(cmdid);
 	return res;
+}
+
+/**
+ * \brief Retrieve the command descriptor that best matches the name \p cmd_identifier
+ *
+ * Check if there is a command with exactly the name \p cmd_identifier. If there
+ * isn't, it tries to find the best matching one (right now by by removing one
+ * letter at a time, but this matching algorithm may be improved later).
+ *
+ * \param cmd Reference to RzCmd instance
+ * \param cmd_identifier Name of the command to search
+ * \return RzCmdDesc reference or NULL if not found
+ */
+RZ_API RzCmdDesc *rz_cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier) {
+	return cmd_get_desc_best(cmd, cmd_identifier, true);
+}
+
+/**
+ * \brief Retrieve the command descriptor for the command named \p cmd_identifier
+ *
+ * Check if there is a command with exactly the name \p cmd_identifier.
+ *
+ * If there isn't, it removes one letter at a time to be compatible with radare2
+ * behaviour until all commands are converted to rzshell. This best-matching
+ * works only to find OLDINPUT command references.
+ *
+ * \param cmd Reference to RzCmd instance
+ * \param cmd_identifier Name of the command to search
+ * \return RzCmdDesc reference or NULL if not found
+ */
+RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
+	return cmd_get_desc_best(cmd, cmd_identifier, false);
 }
 
 /**

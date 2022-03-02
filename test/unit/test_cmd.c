@@ -1321,6 +1321,25 @@ bool test_details_cb(void) {
 	mu_end;
 }
 
+bool test_get_best_match(void) {
+	RzCmd *cmd = rz_cmd_new(false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
+	RzCmdDesc *ap_cd = rz_cmd_desc_group_new(cmd, a_cd, "ap", ap_handler, NULL, &fake_help);
+	RzCmdDesc *apd_cd = rz_cmd_desc_argv_new(cmd, ap_cd, "apd", ap_handler, &fake_help);
+	RzCmdDesc *ae_cd = rz_cmd_desc_oldinput_new(cmd, a_cd, "ae", ae_handler, NULL);
+	rz_cmd_desc_argv_new(cmd, ae_cd, "aeir", aeir_handler, &fake_help);
+	rz_cmd_desc_oldinput_new(cmd, root, "w", w_handler, NULL);
+
+	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "ap"), ap_cd, "ap should be best match for ap");
+	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "apn"), ap_cd, "ap should be best match for apn");
+	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "apd"), apd_cd, "apd should be best match for apd");
+	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "afff"), a_cd, "a should be best match for afff");
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_parsed_args_noargs);
 	mu_run_test(test_parsed_args_onearg);
@@ -1360,6 +1379,7 @@ int all_tests() {
 	mu_run_test(test_state_output_concat_json);
 	mu_run_test(test_default_mode);
 	mu_run_test(test_details_cb);
+	mu_run_test(test_get_best_match);
 	return tests_passed != tests_run;
 }
 
