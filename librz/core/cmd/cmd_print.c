@@ -4721,6 +4721,55 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 	}
 }
 
+static void core_print_2bpp_row(const ut8 *buf, bool useColor) {
+	const char *symbols = "#=-.";
+	for (ut32 i = 0, c = 0; i < 8; i++) {
+		if (buf[1] & ((1 << 7) >> i)) {
+			c = 2;
+		}
+		if (buf[0] & ((1 << 7) >> i)) {
+			c++;
+		}
+		if (useColor) {
+			char *color = "";
+			switch (c) {
+			case 0:
+				color = Color_BGWHITE;
+				break;
+			case 1:
+				color = Color_BGRED;
+				break;
+			case 2:
+				color = Color_BGBLUE;
+				break;
+			case 3:
+				color = Color_BGBLACK;
+				break;
+			}
+			rz_cons_printf("%s  ", color);
+		} else {
+			const char ch = symbols[c % 4];
+			rz_cons_printf("%c%c", ch, ch);
+		}
+		c = 0;
+	}
+}
+
+static void core_print_2bpp_tiles(RzCore *core, ut32 tiles) {
+	const ut8 *buf = core->block;
+	bool useColor = rz_config_get_i(core->config, "scr.color") > 0;
+	for (ut32 i = 0; i < 8; i++) {
+		for (ut32 r = 0; r < tiles; r++) {
+			core_print_2bpp_row(buf + 2 * i + r * 16, useColor);
+		}
+		if (useColor) {
+			rz_cons_printf(Color_RESET "\n");
+		} else {
+			rz_cons_printf("\n");
+		}
+	}
+}
+
 RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	st64 l;
@@ -6572,7 +6621,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_cons_printf("|Usage: p2 [number of bytes representing tiles]\n"
 					       "NOTE: Only full tiles will be printed\n");
 			} else {
-				rz_print_2bpp_tiles(core->print, core->block, len / 16);
+				core_print_2bpp_tiles(core, len / 16);
 			}
 		}
 		break;

@@ -190,8 +190,6 @@ RZ_API int rz_print_date_get_now(RzPrint *p, char *str);
 RZ_API void rz_print_progressbar(RzPrint *pr, int pc, int _cols);
 RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
 RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
-RZ_API void rz_print_2bpp_row(RzPrint *p, ut8 *buf);
-RZ_API void rz_print_2bpp_tiles(RzPrint *p, ut8 *buf, ut32 tiles);
 RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
 RZ_API const char *rz_print_color_op_type(RzPrint *p, ut32 analysis_type);
 RZ_API void rz_print_set_interrupted(int i);

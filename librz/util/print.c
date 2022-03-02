@@ -1445,69 +1445,6 @@ RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int s
 	}
 }
 
-RZ_API void rz_print_2bpp_row(RzPrint *p, ut8 *buf) {
-	const bool useColor = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
-	int i, c = 0;
-	for (i = 0; i < 8; i++) {
-		if (buf[1] & ((1 << 7) >> i)) {
-			c = 2;
-		}
-		if (buf[0] & ((1 << 7) >> i)) {
-			c++;
-		}
-		if (useColor) {
-			char *color = "";
-			switch (c) {
-			case 0:
-				color = Color_BGWHITE;
-				break;
-			case 1:
-				color = Color_BGRED;
-				break;
-			case 2:
-				color = Color_BGBLUE;
-				break;
-			case 3:
-				color = Color_BGBLACK;
-				break;
-			}
-			if (p) {
-				p->cb_printf("%s  ", color);
-			} else {
-				printf("%s  ", color);
-			}
-		} else {
-			const char *chstr = "#=-.";
-			const char ch = chstr[c % 4];
-			if (p) {
-				p->cb_printf("%c%c", ch, ch);
-			} else {
-				printf("%c%c", ch, ch);
-			}
-		}
-		c = 0;
-	}
-}
-
-RZ_API void rz_print_2bpp_tiles(RzPrint *p, ut8 *buf, ut32 tiles) {
-	int i, r;
-	const bool useColor = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
-	for (i = 0; i < 8; i++) {
-		for (r = 0; r < tiles; r++) {
-			rz_print_2bpp_row(p, buf + 2 * i + r * 16);
-		}
-		if (p) {
-			if (useColor) {
-				p->cb_printf(Color_RESET "\n");
-			} else {
-				p->cb_printf("\n");
-			}
-		} else {
-			printf("\n");
-		}
-	}
-}
-
 // probably move somewhere else. RzPrint doesnt needs to know about the RZ_ANALYSIS_ enums
 RZ_API const char *rz_print_color_op_type(RzPrint *p, ut32 analysis_type) {
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
