@@ -5957,13 +5957,15 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		break;
 	case 'u': // "pu"
 		if (input[1] == '?') {
-			rz_cons_printf("|Usage: pu[w] [len]       print N url"
-				       "encoded bytes (w=wide)\n");
+			rz_cons_printf("|Usage: pu[w0] [len]       print N url"
+				       "encoded bytes (w=wide, 0=stop at nil)\n");
 		} else {
 			if (l > 0) {
 				ut32 option = RZ_STR_STRINGIFY_URLENCODE;
 				if (input[1] == 'w') {
 					option |= RZ_STR_STRINGIFY_WIDE16_LE;
+				} else if (input[1] == '0') {
+					option |= RZ_STR_STRINGIFY_STOP_AT_NIL;
 				}
 				core_print_raw_buffer(core->block, len, option, 0);
 			}

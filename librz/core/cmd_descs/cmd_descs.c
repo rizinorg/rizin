@@ -10672,7 +10672,7 @@ static const RzCmdDescHelp write_from_socket_help = {
 };
 
 static const RzCmdDescHelp ww_handler_old_help = {
-	.summary = "Write wide string",
+	.summary = "Write wide 16 little endian string",
 };
 
 static const RzCmdDescHelp wx_help = {

@@ -5,3 +5,20 @@ EXPECT=<<EOF
 [{"value":0,"string":""}]
 EOF
 RUN
+
+NAME=Print urlencode
+FILE==
+CMDS=<<EOF
+w /usr/local/sbin:/usr/local/bin:/usr/bin
+pu 40
+pu0
+ww /usr/local/sbin:/usr/local/bin:/usr/bin
+puw 80
+EOF
+EXPECT=<<EOF
+%2fusr%2flocal%2fsbin%3a%2fusr%2flocal%2fbin%3a%2fusr%2fbin%00
+%2fusr%2flocal%2fsbin%3a%2fusr%2flocal%2fbin%3a%2fusr%2fbin
+%2fusr%2flocal%2fsbin%3a%2fusr%2flocal%2fbin%3a%2fusr%2fbin%00
+EOF
+RUN
+
