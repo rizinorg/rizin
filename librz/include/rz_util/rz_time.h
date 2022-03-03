@@ -25,7 +25,7 @@ RZ_API RZ_OWN char *rz_time_date_dos_to_string(ut32 timestamp);
 RZ_API RZ_OWN char *rz_time_date_hfs_to_string(ut32 timestamp);
 RZ_API RZ_OWN char *rz_time_date_w32_to_string(ut64 timestamp);
 #define rz_time_date_unix_to_string rz_time_stamp_to_str
-RZ_API RZ_OWN char *rz_time_date_now_to_string();
+RZ_API RZ_OWN char *rz_time_date_now_to_string(void);
 
 // Thread-safe cross platform wrappers
 RZ_API char *rz_asctime_r(RZ_NONNULL const struct tm *tm, RZ_NONNULL char *buf);

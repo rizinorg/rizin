@@ -4,6 +4,9 @@
 
 #include <rz_util.h>
 
+#define TIME_HFS_SINCE_1970 2082844800u // Mac HFS/HFS+ constant to convert timestamp to epoch
+#define TIME_W32_SINCE_1970 0x2b6109100ull // The number of seconds from the Windows Runtime epoch to January 1, 1970.
+
 #if __linux__
 #include <time.h>
 #elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
@@ -180,7 +183,7 @@ RZ_API RZ_OWN char *rz_time_date_dos_to_string(ut32 timestamp) {
  * \return           The timestamp in string format
  */
 RZ_API RZ_OWN char *rz_time_date_hfs_to_string(ut32 timestamp) {
-	timestamp += 2082844800; // add Mac HFS+ epoch
+	timestamp += TIME_HFS_SINCE_1970; // add Mac HFS+ epoch
 	return rz_time_stamp_to_str(timestamp);
 }
 
@@ -191,10 +194,14 @@ RZ_API RZ_OWN char *rz_time_date_hfs_to_string(ut32 timestamp) {
  * \return           The timestamp in string format
  */
 RZ_API RZ_OWN char *rz_time_date_w32_to_string(ut64 timestamp) {
-	ut64 limit = 0x2b6109100ll; // seconds to start of 1970
 	timestamp /= 10000000ll; // 100 nanoseconds to seconds
-	timestamp = (timestamp > limit ? timestamp - limit : 0);
-	time_t t = (time_t)timestamp; // TODO: limit above!
+	if (timestamp > TIME_W32_SINCE_1970) {
+		timestamp -= TIME_W32_SINCE_1970;
+	} else {
+		// TODO: this usecase is not handled and defaulted to 0
+		timestamp = 0;
+	}
+	time_t t = (time_t)timestamp;
 	return rz_time_stamp_to_str(t);
 }
 
@@ -203,7 +210,7 @@ RZ_API RZ_OWN char *rz_time_date_w32_to_string(ut64 timestamp) {
  *
  * \return The timestamp in string format
  */
-RZ_API RZ_OWN char *rz_time_date_now_to_string() {
+RZ_API RZ_OWN char *rz_time_date_now_to_string(void) {
 	ut64 now = rz_time_now();
 	now /= RZ_USEC_PER_SEC;
 	return rz_time_stamp_to_str(now);

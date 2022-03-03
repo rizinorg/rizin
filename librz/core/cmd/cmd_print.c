@@ -1456,7 +1456,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, c
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	int timezone = (int)rz_config_get_i(core->config, "time.zone");
 	if (len < sizeof(ut32)) {
-		RZ_LOG_ERROR("The block size less than 4.\n");
+		RZ_LOG_ERROR("The block size is less than 4.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -1480,16 +1480,14 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_current_handler(RzCore *core, int argc
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_dos_handler(RzCore *core, int argc, const char **argv) {
 	char *date = NULL;
-	const ut8 *buf = NULL;
 	const ut8 *block = core->block;
 	ut32 len = core->blocksize;
 	if (len < sizeof(ut32)) {
-		RZ_LOG_ERROR("The block size less than 4.\n");
+		RZ_LOG_ERROR("The block size is less than 4.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (ut64 i = 0; i < len; i += sizeof(ut32)) {
-		buf = block + i;
-		ut32 dt = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
+		ut32 dt = rz_read_le32(block + i);
 		date = rz_time_date_dos_to_string(dt);
 		rz_cons_printf("%s\n", date);
 		free(date);
@@ -1504,7 +1502,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_hfs_handler(RzCore *core, int argc, co
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	int timezone = (int)rz_config_get_i(core->config, "time.zone");
 	if (len < sizeof(ut32)) {
-		RZ_LOG_ERROR("The block size less than 4.\n");
+		RZ_LOG_ERROR("The block size is less than 4.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -1525,7 +1523,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, c
 	ut32 len = core->blocksize;
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	if (len < sizeof(ut64)) {
-		RZ_LOG_ERROR("The block size less than 8.\n");
+		RZ_LOG_ERROR("The block size is less than 8.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
