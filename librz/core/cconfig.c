@@ -1150,7 +1150,7 @@ static bool cb_cfgdebug(void *user, void *data) {
 		return false;
 	}
 	if (core->io) {
-		core->io->va = !node->i_value;
+		rz_config_set_b(core->config, "io.va", !node->i_value);
 	}
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = rz_config_get(core->config, "dbg.backend");

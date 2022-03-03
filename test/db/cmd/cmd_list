@@ -325,14 +325,15 @@ EOF
 EXPECT=<<EOF
 0  ---  bf       LGPL3
 1  ---  bochs    LGPL3
-2  dbg  esil     LGPL3
-3  ---  gdb      LGPL3
-4  ---  io       MIT
-5  ---  native   LGPL3
-6  ---  null     MIT
-7  ---  rap      LGPL3
-8  ---  winkd    LGPL3
-9  ---  qnx      LGPL3
+2  ---  dmp      LGPL3
+3  dbg  esil     LGPL3
+4  ---  gdb      LGPL3
+5  ---  io       MIT
+6  ---  native   LGPL3
+7  ---  null     MIT
+8  ---  rap      LGPL3
+9  ---  winkd    LGPL3
+10  ---  qnx      LGPL3
 EOF
 RUN
 
@@ -342,14 +343,15 @@ CMDS=Ld~!windbg
 EXPECT=<<EOF
 0  ---  bf       LGPL3
 1  ---  bochs    LGPL3
-2  ---  esil     LGPL3
-3  ---  gdb      LGPL3
-4  ---  io       MIT
-5  dbg  native   LGPL3
-6  ---  null     MIT
-7  ---  rap      LGPL3
-8  ---  winkd    LGPL3
-9  ---  qnx      LGPL3
+2  ---  dmp      LGPL3
+3  ---  esil     LGPL3
+4  ---  gdb      LGPL3
+5  ---  io       MIT
+6  dbg  native   LGPL3
+7  ---  null     MIT
+8  ---  rap      LGPL3
+9  ---  winkd    LGPL3
+10  ---  qnx      LGPL3
 EOF
 RUN
 
@@ -361,16 +363,18 @@ Ldj~{[1]}
 Ldj~{[2]}
 Ldj~{[3]}
 Ldj~{[4]}
-Ldj~{[5].name}
-Ldj~{[5].license}
-Ldj~{[6]}
+Ldj~{[5]}
+Ldj~{[6].name}
+Ldj~{[6].license}
 Ldj~{[7]}
 Ldj~{[8]}
 Ldj~{[9]}
+Ldj~{[10]}
 EOF
 EXPECT=<<EOF
 {"arch":"bf","name":"bf","license":"LGPL3"}
 {"arch":"x86","name":"bochs","license":"LGPL3"}
+{"arch":"x86,arm","name":"dmp","license":"LGPL3"}
 {"arch":"any","name":"esil","license":"LGPL3"}
 {"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2","name":"gdb","license":"LGPL3"}
 {"arch":"any","name":"io","license":"MIT"}

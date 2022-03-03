@@ -1,3 +1,6 @@
+#ifndef PROFILES_H
+#define PROFILES_H
+
 Profile XP_SP2_X86 = {
 	2600,
 	2,
@@ -94,6 +97,13 @@ Profile WIN10_19H1_X64 = {
 	0,
 	{ 0x02f0, 0x02e8, 0x03f8, 0x0450, 0x0658, 0x0488, 0x0028, 0x0010, 0x0020, 0x0060, 0x0000, 0x06b8, 0x06a0, 0x0648, 0x0008 },
 };
+Profile WIN11_22000 = {
+	22000,
+	0,
+	64,
+	0,
+	{ 0x0400, 0x03f8, 0x0508, 0x0560, 0x0898, 0x0598, 0x0028, 0x0010, 0x0020, 0x0060, 0x0000, 0x0558, 0x0540, 0x04e8, 0x0008 },
+};
 Profile VISTA_SP0_X86 = {
 	6000,
 	0,
@@ -171,3 +181,34 @@ Profile WIN2003_SP2_X64 = {
 	0,
 	{ 0x00e0, 0x00d8, 0x02c0, 0x0268, 0x0398, 0x0290, 0x0028, 0x0010, 0x0020, 0x0060, 0x0000, 0x03d0, 0x03c8, 0x0358, 0x0008 },
 };
+
+static Profile *p_table[] = {
+	&XP_SP2_X86,
+	&XP_SP3_X86,
+	&WIN7_SP0_X86,
+	&WIN7_SP1_X86,
+	&WIN7_SP0_X64,
+	&WIN7_SP1_X64,
+	&WIN8_SP0_X86,
+	&WIN8_SP1_X86,
+	&WIN8_SP0_X64,
+	&WIN8_SP1_X64,
+	&VISTA_SP0_X86,
+	&VISTA_SP0_X64,
+	&VISTA_SP1_X86,
+	&VISTA_SP1_X64,
+	&VISTA_SP2_X86,
+	&VISTA_SP2_X64,
+	&WIN2003_SP0_X86,
+	&WIN2003_SP1_X86,
+	&WIN2003_SP1_X64,
+	&WIN2003_SP2_X86,
+	&WIN2003_SP2_X64,
+	&WIN10_RS1_X64, // Windows 10 (Anniversary Update)
+	&WIN10_RS4_X64, // Windows 10 (April 2018 Update)
+	&WIN10_19H1_X64, // Windows 10 (May 2019 Update)
+	&WIN11_22000, // Windows 11 (Initial Release)
+	NULL,
+};
+
+#endif
