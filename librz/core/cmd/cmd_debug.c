@@ -2518,10 +2518,9 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzAnalysisOp *op;
 
 	if (!strncmp(input, "ate", 3)) {
-		char str[128];
-		str[0] = 0;
-		rz_print_date_get_now(core->print, str);
-		rz_cons_println(str);
+		char *now = rz_time_date_now_to_string();
+		rz_cons_printf("%s\n", now);
+		free(now);
 		return 0;
 	}
 

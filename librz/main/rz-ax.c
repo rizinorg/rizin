@@ -414,13 +414,12 @@ dotherax:
 			gmt = (const char *)rz_list_head(split)->n->data;
 		}
 		ut32 n = rz_num_math(num, ts);
-		RzPrint *p = rz_print_new();
-		p->big_endian = RZ_SYS_ENDIAN;
-		if (gmt) {
-			p->datezone = rz_num_math(num, gmt);
-		}
-		rz_print_date_unix(p, (const ut8 *)&n, sizeof(ut32));
-		rz_print_free(p);
+		int timezone = (int)rz_num_math(num, gmt);
+		n += timezone * (60 * 60);
+		char *date = rz_time_date_unix_to_string(n);
+		printf("%s\n", date);
+		fflush(stdout);
+		free(date);
 		rz_list_free(split);
 		return true;
 	} else if (flags & (1 << 12)) { // -E
