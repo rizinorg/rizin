@@ -9,8 +9,7 @@ static ut8 *remove_cr(ut8 *str) {
 	char *s = (char *)str;
 	char *start = s;
 	while (*s) {
-		if (s[0] == '\r' &&
-			!(s - start >= 4 && !strncmp(s - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
+		if (s[0] == '\r' && s[1] == '\n') {
 			memmove(s, s + 1, strlen(s + 1) + 1);
 			continue;
 		}
