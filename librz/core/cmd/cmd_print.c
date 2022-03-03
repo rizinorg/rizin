@@ -4771,10 +4771,6 @@ static void core_print_2bpp_tiles(RzCore *core, ut32 tiles) {
 }
 
 static inline void core_print_raw_buffer(const ut8 *buffer, ut32 length, ut32 option, ut32 max_wrap_len) {
-	if (length < 1) {
-		rz_cons_newline();
-		return;
-	}
 	char *str = rz_str_stringify_raw_buffer(buffer, length, option, max_wrap_len);
 	if (str) {
 		rz_cons_strcat(str);

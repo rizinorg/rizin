@@ -3823,14 +3823,14 @@ RZ_API char *rz_str_version(const char *program) {
 /**
  * \brief Converts a raw buffer to a printable string based on the selected options
  *
- * \param  buf          The buffer to read
- * \param  len          The length of the buffer
- * \param  max_wrap_len The max line length when RZ_STR_STRINGIFY_WRAP is set
- * \param  options      The options flags to follow to generate the output.
+ * \param  buf        The buffer to read
+ * \param  len        The length of the buffer
+ * \param  wrap_after Wraps the line when length exeeds wrap_after value (requires RZ_STR_STRINGIFY_WRAP)
+ * \param  options    The options flags to follow to generate the output.
  * \return The stringified raw buffer
  */
-RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RZ_NONNULL const ut8 *buf, ut32 len, ut32 options, ut32 max_wrap_len) {
-	rz_return_val_if_fail(buf && len > 0, NULL);
+RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RZ_NONNULL const ut8 *buf, ut32 len, ut32 options, ut32 wrap_after) {
+	rz_return_val_if_fail(buf && len >= 0, NULL);
 	RzStrBuf sb;
 	bool wide16le = (options & RZ_STR_STRINGIFY_WIDE16_LE); // Only supports wide 16 LE and only ascii chars.
 	bool wide32le = (options & RZ_STR_STRINGIFY_WIDE32_LE); // Only supports wide 32 LE and only ascii chars.
@@ -3874,7 +3874,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RZ_NONNULL const ut8 *buf, ut32 
 				rz_strbuf_appendf(&sb, "\\x%02x", b);
 			}
 		}
-		if (wrap && linelen + 1 >= max_wrap_len) {
+		if (wrap && linelen + 1 >= wrap_after) {
 			rz_strbuf_appendf(&sb, "\n");
 			linelen = 0;
 		}
