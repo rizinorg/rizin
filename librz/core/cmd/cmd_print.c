@@ -1450,87 +1450,88 @@ static void cmd_print_gadget(RzCore *core, const char *_input) {
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, const char **argv) {
-	// len must be multiple of 4 since rz_mem_copyendian move data in fours - sizeof(ut32)
-	st64 l;
-	ut8 *block = core->block;
-	int len = core->blocksize;
+	char *date = NULL;
+	const ut8 *block = core->block;
+	ut32 len = core->blocksize;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	int timezone = (int)rz_config_get_i(core->config, "time.zone");
 	if (len < sizeof(ut32)) {
-		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
-			"run `b %zu`\n",
-			sizeof(ut32), sizeof(ut32));
+		RZ_LOG_ERROR("The block size is less than 4.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (len % sizeof(ut32)) {
-		len = len - (len % sizeof(ut32));
-	}
-	for (l = 0; l < len; l += sizeof(ut32)) {
-		rz_print_date_unix(core->print, block + l, sizeof(ut32));
+
+	for (ut64 i = 0; i < len; i += sizeof(ut32)) {
+		ut32 dt = rz_read_ble32(block + i, big_endian);
+		// add timezone
+		dt += timezone * (60 * 60);
+		date = rz_time_date_unix_to_string(dt);
+		rz_cons_printf("%s\n", date);
+		free(date);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_current_handler(RzCore *core, int argc, const char **argv) {
-	char nowstr[64] = { 0 };
-	rz_print_date_get_now(core->print, nowstr);
-	rz_cons_printf("%s", nowstr);
+	char *now = rz_time_date_now_to_string();
+	rz_cons_printf("%s\n", now);
+	free(now);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_dos_handler(RzCore *core, int argc, const char **argv) {
-	// len must be multiple of 4 since rz_print_date_dos read buf+3
-	// if block size is 1 or 5 for example it reads beyond the buffer
-	st64 l;
-	ut8 *block = core->block;
-	int len = core->blocksize;
+	char *date = NULL;
+	const ut8 *block = core->block;
+	ut32 len = core->blocksize;
 	if (len < sizeof(ut32)) {
-		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
-			"run `b %zu`\n",
-			sizeof(ut32), sizeof(ut32));
+		RZ_LOG_ERROR("The block size is less than 4.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (len % sizeof(ut32)) {
-		len = len - (len % sizeof(ut32));
-	}
-	for (l = 0; l < len; l += sizeof(ut32)) {
-		rz_print_date_dos(core->print, block + l, sizeof(ut32));
+	for (ut64 i = 0; i < len; i += sizeof(ut32)) {
+		ut32 dt = rz_read_le32(block + i);
+		date = rz_time_date_dos_to_string(dt);
+		rz_cons_printf("%s\n", date);
+		free(date);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_hfs_handler(RzCore *core, int argc, const char **argv) {
-	st64 l;
-	ut8 *block = core->block;
-	int len = core->blocksize;
+	char *date = NULL;
+	const ut8 *block = core->block;
+	ut32 len = core->blocksize;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	int timezone = (int)rz_config_get_i(core->config, "time.zone");
 	if (len < sizeof(ut32)) {
-		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
-			"run `b %zu`\n",
-			sizeof(ut32), sizeof(ut32));
+		RZ_LOG_ERROR("The block size is less than 4.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (len % sizeof(ut32)) {
-		len = len - (len % sizeof(ut32));
-	}
-	for (l = 0; l < len; l += sizeof(ut32)) {
-		rz_print_date_hfs(core->print, block + l, sizeof(ut32));
+
+	for (ut64 i = 0; i < len; i += sizeof(ut32)) {
+		ut32 dt = rz_read_ble32(block + i, big_endian);
+		// add timezone
+		dt += timezone * (60 * 60);
+		date = rz_time_date_hfs_to_string(dt);
+		rz_cons_printf("%s\n", date);
+		free(date);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, const char **argv) {
-	st64 l;
-	ut8 *block = core->block;
-	int len = core->blocksize;
+	char *date = NULL;
+	const ut8 *block = core->block;
+	ut32 len = core->blocksize;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	if (len < sizeof(ut64)) {
-		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
-			"run `b %zu`\n",
-			sizeof(ut64), sizeof(ut64));
+		RZ_LOG_ERROR("The block size is less than 8.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (len % sizeof(ut64)) {
-		len = len - (len % sizeof(ut64));
-	}
-	for (l = 0; l < len; l += sizeof(ut64)) {
-		rz_print_date_w32(core->print, block + l, sizeof(ut64));
+
+	for (ut64 i = 0; i < len; i += sizeof(ut64)) {
+		ut64 dt = rz_read_ble64(block + i, big_endian);
+		date = rz_time_date_w32_to_string(dt);
+		rz_cons_printf("%s\n", date);
+		free(date);
 	}
 	return RZ_CMD_STATUS_OK;
 }

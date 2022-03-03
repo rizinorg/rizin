@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include <rz_util/rz_print.h>
+
+#define TIME_HFS_SINCE_1970 2082844800u // Mac HFS/HFS+ constant to convert timestamp to epoch
+#define TIME_W32_SINCE_1970 0x2b6109100ull // The number of seconds from the Windows Runtime epoch to January 1, 1970.
 
 #if __linux__
 #include <time.h>
@@ -11,6 +13,11 @@
 #include <mach/mach_time.h>
 #endif
 
+/**
+ * \brief Returns the current time in microseconds
+ *
+ * \return The current time
+ */
 RZ_API ut64 rz_time_now(void) {
 	ut64 ret;
 	struct timeval now;
@@ -20,6 +27,11 @@ RZ_API ut64 rz_time_now(void) {
 	return ret;
 }
 
+/**
+ * \brief Returns the current time in microseconds, using the monotonic clock
+ *
+ * \return The current time
+ */
 RZ_API ut64 rz_time_now_mono(void) {
 #if __WINDOWS__
 	LARGE_INTEGER f;
@@ -57,10 +69,15 @@ static inline long get_seconds_since_12am31Dec1969(struct tm *time) {
 	return -1;
 }
 
-/* timeStamp must be a Unix epoch integer */
-RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
+/**
+ * \brief Converts an unix epoch timestamp to string
+ *
+ * \param  timestamp  The unix epoch timestamp
+ * \return            The timestamp in string format
+ */
+RZ_API RZ_OWN char *rz_time_stamp_to_str(ut32 timestamp) {
 	char timestr_buf[ASCTIME_BUF_MINLEN];
-	time_t ts = (time_t)timeStamp;
+	time_t ts = (time_t)timestamp;
 	struct tm gmt_tm;
 	rz_gmtime_r(&ts, &gmt_tm);
 	struct tm local_tm;
@@ -99,9 +116,15 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	return timestr;
 }
 
-RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timeStamp) {
-	ut16 date = timeStamp >> 16;
-	ut16 time = timeStamp & 0xFFFF;
+/**
+ * \brief Converts dos timestamp to posix timestamp
+ *
+ * \param  timestamp  The timestamp in dos format to convert
+ * \return            The converted posix timestamp
+ */
+RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timestamp) {
+	ut16 date = timestamp >> 16;
+	ut16 time = timestamp & 0xFFFF;
 
 	/* Date */
 	ut32 year = ((date & 0xfe00) >> 9) + 1980;
@@ -127,6 +150,13 @@ RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timeStamp) {
 	return (ut32)epochTime;
 }
 
+/**
+ * \brief Verifies that the timestamp is in dos format
+ *
+ * \param  certainPosixTimeStamp       Certain posix timestamp
+ * \param  possiblePosixOrDosTimeStamp Possible posix or dos timestamp to test
+ * \return true if format is in dos format, otherwise false
+ */
 RZ_API bool rz_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp) {
 	/* We assume they're both POSIX timestamp and thus the higher bits would be equal if they're close to each other */
 	if ((certainPosixTimeStamp >> 16) == (possiblePosixOrDosTimeStamp >> 16)) {
@@ -135,96 +165,59 @@ RZ_API bool rz_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const 
 	return true;
 }
 
-RZ_API int rz_print_date_dos(RzPrint *p, const ut8 *buf, int len) {
-	if (len < 4) {
-		return 0;
+/**
+ * \brief Converts a dos date (ut32) and returns the timestamp in string format
+ *
+ * \param  timestamp The number to convert to string
+ * \return           The timestamp in string format
+ */
+RZ_API RZ_OWN char *rz_time_date_dos_to_string(ut32 timestamp) {
+	ut32 posix = rz_time_dos_time_stamp_to_posix(timestamp);
+	return rz_time_stamp_to_str(posix);
+}
+
+/**
+ * \brief Converts a Mac HFS+ date (ut32) and returns the timestamp in string format
+ *
+ * \param  timestamp The number to convert to string
+ * \return           The timestamp in string format
+ */
+RZ_API RZ_OWN char *rz_time_date_hfs_to_string(ut32 timestamp) {
+	timestamp += TIME_HFS_SINCE_1970; // add Mac HFS+ epoch
+	return rz_time_stamp_to_str(timestamp);
+}
+
+/**
+ * \brief Converts a Win32 date (ut64) and returns the timestamp in string format
+ *
+ * \param  timestamp The number to convert to string
+ * \return           The timestamp in string format
+ */
+RZ_API RZ_OWN char *rz_time_date_w32_to_string(ut64 timestamp) {
+	timestamp /= 10000000ll; // 100 nanoseconds to seconds
+	if (timestamp > TIME_W32_SINCE_1970) {
+		timestamp -= TIME_W32_SINCE_1970;
+	} else {
+		// TODO: this usecase is not handled and defaulted to 0
+		timestamp = 0;
 	}
-
-	ut32 dt = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
-	char *s = rz_time_stamp_to_str(rz_time_dos_time_stamp_to_posix(dt));
-	if (!s) {
-		return 0;
-	}
-	p->cb_printf("%s\n", s);
-	free(s);
-	return 4;
+	time_t t = (time_t)timestamp;
+	return rz_time_stamp_to_str(t);
 }
 
-RZ_API int rz_print_date_hfs(RzPrint *p, const ut8 *buf, int len) {
-	const int hfs_unix_delta = 2082844800;
-	time_t t = 0;
-	int ret = 0;
-
-	if (p && len >= sizeof(ut32)) {
-		t = rz_read_ble32(buf, p->big_endian);
-		if (p->datefmt[0]) {
-			t += p->datezone * (60 * 60);
-			t += hfs_unix_delta;
-
-			p->cb_printf("%s\n", rz_time_stamp_to_str(t));
-			ret = sizeof(time_t);
-		}
-	}
-	return ret;
+/**
+ * \brief Returns the timestamp in string format of the current time (now)
+ *
+ * \return The timestamp in string format
+ */
+RZ_API RZ_OWN char *rz_time_date_now_to_string(void) {
+	ut64 now = rz_time_now();
+	now /= RZ_USEC_PER_SEC;
+	return rz_time_stamp_to_str(now);
 }
 
-RZ_API int rz_print_date_unix(RzPrint *p, const ut8 *buf, int len) {
-	time_t t = 0;
-	int ret = 0;
-
-	if (p && len >= sizeof(ut32)) {
-		t = rz_read_ble32(buf, p->big_endian);
-		if (p->datefmt[0]) {
-			t += p->datezone * (60 * 60);
-			char *datestr = rz_time_stamp_to_str(t);
-			if (datestr) {
-				p->cb_printf("%s\n", datestr);
-				free(datestr);
-			}
-			ret = sizeof(time_t);
-		}
-	}
-	return ret;
-}
-
-RZ_API int rz_print_date_get_now(RzPrint *p, char *str) {
-	int ret = 0;
-	time_t l;
-
-	*str = 0;
-	l = time(0);
-
-	str = rz_time_stamp_to_str(l);
-	p->cb_printf("%s\n", str);
-	ret = sizeof(time_t);
-	return ret;
-}
-
-RZ_API int rz_print_date_w32(RzPrint *p, const ut8 *buf, int len) {
-	ut64 l, L = 0x2b6109100LL;
-	time_t t;
-	int ret = 0;
-
-	if (p && len >= sizeof(ut64)) {
-		l = rz_read_ble64(buf, p->big_endian);
-		l /= 10000000; // 100ns to s
-		l = (l > L ? l - L : 0); // isValidUnixTime?
-		t = (time_t)l; // TODO limit above!
-		if (p->datefmt[0]) {
-			p->cb_printf("%s\n", rz_time_stamp_to_str(t));
-			ret = sizeof(time_t);
-		}
-	}
-
-	return ret;
-}
-
-RZ_API char *rz_time_to_string(ut64 timestamp64) {
-	ut64 l = timestamp64 / RZ_USEC_PER_SEC;
-	return rz_time_stamp_to_str(l);
-}
-
-RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res) {
+RZ_API struct tm *rz_localtime_r(RZ_NONNULL const time_t *time, RZ_NONNULL struct tm *res) {
+	rz_return_val_if_fail(time && res, NULL);
 #if __WINDOWS__
 	errno_t err = localtime_s(res, time);
 	return err ? NULL : res;
@@ -233,7 +226,8 @@ RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res) {
 #endif
 }
 
-RZ_API struct tm *rz_gmtime_r(const time_t *time, struct tm *res) {
+RZ_API struct tm *rz_gmtime_r(RZ_NONNULL const time_t *time, RZ_NONNULL struct tm *res) {
+	rz_return_val_if_fail(time && res, NULL);
 #if __WINDOWS__
 	errno_t err = gmtime_s(res, time);
 	return err ? NULL : res;
@@ -242,7 +236,8 @@ RZ_API struct tm *rz_gmtime_r(const time_t *time, struct tm *res) {
 #endif
 }
 
-RZ_API char *rz_asctime_r(const struct tm *tm, char *buf) {
+RZ_API char *rz_asctime_r(RZ_NONNULL const struct tm *tm, RZ_NONNULL char *buf) {
+	rz_return_val_if_fail(tm && buf, NULL);
 #if __WINDOWS__
 	errno_t err = asctime_s(buf, ASCTIME_BUF_MINLEN, tm);
 	return err ? NULL : buf;
@@ -251,7 +246,8 @@ RZ_API char *rz_asctime_r(const struct tm *tm, char *buf) {
 #endif
 }
 
-RZ_API char *rz_ctime_r(const time_t *timer, char *buf) {
+RZ_API char *rz_ctime_r(RZ_NONNULL const time_t *timer, RZ_NONNULL char *buf) {
+	rz_return_val_if_fail(timer && buf, NULL);
 #if __WINDOWS__
 	errno_t err = ctime_s(buf, ASCTIME_BUF_MINLEN, timer);
 	return err ? NULL : buf;
