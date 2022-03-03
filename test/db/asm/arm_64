@@ -599,6 +599,10 @@ d "mov x1, -4" 61008092 0x0 (set x1 (bv 64 0xfffffffffffffffc))
 d "mov w1, -0x124" 61248012 0x0 (set x1 (cast 64 false (bv 32 0xfffffedc)))
 d "mov x1, -0x12300000001" 6124c092 0x0 (set x1 (bv 64 0xfffffedcffffffff))
 d "mov w1, -0x1230001" 6124a012 0x0 (set x1 (cast 64 false (bv 32 0xfedcffff)))
+d "mov x1, 0x2a" 410580d2 0x0 (set x1 (bv 64 0x2a))
+d "mov w1, 0x2a" 41058052 0x0 (set x1 (cast 64 false (bv 32 0x2a)))
+d "mov x2, x3" e20303aa 0x0 (set x2 (var x3))
+d "mov w2, w3" e203032a 0x0 (set x2 (cast 64 false (cast 32 false (var x3))))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
