@@ -175,13 +175,6 @@ RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char l
 
 RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
 RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
-#define RZ_PRINT_STRING_WIDE      1
-#define RZ_PRINT_STRING_ZEROEND   2
-#define RZ_PRINT_STRING_URLENCODE 4
-#define RZ_PRINT_STRING_WRAP      8
-#define RZ_PRINT_STRING_WIDE32    16
-#define RZ_PRINT_STRING_ESC_NL    32
-RZ_API int rz_print_string(RzPrint *p, ut64 seek, const ut8 *str, int len, int options);
 RZ_API int rz_print_date_dos(RzPrint *p, const ut8 *buf, int len);
 RZ_API int rz_print_date_hfs(RzPrint *p, const ut8 *buf, int len);
 RZ_API int rz_print_date_w32(RzPrint *p, const ut8 *buf, int len);

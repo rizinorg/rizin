@@ -500,8 +500,8 @@ static const char *help_msg_ps[] = {
 	"psp", "[j]", "print pascal string",
 	"pss", "", "print string in screen (wrap width)",
 	"psu", "[zj]", "print utf16 unicode (json)",
-	"psw", "[j]", "print 16bit wide string",
-	"psW", "[j]", "print 32bit wide string",
+	"psw", "[j]", "print 16bit wide little endian string",
+	"psW", "[j]", "print 32bit wide little endian string",
 	"psx", "", "show string with escaped chars",
 	"psz", "[j]", "print zero-terminated string",
 	NULL
@@ -4770,6 +4770,18 @@ static void core_print_2bpp_tiles(RzCore *core, ut32 tiles) {
 	}
 }
 
+static inline void core_print_raw_buffer(const ut8 *buffer, ut32 length, ut32 option, ut32 max_wrap_len) {
+	if (length < 1) {
+		rz_cons_newline();
+		return;
+	}
+	char *str = rz_str_stringify_raw_buffer(buffer, length, option, max_wrap_len);
+	if (str) {
+		rz_cons_strcat(str);
+		free(str);
+	}
+}
+
 RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	st64 l;
@@ -5750,7 +5762,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		case 'x': // "psx"
 			if (l > 0) {
-				rz_print_string(core->print, core->offset, block, len, RZ_PRINT_STRING_ESC_NL);
+				core_print_raw_buffer(block, len, RZ_STR_STRINGIFY_ESCAPE_NL, 0);
 			}
 			break;
 		case 'b': // "psb"
@@ -5824,8 +5836,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					if (input[2] == 'j') { // pspj
 						print_json_string(core, (const char *)core->block + 1, mylen, RZ_CORE_STRING_KIND_UNKNOWN);
 					} else {
-						rz_print_string(core->print, core->offset,
-							core->block + 1, mylen, RZ_PRINT_STRING_ZEROEND);
+						core_print_raw_buffer(core->block + 1, mylen, RZ_STR_STRINGIFY_STOP_AT_NIL, 0);
 					}
 					core->num->value = mylen;
 				} else {
@@ -5838,8 +5849,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				if (input[2] == 'j') { // pswj
 					print_json_string(core, (const char *)core->block, len, RZ_CORE_STRING_KIND_WIDE16);
 				} else {
-					rz_print_string(core->print, core->offset, core->block, len,
-						RZ_PRINT_STRING_WIDE | RZ_PRINT_STRING_ZEROEND);
+					core_print_raw_buffer(core->block, len, RZ_STR_STRINGIFY_WIDE16_LE | RZ_STR_STRINGIFY_STOP_AT_NIL, 0);
 				}
 			}
 			break;
@@ -5848,13 +5858,12 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				if (input[2] == 'j') { // psWj
 					print_json_string(core, (const char *)core->block, len, RZ_CORE_STRING_KIND_WIDE32);
 				} else {
-					rz_print_string(core->print, core->offset, core->block, len,
-						RZ_PRINT_STRING_WIDE32 | RZ_PRINT_STRING_ZEROEND);
+					core_print_raw_buffer(core->block, len, RZ_STR_STRINGIFY_WIDE32_LE | RZ_STR_STRINGIFY_STOP_AT_NIL, 0);
 				}
 			}
 			break;
 		case ' ': // "ps"
-			rz_print_string(core->print, core->offset, core->block, l, 0);
+			core_print_raw_buffer(core->block, l, RZ_STR_STRINGIFY_DEFAULT, 0);
 			break;
 		case 'u': // "psu"
 			if (l > 0) {
@@ -5886,14 +5895,13 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			if (l > 0) {
 				int h, w = rz_cons_get_size(&h);
 				int colwidth = rz_config_get_i(core->config, "hex.cols") * 2;
-				core->print->width = (colwidth == 32) ? w : colwidth; // w;
+				int width = (colwidth == 32) ? w : colwidth; // w;
 				int bs = core->blocksize;
 				if (len == bs) {
 					len = (h * w) / 3;
 					rz_core_block_size(core, len);
 				}
-				rz_print_string(core->print, core->offset, core->block,
-					len, RZ_PRINT_STRING_WRAP);
+				core_print_raw_buffer(core->block, len, RZ_STR_STRINGIFY_WRAP, width);
 				rz_core_block_size(core, bs);
 			}
 			break;
@@ -5914,15 +5922,13 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				} else if (json) {
 					print_json_string(core, (const char *)core->block + 1, len, RZ_CORE_STRING_KIND_UNKNOWN);
 				} else {
-					rz_print_string(core->print, core->offset, core->block + 1,
-						len, RZ_PRINT_STRING_ZEROEND);
+					core_print_raw_buffer(core->block + 1, len, RZ_STR_STRINGIFY_STOP_AT_NIL, 0);
 				}
 			}
 			break;
 		default:
 			if (l > 0) {
-				rz_print_string(core->print, core->offset, core->block,
-					len, RZ_PRINT_STRING_ZEROEND);
+				core_print_raw_buffer(core->block, len, RZ_STR_STRINGIFY_STOP_AT_NIL, 0);
 			}
 			break;
 		}
@@ -5955,9 +5961,11 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				       "encoded bytes (w=wide)\n");
 		} else {
 			if (l > 0) {
-				rz_print_string(core->print, core->offset, core->block, len,
-					RZ_PRINT_STRING_URLENCODE |
-						((input[1] == 'w') ? RZ_PRINT_STRING_WIDE : 0));
+				ut32 option = RZ_STR_STRINGIFY_URLENCODE;
+				if (input[1] == 'w') {
+					option |= RZ_STR_STRINGIFY_WIDE16_LE;
+				}
+				core_print_raw_buffer(core->block, len, option, 0);
 			}
 		}
 		break;

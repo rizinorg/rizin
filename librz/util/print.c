@@ -393,58 +393,6 @@ RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch) {
 	rz_print_cursor(p, idx, 1, 0);
 }
 
-RZ_API int rz_print_string(RzPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
-	int i;
-	bool wide = (options & RZ_PRINT_STRING_WIDE);
-	bool wide32 = (options & RZ_PRINT_STRING_WIDE32);
-	bool zeroend = (options & RZ_PRINT_STRING_ZEROEND);
-	bool wrap = (options & RZ_PRINT_STRING_WRAP);
-	bool urlencode = (options & RZ_PRINT_STRING_URLENCODE);
-	bool esc_nl = (options & RZ_PRINT_STRING_ESC_NL);
-	int col = 0;
-	i = 0;
-	for (; !rz_print_is_interrupted() && i < len; i++) {
-		if (wide32) {
-			int j = i;
-			while (buf[j] == '\0' && j < (i + 3)) {
-				j++;
-			}
-			i = j;
-		}
-		if (zeroend && buf[i] == '\0') {
-			break;
-		}
-		rz_print_cursor(p, i, 1, 1);
-		ut8 b = buf[i];
-		if (b == '\n') {
-			col = 0;
-		}
-		col++;
-		if (urlencode) {
-			// TODO: some ascii can be bypassed here
-			p->cb_printf("%%%02x", b);
-		} else {
-			if (b == '\\') {
-				p->cb_printf("\\\\");
-			} else if ((b == '\n' && !esc_nl) || IS_PRINTABLE(b)) {
-				p->cb_printf("%c", b);
-			} else {
-				p->cb_printf("\\x%02x", b);
-			}
-		}
-		rz_print_cursor(p, i, 1, 0);
-		if (wrap && col + 1 >= p->width) {
-			p->cb_printf("\n");
-			col = 0;
-		}
-		if (wide) {
-			i++;
-		}
-	}
-	p->cb_printf("\n");
-	return i;
-}
-
 RZ_API void rz_print_hexpairs(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
 	int i;
 	for (i = 0; i < len; i++) {

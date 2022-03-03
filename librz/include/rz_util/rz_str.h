@@ -256,6 +256,15 @@ RZ_API const char *rz_str_sep(const char *base, const char *sep);
 RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep);
 RZ_API char *rz_str_version(const char *program);
 
+#define RZ_STR_STRINGIFY_DEFAULT     (0)
+#define RZ_STR_STRINGIFY_ESCAPE_NL   (1 << 0)
+#define RZ_STR_STRINGIFY_WRAP        (1 << 1)
+#define RZ_STR_STRINGIFY_STOP_AT_NIL (1 << 2)
+#define RZ_STR_STRINGIFY_URLENCODE   (1 << 3)
+#define RZ_STR_STRINGIFY_WIDE16_LE   (1 << 4)
+#define RZ_STR_STRINGIFY_WIDE32_LE   (1 << 5)
+RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RZ_NONNULL const ut8 *buf, ut32 len, ut32 options, ut32 max_wrap_len);
+
 #ifdef __cplusplus
 }
 #endif

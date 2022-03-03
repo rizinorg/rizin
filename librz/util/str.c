@@ -3819,3 +3819,71 @@ RZ_API char *rz_str_version(const char *program) {
 }
 
 #undef RZ_STR_PKG_VERSION_STRING
+
+/**
+ * \brief Converts a raw buffer to a printable string based on the selected options
+ *
+ * \param  buf          The buffer to read
+ * \param  len          The length of the buffer
+ * \param  max_wrap_len The max line length when RZ_STR_STRINGIFY_WRAP is set
+ * \param  options      The options flags to follow to generate the output.
+ * \return The stringified raw buffer
+ */
+RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RZ_NONNULL const ut8 *buf, ut32 len, ut32 options, ut32 max_wrap_len) {
+	rz_return_val_if_fail(buf && len > 0, NULL);
+	RzStrBuf sb;
+	bool wide16le = (options & RZ_STR_STRINGIFY_WIDE16_LE); // Only supports wide 16 LE and only ascii chars.
+	bool wide32le = (options & RZ_STR_STRINGIFY_WIDE32_LE); // Only supports wide 32 LE and only ascii chars.
+	bool stop_at_nil = (options & RZ_STR_STRINGIFY_STOP_AT_NIL);
+	bool wrap = (options & RZ_STR_STRINGIFY_WRAP);
+	bool urlencode = (options & RZ_STR_STRINGIFY_URLENCODE);
+	bool escape_nl = (options & RZ_STR_STRINGIFY_ESCAPE_NL);
+	rz_strbuf_init(&sb);
+	for (ut32 i = 0, linelen = 0; i < len; i++) {
+		if (wide32le) {
+			// handles only ascii and skips the next bytes.
+			ut32 j = i;
+			while (buf[j] == '\0' && j < (i + 3)) {
+				j++;
+			}
+			i = j;
+		}
+		ut8 b = buf[i];
+		if (stop_at_nil && b == '\0') {
+			break;
+		} else if (b == '\n') {
+			linelen = 0;
+		}
+		linelen++;
+		if (urlencode) {
+			if (IS_DIGIT(b) || IS_UPPER(b) || IS_LOWER(b) || b == '-' || b == '_' || b == '.' || b == '~') {
+				// RFC 3986 section 2.3 Unreserved Characters
+				// A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+				// a b c d e f g h i j k l m n o p q r s t u v w x y z
+				// 0 1 2 3 4 5 6 7 8 9 - _ . ~
+				rz_strbuf_appendf(&sb, "%c", b);
+			} else {
+				rz_strbuf_appendf(&sb, "%%%02x", b);
+			}
+		} else {
+			if (b == '\\') {
+				rz_strbuf_appendf(&sb, "\\\\");
+			} else if ((b == '\n' && !escape_nl) || IS_PRINTABLE(b)) {
+				rz_strbuf_appendf(&sb, "%c", b);
+			} else {
+				rz_strbuf_appendf(&sb, "\\x%02x", b);
+			}
+		}
+		if (wrap && linelen + 1 >= max_wrap_len) {
+			rz_strbuf_appendf(&sb, "\n");
+			linelen = 0;
+		}
+		if (wide16le) {
+			// handles only ascii and skips the next byte.
+			i++;
+		}
+	}
+
+	rz_strbuf_appendf(&sb, "\n");
+	return rz_strbuf_drain_nofree(&sb);
+}
