@@ -1502,6 +1502,8 @@ static RzILOpEffect *mul(cs_insn *insn) {
 	RzILOpBitVector *ma = ARG(1, &bits);
 	RzILOpBitVector *mb = ARG(2, &bits);
 	if (!ma || !mb) {
+		rz_il_op_pure_free(ma);
+		rz_il_op_pure_free(mb);
 		return NULL;
 	}
 	RzILOpBitVector *res = MUL(ma, mb);
@@ -1509,6 +1511,23 @@ static RzILOpEffect *mul(cs_insn *insn) {
 		res = NEG(res);
 	}
 	return write_reg(REGID(0), res);
+}
+
+/**
+ * Capstone: ARM64_INS_MOV
+ * ARM: mov
+ */
+static RzILOpEffect *mov(cs_insn *insn) {
+	// TODO: continue checking with wide immediate
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *src = ARG(1, &bits);
+	if (!src) {
+		return NULL;
+	}
+	return write_reg(REGID(0), src);
 }
 
 /**
@@ -1889,6 +1908,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_MUL:
 	case ARM64_INS_MNEG:
 		return mul(insn);
+	case ARM64_INS_MOV:
+		return mov(insn);
 	default:
 		break;
 	}
