@@ -6751,7 +6751,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_list_free(pids);
 		} else if (l > 0) {
 			len = len > core->blocksize ? core->blocksize : len;
-			char *s = rz_print_randomart(block, len, core->offset);
+			char *s = rz_msg_digest_randomart(block, len, core->offset);
 			rz_cons_println(s);
 			free(s);
 		}
@@ -6778,7 +6778,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					rz_cons_canvas_gotoxy(c, j * 20, i * 11);
 					core->offset += len;
 					rz_io_read_at(core->io, core->offset, core->block, len);
-					s = rz_print_randomart(core->block, len, core->offset);
+					s = rz_msg_digest_randomart(core->block, len, core->offset);
 					rz_cons_canvas_write(c, s);
 					free(s);
 				}
