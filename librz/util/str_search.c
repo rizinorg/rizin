@@ -234,7 +234,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 		needle += rc;
 
-		if (rz_isprint(r) && r != '\\') {
+		if (rz_rune_is_printable(r) && r != '\\') {
 			if (str_type == RZ_STRING_ENC_UTF32LE || str_type == RZ_STRING_ENC_UTF32BE) {
 				if (r == 0xff) {
 					r = 0;
@@ -461,7 +461,7 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 				int i = 0;
 				for (; i < sz; i++) {
 					rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
-					if (!rz_isprint(runes[i])) {
+					if (!rz_rune_is_printable(runes[i])) {
 						break;
 					}
 				}
