@@ -107,3 +107,12 @@ enum.sock_domain.AF_VSOCK=40
 enum.sock_domain.AF_KCM=41
 enum.sock_domain.AF_XDP=44
 
+sock_type=enum
+enum.sock_type=SOCK_STREAM,SOCK_DGRAM,SOCK_SEQPACKET,SOCK_RAW,SOCK_RDM,SOCK_PACKET,SOCK_DCCP
+enum.sock_type.SOCK_DGRAM=1
+enum.sock_type.SOCK_STREAM=2
+enum.sock_type.SOCK_RAW=3
+enum.sock_type.SOCK_RDM=4
+enum.sock_type.SOCK_SEQPACKET=5
+enum.sock_type.SOCK_DCCP=6
+enum.sock_type.SOCK_PACKET=7
