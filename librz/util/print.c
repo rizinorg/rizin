@@ -393,58 +393,6 @@ RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch) {
 	rz_print_cursor(p, idx, 1, 0);
 }
 
-RZ_API int rz_print_string(RzPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
-	int i;
-	bool wide = (options & RZ_PRINT_STRING_WIDE);
-	bool wide32 = (options & RZ_PRINT_STRING_WIDE32);
-	bool zeroend = (options & RZ_PRINT_STRING_ZEROEND);
-	bool wrap = (options & RZ_PRINT_STRING_WRAP);
-	bool urlencode = (options & RZ_PRINT_STRING_URLENCODE);
-	bool esc_nl = (options & RZ_PRINT_STRING_ESC_NL);
-	int col = 0;
-	i = 0;
-	for (; !rz_print_is_interrupted() && i < len; i++) {
-		if (wide32) {
-			int j = i;
-			while (buf[j] == '\0' && j < (i + 3)) {
-				j++;
-			}
-			i = j;
-		}
-		if (zeroend && buf[i] == '\0') {
-			break;
-		}
-		rz_print_cursor(p, i, 1, 1);
-		ut8 b = buf[i];
-		if (b == '\n') {
-			col = 0;
-		}
-		col++;
-		if (urlencode) {
-			// TODO: some ascii can be bypassed here
-			p->cb_printf("%%%02x", b);
-		} else {
-			if (b == '\\') {
-				p->cb_printf("\\\\");
-			} else if ((b == '\n' && !esc_nl) || IS_PRINTABLE(b)) {
-				p->cb_printf("%c", b);
-			} else {
-				p->cb_printf("\\x%02x", b);
-			}
-		}
-		rz_print_cursor(p, i, 1, 0);
-		if (wrap && col + 1 >= p->width) {
-			p->cb_printf("\n");
-			col = 0;
-		}
-		if (wide) {
-			i++;
-		}
-	}
-	p->cb_printf("\n");
-	return i;
-}
-
 RZ_API void rz_print_hexpairs(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
 	int i;
 	for (i = 0; i < len; i++) {
@@ -1442,69 +1390,6 @@ RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int s
 			p->cb_printf("%s", Color_RESET);
 		}
 		p->cb_printf("\n");
-	}
-}
-
-RZ_API void rz_print_2bpp_row(RzPrint *p, ut8 *buf) {
-	const bool useColor = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
-	int i, c = 0;
-	for (i = 0; i < 8; i++) {
-		if (buf[1] & ((1 << 7) >> i)) {
-			c = 2;
-		}
-		if (buf[0] & ((1 << 7) >> i)) {
-			c++;
-		}
-		if (useColor) {
-			char *color = "";
-			switch (c) {
-			case 0:
-				color = Color_BGWHITE;
-				break;
-			case 1:
-				color = Color_BGRED;
-				break;
-			case 2:
-				color = Color_BGBLUE;
-				break;
-			case 3:
-				color = Color_BGBLACK;
-				break;
-			}
-			if (p) {
-				p->cb_printf("%s  ", color);
-			} else {
-				printf("%s  ", color);
-			}
-		} else {
-			const char *chstr = "#=-.";
-			const char ch = chstr[c % 4];
-			if (p) {
-				p->cb_printf("%c%c", ch, ch);
-			} else {
-				printf("%c%c", ch, ch);
-			}
-		}
-		c = 0;
-	}
-}
-
-RZ_API void rz_print_2bpp_tiles(RzPrint *p, ut8 *buf, ut32 tiles) {
-	int i, r;
-	const bool useColor = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
-	for (i = 0; i < 8; i++) {
-		for (r = 0; r < tiles; r++) {
-			rz_print_2bpp_row(p, buf + 2 * i + r * 16);
-		}
-		if (p) {
-			if (useColor) {
-				p->cb_printf(Color_RESET "\n");
-			} else {
-				p->cb_printf("\n");
-			}
-		} else {
-			printf("\n");
-		}
 	}
 }
 

@@ -337,7 +337,7 @@ NAME=pu 10
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=pu 10
 EXPECT=<<EOF
-%31%ed%5e%89%e1%83%e4%f0%50%54
+1%ed%5e%89%e1%83%e4%f0PT
 EOF
 RUN
 

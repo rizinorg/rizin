@@ -5,3 +5,71 @@ EXPECT=<<EOF
 [{"value":0,"string":""}]
 EOF
 RUN
+
+NAME=Print urlencode
+FILE==
+CMDS=<<EOF
+w /usr/local/sbin:/usr/local/bin:/usr/bin
+pu 40
+pu0
+ww /usr/local/sbin:/usr/local/bin:/usr/bin
+puw 80
+EOF
+EXPECT=<<EOF
+%2fusr%2flocal%2fsbin%3a%2fusr%2flocal%2fbin%3a%2fusr%2fbin%00
+%2fusr%2flocal%2fsbin%3a%2fusr%2flocal%2fbin%3a%2fusr%2fbin
+%2fusr%2flocal%2fsbin%3a%2fusr%2flocal%2fbin%3a%2fusr%2fbin%00
+EOF
+RUN
+
+NAME=print utf16le string + json
+FILE==
+CMDS=<<EOF
+wx 680065006c006c006f000000
+psw
+pswj
+EOF
+EXPECT=<<EOF
+hello
+{"string":"hello","offset":0,"section":"unknown","length":5,"type":"utf16le"}
+EOF
+RUN
+
+NAME=print utf32le string + json
+FILE==
+CMDS=<<EOF
+wx 68000000650000006c0000006c0000006f00000000000000
+psW
+psWj
+EOF
+EXPECT=<<EOF
+hello
+{"string":"hello","offset":0,"section":"unknown","length":5,"type":"utf32le"}
+EOF
+RUN
+
+NAME=print utf16be string + json
+FILE==
+CMDS=<<EOF
+wx 00680065006c006c006f0000
+psm
+psmj
+EOF
+EXPECT=<<EOF
+hello
+{"string":"hello","offset":0,"section":"unknown","length":5,"type":"utf16be"}
+EOF
+RUN
+
+NAME=print utf32be string + json
+FILE==
+CMDS=<<EOF
+wx 00000068000000650000006c0000006c0000006f00000000
+psM
+psMj
+EOF
+EXPECT=<<EOF
+hello
+{"string":"hello","offset":0,"section":"unknown","length":5,"type":"utf32be"}
+EOF
+RUN
