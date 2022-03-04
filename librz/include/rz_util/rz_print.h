@@ -185,7 +185,6 @@ RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64
 RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
 RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
 RZ_API const char *rz_print_color_op_type(RzPrint *p, ut32 analysis_type);
-RZ_API void rz_print_set_interrupted(int i);
 RZ_API void rz_print_init_rowoffsets(RzPrint *p);
 RZ_API ut32 rz_print_rowoff(RzPrint *p, int i);
 RZ_API void rz_print_set_rowoff(RzPrint *p, int i, ut32 offset, bool overwrite);
@@ -195,10 +194,7 @@ RZ_API const char *rz_print_rowlog(RzPrint *print, const char *str);
 RZ_API void rz_print_rowlog_done(RzPrint *print, const char *str);
 
 // WIP
-RZ_API int rz_print_unpack7bit(const char *src, char *dest);
-RZ_API int rz_print_pack7bit(const char *src, char *dest);
 RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr);
-RZ_API int rz_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off);
 RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, const char **colors);
 RZ_API char *rz_print_json_human(const char *s);
 RZ_API char *rz_print_json_path(const char *s, int pos);
