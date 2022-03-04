@@ -285,7 +285,7 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 4)) { // -x
-		int h = rz_str_hash(str);
+		int h = rz_str_djb2_hash(str);
 		printf("0x%x\n", h);
 		return true;
 	} else if (flags & (1 << 5)) { // -k

@@ -331,7 +331,7 @@ fail:
 }
 
 // Compute a 64 bit DJB hash of a string.
-RZ_API ut64 rz_str_hash64(const char *s) {
+RZ_API ut64 rz_str_djb2_hash(const char *s) {
 	ut64 len, h = 5381;
 	if (!s) {
 		return 0;
@@ -340,11 +340,6 @@ RZ_API ut64 rz_str_hash64(const char *s) {
 		h = (h ^ (h << 5)) ^ *s++;
 	}
 	return h;
-}
-
-// Compute a 32bit DJB hash of a string.
-RZ_API ut32 rz_str_hash(const char *s) {
-	return (ut32)rz_str_hash64(s);
 }
 
 RZ_API int rz_str_delta(char *p, char a, char b) {
