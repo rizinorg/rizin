@@ -4766,7 +4766,7 @@ static void core_print_2bpp_tiles(RzCore *core, ut32 tiles) {
 	}
 }
 
-static inline void core_print_raw_buffer(RzStrStringifyOpt *opt) {
+static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 	char *str = rz_str_stringify_raw_buffer(opt, NULL);
 	if (str) {
 		rz_cons_strcat(str);
