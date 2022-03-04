@@ -3881,9 +3881,10 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
  * \brief Converts a raw buffer to a printable string based on the selected options
  *
  * \param  option Pointer to RzStrStringifyOpt.
+ * \param  length The real string length.
  * \return The stringified raw buffer
  */
-RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option) {
+RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length) {
 	rz_return_val_if_fail(option && option->buffer && option->encoding != RZ_STRING_ENC_GUESS, NULL);
 	if (option->length < 1) {
 		return NULL;
@@ -3891,31 +3892,32 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option) {
 
 	RzStrBuf sb;
 	const ut8 *buf = option->buffer;
-	ut32 length = option->length;
+	ut32 buflen = option->length;
 	RzStrEnc enc = option->encoding;
 	ut32 wrap_at = option->wrap_at;
 	RzRune rune;
+	ut32 n_runes = 0;
 	int rsize = 1; // rune size
 
 	rz_strbuf_init(&sb);
-	for (ut32 i = 0, n_runes = 0; i < length; i += rsize) {
+	for (ut32 i = 0, line_runes = 0; i < buflen; i += rsize) {
 		if (enc == RZ_STRING_ENC_UTF32LE) {
-			rsize = rz_utf32le_decode(&buf[i], length - i, &rune);
+			rsize = rz_utf32le_decode(&buf[i], buflen - i, &rune);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16LE) {
-			rsize = rz_utf16le_decode(&buf[i], length - i, &rune);
+			rsize = rz_utf16le_decode(&buf[i], buflen - i, &rune);
 			if (rsize == 1) {
 				rsize = 2;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF32BE) {
-			rsize = rz_utf32be_decode(&buf[i], length - i, &rune);
+			rsize = rz_utf32be_decode(&buf[i], buflen - i, &rune);
 			if (rsize) {
 				rsize = 4;
 			}
 		} else if (enc == RZ_STRING_ENC_UTF16BE) {
-			rsize = rz_utf16be_decode(&buf[i], length - i, &rune);
+			rsize = rz_utf16be_decode(&buf[i], buflen - i, &rune);
 			if (rsize == 1) {
 				rsize = 2;
 			}
@@ -3933,22 +3935,22 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option) {
 			rune = buf[i];
 			rsize = rune < 0x7F ? 1 : 0;
 		} else {
-			rsize = rz_utf8_decode(&buf[i], length - i, &rune);
+			rsize = rz_utf8_decode(&buf[i], buflen - i, &rune);
 		}
 
 		if (rsize == 0) {
 			switch (enc) {
 			case RZ_STRING_ENC_UTF32LE:
-				rsize = RZ_MIN(4, length - i);
+				rsize = RZ_MIN(4, buflen - i);
 				break;
 			case RZ_STRING_ENC_UTF16LE:
-				rsize = RZ_MIN(2, length - i);
+				rsize = RZ_MIN(2, buflen - i);
 				break;
 			case RZ_STRING_ENC_UTF32BE:
-				rsize = RZ_MIN(4, length - i);
+				rsize = RZ_MIN(4, buflen - i);
 				break;
 			case RZ_STRING_ENC_UTF16BE:
-				rsize = RZ_MIN(2, length - i);
+				rsize = RZ_MIN(2, buflen - i);
 				break;
 			default:
 				rsize = 1;
@@ -3956,6 +3958,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option) {
 			}
 			for (int j = 0; j < rsize; ++j) {
 				rune = buf[i + j];
+				n_runes++;
 				if (option->urlencode) {
 					rz_strbuf_appendf(&sb, "%%%02x", rune);
 				} else if (option->json) {
@@ -3964,16 +3967,17 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option) {
 					rz_strbuf_appendf(&sb, "\\x%02x", rune);
 				}
 			}
-			if (wrap_at && n_runes + 1 >= wrap_at) {
+			if (wrap_at && line_runes + 1 >= wrap_at) {
 				rz_strbuf_appendf(&sb, "\n");
-				n_runes = 0;
+				line_runes = 0;
 			}
 			continue;
 		} else if (rune == '\0' && option->stop_at_nil) {
 			break;
 		} else if (rune == '\n') {
-			n_runes = 0;
+			line_runes = 0;
 		}
+		line_runes++;
 		n_runes++;
 		if (option->urlencode) {
 			if (IS_DIGIT(rune) || IS_UPPER(rune) || IS_LOWER(rune) || rune == '-' || rune == '_' || rune == '.' || rune == '~') {
@@ -4013,6 +4017,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option) {
 					rune = buf[i + j];
 					rz_strbuf_appendf(&sb, "\\u%04x", rune);
 				}
+				n_runes += rsize - 1;
 			}
 		} else {
 			if (rune == '\\') {
@@ -4029,13 +4034,16 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option) {
 				}
 			}
 		}
-		if (wrap_at && n_runes + 1 >= wrap_at) {
+		if (wrap_at && line_runes + 1 >= wrap_at) {
 			rz_strbuf_appendf(&sb, "\n");
-			n_runes = 0;
+			line_runes = 0;
 		}
 	}
 	if (!option->json) {
 		rz_strbuf_appendf(&sb, "\n");
+	}
+	if (length) {
+		*length = n_runes;
 	}
 	return rz_strbuf_drain_nofree(&sb);
 }

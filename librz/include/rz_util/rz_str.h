@@ -268,7 +268,7 @@ typedef struct rz_str_stringify_opt_t {
 } RzStrStringifyOpt;
 
 RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);
-RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option);
+RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length);
 
 #ifdef __cplusplus
 }

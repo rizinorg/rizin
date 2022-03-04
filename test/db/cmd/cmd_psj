@@ -46,7 +46,7 @@ NAME=psj utf32le
 FILE=bins/elf/crackme0x00b
 CMDS=psj 32 @ obj.pass.1964
 EXPECT=<<EOF
-{"string":"w0wgreat","offset":134520896,"section":".data","length":32,"type":"utf32le"}
+{"string":"w0wgreat","offset":134520896,"section":".data","length":8,"type":"utf32le"}
 EOF
 RUN
 
@@ -54,7 +54,7 @@ NAME=psj utf32be
 FILE=bins/elf/crackme0x00b
 CMDS=psj 32 @ 0x0804a03d
 EXPECT=<<EOF
-{"string":"w0wgreat","offset":134520893,"section":".data","length":32,"type":"utf32be"}
+{"string":"w0wgreat","offset":134520893,"section":".data","length":8,"type":"utf32be"}
 EOF
 RUN
 

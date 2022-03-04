@@ -4498,19 +4498,20 @@ static inline char *get_section_name(RzCore *core) {
 	return section_name;
 }
 
-static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding) {
+static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding, bool stop_at_nil) {
 	const char *kindstr = rz_str_enc_as_string(encoding);
 	char *section = get_section_name(core);
 	if (!section) {
 		return;
 	}
-
+	ut32 dlength = 0;
 	RzStrStringifyOpt opt = { 0 };
 	opt.buffer = block;
 	opt.length = len;
 	opt.encoding = encoding;
 	opt.json = true;
-	char *dstring = rz_str_stringify_raw_buffer(&opt);
+	opt.stop_at_nil = stop_at_nil;
+	char *dstring = rz_str_stringify_raw_buffer(&opt, &dlength);
 	if (!dstring) {
 		free(section);
 		return;
@@ -4529,7 +4530,7 @@ static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc
 	pj_raw(pj, "\"");
 	pj_kn(pj, "offset", core->offset);
 	pj_ks(pj, "section", section);
-	pj_ki(pj, "length", len);
+	pj_kn(pj, "length", dlength);
 	pj_ks(pj, "type", kindstr);
 	pj_end(pj);
 	rz_cons_println(pj_string(pj));
@@ -4766,7 +4767,7 @@ static void core_print_2bpp_tiles(RzCore *core, ut32 tiles) {
 }
 
 static inline void core_print_raw_buffer(RzStrStringifyOpt *opt) {
-	char *str = rz_str_stringify_raw_buffer(opt);
+	char *str = rz_str_stringify_raw_buffer(opt, NULL);
 	if (str) {
 		rz_cons_strcat(str);
 		free(str);
@@ -5715,7 +5716,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					len = RZ_MIN(len, core->blocksize);
 				}
 				RzStrEnc enc = rz_str_guess_encoding_from_buffer(core->block, len);
-				print_json_string(core, core->block, len, enc);
+				print_json_string(core, core->block, len, enc, l != len);
 			}
 			break;
 		case 'i': // "psi"
@@ -5817,7 +5818,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					}
 					s[j] = '\0';
 					if (input[2] == 'j') { // pszj
-						print_json_string(core, (const ut8 *)s, j, RZ_STRING_ENC_8BIT);
+						print_json_string(core, (const ut8 *)s, j, RZ_STRING_ENC_8BIT, true);
 					} else {
 						rz_cons_println(s);
 					}
@@ -5831,7 +5832,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				// TODO: add support for 2-4 byte length pascal strings
 				if (mylen < core->blocksize) {
 					if (input[2] == 'j') { // pspj
-						print_json_string(core, core->block + 1, mylen, RZ_STRING_ENC_8BIT);
+						print_json_string(core, core->block + 1, mylen, RZ_STRING_ENC_8BIT, true);
 					} else {
 						RzStrStringifyOpt opt = { 0 };
 						opt.buffer = core->block + 1;
@@ -5849,7 +5850,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'w': // "psw"
 			if (l > 0) {
 				if (input[2] == 'j') { // pswj
-					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE);
+					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
 				} else {
 					RzStrStringifyOpt opt = { 0 };
 					opt.buffer = core->block;
@@ -5863,7 +5864,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'W': // "psW"
 			if (l > 0) {
 				if (input[2] == 'j') { // psWj
-					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE);
+					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE, true);
 				} else {
 					RzStrStringifyOpt opt = { 0 };
 					opt.buffer = core->block;
@@ -5901,7 +5902,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					json = input[3] == 'j'; // "psuzj"
 				}
 				if (json) { // psuj
-					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE);
+					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
 				} else {
 					char *str = rz_str_utf16_encode((const char *)core->block, len);
 					rz_cons_println(str);
@@ -5943,7 +5944,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 						rz_core_cmdf(core, "ps%c @ 0x%" PFMT32x, json ? 'j' : ' ', *((ut32 *)core->block + 2));
 					}
 				} else if (json) {
-					print_json_string(core, core->block + 1, len, RZ_STRING_ENC_8BIT);
+					print_json_string(core, core->block + 1, len, RZ_STRING_ENC_8BIT, true);
 				} else {
 					RzStrStringifyOpt opt = { 0 };
 					opt.buffer = core->block + 1;
@@ -6926,7 +6927,7 @@ RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char *
 		rz_core_block_size(core, len);
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE);
+		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
@@ -6948,7 +6949,7 @@ RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char *
 		rz_core_block_size(core, len);
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE);
+		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
@@ -6970,7 +6971,7 @@ RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char *
 		rz_core_block_size(core, len);
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16BE);
+		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16BE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
@@ -6992,7 +6993,7 @@ RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char *
 		rz_core_block_size(core, len);
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32BE);
+		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32BE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
