@@ -501,7 +501,8 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	case 'h': // "?h"
 		if (input[1] == ' ') {
-			rz_cons_printf("0x%08x\n", (ut32)rz_str_hash(input + 2));
+			ut32 hash = (ut32)rz_str_djb2_hash(input + 2);
+			rz_cons_printf("0x%08x\n", hash);
 		} else {
 			eprintf("Usage: ?h [string-to-hash]\n");
 		}
