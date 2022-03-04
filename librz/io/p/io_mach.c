@@ -38,7 +38,7 @@ static int __get_pid(RzIODesc *desc);
 #define MACH_ERROR_STRING(ret) \
 	(mach_error_string(ret) ? mach_error_string(ret) : "(unknown)")
 
-#define RZ_MACH_MAGIC rz_str_hash("mach")
+#define RZ_MACH_MAGIC rz_str_djb2_hash("mach")
 
 typedef struct {
 	task_t task;
@@ -218,7 +218,7 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 	if (!io || !desc || !buf || !dd) {
 		return -1;
 	}
-	if (dd->magic != rz_str_hash("mach")) {
+	if (dd->magic != rz_str_djb2_hash("mach")) {
 		return -1;
 	}
 	memset(buf, 0xff, len);
@@ -420,7 +420,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	riom->task = task;
-	iodd->magic = rz_str_hash("mach");
+	iodd->magic = rz_str_djb2_hash("mach");
 	iodd->data = riom;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
 	pidpath = pid

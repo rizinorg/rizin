@@ -1885,7 +1885,8 @@ static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	switch (format) {
 	case 'q':
 		if (it->hash->bbhash) {
-			a->cb_printf(" h(%08x)", rz_str_hash(it->hash->bbhash));
+			ut32 hash = rz_str_djb2_hash(it->hash->bbhash);
+			a->cb_printf(" h(%08x)", hash);
 		}
 		break;
 	case '*':

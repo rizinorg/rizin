@@ -175,7 +175,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 		shm->name, shm->size);
 #else
 #if HAVE_SHM_OPEN || HAVE_DECL_ASHMEM_NAME_LEN
-	shm->id = rz_str_hash(name);
+	shm->id = rz_str_djb2_hash(name);
 
 #if HAVE_SHM_OPEN
 	shm->fd = shm_open(shm->name, O_CREAT | (rw ? O_RDWR : O_RDONLY), 0644);
@@ -226,7 +226,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 #else
 	shm->id = atoi(ptr);
 	if (!shm->id) {
-		shm->id = rz_str_hash(ptr);
+		shm->id = rz_str_djb2_hash(ptr);
 	}
 
 	shm->buf = shmat(shm->id, 0, 0);
