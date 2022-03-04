@@ -175,11 +175,6 @@ RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char l
 
 RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
 RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
-RZ_API int rz_print_date_dos(RzPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_hfs(RzPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_w32(RzPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_unix(RzPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_get_now(RzPrint *p, char *str);
 RZ_API void rz_print_progressbar(RzPrint *pr, int pc, int _cols);
 RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
 RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
