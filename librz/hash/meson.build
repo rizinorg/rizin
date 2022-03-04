@@ -1,5 +1,6 @@
 rz_hash_sources = [
   'msg_digest.c',
+  'randomart.c',
   'p/algo_crca.c',
   'p/algo_adler32.c',
   'p/algo_fletcher.c',
