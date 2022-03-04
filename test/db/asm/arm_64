@@ -603,6 +603,12 @@ d "mov x1, 0x2a" 410580d2 0x0 (set x1 (bv 64 0x2a))
 d "mov w1, 0x2a" 41058052 0x0 (set x1 (cast 64 false (bv 32 0x2a)))
 d "mov x2, x3" e20303aa 0x0 (set x2 (var x3))
 d "mov w2, w3" e203032a 0x0 (set x2 (cast 64 false (cast 32 false (var x3))))
+d "movk x0, 0xcafe" c05f99f2 0x0 (set x0 (| (& (var x0) (bv 64 0xffffffffffff0000)) (bv 64 0xcafe)))
+d "movk x0, 0xcafe, lsl 16" c05fb9f2 0x0 (set x0 (| (& (var x0) (bv 64 0xffffffff0000ffff)) (bv 64 0xcafe0000)))
+d "movk x0, 0xcafe, lsl 32" c05fd9f2 0x0 (set x0 (| (& (var x0) (bv 64 0xffff0000ffffffff)) (bv 64 0xcafe00000000)))
+d "movk x0, 0xcafe, lsl 48" c05ff9f2 0x0 (set x0 (| (& (var x0) (bv 64 0xffffffffffff)) (bv 64 0xcafe000000000000)))
+d "movk w0, 0xcafe" c05f9972 0x0 (set x0 (cast 64 false (| (& (cast 32 false (var x0)) (bv 32 0xffff0000)) (bv 32 0xcafe))))
+d "movk w0, 0xcafe, lsl 16" c05fb972 0x0 (set x0 (cast 64 false (| (& (cast 32 false (var x0)) (bv 32 0xffff)) (bv 32 0xcafe0000))))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
