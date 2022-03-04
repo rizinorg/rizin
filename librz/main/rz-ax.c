@@ -143,7 +143,6 @@ static int help(void) {
 		"  -i      dump as C byte array ;  rz-ax -i < bytes\n"
 		"  -I      IP address <-> LONG  ;  rz-ax -I 3530468537\n"
 		"  -k      keep base            ;  rz-ax -k 33+3 -> 36\n"
-		"  -K      randomart            ;  rz-ax -K 0x34 1020304050\n"
 		"  -L      bin -> hex(bignum)   ;  rz-ax -L 111111111 # 0x1ff\n"
 		"  -n      binary number        ;  rz-ax -n 0x1234 # 34120000\n"
 		"  -o      octalstr -> raw      ;  rz-ax -o \\162 \\172 # rz\n"
@@ -198,7 +197,6 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'k': flags ^= 1 << 5; break;
 			case 'f': flags ^= 1 << 6; break;
 			case 'd': flags ^= 1 << 7; break;
-			case 'K': flags ^= 1 << 8; break;
 			case 'n': flags ^= 1 << 9; break;
 			case 'u': flags ^= 1 << 10; break;
 			case 't': flags ^= 1 << 11; break;
@@ -292,28 +290,6 @@ dotherax:
 		out_mode = 'I';
 	} else if (flags & (1 << 6)) { // -f
 		out_mode = 'f';
-	} else if (flags & (1 << 8)) { // -K
-		int n = ((strlen(str)) >> 1) + 1;
-		char *s = NULL;
-		buf = (ut8 *)malloc(n);
-		if (!buf) {
-			return false;
-		}
-		ut32 *m = (ut32 *)buf;
-		memset(buf, '\0', n);
-		n = rz_hex_str2bin(str, (ut8 *)buf);
-		if (n < 1 || !memcmp(str, "0x", 2)) {
-			ut64 q = rz_num_math(num, str);
-			s = rz_print_randomart((ut8 *)&q, sizeof(q), q);
-			printf("%s\n", s);
-			free(s);
-		} else {
-			s = rz_print_randomart((ut8 *)buf, n, *m);
-			printf("%s\n", s);
-			free(s);
-		}
-		free(m);
-		return true;
 	} else if (flags & (1 << 9)) { // -n
 		ut64 n = rz_num_math(num, str);
 		if (n >> 32) {
