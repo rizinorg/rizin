@@ -598,7 +598,7 @@ RZ_API int rz_utf8_strlen(const ut8 *str) {
 	return len;
 }
 
-RZ_API int rz_isprint(const RzRune c) {
+RZ_API bool rz_rune_is_printable(const RzRune c) {
 	// RzRunes are most commonly single byte... We can early out with this common case.
 	if (c < 0x34F) {
 		/*

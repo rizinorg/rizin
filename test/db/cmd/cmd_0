@@ -407,7 +407,6 @@ NAME=ps 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=ps 0
 EXPECT=<<EOF
-
 EOF
 RUN
 

@@ -101,3 +101,43 @@ commands:
         optional: true
     modes:
       - RZ_OUTPUT_MODE_JSON
+  - name: psw
+    summary: Print buffer as a utf16le string
+    cname: print_utf16le
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: psW
+    summary: Print buffer as a utf32le string
+    cname: print_utf32le
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: psm
+    summary: Print buffer as a utf16le string
+    cname: print_utf16be
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: psM
+    summary: Print buffer as a utf32le string
+    cname: print_utf32be
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
