@@ -4499,7 +4499,6 @@ static inline char *get_section_name(RzCore *core) {
 }
 
 static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding, bool stop_at_nil) {
-	const char *kindstr = rz_str_enc_as_string(encoding);
 	char *section = get_section_name(core);
 	if (!section) {
 		return;
@@ -4523,6 +4522,8 @@ static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc
 		free(dstring);
 		return;
 	}
+
+	const char *enc_name = rz_str_enc_as_string(encoding);
 	pj_o(pj);
 	pj_k(pj, "string");
 	pj_raw(pj, "\"");
@@ -4531,7 +4532,7 @@ static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc
 	pj_kn(pj, "offset", core->offset);
 	pj_ks(pj, "section", section);
 	pj_kn(pj, "length", dlength);
-	pj_ks(pj, "type", kindstr);
+	pj_ks(pj, "type", enc_name);
 	pj_end(pj);
 	rz_cons_println(pj_string(pj));
 	pj_free(pj);

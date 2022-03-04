@@ -8969,7 +8969,7 @@ static const RzCmdDescArg print_utf16be_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_utf16be_help = {
-	.summary = "Print buffer as a utf16le string",
+	.summary = "Print buffer as a utf16be string",
 	.args = print_utf16be_args,
 };
 
@@ -8983,7 +8983,7 @@ static const RzCmdDescArg print_utf32be_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_utf32be_help = {
-	.summary = "Print buffer as a utf32le string",
+	.summary = "Print buffer as a utf32be string",
 	.args = print_utf32be_args,
 };
 

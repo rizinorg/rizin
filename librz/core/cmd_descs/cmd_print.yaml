@@ -122,7 +122,7 @@ commands:
         type: RZ_CMD_ARG_TYPE_NUM
         optional: true
   - name: psm
-    summary: Print buffer as a utf16le string
+    summary: Print buffer as a utf16be string
     cname: print_utf16be
     modes:
       - RZ_OUTPUT_MODE_STANDARD
@@ -132,7 +132,7 @@ commands:
         type: RZ_CMD_ARG_TYPE_NUM
         optional: true
   - name: psM
-    summary: Print buffer as a utf32le string
+    summary: Print buffer as a utf32be string
     cname: print_utf32be
     modes:
       - RZ_OUTPUT_MODE_STANDARD
