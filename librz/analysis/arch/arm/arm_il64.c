@@ -1670,6 +1670,35 @@ static RzILOpEffect *mvn(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_RBIT
+ * ARM: rbit
+ */
+static RzILOpEffect *rbit(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = 0;
+	RzILOpBitVector *v = ARG(1, &bits);
+	if (!v) {
+		return NULL;
+	}
+	RzILOpEffect *eff = write_reg(REGID(0), VARL("r"));
+	if (!eff) {
+		return NULL;
+	}
+	return SEQ5(
+		SETL("v", v),
+		SETL("i", UN(6, bits)),
+		SETL("r", UN(bits, 0x0)),
+		REPEAT(INV(IS_ZERO(VARL("v"))),
+			SEQ3(
+				SETL("i", SUB(VARL("i"), UN(6, 1))),
+				SETL("r", LOGOR(VARL("r"), ITE(LSB(VARL("v")), SHIFTL0(UN(bits, 1), VARL("i")), UN(bits, 0)))),
+				SETL("v", SHIFTR0(VARL("v"), UN(6, 1))))),
+		eff);
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -2069,6 +2098,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_NGC:
 	case ARM64_INS_NGCS:
 		return mvn(insn);
+	case ARM64_INS_RBIT:
+		return rbit(insn);
 	default:
 		break;
 	}
