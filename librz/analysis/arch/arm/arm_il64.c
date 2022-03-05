@@ -1622,6 +1622,48 @@ static RzILOpEffect *mrs(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_MVN, ARM64_INS_NEG, ARM64_INS_NEGS, ARM64_INS_NGC, ARM64_INS_NGCS
+ * ARM: mvn, neg, negs, ngc, ngcs
+ */
+static RzILOpEffect *mvn(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = 0;
+	RzILOpBitVector *val = ARG(1, &bits);
+	if (!val) {
+		return NULL;
+	}
+	RzILOpBitVector *res;
+	switch (insn->id) {
+	case ARM64_INS_NEG:
+	case ARM64_INS_NEGS:
+		res = NEG(val);
+		break;
+	case ARM64_INS_NGC:
+	case ARM64_INS_NGCS:
+		res = NEG(ADD(val, ITE(VARG("cf"), UN(bits, 0), UN(bits, 1))));
+		break;
+	default: // ARM64_INS_MVN
+		res = LOGNOT(val);
+		break;
+	}
+	RzILOpEffect *set = write_reg(REGID(0), res);
+	if (!set) {
+		return NULL;
+	}
+	if (insn->detail->arm64.update_flags) {
+		return SEQ5(
+			SETL("b", DUP(val)),
+			set,
+			SETG("cf", sub_carry(UN(bits, 0), VARL("b"), insn->id == ARM64_INS_NGC)),
+			SETG("vf", sub_overflow(UN(bits, 0), VARL("b"), REG(0))),
+			update_flags_zn(REG(0)));
+	}
+	return set;
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -1690,6 +1732,9 @@ static RzILOpEffect *mrs(cs_insn *insn) {
  */
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
+	case ARM64_INS_NOP:
+	case ARM64_INS_HINT:
+		return NOP;
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC:
 	case ARM64_INS_SUB:
@@ -1791,8 +1836,6 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return clz(insn);
 	case ARM64_INS_EXTR:
 		return extr(insn);
-	case ARM64_INS_HINT:
-		return NOP;
 	case ARM64_INS_HVC:
 		return hvc(insn);
 	case ARM64_INS_SVC:
@@ -2010,6 +2053,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return msr(insn);
 	case ARM64_INS_MRS:
 		return mrs(insn);
+	case ARM64_INS_MVN:
+	case ARM64_INS_NEG:
+	case ARM64_INS_NEGS:
+	case ARM64_INS_NGC:
+	case ARM64_INS_NGCS:
+		return mvn(insn);
 	default:
 		break;
 	}
