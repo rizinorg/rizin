@@ -1611,6 +1611,36 @@ static RzILOpEffect *msr(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_RMIF
+ * ARM: rmif
+ */
+static RzILOpEffect *rmif(cs_insn *insn) {
+	if (!ISIMM(1) || !ISIMM(2)) {
+		return NULL;
+	}
+	ut32 bits = 64;
+	RzILOpBitVector *val = ARG(0, &bits);
+	if (!val) {
+		return NULL;
+	}
+	ut64 lsb = IMM(1);
+	ut64 mask = IMM(2);
+	RzILOpEffect *eff = NULL;
+	const char *flags[] = { "vf", "cf", "zf", "nf" };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(flags); i++) {
+		if (!(mask & (1ull << i))) {
+			continue;
+		}
+		if (eff) {
+			val = DUP(val);
+		}
+		RzILOpEffect *set = SETG(flags[i], INV(IS_ZERO(LOGAND(val, UN(bits, 1ull << ((i + lsb) % 64))))));
+		eff = eff ? SEQ2(set, eff) : set;
+	}
+	return eff ? eff : NOP;
+}
+
+/**
  * Capstone: ARM64_INS_MRS
  * ARM: mrs
  */
@@ -2176,6 +2206,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_REV32:
 	case ARM64_INS_REV16:
 		return rev(insn);
+	case ARM64_INS_RMIF:
+		return rmif(insn);
 	default:
 		break;
 	}

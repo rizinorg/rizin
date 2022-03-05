@@ -652,6 +652,10 @@ d "rev w0, w1" 2008c05a 0x0 (set x0 (cast 64 false (append (append (cast 8 false
 d "rev32 x0, x1" 2008c0da 0x0 (set x0 (append (append (append (cast 8 false (>> (var x1) (bv 6 0x20) false)) (cast 8 false (>> (var x1) (bv 6 0x28) false))) (append (cast 8 false (>> (var x1) (bv 6 0x30) false)) (cast 8 false (>> (var x1) (bv 6 0x38) false)))) (append (append (cast 8 false (var x1)) (cast 8 false (>> (var x1) (bv 6 0x8) false))) (append (cast 8 false (>> (var x1) (bv 6 0x10) false)) (cast 8 false (>> (var x1) (bv 6 0x18) false))))))
 d "rev16 x0, x1" 2004c0da 0x0 (set x0 (append (append (append (cast 8 false (>> (var x1) (bv 6 0x30) false)) (cast 8 false (>> (var x1) (bv 6 0x38) false))) (append (cast 8 false (>> (var x1) (bv 6 0x20) false)) (cast 8 false (>> (var x1) (bv 6 0x28) false)))) (append (append (cast 8 false (>> (var x1) (bv 6 0x10) false)) (cast 8 false (>> (var x1) (bv 6 0x18) false))) (append (cast 8 false (var x1)) (cast 8 false (>> (var x1) (bv 6 0x8) false))))))
 d "rev16 w0, w1" 2004c05a 0x0 (set x0 (cast 64 false (append (append (cast 8 false (>> (var x1) (bv 6 0x10) false)) (cast 8 false (>> (var x1) (bv 6 0x18) false))) (append (cast 8 false (var x1)) (cast 8 false (>> (var x1) (bv 6 0x8) false))))))
+d "rmif x1, 0x20, 0xf" 2f0410ba 0x0 (seq (set nf (! (is_zero (& (var x1) (bv 64 0x800000000))))) (set zf (! (is_zero (& (var x1) (bv 64 0x400000000))))) (set cf (! (is_zero (& (var x1) (bv 64 0x200000000))))) (set vf (! (is_zero (& (var x1) (bv 64 0x100000000))))))
+d "rmif x1, 0x20, 0" 200410ba 0x0 nop
+d "rmif x1, 0x20, 3" 230410ba 0x0 (seq (set cf (! (is_zero (& (var x1) (bv 64 0x200000000))))) (set vf (! (is_zero (& (var x1) (bv 64 0x100000000))))))
+d "rmif x1, 0x3f, 7" 27841fba 0x0 (seq (set zf (! (is_zero (& (var x1) (bv 64 0x2))))) (set cf (! (is_zero (& (var x1) (bv 64 0x1))))) (set vf (! (is_zero (& (var x1) (bv 64 0x8000000000000000))))))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
