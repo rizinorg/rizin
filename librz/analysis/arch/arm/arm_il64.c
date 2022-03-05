@@ -534,8 +534,8 @@ static RzILOpEffect *adr(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_AND, ARM64_INS_EON, ARM64_INS_EOR
- * ARM: and, eon, eor
+ * Capstone: ARM64_INS_AND, ARM64_INS_EON, ARM64_INS_EOR, ARM64_INS_ORN, ARM64_INS_AORR
+ * ARM: and, eon, eor, orn, orr
  */
 static RzILOpEffect *bitwise(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -556,6 +556,12 @@ static RzILOpEffect *bitwise(cs_insn *insn) {
 		break;
 	case ARM64_INS_EON:
 		res = LOGXOR(a, LOGNOT(b));
+		break;
+	case ARM64_INS_ORN:
+		res = LOGOR(a, LOGNOT(b));
+		break;
+	case ARM64_INS_ORR:
+		res = LOGOR(a, b);
 		break;
 	default: // ARM64_INS_AND
 		res = LOGAND(a, b);
@@ -1719,7 +1725,7 @@ static RzILOpEffect *mvn(cs_insn *insn) {
  * - BTI: FEAT_BTI/Branch Target Identification
  * - CLREX: clears the local monitor
  * - CRC32B, CRC32H, CRC32W, CRC32X, CRC32CB, CRC32CH, CRC32CW, CRC32CX: does crc32
- * - CSDB, DMB, DSB, ESB, ISB: synchronization, memory barriers
+ * - CSDB, DMB, DSB, ESB, ISB, PSB CSYNC, PSSBB: synchronization, memory barriers
  * - DCPS1, DCPS2, DCPS3, DRPS, HLT: debug
  * - ERET, ERETAA, ERETAB: exception return
  *
@@ -1734,6 +1740,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
 	case ARM64_INS_NOP:
 	case ARM64_INS_HINT:
+	case ARM64_INS_PRFM:
+	case ARM64_INS_PRFUM:
 		return NOP;
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC:
@@ -1755,6 +1763,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 #endif
 	case ARM64_INS_EOR:
 	case ARM64_INS_EON:
+	case ARM64_INS_ORN:
+	case ARM64_INS_ORR:
 		return bitwise(insn);
 	case ARM64_INS_ASR:
 	case ARM64_INS_LSL:
