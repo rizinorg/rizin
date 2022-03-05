@@ -1513,13 +1513,19 @@ static RzILOpEffect *mul(cs_insn *insn) {
 	return write_reg(REGID(0), res);
 }
 
+static RzILOpEffect *movn(cs_insn *insn);
+
 /**
- * Capstone: ARM64_INS_MOV
- * ARM: mov
+ * Capstone: ARM64_INS_MOV, ARM64_INS_MOVZ
+ * ARM: mov, movz
  */
 static RzILOpEffect *mov(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
+	}
+	if (ISIMM(1) && IMM(1) == 0 && !strcmp(insn->mnemonic, "movn")) {
+		// Capstone bug making 0000a012 indistinguishable from 0000a052
+		return movn(insn);
 	}
 	ut32 bits = REGBITS(0);
 	RzILOpBitVector *src = ARG(1, &bits);
@@ -1545,6 +1551,27 @@ static RzILOpEffect *movk(cs_insn *insn) {
 	cs_arm64_op *op = &insn->detail->arm64.operands[1];
 	ut32 shift = op->shift.type == ARM64_SFT_LSL ? op->shift.value : 0;
 	return write_reg(REGID(0), LOGOR(LOGAND(src, UN(bits, ~(0xffffull << shift))), UN(bits, ((ut64)op->imm) << shift)));
+}
+
+/**
+ * Capstone: ARM64_INS_MOVN
+ * ARM: movn
+ */
+static RzILOpEffect *movn(cs_insn *insn) {
+	if (!ISREG(0) || !ISIMM(1)) {
+		return NULL;
+	}
+	// The only case where the movn encoding should be disassembled as "movn" is
+	// when (IsZero(imm16) && hw != '00'), according to the "alias conditions" in the reference manual.
+	// Unfortunately, capstone v4 seems to always disassemble as movn, so we still have to implement this.
+	ut32 bits = 0;
+	RzILOpBitVector *src = ARG(0, &bits);
+	if (!src) {
+		return NULL;
+	}
+	cs_arm64_op *op = &insn->detail->arm64.operands[1];
+	ut32 shift = op->shift.type == ARM64_SFT_LSL ? op->shift.value : 0;
+	return write_reg(REGID(0), UN(bits, ~(((ut64)op->imm) << shift)));
 }
 
 /**
@@ -1926,9 +1953,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_MNEG:
 		return mul(insn);
 	case ARM64_INS_MOV:
+	case ARM64_INS_MOVZ:
 		return mov(insn);
 	case ARM64_INS_MOVK:
 		return movk(insn);
+	case ARM64_INS_MOVN:
+		return movn(insn);
 	default:
 		break;
 	}
