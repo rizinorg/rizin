@@ -661,6 +661,8 @@ d "rmif x1, 0x3f, 7" 27841fba 0x0 (seq (set zf (! (is_zero (& (var x1) (bv 64 0x
 d "sbfiz x1, x2, 5, 0xe" 41347b93 0x0 (set x1 (let res (<< (cast 14 false (var x2)) (bv 6 0x5) false) (cast 64 (msb (var res)) (var res))))
 d "sbfx x1, x2, 0, 0xe" 41344093 0x0 (set x1 (let res (cast 14 false (>> (var x2) (bv 6 0x0) false)) (cast 64 (msb (var res)) (var res))))
 d "sbfx x1, x2, 0xc, 0xe" 41644c93 0x0 (set x1 (let res (cast 14 false (>> (var x2) (bv 6 0xc) false)) (cast 64 (msb (var res)) (var res))))
+d "sdiv x0, x1, x2" 200cc29a 0x0 (set x0 (ite (== (var x2) (bv 64 0x0)) (bv 64 0x0) (ite (&& (== (var x1) (bv 64 0x8000000000000000)) (== (var x2) (bv 64 0xffffffffffffffff))) (bv 64 0x8000000000000000) (sdiv (var x1) (var x2)))))
+d "sdiv w0, w1, w2" 200cc21a 0x0 (set x0 (cast 64 false (ite (== (cast 32 false (var x2)) (bv 32 0x0)) (bv 32 0x0) (ite (&& (== (cast 32 false (var x1)) (bv 32 0x80000000)) (== (cast 32 false (var x2)) (bv 32 0xffffffff))) (bv 32 0x80000000) (sdiv (cast 32 false (var x1)) (cast 32 false (var x2)))))))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))

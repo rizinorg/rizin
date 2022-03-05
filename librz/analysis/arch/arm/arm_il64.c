@@ -1827,6 +1827,29 @@ static RzILOpEffect *rev(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_SDIV
+ * ARM: sdiv
+ */
+static RzILOpEffect *sdiv(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *a = ARG(1, &bits);
+	RzILOpBitVector *b = ARG(2, &bits);
+	if (!a || !b) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
+		return NULL;
+	}
+	return write_reg(REGID(0),
+		ITE(EQ(b, UN(bits, 0)), UN(bits, 0),
+			ITE(AND(EQ(a, UN(bits, 1ull << (bits - 1))), EQ(DUP(b), UN(bits, -1))),
+				UN(bits, 1ull << (bits - 1)),
+				SDIV(DUP(a), DUP(b)))));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -2241,6 +2264,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SBFIZ:
 	case ARM64_INS_SBFX:
 		return sbfx(insn);
+	case ARM64_INS_SDIV:
+		return sdiv(insn);
 	default:
 		break;
 	}
