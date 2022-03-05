@@ -1575,6 +1575,53 @@ static RzILOpEffect *movn(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_MSR
+ * ARM: msr
+ */
+static RzILOpEffect *msr(cs_insn *insn) {
+	cs_arm64_op *op = &insn->detail->arm64.operands[0];
+	if (op->type != ARM64_OP_SYS) {
+		return NULL;
+	}
+	if (op->sys != ARM64_SYSREG_NZCV) {
+		return NULL;
+	}
+	ut32 bits = 0;
+	RzILOpBitVector *val = ARG(1, &bits);
+	if (!val) {
+		return NULL;
+	}
+	return SEQ4(
+		SETG("nf", INV(IS_ZERO(LOGAND(val, UN(bits, 1ull << 31))))),
+		SETG("zf", INV(IS_ZERO(LOGAND(DUP(val), UN(bits, 1ull << 30))))),
+		SETG("cf", INV(IS_ZERO(LOGAND(DUP(val), UN(bits, 1ull << 29))))),
+		SETG("vf", INV(IS_ZERO(LOGAND(DUP(val), UN(bits, 1ull << 28))))));
+}
+
+/**
+ * Capstone: ARM64_INS_MRS
+ * ARM: mrs
+ */
+static RzILOpEffect *mrs(cs_insn *insn) {
+	cs_arm64_op *op = &insn->detail->arm64.operands[1];
+	if (!ISREG(0) || op->type != ARM64_OP_SYS) {
+		return NULL;
+	}
+	if (op->sys != ARM64_SYSREG_NZCV) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
+	return write_reg(REGID(0),
+		LOGOR(ITE(VARG("nf"), UN(bits, 1ull << 31), UN(bits, 0)),
+			LOGOR(ITE(VARG("zf"), UN(bits, 1ull << 30), UN(bits, 0)),
+				LOGOR(ITE(VARG("cf"), UN(bits, 1ull << 29), UN(bits, 0)),
+					ITE(VARG("vf"), UN(bits, 1ull << 28), UN(bits, 0))))));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -1959,6 +2006,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return movk(insn);
 	case ARM64_INS_MOVN:
 		return movn(insn);
+	case ARM64_INS_MSR:
+		return msr(insn);
+	case ARM64_INS_MRS:
+		return mrs(insn);
 	default:
 		break;
 	}

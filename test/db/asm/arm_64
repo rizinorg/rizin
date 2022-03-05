@@ -625,6 +625,8 @@ d "movn x0, 0, lsl 16" 0000a092 0x0 (set x0 (bv 64 0xffffffffffffffff))
 d "movn w0, 0, lsl 16" 0000a012 0x0 (set x0 (cast 64 false (bv 32 0xffffffff)))
 d "movz x0, 0, lsl 16" 0000a0d2 0x0 (set x0 (bv 64 0x0))
 d "movz w0, 0, lsl 16" 0000a052 0x0 (set x0 (cast 64 false (bv 32 0x0)))
+d "msr nzcv, x1" 01421bd5 0x0 (seq (set nf (! (is_zero (& (var x1) (bv 64 0x80000000))))) (set zf (! (is_zero (& (var x1) (bv 64 0x40000000))))) (set cf (! (is_zero (& (var x1) (bv 64 0x20000000))))) (set vf (! (is_zero (& (var x1) (bv 64 0x10000000))))))
+d "mrs x1, nzcv" 01423bd5 0x0 (set x1 (| (ite (var nf) (bv 64 0x80000000) (bv 64 0x0)) (| (ite (var zf) (bv 64 0x40000000) (bv 64 0x0)) (| (ite (var cf) (bv 64 0x20000000) (bv 64 0x0)) (ite (var vf) (bv 64 0x10000000) (bv 64 0x0))))))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
