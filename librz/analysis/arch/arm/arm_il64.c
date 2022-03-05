@@ -465,7 +465,7 @@ static RzILOpEffect *update_flags_zn00(RzILOpBitVector *v) {
 
 /**
  * Capstone: ARM64_INS_ADD, ARM64_INS_ADC, ARM64_INS_SUB, ARM64_INS_SBC
- * ARM: add, adds, adc, adcs, sub, subs, sbc
+ * ARM: add, adds, adc, adcs, sub, subs, sbc, sbcs
  */
 static RzILOpEffect *add_sub(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -578,8 +578,8 @@ static RzILOpEffect *bitwise(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_ASR, ARM64_INS_LSL, ARM64_INS_LSR
- * ARM: asr, asrv, lsl, lslv, lsr, lsrv
+ * Capstone: ARM64_INS_ASR, ARM64_INS_LSL, ARM64_INS_LSR, ARM64_INS_ROR
+ * ARM: asr, asrv, lsl, lslv, lsr, lsrv, ror, rorv
  */
 static RzILOpEffect *shift(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -603,6 +603,9 @@ static RzILOpEffect *shift(cs_insn *insn) {
 		break;
 	case ARM64_INS_LSR:
 		res = SHIFTR0(a, b);
+		break;
+	case ARM64_INS_ROR:
+		res = LOGOR(SHIFTR0(a, b), SHIFTL0(DUP(a), NEG(DUP(b))));
 		break;
 	default: // ARM64_INS_LSL
 		res = SHIFTL0(a, b);
@@ -1853,7 +1856,7 @@ static RzILOpEffect *rev(cs_insn *insn) {
  * - BTI: FEAT_BTI/Branch Target Identification
  * - CLREX: clears the local monitor
  * - CRC32B, CRC32H, CRC32W, CRC32X, CRC32CB, CRC32CH, CRC32CW, CRC32CX: does crc32
- * - CSDB, DMB, DSB, ESB, ISB, PSB CSYNC, PSSBB: synchronization, memory barriers
+ * - CSDB, DMB, DSB, ESB, ISB, PSB CSYNC, PSSBB, SB: synchronization, memory barriers
  * - DCPS1, DCPS2, DCPS3, DRPS, HLT: debug
  * - ERET, ERETAA, ERETAB: exception return
  *
@@ -1897,6 +1900,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_ASR:
 	case ARM64_INS_LSL:
 	case ARM64_INS_LSR:
+	case ARM64_INS_ROR:
 		return shift(insn);
 	case ARM64_INS_B:
 	case ARM64_INS_BR:
