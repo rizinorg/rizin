@@ -645,6 +645,8 @@ d "ngcs w1, w2" e103027a 0x0 (seq (set b (cast 32 false (var x2))) (set x1 (cast
 d "nop" 1f2003d5 0x0 nop
 d "rbit x1, x2" 4100c0da 0x0 (seq (set v (var x2)) (set i (bv 6 0x0)) (set r (bv 64 0x0)) (repeat (! (is_zero (var v))) (seq (set i (- (var i) (bv 6 0x1))) (set r (| (var r) (ite (lsb (var v)) (<< (bv 64 0x1) (var i) false) (bv 64 0x0)))) (set v (>> (var v) (bv 6 0x1) false)))) (set x1 (var r)))
 d "rbit w1, w2" 4100c05a 0x0 (seq (set v (cast 32 false (var x2))) (set i (bv 6 0x20)) (set r (bv 32 0x0)) (repeat (! (is_zero (var v))) (seq (set i (- (var i) (bv 6 0x1))) (set r (| (var r) (ite (lsb (var v)) (<< (bv 32 0x1) (var i) false) (bv 32 0x0)))) (set v (>> (var v) (bv 6 0x1) false)))) (set x1 (cast 64 false (var r))))
+d "ret x2" 40005fd6 0x0 (jmp (var x2))
+d "ret" c0035fd6 0x0 (jmp (var x30))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))

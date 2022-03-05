@@ -1755,7 +1755,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 			return -1;
 		}
 	}
-	int haa = hackyArmAnal(a, op, buf, len);
+	int haa = hackyArmAnal(a, op, buf, len); // TODO: disable this for capstone 5 after testing that everything works
 	if (haa > 0) {
 		return haa;
 	}

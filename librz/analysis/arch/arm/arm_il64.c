@@ -612,12 +612,18 @@ static RzILOpEffect *shift(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_B
- * ARM: b, b.cond
+ * Capstone: ARM64_INS_B, ARM64_INS_RET, ARM64_INS_RETAA, ARM64_INS_RETAB
+ * ARM: b, b.cond, ret, retaa, retab
  */
 static RzILOpEffect *branch(cs_insn *insn) {
-	ut32 bits = 64;
-	RzILOpBitVector *a = ARG(0, &bits);
+	RzILOpBitVector *a;
+	if (OPCOUNT() == 0) {
+		// for ARM64_INS_RET and similar
+		a = read_reg(ARM64_REG_LR);
+	} else {
+		ut32 bits = 64;
+		a = ARG(0, &bits);
+	}
 	if (!a) {
 		return NULL;
 	}
@@ -1801,11 +1807,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return shift(insn);
 	case ARM64_INS_B:
 	case ARM64_INS_BR:
+	case ARM64_INS_RET:
 #if CS_API_MAJOR > 4
 	case ARM64_INS_BRAA:
 	case ARM64_INS_BRAAZ:
 	case ARM64_INS_BRAB:
 	case ARM64_INS_BRABZ:
+	case ARM64_INS_RETAA:
+	case ARM64_INS_RETAB:
 #endif
 		return branch(insn);
 	case ARM64_INS_BL:
