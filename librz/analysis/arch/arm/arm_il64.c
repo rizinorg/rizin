@@ -1705,6 +1705,69 @@ static RzILOpEffect *rbit(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_REV, ARM64_INS_REV32, ARM64_INS_REV16
+ * ARM: rev, rev32, rev16
+ */
+static RzILOpEffect *rev(cs_insn *insn) {
+	if (!ISREG(0) || !ISREG(1)) {
+		return NULL;
+	}
+	ut32 dst_bits = REGBITS(0);
+	arm64_reg src_reg = xreg_of_reg(REGID(1));
+	ut32 container_bits = dst_bits;
+	if (insn->id == ARM64_INS_REV32) {
+		container_bits = 32;
+	} else if (insn->id == ARM64_INS_REV16) {
+		container_bits = 16;
+	}
+	RzILOpBitVector *src = read_reg(src_reg);
+	if (!src) {
+		return NULL;
+	}
+	RzILOpBitVector *res;
+	if (container_bits == 16) {
+		res = APPEND(
+			APPEND(
+				UNSIGNED(8, SHIFTR0(src, UN(6, 0x10))),
+				UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x18)))),
+			APPEND(
+				UNSIGNED(8, DUP(src)),
+				UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x8)))));
+	} else {
+		res = APPEND(
+			APPEND(
+				UNSIGNED(8, DUP(src)),
+				UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x8)))),
+			APPEND(
+				UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x10))),
+				UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x18)))));
+	}
+	if (dst_bits == 64) {
+		if (container_bits == 16) {
+			res = APPEND(
+				APPEND(
+					APPEND(
+						UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x30))),
+						UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x38)))),
+					APPEND(
+						UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x20))),
+						UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x28))))),
+				res);
+		} else {
+			RzILOpBitVector *high = APPEND(
+				APPEND(
+					UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x20))),
+					UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x28)))),
+				APPEND(
+					UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x30))),
+					UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x38)))));
+			res = container_bits == 32 ? APPEND(high, res) : APPEND(res, high);
+		}
+	}
+	return write_reg(REGID(0), res);
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -2109,6 +2172,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return mvn(insn);
 	case ARM64_INS_RBIT:
 		return rbit(insn);
+	case ARM64_INS_REV:
+	case ARM64_INS_REV32:
+	case ARM64_INS_REV16:
+		return rev(insn);
 	default:
 		break;
 	}
