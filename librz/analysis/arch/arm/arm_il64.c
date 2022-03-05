@@ -1644,6 +1644,32 @@ static RzILOpEffect *rmif(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_SBFX, ARM64_INS_SBFIZ
+ * ARM: sbfx, sbfiz
+ */
+static RzILOpEffect *sbfx(cs_insn *insn) {
+	if (!ISREG(0) || !ISIMM(2) || !ISIMM(3)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *src = ARG(1, &bits);
+	if (!src) {
+		return NULL;
+	}
+	ut64 lsb = IMM(2);
+	ut64 width = IMM(3);
+	RzILOpBitVector *res;
+	if (insn->id == ARM64_INS_SBFIZ) {
+		res = SHIFTL0(UNSIGNED(width, src), UN(6, lsb));
+	} else {
+		// ARM64_INS_SBFX
+		res = UNSIGNED(width, SHIFTR0(src, UN(6, lsb)));
+	}
+	res = LET("res", res, SIGNED(bits, VARLP("res")));
+	return write_reg(REGID(0), res);
+}
+
+/**
  * Capstone: ARM64_INS_MRS
  * ARM: mrs
  */
@@ -2212,6 +2238,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return rev(insn);
 	case ARM64_INS_RMIF:
 		return rmif(insn);
+	case ARM64_INS_SBFIZ:
+	case ARM64_INS_SBFX:
+		return sbfx(insn);
 	default:
 		break;
 	}
