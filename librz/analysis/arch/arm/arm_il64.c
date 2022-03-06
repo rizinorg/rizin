@@ -1157,22 +1157,32 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 /**
  * Capstone: ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STRB, ARM64_INS_STURB, ARM64_INS_STRH, ARM64_INS_STURH,
  *           ARM64_INS_STLLR, ARM64_INS_STLLRB, ARM64_INS_STLLRH, ARM64_INS_STLR, ARM64_INS_STLRB, ARM64_INS_STLRH,
- *           ARM64_INS_STLUR, ARM64_INS_STLURB, ARM64_INS_STLURH
- * ARM: str, stur, strb, sturb, strh, sturh, stllr, stllrb, stllrh, stlr, stlrb, stlrh, stlur, stlurb, stlurh
+ *           ARM64_INS_STLUR, ARM64_INS_STLURB, ARM64_INS_STLURH,
+ *           ARM64_INS_STP
+ * ARM: str, stur, strb, sturb, strh, sturh, stllr, stllrb, stllrh, stlr, stlrb, stlrh, stlur, stlurb, stlurh, stp
  */
 static RzILOpEffect *str(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
+	bool pair = insn->id == ARM64_INS_STP;
 	RzILOpBitVector *val = read_reg(xreg_of_reg(REGID(0)));
 	if (!val) {
 		return NULL;
 	}
-	size_t addr_op = 1;
+	RzILOpBitVector *val2 = NULL;
+	if (pair) {
+		val2 = read_reg(xreg_of_reg(REGID(1)));
+		if (!val2) {
+			rz_il_op_pure_free(val);
+		}
+	}
+	size_t addr_op = pair ? 2 : 1;
 	ut32 addr_bits = 64;
 	RzILOpBitVector *addr = ARG(addr_op, &addr_bits);
 	if (!addr) {
 		rz_il_op_pure_free(val);
+		rz_il_op_pure_free(val2);
 		return NULL;
 	}
 	ut32 bits;
@@ -1191,7 +1201,7 @@ static RzILOpEffect *str(cs_insn *insn) {
 	case ARM64_INS_STLURH:
 		bits = 16;
 		break;
-	default: // ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STLLR, ARM64_INS_STLR, ARM64_INS_STLUR
+	default: // ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STLLR, ARM64_INS_STLR, ARM64_INS_STLUR, ARM64_INS_STP
 		bits = REGBITS(0);
 		break;
 	}
@@ -1199,6 +1209,10 @@ static RzILOpEffect *str(cs_insn *insn) {
 		val = UNSIGNED(bits, val);
 	}
 	RzILOpEffect *eff = bits == 8 ? STORE(addr, val) : STOREW(addr, val);
+	if (pair) {
+		RzILOpBitVector *addr2 = ADD(DUP(addr), U64(bits / 8));
+		eff = SEQ2(eff, bits == 8 ? STORE(addr2, val2) : STOREW(addr2, val2));
+	}
 	RzILOpEffect *wb_eff = writeback(insn, addr_op, addr);
 	if (wb_eff) {
 		eff = SEQ2(eff, wb_eff);
@@ -2444,6 +2458,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STLUR:
 	case ARM64_INS_STLURB:
 	case ARM64_INS_STLURH:
+	case ARM64_INS_STP:
 		return str(insn);
 	default:
 		break;

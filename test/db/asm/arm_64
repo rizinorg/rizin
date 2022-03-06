@@ -702,6 +702,10 @@ d "stlur x1, [x2, 3]" 413000d9 0x0 (storew 0 (+ (var x2) (bv 64 0x3)) (var x1))
 d "stlur w1, [x2, 3]" 41300099 0x0 (storew 0 (+ (var x2) (bv 64 0x3)) (cast 32 false (var x1)))
 d "stlurb w1, [x2, 3]" 41300019 0x0 (store 0 (+ (var x2) (bv 64 0x3)) (cast 8 false (var x1)))
 d "stlurh w1, [x2, 3]" 41300059 0x0 (storew 0 (+ (var x2) (bv 64 0x3)) (cast 16 false (var x1)))
+d "stp x1, x2, [x3]" 610800a9 0x0 (seq (storew 0 (var x3) (var x1)) (storew 0 (+ (var x3) (bv 64 0x8)) (var x2)))
+d "stp w1, w2, [x3]" 61080029 0x0 (seq (storew 0 (var x3) (cast 32 false (var x1))) (storew 0 (+ (var x3) (bv 64 0x4)) (var x2)))
+d "stp w1, w2, [sp, 0x10]" e10b0229 0x0 (seq (storew 0 (+ (var sp) (bv 64 0x10)) (cast 32 false (var x1))) (storew 0 (+ (+ (var sp) (bv 64 0x10)) (bv 64 0x4)) (var x2)))
+d "stp w1, w2, [sp, 0x10]!" e10b8229 0x0 (seq (storew 0 (+ (var sp) (bv 64 0x10)) (cast 32 false (var x1))) (storew 0 (+ (+ (var sp) (bv 64 0x10)) (bv 64 0x4)) (var x2)) (set sp (+ (var sp) (bv 64 0x10))))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
