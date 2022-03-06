@@ -665,6 +665,7 @@ d "sdiv x0, x1, x2" 200cc29a 0x0 (set x0 (ite (== (var x2) (bv 64 0x0)) (bv 64 0
 d "sdiv w0, w1, w2" 200cc21a 0x0 (set x0 (cast 64 false (ite (== (cast 32 false (var x2)) (bv 32 0x0)) (bv 32 0x0) (ite (&& (== (cast 32 false (var x1)) (bv 32 0x80000000)) (== (cast 32 false (var x2)) (bv 32 0xffffffff))) (bv 32 0x80000000) (sdiv (cast 32 false (var x1)) (cast 32 false (var x2)))))))
 d "setf8 w2" 4d08003a 0x0 (seq (set vf (^^ (msb (cast 9 false (var x2))) (msb (cast 8 false (var x2))))) (set zf (is_zero (cast 8 false (var x2)))) (set nf (msb (cast 8 false (var x2)))))
 d "setf16 w2" 4d48003a 0x0 (seq (set vf (^^ (msb (cast 17 false (var x2))) (msb (cast 16 false (var x2))))) (set zf (is_zero (cast 16 false (var x2)))) (set nf (msb (cast 16 false (var x2)))))
+d "smaddl x1, w2, w3, x4" 4110239b 0x0 (set x1 (+ (var x4) (* (cast 64 (msb (cast 32 false (var x2))) (cast 32 false (var x2))) (cast 64 (msb (cast 32 false (var x3))) (cast 32 false (var x3))))))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))

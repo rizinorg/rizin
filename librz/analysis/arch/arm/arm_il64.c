@@ -1868,6 +1868,28 @@ static RzILOpEffect *setf(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_SMADDL
+ * ARM: smaddl
+ */
+static RzILOpEffect *smaddl(cs_insn *insn) {
+	if (!ISREG(0) || REGBITS(0) != 64) {
+		return NULL;
+	}
+	ut32 bits = 32;
+	RzILOpBitVector *x = ARG(1, &bits);
+	RzILOpBitVector *y = ARG(2, &bits);
+	bits = 64;
+	RzILOpBitVector *addend = ARG(3, &bits);
+	if (!x || !y || !addend) {
+		rz_il_op_pure_free(x);
+		rz_il_op_pure_free(y);
+		rz_il_op_pure_free(addend);
+		return NULL;
+	}
+	return write_reg(REGID(0), ADD(addend, MUL(SIGNED(64, x), SIGNED(64, y))));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -1940,6 +1962,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_HINT:
 	case ARM64_INS_PRFM:
 	case ARM64_INS_PRFUM:
+	case ARM64_INS_SEV:
+	case ARM64_INS_SEVL:
 		return NOP;
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC:
@@ -2287,6 +2311,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SETF8:
 	case ARM64_INS_SETF16:
 		return setf(insn);
+	case ARM64_INS_SMADDL:
+		return smaddl(insn);
 	default:
 		break;
 	}
