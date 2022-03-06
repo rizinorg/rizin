@@ -678,7 +678,7 @@ jobs:
       - name: Run C++ test
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
-          meson test -C build-cpp-test
+          meson test -C build-cpp-test --print-errorlogs
 
   #  build-extras:
   #    name: Build rizin extras and rzpipe
