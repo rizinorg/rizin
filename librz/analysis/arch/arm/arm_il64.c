@@ -1157,27 +1157,30 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 /**
  * Capstone: ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STRB, ARM64_INS_STURB, ARM64_INS_STRH, ARM64_INS_STURH,
  *           ARM64_INS_STLLR, ARM64_INS_STLLRB, ARM64_INS_STLLRH, ARM64_INS_STLR, ARM64_INS_STLRB, ARM64_INS_STLRH,
- *           ARM64_INS_STLUR, ARM64_INS_STLURB, ARM64_INS_STLURH,
- *           ARM64_INS_STP
+ *           ARM64_INS_STLUR, ARM64_INS_STLURB, ARM64_INS_STLURH, ARM64_INS_STP, ARM64_INS_STXR, ARM64_INS_STXRB,
+ *           ARM64_INS_STXRH, ARM64_INS_STXP, ARM64_INS_STLXR, ARM64_INS_STLXRB. ARM64_INS_STLXRH, ARM64_INS_STLXP
  * ARM: str, stur, strb, sturb, strh, sturh, stllr, stllrb, stllrh, stlr, stlrb, stlrh, stlur, stlurb, stlurh, stp
  */
 static RzILOpEffect *str(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
-	bool pair = insn->id == ARM64_INS_STP;
-	RzILOpBitVector *val = read_reg(xreg_of_reg(REGID(0)));
+	bool result = insn->id == ARM64_INS_STXR || insn->id == ARM64_INS_STXRB || insn->id == ARM64_INS_STXRH || insn->id == ARM64_INS_STXP ||
+		insn->id == ARM64_INS_STLXR || insn->id == ARM64_INS_STLXRB || insn->id == ARM64_INS_STLXRH || insn->id == ARM64_INS_STLXP;
+	bool pair = insn->id == ARM64_INS_STP || insn->id == ARM64_INS_STXP || insn->id == ARM64_INS_STLXP;
+	size_t src_op = result ? 1 : 0;
+	RzILOpBitVector *val = read_reg(xreg_of_reg(REGID(src_op)));
 	if (!val) {
 		return NULL;
 	}
 	RzILOpBitVector *val2 = NULL;
 	if (pair) {
-		val2 = read_reg(xreg_of_reg(REGID(1)));
+		val2 = read_reg(xreg_of_reg(REGID(src_op + 1)));
 		if (!val2) {
 			rz_il_op_pure_free(val);
 		}
 	}
-	size_t addr_op = pair ? 2 : 1;
+	size_t addr_op = (result ? 1 : 0) + 1 + (pair ? 1 : 0);
 	ut32 addr_bits = 64;
 	RzILOpBitVector *addr = ARG(addr_op, &addr_bits);
 	if (!addr) {
@@ -1192,6 +1195,8 @@ static RzILOpEffect *str(cs_insn *insn) {
 	case ARM64_INS_STLLRB:
 	case ARM64_INS_STLRB:
 	case ARM64_INS_STLURB:
+	case ARM64_INS_STXRB:
+	case ARM64_INS_STLXRB:
 		bits = 8;
 		break;
 	case ARM64_INS_STRH:
@@ -1199,10 +1204,14 @@ static RzILOpEffect *str(cs_insn *insn) {
 	case ARM64_INS_STLLRH:
 	case ARM64_INS_STLRH:
 	case ARM64_INS_STLURH:
+	case ARM64_INS_STXRH:
+	case ARM64_INS_STLXRH:
 		bits = 16;
 		break;
-	default: // ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STLLR, ARM64_INS_STLR, ARM64_INS_STLUR, ARM64_INS_STP
-		bits = REGBITS(0);
+	default:
+		// ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STLLR, ARM64_INS_STLR, ARM64_INS_STLUR, ARM64_INS_STP,
+		// ARM64_INS_STXR, ARM64_INS_STXP, ARM64_INS_STLXR, ARM64_INS_STLXP
+		bits = REGBITS(src_op);
 		break;
 	}
 	if (bits != 64) {
@@ -1216,6 +1225,15 @@ static RzILOpEffect *str(cs_insn *insn) {
 	RzILOpEffect *wb_eff = writeback(insn, addr_op, addr);
 	if (wb_eff) {
 		eff = SEQ2(eff, wb_eff);
+	}
+	if (result) {
+		// always successful
+		RzILOpEffect *res_eff = write_reg(REGID(0), UN(REGBITS(0), 0));
+		if (!res_eff) {
+			rz_il_op_effect_free(eff);
+			return NULL;
+		}
+		eff = SEQ2(eff, res_eff);
 	}
 	return eff;
 }
@@ -2459,6 +2477,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STLURB:
 	case ARM64_INS_STLURH:
 	case ARM64_INS_STP:
+	case ARM64_INS_STXR:
+	case ARM64_INS_STXRB:
+	case ARM64_INS_STXRH:
+	case ARM64_INS_STXP:
+	case ARM64_INS_STLXR:
+	case ARM64_INS_STLXRB:
+	case ARM64_INS_STLXRH:
+	case ARM64_INS_STLXP:
 		return str(insn);
 	default:
 		break;
