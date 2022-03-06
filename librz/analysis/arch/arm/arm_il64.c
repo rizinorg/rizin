@@ -1868,8 +1868,8 @@ static RzILOpEffect *setf(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_SMADDL
- * ARM: smaddl
+ * Capstone: ARM64_INS_SMADDL, ARM64_INS_SMSUBL
+ * ARM: smaddl, smsubl
  */
 static RzILOpEffect *smaddl(cs_insn *insn) {
 	if (!ISREG(0) || REGBITS(0) != 64) {
@@ -1886,7 +1886,36 @@ static RzILOpEffect *smaddl(cs_insn *insn) {
 		rz_il_op_pure_free(addend);
 		return NULL;
 	}
-	return write_reg(REGID(0), ADD(addend, MUL(SIGNED(64, x), SIGNED(64, y))));
+	RzILOpBitVector *res = MUL(SIGNED(64, x), SIGNED(64, y));
+	if (insn->id == ARM64_INS_SMSUBL) {
+		res = SUB(addend, res);
+	} else {
+		res = ADD(addend, res);
+	}
+	return write_reg(REGID(0), res);
+}
+
+/**
+ * Capstone: ARM64_INS_SMULL, ARM64_INS_SMNEGL
+ * ARM: smull, smnegl
+ */
+static RzILOpEffect *smull(cs_insn *insn) {
+	if (!ISREG(0) || REGBITS(0) != 64) {
+		return NULL;
+	}
+	ut32 bits = 32;
+	RzILOpBitVector *x = ARG(1, &bits);
+	RzILOpBitVector *y = ARG(2, &bits);
+	if (!x || !y) {
+		rz_il_op_pure_free(x);
+		rz_il_op_pure_free(y);
+		return NULL;
+	}
+	RzILOpBitVector *res = MUL(SIGNED(64, x), SIGNED(64, y));
+	if (insn->id == ARM64_INS_SMNEGL) {
+		res = NEG(res);
+	}
+	return write_reg(REGID(0), res);
 }
 
 /**
@@ -1948,6 +1977,7 @@ static RzILOpEffect *smaddl(cs_insn *insn) {
  * - CSDB, DMB, DSB, ESB, ISB, PSB CSYNC, PSSBB, SB: synchronization, memory barriers
  * - DCPS1, DCPS2, DCPS3, DRPS, HLT: debug
  * - ERET, ERETAA, ERETAB: exception return
+ * - SMC: secure monitor call
  *
  * Not supported by capstone
  * -------------------------
@@ -2312,7 +2342,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SETF16:
 		return setf(insn);
 	case ARM64_INS_SMADDL:
+	case ARM64_INS_SMSUBL:
 		return smaddl(insn);
+	case ARM64_INS_SMULL:
+	case ARM64_INS_SMNEGL:
+		return smull(insn);
 	default:
 		break;
 	}

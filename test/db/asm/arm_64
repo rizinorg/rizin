@@ -666,6 +666,9 @@ d "sdiv w0, w1, w2" 200cc21a 0x0 (set x0 (cast 64 false (ite (== (cast 32 false 
 d "setf8 w2" 4d08003a 0x0 (seq (set vf (^^ (msb (cast 9 false (var x2))) (msb (cast 8 false (var x2))))) (set zf (is_zero (cast 8 false (var x2)))) (set nf (msb (cast 8 false (var x2)))))
 d "setf16 w2" 4d48003a 0x0 (seq (set vf (^^ (msb (cast 17 false (var x2))) (msb (cast 16 false (var x2))))) (set zf (is_zero (cast 16 false (var x2)))) (set nf (msb (cast 16 false (var x2)))))
 d "smaddl x1, w2, w3, x4" 4110239b 0x0 (set x1 (+ (var x4) (* (cast 64 (msb (cast 32 false (var x2))) (cast 32 false (var x2))) (cast 64 (msb (cast 32 false (var x3))) (cast 32 false (var x3))))))
+d "smsubl x1, w2, w3, x4" 4190239b 0x0 (set x1 (- (var x4) (* (cast 64 (msb (cast 32 false (var x2))) (cast 32 false (var x2))) (cast 64 (msb (cast 32 false (var x3))) (cast 32 false (var x3))))))
+d "smull x1, w2, w3" 417c239b 0x0 (set x1 (* (cast 64 (msb (cast 32 false (var x2))) (cast 32 false (var x2))) (cast 64 (msb (cast 32 false (var x3))) (cast 32 false (var x3)))))
+d "smnegl x1, w2, w3" 41fc239b 0x0 (set x1 (~- (* (cast 64 (msb (cast 32 false (var x2))) (cast 32 false (var x2))) (cast 64 (msb (cast 32 false (var x3))) (cast 32 false (var x3))))))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
