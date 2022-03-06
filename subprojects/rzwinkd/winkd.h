@@ -113,6 +113,7 @@ typedef struct _DmpCtx {
 	ut32 kthread_process_offset; // nt!_KTHREAD Process
 	ut8 *context;
 	size_t context_sz;
+	void *bf; // RzBinFile * of DMP File
 } DmpCtx;
 
 static inline ut64 winkd_read_ptr_at(WindCtx *ctx, WindReadAt *read_at_func, ut64 at) {

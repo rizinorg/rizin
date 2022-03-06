@@ -68,6 +68,7 @@ bool winkd_download_module_and_pdb(WindModule *module, const char *symserver, co
 	}
 	char *sum = rz_str_newf("%08" PFMT32x "%" PFMT32x, module->timestamp, module->size);
 	const char *file = rz_str_rchr(module->name, NULL, '\\') + 1;
+	RZ_LOG_INFO("Downloading module and pdb for '%s'\n", file);
 	SPDBDownloaderOpt opts = {
 		.dbg_file = file, .extract = true, .guid = sum, .symbol_server = symserver, .symbol_store_path = symstore
 	};
