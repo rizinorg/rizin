@@ -729,7 +729,9 @@ typedef enum {
 	UWOP_SET_FPREG, /* no info, FP = RSP + UNWIND_INFO.FPRegOffset*16 */
 	UWOP_SAVE_NONVOL, /* info == register number, offset in next slot */
 	UWOP_SAVE_NONVOL_FAR, /* info == register number, offset in next 2 slots */
-	UWOP_SAVE_XMM128 = 8, /* info == XMM reg number, offset in next slot */
+	UWOP_UNKNOWN1, /* 1 extra slot */
+	UWOP_UNKNOWN2, /* 2 extra slots */
+	UWOP_SAVE_XMM128, /* info == XMM reg number, offset in next slot */
 	UWOP_SAVE_XMM128_FAR, /* info == XMM reg number, offset in next 2 slots */
 	UWOP_PUSH_MACHFRAME /* info == 0: no error-code, 1: error-code */
 } PE64_UNWIND_CODE_OPS;
