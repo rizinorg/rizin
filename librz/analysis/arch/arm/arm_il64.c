@@ -1155,21 +1155,42 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_STR, ARM64_INS_STUR
- * ARM: str, stur
+ * Capstone: ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STRB, ARM64_INS_STURB, ARM64_INS_STRH, ARM64_INS_STURH
+ * ARM: str, stur, strb, sturb, strh, sturh
  */
 static RzILOpEffect *str(cs_insn *insn) {
-	size_t addr_op = 1;
-	ut32 bits = 0;
-	RzILOpBitVector *val = ARG(0, &bits);
-	ut32 addr_bits = 64;
-	RzILOpBitVector *addr = ARG(addr_op, &addr_bits);
-	if (!val || !addr) {
-		rz_il_op_pure_free(val);
-		rz_il_op_pure_free(addr);
+	if (!ISREG(0)) {
 		return NULL;
 	}
-	RzILOpEffect *eff = STOREW(addr, val);
+	RzILOpBitVector *val = read_reg(xreg_of_reg(REGID(0)));
+	if (!val) {
+		return NULL;
+	}
+	size_t addr_op = 1;
+	ut32 addr_bits = 64;
+	RzILOpBitVector *addr = ARG(addr_op, &addr_bits);
+	if (!addr) {
+		rz_il_op_pure_free(val);
+		return NULL;
+	}
+	ut32 bits;
+	switch (insn->id) {
+	case ARM64_INS_STRB:
+	case ARM64_INS_STURB:
+		bits = 8;
+		break;
+	case ARM64_INS_STRH:
+	case ARM64_INS_STURH:
+		bits = 16;
+		break;
+	default: // ARM64_INS_STR, ARM64_INS_STUR
+		bits = REGBITS(0);
+		break;
+	}
+	if (bits != 64) {
+		val = UNSIGNED(bits, val);
+	}
+	RzILOpEffect *eff = bits == 8 ? STORE(addr, val) : STOREW(addr, val);
 	RzILOpEffect *wb_eff = writeback(insn, addr_op, addr);
 	if (wb_eff) {
 		eff = SEQ2(eff, wb_eff);
@@ -2402,6 +2423,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return smulh(insn);
 	case ARM64_INS_STR:
 	case ARM64_INS_STUR:
+	case ARM64_INS_STRB:
+	case ARM64_INS_STURB:
+	case ARM64_INS_STRH:
+	case ARM64_INS_STURH:
 		return str(insn);
 	default:
 		break;

@@ -684,6 +684,12 @@ d "str w1, [x2, 8]!" 418c00b8 0x0 (seq (storew 0 (+ (var x2) (bv 64 0x8)) (cast 
 d "str w1, [x2, 3]!" 413c00b8 0x0 (seq (storew 0 (+ (var x2) (bv 64 0x3)) (cast 32 false (var x1))) (set x2 (+ (var x2) (bv 64 0x3))))
 d "str w1, [x2], 8" 418400b8 0x0 (seq (storew 0 (var x2) (cast 32 false (var x1))) (set x2 (+ (var x2) (bv 64 0x8))))
 d "str w1, [x2], 3" 413400b8 0x0 (seq (storew 0 (var x2) (cast 32 false (var x1))) (set x2 (+ (var x2) (bv 64 0x3))))
+d "str x1, [x2, x3, lsl 3]" 417823f8 0x0 (storew 0 (+ (var x2) (<< (var x3) (bv 6 0x3) false)) (var x1))
+d "str x1, [x1, w2, uxtw]" 214822f8 0x0 (storew 0 (+ (var x1) (cast 64 false (cast 32 false (var x2)))) (var x1))
+d "strb w1, [x2]" 41000039 0x0 (store 0 (var x2) (cast 8 false (var x1)))
+d "sturb w1, [x2, 3]" 41300038 0x0 (store 0 (+ (var x2) (bv 64 0x3)) (cast 8 false (var x1)))
+d "strh w1, [x2]" 41000079 0x0 (storew 0 (var x2) (cast 16 false (var x1)))
+d "sturh w1, [x2, 3]" 41300078 0x0 (storew 0 (+ (var x2) (bv 64 0x3)) (cast 16 false (var x1)))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
