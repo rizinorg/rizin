@@ -197,3 +197,21 @@ EXPECT=<<EOF
 [2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[2K[0m[33m[0x00000000]>[0m q[33m[0x00000000]>[0m q[2K[33m[0x00000000]>[0m q
 EOF
 RUN
+
+NAME=nonl last line (b/w)
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -e io.cache=1 -c "aezi; aezsu $s; < \nq\n" bins/bf/2+5.bf
+EXPECT=<<EOF
+7[2K7[0x00000000]> 7[0x00000000]> [2K7[0x00000000]> 
+[2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
+EOF
+RUN
+
+NAME=nonl last line (color)
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=1 -e io.cache=1 -c "aezi; aezsu $s; < \nq\n" bins/bf/2+5.bf
+EXPECT=<<EOF
+7[2K7[0m[33m[0x00000000]>[0m 7[33m[0x00000000]>[0m [2K7[33m[0x00000000]>[0m 
+[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[2K[0m[33m[0x00000000]>[0m q[33m[0x00000000]>[0m q[2K[33m[0x00000000]>[0m q
+EOF
+RUN

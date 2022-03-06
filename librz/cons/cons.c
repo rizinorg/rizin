@@ -106,6 +106,7 @@ static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext 
 	context->buffer_sz = 0;
 	context->lastEnabled = true;
 	context->buffer_len = 0;
+	context->last_nonl_line = NULL;
 	context->is_interactive = false;
 	context->cons_stack = rz_stack_newf(6, cons_stack_free);
 	context->break_stack = rz_stack_newf(6, break_stack_free);
@@ -641,6 +642,7 @@ RZ_API RzCons *rz_cons_free(void) {
 	RZ_FREE(I.input->readbuffer);
 	RZ_FREE(I.input);
 	RZ_FREE(I.context->buffer);
+	RZ_FREE(I.context->last_nonl_line);
 	RZ_FREE(I.break_word);
 	cons_context_deinit(I.context);
 	RZ_FREE(I.context->lastOutput);
@@ -1021,6 +1023,18 @@ RZ_API void rz_cons_flush(void) {
 		}
 	} else {
 		__cons_write(I.context->buffer, I.context->buffer_len);
+	}
+
+	if (I.context->buffer && I.context->buffer_len) {
+		I.context->buffer[I.context->buffer_len] = 0;
+		const char *p = &I.context->buffer[I.context->buffer_len - 1];
+		for (; *p != '\n' && p > I.context->buffer; p--)
+			;
+		if (*p == '\n') {
+			RZ_FREE(I.context->last_nonl_line);
+			p++;
+		}
+		I.context->last_nonl_line = rz_str_append(I.context->last_nonl_line, p);
 	}
 
 	rz_cons_reset();

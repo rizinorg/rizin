@@ -476,6 +476,7 @@ typedef struct rz_cons_context_t {
 	char *buffer;
 	size_t buffer_len;
 	size_t buffer_sz;
+	char *last_nonl_line;
 
 	bool breaked;
 	RzStack *break_stack;

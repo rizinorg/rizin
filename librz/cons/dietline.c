@@ -972,18 +972,20 @@ static void __print_prompt(void) {
 	int columns = rz_cons_get_size(NULL) - 2;
 	int chars = strlen(I.buffer.data);
 	int len, i, cols = RZ_MAX(1, columns - rz_str_ansi_len(I.prompt) - 2);
+	const char *nonl_line = cons->context->last_nonl_line;
+	nonl_line = nonl_line ? nonl_line : "";
 	if (cons->line->prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		rz_cons_gotoxy(0, cons->rows);
 		rz_cons_flush();
 	}
 	rz_cons_clear_line(0);
 	if (cons->context->color_mode > 0) {
-		printf("\r%s%s", Color_RESET, I.prompt);
+		printf("\r%s%s%s", nonl_line, Color_RESET, I.prompt);
 	} else {
-		printf("\r%s", I.prompt);
+		printf("\r%s%s", nonl_line, I.prompt);
 	}
 	fwrite(I.buffer.data, 1, RZ_MIN(cols, chars), stdout);
-	printf("\r%s", I.prompt);
+	printf("\r%s%s", nonl_line, I.prompt);
 	if (I.buffer.index > cols) {
 		printf("< ");
 		i = I.buffer.index - cols;
@@ -2021,11 +2023,14 @@ _end:
 	rz_cons_set_raw(0);
 	rz_cons_enable_mouse(mouse_status);
 	if (I.echo) {
-		printf("\r%s%s\n", I.prompt, I.buffer.data);
+		const char *nonl_line = cons->context->last_nonl_line;
+		nonl_line = nonl_line ? nonl_line : "";
+		printf("\r%s%s%s\n", nonl_line, I.prompt, I.buffer.data);
 		fflush(stdout);
 	}
 
 	RZ_FREE(I.sel_widget);
+	RZ_FREE(cons->context->last_nonl_line);
 
 	// should be here or not?
 	if (!memcmp(I.buffer.data, "!history", 8)) {
