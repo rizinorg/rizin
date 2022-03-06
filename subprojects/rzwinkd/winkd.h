@@ -141,6 +141,7 @@ WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address);
 WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address);
 RzList *winkd_list_process(WindCtx *ctx);
 RzList *winkd_list_threads(WindCtx *ctx);
+void winkd_windmodule_free(void *ptr);
 RzList *winkd_list_modules(WindCtx *ctx);
 int winkd_read_at_uva(WindCtx *ctx, ut64 offset, uint8_t *buf, int count);
 int winkd_write_at_uva(WindCtx *ctx, ut64 offset, const uint8_t *buf, int count);
