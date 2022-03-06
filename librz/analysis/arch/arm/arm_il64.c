@@ -1158,8 +1158,10 @@ static RzILOpEffect *ldr(cs_insn *insn) {
  * Capstone: ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STRB, ARM64_INS_STURB, ARM64_INS_STRH, ARM64_INS_STURH,
  *           ARM64_INS_STLLR, ARM64_INS_STLLRB, ARM64_INS_STLLRH, ARM64_INS_STLR, ARM64_INS_STLRB, ARM64_INS_STLRH,
  *           ARM64_INS_STLUR, ARM64_INS_STLURB, ARM64_INS_STLURH, ARM64_INS_STP, ARM64_INS_STXR, ARM64_INS_STXRB,
- *           ARM64_INS_STXRH, ARM64_INS_STXP, ARM64_INS_STLXR, ARM64_INS_STLXRB. ARM64_INS_STLXRH, ARM64_INS_STLXP
- * ARM: str, stur, strb, sturb, strh, sturh, stllr, stllrb, stllrh, stlr, stlrb, stlrh, stlur, stlurb, stlurh, stp
+ *           ARM64_INS_STXRH, ARM64_INS_STXP, ARM64_INS_STLXR, ARM64_INS_STLXRB. ARM64_INS_STLXRH, ARM64_INS_STLXP,
+ *           ARM64_INS_STNP, ARM64_INS_STTR, ARM64_INS_STTRB, ARM64_INS_STTRH
+ * ARM: str, stur, strb, sturb, strh, sturh, stllr, stllrb, stllrh, stlr, stlrb, stlrh, stlur, stlurb, stlurh, stp, stxr, stxrb,
+ *           stxrh, stxp, stlxr, stlxrb. stlxrh, stlxp, stnp, sttr, sttrb, sttrh
  */
 static RzILOpEffect *str(cs_insn *insn) {
 	if (!ISREG(0)) {
@@ -1167,7 +1169,7 @@ static RzILOpEffect *str(cs_insn *insn) {
 	}
 	bool result = insn->id == ARM64_INS_STXR || insn->id == ARM64_INS_STXRB || insn->id == ARM64_INS_STXRH || insn->id == ARM64_INS_STXP ||
 		insn->id == ARM64_INS_STLXR || insn->id == ARM64_INS_STLXRB || insn->id == ARM64_INS_STLXRH || insn->id == ARM64_INS_STLXP;
-	bool pair = insn->id == ARM64_INS_STP || insn->id == ARM64_INS_STXP || insn->id == ARM64_INS_STLXP;
+	bool pair = insn->id == ARM64_INS_STP || insn->id == ARM64_INS_STNP || insn->id == ARM64_INS_STXP || insn->id == ARM64_INS_STLXP;
 	size_t src_op = result ? 1 : 0;
 	RzILOpBitVector *val = read_reg(xreg_of_reg(REGID(src_op)));
 	if (!val) {
@@ -1197,6 +1199,7 @@ static RzILOpEffect *str(cs_insn *insn) {
 	case ARM64_INS_STLURB:
 	case ARM64_INS_STXRB:
 	case ARM64_INS_STLXRB:
+	case ARM64_INS_STTRB:
 		bits = 8;
 		break;
 	case ARM64_INS_STRH:
@@ -1206,11 +1209,12 @@ static RzILOpEffect *str(cs_insn *insn) {
 	case ARM64_INS_STLURH:
 	case ARM64_INS_STXRH:
 	case ARM64_INS_STLXRH:
+	case ARM64_INS_STTRH:
 		bits = 16;
 		break;
 	default:
 		// ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STLLR, ARM64_INS_STLR, ARM64_INS_STLUR, ARM64_INS_STP,
-		// ARM64_INS_STXR, ARM64_INS_STXP, ARM64_INS_STLXR, ARM64_INS_STLXP
+		// ARM64_INS_STXR, ARM64_INS_STXP, ARM64_INS_STLXR, ARM64_INS_STLXP, ARM64_INS_STNP, ARM64_INS_STTR
 		bits = REGBITS(src_op);
 		break;
 	}
@@ -2035,14 +2039,13 @@ static RzILOpEffect *smulh(cs_insn *insn) {
  * ------------------------------------------------------
  * Plausible to represent by adding another memory with a 60bit keys and 4bit values to hold the memory tags.
  * Instructions:
- * - ADDG
+ * - ADDG, SUBG, SUBP, SUBPS
  * - CMPP
- * - SUBPS
  * - GMI
  * - IRG
  * - LDG, LDGM
- * - ST2G
- * - STG, STGM, STGP
+ * - ST2G, STZ2G
+ * - STG, STGM, STGP, STZG, STZGM
  *
  * FEAT_PAuth: Pointer Authentication
  * ----------------------------------
@@ -2477,6 +2480,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STLURB:
 	case ARM64_INS_STLURH:
 	case ARM64_INS_STP:
+	case ARM64_INS_STNP:
 	case ARM64_INS_STXR:
 	case ARM64_INS_STXRB:
 	case ARM64_INS_STXRH:
@@ -2485,6 +2489,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STLXRB:
 	case ARM64_INS_STLXRH:
 	case ARM64_INS_STLXP:
+	case ARM64_INS_STTR:
+	case ARM64_INS_STTRB:
+	case ARM64_INS_STTRH:
 		return str(insn);
 	default:
 		break;

@@ -706,6 +706,8 @@ d "stp x1, x2, [x3]" 610800a9 0x0 (seq (storew 0 (var x3) (var x1)) (storew 0 (+
 d "stp w1, w2, [x3]" 61080029 0x0 (seq (storew 0 (var x3) (cast 32 false (var x1))) (storew 0 (+ (var x3) (bv 64 0x4)) (var x2)))
 d "stp w1, w2, [sp, 0x10]" e10b0229 0x0 (seq (storew 0 (+ (var sp) (bv 64 0x10)) (cast 32 false (var x1))) (storew 0 (+ (+ (var sp) (bv 64 0x10)) (bv 64 0x4)) (var x2)))
 d "stp w1, w2, [sp, 0x10]!" e10b8229 0x0 (seq (storew 0 (+ (var sp) (bv 64 0x10)) (cast 32 false (var x1))) (storew 0 (+ (+ (var sp) (bv 64 0x10)) (bv 64 0x4)) (var x2)) (set sp (+ (var sp) (bv 64 0x10))))
+d "stnp x1, x2, [x3]" 610800a8 0x0 (seq (storew 0 (var x3) (var x1)) (storew 0 (+ (var x3) (bv 64 0x8)) (var x2)))
+d "stnp w1, w2, [x3]" 61080028 0x0 (seq (storew 0 (var x3) (cast 32 false (var x1))) (storew 0 (+ (var x3) (bv 64 0x4)) (var x2)))
 d "stxr w1, x2, [x4]" 827c01c8 0x0 (seq (storew 0 (var x4) (var x2)) (set x1 (cast 64 false (bv 32 0x0))))
 d "stxr w1, w2, [x4]" 827c0188 0x0 (seq (storew 0 (var x4) (cast 32 false (var x2))) (set x1 (cast 64 false (bv 32 0x0))))
 d "stxrb w1, w2, [x4]" 827c0108 0x0 (seq (store 0 (var x4) (cast 8 false (var x2))) (set x1 (cast 64 false (bv 32 0x0))))
@@ -718,6 +720,10 @@ d "stlxrb w1, w2, [x4]" 82fc0108 0x0 (seq (store 0 (var x4) (cast 8 false (var x
 d "stlxrh w1, w2, [x4]" 82fc0148 0x0 (seq (storew 0 (var x4) (cast 16 false (var x2))) (set x1 (cast 64 false (bv 32 0x0))))
 d "stlxp w1, x2, x3, [x4]" 828c21c8 0x0 (seq (storew 0 (var x4) (var x2)) (storew 0 (+ (var x4) (bv 64 0x8)) (var x3)) (set x1 (cast 64 false (bv 32 0x0))))
 d "stlxp w1, w2, w3, [x4]" 828c2188 0x0 (seq (storew 0 (var x4) (cast 32 false (var x2))) (storew 0 (+ (var x4) (bv 64 0x4)) (var x3)) (set x1 (cast 64 false (bv 32 0x0))))
+d "sttr x0, [x1]" 200800f8 0x0 (storew 0 (var x1) (var x0))
+d "sttr w0, [x1]" 200800b8 0x0 (storew 0 (var x1) (cast 32 false (var x0)))
+d "sttrb w0, [x1]" 20080038 0x0 (store 0 (var x1) (cast 8 false (var x0)))
+d "sttrh w0, [x1]" 20080078 0x0 (storew 0 (var x1) (cast 16 false (var x0)))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
