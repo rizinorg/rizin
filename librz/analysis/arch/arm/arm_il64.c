@@ -1850,6 +1850,24 @@ static RzILOpEffect *sdiv(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_SETF8, ARM64_INS_SETF16
+ * ARM: setf8, setf16
+ */
+static RzILOpEffect *setf(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	RzILOpBitVector *val = read_reg(xreg_of_reg(REGID(0)));
+	if (!val) {
+		return NULL;
+	}
+	ut32 bits = insn->id == ARM64_INS_SETF16 ? 16 : 8;
+	return SEQ2(
+		SETG("vf", XOR(MSB(UNSIGNED(bits + 1, val)), MSB(UNSIGNED(bits, DUP(val))))),
+		update_flags_zn(UNSIGNED(bits, DUP(val))));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -2266,6 +2284,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return sbfx(insn);
 	case ARM64_INS_SDIV:
 		return sdiv(insn);
+	case ARM64_INS_SETF8:
+	case ARM64_INS_SETF16:
+		return setf(insn);
 	default:
 		break;
 	}
