@@ -398,8 +398,11 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm64_op *op
 
 /**
  * IL to retrieve the value of the \p n -th arg of \p insn
+ * \p bits_inout Setting the backing variable to non-0 indicates that the result must have this bitness.
+ *               This is necessary for immediate operands and can make the function fail for invalid registers.
+ *               In any case, if a value is returned, its bitness is written back into this storage.
  */
-static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
+static RzILOpBitVector *arg(cs_insn *insn, size_t n, ut32 *bits_inout) {
 	ut32 bits_requested = bits_inout ? *bits_inout : 0;
 	cs_arm64_op *op = &insn->detail->arm64.operands[n];
 	switch (op->type) {
@@ -1023,6 +1026,23 @@ static RzILOpEffect *load_effect(ut32 bits, bool is_signed, arm64_reg dst_reg, R
 	return write_reg(dst_reg, val);
 }
 
+static RzILOpEffect *writeback(cs_insn *insn, size_t addr_op, RZ_BORROW RzILOpBitVector *addr) {
+	if (!insn->detail->arm64.writeback || !is_xreg(MEMBASEID(addr_op))) {
+		return NULL;
+	}
+	RzILOpBitVector *wbaddr = DUP(addr);
+	if (ISIMM(addr_op + 1)) {
+		// post-index
+		st64 disp = IMM(addr_op + 1);
+		if (disp > 0) {
+			wbaddr = ADD(wbaddr, U64(disp));
+		} else if (disp < 0) {
+			wbaddr = SUB(wbaddr, U64(-disp));
+		}
+	}
+	return write_reg(MEMBASEID(addr_op), wbaddr);
+}
+
 /**
  * Capstone: ARM64_INS_LDR, ARM64_INS_LDRB, ARM64_INS_LDRH, ARM64_INS_LDRU, ARM64_INS_LDRUB, ARM64_INS_LDRUH,
  *           ARM64_INS_LDRSW, ARM64_INS_LDRSB, ARM64_INS_LDRSH, ARM64_INS_LDURSW, ARM64_INS_LDURSB, ARM64_INS_LDURSH,
@@ -1127,23 +1147,31 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 		}
 		eff = SEQ2(eff, eff1);
 	}
-	bool writeback = insn->detail->arm64.writeback;
-	if (writeback && is_xreg(MEMBASEID(addr_op))) {
-		RzILOpBitVector *wbaddr = DUP(addr);
-		if (ISIMM(addr_op + 1)) {
-			// post-index
-			st64 disp = IMM(addr_op + 1);
-			if (disp > 0) {
-				wbaddr = ADD(wbaddr, U64(disp));
-			} else if (disp < 0) {
-				wbaddr = SUB(wbaddr, U64(-disp));
-			}
-		}
-		RzILOpEffect *wb_eff = write_reg(MEMBASEID(addr_op), wbaddr);
-		if (!wb_eff) {
-			rz_il_op_effect_free(eff);
-			return NULL;
-		}
+	RzILOpEffect *wb_eff = writeback(insn, addr_op, addr);
+	if (wb_eff) {
+		eff = SEQ2(eff, wb_eff);
+	}
+	return eff;
+}
+
+/**
+ * Capstone: ARM64_INS_STR, ARM64_INS_STUR
+ * ARM: str, stur
+ */
+static RzILOpEffect *str(cs_insn *insn) {
+	size_t addr_op = 1;
+	ut32 bits = 0;
+	RzILOpBitVector *val = ARG(0, &bits);
+	ut32 addr_bits = 64;
+	RzILOpBitVector *addr = ARG(addr_op, &addr_bits);
+	if (!val || !addr) {
+		rz_il_op_pure_free(val);
+		rz_il_op_pure_free(addr);
+		return NULL;
+	}
+	RzILOpEffect *eff = STOREW(addr, val);
+	RzILOpEffect *wb_eff = writeback(insn, addr_op, addr);
+	if (wb_eff) {
 		eff = SEQ2(eff, wb_eff);
 	}
 	return eff;
@@ -1919,6 +1947,25 @@ static RzILOpEffect *smull(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_SMULH
+ * ARM: smulh
+ */
+static RzILOpEffect *smulh(cs_insn *insn) {
+	if (!ISREG(0) || REGBITS(0) != 64) {
+		return NULL;
+	}
+	ut32 bits = 64;
+	RzILOpBitVector *x = ARG(1, &bits);
+	RzILOpBitVector *y = ARG(2, &bits);
+	if (!x || !y) {
+		rz_il_op_pure_free(x);
+		rz_il_op_pure_free(y);
+		return NULL;
+	}
+	return write_reg(REGID(0), UNSIGNED(64, SHIFTR0(MUL(SIGNED(128, x), SIGNED(128, y)), UN(7, 64))));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -1932,8 +1979,9 @@ static RzILOpEffect *smull(cs_insn *insn) {
  * - SUBPS
  * - GMI
  * - IRG
- * - LDG
- * - LDGM
+ * - LDG, LDGM
+ * - ST2G
+ * - STG, STGM, STGP
  *
  * FEAT_PAuth: Pointer Authentication
  * ----------------------------------
@@ -1974,7 +2022,7 @@ static RzILOpEffect *smull(cs_insn *insn) {
  * - BTI: FEAT_BTI/Branch Target Identification
  * - CLREX: clears the local monitor
  * - CRC32B, CRC32H, CRC32W, CRC32X, CRC32CB, CRC32CH, CRC32CW, CRC32CX: does crc32
- * - CSDB, DMB, DSB, ESB, ISB, PSB CSYNC, PSSBB, SB: synchronization, memory barriers
+ * - CSDB, DMB, DSB, ESB, ISB, PSB CSYNC, PSSBB, SB, SSBB: synchronization, memory barriers
  * - DCPS1, DCPS2, DCPS3, DRPS, HLT: debug
  * - ERET, ERETAA, ERETAB: exception return
  * - SMC: secure monitor call
@@ -1985,6 +2033,9 @@ static RzILOpEffect *smull(cs_insn *insn) {
  * - FEAT_MTE (see above)
  * - DGH
  * - LD64B
+ * - ST64B
+ * - ST64BV
+ * - ST64BV0
  */
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
@@ -2347,6 +2398,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SMULL:
 	case ARM64_INS_SMNEGL:
 		return smull(insn);
+	case ARM64_INS_SMULH:
+		return smulh(insn);
+	case ARM64_INS_STR:
+	case ARM64_INS_STUR:
+		return str(insn);
 	default:
 		break;
 	}
