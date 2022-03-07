@@ -106,6 +106,7 @@ static arm64_reg xreg(ut8 idx) {
 	case 29: return ARM64_REG_X29;
 	case 30: return ARM64_REG_X30;
 	case 31: return ARM64_REG_SP;
+	case 32: return ARM64_REG_XZR;
 	default:
 		rz_warn_if_reached();
 		return ARM64_REG_INVALID;
@@ -146,6 +147,7 @@ static bool is_xreg(arm64_reg reg) {
 	case ARM64_REG_X29:
 	case ARM64_REG_X30:
 	case ARM64_REG_SP:
+	case ARM64_REG_XZR:
 		return true;
 	default:
 		return false;
@@ -186,6 +188,7 @@ static ut8 xreg_idx(arm64_reg reg) {
 	case ARM64_REG_X29: return 29;
 	case ARM64_REG_X30: return 30;
 	case ARM64_REG_SP: return 31;
+	case ARM64_REG_XZR: return 32;
 	default:
 		rz_warn_if_reached();
 		return 0;
@@ -194,7 +197,13 @@ static ut8 xreg_idx(arm64_reg reg) {
 
 static arm64_reg wreg(ut8 idx) {
 	rz_return_val_if_fail(idx <= 31, ARM64_REG_INVALID);
-	return idx == 31 ? ARM64_REG_WSP : ARM64_REG_W0 + idx;
+	if (idx == 31) {
+		return ARM64_REG_WSP;
+	}
+	if (idx == 32) {
+		return ARM64_REG_WZR;
+	}
+	return ARM64_REG_W0 + idx;
 }
 
 static ut8 wreg_idx(arm64_reg reg) {
@@ -204,12 +213,15 @@ static ut8 wreg_idx(arm64_reg reg) {
 	if (reg == ARM64_REG_WSP) {
 		return 31;
 	}
+	if (reg == ARM64_REG_WZR) {
+		return 32;
+	}
 	rz_warn_if_reached();
 	return 0;
 }
 
 static bool is_wreg(arm64_reg reg) {
-	return (reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30) || reg == ARM64_REG_WSP;
+	return (reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30) || reg == ARM64_REG_WSP || reg == ARM64_REG_WZR;
 }
 
 static arm64_reg xreg_of_reg(arm64_reg reg) {
@@ -399,7 +411,7 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm64_op *op
 /**
  * IL to retrieve the value of the \p n -th arg of \p insn
  * \p bits_inout Setting the backing variable to non-0 indicates that the result must have this bitness.
- *               This is necessary for immediate operands and can make the function fail for invalid registers.
+ *               This is necessary for immediate operands for example.
  *               In any case, if a value is returned, its bitness is written back into this storage.
  */
 static RzILOpBitVector *arg(cs_insn *insn, size_t n, ut32 *bits_inout) {
@@ -2031,6 +2043,63 @@ static RzILOpEffect *smulh(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_SWP, ARM64_INS_SWPA, ARM64_INS_SWPAL, ARM64_INS_SWPL,
+ *           ARM64_INS_SWPB, ARM64_INS_SWPAB, ARM64_INS_SWPALB, ARM64_INS_SWPLB
+ *           ARM64_INS_SWPH, ARM64_INS_SWPAH, ARM64_INS_SWPALH, ARM64_INS_SWPLH
+ * ARM: swp, swpa, swpal, swpl, swpb, swpab, swpalb, swplb, swph, swpah, swpalh, swplh
+ */
+static RzILOpEffect *swp(cs_insn *insn) {
+	if (!ISREG(0) || !ISREG(1)) {
+		return NULL;
+	}
+	RzILOpBitVector *store_val = read_reg(xreg_of_reg(REGID(0)));
+	if (!store_val) {
+		return NULL;
+	}
+	ut32 addr_bits = 64;
+	RzILOpBitVector *addr = ARG(2, &addr_bits);
+	if (!addr) {
+		rz_il_op_pure_free(store_val);
+		return NULL;
+	}
+	ut32 bits;
+	switch (insn->id) {
+	case ARM64_INS_SWPB:
+	case ARM64_INS_SWPAB:
+	case ARM64_INS_SWPALB:
+	case ARM64_INS_SWPLB:
+		bits = 8;
+		break;
+	case ARM64_INS_SWPH:
+	case ARM64_INS_SWPAH:
+	case ARM64_INS_SWPALH:
+	case ARM64_INS_SWPLH:
+		bits = 16;
+		break;
+	default: // ARM64_INS_SWP, ARM64_INS_SWPA, ARM64_INS_SWPAL, ARM64_INS_SWPL:
+		bits = REGBITS(0);
+		break;
+	}
+	if (bits != 64) {
+		store_val = UNSIGNED(bits, store_val);
+	}
+	RzILOpEffect *store_eff = bits == 8 ? STORE(addr, store_val) : STOREW(addr, store_val);
+	arm64_reg ret_reg = xreg_of_reg(REGID(1));
+	if (ret_reg == ARM64_REG_XZR) {
+		return store_eff;
+	}
+	RzILOpEffect *ret_eff = write_reg(ret_reg, bits != 64 ? UNSIGNED(64, VARL("ret")) : VARL("ret"));
+	if (!ret_eff) {
+		rz_il_op_effect_free(store_eff);
+		return NULL;
+	}
+	return SEQ3(
+		SETL("ret", bits == 8 ? LOAD(DUP(addr)) : LOADW(bits, DUP(addr))),
+		store_eff,
+		ret_eff);
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -2493,6 +2562,19 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STTRB:
 	case ARM64_INS_STTRH:
 		return str(insn);
+	case ARM64_INS_SWP:
+	case ARM64_INS_SWPA:
+	case ARM64_INS_SWPAL:
+	case ARM64_INS_SWPL:
+	case ARM64_INS_SWPB:
+	case ARM64_INS_SWPAB:
+	case ARM64_INS_SWPALB:
+	case ARM64_INS_SWPLB:
+	case ARM64_INS_SWPH:
+	case ARM64_INS_SWPAH:
+	case ARM64_INS_SWPALH:
+	case ARM64_INS_SWPLH:
+		return swp(insn);
 	default:
 		break;
 	}
