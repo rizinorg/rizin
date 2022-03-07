@@ -1747,8 +1747,8 @@ static RzILOpEffect *rmif(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_SBFX, ARM64_INS_SBFIZ
- * ARM: sbfx, sbfiz
+ * Capstone: ARM64_INS_SBFX, ARM64_INS_SBFIZ, ARM64_INS_UBFX, ARM64_INS_UBFIZ
+ * ARM: sbfx, sbfiz, ubfx, ubfiz
  */
 static RzILOpEffect *sbfx(cs_insn *insn) {
 	if (!ISREG(0) || !ISIMM(2) || !ISIMM(3)) {
@@ -1762,13 +1762,14 @@ static RzILOpEffect *sbfx(cs_insn *insn) {
 	ut64 lsb = IMM(2);
 	ut64 width = IMM(3);
 	RzILOpBitVector *res;
-	if (insn->id == ARM64_INS_SBFIZ) {
+	if (insn->id == ARM64_INS_SBFIZ || insn->id == ARM64_INS_UBFIZ) {
 		res = SHIFTL0(UNSIGNED(width, src), UN(6, lsb));
 	} else {
-		// ARM64_INS_SBFX
+		// ARM64_INS_SBFX, ARM64_INS_UBFX
 		res = UNSIGNED(width, SHIFTR0(src, UN(6, lsb)));
 	}
-	res = LET("res", res, SIGNED(bits, VARLP("res")));
+	bool is_signed = insn->id == ARM64_INS_SBFX || insn->id == ARM64_INS_SBFIZ;
+	res = LET("res", res, is_signed ? SIGNED(bits, VARLP("res")) : UNSIGNED(bits, VARLP("res")));
 	return write_reg(REGID(0), res);
 }
 
@@ -1950,6 +1951,26 @@ static RzILOpEffect *sdiv(cs_insn *insn) {
 			ITE(AND(EQ(a, UN(bits, 1ull << (bits - 1))), EQ(DUP(b), UN(bits, -1))),
 				UN(bits, 1ull << (bits - 1)),
 				SDIV(DUP(a), DUP(b)))));
+}
+
+/**
+ * Capstone: ARM64_INS_UDIV
+ * ARM: udiv
+ */
+static RzILOpEffect *udiv(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits = REGBITS(0);
+	RzILOpBitVector *a = ARG(1, &bits);
+	RzILOpBitVector *b = ARG(2, &bits);
+	if (!a || !b) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
+		return NULL;
+	}
+	return write_reg(REGID(0),
+		ITE(EQ(b, UN(bits, 0)), UN(bits, 0), DIV(a, DUP(b))));
 }
 
 /**
@@ -2150,6 +2171,22 @@ static RzILOpEffect *tbz(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_TST
+ * ARM: tst
+ */
+static RzILOpEffect *tst(cs_insn *insn) {
+	ut32 bits = 0;
+	RzILOpBitVector *a = ARG(0, &bits);
+	RzILOpBitVector *b = ARG(1, &bits);
+	if (!a || !b) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
+		return NULL;
+	}
+	return update_flags_zn00(LOGAND(a, b));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -2198,6 +2235,7 @@ static RzILOpEffect *tbz(cs_insn *insn) {
  * - DC
  * - DVP
  * - IC
+ * - TLBI
  *
  * Miscellaneous
  * -------------
@@ -2205,10 +2243,11 @@ static RzILOpEffect *tbz(cs_insn *insn) {
  * - BTI: FEAT_BTI/Branch Target Identification
  * - CLREX: clears the local monitor
  * - CRC32B, CRC32H, CRC32W, CRC32X, CRC32CB, CRC32CH, CRC32CW, CRC32CX: does crc32
- * - CSDB, DMB, DSB, ESB, ISB, PSB CSYNC, PSSBB, SB, SSBB: synchronization, memory barriers
+ * - CSDB, DMB, DSB, ESB, ISB, PSB CSYNC, PSSBB, SB, SSBB, TSB CSYNC: synchronization, memory barriers
  * - DCPS1, DCPS2, DCPS3, DRPS, HLT: debug
  * - ERET, ERETAA, ERETAB: exception return
  * - SMC: secure monitor call
+ * - UDF: permanently undefined
  *
  * Not supported by capstone
  * -------------------------
@@ -2569,6 +2608,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return rmif(insn);
 	case ARM64_INS_SBFIZ:
 	case ARM64_INS_SBFX:
+	case ARM64_INS_UBFIZ:
+	case ARM64_INS_UBFX:
 		return sbfx(insn);
 	case ARM64_INS_SDIV:
 		return sdiv(insn);
@@ -2634,6 +2675,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_TBNZ:
 	case ARM64_INS_TBZ:
 		return tbz(insn);
+	case ARM64_INS_TST:
+		return tst(insn);
+	case ARM64_INS_UDIV:
+		return udiv(insn);
 	default:
 		break;
 	}
