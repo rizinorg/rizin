@@ -1183,23 +1183,10 @@ static RzILOpEffect *str(cs_insn *insn) {
 		insn->id == ARM64_INS_STLXR || insn->id == ARM64_INS_STLXRB || insn->id == ARM64_INS_STLXRH || insn->id == ARM64_INS_STLXP;
 	bool pair = insn->id == ARM64_INS_STP || insn->id == ARM64_INS_STNP || insn->id == ARM64_INS_STXP || insn->id == ARM64_INS_STLXP;
 	size_t src_op = result ? 1 : 0;
-	RzILOpBitVector *val = read_reg(xreg_of_reg(REGID(src_op)));
-	if (!val) {
-		return NULL;
-	}
-	RzILOpBitVector *val2 = NULL;
-	if (pair) {
-		val2 = read_reg(xreg_of_reg(REGID(src_op + 1)));
-		if (!val2) {
-			rz_il_op_pure_free(val);
-		}
-	}
 	size_t addr_op = (result ? 1 : 0) + 1 + (pair ? 1 : 0);
 	ut32 addr_bits = 64;
 	RzILOpBitVector *addr = ARG(addr_op, &addr_bits);
 	if (!addr) {
-		rz_il_op_pure_free(val);
-		rz_il_op_pure_free(val2);
 		return NULL;
 	}
 	ut32 bits;
@@ -1230,8 +1217,19 @@ static RzILOpEffect *str(cs_insn *insn) {
 		bits = REGBITS(src_op);
 		break;
 	}
-	if (bits != 64) {
-		val = UNSIGNED(bits, val);
+	RzILOpBitVector *val = ARG(src_op, &bits);
+	if (!val) {
+		rz_il_op_pure_free(addr);
+		return NULL;
+	}
+	RzILOpBitVector *val2 = NULL;
+	if (pair) {
+		val2 = ARG(src_op + 1, &bits);
+		if (!val2) {
+			rz_il_op_pure_free(val);
+			rz_il_op_pure_free(addr);
+			return NULL;
+		}
 	}
 	RzILOpEffect *eff = bits == 8 ? STORE(addr, val) : STOREW(addr, val);
 	if (pair) {
@@ -2052,16 +2050,6 @@ static RzILOpEffect *swp(cs_insn *insn) {
 	if (!ISREG(0) || !ISREG(1)) {
 		return NULL;
 	}
-	RzILOpBitVector *store_val = read_reg(xreg_of_reg(REGID(0)));
-	if (!store_val) {
-		return NULL;
-	}
-	ut32 addr_bits = 64;
-	RzILOpBitVector *addr = ARG(2, &addr_bits);
-	if (!addr) {
-		rz_il_op_pure_free(store_val);
-		return NULL;
-	}
 	ut32 bits;
 	switch (insn->id) {
 	case ARM64_INS_SWPB:
@@ -2080,8 +2068,16 @@ static RzILOpEffect *swp(cs_insn *insn) {
 		bits = REGBITS(0);
 		break;
 	}
-	if (bits != 64) {
-		store_val = UNSIGNED(bits, store_val);
+	ut32 addr_bits = 64;
+	RzILOpBitVector *addr = ARG(2, &addr_bits);
+	if (!addr) {
+		return NULL;
+	}
+	RzILOpBitVector *store_val = ARG(0, &bits);
+	if (!addr || !store_val) {
+		rz_il_op_pure_free(addr);
+		rz_il_op_pure_free(store_val);
+		return NULL;
 	}
 	RzILOpEffect *store_eff = bits == 8 ? STORE(addr, store_val) : STOREW(addr, store_val);
 	arm64_reg ret_reg = xreg_of_reg(REGID(1));
