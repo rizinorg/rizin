@@ -2096,18 +2096,23 @@ static RzILOpEffect *swp(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_SXTB, ARM64_INS_SXTH, ARM64_INS_SXTW
- * ARM: sxtb, sxth, sxtw
+ * Capstone: ARM64_INS_SXTB, ARM64_INS_SXTH, ARM64_INS_SXTW, ARM64_INS_UXTB, ARM64_INS_UXTH
+ * ARM: sxtb, sxth, sxtw, uxtb, uxth
  */
 static RzILOpEffect *sxt(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
 	ut32 bits;
+	bool is_signed = true;
 	switch (insn->id) {
+	case ARM64_INS_UXTB:
+		is_signed = false;
 	case ARM64_INS_SXTB:
 		bits = 8;
 		break;
+	case ARM64_INS_UXTH:
+		is_signed = false;
 	case ARM64_INS_SXTH:
 		bits = 16;
 		break;
@@ -2119,7 +2124,7 @@ static RzILOpEffect *sxt(cs_insn *insn) {
 	if (!src) {
 		return NULL;
 	}
-	return write_reg(REGID(0), SIGNED(REGBITS(0), src));
+	return write_reg(REGID(0), is_signed ? SIGNED(REGBITS(0), src) : UNSIGNED(REGBITS(0), src));
 }
 
 /**
@@ -2601,6 +2606,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SXTB:
 	case ARM64_INS_SXTH:
 	case ARM64_INS_SXTW:
+	case ARM64_INS_UXTB:
+	case ARM64_INS_UXTH:
 		return sxt(insn);
 	default:
 		break;
