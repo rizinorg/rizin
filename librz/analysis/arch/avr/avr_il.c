@@ -593,11 +593,6 @@ static RzILOpEffect *avr_il_adc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	x = VARL(AVR_LET_RES);
 	adc = AVR_REG_SET(Rd, x);
 
-	// H: (Rd3 & Rr3) | (Rr3 & !R3) | (!R3 & Rd3)
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	H = avr_il_check_half_carry_flag_addition(AVR_LET_RES, x, y);
-
 	// V: (Rd7 & Rr7 & !Res7) | (!Rd7 & !Rr7 & Res7)
 	x = AVR_REG(Rd);
 	y = AVR_REG(Rr);
@@ -643,11 +638,6 @@ static RzILOpEffect *avr_il_add(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// Rd = TMP
 	x = VARL(AVR_LET_RES);
 	adc = AVR_REG_SET(Rd, x);
-
-	// H: (Rd3 & Rr3) | (Rr3 & !R3) | (!R3 & Rd3)
-	x = AVR_REG(Rd);
-	y = AVR_REG(Rr);
-	H = avr_il_check_half_carry_flag_addition(AVR_LET_RES, x, y);
 
 	// V: (Rd7 & Rr7 & !Res7) | (!Rd7 & !Rr7 & Res7)
 	x = AVR_REG(Rd);
@@ -2528,9 +2518,9 @@ static RzILOpEffect *avr_il_sbc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	// TMP = Rd - Rr - C
 	x = AVR_REG(Rd);
 	y = AVR_REG(Rr);
-	sub = SUB(x, y);
-	y = avr_il_sreg_bit_as_imm(AVR_SREG_C, 1);
 	x = SUB(x, y);
+	y = avr_il_sreg_bit_as_imm(AVR_SREG_C, 1);
+	sub = SUB(x, y);
 	let = SETL(AVR_LET_RES, sub);
 
 	// Rd = TMP
@@ -2581,9 +2571,9 @@ static RzILOpEffect *avr_il_sbci(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	// TMP = Rd - K - C
 	x = AVR_REG(Rd);
 	y = AVR_IMM(K);
-	sub = SUB(x, y);
-	y = avr_il_sreg_bit_as_imm(AVR_SREG_C, 1);
 	x = SUB(x, y);
+	y = avr_il_sreg_bit_as_imm(AVR_SREG_C, 1);
+	sub = SUB(x, y);
 	let = SETL(AVR_LET_RES, sub);
 
 	// Rd = TMP
