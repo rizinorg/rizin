@@ -2227,6 +2227,7 @@ static RzILOpEffect *tst(cs_insn *insn) {
  * - PACIB, PACIB1716, PACIBSP, PACIBZ, PACIZB
  * - BLRAA, BLRAAZ, BLRAB, BLRABZ
  * - BRAA, BRAAZ, BRAB, BRABZ
+ * - XPACD, XPACI, XPACLRI
  * Stub-implemented Instructions:
  * - LDRAA, LDRAB: currently behave like regular ldr
  *
@@ -2253,15 +2254,16 @@ static RzILOpEffect *tst(cs_insn *insn) {
  * - SMC: secure monitor call
  * - UDF: permanently undefined
  *
- * Not supported by capstone
- * -------------------------
- * - AXFLAG
+ * Not supported by capstone v4 or v5 at the time of writing
+ * ---------------------------------------------------------
+ * - AXFLAG, XAFLAG
  * - FEAT_MTE (see above)
  * - DGH
  * - LD64B
  * - ST64B
  * - ST64BV
  * - ST64BV0
+ * - WFET
  */
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
@@ -2271,6 +2273,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_PRFUM:
 	case ARM64_INS_SEV:
 	case ARM64_INS_SEVL:
+	case ARM64_INS_WFE:
+	case ARM64_INS_WFI:
+	case ARM64_INS_YIELD:
 		return NOP;
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC:
