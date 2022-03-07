@@ -2128,6 +2128,28 @@ static RzILOpEffect *sxt(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_TBNZ, ARM64_TBZ
+ * ARM: tbnz, tbz
+ */
+static RzILOpEffect *tbz(cs_insn *insn) {
+	if (!ISIMM(1)) {
+		return NULL;
+	}
+	ut32 bits = 64;
+	RzILOpBitVector *src = ARG(0, &bits);
+	RzILOpBitVector *tgt = ARG(2, &bits);
+	if (!src || !tgt) {
+		rz_il_op_pure_free(src);
+		rz_il_op_pure_free(tgt);
+		return NULL;
+	}
+	RzILOpBool *c = LSB(SHIFTR0(src, UN(6, IMM(1))));
+	return insn->id == ARM64_INS_TBNZ
+		? BRANCH(c, JMP(tgt), NULL)
+		: BRANCH(c, NULL, JMP(tgt));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -2172,7 +2194,7 @@ static RzILOpEffect *sxt(cs_insn *insn) {
  * - AT
  * - CFP
  * - CPP
- * - SYS
+ * - SYS, SYSL
  * - DC
  * - DVP
  * - IC
@@ -2609,6 +2631,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_UXTB:
 	case ARM64_INS_UXTH:
 		return sxt(insn);
+	case ARM64_INS_TBNZ:
+	case ARM64_INS_TBZ:
+		return tbz(insn);
 	default:
 		break;
 	}

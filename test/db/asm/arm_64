@@ -763,6 +763,10 @@ d "uxtb w1, w2" 411c0053 0x0 (set x1 (cast 64 false (cast 32 false (cast 8 false
 d "uxtb w1, w2" 411c0053 0x0 (set x1 (cast 64 false (cast 32 false (cast 8 false (var x2)))))
 d "uxth w1, w2" 413c0053 0x0 (set x1 (cast 64 false (cast 32 false (cast 16 false (var x2)))))
 d "uxth w1, w2" 413c0053 0x0 (set x1 (cast 64 false (cast 32 false (cast 16 false (var x2)))))
+d "tbz w1, 0xd, 0x100100" 01086836 0x100000 (branch (lsb (>> (cast 64 false (var x1)) (bv 6 0xd) false)) nop (jmp (bv 64 0x100100)))
+d "tbz x1, 0x2a, 0x100100" 010850b6 0x100000 (branch (lsb (>> (var x1) (bv 6 0x2a) false)) nop (jmp (bv 64 0x100100)))
+d "tbnz w1, 0xd, 0x100100" 01086837 0x100000 (branch (lsb (>> (cast 64 false (var x1)) (bv 6 0xd) false)) (jmp (bv 64 0x100100)) nop)
+d "tbnz x1, 0x2a, 0x100100" 010850b7 0x100000 (branch (lsb (>> (var x1) (bv 6 0x2a) false)) (jmp (bv 64 0x100100)) nop)
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
