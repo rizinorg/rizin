@@ -782,8 +782,8 @@ static RzILOpEffect *cmp(cs_insn *insn) {
 	}
 	bool is_neg = insn->id == ARM64_INS_CMN || insn->id == ARM64_INS_CCMN;
 	RzILOpEffect *eff = SEQ6(
-		SETL("a", DUP(a)),
-		SETL("b", DUP(b)),
+		SETL("a", a),
+		SETL("b", b),
 		SETL("r", is_neg ? ADD(VARL("a"), VARL("b")) : SUB(VARL("a"), VARL("b"))),
 		SETG("cf", (is_neg ? add_carry : sub_carry)(VARL("a"), VARL("b"), false)),
 		SETG("vf", (is_neg ? add_overflow : sub_overflow)(VARL("a"), VARL("b"), VARL("r"))),
@@ -1629,14 +1629,9 @@ static RzILOpEffect *movn(cs_insn *insn) {
 	// The only case where the movn encoding should be disassembled as "movn" is
 	// when (IsZero(imm16) && hw != '00'), according to the "alias conditions" in the reference manual.
 	// Unfortunately, capstone v4 seems to always disassemble as movn, so we still have to implement this.
-	ut32 bits = 0;
-	RzILOpBitVector *src = ARG(0, &bits);
-	if (!src) {
-		return NULL;
-	}
 	cs_arm64_op *op = &insn->detail->arm64.operands[1];
 	ut32 shift = op->shift.type == ARM64_SFT_LSL ? op->shift.value : 0;
-	return write_reg(REGID(0), UN(bits, ~(((ut64)op->imm) << shift)));
+	return write_reg(REGID(0), UN(REGBITS(0), ~(((ut64)op->imm) << shift)));
 }
 
 /**
@@ -1693,6 +1688,9 @@ static RzILOpEffect *rmif(cs_insn *insn) {
 		}
 		RzILOpEffect *set = SETG(flags[i], INV(IS_ZERO(LOGAND(val, UN(bits, 1ull << ((i + lsb) % 64))))));
 		eff = eff ? SEQ2(set, eff) : set;
+	}
+	if (!eff) {
+		rz_il_op_pure_free(val);
 	}
 	return eff ? eff : NOP;
 }
@@ -1857,7 +1855,7 @@ static RzILOpEffect *rev(cs_insn *insn) {
 	} else {
 		res = APPEND(
 			APPEND(
-				UNSIGNED(8, DUP(src)),
+				UNSIGNED(8, src),
 				UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x8)))),
 			APPEND(
 				UNSIGNED(8, SHIFTR0(DUP(src), UN(6, 0x10))),
