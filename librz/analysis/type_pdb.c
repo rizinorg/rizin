@@ -158,7 +158,7 @@ static RzType *parse_type(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 		char *error_msg = NULL;
 		typ = rz_type_parse_string_single(typedb->parser, simple_type->type, &error_msg);
 		if (error_msg) {
-			eprintf("%s : Error parsing complex type member \"%s\" type:\n%s\n", __FUNCTION__, simple_type->type, error_msg);
+			RZ_LOG_ERROR("%s : Error parsing complex type member \"%s\" type:\n%s\n", __FUNCTION__, simple_type->type, error_msg);
 			RZ_FREE(error_msg);
 		}
 		return typ;
@@ -332,7 +332,7 @@ static RzType *parse_type_nest(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	if (!btype) {
 		return NULL;
 	}
-	btype->name = create_type_name_from_offset(lf_nest->index);
+	btype->name = name ? strdup(name) : create_type_name_from_offset(lf_nest->index);
 	btype->type = n_type;
 	rz_type_db_save_base_type(typedb, btype);
 	if (n_type->kind == RZ_TYPE_KIND_IDENTIFIER) {
@@ -386,7 +386,7 @@ static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, RzPdbTpiS
 		// For structure, we don't need vtable for now
 		goto cleanup;
 	default:
-		eprintf("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
+		RZ_LOG_ERROR("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
 		goto cleanup;
 	}
 	if (!type) {
@@ -407,6 +407,33 @@ cleanup:
 	return NULL;
 }
 
+static inline bool is_tpitype_unnamed(const char *name) {
+	return !name || !strcmp(name, "<unnamed-tag>") || !strcmp(name, "<anonymous-tag>");
+}
+
+static inline RzBaseType *get_tpitype_basetype(const RzTypeDB *typedb, RzPdbTpiType *type, const char *name) {
+	RzBaseType *base_type;
+	if (is_tpitype_unnamed(name)) {
+		char *tmp_name = create_type_name_from_offset(type->type_index);
+		base_type = rz_type_db_get_base_type(typedb, tmp_name);
+		free(tmp_name);
+	} else {
+		base_type = rz_type_db_get_base_type(typedb, name);
+	}
+	return base_type;
+}
+
+static RzType *create_rztype(RzPdbTpiType *type, RzTypeIdentifierKind kind, const char *name) {
+	RzType *t = RZ_NEW0(RzType);
+	if (!t) {
+		return NULL;
+	}
+	t->kind = RZ_TYPE_KIND_IDENTIFIER;
+	t->identifier.kind = kind;
+	t->identifier.name = is_tpitype_unnamed(name) ? create_type_name_from_offset(type->type_index) : strdup(name);
+	return t;
+}
+
 /**
  * \brief Parses structures into BaseType and saves them into hashtable
  *
@@ -420,10 +447,17 @@ static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	RzBaseType *base_type = NULL;
 	char *name = rz_bin_pdb_get_type_name(type);
 	if (name) {
-		base_type = rz_type_db_get_base_type(typedb, name);
-		if (base_type && base_type->type) {
-			if (rz_bin_pdb_type_is_fwdref(type) || base_type->attrs != RZ_TYPE_TYPECLASS_INVALID) {
-				return rz_type_clone(base_type->type);
+		base_type = get_tpitype_basetype(typedb, type, name);
+		if (base_type) {
+			if (base_type->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+				RZ_LOG_WARN("PDB: Type of %s (struct) conflicts with already defined type (%s), redefining it.\n",
+					name, rz_type_base_type_kind_as_string(base_type->kind));
+				rz_type_db_delete_base_type((RzTypeDB *)typedb, base_type);
+				base_type = NULL;
+			} else if (type->parsed || rz_bin_pdb_type_is_fwdref(type)) {
+				return base_type->type ? rz_type_clone(base_type->type) : create_rztype(type, RZ_TYPE_IDENTIFIER_KIND_STRUCT, name);
+			} else if (base_type->attrs != RZ_TYPE_TYPECLASS_INVALID) {
+				RZ_LOG_INFO("%s : Redefining type %s.\n", __FUNCTION__, name);
 			}
 		}
 	}
@@ -434,28 +468,34 @@ static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 			return NULL;
 		}
 
-		RzType *typ = RZ_NEW0(RzType);
+		RzType *typ = create_rztype(type, RZ_TYPE_IDENTIFIER_KIND_STRUCT, name);
 		if (!typ) {
 			rz_type_base_type_free(base_type);
 			return NULL;
 		}
-		typ->kind = RZ_TYPE_KIND_IDENTIFIER;
-		typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
-		typ->identifier.name = strdup(name);
 		base_type->type = typ;
-		base_type->name = name ? strdup(name) : create_type_name_from_offset(type->type_index);
+		base_type->name = strdup(typ->identifier.name);
+		base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 		rz_type_db_save_base_type(typedb, base_type);
 
 		if (rz_bin_pdb_type_is_fwdref(type)) {
-			base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 			return rz_type_clone(base_type->type);
 		}
 	}
-
+	rz_vector_clear(&base_type->struct_data.members);
 	RzList *members = rz_bin_pdb_get_type_members(stream, type);
 	RzListIter *it;
 	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
+		if (member_info->leaf_type == LF_INDEX) {
+			type = rz_bin_pdb_get_type_by_index(stream, rz_bin_pdb_get_type_val(member_info));
+			members = rz_bin_pdb_get_type_members(stream, type);
+			it = rz_list_head(members);
+			if (!it) {
+				break;
+			}
+			member_info = rz_list_first(members);
+		}
 		RzTypeStructMember *struct_member = parse_struct_member(typedb, stream, member_info);
 		if (!struct_member) {
 			continue; // skip the failure
@@ -465,11 +505,15 @@ static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 			rz_type_base_struct_member_free(struct_member, NULL);
 			return NULL;
 		}
+		free(struct_member);
 	}
-	base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
 	base_type->size = rz_bin_pdb_get_type_val(type);
-	rz_list_append(stream->print_type, base_type);
-	return base_type ? base_type->type : NULL;
+	if (base_type->attrs == RZ_TYPE_TYPECLASS_INVALID) {
+		base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
+		rz_list_append(stream->print_type, base_type);
+	}
+	type->parsed = true;
+	return base_type->type ? rz_type_clone(base_type->type) : NULL;
 }
 
 /**
@@ -503,7 +547,7 @@ static RzTypeUnionMember *parse_union_member(const RzTypeDB *typedb, RzPdbTpiStr
 		break;
 	}
 	default:
-		eprintf("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
+		RZ_LOG_ERROR("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
 		goto cleanup;
 	}
 	if (!type) {
@@ -536,10 +580,17 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 	RzBaseType *base_type = NULL;
 	char *name = rz_bin_pdb_get_type_name(type);
 	if (name) {
-		base_type = rz_type_db_get_base_type(typedb, name);
-		if (base_type && base_type->type) {
-			if (rz_bin_pdb_type_is_fwdref(type) || base_type->attrs != RZ_TYPE_TYPECLASS_INVALID) {
-				return rz_type_clone(base_type->type);
+		base_type = get_tpitype_basetype(typedb, type, name);
+		if (base_type) {
+			if (base_type->kind != RZ_BASE_TYPE_KIND_UNION) {
+				RZ_LOG_WARN("PDB: Type of %s (union) conflicts with already defined type (%s), redefining it.\n",
+					name, rz_type_base_type_kind_as_string(base_type->kind));
+				rz_type_db_delete_base_type((RzTypeDB *)typedb, base_type);
+				base_type = NULL;
+			} else if (type->parsed || rz_bin_pdb_type_is_fwdref(type)) {
+				return base_type->type ? rz_type_clone(base_type->type) : create_rztype(type, RZ_TYPE_IDENTIFIER_KIND_UNION, name);
+			} else if (base_type->attrs != RZ_TYPE_TYPECLASS_INVALID) {
+				RZ_LOG_INFO("%s : Redefining type %s.\n", __FUNCTION__, name);
 			}
 		}
 	}
@@ -550,28 +601,34 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 			return NULL;
 		}
 
-		RzType *typ = RZ_NEW0(RzType);
+		RzType *typ = create_rztype(type, RZ_TYPE_IDENTIFIER_KIND_UNION, name);
 		if (!typ) {
 			rz_type_base_type_free(base_type);
 			return NULL;
 		}
-		typ->kind = RZ_TYPE_KIND_IDENTIFIER;
-		typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
-		typ->identifier.name = strdup(name);
 		base_type->type = typ;
-		base_type->name = name ? strdup(name) : create_type_name_from_offset(type->type_index);
+		base_type->name = strdup(typ->identifier.name);
+		base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 		rz_type_db_save_base_type(typedb, base_type);
 
 		if (rz_bin_pdb_type_is_fwdref(type)) {
-			base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 			return rz_type_clone(base_type->type);
 		}
 	}
-
+	rz_vector_clear(&base_type->union_data.members);
 	RzList *members = rz_bin_pdb_get_type_members(stream, type);
 	RzListIter *it;
 	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
+		if (member_info->leaf_type == LF_INDEX) {
+			type = rz_bin_pdb_get_type_by_index(stream, rz_bin_pdb_get_type_val(member_info));
+			members = rz_bin_pdb_get_type_members(stream, type);
+			it = rz_list_head(members);
+			if (!it) {
+				break;
+			}
+			member_info = rz_list_first(members);
+		}
 		RzTypeUnionMember *union_member = parse_union_member(typedb, stream, member_info);
 		if (!union_member) {
 			continue; // skip the failure
@@ -581,11 +638,15 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 			rz_type_base_union_member_free(union_member, NULL);
 			return NULL;
 		}
+		free(union_member);
 	}
 	base_type->size = rz_bin_pdb_get_type_val(type);
-	base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
-	rz_list_append(stream->print_type, base_type);
-	return base_type ? base_type->type : NULL;
+	if (base_type->attrs == RZ_TYPE_TYPECLASS_INVALID) {
+		base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
+		rz_list_append(stream->print_type, base_type);
+	}
+	type->parsed = true;
+	return base_type->type ? rz_type_clone(base_type->type) : NULL;
 }
 
 /**
@@ -626,10 +687,17 @@ static RzType *parse_enum(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 	RzBaseType *base_type = NULL;
 	char *name = rz_bin_pdb_get_type_name(type);
 	if (name) {
-		base_type = rz_type_db_get_base_type(typedb, name);
-		if (base_type && base_type->type) {
-			if (rz_bin_pdb_type_is_fwdref(type) || base_type->attrs != RZ_TYPE_TYPECLASS_INVALID) {
-				return rz_type_clone(base_type->type);
+		base_type = get_tpitype_basetype(typedb, type, name);
+		if (base_type) {
+			if (base_type->kind != RZ_BASE_TYPE_KIND_ENUM) {
+				RZ_LOG_WARN("PDB: Type of %s (enum) conflicts with already defined type (%s), redefining it.\n",
+					name, rz_type_base_type_kind_as_string(base_type->kind));
+				rz_type_db_delete_base_type((RzTypeDB *)typedb, base_type);
+				base_type = NULL;
+			} else if (type->parsed || rz_bin_pdb_type_is_fwdref(type)) {
+				return base_type->type ? rz_type_clone(base_type->type) : NULL;
+			} else if (base_type->attrs != RZ_TYPE_TYPECLASS_INVALID) {
+				RZ_LOG_INFO("%s : Redefining type %s.\n", __FUNCTION__, name);
 			}
 		}
 	}
@@ -650,34 +718,47 @@ static RzType *parse_enum(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 			rz_type_base_type_free(base_type);
 			return NULL;
 		}
-		base_type->name = name ? strdup(name) : create_type_name_from_offset(type->type_index);
+		base_type->name = is_tpitype_unnamed(name) ? create_type_name_from_offset(type->type_index) : strdup(name);
 		base_type->size = rz_type_db_get_bitsize(typedb, btype);
 		base_type->type = btype;
+		base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 		rz_type_db_save_base_type(typedb, base_type);
 
 		if (rz_bin_pdb_type_is_fwdref(type)) {
-			base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
 			return rz_type_clone(base_type->type);
 		}
 	}
-
+	rz_vector_clear(&base_type->enum_data.cases);
 	RzList *members = rz_bin_pdb_get_type_members(stream, type);
 	RzListIter *it;
 	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
+		if (member_info->leaf_type == LF_INDEX) {
+			type = rz_bin_pdb_get_type_by_index(stream, rz_bin_pdb_get_type_val(member_info));
+			members = rz_bin_pdb_get_type_members(stream, type);
+			it = rz_list_head(members);
+			if (!it) {
+				break;
+			}
+			member_info = rz_list_first(members);
+		}
 		RzTypeEnumCase *enum_case = parse_enumerate(member_info);
 		if (!enum_case) {
 			continue; // skip it, move forward
 		}
-		void *element = rz_vector_push(&base_type->struct_data.members, enum_case);
+		void *element = rz_vector_push(&base_type->enum_data.cases, enum_case);
 		if (!element) {
 			rz_type_base_enum_case_free(enum_case, NULL);
 			return NULL;
 		}
+		free(enum_case);
 	}
-	base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
-	rz_list_append(stream->print_type, base_type);
-	return base_type ? base_type->type : NULL;
+	if (base_type->attrs == RZ_TYPE_TYPECLASS_INVALID) {
+		base_type->attrs = RZ_TYPE_TYPECLASS_NONE;
+		rz_list_append(stream->print_type, base_type);
+	}
+	type->parsed = true;
+	return base_type->type ? rz_type_clone(base_type->type) : NULL;
 }
 
 /**
@@ -707,7 +788,7 @@ static void parse_types(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpi
 	default:
 		// shouldn't happen, happens when someone modifies leafs that get here
 		// but not how they should be parsed
-		eprintf("Unknown type record");
+		RZ_LOG_ERROR("Unknown type record");
 		break;
 	}
 }

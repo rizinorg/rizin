@@ -461,6 +461,10 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ule(RZ_NONNULL RzILOpPure *x, RZ_NONNULL 
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ult(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_slt(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_uge(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sge(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ugt(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sgt(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, RZ_NONNULL RzILOpBool *fill, RZ_NONNULL RzILOpBitVector *val);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_unsigned(ut32 length, RZ_NONNULL RzILOpBitVector *val); // "zero extension"
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_signed(ut32 length, RZ_NONNULL RzILOpBitVector *val); // "sign extension"
@@ -478,6 +482,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_or(RZ_NONNULL RzILOpBitVector *x
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_xor(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftl(RZ_NONNULL RzILOpBool *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *sh);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr(RZ_NONNULL RzILOpBool *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *sh);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr_arith(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *high, RZ_NONNULL RzILOpBitVector *low);
 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key);

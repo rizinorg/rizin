@@ -166,10 +166,10 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				}
 			} else {
 				if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_JMP, val, false)) {
-					eprintf("[wasm] cannot find jump type for br (using block type)\n");
+					RZ_LOG_ERROR("wasm: cannot find jump type for br (using block type)\n");
 					rz_analysis_hint_set_jump(analysis, addr, op->jump);
 				} else {
-					eprintf("[wasm] cannot find jump for br\n");
+					RZ_LOG_ERROR("wasm: cannot find jump for br\n");
 				}
 			}
 			rz_analysis_hint_free(hint2);
@@ -195,11 +195,11 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				}
 			} else {
 				if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_CJMP, val, false)) {
-					eprintf("[wasm] cannot find jump type for br_if (using block type)\n");
+					RZ_LOG_ERROR("wasm: cannot find jump type for br_if (using block type)\n");
 					op->fail = addr + op->size;
 					rz_analysis_hint_set_jump(analysis, addr, op->jump);
 				} else {
-					eprintf("[wasm] cannot find jump for br_if\n");
+					RZ_LOG_ERROR("wasm: cannot find jump for br_if\n");
 				}
 			}
 			rz_analysis_hint_free(hint2);

@@ -448,7 +448,7 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzCmdStateOutput *state)
 					? rz_str_newf("%s.%s", map->name, rz_str_rwx_i(map->perm))
 					: rz_str_newf("%08" PFMT64x ".%s", map->addr, rz_str_rwx_i(map->perm));
 				rz_name_filter(name, 0, true);
-				rz_cons_printf("f map.%s 0x%08" PFMT64x " 0x%08" PFMT64x "\n",
+				rz_cons_printf("f map.%s 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n",
 					name, map->addr_end - map->addr + 1, map->addr);
 				free(name);
 			} break;

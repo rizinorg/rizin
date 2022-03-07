@@ -35,7 +35,7 @@ static int hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 }
 
 static int hook_NOP_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	eprintf("NOP WRITE AT 0x%08" PFMT64x "\n", addr);
+	RZ_LOG_DEBUG("esil: NOP write at 0x%08" PFMT64x "\n", addr);
 	return 1; // override
 }
 

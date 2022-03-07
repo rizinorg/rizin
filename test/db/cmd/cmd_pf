@@ -537,43 +537,43 @@ pf.gobelin ww? blah meh (plop)Buh
 pf*.gobelin
 EOF
 EXPECT=<<EOF
-f blah=0x00000000
-fl 2 @ 0x00000000
+f blah @ 0x00000000
+fL 2 @ 0x00000000
 Cd 2 @ 0x00000000
-f meh=0x00000002
-fl 2 @ 0x00000002
+f meh @ 0x00000002
+fL 2 @ 0x00000002
 Cd 2 @ 0x00000002
-f plop.Buh_first=0x00000004
-fl 4 @ 0x00000004
+f plop.Buh_first @ 0x00000004
+fL 4 @ 0x00000004
 Cd 4 @ 0x00000004
-f troll.Boh_integer=0x00000008
-fl 4 @ 0x00000008
+f troll.Boh_integer @ 0x00000008
+fL 4 @ 0x00000008
 Cd 4 @ 0x00000008
-f word=0x0000000c
-fl 2 @ 0x0000000c
+f word @ 0x0000000c
+fL 2 @ 0x0000000c
 Cd 2 @ 0x0000000c
-f troll.Bah_integer=0x00000030
-fl 4 @ 0x00000030
+f troll.Bah_integer @ 0x00000030
+fL 4 @ 0x00000030
 Cd 4 @ 0x00000030
-f word=0x00000034
-fl 2 @ 0x00000034
+f word @ 0x00000034
+fL 2 @ 0x00000034
 Cd 2 @ 0x00000034
-f troll.Bah_integer=0x00000020
-fl 4 @ 0x00000020
+f troll.Bah_integer @ 0x00000020
+fL 4 @ 0x00000020
 Cd 4 @ 0x00000020
-f word=0x00000024
-fl 2 @ 0x00000024
+f word @ 0x00000024
+fL 2 @ 0x00000024
 Cd 2 @ 0x00000024
-fl 4 @ 0x00000020
+fL 4 @ 0x00000020
 Cd 4 @ 0x00000020
-fl 4 @ 0x00000030
+fL 4 @ 0x00000030
 Cd 4 @ 0x00000030
-fl 10 @ 0x00000008
+fL 10 @ 0x00000008
 Cd 10 @ 0x00000008
-f bwa=0x00000012
-fl 2 @ 0x00000012
+f bwa @ 0x00000012
+fL 2 @ 0x00000012
 Cd 2 @ 0x00000012
-fl 16 @ 0x00000004
+fL 16 @ 0x00000004
 Cd 16 @ 0x00000004
 EOF
 RUN

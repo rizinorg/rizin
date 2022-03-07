@@ -5,11 +5,7 @@
 #include "pdb.h"
 
 static bool parse_image_header(PeImageSectionHeader *hdr, RzBuffer *buf) {
-	char *name =
-		rz_buf_get_nstring(buf, rz_buf_tell(buf), PDB_SIZEOF_SECTION_NAME);
-	rz_str_cpy(hdr->name, name);
-	RZ_FREE(name);
-	rz_buf_seek(buf, PDB_SIZEOF_SECTION_NAME, RZ_BUF_CUR);
+	rz_buf_read(buf, (ut8 *)hdr->name, PDB_SIZEOF_SECTION_NAME);
 	return rz_buf_read_le32(buf, &hdr->misc.physical_address) &&
 		rz_buf_read_le32(buf, &hdr->virtual_address) &&
 		rz_buf_read_le32(buf, &hdr->size_of_raw_data) &&
@@ -55,5 +51,9 @@ RZ_IPI bool parse_pe_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	return true;
 }
 RZ_IPI void free_pe_stream(RzPdbPeStream *stream) {
+	if (!stream) {
+		return;
+	}
 	rz_list_free(stream->sections_hdrs);
+	free(stream);
 };

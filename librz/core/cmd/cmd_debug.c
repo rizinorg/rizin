@@ -974,7 +974,7 @@ static void cmd_debug_current_modules(RzCore *core, RzOutputMode mode) { // "dmm
 			char *escaped_path = rz_str_escape(map->file);
 			char *filtered_name = strdup(map->name);
 			rz_name_filter(filtered_name, 0, true);
-			rz_cons_printf("f mod.%s = 0x%08" PFMT64x "\n",
+			rz_cons_printf("f mod.%s @ 0x%08" PFMT64x "\n",
 				filtered_name, map->addr);
 			rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
 			free(escaped_path);
@@ -1008,7 +1008,7 @@ static void cmd_debug_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 			char *escaped_path = rz_str_escape(map->file);
 			char *filtered_name = strdup(map->name);
 			rz_name_filter(filtered_name, 0, true);
-			rz_cons_printf("f mod.%s = 0x%08" PFMT64x "\n",
+			rz_cons_printf("f mod.%s @ 0x%08" PFMT64x "\n",
 				filtered_name, map->addr);
 			rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
 			free(escaped_path);
@@ -2582,10 +2582,9 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzAnalysisOp *op;
 
 	if (!strncmp(input, "ate", 3)) {
-		char str[128];
-		str[0] = 0;
-		rz_print_date_get_now(core->print, str);
-		rz_cons_println(str);
+		char *now = rz_time_date_now_to_string();
+		rz_cons_printf("%s\n", now);
+		free(now);
 		return 0;
 	}
 
@@ -2979,15 +2978,15 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			break;
 		case '*': // "di*"
 			if (rdi) {
-				rz_cons_printf("f dbg.signal = %d\n", core->dbg->reason.signum);
-				rz_cons_printf("f dbg.sigpid = %d\n", core->dbg->reason.tid);
-				rz_cons_printf("f dbg.inbp = %d\n", core->dbg->reason.bp_addr ? 1 : 0);
-				rz_cons_printf("f dbg.sigaddr = 0x%" PFMT64x "\n", core->dbg->reason.addr);
-				rz_cons_printf("f dbg.baddr = 0x%" PFMT64x "\n", rz_debug_get_baddr(core->dbg, NULL));
-				rz_cons_printf("f dbg.pid = %d\n", rdi->pid);
-				rz_cons_printf("f dbg.tid = %d\n", rdi->tid);
-				rz_cons_printf("f dbg.uid = %d\n", rdi->uid);
-				rz_cons_printf("f dbg.gid = %d\n", rdi->gid);
+				rz_cons_printf("f dbg.signal @ %d\n", core->dbg->reason.signum);
+				rz_cons_printf("f dbg.sigpid @ %d\n", core->dbg->reason.tid);
+				rz_cons_printf("f dbg.inbp @ %d\n", core->dbg->reason.bp_addr ? 1 : 0);
+				rz_cons_printf("f dbg.sigaddr @ 0x%" PFMT64x "\n", core->dbg->reason.addr);
+				rz_cons_printf("f dbg.baddr @ 0x%" PFMT64x "\n", rz_debug_get_baddr(core->dbg, NULL));
+				rz_cons_printf("f dbg.pid @ %d\n", rdi->pid);
+				rz_cons_printf("f dbg.tid @ %d\n", rdi->tid);
+				rz_cons_printf("f dbg.uid @ %d\n", rdi->uid);
+				rz_cons_printf("f dbg.gid @ %d\n", rdi->gid);
 			}
 			break;
 		case 'j': // "dij"
@@ -3634,8 +3633,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 			break;
 		}
 		case RZ_OUTPUT_MODE_RIZIN: {
-			rz_cons_printf("f bt.frame%d = 0x%08" PFMT64x "\n", i, frame->addr);
-			rz_cons_printf("f bt.frame%d.stack %d 0x%08" PFMT64x "\n", i, frame->size, frame->sp);
+			rz_cons_printf("f bt.frame%d @ 0x%08" PFMT64x "\n", i, frame->addr);
+			rz_cons_printf("f bt.frame%d.stack %d @ 0x%08" PFMT64x "\n", i, frame->size, frame->sp);
 			i++;
 			break;
 		}

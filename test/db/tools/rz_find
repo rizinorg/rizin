@@ -16,7 +16,7 @@ NAME=rz-find -r -X -s
 FILE==
 CMDS=!rz-find -r -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-f hit0_0 0x0000058f ; bins/elf/ioli/crackme0x00
+f hit0_0 @ 0x0000058f ; bins/elf/ioli/crackme0x00
 EOF
 RUN
 
@@ -24,7 +24,7 @@ NAME=rz-find -f 0x00000000 -t 0x00000590 -r -X -s
 FILE==
 CMDS=!rz-find -f 0x00000000 -t 0x00001000 -r -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-f hit0_0 0x0000058f ; bins/elf/ioli/crackme0x00
+f hit0_0 @ 0x0000058f ; bins/elf/ioli/crackme0x00
 EOF
 RUN
 
@@ -39,7 +39,7 @@ NAME=rz-find -r -X -x
 FILE==
 CMDS=!rz-find -r -X -x 323530333832 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-f hit0_0 0x0000058f ; bins/elf/ioli/crackme0x00
+f hit0_0 @ 0x0000058f ; bins/elf/ioli/crackme0x00
 EOF
 RUN
 
@@ -47,7 +47,7 @@ NAME=rz-find -r -X -x with nibbles masked
 FILE==
 CMDS=!rz-find -r -X -x caf.bab. bins/java/Hello.class
 EXPECT=<<EOF
-f hit0_0 0x00000000 ; bins/java/Hello.class
+f hit0_0 @ 0x00000000 ; bins/java/Hello.class
 EOF
 RUN
 
@@ -55,7 +55,7 @@ NAME=rz-find -r -X -x with bin mask
 FILE==
 CMDS=!rz-find -r -X -x caf3bab3 -M fff0fff0 bins/java/Hello.class
 EXPECT=<<EOF
-f hit0_0 0x00000000 ; bins/java/Hello.class
+f hit0_0 @ 0x00000000 ; bins/java/Hello.class
 EOF
 RUN
 
@@ -164,28 +164,44 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-find -S ascii
+NAME=rz-find -w ascii
 FILE==
-CMDS=!rz-find -S wide bins/pe/testapp-msvc64.exe
+CMDS=!rz-find -w wide bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
 0x1481a
 0x14842
 EOF
 RUN
 
-NAME=rz-find -S U+00ff < utf8 < U+10000
+NAME=rz-find -w U+00ff < utf8 < U+10000
 FILE==
-CMDS=!rz-find -S واسع bins/pe/testapp-msvc64.exe
+CMDS=!rz-find -w واسع bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
 0x14864
 EOF
 RUN
 
-NAME=rz-find -S utf8 >= U+10000
+NAME=rz-find -w utf8 >= U+10000
 FILE==
-CMDS=!rz-find -S 𐍈 bins/elf/strenc
+CMDS=!rz-find -w 𐍈 bins/elf/strenc
 EXPECT=<<EOF
 0x22ac
+EOF
+RUN
+
+NAME=rz-find -S ascii
+FILE==
+CMDS=!rz-find -S QueryPerformanceCounter bins/pe/testapp-msvc64.exe
+EXPECT=<<EOF
+paddr: 0x0000c000 vaddr: 0x14000d000 type: FUNC QueryPerformanceCounter
+EOF
+RUN
+
+NAME=rz-find -I ascii
+FILE==
+CMDS=!rz-find -I QueryPerformanceCounter bins/pe/testapp-msvc64.exe
+EXPECT=<<EOF
+ordinal: 1 QueryPerformanceCounter
 EOF
 RUN
 

@@ -219,7 +219,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			*flagname = 0;
 			flagname = dup;
 			if (IS_MODE_RZCMD(mode)) {
-				rz_cons_printf("fl %s %s\n", flagname, v);
+				rz_cons_printf("fL %s %s\n", flagname, v);
 			} else if (IS_MODE_SET(mode)) {
 				RzFlagItem *fi = rz_flag_get(core->flags, flagname);
 				if (fi) {
@@ -3619,14 +3619,14 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	// class
 	char *fn = rz_core_bin_class_build_flag_name(c);
 	if (fn) {
-		rz_cons_printf("\"f %s = 0x%" PFMT64x "\"\n", fn, at_min);
+		rz_cons_printf("\"f %s @ 0x%" PFMT64x "\"\n", fn, at_min);
 		free(fn);
 	}
 
 	// super class
 	fn = rz_core_bin_super_build_flag_name(c);
 	if (fn) {
-		rz_cons_printf("\"f %s = %d\"\n", fn, c->index);
+		rz_cons_printf("\"f %s @ %d\"\n", fn, c->index);
 		free(fn);
 	}
 
@@ -3634,7 +3634,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	rz_list_foreach (c->fields, iter2, f) {
 		char *fn = rz_core_bin_field_build_flag_name(c, f);
 		if (fn) {
-			rz_cons_printf("\"f %s = 0x%08" PFMT64x "\"\n", fn, f->vaddr);
+			rz_cons_printf("\"f %s @ 0x%08" PFMT64x "\"\n", fn, f->vaddr);
 			free(fn);
 		}
 	}
@@ -3643,7 +3643,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	rz_list_foreach (c->methods, iter2, sym) {
 		char *fn = rz_core_bin_method_build_flag_name(c, sym);
 		if (fn) {
-			rz_cons_printf("\"f %s = 0x%" PFMT64x "\"\n", fn, sym->vaddr);
+			rz_cons_printf("\"f %s @ 0x%" PFMT64x "\"\n", fn, sym->vaddr);
 			free(fn);
 		}
 	}
@@ -4039,9 +4039,12 @@ static int bin_trycatch(RzCore *core, PJ *pj, int mode) {
 	int idx = 0;
 	// FIXME: json mode
 	rz_list_foreach (trycatch, iter, tc) {
-		rz_cons_printf("f try.%d.%" PFMT64x ".from=0x%08" PFMT64x "\n", idx, tc->source, tc->from);
-		rz_cons_printf("f try.%d.%" PFMT64x ".to=0x%08" PFMT64x "\n", idx, tc->source, tc->to);
-		rz_cons_printf("f try.%d.%" PFMT64x ".catch=0x%08" PFMT64x "\n", idx, tc->source, tc->handler);
+		rz_cons_printf("f+ try.%d.%" PFMT64x ".from @ 0x%08" PFMT64x "\n", idx, tc->source, tc->from);
+		rz_cons_printf("f+ try.%d.%" PFMT64x ".to @ 0x%08" PFMT64x "\n", idx, tc->source, tc->to);
+		rz_cons_printf("f+ try.%d.%" PFMT64x ".catch @ 0x%08" PFMT64x "\n", idx, tc->source, tc->handler);
+		if (tc->filter) {
+			rz_cons_printf("f+ try.%d.%" PFMT64x ".filter @ 0x%08" PFMT64x "\n", idx, tc->source, tc->filter);
+		}
 		idx++;
 	}
 	return true;
@@ -4666,84 +4669,6 @@ RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 	}
 out:
 	return rz_strbuf_drain(buf);
-}
-
-static RzCoreStringKind get_string_kind(const ut8 *buf, ut64 len) {
-	rz_return_val_if_fail(buf && len, RZ_CORE_STRING_KIND_UNKNOWN);
-	ut64 needle = 0;
-	ut64 rc, i;
-	RzCoreStringKind str_kind = RZ_CORE_STRING_KIND_UNKNOWN;
-
-	while (needle < len) {
-		rc = rz_utf8_decode(buf + needle, len - needle, NULL);
-		if (!rc) {
-			needle++;
-			continue;
-		}
-		if (needle + rc + 2 < len &&
-			buf[needle + rc + 0] == 0x00 &&
-			buf[needle + rc + 1] == 0x00 &&
-			buf[needle + rc + 2] == 0x00) {
-			str_kind = RZ_CORE_STRING_KIND_WIDE16;
-		} else {
-			str_kind = RZ_CORE_STRING_KIND_ASCII;
-		}
-		for (i = 0; needle < len; i += rc) {
-			RzRune r;
-			if (str_kind == RZ_CORE_STRING_KIND_WIDE16) {
-				if (needle + 1 < len) {
-					r = buf[needle + 1] << 8 | buf[needle];
-					rc = 2;
-				} else {
-					break;
-				}
-			} else {
-				rc = rz_utf8_decode(buf + needle, len - needle, &r);
-				if (rc > 1) {
-					str_kind = RZ_CORE_STRING_KIND_UTF8;
-				}
-			}
-			/*Invalid sequence detected*/
-			if (!rc) {
-				needle++;
-				break;
-			}
-			needle += rc;
-		}
-	}
-	return str_kind;
-}
-
-/**
- * \brief Returns the information about string given the offset and legnth
- *
- * \param core RzCore instance
- * \param block Pointer to the string
- * \param len Length of the string
- * \param type A type of the string to override autodetection
- */
-RZ_OWN RZ_API RzCoreString *rz_core_string_information(RzCore *core, const char *block, ut32 len, RzCoreStringKind kind) {
-	rz_return_val_if_fail(core && block && len, NULL);
-	RzCoreString *cstring = RZ_NEW0(RzCoreString);
-	if (!cstring) {
-		return NULL;
-	}
-	const char *section_name = rz_core_get_section_name(core, core->offset);
-	if (section_name && strlen(section_name) < 1) {
-		section_name = "unknown";
-	}
-	cstring->section_name = section_name;
-	cstring->string = block;
-	cstring->offset = core->offset;
-	cstring->size = len;
-	if (kind != RZ_CORE_STRING_KIND_UNKNOWN) {
-		cstring->kind = kind;
-	} else {
-		cstring->kind = get_string_kind((const ut8 *)block, len);
-	}
-	// FIXME: Add proper length calculation (see functions in librz/util/str.c)
-	cstring->length = cstring->size;
-	return cstring;
 }
 
 RZ_API RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state) {

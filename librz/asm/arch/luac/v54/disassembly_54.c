@@ -5,7 +5,7 @@
 
 int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 	if (len < 4) {
-		eprintf("truncated opcode\n");
+		RZ_LOG_DEBUG("Cannot disassemble lua54 opcode (truncated).\n");
 		return 0;
 	}
 

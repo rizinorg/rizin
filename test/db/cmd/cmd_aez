@@ -123,7 +123,7 @@ ar pc=0x54
 aezs 1
 aezv
 ar
-f @F:registers
+fl @F:registers
 EOF
 EXPECT=<<EOF
 ptr = 0x00010000
@@ -144,10 +144,45 @@ FILE=bins/bf/hello-ok.bf
 CMDS=<<EOF
 s 0x100
 aezi
-f @F:registers
+fl @F:registers
 EOF
 EXPECT=<<EOF
 0x00000100 8 pc
 0x00010000 8 ptr
+EOF
+RUN
+
+NAME=double aezsu with different start pc
+FILE=bins/bf/2+5.bf
+CMDS=<<EOF
+e io.cache=1
+aezi
+(emu_pc pc; ar pc=$0; ar; aezsu $s; ?e)
+.(emu_pc 1)
+wv1 0 @ ptr
+.(emu_pc 0)
+EOF
+EXPECT=<<EOF
+ptr = 0x00010000
+pc = 0x00000001
+6
+ptr = 0x00010000
+pc = 0x00000000
+7
+EOF
+RUN
+
+NAME=double aezi with different offsets
+FILE=bins/bf/2+5.bf
+CMDS=<<EOF
+e io.cache=1
+(emu_start start; aezi @ $0; aezsu $s; ?e)
+.(emu_start 1)
+w0 1 @ ptr
+.(emu_start 2)
+EOF
+EXPECT=<<EOF
+6
+5
 EOF
 RUN

@@ -5,14 +5,14 @@
 #include <winkd.h>
 #include <kd.h>
 
-static WindCtx *wctx = NULL;
+static KdCtx *kdctx = NULL;
 
 static int rz_debug_winkd_step(RzDebug *dbg) {
 	return true;
 }
 
 static int rz_debug_winkd_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
-	int ret = winkd_read_reg(wctx, buf, size);
+	int ret = winkd_read_reg(kdctx, buf, size);
 	if (!ret || size != ret) {
 		return -1;
 	}
@@ -31,23 +31,23 @@ static int rz_debug_winkd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int 
 		eprintf("Could not retrieve the register arena!\n");
 		return false;
 	}
-	int ret = winkd_write_reg(wctx, arena, arena_size);
+	int ret = winkd_write_reg(kdctx, arena, arena_size);
 	free(arena);
 	return ret;
 }
 
 static int rz_debug_winkd_continue(RzDebug *dbg, int pid, int tid, int sig) {
-	return winkd_continue(wctx);
+	return winkd_continue(kdctx);
 }
 
 static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
-	winkd_lock_enter(wctx);
+	winkd_lock_enter(kdctx);
 	for (;;) {
 		void *bed = rz_cons_sleep_begin();
-		int ret = winkd_wait_packet(wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
+		int ret = winkd_wait_packet(kdctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
 		rz_cons_sleep_end(bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = RZ_DEBUG_REASON_ERROR;
@@ -57,7 +57,7 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 		dbg->reason.addr = stc->pc;
 		dbg->reason.tid = stc->kthread;
 		dbg->reason.signum = stc->state;
-		winkd_set_cpu(wctx, stc->cpu);
+		winkd_set_cpu(kdctx, stc->cpu);
 		if (stc->state == DbgKdExceptionStateChange) {
 			dbg->reason.type = RZ_DEBUG_REASON_INT;
 			reason = RZ_DEBUG_REASON_INT;
@@ -69,7 +69,7 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 		}
 		RZ_FREE(pkt);
 	}
-	winkd_lock_leave(wctx);
+	winkd_lock_leave(kdctx);
 	free(pkt);
 	return reason;
 }
@@ -86,19 +86,17 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	if (dbg->arch && strcmp(dbg->arch, "x86")) {
 		return false;
 	}
-	wctx = (WindCtx *)desc->data;
+	kdctx = (KdCtx *)desc->data;
 
 	// Handshake
-	if (!winkd_sync(wctx)) {
-		eprintf("Could not connect to winkd\n");
-		winkd_ctx_free((WindCtx **)&desc->data);
+	if (!winkd_sync(kdctx)) {
+		RZ_LOG_ERROR("Could not connect to winkd\n");
 		return false;
 	}
-	if (!winkd_read_ver(wctx)) {
-		winkd_ctx_free((WindCtx **)&desc->data);
+	if (!winkd_read_ver(kdctx)) {
 		return false;
 	}
-	dbg->bits = winkd_get_bits(wctx);
+	dbg->bits = winkd_get_bits(&kdctx->windctx);
 	// Make rz_debug_is_dead happy
 	dbg->pid = 0;
 	return true;
@@ -138,7 +136,7 @@ static int rz_debug_winkd_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool
 		}
 	}
 	tag = (int *)b->data;
-	return winkd_bkpt(wctx, b->addr, set, b->hw, tag);
+	return winkd_bkpt(kdctx, b->addr, set, b->hw, tag);
 }
 
 static bool rz_debug_winkd_init(RzDebug *dbg, void **user) {
@@ -146,22 +144,31 @@ static bool rz_debug_winkd_init(RzDebug *dbg, void **user) {
 }
 
 static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
-	RzListIter *it;
-	WindProc *p;
+	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
+		return NULL;
+	}
 
-	RzList *ret = rz_list_newf(free);
+	if (kdctx->plist_cache) {
+		return kdctx->plist_cache;
+	}
+
+	RzList *ret = rz_list_newf((RzListFree)rz_debug_pid_free);
 	if (!ret) {
 		return NULL;
 	}
 
-	RzList *pids = winkd_list_process(wctx);
+	RzList *pids = winkd_list_process(&kdctx->windctx);
 	if (!pids) {
-		return ret;
+		rz_list_free(ret);
+		return NULL;
 	}
+	RzListIter *it;
+	WindProc *p;
 	rz_list_foreach (pids, it, p) {
 		RzDebugPid *newpid = RZ_NEW0(RzDebugPid);
 		if (!newpid) {
 			rz_list_free(ret);
+			rz_list_free(pids);
 			return NULL;
 		}
 		newpid->path = strdup(p->name);
@@ -170,19 +177,20 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 		newpid->runnable = true;
 		rz_list_append(ret, newpid);
 	}
-	// rz_list_free (pids);
+	rz_list_free(pids);
+	kdctx->plist_cache = ret;
 	return ret;
 }
 
 static int rz_debug_winkd_select(RzDebug *dbg, int pid, int tid) {
-	ut32 old = winkd_get_target(wctx);
-	int ret = winkd_set_target(wctx, pid);
+	ut32 old = winkd_get_target(&kdctx->windctx);
+	int ret = winkd_set_target(&kdctx->windctx, pid, tid);
 	if (!ret) {
 		return false;
 	}
-	ut64 base = winkd_get_target_base(wctx);
+	ut64 base = winkd_get_target_base(&kdctx->windctx);
 	if (!base) {
-		winkd_set_target(wctx, old);
+		winkd_set_target(&kdctx->windctx, old, tid);
 		return false;
 	}
 	eprintf("Process base is 0x%" PFMT64x "\n", base);
@@ -190,20 +198,25 @@ static int rz_debug_winkd_select(RzDebug *dbg, int pid, int tid) {
 }
 
 static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
-	RzListIter *it;
-	WindThread *t;
+	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
+		return NULL;
+	}
+
+	if (kdctx->tlist_cache) {
+		return kdctx->tlist_cache;
+	}
 
 	RzList *ret = rz_list_newf(free);
 	if (!ret) {
 		return NULL;
 	}
-
-	RzList *threads = winkd_list_threads(wctx);
+	RzList *threads = winkd_list_threads(&kdctx->windctx);
 	if (!threads) {
 		rz_list_free(ret);
 		return NULL;
 	}
-
+	RzListIter *it;
+	WindThread *t;
 	rz_list_foreach (threads, it, t) {
 		RzDebugPid *newpid = RZ_NEW0(RzDebugPid);
 		if (!newpid) {
@@ -215,25 +228,22 @@ static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
 		newpid->runnable = t->runnable;
 		rz_list_append(ret, newpid);
 	}
-
+	rz_list_free(threads);
+	kdctx->tlist_cache = ret;
 	return ret;
 }
 
 static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
-	RzListIter *it;
-	WindModule *m;
-
-	RzList *ret = rz_list_newf(free);
+	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
+		return NULL;
+	}
+	RzList *ret = rz_list_newf((RzListFree)rz_debug_map_free);
 	if (!ret) {
 		return NULL;
 	}
-
-	RzList *modules = winkd_list_modules(wctx);
-	if (!modules) {
-		rz_list_free(ret);
-		return NULL;
-	}
-
+	RzList *modules = winkd_list_modules(&kdctx->windctx);
+	RzListIter *it;
+	WindModule *m;
 	rz_list_foreach (modules, it, m) {
 		RzDebugMap *mod = RZ_NEW0(RzDebugMap);
 		if (!mod) {
@@ -247,7 +257,6 @@ static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
 		mod->addr_end = m->addr + m->size;
 		rz_list_append(ret, mod);
 	}
-
 	rz_list_free(modules);
 	return ret;
 }

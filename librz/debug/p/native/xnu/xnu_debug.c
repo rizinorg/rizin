@@ -175,7 +175,7 @@ bool xnu_step(RzDebug *dbg) {
 	int ret = rz_debug_ptrace(dbg, PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; // SIGINT
 	if (!ret) {
 		perror("ptrace-step");
-		eprintf("mach-error: %d, %s\n", ret, MACH_ERROR_STRING(ret));
+		RZ_LOG_ERROR("mach-error: %d, %s\n", ret, rz_str_get_null(mach_error_string(ret)));
 	}
 	return ret;
 #else
@@ -446,9 +446,9 @@ int xnu_map_dealloc(RzDebug *dbg, ut64 addr, int size) {
 	if (!th) {
 		return false;
 	}
-	int ret = vm_deallocate(th->port, (vm_address_t)addr, (vm_size_t)size);
+	mach_error_t ret = vm_deallocate(th->port, (vm_address_t)addr, (vm_size_t)size);
 	if (ret != KERN_SUCCESS) {
-		perror("vm_deallocate");
+		LOG_MACH_ERROR("vm_deallocate", ret);
 		return false;
 	}
 	return true;
@@ -560,13 +560,12 @@ static vm_prot_t unix_prot_to_darwin(int prot) {
 #endif
 
 int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
-	int ret;
 	task_t task = pid_to_task(dbg->tid);
 #define xwrz_testwx(x) ((x & 1) << 2) | (x & 2) | ((x & 4) >> 2)
 	int xnu_perms = xwrz_testwx(perms);
-	ret = mach_vm_protect(task, (vm_address_t)addr, (vm_size_t)size, (boolean_t)0, xnu_perms); // VM_PROT_COPY | perms);
+	mach_error_t ret = mach_vm_protect(task, (vm_address_t)addr, (vm_size_t)size, (boolean_t)0, xnu_perms); // VM_PROT_COPY | perms);
 	if (ret != KERN_SUCCESS) {
-		perror("vm_protect");
+		LOG_MACH_ERROR("mach_vm_protect", ret);
 		return false;
 	}
 	return true;
@@ -598,10 +597,9 @@ task_t pid_to_task(int pid) {
 			task = task_for_pid_ios9pangu(pid);
 			if (task != MACH_PORT_NULL) {
 				if (pid != -1) {
-					eprintf("Failed to get task %d for pid %d.\n",
+					RZ_LOG_ERROR("Failed to get task %d for pid %d.\n",
 						(int)task, (int)pid);
-					eprintf("Reason: 0x%x: %s\n", err,
-						(char *)MACH_ERROR_STRING(err));
+					RZ_LOG_ERROR("Reason: 0x%x: %s\n", err, rz_str_get_null(mach_error_string(err)));
 				}
 				eprintf("You probably need to run as root\n");
 				return 0;
@@ -724,11 +722,10 @@ static int xnu_dealloc_threads(RzList *threads) {
 	xnu_thread_t *thread;
 	mach_msg_type_number_t thread_count;
 	thread_array_t thread_list;
-	kern_return_t kr = KERN_SUCCESS;
 
-	kr = task_threads(task_dbg, &thread_list, &thread_count);
+	mach_error_t kr = task_threads(task_dbg, &thread_list, &thread_count);
 	if (kr != KERN_SUCCESS) {
-		perror("task_threads");
+		LOG_MACH_ERROR("task_threads", kr);
 	} else {
 		rz_list_foreach_safe (threads, iter, iter2, thread) {
 			mach_port_deallocate(mach_task_self(), thread->port);

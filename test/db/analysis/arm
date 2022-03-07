@@ -111,7 +111,7 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bytes=true
 e asm.bits=32
-wa mov r0, r0
+wa "mov r0, r0"
 pi 1
 pd 1
 ahb 32
@@ -157,11 +157,11 @@ FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e cfg.bigendian=1
-wa blx 0x33b8
+wa "blx 0x33b8"
 p8 4
 pi 1
 e cfg.bigendian=0
-wa blx 0x33b8
+wa "blx 0x33b8"
 p8 4
 pi 1
 EOF
@@ -442,7 +442,7 @@ e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
-f sym.callback=0x315
+f sym.callback @ 0x315
 pd 1
 EOF
 EXPECT=<<EOF
@@ -459,7 +459,7 @@ e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
-f sym.callback=0x14
+f sym.callback @ 0x14
 pd 1
 e asm.sub.varmin=0
 pd 1
@@ -574,7 +574,7 @@ NAME=ELF ARM: aa
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
 aa
-f~sym?
+fl~sym?
 afl~?
 EOF
 EXPECT=<<EOF
@@ -863,7 +863,7 @@ CMDS=<<EOF
 e asm.cpu=arm1176
 e asm.platform=bcm2835
 aa
-f~AUX
+fl~AUX
 CCl~Broadcom
 EOF
 EXPECT=<<EOF
@@ -921,6 +921,7 @@ sign: false
 type: push
 cycles: 1
 esil: 8,sp,-=,lr,r3,2,sp,=[*]
+rzil: (seq (storew 0 (- (var sp) (bv 32 0x8)) (var r3)) (storew 0 (- (var sp) (bv 32 0x4)) (var lr)) (set sp (- (var sp) (bv 32 0x8))))
 family: cpu
 stackop: inc
 stackptr: 8
@@ -942,6 +943,7 @@ sign: false
 type: add
 cycles: 1
 esil: 0,sp,+,0xffffffff,&,r7,=
+rzil: (set r7 (+ (var sp) (bv 32 0x0)))
 family: cpu
 EOF
 RUN
@@ -990,7 +992,7 @@ NAME=arm jmptbl flags and comments
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 af@ sym.__gcc_personality_v0
-f~switch.,case.
+fl~switch.,case.
 CCl~switch
 EOF
 EXPECT=<<EOF
@@ -1096,5 +1098,57 @@ axt @ str.Hello_world
 EOF
 EXPECT=<<EOF
 main 0x512 [DATA] add r3, pc
+EOF
+RUN
+
+NAME=arm pcalign
+FILE=
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e asm.pcalign
+e asm.bits=16
+e asm.pcalign
+EOF
+EXPECT=<<EOF
+4
+2
+EOF
+RUN
+
+NAME=arm thumb it tracking
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+s 0x100
+wx 54bf53f8182c52181846
+pi 4
+ao @ 0x102~mnemonic
+ao @ 0x106~mnemonic
+ao @ 0x108~mnemonic
+?e -- Update after code change
+wx 1846
+pi 4
+ao @ 0x102~mnemonic
+ao @ 0x106~mnemonic
+ao @ 0x108~mnemonic
+EOF
+EXPECT=<<EOF
+ite pl
+ldrpl r2, [r3, -0x18]
+addmi r2, r2, r1
+mov r0, r3
+mnemonic: ldrpl
+mnemonic: addmi
+mnemonic: mov
+-- Update after code change
+mov r0, r3
+ldr r2, [r3, -0x18]
+adds r2, r2, r1
+mov r0, r3
+mnemonic: ldr
+mnemonic: adds
+mnemonic: mov
 EOF
 RUN

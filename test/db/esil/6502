@@ -284,7 +284,7 @@ aes
 pu 1 @ 0x10
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -299,7 +299,7 @@ aes
 pu 1 @ 0x18
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -313,7 +313,7 @@ aes
 pu 1 @ 0x0100
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -328,7 +328,7 @@ aes
 pu 1 @ 0x0108
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -343,7 +343,7 @@ aes
 pu 1 @ 0x0108
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -359,7 +359,7 @@ aes
 pu 1 @ 0x0108
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -375,7 +375,7 @@ aes
 pu 1 @ 0x0108
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -389,7 +389,7 @@ aes
 pu 1 @ 0x10
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -404,7 +404,7 @@ aes
 pu 1 @ 0x18
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -418,7 +418,7 @@ aes
 pu 1 @ 0x0100
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -432,7 +432,7 @@ aes
 pu 1 @ 0x10
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -447,7 +447,7 @@ aes
 pu 1 @ 0x18
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -461,7 +461,7 @@ aes
 pu 1 @ 0x0100
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -532,7 +532,7 @@ wx c680
 aes; pu 1 @ 0x80; ar flags
 EOF
 EXPECT=<<EOF
-%7e
+~
 flags = 0x00000000
 EOF
 RUN
@@ -979,7 +979,7 @@ EOF
 EXPECT=<<EOF
 %b0
 flags = 0x00000080
-%58
+X
 flags = 0x00000000
 %2c
 flags = 0x00000000
@@ -1001,9 +1001,9 @@ EOF
 EXPECT=<<EOF
 %e0
 flags = 0x00000080
-%70
+p
 flags = 0x00000000
-%38
+8
 flags = 0x00000000
 EOF
 RUN

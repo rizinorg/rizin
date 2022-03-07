@@ -148,7 +148,7 @@ FILE==
 CMDS=<<EOF
 !rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00
 ?e Same project, different file
-!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "o; pdi 3 @ easy" bins/elf/ioli/crackme0x01
+!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "ol; pdi 3 @ easy" bins/elf/ioli/crackme0x01
 !rm .crackme.rzdb
 EOF
 EXPECT=<<EOF
@@ -177,5 +177,23 @@ Reload project including file
 0x080483fe                 08e8  or al, ch
 0x08048400                   fc  cld
 0x08048401                 7bfb  jnp 0x80483fe
+EOF
+RUN
+
+NAME=b/w prompt
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \nq\n" =
+EXPECT=<<EOF
+[2K[0x00000000]> [0x00000000]> [2K[0x00000000]> 
+[2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
+EOF
+RUN
+
+NAME=color prompt
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=1 -c "< \nq\n" =
+EXPECT=<<EOF
+[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[33m[0x00000000]>[0m 
+[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[2K[0m[33m[0x00000000]>[0m q[33m[0x00000000]>[0m q[2K[33m[0x00000000]>[0m q
 EOF
 RUN

@@ -51,7 +51,7 @@ RUN
 NAME=quoted comments bug
 FILE=malloc://1024
 CMDS=<<EOF
-"w hello # world"
+w "hello # world"
 ps
 EOF
 EXPECT=<<EOF
@@ -78,7 +78,7 @@ NAME=wa
 FILE=malloc://1024
 ARGS=-a x86 -b 32
 CMDS=<<EOF
-"wa nop;mov eax,33"
+wa "nop;mov eax,33"
 pi 2
 EOF
 EXPECT=<<EOF
@@ -91,7 +91,7 @@ NAME=wa je 0x33
 FILE=malloc://1024
 ARGS=-a x86 -b 32
 CMDS=<<EOF
-wa je 0x33 @ 0x10
+wa "je 0x33" @ 0x10
 pi 1 @ 0x10
 EOF
 EXPECT=<<EOF
@@ -452,16 +452,16 @@ FILE==
 ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 e asm.bytes=true
-wa jne 6 @ 2
+wa "jne 6" @ 2
 wa ret @ 8
 af
 pdr
-wa jne 8 @ 4
+wa "jne 8" @ 4
 pdr
-wa mov rax, [rbp-4]
+wa "mov rax, [rbp-4]"
 pdr
 afvn test var_4h
-wa jne 0 @ 4
+wa "jne 0" @ 4
 pdr
 wx 00000000
 afv # check var was deleted
@@ -514,7 +514,7 @@ e asm.bytes=true
 wx e80200000075020000c3
 af
 pdr
-wa jne 9
+wa "jne 9"
 pdr
 wx e802
 pdr
@@ -562,7 +562,7 @@ wx 0000c300c3
 af
 afb+ 0 4 1
 pdr
-wa add byte [rax], bl
+wa "add byte [rax], bl"
 pdr
 EOF
 EXPECT=<<EOF

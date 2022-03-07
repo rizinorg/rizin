@@ -6,11 +6,11 @@
 #include <ht_uu.h>
 #include <capstone.h>
 #include "../arch/arm/asm-arm.h"
+#include "../arch/arm/arm_it.h"
 #include "./asm_arm_hacks.inc"
 
 typedef struct arm_cs_context_t {
-	HtUU *ht_itblock;
-	HtUU *ht_it;
+	RzArmITContext it;
 	csh cd;
 	int omode;
 	int obits;
@@ -83,38 +83,6 @@ static const char *cc_name(arm_cc cc) {
 	}
 }
 
-static void disass_itblock(RzAsm *a, cs_insn *insn) {
-	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
-	size_t i, size;
-	size = rz_str_nlen(insn->mnemonic, 5);
-	ht_uu_update(ctx->ht_itblock, a->pc, size);
-	for (i = 1; i < size; i++) {
-		switch (insn->mnemonic[i]) {
-		case 0x74: //'t'
-			ht_uu_update(ctx->ht_it, a->pc + (i * insn->size), insn->detail->arm.cc);
-			break;
-		case 0x65: //'e'
-			ht_uu_update(ctx->ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2) ? insn->detail->arm.cc + 1 : insn->detail->arm.cc - 1);
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-static void check_itblock(RzAsm *a, cs_insn *insn) {
-	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
-	size_t x;
-	bool found;
-	ut64 itlen = ht_uu_find(ctx->ht_itblock, a->pc, &found);
-	if (found) {
-		for (x = 1; x < itlen; x++) {
-			ht_uu_delete(ctx->ht_it, a->pc + (x * insn->size));
-		}
-		ht_uu_delete(ctx->ht_itblock, a->pc);
-	}
-}
-
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
 
@@ -122,10 +90,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	cs_insn *insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
-	bool found = false;
-	ut64 itcond;
 
-	mode |= (a->bits == 16) ? CS_MODE_THUMB : CS_MODE_ARM;
+	bool thumb = a->bits == 16;
+	mode |= thumb ? CS_MODE_THUMB : CS_MODE_ARM;
 	mode |= (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	if (mode != ctx->omode || a->bits != ctx->obits) {
 		cs_close(&ctx->cd);
@@ -188,17 +155,14 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (op && !op->size) {
 		op->size = insn->size;
 		if (insn->id == ARM_INS_IT) {
-			disass_itblock(a, insn);
+			rz_arm_it_update_block(&ctx->it, insn);
 		} else {
-			check_itblock(a, insn);
+			rz_arm_it_update_nonblock(&ctx->it, insn);
 		}
-		itcond = ht_uu_find(ctx->ht_it, a->pc, &found);
-		if (found) {
-			insn->detail->arm.cc = itcond;
-			insn->detail->arm.update_flags = 0;
+		if (thumb && rz_arm_it_apply_cond(&ctx->it, insn)) {
 			char *tmpstr = rz_str_newf("%s%s",
 				cs_insn_name(ctx->cd, insn->id),
-				cc_name(itcond));
+				cc_name(insn->detail->arm.cc));
 			rz_str_cpy(insn->mnemonic, tmpstr);
 			free(tmpstr);
 		}
@@ -234,7 +198,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	} else {
 		opcode = armass_assemble(buf, a->pc, is_thumb);
 		if (a->bits != 32 && a->bits != 16) {
-			eprintf("Error: ARM assembler only supports 16 or 32 bits\n");
+			RZ_LOG_ERROR("assembler: arm: cannot assemble instruction due invalid 'asm.bits' value (accepted only 16 or 32 bits).\n");
 			return -1;
 		}
 	}
@@ -277,8 +241,7 @@ static bool arm_init(void **user) {
 	if (!ctx) {
 		return false;
 	}
-	ctx->ht_it = ht_uu_new0();
-	ctx->ht_itblock = ht_uu_new0();
+	rz_arm_it_context_init(&ctx->it);
 	ctx->cd = 0;
 	ctx->omode = -1;
 	ctx->obits = 32;
@@ -290,8 +253,7 @@ static bool arm_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	ArmCSContext *ctx = (ArmCSContext *)user;
 	cs_close(&ctx->cd);
-	ht_uu_free(ctx->ht_itblock);
-	ht_uu_free(ctx->ht_it);
+	rz_arm_it_context_fini(&ctx->it);
 	free(ctx);
 	return true;
 }

@@ -478,8 +478,10 @@ RZ_API int rz_core_block_read(RzCore *core);
 RZ_API bool rz_core_block_size(RzCore *core, ut32 bsize);
 RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset);
 RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
-RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad);
-RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);
+RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);
+RZ_API bool rz_core_write_block(RzCore *core, ut64 addr, ut8 *data, size_t len);
+RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
@@ -539,9 +541,9 @@ RZ_API void rz_core_visual_mark_reset(RzCore *core);
 
 RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallback cb);
 RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);
-RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int binload);
+RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int binload);
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args);
-RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr);
+RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr);
 RZ_API bool rz_core_file_resize(RzCore *core, ut64 newsize);
 RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta);
 RZ_API RzCoreFile *rz_core_file_find_by_fd(RzCore *core, ut64 fd);
@@ -562,7 +564,7 @@ RZ_API bool rz_core_raw_file_print(RzCore *core);
 RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode);
 RZ_API int rz_core_file_binlist(RzCore *core);
 RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 num);
-RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, int size);
+RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, ut64 size);
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz);
 RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int sz);
@@ -574,6 +576,8 @@ RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len);
 RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
+RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdStateOutput *state);
 
 /* creg.c */
 RZ_API RzReg *rz_core_reg_default(RzCore *core);
@@ -919,45 +923,6 @@ RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdSta
 RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encoding, RZ_NULLABLE const char *name);
 RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
 
-typedef enum {
-	RZ_CORE_STRING_KIND_UNKNOWN,
-	RZ_CORE_STRING_KIND_ASCII,
-	RZ_CORE_STRING_KIND_WIDE16, // No UTF/Unicode encoding
-	RZ_CORE_STRING_KIND_WIDE32, // NO UTF/Unicode encoding
-	RZ_CORE_STRING_KIND_UTF8,
-	RZ_CORE_STRING_KIND_UTF16,
-	RZ_CORE_STRING_KIND_UTF32,
-} RzCoreStringKind;
-
-/**
- * \brief A structure to hold information about string - type, size, and location
- */
-typedef struct rz_core_string_t {
-	/**
-	 * The pointer to the string data itself.
-	 */
-	const char *string;
-	ut64 offset;
-	/**
-	 * Size of buffer containing the string in bytes.
-	 */
-	ut32 size;
-	/**
-	 * Length of string in chars.
-	 */
-	ut32 length;
-	/**
-	 * A string kind - ASCII, Wide, or various Unicode types.
-	 */
-	RzCoreStringKind kind;
-	/**
-	 * A section name that contains the string.
-	 */
-	const char *section_name;
-} RzCoreString;
-
-RZ_API RZ_OWN RzCoreString *rz_core_string_information(RzCore *core, const char *block, ut32 len, RzCoreStringKind kind);
-
 /* rtr */
 RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port);
 RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *port, const char *cmd);
@@ -988,7 +953,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 RZ_API RzList * /*<RzIOMap*>*/ rz_core_get_boundaries_prot(RzCore *core, int protection, const char *mode, const char *prefix);
 
 RZ_API void rz_core_hack_help(const RzCore *core);
-RZ_API int rz_core_hack(RzCore *core, const char *op);
+RZ_API bool rz_core_hack(RzCore *core, const char *op);
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append);
 RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);

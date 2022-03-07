@@ -23,7 +23,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-wa clz r0, r1
+wa "clz r0, r1"
 ar r1=0x80000000
 aes
 ar r0
@@ -65,14 +65,13 @@ RUN
 NAME=cmp neq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
 aei
 aeim
 ar sp=0x00108000
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -84,7 +83,6 @@ RUN
 NAME=cmp neq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
 aei
@@ -92,7 +90,7 @@ aeim
 ar sp=0x00108000
 ar cpsr=0xffffffff
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -104,7 +102,6 @@ RUN
 NAME=cmp eq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
 aei
@@ -113,7 +110,7 @@ ar sp=0x00108000
 ar r1=0x10
 ar cpsr=0x40000000
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -125,7 +122,6 @@ RUN
 NAME=cmp eq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
 aei
@@ -134,7 +130,7 @@ ar sp=0x00108000
 ar r1=0x10
 ar cpsr=0x00000000
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -484,7 +480,7 @@ e asm.bits=16
 ar > /dev/null
 ar r1=0x80000001
 ar r2=0x1
-"wa lsls r1, r2;lsls r1, r2"
+wa "lsls r1, r2;lsls r1, r2"
 aes
 ar r1
 ar cpsr
@@ -508,7 +504,7 @@ e asm.bits=16
 ar > /dev/null
 ar r1=-8
 ar r2=2
-"wa lsrs r1, r2;lsrs r1, r2"
+wa "lsrs r1, r2;lsrs r1, r2"
 aes
 ar r1
 ar cpsr
@@ -611,7 +607,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-wa ldr r2, [r3], 10
+wa "ldr r2, [r3], 10"
 wx aabbccdd @ 10
 ar r3=10
 aes
@@ -645,7 +641,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-"wa adcs r1, r3;adcs r1, r3"
+wa "adcs r1, r3;adcs r1, r3"
 ar r1=0x90000000
 ar r3=0x80000000
 ar cpsr=0x00000000
@@ -669,7 +665,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-wa adds r1, 1
+wa "adds r1, 1"
 ar r1=0xffffffff
 aes
 ar r1
@@ -686,7 +682,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-wa subs r1, 1
+wa "subs r1, 1"
 ar r1=1
 aes
 ar r1
@@ -949,7 +945,7 @@ NAME=x86-16 dos syscall
 FILE==
 ARGS=-ax86 -b16 -kdos
 CMDS=<<EOF
-"wa mov ah,0x30;int 0x21"
+wa "mov ah,0x30;int 0x21"
 aecu 0x4
 as
 EOF

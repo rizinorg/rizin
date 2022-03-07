@@ -55,7 +55,7 @@ static int rz_asm_pseudo_string(RzAsmOp *op, char *input, int zero) {
 
 static inline int rz_asm_pseudo_arch(RzAsm *a, char *input) {
 	if (!rz_asm_use(a, input)) {
-		eprintf("Error: Unknown plugin\n");
+		RZ_LOG_ERROR("Unknown asm plugin name '%s'\n", input);
 		return -1;
 	}
 	return 0;
@@ -63,7 +63,7 @@ static inline int rz_asm_pseudo_arch(RzAsm *a, char *input) {
 
 static inline int rz_asm_pseudo_bits(RzAsm *a, char *input) {
 	if (!(rz_asm_set_bits(a, rz_num_math(NULL, input)))) {
-		eprintf("Error: Unsupported value for .bits.\n");
+		RZ_LOG_ERROR("Unsupported bits (%s) value for the selected asm plugin.\n", input);
 		return -1;
 	}
 	return 0;
@@ -75,12 +75,11 @@ static inline int rz_asm_pseudo_org(RzAsm *a, char *input) {
 }
 
 static inline int rz_asm_pseudo_intN(RzAsm *a, RzAsmOp *op, char *input, int n) {
-	short s;
-	int i;
-	long int l;
+	ut16 s;
+	ut32 i;
 	ut64 s64 = rz_num_math(NULL, input);
 	if (n != 8 && s64 >> (n * 8)) {
-		eprintf("int16 Out is out of range\n");
+		RZ_LOG_ERROR("Cannot write a number that does not fit within a int%d type.\n", (n * 8));
 		return 0;
 	}
 	// XXX honor endian here
@@ -89,14 +88,13 @@ static inline int rz_asm_pseudo_intN(RzAsm *a, RzAsmOp *op, char *input, int n) 
 		return 0;
 	}
 	if (n == 2) {
-		s = (short)s64;
+		s = (ut16)(st16)s64;
 		rz_write_ble16(buf, s, a->big_endian);
 	} else if (n == 4) {
-		i = (int)s64;
+		i = (ut32)(st32)s64;
 		rz_write_ble32(buf, i, a->big_endian);
 	} else if (n == 8) {
-		l = (long int)s64;
-		rz_write_ble64(buf, l, a->big_endian);
+		rz_write_ble64(buf, (ut64)s64, a->big_endian);
 	} else {
 		return 0;
 	}
@@ -163,7 +161,7 @@ static inline int rz_asm_pseudo_incbin(RzAsmOp *op, char *input) {
 	size_t count = (size_t)rz_num_math(NULL, rz_str_word_get0(input, 2));
 	char *content = rz_file_slurp(input, &bytes_read);
 	if (!content) {
-		eprintf("Could not open '%s'.\n", input);
+		RZ_LOG_ERROR("Could not open '%s'.\n", input);
 		return -1;
 	}
 	if (skip > 0) {
@@ -378,7 +376,7 @@ RZ_API bool rz_asm_set_big_endian(RzAsm *a, bool b) {
 		a->big_endian = true;
 		break;
 	default:
-		eprintf("RzAsmPlugin doesn't specify endianness\n");
+		RZ_LOG_DEBUG("The asm plugin doesn't specify endianness.\n");
 		break;
 	}
 	return a->big_endian;
@@ -615,7 +613,6 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 	RzStrBuf *buf_asm;
 	RzAsmCode *acode;
 	ut64 pc = a->pc;
-	RzAsmOp op;
 	ut64 idx;
 	size_t ret;
 	const size_t addrbytes = a->core ? ((RzCore *)a->core)->io->addrbytes : 1;
@@ -630,6 +627,8 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 	if (!(buf_asm = rz_strbuf_new(NULL))) {
 		return rz_asm_code_free(acode);
 	}
+	RzAsmOp op;
+	rz_asm_op_init(&op);
 	for (idx = 0; idx + addrbytes <= len; idx += (addrbytes * ret)) {
 		rz_asm_set_pc(a, pc + idx);
 		ret = rz_asm_disassemble(a, &op, buf + idx, len - idx);
@@ -642,6 +641,7 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 		rz_strbuf_append(buf_asm, rz_strbuf_get(&op.buf_asm));
 		rz_strbuf_append(buf_asm, "\n");
 	}
+	rz_asm_op_fini(&op);
 	acode->assembly = rz_strbuf_drain(buf_asm);
 	acode->len = idx;
 	return acode;
@@ -764,12 +764,12 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 			const size_t new_tokens_size = tokens_size * 2;
 			if (sizeof(char *) * new_tokens_size <= sizeof(char *) * tokens_size) {
 				// overflow
-				eprintf("Too many tokens\n");
+				RZ_LOG_ERROR("Too many tokens while assembling (overflow).\n");
 				goto fail;
 			}
 			char **new_tokens = realloc(tokens, sizeof(char *) * new_tokens_size);
 			if (!new_tokens) {
-				eprintf("Too many tokens\n");
+				RZ_LOG_ERROR("Cannot reallocate meory for tokens while assembling.\n");
 				goto fail;
 			}
 			tokens_size = new_tokens_size;
@@ -945,7 +945,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				} else if ((!strncmp(ptr, ".byte ", 6)) || (!strncmp(ptr, ".int8 ", 6))) {
 					ret = rz_asm_pseudo_byte(&op, ptr + 6);
 				} else if (!strncmp(ptr, ".glob", 5)) { // .global .globl
-					//	eprintf (".global directive not yet implemented\n");
+					RZ_LOG_DEBUG(".global directive not yet implemented\n");
 					ret = 0;
 					continue;
 				} else if (!strncmp(ptr, ".equ ", 5)) {
@@ -960,31 +960,31 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 						*ptr2 = '\0';
 						rz_asm_code_set_equ(acode, ptr + 5, ptr2 + 1);
 					} else {
-						eprintf("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
+						RZ_LOG_ERROR("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
 					}
 				} else if (!strncmp(ptr, ".org ", 5)) {
 					ret = rz_asm_pseudo_org(a, ptr + 5);
 				} else if (rz_str_startswith(ptr, ".offset ")) {
-					eprintf("Invalid use of the .offset directory. This directive is only supported in rizin -c 'waf'.\n");
+					RZ_LOG_ERROR("Invalid use of the .offset directory. This directive is only supported in rizin -c 'waf'.\n");
 				} else if (!strncmp(ptr, ".text", 5)) {
 					acode->code_offset = a->pc;
 				} else if (!strncmp(ptr, ".data", 5)) {
 					acode->data_offset = a->pc;
 				} else if (!strncmp(ptr, ".incbin", 7)) {
 					if (ptr[7] != ' ') {
-						eprintf("incbin missing filename\n");
+						RZ_LOG_ERROR("Invalid syntax for '.incbin': Use '.incbin <filename>'\n");
 						continue;
 					}
 					ret = rz_asm_pseudo_incbin(&op, ptr + 8);
 				} else {
-					eprintf("Unknown directive (%s)\n", ptr);
+					RZ_LOG_ERROR("Unknown directive named '%s'\n", ptr);
 					goto fail;
 				}
 				if (!ret) {
 					continue;
 				}
 				if (ret < 0) {
-					eprintf("!!! Oops (%s)\n", ptr);
+					RZ_LOG_ERROR("Something went wrong when handling the directive '%s'.\n", ptr);
 					goto fail;
 				}
 			} else { /* Instruction */
@@ -995,18 +995,22 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 						continue;
 					}
 					str = rz_asm_code_equ_replace(acode, strdup(ptr_start));
+					rz_asm_op_fini(&op);
+					rz_asm_op_init(&op);
 					ret = rz_asm_assemble(a, &op, str);
 					free(str);
 				} else {
 					if (!*ptr_start) {
 						continue;
 					}
+					rz_asm_op_fini(&op);
+					rz_asm_op_init(&op);
 					ret = rz_asm_assemble(a, &op, ptr_start);
 				}
 			}
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
-					eprintf("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
+					RZ_LOG_ERROR("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
 					goto fail;
 				}
 				acode->len = idx + ret;
@@ -1029,17 +1033,15 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 			}
 		}
 	}
+	rz_asm_op_fini(&op);
 	free(lbuf);
 	free(tokens);
 	return acode;
 fail:
+	rz_asm_op_fini(&op);
 	free(lbuf);
 	free(tokens);
 	return rz_asm_code_free(acode);
-}
-
-RZ_API bool rz_asm_modify(RzAsm *a, ut8 *buf, int field, ut64 val) {
-	return (a->cur && a->cur->modify) ? a->cur->modify(a, buf, field, val) : false;
 }
 
 RZ_API int rz_asm_get_offset(RzAsm *a, int type, int idx) { // link to rbin

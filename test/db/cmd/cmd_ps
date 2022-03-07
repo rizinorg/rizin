@@ -3,11 +3,11 @@ FILE=bins/elf/stdstring32-libc++.LOAD1
 ARGS=-n -m 0x08049ee8
 CMDS=<<EOF
 on bins/elf/stdstring32-libc++.heap 0x09eb8000 > /dev/null
-f obj.empty_str 12 0x0804a064
-f obj.long_str1 12 0x0804a04c
-f obj.short_str1 12 0x0804a034
-f obj.long_str2 12 0x0804a058
-f obj.short_str2 12 0x0804a040
+f obj.empty_str 12 @ 0x0804a064
+f obj.long_str1 12 @ 0x0804a04c
+f obj.short_str1 12 @ 0x0804a034
+f obj.long_str2 12 @ 0x0804a058
+f obj.short_str2 12 @ 0x0804a040
 e asm.bits=32
 ps+ @ obj.short_str1
 ps+ @ obj.short_str2
@@ -29,11 +29,11 @@ FILE=bins/elf/stdstring64-libc++.LOAD1
 ARGS=-n -m 0x00600dc8
 CMDS=<<EOF
 on bins/elf/stdstring64-libc++.heap 0x0128b000 > /dev/null
-f obj.empty_str 24 0x006010b8
-f obj.long_str1 24 0x00601088
-f obj.short_str1 24 0x00601058
-f obj.long_str2 24 0x006010a0
-f obj.short_str2 24 0x00601070
+f obj.empty_str 24 @ 0x006010b8
+f obj.long_str1 24 @ 0x00601088
+f obj.short_str1 24 @ 0x00601058
+f obj.long_str2 24 @ 0x006010a0
+f obj.short_str2 24 @ 0x00601070
 e asm.bits=64
 ps+ @ obj.short_str1
 ps+ @ obj.short_str2
@@ -84,7 +84,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
-f obj.empty_str 12 0x0804a064
+f obj.empty_str 12 @ 0x0804a064
 ps+ @ obj.empty_str
 EOF
 EXPECT_ERR=<<EOF

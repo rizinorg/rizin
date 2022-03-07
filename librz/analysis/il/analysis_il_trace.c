@@ -32,14 +32,17 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_
 	// TODO : maybe we could remove memory && register in rzil trace ?
 	trace->registers = ht_up_new(NULL, htup_vector_free, NULL);
 	if (!trace->registers) {
+		RZ_LOG_ERROR("rzil: Cannot allocate hasmap for trace registers\n");
 		goto error;
 	}
 	trace->memory = ht_up_new(NULL, htup_vector_free, NULL);
 	if (!trace->memory) {
+		RZ_LOG_ERROR("rzil: Cannot allocate hasmap for trace memory\n");
 		goto error;
 	}
 	trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
 	if (!trace->instructions) {
+		RZ_LOG_ERROR("rzil: Cannot allocate vector for trace instructions\n");
 		goto error;
 	}
 
@@ -50,6 +53,7 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_
 		RzRegArena *a = analysis->reg->regset[i].arena;
 		RzRegArena *b = rz_reg_arena_new(a->size);
 		if (!b) {
+			RZ_LOG_ERROR("rzil: Cannot allocate register arena for trace\n");
 			goto error;
 		}
 		if (b->bytes && a->bytes && b->size > 0) {
@@ -59,7 +63,6 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_
 	}
 	return trace;
 error:
-	eprintf("Fail to init IL trace\n");
 	rz_analysis_esil_trace_free(trace);
 	return NULL;
 }

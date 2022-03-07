@@ -287,7 +287,7 @@ static int process_group_1(RzAsm *a, ut8 *data, const Opcode *op) {
 		}
 	} else if (op->operands[0].type & OT_BYTE) {
 		if (op->operands[1].immediate > 255) {
-			eprintf("Error: Immediate exceeds bounds\n");
+			RZ_LOG_ERROR("assembler: x86.nz: %s: the immediate value exceeds bounds (imm > 255)\n", op->mnemonic);
 			return -1;
 		}
 		data[l++] = 0x80;
@@ -368,7 +368,7 @@ static int process_group_2(RzAsm *a, ut8 *data, const Opcode *op) {
 
 	st32 immediate = op->operands[1].immediate * op->operands[1].sign;
 	if (immediate > 255 || immediate < -128) {
-		eprintf("Error: Immediate exceeds bounds\n");
+		RZ_LOG_ERROR("assembler: x86.nz: %s: the immediate value exceeds bounds (imm > 255 or imm < -128)\n", op->mnemonic);
 		return -1;
 	}
 
@@ -459,7 +459,7 @@ static int process_1byte_op(RzAsm *a, ut8 *data, const Opcode *op, int op1) {
 			op->operands[1].type & (OT_DWORD | OT_QWORD)) {
 			data[l++] = op1 + 0x1;
 		} else {
-			eprintf("Error: mismatched operand sizes\n");
+			RZ_LOG_ERROR("assembler: x86.nz: %s: mismatched operand sizes\n", op->mnemonic);
 			return -1;
 		}
 		reg = op->operands[1].reg;
@@ -487,7 +487,7 @@ static int process_1byte_op(RzAsm *a, ut8 *data, const Opcode *op, int op1) {
 				op->operands[1].type & (OT_DWORD | OT_QWORD)) {
 				data[l++] = op1 + 0x3;
 			} else {
-				eprintf("Error: mismatched operand sizes\n");
+				RZ_LOG_ERROR("assembler: x86.nz: %s: mismatched operand sizes\n", op->mnemonic);
 				return -1;
 			}
 			reg = op->operands[0].reg;
@@ -1054,7 +1054,7 @@ static int opaam(RzAsm *a, ut8 *data, const Opcode *op) {
 
 static int opdec(RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
-		eprintf("Error: Invalid operands\n");
+		RZ_LOG_ERROR("assembler: x86.nz: %s: invalid operands\n", op->mnemonic);
 		return -1;
 	}
 	is_valid_registers(op);
@@ -1286,7 +1286,7 @@ static int opimul(RzAsm *a, ut8 *data, const Opcode *op) {
 		if (op->operands[0].type & OT_GPREG) {
 			if (op->operands[1].type & OT_CONSTANT) {
 				if (op->operands[1].immediate == -1) {
-					eprintf("Error: Immediate exceeds max\n");
+					RZ_LOG_ERROR("assembler: x86.nz: %s: immediate operand exceeds max value (imm == -1)\n", op->mnemonic);
 					return -1;
 				}
 				immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -1471,7 +1471,7 @@ static int opclflush(RzAsm *a, ut8 *data, const Opcode *op) {
 
 static int opinc(RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
-		eprintf("Error: Invalid operands\n");
+		RZ_LOG_ERROR("assembler: x86.nz: %s: invalid operands\n", op->mnemonic);
 		return -1;
 	}
 	is_valid_registers(op);
@@ -2496,7 +2496,7 @@ static int oppush(RzAsm *a, ut8 *data, const Opcode *op) {
 			}
 			ut8 base = 0x50;
 			if (op->operands[0].reg == X86R_RIP) {
-				eprintf("Invalid register\n");
+				RZ_LOG_ERROR("assembler: x86.nz: %s: invalid register (rip)\n", op->mnemonic);
 				return -1;
 			}
 			data[l++] = base + op->operands[0].reg;
@@ -2709,7 +2709,7 @@ static int optest(RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	if (!op->operands[0].type || !op->operands[1].type) {
-		eprintf("Error: Invalid operands\n");
+		RZ_LOG_ERROR("assembler: x86.nz: %s: invalid operands\n", op->mnemonic);
 		return -1;
 	}
 	if (a->bits == 64) {
@@ -4827,13 +4827,13 @@ static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 		// read number
 		// const int maxreg = (a->bits == 64) ? 15 : 7;
 		if (getToken(token, pos, &nextpos) != TT_NUMBER) {
-			eprintf("Expected register number '%s'\n", str + *pos);
+			RZ_LOG_ERROR("assembler: x86.nz: expected register number but found '%s'\n", str + *pos);
 			return X86R_UNDEFINED;
 		}
 		reg = getnum(a, token + *pos);
 		// st and mm go up to 7, xmm up to 15
 		if ((reg > 15) || ((*type & (OT_FPUREG | OT_MMXREG) & ~OT_REGALL) && reg > 7)) {
-			eprintf("Too large register index!\n");
+			RZ_LOG_ERROR("assembler: x86.nz: register index is too large\n");
 			return X86R_UNDEFINED;
 		}
 		*pos = nextpos;
@@ -4934,7 +4934,7 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 		bool first_reg = true;
 		while (str[pos] != ']') {
 			if (pos > nextpos) {
-				//	eprintf ("Error parsing instruction\n");
+				// RZ_LOG_ERROR("assembler: x86.nz: failed to parse instruction\n");
 				break;
 			}
 			pos = nextpos;

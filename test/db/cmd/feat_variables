@@ -151,11 +151,11 @@ CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
 e analysis.arch=x86
-wa jmp 0x30
+wa "jmp 0x30"
 ?v $j
-wa jz 0x01
+wa "jz 0x01"
 ?v $j
-wa xor eax, eax
+wa "xor eax, eax"
 ?v $j
 ?e
 EOF
@@ -192,9 +192,9 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-wa mov eax, [0x500]
+wa "mov eax, [0x500]"
 ?v $m
-wa mov eax, ebx
+wa "mov eax, ebx"
 ?v $m
 ?e
 EOF
@@ -211,9 +211,9 @@ CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
 e analysis.arch=x86
-wa xor eax, eax
+wa "xor eax, eax"
 ?v $l
-wa mov esp, 0x1
+wa "mov esp, 0x1"
 ?v $l
 wx c3
 ?v $l
@@ -230,13 +230,13 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-wa inc eax
+wa "inc eax"
 ?v $e
-wa jmp 0x01
+wa "jmp 0x01"
 ?v $e
 wa ret
 ?v $e
-wa call 0x01
+wa "call 0x01"
 ?v $e
 EOF
 EXPECT=<<EOF
@@ -275,8 +275,8 @@ unit    8
 segment 0000:0008
 string  "\b"
 fvalue  8.0
-float   0.000000f
-double  0.000000
+float   8.000000f
+double  8.000000
 binary  0b00001000
 trits   0t22
 0x8
@@ -348,8 +348,8 @@ unit    123
 segment 0000:007b
 string  "{"
 fvalue  123.0
-float   0.000000f
-double  0.000000
+float   123.000000f
+double  123.000000
 binary  0b01111011
 trits   0t11120
 EOF

@@ -258,7 +258,7 @@ static bool init_dynstr_aux(ELFOBJ *bin) {
 		return false;
 	}
 
-	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	ut64 offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (offset == UT64_MAX) {
 		RZ_LOG_WARN("Failed to convert DT_STRTAB to a physical offset.\n");
 		return false;
@@ -397,7 +397,7 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
  * Converts a physical address to the virtual address, looking
  * at the program headers in the binary bin
  */
-ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
+ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 
 	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
@@ -426,7 +426,7 @@ ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
  * Converts a virtual address to the relative physical address, looking
  * at the program headers in the binary bin
  */
-ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
+ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 
 	if (!Elf_(rz_bin_elf_has_segments)(bin)) {

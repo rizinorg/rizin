@@ -332,9 +332,9 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode) {
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				if (name) {
-					rz_cons_printf("f %s=0x%08" PFMT64x "\n", name, curMethod->addr);
+					rz_cons_printf("f %s @ 0x%08" PFMT64x "\n", name, curMethod->addr);
 				} else {
-					rz_cons_printf("f method.virtual.0x%08" PFMT64x "=0x%08" PFMT64x "\n", curMethod->addr, curMethod->addr);
+					rz_cons_printf("f method.virtual.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", curMethod->addr, curMethod->addr);
 				}
 			}
 		}

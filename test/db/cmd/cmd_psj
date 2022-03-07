@@ -5,7 +5,7 @@ wx 72697a696e20697320636f6f6c
 psj 13
 EOF
 EXPECT=<<EOF
-{"string":"rizin is cool","offset":0,"section":"unknown","length":13,"type":"ascii"}
+{"string":"rizin is cool","offset":0,"section":"unknown","length":13,"type":"8bit"}
 EOF
 RUN
 
@@ -16,7 +16,7 @@ s 0x00008358
 psj 11
 EOF
 EXPECT=<<EOF
-{"string":"Hello World","offset":33624,"section":".rodata","length":11,"type":"ascii"}
+{"string":"Hello World","offset":33624,"section":".rodata","length":11,"type":"8bit"}
 EOF
 RUN
 
@@ -42,14 +42,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=psj wide16
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-s 0x08049600
-psj 4
-EOF
+NAME=psj utf32le
+FILE=bins/elf/crackme0x00b
+CMDS=psj 32 @ obj.pass.1964
 EXPECT=<<EOF
-{"string":"\u000b\u0000\u0000\u0000","offset":134518272,"section":".dynamic","length":4,"type":"wide16"}
+{"string":"w0wgreat","offset":134520896,"section":".data","length":8,"type":"utf32le"}
+EOF
+RUN
+
+NAME=psj utf32be
+FILE=bins/elf/crackme0x00b
+CMDS=psj 32 @ 0x0804a03d
+EXPECT=<<EOF
+{"string":"w0wgreat","offset":134520893,"section":".data","length":8,"type":"utf32be"}
 EOF
 RUN
 

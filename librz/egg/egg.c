@@ -140,7 +140,7 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 	const char *asmcpu = NULL; // TODO
 	egg->remit = NULL;
 
-	egg->os = os ? rz_str_hash(os) : RZ_EGG_OS_DEFAULT;
+	egg->os = os ? rz_str_djb2_hash(os) : RZ_EGG_OS_DEFAULT;
 	if (!strcmp(arch, "x86")) {
 		egg->arch = RZ_SYS_ARCH_X86;
 		switch (bits) {

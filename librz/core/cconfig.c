@@ -1150,7 +1150,7 @@ static bool cb_cfgdebug(void *user, void *data) {
 		return false;
 	}
 	if (core->io) {
-		core->io->va = !node->i_value;
+		rz_config_set_b(core->config, "io.va", !node->i_value);
 	}
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = rz_config_get(core->config, "dbg.backend");
@@ -2473,13 +2473,6 @@ static bool cb_zoombyte(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analverbose(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->verbose = node->i_value;
-	return true;
-}
-
 static bool cb_binverbose(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2520,6 +2513,13 @@ static bool cb_bindbginfo(void *user, void *data) {
 		return false;
 	}
 	core->bin->want_dbginfo = node->i_value;
+	return true;
+}
+
+static bool cb_hexsdk(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->rasm->hex_sdk = (bool)node->i_value;
 	return true;
 }
 
@@ -2952,7 +2952,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.cc", analysiscc ? analysiscc : "", (RzConfigCallback)&cb_analysiscc, "Specify default calling convention");
 	const char *analysissyscc = rz_analysis_syscc_default(core->analysis);
 	SETCB("analysis.syscc", analysissyscc ? analysissyscc : "", (RzConfigCallback)&cb_analysissyscc, "Specify default syscall calling convention");
-	SETCB("analysis.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
 	SETCB("analysis.roregs", "gp,zero", (RzConfigCallback)&cb_analysis_roregs, "Comma separated list of register names to be readonly");
 	SETICB("analysis.gp", 0, (RzConfigCallback)&cb_analysis_gp, "Set the value of the GP register (MIPS)");
 	SETBPREF("analysis.gpfixed", "true", "Set gp register to analysis.gp before emulating each instruction in aae");
@@ -3079,6 +3078,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.cmt.flgrefs", "true", "Show comment flags associated to branch reference");
 	SETBPREF("asm.cmt.right", "true", "Show comments at right of disassembly if they fit in screen");
 	SETBPREF("asm.cmt.esil", "false", "Show ESIL expressions as comments");
+	SETBPREF("asm.cmt.il", "false", "Show RzIL expressions as comments");
 	SETI("asm.cmt.col", 71, "Column to align comments");
 	SETICB("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	// maybe rename to asm.cmt.calls
@@ -3269,6 +3269,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETCB("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
+
+	/* plugins */
+	SETCB("plugins.hexagon.sdk", "false", &cb_hexsdk, "Print packet syntax in objdump style. Hexagon only.");
 
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");
@@ -3794,7 +3797,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"pe", "pilot", "srec", "w32run", "zip", "all", "none", NULL);
 	SETB("flirt.sig.deflate", false, "enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
 	SETI("flirt.node.optimize", RZ_FLIRT_NODE_OPTIMIZE_MAX, "FLIRT optimization option when creating a signature file (none: 0, normal: 1, smallest: 2)");
-	SETPREF("flirt.sigdb.path", "", "Rizin sigdb location on the filesystem.");
+	SETPREF("flirt.sigdb.path", "", "Additional user defined rizin sigdb location to load on the filesystem.");
 
 	rz_config_lock(cfg, true);
 	return true;

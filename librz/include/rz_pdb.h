@@ -146,6 +146,7 @@ typedef struct tpi_types {
 	ut16 leaf_type;
 	ut16 length;
 	void *type_data;
+	bool parsed;
 } RzPdbTpiType;
 
 typedef struct tpi_stream_t {

@@ -60,7 +60,7 @@ RUN
 
 NAME=ar load many
 FILE=ar://bins/ar/libgdbr.a
-CMDS=o ; is ; ou 5 ; is ; ou 10 ; is
+CMDS=ol ; is ; ou 5 ; is ; ou 10 ; is
 EXPECT=<<EOF
  3 * r-x 0x000036c0 ar://bins/ar/libgdbr.a//libgdbr.o
  4 - r-x 0x000048d8 ar://bins/ar/libgdbr.a//packet.o

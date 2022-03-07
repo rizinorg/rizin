@@ -84,7 +84,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_slurp(const char *file);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
-RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_OWN const ut8 *bytes, ut64 len);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_BORROW const ut8 *bytes, ut64 len);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void /* RzIOBind */ *iob, int fd);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void /* RzIOBind */ *iob);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user);

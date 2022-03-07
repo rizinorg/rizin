@@ -1285,6 +1285,61 @@ bool test_default_mode(void) {
 	mu_end;
 }
 
+static RzCmdDescDetail *z_details_cb(RzCore *core, int argc, const char **argv) {
+	RzCmdDescDetail *z_details_cb_data = RZ_NEWS0(RzCmdDescDetail, 3);
+	z_details_cb_data[0].name = (const char *)strdup("Examples");
+	RzCmdDescDetailEntry *entries = RZ_NEWS0(RzCmdDescDetailEntry, 3);
+	entries[0].text = (const char *)strdup("z");
+	entries[0].comment = (const char *)strdup("dynamically generated detail");
+	entries[1].text = (const char *)strdup("z");
+	entries[1].comment = (const char *)strdup("dynamically generated detail 2");
+	z_details_cb_data[0].entries = (const RzCmdDescDetailEntry *)entries;
+	z_details_cb_data[1].name = (const char *)strdup("Examples 2");
+	z_details_cb_data[2].entries = NULL;
+	return z_details_cb_data;
+}
+
+bool test_details_cb(void) {
+	RzCmdDescArg z_args[] = { { 0 } };
+	RzCmdDescHelp z_help = { 0 };
+	z_help.summary = "z summary";
+	z_help.args = z_args;
+	z_help.details_cb = z_details_cb;
+
+	RzCmd *cmd = rz_cmd_new(false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	rz_cmd_desc_argv_modes_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG_JSON, z_modes_handler, &z_help);
+
+	RzCmdParsedArgs *pa = rz_cmd_parsed_args_new("z?", 0, NULL);
+	char *h = rz_cmd_get_help(cmd, pa, false);
+	mu_assert_strcontains(h, "# dynamically generated detail", "z help should contain result of the details_cb");
+	mu_assert_strcontains(h, "Examples 2", "z help should contain result of the details_cb 2");
+	free(h);
+	rz_cmd_parsed_args_free(pa);
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
+bool test_get_best_match(void) {
+	RzCmd *cmd = rz_cmd_new(false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
+	RzCmdDesc *ap_cd = rz_cmd_desc_group_new(cmd, a_cd, "ap", ap_handler, NULL, &fake_help);
+	RzCmdDesc *apd_cd = rz_cmd_desc_argv_new(cmd, ap_cd, "apd", ap_handler, &fake_help);
+	RzCmdDesc *ae_cd = rz_cmd_desc_oldinput_new(cmd, a_cd, "ae", ae_handler, NULL);
+	rz_cmd_desc_argv_new(cmd, ae_cd, "aeir", aeir_handler, &fake_help);
+	rz_cmd_desc_oldinput_new(cmd, root, "w", w_handler, NULL);
+
+	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "ap"), ap_cd, "ap should be best match for ap");
+	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "apn"), ap_cd, "ap should be best match for apn");
+	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "apd"), apd_cd, "apd should be best match for apd");
+	mu_assert_ptreq(rz_cmd_get_desc_best(cmd, "afff"), a_cd, "a should be best match for afff");
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_parsed_args_noargs);
 	mu_run_test(test_parsed_args_onearg);
@@ -1323,6 +1378,8 @@ int all_tests() {
 	mu_run_test(test_state_output_concat_mix);
 	mu_run_test(test_state_output_concat_json);
 	mu_run_test(test_default_mode);
+	mu_run_test(test_details_cb);
+	mu_run_test(test_get_best_match);
 	return tests_passed != tests_run;
 }
 

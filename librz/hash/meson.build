@@ -1,5 +1,6 @@
 rz_hash_sources = [
   'msg_digest.c',
+  'randomart.c',
   'p/algo_crca.c',
   'p/algo_adler32.c',
   'p/algo_fletcher.c',
@@ -66,6 +67,7 @@ pkgconfig_mod.generate(rz_hash,
   description: 'rizin foundation libraries',
   variables: [
     'plugindir=@0@'.format(rizin_plugins),
+    'datdir=@0@'.format(rizin_datdir_rz),
   ],
 )
 

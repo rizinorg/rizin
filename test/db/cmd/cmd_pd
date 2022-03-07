@@ -7,7 +7,7 @@ e asm.sub.var=0
 pd 1
 e asm.sub.var=1
 pd 1
-f fin.dus=0x1000054d0
+f+ fin.dus @ 0x1000054d0
 pd 1
 e asm.sub.rel=0
 pd 1
@@ -105,7 +105,7 @@ RUN
 
 NAME=pd foo-33
 FILE=malloc://128
-CMDS=f foo=33;pd foo-33
+CMDS=f foo @ 33;pd foo-33
 EXPECT=<<EOF
 EOF
 RUN
@@ -208,7 +208,7 @@ e asm.lines.fcn=false
 e asm.calls=false
 e asm.functions=false
 e scr.color=false
-f-rip
+f- rip
 pd 1
 EOF
 EXPECT=<<EOF
@@ -525,7 +525,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-wa jmp rax
+wa "jmp rax"
 af
 afi~size[1]
 EOF
@@ -1942,7 +1942,7 @@ s 0x1000
 "wz path\"C:\\Program\n"
 f ansi_str
 s 0x2000
-"wa mov eax, 0x1000"
+wa "mov eax, 0x1000"
 e str.escbslash=true
 pd 1
 pdJ 1
@@ -1953,7 +1953,7 @@ s 0x3000
 "ww path\"C:\\Program\r"
 f wide_str
 s 0x4000
-"wa mov ebx, 0x3000"
+wa "mov ebx, 0x3000"
 e bin.str.enc=guess
 pd 1
 pdJ 1
@@ -2424,5 +2424,55 @@ EOF
 EXPECT=<<EOF
   0x10000108a      lea   rsi, section.4.__TEXT.__cstring
   0x10000108a      LEA   RSI, section.4.__TEXT.__cstring
+EOF
+RUN
+
+NAME=asm.cmt.il
+FILE=bins/prg/t01.prg
+ARGS=-F prg
+CMDS=<<EOF
+e asm.cmt.il=1
+e asm.cmt.right=0
+pd 3 @ 0x80e
+?e --
+e asm.cmt.right=1
+pd 3 @ 0x80e
+EOF
+EXPECT=<<EOF
+            ; (seq (set a (bv 8 0x41)) (set Z (is_zero (var a))) (set N (msb (var a))))
+            0x0000080e      lda #0x41
+            ; (seq (set x (bv 8 0xff)) (set Z (is_zero (var x))) (set N (msb (var x))))
+            0x00000810      ldx #0xff
+            ; (store 0 (+ (bv 16 0x3ff) (cast 16 false (var x))) (var a))
+            0x00000812      sta 0x03ff,x
+--
+            0x0000080e      lda   #0x41                                ; (seq (set a (bv 8 0x41)) (set Z (is_zero (var a))) (set N (msb (var a))))
+            0x00000810      ldx   #0xff                                ; (seq (set x (bv 8 0xff)) (set Z (is_zero (var x))) (set N (msb (var x))))
+            0x00000812      sta   0x03ff,x                             ; (store 0 (+ (bv 16 0x3ff) (cast 16 false (var x))) (var a))
+EOF
+RUN
+
+NAME=asm.cmt.esil
+FILE=bins/prg/t01.prg
+ARGS=-F prg
+CMDS=<<EOF
+e asm.cmt.esil=1
+e asm.cmt.right=0
+pd 3 @ 0x80e
+?e --
+e asm.cmt.right=1
+pd 3 @ 0x80e
+EOF
+EXPECT=<<EOF
+            ; 0x41,a,=,$z,Z,:=,7,$s,N,:=
+            0x0000080e      lda #0x41
+            ; 0xff,x,=,$z,Z,:=,7,$s,N,:=
+            0x00000810      ldx #0xff
+            ; a,x,0x03ff,+,=[1]
+            0x00000812      sta 0x03ff,x
+--
+            0x0000080e      lda   #0x41                                ; 0x41,a,=,$z,Z,:=,7,$s,N,:=
+            0x00000810      ldx   #0xff                                ; 0xff,x,=,$z,Z,:=,7,$s,N,:=
+            0x00000812      sta   0x03ff,x                             ; a,x,0x03ff,+,=[1]
 EOF
 RUN

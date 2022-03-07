@@ -66,7 +66,7 @@ static TpiSimpleTypeMode get_simple_type_mode(ut32 type) {
   |+32                        |+12   |+8        |+0
   */
 	// because mode is only number between 0-7, 1 byte is enough
-	return (type & 0x0000000000F00);
+	return (type & 0x0000000000F00) >> 8;
 }
 
 static TpiSimpleTypeKind get_simple_type_kind(ut32 type) {
@@ -537,6 +537,10 @@ RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type) {
 		Tpi_LF_Union *lf_union = type->type_data;
 		return get_numeric_val(&lf_union->size);
 	}
+	case LF_INDEX: {
+		Tpi_LF_Index *lf_index = type->type_data;
+		return lf_index->index;
+	}
 	default:
 		return 0;
 	}
@@ -595,11 +599,6 @@ static void free_tpi_type(void *type_info) {
 	}
 	case LF_FIELDLIST: {
 		Tpi_LF_FieldList *lf_fieldlist = (Tpi_LF_FieldList *)type->type_data;
-		RzListIter *it;
-		RzPdbTpiType *ftype = 0;
-		rz_list_foreach (lf_fieldlist->substructs, it, ftype) {
-			free_tpi_type(ftype);
-		}
 		rz_list_free(lf_fieldlist->substructs);
 		break;
 	}
@@ -685,24 +684,31 @@ static void free_tpi_type(void *type_info) {
 		break;
 	case LF_BITFIELD:
 		break;
+	case LF_INDEX:
+		break;
 	case LF_VFUNCTAB:
 		break;
 	default:
 		rz_warn_if_reached();
 		break;
 	}
+	free(type->type_data);
+	free(type);
 }
 
 static void free_tpi_rbtree(RBNode *node, void *user) {
 	rz_return_if_fail(node);
 	RzPdbTpiType *type = container_of(node, RzPdbTpiType, rb);
 	free_tpi_type(type);
-	RZ_FREE(type);
 }
 
 RZ_IPI void free_tpi_stream(RzPdbTpiStream *stream) {
+	if (!stream) {
+		return;
+	}
 	rz_rbtree_free(stream->types, free_tpi_rbtree, NULL);
 	rz_list_free(stream->print_type);
+	free(stream);
 }
 
 static void skip_padding(RzBuffer *buf, ut16 len, ut16 *read_len, bool has_length) {
@@ -865,6 +871,28 @@ static Tpi_LF_Enumerate *parse_type_enumerate(RzBuffer *buf, ut16 len, ut16 *rea
 	parse_type_string(buf, &enumerate->name, len, read_len);
 	skip_padding(buf, len, read_len, false);
 	return enumerate;
+}
+
+static Tpi_LF_Index *parse_type_index(RzBuffer *buf, ut16 len, ut16 *read_len) {
+	rz_return_val_if_fail(buf, NULL);
+	Tpi_LF_Index *index = RZ_NEW0(Tpi_LF_Index);
+	if (!index) {
+		return NULL;
+	}
+	ut16 fldattr;
+	if (!rz_buf_read_le16(buf, &fldattr)) {
+		RZ_FREE(index);
+		return NULL;
+	}
+	parse_codeview_fld_attribute(&index->fldattr, fldattr);
+	*read_len += sizeof(ut16);
+	if (!rz_buf_read_le32(buf, &index->index)) {
+		RZ_FREE(index);
+		return NULL;
+	}
+	*read_len += sizeof(ut32);
+	skip_padding(buf, len, read_len, false);
+	return index;
 }
 
 static Tpi_LF_NestType *parse_type_nesttype(RzBuffer *buf, ut16 len, ut16 *read_len) {
@@ -1094,7 +1122,7 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 	if (!fieldlist) {
 		return NULL;
 	}
-	fieldlist->substructs = rz_list_new();
+	fieldlist->substructs = rz_list_newf((RzListFree)free_tpi_type);
 	if (!fieldlist->substructs) {
 		goto error;
 	}
@@ -1142,6 +1170,9 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 			break;
 		case LF_STMEMBER:
 			type->type_data = parse_type_staticmember(buf, len, &read_len);
+			break;
+		case LF_INDEX:
+			type->type_data = parse_type_index(buf, len, &read_len);
 			break;
 		default:
 			RZ_LOG_ERROR("%s: Unsupported leaf type 0x%" PFMT32x "\n", __FUNCTION__,
@@ -1327,6 +1358,25 @@ static Tpi_LF_Pointer *parse_type_pointer(RzBuffer *buf, ut16 len) {
 	}
 	parse_codeview_pointer_attribute(&pointer->ptr_attr, ptrattr);
 	read_bytes += sizeof(ut32);
+	if (pointer->ptr_attr.bits.ptrmode == PTR_MODE_PMFUNC ||
+		pointer->ptr_attr.bits.ptrmode == PTR_MODE_PMEM) {
+		read_bytes += sizeof(ut32);
+		if (!rz_buf_read_le32(buf, &pointer->pmember.pmclass)) {
+			RZ_FREE(pointer);
+			return NULL;
+		}
+		read_bytes += sizeof(ut16);
+		if (!rz_buf_read_le16(buf, &pointer->pmember.pmtype)) {
+			RZ_FREE(pointer);
+			return NULL;
+		}
+	} else if (pointer->ptr_attr.bits.ptrtype == PTR_BASE_TYPE) {
+		read_bytes += sizeof(ut32);
+		if (!rz_buf_read_le32(buf, &pointer->pbase.index)) {
+			RZ_FREE(pointer);
+			return NULL;
+		}
+	}
 	skip_padding(buf, len, &read_bytes, true);
 	return pointer;
 }
@@ -1779,7 +1829,7 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 		if (!parse_tpi_types(buf, type) || !type->type_data) {
 			RZ_LOG_ERROR("Parse TPI type error. idx in stream: 0x%" PFMT32x "\n", i);
 			RZ_FREE(type);
-			exit(0);
+			return false;
 		}
 		rz_rbtree_insert(&s->types, &type->type_index, &type->rb, tpi_type_node_cmp, NULL);
 	}

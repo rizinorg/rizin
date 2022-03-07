@@ -369,27 +369,44 @@ RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size) 
 	return ret;
 }
 
-RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, int size) {
-	if (!core->io || !core->file || size < 1) {
-		return false;
-	}
+/**
+ * \brief Extend the file at current offset by inserting \p size 0 bytes at \p addr
+ *
+ * \p addr is an physical/virtual address based on the value of eval "io.va".
+ * When virtual it is translated to a physical address according to the IO map
+ * at the current offset
+ *
+ * \param core Reference to RzCore instance
+ * \param addr Address where to insert new 0 bytes.
+ * \param size Number of 0 bytes to insert
+ * \return true if extend operation was successful, false otherwise
+ */
+RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, ut64 size) {
+	rz_return_val_if_fail(core, false);
+
 	int io_va = rz_config_get_i(core->config, "io.va");
 	if (io_va) {
 		RzIOMap *map = rz_io_map_get(core->io, core->offset);
 		if (map) {
 			addr = addr - map->itv.addr + map->delta;
 		}
-		rz_config_set_i(core->config, "io.va", false);
 	}
-	int ret = rz_io_extend_at(core->io, addr, size);
-	if (addr >= core->offset && addr <= core->offset + core->blocksize) {
-		rz_core_block_read(core);
-	}
-	rz_config_set_i(core->config, "io.va", io_va);
+	bool ret = rz_io_extend_at(core->io, addr, size);
+	rz_core_block_read(core);
 	return ret;
 }
 
-RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) {
+/**
+ * \brief Shift a block of data from \p addr of size \p b_size left or right based on \p dist.
+ *
+ * \param core Reference to RzCore instance
+ * \param addr Address of the block of data to move
+ * \param b_size Size of the block of data to move
+ * \param dist Where to shift the data, whether backward or forward and how
+ *             distant from the original position
+ * \return true if the shift operation was succesful, false otherwise
+ */
+RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	// bstart - block start, fstart file start
 	ut64 fend = 0, fstart = 0, bstart = 0, file_sz = 0;
 	ut8 *shift_buf = NULL;
@@ -420,19 +437,8 @@ RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) 
 		return false;
 	}
 
-	// cases
-	// addr + b_size + dist > file_end
-	// if ( (addr+b_size) + dist > file_end ) {
-	//	res = false;
-	//}
-	// addr + b_size + dist < file_start (should work since dist is signed)
-	// else if ( (addr+b_size) + dist < 0 ) {
-	//	res = false;
-	//}
-	// addr + dist < file_start
 	if (addr + dist < fstart) {
 		res = false;
-		// addr + dist > file_end
 	} else if ((addr) + dist > fend) {
 		res = false;
 	} else {
@@ -495,62 +501,126 @@ err:
 }
 
 /**
+ * Writes the bytes \p data at address \p addr cyclically until it fills the whole block
+ *
+ * It repeats the data \p data with length \p len until it fills an entire block
+ * starting at \p addr.
+ *
+ * \param core RzCore reference
+ * \param addr Address to where to write
+ * \param data Array of bytes to cyclically write in the block at \p addr
+ * \param len Length of \p data
+ */
+RZ_API bool rz_core_write_block(RzCore *core, ut64 addr, ut8 *data, size_t len) {
+	rz_return_val_if_fail(core && data, 0);
+
+	ut8 *buf = RZ_NEWS(ut8, core->blocksize);
+	if (!buf) {
+		return false;
+	}
+
+	bool res = false;
+	rz_mem_copyloop(buf, data, core->blocksize, len);
+	if (!rz_core_write_at(core, addr, buf, core->blocksize)) {
+		RZ_LOG_ERROR("Could not write cyclic data (%d bytes) at %" PFMT64x "\n", core->blocksize, addr);
+		goto err;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, core->blocksize, true);
+	}
+	res = true;
+err:
+	free(buf);
+	return res;
+}
+
+/**
  * \brief Assembles instructions and writes the resulting data at the given offset.
  *
  * \param core RzCore reference
  * \param addr Address to where to write
  * \param instructions List of instructions to assemble as a string
- * \param pretend Don't write but emit the sequence of `wx` commands
- * \param pad Fit the instruction inside the current instruction, fill with nops to pad
  * \return Returns the length of the written data or -1 in case of error
  */
-RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad) {
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions) {
+	rz_return_val_if_fail(core && instructions, -1);
+
+	int ret = -1;
+
 	rz_asm_set_pc(core->rasm, core->offset);
 	RzAsmCode *acode = rz_asm_massemble(core->rasm, instructions);
 	if (!acode) {
 		return -1;
 	}
+	if (acode->len <= 0) {
+		ret = 0;
+		goto err;
+	}
+
+	if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
+		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
+		core->num->value = 1;
+		goto err;
+	}
+	ret = acode->len;
+
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, ret, true);
+	}
+err:
+	rz_asm_code_free(acode);
+	return ret;
+}
+
+/**
+ * \brief Assemble instructions and write the resulting data inside the current instruction.
+ *
+ * Assemble one or more instructions and write the resulting data inside the
+ * current instruction, if the new instructions fit. Fill the rest of the bytes
+ * of the old instruction with NOP
+ *
+ * \param core RzCore reference
+ * \param addr Address to where to write
+ * \param instructions List of instructions to assemble as a string
+ * \return Returns the length of the written data or -1 in case of error (e.g. the new instruction does not fit)
+ */
+RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *instructions) {
+	rz_return_val_if_fail(core && instructions, -1);
+
 	int ret = -1;
-	RzAnalysisOp op = { 0 };
-	if (pad) { // "wai"
-		if (!rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
-			RZ_LOG_ERROR("Invalid instruction?\n");
-			goto exit;
-		}
-		if (op.size < acode->len) {
-			RZ_LOG_ERROR("Doesnt fit\n");
-			goto exit;
-		}
-		rz_core_hack(core, "nop");
+
+	rz_asm_set_pc(core->rasm, core->offset);
+	RzAsmCode *acode = rz_asm_massemble(core->rasm, instructions);
+	if (!acode) {
+		return -1;
 	}
 	if (acode->len <= 0) {
 		ret = 0;
-		goto exit;
+		goto err;
 	}
-	char *hex = rz_asm_code_get_hex(acode);
-	if (pretend) {
-		rz_cons_printf("wx %s\n", hex);
-	} else {
-		if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
-			RZ_LOG_ERROR("Failed to write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
-			core->num->value = 1;
-			free(hex);
-			goto exit;
-		} else {
-			if (rz_config_get_i(core->config, "scr.prompt")) {
-				RZ_LOG_INFO("Written %d byte(s) (%s) = wx %s\n", acode->len, instructions, hex);
-			}
-			if (wseek) {
-				rz_core_seek_delta(core, acode->len, true);
-			}
-		}
-		rz_core_block_read(core);
+
+	RzAnalysisOp op = { 0 };
+	if (!rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
+		RZ_LOG_ERROR("Invalid instruction at %" PFMT64x "\n", core->offset);
+		goto err;
 	}
-	free(hex);
+	if (op.size < acode->len) {
+		RZ_LOG_ERROR("Instructions do not fit at %" PFMT64x "\n", core->offset);
+		goto err;
+	}
+	rz_core_hack(core, "nop");
+
+	if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
+		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
+		core->num->value = 1;
+		goto err;
+	}
 	ret = acode->len;
-exit:
-	rz_analysis_op_fini(&op);
+
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, ret, true);
+	}
+err:
 	rz_asm_code_free(acode);
 	return ret;
 }
@@ -932,4 +1002,105 @@ RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len) {
 err:
 	free(buf);
 	return res;
+}
+
+RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && core->io, RZ_CMD_STATUS_ERROR);
+
+	size_t i, j = 0;
+	void **iter;
+	RzIOCache *c;
+
+	rz_pvector_foreach (&core->io->cache, iter) {
+		c = *iter;
+		const ut64 dataSize = rz_itv_size(c->itv);
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("idx=%" PFMTSZu " addr=0x%08" PFMT64x " size=%" PFMT64u " ", j, rz_itv_begin(c->itv), dataSize);
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", c->odata[i]);
+			}
+			rz_cons_printf(" -> ");
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", c->data[i]);
+			}
+			rz_cons_printf(" %s\n", c->written ? "(written)" : "(not written)");
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "idx", j);
+			pj_kn(state->d.pj, "addr", rz_itv_begin(c->itv));
+			pj_kn(state->d.pj, "size", dataSize);
+			char *hex = rz_hex_bin2strdup(c->odata, dataSize);
+			pj_ks(state->d.pj, "before", hex);
+			free(hex);
+			hex = rz_hex_bin2strdup(c->data, dataSize);
+			pj_ks(state->d.pj, "after", hex);
+			free(hex);
+			pj_kb(state->d.pj, "written", c->written);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_cons_printf("wx ");
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", (ut8)(c->data[i] & 0xff));
+			}
+			rz_cons_printf(" @ 0x%08" PFMT64x, rz_itv_begin(c->itv));
+			rz_cons_printf(" # replaces: ");
+			for (i = 0; i < dataSize; i++) {
+				rz_cons_printf("%02x", (ut8)(c->odata[i] & 0xff));
+			}
+			rz_cons_printf("\n");
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		j++;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && core->io, RZ_CMD_STATUS_ERROR);
+	rz_return_val_if_fail(desc, RZ_CMD_STATUS_ERROR);
+
+	RzList *caches = rz_io_desc_cache_list(desc);
+	RzListIter *iter;
+	RzIOCache *c;
+
+	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
+		rz_cons_printf("e io.va = false\n");
+	}
+	rz_list_foreach (caches, iter, c) {
+		const int cacheSize = rz_itv_size(c->itv);
+		int i;
+
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("0x%08" PFMT64x ": %02x",
+				rz_itv_begin(c->itv), c->odata[0]);
+			for (i = 1; i < cacheSize; i++) {
+				rz_cons_printf("%02x", c->odata[i]);
+			}
+			rz_cons_printf(" -> %02x", c->data[0]);
+			for (i = 1; i < cacheSize; i++) {
+				rz_cons_printf("%02x", c->data[i]);
+			}
+			rz_cons_printf("\n");
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_cons_printf("wx %02x", c->data[0]);
+			for (i = 1; i < cacheSize; i++) {
+				rz_cons_printf("%02x", c->data[i]);
+			}
+			rz_cons_printf(" @ 0x%08" PFMT64x " \n", rz_itv_begin(c->itv));
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_list_free(caches);
+	return RZ_CMD_STATUS_OK;
 }

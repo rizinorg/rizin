@@ -246,6 +246,7 @@ RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 
 RZ_API void rz_type_base_type_free(RzBaseType *type);
 RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind);
+RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kind);
 
 RZ_API void rz_type_base_enum_case_free(void *e, void *user);
 RZ_API void rz_type_base_struct_member_free(void *e, void *user);
@@ -301,7 +302,8 @@ RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath);
 RZ_API st64 rz_type_offset_by_path(const RzTypeDB *typedb, RZ_NONNULL const char *path);
 RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset);
 RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset);
-RZ_API ut64 rz_type_db_struct_member_offset(const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
+RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
+RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
 
 // Type parser low-level API
 

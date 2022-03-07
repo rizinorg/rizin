@@ -489,7 +489,7 @@ static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case RZ_ANALYSIS_OP_TYPE_XOR:
 			break;
 		default:
-			// eprintf ("Missing an RZ_ANALYSIS_OP_TYPE (%"PFMT64u")\n", op->type);
+			// RZ_LOG_ERROR("Missing an RZ_ANALYSIS_OP_TYPE (%"PFMT64u")\n", op->type);
 			break;
 		}
 		vle_free(instr);

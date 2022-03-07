@@ -61,7 +61,7 @@ static bool xnu_thread_get_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	rc = KERN_FAILURE;
 #endif
 	if (rc != KERN_SUCCESS) {
-		perror(__FUNCTION__);
+		LOG_MACH_ERROR("thread_get_state", rc);
 		thread->count = 0;
 		return false;
 	}
@@ -121,7 +121,7 @@ static bool xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	thread->count = 0;
 #endif
 	if (rc != KERN_SUCCESS) {
-		perror(__FUNCTION__);
+		LOG_MACH_ERROR("thread_set_state", rc);
 		thread->count = 0;
 		return false;
 	}
@@ -175,7 +175,7 @@ static bool xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	rc = thread_set_state(thread->port, thread->flavor,
 		(thread_state_t)regs, thread->count);
 	if (rc != KERN_SUCCESS) {
-		perror(__FUNCTION__);
+		LOG_MACH_ERROR("thread_set_state", rc);
 		thread->count = 0;
 		return false;
 	}
@@ -191,7 +191,7 @@ static bool xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t rc;
 #if __POWERPC__
 	thread->state = regs;
-#elif __arm64 || __aarch64 || __arch64__ || __arm64__
+#elif __arm64 || __aarch64 || __aarch64__ || __arm64__
 	// thread->state = regs;
 	thread->state = &regs->uts;
 	if (dbg->bits == RZ_SYS_BITS_64) {
@@ -217,7 +217,7 @@ static bool xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	rc = thread_get_state(thread->port, thread->flavor,
 		(thread_state_t)regs, &thread->count);
 	if (rc != KERN_SUCCESS) {
-		perror(__FUNCTION__);
+		LOG_MACH_ERROR("thread_get_state", rc);
 		thread->count = 0;
 		return false;
 	}

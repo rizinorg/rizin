@@ -570,6 +570,20 @@ static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
 	return true;
 }
 
+RZ_IPI char **rz_cmd_info_demangle_lang_choices(RzCore *core) {
+	char **res = RZ_NEWS0(char *, rz_list_length(core->bin->demangler->plugins) + 1);
+	if (!res) {
+		return NULL;
+	}
+	const RzDemanglerPlugin *plugin;
+	RzListIter *it;
+	int i = 0;
+	rz_list_foreach (core->bin->demangler->plugins, it, plugin) {
+		res[i++] = strdup(plugin->language);
+	}
+	return res;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_demangle_handler(RzCore *core, int argc, const char **argv) {
 	char *output = NULL;
 	if (!rz_demangler_resolve(core->bin->demangler, argv[2], argv[1], &output)) {

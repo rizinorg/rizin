@@ -100,8 +100,13 @@ RZ_API const char *rz_str_trim_head_wp(const char *str) {
 	return str;
 }
 
-/* remove spaces from the head of the string.
- * the string is changed in place */
+/**
+ * \brief Removes whitespace characters (space, tab, newline etc.)
+ * from the end of a string.
+ * The string is changed in place.
+ *
+ * \param str The string to trim.
+ */
 RZ_API void rz_str_trim_head(char *str) {
 	char *p = (char *)rz_str_trim_head_ro(str);
 	if (p) {
@@ -110,8 +115,12 @@ RZ_API void rz_str_trim_head(char *str) {
 }
 
 /**
- * Remove whitespace chars from the tail of the string, replacing them with null bytes. The string is changed in-place.
- * \return the string itself
+ * \brief Removes whitespace characters (space, tab, newline etc.)
+ * from the end of a string and replaces them with '\0' characters.
+ * The string is changed in place.
+ *
+ * \param str The string to trim.
+ * \return The edited string.
  */
 RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str) {
 	rz_return_val_if_fail(str, str);
@@ -126,9 +135,59 @@ RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str) {
 	return str;
 }
 
-// Removes spaces from the head of the string, and zeros out whitespaces from
-// the tail of the string. The string is changed in place.
-RZ_API void rz_str_trim(char *str) {
+/**
+ * \brief Removes the the character \p c from the beginning of a string.
+ *
+ * \param str The string.
+ * \param c The character to be removed.
+ */
+RZ_API void rz_str_trim_head_char(RZ_NONNULL RZ_INOUT char *str, const char c) {
+	rz_return_if_fail(str);
+	char *p = str;
+	for (; *p && (*p == c); p++) {
+		;
+	}
+	if (p) {
+		memmove(str, p, strlen(p) + 1);
+	}
+}
+
+/**
+ * \brief Removes the the character \p c from the end of a string.
+ *
+ * \param str The string.
+ * \param c The character to be removed.
+ */
+RZ_API void rz_str_trim_tail_char(RZ_NONNULL RZ_INOUT char *str, const char c) {
+	rz_return_if_fail(str);
+	size_t length = strlen(str);
+	while (length-- > 0) {
+		if (str[length] == c) {
+			str[length] = '\0';
+		} else {
+			break;
+		}
+	}
+}
+
+/**
+ * \brief Removes the character \p c from the beginning and end of a string.
+ *
+ * \param str The string to trim.
+ * \param c The character to remove.
+ */
+RZ_API void rz_str_trim_char(RZ_NONNULL RZ_INOUT char *str, const char c) {
+	rz_str_trim_head_char(str, c);
+	rz_str_trim_tail_char(str, c);
+}
+
+/**
+ * \brief Removes whitespace characters (space, tab, newline etc.)
+ * from the beginning and end of a string.
+ *
+ * \param str The string to trim.
+ */
+RZ_API void rz_str_trim(RZ_NONNULL RZ_INOUT char *str) {
 	rz_str_trim_head(str);
 	rz_str_trim_tail(str);
 }

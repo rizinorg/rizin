@@ -677,7 +677,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=psW 32 widestring
+NAME=psW 32 utf32le
 FILE=bins/elf/crackme0x00b
 CMDS=psW @ obj.pass.1964
 EXPECT=<<EOF
@@ -685,9 +685,9 @@ w0wgreat
 EOF
 RUN
 
-NAME=psW 32 widestring leading zeros
+NAME=psM 32 utf32be
 FILE=bins/elf/crackme0x00b
-CMDS=psW @ 0x0804a03e
+CMDS=psM @ 0x0804a03d
 EXPECT=<<EOF
 w0wgreat
 EOF

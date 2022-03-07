@@ -970,7 +970,7 @@ static inline void delete_till_end(void) {
 static void __print_prompt(void) {
 	RzCons *cons = rz_cons_singleton();
 	int columns = rz_cons_get_size(NULL) - 2;
-	int chars = RZ_MAX(1, strlen(I.buffer.data));
+	int chars = strlen(I.buffer.data);
 	int len, i, cols = RZ_MAX(1, columns - rz_str_ansi_len(I.prompt) - 2);
 	if (cons->line->prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		rz_cons_gotoxy(0, cons->rows);

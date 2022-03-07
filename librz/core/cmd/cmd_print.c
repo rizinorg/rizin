@@ -14,7 +14,6 @@
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR       "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
-static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
@@ -501,8 +500,8 @@ static const char *help_msg_ps[] = {
 	"psp", "[j]", "print pascal string",
 	"pss", "", "print string in screen (wrap width)",
 	"psu", "[zj]", "print utf16 unicode (json)",
-	"psw", "[j]", "print 16bit wide string",
-	"psW", "[j]", "print 32bit wide string",
+	"psw", "[j]", "print 16bit wide little endian string",
+	"psW", "[j]", "print 32bit wide little endian string",
 	"psx", "", "show string with escaped chars",
 	"psz", "[j]", "print zero-terminated string",
 	NULL
@@ -545,23 +544,6 @@ static const char *help_msg_px[] = {
 	"pxW", "[q]", "same as above, but one per line (q=quiet)",
 	"pxx", "", "show N bytes of hex-less hexdump",
 	"pxX", "", "show N words of hex-less hexdump",
-	NULL
-};
-
-const char *help_msg_pz[] = {
-	"Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
-	"e ", "zoom.maxsz", "max size of block",
-	"e ", "zoom.from", "start address",
-	"e ", "zoom.to", "end address",
-	"e ", "zoom.byte", "specify how to calculate each byte",
-	"pzp", "", "number of printable chars",
-	"pzf", "", "count of flags in block",
-	"pzs", "", "strings in range",
-	"pz0", "", "number of bytes with value '0'",
-	"pzF", "", "number of bytes with value 0xFF",
-	"pze", "", "calculate entropy and expand to 0-255 range",
-	"pzh", "", "head (first byte value); This is the default mode",
-	// "WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
 	NULL
 };
 
@@ -897,122 +879,6 @@ static void cmd_prc(RzCore *core, const ut8 *block, int len) {
 				int brightness = ((color_val & 0xff0000) >> 16) + 2 * ((color_val & 0xff00) >> 8) + (color_val & 0xff) / 3;
 				char *str = rz_str_newf("rgb:%s rgb:%06x",
 					brightness <= 0x7f * 3 ? "fff" : "000", color_val);
-				color = rz_cons_pal_parse(str, NULL);
-				free(str);
-				if (show_cursor && core->print->cur == j) {
-					ch = '_';
-				} else {
-					ch = ' ';
-				}
-			} else {
-				color = strdup("");
-				if (show_cursor && core->print->cur == j) {
-					ch = '_';
-				} else {
-					const int idx = ((float)block[j] / 255) * (strlen(chars) - 1);
-					ch = chars[idx];
-				}
-			}
-			if (show_unalloc &&
-				!core->print->iob.is_valid_offset(core->print->iob.io, core->offset + j, false)) {
-				ch = core->print->io_unalloc_ch;
-				if (show_color) {
-					free(color);
-					color = strdup(Color_RESET);
-					if (ch == ' ') {
-						ch = '.';
-					}
-				} else {
-					ch = strchr(chars, ch) ? '?' : ch;
-				}
-			}
-			if (square) {
-				if (show_flags) {
-					RzFlagItem *fi = rz_flag_get_i(core->flags, core->offset + j);
-					if (fi) {
-						if (fi->name[1]) {
-							ch = fi->name[0];
-							ch2 = fi->name[1];
-						} else {
-							ch = ' ';
-							ch2 = fi->name[0];
-						}
-					} else {
-						ch2 = ch;
-					}
-				} else {
-					ch2 = ch;
-				}
-				rz_cons_printf("%s%c%c", color, ch, ch2);
-			} else {
-				rz_cons_printf("%s%c", color, ch);
-			}
-			free(color);
-		}
-		if (show_color) {
-			rz_cons_printf(Color_RESET);
-		}
-		rz_cons_newline();
-	}
-}
-
-static void cmd_prc_zoom(RzCore *core, const char *input) {
-	const char *chars = " .,:;!O@#";
-	bool square = rz_config_get_i(core->config, "scr.square");
-	int i, j;
-	char ch, ch2, *color;
-	int cols = rz_config_get_i(core->config, "hex.cols");
-	bool show_color = rz_config_get_i(core->config, "scr.color");
-	bool show_flags = rz_config_get_i(core->config, "asm.flags");
-	bool show_cursor = core->print->cur_enabled;
-	bool show_offset = rz_config_get_i(core->config, "hex.offset");
-	bool show_unalloc = core->print->flags & RZ_PRINT_FLAGS_UNALLOC;
-	ut8 *block = core->block;
-	int len = core->blocksize;
-	ut64 from = 0;
-	ut64 to = 0;
-	RzIOMap *map;
-	RzListIter *iter;
-
-	if (cols < 1 || cols > 0xfffff) {
-		cols = 32;
-	}
-	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "zoom");
-	if (list && rz_list_length(list) > 0) {
-		RzListIter *iter1 = list->head;
-		RzIOMap *map1 = iter1->data;
-		from = map1->itv.addr;
-		rz_list_foreach (list, iter, map) {
-			to = rz_itv_end(map->itv);
-		}
-	} else {
-		from = core->offset;
-		to = from + core->blocksize;
-	}
-
-	core->print->zoom->mode = (input && *input) ? input[1] : 'e';
-	rz_print_zoom_buf(core->print, core, printzoomcallback, from, to, len, len);
-	block = core->print->zoom->buf;
-	switch (core->print->zoom->mode) {
-	case 'f':
-		// scale buffer for proper visualization of small numbers as colors
-		for (i = 0; i < core->print->zoom->size; i++) {
-			block[i] *= 8;
-		}
-		break;
-	}
-
-	for (i = 0; i < len; i += cols) {
-		ut64 ea = core->offset + i;
-		if (show_offset) {
-			rz_print_addr(core->print, ea);
-		}
-		for (j = i; j < i + cols; j++) {
-			if (j >= len) {
-				break;
-			}
-			if (show_color) {
-				char *str = rz_str_newf("rgb:fff rgb:%06x", colormap[block[j]]);
 				color = rz_cons_pal_parse(str, NULL);
 				free(str);
 				if (show_cursor && core->print->cur == j) {
@@ -1584,87 +1450,88 @@ static void cmd_print_gadget(RzCore *core, const char *_input) {
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, const char **argv) {
-	// len must be multiple of 4 since rz_mem_copyendian move data in fours - sizeof(ut32)
-	st64 l;
-	ut8 *block = core->block;
-	int len = core->blocksize;
+	char *date = NULL;
+	const ut8 *block = core->block;
+	ut32 len = core->blocksize;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	int timezone = (int)rz_config_get_i(core->config, "time.zone");
 	if (len < sizeof(ut32)) {
-		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
-			"run `b %zu`\n",
-			sizeof(ut32), sizeof(ut32));
+		RZ_LOG_ERROR("The block size is less than 4.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (len % sizeof(ut32)) {
-		len = len - (len % sizeof(ut32));
-	}
-	for (l = 0; l < len; l += sizeof(ut32)) {
-		rz_print_date_unix(core->print, block + l, sizeof(ut32));
+
+	for (ut64 i = 0; i < len; i += sizeof(ut32)) {
+		ut32 dt = rz_read_ble32(block + i, big_endian);
+		// add timezone
+		dt += timezone * (60 * 60);
+		date = rz_time_date_unix_to_string(dt);
+		rz_cons_printf("%s\n", date);
+		free(date);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_current_handler(RzCore *core, int argc, const char **argv) {
-	char nowstr[64] = { 0 };
-	rz_print_date_get_now(core->print, nowstr);
-	rz_cons_printf("%s", nowstr);
+	char *now = rz_time_date_now_to_string();
+	rz_cons_printf("%s\n", now);
+	free(now);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_dos_handler(RzCore *core, int argc, const char **argv) {
-	// len must be multiple of 4 since rz_print_date_dos read buf+3
-	// if block size is 1 or 5 for example it reads beyond the buffer
-	st64 l;
-	ut8 *block = core->block;
-	int len = core->blocksize;
+	char *date = NULL;
+	const ut8 *block = core->block;
+	ut32 len = core->blocksize;
 	if (len < sizeof(ut32)) {
-		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
-			"run `b %zu`\n",
-			sizeof(ut32), sizeof(ut32));
+		RZ_LOG_ERROR("The block size is less than 4.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (len % sizeof(ut32)) {
-		len = len - (len % sizeof(ut32));
-	}
-	for (l = 0; l < len; l += sizeof(ut32)) {
-		rz_print_date_dos(core->print, block + l, sizeof(ut32));
+	for (ut64 i = 0; i < len; i += sizeof(ut32)) {
+		ut32 dt = rz_read_le32(block + i);
+		date = rz_time_date_dos_to_string(dt);
+		rz_cons_printf("%s\n", date);
+		free(date);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_hfs_handler(RzCore *core, int argc, const char **argv) {
-	st64 l;
-	ut8 *block = core->block;
-	int len = core->blocksize;
+	char *date = NULL;
+	const ut8 *block = core->block;
+	ut32 len = core->blocksize;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	int timezone = (int)rz_config_get_i(core->config, "time.zone");
 	if (len < sizeof(ut32)) {
-		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
-			"run `b %zu`\n",
-			sizeof(ut32), sizeof(ut32));
+		RZ_LOG_ERROR("The block size is less than 4.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (len % sizeof(ut32)) {
-		len = len - (len % sizeof(ut32));
-	}
-	for (l = 0; l < len; l += sizeof(ut32)) {
-		rz_print_date_hfs(core->print, block + l, sizeof(ut32));
+
+	for (ut64 i = 0; i < len; i += sizeof(ut32)) {
+		ut32 dt = rz_read_ble32(block + i, big_endian);
+		// add timezone
+		dt += timezone * (60 * 60);
+		date = rz_time_date_hfs_to_string(dt);
+		rz_cons_printf("%s\n", date);
+		free(date);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, const char **argv) {
-	st64 l;
-	ut8 *block = core->block;
-	int len = core->blocksize;
+	char *date = NULL;
+	const ut8 *block = core->block;
+	ut32 len = core->blocksize;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	if (len < sizeof(ut64)) {
-		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
-			"run `b %zu`\n",
-			sizeof(ut64), sizeof(ut64));
+		RZ_LOG_ERROR("The block size is less than 8.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (len % sizeof(ut64)) {
-		len = len - (len % sizeof(ut64));
-	}
-	for (l = 0; l < len; l += sizeof(ut64)) {
-		rz_print_date_w32(core->print, block + l, sizeof(ut64));
+
+	for (ut64 i = 0; i < len; i += sizeof(ut64)) {
+		ut64 dt = rz_read_ble64(block + i, big_endian);
+		date = rz_time_date_w32_to_string(dt);
+		rz_cons_printf("%s\n", date);
+		free(date);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -2420,105 +2287,6 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 		rz_core_cmdf(core, "pid %d @ 0x%" PFMT64x, count, addr);
 		break;
 	}
-}
-
-struct count_pz_t {
-	RzSpace *flagspace;
-	ut64 addr;
-	ut64 size;
-	int *ret;
-};
-
-static bool count_pzs(RzFlagItem *fi, void *u) {
-	struct count_pz_t *user = (struct count_pz_t *)u;
-	if (fi->space == user->flagspace &&
-		((user->addr <= fi->offset && fi->offset < user->addr + user->size) ||
-			(user->addr <= fi->offset + fi->size && fi->offset + fi->size < user->addr + user->size))) {
-		(*user->ret)++;
-	}
-
-	return true;
-}
-static bool count_pzf(RzFlagItem *fi, void *u) {
-	struct count_pz_t *user = (struct count_pz_t *)u;
-	if (fi->offset <= user->addr && user->addr < fi->offset + fi->size) {
-		(*user->ret)++;
-	}
-	return true;
-}
-
-static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
-	RzCore *core = (RzCore *)user;
-	int j, ret = 0;
-	struct count_pz_t u;
-
-	switch (mode) {
-	case 'a': {
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-		int value = 0;
-		if (fcn) {
-			value = rz_list_length(fcn->bbs);
-		}
-		return value;
-	} break;
-	case 'A': {
-		RzCoreAnalStats *as = rz_core_analysis_get_stats(core, addr, addr + size * 2, size);
-		int i;
-		int value = 0;
-		for (i = 0; i < 1; i++) {
-			value += as->block[i].functions;
-			value += as->block[i].in_functions;
-			value += as->block[i].comments;
-			value += as->block[i].symbols;
-			value += as->block[i].flags;
-			value += as->block[i].strings;
-			value += as->block[i].blocks;
-			value *= 20;
-		}
-		rz_core_analysis_stats_free(as);
-		return value;
-	} break;
-	case '0': // "pz0"
-		for (j = 0; j < size; j++) {
-			if (bufz[j] == 0) {
-				ret++;
-			}
-		}
-		break;
-	case 'e': // "pze"
-		ret = (ut8)(rz_hash_entropy_fraction(bufz, size) * 255);
-		break;
-	case 'f': // "pzf"
-		u.addr = addr;
-		u.ret = &ret;
-		rz_flag_foreach(core->flags, count_pzf, &u);
-		break;
-	case 'F': // "pzF"
-		for (j = 0; j < size; j++) {
-			if (bufz[j] == 0xff) {
-				ret++;
-			}
-		}
-		break;
-	case 'p': // "pzp"
-		for (j = 0; j < size; j++) {
-			if (IS_PRINTABLE(bufz[j])) {
-				ret++;
-			}
-		}
-		break;
-	case 's': // "pzs"
-		u.flagspace = rz_flag_space_get(core->flags, RZ_FLAGS_FS_STRINGS);
-		u.addr = addr;
-		u.size = size;
-		u.ret = &ret;
-		rz_flag_foreach(core->flags, count_pzs, &u);
-		break;
-	case 'h': // "pzh" head
-	default:
-		ret = *bufz;
-	}
-	return ret;
 }
 
 RZ_API void rz_core_print_cmp(RzCore *core, ut64 from, ut64 to) {
@@ -3324,17 +3092,17 @@ static void cmd_print_pv(RzCore *core, const char *input, bool useBytes) {
 			ut8 *b = block + (i * n);
 			switch (n) {
 			case 1:
-				rz_cons_printf("f pval.0x%08" PFMT64x "=%d\n", at, rz_read_ble8(b));
+				rz_cons_printf("f pval.0x%08" PFMT64x " @ %d\n", at, rz_read_ble8(b));
 				break;
 			case 2:
-				rz_cons_printf("f pval.0x%08" PFMT64x "=%d\n", at, rz_read_ble16(b, be));
+				rz_cons_printf("f pval.0x%08" PFMT64x " @ %d\n", at, rz_read_ble16(b, be));
 				break;
 			case 4:
-				rz_cons_printf("f pval.0x%08" PFMT64x "=%d\n", at, rz_read_ble32(b, be));
+				rz_cons_printf("f pval.0x%08" PFMT64x " @ %d\n", at, rz_read_ble32(b, be));
 				break;
 			case 8:
 			default:
-				rz_cons_printf("f pval.0x%08" PFMT64x "=%" PFMT64d "\n", at, rz_read_ble64(b, be));
+				rz_cons_printf("f pval.0x%08" PFMT64x " @ %" PFMT64d "\n", at, rz_read_ble64(b, be));
 				break;
 			}
 		}
@@ -3754,6 +3522,62 @@ static ut8 *analBars(RzCore *core, size_t type, size_t nblocks, size_t blocksize
 	return ptr;
 }
 
+static void core_print_columns(RzCore *core, const ut8 *buf, ut32 len, ut32 height) {
+	size_t i, j;
+	bool colors = rz_config_get_i(core->config, "scr.color") > 0;
+	RzCons *cons = rz_cons_singleton();
+	RzConsPrintablePalette *pal = &cons->context->pal;
+	ut32 cols = 78;
+	ut32 rows = height > 0 ? height : 10;
+	const char *vline = cons->use_utf8 ? RUNE_LINE_VERT : "|";
+	const char *block = cons->use_utf8 ? UTF_BLOCK : "#";
+	const char *kol[5];
+	kol[0] = pal->call;
+	kol[1] = pal->jmp;
+	kol[2] = pal->cjmp;
+	kol[3] = pal->mov;
+	kol[4] = pal->nop;
+	if (colors) {
+		for (i = 0; i < rows; i++) {
+			size_t threshold = i * (0xff / rows);
+			size_t koli = i * 5 / rows;
+			for (j = 0; j < cols; j++) {
+				int realJ = j * len / cols;
+				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
+					if (core->print->histblock) {
+						rz_cons_printf("%s%s%s", kol[koli], block, Color_RESET);
+					} else {
+						rz_cons_printf("%s%s%s", kol[koli], vline, Color_RESET);
+					}
+				} else {
+					rz_cons_print(" ");
+				}
+			}
+			rz_cons_print("\n");
+		}
+		return;
+	}
+
+	for (i = 0; i < rows; i++) {
+		size_t threshold = i * (0xff / rows);
+		for (j = 0; j < cols; j++) {
+			size_t realJ = j * len / cols;
+			if (255 - buf[realJ] < threshold) {
+				if (core->print->histblock) {
+					rz_cons_printf("%s%s%s", Color_BGGRAY, block, Color_RESET);
+				} else {
+					rz_cons_printf("%s", vline);
+				}
+			} else if (i + 1 == rows) {
+				rz_cons_print("_");
+			} else {
+				rz_cons_print(" ");
+			}
+		}
+		rz_cons_print("\n");
+	}
+}
+
 static void cmd_print_bars(RzCore *core, const char *input) {
 	bool print_bars = false;
 	ut8 *ptr = NULL;
@@ -3935,7 +3759,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 					}
 					ptr[i] = 256 * k / blocksize;
 				}
-			rz_print_columns(core->print, ptr, nblocks, 14);
+			core_print_columns(core, ptr, nblocks, 14);
 			free(p);
 		} break;
 		case 'e': // "p=e"
@@ -3959,10 +3783,10 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 				ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(p, blocksize));
 			}
 			free(p);
-			rz_print_columns(core->print, ptr, nblocks, 14);
+			core_print_columns(core, ptr, nblocks, 14);
 		} break;
 		default:
-			rz_print_columns(core->print, core->block, core->blocksize, 14);
+			core_print_columns(core, core->block, core->blocksize, 14);
 			break;
 		}
 		break;
@@ -4215,15 +4039,15 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		case '.':
 			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
 			rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, origin, "switch table");
-			rz_core_cmdf(core, "f switch.0x%08" PFMT64x "=0x%08" PFMT64x "\n", origin, origin);
-			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); // origin, origin);
+			rz_core_cmdf(core, "f switch.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", origin, origin);
+			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", offset, offset); // origin, origin);
 			rz_analysis_xrefs_set(core->analysis, offset, origin, RZ_ANALYSIS_REF_TYPE_DATA);
 			break;
 		}
 	} else if (mode == '.') {
 		rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, offset, "switch basic block");
-		rz_core_cmdf(core, "f switch.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); // basic block @ 0x%08"PFMT64x "\n", offset);
+		rz_core_cmdf(core, "f switch.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", offset, offset); // basic block @ 0x%08"PFMT64x "\n", offset);
 	}
 	int n = 0;
 	for (i = 0; (i + sizeof(st32)) <= len; i += step, n++) {
@@ -4659,64 +4483,61 @@ static inline int cmd_pxb_k(const ut8 *buffer, int x) {
 	return buffer[3 - x] << (8 * x);
 }
 
-static void print_json_string(RzCore *core, const char *block, ut32 len, RzCoreStringKind kind) {
-	RzCoreString *cstring = rz_core_string_information(core, block, len, kind);
-	if (!cstring) {
+static inline char *get_section_name(RzCore *core) {
+	const char *csection = rz_core_get_section_name(core, core->offset);
+	if (RZ_STR_ISEMPTY(csection)) {
+		return strdup("unknown");
+	}
+	csection = rz_str_trim_head_ro(csection);
+	char *section_name = strdup(csection);
+	rz_str_trim_tail(section_name);
+	if (RZ_STR_ISEMPTY(section_name)) {
+		free(section_name);
+		return strdup("unknown");
+	}
+	return section_name;
+}
+
+static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding, bool stop_at_nil) {
+	char *section = get_section_name(core);
+	if (!section) {
 		return;
 	}
-	// cleaning useless spaces in section name in json data.
-	char *section_name = strdup(rz_str_trim_head_ro(cstring->section_name));
-	char *p;
-	for (p = (char *)section_name; *p && *p != ' '; p++) {
+	ut32 dlength = 0;
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = block;
+	opt.length = len;
+	opt.encoding = encoding;
+	opt.json = true;
+	opt.stop_at_nil = stop_at_nil;
+	char *dstring = rz_str_stringify_raw_buffer(&opt, &dlength);
+	if (!dstring) {
+		free(section);
+		return;
 	}
-	*p = '\0';
-	char *kindstr;
-	switch (cstring->kind) {
-	case RZ_CORE_STRING_KIND_ASCII:
-		kindstr = "ascii";
-		break;
-	case RZ_CORE_STRING_KIND_WIDE16: // No UTF/Unicode encoding
-		kindstr = "wide16";
-		break;
-	case RZ_CORE_STRING_KIND_WIDE32: // NO UTF/Unicode encoding
-		kindstr = "wide32";
-		break;
-	case RZ_CORE_STRING_KIND_UTF8:
-		kindstr = "utf8";
-		break;
-	case RZ_CORE_STRING_KIND_UTF16:
-		kindstr = "utf16";
-		break;
-	case RZ_CORE_STRING_KIND_UTF32:
-		kindstr = "utf32";
-		break;
-	default:
-		kindstr = "unknown";
-		break;
-	}
+
 	PJ *pj = pj_new();
 	if (!pj) {
-		free(section_name);
-		free(cstring);
+		free(section);
+		free(dstring);
 		return;
 	}
+
+	const char *enc_name = rz_str_enc_as_string(encoding);
 	pj_o(pj);
 	pj_k(pj, "string");
-	// TODO: add pj_kd for data to pass key(string) and value(data,len) instead of pj_ks which null terminates
-	char *str = rz_str_utf16_encode(cstring->string, cstring->size); // XXX just block + len should be fine, pj takes care of this
 	pj_raw(pj, "\"");
-	pj_raw(pj, str);
-	free(str);
+	pj_raw(pj, dstring);
 	pj_raw(pj, "\"");
-	pj_kn(pj, "offset", cstring->offset);
-	pj_ks(pj, "section", section_name);
-	pj_ki(pj, "length", cstring->length);
-	pj_ks(pj, "type", kindstr);
+	pj_kn(pj, "offset", core->offset);
+	pj_ks(pj, "section", section);
+	pj_kn(pj, "length", dlength);
+	pj_ks(pj, "type", enc_name);
 	pj_end(pj);
 	rz_cons_println(pj_string(pj));
 	pj_free(pj);
-	free(section_name);
-	free(cstring);
+	free(section);
+	free(dstring);
 }
 
 static char *__op_refs(RzCore *core, RzAnalysisOp *op, int n) {
@@ -4854,7 +4675,7 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 			}
 			if (mode == '*' && RZ_STR_ISNOTEMPTY(refs)) {
 				// Show only the mapped ones?
-				rz_cons_printf("f pxr.%" PFMT64x "=0x%" PFMT64x "\n", val, addr);
+				rz_cons_printf("f pxr.%" PFMT64x " @ 0x%" PFMT64x "\n", val, addr);
 			} else if (mode == 'q' && RZ_STR_ISNOTEMPTY(refs)) {
 				rz_cons_printf("%s\n", refs);
 			}
@@ -4897,17 +4718,73 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 	}
 }
 
+static void core_print_2bpp_row(const ut8 *buf, bool useColor) {
+	const char *symbols = "#=-.";
+	for (ut32 i = 0, c = 0; i < 8; i++) {
+		if (buf[1] & ((1 << 7) >> i)) {
+			c = 2;
+		}
+		if (buf[0] & ((1 << 7) >> i)) {
+			c++;
+		}
+		if (useColor) {
+			char *color = "";
+			switch (c) {
+			case 0:
+				color = Color_BGWHITE;
+				break;
+			case 1:
+				color = Color_BGRED;
+				break;
+			case 2:
+				color = Color_BGBLUE;
+				break;
+			case 3:
+				color = Color_BGBLACK;
+				break;
+			}
+			rz_cons_printf("%s  ", color);
+		} else {
+			const char ch = symbols[c % 4];
+			rz_cons_printf("%c%c", ch, ch);
+		}
+		c = 0;
+	}
+}
+
+static void core_print_2bpp_tiles(RzCore *core, ut32 tiles) {
+	const ut8 *buf = core->block;
+	bool useColor = rz_config_get_i(core->config, "scr.color") > 0;
+	for (ut32 i = 0; i < 8; i++) {
+		for (ut32 r = 0; r < tiles; r++) {
+			core_print_2bpp_row(buf + 2 * i + r * 16, useColor);
+		}
+		if (useColor) {
+			rz_cons_printf(Color_RESET "\n");
+		} else {
+			rz_cons_printf("\n");
+		}
+	}
+}
+
+static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
+	char *str = rz_str_stringify_raw_buffer(opt, NULL);
+	if (str) {
+		rz_cons_strcat(str);
+		free(str);
+	}
+}
+
 RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	st64 l;
 	int i, len, ret;
 	ut8 *block;
 	ut32 tbs = core->blocksize;
-	ut64 n, off, from, to;
+	ut64 n, off;
 	ut64 tmpseek = UT64_MAX;
 	const size_t addrbytes = core->io->addrbytes;
 	ret = 0;
-	to = 0;
 	PJ *pj = NULL;
 
 	rz_print_init_rowoffsets(core->print);
@@ -5839,7 +5716,8 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					len = rz_num_math(core->num, input + 3);
 					len = RZ_MIN(len, core->blocksize);
 				}
-				print_json_string(core, (const char *)core->block, len, RZ_CORE_STRING_KIND_UNKNOWN);
+				RzStrEnc enc = rz_str_guess_encoding_from_buffer(core->block, len);
+				print_json_string(core, core->block, len, enc, l != len);
 			}
 			break;
 		case 'i': // "psi"
@@ -5878,7 +5756,12 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		case 'x': // "psx"
 			if (l > 0) {
-				rz_print_string(core->print, core->offset, block, len, RZ_PRINT_STRING_ESC_NL);
+				RzStrStringifyOpt opt = { 0 };
+				opt.buffer = block;
+				opt.length = len;
+				opt.encoding = RZ_STRING_ENC_8BIT;
+				opt.escape_nl = true;
+				core_print_raw_buffer(&opt);
 			}
 			break;
 		case 'b': // "psb"
@@ -5936,7 +5819,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					}
 					s[j] = '\0';
 					if (input[2] == 'j') { // pszj
-						print_json_string(core, (const char *)s, j, RZ_CORE_STRING_KIND_UNKNOWN);
+						print_json_string(core, (const ut8 *)s, j, RZ_STRING_ENC_8BIT, true);
 					} else {
 						rz_cons_println(s);
 					}
@@ -5950,10 +5833,14 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				// TODO: add support for 2-4 byte length pascal strings
 				if (mylen < core->blocksize) {
 					if (input[2] == 'j') { // pspj
-						print_json_string(core, (const char *)core->block + 1, mylen, RZ_CORE_STRING_KIND_UNKNOWN);
+						print_json_string(core, core->block + 1, mylen, RZ_STRING_ENC_8BIT, true);
 					} else {
-						rz_print_string(core->print, core->offset,
-							core->block + 1, mylen, RZ_PRINT_STRING_ZEROEND);
+						RzStrStringifyOpt opt = { 0 };
+						opt.buffer = core->block + 1;
+						opt.length = mylen;
+						opt.encoding = RZ_STRING_ENC_8BIT;
+						opt.stop_at_nil = true;
+						core_print_raw_buffer(&opt);
 					}
 					core->num->value = mylen;
 				} else {
@@ -5964,26 +5851,40 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'w': // "psw"
 			if (l > 0) {
 				if (input[2] == 'j') { // pswj
-					print_json_string(core, (const char *)core->block, len, RZ_CORE_STRING_KIND_WIDE16);
+					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
 				} else {
-					rz_print_string(core->print, core->offset, core->block, len,
-						RZ_PRINT_STRING_WIDE | RZ_PRINT_STRING_ZEROEND);
+					RzStrStringifyOpt opt = { 0 };
+					opt.buffer = core->block;
+					opt.length = len;
+					opt.encoding = RZ_STRING_ENC_UTF16LE;
+					opt.stop_at_nil = true;
+					core_print_raw_buffer(&opt);
 				}
 			}
 			break;
 		case 'W': // "psW"
 			if (l > 0) {
 				if (input[2] == 'j') { // psWj
-					print_json_string(core, (const char *)core->block, len, RZ_CORE_STRING_KIND_WIDE32);
+					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE, true);
 				} else {
-					rz_print_string(core->print, core->offset, core->block, len,
-						RZ_PRINT_STRING_WIDE32 | RZ_PRINT_STRING_ZEROEND);
+					RzStrStringifyOpt opt = { 0 };
+					opt.buffer = core->block;
+					opt.length = len;
+					opt.encoding = RZ_STRING_ENC_UTF32LE;
+					opt.stop_at_nil = true;
+					core_print_raw_buffer(&opt);
 				}
 			}
 			break;
 		case ' ': // "ps"
-			rz_print_string(core->print, core->offset, core->block, l, 0);
-			break;
+		{
+			RzStrEnc enc = rz_str_guess_encoding_from_buffer(core->block, l);
+			RzStrStringifyOpt opt = { 0 };
+			opt.buffer = core->block;
+			opt.length = l;
+			opt.encoding = enc;
+			core_print_raw_buffer(&opt);
+		} break;
 		case 'u': // "psu"
 			if (l > 0) {
 				bool json = input[2] == 'j'; // "psuj"
@@ -6002,7 +5903,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					json = input[3] == 'j'; // "psuzj"
 				}
 				if (json) { // psuj
-					print_json_string(core, (const char *)core->block, len, RZ_CORE_STRING_KIND_UTF16);
+					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
 				} else {
 					char *str = rz_str_utf16_encode((const char *)core->block, len);
 					rz_cons_println(str);
@@ -6014,14 +5915,18 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			if (l > 0) {
 				int h, w = rz_cons_get_size(&h);
 				int colwidth = rz_config_get_i(core->config, "hex.cols") * 2;
-				core->print->width = (colwidth == 32) ? w : colwidth; // w;
+				int width = (colwidth == 32) ? w : colwidth; // w;
 				int bs = core->blocksize;
 				if (len == bs) {
 					len = (h * w) / 3;
 					rz_core_block_size(core, len);
 				}
-				rz_print_string(core->print, core->offset, core->block,
-					len, RZ_PRINT_STRING_WRAP);
+				RzStrStringifyOpt opt = { 0 };
+				opt.buffer = core->block;
+				opt.length = len;
+				opt.encoding = RZ_STRING_ENC_8BIT;
+				opt.wrap_at = width;
+				core_print_raw_buffer(&opt);
 				rz_core_block_size(core, bs);
 			}
 			break;
@@ -6040,17 +5945,25 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 						rz_core_cmdf(core, "ps%c @ 0x%" PFMT32x, json ? 'j' : ' ', *((ut32 *)core->block + 2));
 					}
 				} else if (json) {
-					print_json_string(core, (const char *)core->block + 1, len, RZ_CORE_STRING_KIND_UNKNOWN);
+					print_json_string(core, core->block + 1, len, RZ_STRING_ENC_8BIT, true);
 				} else {
-					rz_print_string(core->print, core->offset, core->block + 1,
-						len, RZ_PRINT_STRING_ZEROEND);
+					RzStrStringifyOpt opt = { 0 };
+					opt.buffer = core->block + 1;
+					opt.length = len;
+					opt.encoding = RZ_STRING_ENC_8BIT;
+					opt.stop_at_nil = true;
+					core_print_raw_buffer(&opt);
 				}
 			}
 			break;
 		default:
 			if (l > 0) {
-				rz_print_string(core->print, core->offset, core->block,
-					len, RZ_PRINT_STRING_ZEROEND);
+				RzStrStringifyOpt opt = { 0 };
+				opt.buffer = core->block;
+				opt.length = len;
+				opt.encoding = RZ_STRING_ENC_8BIT;
+				opt.stop_at_nil = true;
+				core_print_raw_buffer(&opt);
 			}
 			break;
 		}
@@ -6079,13 +5992,17 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		break;
 	case 'u': // "pu"
 		if (input[1] == '?') {
-			rz_cons_printf("|Usage: pu[w] [len]       print N url"
-				       "encoded bytes (w=wide)\n");
+			rz_cons_printf("|Usage: pu[w0] [len]       print N url"
+				       "encoded bytes (w=wide, 0=stop at nil)\n");
 		} else {
 			if (l > 0) {
-				rz_print_string(core->print, core->offset, core->block, len,
-					RZ_PRINT_STRING_URLENCODE |
-						((input[1] == 'w') ? RZ_PRINT_STRING_WIDE : 0));
+				RzStrStringifyOpt opt = { 0 };
+				opt.buffer = core->block;
+				opt.length = len;
+				opt.encoding = input[1] == 'w' ? RZ_STRING_ENC_UTF16LE : RZ_STRING_ENC_8BIT;
+				opt.stop_at_nil = input[1] == '0';
+				opt.urlencode = true;
+				core_print_raw_buffer(&opt);
 			}
 		}
 		break;
@@ -6156,18 +6073,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	case 'r': // "pr"
 		switch (input[1]) {
 		case 'c': // "prc" // color raw dump
-			if (input[2] == '?') {
-				rz_cons_printf("prc=e # colorblocks of entropy\n");
-				rz_core_cmd0(core, "pz?");
-			} else if (input[2] == '=') {
-				if (input[3] == '?') {
-					rz_core_cmd_help(core, help_msg_p_equal);
-				} else {
-					cmd_prc_zoom(core, input + 2);
-				}
-			} else {
-				cmd_prc(core, block, len);
-			}
+			cmd_prc(core, block, len);
 			break;
 		case '?':
 			rz_core_cmd_help(core, help_msg_pr);
@@ -6760,7 +6666,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_cons_printf("|Usage: p2 [number of bytes representing tiles]\n"
 					       "NOTE: Only full tiles will be printed\n");
 			} else {
-				rz_print_2bpp_tiles(core->print, core->block, len / 16);
+				core_print_2bpp_tiles(core, len / 16);
 			}
 		}
 		break;
@@ -6845,7 +6751,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_list_free(pids);
 		} else if (l > 0) {
 			len = len > core->blocksize ? core->blocksize : len;
-			char *s = rz_print_randomart(block, len, core->offset);
+			char *s = rz_msg_digest_randomart(block, len, core->offset);
 			rz_cons_println(s);
 			free(s);
 		}
@@ -6872,7 +6778,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					rz_cons_canvas_gotoxy(c, j * 20, i * 11);
 					core->offset += len;
 					rz_io_read_at(core->io, core->offset, core->block, len);
-					s = rz_print_randomart(core->block, len, core->offset);
+					s = rz_msg_digest_randomart(core->block, len, core->offset);
 					rz_cons_canvas_write(c, s);
 					free(s);
 				}
@@ -6882,48 +6788,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_io_read_at(core->io, offset0, core->block, len);
 			core->offset = offset0;
 			rz_cons_printf("\n");
-		}
-		break;
-	case 'z': // "pz"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_pz);
-		} else {
-			RzIOMap *map;
-			RzListIter *iter;
-			RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "zoom");
-			if (list && rz_list_length(list) > 0) {
-				RzListIter *iter1 = list->head;
-				RzIOMap *map1 = iter1->data;
-				from = map1->itv.addr;
-				rz_list_foreach (list, iter, map) {
-					to = rz_itv_end(map->itv);
-				}
-			} else {
-				from = core->offset;
-				to = from + core->blocksize;
-			}
-			ut64 maxsize = rz_config_get_i(core->config, "zoom.maxsz");
-			int oldva = core->io->va;
-			char *oldmode = NULL;
-			bool do_zoom = true;
-
-			core->io->va = 0;
-			if (input[1] && input[1] != ' ') {
-				oldmode = strdup(rz_config_get(core->config, "zoom.byte"));
-				if (!rz_config_set(core->config, "zoom.byte", input + 1)) {
-					do_zoom = false;
-				}
-			}
-			if (do_zoom && l > 0) {
-				rz_print_zoom(core->print, core, printzoomcallback,
-					from, to, l, (int)maxsize);
-			}
-			if (oldmode) {
-				rz_config_set(core->config, "zoom.byte", oldmode);
-			}
-			core->io->va = oldva;
-			RZ_FREE(oldmode);
-			rz_list_free(list);
 		}
 		break;
 	default:
@@ -7055,4 +6919,92 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 // XXX: dupe of rz_print_addr
 RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
 	rz_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
+}
+
+RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 oldsize = core->blocksize;
+	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
+	if (len > oldsize) {
+		rz_core_block_size(core, len);
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
+	} else {
+		RzStrStringifyOpt opt = { 0 };
+		opt.buffer = core->block;
+		opt.length = len;
+		opt.encoding = RZ_STRING_ENC_UTF16LE;
+		opt.stop_at_nil = true;
+		core_print_raw_buffer(&opt);
+	}
+	if (len > oldsize) {
+		rz_core_block_size(core, oldsize);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 oldsize = core->blocksize;
+	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
+	if (len > oldsize) {
+		rz_core_block_size(core, len);
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE, true);
+	} else {
+		RzStrStringifyOpt opt = { 0 };
+		opt.buffer = core->block;
+		opt.length = len;
+		opt.encoding = RZ_STRING_ENC_UTF32LE;
+		opt.stop_at_nil = true;
+		core_print_raw_buffer(&opt);
+	}
+	if (len > oldsize) {
+		rz_core_block_size(core, oldsize);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 oldsize = core->blocksize;
+	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
+	if (len > oldsize) {
+		rz_core_block_size(core, len);
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16BE, true);
+	} else {
+		RzStrStringifyOpt opt = { 0 };
+		opt.buffer = core->block;
+		opt.length = len;
+		opt.encoding = RZ_STRING_ENC_UTF16BE;
+		opt.stop_at_nil = true;
+		core_print_raw_buffer(&opt);
+	}
+	if (len > oldsize) {
+		rz_core_block_size(core, oldsize);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 oldsize = core->blocksize;
+	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
+	if (len > oldsize) {
+		rz_core_block_size(core, len);
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32BE, true);
+	} else {
+		RzStrStringifyOpt opt = { 0 };
+		opt.buffer = core->block;
+		opt.length = len;
+		opt.encoding = RZ_STRING_ENC_UTF32BE;
+		opt.stop_at_nil = true;
+		core_print_raw_buffer(&opt);
+	}
+	if (len > oldsize) {
+		rz_core_block_size(core, oldsize);
+	}
+	return RZ_CMD_STATUS_OK;
 }

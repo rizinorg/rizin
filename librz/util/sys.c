@@ -563,191 +563,48 @@ RZ_API bool rz_sys_aslr(int val) {
 	return ret;
 }
 
-#if __UNIX__
 RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	char *mysterr = NULL;
-	if (!sterr) {
-		sterr = &mysterr;
-	}
-	char buffer[1024], *outputptr = NULL;
-	char *inputptr = (char *)input;
-	int pid, bytes = 0, status = 0;
-	int sh_in[2], sh_out[2], sh_err[2];
-
-	if (len) {
-		*len = 0;
-	}
-	if (rz_sys_pipe(sh_in, true)) {
+	int argc;
+	char **argv = rz_str_argv(cmd, &argc);
+	if (!argv) {
 		return false;
 	}
+	RzSubprocessOpt opts = {
+		.file = argv[0],
+		.args = (const char **)&argv[1],
+		.args_size = argc - 1,
+		.envvars = NULL,
+		.envvals = NULL,
+		.env_size = 0,
+		.stdin_pipe = input ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+		.stdout_pipe = output ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+		.stderr_pipe = sterr ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+	};
+
+	if (!rz_subprocess_init()) {
+		RZ_LOG_ERROR("Failed to initialize subprocess\n");
+		return false;
+	}
+	RzSubprocess *subprocess = rz_subprocess_start_opt(&opts);
+	if (!subprocess) {
+		rz_subprocess_fini();
+		return false;
+	}
+	if (input) {
+		rz_subprocess_stdin_write(subprocess, (ut8 *)input, strlen(input) + 1);
+	}
+	rz_subprocess_wait(subprocess, UT64_MAX);
 	if (output) {
-		if (rz_sys_pipe(sh_out, true)) {
-			rz_sys_pipe_close(sh_in[0]);
-			rz_sys_pipe_close(sh_in[1]);
-			rz_sys_pipe_close(sh_out[0]);
-			rz_sys_pipe_close(sh_out[1]);
-			return false;
-		}
+		*output = (char *)rz_subprocess_out(subprocess, len);
 	}
-	if (rz_sys_pipe(sh_err, true)) {
-		rz_sys_pipe_close(sh_in[0]);
-		rz_sys_pipe_close(sh_in[1]);
-		return false;
+	if (sterr) {
+		*sterr = (char *)rz_subprocess_err(subprocess, NULL);
 	}
-
-	switch ((pid = rz_sys_fork())) {
-	case -1:
-		return false;
-	case 0: {
-		while ((dup2(sh_in[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
-		}
-		rz_sys_pipe_close(sh_in[0]);
-		rz_sys_pipe_close(sh_in[1]);
-		if (output) {
-			while ((dup2(sh_out[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
-			}
-			rz_sys_pipe_close(sh_out[0]);
-			rz_sys_pipe_close(sh_out[1]);
-		}
-		if (sterr) {
-			while ((dup2(sh_err[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
-			}
-			rz_sys_pipe_close(sh_err[0]);
-			rz_sys_pipe_close(sh_err[1]);
-		} else {
-			close(2);
-		}
-		char *bin_sh = rz_file_binsh();
-		int ret = rz_sys_execl(bin_sh, "sh", "-c", cmd, (const char *)NULL);
-		free(bin_sh);
-		exit(ret);
-	}
-	default:
-		outputptr = strdup("");
-		if (!outputptr) {
-			return false;
-		}
-		if (sterr) {
-			*sterr = strdup("");
-			if (!*sterr) {
-				free(outputptr);
-				return false;
-			}
-		}
-		if (output) {
-			rz_sys_pipe_close(sh_out[1]);
-		}
-		rz_sys_pipe_close(sh_err[1]);
-		rz_sys_pipe_close(sh_in[0]);
-		if (!inputptr || !*inputptr) {
-			rz_sys_pipe_close(sh_in[1]);
-			sh_in[1] = -1;
-		}
-		// we should handle broken pipes somehow better
-		rz_sys_signal(SIGPIPE, SIG_IGN);
-		size_t err_len = 0, out_len = 0;
-		for (;;) {
-			fd_set rfds, wfds;
-			int nfd;
-			FD_ZERO(&rfds);
-			FD_ZERO(&wfds);
-			if (output) {
-				FD_SET(sh_out[0], &rfds);
-			}
-			if (sterr) {
-				FD_SET(sh_err[0], &rfds);
-			}
-			if (inputptr && *inputptr) {
-				FD_SET(sh_in[1], &wfds);
-			}
-			memset(buffer, 0, sizeof(buffer));
-			nfd = select(sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
-			if (nfd < 0) {
-				break;
-			}
-			if (output && FD_ISSET(sh_out[0], &rfds)) {
-				if ((bytes = read(sh_out[0], buffer, sizeof(buffer))) < 1) {
-					break;
-				}
-				char *tmp = realloc(outputptr, out_len + bytes + 1);
-				if (!tmp) {
-					RZ_FREE(outputptr);
-					break;
-				}
-				outputptr = tmp;
-				memcpy(outputptr + out_len, buffer, bytes);
-				out_len += bytes;
-			} else if (FD_ISSET(sh_err[0], &rfds) && sterr) {
-				if ((bytes = read(sh_err[0], buffer, sizeof(buffer))) < 1) {
-					break;
-				}
-				char *tmp = realloc(*sterr, err_len + bytes + 1);
-				if (!tmp) {
-					RZ_FREE(*sterr);
-					break;
-				}
-				*sterr = tmp;
-				memcpy(*sterr + err_len, buffer, bytes);
-				err_len += bytes;
-			} else if (FD_ISSET(sh_in[1], &wfds) && inputptr && *inputptr) {
-				int inputptr_len = strlen(inputptr);
-				bytes = write(sh_in[1], inputptr, inputptr_len);
-				if (bytes != inputptr_len) {
-					break;
-				}
-				inputptr += bytes;
-				if (!*inputptr) {
-					rz_sys_pipe_close(sh_in[1]);
-					/* If neither stdout nor stderr should be captured,
-					 * abort now - nothing more to do for select(). */
-					if (!output && !sterr) {
-						break;
-					}
-				}
-			}
-		}
-		if (output) {
-			rz_sys_pipe_close(sh_out[0]);
-		}
-		rz_sys_pipe_close(sh_err[0]);
-		if (sh_in[1] != -1) {
-			rz_sys_pipe_close(sh_in[1]);
-		}
-		waitpid(pid, &status, 0);
-		bool ret = true;
-		if (status) {
-			ret = false;
-		}
-
-		if (len) {
-			*len = out_len;
-		}
-		if (*sterr) {
-			(*sterr)[err_len] = 0;
-		}
-		if (outputptr) {
-			outputptr[out_len] = 0;
-		}
-		if (output) {
-			*output = outputptr;
-		} else {
-			free(outputptr);
-		}
-		free(mysterr);
-		return ret;
-	}
-	return false;
+	rz_subprocess_free(subprocess);
+	rz_subprocess_fini();
+	rz_str_argv_free(argv);
+	return true;
 }
-#elif __WINDOWS__
-RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	return rz_sys_cmd_str_full_w32(cmd, input, output, len, sterr);
-}
-#else
-RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	eprintf("rz_sys_cmd_str: not yet implemented for this platform\n");
-	return false;
-}
-#endif
 
 RZ_API int rz_sys_cmdf(const char *fmt, ...) {
 	int ret;

@@ -3934,6 +3934,28 @@ static char *ts_node_handle_arg(struct tsr2cmd_state *state, TSNode command, TSN
 	return str;
 }
 
+static void get_help_wrong_cmd(RzCore *core, const char *cmdname) {
+	char *cmdname_help = rz_str_newf("%s?", cmdname);
+	if (!cmdname_help) {
+		return;
+	}
+	RzCmdParsedArgs *help_pra = rz_cmd_parsed_args_newcmd(cmdname_help);
+	if (!help_pra) {
+		goto cmdname_err;
+	}
+	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
+	char *help_msg = rz_cmd_get_help(core->rcmd, help_pra, use_color);
+	if (!help_msg) {
+		goto help_pra_err;
+	}
+	eprintf("%s", help_msg);
+	free(help_msg);
+help_pra_err:
+	rz_cmd_parsed_args_free(help_pra);
+cmdname_err:
+	free(cmdname_help);
+}
+
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
 	rz_return_val_if_fail(!ts_node_is_null(command), false);
@@ -3989,32 +4011,21 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	res = rz_cmd_call_parsed_args(state->core->rcmd, pr_args);
 	if (res == RZ_CMD_STATUS_WRONG_ARGS) {
 		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
-		eprintf("Wrong number of arguments passed to `%s`, see its help with `%s?`\n", cmdname, cmdname);
-		RzCmdDesc *cd = rz_cmd_get_desc(state->core->rcmd, cmdname);
-		if (cd) {
-			char *cmdname_help = rz_str_newf("%s?", cmdname);
-			if (!cmdname_help) {
-				goto err;
-			}
-			RzCmdParsedArgs *help_pra = rz_cmd_parsed_args_newcmd(cmdname_help);
-			if (!help_pra) {
-				goto err;
-			}
-			bool use_color = state->core->print->flags & RZ_PRINT_FLAGS_COLOR;
-			char *help_msg = rz_cmd_get_help(state->core->rcmd, help_pra, use_color);
-			if (!help_msg) {
-				goto help_pra_err;
-			}
-			eprintf("%s", help_msg);
-			free(help_msg);
-		help_pra_err:
-			rz_cmd_parsed_args_free(help_pra);
-		}
+		eprintf("Wrong number of arguments passed to `%s`, see its help with `%s?`\n\n", cmdname, cmdname);
+		get_help_wrong_cmd(state->core, cmdname);
 	} else if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
 		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
 		eprintf("Command '%s' does not exist.\n", cmdname);
 		if (rz_str_endswith(cmdname, "?") && pr_args->argc > 1) {
 			eprintf("Did you want to see the help? Try `%s` without any argument.\n", cmdname);
+		} else {
+			// Let's try to find the first command/group in the ancestor chain
+			// that could provide some help
+			RzCmdDesc *hcd = rz_cmd_get_desc_best(state->core->rcmd, cmdname);
+			if (hcd) {
+				eprintf("Displaying the help of command '%s'.\n\n", hcd->name);
+				get_help_wrong_cmd(state->core, hcd->name);
+			}
 		}
 	} else if (res == RZ_CMD_STATUS_ERROR) {
 		RZ_LOG_DEBUG("Something wrong during the execution of `%s` command.\n", rz_cmd_parsed_args_cmd(pr_args));
@@ -4168,7 +4179,8 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char
 	if (argc == 2) {
 		begin = rz_cmd_get_desc(core->rcmd, argv[1]);
 		if (!begin) {
-			status = RZ_CMD_STATUS_NONEXISTINGCMD;
+			RZ_LOG_ERROR("Command '%s' does not exist.\n", argv[1]);
+			status = RZ_CMD_STATUS_ERROR;
 			goto exit_status;
 		}
 	}
@@ -6019,7 +6031,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		RzCmdCb cb;
 	} cmds[] = {
 		{ "_", "print last output", rz_cmd_last },
-		{ "#", "calculate hash", rz_cmd_hash },
 		{ "$", "alias", rz_cmd_alias },
 		{ "%", "short version of 'env' command", rz_cmd_env },
 		{ "&", "tasks", rz_cmd_tasks },
@@ -6033,16 +6044,13 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
 		{ "d", "debugger operations", rz_cmd_debug },
-		{ "f", "get/set flags", rz_cmd_flag },
 		{ "k", "perform sdb query", rz_cmd_kuery },
-		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
 		{ "q", "exit program session", rz_cmd_quit },
 		{ "V", "enter visual mode", rz_cmd_visual },
 		{ "v", "enter visual mode", rz_cmd_panels },
 		{ "w", "write bytes", rz_cmd_write },
 		{ "x", "alias for px", rz_cmd_hexdump },
-		{ "z", "zignatures", rz_cmd_zign },
 	};
 
 	core->rcmd = rz_core_cmd_new(!!core->cons);

@@ -20,6 +20,11 @@ static bool is_valid_gdb_file(RzCoreFile *fh) {
 	return d && strncmp(d->name, "gdb://", 6);
 }
 
+static bool is_valid_dmp_file(RzCoreFile *fh) {
+	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
+	return d && strncmp(d->name, "dmp://", 6);
+}
+
 static char *get_file_in_cur_dir(const char *filepath) {
 	filepath = rz_file_basename(filepath);
 	if (rz_file_exists(filepath) && !rz_file_is_directory(filepath)) {
@@ -156,6 +161,7 @@ static int main_help(int line) {
 		char *home_plugins = rz_path_home_prefix(RZ_PLUGINS);
 		char *system_plugins = rz_path_system(RZ_PLUGINS);
 		char *home_zigns = rz_path_home_prefix(RZ_ZIGNS);
+		char *system_sigdb = rz_path_system(RZ_SIGDB);
 		char *dirPrefix = rz_path_prefix(NULL);
 		// clang-format off
 		printf(
@@ -181,6 +187,7 @@ static int main_help(int line) {
 			" RZ_PREFIX    %s\n"
 			" RZ_INCDIR    %s\n"
 			" RZ_LIBDIR    %s\n"
+			" RZ_SIGDB     %s\n"
 			" RZ_LIBEXT    " RZ_LIB_EXT "\n",
 			system_rc,
 			home_rc, home_config_rc, home_config_rcdir,
@@ -193,7 +200,8 @@ static int main_help(int line) {
 			datahome,
 			dirPrefix,
 			incdir,
-			libdir);
+			libdir,
+			system_sigdb);
 		// clang-format on
 		free(datahome);
 		free(incdir);
@@ -208,6 +216,7 @@ static int main_help(int line) {
 		free(home_plugins);
 		free(system_plugins);
 		free(home_zigns);
+		free(system_sigdb);
 		free(dirPrefix);
 	}
 	return 0;
@@ -223,6 +232,7 @@ static int main_print_var(const char *var_name) {
 	char *cachehome = rz_path_home_cache();
 	char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
 	char *homezigns = rz_path_home_prefix(RZ_ZIGNS);
+	char *sigdbdir = rz_path_system(RZ_SIGDB);
 	char *plugins = rz_path_system(RZ_PLUGINS);
 	char *magicpath = rz_path_system(RZ_SDB_MAGIC);
 	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
@@ -235,6 +245,7 @@ static int main_print_var(const char *var_name) {
 		{ "RZ_MAGICPATH", magicpath },
 		{ "RZ_INCDIR", incdir },
 		{ "RZ_LIBDIR", libdir },
+		{ "RZ_SIGDB", sigdbdir },
 		{ "RZ_LIBEXT", RZ_LIB_EXT },
 		{ "RZ_RCONFIGHOME", confighome },
 		{ "RZ_RDATAHOME", datahome },
@@ -270,6 +281,7 @@ static int main_print_var(const char *var_name) {
 	free(cachehome);
 	free(homeplugins);
 	free(homezigns);
+	free(sigdbdir);
 	free(plugins);
 	free(magicpath);
 	free(prefix);
@@ -971,7 +983,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 			if (debug == 2) {
 				// autodetect backend with -D
-				rz_config_set(r->config, "dbg.backend", debugbackend);
+				if (strcmp(debugbackend, "dmp")) {
+					rz_config_set(r->config, "dbg.backend", debugbackend);
+				}
 				if (strcmp(debugbackend, "native")) {
 					if (!haveRarunProfile) {
 						pfile = strdup(argv[opt.ind++]);
@@ -983,13 +997,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 					fh = rz_core_file_open(r, pfile, perms, mapaddr);
 					iod = (r->io && fh) ? rz_io_desc_get(r->io, fh->fd) : NULL;
-					if (!strcmp(debugbackend, "gdb")) {
+					if (!strcmp(debugbackend, "gdb") || !strcmp(debugbackend, "dmp")) {
 						const char *filepath = rz_config_get(r->config, "dbg.exe.path");
 						ut64 addr = baddr;
 						if (addr == UINT64_MAX) {
 							addr = rz_config_get_i(r->config, "bin.baddr");
 						}
-						if (rz_file_exists(filepath) && !rz_file_is_directory(filepath)) {
+						if (RZ_STR_ISNOTEMPTY(filepath) && rz_file_exists(filepath) && !rz_file_is_directory(filepath)) {
 							char *newpath = rz_file_abspath(filepath);
 							if (newpath) {
 								if (iod) {
@@ -1001,9 +1015,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 								}
 								rz_core_bin_load(r, NULL, addr);
 							}
-						} else if (is_valid_gdb_file(fh)) {
+						} else if (is_valid_gdb_file(fh) || is_valid_dmp_file(fh)) {
 							filepath = iod->name;
-							if (rz_file_exists(filepath) && !rz_file_is_directory(filepath)) {
+							if (RZ_STR_ISNOTEMPTY(filepath) && rz_file_exists(filepath) && !rz_file_is_directory(filepath)) {
 								if (addr == UINT64_MAX) {
 									addr = rz_debug_get_baddr(r->dbg, filepath);
 								}
@@ -1250,7 +1264,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 
 		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin &&
-			iod->plugin->isdbg;
+			(iod->plugin->isdbg || (debug == 2 && !strcmp(iod->plugin->name, "dmp")));
 		if (debug) {
 			rz_core_setup_debugger(r, debugbackend, baddr == UT64_MAX);
 		}

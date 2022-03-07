@@ -5,7 +5,7 @@ i~arch
 i~type
 ir
 ?e --
-o
+ol
 oml
 pd 4 @ 0x0000d008
 ?e -- x86 UNSIGNED reloc
@@ -354,7 +354,7 @@ i~arch
 i~type
 ir
 ?e --
-o
+ol
 oml
 pd 4 @ 0x0000d008
 ?e -- x86 UNSIGNED reloc
@@ -703,7 +703,7 @@ i~arch
 i~type
 ir
 ?e --
-o
+ol
 oml
 ?e -- arm64 reloc
 s 0x0000c000
@@ -1047,7 +1047,7 @@ i~arch
 i~type
 ir
 ?e --
-o
+ol
 oml
 ?e -- arm64 reloc
 s 0x0000c000
@@ -1391,7 +1391,7 @@ i~arch
 i~type
 ir
 ?e --
-o
+ol
 oml
 EOF
 EXPECT=<<EOF
@@ -1418,7 +1418,7 @@ i~arch
 i~type
 ir
 ?e --
-o
+ol
 oml
 ?e --
 s 0x00004074

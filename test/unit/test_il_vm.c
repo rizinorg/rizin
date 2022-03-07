@@ -809,6 +809,65 @@ static bool test_rzil_vm_op_shiftl() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_compare() {
+	RzILVM *vm = rz_il_vm_new(0, 8, true);
+#define TEST_COMPARE(sign, name, lv, rv, expect) \
+	do { \
+		RzILOpBool *op = rz_il_op_new_##sign##name(rz_il_op_new_bitv_from_##sign##t64(32, lv), rz_il_op_new_bitv_from_##sign##t64(32, rv)); \
+		RzILBool *r = rz_il_evaluate_bool(vm, op); \
+		rz_il_op_pure_free(op); \
+		mu_assert_notnull(r, "eval"); \
+		mu_assert_##expect(r->b, "eval val"); \
+		rz_il_bool_free(r); \
+	} while (0);
+
+	TEST_COMPARE(u, le, 100, 100, true);
+	TEST_COMPARE(u, le, 100, 101, true);
+	TEST_COMPARE(u, le, 101, 100, false);
+	TEST_COMPARE(u, le, -1, 100, false);
+	TEST_COMPARE(u, le, -42, -13, true);
+	TEST_COMPARE(u, lt, 100, 100, false);
+	TEST_COMPARE(u, lt, 100, 101, true);
+	TEST_COMPARE(u, lt, 101, 100, false);
+	TEST_COMPARE(u, lt, -1, 100, false);
+	TEST_COMPARE(u, lt, -42, -13, true);
+	TEST_COMPARE(u, ge, 100, 100, true);
+	TEST_COMPARE(u, ge, 100, 101, false);
+	TEST_COMPARE(u, ge, 101, 100, true);
+	TEST_COMPARE(u, ge, -1, 100, true);
+	TEST_COMPARE(u, ge, -42, -13, false);
+	TEST_COMPARE(u, gt, 100, 100, false);
+	TEST_COMPARE(u, gt, 100, 101, false);
+	TEST_COMPARE(u, gt, 101, 100, true);
+	TEST_COMPARE(u, gt, -1, 100, true);
+	TEST_COMPARE(u, gt, -42, -13, false);
+
+	TEST_COMPARE(s, le, 100, 100, true);
+	TEST_COMPARE(s, le, 100, 101, true);
+	TEST_COMPARE(s, le, 101, 100, false);
+	TEST_COMPARE(s, le, -1, 100, true);
+	TEST_COMPARE(s, le, -42, -13, true);
+	TEST_COMPARE(s, lt, 100, 100, false);
+	TEST_COMPARE(s, lt, 100, 101, true);
+	TEST_COMPARE(s, lt, 101, 100, false);
+	TEST_COMPARE(s, lt, -1, 100, true);
+	TEST_COMPARE(s, lt, -42, -13, true);
+	TEST_COMPARE(s, ge, 100, 100, true);
+	TEST_COMPARE(s, ge, 100, 101, false);
+	TEST_COMPARE(s, ge, 101, 100, true);
+	TEST_COMPARE(s, ge, -1, 100, false);
+	TEST_COMPARE(s, ge, -42, -13, false);
+	TEST_COMPARE(s, gt, 100, 100, false);
+	TEST_COMPARE(s, gt, 100, 101, false);
+	TEST_COMPARE(s, gt, 101, 100, true);
+	TEST_COMPARE(s, gt, -1, 100, false);
+	TEST_COMPARE(s, gt, -42, -13, false);
+
+#undef TEST_COMPARE
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_global_vars);
@@ -834,6 +893,7 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_append);
 	mu_run_test(test_rzil_vm_op_shiftr);
 	mu_run_test(test_rzil_vm_op_shiftl);
+	mu_run_test(test_rzil_vm_op_compare);
 	return tests_passed != tests_run;
 }
 

@@ -73,10 +73,8 @@ static const char *help_msg_question_e[] = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
-	"?eb", " 10 20 30", "proportional segments bar",
 	"?eg", " 10 20", "move cursor to column 10, row 20",
 	"?en", " nonl", "echo message without ending newline",
-	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
 	"?et", " msg", "change terminal title",
 	NULL
 };
@@ -503,7 +501,8 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	case 'h': // "?h"
 		if (input[1] == ' ') {
-			rz_cons_printf("0x%08x\n", (ut32)rz_str_hash(input + 2));
+			ut32 hash = (ut32)rz_str_djb2_hash(input + 2);
+			rz_cons_printf("0x%08x\n", hash);
 		} else {
 			eprintf("Usage: ?h [string-to-hash]\n");
 		}
@@ -558,6 +557,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		ut32 s, a;
 		double d;
 		float f;
+		char number[128];
 		char *const inputs = strdup(input + 1);
 		RzList *list = rz_num_str_split_list(inputs);
 		const int list_len = rz_list_length(list);
@@ -581,14 +581,14 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			a = n & 0x0fff;
 			rz_num_units(unit, sizeof(unit), n);
 			if (*input == 'j') {
-				pj_ks(pj, "int32", sdb_fmt("%d", (st32)(n & UT32_MAX)));
-				pj_ks(pj, "uint32", sdb_fmt("%u", (ut32)n));
-				pj_ks(pj, "int64", sdb_fmt("%" PFMT64d, (st64)n));
-				pj_ks(pj, "uint64", sdb_fmt("%" PFMT64u, (ut64)n));
-				pj_ks(pj, "hex", sdb_fmt("0x%08" PFMT64x, n));
-				pj_ks(pj, "octal", sdb_fmt("0%" PFMT64o, n));
+				pj_ks(pj, "int32", rz_strf(number, "%d", (st32)(n & UT32_MAX)));
+				pj_ks(pj, "uint32", rz_strf(number, "%u", (ut32)n));
+				pj_ks(pj, "int64", rz_strf(number, "%" PFMT64d, (st64)n));
+				pj_ks(pj, "uint64", rz_strf(number, "%" PFMT64u, (ut64)n));
+				pj_ks(pj, "hex", rz_strf(number, "0x%08" PFMT64x, n));
+				pj_ks(pj, "octal", rz_strf(number, "0%" PFMT64o, n));
 				pj_ks(pj, "unit", unit);
-				pj_ks(pj, "segment", sdb_fmt("%04x:%04x", s, a));
+				pj_ks(pj, "segment", rz_strf(number, "%04x:%04x", s, a));
 
 			} else {
 				if (n >> 32) {
@@ -611,8 +611,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			/* binary and floating point */
 			rz_str_bits64(out, n);
 			f = d = core->num->fvalue;
-			memcpy(&f, &n, sizeof(f));
-			memcpy(&d, &n, sizeof(d));
 			/* adjust sign for nan floats, different libcs are confused */
 			if (isnan(f) && signbit(f)) {
 				f = -f;
@@ -621,12 +619,12 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 				d = -d;
 			}
 			if (*input == 'j') {
-				pj_ks(pj, "fvalue", sdb_fmt("%.1lf", core->num->fvalue));
-				pj_ks(pj, "float", sdb_fmt("%ff", f));
-				pj_ks(pj, "double", sdb_fmt("%lf", d));
-				pj_ks(pj, "binary", sdb_fmt("0b%s", out));
+				pj_ks(pj, "fvalue", rz_strf(number, "%.1lf", core->num->fvalue));
+				pj_ks(pj, "float", rz_strf(number, "%ff", f));
+				pj_ks(pj, "double", rz_strf(number, "%lf", d));
+				pj_ks(pj, "binary", rz_strf(number, "0b%s", out));
 				rz_num_to_trits(out, n);
-				pj_ks(pj, "trits", sdb_fmt("0t%s", out));
+				pj_ks(pj, "trits", rz_strf(number, "0t%s", out));
 			} else {
 				rz_cons_printf("fvalue  %.1lf\n", core->num->fvalue);
 				rz_cons_printf("float   %ff\n", f);
@@ -906,24 +904,13 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
-		case 't': // "?e=t newtitle"
+		case 't': // "?et newtitle"
 			rz_cons_set_title(rz_str_trim_head_ro(input + 2));
 			break;
 		case '=': { // "?e="
 			ut64 pc = rz_num_math(core->num, input + 2);
 			rz_print_progressbar(core->print, pc, 80);
 			rz_cons_newline();
-			break;
-		}
-		case 'b': { // "?eb"
-			char *arg = strdup(rz_str_trim_head_ro(input + 2));
-			int n = rz_str_split(arg, ' ');
-			ut64 *portions = calloc(n, sizeof(ut64));
-			for (i = 0; i < n; i++) {
-				portions[i] = rz_num_math(core->num, rz_str_word_get0(arg, i));
-			}
-			rz_print_portionbar(core->print, portions, n);
-			free(arg);
 			break;
 		}
 		case 'c': // "?ec" column
@@ -944,20 +931,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			free(newmsg);
 			break;
 		}
-		case 'p': {
-			char *word, *str = strdup(input + 2);
-			RzList *list = rz_str_split_list(str, " ", 0);
-			ut64 *nums = calloc(sizeof(ut64), rz_list_length(list));
-			int i = 0;
-			rz_list_foreach (list, iter, word) {
-				nums[i] = rz_num_math(core->num, word);
-				;
-				i++;
-			}
-			int size = rz_config_get_i(core->config, "hex.cols");
-			rz_print_pie(core->print, nums, rz_list_length(list), size);
-			rz_list_free(list);
-		} break;
 		case ' ': {
 			const char *msg = rz_str_trim_head_ro(input + 1);
 			// TODO: replace all ${flagname} by its value in hexa
@@ -997,32 +970,26 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		}
 		break;
 	}
-	case 'P': // "?P" physical to virtual address conversion
-		if (core->io->va) {
-			ut64 n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
-			ut64 vaddr = rz_io_p2v(core->io, n);
-			if (vaddr == UT64_MAX) {
-				rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
-			} else {
-				rz_cons_printf("0x%08" PFMT64x "\n", vaddr);
-			}
+	case 'P': { // "?P" physical to virtual address conversion
+		ut64 n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
+		ut64 vaddr = rz_io_p2v(core->io, n);
+		if (vaddr == UT64_MAX) {
+			rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x "\n", core->offset);
+			rz_cons_printf("0x%08" PFMT64x "\n", vaddr);
 		}
 		break;
-	case 'p': // "?p" virtual to physical address conversion
-		if (core->io->va) {
-			ut64 n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
-			ut64 paddr = rz_io_v2p(core->io, n);
-			if (paddr == UT64_MAX) {
-				rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
-			} else {
-				rz_cons_printf("0x%08" PFMT64x "\n", paddr);
-			}
+	}
+	case 'p': { // "?p" virtual to physical address conversion
+		ut64 n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
+		ut64 paddr = rz_io_v2p(core->io, n);
+		if (paddr == UT64_MAX) {
+			rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x "\n", core->offset);
+			rz_cons_printf("0x%08" PFMT64x "\n", paddr);
 		}
 		break;
+	}
 	case '_': // "?_" hud input
 		rz_core_yank_hud_file(core, input + 1);
 		break;

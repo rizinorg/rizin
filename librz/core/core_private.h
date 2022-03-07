@@ -139,6 +139,11 @@ RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, 
 RZ_IPI void rz_core_io_file_open(RzCore *core, int fd);
 RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms);
 
+/* cflag.c */
+RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state);
+RZ_IPI void rz_core_flag_real_name_print(RzFlag *f, RzCmdStateOutput *state);
+RZ_IPI void rz_core_flag_range_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
+
 /* cmd_seek.c */
 
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);

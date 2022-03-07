@@ -407,7 +407,6 @@ NAME=ps 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=ps 0
 EXPECT=<<EOF
-
 EOF
 RUN
 
@@ -470,13 +469,6 @@ RUN
 NAME=puw 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=puw 0
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=pz 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=pz 0
 EXPECT=<<EOF
 EOF
 RUN
