@@ -2100,6 +2100,33 @@ static RzILOpEffect *swp(cs_insn *insn) {
 }
 
 /**
+ * Capstone: ARM64_INS_SXTB, ARM64_INS_SXTH, ARM64_INS_SXTW
+ * ARM: sxtb, sxth, sxtw
+ */
+static RzILOpEffect *sxt(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
+	ut32 bits;
+	switch (insn->id) {
+	case ARM64_INS_SXTB:
+		bits = 8;
+		break;
+	case ARM64_INS_SXTH:
+		bits = 16;
+		break;
+	default: // ARM64_INS_SXTW
+		bits = 32;
+		break;
+	}
+	RzILOpBitVector *src = ARG(1, &bits);
+	if (!src) {
+		return NULL;
+	}
+	return write_reg(REGID(0), SIGNED(REGBITS(0), src));
+}
+
+/**
  * Lift an AArch64 instruction to RzIL
  *
  * Currently unimplemented:
@@ -2575,6 +2602,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SWPALH:
 	case ARM64_INS_SWPLH:
 		return swp(insn);
+	case ARM64_INS_SXTB:
+	case ARM64_INS_SXTH:
+	case ARM64_INS_SXTW:
+		return sxt(insn);
 	default:
 		break;
 	}

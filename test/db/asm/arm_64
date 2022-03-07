@@ -754,6 +754,11 @@ d "swpl x1, x2, [x3]" 628061f8 0x0 (seq (set ret (loadw 0 64 (var x3))) (storew 
 d "swpl w1, w2, [x3]" 628061b8 0x0 (seq (set ret (loadw 0 32 (var x3))) (storew 0 (var x3) (cast 32 false (var x1))) (set x2 (cast 64 false (var ret))))
 d "swplb w1, w2, [x3]" 62806138 0x0 (seq (set ret (load 0 (var x3))) (store 0 (var x3) (cast 8 false (var x1))) (set x2 (cast 64 false (var ret))))
 d "swplh w1, w2, [x3]" 62806178 0x0 (seq (set ret (loadw 0 16 (var x3))) (storew 0 (var x3) (cast 16 false (var x1))) (set x2 (cast 64 false (var ret))))
+d "sxtb x1, w2" 411c4093 0x0 (set x1 (cast 64 (msb (cast 8 false (var x2))) (cast 8 false (var x2))))
+d "sxtb w1, w2" 411c0013 0x0 (set x1 (cast 64 false (cast 32 (msb (cast 8 false (var x2))) (cast 8 false (var x2)))))
+d "sxth x1, w2" 413c4093 0x0 (set x1 (cast 64 (msb (cast 16 false (var x2))) (cast 16 false (var x2))))
+d "sxth w1, w2" 413c0013 0x0 (set x1 (cast 64 false (cast 32 (msb (cast 16 false (var x2))) (cast 16 false (var x2)))))
+d "sxtw x1, w2" 417c4093 0x0 (set x1 (cast 64 (msb (cast 32 false (var x2))) (cast 32 false (var x2))))
 
 # Requires capstone v5:
 # d "ldraa x0, [x1]" 200420f8 0x0 (set x0 (loadw 0 64 (var x1)))
