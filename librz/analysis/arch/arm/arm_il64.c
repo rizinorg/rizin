@@ -234,10 +234,7 @@ static ut32 reg_bits(arm64_reg reg) {
 /**
  * IL to read the given capstone reg
  */
-static RzILOpBitVector *read_reg(/*ut64 pc, */ arm64_reg reg) {
-	// if (reg == ARM64_REG_PC) {
-	// 	return U32(pc);
-	// }
+static RzILOpBitVector *read_reg(arm64_reg reg) {
 	if (reg == ARM64_REG_XZR) {
 		return U64(0);
 	}
@@ -323,12 +320,10 @@ static RzILOpBitVector *apply_shift(arm64_shifter sft, ut32 dist, RZ_OWN RzILOpB
 	}
 }
 
-// #define PC(addr)      (addr)
-#define REG_VAL(id)  read_reg(/*PC(insn->address), */ id)
-#define REG(n)       REG_VAL(REGID(n))
+#define REG(n)       read_reg(REGID(n))
 #define REGBITS(n)   reg_bits(REGID(n))
 #define MEMBASEID(x) insn->detail->arm64.operands[x].mem.base
-#define MEMBASE(x)   REG_VAL(MEMBASEID(x))
+#define MEMBASE(x)   read_reg(MEMBASEID(x))
 
 /**
  * IL to write a value to the given capstone reg
