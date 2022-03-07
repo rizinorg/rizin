@@ -154,58 +154,6 @@ static bool is_xreg(arm64_reg reg) {
 	}
 }
 
-static ut8 xreg_idx(arm64_reg reg) {
-	switch (reg) {
-	case ARM64_REG_X0: return 0;
-	case ARM64_REG_X1: return 1;
-	case ARM64_REG_X2: return 2;
-	case ARM64_REG_X3: return 3;
-	case ARM64_REG_X4: return 4;
-	case ARM64_REG_X5: return 5;
-	case ARM64_REG_X6: return 6;
-	case ARM64_REG_X7: return 7;
-	case ARM64_REG_X8: return 8;
-	case ARM64_REG_X9: return 9;
-	case ARM64_REG_X10: return 10;
-	case ARM64_REG_X11: return 11;
-	case ARM64_REG_X12: return 12;
-	case ARM64_REG_X13: return 13;
-	case ARM64_REG_X14: return 14;
-	case ARM64_REG_X15: return 15;
-	case ARM64_REG_X16: return 16;
-	case ARM64_REG_X17: return 17;
-	case ARM64_REG_X18: return 18;
-	case ARM64_REG_X19: return 19;
-	case ARM64_REG_X20: return 20;
-	case ARM64_REG_X21: return 21;
-	case ARM64_REG_X22: return 22;
-	case ARM64_REG_X23: return 23;
-	case ARM64_REG_X24: return 24;
-	case ARM64_REG_X25: return 25;
-	case ARM64_REG_X26: return 26;
-	case ARM64_REG_X27: return 27;
-	case ARM64_REG_X28: return 28;
-	case ARM64_REG_X29: return 29;
-	case ARM64_REG_X30: return 30;
-	case ARM64_REG_SP: return 31;
-	case ARM64_REG_XZR: return 32;
-	default:
-		rz_warn_if_reached();
-		return 0;
-	}
-}
-
-static arm64_reg wreg(ut8 idx) {
-	rz_return_val_if_fail(idx <= 31, ARM64_REG_INVALID);
-	if (idx == 31) {
-		return ARM64_REG_WSP;
-	}
-	if (idx == 32) {
-		return ARM64_REG_WZR;
-	}
-	return ARM64_REG_W0 + idx;
-}
-
 static ut8 wreg_idx(arm64_reg reg) {
 	if (reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30) {
 		return reg - ARM64_REG_W0;
@@ -1193,22 +1141,26 @@ static RzILOpEffect *str(cs_insn *insn) {
 	switch (insn->id) {
 	case ARM64_INS_STRB:
 	case ARM64_INS_STURB:
-	case ARM64_INS_STLLRB:
 	case ARM64_INS_STLRB:
-	case ARM64_INS_STLURB:
 	case ARM64_INS_STXRB:
 	case ARM64_INS_STLXRB:
 	case ARM64_INS_STTRB:
+#if CS_API_MAJOR > 4
+	case ARM64_INS_STLLRB:
+	case ARM64_INS_STLURB:
+#endif
 		bits = 8;
 		break;
 	case ARM64_INS_STRH:
 	case ARM64_INS_STURH:
-	case ARM64_INS_STLLRH:
 	case ARM64_INS_STLRH:
-	case ARM64_INS_STLURH:
 	case ARM64_INS_STXRH:
 	case ARM64_INS_STLXRH:
 	case ARM64_INS_STTRH:
+#if CS_API_MAJOR > 4
+	case ARM64_INS_STLLRH:
+	case ARM64_INS_STLURH:
+#endif
 		bits = 16;
 		break;
 	default:
@@ -1698,12 +1650,15 @@ static RzILOpEffect *movn(cs_insn *insn) {
  */
 static RzILOpEffect *msr(cs_insn *insn) {
 	cs_arm64_op *op = &insn->detail->arm64.operands[0];
-	if (op->type != ARM64_OP_SYS) {
+#if CS_API_MAJOR > 4
+	if (op->type != ARM64_OP_SYS || op->sys != ARM64_SYSREG_NZCV) {
 		return NULL;
 	}
-	if (op->sys != ARM64_SYSREG_NZCV) {
+#else
+	if (op->type != ARM64_OP_REG_MSR || op->reg != 0xda10) {
 		return NULL;
 	}
+#endif
 	ut32 bits = 0;
 	RzILOpBitVector *val = ARG(1, &bits);
 	if (!val) {
@@ -1716,6 +1671,7 @@ static RzILOpEffect *msr(cs_insn *insn) {
 		SETG("vf", INV(IS_ZERO(LOGAND(DUP(val), UN(bits, 1ull << 28))))));
 }
 
+#if CS_API_MAJOR > 5
 /**
  * Capstone: ARM64_INS_RMIF
  * ARM: rmif
@@ -1745,6 +1701,7 @@ static RzILOpEffect *rmif(cs_insn *insn) {
 	}
 	return eff ? eff : NOP;
 }
+#endif
 
 /**
  * Capstone: ARM64_INS_SBFX, ARM64_INS_SBFIZ, ARM64_INS_UBFX, ARM64_INS_UBFIZ
@@ -1778,13 +1735,19 @@ static RzILOpEffect *sbfx(cs_insn *insn) {
  * ARM: mrs
  */
 static RzILOpEffect *mrs(cs_insn *insn) {
+	if (!ISREG(0)) {
+		return NULL;
+	}
 	cs_arm64_op *op = &insn->detail->arm64.operands[1];
-	if (!ISREG(0) || op->type != ARM64_OP_SYS) {
+#if CS_API_MAJOR > 4
+	if (op->type != ARM64_OP_SYS || op->sys != ARM64_SYSREG_NZCV) {
 		return NULL;
 	}
-	if (op->sys != ARM64_SYSREG_NZCV) {
+#else
+	if (op->type != ARM64_OP_REG_MRS || op->reg != 0xda10) {
 		return NULL;
 	}
+#endif
 	ut32 bits = REGBITS(0);
 	if (!bits) {
 		return NULL;
@@ -1973,6 +1936,7 @@ static RzILOpEffect *udiv(cs_insn *insn) {
 		ITE(EQ(b, UN(bits, 0)), UN(bits, 0), DIV(a, DUP(b))));
 }
 
+#if CS_API_MAJOR > 4
 /**
  * Capstone: ARM64_INS_SETF8, ARM64_INS_SETF16
  * ARM: setf8, setf16
@@ -1990,6 +1954,7 @@ static RzILOpEffect *setf(cs_insn *insn) {
 		SETG("vf", XOR(MSB(UNSIGNED(bits + 1, val)), MSB(UNSIGNED(bits, DUP(val))))),
 		update_flags_zn(UNSIGNED(bits, DUP(val))));
 }
+#endif
 
 /**
  * Capstone: ARM64_INS_SMADDL, ARM64_INS_SMSUBL, ARM64_INS_UMADDL, ARM64_INS_UMSUBL
@@ -2065,6 +2030,7 @@ static RzILOpEffect *smulh(cs_insn *insn) {
 	return write_reg(REGID(0), UNSIGNED(64, SHIFTR0(res, UN(7, 64))));
 }
 
+#if CS_API_MAJOR > 4
 /**
  * Capstone: ARM64_INS_SWP, ARM64_INS_SWPA, ARM64_INS_SWPAL, ARM64_INS_SWPL,
  *           ARM64_INS_SWPB, ARM64_INS_SWPAB, ARM64_INS_SWPALB, ARM64_INS_SWPLB
@@ -2119,6 +2085,7 @@ static RzILOpEffect *swp(cs_insn *insn) {
 		store_eff,
 		ret_eff);
 }
+#endif
 
 /**
  * Capstone: ARM64_INS_SXTB, ARM64_INS_SXTH, ARM64_INS_SXTW, ARM64_INS_UXTB, ARM64_INS_UXTH
@@ -2613,8 +2580,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_REV32:
 	case ARM64_INS_REV16:
 		return rev(insn);
+#if CS_API_MAJOR > 4
 	case ARM64_INS_RMIF:
 		return rmif(insn);
+#endif
 	case ARM64_INS_SBFIZ:
 	case ARM64_INS_SBFX:
 	case ARM64_INS_UBFIZ:
@@ -2622,9 +2591,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return sbfx(insn);
 	case ARM64_INS_SDIV:
 		return sdiv(insn);
+#if CS_API_MAJOR > 4
 	case ARM64_INS_SETF8:
 	case ARM64_INS_SETF16:
 		return setf(insn);
+#endif
 	case ARM64_INS_SMADDL:
 	case ARM64_INS_SMSUBL:
 	case ARM64_INS_UMADDL:
@@ -2644,15 +2615,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STURB:
 	case ARM64_INS_STRH:
 	case ARM64_INS_STURH:
-	case ARM64_INS_STLLR:
-	case ARM64_INS_STLLRB:
-	case ARM64_INS_STLLRH:
 	case ARM64_INS_STLR:
 	case ARM64_INS_STLRB:
 	case ARM64_INS_STLRH:
-	case ARM64_INS_STLUR:
-	case ARM64_INS_STLURB:
-	case ARM64_INS_STLURH:
 	case ARM64_INS_STP:
 	case ARM64_INS_STNP:
 	case ARM64_INS_STXR:
@@ -2666,7 +2631,16 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_STTR:
 	case ARM64_INS_STTRB:
 	case ARM64_INS_STTRH:
+#if CS_API_MAJOR > 4
+	case ARM64_INS_STLLR:
+	case ARM64_INS_STLLRB:
+	case ARM64_INS_STLLRH:
+	case ARM64_INS_STLUR:
+	case ARM64_INS_STLURB:
+	case ARM64_INS_STLURH:
+#endif
 		return str(insn);
+#if CS_API_MAJOR > 4
 	case ARM64_INS_SWP:
 	case ARM64_INS_SWPA:
 	case ARM64_INS_SWPAL:
@@ -2680,6 +2654,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_SWPALH:
 	case ARM64_INS_SWPLH:
 		return swp(insn);
+#endif
 	case ARM64_INS_SXTB:
 	case ARM64_INS_SXTH:
 	case ARM64_INS_SXTW:
