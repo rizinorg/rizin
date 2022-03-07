@@ -786,6 +786,9 @@ static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int 
 		return RZ_CMD_STATUS_ERROR;
 	}
 
+	// clear the previous flag items
+	rz_flag_unset_all(core->flags);
+
 	core->num->value = cfile->fd;
 	if (addr == 0) { // if no baddr defined, use the one provided by the file
 		addr = UT64_MAX;
