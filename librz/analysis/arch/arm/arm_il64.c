@@ -1992,8 +1992,8 @@ static RzILOpEffect *setf(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_SMADDL, ARM64_INS_SMSUBL
- * ARM: smaddl, smsubl
+ * Capstone: ARM64_INS_SMADDL, ARM64_INS_SMSUBL, ARM64_INS_UMADDL, ARM64_INS_UMSUBL
+ * ARM: smaddl, smsubl, umaddl, umsubl
  */
 static RzILOpEffect *smaddl(cs_insn *insn) {
 	if (!ISREG(0) || REGBITS(0) != 64) {
@@ -2010,8 +2010,9 @@ static RzILOpEffect *smaddl(cs_insn *insn) {
 		rz_il_op_pure_free(addend);
 		return NULL;
 	}
-	RzILOpBitVector *res = MUL(SIGNED(64, x), SIGNED(64, y));
-	if (insn->id == ARM64_INS_SMSUBL) {
+	bool is_signed = insn->id == ARM64_INS_SMADDL || insn->id == ARM64_INS_SMSUBL;
+	RzILOpBitVector *res = MUL(is_signed ? SIGNED(64, x) : UNSIGNED(64, x), is_signed ? SIGNED(64, y) : UNSIGNED(64, y));
+	if (insn->id == ARM64_INS_SMSUBL || insn->id == ARM64_INS_UMSUBL) {
 		res = SUB(addend, res);
 	} else {
 		res = ADD(addend, res);
@@ -2020,8 +2021,8 @@ static RzILOpEffect *smaddl(cs_insn *insn) {
 }
 
 /**
- * Capstone: ARM64_INS_SMULL, ARM64_INS_SMNEGL
- * ARM: smull, smnegl
+ * Capstone: ARM64_INS_SMULL, ARM64_INS_SMNEGL, ARM64_INS_UMULL, ARM64_INS_UMNEGL
+ * ARM: smull, smnegl, umull, umnegl
  */
 static RzILOpEffect *smull(cs_insn *insn) {
 	if (!ISREG(0) || REGBITS(0) != 64) {
@@ -2035,16 +2036,17 @@ static RzILOpEffect *smull(cs_insn *insn) {
 		rz_il_op_pure_free(y);
 		return NULL;
 	}
-	RzILOpBitVector *res = MUL(SIGNED(64, x), SIGNED(64, y));
-	if (insn->id == ARM64_INS_SMNEGL) {
+	bool is_signed = insn->id == ARM64_INS_SMULL || insn->id == ARM64_INS_SMNEGL;
+	RzILOpBitVector *res = MUL(is_signed ? SIGNED(64, x) : UNSIGNED(64, x), is_signed ? SIGNED(64, y) : UNSIGNED(64, y));
+	if (insn->id == ARM64_INS_SMNEGL || insn->id == ARM64_INS_UMNEGL) {
 		res = NEG(res);
 	}
 	return write_reg(REGID(0), res);
 }
 
 /**
- * Capstone: ARM64_INS_SMULH
- * ARM: smulh
+ * Capstone: ARM64_INS_SMULH, ARM64_INS_UMULH
+ * ARM: smulh, umulh
  */
 static RzILOpEffect *smulh(cs_insn *insn) {
 	if (!ISREG(0) || REGBITS(0) != 64) {
@@ -2058,7 +2060,9 @@ static RzILOpEffect *smulh(cs_insn *insn) {
 		rz_il_op_pure_free(y);
 		return NULL;
 	}
-	return write_reg(REGID(0), UNSIGNED(64, SHIFTR0(MUL(SIGNED(128, x), SIGNED(128, y)), UN(7, 64))));
+	bool is_signed = insn->id == ARM64_INS_SMULH;
+	RzILOpBitVector *res = MUL(is_signed ? SIGNED(128, x) : UNSIGNED(128, x), is_signed ? SIGNED(128, y) : UNSIGNED(128, y));
+	return write_reg(REGID(0), UNSIGNED(64, SHIFTR0(res, UN(7, 64))));
 }
 
 /**
@@ -2618,11 +2622,16 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return setf(insn);
 	case ARM64_INS_SMADDL:
 	case ARM64_INS_SMSUBL:
+	case ARM64_INS_UMADDL:
+	case ARM64_INS_UMSUBL:
 		return smaddl(insn);
 	case ARM64_INS_SMULL:
 	case ARM64_INS_SMNEGL:
+	case ARM64_INS_UMULL:
+	case ARM64_INS_UMNEGL:
 		return smull(insn);
 	case ARM64_INS_SMULH:
+	case ARM64_INS_UMULH:
 		return smulh(insn);
 	case ARM64_INS_STR:
 	case ARM64_INS_STUR:
