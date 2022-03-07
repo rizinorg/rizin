@@ -1671,7 +1671,7 @@ static RzILOpEffect *msr(cs_insn *insn) {
 		SETG("vf", INV(IS_ZERO(LOGAND(DUP(val), UN(bits, 1ull << 28))))));
 }
 
-#if CS_API_MAJOR > 5
+#if CS_API_MAJOR > 4
 /**
  * Capstone: ARM64_INS_RMIF
  * ARM: rmif
