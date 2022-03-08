@@ -254,6 +254,7 @@ static const RzCmdDescArg cmd_debug_esil_step_args[2];
 static const RzCmdDescArg cmd_debug_esil_until_args[2];
 static const RzCmdDescArg cmd_debug_core_gen_args[2];
 static const RzCmdDescArg cmd_debug_handler_new_args[2];
+static const RzCmdDescArg cmd_debug_info_args[2];
 static const RzCmdDescArg cmd_debug_diff_args[3];
 static const RzCmdDescArg cmd_debug_signal_list_args[2];
 static const RzCmdDescArg cmd_debug_signal_set_args[2];
@@ -5500,6 +5501,13 @@ static const RzCmdDescHelp di_help = {
 	.summary = "Show debugger backend information (See dh)",
 };
 static const RzCmdDescArg cmd_debug_info_args[] = {
+	{
+		.name = "rdi",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_info_help = {
@@ -13936,7 +13944,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_handler_new_cd = rz_cmd_desc_argv_new(core->rcmd, d_cd, "dH", rz_cmd_debug_handler_new_handler, &cmd_debug_handler_new_help);
 	rz_warn_if_fail(cmd_debug_handler_new_cd);
 
-	RzCmdDesc *di_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "di", rz_cmd_debug_info_handler, &cmd_debug_info_help, &di_help);
+	RzCmdDesc *di_cd = rz_cmd_desc_group_modes_new(core->rcmd, d_cd, "di", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_info_handler, &cmd_debug_info_help, &di_help);
 	rz_warn_if_fail(di_cd);
 	RzCmdDesc *cmd_debug_diff_cd = rz_cmd_desc_argv_new(core->rcmd, di_cd, "dif", rz_cmd_debug_diff_handler, &cmd_debug_diff_help);
 	rz_warn_if_fail(cmd_debug_diff_cd);
