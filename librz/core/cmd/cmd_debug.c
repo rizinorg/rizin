@@ -4178,7 +4178,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_fd_handler(RzCore *core, int argc, const ch
 // dds
 RZ_IPI RzCmdStatus rz_cmd_debug_fd_seek_handler(RzCore *core, int argc, const char **argv) {
 	int fd = atoi(argv[1]);
-	ut64 off = argc > 2 ? atoi(argv[2]) : UT64_MAX;
+	ut64 off = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
 	if (off == UT64_MAX || !rz_debug_desc_seek(core->dbg, fd, off)) {
 		RzBuffer *buf = rz_core_syscallf(core, "lseek", "%d, 0x%" PFMT64x ", %d", fd, off, 0);
 		consumeBuffer(buf, "dx ", "Cannot seek");
@@ -4189,7 +4189,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_fd_seek_handler(RzCore *core, int argc, const ch
 // ddd
 RZ_IPI RzCmdStatus rz_cmd_debug_dup2_handler(RzCore *core, int argc, const char **argv) {
 	int fd = atoi(argv[1]);
-	ut64 newfd = argc > 2 ? atoi(argv[2]) : UT64_MAX;
+	ut64 newfd = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
 	if (newfd == UT64_MAX || !rz_debug_desc_dup(core->dbg, fd, newfd)) {
 		RzBuffer *buf = rz_core_syscallf(core, "dup2", "%d, %d", fd, (int)newfd);
 		if (buf) {
