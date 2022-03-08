@@ -825,9 +825,16 @@ commands:
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
           - name: times
             type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dt++
+        summary: Add trace for some address
+        cname: cmd_debug_trace_add_addrs
+        args:
+          - name: addrs
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            flags: RZ_CMD_ARG_FLAG_ARRAY
             optional: true
       - name: dt-
         summary: Reset traces (instruction/calls)
@@ -840,18 +847,18 @@ commands:
       - name: dta
         summary: Only trace given addresses
         cname: cmd_debug_trace_addr
-        args: []
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: dtc
         summary: Trace call/ret
         cname: cmd_debug_trace_dtc
-        args: []
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: dtd
         summary: List all traced disassembled (quiet, instructions)
         cname: cmd_debug_traces_dtd
+        modes:
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_STANDARD
         args:
-          - name: qi
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
           - name: nth
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
@@ -872,8 +879,10 @@ commands:
           - name: dtei
             summary: Esil trace log for a single instruction
             cname: cmd_debug_traces_esil_i
-            args: []
-        args: []
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
       - name: dtg
         summary: Graph call/ret trace
         subcommands:

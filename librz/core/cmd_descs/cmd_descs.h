@@ -440,11 +440,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_pers_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_star_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_addrs_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_reset_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_equal_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_debug_trace_addr_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_debug_trace_dtc_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input);
+RZ_IPI int rz_cmd_debug_trace_dtc(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_delete_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, const char **argv);
