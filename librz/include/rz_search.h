@@ -99,7 +99,7 @@ typedef struct rz_search_t {
 
 RZ_API RzSearchParams *rz_search_params_new(RzSearchMode mode);
 RZ_API void rz_search_params_free(RzSearchParams *params);
-RZ_API RzSearch *rz_search_new(RZ_NONNULL RzSearchParams *params);
+RZ_API RzSearch *rz_search_new(RZ_OWN RZ_NONNULL RzSearchParams *params);
 RZ_API int rz_search_params_set_mode(RzSearchParams *params, RzSearchMode mode);
 RZ_API RzSearch *rz_search_free(RzSearch *s);
 
