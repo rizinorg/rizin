@@ -305,3 +305,24 @@ x0 = 0x3333332a
 x0 = 0x00000000
 EOF
 RUN
+
+NAME=emulateme arm64
+FILE=bins/elf/emulateme.arm64
+TIMEOUT=30
+CMDS=<<EOF
+s sym.decrypt
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+# oC 0x10 @ obj.seckrit # TODO: does not work
+e io.cache=1 # TODO: replace this by oC above
+w AnyColourYouLike @ 0x50000
+ar sp=0x41000
+ar x0=0x50000
+aezi
+aezsu 0x914
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+RUN

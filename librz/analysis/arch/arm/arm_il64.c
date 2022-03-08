@@ -54,9 +54,9 @@ static RzILOpBool *cond(arm64_cc c) {
 	case ARM64_CC_VC:
 		return INV(VARG("vf"));
 	case ARM64_CC_HI:
-		return AND(VARG("vf"), INV(VARG("zf")));
+		return AND(VARG("cf"), INV(VARG("zf")));
 	case ARM64_CC_LS:
-		return OR(INV(VARG("vf")), VARG("zf"));
+		return OR(INV(VARG("cf")), VARG("zf"));
 	case ARM64_CC_GE:
 		return INV(XOR(VARG("nf"), VARG("vf")));
 	case ARM64_CC_LT:
