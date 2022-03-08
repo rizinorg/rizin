@@ -2352,6 +2352,21 @@ static void ev_binfiledel_cb(RzEvent *ev, int type, void *user, void *data) {
 	rz_core_vfile_bin_file_deleted(user, bev->bf);
 }
 
+static void update_search_params(RzCore *core) {
+	core->search->params->search_align = rz_config_get_i(core->config, "search.align");
+	core->search->params->search_contiguous = rz_config_get_b(core->config, "search.contiguous");
+	core->search->params->search_distance = rz_config_get_i(core->config, "search.distance");
+	core->search->params->search_flags = rz_config_get_b(core->config, "search.flags");
+	core->search->params->search_from = rz_config_get_i(core->config, "search.from");
+	core->search->params->search_to = rz_config_get_i(core->config, "search.to");
+	core->search->params->search_maxhits = rz_config_get_i(core->config, "search.maxhits");
+	core->search->params->search_maxlength = rz_config_get_i(core->config, "search.maxlength");
+	core->search->params->search_minlength = rz_config_get_i(core->config, "search.minlength");
+	core->search->params->search_overlap = rz_config_get_b(core->config, "search.overlap");
+	core->search->params->search_prefix = rz_config_get(core->config, "search.prefix");
+    core->search->params->search_show = rz_config_get_b(core->config, "search.show");
+}
+
 RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user);
 RZ_IPI void rz_core_task_break_cb(RzCoreTask *task, void *user);
 RZ_IPI void rz_core_file_free(RzCoreFile *cf);
@@ -2562,6 +2577,10 @@ RZ_API bool rz_core_init(RzCore *core) {
 	}
 	rz_config_set(core->config, "asm.arch", RZ_SYS_ARCH);
 	rz_bp_use(core->dbg->bp, RZ_SYS_ARCH);
+
+	// Once the config is setup, we can update search->params
+	update_search_params(core);
+
 	update_sdb(core);
 	{
 		char *a = rz_path_system(RZ_FLAGS);
