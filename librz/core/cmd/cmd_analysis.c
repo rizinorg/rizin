@@ -8047,6 +8047,7 @@ RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, cons
 			break;
 		}
 	}
+	rz_cons_newline();
 	return RZ_CMD_STATUS_OK;
 }
 

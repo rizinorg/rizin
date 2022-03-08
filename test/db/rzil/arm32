@@ -68,6 +68,7 @@ aezsu 0x00010594
 ps @ obj.seckrit
 EOF
 EXPECT=<<EOF
+
 Hello from RzIL!
 EOF
 EXPECT_ERR=

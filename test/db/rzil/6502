@@ -242,6 +242,7 @@ aezsu 0x84f
 ps @ 0x91b
 EOF
 EXPECT=<<EOF
+
 HELLO FROM RZIL
 EOF
 RUN
