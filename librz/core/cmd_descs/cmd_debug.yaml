@@ -16,9 +16,9 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         default_mode: RZ_OUTPUT_MODE_TABLE
         modes:
-           - RZ_OUTPUT_MODE_RIZIN
-           - RZ_OUTPUT_MODE_JSON
-           - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
         details:
           - name: Apply a command to all breakpoints
             entries:
@@ -357,33 +357,132 @@ commands:
             args:
               - name: flag
                 type: RZ_CMD_ARG_TYPE_FLAG
-  - name: dts
-    summary: Debug trace session commands
+  - name: dt
+    summary: Trace commands
     subcommands:
-      - name: dts+
-        summary: Start trace session
-        cname: cmd_debug_start_trace_session
-        args: []
-      - name: dts-
-        summary: Stop trace session
-        cname: cmd_debug_stop_trace_session
-        args: []
-      - name: dtst
-        cname: cmd_debug_save_trace_session
-        summary: Save trace sessions to disk
+      - name: dt
+        summary: List all traces (at address)
+        cname: cmd_debug_traces
         args:
-          - name: dir
-            type: RZ_CMD_ARG_TYPE_FILE
-      - name: dtsf
-        cname: cmd_debug_load_trace_session
-        summary: Load trace sessions to disk
-        args:
-          - name: dir
-            type: RZ_CMD_ARG_TYPE_FILE
-      - name: dtsm
-        cname: cmd_debug_list_trace_session_mmap
-        summary: List current memory map and hash
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dt*
+        summary: List all traced opcode offsets
+        cname: cmd_debug_trace_star
         args: []
+      - name: dt+
+        summary: Add trace for address N times
+        cname: cmd_debug_trace_add
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: times
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dt++
+        summary: Add trace for some address
+        cname: cmd_debug_trace_add_addrs
+        args:
+          - name: addrs
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+            optional: true
+      - name: dt-
+        summary: Reset traces (instruction/calls)
+        cname: cmd_debug_traces_reset
+        args: []
+      - name: dt=
+        summary: Show ascii-art color bars with the debug trace ranges
+        cname: cmd_debug_trace_equal
+        args: []
+      - name: dta
+        summary: Only trace given addresses
+        cname: cmd_debug_trace_addr
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+      - name: dtc
+        summary: Trace call/ret
+        cname: cmd_debug_trace_dtc
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+      - name: dtd
+        summary: List all traced disassembled (quiet, instructions)
+        cname: cmd_debug_traces_dtd
+        modes:
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: nth
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dte
+        summary: Esil trace logs
+        subcommands:
+          - name: dte
+            summary: Esil trace log for a single instruction (for that index log)
+            cname: cmd_debug_traces_esil
+            args:
+              - name: idx
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: dte-*
+            summary: Delete all esil traces
+            cname: cmd_debug_traces_esil_delete
+            args: []
+          - name: dtei
+            summary: Esil trace log for a single instruction
+            cname: cmd_debug_traces_esil_i
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+      - name: dtg
+        summary: Graph call/ret trace
+        subcommands:
+          - name: dtg
+            summary: Graph call/ret trace
+            cname: cmd_debug_trace_graph
+            args: []
+          - name: dtg*
+            summary: Graph in agn/age commands. use .dtg*;aggi for visual
+            cname: cmd_debug_trace_graph_star
+            args: []
+          - name: dtgi
+            summary: Interactive debug trace
+            cname: cmd_debug_trace_interactive
+            args: []
+      - name: dts
+        summary: Debug trace session commands
+        subcommands:
+          - name: dts+
+            summary: Start trace session
+            cname: cmd_debug_start_trace_session
+            args: []
+          - name: dts-
+            summary: Stop trace session
+            cname: cmd_debug_stop_trace_session
+            args: []
+          - name: dtst
+            cname: cmd_debug_save_trace_session
+            summary: Save trace sessions to disk
+            args:
+              - name: dir
+                type: RZ_CMD_ARG_TYPE_FILE
+          - name: dtsf
+            cname: cmd_debug_load_trace_session
+            summary: Load trace sessions to disk
+            args:
+              - name: dir
+                type: RZ_CMD_ARG_TYPE_FILE
+          - name: dtsm
+            cname: cmd_debug_list_trace_session_mmap
+            summary: List current memory map and hash
+            args: []
+      - name: dtt
+        summary: Select trace tag (no arg unsets)
+        cname: cmd_debug_trace_tag
+        args:
+          - name: tag
+            type: RZ_CMD_ARG_TYPE_STRING
   - name: dm
     summary: Memory map commands
     subcommands:
@@ -792,8 +891,8 @@ commands:
         cname: debug_reg_roles
         details: [] # Explicitly empty to not show parent ones
         args: []
-  # ... to here
-  #####################################################
+      # ... to here
+      #####################################################
       - name: drx # this is under registers but debug-specific so should not be sync with cmd_analysis.yaml
         summary: Show hardware breakpoint registers
         details: []

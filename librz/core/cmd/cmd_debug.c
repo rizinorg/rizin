@@ -230,16 +230,6 @@ static const char *help_msg_dte[] = {
 	NULL
 };
 
-static const char *help_msg_dts[] = {
-	"Usage:", "dts[*]", "",
-	"dts+", "", "Start trace session",
-	"dts-", "", "Stop trace session",
-	"dtst", " [dir] ", "Save trace sessions to disk",
-	"dtsf", " [dir] ", "Read trace sessions from disk",
-	"dtsm", "", "List current memory map and hash",
-	NULL
-};
-
 static const char *help_msg_dx[] = {
 	"Usage: dx", "", " # Code injection commands",
 	"dx", " <opcode>...", "Inject opcodes",
@@ -2204,6 +2194,7 @@ static bool cmd_dcu(RzCore *core, const char *input) {
 	return true;
 }
 
+// dsu
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv) {
 	rz_reg_arena_swap(core->dbg->reg, true);
 	step_until(core, rz_num_math(core->num, argv[1]));
@@ -2211,6 +2202,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsui
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc, const char **argv) {
 	if (!step_until_inst(core, argv[1], false)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2219,6 +2211,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc,
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsuir
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int argc, const char **argv) {
 	if (!step_until_inst(core, argv[1], true)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2227,6 +2220,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsuo
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc, const char **argv) {
 	RzList *optypes_list = rz_list_new_from_array((const void **)argv + 1, argc - 1);
 	step_until_optype(core, optypes_list);
@@ -2235,25 +2229,178 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsue
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_esil_handler(RzCore *core, int argc, const char **argv) {
 	step_until_esil(core, argv[1]);
 	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsuf
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, const char **argv) {
 	step_until_flag(core, argv[1]);
 	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
+// dt
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_trace_list(core->dbg, 0, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dt*
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_star_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_trace_list(core->dbg, 1, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dt+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	int count = argc > 2 ? rz_num_math(core->num, argv[2]) : 1;
+	RzAnalysisOp *op = rz_core_op_analysis(core, addr, RZ_ANALYSIS_OP_MASK_HINT);
+	if (op) {
+		RzDebugTracepoint *tp = rz_debug_trace_add(core->dbg, addr, op->size);
+		if (!tp) {
+			rz_analysis_op_free(op);
+			return RZ_CMD_STATUS_OK;
+		}
+		tp->count = count;
+		rz_analysis_trace_bb(core->analysis, addr);
+		rz_analysis_op_free(op);
+	} else {
+		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dt++
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_addrs_handler(RzCore *core, int argc, const char **argv) {
+	for (int i = 1; i < argc; ++i) {
+		ut64 addr = rz_num_get(NULL, argv[i]);
+		(void)rz_debug_trace_add(core->dbg, addr, 1);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dt-
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_reset_handler(RzCore *core, int argc, const char **argv) {
+	rz_tree_reset(core->dbg->tree);
+	rz_debug_trace_free(core->dbg->trace);
+	rz_debug_tracenodes_reset(core->dbg);
+	core->dbg->trace = rz_debug_trace_new();
+	return RZ_CMD_STATUS_OK;
+}
+
+// dt=
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_equal_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_trace_list(core->dbg, '=', core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dta
+RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	rz_debug_trace_at(core->dbg, input + 3);
+	return 0;
+}
+
+// dtc
+RZ_IPI int rz_cmd_debug_trace_dtc(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	debug_trace_calls(core, input + 2);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtd
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	int min = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 0;
+	RzDebugTracepoint *trace;
+	RzListIter *iter;
+	RzAnalysisOp *op;
+	int n = 0;
+
+	switch (mode) {
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_list_foreach (core->dbg->trace->traces, iter, trace) {
+			if (n >= min) {
+				rz_cons_printf("%d  ", trace->count);
+				rz_cons_printf("0x%08" PFMT64x "\n", trace->addr);
+				break;
+			}
+			n++;
+		}
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_list_foreach (core->dbg->trace->traces, iter, trace) {
+			op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
+			if (n >= min) {
+				rz_cons_printf("0x%08" PFMT64x " %s\n", trace->addr, op->mnemonic);
+			}
+			n++;
+			rz_analysis_op_free(op);
+		}
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dte
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_esil_trace_list(core->analysis->esil);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dte-*
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_delete_handler(RzCore *core, int argc, const char **argv) {
+	if (core->analysis->esil) {
+		rz_pvector_free(core->analysis->esil->trace->instructions);
+		core->analysis->esil->trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtei
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
+	RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_ESIL);
+	if (op) {
+		rz_analysis_esil_trace_op(core->analysis->esil, op);
+	}
+	rz_analysis_op_free(op);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtg
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_graph_handler(RzCore *core, int argc, const char **argv) {
+	dot_trace_traverse(core, core->dbg->tree, '\0');
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtg*
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_graph_star_handler(RzCore *core, int argc, const char **argv) {
+	dot_trace_traverse(core, core->dbg->tree, '*');
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtgi
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_interactive_handler(RzCore *core, int argc, const char **argv) {
+	dot_trace_traverse(core, core->dbg->tree, 'i');
+	return RZ_CMD_STATUS_OK;
+}
+
+// dts+
 RZ_IPI RzCmdStatus rz_cmd_debug_start_trace_session_handler(RzCore *core, int argc, const char **argv) {
 	if (rz_debug_is_dead(core->dbg)) {
-		eprintf("Cannot start session outside of debug mode, run ood?\n");
+		RZ_LOG_ERROR("Cannot start session outside of debug mode, run ood?\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (core->dbg->session) {
-		eprintf("Session already started\n");
+		RZ_LOG_ERROR("Session already started\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	core->dbg->session = rz_debug_session_new();
@@ -2261,9 +2408,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_start_trace_session_handler(RzCore *core, int ar
 	return RZ_CMD_STATUS_OK;
 }
 
+// dts-
 RZ_IPI RzCmdStatus rz_cmd_debug_stop_trace_session_handler(RzCore *core, int argc, const char **argv) {
 	if (!core->dbg->session) {
-		eprintf("No session started\n");
+		RZ_LOG_ERROR("No session started\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_debug_session_free(core->dbg->session);
@@ -2271,15 +2419,17 @@ RZ_IPI RzCmdStatus rz_cmd_debug_stop_trace_session_handler(RzCore *core, int arg
 	return RZ_CMD_STATUS_OK;
 }
 
+// dtst
 RZ_IPI RzCmdStatus rz_cmd_debug_save_trace_session_handler(RzCore *core, int argc, const char **argv) {
 	if (!core->dbg->session) {
-		eprintf("No session started\n");
+		RZ_LOG_ERROR("No session started\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_debug_session_save(core->dbg->session, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
+// dtsf
 RZ_IPI RzCmdStatus rz_cmd_debug_load_trace_session_handler(RzCore *core, int argc, const char **argv) {
 	if (core->dbg->session) {
 		rz_debug_session_free(core->dbg->session);
@@ -2290,10 +2440,18 @@ RZ_IPI RzCmdStatus rz_cmd_debug_load_trace_session_handler(RzCore *core, int arg
 	return RZ_CMD_STATUS_OK;
 }
 
+// dtsm
 RZ_IPI RzCmdStatus rz_cmd_debug_list_trace_session_mmap_handler(RzCore *core, int argc, const char **argv) {
 	if (core->dbg->session) {
 		rz_debug_session_list_memory(core->dbg);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtt
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_tag_handler(RzCore *core, int argc, const char **argv) {
+	int tag = atoi(argv[1]);
+	rz_debug_trace_tag(core->dbg, tag);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2680,52 +2838,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			} break;
 			default:
 				rz_core_cmd_help(core, help_msg_dte);
-			}
-			break;
-		case 's': // "dts"
-			switch (input[2]) {
-			case '+': // "dts+"
-				if (rz_debug_is_dead(core->dbg)) {
-					eprintf("Cannot start session outside of debug mode, run ood?\n");
-					break;
-				}
-				if (core->dbg->session) {
-					eprintf("Session already started\n");
-					break;
-				}
-				core->dbg->session = rz_debug_session_new();
-				rz_debug_add_checkpoint(core->dbg);
-				break;
-			case '-': // "dts-"
-				if (!core->dbg->session) {
-					eprintf("No session started\n");
-					break;
-				}
-				rz_debug_session_free(core->dbg->session);
-				core->dbg->session = NULL;
-				break;
-			case 't': // "dtst"
-				if (!core->dbg->session) {
-					eprintf("No session started\n");
-					break;
-				}
-				rz_debug_session_save(core->dbg->session, input + 4);
-				break;
-			case 'f': // "dtsf"
-				if (core->dbg->session) {
-					rz_debug_session_free(core->dbg->session);
-					core->dbg->session = NULL;
-				}
-				core->dbg->session = rz_debug_session_new();
-				rz_debug_session_load(core->dbg, input + 4);
-				break;
-			case 'm': // "dtsm"
-				if (core->dbg->session) {
-					rz_debug_session_list_memory(core->dbg);
-				}
-				break;
-			default:
-				rz_core_cmd_help(core, help_msg_dts);
 			}
 			break;
 		case '?':
