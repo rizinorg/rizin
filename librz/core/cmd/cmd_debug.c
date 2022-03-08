@@ -230,16 +230,6 @@ static const char *help_msg_dte[] = {
 	NULL
 };
 
-static const char *help_msg_dts[] = {
-	"Usage:", "dts[*]", "",
-	"dts+", "", "Start trace session",
-	"dts-", "", "Stop trace session",
-	"dtst", " [dir] ", "Save trace sessions to disk",
-	"dtsf", " [dir] ", "Read trace sessions from disk",
-	"dtsm", "", "List current memory map and hash",
-	NULL
-};
-
 static const char *help_msg_dx[] = {
 	"Usage: dx", "", " # Code injection commands",
 	"dx", " <opcode>...", "Inject opcodes",
