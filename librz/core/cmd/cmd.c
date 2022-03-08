@@ -5984,10 +5984,6 @@ RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	return core_cmd_raw(core, cmd, length);
 }
 
-RZ_IPI int rz_cmd_ox(void *data, const char *input) {
-	return rz_core_cmdf((RzCore *)data, "s 0%s", input);
-}
-
 static int compare_cmd_descriptor_name(const void *a, const void *b) {
 	return strcmp(((RzCmdDescriptor *)a)->cmd, ((RzCmdDescriptor *)b)->cmd);
 }
@@ -6041,7 +6037,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "R", "io pipe", rz_cmd_remote },
 		{ "?", "help message", rz_cmd_help },
 		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
-		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
 		{ "d", "debugger operations", rz_cmd_debug },
 		{ "k", "perform sdb query", rz_cmd_kuery },

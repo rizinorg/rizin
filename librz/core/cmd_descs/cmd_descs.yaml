@@ -173,10 +173,6 @@ commands:
     args:
       - name: characters
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: "0"
-    cname: cmd_ox
-    summary: Alias for `s 0x...`
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: a
     cname: cmd_analysis
     summary: Analysis commands

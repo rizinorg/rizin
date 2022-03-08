@@ -1131,10 +1131,6 @@ static const RzCmdDescHelp push_escaped_help = {
 	.args = push_escaped_args,
 };
 
-static const RzCmdDescHelp cmd_ox_help = {
-	.summary = "Alias for `s 0x...`",
-};
-
 static const RzCmdDescHelp cmd_analysis_help = {
 	.summary = "Analysis commands",
 };
@@ -12096,9 +12092,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *push_escaped_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "<", rz_push_escaped_handler, &push_escaped_help);
 	rz_warn_if_fail(push_escaped_cd);
-
-	RzCmdDesc *cmd_ox_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "0", rz_cmd_ox, &cmd_ox_help);
-	rz_warn_if_fail(cmd_ox_cd);
 
 	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "a", rz_cmd_analysis, &cmd_analysis_help);
 	rz_warn_if_fail(cmd_analysis_cd);
