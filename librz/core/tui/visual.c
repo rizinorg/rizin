@@ -3922,7 +3922,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 
 			if (cmdvhex && *cmdvhex) {
 				rz_strf(debugstr,
-					"?0 ; f tmp ; sr %s @e: cfg.seek.silent=true ; %s ; ?1 ; %s ; ?1 ; "
+					"?0 ; f+ tmp ; sr %s @e: cfg.seek.silent=true ; %s ; ?1 ; %s ; ?1 ; "
 					"s tmp @e: cfg.seek.silent=true ; f- tmp ; pd $r",
 					reg, cmdvhex,
 					ref ? CMD_REGISTERS_REFS : CMD_REGISTERS);
@@ -3932,7 +3932,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 				const char sign = (delta < 0) ? '+' : '-';
 				const int absdelta = RZ_ABS(delta);
 				rz_strf(debugstr,
-					"diq ; ?0 ; f tmp ; sr %s @e: cfg.seek.silent=true ; %s %d @ $$%c%d;"
+					"diq ; ?0 ; f+ tmp ; sr %s @e: cfg.seek.silent=true ; %s %d @ $$%c%d;"
 					"?1 ; %s;"
 					"?1 ; s tmp @e: cfg.seek.silent=true ; f- tmp ; afal ; pd $r",
 					reg, pxa ? "pxa" : pxw, size, sign, absdelta,
