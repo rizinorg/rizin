@@ -247,8 +247,9 @@ static const RzCmdDescArg cmd_debug_dd_args[2];
 static const RzCmdDescArg cmd_debug_fd_close_args[2];
 static const RzCmdDescArg cmd_debug_fd_seek_args[3];
 static const RzCmdDescArg cmd_debug_dup2_args[3];
-static const RzCmdDescArg cmd_debug_fd_read_args[3];
-static const RzCmdDescArg cmd_debug_fd_write_args[3];
+static const RzCmdDescArg cmd_debug_fd_read_args[4];
+static const RzCmdDescArg cmd_debug_fd_write_args[4];
+static const RzCmdDescArg cmd_debug_fd_tty_args[2];
 static const RzCmdDescArg cmd_debug_esil_step_args[2];
 static const RzCmdDescArg cmd_debug_esil_until_args[2];
 static const RzCmdDescArg cmd_debug_core_gen_args[2];
@@ -5290,7 +5291,7 @@ static const RzCmdDescArg cmd_debug_dd_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_dd_help = {
-	.summary = "List file descriptors or Open and map that file into the UI / Open and map that file into the UI",
+	.summary = "List file descriptors or Open / Open and map that file into the UI",
 	.args = cmd_debug_dd_args,
 };
 
@@ -5298,7 +5299,6 @@ static const RzCmdDescArg cmd_debug_fd_close_args[] = {
 	{
 		.name = "fd",
 		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
 
 	},
 	{ 0 },
@@ -5359,6 +5359,11 @@ static const RzCmdDescArg cmd_debug_fd_read_args[] = {
 
 	},
 	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
 		.name = "size",
 		.type = RZ_CMD_ARG_TYPE_NUM,
 
@@ -5377,9 +5382,13 @@ static const RzCmdDescArg cmd_debug_fd_write_args[] = {
 
 	},
 	{
-		.name = "hexpair",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_NUM,
 
 	},
 	{ 0 },
@@ -5387,6 +5396,19 @@ static const RzCmdDescArg cmd_debug_fd_write_args[] = {
 static const RzCmdDescHelp cmd_debug_fd_write_help = {
 	.summary = "Write N bytes to fd",
 	.args = cmd_debug_fd_write_args,
+};
+
+static const RzCmdDescArg cmd_debug_fd_tty_args[] = {
+	{
+		.name = "ttypath",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_fd_tty_help = {
+	.summary = "TODO Open and map that tty into the UI?",
+	.args = cmd_debug_fd_tty_args,
 };
 
 static const RzCmdDescHelp de_help = {
@@ -13890,6 +13912,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_fd_write_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "ddw", rz_cmd_debug_fd_write_handler, &cmd_debug_fd_write_help);
 	rz_warn_if_fail(cmd_debug_fd_write_cd);
+
+	RzCmdDesc *cmd_debug_fd_tty_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "ddt", rz_cmd_debug_fd_tty_handler, &cmd_debug_fd_tty_help);
+	rz_warn_if_fail(cmd_debug_fd_tty_cd);
 
 	RzCmdDesc *de_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "de", rz_cmd_debug_esil_list_handler, &cmd_debug_esil_list_help, &de_help);
 	rz_warn_if_fail(de_cd);

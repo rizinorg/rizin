@@ -317,7 +317,7 @@ commands:
     subcommands:
       - name: dd
         summary: >
-          List file descriptors or Open and map that file into the UI
+          List file descriptors or Open
           / Open and map that file into the UI
         cname: cmd_debug_dd
         args:
@@ -330,7 +330,6 @@ commands:
         args:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
       - name: dd*
         summary: List file descriptors (in rizin commands)
         cname: cmd_debug_list_fd
@@ -357,6 +356,8 @@ commands:
         args:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_NUM
           - name: size
             type: RZ_CMD_ARG_TYPE_NUM
       - name: ddw
@@ -365,8 +366,16 @@ commands:
         args:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
-          - name: hexpair
-            type: RZ_CMD_ARG_TYPE_STRING
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddt
+        summary: TODO Open and map that tty into the UI?
+        cname: cmd_debug_fd_tty
+        args:
+          - name: ttypath
+            type: RZ_CMD_ARG_TYPE_NUM
   - name: de
     summary: Debug with ESIL (see de?)
     subcommands:

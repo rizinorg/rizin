@@ -2316,14 +2316,14 @@ RZ_IPI RzCmdStatus rz_cmd_debug_trace_equal_handler(RzCore *core, int argc, cons
 
 // dta
 RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
-	RzCore* core = (RzCore *)data;
+	RzCore *core = (RzCore *)data;
 	rz_debug_trace_at(core->dbg, input + 3);
 	return 0;
 }
 
 // dtc
 RZ_IPI int rz_cmd_debug_trace_dtc(void *data, const char *input) {
-	RzCore* core = (RzCore *)data;
+	RzCore *core = (RzCore *)data;
 	debug_trace_calls(core, input + 2);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2864,13 +2864,13 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		break;
 	case 'd': // "ddd"
 		switch (input[1]) {
-		case '\0': // "ddd"
+		case '\0': // "dd"
 			rz_debug_desc_list(core->dbg, 0);
 			break;
-		case '*': // "dtd*"
+		case '*': // "dd*"
 			rz_debug_desc_list(core->dbg, 1);
 			break;
-		case 's': // "dtds"
+		case 's': // "dds"
 		{
 			ut64 off = UT64_MAX;
 			int fd = atoi(input + 2);
@@ -4148,36 +4148,90 @@ RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
 
 // dd
 RZ_IPI RzCmdStatus rz_cmd_debug_dd_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 1) {
+		rz_debug_desc_list(core->dbg, 0);
+	} else if (argc > 1) {
+		// TODO: handle read, readwrite, append
+		RzBuffer *buf = rz_core_syscallf(core, "open", "%s, %d, %d", argv[1], 2, 0644);
+		consumeBuffer(buf, "dx ", "Cannot open");
+		// open file
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dd-
 RZ_IPI RzCmdStatus rz_cmd_debug_fd_close_handler(RzCore *core, int argc, const char **argv) {
+	// close file
+	int fd = atoi(argv[1]);
+	// rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, argv[1]));
+	RzBuffer *buf = rz_core_syscallf(core, "close", "%d", fd);
+	consumeBuffer(buf, "dx ", "Cannot close");
 	return RZ_CMD_STATUS_OK;
 }
 
 // dd*
 RZ_IPI RzCmdStatus rz_cmd_debug_list_fd_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_desc_list(core->dbg, 1);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dds
 RZ_IPI RzCmdStatus rz_cmd_debug_fd_seek_handler(RzCore *core, int argc, const char **argv) {
+	int fd = atoi(argv[1]);
+	ut64 off = argc > 2 ? atoi(argv[2]) : UT64_MAX;
+	if (off == UT64_MAX || !rz_debug_desc_seek(core->dbg, fd, off)) {
+		RzBuffer *buf = rz_core_syscallf(core, "lseek", "%d, 0x%" PFMT64x ", %d", fd, off, 0);
+		consumeBuffer(buf, "dx ", "Cannot seek");
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // ddd
 RZ_IPI RzCmdStatus rz_cmd_debug_dup2_handler(RzCore *core, int argc, const char **argv) {
+	int fd = atoi(argv[1]);
+	ut64 newfd = argc > 2 ? atoi(argv[2]) : UT64_MAX;
+	if (newfd == UT64_MAX || !rz_debug_desc_dup(core->dbg, fd, newfd)) {
+		RzBuffer *buf = rz_core_syscallf(core, "dup2", "%d, %d", fd, (int)newfd);
+		if (buf) {
+			consumeBuffer(buf, "dx ", NULL);
+		} else {
+			eprintf("Cannot dup %d %d\n", fd, (int)newfd);
+		}
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // ddr
 RZ_IPI RzCmdStatus rz_cmd_debug_fd_read_handler(RzCore *core, int argc, const char **argv) {
+	int fd = atoi(argv[1]);
+	ut64 off = argc > 3 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
+	ut64 len = argc > 4 ? rz_num_math(core->num, argv[3]) : UT64_MAX;
+	if (len == UT64_MAX || off == UT64_MAX ||
+		!rz_debug_desc_read(core->dbg, fd, off, len)) {
+		consumeBuffer(rz_core_syscallf(core, "read", "%d, 0x%" PFMT64x ", %d",
+				      fd, off, (int)len),
+			"dx ", "Cannot read");
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// ddt
+RZ_IPI RzCmdStatus rz_cmd_debug_fd_tty_handler(RzCore *core, int argc, const char **argv) {
+	RzBuffer *buf = rz_core_syscall(core, "close", 0);
+	consumeBuffer(buf, "dx ", "Cannot close");
 	return RZ_CMD_STATUS_OK;
 }
 
 // ddw
 RZ_IPI RzCmdStatus rz_cmd_debug_fd_write_handler(RzCore *core, int argc, const char **argv) {
+	int fd = atoi(argv[1]);
+	ut64 off = argc > 3 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
+	ut64 len = argc > 4 ? rz_num_math(core->num, argv[3]) : UT64_MAX;
+	if (len == UT64_MAX || off == UT64_MAX ||
+		!rz_debug_desc_write(core->dbg, fd, off, len)) {
+		RzBuffer *buf = rz_core_syscallf(core, "write", "%d, 0x%" PFMT64x ", %d", fd, off, (int)len);
+		consumeBuffer(buf, "dx ", "Cannot write");
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
