@@ -5409,12 +5409,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_stmt) {
 	return res;
 }
 
-DEFINE_HANDLE_TS_FCN_AND_SYMBOL(number_stmt) {
-	ut64 addr = rz_num_math(state->core->num, node_string);
-	rz_core_seek(state->core, addr, true);
-	return RZ_CMD_STATUS_OK;
-}
-
 static RzCmdStatus handle_ts_stmt(struct tsr2cmd_state *state, TSNode node) {
 	RzCmdStatus ret = RZ_CMD_STATUS_INVALID;
 	RzCore *core = state->core;
