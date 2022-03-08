@@ -2364,7 +2364,7 @@ static void update_search_params(RzCore *core) {
 	core->search->params->search_minlength = rz_config_get_i(core->config, "search.minlength");
 	core->search->params->search_overlap = rz_config_get_b(core->config, "search.overlap");
 	core->search->params->search_prefix = rz_config_get(core->config, "search.prefix");
-    core->search->params->search_show = rz_config_get_b(core->config, "search.show");
+	core->search->params->search_show = rz_config_get_b(core->config, "search.show");
 }
 
 RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user);
