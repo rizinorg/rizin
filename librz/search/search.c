@@ -541,11 +541,11 @@ RZ_API int rz_search_params_kw_add(RzSearchParams *params, RzSearchKeyword *kw) 
 }
 
 // Reverse bin_keyword & bin_binmask for backward search
-RZ_API void rz_search_string_prepare_backward(RzSearch *s) {
+RZ_API void rz_search_string_prepare_backward(RzSearchParams *params) {
 	RzListIter *iter;
 	RzSearchKeyword *kw;
 	// Precondition: !kw->binmask_length || kw->keyword_length % kw->binmask_length == 0
-	rz_list_foreach (s->params->kws, iter, kw) {
+	rz_list_foreach (params->kws, iter, kw) {
 		ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
 		while (i < j) {
 			ut8 t = *i;

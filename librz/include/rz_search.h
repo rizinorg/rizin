@@ -119,7 +119,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_regexp(const char *str, const char
 RZ_API int rz_search_params_kw_add(RzSearchParams *params, RzSearchKeyword *kw);
 RZ_API void rz_search_reset(RzSearch *s, int mode);
 RZ_API void rz_search_kw_reset(RzSearch *s);
-RZ_API void rz_search_string_prepare_backward(RzSearch *s);
+RZ_API void rz_search_params_string_prepare_backward(RzSearchParams *s);
 
 // TODO: is this an internal API?
 RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
