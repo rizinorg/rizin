@@ -379,18 +379,18 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		rz_list_foreach (ro->keywords, iter, kw) {
 			if (ro->hexstr) {
 				if (ro->mask) {
-					rz_search_kw_add(rs, rz_search_keyword_new_hex(kw, ro->mask, NULL));
+					rz_search_params_kw_add(rs->params, rz_search_keyword_new_hex(kw, ro->mask, NULL));
 				} else {
-					rz_search_kw_add(rs, rz_search_keyword_new_hexmask(kw, NULL));
+					rz_search_params_kw_add(rs->params, rz_search_keyword_new_hexmask(kw, NULL));
 				}
 			} else if (ro->widestr) {
-				rz_search_kw_add(rs, rz_search_keyword_new_wide(kw, ro->mask, NULL, 0));
+				rz_search_params_kw_add(rs->params, rz_search_keyword_new_wide(kw, ro->mask, NULL, 0));
 			} else {
-				rz_search_kw_add(rs, rz_search_keyword_new_str(kw, ro->mask, NULL, 0));
+				rz_search_params_kw_add(rs->params, rz_search_keyword_new_str(kw, ro->mask, NULL, 0));
 			}
 		}
 	} else if (ro->mode == RZ_SEARCH_STRING) {
-		rz_search_kw_add(rs, rz_search_keyword_new_hexmask("00", NULL)); // XXX
+		rz_search_params_kw_add(rs->params, rz_search_keyword_new_hexmask("00", NULL)); // XXX
 	}
 
 	ro->curfile = file;

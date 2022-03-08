@@ -11,7 +11,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 int main(int argc, char **argv) {
 	RzSearch *rs = rz_search_new(rz_search_params_new(RZ_SEARCH_REGEXP));
 	rz_search_set_callback(rs, &hit, (void *)buffer);
-	rz_search_kw_add(rs, /* search for /E.F/i */
+	rz_search_params_kw_add(rs->params, /* search for /E.F/i */
 		rz_search_keyword_new_str("E.F", "i", NULL, 0));
 	rz_search_begin(rs);
 	printf("Searching strings in '%s'\n", buffer);

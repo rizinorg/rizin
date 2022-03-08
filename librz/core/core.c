@@ -3905,7 +3905,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 		return 0;
 	}
 	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-	rz_search_kw_add(core->search, rz_search_keyword_new(buf, blen, mask, mlen, NULL));
+	rz_search_params_kw_add(core->search->params, rz_search_keyword_new(buf, blen, mask, mlen, NULL));
 	rz_search_begin(core->search);
 	rz_search_set_callback(core->search, &__prelude_cb_hit, core);
 	preludecnt = 0;

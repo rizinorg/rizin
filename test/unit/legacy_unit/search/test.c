@@ -11,10 +11,10 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 
 int main(int argc, char **argv) {
 	RzSearch *rs = rz_search_new(rz_search_params_new(RZ_SEARCH_KEYWORD));
-	rz_search_kw_add(rs,
+	rz_search_params_kw_add(rs->params,
 		rz_search_keyword_new_str("lib", "", NULL, 0));
 	rz_search_set_callback(rs, &hit, buffer);
-	rz_search_set_distance(rs, 0);
+	rz_search_params_set_distance(rs->params, 0);
 	printf("Distance: %d\n", rs->params->search_distance);
 	rz_search_begin(rs);
 	printf("Searching for '%s' in '%s'\n", "lib", buffer);
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 
 	printf("--\n");
 
-	rz_search_set_distance(rs, 4);
+	rz_search_params_set_distance(rs->params, 4);
 	printf("Distance: %d\n", rs->params->search_distance);
 	rz_search_begin(rs);
 	printf("Searching for '%s' in '%s'\n", "lib", buffer);
@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 		RzSearchKeyword *kw = rz_search_keyword_new_str("lib", "ff00ff", NULL, 0);
 		printf("Keyword (%02x %02x %02x)\n", kw->bin_binmask[0],
 			kw->bin_binmask[1], kw->bin_binmask[2]);
-		rz_search_kw_add(rs, kw);
+		rz_search_params_kw_add(rs->params, kw);
 	}
 	rz_search_set_callback(rs, &hit, buffer);
 	rz_search_begin(rs);

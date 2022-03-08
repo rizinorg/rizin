@@ -116,7 +116,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_hex(const char *kwstr, const char 
 RZ_API RzSearchKeyword *rz_search_keyword_new_hexmask(const char *kwstr, const char *data);
 RZ_API RzSearchKeyword *rz_search_keyword_new_regexp(const char *str, const char *data);
 
-RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw);
+RZ_API int rz_search_params_kw_add(RzSearchParams *params, RzSearchKeyword *kw);
 RZ_API void rz_search_reset(RzSearch *s, int mode);
 RZ_API void rz_search_kw_reset(RzSearch *s);
 RZ_API void rz_search_string_prepare_backward(RzSearch *s);
@@ -131,7 +131,8 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int len);
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr);
-RZ_API void rz_search_set_distance(RzSearch *s, int dist);
+RZ_API void rz_search_params_set_distance(RzSearchParams *params, int dist);
+RZ_API int rz_search_strings(RzSearch *s, ut32 min, ut32 max);
 RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max); // dup again?
 // RZ_API int rz_search_set_callback(RzSearch *s, int (*callback)(struct rz_search_kw_t *, void *, ut64), void *user);
 RZ_API void rz_search_set_callback(RzSearch *s, RzSearchCallback(callback), void *user);

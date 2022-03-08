@@ -376,12 +376,12 @@ RZ_IPI RzCmdStatus rz_cmd_search_string_handler(RzCore *core, int argc, const ch
 	}
 
 	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-	rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
+	rz_search_params_set_distance(core->search->params, (int)rz_config_get_i(core->config, "search.distance"));
 	RzSearchKeyword *search_kw = rz_search_keyword_new((const ut8 *)search_term, len, NULL, 0, NULL);
 	if (search_kw) {
 		search_kw->icase = false;
 		search_kw->type = RZ_SEARCH_KEYWORD_TYPE_STRING;
-		rz_search_kw_add(core->search, search_kw);
+		rz_search_params_kw_add(core->search->params, search_kw);
 	} else {
 		RZ_LOG_ERROR("Invalid search keyword\n");
 		goto beach;
@@ -423,7 +423,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_hex_string_handler(RzCore *core, int argc, cons
 
 	RzSearchKeyword *kw;
 	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-	rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
+	rz_search_params_set_distance(core->search->params, (int)rz_config_get_i(core->config, "search.distance"));
 	char *mask_sep = strchr(argv[1], ':');
 
 	if (mask_sep) {
@@ -436,7 +436,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_hex_string_handler(RzCore *core, int argc, cons
 	}
 
 	if (kw) {
-		rz_search_kw_add(core->search, kw);
+		rz_search_params_kw_add(core->search->params, kw);
 		rz_search_begin(core->search);
 	} else {
 		RZ_LOG_ERROR("No keyword\n");
@@ -484,8 +484,8 @@ RZ_IPI RzCmdStatus rz_cmd_search_assembly_handler(RzCore *core, int argc, const 
 		goto beach;
 	}
 	rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
-	rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
-	rz_search_kw_add(core->search, rz_search_keyword_new_hexmask(assembled, NULL));
+	rz_search_params_set_distance(core->search->params, (int)rz_config_get_i(core->config, "search.distance"));
+	rz_search_params_kw_add(core->search->params, rz_search_keyword_new_hexmask(assembled, NULL));
 	free(assembled);
 	rz_config_set_i(core->config, "search.kwidx", core->search->params->n_kws);
 	do_string_search(core, &param);

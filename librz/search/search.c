@@ -474,12 +474,12 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 	return s->nhits - old_nhits;
 }
 
-RZ_API void rz_search_set_distance(RzSearch *s, int dist) {
+RZ_API void rz_search_params_set_distance(RzSearchParams *params, int dist) {
 	if (dist >= RZ_SEARCH_DISTANCE_MAX) {
 		eprintf("Invalid distance\n");
-		s->params->search_distance = 0;
+		params->search_distance = 0;
 	} else {
-		s->params->search_distance = (dist > 0) ? dist : 0;
+		params->search_distance = (dist > 0) ? dist : 0;
 	}
 }
 
@@ -531,12 +531,12 @@ RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const 
 }
 
 /* --- keywords --- */
-RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw) {
+RZ_API int rz_search_params_kw_add(RzSearchParams *params, RzSearchKeyword *kw) {
 	if (!kw || !kw->keyword_length) {
 		return false;
 	}
-	kw->kwidx = s->params->n_kws++;
-	rz_list_append(s->params->kws, kw);
+	kw->kwidx = params->n_kws++;
+	rz_list_append(params->kws, kw);
 	return true;
 }
 
