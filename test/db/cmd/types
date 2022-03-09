@@ -2068,9 +2068,13 @@ NAME=td crash
 FILE==
 CMDS=<<EOF
 td "struct;"
+td "stract;"
 td "struct crash __attribute__((packed)) { };"
 EOF
-EXPECT=<<EOF
+EXPECT_ERR=<<EOF
+Unsupported type definition: struct
+Unsupported type definition: stract;
+Unsupported type definition: struct crash __attribute__((packed)) { }
 EOF
 RUN
 

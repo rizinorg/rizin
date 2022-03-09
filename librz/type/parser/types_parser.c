@@ -1899,6 +1899,11 @@ int parse_type_nodes_save(CParserState *state, TSNode node, const char *text) {
 			return -1;
 		}
 	}
+
+	if (result) {
+		parser_error(state, "Unsupported type definition: %s\n", ts_node_sub_string(node, text));
+	}
+
 	// In case of anonymous type we could use identifier as a name for this type?
 	return result;
 }
