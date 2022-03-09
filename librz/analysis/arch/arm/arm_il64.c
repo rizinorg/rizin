@@ -342,13 +342,13 @@ static RzILOpEffect *write_reg(arm64_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector 
 }
 
 static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm64_op *op) {
-	if (op->mem.index != ARM64_REG_INVALID) {
-		RzILOpBitVector *index = read_reg(op->mem.index);
-		index = extend(64, op->ext, index, reg_bits(op->mem.index));
-		index = apply_shift(op->shift.type, op->shift.value, index);
-		return ADD(base_plus_disp, index);
+	if (op->mem.index == ARM64_REG_INVALID) {
+		return base_plus_disp;
 	}
-	return base_plus_disp;
+	RzILOpBitVector *index = read_reg(op->mem.index);
+	index = extend(64, op->ext, index, reg_bits(op->mem.index));
+	index = apply_shift(op->shift.type, op->shift.value, index);
+	return ADD(base_plus_disp, index);
 }
 
 /**
