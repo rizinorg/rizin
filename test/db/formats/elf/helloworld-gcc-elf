@@ -321,7 +321,7 @@ RUN
 NAME=p-
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-0x8048000
+s 0x8048000
 e search.in=io.map
 p-
 e search.in=io.maps
