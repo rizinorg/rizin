@@ -3,7 +3,6 @@
 //
 // mark with HANDLER_RULE_OP every rule that is a _stmt
 // mark with RULE_OP every rule that you use with DEFINE_IS_TS_FCN or with its TSSymbol (e.g. ts_##name##_symbol)
-HANDLER_RULE_OP(number_stmt)
 HANDLER_RULE_OP(statements)
 HANDLER_RULE_OP(arged_stmt)
 HANDLER_RULE_OP(legacy_quoted_stmt)
