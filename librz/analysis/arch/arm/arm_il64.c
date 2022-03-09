@@ -5,9 +5,8 @@
 #include <capstone.h>
 
 #include "arm_cs.h"
-#include "arm_accessors64.h"
 
-#include <rz_il/rz_il_opbuilder_begin.h>
+#include "arm_accessors64.h"
 // This source file is 64-bit specific, so avoid having to type 64 all the time:
 #define IMM IMM64
 #define REGID REGID64
@@ -15,12 +14,17 @@
 #define ISREG ISREG64
 #define ISMEM ISMEM64
 
+#include <rz_il/rz_il_opbuilder_begin.h>
+
+#include "arm_il_common.inc"
+
 /**
  * All regs available as global IL variables
  */
 static const char *regs_bound[] = {
 	"x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
 	"x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28", "x29", "x30", "sp",
+	"nf", "zf", "cf", "vf",
 	NULL
 };
 
@@ -291,13 +295,31 @@ static RzILOpBitVector *arg(cs_insn *insn, int n, ut32 *bits_inout) {
 #define ARG(n, bits)          arg(insn, n, bits)
 
 /**
- * Capstone: ARM64_INS_ADD
- * ARM: add
+ * zf := v == 0
+ * nf := msb v
  */
-static RzILOpEffect *add(cs_insn *insn) {
+static RzILOpEffect *update_flags_zn(RzILOpBitVector *v) {
+	return SEQ2(
+		SETG("zf", IS_ZERO(v)),
+		SETG("nf", MSB(DUP(v))));
+}
+
+/**
+ * Capstone: ARM64_INS_ADD, ARM64_INS_ADC, ARM64_INS_SUB, ARM64_INS_SBC
+ * ARM: add, adds, adc, adcs, sub, subs, sbc
+ */
+static RzILOpEffect *add_sub(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
+#if 0
+	if ((insn->id == ARM64_INS_ADD || insn->id == ARM64_INS_SUB) &&
+		!insn->detail->arm.update_flags && OPCOUNT() == 3 && REGID(1) == ARM64_REG_PC && ISIMM(2)) {
+		// alias for adr
+		return adr(insn, is_thumb);
+	}
+#endif
+	bool is_sub = insn->id == ARM64_INS_SUB || insn->id == ARM64_INS_SBC;
 	ut32 bits = REGBITS(0);
 	RzILOpBitVector *a = ARG(1, &bits);
 	RzILOpBitVector *b = ARG(2, &bits);
@@ -306,13 +328,41 @@ static RzILOpEffect *add(cs_insn *insn) {
 		rz_il_op_pure_free(b);
 		return NULL;
 	}
-	return write_reg(REGID(0), ADD(a, b));
+	if (!a || !b) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
+		return NULL;
+	}
+	RzILOpBitVector *res = is_sub ? SUB(a, b) : ADD(a, b);
+	bool with_carry = false;
+	if (insn->id == ARM64_INS_ADC) {
+		res = ADD(res, ITE(VARG("cf"), UN(bits, 1), UN(bits, 0)));
+		with_carry = true;
+	} else if (insn->id == ARM64_INS_SBC) {
+		res = SUB(res, ITE(VARG("cf"), UN(bits, 0), UN(bits, 1)));
+		with_carry = true;
+	}
+	RzILOpEffect *set = write_reg(REGID(0), res);
+	bool update_flags = insn->detail->arm64.update_flags;
+	if (update_flags) {
+		return SEQ6(
+			SETL("a", DUP(a)),
+			SETL("b", DUP(b)),
+			set,
+			SETG("cf", is_sub ? sub_carry(VARL("a"), VARL("b"), with_carry) : add_carry(VARL("a"), VARL("b"), with_carry)),
+			SETG("vf", (is_sub ? sub_overflow : add_overflow)(VARL("a"), VARL("b"), REG(0))),
+			update_flags_zn(REG(0)));
+	}
+	return set;
 }
 
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
 	case ARM64_INS_ADD:
-		return add(insn);
+	case ARM64_INS_ADC:
+	case ARM64_INS_SUB:
+	case ARM64_INS_SBC:
+		return add_sub(insn);
 		break;
 	}
 	return NULL;
