@@ -192,16 +192,18 @@ static RzCmdStatus system_common_handler(RzCore *core, bool force_rzcons, int ar
 	rz_cons_sleep_end(bed);
 	if (need_rzcons) {
 #if __WINDOWS__
-		char *s = out;
+		char *src = out;
+		char *dest = src;
 		char *end = out + length;
-		while (s != end) {
-			if (s[0] == '\r' && s[1] == '\n') {
-				memmove(s, s + 1, end - s + 1);
-				end--;
+		while (src != end) {
+			*dest = *src;
+			if (src[0] == '\r' && src[1] == '\n') {
+				// dest does not move
 				length--;
-				continue;
+			} else {
+				dest++;
 			}
-			s++;
+			src++;
 		}
 #endif
 		rz_cons_memcat(out, length);
