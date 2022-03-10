@@ -1537,7 +1537,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * bin) {
 		return false;
 	}
 	bin->nchained_starts = bin->nsegs;
-	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, bin->nsegs);
+	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, bin->nchained_starts);
 	if (!bin->chained_starts) {
 		return false;
 	}
