@@ -2219,10 +2219,10 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	int kwidx = core->search->n_kws; // (int)rz_config_get_i (core->config, "search.kwidx")-1;
 	RzList *hits;
 	RzIOMap *map;
-	bool regexp = input[1] == '/'; // "/c/"
-	bool everyByte = regexp && input[2] == 'a';
+	bool regexp = input[0] == '/'; // "/c/"
+	bool everyByte = regexp && input[1] == 'a';
 	char *end_cmd = strchr(input, ' ');
-	switch ((end_cmd ? *(end_cmd - 1) : input[1])) {
+	switch ((end_cmd ? *(end_cmd - 1) : input[0])) {
 	case 'j':
 		param->outmode = RZ_MODE_JSON;
 		break;
@@ -3184,7 +3184,7 @@ reread:
 			rz_core_cmd_help(core, help_msg_slash_a);
 		} else if (input[1] == 'd') { // "ad"
 			dosearch = 0;
-			do_asm_search(core, &param, input + 1, 0, search_itv);
+			do_asm_search(core, &param, input + 2, 0, search_itv);
 		} else if (input[1] == 'e') { // "ae"
 			dosearch = 0;
 			do_asm_search(core, &param, input + 2, 'e', search_itv);
