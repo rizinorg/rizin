@@ -125,6 +125,7 @@ struct MACH0_(obj_t) {
 	char *compiler;
 	int nsegs;
 	struct rz_dyld_chained_starts_in_segment **chained_starts;
+	ut32 nchained_starts;
 	struct MACH0_(section) * sects;
 	int nsects;
 	struct MACH0_(nlist) * symtab;

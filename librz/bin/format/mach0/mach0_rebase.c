@@ -24,7 +24,8 @@
 RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf, ut64 count) {
 	rz_return_if_fail(obj && buf);
 	ut64 eob = off + count;
-	for (int i = 0; i < obj->nsegs; i++) {
+	int nsegs_to_rebase = RZ_MIN(obj->nchained_starts, obj->nsegs);
+	for (int i = 0; i < nsegs_to_rebase; i++) {
 		if (!obj->chained_starts[i]) {
 			continue;
 		}
@@ -229,7 +230,7 @@ RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj) {
 }
 
 RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj, size_t seg_index) {
-	if (seg_index >= obj->nsegs) {
+	if (seg_index >= obj->nsegs || seg_index >= obj->nchained_starts) {
 		return false;
 	}
 	return obj->chained_starts && obj->chained_starts[seg_index];
