@@ -4349,7 +4349,9 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	} else if (!strncmp("mach0", info->rclass, 5)) {
 		bin_mach0_versioninfo(r);
 	} else {
-		rz_cons_println("Unknown format");
+		if (mode != RZ_MODE_JSON) {
+			rz_cons_println("Unknown format");
+		}
 		return false;
 	}
 	return true;
