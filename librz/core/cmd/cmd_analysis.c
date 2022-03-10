@@ -8812,3 +8812,36 @@ RZ_IPI RzCmdStatus rz_analysis_class_vtable_lookup_handler(RzCore *core, int arg
 	ls_free(classes);
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_analyze_bytes_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut8 *buf;
+	int len;
+
+	if (argc < 2) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (!(buf = malloc(strlen(argv[1]) + 1))) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	len = rz_hex_str2bin(argv[1], buf);
+	if (len <= 0) {
+		free(buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		core_analysis_bytes(core, buf, len, 0, 'j');
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		core_analysis_bytes(core, buf, len, 0, 0);
+		break;
+	default:
+		rz_warn_if_reached();
+	}
+
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}

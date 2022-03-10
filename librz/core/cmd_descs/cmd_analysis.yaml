@@ -1453,3 +1453,13 @@ commands:
               - name: class_name
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
+  - name: a8
+    summary: Analyze bytes
+    cname: analyze_bytes
+    args:
+      - name: hexpairs
+        type: RZ_CMD_ARG_TYPE_STRING
+    type: RZ_CMD_DESC_TYPE_ARGV_MODES
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON

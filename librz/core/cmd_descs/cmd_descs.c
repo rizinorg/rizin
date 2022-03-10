@@ -177,6 +177,7 @@ static const RzCmdDescArg analysis_class_vtable_add_args[5];
 static const RzCmdDescArg analysis_class_vtable_del_args[3];
 static const RzCmdDescArg analysis_class_vtable_list_args[2];
 static const RzCmdDescArg analysis_class_vtable_lookup_args[3];
+static const RzCmdDescArg analyze_bytes_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -3566,6 +3567,20 @@ static const RzCmdDescArg analysis_class_vtable_lookup_args[] = {
 static const RzCmdDescHelp analysis_class_vtable_lookup_help = {
 	.summary = "Lookup function address on vtable offset",
 	.args = analysis_class_vtable_lookup_args,
+};
+
+static const RzCmdDescArg analyze_bytes_args[] = {
+	{
+		.name = "hexpairs",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_bytes_help = {
+	.summary = "Analyze bytes",
+	.args = analyze_bytes_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -12575,6 +12590,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_class_vtable_lookup_cd = rz_cmd_desc_argv_new(core->rcmd, acv_cd, "acvf", rz_analysis_class_vtable_lookup_handler, &analysis_class_vtable_lookup_help);
 	rz_warn_if_fail(analysis_class_vtable_lookup_cd);
+
+	RzCmdDesc *analyze_bytes_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_analysis_cd, "a8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_bytes_handler, &analyze_bytes_help);
+	rz_warn_if_fail(analyze_bytes_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
