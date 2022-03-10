@@ -39,11 +39,10 @@ FILE=--
 CMDS=<<EOF
 ?q `env~?^ASAN_LD_PRELOAD=`
 ?+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
-!python3 -c 'import rzpipe;rz=rzpipe.open("--");rz.cmd("Po bins/other/ls.rzdb");print(rz.cmd("?v custom_main"))'
+!python3 -c 'import rzpipe;rz=rzpipe.open("--");rz.cmd("Po bins/other/ls.rzdb");print(rz.cmd("?v custom_main").strip())'
 EOF
 EXPECT=<<EOF
 0x4070
-
 EOF
 RUN
 
