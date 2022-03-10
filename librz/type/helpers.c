@@ -512,6 +512,10 @@ RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond) {
 		return RZ_TYPE_COND_LE;
 	case RZ_TYPE_COND_AL:
 		return RZ_TYPE_COND_NV;
+	case RZ_TYPE_COND_NE:
+		return RZ_TYPE_COND_EQ;
+	case RZ_TYPE_COND_EQ:
+		return RZ_TYPE_COND_NE;
 	default:
 		rz_warn_if_reached();
 		break;
