@@ -1487,17 +1487,16 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 s
 	if (header.starts_offset > size) {
 		return false;
 	}
-	ut32 segs_count;
-	if (!rz_buf_read_le32_at(bin->b, starts_at, &segs_count)) {
+	if (!rz_buf_read_le32_at(bin->b, starts_at, &bin->nchained_starts)) {
 		return false;
 	}
-	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, segs_count);
+	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, bin->nchained_starts);
 	if (!bin->chained_starts) {
 		return false;
 	}
 	size_t i;
 	ut64 cursor = starts_at + sizeof(ut32);
-	for (i = 0; i < segs_count; i++) {
+	for (i = 0; i < bin->nchained_starts; i++) {
 		ut32 seg_off;
 		if (!rz_buf_read_le32_at(bin->b, cursor, &seg_off) || !seg_off) {
 			cursor += sizeof(ut32);
@@ -1537,6 +1536,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * bin) {
 	if (!bin->nsegs) {
 		return false;
 	}
+	bin->nchained_starts = bin->nsegs;
 	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, bin->nsegs);
 	if (!bin->chained_starts) {
 		return false;
@@ -2083,7 +2083,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	free(mo->intrp);
 	free(mo->compiler);
 	if (mo->chained_starts) {
-		for (i = 0; i < mo->nsegs; i++) {
+		for (i = 0; i < mo->nchained_starts; i++) {
 			if (mo->chained_starts[i]) {
 				free(mo->chained_starts[i]->page_start);
 				free(mo->chained_starts[i]);
