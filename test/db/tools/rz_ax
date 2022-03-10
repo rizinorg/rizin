@@ -505,14 +505,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-ax -K
-FILE==
-CMDS=!printf 1 | rz-ax -K | grep -c 0x00000001
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=rz-ax -i
 FILE==
 CMDS=!printf A | rz-ax -i

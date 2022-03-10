@@ -1,9 +1,9 @@
 NAME=ELF: m68k.elf
 FILE=bins/elf/analysis/busybox.m68k
 CMDS=<<EOF
-f sym.init = 0x80001a30
-f sym.fini = 0x800019b0
-f sub.exit = 0x80001450
+f sym.init @ 0x80001a30
+f sym.fini @ 0x800019b0
+f sub.exit @ 0x80001450
 pi 20
 EOF
 EXPECT=<<EOF

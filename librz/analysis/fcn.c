@@ -20,7 +20,6 @@
 #define MAX_FLG_NAME_SIZE 64
 
 #define FIX_JMP_FWD 0
-#define D           if (a->verbose)
 
 // 64KB max size
 // 256KB max function size
@@ -434,9 +433,18 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 			void **it;
 			rz_pvector_foreach (cloned_vars_used, it) {
 				RzAnalysisVar *other_var = *it;
-				const int actual_delta = other_var->kind == RZ_ANALYSIS_VAR_KIND_SPV
-					? other_var->delta + ctx->stack_diff
-					: other_var->delta + (other_fcn->bp_off - our_fcn->bp_off);
+				int actual_delta = 0;
+				switch (other_var->kind) {
+				case RZ_ANALYSIS_VAR_KIND_SPV:
+					actual_delta = other_var->delta + ctx->stack_diff;
+					break;
+				case RZ_ANALYSIS_VAR_KIND_BPV:
+					actual_delta = other_var->delta + (other_fcn->bp_off - our_fcn->bp_off);
+					break;
+				case RZ_ANALYSIS_VAR_KIND_REG:
+					actual_delta = other_var->delta;
+					break;
+				}
 				RzAnalysisVar *our_var = rz_analysis_function_get_var(our_fcn, other_var->kind, actual_delta);
 				if (!our_var) {
 					our_var = rz_analysis_function_set_var(our_fcn, actual_delta, other_var->kind, other_var->type, 0, other_var->isarg, other_var->name);
@@ -601,12 +609,10 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		rz_sys_usleep(analysis->sleep);
 	}
 
-	// check if address is readable //:
+	// check if address is readable
 	if (!analysis->iob.is_valid_offset(analysis->iob.io, addr, 0)) {
 		if (addr != UT64_MAX && !analysis->iob.io->va) {
-			if (analysis->verbose) {
-				eprintf("Invalid address 0x%" PFMT64x ". Try with io.va=true\n", addr);
-			}
+			RZ_LOG_DEBUG("Invalid address 0x%" PFMT64x ". Try with io.va=true\n", addr);
 		}
 		return RZ_ANALYSIS_RET_ERROR; // MUST BE TOO DEEP
 	}
@@ -633,9 +639,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (analysis->opt.recont) {
 				return RZ_ANALYSIS_RET_END;
 			}
-			if (analysis->verbose) {
-				eprintf("rz_analysis_fcn_bb() fails at 0x%" PFMT64x ".\n", addr);
-			}
+			RZ_LOG_DEBUG("%s fails at 0x%" PFMT64x ".\n", __FUNCTION__, addr);
 			return RZ_ANALYSIS_RET_ERROR; // MUST BE NOT DUP
 		}
 
@@ -647,7 +651,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	if (!analysis->leaddrs) {
 		analysis->leaddrs = rz_list_newf(free_leaddr_pair);
 		if (!analysis->leaddrs) {
-			eprintf("Cannot create leaddr list\n");
+			RZ_LOG_ERROR("Cannot allocate list of pairs<reg, addr> values.\n");
 			gotoBeach(RZ_ANALYSIS_RET_ERROR);
 		}
 	}
@@ -687,9 +691,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 	}
 	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
-		if (analysis->verbose) {
-			eprintf("Warning: Skipping large memory region.\n");
-		}
+		RZ_LOG_DEBUG("Skipping large memory region during basic block analysis.\n");
 		maxlen = 0;
 	}
 
@@ -714,20 +716,16 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		ret = read_ahead(analysis, at, buf, bytes_read);
 
 		if (ret < 0) {
-			eprintf("Failed to read\n");
+			RZ_LOG_ERROR("Failed to read ahead\n");
 			break;
 		}
 		if (isInvalidMemory(analysis, buf, bytes_read)) {
-			if (analysis->verbose) {
-				eprintf("Warning: FFFF opcode at 0x%08" PFMT64x "\n", at);
-			}
+			RZ_LOG_DEBUG("FFFF opcode at 0x%08" PFMT64x "\n", at);
 			gotoBeach(RZ_ANALYSIS_RET_ERROR)
 		}
 		rz_analysis_op_fini(&op);
 		if ((oplen = rz_analysis_op(analysis, &op, at, buf, bytes_read, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT)) < 1) {
-			if (analysis->verbose) {
-				eprintf("Invalid instruction at 0x%" PFMT64x " with %d bits\n", at, analysis->bits);
-			}
+			RZ_LOG_DEBUG("Invalid instruction at 0x%" PFMT64x " with %d bits\n", at, analysis->bits);
 			// gotoBeach (RZ_ANALYSIS_RET_ERROR);
 			// RET_END causes infinite loops somehow
 			gotoBeach(RZ_ANALYSIS_RET_END);
@@ -773,9 +771,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					rz_analysis_block_unref(split);
 				}
 				overlapped = true;
-				if (analysis->verbose) {
-					eprintf("Overlapped at 0x%08" PFMT64x "\n", at);
-				}
+				RZ_LOG_DEBUG("Overlapped at 0x%08" PFMT64x "\n", at);
 			}
 		}
 		if (!overlapped) {
@@ -796,16 +792,21 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					ut64 from_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
 					handle = rz_str_replace(handle, ".from", ".catch", 0);
 					ut64 handle_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
+					handle = rz_str_replace(handle, ".catch", ".filter", 0);
+					ut64 filter_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
+					if (filter_addr) {
+						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_REF_TYPE_CALL);
+					}
 					bb->jump = at + oplen;
 					if (from_addr != bb->addr) {
 						bb->fail = handle_addr;
 						ret = analyze_function_locally(analysis, fcn, handle_addr);
-						eprintf("(%s) 0x%08" PFMT64x "\n", handle, handle_addr);
 						if (bb->size == 0) {
 							rz_analysis_function_remove_block(fcn, bb);
 						}
+						rz_analysis_block_update_hash(bb);
 						rz_analysis_block_unref(bb);
-						bb = fcn_append_basic_block(analysis, fcn, addr);
+						bb = fcn_append_basic_block(analysis, fcn, bb->jump);
 						if (!bb) {
 							gotoBeach(RZ_ANALYSIS_RET_ERROR);
 						}
@@ -821,9 +822,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			// Save the location of it in `delay.idx`
 			// note, we have still increased size of basic block
 			// (and function)
-			if (analysis->verbose) {
-				eprintf("Enter branch delay at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", at - oplen, bb->size);
-			}
+			RZ_LOG_DEBUG("Enter branch delay at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", at - oplen, bb->size);
 			delay.idx = idx - oplen;
 			delay.cnt = op.delay;
 			delay.pending = 1; // we need this in case the actual idx is zero...
@@ -836,9 +835,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			// track of how many still to process.
 			delay.cnt--;
 			if (!delay.cnt) {
-				if (analysis->verbose) {
-					eprintf("Last branch delayed opcode at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", addr + idx - oplen, bb->size);
-				}
+				RZ_LOG_DEBUG("Last branch delayed opcode at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", addr + idx - oplen, bb->size);
 				delay.after = idx;
 				idx = delay.idx;
 				// At this point, we are still looking at the
@@ -848,19 +845,15 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				// the branch delay.
 			}
 		} else if (op.delay > 0 && delay.pending) {
-			if (analysis->verbose) {
-				eprintf("Revisit branch delay jump at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", addr + idx - oplen, bb->size);
-			}
+			RZ_LOG_DEBUG("Revisit branch delay jump at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", addr + idx - oplen, bb->size);
 			// This is the second pass of the branch delaying opcode
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
 			if (delay.adjust) {
 				rz_analysis_block_set_size(bb, (ut64)addrbytes * (ut64)delay.after);
 				fcn->ninstr--;
-				if (analysis->verbose) {
-					eprintf("Correct for branch delay @ %08" PFMT64x " bb.addr=%08" PFMT64x " corrected.bb=%" PFMT64u " f.uncorr=%" PFMT64u "\n",
-						addr + idx - oplen, bb->addr, bb->size, rz_analysis_function_linear_size(fcn));
-				}
+				RZ_LOG_DEBUG("Correct for branch delay @ 0x%08" PFMT64x " bb.addr=0x%08" PFMT64x " corrected.bb=%" PFMT64u " f.uncorr=%" PFMT64u "\n",
+					addr + idx - oplen, bb->addr, bb->size, rz_analysis_function_linear_size(fcn));
 			}
 			// Next time, we go to the opcode after the delay count
 			// Take care not to use this below, use delay.un_idx instead ...
@@ -954,7 +947,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (op.ptr != UT64_MAX) {
 				leaddr_pair *pair = RZ_NEW(leaddr_pair);
 				if (!pair) {
-					eprintf("Cannot create leaddr_pair\n");
+					RZ_LOG_ERROR("Cannot allocate pair<reg, addr> structure\n");
 					gotoBeach(RZ_ANALYSIS_RET_ERROR);
 				}
 				pair->op_addr = op.addr;
@@ -1110,7 +1103,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			}
 			int tc = analysis->opt.tailcall;
 			if (tc) {
-				// eprintf ("TAIL CALL AT 0x%llx\n", op.addr);
 				int diff = op.jump - op.addr;
 				if (tc < 0) {
 					ut8 buf[32];
@@ -1431,11 +1423,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				goto beach;
 			}
 			if (!op.cond) {
-				if (analysis->verbose) {
-					eprintf("RET 0x%08" PFMT64x ". overlap=%s %" PFMT64u " %" PFMT64u "\n",
-						addr + delay.un_idx - oplen, rz_str_bool(overlapped),
-						bb->size, rz_analysis_function_linear_size(fcn));
-				}
+				RZ_LOG_DEBUG("RET 0x%08" PFMT64x ". overlap=%s %" PFMT64u " %" PFMT64u "\n",
+					addr + delay.un_idx - oplen, rz_str_bool(overlapped),
+					bb->size, rz_analysis_function_linear_size(fcn));
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			break;
@@ -1471,11 +1461,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 beach:
 	rz_analysis_op_fini(&op);
 	RZ_FREE(last_reg_mov_lea_name);
-	if (bb && bb->size == 0) {
-		rz_analysis_function_remove_block(fcn, bb);
+	if (bb) {
+		if (bb->size) {
+			rz_analysis_block_update_hash(bb);
+		} else {
+			rz_analysis_function_remove_block(fcn, bb);
+		}
+		rz_analysis_block_unref(bb);
 	}
-	rz_analysis_block_update_hash(bb);
-	rz_analysis_block_unref(bb);
 	free(movbasereg);
 	return ret;
 }
@@ -1631,7 +1624,7 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 			analysis->visited = set_u_new();
 		}
 		if (set_u_contains(analysis->visited, addr)) {
-			eprintf("rz_analysis_fcn: analysis.norevisit at 0x%08" PFMT64x " %c\n", addr, reftype);
+			RZ_LOG_DEBUG("rz_analysis_fcn: analysis.norevisit at 0x%08" PFMT64x " %c\n", addr, reftype);
 			return RZ_ANALYSIS_RET_END;
 		}
 		set_u_add(analysis->visited, addr);
@@ -1704,7 +1697,7 @@ RZ_API int rz_analysis_fcn_del(RzAnalysis *a, ut64 addr) {
 	RzAnalysisFunction *fcn;
 	RzListIter *iter, *iter_tmp;
 	rz_list_foreach_safe (a->fcns, iter, iter_tmp, fcn) {
-		D eprintf("fcn at %llx %llx\n", fcn->addr, addr);
+		RZ_LOG_DEBUG("removing function at %" PFMT64x " %" PFMT64x "\n", fcn->addr, addr);
 		if (fcn->addr == addr) {
 			rz_analysis_function_delete(fcn);
 		}
@@ -1765,14 +1758,13 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *a, const 
 
 /* rename RzAnalysisFunctionBB.add() */
 RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, RZ_BORROW RzAnalysisDiff *diff) {
-	D eprintf("Add bb\n");
 	if (size == 0) {
-		eprintf("Warning: empty basic block at 0x%08" PFMT64x " is not allowed.\n", addr);
+		RZ_LOG_ERROR("Empty basic block at 0x%08" PFMT64x " (not allowed).\n", addr);
 		rz_warn_if_reached();
 		return false;
 	}
 	if (size > a->opt.bb_max_size) {
-		eprintf("Warning: can't allocate such big bb of %" PFMT64d " bytes at 0x%08" PFMT64x "\n", (st64)size, addr);
+		RZ_LOG_ERROR("Cannot allocate such big bb of %" PFMT64d " bytes at 0x%08" PFMT64x "\n", (st64)size, addr);
 		rz_warn_if_reached();
 		return false;
 	}
@@ -1839,8 +1831,8 @@ RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
-		if ((!analysis || analysis->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
-			eprintf("Warning: invalid bb jump/fail pair at 0x%08" PFMT64x " (fcn 0x%08" PFMT64x "\n", bb->addr, fcn->addr);
+		if (!analysis && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
+			RZ_LOG_DEBUG("invalid bb jump/fail pair at 0x%08" PFMT64x " (fcn 0x%08" PFMT64x "\n", bb->addr, fcn->addr);
 		}
 		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
 			P++; // exit nodes
@@ -1856,10 +1848,9 @@ RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 	}
 
 	int result = E - N + (2 * P);
-	if (result < 1 && (!analysis || analysis->verbose)) {
-		eprintf("Warning: CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08" PFMT64x "\n", E, N, P, fcn->addr);
+	if (result < 1 && !analysis) {
+		RZ_LOG_DEBUG("CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08" PFMT64x "\n", E, N, P, fcn->addr);
 	}
-	// rz_return_val_if_fail (result > 0, 0);
 	return result;
 }
 
@@ -2007,19 +1998,19 @@ RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalys
 	RzType *result = rz_type_parse_string_declaration_single(a->typedb->parser, sig, &error_msg);
 	if (!result) {
 		if (error_msg) {
-			eprintf("%s", error_msg);
+			RZ_LOG_ERROR("%s", error_msg);
 			free(error_msg);
 		}
-		eprintf("Cannot parse callable type\n");
+		RZ_LOG_ERROR("Cannot parse callable type\n");
 		return false;
 	}
 	// Parsed result should be RzCallable
 	if (result->kind != RZ_TYPE_KIND_CALLABLE) {
-		eprintf("Parsed function signature should be RzCallable\n");
+		RZ_LOG_ERROR("Parsed function signature should be RzCallable\n");
 		return false;
 	}
 	if (!result->callable) {
-		eprintf("Parsed function signature should not be NULL\n");
+		RZ_LOG_ERROR("Parsed function signature should not be NULL\n");
 		return false;
 	}
 	return rz_analysis_function_set_type(a, f, result->callable);

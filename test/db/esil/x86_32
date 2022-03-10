@@ -2,14 +2,13 @@ NAME=2step push x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
 ar esp=0x00108000
 .arf
-"wa mov eax, 0x1234;push eax"
+wa "mov eax, 0x1234;push eax"
 2aes
 .arf
 ar esp
@@ -25,7 +24,6 @@ NAME=movsb 1 byte x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -55,7 +53,6 @@ NAME=mov eax, 1 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -75,7 +72,6 @@ NAME=rep movsb string x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -108,7 +104,6 @@ NAME=mov byte [0x20000000], 0x64 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -131,7 +126,6 @@ NAME=mov eax, [esp + 4] x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -154,7 +148,6 @@ NAME=mov [esp + 4], eax x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -178,7 +171,6 @@ FILE==
 BROKEN=1
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -211,7 +203,6 @@ NAME=lodsb ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -237,7 +228,6 @@ NAME=lodsb -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -263,7 +253,6 @@ NAME=lodsw ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -289,7 +278,6 @@ NAME=lodsw -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -315,7 +303,6 @@ NAME=lodsd ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -341,7 +328,6 @@ NAME=lodsd -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -367,7 +353,6 @@ NAME=stosb ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -393,7 +378,6 @@ NAME=stosb -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -419,7 +403,6 @@ NAME=stosw ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -445,7 +428,6 @@ NAME=stosw -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -471,7 +453,6 @@ NAME=stosd ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -497,7 +478,6 @@ NAME=stosd -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -523,7 +503,6 @@ NAME=shr eax(9) >> 1 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -549,7 +528,6 @@ NAME=shr eax(0x1b) >> 1 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -575,7 +553,6 @@ NAME=shr eax(5) >> 2 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -601,7 +578,6 @@ NAME=shr byte [esp + 4], 2 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -626,7 +602,6 @@ NAME=add byte [esp + 4], 0xa x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -651,7 +626,6 @@ NAME=add eax, [esp + 4] x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -674,7 +648,6 @@ NAME=add dword [0x20000000], eax x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -697,7 +670,6 @@ NAME=add byte cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -723,7 +695,6 @@ NAME=add word cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -749,7 +720,6 @@ NAME=add dword cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -775,7 +745,6 @@ NAME=adc byte cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -802,7 +771,6 @@ NAME=adc word cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -829,7 +797,6 @@ NAME=adc dword cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -856,7 +823,6 @@ NAME=dec byte [edi] check zf x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -883,7 +849,6 @@ NAME=dec byte [edi] check sf x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -910,7 +875,6 @@ NAME=inc byte [edi] check zf x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -939,7 +903,6 @@ NAME=inc byte [edi] check sf x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -966,7 +929,6 @@ NAME=adc [esi + 0x14], ecx x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -991,7 +953,6 @@ NAME=div cl x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -1012,7 +973,6 @@ NAME=pushal(pushad in intel documentation) x86_32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -1054,7 +1014,6 @@ NAME=popal(popad in intel documentation) x86_32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -1107,7 +1066,6 @@ NAME=pop x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -1136,7 +1094,6 @@ NAME=pushd followed by popfd x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -1275,7 +1232,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmova eax, ecx
+wa "cmova eax, ecx"
 aes
 ar eax
 EOF
@@ -1323,7 +1280,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovae eax, ecx
+wa "cmovae eax, ecx"
 aes
 ar eax
 EOF
@@ -1371,7 +1328,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovb eax, ecx
+wa "cmovb eax, ecx"
 aes
 ar eax
 EOF
@@ -1403,7 +1360,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovbe eax, ecx
+wa "cmovbe eax, ecx"
 aes
 ar eax
 EOF
@@ -1435,7 +1392,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovc eax, ecx
+wa "cmovc eax, ecx"
 aes
 ar eax
 EOF
@@ -1467,7 +1424,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmove eax, ecx
+wa "cmove eax, ecx"
 aes
 ar eax
 EOF
@@ -1483,7 +1440,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovg eax, ecx
+wa "cmovg eax, ecx"
 aes
 ar eax
 EOF
@@ -1515,7 +1472,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovge eax, ecx
+wa "cmovge eax, ecx"
 aes
 ar eax
 EOF
@@ -1547,7 +1504,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovl eax, ecx
+wa "cmovl eax, ecx"
 aes
 ar eax
 EOF
@@ -1579,7 +1536,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmovle eax, ecx
+wa "cmovle eax, ecx"
 aes
 ar eax
 EOF
@@ -1595,7 +1552,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovle eax, ecx
+wa "cmovle eax, ecx"
 aes
 ar eax
 EOF
@@ -1627,7 +1584,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovna eax, ecx
+wa "cmovna eax, ecx"
 aes
 ar eax
 EOF
@@ -1643,7 +1600,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmovna eax, ecx
+wa "cmovna eax, ecx"
 aes
 ar eax
 EOF
@@ -1675,7 +1632,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar cf=1
-wa cmovnae eax, ecx
+wa "cmovnae eax, ecx"
 aes
 ar eax
 EOF
@@ -1707,7 +1664,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnb eax, ecx
+wa "cmovnb eax, ecx"
 aes
 ar eax
 EOF
@@ -1771,7 +1728,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnbe eax, ecx
+wa "cmovnbe eax, ecx"
 aes
 ar eax
 EOF
@@ -1803,7 +1760,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnc eax, ecx
+wa "cmovnc eax, ecx"
 aes
 ar eax
 EOF
@@ -1835,7 +1792,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovne eax, ecx
+wa "cmovne eax, ecx"
 aes
 ar eax
 EOF
@@ -1851,7 +1808,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmovng eax, ecx
+wa "cmovng eax, ecx"
 aes
 ar eax
 EOF
@@ -1867,7 +1824,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovng eax, ecx
+wa "cmovng eax, ecx"
 aes
 ar eax
 EOF
@@ -1899,7 +1856,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovnge eax, ecx
+wa "cmovnge eax, ecx"
 aes
 ar eax
 EOF
@@ -1947,7 +1904,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnl eax, ecx
+wa "cmovnl eax, ecx"
 aes
 ar eax
 EOF
@@ -1963,7 +1920,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnle eax, ecx
+wa "cmovnle eax, ecx"
 aes
 ar eax
 EOF
@@ -2011,7 +1968,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovno eax, ecx
+wa "cmovno eax, ecx"
 aes
 ar eax
 EOF
@@ -2043,7 +2000,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnp eax, ecx
+wa "cmovnp eax, ecx"
 aes
 ar eax
 EOF
@@ -2075,7 +2032,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovns eax, ecx
+wa "cmovns eax, ecx"
 aes
 ar eax
 EOF
@@ -2107,7 +2064,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovnz eax, ecx
+wa "cmovnz eax, ecx"
 aes
 ar eax
 EOF
@@ -2123,7 +2080,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar of=1
-wa cmovo eax, ecx
+wa "cmovo eax, ecx"
 aes
 ar eax
 EOF
@@ -2155,7 +2112,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar pf=1
-wa cmovp eax, ecx
+wa "cmovp eax, ecx"
 aes
 ar eax
 EOF
@@ -2187,7 +2144,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar pf=1
-wa cmovpe eax, ecx
+wa "cmovpe eax, ecx"
 aes
 ar eax
 EOF
@@ -2235,7 +2192,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 
-wa cmovpo eax, ecx
+wa "cmovpo eax, ecx"
 aes
 ar eax
 EOF
@@ -2251,7 +2208,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar sf=1
-wa cmovs eax, ecx
+wa "cmovs eax, ecx"
 aes
 ar eax
 EOF
@@ -2283,7 +2240,7 @@ CMDS=<<EOF
 e io.va=true
 ar ecx=8
 ar zf=1
-wa cmovz eax, ecx
+wa "cmovz eax, ecx"
 aes
 ar eax
 EOF
@@ -2467,12 +2424,11 @@ eflags = 0x00000001
 EOF
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-"wa cmc"
+wa cmc
 ar eflags
 aes
 ar eflags

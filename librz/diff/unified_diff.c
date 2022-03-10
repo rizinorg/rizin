@@ -360,7 +360,7 @@ RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE co
 	}
 
 	if (show_time) {
-		char *time = rz_time_to_string(rz_time_now());
+		char *time = rz_time_date_now_to_string();
 		rz_strbuf_appendf(sb, "--- %s %s\n+++ %s %s\n", from, (time ? time : ""), to, (time ? time : ""));
 		free(time);
 	} else {
@@ -438,7 +438,7 @@ RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE cons
 	pj_o(pj);
 
 	if (show_time) {
-		char *time = rz_time_to_string(rz_time_now());
+		char *time = rz_time_date_now_to_string();
 		if (!time) {
 			RZ_LOG_ERROR("rz_diff_unified: failed to allocate timestamp\n");
 			goto rz_diff_unified_json_fail;

@@ -14,7 +14,8 @@
 #include "../arch/avr/disassembler.h"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	op->size = avr_disassembler(buf, len, a->pc, a->big_endian, &op->buf_asm);
+	AVROp aop = { 0 };
+	op->size = avr_disassembler(buf, len, a->pc, a->big_endian, &aop, &op->buf_asm);
 	if (!op->size) {
 		op->size = 2;
 		rz_strbuf_set(&op->buf_asm, "invalid");

@@ -151,7 +151,7 @@ Arithmetic
 3. SUB ("-")
 4. DIV ("/")
 5. MOD ("%")
-
+6. POW ("**")
 
 Bit arithmetic
 ===============

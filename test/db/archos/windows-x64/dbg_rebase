@@ -48,9 +48,9 @@ ARGS=-d
 CMDS=<<EOF
 fs test
 f testflag @ main+10
-?v `f~testflag[0]`-`e bin.baddr`
+?v `fl~testflag[0]`-`e bin.baddr`
 doc
-?v `f~testflag[0]`-`e bin.baddr`
+?v `fl~testflag[0]`-`e bin.baddr`
 EOF
 EXPECT=<<EOF
 0x100a

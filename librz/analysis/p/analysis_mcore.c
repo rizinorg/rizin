@@ -11,7 +11,7 @@ static int mcore_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 	mcore_t *instr = NULL;
 
 	if (mcore_init(&handle, buf, len)) {
-		eprintf("[!] mcore: bad or invalid data.\n");
+		RZ_LOG_ERROR("mcore: bad or invalid data.\n");
 		return -1;
 	}
 

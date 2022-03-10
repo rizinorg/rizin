@@ -131,7 +131,7 @@ FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov hello, eax"
 EXPECT=
 EXPECT_ERR=<<EOF
-Cannot assemble 'mov hello, eax' at line 3
+ERROR: Cannot assemble 'mov hello, eax' at line 3
 EOF
 RUN
 
@@ -140,7 +140,7 @@ FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov 33, eax"
 EXPECT=
 EXPECT_ERR=<<EOF
-Cannot assemble 'mov 33, eax' at line 3
+ERROR: Cannot assemble 'mov 33, eax' at line 3
 EOF
 RUN
 
@@ -149,7 +149,7 @@ FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov eax, hello"
 EXPECT=
 EXPECT_ERR=<<EOF
-Cannot assemble 'mov eax, hello' at line 3
+ERROR: Cannot assemble 'mov eax, hello' at line 3
 EOF
 RUN
 
@@ -158,7 +158,7 @@ FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov eax, 0x1122334455"
 EXPECT=
 EXPECT_ERR=<<EOF
-Cannot assemble 'mov eax, 0x1122334455' at line 3
+ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
 EOF
 RUN
 
@@ -170,8 +170,8 @@ CMDS=<<EOF
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-Cannot assemble 'mov rax, 0x112233445566778899' at line 3
-Cannot assemble 'mov eax, 0x1122334455' at line 3
+ERROR: Cannot assemble 'mov rax, 0x112233445566778899' at line 3
+ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
 EOF
 RUN
 
@@ -394,6 +394,20 @@ msr psp, r0
 EOF
 RUN
 
+NAME=rz-asm -A with -c and -o
+FILE==
+CMDS=!rz-asm -a arm -b 16 -A -o 0x1000 -c cortex 0x80f30988
+EXPECT=<<EOF
+offset:   0x00001000
+bytes:    80f30988
+type:     mov
+stackop:  null
+esil:     0,0xFF,|,DUP,!,SWAP,&,r0,SWAP,cpsr,&,|,cpsr,=
+stackptr: 0
+
+EOF
+RUN
+
 NAME=rz-asm -k
 BROKEN=1
 FILE==
@@ -433,8 +447,8 @@ EXPECT=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 6a00
-f entry = $$
-f label.main = $$ + 1
+f entry @ $$
+f label.main @ $$ + 1
 EOF
 RUN
 

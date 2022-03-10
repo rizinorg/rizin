@@ -804,6 +804,7 @@ typedef struct rz_cons_canvas_line_style_t {
 #define CORNER_TR   6
 #define ARROW_RIGHT 8
 #define ARROW_LEFT  9
+#define SELF_LOOP   10
 
 #ifdef RZ_API
 RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);

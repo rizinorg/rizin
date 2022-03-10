@@ -135,6 +135,7 @@ rz_asm_sources = [
   'arch/8051/8051_ass.c',
   'arch/arm/armass.c',
   'arch/arm/armass64.c',
+  'arch/arm/arm_it.c',
   'arch/avr/disassembler.c',
   'arch/avr/assembler.c',
   'arch/cr16/cr16_disas.c',
@@ -334,6 +335,7 @@ pkgconfig_mod.generate(rz_asm,
   description: 'rizin foundation libraries',
   variables: [
     'plugindir=@0@'.format(rizin_plugins),
+    'datdir=@0@'.format(rizin_datdir_rz),
   ],
 )
 

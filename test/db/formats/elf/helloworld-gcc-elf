@@ -321,7 +321,7 @@ RUN
 NAME=p-
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-0x8048000
+s 0x8048000
 e search.in=io.map
 p-
 e search.in=io.maps
@@ -337,7 +337,7 @@ NAME=pu 10
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=pu 10
 EXPECT=<<EOF
-%31%ed%5e%89%e1%83%e4%f0%50%54
+1%ed%5e%89%e1%83%e4%f0PT
 EOF
 RUN
 
@@ -416,7 +416,7 @@ RUN
 
 NAME=flags (total)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=f~?
+CMDS=fl~?
 EXPECT=<<EOF
 107
 EOF
@@ -424,7 +424,7 @@ RUN
 
 NAME=flags
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=f
+CMDS=fl
 EXPECT=<<EOF
 0x00000000 0 section.
 0x00000000 17 section..comment

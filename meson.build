@@ -1,7 +1,7 @@
 project('rizin', 'c',
   version: 'v0.4.0-git',
   license: 'LGPL3',
-  meson_version: '>=0.55.3',
+  meson_version: '>=0.59.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
@@ -11,7 +11,7 @@ project('rizin', 'c',
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
-cmake_mod = import('cmake')
+cmake_mod = import('cmake', required: false)
 
 # Python scripts used during the build process
 create_tags_rz_py = files('sys/create_tags_rz.py')
@@ -79,7 +79,12 @@ endif
 if host_machine.system() == 'windows'
   rizinbirth = run_command('cmd', '/c', 'echo %date%__%time%')
 else
-  rizinbirth = run_command('date', '+%Y-%m-%d__%H:%M:%S')
+  rizinbirth = run_command('sh', '-c', '''
+      SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}";
+      FORMAT="+%Y-%m-%d__%H:%M:%S";
+      date -u -d "@$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
+      date -u -r  "$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
+      date -u "$FORMAT"''')
 endif
 if rizinbirth.returncode() != 0
   rizinbirth = ''
@@ -190,6 +195,7 @@ if host_machine.system() == 'windows'
   rizin_wwwroot = rizin_datdir / 'www'
   rizin_sdb = rizin_datdir / ''
   rizin_zigns = rizin_datdir / 'zigns'
+  rizin_sigdb = rizin_datdir / 'sigdb'
   rizin_themes = rizin_datdir / 'cons'
   rizin_fortunes = rizin_datdir / 'fortunes'
   rizin_flags = rizin_datdir / 'flag'
@@ -201,6 +207,7 @@ else
   rizin_wwwroot = rizin_datdir_rz / 'www'
   rizin_sdb = rizin_datdir_rz
   rizin_zigns = rizin_datdir_rz / 'zigns'
+  rizin_sigdb = rizin_datdir_rz / 'sigdb'
   rizin_themes = rizin_datdir_rz / 'cons'
   rizin_fortunes = rizin_datdir_rz / 'fortunes'
   rizin_flags = rizin_datdir_rz / 'flag'
@@ -209,10 +216,17 @@ else
   rizin_bindings = rizin_libdir / 'rizin-bindings'
 endif
 
+# Calcualte BINDIR's depth to be able to find the root directory during runtime
+# in portable builds
+py_cmd = 'import os; print(len(os.path.normpath(r"@0@").split(os.sep)) - len(os.path.normpath(r"@1@").split(os.sep)))'.format(rizin_prefix / rizin_bindir, rizin_prefix)
+py_cmd = run_command(py3_exe, '-c', py_cmd)
+bindir_depth = py_cmd.stdout().strip()
+
 opts_overwrite = [
   'rizin_wwwroot',
   'rizin_sdb',
   'rizin_zigns',
+  'rizin_sigdb',
   'rizin_themes',
   'rizin_fortunes',
   'rizin_flags',
@@ -374,6 +388,7 @@ userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', rizin_prefix)
 userconf.set('BINDIR', rizin_bindir)
+userconf.set('BINDIR_DEPTH', bindir_depth)
 userconf.set('LIBDIR', rizin_libdir)
 userconf.set('INCLUDEDIR', rizin_incdir)
 userconf.set('DATADIR_RZ', rizin_datdir_rz)
@@ -383,6 +398,7 @@ userconf.set('DATADIR', rizin_datdir)
 userconf.set('WWWROOT', rizin_wwwroot)
 userconf.set('SDB', rizin_sdb)
 userconf.set('ZIGNS', rizin_zigns)
+userconf.set('SIGDB', rizin_sigdb)
 userconf.set('THEMES', rizin_themes)
 userconf.set('FORTUNES', rizin_fortunes)
 userconf.set('FLAGS', rizin_flags)
@@ -451,6 +467,7 @@ foreach item : [
     ['execvp', '#include <unistd.h>', []],
     ['execl', '#include <unistd.h>', []],
     ['system', '#include <stdlib.h>', []],
+    ['realpath', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
     ['nice', '#include <unistd.h>', []],
     ['copyfile', '#include <copyfile.h>', []],
@@ -605,7 +622,13 @@ rpath_exe = ''
 rpath_lib = ''
 rpath_summary = 'disabled'
 if use_rpath
-  rpath_exe = '$ORIGIN/../' + get_option('libdir')
+  # Use bindir depth to create a path to the rootdir from bindir
+  path_to_rootdir=''
+  foreach i : range(bindir_depth.to_int())
+    path_to_rootdir += '../'
+  endforeach
+
+  rpath_exe = '$ORIGIN/' + path_to_rootdir + get_option('libdir')
   rpath_lib = '$ORIGIN'
   rpath_summary = 'relative'
 elif use_rpath_absolute
@@ -650,6 +673,14 @@ endif
 
 subdir('librz')
 
+if get_option('install_sigdb')
+  r = run_command(py3_exe, check_meson_subproject_py, 'sigdb')
+  if r.returncode() == 1 and get_option('subprojects_check')
+    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  endif
+  subproject('sigdb', default_options: ['sigdb_path=@0@'.format(get_option('prefix') / rizin_sigdb)])
+endif
+
 cli_option = get_option('cli')
 cli_enabled = cli_option.auto() ? not meson.is_subproject() : cli_option.enabled()
 if cli_enabled
@@ -685,6 +716,7 @@ summary({
   'wwwroot': rizin_wwwroot,
   'sdb': rizin_sdb,
   'zigns': rizin_zigns,
+  'sigdb': rizin_sigdb,
   'themes': rizin_themes,
   'fortunes': rizin_fortunes,
   'flags': rizin_flags,
@@ -695,6 +727,7 @@ summary({
 
 summary({
   'GPL code': get_option('use_gpl'),
+  'Install sigdb': get_option('install_sigdb'),
   'Swift demangler': get_option('use_swift_demangler'),
   'Debugger enabled': has_debugger,
   'Capstone version': capstone_dep.version(),

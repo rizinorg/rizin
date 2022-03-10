@@ -23,7 +23,7 @@
 
 #define BS 1024
 #ifdef __WINDOWS__
-#define StructStat struct _stat
+#define StructStat struct _stat64
 #else
 #define StructStat struct stat
 #endif
@@ -35,7 +35,7 @@ static int file_stat(const char *file, StructStat *pStat) {
 	if (!wfile) {
 		return -1;
 	}
-	int ret = _wstat(wfile, pStat);
+	int ret = _wstati64(wfile, pStat);
 	free(wfile);
 	return ret;
 #else // __WINDOWS__
@@ -231,7 +231,7 @@ RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 		ret = tmp;
 	}
 #endif
-#if __UNIX__
+#if HAVE_REALPATH
 	char rp[PATH_MAX] = { 0 };
 	char *abspath = realpath(ret, rp); // second arg == NULL is only an extension
 	if (abspath) {

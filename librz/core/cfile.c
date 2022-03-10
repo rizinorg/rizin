@@ -184,7 +184,7 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 	rz_debug_bp_rebase(core->dbg, old_base, new_base);
 }
 
-RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr) {
+RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr) {
 	RzCoreFile *ofile = core->file;
 	RzIODesc *desc;
 	RzCoreFile *file;
@@ -284,7 +284,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	free(binpath);
 }
 
-RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loadbin) {
+RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = rz_config_get_b(core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = rz_config_get_i(core->config, "bin.laddr");

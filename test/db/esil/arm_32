@@ -1,7 +1,6 @@
 NAME=ands (opcode) triggers zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=0
@@ -18,7 +17,6 @@ RUN
 NAME=ands (opcode) triggers zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=5
@@ -35,12 +33,11 @@ RUN
 NAME=ands triggers zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=0
 ar cpsr=0
-wa ands r2, r2
+wa "ands r2, r2"
 aes
 ar cpsr
 EOF
@@ -52,12 +49,11 @@ RUN
 NAME=ands triggers zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=5
 ar cpsr=0x40000000
-wa ands r2, r2
+wa "ands r2, r2"
 aes
 ar cpsr
 EOF
@@ -69,7 +65,6 @@ RUN
 NAME=and (no s flag) does not trigger zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=0
@@ -86,7 +81,6 @@ RUN
 NAME=and (no s flag) does not trigger zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=5
@@ -103,12 +97,11 @@ RUN
 NAME=orrs triggers zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=0
 ar cpsr=0
-wa orrs r2, r2
+wa "orrs r2, r2"
 aes
 ar cpsr
 EOF
@@ -120,12 +113,11 @@ RUN
 NAME=orrs triggers zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=5
 ar cpsr=0x40000000
-wa orrs r2, r2
+wa "orrs r2, r2"
 aes
 ar cpsr
 EOF
@@ -137,7 +129,6 @@ RUN
 NAME=orrs (opcode) triggers zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=0
@@ -154,7 +145,6 @@ RUN
 NAME=orrs (opcode) triggers zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=5
@@ -171,7 +161,6 @@ RUN
 NAME=orr (no s flag) does not trigger zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=0
@@ -188,7 +177,6 @@ RUN
 NAME=orr (no s flag) does not trigger zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=5
@@ -205,12 +193,11 @@ RUN
 NAME=adds triggers zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=0
 ar cpsr=0
-wa adds r2, r2
+wa "adds r2, r2"
 aes
 ar cpsr
 EOF
@@ -222,13 +209,12 @@ RUN
 NAME=adds triggers zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=2
 ar r1=5
 ar cpsr=0x40000000
-wa adds r1,r2 
+wa "adds r1,r2"
 aes
 ar cpsr
 EOF
@@ -240,7 +226,6 @@ RUN
 NAME=add (no s flag) does not trigger zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=0
@@ -257,7 +242,6 @@ RUN
 NAME=add (no s flag) does not trigger zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=2
@@ -275,7 +259,6 @@ RUN
 NAME=eors (opcode) triggers zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=1
@@ -292,7 +275,6 @@ RUN
 NAME=eors (opcode) triggers zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=2
@@ -310,12 +292,11 @@ RUN
 NAME=eors triggers zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=1
 ar cpsr=0
-wa eors r2, r2
+wa "eors r2, r2"
 aes
 ar cpsr
 EOF
@@ -327,13 +308,12 @@ RUN
 NAME=eors triggers zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=2
 ar r1=5
 ar cpsr=0x40000000
-wa eors r1,r2 
+wa "eors r1,r2"
 aes
 ar cpsr
 EOF
@@ -345,7 +325,6 @@ RUN
 NAME=eor (no s flag) does not trigger zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=1
@@ -362,7 +341,6 @@ RUN
 NAME=eor (no s flag) does not trigger zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=2
@@ -380,12 +358,11 @@ RUN
 NAME=subs triggers zf and cf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=1
 ar cpsr=0
-wa subs r2, r2, 1
+wa "subs r2, r2, 1"
 aes
 ar cpsr
 EOF
@@ -397,12 +374,11 @@ RUN
 NAME=subs triggers cf and zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=2
 ar cpsr=0x40000000
-wa subs r2, r2, 1
+wa "subs r2, r2, 1"
 aes
 ar cpsr
 EOF
@@ -414,7 +390,6 @@ RUN
 NAME=sub (no s flag) does not trigger zf
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=1
@@ -431,7 +406,6 @@ RUN
 NAME=sub (no s flag) does not trigger zf off
 FILE==
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 ar r2=2
@@ -448,14 +422,13 @@ RUN
 NAME=cmp neq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aei
 aeim
 ar sp=0x00108000
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -467,7 +440,6 @@ RUN
 NAME=cmp neq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aei
@@ -475,7 +447,7 @@ aeim
 ar sp=0x00108000
 ar cpsr=0xffffffff
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -487,7 +459,6 @@ RUN
 NAME=cmp eq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aei
@@ -496,7 +467,7 @@ ar sp=0x00108000
 ar r1=0x10
 ar cpsr=0x40000000
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF
@@ -508,7 +479,6 @@ RUN
 NAME=cmp eq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aei
@@ -516,7 +486,7 @@ aeim
 ar sp=0x00108000
 ar cpsr=0xffffffff
 .arf
-wa cmp r1, 16
+wa "cmp r1, 16"
 aes
 ?v cpsr & 0xf0000000
 EOF

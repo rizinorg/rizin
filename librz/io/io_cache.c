@@ -90,65 +90,6 @@ RZ_API int rz_io_cache_invalidate(RzIO *io, ut64 from, ut64 to) {
 	return invalidated;
 }
 
-RZ_API bool rz_io_cache_list(RzIO *io, int rad) {
-	rz_return_val_if_fail(io, false);
-	size_t i, j = 0;
-	void **iter;
-	RzIOCache *c;
-	PJ *pj = NULL;
-	if (rad == 2) {
-		pj = pj_new();
-		pj_a(pj);
-	}
-	rz_pvector_foreach (&io->cache, iter) {
-		c = *iter;
-		const ut64 dataSize = rz_itv_size(c->itv);
-		if (rad == 1) {
-			io->cb_printf("wx ");
-			for (i = 0; i < dataSize; i++) {
-				io->cb_printf("%02x", (ut8)(c->data[i] & 0xff));
-			}
-			io->cb_printf(" @ 0x%08" PFMT64x, rz_itv_begin(c->itv));
-			io->cb_printf(" # replaces: ");
-			for (i = 0; i < dataSize; i++) {
-				io->cb_printf("%02x", (ut8)(c->odata[i] & 0xff));
-			}
-			io->cb_printf("\n");
-		} else if (rad == 2) {
-			pj_o(pj);
-			pj_kn(pj, "idx", j);
-			pj_kn(pj, "addr", rz_itv_begin(c->itv));
-			pj_kn(pj, "size", dataSize);
-			char *hex = rz_hex_bin2strdup(c->odata, dataSize);
-			pj_ks(pj, "before", hex);
-			free(hex);
-			hex = rz_hex_bin2strdup(c->data, dataSize);
-			pj_ks(pj, "after", hex);
-			free(hex);
-			pj_kb(pj, "written", c->written);
-			pj_end(pj);
-		} else if (rad == 0) {
-			io->cb_printf("idx=%" PFMTSZu " addr=0x%08" PFMT64x " size=%" PFMT64u " ", j, rz_itv_begin(c->itv), dataSize);
-			for (i = 0; i < dataSize; i++) {
-				io->cb_printf("%02x", c->odata[i]);
-			}
-			io->cb_printf(" -> ");
-			for (i = 0; i < dataSize; i++) {
-				io->cb_printf("%02x", c->data[i]);
-			}
-			io->cb_printf(" %s\n", c->written ? "(written)" : "(not written)");
-		}
-		j++;
-	}
-	if (rad == 2) {
-		pj_end(pj);
-		char *json = pj_drain(pj);
-		io->cb_printf("%s", json);
-		free(json);
-	}
-	return false;
-}
-
 RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	rz_return_val_if_fail(io && buf, false);
 	RzIOCache *ch = RZ_NEW0(RzIOCache);

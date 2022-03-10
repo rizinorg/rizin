@@ -101,7 +101,7 @@ af
 afi*
 EOF
 EXPECT=<<EOF
-"f sym._checkinput 288 0x100000da0"
+"f sym._checkinput 288 @ 0x100000da0"
 "af+ 0x100000da0 sym._checkinput f n"
 afb+ 0x100000da0 0x100000da0 22 0x100000db6 0xffffffffffffffff
 afb+ 0x100000da0 0x100000e99 5 0x100000e9e 0xffffffffffffffff
@@ -720,7 +720,7 @@ FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
 aav
-f
+fl
 EOF
 EXPECT=<<EOF
 0x0000000d 4 aav.0x0000000d
@@ -2429,7 +2429,7 @@ NAME=unique function names
 FILE=bins/elf/bash
 CMDS=<<EOF
 aaa
-f~strlen~390
+fl~strlen~390
 EOF
 EXPECT=<<EOF
 EOF
@@ -3246,7 +3246,7 @@ RUN
 NAME=t.analysis/x86/aap
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-f-sym.func.*
+f- sym.func.*
 aap
 pi 2 @ fcn.1000010f8
 EOF
@@ -3261,7 +3261,7 @@ FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 e analysis.jmp.tbl=true
 af
-f~switch
+fl~switch
 EOF
 EXPECT=<<EOF
 0x100001527 1 switch.0x100001527
@@ -3272,8 +3272,8 @@ NAME=gcc_5.5.0_64 switch/case flags, meta, hints, etc.
 FILE=bins/jmptbl/test_gcc_5.5.0_64.out
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 C~Cd 4
 ahl
 axf @ 0x59d
@@ -3354,8 +3354,8 @@ NAME=gcc_7.2.0_64 switch/case flags
 FILE=bins/jmptbl/test_gcc_7.2.0_64.out
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x0000054d 1 switch.0x0000054d
@@ -3381,8 +3381,8 @@ NAME=gcc_9.2.0_64 switch/case flags
 FILE=bins/elf/dectest64
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x004011fd 1 switch.0x004011fd
@@ -3406,8 +3406,8 @@ NAME=clang_3.8_64 switch/case flags
 FILE=bins/jmptbl/test_clang_3.8_64.out
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x004004d8 1 switch.0x004004d8
@@ -3432,8 +3432,8 @@ NAME=clang_5.0_64 switch/case flags
 FILE=bins/jmptbl/test_clang_5.0_64.out
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x004004c8 1 switch.0x004004c8
@@ -3458,8 +3458,8 @@ NAME=msvc_1700_64 switch/case flags
 FILE=bins/jmptbl/test_msvc_1700_64.exe
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x140001023 1 switch.0x140001023
@@ -3552,8 +3552,8 @@ NAME=msvc_1900_64 switch/case flags
 FILE=bins/jmptbl/test_msvc_1900_64.exe
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x140001023 1 switch.0x140001023

@@ -926,8 +926,9 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			val = 0x8000000000000000;
 			break;
 		default:
-			eprintf("Error: unknown operand size: %d\n", gop.insn->detail->x86.operands[0].size);
+			RZ_LOG_ERROR("x86: unknown operand size: %d\n", gop.insn->detail->x86.operands[0].size);
 			val = 256;
+			break;
 		}
 		ut32 bitsize;
 		src = getarg(&gop, 1, 0, NULL, SRC_AR, NULL);
@@ -1684,7 +1685,8 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			xor = 0xffffffffffffffff;
 			break;
 		default:
-			eprintf("Neg: Unhandled bitsize %d\n", bitsize);
+			RZ_LOG_ERROR("x86: unhandled neg bitsize %d\n", bitsize);
+			break;
 		}
 		esilprintf(op, "%s,!,!,cf,:=,%s,0x%" PFMT64x ",^,1,+,%s,$z,zf,:=,0,of,:=,%d,$s,sf,:=,%d,$o,pf,:=",
 			src, src, xor, dst, bitsize - 1, bitsize - 1);

@@ -107,7 +107,7 @@ RZ_API int rz_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 		if (analysis->pcalign && addr % analysis->pcalign) {
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 			op->addr = addr;
-			// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", analysis->bits, addr);
+			// RZ_LOG_DEBUG("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", analysis->bits, addr);
 			op->size = 1;
 			return -1;
 		}
@@ -129,9 +129,7 @@ RZ_API int rz_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 		}
 	}
 	if (!op->mnemonic && (mask & RZ_ANALYSIS_OP_MASK_DISASM)) {
-		if (analysis->verbose) {
-			eprintf("Warning: unhandled RZ_ANALYSIS_OP_MASK_DISASM in rz_analysis_op\n");
-		}
+		RZ_LOG_DEBUG("Warning: unhandled RZ_ANALYSIS_OP_MASK_DISASM in rz_analysis_op\n");
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_HINT) {
 		RzAnalysisHint *hint = rz_analysis_hint_get(analysis, addr);
@@ -503,7 +501,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	case RZ_ANALYSIS_OP_TYPE_ROR:
 	case RZ_ANALYSIS_OP_TYPE_SWITCH:
 	case RZ_ANALYSIS_OP_TYPE_CASE:
-		eprintf("Command not implemented.\n");
+		RZ_LOG_DEBUG("Command not implemented.\n");
 		free(r0);
 		free(a0);
 		free(a1);

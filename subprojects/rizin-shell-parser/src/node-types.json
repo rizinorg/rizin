@@ -180,10 +180,6 @@
             "named": true
           },
           {
-            "type": "number_stmt",
-            "named": true
-          },
-          {
             "type": "pf_args",
             "named": true
           },
@@ -458,10 +454,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -771,10 +763,6 @@
             "named": true
           },
           {
-            "type": "number_stmt",
-            "named": true
-          },
-          {
             "type": "pipe_stmt",
             "named": true
           },
@@ -1005,10 +993,6 @@
             "named": true
           },
           {
-            "type": "number_stmt",
-            "named": true
-          },
-          {
             "type": "pipe_stmt",
             "named": true
           },
@@ -1213,10 +1197,6 @@
             "named": true
           },
           {
-            "type": "number_stmt",
-            "named": true
-          },
-          {
             "type": "pipe_stmt",
             "named": true
           },
@@ -1418,10 +1398,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -1632,10 +1608,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -1836,10 +1808,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -2046,10 +2014,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -2253,10 +2217,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -2457,10 +2417,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -2671,10 +2627,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -2879,10 +2831,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -3093,10 +3041,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -3297,10 +3241,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -3507,10 +3447,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -3711,10 +3647,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -3921,10 +3853,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -4128,10 +4056,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -4332,10 +4256,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -4546,10 +4466,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -4757,10 +4673,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -4961,10 +4873,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -5171,10 +5079,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -5375,10 +5279,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -5589,10 +5489,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -5793,10 +5689,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -6003,10 +5895,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -6207,10 +6095,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -6486,10 +6370,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -6570,11 +6450,6 @@
   },
   {
     "type": "number",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "number_stmt",
     "named": true,
     "fields": {}
   },
@@ -6819,10 +6694,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -7033,10 +6904,6 @@
           },
           {
             "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
-            "type": "number_stmt",
             "named": true
           },
           {
@@ -7276,10 +7143,6 @@
             "named": true
           },
           {
-            "type": "number_stmt",
-            "named": true
-          },
-          {
             "type": "pipe_stmt",
             "named": true
           },
@@ -7504,10 +7367,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -7719,10 +7578,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -7927,10 +7782,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -8141,10 +7992,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -8349,10 +8196,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -8563,10 +8406,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -8771,10 +8610,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -8985,10 +8820,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -9193,10 +9024,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -9407,10 +9234,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -9615,10 +9438,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -9829,10 +9648,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -10037,10 +9852,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -10251,10 +10062,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -10459,10 +10266,6 @@
         },
         {
           "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "number_stmt",
           "named": true
         },
         {
@@ -10673,10 +10476,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -10884,10 +10683,6 @@
           "named": true
         },
         {
-          "type": "number_stmt",
-          "named": true
-        },
-        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -11012,10 +10807,6 @@
   },
   {
     "type": "./",
-    "named": false
-  },
-  {
-    "type": "0",
     "named": false
   },
   {

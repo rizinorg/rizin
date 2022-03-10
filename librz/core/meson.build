@@ -20,6 +20,7 @@ rz_core_sources = [
   'cdebug.c',
   'cdwarf.c',
   'cfile.c',
+  'cflag.c',
   'chash.c',
   'cheap.c',
   'cil.c',
@@ -184,6 +185,7 @@ pkgconfig_mod.generate(
   description: 'rizin foundation libraries',
   variables: [
     'plugindir=@0@'.format(rizin_plugins),
+    'datdir=@0@'.format(rizin_datdir_rz),
   ],
 )
 

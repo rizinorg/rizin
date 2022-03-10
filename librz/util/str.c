@@ -11,6 +11,10 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <rz_util/rz_base64.h>
+#include <rz_util/rz_utf8.h>
+#include <rz_util/rz_utf16.h>
+#include <rz_util/rz_utf32.h>
+#include <rz_util/rz_ebcdic.h>
 
 /* stable code */
 static const char *rwxstr[] = {
@@ -66,16 +70,11 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 }
 
 RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
-	int res;
 #ifdef _MSC_VER
-	res = stricmp(s1, s2);
+	return stricmp(s1, s2);
 #else
-	res = strcasecmp(s1, s2);
+	return strcasecmp(s1, s2);
 #endif
-	if (res == 0) {
-		res = strcmp(s1, s2);
-	}
-	return res;
 }
 
 RZ_API int rz_str_ncasecmp(const char *s1, const char *s2, size_t n) {
@@ -332,7 +331,7 @@ fail:
 }
 
 // Compute a 64 bit DJB hash of a string.
-RZ_API ut64 rz_str_hash64(const char *s) {
+RZ_API ut64 rz_str_djb2_hash(const char *s) {
 	ut64 len, h = 5381;
 	if (!s) {
 		return 0;
@@ -341,11 +340,6 @@ RZ_API ut64 rz_str_hash64(const char *s) {
 		h = (h ^ (h << 5)) ^ *s++;
 	}
 	return h;
-}
-
-// Compute a 32bit DJB hash of a string.
-RZ_API ut32 rz_str_hash(const char *s) {
-	return (ut32)rz_str_hash64(s);
 }
 
 RZ_API int rz_str_delta(char *p, char a, char b) {
@@ -1643,7 +1637,7 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 				}
 			}
 		} else if (ch_bytes == 4) {
-			if (rz_isprint(ch)) {
+			if (rz_rune_is_printable(ch)) {
 				// Assumes buf is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
@@ -1667,7 +1661,7 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 				}
 			}
 		} else if (ch_bytes > 1) {
-			if (rz_isprint(ch)) {
+			if (rz_rune_is_printable(ch)) {
 				// Assumes buf is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
@@ -3824,3 +3818,227 @@ RZ_API char *rz_str_version(const char *program) {
 }
 
 #undef RZ_STR_PKG_VERSION_STRING
+
+/**
+ * \brief Tries to guess the string encoding method from the buffer.
+ *
+ * \param buffer  The string buffer to use for guessing the encoding
+ * \param length  The string buffer length
+ *
+ * \return string encoding as RzStrEnc type
+ */
+RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length) {
+	rz_return_val_if_fail(buffer, RZ_STRING_ENC_UTF8);
+	RzStrEnc enc = rz_utf_bom_encoding(buffer, length);
+	if (enc != RZ_STRING_ENC_GUESS) {
+		return enc;
+	}
+	for (ut32 i = 0, utf32le = 0, utf32be = 0, utf16le = 0, utf16be = 0, ascii = 0; i < length; ++i) {
+		ut32 leftovers = length - i;
+		if (leftovers > 4 && IS_PRINTABLE(buffer[i]) && buffer[i + 1] == 0 && buffer[i + 2] == 0 && buffer[i + 3] == 0) {
+			utf32le++;
+			if (utf32le > 2) {
+				enc = RZ_STRING_ENC_UTF32LE;
+				break;
+			}
+		} else if (leftovers > 4 && buffer[i] == 0 && buffer[i + 1] == 0 && buffer[i + 2] == 0 && IS_PRINTABLE(buffer[i + 3])) {
+			utf32be++;
+			if (utf32be > 2) {
+				enc = RZ_STRING_ENC_UTF32BE;
+				break;
+			}
+		}
+		if (leftovers > 2 && IS_PRINTABLE(buffer[i]) && buffer[i + 1] == 0) {
+			utf16le++;
+			if (utf16le > 2) {
+				enc = RZ_STRING_ENC_UTF16LE;
+				break;
+			}
+		} else if (leftovers > 2 && buffer[i] == 0 && IS_PRINTABLE(buffer[i + 1])) {
+			utf16be++;
+			if (utf16be > 2) {
+				enc = RZ_STRING_ENC_UTF16BE;
+				break;
+			}
+		}
+		if (IS_PRINTABLE(buffer[i]) || buffer[i] == ' ') {
+			ascii++;
+			if (ascii > length - 1) {
+				enc = RZ_STRING_ENC_8BIT;
+				break;
+			}
+		}
+	}
+	return enc == RZ_STRING_ENC_GUESS ? RZ_STRING_ENC_UTF8 : enc;
+}
+
+/**
+ * \brief Converts a raw buffer to a printable string based on the selected options
+ *
+ * \param  option Pointer to RzStrStringifyOpt.
+ * \param  length The real string length.
+ * \return The stringified raw buffer
+ */
+RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length) {
+	rz_return_val_if_fail(option && option->buffer && option->encoding != RZ_STRING_ENC_GUESS, NULL);
+	if (option->length < 1) {
+		return NULL;
+	}
+
+	RzStrBuf sb;
+	const ut8 *buf = option->buffer;
+	ut32 buflen = option->length;
+	RzStrEnc enc = option->encoding;
+	ut32 wrap_at = option->wrap_at;
+	RzRune rune;
+	ut32 n_runes = 0;
+	int rsize = 1; // rune size
+
+	rz_strbuf_init(&sb);
+	for (ut32 i = 0, line_runes = 0; i < buflen; i += rsize) {
+		if (enc == RZ_STRING_ENC_UTF32LE) {
+			rsize = rz_utf32le_decode(&buf[i], buflen - i, &rune);
+			if (rsize) {
+				rsize = 4;
+			}
+		} else if (enc == RZ_STRING_ENC_UTF16LE) {
+			rsize = rz_utf16le_decode(&buf[i], buflen - i, &rune);
+			if (rsize == 1) {
+				rsize = 2;
+			}
+		} else if (enc == RZ_STRING_ENC_UTF32BE) {
+			rsize = rz_utf32be_decode(&buf[i], buflen - i, &rune);
+			if (rsize) {
+				rsize = 4;
+			}
+		} else if (enc == RZ_STRING_ENC_UTF16BE) {
+			rsize = rz_utf16be_decode(&buf[i], buflen - i, &rune);
+			if (rsize == 1) {
+				rsize = 2;
+			}
+		} else if (enc == RZ_STRING_ENC_IBM037) {
+			rsize = rz_str_ibm037_to_unicode(buf[i], &rune);
+		} else if (enc == RZ_STRING_ENC_IBM290) {
+			rsize = rz_str_ibm290_to_unicode(buf[i], &rune);
+		} else if (enc == RZ_STRING_ENC_EBCDIC_ES) {
+			rsize = rz_str_ebcdic_es_to_unicode(buf[i], &rune);
+		} else if (enc == RZ_STRING_ENC_EBCDIC_UK) {
+			rsize = rz_str_ebcdic_uk_to_unicode(buf[i], &rune);
+		} else if (enc == RZ_STRING_ENC_EBCDIC_US) {
+			rsize = rz_str_ebcdic_us_to_unicode(buf[i], &rune);
+		} else if (enc == RZ_STRING_ENC_8BIT) {
+			rune = buf[i];
+			rsize = rune < 0x7F ? 1 : 0;
+		} else {
+			rsize = rz_utf8_decode(&buf[i], buflen - i, &rune);
+		}
+
+		if (rsize == 0) {
+			switch (enc) {
+			case RZ_STRING_ENC_UTF32LE:
+				rsize = RZ_MIN(4, buflen - i);
+				break;
+			case RZ_STRING_ENC_UTF16LE:
+				rsize = RZ_MIN(2, buflen - i);
+				break;
+			case RZ_STRING_ENC_UTF32BE:
+				rsize = RZ_MIN(4, buflen - i);
+				break;
+			case RZ_STRING_ENC_UTF16BE:
+				rsize = RZ_MIN(2, buflen - i);
+				break;
+			default:
+				rsize = 1;
+				break;
+			}
+			for (int j = 0; j < rsize; ++j) {
+				rune = buf[i + j];
+				n_runes++;
+				if (option->urlencode) {
+					rz_strbuf_appendf(&sb, "%%%02x", rune);
+				} else if (option->json) {
+					rz_strbuf_appendf(&sb, "\\u%04x", rune);
+				} else {
+					rz_strbuf_appendf(&sb, "\\x%02x", rune);
+				}
+			}
+			if (wrap_at && line_runes + 1 >= wrap_at) {
+				rz_strbuf_appendf(&sb, "\n");
+				line_runes = 0;
+			}
+			continue;
+		} else if (rune == '\0' && option->stop_at_nil) {
+			break;
+		} else if (rune == '\n') {
+			line_runes = 0;
+		}
+		line_runes++;
+		n_runes++;
+		if (option->urlencode) {
+			if (IS_DIGIT(rune) || IS_UPPER(rune) || IS_LOWER(rune) || rune == '-' || rune == '_' || rune == '.' || rune == '~') {
+				// RFC 3986 section 2.3 Unreserved Characters
+				// A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+				// a b c d e f g h i j k l m n o p q r s t u v w x y z
+				// 0 1 2 3 4 5 6 7 8 9 - _ . ~
+				char ch = rune;
+				rz_strbuf_appendf(&sb, "%c", ch);
+			} else {
+				ut8 tmp[4];
+				int n_enc = rz_utf8_encode((ut8 *)tmp, rune);
+				for (int j = 0; j < n_enc; ++j) {
+					rz_strbuf_appendf(&sb, "%%%02x", tmp[j]);
+				}
+			}
+		} else if (option->json) {
+			if (IS_PRINTABLE(rune) && rune != '\"' && rune != '\\') {
+				char ch = rune;
+				rz_strbuf_appendf(&sb, "%c", ch);
+			} else if (rune == '\n') {
+				rz_strbuf_append(&sb, "\\n");
+			} else if (rune == '\r') {
+				rz_strbuf_append(&sb, "\\r");
+			} else if (rune == '\\') {
+				rz_strbuf_append(&sb, "\\\\");
+			} else if (rune == '\t') {
+				rz_strbuf_append(&sb, "\\t");
+			} else if (rune == '\f') {
+				rz_strbuf_append(&sb, "\\f");
+			} else if (rune == '\b') {
+				rz_strbuf_append(&sb, "\\b");
+			} else if (rune == '"') {
+				rz_strbuf_append(&sb, "\\\"");
+			} else {
+				for (int j = 0; j < rsize; ++j) {
+					rune = buf[i + j];
+					rz_strbuf_appendf(&sb, "\\u%04x", rune);
+				}
+				n_runes += rsize - 1;
+			}
+		} else {
+			if (rune == '\\') {
+				rz_strbuf_appendf(&sb, "\\\\");
+			} else if ((rune == '\n' && !option->escape_nl) || (rz_rune_is_printable(rune) && rune >= ' ')) {
+				char tmp[5] = { 0 };
+				rz_utf8_encode((ut8 *)tmp, rune);
+				rz_strbuf_appendf(&sb, "%s", tmp);
+			} else {
+				ut8 tmp[4];
+				int n_enc = rz_utf8_encode((ut8 *)tmp, rune);
+				for (int j = 0; j < n_enc; ++j) {
+					rz_strbuf_appendf(&sb, "\\x%02x", tmp[j]);
+				}
+			}
+		}
+		if (wrap_at && line_runes + 1 >= wrap_at) {
+			rz_strbuf_appendf(&sb, "\n");
+			line_runes = 0;
+		}
+	}
+	if (!option->json) {
+		rz_strbuf_appendf(&sb, "\n");
+	}
+	if (length) {
+		*length = n_runes;
+	}
+	return rz_strbuf_drain_nofree(&sb);
+}

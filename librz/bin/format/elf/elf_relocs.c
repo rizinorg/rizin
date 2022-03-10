@@ -31,12 +31,12 @@ static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RzBinElfReloc *reloc,
 		reloc->vaddr = reloc->offset;
 	} else {
 		reloc->paddr = sub_section->offset + reloc->offset;
-		reloc->vaddr = Elf_(rz_bin_elf_p2v_new)(bin, reloc->paddr);
+		reloc->vaddr = Elf_(rz_bin_elf_p2v)(bin, reloc->paddr);
 	}
 }
 
 static void fix_rva_and_offset_exec_file(ELFOBJ *bin, RzBinElfReloc *reloc) {
-	reloc->paddr = Elf_(rz_bin_elf_v2p_new)(bin, reloc->offset);
+	reloc->paddr = Elf_(rz_bin_elf_v2p)(bin, reloc->offset);
 
 	if (reloc->paddr == UT64_MAX) {
 		reloc->paddr = reloc->offset;
@@ -135,7 +135,7 @@ static bool get_relocs_entry_from_dt_dynamic_aux(ELFOBJ *bin, RzVector *relocs, 
 		return true;
 	}
 
-	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	ut64 offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (offset == UT64_MAX) {
 		return false;
 	}

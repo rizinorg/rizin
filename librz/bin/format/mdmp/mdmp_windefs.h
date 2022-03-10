@@ -11,8 +11,10 @@
 
 #define SIZE_OF_80387_REGISTERS 80
 
-#define ARM_MAX_BREAKPOINTS 8
-#define ARM_MAX_WATCHPOINTS 1
+#define ARM_MAX_BREAKPOINTS   8
+#define ARM_MAX_WATCHPOINTS   1
+#define ARM64_MAX_BREAKPOINTS 8
+#define ARM64_MAX_WATCHPOINTS 2
 
 RZ_PACKED(
 	struct windows_floating_save_area {
@@ -503,5 +505,76 @@ RZ_PACKED(
 		struct windows_exception_record32 *exception_record;
 		void /*struct context*/ *context_record;
 	});
+
+struct context_type_arm64 {
+
+	//
+	// Control flags.
+	//
+
+	/* +0x000 */ ut32 ContextFlags;
+
+	//
+	// Integer registers
+	//
+
+	/* +0x004 */ ut32 Cpsr; // NZVF + DAIF + CurrentEL + SPSel
+	/* +0x008 */ union {
+		struct {
+			ut64 X0;
+			ut64 X1;
+			ut64 X2;
+			ut64 X3;
+			ut64 X4;
+			ut64 X5;
+			ut64 X6;
+			ut64 X7;
+			ut64 X8;
+			ut64 X9;
+			ut64 X10;
+			ut64 X11;
+			ut64 X12;
+			ut64 X13;
+			ut64 X14;
+			ut64 X15;
+			ut64 X16;
+			ut64 X17;
+			ut64 X18;
+			ut64 X19;
+			ut64 X20;
+			ut64 X21;
+			ut64 X22;
+			ut64 X23;
+			ut64 X24;
+			ut64 X25;
+			ut64 X26;
+			ut64 X27;
+			ut64 X28;
+			/* +0x0f0 */ ut64 Fp;
+			/* +0x0f8 */ ut64 Lr;
+		};
+		ut64 X[31];
+	};
+	/* +0x100 */ ut64 Sp;
+	/* +0x108 */ ut64 Pc;
+
+	//
+	// Floating Point/NEON Registers
+	//
+
+	/* +0x110 */ struct windows_neon128 V[32];
+	/* +0x310 */ ut32 Fpcr;
+	/* +0x314 */ ut32 Fpsr;
+
+	//
+	// Debug registers
+	//
+
+	/* +0x318 */ ut32 Bcr[ARM64_MAX_BREAKPOINTS];
+	/* +0x338 */ ut64 Bvr[ARM64_MAX_BREAKPOINTS];
+	/* +0x378 */ ut32 Wcr[ARM64_MAX_WATCHPOINTS];
+	/* +0x380 */ ut64 Wvr[ARM64_MAX_WATCHPOINTS];
+	/* +0x390 */
+};
 
 #endif /* MDMP_WINDEFS_H */

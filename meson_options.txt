@@ -10,6 +10,7 @@ option('portable', type: 'boolean', value: false, description: 'Make rizin insta
 option('rizin_wwwroot', type: 'string', value: '', description: 'Install path for www files')
 option('rizin_sdb', type: 'string', value: '', description: '')
 option('rizin_zigns', type: 'string', value: '', description: 'Install path for zignatures files')
+option('rizin_sigdb', type: 'string', value: '', description: 'Install path for sigdb files')
 option('rizin_themes', type: 'string', value: '', description: 'Install path for themes (colors, etc.)')
 option('rizin_fortunes', type: 'string', value: '', description: 'Install path for fortunes displayed when starting')
 option('rizin_flags', type: 'string', value: '', description: 'Install path for flags tags')
@@ -34,6 +35,7 @@ option('use_sys_libuv', type: 'feature', value: 'auto', description: 'Whether to
 option('use_libuv', type: 'boolean', value: true, description: 'If true, libuv is used to handle remote features')
 option('use_swift_demangler', type: 'boolean', value: true, description: 'If false, disables the swift demangler')
 option('use_gpl', type: 'boolean', value: true, description: 'Set to false when you want to disable gpl code')
+option('install_sigdb', type: 'boolean', value: false, description: 'Downloads and installs rizin sigdb')
 option('debugger', type: 'boolean', value: true)
 
 option('enable_tests', type: 'boolean', value: true, description: 'Build unit tests in test/unit')

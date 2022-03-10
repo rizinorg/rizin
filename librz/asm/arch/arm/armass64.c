@@ -637,6 +637,52 @@ static ut32 bdot(ArmOp *op, ut64 addr, int k) {
 	return data;
 }
 
+/**
+ * Determine the 4-bit condition code for given string representation (e.g. "eq", "ne", ...)
+ * \p str string of at least 2 chars
+ * \return the 4-bit condition or UT8_MAX if invalid
+ */
+static ut8 parse_cond(const char *str) {
+	// clang-format off
+	switch (((ut16)str[0] << 8 | (ut16)str[1])) {
+#define COND_CASE(a, b) case (ut16)(a) << 8 | (ut16)(b)
+	COND_CASE('e', 'q'): return 0x0;
+	COND_CASE('n', 'e'): return 0x1;
+	COND_CASE('c', 's'): return 0x2;
+	COND_CASE('h', 's'): return 0x2;
+	COND_CASE('c', 'c'): return 0x3;
+	COND_CASE('l', 'o'): return 0x3;
+	COND_CASE('m', 'i'): return 0x4;
+	COND_CASE('p', 'l'): return 0x5;
+	COND_CASE('v', 's'): return 0x6;
+	COND_CASE('v', 'c'): return 0x7;
+	COND_CASE('h', 'i'): return 0x8;
+	COND_CASE('l', 's'): return 0x9;
+	COND_CASE('g', 'e'): return 0xa;
+	COND_CASE('l', 't'): return 0xb;
+	COND_CASE('g', 't'): return 0xc;
+	COND_CASE('l', 'e'): return 0xd;
+	COND_CASE('a', 'l'): return 0xe;
+	COND_CASE('n', 'v'): return 0xf;
+	default: return UT8_MAX;
+#undef COND_CASE
+	}
+	// clang-format on
+}
+
+static ut32 parse_bdot(const char *str, ArmOp *op, ut64 addr) {
+	if (!str[0] || !str[1] || str[2] != ' ') {
+	inval:
+		RZ_LOG_ERROR("assembler: arm64: invalid condition\n");
+		return UT32_MAX;
+	}
+	ut8 cond = parse_cond(str);
+	if (cond == UT8_MAX) {
+		goto inval;
+	}
+	return bdot(op, addr, 0x00000054 | ((ut32)cond << 24));
+}
+
 static ut32 mem_barrier(ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
 	data = k;
@@ -810,7 +856,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 	if (op->operands[0].type == ARM_GPR) {
 		data |= encode1reg(op);
 	} else {
-		eprintf("Usage: adrp x0, addr\n");
+		RZ_LOG_ERROR("assembler: arm64: adrp: invalid assembly. valid usage: adrp x0, addr\n");
 		return UT32_MAX;
 	}
 	if (op->operands[1].type == ARM_CONSTANT) {
@@ -818,7 +864,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 		at = op->operands[1].immediate - addr;
 		at /= 4;
 	} else {
-		eprintf("Usage: adrp, x0, addr\n");
+		RZ_LOG_ERROR("assembler: arm64: adrp: invalid assembly. valid usage: adrp x0, addr\n");
 		return UT32_MAX;
 	}
 	ut8 b0 = at;
@@ -996,7 +1042,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 			token++;
 		}
 		if (operand >= MAX_OPERANDS) {
-			eprintf("Too many operands\n");
+			RZ_LOG_ERROR("assembler: arm64: maximum number of operands reached.\n");
 			return false;
 		}
 		op->operands[operand].type = ARM_NOTYPE;
@@ -1300,6 +1346,7 @@ static bool handlePAC(ut32 *op, const char *str) {
 }
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
+	*op = UT32_MAX;
 	ArmOp ops = { 0 };
 	if (!parseOpcode(str, &ops)) {
 		free(ops.mnemonic);
@@ -1391,10 +1438,8 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = exception(&ops, 0x000040d4);
 	} else if (!strncmp(str, "b ", 2)) {
 		*op = branch(&ops, addr, 0x14);
-	} else if (!strncmp(str, "b.eq ", 5)) {
-		*op = bdot(&ops, addr, 0x00000054);
-	} else if (!strncmp(str, "b.hs ", 5)) {
-		*op = bdot(&ops, addr, 0x02000054);
+	} else if (!strncmp(str, "b.", 2)) {
+		*op = parse_bdot(str + 2, &ops, addr);
 	} else if (!strncmp(str, "bl ", 3)) {
 		*op = branch(&ops, addr, 0x94);
 	} else if (!strncmp(str, "br x", 4)) {

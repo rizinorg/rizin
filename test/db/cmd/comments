@@ -137,7 +137,7 @@ CMDS=<<EOF
 aaa
 e asm.cmt.refs=true
 e asm.bytes=true
-f test.flag @ 0x004003e0
+f+ test.flag @ 0x004003e0
 CC test comment @ 0x004003e0
 pd 1 @ 0x0040050f
 EOF

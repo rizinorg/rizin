@@ -76,6 +76,7 @@ DECL_DESC_HELP_DETAILS_TEMPLATE = "static const RzCmdDescDetail {cname}[{size}];
 
 DESC_HELP_ARG_CHOICES = "static const char *{cname}[] = {{ {choices} }};\n"
 DESC_HELP_ARG_UNION_CHOICES = "\t\t.choices = {choices},\n"
+DESC_HELP_ARG_UNION_CHOICES_CB = "\t\t.choices_cb = {choices_cb},\n"
 DESC_HELP_ARG_TEMPLATE_FLAGS = "\t\t.flags = {flags},\n"
 DESC_HELP_ARG_TEMPLATE_OPTIONAL = "\t\t.optional = {optional},\n"
 DESC_HELP_ARG_TEMPLATE_NO_SPACE = "\t\t.no_space = {no_space},\n"
@@ -97,10 +98,11 @@ DESC_HELP_TEMPLATE_USAGE = "\t.usage = {usage},\n"
 DESC_HELP_TEMPLATE_SORT_SUBCOMMANDS = "\t.sort_subcommands = {sort_subcommands},\n"
 DESC_HELP_TEMPLATE_OPTIONS = "\t.options = {options},\n"
 DESC_HELP_TEMPLATE_DETAILS = "\t.details = {details},\n"
+DESC_HELP_TEMPLATE_DETAILS_CB = "\t.details_cb = {details_cb},\n"
 DESC_HELP_TEMPLATE_ARGS = "\t.args = {args},\n"
 DESC_HELP_TEMPLATE = """static const RzCmdDescHelp {cname} = {{
 \t.summary = {summary},
-{description}{args_str}{usage}{options}{details}{args}{sort_subcommands}}};
+{description}{args_str}{usage}{options}{details}{details_cb}{args}{sort_subcommands}}};
 """
 
 DEFINE_OLDINPUT_TEMPLATE = """
@@ -164,6 +166,7 @@ class Arg:
             str(c.pop("default_value")) if "default_value" in c else None
         )
         self.choices = c.pop("choices", None)
+        self.choices_cb = c.pop("choices_cb", None)
         if c.keys():
             print(
                 "Argument %s for command %s has unrecognized properties: %s."
@@ -186,7 +189,12 @@ class Arg:
 
     def _get_union(self):
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
-            return DESC_HELP_ARG_UNION_CHOICES.format(choices=self._get_choices_cname())
+            if self.choices_cb is None:
+                return DESC_HELP_ARG_UNION_CHOICES.format(
+                    choices=self._get_choices_cname()
+                )
+            return DESC_HELP_ARG_UNION_CHOICES_CB.format(choices_cb=self.choices_cb)
+
         return ""
 
     def __str__(self):
@@ -227,7 +235,7 @@ class Arg:
         )
 
     def get_cstructure(self):
-        if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
+        if self.type == "RZ_CMD_ARG_TYPE_CHOICES" and self.choices_cb is None:
             return DESC_HELP_ARG_CHOICES.format(
                 cname=self._get_choices_cname(),
                 choices=", ".join(
@@ -238,6 +246,11 @@ class Arg:
                 ),
             )
         return ""
+
+    def decl(self):
+        if self.type == "RZ_CMD_ARG_TYPE_CHOICES" and self.choices_cb is not None:
+            return "RZ_IPI char **%s(RzCore *core);" % (self.choices_cb,)
+        return None
 
 
 def format_detail_entry(c):
@@ -300,6 +313,8 @@ class CmdDesc:
             self.details = [Detail(self, x) for x in c.pop("details", [])]
         elif "details" in c and isinstance(c["details"], str):
             self.details_alias = c.pop("details")
+        if "details_cb" in c and isinstance(c["details_cb"], str):
+            self.details_cb = c.pop("details_cb")
 
     def _process_args(self, c):
         if "args" in c and isinstance(c["args"], list):
@@ -388,6 +403,7 @@ class CmdDesc:
 
         self.details = None
         self.details_alias = None
+        self.details_cb = None
         self._process_details(c)
 
         self.args = None
@@ -539,6 +555,11 @@ class CmdDesc:
             if details_cname is not None
             else ""
         )
+        details_cb = (
+            DESC_HELP_TEMPLATE_DETAILS_CB.format(details_cb=self.details_cb)
+            if self.details_cb is not None
+            else ""
+        )
         arguments = (
             DESC_HELP_TEMPLATE_ARGS.format(args=args_cname)
             if args_cname is not None
@@ -552,6 +573,7 @@ class CmdDesc:
             usage=usage,
             options=options,
             details=details,
+            details_cb=details_cb,
             args=arguments,
             sort_subcommands=sort_subcommands,
         )
@@ -721,25 +743,39 @@ def detail2decl(cd):
     )
 
 
-def handler2decl(cd_type, handler_name):
+def handler2decl(cd, cd_type, handler_name):
+    out = []
     if cd_type == CD_TYPE_ARGV:
-        return "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv);" % (
-            handler_name,
+        out.append(
+            "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv);"
+            % (handler_name,)
         )
     if cd_type == CD_TYPE_ARGV_MODES:
-        return (
+        out.append(
             "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzOutputMode mode);"
             % (handler_name,)
         )
     if cd_type == CD_TYPE_ARGV_STATE:
-        return (
+        out.append(
             "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);"
             % (handler_name,)
         )
     if cd_type == CD_TYPE_OLDINPUT:
-        return "RZ_IPI int %s(void *data, const char *input);" % (handler_name,)
+        out.append("RZ_IPI int %s(void *data, const char *input);" % (handler_name,))
 
-    return None
+    if cd.details_cb is not None:
+        out.append(
+            "RZ_IPI RzCmdDescDetail *%s(RzCore *core, int argc, const char **argv);"
+            % (cd.details_cb,)
+        )
+
+    if isinstance(cd.args, list):
+        for arg in cd.args:
+            d = arg.decl()
+            if d is not None:
+                out.append(d)
+
+    return "\n".join(out) if out else None
 
 
 parser = argparse.ArgumentParser(
@@ -783,12 +819,14 @@ if args.src_output_dir:
         f.write(cf_text)
 
 handlers_decls = filter(
-    lambda th: th[1] is not None,
-    [(cd.type, cd.get_handler_cname()) for cd in CmdDesc.c_cds.values()],
+    lambda th: th[2] is not None,
+    [(cd, cd.type, cd.get_handler_cname()) for cd in CmdDesc.c_cds.values()],
 )
 
 hf_text = CMDDESCS_H_TEMPLATE.format(
-    handlers_declarations="\n".join([handler2decl(t, h) for t, h in handlers_decls]),
+    handlers_declarations="\n".join(
+        [handler2decl(cd, t, h) for cd, t, h in handlers_decls]
+    ),
 )
 with open(os.path.join(args.output_dir, "cmd_descs.h"), "w", encoding="utf8") as f:
     f.write(hf_text)

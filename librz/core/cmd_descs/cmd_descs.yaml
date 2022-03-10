@@ -59,6 +59,7 @@
 #       flags: same as RzCmdDescArg.flags
 #       default_value: same as RzCmdDescArg.default_value
 #       choices: same as RzCmdDescArg.choices (only valid if type is RZ_CMD_ARG_TYPE_CHOICES)
+#       choices_cb: same as RzCmdDescArg.choices_cb (only valid if type is RZ_CMD_ARG_TYPE_CHOICES)
 #
 ---
 name: root
@@ -72,11 +73,10 @@ commands:
     args: []
   - name: "#!"
     cname: hash_bang
-    summary: List all available interpreters / Run interpreter
+    summary: Run interpreter
     args:
       - name: interpreter-name
         type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
         no_space: true
       - name: arg
         type: RZ_CMD_ARG_TYPE_STRING
@@ -94,6 +94,7 @@ commands:
           - text: "#!"
             arg_str: "python foo.py arg1"
             comment: Run foo.py python script and pass it arg1 as argument
+    details_cb: rz_hash_bang_details_cb
   - name: $
     cname: cmd_alias
     summary: Alias commands and strings
@@ -172,10 +173,6 @@ commands:
     args:
       - name: characters
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: "0"
-    cname: cmd_ox
-    summary: Alias for `s 0x...`
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: a
     cname: cmd_analysis
     summary: Analysis commands
@@ -213,9 +210,7 @@ commands:
     summary: List/get/set config evaluable vars
     subcommands: cmd_eval
   - name: f
-    cname: cmd_flag
     summary: Manage flags
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_flag
   - name: g
     summary: Generate shellcodes with rz_egg
@@ -234,9 +229,7 @@ commands:
     summary: List, unload, load rizin plugins
     subcommands: cmd_plugins
   - name: o
-    cname: cmd_open
     summary: Open files and handle opened files
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_open
   - name: p
     cname: cmd_print
@@ -590,6 +583,10 @@ commands:
             comment: Only get the first row where column <col> or all columns are unique.
           - text: "*/page/<n_page>/<page_size>"
             comment: Show <page_size> rows starting from the page number <n_page>.
+          - text: "*/head/<n_rows>"
+            comment: Show the first <n_rows> rows.
+          - text: "*/tail/<n_rows>"
+            comment: Show the last <n_rows> rows.
           - text: "<col>/str/<value>"
             comment: Grep rows where string <value> is a substring of column <col>.
           - text: "<col>/strlen/<value>"

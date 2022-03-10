@@ -52,7 +52,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Calculate GP 
+NAME=Calculate GP
 FILE=bins/elf/analysis/mips64r2-ld-2.28.so
 CMDS=<<EOF
 s 0x000023f0
@@ -67,12 +67,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mips ld(load doubleword) instruction 
+NAME=mips ld(load doubleword) instruction
 FILE=bins/elf/analysis/mips64r2-busybox-loongson
 CMDS=<<EOF
 s 0x120004460
 e asm.bytes=true
-f--
+f-*
+fs-*
 pd 1
 EOF
 EXPECT=<<EOF

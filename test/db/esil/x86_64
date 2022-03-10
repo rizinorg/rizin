@@ -250,7 +250,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-wa mov eax, 4
+wa "mov eax, 4"
 e asm.esil=true
 pd 1
 EOF
@@ -263,7 +263,6 @@ NAME=reg size bitmask
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=64
 aei
@@ -287,7 +286,6 @@ NAME=mem read
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=64
 aei

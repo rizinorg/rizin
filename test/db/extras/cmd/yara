@@ -2,7 +2,7 @@ NAME=yara: scan
 FILE=bins/elf/vim
 CMDS=<<EOF
 yara scan
-f
+fl
 EOF
 EXPECT=<<EOF
 BLOWFISH_Constants

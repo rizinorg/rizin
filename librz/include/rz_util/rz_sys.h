@@ -123,7 +123,6 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 #define rz_sys_conv_win_to_utf8_l(buf, len) rz_acp_to_utf8_l(buf, len)
 #endif
 RZ_API char *rz_sys_get_src_dir_w32(void);
-RZ_API bool rz_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr);
 RZ_API bool rz_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err);
 RZ_API char **rz_sys_utf8_argv_new(int argc, const wchar_t **argv);
 RZ_API void rz_sys_utf8_argv_free(int argc, char **utf8_argv);

@@ -6,7 +6,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pi asm.midflags=2
+NAME=pi asm.flags.middle=2
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -14,7 +14,7 @@ e asm.bytes=true
 e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=2
-f dat.sym = 2
+f dat.sym @ 2
 pi 4
 pdi 4
 EOF
@@ -31,14 +31,14 @@ push r15
 EOF
 RUN
 
-NAME=pi asm.midflags=1
+NAME=pi asm.flags.middle=1
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=1
-f dat.sym = 2
+f dat.sym @ 2
 pi 4
 EOF
 EXPECT=<<EOF
@@ -49,14 +49,14 @@ push r14
 EOF
 RUN
 
-NAME=pi asm.midflags=0
+NAME=pi asm.flags.middle=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
-f dat.sym = 2
+f dat.sym @ 2
 pi 4
 EOF
 EXPECT=<<EOF
@@ -67,15 +67,15 @@ push r14
 EOF
 RUN
 
-NAME=Another pi asm.midflags=2
+NAME=Another pi asm.flags.middle=2
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
 e asm.bits=64
 wx 554889e54157415641554154534881ec
-e asm.midflags=2
-f dat.sym = 2
+e asm.flags.middle=2
+f dat.sym @ 2
 pid 4
 EOF
 EXPECT=<<EOF
@@ -87,7 +87,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pid asm.midflags=0
+NAME=pid asm.flags.middle=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -95,7 +95,7 @@ e asm.bytes=true
 e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
-f dat.sym = 2
+f dat.sym @ 2
 pid 4
 EOF
 EXPECT=<<EOF
@@ -106,7 +106,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pij asm.midflags=0
+NAME=pij asm.flags.middle=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=64
@@ -114,7 +114,7 @@ e asm.arch=x86
 e analysis.arch=x86
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
-f dat.sym = 2
+f dat.sym @ 2
 pij 4~{}
 EOF
 EXPECT=<<EOF
@@ -187,15 +187,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pij asm.midflags=2
+NAME=pij asm.flags.middle=2
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
 e analysis.arch=x86
 wx 554889e54157415641554154534881ec
-e asm.midflags=2
-f dat.sym = 2
+e asm.flags.middle=2
+f dat.sym @ 2
 pij 4~{}
 EOF
 EXPECT=<<EOF
@@ -271,14 +271,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pid asm.midflags=0
+NAME=pid asm.flags.middle=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
 e asm.bits=32
 e asm.flags.middle=0
-f mid.flag = 4
+f mid.flag @ 4
 wx 31ed4989d15e4889e2
 pid 3
 EOF
@@ -289,14 +289,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pid asm.midflags=2
+NAME=pid asm.flags.middle=2
 FILE=malloc://1024
 BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e asm.midflags=1
-f mid.flag = 4
+e asm.flags.middle=1
+f mid.flag @ 4
 wx 31ed4989d15e4889e2
 pid 3
 EOF
@@ -309,7 +309,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd asm.midflags=0
+NAME=pd asm.flags.middle=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -317,7 +317,7 @@ e asm.bytes=true
 e asm.bits=32
 e asm.flags.middle=0
 e asm.lines.bb=false
-f mid.flag = 4
+f mid.flag @ 4
 wx 31ed4989d15e4889e2
 pd 4
 EOF
@@ -329,15 +329,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd asm.midflags=2 mid.flag=5
+NAME=pd asm.flags.middle=2 mid.flag=5
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.bytes=true
 e asm.lines.bb=false
-e asm.midflags=2
-f mid.flag = 5
+e asm.flags.middle=2
+f mid.flag @ 5
 wx 31ed4989d15e4889e2
 pd 4
 EOF
@@ -350,7 +350,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd asm.midflags=2 mid.flag=4
+NAME=pd asm.flags.middle=2 mid.flag=4
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -358,7 +358,7 @@ e asm.bits=32
 e asm.lines.bb=false
 e asm.bytes=true
 e asm.flags.middle=2
-f mid.flag = 4
+f mid.flag @ 4
 wx 31ed4989d15e4889e2
 pd 4
 EOF
@@ -380,8 +380,8 @@ e asm.bits=32
 wx 66b8eb0531c074f9e89090909090
 e asm.lines.bb=false
 e asm.flags.middle=2
-f mid.flag = 2
-f mid.flag2 = 9
+f mid.flag @ 2
+f mid.flag2 @ 9
 pd 6
 EOF
 EXPECT=<<EOF

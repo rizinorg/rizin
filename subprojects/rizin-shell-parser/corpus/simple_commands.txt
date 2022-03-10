@@ -188,26 +188,6 @@ Command with concatenation args
       (arg (arg_identifier)))))
 
 
-==============
-Number command
-==============
-
-0x8048000
-0b1001
-0xtest
-0123123
-0x123command
-
----
-
-(statements
-  (number_stmt)
-  (number_stmt)
-  (number_stmt) (ERROR)
-  (number_stmt)
-  (number_stmt) (ERROR))
-
-
 =============
 Tasks command
 =============

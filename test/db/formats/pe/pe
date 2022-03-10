@@ -9,7 +9,7 @@ RUN
 NAME=pe overlay
 FILE=bins/pe/base.exe
 ARGS=-nn
-CMDS=f~pe_overlay
+CMDS=fl~pe_overlay
 EXPECT=<<EOF
 0x00032600 10233 pe_overlay
 EOF

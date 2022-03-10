@@ -96,7 +96,7 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 					return -1;
 				}
 			}
-			offset += rz_type_db_struct_member_offset(typedb, parent->identifier.name, member);
+			offset += rz_type_db_struct_member_packed_offset(typedb, parent->identifier.name, member);
 			path = member + membsize;
 			break;
 		default:
@@ -235,13 +235,13 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_db_get_by_offset(const RzTypeDB *
 }
 
 /**
- * \brief Returns the offset of the structure member if there is a match
+ * \brief Returns the packed offset in bits of the structure member if there is a match
  *
  * \param typedb Types Database instance
  * \param name The structure type name
  * \param name The structure member name
  */
-RZ_API ut64 rz_type_db_struct_member_offset(const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member) {
+RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member) {
 	rz_return_val_if_fail(typedb && name && member, 0);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
@@ -257,4 +257,26 @@ RZ_API ut64 rz_type_db_struct_member_offset(const RzTypeDB *typedb, RZ_NONNULL c
 		result += rz_type_db_get_bitsize(typedb, memb->type);
 	}
 	return result;
+}
+
+/**
+ * \brief Returns the offset in bytes of the structure member if there is a match
+ *
+ * \param typedb Types Database instance
+ * \param name The structure type name
+ * \param name The structure member name
+ */
+RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member) {
+	rz_return_val_if_fail(typedb && name && member, 0);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+		return 0;
+	}
+	RzTypeStructMember *memb;
+	rz_vector_foreach(&btype->struct_data.members, memb) {
+		if (!strcmp(memb->name, member)) {
+			return memb->offset;
+		}
+	}
+	return 0;
 }
