@@ -5618,11 +5618,11 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 
 static int run_cmd_depth(RzCore *core, char *cmd) {
 	char *rcmd;
-	int ret = false;
+	int ret = 0;
 
 	if (core->cons->context->cmd_depth < 1) {
 		eprintf("rz_core_cmd: That was too deep (%s)...\n", cmd);
-		return false;
+		return -1;
 	}
 	core->cons->context->cmd_depth--;
 	for (rcmd = cmd;;) {
