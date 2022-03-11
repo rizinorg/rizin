@@ -227,6 +227,8 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_size_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_analyze_n_ins_size_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analyze_opcode_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_display_opcode_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_analysis(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_block_decrease_handler(RzCore *core, int argc, const char **argv);

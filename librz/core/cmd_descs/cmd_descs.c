@@ -185,6 +185,7 @@ static const RzCmdDescArg analyze_n_bytes_size_args[2];
 static const RzCmdDescArg analyze_n_ins_args[2];
 static const RzCmdDescArg analyze_n_ins_size_args[2];
 static const RzCmdDescArg analyze_n_ins_esil_args[2];
+static const RzCmdDescArg analyze_opcode_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -3595,9 +3596,8 @@ static const RzCmdDescHelp aO_help = {
 };
 static const RzCmdDescArg analyze_n_bytes_args[] = {
 	{
-		.name = "byte_len",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
 
 	},
 	{ 0 },
@@ -3609,9 +3609,8 @@ static const RzCmdDescHelp analyze_n_bytes_help = {
 
 static const RzCmdDescArg analyze_n_bytes_esil_args[] = {
 	{
-		.name = "byte_len",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
 
 	},
 	{ 0 },
@@ -3623,9 +3622,8 @@ static const RzCmdDescHelp analyze_n_bytes_esil_help = {
 
 static const RzCmdDescArg analyze_n_bytes_desc_args[] = {
 	{
-		.name = "byte_len",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
 
 	},
 	{ 0 },
@@ -3637,9 +3635,8 @@ static const RzCmdDescHelp analyze_n_bytes_desc_help = {
 
 static const RzCmdDescArg analyze_n_bytes_size_args[] = {
 	{
-		.name = "byte_len",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
 
 	},
 	{ 0 },
@@ -3654,9 +3651,8 @@ static const RzCmdDescHelp ao_help = {
 };
 static const RzCmdDescArg analyze_n_ins_args[] = {
 	{
-		.name = "instruction_cnt",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "n_instructions",
+		.type = RZ_CMD_ARG_TYPE_NUM,
 		.optional = true,
 
 	},
@@ -3669,9 +3665,8 @@ static const RzCmdDescHelp analyze_n_ins_help = {
 
 static const RzCmdDescArg analyze_n_ins_size_args[] = {
 	{
-		.name = "instruction_cnt",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "n_instructions",
+		.type = RZ_CMD_ARG_TYPE_NUM,
 		.optional = true,
 
 	},
@@ -3684,9 +3679,8 @@ static const RzCmdDescHelp analyze_n_ins_size_help = {
 
 static const RzCmdDescArg analyze_n_ins_esil_args[] = {
 	{
-		.name = "instruction_cnt",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "n_instructions",
+		.type = RZ_CMD_ARG_TYPE_NUM,
 		.optional = true,
 
 	},
@@ -3695,6 +3689,29 @@ static const RzCmdDescArg analyze_n_ins_esil_args[] = {
 static const RzCmdDescHelp analyze_n_ins_esil_help = {
 	.summary = "Print the esil of next N instructions",
 	.args = analyze_n_ins_esil_args,
+};
+
+static const RzCmdDescArg analyze_opcode_args[] = {
+	{
+		.name = "opcode",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_opcode_help = {
+	.summary = "Describe opcode for asm.arch",
+	.args = analyze_opcode_args,
+};
+
+static const RzCmdDescArg display_opcode_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp display_opcode_help = {
+	.summary = "Describe all opcode for asm.arch",
+	.args = display_opcode_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -12726,6 +12743,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analyze_n_ins_esil_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoe", rz_analyze_n_ins_esil_handler, &analyze_n_ins_esil_help);
 	rz_warn_if_fail(analyze_n_ins_esil_cd);
+
+	RzCmdDesc *analyze_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aod", rz_analyze_opcode_handler, &analyze_opcode_help);
+	rz_warn_if_fail(analyze_opcode_cd);
+
+	RzCmdDesc *display_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoda", rz_display_opcode_handler, &display_opcode_help);
+	rz_warn_if_fail(display_opcode_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

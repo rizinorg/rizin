@@ -1470,8 +1470,8 @@ commands:
         summary: Analyze next N bytes as instructions
         cname: analyze_n_bytes
         args:
-          - name: byte_len
-            type: RZ_CMD_ARG_TYPE_STRING
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
@@ -1480,20 +1480,20 @@ commands:
         summary: Analyze the esil of next N bytes
         cname: analyze_n_bytes_esil
         args:
-          - name: byte_len
-            type: RZ_CMD_ARG_TYPE_STRING
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
       - name: aOd
         summary: Print the description of next N bytes
         cname: analyze_n_bytes_desc
         args:
-          - name: byte_len
-            type: RZ_CMD_ARG_TYPE_STRING
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
       - name: aOs
         summary: Print the total instruction size of next N bytes
         cname: analyze_n_bytes_size
         args:
-          - name: byte_len
-            type: RZ_CMD_ARG_TYPE_STRING
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
   - name: ao
     summary: Analyze N instructions
     subcommands:
@@ -1501,8 +1501,8 @@ commands:
         summary: Analyze next N instructions
         cname: analyze_n_ins
         args:
-          - name: instruction_cnt
-            type: RZ_CMD_ARG_TYPE_STRING
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
             optional: true
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -1512,13 +1512,24 @@ commands:
         summary: Print the total size of next N instructions
         cname: analyze_n_ins_size
         args:
-          - name: instruction_cnt
-            type: RZ_CMD_ARG_TYPE_STRING
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
             optional: true
       - name: aoe
         summary: Print the esil of next N instructions
         cname: analyze_n_ins_esil
         args:
-          - name: instruction_cnt
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aod
+        summary: Describe opcode for asm.arch
+        cname: analyze_opcode
+        args:
+          - name: opcode
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+      - name: aoda
+        summary: Describe all opcode for asm.arch
+        cname: display_opcode
+        args: []

@@ -9033,3 +9033,28 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
 	}
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_analyze_opcode_handler(RzCore *core, int argc, const char **argv) {
+	int cur;
+	char *d;
+
+	if (argc < 2) {
+		cur = RZ_MAX(core->print->cur, 0);
+		core_analysis_bytes_desc(core, core->block + cur, core->blocksize, 1);
+	} else {
+		eprintf("argv[1]: %s", argv[1]);
+		d = rz_asm_describe(core->rasm, argv[1]);
+		if (d && *d) {
+			rz_cons_println(d);
+			free(d);
+		} else {
+			eprintf("Unknown mnemonic\n");
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_display_opcode_handler(RzCore *core, int argc, const char **argv) {
+	sdb_foreach(core->rasm->pair, listOpDescriptions, core);
+	return RZ_CMD_STATUS_OK;
+}
