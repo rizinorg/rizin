@@ -1459,7 +1459,66 @@ commands:
     args:
       - name: hexpairs
         type: RZ_CMD_ARG_TYPE_STRING
-    type: RZ_CMD_DESC_TYPE_ARGV_MODES
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
+  - name: aO
+    summary: Analyze N instructions in M bytes
+    subcommands:
+      - name: aO
+        summary: Analyze next N bytes as instructions
+        cname: analyze_n_bytes
+        args:
+          - name: byte_len
+            type: RZ_CMD_ARG_TYPE_STRING
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+      - name: aOe
+        summary: Analyze the esil of next N bytes
+        cname: analyze_n_bytes_esil
+        args:
+          - name: byte_len
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: aOd
+        summary: Print the description of next N bytes
+        cname: analyze_n_bytes_desc
+        args:
+          - name: byte_len
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: aOs
+        summary: Print the total instruction size of next N bytes
+        cname: analyze_n_bytes_size
+        args:
+          - name: byte_len
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: ao
+    summary: Analyze N instructions
+    subcommands:
+      - name: ao
+        summary: Analyze next N instructions
+        cname: analyze_n_ins
+        args:
+          - name: instruction_cnt
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+      - name: aos
+        summary: Print the total size of next N instructions
+        cname: analyze_n_ins_size
+        args:
+          - name: instruction_cnt
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: aoe
+        summary: Print the esil of next N instructions
+        cname: analyze_n_ins_esil
+        args:
+          - name: instruction_cnt
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true

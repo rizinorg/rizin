@@ -178,6 +178,13 @@ static const RzCmdDescArg analysis_class_vtable_del_args[3];
 static const RzCmdDescArg analysis_class_vtable_list_args[2];
 static const RzCmdDescArg analysis_class_vtable_lookup_args[3];
 static const RzCmdDescArg analyze_bytes_args[2];
+static const RzCmdDescArg analyze_n_bytes_args[2];
+static const RzCmdDescArg analyze_n_bytes_esil_args[2];
+static const RzCmdDescArg analyze_n_bytes_desc_args[2];
+static const RzCmdDescArg analyze_n_bytes_size_args[2];
+static const RzCmdDescArg analyze_n_ins_args[2];
+static const RzCmdDescArg analyze_n_ins_size_args[2];
+static const RzCmdDescArg analyze_n_ins_esil_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -3581,6 +3588,113 @@ static const RzCmdDescArg analyze_bytes_args[] = {
 static const RzCmdDescHelp analyze_bytes_help = {
 	.summary = "Analyze bytes",
 	.args = analyze_bytes_args,
+};
+
+static const RzCmdDescHelp aO_help = {
+	.summary = "Analyze N instructions in M bytes",
+};
+static const RzCmdDescArg analyze_n_bytes_args[] = {
+	{
+		.name = "byte_len",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_bytes_help = {
+	.summary = "Analyze next N bytes as instructions",
+	.args = analyze_n_bytes_args,
+};
+
+static const RzCmdDescArg analyze_n_bytes_esil_args[] = {
+	{
+		.name = "byte_len",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_bytes_esil_help = {
+	.summary = "Analyze the esil of next N bytes",
+	.args = analyze_n_bytes_esil_args,
+};
+
+static const RzCmdDescArg analyze_n_bytes_desc_args[] = {
+	{
+		.name = "byte_len",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_bytes_desc_help = {
+	.summary = "Print the description of next N bytes",
+	.args = analyze_n_bytes_desc_args,
+};
+
+static const RzCmdDescArg analyze_n_bytes_size_args[] = {
+	{
+		.name = "byte_len",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_bytes_size_help = {
+	.summary = "Print the total instruction size of next N bytes",
+	.args = analyze_n_bytes_size_args,
+};
+
+static const RzCmdDescHelp ao_help = {
+	.summary = "Analyze N instructions",
+};
+static const RzCmdDescArg analyze_n_ins_args[] = {
+	{
+		.name = "instruction_cnt",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_ins_help = {
+	.summary = "Analyze next N instructions",
+	.args = analyze_n_ins_args,
+};
+
+static const RzCmdDescArg analyze_n_ins_size_args[] = {
+	{
+		.name = "instruction_cnt",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_ins_size_help = {
+	.summary = "Print the total size of next N instructions",
+	.args = analyze_n_ins_size_args,
+};
+
+static const RzCmdDescArg analyze_n_ins_esil_args[] = {
+	{
+		.name = "instruction_cnt",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_ins_esil_help = {
+	.summary = "Print the esil of next N instructions",
+	.args = analyze_n_ins_esil_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -12591,8 +12705,27 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_class_vtable_lookup_cd = rz_cmd_desc_argv_new(core->rcmd, acv_cd, "acvf", rz_analysis_class_vtable_lookup_handler, &analysis_class_vtable_lookup_help);
 	rz_warn_if_fail(analysis_class_vtable_lookup_cd);
 
-	RzCmdDesc *analyze_bytes_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_analysis_cd, "a8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_bytes_handler, &analyze_bytes_help);
+	RzCmdDesc *analyze_bytes_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_cd, "a8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_bytes_handler, &analyze_bytes_help);
 	rz_warn_if_fail(analyze_bytes_cd);
+
+	RzCmdDesc *aO_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "aO", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_n_bytes_handler, &analyze_n_bytes_help, &aO_help);
+	rz_warn_if_fail(aO_cd);
+	RzCmdDesc *analyze_n_bytes_esil_cd = rz_cmd_desc_argv_new(core->rcmd, aO_cd, "aOe", rz_analyze_n_bytes_esil_handler, &analyze_n_bytes_esil_help);
+	rz_warn_if_fail(analyze_n_bytes_esil_cd);
+
+	RzCmdDesc *analyze_n_bytes_desc_cd = rz_cmd_desc_argv_new(core->rcmd, aO_cd, "aOd", rz_analyze_n_bytes_desc_handler, &analyze_n_bytes_desc_help);
+	rz_warn_if_fail(analyze_n_bytes_desc_cd);
+
+	RzCmdDesc *analyze_n_bytes_size_cd = rz_cmd_desc_argv_new(core->rcmd, aO_cd, "aOs", rz_analyze_n_bytes_size_handler, &analyze_n_bytes_size_help);
+	rz_warn_if_fail(analyze_n_bytes_size_cd);
+
+	RzCmdDesc *ao_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ao", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_n_ins_handler, &analyze_n_ins_help, &ao_help);
+	rz_warn_if_fail(ao_cd);
+	RzCmdDesc *analyze_n_ins_size_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aos", rz_analyze_n_ins_size_handler, &analyze_n_ins_size_help);
+	rz_warn_if_fail(analyze_n_ins_size_cd);
+
+	RzCmdDesc *analyze_n_ins_esil_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoe", rz_analyze_n_ins_esil_handler, &analyze_n_ins_esil_help);
+	rz_warn_if_fail(analyze_n_ins_esil_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
