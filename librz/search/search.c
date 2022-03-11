@@ -508,10 +508,6 @@ RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len) {
 	return ret;
 }
 
-RZ_API int rz_search_update_i(RzSearch *s, ut64 from, const ut8 *buf, long len) {
-	return rz_search_update(s, from, buf, len);
-}
-
 static int listcb(RzSearchKeyword *k, void *user, ut64 addr) {
 	RzSearchHit *hit = RZ_NEW0(RzSearchHit);
 	if (!hit) {

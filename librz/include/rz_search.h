@@ -106,8 +106,8 @@ RZ_API RzSearch *rz_search_free(RzSearch *s);
 /* keyword management */
 RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len);
 RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len);
-RZ_API int rz_search_update_i(RzSearch *s, ut64 from, const ut8 *buf, long len);
 
+/* keyword management */
 RZ_API void rz_search_keyword_free(RzSearchKeyword *kw);
 RZ_API RzSearchKeyword *rz_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data);
 RZ_API RzSearchKeyword *rz_search_keyword_new_str(const char *kw, const char *bm, const char *data, int icase);
