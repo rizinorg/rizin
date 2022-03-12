@@ -82,14 +82,14 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 		}
 	}
 	if (!jemalloc_ver_end) {
-		eprintf("Warning: Is jemalloc mapped in memory? (see dm command)\n");
+		RZ_LOG_WARN("Warning: Is jemalloc mapped in memory? (see dm command)\n");
 		return false;
 	}
 #if __linux__
 	bool is_debug_file = GH(je_matched)(jemalloc_ver_end, "/usr/local/lib");
 
 	if (!is_debug_file) {
-		eprintf("Warning: Is libjemalloc.so.2 in /usr/local/lib path?\n");
+		RZ_LOG_WARN("Warning: Is libjemalloc.so.2 in /usr/local/lib path?\n");
 		return false;
 	}
 	char *path = rz_str_newf("%s", jemalloc_ver_end);
@@ -104,15 +104,15 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 	free(path);
 	return false;
 #else
-	eprintf("[*] Resolving %s from libjemalloc.2... ", symname);
+	rz_cons_printf("[*] Resolving %s from libjemalloc.2... ", symname);
 	// this is quite sloooow, we must optimize dmi
 	char *va = rz_core_cmd_strf(core, "dmi libjemalloc.2 %s$~[1]", symname);
 	ut64 n = rz_num_get(NULL, va);
 	if (n && n != UT64_MAX) {
 		*symbol = n;
-		eprintf("0x%08" PFMT64x "\n", n);
+		rz_cons_printf("0x%08" PFMT64x "\n", n);
 	} else {
-		eprintf("NOT FOUND\n");
+		rz_cons_printf("NOT FOUND\n");
 	}
 	free(va);
 	return true;
@@ -124,14 +124,14 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	if (!GH(rz_resolve_jemalloc)(core, "je_chunksize", &cnksz)) {
-		eprintf("Fail at read symbol je_chunksize\n");
+		rz_cons_printf("Fail at read symbol je_chunksize\n");
 		return;
 	}
 	rz_io_read_at(core->io, cnksz, (ut8 *)&cnksz, sizeof(GHT));
 
 	switch (input[0]) {
 	case '\0':
-		eprintf("need an arena_t to associate chunks");
+		rz_cons_printf("need an arena_t to associate chunks");
 		break;
 	case ' ': {
 		GHT arena = GHT_MAX;
@@ -176,7 +176,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 		extent_node_t *head = RZ_NEW0(extent_node_t);
 
 		if (!node || !head) {
-			eprintf("Error calling calloc\n");
+			RZ_LOG_ERROR("Error calling calloc\n");
 			free(ar);
 			free(node);
 			free(head);
@@ -246,13 +246,13 @@ static void GH(jemalloc_print_narenas)(RzCore *core, const char *input) {
 			PRINTF_GA("narenas : %" PFMT64d "\n", (ut64)narenas);
 		}
 		if (narenas == 0) {
-			eprintf("No arenas allocated.\n");
+			rz_cons_printf("No arenas allocated.\n");
 			free(stats);
 			free(ar);
 			return;
 		}
 		if (narenas == GHT_MAX) {
-			eprintf("Cannot find narenas_total\n");
+			rz_cons_printf("Cannot find narenas_total\n");
 			free(stats);
 			free(ar);
 			return;
@@ -340,7 +340,7 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 			break;
 		}
 		if (!GH(rz_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
-			eprintf("Error resolving je_arena_bin_info\n");
+			RZ_LOG_ERROR("Error resolving je_arena_bin_info\n");
 			RZ_FREE(b);
 			break;
 		}
@@ -410,7 +410,7 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 			arena_chunk_t *c = RZ_NEW0 (arena_chunk_t);
 
 			if (!c) {
-				eprintf ("Error calling calloc\n");
+				RZ_LOG_ERROR ("Error calling calloc\n");
 				return;
 			}
 
@@ -418,19 +418,19 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 			chunk = rz_num_math (core->num, input);
 
 			if (!GH(rz_resolve_jemalloc)(core, "je_chunk_npages", &npages)) {
-				eprintf ("Error resolving je_chunk_npages\n");
+				RZ_LOG_ERROR ("Error resolving je_chunk_npages\n");
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_chunksize_mask", &chunksize_mask)) {
-				eprintf ("Error resolving je_chunksize_mask\n");
+				RZ_LOG_ERROR ("Error resolving je_chunksize_mask\n");
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_map_bias", &map_bias)) {
-				eprintf ("Error resolving je_map_bias");
+				RZ_LOG_ERROR ("Error resolving je_map_bias");
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_map_misc_offset", &map_misc_offset)) {
-				eprintf ("Error resolving je_map_misc_offset");
+				RZ_LOG_ERROR ("Error resolving je_map_misc_offset");
 				return;
 			}
 
@@ -439,21 +439,21 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 			rz_io_read_at (core->io, map_bias, (ut8*)&map_bias, sizeof (GHT));
 			rz_io_read_at (core->io, map_misc_offset, (ut8*)&map_misc_offset, sizeof (GHT));
 
-			eprintf ("map_misc_offset 0x%08"PFMT64x"\n", (ut64)map_misc_offset);
+			rz_cons_printf ("map_misc_offset 0x%08"PFMT64x"\n", (ut64)map_misc_offset);
 
 			rz_io_read_at (core->io, chunk, (ut8 *)c, sizeof (arena_chunk_t));
 			mapbits = *(GHT *)&c->map_bits;
-			eprintf ("map_bits: 0x%08"PFMT64x"\n", (ut64)mapbits);
+			rz_cons_printf ("map_bits: 0x%08"PFMT64x"\n", (ut64)mapbits);
 
 			uint32_t offset = rz_offsetof (arena_chunk_t, map_bits);
 
 			arena_chunk_map_bits_t *dwords = (void *)calloc (sizeof (arena_chunk_map_bits_t), npages);
 			rz_io_read_at (core->io, chunk + offset, (ut8*)dwords, sizeof (arena_chunk_map_bits_t) * npages);
-			eprintf ("map_bits @ 0x%08"PFMT64x"\n", (ut64)(chunk + offset));
+			rz_cons_printf ("map_bits @ 0x%08"PFMT64x"\n", (ut64)(chunk + offset));
 
 			arena_run_t *r = RZ_NEW0 (arena_run_t);
 			if (!r) {
-				eprintf ("Error calling calloc\n");
+				RZ_LOG_ERROR ("Error calling calloc\n");
 				return;
 			}
 			for (pageind = map_bias; pageind < npages; pageind++) {
@@ -461,25 +461,25 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 				if (mapelm.bits & CHUNK_MAP_ALLOCATED) {
 					// ut64 elm = ((arena_chunk_map_misc_t *)((uintptr_t)chunk + (uintptr_t)map_misc_offset) + pageind-map_bias);
 					ut64 elm = chunk + map_misc_offset + pageind-map_bias;
-					eprintf ("\nelm: 0x%"PFMT64x"\n", elm);
+					rz_cons_printf ("\nelm: 0x%"PFMT64x"\n", elm);
 					arena_chunk_map_misc_t *m = RZ_NEW0 (arena_chunk_map_misc_t);
 					if (m) {
 						ut64 run = elm + rz_offsetof (arena_chunk_map_misc_t, run);
 						rz_io_read_at (core->io, elm, (ut8*)m, sizeof (arena_chunk_map_misc_t));
-						eprintf ("Small run @ 0x%08"PFMT64x"\n", (ut64)elm);
+						rz_cons_printf ("Small run @ 0x%08"PFMT64x"\n", (ut64)elm);
 						rz_io_read_at (core->io, run, (ut8*)r, sizeof (arena_run_t));
-						eprintf ("binind: 0x%08"PFMT64x"\n", (ut64)r->binind);
-						eprintf ("nfree: 0x%08"PFMT64x"\n", (ut64)r->nfree);
-						eprintf ("bitmap: 0x%08"PFMT64x"\n\n", (ut64)*(GHT*)r->bitmap);
+						rz_cons_printf ("binind: 0x%08"PFMT64x"\n", (ut64)r->binind);
+						rz_cons_printf ("nfree: 0x%08"PFMT64x"\n", (ut64)r->nfree);
+						rz_cons_printf ("bitmap: 0x%08"PFMT64x"\n\n", (ut64)*(GHT*)r->bitmap);
 						free (m);
 					}
 				} else if (mapelm.bits & CHUNK_MAP_LARGE) {
 					ut64 run = (ut64) (size_t) chunk + (pageind << LG_PAGE);
-					eprintf ("Large run @ 0x%08"PFMT64x"\n", run);
+					rz_cons_printf ("Large run @ 0x%08"PFMT64x"\n", run);
 					rz_io_read_at (core->io, run, (ut8*)r, sizeof (arena_run_t));
-					eprintf ("binind: 0x%08"PFMT64x"\n", (ut64)r->binind);
-					eprintf ("nfree: 0x%08"PFMT64x"\n", (ut64)r->nfree);
-					eprintf ("bitmap: 0x%08"PFMT64x"\n\n", (ut64)*(GHT*)r->bitmap);
+					rz_cons_printf ("binind: 0x%08"PFMT64x"\n", (ut64)r->binind);
+					rz_cons_printf ("nfree: 0x%08"PFMT64x"\n", (ut64)r->nfree);
+					rz_cons_printf ("bitmap: 0x%08"PFMT64x"\n\n", (ut64)*(GHT*)r->bitmap);
 				}
 			}
 			free (c);
