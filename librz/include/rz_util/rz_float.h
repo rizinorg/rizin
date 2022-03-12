@@ -17,8 +17,10 @@ typedef enum float_format_enum {
 
 typedef enum float_format_info {
     RZ_FLOAT_INFO_BASE,
-    RZ_FLOAT_INFO_EXP_LEN,  ///< info about length of exponent field, in bits
-    RZ_FLOAT_INFO_MAN_LEN, ///< info about length of mantissa field, in bits
+    RZ_FLOAT_INFO_EXP_LEN,  ///< info about width of exponent field, in bits
+    RZ_FLOAT_INFO_MAN_LEN, ///< info about width of mantissa field, in bits
+    RZ_FLOAT_INFO_TOTAL_LEN,    ///< info of length of format bv
+    RZ_FLOAT_INFO_BIAS  ///< exponent bias
 } RzFloatInfo;
 
 typedef enum float_round_enum {
@@ -39,15 +41,18 @@ typedef enum float_exception_enum {
 } RzFloatException;
 
 /// IEEE-754-2008
-/// A : MSB of the significand. is_quiet flag
+/// A : MSB of the mantissa. is_quiet flag
 /// quiet_NaN : A == 1
 /// signaling_NaN : A == 0
 /// PA-RISC and MIPS, use A as is_signal flag. Should reverse the case
-typedef enum float_nan_type {
-    RZ_FLOAT_NAN_NOT,   ///< not an NaN
-    RZ_FLOAT_NAN_QUIET, ///< Quiet NaN
-    RZ_FLOAT_NAN_SIG    ///< Signaling NaN
-} RzFloatNaNType;
+typedef enum float_speciality_enum {
+    RZ_FLOAT_SPEC_NOT,   ///< not a special num
+    RZ_FLOAT_SPEC_ZERO,
+    RZ_FLOAT_SPEC_PINF,
+    RZ_FLOAT_SPEC_NINF,
+    RZ_FLOAT_SPEC_QNAN, ///< Quiet NaN
+    RZ_FLOAT_SPEC_SNAN    ///< Signaling NaN
+} RzFloatSpec;
 
 typedef struct float_t {
     RzFloatFormat r; ///< An interpretation of bitvector

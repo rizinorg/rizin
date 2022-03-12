@@ -13,6 +13,10 @@ static inline ut32 rz_float_info_bin32(RzFloatInfo which_info) {
             return 8;
         case RZ_FLOAT_INFO_MAN_LEN:
             return 23;
+        case RZ_FLOAT_INFO_TOTAL_LEN:
+            return 32;
+        case RZ_FLOAT_INFO_BIAS:
+            return 127;
         default:
             return 0;
     }
@@ -26,6 +30,10 @@ static inline ut32 rz_float_info_bin64(RzFloatInfo which_info) {
             return 11;
         case RZ_FLOAT_INFO_MAN_LEN:
             return 52;
+        case RZ_FLOAT_INFO_TOTAL_LEN:
+            return 64;
+        case RZ_FLOAT_INFO_BIAS:
+            return 1023;
         default:
             return 0;
     }
@@ -39,6 +47,10 @@ static inline ut32 rz_float_info_bin128(RzFloatInfo which_info) {
             return 15;
         case RZ_FLOAT_INFO_MAN_LEN:
             return 112;
+        case RZ_FLOAT_INFO_TOTAL_LEN:
+            return 128;
+        case RZ_FLOAT_INFO_BIAS:
+            return 16383;
         default:
             return 0;
     }
@@ -68,7 +80,6 @@ static bool rz_bv_is_full_vector(RZ_NONNULL const RzBitVector *x) {
     return true;
 }
 
-// TODO : move this to bitvector.c in the future
 /**
  * Shift right, but keeps LSB true if hit 1 during shift
  * \param x RzBitVector, pointer to bv
@@ -91,6 +102,12 @@ static bool rz_bv_shift_right_jammed(RzBitVector *bv, ut32 dist) {
     return true;
 }
 
+/**
+ * Get a bitvector representation of exponent, have the same length of parameter `bv`
+ * @param bv RzBitVector, the bitvector interpreted as float
+ * @param format RzFloatFormat, specifying the format of float
+ * @return a bitvector representation of exponent
+ */
 static RZ_OWN RzBitVector *get_exp(RZ_NONNULL RzBitVector *bv, RzFloatFormat format) {
     rz_return_val_if_fail(bv, NULL);
 
@@ -102,6 +119,12 @@ static RZ_OWN RzBitVector *get_exp(RZ_NONNULL RzBitVector *bv, RzFloatFormat for
     return res;
 }
 
+/**
+ * Get a bitvector representation of mantissa, have the same length of parameter `bv`
+ * @param bv RzBitVector, the bitvector interpreted as float
+ * @param format RzFloatFormat, specifying the format of float
+ * @return a bitvector representation of mantissa
+ */
 static RZ_OWN RzBitVector *get_man(RZ_NONNULL RzBitVector *bv, RzFloatFormat format) {
     rz_return_val_if_fail(bv, NULL);
 
@@ -113,6 +136,27 @@ static RZ_OWN RzBitVector *get_man(RZ_NONNULL RzBitVector *bv, RzFloatFormat for
     return res;
 }
 
+/**
+ * Get a bitvector representation of mantissa, twice as long as `bv` length.
+ * @param bv RzBitVector, the bitvector interpreted as float
+ * @param format RzFloatFormat, specifying the format of float
+ * @return a bitvector representation of mantissa
+ */
+static RZ_OWN RzBitVector *get_man_stretched(RZ_NONNULL RzBitVector *bv, RzFloatFormat format) {
+    rz_return_val_if_fail(bv, NULL);
+
+    ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
+    ut32 total = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+    RzBitVector *res = rz_bv_new(total * 2);
+    rz_bv_copy_nbits(bv, 0, res, 0, man_len);
+}
+
+/**
+ * Get a bitvector representation of exponent. The length is depending on the exponent width (specified by `format`)
+ * @param bv RzBitVector, the bitvector interpreted as float
+ * @param format RzFloatFormat, specifying the format of float
+ * @return a bitvector representation of exponent
+ */
 static RZ_OWN RzBitVector *get_exp_squashed(RZ_NONNULL RzBitVector *bv, RzFloatFormat format) {
     rz_return_val_if_fail(bv, NULL);
 
@@ -124,6 +168,12 @@ static RZ_OWN RzBitVector *get_exp_squashed(RZ_NONNULL RzBitVector *bv, RzFloatF
     return res;
 }
 
+/**
+ * Get a bitvector representation of mantissa. The length is depending on the mantissa width (specified by `format`)
+ * @param bv RzBitVector, the bitvector interpreted as float
+ * @param format RzFloatFormat, specifying the format of float
+ * @return a bitvector representation of mantissa
+ */
 static RZ_OWN RzBitVector *get_man_squashed(RZ_NONNULL RzBitVector *bv, RzFloatFormat format) {
     rz_return_val_if_fail(bv, NULL);
 
@@ -134,18 +184,16 @@ static RZ_OWN RzBitVector *get_man_squashed(RZ_NONNULL RzBitVector *bv, RzFloatF
     return res;
 }
 
+/**
+ * Get the sign of bv
+ * @param bv RzBitVector, the bitvector interpreted as float
+ * @param format RzFloatFormat, specifying the format of float
+ * @return bool sign of float bv
+ */
 static RZ_OWN bool get_sign(RZ_NONNULL RzBitVector *bv, RzFloatFormat format) {
     rz_return_val_if_fail(bv, NULL);
 
     return rz_bv_get(bv, bv->len - 1);
-}
-
-static RZ_OWN RzBitVector *create_inf_nan_pattern(ut32 len, ut32 exp_len) {
-    RzBitVector *bv = rz_bv_new(len);
-    for (ut32 i = 0; i < exp_len; ++i) {
-        rz_bv_set(bv, i, true);
-    }
-    return bv;
 }
 
 static bool is_signal_nan_bv(RzBitVector *float_bv, RzFloatFormat format) {
@@ -180,6 +228,14 @@ static bool is_nan_bv(RzBitVector *float_bv, RzFloatFormat format) {
     return ret;
 }
 
+/**
+ * Pack sign, exponent, and significant together to float bv
+ * @param sign sign of float
+ * @param exp exponent part, can be squashed or normal
+ * @param sig significant part (mantissa with a leading bit 1), can be squashed or normal
+ * @param format format of float
+ * @return RzBitVector the final bitvector representation of RzFloat
+ */
 static RZ_OWN RzBitVector *pack_float_bv(bool sign, RzBitVector *exp, RzBitVector *sig, RzFloatFormat format)
 {
     ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
@@ -194,169 +250,191 @@ static RZ_OWN RzBitVector *pack_float_bv(bool sign, RzBitVector *exp, RzBitVecto
     return ret;
 }
 
-static RZ_OWN RzFloat *propagate_nan(RzBitVector *left, RzBitVector *right, RzFloatFormat format) {
-    RzBitVector *ret_bv;
-    // TODO : move float_new to header
-    RzFloat *ret = RZ_NEW0(RzFloat);
+/**
+ * Detecting if a significant should be rounded
+ * @param sig RzBitVector significant bv before rounding `point` is at the 2nd bit counted from MSB (01.MM MMMM ...)
+ * @param r_bits_bound ut32 boundary of round bits
+ * @return bool return true if significant should be rounded, else return false
+ */
+inline bool detect_should_round(RzBitVector *sig, ut32 r_bits_bound)
+{
+    bool should_round = false;
+    for (ut32 i = 0; i < r_bits_bound; ++i)
+    {
+        if (rz_bv_get(sig, i) == true){
+            should_round = true;
+            break;
+        }
+    }
+    return should_round;
+}
 
-    RzBitVector *magic = rz_bv_new(left->len);
+/**
+ * Detecting if the round bits is in the halfway (MSB is 1, the other bits is 0)
+ * @param sig RzBitVector significant bv before rounding `point` is at the 2nd bit counted from MSB (01.MM MMMM ...)
+ * @param r_bits_bound ut32 boundary of round bits
+ * @return bool return true if significant should be rounded, else return false
+ */
+static bool detect_halfway(RzBitVector *sig, ut32 r_bits_bound)
+{
+    for (ut32 i = 0; i < r_bits_bound - 1; ++i)
+    {
+        if (rz_bv_get(sig, i) == true)
+        {
+            return false;
+        }
+    }
+
+    if (rz_bv_get(sig, r_bits_bound - 1) == true)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Generate an infinite bitvector
+ * @param sign sign of an inf
+ * @param format RzFloatFormat format of float
+ * @return an infinite bitvector
+ */
+static RZ_OWN RzBitVector *gen_inf_bv(bool sign, RzFloatFormat format)
+{
+    return NULL;
+}
+
+/**
+ * Trying to round float component
+ * @param sign sign of float
+ * @param exp ut32 value of exponent
+ * @param sig RzBitVector significant bv before rounding `point` is at the 2nd bit counted from MSB (01.MM MMMM ...)
+ * @param format RzFloatFormat format of float
+ * @param mode Rounding mode
+ * @return RzFloat A rounded float
+ */
+static RZ_OWN RzFloat *
+round_float_bv(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
+    ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
+    ut32 emax = ((bias + 1) << 1) - 1;
     ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-    ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
-    ut32 total = exp_len + man_len;
-    rz_bv_set(magic, total - (exp_len + 2), true);
+    ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+    bool is_rne = (mode == RZ_FLOAT_RMODE_RNE);
+    bool is_rna = (mode == RZ_FLOAT_RMODE_RNA);
+    RzFloat *ret = RZ_NEW0(RzFloat);
+    ret->r = format;
+    ret->s = NULL;
 
-    if (is_signal_nan_bv(left, format) || is_signal_nan_bv(right, format)) {
-        if (is_nan_bv(left, format)) {
-            ret_bv = rz_bv_or(left, magic);
-            rz_bv_free(magic);
-            ret->s = ret_bv;
-            ret->r = format;
-            ret->exception |= RZ_FLOAT_E_INVALID_OP;
+    /// add 1 to the LSB of sig
+    ut32 round_inc_val = (bias + 1) >> 1;
+
+    /// handle round to max(+inf)/min(-inf)
+    /// if + && round towards +inf : use bias as inc
+    /// if - && round towards -inf : use bias as inc
+    if (!is_rne && !is_rna)
+    {
+        round_inc_val =
+                (mode == (sign ? RZ_FLOAT_RMODE_RTN : RZ_FLOAT_RMODE_RTP))
+                ? bias
+                : 0;
+    }
+
+    /// get round bits
+    /// every num before rounding have the following pattern
+    /// 01MM MMMM MMMM ...
+    /// we will leave (sign_len + exp_len) bits before mantissa part
+    /// and thus the lower (sign_len + exp_len - 2) bits will be r-shifted out
+    /// in another word, the lower bits will be guard bit, round bit and sticky bits
+    ut32 round_bits_bound = (exp_len + 1 - 2);
+    ut32 should_round = detect_should_round(sig, round_bits_bound);
+    ut32 guard_bit_pos = round_bits_bound - 1;
+    ut32 is_halfway = detect_halfway(sig, round_bits_bound);
+
+    RzBitVector *possible_sig = NULL;
+    bool unused;
+    RzBitVector *round_inc_bv = rz_bv_new_from_ut64(sig->len, round_inc_val);
+    possible_sig = rz_bv_add(sig, round_inc_bv, &unused);
+
+    if (exp >= emax - 2)
+    {
+        /// handle overflow and underflow
+        if ((st32)exp < 0)
+        {
+            /// extremely small
+            bool is_tiny = (exp < -1)
+                    || (!(rz_bv_msb(possible_sig)));
+
+            rz_bv_shift_right_jammed(possible_sig, (ut32)(-(st32)exp));
+            exp = 0;
+
+            /// update round info
+            should_round = detect_should_round(possible_sig, round_bits_bound);
+            is_halfway = detect_halfway(sig, round_bits_bound);
+
+            if (is_tiny && should_round) {
+                ret->exception |= RZ_FLOAT_E_UNDERFLOW;
+            }
+        }
+        else if ((exp > emax - 2) || (rz_bv_msb(possible_sig)))
+        {
+            /// overflow
+            ret->exception |= RZ_FLOAT_E_OVERFLOW;
+            ret->exception |= RZ_FLOAT_E_INEXACT;
+
+            /// gen a num near inf
+            if (round_inc_val) {
+                ret->s = gen_inf_bv(sign, format);
+            }
+            else {
+                RzBitVector *one = rz_bv_new_one(total_len);
+                RzBitVector *inf = gen_inf_bv(sign, format);
+                ret->s = rz_bv_sub(inf, one, &unused);
+                rz_bv_free(one);
+                rz_bv_free(inf);
+                inf = NULL;
+                one = NULL;
+            }
+
+            rz_bv_free(possible_sig);
+            rz_bv_free(sig);
+            rz_bv_free(round_inc_bv);
             return ret;
         }
     }
 
-    left = is_nan_bv(left, format) ? left : right;
-    ret_bv = rz_bv_or(left, magic);
-    rz_bv_free(magic);
-    ret->s = ret_bv;
-    ret->r = format;
-    return ret;
-}
-
-static RZ_OWN RzFloat *
-round_float_bv(bool sign, RzBitVector *exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
-    bool round_to_even = (mode == RZ_FLOAT_RMODE_RNE);
-    RzBitVector *borrow_round_inc = NULL;
-    ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-    RzBitVector *tmp = NULL, *tmp2 = NULL;
-    RzFloat *ret;
-    bool carry;
-
-    ret = RZ_NEW0(RzFloat);
-    ret->r = format;
-
-    /// generate magic pattern
-    /// 1. normal round inc
-    RzBitVector *m1 = rz_bv_new(sig->len);
-    rz_bv_set(m1, exp_len - 2, true);
-    /// 2. round to min/max inc
-    RzBitVector *m2 = rz_bv_new(sig->len);
-    for (ut32 i = 0; i < exp_len - 1; ++i) {
-        rz_bv_set(m2, i, true);
-    }
-    /// 3. zero
-    RzBitVector *zero = rz_bv_new_zero(sig->len);
-    /// 4. m3 to pack float
-    RzBitVector *m3 = rz_bv_new(sig->len);
-    for (ut32 i = 0; i < exp_len; ++i) {
-        rz_bv_set(m3, i, true);
-    }
-    /// 5. exp bound
-    RzBitVector *exp_bound = rz_bv_dup(m3);
-    rz_bv_set(exp_bound, 1, false);
-    /// 6. sig bound
-    RzBitVector *sig_bound = rz_bv_new(sig->len);
-    rz_bv_set(sig_bound, sig->len, true);
-    /// 7. -1 == ~0
-    RzBitVector *neg_one = rz_bv_not(zero);
-    /// 8. 1
-    RzBitVector *one = rz_bv_new_one(sig->len);
-    /// 9. ~1
-    RzBitVector *not_one = rz_bv_not(one);
-
-    /// generate round increment
-    if (!round_to_even && (mode != RZ_FLOAT_RMODE_RNA)) {
-        if (mode == (sign ? RZ_FLOAT_RMODE_RTN : RZ_FLOAT_RMODE_RTP)) {
-            borrow_round_inc = m2;
-        } else {
-            borrow_round_inc = zero;
-        }
-    } else {
-        borrow_round_inc = m1;
-    }
-
-    RzBitVector *round_bits = rz_bv_and(sig, m2);
-    bool is_tiny = false;
-
-    if (rz_bv_ule(exp_bound, exp)) {
-        /// calculate sig + inc
-        tmp = rz_bv_add(sig, borrow_round_inc, &carry);
-        if (rz_bv_sle(exp, zero) && !rz_bv_is_zero_vector(exp)) {
-            /// TODO : add skipped check tininess before rounding in Berkley softfloat
-            /// exp < -1 || sig + inc < bound
-            is_tiny = (rz_bv_sle(exp, neg_one) && !rz_bv_is_zero_vector(exp)) ||
-                      (rz_bv_sle(tmp, sig_bound) && !rz_bv_eq(tmp, sig_bound));
-            // sig = jammed_shift_r(sig, -exp)
-            rz_bv_free(tmp);
-            tmp = NULL;
-            rz_bv_shift_right_jammed(sig, -rz_bv_to_ut32(exp));
-
-            // exp = 0
-            rz_bv_free(exp);
-            exp = rz_bv_dup(zero);
-
-            rz_bv_free(round_bits);
-            round_bits = rz_bv_and(sig, m2);
-
-            if (is_tiny && !rz_bv_is_zero_vector(round_bits)) {
-                ret->exception |= RZ_FLOAT_E_UNDERFLOW;
-            }
-        }
-        else if ((rz_bv_sle(exp_bound, exp) && !rz_bv_is_zero_vector(exp))
-            || rz_bv_ule(sig_bound, tmp))
-        {
-            ret->exception |= RZ_FLOAT_E_OVERFLOW | RZ_FLOAT_E_INEXACT;
-            rz_bv_free(tmp);
-            tmp = pack_float_bv(sign, exp_bound, zero, format);
-            ret->s = rz_bv_sub(
-                    tmp,
-                    rz_bv_is_zero_vector(borrow_round_inc) ? one : zero,
-                    &carry);
-            rz_bv_free(tmp);
-            tmp = NULL;
-            goto clean_local;
-        }
-    }
-
-    tmp = rz_bv_add(sig, borrow_round_inc, &carry);
-    rz_bv_rshift(tmp, exp_len - 1);
+    /// shift for packing
     rz_bv_free(sig);
-    sig = tmp;
-    tmp = NULL;
+    sig = possible_sig;
+    possible_sig = NULL;
+    rz_bv_rshift(sig, round_bits_bound);
 
-    if (!rz_bv_is_zero_vector(round_bits)) {
+    if (should_round) {
         ret->exception |= RZ_FLOAT_E_INEXACT;
     }
 
-    bool mask_bit;
-    tmp = rz_bv_xor(round_bits, m1);
-    mask_bit = rz_bv_is_zero_vector(tmp) & round_to_even;
-    rz_bv_free(tmp);
-    tmp = rz_bv_and(
-            sig,
-            mask_bit ? not_one : neg_one);
-    rz_bv_free(sig);
-    sig = tmp;
-    tmp = NULL;
-
-    if (rz_bv_is_zero_vector(sig)) {
-        rz_bv_free(exp);
-        exp = rz_bv_dup(zero);
+    /// detect half way
+    if (is_halfway && is_rne)
+    {
+        /// set lsb == 0
+        rz_bv_set(sig, 0, false);
     }
 
-    ret->s = pack_float_bv(sign, exp, sig, format);
-clean_local:
-    rz_bv_free(m1);
-    rz_bv_free(m2);
-    rz_bv_free(m3);
-    rz_bv_free(zero);
-    rz_bv_free(one);
-    rz_bv_free(not_one);
-    rz_bv_free(neg_one);
-    rz_bv_free(exp_bound);
-    rz_bv_free(sig_bound);
-    rz_bv_free(round_bits);
+    if (rz_bv_is_zero_vector(sig))
+    {
+        /// NaN
+        exp = 0;
+    }
+
+    /// pack float
+    RzBitVector *exp_bv = rz_bv_new_from_ut64(total_len, exp);
+    ret->s = rz_bv_add(exp_bv, sig, &unused);
+    rz_bv_set(ret->s, total_len - 1, sign);
+
+    /// clean
+    rz_bv_free(round_inc_bv);
+    rz_bv_free(exp_bv);
+    rz_bv_free(sig);
+
     return ret;
 }
 
