@@ -25,6 +25,7 @@ on:
     - '**.inc'
     - '**/meson.build'
     - 'subprojects/**'
+    - 'test/**'
     - '.github/workflows/tcc.yml'
     branches:
     - 'dev'
