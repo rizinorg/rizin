@@ -178,8 +178,10 @@ jobs:
           path: test/rz-pipe
       - name: Install test dependencies
         if: matrix.run_tests && matrix.enabled
+        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
+      - name: Install Linux test dependencies
+        if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-11'
         run: |
-          pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
           sudo apt-get update
           sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev
       - name: Install gdbserver dependency
