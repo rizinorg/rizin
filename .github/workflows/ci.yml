@@ -178,7 +178,9 @@ jobs:
           path: test/rz-pipe
       - name: Install test dependencies
         if: matrix.run_tests && matrix.enabled
-        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
+        run: |
+          pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
+          sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev
       - name: Install gdbserver dependency
         if: matrix.run_tests && matrix.enabled && (matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-20.04')
         run: sudo apt-get --assume-yes install gdbserver
