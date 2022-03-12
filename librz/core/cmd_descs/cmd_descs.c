@@ -186,6 +186,7 @@ static const RzCmdDescArg analyze_n_ins_args[2];
 static const RzCmdDescArg analyze_n_ins_size_args[2];
 static const RzCmdDescArg analyze_n_ins_esil_args[2];
 static const RzCmdDescArg analyze_opcode_args[2];
+static const RzCmdDescArg analyze_cycles_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -3712,6 +3713,20 @@ static const RzCmdDescArg display_opcode_args[] = {
 static const RzCmdDescHelp display_opcode_help = {
 	.summary = "Describe all opcode for asm.arch",
 	.args = display_opcode_args,
+};
+
+static const RzCmdDescArg analyze_cycles_args[] = {
+	{
+		.name = "cycles",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_cycles_help = {
+	.summary = "Analyze which op could be executed in [cycles]",
+	.args = analyze_cycles_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -12749,6 +12764,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *display_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoda", rz_display_opcode_handler, &display_opcode_help);
 	rz_warn_if_fail(display_opcode_cd);
+
+	RzCmdDesc *analyze_cycles_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoc", rz_analyze_cycles_handler, &analyze_cycles_help);
+	rz_warn_if_fail(analyze_cycles_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

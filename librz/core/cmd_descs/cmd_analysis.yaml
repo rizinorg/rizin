@@ -1533,3 +1533,10 @@ commands:
         summary: Describe all opcode for asm.arch
         cname: display_opcode
         args: []
+      - name: aoc
+        summary: Analyze which op could be executed in [cycles]
+        cname: analyze_cycles
+        args:
+          - name: cycles
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true

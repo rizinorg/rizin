@@ -9042,7 +9042,6 @@ RZ_IPI RzCmdStatus rz_analyze_opcode_handler(RzCore *core, int argc, const char 
 		cur = RZ_MAX(core->print->cur, 0);
 		core_analysis_bytes_desc(core, core->block + cur, core->blocksize, 1);
 	} else {
-		eprintf("argv[1]: %s", argv[1]);
 		d = rz_asm_describe(core->rasm, argv[1]);
 		if (d && *d) {
 			rz_cons_println(d);
@@ -9056,5 +9055,43 @@ RZ_IPI RzCmdStatus rz_analyze_opcode_handler(RzCore *core, int argc, const char 
 
 RZ_IPI RzCmdStatus rz_display_opcode_handler(RzCore *core, int argc, const char **argv) {
 	sdb_foreach(core->rasm->pair, listOpDescriptions, core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char **argv) {
+	RzList *hooks;
+	RzListIter *iter;
+	RzAnalysisCycleHook *hook;
+	char *instr_tmp = NULL;
+	int ccl = 0;
+	int cr = rz_config_get_i(core->config, "asm.cmt.right");
+	int fun = rz_config_get_i(core->config, "asm.functions");
+	int li = rz_config_get_i(core->config, "asm.lines");
+	int xr = rz_config_get_i(core->config, "asm.xrefs");
+
+	if (argc > 1) {
+		ccl = (int)rz_num_get(core->num, argv[1]);
+	}
+
+	rz_config_set_i(core->config, "asm.cmt.right", true);
+	rz_config_set_i(core->config, "asm.functions", false);
+	rz_config_set_i(core->config, "asm.lines", false);
+	rz_config_set_i(core->config, "asm.xrefs", false);
+
+	hooks = rz_core_analysis_cycles(core, ccl); // analysisyse
+	rz_cons_clear_line(1);
+	rz_list_foreach (hooks, iter, hook) {
+		instr_tmp = rz_core_disassemble_instr(core, hook->addr, 1);
+		rz_cons_printf("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
+		rz_cons_flush();
+		free(instr_tmp);
+	}
+	rz_list_free(hooks);
+
+	rz_config_set_i(core->config, "asm.cmt.right", cr); // reset settings
+	rz_config_set_i(core->config, "asm.functions", fun);
+	rz_config_set_i(core->config, "asm.lines", li);
+	rz_config_set_i(core->config, "asm.xrefs", xr);
+
 	return RZ_CMD_STATUS_OK;
 }
