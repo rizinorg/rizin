@@ -3495,8 +3495,7 @@ err_r_str_mb_to_wc:
 
 RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	char *res_buf = NULL;
-	mbstate_t mbstate;
-    memset((void*)&mbstate, 0, sizeof(mbstate));                                                      
+	mbstate_t mbstate = { 0 };
 	size_t sz;
 
 	if (!buf || len <= 0) {
