@@ -223,8 +223,8 @@ func.bind.ret=int
 
 socket=func
 func.socket.args=3
-func.socket.arg.0=int,domain
-func.socket.arg.1=int,type
+func.socket.arg.0=enum sock_domain
+func.socket.arg.1=enum sock_type
 func.socket.arg.2=int,protocol
 func.socket.ret=int
 
