@@ -29,7 +29,10 @@ CMDS=<<EOF
 dm~?
 db @ sym.imp.puts
 dc~?
+?e
 dm~?
+dm
+?e
 dc
 EOF
 EXPECT=<<EOF
