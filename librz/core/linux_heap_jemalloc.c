@@ -82,7 +82,7 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 		}
 	}
 	if (!jemalloc_ver_end) {
-		RZ_LOG_WARN("Warning: Is jemalloc mapped in memory? (see dm command)\n");
+		RZ_LOG_WARN("Is jemalloc mapped in memory? (see dm command)\n");
 		return false;
 	}
 #if __linux__
