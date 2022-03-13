@@ -4294,14 +4294,15 @@ RZ_IPI RzCmdStatus rz_cmd_debug_info_handler(RzCore *core, int argc, const char 
 	RzDebugInfo *rdi = argc > 1 ? rz_debug_info(core->dbg, argv[1]) : NULL;
 	RzDebugReasonType stop = rz_debug_stop_reason(core->dbg);
 	char *escaped_str;
+	const char *reason;
 
 	switch (mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		const char *r = rz_debug_reason_to_string(core->dbg->reason.type);
-		if (!r) {
-			r = "none";
+		reason = rz_debug_reason_to_string(core->dbg->reason.type);
+		if (!reason) {
+			reason = "none";
 		}
-		rz_cons_printf("%s at 0x%08" PFMT64x "\n", r, core->dbg->stopaddr);
+		rz_cons_printf("%s at 0x%08" PFMT64x "\n", reason, core->dbg->stopaddr);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (rdi) {
