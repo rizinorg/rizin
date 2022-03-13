@@ -8886,6 +8886,7 @@ RZ_IPI RzCmdStatus rz_analyze_bytes_handler(RzCore *core, int argc, const char *
 		break;
 	default:
 		rz_warn_if_reached();
+		break;
 	}
 
 	free(buf);
@@ -8898,7 +8899,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_handler(RzCore *core, int argc, const char
 
 	len = rz_num_get(core->num, argv[1]);
 	if ((int)len <= 0) {
-		eprintf("Invalid zero or negative arguments.\n");
+		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -8930,7 +8931,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_esil_handler(RzCore *core, int argc, const
 
 	len = rz_num_get(core->num, argv[1]);
 	if ((int)len <= 0) {
-		eprintf("Invalid zero or negative arguments.\n");
+		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -8950,7 +8951,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_desc_handler(RzCore *core, int argc, const
 
 	len = rz_num_get(core->num, argv[1]);
 	if ((int)len <= 0) {
-		eprintf("Invalid zero or negative arguments.\n");
+		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -8970,7 +8971,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_size_handler(RzCore *core, int argc, const
 
 	len = rz_num_get(core->num, argv[1]);
 	if ((int)len <= 0) {
-		eprintf("Invalid zero or negative arguments.\n");
+		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -8990,7 +8991,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char *
 	if (argc > 1) {
 		l = rz_num_get(core->num, argv[1]);
 		if ((int)l <= 0) {
-			eprintf("Invalid zero or negative arguments.\n");
+			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 
@@ -9025,7 +9026,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_size_handler(RzCore *core, int argc, const c
 	if (argc > 1) {
 		l = rz_num_get(core->num, argv[1]);
 		if ((int)l <= 0) {
-			eprintf("Invalid zero or negative arguments.\n");
+			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		count = l;
@@ -9049,7 +9050,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
 	if (argc > 1) {
 		l = rz_num_get(core->num, argv[1]);
 		if ((int)l <= 0) {
-			eprintf("Invalid zero or negative arguments.\n");
+			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		count = l;
@@ -9076,12 +9077,13 @@ RZ_IPI RzCmdStatus rz_analyze_opcode_handler(RzCore *core, int argc, const char 
 		core_analysis_bytes_desc(core, core->block + cur, core->blocksize, 1);
 	} else {
 		d = rz_asm_describe(core->rasm, argv[1]);
-		if (d && *d) {
-			rz_cons_println(d);
+		if (RZ_STR_ISEMPTY(d)) {
+			RZ_LOG_ERROR("Unknown mnemonic\n");
 			free(d);
-		} else {
-			eprintf("Unknown mnemonic\n");
+			return RZ_CMD_STATUS_ERROR;
 		}
+		rz_cons_println(d);
+		free(d);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -9105,7 +9107,7 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 	if (argc > 1) {
 		ccl = rz_num_get(core->num, argv[1]);
 		if ((int)ccl < 0) {
-			eprintf("Invalid negative arguments.\n");
+			RZ_LOG_ERROR("Invalid negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
@@ -9140,13 +9142,13 @@ RZ_IPI RzCmdStatus rz_convert_mne_handler(RzCore *core, int argc, const char **a
 		id = rz_num_math(core->num, argv[1]);
 		// id starts from 1
 		if ((int)id <= 0) {
-			eprintf("Invalid negative or zero arguments.\n");
+			RZ_LOG_ERROR("Invalid negative or zero arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 
 		char *ops = rz_asm_mnemonics(core->rasm, id, false);
 		if (!ops) {
-			eprintf("Can not find mnemonic by id.\n");
+			RZ_LOG_ERROR("Can not find mnemonic by id.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 
@@ -9155,7 +9157,7 @@ RZ_IPI RzCmdStatus rz_convert_mne_handler(RzCore *core, int argc, const char **a
 	} else {
 		id = rz_asm_mnemonics_byname(core->rasm, argv[1]);
 		if (id <= 0) {
-			eprintf("Can not find id by mnemonic.\n");
+			RZ_LOG_ERROR("Can not find id by mnemonic.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_cons_printf("%d\n", id);
