@@ -698,6 +698,7 @@ commands:
         args:
           - name: pid
             type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: dpl
         summary: List all attachable pids
         cname: cmd_debug_pid_attachable
@@ -711,6 +712,7 @@ commands:
         args:
           - name: pid
             type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: dp=
         summary: Select pid
         cname: cmd_debug_pid_sel
@@ -723,6 +725,7 @@ commands:
         args:
           - name: pid
             type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: dpc
         summary: Select forked pid (see dbg.forks)
         cname: cmd_debug_pid_forked_sel
@@ -734,7 +737,10 @@ commands:
       - name: dpe
         summary: Show path to executable
         cname: cmd_debug_exec_path
-        args: []
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: dpf
         summary: Attach to pid like file fd // HACK
         cname: cmd_debug_pid_f

@@ -76,31 +76,6 @@ static const char *help_msg_dmi[] = {
 	NULL
 };
 
-static const char *help_msg_dp[] = {
-	"Usage:", "dp", " # Process commands",
-	"dp", "", "List current pid and children",
-	"dp", " <pid>", "List children of pid",
-	"dpj", " <pid>", "List children of pid in JSON format",
-	"dpl", "", "List all attachable pids",
-	"dplj", "", "List all attachable pids in JSON format",
-	"dp-", " <pid>", "Detach select pid",
-	"dp=", "<pid>", "Select pid",
-	"dpa", " <pid>", "Attach and select pid",
-	"dpc", "", "Select forked pid (see dbg.forks)",
-	"dpc*", "", "Display forked pid (see dbg.forks)",
-	"dpe", "", "Show path to executable",
-	"dpf", "", "Attach to pid like file fd // HACK",
-	"dpk", " <pid> [<signal>]", "Send signal to process (default 0)",
-	"dpn", "", "Create new process (fork)",
-	"dptn", "", "Create new thread (clone)",
-	"dpt", "", "List threads of current pid",
-	"dptj", "", "List threads of current pid in JSON format",
-	"dpt", " <pid>", "List threads of process",
-	"dptj", " <pid>", "List threads of process in JSON format",
-	"dpt=", "<thread>", "Attach to thread",
-	NULL
-};
-
 static const char *help_msg_ds[] = {
 	"Usage: ds", "", "Step commands",
 	"ds", "", "Step one instruction",
@@ -602,140 +577,6 @@ static int step_line(RzCore *core, int times) {
 	rz_core_reg_update_flags(core);
 
 	return true;
-}
-
-static void cmd_debug_pid(RzCore *core, const char *input) {
-	int pid, sig;
-	const char *ptr;
-	switch (input[1]) {
-	case '\0': // "dp"
-		eprintf("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
-		rz_debug_pid_list(core->dbg, core->dbg->pid, 0);
-		break;
-	case '-': // "dp-"
-		if (input[2] == ' ') {
-			rz_debug_detach(core->dbg, rz_num_math(core->num, input + 2));
-		} else {
-			rz_debug_detach(core->dbg, core->dbg->pid);
-		}
-		break;
-	case 'c': // "dpc"
-		if (core->dbg->forked_pid != -1) {
-			if (input[2] == '*') {
-				eprintf("dp %d\n", core->dbg->forked_pid);
-			} else {
-				rz_debug_select(core->dbg, core->dbg->forked_pid, core->dbg->tid);
-				core->dbg->main_pid = core->dbg->forked_pid;
-				core->dbg->n_threads = 0;
-				core->dbg->forked_pid = -1;
-			}
-		} else {
-			eprintf("No recently forked children\n");
-		}
-		break;
-	case 'k': // "dpk"
-		/* stop, print, pass -- just use flags*/
-		/* XXX: not for threads? signal is for a whole process!! */
-		/* XXX: but we want fine-grained access to process resources */
-		pid = atoi(input + 2);
-		if (pid > 0) {
-			ptr = rz_str_trim_head_ro(input + 2);
-			ptr = strchr(ptr, ' ');
-			sig = ptr ? atoi(ptr + 1) : 0;
-			eprintf("Sending signal '%d' to pid '%d'\n", sig, pid);
-			rz_debug_kill(core->dbg, pid, false, sig);
-		} else
-			eprintf("cmd_debug_pid: Invalid arguments (%s)\n", input);
-		break;
-	case 'n': // "dpn"
-		eprintf("TODO: debug_fork: %d\n", rz_debug_child_fork(core->dbg));
-		break;
-	case 't': // "dpt"
-		switch (input[2]) {
-		case '\0': // "dpt"
-			rz_debug_thread_list(core->dbg, core->dbg->pid, 0);
-			break;
-		case 'j': // "dptj"
-			if (input[3] != ' ') { // "dptj"
-				rz_debug_thread_list(core->dbg, core->dbg->pid, 'j');
-			} else { // "dptj "
-				rz_debug_thread_list(core->dbg, atoi(input + 3), 'j');
-			}
-			break;
-		case ' ': // "dpt "
-			rz_debug_thread_list(core->dbg, atoi(input + 2), 0);
-			break;
-		case '=': // "dpt="
-			rz_debug_select(core->dbg, core->dbg->pid,
-				(int)rz_num_math(core->num, input + 3));
-			break;
-		case 'n': // "dptn"
-			eprintf("TODO: debug_clone: %d\n", rz_debug_child_clone(core->dbg));
-			break;
-		case '?': // "dpt?"
-		default:
-			rz_core_cmd_help(core, help_msg_dp);
-			break;
-		}
-		break;
-	case 'a': // "dpa"
-		if (input[2]) {
-			int pid = rz_num_math(core->num, input + 2);
-			rz_core_debug_attach(core, pid);
-		} else {
-			rz_core_debug_attach(core, 0);
-		}
-		break;
-	case 'f': // "dpf"
-		if (core->file && core->io) {
-			rz_debug_select(core->dbg, rz_io_fd_get_pid(core->io, core->file->fd),
-				rz_io_fd_get_tid(core->io, core->file->fd));
-		}
-		break;
-	case '=': // "dp="
-		rz_debug_select(core->dbg,
-			(int)rz_num_math(core->num, input + 2), core->dbg->tid);
-		core->dbg->main_pid = rz_num_math(core->num, input + 2);
-		break;
-	case 'l': // "dpl"
-		switch (input[2]) {
-		case '\0': // "dpl"
-			rz_debug_pid_list(core->dbg, 0, 0);
-			break;
-		case 'j': // "dplj"
-			rz_debug_pid_list(core->dbg, 0, 'j');
-			break;
-		}
-		break;
-	case 'j': // "dpj"
-		switch (input[2]) {
-		case '\0': // "dpj"
-			rz_debug_pid_list(core->dbg, core->dbg->pid, 'j');
-			break;
-		case ' ': // "dpj "
-			rz_debug_pid_list(core->dbg,
-				(int)RZ_MAX(0, (int)rz_num_math(core->num, input + 2)), 'j');
-			break;
-		}
-		break;
-	case 'e': // "dpe"
-	{
-		int pid = (input[2] == ' ') ? atoi(input + 2) : core->dbg->pid;
-		char *exe = rz_sys_pid_to_path(pid);
-		if (exe) {
-			rz_cons_println(exe);
-			free(exe);
-		}
-	} break;
-	case ' ': // "dp "
-		rz_debug_pid_list(core->dbg,
-			(int)RZ_MAX(0, (int)rz_num_math(core->num, input + 2)), 0);
-		break;
-	case '?': // "dp?"
-	default:
-		rz_core_cmd_help(core, help_msg_dp);
-		break;
-	}
 }
 
 static void cmd_debug_backtrace(RzCore *core, ut64 len) {
@@ -2353,9 +2194,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			follow = rz_config_get_i(core->config, "dbg.follow");
 		}
 		break;
-	case 'p': // "dp"
-		cmd_debug_pid(core, input);
-		break;
 #if __WINDOWS__
 	case 'W': // "dW"
 		if (input[1] == 'i') {
@@ -3786,71 +3624,122 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, co
 
 // dp
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	eprintf("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
+
+	const int pid = argc > 0 ? (int)RZ_MAX(0, (int)rz_num_math(core->num, argv[1])) : core->dbg->pid;
+	const char fmt = (char)rz_output_mode_to_char(mode);
+	rz_debug_pid_list(core->dbg, pid, fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpl
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_attachable_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_debug_pid_list(core->dbg, 0, (char)rz_output_mode_to_char(mode));
 	return RZ_CMD_STATUS_OK;
 }
 
 // dp-
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_detach_handler(RzCore *core, int argc, const char **argv) {
+	ut64 pid = argc > 1 ? rz_num_math(core->num, argv[1]) : core->dbg->pid;
+	rz_debug_detach(core->dbg, pid);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dp=
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_sel_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_select(core->dbg,
+		(int)rz_num_math(core->num, argv[1]), core->dbg->tid);
+	core->dbg->main_pid = rz_num_math(core->num, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpa
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_attach_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_debug_attach(core, argc > 1 ? rz_num_math(core->num, argv[1]) : 0);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpc
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_forked_sel_handler(RzCore *core, int argc, const char **argv) {
+	if (core->dbg->forked_pid != -1) {
+		rz_debug_select(core->dbg, core->dbg->forked_pid, core->dbg->tid);
+		core->dbg->main_pid = core->dbg->forked_pid;
+		core->dbg->n_threads = 0;
+		core->dbg->forked_pid = -1;
+	} else {
+		eprintf("No recently forked children\n");
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpc*
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_forked_handler(RzCore *core, int argc, const char **argv) {
+	eprintf("dp %d\n", core->dbg->forked_pid);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpe
 RZ_IPI RzCmdStatus rz_cmd_debug_exec_path_handler(RzCore *core, int argc, const char **argv) {
+	int pid = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->dbg->pid;
+	char *exe = rz_sys_pid_to_path(pid);
+	if (exe) {
+		rz_cons_println(exe);
+		free(exe);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpf
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_f_handler(RzCore *core, int argc, const char **argv) {
+	if (core->file && core->io) {
+		rz_debug_select(core->dbg, rz_io_fd_get_pid(core->io, core->file->fd),
+			rz_io_fd_get_tid(core->io, core->file->fd));
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpk
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_kill_handler(RzCore *core, int argc, const char **argv) {
+	/* stop, print, pass -- just use flags*/
+	/* XXX: not for threads? signal is for a whole process!! */
+	/* XXX: but we want fine-grained access to process resources */
+	int pid = rz_num_math(core->num, argv[1]);
+	if (pid > 0) {
+		int sig = argc > 2 ? atoi(argv[2]) : 0;
+		eprintf("Sending signal '%d' to pid '%d'\n", sig, pid);
+		rz_debug_kill(core->dbg, pid, false, sig);
+	} else {
+		eprintf("cmd_debug_pid: Invalid arguments (%s)\n", argv[1]);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpn
 RZ_IPI RzCmdStatus rz_cmd_debug_process_new_handler(RzCore *core, int argc, const char **argv) {
+	eprintf("TODO: debug_fork: %d\n", rz_debug_child_fork(core->dbg));
 	return RZ_CMD_STATUS_OK;
 }
 
 // dptn
 RZ_IPI RzCmdStatus rz_cmd_debug_thread_new_handler(RzCore *core, int argc, const char **argv) {
+	eprintf("TODO: debug_clone: %d\n", rz_debug_child_clone(core->dbg));
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpt
 RZ_IPI RzCmdStatus rz_cmd_debug_threads_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char fmt = (char)rz_output_mode_to_char(mode);
+	if (argc <= 1) {
+		rz_debug_thread_list(core->dbg, core->dbg->pid, fmt);
+	} else {
+		rz_debug_thread_list(core->dbg, atoi(argv[1]), 0);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpt=
 RZ_IPI RzCmdStatus rz_cmd_debug_thread_attach_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_select(core->dbg, core->dbg->pid, (int)rz_num_math(core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
 

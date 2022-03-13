@@ -282,6 +282,7 @@ static const RzCmdDescArg cmd_debug_pid_list_args[2];
 static const RzCmdDescArg cmd_debug_pid_detach_args[2];
 static const RzCmdDescArg cmd_debug_pid_sel_args[2];
 static const RzCmdDescArg cmd_debug_pid_attach_args[2];
+static const RzCmdDescArg cmd_debug_exec_path_args[2];
 static const RzCmdDescArg cmd_debug_pid_kill_args[3];
 static const RzCmdDescArg cmd_debug_threads_list_args[2];
 static const RzCmdDescArg cmd_debug_thread_attach_args[2];
@@ -6057,6 +6058,7 @@ static const RzCmdDescArg cmd_debug_pid_list_args[] = {
 		.name = "pid",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -6079,6 +6081,7 @@ static const RzCmdDescArg cmd_debug_pid_detach_args[] = {
 		.name = "pid",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -6107,6 +6110,7 @@ static const RzCmdDescArg cmd_debug_pid_attach_args[] = {
 		.name = "pid",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -6133,6 +6137,13 @@ static const RzCmdDescHelp cmd_debug_pid_forked_help = {
 };
 
 static const RzCmdDescArg cmd_debug_exec_path_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_exec_path_help = {
