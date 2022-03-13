@@ -89,7 +89,7 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 	bool is_debug_file = GH(je_matched)(jemalloc_ver_end, "/usr/local/lib");
 
 	if (!is_debug_file) {
-		RZ_LOG_WARN("Warning: Is libjemalloc.so.2 in /usr/local/lib path?\n");
+		RZ_LOG_WARN("Is libjemalloc.so.2 in /usr/local/lib path?\n");
 		return false;
 	}
 	char *path = rz_str_newf("%s", jemalloc_ver_end);
