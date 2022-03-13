@@ -1540,3 +1540,13 @@ commands:
           - name: cycles
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+      - name: aom
+        summary: convert between mnemonic/id for asm.arch
+        cname: convert_mne
+        args:
+          - name: mne_or_id
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: aoma
+        summary: List mnemonics for asm.arch
+        cname: list_mne
+        args: []

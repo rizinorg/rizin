@@ -187,6 +187,7 @@ static const RzCmdDescArg analyze_n_ins_size_args[2];
 static const RzCmdDescArg analyze_n_ins_esil_args[2];
 static const RzCmdDescArg analyze_opcode_args[2];
 static const RzCmdDescArg analyze_cycles_args[2];
+static const RzCmdDescArg convert_mne_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -3727,6 +3728,28 @@ static const RzCmdDescArg analyze_cycles_args[] = {
 static const RzCmdDescHelp analyze_cycles_help = {
 	.summary = "Analyze which op could be executed in [cycles]",
 	.args = analyze_cycles_args,
+};
+
+static const RzCmdDescArg convert_mne_args[] = {
+	{
+		.name = "mne_or_id",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp convert_mne_help = {
+	.summary = "convert between mnemonic/id for asm.arch",
+	.args = convert_mne_args,
+};
+
+static const RzCmdDescArg list_mne_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp list_mne_help = {
+	.summary = "List mnemonics for asm.arch",
+	.args = list_mne_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -12767,6 +12790,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analyze_cycles_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoc", rz_analyze_cycles_handler, &analyze_cycles_help);
 	rz_warn_if_fail(analyze_cycles_cd);
+
+	RzCmdDesc *convert_mne_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aom", rz_convert_mne_handler, &convert_mne_help);
+	rz_warn_if_fail(convert_mne_cd);
+
+	RzCmdDesc *list_mne_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoma", rz_list_mne_handler, &list_mne_help);
+	rz_warn_if_fail(list_mne_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

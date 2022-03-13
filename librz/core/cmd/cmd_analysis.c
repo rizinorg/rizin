@@ -9132,3 +9132,58 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_convert_mne_handler(RzCore *core, int argc, const char **argv) {
+	ut32 id;
+
+	if(rz_str_isnumber(argv[1])) {
+		id = rz_num_math(core->num, argv[1]);
+		// id starts from 1
+		if ((int)id <= 0) {
+			eprintf("Invalid negative or zero arguments.\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+
+		char *ops = rz_asm_mnemonics(core->rasm, id, false);
+		if (!ops) {
+			eprintf("Can not find mnemonic by id.\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+
+		rz_cons_println(ops);
+		free(ops);
+	} else {
+		id = rz_asm_mnemonics_byname(core->rasm, argv[1]);
+		if (id <= 0) {
+			eprintf("Can not find id by mnemonic.\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_cons_printf("%d\n", id);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_list_mne_handler(RzCore *core, int argc, const char **argv) {
+	char *nl, *ptr, *ops = rz_asm_mnemonics(core->rasm, -1, false);
+
+	if (!ops) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ptr = ops;
+	nl = strchr(ptr, '\n');
+	while (nl) {
+		*nl = 0;
+		char *desc = rz_asm_describe(core->rasm, ptr);
+		if (desc) {
+			const char *pad = rz_str_pad(' ', 16 - strlen(ptr));
+			rz_cons_printf("%s%s%s\n", ptr, pad, desc);
+			free(desc);
+		} else {
+			rz_cons_printf("%s\n", ptr);
+		}
+		ptr = nl + 1;
+		nl = strchr(ptr, '\n');
+	}
+	free(ops);
+	return RZ_CMD_STATUS_OK;
+}
