@@ -124,7 +124,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	if (!GH(rz_resolve_jemalloc)(core, "je_chunksize", &cnksz)) {
-		RZ_LOG_ERROR("Fail at read symbol je_chunksize\n");
+		RZ_LOG_ERROR("Fail at reading symbol je_chunksize\n");
 		return;
 	}
 	rz_io_read_at(core->io, cnksz, (ut8 *)&cnksz, sizeof(GHT));
@@ -176,7 +176,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 		extent_node_t *head = RZ_NEW0(extent_node_t);
 
 		if (!node || !head) {
-			RZ_LOG_ERROR("Error calling calloc\n");
+			RZ_LOG_ERROR("Cannot call calloc\n");
 			free(ar);
 			free(node);
 			free(head);
@@ -340,7 +340,7 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 			break;
 		}
 		if (!GH(rz_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
-			RZ_LOG_ERROR("Error resolving je_arena_bin_info\n");
+			RZ_LOG_ERROR("Cannot resolve je_arena_bin_info\n");
 			RZ_FREE(b);
 			break;
 		}
@@ -410,7 +410,7 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 			arena_chunk_t *c = RZ_NEW0 (arena_chunk_t);
 
 			if (!c) {
-				RZ_LOG_ERROR ("Error calling calloc\n");
+				RZ_LOG_ERROR ("Cannot call calloc\n");
 				return;
 			}
 
@@ -418,19 +418,19 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 			chunk = rz_num_math (core->num, input);
 
 			if (!GH(rz_resolve_jemalloc)(core, "je_chunk_npages", &npages)) {
-				RZ_LOG_ERROR ("Error resolving je_chunk_npages\n");
+				RZ_LOG_ERROR ("Cannot resolve je_chunk_npages\n");
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_chunksize_mask", &chunksize_mask)) {
-				RZ_LOG_ERROR ("Error resolving je_chunksize_mask\n");
+				RZ_LOG_ERROR ("Cannot resolve je_chunksize_mask\n");
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_map_bias", &map_bias)) {
-				RZ_LOG_ERROR ("Error resolving je_map_bias");
+				RZ_LOG_ERROR ("Cannot resolve je_map_bias");
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_map_misc_offset", &map_misc_offset)) {
-				RZ_LOG_ERROR ("Error resolving je_map_misc_offset");
+				RZ_LOG_ERROR ("Cannot resolve je_map_misc_offset");
 				return;
 			}
 
@@ -453,7 +453,7 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 
 			arena_run_t *r = RZ_NEW0 (arena_run_t);
 			if (!r) {
-				RZ_LOG_ERROR ("Error calling calloc\n");
+				RZ_LOG_ERROR ("Cannot call calloc\n");
 				return;
 			}
 			for (pageind = map_bias; pageind < npages; pageind++) {
