@@ -1328,7 +1328,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 				: op.direction == 2         ? "write"
 				: op.direction == 4         ? "exec"
 				: op.direction == 8         ? "ref"
-								: "none";
+							    : "none";
 			printline("direction", "%s\n", dir);
 		}
 		if (hint && hint->fail != UT64_MAX) {
@@ -9136,7 +9136,7 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_convert_mne_handler(RzCore *core, int argc, const char **argv) {
 	ut32 id;
 
-	if(rz_str_isnumber(argv[1])) {
+	if (rz_str_isnumber(argv[1])) {
 		id = rz_num_math(core->num, argv[1]);
 		// id starts from 1
 		if ((int)id <= 0) {
