@@ -1069,7 +1069,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 			pj_kn(pj, "fail", op.fail);
 		}
 		const char *jesil = (hint && hint->esil) ? hint->esil : esilstr;
-		if (jesil && *jesil) {
+		if (RZ_STR_ISNOTEMPTY(jesil)) {
 			pj_ks(pj, "esil", jesil);
 		}
 		if (op.il_op) {
@@ -1079,7 +1079,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		pj_kb(pj, "sign", op.sign);
 		pj_kn(pj, "prefix", op.prefix);
 		pj_ki(pj, "id", op.id);
-		if (opexstr && *opexstr) {
+		if (RZ_STR_ISNOTEMPTY(opexstr)) {
 			pj_k(pj, "opex");
 			pj_j(pj, opexstr);
 		}
@@ -8893,9 +8893,15 @@ RZ_IPI RzCmdStatus rz_analyze_bytes_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int len = core->blocksize;
-	int tbs = len;
-	len = (int)rz_num_get(core->num, argv[1]);
+	ut32 len = core->blocksize;
+	ut32 tbs = len;
+
+	len = rz_num_get(core->num, argv[1]);
+	if ((int)len <= 0) {
+		eprintf("Invalid zero or negative arguments.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	if (len > tbs) {
 		rz_core_block_size(core, len);
 	}
@@ -8909,6 +8915,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_handler(RzCore *core, int argc, const char
 		break;
 	default:
 		rz_warn_if_reached();
+		break;
 	}
 
 	if (tbs != core->blocksize) {
@@ -8918,9 +8925,15 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_esil_handler(RzCore *core, int argc, const char **argv) {
-	int len = core->blocksize;
-	int tbs = len;
-	len = (int)rz_num_get(core->num, argv[1]);
+	ut32 len = core->blocksize;
+	ut32 tbs = len;
+
+	len = rz_num_get(core->num, argv[1]);
+	if ((int)len <= 0) {
+		eprintf("Invalid zero or negative arguments.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	if (len > tbs) {
 		rz_core_block_size(core, len);
 	}
@@ -8932,9 +8945,15 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_esil_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_desc_handler(RzCore *core, int argc, const char **argv) {
-	int len = core->blocksize;
-	int tbs = len;
-	len = (int)rz_num_get(core->num, argv[1]);
+	ut32 len = core->blocksize;
+	ut32 tbs = len;
+
+	len = rz_num_get(core->num, argv[1]);
+	if ((int)len <= 0) {
+		eprintf("Invalid zero or negative arguments.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	if (len > tbs) {
 		rz_core_block_size(core, len);
 	}
@@ -8946,9 +8965,15 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_desc_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_size_handler(RzCore *core, int argc, const char **argv) {
-	int len = core->blocksize;
-	int tbs = len;
-	len = (int)rz_num_get(core->num, argv[1]);
+	ut32 len = core->blocksize;
+	ut32 tbs = len;
+
+	len = rz_num_get(core->num, argv[1]);
+	if ((int)len <= 0) {
+		eprintf("Invalid zero or negative arguments.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	if (len > tbs) {
 		rz_core_block_size(core, len);
 	}
@@ -8960,13 +8985,16 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_size_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int l, count = 1, obs = core->blocksize;
+	ut32 l, count = 1, obs = core->blocksize;
 
 	if (argc > 1) {
-		l = (int)rz_num_get(core->num, argv[1]);
-		if (l > 0) {
-			count = l;
+		l = rz_num_get(core->num, argv[1]);
+		if ((int)l <= 0) {
+			eprintf("Invalid zero or negative arguments.\n");
+			return RZ_CMD_STATUS_ERROR;
 		}
+
+		count = l;
 		l *= 8;
 		if (l > obs) {
 			rz_core_block_size(core, l);
@@ -8982,6 +9010,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char *
 		break;
 	default:
 		rz_warn_if_reached();
+		break;
 	}
 
 	if (obs != core->blocksize) {
@@ -8991,13 +9020,15 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_size_handler(RzCore *core, int argc, const char **argv) {
-	int l, count = 1, obs = core->blocksize;
+	ut32 l, count = 1, obs = core->blocksize;
 
 	if (argc > 1) {
-		l = (int)rz_num_get(core->num, argv[1]);
-		if (l > 0) {
-			count = l;
+		l = rz_num_get(core->num, argv[1]);
+		if ((int)l <= 0) {
+			eprintf("Invalid zero or negative arguments.\n");
+			return RZ_CMD_STATUS_ERROR;
 		}
+		count = l;
 		l *= 8;
 		if (l > obs) {
 			rz_core_block_size(core, l);
@@ -9013,13 +9044,15 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_size_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const char **argv) {
-	int l, count = 1, obs = core->blocksize;
+	ut32 l, count = 1, obs = core->blocksize;
 
 	if (argc > 1) {
-		l = (int)rz_num_get(core->num, argv[1]);
-		if (l > 0) {
-			count = l;
+		l = rz_num_get(core->num, argv[1]);
+		if ((int)l <= 0) {
+			eprintf("Invalid zero or negative arguments.\n");
+			return RZ_CMD_STATUS_ERROR;
 		}
+		count = l;
 		l *= 8;
 		if (l > obs) {
 			rz_core_block_size(core, l);
@@ -9063,14 +9096,18 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 	RzListIter *iter;
 	RzAnalysisCycleHook *hook;
 	char *instr_tmp = NULL;
-	int ccl = 0;
+	ut32 ccl = 0;
 	int cr = rz_config_get_i(core->config, "asm.cmt.right");
 	int fun = rz_config_get_i(core->config, "asm.functions");
 	int li = rz_config_get_i(core->config, "asm.lines");
 	int xr = rz_config_get_i(core->config, "asm.xrefs");
 
 	if (argc > 1) {
-		ccl = (int)rz_num_get(core->num, argv[1]);
+		ccl = rz_num_get(core->num, argv[1]);
+		if ((int)ccl < 0) {
+			eprintf("Invalid negative arguments.\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 
 	rz_config_set_i(core->config, "asm.cmt.right", true);
