@@ -5423,6 +5423,10 @@ static const RzCmdDescHelp cmd_debug_esil_list_help = {
 	.args = cmd_debug_esil_list_args,
 };
 
+static const RzCmdDescHelp cmd_debug_esil_stop_help = {
+	.summary = "Stop on condition",
+};
+
 static const RzCmdDescArg cmd_debug_esil_delete_args[] = {
 	{ 0 },
 };
@@ -5444,7 +5448,6 @@ static const RzCmdDescArg cmd_debug_esil_step_args[] = {
 		.name = "n",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
 
 	},
 	{ 0 },
@@ -5459,7 +5462,6 @@ static const RzCmdDescArg cmd_debug_esil_until_args[] = {
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
 
 	},
 	{ 0 },
@@ -13926,6 +13928,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *de_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "de", rz_cmd_debug_esil_list_handler, &cmd_debug_esil_list_help, &de_help);
 	rz_warn_if_fail(de_cd);
+	RzCmdDesc *cmd_debug_esil_stop_cd = rz_cmd_desc_oldinput_new(core->rcmd, de_cd, "dee", rz_cmd_debug_esil_stop, &cmd_debug_esil_stop_help);
+	rz_warn_if_fail(cmd_debug_esil_stop_cd);
+
 	RzCmdDesc *cmd_debug_esil_delete_cd = rz_cmd_desc_argv_new(core->rcmd, de_cd, "de-*", rz_cmd_debug_esil_delete_handler, &cmd_debug_esil_delete_help);
 	rz_warn_if_fail(cmd_debug_esil_delete_cd);
 

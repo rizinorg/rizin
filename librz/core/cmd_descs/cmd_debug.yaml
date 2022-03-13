@@ -383,6 +383,10 @@ commands:
         summary: List esil watchpoints
         cname: cmd_debug_esil_list
         args: []
+      - name: dee
+        summary: Stop on condition
+        cname: cmd_debug_esil_stop
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: de-*
         summary: Delete all esil watchpoints
         cname: cmd_debug_esil_delete
@@ -397,14 +401,12 @@ commands:
         args:
           - name: n
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
       - name: desu
         summary: Esildebug until specific address
         cname: cmd_debug_esil_until
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
   - name: dg
     summary: Generate a core-file (WIP)
     cname: cmd_debug_core_gen
