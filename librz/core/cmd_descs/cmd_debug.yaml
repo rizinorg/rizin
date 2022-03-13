@@ -496,10 +496,6 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         default_mode: RZ_OUTPUT_MODE_STANDARD
-        args: []
-      - name: dLs
-        summary: Set debugger handler
-        cname: cmd_debug_handler_set
         args:
           - name: handler
             type: RZ_CMD_ARG_TYPE_NUM

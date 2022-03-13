@@ -3404,6 +3404,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_ko_handler(RzCore *core, int argc, const char **
 
 // dL
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (argc > 1) {
+		rz_config_set(core->config, "dbg.backend", argv[1]);
+		// implicit by config.set rz_debug_use (core->dbg, str);
+		return RZ_CMD_STATUS_OK;
+	}
+
 	RzCmdStateOutput state = { 0 };
 	rz_cmd_state_output_init(&state, mode);
 
@@ -3411,15 +3417,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, con
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
 	rz_cons_flush();
-	return RZ_CMD_STATUS_OK;
-}
-
-// dLs
-RZ_IPI RzCmdStatus rz_cmd_debug_handler_set_handler(RzCore *core, int argc, const char **argv) {
-	if (argc > 1) {
-		rz_config_set(core->config, "dbg.backend", argv[1]);
-		// implicit by config.set rz_debug_use (core->dbg, str);
-	}
 	return RZ_CMD_STATUS_OK;
 }
 
