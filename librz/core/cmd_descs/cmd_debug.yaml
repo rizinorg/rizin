@@ -979,29 +979,32 @@ commands:
         cname: cmd_debug_inject
         args:
           - name: opcodes
-            type: RZ_CMD_ARG_TYPE_NUM
-            flags: RZ_CMD_ARG_FLAG_ARRAY
-            optional: true
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: dxa
         summary: Assemble code and inject
         cname: cmd_debug_inject_assemble
-        args: []
+        args:
+          - name: acode
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: dxe
         summary: Compile egg expression and inject it
         cname: cmd_debug_inject_egg
-        args: []
+        args:
+          - name: egg-expr
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: dxr
         summary: Inject opcodes and restore state
         cname: cmd_debug_inject_restore
         args:
           - name: opcodes
-            type: RZ_CMD_ARG_TYPE_NUM
-            flags: RZ_CMD_ARG_FLAG_ARRAY
+            type: RZ_CMD_ARG_TYPE_STRING
             optional: true
       - name: dxs
         summary: Syscall injection (see gs)
         cname: cmd_debug_inject_syscall
-        args: []
+        args:
+          - name: sys-call
+            type: RZ_CMD_ARG_TYPE_STRING
   #####################################################
   # Keep this in sync with ar in cmd_analysis.yaml from here...
   - name: dr

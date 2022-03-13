@@ -303,7 +303,10 @@ static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_trace_tag_args[2];
 static const RzCmdDescArg cmd_debug_prompt_until_args[2];
 static const RzCmdDescArg cmd_debug_inject_args[2];
+static const RzCmdDescArg cmd_debug_inject_assemble_args[2];
+static const RzCmdDescArg cmd_debug_inject_egg_args[2];
 static const RzCmdDescArg cmd_debug_inject_restore_args[2];
+static const RzCmdDescArg cmd_debug_inject_syscall_args[2];
 static const RzCmdDescArg debug_regs_args[2];
 static const RzCmdDescArg debug_regs_columns_args[2];
 static const RzCmdDescArg debug_regs_references_args[2];
@@ -6595,9 +6598,8 @@ static const RzCmdDescHelp dx_help = {
 static const RzCmdDescArg cmd_debug_inject_args[] = {
 	{
 		.name = "opcodes",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -6608,6 +6610,12 @@ static const RzCmdDescHelp cmd_debug_inject_help = {
 };
 
 static const RzCmdDescArg cmd_debug_inject_assemble_args[] = {
+	{
+		.name = "acode",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_inject_assemble_help = {
@@ -6616,6 +6624,12 @@ static const RzCmdDescHelp cmd_debug_inject_assemble_help = {
 };
 
 static const RzCmdDescArg cmd_debug_inject_egg_args[] = {
+	{
+		.name = "egg-expr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_inject_egg_help = {
@@ -6626,8 +6640,8 @@ static const RzCmdDescHelp cmd_debug_inject_egg_help = {
 static const RzCmdDescArg cmd_debug_inject_restore_args[] = {
 	{
 		.name = "opcodes",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -6639,6 +6653,12 @@ static const RzCmdDescHelp cmd_debug_inject_restore_help = {
 };
 
 static const RzCmdDescArg cmd_debug_inject_syscall_args[] = {
+	{
+		.name = "sys-call",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_inject_syscall_help = {

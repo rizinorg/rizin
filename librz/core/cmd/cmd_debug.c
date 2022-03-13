@@ -92,19 +92,6 @@ static const char *help_msg_ds[] = {
 	NULL
 };
 
-static const char *help_msg_dx[] = {
-	"Usage: dx", "", " # Code injection commands",
-	"dx", " <opcode>...", "Inject opcodes",
-	"dxa", " nop", "Assemble code and inject",
-	"dxe", " egg-expr", "Compile egg expression and inject it",
-	"dxr", " <opcode>...", "Inject opcodes and restore state",
-	"dxs", " write 1, 0x8048, 12", "Syscall injection (see gs)",
-	"\nExamples:", "", "",
-	"dx", " 9090", "Inject two x86 nop",
-	"\"dxa mov eax,6;mov ebx,0;int 0x80\"", "", "Inject and restore state",
-	NULL
-};
-
 struct dot_trace_ght {
 	RzGraph *graph;
 	Sdb *graphnodes;
@@ -2216,87 +2203,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		}
 		rz_cons_break_pop();
 		break;
-	case 'x': // "dx"
-		switch (input[1]) {
-		case ' ': { // "dx "
-			ut8 bytes[4096];
-			if (strlen(input + 2) < 4096) {
-				int bytes_len = rz_hex_str2bin(input + 2, bytes);
-				if (bytes_len > 0)
-					rz_debug_execute(core->dbg,
-						bytes, bytes_len, 0);
-				else
-					eprintf("Invalid hexpairs\n");
-			} else
-				eprintf("Injection opcodes so long\n");
-			break;
-		}
-		case 'a': { // "dxa"
-			RzAsmCode *acode;
-			rz_asm_set_pc(core->rasm, core->offset);
-			acode = rz_asm_massemble(core->rasm, input + 2);
-			if (acode) {
-				rz_reg_arena_push(core->dbg->reg);
-				rz_debug_execute(core->dbg, acode->bytes, acode->len, 0);
-				rz_reg_arena_pop(core->dbg->reg);
-			}
-			rz_asm_code_free(acode);
-			break;
-		}
-		case 'e': { // "dxe"
-			RzEgg *egg = core->egg;
-			RzBuffer *b;
-			const char *asm_arch = rz_config_get(core->config, "asm.arch");
-			int asm_bits = rz_config_get_i(core->config, "asm.bits");
-			const char *asm_os = rz_config_get(core->config, "asm.os");
-			rz_egg_setup(egg, asm_arch, asm_bits, 0, asm_os);
-			rz_egg_reset(egg);
-			rz_egg_load(egg, input + 1, 0);
-			rz_egg_compile(egg);
-			b = rz_egg_get_bin(egg);
-			rz_asm_set_pc(core->rasm, core->offset);
-			rz_reg_arena_push(core->dbg->reg);
-			ut64 tmpsz;
-			const ut8 *tmp = rz_buf_data(b, &tmpsz);
-			rz_debug_execute(core->dbg, tmp, tmpsz, 0);
-			rz_reg_arena_pop(core->dbg->reg);
-			break;
-		}
-		case 'r': // "dxr"
-			rz_reg_arena_push(core->dbg->reg);
-			if (input[2] == ' ') {
-				ut8 bytes[4096];
-				if (strlen(input + 2) < 4096) {
-					int bytes_len = rz_hex_str2bin(input + 2,
-						bytes);
-					if (bytes_len > 0) {
-						rz_debug_execute(core->dbg,
-							bytes, bytes_len,
-							0);
-					} else {
-						eprintf("Invalid hexpairs\n");
-					}
-				} else
-					eprintf("Injection opcodes so long\n");
-			}
-			rz_reg_arena_pop(core->dbg->reg);
-			break;
-		case 's': // "dxs"
-			if (input[2]) {
-				char *str;
-				str = rz_core_cmd_str(core, sdb_fmt("gs %s", input + 2));
-				rz_core_cmdf(core, "dx %s", str); //`gs %s`", input + 2);
-				free(str);
-			} else {
-				eprintf("Missing parameter used in gs by dxs\n");
-			}
-			break;
-		case '?': // "dx?"
-		default:
-			rz_core_cmd_help(core, help_msg_dx);
-			break;
-		}
-		break;
 	case '?': // "d?"
 	default:
 		rz_core_cmd_help(core, help_msg_d);
@@ -3760,26 +3666,80 @@ RZ_IPI RzCmdStatus rz_cmd_debug_window_identify_handler(RzCore *core, int argc, 
 
 // dx
 RZ_IPI RzCmdStatus rz_cmd_debug_inject_handler(RzCore *core, int argc, const char **argv) {
+	ut8 bytes[4096];
+	if (strlen(argv[1]) < 4096) {
+		int bytes_len = rz_hex_str2bin(argv[1], bytes);
+		if (bytes_len > 0)
+			rz_debug_execute(core->dbg,
+				bytes, bytes_len, 0);
+		else
+			eprintf("Invalid hexpairs\n");
+	} else
+		eprintf("Injection opcodes so long\n");
 	return RZ_CMD_STATUS_OK;
 }
 
 // dxa
 RZ_IPI RzCmdStatus rz_cmd_debug_inject_assemble_handler(RzCore *core, int argc, const char **argv) {
+	RzAsmCode *acode;
+	rz_asm_set_pc(core->rasm, core->offset);
+	acode = rz_asm_massemble(core->rasm, argv[1]);
+	if (acode) {
+		rz_reg_arena_push(core->dbg->reg);
+		rz_debug_execute(core->dbg, acode->bytes, acode->len, 0);
+		rz_reg_arena_pop(core->dbg->reg);
+	}
+	rz_asm_code_free(acode);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dxe
 RZ_IPI RzCmdStatus rz_cmd_debug_inject_egg_handler(RzCore *core, int argc, const char **argv) {
+	RzEgg *egg = core->egg;
+	RzBuffer *b;
+	const char *asm_arch = rz_config_get(core->config, "asm.arch");
+	int asm_bits = rz_config_get_i(core->config, "asm.bits");
+	const char *asm_os = rz_config_get(core->config, "asm.os");
+	rz_egg_setup(egg, asm_arch, asm_bits, 0, asm_os);
+	rz_egg_reset(egg);
+	rz_egg_load(egg, argv[1], 0);
+	rz_egg_compile(egg);
+	b = rz_egg_get_bin(egg);
+	rz_asm_set_pc(core->rasm, core->offset);
+	rz_reg_arena_push(core->dbg->reg);
+	ut64 tmpsz;
+	const ut8 *tmp = rz_buf_data(b, &tmpsz);
+	rz_debug_execute(core->dbg, tmp, tmpsz, 0);
+	rz_reg_arena_pop(core->dbg->reg);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dxr
 RZ_IPI RzCmdStatus rz_cmd_debug_inject_restore_handler(RzCore *core, int argc, const char **argv) {
+	rz_reg_arena_push(core->dbg->reg);
+	if (argc > 1) {
+		ut8 bytes[4096];
+		if (strlen(argv[1]) < 4096) {
+			int bytes_len = rz_hex_str2bin(argv[1], bytes);
+			if (bytes_len > 0) {
+				rz_debug_execute(core->dbg,
+					bytes, bytes_len,
+					0);
+			} else {
+				eprintf("Invalid hexpairs\n");
+			}
+		} else
+			eprintf("Injection opcodes so long\n");
+	}
+	rz_reg_arena_pop(core->dbg->reg);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dxs
 RZ_IPI RzCmdStatus rz_cmd_debug_inject_syscall_handler(RzCore *core, int argc, const char **argv) {
+	char *str = rz_core_cmd_str(core, sdb_fmt("gs %s", argv[1]));
+	rz_core_cmdf(core, "dx %s", str); //`gs %s`", input + 2);
+	free(str);
 	return RZ_CMD_STATUS_OK;
 }
 
