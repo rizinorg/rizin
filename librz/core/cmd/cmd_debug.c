@@ -89,26 +89,6 @@ static const char *help_msg_di[] = {
 	NULL
 };
 
-static const char *help_msg_dk[] = {
-	"Usage: dk", "", "Signal commands",
-	"dk", "", "List all signal handlers of child process",
-	"dk", " <signal>", "Send KILL signal to child",
-	"dk", " <signal>=1", "Set signal handler for <signal> in child",
-	"dk?", "<signal>", "Name/signum resolver",
-	"dko", "[?] <signal>", "Reset skip or cont options for given signal",
-	"dko", " <signal> [|skip|cont]", "On signal SKIP handler or CONT into",
-	"dkj", "", "List all signal handlers in JSON",
-	NULL
-};
-
-static const char *help_msg_dko[] = {
-	"Usage:", "dko", " # Signal handling commands",
-	"dko", "", "List existing signal handling",
-	"dko", " [signal]", "Clear handling for a signal",
-	"dko", " [signal] [skip|cont]", "Set handling for a signal",
-	NULL
-};
-
 static const char *help_msg_dmi[] = {
 	"Usage: dmi", "", " # List/Load Symbols",
 	"dmi", "[j|q|*] [libname] [symname]", "List symbols of target lib",
@@ -1917,94 +1897,6 @@ static void debug_trace_calls(RzCore *core, const char *input) {
 	rz_cons_break_pop();
 }
 
-static void rz_core_debug_kill(RzCore *core, const char *input) {
-	if (!input || *input == '?') {
-		if (input && input[1]) {
-			const char *signame, *arg = input + 1;
-			int signum = atoi(arg);
-			if (signum > 0) {
-				signame = rz_signal_to_string(signum);
-				if (signame)
-					rz_cons_println(signame);
-			} else {
-				signum = rz_signal_from_string(arg);
-				if (signum > 0) {
-					rz_cons_printf("%d\n", signum);
-				}
-			}
-		} else {
-			rz_core_cmd_help(core, help_msg_dk);
-		}
-	} else if (*input == 'o') {
-		switch (input[1]) {
-		case 0: // "dko" - list signal skip/conts
-			rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		case ' ': // dko SIGNAL
-			if (input[2]) {
-				char *p, *name = strdup(input + 2);
-				int signum = atoi(name);
-				p = strchr(name, ' ');
-				if (p)
-					*p++ = 0; /* got SIGNAL and an action */
-				// Actions:
-				//  - pass
-				//  - trace
-				//  - stop
-				if (signum < 1)
-					signum = rz_signal_from_string(name);
-				if (signum > 0) {
-					if (!p || !p[0]) { // stop (the usual)
-						rz_debug_signal_setup(core->dbg, signum, 0);
-					} else if (*p == 's') { // skip
-						rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_SKIP);
-					} else if (*p == 'c') { // cont
-						rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_CONT);
-					} else {
-						eprintf("Invalid option: %s\n", p);
-					}
-				} else {
-					eprintf("Invalid signal: %s\n", input + 2);
-				}
-				free(name);
-				break;
-			}
-			/* fall through */
-		case '?':
-		default: {
-			rz_core_cmd_help(core, help_msg_dko);
-			// TODO #7967 help refactor: move to detail
-			rz_cons_println("NOTE: [signal] can be a number or a string that resolves with dk?\n"
-					"  skip means do not enter into the signal handler\n"
-					"  continue means enter into the signal handler");
-		}
-		}
-	} else if (*input == 'j') {
-		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_JSON);
-	} else if (!*input) {
-		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
-#if 0
-		RzListIter *iter;
-		RzDebugSignal *ds;
-		eprintf ("TODO: list signal handlers of child\n");
-		RzList *list = rz_debug_kill_list (core->dbg);
-		rz_list_foreach (list, iter, ds) {
-			// TODO: resolve signal name by number and show handler offset
-			eprintf ("--> %d\n", ds->num);
-		}
-		rz_list_free (list);
-#endif
-	} else {
-		int sig = atoi(input);
-		char *p = strchr(input, '=');
-		if (p) {
-			rz_debug_kill_setup(core->dbg, sig, rz_num_math(core->num, p + 1));
-		} else {
-			rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->tid, sig);
-		}
-	}
-}
-
 static bool cmd_dcu(RzCore *core, const char *input) {
 	const char *ptr = NULL;
 	ut64 from, to, pc;
@@ -2967,9 +2859,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			}
 			free(corefile);
 		}
-		break;
-	case 'k': // "dk"
-		rz_core_debug_kill(core, input + 1);
 		break;
 	case 'o': // "do"
 		switch (input[1]) {
@@ -4296,26 +4185,83 @@ RZ_IPI RzCmdStatus rz_cmd_debug_diff_handler(RzCore *core, int argc, const char 
 
 // dk
 RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (argc <= 1) {
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+		case RZ_OUTPUT_MODE_JSON:
+			rz_debug_signal_list(core->dbg, mode);
+			break;
+		default: rz_warn_if_reached(); break;
+		}
+#if 0
+		RzListIter *iter;
+		RzDebugSignal *ds;
+		eprintf ("TODO: list signal handlers of child\n");
+		RzList *list = rz_debug_kill_list (core->dbg);
+		rz_list_foreach (list, iter, ds) {
+			// TODO: resolve signal name by number and show handler offset
+			eprintf ("--> %d\n", ds->num);
+		}
+		rz_list_free (list);
+#endif
+		return RZ_CMD_STATUS_OK;
+	}
+	int sig = atoi(argv[1]);
+	if (argc >= 3) {
+		rz_debug_kill_setup(core->dbg, sig, rz_num_math(core->num, argv[2]));
+	} else {
+		rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->tid, sig);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
-// dk=
-RZ_IPI RzCmdStatus rz_cmd_debug_signal_set_handler(RzCore *core, int argc, const char **argv) {
-	return RZ_CMD_STATUS_OK;
-}
-
-// dk?
+// dkr
 RZ_IPI RzCmdStatus rz_cmd_debug_signal_resolver_handler(RzCore *core, int argc, const char **argv) {
+	const char *signame, *arg = argv[1];
+	int signum = atoi(arg);
+	if (signum > 0) {
+		signame = rz_signal_to_string(signum);
+		if (signame)
+			rz_cons_println(signame);
+	} else {
+		signum = rz_signal_from_string(arg);
+		if (signum > 0) {
+			rz_cons_printf("%d\n", signum);
+		}
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dko
 RZ_IPI RzCmdStatus rz_cmd_debug_ko_handler(RzCore *core, int argc, const char **argv) {
-	return RZ_CMD_STATUS_OK;
-}
+	if (argc <= 1) {
+		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
+		return RZ_CMD_STATUS_OK;
+	}
 
-// dko?
-RZ_IPI RzCmdStatus rz_cmd_debug_kox_handler(RzCore *core, int argc, const char **argv) {
+	int signum = atoi(argv[1]);
+	if (signum < 1)
+		signum = rz_signal_from_string(argv[1]);
+	if (signum <= 0) {
+		eprintf("Invalid signal: %s\n", argv[1]);
+	}
+	// Actions:
+	//  - pass
+	//  - trace
+	//  - stop
+	if (argc <= 2) { // stop (the usual)
+		rz_debug_signal_setup(core->dbg, signum, 0);
+	} else {
+		const char *option = argv[2];
+		if (*option == 's') { // skip
+			rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_SKIP);
+		} else if (*option == 'c') { // cont
+			rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_CONT);
+		} else {
+			eprintf("Invalid option: %s\n", option);
+		}
+	}
+
 	return RZ_CMD_STATUS_OK;
 }
 

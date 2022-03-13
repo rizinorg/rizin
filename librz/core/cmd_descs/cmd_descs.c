@@ -256,11 +256,9 @@ static const RzCmdDescArg cmd_debug_core_gen_args[2];
 static const RzCmdDescArg cmd_debug_handler_new_args[2];
 static const RzCmdDescArg cmd_debug_info_args[2];
 static const RzCmdDescArg cmd_debug_diff_args[3];
-static const RzCmdDescArg cmd_debug_signal_list_args[2];
-static const RzCmdDescArg cmd_debug_signal_set_args[2];
+static const RzCmdDescArg cmd_debug_signal_list_args[3];
 static const RzCmdDescArg cmd_debug_signal_resolver_args[2];
 static const RzCmdDescArg cmd_debug_ko_args[3];
-static const RzCmdDescArg cmd_debug_kox_args[2];
 static const RzCmdDescArg cmd_debug_handler_set_args[2];
 static const RzCmdDescArg cmd_debug_allocate_maps_args[2];
 static const RzCmdDescArg cmd_debug_dump_maps_args[2];
@@ -5544,6 +5542,12 @@ static const RzCmdDescArg cmd_debug_signal_list_args[] = {
 	{
 		.name = "signal",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "handler",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -5551,22 +5555,8 @@ static const RzCmdDescArg cmd_debug_signal_list_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_signal_list_help = {
-	.summary = "List all signal handlers of child process / Send KILL signal to child",
+	.summary = "List all signal handlers of child process  / Send KILL signal to child / Set signal handler for <signal> in child",
 	.args = cmd_debug_signal_list_args,
-};
-
-static const RzCmdDescArg cmd_debug_signal_set_args[] = {
-	{
-		.name = "signal",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_signal_set_help = {
-	.summary = "Set signal handler for <signal> in child",
-	.args = cmd_debug_signal_set_args,
 };
 
 static const RzCmdDescArg cmd_debug_signal_resolver_args[] = {
@@ -5583,7 +5573,7 @@ static const RzCmdDescHelp cmd_debug_signal_resolver_help = {
 	.args = cmd_debug_signal_resolver_args,
 };
 
-static const char *cmd_debug_ko_signal_choices[] = { "skip", "cont", NULL };
+static const char *cmd_debug_ko_skip_space_or_space_cont_choices[] = { "skip", "cont", NULL };
 static const RzCmdDescArg cmd_debug_ko_args[] = {
 	{
 		.name = "signal",
@@ -5591,31 +5581,17 @@ static const RzCmdDescArg cmd_debug_ko_args[] = {
 
 	},
 	{
-		.name = "signal",
+		.name = "skip or cont",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = cmd_debug_ko_signal_choices,
+		.choices = cmd_debug_ko_skip_space_or_space_cont_choices,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_ko_help = {
-	.summary = "Reset skip or cont options for given signal / On signal SKIP handler or CONT into",
+	.summary = "List existing signal handling / Clear handling for a signal / Set handling for a signal",
 	.args = cmd_debug_ko_args,
-};
-
-static const RzCmdDescArg cmd_debug_kox_args[] = {
-	{
-		.name = "signal",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_kox_help = {
-	.summary = "cont options for given signal",
-	.args = cmd_debug_kox_args,
 };
 
 static const RzCmdDescHelp dL_help = {
@@ -13966,17 +13942,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *dk_cd = rz_cmd_desc_group_modes_new(core->rcmd, d_cd, "dk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_signal_list_handler, &cmd_debug_signal_list_help, &dk_help);
 	rz_warn_if_fail(dk_cd);
-	RzCmdDesc *cmd_debug_signal_set_cd = rz_cmd_desc_argv_new(core->rcmd, dk_cd, "dk=", rz_cmd_debug_signal_set_handler, &cmd_debug_signal_set_help);
-	rz_warn_if_fail(cmd_debug_signal_set_cd);
-
-	RzCmdDesc *cmd_debug_signal_resolver_cd = rz_cmd_desc_argv_new(core->rcmd, dk_cd, "dk?", rz_cmd_debug_signal_resolver_handler, &cmd_debug_signal_resolver_help);
+	RzCmdDesc *cmd_debug_signal_resolver_cd = rz_cmd_desc_argv_new(core->rcmd, dk_cd, "dkr", rz_cmd_debug_signal_resolver_handler, &cmd_debug_signal_resolver_help);
 	rz_warn_if_fail(cmd_debug_signal_resolver_cd);
 
 	RzCmdDesc *cmd_debug_ko_cd = rz_cmd_desc_argv_new(core->rcmd, dk_cd, "dko", rz_cmd_debug_ko_handler, &cmd_debug_ko_help);
 	rz_warn_if_fail(cmd_debug_ko_cd);
-
-	RzCmdDesc *cmd_debug_kox_cd = rz_cmd_desc_argv_new(core->rcmd, dk_cd, "dko?", rz_cmd_debug_kox_handler, &cmd_debug_kox_help);
-	rz_warn_if_fail(cmd_debug_kox_cd);
 
 	RzCmdDesc *dL_cd = rz_cmd_desc_group_modes_new(core->rcmd, d_cd, "dL", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_handler_list_handler, &cmd_debug_handler_list_help, &dL_help);
 	rz_warn_if_fail(dL_cd);

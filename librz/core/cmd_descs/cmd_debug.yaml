@@ -450,8 +450,9 @@ commands:
     subcommands:
       - name: dk
         summary: >
-          List all signal handlers of child process
+          List all signal handlers of child process 
           / Send KILL signal to child
+          / Set signal handler for <signal> in child
         cname: cmd_debug_signal_list
         modes:
           - RZ_OUTPUT_MODE_STANDARD
@@ -460,13 +461,10 @@ commands:
           - name: signal
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-      - name: dk=
-        summary: Set signal handler for <signal> in child
-        cname: cmd_debug_signal_set
-        args:
-          - name: signal
+          - name: handler
             type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: dk?
+            optional: true
+      - name: dkr
         summary: Name/signum resolver
         cname: cmd_debug_signal_resolver
         args:
@@ -474,24 +472,19 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
       - name: dko
         summary: >
-          Reset skip or cont options for given signal
-          / On signal SKIP handler or CONT into
+          List existing signal handling
+          / Clear handling for a signal
+          / Set handling for a signal
         cname: cmd_debug_ko
         args:
           - name: signal
             type: RZ_CMD_ARG_TYPE_RZNUM
-          - name: signal
+          - name: skip or cont
             type: RZ_CMD_ARG_TYPE_CHOICES
             optional: true
             choices:
               - skip
               - cont
-      - name: dko?
-        summary: cont options for given signal
-        cname: cmd_debug_kox
-        args:
-          - name: signal
-            type: RZ_CMD_ARG_TYPE_RZNUM
   - name: dL
     summary: List or set debugger handler
     subcommands:
