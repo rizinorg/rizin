@@ -494,16 +494,22 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
   - name: dL
     summary: List or set debugger handler
-    cname: cmd_debug_handler
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
-      - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
-    args:
-      - name: handler
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
+    subcommands:
+      - name: dL
+        summary: List debugger handler
+        cname: cmd_debug_handler_list
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: dLs
+        summary: Set debugger handler
+        cname: cmd_debug_handler_set
+        args:
+          - name: handler
+            type: RZ_CMD_ARG_TYPE_NUM
   - name: dm
     summary: Memory map commands
     subcommands:
