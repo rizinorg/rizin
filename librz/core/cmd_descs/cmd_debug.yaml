@@ -652,25 +652,24 @@ commands:
       - name: do
         summary: Open process (reload, alias for 'oo')
         cname: cmd_debug_process_open
-        args: []
+        args:
+          - name: args
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
       - name: dor
         summary: Comma separated list of k=v rz-run profile options (e dbg.profile)
         cname: cmd_debug_process_dor
         args:
-          - name: pid
+          - name: rz-run
             type: RZ_CMD_ARG_TYPE_STRING
       - name: doe
         summary: Show rz-run startup profile
         cname: cmd_debug_process_profile
-        args:
-          - name: pid
-            type: RZ_CMD_ARG_TYPE_STRING
+        args: []
       - name: doe!
         summary: Edit rz-run startup profile with $EDITOR
         cname: cmd_debug_process_profile_edit
-        args:
-          - name: pid
-            type: RZ_CMD_ARG_TYPE_STRING
+        args: []
       - name: doo
         summary: Reopen in debug mode with args (alias for 'ood')
         cname: cmd_debug_process_doo

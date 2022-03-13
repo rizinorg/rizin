@@ -274,9 +274,8 @@ static const RzCmdDescArg debug_memory_permission_args[3];
 static const RzCmdDescArg cmd_debug_dmL_args[2];
 static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
+static const RzCmdDescArg cmd_debug_process_open_args[2];
 static const RzCmdDescArg cmd_debug_process_dor_args[2];
-static const RzCmdDescArg cmd_debug_process_profile_args[2];
-static const RzCmdDescArg cmd_debug_process_profile_edit_args[2];
 static const RzCmdDescArg cmd_debug_process_doo_args[2];
 static const RzCmdDescArg cmd_debug_process_doof_args[2];
 static const RzCmdDescArg cmd_debug_pid_list_args[2];
@@ -5970,6 +5969,13 @@ static const RzCmdDescHelp do_help = {
 	.summary = "Debug (re)open commands",
 };
 static const RzCmdDescArg cmd_debug_process_open_args[] = {
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_process_open_help = {
@@ -5979,7 +5985,7 @@ static const RzCmdDescHelp cmd_debug_process_open_help = {
 
 static const RzCmdDescArg cmd_debug_process_dor_args[] = {
 	{
-		.name = "pid",
+		.name = "rz-run",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
@@ -5992,12 +5998,6 @@ static const RzCmdDescHelp cmd_debug_process_dor_help = {
 };
 
 static const RzCmdDescArg cmd_debug_process_profile_args[] = {
-	{
-		.name = "pid",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_process_profile_help = {
@@ -6006,12 +6006,6 @@ static const RzCmdDescHelp cmd_debug_process_profile_help = {
 };
 
 static const RzCmdDescArg cmd_debug_process_profile_edit_args[] = {
-	{
-		.name = "pid",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_process_profile_edit_help = {
