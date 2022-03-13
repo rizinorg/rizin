@@ -143,7 +143,7 @@ CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x00000000 - 0x000000ff r-- fmap.vtable
  2 fd: 3 +0x00000100 0x00000100 - 0x000001ff r-- fmap.header
- 3 fd: 3 +0x00000200 0x00000200 - 0x000272f7 r-x fmap.text
+ 3 fd: 3 +0x00000200 0x00000200 * 0x000272f7 r-x fmap.text
 EOF
 RUN
 
