@@ -2181,28 +2181,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			follow = rz_config_get_i(core->config, "dbg.follow");
 		}
 		break;
-#if __WINDOWS__
-	case 'W': // "dW"
-		if (input[1] == 'i') {
-			rz_w32_identify_window();
-		} else {
-			rz_w32_print_windows(core->dbg);
-		}
-		break;
-#endif
-	case 'w': // "dw"
-		rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
-		for (; !rz_cons_is_breaked();) {
-			int pid = atoi(input + 1);
-			// int opid = core->dbg->pid = pid;
-			int res = rz_debug_kill(core->dbg, pid, 0, 0);
-			if (!res) {
-				break;
-			}
-			rz_sys_usleep(200);
-		}
-		rz_cons_break_pop();
-		break;
 	case '?': // "d?"
 	default:
 		rz_core_cmd_help(core, help_msg_d);
@@ -3651,16 +3629,37 @@ RZ_IPI RzCmdStatus rz_cmd_debug_thread_attach_handler(RzCore *core, int argc, co
 
 // dw
 RZ_IPI RzCmdStatus rz_cmd_debug_prompt_until_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	for (; !rz_cons_is_breaked();) {
+		int pid = atoi(argv[1]);
+		// int opid = core->dbg->pid = pid;
+		int res = rz_debug_kill(core->dbg, pid, 0, 0);
+		if (!res) {
+			break;
+		}
+		rz_sys_usleep(200);
+	}
+	rz_cons_break_pop();
 	return RZ_CMD_STATUS_OK;
 }
 
 // dW
 RZ_IPI RzCmdStatus rz_cmd_debug_window_process_list_handler(RzCore *core, int argc, const char **argv) {
+#if __WINDOWS__
+	rz_w32_print_windows(core->dbg);
+#else
+	eprintf("Not Windows\n");
+#endif
 	return RZ_CMD_STATUS_OK;
 }
 
 // dWi
 RZ_IPI RzCmdStatus rz_cmd_debug_window_identify_handler(RzCore *core, int argc, const char **argv) {
+#if __WINDOWS__
+	rz_w32_identify_window();
+#else
+	eprintf("Not Windows\n");
+#endif
 	return RZ_CMD_STATUS_OK;
 }
 
