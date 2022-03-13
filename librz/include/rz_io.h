@@ -159,6 +159,14 @@ typedef struct rz_io_map_t {
 	RzInterval itv;
 	ut64 delta; // paddr = itv.addr + delta
 	RZ_NULLABLE char *name;
+
+	/**
+	 * @brief Uninterpreted data to be injected from outside
+	 *
+	 * RZ_EVENT_IO_MAP_DEL may be listened to if any freeing is necessary.
+	 * (Hint when part of RzCore: RzCoreIOMapInfo is stored here)
+	 */
+	void *user;
 } RzIOMap;
 
 typedef struct rz_io_cache_t {
