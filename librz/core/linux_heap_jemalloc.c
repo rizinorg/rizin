@@ -176,7 +176,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 		extent_node_t *head = RZ_NEW0(extent_node_t);
 
 		if (!node || !head) {
-			RZ_LOG_ERROR("Cannot call calloc\n");
+			RZ_LOG_ERROR("Failed to allocate extent_node_t\n");
 			free(ar);
 			free(node);
 			free(head);
@@ -246,13 +246,13 @@ static void GH(jemalloc_print_narenas)(RzCore *core, const char *input) {
 			PRINTF_GA("narenas : %" PFMT64d "\n", (ut64)narenas);
 		}
 		if (narenas == 0) {
-			rz_cons_printf("No arenas allocated.\n");
+			RZ_LOG_ERROR("No arenas allocated.\n");
 			free(stats);
 			free(ar);
 			return;
 		}
 		if (narenas == GHT_MAX) {
-			rz_cons_printf("Cannot find narenas_total\n");
+			RZ_LOG_ERROR("Cannot find narenas_total\n");
 			free(stats);
 			free(ar);
 			return;
