@@ -309,7 +309,7 @@ commands:
               - name: str
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
-          - name: dcs*
+          - name: dcst
             summary: Trace all syscalls, a la strace
             cname: cmd_debug_trace_syscall
             args: []
@@ -329,31 +329,34 @@ commands:
     subcommands:
       - name: dd
         summary: >
-          List file descriptors or Open
-          / Open and map that file into the UI
+          Open and map that file into the UI
         cname: cmd_debug_dd
         args:
           - name: file
             type: RZ_CMD_ARG_TYPE_FILE
-            optional: true
+      - name: ddl
+        summary: >
+          List file descriptors
+        cname: cmd_debug_ddl
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
       - name: dd-
         summary: Close stdout fd
         cname: cmd_debug_fd_close
         args:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
-      - name: dd*
-        summary: List file descriptors (in rizin commands)
-        cname: cmd_debug_list_fd
-        args: []
       - name: dds
         summary: Seek given fd
         cname: cmd_debug_fd_seek
         args:
           - name: fd
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
           - name: offset
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: ddd
         summary: Dup2 from fd1 to fd2
         cname: cmd_debug_dup2
@@ -438,6 +441,7 @@ commands:
       - name: di
         summary: Show debugger target information
         cname: cmd_debug_info
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_STANDARD
@@ -466,6 +470,7 @@ commands:
           / Send KILL signal to child
           / Set signal handler for <signal> in child
         cname: cmd_debug_signal_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -498,20 +503,20 @@ commands:
               - skip
               - cont
   - name: dL
-    summary: List or set debugger handler
-    subcommands:
-      - name: dL
-        summary: List debugger handler
-        cname: cmd_debug_handler_list
-        modes:
-          - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_QUIET
-        default_mode: RZ_OUTPUT_MODE_STANDARD
-        args:
-          - name: handler
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+    summary: >
+      List or set debugger handler
+      / Set debugger handler <handler>
+    cname: cmd_debug_handler_list
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: handler
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
   - name: dm
     summary: Memory map commands
     subcommands:
@@ -598,6 +603,7 @@ commands:
               - name: symname
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN
@@ -713,6 +719,7 @@ commands:
       - name: dp
         summary: List current pid and children
         cname: cmd_debug_pid_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -723,6 +730,7 @@ commands:
       - name: dpl
         summary: List all attachable pids
         cname: cmd_debug_pid_attachable
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON

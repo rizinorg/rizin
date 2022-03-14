@@ -844,14 +844,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int arg
 }
 
 // dmi
-RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	CMD_CHECK_DEBUG_DEAD(core);
 	if (argc <= 1) {
-		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, mode);
-		cmd_debug_modules(core, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
+		cmd_debug_modules(core, state);
+		rz_cmd_state_output_print(state);
+		rz_cmd_state_output_fini(state);
 		rz_cons_flush();
 		return RZ_CMD_STATUS_OK;
 	}
@@ -867,7 +865,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 	}
 
 	ut64 baddr = 0LL;
-	bool symbols_only = (mode == RZ_OUTPUT_MODE_LONG);
+	bool symbols_only = (state->mode == RZ_OUTPUT_MODE_LONG);
 	PJ *pj = NULL;
 	RzDebugMap *map = get_closest_map(core, addr);
 	if (map) {
@@ -886,7 +884,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 					rz_core_dump(core, file, baddr, map->size, false);
 				}
 			}
-			get_bin_info(core, file, baddr, pj, mode, symbols_only, &filter);
+			get_bin_info(core, file, baddr, pj, state->mode, symbols_only, &filter);
 			if (newfile) {
 				if (!rz_file_rm(newfile)) {
 					RZ_LOG_ERROR("Error when removing %s\n", newfile);
@@ -897,16 +895,14 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 			RzBinFile *bf = rz_bin_cur(core->bin);
 			if (bf) {
 				rz_bin_set_baddr(core->bin, map->addr);
-				RzCmdStateOutput state;
-				rz_cmd_state_output_init(&state, rad2mode(mode));
-				rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
-				rz_cmd_state_output_print(&state);
-				rz_cmd_state_output_fini(&state);
+				rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, state, NULL);
+				rz_cmd_state_output_print(state);
+				rz_cmd_state_output_fini(state);
 				rz_bin_set_baddr(core->bin, baddr);
 			}
 		}
 	}
-	if (mode == RZ_MODE_JSON) {
+	if (state->mode == RZ_MODE_JSON) {
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
@@ -2830,13 +2826,23 @@ RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
 
 // dd
 RZ_IPI RzCmdStatus rz_cmd_debug_dd_handler(RzCore *core, int argc, const char **argv) {
-	if (argc == 1) {
+	// TODO: handle read, readwrite, append
+	RzBuffer *buf = rz_core_syscallf(core, "open", "%s, %d, %d", argv[1], 2, 0644);
+	consumeBuffer(buf, "dx ", "Cannot open");
+	// open file
+	return RZ_CMD_STATUS_OK;
+}
+
+// ddl
+RZ_IPI RzCmdStatus rz_cmd_debug_ddl_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
 		rz_debug_desc_list(core->dbg, 0);
-	} else if (argc > 1) {
-		// TODO: handle read, readwrite, append
-		RzBuffer *buf = rz_core_syscallf(core, "open", "%s, %d, %d", argv[1], 2, 0644);
-		consumeBuffer(buf, "dx ", "Cannot open");
-		// open file
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_debug_desc_list(core->dbg, 1);
+		break;
+	default: rz_warn_if_reached(); break;
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -2848,12 +2854,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_fd_close_handler(RzCore *core, int argc, const c
 	// rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, argv[1]));
 	RzBuffer *buf = rz_core_syscallf(core, "close", "%d", fd);
 	consumeBuffer(buf, "dx ", "Cannot close");
-	return RZ_CMD_STATUS_OK;
-}
-
-// dd*
-RZ_IPI RzCmdStatus rz_cmd_debug_list_fd_handler(RzCore *core, int argc, const char **argv) {
-	rz_debug_desc_list(core->dbg, 1);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3036,7 +3036,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_handler_new_handler(RzCore *core, int argc, cons
 }
 
 // di
-RZ_IPI RzCmdStatus rz_cmd_debug_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 
 #define P rz_cons_printf
 #define PS(X, Y) \
@@ -3051,7 +3051,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_info_handler(RzCore *core, int argc, const char 
 	char *escaped_str;
 	const char *reason;
 
-	switch (mode) {
+	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		reason = rz_debug_reason_to_string(core->dbg->reason.type);
 		if (!reason) {
@@ -3178,9 +3178,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_diff_handler(RzCore *core, int argc, const char 
 }
 
 // dk
-RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc <= 1) {
-		rz_debug_signal_list(core->dbg, mode);
+		rz_debug_signal_list(core->dbg, state->mode);
 #if 0
 		RzListIter *iter;
 		RzDebugSignal *ds;
@@ -3254,19 +3254,16 @@ RZ_IPI RzCmdStatus rz_cmd_debug_ko_handler(RzCore *core, int argc, const char **
 }
 
 // dL
-RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc > 1) {
 		rz_config_set(core->config, "dbg.backend", argv[1]);
 		// implicit by config.set rz_debug_use (core->dbg, str);
 		return RZ_CMD_STATUS_OK;
 	}
 
-	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, mode);
-
-	rz_core_debug_plugins_print(core, &state);
-	rz_cmd_state_output_print(&state);
-	rz_cmd_state_output_fini(&state);
+	rz_core_debug_plugins_print(core, state);
+	rz_cmd_state_output_print(state);
+	rz_cmd_state_output_fini(state);
 	rz_cons_flush();
 	return RZ_CMD_STATUS_OK;
 }
@@ -3386,18 +3383,19 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, co
 }
 
 // dp
-RZ_IPI RzCmdStatus rz_cmd_debug_pid_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_pid_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_cons_printf("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
 
 	const int pid = argc > 0 ? (int)RZ_MAX(0, (int)rz_num_math(core->num, argv[1])) : core->dbg->pid;
-	const char fmt = (char)rz_output_mode_to_char(mode);
+	const char fmt = (char)rz_output_mode_to_char(state->mode);
 	rz_debug_pid_list(core->dbg, pid, fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dpl
-RZ_IPI RzCmdStatus rz_cmd_debug_pid_attachable_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	rz_debug_pid_list(core->dbg, 0, (char)rz_output_mode_to_char(mode));
+RZ_IPI RzCmdStatus
+rz_cmd_debug_pid_attachable_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_debug_pid_list(core->dbg, 0, (char)rz_output_mode_to_char(state->mode));
 	return RZ_CMD_STATUS_OK;
 }
 
