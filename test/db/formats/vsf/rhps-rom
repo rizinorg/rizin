@@ -23,6 +23,6 @@ EXPECT=<<EOF
  3 fd: 3 +0x0004a0a1 0x0000c000 - 0x0000cfff r-x fmap.EDITOR
  4 fd: 3 +0x000400a1 0x0000e000 - 0x0000ffff r-x fmap.KERNAL
  5 fd: 3 +0x0000008c 0x00000000 - 0x0000ffff r-x fmap.RAM BANK 0
- 6 fd: 3 +0x0001008c 0x00000000 - 0x0000ffff r-x fmap.RAM BANK 1
+ 6 fd: 3 +0x0001008c 0x00000000 * 0x0000ffff r-x fmap.RAM BANK 1
 EOF
 RUN

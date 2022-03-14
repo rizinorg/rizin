@@ -149,6 +149,23 @@ typedef struct rz_core_file_t {
 	RzPVector /*<RzIOMap>*/ maps; ///< all maps that have been created as a result of loading this file
 } RzCoreFile;
 
+/**
+ * Data to be stored inside RzIOMap.user to track back to its origin
+ */
+typedef struct rz_core_io_map_info_t {
+	RzCoreFile *cf;
+
+	/**
+	 * Original perms as specified for example by the RzBinMap.
+	 *
+	 * This may be different from the RzIOMap's perms because io will disable writing if the
+	 * file has been opened read-only. If one needs the info whether a e.g. the segment causing
+	 * this map is writeable, this is the place to look for.
+	 * Used by rz-ghidra for example.
+	 */
+	int perm_orig;
+} RzCoreIOMapInfo;
+
 typedef struct rz_core_times_t {
 	ut64 loadlibs_init_time;
 	ut64 loadlibs_time;

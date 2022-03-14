@@ -7,7 +7,7 @@ EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00000160 0x00000160 - 0x0000041b r-x fmap.data
  2 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
- 3 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-x 
+ 3 fd: 3 +0x00000000 0x00000000 * 0x0000041b r-x 
 0x160
 EOF
 RUN
@@ -1491,7 +1491,7 @@ EXPECT=<<EOF
  8 fd: 3 +0x000001e8 0x000001e8 - 0x0000021d r-x fmap.code.Hello.say
  9 fd: 3 +0x00000194 0x00000194 - 0x000003e7 r-x fmap.data
 10 fd: 3 +0x00000000 0x00000000 - 0x000003e7 r-- fmap.file
-11 fd: 4 +0x00000000 0x00000000 - 0x000003e7 r-x 
+11 fd: 4 +0x00000000 0x00000000 * 0x000003e7 r-x 
  3 - r-x 0x00000800 classes2.dex
  4 * r-x 0x000003e8 classes.dex
 EOF
