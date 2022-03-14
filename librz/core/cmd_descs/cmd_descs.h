@@ -408,13 +408,13 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_block_flag_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input);
-RZ_IPI RzCmdStatus rz_cmd_debug_process_open_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_debug_process_dor_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI int rz_cmd_debug_process_dor(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_debug_process_doo_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_debug_process_doof_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI int rz_cmd_debug_process_doo(void *data, const char *input);
+RZ_IPI int rz_cmd_debug_process_doof(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI int rz_cmd_debug_process_open(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_attachable_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_detach_handler(RzCore *core, int argc, const char **argv);

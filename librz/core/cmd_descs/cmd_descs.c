@@ -274,10 +274,6 @@ static const RzCmdDescArg debug_memory_permission_args[3];
 static const RzCmdDescArg cmd_debug_dmL_args[2];
 static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
-static const RzCmdDescArg cmd_debug_process_open_args[2];
-static const RzCmdDescArg cmd_debug_process_dor_args[2];
-static const RzCmdDescArg cmd_debug_process_doo_args[2];
-static const RzCmdDescArg cmd_debug_process_doof_args[2];
 static const RzCmdDescArg cmd_debug_pid_list_args[2];
 static const RzCmdDescArg cmd_debug_pid_detach_args[2];
 static const RzCmdDescArg cmd_debug_pid_sel_args[2];
@@ -5962,36 +5958,11 @@ static const RzCmdDescHelp cmd_debug_heap_jemalloc_help = {
 	.args = cmd_debug_heap_jemalloc_args,
 };
 
-static const RzCmdDescHelp do_help = {
-	.summary = "Debug (re)open commands",
-};
-static const RzCmdDescArg cmd_debug_process_open_args[] = {
-	{
-		.name = "args",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
 static const RzCmdDescHelp cmd_debug_process_open_help = {
-	.summary = "Open process (reload, alias for 'oo')",
-	.args = cmd_debug_process_open_args,
-};
-
-static const RzCmdDescArg cmd_debug_process_dor_args[] = {
-	{
-		.name = "rz-run",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
+	.summary = "Debug (re)open commands / Open process (reload, alias for 'oo')",
 };
 static const RzCmdDescHelp cmd_debug_process_dor_help = {
 	.summary = "Comma separated list of k=v rz-run profile options (e dbg.profile)",
-	.args = cmd_debug_process_dor_args,
 };
 
 static const RzCmdDescArg cmd_debug_process_profile_args[] = {
@@ -6010,32 +5981,12 @@ static const RzCmdDescHelp cmd_debug_process_profile_edit_help = {
 	.args = cmd_debug_process_profile_edit_args,
 };
 
-static const RzCmdDescArg cmd_debug_process_doo_args[] = {
-	{
-		.name = "args",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
 static const RzCmdDescHelp cmd_debug_process_doo_help = {
 	.summary = "Reopen in debug mode with args (alias for 'ood')",
-	.args = cmd_debug_process_doo_args,
 };
 
-static const RzCmdDescArg cmd_debug_process_doof_args[] = {
-	{
-		.name = "args",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
 static const RzCmdDescHelp cmd_debug_process_doof_help = {
 	.summary = "Reopen in debug mode from file (alias for 'oodf')",
-	.args = cmd_debug_process_doof_args,
 };
 
 static const RzCmdDescArg cmd_debug_process_close_args[] = {
@@ -14052,24 +14003,24 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_heap_jemalloc_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmx", rz_cmd_debug_heap_jemalloc, &cmd_debug_heap_jemalloc_help);
 	rz_warn_if_fail(cmd_debug_heap_jemalloc_cd);
 
-	RzCmdDesc *do_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "do", rz_cmd_debug_process_open_handler, &cmd_debug_process_open_help, &do_help);
-	rz_warn_if_fail(do_cd);
-	RzCmdDesc *cmd_debug_process_dor_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "dor", rz_cmd_debug_process_dor_handler, &cmd_debug_process_dor_help);
+	RzCmdDesc *cmd_debug_process_open_cd = rz_cmd_desc_oldinput_new(core->rcmd, d_cd, "do", rz_cmd_debug_process_open, &cmd_debug_process_open_help);
+	rz_warn_if_fail(cmd_debug_process_open_cd);
+	RzCmdDesc *cmd_debug_process_dor_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_process_open_cd, "dor", rz_cmd_debug_process_dor, &cmd_debug_process_dor_help);
 	rz_warn_if_fail(cmd_debug_process_dor_cd);
 
-	RzCmdDesc *cmd_debug_process_profile_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doe", rz_cmd_debug_process_profile_handler, &cmd_debug_process_profile_help);
+	RzCmdDesc *cmd_debug_process_profile_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_debug_process_open_cd, "doe", rz_cmd_debug_process_profile_handler, &cmd_debug_process_profile_help);
 	rz_warn_if_fail(cmd_debug_process_profile_cd);
 
-	RzCmdDesc *cmd_debug_process_profile_edit_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doe!", rz_cmd_debug_process_profile_edit_handler, &cmd_debug_process_profile_edit_help);
+	RzCmdDesc *cmd_debug_process_profile_edit_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_debug_process_open_cd, "doe!", rz_cmd_debug_process_profile_edit_handler, &cmd_debug_process_profile_edit_help);
 	rz_warn_if_fail(cmd_debug_process_profile_edit_cd);
 
-	RzCmdDesc *cmd_debug_process_doo_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doo", rz_cmd_debug_process_doo_handler, &cmd_debug_process_doo_help);
+	RzCmdDesc *cmd_debug_process_doo_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_process_open_cd, "doo", rz_cmd_debug_process_doo, &cmd_debug_process_doo_help);
 	rz_warn_if_fail(cmd_debug_process_doo_cd);
 
-	RzCmdDesc *cmd_debug_process_doof_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doof", rz_cmd_debug_process_doof_handler, &cmd_debug_process_doof_help);
+	RzCmdDesc *cmd_debug_process_doof_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_process_open_cd, "doof", rz_cmd_debug_process_doof, &cmd_debug_process_doof_help);
 	rz_warn_if_fail(cmd_debug_process_doof_cd);
 
-	RzCmdDesc *cmd_debug_process_close_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doc", rz_cmd_debug_process_close_handler, &cmd_debug_process_close_help);
+	RzCmdDesc *cmd_debug_process_close_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_debug_process_open_cd, "doc", rz_cmd_debug_process_close_handler, &cmd_debug_process_close_help);
 	rz_warn_if_fail(cmd_debug_process_close_cd);
 
 	RzCmdDesc *dp_cd = rz_cmd_desc_group_modes_new(core->rcmd, d_cd, "dp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_pid_list_handler, &cmd_debug_pid_list_help, &dp_help);

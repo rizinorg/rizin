@@ -644,21 +644,14 @@ commands:
         type: RZ_CMD_DESC_TYPE_OLDINPUT
         args: []
   - name: do
-    summary: Debug (re)open commands
+    summary: Debug (re)open commands / Open process (reload, alias for 'oo')
+    cname: cmd_debug_process_open
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands:
-      - name: do
-        summary: Open process (reload, alias for 'oo')
-        cname: cmd_debug_process_open
-        args:
-          - name: args
-            type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
       - name: dor
         summary: Comma separated list of k=v rz-run profile options (e dbg.profile)
         cname: cmd_debug_process_dor
-        args:
-          - name: rz-run
-            type: RZ_CMD_ARG_TYPE_STRING
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: doe
         summary: Show rz-run startup profile
         cname: cmd_debug_process_profile
@@ -670,15 +663,11 @@ commands:
       - name: doo
         summary: Reopen in debug mode with args (alias for 'ood')
         cname: cmd_debug_process_doo
-        args:
-          - name: args
-            type: RZ_CMD_ARG_TYPE_STRING
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: doof
         summary: Reopen in debug mode from file (alias for 'oodf')
         cname: cmd_debug_process_doof
-        args:
-          - name: args
-            type: RZ_CMD_ARG_TYPE_STRING
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: doc
         summary: Close debug session
         cname: cmd_debug_process_close

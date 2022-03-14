@@ -3420,16 +3420,43 @@ RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
+static const char *help_msg_do[] = {
+	"Usage:", "do", " # Debug (re)open commands",
+	"do", "", "Open process (reload, alias for 'oo')",
+	"dor", " [rz-run]", "Comma separated list of k=v rz-run profile options (e dbg.profile)",
+	"doe", "", "Show rz-run startup profile",
+	"doe!", "", "Edit rz-run startup profile with $EDITOR",
+	"doo", " [args]", "Reopen in debug mode with args (alias for 'ood')",
+	"doof", " [args]", "Reopen in debug mode from file (alias for 'oodf')",
+	"doc", "", "Close debug session",
+	NULL
+};
+
 // do
-RZ_IPI RzCmdStatus rz_cmd_debug_process_open_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_file_reopen(core, argc > 1 ? argv[1] : NULL, 0, 1);
-	return RZ_CMD_STATUS_OK;
+RZ_IPI int rz_cmd_debug_process_open(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	if (input && input[0] == '?') {
+		rz_core_cmd_help(core, help_msg_do);
+		return 0;
+	}
+	rz_core_file_reopen(core, input, 0, 1);
+	return 0;
 }
 
 // dor
-RZ_IPI RzCmdStatus rz_cmd_debug_process_dor_handler(RzCore *core, int argc, const char **argv) {
-	setRarunProfileString(core, argv[1]);
-	return RZ_CMD_STATUS_OK;
+RZ_IPI int rz_cmd_debug_process_dor(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	if (input && input[0] == '?') {
+		rz_core_cmd_help(core, help_msg_do);
+		return 0;
+	}
+	if (input) {
+		setRarunProfileString(core, input);
+	} else {
+		// TODO use the api
+		rz_sys_xsystem("rz-run -h");
+	}
+	return 0;
 }
 
 // doe
@@ -3452,16 +3479,26 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int a
 }
 
 // doo
-RZ_IPI RzCmdStatus rz_cmd_debug_process_doo_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_file_reopen_debug(core, argv[1]);
-	return RZ_CMD_STATUS_OK;
+RZ_IPI int rz_cmd_debug_process_doo(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	if (input && input[0] == '?') {
+		rz_core_cmd_help(core, help_msg_do);
+		return 0;
+	}
+	rz_core_file_reopen_debug(core, input);
+	return 0;
 }
 
 // doof
-RZ_IPI RzCmdStatus rz_cmd_debug_process_doof_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI int rz_cmd_debug_process_doof(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	if (input && input[0] == '?') {
+		rz_core_cmd_help(core, help_msg_do);
+		return 0;
+	}
 	rz_config_set_b(core->config, "cfg.debug", true);
-	rz_core_cmd0(core, sdb_fmt("oodf %s", argv[1]));
-	return RZ_CMD_STATUS_OK;
+	rz_core_cmd0(core, sdb_fmt("oodf %s", input));
+	return 0;
 }
 
 // doc
