@@ -23,6 +23,30 @@
 #include <transport.h>
 #include <winkd.h>
 
+typedef struct {
+	RzIO *io;
+	RzIODesc *fd;
+} ReadAtCtx;
+
+static int op_at_phys(void *user, ut64 address, const ut8 *in, ut8 *out, int len, bool write) {
+	ReadAtCtx *ctx = user;
+	int ret = write ? winkd_write_at_phys(ctx->fd->data, address, in, len) : winkd_read_at_phys(ctx->fd->data, address, out, len);
+	return ret;
+}
+
+static int read_at_phys(void *user, ut64 address, ut8 *buf, int len) {
+	return op_at_phys(user, address, NULL, buf, len, false);
+}
+
+static int write_at_phys(void *user, ut64 address, const ut8 *buf, int len) {
+	return op_at_phys(user, address, buf, NULL, len, true);
+}
+
+static int read_at_kernel_virtual(void *user, ut64 address, ut8 *buf, int len) {
+	ReadAtCtx *ctx = user;
+	return winkd_read_at(ctx->fd->data, ctx->io->off, buf, len);
+}
+
 static bool __plugin_open(RzIO *io, const char *file, bool many) {
 	return (!strncmp(file, "winkd://", 8));
 }
@@ -59,12 +83,28 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 
-	WindCtx *ctx = winkd_ctx_new(desc);
+	KdCtx *ctx = winkd_kdctx_new(desc);
 	if (!ctx) {
 		eprintf("Failed to initialize winkd context\n");
 		return NULL;
 	}
-	return rz_io_desc_new(io, &rz_io_plugin_winkd, file, rw, mode, ctx);
+	ctx->windctx.read_at_physical = read_at_phys;
+	ctx->windctx.write_at_physical = write_at_phys;
+	ctx->windctx.read_at_kernel_virtual = read_at_kernel_virtual;
+	ReadAtCtx *c = RZ_NEW0(ReadAtCtx);
+	if (!c) {
+		free(ctx);
+		return NULL;
+	}
+	c->io = io;
+	c->fd = rz_io_desc_new(io, &rz_io_plugin_winkd, file, rw, mode, ctx);
+	if (!c->fd) {
+		free(c);
+		free(ctx);
+		return NULL;
+	}
+	ctx->windctx.user = c;
+	return c->fd;
 }
 
 static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
@@ -72,9 +112,9 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	}
 	if (winkd_get_target(fd->data)) {
-		return winkd_write_at_uva(fd->data, buf, io->off, count);
+		return winkd_write_at_uva(fd->data, io->off, buf, count);
 	}
-	return winkd_write_at(fd->data, buf, io->off, count);
+	return winkd_write_at(fd->data, io->off, buf, count);
 }
 
 static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
@@ -96,14 +136,14 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	}
 
 	if (winkd_get_target(fd->data)) {
-		return winkd_read_at_uva(fd->data, buf, io->off, count);
+		return winkd_read_at_uva(fd->data, io->off, buf, count);
 	}
 
-	return winkd_read_at(fd->data, buf, io->off, count);
+	return winkd_read_at(fd->data, io->off, buf, count);
 }
 
 static int __close(RzIODesc *fd) {
-	winkd_ctx_free((WindCtx **)&fd->data);
+	winkd_kdctx_free((KdCtx **)&fd->data);
 	return true;
 }
 

@@ -52,16 +52,16 @@ static bool sigdb_signature_resolve_details(RzSigDBEntry *entry, size_t path_len
 		goto skip_details;
 	}
 
-	buffer = rz_buf_new_slurp(entry->file_path);
+	buffer = rz_buf_new_file(entry->file_path, O_RDONLY, 0);
 	if (!buffer) {
-		RZ_LOG_WARN("sigdb: cannot open .sig file '%s'.\n", entry->file_path);
+		RZ_LOG_WARN("sigdb: cannot open signature file '%s'.\n", entry->file_path);
 		return false;
 	}
 
 	if (rz_str_endswith(entry->base_name, ".sig")) {
-		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY, &info);
+		bool success = rz_sign_flirt_parse_header_compressed_pattern_from_buffer(buffer, &info);
 		rz_buf_free(buffer);
-		if (!node) {
+		if (!success) {
 			return false;
 		}
 

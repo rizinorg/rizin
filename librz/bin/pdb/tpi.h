@@ -349,13 +349,26 @@ typedef struct {
 } Tpi_LF_Modifier;
 
 typedef enum {
-	PTR_MODE_PTR = 0x00000000,
-	PTR_MODE_REF = 0x00000001,
-	PTR_MODE_PMEM = 0x00000002,
-	PTR_MODE_PMFUNC = 0x00000003,
-	PTR_MODE_RESERVED = 0x00000004,
+	PTR_MODE_PTR = 0x00000000, // "normal" pointer
+	PTR_MODE_LVREF = 0x00000001, // l-value reference
+	PTR_MODE_PMEM = 0x00000002, // pointer to data member
+	PTR_MODE_PMFUNC = 0x00000003, // pointer to member function
+	PTR_MODE_RVREF = 0x00000004, // r-value reference
+	PTR_MODE_RESERVED = 0x00000005, // first unused pointer mode
 	ModeMax
-} TpiCVMode;
+} TpiCVPtrMode;
+
+typedef enum {
+	PMTYPE_UNDEFINED = 0x00, // not specified (pre VC8)
+	PMTYPE_DATA_SINGLE = 0x01, // member data, single inheritance
+	PMTYPE_DATA_MULTIPLE = 0x02, // member data, multiple inheritance
+	PMTYPE_DATA_VIRTUAL = 0x03, // member data, virtual inheritance
+	PMTYPE_DATA_GENERAL = 0x04, // member data, most general
+	PMTYPE_FCN_SINGLE = 0x05, // member function, single inheritance
+	PMTYPE_FCN_MULTIPLE = 0x06, // member function, multiple inheritance
+	PMTYPE_FCN_VIRTUAL = 0x07, // member function, virtual inheritance
+	PMTYPE_FCN_GENERAL = 0x08, // member function, most general
+} TpiCVPmType;
 
 typedef enum {
 	PTR_NEAR = 0x00000000,
@@ -395,6 +408,15 @@ typedef union {
 typedef struct {
 	ut32 utype;
 	TpiCVPointerAttr ptr_attr;
+	union {
+		struct {
+			ut32 pmclass; // index of containing class for pointer to member
+			ut16 pmtype; // TpiCVPmType
+		} pmember;
+		struct {
+			ut32 index; // type index if PTR_BASE_TYPE
+		} pbase;
+	};
 	ut8 pad;
 } Tpi_LF_Pointer;
 
@@ -525,6 +547,12 @@ typedef struct {
 	Tpi_Type_String name;
 	ut8 pad;
 } Tpi_LF_StaticMember;
+
+typedef struct {
+	TpiCVFldattr fldattr;
+	ut32 index;
+	ut8 pad;
+} Tpi_LF_Index;
 
 typedef struct {
 	TpiCVFldattr fldattr;

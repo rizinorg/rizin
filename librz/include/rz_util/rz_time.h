@@ -18,16 +18,20 @@ RZ_API ut64 rz_time_now(void);
 // monotonic time in microseconds
 RZ_API ut64 rz_time_now_mono(void);
 
-RZ_API char *rz_time_stamp_to_str(ut32 timeStamp);
-RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timeStamp);
+RZ_API RZ_OWN char *rz_time_stamp_to_str(ut32 timestamp);
+RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timestamp);
 RZ_API bool rz_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp);
-RZ_API char *rz_time_to_string(ut64 ts);
+RZ_API RZ_OWN char *rz_time_date_dos_to_string(ut32 timestamp);
+RZ_API RZ_OWN char *rz_time_date_hfs_to_string(ut32 timestamp);
+RZ_API RZ_OWN char *rz_time_date_w32_to_string(ut64 timestamp);
+#define rz_time_date_unix_to_string rz_time_stamp_to_str
+RZ_API RZ_OWN char *rz_time_date_now_to_string(void);
 
 // Thread-safe cross platform wrappers
-RZ_API char *rz_asctime_r(const struct tm *tm, char *buf);
-RZ_API char *rz_ctime_r(const time_t *timer, char *buf);
-RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res);
-RZ_API struct tm *rz_gmtime_r(const time_t *time, struct tm *res);
+RZ_API char *rz_asctime_r(RZ_NONNULL const struct tm *tm, RZ_NONNULL char *buf);
+RZ_API char *rz_ctime_r(RZ_NONNULL const time_t *timer, RZ_NONNULL char *buf);
+RZ_API struct tm *rz_localtime_r(RZ_NONNULL const time_t *time, RZ_NONNULL struct tm *res);
+RZ_API struct tm *rz_gmtime_r(RZ_NONNULL const time_t *time, RZ_NONNULL struct tm *res);
 
 #define RZ_TIME_PROFILE_ENABLED 0
 

@@ -15,7 +15,7 @@ typedef struct {
 	libgdbr_t desc;
 } RzIOGdb;
 
-#define RZ_GDB_MAGIC rz_str_hash("gdb")
+#define RZ_GDB_MAGIC rz_str_djb2_hash("gdb")
 
 static int __close(RzIODesc *fd);
 static libgdbr_t *desc = NULL;

@@ -159,8 +159,7 @@ RZ_API const char *rz_str_trim_head_ro(const char *str);
 RZ_API const char *rz_str_trim_head_wp(const char *str);
 RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str);
 RZ_API void rz_str_trim_tail_char(RZ_NONNULL RZ_INOUT char *str, const char c);
-RZ_API ut32 rz_str_hash(const char *str);
-RZ_API ut64 rz_str_hash64(const char *str);
+RZ_API ut64 rz_str_djb2_hash(const char *str);
 RZ_API char *rz_str_trim_nc(char *str);
 RZ_API const char *rz_str_nstr(const char *from, const char *to, int size);
 RZ_API const char *rz_str_lchr(const char *str, char chr);
@@ -255,6 +254,20 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width);
 RZ_API const char *rz_str_sep(const char *base, const char *sep);
 RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep);
 RZ_API char *rz_str_version(const char *program);
+
+typedef struct rz_str_stringify_opt_t {
+	const ut8 *buffer; ///< String buffer (cannot be NULL).
+	ut32 length; ///< String buffer length.
+	RzStrEnc encoding; ///< String encoding type (cannot be RZ_STRING_ENC_GUESS)
+	ut32 wrap_at; ///< Adds a new line the output when it exeeds this value.
+	bool escape_nl; ///< When enabled escapes new lines (\n).
+	bool json; ///< Encodes the output as a JSON string.
+	bool stop_at_nil; ///< When enabled stops printing when '\0' is found.
+	bool urlencode; ///< Encodes the output following RFC 3986.
+} RzStrStringifyOpt;
+
+RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);
+RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length);
 
 #ifdef __cplusplus
 }

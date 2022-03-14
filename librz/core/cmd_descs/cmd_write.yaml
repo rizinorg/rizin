@@ -417,7 +417,7 @@ commands:
             optional: true
   - name: ww
     cname: ww_handler_old
-    summary: Write wide string
+    summary: Write wide 16 little endian string
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wx
     summary: Write hexadecimal data

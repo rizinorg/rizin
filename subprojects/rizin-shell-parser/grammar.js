@@ -86,7 +86,6 @@ module.exports = grammar({
         $.help_stmt,
         $.repeat_stmt,
         $.arged_stmt,
-        $.number_stmt,
         $._tmp_stmt,
         $._iter_stmt,
         $._pipe_stmt,
@@ -209,7 +208,6 @@ module.exports = grammar({
     tmp_hex_stmt: ($) => prec.right(1, seq($._simple_stmt, "@x:", $.arg)),
 
     // basic statements
-    number_stmt: ($) => choice($._dec_number, "0", /(0x[0-9A-Fa-f]+|0b[0-1]+)/),
     help_stmt: ($) =>
       prec.left(
         1,

@@ -351,7 +351,7 @@ RZ_API bool rz_bv_set_all(RZ_NONNULL RzBitVector *bv, bool b) {
 	rz_return_val_if_fail(bv, false);
 
 	if (bv->len <= 64) {
-		bv->bits.small_u = b ? (UT64_MAX & ((1ull << bv->len) - 1)) : 0;
+		bv->bits.small_u = b ? UT64_MAX >> (64 - bv->len) : 0;
 		return b;
 	}
 
@@ -1302,14 +1302,23 @@ RZ_API void rz_bv_set_to_bytes_le(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NO
 	ut32 bytes = rz_bv_len_bytes(bv);
 	if (bv->len > 64) {
 		for (ut32 i = 0; i < bytes; i++) {
-			ut8 b8 = bv->bits.large_a[i];
-			buf[i] = reverse_byte(b8);
+			if (i + 1 == bytes && bv->len % 8) {
+				buf[i] &= (0xff << (bv->len % 8)) & 0xff;
+				buf[i] |= bv->bits.large_a[i];
+			} else {
+				buf[i] = bv->bits.large_a[i];
+			}
 		}
 		return;
 	}
 	ut64 val = bv->bits.small_u;
 	for (ut32 i = 0; i < bytes; i++) {
-		buf[i] = val & 0xFF;
+		if (i + 1 == bytes && bv->len % 8) {
+			buf[i] &= (0xff << (bv->len % 8)) & 0xff;
+			buf[i] |= val & 0xff;
+		} else {
+			buf[i] = val & 0xff;
+		}
 		val >>= 8;
 	}
 }
@@ -1325,8 +1334,7 @@ RZ_API void rz_bv_set_to_bytes_be(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NO
 	if (bv->len > 64) {
 		ut32 end = bytes - 1;
 		for (ut32 i = 0; i < bytes; i++) {
-			ut8 b8 = bv->bits.large_a[i];
-			buf[end - i] = reverse_byte(b8);
+			buf[end - i] = bv->bits.large_a[i];
 		}
 		return;
 	}

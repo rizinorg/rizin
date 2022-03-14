@@ -150,6 +150,9 @@ rz_analysis_sources = [
   #'arch/gb/meta_gb_cmt.c',
   'arch/arm/arm_esil32.c',
   'arch/arm/arm_esil64.c',
+  'arch/avr/avr_esil.c',
+  'arch/avr/avr_il.c',
+  'arch/arm/arm_il32.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cr16/cr16_disas.c',
@@ -296,6 +299,7 @@ pkgconfig_mod.generate(rz_analysis,
   description: 'rizin foundation libraries',
   variables: [
     'plugindir=@0@'.format(rizin_plugins),
+    'datdir=@0@'.format(rizin_datdir_rz),
   ],
 )
 

@@ -25,6 +25,7 @@ on:
     - '**.inc'
     - '**/meson.build'
     - 'subprojects/**'
+    - 'test/**'
     - '.github/workflows/tcc.yml'
     branches:
     - 'dev'
@@ -85,6 +86,8 @@ jobs:
     - name: Install test dependencies
       run: |
           python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+          sudo apt-get update
+          sudo apt-get --assume-yes install libc6 libc6-i386
 
     - name: Run tests
       env:

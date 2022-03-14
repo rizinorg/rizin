@@ -921,6 +921,7 @@ sign: false
 type: push
 cycles: 1
 esil: 8,sp,-=,lr,r3,2,sp,=[*]
+rzil: (seq (storew 0 (- (var sp) (bv 32 0x8)) (var r3)) (storew 0 (- (var sp) (bv 32 0x4)) (var lr)) (set sp (- (var sp) (bv 32 0x8))))
 family: cpu
 stackop: inc
 stackptr: 8
@@ -942,6 +943,7 @@ sign: false
 type: add
 cycles: 1
 esil: 0,sp,+,0xffffffff,&,r7,=
+rzil: (set r7 (+ (var sp) (bv 32 0x0)))
 family: cpu
 EOF
 RUN

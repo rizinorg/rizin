@@ -35,7 +35,7 @@ EOF
 EXPECT=<<EOF
 9
 0
-17
+18
 Hello world!
 EOF
 RUN

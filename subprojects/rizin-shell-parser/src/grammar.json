@@ -164,10 +164,6 @@
         },
         {
           "type": "SYMBOL",
-          "name": "number_stmt"
-        },
-        {
-          "type": "SYMBOL",
           "name": "_tmp_stmt"
         },
         {
@@ -1428,23 +1424,6 @@
           }
         ]
       }
-    },
-    "number_stmt": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "_dec_number"
-        },
-        {
-          "type": "STRING",
-          "value": "0"
-        },
-        {
-          "type": "PATTERN",
-          "value": "(0x[0-9A-Fa-f]+|0b[0-1]+)"
-        }
-      ]
     },
     "help_stmt": {
       "type": "PREC_LEFT",

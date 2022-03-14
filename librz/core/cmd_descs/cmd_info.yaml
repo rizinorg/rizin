@@ -145,14 +145,7 @@ commands:
         args:
           - name: lang
             type: RZ_CMD_ARG_TYPE_CHOICES
-            choices:
-              - c++
-              - java
-              - objc
-              - swift
-              - dlang
-              - msvc
-              - rust
+            choices_cb: rz_cmd_info_demangle_lang_choices
           - name: symbol
             type: RZ_CMD_ARG_TYPE_STRING
       - name: iDl

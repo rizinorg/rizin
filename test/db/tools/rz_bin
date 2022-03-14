@@ -1109,7 +1109,7 @@ EXPECT=<<EOF
         },
         {
           "type": "union",
-          "name": "<unnamed-tag>",
+          "name": "type_0x1004",
           "size": 4,
           "members": [
             {
@@ -1130,7 +1130,7 @@ EXPECT=<<EOF
           "size": 8,
           "members": [
             {
-              "member_type": "union <unnamed-tag>",
+              "member_type": "union type_0x1004",
               "member_name": "a",
               "offset": 0
             },

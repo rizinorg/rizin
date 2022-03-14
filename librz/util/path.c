@@ -5,6 +5,7 @@
 #include <rz_util/rz_file.h>
 #include <rz_util/rz_sys.h>
 #include <rz_util/rz_str.h>
+#include <rz_util/rz_utf8.h>
 
 /**
  * \brief Return \p path prefixed by the Rizin install prefix
@@ -15,23 +16,37 @@
 RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path) {
 #if RZ_IS_PORTABLE
 	char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
-	if (pid_to_path) {
-		char *t = rz_file_dirname(pid_to_path);
-		free(pid_to_path);
-		// When rz_path_prefix is called from a unit test or from a
-		// not-yet-instazled rizin binary this would return the wrong path.
-		// In those cases, just return RZ_PREFIX.
-		char *result = NULL;
-		if (rz_str_endswith(t, RZ_SYS_DIR RZ_BINDIR)) {
-			char *r = rz_file_dirname(t);
-			result = rz_file_path_join(r, path);
-			free(r);
+	if (!pid_to_path) {
+		goto prefix;
+	}
+	char *bindir = rz_path_realpath(RZ_JOIN_2_PATHS(RZ_PREFIX, RZ_BINDIR));
+	if (!bindir) {
+		goto prefix;
+	}
+
+	char *it = rz_file_dirname(pid_to_path);
+	free(pid_to_path);
+
+	bool in_bindir = rz_str_endswith(it, rz_file_basename(bindir));
+	free(bindir);
+	// When rz_path_prefix is called from a unit test or from a
+	// not-yet-installed rizin binary this would return the wrong path.
+	// In those cases, just return RZ_PREFIX.
+	if (in_bindir) {
+		for (int i = 0; i < RZ_BINDIR_DEPTH; i++) {
+			char *tmp = it;
+			it = rz_file_dirname(tmp);
+			free(tmp);
 		}
-		free(t);
-		if (result) {
+
+		if (rz_file_is_directory(it)) {
+			char *result = rz_file_path_join(it, path);
+			free(it);
 			return result;
 		}
 	}
+	free(it);
+prefix:
 #endif
 	return rz_file_path_join(RZ_PREFIX, path);
 }
@@ -179,4 +194,34 @@ RZ_API RZ_OWN char *rz_path_home_expand(RZ_NULLABLE const char *path) {
 	}
 
 	return rz_path_home(path + 1);
+}
+
+/**
+ * \brief Return a canonicalized absolute path. Expands all symbolic links and resolves
+ * references to /./, /../ and extra '/' characters.
+ *
+ * \param path Original file path.
+ * \return New canonicalized absolute path.
+ */
+RZ_API RZ_OWN char *rz_path_realpath(RZ_NULLABLE const char *path) {
+	if (!path) {
+		return NULL;
+	}
+#if HAVE_REALPATH
+	char buf[PATH_MAX] = { 0 };
+	const char *rp = realpath(path, buf);
+	if (rp) {
+		return strdup(rp);
+	}
+#elif __WINDOWS__
+	wchar_t buf[MAX_PATH] = { 0 };
+
+	wchar_t *wpath = rz_utf8_to_utf16(path);
+	DWORD len = GetFullPathNameW(wpath, MAX_PATH, buf, NULL);
+	free(wpath);
+	if (len > 0 && len < MAX_PATH - 1) {
+		return rz_utf16_to_utf8_l(buf, len);
+	}
+#endif
+	return NULL;
 }

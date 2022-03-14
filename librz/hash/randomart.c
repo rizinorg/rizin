@@ -25,7 +25,7 @@
  *
  * The algorithm used here is a worm crawling over a discrete plane,
  * leaving a trace (augmenting the field) everywhere it goes.
- * Movement is taken from dgst_raw 2bit-wise.  Bumping into walls
+ * Movement is taken from buffer 2bit-wise.  Bumping into walls
  * makes the respective movement vector be ignored for this turn.
  * Graphs are not unambiguous, because circles in graphs can be
  * walked in either direction.
@@ -37,14 +37,23 @@
  * Else pictures would be too dense, and drawing the frame would
  * fail, too, because the key type would not fit in anymore.
  */
+#include <rz_msg_digest.h>
 #include <rz_util.h>
 
 #define FLDBASE   8
 #define FLDSIZE_Y (FLDBASE + 1)
 #define FLDSIZE_X (FLDBASE * 2 + 1)
 
-// static char * key_fingerprint_randomart(ut8 *dgst_raw, ut32 dgst_raw_len) {
-RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr) {
+/**
+ * \brief Generates a randomart that is meant to be an easily validate buffers.
+ *
+ * \param  buffer The buffer to use to generate the
+ * \param  length The buffer length
+ * \param  addr   The location of the hash (when unknown can be set to 0).
+ * \return
+ */
+RZ_API RZ_OWN char *rz_msg_digest_randomart(RZ_NONNULL const ut8 *buffer, ut32 length, ut64 address) {
+	rz_return_val_if_fail(buffer && length > 0, NULL);
 	/*
 	 * Chars to be used after each other every time the worm
 	 * intersects with itself.  Matter of taste.
@@ -70,10 +79,10 @@ RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 add
 	y = FLDSIZE_Y / 2;
 
 	/* process raw key */
-	for (i = 0; i < dgst_raw_len; i++) {
+	for (i = 0; i < length; i++) {
 		int input;
 		/* each byte conveys four 2-bit move commands */
-		input = dgst_raw[i];
+		input = buffer[i];
 		for (b = 0; b < 4; b++) {
 			/* evaluate 2 bit, rest is shifted later */
 			x += (input & 0x1) ? 1 : -1;
@@ -98,12 +107,7 @@ RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 add
 	field[x][y] = len;
 
 	/* fill in retval */
-#if 0
-	snprintf(retval, FLDSIZE_X, "+--[%4s %4u]", key_type(k), key_size(k));
-#else
-	// strcpy (retval, "+-------------");
-	sprintf(retval, "+--[0x%08" PFMT64x "]-", addr);
-#endif
+	sprintf(retval, "+--[0x%08" PFMT64x "]-", address);
 	p = strchr(retval, '\0');
 
 	/* output upper border */

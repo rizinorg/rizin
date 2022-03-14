@@ -1727,7 +1727,6 @@ ar
 ara-
 wc-*
 ar
-aezi  # Shouldn't be necessary
 aezsu $s; ?e
 EOF
 EXPECT=<<EOF
@@ -1738,22 +1737,5 @@ pc = 0x000002af
 ptr = 0x00010000
 pc = 0x00000000
 7
-EOF
-RUN
-
-NAME=ar pc=1 before aezi
-FILE=bins/bf/2+5.bf
-BROKEN=1
-CMDS=<<EOF
-e io.cache=1
-ar pc=1
-aezi
-ar
-aezsu $s; ?e
-EOF
-EXPECT=<<EOF
-ptr = 0x00010000
-pc = 0x00000001
-6
 EOF
 RUN

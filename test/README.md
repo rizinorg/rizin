@@ -44,6 +44,7 @@ To run unit tests, just use `ninja -C build test` (or `meson test -C build`)
 from the top directory (replace `build` with the name of the directory you used
 to build Rizin).
 You can run one specific testcase category (e.g. the whole `test_bin.c` file) using `meson test -C build bin`.
+If you are using `meson test`, you should consider using the `--print-errorlogs` flag.
 
 # Failure Levels
 

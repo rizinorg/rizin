@@ -73,10 +73,8 @@ static const char *help_msg_question_e[] = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
-	"?eb", " 10 20 30", "proportional segments bar",
 	"?eg", " 10 20", "move cursor to column 10, row 20",
 	"?en", " nonl", "echo message without ending newline",
-	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
 	"?et", " msg", "change terminal title",
 	NULL
 };
@@ -503,7 +501,8 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	case 'h': // "?h"
 		if (input[1] == ' ') {
-			rz_cons_printf("0x%08x\n", (ut32)rz_str_hash(input + 2));
+			ut32 hash = (ut32)rz_str_djb2_hash(input + 2);
+			rz_cons_printf("0x%08x\n", hash);
 		} else {
 			eprintf("Usage: ?h [string-to-hash]\n");
 		}
@@ -905,24 +904,13 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
-		case 't': // "?e=t newtitle"
+		case 't': // "?et newtitle"
 			rz_cons_set_title(rz_str_trim_head_ro(input + 2));
 			break;
 		case '=': { // "?e="
 			ut64 pc = rz_num_math(core->num, input + 2);
 			rz_print_progressbar(core->print, pc, 80);
 			rz_cons_newline();
-			break;
-		}
-		case 'b': { // "?eb"
-			char *arg = strdup(rz_str_trim_head_ro(input + 2));
-			int n = rz_str_split(arg, ' ');
-			ut64 *portions = calloc(n, sizeof(ut64));
-			for (i = 0; i < n; i++) {
-				portions[i] = rz_num_math(core->num, rz_str_word_get0(arg, i));
-			}
-			rz_print_portionbar(core->print, portions, n);
-			free(arg);
 			break;
 		}
 		case 'c': // "?ec" column
@@ -943,20 +931,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			free(newmsg);
 			break;
 		}
-		case 'p': {
-			char *word, *str = strdup(input + 2);
-			RzList *list = rz_str_split_list(str, " ", 0);
-			ut64 *nums = calloc(sizeof(ut64), rz_list_length(list));
-			int i = 0;
-			rz_list_foreach (list, iter, word) {
-				nums[i] = rz_num_math(core->num, word);
-				;
-				i++;
-			}
-			int size = rz_config_get_i(core->config, "hex.cols");
-			rz_print_pie(core->print, nums, rz_list_length(list), size);
-			rz_list_free(list);
-		} break;
 		case ' ': {
 			const char *msg = rz_str_trim_head_ro(input + 1);
 			// TODO: replace all ${flagname} by its value in hexa

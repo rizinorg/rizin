@@ -390,6 +390,10 @@ static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
 static const RzCmdDescArg cmd_print_magic_args[2];
+static const RzCmdDescArg print_utf16le_args[2];
+static const RzCmdDescArg print_utf32le_args[2];
+static const RzCmdDescArg print_utf16be_args[2];
+static const RzCmdDescArg print_utf32be_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -614,7 +618,6 @@ static const RzCmdDescArg hash_bang_args[] = {
 	{
 		.name = "interpreter-name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = true,
 		.no_space = true,
 
 	},
@@ -628,8 +631,9 @@ static const RzCmdDescArg hash_bang_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp hash_bang_help = {
-	.summary = "List all available interpreters / Run interpreter",
+	.summary = "Run interpreter",
 	.details = hash_bang_details,
+	.details_cb = rz_hash_bang_details_cb,
 	.args = hash_bang_args,
 };
 
@@ -1125,10 +1129,6 @@ static const RzCmdDescArg push_escaped_args[] = {
 static const RzCmdDescHelp push_escaped_help = {
 	.summary = "Push escaped string into the RzCons.readChar buffer",
 	.args = push_escaped_args,
-};
-
-static const RzCmdDescHelp cmd_ox_help = {
-	.summary = "Alias for `s 0x...`",
 };
 
 static const RzCmdDescHelp cmd_analysis_help = {
@@ -7425,12 +7425,11 @@ static const RzCmdDescHelp cmd_info_pdb_download_help = {
 static const RzCmdDescHelp iD_help = {
 	.summary = "Demangle symbol for given language",
 };
-static const char *cmd_info_demangle_lang_choices[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
 static const RzCmdDescArg cmd_info_demangle_args[] = {
 	{
 		.name = "lang",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.choices = cmd_info_demangle_lang_choices,
+		.choices_cb = rz_cmd_info_demangle_lang_choices,
 
 	},
 	{
@@ -8926,6 +8925,62 @@ static const RzCmdDescArg cmd_print_magic_args[] = {
 static const RzCmdDescHelp cmd_print_magic_help = {
 	.summary = "Print libmagic data",
 	.args = cmd_print_magic_args,
+};
+
+static const RzCmdDescArg print_utf16le_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_utf16le_help = {
+	.summary = "Print buffer as a utf16le string",
+	.args = print_utf16le_args,
+};
+
+static const RzCmdDescArg print_utf32le_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_utf32le_help = {
+	.summary = "Print buffer as a utf32le string",
+	.args = print_utf32le_args,
+};
+
+static const RzCmdDescArg print_utf16be_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_utf16be_help = {
+	.summary = "Print buffer as a utf16be string",
+	.args = print_utf16be_args,
+};
+
+static const RzCmdDescArg print_utf32be_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_utf32be_help = {
+	.summary = "Print buffer as a utf32be string",
+	.args = print_utf32be_args,
 };
 
 static const RzCmdDescHelp P_help = {
@@ -10673,7 +10728,7 @@ static const RzCmdDescHelp write_from_socket_help = {
 };
 
 static const RzCmdDescHelp ww_handler_old_help = {
-	.summary = "Write wide string",
+	.summary = "Write wide 16 little endian string",
 };
 
 static const RzCmdDescHelp wx_help = {
@@ -12037,9 +12092,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *push_escaped_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "<", rz_push_escaped_handler, &push_escaped_help);
 	rz_warn_if_fail(push_escaped_cd);
-
-	RzCmdDesc *cmd_ox_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "0", rz_cmd_ox, &cmd_ox_help);
-	rz_warn_if_fail(cmd_ox_cd);
 
 	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "a", rz_cmd_analysis, &cmd_analysis_help);
 	rz_warn_if_fail(cmd_analysis_cd);
@@ -13768,6 +13820,18 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
 	rz_warn_if_fail(cmd_print_magic_cd);
+
+	RzCmdDesc *print_utf16le_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf16le_handler, &print_utf16le_help);
+	rz_warn_if_fail(print_utf16le_cd);
+
+	RzCmdDesc *print_utf32le_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psW", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf32le_handler, &print_utf32le_help);
+	rz_warn_if_fail(print_utf32le_cd);
+
+	RzCmdDesc *print_utf16be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf16be_handler, &print_utf16be_help);
+	rz_warn_if_fail(print_utf16be_cd);
+
+	RzCmdDesc *print_utf32be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psM", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf32be_handler, &print_utf32be_help);
+	rz_warn_if_fail(print_utf32be_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

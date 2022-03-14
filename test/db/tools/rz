@@ -179,3 +179,21 @@ Reload project including file
 0x08048401                 7bfb  jnp 0x80483fe
 EOF
 RUN
+
+NAME=b/w prompt
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \nq\n" =
+EXPECT=<<EOF
+[2K[0x00000000]> [0x00000000]> [2K[0x00000000]> 
+[2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
+EOF
+RUN
+
+NAME=color prompt
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=1 -c "< \nq\n" =
+EXPECT=<<EOF
+[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[33m[0x00000000]>[0m 
+[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[2K[0m[33m[0x00000000]>[0m q[33m[0x00000000]>[0m q[2K[33m[0x00000000]>[0m q
+EOF
+RUN

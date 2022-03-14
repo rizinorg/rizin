@@ -1150,7 +1150,7 @@ static bool cb_cfgdebug(void *user, void *data) {
 		return false;
 	}
 	if (core->io) {
-		core->io->va = !node->i_value;
+		rz_config_set_b(core->config, "io.va", !node->i_value);
 	}
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = rz_config_get(core->config, "dbg.backend");
@@ -3797,7 +3797,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"pe", "pilot", "srec", "w32run", "zip", "all", "none", NULL);
 	SETB("flirt.sig.deflate", false, "enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
 	SETI("flirt.node.optimize", RZ_FLIRT_NODE_OPTIMIZE_MAX, "FLIRT optimization option when creating a signature file (none: 0, normal: 1, smallest: 2)");
-	SETPREF("flirt.sigdb.path", "", "Rizin sigdb location on the filesystem.");
+	SETPREF("flirt.sigdb.path", "", "Additional user defined rizin sigdb location to load on the filesystem.");
 
 	rz_config_lock(cfg, true);
 	return true;

@@ -34,7 +34,6 @@ extern "C" {
 #define RZ_PRINT_FLAGS_BGFILL   0x00100000
 #define RZ_PRINT_FLAGS_SECTION  0x00200000
 
-typedef int (*RzPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RzPrintNameCallback)(void *user, ut64 addr);
 typedef int (*RzPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RzPrintCommentCallback)(void *user, ut64 addr);
@@ -136,12 +135,10 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int idx);
 RZ_API void rz_print_hex_from_base2(RzPrint *p, char *bin_str);
 RZ_API RzPrint *rz_print_new(void);
 RZ_API RzPrint *rz_print_free(RzPrint *p);
-RZ_API bool rz_print_mute(RzPrint *p, int x);
 RZ_API void rz_print_set_flags(RzPrint *p, int _flags);
 RZ_API void rz_print_unset_flags(RzPrint *p, int flags);
 RZ_API void rz_print_addr(RzPrint *p, ut64 addr);
 RZ_API void rz_print_section(RzPrint *p, ut64 at);
-RZ_API void rz_print_columns(RzPrint *p, const ut8 *buf, int len, int height);
 RZ_API void rz_print_hexii(RzPrint *p, ut64 addr, const ut8 *buf, int len, int step);
 RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
 RZ_API void rz_print_hexdump_simple(const ut8 *buf, int len);
@@ -178,43 +175,20 @@ RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char l
 
 RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
 RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
-#define RZ_PRINT_STRING_WIDE      1
-#define RZ_PRINT_STRING_ZEROEND   2
-#define RZ_PRINT_STRING_URLENCODE 4
-#define RZ_PRINT_STRING_WRAP      8
-#define RZ_PRINT_STRING_WIDE32    16
-#define RZ_PRINT_STRING_ESC_NL    32
-RZ_API int rz_print_string(RzPrint *p, ut64 seek, const ut8 *str, int len, int options);
-RZ_API int rz_print_date_dos(RzPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_hfs(RzPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_w32(RzPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_unix(RzPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_get_now(RzPrint *p, char *str);
-RZ_API void rz_print_zoom(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
-RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 RZ_API void rz_print_progressbar(RzPrint *pr, int pc, int _cols);
-RZ_API void rz_print_portionbar(RzPrint *p, const ut64 *portions, int n_portions);
 RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
-RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
-RZ_API void rz_print_2bpp_row(RzPrint *p, ut8 *buf);
-RZ_API void rz_print_2bpp_tiles(RzPrint *p, ut8 *buf, ut32 tiles);
 RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
 RZ_API const char *rz_print_color_op_type(RzPrint *p, ut32 analysis_type);
-RZ_API void rz_print_set_interrupted(int i);
 RZ_API void rz_print_init_rowoffsets(RzPrint *p);
 RZ_API ut32 rz_print_rowoff(RzPrint *p, int i);
 RZ_API void rz_print_set_rowoff(RzPrint *p, int i, ut32 offset, bool overwrite);
 RZ_API int rz_print_row_at_off(RzPrint *p, ut32 offset);
-RZ_API int rz_print_pie(RzPrint *p, ut64 *values, int nvalues, int size);
 
 RZ_API const char *rz_print_rowlog(RzPrint *print, const char *str);
 RZ_API void rz_print_rowlog_done(RzPrint *print, const char *str);
 
 // WIP
-RZ_API int rz_print_unpack7bit(const char *src, char *dest);
-RZ_API int rz_print_pack7bit(const char *src, char *dest);
 RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr);
-RZ_API int rz_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off);
 RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, const char **colors);
 RZ_API char *rz_print_json_human(const char *s);
 RZ_API char *rz_print_json_path(const char *s, int pos);

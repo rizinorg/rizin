@@ -952,6 +952,84 @@ static bool test_rz_bv_len_bytes(void) {
 	mu_end;
 }
 
+bool test_rz_bv_set_all(void) {
+	RzBitVector *bv = rz_bv_new(43);
+	rz_bv_set_all(bv, true);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x7ffffffffff", "set all 1");
+	rz_bv_set_all(bv, false);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "set all 0");
+	rz_bv_free(bv);
+
+	bv = rz_bv_new(64);
+	rz_bv_set_all(bv, true);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0xffffffffffffffff", "set all 1");
+	rz_bv_set_all(bv, false);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "set all 0");
+	rz_bv_free(bv);
+
+	bv = rz_bv_new(73);
+	rz_bv_set_all(bv, true);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x1ffffffffffffffffff", "set all 1");
+	rz_bv_set_all(bv, false);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "set all 0");
+	rz_bv_free(bv);
+
+	bv = rz_bv_new(80);
+	rz_bv_set_all(bv, true);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0xffffffffffffffffffff", "set all 1");
+	rz_bv_set_all(bv, false);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "set all 0");
+	rz_bv_free(bv);
+	mu_end;
+}
+
+static bool test_rz_bv_set_to_bytes_le(void) {
+	{
+		ut8 buf8[8] = { 0 };
+		RzBitVector *bv = rz_bv_new_from_ut64(64, 0xc0ffee4201234567);
+		rz_bv_set_to_bytes_le(bv, buf8);
+		const ut8 expect8[8] = { 0x67, 0x45, 0x23, 0x01, 0x42, 0xee, 0xff, 0xc0 };
+		mu_assert_memeq(buf8, expect8, sizeof(expect8), "set to bytes le");
+		rz_bv_free(bv);
+	}
+	{
+		ut8 buf4[4] = { 0 };
+		RzBitVector *bv = rz_bv_new_from_ut64(32, 0xc0ffee42);
+		rz_bv_set_to_bytes_le(bv, buf4);
+		const ut8 expect4[4] = { 0x42, 0xee, 0xff, 0xc0 };
+		mu_assert_memeq(buf4, expect4, sizeof(expect4), "set to bytes le");
+		rz_bv_free(bv);
+	}
+	{
+		ut8 buf2[2] = { 0xff, 0xff }; // make sure these trailing bits are not overwritten
+		RzBitVector *bv = rz_bv_new_from_ut64(13, 0x0);
+		rz_bv_set_to_bytes_le(bv, buf2);
+		const ut8 expect2[2] = { 0x0, 0xe0 };
+		mu_assert_memeq(buf2, expect2, sizeof(expect2), "set to bytes le");
+		rz_bv_free(bv);
+	}
+	{
+		ut8 buf9[9] = { 0 };
+		RzBitVector *bv = rz_bv_new_from_ut64(64 + 8, 0xc0ffee4200000000);
+		rz_bv_lshift_fill(bv, 8, true);
+		rz_bv_set_to_bytes_le(bv, buf9);
+		const ut8 expect9[9] = { 0xff, 0x00, 0x00, 0x00, 0x00, 0x42, 0xee, 0xff, 0xc0 };
+		mu_assert_memeq(buf9, expect9, sizeof(expect9), "set to bytes le");
+		rz_bv_free(bv);
+	}
+	{
+		ut8 buf9[9] = { 0 };
+		buf9[8] = 0xff; // make sure these trailing bits are not overwritten
+		RzBitVector *bv = rz_bv_new_from_ut64(64 + 6, 0xffffee00000000);
+		rz_bv_lshift_fill(bv, 8, true);
+		rz_bv_set_to_bytes_le(bv, buf9);
+		const ut8 expect9[9] = { 0xff, 0x00, 0x00, 0x00, 0x00, 0xee, 0xff, 0xff, 0xc0 };
+		mu_assert_memeq(buf9, expect9, sizeof(expect9), "set to bytes le");
+		rz_bv_free(bv);
+	}
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
@@ -973,6 +1051,8 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_div);
 	mu_run_test(test_rz_bv_mod);
 	mu_run_test(test_rz_bv_len_bytes);
+	mu_run_test(test_rz_bv_set_all);
+	mu_run_test(test_rz_bv_set_to_bytes_le);
 	return tests_passed != tests_run;
 }
 

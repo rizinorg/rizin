@@ -10,7 +10,8 @@ static ut8 *remove_cr(ut8 *str) {
 	char *start = s;
 	while (*s) {
 		if (s[0] == '\r' &&
-			!(s - start >= 4 && !strncmp(s - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
+			(s[1] == '\n' ||
+				(s[1] == '\r' && s[2] == '\n' /* TODO remove this */))) {
 			memmove(s, s + 1, strlen(s + 1) + 1);
 			continue;
 		}

@@ -78,6 +78,9 @@ RZ_IPI bool parse_gdata_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 }
 
 RZ_IPI void free_gdata_stream(RzPdbGDataStream *stream) {
+	if (!stream) {
+		return;
+	}
 	GDataGlobal *global;
 	RzListIter *it;
 	rz_list_foreach (stream->global_list, it, global) {
@@ -85,4 +88,5 @@ RZ_IPI void free_gdata_stream(RzPdbGDataStream *stream) {
 		RZ_FREE(global);
 	}
 	rz_list_free(stream->global_list);
+	free(stream);
 }

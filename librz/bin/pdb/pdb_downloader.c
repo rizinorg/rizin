@@ -64,7 +64,7 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 
 static char *download(struct SPDBDownloader *pd) {
 	SPDBDownloaderOpt *opt = pd->opt;
-	int res = 1;
+	int res = 0;
 	int cmd_ret;
 
 	if (!opt->dbg_file || !*opt->dbg_file) {

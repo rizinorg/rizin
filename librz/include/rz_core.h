@@ -923,45 +923,6 @@ RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdSta
 RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encoding, RZ_NULLABLE const char *name);
 RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
 
-typedef enum {
-	RZ_CORE_STRING_KIND_UNKNOWN,
-	RZ_CORE_STRING_KIND_ASCII,
-	RZ_CORE_STRING_KIND_WIDE16, // No UTF/Unicode encoding
-	RZ_CORE_STRING_KIND_WIDE32, // NO UTF/Unicode encoding
-	RZ_CORE_STRING_KIND_UTF8,
-	RZ_CORE_STRING_KIND_UTF16,
-	RZ_CORE_STRING_KIND_UTF32,
-} RzCoreStringKind;
-
-/**
- * \brief A structure to hold information about string - type, size, and location
- */
-typedef struct rz_core_string_t {
-	/**
-	 * The pointer to the string data itself.
-	 */
-	const char *string;
-	ut64 offset;
-	/**
-	 * Size of buffer containing the string in bytes.
-	 */
-	ut32 size;
-	/**
-	 * Length of string in chars.
-	 */
-	ut32 length;
-	/**
-	 * A string kind - ASCII, Wide, or various Unicode types.
-	 */
-	RzCoreStringKind kind;
-	/**
-	 * A section name that contains the string.
-	 */
-	const char *section_name;
-} RzCoreString;
-
-RZ_API RZ_OWN RzCoreString *rz_core_string_information(RzCore *core, const char *block, ut32 len, RzCoreStringKind kind);
-
 /* rtr */
 RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port);
 RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *port, const char *cmd);

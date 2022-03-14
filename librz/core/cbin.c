@@ -4349,7 +4349,9 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	} else if (!strncmp("mach0", info->rclass, 5)) {
 		bin_mach0_versioninfo(r);
 	} else {
-		rz_cons_println("Unknown format");
+		if (mode != RZ_MODE_JSON) {
+			rz_cons_println("Unknown format");
+		}
 		return false;
 	}
 	return true;
@@ -4669,84 +4671,6 @@ RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 	}
 out:
 	return rz_strbuf_drain(buf);
-}
-
-static RzCoreStringKind get_string_kind(const ut8 *buf, ut64 len) {
-	rz_return_val_if_fail(buf && len, RZ_CORE_STRING_KIND_UNKNOWN);
-	ut64 needle = 0;
-	ut64 rc, i;
-	RzCoreStringKind str_kind = RZ_CORE_STRING_KIND_UNKNOWN;
-
-	while (needle < len) {
-		rc = rz_utf8_decode(buf + needle, len - needle, NULL);
-		if (!rc) {
-			needle++;
-			continue;
-		}
-		if (needle + rc + 2 < len &&
-			buf[needle + rc + 0] == 0x00 &&
-			buf[needle + rc + 1] == 0x00 &&
-			buf[needle + rc + 2] == 0x00) {
-			str_kind = RZ_CORE_STRING_KIND_WIDE16;
-		} else {
-			str_kind = RZ_CORE_STRING_KIND_ASCII;
-		}
-		for (i = 0; needle < len; i += rc) {
-			RzRune r;
-			if (str_kind == RZ_CORE_STRING_KIND_WIDE16) {
-				if (needle + 1 < len) {
-					r = buf[needle + 1] << 8 | buf[needle];
-					rc = 2;
-				} else {
-					break;
-				}
-			} else {
-				rc = rz_utf8_decode(buf + needle, len - needle, &r);
-				if (rc > 1) {
-					str_kind = RZ_CORE_STRING_KIND_UTF8;
-				}
-			}
-			/*Invalid sequence detected*/
-			if (!rc) {
-				needle++;
-				break;
-			}
-			needle += rc;
-		}
-	}
-	return str_kind;
-}
-
-/**
- * \brief Returns the information about string given the offset and legnth
- *
- * \param core RzCore instance
- * \param block Pointer to the string
- * \param len Length of the string
- * \param type A type of the string to override autodetection
- */
-RZ_OWN RZ_API RzCoreString *rz_core_string_information(RzCore *core, const char *block, ut32 len, RzCoreStringKind kind) {
-	rz_return_val_if_fail(core && block && len, NULL);
-	RzCoreString *cstring = RZ_NEW0(RzCoreString);
-	if (!cstring) {
-		return NULL;
-	}
-	const char *section_name = rz_core_get_section_name(core, core->offset);
-	if (section_name && strlen(section_name) < 1) {
-		section_name = "unknown";
-	}
-	cstring->section_name = section_name;
-	cstring->string = block;
-	cstring->offset = core->offset;
-	cstring->size = len;
-	if (kind != RZ_CORE_STRING_KIND_UNKNOWN) {
-		cstring->kind = kind;
-	} else {
-		cstring->kind = get_string_kind((const ut8 *)block, len);
-	}
-	// FIXME: Add proper length calculation (see functions in librz/util/str.c)
-	cstring->length = cstring->size;
-	return cstring;
 }
 
 RZ_API RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state) {

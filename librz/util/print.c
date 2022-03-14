@@ -30,99 +30,6 @@ static int libc_eprintf(const char *format, ...) {
 
 static RzPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
-RZ_API void rz_print_portionbar(RzPrint *p, const ut64 *portions, int n_portions) {
-	const int use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
-	int i, j;
-	ut64 total = 0LL;
-	for (i = 0; i < n_portions; i++) {
-		ut64 sum = total + portions[i];
-		if (total > sum) {
-			eprintf("portionbar overflow aborted\n");
-			return;
-		}
-		total = sum;
-	}
-	p->cb_printf("[");
-	if (total == 0) {
-		total = 1;
-	}
-	for (i = 0; i < n_portions; i++) {
-		int pc = portions[i] * 100 / total;
-		// adjust pc to screen columns
-		pc = pc * p->width / 100;
-		if (use_color) {
-			p->cb_printf("\x1b[%dm", 31 + (i % 8));
-		}
-		if (pc == 0) {
-			pc = 1;
-		}
-		for (j = 0; j < pc; j++) {
-			p->cb_printf("%c", 'A' + i);
-		}
-		if (use_color) {
-			p->cb_printf(Color_RESET);
-		}
-	}
-	p->cb_printf("]\n");
-}
-
-RZ_API void rz_print_columns(RzPrint *p, const ut8 *buf, int len, int height) {
-#define cb_print(x) p->cb_printf("%s", x)
-	size_t i, j;
-	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
-	int rows = height > 0 ? height : 10;
-	// int realrows = rows * 2;
-	bool colors = p->flags & RZ_PRINT_FLAGS_COLOR;
-	RzConsPrintablePalette *pal = &p->cons->context->pal;
-	const char *vline = p->cons->use_utf8 ? RUNE_LINE_VERT : "|";
-	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
-	const char *kol[5];
-	kol[0] = pal->call;
-	kol[1] = pal->jmp;
-	kol[2] = pal->cjmp;
-	kol[3] = pal->mov;
-	kol[4] = pal->nop;
-	if (colors) {
-		for (i = 0; i < rows; i++) {
-			size_t threshold = i * (0xff / rows);
-			size_t koli = i * 5 / rows;
-			for (j = 0; j < cols; j++) {
-				int realJ = j * len / cols;
-				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					if (p->histblock) {
-						p->cb_printf("%s%s%s", kol[koli], block, Color_RESET);
-					} else {
-						p->cb_printf("%s%s%s", kol[koli], vline, Color_RESET);
-					}
-				} else {
-					cb_print(" ");
-				}
-			}
-			cb_print("\n");
-		}
-		return;
-	}
-
-	for (i = 0; i < rows; i++) {
-		size_t threshold = i * (0xff / rows);
-		for (j = 0; j < cols; j++) {
-			size_t realJ = j * len / cols;
-			if (255 - buf[realJ] < threshold) {
-				if (p->histblock) {
-					p->cb_printf("%s%s%s", Color_BGGRAY, block, Color_RESET);
-				} else {
-					cb_print(vline);
-				}
-			} else if (i + 1 == rows) {
-				cb_print("_");
-			} else {
-				cb_print(" ");
-			}
-		}
-		cb_print("\n");
-	}
-}
-
 RZ_API bool rz_print_is_interrupted(void) {
 	if (is_interrupted_cb) {
 		return is_interrupted_cb();
@@ -132,22 +39,6 @@ RZ_API bool rz_print_is_interrupted(void) {
 
 RZ_API void rz_print_set_is_interrupted_cb(RzPrintIsInterruptedCallback cb) {
 	is_interrupted_cb = cb;
-}
-
-RZ_API bool rz_print_mute(RzPrint *p, int x) {
-	if (x) {
-		if (p->cb_printf == &nullprinter) {
-			return false;
-		}
-		p->oprintf = p->cb_printf;
-		p->cb_printf = nullprinter;
-		return true;
-	}
-	if (p->cb_printf == nullprinter) {
-		p->cb_printf = p->oprintf;
-		return true;
-	}
-	return false;
 }
 
 RZ_API RzPrint *rz_print_new(void) {
@@ -500,58 +391,6 @@ RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch) {
 		printfmt(fmt, rch);
 	}
 	rz_print_cursor(p, idx, 1, 0);
-}
-
-RZ_API int rz_print_string(RzPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
-	int i;
-	bool wide = (options & RZ_PRINT_STRING_WIDE);
-	bool wide32 = (options & RZ_PRINT_STRING_WIDE32);
-	bool zeroend = (options & RZ_PRINT_STRING_ZEROEND);
-	bool wrap = (options & RZ_PRINT_STRING_WRAP);
-	bool urlencode = (options & RZ_PRINT_STRING_URLENCODE);
-	bool esc_nl = (options & RZ_PRINT_STRING_ESC_NL);
-	int col = 0;
-	i = 0;
-	for (; !rz_print_is_interrupted() && i < len; i++) {
-		if (wide32) {
-			int j = i;
-			while (buf[j] == '\0' && j < (i + 3)) {
-				j++;
-			}
-			i = j;
-		}
-		if (zeroend && buf[i] == '\0') {
-			break;
-		}
-		rz_print_cursor(p, i, 1, 1);
-		ut8 b = buf[i];
-		if (b == '\n') {
-			col = 0;
-		}
-		col++;
-		if (urlencode) {
-			// TODO: some ascii can be bypassed here
-			p->cb_printf("%%%02x", b);
-		} else {
-			if (b == '\\') {
-				p->cb_printf("\\\\");
-			} else if ((b == '\n' && !esc_nl) || IS_PRINTABLE(b)) {
-				p->cb_printf("%c", b);
-			} else {
-				p->cb_printf("\\x%02x", b);
-			}
-		}
-		rz_print_cursor(p, i, 1, 0);
-		if (wrap && col + 1 >= p->width) {
-			p->cb_printf("\n");
-			col = 0;
-		}
-		if (wide) {
-			i++;
-		}
-	}
-	p->cb_printf("\n");
-	return i;
 }
 
 RZ_API void rz_print_hexpairs(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
@@ -1433,66 +1272,6 @@ RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64
 	p->cb_printf("|");
 }
 
-RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
-	static int mode = -1;
-	ut8 *bufz = NULL, *bufz2 = NULL;
-	int i, j = 0;
-	ut64 size = (to - from);
-	size = len ? size / len : 0;
-
-	if (maxlen < 2) {
-		maxlen = 1024 * 1024;
-	}
-	if (size > maxlen) {
-		size = maxlen;
-	}
-	if (size < 1) {
-		size = 1;
-	}
-	if (len < 1) {
-		len = 1;
-	}
-
-	if (mode != p->zoom->mode || from != p->zoom->from || to != p->zoom->to || size != p->zoom->size) {
-		mode = p->zoom->mode;
-		bufz = (ut8 *)calloc(1, len);
-		if (!bufz) {
-			return;
-		}
-		bufz2 = (ut8 *)calloc(1, size);
-		if (!bufz2) {
-			free(bufz);
-			return;
-		}
-
-		// TODO: memoize blocks
-		for (i = 0; i < len; i++) {
-			if (p->cons->context->breaked) {
-				break;
-			}
-			p->iob.read_at(p->iob.io, from + j, bufz2, size);
-			bufz[i] = cb(user, p->zoom->mode, from + j, bufz2, size);
-			j += size;
-		}
-		free(bufz2);
-		// memoize
-		free(p->zoom->buf);
-		p->zoom->buf = bufz;
-		p->zoom->from = from;
-		p->zoom->to = to;
-		p->zoom->size = len; // size;
-	}
-}
-
-RZ_API void rz_print_zoom(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
-	ut64 size = (to - from);
-	rz_print_zoom_buf(p, user, cb, from, to, len, maxlen);
-	size = len ? size / len : 0;
-	p->flags &= ~RZ_PRINT_FLAGS_HEADER;
-	rz_print_hexdump(p, from, p->zoom->buf, p->zoom->size, 16, 1, size);
-	p->flags |= RZ_PRINT_FLAGS_HEADER;
-}
-
 static inline void printHistBlock(RzPrint *p, int k, int cols) {
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
@@ -1611,69 +1390,6 @@ RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int s
 			p->cb_printf("%s", Color_RESET);
 		}
 		p->cb_printf("\n");
-	}
-}
-
-RZ_API void rz_print_2bpp_row(RzPrint *p, ut8 *buf) {
-	const bool useColor = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
-	int i, c = 0;
-	for (i = 0; i < 8; i++) {
-		if (buf[1] & ((1 << 7) >> i)) {
-			c = 2;
-		}
-		if (buf[0] & ((1 << 7) >> i)) {
-			c++;
-		}
-		if (useColor) {
-			char *color = "";
-			switch (c) {
-			case 0:
-				color = Color_BGWHITE;
-				break;
-			case 1:
-				color = Color_BGRED;
-				break;
-			case 2:
-				color = Color_BGBLUE;
-				break;
-			case 3:
-				color = Color_BGBLACK;
-				break;
-			}
-			if (p) {
-				p->cb_printf("%s  ", color);
-			} else {
-				printf("%s  ", color);
-			}
-		} else {
-			const char *chstr = "#=-.";
-			const char ch = chstr[c % 4];
-			if (p) {
-				p->cb_printf("%c%c", ch, ch);
-			} else {
-				printf("%c%c", ch, ch);
-			}
-		}
-		c = 0;
-	}
-}
-
-RZ_API void rz_print_2bpp_tiles(RzPrint *p, ut8 *buf, ut32 tiles) {
-	int i, r;
-	const bool useColor = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
-	for (i = 0; i < 8; i++) {
-		for (r = 0; r < tiles; r++) {
-			rz_print_2bpp_row(p, buf + 2 * i + r * 16);
-		}
-		if (p) {
-			if (useColor) {
-				p->cb_printf(Color_RESET "\n");
-			} else {
-				p->cb_printf("\n");
-			}
-		} else {
-			printf("\n");
-		}
 	}
 }
 
