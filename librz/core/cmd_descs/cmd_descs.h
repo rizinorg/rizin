@@ -365,7 +365,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_fd_seek_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_cmd_debug_dup2_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_fd_read_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_fd_write_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_debug_fd_tty_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_esil_list_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_debug_esil_stop(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_esil_delete_handler(RzCore *core, int argc, const char **argv);
@@ -378,7 +377,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_info_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_cmd_debug_diff_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_debug_signal_resolver_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_debug_ko_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_debug_allocate_maps_handler(RzCore *core, int argc, const char **argv);
@@ -416,7 +414,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int a
 RZ_IPI int rz_cmd_debug_process_doo(void *data, const char *input);
 RZ_IPI int rz_cmd_debug_process_doof(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_cmd_debug_process_open(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_attachable_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_detach_handler(RzCore *core, int argc, const char **argv);

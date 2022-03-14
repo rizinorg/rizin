@@ -385,12 +385,6 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: ddt
-        summary: TODO Open and map that tty into the UI?
-        cname: cmd_debug_fd_tty
-        args:
-          - name: ttypath
-            type: RZ_CMD_ARG_TYPE_NUM
   - name: de
     summary: Debug with ESIL (see de?)
     subcommands:
@@ -468,7 +462,6 @@ commands:
         summary: >
           List all signal handlers of child process 
           / Send KILL signal to child
-          / Set signal handler for <signal> in child
         cname: cmd_debug_signal_list
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -478,30 +471,12 @@ commands:
           - name: signal
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-          - name: handler
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
       - name: dkr
         summary: Name/signum resolver
         cname: cmd_debug_signal_resolver
         args:
           - name: signal
             type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: dko
-        summary: >
-          List existing signal handling
-          / Clear handling for a signal
-          / Set handling for a signal
-        cname: cmd_debug_ko
-        args:
-          - name: signal
-            type: RZ_CMD_ARG_TYPE_RZNUM
-          - name: skip or cont
-            type: RZ_CMD_ARG_TYPE_CHOICES
-            optional: true
-            choices:
-              - skip
-              - cont
   - name: dL
     summary: >
       List or set debugger handler
@@ -685,9 +660,7 @@ commands:
         type: RZ_CMD_DESC_TYPE_OLDINPUT
         args: []
   - name: do
-    summary: Debug (re)open commands / Open process (reload, alias for 'oo')
-    cname: cmd_debug_process_open
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Debug (re)open commands
     subcommands:
       - name: dor
         summary: Comma separated list of k=v rz-run profile options (e dbg.profile)

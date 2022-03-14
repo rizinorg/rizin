@@ -2897,13 +2897,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_fd_read_handler(RzCore *core, int argc, const ch
 	return RZ_CMD_STATUS_OK;
 }
 
-// ddt
-RZ_IPI RzCmdStatus rz_cmd_debug_fd_tty_handler(RzCore *core, int argc, const char **argv) {
-	RzBuffer *buf = rz_core_syscall(core, "close", 0);
-	consumeBuffer(buf, "dx ", "Cannot close");
-	return RZ_CMD_STATUS_OK;
-}
-
 // ddw
 RZ_IPI RzCmdStatus rz_cmd_debug_fd_write_handler(RzCore *core, int argc, const char **argv) {
 	int fd = atoi(argv[1]);
@@ -3195,11 +3188,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_OK;
 	}
 	int sig = atoi(argv[1]);
-	if (argc >= 3) {
-		rz_debug_kill_setup(core->dbg, sig, rz_num_math(core->num, argv[2]));
-	} else {
-		rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->tid, sig);
-	}
+	rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->tid, sig);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3220,39 +3209,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_signal_resolver_handler(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
-// dko
-RZ_IPI RzCmdStatus rz_cmd_debug_ko_handler(RzCore *core, int argc, const char **argv) {
-	if (argc <= 1) {
-		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
-		return RZ_CMD_STATUS_OK;
-	}
-
-	int signum = atoi(argv[1]);
-	if (signum < 1)
-		signum = rz_signal_from_string(argv[1]);
-	if (signum <= 0) {
-		RZ_LOG_ERROR("Invalid signal: %s\n", argv[1]);
-	}
-	// Actions:
-	//  - pass
-	//  - trace
-	//  - stop
-	if (argc <= 2) { // stop (the usual)
-		rz_debug_signal_setup(core->dbg, signum, 0);
-	} else {
-		const char *option = argv[2];
-		if (*option == 's') { // skip
-			rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_SKIP);
-		} else if (*option == 'c') { // cont
-			rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_CONT);
-		} else {
-			RZ_LOG_ERROR("Invalid option: %s\n", option);
-		}
-	}
-
-	return RZ_CMD_STATUS_OK;
-}
-
 // dL
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc > 1) {
@@ -3270,7 +3226,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, con
 
 static const char *help_msg_do[] = {
 	"Usage:", "do", " # Debug (re)open commands",
-	"do", "", "Open process (reload, alias for 'oo')",
 	"dor", " [rz-run]", "Comma separated list of k=v rz-run profile options (e dbg.profile)",
 	"doe", "", "Show rz-run startup profile",
 	"doe!", "", "Edit rz-run startup profile with $EDITOR",
@@ -3279,17 +3234,6 @@ static const char *help_msg_do[] = {
 	"doc", "", "Close debug session",
 	NULL
 };
-
-// do
-RZ_IPI int rz_cmd_debug_process_open(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input && input[0] == '?') {
-		rz_core_cmd_help(core, help_msg_do);
-		return 0;
-	}
-	rz_core_file_reopen(core, input, 0, 1);
-	return 0;
-}
 
 // dor
 RZ_IPI int rz_cmd_debug_process_dor(void *data, const char *input) {
