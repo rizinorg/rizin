@@ -353,7 +353,7 @@ commands:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
           - name: offset
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: ddd
         summary: Dup2 from fd1 to fd2
         cname: cmd_debug_dup2
