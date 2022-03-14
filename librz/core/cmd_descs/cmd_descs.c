@@ -255,7 +255,6 @@ static const RzCmdDescArg cmd_debug_esil_until_args[2];
 static const RzCmdDescArg cmd_debug_core_gen_args[2];
 static const RzCmdDescArg cmd_debug_handler_new_args[2];
 static const RzCmdDescArg cmd_debug_info_args[2];
-static const RzCmdDescArg cmd_debug_diff_args[3];
 static const RzCmdDescArg cmd_debug_signal_kill_args[2];
 static const RzCmdDescArg cmd_debug_signal_resolver_args[2];
 static const RzCmdDescArg cmd_debug_handler_list_args[2];
@@ -570,6 +569,7 @@ static const RzCmdDescArg cmd_shell_echo_args[2];
 static const RzCmdDescArg cmd_shell_cp_args[3];
 static const RzCmdDescArg cmd_shell_cd_args[2];
 static const RzCmdDescArg cmd_shell_cat_args[2];
+static const RzCmdDescArg cmd_shell_diff_args[3];
 static const RzCmdDescArg cmd_shell_mv_args[3];
 static const RzCmdDescArg cmd_shell_mkdir_args[3];
 static const RzCmdDescArg cmd_shell_sort_args[2];
@@ -5528,26 +5528,6 @@ static const RzCmdDescArg cmd_debug_info_args[] = {
 static const RzCmdDescHelp cmd_debug_info_help = {
 	.summary = "Show debugger target information",
 	.args = cmd_debug_info_args,
-};
-
-static const RzCmdDescArg cmd_debug_diff_args[] = {
-	{
-		.name = "a",
-		.type = RZ_CMD_ARG_TYPE_FILE,
-		.optional = true,
-
-	},
-	{
-		.name = "b",
-		.type = RZ_CMD_ARG_TYPE_FILE,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_diff_help = {
-	.summary = "Compare two files (or $alias files)",
-	.args = cmd_debug_diff_args,
 };
 
 static const RzCmdDescHelp dk_help = {
@@ -12873,6 +12853,26 @@ static const RzCmdDescHelp cmd_shell_cat_help = {
 	.args = cmd_shell_cat_args,
 };
 
+static const RzCmdDescArg cmd_shell_diff_args[] = {
+	{
+		.name = "a",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{
+		.name = "b",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_diff_help = {
+	.summary = "Compare two files (or $alias files)",
+	.args = cmd_shell_diff_args,
+};
+
 static const RzCmdDescArg cmd_shell_mv_args[] = {
 	{
 		.name = "src",
@@ -14022,8 +14022,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *di_cd = rz_cmd_desc_group_state_new(core->rcmd, d_cd, "di", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_info_handler, &cmd_debug_info_help, &di_help);
 	rz_warn_if_fail(di_cd);
-	RzCmdDesc *cmd_debug_diff_cd = rz_cmd_desc_argv_new(core->rcmd, di_cd, "dif", rz_cmd_debug_diff_handler, &cmd_debug_diff_help);
-	rz_warn_if_fail(cmd_debug_diff_cd);
 
 	RzCmdDesc *dk_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dk", rz_cmd_debug_signal_kill_handler, &cmd_debug_signal_kill_help, &dk_help);
 	rz_warn_if_fail(dk_cd);
@@ -15603,6 +15601,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_cat_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "cat", rz_cmd_shell_cat_handler, &cmd_shell_cat_help);
 	rz_warn_if_fail(cmd_shell_cat_cd);
+
+	RzCmdDesc *cmd_shell_diff_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "diff", rz_cmd_shell_diff_handler, &cmd_shell_diff_help);
+	rz_warn_if_fail(cmd_shell_diff_cd);
 
 	RzCmdDesc *cmd_shell_mv_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "mv", rz_cmd_shell_mv_handler, &cmd_shell_mv_help);
 	rz_warn_if_fail(cmd_shell_mv_cd);

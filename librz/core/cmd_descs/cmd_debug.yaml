@@ -445,16 +445,6 @@ commands:
           - name: rdi
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
-      - name: dif
-        summary: Compare two files (or $alias files)
-        cname: cmd_debug_diff
-        args:
-          - name: a
-            type: RZ_CMD_ARG_TYPE_FILE
-            optional: true
-          - name: b
-            type: RZ_CMD_ARG_TYPE_FILE
-            optional: true
   - name: dk
     summary: Handle signal handlers of child processes
     subcommands:

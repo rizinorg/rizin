@@ -3148,34 +3148,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_info_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
-// dif
-RZ_IPI RzCmdStatus rz_cmd_debug_diff_handler(RzCore *core, int argc, const char **argv) {
-	if (argc < 3) {
-		RZ_LOG_ERROR("Cannot open those alias files\n");
-	} else {
-		char *a = (char *)getFileData(core, argv[1]);
-		char *b = (char *)getFileData(core, argv[2]);
-		if (a && b) {
-			RzDiff *dff = rz_diff_lines_new(a, b, NULL);
-			char *uni = rz_diff_unified_text(dff, argv[1], argv[2], false, false);
-			rz_diff_free(dff);
-			rz_cons_printf("%s\n", uni);
-			free(uni);
-		} else {
-			RZ_LOG_ERROR("Cannot open those alias files\n");
-		}
-		free(a);
-		free(b);
-	}
-	return RZ_CMD_STATUS_OK;
-}
-
 // dk
 RZ_IPI RzCmdStatus rz_cmd_debug_signal_kill_handler(RzCore *core, int argc, const char **argv) {
 	int sig = atoi(argv[1]);
 	rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->tid, sig);
 	return RZ_CMD_STATUS_OK;
-
 }
 
 // dkl

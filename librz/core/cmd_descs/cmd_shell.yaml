@@ -121,6 +121,16 @@ commands:
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
+  - name: diff
+    summary: Compare two files (or $alias files)
+    cname: cmd_shell_diff
+    args:
+      - name: a
+        type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
+      - name: b
+        type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
   - name: mv
     summary: Move <src> file to <dst>
     cname: cmd_shell_mv

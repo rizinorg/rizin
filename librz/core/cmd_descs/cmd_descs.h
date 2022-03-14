@@ -374,7 +374,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_esil_until_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_cmd_debug_core_gen_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_new_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-RZ_IPI RzCmdStatus rz_cmd_debug_diff_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_signal_kill_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_debug_signal_resolver_handler(RzCore *core, int argc, const char **argv);
@@ -900,6 +899,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_mv_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_mkdir_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char **argv);
