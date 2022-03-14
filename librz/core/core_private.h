@@ -138,6 +138,8 @@ RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, 
 /* cfile.c */
 RZ_IPI void rz_core_io_file_open(RzCore *core, int fd);
 RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms);
+RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
+RZ_IPI void rz_core_io_map_info_free(RzCoreIOMapInfo *info);
 
 /* cflag.c */
 RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state);
