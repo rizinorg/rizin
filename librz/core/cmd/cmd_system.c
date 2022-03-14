@@ -197,7 +197,7 @@ static RzCmdStatus system_common_handler(RzCore *core, bool force_rzcons, int ar
 		char *end = out + length;
 		while (src != end) {
 			*dest = *src;
-			if (src[0] == '\r' && src[1] == '\n') {
+			if (src[0] == '\r' && src + 1 != end && src[1] == '\n') {
 				// dest does not move
 				length--;
 			} else {
