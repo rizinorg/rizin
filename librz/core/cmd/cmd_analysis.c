@@ -380,21 +380,6 @@ static const char *help_msg_agn[] = {
 	NULL
 };
 
-static const char *help_msg_ao[] = {
-	"Usage:", "ao[e?] [len]", "Analyze Opcodes",
-	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
-	"aoe", " N", "display esil form for N opcodes",
-	"aoef", " expr", "filter esil expression of opcode by given output",
-	"aos", " N", "display size of N opcodes",
-	"aom", " [id]", "list current or all mnemonics for current arch",
-	"aod", " [mnemonic]", "describe opcode for asm.arch",
-	"aoda", "", "show all mnemonic descriptions",
-	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
-	"ao", " 5", "display opcode analysis of 5 opcodes",
-	"ao*", "", "display opcode in r commands",
-	NULL
-};
-
 static const char *help_msg_as[] = {
 	"Usage: as[ljk?]", "", "syscall name <-> number utility",
 	"as", "", "show current syscall and arguments",
@@ -3637,112 +3622,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	}
 }
 
-static void cmd_analysis_opcode(RzCore *core, const char *input) {
-	rz_core_block_read(core);
-	switch (input[0]) {
-	case 'm': // "aom"
-		if (input[1] == '?') {
-			rz_cons_printf("Usage: aom[ljd] [arg] .. list mnemonics for asm.arch\n");
-			rz_cons_printf(". = current, l = list, d = describe, j=json)\n");
-		} else if (input[1] == 'd') {
-			const int id = (input[2] == ' ')
-				? (int)rz_num_math(core->num, input + 2)
-				: -1;
-			char *ops = rz_asm_mnemonics(core->rasm, id, false);
-			if (ops) {
-				char *ptr = ops;
-				char *nl = strchr(ptr, '\n');
-				while (nl) {
-					*nl = 0;
-					char *desc = rz_asm_describe(core->rasm, ptr);
-					if (desc) {
-						const char *pad = rz_str_pad(' ', 16 - strlen(ptr));
-						rz_cons_printf("%s%s%s\n", ptr, pad, desc);
-						free(desc);
-					} else {
-						rz_cons_printf("%s\n", ptr);
-					}
-					ptr = nl + 1;
-					nl = strchr(ptr, '\n');
-				}
-				free(ops);
-			}
-		} else if (input[1] == 'l' || input[1] == '=' || input[1] == ' ' || input[1] == 'j') {
-			if (input[1] == ' ' && !IS_DIGIT(input[2])) {
-				rz_cons_printf("%d\n", rz_asm_mnemonics_byname(core->rasm, input + 2));
-			} else {
-				const int id = (input[1] == ' ')
-					? (int)rz_num_math(core->num, input + 2)
-					: -1;
-				char *ops = rz_asm_mnemonics(core->rasm, id, input[1] == 'j');
-				if (ops) {
-					rz_cons_println(ops);
-					free(ops);
-				}
-			}
-		} else {
-			rz_core_cmd0(core, "ao~mnemonic[1]");
-		}
-		break;
-	case 'c': // "aoc"
-	{
-		RzList *hooks;
-		RzListIter *iter;
-		RzAnalysisCycleHook *hook;
-		char *instr_tmp = NULL;
-		int ccl = input[1] ? rz_num_math(core->num, &input[2]) : 0; // get cycles to look for
-		int cr = rz_config_get_i(core->config, "asm.cmt.right");
-		int fun = rz_config_get_i(core->config, "asm.functions");
-		int li = rz_config_get_i(core->config, "asm.lines");
-		int xr = rz_config_get_i(core->config, "asm.xrefs");
-
-		rz_config_set_i(core->config, "asm.cmt.right", true);
-		rz_config_set_i(core->config, "asm.functions", false);
-		rz_config_set_i(core->config, "asm.lines", false);
-		rz_config_set_i(core->config, "asm.xrefs", false);
-
-		hooks = rz_core_analysis_cycles(core, ccl); // analysisyse
-		rz_cons_clear_line(1);
-		rz_list_foreach (hooks, iter, hook) {
-			instr_tmp = rz_core_disassemble_instr(core, hook->addr, 1);
-			rz_cons_printf("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
-			rz_cons_flush();
-			free(instr_tmp);
-		}
-		rz_list_free(hooks);
-
-		rz_config_set_i(core->config, "asm.cmt.right", cr); // reset settings
-		rz_config_set_i(core->config, "asm.functions", fun);
-		rz_config_set_i(core->config, "asm.lines", li);
-		rz_config_set_i(core->config, "asm.xrefs", xr);
-	} break;
-	case 'd': // "aod"
-		if (input[1] == 'a') { // "aoda"
-			// list sdb database
-			sdb_foreach(core->rasm->pair, listOpDescriptions, core);
-		} else if (input[1] == 0) {
-			int cur = RZ_MAX(core->print->cur, 0);
-			// XXX: we need cmd_xxx.h (cmd_analysis.h)
-			core_analysis_bytes_desc(core, core->block + cur, core->blocksize, 1);
-		} else if (input[1] == ' ') {
-			char *d = rz_asm_describe(core->rasm, input + 2);
-			if (d && *d) {
-				rz_cons_println(d);
-				free(d);
-			} else {
-				eprintf("Unknown mnemonic\n");
-			}
-		} else {
-			eprintf("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
-		}
-		break;
-	default:
-	case '?': // "ao?"
-		rz_core_cmd_help(core, help_msg_ao);
-		break;
-	}
-}
-
 static void cmd_analysis_jumps(RzCore *core, const char *input) {
 	rz_core_cmdf(core, "af @@= `axl~ref.code.jmp[1]`");
 }
@@ -5847,7 +5726,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		rz_cons_flush();
 		break;
 	}
-	case 'o': cmd_analysis_opcode(core, input + 1); break; // "ao"
 	case 'F': // "aF"
 		rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, 1);
 		break;
