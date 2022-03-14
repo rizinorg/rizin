@@ -3604,11 +3604,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_thread_new_handler(RzCore *core, int argc, const
 // dpt
 RZ_IPI RzCmdStatus rz_cmd_debug_threads_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char fmt = (char)rz_output_mode_to_char(mode);
-	if (argc <= 1) {
-		rz_debug_thread_list(core->dbg, core->dbg->pid, fmt);
-	} else {
-		rz_debug_thread_list(core->dbg, atoi(argv[1]), 0);
-	}
+	const int pid = argc > 1 ? atoi(argv[1]) : core->dbg->pid;
+	rz_debug_thread_list(core->dbg, pid, fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
