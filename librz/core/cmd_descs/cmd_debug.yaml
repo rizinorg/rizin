@@ -369,9 +369,9 @@ commands:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
           - name: offset
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
           - name: size
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: ddw
         summary: Write N bytes to fd
         cname: cmd_debug_fd_write
