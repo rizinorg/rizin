@@ -3,7 +3,7 @@ FILE=bins/elf/hello_world
 ARGS=-d
 CMDS=<<EOF
 dcu main+8
-de r r rsp
+dee r r rsp
 dec
 .drf
 s rip
@@ -20,7 +20,7 @@ FILE=bins/elf/hello_world
 ARGS=-d
 CMDS=<<EOF
 dcu main
-de w r rax
+dee w r rax
 dec
 .drf
 s rip-7

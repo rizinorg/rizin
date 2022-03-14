@@ -5604,6 +5604,7 @@ static const RzCmdDescArg cmd_debug_handler_list_args[] = {
 	{
 		.name = "handler",
 		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
 
 	},
 	{ 0 },

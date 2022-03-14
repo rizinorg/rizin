@@ -499,6 +499,7 @@ commands:
         args:
           - name: handler
             type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
   - name: dm
     summary: Memory map commands
     subcommands:

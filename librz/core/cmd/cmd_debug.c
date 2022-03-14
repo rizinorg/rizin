@@ -2028,7 +2028,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 				n++;
 			} while (!rz_num_conditional(core->num, input + 2));
 			rz_cons_break_pop();
-			rz_cons_printf("Stopped after %d instructions\n", n);
+			RZ_LOG_ERROR("Stopped after %d instructions\n", n);
 		} else {
 			RZ_LOG_ERROR("3 Missing argument\n");
 		}
