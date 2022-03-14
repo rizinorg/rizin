@@ -8865,7 +8865,7 @@ RZ_IPI RzCmdStatus rz_analysis_class_vtable_lookup_handler(RzCore *core, int arg
 
 RZ_IPI RzCmdStatus rz_analyze_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut8 *buf;
-	int len;
+	st32 len;
 
 	if (!(buf = malloc(strlen(argv[1]) + 1))) {
 		return RZ_CMD_STATUS_ERROR;
@@ -8894,11 +8894,10 @@ RZ_IPI RzCmdStatus rz_analyze_bytes_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut32 len = core->blocksize;
-	ut32 tbs = len;
+	st32 len = core->blocksize, tbs = len;
 
-	len = rz_num_get(core->num, argv[1]);
-	if ((int)len <= 0) {
+	len = (st32)rz_num_get(core->num, argv[1]);
+	if (len <= 0) {
 		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -8926,11 +8925,10 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_esil_handler(RzCore *core, int argc, const char **argv) {
-	ut32 len = core->blocksize;
-	ut32 tbs = len;
+	st32 len = core->blocksize, tbs = len;
 
-	len = rz_num_get(core->num, argv[1]);
-	if ((int)len <= 0) {
+	len = (st32)rz_num_get(core->num, argv[1]);
+	if (len <= 0) {
 		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -8946,11 +8944,10 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_esil_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_desc_handler(RzCore *core, int argc, const char **argv) {
-	ut32 len = core->blocksize;
-	ut32 tbs = len;
+	st32 len = core->blocksize, tbs = len;
 
-	len = rz_num_get(core->num, argv[1]);
-	if ((int)len <= 0) {
+	len = (st32)rz_num_get(core->num, argv[1]);
+	if (len <= 0) {
 		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -8966,11 +8963,10 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_desc_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_size_handler(RzCore *core, int argc, const char **argv) {
-	ut32 len = core->blocksize;
-	ut32 tbs = len;
+	st32 len = core->blocksize, tbs = len;
 
-	len = rz_num_get(core->num, argv[1]);
-	if ((int)len <= 0) {
+	len = (st32)rz_num_get(core->num, argv[1]);
+	if (len <= 0) {
 		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -8986,11 +8982,12 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_size_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut32 l, count = 1, obs = core->blocksize;
+	st32 l;
+	ut32 count = 1, obs = core->blocksize;
 
 	if (argc > 1) {
-		l = rz_num_get(core->num, argv[1]);
-		if ((int)l <= 0) {
+		l = (st32)rz_num_get(core->num, argv[1]);
+		if (l <= 0) {
 			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -9021,11 +9018,12 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_size_handler(RzCore *core, int argc, const char **argv) {
-	ut32 l, count = 1, obs = core->blocksize;
+	ut32 count = 1, obs = core->blocksize;
+	st32 l;
 
 	if (argc > 1) {
-		l = rz_num_get(core->num, argv[1]);
-		if ((int)l <= 0) {
+		l = (st32)rz_num_get(core->num, argv[1]);
+		if (l <= 0) {
 			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -9045,11 +9043,12 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_size_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const char **argv) {
-	ut32 l, count = 1, obs = core->blocksize;
+	ut32 count = 1, obs = core->blocksize;
+	st32 l;
 
 	if (argc > 1) {
-		l = rz_num_get(core->num, argv[1]);
-		if ((int)l <= 0) {
+		l = (st32)rz_num_get(core->num, argv[1]);
+		if (l <= 0) {
 			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -9098,15 +9097,15 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 	RzListIter *iter;
 	RzAnalysisCycleHook *hook;
 	char *instr_tmp = NULL;
-	ut32 ccl = 0;
+	st32 ccl = 0;
 	int cr = rz_config_get_i(core->config, "asm.cmt.right");
 	int fun = rz_config_get_i(core->config, "asm.functions");
 	int li = rz_config_get_i(core->config, "asm.lines");
 	int xr = rz_config_get_i(core->config, "asm.xrefs");
 
 	if (argc > 1) {
-		ccl = rz_num_get(core->num, argv[1]);
-		if ((int)ccl < 0) {
+		ccl = (st32)rz_num_get(core->num, argv[1]);
+		if (ccl < 0) {
 			RZ_LOG_ERROR("Invalid negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -9136,12 +9135,12 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_convert_mne_handler(RzCore *core, int argc, const char **argv) {
-	ut32 id;
+	st32 id;
 
 	if (rz_str_isnumber(argv[1])) {
-		id = rz_num_math(core->num, argv[1]);
+		id = (st32)rz_num_math(core->num, argv[1]);
 		// id starts from 1
-		if ((int)id <= 0) {
+		if (id <= 0) {
 			RZ_LOG_ERROR("Invalid negative or zero arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
