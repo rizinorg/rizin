@@ -379,9 +379,9 @@ commands:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
           - name: offset
-            type: RZ_CMD_ARG_TYPE_NUM
-          - name: len
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: ddt
         summary: TODO Open and map that tty into the UI?
         cname: cmd_debug_fd_tty
