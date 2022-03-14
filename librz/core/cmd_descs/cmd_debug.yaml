@@ -299,8 +299,20 @@ commands:
         args: []
       - name: dcs
         summary: Continue until syscall
-        cname: cmd_debug_continue_syscall
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        subcommands:
+          - name: dcs
+            summary: >
+              Continue until next syscall
+              / Continue until next call to the 'str' syscall
+            cname: cmd_debug_continue_syscall
+            args:
+              - name: str
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: dcs*
+            summary: Trace all syscalls, a la strace
+            cname: cmd_debug_trace_syscall
+            args: []
       - name: dct
         summary: Traptrace from curseek to len, no argument to list
         cname: cmd_debug_continue_traptrace

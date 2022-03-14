@@ -19,44 +19,6 @@
 
 #include "../core_private.h"
 
-static const char *help_msg_d[] = {
-	"Usage:", "d", " # Debug commands",
-	"db", "[?]", "Breakpoints commands",
-	"dbt", "[?]", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-	"dc", "[?]", "Continue execution",
-	"dd", "[?]", "File descriptors (!fd in r1)",
-	"de", "[-sc] [perm] [rm] [e]", "Debug with ESIL (see de?)",
-	"dg", " <file>", "Generate a core-file (WIP)",
-	"dH", " [handler]", "Transplant process to a new handler",
-	"di", "[?]", "Show debugger backend information (See dh)",
-	"dk", "[?]", "List, send, get, set, signal handlers of child",
-	"dL", "[?]", "List or set debugger handler",
-	"dm", "[?]", "Show memory maps",
-	"do", "[?]", "Open process (reload, alias for 'oo')",
-	"doo", "[args]", "Reopen in debug mode with args (alias for 'ood')",
-	"doof", "[file]", "Reopen in debug mode from file (alias for 'oodf')",
-	"doc", "", "Close debug session",
-	"dp", "[?]", "List, attach to process or thread id",
-	"dr", "[?]", "Cpu registers",
-	"ds", "[?]", "Step, over, source line",
-	"dt", "[?]", "Display instruction traces",
-	"dw", " <pid>", "Block prompt until pid dies",
-#if __WINDOWS__
-	"dW", "", "List process windows",
-	"dWi", "", "Identify window under cursor",
-#endif
-	"dx", "[?]", "Inject and run code on target process (See gs)",
-	NULL
-};
-
-static const char *help_msg_dcs[] = {
-	"Usage:", "dcs", " Continue until syscall",
-	"dcs", "", "Continue until next syscall",
-	"dcs [str]", "", "Continue until next call to the 'str' syscall",
-	"dcs", "*", "Trace all syscalls, a la strace",
-	NULL
-};
-
 static const char *help_msg_dcu[] = {
 	"Usage:", "dcu", " Continue until address",
 	"dcu.", "", "Alias for dcu $$ (continue until current address",
@@ -260,7 +222,6 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 /* TODO: refactor all those step_until* function into a single one
  * TODO: handle when the process is dead
  * TODO: handle ^C */
-
 static int step_until(RzCore *core, ut64 addr) {
 	ut64 off = rz_debug_reg_get(core->dbg, "PC");
 	if (!off) {
@@ -601,7 +562,7 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 	}
 }
 
-#define MAX_MAP_SIZE 1024 * 1024 * 512
+#define MAX_MAP_SIZE (1024 * 1024 * 512)
 static int dump_maps(RzCore *core, int perm, const char *filename) {
 	RzDebugMap *map;
 	RzListIter *iter;
@@ -653,7 +614,8 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 	return ret;
 }
 
-static void cmd_debug_current_modules(RzCore *core, RzOutputMode mode) { // "dmm"
+// "dmm"
+static void cmd_debug_current_modules(RzCore *core, RzOutputMode mode) {
 	ut64 addr = core->offset;
 	RzDebugMap *map;
 	RzList *list;
@@ -2164,34 +2126,6 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 	rz_cons_printf("\n");
 }
 
-RZ_IPI int rz_cmd_debug(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int follow = 0;
-
-	if (!strncmp(input, "ate", 3)) {
-		char *now = rz_time_date_now_to_string();
-		rz_cons_printf("%s\n", now);
-		free(now);
-		return 0;
-	}
-
-	switch (input[0]) {
-	case 's': // "ds"
-		if (rz_cmd_debug_step(core, input + 1)) {
-			follow = rz_config_get_i(core->config, "dbg.follow");
-		}
-		break;
-	case '?': // "d?"
-	default:
-		rz_core_cmd_help(core, help_msg_d);
-		break;
-	}
-	if (follow > 0) {
-		rz_core_dbg_follow_seek_register(core);
-	}
-	return 0;
-}
-
 // db
 RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_handler(RzCore *core, int argc, const char **argv) {
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
@@ -2919,6 +2853,26 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_ret_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
+static inline RzCmdStatus continue_syscall(RzCore *core, const char *str) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	cmd_debug_cont_syscall(core, str);
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dcs
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_syscall_handler(RzCore *core, int argc, const char **argv) {
+	const char *str = argc > 1 ? argv[1] : NULL;
+	return continue_syscall(core, str);
+}
+
+// dcs*
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_syscall_handler(RzCore *core, int argc, const char **argv) {
+	return continue_syscall(core, "-1");
+}
+
 // dct
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_traptrace_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
@@ -2927,31 +2881,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_traptrace_handler(RzCore *core, int arg
 		cmd_debug_backtrace(core, 0);
 	} else {
 		cmd_debug_backtrace(core, rz_num_math(core->num, argv[1]));
-	}
-	rz_cons_break_pop();
-	rz_core_dbg_follow_seek_register(core);
-	return RZ_CMD_STATUS_OK;
-}
-
-// dcs
-RZ_IPI int rz_cmd_debug_continue_syscall(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	CMD_CHECK_DEBUG_DEAD(core);
-	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
-	switch (input[0]) {
-	case '*':
-		cmd_debug_cont_syscall(core, "-1");
-		break;
-	case ' ':
-		cmd_debug_cont_syscall(core, input + 2);
-		break;
-	case '\0':
-		cmd_debug_cont_syscall(core, NULL);
-		break;
-	default:
-	case '?':
-		rz_core_cmd_help(core, help_msg_dcs);
-		break;
 	}
 	rz_cons_break_pop();
 	rz_core_dbg_follow_seek_register(core);

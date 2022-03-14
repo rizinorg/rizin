@@ -6043,7 +6043,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
 		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
-		{ "d", "debugger operations", rz_cmd_debug },
 		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "p", "print current block", rz_cmd_print },
 		{ "q", "exit program session", rz_cmd_quit },
