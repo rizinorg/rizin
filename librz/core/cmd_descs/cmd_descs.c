@@ -256,7 +256,7 @@ static const RzCmdDescArg cmd_debug_core_gen_args[2];
 static const RzCmdDescArg cmd_debug_handler_new_args[2];
 static const RzCmdDescArg cmd_debug_info_args[2];
 static const RzCmdDescArg cmd_debug_diff_args[3];
-static const RzCmdDescArg cmd_debug_signal_list_args[2];
+static const RzCmdDescArg cmd_debug_signal_kill_args[2];
 static const RzCmdDescArg cmd_debug_signal_resolver_args[2];
 static const RzCmdDescArg cmd_debug_handler_list_args[2];
 static const RzCmdDescArg cmd_debug_allocate_maps_args[2];
@@ -5553,18 +5553,25 @@ static const RzCmdDescHelp cmd_debug_diff_help = {
 static const RzCmdDescHelp dk_help = {
 	.summary = "Handle signal handlers of child processes",
 };
-static const RzCmdDescArg cmd_debug_signal_list_args[] = {
+static const RzCmdDescArg cmd_debug_signal_kill_args[] = {
 	{
 		.name = "signal",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
 
 	},
 	{ 0 },
 };
+static const RzCmdDescHelp cmd_debug_signal_kill_help = {
+	.summary = "Send KILL signal to child",
+	.args = cmd_debug_signal_kill_args,
+};
+
+static const RzCmdDescArg cmd_debug_signal_list_args[] = {
+	{ 0 },
+};
 static const RzCmdDescHelp cmd_debug_signal_list_help = {
-	.summary = "List all signal handlers of child process  / Send KILL signal to child",
+	.summary = "List all signal handlers of child process",
 	.args = cmd_debug_signal_list_args,
 };
 
@@ -14018,8 +14025,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_diff_cd = rz_cmd_desc_argv_new(core->rcmd, di_cd, "dif", rz_cmd_debug_diff_handler, &cmd_debug_diff_help);
 	rz_warn_if_fail(cmd_debug_diff_cd);
 
-	RzCmdDesc *dk_cd = rz_cmd_desc_group_state_new(core->rcmd, d_cd, "dk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_signal_list_handler, &cmd_debug_signal_list_help, &dk_help);
+	RzCmdDesc *dk_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dk", rz_cmd_debug_signal_kill_handler, &cmd_debug_signal_kill_help, &dk_help);
 	rz_warn_if_fail(dk_cd);
+	RzCmdDesc *cmd_debug_signal_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, dk_cd, "dkl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_signal_list_handler, &cmd_debug_signal_list_help);
+	rz_warn_if_fail(cmd_debug_signal_list_cd);
+
 	RzCmdDesc *cmd_debug_signal_resolver_cd = rz_cmd_desc_argv_new(core->rcmd, dk_cd, "dkr", rz_cmd_debug_signal_resolver_handler, &cmd_debug_signal_resolver_help);
 	rz_warn_if_fail(cmd_debug_signal_resolver_cd);
 

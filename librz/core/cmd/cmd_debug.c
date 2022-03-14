@@ -3171,24 +3171,27 @@ RZ_IPI RzCmdStatus rz_cmd_debug_diff_handler(RzCore *core, int argc, const char 
 }
 
 // dk
-RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	if (argc <= 1) {
-		rz_debug_signal_list(core->dbg, state->mode);
-#if 0
-		RzListIter *iter;
-		RzDebugSignal *ds;
-		rz_cons_printf ("TODO: list signal handlers of child\n");
-		RzList *list = rz_debug_kill_list (core->dbg);
-		rz_list_foreach (list, iter, ds) {
-			// TODO: resolve signal name by number and show handler offset
-			rz_cons_printf ("--> %d\n", ds->num);
-		}
-		rz_list_free (list);
-#endif
-		return RZ_CMD_STATUS_OK;
-	}
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_kill_handler(RzCore *core, int argc, const char **argv) {
 	int sig = atoi(argv[1]);
 	rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->tid, sig);
+	return RZ_CMD_STATUS_OK;
+
+}
+
+// dkl
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_debug_signal_list(core->dbg, state->mode);
+#if 0
+	RzListIter *iter;
+	RzDebugSignal *ds;
+	rz_cons_printf ("TODO: list signal handlers of child\n");
+	RzList *list = rz_debug_kill_list (core->dbg);
+	rz_list_foreach (list, iter, ds) {
+		// TODO: resolve signal name by number and show handler offset
+		rz_cons_printf ("--> %d\n", ds->num);
+	}
+	rz_list_free (list);
+#endif
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -460,17 +460,20 @@ commands:
     subcommands:
       - name: dk
         summary: >
-          List all signal handlers of child process 
-          / Send KILL signal to child
+          Send KILL signal to child
+        cname: cmd_debug_signal_kill
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dkl
+        summary: >
+          List all signal handlers of child process
         cname: cmd_debug_signal_list
+        args: []
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-        args:
-          - name: signal
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
       - name: dkr
         summary: Name/signum resolver
         cname: cmd_debug_signal_resolver
