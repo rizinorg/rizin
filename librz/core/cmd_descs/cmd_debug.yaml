@@ -458,7 +458,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_FILE
             optional: true
   - name: dk
-    summary: List, send, get, set, signal handlers of child
+    summary: Handle signal handlers of child processes
     subcommands:
       - name: dk
         summary: >
