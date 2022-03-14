@@ -108,7 +108,7 @@ pd 1 @ reloc.target.strcmp
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
- 2 fd: 3 +0x00000040 0x08000040 - 0x08000635 r-x fmap..text
+ 2 fd: 3 +0x00000040 0x08000040 * 0x08000635 r-x fmap..text
  3 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
  4 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
  5 fd: 3 +0x00000825 0x08000825 - 0x0800085b --- fmap..comment
@@ -142,7 +142,7 @@ EOF
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x08000f00 - 0x08000fff r-- vmap.reloc-targets
  2 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
- 3 fd: 5 +0x00000040 0x08000040 - 0x08000635 r-x vmap..text
+ 3 fd: 5 +0x00000040 0x08000040 * 0x08000635 r-x vmap..text
  4 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
  5 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
  6 fd: 3 +0x00000825 0x08000825 - 0x0800085b --- fmap..comment

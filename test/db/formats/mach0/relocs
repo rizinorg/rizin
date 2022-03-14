@@ -326,7 +326,7 @@ vaddr      paddr      target     type    name
  4 - r-x 0x00000950 vfile://0/reloc-targets
  5 - r-x 0x0000cef0 vfile://0/patched
  1 fd: 4 +0x00000000 0x0000d008 - 0x0000d957 r-- vmap.reloc-targets
- 2 fd: 5 +0x00000000 0x00000000 - 0x00000fff r-x vmap.__TEXT
+ 2 fd: 5 +0x00000000 0x00000000 * 0x00000fff r-x vmap.__TEXT
  3 fd: 5 +0x00001000 0x00001000 - 0x00001fff r-- vmap.__DATA
  4 fd: 3 +0x00002000 0x00002000 - 0x0000cfff r-- fmap.__LINKEDIT
             ;-- OSMetaClass::~OSMetaClass():
@@ -677,7 +677,7 @@ vaddr      paddr      target     type    name
  1 fd: 3 +0x00000000 0x00000000 - 0x0002b49f r-x 
  2 fd: 4 +0x00000000 0x0000d008 - 0x0000d957 r-- vmap.reloc-targets
  3 fd: 5 +0x00000000 0x00000000 - 0x00000fff r-x vmap.__TEXT
- 4 fd: 5 +0x00001000 0x00001000 - 0x00001fff r-- vmap.__DATA
+ 4 fd: 5 +0x00001000 0x00001000 * 0x00001fff r-- vmap.__DATA
  5 fd: 3 +0x00003000 0x00002000 - 0x0000cfff r-- fmap.__LINKEDIT
             ;-- OSMetaClass::~OSMetaClass():
             0x0000d008      .qword 0x0000000000000000                  ; RELOC TARGET 2 OSMetaClass::~OSMetaClass()
@@ -1027,7 +1027,7 @@ vaddr      paddr      target     type    name
  5 - r-x 0x0001b4a0 vfile://0/patched
  1 fd: 4 +0x00000000 0x0001c008 - 0x0001c987 r-- vmap.reloc-targets
  2 fd: 3 +0x00000000 0x00000000 - 0x00003fff r-- fmap.__TEXT
- 3 fd: 3 +0x00004000 0x00004000 - 0x00007fff r-x fmap.__TEXT_EXEC
+ 3 fd: 3 +0x00004000 0x00004000 * 0x00007fff r-x fmap.__TEXT_EXEC
  4 fd: 5 +0x00008000 0x00008000 - 0x0000bfff r-- vmap.__DATA
  5 fd: 5 +0x0000c000 0x0000c000 - 0x0000ffff r-- vmap.__DATA_CONST
  6 fd: 3 +0x00010000 0x00010000 - 0x0001bfff r-- fmap.__LINKEDIT
@@ -1372,7 +1372,7 @@ vaddr      paddr      target     type    name
  1 fd: 3 +0x00000000 0x00000000 - 0x0002b49f r-x 
  2 fd: 4 +0x00000000 0x0001c008 - 0x0001c987 r-- vmap.reloc-targets
  3 fd: 3 +0x00010000 0x00000000 - 0x00003fff r-- fmap.__TEXT
- 4 fd: 3 +0x00014000 0x00004000 - 0x00007fff r-x fmap.__TEXT_EXEC
+ 4 fd: 3 +0x00014000 0x00004000 * 0x00007fff r-x fmap.__TEXT_EXEC
  5 fd: 5 +0x00008000 0x00008000 - 0x0000bfff r-- vmap.__DATA
  6 fd: 5 +0x0000c000 0x0000c000 - 0x0000ffff r-- vmap.__DATA_CONST
  7 fd: 3 +0x00020000 0x00010000 - 0x0001bfff r-- fmap.__LINKEDIT
@@ -1404,7 +1404,7 @@ vaddr paddr type name
  3 * r-x 0x0001e290 bins/mach0/IOKitTest-arm64e.kext/Contents/MacOS/IOKitTest
  4 - r-x 0x0001e290 vfile://0/rebased_stripped
  1 fd: 3 +0x00000000 0x00000000 - 0x00003fff r-- fmap.__TEXT
- 2 fd: 3 +0x00004000 0x00004000 - 0x00007fff r-x fmap.__TEXT_EXEC
+ 2 fd: 3 +0x00004000 0x00004000 * 0x00007fff r-x fmap.__TEXT_EXEC
  3 fd: 4 +0x00008000 0x00008000 - 0x0000bfff r-- vmap.__DATA
  4 fd: 4 +0x0000c000 0x0000c000 - 0x0000ffff r-- vmap.__DATA_CONST
  5 fd: 3 +0x00010000 0x00010000 - 0x0001ffff r-- fmap.__LINKEDIT
@@ -1450,7 +1450,7 @@ vaddr      paddr      target     type    name
  4 - r-x 0x00000030 vfile://0/reloc-targets
  5 - r-x 0x00004850 vfile://0/patched
  1 fd: 4 +0x00000000 0x00006008 - 0x00006037 r-- vmap.reloc-targets
- 2 fd: 3 +0x00000000 0x00001000 - 0x00002fff r-x fmap.__TEXT
+ 2 fd: 3 +0x00000000 0x00001000 * 0x00002fff r-x fmap.__TEXT
  3 fd: 3 +0x00002000 0x00003000 - 0x00003fff r-- fmap.__DATA
  4 fd: 5 +0x00003000 0x00004000 - 0x00005fff r-- vmap.__LINKEDIT
 --
