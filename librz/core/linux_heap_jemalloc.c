@@ -176,7 +176,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 		extent_node_t *head = RZ_NEW0(extent_node_t);
 
 		if (!node || !head) {
-			RZ_LOG_ERROR("Cannot call calloc\n");
+			RZ_LOG_ERROR("Failed to allocate extent_node_t\n");
 			free(ar);
 			free(node);
 			free(head);
