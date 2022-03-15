@@ -46,6 +46,8 @@ static const RzCmdDescDetail w8_details[2];
 static const RzCmdDescDetail w6_details[2];
 static const RzCmdDescDetail write_extend_hexbytes_details[2];
 static const RzCmdDescDetail write_assembly_opcode_details[2];
+static const RzCmdDescDetail write_op_sequence_details[2];
+static const RzCmdDescDetail wo_details[2];
 static const RzCmdDescDetail zign_add_details[5];
 static const RzCmdDescDetail tmp_modifiers_details[2];
 static const RzCmdDescDetail iterators_details[2];
@@ -491,6 +493,20 @@ static const RzCmdDescArg write_assembly_file_args[2];
 static const RzCmdDescArg write_assembly_opcode_args[2];
 static const RzCmdDescArg write_block_args[2];
 static const RzCmdDescArg write_mask_set_args[2];
+static const RzCmdDescArg write_op_add_args[2];
+static const RzCmdDescArg write_op_and_args[2];
+static const RzCmdDescArg write_op_div_args[2];
+static const RzCmdDescArg write_op_shl_args[2];
+static const RzCmdDescArg write_op_mul_args[2];
+static const RzCmdDescArg write_op_or_args[2];
+static const RzCmdDescArg write_op_shr_args[2];
+static const RzCmdDescArg write_op_sub_args[2];
+static const RzCmdDescArg write_op_xor_args[2];
+static const RzCmdDescArg write_op_sequence_args[5];
+static const RzCmdDescArg write_op_decrypt_args[4];
+static const RzCmdDescArg write_op_encrypt_args[4];
+static const RzCmdDescArg write_debruijn_args[2];
+static const RzCmdDescArg write_debruijn_find_args[2];
 static const RzCmdDescArg write_duplicate_args[3];
 static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
@@ -10747,10 +10763,6 @@ static const RzCmdDescHelp write_from_socket_help = {
 	.args = write_from_socket_args,
 };
 
-<<<<<<< HEAD
-static const RzCmdDescHelp ww_handler_old_help = {
-	.summary = "Write wide 16 little endian string",
-=======
 static const RzCmdDescArg write_wide_string_args[] = {
 	{
 		.name = "string",
@@ -10761,9 +10773,8 @@ static const RzCmdDescArg write_wide_string_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp write_wide_string_help = {
-	.summary = "Write wide string",
+	.summary = "Write wide 16 little endian string",
 	.args = write_wide_string_args,
->>>>>>> 5b81d9c6d7 (Convert 'ww' command to rzshell)
 };
 
 static const RzCmdDescHelp wx_help = {
@@ -10915,8 +10926,293 @@ static const RzCmdDescHelp write_mask_reset_help = {
 	.args = write_mask_reset_args,
 };
 
-static const RzCmdDescHelp wo_handler_old_help = {
-	.summary = "Write in block with operation",
+static const RzCmdDescDetailEntry wo_Examples_detail_entries[] = {
+	{ .text = "woa", .arg_str = " 20", .comment = "Content before: 1122334455 ; Content after: 3142536475" },
+	{ .text = "wos", .arg_str = " 2021", .comment = "Content before: 1122334455 ; Content after: f101132335" },
+	{ .text = "wo4", .arg_str = "", .comment = "Content before: 1122334455667788; Content after: 4433221188776655" },
+	{ 0 },
+};
+static const RzCmdDescDetail wo_details[] = {
+	{ .name = "Examples", .entries = wo_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp wo_help = {
+	.summary = "Write a block with a special operation",
+	.details = wo_details,
+};
+static const RzCmdDescArg write_op_2byteswap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_2byteswap_help = {
+	.summary = "Swap the endianess of 2-bytes values in the current block",
+	.args = write_op_2byteswap_args,
+};
+
+static const RzCmdDescArg write_op_4byteswap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_4byteswap_help = {
+	.summary = "Swap the endianess of 4-bytes values in the current block",
+	.args = write_op_4byteswap_args,
+};
+
+static const RzCmdDescArg write_op_8byteswap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_8byteswap_help = {
+	.summary = "Swap the endianess of 8-bytes values in the current block",
+	.args = write_op_8byteswap_args,
+};
+
+static const RzCmdDescArg write_op_add_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_add_help = {
+	.summary = "Add each existing byte in the block with the given <value>",
+	.args = write_op_add_args,
+};
+
+static const RzCmdDescArg write_op_and_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_and_help = {
+	.summary = "Bitwise-and each existing byte in the block with the given <value>",
+	.args = write_op_and_args,
+};
+
+static const RzCmdDescArg write_op_div_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_div_help = {
+	.summary = "Divide each existing byte in the block with the given <value>",
+	.args = write_op_div_args,
+};
+
+static const RzCmdDescArg write_op_shl_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_shl_help = {
+	.summary = "Bitwise-shift-left each existing byte in the block with the given <value>",
+	.args = write_op_shl_args,
+};
+
+static const RzCmdDescArg write_op_mul_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_mul_help = {
+	.summary = "Multiply each existing byte in the block with the given <value>",
+	.args = write_op_mul_args,
+};
+
+static const RzCmdDescArg write_op_or_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_or_help = {
+	.summary = "Bitwise-or each existing byte in the block with the given <value>",
+	.args = write_op_or_args,
+};
+
+static const RzCmdDescArg write_op_shr_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_shr_help = {
+	.summary = "Bitwise-shift-right each existing byte in the block with the given <value>",
+	.args = write_op_shr_args,
+};
+
+static const RzCmdDescArg write_op_sub_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_sub_help = {
+	.summary = "Subtract each existing byte in the block with the given <value>",
+	.args = write_op_sub_args,
+};
+
+static const RzCmdDescArg write_op_xor_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_xor_help = {
+	.summary = "Bitwise-xor each existing byte in the block with the given <value>",
+	.args = write_op_xor_args,
+};
+
+static const RzCmdDescDetailEntry write_op_sequence_Examples_detail_entries[] = {
+	{ .text = "woe", .arg_str = " 1 3 1", .comment = "Write 010203010203010203" },
+	{ .text = "woe", .arg_str = " 1 4 2", .comment = "Write 010301030103010301" },
+	{ .text = "woe", .arg_str = " 1 5 2", .comment = "Write 010305020401030502" },
+	{ .text = "woe", .arg_str = " 1 3 1 2", .comment = "Write 01000200030001000200" },
+	{ 0 },
+};
+static const RzCmdDescDetail write_op_sequence_details[] = {
+	{ .name = "Examples", .entries = write_op_sequence_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg write_op_sequence_args[] = {
+	{
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "to",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "step",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "1",
+
+	},
+	{
+		.name = "value_size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "1",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_sequence_help = {
+	.summary = "Write a sequence repeatedly with values from <from> up to <to> in the block",
+	.description = "Write a sequence of data to fill the whole block at the current offset. The sequence is formed starting from <from> up to <to>, with an increment specified in <step>. Each value is written as a <value_size>-bytes value, according to the endianess specified in cfg.bigendian.",
+	.details = write_op_sequence_details,
+	.args = write_op_sequence_args,
+};
+
+static const RzCmdDescArg write_op_decrypt_args[] = {
+	{
+		.name = "algo",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "key",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "IV",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_decrypt_help = {
+	.summary = "Decrypt current block with given <algo>, <key> and optional <IV>",
+	.args = write_op_decrypt_args,
+};
+
+static const RzCmdDescArg write_op_encrypt_args[] = {
+	{
+		.name = "algo",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "key",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "IV",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_encrypt_help = {
+	.summary = "Encrypt current block with given <algo>, <key> and optional <IV>",
+	.args = write_op_encrypt_args,
+};
+
+static const RzCmdDescHelp wD_help = {
+	.summary = "Write De Bruijn Pattern",
+};
+static const RzCmdDescArg write_debruijn_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_debruijn_help = {
+	.summary = "Write a De Bruijn Pattern of length <len> at the current offset",
+	.args = write_debruijn_args,
+};
+
+static const RzCmdDescArg write_debruijn_find_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_debruijn_find_help = {
+	.summary = "Returns the offset where <value> can be found in a De Bruijn Pattern",
+	.description = "It search for a particular value in the pattern as returned by the `wD` command. <value> is assumed to be a number of as few bytes as necessary, in the endian specified by cfg.bigendian.",
+	.args = write_debruijn_find_args,
 };
 
 static const RzCmdDescArg write_duplicate_args[] = {
@@ -14283,8 +14579,57 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_mask_reset_cd = rz_cmd_desc_argv_new(core->rcmd, wm_cd, "wm-", rz_write_mask_reset_handler, &write_mask_reset_help);
 	rz_warn_if_fail(write_mask_reset_cd);
 
-	RzCmdDesc *wo_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wo", rz_wo_handler_old, &wo_handler_old_help);
-	rz_warn_if_fail(wo_handler_old_cd);
+	RzCmdDesc *wo_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wo", NULL, NULL, &wo_help);
+	rz_warn_if_fail(wo_cd);
+	RzCmdDesc *write_op_2byteswap_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wo2", rz_write_op_2byteswap_handler, &write_op_2byteswap_help);
+	rz_warn_if_fail(write_op_2byteswap_cd);
+
+	RzCmdDesc *write_op_4byteswap_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wo4", rz_write_op_4byteswap_handler, &write_op_4byteswap_help);
+	rz_warn_if_fail(write_op_4byteswap_cd);
+
+	RzCmdDesc *write_op_8byteswap_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wo8", rz_write_op_8byteswap_handler, &write_op_8byteswap_help);
+	rz_warn_if_fail(write_op_8byteswap_cd);
+
+	RzCmdDesc *write_op_add_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woa", rz_write_op_add_handler, &write_op_add_help);
+	rz_warn_if_fail(write_op_add_cd);
+
+	RzCmdDesc *write_op_and_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woA", rz_write_op_and_handler, &write_op_and_help);
+	rz_warn_if_fail(write_op_and_cd);
+
+	RzCmdDesc *write_op_div_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wod", rz_write_op_div_handler, &write_op_div_help);
+	rz_warn_if_fail(write_op_div_cd);
+
+	RzCmdDesc *write_op_shl_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wol", rz_write_op_shl_handler, &write_op_shl_help);
+	rz_warn_if_fail(write_op_shl_cd);
+
+	RzCmdDesc *write_op_mul_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wom", rz_write_op_mul_handler, &write_op_mul_help);
+	rz_warn_if_fail(write_op_mul_cd);
+
+	RzCmdDesc *write_op_or_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woo", rz_write_op_or_handler, &write_op_or_help);
+	rz_warn_if_fail(write_op_or_cd);
+
+	RzCmdDesc *write_op_shr_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wor", rz_write_op_shr_handler, &write_op_shr_help);
+	rz_warn_if_fail(write_op_shr_cd);
+
+	RzCmdDesc *write_op_sub_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wos", rz_write_op_sub_handler, &write_op_sub_help);
+	rz_warn_if_fail(write_op_sub_cd);
+
+	RzCmdDesc *write_op_xor_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wox", rz_write_op_xor_handler, &write_op_xor_help);
+	rz_warn_if_fail(write_op_xor_cd);
+
+	RzCmdDesc *write_op_sequence_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woe", rz_write_op_sequence_handler, &write_op_sequence_help);
+	rz_warn_if_fail(write_op_sequence_cd);
+
+	RzCmdDesc *write_op_decrypt_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woD", rz_write_op_decrypt_handler, &write_op_decrypt_help);
+	rz_warn_if_fail(write_op_decrypt_cd);
+
+	RzCmdDesc *write_op_encrypt_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woE", rz_write_op_encrypt_handler, &write_op_encrypt_help);
+	rz_warn_if_fail(write_op_encrypt_cd);
+
+	RzCmdDesc *wD_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wD", rz_write_debruijn_handler, &write_debruijn_help, &wD_help);
+	rz_warn_if_fail(wD_cd);
+	RzCmdDesc *write_debruijn_find_cd = rz_cmd_desc_argv_new(core->rcmd, wD_cd, "wD/", rz_write_debruijn_find_handler, &write_debruijn_find_help);
+	rz_warn_if_fail(write_debruijn_find_cd);
 
 	RzCmdDesc *write_duplicate_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wd", rz_write_duplicate_handler, &write_duplicate_help);
 	rz_warn_if_fail(write_duplicate_cd);

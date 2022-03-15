@@ -103,6 +103,21 @@ typedef enum {
 	RZ_CORE_VISUAL_MODE_CD = 4 ///< Print in string format
 } RzCoreVisualMode;
 
+typedef enum {
+	RZ_CORE_WRITE_OP_BYTESWAP2, ///< Swap the endianess of 2-bytes values
+	RZ_CORE_WRITE_OP_BYTESWAP4, ///< Swap the endianess of 4-bytes values
+	RZ_CORE_WRITE_OP_BYTESWAP8, ///< Swap the endianess of 8-bytes values
+	RZ_CORE_WRITE_OP_ADD, ///< Write the addition of existing byte and argument value
+	RZ_CORE_WRITE_OP_SUB, ///< Write the subtraction of existing byte and argument value
+	RZ_CORE_WRITE_OP_DIV, ///< Write the division of existing byte and argument value
+	RZ_CORE_WRITE_OP_MUL, ///< Write the multiplication of existing byte and argument value
+	RZ_CORE_WRITE_OP_AND, ///< Write the bitwise-and of existing byte and argument value
+	RZ_CORE_WRITE_OP_OR, ///< Write the bitwise-or of existing byte and argument value
+	RZ_CORE_WRITE_OP_XOR, ///< Write the bitwise-xor of existing byte and argument value
+	RZ_CORE_WRITE_OP_SHIFT_LEFT, ///< Write the shift left of existing byte by argument value
+	RZ_CORE_WRITE_OP_SHIFT_RIGHT, ///< Write the shift right of existing byte and argument value
+} RzCoreWriteOp;
+
 typedef bool (*RzCorePluginInit)(RzCore *core);
 typedef bool (*RzCorePluginFini)(RzCore *core);
 
@@ -498,6 +513,7 @@ RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
 RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);
 RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);
 RZ_API bool rz_core_write_block(RzCore *core, ut64 addr, ut8 *data, size_t len);
+RZ_API bool rz_core_write_seq_at(RzCore *core, ut64 addr, ut64 from, ut64 to, ut64 step, int value_size);
 RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
@@ -592,8 +608,8 @@ RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *
 RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len);
-RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
-RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
+RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen);
+RZ_API ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen, int *buflen);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state);
 RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdStateOutput *state);

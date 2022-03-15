@@ -92,221 +92,6 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 	return true;
 }
 
-static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
-	ut32 i;
-	ut16 v16;
-	ut32 v32;
-	ut64 v64;
-	if (len != 8 && len != 4 && len != 2 && len != 1) {
-		eprintf("Invalid word size. Use 1, 2, 4 or 8\n");
-		return false;
-	}
-	if (len == 1) {
-		return true;
-	}
-	for (i = 0; i < blocksize; i += len) {
-		switch (len) {
-		case 8:
-			v64 = rz_read_at_be64(buf, i);
-			rz_write_at_le64(buf, v64, i);
-			break;
-		case 4:
-			v32 = rz_read_at_be32(buf, i);
-			rz_write_at_le32(buf, v32, i);
-			break;
-		case 2:
-			v16 = rz_read_at_be16(buf, i);
-			rz_write_at_le16(buf, v16, i);
-			break;
-		}
-	}
-	return true;
-}
-
-RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op) {
-	int i, j;
-	ut64 len;
-	char *str = NULL;
-	ut8 *buf;
-
-	buf = (ut8 *)malloc(core->blocksize);
-	if (!buf) {
-		return NULL;
-	}
-	memcpy(buf, core->block, core->blocksize);
-
-	if (op != 'e') {
-		// fill key buffer either from arg or from clipboard
-		if (arg) { // parse arg for key
-			// rz_hex_str2bin() is guaranteed to output maximum half the
-			// input size, or 1 byte if there is just a single nibble.
-			str = (char *)malloc(strlen(arg) / 2 + 1);
-			if (!str) {
-				goto beach;
-			}
-			len = rz_hex_str2bin(arg, (ut8 *)str);
-			// Output is invalid if there was just a single nibble,
-			// but in that case, len is negative (-1).
-			if (len <= 0) {
-				eprintf("Invalid hexpair string\n");
-				goto beach;
-			}
-		} else { // use clipboard as key
-			const ut8 *tmp = rz_buf_data(core->yank_buf, &len);
-			str = rz_mem_dup(tmp, len);
-			if (!str) {
-				goto beach;
-			}
-		}
-	} else {
-		len = 0;
-	}
-
-	// execute the operand
-	if (op == 'e') {
-		int wordsize = 1;
-		char *os, *p, *s = strdup(arg);
-		int n = 0, from = 0, to = UT8_MAX, dif = 0, step = 1;
-		os = s;
-		p = strchr(s, ' ');
-		if (p) {
-			*p = 0;
-			from = rz_num_math(core->num, s);
-			s = p + 1;
-		}
-		p = strchr(s, ' ');
-		if (p) {
-			*p = 0;
-			to = rz_num_math(core->num, s);
-			s = p + 1;
-		}
-		p = strchr(s, ' ');
-		if (p) {
-			*p = 0;
-			step = rz_num_math(core->num, s);
-			s = p + 1;
-			wordsize = rz_num_math(core->num, s);
-		} else {
-			step = rz_num_math(core->num, s);
-		}
-		free(os);
-		eprintf("from %d to %d step %d size %d\n", from, to, step, wordsize);
-		dif = (to <= from) ? UT8_MAX : to - from + 1;
-		if (wordsize == 1) {
-			from %= (UT8_MAX + 1);
-		}
-		if (dif < 1) {
-			dif = UT8_MAX + 1;
-		}
-		if (step < 1) {
-			step = 1;
-		}
-		if (wordsize < 1) {
-			wordsize = 1;
-		}
-		if (wordsize == 1) {
-			for (i = n = 0; i < core->blocksize; i++, n += step) {
-				buf[i] = (ut8)(n % dif) + from;
-			}
-		} else if (wordsize == 2) {
-			ut16 num16 = from;
-			for (i = 0; i < core->blocksize; i += wordsize, num16 += step) {
-				rz_write_le16(buf + i, num16);
-			}
-		} else if (wordsize == 4) {
-			ut32 num32 = from;
-			for (i = 0; i < core->blocksize; i += wordsize, num32 += step) {
-				rz_write_le32(buf + i, num32);
-			}
-		} else if (wordsize == 8) {
-			ut64 num64 = from;
-			for (i = 0; i < core->blocksize; i += wordsize, num64 += step) {
-				rz_write_le64(buf + i, num64);
-			}
-		} else {
-			eprintf("Invalid word size. Use 1, 2, 4 or 8\n");
-		}
-	} else if (op == '2' || op == '4' || op == '8') { // "wo2" "wo4" "wo8"
-		int inc = op - '0';
-		ut8 tmp;
-		for (i = 0; (i + inc) <= core->blocksize; i += inc) {
-			if (inc == 2) {
-				tmp = buf[i];
-				buf[i] = buf[i + 1];
-				buf[i + 1] = tmp;
-			} else if (inc == 4) {
-				tmp = buf[i];
-				buf[i] = buf[i + 3];
-				buf[i + 3] = tmp;
-				tmp = buf[i + 1];
-				buf[i + 1] = buf[i + 2];
-				buf[i + 2] = tmp;
-			} else if (inc == 8) {
-				tmp = buf[i];
-				buf[i] = buf[i + 7];
-				buf[i + 7] = tmp;
-
-				tmp = buf[i + 1];
-				buf[i + 1] = buf[i + 6];
-				buf[i + 6] = tmp;
-
-				tmp = buf[i + 2];
-				buf[i + 2] = buf[i + 5];
-				buf[i + 5] = tmp;
-
-				tmp = buf[i + 3];
-				buf[i + 3] = buf[i + 4];
-				buf[i + 4] = tmp;
-			} else {
-				eprintf("Invalid inc, use 2, 4 or 8.\n");
-				break;
-			}
-		}
-	} else {
-		bool be = rz_config_get_i(core->config, "cfg.bigendian");
-		if (!be) {
-			if (!__endian_swap((ut8 *)str, len, len)) {
-				goto beach;
-			}
-		}
-		for (i = j = 0; i < core->blocksize; i++) {
-			switch (op) {
-			case 'x': buf[i] ^= str[j]; break;
-			case 'a': buf[i] += str[j]; break;
-			case 's': buf[i] -= str[j]; break;
-			case 'm': buf[i] *= str[j]; break;
-			case 'w': buf[i] = str[j]; break;
-			case 'd': buf[i] = (str[j]) ? (buf[i] / str[j]) : 0; break;
-			case 'r': buf[i] >>= str[j]; break;
-			case 'l': buf[i] <<= str[j]; break;
-			case 'o': buf[i] |= str[j]; break;
-			case 'A': buf[i] &= str[j]; break;
-			}
-			j++;
-			if (j >= len) {
-				j = 0; /* cyclic key */
-			}
-		}
-	}
-
-	free(str);
-	return buf;
-beach:
-	free(str);
-	free(buf);
-	return NULL;
-}
-
-RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op) {
-	ut8 *buf = rz_core_transform_op(core, arg, op);
-	if (!buf) {
-		return false;
-	}
-	int ret = rz_core_write_at(core, core->offset, buf, core->blocksize);
-	free(buf);
-	return ret;
-}
-
 // Get address-specific bits and arch at a certain address.
 // If there are no specific infos (i.e. asm.bits and asm.arch should apply), the bits and arch will be 0 or NULL respectively!
 RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int *bits, RZ_OUT RZ_BORROW RZ_NULLABLE const char **arch) {
@@ -1132,5 +917,179 @@ RZ_API bool rz_core_write_string_zero_at(RzCore *core, ut64 addr, const char *s)
 		return false;
 	}
 	free(str);
+	return true;
+}
+
+/**
+ * \brief Transform a block of data at \p addr according to the operation \p op and the hexvalue \p hex
+ *
+ * \param core Reference to RzCore instance
+ * \param addr Where the block of data to modify starts
+ * \param op Operation to perform on the block of data
+ * \param hex Optional hex string that may be required by the specific operation
+ * \param hexlen Optional length of the \p hex string. Must be present if \p hex is specified.
+ * \param buflen Used to return the length of the returned buffer
+ * \return The transformed buffer
+ */
+RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen, int *buflen) {
+	rz_return_val_if_fail(core, NULL);
+	rz_return_val_if_fail(!hex || hexlen >= 0, NULL);
+	rz_return_val_if_fail(buflen, NULL);
+
+	switch (op) {
+	case RZ_CORE_WRITE_OP_ADD:
+	case RZ_CORE_WRITE_OP_SUB:
+	case RZ_CORE_WRITE_OP_DIV:
+	case RZ_CORE_WRITE_OP_MUL:
+	case RZ_CORE_WRITE_OP_AND:
+	case RZ_CORE_WRITE_OP_OR:
+	case RZ_CORE_WRITE_OP_XOR:
+	case RZ_CORE_WRITE_OP_SHIFT_LEFT:
+	case RZ_CORE_WRITE_OP_SHIFT_RIGHT:
+		rz_return_val_if_fail(hex && hexlen >= 0, NULL);
+		break;
+	default:
+		break;
+	}
+
+	ut8 *buf = RZ_NEWS(ut8, core->blocksize);
+	if (!buf) {
+		return NULL;
+	}
+
+	int len = rz_io_nread_at(core->io, addr, buf, core->blocksize);
+	if (len < 0) {
+		free(buf);
+		return NULL;
+	}
+
+	for (int i = 0, j = 0; i < len; i++, j = (j + 1) % (hexlen ? hexlen : 1)) {
+		ut16 tmp16;
+		ut32 tmp32;
+		ut64 tmp64;
+		switch (op) {
+		case RZ_CORE_WRITE_OP_BYTESWAP2:
+			if (i + 1 < len) {
+				tmp16 = rz_read_le16(buf + i);
+				rz_write_be16(buf + i, tmp16);
+				i++;
+			}
+			break;
+		case RZ_CORE_WRITE_OP_BYTESWAP4:
+			if (i + 3 < len) {
+				tmp32 = rz_read_le32(buf + i);
+				rz_write_be32(buf + i, tmp32);
+				i += 3;
+			}
+			break;
+		case RZ_CORE_WRITE_OP_BYTESWAP8:
+			if (i + 7 < len) {
+				tmp64 = rz_read_le64(buf + i);
+				rz_write_be64(buf + i, tmp64);
+				i += 7;
+			}
+			break;
+		case RZ_CORE_WRITE_OP_ADD:
+			buf[i] += hex[j];
+			break;
+		case RZ_CORE_WRITE_OP_SUB:
+			buf[i] -= hex[j];
+			break;
+		case RZ_CORE_WRITE_OP_DIV:
+			buf[i] = hex[j] ? buf[i] / hex[j] : 0;
+			break;
+		case RZ_CORE_WRITE_OP_MUL:
+			buf[i] *= hex[j];
+			break;
+		case RZ_CORE_WRITE_OP_AND:
+			buf[i] &= hex[j];
+			break;
+		case RZ_CORE_WRITE_OP_OR:
+			buf[i] |= hex[j];
+			break;
+		case RZ_CORE_WRITE_OP_XOR:
+			buf[i] ^= hex[j];
+			break;
+		case RZ_CORE_WRITE_OP_SHIFT_LEFT:
+			buf[i] <<= hex[j];
+			break;
+		case RZ_CORE_WRITE_OP_SHIFT_RIGHT:
+			buf[i] >>= hex[j];
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	*buflen = len;
+	return buf;
+}
+
+/**
+ * \brief Write a full block of data according to the operation \p op and the hexvalue \p hex
+ *
+ * \param core Reference to RzCore instance
+ * \param addr Where the block of data to modify starts
+ * \param op Operation to perform on the block of data
+ * \param hex Optional hex string that may be required by the specific operation
+ * \param hexlen Optional length of the \p hex string. Must be present if \p hex is specified.
+ * \return true if the write operation succeeds, false otherwise
+ */
+RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen) {
+	int buflen;
+	ut8 *buf = rz_core_transform_op(core, addr, op, hex, hexlen, &buflen);
+	if (!buf) {
+		return false;
+	}
+
+	if (!rz_core_write_at(core, addr, buf, buflen)) {
+		RZ_LOG_ERROR("Could not write block operation at %" PFMT64x "\n", addr);
+		free(buf);
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * \brief Write a full block of data with a sequence
+ *
+ * Write a full block of data with a sequence of numbers starting from \p from
+ * up to \p to, with a step of \p step. The values are written as numbers of
+ * \p value_size bytes.
+ *
+ * \param core Reference to RzCore instance
+ * \param addr Where the block of data to modify starts
+ * \param from From where to start the sequence of numbers
+ * \param to Where to stop in the sequence
+ * \param step Difference between two numbers in the sequence
+ * \param value_size Size of each number of the sequence, in bytes
+ * \return true if the write operation succeeds, false otherwise
+ */
+RZ_API bool rz_core_write_seq_at(RzCore *core, ut64 addr, ut64 from, ut64 to, ut64 step, int value_size) {
+	rz_return_val_if_fail(core, false);
+	rz_return_val_if_fail(value_size == 1 || value_size == 2 || value_size == 4 || value_size == 8, false);
+	ut64 max_val = (1ULL << (8 * value_size));
+	rz_return_val_if_fail(from < max_val, false);
+	rz_return_val_if_fail(to < max_val, false);
+
+	ut8 *buf = RZ_NEWS0(ut8, core->blocksize);
+	if (!buf) {
+		return false;
+	}
+
+	ut64 diff = to <= from ? max_val : to - from + 1;
+	ut64 p = from;
+	for (size_t i = 0; i < core->blocksize; i += value_size, p = (from + ((p + step - from) % diff)) % max_val) {
+		rz_write_ble(buf + i, p, rz_config_get_b(core->config, "cfg.bigendian"), value_size * 8);
+	}
+
+	if (!rz_core_write_at(core, addr, buf, core->blocksize)) {
+		RZ_LOG_ERROR("Could not write sequence [%" PFMT64d ", %" PFMT64d "] step=%" PFMT64d ",value_size=%d at %" PFMT64x "\n", from, to, step, value_size, addr);
+		free(buf);
+		return false;
+	}
+
+	free(buf);
 	return true;
 }

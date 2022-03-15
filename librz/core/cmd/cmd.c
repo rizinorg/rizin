@@ -6038,7 +6038,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "q", "exit program session", rz_cmd_quit },
 		{ "V", "enter visual mode", rz_cmd_visual },
 		{ "v", "enter visual mode", rz_cmd_panels },
-		{ "w", "write bytes", rz_cmd_write },
 		{ "x", "alias for px", rz_cmd_hexdump },
 	};
 
