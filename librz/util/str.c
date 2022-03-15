@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <wchar.h>
 #include <stdarg.h>
 #include <rz_util/rz_base64.h>
 #include <rz_util/rz_utf8.h>
@@ -3494,12 +3495,13 @@ err_r_str_mb_to_wc:
 
 RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	char *res_buf = NULL;
+	mbstate_t mbstate = { 0 };
 	size_t sz;
 
 	if (!buf || len <= 0) {
 		return NULL;
 	}
-	sz = wcstombs(NULL, buf, 0);
+	sz = wcsrtombs(NULL, &buf, 0, &mbstate);
 	if (sz == (size_t)-1) {
 		goto err_r_str_wc_to_mb;
 	}
@@ -3507,7 +3509,7 @@ RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	if (!res_buf) {
 		goto err_r_str_wc_to_mb;
 	}
-	sz = wcstombs(res_buf, buf, sz + 1);
+	sz = wcsrtombs(res_buf, &buf, sz + 1, &mbstate);
 	if (sz == (size_t)-1) {
 		goto err_r_str_wc_to_mb;
 	}
