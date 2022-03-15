@@ -69,3 +69,14 @@ struct.timespec.tv_nsec=long,8,0
 
 std__type_info=struct
 struct.std__type_info=
+
+access_perm=enum
+enum.access_perm=F_OK,X_OK,W_OK,R_OK,WX_OK,RX_OK,RW_OK,RWX_OK
+enum.access_perm.F_OK=0
+enum.access_perm.X_OK=1
+enum.access_perm.WX_OK=3
+enum.access_perm.W_OK=2
+enum.access_perm.R_OK=4
+enum.access_perm.RX_OK=5
+enum.access_perm.RW_OK=6
+enum.access_perm.RWX_OK=7

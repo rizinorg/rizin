@@ -399,85 +399,84 @@ RZ_PACKED(
 		ut8 reserved_4[224];
 	});
 
-RZ_PACKED(
-	struct context_type_amd64 {
-		ut64 p1_home;
-		ut64 p2_home;
-		ut64 p3_home;
-		ut64 p4_home;
-		ut64 p5_home;
-		ut64 p6_home;
+struct context_type_amd64 {
+	ut64 p1_home;
+	ut64 p2_home;
+	ut64 p3_home;
+	ut64 p4_home;
+	ut64 p5_home;
+	ut64 p6_home;
 
-		ut32 context_flags;
-		ut32 mx_csr;
+	ut32 context_flags;
+	ut32 mx_csr;
 
-		ut16 seg_cs;
-		ut16 seg_ds;
-		ut16 seg_es;
-		ut16 seg_fs;
-		ut16 seg_gs;
-		ut16 seg_ss;
-		ut32 e_flags;
+	ut16 seg_cs;
+	ut16 seg_ds;
+	ut16 seg_es;
+	ut16 seg_fs;
+	ut16 seg_gs;
+	ut16 seg_ss;
+	ut32 e_flags;
 
-		ut64 dr0;
-		ut64 dr1;
-		ut64 dr2;
-		ut64 dr3;
-		ut64 dr6;
-		ut64 dr7;
+	ut64 dr0;
+	ut64 dr1;
+	ut64 dr2;
+	ut64 dr3;
+	ut64 dr6;
+	ut64 dr7;
 
-		ut64 rax;
-		ut64 rcx;
-		ut64 rdx;
-		ut64 rbx;
-		ut64 rsp;
-		ut64 rbp;
-		ut64 rsi;
-		ut64 rdi;
-		ut64 r8;
-		ut64 r9;
-		ut64 r10;
-		ut64 r11;
-		ut64 r12;
-		ut64 r13;
-		ut64 r14;
-		ut64 r15;
+	ut64 rax;
+	ut64 rcx;
+	ut64 rdx;
+	ut64 rbx;
+	ut64 rsp;
+	ut64 rbp;
+	ut64 rsi;
+	ut64 rdi;
+	ut64 r8;
+	ut64 r9;
+	ut64 r10;
+	ut64 r11;
+	ut64 r12;
+	ut64 r13;
+	ut64 r14;
+	ut64 r15;
 
-		ut64 rip;
+	ut64 rip;
 
-		union {
-			struct windows_xsave_format32 flt_save;
-			struct {
-				struct windows_m128a header[2];
-				struct windows_m128a legacy[8];
-				struct windows_m128a xmm_0;
-				struct windows_m128a xmm_1;
-				struct windows_m128a xmm_2;
-				struct windows_m128a xmm_3;
-				struct windows_m128a xmm_4;
-				struct windows_m128a xmm_5;
-				struct windows_m128a xmm_6;
-				struct windows_m128a xmm_7;
-				struct windows_m128a xmm_8;
-				struct windows_m128a xmm_9;
-				struct windows_m128a xmm_10;
-				struct windows_m128a xmm_11;
-				struct windows_m128a xmm_12;
-				struct windows_m128a xmm_13;
-				struct windows_m128a xmm_14;
-				struct windows_m128a xmm_15;
-			};
+	union {
+		struct windows_xsave_format32 flt_save;
+		struct {
+			struct windows_m128a header[2];
+			struct windows_m128a legacy[8];
+			struct windows_m128a xmm_0;
+			struct windows_m128a xmm_1;
+			struct windows_m128a xmm_2;
+			struct windows_m128a xmm_3;
+			struct windows_m128a xmm_4;
+			struct windows_m128a xmm_5;
+			struct windows_m128a xmm_6;
+			struct windows_m128a xmm_7;
+			struct windows_m128a xmm_8;
+			struct windows_m128a xmm_9;
+			struct windows_m128a xmm_10;
+			struct windows_m128a xmm_11;
+			struct windows_m128a xmm_12;
+			struct windows_m128a xmm_13;
+			struct windows_m128a xmm_14;
+			struct windows_m128a xmm_15;
 		};
+	};
 
-		struct windows_m128a vector_register[26];
-		ut64 vector_control;
+	struct windows_m128a vector_register[26];
+	ut64 vector_control;
 
-		ut64 debugcontrol;
-		ut64 last_branch_to_rip;
-		ut64 last_branch_from_rip;
-		ut64 last_exception_to_rip;
-		ut64 last_exception_from_rip;
-	});
+	ut64 debugcontrol;
+	ut64 last_branch_to_rip;
+	ut64 last_branch_from_rip;
+	ut64 last_exception_to_rip;
+	ut64 last_exception_from_rip;
+};
 
 RZ_PACKED(
 	struct windows_exception_record32 {

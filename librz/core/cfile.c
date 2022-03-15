@@ -1263,6 +1263,7 @@ RZ_IPI void rz_core_file_io_map_deleted(RzCore *core, RzIOMap *map) {
 	rz_list_foreach (core->files, it, cf) {
 		rz_pvector_remove_data(&cf->maps, map);
 	}
+	rz_core_io_map_info_free(map->user);
 }
 
 RZ_IPI void rz_core_file_bin_file_deleted(RzCore *core, RzBinFile *bf) {
@@ -1612,4 +1613,18 @@ RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
 			}
 		}
 	}
+}
+
+RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig) {
+	RzCoreIOMapInfo *info = RZ_NEW(RzCoreIOMapInfo);
+	if (!info) {
+		return NULL;
+	}
+	info->cf = cf;
+	info->perm_orig = perm_orig;
+	return info;
+}
+
+RZ_IPI void rz_core_io_map_info_free(RzCoreIOMapInfo *info) {
+	free(info);
 }

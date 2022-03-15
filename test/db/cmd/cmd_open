@@ -315,7 +315,7 @@ EXPECT=<<EOF
 0x00000010  2021 2223 2425 2627 2829 2a2b 2c2d 2e2f   !"#$%&'()*+,-./
 
  1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
- 2 fd: 4 +0x00000000 0x00000000 - 0x000000ff rwx 
+ 2 fd: 4 +0x00000000 0x00000000 * 0x000000ff rwx 
 
 0x00000010  1011 1213 1415 1617 1819 1a1b 1c1d 1e1f  ................
 EOF
@@ -376,7 +376,7 @@ EOF
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x00023560 - 0x00023f17 rwx vmap.reloc-targets
  2 fd: 3 +0x00000000 0x00000000 - 0x0000347f rwx fmap.LOAD0
- 3 fd: 3 +0x00004000 0x00004000 - 0x00016790 rwx fmap.LOAD1
+ 3 fd: 3 +0x00004000 0x00004000 * 0x00016790 rwx fmap.LOAD1
  4 fd: 3 +0x00017000 0x00017000 - 0x0001f7bf rwx fmap.LOAD2
  5 fd: 5 +0x00000000 0x00022268 - 0x00023557 rwx mmap.LOAD3
  6 fd: 6 +0x00020050 0x00021050 - 0x00022267 rwx vmap.LOAD3
@@ -522,14 +522,14 @@ EXPECT=<<EOF
  4 - r-x 0x000000b0 vfile://0/reloc-targets
  5 - rw- 0x00000184 null://388
  1 fd: 4 +0x00000000 0x0804e248 - 0x0804e2f7 r-- vmap.reloc-targets
- 2 fd: 3 +0x00000000 0x08048000 - 0x0804c657 r-x fmap.LOAD0
+ 2 fd: 3 +0x00000000 0x08048000 * 0x0804c657 r-x fmap.LOAD0
  3 fd: 5 +0x00000000 0x0804e0bc - 0x0804e23f rw- mmap.LOAD1
  4 fd: 3 +0x00004ef0 0x0804def0 - 0x0804e0bb r-- fmap.LOAD1
  3 - r-x 0x000000b0 vfile://0/reloc-targets
  4 * r-x 0x0000560c bins/elf/true32
  5 - rw- 0x00000184 null://388
  1 fd: 4 +0x00000000 0x0804e248 - 0x0804e2f7 r-- vmap.reloc-targets
- 2 fd: 3 +0x00000000 0x08048000 - 0x0804c657 r-x fmap.LOAD0
+ 2 fd: 3 +0x00000000 0x08048000 * 0x0804c657 r-x fmap.LOAD0
  3 fd: 5 +0x00000000 0x0804e0bc - 0x0804e23f rw- mmap.LOAD1
  4 fd: 3 +0x00004ef0 0x0804def0 - 0x0804e0bb r-- fmap.LOAD1
 EOF
@@ -626,7 +626,7 @@ oma 3
 oml~true32
 EOF
 EXPECT=<<EOF
- 5 fd: 3 +0x00000000 0x00000000 - 0xfffffffffffffffe r-x bins/elf/true32
+ 5 fd: 3 +0x00000000 0x00000000 * 0xfffffffffffffffe r-x bins/elf/true32
 EOF
 RUN
 
@@ -646,7 +646,7 @@ EOF
 EXPECT=<<EOF
 nop
 nop
- 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx 
  1 fd: 3 +0x00000000 0x00003000 - 0x000031ff rwx 
 invalid
 invalid
@@ -682,11 +682,11 @@ nop
  2 fd: 4 +0x00000000 0x00000000 - 0x000001ff rw- 
  3 fd: 5 +0x00000000 0x00000000 - 0x000001ff rw- 
  4 fd: 6 +0x00000000 0x00000000 - 0x000001ff rw- 
- 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx 
  3 fd: 5 +0x00000000 0x00000000 - 0x000001ff rw- 
  4 fd: 6 +0x00000000 0x00000000 - 0x000001ff rw- 
  1 fd: 3 +0x00000000 0x00003000 - 0x000031ff rwx 
- 2 fd: 4 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 2 fd: 4 +0x00000000 0x00000000 * 0x000001ff rw- 
 ret
 ret
 nop
@@ -707,9 +707,9 @@ omni- 1
 oml
 EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx HelloMap
- 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
- 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx HelloMap1
- 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx HelloMap
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx 
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx HelloMap1
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx 
 EOF
 RUN
