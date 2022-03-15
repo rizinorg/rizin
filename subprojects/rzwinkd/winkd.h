@@ -165,7 +165,6 @@ int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int co
 int winkd_write_at(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int count);
 int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int count);
 void winkd_break(void *ctx);
-int winkd_break_read(KdCtx *ctx);
 bool winkd_lock_enter(KdCtx *ctx);
 bool winkd_lock_leave(KdCtx *ctx);
 bool winkd_lock_tryenter(KdCtx *ctx);

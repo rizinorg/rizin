@@ -1470,18 +1470,3 @@ void winkd_break(void *arg) {
 	KdCtx *ctx = (KdCtx *)arg;
 	(void)iob_write(ctx->desc, (const uint8_t *)"b", 1);
 }
-
-int winkd_break_read(KdCtx *ctx) {
-#if __WINDOWS__ && defined(_MSC_VER)
-	static BOOL(WINAPI * w32_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
-	if (!w32_CancelIoEx) {
-		w32_CancelIoEx = (BOOL(WINAPI *)(HANDLE, LPOVERLAPPED))
-			GetProcAddress(GetModuleHandle(TEXT("kernel32")),
-				"CancelIoEx");
-	}
-	if (w32_CancelIoEx) {
-		w32_CancelIoEx(ctx->desc, NULL);
-	}
-#endif
-	return 1;
-}
