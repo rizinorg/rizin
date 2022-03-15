@@ -221,16 +221,16 @@ EXPECT=<<EOF
 --- From 0x401000 ---
 
 -- 1 --
-            0x00400fff  ~   ffcc           dec   esp
-0x400fff
-            0x00400fff  ~   ffcc           dec   esp
+            0x00400ffe      0000           add   byte [eax], al
+0x400ffe
+            0x00400ffe      0000           add   byte [eax], al
 
 -- 2 --
-            0x00400ffe      ff             invalid
-            0x00400fff  ~   ffcc           dec   esp
-0x400ffe
-            0x00400ffe      ff             invalid
-            0x00400fff  ~   ffcc           dec   esp
+            0x00400ffc      0000           add   byte [eax], al
+            0x00400ffe      0000           add   byte [eax], al
+0x400ffc
+            0x00400ffc      0000           add   byte [eax], al
+            0x00400ffe      0000           add   byte [eax], al
 
 --- From 0x560e7d ---
 

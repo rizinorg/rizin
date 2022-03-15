@@ -23,6 +23,7 @@ typedef int (*RzCoreConfigGetI)(void *core, const char *key);
 typedef const char *(*RzCoreConfigGet)(void *core, const char *key);
 typedef ut64 (*RzCoreNumGet)(void *core, const char *str);
 typedef const RzList *(*RzCoreFlagsGet)(void *core, ut64 offset);
+typedef bool (*RzCoreBinApplyInfo)(void *core, void *binfile, ut32 mask);
 
 typedef struct rz_core_bind_t {
 	void *core;
@@ -41,6 +42,7 @@ typedef struct rz_core_bind_t {
 	RzCoreConfigGet cfgGet;
 	RzCoreNumGet numGet;
 	RzCoreFlagsGet flagsGet;
+	RzCoreBinApplyInfo applyBinInfo;
 } RzCoreBind;
 
 #endif
