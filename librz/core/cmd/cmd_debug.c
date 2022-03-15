@@ -692,23 +692,7 @@ static RzDebugMap *get_closest_map(RzCore *core, ut64 addr) {
 	return NULL;
 }
 
-static RzOutputMode rad2mode(int mode) {
-	switch (mode) {
-	case RZ_MODE_PRINT:
-	default:
-		return RZ_OUTPUT_MODE_STANDARD;
-	case RZ_MODE_JSON:
-		return RZ_OUTPUT_MODE_JSON;
-	case RZ_MODE_SIMPLE:
-		return RZ_OUTPUT_MODE_QUIET;
-	case RZ_MODE_SIMPLEST:
-		return RZ_OUTPUT_MODE_QUIETEST;
-	case RZ_MODE_RIZINCMD:
-		return RZ_OUTPUT_MODE_RIZIN;
-	}
-}
-
-static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, int mode, bool symbols_only, RzCoreBinFilter *filter) {
+static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, RzCmdStateOutput *state, bool symbols_only, RzCoreBinFilter *filter) {
 	int fd;
 	if ((fd = rz_io_fd_open(core->io, file, RZ_PERM_R, 0)) == -1) {
 		return false;
@@ -729,17 +713,16 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	int action = RZ_CORE_BIN_ACC_ALL & ~RZ_CORE_BIN_ACC_INFO;
 	if (symbols_only || filter->name) {
 		action = RZ_CORE_BIN_ACC_SYMBOLS;
-	} else if (mode == RZ_MODE_SET || mode == RZ_MODE_RIZINCMD) {
+	}
+	if ((state->mode & RZ_OUTPUT_MODE_STANDARD) || (state->mode & RZ_OUTPUT_MODE_RIZIN)) {
 		action &= ~RZ_CORE_BIN_ACC_ENTRIES & ~RZ_CORE_BIN_ACC_MAIN & ~RZ_CORE_BIN_ACC_MAPS;
 	}
-	if (mode == RZ_MODE_SET) {
+	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_core_bin_apply_info(core, core->bin->cur, action);
 	} else {
-		RzCmdStateOutput state;
-		rz_cmd_state_output_init(&state, rad2mode(mode));
-		rz_core_bin_print(core, bf, action, filter, &state, NULL);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
+		rz_core_bin_print(core, bf, action, filter, state, NULL);
+		rz_cmd_state_output_print(state);
+		rz_cmd_state_output_fini(state);
 	}
 	rz_bin_file_delete(core->bin, bf);
 	rz_bin_file_set_cur_binfile(core->bin, obf);
@@ -846,7 +829,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int arg
 // dmi
 RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	CMD_CHECK_DEBUG_DEAD(core);
-	if (argc <= 1) {
+	bool symbols_only = argc >= 2 ? (strcmp(argv[1], "-a") != 0) : true;
+
+	if (argc <= 1 || (argc == 2 && !symbols_only)) {
 		cmd_debug_modules(core, state);
 		rz_cmd_state_output_print(state);
 		rz_cmd_state_output_fini(state);
@@ -854,9 +839,18 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 		return RZ_CMD_STATUS_OK;
 	}
 
-	ut64 addr = rz_num_get(core->num, argv[1]);
-	const char *libname = (!addr || addr == UT64_MAX) ? argv[1] : NULL;
-	const char *symname = argc > 2 ? symname = argv[2] : NULL;
+	ut64 addr;
+	const char *libname = NULL, *symname = NULL;
+	if (symbols_only) {
+		addr = rz_num_get(core->num, argv[1]);
+		libname = (!addr || addr == UT64_MAX) ? argv[1] : NULL;
+		symname = argc > 2 ? argv[2] : NULL;
+	} else {
+		addr = rz_num_get(core->num, argv[2]);
+		libname = (!addr || addr == UT64_MAX) ? argv[2] : NULL;
+		symname = argc >= 4 ? argv[3] : NULL;
+	}
+
 	if (libname && !addr) {
 		addr = addroflib(core, rz_file_basename(libname));
 		if (addr == UT64_MAX) {
@@ -865,7 +859,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 	}
 
 	ut64 baddr = 0LL;
-	bool symbols_only = (state->mode == RZ_OUTPUT_MODE_LONG);
 	PJ *pj = NULL;
 	RzDebugMap *map = get_closest_map(core, addr);
 	if (map) {
@@ -884,7 +877,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 					rz_core_dump(core, file, baddr, map->size, false);
 				}
 			}
-			get_bin_info(core, file, baddr, pj, state->mode, symbols_only, &filter);
+			get_bin_info(core, file, baddr, pj, state, symbols_only, &filter);
 			if (newfile) {
 				if (!rz_file_rm(newfile)) {
 					RZ_LOG_ERROR("Error when removing %s\n", newfile);
@@ -902,7 +895,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 			}
 		}
 	}
-	if (state->mode == RZ_MODE_JSON) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
