@@ -4,7 +4,7 @@ FILE==
 CMDS=<<EOF
 cd `e dir.tmp`
 e io.cache=true
-"(show_fname fname; wz $0; pr `?v $s` > `prz`; o `prz`; i~file; ij; rm `prz`)"
+"(show_fname fname; wz $0; pr `$b` > `prz`; o `prz`; i~file; ij; rm `prz`)"
 .(show_fname A\x1b¢\302\200€𝄞\363\240\201\201\\.bin)
 .(show_fname B\x1b¢\302\200€𝄞\363\240\201\201\\.bin)
 # INVALID FILENAME .(show_fname B\x1b¢\302\200\201€𝄞\363\240\201\201\\.bin)
