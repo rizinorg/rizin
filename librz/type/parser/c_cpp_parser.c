@@ -10,6 +10,18 @@
 
 #include <types_parser.h>
 
+#define TS_START_END(node, start, end) \
+	do { \
+		start = ts_node_start_byte(node); \
+		end = ts_node_end_byte(node); \
+	} while (0)
+
+static char *ts_node_sub_string(TSNode node, const char *cstr) {
+	ut32 start, end;
+	TS_START_END(node, start, end);
+	return rz_str_newf("%.*s", end - start, cstr + start);
+}
+
 // Declare the `tree_sitter_c` function, which is
 // implemented by the `tree-sitter-c` library.
 TSLanguage *tree_sitter_c();
@@ -168,10 +180,12 @@ static int type_parse_string(CParserState *state, const char *code, char **error
 	for (i = 0; i < root_node_child_count; i++) {
 		TSNode child = ts_node_named_child(root_node, i);
 		// We skip ";" or "," - empty expressions
-		const char *node_type = ts_node_type(child);
-		if (!strcmp(node_type, "expression_statement")) {
+		char *node_code = ts_node_sub_string(child, code);
+		if (!strcmp(node_code, ";") || !strcmp(node_code, ",")) {
+			free(node_code);
 			continue;
 		}
+		free(node_code);
 		parser_debug(state, "Processing %d child...\n", i);
 		result += parse_type_nodes_save(state, child, code);
 	}

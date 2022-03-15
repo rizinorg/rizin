@@ -294,6 +294,7 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->cfgGet = (RzCoreConfigGet)cfgget;
 	bnd->numGet = (RzCoreNumGet)numget;
 	bnd->flagsGet = (RzCoreFlagsGet)__flagsGet;
+	bnd->applyBinInfo = (RzCoreBinApplyInfo)rz_core_bin_apply_info;
 	return true;
 }
 

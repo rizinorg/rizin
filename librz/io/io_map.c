@@ -184,12 +184,6 @@ RZ_API bool rz_io_map_is_mapped(RzIO *io, ut64 addr) {
 }
 
 RZ_API void rz_io_map_reset(RzIO *io) {
-	void **it;
-	rz_pvector_foreach (&io->maps, it) {
-		RzIOMap *map = *it;
-		RzEventIOMapDel ev = { map };
-		rz_event_send(io->event, RZ_EVENT_IO_MAP_DEL, &ev);
-	}
 	rz_io_map_fini(io);
 	rz_io_map_init(io);
 	io_map_calculate_skyline(io);
@@ -244,7 +238,7 @@ RZ_API bool rz_io_map_priorize(RzIO *io, ut32 id) {
 		if (map->id == id) {
 			rz_pvector_remove_at(&io->maps, i);
 			rz_pvector_push(&io->maps, map);
-			io_map_calculate_skyline(io);
+			rz_skyline_add(&io->map_skyline, map->itv, map);
 			return true;
 		}
 	}
@@ -323,6 +317,12 @@ RZ_API void rz_io_map_cleanup(RzIO *io) {
 
 RZ_API void rz_io_map_fini(RzIO *io) {
 	rz_return_if_fail(io);
+	void **it;
+	rz_pvector_foreach (&io->maps, it) {
+		RzIOMap *map = *it;
+		RzEventIOMapDel ev = { map };
+		rz_event_send(io->event, RZ_EVENT_IO_MAP_DEL, &ev);
+	}
 	rz_pvector_clear(&io->maps);
 	rz_id_pool_free(io->map_ids);
 	io->map_ids = NULL;
