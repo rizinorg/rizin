@@ -2,7 +2,7 @@ NAME=unified diff and patch
 FILE==
 CMDS=<<EOF
 b 16
-wow 41
+wb 41
 cu 16 > .p
 wu .p
 !rm -f .p

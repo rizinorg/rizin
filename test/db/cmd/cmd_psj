@@ -34,7 +34,7 @@ RUN
 NAME=psj utf8 (#9064)
 FILE==
 CMDS=<<EOF
-"wz ...\"..����..."
+wz "...\"..����..."
 psj 13
 EOF
 EXPECT=<<EOF
