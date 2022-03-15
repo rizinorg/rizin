@@ -839,7 +839,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 		return RZ_CMD_STATUS_OK;
 	}
 
-	ut64 addr;
+	ut64 addr = core->offset;
 	const char *libname = NULL, *symname = NULL;
 	if (symbols_only) {
 		addr = rz_num_get(core->num, argv[1]);
