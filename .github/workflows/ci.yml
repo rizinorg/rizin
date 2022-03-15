@@ -100,7 +100,7 @@ jobs:
             asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
             run_tests: true
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
-            timeout: 100
+            timeout: 120
             allow_failure: false
           - name: linux-clang-tests-asan
             os: ubuntu-20.04
