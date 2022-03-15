@@ -236,6 +236,25 @@ RZ_API void *rz_vector_flush(RzVector *vec) {
 	return r;
 }
 
+RZ_API void rz_vector_insertion_sort(RzVector *vec, RzVectorComparator cmp, bool reverse) {
+	rz_return_if_fail(vec);
+	ut32 i,j;
+	void *a, *b, *c = malloc(vec->elem_size);
+
+	for (i = 0; i < rz_vector_len(vec); i++) {
+		for (j = i + 1; j < rz_vector_len(vec); j++) {
+			a = rz_vector_index_ptr(vec, i);
+			b = rz_vector_index_ptr(vec, j);
+			if ((cmp(a, b) > 0 && !reverse) || (cmp(a, b) < 0 && reverse)) {
+				memcpy(c, a, vec->elem_size);
+				memcpy(a, b, vec->elem_size);
+				memcpy(b, c, vec->elem_size);
+			}
+		}
+	}
+	free(c);
+}
+
 // pvector
 
 static void pvector_free_elem(void *e, void *user) {

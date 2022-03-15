@@ -7846,13 +7846,13 @@ static void print_stats(RzCore *core, HtPU *ht, RzAnalysisFunction *fcn, RzCmdSt
 		rz_list_foreach (list, iter, name) {
 			rz_table_add_column(t, typeNumber, name, 0);
 		}
-		RzList *items = rz_list_newf(free);
-		rz_list_append(items, strdup(fcn->name));
+		RzPVector *items = rz_pvector_new(free);
+		rz_pvector_push(items, strdup(fcn->name));
 		rz_list_foreach (list, iter, name) {
 			int nv = (int)ht_pu_find(ht, name, NULL);
-			rz_list_append(items, rz_str_newf("%d", nv));
+			rz_pvector_push(items, rz_str_newf("%d", nv));
 		}
-		rz_table_add_row_list(t, items);
+		rz_table_add_row_vec(t, items);
 	} else {
 		rz_list_foreach (list, iter, name) {
 			ut32 nv = (ut32)ht_pu_find(ht, name, NULL);
@@ -7937,19 +7937,19 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 
 	RzListIter *iter2;
 	rz_list_foreach (dbs, iter2, db) {
-		RzList *items = rz_list_newf(free);
+		RzPVector *items = rz_pvector_new(free);
 		if (!items) {
 			break;
 		}
 		ut64 fcnAddr = ht_pu_find(db, ".addr", NULL);
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fcnAddr);
-		rz_list_append(items, fcn ? strdup(fcn->name) : strdup(""));
-		rz_list_append(items, fcn ? rz_str_newf("0x%08" PFMT64x, fcnAddr) : strdup("0"));
+		rz_pvector_push(items, fcn ? strdup(fcn->name) : strdup(""));
+		rz_pvector_push(items, fcn ? rz_str_newf("0x%08" PFMT64x, fcnAddr) : strdup("0"));
 		rz_list_foreach (keys, iter, key) {
 			ut32 n = (ut32)ht_pu_find(db, key, NULL);
-			rz_list_append(items, rz_str_newf("%u", n));
+			rz_pvector_push(items, rz_str_newf("%u", n));
 		}
-		rz_table_add_row_list(t, items);
+		rz_table_add_row_vec(t, items);
 	}
 	res = RZ_CMD_STATUS_OK;
 exit:
@@ -8373,17 +8373,17 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name, b
 			RzAnalysisMethod *meth;
 			int i = 1;
 			rz_vector_foreach(methods, meth) {
-				RzList *row_list = rz_list_newf(free);
-				rz_list_append(row_list, rz_str_newf("%d", i++));
-				rz_list_append(row_list, rz_str_new(meth->real_name));
-				rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, meth->addr));
+				RzPVector *row_vec = rz_pvector_new(free);
+				rz_pvector_push(row_vec, rz_str_newf("%d", i++));
+				rz_pvector_push(row_vec, rz_str_new(meth->real_name));
+				rz_pvector_push(row_vec, rz_str_newf("0x%" PFMT64x, meth->addr));
 				if (meth->vtable_offset >= 0) {
-					rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, meth->vtable_offset));
+					rz_pvector_push(row_vec, rz_str_newf("0x%" PFMT64x, meth->vtable_offset));
 				} else {
-					rz_list_append(row_list, rz_str_new("-1"));
+					rz_pvector_push(row_vec, rz_str_new("-1"));
 				}
-				rz_list_append(row_list, rz_str_new(method_type[meth->method_type]));
-				rz_table_add_row_list(table, row_list);
+				rz_pvector_push(row_vec, rz_str_new(method_type[meth->method_type]));
+				rz_table_add_row_vec(table, row_vec);
 			}
 			char *s = rz_table_tostring(table);
 			rz_cons_printf("%s\n", s);
