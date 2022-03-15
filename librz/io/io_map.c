@@ -238,7 +238,7 @@ RZ_API bool rz_io_map_priorize(RzIO *io, ut32 id) {
 		if (map->id == id) {
 			rz_pvector_remove_at(&io->maps, i);
 			rz_pvector_push(&io->maps, map);
-			io_map_calculate_skyline(io);
+			rz_skyline_add(&io->map_skyline, map->itv, map);
 			return true;
 		}
 	}
