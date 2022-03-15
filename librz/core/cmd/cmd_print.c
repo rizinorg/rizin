@@ -2611,6 +2611,7 @@ static ut8 *old_transform_op(RzCore *core, const char *val, char op, int *buflen
 		wop = RZ_CORE_WRITE_OP_XOR;
 		break;
 	default:
+		wop = RZ_CORE_WRITE_OP_XOR;
 		rz_warn_if_reached();
 		break;
 	}
