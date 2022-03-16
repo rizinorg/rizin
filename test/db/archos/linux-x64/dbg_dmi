@@ -2,8 +2,8 @@ NAME=dmi ld
 FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
-dmiqq ld
-dmiqq ld _dl_rtld_di_serinfo
+dmiq ld
+dmiq ld _dl_rtld_di_serinfo
 dk 9
 EOF
 EXPECT=<<EOF
@@ -48,7 +48,7 @@ NAME=dmia ld
 FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
-dmiaqq ld~la_activity
+dmiq -a ld~la_activity
 dk 9
 EOF
 EXPECT=<<EOF
@@ -60,7 +60,7 @@ NAME=dmias ld
 FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
-dmias ld
+dmi -a ld
 s sym._dl_rtld_di_serinfo
 fN
 dk 9

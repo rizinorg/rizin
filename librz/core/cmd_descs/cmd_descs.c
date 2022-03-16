@@ -6248,6 +6248,7 @@ static const RzCmdDescArg cmd_debug_step_over_args[] = {
 		.name = "num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -6270,6 +6271,7 @@ static const RzCmdDescArg cmd_debug_step_skip_args[] = {
 		.name = "num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },

@@ -810,6 +810,7 @@ commands:
         args:
           - name: num
             type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: dsp
         cname: cmd_debug_step_prog
         summary: Step into program (skip libs)
@@ -820,6 +821,7 @@ commands:
         args:
           - name: num
             type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: dsu
         summary: Debug step until commands
         subcommands:
