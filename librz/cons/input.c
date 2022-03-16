@@ -5,6 +5,8 @@
 #include <string.h>
 #if __UNIX__
 #include <errno.h>
+#elif __WINDOWS__
+#include <rz_windows.h>
 #endif
 
 #define I rz_cons_singleton()

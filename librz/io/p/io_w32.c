@@ -5,6 +5,7 @@
 #include "rz_lib.h"
 
 #if __WINDOWS__
+#include <rz_windows.h>
 #include <sys/types.h>
 
 typedef struct {

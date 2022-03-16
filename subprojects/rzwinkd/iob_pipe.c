@@ -8,7 +8,7 @@
 #include "transport.h"
 
 #if __WINDOWS__
-#include <windows.h>
+#include <rz_windows.h>
 
 static void *iob_pipe_open(const char *path) {
 	HANDLE hPipe;

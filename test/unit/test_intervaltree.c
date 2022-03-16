@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <rz_util.h>
 #include "minunit.h"
+#include <rz_windows.h> // For struct timeval
 
 bool check_invariants(RzIntervalNode *node) {
 	if (!node) {

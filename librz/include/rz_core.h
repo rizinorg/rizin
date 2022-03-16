@@ -5,7 +5,6 @@
 #define RZ_CORE_H
 
 #include <rz_main.h>
-#include <rz_socket.h>
 #include <rz_types.h>
 #include <rz_magic.h>
 #include <rz_agraph.h>
@@ -131,13 +130,7 @@ typedef struct rz_core_plugin_t {
 	RzCorePluginFini fini;
 } RzCorePlugin;
 
-typedef struct rz_core_rtr_host_t {
-	int proto;
-	char host[512];
-	int port;
-	char file[1024];
-	RzSocket *fd;
-} RzCoreRtrHost;
+typedef struct rz_core_rtr_host_t RzCoreRtrHost;
 
 typedef enum {
 	AUTOCOMPLETE_DEFAULT,
@@ -350,7 +343,7 @@ struct rz_core_t {
 	const char *cmdtimes; // cmd.times
 	RZ_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
 	int rtr_n;
-	RzCoreRtrHost rtr_host[RTR_MAX_HOSTS];
+	RzCoreRtrHost *rtr_host; // array of RzCoreRtrHost
 	ut64 *asmqjmps;
 	int asmqjmps_count;
 	int asmqjmps_size;
@@ -959,6 +952,7 @@ RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc
 RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
 
 /* rtr */
+RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);
 RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port);
 RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *port, const char *cmd);
 RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input);

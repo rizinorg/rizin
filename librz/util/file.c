@@ -18,6 +18,7 @@
 #include <copyfile.h>
 #endif
 #if _MSC_VER
+#include <rz_windows.h>
 #include <process.h>
 #endif
 

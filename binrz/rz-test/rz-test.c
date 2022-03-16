@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <rz_cons.h>
 #include <rz_main.h>
+#include <rz_windows.h>
 
 #define Color_INSERT   Color_BGREEN
 #define Color_DELETE   Color_BRED
@@ -589,7 +590,7 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 }
 
 static RzThreadFunctionRet worker_th(RzThread *th) {
-	RzTestState *state = th->user;
+	RzTestState *state = rz_th_get_user(th);
 	rz_th_lock_enter(state->lock);
 	while (true) {
 		if (rz_pvector_empty(&state->queue)) {
