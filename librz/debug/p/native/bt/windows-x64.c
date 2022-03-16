@@ -71,18 +71,16 @@ static inline ut64 read_register(RzDebug *dbg, ut64 at) {
 	return rz_read_le64(buf);
 }
 
-static inline ut32 read_slot32(RzDebug *dbg, ut64 unwind_code_offset, int *index) {
-	ut8 buf[4];
-	READ_AT(unwind_code_offset + *index * sizeof(ut16), buf, sizeof(buf));
+static inline ut32 read_slot32(RzDebug *dbg, PE64_UNWIND_INFO *info, int *index) {
+	ut32 ret = rz_read_le32(&info->UnwindCode[*index]);
 	*index += 2;
-	return rz_read_le32(&buf);
+	return ret;
 }
 
-static inline ut16 read_slot16(RzDebug *dbg, ut64 unwind_code_offset, int *index) {
-	ut8 buf[2];
-	READ_AT(unwind_code_offset + *index * sizeof(ut16), buf, sizeof(buf));
-	(*index)++;
-	return rz_read_le16(&buf);
+static inline ut16 read_slot16(RzDebug *dbg, PE64_UNWIND_INFO *info, int *index) {
+	ut16 ret = rz_read_le16(&info->UnwindCode[*index]);
+	*index += 1;
+	return ret;
 }
 
 // Decides if current rsp or another register is used as the frame base (eg. rbp, etc)
@@ -113,6 +111,23 @@ static inline ut64 get_frame_base(const PE64_UNWIND_INFO *info, const struct con
 	}
 }
 
+static inline PE64_UNWIND_INFO *read_unwind_info(RzDebug *dbg, ut64 at) {
+	PE64_UNWIND_INFO *info = RZ_NEW0(PE64_UNWIND_INFO);
+	if (!info) {
+		return NULL;
+	}
+	READ_AT(at, (ut8 *)info, sizeof(*info));
+	const size_t unwind_code_array_sz = info->CountOfCodes * sizeof(PE64_UNWIND_CODE);
+	void *tmp = realloc(info, sizeof(PE64_UNWIND_INFO) + unwind_code_array_sz);
+	if (!tmp) {
+		free(info);
+		return NULL;
+	}
+	info = tmp;
+	READ_AT(at + rz_offsetof(PE64_UNWIND_INFO, UnwindCode), (ut8 *)info->UnwindCode, unwind_code_array_sz);
+	return info;
+}
+
 static inline bool unwind_function(
 	RzDebug *dbg,
 	RzDebugFrame *frame,
@@ -126,26 +141,28 @@ static inline bool unwind_function(
 	ut64 machine_frame_start;
 	bool is_machine_frame = false;
 
+	ut64 unwind_info_address = module_address + rfcn->UnwindInfoAddress;
+
 	// Read initial unwind info structure
-	PE64_UNWIND_INFO info;
-	ut64 unwind_info_offset = module_address + rfcn->UnwindInfoAddress;
-	READ_AT(unwind_info_offset, (ut8 *)&info, sizeof(info));
-
-	// Get address that is used as the base for stack accesses
-	ut64 frame_base = get_frame_base(&info, context, function_address);
-
-process_chained_info:
-	if (info.Version != 1 && info.Version != 2) {
-		// Version 1 found in user-space, version 2 in kernel
-		RZ_LOG_ERROR("Unwind info version (%" PFMT32d ") for function 0x%" PFMT64x " is not recognized\n",
-			(ut32)info.Version, function_address);
+	PE64_UNWIND_INFO *info = read_unwind_info(dbg, unwind_info_address);
+	if (!info) {
 		return false;
 	}
-	const ut64 unwind_code_offset = unwind_info_offset + rz_offsetof(PE64_UNWIND_INFO, UnwindCode);
+
+	// Get address that is used as the base for stack accesses
+	ut64 frame_base = get_frame_base(info, context, function_address);
+
+process_chained_info:
+	if (info->Version != 1 && info->Version != 2) {
+		// Version 1 found in user-space, version 2 in kernel
+		RZ_LOG_ERROR("Unwind info version (%" PFMT32d ") for function 0x%" PFMT64x " is not recognized\n",
+			(ut32)info->Version, function_address);
+		free(info);
+		return false;
+	}
 	int i = 0;
-	while (i < info.CountOfCodes) {
-		PE64_UNWIND_CODE code;
-		READ_AT(unwind_code_offset + i * sizeof(ut16), (ut8 *)&code, sizeof(code));
+	while (i < info->CountOfCodes) {
+		const PE64_UNWIND_CODE code = info->UnwindCode[i];
 		i++;
 		// Check if we are already past the prolog instruction
 		// If we are processing a chained scope, always process all of them
@@ -181,20 +198,20 @@ process_chained_info:
 			break;
 		case UWOP_ALLOC_LARGE: /* info == unscaled or scaled, alloc size in next 1 or 2 slots */
 			if (code.OpInfo) {
-				context->rsp += read_slot32(dbg, unwind_code_offset, &i);
+				context->rsp += read_slot32(dbg, info, &i);
 			} else {
-				context->rsp += read_slot16(dbg, unwind_code_offset, &i) * 8;
+				context->rsp += read_slot16(dbg, info, &i) * 8;
 			}
 			break;
 		case UWOP_ALLOC_SMALL: /* info == size of allocation / 8 - 1 */
 			context->rsp += code.OpInfo * 8 + 8;
 			break;
 		case UWOP_SET_FPREG: /* no info, FP = RSP + UNWIND_INFO.FPRegOffset*16 */
-			frame->bp = integer_registers[info.FrameRegister];
-			context->rsp = integer_registers[info.FrameRegister] - info.FrameOffset * 16;
+			frame->bp = integer_registers[info->FrameRegister];
+			context->rsp = integer_registers[info->FrameRegister] - info->FrameOffset * 16;
 			break;
 		case UWOP_SAVE_NONVOL: /* info == register number, offset in next slot */
-			offset = read_slot16(dbg, unwind_code_offset, &i) * 8;
+			offset = read_slot16(dbg, info, &i) * 8;
 			integer_registers[code.OpInfo] = read_register(dbg, frame_base + offset);
 			break;
 		case UWOP_SAVE_XMM128: /* info == XMM reg number, offset in next slot */
@@ -202,7 +219,7 @@ process_chained_info:
 			i++;
 			break;
 		case UWOP_SAVE_NONVOL_FAR: /* info == register number, offset in next 2 slots */
-			offset = read_slot32(dbg, unwind_code_offset, &i);
+			offset = read_slot32(dbg, info, &i);
 			integer_registers[code.OpInfo] = read_register(dbg, frame_base + offset);
 			break;
 		case UWOP_SAVE_XMM128_FAR: /* info == XMM reg number, offset in next 2 slots */
@@ -220,14 +237,24 @@ process_chained_info:
 			break;
 		}
 	}
-	if (info.Flags & PE64_UNW_FLAG_CHAININFO) {
+	if (info->Flags & PE64_UNW_FLAG_CHAININFO) {
 		if (i % 2) {
 			i++;
 		}
+
+		// Read chained RUNTIME_FUNCTION
+		const ut64 chained_fcn_address = unwind_info_address + rz_offsetof(PE64_UNWIND_INFO, UnwindCode[i]);
 		ut8 buf[sizeof(PE64_RUNTIME_FUNCTION)];
-		READ_AT(unwind_code_offset + i * sizeof(ut16), buf, sizeof(buf));
-		unwind_info_offset = module_address + rz_read_le32(buf + rz_offsetof(PE64_RUNTIME_FUNCTION, UnwindInfoAddress));
-		READ_AT(unwind_info_offset, (ut8 *)&info, sizeof(info));
+		READ_AT(chained_fcn_address, buf, sizeof(buf));
+
+		// Get unwind info from the chained RUNTIME_FUNCTION
+		unwind_info_address = module_address + rz_read_le32(buf + rz_offsetof(PE64_RUNTIME_FUNCTION, UnwindInfoAddress));
+		free(info);
+		info = read_unwind_info(dbg, unwind_info_address);
+		if (!info) {
+			return false;
+		}
+
 		// Make sure we process all the chained unwind ops
 		is_chained = true;
 		goto process_chained_info;
@@ -239,6 +266,7 @@ process_chained_info:
 		context->rip = read_register(dbg, context->rsp);
 		context->rsp += 8;
 	}
+	free(info);
 	return true;
 }
 
