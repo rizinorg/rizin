@@ -16,9 +16,9 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         default_mode: RZ_OUTPUT_MODE_TABLE
         modes:
-           - RZ_OUTPUT_MODE_RIZIN
-           - RZ_OUTPUT_MODE_JSON
-           - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
         details:
           - name: Apply a command to all breakpoints
             entries:
@@ -457,6 +457,9 @@ commands:
       - name: dmh
         summary: Glibc heap commands
         subcommands: cmd_heap_glibc
+      - name: dmx
+        summary: Jemalloc heap commands
+        subcommands: cmd_heap_jemalloc
       - name: dmi
         summary: List/Load symbols
         cname: cmd_debug_dmi
@@ -792,8 +795,8 @@ commands:
         cname: debug_reg_roles
         details: [] # Explicitly empty to not show parent ones
         args: []
-  # ... to here
-  #####################################################
+      # ... to here
+      #####################################################
       - name: drx # this is under registers but debug-specific so should not be sync with cmd_analysis.yaml
         summary: Show hardware breakpoint registers
         details: []

@@ -260,6 +260,9 @@ static const RzCmdDescArg cmd_heap_fastbins_print_args[2];
 static const RzCmdDescArg cmd_heap_chunks_graph_args[2];
 static const RzCmdDescArg cmd_heap_info_print_args[2];
 static const RzCmdDescArg cmd_main_arena_print_args[2];
+static const RzCmdDescArg cmd_jemalloc_print_nareans_args[2];
+static const RzCmdDescArg cmd_jemalloc_get_bins_args[2];
+static const RzCmdDescArg cmd_jemalloc_get_chunks_args[2];
 static const RzCmdDescArg cmd_debug_dml_args[2];
 static const RzCmdDescArg debug_memory_permission_args[3];
 static const RzCmdDescArg cmd_debug_dmL_args[2];
@@ -5608,6 +5611,51 @@ static const RzCmdDescArg cmd_heap_tcache_print_args[] = {
 static const RzCmdDescHelp cmd_heap_tcache_print_help = {
 	.summary = "Display all parsed thread cache bins of all arena's tcache instance",
 	.args = cmd_heap_tcache_print_args,
+};
+
+static const RzCmdDescHelp dmx_help = {
+	.summary = "Jemalloc heap commands",
+};
+static const RzCmdDescArg cmd_jemalloc_print_nareans_args[] = {
+	{
+		.name = "arena_t",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_jemalloc_print_nareans_help = {
+	.summary = "show all arenas created or print arena_t structure for given arena",
+	.args = cmd_jemalloc_print_nareans_args,
+};
+
+static const RzCmdDescArg cmd_jemalloc_get_bins_args[] = {
+	{
+		.name = "arena_t",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_jemalloc_get_bins_help = {
+	.summary = "show all bins created for a gievn arena",
+	.args = cmd_jemalloc_get_bins_args,
+};
+
+static const RzCmdDescArg cmd_jemalloc_get_chunks_args[] = {
+	{
+		.name = "arena_t",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_jemalloc_get_chunks_help = {
+	.summary = "show all chunks created in all arenas,  or show all chunks created for a given arena_t instance",
+	.args = cmd_jemalloc_get_chunks_args,
 };
 
 static const RzCmdDescHelp cmd_debug_dmi_help = {
@@ -13060,6 +13108,17 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmht", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
 	rz_warn_if_fail(cmd_heap_tcache_print_cd);
+
+	RzCmdDesc *dmx_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmx", NULL, NULL, &dmx_help);
+	rz_warn_if_fail(dmx_cd);
+	RzCmdDesc *cmd_jemalloc_print_nareans_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxa", rz_cmd_jemalloc_print_nareans_handler, &cmd_jemalloc_print_nareans_help);
+	rz_warn_if_fail(cmd_jemalloc_print_nareans_cd);
+
+	RzCmdDesc *cmd_jemalloc_get_bins_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxb", rz_cmd_jemalloc_get_bins_handler, &cmd_jemalloc_get_bins_help);
+	rz_warn_if_fail(cmd_jemalloc_get_bins_cd);
+
+	RzCmdDesc *cmd_jemalloc_get_chunks_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxc", rz_cmd_jemalloc_get_chunks_handler, &cmd_jemalloc_get_chunks_help);
+	rz_warn_if_fail(cmd_jemalloc_get_chunks_cd);
 
 	RzCmdDesc *cmd_debug_dmi_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmi", rz_cmd_debug_dmi, &cmd_debug_dmi_help);
 	rz_warn_if_fail(cmd_debug_dmi_cd);

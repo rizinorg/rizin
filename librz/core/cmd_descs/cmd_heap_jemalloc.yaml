@@ -1,22 +1,29 @@
+#
+#
+#
+---
 name: cmd_heap_jemalloc
 commands:
   - name: dmxa
     cname: cmd_jemalloc_print_nareans
     summary: show all arenas created or print arena_t structure for given arena
+    type: RZ_CMD_DESC_TYPE_ARGV
     args:
       - name: arena_t
-        type: RZ_CMD_DESC_TYPE_ARGV
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: dmxb
     cname: cmd_jemalloc_get_bins
     summary: show all bins created for a gievn arena
+    type: RZ_CMD_DESC_TYPE_ARGV
     args:
       - name: arena_t
-        type: RZ_CMD_DESC_TYPE_ARGV
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: dmxc
     cname: cmd_jemalloc_get_chunks
     summary: >
       show all chunks created in all arenas, 
       or show all chunks created for a given arena_t instance
+    type: RZ_CMD_DESC_TYPE_ARGV
     args:
       - name: arena_t
-        type: RZ_CMD_DESC_TYPE_ARGV
+        type: RZ_CMD_ARG_TYPE_STRING
