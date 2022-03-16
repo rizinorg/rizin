@@ -563,15 +563,10 @@ commands:
         subcommands:
           - name: dmi
             summary: List symbols of target lib
-            cname: cmd_debug_dmi
+            cname: cmd_debug_symbols
             args:
-              - name: a
-                type: RZ_CMD_ARG_TYPE_OPTION
-                flags: RZ_CMD_ARG_FLAG_OPTION
-                optional: true
               - name: libname
                 type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
               - name: symname
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
@@ -580,10 +575,30 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_QUIETEST
               - RZ_OUTPUT_MODE_JSON
+          - name: dmia
+            summary: List all info of target lib
+            cname: cmd_debug_all_info
+            args:
+              - name: libname
+                type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_QUIETEST
+              - RZ_OUTPUT_MODE_JSON
+          - name: dmias
+            summary: Apply info of target lib
+            cname: cmd_debug_apply_info
+            args:
+              - name: libname
+                type: RZ_CMD_ARG_TYPE_STRING
           - name: dmi.
             summary: List closest symbol to the current address
-            cname: cmd_debug_dmid
+            cname: cmd_debug_closest_symbol
             args: []
       - name: dml
         summary: Load contents of file into current map region

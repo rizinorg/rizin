@@ -267,7 +267,9 @@ static const RzCmdDescArg cmd_heap_fastbins_print_args[2];
 static const RzCmdDescArg cmd_heap_chunks_graph_args[2];
 static const RzCmdDescArg cmd_heap_info_print_args[2];
 static const RzCmdDescArg cmd_main_arena_print_args[2];
-static const RzCmdDescArg cmd_debug_dmi_args[4];
+static const RzCmdDescArg cmd_debug_symbols_args[3];
+static const RzCmdDescArg cmd_debug_all_info_args[2];
+static const RzCmdDescArg cmd_debug_apply_info_args[2];
 static const RzCmdDescArg cmd_debug_dml_args[2];
 static const RzCmdDescArg debug_memory_permission_args[3];
 static const RzCmdDescArg cmd_debug_dmL_args[2];
@@ -5820,18 +5822,10 @@ static const RzCmdDescHelp cmd_heap_tcache_print_help = {
 static const RzCmdDescHelp dmi_help = {
 	.summary = "List/Load symbols",
 };
-static const RzCmdDescArg cmd_debug_dmi_args[] = {
-	{
-		.name = "a",
-		.type = RZ_CMD_ARG_TYPE_OPTION,
-		.flags = RZ_CMD_ARG_FLAG_OPTION,
-		.optional = true,
-
-	},
+static const RzCmdDescArg cmd_debug_symbols_args[] = {
 	{
 		.name = "libname",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = true,
 
 	},
 	{
@@ -5843,17 +5837,45 @@ static const RzCmdDescArg cmd_debug_dmi_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_debug_dmi_help = {
+static const RzCmdDescHelp cmd_debug_symbols_help = {
 	.summary = "List symbols of target lib",
-	.args = cmd_debug_dmi_args,
+	.args = cmd_debug_symbols_args,
 };
 
-static const RzCmdDescArg cmd_debug_dmid_args[] = {
+static const RzCmdDescArg cmd_debug_all_info_args[] = {
+	{
+		.name = "libname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_debug_dmid_help = {
+static const RzCmdDescHelp cmd_debug_all_info_help = {
+	.summary = "List all info of target lib",
+	.args = cmd_debug_all_info_args,
+};
+
+static const RzCmdDescArg cmd_debug_apply_info_args[] = {
+	{
+		.name = "libname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_apply_info_help = {
+	.summary = "Apply info of target lib",
+	.args = cmd_debug_apply_info_args,
+};
+
+static const RzCmdDescArg cmd_debug_closest_symbol_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_closest_symbol_help = {
 	.summary = "List closest symbol to the current address",
-	.args = cmd_debug_dmid_args,
+	.args = cmd_debug_closest_symbol_args,
 };
 
 static const RzCmdDescArg cmd_debug_dml_args[] = {
@@ -14098,10 +14120,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmht", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
 	rz_warn_if_fail(cmd_heap_tcache_print_cd);
 
-	RzCmdDesc *dmi_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_dmi_handler, &cmd_debug_dmi_help, &dmi_help);
+	RzCmdDesc *dmi_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_symbols_handler, &cmd_debug_symbols_help, &dmi_help);
 	rz_warn_if_fail(dmi_cd);
-	RzCmdDesc *cmd_debug_dmid_cd = rz_cmd_desc_argv_new(core->rcmd, dmi_cd, "dmi.", rz_cmd_debug_dmid_handler, &cmd_debug_dmid_help);
-	rz_warn_if_fail(cmd_debug_dmid_cd);
+	RzCmdDesc *cmd_debug_all_info_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmi_cd, "dmia", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_all_info_handler, &cmd_debug_all_info_help);
+	rz_warn_if_fail(cmd_debug_all_info_cd);
+
+	RzCmdDesc *cmd_debug_apply_info_cd = rz_cmd_desc_argv_new(core->rcmd, dmi_cd, "dmias", rz_cmd_debug_apply_info_handler, &cmd_debug_apply_info_help);
+	rz_warn_if_fail(cmd_debug_apply_info_cd);
+
+	RzCmdDesc *cmd_debug_closest_symbol_cd = rz_cmd_desc_argv_new(core->rcmd, dmi_cd, "dmi.", rz_cmd_debug_closest_symbol_handler, &cmd_debug_closest_symbol_help);
+	rz_warn_if_fail(cmd_debug_closest_symbol_cd);
 
 	RzCmdDesc *cmd_debug_dml_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dml", rz_cmd_debug_dml_handler, &cmd_debug_dml_help);
 	rz_warn_if_fail(cmd_debug_dml_cd);
