@@ -200,36 +200,6 @@ static const char *help_msg_dsu[] = {
 	NULL
 };
 
-static const char *help_msg_dt[] = {
-	"Usage: dt", "", "Trace commands",
-	"dt", "", "List all traces ",
-	"dt", " [addr]", "Show trace info at address",
-	"dt%", "", "TODO",
-	"dt*", "", "List all traced opcode offsets",
-	"dt+", " [addr] [times]", "Add trace for address N times",
-	"dt-", "", "Reset traces (instruction/calls)",
-	"dt=", "", "Show ascii-art color bars with the debug trace ranges",
-	"dta", " 0x804020 ...", "Only trace given addresses",
-	"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
-	"dtd", "[qi] [nth-start]", "List all traced disassembled (quiet, instructions)",
-	"dte", "[?]", "Show esil trace logs",
-	"dtg", "", "Graph call/ret trace",
-	"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
-	"dtgi", "", "Interactive debug trace",
-	"dts", "[?]", "Trace sessions",
-	"dtt", " [tag]", "Select trace tag (no arg unsets)",
-	NULL
-};
-
-static const char *help_msg_dte[] = {
-	"Usage:", "dte", " Show esil trace logs",
-	"dte", "", "Esil trace log for a single instruction",
-	"dte", " [idx]", "Show commands for that index log",
-	"dte", "-*", "Delete all esil traces",
-	"dtei", "", "Esil trace log single instruction",
-	NULL
-};
-
 static const char *help_msg_dx[] = {
 	"Usage: dx", "", " # Code injection commands",
 	"dx", " <opcode>...", "Inject opcodes",
@@ -2664,16 +2634,10 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 
 RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
-	RzDebugTracepoint *t;
-	const char *ptr;
 	int follow = 0;
-	ut64 addr;
-	int min;
 	RzListIter *iter;
 	RzList *list;
 	RzDebugPid *p;
-	RzDebugTracepoint *trace;
-	RzAnalysisOp *op;
 
 	if (!strncmp(input, "ate", 3)) {
 		char *now = rz_time_date_now_to_string();
@@ -2683,170 +2647,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	}
 
 	switch (input[0]) {
-	case 't':
-		// TODO: define ranges? to display only some traces, allow to scroll on this disasm? ~.. ?
-		switch (input[1]) {
-		case '\0': // "dt"
-			rz_debug_trace_list(core->dbg, 0, core->offset);
-			break;
-		case '=': // "dt="
-			rz_debug_trace_list(core->dbg, '=', core->offset);
-			break;
-		case 'q': // "dtq"
-			rz_debug_trace_list(core->dbg, 'q', core->offset);
-			break;
-		case '*': // "dt*"
-			rz_debug_trace_list(core->dbg, 1, core->offset);
-			break;
-		case ' ': // "dt [addr]"
-			if ((t = rz_debug_trace_get(core->dbg,
-				     rz_num_math(core->num, input + 3)))) {
-				rz_cons_printf("offset = 0x%" PFMT64x "\n", t->addr);
-				rz_cons_printf("opsize = %d\n", t->size);
-				rz_cons_printf("times = %d\n", t->times);
-				rz_cons_printf("count = %d\n", t->count);
-				// TODO cons_printf("time = %d\n", t->tm);
-			}
-			break;
-		case 'a': // "dta"
-			rz_debug_trace_at(core->dbg, input + 3);
-			break;
-		case 't': // "dtt"
-			rz_debug_trace_tag(core->dbg, atoi(input + 3));
-			break;
-		case 'c': // "dtc"
-			if (input[2] == '?') {
-				rz_cons_println("Usage: dtc [addr] ([from] [to] [addr]) - trace calls in debugger");
-			} else {
-				debug_trace_calls(core, input + 2);
-			}
-			break;
-		case 'd': // "dtd"
-			min = rz_num_math(core->num, input + 3);
-			if (input[2] == 'q') { // "dtdq"
-				int n = 0;
-				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					if (n >= min) {
-						rz_cons_printf("%d  ", trace->count);
-						rz_cons_printf("0x%08" PFMT64x "\n", trace->addr);
-						break;
-					}
-					n++;
-				}
-			} else if (input[2] == 'i') {
-				int n = 0;
-				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-					if (n >= min) {
-						rz_cons_printf("%d %s\n", trace->count, op->mnemonic);
-					}
-					n++;
-					rz_analysis_op_free(op);
-				}
-			} else if (input[2] == ' ') {
-				int n = 0;
-				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-					if (n >= min) {
-						rz_cons_printf("0x%08" PFMT64x " %s\n", trace->addr, op->mnemonic);
-					}
-					n++;
-					rz_analysis_op_free(op);
-				}
-			} else {
-				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-					rz_cons_printf("0x%08" PFMT64x " %s\n", trace->addr, op->mnemonic);
-					rz_analysis_op_free(op);
-				}
-			}
-			break;
-		case 'g': // "dtg"
-			dot_trace_traverse(core, core->dbg->tree, input[2]);
-			break;
-		case '-': // "dt-"
-			rz_tree_reset(core->dbg->tree);
-			rz_debug_trace_free(core->dbg->trace);
-			rz_debug_tracenodes_reset(core->dbg);
-			core->dbg->trace = rz_debug_trace_new();
-			break;
-		case '+': // "dt+"
-			if (input[2] == '+') { // "dt++"
-				char *a, *s = rz_str_trim_dup(input + 3);
-				RzList *args = rz_str_split_list(s, " ", 0);
-				RzListIter *iter;
-				rz_list_foreach (args, iter, a) {
-					ut64 addr = rz_num_get(NULL, a);
-					(void)rz_debug_trace_add(core->dbg, addr, 1);
-				}
-				rz_list_free(args);
-				free(s);
-			} else {
-				ptr = input + 2;
-				addr = rz_num_math(core->num, ptr);
-				ptr = strchr(ptr, ' ');
-				int count = 1;
-				if (ptr) {
-					count = rz_num_math(core->num, ptr + 1);
-				}
-				RzAnalysisOp *op = rz_core_op_analysis(core, addr, RZ_ANALYSIS_OP_MASK_HINT);
-				if (op) {
-					RzDebugTracepoint *tp = rz_debug_trace_add(core->dbg, addr, op->size);
-					if (!tp) {
-						rz_analysis_op_free(op);
-						break;
-					}
-					tp->count = count;
-					rz_analysis_trace_bb(core->analysis, addr);
-					rz_analysis_op_free(op);
-				} else {
-					eprintf("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
-				}
-			}
-			break;
-		case 'e': // "dte"
-			rz_core_analysis_esil_init(core);
-			switch (input[2]) {
-			case 0: // "dte"
-				rz_analysis_esil_trace_list(core->analysis->esil);
-				break;
-			case 'i': { // "dtei"
-				ut64 addr = rz_num_math(core->num, input + 3);
-				if (!addr) {
-					addr = core->offset;
-				}
-				RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_ESIL);
-				if (op) {
-					rz_analysis_esil_trace_op(core->analysis->esil, op);
-				}
-				rz_analysis_op_free(op);
-			} break;
-			case '-': // "dte-"
-				if (!strcmp(input + 3, "*")) {
-					if (core->analysis->esil) {
-						rz_pvector_free(core->analysis->esil->trace->instructions);
-						core->analysis->esil->trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
-					}
-				} else {
-					eprintf("TODO: dte- cannot delete specific logs. Use dte-*\n");
-				}
-				break;
-			case ' ': { // "dte "
-				int idx = atoi(input + 3);
-				rz_analysis_esil_trace_show(
-					core->analysis->esil, idx);
-			} break;
-			default:
-				rz_core_cmd_help(core, help_msg_dte);
-			}
-			break;
-		case '?':
-		default: {
-			rz_core_cmd_help(core, help_msg_dt);
-			rz_cons_printf("Current Tag: %d\n", core->dbg->trace->tag);
-		} break;
-		}
-		break;
 	case 'd': // "ddd"
 		switch (input[1]) {
 		case '\0': // "ddd"
