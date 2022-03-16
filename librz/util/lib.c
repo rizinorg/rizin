@@ -3,6 +3,7 @@
 
 #include <rz_util.h>
 #include <rz_lib.h>
+#include <rz_windows.h>
 
 RZ_LIB_VERSION(rz_lib);
 

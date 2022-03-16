@@ -3,6 +3,7 @@
 
 #include <rz_main.h>
 #include <rz_core.h>
+#include <rz_socket.h>
 
 static const char *page_index =
 	"<html>"

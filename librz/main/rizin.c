@@ -4,16 +4,12 @@
 #define USE_THREADS       1
 #define ALLOW_THREADED    0
 #define UNCOLORIZE_NONTTY 0
-#ifdef _MSC_VER
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#endif
 
 #include <rz_core.h>
 #include <rz_demangler.h>
 #include <rz_project.h>
 #include <rz_flirt.h>
+#include <rz_socket.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;

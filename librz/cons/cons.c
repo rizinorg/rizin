@@ -5,6 +5,7 @@
 #include <rz_cons.h>
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
+#include <rz_windows.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>

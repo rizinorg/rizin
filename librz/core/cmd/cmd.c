@@ -8,6 +8,7 @@
 #include <rz_analysis.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
+#include <rz_windows.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <ctype.h>

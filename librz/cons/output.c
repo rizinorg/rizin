@@ -6,6 +6,7 @@
 #define I rz_cons_singleton()
 
 #if __WINDOWS__
+#include <rz_windows.h>
 static void __fill_tail(int cols, int lines) {
 	lines++;
 	if (lines > 0) {

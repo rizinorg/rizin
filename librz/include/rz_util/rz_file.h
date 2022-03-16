@@ -16,7 +16,7 @@ typedef struct rz_mmap_t {
 	char *filename;
 	int fd;
 #if __WINDOWS__
-	HANDLE fm;
+	void *fm;
 #endif
 } RzMmap;
 

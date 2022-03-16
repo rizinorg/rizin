@@ -6,6 +6,7 @@
 #include "rz_cons.h"
 #include "rz_core.h"
 #include "rz_io.h"
+#include <rz_socket.h>
 
 static void cmd_write_fail(RzCore *core) {
 	eprintf("Failed to write\n");
