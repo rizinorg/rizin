@@ -127,10 +127,8 @@ commands:
     args:
       - name: a
         type: RZ_CMD_ARG_TYPE_FILE
-        optional: true
       - name: b
         type: RZ_CMD_ARG_TYPE_FILE
-        optional: true
   - name: mv
     summary: Move <src> file to <dst>
     cname: cmd_shell_mv

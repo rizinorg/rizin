@@ -167,23 +167,19 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char *
 
 // diff
 RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char **argv) {
-	if (argc < 3) {
-		RZ_LOG_ERROR("Cannot open those alias files\n");
+	char *a = (char *)getFileData(core, argv[1]);
+	char *b = (char *)getFileData(core, argv[2]);
+	if (a && b) {
+		RzDiff *dff = rz_diff_lines_new(a, b, NULL);
+		char *uni = rz_diff_unified_text(dff, argv[1], argv[2], false, false);
+		rz_diff_free(dff);
+		rz_cons_printf("%s\n", uni);
+		free(uni);
 	} else {
-		char *a = (char *)getFileData(core, argv[1]);
-		char *b = (char *)getFileData(core, argv[2]);
-		if (a && b) {
-			RzDiff *dff = rz_diff_lines_new(a, b, NULL);
-			char *uni = rz_diff_unified_text(dff, argv[1], argv[2], false, false);
-			rz_diff_free(dff);
-			rz_cons_printf("%s\n", uni);
-			free(uni);
-		} else {
-			RZ_LOG_ERROR("Cannot open those alias files\n");
-		}
-		free(a);
-		free(b);
+		RZ_LOG_ERROR("Cannot open those alias files\n");
 	}
+	free(a);
+	free(b);
 	return RZ_CMD_STATUS_OK;
 }
 

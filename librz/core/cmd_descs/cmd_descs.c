@@ -12866,13 +12866,11 @@ static const RzCmdDescArg cmd_shell_diff_args[] = {
 	{
 		.name = "a",
 		.type = RZ_CMD_ARG_TYPE_FILE,
-		.optional = true,
 
 	},
 	{
 		.name = "b",
 		.type = RZ_CMD_ARG_TYPE_FILE,
-		.optional = true,
 
 	},
 	{ 0 },
