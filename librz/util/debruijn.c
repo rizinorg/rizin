@@ -63,78 +63,82 @@ static char *de_bruijn(const char *charset, int order, int maxlen) {
 	return sequence;
 }
 
-// Generate a cyclic pattern of desired size, and charset, return with starting
-// offset of start.
-// The returned string is malloced, and it is the responsibility of the caller
-// to free the memory.
-RZ_API char *rz_debruijn_pattern(int size, int start, const char *charset) {
-	char *pat, *pat2;
-	ut64 len;
+/**
+ * \brief Generate a cyclic pattern following the Debruijn pattern
+ *
+ * Generate a cyclic pattern of desired size, and charset, return with starting
+ * offset of start.
+ *
+ * For example, AAABAACAAD is a sequence of size 10, start 0, charset =
+ * debruijn_charset.
+ *
+ * \param size Size of the string to return
+ * \param start Starting offset in the Debruijn pattern
+ * \param charset Set of characters to use to generate the string
+ * \return String of length \p size allocated on the heap
+ */
+RZ_API RZ_OWN char *rz_debruijn_pattern(int size, int start, const char *charset) {
+	rz_return_val_if_fail(size >= 0, NULL);
+	rz_return_val_if_fail(start >= 0, NULL);
 	if (!charset) {
 		charset = debruijn_charset;
 	}
-	if (start >= size) {
-		return (char *)NULL;
-	}
-	pat = de_bruijn(charset, 3 /*subsequence length*/, size);
-	if (!pat) {
-		return NULL;
-	}
-	if (start == 0) {
-		len = strlen(pat);
-		if (size != len) {
-			eprintf("warning: requested pattern of length %d, "
-				"generated length %" PFMT64d "\n",
-				size, len);
-		}
+	char *pat = de_bruijn(charset, 3, size + start);
+	if (!pat || start == 0) {
 		return pat;
 	}
-	pat2 = calloc((size - start) + 1, sizeof(char));
+
+	char *pat2 = RZ_NEWS0(char, size + 1);
 	if (!pat2) {
 		free(pat);
 		return NULL;
 	}
-	strncpy(pat2, pat + start, size - start);
-	pat2[size - start] = 0;
+	size_t len = strlen(pat + start);
+	rz_return_val_if_fail(len <= size, NULL);
+	strcpy(pat2, pat + start);
 	free(pat);
-	len = strlen(pat2);
-	if (size != len) {
-		eprintf("warning: requested pattern of length %d, "
-			"generated length %" PFMT64d "\n",
-			size, len);
-	}
 	return pat2;
 }
 
-// Finds the offset of a given value in a cyclic pattern of an integer.
-RZ_API int rz_debruijn_offset(ut64 value, bool is_big_endian) {
-	char *needle, *pattern, buf[9];
+/**
+ * \brief Finds the offset of a given value in a debrujn sequence
+ *
+ * \param start Starting offset in the Debruijn pattern
+ * \param charset Set of characters to use to generate the sequence
+ * \param value Value to search in the sequence
+ * \param is_big_endian Endianess of \p value
+ * \return The offset in the sequence where \p value is found or -1 if not found
+ */
+RZ_API int rz_debruijn_offset(int start, const char *charset, ut64 value, bool is_big_endian) {
 	int retval = -1;
-	char *pch;
 	// 0x10000 should be long enough. This is how peda works, and nobody complains
 	// ... but is slow. Optimize for common case.
-	int lens[2] = { 0x1000, 0x10000 };
+	int lens[] = { 0x1000, 0x10000, 0x100000 };
 	int j;
 
 	if (value == 0) {
 		return -1;
 	}
 
-	for (j = 0; j < 2 && retval == -1; j++) {
-		pattern = rz_debruijn_pattern(lens[j], 0, debruijn_charset);
+	for (j = 0; j < RZ_ARRAY_SIZE(lens) && retval == -1; j++) {
+		char *pattern = rz_debruijn_pattern(lens[j], start, charset);
+		if (!pattern) {
+			return -1;
+		}
 
+		char buf[9];
 		buf[8] = '\0';
 		if (is_big_endian) {
 			rz_write_be64(buf, value);
 		} else {
 			rz_write_le64(buf, value);
 		}
+		char *needle;
 		for (needle = buf; !*needle; needle++) {
 			/* do nothing here */
 		}
 
-		pch = strstr(pattern, needle);
-
+		char *pch = strstr(pattern, needle);
 		if (pch) {
 			retval = (int)(size_t)(pch - pattern);
 		}

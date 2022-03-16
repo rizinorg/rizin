@@ -2571,8 +2571,69 @@ static int cmd_print_pxA(RzCore *core, int len, const char *input) {
 	return true;
 }
 
+static ut8 *old_transform_op(RzCore *core, const char *val, char op, int *buflen) {
+	RzCoreWriteOp wop;
+	switch (op) {
+	case '2':
+		wop = RZ_CORE_WRITE_OP_BYTESWAP2;
+		break;
+	case '4':
+		wop = RZ_CORE_WRITE_OP_BYTESWAP4;
+		break;
+	case '8':
+		wop = RZ_CORE_WRITE_OP_BYTESWAP8;
+		break;
+	case 'a':
+		wop = RZ_CORE_WRITE_OP_ADD;
+		break;
+	case 'A':
+		wop = RZ_CORE_WRITE_OP_AND;
+		break;
+	case 'd':
+		wop = RZ_CORE_WRITE_OP_DIV;
+		break;
+	case 'l':
+		wop = RZ_CORE_WRITE_OP_SHIFT_LEFT;
+		break;
+	case 'm':
+		wop = RZ_CORE_WRITE_OP_MUL;
+		break;
+	case 'o':
+		wop = RZ_CORE_WRITE_OP_OR;
+		break;
+	case 'r':
+		wop = RZ_CORE_WRITE_OP_SHIFT_RIGHT;
+		break;
+	case 's':
+		wop = RZ_CORE_WRITE_OP_SUB;
+		break;
+	case 'x':
+		wop = RZ_CORE_WRITE_OP_XOR;
+		break;
+	default:
+		wop = RZ_CORE_WRITE_OP_XOR;
+		rz_warn_if_reached();
+		break;
+	}
+
+	ut8 *hex = NULL;
+	int hexlen = -1;
+	if (val) {
+		val = rz_str_trim_head_ro(val);
+		hex = RZ_NEWS(ut8, (strlen(val) + 1) / 2);
+		if (!hex) {
+			return NULL;
+		}
+
+		hexlen = rz_hex_str2bin(val, hex);
+	}
+	return rz_core_transform_op(core, core->offset, wop, hex, hexlen, buflen);
+}
+
 static void cmd_print_op(RzCore *core, const char *input) {
 	ut8 *buf;
+	int buflen = -1;
+
 	if (!input[0])
 		return;
 	switch (input[1]) {
@@ -2588,13 +2649,13 @@ static void cmd_print_op(RzCore *core, const char *input) {
 	case '2':
 	case '4':
 		if (input[2]) { // parse val from arg
-			buf = rz_core_transform_op(core, input + 3, input[1]);
+			buf = old_transform_op(core, input + 3, input[1], &buflen);
 		} else { // use clipboard instead of val
-			buf = rz_core_transform_op(core, NULL, input[1]);
+			buf = old_transform_op(core, NULL, input[1], &buflen);
 		}
 		break;
 	case 'n':
-		buf = rz_core_transform_op(core, "ff", 'x');
+		buf = old_transform_op(core, "ff", 'x', &buflen);
 		break;
 	case '\0':
 	case '?':
@@ -2604,7 +2665,7 @@ static void cmd_print_op(RzCore *core, const char *input) {
 	}
 	if (buf) {
 		rz_print_hexdump(core->print, core->offset, buf,
-			core->blocksize, 16, 1, 1);
+			buflen, 16, 1, 1);
 		free(buf);
 	}
 }
