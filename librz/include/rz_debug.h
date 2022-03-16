@@ -547,7 +547,7 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc);
 RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op);
 RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str);
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr);
-RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset);
+RZ_API void rz_debug_trace_list(RzDebug *dbg, RzOutputMode mode, ut64 offset);
 RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size);
 RZ_API RzDebugTrace *rz_debug_trace_new(void);
 RZ_API void rz_debug_trace_free(RzDebugTrace *dbg);

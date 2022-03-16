@@ -2214,14 +2214,22 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, 
 }
 
 // dt
-RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const char **argv) {
-	rz_debug_trace_list(core->dbg, 0, core->offset);
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_handler(RzCore *core, int argc, const char **argv) {
+	RzDebugTracepoint *t;
+	if ((t = rz_debug_trace_get(core->dbg,
+		     rz_num_math(core->num, argv[1])))) {
+		rz_cons_printf("offset = 0x%" PFMT64x "\n", t->addr);
+		rz_cons_printf("opsize = %d\n", t->size);
+		rz_cons_printf("times = %d\n", t->times);
+		rz_cons_printf("count = %d\n", t->count);
+		// TODO cons_printf("time = %d\n", t->tm);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
-// dt*
-RZ_IPI RzCmdStatus rz_cmd_debug_trace_star_handler(RzCore *core, int argc, const char **argv) {
-	rz_debug_trace_list(core->dbg, 1, core->offset);
+// dtl
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_debug_trace_list(core->dbg, mode, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2263,23 +2271,17 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_reset_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
-// dt=
-RZ_IPI RzCmdStatus rz_cmd_debug_trace_equal_handler(RzCore *core, int argc, const char **argv) {
-	rz_debug_trace_list(core->dbg, '=', core->offset);
-	return RZ_CMD_STATUS_OK;
-}
-
 // dta
 RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
-	rz_debug_trace_at(core->dbg, input + 3);
+	rz_debug_trace_at(core->dbg, input);
 	return 0;
 }
 
 // dtc
 RZ_IPI int rz_cmd_debug_trace_dtc(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
-	debug_trace_calls(core, input + 2);
+	debug_trace_calls(core, input);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2320,13 +2322,23 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const
 }
 
 // dte
-RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_esil_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init(core);
+	int idx = atoi(argv[1]);
+	rz_analysis_esil_trace_show(core->analysis->esil, idx);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtel
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_esils_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init(core);
 	rz_analysis_esil_trace_list(core->analysis->esil);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dte-*
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_delete_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init(core);
 	if (core->analysis->esil) {
 		rz_pvector_free(core->analysis->esil->trace->instructions);
 		core->analysis->esil->trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
@@ -2336,6 +2348,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_delete_handler(RzCore *core, int arg
 
 // dtei
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init(core);
 	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
 	RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_ESIL);
 	if (op) {
@@ -2346,14 +2359,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, co
 }
 
 // dtg
-RZ_IPI RzCmdStatus rz_cmd_debug_trace_graph_handler(RzCore *core, int argc, const char **argv) {
-	dot_trace_traverse(core, core->dbg->tree, '\0');
-	return RZ_CMD_STATUS_OK;
-}
-
-// dtg*
-RZ_IPI RzCmdStatus rz_cmd_debug_trace_graph_star_handler(RzCore *core, int argc, const char **argv) {
-	dot_trace_traverse(core, core->dbg->tree, '*');
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_graph_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	dot_trace_traverse(core, core->dbg->tree, rz_output_mode_to_char(mode));
 	return RZ_CMD_STATUS_OK;
 }
 

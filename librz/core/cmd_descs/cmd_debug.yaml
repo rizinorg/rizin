@@ -361,16 +361,20 @@ commands:
     summary: Trace commands
     subcommands:
       - name: dt
-        summary: List all traces (at address)
-        cname: cmd_debug_traces
+        summary: Get trace info at address
+        cname: cmd_debug_trace
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-      - name: dt*
-        summary: List all traced opcode offsets
-        cname: cmd_debug_trace_star
+      - name: dtl
+        summary: List all traces
+        cname: cmd_debug_traces
         args: []
+        modes:
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_TABLE
       - name: dt+
         summary: Add trace for address N times
         cname: cmd_debug_trace_add
@@ -391,10 +395,6 @@ commands:
       - name: dt-
         summary: Reset traces (instruction/calls)
         cname: cmd_debug_traces_reset
-        args: []
-      - name: dt=
-        summary: Show ascii-art color bars with the debug trace ranges
-        cname: cmd_debug_trace_equal
         args: []
       - name: dta
         summary: Only trace given addresses
@@ -418,12 +418,15 @@ commands:
         summary: Esil trace logs
         subcommands:
           - name: dte
-            summary: Esil trace log for a single instruction (for that index log)
-            cname: cmd_debug_traces_esil
+            summary: Esil trace log for a single instruction for that index log
+            cname: cmd_debug_trace_esil
             args:
               - name: idx
                 type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+          - name: dtel
+            summary: Esil trace log for a single instruction
+            cname: cmd_debug_trace_esils
+            args: []
           - name: dte-*
             summary: Delete all esil traces
             cname: cmd_debug_traces_esil_delete
@@ -442,10 +445,9 @@ commands:
             summary: Graph call/ret trace
             cname: cmd_debug_trace_graph
             args: []
-          - name: dtg*
-            summary: Graph in agn/age commands. use .dtg*;aggi for visual
-            cname: cmd_debug_trace_graph_star
-            args: []
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
           - name: dtgi
             summary: Interactive debug trace
             cname: cmd_debug_trace_interactive

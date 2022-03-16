@@ -209,22 +209,22 @@ static int cmpaddr(const void *_a, const void *_b) {
 														     : 0;
 }
 
-RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset) {
+RZ_API void rz_debug_trace_list(RzDebug *dbg, RzOutputMode mode, ut64 offset) {
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
-	bool flag = false;
-	RzList *info_list = rz_list_new();
-	if (!info_list && mode == '=') {
-		return;
+	RzList *info_list = NULL;
+	if (mode == RZ_OUTPUT_MODE_TABLE) {
+		info_list = rz_list_new();
+		rz_return_if_fail(info_list);
 	}
 	RzDebugTracepoint *trace;
 	rz_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			switch (mode) {
-			case 'q':
+			case RZ_OUTPUT_MODE_QUIET:
 				dbg->cb_printf("0x%" PFMT64x "\n", trace->addr);
 				break;
-			case '=': {
+			case RZ_OUTPUT_MODE_TABLE: {
 				RzListInfo *info = RZ_NEW0(RzListInfo);
 				if (!info) {
 					rz_list_free(info_list);
@@ -236,12 +236,11 @@ RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset) {
 				info->name = rz_str_newf("%d", trace->times);
 				info->extra = rz_str_newf("%d", trace->count);
 				rz_list_append(info_list, info);
-				flag = true;
 			} break;
-			case 1:
-			case '*':
+			case RZ_OUTPUT_MODE_RIZIN:
 				dbg->cb_printf("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
 				break;
+			case RZ_OUTPUT_MODE_STANDARD:
 			default:
 				dbg->cb_printf("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
 					trace->addr, trace->size, trace->count, trace->times, trace->tag);
@@ -249,7 +248,7 @@ RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset) {
 			}
 		}
 	}
-	if (flag) {
+	if (mode == RZ_OUTPUT_MODE_TABLE) {
 		rz_list_sort(info_list, cmpaddr);
 		RzTable *table = rz_table_new();
 		table->cons = rz_cons_singleton();
