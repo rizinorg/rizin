@@ -349,8 +349,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		}
 
 		get_offset = rz_num_math(0, sequence);
-		printf("Little endian: %d\n", rz_debruijn_offset(get_offset, false));
-		printf("Big endian: %d\n", rz_debruijn_offset(get_offset, true));
+		printf("Little endian: %d\n", rz_debruijn_offset(0, NULL, get_offset, false));
+		printf("Big endian: %d\n", rz_debruijn_offset(0, NULL, get_offset, true));
 		free(sequence);
 		rz_egg_free(egg);
 		return 0;

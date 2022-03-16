@@ -7,90 +7,6 @@
 #include "rz_core.h"
 #include "rz_io.h"
 
-static const char *help_msg_w[] = {
-	"Usage:", "w[x] [str] [<file] [<<EOF] [@addr]", "",
-	"w", "[1248][+-][n]", "increment/decrement byte,word..",
-	"w", " foobar", "write string 'foobar'",
-	"w0", " [len]", "write 'len' bytes with value 0x00",
-	"w6", "[de] base64/hex", "write base64 [d]ecoded or [e]ncoded string",
-	"wa", "[?] push ebp", "write opcode, separated by ';' (use '\"' around the command)",
-	"waf", " f.asm", "assemble file and write bytes",
-	"waF", " f.asm", "assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
-	"wao", "[?] op", "modify opcode (change conditional of jump. nop, etc)",
-	"wA", "[?] r 0", "alter/modify opcode at current seek (see wA?)",
-	"wb", " 010203", "fill current block with cyclic hexpairs",
-	"wB", "[-]0xVALUE", "set or unset bits with given value",
-	"wc", "", "list all write changes",
-	"wc", "[?][jir+-*?]", "write cache undo/commit/reset/list (io.cache)",
-	"wd", " [off] [n]", "duplicate N bytes from offset at current seek (memcpy) (see y?)",
-	"we", "[?] [nNsxX] [arg]", "extend write operations (insert instead of replace)",
-	"wf", "[fs] -|file", "write contents of file at current offset",
-	"wh", " rizin", "whereis/which shell command",
-	"wm", " f0ff", "set binary mask hexpair to be used as cyclic write mask",
-	"wo", "[?] hex", "write in block with operation. 'wo?' fmi",
-	"wp", "[?] -|file", "apply rizin patch file. See wp? fmi",
-	"wr", " 10", "write 10 random bytes",
-	"ws", " pstring", "write 1 byte for length and then the string",
-	"wt[f]", "[?] file [sz]", "write to file (from current seek, blocksize or sz bytes)",
-	"wts", " host:port [sz]", "send data to remote host:port via tcp://",
-	"ww", " foobar", "write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
-	"wx", "[?][fs] 9090", "write two intel nops (from wxfile or wxseek)",
-	"wv", "[?] eip+34", "write 32-64 bit value honoring cfg.bigendian",
-	"wz", " string", "write zero terminated string (like w + \\x00)",
-	NULL
-};
-
-static const char *help_msg_wo[] = {
-	"Usage:", "wo[asmdxoArl24]", " [hexpairs] @ addr[!bsize]",
-	"wo[24aAdlmorwx]", "", "without hexpair values, clipboard is used",
-	"wo2", " [val]", "2=  2 byte endian swap (word)",
-	"wo4", " [val]", "4=  4 byte endian swap (dword)",
-	"wo8", " [val]", "8=  8 byte endian swap (qword)",
-	"woa", " [val]", "+=  addition (f.ex: woa 0102)",
-	"woA", " [val]", "&=  and",
-	"wod", " [val]", "/=  divide",
-	"woD", "[algo] [key] [IV]", "decrypt current block with given algo and key",
-	"woe", " [from to] [step] [wsz=1]", "..  create sequence",
-	"woE", " [algo] [key] [IV]", "encrypt current block with given algo and key",
-	"wol", " [val]", "<<= shift left",
-	"wom", " [val]", "*=  multiply",
-	"woo", " [val]", "|=  or",
-	"wop[DO]", " [arg]", "De Bruijn Patterns",
-	"wor", " [val]", ">>= shift right",
-	"woR", "", "random bytes (alias for 'wr $b')",
-	"wos", " [val]", "-=  substraction",
-	"wow", " [val]", "==  write looped value (alias for 'wb')",
-	"wox", " [val]", "^=  xor  (f.ex: wox 0x90)",
-	NULL
-};
-
-static const char *help_msg_wop[] = {
-	"Usage:", "wop[DO]", " len @ addr | value",
-	"wopD", " len [@ addr]", "Write a De Bruijn Pattern of length 'len' at address 'addr'",
-	"wopD*", " len [@ addr]", "Show wx command that creates a debruijn pattern of a specific length",
-	"wopO", " value", "Finds the given value into a De Bruijn Pattern at current offset",
-	NULL
-};
-
-static const char *help_msg_wt[] = {
-	"Usage:", "wt[a] file [size]", " Write 'size' bytes in current block to 'file'",
-	"wta", " [filename]", "append to 'filename'",
-	"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
-	"wtf!", " [filename]", "write to file from current address to eof",
-	"wtff", " [prefix]", "write block from current seek to [prefix]-[offset]",
-	"wts", " host:port [sz]", "send data to remote host:port via tcp://",
-	NULL
-};
-
-static const char *help_msg_wf[] = {
-	"Usage:", "wf[fs] [-|args ..]", " Write from (file, swap, offset)",
-	"wf", " 10 20", "write 20 bytes from offset 10 into current seek",
-	"wff", " file [len]", "write contents of file into current offset",
-	"wfs", " host:port [len]", "write from socket (tcp listen in port for N bytes)",
-	"wfx", " 10 20", "exchange 20 bytes betweet current offset and 10",
-	NULL
-};
-
 static void cmd_write_fail(RzCore *core) {
 	eprintf("Failed to write\n");
 	core->num->value = 1;
@@ -171,157 +87,6 @@ static void cmd_write_bits(RzCore *core, int set, ut64 val) {
 	}
 }
 
-static void wo_show_algorithms(char c) {
-	char flags[5] = { 0 };
-
-	eprintf("Usage: wo%c [algo] [key] [IV]\n", c);
-	eprintf(" flags algorithm      license    author\n");
-
-	const RzCryptoPlugin *rcp;
-	for (size_t i = 0; (rcp = rz_crypto_plugin_by_index(i)); i++) {
-		if (!strncmp("base", rcp->name, 4) || !strcmp("punycode", rcp->name)) {
-			snprintf(flags, sizeof(flags), "__ed");
-		} else if (!strcmp("rol", rcp->name)) {
-			snprintf(flags, sizeof(flags), "E___");
-		} else if (!strcmp("ror", rcp->name)) {
-			snprintf(flags, sizeof(flags), "_D__");
-		} else {
-			snprintf(flags, sizeof(flags), "ED__");
-		}
-		eprintf(" %-5s %-14s %-10s %s\n", flags, rcp->name, rcp->license, rcp->author);
-	}
-	eprintf(
-		"\n"
-		"flags legenda:\n"
-		"    E = encryption, D = decryption\n"
-		"    e = encoding, d = encoding\n");
-}
-
-RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	ut8 *buf;
-	int len;
-	int value;
-	switch (input[0]) {
-	case 'e':
-		if (input[1] != ' ') {
-			rz_cons_printf("Usage: 'woe from-to step'\n");
-			return -1;
-		}
-		/* fallthru */
-	case 'a':
-	case 's':
-	case 'A':
-	case 'x':
-	case 'r':
-	case 'l':
-	case 'm':
-	case 'd':
-	case 'o':
-	case 'w':
-	case '2': // "wo2"
-	case '4': // "wo4"
-	case '8': // "wo8"
-		if (input[1]) { // parse val from arg
-			rz_core_write_op(core, input + 2, input[0]);
-		} else { // use clipboard instead of val
-			rz_core_write_op(core, NULL, input[0]);
-		}
-		rz_core_block_read(core);
-		break;
-	case 'R':
-		rz_core_cmd0(core, "wr $b");
-		break;
-	case 'n':
-		rz_core_write_op(core, "ff", 'x');
-		rz_core_block_read(core);
-		break;
-	case 'E': // "woE" encrypt
-	case 'D': // "woD" decrypt
-	{
-		int direction = (input[0] == 'E') ? 0 : 1;
-		const char *algo = NULL;
-		const char *key = NULL;
-		const char *iv = NULL;
-		char *space, *args = strdup(rz_str_trim_head_ro(input + 1));
-		space = strchr(args, ' ');
-		if (space) {
-			*space++ = 0;
-			key = space;
-			space = strchr(key, ' ');
-			if (space) {
-				*space++ = 0;
-				iv = space;
-			}
-		}
-		algo = args;
-		if (algo && *algo && key) {
-			encrypt_or_decrypt_block(core, algo, key, direction, iv);
-		} else {
-			if (input[1] == '?') {
-				wo_show_algorithms(input[0]);
-			} else {
-				eprintf("Usage: wo%c [algo] [key] [IV] (use wo%c? for the algorithms list)\n", input[0], input[0]);
-			}
-		}
-		free(args);
-	} break;
-	case 'p': // debrujin patterns
-		switch (input[1]) {
-		case 'D': // "wopD"
-		{
-			char *sp = strchr(input, ' ');
-			len = sp ? rz_num_math(core->num, sp + 1) : core->blocksize;
-		}
-			if (len > 0) {
-				/* XXX This seems to fail at generating long patterns (wopD 512K) */
-				buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL); // debruijn_charset);
-				if (buf) {
-					const ut8 *ptr = buf;
-					ut64 addr = core->offset;
-					if (input[2] == '*') {
-						int i;
-						rz_cons_printf("wx ");
-						for (i = 0; i < len; i++) {
-							rz_cons_printf("%02x", buf[i]);
-						}
-						rz_cons_newline();
-					} else {
-						if (!rz_core_write_at(core, addr, ptr, len)) {
-							cmd_write_fail(core);
-						}
-					}
-					free(buf);
-				} else {
-					eprintf("Couldn't generate pattern of length %d\n", len);
-				}
-			}
-			break;
-		case 'O': // "wopO"
-			if (strlen(input) > 3 && strncmp(input + 3, "0x", 2)) {
-				eprintf("Need hex value with `0x' prefix e.g. 0x41414142\n");
-			} else if (input[2] == ' ') {
-				value = rz_num_get(core->num, input + 3);
-				core->num->value = rz_debruijn_offset(value, rz_config_get_i(core->config, "cfg.bigendian"));
-				rz_cons_printf("%" PFMT64d "\n", core->num->value);
-			}
-			break;
-		case '\0':
-		case '?':
-		default:
-			rz_core_cmd_help(core, help_msg_wop);
-			break;
-		}
-		break;
-	case '\0':
-	case '?':
-	default:
-		rz_core_cmd_help(core, help_msg_wo);
-		break;
-	}
-	return 0;
-}
-
 #define WSEEK(x, y) \
 	if (wseek) \
 	rz_core_seek_delta(x, y, true)
@@ -364,59 +129,6 @@ RZ_IPI RzCmdStatus rz_write_base64_decode_handler(RzCore *core, int argc, const 
 	return rz_core_write_base64d_at(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-static bool cmd_wff(RzCore *core, const char *input) {
-	ut8 *buf;
-	size_t size;
-	// XXX: file names cannot contain spaces
-	const char *arg = input + ((input[0] == ' ') ? 1 : 0);
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	char *p, *a = rz_str_trim_dup(arg);
-	p = strchr(a, ' ');
-	if (p) {
-		*p++ = 0;
-	}
-
-	if (*arg == '?' || !*arg) {
-		eprintf("Usage: wf [file] ([size] ([offset]))\n");
-	}
-	if (!strcmp(arg, "-")) {
-		char *out = rz_core_editor(core, NULL, NULL);
-		if (out) {
-			if (!rz_io_write_at(core->io, core->offset,
-				    (ut8 *)out, strlen(out))) {
-				eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-			}
-			rz_core_block_read(core);
-			free(out);
-		}
-	}
-	if ((buf = (ut8 *)rz_file_slurp(a, &size))) {
-		int u_offset = 0;
-		ut64 u_size = rz_num_math(core->num, p);
-		if (u_size < 1)
-			u_size = (ut64)size;
-		if (p) {
-			*p++ = 0;
-			u_offset = rz_num_math(core->num, p);
-			if (u_offset > size) {
-				eprintf("Invalid offset\n");
-				free(buf);
-				return false;
-			}
-		}
-		rz_io_use_fd(core->io, core->file->fd);
-		if (!rz_io_write_at(core->io, core->offset, buf + u_offset, (int)u_size)) {
-			eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-		}
-		WSEEK(core, size);
-		free(buf);
-		rz_core_block_read(core);
-	} else {
-		eprintf("Cannot open file '%s'\n", arg);
-	}
-	return true;
-}
-
 static bool ioMemcpy(RzCore *core, ut64 dst, ut64 src, int len) {
 	bool ret = false;
 	if (len > 0) {
@@ -436,99 +148,6 @@ static bool ioMemcpy(RzCore *core, ut64 dst, ut64 src, int len) {
 		}
 	}
 	return ret;
-}
-
-static bool cmd_wfx(RzCore *core, const char *input) {
-	char *args = rz_str_trim_dup(input);
-	char *arg = strchr(args, ' ');
-	int len = core->blocksize;
-	if (arg) {
-		*arg = 0;
-		len = rz_num_math(core->num, arg + 1);
-	}
-	ut64 dst = core->offset;
-	ut64 src = rz_num_math(core->num, args);
-	if (len > 0) {
-		// cache dest, memcpy, write cache
-		ut8 *buf = calloc(1, len);
-		if (buf) {
-			if (rz_io_read_at(core->io, dst, buf, len)) {
-				ioMemcpy(core, core->offset, src, len);
-				if (rz_io_write_at(core->io, src, buf, len)) {
-					rz_core_block_read(core);
-				} else {
-					eprintf("Failed to write at 0x%08" PFMT64x "\n", src);
-				}
-			} else {
-				eprintf("cmd_wfx: failed to read at 0x%08" PFMT64x "\n", dst);
-			}
-			free(buf);
-		}
-	}
-	free(args);
-	return true;
-}
-
-static bool cmd_wfs(RzCore *core, const char *input) {
-	char *str = strdup(input);
-	if (str[0] != ' ') {
-		eprintf("Usage wfs host:port [sz]\n");
-		free(str);
-		return false;
-	}
-	ut64 addr = 0;
-	char *host = str + 1;
-	char *port = strchr(host, ':');
-	if (!port) {
-		eprintf("Usage wfs host:port [sz]\n");
-		free(str);
-		return false;
-	}
-	ut64 sz = core->blocksize;
-	*port++ = 0;
-	char *space = strchr(port, ' ');
-	if (space) {
-		*space++ = 0;
-		sz = rz_num_math(core->num, space);
-		addr = core->offset;
-	}
-	ut8 *buf = calloc(1, sz);
-	if (!buf) {
-		free(str);
-		return false;
-	}
-	rz_io_read_at(core->io, addr, buf, sz);
-	RzSocket *s = rz_socket_new(false);
-	if (!rz_socket_listen(s, port, NULL)) {
-		eprintf("Cannot listen on port %s\n", port);
-		rz_socket_free(s);
-		free(str);
-		free(buf);
-		return false;
-	}
-	int done = 0;
-	RzSocket *c = rz_socket_accept(s);
-	if (c) {
-		eprintf("Receiving data from client...\n");
-		while (done < sz) {
-			int rc = rz_socket_read(c, buf + done, sz - done);
-			if (rc < 1) {
-				eprintf("oops\n");
-				break;
-			}
-			done += rc;
-		}
-		rz_socket_free(c);
-		if (rz_io_write_at(core->io, core->offset, buf, done)) {
-			eprintf("Written %d bytes\n", done);
-		} else {
-			eprintf("Cannot write\n");
-		}
-	}
-	rz_socket_free(s);
-	free(buf);
-	free(str);
-	return true;
 }
 
 RZ_IPI RzCmdStatus rz_write_from_io_handler(RzCore *core, int argc, const char **argv) {
@@ -673,55 +292,6 @@ err:
 	return res;
 }
 
-RZ_IPI int rz_wf_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (!core || !*input) {
-		return -1;
-	}
-	if (input[0] == '?') {
-		eprintf("Usage: wf [file] ([size] ([offset]))\n");
-		rz_core_cmd_help(core, help_msg_wf);
-		return -1;
-	}
-	if (input[0] == 's') { // "wfs"
-		return cmd_wfs(core, input + 1);
-	}
-	if (input[0] == 'x') { // "wfx"
-		return cmd_wfx(core, input + 1);
-	}
-	if (input[0] == 'f') { // "wff"
-		return cmd_wff(core, input + 1);
-	}
-	char *args = rz_str_trim_dup(input);
-	char *arg = strchr(args, ' ');
-	int len = core->blocksize;
-	if (arg) {
-		*arg++ = 0;
-		len = rz_num_math(core->num, arg);
-	}
-	ut64 addr = rz_num_math(core->num, args);
-	ioMemcpy(core, core->offset, addr, len);
-	free(args);
-	rz_core_block_read(core);
-	return 0;
-}
-
-RZ_IPI int rz_wB_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	switch (input[0]) {
-	case ' ':
-		cmd_write_bits(core, 1, rz_num_math(core->num, input + 1));
-		break;
-	case '-':
-		cmd_write_bits(core, 0, rz_num_math(core->num, input + 1));
-		break;
-	default:
-		eprintf("Usage: wB 0x2000  # or wB-0x2000\n");
-		break;
-	}
-	return 0;
-}
-
 RZ_IPI RzCmdStatus rz_write_bits_handler(RzCore *core, int argc, const char **argv) {
 	cmd_write_bits(core, 1, rz_num_math(core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
@@ -730,31 +300,6 @@ RZ_IPI RzCmdStatus rz_write_bits_handler(RzCore *core, int argc, const char **ar
 RZ_IPI RzCmdStatus rz_write_unset_bits_handler(RzCore *core, int argc, const char **argv) {
 	cmd_write_bits(core, 0, rz_num_math(core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
-}
-
-static int w0_handler_common(RzCore *core, ut64 len) {
-	int res = 0;
-	if (len > 0) {
-		ut8 *buf = calloc(1, len);
-		if (buf) {
-			if (!rz_io_write_at(core->io, core->offset, buf, len)) {
-				eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-				res = -1;
-			}
-			rz_core_block_read(core);
-			free(buf);
-		} else {
-			eprintf("Cannot allocate %d byte(s)\n", (int)len);
-			res = -1;
-		}
-	}
-	return res;
-}
-
-RZ_IPI int rz_w0_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	ut64 len = rz_num_math(core->num, input);
-	return w0_handler_common(core, len);
 }
 
 RZ_IPI RzCmdStatus rz_write_zero_handler(RzCore *core, int argc, const char **argv) {
@@ -808,131 +353,67 @@ RZ_IPI RzCmdStatus rz_write_8_dec_handler(RzCore *core, int argc, const char **a
 	return w_incdec_handler(core, argc, argv, 8);
 }
 
-RZ_IPI int rz_w6_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	int fail = 0;
-	ut8 *buf = NULL;
-	int len = 0, str_len;
-	const char *str;
-
-	if (input[0] && input[1] != ' ')
-		fail = 1;
-
-	if (input[0] && input[1] && input[2])
-		str = input + 2;
-	else
-		str = "";
-	str_len = strlen(str) + 1;
-	if (!fail) {
-		switch (input[0]) {
-		case 'd': // "w6d"
-			buf = malloc(str_len);
-			if (!buf) {
-				eprintf("Error: failed to malloc memory");
-				break;
-			}
-			len = rz_base64_decode(buf, str, -1);
-			if (len < 0) {
-				free(buf);
-				fail = 1;
-			}
-			break;
-		case 'e': { // "w6e"
-			ut8 *bin_buf = malloc(str_len);
-			if (!bin_buf) {
-				eprintf("Error: failed to malloc memory");
-				break;
-			}
-			const int bin_len = rz_hex_str2bin(str, bin_buf);
-			if (bin_len <= 0) {
-				fail = 1;
-			} else {
-				buf = calloc(str_len + 1, 4);
-				len = rz_base64_encode((char *)buf, bin_buf, bin_len);
-				if (len == 0) {
-					free(buf);
-					fail = 1;
-				}
-			}
-			free(bin_buf);
-			break;
-		}
-		default:
-			fail = 1;
-			break;
-		}
-	}
-	if (!fail) {
-		if (!rz_core_write_at(core, core->offset, buf, len)) {
-			cmd_write_fail(core);
-		}
-		WSEEK(core, len);
-		rz_core_block_read(core);
-		free(buf);
-	} else {
-		eprintf("Usage: w6[de] base64/hex\n");
-	}
-	return 0;
-}
-
-RZ_IPI int rz_wu_handler_old(void *data, const char *input) {
+RZ_IPI RzCmdStatus rz_write_unified_patch_handler(RzCore *core, int argc, const char **argv) {
 	// TODO: implement it in an API RzCore.write_unified_hexpatch() is ETOOLONG
-	if (input[0] == ' ') {
-		char *data = rz_file_slurp(input + 1, NULL);
-		if (data) {
-			int i;
-			char sign = ' ';
-			int line = 0, offs = 0, hexa = 0;
-			int newline = 1;
-			for (i = 0; data[i]; i++) {
-				switch (data[i]) {
-				case '+':
-					if (newline)
-						sign = 1;
-					break;
-				case '-':
-					if (newline) {
-						sign = 0;
-						offs = i + ((data[i + 1] == ' ') ? 2 : 1);
-					}
-					break;
-				case ' ':
-					data[i] = 0;
-					if (sign) {
-						if (!line)
-							line = i + 1;
-						else if (!hexa)
-							hexa = i + 1;
-					}
-					break;
-				case '\r':
-					break;
-				case '\n':
-					newline = 1;
-					if (sign == ' ') {
-						offs = 0;
-						line = 0;
-						hexa = 0;
-					} else if (sign) {
-						if (offs && hexa) {
-							rz_cons_printf("wx %s @ %s\n", data + hexa, data + offs);
-						} else
-							eprintf("food\n");
-						offs = 0;
-						line = 0;
-					} else
-						hexa = 0;
-					sign = -1;
-					continue;
-				}
-				newline = 0;
-			}
-			free(data);
-		}
-	} else {
-		eprintf("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
+	char *data = rz_file_slurp(argv[1], NULL);
+	if (!data) {
+		RZ_LOG_ERROR("Cannot read data from %s.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
 	}
+	int i;
+	char sign = ' ';
+	int line = 0, offs = 0, hexa = 0;
+	int newline = 1;
+	for (i = 0; data[i]; i++) {
+		switch (data[i]) {
+		case '+':
+			if (newline)
+				sign = 1;
+			break;
+		case '-':
+			if (newline) {
+				sign = 0;
+				offs = i + ((data[i + 1] == ' ') ? 2 : 1);
+			}
+			break;
+		case ' ':
+			data[i] = 0;
+			if (sign) {
+				if (!line)
+					line = i + 1;
+				else if (!hexa)
+					hexa = i + 1;
+			}
+			break;
+		case '\r':
+			break;
+		case '\n':
+			newline = 1;
+			if (sign == ' ') {
+				offs = 0;
+				line = 0;
+				hexa = 0;
+			} else if (sign) {
+				if (offs && hexa) {
+					ut64 dst = rz_num_math(core->num, data + offs);
+					ut8 *buf = RZ_NEWS(ut8, strlen(data + hexa));
+					if (buf) {
+						int len = rz_hex_str2bin(data + hexa, buf);
+						rz_core_write_at(core, dst, buf, len);
+					}
+				} else {
+					eprintf("food\n");
+				}
+				offs = 0;
+				line = 0;
+			} else
+				hexa = 0;
+			sign = -1;
+			continue;
+		}
+		newline = 0;
+	}
+	free(data);
 	return 0;
 }
 
@@ -945,252 +426,16 @@ RZ_IPI RzCmdStatus rz_write_random_handler(RzCore *core, int argc, const char **
 	return rz_core_write_random_at(core, core->offset, length) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-static void w_handler_common(RzCore *core, const char *input) {
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	char *str = strdup(input);
-	/* write string */
-	int len = rz_str_unescape(str);
-	if (!rz_core_write_at(core, core->offset, (const ut8 *)str, len)) {
-		cmd_write_fail(core);
-	}
-	free(str);
-	WSEEK(core, len);
-	rz_core_block_read(core);
-}
-
-RZ_IPI int rz_w_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	w_handler_common(core, input);
-	return 0;
-}
-
 RZ_IPI RzCmdStatus rz_write_handler(RzCore *core, int argc, const char **argv) {
-	return rz_core_write_string_at(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return bool2status(rz_core_write_string_at(core, core->offset, argv[1]));
 }
 
-RZ_IPI int rz_wz_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	char *str = strdup(input);
-	/* write zero-terminated string */
-	int len = rz_str_unescape(str);
-	if (!rz_core_write_at(core, core->offset, (const ut8 *)str + 1, len)) {
-		cmd_write_fail(core);
-	}
-	if (len > 0) {
-		core->num->value = len;
-	} else {
-		core->num->value = 0;
-	}
-#if 0
-		rz_io_use_desc (core->io, core->file->desc);
-#endif
-	WSEEK(core, len + 1);
-	rz_core_block_read(core);
-	return 0;
+RZ_IPI RzCmdStatus rz_write_zero_string_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_core_write_string_zero_at(core, core->offset, argv[1]));
 }
 
-RZ_IPI int rz_wt_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	char *str = strdup(input);
-	char *ostr = str;
-	const char *filename = "";
-	char _fn[32];
-	_fn[0] = 0;
-	char *tmp;
-	if (*str == 's') { // "wts"
-		if (str[1] == ' ') {
-			eprintf("Write to server\n");
-			st64 sz = rz_io_size(core->io);
-			if (sz > 0) {
-				ut64 addr = 0;
-				char *host = str + 2;
-				char *port = strchr(host, ':');
-				if (port) {
-					*port++ = 0;
-					char *space = strchr(port, ' ');
-					if (space) {
-						*space++ = 0;
-						sz = rz_num_math(core->num, space);
-						addr = core->offset;
-					}
-					ut8 *buf = calloc(1, sz);
-					rz_io_read_at(core->io, addr, buf, sz);
-					RzSocket *s = rz_socket_new(false);
-					if (rz_socket_connect(s, host, port, RZ_SOCKET_PROTO_TCP, 0)) {
-						int done = 0;
-						eprintf("Transfering file to the end-point...\n");
-						while (done < sz) {
-							int rc = rz_socket_write(s, buf + done, sz - done);
-							if (rc < 1) {
-								eprintf("oops\n");
-								break;
-							}
-							done += rc;
-						}
-					} else {
-						eprintf("Cannot connect\n");
-					}
-					rz_socket_free(s);
-					free(buf);
-				} else {
-					eprintf("Usage wts host:port [sz]\n");
-				}
-			} else {
-				eprintf("Unknown file size\n");
-			}
-		} else {
-			eprintf("Usage wts host:port [sz]\n");
-		}
-	} else if (*str == '?' || *str == '\0') {
-		rz_core_cmd_help(core, help_msg_wt);
-		free(ostr);
-		return 0;
-	} else {
-		bool append = false;
-		bool toend = false;
-		st64 sz = core->blocksize;
-		ut64 poff = core->offset;
-		if (*str == 'f') { // "wtf"
-			str++;
-			if (*str == '?') {
-				rz_core_cmd_help(core, help_msg_wt);
-				return 0;
-			}
-			if (*str == '!') {
-				if (str[1] == '?') {
-					rz_core_cmd_help(core, help_msg_wt);
-					return 0;
-				}
-				RzIOMap *map = rz_io_map_get(core->io, poff);
-				toend = true;
-				// use physical address
-				poff = map ? poff - map->itv.addr + map->delta : poff;
-				str++;
-			}
-			if (*str == 'f') { // "wtff"
-				if (str[1] == '?') {
-					rz_core_cmd_help(core, help_msg_wt);
-					return 0;
-				}
-				const char *prefix = rz_str_trim_head_ro(str + 2);
-				if (!*prefix) {
-					prefix = "dump";
-				}
-				str++;
-				filename = rz_str_newf("%s-0x%08" PFMT64x, prefix, core->offset);
-			} else {
-				if (*str) {
-					if (str[1] == '?') {
-						rz_core_cmd_help(core, help_msg_wt);
-						return 0;
-					}
-					filename = rz_str_trim_head_ro(str);
-				} else {
-					filename = "";
-				}
-			}
-		} else if (*str == 'a') { // "wta"
-			append = 1;
-			str++;
-			if (str[0] == ' ') {
-				filename = str + 1;
-			} else {
-				const char *prefix = rz_config_get(core->config, "cfg.prefixdump");
-				snprintf(_fn, sizeof(_fn), "%s.0x%08" PFMT64x, prefix, poff);
-				filename = _fn;
-			}
-		} else if (*str != ' ') {
-			const char *prefix = rz_config_get(core->config, "cfg.prefixdump");
-			snprintf(_fn, sizeof(_fn), "%s.0x%08" PFMT64x, prefix, poff);
-			filename = _fn;
-		} else {
-			filename = str + 1;
-		}
-		tmp = *str ? strchr(str + 1, ' ') : NULL;
-		if (!filename || !*filename) {
-			const char *prefix = rz_config_get(core->config, "cfg.prefixdump");
-			snprintf(_fn, sizeof(_fn), "%s.0x%08" PFMT64x, prefix, poff);
-			filename = _fn;
-		}
-		if (tmp) {
-			if (toend) {
-				sz = rz_io_fd_size(core->io, core->file->fd) - core->offset;
-				if (sz < 0) {
-					eprintf("Warning: File size is unknown.");
-				}
-			} else {
-				sz = (st64)rz_num_math(core->num, tmp + 1);
-				*tmp = 0;
-			}
-			if ((st64)sz < 1) {
-				sz = 0;
-			} else if (!rz_core_dump(core, filename, poff, (ut64)sz, append)) {
-				sz = -1;
-			}
-		} else {
-			if (toend) {
-				sz = rz_io_fd_size(core->io, core->file->fd);
-				if (sz < 0) {
-					eprintf("Warning: File size is unknown.");
-				}
-				if (sz != -1 && core->offset <= sz) {
-					sz -= core->offset;
-					if (!rz_core_dump(core, filename, core->offset, (ut64)sz, append)) {
-						sz = -1;
-					}
-				} else {
-					sz = -1;
-				}
-			} else {
-				sz = core->blocksize;
-				if (!rz_file_dump(filename, core->block, sz, append)) {
-					sz = -1;
-				}
-			}
-		}
-		if (sz >= 0) {
-			eprintf("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x " into %s\n",
-				sz, poff, filename);
-		}
-	}
-	return 0;
-}
-
-RZ_IPI int rz_ww_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	char *str = strdup(input);
-	int len = rz_str_unescape(str);
-	if (len < 1) {
-		return 0;
-	}
-	len++;
-	str++;
-	len = (len - 1) << 1;
-	char *tmp = (len > 0) ? malloc(len + 1) : NULL;
-	if (tmp) {
-		int i;
-		for (i = 0; i < len; i++) {
-			if (i % 2)
-				tmp[i] = 0;
-			else
-				tmp[i] = str[i >> 1];
-		}
-		str = tmp;
-		if (core->file) {
-			rz_io_use_fd(core->io, core->file->fd);
-		}
-		if (!rz_io_write_at(core->io, core->offset, (const ut8 *)str, len)) {
-			eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-		}
-		WSEEK(core, len);
-		rz_core_block_read(core);
-		free(tmp);
-	} else {
-		eprintf("Cannot malloc %d\n", len);
-	}
-	return 0;
+RZ_IPI RzCmdStatus rz_write_wide_string_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_core_write_string_wide_at(core, core->offset, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_write_hex_handler(RzCore *core, int argc, const char **argv) {
@@ -1277,104 +522,42 @@ RZ_IPI RzCmdStatus rz_write_block_handler(RzCore *core, int argc, const char **a
 	return bool2status(rz_core_write_block(core, core->offset, hex, len));
 }
 
-RZ_IPI int rz_wm_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	char *str = strdup(input);
-	int size = rz_hex_str2bin(input, (ut8 *)str);
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	switch (input[0]) {
-	case '\0':
-		eprintf("TODO: Display current write mask");
-		break;
-	case '?':
-		break;
-	case '-':
-		rz_io_set_write_mask(core->io, 0, 0);
-		eprintf("Write mask disabled\n");
-		break;
-	case ' ':
-		if (size > 0) {
-			rz_io_use_fd(core->io, core->file->fd);
-			rz_io_set_write_mask(core->io, (const ut8 *)str, size);
-			WSEEK(core, size);
-			eprintf("Write mask set to '");
-			size_t i;
-			for (i = 0; i < size; i++) {
-				eprintf("%02x", str[i]);
-			}
-			eprintf("'\n");
-		} else {
-			eprintf("Invalid string\n");
-		}
-		break;
+RZ_IPI RzCmdStatus rz_write_mask_set_handler(RzCore *core, int argc, const char **argv) {
+	ut8 *buf = RZ_NEWS(ut8, strlen(argv[1]) / 2);
+	if (!buf) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-	return 0;
+	int size = rz_hex_str2bin(argv[1], buf);
+	return bool2status(rz_io_set_write_mask(core->io, buf, size));
 }
 
-RZ_IPI int rz_wd_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] && input[0] == ' ') {
-		char *arg, *inp = strdup(input + 1);
-		arg = strchr(inp, ' ');
-		if (arg) {
-			*arg = 0;
-			ut64 addr = rz_num_math(core->num, input + 1);
-			ut64 len = rz_num_math(core->num, arg + 1);
-			ut8 *data = malloc(len);
-			rz_io_read_at(core->io, addr, data, len);
-			if (!rz_io_write_at(core->io, core->offset, data, len)) {
-				eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-			}
-			free(data);
-		} else {
-			eprintf("See wd?\n");
-		}
-		free(inp);
-	} else
-		eprintf("Usage: wd [source-offset] [length] @ [dest-offset]\n");
-	return 0;
+RZ_IPI RzCmdStatus rz_write_mask_reset_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_io_set_write_mask(core->io, NULL, 0));
+}
+
+RZ_IPI RzCmdStatus rz_write_duplicate_handler(RzCore *core, int argc, const char **argv) {
+	ut64 src = rz_num_math(core->num, argv[1]);
+	ut64 len = rz_num_math(core->num, argv[2]);
+	ut8 *data = RZ_NEWS(ut8, len);
+	if (!data) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	int n = rz_io_nread_at(core->io, src, data, len);
+	if (n < 0) {
+		free(data);
+		RZ_LOG_ERROR("Cannot read data from %" PFMT64x ".\n", src);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_core_write_at(core, core->offset, data, n)) {
+		RZ_LOG_ERROR("Cannot write %d bytes to %" PFMT64x ".\n", n, core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_write_length_string_handler(RzCore *core, int argc, const char **argv) {
 	return rz_core_write_length_string_at(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
-}
-
-/* TODO: simplify using rz_write */
-RZ_IPI int rz_cmd_write(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-
-	if (!input) {
-		return 0;
-	}
-
-	switch (*input) {
-	case 'u': // "wu"
-		rz_wu_handler_old(core, input + 1);
-		break;
-	case 'z': // "wz"
-		rz_wz_handler_old(core, input + 1);
-		break;
-	case 't': // "wt"
-		rz_wt_handler_old(core, input + 1);
-		break;
-	case 'w': // "ww"
-		rz_ww_handler_old(core, input + 1);
-		break;
-	case 'm': // "wm"
-		rz_wm_handler_old(core, input + 1);
-		break;
-	case 'o': // "wo"
-		rz_wo_handler_old(core, input + 1);
-		break;
-	case 'd': // "wd"
-		rz_wd_handler_old(core, input + 1);
-		break;
-	default:
-	case '?': // "w?"
-		rz_core_cmd_help(core, help_msg_w);
-		break;
-	}
-	return 0;
 }
 
 RZ_IPI RzCmdStatus rz_write_cache_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1481,4 +664,133 @@ RZ_IPI RzCmdStatus rz_write_extend_hexbytes_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return bool2status(rz_core_write_at(core, addr, bytes, len));
+}
+
+RZ_IPI RzCmdStatus rz_write_op_2byteswap_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_core_write_block_op_at(core, core->offset, RZ_CORE_WRITE_OP_BYTESWAP2, NULL, 0));
+}
+
+RZ_IPI RzCmdStatus rz_write_op_4byteswap_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_core_write_block_op_at(core, core->offset, RZ_CORE_WRITE_OP_BYTESWAP4, NULL, 0));
+}
+
+RZ_IPI RzCmdStatus rz_write_op_8byteswap_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_core_write_block_op_at(core, core->offset, RZ_CORE_WRITE_OP_BYTESWAP8, NULL, 0));
+}
+
+static RzCmdStatus write_op_val(RzCore *core, int argc, const char **argv, RzCoreWriteOp op) {
+	rz_return_val_if_fail(argc > 1, RZ_CMD_STATUS_WRONG_ARGS);
+
+	ut8 *hex = RZ_NEWS(ut8, (strlen(argv[1]) + 1) / 2);
+	if (!hex) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	int hexlen = rz_hex_str2bin(argv[1], hex);
+	RzCmdStatus res = bool2status(rz_core_write_block_op_at(core, core->offset, op, hex, hexlen));
+	free(hex);
+	return res;
+}
+
+RZ_IPI RzCmdStatus rz_write_op_add_handler(RzCore *core, int argc, const char **argv) {
+	return write_op_val(core, argc, argv, RZ_CORE_WRITE_OP_ADD);
+}
+
+RZ_IPI RzCmdStatus rz_write_op_sub_handler(RzCore *core, int argc, const char **argv) {
+	return write_op_val(core, argc, argv, RZ_CORE_WRITE_OP_SUB);
+}
+
+RZ_IPI RzCmdStatus rz_write_op_mul_handler(RzCore *core, int argc, const char **argv) {
+	return write_op_val(core, argc, argv, RZ_CORE_WRITE_OP_MUL);
+}
+
+RZ_IPI RzCmdStatus rz_write_op_div_handler(RzCore *core, int argc, const char **argv) {
+	return write_op_val(core, argc, argv, RZ_CORE_WRITE_OP_DIV);
+}
+
+RZ_IPI RzCmdStatus rz_write_op_xor_handler(RzCore *core, int argc, const char **argv) {
+	return write_op_val(core, argc, argv, RZ_CORE_WRITE_OP_XOR);
+}
+
+RZ_IPI RzCmdStatus rz_write_op_and_handler(RzCore *core, int argc, const char **argv) {
+	return write_op_val(core, argc, argv, RZ_CORE_WRITE_OP_AND);
+}
+
+RZ_IPI RzCmdStatus rz_write_op_or_handler(RzCore *core, int argc, const char **argv) {
+	return write_op_val(core, argc, argv, RZ_CORE_WRITE_OP_OR);
+}
+
+RZ_IPI RzCmdStatus rz_write_op_shl_handler(RzCore *core, int argc, const char **argv) {
+	return write_op_val(core, argc, argv, RZ_CORE_WRITE_OP_SHIFT_LEFT);
+}
+
+RZ_IPI RzCmdStatus rz_write_op_shr_handler(RzCore *core, int argc, const char **argv) {
+	return write_op_val(core, argc, argv, RZ_CORE_WRITE_OP_SHIFT_RIGHT);
+}
+
+RZ_IPI RzCmdStatus rz_write_op_encrypt_handler(RzCore *core, int argc, const char **argv) {
+	const char *algo = argv[1];
+	const char *key = argv[2];
+	const char *iv = argv[3];
+	return bool2status(encrypt_or_decrypt_block(core, algo, key, 0, iv));
+}
+
+RZ_IPI RzCmdStatus rz_write_op_decrypt_handler(RzCore *core, int argc, const char **argv) {
+	const char *algo = argv[1];
+	const char *key = argv[2];
+	const char *iv = argv[3];
+	return bool2status(encrypt_or_decrypt_block(core, algo, key, 1, iv));
+}
+
+RZ_IPI RzCmdStatus rz_write_op_sequence_handler(RzCore *core, int argc, const char **argv) {
+	ut64 from = rz_num_math(NULL, argv[1]);
+	ut64 to = rz_num_math(NULL, argv[2]);
+	ut64 step = rz_num_math(NULL, argv[3]);
+	int value_size = (int)rz_num_math(NULL, argv[4]);
+	if (step < 1) {
+		RZ_LOG_ERROR("Invalid <step> value: %" PFMT64d "\n", step);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (value_size != 1 && value_size != 2 && value_size != 4 && value_size != 8) {
+		RZ_LOG_ERROR("Invalid <value_size> value: %d\n", value_size);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 max_val = (1ULL << (8 * value_size));
+	if (from >= max_val) {
+		RZ_LOG_ERROR("Invalid <from> value: %" PFMT64d "\n", from);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (to >= max_val) {
+		RZ_LOG_ERROR("Invalid <to> value: %" PFMT64d "\n", to);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	return bool2status(rz_core_write_seq_at(core, core->offset, from, to, step, value_size));
+}
+
+RZ_IPI RzCmdStatus rz_write_debruijn_handler(RzCore *core, int argc, const char **argv) {
+	int len = (int)rz_num_math(core->num, argv[1]);
+	if (len < 0) {
+		RZ_LOG_ERROR("Invalid length: %d\n", len);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *p = rz_debruijn_pattern(len, 0, NULL);
+	if (!p) {
+		RZ_LOG_ERROR("Cannot create Debrujn sequence of length %d\n", len);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool res = rz_core_write_string_at(core, core->offset, p);
+	free(p);
+	return bool2status(res);
+}
+
+RZ_IPI RzCmdStatus rz_write_debruijn_find_handler(RzCore *core, int argc, const char **argv) {
+	ut64 value = rz_num_math(core->num, argv[1]);
+	int offset = rz_debruijn_offset(0, NULL, value, rz_config_get_b(core->config, "cfg.bigendian"));
+	if (offset < 0) {
+		RZ_LOG_ERROR("Could not find value %" PFMT64x " in Debruijn sequence.\n", value);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("%d\n", offset);
+	return RZ_CMD_STATUS_OK;
 }
