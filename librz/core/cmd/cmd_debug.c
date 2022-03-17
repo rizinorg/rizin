@@ -2216,8 +2216,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, 
 // dt
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_handler(RzCore *core, int argc, const char **argv) {
 	RzDebugTracepoint *t;
-	if ((t = rz_debug_trace_get(core->dbg,
-		     rz_num_math(core->num, argv[1])))) {
+	if ((t = rz_debug_trace_get(core->dbg, core->offset))) {
 		rz_cons_printf("offset = 0x%" PFMT64x "\n", t->addr);
 		rz_cons_printf("opsize = %d\n", t->size);
 		rz_cons_printf("times = %d\n", t->times);
@@ -2228,27 +2227,32 @@ RZ_IPI RzCmdStatus rz_cmd_debug_trace_handler(RzCore *core, int argc, const char
 }
 
 // dtl
-RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	rz_debug_trace_list(core->dbg, mode, core->offset);
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_debug_trace_list(core->dbg, state->mode, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtl=
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_ascii_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_trace_list_ascii(core->dbg, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dt+
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = rz_num_math(core->num, argv[1]);
-	int count = argc > 2 ? rz_num_math(core->num, argv[2]) : 1;
-	RzAnalysisOp *op = rz_core_op_analysis(core, addr, RZ_ANALYSIS_OP_MASK_HINT);
+	int count = argc > 2 ? rz_num_math(core->num, argv[1]) : 1;
+	RzAnalysisOp *op = rz_core_op_analysis(core, core->offset, RZ_ANALYSIS_OP_MASK_HINT);
 	if (op) {
-		RzDebugTracepoint *tp = rz_debug_trace_add(core->dbg, addr, op->size);
+		RzDebugTracepoint *tp = rz_debug_trace_add(core->dbg, core->offset, op->size);
 		if (!tp) {
 			rz_analysis_op_free(op);
 			return RZ_CMD_STATUS_OK;
 		}
 		tp->count = count;
-		rz_analysis_trace_bb(core->analysis, addr);
+		rz_analysis_trace_bb(core->analysis, core->offset);
 		rz_analysis_op_free(op);
 	} else {
-		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", core->offset);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -2286,14 +2290,14 @@ RZ_IPI int rz_cmd_debug_trace_dtc(void *data, const char *input) {
 }
 
 // dtd
-RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int min = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 0;
 	RzDebugTracepoint *trace;
 	RzListIter *iter;
 	RzAnalysisOp *op;
 	int n = 0;
 
-	switch (mode) {
+	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_list_foreach (core->dbg->trace->traces, iter, trace) {
 			if (n >= min) {
@@ -2324,7 +2328,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const
 // dte
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_esil_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_esil_init(core);
-	int idx = atoi(argv[1]);
+	int idx = rz_num_math(core->num, argv[1]);
 	rz_analysis_esil_trace_show(core->analysis->esil, idx);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2349,11 +2353,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_delete_handler(RzCore *core, int arg
 // dtei
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_esil_init(core);
-	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_ESIL);
-	if (op) {
-		rz_analysis_esil_trace_op(core->analysis->esil, op);
+	RzAnalysisOp *op = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_ESIL);
+	if (!op) {
+		RZ_LOG_ERROR("failed analysis op at: %llx", core->offset);
+		return RZ_CMD_STATUS_OK;
 	}
+	rz_analysis_esil_trace_op(core->analysis->esil, op);
 	rz_analysis_op_free(op);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2427,7 +2432,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_trace_session_mmap_handler(RzCore *core, in
 
 // dtt
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_tag_handler(RzCore *core, int argc, const char **argv) {
-	int tag = atoi(argv[1]);
+	int tag = rz_num_math(core->num, argv[1]);
 	rz_debug_trace_tag(core->dbg, tag);
 	return RZ_CMD_STATUS_OK;
 }

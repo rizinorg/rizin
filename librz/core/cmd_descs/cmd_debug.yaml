@@ -363,24 +363,24 @@ commands:
       - name: dt
         summary: Get trace info at address
         cname: cmd_debug_trace
-        args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
+        args: []
       - name: dtl
         summary: List all traces
         cname: cmd_debug_traces
         args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
-          - RZ_OUTPUT_MODE_TABLE
+      - name: dtl=
+        summary: List all traces in ascii art
+        cname: cmd_debug_traces_ascii
+        args: []
       - name: dt+
         summary: Add trace for address N times
         cname: cmd_debug_trace_add
         args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
           - name: times
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
@@ -391,7 +391,6 @@ commands:
           - name: addrs
             type: RZ_CMD_ARG_TYPE_RZNUM
             flags: RZ_CMD_ARG_FLAG_ARRAY
-            optional: true
       - name: dt-
         summary: Reset traces (instruction/calls)
         cname: cmd_debug_traces_reset
@@ -407,13 +406,14 @@ commands:
       - name: dtd
         summary: List all traced disassembled (quiet, instructions)
         cname: cmd_debug_traces_dtd
-        modes:
-          - RZ_OUTPUT_MODE_QUIET
-          - RZ_OUTPUT_MODE_STANDARD
         args:
           - name: nth
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_STANDARD
       - name: dte
         summary: Esil trace logs
         subcommands:
@@ -434,10 +434,7 @@ commands:
           - name: dtei
             summary: Esil trace log for a single instruction
             cname: cmd_debug_traces_esil_i
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
       - name: dtg
         summary: Graph call/ret trace
         subcommands:

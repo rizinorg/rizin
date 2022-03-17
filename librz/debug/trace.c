@@ -212,53 +212,66 @@ static int cmpaddr(const void *_a, const void *_b) {
 RZ_API void rz_debug_trace_list(RzDebug *dbg, RzOutputMode mode, ut64 offset) {
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
-	RzList *info_list = NULL;
-	if (mode == RZ_OUTPUT_MODE_TABLE) {
-		info_list = rz_list_new();
-		rz_return_if_fail(info_list);
+	RzDebugTracepoint *trace;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_list_foreach (dbg->trace->traces, iter, trace) {
+			if (!trace->tag || (tag & trace->tag)) {
+				dbg->cb_printf("0x%" PFMT64x "\n", trace->addr);
+			}
+		}
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_list_foreach (dbg->trace->traces, iter, trace) {
+			if (!trace->tag || (tag & trace->tag)) {
+				dbg->cb_printf("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
+			}
+		}
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+	default:
+		rz_list_foreach (dbg->trace->traces, iter, trace) {
+			if (!trace->tag || (tag & trace->tag)) {
+				dbg->cb_printf("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
+					trace->addr, trace->size, trace->count, trace->times, trace->tag);
+			}
+		}
+		break;
 	}
+}
+
+RZ_API void rz_debug_trace_list_ascii(RzDebug *dbg, ut64 offset) {
+	int tag = dbg->trace->tag;
+	RzListIter *iter;
+	RzList *info_list = rz_list_new();
+	rz_return_if_fail(info_list);
+
 	RzDebugTracepoint *trace;
 	rz_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
-			switch (mode) {
-			case RZ_OUTPUT_MODE_QUIET:
-				dbg->cb_printf("0x%" PFMT64x "\n", trace->addr);
-				break;
-			case RZ_OUTPUT_MODE_TABLE: {
-				RzListInfo *info = RZ_NEW0(RzListInfo);
-				if (!info) {
-					rz_list_free(info_list);
-					return;
-				}
-				info->pitv = (RzInterval){ trace->addr, trace->size };
-				info->vitv = info->pitv;
-				info->perm = -1;
-				info->name = rz_str_newf("%d", trace->times);
-				info->extra = rz_str_newf("%d", trace->count);
-				rz_list_append(info_list, info);
-			} break;
-			case RZ_OUTPUT_MODE_RIZIN:
-				dbg->cb_printf("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
-				break;
-			case RZ_OUTPUT_MODE_STANDARD:
-			default:
-				dbg->cb_printf("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
-					trace->addr, trace->size, trace->count, trace->times, trace->tag);
-				break;
+			RzListInfo *info = RZ_NEW0(RzListInfo);
+			if (!info) {
+				rz_list_free(info_list);
+				return;
 			}
+			info->pitv = (RzInterval){ trace->addr, trace->size };
+			info->vitv = info->pitv;
+			info->perm = -1;
+			info->name = rz_str_newf("%d", trace->times);
+			info->extra = rz_str_newf("%d", trace->count);
+			rz_list_append(info_list, info);
 		}
 	}
-	if (mode == RZ_OUTPUT_MODE_TABLE) {
-		rz_list_sort(info_list, cmpaddr);
-		RzTable *table = rz_table_new();
-		table->cons = rz_cons_singleton();
-		RzIO *io = dbg->iob.io;
-		rz_table_visual_list(table, info_list, offset, 1,
-			rz_cons_get_size(NULL), io->va);
-		io->cb_printf("\n%s\n", rz_table_tostring(table));
-		rz_table_free(table);
-		rz_list_free(info_list);
-	}
+
+	rz_list_sort(info_list, cmpaddr);
+	RzTable *table = rz_table_new();
+	table->cons = rz_cons_singleton();
+	RzIO *io = dbg->iob.io;
+	rz_table_visual_list(table, info_list, offset, 1,
+		rz_cons_get_size(NULL), io->va);
+	io->cb_printf("\n%s\n", rz_table_tostring(table));
+	rz_table_free(table);
+	rz_list_free(info_list);
 }
 
 // XXX: find better name, make it public?
