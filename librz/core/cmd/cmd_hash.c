@@ -13,34 +13,6 @@ typedef struct {
 	RzMsgDigestPlugin *plugin;
 } MsgDigestCaller;
 
-static inline void hexprint(const ut8 *data, int len) {
-	if (!data || len < 1) {
-		return;
-	}
-	for (int i = 0; i < len; i++) {
-		rz_cons_printf("%02x", data[i]);
-	}
-	rz_cons_newline();
-}
-
-static void handle_msg_digest(const char *name, const ut8 *block, int len) {
-	RzMsgDigestSize digest_size = 0;
-	ut8 *digest = rz_msg_digest_calculate_small_block(name, block, len, &digest_size);
-	hexprint(digest, digest_size);
-	free(digest);
-}
-
-static void handle_entropy(const char *name, const ut8 *block, int len) {
-	RzMsgDigestSize digest_size = 0;
-	ut8 *digest = rz_msg_digest_calculate_small_block(name, block, len, &digest_size);
-	if (!digest) {
-		return;
-	}
-	double entropy = rz_read_be_double(digest);
-	rz_cons_printf("%f\n", entropy);
-	free(digest);
-}
-
 RZ_IPI RzCmdDescDetail *rz_hash_bang_details_cb(RzCore *core, int argc, const char **argv) {
 	RzListIter *iter;
 	RzLangPlugin *lp;

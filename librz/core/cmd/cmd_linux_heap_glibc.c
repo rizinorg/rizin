@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: 2021 Pulak Malhotra <pulakmalhotra2000@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_types.h>
 #include <rz_core.h>
+#include <rz_heap_glibc.h>
+#include "cmd_descs.h"
+#include "../linux_heap_glibc.h"
+#include "../linux_heap_glibc64.h"
+
 #define call_handler(fun, ...) \
 	{ \
 		if (core->rasm->bits == 64) { \
@@ -10,6 +16,7 @@
 			return fun##_32(core, ##__VA_ARGS__); \
 		} \
 	}
+
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	call_handler(rz_cmd_heap_chunks_print_handler, argc, argv, state);
 }

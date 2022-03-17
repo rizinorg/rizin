@@ -5,6 +5,7 @@
 #include <rz_debug.h>
 #include <rz_core.h>
 #include <rz_io.h>
+#include "../core_private.h"
 
 struct open_list_ascii_data_t {
 	RzPrint *p;
