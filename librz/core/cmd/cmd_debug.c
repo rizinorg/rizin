@@ -2242,18 +2242,19 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_ascii_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_handler(RzCore *core, int argc, const char **argv) {
 	int count = argc > 2 ? rz_num_math(core->num, argv[1]) : 1;
 	RzAnalysisOp *op = rz_core_op_analysis(core, core->offset, RZ_ANALYSIS_OP_MASK_HINT);
-	if (op) {
-		RzDebugTracepoint *tp = rz_debug_trace_add(core->dbg, core->offset, op->size);
-		if (!tp) {
-			rz_analysis_op_free(op);
-			return RZ_CMD_STATUS_OK;
-		}
-		tp->count = count;
-		rz_analysis_trace_bb(core->analysis, core->offset);
-		rz_analysis_op_free(op);
-	} else {
+	if (!op) {
 		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_OK;
 	}
+
+	RzDebugTracepoint *tp = rz_debug_trace_add(core->dbg, core->offset, op->size);
+	if (!tp) {
+		rz_analysis_op_free(op);
+		return RZ_CMD_STATUS_OK;
+	}
+	tp->count = count;
+	rz_analysis_trace_bb(core->analysis, core->offset);
+	rz_analysis_op_free(op);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2355,7 +2356,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, co
 	rz_core_analysis_esil_init(core);
 	RzAnalysisOp *op = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_ESIL);
 	if (!op) {
-		RZ_LOG_ERROR("failed analysis op at: %llx", core->offset);
+		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_OK;
 	}
 	rz_analysis_esil_trace_op(core->analysis->esil, op);
