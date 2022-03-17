@@ -1390,7 +1390,6 @@ EOF
 RUN
 
 NAME=pdJ string
-ARGS=-ecfg.oldshell=false
 FILE=malloc://128
 CMDS=<<EOF
 w "Snoo\"ping as\" usual,"
