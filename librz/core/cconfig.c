@@ -2156,20 +2156,6 @@ static bool cb_scrhtml(void *user, void *data) {
 	return true;
 }
 
-static bool cb_oldshell(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzCore *core = (RzCore *)user;
-	core->use_tree_sitter_rzcmd = !node->i_value;
-	return true;
-}
-
-static bool cb_oldshell_autocompletion(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzCore *core = (RzCore *)user;
-	core->use_rzshell_autocompletion = !node->i_value;
-	return true;
-}
-
 static bool cb_scrhighlight(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	rz_cons_highlight(node->value);
@@ -3301,10 +3287,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("cfg.seek.histsize", 63, NULL, "Maximum size of the seek history");
 	SETCB("cfg.seek.silent", "false", NULL, "When true, seek movements are not logged in seek history");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-	p = rz_sys_getenv("RZ_CFG_OLDSHELL");
-	SETCB("cfg.oldshell", p ? "true" : "false", &cb_oldshell, "Use old radare2 parser");
-	free(p);
-	SETCB("cfg.oldshell.autocompletion", "true", &cb_oldshell_autocompletion, "Use old radare2 autocompletion");
 	SETI("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */

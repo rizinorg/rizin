@@ -5345,79 +5345,7 @@ RZ_API RzCmdStatus rz_core_cmd_rzshell(RzCore *core, const char *cstr, int log) 
 }
 
 RZ_API int rz_core_cmd(RzCore *core, const char *cstr, int log) {
-	if (core->use_tree_sitter_rzcmd) {
-		return rz_cmd_status2int(core_cmd_tsrzcmd(core, cstr, false, log));
-	}
-
-	int ret = false, i;
-
-	if (core->cmdfilter) {
-		const char *invalid_chars = ";|>`@";
-		for (i = 0; invalid_chars[i]; i++) {
-			if (strchr(cstr, invalid_chars[i])) {
-				ret = true;
-				goto beach;
-			}
-		}
-		if (strncmp(cstr, core->cmdfilter, strlen(core->cmdfilter))) {
-			ret = true;
-			goto beach;
-		}
-	}
-	if (core->cmdremote) {
-		if (*cstr == 'q') {
-			RZ_FREE(core->cmdremote);
-			goto beach; // false
-		} else if (*cstr != '=' && strncmp(cstr, "!=", 2)) {
-			if (core->cmdremote[0]) {
-				char *s = rz_str_newf("%s %s", core->cmdremote, cstr);
-				rz_core_rtr_cmd(core, s);
-				free(s);
-			} else {
-				char *res = rz_io_system(core->io, cstr);
-				if (res) {
-					rz_cons_printf("%s\n", res);
-					free(res);
-				}
-			}
-			if (log) {
-				rz_line_hist_add(cstr);
-			}
-			goto beach; // false
-		}
-	}
-
-	if (!cstr || (*cstr == '|' && cstr[1] != '?')) {
-		// raw comment syntax
-		goto beach; // false;
-	}
-	if (!strncmp(cstr, "/*", 2)) {
-		core->incomment = true;
-	} else if (!strncmp(cstr, "*/", 2)) {
-		core->incomment = false;
-		goto beach; // false
-	}
-	if (core->incomment) {
-		goto beach; // false
-	}
-	if (log && (*cstr && (*cstr != '.' || !strncmp(cstr, ".(", 2)))) {
-		free(core->lastcmd);
-		core->lastcmd = strdup(cstr);
-	}
-
-	char *cmd = malloc(strlen(cstr) + 4096);
-	if (!cmd) {
-		goto beach;
-	}
-	rz_str_cpy(cmd, cstr);
-	if (log) {
-		rz_line_hist_add(cstr);
-	}
-
-	ret = run_cmd_depth(core, cmd);
-	free(cmd);
-beach:
-	return ret;
+	return rz_cmd_status2int(core_cmd_tsrzcmd(core, cstr, false, log));
 }
 
 RZ_API RzCmdStatus rz_core_cmd_lines_rzshell(RzCore *core, const char *lines) {
@@ -5425,58 +5353,8 @@ RZ_API RzCmdStatus rz_core_cmd_lines_rzshell(RzCore *core, const char *lines) {
 }
 
 RZ_API int rz_core_cmd_lines(RzCore *core, const char *lines) {
-	if (core->use_tree_sitter_rzcmd) {
-		RzCmdStatus status = core_cmd_tsrzcmd(core, lines, true, false);
-		return status == RZ_CMD_STATUS_OK;
-	}
-	int r, ret = true;
-	char *nl, *data, *odata;
-
-	if (!lines || !*lines) {
-		return true;
-	}
-	data = odata = strdup(lines);
-	if (!odata) {
-		return false;
-	}
-	nl = strchr(odata, '\n');
-	if (nl) {
-		rz_cons_break_push(NULL, NULL);
-		do {
-			if (rz_cons_is_breaked()) {
-				free(odata);
-				rz_cons_break_pop();
-				return ret;
-			}
-			*nl = '\0';
-			r = rz_core_cmd(core, data, 0);
-			if (r < 0) { //== -1) {
-				data = nl + 1;
-				ret = -1; // r; //false;
-				break;
-			}
-			rz_cons_flush();
-			if (data[0] == 'q') {
-				if (data[1] == '!') {
-					ret = -1;
-				} else {
-					eprintf("'q': quit ignored. Use 'q!'\n");
-				}
-				data = nl + 1;
-				break;
-			}
-			data = nl + 1;
-			rz_core_task_yield(&core->tasks);
-		} while ((nl = strchr(data, '\n')));
-		rz_cons_break_pop();
-	}
-	if (ret >= 0 && data && *data) {
-		rz_core_cmd(core, data, 0);
-		rz_cons_flush();
-		rz_core_task_yield(&core->tasks);
-	}
-	free(odata);
-	return ret;
+	RzCmdStatus status = core_cmd_tsrzcmd(core, lines, true, false);
+	return status == RZ_CMD_STATUS_OK;
 }
 
 RZ_API int rz_core_cmd_file(RzCore *core, const char *file) {
@@ -5591,11 +5469,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 			return rz_core_cmd_str(core, cmd);
 		}
 		char *_cmd = strdup(cmd);
-		if (core->use_tree_sitter_rzcmd) {
-			rz_core_cmd(core, _cmd, 0);
-		} else {
-			rz_core_cmd_subst(core, _cmd);
-		}
+		rz_core_cmd(core, _cmd, 0);
 		rz_cons_flush();
 		rz_cons_pipe_close(pipefd);
 		if (rz_file_exists(tmp)) {

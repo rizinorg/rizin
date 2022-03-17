@@ -384,8 +384,6 @@ struct rz_core_t {
 	bool scr_gadgets;
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RzList *ropchain;
-	bool use_tree_sitter_rzcmd;
-	bool use_rzshell_autocompletion;
 	RzCoreSeekHistory seek_history;
 
 	bool marks_init;
