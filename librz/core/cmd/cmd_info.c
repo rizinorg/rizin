@@ -8,6 +8,7 @@
 #include <rz_core.h>
 #include <rz_demangler.h>
 #include "../bin/pdb/pdb_downloader.h"
+#include "../core_private.h"
 
 static int bin_is_executable(RzBinObject *obj) {
 	RzListIter *it;

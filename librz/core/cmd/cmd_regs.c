@@ -4,6 +4,8 @@
 #include <rz_core.h>
 #include "../core_private.h"
 
+HEAPTYPE(ut64);
+
 #define SYNC_READ(type, failed) \
 	do { \
 		failed = false; \
