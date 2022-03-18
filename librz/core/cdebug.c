@@ -590,3 +590,46 @@ RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input,
 		print_debug_maps_ascii_art(dbg, maps, addr, colors);
 	}
 }
+
+RZ_API void rz_debug_trace_list(RzDebug *dbg, RzOutputMode mode, ut64 offset) {
+	int tag = dbg->trace->tag;
+	RzListIter *iter;
+	RzDebugTracepoint *trace;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_list_foreach (dbg->trace->traces, iter, trace) {
+			if (!trace->tag || (tag & trace->tag)) {
+				dbg->cb_printf("0x%" PFMT64x "\n", trace->addr);
+			}
+		}
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_list_foreach (dbg->trace->traces, iter, trace) {
+			if (!trace->tag || (tag & trace->tag)) {
+				dbg->cb_printf("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
+			}
+		}
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+	default:
+		rz_list_foreach (dbg->trace->traces, iter, trace) {
+			if (!trace->tag || (tag & trace->tag)) {
+				dbg->cb_printf("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
+					trace->addr, trace->size, trace->count, trace->times, trace->tag);
+			}
+		}
+		break;
+	}
+}
+
+RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
+	RzList *info_list = rz_debug_traces_info(dbg, offset);
+	RzTable *table = rz_table_new();
+	table->cons = rz_cons_singleton();
+	RzIO *io = dbg->iob.io;
+	rz_table_visual_list(table, info_list, offset, 1,
+		rz_cons_get_size(NULL), io->va);
+	io->cb_printf("\n%s\n", rz_table_tostring(table));
+	rz_table_free(table);
+	rz_list_free(info_list);
+}
