@@ -1254,10 +1254,15 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 		TSNode child = ts_node_named_child(paramlist, i);
 		const char *node_type = ts_node_type(child);
 		// Every field should have (parameter_declaration) AST clause
-		if (strcmp(node_type, "parameter_declaration")) {
-			parser_error(state, "ERROR: Parameter field AST should contain (parameter_declaration) node!\n");
-			node_malformed_error(state, child, text, "parameter_declaration");
+		if (strcmp(node_type, "parameter_declaration") && strcmp(node_type, "variadic_parameter")) {
+			parser_error(state, "ERROR: Parameter field AST should contain (parameter_declaration|variadic_parameter) node!\n");
+			node_malformed_error(state, child, text, "parameter_declaration|variadic_parameter");
 			return -1;
+		}
+		if (!strcmp(node_type, "variadic_parameter")) {
+			// This is a variadic parameter "...", let's ignore it for now
+			parser_debug(state, "Processing variadic parameter, ignoring for now...\n", i);
+			continue;
 		}
 		char *identifier = NULL;
 		// Create new TypePair here
