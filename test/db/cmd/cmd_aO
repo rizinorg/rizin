@@ -1,10 +1,10 @@
 NAME=aO
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
-aOd 4
-aOs 4
-aOe 4
-aOj 4
+aOd @!4
+aOs @!4
+aOe @!4
+aOj @!4
 EOF
 EXPECT=<<EOF
 ldr: load from memory to register

@@ -1464,36 +1464,28 @@ commands:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
   - name: aO
-    summary: Analyze N instructions in M bytes
+    summary: Analyze next block as instructions
     subcommands:
       - name: aO
-        summary: Analyze next N bytes as instructions
+        summary: Analyze next block as instructions
         cname: analyze_n_bytes
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
+        args: []
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
       - name: aOe
-        summary: Analyze the esil of next N bytes
+        summary: Analyze the esil of next block
         cname: analyze_n_bytes_esil
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
+        args: []
       - name: aOd
-        summary: Print the description of next N bytes
+        summary: Print the description of next block
         cname: analyze_n_bytes_desc
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
+        args: []
       - name: aOs
-        summary: Print the total instruction size of next N bytes
+        summary: Print the total instruction size of next block
         cname: analyze_n_bytes_size
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
+        args: []
   - name: ao
     summary: Analyze N instructions
     subcommands:

@@ -178,10 +178,6 @@ static const RzCmdDescArg analysis_class_vtable_del_args[3];
 static const RzCmdDescArg analysis_class_vtable_list_args[2];
 static const RzCmdDescArg analysis_class_vtable_lookup_args[3];
 static const RzCmdDescArg analyze_bytes_args[2];
-static const RzCmdDescArg analyze_n_bytes_args[2];
-static const RzCmdDescArg analyze_n_bytes_esil_args[2];
-static const RzCmdDescArg analyze_n_bytes_desc_args[2];
-static const RzCmdDescArg analyze_n_bytes_size_args[2];
 static const RzCmdDescArg analyze_n_ins_args[2];
 static const RzCmdDescArg analyze_n_ins_size_args[2];
 static const RzCmdDescArg analyze_n_ins_esil_args[2];
@@ -3594,57 +3590,37 @@ static const RzCmdDescHelp analyze_bytes_help = {
 };
 
 static const RzCmdDescHelp aO_help = {
-	.summary = "Analyze N instructions in M bytes",
+	.summary = "Analyze next block as instructions",
 };
 static const RzCmdDescArg analyze_n_bytes_args[] = {
-	{
-		.name = "n_bytes",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_n_bytes_help = {
-	.summary = "Analyze next N bytes as instructions",
+	.summary = "Analyze next block as instructions",
 	.args = analyze_n_bytes_args,
 };
 
 static const RzCmdDescArg analyze_n_bytes_esil_args[] = {
-	{
-		.name = "n_bytes",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_n_bytes_esil_help = {
-	.summary = "Analyze the esil of next N bytes",
+	.summary = "Analyze the esil of next block",
 	.args = analyze_n_bytes_esil_args,
 };
 
 static const RzCmdDescArg analyze_n_bytes_desc_args[] = {
-	{
-		.name = "n_bytes",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_n_bytes_desc_help = {
-	.summary = "Print the description of next N bytes",
+	.summary = "Print the description of next block",
 	.args = analyze_n_bytes_desc_args,
 };
 
 static const RzCmdDescArg analyze_n_bytes_size_args[] = {
-	{
-		.name = "n_bytes",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_n_bytes_size_help = {
-	.summary = "Print the total instruction size of next N bytes",
+	.summary = "Print the total instruction size of next block",
 	.args = analyze_n_bytes_size_args,
 };
 

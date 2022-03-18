@@ -8772,90 +8772,36 @@ RZ_IPI RzCmdStatus rz_analyze_bytes_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	st32 len = core->blocksize, tbs = len;
-
-	len = (st32)rz_num_get(core->num, argv[1]);
-	if (len <= 0) {
-		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	if (len > tbs) {
-		rz_core_block_size(core, len);
-	}
-
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		core_analysis_bytes_json(core, core->block, len, 0, state->d.pj);
+		core_analysis_bytes_json(core, core->block, core->blocksize, 0, state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		core_analysis_bytes_standard(core, core->block, len, 0);
+		core_analysis_bytes_standard(core, core->block, core->blocksize, 0);
 		break;
 	default:
 		rz_warn_if_reached();
 		break;
 	}
 
-	if (tbs != core->blocksize) {
-		rz_core_block_size(core, tbs);
-	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_esil_handler(RzCore *core, int argc, const char **argv) {
-	st32 len = core->blocksize, tbs = len;
+	core_analysis_bytes_esil(core, core->block, core->blocksize, 0);
 
-	len = (st32)rz_num_get(core->num, argv[1]);
-	if (len <= 0) {
-		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	if (len > tbs) {
-		rz_core_block_size(core, len);
-	}
-	core_analysis_bytes_esil(core, core->block, len, 0);
-	if (tbs != core->blocksize) {
-		rz_core_block_size(core, tbs);
-	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_desc_handler(RzCore *core, int argc, const char **argv) {
-	st32 len = core->blocksize, tbs = len;
+	core_analysis_bytes_desc(core, core->block, core->blocksize, 0);
 
-	len = (st32)rz_num_get(core->num, argv[1]);
-	if (len <= 0) {
-		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	if (len > tbs) {
-		rz_core_block_size(core, len);
-	}
-	core_analysis_bytes_desc(core, core->block, len, 0);
-	if (tbs != core->blocksize) {
-		rz_core_block_size(core, tbs);
-	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_size_handler(RzCore *core, int argc, const char **argv) {
-	st32 len = core->blocksize, tbs = len;
+	core_analysis_bytes_size(core, core->block, core->blocksize, 0);
 
-	len = (st32)rz_num_get(core->num, argv[1]);
-	if (len <= 0) {
-		RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	if (len > tbs) {
-		rz_core_block_size(core, len);
-	}
-	core_analysis_bytes_size(core, core->block, len, 0);
-	if (tbs != core->blocksize) {
-		rz_core_block_size(core, tbs);
-	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -8864,7 +8810,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char *
 	ut32 count = 1, obs = core->blocksize;
 
 	if (argc > 1) {
-		l = (st32)rz_num_get(core->num, argv[1]);
+		l = (st32)rz_num_math(core->num, argv[1]);
 		if (l <= 0) {
 			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
@@ -8900,7 +8846,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_size_handler(RzCore *core, int argc, const c
 	st32 l;
 
 	if (argc > 1) {
-		l = (st32)rz_num_get(core->num, argv[1]);
+		l = (st32)rz_num_math(core->num, argv[1]);
 		if (l <= 0) {
 			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
@@ -8925,7 +8871,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
 	st32 l;
 
 	if (argc > 1) {
-		l = (st32)rz_num_get(core->num, argv[1]);
+		l = (st32)rz_num_math(core->num, argv[1]);
 		if (l <= 0) {
 			RZ_LOG_ERROR("Invalid zero or negative arguments.\n");
 			return RZ_CMD_STATUS_ERROR;
@@ -8976,10 +8922,12 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 	RzAnalysisCycleHook *hook;
 	char *instr_tmp = NULL;
 	st32 ccl = 0;
-	int cr = rz_config_get_i(core->config, "asm.cmt.right");
-	int fun = rz_config_get_i(core->config, "asm.functions");
-	int li = rz_config_get_i(core->config, "asm.lines");
-	int xr = rz_config_get_i(core->config, "asm.xrefs");
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+
+	rz_config_hold_i(hc, "asm.cmt.right", NULL);
+	rz_config_hold_i(hc, "asm.functions", NULL);
+	rz_config_hold_i(hc, "asm.lines", NULL);
+	rz_config_hold_i(hc, "asm.xrefs", NULL);
 
 	if (argc > 1) {
 		ccl = (st32)rz_num_get(core->num, argv[1]);
@@ -9004,11 +8952,8 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 	}
 	rz_list_free(hooks);
 
-	rz_config_set_i(core->config, "asm.cmt.right", cr); // reset settings
-	rz_config_set_i(core->config, "asm.functions", fun);
-	rz_config_set_i(core->config, "asm.lines", li);
-	rz_config_set_i(core->config, "asm.xrefs", xr);
-
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
 	return RZ_CMD_STATUS_OK;
 }
 
