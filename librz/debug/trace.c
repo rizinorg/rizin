@@ -213,7 +213,9 @@ RZ_API RzList *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
 	RzList *info_list = rz_list_new();
-	rz_return_if_fail(info_list);
+	if (!info_list) {
+		return NULL;
+	}
 
 	RzDebugTracepoint *trace;
 	rz_list_foreach (dbg->trace->traces, iter, trace) {
