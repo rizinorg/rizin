@@ -71,10 +71,6 @@ RZ_API void rz_table_column_free(void *_col, void *user) {
 	free(col->name);
 }
 
-RZ_API void rz_table_normal_free(void *obj, void *user) {
-	// free(obj);
-}
-
 RZ_API RzTableColumn *rz_table_column_clone(RzTableColumn *col) {
 	RzTableColumn *c = RZ_NEW0(RzTableColumn);
 	if (!c) {
@@ -640,7 +636,8 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 	}
 	size_t nrow = 0;
 	ut32 i;
-	rz_vector_enumerate(t->rows, row, i) {
+	for (i = 0; i < rz_vector_len(t->rows); i++) {
+		row = rz_vector_index_ptr(t->rows, i);
 		const char *nn = rz_pvector_at(row->items, nth);
 		ut64 nv = rz_num_math(NULL, nn);
 		bool match = true;
