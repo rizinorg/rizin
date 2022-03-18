@@ -6,16 +6,19 @@
 
 #if __WINDOWS__
 static ut8 *remove_cr(ut8 *str) {
-	char *s = (char *)str;
-	char *start = s;
-	while (*s) {
-		if (s[0] == '\r' && s[1] == '\n') {
-			memmove(s, s + 1, strlen(s + 1) + 1);
-			continue;
+	char *src = (char *)str;
+	char *dest = src;
+	while (*src) {
+		*dest = *src;
+		if (src[0] == '\r' && src[1] == '\n') {
+			// dest does not move
+		} else {
+			dest++;
 		}
-		s++;
+		src++;
 	}
-	return (ut8 *)start;
+	*dest = '\0';
+	return str;
 }
 #else
 #define remove_cr(x) (x)
