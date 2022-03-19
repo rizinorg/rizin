@@ -384,21 +384,18 @@ static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
 }
 
 #include "native/bt/windows-x64.c"
+#include "native/bt/generic-all.c"
 
 static RzList *rz_debug_winkd_frames(RzDebug *dbg, ut64 at) {
 	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
 		return NULL;
 	}
 	RzList *ret = NULL;
-	if (kdctx->windctx.is_arm) {
-		// TODO
+	if (!kdctx->windctx.is_arm && kdctx->windctx.is_64bit) {
+		struct context_type_amd64 context = { 0 };
+		backtrace_windows_x64(dbg, &ret, &context);
 	} else {
-		if (kdctx->windctx.is_64bit) {
-			struct context_type_amd64 context = { 0 };
-			backtrace_windows_x64(dbg, &ret, &context);
-		} else {
-			return NULL;
-		}
+		ret = backtrace_generic(dbg);
 	}
 	return ret;
 }

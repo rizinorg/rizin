@@ -238,6 +238,7 @@ dr
 s pc
 e asm.sub.names=false
 pi 4
+dbt
 EOF
 EXPECT=<<EOF
 DUMP_HEADER64:
@@ -329,6 +330,11 @@ add x0, x19, 0x40
 bl 0xfffff803f318f560
 adrp x8, 0xfffff803f3a23000
 ldr x11, [x8, 0xa40]
+0  0xfffff803f32de014 sp: 0xffffe00e0e4bc4a0  0    [??]  pdb.ntkrnlmp.KeBugCheck2+452 
+1  0xfffff803f33442a0 sp: 0xffffe00e0e4bc4b0  1632 [??]  pdb.ntkrnlmp.PopPowerButtonWorkCallback+752 
+2  0xfffff803f309ff1c sp: 0xffffe00e0e4bcb20  432  [??]  pdb.ntkrnlmp.ExpWorkerThread+460 
+3  0xfffff803f3173340 sp: 0xffffe00e0e4bcce0  80   [??]  pdb.ntkrnlmp.PspSystemThreadStartup+80 
+4  0xfffff803f3007de4 sp: 0xffffe00e0e4bcd40  0    [??]  pdb.ntkrnlmp.KiStartSystemThread+36 
 EOF
 RUN
 
