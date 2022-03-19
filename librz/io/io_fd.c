@@ -43,6 +43,18 @@ RZ_API ut64 rz_io_fd_size(RzIO *io, int fd) {
 	return rz_io_desc_size(rz_io_desc_get(io, fd));
 }
 
+/**
+ * \brief Returns the underlying buffer of the file descriptor
+ * \param[in] io The RzIO instance
+ * \param[in] fd The file descriptor
+ * \param[out] size Size of the buffer returned
+ * \return The buffer or NULL if the file descriptor is invalid or the buffer is not available
+ */
+RZ_API ut8 *rz_io_fd_get_buf(RzIO *io, int fd, RZ_OUT RZ_NONNULL ut64 *size) {
+	rz_return_val_if_fail(io && size, NULL);
+	return rz_io_desc_get_buf(rz_io_desc_get(io, fd), size);
+}
+
 RZ_API bool rz_io_fd_resize(RzIO *io, int fd, ut64 newsize) {
 	return rz_io_desc_resize(rz_io_desc_get(io, fd), newsize);
 }

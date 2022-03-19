@@ -1286,7 +1286,7 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff) {
  * entire buffer in memory. Consider using the rz_buf_read* APIs instead and
  * read only the chunks you need.
  */
-RZ_DEPRECATE RZ_API RZ_BORROW const ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size) {
+RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size) {
 	rz_return_val_if_fail(b, NULL);
 
 	return get_whole_buf(b, size);
