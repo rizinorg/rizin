@@ -1590,6 +1590,7 @@ static RzILOpEffect *mov(cs_insn *insn) {
 	}
 	if (ISIMM(1) && IMM(1) == 0 && !strcmp(insn->mnemonic, "movn")) {
 		// Capstone bug making 0000a012 indistinguishable from 0000a052
+		// https://github.com/capstone-engine/capstone/issues/1857
 		return movn(insn);
 	}
 	ut32 bits = REGBITS(0);
