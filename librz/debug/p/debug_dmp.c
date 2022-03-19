@@ -10,6 +10,7 @@
 #include "common_winkd.h"
 
 #include "native/bt/windows-x64.c"
+#include "native/bt/generic-all.c"
 
 static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	RzCore *core = dbg->corebind.core;
@@ -516,50 +517,46 @@ RzList *rz_debug_dmp_frames(RzDebug *dbg, ut64 at) {
 	RzCore *core = dbg->corebind.core;
 	DmpCtx *ctx = dbg->plugin_data;
 	RzList *ret = NULL;
-	if (ctx->windctx.is_arm) {
-		// TODO
-	} else {
-		if (ctx->windctx.is_64bit) {
-			RzList *modules = NULL;
-			struct context_type_amd64 context = { 0 };
-			const char *server = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server");
-			const char *symstore = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore");
-			ut64 last_rsp = 0;
-			while (!backtrace_windows_x64(dbg, &ret, &context)) {
-				if (last_rsp == context.rsp) {
-					break;
-				}
-				last_rsp = context.rsp;
-				if (!modules) {
-					modules = dmp_get_modules(ctx);
-				}
-				RzListIter *it = rz_list_find(modules, &context.rip, is_pc_inside_windmodule);
-				if (!it) {
-					break;
-				}
-				WindModule *module = rz_list_iter_get_data(it);
-				char *exepath, *pdbpath;
-				if (!winkd_download_module_and_pdb(module, server, symstore, &exepath, &pdbpath)) {
-					break;
-				}
-				RzBinOptions opts = { 0 };
-				opts.obj_opts.baseaddr = module->addr;
-				RzBinFile *file = rz_bin_open(core->bin, exepath, &opts);
-				if (!file) {
-					free(exepath);
-					free(pdbpath);
-					break;
-				}
-				dbg->corebind.applyBinInfo(core, file, RZ_CORE_BIN_ACC_MAPS | RZ_CORE_BIN_ACC_SYMBOLS);
-				dbg->corebind.cmdf(dbg->corebind.core, "idp %s", pdbpath);
-				dbg->corebind.cmdf(dbg->corebind.core, "ompb %d", ((RzBinFile *)ctx->bf)->id);
+	if (!ctx->windctx.is_arm && ctx->windctx.is_64bit) {
+		RzList *modules = NULL;
+		struct context_type_amd64 context = { 0 };
+		const char *server = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server");
+		const char *symstore = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore");
+		ut64 last_rsp = 0;
+		while (!backtrace_windows_x64(dbg, &ret, &context)) {
+			if (last_rsp == context.rsp) {
+				break;
+			}
+			last_rsp = context.rsp;
+			if (!modules) {
+				modules = dmp_get_modules(ctx);
+			}
+			RzListIter *it = rz_list_find(modules, &context.rip, is_pc_inside_windmodule);
+			if (!it) {
+				break;
+			}
+			WindModule *module = rz_list_iter_get_data(it);
+			char *exepath, *pdbpath;
+			if (!winkd_download_module_and_pdb(module, server, symstore, &exepath, &pdbpath)) {
+				break;
+			}
+			RzBinOptions opts = { 0 };
+			opts.obj_opts.baseaddr = module->addr;
+			RzBinFile *file = rz_bin_open(core->bin, exepath, &opts);
+			if (!file) {
 				free(exepath);
 				free(pdbpath);
+				break;
 			}
-			rz_list_free(modules);
-		} else {
-			// TODO
+			dbg->corebind.applyBinInfo(core, file, RZ_CORE_BIN_ACC_MAPS | RZ_CORE_BIN_ACC_SYMBOLS);
+			dbg->corebind.cmdf(dbg->corebind.core, "idp %s", pdbpath);
+			dbg->corebind.cmdf(dbg->corebind.core, "ompb %d", ((RzBinFile *)ctx->bf)->id);
+			free(exepath);
+			free(pdbpath);
 		}
+		rz_list_free(modules);
+	} else {
+		ret = backtrace_generic(dbg);
 	}
 	return ret;
 }
