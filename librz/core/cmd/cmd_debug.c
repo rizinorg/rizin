@@ -1523,8 +1523,6 @@ RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
 	return RZ_CMD_STATUS_ERROR;
 }
 
-#include "../linux_heap_glibc.c"
-
 static void foreach_reg_set_or_clear(RzCore *core, bool set) {
 	RzReg *reg = rz_core_reg_default(core);
 	const RzList *regs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);

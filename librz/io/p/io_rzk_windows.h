@@ -5,6 +5,7 @@
 
 #ifndef __IO_RZK_WINDOWS_H__
 #define __IO_RZK_WINDOWS_H__
+#include <rz_windows.h>
 
 #include <rz_io.h>
 #include <rz_lib.h>

@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_th.h>
 #include <rz_util.h>
+#include "thread.h"
 
 #if __APPLE__
 // Here to avoid polluting mach types macro redefinitions...
@@ -63,7 +63,7 @@ RZ_API int rz_th_push_task(struct rz_th_t *th, void *user) {
 	return ret;
 }
 
-RZ_API RZ_TH_TID rz_th_self(void) {
+RZ_IPI RZ_TH_TID rz_th_self(void) {
 #if HAVE_PTHREAD
 	return pthread_self();
 #elif __WINDOWS__
@@ -512,4 +512,15 @@ RZ_API bool rz_th_pool_kill_free(RZ_NONNULL RzThreadPool *pool) {
 		}
 	}
 	return has_exited;
+}
+
+/**
+ * \brief Returns user pointer of thread
+ *
+ * \param  th The thread to get the user pointer from
+ *
+ * \return user pointer set by the rz_th_new user parameter
+ */
+RZ_API void *rz_th_get_user(RzThread *th) {
+	return th->user;
 }

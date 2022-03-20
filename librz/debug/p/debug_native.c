@@ -32,7 +32,6 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #endif
 
 #if __WINDOWS__
-//#include <windows.h>
 #include "native/windows/windows_debug.h"
 // TODO: Move these onto windows.h?
 RZ_API RzList *rz_w32_dbg_modules(RzDebug *); // ugly!

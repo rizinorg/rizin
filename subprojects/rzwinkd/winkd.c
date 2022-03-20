@@ -486,14 +486,31 @@ int winkd_write_at_uva(WindCtx *ctx, ut64 address, const uint8_t *buf, int count
 	return winkd_op_at_uva(ctx, address, (uint8_t *)buf, count, true);
 }
 
+int map_comparator(const void *m1, const void *m2) {
+	const RzDebugMap *map1 = m1;
+	const RzDebugMap *map2 = m2;
+	return map1->addr > map2->addr ? 1 : map1->addr < map2->addr ? -1
+								     : 0;
+}
+
+void winkd_windmodule_free(void *ptr) {
+	WindModule *mod = ptr;
+	free(mod->name);
+	free(mod);
+}
+
 RzList *winkd_list_modules(WindCtx *ctx) {
+	RzList *ret = rz_list_newf(winkd_windmodule_free);
+	if (!ret) {
+		return NULL;
+	}
 	ut64 ptr, base;
 	int list_entry_off = 0;
 	const bool is_target_kernel = ctx->target.uniqueid <= 4;
 	if (is_target_kernel) {
 		if (!ctx->PsLoadedModuleList) {
 			RZ_LOG_ERROR("No PsLoadedModuleList\n");
-			return NULL;
+			return ret;
 		}
 		ptr = ctx->PsLoadedModuleList;
 		base = ptr;
@@ -501,19 +518,30 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 			RZ_LOG_ERROR("PsLoadedModuleList not present in mappings\n");
 		}
 		if (ptr == base) {
-			return NULL;
+			return ret;
 		}
 	} else {
+		// Get kernel modules
+		const ut32 saved_target = ctx->target.uniqueid;
+		ctx->target.uniqueid = 0;
+		RzList *kernel_modules = winkd_list_modules(ctx);
+		ctx->target.uniqueid = saved_target;
+
+		if (kernel_modules) {
+			rz_list_join(ret, kernel_modules);
+			rz_list_free(kernel_modules);
+		}
+
 		if (!ctx->target.peb) {
 			RZ_LOG_ERROR("No PEB for target\n");
-			return NULL;
+			return ret;
 		}
 
 		// Grab the _PEB_LDR_DATA from PEB
 		ut64 ldroff = ctx->is_64bit ? 0x18 : 0xC;
 		if (!winkd_read_at_uva(ctx, ctx->target.peb + ldroff, (uint8_t *)&ptr, 4 << ctx->is_64bit)) {
 			RZ_LOG_ERROR("PEB not present in target mappings\n");
-			return NULL;
+			return ret;
 		}
 
 		RZ_LOG_DEBUG("_PEB_LDR_DATA : 0x%016" PFMT64x "\n", ptr);
@@ -530,8 +558,6 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 	}
 
 	RZ_LOG_DEBUG("InMemoryOrderModuleList : 0x%016" PFMT64x "\n", ptr);
-
-	RzList *ret = rz_list_newf(free);
 
 	const ut64 baseoff = ctx->is_64bit ? 0x30 : 0x18;
 	const ut64 sizeoff = ctx->is_64bit ? 0x40 : 0x20;
@@ -572,7 +598,6 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 		if (!unname) {
 			break;
 		}
-
 		winkd_read_at_uva(ctx, bufferaddr, unname, length);
 
 		mod->name = calloc((ut64)length + 1, 1);
@@ -581,7 +606,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 		}
 		rz_str_utf16_to_utf8((ut8 *)mod->name, length + 1, unname, length + 2, true);
 		free(unname);
-		rz_list_append(ret, mod);
+		rz_list_add_sorted(ret, mod, map_comparator);
 
 		ptr = next;
 	} while (ptr != base);
@@ -1444,19 +1469,4 @@ void winkd_break(void *arg) {
 	// want break queued up after another background task
 	KdCtx *ctx = (KdCtx *)arg;
 	(void)iob_write(ctx->desc, (const uint8_t *)"b", 1);
-}
-
-int winkd_break_read(KdCtx *ctx) {
-#if __WINDOWS__ && defined(_MSC_VER)
-	static BOOL(WINAPI * w32_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
-	if (!w32_CancelIoEx) {
-		w32_CancelIoEx = (BOOL(WINAPI *)(HANDLE, LPOVERLAPPED))
-			GetProcAddress(GetModuleHandle(TEXT("kernel32")),
-				"CancelIoEx");
-	}
-	if (w32_CancelIoEx) {
-		w32_CancelIoEx(ctx->desc, NULL);
-	}
-#endif
-	return 1;
 }

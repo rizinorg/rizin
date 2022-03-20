@@ -2,7 +2,7 @@ NAME=pf QeQ
 FILE==
 CMDS=<<EOF
 b 256
-woe 0x11
+woe 0 255 0x11
 e cfg.bigendian=false
 pf Q
 e cfg.bigendian=true

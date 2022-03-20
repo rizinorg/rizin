@@ -100,7 +100,7 @@ jobs:
             asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
             run_tests: true
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
-            timeout: 100
+            timeout: 120
             allow_failure: false
           - name: linux-clang-tests-asan
             os: ubuntu-20.04
@@ -179,6 +179,11 @@ jobs:
       - name: Install test dependencies
         if: matrix.run_tests && matrix.enabled
         run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
+      - name: Install Linux test dependencies
+        if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-11'
+        run: |
+          sudo apt-get update
+          sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev
       - name: Install gdbserver dependency
         if: matrix.run_tests && matrix.enabled && (matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-20.04')
         run: sudo apt-get --assume-yes install gdbserver

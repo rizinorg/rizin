@@ -3,6 +3,7 @@
 
 // Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <rz_cons.h>
+#include <rz_windows.h>
 
 #if __UNIX__
 #include <stdio.h>

@@ -201,7 +201,7 @@ static int basefind_score_compare(const RzBaseFindScore *a, const RzBaseFindScor
 }
 
 static RzThreadFunctionRet basefind_thread_runner(RzThread *th) {
-	BaseFindThreadData *bftd = (BaseFindThreadData *)th->user;
+	BaseFindThreadData *bftd = (BaseFindThreadData *)rz_th_get_user(th);
 	RzBaseFindScore *pair = NULL;
 	BaseFindData bfd;
 	ut64 base;
@@ -372,7 +372,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 		if (progress) {
 			rz_cons_gotoxy(1, line);
 			for (ut32 i = 0; i < pool->size; ++i) {
-				BaseFindThreadData *bftd = pool->threads[i]->user;
+				BaseFindThreadData *bftd = rz_th_get_user(pool->threads[i]);
 				ut32 perc = ((bftd->current - bftd->base_start) * 100) / (bftd->base_end - bftd->base_start);
 				if (perc > 100) {
 					perc = 100;
@@ -395,7 +395,7 @@ rz_basefind_end:
 	if (pool) {
 		for (ut32 i = 0; i < pool->size; ++i) {
 			if (pool->threads[i]) {
-				free(pool->threads[i]->user);
+				free(rz_th_get_user(pool->threads[i]));
 			}
 		}
 		rz_th_pool_free(pool);

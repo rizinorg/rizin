@@ -8,7 +8,7 @@
 
 #include "rz_list.h"
 #include <rz_util.h>
-#include "rz_socket.h"
+#include <rz_bind.h>
 #include "rz_vector.h"
 #include "rz_skyline.h"
 
@@ -27,10 +27,6 @@
 #if DEBUGGER && HAVE_PTRACE
 #include <sys/ptrace.h>
 #endif
-#endif
-
-#if __WINDOWS__
-#include <w32dbg_wrap.h>
 #endif
 
 #if (defined(__GLIBC__) && defined(__linux__))
@@ -115,13 +111,6 @@ typedef struct {
 	void *data;
 } RzIODescData;
 
-// Move somewhere else?
-typedef struct {
-	RzSocket *fd;
-	RzSocket *client;
-	bool listener;
-} RzIORap;
-
 typedef struct rz_io_plugin_t {
 	const char *name;
 	const char *desc;
@@ -159,6 +148,14 @@ typedef struct rz_io_map_t {
 	RzInterval itv;
 	ut64 delta; // paddr = itv.addr + delta
 	RZ_NULLABLE char *name;
+
+	/**
+	 * @brief Uninterpreted data to be injected from outside
+	 *
+	 * RZ_EVENT_IO_MAP_DEL may be listened to if any freeing is necessary.
+	 * (Hint when part of RzCore: RzCoreIOMapInfo is stored here)
+	 */
+	void *user;
 } RzIOMap;
 
 typedef struct rz_io_cache_t {

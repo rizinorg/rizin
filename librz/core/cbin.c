@@ -10,6 +10,8 @@
 #include <rz_util/rz_time.h>
 #include <rz_basefind.h>
 
+#include "core_private.h"
+
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
@@ -799,6 +801,9 @@ static bool io_create_mem_map(RzIO *io, RZ_NULLABLE RzCoreFile *cf, RzBinMap *ma
 		free(iomap->name);
 		iomap->name = rz_str_newf("mmap.%s", map->name);
 	}
+	if (!iomap->user) {
+		iomap->user = rz_core_io_map_info_new(cf, map->perm);
+	}
 	return true;
 }
 
@@ -867,6 +872,7 @@ static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzB
 			free(map_name);
 			return;
 		}
+		iomap->user = rz_core_io_map_info_new(cf, perm);
 		free(iomap->name);
 		iomap->name = map_name;
 		if (cf) {
@@ -4349,7 +4355,9 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	} else if (!strncmp("mach0", info->rclass, 5)) {
 		bin_mach0_versioninfo(r);
 	} else {
-		rz_cons_println("Unknown format");
+		if (mode != RZ_MODE_JSON) {
+			rz_cons_println("Unknown format");
+		}
 		return false;
 	}
 	return true;
@@ -4671,7 +4679,7 @@ out:
 	return rz_strbuf_drain(buf);
 }
 
-RZ_API RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bp && state, RZ_CMD_STATUS_ERROR);
 
 	rz_cmd_state_output_set_columnsf(state, "sss", "type", "name", "description");
@@ -4711,7 +4719,7 @@ RZ_API RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOut
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bx && state, RZ_CMD_STATUS_ERROR);
 
 	const char *name = NULL;
@@ -4743,7 +4751,7 @@ RZ_API RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(ld && state, RZ_CMD_STATUS_ERROR);
 
 	const char *name;

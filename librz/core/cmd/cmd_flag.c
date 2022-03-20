@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stddef.h>
-#include "rz_cons.h"
-#include "rz_core.h"
+#include <rz_cons.h>
+#include <rz_core.h>
+#include "../core_private.h"
 
 static bool listFlag(RzFlagItem *flag, void *user) {
 	rz_list_append(user, flag);

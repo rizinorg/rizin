@@ -48,7 +48,7 @@ NAME=omp 2
 FILE=malloc://3
 CMDS=<<EOF
 b 3
-wow 90
+wb 90
 p8
 o malloc://1 1 rw
 p8

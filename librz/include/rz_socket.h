@@ -19,6 +19,8 @@ RZ_LIB_VERSION_HEADER(rz_socket);
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#elif __WINDOWS__
+#include <rz_windows.h>
 #endif
 
 #if HAVE_LIB_SSL

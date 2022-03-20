@@ -40,8 +40,29 @@ bool test_file_slurp(void) {
 	mu_end;
 }
 
+bool test_endian(void) {
+	ut8 buf[8];
+	rz_write_be16(buf, 0x1122);
+	mu_assert_memeq((ut8 *)"\x11\x22", buf, 2, "be16");
+	rz_write_le16(buf, 0x1122);
+	mu_assert_memeq((ut8 *)"\x22\x11", buf, 2, "le16");
+
+	rz_write_be32(buf, 0x11223344);
+	mu_assert_memeq((ut8 *)"\x11\x22\x33\x44", buf, 4, "be32");
+	rz_write_le32(buf, 0x11223344);
+	mu_assert_memeq((ut8 *)"\x44\x33\x22\x11", buf, 4, "le32");
+
+	rz_write_ble(buf, 0x1122, true, 16);
+	mu_assert_memeq((ut8 *)"\x11\x22", buf, 2, "ble 16 true");
+	rz_write_ble(buf, 0x1122, false, 16);
+	mu_assert_memeq((ut8 *)"\x22\x11", buf, 2, "ble 16 false");
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_file_slurp);
+	mu_run_test(test_endian);
 	return tests_passed != tests_run;
 }
 

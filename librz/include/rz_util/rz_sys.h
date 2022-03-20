@@ -1,6 +1,7 @@
 #ifndef RZ_SYS_H
 #define RZ_SYS_H
 
+#include <rz_types.h>
 #include <rz_list.h>
 
 #if __WINDOWS__
@@ -87,11 +88,7 @@ RZ_API int rz_sys_arch_id(const char *arch);
 RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch);
 RZ_API RzList *rz_sys_dir(const char *path);
 RZ_API void rz_sys_perror_str(const char *fun);
-#if __WINDOWS__
-#define rz_sys_mkdir_failed() (GetLastError() != ERROR_ALREADY_EXISTS)
-#else
 #define rz_sys_mkdir_failed() (errno != EEXIST)
-#endif
 RZ_API bool rz_sys_mkdir(const char *dir);
 RZ_API bool rz_sys_mkdirp(const char *dir);
 RZ_API int rz_sys_sleep(int secs);
@@ -122,6 +119,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 #define rz_sys_conv_win_to_utf8(buf)        rz_acp_to_utf8(buf)
 #define rz_sys_conv_win_to_utf8_l(buf, len) rz_acp_to_utf8_l(buf, len)
 #endif
+typedef void *HANDLE;
 RZ_API char *rz_sys_get_src_dir_w32(void);
 RZ_API bool rz_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err);
 RZ_API char **rz_sys_utf8_argv_new(int argc, const wchar_t **argv);

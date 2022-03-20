@@ -5,7 +5,7 @@
 #include <rz_util.h>
 
 #if __WINDOWS__
-#include <windows.h>
+#include <rz_windows.h>
 #include <stdio.h>
 #include <tchar.h>
 

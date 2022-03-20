@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2014-2017 LemonBoy <thatlemon@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util.h>
+#include <rz_th.h>
 #include "transport.h"
 
 io_desc_t *io_desc_new(io_backend_t *iob, void *fp) {

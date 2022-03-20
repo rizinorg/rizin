@@ -24,7 +24,6 @@ RZ_LIB_VERSION_HEADER(rz_lib);
 
 /* TODO: This must depend on HOST_OS, and maybe move into rz_types */
 #if __WINDOWS__
-#include <windows.h>
 #define RZ_LIB_EXT "dll"
 #elif __APPLE__
 #define RZ_LIB_EXT "dylib"
