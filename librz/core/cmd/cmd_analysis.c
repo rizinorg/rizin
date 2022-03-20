@@ -832,7 +832,7 @@ static void cmd_syscall_do(RzCore *core, st64 n, ut64 addr) {
 
 static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int nops) {
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
-	int ret, i, j, idx;
+	int ret, i, idx;
 	RzAnalysisOp op = { 0 };
 	ut64 addr;
 	int totalsize = 0;
@@ -844,11 +844,7 @@ static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int 
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 
 		if (ret < 1) {
-			eprintf("Oops at 0x%08" PFMT64x " (", core->offset + idx);
-			for (i = idx, j = 0; i < core->blocksize && j < 3; i++, j++) {
-				eprintf("%02x ", buf[i]);
-			}
-			eprintf("...)\n");
+			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", core->offset + idx);
 			break;
 		}
 		totalsize += op.size;
@@ -872,6 +868,11 @@ static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int 
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx);
 
+		if (ret < 1) {
+			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", core->offset + idx);
+			break;
+		}
+
 		char *opname = strdup(rz_asm_op_get_asm(&asmop));
 		if (opname) {
 			rz_str_split(opname, ' ');
@@ -880,7 +881,7 @@ static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int 
 				rz_cons_printf("%s: %s\n", opname, d);
 				free(d);
 			} else {
-				eprintf("Unknown opcode\n");
+				RZ_LOG_ERROR("mnemonic %s has no description\n", opname);
 			}
 			free(opname);
 		}
@@ -892,7 +893,7 @@ static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int 
 static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int nops) {
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
-	int ret, i, j, idx;
+	int ret, i, idx;
 	const char *color = "";
 	const char *esilstr;
 	RzAnalysisEsil *esil = NULL;
@@ -910,11 +911,7 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 		esilstr = RZ_STRBUF_SAFEGET(&op.esil);
 
 		if (ret < 1) {
-			eprintf("Oops at 0x%08" PFMT64x " (", core->offset + idx);
-			for (i = idx, j = 0; i < core->blocksize && j < 3; i++, j++) {
-				eprintf("%02x ", buf[i]);
-			}
-			eprintf("...)\n");
+			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", core->offset + idx);
 			break;
 		}
 
@@ -934,7 +931,7 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
 	bool be = core->print->big_endian;
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
-	int ret, i, j, idx, size;
+	int ret, i, idx, size;
 	const char *esilstr;
 	const char *opexstr;
 	RzAnalysisHint *hint;
@@ -969,11 +966,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 			}
 		}
 		if (ret < 1) {
-			eprintf("Oops at 0x%08" PFMT64x " (", core->offset + idx);
-			for (i = idx, j = 0; i < core->blocksize && j < 3; i++, j++) {
-				eprintf("%02x ", buf[i]);
-			}
-			eprintf("...)\n");
+			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", core->offset + idx);
 			free(mnem);
 			break;
 		}
@@ -1171,11 +1164,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 			}
 		}
 		if (ret < 1) {
-			eprintf("Oops at 0x%08" PFMT64x " (", core->offset + idx);
-			for (i = idx, j = 0; i < core->blocksize && j < 3; i++, j++) {
-				eprintf("%02x ", buf[i]);
-			}
-			eprintf("...)\n");
+			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", core->offset + idx);
 			free(mnem);
 			break;
 		}
