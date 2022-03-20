@@ -5356,7 +5356,7 @@ static const RzCmdDescArg cmd_debug_trace_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_trace_help = {
-	.summary = "Get trace info at address",
+	.summary = "Get trace info at the current address",
 	.args = cmd_debug_trace_args,
 };
 

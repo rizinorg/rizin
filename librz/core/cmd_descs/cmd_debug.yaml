@@ -361,7 +361,7 @@ commands:
     summary: Trace commands
     subcommands:
       - name: dt
-        summary: Get trace info at address
+        summary: Get trace info at the current address
         cname: cmd_debug_trace
         args: []
       - name: dtl
@@ -890,8 +890,8 @@ commands:
         cname: debug_reg_roles
         details: [] # Explicitly empty to not show parent ones
         args: []
-      # ... to here
-      #####################################################
+  # ... to here
+  #####################################################
       - name: drx # this is under registers but debug-specific so should not be sync with cmd_analysis.yaml
         summary: Show hardware breakpoint registers
         details: []

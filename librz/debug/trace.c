@@ -209,7 +209,14 @@ static int cmpaddr(const void *_a, const void *_b) {
 														     : 0;
 }
 
-RZ_API RzList *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
+/***
+ * Get all trace info
+ * @param dbg core->dbg
+ * @param offset offset of address
+ * @return a RzList of RzListInfo
+ */
+RZ_API RZ_OWN RzList *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
+	rz_return_val_if_fail(dbg, NULL);
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
 	RzList *info_list = rz_list_new();

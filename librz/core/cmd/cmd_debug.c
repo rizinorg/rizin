@@ -2228,7 +2228,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_trace_handler(RzCore *core, int argc, const char
 
 // dtl
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_debug_trace_list(core->dbg, state->mode, core->offset);
+	rz_debug_trace_print(core->dbg, state->mode, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
