@@ -666,7 +666,7 @@ static bool palloc(int moar) {
 		if (temp) {
 			CTX(buffer_sz) = new_sz;
 			CTX(buffer) = temp;
-			CTX(buffer)[0] = '\0';
+			(CTX(buffer))[0] = '\0';
 		}
 	} else if (moar + CTX(buffer_len) > CTX(buffer_sz)) {
 		char *new_buffer;
@@ -772,7 +772,7 @@ static void cons_grep_reset(RzConsGrep *grep) {
 
 RZ_API void rz_cons_reset(void) {
 	if (CTX(buffer)) {
-		CTX(buffer)[0] = '\0';
+		(CTX(buffer))[0] = '\0';
 	}
 	CTX(buffer_len) = 0;
 	I.lines = 0;
@@ -947,7 +947,7 @@ RZ_API void rz_cons_flush(void) {
 	if (rz_cons_is_interactive() && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (CTX(pageable) && CTX(buffer) && I.pager && *I.pager && CTX(buffer_len) > 0 && rz_str_char_count(CTX(buffer), '\n') >= I.rows) {
-			CTX(buffer)[CTX(buffer_len) - 1] = 0;
+			(CTX(buffer))[CTX(buffer_len) - 1] = 0;
 			if (!strcmp(I.pager, "..")) {
 				char *str = rz_str_ndup(CTX(buffer), CTX(buffer_len));
 				CTX(pageable) = false;
@@ -1004,7 +1004,7 @@ RZ_API void rz_cons_flush(void) {
 			char *ptr = CTX(buffer);
 			char *nl = strchr(ptr, '\n');
 			int len = CTX(buffer_len);
-			CTX(buffer)[CTX(buffer_len)] = 0;
+			(CTX(buffer))[CTX(buffer_len)] = 0;
 			rz_cons_break_push(NULL, NULL);
 			while (nl && !rz_cons_is_breaked()) {
 				__cons_write(ptr, nl - ptr + 1);
@@ -1217,7 +1217,7 @@ RZ_API int rz_cons_get_column(void) {
 	if (!line) {
 		line = CTX(buffer);
 	}
-	CTX(buffer)[CTX(buffer_len)] = 0;
+	(CTX(buffer))[CTX(buffer_len)] = 0;
 	return rz_str_ansi_len(line);
 }
 
@@ -1237,7 +1237,7 @@ RZ_API int rz_cons_memcat(const char *str, int len) {
 		if (palloc(len + 1)) {
 			memcpy(CTX(buffer) + CTX(buffer_len), str, len);
 			CTX(buffer_len) += len;
-			CTX(buffer)[CTX(buffer_len)] = 0;
+			(CTX(buffer))[CTX(buffer_len)] = 0;
 		}
 	}
 	if (I.flush) {
@@ -1256,7 +1256,7 @@ RZ_API void rz_cons_memset(char ch, int len) {
 		if (palloc(len + 1)) {
 			memset(CTX(buffer) + CTX(buffer_len), ch, len);
 			CTX(buffer_len) += len;
-			CTX(buffer)[CTX(buffer_len)] = 0;
+			(CTX(buffer))[CTX(buffer_len)] = 0;
 		}
 	}
 }
@@ -1884,7 +1884,7 @@ RZ_API void rz_cons_chop(void) {
 		if (ch != '\n' && !IS_WHITESPACE(ch)) {
 			break;
 		}
-		CTX(buffer_len)--;
+		(CTX(buffer_len))--;
 	}
 }
 
