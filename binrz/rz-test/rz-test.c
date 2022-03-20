@@ -198,6 +198,12 @@ int rz_test_main(int argc, const char **argv) {
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
 	int ret = 0;
 
+	if (!except_dir) {
+		RZ_LOG_ERROR("Fail to create RzPVector\n");
+		ret = -1;
+		goto beach;
+	}
+
 #if __WINDOWS__
 	UINT old_cp = GetConsoleOutputCP();
 	{
