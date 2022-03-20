@@ -58,21 +58,54 @@ static GHT GH(je_get_va_symbol)(RzCore *core, const char *path, const char *sym_
 	return vaddr;
 }
 
-static int GH(je_matched)(const char *ptr, const char *str) {
+static inline GHT GH(je_matched)(const char *ptr, const char *str) {
 	int ret = strncmp(ptr, str, strlen(str) - 1);
 	return !ret;
 }
 #endif
+static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
+    rz_return_val_if_fail(core && map, GHT_MAX);
+    GHT base_addr = map->addr;
+    rz_return_val_if_fail(base_addr != GHT_MAX, GHT_MAX);
 
-static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
+#if __linux__
+    GHT main_arena = GHT_MAX;
+    GHT vaddr = GHT_MAX;
+    char *path = strdup(map->name);
+    if (path && rz_file_exists(path)) {
+	vaddr = GH(je_get_va_symbol)(core, path, "main_arena");
+	if (vaddr != GHT_MAX) {
+	    main_arena = base_addr + vaddr;
+    }   else {
+	   vaddr = GH(je_get_va_symbol)(core, path, "__malloc_hook");
+	   if (vaddr == GHT_MAX) {
+	    	return main_arena;
+		}
+    	}
+    }
+
+    free(path);
+    return main_arena;
+#else
+    GHT main_arena = GHT_MAX;
+    char *va = rz_core_cmd_strf(core, "dmi libjemalloc.2 %s$~[1]", "main_arena");
+    GHT vaddr = rz_num_get(NULL, va);
+    if(vaddr && vaddr != GHT_MAX){
+	main_arena = vaddr;
+    }
+
+    free(va);
+    return main_arena;
+
+#endif
+
+static bool GH(rz_resolve_jemalloc)(RzCore *core, GHT *m_arena) {
+    	rz_return_val_if_fail(core && core->dbg && core->dbg->maps, false);
+	
 	RzListIter *iter;
 	RzDebugMap *map;
 	const char *jemalloc_ver_end = NULL;
-	ut64 jemalloc_addr = UT64_MAX;
-
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return false;
-	}
+	GHT jemalloc_addr = GHT_MAX;
 	rz_debug_map_sync(core->dbg);
 	rz_list_foreach (core->dbg->maps, iter, map) {
 		if (strstr(map->name, "libjemalloc.")) {
@@ -85,7 +118,17 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 		RZ_LOG_WARN("Is jemalloc mapped in memory? (see dm command)\n");
 		return false;
 	}
-#if __linux__
+
+
+	jemalloc_addr = GH(get_main_arena_with_symbol)(core, map);
+
+	if(jemalloc_addr && jemalloc_addr != GHT_MAX)
+	    return true;
+
+
+	return false;
+
+/*#if __linux__
 	bool is_debug_file = GH(je_matched)(jemalloc_ver_end, "/usr/local/lib");
 
 	if (!is_debug_file) {
@@ -116,7 +159,7 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 	}
 	free(va);
 	return true;
-#endif
+#endif*/
 }
 
 static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
