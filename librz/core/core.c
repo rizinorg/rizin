@@ -1633,12 +1633,6 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 	}
 }
 
-static int autocomplete(RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
-	RzCore *core = user;
-	rz_core_autocomplete(core, completion, buf, prompt_type);
-	return true;
-}
-
 static RzLineNSCompletionResult *rzshell_autocomplete(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
 	return rz_core_autocomplete_rzshell((RzCore *)user, buf, prompt_type);
 }
@@ -1650,16 +1644,9 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
 	if (prompt) {
-		if (core->use_rzshell_autocompletion) {
-			rzline->ns_completion.run = rzshell_autocomplete;
-			rzline->ns_completion.run_user = core;
-			rzline->completion.run = NULL;
-		} else {
-			rz_line_completion_set(&rzline->completion, rizin_argc, rizin_argv);
-			rzline->completion.run = autocomplete;
-			rzline->completion.run_user = core;
-			rzline->ns_completion.run = NULL;
-		}
+		rzline->ns_completion.run = rzshell_autocomplete;
+		rzline->ns_completion.run_user = core;
+		rzline->completion.run = NULL;
 	} else {
 		rzline->history.data = NULL;
 		rz_line_completion_set(&rzline->completion, 0, NULL);
@@ -2358,8 +2345,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->incomment = false;
 	core->config = NULL;
 	core->http_up = false;
-	core->use_tree_sitter_rzcmd = false;
-	core->use_rzshell_autocompletion = false;
 	ZERO_FILL(core->root_cmd_descriptor);
 	core->print = rz_print_new();
 	core->ropchain = rz_list_newf((RzListFree)free);

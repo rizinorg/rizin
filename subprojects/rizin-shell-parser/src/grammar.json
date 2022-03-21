@@ -3556,16 +3556,8 @@
       ]
     },
     "_comment": {
-      "type": "TOKEN",
-      "content": {
-        "type": "CHOICE",
-        "members": [
-          {
-            "type": "PATTERN",
-            "value": "#[^\\r\\n]*"
-          }
-        ]
-      }
+      "type": "PATTERN",
+      "value": "#[^\\r\\n]*"
     },
     "stmt_delimiter": {
       "type": "CHOICE",
@@ -3692,8 +3684,7 @@
   ],
   "inline": [
     "stmt_delimiter",
-    "stmt_delimiter_singleline",
-    "_comment"
+    "stmt_delimiter_singleline"
   ],
   "supertypes": []
 }

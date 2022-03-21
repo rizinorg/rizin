@@ -3,7 +3,8 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "rz_core.h"
+#include <rz_core.h>
+#include "../core_private.h"
 
 static bool load_theme(RzCore *core, const char *path) {
 	if (!rz_file_exists(path)) {

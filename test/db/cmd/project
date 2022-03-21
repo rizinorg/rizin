@@ -2,7 +2,6 @@ NAME=load with file without moving anything
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 e asm.bytes=true
-e cfg.oldshell=false
 f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
 Ps .tmp_load_no_move.rzdb
 o--
@@ -21,7 +20,6 @@ RUN
 NAME=load with file using saved absolute file path after project file was moved
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
-e cfg.oldshell=false
 e asm.bytes=true
 f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
 Ps .tmp_load_move_project.rzdb
@@ -47,7 +45,6 @@ NAME=load with file using saved relative file path after project file and binary
 FILE=--
 CMDS=<<EOF
 e asm.bytes=true
-e cfg.oldshell=false
 cp bins/elf/crackme0x05 .tmp_load_move_both.bin
 o .tmp_load_move_both.bin
 f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
@@ -74,7 +71,6 @@ RUN
 NAME=load with file using saved relative file path after project file and binary were moved together with different relation
 FILE=--
 CMDS=<<EOF
-e cfg.oldshell=false
 e asm.bytes=true
 mkdir -p .tmp_load_move_both2/.tmp_load_move_both2
 cp bins/elf/crackme0x05 .tmp_load_move_both2/somebin
@@ -104,7 +100,6 @@ NAME=load with file using saved raw file path after everything has been messed u
 FILE=--
 CMDS=<<EOF
 e asm.bytes=true
-e cfg.oldshell=false
 mkdir -p .tmp_load_move_bin
 cp bins/elf/crackme0x05 .tmp_load_move_bin.bin
 o .tmp_load_move_bin.bin
@@ -133,7 +128,6 @@ NAME=load without file
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 e asm.bytes=true
-e cfg.oldshell=false
 f a_nice_refreshing_un-moisten @ 0x080483d8
 Ps .tmp_load_without_file.rzdb
 ol
@@ -168,7 +162,6 @@ RUN
 NAME=load on top of file
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
-e cfg.oldshell=false
 e asm.bytes=true
 f a_nice_refreshing_un-moisten @ 0x080483d8
 Ps .tmp_load_on_top_of_file.rzdb
@@ -204,7 +197,6 @@ RUN
 NAME=flags
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
-e cfg.oldshell=false
 fr sym.main sym.renamedmain
 fl~?
 fl~main
@@ -237,7 +229,6 @@ RUN
 NAME=config
 FILE==
 CMDS=<<EOF
-e cfg.oldshell=false
 e asm.describe=1
 e asm.describe
 e asm.indentspace=8
@@ -277,7 +268,6 @@ RUN
 NAME=seek
 FILE==
 CMDS=<<EOF
-e cfg.oldshell=false
 s 0x1337
 s
 Ps .tmp_seek.rzdb
@@ -296,7 +286,6 @@ RUN
 NAME=analysis
 FILE==
 CMDS=<<EOF
-e cfg.oldshell=false
 af+ 0x100 windowpane
 afb+ windowpane 0x100 0x30
 afl
@@ -321,7 +310,6 @@ NAME=remember saved project file during session
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 e asm.bytes=true
-e cfg.oldshell=false
 Ps .tmp_remember.rzdb
 e prj.file
 f cashews @ 0x080483d8
@@ -346,7 +334,6 @@ RUN
 NAME=raw file permissions after reload
 FILE=bins/other/0x3
 CMDS=<<EOF
-e cfg.oldshell=false
 oml
 Ps .tmp_perms.rzdb
 o--

@@ -58,7 +58,7 @@ module.exports = grammar({
     $._spec_sep,
   ],
 
-  inline: ($) => [$.stmt_delimiter, $.stmt_delimiter_singleline, $._comment],
+  inline: ($) => [$.stmt_delimiter, $.stmt_delimiter_singleline],
 
   rules: {
     statements: ($) =>
@@ -438,7 +438,7 @@ module.exports = grammar({
     concatenation: ($) => prec(-1, seq($._arg, repeat1(prec(-1, seq($._concat, $._arg))))),
 
     _dec_number: ($) => choice(/[1-9][0-9]*/, /[0-9][0-9]+/),
-    _comment: ($) => token(choice(/#[^\r\n]*/)),
+    _comment: ($) => /#[^\r\n]*/,
 
     stmt_delimiter: ($) => choice("\n", "\r", $.stmt_delimiter_singleline),
     stmt_delimiter_singleline: ($) => choice(";"),

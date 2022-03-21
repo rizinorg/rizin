@@ -1,12 +1,13 @@
 // SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_crypto.h"
-#include "rz_config.h"
-#include "rz_cons.h"
-#include "rz_core.h"
-#include "rz_io.h"
+#include <rz_crypto.h>
+#include <rz_config.h>
+#include <rz_cons.h>
+#include <rz_core.h>
+#include <rz_io.h>
 #include <rz_socket.h>
+#include "../core_private.h"
 
 static void cmd_write_fail(RzCore *core) {
 	eprintf("Failed to write\n");

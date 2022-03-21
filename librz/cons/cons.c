@@ -65,20 +65,20 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 		data->noflush = CTX(noflush);
 		data->grep = RZ_NEW0(RzConsGrep);
 		if (data->grep) {
-			memcpy(data->grep, &I.context->grep, sizeof(RzConsGrep));
-			if (I.context->grep.str) {
-				data->grep->str = strdup(I.context->grep.str);
+			memcpy(data->grep, &CTX(grep), sizeof(RzConsGrep));
+			if (CTX(grep).str) {
+				data->grep->str = strdup(CTX(grep).str);
 			}
 		}
-		if (recreate && I.context->buffer_sz > 0) {
-			I.context->buffer = malloc(I.context->buffer_sz);
-			if (!I.context->buffer) {
-				I.context->buffer = data->buf;
+		if (recreate && CTX(buffer_sz) > 0) {
+			CTX(buffer) = malloc(CTX(buffer_sz));
+			if (!CTX(buffer)) {
+				CTX(buffer) = data->buf;
 				free(data);
 				return NULL;
 			}
 		} else {
-			I.context->buffer = NULL;
+			CTX(buffer) = NULL;
 		}
 	}
 	return data;
@@ -87,17 +87,17 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 static void cons_stack_load(RzConsStack *data, bool free_current) {
 	rz_return_if_fail(data);
 	if (free_current) {
-		free(I.context->buffer);
+		free(CTX(buffer));
 	}
-	I.context->buffer = data->buf;
+	CTX(buffer) = data->buf;
 	data->buf = NULL;
-	I.context->buffer_len = data->buf_len;
-	I.context->buffer_sz = data->buf_size;
+	CTX(buffer_len) = data->buf_len;
+	CTX(buffer_sz) = data->buf_size;
 	if (data->grep) {
-		free(I.context->grep.str);
-		memcpy(&I.context->grep, data->grep, sizeof(RzConsGrep));
+		free(CTX(grep).str);
+		memcpy(&CTX(grep), data->grep, sizeof(RzConsGrep));
 	}
-	I.context->noflush = data->noflush;
+	CTX(noflush) = data->noflush;
 }
 
 static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext *parent) {
@@ -174,7 +174,7 @@ static inline void __cons_write(const char *obuf, int olen) {
 
 RZ_API RzColor rz_cons_color_random(ut8 alpha) {
 	RzColor rcolor = { 0 };
-	if (I.context->color_mode > COLOR_MODE_16) {
+	if (CTX(color_mode) > COLOR_MODE_16) {
 		rcolor.r = rz_num_rand(0xff);
 		rcolor.g = rz_num_rand(0xff);
 		rcolor.b = rz_num_rand(0xff);
@@ -294,7 +294,7 @@ RZ_API RzCons *rz_cons_singleton(void) {
 }
 
 RZ_API void rz_cons_break_clear(void) {
-	I.context->breaked = false;
+	CTX(breaked) = false;
 }
 
 RZ_API void rz_cons_context_break_push(RzConsContext *context, RzConsBreak cb, void *user, bool sig) {
@@ -355,7 +355,7 @@ RZ_API void rz_cons_break_pop(void) {
 }
 
 RZ_API bool rz_cons_is_interactive(void) {
-	return I.context->is_interactive;
+	return CTX(is_interactive);
 }
 
 RZ_API bool rz_cons_default_context_is_interactive(void) {
@@ -368,12 +368,12 @@ RZ_API bool rz_cons_is_breaked(void) {
 	}
 	if (I.timeout) {
 		if (rz_time_now_mono() > I.timeout) {
-			I.context->breaked = true;
+			CTX(breaked) = true;
 			eprintf("\nTimeout!\n");
 			I.timeout = 0;
 		}
 	}
-	return I.context->breaked;
+	return CTX(breaked);
 }
 
 RZ_API int rz_cons_get_cur_line(void) {
@@ -416,18 +416,18 @@ RZ_API void rz_cons_break_timeout(int timeout) {
 }
 
 RZ_API void rz_cons_break_end(void) {
-	I.context->breaked = false;
+	CTX(breaked) = false;
 	I.timeout = 0;
 #if __UNIX__
 	rz_sys_signal(SIGINT, SIG_IGN);
 #endif
-	if (!rz_stack_is_empty(I.context->break_stack)) {
+	if (!rz_stack_is_empty(CTX(break_stack))) {
 		// free all the stack
-		rz_stack_free(I.context->break_stack);
+		rz_stack_free(CTX(break_stack));
 		// create another one
-		I.context->break_stack = rz_stack_newf(6, break_stack_free);
-		I.context->event_interrupt_data = NULL;
-		I.context->event_interrupt = NULL;
+		CTX(break_stack) = rz_stack_newf(6, break_stack_free);
+		CTX(event_interrupt_data) = NULL;
+		CTX(event_interrupt) = NULL;
 	}
 }
 
@@ -641,11 +641,11 @@ RZ_API RzCons *rz_cons_free(void) {
 	}
 	RZ_FREE(I.input->readbuffer);
 	RZ_FREE(I.input);
-	RZ_FREE(I.context->buffer);
+	RZ_FREE(CTX(buffer));
 	RZ_FREE(I.break_word);
 	cons_context_deinit(I.context);
-	RZ_FREE(I.context->lastOutput);
-	I.context->lastLength = 0;
+	RZ_FREE(CTX(lastOutput));
+	CTX(lastLength) = 0;
 	RZ_FREE(I.pager);
 	return NULL;
 }
@@ -656,7 +656,7 @@ static bool palloc(int moar) {
 	if (moar <= 0) {
 		return false;
 	}
-	if (!I.context->buffer) {
+	if (!CTX(buffer)) {
 		int new_sz;
 		if ((INT_MAX - MOAR) < moar) {
 			return false;
@@ -664,22 +664,22 @@ static bool palloc(int moar) {
 		new_sz = moar + MOAR;
 		temp = calloc(1, new_sz);
 		if (temp) {
-			I.context->buffer_sz = new_sz;
-			I.context->buffer = temp;
-			I.context->buffer[0] = '\0';
+			CTX(buffer_sz) = new_sz;
+			CTX(buffer) = temp;
+			(CTX(buffer))[0] = '\0';
 		}
-	} else if (moar + I.context->buffer_len > I.context->buffer_sz) {
+	} else if (moar + CTX(buffer_len) > CTX(buffer_sz)) {
 		char *new_buffer;
-		int old_buffer_sz = I.context->buffer_sz;
-		if ((INT_MAX - MOAR - moar) < I.context->buffer_sz) {
+		int old_buffer_sz = CTX(buffer_sz);
+		if ((INT_MAX - MOAR - moar) < CTX(buffer_sz)) {
 			return false;
 		}
-		I.context->buffer_sz += moar + MOAR;
-		new_buffer = realloc(I.context->buffer, I.context->buffer_sz);
+		CTX(buffer_sz) += moar + MOAR;
+		new_buffer = realloc(CTX(buffer), CTX(buffer_sz));
 		if (new_buffer) {
-			I.context->buffer = new_buffer;
+			CTX(buffer) = new_buffer;
 		} else {
-			I.context->buffer_sz = old_buffer_sz;
+			CTX(buffer_sz) = old_buffer_sz;
 			return false;
 		}
 	}
@@ -771,13 +771,13 @@ static void cons_grep_reset(RzConsGrep *grep) {
 }
 
 RZ_API void rz_cons_reset(void) {
-	if (I.context->buffer) {
-		I.context->buffer[0] = '\0';
+	if (CTX(buffer)) {
+		(CTX(buffer))[0] = '\0';
 	}
-	I.context->buffer_len = 0;
+	CTX(buffer_len) = 0;
 	I.lines = 0;
-	I.lastline = I.context->buffer;
-	cons_grep_reset(&I.context->grep);
+	I.lastline = CTX(buffer);
+	cons_grep_reset(&CTX(grep));
 	CTX(pageable) = true;
 }
 
@@ -786,7 +786,7 @@ RZ_API void rz_cons_reset(void) {
  */
 RZ_API const char *rz_cons_get_buffer(void) {
 	// check len otherwise it will return trash
-	return I.context->buffer_len ? I.context->buffer : NULL;
+	return CTX(buffer_len) ? CTX(buffer) : NULL;
 }
 
 /**
@@ -798,24 +798,24 @@ RZ_API char *rz_cons_get_buffer_dup(void) {
 }
 
 RZ_API int rz_cons_get_buffer_len(void) {
-	return I.context->buffer_len;
+	return CTX(buffer_len);
 }
 
 RZ_API void rz_cons_filter(void) {
 	/* grep */
-	if (I.filter || I.context->grep.nstrings > 0 || I.context->grep.tokens_used || I.context->grep.less || I.context->grep.json) {
+	if (I.filter || CTX(grep).nstrings > 0 || CTX(grep).tokens_used || CTX(grep).less || CTX(grep).json) {
 		(void)rz_cons_grepbuf();
 		I.filter = false;
 	}
 	/* html */
 	if (I.is_html) {
 		int newlen = 0;
-		char *input = rz_str_ndup(I.context->buffer, I.context->buffer_len);
+		char *input = rz_str_ndup(CTX(buffer), CTX(buffer_len));
 		char *res = rz_cons_html_filter(input, &newlen);
-		free(I.context->buffer);
-		I.context->buffer = res;
-		I.context->buffer_len = newlen;
-		I.context->buffer_sz = newlen;
+		free(CTX(buffer));
+		CTX(buffer) = res;
+		CTX(buffer_len) = newlen;
+		CTX(buffer_sz) = newlen;
 		free(input);
 	}
 	if (I.was_html) {
@@ -825,26 +825,26 @@ RZ_API void rz_cons_filter(void) {
 }
 
 RZ_API void rz_cons_push(void) {
-	if (!I.context->cons_stack) {
+	if (!CTX(cons_stack)) {
 		return;
 	}
 	RzConsStack *data = cons_stack_dump(true);
 	if (!data) {
 		return;
 	}
-	rz_stack_push(I.context->cons_stack, data);
-	I.context->buffer_len = 0;
-	if (I.context->buffer) {
-		memset(I.context->buffer, 0, I.context->buffer_sz);
+	rz_stack_push(CTX(cons_stack), data);
+	CTX(buffer_len) = 0;
+	if (CTX(buffer)) {
+		memset(CTX(buffer), 0, CTX(buffer_sz));
 	}
-	I.context->noflush = true;
+	CTX(noflush) = true;
 }
 
 RZ_API void rz_cons_pop(void) {
-	if (!I.context->cons_stack) {
+	if (!CTX(cons_stack)) {
 		return;
 	}
-	RzConsStack *data = (RzConsStack *)rz_stack_pop(I.context->cons_stack);
+	RzConsStack *data = (RzConsStack *)rz_stack_pop(CTX(cons_stack));
 	if (!data) {
 		return;
 	}
@@ -900,7 +900,7 @@ RZ_API void rz_cons_last(void) {
 }
 
 static bool lastMatters(void) {
-	return (I.context->buffer_len > 0) && (CTX(lastEnabled) && !I.filter && I.context->grep.nstrings < 1 && !I.context->grep.tokens_used && !I.context->grep.less && !I.context->grep.json && !I.is_html);
+	return (CTX(buffer_len) > 0) && (CTX(lastEnabled) && !I.filter && CTX(grep).nstrings < 1 && !CTX(grep).tokens_used && !CTX(grep).less && !CTX(grep).json && !I.is_html);
 }
 
 RZ_API void rz_cons_echo(const char *msg) {
@@ -947,7 +947,7 @@ RZ_API void rz_cons_flush(void) {
 	if (rz_cons_is_interactive() && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (CTX(pageable) && CTX(buffer) && I.pager && *I.pager && CTX(buffer_len) > 0 && rz_str_char_count(CTX(buffer), '\n') >= I.rows) {
-			I.context->buffer[I.context->buffer_len - 1] = 0;
+			(CTX(buffer))[CTX(buffer_len) - 1] = 0;
 			if (!strcmp(I.pager, "..")) {
 				char *str = rz_str_ndup(CTX(buffer), CTX(buffer_len));
 				CTX(pageable) = false;
@@ -959,11 +959,11 @@ RZ_API void rz_cons_flush(void) {
 				rz_sys_cmd_str_full(I.pager, CTX(buffer), NULL, NULL, NULL);
 				rz_cons_reset();
 			}
-		} else if (I.context->buffer_len > CONS_MAX_USER) {
+		} else if (CTX(buffer_len) > CONS_MAX_USER) {
 #if COUNT_LINES
 			int i, lines = 0;
-			for (i = 0; I.context->buffer[i]; i++) {
-				if (I.context->buffer[i] == '\n') {
+			for (i = 0; CTX(buffer)[i]; i++) {
+				if (CTX(buffer)[i] == '\n') {
 					lines++;
 				}
 			}
@@ -973,7 +973,7 @@ RZ_API void rz_cons_flush(void) {
 			}
 #else
 			char buf[8];
-			rz_num_units(buf, sizeof(buf), I.context->buffer_len);
+			rz_num_units(buf, sizeof(buf), CTX(buffer_len));
 			if (!rz_cons_yesno('n', "Do you want to print %s chars? (y/N)", buf)) {
 				rz_cons_reset();
 				return;
@@ -986,7 +986,7 @@ RZ_API void rz_cons_flush(void) {
 	if (tee && *tee) {
 		FILE *d = rz_sys_fopen(tee, "a+");
 		if (d) {
-			if (I.context->buffer_len != fwrite(I.context->buffer, 1, I.context->buffer_len, d)) {
+			if (CTX(buffer_len) != fwrite(CTX(buffer), 1, CTX(buffer_len), d)) {
 				eprintf("rz_cons_flush: fwrite: error (%s)\n", tee);
 			}
 			fclose(d);
@@ -1001,10 +1001,10 @@ RZ_API void rz_cons_flush(void) {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
 			int i = 0;
 			int pagesize = RZ_MAX(1, I.pagesize);
-			char *ptr = I.context->buffer;
+			char *ptr = CTX(buffer);
 			char *nl = strchr(ptr, '\n');
-			int len = I.context->buffer_len;
-			I.context->buffer[I.context->buffer_len] = 0;
+			int len = CTX(buffer_len);
+			(CTX(buffer))[CTX(buffer_len)] = 0;
 			rz_cons_break_push(NULL, NULL);
 			while (nl && !rz_cons_is_breaked()) {
 				__cons_write(ptr, nl - ptr + 1);
@@ -1015,13 +1015,13 @@ RZ_API void rz_cons_flush(void) {
 				nl = strchr(ptr, '\n');
 				i++;
 			}
-			__cons_write(ptr, I.context->buffer + len - ptr);
+			__cons_write(ptr, CTX(buffer) + len - ptr);
 			rz_cons_break_pop();
 		} else {
-			__cons_write(I.context->buffer, I.context->buffer_len);
+			__cons_write(CTX(buffer), CTX(buffer_len));
 		}
 	} else {
-		__cons_write(I.context->buffer, I.context->buffer_len);
+		__cons_write(CTX(buffer), CTX(buffer_len));
 	}
 
 	rz_cons_reset();
@@ -1040,12 +1040,12 @@ RZ_API void rz_cons_visual_flush(void) {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
 		if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
-			rz_cons_visual_write(I.context->buffer);
+			rz_cons_visual_write(CTX(buffer));
 		} else {
-			rz_cons_w32_print(I.context->buffer, I.context->buffer_len, true);
+			rz_cons_w32_print(CTX(buffer), CTX(buffer_len), true);
 		}
 #else
-		rz_cons_visual_write(I.context->buffer);
+		rz_cons_visual_write(CTX(buffer));
 #endif
 	}
 	rz_cons_reset();
@@ -1182,8 +1182,8 @@ RZ_API void rz_cons_printf_list(const char *format, va_list ap) {
 	if (strchr(format, '%')) {
 		if (palloc(MOAR + strlen(format) * 20)) {
 		club:
-			size = I.context->buffer_sz - I.context->buffer_len; /* remaining space in I.context->buffer */
-			written = vsnprintf(I.context->buffer + I.context->buffer_len, size, format, ap3);
+			size = CTX(buffer_sz) - CTX(buffer_len); /* remaining space in CTX(buffer) */
+			written = vsnprintf(CTX(buffer) + CTX(buffer_len), size, format, ap3);
 			if (written >= size) { /* not all bytes were written */
 				if (palloc(written + 1)) { /* + 1 byte for \0 termination */
 					va_end(ap3);
@@ -1191,7 +1191,7 @@ RZ_API void rz_cons_printf_list(const char *format, va_list ap) {
 					goto club;
 				}
 			}
-			I.context->buffer_len += written;
+			CTX(buffer_len) += written;
 		}
 	} else {
 		rz_cons_strcat(format);
@@ -1213,11 +1213,11 @@ RZ_API int rz_cons_printf(const char *format, ...) {
 }
 
 RZ_API int rz_cons_get_column(void) {
-	char *line = strrchr(I.context->buffer, '\n');
+	char *line = strrchr(CTX(buffer), '\n');
 	if (!line) {
-		line = I.context->buffer;
+		line = CTX(buffer);
 	}
-	I.context->buffer[I.context->buffer_len] = 0;
+	(CTX(buffer))[CTX(buffer_len)] = 0;
 	return rz_str_ansi_len(line);
 }
 
@@ -1235,9 +1235,9 @@ RZ_API int rz_cons_memcat(const char *str, int len) {
 	}
 	if (str && len > 0 && !I.null) {
 		if (palloc(len + 1)) {
-			memcpy(I.context->buffer + I.context->buffer_len, str, len);
-			I.context->buffer_len += len;
-			I.context->buffer[I.context->buffer_len] = 0;
+			memcpy(CTX(buffer) + CTX(buffer_len), str, len);
+			CTX(buffer_len) += len;
+			(CTX(buffer))[CTX(buffer_len)] = 0;
 		}
 	}
 	if (I.flush) {
@@ -1245,7 +1245,7 @@ RZ_API int rz_cons_memcat(const char *str, int len) {
 	}
 	if (I.break_word && str && len > 0) {
 		if (rz_mem_mem((const ut8 *)str, len, (const ut8 *)I.break_word, I.break_word_len)) {
-			I.context->breaked = true;
+			CTX(breaked) = true;
 		}
 	}
 	return len;
@@ -1254,9 +1254,9 @@ RZ_API int rz_cons_memcat(const char *str, int len) {
 RZ_API void rz_cons_memset(char ch, int len) {
 	if (!I.null && len > 0) {
 		if (palloc(len + 1)) {
-			memset(I.context->buffer + I.context->buffer_len, ch, len);
-			I.context->buffer_len += len;
-			I.context->buffer[I.context->buffer_len] = 0;
+			memset(CTX(buffer) + CTX(buffer_len), ch, len);
+			CTX(buffer_len) += len;
+			(CTX(buffer))[CTX(buffer_len)] = 0;
 		}
 	}
 }
@@ -1297,11 +1297,11 @@ RZ_API int rz_cons_get_cursor(int *rows) {
 	int i, col = 0;
 	int row = 0;
 	// TODO: we need to handle GOTOXY and CLRSCR ansi escape code too
-	for (i = 0; i < I.context->buffer_len; i++) {
+	for (i = 0; i < CTX(buffer_len); i++) {
 		// ignore ansi chars, copypasta from rz_str_ansi_len
-		if (I.context->buffer[i] == 0x1b) {
-			char ch2 = I.context->buffer[i + 1];
-			char *str = I.context->buffer;
+		if (CTX(buffer)[i] == 0x1b) {
+			char ch2 = CTX(buffer)[i + 1];
+			char *str = CTX(buffer);
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
@@ -1313,7 +1313,7 @@ RZ_API int rz_cons_get_cursor(int *rows) {
 					;
 				}
 			}
-		} else if (I.context->buffer[i] == '\n') {
+		} else if (CTX(buffer)[i] == '\n') {
 			row++;
 			col = 0;
 		} else {
@@ -1687,12 +1687,12 @@ RZ_API bool rz_cons_set_cup(bool enable) {
 }
 
 RZ_API void rz_cons_column(int c) {
-	char *b = malloc(I.context->buffer_len + 1);
+	char *b = malloc(CTX(buffer_len) + 1);
 	if (!b) {
 		return;
 	}
-	memcpy(b, I.context->buffer, I.context->buffer_len);
-	b[I.context->buffer_len] = 0;
+	memcpy(b, CTX(buffer), CTX(buffer_len));
+	b[CTX(buffer_len)] = 0;
 	rz_cons_reset();
 	// align current buffer N chars right
 	rz_cons_strcat_justify(b, c, 0);
@@ -1751,13 +1751,13 @@ RZ_API void rz_cons_highlight(const char *word) {
 		rz_cons_enable_highlight(true);
 		return;
 	}
-	if (word && *word && I.context->buffer) {
+	if (word && *word && CTX(buffer)) {
 		int word_len = strlen(word);
 		char *orig;
-		clean = rz_str_ndup(I.context->buffer, I.context->buffer_len);
+		clean = rz_str_ndup(CTX(buffer), CTX(buffer_len));
 		l = rz_str_ansi_filter(clean, &orig, &cpos, -1);
-		free(I.context->buffer);
-		I.context->buffer = orig;
+		free(CTX(buffer));
+		CTX(buffer) = orig;
 		if (I.highlight) {
 			if (strcmp(word, I.highlight)) {
 				free(I.highlight);
@@ -1775,25 +1775,25 @@ RZ_API void rz_cons_highlight(const char *word) {
 		strcpy(rword, inv[0]);
 		strcpy(rword + linv[0], word);
 		strcpy(rword + linv[0] + word_len, inv[1]);
-		res = rz_str_replace_thunked(I.context->buffer, clean, cpos,
+		res = rz_str_replace_thunked(CTX(buffer), clean, cpos,
 			l, word, rword, 1);
 		if (res) {
-			I.context->buffer = res;
-			I.context->buffer_len = I.context->buffer_sz = strlen(res);
+			CTX(buffer) = res;
+			CTX(buffer_len) = CTX(buffer_sz) = strlen(res);
 		}
 		free(rword);
 		free(clean);
 		free(cpos);
 		/* don't free orig - it's assigned
-		 * to I.context->buffer and possibly realloc'd */
+		 * to CTX(buffer) and possibly realloc'd */
 	} else {
 		RZ_FREE(I.highlight);
 	}
 }
 
 RZ_API char *rz_cons_lastline(int *len) {
-	char *b = I.context->buffer + I.context->buffer_len;
-	while (b > I.context->buffer) {
+	char *b = CTX(buffer) + CTX(buffer_len);
+	while (b > CTX(buffer)) {
 		if (*b == '\n') {
 			b++;
 			break;
@@ -1801,8 +1801,8 @@ RZ_API char *rz_cons_lastline(int *len) {
 		b--;
 	}
 	if (len) {
-		int delta = b - I.context->buffer;
-		*len = I.context->buffer_len - delta;
+		int delta = b - CTX(buffer);
+		*len = CTX(buffer_len) - delta;
 	}
 	return b;
 }
@@ -1814,12 +1814,12 @@ RZ_API char *rz_cons_lastline_utf8_ansi_len(int *len) {
 		return rz_cons_lastline(0);
 	}
 
-	char *b = I.context->buffer + I.context->buffer_len;
+	char *b = CTX(buffer) + CTX(buffer_len);
 	int l = 0;
 	int last_possible_ansi_end = 0;
 	char ch = '\0';
 	char ch2;
-	while (b > I.context->buffer) {
+	while (b > CTX(buffer)) {
 		ch2 = ch;
 		ch = *b;
 
@@ -1870,21 +1870,21 @@ RZ_API char *rz_cons_swap_ground(const char *col) {
 }
 
 RZ_API bool rz_cons_drop(int n) {
-	if (n > I.context->buffer_len) {
-		I.context->buffer_len = 0;
+	if (n > CTX(buffer_len)) {
+		CTX(buffer_len) = 0;
 		return false;
 	}
-	I.context->buffer_len -= n;
+	CTX(buffer_len) -= n;
 	return true;
 }
 
 RZ_API void rz_cons_chop(void) {
-	while (I.context->buffer_len > 0) {
-		char ch = I.context->buffer[I.context->buffer_len - 1];
+	while (CTX(buffer_len) > 0) {
+		char ch = CTX(buffer)[CTX(buffer_len) - 1];
 		if (ch != '\n' && !IS_WHITESPACE(ch)) {
 			break;
 		}
-		I.context->buffer_len--;
+		(CTX(buffer_len))--;
 	}
 }
 
