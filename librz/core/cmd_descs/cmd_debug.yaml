@@ -404,7 +404,7 @@ commands:
         cname: cmd_debug_trace_dtc
         type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: dtd
-        summary: List all traced disassembled (quiet, instructions)
+        summary: List all traces disassembled (quiet, instructions)
         cname: cmd_debug_traces_dtd
         args:
           - name: nth
