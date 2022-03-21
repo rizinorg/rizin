@@ -8778,19 +8778,16 @@ RZ_IPI RzCmdStatus rz_analyze_n_bytes_handler(RzCore *core, int argc, const char
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_esil_handler(RzCore *core, int argc, const char **argv) {
 	core_analysis_bytes_esil(core, core->block, core->blocksize, 0);
-
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_desc_handler(RzCore *core, int argc, const char **argv) {
 	core_analysis_bytes_desc(core, core->block, core->blocksize, 0);
-
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_bytes_size_handler(RzCore *core, int argc, const char **argv) {
 	core_analysis_bytes_size(core, core->block, core->blocksize, 0);
-
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -8913,10 +8910,7 @@ RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char 
 	st32 ccl = 0;
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 
-	rz_config_hold_i(hc, "asm.cmt.right", NULL);
-	rz_config_hold_i(hc, "asm.functions", NULL);
-	rz_config_hold_i(hc, "asm.lines", NULL);
-	rz_config_hold_i(hc, "asm.xrefs", NULL);
+	rz_config_hold_i(hc, "asm.cmt.right", "asm.functions", "asm.lines", "asm.xrefs", NULL);
 
 	if (argc > 1) {
 		ccl = (st32)rz_num_get(core->num, argv[1]);
