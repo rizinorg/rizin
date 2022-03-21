@@ -2197,20 +2197,22 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, 
 
 // dt
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_handler(RzCore *core, int argc, const char **argv) {
-	RzDebugTracepoint *t;
-	if ((t = rz_debug_trace_get(core->dbg, core->offset))) {
-		rz_cons_printf("offset = 0x%" PFMT64x "\n", t->addr);
-		rz_cons_printf("opsize = %d\n", t->size);
-		rz_cons_printf("times = %d\n", t->times);
-		rz_cons_printf("count = %d\n", t->count);
-		// TODO cons_printf("time = %d\n", t->tm);
+	RzDebugTracepoint *t = rz_debug_trace_get(core->dbg, core->offset);
+	if (!t) {
+		RZ_LOG_ERROR("Cannot find any debug trace at address %" PFMT64x ".\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
 	}
+
+	rz_cons_printf("offset = 0x%" PFMT64x "\n", t->addr);
+	rz_cons_printf("opsize = %d\n", t->size);
+	rz_cons_printf("times = %d\n", t->times);
+	rz_cons_printf("count = %d\n", t->count);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dtl
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_debug_trace_print(core->dbg, state->mode, core->offset);
+	rz_debug_trace_print(core->dbg, state, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2222,20 +2224,19 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_ascii_handler(RzCore *core, int argc, con
 
 // dt+
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_handler(RzCore *core, int argc, const char **argv) {
-	int count = argc > 2 ? rz_num_math(core->num, argv[1]) : 1;
+	int count = argc > 1 ? rz_num_math(core->num, argv[1]) : 1;
 	RzAnalysisOp *op = rz_core_op_analysis(core, core->offset, RZ_ANALYSIS_OP_MASK_HINT);
 	if (!op) {
 		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", core->offset);
-		return RZ_CMD_STATUS_OK;
+		return RZ_CMD_STATUS_ERROR;
 	}
 
 	RzDebugTracepoint *tp = rz_debug_trace_add(core->dbg, core->offset, op->size);
 	if (!tp) {
 		rz_analysis_op_free(op);
-		return RZ_CMD_STATUS_OK;
+		return RZ_CMD_STATUS_ERROR;
 	}
 	tp->count = count;
-	rz_analysis_trace_bb(core->analysis, core->offset);
 	rz_analysis_op_free(op);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2244,7 +2245,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_addrs_handler(RzCore *core, int argc, const char **argv) {
 	for (int i = 1; i < argc; ++i) {
 		ut64 addr = rz_num_get(NULL, argv[i]);
-		(void)rz_debug_trace_add(core->dbg, addr, 1);
+		RzDebugTracepoint *t = rz_debug_trace_add(core->dbg, addr, 1);
+		if (!t) {
+			RZ_LOG_ERROR("Cannot add trace at address %" PFMT64x ".\n", addr);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -2267,9 +2272,9 @@ RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
 
 // dtc
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_calls_handler(RzCore *core, int argc, const char **argv) {
-	ut64 from = argc > 1 ? rz_num_math(core->num, argv[1]) : 0,
-	     to = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX,
-	     addr = argc > 3 ? rz_num_math(core->num, argv[3]) : UT64_MAX;
+	ut64 from = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+	ut64 to = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
+	ut64 addr = argc > 3 ? rz_num_math(core->num, argv[3]) : UT64_MAX;
 
 	debug_trace_calls(core, from, to, addr);
 	return RZ_CMD_STATUS_OK;
@@ -2306,7 +2311,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, co
 	RzAnalysisOp *op = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_ESIL);
 	if (!op) {
 		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", core->offset);
-		return RZ_CMD_STATUS_OK;
+		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_analysis_esil_trace_op(core->analysis->esil, op);
 	rz_analysis_op_free(op);

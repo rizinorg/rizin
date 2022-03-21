@@ -597,35 +597,28 @@ RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input,
  * @param mode output mode, default RZ_OUTPUT_MODE_STANDARD
  * @param offset offset of address
  */
-RZ_API void rz_debug_trace_print(RzDebug *dbg, RzOutputMode mode, ut64 offset) {
+RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 offset) {
 	rz_return_if_fail(dbg);
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
 	RzDebugTracepoint *trace;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_list_foreach (dbg->trace->traces, iter, trace) {
-			if (!trace->tag || (tag & trace->tag)) {
-				rz_cons_printf("0x%" PFMT64x "\n", trace->addr);
-			}
+	rz_list_foreach (dbg->trace->traces, iter, trace) {
+		if (trace->tag && !(tag & trace->tag)) {
+			continue;
 		}
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_list_foreach (dbg->trace->traces, iter, trace) {
-			if (!trace->tag || (tag & trace->tag)) {
-				rz_cons_printf("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
-			}
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_cons_printf("0x%" PFMT64x "\n", trace->addr);
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_cons_printf("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+		default:
+			rz_cons_printf("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
+				trace->addr, trace->size, trace->count, trace->times, trace->tag);
+			break;
 		}
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-	default:
-		rz_list_foreach (dbg->trace->traces, iter, trace) {
-			if (!trace->tag || (tag & trace->tag)) {
-				rz_cons_printf("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
-					trace->addr, trace->size, trace->count, trace->times, trace->tag);
-			}
-		}
-		break;
 	}
 }
 
