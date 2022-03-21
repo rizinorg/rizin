@@ -58,9 +58,8 @@ static GHT GH(je_get_va_symbol)(RzCore *core, const char *path, const char *sym_
 	return vaddr;
 }
 
-static inline GHT GH(je_matched)(const char *ptr, const char *str) {
-	int ret = strncmp(ptr, str, strlen(str) - 1);
-	return !ret;
+static bool GH(je_matched)(const char *ptr, const char *str) {
+	return !strncmp(ptr, str, strlen(str) - 1);
 }
 #endif
 static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
