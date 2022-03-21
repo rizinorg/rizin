@@ -2269,7 +2269,7 @@ RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_calls_handler(RzCore *core, int argc, const char **argv) {
 	ut64 from = argc > 1 ? rz_num_math(core->num, argv[1]) : 0,
 	     to = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX,
-	     addr = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
+	     addr = argc > 3 ? rz_num_math(core->num, argv[3]) : UT64_MAX;
 
 	debug_trace_calls(core, from, to, addr);
 	return RZ_CMD_STATUS_OK;
