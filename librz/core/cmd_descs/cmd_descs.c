@@ -5432,7 +5432,7 @@ static const RzCmdDescArg cmd_debug_traces_dtd_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_traces_dtd_help = {
-	.summary = "List all traced disassembled (quiet, instructions)",
+	.summary = "List all traces disassembled",
 	.args = cmd_debug_traces_dtd_args,
 };
 
@@ -13545,7 +13545,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_trace_dtc_cd = rz_cmd_desc_oldinput_new(core->rcmd, dt_cd, "dtc", rz_cmd_debug_trace_dtc, &cmd_debug_trace_dtc_help);
 	rz_warn_if_fail(cmd_debug_trace_dtc_cd);
 
-	RzCmdDesc *cmd_debug_traces_dtd_cd = rz_cmd_desc_argv_state_new(core->rcmd, dt_cd, "dtd", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_traces_dtd_handler, &cmd_debug_traces_dtd_help);
+	RzCmdDesc *cmd_debug_traces_dtd_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtd", rz_cmd_debug_traces_dtd_handler, &cmd_debug_traces_dtd_help);
 	rz_warn_if_fail(cmd_debug_traces_dtd_cd);
 
 	RzCmdDesc *dte_cd = rz_cmd_desc_group_new(core->rcmd, dt_cd, "dte", rz_cmd_debug_trace_esil_handler, &cmd_debug_trace_esil_help, &dte_help);

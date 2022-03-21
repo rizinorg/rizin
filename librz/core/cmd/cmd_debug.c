@@ -2291,38 +2291,22 @@ RZ_IPI int rz_cmd_debug_trace_dtc(void *data, const char *input) {
 }
 
 // dtd
-RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const char **argv) {
 	int min = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 0;
 	RzDebugTracepoint *trace;
 	RzListIter *iter;
 	RzAnalysisOp *op;
 	int n = 0;
 
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-			if (n >= min) {
-				rz_cons_printf("%d  ", trace->count);
-				rz_cons_printf("0x%08" PFMT64x "\n", trace->addr);
-				break;
-			}
-			n++;
+	rz_list_foreach (core->dbg->trace->traces, iter, trace) {
+		op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
+		if (n >= min && op) {
+			rz_cons_printf("0x%08" PFMT64x " %s\n", trace->addr, op->mnemonic);
 		}
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-			op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-			if (n >= min) {
-				rz_cons_printf("0x%08" PFMT64x " %s\n", trace->addr, op->mnemonic);
-			}
-			n++;
-			rz_analysis_op_free(op);
-		}
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
+		n++;
+		rz_analysis_op_free(op);
 	}
+
 	return RZ_CMD_STATUS_OK;
 }
 
