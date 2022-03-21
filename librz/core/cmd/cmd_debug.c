@@ -1878,31 +1878,13 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 	}
 }
 
-static void debug_trace_calls(RzCore *core, const char *input) {
+static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr) {
 	RzBreakpointItem *bp_final = NULL;
 	int t = core->dbg->trace->enabled;
-	ut64 from = 0, to = UT64_MAX, final_addr = UT64_MAX;
 
 	if (rz_debug_is_dead(core->dbg)) {
 		eprintf("No process to debug.");
 		return;
-	}
-	if (*input == ' ') {
-		input = rz_str_trim_head_ro(input);
-		ut64 first_n = rz_num_math(core->num, input);
-		input = strchr(input, ' ');
-		if (input) {
-			input = rz_str_trim_head_ro(input);
-			from = first_n;
-			to = rz_num_math(core->num, input);
-			input = strchr(input, ' ');
-			if (input) {
-				input = rz_str_trim_head_ro(input);
-				final_addr = rz_num_math(core->num, input);
-			}
-		} else {
-			final_addr = first_n;
-		}
 	}
 	core->dbg->trace->enabled = 0;
 	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
@@ -2284,29 +2266,12 @@ RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
 }
 
 // dtc
-RZ_IPI int rz_cmd_debug_trace_dtc(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	debug_trace_calls(core, input);
-	return RZ_CMD_STATUS_OK;
-}
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_calls_handler(RzCore *core, int argc, const char **argv) {
+	ut64 from = argc > 1 ? rz_num_math(core->num, argv[1]) : 0,
+	     to = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX,
+	     addr = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
 
-// dtd
-RZ_IPI RzCmdStatus rz_cmd_debug_traces_dtd_handler(RzCore *core, int argc, const char **argv) {
-	int min = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 0;
-	RzDebugTracepoint *trace;
-	RzListIter *iter;
-	RzAnalysisOp *op;
-	int n = 0;
-
-	rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-		op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-		if (n >= min && op) {
-			rz_cons_printf("0x%08" PFMT64x " %s\n", trace->addr, op->mnemonic);
-		}
-		n++;
-		rz_analysis_op_free(op);
-	}
-
+	debug_trace_calls(core, from, to, addr);
 	return RZ_CMD_STATUS_OK;
 }
 

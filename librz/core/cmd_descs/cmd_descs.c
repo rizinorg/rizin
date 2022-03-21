@@ -253,7 +253,7 @@ static const RzCmdDescArg cmd_debug_step_until_esil_args[2];
 static const RzCmdDescArg cmd_debug_step_until_flag_args[2];
 static const RzCmdDescArg cmd_debug_trace_add_args[2];
 static const RzCmdDescArg cmd_debug_trace_add_addrs_args[2];
-static const RzCmdDescArg cmd_debug_traces_dtd_args[2];
+static const RzCmdDescArg cmd_debug_trace_calls_args[4];
 static const RzCmdDescArg cmd_debug_trace_esil_args[2];
 static const RzCmdDescArg cmd_debug_save_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
@@ -5417,13 +5417,21 @@ static const RzCmdDescHelp cmd_debug_trace_addr_help = {
 	.summary = "Only trace given addresses",
 };
 
-static const RzCmdDescHelp cmd_debug_trace_dtc_help = {
-	.summary = "Trace call/ret",
-};
-
-static const RzCmdDescArg cmd_debug_traces_dtd_args[] = {
+static const RzCmdDescArg cmd_debug_trace_calls_args[] = {
 	{
-		.name = "nth",
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "to",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -5431,9 +5439,9 @@ static const RzCmdDescArg cmd_debug_traces_dtd_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_debug_traces_dtd_help = {
-	.summary = "List all traces disassembled",
-	.args = cmd_debug_traces_dtd_args,
+static const RzCmdDescHelp cmd_debug_trace_calls_help = {
+	.summary = "Trace call/ret",
+	.args = cmd_debug_trace_calls_args,
 };
 
 static const RzCmdDescHelp dte_help = {
@@ -13542,11 +13550,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_trace_addr_cd = rz_cmd_desc_oldinput_new(core->rcmd, dt_cd, "dta", rz_cmd_debug_trace_addr, &cmd_debug_trace_addr_help);
 	rz_warn_if_fail(cmd_debug_trace_addr_cd);
 
-	RzCmdDesc *cmd_debug_trace_dtc_cd = rz_cmd_desc_oldinput_new(core->rcmd, dt_cd, "dtc", rz_cmd_debug_trace_dtc, &cmd_debug_trace_dtc_help);
-	rz_warn_if_fail(cmd_debug_trace_dtc_cd);
-
-	RzCmdDesc *cmd_debug_traces_dtd_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtd", rz_cmd_debug_traces_dtd_handler, &cmd_debug_traces_dtd_help);
-	rz_warn_if_fail(cmd_debug_traces_dtd_cd);
+	RzCmdDesc *cmd_debug_trace_calls_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtc", rz_cmd_debug_trace_calls_handler, &cmd_debug_trace_calls_help);
+	rz_warn_if_fail(cmd_debug_trace_calls_cd);
 
 	RzCmdDesc *dte_cd = rz_cmd_desc_group_new(core->rcmd, dt_cd, "dte", rz_cmd_debug_trace_esil_handler, &cmd_debug_trace_esil_help, &dte_help);
 	rz_warn_if_fail(dte_cd);

@@ -401,13 +401,15 @@ commands:
         type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: dtc
         summary: Trace call/ret
-        cname: cmd_debug_trace_dtc
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
-      - name: dtd
-        summary: List all traces disassembled
-        cname: cmd_debug_traces_dtd
+        cname: cmd_debug_trace_calls
         args:
-          - name: nth
+          - name: from
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: to
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: dte
