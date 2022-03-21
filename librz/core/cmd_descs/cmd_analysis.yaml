@@ -1453,3 +1453,92 @@ commands:
               - name: class_name
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
+  - name: a8
+    summary: Analyze bytes
+    cname: analyze_bytes
+    args:
+      - name: hexpairs
+        type: RZ_CMD_ARG_TYPE_STRING
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: aO
+    summary: Analyze next block as instructions
+    subcommands:
+      - name: aO
+        summary: Analyze next block as instructions
+        cname: analyze_n_bytes
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+      - name: aOe
+        summary: Analyze the esil of next block
+        cname: analyze_n_bytes_esil
+        args: []
+      - name: aOd
+        summary: Print the description of next block
+        cname: analyze_n_bytes_desc
+        args: []
+      - name: aOs
+        summary: Print the total instruction size of next block
+        cname: analyze_n_bytes_size
+        args: []
+  - name: ao
+    summary: Analyze N instructions
+    subcommands:
+      - name: ao
+        summary: Analyze next N instructions
+        cname: analyze_n_ins
+        args:
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+      - name: aos
+        summary: Print the total size of next N instructions
+        cname: analyze_n_ins_size
+        args:
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aoe
+        summary: Print the esil of next N instructions
+        cname: analyze_n_ins_esil
+        args:
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aod
+        summary: Describe opcode for asm.arch
+        cname: analyze_opcode
+        args:
+          - name: opcode
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: aoda
+        summary: Describe all opcode for asm.arch
+        cname: display_opcode
+        args: []
+      - name: aoc
+        summary: Analyze which op could be executed in [cycles]
+        cname: analyze_cycles
+        args:
+          - name: cycles
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aom
+        summary: convert between mnemonic/id for asm.arch
+        cname: convert_mne
+        args:
+          - name: mne_or_id
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: aoma
+        summary: List mnemonics for asm.arch
+        cname: list_mne
+        args: []
