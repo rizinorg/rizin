@@ -63,9 +63,8 @@ static bool GH(je_matched)(const char *ptr, const char *str) {
 }
 #endif
 static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
-    rz_return_val_if_fail(core && map, GHT_MAX);
+    rz_return_val_if_fail(core && map && map->addr != GHT_MAX , GHT_MAX);
     GHT base_addr = map->addr;
-    rz_return_val_if_fail(base_addr != GHT_MAX, GHT_MAX);
 
 #if __linux__
     GHT main_arena = GHT_MAX;
