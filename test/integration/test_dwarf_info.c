@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include "minunit.h"
 #include <rz_bin.h>
 #include <rz_bin_dwarf.h>
+#include "../unit/minunit.h"
 
 #define check_attr_string(attr_idx, expect_string) \
 	mu_assert_streq(cu.dies[i].attr_values[attr_idx].string.content, expect_string, "Wrong string attribute information")
