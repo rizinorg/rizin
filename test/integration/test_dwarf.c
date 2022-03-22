@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include "minunit.h"
 #include <rz_bin.h>
 #include <rz_core.h>
 #include <rz_bin_dwarf.h>
+#include "../unit/minunit.h"
 
 #define check_abbrev_code(expected_code) \
 	mu_assert_eq(da->decls[i].code, expected_code, "Wrong abbrev code");

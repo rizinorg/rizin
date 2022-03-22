@@ -3,7 +3,7 @@
 
 #include <rz_core.h>
 #include <rz_util/rz_str.h>
-#include "minunit.h"
+#include "../unit/minunit.h"
 
 static RzCmdDescArg xd_args[] = {
 	{ .name = "f1", .type = RZ_CMD_ARG_TYPE_FILE },

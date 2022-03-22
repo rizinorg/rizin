@@ -5,8 +5,8 @@
 #include <rz_bin.h>
 #include <rz_type.h>
 #include <rz_util/rz_path.h>
-#include "minunit.h"
 #include "test_types.h"
+#include "../unit/minunit.h"
 
 #define check_kv(k, v) \
 	do { \

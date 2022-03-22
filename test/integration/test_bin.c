@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include "minunit.h"
 #include <rz_bin.h>
+#include "../unit/minunit.h"
 
 bool test_rz_bin(void) {
 	RzBin *bin = rz_bin_new();
