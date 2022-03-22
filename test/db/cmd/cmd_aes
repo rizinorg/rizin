@@ -37,7 +37,7 @@ ebx = 0x00000010
 EOF
 RUN
 
-NAME=dte
+NAME=dtel
 FILE=bins/elf/ls
 CMDS=<<EOF
 s main
@@ -53,7 +53,7 @@ aets+
 ..(ar rbx rdi rip rflags rsp)
 ?e qword[0x0] = `pv8 @ 0`
 ?e
-dte
+dtel
 EOF
 EXPECT=<<EOF
 rax = 0x00000000
