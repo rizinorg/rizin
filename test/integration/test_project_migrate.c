@@ -4,7 +4,7 @@
 #include <rz_core.h>
 #include <rz_project.h>
 
-#include "minunit.h"
+#include "../unit/minunit.h"
 
 /**
  * \file

@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include "minunit.h"
 #include <rz_bin.h>
 #include <rz_core.h>
 #include <rz_pdb.h>
 #include <rz_util/rz_path.h>
 #include "test_types.h"
 #include "../../librz/bin/pdb/pdb.h"
+#include "../unit/minunit.h"
 
 bool pdb_info_save_types(RzAnalysis *analysis, const char *file) {
 	RzPdb *pdb = rz_bin_pdb_parse_from_file(file);
