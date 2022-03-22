@@ -19,6 +19,14 @@
 
 #include "../core_private.h"
 
+#define CMD_CHECK_DEBUG_DEAD(core) \
+	do { \
+		if (rz_debug_is_dead(core->dbg)) { \
+			rz_cons_println("Debugging is not enabled. Run ood?"); \
+			return RZ_CMD_STATUS_ERROR; \
+		} \
+	} while (0)
+
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
 	"db", "[?]", "Breakpoints commands",
