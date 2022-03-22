@@ -113,6 +113,7 @@ typedef struct _DmpCtx {
 	ut32 kthread_process_offset; // nt!_KTHREAD Process
 	ut8 *context;
 	size_t context_sz;
+	void *bf; // RzBinFile * of DMP File
 } DmpCtx;
 
 static inline ut64 winkd_read_ptr_at(WindCtx *ctx, WindReadAt *read_at_func, ut64 at) {
@@ -141,6 +142,7 @@ WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address);
 WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address);
 RzList *winkd_list_process(WindCtx *ctx);
 RzList *winkd_list_threads(WindCtx *ctx);
+void winkd_windmodule_free(void *ptr);
 RzList *winkd_list_modules(WindCtx *ctx);
 int winkd_read_at_uva(WindCtx *ctx, ut64 offset, uint8_t *buf, int count);
 int winkd_write_at_uva(WindCtx *ctx, ut64 offset, const uint8_t *buf, int count);
@@ -163,7 +165,6 @@ int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int co
 int winkd_write_at(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int count);
 int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int count);
 void winkd_break(void *ctx);
-int winkd_break_read(KdCtx *ctx);
 bool winkd_lock_enter(KdCtx *ctx);
 bool winkd_lock_leave(KdCtx *ctx);
 bool winkd_lock_tryenter(KdCtx *ctx);

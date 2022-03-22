@@ -9,6 +9,7 @@
 #include "io_private.h"
 
 #if __WINDOWS__
+#include <rz_windows.h>
 #include <w32dbg_wrap.h>
 #endif
 
@@ -505,10 +506,18 @@ RZ_API bool rz_io_extend_at(RzIO *io, ut64 addr, ut64 size) {
 #undef IO_EXTEND_BLOCK_SZ
 }
 
+/**
+ * \brief Set a mask that is used on all following write operations
+ *
+ * \param io Reference to RzIo instance
+ * \param mask Mask to apply
+ * \param len Number of bytes in the mask
+ * \return true if the mask was correctly set, false otherwise
+ */
 RZ_API bool rz_io_set_write_mask(RzIO *io, const ut8 *mask, int len) {
-	if (!io || len < 1) {
-		return false;
-	}
+	rz_return_val_if_fail(io, false);
+	rz_return_val_if_fail(mask || len == 0, false);
+
 	free(io->write_mask);
 	if (!mask) {
 		io->write_mask = NULL;

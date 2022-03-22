@@ -200,46 +200,6 @@ static const char *help_msg_dsu[] = {
 	NULL
 };
 
-static const char *help_msg_dt[] = {
-	"Usage: dt", "", "Trace commands",
-	"dt", "", "List all traces ",
-	"dt", " [addr]", "Show trace info at address",
-	"dt%", "", "TODO",
-	"dt*", "", "List all traced opcode offsets",
-	"dt+", " [addr] [times]", "Add trace for address N times",
-	"dt-", "", "Reset traces (instruction/calls)",
-	"dt=", "", "Show ascii-art color bars with the debug trace ranges",
-	"dta", " 0x804020 ...", "Only trace given addresses",
-	"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
-	"dtd", "[qi] [nth-start]", "List all traced disassembled (quiet, instructions)",
-	"dte", "[?]", "Show esil trace logs",
-	"dtg", "", "Graph call/ret trace",
-	"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
-	"dtgi", "", "Interactive debug trace",
-	"dts", "[?]", "Trace sessions",
-	"dtt", " [tag]", "Select trace tag (no arg unsets)",
-	NULL
-};
-
-static const char *help_msg_dte[] = {
-	"Usage:", "dte", " Show esil trace logs",
-	"dte", "", "Esil trace log for a single instruction",
-	"dte", " [idx]", "Show commands for that index log",
-	"dte", "-*", "Delete all esil traces",
-	"dtei", "", "Esil trace log single instruction",
-	NULL
-};
-
-static const char *help_msg_dts[] = {
-	"Usage:", "dts[*]", "",
-	"dts+", "", "Start trace session",
-	"dts-", "", "Stop trace session",
-	"dtst", " [dir] ", "Save trace sessions to disk",
-	"dtsf", " [dir] ", "Read trace sessions from disk",
-	"dtsm", "", "List current memory map and hash",
-	NULL
-};
-
 static const char *help_msg_dx[] = {
 	"Usage: dx", "", " # Code injection commands",
 	"dx", " <opcode>...", "Inject opcodes",
@@ -1523,8 +1483,6 @@ RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
 	return RZ_CMD_STATUS_ERROR;
 }
 
-#include "../linux_heap_glibc.c"
-
 static void foreach_reg_set_or_clear(RzCore *core, bool set) {
 	RzReg *reg = rz_core_reg_default(core);
 	const RzList *regs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
@@ -1918,31 +1876,13 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 	}
 }
 
-static void debug_trace_calls(RzCore *core, const char *input) {
+static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr) {
 	RzBreakpointItem *bp_final = NULL;
 	int t = core->dbg->trace->enabled;
-	ut64 from = 0, to = UT64_MAX, final_addr = UT64_MAX;
 
 	if (rz_debug_is_dead(core->dbg)) {
 		eprintf("No process to debug.");
 		return;
-	}
-	if (*input == ' ') {
-		input = rz_str_trim_head_ro(input);
-		ut64 first_n = rz_num_math(core->num, input);
-		input = strchr(input, ' ');
-		if (input) {
-			input = rz_str_trim_head_ro(input);
-			from = first_n;
-			to = rz_num_math(core->num, input);
-			input = strchr(input, ' ');
-			if (input) {
-				input = rz_str_trim_head_ro(input);
-				final_addr = rz_num_math(core->num, input);
-			}
-		} else {
-			final_addr = first_n;
-		}
 	}
 	core->dbg->trace->enabled = 0;
 	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
@@ -2204,6 +2144,7 @@ static bool cmd_dcu(RzCore *core, const char *input) {
 	return true;
 }
 
+// dsu
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv) {
 	rz_reg_arena_swap(core->dbg->reg, true);
 	step_until(core, rz_num_math(core->num, argv[1]));
@@ -2211,6 +2152,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsui
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc, const char **argv) {
 	if (!step_until_inst(core, argv[1], false)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2219,6 +2161,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc,
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsuir
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int argc, const char **argv) {
 	if (!step_until_inst(core, argv[1], true)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2227,6 +2170,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsuo
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc, const char **argv) {
 	RzList *optypes_list = rz_list_new_from_array((const void **)argv + 1, argc - 1);
 	step_until_optype(core, optypes_list);
@@ -2235,25 +2179,163 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsue
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_esil_handler(RzCore *core, int argc, const char **argv) {
 	step_until_esil(core, argv[1]);
 	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
+// dsuf
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, const char **argv) {
 	step_until_flag(core, argv[1]);
 	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
+// dt
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_handler(RzCore *core, int argc, const char **argv) {
+	RzDebugTracepoint *t = rz_debug_trace_get(core->dbg, core->offset);
+	if (!t) {
+		RZ_LOG_ERROR("Cannot find any debug trace at address %" PFMT64x ".\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_cons_printf("offset = 0x%" PFMT64x "\n", t->addr);
+	rz_cons_printf("opsize = %d\n", t->size);
+	rz_cons_printf("times = %d\n", t->times);
+	rz_cons_printf("count = %d\n", t->count);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtl
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_debug_trace_print(core->dbg, state, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtl=
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_ascii_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_traces_ascii(core->dbg, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dt+
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_handler(RzCore *core, int argc, const char **argv) {
+	int count = argc > 1 ? rz_num_math(core->num, argv[1]) : 1;
+	RzAnalysisOp *op = rz_core_op_analysis(core, core->offset, RZ_ANALYSIS_OP_MASK_HINT);
+	if (!op) {
+		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzDebugTracepoint *tp = rz_debug_trace_add(core->dbg, core->offset, op->size);
+	if (!tp) {
+		rz_analysis_op_free(op);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	tp->count = count;
+	rz_analysis_op_free(op);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dt++
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_add_addrs_handler(RzCore *core, int argc, const char **argv) {
+	for (int i = 1; i < argc; ++i) {
+		ut64 addr = rz_num_get(NULL, argv[i]);
+		RzDebugTracepoint *t = rz_debug_trace_add(core->dbg, addr, 1);
+		if (!t) {
+			RZ_LOG_ERROR("Cannot add trace at address %" PFMT64x ".\n", addr);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dt-
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_reset_handler(RzCore *core, int argc, const char **argv) {
+	rz_tree_reset(core->dbg->tree);
+	rz_debug_trace_free(core->dbg->trace);
+	rz_debug_tracenodes_reset(core->dbg);
+	core->dbg->trace = rz_debug_trace_new();
+	return RZ_CMD_STATUS_OK;
+}
+
+// dta
+RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	rz_debug_trace_at(core->dbg, input);
+	return 0;
+}
+
+// dtc
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_calls_handler(RzCore *core, int argc, const char **argv) {
+	ut64 from = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+	ut64 to = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
+	ut64 addr = argc > 3 ? rz_num_math(core->num, argv[3]) : UT64_MAX;
+
+	debug_trace_calls(core, from, to, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dte
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_esil_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init(core);
+	int idx = rz_num_math(core->num, argv[1]);
+	rz_analysis_esil_trace_show(core->analysis->esil, idx);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtel
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_esils_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init(core);
+	rz_analysis_esil_trace_list(core->analysis->esil);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dte-*
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_delete_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init(core);
+	if (core->analysis->esil) {
+		rz_pvector_free(core->analysis->esil->trace->instructions);
+		core->analysis->esil->trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtei
+RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init(core);
+	RzAnalysisOp *op = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_ESIL);
+	if (!op) {
+		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_esil_trace_op(core->analysis->esil, op);
+	rz_analysis_op_free(op);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtg
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_graph_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	dot_trace_traverse(core, core->dbg->tree, rz_output_mode_to_char(mode));
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtgi
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_interactive_handler(RzCore *core, int argc, const char **argv) {
+	dot_trace_traverse(core, core->dbg->tree, 'i');
+	return RZ_CMD_STATUS_OK;
+}
+
+// dts+
 RZ_IPI RzCmdStatus rz_cmd_debug_start_trace_session_handler(RzCore *core, int argc, const char **argv) {
 	if (rz_debug_is_dead(core->dbg)) {
-		eprintf("Cannot start session outside of debug mode, run ood?\n");
+		RZ_LOG_ERROR("Cannot start session outside of debug mode, run ood?\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (core->dbg->session) {
-		eprintf("Session already started\n");
+		RZ_LOG_ERROR("Session already started\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	core->dbg->session = rz_debug_session_new();
@@ -2261,9 +2343,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_start_trace_session_handler(RzCore *core, int ar
 	return RZ_CMD_STATUS_OK;
 }
 
+// dts-
 RZ_IPI RzCmdStatus rz_cmd_debug_stop_trace_session_handler(RzCore *core, int argc, const char **argv) {
 	if (!core->dbg->session) {
-		eprintf("No session started\n");
+		RZ_LOG_ERROR("No session started\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_debug_session_free(core->dbg->session);
@@ -2271,15 +2354,17 @@ RZ_IPI RzCmdStatus rz_cmd_debug_stop_trace_session_handler(RzCore *core, int arg
 	return RZ_CMD_STATUS_OK;
 }
 
+// dtst
 RZ_IPI RzCmdStatus rz_cmd_debug_save_trace_session_handler(RzCore *core, int argc, const char **argv) {
 	if (!core->dbg->session) {
-		eprintf("No session started\n");
+		RZ_LOG_ERROR("No session started\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_debug_session_save(core->dbg->session, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
+// dtsf
 RZ_IPI RzCmdStatus rz_cmd_debug_load_trace_session_handler(RzCore *core, int argc, const char **argv) {
 	if (core->dbg->session) {
 		rz_debug_session_free(core->dbg->session);
@@ -2290,10 +2375,18 @@ RZ_IPI RzCmdStatus rz_cmd_debug_load_trace_session_handler(RzCore *core, int arg
 	return RZ_CMD_STATUS_OK;
 }
 
+// dtsm
 RZ_IPI RzCmdStatus rz_cmd_debug_list_trace_session_mmap_handler(RzCore *core, int argc, const char **argv) {
 	if (core->dbg->session) {
 		rz_debug_session_list_memory(core->dbg);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dtt
+RZ_IPI RzCmdStatus rz_cmd_debug_trace_tag_handler(RzCore *core, int argc, const char **argv) {
+	int tag = rz_num_math(core->num, argv[1]);
+	rz_debug_trace_tag(core->dbg, tag);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2506,16 +2599,10 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 
 RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
-	RzDebugTracepoint *t;
-	const char *ptr;
 	int follow = 0;
-	ut64 addr;
-	int min;
 	RzListIter *iter;
 	RzList *list;
 	RzDebugPid *p;
-	RzDebugTracepoint *trace;
-	RzAnalysisOp *op;
 
 	if (!strncmp(input, "ate", 3)) {
 		char *now = rz_time_date_now_to_string();
@@ -2525,216 +2612,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	}
 
 	switch (input[0]) {
-	case 't':
-		// TODO: define ranges? to display only some traces, allow to scroll on this disasm? ~.. ?
-		switch (input[1]) {
-		case '\0': // "dt"
-			rz_debug_trace_list(core->dbg, 0, core->offset);
-			break;
-		case '=': // "dt="
-			rz_debug_trace_list(core->dbg, '=', core->offset);
-			break;
-		case 'q': // "dtq"
-			rz_debug_trace_list(core->dbg, 'q', core->offset);
-			break;
-		case '*': // "dt*"
-			rz_debug_trace_list(core->dbg, 1, core->offset);
-			break;
-		case ' ': // "dt [addr]"
-			if ((t = rz_debug_trace_get(core->dbg,
-				     rz_num_math(core->num, input + 3)))) {
-				rz_cons_printf("offset = 0x%" PFMT64x "\n", t->addr);
-				rz_cons_printf("opsize = %d\n", t->size);
-				rz_cons_printf("times = %d\n", t->times);
-				rz_cons_printf("count = %d\n", t->count);
-				// TODO cons_printf("time = %d\n", t->tm);
-			}
-			break;
-		case 'a': // "dta"
-			rz_debug_trace_at(core->dbg, input + 3);
-			break;
-		case 't': // "dtt"
-			rz_debug_trace_tag(core->dbg, atoi(input + 3));
-			break;
-		case 'c': // "dtc"
-			if (input[2] == '?') {
-				rz_cons_println("Usage: dtc [addr] ([from] [to] [addr]) - trace calls in debugger");
-			} else {
-				debug_trace_calls(core, input + 2);
-			}
-			break;
-		case 'd': // "dtd"
-			min = rz_num_math(core->num, input + 3);
-			if (input[2] == 'q') { // "dtdq"
-				int n = 0;
-				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					if (n >= min) {
-						rz_cons_printf("%d  ", trace->count);
-						rz_cons_printf("0x%08" PFMT64x "\n", trace->addr);
-						break;
-					}
-					n++;
-				}
-			} else if (input[2] == 'i') {
-				int n = 0;
-				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-					if (n >= min) {
-						rz_cons_printf("%d %s\n", trace->count, op->mnemonic);
-					}
-					n++;
-					rz_analysis_op_free(op);
-				}
-			} else if (input[2] == ' ') {
-				int n = 0;
-				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-					if (n >= min) {
-						rz_cons_printf("0x%08" PFMT64x " %s\n", trace->addr, op->mnemonic);
-					}
-					n++;
-					rz_analysis_op_free(op);
-				}
-			} else {
-				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-					rz_cons_printf("0x%08" PFMT64x " %s\n", trace->addr, op->mnemonic);
-					rz_analysis_op_free(op);
-				}
-			}
-			break;
-		case 'g': // "dtg"
-			dot_trace_traverse(core, core->dbg->tree, input[2]);
-			break;
-		case '-': // "dt-"
-			rz_tree_reset(core->dbg->tree);
-			rz_debug_trace_free(core->dbg->trace);
-			rz_debug_tracenodes_reset(core->dbg);
-			core->dbg->trace = rz_debug_trace_new();
-			break;
-		case '+': // "dt+"
-			if (input[2] == '+') { // "dt++"
-				char *a, *s = rz_str_trim_dup(input + 3);
-				RzList *args = rz_str_split_list(s, " ", 0);
-				RzListIter *iter;
-				rz_list_foreach (args, iter, a) {
-					ut64 addr = rz_num_get(NULL, a);
-					(void)rz_debug_trace_add(core->dbg, addr, 1);
-				}
-				rz_list_free(args);
-				free(s);
-			} else {
-				ptr = input + 2;
-				addr = rz_num_math(core->num, ptr);
-				ptr = strchr(ptr, ' ');
-				int count = 1;
-				if (ptr) {
-					count = rz_num_math(core->num, ptr + 1);
-				}
-				RzAnalysisOp *op = rz_core_op_analysis(core, addr, RZ_ANALYSIS_OP_MASK_HINT);
-				if (op) {
-					RzDebugTracepoint *tp = rz_debug_trace_add(core->dbg, addr, op->size);
-					if (!tp) {
-						rz_analysis_op_free(op);
-						break;
-					}
-					tp->count = count;
-					rz_analysis_trace_bb(core->analysis, addr);
-					rz_analysis_op_free(op);
-				} else {
-					eprintf("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
-				}
-			}
-			break;
-		case 'e': // "dte"
-			rz_core_analysis_esil_init(core);
-			switch (input[2]) {
-			case 0: // "dte"
-				rz_analysis_esil_trace_list(core->analysis->esil);
-				break;
-			case 'i': { // "dtei"
-				ut64 addr = rz_num_math(core->num, input + 3);
-				if (!addr) {
-					addr = core->offset;
-				}
-				RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_ESIL);
-				if (op) {
-					rz_analysis_esil_trace_op(core->analysis->esil, op);
-				}
-				rz_analysis_op_free(op);
-			} break;
-			case '-': // "dte-"
-				if (!strcmp(input + 3, "*")) {
-					if (core->analysis->esil) {
-						rz_pvector_free(core->analysis->esil->trace->instructions);
-						core->analysis->esil->trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
-					}
-				} else {
-					eprintf("TODO: dte- cannot delete specific logs. Use dte-*\n");
-				}
-				break;
-			case ' ': { // "dte "
-				int idx = atoi(input + 3);
-				rz_analysis_esil_trace_show(
-					core->analysis->esil, idx);
-			} break;
-			default:
-				rz_core_cmd_help(core, help_msg_dte);
-			}
-			break;
-		case 's': // "dts"
-			switch (input[2]) {
-			case '+': // "dts+"
-				if (rz_debug_is_dead(core->dbg)) {
-					eprintf("Cannot start session outside of debug mode, run ood?\n");
-					break;
-				}
-				if (core->dbg->session) {
-					eprintf("Session already started\n");
-					break;
-				}
-				core->dbg->session = rz_debug_session_new();
-				rz_debug_add_checkpoint(core->dbg);
-				break;
-			case '-': // "dts-"
-				if (!core->dbg->session) {
-					eprintf("No session started\n");
-					break;
-				}
-				rz_debug_session_free(core->dbg->session);
-				core->dbg->session = NULL;
-				break;
-			case 't': // "dtst"
-				if (!core->dbg->session) {
-					eprintf("No session started\n");
-					break;
-				}
-				rz_debug_session_save(core->dbg->session, input + 4);
-				break;
-			case 'f': // "dtsf"
-				if (core->dbg->session) {
-					rz_debug_session_free(core->dbg->session);
-					core->dbg->session = NULL;
-				}
-				core->dbg->session = rz_debug_session_new();
-				rz_debug_session_load(core->dbg, input + 4);
-				break;
-			case 'm': // "dtsm"
-				if (core->dbg->session) {
-					rz_debug_session_list_memory(core->dbg);
-				}
-				break;
-			default:
-				rz_core_cmd_help(core, help_msg_dts);
-			}
-			break;
-		case '?':
-		default: {
-			rz_core_cmd_help(core, help_msg_dt);
-			rz_cons_printf("Current Tag: %d\n", core->dbg->trace->tag);
-		} break;
-		}
-		break;
 	case 'd': // "ddd"
 		switch (input[1]) {
 		case '\0': // "ddd"

@@ -166,11 +166,11 @@ hello
 EOF
 RUN
 
-NAME=wt
+NAME=write to file
 FILE==
 CMDS=<<EOF
 wx 01020304
-wt .rz-wt.test 4
+pr 4 > .rz-wt.test
 p8 4 @ 4
 wff .rz-wt.test @ 4
 rm .rz-wt.test
@@ -322,7 +322,6 @@ EOF
 RUN
 
 NAME=w_escape
-ARGS=-ecfg.oldshell=false
 FILE==
 CMDS=<<EOF
 wv8\@10

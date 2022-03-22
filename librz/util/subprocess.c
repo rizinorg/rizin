@@ -8,6 +8,7 @@
 #define BUFFER_SIZE 0x500
 
 #if __WINDOWS__
+#include <rz_windows.h>
 struct rz_subprocess_t {
 	HANDLE stdin_write;
 	HANDLE stdout_read;

@@ -29,7 +29,6 @@ $foo
 $foo
 ?e --
 $-*
-e cfg.oldshell=false
 $foo=\#!pipe echo hello
 $foo
 ?e --

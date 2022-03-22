@@ -46,6 +46,8 @@ static const RzCmdDescDetail w8_details[2];
 static const RzCmdDescDetail w6_details[2];
 static const RzCmdDescDetail write_extend_hexbytes_details[2];
 static const RzCmdDescDetail write_assembly_opcode_details[2];
+static const RzCmdDescDetail write_op_sequence_details[2];
+static const RzCmdDescDetail wo_details[2];
 static const RzCmdDescDetail zign_add_details[5];
 static const RzCmdDescDetail tmp_modifiers_details[2];
 static const RzCmdDescDetail iterators_details[2];
@@ -177,6 +179,13 @@ static const RzCmdDescArg analysis_class_vtable_add_args[5];
 static const RzCmdDescArg analysis_class_vtable_del_args[3];
 static const RzCmdDescArg analysis_class_vtable_list_args[2];
 static const RzCmdDescArg analysis_class_vtable_lookup_args[3];
+static const RzCmdDescArg analyze_bytes_args[2];
+static const RzCmdDescArg analyze_n_ins_args[2];
+static const RzCmdDescArg analyze_n_ins_size_args[2];
+static const RzCmdDescArg analyze_n_ins_esil_args[2];
+static const RzCmdDescArg analyze_opcode_args[2];
+static const RzCmdDescArg analyze_cycles_args[2];
+static const RzCmdDescArg convert_mne_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -249,8 +258,13 @@ static const RzCmdDescArg cmd_debug_step_until_instr_regex_args[2];
 static const RzCmdDescArg cmd_debug_step_until_optype_args[2];
 static const RzCmdDescArg cmd_debug_step_until_esil_args[2];
 static const RzCmdDescArg cmd_debug_step_until_flag_args[2];
+static const RzCmdDescArg cmd_debug_trace_add_args[2];
+static const RzCmdDescArg cmd_debug_trace_add_addrs_args[2];
+static const RzCmdDescArg cmd_debug_trace_calls_args[4];
+static const RzCmdDescArg cmd_debug_trace_esil_args[2];
 static const RzCmdDescArg cmd_debug_save_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
+static const RzCmdDescArg cmd_debug_trace_tag_args[2];
 static const RzCmdDescArg cmd_debug_allocate_maps_args[2];
 static const RzCmdDescArg cmd_debug_dump_maps_args[2];
 static const RzCmdDescArg cmd_heap_chunks_print_args[2];
@@ -471,15 +485,18 @@ static const RzCmdDescArg write_base64_encode_args[2];
 static const RzCmdDescArg write_extend_zero_args[3];
 static const RzCmdDescArg write_extend_shift_args[3];
 static const RzCmdDescArg write_extend_hexbytes_args[3];
+static const RzCmdDescArg write_unified_patch_args[2];
 static const RzCmdDescArg write_random_args[2];
 static const RzCmdDescArg write_cache_remove_args[3];
 static const RzCmdDescArg write_cache_commit_args[3];
 static const RzCmdDescArg write_pcache_list_args[2];
 static const RzCmdDescArg write_pcache_commit_args[2];
+static const RzCmdDescArg write_zero_string_args[2];
 static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
 static const RzCmdDescArg write_from_socket_args[3];
+static const RzCmdDescArg write_wide_string_args[2];
 static const RzCmdDescArg write_hex_args[2];
 static const RzCmdDescArg write_hex_from_file_args[2];
 static const RzCmdDescArg write_assembly_args[2];
@@ -487,6 +504,22 @@ static const RzCmdDescArg write_assembly_inside_args[2];
 static const RzCmdDescArg write_assembly_file_args[2];
 static const RzCmdDescArg write_assembly_opcode_args[2];
 static const RzCmdDescArg write_block_args[2];
+static const RzCmdDescArg write_mask_set_args[2];
+static const RzCmdDescArg write_op_add_args[2];
+static const RzCmdDescArg write_op_and_args[2];
+static const RzCmdDescArg write_op_div_args[2];
+static const RzCmdDescArg write_op_shl_args[2];
+static const RzCmdDescArg write_op_mul_args[2];
+static const RzCmdDescArg write_op_or_args[2];
+static const RzCmdDescArg write_op_shr_args[2];
+static const RzCmdDescArg write_op_sub_args[2];
+static const RzCmdDescArg write_op_xor_args[2];
+static const RzCmdDescArg write_op_sequence_args[5];
+static const RzCmdDescArg write_op_decrypt_args[4];
+static const RzCmdDescArg write_op_encrypt_args[4];
+static const RzCmdDescArg write_debruijn_args[2];
+static const RzCmdDescArg write_debruijn_find_args[2];
+static const RzCmdDescArg write_duplicate_args[3];
 static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
@@ -3568,6 +3601,159 @@ static const RzCmdDescHelp analysis_class_vtable_lookup_help = {
 	.args = analysis_class_vtable_lookup_args,
 };
 
+static const RzCmdDescArg analyze_bytes_args[] = {
+	{
+		.name = "hexpairs",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_bytes_help = {
+	.summary = "Analyze bytes",
+	.args = analyze_bytes_args,
+};
+
+static const RzCmdDescHelp aO_help = {
+	.summary = "Analyze next block as instructions",
+};
+static const RzCmdDescArg analyze_n_bytes_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_bytes_help = {
+	.summary = "Analyze next block as instructions",
+	.args = analyze_n_bytes_args,
+};
+
+static const RzCmdDescArg analyze_n_bytes_esil_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_bytes_esil_help = {
+	.summary = "Analyze the esil of next block",
+	.args = analyze_n_bytes_esil_args,
+};
+
+static const RzCmdDescArg analyze_n_bytes_desc_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_bytes_desc_help = {
+	.summary = "Print the description of next block",
+	.args = analyze_n_bytes_desc_args,
+};
+
+static const RzCmdDescArg analyze_n_bytes_size_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_bytes_size_help = {
+	.summary = "Print the total instruction size of next block",
+	.args = analyze_n_bytes_size_args,
+};
+
+static const RzCmdDescHelp ao_help = {
+	.summary = "Analyze N instructions",
+};
+static const RzCmdDescArg analyze_n_ins_args[] = {
+	{
+		.name = "n_instructions",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_ins_help = {
+	.summary = "Analyze next N instructions",
+	.args = analyze_n_ins_args,
+};
+
+static const RzCmdDescArg analyze_n_ins_size_args[] = {
+	{
+		.name = "n_instructions",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_ins_size_help = {
+	.summary = "Print the total size of next N instructions",
+	.args = analyze_n_ins_size_args,
+};
+
+static const RzCmdDescArg analyze_n_ins_esil_args[] = {
+	{
+		.name = "n_instructions",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_ins_esil_help = {
+	.summary = "Print the esil of next N instructions",
+	.args = analyze_n_ins_esil_args,
+};
+
+static const RzCmdDescArg analyze_opcode_args[] = {
+	{
+		.name = "opcode",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_opcode_help = {
+	.summary = "Describe opcode for asm.arch",
+	.args = analyze_opcode_args,
+};
+
+static const RzCmdDescArg display_opcode_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp display_opcode_help = {
+	.summary = "Describe all opcode for asm.arch",
+	.args = display_opcode_args,
+};
+
+static const RzCmdDescArg analyze_cycles_args[] = {
+	{
+		.name = "cycles",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_cycles_help = {
+	.summary = "Analyze which op could be executed in [cycles]",
+	.args = analyze_cycles_args,
+};
+
+static const RzCmdDescArg convert_mne_args[] = {
+	{
+		.name = "mne_or_id",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp convert_mne_help = {
+	.summary = "convert between mnemonic/id for asm.arch",
+	.args = convert_mne_args,
+};
+
+static const RzCmdDescArg list_mne_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp list_mne_help = {
+	.summary = "List mnemonics for asm.arch",
+	.args = list_mne_args,
+};
+
 static const RzCmdDescHelp b_help = {
 	.summary = "Display or change the block size",
 };
@@ -5323,6 +5509,161 @@ static const RzCmdDescHelp cmd_debug_step_until_flag_help = {
 	.args = cmd_debug_step_until_flag_args,
 };
 
+static const RzCmdDescHelp dt_help = {
+	.summary = "Trace commands",
+};
+static const RzCmdDescArg cmd_debug_trace_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_trace_help = {
+	.summary = "Get trace info at the current address",
+	.args = cmd_debug_trace_args,
+};
+
+static const RzCmdDescArg cmd_debug_traces_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_traces_help = {
+	.summary = "List all traces",
+	.args = cmd_debug_traces_args,
+};
+
+static const RzCmdDescArg cmd_debug_traces_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_traces_ascii_help = {
+	.summary = "List all traces in ascii art",
+	.args = cmd_debug_traces_ascii_args,
+};
+
+static const RzCmdDescArg cmd_debug_trace_add_args[] = {
+	{
+		.name = "times",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_trace_add_help = {
+	.summary = "Add trace for address N times",
+	.args = cmd_debug_trace_add_args,
+};
+
+static const RzCmdDescArg cmd_debug_trace_add_addrs_args[] = {
+	{
+		.name = "addrs",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_trace_add_addrs_help = {
+	.summary = "Add trace for some address",
+	.args = cmd_debug_trace_add_addrs_args,
+};
+
+static const RzCmdDescArg cmd_debug_traces_reset_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_traces_reset_help = {
+	.summary = "Reset traces (instruction/calls)",
+	.args = cmd_debug_traces_reset_args,
+};
+
+static const RzCmdDescHelp cmd_debug_trace_addr_help = {
+	.summary = "Only trace given addresses",
+};
+
+static const RzCmdDescArg cmd_debug_trace_calls_args[] = {
+	{
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "to",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_trace_calls_help = {
+	.summary = "Trace call/ret",
+	.args = cmd_debug_trace_calls_args,
+};
+
+static const RzCmdDescHelp dte_help = {
+	.summary = "Esil trace logs",
+};
+static const RzCmdDescArg cmd_debug_trace_esil_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_trace_esil_help = {
+	.summary = "Esil trace log for a single instruction for that index log",
+	.args = cmd_debug_trace_esil_args,
+};
+
+static const RzCmdDescArg cmd_debug_trace_esils_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_trace_esils_help = {
+	.summary = "Esil trace log for a single instruction",
+	.args = cmd_debug_trace_esils_args,
+};
+
+static const RzCmdDescArg cmd_debug_traces_esil_delete_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_traces_esil_delete_help = {
+	.summary = "Delete all esil traces",
+	.args = cmd_debug_traces_esil_delete_args,
+};
+
+static const RzCmdDescArg cmd_debug_traces_esil_i_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_traces_esil_i_help = {
+	.summary = "Esil trace log for a single instruction",
+	.args = cmd_debug_traces_esil_i_args,
+};
+
+static const RzCmdDescHelp dtg_help = {
+	.summary = "Graph call/ret trace",
+};
+static const RzCmdDescArg cmd_debug_trace_graph_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_trace_graph_help = {
+	.summary = "Graph call/ret trace",
+	.args = cmd_debug_trace_graph_args,
+};
+
+static const RzCmdDescArg cmd_debug_trace_interactive_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_trace_interactive_help = {
+	.summary = "Interactive debug trace",
+	.args = cmd_debug_trace_interactive_args,
+};
+
 static const RzCmdDescHelp dts_help = {
 	.summary = "Debug trace session commands",
 };
@@ -5374,6 +5715,20 @@ static const RzCmdDescArg cmd_debug_list_trace_session_mmap_args[] = {
 static const RzCmdDescHelp cmd_debug_list_trace_session_mmap_help = {
 	.summary = "List current memory map and hash",
 	.args = cmd_debug_list_trace_session_mmap_args,
+};
+
+static const RzCmdDescArg cmd_debug_trace_tag_args[] = {
+	{
+		.name = "tag",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_trace_tag_help = {
+	.summary = "Select trace tag (no arg unsets)",
+	.args = cmd_debug_trace_tag_args,
 };
 
 static const RzCmdDescHelp dm_help = {
@@ -10518,8 +10873,17 @@ static const RzCmdDescHelp write_extend_hexbytes_help = {
 	.args = write_extend_hexbytes_args,
 };
 
-static const RzCmdDescHelp wu_handler_old_help = {
+static const RzCmdDescArg write_unified_patch_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_unified_patch_help = {
 	.summary = "Apply unified hex patch (see output of cu)",
+	.args = write_unified_patch_args,
 };
 
 static const RzCmdDescArg write_random_args[] = {
@@ -10632,12 +10996,18 @@ static const RzCmdDescHelp write_pcache_commit_help = {
 	.args = write_pcache_commit_args,
 };
 
-static const RzCmdDescHelp wz_handler_old_help = {
-	.summary = "Write zero-terminated string",
-};
+static const RzCmdDescArg write_zero_string_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
-static const RzCmdDescHelp wt_handler_old_help = {
-	.summary = "Write to file",
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_zero_string_help = {
+	.summary = "Write zero-terminated string",
+	.args = write_zero_string_args,
 };
 
 static const RzCmdDescHelp wf_help = {
@@ -10727,8 +11097,18 @@ static const RzCmdDescHelp write_from_socket_help = {
 	.args = write_from_socket_args,
 };
 
-static const RzCmdDescHelp ww_handler_old_help = {
+static const RzCmdDescArg write_wide_string_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_wide_string_help = {
 	.summary = "Write wide 16 little endian string",
+	.args = write_wide_string_args,
 };
 
 static const RzCmdDescHelp wx_help = {
@@ -10854,16 +11234,338 @@ static const RzCmdDescHelp write_block_help = {
 	.args = write_block_args,
 };
 
-static const RzCmdDescHelp wm_handler_old_help = {
+static const RzCmdDescHelp wm_help = {
 	.summary = "Set binary mask hexpair to be used as cyclic write mask",
 };
+static const RzCmdDescArg write_mask_set_args[] = {
+	{
+		.name = "hex_mask",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
-static const RzCmdDescHelp wo_handler_old_help = {
-	.summary = "Write in block with operation",
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_mask_set_help = {
+	.summary = "Set a write mask",
+	.description = "Set a write mask that is applied whenever a following write operation is performed. Data will be masked as if the first byte of data is in arithmetic AND (&) with the first byte of the mask, the second byte of data with the second byte of the mask, and so on.",
+	.args = write_mask_set_args,
 };
 
-static const RzCmdDescHelp wd_handler_old_help = {
-	.summary = "Duplicate N bytes from offset at current seek",
+static const RzCmdDescArg write_mask_reset_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_mask_reset_help = {
+	.summary = "Remove the write mask",
+	.args = write_mask_reset_args,
+};
+
+static const RzCmdDescDetailEntry wo_Examples_detail_entries[] = {
+	{ .text = "woa", .arg_str = " 20", .comment = "Content before: 1122334455 ; Content after: 3142536475" },
+	{ .text = "wos", .arg_str = " 2021", .comment = "Content before: 1122334455 ; Content after: f101132335" },
+	{ .text = "wo4", .arg_str = "", .comment = "Content before: 1122334455667788; Content after: 4433221188776655" },
+	{ 0 },
+};
+static const RzCmdDescDetail wo_details[] = {
+	{ .name = "Examples", .entries = wo_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp wo_help = {
+	.summary = "Write a block with a special operation",
+	.details = wo_details,
+};
+static const RzCmdDescArg write_op_2byteswap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_2byteswap_help = {
+	.summary = "Swap the endianess of 2-bytes values in the current block",
+	.args = write_op_2byteswap_args,
+};
+
+static const RzCmdDescArg write_op_4byteswap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_4byteswap_help = {
+	.summary = "Swap the endianess of 4-bytes values in the current block",
+	.args = write_op_4byteswap_args,
+};
+
+static const RzCmdDescArg write_op_8byteswap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_8byteswap_help = {
+	.summary = "Swap the endianess of 8-bytes values in the current block",
+	.args = write_op_8byteswap_args,
+};
+
+static const RzCmdDescArg write_op_add_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_add_help = {
+	.summary = "Add each existing byte in the block with the given <value>",
+	.args = write_op_add_args,
+};
+
+static const RzCmdDescArg write_op_and_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_and_help = {
+	.summary = "Bitwise-and each existing byte in the block with the given <value>",
+	.args = write_op_and_args,
+};
+
+static const RzCmdDescArg write_op_div_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_div_help = {
+	.summary = "Divide each existing byte in the block with the given <value>",
+	.args = write_op_div_args,
+};
+
+static const RzCmdDescArg write_op_shl_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_shl_help = {
+	.summary = "Bitwise-shift-left each existing byte in the block with the given <value>",
+	.args = write_op_shl_args,
+};
+
+static const RzCmdDescArg write_op_mul_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_mul_help = {
+	.summary = "Multiply each existing byte in the block with the given <value>",
+	.args = write_op_mul_args,
+};
+
+static const RzCmdDescArg write_op_or_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_or_help = {
+	.summary = "Bitwise-or each existing byte in the block with the given <value>",
+	.args = write_op_or_args,
+};
+
+static const RzCmdDescArg write_op_shr_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_shr_help = {
+	.summary = "Bitwise-shift-right each existing byte in the block with the given <value>",
+	.args = write_op_shr_args,
+};
+
+static const RzCmdDescArg write_op_sub_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_sub_help = {
+	.summary = "Subtract each existing byte in the block with the given <value>",
+	.args = write_op_sub_args,
+};
+
+static const RzCmdDescArg write_op_xor_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_xor_help = {
+	.summary = "Bitwise-xor each existing byte in the block with the given <value>",
+	.args = write_op_xor_args,
+};
+
+static const RzCmdDescDetailEntry write_op_sequence_Examples_detail_entries[] = {
+	{ .text = "woe", .arg_str = " 1 3 1", .comment = "Write 010203010203010203" },
+	{ .text = "woe", .arg_str = " 1 4 2", .comment = "Write 010301030103010301" },
+	{ .text = "woe", .arg_str = " 1 5 2", .comment = "Write 010305020401030502" },
+	{ .text = "woe", .arg_str = " 1 3 1 2", .comment = "Write 01000200030001000200" },
+	{ 0 },
+};
+static const RzCmdDescDetail write_op_sequence_details[] = {
+	{ .name = "Examples", .entries = write_op_sequence_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg write_op_sequence_args[] = {
+	{
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "to",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "step",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "1",
+
+	},
+	{
+		.name = "value_size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.default_value = "1",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_sequence_help = {
+	.summary = "Write a sequence repeatedly with values from <from> up to <to> in the block",
+	.description = "Write a sequence of data to fill the whole block at the current offset. The sequence is formed starting from <from> up to <to>, with an increment specified in <step>. Each value is written as a <value_size>-bytes value, according to the endianess specified in cfg.bigendian.",
+	.details = write_op_sequence_details,
+	.args = write_op_sequence_args,
+};
+
+static const RzCmdDescArg write_op_decrypt_args[] = {
+	{
+		.name = "algo",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "key",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "IV",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_decrypt_help = {
+	.summary = "Decrypt current block with given <algo>, <key> and optional <IV>",
+	.args = write_op_decrypt_args,
+};
+
+static const RzCmdDescArg write_op_encrypt_args[] = {
+	{
+		.name = "algo",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "key",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "IV",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_op_encrypt_help = {
+	.summary = "Encrypt current block with given <algo>, <key> and optional <IV>",
+	.args = write_op_encrypt_args,
+};
+
+static const RzCmdDescHelp wD_help = {
+	.summary = "Write De Bruijn Pattern",
+};
+static const RzCmdDescArg write_debruijn_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_debruijn_help = {
+	.summary = "Write a De Bruijn Pattern of length <len> at the current offset",
+	.args = write_debruijn_args,
+};
+
+static const RzCmdDescArg write_debruijn_find_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_debruijn_find_help = {
+	.summary = "Returns the offset where <value> can be found in a De Bruijn Pattern",
+	.description = "It search for a particular value in the pattern as returned by the `wD` command. <value> is assumed to be a number of as few bytes as necessary, in the endian specified by cfg.bigendian.",
+	.args = write_debruijn_find_args,
+};
+
+static const RzCmdDescArg write_duplicate_args[] = {
+	{
+		.name = "src",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_duplicate_help = {
+	.summary = "Duplicate <len> bytes from <src> offset to current seek",
+	.args = write_duplicate_args,
 };
 
 static const RzCmdDescArg write_length_string_args[] = {
@@ -12576,6 +13278,43 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_class_vtable_lookup_cd = rz_cmd_desc_argv_new(core->rcmd, acv_cd, "acvf", rz_analysis_class_vtable_lookup_handler, &analysis_class_vtable_lookup_help);
 	rz_warn_if_fail(analysis_class_vtable_lookup_cd);
 
+	RzCmdDesc *analyze_bytes_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_cd, "a8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_bytes_handler, &analyze_bytes_help);
+	rz_warn_if_fail(analyze_bytes_cd);
+
+	RzCmdDesc *aO_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "aO", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_n_bytes_handler, &analyze_n_bytes_help, &aO_help);
+	rz_warn_if_fail(aO_cd);
+	RzCmdDesc *analyze_n_bytes_esil_cd = rz_cmd_desc_argv_new(core->rcmd, aO_cd, "aOe", rz_analyze_n_bytes_esil_handler, &analyze_n_bytes_esil_help);
+	rz_warn_if_fail(analyze_n_bytes_esil_cd);
+
+	RzCmdDesc *analyze_n_bytes_desc_cd = rz_cmd_desc_argv_new(core->rcmd, aO_cd, "aOd", rz_analyze_n_bytes_desc_handler, &analyze_n_bytes_desc_help);
+	rz_warn_if_fail(analyze_n_bytes_desc_cd);
+
+	RzCmdDesc *analyze_n_bytes_size_cd = rz_cmd_desc_argv_new(core->rcmd, aO_cd, "aOs", rz_analyze_n_bytes_size_handler, &analyze_n_bytes_size_help);
+	rz_warn_if_fail(analyze_n_bytes_size_cd);
+
+	RzCmdDesc *ao_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ao", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_n_ins_handler, &analyze_n_ins_help, &ao_help);
+	rz_warn_if_fail(ao_cd);
+	RzCmdDesc *analyze_n_ins_size_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aos", rz_analyze_n_ins_size_handler, &analyze_n_ins_size_help);
+	rz_warn_if_fail(analyze_n_ins_size_cd);
+
+	RzCmdDesc *analyze_n_ins_esil_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoe", rz_analyze_n_ins_esil_handler, &analyze_n_ins_esil_help);
+	rz_warn_if_fail(analyze_n_ins_esil_cd);
+
+	RzCmdDesc *analyze_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aod", rz_analyze_opcode_handler, &analyze_opcode_help);
+	rz_warn_if_fail(analyze_opcode_cd);
+
+	RzCmdDesc *display_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoda", rz_display_opcode_handler, &display_opcode_help);
+	rz_warn_if_fail(display_opcode_cd);
+
+	RzCmdDesc *analyze_cycles_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoc", rz_analyze_cycles_handler, &analyze_cycles_help);
+	rz_warn_if_fail(analyze_cycles_cd);
+
+	RzCmdDesc *convert_mne_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aom", rz_convert_mne_handler, &convert_mne_help);
+	rz_warn_if_fail(convert_mne_cd);
+
+	RzCmdDesc *list_mne_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoma", rz_list_mne_handler, &list_mne_help);
+	rz_warn_if_fail(list_mne_cd);
+
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
 	RzCmdDesc *block_decrease_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "b-", rz_block_decrease_handler, &block_decrease_help);
@@ -12988,7 +13727,46 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_step_until_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsuf", rz_cmd_debug_step_until_flag_handler, &cmd_debug_step_until_flag_help);
 	rz_warn_if_fail(cmd_debug_step_until_flag_cd);
 
-	RzCmdDesc *dts_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dts", NULL, NULL, &dts_help);
+	RzCmdDesc *dt_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dt", rz_cmd_debug_trace_handler, &cmd_debug_trace_help, &dt_help);
+	rz_warn_if_fail(dt_cd);
+	RzCmdDesc *cmd_debug_traces_cd = rz_cmd_desc_argv_state_new(core->rcmd, dt_cd, "dtl", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_traces_handler, &cmd_debug_traces_help);
+	rz_warn_if_fail(cmd_debug_traces_cd);
+
+	RzCmdDesc *cmd_debug_traces_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtl=", rz_cmd_debug_traces_ascii_handler, &cmd_debug_traces_ascii_help);
+	rz_warn_if_fail(cmd_debug_traces_ascii_cd);
+
+	RzCmdDesc *cmd_debug_trace_add_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dt+", rz_cmd_debug_trace_add_handler, &cmd_debug_trace_add_help);
+	rz_warn_if_fail(cmd_debug_trace_add_cd);
+
+	RzCmdDesc *cmd_debug_trace_add_addrs_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dt++", rz_cmd_debug_trace_add_addrs_handler, &cmd_debug_trace_add_addrs_help);
+	rz_warn_if_fail(cmd_debug_trace_add_addrs_cd);
+
+	RzCmdDesc *cmd_debug_traces_reset_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dt-", rz_cmd_debug_traces_reset_handler, &cmd_debug_traces_reset_help);
+	rz_warn_if_fail(cmd_debug_traces_reset_cd);
+
+	RzCmdDesc *cmd_debug_trace_addr_cd = rz_cmd_desc_oldinput_new(core->rcmd, dt_cd, "dta", rz_cmd_debug_trace_addr, &cmd_debug_trace_addr_help);
+	rz_warn_if_fail(cmd_debug_trace_addr_cd);
+
+	RzCmdDesc *cmd_debug_trace_calls_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtc", rz_cmd_debug_trace_calls_handler, &cmd_debug_trace_calls_help);
+	rz_warn_if_fail(cmd_debug_trace_calls_cd);
+
+	RzCmdDesc *dte_cd = rz_cmd_desc_group_new(core->rcmd, dt_cd, "dte", rz_cmd_debug_trace_esil_handler, &cmd_debug_trace_esil_help, &dte_help);
+	rz_warn_if_fail(dte_cd);
+	RzCmdDesc *cmd_debug_trace_esils_cd = rz_cmd_desc_argv_new(core->rcmd, dte_cd, "dtel", rz_cmd_debug_trace_esils_handler, &cmd_debug_trace_esils_help);
+	rz_warn_if_fail(cmd_debug_trace_esils_cd);
+
+	RzCmdDesc *cmd_debug_traces_esil_delete_cd = rz_cmd_desc_argv_new(core->rcmd, dte_cd, "dte-*", rz_cmd_debug_traces_esil_delete_handler, &cmd_debug_traces_esil_delete_help);
+	rz_warn_if_fail(cmd_debug_traces_esil_delete_cd);
+
+	RzCmdDesc *cmd_debug_traces_esil_i_cd = rz_cmd_desc_argv_new(core->rcmd, dte_cd, "dtei", rz_cmd_debug_traces_esil_i_handler, &cmd_debug_traces_esil_i_help);
+	rz_warn_if_fail(cmd_debug_traces_esil_i_cd);
+
+	RzCmdDesc *dtg_cd = rz_cmd_desc_group_modes_new(core->rcmd, dt_cd, "dtg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_trace_graph_handler, &cmd_debug_trace_graph_help, &dtg_help);
+	rz_warn_if_fail(dtg_cd);
+	RzCmdDesc *cmd_debug_trace_interactive_cd = rz_cmd_desc_argv_new(core->rcmd, dtg_cd, "dtgi", rz_cmd_debug_trace_interactive_handler, &cmd_debug_trace_interactive_help);
+	rz_warn_if_fail(cmd_debug_trace_interactive_cd);
+
+	RzCmdDesc *dts_cd = rz_cmd_desc_group_new(core->rcmd, dt_cd, "dts", NULL, NULL, &dts_help);
 	rz_warn_if_fail(dts_cd);
 	RzCmdDesc *cmd_debug_start_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dts+", rz_cmd_debug_start_trace_session_handler, &cmd_debug_start_trace_session_help);
 	rz_warn_if_fail(cmd_debug_start_trace_session_cd);
@@ -13004,6 +13782,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_list_trace_session_mmap_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtsm", rz_cmd_debug_list_trace_session_mmap_handler, &cmd_debug_list_trace_session_mmap_help);
 	rz_warn_if_fail(cmd_debug_list_trace_session_mmap_cd);
+
+	RzCmdDesc *cmd_debug_trace_tag_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtt", rz_cmd_debug_trace_tag_handler, &cmd_debug_trace_tag_help);
+	rz_warn_if_fail(cmd_debug_trace_tag_cd);
 
 	RzCmdDesc *dm_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "dm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_maps_handler, &cmd_debug_list_maps_help, &dm_help);
 	rz_warn_if_fail(dm_cd);
@@ -14144,8 +14925,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_extend_hexbytes_cd = rz_cmd_desc_argv_new(core->rcmd, we_cd, "wex", rz_write_extend_hexbytes_handler, &write_extend_hexbytes_help);
 	rz_warn_if_fail(write_extend_hexbytes_cd);
 
-	RzCmdDesc *wu_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wu", rz_wu_handler_old, &wu_handler_old_help);
-	rz_warn_if_fail(wu_handler_old_cd);
+	RzCmdDesc *write_unified_patch_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wu", rz_write_unified_patch_handler, &write_unified_patch_help);
+	rz_warn_if_fail(write_unified_patch_cd);
 
 	RzCmdDesc *write_random_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wr", rz_write_random_handler, &write_random_help);
 	rz_warn_if_fail(write_random_cd);
@@ -14170,11 +14951,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_pcache_commit_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wcpi", rz_write_pcache_commit_handler, &write_pcache_commit_help);
 	rz_warn_if_fail(write_pcache_commit_cd);
 
-	RzCmdDesc *wz_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wz", rz_wz_handler_old, &wz_handler_old_help);
-	rz_warn_if_fail(wz_handler_old_cd);
-
-	RzCmdDesc *wt_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wt", rz_wt_handler_old, &wt_handler_old_help);
-	rz_warn_if_fail(wt_handler_old_cd);
+	RzCmdDesc *write_zero_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wz", rz_write_zero_string_handler, &write_zero_string_help);
+	rz_warn_if_fail(write_zero_string_cd);
 
 	RzCmdDesc *wf_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wf", rz_write_from_io_handler, &write_from_io_help, &wf_help);
 	rz_warn_if_fail(wf_cd);
@@ -14187,8 +14965,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_from_socket_cd = rz_cmd_desc_argv_new(core->rcmd, wf_cd, "wfs", rz_write_from_socket_handler, &write_from_socket_help);
 	rz_warn_if_fail(write_from_socket_cd);
 
-	RzCmdDesc *ww_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "ww", rz_ww_handler_old, &ww_handler_old_help);
-	rz_warn_if_fail(ww_handler_old_cd);
+	RzCmdDesc *write_wide_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "ww", rz_write_wide_string_handler, &write_wide_string_help);
+	rz_warn_if_fail(write_wide_string_cd);
 
 	RzCmdDesc *wx_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wx", rz_write_hex_handler, &write_hex_help, &wx_help);
 	rz_warn_if_fail(wx_cd);
@@ -14209,14 +14987,65 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_block_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wb", rz_write_block_handler, &write_block_help);
 	rz_warn_if_fail(write_block_cd);
 
-	RzCmdDesc *wm_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wm", rz_wm_handler_old, &wm_handler_old_help);
-	rz_warn_if_fail(wm_handler_old_cd);
+	RzCmdDesc *wm_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wm", rz_write_mask_set_handler, &write_mask_set_help, &wm_help);
+	rz_warn_if_fail(wm_cd);
+	RzCmdDesc *write_mask_reset_cd = rz_cmd_desc_argv_new(core->rcmd, wm_cd, "wm-", rz_write_mask_reset_handler, &write_mask_reset_help);
+	rz_warn_if_fail(write_mask_reset_cd);
 
-	RzCmdDesc *wo_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wo", rz_wo_handler_old, &wo_handler_old_help);
-	rz_warn_if_fail(wo_handler_old_cd);
+	RzCmdDesc *wo_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wo", NULL, NULL, &wo_help);
+	rz_warn_if_fail(wo_cd);
+	RzCmdDesc *write_op_2byteswap_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wo2", rz_write_op_2byteswap_handler, &write_op_2byteswap_help);
+	rz_warn_if_fail(write_op_2byteswap_cd);
 
-	RzCmdDesc *wd_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wd", rz_wd_handler_old, &wd_handler_old_help);
-	rz_warn_if_fail(wd_handler_old_cd);
+	RzCmdDesc *write_op_4byteswap_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wo4", rz_write_op_4byteswap_handler, &write_op_4byteswap_help);
+	rz_warn_if_fail(write_op_4byteswap_cd);
+
+	RzCmdDesc *write_op_8byteswap_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wo8", rz_write_op_8byteswap_handler, &write_op_8byteswap_help);
+	rz_warn_if_fail(write_op_8byteswap_cd);
+
+	RzCmdDesc *write_op_add_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woa", rz_write_op_add_handler, &write_op_add_help);
+	rz_warn_if_fail(write_op_add_cd);
+
+	RzCmdDesc *write_op_and_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woA", rz_write_op_and_handler, &write_op_and_help);
+	rz_warn_if_fail(write_op_and_cd);
+
+	RzCmdDesc *write_op_div_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wod", rz_write_op_div_handler, &write_op_div_help);
+	rz_warn_if_fail(write_op_div_cd);
+
+	RzCmdDesc *write_op_shl_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wol", rz_write_op_shl_handler, &write_op_shl_help);
+	rz_warn_if_fail(write_op_shl_cd);
+
+	RzCmdDesc *write_op_mul_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wom", rz_write_op_mul_handler, &write_op_mul_help);
+	rz_warn_if_fail(write_op_mul_cd);
+
+	RzCmdDesc *write_op_or_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woo", rz_write_op_or_handler, &write_op_or_help);
+	rz_warn_if_fail(write_op_or_cd);
+
+	RzCmdDesc *write_op_shr_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wor", rz_write_op_shr_handler, &write_op_shr_help);
+	rz_warn_if_fail(write_op_shr_cd);
+
+	RzCmdDesc *write_op_sub_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wos", rz_write_op_sub_handler, &write_op_sub_help);
+	rz_warn_if_fail(write_op_sub_cd);
+
+	RzCmdDesc *write_op_xor_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "wox", rz_write_op_xor_handler, &write_op_xor_help);
+	rz_warn_if_fail(write_op_xor_cd);
+
+	RzCmdDesc *write_op_sequence_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woe", rz_write_op_sequence_handler, &write_op_sequence_help);
+	rz_warn_if_fail(write_op_sequence_cd);
+
+	RzCmdDesc *write_op_decrypt_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woD", rz_write_op_decrypt_handler, &write_op_decrypt_help);
+	rz_warn_if_fail(write_op_decrypt_cd);
+
+	RzCmdDesc *write_op_encrypt_cd = rz_cmd_desc_argv_new(core->rcmd, wo_cd, "woE", rz_write_op_encrypt_handler, &write_op_encrypt_help);
+	rz_warn_if_fail(write_op_encrypt_cd);
+
+	RzCmdDesc *wD_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wD", rz_write_debruijn_handler, &write_debruijn_help, &wD_help);
+	rz_warn_if_fail(wD_cd);
+	RzCmdDesc *write_debruijn_find_cd = rz_cmd_desc_argv_new(core->rcmd, wD_cd, "wD/", rz_write_debruijn_find_handler, &write_debruijn_find_help);
+	rz_warn_if_fail(write_debruijn_find_cd);
+
+	RzCmdDesc *write_duplicate_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wd", rz_write_duplicate_handler, &write_duplicate_help);
+	rz_warn_if_fail(write_duplicate_cd);
 
 	RzCmdDesc *write_length_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "ws", rz_write_length_string_handler, &write_length_string_help);
 	rz_warn_if_fail(write_length_string_cd);

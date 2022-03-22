@@ -5,6 +5,7 @@
 
 #include "rz_util.h"
 #include "rz_serialize.h"
+#include <sdb.h>
 
 #ifdef __cplusplus
 extern "C" {

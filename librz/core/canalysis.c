@@ -5973,7 +5973,7 @@ static int core_sigdb_sorter(const RzSigDBEntry *a, const RzSigDBEntry *b) {
 static RzList *core_load_all_signatures_from_sigdb(RzCore *core, bool with_details) {
 	RzList *sysdb = NULL, *userdb = NULL;
 	char *system_sigdb = rz_path_system(RZ_SIGDB);
-	if (RZ_STR_ISNOTEMPTY(system_sigdb)) {
+	if (RZ_STR_ISNOTEMPTY(system_sigdb) && rz_file_is_directory(system_sigdb)) {
 		sysdb = rz_sign_sigdb_load_database(system_sigdb, with_details);
 	}
 	free(system_sigdb);

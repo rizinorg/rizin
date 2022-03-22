@@ -536,13 +536,13 @@ static void autocmplt_cmd_arg_zign_space(RzCore *core, RzLineNSCompletionResult 
 static void autocmplt_cmd_arg_choices(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len, const RzCmdDescArg *arg) {
 	char **oc, **c;
 	oc = c = arg->choices_cb ? arg->choices_cb(core) : (char **)arg->choices;
-	for (c = oc; *c; c++) {
+	for (c = oc; c && *c; c++) {
 		if (!strncmp(*c, s, len)) {
 			rz_line_ns_completion_result_add(res, *c);
 		}
 	}
 	if (arg->choices_cb) {
-		for (c = oc; *c; c++) {
+		for (c = oc; c && *c; c++) {
 			free(*c);
 		}
 		free(oc);

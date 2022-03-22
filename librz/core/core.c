@@ -294,6 +294,7 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->cfgGet = (RzCoreConfigGet)cfgget;
 	bnd->numGet = (RzCoreNumGet)numget;
 	bnd->flagsGet = (RzCoreFlagsGet)__flagsGet;
+	bnd->applyBinInfo = (RzCoreBinApplyInfo)rz_core_bin_apply_info;
 	return true;
 }
 
@@ -1632,12 +1633,6 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 	}
 }
 
-static int autocomplete(RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
-	RzCore *core = user;
-	rz_core_autocomplete(core, completion, buf, prompt_type);
-	return true;
-}
-
 static RzLineNSCompletionResult *rzshell_autocomplete(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
 	return rz_core_autocomplete_rzshell((RzCore *)user, buf, prompt_type);
 }
@@ -1649,16 +1644,9 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
 	if (prompt) {
-		if (core->use_rzshell_autocompletion) {
-			rzline->ns_completion.run = rzshell_autocomplete;
-			rzline->ns_completion.run_user = core;
-			rzline->completion.run = NULL;
-		} else {
-			rz_line_completion_set(&rzline->completion, rizin_argc, rizin_argv);
-			rzline->completion.run = autocomplete;
-			rzline->completion.run_user = core;
-			rzline->ns_completion.run = NULL;
-		}
+		rzline->ns_completion.run = rzshell_autocomplete;
+		rzline->ns_completion.run_user = core;
+		rzline->completion.run = NULL;
 	} else {
 		rzline->history.data = NULL;
 		rz_line_completion_set(&rzline->completion, 0, NULL);
@@ -2357,8 +2345,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->incomment = false;
 	core->config = NULL;
 	core->http_up = false;
-	core->use_tree_sitter_rzcmd = false;
-	core->use_rzshell_autocompletion = false;
 	ZERO_FILL(core->root_cmd_descriptor);
 	core->print = rz_print_new();
 	core->ropchain = rz_list_newf((RzListFree)free);
@@ -2380,6 +2366,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->print->get_comments = get_comments_cb;
 	core->print->get_section_name = get_section_name;
 	core->print->use_comments = false;
+	rz_core_rtr_init(core);
 	core->rtr_n = 0;
 	core->blocksize_max = RZ_CORE_BLOCKSIZE_MAX;
 	rz_core_task_scheduler_init(&core->tasks, rz_core_task_ctx_switch, NULL, rz_core_task_break_cb, NULL);
@@ -2640,6 +2627,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_parse_free(c->parser);
 	free(c->times);
 	rz_core_seek_free(c);
+	free(c->rtr_host);
 	RZ_FREE(c->curtheme);
 }
 
@@ -2868,6 +2856,12 @@ RZ_API RzAnalysisOp *rz_core_op_analysis(RzCore *core, ut64 addr, RzAnalysisOpMa
 	rz_analysis_op(core->analysis, op, addr, buf, sizeof(buf), mask);
 	return op;
 }
+
+typedef struct {
+	RzSocket *fd;
+	RzSocket *client;
+	bool listener;
+} RzIORap;
 
 static void rap_break(void *u) {
 	RzIORap *rior = (RzIORap *)u;

@@ -136,32 +136,10 @@ typedef enum {
 #define __UNIX__ 1
 #endif
 #if __WINDOWS__ || _WIN32
-#ifdef _MSC_VER
-#include <sdkddkver.h>
-#ifdef NTDDI_WIN10_TH2
-/* Avoid using Developer Preview and default to Windows 10/Windows Server 2016 */
-#undef _WIN32_WINNT
-#undef NTDDI_VERSION
-#define _WIN32_WINNT  _WIN32_WINNT_WIN10
-#define NTDDI_VERSION NTDDI_WIN10
-#endif
-/* Must be included before windows.h */
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#endif
-typedef int socklen_t;
-#undef USE_SOCKETS
-#define __WINDOWS__ 1
+#define __WINDOWS__  1
+#define _WINSOCKAPI_ /* Prevent inclusion of winsock.h in windows.h */
 #undef __UNIX__
 #undef __BSD__
-#endif
-#if __WINDOWS__ || _WIN32
-#define __addr_t_defined
-#include <windows.h>
-#include <direct.h>
 #endif
 
 #if defined(__APPLE__) && ((__arm__ || __arm64__ || __aarch64__) && IS_IOS)

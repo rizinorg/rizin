@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2020 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_th.h>
+#include "thread.h"
 
 RZ_API RzThreadCond *rz_th_cond_new(void) {
 	RzThreadCond *cond = RZ_NEW0(RzThreadCond);

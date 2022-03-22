@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <rz_core.h>
+#include "../core_private.h"
 
 RZ_IPI RzCmdStatus rz_yank_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc > 1) {

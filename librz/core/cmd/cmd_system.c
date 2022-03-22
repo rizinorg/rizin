@@ -3,6 +3,8 @@
 // SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_core.h>
+
 #if __WINDOWS__
 #define START_ENV_CHAR "%"
 #define END_ENV_CHAR   "%"
@@ -191,6 +193,21 @@ static RzCmdStatus system_common_handler(RzCore *core, bool force_rzcons, int ar
 	bool succ = system_exec(core, argc - 1, &argv[1], need_rzcons ? &out : NULL, &length, &ret);
 	rz_cons_sleep_end(bed);
 	if (need_rzcons) {
+#if __WINDOWS__
+		char *src = out;
+		char *dest = src;
+		char *end = out + length;
+		while (src != end) {
+			*dest = *src;
+			if (src[0] == '\r' && src + 1 != end && src[1] == '\n') {
+				// dest does not move
+				length--;
+			} else {
+				dest++;
+			}
+			src++;
+		}
+#endif
 		rz_cons_memcat(out, length);
 	}
 	free(out);

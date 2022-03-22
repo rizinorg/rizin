@@ -75,7 +75,7 @@ FILE=bins/elf/pngrutil_o
 CMDS=oml
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x0800870c - 0x080090c7 r-- vmap.reloc-targets
- 2 fd: 5 +0x00000034 0x08000034 - 0x080055c7 r-x vmap..text
+ 2 fd: 5 +0x00000034 0x08000034 * 0x080055c7 r-x vmap..text
  3 fd: 3 +0x00007328 0x08007328 - 0x0800852f --x fmap..rel.text
  4 fd: 5 +0x000055c8 0x080055c8 - 0x0800642b r-- vmap..rodata
  5 fd: 3 +0x00008530 0x08008530 - 0x0800858f --- fmap..rel.rodata

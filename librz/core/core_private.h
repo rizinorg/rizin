@@ -138,6 +138,8 @@ RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, 
 /* cfile.c */
 RZ_IPI void rz_core_io_file_open(RzCore *core, int fd);
 RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms);
+RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
+RZ_IPI void rz_core_io_map_info_free(RzCoreIOMapInfo *info);
 
 /* cflag.c */
 RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state);
@@ -198,5 +200,11 @@ RZ_IPI RzList *rz_heap_list(RzCore *core);
 RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag);
 RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode);
 #endif
+
+RZ_IPI bool rz_core_cmd_lastcmd_repeat(RzCore *core, bool next);
+
+static inline RzCmdStatus bool2status(bool val) {
+	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
 
 #endif

@@ -11,6 +11,8 @@
 #include <time.h>
 #elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
 #include <mach/mach_time.h>
+#elif __WINDOWS__
+#include <rz_windows.h>
 #endif
 
 /**

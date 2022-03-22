@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
-#include <rz_debug.h>
+
+#include <rz_windows.h>
 #include "windows_message.h"
 
 static char *msg_types_arr[] = {

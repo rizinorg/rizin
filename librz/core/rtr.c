@@ -30,6 +30,14 @@ static RzThread *httpthread = NULL;
 static RzThread *rapthread = NULL;
 static const char *listenport = NULL;
 
+struct rz_core_rtr_host_t {
+	int proto;
+	char host[512];
+	int port;
+	char file[1024];
+	RzSocket *fd;
+};
+
 typedef struct {
 	const char *host;
 	const char *port;
@@ -837,7 +845,7 @@ static RzThreadFunctionRet rz_core_rtr_rap_thread(RzThread *th) {
 	if (!th) {
 		return false;
 	}
-	RapThread *rt = th->user;
+	RapThread *rt = rz_th_get_user(th);
 	if (!rt || !rt->core) {
 		return false;
 	}
@@ -998,6 +1006,17 @@ RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *
 	}
 	rz_socket_free(s);
 	return rbuf;
+}
+
+/**
+ * \brief Allocates core rtr structure
+ *
+ * \param core RzCore to initialize rtr structure
+ */
+RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, false);
+	rtr_host = RZ_NEWS0(RzCoreRtrHost, RTR_MAX_HOSTS);
+	return rtr_host;
 }
 
 #if HAVE_LIBUV
