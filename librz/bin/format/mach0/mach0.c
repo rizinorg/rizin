@@ -1882,6 +1882,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 				bprintf("Error: LC_UNIXTHREAD with other threads\n");
 				return false;
 			}
+			// fallthrough
 		case LC_THREAD:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "thread", 0);
 			if (!parse_thread(bin, &lc, off, is_first_thread)) {

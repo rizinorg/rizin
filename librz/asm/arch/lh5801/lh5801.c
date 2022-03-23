@@ -733,9 +733,9 @@ int lh5801_decode(struct lh5801_insn *insn, const ut8 *buf, int len) {
 	insn->fd = fd;
 	insn->opcode = buf[0];
 	switch (LH5801_IFMT_IMMS(desc.format)) {
-	case 3: insn->imm[2] = buf[3];
-	case 2: insn->imm[1] = buf[2];
-	case 1: insn->imm[0] = buf[1];
+	case 3: insn->imm[2] = buf[3]; // fallthrough
+	case 2: insn->imm[1] = buf[2]; // fallthrough
+	case 1: insn->imm[0] = buf[1]; // fallthrough
 	}
 
 	/* return the instruction length */

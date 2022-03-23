@@ -5207,6 +5207,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					rz_analysis_function_linear_size((RzAnalysisFunction *)f), 0);
 				break;
 			}
+			break;
 		}
 		case 'd': // "pId" is the same as pDi
 			if (l) {
