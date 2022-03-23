@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <rz_core.h>
 #include <rz_main.h>
 #include <rz_types.h>
 #include <rz_search.h>
@@ -294,11 +295,29 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		goto err;
 	}
 
+	RzCore core = { 0 };
+	rz_core_init(&core);
+	RzBinOptions bo;
+	rz_bin_options_init(&bo, 0, UT64_MAX, UT64_MAX, false, 2);
+	RzBin *bin = core.bin;
+	bin->cb_printf = rz_cons_printf;
+	RzBinFile *bf = rz_bin_open(bin, file, &bo);
+	RzCmdStateOutput state;
+	if (ro->json) {
+		bf->strmode = RZ_MODE_JSON;
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
+	} else {
+		bf->strmode = RZ_MODE_SIMPLE;
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+	}
+
 	if (ro->mode == RZ_SEARCH_STRING) {
-		/* TODO: implement using api */
-		rz_sys_cmdf("rz-bin -q%szzz \"%s\"", ro->json ? "j" : "", efile);
+		rz_bin_dump_strings(bf, bin->minstrlen, bf->rawstr);
+		rz_cmd_state_output_fini(&state);
+		rz_cons_flush();
 		goto done;
 	}
+
 	if (ro->mode == RZ_SEARCH_MAGIC) {
 		/* TODO: implement using api */
 		char *tostr = (to && to != UT64_MAX) ? rz_str_newf("-e search.to=%" PFMT64d, to) : strdup("");
@@ -366,6 +385,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 done:
 	rz_cons_free();
 err:
+	rz_core_fini(&core);
 	free(efile);
 	rz_search_free(rs);
 	rz_io_free(io);
