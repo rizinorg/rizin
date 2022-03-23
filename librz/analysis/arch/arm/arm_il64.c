@@ -1714,7 +1714,7 @@ static RzILOpEffect *sbfx(cs_insn *insn) {
 	ut64 width = IMM(3);
 	RzILOpBitVector *res;
 	if (insn->id == ARM64_INS_SBFIZ || insn->id == ARM64_INS_UBFIZ) {
-		res = SHIFTL0(UNSIGNED(width, src), UN(6, lsb));
+		res = SHIFTL0(UNSIGNED(width + lsb, src), UN(6, lsb));
 	} else {
 		// ARM64_INS_SBFX, ARM64_INS_UBFX
 		res = UNSIGNED(width, SHIFTR0(src, UN(6, lsb)));
