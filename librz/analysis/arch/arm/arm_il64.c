@@ -473,7 +473,7 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 			SETL("a", DUP(a)),
 			SETL("b", DUP(b)),
 			set,
-			SETG("cf", is_sub ? sub_carry(VARL("a"), VARL("b"), with_carry) : add_carry(VARL("a"), VARL("b"), with_carry)),
+			SETG("cf", (is_sub ? sub_carry : add_carry)(VARL("a"), VARL("b"), with_carry, bits)),
 			SETG("vf", (is_sub ? sub_overflow : add_overflow)(VARL("a"), VARL("b"), REG(0))),
 			update_flags_zn(REG(0)));
 	}
@@ -785,7 +785,7 @@ static RzILOpEffect *cmp(cs_insn *insn) {
 		SETL("a", a),
 		SETL("b", b),
 		SETL("r", is_neg ? ADD(VARL("a"), VARL("b")) : SUB(VARL("a"), VARL("b"))),
-		SETG("cf", (is_neg ? add_carry : sub_carry)(VARL("a"), VARL("b"), false)),
+		SETG("cf", (is_neg ? add_carry : sub_carry)(VARL("a"), VARL("b"), false, bits)),
 		SETG("vf", (is_neg ? add_overflow : sub_overflow)(VARL("a"), VARL("b"), VARL("r"))),
 		update_flags_zn(VARL("r")));
 	RzILOpBool *c = cond(insn->detail->arm64.cc);
@@ -1788,7 +1788,7 @@ static RzILOpEffect *mvn(cs_insn *insn) {
 		return SEQ5(
 			SETL("b", DUP(val)),
 			set,
-			SETG("cf", sub_carry(UN(bits, 0), VARL("b"), insn->id == ARM64_INS_NGC)),
+			SETG("cf", sub_carry(UN(bits, 0), VARL("b"), insn->id == ARM64_INS_NGC, bits)),
 			SETG("vf", sub_overflow(UN(bits, 0), VARL("b"), REG(0))),
 			update_flags_zn(REG(0)));
 	}
