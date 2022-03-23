@@ -378,7 +378,11 @@ static RzILOpBitVector *arg(cs_insn *insn, size_t n, ut32 *bits_inout) {
 		if (!bits_requested) {
 			return NULL;
 		}
-		return UN(bits_requested, IMM(n));
+		ut64 val = IMM(n);
+		if (op->shift.type == ARM64_SFT_LSL) {
+			val <<= op->shift.value;
+		}
+		return UN(bits_requested, val);
 	}
 	case ARM64_OP_MEM: {
 		RzILOpBitVector *addr = MEMBASE(n);

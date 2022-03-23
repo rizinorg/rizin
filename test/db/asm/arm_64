@@ -388,6 +388,7 @@ d "adds w8, w9, w10" 28010a2b 0x0 (seq (set a (cast 32 false (var x9))) (set b (
 d "sub x9, x10, x11" 49010bcb 0x0 (set x9 (- (var x10) (var x11)))
 d "subs x12, x13, x14" ac010eeb 0x0 (seq (set a (var x13)) (set b (var x14)) (set x12 (- (var x13) (var x14))) (set cf (ule (var b) (var a))) (set vf (&& (^^ (msb (var a)) (msb (var b))) (^^ (msb (var a)) (msb (var x12))))) (set zf (is_zero (var x12))) (set nf (msb (var x12))))
 d "sub w11, w12, w13" 8b010d4b 0x0 (set x11 (cast 64 false (- (cast 32 false (var x12)) (cast 32 false (var x13)))))
+d "sub x1, x19, 8, lsl 12" 612240d1 0x0 (set x1 (- (var x19) (bv 64 0x8000)))
 d "adc x15, x16, x17" 0f02119a 0x0 (set x15 (+ (+ (var x16) (var x17)) (ite (var cf) (bv 64 0x1) (bv 64 0x0))))
 d "adc w14, w15, w16" ee01101a 0x0 (set x14 (cast 64 false (+ (+ (cast 32 false (var x15)) (cast 32 false (var x16))) (ite (var cf) (bv 32 0x1) (bv 32 0x0)))))
 d "sbc x18, x19, x20" 720214da 0x0 (set x18 (- (- (var x19) (var x20)) (ite (var cf) (bv 64 0x0) (bv 64 0x1))))
