@@ -395,7 +395,7 @@ jobs:
       - name: Run tests
         # FIXME: debug tests fail on Debian for now, let's ignore all tests for the moment
         run: |
-          rz-test -e db/archos -L -o results.json || true
+          rz-test -e db/archos -L -o results.json
         working-directory: rizin/test
         env:
           PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
