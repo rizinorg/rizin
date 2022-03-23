@@ -85,11 +85,12 @@ RZ_API const char *rz_file_basename(const char *path) {
 	const char *ptr = rz_str_rchr(path, NULL, '/');
 	if (ptr) {
 		path = ptr + 1;
-	} else {
-		if ((ptr = rz_str_rchr(path, NULL, '\\'))) {
-			path = ptr + 1;
-		}
 	}
+#if __WINDOWS__
+	if ((ptr = rz_str_rchr(path, NULL, '\\'))) {
+		path = ptr + 1;
+	}
+#endif
 	return path;
 }
 
