@@ -449,6 +449,7 @@ static RzList *rz_debug_dmp_modules(RzDebug *dbg) {
 			return NULL;
 		}
 		mod->file = strdup(m->name);
+		mod->name = strdup(rz_file_basename(m->name));
 		mod->size = m->size;
 		mod->addr = m->addr;
 		mod->addr_end = m->addr + m->size;
