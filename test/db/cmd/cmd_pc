@@ -250,17 +250,6 @@ let byteArray : [UInt8] = [
 EOF
 RUN
 
-NAME=Print bytes as Vlang byte array.
-FILE=bins/elf/analysis/hello-arm32
-CMDS=pcv 30
-EXPECT=<<EOF
-byteArray := [ byte(128)
-  64, 45, 233, 0, 112, 141, 226, 0, 2, 0, 227, 1, 0, 64, 227,
-  241, 255, 255, 235, 0, 48, 176, 227, 3, 0, 160, 225, 241, 255
-];
-EOF
-RUN
-
 NAME=Print bytes as Yara byte array.
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pcy 30

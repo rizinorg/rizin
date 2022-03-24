@@ -306,13 +306,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pcv 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=pcv 0
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=pcy 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pcy 0
