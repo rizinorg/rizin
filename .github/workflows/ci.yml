@@ -325,7 +325,8 @@ jobs:
         run: ninja -C build test
         working-directory: rizin
       - name: Run tests
-        run: rz-test -L -o results.json || true
+        run: |
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
         working-directory: rizin/test
 
   build-debian:
@@ -393,7 +394,7 @@ jobs:
       - name: Install test dependencies
         run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - name: Run tests
-        # FIXME: debug tests fail on Debian for now, let's ignore all tests for the moment
+        # Debug tests fail on old Debian because of the runtime differences, ignore them
         run: |
           rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
         working-directory: rizin/test
@@ -437,9 +438,9 @@ jobs:
       - name: Install test dependencies
         run: pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - name: Run tests
-        # FIXME: let's ignore all tests for the moment
+        # Debug tests fail due to the runtime differences, ignore them
         run: |
-          rz-test -L -o results.json || true
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
         working-directory: rizin/test
         env:
           PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
@@ -481,7 +482,7 @@ jobs:
           rizin -v
           rz-test -v
           cd test
-          rz-test -L -o results.json || true
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
         working-directory: rizin
       - name: Upload test results
         if: always()
