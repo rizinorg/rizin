@@ -346,7 +346,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		rz_list_foreach(list, it, string) {
 			print_bin_string(bf, string, pj);
 		}
-		rz_list_free(free);
+		rz_list_free(list);
 		if (pj) {
 			pj_end(pj);
 			printf("%s", pj_string(pj));
