@@ -174,6 +174,7 @@ RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const u
 			if (!linescall) {
 				break;
 			}
+			// fallthrough
 		case RZ_ANALYSIS_OP_TYPE_CJMP:
 		case RZ_ANALYSIS_OP_TYPE_JMP:
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {

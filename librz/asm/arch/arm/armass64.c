@@ -1269,7 +1269,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 			break;
 		case '-':
 			op->operands[operand].sign = -1;
-			// falthru
+			// fallthrough
 		default:
 			op->operands_count++;
 			op->operands[operand].type = ARM_CONSTANT;

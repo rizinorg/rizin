@@ -68,7 +68,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	switch (data[0]) {
 	case 0xca: // rem-float:
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
-		/* pass through */
+		// fallthrough
 	case 0x1b: // const-string/jumbo
 	case 0x14: // const
 	case 0x15: // const
@@ -170,7 +170,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0x88: // float-to-long
 	case 0x86: // long-to-double
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
-		/* pass through */
+		// fallthrough
 	case 0x81: // int-to-long
 	case 0x82: // int-to-float
 	case 0x85: // long-to-float
@@ -355,7 +355,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0xcf: // rem-double
 	case 0xaf: // rem-double
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
-		/* pass through */
+		// fallthrough
 	case 0xb4: // rem-int/2addr
 	case 0xdc: // rem-int/lit8
 	case 0xd4: // rem-int
@@ -381,7 +381,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		break;
 	case 0xc9: // div-float
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
-		/* pass through */
+		// fallthrough
 	case 0x93: // div-int
 	case 0xd3: // div-int/lit16
 	case 0xdb: // div-int/lit8
