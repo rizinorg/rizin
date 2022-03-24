@@ -88,13 +88,7 @@ RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, in
 
 	bool patch_relocs = rz_config_get_b(core->config, "bin.relocs");
 
-	rz_bin_options_init(
-		opts,
-		fd,
-		baseaddr,
-		loadaddr,
-		patch_relocs,
-		core->bin->rawstr);
+	rz_bin_options_init(opts, fd, baseaddr, loadaddr, patch_relocs);
 
 	opts->obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
 	opts->obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
@@ -1673,7 +1667,7 @@ static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile
 	if (!plugin || !rz_config_get_i(r->config, "bin.strings")) {
 		return NULL;
 	}
-	if (plugin->name && !strcmp(plugin->name, "any") && !rz_config_get_i(r->config, "bin.rawstr")) {
+	if (plugin->name && !strcmp(plugin->name, "any")) {
 		return NULL;
 	}
 	return rz_bin_get_strings(r->bin);
@@ -2812,7 +2806,7 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 		bf->rbin = core->bin;
 		new_bf = true;
 	}
-	RzList *l = rz_bin_raw_strings(bf, 0);
+	RzList *l = rz_bin_file_strings(bf, 0, true);
 	bool res = strings_print(core, state, l);
 	rz_list_free(l);
 	if (new_bf) {

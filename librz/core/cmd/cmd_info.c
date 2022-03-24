@@ -358,26 +358,68 @@ RZ_IPI RzCmdStatus rz_cmd_info_whole_strings_handler(RzCore *core, int argc, con
 	return bool2status(rz_core_bin_whole_strings_print(core, bf, state));
 }
 
-RZ_IPI RzCmdStatus rz_cmd_info_dump_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	GET_CHECK_CUR_BINFILE(core);
-	int min = rz_config_get_i(core->config, "bin.minstr");
-	int strmode = bf->strmode;
+static void print_string(RzBinFile *bf, RzBinString *string, RzCmdStateOutput *state) {
+	const char *section_name, *type_string;
+	ut64 addr, vaddr;
+	RzBin *bin = bf->rbin;
+	if (!bin) {
+		return;
+	}
+	RzBinSection *s = rz_bin_get_section_at(bf->o, string->paddr, false);
+	if (s) {
+		string->vaddr = s->vaddr + (string->paddr - s->paddr);
+	}
+
+	section_name = s ? s->name : "";
+	type_string = rz_bin_string_type(string->type);
+	vaddr = addr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
+
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		bf->strmode = RZ_MODE_JSON;
+		pj_o(state->d.pj);
+		pj_kn(state->d.pj, "vaddr", vaddr);
+		pj_kn(state->d.pj, "paddr", string->paddr);
+		pj_kn(state->d.pj, "ordinal", string->ordinal);
+		pj_kn(state->d.pj, "size", string->size);
+		pj_kn(state->d.pj, "length", string->length);
+		pj_ks(state->d.pj, "section", section_name);
+		pj_ks(state->d.pj, "type", type_string);
+		pj_ks(state->d.pj, "string", string->string);
+		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		bf->strmode = RZ_MODE_PRINT;
+		rz_table_add_rowf(state->d.t, "iXXiisss", string->ordinal, string->paddr, vaddr,
+			string->length, string->size, section_name, type_string, string->string);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		bf->strmode = RZ_MODE_SIMPLE;
+		rz_cons_printf("0x%08" PFMT64x " %s\n", addr, string->string);
+		break;
+	case RZ_OUTPUT_MODE_QUIETEST:
+		rz_cons_printf("%s\n", string->string);
 		break;
 	default:
 		rz_warn_if_reached();
 		break;
 	}
-	rz_bin_dump_strings(bf, min, 2);
-	bf->strmode = strmode;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_dump_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	GET_CHECK_CUR_BINFILE(core);
+	int min = rz_config_get_i(core->config, "bin.minstr");
+	RzList *list = rz_bin_file_strings(bf, min, true);
+	RzListIter *it;
+	RzBinString *string;
+
+	rz_cmd_state_output_array_start(state);
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		rz_cmd_state_output_set_columnsf(state, "iXXiisss", "ordinal", "paddr", "vaddr", "length", "size", "section", "type", "value");
+	}
+	rz_list_foreach(list, it, string) {
+		print_string(bf, string, state);
+	}
+	rz_cmd_state_output_array_end(state);
+
+	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -210,7 +210,7 @@ static int rabin_show_help(int v) {
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
 			" -Y [fw file]    calculates all the possibles base address candidates of a firmware bin\n"
 			" -z              strings (from data section)\n"
-			" -zz             strings (from raw bins [e bin.rawstr=1])\n"
+			" -zz             strings (from raw strings from bin)\n"
 			" -zzz            dump raw strings to stdout (for huge files)\n"
 			" -Z              guess size of binary program\n");
 	}
@@ -648,6 +648,39 @@ static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
 	return true;
 }
 
+static void print_string(RzBinFile *bf, RzBinString *string, PJ *pj, int mode) {
+	rz_return_if_fail(bf && string);
+
+	ut64 vaddr;
+	RzBinSection *s = rz_bin_get_section_at(bf->o, string->paddr, false);
+	if (s) {
+		string->vaddr = s->vaddr + (string->paddr - s->paddr);
+	}
+	vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
+	const char *type_string = rz_bin_string_type(string->type);
+
+	switch (mode) {
+	case RZ_MODE_JSON:
+		pj_o(pj);
+		pj_kn(pj, "vaddr", vaddr);
+		pj_kn(pj, "paddr", string->paddr);
+		pj_kn(pj, "ordinal", string->ordinal);
+		pj_kn(pj, "size", string->size);
+		pj_kn(pj, "length", string->length);
+		pj_ks(pj, "section", s ? s->name : "");
+		pj_ks(pj, "type", type_string);
+		pj_ks(pj, "string", string->string);
+		pj_end(pj);
+		break;
+	case RZ_MODE_SIMPLEST:
+		printf("%s\n", string->string);
+		break;
+	case RZ_MODE_SIMPLE:
+		printf("0x%08" PFMT64x " %s\n", vaddr, string->string);
+		break;
+	}
+}
+
 RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	RzBin *bin = NULL;
 	const char *name = NULL;
@@ -669,7 +702,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	RzCoreFile *fh = NULL;
 	RzCoreBinFilter filter;
 	int xtr_idx = 0; // load all files if extraction is necessary.
-	int rawstr = 0;
+	bool rawstr = false;
 	int fd = -1;
 	RzCore core = { 0 };
 	ut64 at = UT64_MAX;
@@ -826,13 +859,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			break;
 		case 'z':
 			if (is_active(RZ_BIN_REQ_STRINGS)) {
-				if (rawstr) {
-					/* rawstr mode 2 means that we are not going */
-					/* to store them just dump'm all to stdout */
-					rawstr = 2;
-				} else {
-					rawstr = 1;
-				}
+				rawstr = true;
 			} else {
 				set_action(RZ_BIN_REQ_STRINGS);
 			}
@@ -1079,7 +1106,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_core_fini(&core);
 		return 0;
 	}
-	if (rawstr == 2) {
+	if (rawstr) {
 		unset_action(RZ_BIN_REQ_STRINGS);
 	}
 	rz_config_set_i(core.config, "bin.rawstr", rawstr);
@@ -1165,7 +1192,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_bin_load_filter(bin, action);
 
 	RzBinOptions bo;
-	rz_bin_options_init(&bo, fd, baddr, laddr, false, rawstr);
+	rz_bin_options_init(&bo, fd, baddr, laddr, false);
 	bo.obj_opts.elf_load_sections = rz_config_get_b(core.config, "elf.load.sections");
 	bo.obj_opts.elf_checks_sections = rz_config_get_b(core.config, "elf.checks.sections");
 	bo.obj_opts.elf_checks_segments = rz_config_get_b(core.config, "elf.checks.segments");
@@ -1184,9 +1211,29 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (baddr != UT64_MAX) {
 		rz_bin_set_baddr(bin, baddr);
 	}
-	if (rawstr == 2) {
-		bf->strmode = rad;
-		rz_bin_dump_strings(bf, bin->minstrlen, bf->rawstr);
+	if (rawstr) {
+		PJ *pj = NULL;
+		if (rad == RZ_MODE_JSON) {
+			pj = pj_new();
+			if (!pj) {
+				eprintf("rz-bin: Cannot allocate buffer for json array\n");
+				result = 1;
+				goto err;
+			}
+			pj_a(pj);
+		}
+		RzList *list = rz_bin_file_strings(bf, bin->minstrlen, true);
+		RzListIter *it;
+		RzBinString *string;
+		rz_list_foreach(list, it, string) {
+			print_string(bf, string, pj, rad);
+		}
+		rz_list_free(list);
+		if (pj) {
+			pj_end(pj);
+			printf("%s", pj_string(pj));
+			pj_free(pj);
+		}
 	}
 	if (query) {
 		if (rad) {

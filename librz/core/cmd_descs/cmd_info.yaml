@@ -449,6 +449,7 @@ commands:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_QUIETEST
     args: []
   - name: iz-
     cname: cmd_info_purge_string

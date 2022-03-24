@@ -14501,7 +14501,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_whole_strings_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_whole_strings_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_dump_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "izzz", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_dump_strings_handler, &cmd_info_dump_strings_help);
+	RzCmdDesc *cmd_info_dump_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "izzz", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_dump_strings_handler, &cmd_info_dump_strings_help);
 	rz_warn_if_fail(cmd_info_dump_strings_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_dump_strings_cd, RZ_OUTPUT_MODE_TABLE);
 
