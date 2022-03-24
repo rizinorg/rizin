@@ -9195,7 +9195,7 @@ static const RzCmdDescArg cmd_print_byte_array_asm_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_asm_help = {
-	.summary = "Print bytes as assembly.",
+	.summary = "Print bytes as GAS assembly.",
 	.args = cmd_print_byte_array_asm_args,
 };
 

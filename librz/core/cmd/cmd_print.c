@@ -6131,12 +6131,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				case '*': // "pc*" // rizin commands
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RIZIN);
 					break;
-				case 'A': // "pcA" // C bytes with asm
-					// delete me
-					break;
-				case 'i': // "pci" // same as pcA
-					// delete me
-					break;
 				case 'a': // "pca" // GAS asm
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_ASM);
 					break;

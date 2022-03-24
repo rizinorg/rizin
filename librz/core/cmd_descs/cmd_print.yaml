@@ -36,7 +36,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
       - name: pca
-        summary: Print bytes as assembly.
+        summary: Print bytes as GAS assembly.
         cname: cmd_print_byte_array_asm
         args:
           - name: n_bytes
