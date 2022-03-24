@@ -716,6 +716,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			}
 			break;
 		}
+		// fallthrough
 	case X86_INS_MOVSB:
 	case X86_INS_MOVSQ:
 	case X86_INS_MOVSW:

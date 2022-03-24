@@ -1152,6 +1152,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			}
 			op->val = op->stackptr;
 		}
+		// fallthrough
 	case ARM_INS_ADC:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {

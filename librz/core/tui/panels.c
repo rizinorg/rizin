@@ -6847,7 +6847,9 @@ repeat:
 		goto exit;
 	case '!':
 		fromVisual = true;
+		// fallthrough
 	case 'q':
+		// fallthrough
 	case -1: // EOF
 		__set_root_state(core, DEL);
 		goto exit;

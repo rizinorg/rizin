@@ -587,6 +587,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			break;
 		case 'h':
 			help++;
+			// fallthrough
 		case 'i':
 			skip = rz_num_math(NULL, opt.arg);
 			break;

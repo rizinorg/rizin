@@ -2280,6 +2280,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		break;
 	case DIFF_OPT_HELP:
 		success = true;
+		// fallthrough
 	default:
 		rz_diff_show_help(false);
 		break;

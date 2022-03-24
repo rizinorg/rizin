@@ -788,8 +788,9 @@ static void esil_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 		break;
 	case 83: // l16si
 		sign_extend_bit = 15;
-		/* no break */
-	case 82: // l16ui
+		// fallthrough
+	case 82:
+		// l16ui
 		offset <<= 1;
 		break;
 	}

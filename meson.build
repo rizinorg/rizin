@@ -154,6 +154,10 @@ if cc.has_argument('-Werror=sizeof-pointer-memaccess')
   add_global_arguments('-Werror=sizeof-pointer-memaccess', language: ['c', 'cpp'])
 endif
 
+if cc.has_argument('-Wimplicit-fallthrough=3')
+  add_project_arguments('-Wimplicit-fallthrough=3', language: ['c', 'cpp'])
+endif
+
 if cc.get_id() == 'clang-cl'
   if cc.has_argument('-fcommon')
     add_project_arguments('-fcommon', language: 'c')

@@ -154,6 +154,7 @@ RZ_API int bfvm_trace_op(BfvmCPU *c, ut8 op) {
 	switch (op) {
 	case '\0':
 		eprintf(" ; trap (%02x)\n", op);
+		// fallthrough
 	case '.':
 	case ',':
 	case '+':
