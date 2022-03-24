@@ -68,6 +68,18 @@ const uint16_t array[ARRAY_SIZE] = {
 EOF
 RUN
 
+NAME=Print bytes as C/C++ half-word (2 bytes value) array (big endian).
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pch 30 @e:cfg.bigendian=true
+EXPECT=<<EOF
+#define ARRAY_SIZE 15
+const uint16_t array[ARRAY_SIZE] = {
+  0x8040, 0x2de9, 0x0070, 0x8de2, 0x0002, 0x00e3, 0x0100, 0x40e3,
+  0xf1ff, 0xffeb, 0x0030, 0xb0e3, 0x0300, 0xa0e1, 0xf1ff
+};
+EOF
+RUN
+
 NAME=Print bytes as C/C++ word (4 bytes value) array.
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pcw 30 ; pcw 3
@@ -81,6 +93,18 @@ const uint32_t array[ARRAY_SIZE] = {
 EOF
 RUN
 
+NAME=Print bytes as C/C++ word (4 bytes value) array (big endian).
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pcw 30 @e:cfg.bigendian=true
+EXPECT=<<EOF
+#define ARRAY_SIZE 7
+const uint32_t array[ARRAY_SIZE] = {
+  0x80402de9u, 0x00708de2u, 0x000200e3u, 0x010040e3u,
+  0xf1ffffebu, 0x0030b0e3u, 0x0300a0e1u
+};
+EOF
+RUN
+
 NAME=Print bytes as C/C++ double-word (8 bytes value) array.
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pcd 30 ; pcd 7
@@ -91,6 +115,18 @@ const uint64_t array[ARRAY_SIZE] = {
   0xe3b03000ebfffff1ull
 };
 // Warning: the number of available bytes is less than 8
+EOF
+RUN
+
+NAME=Print bytes as C/C++ double-word (8 bytes value) array (big endian).
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pcd 30 @e:cfg.bigendian=true
+EXPECT=<<EOF
+#define ARRAY_SIZE 3
+const uint64_t array[ARRAY_SIZE] = {
+  0x80402de900708de2ull, 0x000200e3010040e3ull,
+  0xf1ffffeb0030b0e3ull
+};
 EOF
 RUN
 
