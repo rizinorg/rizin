@@ -201,9 +201,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pc* 0
+NAME=pch 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pc* 0
+CMDS=pch 0
 EXPECT=<<EOF
 EOF
 RUN
@@ -222,6 +222,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pc* 0
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pc* 0
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=pca 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pca 0
@@ -229,16 +236,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pcs 0
+NAME=pcb 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcs 0
+CMDS=pcb 0
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pcS 0
+NAME=pcg 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcS 0
+CMDS=pcg 0
 EXPECT=<<EOF
 EOF
 RUN
@@ -250,9 +257,65 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pcj 0
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pcj 0
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pck 0
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pck 0
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pcn 0
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pcn 0
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pco 0
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pco 0
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=pcp 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pcp 0
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pcr 0
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pcr 0
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pcs 0
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pcs 0
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pcv 0
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pcv 0
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pcy 0
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pcy 0
 EXPECT=<<EOF
 EOF
 RUN

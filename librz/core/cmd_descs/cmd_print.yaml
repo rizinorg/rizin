@@ -3,6 +3,136 @@
 ---
 name: cmd_print
 commands:
+  - name: pc
+    summary: Print bytes as code byte arrays.
+    cname: cmd_print_byte_array
+    subcommands:
+      - name: pc
+        summary: Print bytes as C/C++ byte array.
+        cname: cmd_print_byte_array_c_cpp_bytes
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pch
+        summary: Print bytes as C/C++ 16 bits array (endianness follows cfg.bigendian).
+        cname: cmd_print_byte_array_c_cpp_half_word
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcw
+        summary: Print bytes as C/C++ 32 bits array (endianness follows cfg.bigendian).
+        cname: cmd_print_byte_array_c_cpp_word
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcd
+        summary: Print bytes as C/C++ 64 bits array (endianness follows cfg.bigendian).
+        cname: cmd_print_byte_array_c_cpp_double_word
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pca
+        summary: Print bytes as assembly.
+        cname: cmd_print_byte_array_asm
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcb
+        summary: Print bytes as a bash command.
+        cname: cmd_print_byte_array_bash
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcg
+        summary: Print bytes as golang byte array.
+        cname: cmd_print_byte_array_golang
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcJ
+        summary: Print bytes as Java byte array.
+        cname: cmd_print_byte_array_java
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcj
+        summary: Print bytes as json byte array.
+        cname: cmd_print_byte_array_json
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pck
+        summary: Print bytes as Kotlin byte array.
+        cname: cmd_print_byte_array_kotlin
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcn
+        summary: Print bytes as NodeJS buffer.
+        cname: cmd_print_byte_array_nodejs
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pco
+        summary: Print bytes as Objective-C/C++ byte array.
+        cname: cmd_print_byte_array_objc
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcp
+        summary: Print bytes as Python byte array.
+        cname: cmd_print_byte_array_python
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcr
+        summary: Print bytes as Rust byte array.
+        cname: cmd_print_byte_array_rust
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcs
+        summary: Print bytes as Swift byte array.
+        cname: cmd_print_byte_array_swift
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcv
+        summary: Print bytes as Vlang byte array.
+        cname: cmd_print_byte_array_vlang
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pcy
+        summary: Print bytes as Yara byte array.
+        cname: cmd_print_byte_array_yara
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pc*
+        summary: Print bytes as rizin command.
+        cname: cmd_print_byte_array_rizin
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget

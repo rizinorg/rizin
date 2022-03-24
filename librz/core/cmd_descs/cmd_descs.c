@@ -400,6 +400,24 @@ static const RzCmdDescArg open_maps_prioritize_binid_args[2];
 static const RzCmdDescArg open_maps_deprioritize_args[2];
 static const RzCmdDescArg open_maps_prioritize_fd_args[2];
 static const RzCmdDescArg open_exchange_args[3];
+static const RzCmdDescArg cmd_print_byte_array_c_cpp_bytes_args[2];
+static const RzCmdDescArg cmd_print_byte_array_c_cpp_half_word_args[2];
+static const RzCmdDescArg cmd_print_byte_array_c_cpp_word_args[2];
+static const RzCmdDescArg cmd_print_byte_array_c_cpp_double_word_args[2];
+static const RzCmdDescArg cmd_print_byte_array_asm_args[2];
+static const RzCmdDescArg cmd_print_byte_array_bash_args[2];
+static const RzCmdDescArg cmd_print_byte_array_golang_args[2];
+static const RzCmdDescArg cmd_print_byte_array_java_args[2];
+static const RzCmdDescArg cmd_print_byte_array_json_args[2];
+static const RzCmdDescArg cmd_print_byte_array_kotlin_args[2];
+static const RzCmdDescArg cmd_print_byte_array_nodejs_args[2];
+static const RzCmdDescArg cmd_print_byte_array_objc_args[2];
+static const RzCmdDescArg cmd_print_byte_array_python_args[2];
+static const RzCmdDescArg cmd_print_byte_array_rust_args[2];
+static const RzCmdDescArg cmd_print_byte_array_swift_args[2];
+static const RzCmdDescArg cmd_print_byte_array_vlang_args[2];
+static const RzCmdDescArg cmd_print_byte_array_yara_args[2];
+static const RzCmdDescArg cmd_print_byte_array_rizin_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -9108,6 +9126,261 @@ static const RzCmdDescHelp open_exchange_help = {
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
 };
+static const RzCmdDescHelp cmd_print_byte_array_help = {
+	.summary = "Print bytes as code byte arrays.",
+};
+static const RzCmdDescArg cmd_print_byte_array_c_cpp_bytes_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_c_cpp_bytes_help = {
+	.summary = "Print bytes as C/C++ byte array.",
+	.args = cmd_print_byte_array_c_cpp_bytes_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_c_cpp_half_word_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_c_cpp_half_word_help = {
+	.summary = "Print bytes as C/C++ 16 bits array (endianness follows cfg.bigendian).",
+	.args = cmd_print_byte_array_c_cpp_half_word_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_c_cpp_word_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_c_cpp_word_help = {
+	.summary = "Print bytes as C/C++ 32 bits array (endianness follows cfg.bigendian).",
+	.args = cmd_print_byte_array_c_cpp_word_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_c_cpp_double_word_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_c_cpp_double_word_help = {
+	.summary = "Print bytes as C/C++ 64 bits array (endianness follows cfg.bigendian).",
+	.args = cmd_print_byte_array_c_cpp_double_word_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_asm_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_asm_help = {
+	.summary = "Print bytes as assembly.",
+	.args = cmd_print_byte_array_asm_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_bash_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_bash_help = {
+	.summary = "Print bytes as a bash command.",
+	.args = cmd_print_byte_array_bash_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_golang_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_golang_help = {
+	.summary = "Print bytes as golang byte array.",
+	.args = cmd_print_byte_array_golang_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_java_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_java_help = {
+	.summary = "Print bytes as Java byte array.",
+	.args = cmd_print_byte_array_java_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_json_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_json_help = {
+	.summary = "Print bytes as json byte array.",
+	.args = cmd_print_byte_array_json_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_kotlin_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_kotlin_help = {
+	.summary = "Print bytes as Kotlin byte array.",
+	.args = cmd_print_byte_array_kotlin_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_nodejs_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_nodejs_help = {
+	.summary = "Print bytes as NodeJS buffer.",
+	.args = cmd_print_byte_array_nodejs_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_objc_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_objc_help = {
+	.summary = "Print bytes as Objective-C/C++ byte array.",
+	.args = cmd_print_byte_array_objc_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_python_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_python_help = {
+	.summary = "Print bytes as Python byte array.",
+	.args = cmd_print_byte_array_python_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_rust_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_rust_help = {
+	.summary = "Print bytes as Rust byte array.",
+	.args = cmd_print_byte_array_rust_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_swift_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_swift_help = {
+	.summary = "Print bytes as Swift byte array.",
+	.args = cmd_print_byte_array_swift_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_vlang_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_vlang_help = {
+	.summary = "Print bytes as Vlang byte array.",
+	.args = cmd_print_byte_array_vlang_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_yara_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_yara_help = {
+	.summary = "Print bytes as Yara byte array.",
+	.args = cmd_print_byte_array_yara_args,
+};
+
+static const RzCmdDescArg cmd_print_byte_array_rizin_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_rizin_help = {
+	.summary = "Print bytes as rizin command.",
+	.args = cmd_print_byte_array_rizin_args,
+};
+
 static const RzCmdDescHelp cmd_print_gadget_help = {
 	.summary = "Print gadgets",
 };
@@ -14569,6 +14842,59 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
+	RzCmdDesc *cmd_print_byte_array_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pc", rz_cmd_print_byte_array_c_cpp_bytes_handler, &cmd_print_byte_array_c_cpp_bytes_help, &cmd_print_byte_array_help);
+	rz_warn_if_fail(cmd_print_byte_array_cd);
+	RzCmdDesc *cmd_print_byte_array_c_cpp_half_word_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pch", rz_cmd_print_byte_array_c_cpp_half_word_handler, &cmd_print_byte_array_c_cpp_half_word_help);
+	rz_warn_if_fail(cmd_print_byte_array_c_cpp_half_word_cd);
+
+	RzCmdDesc *cmd_print_byte_array_c_cpp_word_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcw", rz_cmd_print_byte_array_c_cpp_word_handler, &cmd_print_byte_array_c_cpp_word_help);
+	rz_warn_if_fail(cmd_print_byte_array_c_cpp_word_cd);
+
+	RzCmdDesc *cmd_print_byte_array_c_cpp_double_word_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcd", rz_cmd_print_byte_array_c_cpp_double_word_handler, &cmd_print_byte_array_c_cpp_double_word_help);
+	rz_warn_if_fail(cmd_print_byte_array_c_cpp_double_word_cd);
+
+	RzCmdDesc *cmd_print_byte_array_asm_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pca", rz_cmd_print_byte_array_asm_handler, &cmd_print_byte_array_asm_help);
+	rz_warn_if_fail(cmd_print_byte_array_asm_cd);
+
+	RzCmdDesc *cmd_print_byte_array_bash_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcb", rz_cmd_print_byte_array_bash_handler, &cmd_print_byte_array_bash_help);
+	rz_warn_if_fail(cmd_print_byte_array_bash_cd);
+
+	RzCmdDesc *cmd_print_byte_array_golang_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcg", rz_cmd_print_byte_array_golang_handler, &cmd_print_byte_array_golang_help);
+	rz_warn_if_fail(cmd_print_byte_array_golang_cd);
+
+	RzCmdDesc *cmd_print_byte_array_java_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcJ", rz_cmd_print_byte_array_java_handler, &cmd_print_byte_array_java_help);
+	rz_warn_if_fail(cmd_print_byte_array_java_cd);
+
+	RzCmdDesc *cmd_print_byte_array_json_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcj", rz_cmd_print_byte_array_json_handler, &cmd_print_byte_array_json_help);
+	rz_warn_if_fail(cmd_print_byte_array_json_cd);
+
+	RzCmdDesc *cmd_print_byte_array_kotlin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pck", rz_cmd_print_byte_array_kotlin_handler, &cmd_print_byte_array_kotlin_help);
+	rz_warn_if_fail(cmd_print_byte_array_kotlin_cd);
+
+	RzCmdDesc *cmd_print_byte_array_nodejs_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcn", rz_cmd_print_byte_array_nodejs_handler, &cmd_print_byte_array_nodejs_help);
+	rz_warn_if_fail(cmd_print_byte_array_nodejs_cd);
+
+	RzCmdDesc *cmd_print_byte_array_objc_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pco", rz_cmd_print_byte_array_objc_handler, &cmd_print_byte_array_objc_help);
+	rz_warn_if_fail(cmd_print_byte_array_objc_cd);
+
+	RzCmdDesc *cmd_print_byte_array_python_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcp", rz_cmd_print_byte_array_python_handler, &cmd_print_byte_array_python_help);
+	rz_warn_if_fail(cmd_print_byte_array_python_cd);
+
+	RzCmdDesc *cmd_print_byte_array_rust_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcr", rz_cmd_print_byte_array_rust_handler, &cmd_print_byte_array_rust_help);
+	rz_warn_if_fail(cmd_print_byte_array_rust_cd);
+
+	RzCmdDesc *cmd_print_byte_array_swift_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcs", rz_cmd_print_byte_array_swift_handler, &cmd_print_byte_array_swift_help);
+	rz_warn_if_fail(cmd_print_byte_array_swift_cd);
+
+	RzCmdDesc *cmd_print_byte_array_vlang_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcv", rz_cmd_print_byte_array_vlang_handler, &cmd_print_byte_array_vlang_help);
+	rz_warn_if_fail(cmd_print_byte_array_vlang_cd);
+
+	RzCmdDesc *cmd_print_byte_array_yara_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcy", rz_cmd_print_byte_array_yara_handler, &cmd_print_byte_array_yara_help);
+	rz_warn_if_fail(cmd_print_byte_array_yara_cd);
+
+	RzCmdDesc *cmd_print_byte_array_rizin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pc*", rz_cmd_print_byte_array_rizin_handler, &cmd_print_byte_array_rizin_help);
+	rz_warn_if_fail(cmd_print_byte_array_rizin_cd);
+
 	RzCmdDesc *cmd_print_gadget_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pg", rz_cmd_print_gadget_add_handler, &cmd_print_gadget_add_help, &cmd_print_gadget_help);
 	rz_warn_if_fail(cmd_print_gadget_cd);
 	RzCmdDesc *cmd_print_gadget_print_as_rizin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pg*", rz_cmd_print_gadget_print_as_rizin_handler, &cmd_print_gadget_print_as_rizin_help);

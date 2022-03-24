@@ -157,7 +157,6 @@ RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set);
 RZ_API void rz_print_cursor_range(RzPrint *p, int cur, int to, int set);
 RZ_API int rz_print_get_cursor(RzPrint *p);
 RZ_API void rz_print_set_cursor(RzPrint *p, int curset, int ocursor, int cursor);
-RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char lang);
 #define SEEFLAG    -2
 #define JSONOUTPUT -3
 
