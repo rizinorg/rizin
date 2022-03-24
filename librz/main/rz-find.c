@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <rz_core.h>
 #include <rz_main.h>
 #include <rz_types.h>
 #include <rz_search.h>
@@ -294,11 +295,19 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		goto err;
 	}
 
+	RzBinOptions opt;
+	rz_bin_options_init(&opt, 0, 0, 0, false, 2);
+	RzBin *bin = rz_bin_new();
+	rz_io_bind(io, &bin->iob);
+	io->cb_printf = printf;
+	RzBinFile *bf = rz_bin_open(bin, file, &opt);
+	bf->strmode = ro->json ? RZ_MODE_JSON : RZ_MODE_SIMPLE;
+
 	if (ro->mode == RZ_SEARCH_STRING) {
-		/* TODO: implement using api */
-		rz_sys_cmdf("rz-bin -q%szzz \"%s\"", ro->json ? "j" : "", efile);
+		rz_bin_dump_strings(bf, bin->minstrlen, bf->rawstr);
 		goto done;
 	}
+
 	if (ro->mode == RZ_SEARCH_MAGIC) {
 		/* TODO: implement using api */
 		char *tostr = (to && to != UT64_MAX) ? rz_str_newf("-e search.to=%" PFMT64d, to) : strdup("");
@@ -365,6 +374,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	}
 done:
 	rz_cons_free();
+	rz_bin_free(bin);
 err:
 	free(efile);
 	rz_search_free(rs);
