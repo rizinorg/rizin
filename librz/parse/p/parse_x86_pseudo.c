@@ -243,8 +243,8 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 				if (strlen(wa[3]) > 2) {
 					rz_str_ncpy(wa[1], "eax", sizeof(w1));
 					rz_str_ncpy(wa[2], "eax", sizeof(w2));
-					break;
 				}
+				break;
 			default: // .x, .p, .i or word
 				if (wa[3][1] == 'x' || wa[3][1] == 'p' ||
 					wa[3][1] == 'i' || wa[3][0] == 'w') {
@@ -254,6 +254,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 					rz_str_ncpy(wa[1], "al", sizeof(w1));
 					rz_str_ncpy(wa[2], "al", sizeof(w2));
 				}
+				break;
 			}
 		} else if (nw == 3) {
 			rz_str_ncpy(wa[3], wa[2], sizeof(w3));

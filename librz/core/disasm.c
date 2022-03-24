@@ -3130,8 +3130,8 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 				RZ_FREE(ds->refline2);
 				RZ_FREE(ds->prev_line_col);
 				ret = true;
-				break;
 			}
+			break;
 		case RZ_META_TYPE_HIDE:
 			rz_cons_printf("(%" PFMT64d " bytes hidden)", mi_size);
 			ds->asmop.size = mi_size;
@@ -4762,6 +4762,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 			break;
 		}
 	}
+		// fallthrough
 	case RZ_ANALYSIS_OP_TYPE_UCALL:
 	case RZ_ANALYSIS_OP_TYPE_ICALL:
 	case RZ_ANALYSIS_OP_TYPE_RCALL:

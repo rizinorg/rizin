@@ -2622,6 +2622,7 @@ repeat:
 						       "  ]\n",
 						fcni->addr - base, fcnr->to - base);
 				}
+				// fallthrough
 			case RZ_GRAPH_FORMAT_GML:
 				if (iteration != 0) {
 					rz_cons_printf("  edge [\n"
@@ -3881,6 +3882,7 @@ RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl) {
 				ch->cycles = ccl - op->failcycles;
 				rz_list_push(cf->hooks, ch);
 				ch = NULL;
+				// fallthrough
 			case RZ_ANALYSIS_OP_TYPE_CALL:
 				if (op->addr != op->jump) { // no selfies
 					cf->naddr = addr;

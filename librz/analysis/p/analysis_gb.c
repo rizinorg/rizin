@@ -1100,6 +1100,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0xd9:
 		gb_analysis_mov_ime(analysis->reg, op, data[0]);
 		op->type2 = RZ_ANALYSIS_OP_TYPE_MOV;
+		// fallthrough
 	case 0xc9:
 		op->eob = true;
 		op->cycles = 16;

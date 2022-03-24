@@ -1831,6 +1831,7 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 				} else if (ptr2[0] == 'u') {
 					diff->type = RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 				}
+				// fallthrough
 			case 3:
 				ptr2 = rz_str_word_get0(ptr, 2);
 				if (strchr(ptr2, 'l')) {
@@ -1842,10 +1843,13 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 				} else {
 					type = RZ_ANALYSIS_FCN_TYPE_FCN;
 				}
+				// fallthrough
 			case 2:
 				name = rz_str_word_get0(ptr, 1);
+				// fallthrough
 			case 1:
 				addr = rz_num_math(core->num, rz_str_word_get0(ptr, 0));
+				break;
 			}
 			RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, name, addr, type, diff);
 			if (!fcn) {
