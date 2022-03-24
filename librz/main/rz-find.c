@@ -295,17 +295,16 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		goto err;
 	}
 
-	RzCore core = { 0 };
-	rz_core_init(&core);
 	RzBinOptions opt;
-	RzBin *bin = core.bin;
 	rz_bin_options_init(&opt, 0, 0, 0, false, 2);
+	RzBin *bin = rz_bin_new();
+	rz_io_bind(io, &bin->iob);
+	io->cb_printf = printf;
 	RzBinFile *bf = rz_bin_open(bin, file, &opt);
 	bf->strmode = ro->json ? RZ_MODE_JSON : RZ_MODE_SIMPLE;
 
 	if (ro->mode == RZ_SEARCH_STRING) {
 		rz_bin_dump_strings(bf, bin->minstrlen, bf->rawstr);
-		rz_cons_flush();
 		goto done;
 	}
 
@@ -375,8 +374,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	}
 done:
 	rz_cons_free();
+	rz_bin_free(bin);
 err:
-	rz_core_fini(&core);
 	free(efile);
 	rz_search_free(rs);
 	rz_io_free(io);
