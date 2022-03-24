@@ -301,11 +301,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	RzBin *bin = core.bin;
 	rz_bin_options_init(&opt, 0, 0, 0, false, 2);
 	RzBinFile *bf = rz_bin_open(bin, file, &opt);
-	if (ro->json) {
-		bf->strmode = RZ_MODE_JSON;
-	} else {
-		bf->strmode = RZ_MODE_SIMPLE;
-	}
+	bf->strmode = ro->json ? RZ_MODE_JSON : RZ_MODE_SIMPLE;
 
 	if (ro->mode == RZ_SEARCH_STRING) {
 		rz_bin_dump_strings(bf, bin->minstrlen, bf->rawstr);
