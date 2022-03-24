@@ -533,10 +533,8 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0xb7: // invokespecial
 	case 0xb6: // invokevirtual
 	case 0x6e: // invoke-virtual
-		if (len > 2) {
-			// XXX fix this better since the check avoid an oob
-			// but the jump will be incorrect
-			ut32 vB = len > 3 ? (data[3] << 8) | data[2] : 0;
+		if (len > 3) {
+			ut32 vB = (data[3] << 8) | data[2];
 			ut64 dst = analysis->binb.get_offset(analysis->binb.bin, 'm', vB);
 			if (dst == 0) {
 				op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
@@ -546,7 +544,6 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 			}
 			op->fail = addr + sz;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-				// TODO: handle /range instructions
 				esilprintf(op, "8,sp,-=,0x%" PFMT64x ",sp,=[8],0x%" PFMT64x ",ip,=", op->fail, op->jump);
 			}
 		}
@@ -559,20 +556,19 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0x75: // invoke-super/range
 	case 0x76: // invoke-direct/range
 	case 0xfa: // invoke-super-quick // invoke-polymorphic
-		if (len > 2) {
-			// XXX fix this better since the check avoid an oob
-			// but the jump will be incorrect
-			//  ut32 vB = len > 3?(data[3] << 8) | data[2] : 3;
-			// op->jump = analysis->binb.get_offset (analysis->binb.bin, 'm', vB);
+		if (len > 3) {
+			ut32 vB = (data[3] << 8) | data[2];
+			ut64 dst = analysis->binb.get_offset(analysis->binb.bin, 'm', vB);
 			op->fail = addr + sz;
-			// op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-			// TODO: handle /range instructions
-			// NOP esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
-		}
-		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-			// TODO: handle /range instructions
-			esilprintf(op, "8,sp,-=,0x%" PFMT64x ",sp,=[8],0x%" PFMT64x ",ip,=", op->fail, op->jump);
+			if (dst == 0) {
+				op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
+			} else {
+				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+				op->jump = dst;
+				if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+					esilprintf(op, "8,sp,-=,0x%" PFMT64x ",sp,=[8],0x%" PFMT64x ",ip,=", op->fail, op->jump);
+				}
+			}
 		}
 		break;
 	case 0x27: // throw
