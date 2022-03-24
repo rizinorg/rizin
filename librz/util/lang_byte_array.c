@@ -197,23 +197,6 @@ static void lang_byte_array_swift(RzStrBuf *sb, const ut8 *buffer, size_t size) 
 	}
 }
 
-static void lang_byte_array_vlang(RzStrBuf *sb, const ut8 *buffer, size_t size) {
-	if (size < 1) {
-		rz_strbuf_append(sb, "// Warning: the number of available bytes is less than 1");
-		return;
-	} else if (size == 1) {
-		rz_strbuf_appendf(sb, "byteArray := [ byte(%u) ]\n ", buffer[0]);
-		return;
-	}
-	rz_strbuf_appendf(sb, "byteArray := [ byte(%u)\n ", buffer[0]);
-	for (size_t pos = 1; pos < size; pos++) {
-		if (pos > 0 && !(pos % (RZ_LANG_BYTE_ARRAY_TRUNK_SIZE))) {
-			rz_strbuf_append(sb, "\n ");
-		}
-		rz_strbuf_appendf(sb, (pos + 1) < size ? " %u," : " %u\n];", buffer[pos]);
-	}
-}
-
 static void lang_byte_array_yara(RzStrBuf *sb, const ut8 *buffer, size_t size) {
 	rz_strbuf_append(sb, "$byteArray = {\n ");
 	for (size_t pos = 0; pos < size; pos++) {
@@ -300,9 +283,6 @@ RZ_API RZ_OWN char *rz_lang_byte_array(RZ_NONNULL const ut8 *buffer, size_t size
 		break;
 	case RZ_LANG_BYTE_ARRAY_SWIFT:
 		lang_byte_array_swift(&sb, buffer, size);
-		break;
-	case RZ_LANG_BYTE_ARRAY_VLANG:
-		lang_byte_array_vlang(&sb, buffer, size);
 		break;
 	case RZ_LANG_BYTE_ARRAY_YARA:
 		lang_byte_array_yara(&sb, buffer, size);

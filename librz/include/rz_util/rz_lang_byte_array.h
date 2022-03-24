@@ -27,7 +27,6 @@ typedef enum rz_lang_byte_array_type_t {
 	RZ_LANG_BYTE_ARRAY_PYTHON,
 	RZ_LANG_BYTE_ARRAY_RUST,
 	RZ_LANG_BYTE_ARRAY_SWIFT,
-	RZ_LANG_BYTE_ARRAY_VLANG,
 	RZ_LANG_BYTE_ARRAY_YARA,
 } RzLangByteArrayType;
 

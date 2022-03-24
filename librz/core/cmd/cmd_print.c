@@ -6126,7 +6126,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			} else {
 				char *str = NULL;
 				bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
-				// rz_print_code(core->print, core->offset, core->block, len, input[1]);
 				switch (input[1]) {
 				case '*': // "pc*" // rizin commands
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RIZIN);
@@ -6134,19 +6133,19 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				case 'a': // "pca" // GAS asm
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_ASM);
 					break;
-				case 'S': // "pcS" // bash shellscript
+				case 'b': // "pcb" // bash shellscript
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_BASH);
 					break;
-				case 'J': // "pcJ" // nodejs
+				case 'n': // "pcn" // nodejs
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_NODEJS);
 					break;
-				case 'G': // "pcG" // golang
+				case 'g': // "pcg" // golang
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_GOLANG);
 					break;
 				case 'k': // "pck" kotlin
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_KOTLIN);
 					break;
-				case 'z': // "pcz" // swift
+				case 's': // "pcs" // swift
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_SWIFT);
 					break;
 				case 'r': // "pcr" // Rust
@@ -6155,11 +6154,8 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				case 'o': // "pco" // Objective-C
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_OBJECTIVE_C);
 					break;
-				case 'v': // "pcv" // java
+				case 'J': // "pcJ" // java
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JAVA);
-					break;
-				case 'V': // "pcV" // vlang.io
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_VLANG);
 					break;
 				case 'y': // "pcy" // yara
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_YARA);
@@ -6167,7 +6163,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				case 'j': // "pcj" // json
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JSON);
 					break;
-				case 'P': // "pcP" // python
 				case 'p': // "pcp" // python
 					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_PYTHON);
 					break;
@@ -7214,7 +7209,6 @@ CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_objc_handler, RZ_LAN
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_python_handler, RZ_LANG_BYTE_ARRAY_PYTHON);
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_rust_handler, RZ_LANG_BYTE_ARRAY_RUST);
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_swift_handler, RZ_LANG_BYTE_ARRAY_SWIFT);
-CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_vlang_handler, RZ_LANG_BYTE_ARRAY_VLANG);
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_yara_handler, RZ_LANG_BYTE_ARRAY_YARA);
 #undef CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL
 #undef CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN

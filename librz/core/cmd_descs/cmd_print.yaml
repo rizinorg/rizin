@@ -112,13 +112,6 @@ commands:
           - name: n_bytes
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
-      - name: pcv
-        summary: Print bytes as Vlang byte array.
-        cname: cmd_print_byte_array_vlang
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
       - name: pcy
         summary: Print bytes as Yara byte array.
         cname: cmd_print_byte_array_yara
