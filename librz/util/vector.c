@@ -238,12 +238,17 @@ RZ_API void *rz_vector_flush(RzVector *vec) {
 
 RZ_API void rz_vector_insertion_sort(RzVector *vec, RzVectorComparator cmp, bool reverse) {
 	rz_return_if_fail(vec);
-	ut32 i,j;
+	ut32 i, j;
 	void *a, *b, *c = malloc(vec->elem_size);
 
+	if (!c) {
+		RZ_LOG_ERROR("Failed to allocate memory\n");
+		return;
+	}
+
 	for (i = 0; i < rz_vector_len(vec); i++) {
+		a = rz_vector_index_ptr(vec, i);
 		for (j = i + 1; j < rz_vector_len(vec); j++) {
-			a = rz_vector_index_ptr(vec, i);
 			b = rz_vector_index_ptr(vec, j);
 			if ((cmp(a, b) > 0 && !reverse) || (cmp(a, b) < 0 && reverse)) {
 				memcpy(c, a, vec->elem_size);

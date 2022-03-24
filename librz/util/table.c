@@ -37,7 +37,6 @@ RZ_API RzTableColumnType *rz_table_type(const char *name) {
 	return NULL;
 }
 
-// TODO: unused for now, maybe good to call after filter :?
 static void __table_adjust(RzTable *t) {
 	RzTableColumn *col;
 	RzTableRow *row;
@@ -61,12 +60,26 @@ static void __table_adjust(RzTable *t) {
 	}
 }
 
-RZ_API void rz_table_row_free(void *_row, void *user) {
+/**
+ * \brief Free function for RzVector rows in RzTable
+ *
+ * \param _row pointer to the elements of rows in RzTable
+ * \param user useless, used for satisfying RzVectorFree type
+ */
+RZ_API void rz_table_row_free(RZ_NONNULL void *_row, void *user) {
+	rz_return_if_fail(_row);
 	RzTableRow *row = _row;
 	rz_pvector_free(row->items);
 }
 
-RZ_API void rz_table_column_free(void *_col, void *user) {
+/**
+ * \brief Free function for RzVector cols in RzTable
+ *
+ * \param _col pointer to the elements of cols in RzTable
+ * \param user useless, used for satisfying RzVectorFree type
+ */
+RZ_API void rz_table_column_free(RZ_NONNULL void *_col, void *user) {
+	rz_return_if_fail(_col);
 	RzTableColumn *col = _col;
 	free(col->name);
 }
@@ -148,7 +161,14 @@ static bool __addRow(RzTable *t, RzPVector *items, const char *arg, int col) {
 	return false;
 }
 
-RZ_API void rz_table_add_row_vec(RzTable *t, RzPVector *items) {
+/**
+ * \brief Add a new row to RzTable
+ *
+ * \param t pointer to RzTable
+ * \param items pointer to RzPVector which contains row elements
+ */
+RZ_API void rz_table_add_row_vec(RZ_NONNULL RzTable *t, RZ_NONNULL RzPVector *items) {
+	rz_return_if_fail(t && items);
 	RzTableRow *row = rz_table_row_new(items);
 	rz_vector_push(t->rows, row);
 	// throw warning if not enough columns defined in header
@@ -299,7 +319,8 @@ RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...) {
 	rz_table_add_row_vec(t, vec);
 }
 
-RZ_API void rz_table_add_row(RzTable *t, const char *name, ...) {
+RZ_API void rz_table_add_row(RZ_NONNULL RzTable *t, const char *name, ...) {
+	rz_return_if_fail(t);
 	va_list ap;
 	va_start(ap, name);
 	int col = 0;
@@ -366,7 +387,14 @@ static void __computeTotal(RzTable *t) {
 	}
 }
 
-RZ_API char *rz_table_tofancystring(RzTable *t) {
+/**
+ * \brief Add a new row to RzTable
+ *
+ * \param t pointer to RzTable
+ * \return string containing content of RzTable
+ */
+RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
+	rz_return_val_if_fail(t, NULL);
 	if (rz_vector_len(t->cols) == 0) {
 		return strdup("");
 	}
@@ -374,7 +402,6 @@ RZ_API char *rz_table_tofancystring(RzTable *t) {
 	RzTableRow *row;
 	RzTableColumn *col;
 	RzCons *cons = (RzCons *)t->cons;
-	// RzListIter *iter, *iter2;
 	bool useUtf8 = (cons && cons->use_utf8);
 	bool useUtf8Curvy = (cons && cons->use_utf8_curvy);
 	const char *v_line = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : "|";
@@ -464,6 +491,9 @@ static int __strbuf_append_col_aligned(RzStrBuf *sb, RzTableColumn *col, const c
 			rz_strbuf_appendf(sb, "%-*s ", pad + left, str);
 			break;
 		}
+		default:
+			rz_warn_if_reached();
+			break;
 		}
 	}
 	return rz_strbuf_length(sb) - ll;
@@ -579,7 +609,14 @@ RZ_API char *rz_table_tocsv(RzTable *t) {
 	return rz_strbuf_drain(sb);
 }
 
-RZ_API char *rz_table_tojson(RzTable *t) {
+/**
+ * \brief Convert RzTable to json format
+ *
+ * \param t pointer to RzTable
+ * \return json string
+ */
+RZ_API RZ_OWN char *rz_table_tojson(RzTable *t) {
+	rz_return_val_if_fail(t, NULL);
 	PJ *pj = pj_new();
 	RzTableRow *row;
 	pj_a(pj);
@@ -848,6 +885,12 @@ static int __resolveOperation(const char *op) {
 	return -1;
 }
 
+/**
+ * \brief Select specific columns in RzTable
+ *
+ * \param t pointer to RzTable
+ * \param col_names pointer to RzList containing column names
+ */
 RZ_API void rz_table_columns(RzTable *t, RzList *col_names) {
 	// 1 bool per OLD column to indicate whether it should be freed (masked out)
 	bool *free_cols = malloc(sizeof(bool) * rz_vector_len(t->cols));
@@ -916,7 +959,7 @@ RZ_API void rz_table_columns(RzTable *t, RzList *col_names) {
 	}
 
 	RzVector *old_cols = t->cols;
-	RzVector *new_cols = rz_vector_new(sizeof(char *), rz_table_column_free, NULL);
+	RzVector *new_cols = rz_vector_new(sizeof(RzTableColumn), rz_table_column_free, NULL);
 	for (i = 0; i < new_count; i++) {
 		RzTableColumn *col = rz_vector_index_ptr(old_cols, col_sources[i].oldcol);
 		if (!col) {
