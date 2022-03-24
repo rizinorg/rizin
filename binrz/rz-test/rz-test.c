@@ -77,7 +77,8 @@ static int help(bool verbose) {
 			" -f [file]    file to use for json tests (default is " JSON_TEST_FILE_DEFAULT ")\n"
 			" -C [dir]     chdir before running rz-test (default follows executable symlink + test/new\n"
 			" -t [seconds] timeout per test (default is " TIMEOUT_DEFAULT_STR ")\n"
-			" -o [file]    output test run information in JSON format to file"
+			" -o [file]    output test run information in JSON format to file\n"
+			" -e [dir]     exclude a particular directory while testing (this option can appear many times)"
 			"\n"
 			"Supported test types: @json @unit @fuzz @cmds\n"
 			"OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
@@ -192,9 +193,16 @@ int rz_test_main(int argc, const char **argv) {
 	char *json_test_file = NULL;
 	char *output_file = NULL;
 	char *fuzz_dir = NULL;
+	RzPVector *except_dir = rz_pvector_new(free);
 	const char *rz_test_dir = NULL;
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
 	int ret = 0;
+
+	if (!except_dir) {
+		RZ_LOG_ERROR("Fail to create RzPVector\n");
+		ret = -1;
+		goto beach;
+	}
 
 #if __WINDOWS__
 	UINT old_cp = GetConsoleOutputCP();
@@ -211,7 +219,7 @@ int rz_test_main(int argc, const char **argv) {
 #endif
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -280,6 +288,9 @@ int rz_test_main(int argc, const char **argv) {
 		case 'o':
 			free(output_file);
 			output_file = strdup(opt.arg);
+			break;
+		case 'e':
+			rz_pvector_push(except_dir, strdup(opt.arg));
 			break;
 		default:
 			ret = help(false);
@@ -409,6 +420,28 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 
+	// filter out except_dir
+	if (!rz_pvector_empty(except_dir)) {
+		void **it;
+		rz_pvector_foreach (except_dir, it) {
+			const char *p = rz_file_abspath_rel(cwd, (char *)*it), *tp;
+			for (ut32 i = 0; i < rz_pvector_len(&state.db->tests); i++) {
+				RzTest *test = rz_pvector_at(&state.db->tests, i);
+				if (rz_file_is_abspath(test->path)) {
+					tp = strdup(test->path);
+				} else {
+					tp = rz_file_abspath_rel(cwd, test->path);
+				}
+				if (rz_str_startswith(tp, p)) {
+					rz_test_test_free(test);
+					rz_pvector_remove_at(&state.db->tests, i--);
+				}
+				RZ_FREE(tp);
+			}
+			RZ_FREE(p);
+		}
+	}
+
 	RZ_FREE(cwd);
 	uint32_t loaded_tests = rz_pvector_len(&state.db->tests);
 	printf("Loaded %u tests.\n", loaded_tests);
@@ -533,6 +566,7 @@ beach:
 	free(rz_asm_cmd);
 	free(json_test_file);
 	free(fuzz_dir);
+	rz_pvector_free(except_dir);
 #if __WINDOWS__
 	if (old_cp) {
 		(void)SetConsoleOutputCP(old_cp);
