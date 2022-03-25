@@ -661,12 +661,21 @@ static RzILOpEffect *bic(cs_insn *insn) {
 		rz_il_op_pure_free(b);
 		return NULL;
 	}
-	RzILOpEffect *eff = write_reg(REGID(0), LOGAND(a, LOGNOT(b)));
-	if (!eff) {
-		return NULL;
+	RzILOpBitVector *res = LOGAND(a, LOGNOT(b));
+	RzILOpEffect *eff = NULL;
+	if (REGID(0) != ARM64_REG_XZR && REGID(0) != ARM64_REG_WZR) {
+		eff = write_reg(REGID(0), res);
+		if (!eff) {
+			return NULL;
+		}
+		res = NULL;
 	}
 	if (insn->detail->arm64.update_flags) {
-		return SEQ2(eff, update_flags_zn00(REG(0)));
+		RzILOpEffect *eff1 = update_flags_zn00(res ? res : REG(0));
+		return eff ? SEQ2(eff, eff1) : eff1;
+	}
+	if (!eff) {
+		rz_il_op_pure_free(res);
 	}
 	return eff;
 }
