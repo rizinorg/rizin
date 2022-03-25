@@ -7159,37 +7159,21 @@ RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char *
 
 #define CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(name, type) \
 	RZ_IPI RzCmdStatus name(RzCore *core, int argc, const char **argv) { \
-		ut64 oldsize = core->blocksize; \
-		ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize; \
-		if (len > oldsize) { \
-			rz_core_block_size(core, len); \
-		} \
-		char *code = rz_lang_byte_array(core->block, len, type); \
+		char *code = rz_lang_byte_array(core->block, core->blocksize, type); \
 		if (RZ_STR_ISNOTEMPTY(code)) { \
 			rz_cons_println(code); \
 			free(code); \
-		} \
-		if (len > oldsize) { \
-			rz_core_block_size(core, oldsize); \
 		} \
 		return code ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR; \
 	}
 
 #define CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN(name, type) \
 	RZ_IPI RzCmdStatus name(RzCore *core, int argc, const char **argv) { \
-		ut64 oldsize = core->blocksize; \
 		bool big_endian = rz_config_get_b(core->config, "cfg.bigendian"); \
-		ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize; \
-		if (len > oldsize) { \
-			rz_core_block_size(core, len); \
-		} \
-		char *code = rz_lang_byte_array(core->block, len, big_endian ? type##_BE : type##_LE); \
+		char *code = rz_lang_byte_array(core->block, core->blocksize, big_endian ? type##_BE : type##_LE); \
 		if (RZ_STR_ISNOTEMPTY(code)) { \
 			rz_cons_println(code); \
 			free(code); \
-		} \
-		if (len > oldsize) { \
-			rz_core_block_size(core, oldsize); \
 		} \
 		return code ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR; \
 	}

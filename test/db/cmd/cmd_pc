@@ -1,6 +1,6 @@
 NAME=Print bytes as C/C++ byte array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pc 30
+CMDS=pc @! 30
 EXPECT=<<EOF
 #define ARRAY_SIZE 30
 const uint8_t array[ARRAY_SIZE] = {
@@ -38,7 +38,11 @@ RUN
 
 NAME=Print bytes as C/C++ half-word (2 bytes value) array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pch 30 ; pch ; pch 1
+CMDS=<<EOF
+pch @! 30
+pch
+pch @! 1
+EOF
 EXPECT=<<EOF
 #define ARRAY_SIZE 15
 const uint16_t array[ARRAY_SIZE] = {
@@ -70,7 +74,7 @@ RUN
 
 NAME=Print bytes as C/C++ half-word (2 bytes value) array (big endian).
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pch 30 @e:cfg.bigendian=true
+CMDS=pch @! 30 @e:cfg.bigendian=true
 EXPECT=<<EOF
 #define ARRAY_SIZE 15
 const uint16_t array[ARRAY_SIZE] = {
@@ -82,7 +86,10 @@ RUN
 
 NAME=Print bytes as C/C++ word (4 bytes value) array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcw 30 ; pcw 3
+CMDS=<<EOF
+pcw @! 30
+pcw @! 3
+EOF
 EXPECT=<<EOF
 #define ARRAY_SIZE 7
 const uint32_t array[ARRAY_SIZE] = {
@@ -95,7 +102,7 @@ RUN
 
 NAME=Print bytes as C/C++ word (4 bytes value) array (big endian).
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcw 30 @e:cfg.bigendian=true
+CMDS=pcw @! 30 @e:cfg.bigendian=true
 EXPECT=<<EOF
 #define ARRAY_SIZE 7
 const uint32_t array[ARRAY_SIZE] = {
@@ -107,7 +114,10 @@ RUN
 
 NAME=Print bytes as C/C++ double-word (8 bytes value) array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcd 30 ; pcd 7
+CMDS=<<EOF
+pcd @! 30
+pcd @! 7
+EOF
 EXPECT=<<EOF
 #define ARRAY_SIZE 3
 const uint64_t array[ARRAY_SIZE] = {
@@ -120,7 +130,7 @@ RUN
 
 NAME=Print bytes as C/C++ double-word (8 bytes value) array (big endian).
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcd 30 @e:cfg.bigendian=true
+CMDS=pcd @! 30 @e:cfg.bigendian=true
 EXPECT=<<EOF
 #define ARRAY_SIZE 3
 const uint64_t array[ARRAY_SIZE] = {
@@ -132,7 +142,7 @@ RUN
 
 NAME=Print bytes as rizin command.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pc* 30
+CMDS=pc* @! 30
 EXPECT=<<EOF
 wx 80402de900708de2000200e3010040e3 ; sd +16
 wx f1ffffeb0030b0e30300a0e1f1ff ; sd -30
@@ -141,7 +151,7 @@ RUN
 
 NAME=Print bytes as assembly.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pca 30
+CMDS=pca @! 30
 EXPECT=<<EOF
 byte_array:
 .byte 0x80, 0x40, 0x2d, 0xe9, 0x00, 0x70, 0x8d, 0xe2, 0x00, 0x02, 0x00, 0xe3, 0x01, 0x00, 0x40, 0xe3
@@ -152,7 +162,7 @@ RUN
 
 NAME=Print bytes as a bash command.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcb 30
+CMDS=pcb @! 30
 EXPECT=<<EOF
 printf "\200\100\055\351\000\160\215\342\000\002\000\343\001\000\100\343" > data.bin
 printf "\361\377\377\353\000\060\260\343\003\000\240\341\361\377" >> data.bin
@@ -161,7 +171,7 @@ RUN
 
 NAME=Print bytes as golang byte array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcg 30
+CMDS=pcg @! 30
 EXPECT=<<EOF
 byteArray := []byte{
   0x80, 0x40, 0x2d, 0xe9, 0x00, 0x70, 0x8d, 0xe2, 0x00, 0x02, 0x00, 0xe3, 0x01, 0x00, 0x40, 0xe3,
@@ -172,7 +182,7 @@ RUN
 
 NAME=Print bytes as Java byte array (uses signed bytes).
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcJ 30
+CMDS=pcJ @! 30
 EXPECT=<<EOF
 byte[] byteArray = new byte[] {
   -128,   64,   45,  -23,    0,  112, -115,  -30,    0,    2,    0,  -29,    1,    0,   64,  -29,
@@ -183,7 +193,7 @@ RUN
 
 NAME=Print bytes as json byte array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcj 30
+CMDS=pcj @! 30
 EXPECT=<<EOF
 [128,64,45,233,0,112,141,226,0,2,0,227,1,0,64,227,241,255,255,235,0,48,176,227,3,0,160,225,241,255]
 EOF
@@ -191,7 +201,7 @@ RUN
 
 NAME=Print bytes as Kotlin byte array (uses signed bytes).
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pck 30
+CMDS=pck @! 30
 EXPECT=<<EOF
 val byteArray = byteArrayOf(
   -128,   64,   45,  -23,    0,  112, -115,  -30,    0,    2,    0,  -29,    1,    0,   64,  -29,
@@ -202,7 +212,7 @@ RUN
 
 NAME=Print bytes as NodeJS buffer.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcn 30
+CMDS=pcn @! 30
 EXPECT=<<EOF
 var byteArray = new Buffer('gEAt6QBwjeIAAgDjAQBA4/H//+sAMLDjAwCg4fH/', 'base64');
 EOF
@@ -210,7 +220,7 @@ RUN
 
 NAME=Print bytes as Objective-C/C++ byte array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pco 30
+CMDS=pco @! 30
 EXPECT=<<EOF
 NSData *byteArray = [[NSData alloc] initWithBytes:{
   0x80, 0x40, 0x2d, 0xe9, 0x00, 0x70, 0x8d, 0xe2, 0x00, 0x02, 0x00, 0xe3, 0x01, 0x00, 0x40, 0xe3,
@@ -221,7 +231,7 @@ RUN
 
 NAME=Print bytes as Python byte array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcp 30
+CMDS=pcp @! 30
 EXPECT=<<EOF
 byteArray = b'\x80\x40\x2d\xe9\x00\x70\x8d\xe2\x00\x02\x00\xe3\x01\x00\x40\xe3'
 byteArray += b'\xf1\xff\xff\xeb\x00\x30\xb0\xe3\x03\x00\xa0\xe1\xf1\xff'
@@ -230,7 +240,7 @@ RUN
 
 NAME=Print bytes as Rust byte array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcr 30
+CMDS=pcr @! 30
 EXPECT=<<EOF
 let _: [u8; 30] = [
   0x80, 0x40, 0x2d, 0xe9, 0x00, 0x70, 0x8d, 0xe2, 0x00, 0x02, 0x00, 0xe3, 0x01, 0x00, 0x40, 0xe3,
@@ -241,7 +251,7 @@ RUN
 
 NAME=Print bytes as Swift byte array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcs 30
+CMDS=pcs @! 30
 EXPECT=<<EOF
 let byteArray : [UInt8] = [
   0x80, 0x40, 0x2d, 0xe9, 0x00, 0x70, 0x8d, 0xe2, 0x00, 0x02, 0x00, 0xe3, 0x01, 0x00, 0x40, 0xe3,
@@ -252,7 +262,7 @@ RUN
 
 NAME=Print bytes as Yara byte array.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pcy 30
+CMDS=pcy @! 30
 EXPECT=<<EOF
 $byteArray = {
   80 40 2d e9 00 70 8d e2 00 02 00 e3 01 00 40 e3

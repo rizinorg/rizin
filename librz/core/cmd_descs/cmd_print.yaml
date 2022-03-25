@@ -6,126 +6,90 @@ commands:
   - name: pc
     summary: Print bytes as code byte arrays.
     cname: cmd_print_byte_array
+    details:
+      - name: Useful modifiers
+        entries:
+          - text: "pch @e:cfg.bigendian=<true|false>"
+            comment: "Change endianness for pch, pcw and pcd commands"
+          - text: "pc @! <n>"
+            comment: "Change the N of bytes (i.e. block size)."
+      - name: Example of usages
+        entries:
+          - text: "pch @! 64 @e:cfg.bigendian=true"
+            comment: "Generate a C 32 bits array in big endian format, using 64 bytes"
+          - text: "pcp @! 1024"
+            comment: "Generate a Python byte array of size 1024"
+          - text: "pcj @! 10"
+            comment: "Generate a JSON bytes array of size 10"
     subcommands:
       - name: pc
-        summary: Print bytes as C/C++ byte array.
+        summary: Generate a C/C++ byte array.
         cname: cmd_print_byte_array_c_cpp_bytes
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pch
-        summary: Print bytes as C/C++ 16 bits array (endianness follows cfg.bigendian).
+        summary: Generate a C/C++ 16 bits array.
         cname: cmd_print_byte_array_c_cpp_half_word
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcw
-        summary: Print bytes as C/C++ 32 bits array (endianness follows cfg.bigendian).
+        summary: Generate a C/C++ 32 bits array.
         cname: cmd_print_byte_array_c_cpp_word
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcd
-        summary: Print bytes as C/C++ 64 bits array (endianness follows cfg.bigendian).
+        summary: Generate a C/C++ 64 bits array.
         cname: cmd_print_byte_array_c_cpp_double_word
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pca
-        summary: Print bytes as GAS assembly.
+        summary: Generate a byte array in GAS assembly.
         cname: cmd_print_byte_array_asm
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcb
-        summary: Print bytes as a bash command.
+        summary: Generate a bash script with the byte array.
         cname: cmd_print_byte_array_bash
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcg
-        summary: Print bytes as golang byte array.
+        summary: Generate a Golang byte array.
         cname: cmd_print_byte_array_golang
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcJ
-        summary: Print bytes as Java byte array.
+        summary: Generate a Java byte array.
         cname: cmd_print_byte_array_java
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcj
-        summary: Print bytes as json byte array.
+        summary: Generate a JSON byte array.
         cname: cmd_print_byte_array_json
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pck
-        summary: Print bytes as Kotlin byte array.
+        summary: Generate a Kotlin byte array.
         cname: cmd_print_byte_array_kotlin
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcn
-        summary: Print bytes as NodeJS buffer.
+        summary: Generate a NodeJS buffer.
         cname: cmd_print_byte_array_nodejs
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pco
-        summary: Print bytes as Objective-C/C++ byte array.
+        summary: Generate a Objective-C/C++ byte array.
         cname: cmd_print_byte_array_objc
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcp
-        summary: Print bytes as Python byte array.
+        summary: Generate a Python byte array.
         cname: cmd_print_byte_array_python
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcr
-        summary: Print bytes as Rust byte array.
+        summary: Generate a Rust byte array.
         cname: cmd_print_byte_array_rust
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcs
-        summary: Print bytes as Swift byte array.
+        summary: Generate a Swift byte array.
         cname: cmd_print_byte_array_swift
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pcy
-        summary: Print bytes as Yara byte array.
+        summary: Generate a Yara match pattern.
         cname: cmd_print_byte_array_yara
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pc*
-        summary: Print bytes as rizin command.
+        summary: Generate a rizin commands for writing the byte array.
         cname: cmd_print_byte_array_rizin
-        args:
-          - name: n_bytes
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget
