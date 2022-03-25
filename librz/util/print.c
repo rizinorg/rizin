@@ -1066,10 +1066,6 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 	}
 }
 
-RZ_API void rz_print_hexdump_simple(const ut8 *buf, int len) {
-	rz_print_hexdump(NULL, 0, buf, len, 16, 16, 0);
-}
-
 static const char *getbytediff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
 	if (*fmt) {
 		if (a == b) {
