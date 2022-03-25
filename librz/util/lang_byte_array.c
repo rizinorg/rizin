@@ -109,7 +109,10 @@ static void lang_byte_array_java(RzStrBuf *sb, const ut8 *buffer, size_t size) {
 		if (pos > 0 && !(pos % (RZ_LANG_BYTE_ARRAY_TRUNK_SIZE))) {
 			rz_strbuf_append(sb, "\n ");
 		}
-		value = (int)(char)buffer[pos];
+		value = buffer[pos];
+		if (value > 127) {
+			value -= 256;
+		}
 		rz_strbuf_appendf(sb, " %4d,", value);
 	}
 	rz_strbuf_append(sb, "\n};");
@@ -135,7 +138,10 @@ static void lang_byte_array_kotlin(RzStrBuf *sb, const ut8 *buffer, size_t size)
 		if (pos > 0 && !(pos % (RZ_LANG_BYTE_ARRAY_TRUNK_SIZE))) {
 			rz_strbuf_append(sb, "\n ");
 		}
-		value = (int)(char)buffer[pos];
+		value = buffer[pos];
+		if (value > 127) {
+			value -= 256;
+		}
 		rz_strbuf_appendf(sb, " %4d,", value);
 	}
 	rz_strbuf_append(sb, "\n);");
