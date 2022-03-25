@@ -394,7 +394,7 @@ static void __computeTotal(RzTable *t) {
 }
 
 /**
- * \brief Add a new row to RzTable
+ * \brief Convert the content of RzTable to string
  *
  * \param t pointer to RzTable
  * \return string containing content of RzTable
