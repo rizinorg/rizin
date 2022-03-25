@@ -177,9 +177,6 @@ RZ_API ut32 rz_print_rowoff(RzPrint *p, int i);
 RZ_API void rz_print_set_rowoff(RzPrint *p, int i, ut32 offset, bool overwrite);
 RZ_API int rz_print_row_at_off(RzPrint *p, ut32 offset);
 
-RZ_API const char *rz_print_rowlog(RzPrint *print, const char *str);
-RZ_API void rz_print_rowlog_done(RzPrint *print, const char *str);
-
 // WIP
 RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr);
 RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, const char **colors);

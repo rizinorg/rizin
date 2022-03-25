@@ -538,8 +538,8 @@ RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core) {
 		}
 	}
 	if (!gopclntab) {
-		oldstr = rz_print_rowlog(core->print, "Could not find .gopclntab section");
-		rz_print_rowlog_done(core->print, oldstr);
+		oldstr = rz_core_notify_begin(core, "Could not find .gopclntab section");
+		rz_core_notify_done(core, oldstr);
 		return;
 	}
 	int ptr_size = core->analysis->bits / 8;
@@ -581,11 +581,11 @@ RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core) {
 	}
 	rz_flag_space_pop(core->flags);
 	if (num_syms) {
-		oldstr = rz_print_rowlog(core->print, sdb_fmt("Found %d symbols and saved them at sym.go.*", num_syms));
-		rz_print_rowlog_done(core->print, oldstr);
+		oldstr = rz_core_notify_begin(core, sdb_fmt("Found %d symbols and saved them at sym.go.*", num_syms));
+		rz_core_notify_done(core, oldstr);
 	} else {
-		oldstr = rz_print_rowlog(core->print, "Found no symbols.");
-		rz_print_rowlog_done(core->print, oldstr);
+		oldstr = rz_core_notify_begin(core, "Found no symbols.");
+		rz_core_notify_done(core, oldstr);
 	}
 }
 
@@ -5801,12 +5801,12 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	bool plugin_supports_esil = core->analysis->cur->esil;
 	const char *oldstr = NULL;
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
-		oldstr = rz_print_rowlog(core->print, "Find function and symbol names from golang binaries (aang)");
-		rz_print_rowlog_done(core->print, oldstr);
+		oldstr = rz_core_notify_begin(core, "Find function and symbol names from golang binaries (aang)");
+		rz_core_notify_done(core, oldstr);
 		rz_core_analysis_autoname_all_golang_fcns(core);
-		oldstr = rz_print_rowlog(core->print, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+		oldstr = rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 		rz_core_cmd0(core, "aF @@f:sym.go.*");
-		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_notify_done(core, oldstr);
 	}
 	rz_core_task_yield(&core->tasks);
 	if (!cfg_debug) {
@@ -5823,42 +5823,42 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
-	oldstr = rz_print_rowlog(core->print, "Analyze function calls (aac)");
+	oldstr = rz_core_notify_begin(core, "Analyze function calls (aac)");
 	(void)rz_cmd_analysis_calls(core, "", false, false); // "aac"
 	rz_core_seek(core, curseek, true);
-	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_notify_done(core, oldstr);
 	rz_core_task_yield(&core->tasks);
 	if (rz_cons_is_breaked()) {
 		return false;
 	}
 
 	if (is_unknown_file(core)) {
-		oldstr = rz_print_rowlog(core->print, "find and analyze function preludes (aap)");
+		oldstr = rz_core_notify_begin(core, "find and analyze function preludes (aap)");
 		(void)rz_core_search_preludes(core, false); // "aap"
 		didAap = true;
-		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_notify_done(core, oldstr);
 		rz_core_task_yield(&core->tasks);
 		if (rz_cons_is_breaked()) {
 			return false;
 		}
 	}
 
-	oldstr = rz_print_rowlog(core->print, "Analyze len bytes of instructions for references (aar)");
+	oldstr = rz_core_notify_begin(core, "Analyze len bytes of instructions for references (aar)");
 	(void)rz_core_analysis_refs(core, ""); // "aar"
-	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_notify_done(core, oldstr);
 	rz_core_task_yield(&core->tasks);
 	if (rz_cons_is_breaked()) {
 		return false;
 	}
 	if (is_apple_target(core)) {
-		oldstr = rz_print_rowlog(core->print, "Check for objc references");
-		rz_print_rowlog_done(core->print, oldstr);
+		oldstr = rz_core_notify_begin(core, "Check for objc references");
+		rz_core_notify_done(core, oldstr);
 		cmd_analysis_objc(core, true);
 	}
 	rz_core_task_yield(&core->tasks);
-	oldstr = rz_print_rowlog(core->print, "Check for classes");
+	oldstr = rz_core_notify_begin(core, "Check for classes");
 	rz_analysis_class_recover_all(core->analysis);
-	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_notify_done(core, oldstr);
 	rz_core_task_yield(&core->tasks);
 	rz_config_set_i(core->config, "analysis.calls", c);
 	rz_core_task_yield(&core->tasks);
@@ -5870,11 +5870,11 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_task_yield(&core->tasks);
 		bool pcache = rz_config_get_b(core->config, "io.pcache");
 		rz_config_set_b(core->config, "io.pcache", false);
-		oldstr = rz_print_rowlog(core->print, "Emulate functions to find computed references (aaef)");
+		oldstr = rz_core_notify_begin(core, "Emulate functions to find computed references (aaef)");
 		if (plugin_supports_esil) {
 			rz_core_analysis_esil_references_all_functions(core);
 		}
-		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_notify_done(core, oldstr);
 		rz_core_task_yield(&core->tasks);
 		rz_config_set_b(core->config, "io.pcache", pcache);
 		if (rz_cons_is_breaked()) {
@@ -5882,10 +5882,10 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		}
 	}
 	if (rz_config_get_i(core->config, "analysis.autoname")) {
-		oldstr = rz_print_rowlog(core->print, "Speculatively constructing a function name "
-						      "for fcn.* and sym.func.* functions (aan)");
+		oldstr = rz_core_notify_begin(core, "Speculatively constructing a function name "
+						    "for fcn.* and sym.func.* functions (aan)");
 		rz_core_analysis_autoname_all_fcns(core);
-		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_notify_done(core, oldstr);
 		rz_core_task_yield(&core->tasks);
 	}
 	if (core->analysis->opt.vars) {
@@ -5907,45 +5907,45 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_task_yield(&core->tasks);
 	}
 	if (!sdb_isempty(core->analysis->sdb_zigns)) {
-		oldstr = rz_print_rowlog(core->print, "Check for zignature from zigns folder (z/)");
+		oldstr = rz_core_notify_begin(core, "Check for zignature from zigns folder (z/)");
 		rz_core_cmd0(core, "z/");
-		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_notify_done(core, oldstr);
 		rz_core_task_yield(&core->tasks);
 	}
 	if (plugin_supports_esil) {
-		oldstr = rz_print_rowlog(core->print, "Type matching analysis for all functions (aaft)");
+		oldstr = rz_core_notify_begin(core, "Type matching analysis for all functions (aaft)");
 		rz_core_analysis_types_propagation(core);
-		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_notify_done(core, oldstr);
 		rz_core_task_yield(&core->tasks);
 	}
 
-	oldstr = rz_print_rowlog(core->print, "Propagate noreturn information");
+	oldstr = rz_core_notify_begin(core, "Propagate noreturn information");
 	rz_core_analysis_propagate_noreturn(core, UT64_MAX);
-	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_notify_done(core, oldstr);
 	rz_core_task_yield(&core->tasks);
 
 	// Apply DWARF function information
 	Sdb *dwarf_sdb = sdb_ns(core->analysis->sdb, "dwarf", 0);
 	if (dwarf_sdb) {
-		oldstr = rz_print_rowlog(core->print, "Integrate dwarf function information.");
+		oldstr = rz_core_notify_begin(core, "Integrate dwarf function information.");
 		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags, dwarf_sdb);
-		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_notify_done(core, oldstr);
 	}
 
-	oldstr = rz_print_rowlog(core->print, "Use -AA or aaaa to perform additional experimental analysis.");
-	rz_print_rowlog_done(core->print, oldstr);
+	oldstr = rz_core_notify_begin(core, "Use -AA or aaaa to perform additional experimental analysis.");
+	rz_core_notify_done(core, oldstr);
 
 	if (experimental) {
 		if (!didAap) {
-			oldstr = rz_print_rowlog(core->print, "Finding function preludes");
+			oldstr = rz_core_notify_begin(core, "Finding function preludes");
 			(void)rz_core_search_preludes(core, false); // "aap"
-			rz_print_rowlog_done(core->print, oldstr);
+			rz_core_notify_done(core, oldstr);
 			rz_core_task_yield(&core->tasks);
 		}
 
-		oldstr = rz_print_rowlog(core->print, "Enable constraint types analysis for variables");
+		oldstr = rz_core_notify_begin(core, "Enable constraint types analysis for variables");
 		rz_config_set(core->config, "analysis.types.constraint", "true");
-		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_notify_done(core, oldstr);
 	}
 	rz_core_seek_undo(core);
 	if (dh_orig) {
@@ -5959,10 +5959,10 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (rz_config_get_b(core->config, "analysis.apply.signature")) {
 		int n_applied = 0;
 		char message[100];
-		rz_print_rowlog(core->print, "Applying signatures from sigdb");
+		rz_core_notify_begin(core, "Applying signatures from sigdb");
 		rz_core_analysis_sigdb_apply(core, &n_applied, NULL);
 		rz_strf(message, "Applied %d FLIRT signatures via sigdb", n_applied);
-		rz_print_rowlog_done(core->print, message);
+		rz_core_notify_done(core, message);
 	}
 
 	return true;
@@ -6494,8 +6494,8 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 	int archAlign = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 	rz_config_set_i(core->config, "search.align", archAlign);
 	rz_config_set(core->config, "analysis.in", "io.maps.x");
-	const char *oldstr = rz_print_rowlog(core->print, "Finding xrefs in noncode section with analysis.in=io.maps");
-	rz_print_rowlog_done(core->print, oldstr);
+	const char *oldstr = rz_core_notify_begin(core, "Finding xrefs in noncode section with analysis.in=io.maps");
+	rz_core_notify_done(core, oldstr);
 
 	int vsize = 4; // 32bit dword
 	if (core->rasm->bits == 64) {
@@ -6503,8 +6503,8 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 	}
 
 	// body
-	oldstr = rz_print_rowlog(core->print, "Analyze value pointers (aav)");
-	rz_print_rowlog_done(core->print, oldstr);
+	oldstr = rz_core_notify_begin(core, "Analyze value pointers (aav)");
+	rz_core_notify_done(core, oldstr);
 	rz_cons_break_push(NULL, NULL);
 	if (is_debug) {
 		RzList *list = rz_core_get_boundaries_prot(core, 0, "dbg.map", "analysis");
@@ -6517,8 +6517,8 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 			if (rz_cons_is_breaked()) {
 				break;
 			}
-			oldstr = rz_print_rowlog(core->print, sdb_fmt("from 0x%" PFMT64x " to 0x%" PFMT64x " (aav)", map->itv.addr, rz_itv_end(map->itv)));
-			rz_print_rowlog_done(core->print, oldstr);
+			oldstr = rz_core_notify_begin(core, sdb_fmt("from 0x%" PFMT64x " to 0x%" PFMT64x " (aav)", map->itv.addr, rz_itv_end(map->itv)));
+			rz_core_notify_done(core, oldstr);
 			(void)rz_core_search_value_in_range(core, map->itv,
 				map->itv.addr, rz_itv_end(map->itv), vsize, _CbInRangeAav, (void *)&mode);
 		}
@@ -6540,12 +6540,12 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 			// TODO: Reduce multiple hits for same addr
 			from = rz_itv_begin(map2->itv);
 			to = rz_itv_end(map2->itv);
-			oldstr = rz_print_rowlog(core->print, sdb_fmt("Value from 0x%08" PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
+			oldstr = rz_core_notify_begin(core, sdb_fmt("Value from 0x%08" PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
 			if ((to - from) > MAX_SCAN_SIZE) {
 				eprintf("Warning: Skipping large region\n");
 				continue;
 			}
-			rz_print_rowlog_done(core->print, oldstr);
+			rz_core_notify_done(core, oldstr);
 			rz_list_foreach (list, iter, map) {
 				ut64 begin = map->itv.addr;
 				ut64 end = rz_itv_end(map->itv);
@@ -6553,12 +6553,12 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 					break;
 				}
 				if (end - begin > UT32_MAX) {
-					oldstr = rz_print_rowlog(core->print, "Skipping huge range");
-					rz_print_rowlog_done(core->print, oldstr);
+					oldstr = rz_core_notify_begin(core, "Skipping huge range");
+					rz_core_notify_done(core, oldstr);
 					continue;
 				}
-				oldstr = rz_print_rowlog(core->print, sdb_fmt("0x%08" PFMT64x "-0x%08" PFMT64x " in 0x%" PFMT64x "-0x%" PFMT64x " (aav)", from, to, begin, end));
-				rz_print_rowlog_done(core->print, oldstr);
+				oldstr = rz_core_notify_begin(core, sdb_fmt("0x%08" PFMT64x "-0x%08" PFMT64x " in 0x%" PFMT64x "-0x%" PFMT64x " (aav)", from, to, begin, end));
+				rz_core_notify_done(core, oldstr);
 				(void)rz_core_search_value_in_range(core, map->itv, from, to, vsize, _CbInRangeAav, (void *)&mode);
 			}
 		}

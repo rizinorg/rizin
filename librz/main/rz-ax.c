@@ -179,7 +179,6 @@ static void print_hex_from_base2(char *base2) {
 	free(bytes);
 }
 
-
 static void print_ascii_table(void) {
 	printf("%s", ret_ascii_table());
 }
