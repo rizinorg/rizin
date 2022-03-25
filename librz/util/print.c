@@ -393,13 +393,6 @@ RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch) {
 	rz_print_cursor(p, idx, 1, 0);
 }
 
-RZ_API void rz_print_hexpairs(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
-	int i;
-	for (i = 0; i < len; i++) {
-		p->cb_printf("%02x ", buf[i]);
-	}
-}
-
 static bool checkSparse(const ut8 *p, int len, int ch) {
 	int i;
 	ut8 q = *p;
