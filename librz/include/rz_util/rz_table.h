@@ -56,8 +56,8 @@ typedef struct {
 
 typedef void (*RzTableSelector)(RzTableRow *acc, RzTableRow *new_row, int nth);
 
-RZ_API void rz_table_row_free(void *_row, void *user);
-RZ_API void rz_table_column_free(void *_col, void *user);
+RZ_API void rz_table_row_free(void *_row);
+RZ_API void rz_table_column_free(void *_col);
 RZ_API RzTableColumn *rz_table_column_clone(RzTableColumn *col);
 RZ_API RzTableColumnType *rz_table_type(const char *name);
 RZ_API RzTable *rz_table_new(void);

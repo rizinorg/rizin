@@ -64,24 +64,30 @@ static void __table_adjust(RzTable *t) {
  * \brief Free function for RzVector rows in RzTable
  *
  * \param _row pointer to the elements of rows in RzTable
- * \param user useless, used for satisfying RzVectorFree type
  */
-RZ_API void rz_table_row_free(RZ_NONNULL void *_row, void *user) {
+RZ_API void rz_table_row_free(RZ_NONNULL void *_row) {
 	rz_return_if_fail(_row);
 	RzTableRow *row = _row;
 	rz_pvector_free(row->items);
+}
+
+static void rz_table_row_free_wrapper(RZ_NONNULL void *_row, void *user) {
+	rz_table_row_free(_row);
 }
 
 /**
  * \brief Free function for RzVector cols in RzTable
  *
  * \param _col pointer to the elements of cols in RzTable
- * \param user useless, used for satisfying RzVectorFree type
  */
-RZ_API void rz_table_column_free(RZ_NONNULL void *_col, void *user) {
+RZ_API void rz_table_column_free(RZ_NONNULL void *_col) {
 	rz_return_if_fail(_col);
 	RzTableColumn *col = _col;
 	free(col->name);
+}
+
+static void rz_table_column_free_wrapper(RZ_NONNULL void *_col, void *user) {
+	rz_table_column_free(_col);
 }
 
 RZ_API RzTableColumn *rz_table_column_clone(RzTableColumn *col) {
@@ -98,8 +104,8 @@ RZ_API RzTable *rz_table_new(void) {
 	RzTable *t = RZ_NEW0(RzTable);
 	if (t) {
 		t->showHeader = true;
-		t->cols = rz_vector_new(sizeof(RzTableColumn), rz_table_column_free, NULL);
-		t->rows = rz_vector_new(sizeof(RzTableRow), rz_table_row_free, NULL);
+		t->cols = rz_vector_new(sizeof(RzTableColumn), rz_table_column_free_wrapper, NULL);
+		t->rows = rz_vector_new(sizeof(RzTableRow), rz_table_row_free_wrapper, NULL);
 		t->showSum = false;
 	}
 	return t;
@@ -959,7 +965,7 @@ RZ_API void rz_table_columns(RzTable *t, RzList *col_names) {
 	}
 
 	RzVector *old_cols = t->cols;
-	RzVector *new_cols = rz_vector_new(sizeof(RzTableColumn), rz_table_column_free, NULL);
+	RzVector *new_cols = rz_vector_new(sizeof(RzTableColumn), rz_table_column_free_wrapper, NULL);
 	for (i = 0; i < new_count; i++) {
 		RzTableColumn *col = rz_vector_index_ptr(old_cols, col_sources[i].oldcol);
 		if (!col) {
@@ -977,7 +983,7 @@ RZ_API void rz_table_columns(RzTable *t, RzList *col_names) {
 	i = 0;
 	rz_vector_foreach(old_cols, col) {
 		if (free_cols[i]) {
-			rz_table_column_free(col, NULL);
+			rz_table_column_free(col);
 		}
 		i++;
 	}
@@ -993,7 +999,7 @@ RZ_API void rz_table_filter_columns(RzTable *t, RzList *list) {
 	const char *col;
 	RzListIter *iter;
 	RzVector *cols = t->cols;
-	t->cols = rz_vector_new(sizeof(char *), rz_table_column_free, NULL);
+	t->cols = rz_vector_new(sizeof(RzTableColumn), rz_table_column_free_wrapper, NULL);
 	rz_list_foreach (list, iter, col) {
 		int ncol = rz_table_column_nth(t, col);
 		if (ncol != -1) {
@@ -1003,6 +1009,7 @@ RZ_API void rz_table_filter_columns(RzTable *t, RzList *list) {
 			}
 		}
 	}
+	rz_vector_free(cols);
 }
 
 static bool set_table_format(RzTable *t, const char *q) {
