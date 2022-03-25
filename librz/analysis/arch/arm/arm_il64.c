@@ -1094,10 +1094,16 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 		loadsz = is_wreg(dst_reg) ? 32 : 64;
 		break;
 	}
-	RzILOpEffect *eff = load_effect(loadsz, is_signed, dst_reg, addr);
-	if (!eff) {
+	RzILOpEffect *eff = NULL;
+	if (pair) {
+		eff = SETL("addr", addr);
+		addr = VARL("addr");
+	}
+	RzILOpEffect *eff1 = load_effect(loadsz, is_signed, dst_reg, addr);
+	if (!eff1) {
 		return NULL;
 	}
+	eff = eff ? SEQ2(eff, eff1) : eff1;
 	if (pair) {
 		RzILOpEffect *eff1 = load_effect(loadsz, is_signed, REGID(1), ADD(DUP(addr), U64(loadsz / 8)));
 		if (!eff1) {
