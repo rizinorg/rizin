@@ -19,7 +19,7 @@ NAME=PE: nosectionXP - entrypoint 2
 FILE=bins/pe/nosectionXP.exe
 CMDS=pi 5
 EXPECT=<<EOF
-push 0x400150
+push str.Low_alignment_PE_with_no_section__XP
 call dword [sym.imp.msvcrt.dll_printf]
 add esp, 4
 nop

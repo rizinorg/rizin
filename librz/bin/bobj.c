@@ -487,7 +487,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			// when a bin plugin does not provide it's own strings
 			// we always take all the strings found in the binary
 			// the method also converts the paddrs to vaddrs
-			o->strings = rz_bin_file_strings(bf, bin->minstrlen, true);
+			o->strings = rz_bin_file_strings(bf, minlen, true);
 		}
 		if (bin->debase64) {
 			rz_bin_object_filter_strings(o);

@@ -17,6 +17,6 @@ NAME=PE: corkami bigib.exe - pi 1
 FILE=bins/pe/bigib.exe
 CMDS=pi 1
 EXPECT=<<EOF
-push 0x7efd1018
+push str.ImageBase_is_7efd0000h__and_no_relocations
 EOF
 RUN
