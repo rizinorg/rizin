@@ -143,7 +143,6 @@ RZ_API void rz_print_hexii(RzPrint *p, ut64 addr, const ut8 *buf, int len, int s
 RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
 RZ_API void rz_print_hexdump_simple(const ut8 *buf, int len);
 RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize);
-RZ_API void rz_print_hexpairs(RzPrint *p, ut64 addr, const ut8 *buf, int len);
 RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8 *a, ut64 ba, const ut8 *b, int len, int scndcol);
 RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt);
 RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int step);
