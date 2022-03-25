@@ -343,7 +343,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		RzList *list = rz_bin_file_strings(bf, bin->minstrlen, true);
 		RzListIter *it;
 		RzBinString *string;
-		rz_list_foreach(list, it, string) {
+		rz_list_foreach (list, it, string) {
 			print_bin_string(bf, string, pj);
 		}
 		rz_list_free(list);

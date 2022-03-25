@@ -1225,7 +1225,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		RzList *list = rz_bin_file_strings(bf, bin->minstrlen, true);
 		RzListIter *it;
 		RzBinString *string;
-		rz_list_foreach(list, it, string) {
+		rz_list_foreach (list, it, string) {
 			print_string(bf, string, pj, rad);
 		}
 		rz_list_free(list);

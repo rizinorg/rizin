@@ -414,7 +414,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_dump_strings_handler(RzCore *core, int argc, cons
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		rz_cmd_state_output_set_columnsf(state, "iXXiisss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 	}
-	rz_list_foreach(list, it, string) {
+	rz_list_foreach (list, it, string) {
 		print_string(bf, string, state);
 	}
 	rz_cmd_state_output_array_end(state);
