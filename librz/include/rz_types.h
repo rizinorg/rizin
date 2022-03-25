@@ -18,6 +18,7 @@
 #undef __UNIX__
 #undef __WINDOWS__
 
+// TODO: these modes should be dropped when oldshell is removed in favour of RzOutputMode.
 #define RZ_MODE_PRINT     0x000
 #define RZ_MODE_RIZINCMD  0x001
 #define RZ_MODE_SET       0x002

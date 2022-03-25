@@ -696,7 +696,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	const char *name = NULL;
 	const char *file = NULL;
 	const char *output = NULL;
-	int rad = 0;
+	int out_mode = RZ_MODE_PRINT;
 	ut64 laddr = UT64_MAX;
 	ut64 baddr = UT64_MAX;
 	const char *do_demangle = NULL;
@@ -823,9 +823,9 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'T': set_action(RZ_BIN_REQ_SIGNATURE); break;
 		case 'w': set_action(RZ_BIN_REQ_TRYCATCH); break;
 		case 'q':
-			rad = (rad & RZ_MODE_SIMPLE ? RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE);
+			out_mode = (out_mode & RZ_MODE_SIMPLE ? RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE);
 			break;
-		case 'j': rad = RZ_MODE_JSON; break;
+		case 'j': out_mode = RZ_MODE_JSON; break;
 		case 'A': set_action(RZ_BIN_REQ_LISTARCHS); break;
 		case 'a': arch = opt.arg; break;
 		case 'C':
@@ -938,7 +938,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			break;
 		case 'o': output = opt.arg; break;
 		case 'p': core.io->va = false; break;
-		case 'r': rad = true; break;
+		case 'r': out_mode = RZ_MODE_RIZINCMD; break;
 		case 'v':
 			rz_core_fini(&core);
 			return rz_main_version_print("rz-bin");
@@ -989,8 +989,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_core_fini(&core);
 			return 1;
 		}
-		__listPlugins(bin, plugin_name, pj, rad);
-		if (rad == RZ_MODE_JSON) {
+		__listPlugins(bin, plugin_name, pj, out_mode);
+		if (out_mode == RZ_MODE_JSON) {
 			rz_cons_println(pj_string(pj));
 			rz_cons_flush();
 		}
@@ -1222,7 +1222,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	if (rawstr) {
 		PJ *pj = NULL;
-		if (rad == RZ_MODE_JSON) {
+		if (out_mode == RZ_MODE_JSON) {
 			pj = pj_new();
 			if (!pj) {
 				eprintf("rz-bin: Cannot allocate buffer for json array\n");
@@ -1235,7 +1235,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		RzListIter *it;
 		RzBinString *string;
 		rz_list_foreach (list, it, string) {
-			print_string(bf, string, pj, rad);
+			print_string(bf, string, pj, out_mode);
 		}
 		rz_list_free(list);
 		if (pj) {
@@ -1245,7 +1245,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 	}
 	if (query) {
-		if (rad) {
+		if (out_mode) {
 			rz_core_bin_export_info(&core, RZ_MODE_RIZINCMD);
 			rz_cons_flush();
 		} else {
@@ -1258,7 +1258,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		result = 0;
 		goto err;
 	}
-#define isradjson (rad == RZ_MODE_JSON && actions > 0)
+#define ismodejson (out_mode == RZ_MODE_JSON && actions > 0)
 #define run_action(n, x, y) \
 	if (action & (x)) { \
 		RzCmdStateOutput *st = add_header(&state, mode, n); \
@@ -1281,7 +1281,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_cons_new()->context->is_interactive = false;
 
 	RzCmdStateOutput state;
-	RzOutputMode mode = rad2outputmode(rad);
+	RzOutputMode mode = rad2outputmode(out_mode);
 	if (!rz_cmd_state_output_init(&state, mode)) {
 		result = 1;
 		goto chksum_err;
@@ -1305,7 +1305,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			RZ_FREE(tmp);
 		}
 		pdbopts.symbol_store_path = (char *)rz_config_get(core.config, "pdb.symstore");
-		result = rz_bin_pdb_download(core.bin, state.mode == RZ_OUTPUT_MODE_JSON ? state.d.pj : NULL, isradjson, &pdbopts);
+		result = rz_bin_pdb_download(core.bin, state.mode == RZ_OUTPUT_MODE_JSON ? state.d.pj : NULL, ismodejson, &pdbopts);
 	}
 
 	if ((tmp = rz_sys_getenv("RZ_BIN_PREFIX"))) {
@@ -1331,7 +1331,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 	}
 	if (op && action & RZ_BIN_REQ_OPERATION) {
-		rabin_do_operation(bin, op, rad, output, file);
+		rabin_do_operation(bin, op, out_mode, output, file);
 	}
 	end_state(&state);
 	rz_cmd_state_output_fini(&state);
