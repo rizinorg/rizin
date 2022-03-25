@@ -24,6 +24,49 @@ static ut64 letter_divs[RZ_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 
 extern bool rz_core_is_project(RzCore *core, const char *name);
 
+/**
+ * \brief  Prints a message definining the beginning of a task
+ *
+ * \param  core     The RzCore to use
+ * \param  message  The message to notify
+ *
+ * \return Returns the same pointer as message
+ */
+RZ_API const char *rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message) {
+	rz_return_val_if_fail(core && message, NULL);
+	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
+	bool verbose = rz_config_get_b(core->config, "scr.prompt");
+	if (!verbose) {
+		return message;
+	}
+	if (use_color) {
+		fprintf(stderr, "[ ] " Color_YELLOW "%s\r[" Color_RESET, message);
+	} else {
+		fprintf(stderr, "[ ] %s\r[", message);
+	}
+	return message;
+}
+
+/**
+ * \brief  Prints a message definining the end of a task
+ *
+ * \param  core     The RzCore to use
+ * \param  message  The message to notify
+ */
+RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message) {
+	rz_return_if_fail(core && message);
+	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
+	bool verbose = rz_config_get_b(core->config, "scr.prompt");
+	if (!verbose) {
+		return;
+	}
+	if (use_color) {
+		fprintf(stderr, "\r" Color_GREEN "[x]" Color_RESET " %s\n", message);
+		return;
+	}
+	fprintf(stderr, "\r[x] %s\n", message);
+}
+
 static int on_fcn_new(RzAnalysis *_analysis, void *_user, RzAnalysisFunction *fcn) {
 	RzCore *core = (RzCore *)_user;
 	const char *cmd = rz_config_get(core->config, "cmd.fcn.new");
