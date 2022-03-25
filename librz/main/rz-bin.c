@@ -1109,7 +1109,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (rawstr) {
 		unset_action(RZ_BIN_REQ_STRINGS);
 	}
-	rz_config_set_i(core.config, "bin.rawstr", rawstr);
 
 	if (!file) {
 		eprintf("Missing file.\n");
