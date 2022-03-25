@@ -1757,31 +1757,3 @@ RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize) 
 	p->cb_printf("]\n");
 	return words;
 }
-
-RZ_API const char *rz_print_rowlog(RzPrint *print, const char *str) {
-	int use_color = print->flags & RZ_PRINT_FLAGS_COLOR;
-	bool verbose = print->scr_prompt;
-	rz_return_val_if_fail(print->cb_eprintf, NULL);
-	if (!verbose) {
-		return NULL;
-	}
-	if (use_color) {
-		print->cb_eprintf("[ ] " Color_YELLOW "%s\r[" Color_RESET, str);
-	} else {
-		print->cb_eprintf("[ ] %s\r[", str);
-	}
-	return str;
-}
-
-RZ_API void rz_print_rowlog_done(RzPrint *print, const char *str) {
-	int use_color = print->flags & RZ_PRINT_FLAGS_COLOR;
-	bool verbose = print->scr_prompt;
-	rz_return_if_fail(print->cb_eprintf);
-	if (verbose) {
-		if (use_color) {
-			print->cb_eprintf("\r" Color_GREEN "[x]" Color_RESET " %s\n", str);
-		} else {
-			print->cb_eprintf("\r[x] %s\n", str);
-		}
-	}
-}
