@@ -145,7 +145,6 @@ RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt)
 RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int step);
 RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch);
 RZ_API const char *rz_print_byte_color(RzPrint *p, int ch);
-RZ_API void rz_print_c(RzPrint *p, const ut8 *str, int len);
 RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len);
 RZ_API bool rz_print_have_cursor(RzPrint *p, int cur, int len);
 RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len);

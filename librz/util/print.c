@@ -1180,23 +1180,6 @@ RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
 	p->write(buf, len);
 }
 
-RZ_API void rz_print_c(RzPrint *p, const ut8 *str, int len) {
-	int i, inc = p->width / 6;
-	p->cb_printf("#define _BUFFER_SIZE %d\n"
-		     "unsigned char buffer[_BUFFER_SIZE] = {\n",
-		len);
-	for (i = 0; !rz_print_is_interrupted() && i < len;) {
-		rz_print_byte(p, "0x%02x", i, str[i]);
-		if (++i < len) {
-			p->cb_printf(", ");
-		}
-		if (!(i % inc)) {
-			p->cb_printf("\n");
-		}
-	}
-	p->cb_printf(" };\n");
-}
-
 // HACK :D
 static RzPrint staticp = {
 	.cb_printf = libc_printf
