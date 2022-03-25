@@ -315,6 +315,10 @@ static RzList *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, R
 	return ret;
 }
 
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 0, false);
+}
+
 RzBinPlugin rz_bin_plugin_smd = {
 	.name = "smd",
 	.desc = "SEGA Genesis/Megadrive",
@@ -326,6 +330,7 @@ RzBinPlugin rz_bin_plugin_smd = {
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
+	.strings = &strings,
 	.info = &info,
 	.minstrlen = 10,
 	.strfilter = 'U'

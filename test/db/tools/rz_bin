@@ -165,7 +165,7 @@ NAME=rz-bin -z pe
 FILE=bins/pe/a.exe
 CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
-8
+31
 EOF
 RUN
 

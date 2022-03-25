@@ -97,7 +97,7 @@ Shared buffer size 0x400
 |           0x00401011      push  dword [0x40108c]
 |           0x00401017      push  dword [0x401088]
 |           0x0040101d      push  dword [0x401084]
-|           0x00401023      push  0x40103c                             ; " * a PE overriding OS values: OS Ver %i.%i.%i PlatformID %i\n\n" ; const char *format
+|           0x00401023      push  str.a_PE_overriding_OS_values:_OS_Ver__i._i._i_PlatformID__i ; 0x40103c ; " * a PE overriding OS values: OS Ver %i.%i.%i PlatformID %i\n\n" ; const char *format
 |           0x00401028      call  dword [sym.imp.msvcrt.dll_printf]    ; 0x4011bc ; int printf(const char *format)
 |           0x0040102e      add   esp, 0x10
 |           0x00401031      nop
