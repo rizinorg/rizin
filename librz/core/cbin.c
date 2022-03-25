@@ -2806,7 +2806,8 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 		bf->rbin = core->bin;
 		new_bf = true;
 	}
-	RzList *l = rz_bin_file_strings(bf, 0, true);
+	size_t min = rz_config_get_i(core->config, "bin.minstr");
+	RzList *l = rz_bin_file_strings(bf, min, true);
 	bool res = strings_print(core, state, l);
 	rz_list_free(l);
 	if (new_bf) {

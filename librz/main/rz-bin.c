@@ -658,6 +658,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, PJ *pj, int mode) {
 	}
 	vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
 	const char *type_string = rz_bin_string_type(string->type);
+	const char *section_name = s ? s->name : "";
 
 	switch (mode) {
 	case RZ_MODE_JSON:
@@ -667,7 +668,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, PJ *pj, int mode) {
 		pj_kn(pj, "ordinal", string->ordinal);
 		pj_kn(pj, "size", string->size);
 		pj_kn(pj, "length", string->length);
-		pj_ks(pj, "section", s ? s->name : "");
+		pj_ks(pj, "section", section_name);
 		pj_ks(pj, "type", type_string);
 		pj_ks(pj, "string", string->string);
 		pj_end(pj);
@@ -676,7 +677,16 @@ static void print_string(RzBinFile *bf, RzBinString *string, PJ *pj, int mode) {
 		printf("%s\n", string->string);
 		break;
 	case RZ_MODE_SIMPLE:
-		printf("0x%08" PFMT64x " %s\n", vaddr, string->string);
+		printf("0x%" PFMT64x " %u %u %s\n", vaddr, string->size, string->length, string->string);
+		break;
+	case RZ_MODE_PRINT:
+		printf("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %u %u (%s) %s %s\n",
+			string->ordinal, string->paddr, vaddr,
+			string->length, string->size,
+			section_name, type_string, string->string);
+		break;
+	default:
+		rz_warn_if_reached();
 		break;
 	}
 }

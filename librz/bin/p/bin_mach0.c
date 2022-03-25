@@ -848,6 +848,10 @@ static ut64 size(RzBinFile *bf) {
 	return off + len;
 }
 
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 4, false);
+}
+
 RzBinPlugin rz_bin_plugin_mach0 = {
 	.name = "mach0",
 	.desc = "mach0 bin plugin",
@@ -865,6 +869,7 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
+	.strings = &strings,
 	.size = &size,
 	.info = &info,
 	.header = MACH0_(mach_headerfields),

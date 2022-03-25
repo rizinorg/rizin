@@ -150,10 +150,10 @@ static void get_strings_range(RzBinFile *bf, RzList *list, size_t min, ut64 from
 
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
 
-	if (!plugin || !plugin->info) {
-		return;
+	if (plugin && !min) {
+		min = plugin->minstrlen > 0 ? plugin->minstrlen : 4;
 	} else if (!min) {
-		min = plugin && plugin->minstrlen > 0 ? plugin->minstrlen : 4;
+		min = 4;
 	}
 
 	if (!bf->rbin->is_debugger) {

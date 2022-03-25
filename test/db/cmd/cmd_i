@@ -3905,14 +3905,14 @@ nth paddr       vaddr       len size section            type  string
 -- geq 12 --
 nth paddr       vaddr       len size section            type  string            
 --------------------------------------------------------------------------------
-0   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
-1   0x00000db9  0x100000db9 13  14   2.__TEXT.__cstring ascii v24@0:8i16i20
-0   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+4   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
+10  0x00000db9  0x100000db9 13  14   2.__TEXT.__cstring ascii v24@0:8i16i20
+4   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
 -- leq 13 --
 nth paddr       vaddr       len size section            type  string            
 --------------------------------------------------------------------------------
-0   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
-0   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+4   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
+4   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
 EOF
 RUN
 
@@ -4292,23 +4292,6 @@ echo "" > /etc/shadow ; echo "" > /etc/passwd ; rm -Rf /
 EOF
 RUN
 
-NAME=izzz (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izzz~?
-EXPECT=<<EOF
-82
-EOF
-RUN
-
-NAME=izzzq (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izzzq~puts
-EXPECT=<<EOF
-0x004002fa puts
-0x0000015b puts@@GLIBC_2.2.5
-EOF
-RUN
-
 NAME=izz (no rbin - file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
@@ -4339,17 +4322,6 @@ izzj
 EOF
 EXPECT=<<EOF
 [{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
-EOF
-RUN
-
-NAME=izzzj
-FILE==
-CMDS=<<EOF
-w abcd\00012345\0efghi\0
-izzzj
-EOF
-EXPECT=<<EOF
-[{"vaddr":0,"paddr":0,"ordinal":0,"size":5,"length":4,"section":"","type":"ascii","string":"abcd"},{"vaddr":5,"paddr":5,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"12345"},{"vaddr":11,"paddr":11,"ordinal":2,"size":6,"length":5,"section":"","type":"ascii","string":"efghi"}]
 EOF
 RUN
 
@@ -5247,12 +5219,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=izzz
+NAME=izz
 FILE=bins/mach0/fatmach0-3true
-BROKEN=1
-CMDS=izzz~http~codesigning
+CMDS=izz~http~codesigning
 EXPECT=<<EOF
-093 0x00002f3c 0x00002f3c  47  48 () ascii ,http://www.apple.com/appleca/codesigning.crl0\r
+97  0x00002f3c 0x00002f3c 47  48           ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
 EOF
 RUN
 
