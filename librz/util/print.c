@@ -1779,61 +1779,6 @@ RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize) 
 	return words;
 }
 
-RZ_API void rz_print_hex_from_base2(RzPrint *p, char *base2) {
-	bool first = true;
-	const int len = strlen(base2);
-	if (len < 1) {
-		return;
-	}
-
-	RzPrint defprint = { .cb_printf = libc_printf };
-	if (!p) {
-		p = &defprint;
-	}
-
-	// we split each section by 8 bits and have bytes.
-	ut32 bytes_size = (len >> 3) + (len & 7 ? 1 : 0);
-	ut8 *bytes = calloc(bytes_size, sizeof(ut8));
-	if (!bytes) {
-		eprintf("cannot allocate %d bytes\n", bytes_size);
-		return;
-	}
-
-	int c = len & 7;
-	if (c) {
-		// align counter to 8 bits
-		c = 8 - c;
-	}
-	for (int i = 0, j = 0; i < len && j < bytes_size; i++, c++) {
-		if (base2[i] != '1' && base2[i] != '0') {
-			eprintf("invalid base2 number %c at char %d\n", base2[i], i);
-			free(bytes);
-			return;
-		}
-		// c & 7 is c % 8
-		if (c > 0 && !(c & 7)) {
-			j++;
-		}
-		bytes[j] <<= 1;
-		bytes[j] |= base2[i] - '0';
-	}
-
-	p->cb_printf("0x");
-	for (int i = 0; i < bytes_size; ++i) {
-		if (first) {
-			if (i != (bytes_size - 1) && !bytes[i]) {
-				continue;
-			}
-			p->cb_printf("%x", bytes[i]);
-			first = false;
-		} else {
-			p->cb_printf("%02x", bytes[i]);
-		}
-	}
-	p->cb_printf("\n");
-	free(bytes);
-}
-
 RZ_API const char *rz_print_rowlog(RzPrint *print, const char *str) {
 	int use_color = print->flags & RZ_PRINT_FLAGS_COLOR;
 	bool verbose = print->scr_prompt;

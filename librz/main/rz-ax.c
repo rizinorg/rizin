@@ -129,6 +129,57 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 	return true;
 }
 
+static void print_hex_from_base2(char *base2) {
+	bool first = true;
+	const int len = strlen(base2);
+	if (len < 1) {
+		return;
+	}
+
+	// we split each section by 8 bits and have bytes.
+	ut32 bytes_size = (len >> 3) + (len & 7 ? 1 : 0);
+	ut8 *bytes = calloc(bytes_size, sizeof(ut8));
+	if (!bytes) {
+		eprintf("cannot allocate %d bytes\n", bytes_size);
+		return;
+	}
+
+	int c = len & 7;
+	if (c) {
+		// align counter to 8 bits
+		c = 8 - c;
+	}
+	for (int i = 0, j = 0; i < len && j < bytes_size; i++, c++) {
+		if (base2[i] != '1' && base2[i] != '0') {
+			eprintf("invalid base2 number %c at char %d\n", base2[i], i);
+			free(bytes);
+			return;
+		}
+		// c & 7 is c % 8
+		if (c > 0 && !(c & 7)) {
+			j++;
+		}
+		bytes[j] <<= 1;
+		bytes[j] |= base2[i] - '0';
+	}
+
+	printf("0x");
+	for (int i = 0; i < bytes_size; ++i) {
+		if (first) {
+			if (i != (bytes_size - 1) && !bytes[i]) {
+				continue;
+			}
+			printf("%x", bytes[i]);
+			first = false;
+		} else {
+			printf("%02x", bytes[i]);
+		}
+	}
+	printf("\n");
+	free(bytes);
+}
+
+
 static void print_ascii_table(void) {
 	printf("%s", ret_ascii_table());
 }
@@ -526,7 +577,7 @@ dotherax:
 
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_BIN_TO_BIGNUM)) { // -L
-		rz_print_hex_from_base2(NULL, str);
+		print_hex_from_base2(str);
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_DUMP_C_BYTES)) { // -i
 		static const char start[] = "unsigned char buf[] = {";
