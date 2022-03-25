@@ -483,7 +483,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	if (bin->filter_rules & RZ_BIN_REQ_STRINGS) {
 		o->strings = p->strings
 			? p->strings(bf)
-			: rz_bin_file_strings(bf, minlen, true);
+			: rz_bin_file_strings(bf, minlen, false);
 		if (bin->debase64) {
 			rz_bin_object_filter_strings(o);
 		}
@@ -838,7 +838,7 @@ RZ_API const RzList *rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBi
 	if (plugin && plugin->strings) {
 		obj->strings = plugin->strings(bf);
 	} else {
-		obj->strings = rz_bin_file_strings(bf, bin->minstrlen, true);
+		obj->strings = rz_bin_file_strings(bf, bin->minstrlen, false);
 	}
 	if (bin->debase64) {
 		rz_bin_object_filter_strings(obj);

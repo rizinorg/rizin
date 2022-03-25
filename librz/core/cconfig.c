@@ -2467,13 +2467,6 @@ static bool cb_binverbose(void *user, void *data) {
 	return true;
 }
 
-static bool cb_rawstr(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->bin->rawstr = node->i_value;
-	return true;
-}
-
 static bool cb_debase64(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;

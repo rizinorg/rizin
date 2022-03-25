@@ -531,13 +531,30 @@ RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *bf) {
 	return (bf && bf->o) ? bf->o->plugin : NULL;
 }
 
+/**
+ * \brief  Generates a RzList struct containing RzBinString from a given RzBinFile
+ *
+ * \param  bf           The RzBinFile to use for searching for strings
+ * \param  min_length   The string minimum length
+ * \param  raw_strings  When set to false, it will search for strings only in the data section
+ *
+ * \return On success returns RzList pointer, otherwise NULL
+ */
 RZ_API RzList *rz_bin_file_strings(RzBinFile *bf, size_t min_length, bool raw_strings) {
 	rz_return_val_if_fail(bf, NULL);
 	RzListIter *iter;
 	RzBinSection *section;
 	RzList *ret = rz_list_newf(rz_bin_string_free);
+	if (!ret) {
+		RZ_LOG_ERROR("bin: cannot allocate RzList\n");
+		return NULL;
+	}
 
-	if (!raw_strings && bf && bf->o && bf->o->sections && !rz_list_empty(bf->o->sections)) {
+	if (raw_strings) {
+		// returns all the strings found on the RzBinFile
+		get_strings_range(bf, ret, min_length, 0, bf->size, NULL);
+	} else if (bf->o && bf->o->sections && !rz_list_empty(bf->o->sections)) {
+		// returns only the strings found on the RzBinFile but within the data section
 		RzBinObject *o = bf->o;
 		rz_list_foreach (o->sections, iter, section) {
 			if (__isDataSection(bf, section)) {
@@ -552,48 +569,50 @@ RZ_API RzList *rz_bin_file_strings(RzBinFile *bf, size_t min_length, bool raw_st
 			const int bits = (bf->o && bf->o->info) ? bf->o->info->bits : 32;
 			const int cfstr_size = (bits == 64) ? 32 : 16;
 			const int cfstr_offs = (bits == 64) ? 16 : 8;
-			if (strstr(section->name, "__cfstring")) {
-				int i;
-				// XXX do not walk if bin.strings == 0
-				ut8 *p;
-				if (section->size > bf->size) {
-					continue;
-				}
-				ut8 *sbuf = malloc(section->size);
-				if (!sbuf) {
-					continue;
-				}
-				rz_buf_read_at(bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
-				for (i = 0; i < section->size; i += cfstr_size) {
-					ut8 *buf = sbuf;
-					p = buf + i;
-					if ((i + ((bits == 64) ? 8 : 4)) >= section->size) {
-						break;
-					}
-					ut64 cfstr_vaddr = section->vaddr + i;
-					ut64 cstr_vaddr = (bits == 64) ? rz_read_le64(p) : rz_read_le32(p);
-					RzBinString *s = __stringAt(bf, ret, cstr_vaddr);
-					if (s) {
-						RzBinString *bs = RZ_NEW0(RzBinString);
-						if (bs) {
-							bs->type = s->type;
-							bs->length = s->length;
-							bs->size = s->size;
-							bs->ordinal = s->ordinal;
-							bs->vaddr = cfstr_vaddr;
-							bs->paddr = cfstr_vaddr; // XXX should be paddr instead
-							bs->string = rz_str_newf("cstr.%s", s->string);
-							rz_list_append(ret, bs);
-							ht_up_insert(o->strings_db, bs->vaddr, bs);
-						}
-					}
-				}
-				free(sbuf);
+			if (!strstr(section->name, "__cfstring")) {
+				continue;
 			}
+			// XXX do not walk if bin.strings == 0
+			if (section->size > bf->size) {
+				continue;
+			}
+			ut8 *sbuf = malloc(section->size);
+			if (!sbuf) {
+				continue;
+			}
+			rz_buf_read_at(bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
+			for (ut64 i = 0; i < section->size; i += cfstr_size) {
+				ut8 *buf = sbuf;
+				ut8 *p = buf + i;
+				if ((i + ((bits == 64) ? 8 : 4)) >= section->size) {
+					break;
+				}
+				ut64 cfstr_vaddr = section->vaddr + i;
+				ut64 cstr_vaddr = (bits == 64) ? rz_read_le64(p) : rz_read_le32(p);
+				RzBinString *s = __stringAt(bf, ret, cstr_vaddr);
+				if (!s) {
+					continue;
+				}
+				RzBinString *bs = RZ_NEW0(RzBinString);
+				if (!bs) {
+					RZ_LOG_ERROR("bin: cannot allocate RzBinString\n");
+					free(sbuf);
+					goto fail;
+				}
+				bs->type = s->type;
+				bs->length = s->length;
+				bs->size = s->size;
+				bs->ordinal = s->ordinal;
+				bs->vaddr = cfstr_vaddr;
+				bs->paddr = cfstr_vaddr; // XXX should be paddr instead
+				bs->string = rz_str_newf("cstr.%s", s->string);
+				rz_list_append(ret, bs);
+				ht_up_insert(o->strings_db, bs->vaddr, bs);
+			}
+			free(sbuf);
 		}
-	} else {
-		get_strings_range(bf, ret, min_length, 0, bf->size, NULL);
 	}
+fail:
 	return ret;
 }
 
