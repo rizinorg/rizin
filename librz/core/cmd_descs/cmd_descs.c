@@ -186,6 +186,7 @@ static const RzCmdDescArg analyze_n_ins_esil_args[2];
 static const RzCmdDescArg analyze_opcode_args[2];
 static const RzCmdDescArg analyze_cycles_args[2];
 static const RzCmdDescArg convert_mne_args[2];
+static const RzCmdDescArg analyse_name_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -3752,6 +3753,21 @@ static const RzCmdDescArg list_mne_args[] = {
 static const RzCmdDescHelp list_mne_help = {
 	.summary = "List mnemonics for asm.arch",
 	.args = list_mne_args,
+};
+
+static const RzCmdDescArg analyse_name_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyse_name_help = {
+	.summary = "Show/rename/create whatever flag/function is used at addr",
+	.args = analyse_name_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -13314,6 +13330,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *list_mne_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoma", rz_list_mne_handler, &list_mne_help);
 	rz_warn_if_fail(list_mne_cd);
+
+	RzCmdDesc *analyse_name_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_cd, "an", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyse_name_handler, &analyse_name_help);
+	rz_warn_if_fail(analyse_name_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
