@@ -46,6 +46,7 @@ static st64 buf_io_fd_seek(RzBuffer *b, st64 addr, int whence) {
 	switch (whence) {
 	default:
 		rz_warn_if_reached();
+		// fallthrough
 	case RZ_BUF_SET:
 		io_whence = RZ_IO_SEEK_SET;
 		break;

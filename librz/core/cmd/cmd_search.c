@@ -3549,6 +3549,7 @@ reread:
 			eprintf("Invalid keyword\n");
 			break;
 		}
+		// fallthrough
 	case 'i': // "/i"
 		if (input[param_offset - 1] != ' ') {
 			eprintf("Missing ' ' after /i\n");

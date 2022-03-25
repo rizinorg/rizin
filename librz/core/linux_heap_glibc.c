@@ -835,7 +835,7 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 		break;
 	case ' ': // dmhb [bin_num]
 		j--; // for spaces after input
-		/* fallthu */
+		// fallthrough
 	case 'g': // dmhbg [bin_num]
 		num_bin = rz_num_get(NULL, input + j);
 		if (num_bin > NBINS - 2) {

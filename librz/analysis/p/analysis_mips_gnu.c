@@ -824,6 +824,7 @@ static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, gnu_insn *ins
 		break;
 	case MIPS_INS_J:
 		rz_strbuf_appendf(&op->esil, ES_TRAP_DS() "" ES_J("%s"), J_REG(jump));
+		break;
 	case MIPS_INS_B:
 		// jump to address with conditional
 		rz_strbuf_appendf(&op->esil, ES_TRAP_DS() "" ES_J("%s"), I_REG(jump));
@@ -1109,6 +1110,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			insn.id = MIPS_INS_SLL;
 			insn.r_reg.rs = NULL;
 			op->val = sa;
+			// fallthrough
 		case 4: // sllv
 			insn.id = MIPS_INS_SLLV;
 			op->type = RZ_ANALYSIS_OP_TYPE_SHL;
@@ -1117,6 +1119,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			insn.id = MIPS_INS_SRL;
 			insn.r_reg.rs = NULL;
 			op->val = sa;
+			// fallthrough
 		case 6: // srlv
 			insn.id = MIPS_INS_SRLV;
 			op->type = RZ_ANALYSIS_OP_TYPE_SHR;
@@ -1187,6 +1190,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case 24: // mult
 			insn.id = MIPS_INS_MULT;
+			// fallthrough
 		case 25: // multu
 			insn.id = MIPS_INS_MULTU;
 			op->type = RZ_ANALYSIS_OP_TYPE_MUL;
@@ -1198,6 +1202,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case 32: // add
 			insn.id = MIPS_INS_ADD;
+			// fallthrough
 		case 33: // addu	//TODO:表明位数
 			insn.id = MIPS_INS_ADDU;
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
@@ -1397,6 +1402,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 					insn.id = MIPS_INS_BEQZ;
 				}
 			}
+			// fallthrough
 		case 5: // bne // also bnez
 			if (!insn.id) {
 				insn.id = MIPS_INS_BNE;
@@ -1404,10 +1410,12 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 					insn.id = MIPS_INS_BNEZ;
 				}
 			}
+			// fallthrough
 		case 6: // blez
 			if (!insn.id) {
 				insn.id = MIPS_INS_BLEZ;
 			}
+			// fallthrough
 		case 7: // bgtz
 			// XXX: use imm here
 			if (!insn.id) {

@@ -234,6 +234,7 @@ static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 			op->ptr = (addr & ~3) + fields.imm;
 			op->refptr = 1; /* HACK! we don't actually know what size it is */
 		}
+		// fallthrough
 	case 0x01: /* add with carry */
 	case 0x14: /* add with left shift by 1 */
 	case 0x15: /* add with left shift by 2 */

@@ -2627,6 +2627,7 @@ RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 			if (delta < 0) {
 				delta = 0;
 			}
+			break;
 		case 'j':
 			delta++;
 			break;
