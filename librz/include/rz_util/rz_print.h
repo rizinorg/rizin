@@ -149,7 +149,6 @@ RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len);
 RZ_API bool rz_print_have_cursor(RzPrint *p, int cur, int len);
 RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len);
 RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set);
-RZ_API void rz_print_cursor_range(RzPrint *p, int cur, int to, int set);
 RZ_API int rz_print_get_cursor(RzPrint *p);
 RZ_API void rz_print_set_cursor(RzPrint *p, int curset, int ocursor, int cursor);
 #define SEEFLAG    -2
