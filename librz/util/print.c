@@ -106,10 +106,6 @@ RZ_API void rz_print_set_flags(RzPrint *p, int _flags) {
 	p->flags = _flags;
 }
 
-RZ_API void rz_print_unset_flags(RzPrint *p, int flags) {
-	p->flags = p->flags & (p->flags ^ flags);
-}
-
 RZ_API void rz_print_set_cursor(RzPrint *p, int enable, int ocursor, int cursor) {
 	if (!p) {
 		return;
