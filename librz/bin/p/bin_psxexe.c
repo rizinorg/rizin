@@ -110,7 +110,7 @@ static RzList *entries(RzBinFile *bf) {
 
 static RzList *strings(RzBinFile *bf) {
 	// hardcode minstrlen = 20
-	return rz_bin_file_get_strings(bf, 20, 0, 2);
+	return rz_bin_file_strings(bf, 20, true);
 }
 
 RzBinPlugin rz_bin_plugin_psxexe = {

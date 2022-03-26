@@ -27,86 +27,6 @@ static RzBinString *__stringAt(RzBinFile *bf, RzList *ret, ut64 addr) {
 	return NULL;
 }
 
-static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
-	rz_return_if_fail(bf && string);
-
-	int mode = bf->strmode;
-	ut64 addr, vaddr;
-	RzBin *bin = bf->rbin;
-	if (!bin) {
-		return;
-	}
-	const char *section_name, *type_string;
-	RzIO *io = bin->iob.io;
-	if (!io) {
-		return;
-	}
-	RzBinSection *s = rz_bin_get_section_at(bf->o, string->paddr, false);
-	if (s) {
-		string->vaddr = s->vaddr + (string->paddr - s->paddr);
-	}
-	section_name = s ? s->name : "";
-	type_string = rz_bin_string_type(string->type);
-	vaddr = addr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
-
-	// If raw string dump mode, use printf to dump directly to stdout.
-	//  PrintfCallback temp = io->cb_printf;
-	switch (mode) {
-	case RZ_MODE_JSON: {
-		if (pj) {
-			pj_o(pj);
-			pj_kn(pj, "vaddr", vaddr);
-			pj_kn(pj, "paddr", string->paddr);
-			pj_kn(pj, "ordinal", string->ordinal);
-			pj_kn(pj, "size", string->size);
-			pj_kn(pj, "length", string->length);
-			pj_ks(pj, "section", section_name);
-			pj_ks(pj, "type", type_string);
-			pj_ks(pj, "string", string->string);
-			pj_end(pj);
-		}
-	} break;
-	case RZ_MODE_SIMPLEST:
-		io->cb_printf("%s\n", string->string);
-		break;
-	case RZ_MODE_SIMPLE:
-		if (raw == 2) {
-			io->cb_printf("0x%08" PFMT64x " %s\n", addr, string->string);
-		} else {
-			io->cb_printf("%s\n", string->string);
-		}
-		break;
-	case RZ_MODE_RIZINCMD: {
-		char *f_name, *nstr;
-		f_name = strdup(string->string);
-		rz_name_filter(f_name, 512, true);
-		if (bin->prefix) {
-			nstr = rz_str_newf("%s.str.%s", bin->prefix, f_name);
-			io->cb_printf("f %s.str.%s %u @ 0x%08" PFMT64x "\n"
-				      "Cs %u @ 0x%08" PFMT64x "\n",
-				bin->prefix, f_name, string->size, addr,
-				string->size, addr);
-		} else {
-			nstr = rz_str_newf("str.%s", f_name);
-			io->cb_printf("f str.%s %u @ 0x%08" PFMT64x "\n"
-				      "Cs %u @ 0x%08" PFMT64x "\n",
-				f_name, string->size, addr,
-				string->size, addr);
-		}
-		free(nstr);
-		free(f_name);
-		break;
-	}
-	case RZ_MODE_PRINT:
-		io->cb_printf("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
-			      "(%s) %5s %s\n",
-			string->ordinal, string->paddr, vaddr,
-			string->length, string->size,
-			section_name, type_string, string->string);
-		break;
-	}
-}
-
 static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedString *src) {
 	int type = -1;
 	switch (src->type) {
@@ -160,18 +80,14 @@ static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedStr
 	free(src);
 }
 
-static int string_scan_range(RzList *list, RzBinFile *bf, int min,
-	const ut64 from, const ut64 to, RzStrEnc type, int raw, RzBinSection *section) {
-
-	rz_return_val_if_fail(bf, -1);
-
+static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut64 from, const ut64 to, RzStrEnc type, RzBinSection *section) {
 	RzListIter *it;
 	RzDetectedString *str;
 	RzBinSection *s = NULL;
 
 	RzList *str_list = rz_list_new();
 	if (!str_list) {
-		return -1;
+		return;
 	}
 
 	RzUtilStrScanOptions scan_opt = {
@@ -184,15 +100,7 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, from, to, type);
 	if (count <= 0) {
 		rz_list_free(str_list);
-		return 0;
-	}
-
-	PJ *pj = NULL;
-	if (bf->strmode == RZ_MODE_JSON && !list) {
-		pj = pj_new();
-		if (pj) {
-			pj_a(pj);
-		}
+		return;
 	}
 
 	int ord = 0;
@@ -213,15 +121,10 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 			bs->vaddr = bs->paddr - s->paddr + s->vaddr;
 		}
 
-		if (list) {
-			if (bf->o) {
-				ht_up_insert(bf->o->strings_db, bs->vaddr, bs);
-			}
-			rz_list_append(list, bs);
-		} else {
-			print_string(bf, bs, raw, pj);
-			rz_bin_string_free(bs);
+		if (bf->o) {
+			ht_up_insert(bf->o->strings_db, bs->vaddr, bs);
 		}
+		rz_list_append(list, bs);
 
 		if (from == 0 && to == bf->size) {
 			/* force lookup section at the next one */
@@ -229,50 +132,30 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 		}
 	}
 
-	if (pj) {
-		pj_end(pj);
-		if (bf->rbin) {
-			RzIO *io = bf->rbin->iob.io;
-			if (io) {
-				io->cb_printf("%s", pj_string(pj));
-			}
-		}
-		pj_free(pj);
-	}
-
 	rz_list_free(str_list);
-	return count;
 }
 
 static bool __isDataSection(RzBinFile *a, RzBinSection *s) {
 	if (s->has_strings || s->is_data) {
 		return true;
-	}
-	if (!s->name) {
+	} else if (!s->name) {
 		return false;
 	}
 	// Rust
 	return strstr(s->name, "_const") != NULL;
 }
 
-static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut64 from, ut64 to, RzBinSection *section) {
+static void get_strings_range(RzBinFile *bf, RzList *list, size_t min, ut64 from, ut64 to, RzBinSection *section) {
 	rz_return_if_fail(bf && bf->buf && bf->rbin);
 
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
 
-	if (!raw && (!plugin || !plugin->info)) {
-		return;
-	}
-	if (!min) {
-		min = plugin ? plugin->minstrlen : 4;
-	}
-	/* Some plugins return zero, fix it up */
-	if (!min) {
+	if (plugin && !min) {
+		min = plugin->minstrlen > 0 ? plugin->minstrlen : 4;
+	} else if (!min) {
 		min = 4;
 	}
-	if (min < 0) {
-		return;
-	}
+
 	if (!bf->rbin->is_debugger) {
 		if (!to || to > rz_buf_size(bf->buf)) {
 			to = rz_buf_size(bf->buf);
@@ -281,16 +164,12 @@ static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut6
 			return;
 		}
 	}
-	if (raw != 2) {
-		ut64 size = to - from;
-		// in case of dump ignore here
-		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
-			if (bf->rbin->verbose) {
-				eprintf("WARNING: bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RZ_BIN_MAXSTRBUF) in rizin (rz_bin)\n",
-					size);
-			}
-			return;
-		}
+
+	ut64 size = to - from;
+	// in case of dump ignore here
+	if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
+		RZ_LOG_INFO("bin: buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RZ_BIN_MAXSTRBUF) in rizin (rz-bin)\n", size);
+		return;
 	}
 
 	RzStrEnc type;
@@ -320,13 +199,13 @@ static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut6
 	} else if (!strcmp(enc, "ebcdicus")) {
 		type = RZ_STRING_ENC_EBCDIC_US;
 	} else {
-		eprintf("ERROR: encoding %s not supported\n", enc);
+		RZ_LOG_ERROR("bin: encoding %s not supported\n", enc);
 		return;
 	}
-	string_scan_range(list, bf, min, from, to, type, raw, section);
+	string_scan_range(list, bf, min, from, to, type, section);
 }
 
-RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
+RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
 	ut32 bf_id;
 	if (!rz_id_pool_grab_id(bin->ids->pool, &bf_id)) {
 		return NULL;
@@ -336,7 +215,6 @@ RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, in
 		bf->id = bf_id;
 		bf->rbin = bin;
 		bf->file = file ? strdup(file) : NULL;
-		bf->rawstr = rawstr;
 		bf->fd = fd;
 		bf->curxtr = xtrname ? rz_bin_get_xtrplugin_by_name(bin, xtrname) : NULL;
 		bf->sdb = sdb;
@@ -442,10 +320,10 @@ static bool xtr_metadata_match(RzBinXtrData *xtr_data, const char *arch, int bit
 	return bits == iter_bits && !strcmp(iter_arch, arch) && !xtr_data->loaded;
 }
 
-RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, int rawstr, RzBinObjectLoadOptions *opts, int fd, const char *pluginname) {
+RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname) {
 	rz_return_val_if_fail(bin && file && buf, NULL);
 
-	RzBinFile *bf = rz_bin_file_new(bin, file, rz_buf_size(buf), rawstr, fd, pluginname, NULL, false);
+	RzBinFile *bf = rz_bin_file_new(bin, file, rz_buf_size(buf), fd, pluginname, NULL, false);
 	if (bf) {
 		RzListIter *item = rz_list_append(bin->binfiles, bf);
 		bf->buf = rz_buf_ref(buf);
@@ -600,12 +478,12 @@ RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name) {
 	return rz_bin_file_set_cur_binfile(bin, bf);
 }
 
-RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd, int rawstr) {
+RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd) {
 	rz_return_val_if_fail(bin && xtr && buf, NULL);
 
 	RzBinFile *bf = rz_bin_file_find_by_name(bin, filename);
 	if (!bf) {
-		bf = rz_bin_file_new(bin, filename, rz_buf_size(buf), rawstr, fd, xtr->name, bin->sdb, false);
+		bf = rz_bin_file_new(bin, filename, rz_buf_size(buf), fd, xtr->name, bin->sdb, false);
 		if (!bf) {
 			return NULL;
 		}
@@ -653,19 +531,34 @@ RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *bf) {
 	return (bf && bf->o) ? bf->o->plugin : NULL;
 }
 
-// TODO: searchStrings() instead
-RZ_IPI RzList *rz_bin_file_get_strings(RzBinFile *bf, int min, int dump, int raw) {
+/**
+ * \brief  Generates a RzList struct containing RzBinString from a given RzBinFile
+ *
+ * \param  bf           The RzBinFile to use for searching for strings
+ * \param  min_length   The string minimum length
+ * \param  raw_strings  When set to false, it will search for strings only in the data section
+ *
+ * \return On success returns RzList pointer, otherwise NULL
+ */
+RZ_API RzList *rz_bin_file_strings(RzBinFile *bf, size_t min_length, bool raw_strings) {
 	rz_return_val_if_fail(bf, NULL);
 	RzListIter *iter;
 	RzBinSection *section;
-	RzList *ret = dump ? NULL : rz_list_newf(rz_bin_string_free);
+	RzList *ret = rz_list_newf(rz_bin_string_free);
+	if (!ret) {
+		RZ_LOG_ERROR("bin: cannot allocate RzList\n");
+		return NULL;
+	}
 
-	if (!raw && bf && bf->o && bf->o->sections && !rz_list_empty(bf->o->sections)) {
+	if (raw_strings) {
+		// returns all the strings found on the RzBinFile
+		get_strings_range(bf, ret, min_length, 0, bf->size, NULL);
+	} else if (bf->o && bf->o->sections && !rz_list_empty(bf->o->sections)) {
+		// returns only the strings found on the RzBinFile but within the data section
 		RzBinObject *o = bf->o;
 		rz_list_foreach (o->sections, iter, section) {
 			if (__isDataSection(bf, section)) {
-				get_strings_range(bf, ret, min, raw, section->paddr,
-					section->paddr + section->size, section);
+				get_strings_range(bf, ret, min_length, section->paddr, section->paddr + section->size, section);
 			}
 		}
 		rz_list_foreach (o->sections, iter, section) {
@@ -676,48 +569,50 @@ RZ_IPI RzList *rz_bin_file_get_strings(RzBinFile *bf, int min, int dump, int raw
 			const int bits = (bf->o && bf->o->info) ? bf->o->info->bits : 32;
 			const int cfstr_size = (bits == 64) ? 32 : 16;
 			const int cfstr_offs = (bits == 64) ? 16 : 8;
-			if (strstr(section->name, "__cfstring")) {
-				int i;
-				// XXX do not walk if bin.strings == 0
-				ut8 *p;
-				if (section->size > bf->size) {
-					continue;
-				}
-				ut8 *sbuf = malloc(section->size);
-				if (!sbuf) {
-					continue;
-				}
-				rz_buf_read_at(bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
-				for (i = 0; i < section->size; i += cfstr_size) {
-					ut8 *buf = sbuf;
-					p = buf + i;
-					if ((i + ((bits == 64) ? 8 : 4)) >= section->size) {
-						break;
-					}
-					ut64 cfstr_vaddr = section->vaddr + i;
-					ut64 cstr_vaddr = (bits == 64) ? rz_read_le64(p) : rz_read_le32(p);
-					RzBinString *s = __stringAt(bf, ret, cstr_vaddr);
-					if (s) {
-						RzBinString *bs = RZ_NEW0(RzBinString);
-						if (bs) {
-							bs->type = s->type;
-							bs->length = s->length;
-							bs->size = s->size;
-							bs->ordinal = s->ordinal;
-							bs->vaddr = cfstr_vaddr;
-							bs->paddr = cfstr_vaddr; // XXX should be paddr instead
-							bs->string = rz_str_newf("cstr.%s", s->string);
-							rz_list_append(ret, bs);
-							ht_up_insert(o->strings_db, bs->vaddr, bs);
-						}
-					}
-				}
-				free(sbuf);
+			if (!strstr(section->name, "__cfstring")) {
+				continue;
 			}
+			// XXX do not walk if bin.strings == 0
+			if (section->size > bf->size) {
+				continue;
+			}
+			ut8 *sbuf = malloc(section->size);
+			if (!sbuf) {
+				continue;
+			}
+			rz_buf_read_at(bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
+			for (ut64 i = 0; i < section->size; i += cfstr_size) {
+				ut8 *buf = sbuf;
+				ut8 *p = buf + i;
+				if ((i + ((bits == 64) ? 8 : 4)) >= section->size) {
+					break;
+				}
+				ut64 cfstr_vaddr = section->vaddr + i;
+				ut64 cstr_vaddr = (bits == 64) ? rz_read_le64(p) : rz_read_le32(p);
+				RzBinString *s = __stringAt(bf, ret, cstr_vaddr);
+				if (!s) {
+					continue;
+				}
+				RzBinString *bs = RZ_NEW0(RzBinString);
+				if (!bs) {
+					RZ_LOG_ERROR("bin: cannot allocate RzBinString\n");
+					free(sbuf);
+					goto fail;
+				}
+				bs->type = s->type;
+				bs->length = s->length;
+				bs->size = s->size;
+				bs->ordinal = s->ordinal;
+				bs->vaddr = cfstr_vaddr;
+				bs->paddr = cfstr_vaddr; // XXX should be paddr instead
+				bs->string = rz_str_newf("cstr.%s", s->string);
+				rz_list_append(ret, bs);
+				ht_up_insert(o->strings_db, bs->vaddr, bs);
+			}
+			free(sbuf);
 		}
-	} else {
-		get_strings_range(bf, ret, min, raw, 0, bf->size, NULL);
 	}
+fail:
 	return ret;
 }
 

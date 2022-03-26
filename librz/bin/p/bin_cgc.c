@@ -117,6 +117,7 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.symbols = &symbols,
 	.minstrlen = 4,
 	.imports = &imports,
+	.strings = &strings,
 	.info = &info,
 	.fields = &fields,
 	.size = &size,

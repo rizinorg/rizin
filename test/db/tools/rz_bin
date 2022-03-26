@@ -165,7 +165,7 @@ NAME=rz-bin -z pe
 FILE=bins/pe/a.exe
 CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
-8
+31
 EOF
 RUN
 
@@ -173,15 +173,7 @@ NAME=rz-bin -zz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rz-bin -zz ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
-102 0x00002619 0x00404019 10  11   .rdata  ascii   Password: 
-EOF
-RUN
-
-NAME=rz-bin -zzz pe
-FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzz ${RZ_FILE} | grep "Password:"
-EXPECT=<<EOF
-102 0x00002619 0x00404019  10  11 (.rdata) ascii Password: 
+102 0x00002619 0x00404019 10 11 (.rdata) ascii Password: 
 EOF
 RUN
 
@@ -193,25 +185,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-bin -zzzq pe
-FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzzq ${RZ_FILE} | grep "Password:"
-EXPECT=<<EOF
-0x00404019 Password: 
-EOF
-RUN
-
 NAME=rz-bin -zzqq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rz-bin -zzqq ${RZ_FILE} | grep "Password:"
-EXPECT=<<EOF
-Password: 
-EOF
-RUN
-
-NAME=rz-bin -zzzqq pe
-FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzzqq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 Password: 
 EOF

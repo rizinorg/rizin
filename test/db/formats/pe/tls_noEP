@@ -26,7 +26,7 @@ NAME=2: PE: tls_noEP - entrypoint
 FILE=bins/pe/tls_noEP.exe
 CMDS=pi 5
 EXPECT=<<EOF
-push 0x401024
+push str.Exiting_TLS_with_no_EP:_____1st_TLS_call__ExitProcess___called
 call dword [sym.imp.msvcrt.dll_printf]
 add esp, 4
 nop
