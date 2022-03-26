@@ -440,330 +440,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=hexagon regs
-FILE=
-CMDS=<<EOF
-e asm.arch=hexagon
-ar~[0]
-EOF
-EXPECT=<<EOF
-lc0
-sa0
-lc1
-sa1
-p3:0
-c5
-pc
-ugp
-gp
-cs0
-cs1
-upcyclelo
-upcyclehi
-framelimit
-framekey
-pktcountlo
-pktcounthi
-utimerlo
-utimerhi
-m0
-m1
-usr
-c1:0
-c3:2
-c5:4
-c7:6
-c9:8
-c11:10
-c13:12
-c15:14
-c17:16
-c19:18
-c31:30
-r1:0
-r3:2
-r5:4
-r7:6
-r9:8
-r13:12
-r15:14
-r17:16
-r19:18
-r21:20
-r23:22
-r25:24
-r27:26
-r11:10
-r29:28
-r31:30
-gelr
-gsr
-gosp
-gbadva
-g4
-g5
-g6
-g7
-g8
-g9
-g10
-g11
-g12
-g13
-g14
-g15
-gpmucnt4
-gpmucnt5
-gpmucnt6
-gpmucnt7
-g20
-g21
-g22
-g23
-gpcyclelo
-gpcyclehi
-gpmucnt0
-gpmucnt1
-gpmucnt2
-gpmucnt3
-g30
-g31
-g1:0
-g3:2
-g5:4
-g7:6
-g9:8
-g11:10
-g13:12
-g15:14
-g17:16
-g19:18
-g21:20
-g23:22
-g25:24
-g27:26
-g29:28
-g31:30
-q0
-q1
-q2
-q3
-v3:0
-v7:4
-v11:8
-v15:12
-v19:16
-v23:20
-v27:24
-v31:28
-v0
-v1
-v2
-v3
-v4
-v5
-v6
-v7
-v8
-v9
-v10
-v11
-v12
-v13
-v14
-v15
-v16
-v17
-v18
-v19
-v20
-v21
-v22
-v23
-v24
-v25
-v26
-v27
-v28
-v29
-v30
-v31
-v1:0
-v3:2
-v5:4
-v7:6
-v9:8
-v11:10
-v13:12
-v15:14
-v17:16
-v19:18
-v21:20
-v23:22
-v25:24
-v27:26
-v29:28
-v31:30
-r0
-r1
-r2
-r3
-r4
-r5
-r6
-r7
-r8
-r9
-r12
-r13
-r14
-r15
-r16
-r17
-r18
-r19
-r20
-r21
-r22
-r23
-r24
-r25
-r26
-r27
-r28
-r10
-r11
-r29
-r30
-r31
-p0
-p1
-p2
-p3
-sgp0
-sgp1
-stid
-elr
-badva0
-badva1
-ssr
-ccr
-htid
-badva
-imask
-s11
-s12
-s13
-s14
-s15
-s19
-s23
-s25
-evb
-modectl
-syscfg
-s20
-vid
-s22
-s24
-s26
-cfgbase
-diag
-rev
-pcyclehi
-pcyclelo
-isdbst
-isdbcfg0
-isdbcfg1
-s35
-brkptpc0
-brkptcfg0
-brkptpc1
-brkptcfg1
-isdbmbxin
-isdbmbxout
-isdben
-isdbgpr
-s44
-s45
-s46
-s47
-pmucnt0
-pmucnt1
-pmucnt2
-pmucnt3
-pmuevtcfg
-pmucfg
-s54
-s55
-s56
-s57
-s58
-s59
-s60
-s61
-s62
-s63
-s64
-s65
-s66
-s67
-s68
-s69
-s70
-s71
-s72
-s73
-s74
-s75
-s76
-s77
-s78
-s79
-s80
-s1:0
-s3:2
-s5:4
-s7:6
-s9:8
-s11:10
-s13:12
-s15:14
-s17:16
-s19:18
-s21:20
-s23:22
-s25:24
-s27:26
-s29:28
-s31:30
-s33:32
-s35:34
-s37:36
-s39:38
-s41:40
-s43:42
-s45:44
-s47:46
-s49:48
-s51:50
-s53:52
-s55:54
-s57:56
-s59:58
-s61:60
-s63:62
-s65:64
-s67:66
-s69:68
-s71:70
-s73:72
-s75:74
-s77:76
-s79:78
-EOF
-RUN
-
 NAME=hexagon basic block graph
 FILE=bins/elf/analysis/hexagon-hello-loop
 CMDS=<<EOF
@@ -845,14 +521,14 @@ pd 12
 EOF
 EXPECT=<<EOF
 / sym.thread_join ();
-|           0x00005200      ?       R1 = HTID
+|           0x00005200      ?       R1 = S8
 |           0x00005204      ?       R3 = ##0x1
 |           0x00005208      [   R1 = asl(R3,R1)
 |           0x0000520c      [   R1 = sub(##-0x1,R1)
 |           0x00005210      [   R0 = and(R0,R1)
 |           0x00005214      [   R0 = combine(R0.l,R0.l)
 |           ; CODE XREF from sym.thread_join @ 0x5228
-|       .-> 0x00005218      [   R2 = MODECTL
+|       .-> 0x00005218      [   R2 = S17
 |       :   0x0000521c      [   R2 = and(R0,R2)
 |       :   0x00005220      [   P0 = cmp.eq(R2,#0x0) ; if (P0.new) jumpr:nt R31
 |       :   0x00005224      [   pause(#0x1)
@@ -874,7 +550,7 @@ pd 11
 EOF
 EXPECT=<<EOF
 / sym.sys_deinit_tls ();
-|           0x00005344      ?       R2 = UGP
+|           0x00005344      ?       R2 = C10
 |           0x00005348      /       immext(##0x1100)                   ; loc.CoreDump
 |           0x0000534c      |       R3 = memw(GP+##0x1110)             ; loc._TLSEnd
 |           0x00005350      |       immext(##0x1100)                   ; loc.CoreDump
@@ -1015,5 +691,660 @@ EXPECT=<<EOF
 {   R4 = R3
    nop
    nop }:endloop1
+EOF
+RUN
+
+NAME=hexagon regs
+FILE=
+CMDS=<<EOF
+e asm.arch=hexagon
+arp~[0-1]
+EOF
+EXPECT=<<EOF
+PC pc
+SP r29
+BP r30
+LR r31
+SR c8
+SN r0
+A0 r0
+A1 r1
+A2 r2
+A3 r3
+A4 r4
+A5 r5
+A6 r1:0
+A7 r3:2
+A8 r5:4
+R0 r0
+R1 r1
+R2 r1:0
+ctr c0
+ctr c1
+ctr c2
+ctr c3
+ctr c4
+ctr c5
+ctr c6
+ctr c7
+ctr c8
+ctr c9
+ctr c10
+ctr c11
+ctr c12
+ctr c13
+ctr c14
+ctr c15
+ctr c16
+ctr c17
+ctr c18
+ctr c19
+ctr c30
+ctr c31
+ctr c1:0
+ctr c3:2
+ctr c5:4
+ctr c7:6
+ctr c9:8
+ctr c11:10
+ctr c13:12
+ctr c15:14
+ctr c17:16
+ctr c19:18
+ctr c31:30
+gpr r1:0
+gpr r3:2
+gpr r5:4
+gpr r7:6
+gpr r9:8
+gpr r11:10
+gpr r13:12
+gpr r15:14
+gpr r17:16
+gpr r19:18
+gpr r21:20
+gpr r23:22
+gpr r25:24
+gpr r27:26
+gpr r29:28
+gpr r31:30
+gpr g0
+gpr g1
+gpr g2
+gpr g3
+gpr g4
+gpr g5
+gpr g6
+gpr g7
+gpr g8
+gpr g9
+gpr g10
+gpr g11
+gpr g12
+gpr g13
+gpr g14
+gpr g15
+gpr g16
+gpr g17
+gpr g18
+gpr g19
+gpr g20
+gpr g21
+gpr g22
+gpr g23
+gpr g24
+gpr g25
+gpr g26
+gpr g27
+gpr g28
+gpr g29
+gpr g30
+gpr g31
+gpr g1:0
+gpr g3:2
+gpr g5:4
+gpr g7:6
+gpr g9:8
+gpr g11:10
+gpr g13:12
+gpr g15:14
+gpr g17:16
+gpr g19:18
+gpr g21:20
+gpr g23:22
+gpr g25:24
+gpr g27:26
+gpr g29:28
+gpr g31:30
+vcc q0
+vcc q1
+vcc q2
+vcc q3
+vc v3:0
+vc v7:4
+vc v11:8
+vc v15:12
+vc v19:16
+vc v23:20
+vc v27:24
+vc v31:28
+vc v0
+vc v1
+vc v2
+vc v3
+vc v4
+vc v5
+vc v6
+vc v7
+vc v8
+vc v9
+vc v10
+vc v11
+vc v12
+vc v13
+vc v14
+vc v15
+vc v16
+vc v17
+vc v18
+vc v19
+vc v20
+vc v21
+vc v22
+vc v23
+vc v24
+vc v25
+vc v26
+vc v27
+vc v28
+vc v29
+vc v30
+vc v31
+vc v1:0
+vc v3:2
+vc v5:4
+vc v7:6
+vc v9:8
+vc v11:10
+vc v13:12
+vc v15:14
+vc v17:16
+vc v19:18
+vc v21:20
+vc v23:22
+vc v25:24
+vc v27:26
+vc v29:28
+vc v31:30
+gpr r0
+gpr r1
+gpr r2
+gpr r3
+gpr r4
+gpr r5
+gpr r6
+gpr r7
+gpr r8
+gpr r9
+gpr r10
+gpr r11
+gpr r12
+gpr r13
+gpr r14
+gpr r15
+gpr r16
+gpr r17
+gpr r18
+gpr r19
+gpr r20
+gpr r21
+gpr r22
+gpr r23
+gpr r24
+gpr r25
+gpr r26
+gpr r27
+gpr r28
+gpr r29
+gpr r30
+gpr r31
+ctr p0
+ctr p1
+ctr p2
+ctr p3
+sys s0
+sys s1
+sys s2
+sys s3
+sys s4
+sys s5
+sys s6
+sys s7
+sys s8
+sys s9
+sys s10
+sys s11
+sys s12
+sys s13
+sys s14
+sys s15
+sys s16
+sys s17
+sys s18
+sys s19
+sys s20
+sys s21
+sys s22
+sys s23
+sys s24
+sys s25
+sys s26
+sys s27
+sys s28
+sys s29
+sys s30
+sys s31
+sys s32
+sys s33
+sys s34
+sys s35
+sys s36
+sys s37
+sys s38
+sys s39
+sys s40
+sys s41
+sys s42
+sys s43
+sys s44
+sys s45
+sys s46
+sys s47
+sys s48
+sys s49
+sys s50
+sys s51
+sys s52
+sys s53
+sys s54
+sys s55
+sys s56
+sys s57
+sys s58
+sys s59
+sys s60
+sys s61
+sys s62
+sys s63
+sys s64
+sys s65
+sys s66
+sys s67
+sys s68
+sys s69
+sys s70
+sys s71
+sys s72
+sys s73
+sys s74
+sys s75
+sys s76
+sys s77
+sys s78
+sys s79
+sys s80
+sys s1:0
+sys s3:2
+sys s5:4
+sys s7:6
+sys s9:8
+sys s11:10
+sys s13:12
+sys s15:14
+sys s17:16
+sys s19:18
+sys s21:20
+sys s23:22
+sys s25:24
+sys s27:26
+sys s29:28
+sys s31:30
+sys s33:32
+sys s35:34
+sys s37:36
+sys s39:38
+sys s41:40
+sys s43:42
+sys s45:44
+sys s47:46
+sys s49:48
+sys s51:50
+sys s53:52
+sys s55:54
+sys s57:56
+sys s59:58
+sys s61:60
+sys s63:62
+sys s65:64
+sys s67:66
+sys s69:68
+sys s71:70
+sys s73:72
+sys s75:74
+sys s77:76
+sys s79:78
+ctr c0_tmp
+ctr c1_tmp
+ctr c2_tmp
+ctr c3_tmp
+ctr c4_tmp
+ctr c5_tmp
+ctr c6_tmp
+ctr c7_tmp
+ctr c8_tmp
+ctr c9_tmp
+ctr c10_tmp
+ctr c11_tmp
+ctr c12_tmp
+ctr c13_tmp
+ctr c14_tmp
+ctr c15_tmp
+ctr c16_tmp
+ctr c17_tmp
+ctr c18_tmp
+ctr c19_tmp
+ctr c30_tmp
+ctr c31_tmp
+ctr c1:0_tmp
+ctr c3:2_tmp
+ctr c5:4_tmp
+ctr c7:6_tmp
+ctr c9:8_tmp
+ctr c11:10_tmp
+ctr c13:12_tmp
+ctr c15:14_tmp
+ctr c17:16_tmp
+ctr c19:18_tmp
+ctr c31:30_tmp
+gpr r1:0_tmp
+gpr r3:2_tmp
+gpr r5:4_tmp
+gpr r7:6_tmp
+gpr r9:8_tmp
+gpr r11:10_tmp
+gpr r13:12_tmp
+gpr r15:14_tmp
+gpr r17:16_tmp
+gpr r19:18_tmp
+gpr r21:20_tmp
+gpr r23:22_tmp
+gpr r25:24_tmp
+gpr r27:26_tmp
+gpr r29:28_tmp
+gpr r31:30_tmp
+gpr g0_tmp
+gpr g1_tmp
+gpr g2_tmp
+gpr g3_tmp
+gpr g4_tmp
+gpr g5_tmp
+gpr g6_tmp
+gpr g7_tmp
+gpr g8_tmp
+gpr g9_tmp
+gpr g10_tmp
+gpr g11_tmp
+gpr g12_tmp
+gpr g13_tmp
+gpr g14_tmp
+gpr g15_tmp
+gpr g16_tmp
+gpr g17_tmp
+gpr g18_tmp
+gpr g19_tmp
+gpr g20_tmp
+gpr g21_tmp
+gpr g22_tmp
+gpr g23_tmp
+gpr g24_tmp
+gpr g25_tmp
+gpr g26_tmp
+gpr g27_tmp
+gpr g28_tmp
+gpr g29_tmp
+gpr g30_tmp
+gpr g31_tmp
+gpr g1:0_tmp
+gpr g3:2_tmp
+gpr g5:4_tmp
+gpr g7:6_tmp
+gpr g9:8_tmp
+gpr g11:10_tmp
+gpr g13:12_tmp
+gpr g15:14_tmp
+gpr g17:16_tmp
+gpr g19:18_tmp
+gpr g21:20_tmp
+gpr g23:22_tmp
+gpr g25:24_tmp
+gpr g27:26_tmp
+gpr g29:28_tmp
+gpr g31:30_tmp
+vcc q0_tmp
+vcc q1_tmp
+vcc q2_tmp
+vcc q3_tmp
+vc v3:0_tmp
+vc v7:4_tmp
+vc v11:8_tmp
+vc v15:12_tmp
+vc v19:16_tmp
+vc v23:20_tmp
+vc v27:24_tmp
+vc v31:28_tmp
+vc v0_tmp
+vc v1_tmp
+vc v2_tmp
+vc v3_tmp
+vc v4_tmp
+vc v5_tmp
+vc v6_tmp
+vc v7_tmp
+vc v8_tmp
+vc v9_tmp
+vc v10_tmp
+vc v11_tmp
+vc v12_tmp
+vc v13_tmp
+vc v14_tmp
+vc v15_tmp
+vc v16_tmp
+vc v17_tmp
+vc v18_tmp
+vc v19_tmp
+vc v20_tmp
+vc v21_tmp
+vc v22_tmp
+vc v23_tmp
+vc v24_tmp
+vc v25_tmp
+vc v26_tmp
+vc v27_tmp
+vc v28_tmp
+vc v29_tmp
+vc v30_tmp
+vc v31_tmp
+vc v1:0_tmp
+vc v3:2_tmp
+vc v5:4_tmp
+vc v7:6_tmp
+vc v9:8_tmp
+vc v11:10_tmp
+vc v13:12_tmp
+vc v15:14_tmp
+vc v17:16_tmp
+vc v19:18_tmp
+vc v21:20_tmp
+vc v23:22_tmp
+vc v25:24_tmp
+vc v27:26_tmp
+vc v29:28_tmp
+vc v31:30_tmp
+gpr r0_tmp
+gpr r1_tmp
+gpr r2_tmp
+gpr r3_tmp
+gpr r4_tmp
+gpr r5_tmp
+gpr r6_tmp
+gpr r7_tmp
+gpr r8_tmp
+gpr r9_tmp
+gpr r10_tmp
+gpr r11_tmp
+gpr r12_tmp
+gpr r13_tmp
+gpr r14_tmp
+gpr r15_tmp
+gpr r16_tmp
+gpr r17_tmp
+gpr r18_tmp
+gpr r19_tmp
+gpr r20_tmp
+gpr r21_tmp
+gpr r22_tmp
+gpr r23_tmp
+gpr r24_tmp
+gpr r25_tmp
+gpr r26_tmp
+gpr r27_tmp
+gpr r28_tmp
+gpr r29_tmp
+gpr r30_tmp
+gpr r31_tmp
+ctr p0_tmp
+ctr p1_tmp
+ctr p2_tmp
+ctr p3_tmp
+sys s0_tmp
+sys s1_tmp
+sys s2_tmp
+sys s3_tmp
+sys s4_tmp
+sys s5_tmp
+sys s6_tmp
+sys s7_tmp
+sys s8_tmp
+sys s9_tmp
+sys s10_tmp
+sys s11_tmp
+sys s12_tmp
+sys s13_tmp
+sys s14_tmp
+sys s15_tmp
+sys s16_tmp
+sys s17_tmp
+sys s18_tmp
+sys s19_tmp
+sys s20_tmp
+sys s21_tmp
+sys s22_tmp
+sys s23_tmp
+sys s24_tmp
+sys s25_tmp
+sys s26_tmp
+sys s27_tmp
+sys s28_tmp
+sys s29_tmp
+sys s30_tmp
+sys s31_tmp
+sys s32_tmp
+sys s33_tmp
+sys s34_tmp
+sys s35_tmp
+sys s36_tmp
+sys s37_tmp
+sys s38_tmp
+sys s39_tmp
+sys s40_tmp
+sys s41_tmp
+sys s42_tmp
+sys s43_tmp
+sys s44_tmp
+sys s45_tmp
+sys s46_tmp
+sys s47_tmp
+sys s48_tmp
+sys s49_tmp
+sys s50_tmp
+sys s51_tmp
+sys s52_tmp
+sys s53_tmp
+sys s54_tmp
+sys s55_tmp
+sys s56_tmp
+sys s57_tmp
+sys s58_tmp
+sys s59_tmp
+sys s60_tmp
+sys s61_tmp
+sys s62_tmp
+sys s63_tmp
+sys s64_tmp
+sys s65_tmp
+sys s66_tmp
+sys s67_tmp
+sys s68_tmp
+sys s69_tmp
+sys s70_tmp
+sys s71_tmp
+sys s72_tmp
+sys s73_tmp
+sys s74_tmp
+sys s75_tmp
+sys s76_tmp
+sys s77_tmp
+sys s78_tmp
+sys s79_tmp
+sys s80_tmp
+sys s1:0_tmp
+sys s3:2_tmp
+sys s5:4_tmp
+sys s7:6_tmp
+sys s9:8_tmp
+sys s11:10_tmp
+sys s13:12_tmp
+sys s15:14_tmp
+sys s17:16_tmp
+sys s19:18_tmp
+sys s21:20_tmp
+sys s23:22_tmp
+sys s25:24_tmp
+sys s27:26_tmp
+sys s29:28_tmp
+sys s31:30_tmp
+sys s33:32_tmp
+sys s35:34_tmp
+sys s37:36_tmp
+sys s39:38_tmp
+sys s41:40_tmp
+sys s43:42_tmp
+sys s45:44_tmp
+sys s47:46_tmp
+sys s49:48_tmp
+sys s51:50_tmp
+sys s53:52_tmp
+sys s55:54_tmp
+sys s57:56_tmp
+sys s59:58_tmp
+sys s61:60_tmp
+sys s63:62_tmp
+sys s65:64_tmp
+sys s67:66_tmp
+sys s69:68_tmp
+sys s71:70_tmp
+sys s73:72_tmp
+sys s75:74_tmp
+sys s77:76_tmp
 EOF
 RUN
