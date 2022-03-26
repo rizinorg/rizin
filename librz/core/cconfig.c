@@ -2510,6 +2510,13 @@ static bool cb_hexsdk(void *user, void *data) {
 	return true;
 }
 
+static bool cb_hex_regalias(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->rasm->settings.hex_reg_alias = (bool)node->i_value;
+	return true;
+}
+
 static bool cb_binprefix(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3259,6 +3266,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* plugins */
 	SETCB("plugins.hexagon.sdk", "false", &cb_hexsdk, "Print packet syntax in objdump style. Hexagon only.");
+	SETCB("plugins.hexagon.reg.alias", "true", &cb_hex_regalias, "Print the alias of registers (Alias from C0 = SA0).");
 
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");
