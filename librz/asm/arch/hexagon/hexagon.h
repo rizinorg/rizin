@@ -3,12 +3,11 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-03-26 04:32:01-04:00
+// Date of code generation: 2022-03-26 15:50:26-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
 // https://github.com/rizinorg/rz-hexagon
-
 #ifndef HEXAGON_H
 #define HEXAGON_H
 
@@ -536,24 +535,23 @@ typedef enum {
 #define BF_GET(y, start, len)  (((y) >> (start)) & BIT_MASK(len))
 #define BF_GETB(y, start, end) (BF_GET((y), (start), (end) - (start) + 1)
 
-char *hex_get_ctr_regs(int opcode_reg);
-char *hex_get_ctr_regs64(int opcode_reg);
-char *hex_get_double_regs(int opcode_reg);
-char *hex_get_general_double_low8_regs(int opcode_reg);
-char *hex_get_general_sub_regs(int opcode_reg);
-char *hex_get_guest_regs(int opcode_reg);
-char *hex_get_guest_regs64(int opcode_reg);
-char *hex_get_hvx_qr(int opcode_reg);
-char *hex_get_hvx_vqr(int opcode_reg);
-char *hex_get_hvx_vr(int opcode_reg);
-char *hex_get_hvx_wr(int opcode_reg);
-char *hex_get_int_regs(int opcode_reg);
-char *hex_get_int_regs_low8(int opcode_reg);
-char *hex_get_mod_regs(int opcode_reg);
-char *hex_get_pred_regs(int opcode_reg);
-char *hex_get_sys_regs(int opcode_reg);
-char *hex_get_sys_regs64(int opcode_reg);
-
+char *hex_get_ctr_regs(int opcode_reg, bool get_alias);
+char *hex_get_ctr_regs64(int opcode_reg, bool get_alias);
+char *hex_get_double_regs(int opcode_reg, bool get_alias);
+char *hex_get_general_double_low8_regs(int opcode_reg, bool get_alias);
+char *hex_get_general_sub_regs(int opcode_reg, bool get_alias);
+char *hex_get_guest_regs(int opcode_reg, bool get_alias);
+char *hex_get_guest_regs64(int opcode_reg, bool get_alias);
+char *hex_get_hvx_qr(int opcode_reg, bool get_alias);
+char *hex_get_hvx_vqr(int opcode_reg, bool get_alias);
+char *hex_get_hvx_vr(int opcode_reg, bool get_alias);
+char *hex_get_hvx_wr(int opcode_reg, bool get_alias);
+char *hex_get_int_regs(int opcode_reg, bool get_alias);
+char *hex_get_int_regs_low8(int opcode_reg, bool get_alias);
+char *hex_get_mod_regs(int opcode_reg, bool get_alias);
+char *hex_get_pred_regs(int opcode_reg, bool get_alias);
+char *hex_get_sys_regs(int opcode_reg, bool get_alias);
+char *hex_get_sys_regs64(int opcode_reg, bool get_alias);
 RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_new_extender, const ut32 addr);
 int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p);
 int hexagon_disasm_instruction(const RzAsm *rz_asm, HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, HexPkt *pkt);
