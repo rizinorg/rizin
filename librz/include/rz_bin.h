@@ -314,8 +314,6 @@ struct rz_bin_file_t {
 	char *file;
 	int fd; ///< when used in combination with RzIO, this refers to the io fd.
 	int size;
-	int rawstr;
-	int strmode;
 	ut32 id;
 	RzBuffer *buf;
 	ut64 offset;
@@ -865,7 +863,6 @@ typedef struct rz_bin_options_t {
 	RzBinObjectLoadOptions obj_opts;
 	ut64 sz;
 	int xtr_idx; // load Nth binary
-	int rawstr;
 	int fd;
 	const char *filename;
 } RzBinOptions;
@@ -892,7 +889,7 @@ RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzList /* <RzBinMap> */ *maps,
 	RZ_NONNULL const char *vfile_name_patched, RZ_NONNULL const char *vfile_name_reloc_targets);
 
 // options functions
-RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, bool patch_relocs, int rawstr);
+RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, bool patch_relocs);
 RZ_API void rz_bin_arch_options_init(RzBinArchOptions *opt, const char *arch, int bits);
 
 // open/close/reload functions
@@ -924,8 +921,7 @@ RZ_API RzBinInfo *rz_bin_get_info(RzBin *bin);
 RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr);
 RZ_API ut64 rz_bin_get_laddr(RzBin *bin);
 RZ_API ut64 rz_bin_get_size(RzBin *bin);
-RZ_API RzList *rz_bin_raw_strings(RzBinFile *a, int min);
-RZ_API RzList *rz_bin_dump_strings(RzBinFile *a, int min, int raw);
+RZ_API RzList *rz_bin_file_strings(RzBinFile *a, size_t min_length, bool raw_strings);
 
 // use RzBinFile instead
 RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_entries(RZ_NONNULL RzBin *bin);

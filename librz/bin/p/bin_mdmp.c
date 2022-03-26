@@ -461,6 +461,10 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 0, false);
+}
+
 RzBinPlugin rz_bin_plugin_mdmp = {
 	.name = "mdmp",
 	.desc = "Minidump format rz_bin plugin",
@@ -478,6 +482,7 @@ RzBinPlugin rz_bin_plugin_mdmp = {
 	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
+	.strings = &strings,
 };
 
 #ifndef RZ_PLUGIN_INCORE

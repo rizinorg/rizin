@@ -10,7 +10,7 @@ FILE=bins/pe/mz.exe
 CMDS=e asm.bytes=true; pid 4; 
 EXPECT=<<EOF
 0x00401000   section.sect_0:
-0x00401000           6818104000  push 0x401018
+0x00401000           6818104000  push str.executed_via_imported_TLS
 0x00401005         ff15c8104000  call dword [sym.imp.msvcrt.dll_printf]
 0x0040100b               83c404  add esp, 4
 0x0040100e                   90  nop
@@ -24,7 +24,7 @@ e asm.flags.real=true
 pi 6
 EOF
 EXPECT=<<EOF
-push 0x401018
+push str.executed_via_imported_TLS
 call dword [printf]
 add esp, 4
 nop

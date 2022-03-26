@@ -486,6 +486,7 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
+	.strings = &strings,
 	.info = &info,
 	.header = &header,
 	.fields = &fields,
