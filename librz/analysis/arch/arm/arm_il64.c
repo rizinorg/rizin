@@ -228,6 +228,7 @@ static ut32 reg_bits(arm64_reg reg) {
 	if (is_wreg(reg) || reg == ARM64_REG_WZR) {
 		return 32;
 	}
+	rz_warn_if_reached();
 	return 0;
 }
 
