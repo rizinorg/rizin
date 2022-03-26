@@ -1479,12 +1479,12 @@ RZ_API RzList *rz_sign_diff(RzAnalysis *a, RzSignOptions *options, const char *o
 			bool graphMatch = graphScore >= (options ? options->graph_diff_threshold : SIGN_DIFF_MATCH_GRAPH_THRESHOLD);
 
 			if (bytesMatch) {
-				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5lf B %s\n", si->addr, si2->addr, bytesScore, si->name);
+				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5lf B %s", si->addr, si2->addr, bytesScore, si->name);
 				rz_list_append(matches, match);
 			}
 
 			if (graphMatch) {
-				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5lf G %s\n", si->addr, si2->addr, graphScore, si->name);
+				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5lf G %s", si->addr, si2->addr, graphScore, si->name);
 				rz_list_append(matches, match);
 			}
 		}
@@ -1544,11 +1544,11 @@ RZ_API RzList *rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const
 			bool bytesMatch = bytesScore >= (options ? options->bytes_diff_threshold : SIGN_DIFF_MATCH_BYTES_THRESHOLD);
 			bool graphMatch = graphScore >= (options ? options->graph_diff_threshold : SIGN_DIFF_MATCH_GRAPH_THRESHOLD);
 			if ((bytesMatch && !not_matching) || (!bytesMatch && not_matching)) {
-				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5f B %s\n", si->addr, si2->addr, bytesScore, si->name);
+				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5f B %s", si->addr, si2->addr, bytesScore, si->name);
 				rz_list_append(matches, match);
 			}
 			if ((graphMatch && !not_matching) || (!graphMatch && not_matching)) {
-				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5f G %s\n", si->addr, si2->addr, graphScore, si->name);
+				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5f G %s", si->addr, si2->addr, graphScore, si->name);
 				rz_list_append(matches, match);
 			}
 		}
