@@ -2053,7 +2053,7 @@ RZ_API void rz_sign_list(RzAnalysis *a, RzStrBuf *sb, int format) {
 		pj_a(pj);
 	}
 
-	struct ctxListCB ctx = { a, 0, format, pj };
+	struct ctxListCB ctx = { a, 0, format, pj, sb };
 	sdb_foreach(a->sdb_zigns, listCB, &ctx);
 
 	if (format == 'j') {
