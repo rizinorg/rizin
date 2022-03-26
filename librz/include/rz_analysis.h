@@ -597,7 +597,6 @@ typedef struct rz_analysis_t {
 	bool recursive_noreturn; // analysis.rnr
 	RzSpaces zign_spaces;
 	char *zign_path; // dir.zigns
-	PrintfCallback cb_printf;
 	// moved from RzAnalysisFcn
 	Sdb *sdb; // root
 	HtUP /*<RzVector<RzAnalysisAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address

@@ -753,19 +753,23 @@ static int cmdCheck(void *data, const char *input) {
 
 RZ_IPI RzCmdStatus rz_zign_show_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	char *out;
+	RzStrBuf sb;
+	if (mode != RZ_OUTPUT_MODE_SDB) {
+		rz_strbuf_init(&sb);
+	}
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_sign_list(core->analysis, '\0');
-		return RZ_CMD_STATUS_OK;
+		rz_sign_list(core->analysis, &sb, '\0');
+		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_sign_list(core->analysis, 'q');
-		return RZ_CMD_STATUS_OK;
+		rz_sign_list(core->analysis, &sb, 'q');
+		break;
 	case RZ_OUTPUT_MODE_JSON:
-		rz_sign_list(core->analysis, 'j');
-		return RZ_CMD_STATUS_OK;
+		rz_sign_list(core->analysis, &sb, 'j');
+		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_sign_list(core->analysis, '*');
-		return RZ_CMD_STATUS_OK;
+		rz_sign_list(core->analysis, &sb, '*');
+		break;
 	case RZ_OUTPUT_MODE_SDB:
 		out = sdb_querys(core->sdb, NULL, 0, "analysis/zigns/*");
 		if (!out) {
@@ -777,6 +781,9 @@ RZ_IPI RzCmdStatus rz_zign_show_handler(RzCore *core, int argc, const char **arg
 	default:
 		return RZ_CMD_STATUS_ERROR;
 	}
+	rz_cons_print(rz_strbuf_get(&sb));
+	rz_strbuf_fini(&sb);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_zign_find_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -926,18 +933,30 @@ RZ_IPI RzCmdStatus rz_zign_cmp_handler(RzCore *core, int argc, const char **argv
 	const char *raw_bytes_thresh = rz_config_get(core->config, "zign.diff.bthresh");
 	const char *raw_graph_thresh = rz_config_get(core->config, "zign.diff.gthresh");
 	RzSignOptions *options = rz_sign_options_new(raw_bytes_thresh, raw_graph_thresh);
-	RzCmdStatus res = rz_sign_diff(core->analysis, options, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	RzList *matches = rz_sign_diff(core->analysis, options, argv[1]);
+	RzListIter *it;
+	const char *match;
+	rz_list_foreach (matches, it, match) {
+		rz_cons_println(match);
+	}
+	rz_list_free(matches);
 	rz_sign_options_free(options);
-	return res;
+	return matches ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus zcn_handler_common(RzCore *core, int argc, const char **argv, bool negative_match) {
 	const char *raw_bytes_thresh = rz_config_get(core->config, "zign.diff.bthresh");
 	const char *raw_graph_thresh = rz_config_get(core->config, "zign.diff.gthresh");
 	RzSignOptions *options = rz_sign_options_new(raw_bytes_thresh, raw_graph_thresh);
-	RzCmdStatus res = rz_sign_diff_by_name(core->analysis, options, argv[1], negative_match) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	RzList *matches = rz_sign_diff_by_name(core->analysis, options, argv[1], negative_match);
+	RzListIter *it;
+	const char *match;
+	rz_list_foreach (matches, it, match) {
+		rz_cons_println(match);
+	}
+	rz_list_free(matches);
 	rz_sign_options_free(options);
-	return res;
+	return matches ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_zign_cmp_name_handler(RzCore *core, int argc, const char **argv) {
