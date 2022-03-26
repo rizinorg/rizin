@@ -438,13 +438,6 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
-#if 0
-	if ((insn->id == ARM64_INS_ADD || insn->id == ARM64_INS_SUB) &&
-		!insn->detail->arm.update_flags && OPCOUNT() == 3 && REGID(1) == ARM64_REG_PC && ISIMM(2)) {
-		// alias for adr
-		return adr(insn, is_thumb);
-	}
-#endif
 	bool is_sub = insn->id == ARM64_INS_SUB || insn->id == ARM64_INS_SBC
 #if CS_API_MAJOR > 4
 		|| insn->id == ARM64_INS_SUBS || insn->id == ARM64_INS_SBCS
