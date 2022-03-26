@@ -2122,11 +2122,13 @@ static RzILOpEffect *sxt(cs_insn *insn) {
 	switch (insn->id) {
 	case ARM64_INS_UXTB:
 		is_signed = false;
+		// fallthrough
 	case ARM64_INS_SXTB:
 		bits = 8;
 		break;
 	case ARM64_INS_UXTH:
 		is_signed = false;
+		// fallthrough
 	case ARM64_INS_SXTH:
 		bits = 16;
 		break;
