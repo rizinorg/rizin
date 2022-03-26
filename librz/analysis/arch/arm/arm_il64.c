@@ -270,24 +270,28 @@ static RzILOpBitVector *extend(ut32 dst_bits, arm64_extender ext, RZ_OWN RzILOpB
 	switch (ext) {
 	case ARM64_EXT_SXTB:
 		is_signed = true;
+		// fallthrough
 	case ARM64_EXT_UXTB:
 		src_bits = 8;
 		break;
 
 	case ARM64_EXT_SXTH:
 		is_signed = true;
+		// fallthrough
 	case ARM64_EXT_UXTH:
 		src_bits = 16;
 		break;
 
 	case ARM64_EXT_SXTW:
 		is_signed = true;
+		// fallthrough
 	case ARM64_EXT_UXTW:
 		src_bits = 32;
 		break;
 
 	case ARM64_EXT_SXTX:
 		is_signed = true;
+		// fallthrough
 	case ARM64_EXT_UXTX:
 		src_bits = 64;
 		break;
@@ -851,16 +855,19 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 		break;
 	case ARM64_INS_CSINV:
 		invert_cond = true;
+		// fallthrough
 	case ARM64_INS_CINV:
 		res = LOGNOT(src1);
 		break;
 	case ARM64_INS_CSNEG:
 		invert_cond = true;
+		// fallthrough
 	case ARM64_INS_CNEG:
 		res = NEG(src1);
 		break;
 	case ARM64_INS_CSINC:
 		invert_cond = true;
+		// fallthrough
 	default: // ARM64_INS_CINC, ARM64_INS_CSINC
 		res = ADD(src1, UN(bits, 1));
 		break;
@@ -1054,6 +1061,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDAPURSB:
 #endif
 		is_signed = true;
+		// fallthrough
 	case ARM64_INS_LDRB:
 	case ARM64_INS_LDURB:
 	case ARM64_INS_LDARB:
@@ -1074,6 +1082,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
 	case ARM64_INS_LDAPURSH:
 #endif
 		is_signed = true;
+		// fallthrough
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDURH:
 	case ARM64_INS_LDARH:
