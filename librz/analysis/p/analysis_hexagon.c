@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-03-26 05:33:07-04:00
+// Date of code generation: 2022-03-26 10:47:37-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -29,10 +29,8 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 
 	return op->size;
 }
-
 RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
-
 		"=PC	pc\n"
 		"=SP	r29\n"
 		"=BP	r30\n"
@@ -154,10 +152,10 @@ RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	g29:28	.64	2624	0\n"
 		"gpr	g31:30	.64	2688	0\n"
 
-		"ctr	q0	.128	2752	0\n"
-		"ctr	q1	.128	2880	0\n"
-		"ctr	q2	.128	3008	0\n"
-		"ctr	q3	.128	3136	0\n"
+		"vcc	q0	.128	2752	0\n"
+		"vcc	q1	.128	2880	0\n"
+		"vcc	q2	.128	3008	0\n"
+		"vcc	q3	.128	3136	0\n"
 
 		"vc	v3:0	.4096	3264	0\n"
 		"vc	v7:4	.4096	7360	0\n"
@@ -476,10 +474,10 @@ RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	g27:26_tmp	.64	41184	0\n"
 		"gpr	g29:28_tmp	.64	41248	0\n"
 		"gpr	g31:30_tmp	.64	41312	0\n"
-		"ctr	q0_tmp	.128	41376	0\n"
-		"ctr	q1_tmp	.128	41504	0\n"
-		"ctr	q2_tmp	.128	41632	0\n"
-		"ctr	q3_tmp	.128	41760	0\n"
+		"vcc	q0_tmp	.128	41376	0\n"
+		"vcc	q1_tmp	.128	41504	0\n"
+		"vcc	q2_tmp	.128	41632	0\n"
+		"vcc	q3_tmp	.128	41760	0\n"
 		"vc	v3:0_tmp	.4096	41888	0\n"
 		"vc	v7:4_tmp	.4096	45984	0\n"
 		"vc	v11:8_tmp	.4096	50080	0\n"
@@ -694,7 +692,6 @@ RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 		"sys	s77:76_tmp	.64	77088	0\n";
 	return strdup(p);
 }
-
 RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.name = "hexagon",
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
