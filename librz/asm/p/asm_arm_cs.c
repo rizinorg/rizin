@@ -86,7 +86,7 @@ static const char *cc_name(arm_cc cc) {
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
 
-	bool disp_hash = a->immdisp;
+	bool disp_hash = a->settings.immdisp;
 	cs_insn *insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;

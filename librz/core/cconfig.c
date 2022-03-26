@@ -848,14 +848,14 @@ static bool cb_emuskip(void *user, void *data) {
 static bool cb_asm_immhash(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->immdisp = node->i_value ? true : false;
+	core->rasm->settings.immdisp = node->i_value ? true : false;
 	return true;
 }
 
 static bool cb_asm_immsign(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->immsign = node->i_value;
+	core->rasm->settings.immsign = node->i_value;
 	return true;
 }
 
@@ -2410,7 +2410,7 @@ static bool cb_tracetag(void *user, void *data) {
 static bool cb_utf8(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->utf8 = (bool)node->i_value;
+	core->rasm->settings.utf8 = (bool)node->i_value;
 	rz_cons_set_utf8((bool)node->i_value);
 	return true;
 }
@@ -2506,7 +2506,7 @@ static bool cb_bindbginfo(void *user, void *data) {
 static bool cb_hexsdk(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->hex_sdk = (bool)node->i_value;
+	core->rasm->settings.hex_sdk = (bool)node->i_value;
 	return true;
 }
 

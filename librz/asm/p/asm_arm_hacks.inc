@@ -258,7 +258,7 @@ static int hackyArmAsm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 
 		if (buf_asm) {
-			if (!a->immdisp) {
+			if (!a->settings.immdisp) {
 				rz_str_replace_char(buf_asm, '#', 0);
 			}
 			rz_strbuf_set(&op->buf_asm, buf_asm);

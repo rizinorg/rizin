@@ -91,6 +91,17 @@ typedef struct {
 	char *value;
 } RzAsmEqu;
 
+/**
+ * \brief Holds several settings for plugins.
+ */
+typedef struct {
+	bool immdisp; //< Display immediates with # symbol (for arm/hexagon architectures). false = show hashs
+	bool immsign; //< Print signed immediates as negative values, not their unsigned representation.
+	bool utf8; //< Flag for plugins: Use utf-8 characters.
+	bool hex_sdk; //< Hexagon arch only. Print packet syntax in hexagon-objdump style.
+	bool hex_reg_alias; //< Print the alias of registers (Alias from C0 = SA0).
+} RzAsmPluginSettings;
+
 #define _RzAsmPlugin struct rz_asm_plugin_t
 typedef struct rz_asm_t {
 	char *cpu;
@@ -115,10 +126,7 @@ typedef struct rz_asm_t {
 	int pcalign;
 	int dataalign;
 	int bitshift;
-	bool immdisp; // Display immediates with # symbol (for arm/hexagon architectures). false = show hashs
-	bool immsign; // Print signed immediates as negative values, not their unsigned representation.
-	bool utf8; // Flag for plugins: Use utf-8 characters.
-	bool hex_sdk; // Hexagon arch only. Print packet syntax in hexagon-objdump style.
+	RzAsmPluginSettings settings;
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;
