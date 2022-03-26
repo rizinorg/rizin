@@ -53,10 +53,10 @@ EXPECT=<<EOF
 0x00000b84   # 4: [   R0.l = #0xbeef
 0x00001e68   # 4: [   R4.l = #0xbeef
 0x0000342c   # 4: |   if (!P3) memh(R23++#-0x8) = R11.h
-0x0000511c   # 4: [   R2 = add(R30,##-0x8)
-0x00005128   # 4: [   R2 = memw(R30+##-0x8)
-0x00005144   # 4: [   R2 = memw(R30+##-0x8)
-0x0000514c   # 4: [   memw(R30+##-0x8) = R2
+0x0000511c   # 4: [   R2 = add(FP,##-0x8)
+0x00005128   # 4: [   R2 = memw(FP+##-0x8)
+0x00005144   # 4: [   R2 = memw(FP+##-0x8)
+0x0000514c   # 4: [   memw(FP+##-0x8) = R2
 0x0000564c   # 4: \   R2 = memw(R0+##-0x8)
 0x00005654   # 4: \   if (P0.new) R17 = add(R16,##-0x8)
 0x00005740   # 4: \   R17 = and(R2,##-0x8)
@@ -143,7 +143,7 @@ e analysis.arch=hexagon
 pi 5
 EOF
 EXPECT=<<EOF
-?   C19:18 = R31:30
+?   PKTCOUNT = LR:FP
 [   loop0(0x8,#0x10)
 [   nop
 /   nop
@@ -233,23 +233,23 @@ EXPECT=<<EOF
 /   R0 = ##0x1
 |   R1 = and(R16,##0xff)
 |   R2 = and(R16,##0xff)
-\   memw(R29+##0x4) = R0.new
+\   memw(SP+##0x4) = R0.new
 /   R0 = ##0x1
 |   R1 = and(R16,##0xff)
 |   R2 = and(R16,##0xff)
-\   memw(R29+##0x4) = R1.new
+\   memw(SP+##0x4) = R1.new
 /   R0 = ##0x1
 |   R1 = and(R16,##0xff)
 |   R2 = and(R16,##0xff)
-\   memw(R29+##0x4) = R2.new
+\   memw(SP+##0x4) = R2.new
 /   R1 = and(R16,##0xff)
 |   R0 = ##0x1
 |   R2 = and(R16,##0xff)
-\   memw(R29+##0x4) = R0.new
-/   R29 = and(R16,##0xff)
+\   memw(SP+##0x4) = R0.new
+/   SP = and(R16,##0xff)
 |   nop
 |   R2 = and(R16,##0xff)
-\   memw(R29+##0x4) = R29.new
+\   memw(SP+##0x4) = SP.new
 /   R4 = add(R17,R4)
 \   if (!cmp.gtu(R4.new,R2)) jump:t 0x68
 /   jump 0xfffffff4
@@ -258,23 +258,23 @@ EXPECT=<<EOF
 /   R3 = R0
 |   immext(##0xc2f34000)
 |   R0 = ##-0x3d0cc000
-\   memw(R29+##0x0) = R3.new
+\   memw(SP+##0x0) = R3.new
 /   R3 = R0
 |   immext(##0xc2f34000)
 |   R0 = ##-0x3d0cc000
-\   memw(R29+##0x0) = R0.new
+\   memw(SP+##0x0) = R0.new
 /   immext(##0xc2f345c0)
 |   R0 = ##-0x3d0cba20
 |   immext(##0x1c40)
-\   memw(R29+##0x1c40) = R0.new
+\   memw(SP+##0x1c40) = R0.new
 /   R3 = R0
 |   R0 = ##0x0
 |   immext(##0xc2f34000)
-\   memw(R29+##-0x3d0cc000) = R0.new
+\   memw(SP+##-0x3d0cc000) = R0.new
 /   R3 = R0
 |   R0 = ##0x0
 |   immext(##0xc2f34000)
-\   memw(R29+##-0x3d0cc000) = R3.new
+\   memw(SP+##-0x3d0cc000) = R3.new
 EOF
 RUN
 
@@ -315,10 +315,10 @@ e asm.imm.sign=false
 EOF
 EXPECT=<<EOF
 0x0000342c   # 4: |   if (!P3) memh(R23++#0xfffffff8) = R11.h
-0x0000511c   # 4: [   R2 = add(R30,##0xfffffff8)
-0x00005128   # 4: [   R2 = memw(R30+##0xfffffff8)
-0x00005144   # 4: [   R2 = memw(R30+##0xfffffff8)
-0x0000514c   # 4: [   memw(R30+##0xfffffff8) = R2
+0x0000511c   # 4: [   R2 = add(FP,##0xfffffff8)
+0x00005128   # 4: [   R2 = memw(FP+##0xfffffff8)
+0x00005144   # 4: [   R2 = memw(FP+##0xfffffff8)
+0x0000514c   # 4: [   memw(FP+##0xfffffff8) = R2
 0x0000564c   # 4: \   R2 = memw(R0+##0xfffffff8)
 0x00005654   # 4: \   if (P0.new) R17 = add(R16,##0xfffffff8)
 0x00005740   # 4: \   R17 = and(R2,##0xfffffff8)
@@ -434,9 +434,27 @@ EXPECT=<<EOF
 |       |   0x00000030      [   R2 = R0
 |       |   0x00000034      /       R0 = R2
 |       |   0x00000038      \       R17:16 = memd(R29+#0x8) ; deallocframe
-|       |   0x0000003c      [   jumpr R31
+|       |   0x0000003c      [   jumpr LR
 |       `-> 0x00000040      [   R2 = ##0x0
 \           0x00000044      [   invalid
+EOF
+RUN
+
+NAME=hexagon no reg alias on first disassembled instruction
+FILE=bins/elf/analysis/hexagon-hello-loop
+BROKEN=1
+CMDS=<<EOF
+aaa
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from sym.__libc_start_main @ 0x5e98
+/ int main (int argc, char **argv, char **envp);
+| bp: 0 (vars 0, args 0)
+| sp: 0 (vars 0, args 0)
+| rg: 1 (vars 0, args 1)
+|           0x00005110      ?       allocframe(R29,#0x8):raw
 EOF
 RUN
 
@@ -449,41 +467,41 @@ agf
 EOF
 EXPECT=<<EOF
 [0x00005110]>  # int main (int argc, char **argv, char **envp);
-          .---------------------------------------------------.
-          |  0x5110                                           |
-          |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
-          | int main (int argc, char **argv, char **envp);    |
-          | ; arg int argc @ r0                               |
-          | ?   allocframe(R29,#0x8):raw                      |
-          | [   R2 = add(R30,##-0x4)                          |
-          | [   memw(R2+#0x0) = ##0x0                         |
-          | [   R2 = add(R30,##-0x8)                          |
-          | [   memw(R2+#0x0) = ##0x0                         |
-          | [   jump 0x5128                                   |
-          `---------------------------------------------------'
-              v
-              |
-              '------.
-.----------------------.
-|                    | |
-|              .-----------------------------------------.
-|              |  0x5128                                 |
-|              | ; CODE XREFS from main @ 0x5124, 0x5150 |
-|              | [   R2 = memw(R30+##-0x8)               |
-|              | [   P0 = cmp.gt(R2,##0x2)               |
-|              | [   if (P0) jump:nt 0x5154              |
-|              `-----------------------------------------'
-|                      f t
-|                      | |
-|                      | '-----------.
-|          .-----------'             |
+         .---------------------------------------------------.
+         |  0x5110                                           |
+         |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
+         | int main (int argc, char **argv, char **envp);    |
+         | ; arg int argc @ r0                               |
+         | ?   allocframe(R29,#0x8):raw                      |
+         | [   R2 = add(FP,##-0x4)                           |
+         | [   memw(R2+#0x0) = ##0x0                         |
+         | [   R2 = add(FP,##-0x8)                           |
+         | [   memw(R2+#0x0) = ##0x0                         |
+         | [   jump 0x5128                                   |
+         `---------------------------------------------------'
+             v
+             |
+             '------.
+.---------------------.
+|                   | |
+|             .-----------------------------------------.
+|             |  0x5128                                 |
+|             | ; CODE XREFS from main @ 0x5124, 0x5150 |
+|             | [   R2 = memw(FP+##-0x8)                |
+|             | [   P0 = cmp.gt(R2,##0x2)               |
+|             | [   if (P0) jump:nt 0x5154              |
+|             `-----------------------------------------'
+|                     f t
+|                     | |
+|                     | '------------.
+|          .----------'              |
 |          |                         |
-|      .--------------------.    .-----------------------------------------.
-|      |  0x5134            |    |  0x5154                                 |
-|      | [   jump 0x5138    |    | ; DATA XREF from main @ 0x5130          |
-|      `--------------------'    | [   R0 = ##0x0                          |
-|          v                     | [   R31:30 = dealloc_return(R30):raw    |
-|          |                     `-----------------------------------------'
+|      .--------------------.    .---------------------------------------.
+|      |  0x5134            |    |  0x5154                               |
+|      | [   jump 0x5138    |    | ; DATA XREF from main @ 0x5130        |
+|      `--------------------'    | [   R0 = ##0x0                        |
+|          v                     | [   LR:FP = dealloc_return(FP):raw    |
+|          |                     `---------------------------------------'
 |          |
 |          |
 |    .-----'
@@ -501,9 +519,9 @@ EXPECT=<<EOF
 |.--------------------------------.
 ||  0x5144                        |
 || ; CODE XREF from main @ 0x5140 |
-|| [   R2 = memw(R30+##-0x8)      |
+|| [   R2 = memw(FP+##-0x8)       |
 || [   R2 = add(R2,##0x1)         |
-|| [   memw(R30+##-0x8) = R2      |
+|| [   memw(FP+##-0x8) = R2       |
 || [   jump 0x5128                |
 |`--------------------------------'
 |    v
