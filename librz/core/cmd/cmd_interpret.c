@@ -4,10 +4,11 @@
 #include <rz_cmd.h>
 #include <rz_core.h>
 #include <cmd_descs.h>
+#include "../core_private.h"
 
 RZ_IPI RzCmdStatus rz_interpret_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
-		lastcmd_repeat(core, 0);
+		rz_core_cmd_lastcmd_repeat(core, 0);
 		return RZ_CMD_STATUS_OK;
 	} else if (argc == 2) {
 		int tmp_html = rz_cons_singleton()->is_html;
@@ -35,7 +36,7 @@ RZ_IPI RzCmdStatus rz_interpret_output_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_repeat_forward_handler(RzCore *core, int argc, const char **argv) {
-	lastcmd_repeat(core, 1);
+	rz_core_cmd_lastcmd_repeat(core, 1);
 	return RZ_CMD_STATUS_OK;
 }
 

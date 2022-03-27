@@ -100,7 +100,7 @@ jobs:
             asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
             run_tests: true
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
-            timeout: 100
+            timeout: 120
             allow_failure: false
           - name: linux-clang-tests-asan
             os: ubuntu-20.04
@@ -190,18 +190,6 @@ jobs:
       - name: Install clang
         if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
         run: sudo apt-get --assume-yes install clang
-      - name: Checkout our Testsuite Binaries
-        if: matrix.enabled
-        uses: actions/checkout@v2
-        with:
-          repository: rizinorg/rizin-testbins
-          path: test/bins
-      - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
-        if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
-        uses: actions/checkout@v2
-        with:
-          repository: rizinorg/rizin-fuzztargets
-          path: test/fuzz/targets
       - name: Build with Meson
         if: matrix.build_system == 'meson' && matrix.enabled
         run: |
@@ -243,16 +231,28 @@ jobs:
               export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
             fi
           fi
-          ninja -C build test
+          meson test -C build --suite unit
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
           CC: ${{ matrix.compiler }}
-      - name: Run tests
+      - name: Checkout our Testsuite Binaries
+        if: matrix.enabled
+        uses: actions/checkout@v2
+        with:
+          repository: rizinorg/rizin-testbins
+          path: test/bins
+      - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
+        if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
+        uses: actions/checkout@v2
+        with:
+          repository: rizinorg/rizin-fuzztargets
+          path: test/fuzz/targets
+      - name: Run integration tests and rz-test
         if: matrix.run_tests && matrix.enabled
         run: |
           # Running the test suite
-          export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           if [ "$ASAN" == "true" ]; then
@@ -263,6 +263,7 @@ jobs:
               export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
             fi
           fi
+          meson test -C build --suite integration
           cd test
           rz-test -L -o results.json
         env:
@@ -324,7 +325,8 @@ jobs:
         run: ninja -C build test
         working-directory: rizin
       - name: Run tests
-        run: rz-test -L -o results.json || true
+        run: |
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
         working-directory: rizin/test
 
   build-debian:
@@ -392,9 +394,9 @@ jobs:
       - name: Install test dependencies
         run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - name: Run tests
-        # FIXME: debug tests fail on Debian for now, let's ignore all tests for the moment
+        # Debug tests fail on old Debian because of the runtime differences, ignore them
         run: |
-          rz-test -L -o results.json || true
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
         working-directory: rizin/test
         env:
           PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
@@ -436,9 +438,9 @@ jobs:
       - name: Install test dependencies
         run: pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - name: Run tests
-        # FIXME: let's ignore all tests for the moment
+        # Debug tests fail due to the runtime differences, ignore them
         run: |
-          rz-test -L -o results.json || true
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
         working-directory: rizin/test
         env:
           PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
@@ -480,7 +482,7 @@ jobs:
           rizin -v
           rz-test -v
           cd test
-          rz-test -L -o results.json || true
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
         working-directory: rizin
       - name: Upload test results
         if: always()

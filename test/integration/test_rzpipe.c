@@ -3,7 +3,7 @@
 
 #include <rz_util.h>
 #include <rz_socket.h>
-#include "minunit.h"
+#include "../unit/minunit.h"
 #include "test_config.h"
 
 static bool test_rzpipe(void) {

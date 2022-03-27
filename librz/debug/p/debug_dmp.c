@@ -9,6 +9,8 @@
 #include <winkd.h>
 #include "common_winkd.h"
 
+#include "native/bt/windows-x64.c"
+
 static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	RzCore *core = dbg->corebind.core;
 	RzIODesc *desc = core->io->desc;
@@ -19,9 +21,15 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		RZ_LOG_ERROR("Open a file with dmp:// to use the 'dmp' debug plugin\n");
 		return false;
 	}
+	RzBinInfo *info = core->bin->cur->o->info;
+	if (!info || !info->rclass || strcmp(info->rclass, "dmp64")) {
+		RZ_LOG_ERROR("Open a Windows kernel dump file with dmp:// to use the 'dmp' debug plugin\n");
+		return false;
+	}
 
 	dbg->plugin_data = core->io->desc->data;
 	DmpCtx *ctx = dbg->plugin_data;
+	ctx->bf = core->bin->cur;
 
 	int ret = rz_hex_str2bin(core->bin->cur->o->regstate, NULL);
 	ctx->context = malloc(ret);
@@ -37,6 +45,8 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	ut32 ProcessOffset = 0;
 	ut32 ThreadOffset = 0;
 	ut32 CallStackOffset = 0;
+	ut32 SizeOfCallStack = 0;
+	ut64 TopOfStack = 0;
 	ut32 NumberProcessors = 0;
 	ctx->target = TARGET_BACKEND;
 	dbg->corebind.cmd(dbg->corebind.core, "e io.va=0");
@@ -53,6 +63,8 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	rz_buf_read_le32_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, ProcessOffset), &ProcessOffset);
 	rz_buf_read_le32_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, ThreadOffset), &ThreadOffset);
 	rz_buf_read_le32_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, CallStackOffset), &CallStackOffset);
+	rz_buf_read_le32_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, SizeOfCallStack), &SizeOfCallStack);
+	rz_buf_read_le64_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, TopOfStack), &TopOfStack);
 	rz_buf_free(b);
 
 	RzIOMap *map = rz_io_map_get(core->io, 0);
@@ -161,6 +173,9 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	}
 
 	if (ctx->type == DMP_DUMPTYPE_TRIAGE) {
+		// Map Call stack into address space
+		map = rz_io_map_new(core->io, desc->fd, RZ_PERM_R, CallStackOffset, TopOfStack, SizeOfCallStack);
+
 		// Map ETHREAD into address space
 		const ut64 address = 0x1000;
 		map = rz_io_map_new(core->io, desc->fd, RZ_PERM_R, ThreadOffset, address, CallStackOffset - ThreadOffset);
@@ -391,13 +406,39 @@ static RzList *rz_debug_dmp_threads(RzDebug *dbg, int pid) {
 	return ret;
 }
 
+static RzList *dmp_get_modules(DmpCtx *ctx) {
+	if (ctx->type != DMP_DUMPTYPE_TRIAGE) {
+		return winkd_list_modules(&ctx->windctx);
+	}
+	RzList *ret = rz_list_newf(winkd_windmodule_free);
+	if (!ret) {
+		return NULL;
+	}
+	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)((RzBinFile *)ctx->bf)->o->bin_obj;
+	RzListIter *it;
+	dmp_driver_desc *driver;
+	rz_list_foreach (obj->drivers, it, driver) {
+		WindModule *mod = RZ_NEW0(WindModule);
+		if (!mod) {
+			rz_list_free(ret);
+			return NULL;
+		}
+		mod->name = strdup(driver->file);
+		mod->size = driver->size;
+		mod->addr = driver->base;
+		mod->timestamp = driver->timestamp;
+		rz_list_append(ret, mod);
+	}
+	return ret;
+}
+
 static RzList *rz_debug_dmp_modules(RzDebug *dbg) {
 	DmpCtx *ctx = dbg->plugin_data;
 	RzList *ret = rz_list_newf((RzListFree)rz_debug_map_free);
 	if (!ret) {
 		return NULL;
 	}
-	RzList *modules = winkd_list_modules(&ctx->windctx);
+	RzList *modules = dmp_get_modules(ctx);
 	RzListIter *it;
 	WindModule *m;
 	rz_list_foreach (modules, it, m) {
@@ -407,7 +448,8 @@ static RzList *rz_debug_dmp_modules(RzDebug *dbg) {
 			rz_list_free(ret);
 			return NULL;
 		}
-		mod->file = m->name;
+		mod->file = strdup(m->name);
+		mod->name = strdup(rz_file_basename(m->name));
 		mod->size = m->size;
 		mod->addr = m->addr;
 		mod->addr_end = m->addr + m->size;
@@ -425,6 +467,66 @@ static bool rz_debug_dmp_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
+static int is_pc_inside_windmodule(const void *value, const void *list_data) {
+	const ut64 pc = *(const ut64 *)value;
+	const WindModule *module = list_data;
+	return !(pc >= module->addr && pc < (module->addr + module->size));
+}
+
+typedef RzList *(*RzDebugFrameCallback)(RzDebug *dbg, ut64 at);
+
+RzList *rz_debug_dmp_frames(RzDebug *dbg, ut64 at) {
+	RzCore *core = dbg->corebind.core;
+	DmpCtx *ctx = dbg->plugin_data;
+	RzList *ret = NULL;
+	if (ctx->windctx.is_arm) {
+		// TODO
+	} else {
+		if (ctx->windctx.is_64bit) {
+			RzList *modules = NULL;
+			struct context_type_amd64 context = { 0 };
+			const char *server = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server");
+			const char *symstore = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore");
+			ut64 last_rsp = 0;
+			while (!backtrace_windows_x64(dbg, &ret, &context)) {
+				if (last_rsp == context.rsp) {
+					break;
+				}
+				last_rsp = context.rsp;
+				if (!modules) {
+					modules = dmp_get_modules(ctx);
+				}
+				RzListIter *it = rz_list_find(modules, &context.rip, is_pc_inside_windmodule);
+				if (!it) {
+					break;
+				}
+				WindModule *module = rz_list_iter_get_data(it);
+				char *exepath, *pdbpath;
+				if (!winkd_download_module_and_pdb(module, server, symstore, &exepath, &pdbpath)) {
+					break;
+				}
+				RzBinOptions opts = { 0 };
+				opts.obj_opts.baseaddr = module->addr;
+				RzBinFile *file = rz_bin_open(core->bin, exepath, &opts);
+				if (!file) {
+					free(exepath);
+					free(pdbpath);
+					break;
+				}
+				dbg->corebind.applyBinInfo(core, file, RZ_CORE_BIN_ACC_MAPS | RZ_CORE_BIN_ACC_SYMBOLS);
+				dbg->corebind.cmdf(dbg->corebind.core, "idp %s", pdbpath);
+				dbg->corebind.cmdf(dbg->corebind.core, "ompb %d", ((RzBinFile *)ctx->bf)->id);
+				free(exepath);
+				free(pdbpath);
+			}
+			rz_list_free(modules);
+		} else {
+			// TODO
+		}
+	}
+	return ret;
+}
+
 RzDebugPlugin rz_debug_plugin_dmp = {
 	.name = "dmp",
 	.license = "LGPL3",
@@ -440,6 +542,7 @@ RzDebugPlugin rz_debug_plugin_dmp = {
 	.modules_get = &rz_debug_dmp_modules,
 	.map_get = &rz_debug_dmp_maps,
 	.kill = &rz_debug_dmp_kill,
+	.frames = &rz_debug_dmp_frames,
 };
 
 #ifndef RZ_PLUGIN_INCORE

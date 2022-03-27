@@ -3,6 +3,7 @@
 
 #include "rz_io.h"
 #include "rz_lib.h"
+#include <rz_socket.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../io_memory.h"

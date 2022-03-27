@@ -3,6 +3,93 @@
 ---
 name: cmd_print
 commands:
+  - name: pc
+    summary: Print bytes as code byte arrays.
+    cname: cmd_print_byte_array
+    details:
+      - name: Useful modifiers
+        entries:
+          - text: "pch @e:cfg.bigendian=<true|false>"
+            comment: "Change endianness for pch, pcw and pcd commands"
+          - text: "pc @! <n>"
+            comment: "Change the N of bytes (i.e. block size)."
+      - name: Example of usages
+        entries:
+          - text: "pch @! 64 @e:cfg.bigendian=true"
+            comment: "Generate a C 32 bits array in big endian format, using 64 bytes"
+          - text: "pcp @! 1024"
+            comment: "Generate a Python byte array of size 1024"
+          - text: "pcj @! 10"
+            comment: "Generate a JSON bytes array of size 10"
+    subcommands:
+      - name: pc
+        summary: Generate a C/C++ byte array.
+        cname: cmd_print_byte_array_c_cpp_bytes
+        args: []
+      - name: pch
+        summary: Generate a C/C++ 16 bits array.
+        cname: cmd_print_byte_array_c_cpp_half_word
+        args: []
+      - name: pcw
+        summary: Generate a C/C++ 32 bits array.
+        cname: cmd_print_byte_array_c_cpp_word
+        args: []
+      - name: pcd
+        summary: Generate a C/C++ 64 bits array.
+        cname: cmd_print_byte_array_c_cpp_double_word
+        args: []
+      - name: pca
+        summary: Generate a byte array in GAS assembly.
+        cname: cmd_print_byte_array_asm
+        args: []
+      - name: pcb
+        summary: Generate a bash script with the byte array.
+        cname: cmd_print_byte_array_bash
+        args: []
+      - name: pcg
+        summary: Generate a Golang byte array.
+        cname: cmd_print_byte_array_golang
+        args: []
+      - name: pcJ
+        summary: Generate a Java byte array.
+        cname: cmd_print_byte_array_java
+        args: []
+      - name: pcj
+        summary: Generate a JSON byte array.
+        cname: cmd_print_byte_array_json
+        args: []
+      - name: pck
+        summary: Generate a Kotlin byte array.
+        cname: cmd_print_byte_array_kotlin
+        args: []
+      - name: pcn
+        summary: Generate a NodeJS buffer.
+        cname: cmd_print_byte_array_nodejs
+        args: []
+      - name: pco
+        summary: Generate a Objective-C/C++ byte array.
+        cname: cmd_print_byte_array_objc
+        args: []
+      - name: pcp
+        summary: Generate a Python byte array.
+        cname: cmd_print_byte_array_python
+        args: []
+      - name: pcr
+        summary: Generate a Rust byte array.
+        cname: cmd_print_byte_array_rust
+        args: []
+      - name: pcs
+        summary: Generate a Swift byte array.
+        cname: cmd_print_byte_array_swift
+        args: []
+      - name: pcy
+        summary: Generate a Yara match pattern.
+        cname: cmd_print_byte_array_yara
+        args: []
+      - name: pc*
+        summary: Generate a rizin commands for writing the byte array.
+        cname: cmd_print_byte_array_rizin
+        args: []
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget

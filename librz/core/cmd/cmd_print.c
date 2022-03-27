@@ -2571,8 +2571,69 @@ static int cmd_print_pxA(RzCore *core, int len, const char *input) {
 	return true;
 }
 
+static ut8 *old_transform_op(RzCore *core, const char *val, char op, int *buflen) {
+	RzCoreWriteOp wop;
+	switch (op) {
+	case '2':
+		wop = RZ_CORE_WRITE_OP_BYTESWAP2;
+		break;
+	case '4':
+		wop = RZ_CORE_WRITE_OP_BYTESWAP4;
+		break;
+	case '8':
+		wop = RZ_CORE_WRITE_OP_BYTESWAP8;
+		break;
+	case 'a':
+		wop = RZ_CORE_WRITE_OP_ADD;
+		break;
+	case 'A':
+		wop = RZ_CORE_WRITE_OP_AND;
+		break;
+	case 'd':
+		wop = RZ_CORE_WRITE_OP_DIV;
+		break;
+	case 'l':
+		wop = RZ_CORE_WRITE_OP_SHIFT_LEFT;
+		break;
+	case 'm':
+		wop = RZ_CORE_WRITE_OP_MUL;
+		break;
+	case 'o':
+		wop = RZ_CORE_WRITE_OP_OR;
+		break;
+	case 'r':
+		wop = RZ_CORE_WRITE_OP_SHIFT_RIGHT;
+		break;
+	case 's':
+		wop = RZ_CORE_WRITE_OP_SUB;
+		break;
+	case 'x':
+		wop = RZ_CORE_WRITE_OP_XOR;
+		break;
+	default:
+		wop = RZ_CORE_WRITE_OP_XOR;
+		rz_warn_if_reached();
+		break;
+	}
+
+	ut8 *hex = NULL;
+	int hexlen = -1;
+	if (val) {
+		val = rz_str_trim_head_ro(val);
+		hex = RZ_NEWS(ut8, (strlen(val) + 1) / 2);
+		if (!hex) {
+			return NULL;
+		}
+
+		hexlen = rz_hex_str2bin(val, hex);
+	}
+	return rz_core_transform_op(core, core->offset, wop, hex, hexlen, buflen);
+}
+
 static void cmd_print_op(RzCore *core, const char *input) {
 	ut8 *buf;
+	int buflen = -1;
+
 	if (!input[0])
 		return;
 	switch (input[1]) {
@@ -2588,13 +2649,13 @@ static void cmd_print_op(RzCore *core, const char *input) {
 	case '2':
 	case '4':
 		if (input[2]) { // parse val from arg
-			buf = rz_core_transform_op(core, input + 3, input[1]);
+			buf = old_transform_op(core, input + 3, input[1], &buflen);
 		} else { // use clipboard instead of val
-			buf = rz_core_transform_op(core, NULL, input[1]);
+			buf = old_transform_op(core, NULL, input[1], &buflen);
 		}
 		break;
 	case 'n':
-		buf = rz_core_transform_op(core, "ff", 'x');
+		buf = old_transform_op(core, "ff", 'x', &buflen);
 		break;
 	case '\0':
 	case '?':
@@ -2604,7 +2665,7 @@ static void cmd_print_op(RzCore *core, const char *input) {
 	}
 	if (buf) {
 		rz_print_hexdump(core->print, core->offset, buf,
-			core->blocksize, 16, 1, 1);
+			buflen, 16, 1, 1);
 		free(buf);
 	}
 }
@@ -2976,6 +3037,34 @@ restore_conf:
 	rz_config_set_i(core->config, "scr.html", scr_html);
 	rz_config_set_i(core->config, "asm.emu", asm_emu);
 	rz_config_set_i(core->config, "emu.str", emu_str);
+}
+
+static void handle_entropy(const char *name, const ut8 *block, int len) {
+	RzMsgDigestSize digest_size = 0;
+	ut8 *digest = rz_msg_digest_calculate_small_block(name, block, len, &digest_size);
+	if (!digest) {
+		return;
+	}
+	double entropy = rz_read_be_double(digest);
+	rz_cons_printf("%f\n", entropy);
+	free(digest);
+}
+
+static inline void hexprint(const ut8 *data, int len) {
+	if (!data || len < 1) {
+		return;
+	}
+	for (int i = 0; i < len; i++) {
+		rz_cons_printf("%02x", data[i]);
+	}
+	rz_cons_newline();
+}
+
+static void handle_msg_digest(const char *name, const ut8 *block, int len) {
+	RzMsgDigestSize digest_size = 0;
+	ut8 *digest = rz_msg_digest_calculate_small_block(name, block, len, &digest_size);
+	hexprint(digest, digest_size);
+	free(digest);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_handler(RzCore *core, int argc, const char **argv) {
@@ -5118,6 +5207,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					rz_analysis_function_linear_size((RzAnalysisFunction *)f), 0);
 				break;
 			}
+			break;
 		}
 		case 'd': // "pId" is the same as pDi
 			if (l) {
@@ -6034,7 +6124,65 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				}
 				rz_cons_printf(".equ shellcode_len, %d\n", len);
 			} else {
-				rz_print_code(core->print, core->offset, core->block, len, input[1]);
+				char *str = NULL;
+				bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+				switch (input[1]) {
+				case '*': // "pc*" // rizin commands
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RIZIN);
+					break;
+				case 'a': // "pca" // GAS asm
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_ASM);
+					break;
+				case 'b': // "pcb" // bash shellscript
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_BASH);
+					break;
+				case 'n': // "pcn" // nodejs
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_NODEJS);
+					break;
+				case 'g': // "pcg" // golang
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_GOLANG);
+					break;
+				case 'k': // "pck" kotlin
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_KOTLIN);
+					break;
+				case 's': // "pcs" // swift
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_SWIFT);
+					break;
+				case 'r': // "pcr" // Rust
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RUST);
+					break;
+				case 'o': // "pco" // Objective-C
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_OBJECTIVE_C);
+					break;
+				case 'J': // "pcJ" // java
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JAVA);
+					break;
+				case 'y': // "pcy" // yara
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_YARA);
+					break;
+				case 'j': // "pcj" // json
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JSON);
+					break;
+				case 'p': // "pcp" // python
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_PYTHON);
+					break;
+				case 'h': // "pch" // C half words with asm
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_HALFWORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_HALFWORDS_LE);
+					break;
+				case 'w': // "pcw" // C words with asm
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_WORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_WORDS_LE);
+					break;
+				case 'd': // "pcd" // C double-words with asm
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_DOUBLEWORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_DOUBLEWORDS_LE);
+					break;
+				default: // "pc" // C bytes
+					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_C_CPP_BYTES);
+					break;
+				}
+				if (str) {
+					rz_cons_println(str);
+					free(str);
+				}
 			}
 		}
 		break;
@@ -7008,3 +7156,43 @@ RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char *
 	}
 	return RZ_CMD_STATUS_OK;
 }
+
+#define CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(name, type) \
+	RZ_IPI RzCmdStatus name(RzCore *core, int argc, const char **argv) { \
+		char *code = rz_lang_byte_array(core->block, core->blocksize, type); \
+		if (RZ_STR_ISNOTEMPTY(code)) { \
+			rz_cons_println(code); \
+			free(code); \
+		} \
+		return code ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR; \
+	}
+
+#define CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN(name, type) \
+	RZ_IPI RzCmdStatus name(RzCore *core, int argc, const char **argv) { \
+		bool big_endian = rz_config_get_b(core->config, "cfg.bigendian"); \
+		char *code = rz_lang_byte_array(core->block, core->blocksize, big_endian ? type##_BE : type##_LE); \
+		if (RZ_STR_ISNOTEMPTY(code)) { \
+			rz_cons_println(code); \
+			free(code); \
+		} \
+		return code ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR; \
+	}
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_rizin_handler, RZ_LANG_BYTE_ARRAY_RIZIN);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_asm_handler, RZ_LANG_BYTE_ARRAY_ASM);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_bash_handler, RZ_LANG_BYTE_ARRAY_BASH);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_c_cpp_bytes_handler, RZ_LANG_BYTE_ARRAY_C_CPP_BYTES);
+CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN(rz_cmd_print_byte_array_c_cpp_half_word_handler, RZ_LANG_BYTE_ARRAY_C_CPP_HALFWORDS);
+CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN(rz_cmd_print_byte_array_c_cpp_word_handler, RZ_LANG_BYTE_ARRAY_C_CPP_WORDS);
+CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN(rz_cmd_print_byte_array_c_cpp_double_word_handler, RZ_LANG_BYTE_ARRAY_C_CPP_DOUBLEWORDS);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_golang_handler, RZ_LANG_BYTE_ARRAY_GOLANG);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_java_handler, RZ_LANG_BYTE_ARRAY_JAVA);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_json_handler, RZ_LANG_BYTE_ARRAY_JSON);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_kotlin_handler, RZ_LANG_BYTE_ARRAY_KOTLIN);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_nodejs_handler, RZ_LANG_BYTE_ARRAY_NODEJS);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_objc_handler, RZ_LANG_BYTE_ARRAY_OBJECTIVE_C);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_python_handler, RZ_LANG_BYTE_ARRAY_PYTHON);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_rust_handler, RZ_LANG_BYTE_ARRAY_RUST);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_swift_handler, RZ_LANG_BYTE_ARRAY_SWIFT);
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_yara_handler, RZ_LANG_BYTE_ARRAY_YARA);
+#undef CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL
+#undef CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN

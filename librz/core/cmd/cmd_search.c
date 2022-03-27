@@ -264,7 +264,6 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 					.obj_opts = { 0 },
 					.sz = 4096,
 					.xtr_idx = 0,
-					.rawstr = core->bin->rawstr,
 					.fd = fd,
 				};
 				rz_bin_open_io(core->bin, &opt);
@@ -3549,6 +3548,7 @@ reread:
 			eprintf("Invalid keyword\n");
 			break;
 		}
+		// fallthrough
 	case 'i': // "/i"
 		if (input[param_offset - 1] != ' ') {
 			eprintf("Missing ' ' after /i\n");

@@ -5,6 +5,7 @@
 #include <rz_cons.h>
 #include <rz_basefind.h>
 #include <rz_th.h>
+#include <rz_windows.h>
 
 #include "core_private.h"
 
@@ -2155,20 +2156,6 @@ static bool cb_scrhtml(void *user, void *data) {
 	return true;
 }
 
-static bool cb_oldshell(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzCore *core = (RzCore *)user;
-	core->use_tree_sitter_rzcmd = !node->i_value;
-	return true;
-}
-
-static bool cb_oldshell_autocompletion(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzCore *core = (RzCore *)user;
-	core->use_rzshell_autocompletion = !node->i_value;
-	return true;
-}
-
 static bool cb_scrhighlight(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	rz_cons_highlight(node->value);
@@ -2477,13 +2464,6 @@ static bool cb_binverbose(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->bin->verbose = node->i_value;
-	return true;
-}
-
-static bool cb_rawstr(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->bin->rawstr = node->i_value;
 	return true;
 }
 
@@ -3264,7 +3244,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Default string encoding of binary");
 	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB("bin.prefix", "", &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
-	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");
@@ -3300,10 +3279,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("cfg.seek.histsize", 63, NULL, "Maximum size of the seek history");
 	SETCB("cfg.seek.silent", "false", NULL, "When true, seek movements are not logged in seek history");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-	p = rz_sys_getenv("RZ_CFG_OLDSHELL");
-	SETCB("cfg.oldshell", p ? "true" : "false", &cb_oldshell, "Use old radare2 parser");
-	free(p);
-	SETCB("cfg.oldshell.autocompletion", "true", &cb_oldshell_autocompletion, "Use old radare2 autocompletion");
 	SETI("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */

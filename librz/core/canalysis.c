@@ -2622,6 +2622,7 @@ repeat:
 						       "  ]\n",
 						fcni->addr - base, fcnr->to - base);
 				}
+				// fallthrough
 			case RZ_GRAPH_FORMAT_GML:
 				if (iteration != 0) {
 					rz_cons_printf("  edge [\n"
@@ -3881,6 +3882,7 @@ RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl) {
 				ch->cycles = ccl - op->failcycles;
 				rz_list_push(cf->hooks, ch);
 				ch = NULL;
+				// fallthrough
 			case RZ_ANALYSIS_OP_TYPE_CALL:
 				if (op->addr != op->jump) { // no selfies
 					cf->naddr = addr;
@@ -5973,7 +5975,7 @@ static int core_sigdb_sorter(const RzSigDBEntry *a, const RzSigDBEntry *b) {
 static RzList *core_load_all_signatures_from_sigdb(RzCore *core, bool with_details) {
 	RzList *sysdb = NULL, *userdb = NULL;
 	char *system_sigdb = rz_path_system(RZ_SIGDB);
-	if (RZ_STR_ISNOTEMPTY(system_sigdb)) {
+	if (RZ_STR_ISNOTEMPTY(system_sigdb) && rz_file_is_directory(system_sigdb)) {
 		sysdb = rz_sign_sigdb_load_database(system_sigdb, with_details);
 	}
 	free(system_sigdb);

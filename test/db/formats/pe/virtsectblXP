@@ -18,6 +18,6 @@ NAME=PE: corkami virtsectblXP.exe - pi 1
 FILE=bins/pe/virtsectblXP.exe
 CMDS=pi 1
 EXPECT=<<EOF
-push 0x400150
+push str.Low_alignment_PE_with_a_virtual_section_table__XP
 EOF
 RUN

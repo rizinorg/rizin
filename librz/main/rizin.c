@@ -4,16 +4,12 @@
 #define USE_THREADS       1
 #define ALLOW_THREADED    0
 #define UNCOLORIZE_NONTTY 0
-#ifdef _MSC_VER
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#endif
 
 #include <rz_core.h>
 #include <rz_demangler.h>
 #include <rz_project.h>
 #include <rz_flirt.h>
+#include <rz_socket.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
@@ -175,7 +171,6 @@ static int main_help(int line) {
 			" RZ_LIBR_PLUGINS %s\n"
 			" RZ_USER_ZIGNS %s\n"
 			"Environment:\n"
-			" RZ_CFG_OLDSHELL sets cfg.oldshell=true\n"
 			" RZ_DEBUG      if defined, show error messages and crash signal\n"
 			" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
 			" RZ_MAGICPATH %s\n"
@@ -876,8 +871,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	case 1:
 		rz_config_set(r->config, "bin.strings", "false");
 		break;
-	case 2:
-		rz_config_set(r->config, "bin.rawstr", "true");
+	default:
 		break;
 	}
 	if (zflag > 3) {

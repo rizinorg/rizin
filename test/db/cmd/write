@@ -232,14 +232,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-## "wt" - write to file
-
-# see bug #503
-NAME=wt
+NAME=write to file 2
 FILE==
 #bins/pe/b.exe
 CMDS=<<EOF
-wt a_piece_of_ls_saved_to_PWD 0x400
+pr 0x400 > a_piece_of_ls_saved_to_PWD
 ls -l a_piece_of_ls_saved_to_PWD~[3]
 rm a_piece_of_ls_saved_to_PWD
 EOF
@@ -247,7 +244,7 @@ EXPECT=<<EOF
 1024
 EOF
 EXPECT_ERR=<<EOF
-Dumped 1024 bytes from 0x00000000 into a_piece_of_ls_saved_to_PWD
+
 EOF
 RUN
 

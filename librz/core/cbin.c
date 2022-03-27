@@ -10,6 +10,8 @@
 #include <rz_util/rz_time.h>
 #include <rz_basefind.h>
 
+#include "core_private.h"
+
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
@@ -86,13 +88,7 @@ RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, in
 
 	bool patch_relocs = rz_config_get_b(core->config, "bin.relocs");
 
-	rz_bin_options_init(
-		opts,
-		fd,
-		baseaddr,
-		loadaddr,
-		patch_relocs,
-		core->bin->rawstr);
+	rz_bin_options_init(opts, fd, baseaddr, loadaddr, patch_relocs);
 
 	opts->obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
 	opts->obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
@@ -799,6 +795,9 @@ static bool io_create_mem_map(RzIO *io, RZ_NULLABLE RzCoreFile *cf, RzBinMap *ma
 		free(iomap->name);
 		iomap->name = rz_str_newf("mmap.%s", map->name);
 	}
+	if (!iomap->user) {
+		iomap->user = rz_core_io_map_info_new(cf, map->perm);
+	}
 	return true;
 }
 
@@ -867,6 +866,7 @@ static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzB
 			free(map_name);
 			return;
 		}
+		iomap->user = rz_core_io_map_info_new(cf, perm);
 		free(iomap->name);
 		iomap->name = map_name;
 		if (cf) {
@@ -1667,7 +1667,7 @@ static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile
 	if (!plugin || !rz_config_get_i(r->config, "bin.strings")) {
 		return NULL;
 	}
-	if (plugin->name && !strcmp(plugin->name, "any") && !rz_config_get_i(r->config, "bin.rawstr")) {
+	if (plugin->name && !strcmp(plugin->name, "any")) {
 		return NULL;
 	}
 	return rz_bin_get_strings(r->bin);
@@ -2806,7 +2806,8 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 		bf->rbin = core->bin;
 		new_bf = true;
 	}
-	RzList *l = rz_bin_raw_strings(bf, 0);
+	size_t min = rz_config_get_i(core->config, "bin.minstr");
+	RzList *l = rz_bin_file_strings(bf, min, true);
 	bool res = strings_print(core, state, l);
 	rz_list_free(l);
 	if (new_bf) {
@@ -4673,7 +4674,7 @@ out:
 	return rz_strbuf_drain(buf);
 }
 
-RZ_API RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bp && state, RZ_CMD_STATUS_ERROR);
 
 	rz_cmd_state_output_set_columnsf(state, "sss", "type", "name", "description");
@@ -4713,7 +4714,7 @@ RZ_API RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOut
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bx && state, RZ_CMD_STATUS_ERROR);
 
 	const char *name = NULL;
@@ -4745,7 +4746,7 @@ RZ_API RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(ld && state, RZ_CMD_STATUS_ERROR);
 
 	const char *name;

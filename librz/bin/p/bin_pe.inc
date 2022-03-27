@@ -150,6 +150,17 @@ static RzList *maps(RzBinFile *bf) {
 		return NULL;
 	}
 	ut64 ba = baddr(bf);
+	RzBinMap *map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		return ret;
+	}
+	map->name = strdup("header");
+	map->paddr = 0;
+	map->psize = RZ_MIN(bin->size, RZ_ROUND(bin->nt_headers->optional_header.SizeOfHeaders, bin->nt_headers->optional_header.FileAlignment));
+	map->vaddr = ba;
+	map->vsize = RZ_ROUND(map->psize, 4096);
+	map->perm = RZ_PERM_R;
+	rz_list_append(ret, map);
 	PE_(rz_bin_pe_check_sections)
 	(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
@@ -206,14 +217,14 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->perm = perm_of_section_perm(sections[i].perm);
-		if ((ptr->perm & RZ_PERM_RW) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
-			if (!strcmp(ptr->name, ".rsrc") ||
-				!strcmp(ptr->name, ".data") ||
-				!strcmp(ptr->name, ".rdata")) {
-				ptr->is_data = true;
-			}
+		if ((ptr->perm & RZ_PERM_R) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
+			ptr->is_data = true;
 		}
 		rz_list_append(ret, ptr);
+	}
+	if (rz_list_length(ret) == 1 && ptr->perm & RZ_PERM_R) {
+		// if there is only one section, then we expect to have data in here also.
+		ptr->is_data = true;
 	}
 	return ret;
 }
@@ -644,4 +655,8 @@ static RzList *compute_hashes(RzBinFile *bf) {
 	}
 
 	return file_hashes;
+}
+
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 4, false);
 }

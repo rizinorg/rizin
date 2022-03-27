@@ -4,6 +4,8 @@
 #include <string.h>
 #include <rz_util.h>
 #include <rz_core.h>
+#include <rz_windows.h>
+#include <rz_socket.h>
 #include "pdb_downloader.h"
 
 static bool checkExtract(void) {
@@ -131,6 +133,9 @@ static char *download(struct SPDBDownloader *pd) {
 		eprintf("Falling back to uncompressed pdb\n");
 		eprintf("Attempting to download uncompressed pdb in %s\n", abspath_to_file);
 		res = download_and_write(opt, opt->dbg_file);
+		if (!res) {
+			free(abspath_to_file);
+		}
 	}
 	return res ? abspath_to_file : NULL;
 }
@@ -192,7 +197,6 @@ static bool is_valid_guid(const char *guid) {
  */
 RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int isradjson, RZ_NONNULL SPDBOptions *options) {
 	rz_return_val_if_fail(bin && options, 1);
-	int ret = 1;
 	SPDBDownloaderOpt opt;
 	RzBinInfo *info = rz_bin_get_info(bin);
 
@@ -224,14 +228,14 @@ RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int is
 		pj_ks(pj, "file", opt.dbg_file);
 		pj_ks(pj, "guid", opt.guid);
 		pj_ks(pj, "path", path);
-		pj_kb(pj, "download", (bool)ret);
+		pj_kb(pj, "download", (bool)path);
 		pj_end(pj);
 	} else {
 		rz_cons_printf("PDB \"%s\" download %s\n",
-			opt.dbg_file, ret ? "success" : "failed");
+			opt.dbg_file, path ? "success" : "failed");
 	}
 	free(path);
-	return !ret;
+	return !path;
 }
 
 /**

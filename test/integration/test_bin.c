@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include "minunit.h"
 #include <rz_bin.h>
+#include "../unit/minunit.h"
 
 bool test_rz_bin(void) {
 	RzBin *bin = rz_bin_new();
@@ -12,7 +12,7 @@ bool test_rz_bin(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ioli/crackme0x00", &opt);
 	mu_assert_notnull(bf, "crackme0x00 binary could not be opened");
 	mu_assert_notnull(bf->o, "bin object");
@@ -266,7 +266,7 @@ bool test_rz_bin_sections_mapping(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ioli/crackme0x00", &opt);
 	mu_assert_notnull(bf, "crackme0x00 binary could not be opened");
 	mu_assert_notnull(bf->o, "bin object");

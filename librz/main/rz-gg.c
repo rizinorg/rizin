@@ -349,8 +349,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		}
 
 		get_offset = rz_num_math(0, sequence);
-		printf("Little endian: %d\n", rz_debruijn_offset(get_offset, false));
-		printf("Big endian: %d\n", rz_debruijn_offset(get_offset, true));
+		printf("Little endian: %d\n", rz_debruijn_offset(0, NULL, get_offset, false));
+		printf("Big endian: %d\n", rz_debruijn_offset(0, NULL, get_offset, true));
 		free(sequence);
 		rz_egg_free(egg);
 		return 0;
@@ -528,15 +528,19 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				eprintf("No format specified\n");
 				goto fail;
 			}
-			RzPrint *p = rz_print_new();
+			char *code = NULL;
 			ut64 tmpsz;
 			const ut8 *tmp = rz_buf_data(b, &tmpsz);
 			switch (*format) {
 			case 'c':
-				rz_print_code(p, 0, tmp, tmpsz, 'c');
+				code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_C_CPP_BYTES);
+				printf("%s\n", code);
+				free(code);
 				break;
-			case 'j': // JavaScript
-				rz_print_code(p, 0, tmp, tmpsz, 'j');
+			case 'j': // json
+				code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_JSON);
+				printf("%s\n", code);
+				free(code);
 				break;
 			case 'r':
 				if (show_str) {
@@ -555,7 +559,9 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				break;
 			case 'p': // PE
 				if (strlen(format) >= 2 && format[1] == 'y') { // Python
-					rz_print_code(p, 0, tmp, tmpsz, 'p');
+					code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_PYTHON);
+					printf("%s\n", code);
+					free(code);
 				}
 				break;
 			case 'e': // ELF
@@ -566,7 +572,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				eprintf("unknown executable format (%s)\n", format);
 				goto fail;
 			}
-			rz_print_free(p);
 		}
 	}
 	if (fd != -1) {

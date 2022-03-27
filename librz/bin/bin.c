@@ -102,24 +102,13 @@ RZ_API void rz_bin_xtrdata_free(void /*RzBinXtrData*/ *data_) {
 	free(data);
 }
 
-RZ_API RzList *rz_bin_raw_strings(RzBinFile *bf, int min) {
-	rz_return_val_if_fail(bf, NULL);
-	return rz_bin_file_get_strings(bf, min, 0, 2);
-}
-
-RZ_API RzList *rz_bin_dump_strings(RzBinFile *bf, int min, int raw) {
-	rz_return_val_if_fail(bf, NULL);
-	return rz_bin_file_get_strings(bf, min, 1, raw);
-}
-
-RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, bool patch_relocs, int rawstr) {
+RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, bool patch_relocs) {
 	memset(opt, 0, sizeof(*opt));
 	opt->obj_opts.baseaddr = baseaddr;
 	opt->obj_opts.loadaddr = loadaddr;
 	opt->obj_opts.patch_relocs = patch_relocs;
 	opt->obj_opts.elf_load_sections = true;
 	opt->fd = fd;
-	opt->rawstr = rawstr;
 }
 
 RZ_API void rz_bin_arch_options_init(RzBinArchOptions *opt, const char *arch, int bits) {
@@ -264,7 +253,7 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 	bool elf_checks_segments = bf->o ? bf->o->opts.elf_checks_segments : false;
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, patch_relocs, bin->rawstr);
+	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, patch_relocs);
 	opt.obj_opts.elf_load_sections = elf_load_sections;
 	opt.obj_opts.elf_checks_sections = elf_checks_sections;
 	opt.obj_opts.elf_checks_segments = elf_checks_segments;
@@ -282,7 +271,6 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 	RzListIter *it;
 	RzBinXtrPlugin *xtr;
 
-	bin->rawstr = opt->rawstr;
 	bin->file = opt->filename;
 	if (opt->obj_opts.loadaddr == UT64_MAX) {
 		opt->obj_opts.loadaddr = 0;
@@ -303,7 +291,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 					xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					bf = rz_bin_file_xtr_load_buffer(bin, xtr,
 						bin->file, buf, &opt->obj_opts,
-						opt->xtr_idx, opt->fd, bin->rawstr);
+						opt->xtr_idx, opt->fd);
 				}
 			}
 		}
@@ -311,7 +299,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 	if (!bf) {
 		// Uncomment for this speedup: 20s vs 22s
 		// RzBuffer *buf = rz_buf_new_slurp (bin->file);
-		bf = rz_bin_file_new_from_buffer(bin, bin->file, buf, bin->rawstr,
+		bf = rz_bin_file_new_from_buffer(bin, bin->file, buf,
 			&opt->obj_opts, opt->fd, opt->pluginname);
 		if (!bf) {
 			return NULL;

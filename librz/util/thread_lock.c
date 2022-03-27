@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_th.h>
+#include "thread.h"
 
 /* locks/mutex/sems */
 

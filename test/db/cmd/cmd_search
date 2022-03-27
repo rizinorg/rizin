@@ -52,6 +52,7 @@ FILE=bins/pe/x.dll
 CMDS=/r 0x69682004
 EXPECT=<<EOF
 (nofunc); [00] -r-x section size 4096 named .text 0x69681000 [DATA] push dword [0x69682004]
+(nofunc); [00] -r-x section size 4096 named .text 0x69681000 [DATA] push dword [0x69682004]
 (nofunc) 0x69681006 [DATA] push 0x69682004
 (nofunc) 0x6968100b [DATA] mov eax, dword [0x69682004]
 (nofunc) 0x69681010 [DATA] mov eax, 0x69682004

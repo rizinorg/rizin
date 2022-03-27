@@ -3,29 +3,15 @@
 // SPDX-FileCopyrightText: 2016-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef INCLUDE_HEAP_GLIBC_C
-#define INCLUDE_HEAP_GLIBC_C
-#include "rz_config.h"
-#define HEAP32 1
-#include "linux_heap_glibc.c"
-#undef HEAP32
-#endif
+#include <rz_core.h>
+#include <rz_config.h>
+#include <rz_types.h>
+#include <math.h>
 
-#undef GH
-#undef GHT
-#undef GHT_MAX
-#undef read_le
-
-#if HEAP32
-#define GH(x)      x##_32
-#define GHT        ut32
-#define GHT_MAX    UT32_MAX
-#define read_le(x) rz_read_le##32(x)
+#ifdef HEAP64
+#include "linux_heap_glibc64.h"
 #else
-#define GH(x)      x##_64
-#define GHT        ut64
-#define GHT_MAX    UT64_MAX
-#define read_le(x) rz_read_le##64(x)
+#include "linux_heap_glibc.h"
 #endif
 
 /**
@@ -47,7 +33,7 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 	RzBinSymbol *s;
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, -1, 0, 0, false, false);
+	rz_bin_options_init(&opt, -1, 0, 0, false);
 	opt.obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
 	opt.obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
 	opt.obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
@@ -849,7 +835,7 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 		break;
 	case ' ': // dmhb [bin_num]
 		j--; // for spaces after input
-		/* fallthu */
+		// fallthrough
 	case 'g': // dmhbg [bin_num]
 		num_bin = rz_num_get(NULL, input + j);
 		if (num_bin > NBINS - 2) {

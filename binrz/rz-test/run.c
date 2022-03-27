@@ -5,22 +5,23 @@
 #include <rz_cons.h>
 
 #if __WINDOWS__
-static ut8 *remove_cr(ut8 *str) {
-	char *s = (char *)str;
-	char *start = s;
-	while (*s) {
-		if (s[0] == '\r' &&
-			(s[1] == '\n' ||
-				(s[1] == '\r' && s[2] == '\n' /* TODO remove this */))) {
-			memmove(s, s + 1, strlen(s + 1) + 1);
-			continue;
+static ut8 *crlf2lf(ut8 *str) {
+	char *src = (char *)str;
+	char *dest = src;
+	while (*src) {
+		*dest = *src;
+		if (src[0] == '\r' && src[1] == '\n') {
+			// dest does not move
+		} else {
+			dest++;
 		}
-		s++;
+		src++;
 	}
-	return (ut8 *)start;
+	*dest = '\0';
+	return str;
 }
 #else
-#define remove_cr(x) (x)
+#define crlf2lf(x) (x)
 #endif
 
 static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
@@ -36,8 +37,8 @@ static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[
 	RzSubprocessOutput *out = rz_subprocess_drain(proc);
 	if (out) {
 		out->timeout = r == RZ_SUBPROCESS_TIMEDOUT;
-		out->out = remove_cr(out->out);
-		out->err = remove_cr(out->err);
+		out->out = crlf2lf(out->out);
+		out->err = crlf2lf(out->err);
 	}
 	rz_subprocess_free(proc);
 	return out;
@@ -311,7 +312,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto rip;
 		}
-		char *hex = (char *)remove_cr(rz_subprocess_out(proc, NULL));
+		char *hex = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
 		size_t hexlen = strlen(hex);
 		if (!hexlen) {
 			goto rip;
@@ -345,7 +346,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto ship;
 		}
-		char *disasm = (char *)remove_cr(rz_subprocess_out(proc, NULL));
+		char *disasm = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
 		rz_str_trim(disasm);
 		out->disasm = disasm;
 	ship:
@@ -366,9 +367,9 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			rz_subprocess_kill(proc);
 			out->il_timeout = true;
 		} else {
-			char *il = (char *)remove_cr(rz_subprocess_out(proc, NULL));
+			char *il = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
 			rz_str_trim(il);
-			char *il_err = (char *)remove_cr(rz_subprocess_err(proc, NULL));
+			char *il_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
 			rz_str_trim(il_err);
 			out->il = il;
 			out->il_report = il_err;

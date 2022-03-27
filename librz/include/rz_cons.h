@@ -33,17 +33,7 @@ extern "C" {
 #include <sys/wait.h>
 #include <sys/socket.h>
 #endif
-#if __WINDOWS__
-#include <windows.h>
-#include <wincon.h>
-#include <winuser.h>
-#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
-#endif
-#ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
-#define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
-#endif
-#else
+#if !__WINDOWS__
 #include <unistd.h>
 #endif
 
@@ -544,9 +534,9 @@ typedef struct rz_cons_t {
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
-	DWORD term_raw, term_buf, term_xterm;
-	UINT old_cp;
-	UINT old_ocp;
+	unsigned long term_raw, term_buf, term_xterm;
+	ut32 old_cp;
+	ut32 old_ocp;
 #endif
 	RzNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the
@@ -864,7 +854,7 @@ RZ_API void rz_cons_w32_gotoxy(int fd, int x, int y);
 RZ_API int rz_cons_w32_print(const char *ptr, int len, bool vmode);
 RZ_API int rz_cons_win_printf(bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_cons_win_eprintf(bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
-RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap);
+RZ_API int rz_cons_win_vhprintf(unsigned long hdl, bool vmode, const char *fmt, va_list ap);
 #endif
 
 RZ_API void rz_cons_push(void);

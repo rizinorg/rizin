@@ -51,13 +51,6 @@ RZ_LIB_VERSION_HEADER(rz_debug);
 #define PTRACE_SYSCALL    PT_STEP
 #endif
 
-#define CMD_CHECK_DEBUG_DEAD(core) \
-	do { \
-		if (rz_debug_is_dead(core->dbg)) { \
-			rz_cons_println("Debugging is not enabled. Run ood?"); \
-			return RZ_CMD_STATUS_ERROR; \
-		} \
-	} while (0)
 #define SNAP_PAGE_SIZE    4096
 #define CHECK_POINT_LIMIT 0x100000 // TODO: take the benchmark
 /*
@@ -547,7 +540,9 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc);
 RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op);
 RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str);
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr);
-RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset);
+RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 offset);
+RZ_API RZ_OWN RzList *rz_debug_traces_info(RzDebug *dbg, ut64 offset);
+RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset);
 RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size);
 RZ_API RzDebugTrace *rz_debug_trace_new(void);
 RZ_API void rz_debug_trace_free(RzDebugTrace *dbg);

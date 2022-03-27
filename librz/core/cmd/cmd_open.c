@@ -5,6 +5,7 @@
 #include <rz_debug.h>
 #include <rz_core.h>
 #include <rz_io.h>
+#include "../core_private.h"
 
 struct open_list_ascii_data_t {
 	RzPrint *p;
@@ -387,6 +388,21 @@ RZ_IPI RzCmdStatus rz_open_maps_prioritize_binid_handler(RzCore *core, int argc,
 		RZ_LOG_ERROR("Cannot prioritize bin with fd %d\n", id);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	RzListIter *it;
+	RzCoreFile *file = NULL;
+	rz_list_foreach (core->files, it, file) {
+		void **binfile;
+		rz_pvector_foreach (&file->binfiles, binfile) {
+			RzBinFile *bf = *binfile;
+			if (bf->id == id) {
+				void **map;
+				rz_pvector_foreach (&file->maps, map) {
+					RzIOMap *m = *map;
+					rz_io_map_priorize(core->io, m->id);
+				}
+			}
+		}
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -556,7 +572,7 @@ RZ_IPI RzCmdStatus rz_open_maps_map_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-static void open_maps_show(RzCore *core, RzCmdStateOutput *state, RzIOMap *map) {
+static void open_maps_show(RzCore *core, RzCmdStateOutput *state, RzIOMap *map, bool seek_inside) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("%d %d\n", map->fd, map->id);
@@ -581,9 +597,9 @@ static void open_maps_show(RzCore *core, RzCmdStateOutput *state, RzIOMap *map) 
 			rz_io_map_get_from(map), rz_itv_end(map->itv), rz_str_rwx_i(map->perm), rz_str_get(map->name));
 		break;
 	default:
-		rz_cons_printf("%2d fd: %i +0x%08" PFMT64x " 0x%08" PFMT64x " - 0x%08" PFMT64x " %s %s\n",
+		rz_cons_printf("%2d fd: %i +0x%08" PFMT64x " 0x%08" PFMT64x " %c 0x%08" PFMT64x " %s %s\n",
 			map->id, map->fd,
-			map->delta, rz_io_map_get_from(map), rz_io_map_get_to(map),
+			map->delta, rz_io_map_get_from(map), seek_inside ? '*' : '-', rz_io_map_get_to(map),
 			rz_str_rwx_i(map->perm), rz_str_get(map->name));
 		break;
 	}
@@ -598,12 +614,16 @@ static void open_maps_list(RzCore *core, RzCmdStateOutput *state, int fd) {
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		state->d.t->showFancy = true;
 	}
+	RzIOMap *at_seek = NULL;
+	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
+		at_seek = rz_io_map_get(core->io, core->offset);
+	}
 	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
 		if (fd >= 0 && map->fd != fd) {
 			continue;
 		}
-		open_maps_show(core, state, map);
+		open_maps_show(core, state, map, map == at_seek);
 	}
 	rz_cmd_state_output_array_end(state);
 }
@@ -624,7 +644,7 @@ RZ_IPI RzCmdStatus rz_open_maps_list_cur_handler(RzCore *core, int argc, const c
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		state->d.t->showFancy = true;
 	}
-	open_maps_show(core, state, map);
+	open_maps_show(core, state, map, false);
 	return RZ_CMD_STATUS_OK;
 }
 

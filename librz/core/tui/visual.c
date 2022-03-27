@@ -3,6 +3,7 @@
 
 #include <rz_core.h>
 #include <rz_cons.h>
+#include <rz_windows.h>
 #include "../core_private.h"
 
 #define NPF  5

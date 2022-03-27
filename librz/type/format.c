@@ -1585,6 +1585,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 		switch (fmt[i]) {
 		case '.':
 			idx--;
+			// fallthrough
 		case 'c':
 		case 'b':
 		case 'X':
@@ -1595,6 +1596,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 			break;
 		case ':':
 			idx--;
+			// fallthrough
 		case 'd':
 		case 'o':
 		case 'i':
