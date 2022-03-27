@@ -6293,7 +6293,6 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	PJ *pj = NULL;
 	const char *bp = NULL;
 	RzList *list;
 	RzListIter *iter;
@@ -6314,20 +6313,14 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 		}
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		pj = pj_new();
-		if (!pj) {
-			return RZ_CMD_STATUS_ERROR;
-		}
-		pj_o(pj);
-		pj_k(pj, "sp");
+		pj_o(state->d.pj);
+		pj_k(state->d.pj, "sp");
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, state);
-		pj_k(pj, "bp");
+		pj_k(state->d.pj, "bp");
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, state);
-		pj_k(pj, "reg");
+		pj_k(state->d.pj, "reg");
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, state);
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
+		pj_end(state->d.pj);
 		break;
 	default:
 		rz_return_val_if_reached(RZ_CMD_STATUS_ERROR);
@@ -6582,18 +6575,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_vars_handler(RzCore *core, in
 }
 
 static RzCmdStatus analysis_function_vars_kind_list(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, RzCmdStateOutput *state) {
-	PJ *pj = NULL;
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
-		if (!pj) {
-			return RZ_CMD_STATUS_ERROR;
-		}
-	}
 	core_analysis_var_list_show(core->analysis, fcn, kind, state);
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	}
 	return RZ_CMD_STATUS_OK;
 }
 
