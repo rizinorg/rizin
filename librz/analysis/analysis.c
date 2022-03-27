@@ -282,6 +282,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 			int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 			analysis->pcalign = RZ_MAX(0, v);
 			rz_type_db_set_bits(analysis->typedb, bits);
+			rz_type_db_set_address_bits(analysis->typedb, rz_analysis_get_address_bits(analysis));
 			if (!is_hack) {
 				char *types_dir = rz_path_system(RZ_SDB_TYPES);
 				rz_type_db_reload(analysis->typedb, types_dir);
