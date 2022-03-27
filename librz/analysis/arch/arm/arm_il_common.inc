@@ -4,10 +4,10 @@
 /**
  * Carry resulting from a + b (+ cf)
  */
-static RZ_OWN RzILOpBool *add_carry(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, bool with_carry) {
-	RzILOpBitVector *r = ADD(UNSIGNED(33, a), UNSIGNED(33, b));
+static RZ_OWN RzILOpBool *add_carry(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, bool with_carry, ut32 bits) {
+	RzILOpBitVector *r = ADD(UNSIGNED(bits + 1, a), UNSIGNED(bits + 1, b));
 	if (with_carry) {
-		r = ADD(r, ITE(VARG("cf"), UN(33, 1), UN(33, 0)));
+		r = ADD(r, ITE(VARG("cf"), UN(bits + 1, 1), UN(bits + 1, 0)));
 	}
 	return MSB(r);
 }
@@ -15,9 +15,9 @@ static RZ_OWN RzILOpBool *add_carry(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitV
 /**
  * Carry resulting from a - b
  */
-static RZ_OWN RzILOpBool *sub_carry(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, bool with_carry) {
+static RZ_OWN RzILOpBool *sub_carry(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, bool with_carry, ut32 bits) {
 	if (with_carry) {
-		return add_carry(a, LOGNOT(b), true);
+		return add_carry(a, LOGNOT(b), true, bits);
 	}
 	return ULE(b, a);
 }
