@@ -4173,6 +4173,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	if (scr_html != -1) {
 		rz_config_set_i(state->core->config, "scr.html", scr_html);
 	}
+	rz_list_free(stack);
 	return res;
 }
 
@@ -5912,6 +5913,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	RzList *stack = rz_list_newf(free);
 	char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
 	if (!p && *cmd != '!' && *cmd != '.') {
+		rz_list_free(stack);
 		return rz_core_cmd_str(core, cmd);
 	}
 	rz_cons_reset();
@@ -5920,6 +5922,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 		if (pipefd == -1) {
 			rz_file_rm(tmp);
 			free(tmp);
+			rz_list_free(stack);
 			return rz_core_cmd_str(core, cmd);
 		}
 		char *_cmd = strdup(cmd);
@@ -5935,14 +5938,17 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 			rz_file_rm(tmp);
 			free(tmp);
 			free(_cmd);
+			rz_list_free(stack);
 			return s ? s : strdup("");
 		}
 		eprintf("slurp %s fails\n", tmp);
 		rz_file_rm(tmp);
 		free(tmp);
 		free(_cmd);
+		rz_list_free(stack);
 		return rz_core_cmd_str(core, cmd);
 	}
+	rz_list_free(stack);
 	return NULL;
 }
 

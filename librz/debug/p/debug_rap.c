@@ -50,10 +50,12 @@ static int __rap_detach(RzDebug *dbg, int pid) {
 
 static char *__rap_reg_profile(RzDebug *dbg) {
 	char *out, *tf = rz_file_temp("rap.XXXXXX");
-	int fd = rz_cons_pipe_open(tf, 1, 0);
+	RzList *stack = rz_list_newf(free);
+	int fd = rz_cons_pipe_open(tf, 1, 0, stack);
 	rz_io_system(dbg->iob.io, "drp");
 	rz_cons_flush();
-	rz_cons_pipe_close(fd);
+	rz_cons_pipe_close(fd, stack);
+	rz_list_free(stack);
 	out = rz_file_slurp(tf, NULL);
 	rz_file_rm(tf);
 	free(tf);
