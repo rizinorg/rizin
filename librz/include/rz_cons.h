@@ -79,6 +79,11 @@ typedef struct rz_cons_bind_t {
 	RzConsGrepCallback cb_grep;
 } RzConsBind;
 
+typedef struct rz_cons_pipe_stack {
+	int backup_fd;
+	int backup_fdn;
+} RzConsPipeStack;
+
 typedef struct rz_cons_grep_t {
 	char strings[RZ_CONS_GREP_WORDS][RZ_CONS_GREP_WORD_SIZE];
 	int nstrings;
@@ -849,8 +854,8 @@ RZ_API void rz_cons_break_end(void);
 RZ_API void rz_cons_break_timeout(int timeout);
 
 /* pipe */
-RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append);
-RZ_API void rz_cons_pipe_close(int fd);
+RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzList *stack);
+RZ_API void rz_cons_pipe_close(int fd, RzList *stack);
 
 #if __WINDOWS__
 RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void);
