@@ -799,7 +799,6 @@ RZ_API void rz_table_sortlen(RzTable *t, int nth, bool dec) {
 	RzTableColumn *col = rz_vector_index_ptr(t->cols, nth);
 	if (col) {
 		Gnth = nth;
-		// t->rows->sorted = false; // force sorting
 		rz_vector_insertion_sort(t->rows, cmplen, dec);
 		Gnth = 0;
 	}
