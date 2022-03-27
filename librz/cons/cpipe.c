@@ -24,7 +24,7 @@ static bool __dupDescriptor(int fd, int fdn, RzConsPipeStack *fds) {
 #endif
 }
 
-RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzList *stack) {
+RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzVector *stack) {
 	if (fdn < 1) {
 		return -1;
 	}
@@ -35,7 +35,7 @@ RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzList *stac
 		return -1;
 	}
 	RzConsPipeStack *fds = malloc(sizeof(*fds));
-	rz_list_prepend(stack, fds);
+	rz_vector_push_front(stack, fds);
 	fds->backup_fdn = fdn;
 	if (!__dupDescriptor(fd, fdn, fds)) {
 		eprintf("Cannot dup stdout to %d\n", fdn);
@@ -46,13 +46,15 @@ RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzList *stac
 	return fd;
 }
 
-RZ_API void rz_cons_pipe_close(int fd, RzList *stack) {
+RZ_API void rz_cons_pipe_close(int fd, RzVector *stack) {
 	if (fd != -1) {
 		close(fd);
-		RzConsPipeStack *fds = rz_list_pop_head(stack);
+		RzConsPipeStack *fds = NULL;
+		rz_vector_pop_front(stack, fds);
 		if (fds) {
 			dup2(fds->backup_fd, fds->backup_fdn);
 			close(fds->backup_fd);
 		}
+		free(fds);
 	}
 }

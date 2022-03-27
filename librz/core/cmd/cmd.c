@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include "rz_list.h"
+#include "rz_vector.h"
 #include <ctype.h>
 #include <stdarg.h>
 #if __UNIX__
@@ -25,6 +26,10 @@ TSLanguage *tree_sitter_rzcmd();
 
 RZ_API void rz_save_panels_layout(RzCore *core, const char *_name);
 RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name);
+
+static void vec_item_free(RzConsPipeStack *item, void *unused) {
+	free(item);
+}
 
 static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 	RzCmdDescriptor *d = RZ_NEW0(RzCmdDescriptor);
@@ -1400,7 +1405,7 @@ static bool set_tmp_bits(RzCore *core, int bits, char **tmpbits, int *cmd_ignbit
 
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek) {
 	RzList *tmpenvs = rz_list_newf(tmpenvs_free);
-	RzList *stack = rz_list_newf(free);
+	RzVector *stack = rz_vector_new(0, (RzVectorFree)vec_item_free, NULL);
 	const char *quotestr = "`";
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
@@ -1422,7 +1427,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 
 	if (!cmd) {
 		rz_list_free(tmpenvs);
-		rz_list_free(stack);
+		rz_vector_free(stack);
 		return 0;
 	}
 	rz_str_trim(cmd);
@@ -1444,7 +1449,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 	case '.':
 		if (cmd[1] == '"') { /* interpret */
 			rz_list_free(tmpenvs);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return rz_cmd_call(core->rcmd, cmd);
 		}
 		break;
@@ -1460,7 +1465,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				if (!p || !*p) {
 					eprintf("Missing \" in (%s).", cmd);
 					rz_list_free(tmpenvs);
-					rz_list_free(stack);
+					rz_vector_free(stack);
 					return false;
 				}
 				*p++ = 0;
@@ -1553,12 +1558,12 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			}
 		}
 		rz_list_free(tmpenvs);
-		rz_list_free(stack);
+		rz_vector_free(stack);
 		return true;
 	case '(':
 		if (cmd[1] != '*' && !strstr(cmd, ")()")) {
 			rz_list_free(tmpenvs);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return rz_cmd_call(core->rcmd, cmd);
 		}
 		break;
@@ -1566,7 +1571,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 		if (cmd[1] == '>') {
 			rz_core_cmd_help(core, help_msg_greater_sign);
 			rz_list_free(tmpenvs);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return true;
 		}
 	}
@@ -1594,14 +1599,14 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			*ptr = '\0';
 			if (rz_core_cmd_subst(core, cmd) == -1) {
 				rz_list_free(tmpenvs);
-				rz_list_free(stack);
+				rz_vector_free(stack);
 				return -1;
 			}
 			cmd = ptr + 1;
 			ret = rz_core_cmd_subst(core, cmd);
 			*ptr = ';';
 			rz_list_free(tmpenvs);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return ret;
 			// rz_cons_flush ();
 		}
@@ -1627,7 +1632,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				if (!strcmp(ptr + 1, "?")) { // "|?"
 					rz_core_cmd_help(core, help_msg_vertical_bar);
 					rz_list_free(tmpenvs);
-					rz_list_free(stack);
+					rz_vector_free(stack);
 					return ret;
 				} else if (!strncmp(ptr + 1, "H", 1)) { // "|H"
 					scr_html = rz_config_get_i(core->config, "scr.html");
@@ -1635,7 +1640,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				} else if (!strcmp(ptr + 1, ".")) { // "|."
 					ret = *cmd ? rz_core_cmdf(core, ".%s", cmd) : 0;
 					rz_list_free(tmpenvs);
-					rz_list_free(stack);
+					rz_vector_free(stack);
 					return ret;
 				} else if (ptr[1]) { // "| grep .."
 					int value = core->num->value;
@@ -1650,7 +1655,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 					}
 					core->num->value = value;
 					rz_list_free(tmpenvs);
-					rz_list_free(stack);
+					rz_vector_free(stack);
 					return 0;
 				} else { // "|"
 					scr_html = rz_config_get_i(core->config, "scr.html");
@@ -1679,7 +1684,7 @@ escape_pipe:
 				rz_config_set_i(core->config, "scr.color", scr_color);
 			}
 			rz_list_free(tmpenvs);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return ret;
 		}
 		for (cmd = ptr + 2; cmd && *cmd == ' '; cmd++) {
@@ -1710,7 +1715,7 @@ escape_pipe:
 				rz_config_set_i(core->config, "scr.color", scr_color);
 			}
 			rz_list_free(tmpenvs);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return 0;
 		}
 	}
@@ -1729,7 +1734,7 @@ escape_pipe:
 		if (ptr[0] && ptr[1] == '?') {
 			rz_core_cmd_help(core, help_msg_greater_sign);
 			rz_list_free(tmpenvs);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return true;
 		}
 		int fdn = 1;
@@ -1825,7 +1830,7 @@ escape_pipe:
 			rz_config_set_i(core->config, "scr.color", scr_color);
 		}
 		rz_list_free(tmpenvs);
-		rz_list_free(stack);
+		rz_vector_free(stack);
 		return ret;
 	}
 escape_redir:
@@ -1894,7 +1899,7 @@ next2:
 			}
 			free(str);
 			rz_list_free(tmpenvs);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return ret;
 		}
 	}
@@ -1918,7 +1923,7 @@ escape_backtick:
 			if (showHelp) {
 				rz_cons_grep_help();
 				rz_list_free(tmpenvs);
-				rz_list_free(stack);
+				rz_vector_free(stack);
 				return true;
 			}
 		}
@@ -2418,7 +2423,7 @@ beach:
 		rz_config_set_i(core->config, "scr.color", scr_color);
 	}
 	rz_list_free(tmpenvs);
-	rz_list_free(stack);
+	rz_vector_free(stack);
 	if (tmpdesc) {
 		rz_io_desc_close(tmpdesc);
 		tmpdesc = NULL;
@@ -3781,7 +3786,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	int scr_html = -1;
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID, is_append = false, is_html = false;
 	int fdn = 1;
-	RzList *stack = rz_list_newf(free);
+	RzVector *stack = rz_vector_new(0, (RzVectorFree)vec_item_free, NULL);
 
 	TSNode redirect_op = ts_node_child_by_field_name(node, "redirect_operator", strlen("redirect_operator"));
 	if (is_ts_fdn_redirect_operator(redirect_op)) {
@@ -3863,7 +3868,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	if (scr_html != -1) {
 		rz_config_set_i(state->core->config, "scr.html", scr_html);
 	}
-	rz_list_free(stack);
+	rz_vector_free(stack);
 	return res;
 }
 
@@ -5478,10 +5483,10 @@ RZ_API int rz_core_flush(RzCore *core, const char *cmd) {
 
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	char *tmp = NULL;
-	RzList *stack = rz_list_newf(free);
+	RzVector *stack = rz_vector_new(0, (RzVectorFree)vec_item_free, NULL);
 	char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
 	if (!p && *cmd != '!' && *cmd != '.') {
-		rz_list_free(stack);
+		rz_vector_free(stack);
 		return rz_core_cmd_str(core, cmd);
 	}
 	rz_cons_reset();
@@ -5490,7 +5495,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 		if (pipefd == -1) {
 			rz_file_rm(tmp);
 			free(tmp);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return rz_core_cmd_str(core, cmd);
 		}
 		char *_cmd = strdup(cmd);
@@ -5502,17 +5507,17 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 			rz_file_rm(tmp);
 			free(tmp);
 			free(_cmd);
-			rz_list_free(stack);
+			rz_vector_free(stack);
 			return s ? s : strdup("");
 		}
 		eprintf("slurp %s fails\n", tmp);
 		rz_file_rm(tmp);
 		free(tmp);
 		free(_cmd);
-		rz_list_free(stack);
+		rz_vector_free(stack);
 		return rz_core_cmd_str(core, cmd);
 	}
-	rz_list_free(stack);
+	rz_vector_free(stack);
 	return NULL;
 }
 

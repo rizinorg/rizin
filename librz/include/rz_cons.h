@@ -844,8 +844,8 @@ RZ_API void rz_cons_break_end(void);
 RZ_API void rz_cons_break_timeout(int timeout);
 
 /* pipe */
-RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzList *stack);
-RZ_API void rz_cons_pipe_close(int fd, RzList *stack);
+RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzVector *stack);
+RZ_API void rz_cons_pipe_close(int fd, RzVector *stack);
 
 #if __WINDOWS__
 RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void);
