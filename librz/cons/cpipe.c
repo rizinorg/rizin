@@ -6,8 +6,6 @@
 
 // TODO: remove globals, and make this stackable
 // cons_pipe should be using a stack pipe_push, pipe_pop
-static int backup_fd = -1;
-static int backup_fdn = 1;
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -36,10 +34,6 @@ RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzList *stac
 		eprintf("rz_cons_pipe_open: Cannot open file '%s'\n", file);
 		return -1;
 	}
-	// if (backup_fd != -1) {		// This may need to be removed????
-	// 	close(backup_fd);
-	// 	// already set in __dupDescriptor // backup_fd = -1;
-	// }
 	RzConsPipeStack *fds = malloc(sizeof(*fds));
 	rz_list_prepend(stack, fds);
 	fds->backup_fdn = fdn;
@@ -59,7 +53,6 @@ RZ_API void rz_cons_pipe_close(int fd, RzList *stack) {
 		if (fds) {
 			dup2(fds->backup_fd, fds->backup_fdn);
 			close(fds->backup_fd);
-			// backup_fd = -1;
 		}
 	}
 }

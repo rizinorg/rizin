@@ -1732,6 +1732,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 
 	if (!cmd) {
 		rz_list_free(tmpenvs);
+		rz_list_free(stack);
 		return 0;
 	}
 	rz_str_trim(cmd);
@@ -1753,6 +1754,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 	case '.':
 		if (cmd[1] == '"') { /* interpret */
 			rz_list_free(tmpenvs);
+			rz_list_free(stack);
 			return rz_cmd_call(core->rcmd, cmd);
 		}
 		break;
@@ -1768,6 +1770,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				if (!p || !*p) {
 					eprintf("Missing \" in (%s).", cmd);
 					rz_list_free(tmpenvs);
+					rz_list_free(stack);
 					return false;
 				}
 				*p++ = 0;
@@ -1860,10 +1863,12 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			}
 		}
 		rz_list_free(tmpenvs);
+		rz_list_free(stack);
 		return true;
 	case '(':
 		if (cmd[1] != '*' && !strstr(cmd, ")()")) {
 			rz_list_free(tmpenvs);
+			rz_list_free(stack);
 			return rz_cmd_call(core->rcmd, cmd);
 		}
 		break;
@@ -1871,6 +1876,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 		if (cmd[1] == '>') {
 			rz_core_cmd_help(core, help_msg_greater_sign);
 			rz_list_free(tmpenvs);
+			rz_list_free(stack);
 			return true;
 		}
 	}
@@ -1898,12 +1904,14 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			*ptr = '\0';
 			if (rz_core_cmd_subst(core, cmd) == -1) {
 				rz_list_free(tmpenvs);
+				rz_list_free(stack);
 				return -1;
 			}
 			cmd = ptr + 1;
 			ret = rz_core_cmd_subst(core, cmd);
 			*ptr = ';';
 			rz_list_free(tmpenvs);
+			rz_list_free(stack);
 			return ret;
 			// rz_cons_flush ();
 		}
@@ -1929,6 +1937,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				if (!strcmp(ptr + 1, "?")) { // "|?"
 					rz_core_cmd_help(core, help_msg_vertical_bar);
 					rz_list_free(tmpenvs);
+					rz_list_free(stack);
 					return ret;
 				} else if (!strncmp(ptr + 1, "H", 1)) { // "|H"
 					scr_html = rz_config_get_i(core->config, "scr.html");
@@ -1936,6 +1945,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				} else if (!strcmp(ptr + 1, ".")) { // "|."
 					ret = *cmd ? rz_core_cmdf(core, ".%s", cmd) : 0;
 					rz_list_free(tmpenvs);
+					rz_list_free(stack);
 					return ret;
 				} else if (ptr[1]) { // "| grep .."
 					int value = core->num->value;
@@ -1950,6 +1960,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 					}
 					core->num->value = value;
 					rz_list_free(tmpenvs);
+					rz_list_free(stack);
 					return 0;
 				} else { // "|"
 					scr_html = rz_config_get_i(core->config, "scr.html");
@@ -1978,6 +1989,7 @@ escape_pipe:
 				rz_config_set_i(core->config, "scr.color", scr_color);
 			}
 			rz_list_free(tmpenvs);
+			rz_list_free(stack);
 			return ret;
 		}
 		for (cmd = ptr + 2; cmd && *cmd == ' '; cmd++) {
@@ -2008,6 +2020,7 @@ escape_pipe:
 				rz_config_set_i(core->config, "scr.color", scr_color);
 			}
 			rz_list_free(tmpenvs);
+			rz_list_free(stack);
 			return 0;
 		}
 	}
@@ -2026,6 +2039,7 @@ escape_pipe:
 		if (ptr[0] && ptr[1] == '?') {
 			rz_core_cmd_help(core, help_msg_greater_sign);
 			rz_list_free(tmpenvs);
+			rz_list_free(stack);
 			return true;
 		}
 		int fdn = 1;
@@ -2121,6 +2135,7 @@ escape_pipe:
 			rz_config_set_i(core->config, "scr.color", scr_color);
 		}
 		rz_list_free(tmpenvs);
+		rz_list_free(stack);
 		return ret;
 	}
 escape_redir:
@@ -2189,6 +2204,7 @@ next2:
 			}
 			free(str);
 			rz_list_free(tmpenvs);
+			rz_list_free(stack);
 			return ret;
 		}
 	}
@@ -2212,6 +2228,7 @@ escape_backtick:
 			if (showHelp) {
 				rz_cons_grep_help();
 				rz_list_free(tmpenvs);
+				rz_list_free(stack);
 				return true;
 			}
 		}
@@ -2711,6 +2728,7 @@ beach:
 		rz_config_set_i(core->config, "scr.color", scr_color);
 	}
 	rz_list_free(tmpenvs);
+	rz_list_free(stack);
 	if (tmpdesc) {
 		rz_io_desc_close(tmpdesc);
 		tmpdesc = NULL;
