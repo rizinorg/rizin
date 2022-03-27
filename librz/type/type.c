@@ -149,6 +149,21 @@ RZ_API void rz_type_db_set_bits(RzTypeDB *typedb, int bits) {
 }
 
 /**
+ * \brief Set the RzType target adress size
+ *
+ * Important for calculating some types size, especially
+ * pointers's size.
+ *
+ * \param typedb RzTypeDB instance
+ * \param bits size of an address in bits. If <= 0, then
+ *        the value from rz_type_db_set_bits() is used.
+ */
+RZ_API void rz_type_db_set_address_bits(RzTypeDB *typedb, int addr_bits) {
+	rz_return_if_fail(typedb);
+	typedb->target->addr_bits = addr_bits;
+}
+
+/**
  * \brief Set the RzType target architecture operating system
  *
  * Important for calculating some types size, especially
@@ -194,9 +209,7 @@ RZ_API void rz_type_db_set_endian(RzTypeDB *typedb, bool big_endian) {
  * \param typedb RzTypeDB instance
  */
 RZ_API ut8 rz_type_db_pointer_size(const RzTypeDB *typedb) {
-	// TODO: Handle more special cases where the pointer
-	// size is different from the target bitness
-	return typedb->target->bits;
+	return typedb->target->addr_bits > 0 ? typedb->target->addr_bits : typedb->target->bits;
 }
 
 /**
