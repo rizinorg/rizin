@@ -48,12 +48,24 @@ static int __rap_detach(RzDebug *dbg, int pid) {
 	return true;
 }
 
+
+static void rz_pipe_stack_fini(void *e, void *user) {
+	(void)user;
+	free(e);
+}
+
 static char *__rap_reg_profile(RzDebug *dbg) {
 	char *out, *tf = rz_file_temp("rap.XXXXXX");
-	int fd = rz_cons_pipe_open(tf, 1, 0);
+	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), rz_pipe_stack_fini, NULL);
+	RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
+	int fd = rz_cons_pipe_open(tf, 1, 0, new);
+	rz_vector_push_front(stack, new);
 	rz_io_system(dbg->iob.io, "drp");
 	rz_cons_flush();
-	rz_cons_pipe_close(fd);
+	rz_vector_pop_front(stack, new);
+	rz_cons_pipe_close(fd, new);
+	free(new);
+	rz_vector_free(stack);
 	out = rz_file_slurp(tf, NULL);
 	rz_file_rm(tf);
 	free(tf);

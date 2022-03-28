@@ -98,6 +98,11 @@ typedef struct rz_cons_grep_t {
 	int icase;
 } RzConsGrep;
 
+typedef struct rz_cons_pipe_stack {
+    int backup_fd;
+    int backup_fdn;
+} RzConsPipeStack;
+
 #if 0
 // TODO Might be better than using rz_cons_pal_get_i
 // And have smaller RzConsPrintablePalette and RzConsPalette
@@ -839,8 +844,8 @@ RZ_API void rz_cons_break_end(void);
 RZ_API void rz_cons_break_timeout(int timeout);
 
 /* pipe */
-RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append);
-RZ_API void rz_cons_pipe_close(int fd);
+RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzConsPipeStack *fds);
+RZ_API void rz_cons_pipe_close(int fd, RzConsPipeStack *fds);
 
 #if __WINDOWS__
 RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void);
