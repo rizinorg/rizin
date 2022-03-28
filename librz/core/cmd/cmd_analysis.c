@@ -3032,6 +3032,23 @@ static void __core_analysis_appcall(RzCore *core, const char *input) {
 	//	rz_reg_arena_pop (core->dbg->reg);
 }
 
+RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil) {
+	rz_return_val_if_fail(esil, false);
+	int i;
+	if (esil->trap) {
+		rz_cons_printf("ESIL TRAP type %d code 0x%08x %s\n",
+			esil->trap, esil->trap_code,
+			rz_analysis_esil_trapstr(esil->trap));
+	}
+	if (esil->stackptr < 1) {
+		return false;
+	}
+	for (i = esil->stackptr - 1; i >= 0; i--) {
+		rz_cons_printf("%s\n", esil->stack[i]);
+	}
+	return true;
+}
+
 static void __analysis_esil_function(RzCore *core, ut64 addr) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
@@ -3074,7 +3091,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 					if (opskip) {
 						rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, pc);
 						rz_analysis_esil_parse(core->analysis->esil, RZ_STRBUF_SAFEGET(&op.esil));
-						rz_analysis_esil_dumpstack(core->analysis->esil);
+						rz_core_esil_dumpstack(core->analysis->esil);
 						rz_analysis_esil_stack_free(core->analysis->esil);
 					}
 					pc += op.size;
@@ -3142,7 +3159,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL); // setup io
 		rz_analysis_esil_set_pc(esil, core->offset);
 		rz_analysis_esil_parse(esil, input + 1);
-		rz_analysis_esil_dumpstack(esil);
+		rz_core_esil_dumpstack(esil);
 		rz_analysis_esil_stack_free(esil);
 		break;
 	case 's': // "aes"

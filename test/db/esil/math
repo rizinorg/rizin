@@ -77,9 +77,9 @@ ae 0,3,/
 ae*
 EOF
 EXPECT=<<EOF
+ESIL TRAP type 3 code 0x00000000 divbyzero
 trap: 3
 trap-code: 0
-ESIL TRAP type 3 code 0x00000000 divbyzero
 EOF
 RUN
 
@@ -90,9 +90,9 @@ ae 3,0,/
 ae*
 EOF
 EXPECT=<<EOF
+0x0
 trap: 0
 trap-code: 0
-0x0
 EOF
 RUN
 
