@@ -1003,9 +1003,11 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
  * \param timeout_ms Wait for at most this amount of millisecond
  */
 RZ_API RzSubprocessWaitReason rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
-	// Close subprocess stdin
-	rz_sys_pipe_close(proc->stdin_fd);
-	proc->stdin_fd = -1;
+	if (proc->stdin_fd != -1) {
+		// Close subprocess stdin to tell it that no more input will come from us
+		rz_sys_pipe_close(proc->stdin_fd);
+		proc->stdin_fd = -1;
+	}
 	// Empty buffers and read everything we can
 	rz_strbuf_fini(&proc->out);
 	rz_strbuf_init(&proc->out);
