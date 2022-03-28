@@ -94,6 +94,23 @@ RZ_API const char *rz_file_basename(const char *path) {
 	return path;
 }
 
+/* \brief Returns file name from a path accepting both `/` and `\` as directory separators
+ *
+ * \param path Path of file to get the file name
+ * \return const char * Pointer to the file name
+ */
+RZ_API const char *rz_file_dos_basename(RZ_BORROW RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(path, NULL);
+	const char *ptr = rz_str_rchr(path, NULL, '/');
+	if (ptr) {
+		path = ptr + 1;
+	}
+	if ((ptr = rz_str_rchr(path, NULL, '\\'))) {
+		path = ptr + 1;
+	}
+	return path;
+}
+
 /*
 Example:
 	str = rz_file_dirname ("home/inisider/Downloads/user32.dll");
