@@ -99,8 +99,8 @@ typedef struct rz_cons_grep_t {
 } RzConsGrep;
 
 typedef struct rz_cons_pipe_stack {
-    int backup_fd;
-    int backup_fdn;
+	int backup_fd;
+	int backup_fdn;
 } RzConsPipeStack;
 
 #if 0

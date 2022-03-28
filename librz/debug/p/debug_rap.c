@@ -48,7 +48,6 @@ static int __rap_detach(RzDebug *dbg, int pid) {
 	return true;
 }
 
-
 static void rz_pipe_stack_fini(void *e, void *user) {
 	(void)user;
 	free(e);

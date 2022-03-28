@@ -1427,7 +1427,6 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 	if (!cmd) {
 		rz_list_free(tmpenvs);
 		rz_vector_free(stack);
-		rz_vector_free(stack);
 		return 0;
 	}
 	rz_str_trim(cmd);
