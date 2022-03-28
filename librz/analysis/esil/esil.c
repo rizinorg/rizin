@@ -2007,10 +2007,7 @@ static bool esil_peek16(RzAnalysisEsil *esil) {
 }
 
 static bool esil_stack(RzAnalysisEsil *esil) {
-	if (esil->stackptr < 1) {
-		return false;
-	}
-	return true;
+	return esil->stackptr >= 1;
 }
 
 static bool esil_peek(RzAnalysisEsil *esil) {
