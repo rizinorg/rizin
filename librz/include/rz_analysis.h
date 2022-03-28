@@ -1517,7 +1517,6 @@ RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, RzAnalysis *analysis, i
 RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil);
 RZ_API bool rz_analysis_esil_runword(RzAnalysisEsil *esil, const char *word);
 RZ_API bool rz_analysis_esil_parse(RzAnalysisEsil *esil, const char *str);
-RZ_API bool rz_analysis_esil_dumpstack(RzAnalysisEsil *esil);
 RZ_API int rz_analysis_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len);
 RZ_API int rz_analysis_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len);
 RZ_API int rz_analysis_esil_reg_read(RzAnalysisEsil *esil, const char *regname, ut64 *num, int *size);
@@ -1525,6 +1524,7 @@ RZ_API int rz_analysis_esil_reg_write(RzAnalysisEsil *esil, const char *dst, ut6
 RZ_API bool rz_analysis_esil_pushnum(RzAnalysisEsil *esil, ut64 num);
 RZ_API bool rz_analysis_esil_push(RzAnalysisEsil *esil, const char *str);
 RZ_API char *rz_analysis_esil_pop(RzAnalysisEsil *esil);
+RZ_API const char *rz_analysis_esil_trapstr(int type);
 RZ_API bool rz_analysis_esil_set_op(RzAnalysisEsil *esil, const char *op, RzAnalysisEsilOpCb code, ut32 push, ut32 pop, ut32 type);
 RZ_API void rz_analysis_esil_stack_free(RzAnalysisEsil *esil);
 RZ_API int rz_analysis_esil_get_parm_type(RzAnalysisEsil *esil, const char *str);
