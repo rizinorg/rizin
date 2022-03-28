@@ -703,6 +703,7 @@ install_data(
   install_dir: rizin_fortunes
 )
 
+
 dist_script = 'sys/meson_dist_script.py'
 if meson.version().version_compare('>=0.49.0') and meson.version().version_compare('<0.57.0')
   meson.add_dist_script(meson.source_root() / dist_script)
