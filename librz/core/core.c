@@ -2435,7 +2435,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->analysis->cb.on_fcn_rename = on_fcn_rename;
 	core->rasm->syscall = rz_syscall_ref(core->analysis->syscall); // BIND syscall analysis/asm
 	core->analysis->core = core;
-	core->analysis->cb_printf = (void *)rz_cons_printf;
 	core->parser = rz_parse_new();
 	rz_analysis_bind(core->analysis, &(core->parser->analb));
 	core->parser->varlist = rz_analysis_function_get_var_fields;

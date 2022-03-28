@@ -99,7 +99,6 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->sdb_classes_attrs = sdb_ns(analysis->sdb_classes, "attrs", 1);
 	analysis->sdb_noret = sdb_ns(analysis->sdb, "noreturn", 1);
 	analysis->zign_path = strdup("");
-	analysis->cb_printf = (PrintfCallback)printf;
 	(void)rz_analysis_xrefs_init(analysis);
 	analysis->diff_thbb = RZ_ANALYSIS_THRESHOLDBB;
 	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
