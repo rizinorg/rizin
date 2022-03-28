@@ -1546,3 +1546,14 @@ commands:
         summary: List mnemonics for asm.arch
         cname: list_mne
         args: []
+  - name: an
+    summary: Show/rename/create whatever flag/function is used at addr
+    cname: analyse_name
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
