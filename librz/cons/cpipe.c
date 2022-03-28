@@ -22,9 +22,7 @@ static bool __dupDescriptor(int fd, int fdn, RzConsPipeStack *fds) {
 }
 
 RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzConsPipeStack *fds) {
-	if (fdn < 1) {
-		return -1;
-	}
+	rz_return_val_if_fail(file != NULL && fdn > -1 && fds != NULL, -1);
 	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append ? O_APPEND : O_TRUNC);
 	int fd = rz_sys_open(file, fd_flags, 0644);
 	if (fd == -1) {
@@ -33,7 +31,7 @@ RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append, RzConsPipeSt
 	}
 	fds->backup_fdn = fdn;
 	if (!__dupDescriptor(fd, fdn, fds)) {
-		eprintf("Cannot dup stdout to %d\n", fdn);
+		RZ_LOG_ERROR("Cannot dup stdout to %d\n", fdn);
 		return -1;
 	}
 	close(fdn);

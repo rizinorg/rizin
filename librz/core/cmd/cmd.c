@@ -1127,11 +1127,6 @@ RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) 
 	return ret;
 }
 
-static void rz_pipe_stack_fini(void *e, void *user) {
-	(void)user;
-	free(e);
-}
-
 static char *parse_tmp_evals(RzCore *core, const char *str) {
 	char *s = strdup(str);
 	int i, argc = rz_str_split(s, ',');
@@ -1404,7 +1399,7 @@ static bool set_tmp_bits(RzCore *core, int bits, char **tmpbits, int *cmd_ignbit
 
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek) {
 	RzList *tmpenvs = rz_list_newf(tmpenvs_free);
-	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), rz_pipe_stack_fini, NULL);
+	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), NULL, NULL);
 	const char *quotestr = "`";
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
@@ -1517,6 +1512,11 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 					rz_cons_flush();
 					const bool append = p[2] == '>';
 					RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
+					if (!new) {
+						rz_list_free(tmpenvs);
+						rz_vector_free(stack);
+						return true;
+					}
 					pipefd = rz_cons_pipe_open(str, 1, append, new);
 					rz_vector_push_front(stack, new);
 				}
@@ -1803,8 +1803,11 @@ escape_pipe:
 		} else if (fdn > 0) {
 			// pipe to file (or append)
 			RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
+			if (!new) {
+				return -1;
+			}
 			pipefd = rz_cons_pipe_open(str, fdn, appendResult, new);
-			rz_vector_push_front(stack, new); 
+			rz_vector_push_front(stack, new);
 			if (pipefd != -1) {
 				if (!pipecolor) {
 					rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -3795,7 +3798,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	int scr_html = -1;
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID, is_append = false, is_html = false;
 	int fdn = 1;
-	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), rz_pipe_stack_fini, NULL);
+	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), NULL, NULL);
 
 	TSNode redirect_op = ts_node_child_by_field_name(node, "redirect_operator", strlen("redirect_operator"));
 	if (is_ts_fdn_redirect_operator(redirect_op)) {
@@ -3857,6 +3860,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 		rz_cons_flush();
 		RZ_LOG_DEBUG("redirect_stmt: fdn = %d, is_append = %d\n", fdn, is_append);
 		RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
+		if (!new) {
+			return -1;
+		}
 		int pipefd = rz_cons_pipe_open(arg_str, fdn, is_append, new);
 		rz_vector_push_front(stack, new);
 		if (pipefd != -1) {
@@ -5495,7 +5501,7 @@ RZ_API int rz_core_flush(RzCore *core, const char *cmd) {
 }
 
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
-	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), rz_pipe_stack_fini, NULL);
+	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), NULL, NULL);
 	char *tmp = NULL;
 	char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
 	if (!p && *cmd != '!' && *cmd != '.') {
@@ -5504,11 +5510,18 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	rz_cons_reset();
 	if (rz_file_mkstemp("cmd", &tmp) != -1) {
 		RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
+		if (!new) {
+			rz_file_rm(tmp);
+			free(tmp);
+			rz_vector_free(stack);
+			return NULL;
+		}
 		int pipefd = rz_cons_pipe_open(tmp, 1, 0, new);
 		rz_vector_push_front(stack, new);
 		if (pipefd == -1) {
 			rz_file_rm(tmp);
 			free(tmp);
+			rz_vector_free(stack);
 			return rz_core_cmd_str(core, cmd);
 		}
 		char *_cmd = strdup(cmd);
@@ -5523,12 +5536,14 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 			rz_file_rm(tmp);
 			free(tmp);
 			free(_cmd);
+			rz_vector_free(stack);
 			return s ? s : strdup("");
 		}
 		eprintf("slurp %s fails\n", tmp);
 		rz_file_rm(tmp);
 		free(tmp);
 		free(_cmd);
+		rz_vector_free(stack);
 		return rz_core_cmd_str(core, cmd);
 	}
 	return NULL;
