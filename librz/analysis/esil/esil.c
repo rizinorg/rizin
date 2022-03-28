@@ -1436,7 +1436,7 @@ RZ_API bool rz_analysis_esil_dumpstack(RzAnalysisEsil *esil) {
 	rz_return_val_if_fail(esil, false);
 	int i;
 	if (esil->trap) {
-		esil->analysis->cb_printf("ESIL TRAP type %d code 0x%08x %s\n",
+		printf("ESIL TRAP type %d code 0x%08x %s\n",
 			esil->trap, esil->trap_code,
 			rz_analysis_esil_trapstr(esil->trap));
 	}
@@ -1444,7 +1444,7 @@ RZ_API bool rz_analysis_esil_dumpstack(RzAnalysisEsil *esil) {
 		return false;
 	}
 	for (i = esil->stackptr - 1; i >= 0; i--) {
-		esil->analysis->cb_printf("%s\n", esil->stack[i]);
+		printf("%s\n", esil->stack[i]);
 	}
 	return true;
 }
