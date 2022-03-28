@@ -232,6 +232,7 @@ RZ_IPI RzCmdStatus rz_display_opcode_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_analyze_cycles_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_convert_mne_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_list_mne_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analyse_name_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI int rz_cmd_analysis(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_block_decrease_handler(RzCore *core, int argc, const char **argv);
