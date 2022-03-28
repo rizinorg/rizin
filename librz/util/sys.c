@@ -982,10 +982,6 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	}
 	return result;
 #elif __APPLE__
-#if __POWERPC__
-#warning TODO getpidproc
-	return NULL;
-#else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pathbuf[0] = 0;
 	int ret = proc_pidpath(pid, pathbuf, sizeof(pathbuf));
@@ -993,7 +989,6 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		return NULL;
 	}
 	return strdup(pathbuf);
-#endif
 #else
 	int ret;
 #if __FreeBSD__ || __DragonFly__
