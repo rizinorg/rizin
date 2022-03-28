@@ -215,7 +215,7 @@ RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int is
 		return 1;
 	}
 
-	opt.dbg_file = rz_file_basename(info->debug_file_name);
+	opt.dbg_file = rz_file_dos_basename(info->debug_file_name);
 	opt.guid = info->guid;
 	opt.symbol_server = options->symbol_server;
 	opt.symbol_store_path = options->symbol_store_path;

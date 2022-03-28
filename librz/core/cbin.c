@@ -4823,12 +4823,12 @@ RZ_API char *rz_core_bin_pdb_get_filename(RzCore *core) {
 		return NULL;
 	}
 	// Check raw path for debug filename
-	bool file_found = rz_file_exists(rz_file_basename(info->debug_file_name));
+	bool file_found = rz_file_exists(info->debug_file_name);
 	if (file_found) {
-		return strdup(rz_file_basename(info->debug_file_name));
+		return strdup(info->debug_file_name);
 	}
 	// Check debug filename basename in current directory
-	char *basename = (char *)rz_file_basename(info->debug_file_name);
+	const char *basename = rz_file_dos_basename(info->debug_file_name);
 	file_found = rz_file_exists(basename);
 	if (file_found) {
 		return strdup(basename);
@@ -4845,9 +4845,8 @@ RZ_API char *rz_core_bin_pdb_get_filename(RzCore *core) {
 
 	// Last chance: Check if file is in downstream symbol store
 	const char *symstore_path = rz_config_get(core->config, "pdb.symstore");
-	const char *base_file = rz_file_basename(info->debug_file_name);
 	return rz_str_newf("%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s",
-		symstore_path, base_file, info->guid, base_file);
+		symstore_path, basename, info->guid, basename);
 }
 
 static void bin_memory_print_rec(RzCmdStateOutput *state, RzBinMem *mirror, const RzList *mems, int perms) {
