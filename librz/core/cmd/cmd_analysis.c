@@ -48,7 +48,7 @@ static const char *help_msg_aa[] = {
 	"aac", " [len]", "analyze function calls (af @@=`pi len~call[1]`)",
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aad", " [len]", "analyze data references to code",
-	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
+	"aae", " [len]", "analyze references with ESIL",
 	"aaef", "", "analyze references with ESIL in all functions",
 	"aaf", "[e|r|t] ", "analyze all functions (e analysis.hasnext=1;afr @@c:isq) (aafe=aef@@F)",
 	"aaF", " ", "applies signatures from sigdb",
@@ -5250,25 +5250,6 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case 'o': // "aao"
 		cmd_analysis_objc(core, false);
 		break;
-	case 'e': { // "aae"
-		bool reg_flags_defined = rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
-		if (input[1] == 'f') { // "aaef"
-			rz_core_analysis_esil_references_all_functions(core);
-		} else if (input[1] == ' ') {
-			const char *len = (char *)input + 1;
-			char *addr = strchr(input + 2, ' ');
-			if (addr) {
-				*addr++ = 0;
-			}
-			rz_core_analysis_esil(core, len, addr);
-		} else {
-			rz_core_analysis_esil_default(core);
-		}
-		if (!reg_flags_defined) {
-			rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_REGISTERS);
-		}
-		break;
-	}
 	case 'r': // "aar"
 		(void)rz_core_analysis_refs(core, input + 1);
 		break;
@@ -9136,6 +9117,30 @@ RZ_IPI RzCmdStatus rz_analyse_name_handler(RzCore *core, int argc, const char **
 		// name exists when error happens
 		RZ_LOG_ERROR("Error happens while handling name: %s\n", name);
 		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_all_esil_handler(RzCore *core, int argc, const char **argv) {
+	bool reg_flags_defined = !!rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
+	if (argc > 1) {
+		rz_core_analysis_esil(core, core->offset, rz_num_get(core->num, argv[1]), NULL);
+	} else {
+		rz_core_analysis_esil_default(core);
+	}
+	if (!reg_flags_defined) {
+		// hack to not leak flags if not wanted
+		rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_REGISTERS);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_all_esil_functions_handler(RzCore *core, int argc, const char **argv) {
+	bool reg_flags_defined = !!rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
+	rz_core_analysis_esil_references_all_functions(core);
+	if (!reg_flags_defined) {
+		// hack to not leak flags if not wanted
+		rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_REGISTERS);
 	}
 	return RZ_CMD_STATUS_OK;
 }

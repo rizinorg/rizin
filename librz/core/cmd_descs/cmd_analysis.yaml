@@ -3,6 +3,29 @@
 ---
 name: cmd_analysis
 commands:
+  - name: aae
+    summary: analyze references with ESIL
+    cname: analysis_all_esil
+    type: RZ_CMD_DESC_TYPE_ARGV
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "aae"
+            arg_str: ""
+            comment: analyze ranges given by analysis.in
+          - text: "aae"
+            arg_str: " $SS @ $S"
+            comment: analyze the whole section
+
+  - name: aaef
+    summary: analyze references with ESIL in all functions
+    cname: analysis_all_esil_functions
+    type: RZ_CMD_DESC_TYPE_ARGV
+    args: []
   - name: af
     summary: Analyze Functions commands
     cname: cmd_analysis_fcn
