@@ -1511,14 +1511,14 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 					str = (char *)rz_str_trim_head_ro(str);
 					rz_cons_flush();
 					const bool append = p[2] == '>';
-					RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
-					if (!new) {
+					RzConsPipeStack *stackElem = malloc(sizeof(RzConsPipeStack));
+					if (!stackElem) {
 						rz_list_free(tmpenvs);
 						rz_vector_free(stack);
 						return true;
 					}
-					pipefd = rz_cons_pipe_open(str, 1, append, new);
-					rz_vector_push_front(stack, new);
+					pipefd = rz_cons_pipe_open(str, 1, append, stackElem);
+					rz_vector_push_front(stack, stackElem);
 				}
 			}
 			line = strdup(cmd);
@@ -1802,12 +1802,12 @@ escape_pipe:
 			free(o);
 		} else if (fdn > 0) {
 			// pipe to file (or append)
-			RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
-			if (!new) {
+			RzConsPipeStack *stackElem = malloc(sizeof(RzConsPipeStack));
+			if (!stackElem) {
 				return -1;
 			}
-			pipefd = rz_cons_pipe_open(str, fdn, appendResult, new);
-			rz_vector_push_front(stack, new);
+			pipefd = rz_cons_pipe_open(str, fdn, appendResult, stackElem);
+			rz_vector_push_front(stack, stackElem);
 			if (pipefd != -1) {
 				if (!pipecolor) {
 					rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -3859,12 +3859,12 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	} else {
 		rz_cons_flush();
 		RZ_LOG_DEBUG("redirect_stmt: fdn = %d, is_append = %d\n", fdn, is_append);
-		RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
-		if (!new) {
+		RzConsPipeStack *stackElem = malloc(sizeof(RzConsPipeStack));
+		if (!stackElem) {
 			return -1;
 		}
-		int pipefd = rz_cons_pipe_open(arg_str, fdn, is_append, new);
-		rz_vector_push_front(stack, new);
+		int pipefd = rz_cons_pipe_open(arg_str, fdn, is_append, stackElem);
+		rz_vector_push_front(stack, stackElem);
 		if (pipefd != -1) {
 			if (!pipecolor) {
 				rz_config_set_i(state->core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -5509,15 +5509,15 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	}
 	rz_cons_reset();
 	if (rz_file_mkstemp("cmd", &tmp) != -1) {
-		RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
-		if (!new) {
+		RzConsPipeStack *stackElem = malloc(sizeof(RzConsPipeStack));
+		if (!stackElem) {
 			rz_file_rm(tmp);
 			free(tmp);
 			rz_vector_free(stack);
 			return NULL;
 		}
-		int pipefd = rz_cons_pipe_open(tmp, 1, 0, new);
-		rz_vector_push_front(stack, new);
+		int pipefd = rz_cons_pipe_open(tmp, 1, 0, stackElem);
+		rz_vector_push_front(stack, stackElem);
 		if (pipefd == -1) {
 			rz_file_rm(tmp);
 			free(tmp);
