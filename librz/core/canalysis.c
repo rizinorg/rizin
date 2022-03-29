@@ -4721,7 +4721,6 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 							char *str2 = sdb_fmt("esilref: '%s'", str);
 							// HACK avoid format string inside string used later as format
 							// string crashes disasm inside agf under some conditions.
-							// https://github.com/rizinorg/rizin/issues/6937
 							rz_str_replace_char(str2, '%', '&');
 							rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, str2);
 							free(str);
