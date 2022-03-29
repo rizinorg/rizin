@@ -13,7 +13,7 @@ rz_type_sources = [
   'parser/types_storage.c',
 ]
 
-r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter-c', check: true)
+r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter-c', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
