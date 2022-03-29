@@ -4452,7 +4452,14 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	return true;
 }
 
-RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *target) {
+/**
+ * Analyze references with esil (aae)
+ *
+ * \p addr start address
+ * \p size number of bytes to analyze
+ * \p fcn optional, when analyzing for a specific function
+ */
+RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABLE RzAnalysisFunction *fcn) {
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
 	bool emu_lazy = rz_config_get_i(core->config, "emu.lazy");
 	bool gp_fixed = rz_config_get_i(core->config, "analysis.gpfixed");
@@ -4460,62 +4467,14 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	const char *pcname;
 	RzAnalysisOp op = RZ_EMPTY;
 	ut8 *buf = NULL;
-	bool end_address_set = false;
 	int iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	bool archIsArm = false;
-	ut64 addr = core->offset;
 	ut64 start = addr;
-	ut64 end = 0LL;
-	ut64 cur;
-
-	if (!strcmp(str, "?")) {
-		eprintf("Usage: aae[f] [len] [addr] - analyze refs in function, section or len bytes with esil\n");
-		eprintf("  aae $SS @ $S             - analyze the whole section\n");
-		eprintf("  aae $SS str.Hello @ $S   - find references for str.Hellow\n");
-		eprintf("  aaef                     - analyze functions discovered with esil\n");
+	ut64 end = addr + size;
+	if (end <= start) {
 		return;
 	}
-#define CHECKREF(x) ((refptr && (x) == refptr) || !refptr)
-	if (target) {
-		const char *expr = rz_str_trim_head_ro(target);
-		if (*expr) {
-			refptr = ntarget = rz_num_math(core->num, expr);
-			if (!refptr) {
-				ntarget = refptr = addr;
-			}
-		} else {
-			ntarget = UT64_MAX;
-			refptr = 0LL;
-		}
-	} else {
-		ntarget = UT64_MAX;
-		refptr = 0LL;
-	}
-	RzAnalysisFunction *fcn = NULL;
-	if (!strcmp(str, "f")) {
-		fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-		if (fcn) {
-			start = rz_analysis_function_min_addr(fcn);
-			addr = fcn->addr;
-			end = rz_analysis_function_max_addr(fcn);
-			end_address_set = true;
-		}
-	}
-
-	if (!end_address_set) {
-		if (str[0] == ' ') {
-			end = addr + rz_num_math(core->num, str + 1);
-		} else {
-			RzIOMap *map = rz_io_map_get(core->io, addr);
-			if (map) {
-				end = map->itv.addr + map->itv.size;
-			} else {
-				end = addr + core->blocksize;
-			}
-		}
-	}
-
 	iend = end - start;
 	if (iend < 0) {
 		return;
@@ -4589,13 +4548,13 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	RZ_NULLABLE const char *sn = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
 
 	IterCtx ictx = { start, end, fcn, NULL };
-	size_t i = addr - start;
+	size_t i = 0;
 	do {
 		if (esil_analysis_stop || rz_cons_is_breaked()) {
 			break;
 		}
 		size_t i_old = i;
-		cur = start + i;
+		ut64 cur = start + i;
 		if (!rz_io_is_valid_offset(core->io, cur, 0)) {
 			break;
 		}
@@ -4706,9 +4665,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			rz_reg_setv(core->analysis->reg, gp_reg, gp);
 		}
 		(void)rz_analysis_esil_parse(ESIL, esilstr);
-		// looks like ^C is handled by esil_parse !!!!
-		// rz_analysis_esil_dumpstack (ESIL);
-		// rz_analysis_esil_stack_free (ESIL);
+#define CHECKREF(x) ((refptr && (x) == refptr) || !refptr)
 		switch (op.type) {
 		case RZ_ANALYSIS_OP_TYPE_LEA:
 			// arm64
@@ -4716,13 +4673,12 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 				if (CHECKREF(ESIL->cur)) {
 					rz_analysis_xrefs_set(core->analysis, cur, ESIL->cur, RZ_ANALYSIS_REF_TYPE_STRING);
 				}
-			} else if ((target && op.ptr == ntarget) || !target) {
-				if (CHECKREF(ESIL->cur)) {
-					if (op.ptr && rz_io_is_valid_offset(core->io, op.ptr, !core->analysis->opt.noncode)) {
-						rz_analysis_xrefs_set(core->analysis, cur, op.ptr, RZ_ANALYSIS_REF_TYPE_STRING);
-					} else {
-						rz_analysis_xrefs_set(core->analysis, cur, ESIL->cur, RZ_ANALYSIS_REF_TYPE_STRING);
-					}
+			}
+			if (CHECKREF(ESIL->cur)) {
+				if (op.ptr && rz_io_is_valid_offset(core->io, op.ptr, !core->analysis->opt.noncode)) {
+					rz_analysis_xrefs_set(core->analysis, cur, op.ptr, RZ_ANALYSIS_REF_TYPE_STRING);
+				} else {
+					rz_analysis_xrefs_set(core->analysis, cur, ESIL->cur, RZ_ANALYSIS_REF_TYPE_STRING);
 				}
 			}
 			if (cfg_analysis_strings) {
@@ -4734,10 +4690,8 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			if (core->analysis->cur && archIsArm) {
 				/* This code is known to work on Thumb, ARM and ARM64 */
 				ut64 dst = ESIL->cur;
-				if ((target && dst == ntarget) || !target) {
-					if (CHECKREF(dst)) {
-						rz_analysis_xrefs_set(core->analysis, cur, dst, RZ_ANALYSIS_REF_TYPE_DATA);
-					}
+				if (CHECKREF(dst)) {
+					rz_analysis_xrefs_set(core->analysis, cur, dst, RZ_ANALYSIS_REF_TYPE_DATA);
 				}
 				if (cfg_analysis_strings) {
 					add_string_ref(core, op.addr, dst);
@@ -4753,26 +4707,23 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 				if (!strcmp(op.src[0]->reg->name, "zero")) {
 					break;
 				}
-				if ((target && dst == ntarget) || !target) {
-					if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) && myvalid(core->io, dst)) {
-						RzFlagItem *f;
-						char *str;
-						if (CHECKREF(dst) || CHECKREF(cur)) {
-							rz_analysis_xrefs_set(core->analysis, cur, dst, RZ_ANALYSIS_REF_TYPE_DATA);
-							if (cfg_analysis_strings) {
-								add_string_ref(core, op.addr, dst);
-							}
-							if ((f = rz_core_flag_get_by_spaces(core->flags, dst))) {
-								rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, f->name);
-							} else if ((str = is_string_at(core, dst, NULL))) {
-								char *str2 = sdb_fmt("esilref: '%s'", str);
-								// HACK avoid format string inside string used later as format
-								// string crashes disasm inside agf under some conditions.
-								// https://github.com/rizinorg/rizin/issues/6937
-								rz_str_replace_char(str2, '%', '&');
-								rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, str2);
-								free(str);
-							}
+				if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) && myvalid(core->io, dst)) {
+					RzFlagItem *f;
+					char *str;
+					if (CHECKREF(dst) || CHECKREF(cur)) {
+						rz_analysis_xrefs_set(core->analysis, cur, dst, RZ_ANALYSIS_REF_TYPE_DATA);
+						if (cfg_analysis_strings) {
+							add_string_ref(core, op.addr, dst);
+						}
+						if ((f = rz_core_flag_get_by_spaces(core->flags, dst))) {
+							rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, f->name);
+						} else if ((str = is_string_at(core, dst, NULL))) {
+							char *str2 = sdb_fmt("esilref: '%s'", str);
+							// HACK avoid format string inside string used later as format
+							// string crashes disasm inside agf under some conditions.
+							rz_str_replace_char(str2, '%', '&');
+							rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, str2);
+							free(str);
 						}
 					}
 				}
@@ -4861,6 +4812,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			break;
 		}
 	} while (get_next_i(&ictx, &i));
+#undef CHECKREF
 	free(buf);
 	ESIL->cb.hook_mem_read = NULL;
 	ESIL->cb.hook_mem_write = NULL;

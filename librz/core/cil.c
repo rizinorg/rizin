@@ -261,12 +261,11 @@ RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *
 RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
-	ut64 cur_seek = core->offset;
 	rz_list_foreach (core->analysis->fcns, it, fcn) {
-		rz_core_seek(core, fcn->addr, true);
-		rz_core_analysis_esil(core, "f", NULL);
+		ut64 from = rz_analysis_function_min_addr(fcn);
+		ut64 to = rz_analysis_function_max_addr(fcn);
+		rz_core_analysis_esil(core, from, to - from, fcn);
 	}
-	rz_core_seek(core, cur_seek, true);
 }
 
 /**
@@ -379,7 +378,6 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 }
 
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
-	ut64 at = core->offset;
 	RzIOMap *map;
 	RzListIter *iter;
 	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "analysis");
@@ -390,25 +388,18 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 		ut64 from = rz_config_get_i(core->config, "analysis.from");
 		ut64 to = rz_config_get_i(core->config, "analysis.to");
 		if (to > from) {
-			char *len = rz_str_newf(" 0x%" PFMT64x, to - from);
-			rz_core_seek(core, from, true);
-			rz_core_analysis_esil(core, len, NULL);
-			free(len);
+			rz_core_analysis_esil(core, from, to - from, NULL);
 		} else {
 			eprintf("Assert: analysis.from > analysis.to\n");
 		}
 	} else {
 		rz_list_foreach (list, iter, map) {
 			if (map->perm & RZ_PERM_X) {
-				char *ss = rz_str_newf(" 0x%" PFMT64x, map->itv.size);
-				rz_core_seek(core, map->itv.addr, true);
-				rz_core_analysis_esil(core, ss, NULL);
-				free(ss);
+				rz_core_analysis_esil(core, map->itv.addr, map->itv.size, NULL);
 			}
 		}
 	}
 	rz_list_free(list);
-	rz_core_seek(core, at, true);
 }
 
 RZ_IPI void rz_core_analysis_il_reinit(RzCore *core) {
