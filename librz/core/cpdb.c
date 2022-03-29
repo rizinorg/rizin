@@ -196,7 +196,7 @@ static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, c
 	return;
 }
 
-static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img_base) {
+static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img_base, const char *pdbfile) {
 	rz_return_if_fail(core && pdb);
 	PeImageSectionHeader *sctn_header = 0;
 	RzPdbGDataStream *gsym_data_stream = 0;
@@ -212,13 +212,15 @@ static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img
 	if (!pe_stream) {
 		return;
 	}
+	char *file = rz_str_replace(strdup(pdbfile), ".pdb", "", 0);
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 	rz_list_foreach (gsym_data_stream->global_list, it, gdata) {
 		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
 			name = rz_demangler_msvc(gdata->name);
 			name = (name) ? name : strdup(gdata->name);
 			filtered_name = rz_name_filter2(name, true);
-			char *fname = rz_str_newf("pdb.%s", filtered_name);
+			char *fname = rz_str_newf("pdb.%s.%s", file, filtered_name);
 			ut64 addr = (ut64)(img_base + rz_bin_pdb_omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address));
 			RzFlagItem *item = rz_flag_set(core->flags, fname, addr, 0);
 			if (item) {
@@ -228,6 +230,8 @@ static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img
 			free(name);
 		}
 	}
+	rz_flag_space_pop(core->flags);
+	free(file);
 	return;
 }
 
@@ -241,10 +245,9 @@ static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img
 RZ_API RzPdb *rz_core_pdb_load_info(RZ_NONNULL RzCore *core, RZ_NONNULL const char *file) {
 	rz_return_val_if_fail(core && file, NULL);
 
-	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
-	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
-		baddr = core->bin->cur->o->opts.baseaddr;
-	} else {
+	ut64 baddr = rz_bin_get_baddr(core->bin);
+	if (!baddr || baddr == UT64_MAX) {
+		baddr = rz_config_get_i(core->config, "bin.baddr");
 		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
 	}
 
@@ -255,7 +258,7 @@ RZ_API RzPdb *rz_core_pdb_load_info(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 
 	// Save compound types into types database
 	rz_parse_pdb_types(core->analysis->typedb, pdb);
-	pdb_set_symbols(core, pdb, baddr);
+	pdb_set_symbols(core, pdb, baddr, rz_file_basename(file));
 	return pdb;
 }
 
