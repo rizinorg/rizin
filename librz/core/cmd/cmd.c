@@ -1398,8 +1398,11 @@ static bool set_tmp_bits(RzCore *core, int bits, char **tmpbits, int *cmd_ignbit
 }
 
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek) {
-	RzList *tmpenvs = rz_list_newf(tmpenvs_free);
 	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), NULL, NULL);
+	if(!stack){
+		return -1;
+	}
+	RzList *tmpenvs = rz_list_newf(tmpenvs_free);
 	const char *quotestr = "`";
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
@@ -3799,7 +3802,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID, is_append = false, is_html = false;
 	int fdn = 1;
 	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), NULL, NULL);
-
+	if(!stack) {
+		return -1;
+	}
 	TSNode redirect_op = ts_node_child_by_field_name(node, "redirect_operator", strlen("redirect_operator"));
 	if (is_ts_fdn_redirect_operator(redirect_op)) {
 		// this is the default operation, no html and no append
@@ -5502,6 +5507,9 @@ RZ_API int rz_core_flush(RzCore *core, const char *cmd) {
 
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), NULL, NULL);
+	if(!stack) {
+		return NULL;
+	}
 	char *tmp = NULL;
 	char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
 	if (!p && *cmd != '!' && *cmd != '.') {
