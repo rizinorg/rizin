@@ -17,20 +17,10 @@ NAME="p8|sed -e s,1,x,g>x;cat x;rm x"
 FILE=malloc://512
 CMDS=<<EOF
 wv 0x100
-p8 8| rizin -e scr.color=0 -qc "px 32" -
-p8 8| sed -e s,1,x,g>x;!rizin -e scr.color=0 -qc "px 32" x;cat x;rm x
-?e \r\n| rizin -e scr.color=0 -qc "px 16" -
+p8 8| sed -e s,1,x,g>x;!dos2unix x;cat x;rm x
 EOF
 EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x00000000  3030 3031 3030 3030 3030 3030 3030 3030  0001000000000000
-0x00000010  0aff ffff ffff ffff ffff ffff ffff ffff  ................
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x00000000  3030 3078 3030 3030 3030 3030 3030 3030  000x000000000000
-0x00000010  0aff ffff ffff ffff ffff ffff ffff ffff  ................
 000x000000000000
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x00000000  0d0a 0aff ffff ffff ffff ffff ffff ffff  ................
 EOF
 RUN
 

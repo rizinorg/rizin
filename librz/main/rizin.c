@@ -923,13 +923,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 	} else if (argv[opt.ind] && !strcmp(argv[opt.ind], "-")) {
 		int sz;
-#if __WINDOWS__
-		int result = _setmode(_fileno(stdin), _O_BINARY);
-		if (result == -1) {
-			eprintf("Cannot set stdin to binary mode");
-			return 1;
-		}
-#endif
 		/* stdin/batch mode */
 		char *buf = rz_stdin_slurp(&sz);
 		eprintf("^D\n");
@@ -940,11 +933,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_xfreopen("/dev/tty", "w", stdout);
 		rz_xfreopen("/dev/tty", "w", stderr);
 #else
-		/*
 		eprintf("Cannot reopen stdin without UNIX\n");
 		free(buf);
 		return 1;
-		*/
 #endif
 		if (buf && sz > 0) {
 			char *path = rz_str_newf("malloc://%d", sz);
