@@ -1432,23 +1432,6 @@ RZ_API const char *rz_analysis_esil_trapstr(int type) {
 	}
 }
 
-RZ_API bool rz_analysis_esil_dumpstack(RzAnalysisEsil *esil) {
-	rz_return_val_if_fail(esil, false);
-	int i;
-	if (esil->trap) {
-		esil->analysis->cb_printf("ESIL TRAP type %d code 0x%08x %s\n",
-			esil->trap, esil->trap_code,
-			rz_analysis_esil_trapstr(esil->trap));
-	}
-	if (esil->stackptr < 1) {
-		return false;
-	}
-	for (i = esil->stackptr - 1; i >= 0; i--) {
-		esil->analysis->cb_printf("%s\n", esil->stack[i]);
-	}
-	return true;
-}
-
 static bool esil_break(RzAnalysisEsil *esil) {
 	esil->parse_stop = 1;
 	return 1;
@@ -2021,6 +2004,10 @@ static bool esil_peek8(RzAnalysisEsil *esil) {
 static bool esil_peek16(RzAnalysisEsil *esil) {
 	// packed only
 	return esil_peek_n(esil, 128);
+}
+
+static bool esil_stack(RzAnalysisEsil *esil) {
+	return esil->stackptr >= 1;
 }
 
 static bool esil_peek(RzAnalysisEsil *esil) {
@@ -3290,7 +3277,7 @@ static void rz_analysis_esil_setup_ops(RzAnalysisEsil *esil) {
 	OP("[4]", esil_peek4, 1, 1, OT_MEMR);
 	OP("[8]", esil_peek8, 1, 1, OT_MEMR);
 	OP("[16]", esil_peek16, 1, 1, OT_MEMR);
-	OP("STACK", rz_analysis_esil_dumpstack, 0, 0, OT_UNK);
+	OP("STACK", esil_stack, 0, 0, OT_UNK);
 	OP("REPEAT", esil_repeat, 0, 2, OT_CTR);
 	OP("POP", esil_pop, 0, 1, OT_UNK);
 	OP("TODO", esil_todo, 0, 0, OT_UNK);

@@ -148,6 +148,7 @@ commands:
           - name: afv
             cname: analysis_function_vars
             summary: List all variables and arguments of the current function
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
@@ -248,6 +249,7 @@ commands:
               - name: afvb
                 cname: analysis_function_vars_bp
                 summary: List base pointer based arguments and locals / Define a new one
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
                   - RZ_OUTPUT_MODE_RIZIN
@@ -292,6 +294,7 @@ commands:
             subcommands:
               - name: afvr
                 cname: analysis_function_vars_regs
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 summary: List register-based arguments and locals / Define a new one
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
@@ -337,6 +340,7 @@ commands:
             subcommands:
               - name: afvs
                 cname: analysis_function_vars_sp
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 summary: List stack based arguments and locals / Define a new one
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
@@ -1542,3 +1546,14 @@ commands:
         summary: List mnemonics for asm.arch
         cname: list_mne
         args: []
+  - name: an
+    summary: Show/rename/create whatever flag/function is used at addr
+    cname: analyse_name
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON

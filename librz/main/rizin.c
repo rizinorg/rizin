@@ -871,8 +871,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	case 1:
 		rz_config_set(r->config, "bin.strings", "false");
 		break;
-	case 2:
-		rz_config_set(r->config, "bin.rawstr", "true");
+	default:
 		break;
 	}
 	if (zflag > 3) {

@@ -99,7 +99,6 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->sdb_classes_attrs = sdb_ns(analysis->sdb_classes, "attrs", 1);
 	analysis->sdb_noret = sdb_ns(analysis->sdb, "noreturn", 1);
 	analysis->zign_path = strdup("");
-	analysis->cb_printf = (PrintfCallback)printf;
 	(void)rz_analysis_xrefs_init(analysis);
 	analysis->diff_thbb = RZ_ANALYSIS_THRESHOLDBB;
 	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
@@ -282,6 +281,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 			int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 			analysis->pcalign = RZ_MAX(0, v);
 			rz_type_db_set_bits(analysis->typedb, bits);
+			rz_type_db_set_address_bits(analysis->typedb, rz_analysis_get_address_bits(analysis));
 			if (!is_hack) {
 				char *types_dir = rz_path_system(RZ_SDB_TYPES);
 				rz_type_db_reload(analysis->typedb, types_dir);

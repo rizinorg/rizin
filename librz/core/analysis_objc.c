@@ -78,7 +78,7 @@ static ut64 readQword(RzCoreObjc *objc, ut64 addr, bool *success) {
 }
 
 static void objc_analyze(RzCore *core) {
-	const char *oldstr = rz_print_rowlog(core->print, "Analyzing code to find selref references");
+	const char *oldstr = rz_core_notify_begin(core, "Analyzing code to find selref references");
 	(void)rz_core_analysis_refs(core, "");
 	if (!strcmp("arm", rz_config_get(core->config, "asm.arch"))) {
 		const bool emu_lazy = rz_config_get_i(core->config, "emu.lazy");
@@ -86,7 +86,7 @@ static void objc_analyze(RzCore *core) {
 		rz_core_analysis_esil_default(core);
 		rz_config_set_i(core->config, "emu.lazy", emu_lazy);
 	}
-	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_notify_done(core, oldstr);
 }
 
 static ut64 getRefPtr(RzCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
@@ -222,8 +222,7 @@ static bool objc_find_refs(RzCore *core) {
 		core_objc_free(objc);
 		return false;
 	}
-	const char *oldstr = rz_print_rowlog(core->print, "Parsing metadata in ObjC to find hidden xrefs");
-	rz_print_rowlog_done(core->print, oldstr);
+	const char *oldstr = rz_core_notify_begin(core, "Parsing metadata in ObjC to find hidden xrefs");
 
 	ut64 off;
 	size_t total_xrefs = 0;
@@ -252,7 +251,7 @@ static bool objc_find_refs(RzCore *core) {
 		classMethodsVA += 8; // advance to start of class methods array
 		ut64 to = classMethodsVA + (objc2ClassMethSize * count);
 		if (classMethodsVA > to || classMethodsVA + 0xfffff < to) {
-			eprintf("Warning: Fuzzed binary or bug in here, checking next\n");
+			RZ_LOG_WARN("objc: the input binary might be malformed or this could be a bug.\n");
 			continue;
 		}
 		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {
@@ -281,13 +280,14 @@ static bool objc_find_refs(RzCore *core) {
 			}
 		}
 	}
+	rz_core_notify_done(core, oldstr);
 
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
 
-	char rs[128];
-	snprintf(rs, sizeof(rs), "Found %zu objc xrefs...", total_xrefs);
-	rz_print_rowlog(core->print, rs);
+	char message[128];
+	rz_strf(message, "Found %zu objc xrefs...", total_xrefs);
+	rz_core_notify_begin(core, message);
 	size_t total_words = 0;
 	ut64 a;
 	const size_t word_size = objc->word_size;
@@ -295,8 +295,8 @@ static bool objc_find_refs(RzCore *core) {
 		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}
-	snprintf(rs, sizeof(rs), "Found %zu objc xrefs in %zu dwords.", total_xrefs, total_words);
-	rz_print_rowlog_done(core->print, rs);
+	rz_strf(message, "Found %zu objc xrefs in %zu dwords.", total_xrefs, total_words);
+	rz_core_notify_done(core, message);
 	core_objc_free(objc);
 	return true;
 }

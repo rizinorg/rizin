@@ -142,6 +142,33 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	return 1;
 }
 
+static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
+	rz_return_if_fail(bf && string);
+
+	RzBinSection *s = rz_bin_get_section_at(bf->o, string->paddr, false);
+	if (s) {
+		string->vaddr = s->vaddr + (string->paddr - s->paddr);
+	}
+	string->vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
+
+	if (pj) {
+		const char *section_name = s ? s->name : "";
+		const char *type_string = rz_bin_string_type(string->type);
+		pj_o(pj);
+		pj_kn(pj, "vaddr", string->vaddr);
+		pj_kn(pj, "paddr", string->paddr);
+		pj_kn(pj, "ordinal", string->ordinal);
+		pj_kn(pj, "size", string->size);
+		pj_kn(pj, "length", string->length);
+		pj_ks(pj, "section", section_name);
+		pj_ks(pj, "type", type_string);
+		pj_ks(pj, "string", string->string);
+		pj_end(pj);
+	} else {
+		printf("%s\n", string->string);
+	}
+}
+
 static int show_help(const char *argv0, int line) {
 	printf("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
@@ -212,7 +239,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		}
 
 		rz_io_bind(rio, &bin->iob);
-		rz_bin_options_init(&opt, 0, 0, 0, false, false);
+		rz_bin_options_init(&opt, 0, 0, 0, false);
 
 		bf = rz_bin_open(bin, file, &opt);
 		if (!bf) {
@@ -296,15 +323,35 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	}
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, 0, 0, 0, false, 2);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBin *bin = rz_bin_new();
 	rz_io_bind(io, &bin->iob);
 	io->cb_printf = printf;
 	RzBinFile *bf = rz_bin_open(bin, file, &opt);
-	bf->strmode = ro->json ? RZ_MODE_JSON : RZ_MODE_SIMPLE;
 
 	if (ro->mode == RZ_SEARCH_STRING) {
-		rz_bin_dump_strings(bf, bin->minstrlen, bf->rawstr);
+		PJ *pj = NULL;
+		if (ro->json) {
+			pj = pj_new();
+			if (!pj) {
+				eprintf("rz-bin: Cannot allocate buffer for json array\n");
+				result = 1;
+				goto err;
+			}
+			pj_a(pj);
+		}
+		RzList *list = rz_bin_file_strings(bf, bin->minstrlen, true);
+		RzListIter *it;
+		RzBinString *string;
+		rz_list_foreach (list, it, string) {
+			print_bin_string(bf, string, pj);
+		}
+		rz_list_free(list);
+		if (pj) {
+			pj_end(pj);
+			printf("%s", pj_string(pj));
+			pj_free(pj);
+		}
 		goto done;
 	}
 

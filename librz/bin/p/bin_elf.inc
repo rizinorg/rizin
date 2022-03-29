@@ -1805,3 +1805,7 @@ static ut64 size(RzBinFile *bf) {
 	}
 	return off + len;
 }
+
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 4, false);
+}

@@ -472,6 +472,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.signature = &signature,
 	.symbols = &symbols,
 	.imports = &imports,
+	.strings = &strings,
 	.info = &info,
 	.header = &header,
 	.fields = &fields,

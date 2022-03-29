@@ -187,6 +187,7 @@ static const RzCmdDescArg analyze_n_ins_esil_args[2];
 static const RzCmdDescArg analyze_opcode_args[2];
 static const RzCmdDescArg analyze_cycles_args[2];
 static const RzCmdDescArg convert_mne_args[2];
+static const RzCmdDescArg analyse_name_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -3753,6 +3754,21 @@ static const RzCmdDescArg list_mne_args[] = {
 static const RzCmdDescHelp list_mne_help = {
 	.summary = "List mnemonics for asm.arch",
 	.args = list_mne_args,
+};
+
+static const RzCmdDescArg analyse_name_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyse_name_help = {
+	.summary = "Show/rename/create whatever flag/function is used at addr",
+	.args = analyse_name_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -8077,14 +8093,6 @@ static const RzCmdDescArg cmd_info_whole_strings_args[] = {
 static const RzCmdDescHelp cmd_info_whole_strings_help = {
 	.summary = "List strings in the whole binary",
 	.args = cmd_info_whole_strings_args,
-};
-
-static const RzCmdDescArg cmd_info_dump_strings_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_info_dump_strings_help = {
-	.summary = "Dump Strings from whole binary to rizin shell (for huge files)",
-	.args = cmd_info_dump_strings_args,
 };
 
 static const RzCmdDescArg cmd_info_purge_string_args[] = {
@@ -13006,7 +13014,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_stacksz_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afS", rz_analysis_function_stacksz_handler, &analysis_function_stacksz_help);
 	rz_warn_if_fail(analysis_function_stacksz_cd);
 
-	RzCmdDesc *afv_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_function_vars_handler, &analysis_function_vars_help, &afv_help);
+	RzCmdDesc *afv_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_fcn_cd, "afv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_function_vars_handler, &analysis_function_vars_help, &afv_help);
 	rz_warn_if_fail(afv_cd);
 	RzCmdDesc *analysis_function_vars_dis_refs_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afv=", rz_analysis_function_vars_dis_refs_handler, &analysis_function_vars_dis_refs_help);
 	rz_warn_if_fail(analysis_function_vars_dis_refs_cd);
@@ -13043,7 +13051,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_xrefs_vars_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afvx_cd, "afvxv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_vars_handler, &analysis_function_vars_xrefs_vars_help);
 	rz_warn_if_fail(analysis_function_vars_xrefs_vars_cd);
 
-	RzCmdDesc *afvb_cd = rz_cmd_desc_group_modes_new(core->rcmd, afv_cd, "afvb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_bp_handler, &analysis_function_vars_bp_help, &afvb_help);
+	RzCmdDesc *afvb_cd = rz_cmd_desc_group_state_new(core->rcmd, afv_cd, "afvb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_bp_handler, &analysis_function_vars_bp_help, &afvb_help);
 	rz_warn_if_fail(afvb_cd);
 	RzCmdDesc *analysis_function_vars_bp_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvb-", rz_analysis_function_vars_bp_del_handler, &analysis_function_vars_bp_del_help);
 	rz_warn_if_fail(analysis_function_vars_bp_del_cd);
@@ -13057,7 +13065,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_bp_setref_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvbs", rz_analysis_function_vars_bp_setref_handler, &analysis_function_vars_bp_setref_help);
 	rz_warn_if_fail(analysis_function_vars_bp_setref_cd);
 
-	RzCmdDesc *afvr_cd = rz_cmd_desc_group_modes_new(core->rcmd, afv_cd, "afvr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_regs_handler, &analysis_function_vars_regs_help, &afvr_help);
+	RzCmdDesc *afvr_cd = rz_cmd_desc_group_state_new(core->rcmd, afv_cd, "afvr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_regs_handler, &analysis_function_vars_regs_help, &afvr_help);
 	rz_warn_if_fail(afvr_cd);
 	RzCmdDesc *analysis_function_vars_regs_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvr-", rz_analysis_function_vars_regs_del_handler, &analysis_function_vars_regs_del_help);
 	rz_warn_if_fail(analysis_function_vars_regs_del_cd);
@@ -13071,7 +13079,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_regs_setref_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvrs", rz_analysis_function_vars_regs_setref_handler, &analysis_function_vars_regs_setref_help);
 	rz_warn_if_fail(analysis_function_vars_regs_setref_cd);
 
-	RzCmdDesc *afvs_cd = rz_cmd_desc_group_modes_new(core->rcmd, afv_cd, "afvs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_sp_handler, &analysis_function_vars_sp_help, &afvs_help);
+	RzCmdDesc *afvs_cd = rz_cmd_desc_group_state_new(core->rcmd, afv_cd, "afvs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_sp_handler, &analysis_function_vars_sp_help, &afvs_help);
 	rz_warn_if_fail(afvs_cd);
 	RzCmdDesc *analysis_function_vars_sp_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvs-", rz_analysis_function_vars_sp_del_handler, &analysis_function_vars_sp_del_help);
 	rz_warn_if_fail(analysis_function_vars_sp_del_cd);
@@ -13472,6 +13480,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *list_mne_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoma", rz_list_mne_handler, &list_mne_help);
 	rz_warn_if_fail(list_mne_cd);
+
+	RzCmdDesc *analyse_name_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_cd, "an", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyse_name_handler, &analyse_name_help);
+	rz_warn_if_fail(analyse_name_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
@@ -14500,10 +14511,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_whole_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "izz", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_whole_strings_handler, &cmd_info_whole_strings_help);
 	rz_warn_if_fail(cmd_info_whole_strings_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_whole_strings_cd, RZ_OUTPUT_MODE_TABLE);
-
-	RzCmdDesc *cmd_info_dump_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "izzz", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_dump_strings_handler, &cmd_info_dump_strings_help);
-	rz_warn_if_fail(cmd_info_dump_strings_cd);
-	rz_cmd_desc_set_default_mode(cmd_info_dump_strings_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_info_purge_string_cd = rz_cmd_desc_argv_new(core->rcmd, i_cd, "iz-", rz_cmd_info_purge_string_handler, &cmd_info_purge_string_help);
 	rz_warn_if_fail(cmd_info_purge_string_cd);

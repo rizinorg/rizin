@@ -635,7 +635,7 @@ static bool rz_diff_file_open(DiffFile *dfile, const char *filename) {
 	rz_io_bind(dio->io, &bin->iob);
 
 	// TODO: no RzConfig ???
-	rz_bin_options_init(&opt, dio->io->desc->fd, 0, 0, false, false);
+	rz_bin_options_init(&opt, dio->io->desc->fd, 0, 0, false);
 	opt.obj_opts.elf_load_sections = true;
 	opt.obj_opts.elf_checks_sections = true;
 	opt.obj_opts.elf_checks_segments = true;

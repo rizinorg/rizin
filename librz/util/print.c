@@ -106,10 +106,6 @@ RZ_API void rz_print_set_flags(RzPrint *p, int _flags) {
 	p->flags = _flags;
 }
 
-RZ_API void rz_print_unset_flags(RzPrint *p, int flags) {
-	p->flags = p->flags & (p->flags ^ flags);
-}
-
 RZ_API void rz_print_set_cursor(RzPrint *p, int enable, int ocursor, int cursor) {
 	if (!p) {
 		return;
@@ -391,13 +387,6 @@ RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch) {
 		printfmt(fmt, rch);
 	}
 	rz_print_cursor(p, idx, 1, 0);
-}
-
-RZ_API void rz_print_hexpairs(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
-	int i;
-	for (i = 0; i < len; i++) {
-		p->cb_printf("%02x ", buf[i]);
-	}
 }
 
 static bool checkSparse(const ut8 *p, int len, int ch) {
@@ -1073,10 +1062,6 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 	}
 }
 
-RZ_API void rz_print_hexdump_simple(const ut8 *buf, int len) {
-	rz_print_hexdump(NULL, 0, buf, len, 16, 16, 0);
-}
-
 static const char *getbytediff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
 	if (*fmt) {
 		if (a == b) {
@@ -1193,23 +1178,6 @@ RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt)
 
 RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
 	p->write(buf, len);
-}
-
-RZ_API void rz_print_c(RzPrint *p, const ut8 *str, int len) {
-	int i, inc = p->width / 6;
-	p->cb_printf("#define _BUFFER_SIZE %d\n"
-		     "unsigned char buffer[_BUFFER_SIZE] = {\n",
-		len);
-	for (i = 0; !rz_print_is_interrupted() && i < len;) {
-		rz_print_byte(p, "0x%02x", i, str[i]);
-		if (++i < len) {
-			p->cb_printf(", ");
-		}
-		if (!(i % inc)) {
-			p->cb_printf("\n");
-		}
-	}
-	p->cb_printf(" };\n");
 }
 
 // HACK :D
@@ -1788,87 +1756,4 @@ RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize) 
 	}
 	p->cb_printf("]\n");
 	return words;
-}
-
-RZ_API void rz_print_hex_from_base2(RzPrint *p, char *base2) {
-	bool first = true;
-	const int len = strlen(base2);
-	if (len < 1) {
-		return;
-	}
-
-	RzPrint defprint = { .cb_printf = libc_printf };
-	if (!p) {
-		p = &defprint;
-	}
-
-	// we split each section by 8 bits and have bytes.
-	ut32 bytes_size = (len >> 3) + (len & 7 ? 1 : 0);
-	ut8 *bytes = calloc(bytes_size, sizeof(ut8));
-	if (!bytes) {
-		eprintf("cannot allocate %d bytes\n", bytes_size);
-		return;
-	}
-
-	int c = len & 7;
-	if (c) {
-		// align counter to 8 bits
-		c = 8 - c;
-	}
-	for (int i = 0, j = 0; i < len && j < bytes_size; i++, c++) {
-		if (base2[i] != '1' && base2[i] != '0') {
-			eprintf("invalid base2 number %c at char %d\n", base2[i], i);
-			free(bytes);
-			return;
-		}
-		// c & 7 is c % 8
-		if (c > 0 && !(c & 7)) {
-			j++;
-		}
-		bytes[j] <<= 1;
-		bytes[j] |= base2[i] - '0';
-	}
-
-	p->cb_printf("0x");
-	for (int i = 0; i < bytes_size; ++i) {
-		if (first) {
-			if (i != (bytes_size - 1) && !bytes[i]) {
-				continue;
-			}
-			p->cb_printf("%x", bytes[i]);
-			first = false;
-		} else {
-			p->cb_printf("%02x", bytes[i]);
-		}
-	}
-	p->cb_printf("\n");
-	free(bytes);
-}
-
-RZ_API const char *rz_print_rowlog(RzPrint *print, const char *str) {
-	int use_color = print->flags & RZ_PRINT_FLAGS_COLOR;
-	bool verbose = print->scr_prompt;
-	rz_return_val_if_fail(print->cb_eprintf, NULL);
-	if (!verbose) {
-		return NULL;
-	}
-	if (use_color) {
-		print->cb_eprintf("[ ] " Color_YELLOW "%s\r[" Color_RESET, str);
-	} else {
-		print->cb_eprintf("[ ] %s\r[", str);
-	}
-	return str;
-}
-
-RZ_API void rz_print_rowlog_done(RzPrint *print, const char *str) {
-	int use_color = print->flags & RZ_PRINT_FLAGS_COLOR;
-	bool verbose = print->scr_prompt;
-	rz_return_if_fail(print->cb_eprintf);
-	if (verbose) {
-		if (use_color) {
-			print->cb_eprintf("\r" Color_GREEN "[x]" Color_RESET " %s\n", str);
-		} else {
-			print->cb_eprintf("\r[x] %s\n", str);
-		}
-	}
 }

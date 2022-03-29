@@ -248,6 +248,10 @@ static void destroy(RzBinFile *bf) {
 	rz_bflt_free(bf->o->bin_obj);
 }
 
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 0, false);
+}
+
 RzBinPlugin rz_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT uClinux executable",
@@ -259,6 +263,7 @@ RzBinPlugin rz_bin_plugin_bflt = {
 	.maps = &maps,
 	.entries = &entries,
 	.sections = &sections,
+	.strings = &strings,
 	.info = &info,
 	.relocs = &relocs
 };

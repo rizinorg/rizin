@@ -149,6 +149,10 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return info;
 }
 
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 0, false);
+}
+
 RzBinPlugin rz_bin_plugin_le = {
 	.name = "le",
 	.desc = "LE/LX format plugin",
@@ -164,6 +168,7 @@ RzBinPlugin rz_bin_plugin_le = {
 	.entries = &entries,
 	.symbols = &symbols,
 	.imports = &imports,
+	.strings = &strings,
 	.libs = &libs,
 	.relocs = &relocs,
 	.minstrlen = 4

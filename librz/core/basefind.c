@@ -105,7 +105,7 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core) {
 	}
 
 	// if this list is sorted we can improve speed via half-interval search
-	strings = rz_bin_raw_strings(current, string_min_size);
+	strings = rz_bin_file_strings(current, string_min_size, true);
 	if (!strings || rz_list_empty(strings)) {
 		RZ_LOG_ERROR("basefind: cannot find strings in binary with a minimum size of %u.\n", string_min_size);
 		rz_list_free(strings);

@@ -2467,13 +2467,6 @@ static bool cb_binverbose(void *user, void *data) {
 	return true;
 }
 
-static bool cb_rawstr(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->bin->rawstr = node->i_value;
-	return true;
-}
-
 static bool cb_debase64(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3251,7 +3244,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Default string encoding of binary");
 	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB("bin.prefix", "", &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
-	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");

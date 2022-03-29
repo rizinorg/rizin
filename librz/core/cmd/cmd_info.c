@@ -360,25 +360,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_whole_strings_handler(RzCore *core, int argc, con
 
 RZ_IPI RzCmdStatus rz_cmd_info_dump_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	GET_CHECK_CUR_BINFILE(core);
-	int min = rz_config_get_i(core->config, "bin.minstr");
-	int strmode = bf->strmode;
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_JSON:
-		bf->strmode = RZ_MODE_JSON;
-		break;
-	case RZ_OUTPUT_MODE_TABLE:
-		bf->strmode = RZ_MODE_PRINT;
-		break;
-	case RZ_OUTPUT_MODE_QUIET:
-		bf->strmode = RZ_MODE_SIMPLE;
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-	rz_bin_dump_strings(bf, min, 2);
-	bf->strmode = strmode;
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_whole_strings_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_purge_string_handler(RzCore *core, int argc, const char **argv) {
