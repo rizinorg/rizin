@@ -2837,24 +2837,24 @@ static void cps2_crypt(int dir, const ut16 *rom, ut16 *dec, int length, const ut
 		key2[3] ^= BIT(key2[3], 1) << 5;
 
 		// de/en-crypt the opcodes
-		for (a = i; a < length / 2 && a < upper_limit / 2; a += 0x10000) {
+		for (a = i; a < length && a < upper_limit / 2; a += 0x10000) {
 			if (dir) {
 				/* decrypt */
 				dec[a] = feistel(rom[a], fn2_groupA, fn2_groupB,
 					&sboxes2[0 * 4], &sboxes2[1 * 4], &sboxes2[2 * 4], &sboxes2[3 * 4],
 					key2[0], key2[1], key2[2], key2[3]);
-				dec[a] = rz_read_be16(&dec[a]);
+				dec[a] = (dec[a] << 8) | (dec[a] >> 8);
 			} else {
 				/* encrypt */
-				dec[a] = rz_read_be16(&rom[a]);
+				dec[a] = (rom[a] << 8) | (rom[a] >> 8);
 				dec[a] = feistel(dec[a], fn2_groupA, fn2_groupB,
 					&sboxes2[3 * 4], &sboxes2[2 * 4], &sboxes2[1 * 4], &sboxes2[0 * 4],
 					key2[3], key2[2], key2[1], key2[0]);
 			}
 		}
 		// copy the unencrypted part
-		while (a < length / 2) {
-			dec[a] = rz_read_be16(&rom[a]);
+		while (a < length) {
+			dec[a] = (rom[a] << 8) | (rom[a] >> 8);
 			a += 0x10000;
 		}
 	}
@@ -2910,18 +2910,30 @@ static bool cps2_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
-	rz_return_val_if_fail(cry->user, false);
+	rz_return_val_if_fail(cry->user && len > 0, false);
 	ut32 *cps2key = (ut32 *)cry->user;
 
-	ut8 *output = calloc(1, len);
+	size_t slen = len / 2;
+	ut16 *output = RZ_NEWS0(ut16, slen);
 	if (!output) {
 		return false;
 	}
-
+	ut16 *input = RZ_NEWS0(ut16, slen);
+	if (!input) {
+		free(output);
+		return false;
+	}
+	for (size_t i = 0; i < slen; i++) {
+		input[i] = rz_read_at_le16(buf, i * 2);
+	}
 	/* TODO : control decryption errors */
-	cps2_crypt(cry->dir, (const ut16 *)buf, (ut16 *)output, len, cps2key, UPPER_LIMIT);
-	rz_crypto_append(cry, output, len);
+	cps2_crypt(cry->dir, input, output, slen, cps2key, UPPER_LIMIT);
+	for (size_t i = 0; i < slen; i++) {
+		rz_write_at_le16((ut8 *)output, output[i], i * 2);
+	}
+	rz_crypto_append(cry, (const ut8 *)output, slen * 2);
 	free(output);
+	free(input);
 	return true;
 }
 
