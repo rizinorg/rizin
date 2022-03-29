@@ -20,7 +20,6 @@ commands:
           - text: "aae"
             arg_str: " $SS @ $S"
             comment: analyze the whole section
-
   - name: aaef
     summary: analyze references with ESIL in all functions
     cname: analysis_all_esil_functions

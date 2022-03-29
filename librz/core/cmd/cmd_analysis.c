@@ -9122,7 +9122,7 @@ RZ_IPI RzCmdStatus rz_analyse_name_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_analysis_all_esil_handler(RzCore *core, int argc, const char **argv) {
-	bool reg_flags_defined = !!rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
+	bool reg_flags_defined = rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS) != 0;
 	if (argc > 1) {
 		rz_core_analysis_esil(core, core->offset, rz_num_get(core->num, argv[1]), NULL);
 	} else {
@@ -9136,7 +9136,7 @@ RZ_IPI RzCmdStatus rz_analysis_all_esil_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_analysis_all_esil_functions_handler(RzCore *core, int argc, const char **argv) {
-	bool reg_flags_defined = !!rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
+	bool reg_flags_defined = rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS) != 0;
 	rz_core_analysis_esil_references_all_functions(core);
 	if (!reg_flags_defined) {
 		// hack to not leak flags if not wanted
