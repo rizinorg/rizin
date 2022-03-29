@@ -186,42 +186,42 @@ mov qword [rsp + 8], rcx
 mov qword [rsp + 0x10], rdx
 mov qword [rsp + 0x18], r8
 mov qword [rsp + 0x20], r9
-0  0xfffff8047bdf5a80 sp: 0xffff850429890ee8  0    [??]  pdb.KeBugCheckEx pdb.KeBugCheckEx0
-1  0xfffff8047be0f4e1 sp: 0xffff850429890ef0  56   [??]  pdb._C__1DO_NJNPPJHL___AAK__AAe__AAr__AAn__AAe__AAl__AA_9__AAM__AAU__AAI__AA_9__AAL__AAa__AAn__AAg_FNODOBFM+5649 
-2  0xfffff8047bdcc052 sp: 0xffff850429890f30  104  [??]  sym.ntoskrnl.exe___C_specific_handler+162 
-3  0xfffff8047bdfe942 sp: 0xffff850429890fa0  40   [??]  pdb.RtlpExecuteHandlerForException+18 
-4  0xfffff8047bd2bf97 sp: 0xffff850429890fd0  1816 [??]  pdb.RtlDispatchException+663 
-5  0xfffff8047bd2ab86 sp: 0xffff8504298916f0  1720 [??]  pdb.KiDispatchException+390 
-6  0xfffff8047be07bac sp: 0xffff850429891db0  472  [??]  pdb.KiExceptionDispatch+300 
-7  0xfffff8047be031f5 sp: 0xffff850429891f90  400  [??]  pdb.KiSegmentNotPresentFault+821 
-8  0xfffff8048b58334c sp: 0xffff850429892120  40   [??]  pdb.WriteIoMemRawEx+112 
-9  0xfffff8048b58313f sp: 0xffff850429892150  40   [??]  pdb.WriteGenAddrEx+107 
-10  0xfffff8048b583234 sp: 0xffff850429892180  40   [??]  pdb.WriteGenAddrMaybeHiddenEx+24 
-11  0xfffff8048b5a0e8f sp: 0xffff8504298921b0  88   [??]  pdb.InitAcpiCpc+791 
-12  0xfffff8048b5a83f6 sp: 0xffff850429892210  296  [??]  pdb.ProcLibDeviceStart+2182 
-13  0xfffff8048b59f852 sp: 0xffff850429892340  56   [??]  pdb.EvtDevicePrepareHardware+210 
-14  0xfffff804799cc027 sp: 0xffff850429892380  72   [??]  pdb.protected_virtual:_long_int___cdecl_FxPnpDevicePrepareHardware::InvokeClient_void____ptr64+39 
-15  0xfffff80479966f81 sp: 0xffff8504298923d0  56   [??]  pdb.public:_long_int___cdecl_FxPrePostCallback::InvokeStateful_enum_FxCxCallbackProgress_____ptr64__enum_FxCxCallbackCleanupAction____ptr64+105 
-16  0xfffff804799cb227 sp: 0xffff850429892410  72   [??]  pdb.protected:_long_int___cdecl_FxPkgPnp::PnpPrepareHardware_unsigned_char_____ptr64__enum_FxCxCallbackProgress_____ptr64____ptr64+223 
-17  0xfffff804799c9e21 sp: 0xffff850429892460  56   [??]  pdb.protected:_static_enum__WDF_DEVICE_PNP_STATE___cdecl_FxPkgPnp::PnpEventHardwareAvailable_class_FxPkgPnp_____ptr64+81 
-18  0xfffff804799c99da sp: 0xffff8504298924a0  136  [??]  pdb.protected:_void___cdecl_FxPkgPnp::PnpEnterNewState_enum__WDF_DEVICE_PNP_STATE____ptr64+350 
-19  0xfffff804799cb6b1 sp: 0xffff850429892530  104  [??]  pdb.protected:_void___cdecl_FxPkgPnp::PnpProcessEventInner_struct_FxPostProcessInfo_____ptr64____ptr64+465 
-20  0xfffff804799cb47a sp: 0xffff8504298925a0  136  [??]  pdb.public:_void___cdecl_FxPkgPnp::PnpProcessEvent_enum_FxPnpEvent__unsigned_char____ptr64+386 
-21  0xfffff804799d299e sp: 0xffff850429892630  40   [??]  pdb.protected:_static_long_int___cdecl_FxPkgPnp::_PnpStartDevice_class_FxPkgPnp_____ptr64__class_FxIrp_____ptr64+30 
-22  0xfffff8047995cc5f sp: 0xffff850429892660  104  [??]  pdb.protected_virtual:_long_int___cdecl_FxPkgPnp::Dispatch_struct__IRP_____ptr64____ptr64+175 
-23  0xfffff8047995a866 sp: 0xffff8504298926d0  88   [??]  pdb.public:_static_long_int___cdecl_FxDevice::DispatchWithLock_struct__DEVICE_OBJECT_____ptr64__struct__IRP_____ptr64+342 
-24  0xfffff8047bc52f55 sp: 0xffff850429892730  56   [??]  pdb.IofCallDriver+85 
-25  0xfffff8047c1548a6 sp: 0xffff850429892770  56   [??]  pdb.PnpAsynchronousCall+234 
-26  0xfffff8047bce0d1e sp: 0xffff8504298927b0  104  [??]  pdb.PnpSendIrp+158 
-27  0xfffff8047bd6ab7c sp: 0xffff850429892820  136  [??]  pdb.PnpStartDevice+136 
-28  0xfffff8047c123760 sp: 0xffff8504298928b0  136  [??]  pdb.PnpStartDeviceNode+236 
-29  0xfffff8047c12362f sp: 0xffff850429892940  72   [??]  pdb.PipProcessStartPhase1+115 
-30  0xfffff8047c126bdd sp: 0xffff850429892990  200  [??]  pdb.PipProcessDevNodeTree+793 
-31  0xfffff8047c1bdf0c sp: 0xffff850429892a60  72   [??]  pdb.PiProcessStartSystemDevices+96 
-32  0xfffff8047bd6c2ec sp: 0xffff850429892ab0  184  [??]  pdb.PnpDeviceActionWorker+1228 
-33  0xfffff8047bc25975 sp: 0xffff850429892b70  152  [??]  pdb.ExpWorkerThread+261 
-34  0xfffff8047bd17e25 sp: 0xffff850429892c10  72   [??]  pdb.PspSystemThreadStartup+85 
-35  0xfffff8047bdfd0d8 sp: 0xffff850429892c60  40   [??]  pdb.KiStartSystemThread+40 
+0  0xfffff8047bdf5a80 sp: 0xffff850429890ee8  0    [??]  pdb.ntkrnlmp.KeBugCheckEx pdb.ntkrnlmp.KeBugCheckEx0
+1  0xfffff8047be0f4e1 sp: 0xffff850429890ef0  56   [??]  pdb.ntkrnlmp._C__1DO_NJNPPJHL___AAK__AAe__AAr__AAn__AAe__AAl__AA_9__AAM__AAU__AAI__AA_9__AAL__AAa__AAn__AAg_FNODOBFM+5649 
+2  0xfffff8047bdcc052 sp: 0xffff850429890f30  104  [??]  pdb.ntkrnlmp.__C_specific_handler+162 
+3  0xfffff8047bdfe942 sp: 0xffff850429890fa0  40   [??]  pdb.ntkrnlmp.RtlpExecuteHandlerForException+18 
+4  0xfffff8047bd2bf97 sp: 0xffff850429890fd0  1816 [??]  pdb.ntkrnlmp.RtlDispatchException+663 
+5  0xfffff8047bd2ab86 sp: 0xffff8504298916f0  1720 [??]  pdb.ntkrnlmp.KiDispatchException+390 
+6  0xfffff8047be07bac sp: 0xffff850429891db0  472  [??]  pdb.ntkrnlmp.KiExceptionDispatch+300 
+7  0xfffff8047be031f5 sp: 0xffff850429891f90  400  [??]  pdb.ntkrnlmp.KiSegmentNotPresentFault+821 
+8  0xfffff8048b58334c sp: 0xffff850429892120  40   [??]  pdb.amdppm.WriteIoMemRawEx+112 
+9  0xfffff8048b58313f sp: 0xffff850429892150  40   [??]  pdb.amdppm.WriteGenAddrEx+107 
+10  0xfffff8048b583234 sp: 0xffff850429892180  40   [??]  pdb.amdppm.WriteGenAddrMaybeHiddenEx+24 
+11  0xfffff8048b5a0e8f sp: 0xffff8504298921b0  88   [??]  pdb.amdppm.InitAcpiCpc+791 
+12  0xfffff8048b5a83f6 sp: 0xffff850429892210  296  [??]  pdb.amdppm.ProcLibDeviceStart+2182 
+13  0xfffff8048b59f852 sp: 0xffff850429892340  56   [??]  pdb.amdppm.EvtDevicePrepareHardware+210 
+14  0xfffff804799cc027 sp: 0xffff850429892380  72   [??]  pdb.Wdf01000.protected_virtual:_long_int___cdecl_FxPnpDevicePrepareHardware::InvokeClient_void____ptr64+39 
+15  0xfffff80479966f81 sp: 0xffff8504298923d0  56   [??]  pdb.Wdf01000.public:_long_int___cdecl_FxPrePostCallback::InvokeStateful_enum_FxCxCallbackProgress_____ptr64__enum_FxCxCallbackCleanupAction____ptr64+105 
+16  0xfffff804799cb227 sp: 0xffff850429892410  72   [??]  pdb.Wdf01000.protected:_long_int___cdecl_FxPkgPnp::PnpPrepareHardware_unsigned_char_____ptr64__enum_FxCxCallbackProgress_____ptr64____ptr64+223 
+17  0xfffff804799c9e21 sp: 0xffff850429892460  56   [??]  pdb.Wdf01000.protected:_static_enum__WDF_DEVICE_PNP_STATE___cdecl_FxPkgPnp::PnpEventHardwareAvailable_class_FxPkgPnp_____ptr64+81 
+18  0xfffff804799c99da sp: 0xffff8504298924a0  136  [??]  pdb.Wdf01000.protected:_void___cdecl_FxPkgPnp::PnpEnterNewState_enum__WDF_DEVICE_PNP_STATE____ptr64+350 
+19  0xfffff804799cb6b1 sp: 0xffff850429892530  104  [??]  pdb.Wdf01000.protected:_void___cdecl_FxPkgPnp::PnpProcessEventInner_struct_FxPostProcessInfo_____ptr64____ptr64+465 
+20  0xfffff804799cb47a sp: 0xffff8504298925a0  136  [??]  pdb.Wdf01000.public:_void___cdecl_FxPkgPnp::PnpProcessEvent_enum_FxPnpEvent__unsigned_char____ptr64+386 
+21  0xfffff804799d299e sp: 0xffff850429892630  40   [??]  pdb.Wdf01000.protected:_static_long_int___cdecl_FxPkgPnp::_PnpStartDevice_class_FxPkgPnp_____ptr64__class_FxIrp_____ptr64+30 
+22  0xfffff8047995cc5f sp: 0xffff850429892660  104  [??]  pdb.Wdf01000.protected_virtual:_long_int___cdecl_FxPkgPnp::Dispatch_struct__IRP_____ptr64____ptr64+175 
+23  0xfffff8047995a866 sp: 0xffff8504298926d0  88   [??]  pdb.Wdf01000.public:_static_long_int___cdecl_FxDevice::DispatchWithLock_struct__DEVICE_OBJECT_____ptr64__struct__IRP_____ptr64+342 
+24  0xfffff8047bc52f55 sp: 0xffff850429892730  56   [??]  pdb.ntkrnlmp.IofCallDriver+85 
+25  0xfffff8047c1548a6 sp: 0xffff850429892770  56   [??]  pdb.ntkrnlmp.PnpAsynchronousCall+234 
+26  0xfffff8047bce0d1e sp: 0xffff8504298927b0  104  [??]  pdb.ntkrnlmp.PnpSendIrp+158 
+27  0xfffff8047bd6ab7c sp: 0xffff850429892820  136  [??]  pdb.ntkrnlmp.PnpStartDevice+136 
+28  0xfffff8047c123760 sp: 0xffff8504298928b0  136  [??]  pdb.ntkrnlmp.PnpStartDeviceNode+236 
+29  0xfffff8047c12362f sp: 0xffff850429892940  72   [??]  pdb.ntkrnlmp.PipProcessStartPhase1+115 
+30  0xfffff8047c126bdd sp: 0xffff850429892990  200  [??]  pdb.ntkrnlmp.PipProcessDevNodeTree+793 
+31  0xfffff8047c1bdf0c sp: 0xffff850429892a60  72   [??]  pdb.ntkrnlmp.PiProcessStartSystemDevices+96 
+32  0xfffff8047bd6c2ec sp: 0xffff850429892ab0  184  [??]  pdb.ntkrnlmp.PnpDeviceActionWorker+1228 
+33  0xfffff8047bc25975 sp: 0xffff850429892b70  152  [??]  pdb.ntkrnlmp.ExpWorkerThread+261 
+34  0xfffff8047bd17e25 sp: 0xffff850429892c10  72   [??]  pdb.ntkrnlmp.PspSystemThreadStartup+85 
+35  0xfffff8047bdfd0d8 sp: 0xffff850429892c60  40   [??]  pdb.ntkrnlmp.KiStartSystemThread+40 
 36  0x0                sp: 0xffff850429892c90  0    [??]  str.PAGEDU64 str.PAGEDU640
 EOF
 RUN
@@ -393,10 +393,10 @@ int3
 ret
 int3
 int3
-0  0xfffff805108776a0 sp: 0xfffff805135684f8  0    [??]  pdb.RtlpBreakWithStatusInstruction pdb.RtlpBreakWithStatusInstruction0
-1  0xfffff805110dd222 sp: 0xfffff80513568500  568  [??]  pdb._C__1CG_JLJMEKNK___AA_2__AAD__AAe__AAv__AAi__AAc__AAe__AA_2__AAR__AAa__AAm__AAd__AAi__AAs__AAk_PBOPGDP+25474 
-2  0xfffff80510c50204 sp: 0xfffff80513568740  776  [??]  pdb.KiInitializeKernel+1364 
-3  0xfffff80510c45219 sp: 0xfffff80513568a50  1448 [??]  pdb.KiSystemStartup+521 
+0  0xfffff805108776a0 sp: 0xfffff805135684f8  0    [??]  pdb.ntkrnlmp.RtlpBreakWithStatusInstruction pdb.ntkrnlmp.RtlpBreakWithStatusInstruction0
+1  0xfffff805110dd222 sp: 0xfffff80513568500  568  [??]  pdb.ntkrnlmp._C__1CG_JLJMEKNK___AA_2__AAD__AAe__AAv__AAi__AAc__AAe__AA_2__AAR__AAa__AAm__AAd__AAi__AAs__AAk_PBOPGDP+25474 
+2  0xfffff80510c50204 sp: 0xfffff80513568740  776  [??]  pdb.ntkrnlmp.KiInitializeKernel+1364 
+3  0xfffff80510c45219 sp: 0xfffff80513568a50  1448 [??]  pdb.ntkrnlmp.KiSystemStartup+521 
 4  0x0                sp: 0xfffff80513569000  0    [??]   
 EOF
 RUN

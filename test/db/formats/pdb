@@ -59,8 +59,8 @@ idp bins/pdb/Project1.pdb
 fl~pdb:1
 EOF
 EXPECT=<<EOF
-0x00011000 0 pdb.__enc_textbss_end
-0x00811000 0 pdb.__enc_textbss_end
+0x00011000 0 pdb.Project1.__enc_textbss_end
+0x00811000 0 pdb.Project1.__enc_textbss_end
 EOF
 RUN
 
