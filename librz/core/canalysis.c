@@ -4548,7 +4548,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 	RZ_NULLABLE const char *sn = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
 
 	IterCtx ictx = { start, end, fcn, NULL };
-	size_t i = addr - start;
+	size_t i = 0;
 	do {
 		if (esil_analysis_stop || rz_cons_is_breaked()) {
 			break;
@@ -4666,9 +4666,6 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		}
 		(void)rz_analysis_esil_parse(ESIL, esilstr);
 #define CHECKREF(x) ((refptr && (x) == refptr) || !refptr)
-		// looks like ^C is handled by esil_parse !!!!
-		// rz_analysis_esil_dumpstack (ESIL);
-		// rz_analysis_esil_stack_free (ESIL);
 		switch (op.type) {
 		case RZ_ANALYSIS_OP_TYPE_LEA:
 			// arm64
