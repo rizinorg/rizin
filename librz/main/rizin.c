@@ -925,7 +925,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		int sz;
 #if __WINDOWS__
 		int result = _setmode(_fileno(stdin), _O_BINARY);
-		if(result == -1) {
+		if (result == -1) {
 			eprintf("Cannot set stdin to binary mode");
 			return 1;
 		}

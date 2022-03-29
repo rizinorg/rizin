@@ -13,7 +13,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME="p8|sed -e s,0,x,g>x;cat x;rm x"
+NAME="p8|sed -e s,1,x,g>x;cat x;rm x"
 FILE=malloc://512
 CMDS=<<EOF
 wv 0x100
