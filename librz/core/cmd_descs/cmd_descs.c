@@ -12,6 +12,7 @@ static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
+static const RzCmdDescDetail analysis_all_esil_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
 static const RzCmdDescDetail analysis_hint_set_arch_details[2];
@@ -84,6 +85,7 @@ static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg cmd_help_search_args[2];
 static const RzCmdDescArg push_escaped_args[2];
+static const RzCmdDescArg analysis_all_esil_args[2];
 static const RzCmdDescArg analysis_function_blocks_add_args[7];
 static const RzCmdDescArg analysis_function_blocks_edge_args[3];
 static const RzCmdDescArg analysis_function_blocks_color_args[3];
@@ -1169,6 +1171,39 @@ static const RzCmdDescHelp push_escaped_help = {
 static const RzCmdDescHelp cmd_analysis_help = {
 	.summary = "Analysis commands",
 };
+static const RzCmdDescDetailEntry analysis_all_esil_Examples_detail_entries[] = {
+	{ .text = "aae", .arg_str = "", .comment = "analyze ranges given by analysis.in" },
+	{ .text = "aae", .arg_str = " $SS @ $S", .comment = "analyze the whole section" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_all_esil_details[] = {
+	{ .name = "Examples", .entries = analysis_all_esil_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_all_esil_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_all_esil_help = {
+	.summary = "analyze references with ESIL",
+	.details = analysis_all_esil_details,
+	.args = analysis_all_esil_args,
+};
+
+static const RzCmdDescArg analysis_all_esil_functions_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_all_esil_functions_help = {
+	.summary = "analyze references with ESIL in all functions",
+	.args = analysis_all_esil_functions_args,
+};
+
 static const RzCmdDescHelp cmd_analysis_fcn_help = {
 	.summary = "Analyze Functions commands",
 };
@@ -12963,6 +12998,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "a", rz_cmd_analysis, &cmd_analysis_help);
 	rz_warn_if_fail(cmd_analysis_cd);
+	RzCmdDesc *analysis_all_esil_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aae", rz_analysis_all_esil_handler, &analysis_all_esil_help);
+	rz_warn_if_fail(analysis_all_esil_cd);
+
+	RzCmdDesc *analysis_all_esil_functions_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aaef", rz_analysis_all_esil_functions_handler, &analysis_all_esil_functions_help);
+	rz_warn_if_fail(analysis_all_esil_functions_cd);
+
 	RzCmdDesc *cmd_analysis_fcn_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_analysis_cd, "af", rz_cmd_analysis_fcn, &cmd_analysis_fcn_help);
 	rz_warn_if_fail(cmd_analysis_fcn_cd);
 	RzCmdDesc *afb_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_fcn_cd, "afb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_list_handler, &analysis_function_blocks_list_help, &afb_help);

@@ -695,7 +695,7 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 /* cil.c */
 // TODO : They should have been there, but require `static` vars inside canalysis.c
 //      : Keep esil in canalysis.c, and split the rzil in cil.c
-RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *addr);
+RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABLE RzAnalysisFunction *fcn);
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 RZ_API int rz_core_esil_step_back(RzCore *core);

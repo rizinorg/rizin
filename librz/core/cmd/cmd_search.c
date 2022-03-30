@@ -58,7 +58,7 @@ static const char *help_msg_slash[] = {
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
 	"/s", "[*] [threshold]", "find sections by grouping blocks with similar entropy",
-	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
+	"/r[rwx]", "[?] sym.printf", "analyze opcode reference an offset",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	// moved into /as "/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
@@ -117,7 +117,6 @@ static const char *help_msg_slash_r[] = {
 	"/r", " [addr]", "search references to this specific address",
 	"/ra", "", "search all references",
 	"/rc", "", "search for call references",
-	"/re", " [addr]", "search references using esil",
 	"/rr", "", "Find read references",
 	"/rw", "", "Find write references",
 	"/rx", "", "Find exec references",
@@ -3086,7 +3085,7 @@ reread:
 			}
 		}
 		goto beach;
-	case 'r': // "/r" and "/re"
+	case 'r': // "/r"
 	{
 		ut64 n = (input[1] == ' ' || (input[1] && input[2] == ' '))
 			? rz_num_math(core->num, input + 2)
@@ -3114,26 +3113,6 @@ reread:
 				rz_core_analysis_search(core, map->itv.addr, rz_itv_end(map->itv), n, 0);
 			}
 		} break;
-		case 'e': // "/re"
-			if (input[2] == '?') {
-				eprintf("Usage: /re $$ - to find references to current address\n");
-			} else {
-				RzListIter *iter;
-				RzIOMap *map;
-				rz_list_foreach (param.boundaries, iter, map) {
-					eprintf("-- 0x%" PFMT64x " 0x%" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
-					ut64 refptr = rz_num_math(core->num, input + 2);
-					ut64 curseek = core->offset;
-					rz_core_seek(core, map->itv.addr, true);
-					char *arg = rz_str_newf(" %" PFMT64d, rz_itv_end(map->itv) - map->itv.addr);
-					char *trg = refptr ? rz_str_newf(" %" PFMT64d, refptr) : strdup("");
-					rz_core_analysis_esil(core, arg, trg);
-					free(arg);
-					free(trg);
-					rz_core_seek(core, curseek, true);
-				}
-			}
-			break;
 		case 'r': // "/rr" - read refs
 		{
 			RzListIter *iter;
