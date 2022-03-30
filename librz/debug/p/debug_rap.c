@@ -51,14 +51,14 @@ static int __rap_detach(RzDebug *dbg, int pid) {
 static char *__rap_reg_profile(RzDebug *dbg) {
 	char *out, *tf = rz_file_temp("rap.XXXXXX");
 	RzVector *stack = rz_vector_new(sizeof(RzConsPipeStack), NULL, NULL);
-	RzConsPipeStack *new = malloc(sizeof(RzConsPipeStack));
-	int fd = rz_cons_pipe_open(tf, 1, 0, new);
-	rz_vector_push_front(stack, new);
+	RzConsPipeStack *stackElem = malloc(sizeof(RzConsPipeStack));
+	int fd = rz_cons_pipe_open(tf, 1, 0, stackElem);
+	rz_vector_push_front(stack, stackElem);
 	rz_io_system(dbg->iob.io, "drp");
 	rz_cons_flush();
-	rz_vector_pop_front(stack, new);
-	rz_cons_pipe_close(fd, new);
-	free(new);
+	rz_vector_pop_front(stack, stackElem);
+	rz_cons_pipe_close(fd, stackElem);
+	free(stackElem);
 	rz_vector_free(stack);
 	out = rz_file_slurp(tf, NULL);
 	rz_file_rm(tf);
