@@ -686,10 +686,12 @@ typedef struct rz_bin_class_t {
 
 #define REBASE_PADDR(o, l, type_t) \
 	do { \
-		RzListIter *_it; \
-		type_t *_el; \
-		rz_list_foreach ((l), _it, _el) { \
-			_el->paddr += (o)->opts.loadaddr; \
+		if ((o)->opts.loadaddr) { \
+			RzListIter *_it; \
+			type_t *_el; \
+			rz_list_foreach ((l), _it, _el) { \
+				_el->paddr += (o)->opts.loadaddr; \
+			} \
 		} \
 	} while (0)
 
