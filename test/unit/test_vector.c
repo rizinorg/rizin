@@ -200,6 +200,7 @@ static bool test_vector_clone(void) {
 
 static bool test_vector_sort(void) {
 	RzVector *v = rz_vector_new(sizeof("aaa"), NULL, NULL);
+	rz_vector_push(v, "abb");
 	rz_vector_push(v, "caa");
 	rz_vector_push(v, "abb");
 	rz_vector_push(v, "ccc");
@@ -207,14 +208,16 @@ static bool test_vector_sort(void) {
 	// do inc sort
 	rz_vector_sort(v, (RzVectorComparator)strcmp, false);
 	mu_assert_streq(rz_vector_index_ptr(v, 0), "abb", "sorted strings");
-	mu_assert_streq(rz_vector_index_ptr(v, 1), "caa", "sorted strings");
-	mu_assert_streq(rz_vector_index_ptr(v, 2), "ccc", "sorted strings");
+	mu_assert_streq(rz_vector_index_ptr(v, 1), "abb", "sorted strings");
+	mu_assert_streq(rz_vector_index_ptr(v, 2), "caa", "sorted strings");
+	mu_assert_streq(rz_vector_index_ptr(v, 3), "ccc", "sorted strings");
 
 	// do dec sort
 	rz_vector_sort(v, (RzVectorComparator)strcmp, true);
 	mu_assert_streq(rz_vector_index_ptr(v, 0), "ccc", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 1), "caa", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 2), "abb", "sorted strings");
+	mu_assert_streq(rz_vector_index_ptr(v, 3), "abb", "sorted strings");
 
 	rz_vector_free(v);
 	mu_end;
