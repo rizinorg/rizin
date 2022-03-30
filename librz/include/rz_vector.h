@@ -154,8 +154,8 @@ RZ_API void *rz_vector_shrink(RzVector *vec);
  */
 RZ_API void *rz_vector_flush(RzVector *vec);
 
-// sort function
-RZ_API void rz_vector_insertion_sort(RzVector *vec, RzVectorComparator cmp, bool reverse);
+// sort vector
+RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse);
 
 /*
  * example:

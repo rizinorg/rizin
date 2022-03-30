@@ -115,13 +115,13 @@ imports          loc.imp._ITM_deregisterTMCloneTable
 .----------------------------------------------------------------------------------------------------.
 | space     | size  | name                                                                           |
 )----------------------------------------------------------------------------------------------------(
-| classes   | 1     | class.std::ostream                                                             |
 | classes   | 1     | class.std::ios_base::Init                                                      |
-| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char_____std::operator____std  |
-| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char_____std::endl_char__std   |
+| classes   | 1     | class.std::ostream                                                             |
 | classes   | 1     | class.B                                                                        |
-| classes   | 1     | class.A                                                                        |
+| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char_____std::endl_char__std   |
 | classes   | 1     | class.C                                                                        |
+| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char_____std::operator____std  |
+| classes   | 1     | class.A                                                                        |
 | imports   | 16    | loc.imp._ITM_registerTMCloneTable                                              |
 | imports   | 16    | loc.imp._ITM_deregisterTMCloneTable                                            |
 | segments  | 64    | segment.ehdr                                                                   |

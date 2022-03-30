@@ -236,28 +236,48 @@ RZ_API void *rz_vector_flush(RzVector *vec) {
 	return r;
 }
 
-RZ_API void rz_vector_insertion_sort(RzVector *vec, RzVectorComparator cmp, bool reverse) {
-	rz_return_if_fail(vec);
-	ut32 i, j;
-	void *a, *b, *c = malloc(vec->elem_size);
+// CLRS Quicksort. It is slow, but simple.
+#define VEC_INDEX(a, i) (char *)a + elem_size *(i)
+static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorComparator cmp, bool reverse) {
+	rz_return_if_fail(a);
+	if (len <= 1) {
+		return;
+	}
+	size_t i = rand() % len, j = 0;
+	void *t, *pivot;
 
-	if (!c) {
+	t = (void *)malloc(elem_size);
+	pivot = (void *)malloc(elem_size);
+	if (!t || !pivot) {
+		RZ_FREE(t);
+		RZ_FREE(pivot);
 		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return;
 	}
 
-	for (i = 0; i < rz_vector_len(vec); i++) {
-		a = rz_vector_index_ptr(vec, i);
-		for (j = i + 1; j < rz_vector_len(vec); j++) {
-			b = rz_vector_index_ptr(vec, j);
-			if ((cmp(a, b) > 0 && !reverse) || (cmp(a, b) < 0 && reverse)) {
-				memcpy(c, a, vec->elem_size);
-				memcpy(a, b, vec->elem_size);
-				memcpy(b, c, vec->elem_size);
-			}
+	memcpy(pivot, VEC_INDEX(a, i), elem_size);
+	memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
+	for (i = 0; i < len - 1; i++) {
+		if ((cmp(VEC_INDEX(a, i), pivot) < 0 && !reverse) ||
+			(cmp(VEC_INDEX(a, i), pivot) > 0 && reverse)) {
+			memcpy(t, VEC_INDEX(a, i), elem_size);
+			memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
+			memcpy(VEC_INDEX(a, j), t, elem_size);
+			j++;
 		}
 	}
-	free(c);
+	memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
+	memcpy(VEC_INDEX(a, j), pivot, elem_size);
+	RZ_FREE(t);
+	RZ_FREE(pivot);
+	vector_quick_sort(a, elem_size, j, cmp, reverse);
+	vector_quick_sort(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse);
+}
+#undef VEC_INDEX
+
+RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse) {
+	rz_return_if_fail(vec && cmp);
+	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse);
 }
 
 // pvector

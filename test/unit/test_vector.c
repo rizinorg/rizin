@@ -198,6 +198,28 @@ static bool test_vector_clone(void) {
 	mu_end;
 }
 
+static bool test_vector_sort(void) {
+	RzVector *v = rz_vector_new(sizeof("aaa"), NULL, NULL);
+	rz_vector_push(v, "caa");
+	rz_vector_push(v, "abb");
+	rz_vector_push(v, "ccc");
+
+	// do inc sort
+	rz_vector_sort(v, (RzVectorComparator)strcmp, false);
+	mu_assert_streq(rz_vector_index_ptr(v, 0), "abb", "sorted strings");
+	mu_assert_streq(rz_vector_index_ptr(v, 1), "caa", "sorted strings");
+	mu_assert_streq(rz_vector_index_ptr(v, 2), "ccc", "sorted strings");
+
+	// do dec sort
+	rz_vector_sort(v, (RzVectorComparator)strcmp, true);
+	mu_assert_streq(rz_vector_index_ptr(v, 0), "ccc", "sorted strings");
+	mu_assert_streq(rz_vector_index_ptr(v, 1), "caa", "sorted strings");
+	mu_assert_streq(rz_vector_index_ptr(v, 2), "abb", "sorted strings");
+
+	rz_vector_free(v);
+	mu_end;
+}
+
 static bool test_vector_empty(void) {
 	RzVector v;
 	rz_vector_init(&v, 1, NULL, NULL);
@@ -1288,6 +1310,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_clone);
 	mu_run_test(test_vector_empty);
 	mu_run_test(test_vector_remove_at);
+	mu_run_test(test_vector_sort);
 	mu_run_test(test_vector_remove_range);
 	mu_run_test(test_vector_insert);
 	mu_run_test(test_vector_insert_range);
