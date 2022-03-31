@@ -930,8 +930,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #if __UNIX__
 		// TODO: keep flags :?
 		rz_xfreopen("/dev/tty", "rb", stdin);
-		rz_xfreopen("/dev/tty", "w", stdout);
-		rz_xfreopen("/dev/tty", "w", stderr);
 #else
 		eprintf("Cannot reopen stdin without UNIX\n");
 		free(buf);
