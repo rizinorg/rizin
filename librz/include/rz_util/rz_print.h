@@ -132,32 +132,25 @@ RZ_API void rz_print_set_is_interrupted_cb(RzPrintIsInterruptedCallback cb);
 
 /* ... */
 RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int idx);
-RZ_API void rz_print_hex_from_base2(RzPrint *p, char *bin_str);
 RZ_API RzPrint *rz_print_new(void);
 RZ_API RzPrint *rz_print_free(RzPrint *p);
 RZ_API void rz_print_set_flags(RzPrint *p, int _flags);
-RZ_API void rz_print_unset_flags(RzPrint *p, int flags);
 RZ_API void rz_print_addr(RzPrint *p, ut64 addr);
 RZ_API void rz_print_section(RzPrint *p, ut64 at);
 RZ_API void rz_print_hexii(RzPrint *p, ut64 addr, const ut8 *buf, int len, int step);
 RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
-RZ_API void rz_print_hexdump_simple(const ut8 *buf, int len);
 RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize);
-RZ_API void rz_print_hexpairs(RzPrint *p, ut64 addr, const ut8 *buf, int len);
 RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8 *a, ut64 ba, const ut8 *b, int len, int scndcol);
 RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt);
 RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int step);
 RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch);
 RZ_API const char *rz_print_byte_color(RzPrint *p, int ch);
-RZ_API void rz_print_c(RzPrint *p, const ut8 *str, int len);
 RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len);
 RZ_API bool rz_print_have_cursor(RzPrint *p, int cur, int len);
 RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len);
 RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set);
-RZ_API void rz_print_cursor_range(RzPrint *p, int cur, int to, int set);
 RZ_API int rz_print_get_cursor(RzPrint *p);
 RZ_API void rz_print_set_cursor(RzPrint *p, int curset, int ocursor, int cursor);
-RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char lang);
 #define SEEFLAG    -2
 #define JSONOUTPUT -3
 
@@ -183,9 +176,6 @@ RZ_API void rz_print_init_rowoffsets(RzPrint *p);
 RZ_API ut32 rz_print_rowoff(RzPrint *p, int i);
 RZ_API void rz_print_set_rowoff(RzPrint *p, int i, ut32 offset, bool overwrite);
 RZ_API int rz_print_row_at_off(RzPrint *p, ut32 offset);
-
-RZ_API const char *rz_print_rowlog(RzPrint *print, const char *str);
-RZ_API void rz_print_rowlog_done(RzPrint *print, const char *str);
 
 // WIP
 RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr);

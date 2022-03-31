@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_analysis.h"
-#include "rz_bin.h"
-#include "rz_cons.h"
-#include "rz_core.h"
-#include "rz_util.h"
-#include "rz_types.h"
+#include <rz_analysis.h>
+#include <rz_bin.h>
+#include <rz_cons.h>
+#include <rz_core.h>
+#include <rz_util.h>
+#include <rz_types.h>
 #include <sdb.h>
+#include "../core_private.h"
 
 #define META_NAME_LENGTH
 

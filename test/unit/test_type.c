@@ -1013,6 +1013,19 @@ bool test_references(void) {
 	mu_end;
 }
 
+bool test_addr_bits(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	rz_type_db_set_bits(typedb, 32);
+	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
+	rz_type_db_set_bits(typedb, 64);
+	mu_assert_eq(rz_type_db_pointer_size(typedb), 64, "ptr size");
+	rz_type_db_set_address_bits(typedb, 32); // overrided bits
+	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
+	rz_type_db_set_bits(typedb, 16);
+	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_types_get_base_type_struct);
 	mu_run_test(test_types_get_base_type_union);
@@ -1033,6 +1046,7 @@ int all_tests() {
 	mu_run_test(test_union_identifier_without_specifier);
 	mu_run_test(test_edit_types);
 	mu_run_test(test_references);
+	mu_run_test(test_addr_bits);
 	return tests_passed != tests_run;
 }
 

@@ -9,8 +9,8 @@
 
 #define UPDATE_TIME(a) (r->times->file_open_time = rz_time_now_mono() - (a))
 
-static int rz_core_file_do_load_for_debug(RzCore *r, ut64 loadaddr, const char *filenameuri);
-static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
+static bool core_file_do_load_for_debug(RzCore *r, ut64 loadaddr, const char *filenameuri);
+static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
 
 static RzCoreFile *core_file_new(RzCore *core, int fd) {
 	RzCoreFile *r = RZ_NEW0(RzCoreFile);
@@ -595,7 +595,7 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 #endif
 
 // XXX - need to handle index selection during debugging
-static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri) {
+static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri) {
 	RzCoreFile *cf = rz_core_file_cur(r);
 	RzIODesc *desc = cf ? rz_io_desc_get(r->io, cf->fd) : NULL;
 	RzBinPlugin *plugin;
@@ -629,7 +629,7 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	int fd = cf ? cf->fd : -1;
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, false);
+	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false);
 	opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
 	opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
 	opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
@@ -637,20 +637,8 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open(r->bin, filenameuri, &opt);
 	if (!binfile) {
-		eprintf("RzBinLoad: Cannot open %s\n", filenameuri);
-		if (rz_config_get_i(r->config, "bin.rawstr")) {
-			rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, true);
-			opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
-			opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
-			opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
-			opt.obj_opts.big_endian = rz_config_get_b(r->config, "cfg.bigendian");
-			opt.xtr_idx = xtr_idx;
-
-			binfile = rz_bin_open(r->bin, filenameuri, &opt);
-			if (!binfile) {
-				return false;
-			}
-		}
+		RZ_LOG_ERROR("bin: debug: Cannot open %s\n", filenameuri);
+		return false;
 	}
 
 	if (binfile && cf) {
@@ -674,7 +662,6 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	if (plugin && !strcmp(plugin->name, "any")) {
 		// set use of raw strings
 		// rz_config_set_i (r->config, "io.va", false);
-		//\\ rz_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
 		r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
@@ -689,7 +676,7 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	return true;
 }
 
-static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr) {
+static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RzCoreFile *cf = rz_core_file_cur(r);
 	int fd = cf ? cf->fd : -1;
 	int xtr_idx = 0; // if 0, load all if xtr is used
@@ -726,7 +713,6 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 		// set use of raw strings
 		rz_core_bin_set_arch_bits(r, binfile->file, info->arch, info->bits);
 		// rz_config_set_i (r->config, "io.va", false);
-		// rz_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
 		r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
@@ -947,9 +933,9 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 		// TODO? necessary to restore the desc back?
 		// Fix to select pid before trying to load the binary
 		if ((desc->plugin && desc->plugin->isdbg) || rz_config_get_b(r->config, "cfg.debug")) {
-			rz_core_file_do_load_for_debug(r, baddr, filenameuri);
+			core_file_do_load_for_debug(r, baddr, filenameuri);
 		} else {
-			rz_core_file_do_load_for_io_plugin(r, baddr, 0LL);
+			core_file_do_load_for_io_plugin(r, baddr, 0LL);
 			if (!strncmp(filenameuri, "apk://", 6) && r->io->files->size > 1) {
 				RZ_LOG_INFO("Found multidex APK, mapping extra files\n");
 				rz_id_storage_foreach(r->io->files, (RzIDStorageForeachCb)map_multi_dex, r);
@@ -991,7 +977,6 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 				rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 			}
 			// set use of raw strings
-			// rz_config_set (r->config, "bin.rawstr", "true");
 			// rz_config_set_i (r->config, "io.va", false);
 			// get bin.minstr
 			r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");

@@ -1431,26 +1431,30 @@ RZ_API RzList *rz_sign_find_closest_fcn(RzAnalysis *a, RzSignItem *it, int count
 	return output;
 }
 
-RZ_API bool rz_sign_diff(RzAnalysis *a, RzSignOptions *options, const char *other_space_name) {
-	rz_return_val_if_fail(a && other_space_name, false);
+RZ_API RzList *rz_sign_diff(RzAnalysis *a, RzSignOptions *options, const char *other_space_name) {
+	rz_return_val_if_fail(a && other_space_name, NULL);
+	RzList *matches = rz_list_newf(free);
+	if (!matches) {
+		return NULL;
+	}
 
 	RzSpace *current_space = rz_spaces_current(&a->zign_spaces);
 	if (!current_space) {
-		return false;
+		return matches;
 	}
 	RzSpace *other_space = rz_spaces_get(&a->zign_spaces, other_space_name);
 	if (!other_space) {
-		return false;
+		return matches;
 	}
 
 	RzList *la = deserialize_sign_space(a, current_space);
 	if (!la) {
-		return false;
+		return matches;
 	}
 	RzList *lb = deserialize_sign_space(a, other_space);
 	if (!lb) {
 		rz_list_free(la);
-		return false;
+		return matches;
 	}
 
 	RZ_LOG_INFO("zignature: Diff %d %d\n", (int)ls_length(la), (int)ls_length(lb));
@@ -1475,40 +1479,46 @@ RZ_API bool rz_sign_diff(RzAnalysis *a, RzSignOptions *options, const char *othe
 			bool graphMatch = graphScore >= (options ? options->graph_diff_threshold : SIGN_DIFF_MATCH_GRAPH_THRESHOLD);
 
 			if (bytesMatch) {
-				a->cb_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5lf B %s\n", si->addr, si2->addr, bytesScore, si->name);
+				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5lf B %s", si->addr, si2->addr, bytesScore, si->name);
+				rz_list_append(matches, match);
 			}
 
 			if (graphMatch) {
-				a->cb_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5lf G %s\n", si->addr, si2->addr, graphScore, si->name);
+				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5lf G %s", si->addr, si2->addr, graphScore, si->name);
+				rz_list_append(matches, match);
 			}
 		}
 	}
 
 	rz_list_free(la);
 	rz_list_free(lb);
-	return true;
+	return matches;
 }
 
-RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const char *other_space_name, bool not_matching) {
-	rz_return_val_if_fail(a && other_space_name, false);
+RZ_API RzList *rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const char *other_space_name, bool not_matching) {
+	rz_return_val_if_fail(a && other_space_name, NULL);
+	RzList *matches = rz_list_newf(free);
+	if (!matches) {
+		return NULL;
+	}
 
 	RzSpace *current_space = rz_spaces_current(&a->zign_spaces);
 	if (!current_space) {
-		return false;
+		return matches;
 	}
 	RzSpace *other_space = rz_spaces_get(&a->zign_spaces, other_space_name);
 	if (!other_space) {
-		return false;
+		return matches;
 	}
 
 	RzList *la = deserialize_sign_space(a, current_space);
 	if (!la) {
-		return false;
+		return matches;
 	}
 	RzList *lb = deserialize_sign_space(a, other_space);
 	if (!lb) {
 		rz_list_free(la);
-		return false;
+		return matches;
 	}
 
 	RZ_LOG_INFO("zignature: Diff by name %d %d (%s)\n", (int)ls_length(la), (int)ls_length(lb), not_matching ? "not matching" : "matching");
@@ -1534,10 +1544,12 @@ RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const ch
 			bool bytesMatch = bytesScore >= (options ? options->bytes_diff_threshold : SIGN_DIFF_MATCH_BYTES_THRESHOLD);
 			bool graphMatch = graphScore >= (options ? options->graph_diff_threshold : SIGN_DIFF_MATCH_GRAPH_THRESHOLD);
 			if ((bytesMatch && !not_matching) || (!bytesMatch && not_matching)) {
-				a->cb_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5f B %s\n", si->addr, si2->addr, bytesScore, si->name);
+				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5f B %s", si->addr, si2->addr, bytesScore, si->name);
+				rz_list_append(matches, match);
 			}
 			if ((graphMatch && !not_matching) || (!graphMatch && not_matching)) {
-				a->cb_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5f G %s\n", si->addr, si2->addr, graphScore, si->name);
+				char *match = rz_str_newf("0x%08" PFMT64x " 0x%08" PFMT64x " %02.5f G %s", si->addr, si2->addr, graphScore, si->name);
+				rz_list_append(matches, match);
 			}
 		}
 	}
@@ -1545,7 +1557,7 @@ RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const ch
 	rz_list_free(la);
 	rz_list_free(lb);
 
-	return true;
+	return matches;
 }
 
 struct ctxListCB {
@@ -1553,6 +1565,7 @@ struct ctxListCB {
 	int idx;
 	int format;
 	PJ *pj;
+	RzStrBuf *sb;
 };
 
 struct ctxGetListCB {
@@ -1560,7 +1573,7 @@ struct ctxGetListCB {
 	RzList *list;
 };
 
-static void listBytes(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listBytes(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	RzSignBytes *bytes = it->bytes;
 
 	if (!bytes->bytes) {
@@ -1584,32 +1597,32 @@ static void listBytes(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 
 	if (format == '*') {
 		if (masked == bytes->size) {
-			a->cb_printf("za %s b %s\n", it->name, strbytes);
+			rz_strbuf_appendf(sb, "za %s b %s\n", it->name, strbytes);
 		} else {
-			a->cb_printf("za %s b %s:%s\n", it->name, strbytes, strmask);
+			rz_strbuf_appendf(sb, "za %s b %s:%s\n", it->name, strbytes, strmask);
 		}
 	} else if (format == 'q') {
-		a->cb_printf(" b(%d/%d)", masked, bytes->size);
+		rz_strbuf_appendf(sb, " b(%d/%d)", masked, bytes->size);
 	} else if (format == 'j') {
 		pj_ks(pj, "bytes", strbytes);
 		pj_ks(pj, "mask", strmask);
 	} else {
-		a->cb_printf("  bytes: %s\n", strbytes);
-		a->cb_printf("  mask: %s\n", strmask);
+		rz_strbuf_appendf(sb, "  bytes: %s\n", strbytes);
+		rz_strbuf_appendf(sb, "  mask: %s\n", strmask);
 	}
 
 	free(strbytes);
 	free(strmask);
 }
 
-static void listGraph(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listGraph(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	RzSignGraph *graph = it->graph;
 
 	if (format == 'q') {
-		a->cb_printf(" g(cc=%d,nb=%d,e=%d,eb=%d,h=%d)",
+		rz_strbuf_appendf(sb, " g(cc=%d,nb=%d,e=%d,eb=%d,h=%d)",
 			graph->cc, graph->nbbs, graph->edges, graph->ebbs, graph->bbsum);
 	} else if (format == '*') {
-		a->cb_printf("za %s g cc=%d nbbs=%d edges=%d ebbs=%d bbsum=%d\n",
+		rz_strbuf_appendf(sb, "za %s g cc=%d nbbs=%d edges=%d ebbs=%d bbsum=%d\n",
 			it->name, graph->cc, graph->nbbs, graph->edges, graph->ebbs, graph->bbsum);
 	} else if (format == 'j') {
 		pj_ko(pj, "graph");
@@ -1620,81 +1633,81 @@ static void listGraph(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 		pj_kN(pj, "bbsum", graph->bbsum);
 		pj_end(pj);
 	} else {
-		a->cb_printf("  graph: cc=%d nbbs=%d edges=%d ebbs=%d bbsum=%d\n",
+		rz_strbuf_appendf(sb, "  graph: cc=%d nbbs=%d edges=%d ebbs=%d bbsum=%d\n",
 			graph->cc, graph->nbbs, graph->edges, graph->ebbs, graph->bbsum);
 	}
 }
 
-static void listComment(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listComment(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	if (it->comment) {
 		if (format == 'q') {
 			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
-			a->cb_printf("\n ; %s\n", it->comment);
+			rz_strbuf_appendf(sb, "\n ; %s\n", it->comment);
 		} else if (format == '*') {
-			a->cb_printf("%s\n", it->comment); // comment injection via CCu..
+			rz_strbuf_appendf(sb, "%s\n", it->comment); // comment injection via CCu..
 		} else if (format == 'j') {
 			pj_ks(pj, "comments", it->comment);
 		} else {
-			a->cb_printf("  comment: 0x%08" PFMT64x "\n", it->addr);
+			rz_strbuf_appendf(sb, "  comment: 0x%08" PFMT64x "\n", it->addr);
 		}
 	}
 }
 
-static void listRealname(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listRealname(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	if (it->realname) {
 		if (format == 'q') {
-			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
+			//	rz_strbuf_appendf(sb, " addr(0x%08"PFMT64x")", it->addr);
 		} else if (format == '*') {
-			a->cb_printf("za %s n %s\n", it->name, it->realname);
-			a->cb_printf("afn %s @ 0x%08" PFMT64x "\n", it->realname, it->addr);
+			rz_strbuf_appendf(sb, "za %s n %s\n", it->name, it->realname);
+			rz_strbuf_appendf(sb, "afn %s @ 0x%08" PFMT64x "\n", it->realname, it->addr);
 		} else if (format == 'j') {
 			pj_ks(pj, "realname", it->realname);
 		} else {
-			a->cb_printf("  realname: %s\n", it->realname);
+			rz_strbuf_appendf(sb, "  realname: %s\n", it->realname);
 		}
 	}
 }
 
-static void listOffset(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listOffset(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	if (format == 'q') {
-		//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
+		//	rz_strbuf_appendf(sb, " addr(0x%08"PFMT64x")", it->addr);
 	} else if (format == '*') {
-		a->cb_printf("za %s o 0x%08" PFMT64x "\n", it->name, it->addr);
+		rz_strbuf_appendf(sb, "za %s o 0x%08" PFMT64x "\n", it->name, it->addr);
 	} else if (format == 'j') {
 		pj_kN(pj, "addr", it->addr);
 	} else {
-		a->cb_printf("  addr: 0x%08" PFMT64x "\n", it->addr);
+		rz_strbuf_appendf(sb, "  addr: 0x%08" PFMT64x "\n", it->addr);
 	}
 }
 
-static void listVars(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listVars(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	RzListIter *iter = NULL;
 	char *var = NULL;
 	int i = 0;
 
 	if (format == '*') {
-		a->cb_printf("za %s v ", it->name);
+		rz_strbuf_appendf(sb, "za %s v ", it->name);
 	} else if (format == 'q') {
-		a->cb_printf(" vars(%d)", rz_list_length(it->vars));
+		rz_strbuf_appendf(sb, " vars(%d)", rz_list_length(it->vars));
 		return;
 	} else if (format == 'j') {
 		pj_ka(pj, "vars");
 	} else {
-		a->cb_printf("  vars: ");
+		rz_strbuf_appendf(sb, "  vars: ");
 	}
 
 	rz_list_foreach (it->vars, iter, var) {
 		if (i > 0) {
 			if (format == '*') {
-				a->cb_printf(" ");
+				rz_strbuf_appendf(sb, " ");
 			} else if (format != 'j') {
-				a->cb_printf(", ");
+				rz_strbuf_appendf(sb, ", ");
 			}
 		}
 		if (format == 'j') {
 			pj_s(pj, var);
 		} else {
-			a->cb_printf("%s", var);
+			rz_strbuf_appendf(sb, "%s", var);
 		}
 		i++;
 	}
@@ -1702,20 +1715,20 @@ static void listVars(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	if (format == 'j') {
 		pj_end(pj);
 	} else {
-		a->cb_printf("\n");
+		rz_strbuf_appendf(sb, "\n");
 	}
 }
 
-static void print_list_type_header(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void print_list_type_header(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	if (format == '*') {
-		a->cb_printf("za %s t ", it->name);
+		rz_strbuf_appendf(sb, "za %s t ", it->name);
 	} else if (format == 'q') {
-		a->cb_printf(" types(%d)", rz_list_length(it->types));
+		rz_strbuf_appendf(sb, " types(%d)", rz_list_length(it->types));
 		return;
 	} else if (format == 'j') {
 		pj_ka(pj, "types");
 	} else {
-		a->cb_printf("  types: ");
+		rz_strbuf_appendf(sb, "  types: ");
 	}
 }
 
@@ -1755,77 +1768,77 @@ static void print_type_json(RzAnalysis *a, char *type, PJ *pj, size_t pos) {
 	print_function_args_json(a, pj, str_type);
 }
 
-static void print_list_separator(RzAnalysis *a, RzSignItem *it, PJ *pj, int format, int pos) {
+static void print_list_separator(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format, int pos) {
 	if (pos == 0 || format == 'j') {
 		return;
 	}
 	if (format == '*') {
-		a->cb_printf(" ");
+		rz_strbuf_appendf(sb, " ");
 	} else {
-		a->cb_printf(", ");
+		rz_strbuf_appendf(sb, ", ");
 	}
 }
 
-static void print_list_type_body(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void print_list_type_body(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	int i = 0;
 	char *type = NULL;
 	RzListIter *iter = NULL;
 
 	rz_list_foreach (it->types, iter, type) {
-		print_list_separator(a, it, pj, format, i);
+		print_list_separator(a, it, pj, sb, format, i);
 
 		if (format == 'j') {
 			char *t = strdup(type);
 			print_type_json(a, t, pj, i);
 			free(t);
 		} else {
-			a->cb_printf("%s", type);
+			rz_strbuf_appendf(sb, "%s", type);
 		}
 		i++;
 	}
 }
 
-static void listTypes(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
-	print_list_type_header(a, it, pj, format);
-	print_list_type_body(a, it, pj, format);
+static void listTypes(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
+	print_list_type_header(a, it, pj, sb, format);
+	print_list_type_body(a, it, pj, sb, format);
 
 	if (format == 'j') {
 		pj_end(pj);
 	} else {
-		a->cb_printf("\n");
+		rz_strbuf_appendf(sb, "\n");
 	}
 }
 
-static void listXRefsTo(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listXRefsTo(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	RzListIter *iter = NULL;
 	char *ref = NULL;
 	int i = 0;
 
 	if (format == '*') {
-		a->cb_printf("za %s x ", it->name);
+		rz_strbuf_appendf(sb, "za %s x ", it->name);
 	} else if (format == 'q') {
-		a->cb_printf(" xrefs_to(%d)", rz_list_length(it->xrefs_to));
+		rz_strbuf_appendf(sb, " xrefs_to(%d)", rz_list_length(it->xrefs_to));
 		return;
 	} else if (format == 'j') {
 		pj_ka(pj, "xrefs_to");
 	} else {
 		if (it->xrefs_to && !rz_list_empty(it->xrefs_to)) {
-			a->cb_printf("  xrefs_to: ");
+			rz_strbuf_appendf(sb, "  xrefs_to: ");
 		}
 	}
 
 	rz_list_foreach (it->xrefs_to, iter, ref) {
 		if (i > 0) {
 			if (format == '*') {
-				a->cb_printf(" ");
+				rz_strbuf_appendf(sb, " ");
 			} else if (format != 'j') {
-				a->cb_printf(", ");
+				rz_strbuf_appendf(sb, ", ");
 			}
 		}
 		if (format == 'j') {
 			pj_s(pj, ref);
 		} else {
-			a->cb_printf("%s", ref);
+			rz_strbuf_appendf(sb, "%s", ref);
 		}
 		i++;
 	}
@@ -1833,40 +1846,40 @@ static void listXRefsTo(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	if (format == 'j') {
 		pj_end(pj);
 	} else {
-		a->cb_printf("\n");
+		rz_strbuf_appendf(sb, "\n");
 	}
 }
 
-static void listXRefsFrom(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listXRefsFrom(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	RzListIter *iter = NULL;
 	char *ref = NULL;
 	int i = 0;
 
 	if (format == '*') {
-		a->cb_printf("za %s r ", it->name);
+		rz_strbuf_appendf(sb, "za %s r ", it->name);
 	} else if (format == 'q') {
-		a->cb_printf(" xrefs_from(%d)", rz_list_length(it->xrefs_from));
+		rz_strbuf_appendf(sb, " xrefs_from(%d)", rz_list_length(it->xrefs_from));
 		return;
 	} else if (format == 'j') {
 		pj_ka(pj, "xrefs_from");
 	} else {
 		if (it->xrefs_from && !rz_list_empty(it->xrefs_from)) {
-			a->cb_printf("  xrefs_from: ");
+			rz_strbuf_appendf(sb, "  xrefs_from: ");
 		}
 	}
 
 	rz_list_foreach (it->xrefs_from, iter, ref) {
 		if (i > 0) {
 			if (format == '*') {
-				a->cb_printf(" ");
+				rz_strbuf_appendf(sb, " ");
 			} else if (format != 'j') {
-				a->cb_printf(", ");
+				rz_strbuf_appendf(sb, ", ");
 			}
 		}
 		if (format == 'j') {
 			pj_s(pj, ref);
 		} else {
-			a->cb_printf("%s", ref);
+			rz_strbuf_appendf(sb, "%s", ref);
 		}
 		i++;
 	}
@@ -1874,11 +1887,11 @@ static void listXRefsFrom(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	if (format == 'j') {
 		pj_end(pj);
 	} else {
-		a->cb_printf("\n");
+		rz_strbuf_appendf(sb, "\n");
 	}
 }
 
-static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, RzStrBuf *sb, int format) {
 	if (!it->hash) {
 		return;
 	}
@@ -1886,12 +1899,12 @@ static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	case 'q':
 		if (it->hash->bbhash) {
 			ut32 hash = rz_str_djb2_hash(it->hash->bbhash);
-			a->cb_printf(" h(%08x)", hash);
+			rz_strbuf_appendf(sb, " h(%08x)", hash);
 		}
 		break;
 	case '*':
 		if (it->hash->bbhash) {
-			a->cb_printf("za %s h %s\n", it->name, it->hash->bbhash);
+			rz_strbuf_appendf(sb, "za %s h %s\n", it->name, it->hash->bbhash);
 		}
 		break;
 	case 'j':
@@ -1903,7 +1916,7 @@ static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 		break;
 	default:
 		if (it->hash->bbhash) {
-			a->cb_printf("  bbhash: %s\n", it->hash->bbhash);
+			rz_strbuf_appendf(sb, "  bbhash: %s\n", it->hash->bbhash);
 		}
 		break;
 	}
@@ -1932,14 +1945,14 @@ static bool listCB(void *user, const char *k, const char *v) {
 	// Zignspace and name (except for rizin format)
 	if (ctx->format == '*') {
 		if (it->space) {
-			a->cb_printf("zs %s\n", it->space->name);
+			rz_strbuf_appendf(ctx->sb, "zs %s\n", it->space->name);
 		} else {
-			a->cb_printf("zs *\n");
+			rz_strbuf_appendf(ctx->sb, "zs *\n");
 		}
 	} else if (ctx->format == 'q') {
-		a->cb_printf("0x%08" PFMT64x " ", it->addr);
+		rz_strbuf_appendf(ctx->sb, "0x%08" PFMT64x " ", it->addr);
 		const char *pad = rz_str_pad(' ', 30 - strlen(it->name));
-		a->cb_printf("%s:%s", it->name, pad);
+		rz_strbuf_appendf(ctx->sb, "%s:%s", it->name, pad);
 	} else if (ctx->format == 'j') {
 		if (it->space) {
 			pj_ks(ctx->pj, "zignspace", it->space->name);
@@ -1947,21 +1960,21 @@ static bool listCB(void *user, const char *k, const char *v) {
 		pj_ks(ctx->pj, "name", it->name);
 	} else {
 		if (!rz_spaces_current(&a->zign_spaces) && it->space) {
-			a->cb_printf("(%s) ", it->space->name);
+			rz_strbuf_appendf(ctx->sb, "(%s) ", it->space->name);
 		}
-		a->cb_printf("%s:\n", it->name);
+		rz_strbuf_appendf(ctx->sb, "%s:\n", it->name);
 	}
 
 	// Bytes pattern
 	if (it->bytes) {
-		listBytes(a, it, ctx->pj, ctx->format);
+		listBytes(a, it, ctx->pj, ctx->sb, ctx->format);
 	} else if (ctx->format == 'j') {
 		pj_ks(ctx->pj, "bytes", "");
 	}
 
 	// Graph metrics
 	if (it->graph) {
-		listGraph(a, it, ctx->pj, ctx->format);
+		listGraph(a, it, ctx->pj, ctx->sb, ctx->format);
 	} else if (ctx->format == 'j') {
 		pj_ko(ctx->pj, "graph");
 		pj_end(ctx->pj);
@@ -1969,47 +1982,47 @@ static bool listCB(void *user, const char *k, const char *v) {
 
 	// Offset
 	if (it->addr != UT64_MAX) {
-		listOffset(a, it, ctx->pj, ctx->format);
+		listOffset(a, it, ctx->pj, ctx->sb, ctx->format);
 	} else if (ctx->format == 'j') {
 		pj_kN(ctx->pj, "addr", -1);
 	}
 	// Name
 	if (it->realname) {
-		listRealname(a, it, ctx->pj, ctx->format);
+		listRealname(a, it, ctx->pj, ctx->sb, ctx->format);
 	}
 	if (it->comment) {
-		listComment(a, it, ctx->pj, ctx->format);
+		listComment(a, it, ctx->pj, ctx->sb, ctx->format);
 	}
 	// XReferences
 	if (it->xrefs_from) {
-		listXRefsFrom(a, it, ctx->pj, ctx->format);
+		listXRefsFrom(a, it, ctx->pj, ctx->sb, ctx->format);
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "xrefs_from");
 		pj_end(ctx->pj);
 	}
 	// XReferences
 	if (it->xrefs_to) {
-		listXRefsTo(a, it, ctx->pj, ctx->format);
+		listXRefsTo(a, it, ctx->pj, ctx->sb, ctx->format);
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "xrefs_to");
 		pj_end(ctx->pj);
 	}
 	// Vars
 	if (it->vars) {
-		listVars(a, it, ctx->pj, ctx->format);
+		listVars(a, it, ctx->pj, ctx->sb, ctx->format);
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "vars");
 		pj_end(ctx->pj);
 	}
 	if (it->types) {
-		listTypes(a, it, ctx->pj, ctx->format);
+		listTypes(a, it, ctx->pj, ctx->sb, ctx->format);
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "types");
 		pj_end(ctx->pj);
 	}
 	// Hash
 	if (it->hash) {
-		listHash(a, it, ctx->pj, ctx->format);
+		listHash(a, it, ctx->pj, ctx->sb, ctx->format);
 	} else if (ctx->format == 'j') {
 		pj_ko(ctx->pj, "hash");
 		pj_end(ctx->pj);
@@ -2020,7 +2033,7 @@ static bool listCB(void *user, const char *k, const char *v) {
 		pj_end(ctx->pj);
 	}
 	if (ctx->format == 'q') {
-		a->cb_printf("\n");
+		rz_strbuf_appendf(ctx->sb, "\n");
 	}
 
 	ctx->idx++;
@@ -2031,7 +2044,7 @@ out:
 	return true;
 }
 
-RZ_API void rz_sign_list(RzAnalysis *a, int format) {
+RZ_API void rz_sign_list(RzAnalysis *a, RzStrBuf *sb, int format) {
 	rz_return_if_fail(a);
 	PJ *pj = NULL;
 
@@ -2040,12 +2053,12 @@ RZ_API void rz_sign_list(RzAnalysis *a, int format) {
 		pj_a(pj);
 	}
 
-	struct ctxListCB ctx = { a, 0, format, pj };
+	struct ctxListCB ctx = { a, 0, format, pj, sb };
 	sdb_foreach(a->sdb_zigns, listCB, &ctx);
 
 	if (format == 'j') {
 		pj_end(pj);
-		a->cb_printf("%s\n", pj_string(pj));
+		rz_strbuf_appendf(sb, "%s\n", pj_string(pj));
 		pj_free(pj);
 	}
 }

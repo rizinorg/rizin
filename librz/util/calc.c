@@ -257,6 +257,7 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 		} else {
 			error(num, nc, " ')' expected");
 		}
+		return v;
 	case RNCLT:
 	case RNCGT:
 	case RNCEND:

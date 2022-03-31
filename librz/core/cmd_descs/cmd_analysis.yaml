@@ -3,6 +3,28 @@
 ---
 name: cmd_analysis
 commands:
+  - name: aae
+    summary: analyze references with ESIL
+    cname: analysis_all_esil
+    type: RZ_CMD_DESC_TYPE_ARGV
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "aae"
+            arg_str: ""
+            comment: analyze ranges given by analysis.in
+          - text: "aae"
+            arg_str: " $SS @ $S"
+            comment: analyze the whole section
+  - name: aaef
+    summary: analyze references with ESIL in all functions
+    cname: analysis_all_esil_functions
+    type: RZ_CMD_DESC_TYPE_ARGV
+    args: []
   - name: af
     summary: Analyze Functions commands
     cname: cmd_analysis_fcn
@@ -148,6 +170,7 @@ commands:
           - name: afv
             cname: analysis_function_vars
             summary: List all variables and arguments of the current function
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
@@ -248,6 +271,7 @@ commands:
               - name: afvb
                 cname: analysis_function_vars_bp
                 summary: List base pointer based arguments and locals / Define a new one
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
                   - RZ_OUTPUT_MODE_RIZIN
@@ -292,6 +316,7 @@ commands:
             subcommands:
               - name: afvr
                 cname: analysis_function_vars_regs
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 summary: List register-based arguments and locals / Define a new one
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
@@ -337,6 +362,7 @@ commands:
             subcommands:
               - name: afvs
                 cname: analysis_function_vars_sp
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 summary: List stack based arguments and locals / Define a new one
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
@@ -1453,3 +1479,103 @@ commands:
               - name: class_name
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
+  - name: a8
+    summary: Analyze bytes
+    cname: analyze_bytes
+    args:
+      - name: hexpairs
+        type: RZ_CMD_ARG_TYPE_STRING
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: aO
+    summary: Analyze next block as instructions
+    subcommands:
+      - name: aO
+        summary: Analyze next block as instructions
+        cname: analyze_n_bytes
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+      - name: aOe
+        summary: Analyze the esil of next block
+        cname: analyze_n_bytes_esil
+        args: []
+      - name: aOd
+        summary: Print the description of next block
+        cname: analyze_n_bytes_desc
+        args: []
+      - name: aOs
+        summary: Print the total instruction size of next block
+        cname: analyze_n_bytes_size
+        args: []
+  - name: ao
+    summary: Analyze N instructions
+    subcommands:
+      - name: ao
+        summary: Analyze next N instructions
+        cname: analyze_n_ins
+        args:
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+      - name: aos
+        summary: Print the total size of next N instructions
+        cname: analyze_n_ins_size
+        args:
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aoe
+        summary: Print the esil of next N instructions
+        cname: analyze_n_ins_esil
+        args:
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aod
+        summary: Describe opcode for asm.arch
+        cname: analyze_opcode
+        args:
+          - name: opcode
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: aoda
+        summary: Describe all opcode for asm.arch
+        cname: display_opcode
+        args: []
+      - name: aoc
+        summary: Analyze which op could be executed in [cycles]
+        cname: analyze_cycles
+        args:
+          - name: cycles
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aom
+        summary: convert between mnemonic/id for asm.arch
+        cname: convert_mne
+        args:
+          - name: mne_or_id
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: aoma
+        summary: List mnemonics for asm.arch
+        cname: list_mne
+        args: []
+  - name: an
+    summary: Show/rename/create whatever flag/function is used at addr
+    cname: analyse_name
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON

@@ -16,7 +16,7 @@ typedef struct rz_mmap_t {
 	char *filename;
 	int fd;
 #if __WINDOWS__
-	HANDLE fm;
+	void *fm;
 #endif
 } RzMmap;
 
@@ -37,6 +37,7 @@ RZ_API char *rz_file_temp(const char *prefix);
 RZ_API char *rz_file_path(const char *bin);
 RZ_API RZ_OWN char *rz_file_path_join(RZ_NONNULL const char *s1, RZ_NULLABLE const char *s2);
 RZ_API const char *rz_file_basename(const char *path);
+RZ_API const char *rz_file_dos_basename(RZ_BORROW RZ_NONNULL const char *path);
 RZ_API char *rz_file_dirname(const char *path);
 RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file);
 RZ_API char *rz_file_abspath(const char *file);

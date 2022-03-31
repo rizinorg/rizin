@@ -70,7 +70,7 @@ extern char **environ;
 #endif
 #if __WINDOWS__
 #include <io.h>
-#include <winbase.h>
+#include <rz_windows.h>
 #include <signal.h>
 #define TMP_BUFSIZE 4096
 #ifdef _MSC_VER
@@ -655,10 +655,9 @@ RZ_API bool rz_sys_mkdir(const char *dir) {
 	bool ret;
 
 #if __WINDOWS__
-	LPTSTR dir_ = rz_sys_conv_utf8_to_win(dir);
-
-	ret = CreateDirectory(dir_, NULL) != 0;
-	free(dir_);
+	wchar_t *dir_utf16 = rz_utf8_to_utf16(dir);
+	ret = _wmkdir(dir_utf16) != -1;
+	free(dir_utf16);
 #else
 	ret = mkdir(dir, 0755) != -1;
 #endif
@@ -983,10 +982,6 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	}
 	return result;
 #elif __APPLE__
-#if __POWERPC__
-#warning TODO getpidproc
-	return NULL;
-#else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pathbuf[0] = 0;
 	int ret = proc_pidpath(pid, pathbuf, sizeof(pathbuf));
@@ -994,7 +989,6 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		return NULL;
 	}
 	return strdup(pathbuf);
-#endif
 #else
 	int ret;
 #if __FreeBSD__ || __DragonFly__

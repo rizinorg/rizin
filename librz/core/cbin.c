@@ -88,13 +88,7 @@ RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, in
 
 	bool patch_relocs = rz_config_get_b(core->config, "bin.relocs");
 
-	rz_bin_options_init(
-		opts,
-		fd,
-		baseaddr,
-		loadaddr,
-		patch_relocs,
-		core->bin->rawstr);
+	rz_bin_options_init(opts, fd, baseaddr, loadaddr, patch_relocs);
 
 	opts->obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
 	opts->obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
@@ -1673,7 +1667,7 @@ static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile
 	if (!plugin || !rz_config_get_i(r->config, "bin.strings")) {
 		return NULL;
 	}
-	if (plugin->name && !strcmp(plugin->name, "any") && !rz_config_get_i(r->config, "bin.rawstr")) {
+	if (plugin->name && !strcmp(plugin->name, "any")) {
 		return NULL;
 	}
 	return rz_bin_get_strings(r->bin);
@@ -2812,7 +2806,8 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 		bf->rbin = core->bin;
 		new_bf = true;
 	}
-	RzList *l = rz_bin_raw_strings(bf, 0);
+	size_t min = rz_config_get_i(core->config, "bin.minstr");
+	RzList *l = rz_bin_file_strings(bf, min, true);
 	bool res = strings_print(core, state, l);
 	rz_list_free(l);
 	if (new_bf) {
@@ -4828,12 +4823,12 @@ RZ_API char *rz_core_bin_pdb_get_filename(RzCore *core) {
 		return NULL;
 	}
 	// Check raw path for debug filename
-	bool file_found = rz_file_exists(rz_file_basename(info->debug_file_name));
+	bool file_found = rz_file_exists(info->debug_file_name);
 	if (file_found) {
-		return strdup(rz_file_basename(info->debug_file_name));
+		return strdup(info->debug_file_name);
 	}
 	// Check debug filename basename in current directory
-	char *basename = (char *)rz_file_basename(info->debug_file_name);
+	const char *basename = rz_file_dos_basename(info->debug_file_name);
 	file_found = rz_file_exists(basename);
 	if (file_found) {
 		return strdup(basename);
@@ -4850,9 +4845,8 @@ RZ_API char *rz_core_bin_pdb_get_filename(RzCore *core) {
 
 	// Last chance: Check if file is in downstream symbol store
 	const char *symstore_path = rz_config_get(core->config, "pdb.symstore");
-	const char *base_file = rz_file_basename(info->debug_file_name);
 	return rz_str_newf("%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s",
-		symstore_path, base_file, info->guid, base_file);
+		symstore_path, basename, info->guid, basename);
 }
 
 static void bin_memory_print_rec(RzCmdStateOutput *state, RzBinMem *mirror, const RzList *mems, int perms) {

@@ -194,7 +194,7 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 			free(r);
 		}
 		rz_cons_printf("esil stack:\n");
-		rz_analysis_esil_dumpstack(esil);
+		rz_core_esil_dumpstack(esil);
 		rz_analysis_op_fini(&analop);
 		rz_cons_newline();
 		rz_cons_visual_flush();
@@ -2627,6 +2627,7 @@ RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 			if (delta < 0) {
 				delta = 0;
 			}
+			break;
 		case 'j':
 			delta++;
 			break;

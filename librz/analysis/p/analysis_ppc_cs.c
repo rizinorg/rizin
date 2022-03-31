@@ -896,6 +896,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			break;
 		case PPC_INS_MULLI:
 			op->sign = true;
+			// fallthrough
 		case PPC_INS_MULLW:
 		case PPC_INS_MULLD:
 			op->type = RZ_ANALYSIS_OP_TYPE_MUL;

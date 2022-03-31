@@ -5,6 +5,7 @@
 #include <rz_debug.h>
 #include <rz_core.h>
 #include <rz_io.h>
+#include "../core_private.h"
 
 struct open_list_ascii_data_t {
 	RzPrint *p;
@@ -386,6 +387,21 @@ RZ_IPI RzCmdStatus rz_open_maps_prioritize_binid_handler(RzCore *core, int argc,
 	if (!rz_bin_file_set_cur_by_id(core->bin, id)) {
 		RZ_LOG_ERROR("Cannot prioritize bin with fd %d\n", id);
 		return RZ_CMD_STATUS_ERROR;
+	}
+	RzListIter *it;
+	RzCoreFile *file = NULL;
+	rz_list_foreach (core->files, it, file) {
+		void **binfile;
+		rz_pvector_foreach (&file->binfiles, binfile) {
+			RzBinFile *bf = *binfile;
+			if (bf->id == id) {
+				void **map;
+				rz_pvector_foreach (&file->maps, map) {
+					RzIOMap *m = *map;
+					rz_io_map_priorize(core->io, m->id);
+				}
+			}
+		}
 	}
 	return RZ_CMD_STATUS_OK;
 }

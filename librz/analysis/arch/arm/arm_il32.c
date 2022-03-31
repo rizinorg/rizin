@@ -525,7 +525,7 @@ static RzILOpEffect *add_sub(cs_insn *insn, bool is_thumb) {
 			SETL("a", DUP(a)),
 			SETL("b", DUP(b)),
 			set,
-			SETG("cf", is_sub ? sub_carry(VARL("a"), VARL("b"), with_carry) : add_carry(VARL("a"), VARL("b"), with_carry)),
+			SETG("cf", (is_sub ? sub_carry : add_carry)(VARL("a"), VARL("b"), with_carry, 32)),
 			SETG("vf", (is_sub ? sub_overflow : add_overflow)(VARL("a"), VARL("b"), REG(0))),
 			update_flags_zn(REG(0)));
 	}
@@ -955,7 +955,7 @@ static RzILOpEffect *cmp(cs_insn *insn, bool is_thumb) {
 		SETL("a", a),
 		SETL("b", b),
 		SETL("res", is_sub ? SUB(VARL("a"), VARL("b")) : ADD(VARL("a"), VARL("b"))),
-		SETG("cf", is_sub ? sub_carry(VARL("a"), VARL("b"), false) : add_carry(VARL("a"), VARL("b"), false)),
+		SETG("cf", (is_sub ? sub_carry : add_carry)(VARL("a"), VARL("b"), false, 32)),
 		SETG("vf", (is_sub ? sub_overflow : add_overflow)(VARL("a"), VARL("b"), VARL("res"))),
 		update_flags_zn(VARL("res")));
 }
@@ -1690,6 +1690,7 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	case ARM_INS_SHSAX:
 	case ARM_INS_UHSAX:
 		halve = true;
+		// fallthrough
 	case ARM_INS_SASX:
 	case ARM_INS_UASX:
 		l = SUB(al, bh);
@@ -1699,6 +1700,7 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	case ARM_INS_SHASX:
 	case ARM_INS_UHASX:
 		halve = true;
+		// fallthrough
 	case ARM_INS_SSAX:
 	case ARM_INS_USAX:
 		l = ADD(al, bh);
@@ -1708,6 +1710,7 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	case ARM_INS_SHSUB16:
 	case ARM_INS_UHSUB16:
 		halve = true;
+		// fallthrough
 	case ARM_INS_SSUB16:
 	case ARM_INS_USUB16:
 		l = SUB(al, bl);
@@ -1717,6 +1720,7 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	case ARM_INS_SHADD16:
 	case ARM_INS_UHADD16:
 		halve = true;
+		// fallthrough
 	default: // ARM_INS_SADD16, ARM_INS_SHADD16, ARM_INS_UADD16, ARM_INS_UHADD16
 		l = ADD(al, bl);
 		h = ADD(ah, bh);
@@ -1775,6 +1779,7 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 	case ARM_INS_SHSUB8:
 	case ARM_INS_UHSUB8:
 		halve = true;
+		// fallthrough
 	case ARM_INS_SSUB8:
 	case ARM_INS_USUB8:
 		r0 = SUB(a0, b0);
@@ -1786,6 +1791,7 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 	case ARM_INS_SHADD8:
 	case ARM_INS_UHADD8:
 		halve = true;
+		// fallthrough
 	default: // ARM_INS_SADD8, ARM_INS_UADD8
 		r0 = ADD(a0, b0);
 		r1 = ADD(a1, b1);

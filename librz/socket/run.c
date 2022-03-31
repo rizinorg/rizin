@@ -15,9 +15,7 @@
 #include <sys/types.h>
 
 #if __APPLE__ && HAVE_FORK
-#if !__POWERPC__
 #include <spawn.h>
-#endif
 #include <sys/wait.h>
 #include <mach/exception_types.h>
 #include <mach/mach_init.h>
@@ -288,7 +286,7 @@ static void setASLR(RzRunProfile *r, int enabled) {
 #endif
 }
 
-#if __APPLE__ && !__POWERPC__
+#if __APPLE__
 #else
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 static void restore_saved_fd(int saved, bool restore, int fd) {
@@ -389,7 +387,7 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 #endif
 
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
-#if __APPLE__ && !__POWERPC__
+#if __APPLE__
 	// XXX handle this in other layer since things changes a little bit
 	// this seems like a really good place to refactor stuff
 	return 0;
@@ -1083,7 +1081,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 	}
 #endif
-#if __APPLE__ && !__POWERPC__ && HAVE_FORK
+#if __APPLE__ && HAVE_FORK
 	posix_spawnattr_t attr = { 0 };
 	pid_t pid = -1;
 	int ret;
@@ -1116,15 +1114,8 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 		switch (ret) {
 		case 0:
 			break;
-		case 22:
-			eprintf("posix_spawnp: Invalid argument\n");
-			break;
-		case 86:
-			eprintf("posix_spawnp: Unsupported architecture\n");
-			break;
 		default:
-			eprintf("posix_spawnp: unknown error %d\n", ret);
-			perror("posix_spawnp");
+			eprintf("posix_spawnp: %s\n", strerror(ret));
 			break;
 		}
 		exit(ret);

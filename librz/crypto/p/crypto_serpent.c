@@ -13,7 +13,9 @@ static bool serpent_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode,
 		return false;
 	}
 	st->key_size = keylen * 8;
-	memcpy(st->key, key, keylen);
+	for (size_t i = 0; i < keylen / 4; i++) {
+		st->key[i] = rz_read_at_le32(key, i * 4);
+	}
 	cry->dir = direction;
 	return true;
 }

@@ -5,8 +5,8 @@
 #include <rz_bin.h>
 #include <rz_type.h>
 #include <rz_util/rz_path.h>
-#include "minunit.h"
 #include "test_types.h"
+#include "../unit/minunit.h"
 
 #define check_kv(k, v) \
 	do { \
@@ -148,7 +148,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	free(types_dir);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
@@ -211,7 +211,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	rz_analysis_set_bits(analysis, 64);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf_go_tree", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
@@ -273,7 +273,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	free(types_dir);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf_rust_bubble", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?

@@ -953,22 +953,22 @@ static bool parse_v5_header(RzBuffer *buf, idasig_v5_t *header) {
 	if (rz_buf_read(buf, &header->arch, sizeof(header->arch)) != sizeof(header->arch)) {
 		return false;
 	}
-	if (rz_buf_read(buf, (unsigned char *)&header->file_types, sizeof(header->file_types)) != sizeof(header->file_types)) {
+	if (!rz_buf_read_le32(buf, &header->file_types)) {
 		return false;
 	}
-	if (rz_buf_read(buf, (unsigned char *)&header->os_types, sizeof(header->os_types)) != sizeof(header->os_types)) {
+	if (!rz_buf_read_le16(buf, &header->os_types)) {
 		return false;
 	}
-	if (rz_buf_read(buf, (unsigned char *)&header->app_types, sizeof(header->app_types)) != sizeof(header->app_types)) {
+	if (!rz_buf_read_le16(buf, &header->app_types)) {
 		return false;
 	}
-	if (rz_buf_read(buf, (unsigned char *)&header->features, sizeof(header->features)) != sizeof(header->features)) {
+	if (!rz_buf_read_le16(buf, &header->features)) {
 		return false;
 	}
-	if (rz_buf_read(buf, (unsigned char *)&header->old_n_functions, sizeof(header->old_n_functions)) != sizeof(header->old_n_functions)) {
+	if (!rz_buf_read_le16(buf, &header->old_n_functions)) {
 		return false;
 	}
-	if (rz_buf_read(buf, (unsigned char *)&header->crc16, sizeof(header->crc16)) != sizeof(header->crc16)) {
+	if (!rz_buf_read_le16(buf, &header->crc16)) {
 		return false;
 	}
 	if (rz_buf_read(buf, header->ctype, sizeof(header->ctype)) != sizeof(header->ctype)) {
@@ -977,7 +977,7 @@ static bool parse_v5_header(RzBuffer *buf, idasig_v5_t *header) {
 	if (rz_buf_read(buf, (unsigned char *)&header->library_name_len, sizeof(header->library_name_len)) != sizeof(header->library_name_len)) {
 		return false;
 	}
-	if (rz_buf_read(buf, (unsigned char *)&header->ctypes_crc16, sizeof(header->ctypes_crc16)) != sizeof(header->ctypes_crc16)) {
+	if (!rz_buf_read_le16(buf, &header->ctypes_crc16)) {
 		return false;
 	}
 
@@ -985,7 +985,7 @@ static bool parse_v5_header(RzBuffer *buf, idasig_v5_t *header) {
 }
 
 static int parse_v6_v7_header(RzBuffer *buf, idasig_v6_v7_t *header) {
-	if (rz_buf_read(buf, (unsigned char *)&header->n_functions, sizeof(header->n_functions)) != sizeof(header->n_functions)) {
+	if (!rz_buf_read_le32(buf, &header->n_functions)) {
 		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v6/v7 header).\n");
 		return false;
 	}
@@ -994,7 +994,7 @@ static int parse_v6_v7_header(RzBuffer *buf, idasig_v6_v7_t *header) {
 }
 
 static int parse_v8_v9_header(RzBuffer *buf, idasig_v8_v9_t *header) {
-	if (rz_buf_read(buf, (unsigned char *)&header->pattern_size, sizeof(header->pattern_size)) != sizeof(header->pattern_size)) {
+	if (!rz_buf_read_le16(buf, &header->pattern_size)) {
 		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v8/v9 header).\n");
 		return false;
 	}
@@ -1003,7 +1003,7 @@ static int parse_v8_v9_header(RzBuffer *buf, idasig_v8_v9_t *header) {
 }
 
 static int parse_v10_header(RzBuffer *buf, idasig_v10_t *header) {
-	if (rz_buf_read(buf, (unsigned char *)&header->unknown, sizeof(header->unknown)) != sizeof(header->unknown)) {
+	if (!rz_buf_read_le16(buf, &header->unknown)) {
 		RZ_LOG_ERROR("FLIRT: invalid sig file (EOF in v10 header).\n");
 		return false;
 	}

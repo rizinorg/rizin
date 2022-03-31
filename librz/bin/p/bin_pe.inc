@@ -150,6 +150,17 @@ static RzList *maps(RzBinFile *bf) {
 		return NULL;
 	}
 	ut64 ba = baddr(bf);
+	RzBinMap *map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		return ret;
+	}
+	map->name = strdup("header");
+	map->paddr = 0;
+	map->psize = RZ_MIN(bin->size, RZ_ROUND(bin->nt_headers->optional_header.SizeOfHeaders, bin->nt_headers->optional_header.FileAlignment));
+	map->vaddr = ba;
+	map->vsize = RZ_ROUND(map->psize, 4096);
+	map->perm = RZ_PERM_R;
+	rz_list_append(ret, map);
 	PE_(rz_bin_pe_check_sections)
 	(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
@@ -206,14 +217,14 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->perm = perm_of_section_perm(sections[i].perm);
-		if ((ptr->perm & RZ_PERM_RW) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
-			if (!strcmp(ptr->name, ".rsrc") ||
-				!strcmp(ptr->name, ".data") ||
-				!strcmp(ptr->name, ".rdata")) {
-				ptr->is_data = true;
-			}
+		if ((ptr->perm & RZ_PERM_R) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
+			ptr->is_data = true;
 		}
 		rz_list_append(ret, ptr);
+	}
+	if (rz_list_length(ret) == 1 && ptr->perm & RZ_PERM_R) {
+		// if there is only one section, then we expect to have data in here also.
+		ptr->is_data = true;
 	}
 	return ret;
 }
@@ -520,24 +531,8 @@ static int has_canary(RzBinFile *bf) {
 	return false;
 }
 
-static int haschr(const RzBinFile *bf, ut16 dllCharacteristic) {
-	const ut8 *buf;
-	unsigned int idx;
-	ut64 sz;
-	if (!bf) {
-		return false;
-	}
-	buf = rz_buf_data(bf->buf, &sz);
-	if (!buf) {
-		return false;
-	}
-	idx = (buf[0x3c] | (buf[0x3d] << 8));
-	if (idx + 0x5E + 1 >= sz) {
-		return false;
-	}
-	// it's funny here idx+0x5E can be 158 and sz 159 but with
-	// the cast it reads two bytes until 160
-	return ((*(ut16 *)(buf + idx + 0x5E)) & dllCharacteristic);
+static inline bool haschr(const struct PE_(rz_bin_pe_obj_t) * bin, ut16 dllCharacteristic) {
+	return bin->nt_headers->optional_header.DllCharacteristics & dllCharacteristic;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -576,25 +571,25 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->big_endian = PE_(rz_bin_pe_is_big_endian)(bf->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_canary = has_canary(bf);
-	ret->has_nx = haschr(bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
-	ret->has_pi = haschr(bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
+	ret->has_nx = haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
+	ret->has_pi = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 	ret->claimed_checksum = strdup(sdb_fmt("0x%08x", claimed_checksum));
 	ret->actual_checksum = strdup(sdb_fmt("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
 	sdb_bool_set(db, "canary", has_canary(bf), 0);
-	sdb_bool_set(db, "highva", haschr(bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
-	sdb_bool_set(db, "aslr", haschr(bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
-	sdb_bool_set(db, "forceintegrity", haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set(db, "nx", haschr(bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
-	sdb_bool_set(db, "isolation", !haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set(db, "seh", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
-	sdb_bool_set(db, "bind", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
-	sdb_bool_set(db, "appcontainer", haschr(bf, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
-	sdb_bool_set(db, "wdmdriver", haschr(bf, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
-	sdb_bool_set(db, "guardcf", haschr(bf, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
-	sdb_bool_set(db, "terminalserveraware", haschr(bf, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
+	sdb_bool_set(db, "highva", haschr(bin, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
+	sdb_bool_set(db, "aslr", haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
+	sdb_bool_set(db, "forceintegrity", haschr(bin, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set(db, "nx", haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
+	sdb_bool_set(db, "isolation", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_ISOLATION), 0);
+	sdb_bool_set(db, "seh", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
+	sdb_bool_set(db, "bind", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
+	sdb_bool_set(db, "appcontainer", haschr(bin, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
+	sdb_bool_set(db, "wdmdriver", haschr(bin, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
+	sdb_bool_set(db, "guardcf", haschr(bin, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
+	sdb_bool_set(db, "terminalserveraware", haschr(bin, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
 	sdb_num_set(db, "bits", ret->bits, 0);
 	sdb_set(db, "claimed_checksum", ret->claimed_checksum, 0);
 	sdb_set(db, "actual_checksum", ret->actual_checksum, 0);
@@ -644,4 +639,8 @@ static RzList *compute_hashes(RzBinFile *bf) {
 	}
 
 	return file_hashes;
+}
+
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 4, false);
 }

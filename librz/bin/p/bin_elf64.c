@@ -31,6 +31,7 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
+	.strings = &strings,
 	.minstrlen = 4,
 	.info = &info,
 	.fields = &fields,

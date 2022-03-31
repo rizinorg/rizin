@@ -3,6 +3,7 @@
 
 #include <rz_analysis.h>
 #include <rz_core.h>
+#include <rz_windows.h>
 #include "minunit.h"
 
 #include "mock_io.inl"

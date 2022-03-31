@@ -20,7 +20,6 @@ subproject_filename = os.path.join(meson_root, "subprojects", subproject + ".wra
 
 try:
     with open(subproject_filename, "r", encoding="utf8") as f:
-
         is_wrap_git = False
         revision = None
         directory = subproject
@@ -67,10 +66,10 @@ try:
                         patch_subproject_dir, subproject_dir
                     )
                     if not os.path.isfile(subproject_f):
-                        sys.exit(1)
+                        sys.exit(2)
 
                     if not filecmp.cmp(subproject_p_f, subproject_f):
-                        sys.exit(1)
+                        sys.exit(3)
 
         sys.exit(0)
 except FileNotFoundError:

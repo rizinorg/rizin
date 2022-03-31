@@ -35,7 +35,7 @@ static GHT GH(je_get_va_symbol)(RzCore *core, const char *path, const char *sym_
 	RzBinSymbol *s;
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, -1, 0, 0, false, false);
+	rz_bin_options_init(&opt, -1, 0, 0, false);
 	opt.obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
 	opt.obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
 	opt.obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");

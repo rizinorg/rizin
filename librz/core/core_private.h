@@ -201,4 +201,10 @@ RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode
 RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode);
 #endif
 
+RZ_IPI bool rz_core_cmd_lastcmd_repeat(RzCore *core, bool next);
+
+static inline RzCmdStatus bool2status(bool val) {
+	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
 #endif

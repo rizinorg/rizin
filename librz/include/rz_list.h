@@ -2,7 +2,7 @@
 #define RZ_LIST_H
 
 #include <rz_types.h>
-#include <sdb.h>
+#include <ht_pp.h>
 
 #ifdef __cplusplus
 extern "C" {

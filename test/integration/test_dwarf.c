@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include "minunit.h"
 #include <rz_bin.h>
 #include <rz_core.h>
 #include <rz_bin_dwarf.h>
+#include "../unit/minunit.h"
 
 #define check_abbrev_code(expected_code) \
 	mu_assert_eq(da->decls[i].code, expected_code, "Wrong abbrev code");
@@ -82,7 +82,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -198,7 +198,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_cpp.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -590,7 +590,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -697,7 +697,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/pe/hello_world_not_stripped.exe", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -757,7 +757,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -865,7 +865,7 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -966,7 +966,7 @@ bool test_dwarf4_multidir_comp_units(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_multidir_comp_units", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -1010,7 +1010,7 @@ bool test_big_endian_dwarf2(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -1510,7 +1510,7 @@ bool test_dwarf3_aranges(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 

@@ -5,7 +5,6 @@
 #define RZ_CORE_H
 
 #include <rz_main.h>
-#include <rz_socket.h>
 #include <rz_types.h>
 #include <rz_magic.h>
 #include <rz_agraph.h>
@@ -103,6 +102,21 @@ typedef enum {
 	RZ_CORE_VISUAL_MODE_CD = 4 ///< Print in string format
 } RzCoreVisualMode;
 
+typedef enum {
+	RZ_CORE_WRITE_OP_BYTESWAP2, ///< Swap the endianess of 2-bytes values
+	RZ_CORE_WRITE_OP_BYTESWAP4, ///< Swap the endianess of 4-bytes values
+	RZ_CORE_WRITE_OP_BYTESWAP8, ///< Swap the endianess of 8-bytes values
+	RZ_CORE_WRITE_OP_ADD, ///< Write the addition of existing byte and argument value
+	RZ_CORE_WRITE_OP_SUB, ///< Write the subtraction of existing byte and argument value
+	RZ_CORE_WRITE_OP_DIV, ///< Write the division of existing byte and argument value
+	RZ_CORE_WRITE_OP_MUL, ///< Write the multiplication of existing byte and argument value
+	RZ_CORE_WRITE_OP_AND, ///< Write the bitwise-and of existing byte and argument value
+	RZ_CORE_WRITE_OP_OR, ///< Write the bitwise-or of existing byte and argument value
+	RZ_CORE_WRITE_OP_XOR, ///< Write the bitwise-xor of existing byte and argument value
+	RZ_CORE_WRITE_OP_SHIFT_LEFT, ///< Write the shift left of existing byte by argument value
+	RZ_CORE_WRITE_OP_SHIFT_RIGHT, ///< Write the shift right of existing byte and argument value
+} RzCoreWriteOp;
+
 typedef bool (*RzCorePluginInit)(RzCore *core);
 typedef bool (*RzCorePluginFini)(RzCore *core);
 
@@ -116,13 +130,7 @@ typedef struct rz_core_plugin_t {
 	RzCorePluginFini fini;
 } RzCorePlugin;
 
-typedef struct rz_core_rtr_host_t {
-	int proto;
-	char host[512];
-	int port;
-	char file[1024];
-	RzSocket *fd;
-} RzCoreRtrHost;
+typedef struct rz_core_rtr_host_t RzCoreRtrHost;
 
 typedef enum {
 	AUTOCOMPLETE_DEFAULT,
@@ -335,7 +343,7 @@ struct rz_core_t {
 	const char *cmdtimes; // cmd.times
 	RZ_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
 	int rtr_n;
-	RzCoreRtrHost rtr_host[RTR_MAX_HOSTS];
+	RzCoreRtrHost *rtr_host; // array of RzCoreRtrHost
 	ut64 *asmqjmps;
 	int asmqjmps_count;
 	int asmqjmps_size;
@@ -376,8 +384,6 @@ struct rz_core_t {
 	bool scr_gadgets;
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RzList *ropchain;
-	bool use_tree_sitter_rzcmd;
-	bool use_rzshell_autocompletion;
 	RzCoreSeekHistory seek_history;
 
 	bool marks_init;
@@ -414,6 +420,9 @@ typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef RZ_API
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
+
+RZ_API const char *rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message);
+RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message);
 
 /**
  * \brief APIs to handle Visual Gadgets
@@ -498,6 +507,7 @@ RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
 RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);
 RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);
 RZ_API bool rz_core_write_block(RzCore *core, ut64 addr, ut8 *data, size_t len);
+RZ_API bool rz_core_write_seq_at(RzCore *core, ut64 addr, ut64 from, ut64 to, ut64 step, int value_size);
 RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
@@ -586,12 +596,14 @@ RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz);
 RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int sz);
 RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
+RZ_API bool rz_core_write_string_zero_at(RzCore *core, ut64 addr, const char *s);
+RZ_API bool rz_core_write_string_wide_at(RzCore *core, ut64 addr, const char *s);
 RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *s);
 RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len);
-RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
-RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
+RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen);
+RZ_API ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen, int *buflen);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state);
 RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdStateOutput *state);
@@ -683,10 +695,11 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 /* cil.c */
 // TODO : They should have been there, but require `static` vars inside canalysis.c
 //      : Keep esil in canalysis.c, and split the rzil in cil.c
-RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *addr);
+RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABLE RzAnalysisFunction *fcn);
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 RZ_API int rz_core_esil_step_back(RzCore *core);
+RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil);
 
 /* canalysis.c */
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
@@ -941,6 +954,7 @@ RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc
 RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
 
 /* rtr */
+RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);
 RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port);
 RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *port, const char *cmd);
 RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input);

@@ -319,8 +319,35 @@ RZ_API bool rz_heap_resolve_main_arena_32(RzCore *core, ut32 *m_arena);
 RZ_API bool rz_heap_update_main_arena_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
 RZ_API bool rz_heap_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
 
+RZ_API bool rz_heap_write_heap_chunk_64(RzCore *core, RzHeapChunkSimple *chunk_simple);
+RZ_API bool rz_heap_write_heap_chunk_32(RzCore *core, RzHeapChunkSimple *chunk_simple);
+
+RZ_API RzList *rz_heap_tcache_content_64(RzCore *core, ut64 arena_base);
+RZ_API RzList *rz_heap_tcache_content_32(RzCore *core, ut32 arena_base);
+
+RZ_API MallocState *rz_heap_get_arena_64(RzCore *core, ut64 m_state);
+RZ_API MallocState *rz_heap_get_arena_32(RzCore *core, ut32 m_state);
+
+RZ_API RzHeapBin *rz_heap_fastbin_content_64(RzCore *core, MallocState *main_arena, int bin_num);
+RZ_API RzHeapBin *rz_heap_fastbin_content_32(RzCore *core, MallocState *main_arena, int bin_num);
+
+RZ_API RzHeapBin *rz_heap_bin_content_64(RzCore *core, MallocState *main_arena, int bin_num, ut64 m_arena);
+RZ_API RzHeapBin *rz_heap_bin_content_32(RzCore *core, MallocState *main_arena, int bin_num, ut32 m_arena);
+
 RZ_API RzList *rz_heap_tcache_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena, bool main_thread_only);
 RZ_API RzList *rz_heap_tcache_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena, bool main_thread_only);
+
+RZ_API RzList *rz_heap_chunks_list_wrapper_64(RzCore *core, ut64 m_state);
+RZ_API RzList *rz_heap_chunks_list_wrapper_32(RzCore *core, ut64 m_state);
+
+RZ_API RzList *rz_heap_arena_list_wrapper_64(RzCore *core);
+RZ_API RzList *rz_heap_arena_list_wrapper_32(RzCore *core);
+
+RZ_IPI int rz_cmd_heap_fastbins_print_64(void *data, const char *input);
+RZ_IPI int rz_cmd_heap_fastbins_print_32(void *data, const char *input);
+
+RZ_IPI int rz_cmd_heap_bins_list_print_64(RzCore *core, const char *input);
+RZ_IPI int rz_cmd_heap_bins_list_print_32(RzCore *core, const char *input);
 
 RZ_API void rz_heap_bin_free_64(RzHeapBin *bin);
 RZ_API void rz_heap_bin_free_32(RzHeapBin *bin);

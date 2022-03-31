@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include "minunit.h"
 #include <rz_bin.h>
 #include <rz_bin_dwarf.h>
+#include "../unit/minunit.h"
 
 #define check_attr_string(attr_idx, expect_string) \
 	mu_assert_streq(cu.dies[i].attr_values[attr_idx].string.content, expect_string, "Wrong string attribute information")
@@ -57,7 +57,7 @@ bool test_dwarf3_c(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -121,7 +121,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
@@ -332,7 +332,7 @@ bool test_dwarf2_big_endian(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 

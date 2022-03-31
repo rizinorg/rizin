@@ -4,6 +4,8 @@
 #include <rz_util.h>
 #if __UNIX__
 #include <sys/mman.h>
+#elif __WINDOWS__
+#include <rz_windows.h>
 #endif
 
 #define SET_BIT(p, n) ((p) |= (1 << (n)))

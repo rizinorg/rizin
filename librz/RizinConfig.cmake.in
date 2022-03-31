@@ -88,6 +88,11 @@ foreach(_comp ${Rizin_FIND_COMPONENTS})
     set(Rizin_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
     return()
   endif()
+  if (rz_${_comp_lower}_FOUND)
+    # Already got this component, trying to re-add the
+    # target below would be an error
+    continue()
+  endif()
   find_package(rz_${_comp_lower} PATHS ${_rizin_cmake_path})
   if (NOT rz_${_comp_lower}_FOUND)
     set(Rizin_FOUND False)

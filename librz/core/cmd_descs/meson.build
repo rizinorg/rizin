@@ -31,7 +31,7 @@ cmd_descs_yaml = files(
 )
 cmd_descs_src_c = files('cmd_descs.c', 'cmd_descs.h')
 
-r = run_command(py3_exe, '-c', 'import yaml')
+r = run_command(py3_exe, '-c', 'import yaml', check: false)
 if r.returncode() == 0
   cmd_descs_ch = custom_target(
     'cmd_descs.[ch]',

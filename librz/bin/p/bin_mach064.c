@@ -287,6 +287,10 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return ret;
 }
 
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 4, false);
+}
+
 RzBinPlugin rz_bin_plugin_mach064 = {
 	.name = "mach064",
 	.desc = "mach064 bin plugin",
@@ -304,6 +308,7 @@ RzBinPlugin rz_bin_plugin_mach064 = {
 	.signature = &entitlements,
 	.symbols = &symbols,
 	.imports = &imports,
+	.strings = &strings,
 	.info = &info,
 	.libs = &libs,
 	.header = &MACH0_(mach_headerfields),
