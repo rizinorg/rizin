@@ -1963,6 +1963,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			pj_kn(state->d.pj, "vaddr", addr);
 			pj_kn(state->d.pj, "paddr", symbol->paddr);
 			pj_kb(state->d.pj, "is_imported", symbol->is_imported);
+			pj_ks(state->d.pj, "lib", rz_str_get(symbol->libname));
 			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
@@ -1973,7 +1974,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 				symbol->bind ? symbol->bind : "NONE",
 				symbol->type ? symbol->type : "NONE",
 				symbol->size,
-				symbol->libname ? symbol->libname : "", // for 'is' libname empty
+				rz_str_get(symbol->libname),
 				rz_str_get_null(rz_symbol_name));
 			break;
 		default:
