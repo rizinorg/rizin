@@ -359,6 +359,7 @@ RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *nod
 		rz_list_append(cfg->nodes, node);
 		return true;
 	}
+	RZ_LOG_WARN("Config locked. Plugin config node not copied.\n");
 	return false;
 }
 

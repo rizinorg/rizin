@@ -10,6 +10,7 @@
 #include <rz_util.h>
 #include <rz_parse.h>
 #include <rz_bind.h>
+#include <rz_config.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -139,6 +140,7 @@ typedef struct rz_asm_plugin_t {
 	int (*disassemble)(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RzAsm *a, RzAsmOp *op, const char *buf);
 	char *(*mnemonics)(RzAsm *a, int id, bool json);
+	RzConfig *(*get_config)(void);
 	const char *features;
 	const char *platforms;
 } RzAsmPlugin;
