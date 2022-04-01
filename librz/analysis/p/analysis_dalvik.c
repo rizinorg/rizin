@@ -541,7 +541,6 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 				op->jump = dst;
-				op->ptr = dst;
 			}
 			op->fail = addr + sz;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
@@ -566,7 +565,6 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 				op->jump = dst;
-				op->ptr = dst;
 				if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 					esilprintf(op, "8,sp,-=,0x%" PFMT64x ",sp,=[8],0x%" PFMT64x ",ip,=", op->fail, op->jump);
 				}

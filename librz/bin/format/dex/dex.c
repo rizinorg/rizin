@@ -707,6 +707,7 @@ RZ_API RZ_OWN RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex 
 			continue;
 		}
 		bstr->paddr = string->offset;
+		bstr->vaddr = RZ_DEX_VIRT_ADDRESS + string->offset;
 		bstr->ordinal = ordinal;
 		bstr->length = string->size;
 		bstr->size = string->size;
@@ -1521,7 +1522,7 @@ RZ_API RZ_OWN RzList /*<char*>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex)
 	return libraries;
 }
 
-static bool dex_resolve_symbol_in_class_methods(RzBinDex *dex, DexClassDef *class_def, RzBinSpecialSymbol resolve, ut64 *address) {
+static bool dex_resolve_symbol_in_class_methods(RzBinDex *dex, DexClassDef *class_def, RzBinSpecialSymbol resolve, ut64 *paddr, ut64 *vaddr) {
 	RzListIter *it;
 	DexEncodedMethod *encoded_method = NULL;
 
@@ -1548,8 +1549,13 @@ static bool dex_resolve_symbol_in_class_methods(RzBinDex *dex, DexClassDef *clas
 			}
 		}
 		free(name);
-
-		*address = encoded_method->code_offset;
+		if (method_id->code_offset < RZ_DEX_RELOC_ADDRESS) {
+			*vaddr = RZ_DEX_VIRT_ADDRESS + encoded_method->code_offset;
+			*paddr = method_id->code_offset;
+		} else {
+			*vaddr = encoded_method->code_offset;
+			*paddr = 0;
+		}
 		return true;
 	}
 
@@ -1577,7 +1583,13 @@ static bool dex_resolve_symbol_in_class_methods(RzBinDex *dex, DexClassDef *clas
 		}
 		free(name);
 
-		*address = method_id->code_offset;
+		if (method_id->code_offset < RZ_DEX_RELOC_ADDRESS) {
+			*vaddr = RZ_DEX_VIRT_ADDRESS + encoded_method->code_offset;
+			*paddr = method_id->code_offset;
+		} else {
+			*vaddr = encoded_method->code_offset;
+			*paddr = 0;
+		}
 		return true;
 	}
 	return false;
@@ -1597,10 +1609,11 @@ RZ_API RZ_OWN RzBinAddr *rz_bin_dex_resolve_symbol(RZ_NONNULL RzBinDex *dex, RzB
 		return NULL;
 	}
 	ret->paddr = UT64_MAX;
+	ret->vaddr = UT64_MAX;
 
 	rz_pvector_foreach (dex->class_defs, it) {
 		class_def = (DexClassDef *)*it;
-		if (dex_resolve_symbol_in_class_methods(dex, class_def, resolve, &ret->paddr)) {
+		if (dex_resolve_symbol_in_class_methods(dex, class_def, resolve, &ret->paddr, &ret->vaddr)) {
 			break;
 		}
 	}
@@ -1823,7 +1836,7 @@ RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut
 		RZ_LOG_INFO("cannot find string with index %u\n", string_idx);
 		return UT64_MAX;
 	}
-	return string->offset;
+	return RZ_DEX_VIRT_ADDRESS + string->offset;
 }
 
 /**
