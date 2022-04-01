@@ -371,7 +371,7 @@ RZ_API const char *rz_config_node_desc(RzConfigNode *node, RZ_NULLABLE const cha
 }
 
 RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name) && cfg, NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
 		ht_pp_delete(cfg->ht, node->name);
