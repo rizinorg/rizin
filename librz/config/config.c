@@ -352,6 +352,16 @@ beach:
 	return node;
 }
 
+RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *node) {
+	rz_return_val_if_fail(cfg && node, false);
+	if (!cfg->lock) {
+		ht_pp_insert(cfg->ht, node->name, node);
+		rz_list_append(cfg->nodes, node);
+		return true;
+	}
+	return false;
+}
+
 /* rz_config_desc takes a RzConfig and a name,
  * rz_config_node_desc takes a RzConfigNode
  * Both set and return node->desc */
