@@ -20,6 +20,17 @@ RZ_LIB_VERSION_HEADER(rz_config);
 #define CN_RO  0x000010
 #define CN_RW  0x000020
 
+#define NODECB(w, x, y)    rz_config_set_cb(cfg, w, x, y)
+#define NODEICB(w, x, y)   rz_config_set_i_cb(cfg, w, x, y)
+#define SETDESC(x, y)      rz_config_node_desc(x, y)
+#define SETOPTIONS(x, ...) set_options(x, __VA_ARGS__)
+#define SETI(x, y, z)      SETDESC(rz_config_set_i(cfg, x, y), z)
+#define SETB(x, y, z)      SETDESC(rz_config_set_b(cfg, x, y), z)
+#define SETICB(w, x, y, z) SETDESC(NODEICB(w, x, y), z)
+#define SETPREF(x, y, z)   SETDESC(rz_config_set(cfg, x, y), z)
+#define SETCB(w, x, y, z)  SETDESC(NODECB(w, x, y), z)
+#define SETBPREF(x, y, z)  SETDESC(NODECB(x, y, boolify_var_cb), z)
+
 typedef bool (*RzConfigCallback)(void *user, void *data);
 
 typedef struct rz_config_node_t {
