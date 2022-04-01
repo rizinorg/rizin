@@ -197,3 +197,12 @@ EXPECT=<<EOF
 [2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[2K[0m[33m[0x00000000]>[0m q[33m[0x00000000]>[0m q[2K[33m[0x00000000]>[0m q
 EOF
 RUN
+
+NAME=read from stdin
+FILE=--
+CMDS=?e \r\n | rizin -e scr.color=0 -qc "px 16" -
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  0d0a 0aff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
