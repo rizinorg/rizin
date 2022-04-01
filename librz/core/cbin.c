@@ -3810,8 +3810,9 @@ RZ_API bool rz_core_bin_class_methods_print(RzCore *core, RzBinFile *bf, RzCmdSt
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			rz_list_foreach (c->methods, iter2, sym) {
+				const char *name = sym->dname ? sym->dname : sym->name;
 				pj_o(state->d.pj);
-				pj_ks(state->d.pj, "name", sym->name);
+				pj_ks(state->d.pj, "name", name);
 				pj_ks(state->d.pj, "class", c->name);
 				if (sym->method_flags) {
 					flags_to_json(state->d.pj, sym->method_flags);
