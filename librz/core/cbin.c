@@ -3793,46 +3793,37 @@ RZ_API bool rz_core_bin_class_methods_print(RzCore *core, RzBinFile *bf, RzCmdSt
 			continue;
 		}
 
-		switch (state->mode) {
-		case RZ_OUTPUT_MODE_QUIET:
-			rz_list_foreach (c->methods, iter2, sym) {
-				const char *name = sym->dname ? sym->dname : sym->name;
-				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, 0);
+		rz_list_foreach (c->methods, iter2, sym) {
+			const char *name = sym->dname ? sym->dname : sym->name;
+			char *mflags = rz_core_bin_method_flags_str(sym->method_flags, 0);
+
+			switch (state->mode) {
+			case RZ_OUTPUT_MODE_QUIET:
 				rz_cons_printf("0x%08" PFMT64x " method %d %s %s %s\n", sym->vaddr, m, c->name, mflags, name);
-				free(mflags);
-				m++;
-			}
-			break;
-		case RZ_OUTPUT_MODE_QUIETEST:
-			rz_list_foreach (c->methods, iter2, sym) {
-				const char *name = sym->dname ? sym->dname : sym->name;
+				break;
+			case RZ_OUTPUT_MODE_QUIETEST:
 				rz_cons_printf("%s\n", name);
-			}
-			break;
-		case RZ_OUTPUT_MODE_JSON:
-			rz_list_foreach (c->methods, iter2, sym) {
+				break;
+			case RZ_OUTPUT_MODE_JSON:
 				pj_o(state->d.pj);
-				pj_ks(state->d.pj, "name", sym->name);
+				pj_ks(state->d.pj, "name", name);
 				pj_ks(state->d.pj, "class", c->name);
 				if (sym->method_flags) {
 					flags_to_json(state->d.pj, sym->method_flags);
 				}
 				pj_kN(state->d.pj, "addr", sym->vaddr);
 				pj_end(state->d.pj);
-			}
-			break;
-		case RZ_OUTPUT_MODE_TABLE:
-			rz_list_foreach (c->methods, iter2, sym) {
-				const char *name = sym->dname ? sym->dname : sym->name;
-				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, 0);
+				break;
+			case RZ_OUTPUT_MODE_TABLE:
 				rz_table_add_rowf(state->d.t, "Xisss", sym->vaddr, m, c->name, mflags, name);
-				free(mflags);
-				m++;
+				break;
+			default:
+				rz_warn_if_reached();
+				break;
 			}
-			break;
-		default:
-			rz_warn_if_reached();
-			break;
+
+			free(mflags);
+			m++;
 		}
 	}
 	rz_cmd_state_output_array_end(state);
