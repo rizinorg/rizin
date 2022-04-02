@@ -33,7 +33,7 @@ NAME=io-zip hello.apk
 FILE=apk://bins/dex/Hello.apk
 CMDS=ieq
 EXPECT=<<EOF
-0x000001c0
+0x1000001c0
 EOF
 RUN
 
