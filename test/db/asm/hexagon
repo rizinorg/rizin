@@ -3,11 +3,11 @@ d "?   immext(##0x40)" 01400000 0x0
 d "?   immext(##0xffffffc0)" ff7fff0f 0x0
 
 d "?   R0 = ##0x101" 20e00078 0x0
-d "?   R5 = add(clb(R31),#-0x1)" 05ff3f8c 0x0
+d "?   R5 = add(clb(LR),#-0x1)" 05ff3f8c 0x0
 d "?   R4 = add(R19,##0x33)" 64c613b0 0x0
 
 d "?   nop"  00c0007f 0x10000000
-d "?   R31 = add(R0,##0x2)" 5f4000b0 0x0
+d "?   LR = add(R0,##0x2)" 5f4000b0 0x0
 
 d "?   P0 = tstbit(R6,#0); if (!P0.new) jump:t 0x14" 04e3c611 0xc
 d "?   P0 = tstbit(R6,#0); if (!P0.new) jump:t 0x8" fce3f611 0x10
@@ -19,13 +19,13 @@ d "?   R23:22 = combine(#0,#0x2) ; R17:16 = memd(R29+#0x40)" 443e475c 0x0
 d "?   if (!P0.new) R23 = #0 ; jumpr R31" c03f5f5a 0x0
 
 d "?   G9:8 = R9:8" 08c00863 0x0
-d "?   GELR = R31" 00c01f62 0x0
+d "?   GELR = LR" 00c01f62 0x0
 
 d "?   R11:10 = memb_fifo(R12++M0:brev)" 0a408c9e 0x0
 d "?   R15:14 = memb_fifo(R7=##0x3)" 6ed0879a 0x0
 dB "?   C21:20 = R19:18" 14c03263 0x0
 d "?   C17:16 = R19:18" 10c03263 0x0
-d "?   C19:18 = R31:30" 12c03e63 0x0
+d "?   PKTCOUNT = LR:FP" 12c03e63 0x0
 
 d "?   V31.h = vsat(V0.w,V13.w)" 7fc06d1f 0x0
 
@@ -38,16 +38,16 @@ d "?   R1 = ##0x3 ; R23 = -1" 0f3a3128 0x0
 d "?   R23 = -1 ; R0 = -1" 003a0f3a 0x0
 d "?   R6 = ##0x4 ; R4 = #0x0" 04284628 0x0
 d "?   CSwi(R0)" 20400064 0x0
-d "?   SGP0 = R29" 00401d67 0x0
+d "?   SGP0 = SP" 00401d67 0x0
 d "?   EVB = R0" 10400067 0x0
 d "?   S60 = R0" 3c400067 0x0
-d "?   R31 = S80" 1f40d06e 0x0
+d "?   LR = S80" 1f40d06e 0x0
 d "?   S35 = R0" 23400067 0x0
 d "?   ISDBEN = R2" 2a400267 0x0
 d "?   S61:60 = R1:0" 3c40006d 0x0
 d "?   S79:78 = R1:0" 4e40006d 0x0
-d "?   S1:0 = R1:0" 004c006d 0x0
-d "?   R1:0 = S1:0" 0040006f 0x0
+d "?   SGP1:0 = R1:0" 004c006d 0x0
+d "?   R1:0 = SGP1:0" 0040006f 0x0
 d "?   R1:0 = S79:78" 00404e6f 0x0
 
 d "?   R1:0 = combine(##0x1b,#0x3)" 6063017c 0x0
