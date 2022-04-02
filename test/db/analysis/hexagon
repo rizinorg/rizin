@@ -309,7 +309,7 @@ FILE=bins/elf/analysis/hexagon-hello-loop
 CMDS=<<EOF
 b 0x100000
 aar
-e asm.imm.sign=false
+e plugins.hexagon.imm.sign=false
 /ai -8
 /ai 0xffffff40 0xffffffff
 EOF
@@ -402,7 +402,7 @@ EXPECT=<<EOF
 |           0x00000020      /       P2 = bitsclr(R14,#0x7)
 |           0x00000024      \       dcfetch(R1+#0x0)
 |           0x00000028      /       P2 = and(P2,!P3)
-|           0x0000002c      |       if (P2.new) R2 = add(R2,##0xfffffff8)
+|           0x0000002c      |       if (P2.new) R2 = add(R2,##-0x8)
 |       ,=< 0x00000030      \       if (P2.new) jump:nt 0x2b4
 EOF
 RUN
@@ -867,7 +867,7 @@ CMDS=<<EOF
 e analysis.jmp.cref=true
 e analysis.trap.after=true
 e asm.pcalign=4
-e asm.imm.sign=false
+e plugins.hexagon.imm.sign=false
 aaa
 s sym.sys_deinit_tls
 pd 11
