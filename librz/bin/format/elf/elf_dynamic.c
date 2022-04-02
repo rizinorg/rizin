@@ -35,7 +35,7 @@ static bool get_dynamic_entry(ELFOBJ *bin, ut64 offset, Elf_(Dyn) * entry) {
 
 static bool add_dt_dynamic_entry(RzBinElfDtDynamic *ptr, ut64 key, ut64 info) {
 	if (key == DT_NEEDED) {
-		return rz_vector_push(ptr->dt_needed, &info);
+		return !!rz_vector_push(&ptr->dt_needed, &info);
 	} else {
 		return ht_uu_insert(ptr->info, key, info);
 	}
@@ -92,7 +92,7 @@ RZ_BORROW RzVector *Elf_(rz_bin_elf_get_dt_needed)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	return bin->dt_dynamic->dt_needed;
+	return &bin->dt_dynamic->dt_needed;
 }
 
 RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_dt_dynamic_new)(RZ_NONNULL ELFOBJ *bin) {
@@ -107,11 +107,7 @@ RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_dt_dynamic_new)(RZ_NONNULL ELFOBJ *bin
 		return NULL;
 	}
 
-	result->dt_needed = rz_vector_new(sizeof(Elf_(Word)), NULL, NULL);
-	if (!result->dt_needed) {
-		Elf_(rz_bin_elf_dt_dynamic_free)(result);
-		return NULL;
-	}
+	rz_vector_init(&result->dt_needed, sizeof(ut64), NULL, NULL);
 
 	if (!init_dt_dynamic(bin, result)) {
 		Elf_(rz_bin_elf_dt_dynamic_free)(result);
@@ -142,6 +138,6 @@ void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr) {
 	}
 
 	ht_uu_free(ptr->info);
-	rz_vector_free(ptr->dt_needed);
+	rz_vector_fini(&ptr->dt_needed);
 	free(ptr);
 }
