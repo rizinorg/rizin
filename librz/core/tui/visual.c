@@ -3220,10 +3220,6 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				}
 			}
 			break;
-#if 0
-		case 'n': rz_core_seek_delta (core, core->blocksize); break;
-		case 'N': rz_core_seek_delta (core, 0 - (int) core->blocksize); break;
-#endif
 		case ':':
 			rz_core_visual_prompt_input(core);
 			break;
