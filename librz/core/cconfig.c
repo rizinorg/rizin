@@ -2479,13 +2479,6 @@ static bool cb_bindbginfo(void *user, void *data) {
 	return true;
 }
 
-static bool cb_hexsdk(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->hex_sdk = (bool)node->i_value;
-	return true;
-}
-
 static bool cb_binprefix(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
