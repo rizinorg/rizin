@@ -532,10 +532,10 @@ int rz_test_main(int argc, const char **argv) {
 	printf("Finished in");
 	if (seconds > 60) {
 		ut64 minutes = seconds / 60;
-		printf(" %" PFMT64d " minutes and", seconds / 60);
+		printf(" %" PFMT64u " minutes and", minutes);
 		seconds -= (minutes * 60);
 	}
-	printf(" %" PFMT64d " seconds.\n", seconds % 60);
+	printf(" %" PFMT64u " seconds.\n", seconds % 60);
 
 	if (output_file) {
 		pj_end(state.test_results);
