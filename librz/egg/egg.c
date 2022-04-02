@@ -588,6 +588,13 @@ RZ_API int rz_egg_patch(RzEgg *egg, int off, const ut8 *buf, int len) {
 	return true;
 }
 
+RZ_API bool rz_egg_patch_num(RzEgg *egg, int off, ut64 num, ut32 bits) {
+	rz_return_val_if_fail(egg && bits <= 64, false);
+	ut8 buf[8] = { 0 };
+	rz_write_ble(buf, num, egg->endian, bits);
+	return rz_egg_patch(egg, off, buf, bits / 8);
+}
+
 RZ_API void rz_egg_finalize(RzEgg *egg) {
 	struct egg_patch_t *ep;
 	RzListIter *iter;
