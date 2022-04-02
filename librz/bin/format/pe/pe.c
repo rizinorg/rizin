@@ -1098,7 +1098,7 @@ static const char *PE_(bin_pe_get_claimed_authentihash)(struct PE_(rz_bin_pe_obj
 	return rz_hex_bin2strdup(digest->binary, digest->length);
 }
 
-const char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin) {
+char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	if (!bin->spcinfo) {
 		return NULL;
 	}
@@ -1150,6 +1150,9 @@ const char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin) 
 }
 
 const char *PE_(bin_pe_get_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin) {
+	if (!bin->authentihash) {
+		bin->authentihash = PE_(bin_pe_compute_authentihash)(bin);
+	}
 	return bin->authentihash;
 }
 
@@ -3320,15 +3323,12 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 	}
 
 	if (bin->cms && bin->spcinfo) {
-		const char *actual_authentihash = PE_(bin_pe_compute_authentihash)(bin);
+		const char *actual_authentihash = PE_(bin_pe_get_authentihash)(bin);
 		const char *claimed_authentihash = PE_(bin_pe_get_claimed_authentihash)(bin);
 		if (actual_authentihash && claimed_authentihash) {
 			bin->is_authhash_valid = !strcmp(actual_authentihash, claimed_authentihash);
 		} else {
 			bin->is_authhash_valid = false;
-		}
-		if (actual_authentihash) {
-			free((void *)actual_authentihash);
 		}
 		free((void *)claimed_authentihash);
 	}
