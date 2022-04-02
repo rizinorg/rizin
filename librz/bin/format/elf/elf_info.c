@@ -884,7 +884,7 @@ RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	Elf_(Word) *iter = NULL;
+	ut64 *iter = NULL;
 	rz_vector_foreach(dt_needed, iter) {
 		char *tmp = Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, *iter);
 		if (!tmp) {
