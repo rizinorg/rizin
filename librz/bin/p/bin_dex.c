@@ -22,7 +22,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	binfo->file = strdup(bf->file);
 	binfo->type = strdup("DEX CLASS");
 	binfo->bclass = rz_bin_dex_version(dex);
-	binfo->has_va = false;
+	binfo->has_va = true;
 	binfo->rclass = strdup("class");
 	binfo->os = strdup("linux");
 	binfo->subsystem = strdup("any");
@@ -137,7 +137,6 @@ static RzList *entrypoints(RzBinFile *bf) {
 		return NULL;
 	}
 
-	// return rz_bin_java_class_entrypoints(dex);
 	return rz_bin_dex_entrypoints(dex);
 }
 
@@ -148,6 +147,35 @@ static RzList *strings(RzBinFile *bf) {
 	}
 
 	return rz_bin_dex_strings(dex);
+}
+
+static RzList *virtual_files(RzBinFile *bf) {
+	RzBinDex *dex = rz_bin_file_get_dex(bf);
+	if (!dex) {
+		return NULL;
+	}
+
+	RzBuffer *buffer = rz_bin_dex_relocations(dex);
+	if (!buffer) {
+		return NULL;
+	}
+
+	RzList *vfiles = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	if (!vfiles) {
+		return NULL;
+	}
+
+	RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
+	if (!vf) {
+		rz_buf_free(buffer);
+		return vfiles;
+	}
+	vf->buf = buffer;
+	vf->buf_owned = false;
+	vf->name = strdup(RZ_DEX_RELOC_TARGETS);
+
+	rz_list_push(vfiles, vf);
+	return vfiles;
 }
 
 static int demangle_type(const char *str) {
@@ -184,7 +212,7 @@ static ut64 get_offset(RzBinFile *bf, int type, int index) {
 	case 'm': // method
 		return rz_bin_dex_resolve_method_offset_by_idx(dex, index);
 	case 's': // strings
-		return (int)rz_bin_dex_resolve_string_offset_by_idx(dex, index);
+		return rz_bin_dex_resolve_string_offset_by_idx(dex, index);
 	case 't': // type
 		return rz_bin_dex_resolve_type_id_offset_by_idx(dex, index);
 	case 'c': // class
@@ -193,6 +221,20 @@ static ut64 get_offset(RzBinFile *bf, int type, int index) {
 	default:
 		return -1;
 	}
+}
+
+static RzList *maps(RzBinFile *bf) {
+	RzList *maps = rz_bin_maps_of_file_sections(bf);
+	RzListIter *iter;
+	RzBinMap *map;
+
+	rz_list_foreach (maps, iter, map) {
+		if (strcmp(map->name, RZ_DEX_RELOC_TARGETS)) {
+			continue;
+		}
+		map->vfile_name = strdup(RZ_DEX_RELOC_TARGETS);
+	}
+	return maps;
 }
 
 RzBinPlugin rz_bin_plugin_dex = {
@@ -206,7 +248,8 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entrypoints,
-	.maps = &rz_bin_maps_of_file_sections,
+	.virtual_files = &virtual_files,
+	.maps = &maps,
 	.sections = sections,
 	.symbols = symbols,
 	.imports = &imports,
