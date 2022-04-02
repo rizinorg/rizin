@@ -192,39 +192,27 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			}
 			free(arg);
 		} break;
-		case 'n': {
-			ut32 n = rz_num_math(NULL, opt.arg);
-			append = 1;
-			rz_egg_patch(egg, -1, (const ut8 *)&n, 4);
-		} break;
+		case 'n':
 		case 'N': {
 			ut64 n = rz_num_math(NULL, opt.arg);
-			rz_egg_patch(egg, -1, (const ut8 *)&n, 8);
+			// TODO: support big endian too
+			// (this is always little because rz_egg_setup is further below)
+			rz_egg_patch_num(egg, -1, n, c == 'N' ? 64 : 32);
 			append = 1;
 		} break;
-		case 'd': {
-			ut32 off, n;
-			char *p = strchr(opt.arg, ':');
-			if (p) {
-				*p = 0;
-				off = rz_num_math(NULL, opt.arg);
-				n = rz_num_math(NULL, p + 1);
-				*p = ':';
-				// TODO: honor endianness here
-				rz_egg_patch(egg, off, (const ut8 *)&n, 4);
-			} else {
-				eprintf("Missing colon in -d\n");
-			}
-		} break;
+		case 'd':
 		case 'D': {
 			char *p = strchr(opt.arg, ':');
 			if (p) {
+				*p = '\0';
 				ut64 n, off = rz_num_math(NULL, opt.arg);
+				*p = ':';
 				n = rz_num_math(NULL, p + 1);
-				// TODO: honor endianness here
-				rz_egg_patch(egg, off, (const ut8 *)&n, 8);
+				// TODO: support big endian too
+				// (this is always little because rz_egg_setup is further below)
+				rz_egg_patch_num(egg, off, n, c == 'D' ? 64 : 32);
 			} else {
-				eprintf("Missing colon in -d\n");
+				eprintf("Missing colon in -%c\n", c);
 			}
 		} break;
 		case 'S':
