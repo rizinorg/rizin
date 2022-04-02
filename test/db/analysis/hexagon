@@ -284,7 +284,7 @@ CMDS=<<EOF
 wx 00c0007f0bc0006900404d850040000076d09b9a0ac020690040007f07407c700040000087c40aab048063700080007f00c0007f
 e asm.arch=hexagon
 e analysis.arch=hexagon
-e asm.imm.hash=1
+e plugins.hexagon.imm.hash=false
 pi 13
 EOF
 EXPECT=<<EOF
