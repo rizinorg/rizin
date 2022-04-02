@@ -842,13 +842,6 @@ static bool cb_asm_immhash(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asm_immsign(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->immsign = node->i_value;
-	return true;
-}
-
 static bool cb_asm_invhex(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3067,7 +3060,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETBPREF("asm.decode", "false", "Use code analysis as a disassembler");
 	SETICB("asm.imm.hash", 0, &cb_asm_immhash, "Display # for immediates in ARM and Hexagon (0 = on)");
-	SETCB("asm.imm.sign", "true", &cb_asm_immsign, "False: Print signed immediates in unsigned representation. True: Print them with sign.");
 	SETBPREF("asm.imm.str", "true", "Show immediates values as strings");
 	SETBPREF("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
 	SETBPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
@@ -3238,9 +3230,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETCB("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
-
-	/* plugins */
-	SETCB("plugins.hexagon.sdk", "false", &cb_hexsdk, "Print packet syntax in objdump style. Hexagon only.");
 
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");
