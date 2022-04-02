@@ -1283,13 +1283,66 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff) {
  * \param size ...
  *
  * WARNING: this function should be used with care because it may allocate the
- * entire buffer in memory. Consider using the rz_buf_read* APIs instead and
+ * entire buffer in memory. Consider using the rz_buf_read* APIs or rz_buf_fwd_scan API instead and
  * read only the chunks you need.
  */
 RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size) {
 	rz_return_val_if_fail(b, NULL);
 
 	return get_whole_buf(b, size);
+}
+
+/**
+ * \brief Scans buffer linearly in chunks calling \p fwd_scan for each chunk.
+ *
+ * \param b RzBuffer to read
+ * \param start Start address
+ * \param amount Amount of bytes to read
+ * \param fwd_scan Function to call for each chunk
+ * \param user User data to pass to fwd_scan
+ * \return Number of bytes read
+ */
+RZ_API ut64 rz_buf_fwd_scan(RZ_NONNULL RzBuffer *b, ut64 start, ut64 amount, RZ_NONNULL RzBufferFwdScan fwd_scan, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(b && fwd_scan, 0);
+	if (!amount) {
+		return 0;
+	}
+	if (b->methods->get_whole_buf) {
+		ut64 sz;
+		const ut8 *buf = b->methods->get_whole_buf(b, &sz);
+		if (buf) {
+			if (sz <= start) {
+				return 0;
+			}
+			return fwd_scan(buf + start, RZ_MIN(sz - start, amount), user);
+		}
+	}
+	const ut64 size = rz_buf_size(b);
+	if (size <= start) {
+		return 0;
+	}
+	if (b->whole_buf) {
+		return fwd_scan(b->whole_buf + start, RZ_MIN(size - start, amount), user);
+	}
+	ut64 addr = start;
+	const ut64 user_end = UT64_ADD_OVFCHK(start, amount) ? UT64_MAX : start + amount;
+	const ut64 end = RZ_MIN(user_end, size);
+	const size_t buf_size = RZ_MIN(end - start, 0x1000);
+	ut8 *buf = malloc(buf_size);
+	if (!buf) {
+		return 0;
+	}
+	while (addr < end) {
+		const ut64 read_amount = RZ_MIN(buf_size, end - addr);
+		rz_buf_read_at(b, addr, buf, read_amount);
+		ut64 read = fwd_scan(buf, read_amount, user);
+		if (!read) {
+			break;
+		}
+		addr += read;
+	}
+	free(buf);
+	return addr - start;
 }
 
 /**
