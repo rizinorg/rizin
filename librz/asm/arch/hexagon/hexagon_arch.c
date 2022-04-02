@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-01-24 07:53:55-05:00
+// Date of code generation: 2022-04-02 05:47:08-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -372,6 +372,8 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 	rz_return_if_fail(hi && p);
 	bool is_first = (k == 0);
 	HexPktInfo *hi_pi = &hi->pkt_info;
+	HexState *state = hexagon_get_state();
+	bool sdk_form = rz_config_get_b(state->cfg, "plugins.hexagon.sdk");
 
 	strncpy(hi_pi->mnem_postfix, "", 16);
 	// Parse instr. position in pkt
@@ -379,9 +381,9 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = true;
 		if (p->is_valid) {
-			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, true, SINGLE_IN_PKT), 8);
-			if (rz_asm->hex_sdk) {
-				strncpy(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, SINGLE_IN_PKT), 8);
+			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, SINGLE_IN_PKT), 8);
+			if (sdk_form) {
+				strncpy(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, SINGLE_IN_PKT), 8);
 			}
 		} else {
 			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
@@ -390,7 +392,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = false;
 		if (p->is_valid) {
-			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, true, FIRST_IN_PKT), 8);
+			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, FIRST_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
 		}
@@ -398,22 +400,22 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = true;
 		if (p->is_valid) {
-			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, true, LAST_IN_PKT), 8);
-			if (rz_asm->hex_sdk) {
-				strncpy(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, LAST_IN_PKT), 8);
+			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, LAST_IN_PKT), 8);
+			if (sdk_form) {
+				strncpy(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, LAST_IN_PKT), 8);
 			}
 
 			switch (hex_get_loop_flag(p)) {
 			default:
 				break;
 			case HEX_LOOP_01:
-				strncat(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, ELOOP_01_PKT), 23 - strlen(hi_pi->mnem_postfix));
+				strncat(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, ELOOP_01_PKT), 23 - strlen(hi_pi->mnem_postfix));
 				break;
 			case HEX_LOOP_0:
-				strncat(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, ELOOP_0_PKT), 23 - strlen(hi_pi->mnem_postfix));
+				strncat(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, ELOOP_0_PKT), 23 - strlen(hi_pi->mnem_postfix));
 				break;
 			case HEX_LOOP_1:
-				strncat(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, false, ELOOP_1_PKT), 23 - strlen(hi_pi->mnem_postfix));
+				strncat(hi_pi->mnem_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, ELOOP_1_PKT), 23 - strlen(hi_pi->mnem_postfix));
 				break;
 			}
 		} else {
@@ -423,7 +425,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = false;
 		if (p->is_valid) {
-			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, rz_asm->hex_sdk, true, MID_IN_PKT), 8);
+			strncpy(hi_pi->mnem_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, MID_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
 		}
