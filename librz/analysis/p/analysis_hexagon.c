@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-04-02 10:25:38-04:00
+// Date of code generation: 2022-04-02 11:40:33-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -38,18 +38,14 @@ RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 		"=LR	R31\n"
 		"=SR	C8\n"
 		"=SN	R0\n"
-		"=A0	r0\n"
-		"=A1	r1\n"
-		"=A2	r2\n"
-		"=A3	r3\n"
-		"=A4	r4\n"
-		"=A5	r5\n"
-		"=A6	r1:0\n"
-		"=A7	r3:2\n"
-		"=A8	r5:4\n"
-		"=R0	r0\n"
-		"=R1	r1\n"
-		"=R2	r1:0\n"
+		"=A0	R0\n"
+		"=A1	R1\n"
+		"=A2	R2\n"
+		"=A3	R3\n"
+		"=A4	R4\n"
+		"=A5	R5\n"
+		"=R0	R0\n"
+		"=R1	R1\n"
 
 		"ctr	C0	.32	1024	0\n"
 		"ctr	C1	.32	1056	0\n"
