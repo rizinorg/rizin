@@ -197,7 +197,7 @@ static void do_string_search(RzCore *core, struct search_parameters *param) {
 			return;
 		}
 		if (search->params->backwards) {
-			rz_search_string_prepare_backward(search);
+			rz_search_params_string_prepare_backward(search->params);
 		}
 		rz_cons_break_push(NULL, NULL);
 		// TODO search cross boundary

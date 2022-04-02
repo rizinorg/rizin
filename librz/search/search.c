@@ -508,28 +508,6 @@ RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len) {
 	return ret;
 }
 
-static int listcb(RzSearchKeyword *k, void *user, ut64 addr) {
-	RzSearchHit *hit = RZ_NEW0(RzSearchHit);
-	if (!hit) {
-		return 0;
-	}
-	hit->kw = k;
-	hit->addr = addr;
-	rz_list_append(user, hit);
-	return 1;
-}
-
-RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len) {
-	RzList *ret = rz_list_new();
-	if (!s->callback) {
-		rz_search_set_callback(s, listcb, ret);
-	} else {
-		rz_search_set_callback(s, s->callback, ret);
-	}
-	rz_search_update(s, addr, buf, len);
-	return ret;
-}
-
 /* --- keywords --- */
 RZ_API int rz_search_params_kw_add(RzSearchParams *params, RzSearchKeyword *kw) {
 	if (!kw || !kw->keyword_length) {
@@ -541,7 +519,7 @@ RZ_API int rz_search_params_kw_add(RzSearchParams *params, RzSearchKeyword *kw) 
 }
 
 // Reverse bin_keyword & bin_binmask for backward search
-RZ_API void rz_search_string_prepare_backward(RzSearchParams *params) {
+RZ_API void rz_search_params_string_prepare_backward(RzSearchParams *params) {
 	RzListIter *iter;
 	RzSearchKeyword *kw;
 	// Precondition: !kw->binmask_length || kw->keyword_length % kw->binmask_length == 0

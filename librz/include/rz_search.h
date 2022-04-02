@@ -103,8 +103,6 @@ RZ_API RzSearch *rz_search_new(RZ_OWN RZ_NONNULL RzSearchParams *params);
 RZ_API int rz_search_params_set_mode(RzSearchParams *params, RzSearchMode mode);
 RZ_API RzSearch *rz_search_free(RzSearch *s);
 
-/* keyword management */
-RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len);
 RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len);
 
 /* keyword management */
