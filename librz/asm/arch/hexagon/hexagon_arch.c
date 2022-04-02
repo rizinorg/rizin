@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-04-02 05:47:08-04:00
+// Date of code generation: 2022-04-02 06:41:46-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -808,7 +808,7 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 	HexPkt *p = hex_get_pkt(state, hi->addr);
 
 	// Do disasassembly and analysis
-	hexagon_disasm_instruction(&state->rz_asm, state, data, hi, p);
+	hexagon_disasm_instruction(state, data, hi, p);
 
 	switch (rz_reverse->action) {
 	default:
