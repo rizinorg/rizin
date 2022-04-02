@@ -374,12 +374,12 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
 				return false;
 			}
-			if (a->cur && a->cur->get_config) {
+			if (a->cur && a->cur->get_config && core) {
 				rz_config_lock(core->config, false);
 				unset_plugins_config(a, a->cur->get_config());
 				rz_config_lock(core->config, true);
 			}
-			if (h->get_config) {
+			if (h->get_config && core) {
 				rz_config_lock(core->config, false);
 				set_plugin_configs(a, h->get_config());
 				rz_config_lock(core->config, true);
