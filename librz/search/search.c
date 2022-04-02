@@ -23,7 +23,7 @@ RZ_API RzSearchParams *rz_search_params_new(RzSearchMode mode) {
 	}
 	if (!rz_search_params_set_mode(params, mode)) {
 		free(params);
-		eprintf("Cannot init search params for mode %d\n", mode);
+		RZ_LOG_ERROR("Cannot init search params for mode %d\n", mode);
 		return false;
 	}
 
@@ -99,7 +99,7 @@ RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max) {
 }
 
 RZ_API int rz_search_magic_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
-	eprintf("TODO: import librz/core/cmd_search.c /m implementation into rsearch\n");
+	RZ_LOG_WARN("TODO: import librz/core/cmd_search.c /m implementation into rsearch\n");
 	return false;
 }
 
@@ -133,15 +133,15 @@ RZ_API int rz_search_begin(RzSearch *s) {
 
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr) {
-	if (s->params->inverse && (addr % s->params->inverse)) {
-		eprintf("0x%08" PFMT64x " unaligned\n", addr);
+	if (s->params->search_align && (addr % s->params->search_align)) {
+		RZ_LOG_WARN("Unaligned address: 0x%08" PFMT64x, addr);
 		return 1;
 	}
 	if (!s->params->search_contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
 			kw->last = s->params->backwards ? addr : addr + kw->keyword_length;
-			eprintf("0x%08" PFMT64x " Sequential hit ignored.\n", addr);
+			RZ_LOG_WARN("Sequential hit at 0x%08" PFMT64x " ignored", addr);
 			return 1;
 		}
 	}
@@ -476,14 +476,14 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 
 RZ_API void rz_search_params_set_distance(RzSearchParams *params, int dist) {
 	if (dist >= RZ_SEARCH_DISTANCE_MAX) {
-		eprintf("Invalid distance\n");
+		RZ_LOG_ERROR("Invalid distance\n");
 		params->search_distance = 0;
 	} else {
 		params->search_distance = (dist > 0) ? dist : 0;
 	}
 }
 
-// deprecate? or standarize with ->params->inverse ??
+// deprecate? or standarize with params->search_align ??
 RZ_API void rz_search_pattern_size(RzSearch *s, int size) {
 	s->params->pattern_size = size;
 }
@@ -503,7 +503,7 @@ RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len) {
 		}
 		ret = s->params->update(s, from, buf, len);
 	} else {
-		eprintf("rz_search_update: No search method defined\n");
+		RZ_LOG_WARN("rz_search_update: No search method defined\n");
 	}
 	return ret;
 }
@@ -565,7 +565,7 @@ RZ_API void rz_search_string_prepare_backward(RzSearchParams *params) {
 RZ_API void rz_search_reset(RzSearch *s, int mode) {
 	s->nhits = 0;
 	if (!rz_search_params_set_mode(s->params, mode)) {
-		eprintf("Cannot init search for mode %d\n", mode);
+		RZ_LOG_ERROR("Cannot init search for mode %d\n", mode);
 	}
 }
 
