@@ -62,17 +62,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=x86_64 getenv this maybe
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
-af
-aCe 0x10000143e
-EOF
-EXPECT=<<EOF
-char *getenv("COLUMNS")
-EOF
-RUN
-
 NAME=x86_64 socket syscall
 FILE=bins/elf/socket-syscall
 CMDS=<<EOF
@@ -865,7 +854,7 @@ EXPECT=<<EOF
 nth paddr      vaddr      bind   type size lib name    
 -------------------------------------------------------
 22  0x000009b7 0x080489b7 GLOBAL FUNC 189      decrypt
-[{"name":"prog_timeout","flagname":"sym.prog_timeout","realname":"prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470,"is_imported":false}]
+[{"name":"prog_timeout","flagname":"sym.prog_timeout","realname":"prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470,"is_imported":false,"lib":""}]
 EOF
 RUN
 
@@ -3685,7 +3674,7 @@ NAME=Jump table attached to wrong basic block bug
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aF @ 0x00459990
-ab @ 0x00459aa7~outputs
+abil @ 0x00459aa7~outputs
 EOF
 EXPECT=<<EOF
 outputs: 11

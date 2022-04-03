@@ -190,6 +190,7 @@ static const RzCmdDescArg analyze_opcode_args[2];
 static const RzCmdDescArg analyze_cycles_args[2];
 static const RzCmdDescArg convert_mne_args[2];
 static const RzCmdDescArg analyse_name_args[2];
+static const RzCmdDescArg analysis_basic_block_find_paths_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -3804,6 +3805,39 @@ static const RzCmdDescArg analyse_name_args[] = {
 static const RzCmdDescHelp analyse_name_help = {
 	.summary = "Show/rename/create whatever flag/function is used at addr",
 	.args = analyse_name_args,
+};
+
+static const RzCmdDescHelp ab_help = {
+	.summary = "Basic blocks",
+};
+static const RzCmdDescArg analysis_basic_block_info_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_basic_block_info_help = {
+	.summary = "Show basic block information in current seek",
+	.args = analysis_basic_block_info_args,
+};
+
+static const RzCmdDescArg analysis_basic_block_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_basic_block_list_help = {
+	.summary = "List all basic blocks",
+	.args = analysis_basic_block_list_args,
+};
+
+static const RzCmdDescArg analysis_basic_block_find_paths_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_basic_block_find_paths_help = {
+	.summary = "Find paths from current seek to the given address",
+	.args = analysis_basic_block_find_paths_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -13524,6 +13558,17 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analyse_name_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_cd, "an", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyse_name_handler, &analyse_name_help);
 	rz_warn_if_fail(analyse_name_cd);
+
+	RzCmdDesc *ab_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ab", NULL, NULL, &ab_help);
+	rz_warn_if_fail(ab_cd);
+	RzCmdDesc *analysis_basic_block_info_cd = rz_cmd_desc_argv_state_new(core->rcmd, ab_cd, "abi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_basic_block_info_handler, &analysis_basic_block_info_help);
+	rz_warn_if_fail(analysis_basic_block_info_cd);
+
+	RzCmdDesc *analysis_basic_block_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ab_cd, "abl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_QUIET, rz_analysis_basic_block_list_handler, &analysis_basic_block_list_help);
+	rz_warn_if_fail(analysis_basic_block_list_cd);
+
+	RzCmdDesc *analysis_basic_block_find_paths_cd = rz_cmd_desc_argv_state_new(core->rcmd, ab_cd, "abt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_basic_block_find_paths_handler, &analysis_basic_block_find_paths_help);
+	rz_warn_if_fail(analysis_basic_block_find_paths_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

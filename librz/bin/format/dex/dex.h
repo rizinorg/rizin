@@ -9,6 +9,10 @@
 #include <rz_util.h>
 #include <rz_bin.h>
 
+#define RZ_DEX_RELOC_TARGETS "reloc-targets"
+#define RZ_DEX_VIRT_ADDRESS  0x0100000000
+#define RZ_DEX_RELOC_ADDRESS 0x8000000000
+
 typedef enum {
 	DEX_MAP_ITEM_TYPE_HEADER_ITEM = 0x0000,
 	DEX_MAP_ITEM_TYPE_STRING_ID_ITEM = 0x0001,
@@ -180,6 +184,11 @@ typedef struct dex_t {
 	RzPVector /*<DexClassDef>*/ *class_defs;
 
 	DexTypeId *types;
+
+	ut64 relocs_offset;
+	ut32 relocs_size;
+	ut8 *relocs_code;
+	RzBuffer *relocs_buffer;
 } RzBinDex;
 
 RZ_API RZ_OWN RzBinDex *rz_bin_dex_new(RZ_NONNULL RzBuffer *buf, ut64 base, RZ_NONNULL Sdb *kv);
@@ -197,6 +206,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex 
 RZ_API RZ_OWN RzList /*<char*>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzBinAddr *rz_bin_dex_resolve_symbol(RZ_NONNULL RzBinDex *dex, RzBinSpecialSymbol resolve);
 RZ_API RZ_OWN RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_BORROW RzBuffer *rz_bin_dex_relocations(RZ_NONNULL RzBinDex *dex);
 
 RZ_API RZ_OWN char *rz_bin_dex_resolve_method_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx);
 RZ_API RZ_OWN char *rz_bin_dex_resolve_field_by_idx(RZ_NONNULL RzBinDex *dex, ut32 field_idx);

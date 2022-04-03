@@ -5337,6 +5337,20 @@ address    index class   flags name
 EOF
 RUN
 
+NAME=ic json (file Java)
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+icj
+icfj
+icmj
+EOF
+EXPECT=<<EOF
+[{"classname":"LHello;","addr":0,"index":0,"visibility":"public","super":"java/lang/Object","methods":[{"name":"LHello;.<init>","flags":["public"],"addr":555},{"name":"LHello;.say","flags":["public"],"addr":611},{"name":"LHello;.main","flags":["static","public"],"addr":682}],"fields":[{"name":"who","type":"Ljava/lang/String;","flags":["private"],"addr":523}]}]
+[{"type":"Ljava/lang/String;","name":"who","class":"LHello;","flags":["private"],"addr":523}]
+[{"name":"<init>(Ljava/lang/String;)V","class":"LHello;","flags":["public"],"addr":555},{"name":"say()V","class":"LHello;","flags":["public"],"addr":611},{"name":"main([Ljava/lang/String;)V","class":"LHello;","flags":["static","public"],"addr":682}]
+EOF
+RUN
+
 NAME=icq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icq

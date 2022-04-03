@@ -536,7 +536,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		if (len > 3) {
 			ut32 vB = (data[3] << 8) | data[2];
 			ut64 dst = analysis->binb.get_offset(analysis->binb.bin, 'm', vB);
-			if (dst == 0) {
+			if (dst == UT64_MAX) {
 				op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
@@ -560,7 +560,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 			ut32 vB = (data[3] << 8) | data[2];
 			ut64 dst = analysis->binb.get_offset(analysis->binb.bin, 'm', vB);
 			op->fail = addr + sz;
-			if (dst == 0) {
+			if (dst == UT64_MAX) {
 				op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
@@ -569,6 +569,8 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 					esilprintf(op, "8,sp,-=,0x%" PFMT64x ",sp,=[8],0x%" PFMT64x ",ip,=", op->fail, op->jump);
 				}
 			}
+		} else {
+			rz_warn_if_reached();
 		}
 		break;
 	case 0x27: // throw
@@ -753,6 +755,7 @@ RzAnalysisPlugin rz_analysis_plugin_dalvik = {
 	.get_reg_profile = &get_reg_profile,
 	.license = "LGPL3",
 	.bits = 32,
+	.esil = false,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
 	.op = &dalvik_op,
 };

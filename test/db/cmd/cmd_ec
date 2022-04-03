@@ -336,6 +336,6 @@ CMDS=<<EOF
 ecoj
 EOF
 EXPECT=<<EOF
-["ayu","basic","behelit","bold","bright","cga","consonance","cutter","dark","darkda","default","defragger","focus","gb","gentoo","lima","matrix","monokai","ogray","onedark","pink","rasta","sepia","smyck","solarized","tango","twilight","white","white2","xvilka","zenburn"]
+["ayu","basic","behelit","bold","bright","cga","consonance","cutter","dark","darkda","default","defragger","durian","focus","gb","gentoo","lima","matrix","monokai","ogray","onedark","pink","rasta","sepia","smyck","solarized","tango","twilight","white","white2","xvilka","zenburn"]
 EOF
 RUN
