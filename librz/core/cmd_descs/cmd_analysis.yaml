@@ -1579,3 +1579,38 @@ commands:
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
+  - name: ab
+    summary: Basic blocks
+    subcommands:
+      - name: abi
+        summary: Show basic block information in current seek
+        cname: analysis_basic_block_info
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: abl
+        summary: List all basic blocks
+        cname: analysis_basic_block_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: abt
+        summary: Find paths from current seek to the given address
+        cname: analysis_basic_block_find_paths
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM

@@ -1,13 +1,17 @@
 NAME=Dalvik HelloWorld afl
 FILE=bins/dex/HelloWorld.dex
-CMDS=e io.va=0; aa; afl
+CMDS=aa; afl
 EXPECT=<<EOF
-0x0000025c    1 34           entry0
-0x00000238    1 20           method.public.constructor.LHello_._init___V
-0x00000290    1 84           method.public.LHello_.foo_I_V
-0x000002f4    1 20           method.public.constructor.LWorld_._init___V
-0x00000318    1 68           method.public.LWorld_.foo_I_V
-0x00000000    4 72           sym.Ljava_lang_System_.out
+0x10000025c    1 34           entry0
+0x8000000000    1 2            sym.Ljava_io_PrintStream_.println_Ljava_lang_String__V
+0x100000238    1 20           method.public.constructor.LHello_._init___V
+0x100000290    1 84           method.public.LHello_.foo_I_V
+0x8000000006    1 2            sym.Ljava_lang_StringBuilder_.append_Ljava_lang_String__Ljava_lang_StringBuilder
+0x8000000002    1 2            sym.Ljava_lang_Integer_._init__I_V
+0x8000000004    1 2            sym.Ljava_lang_Integer_.toString__Ljava_lang_String
+0x8000000008    1 2            sym.Ljava_lang_StringBuilder_.toString__Ljava_lang_String
+0x1000002f4    1 20           method.public.constructor.LWorld_._init___V
+0x100000318    1 68           method.public.LWorld_.foo_I_V
 EOF
 RUN
 
@@ -15,7 +19,7 @@ NAME=Dalvik HelloWorld string xref
 FILE=bins/dex/HelloWorld.dex
 CMDS=aa; axt @ str.Findus
 EXPECT=<<EOF
-entry0 0x260 [DATA] const-string v1, str.Findus
+entry0 0x100000260 [DATA] const-string v1, str.Findus
 EOF
 RUN
 
@@ -23,22 +27,28 @@ NAME=Dalvik HelloWorld func xref
 FILE=bins/dex/HelloWorld.dex
 CMDS=aa; axt @ sym.LHello_._init___V
 EXPECT=<<EOF
-sym.Ljava_lang_System_.out 0x24 [CALL] invoke-direct {}, LHello;-><init>()V
-sym.Ljava_lang_System_.out 0x3c [CALL] invoke-direct {}, LHello;-><init>()V
-entry0 0x26e [CALL] invoke-direct {v0}, LHello;-><init>()V
-method.public.LHello_.foo_I_V 0x298 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
-method.public.constructor.LWorld_._init___V; [03] -r-x section size 20 named code.World._init 0x2f4 [CALL] invoke-direct {v1}, Ljava/lang/Object;-><init>()V
-method.public.LWorld_.foo_I_V 0x320 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+entry0 0x10000026e [CALL] invoke-direct {v0}, LHello;-><init>()V
+method.public.LHello_.foo_I_V 0x100000298 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+method.public.constructor.LWorld_._init___V; void <init>() 0x1000002f4 [CALL] invoke-direct {v1}, Ljava/lang/Object;-><init>()V
+method.public.LWorld_.foo_I_V 0x100000320 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
 EOF
 RUN
 
 NAME=Dalvik resolve virtual methods called via invoke-virtual
 FILE=apk://bins/dex/org.radare.radare2installer.apk
-CMDS=e scr.prompt=false ; aaa ; axt @ sym.Lcom_ice_tar_TarEntry_.getUserName__Ljava_lang_String
+CMDS=aaa ; axt @ sym.Lcom_ice_tar_TarEntry_.getUserName__Ljava_lang_String
 EXPECT=<<EOF
-entry0 0xc8ba [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
-entry0 0xc9e6 [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
-method.public.Lcom_ice_tar_TarEntry_.toString__Ljava_lang_String 0xf04a [CALL] invoke-virtual {v4}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+entry0 0x10000c8ba [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+entry0 0x10000c9e6 [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+method.public.Lcom_ice_tar_TarEntry_.toString__Ljava_lang_String 0x10000f04a [CALL] invoke-virtual {v4}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+EOF
+RUN
+
+NAME=Dalvik resolve imports called via invoke-virtual
+FILE=apk://bins/dex/org.radare.radare2installer.apk
+CMDS=aaa ; axt @ sym.Ljava_net_URL_.openStream__Ljava_io_InputStream
+EXPECT=<<EOF
+method.public.Ljavax_activation_URLDataSource_.getInputStream__Ljava_io_InputStream 0x100021180 [CALL] invoke-virtual {v0}, Ljava/net/URL;->openStream()Ljava/io/InputStream;
 EOF
 RUN
 

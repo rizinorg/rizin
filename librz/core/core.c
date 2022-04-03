@@ -849,7 +849,7 @@ static const char *rizin_argv[] = {
 	"aar?", "aar", "aar*", "aarj", "aas", "aat", "aaT", "aau", "aav",
 	"a8", "ab",
 	"acl", "acll", "aclj", "acl*", "ac?", "ac", "ac-", "acn", "acv", "acvf", "acv-", "acb", "acb-", "acm", "acm-", "acmn",
-	"aC?", "aC", "aCe", "ad", "ad4", "ad8", "adf", "adfg", "adt", "adk",
+	"aC?", "aC", "ad", "ad4", "ad8", "adf", "adfg", "adt", "adk",
 	"ae?", "ae??", "ae", "aea", "aeA", "aeaf", "aeAf", "aeC", "aec?", "aec", "aecb", "aecs", "aecc", "aecu", "aecue",
 	"aef", "aefa",
 	"aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc",

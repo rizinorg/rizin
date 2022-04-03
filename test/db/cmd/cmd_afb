@@ -17,16 +17,16 @@ NAME=ab opaddr
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 af
-ab
+abil
 sd +1
-ab~opaddr
+abil~opaddr
 sd +1
-ab~opaddr
-abj~{}
+abil~opaddr
+abij~{}
 sd +1
-ab~opaddr
+abil~opaddr
 sd +1
-ab~opaddr
+abil~opaddr
 EOF
 EXPECT=<<EOF
 jump: 0x100001216
