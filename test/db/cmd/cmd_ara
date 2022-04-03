@@ -45,8 +45,8 @@ ara+
 ara~?
 EOF
 EXPECT=<<EOF
-20
-30
+26
+39
 EOF
 RUN
 
@@ -66,11 +66,11 @@ ara-
 ara~?
 EOF
 EXPECT=<<EOF
-20
-30
-20
-10
-10
+26
+39
+26
+13
+13
 EOF
 RUN
 
