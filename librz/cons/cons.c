@@ -627,14 +627,14 @@ RZ_API RzCons *rz_cons_new(void) {
 }
 
 RZ_API RzCons *rz_cons_free(void) {
-#if __WINDOWS__
-	rz_cons_enable_mouse(false);
-	restore_console_codepage();
-#endif
 	I.refcnt--;
 	if (I.refcnt != 0) {
 		return NULL;
 	}
+#if __WINDOWS__
+	rz_cons_enable_mouse(false);
+	restore_console_codepage();
+#endif
 	if (I.line) {
 		rz_line_free();
 		I.line = NULL;
