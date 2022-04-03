@@ -5,11 +5,13 @@ EXPECT=<<EOF
 0x10000025c    1 34           entry0
 0x8000000000    1 2            sym.Ljava_io_PrintStream_.println_Ljava_lang_String__V
 0x100000238    1 20           method.public.constructor.LHello_._init___V
+0x8000000006    1 2            sym.Ljava_lang_Object_._init___V
 0x100000290    1 84           method.public.LHello_.foo_I_V
-0x8000000006    1 2            sym.Ljava_lang_StringBuilder_.append_Ljava_lang_String__Ljava_lang_StringBuilder
+0x8000000008    1 2            sym.Ljava_lang_StringBuilder_._init___V
+0x800000000a    1 2            sym.Ljava_lang_StringBuilder_.append_Ljava_lang_String__Ljava_lang_StringBuilder
 0x8000000002    1 2            sym.Ljava_lang_Integer_._init__I_V
 0x8000000004    1 2            sym.Ljava_lang_Integer_.toString__Ljava_lang_String
-0x8000000008    1 2            sym.Ljava_lang_StringBuilder_.toString__Ljava_lang_String
+0x800000000c    1 2            sym.Ljava_lang_StringBuilder_.toString__Ljava_lang_String
 0x1000002f4    1 20           method.public.constructor.LWorld_._init___V
 0x100000318    1 68           method.public.LWorld_.foo_I_V
 EOF
@@ -28,9 +30,16 @@ FILE=bins/dex/HelloWorld.dex
 CMDS=aa; axt @ sym.LHello_._init___V
 EXPECT=<<EOF
 entry0 0x10000026e [CALL] invoke-direct {v0}, LHello;-><init>()V
-method.public.LHello_.foo_I_V 0x100000298 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
-method.public.constructor.LWorld_._init___V; void <init>() 0x1000002f4 [CALL] invoke-direct {v1}, Ljava/lang/Object;-><init>()V
-method.public.LWorld_.foo_I_V 0x100000320 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+EOF
+RUN
+
+NAME=Dalvik HelloWorld func xref to super method
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=aaa; axt @ sym.Landroid_app_Activity_.onDestroy__V~invoke-super
+EXPECT=<<EOF
+method.public.Lorg_radare_radare2installer_ConsoleActivity_.onDestroy__V; void onDestroy() 0x100019e50 [CALL] invoke-super {v1}, Landroid/app/Activity;->onDestroy()V
+method.public.Lorg_radare_radare2installer_LaunchActivity_.onDestroy__V 0x10001a256 [CALL] invoke-super {v1}, Landroid/app/Activity;->onDestroy()V
+method.public.Lorg_radare_radare2installer_WebActivity_.onDestroy__V; void onDestroy() 0x10001e574 [CALL] invoke-super {v2}, Landroid/app/Activity;->onDestroy()V
 EOF
 RUN
 
