@@ -10,6 +10,7 @@
 #include <rz_util.h>
 #include <rz_parse.h>
 #include <rz_bind.h>
+#include <rz_config.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,10 +116,8 @@ typedef struct rz_asm_t {
 	int pcalign;
 	int dataalign;
 	int bitshift;
-	bool immdisp; // Display immediates with # symbol (for arm/hexagon architectures). false = show hashs
-	bool immsign; // Print signed immediates as negative values, not their unsigned representation.
+	bool immdisp; // Display immediates with # symbol (for arm architectures). false = show hashs
 	bool utf8; // Flag for plugins: Use utf-8 characters.
-	bool hex_sdk; // Hexagon arch only. Print packet syntax in hexagon-objdump style.
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;
@@ -139,6 +138,7 @@ typedef struct rz_asm_plugin_t {
 	int (*disassemble)(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RzAsm *a, RzAsmOp *op, const char *buf);
 	char *(*mnemonics)(RzAsm *a, int id, bool json);
+	RzConfig *(*get_config)(void);
 	const char *features;
 	const char *platforms;
 } RzAsmPlugin;

@@ -405,7 +405,7 @@ ad__  16         dcpu16      PD      Mojang's DCPU-16
 _dA_  32 64      ebc         LGPL3   EFI Bytecode (by Fedor Sakharov)
 adAe  16         gb          LGPL3   GameBoy(TM) (z80-like) (by condret)
 _dAe  16         h8300       LGPL3   H8/300 disassembly plugin
-_dA_  32         hexagon     LGPL3   Qualcomm Hexagon (QDSP6) V6 (by xvilka)
+_dA_  32         hexagon     LGPL3   Qualcomm Hexagon (QDSP6) V6 (by Rot127)
 _dA_  4          i4004       LGPL3   Intel 4004 microprocessor
 _dA_  8          i8080       BSD     Intel 8080 CPU
 adA_  32         java        LGPL-3  Java bytecode disassembler (by deroad)
