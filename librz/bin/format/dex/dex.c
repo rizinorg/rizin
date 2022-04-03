@@ -371,30 +371,57 @@ static bool dex_create_relocations(RzBinDex *dex) {
 	RzListIter *iter_l;
 	DexClassDef *class_def;
 	DexEncodedMethod *encoded_method = NULL;
-	DexMethodId *method_id;
+	DexMethodId *method_id = NULL;
 
 	dex->relocs_size = 0;
 	rz_pvector_foreach (dex->class_defs, iter_p0) {
 		class_def = (DexClassDef *)*iter_p0;
-		rz_list_foreach (class_def->virtual_methods, iter_l, encoded_method) {
-			if (encoded_method->method_idx >= rz_pvector_len(dex->method_ids)) {
-				RZ_LOG_INFO("cannot find virtual method with index %" PFMT64u "\n", encoded_method->method_idx);
-				continue;
-			} else if (encoded_method->code_offset > 0) {
+		rz_list_foreach (class_def->direct_methods, iter_l, encoded_method) {
+			if (encoded_method->code_offset > 0) {
 				continue;
 			}
-
-			method_id = (DexMethodId *)rz_pvector_at(dex->method_ids, encoded_method->method_idx);
-			if (method_id->code_offset > 0) {
-				encoded_method->code_offset = method_id->code_offset;
-				encoded_method->code_size = method_id->code_size;
-				continue;
+			method_id = NULL;
+			if (encoded_method->method_idx < rz_pvector_len(dex->method_ids)) {
+				method_id = (DexMethodId *)rz_pvector_at(dex->method_ids, encoded_method->method_idx);
+				if (method_id->code_offset > 0) {
+					encoded_method->code_offset = method_id->code_offset;
+					encoded_method->code_size = method_id->code_size;
+					continue;
+				}
 			}
 
 			// patch the imported method.
-			encoded_method->code_offset = method_id->code_offset = dex->relocs_offset + dex->relocs_size;
-			encoded_method->code_size = method_id->code_size = 2;
+			encoded_method->code_offset = dex->relocs_offset + dex->relocs_size;
+			encoded_method->code_size = 2;
 			dex->relocs_size += 2;
+			if (method_id) {
+				method_id->code_offset = encoded_method->code_offset;
+				method_id->code_size = encoded_method->code_size;
+			}
+		}
+
+		rz_list_foreach (class_def->virtual_methods, iter_l, encoded_method) {
+			if (encoded_method->code_offset > 0) {
+				continue;
+			}
+			method_id = NULL;
+			if (encoded_method->method_idx < rz_pvector_len(dex->method_ids)) {
+				method_id = (DexMethodId *)rz_pvector_at(dex->method_ids, encoded_method->method_idx);
+				if (method_id->code_offset > 0) {
+					encoded_method->code_offset = method_id->code_offset;
+					encoded_method->code_size = method_id->code_size;
+					continue;
+				}
+			}
+
+			// patch the imported method.
+			encoded_method->code_offset = dex->relocs_offset + dex->relocs_size;
+			encoded_method->code_size = 2;
+			dex->relocs_size += 2;
+			if (method_id) {
+				method_id->code_offset = encoded_method->code_offset;
+				method_id->code_size = encoded_method->code_size;
+			}
 		}
 	}
 
@@ -409,7 +436,7 @@ static bool dex_create_relocations(RzBinDex *dex) {
 				break;
 			}
 		}
-		if (class_found || method_id->code_offset > 0) {
+		if (class_found && method_id->code_offset > 0) {
 			continue;
 		}
 		// patch the imported method.

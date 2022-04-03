@@ -159,10 +159,10 @@ EXPECT=<<EOF
 0x8000000000 2 java.io.PrintStream imp.println(Ljava/lang/String;)V
 0x8000000002 2 java.lang.Integer imp.<init>(I)V
 0x8000000004 2 java.lang.Integer imp.toString()Ljava/lang/String;
-0x100000238 20 java.lang.Object void <init>()
-0x100000238 20 java.lang.StringBuilder void <init>()
-0x8000000006 2 java.lang.StringBuilder imp.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-0x8000000008 2 java.lang.StringBuilder imp.toString()Ljava/lang/String;
+0x8000000006 2 java.lang.Object imp.<init>()V
+0x8000000008 2 java.lang.StringBuilder imp.<init>()V
+0x800000000a 2 java.lang.StringBuilder imp.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+0x800000000c 2 java.lang.StringBuilder imp.toString()Ljava/lang/String;
 EOF
 RUN
 
@@ -176,8 +176,6 @@ EXPECT=<<EOF
 0x00000208 1 class.LWorld
 0x100000228 908 section.data
 0x100000238 20 sym.LHello_._init___V
-0x100000238 20 sym.Ljava_lang_Object_._init___V
-0x100000238 20 sym.Ljava_lang_StringBuilder_._init___V
 0x100000238 1 method.public.constructor.LHello_._init___V
 0x10000025c 256 main
 0x10000025c 1 entry0
@@ -222,12 +220,14 @@ EXPECT=<<EOF
 0x1000004f2 0 sym.LHello_.localVar
 0x100000506 0 sym.LWorld_.worldVar
 0x100000508 0 sym.LWorld_.worldVar2
-0x8000000000 10 section.reloc_targets
+0x8000000000 14 section.reloc_targets
 0x8000000000 2 sym.Ljava_io_PrintStream_.println_Ljava_lang_String__V
 0x8000000002 2 sym.Ljava_lang_Integer_._init__I_V
 0x8000000004 2 sym.Ljava_lang_Integer_.toString__Ljava_lang_String
-0x8000000006 2 sym.Ljava_lang_StringBuilder_.append_Ljava_lang_String__Ljava_lang_StringBuilder
-0x8000000008 2 sym.Ljava_lang_StringBuilder_.toString__Ljava_lang_String
+0x8000000006 2 sym.Ljava_lang_Object_._init___V
+0x8000000008 2 sym.Ljava_lang_StringBuilder_._init___V
+0x800000000a 2 sym.Ljava_lang_StringBuilder_.append_Ljava_lang_String__Ljava_lang_StringBuilder
+0x800000000c 2 sym.Ljava_lang_StringBuilder_.toString__Ljava_lang_String
 EOF
 RUN
 
