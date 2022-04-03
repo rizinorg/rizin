@@ -18,16 +18,19 @@ RZ_LIB_VERSION_HEADER(rz_reg);
  * this enum aims to cover them all.
  */
 typedef enum {
-	RZ_REG_TYPE_GPR,
+	RZ_REG_TYPE_GPR, //< General purpose
 	RZ_REG_TYPE_DRX,
-	RZ_REG_TYPE_FPU,
+	RZ_REG_TYPE_FPU, //< Floating point
 	RZ_REG_TYPE_MMX,
 	RZ_REG_TYPE_XMM,
 	RZ_REG_TYPE_YMM,
 	RZ_REG_TYPE_FLG,
 	RZ_REG_TYPE_SEG,
-	RZ_REG_TYPE_SYS,
+	RZ_REG_TYPE_SYS, //< System
 	RZ_REG_TYPE_SEC,
+	RZ_REG_TYPE_VC, //< Vector
+	RZ_REG_TYPE_VCC, //< Vector control
+	RZ_REG_TYPE_CTR, //< Control
 	RZ_REG_TYPE_LAST,
 	RZ_REG_TYPE_ANY = -1
 } RzRegisterType;
