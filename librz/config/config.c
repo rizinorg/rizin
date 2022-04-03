@@ -352,15 +352,23 @@ beach:
 	return node;
 }
 
+/**
+  * \brief Appends the given node to the config \p cfg.
+  *
+  * \param cfg The configuration the node is appended.
+  * \param node The node to append.
+  * \return bool True if the node was successful added. False otherwise.
+  */
 RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *node) {
 	rz_return_val_if_fail(cfg && node, false);
-	if (!cfg->lock) {
-		ht_pp_insert(cfg->ht, node->name, node);
-		rz_list_append(cfg->nodes, node);
-		return true;
+	if (cfg->lock) {
+    RZ_LOG_WARN("Config locked. Plugin config node not copied.\n");
+    rz_config_node_free(node);
+    return false;
 	}
-	RZ_LOG_WARN("Config locked. Plugin config node not copied.\n");
-	return false;
+  ht_pp_insert(cfg->ht, node->name, node);
+  rz_list_append(cfg->nodes, node);
+  return true;
 }
 
 /* rz_config_desc takes a RzConfig and a name,
