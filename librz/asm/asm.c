@@ -332,7 +332,7 @@ static void set_plugin_configs(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pcfg
  * \param pcfg Pointer to the plugins RzConfig struct.
  */
 static void unset_plugins_config(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pcfg) {
-	rz_return_if_fail(pcfg && rz_asm);
+	rz_return_if_fail(pcfg && rz_asm && rz_asm->core);
 
 	RzConfig *conf = ((RzCore *)(rz_asm->core))->config;
 	RzConfigNode *n;
