@@ -3,7 +3,7 @@ d "?   immext(##0x40)" 01400000 0x0
 d "?   immext(##0xffffffc0)" ff7fff0f 0x0
 
 d "?   R0 = ##0x101" 20e00078 0x0
-d "?   R5 = add(clb(R31),#0xffffffff)" 05ff3f8c 0x0
+d "?   R5 = add(clb(R31),#-0x1)" 05ff3f8c 0x0
 d "?   R4 = add(R19,##0x33)" 64c613b0 0x0
 
 d "?   nop"  00c0007f 0x10000000
