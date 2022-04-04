@@ -6,6 +6,7 @@
 #include <capstone.h>
 #include <ppc.h>
 #include "../../asm/arch/ppc/libvle/vle.h"
+#include "../arch/ppc/ppc_il.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */
@@ -1323,6 +1324,13 @@ static RzList *analysis_preludes(RzAnalysis *analysis) {
 	return l;
 }
 
+static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+	if (analysis->bits == 64) {
+		return rz_ppc_cs_64_il_config(analysis->big_endian);
+	}
+	return rz_ppc_cs_32_il_config(analysis->big_endian);
+}
+
 RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.name = "ppc",
 	.desc = "Capstone PowerPC analysis",
@@ -1334,6 +1342,7 @@ RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.preludes = analysis_preludes,
 	.op = &analop,
 	.get_reg_profile = &get_reg_profile,
+	.il_config = il_config,
 };
 
 #ifndef RZ_PLUGIN_INCORE

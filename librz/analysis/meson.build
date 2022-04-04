@@ -154,6 +154,7 @@ rz_analysis_sources = [
   'arch/avr/avr_il.c',
   'arch/arm/arm_il32.c',
   'arch/arm/arm_il64.c',
+  'arch/ppc/ppc_il.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cr16/cr16_disas.c',
