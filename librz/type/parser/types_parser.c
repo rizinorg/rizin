@@ -948,7 +948,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 	// Now we form both RzType and RzBaseType to store in the Types database
 	ParserTypePair *enum_pair = c_parser_new_enum_type(state, name, body_child_count);
 	if (!enum_pair) {
-		parser_error(state, "Error forming RzType and RzBaseType pair out of enum\n");
+		parser_error(state, "Error forming RzType and RzBaseType pair out of enum: \"%s\"\n", name);
 		result = -1;
 		goto rexit;
 	}
