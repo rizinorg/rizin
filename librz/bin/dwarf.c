@@ -528,7 +528,7 @@ static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const 
 			goto beach;
 		}
 		RzBinDwarfLineFileEntry *entry = rz_vector_push(&file_names, NULL);
-		entry->name = strdup(filename);
+		entry->name = rz_str_ndup(filename, len);
 		entry->id_idx = id_idx;
 		entry->mod_time = mod_time;
 		entry->file_len = file_len;
@@ -1524,8 +1524,8 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
-		value->string.content = *buf ? strdup((const char *)buf) : NULL;
-		buf += (strlen((const char *)buf) + 1);
+		value->string.content = *buf ? rz_str_ndup((char *)buf, buf_end - buf) : NULL;
+		buf += value->string.content ? strlen(value->string.content) + 1 : 1;
 		break;
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1568,7 +1568,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->string.offset = dwarf_read_offset(hdr->is_64bit, big_endian, &buf, buf_end);
 		if (debug_str && value->string.offset < debug_str_len) {
 			value->string.content =
-				strdup((const char *)(debug_str + value->string.offset));
+				rz_str_ndup((char *)debug_str + value->string.offset, debug_str_len - value->string.offset);
 		} else {
 			value->string.content = NULL; // Means malformed DWARF, should we print error message?
 		}
@@ -1628,9 +1628,9 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_strx:
 		value->kind = DW_AT_KIND_STRING;
 		// value->string.offset = dwarf_read_offset (hdr->is_64bit, big_endian, &buf, buf_end);
-		// if (debug_str && value->string.offset < debug_line_str_len) {
+		// if (debug_str && value->string.offset < debug_str_len) {
 		// 	value->string.content =
-		// 		strdup ((const char *)(debug_str + value->string.offset));
+		// 		rz_str_ndup ((const char *)(debug_str + value->string.offset), debug_str_len - value->string.offset);
 		// } else {
 		// 	value->string.content = NULL; // Means malformed DWARF, should we print error message?
 		// }
@@ -1685,7 +1685,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->string.offset = dwarf_read_offset(hdr->is_64bit, big_endian, &buf, buf_end);
 		// if (debug_str && value->string.offset < debug_line_str_len) {
 		// 	value->string.content =
-		// 		strdupsts
+		// 		rz_str_ndup
 		break;
 	// offset in the supplementary object file
 	case DW_FORM_ref_sup4:
