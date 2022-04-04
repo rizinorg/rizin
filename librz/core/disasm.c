@@ -1526,6 +1526,27 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 	rz_list_free(xrefs);
 }
 
+static bool calc_tab_buf_size(size_t len, size_t tabs, size_t *c) {
+	if (SZT_ADD_OVFCHK(tabs, 1)) {
+		return true;
+	}
+	tabs++;
+	if (SZT_MUL_OVFCHK(len, tabs)) {
+		return true;
+	}
+	len *= tabs;
+	if (SZT_MUL_OVFCHK(len, 4)) {
+		return true;
+	}
+	len *= 4;
+	if (SZT_ADD_OVFCHK(len, 4)) {
+		return true;
+	}
+	len += 4;
+	*c = len;
+	return false;
+}
+
 static void ds_atabs_option(RzDisasmState *ds) {
 	int n, i = 0, comma = 0, word = 0;
 	int brackets = 0;
@@ -1533,20 +1554,24 @@ static void ds_atabs_option(RzDisasmState *ds) {
 	if (!ds || !ds->atabs) {
 		return;
 	}
-	int bufasm_len = rz_strbuf_length(&ds->asmop.buf_asm);
-	int size = bufasm_len * (ds->atabs + 1) * 4 + 4;
-	if (size < 1 || size < bufasm_len) {
-		return;
-	}
+	size_t size;
+	const char *opstr;
 	if (ds->opstr) {
-		size = strlen(ds->opstr) * (ds->atabs + 1) * 4 + 4;
-		b = rz_str_ndup(ds->opstr, size);
+		if (calc_tab_buf_size(strlen(ds->opstr), ds->atabs, &size)) {
+			return;
+		}
+		opstr = ds->opstr;
 	} else {
-		b = rz_str_ndup(rz_asm_op_get_asm(&ds->asmop), size);
+		if (calc_tab_buf_size(rz_strbuf_length(&ds->asmop.buf_asm), ds->atabs, &size)) {
+			return;
+		}
+		opstr = rz_strbuf_get(&ds->asmop.buf_asm);
 	}
+	b = malloc(size);
 	if (!b) {
 		return;
 	}
+	rz_str_ncpy(b, opstr, size);
 	free(ds->opstr);
 	ds->opstr = b;
 	for (; *b; b++, i++) {
