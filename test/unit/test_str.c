@@ -674,6 +674,20 @@ bool test_rz_str_ndup(void) {
 	mu_end;
 }
 
+bool test_rz_str_filter(void) {
+	char buf[10] = "hel\x01\x02\x03lo";
+	char *buf2 = rz_str_ndup("AAA\001\002AAA", 20);
+	char *buf3 = rz_str_ndup("AAA\001\002AAA", 5);
+
+	rz_str_filter(buf);
+	mu_assert_streq(buf, "hel...lo", "static buffer should be filtered");
+	rz_str_filter(buf2);
+	mu_assert_streq_free(buf2, "AAA..AAA", "allocated buffer with ndup 20 should be filtered");
+	rz_str_filter(buf3);
+	mu_assert_streq_free(buf3, "AAA..", "allocated buffer with ndup 5 should be filtered");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
@@ -712,6 +726,7 @@ bool all_tests() {
 	mu_run_test(test_rz_strf);
 	mu_run_test(test_rz_str_nlen);
 	mu_run_test(test_rz_str_ndup);
+	mu_run_test(test_rz_str_filter);
 	return tests_passed != tests_run;
 }
 

@@ -4080,7 +4080,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 						msg2[len - 1] = 0;
 						kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg2, len - 1);
 						if (kind && !strcmp(kind, "text")) {
-							rz_str_filter(msg2, 0);
+							rz_str_filter(msg2);
 							if (*msg2) {
 								char *lala = rz_str_newf("\"%s\"", msg2);
 								free(msg2);
@@ -4153,7 +4153,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 			if (strlen(msg) != 1) {
 				char *msg2 = rz_str_new(msg);
 				if (msg2) {
-					rz_str_filter(msg2, 0);
+					rz_str_filter(msg2);
 					if (!strncmp(msg2, "UH..", 4)) {
 						print_msg = false;
 					}

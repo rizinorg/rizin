@@ -710,7 +710,7 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 			case 'z':
 				memset(str, 0, sizeof(str));
 				rz_io_read_at(core->io, arg, (ut8 *)str, sizeof(str) - 1);
-				rz_str_filter(str, strlen(str));
+				rz_str_filter(str);
 				res = rz_str_appendf(res, "\"%s\"", str);
 				break;
 			case 'Z': {
@@ -722,7 +722,7 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 				}
 				(void)rz_io_read_at(core->io, arg, (ut8 *)str, len);
 				str[len] = 0;
-				rz_str_filter(str, -1);
+				rz_str_filter(str);
 				res = rz_str_appendf(res, "\"%s\"", str);
 			} break;
 			default:

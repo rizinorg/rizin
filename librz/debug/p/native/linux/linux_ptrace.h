@@ -52,4 +52,6 @@
 
 #endif
 
+long rz_debug_ptrace_get_x86_xstate(RzDebug *dbg, pid_t pid, struct iovec *iov);
+
 #endif
