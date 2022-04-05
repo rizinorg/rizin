@@ -878,6 +878,26 @@ RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len) {
 	return out;
 }
 
+/**
+ * \brief Create new copy of string \p ptr limited to size \p len
+ * \param[in] ptr String to create new copy from
+ * \param[in] len Upper limit for new string size
+ * \return New copy of string \p ptr with size limited by \p len or NULL if \p ptr is NULL.
+ *         Returned buffer size is guaranteed to be len + 1.
+ */
+RZ_API char *rz_str_ndup_buflen(RZ_NULLABLE const char *ptr, int len) {
+	if (!ptr || len < 0) {
+		return NULL;
+	}
+	char *out = malloc(len + 1);
+	if (!out) {
+		return NULL;
+	}
+	memcpy(out, ptr, len);
+	out[len] = 0;
+	return out;
+}
+
 // TODO: deprecate?
 RZ_API char *rz_str_dup(char *ptr, const char *string) {
 	char *str = rz_str_new(string);

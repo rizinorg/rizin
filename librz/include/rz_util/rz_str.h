@@ -179,6 +179,7 @@ static inline const char *rz_str_get_null(const char *str) {
 	return str ? str : "(null)";
 }
 RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len);
+RZ_API char *rz_str_ndup_buflen(RZ_NULLABLE const char *ptr, int len);
 RZ_API char *rz_str_dup(char *ptr, const char *string);
 RZ_API int rz_str_inject(char *begin, char *end, char *str, int maxlen);
 RZ_API int rz_str_delta(char *p, char a, char b);
