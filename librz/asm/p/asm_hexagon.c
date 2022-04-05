@@ -27,6 +27,7 @@
  * \return int Size of the reversed opcode.
  */
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
+  rz_return_val_if_fail(a && op && buf && l >= 4, -1);
 	ut32 addr = (ut32)a->pc;
 	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
 

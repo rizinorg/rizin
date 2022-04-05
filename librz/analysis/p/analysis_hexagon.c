@@ -19,6 +19,7 @@
 #include "hexagon_arch.h"
 
 RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	rz_return_val_if_fail(analysis && op && buf && len >= 4, -1);
 	if (analysis->pcalign == 0) {
 		analysis->pcalign = 0x4;
 	}
