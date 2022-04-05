@@ -403,6 +403,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	rz_debug_plugin_init(dbg);
 	dbg->bp->iob.init = false;
 	dbg->bp->baddr = 0;
+	dbg->nt_x86_xstate_supported = true;
 	return dbg;
 }
 

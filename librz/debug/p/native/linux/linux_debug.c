@@ -26,6 +26,33 @@
 #define HAVE_YMM 0
 #endif
 
+#if (__i386__ || __x86_64__) && defined(PTRACE_GETREGSET) && defined(NT_X86_XSTATE)
+long rz_debug_ptrace_get_x86_xstate(RzDebug *dbg, pid_t pid, struct iovec *iov) {
+	if (!dbg->nt_x86_xstate_supported) {
+		return -1;
+	}
+
+	long res = rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)NT_X86_XSTATE, iov);
+	if (res == -1) {
+		if (errno == ENODEV) {
+			// Ignore ENODEV error because it means the kernel does not support
+			// NT_X86_XSTATE.
+			dbg->nt_x86_xstate_supported = false;
+			rz_sys_perror("PTRACE_GETREGSET/NT_X86_XSTATE");
+			return -1;
+		}
+
+		rz_sys_perror("rz_debug_ptrace_get_x86_xstate");
+		return -1;
+	}
+	return res;
+}
+#else
+long rz_debug_ptrace_get_x86_xstate(RzDebug *dbg, pid_t pid, struct iovec *iov) {
+	return -1;
+}
+#endif
+
 char *linux_reg_profile(RzDebug *dbg) {
 #if __arm__
 #include "reg/linux-arm.h"
@@ -1208,9 +1235,8 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		struct iovec iov;
 		iov.iov_base = &xstate;
 		iov.iov_len = sizeof(struct _xstate);
-		ret = rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)NT_X86_XSTATE, &iov);
-		if (ret != 0) {
-			rz_sys_perror("PTRACE_GETREGSET");
+		ret = rz_debug_ptrace_get_x86_xstate(dbg, pid, &iov);
+		if (ret == -1) {
 			return false;
 		}
 		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
