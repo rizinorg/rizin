@@ -233,6 +233,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 			return false;
 		}
 		if (UT64_MUL_OVFCHK(i, DMP_PAGE_SIZE)) {
+			free(page);
 			break;
 		}
 		page->start = i * DMP_PAGE_SIZE;
