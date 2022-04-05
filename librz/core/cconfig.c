@@ -2834,15 +2834,7 @@ static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
 static bool cb_dbg_verbose(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	const char *value = node->value;
-	switch (value[0]) {
-	case 't':
-	case 'T':
-		core->dbg->verbose = true;
-		break;
-	default:
-		core->dbg->verbose = false;
-	}
+	core->dbg->verbose = node->i_value;
 	return true;
 }
 
@@ -3345,7 +3337,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("dbg.skipover", "false", "Make dso perform a dss (same goes for esil and visual/graph");
 	SETI("dbg.hwbp", 0, "Set HW or SW breakpoints");
 	SETCB("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
-	SETCB("dbg.verbose", "true", &cb_dbg_verbose, "Verbose debug output");
+	SETCB("dbg.verbose", "false", &cb_dbg_verbose, "Verbose debug output");
 	SETBPREF("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
 	SETBPREF("dbg.funcarg", "false", "Display arguments to function call in visual mode");
 
