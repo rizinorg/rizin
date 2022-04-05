@@ -2295,6 +2295,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 				}
 				if (mode & RZ_PRINT_UNIONMODE) {
 					rz_strbuf_appendf(outbuf, "f %s @ 0x%08" PFMT64x "\n", formatname, seeki);
+					free(newname);
 					goto beach;
 				} else if (tmp == '?') {
 					rz_strbuf_appendf(outbuf, "f %s.%s_", fmtname, fieldname);
