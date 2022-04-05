@@ -413,3 +413,35 @@ ret
 EOF
 RUN
 
+NAME=PPC big endian R_PPC_RELATIVE and R_PPC_JMP_SLOT
+FILE=bins/abi_bins/elf/platforms/macppc-openbsd-echo
+BROKEN=1
+CMDS=<<EOF
+# 584 relocs + 2 header lines
+ir~?
+# R_PPC_RELATIVE
+s 0x398f8
+pf bbbb
+pd 1
+# R_PPC_JMP_SLOT
+s 0x39ca4
+pf bbbb
+pd 1
+EOF
+EXPECT=<<EOF
+586
+0x000398f8 = 0x00
+0x000398f9 = 0x01
+0x000398fa = 0x40
+0x000398fb = 0xf4
+            ;-- section..preinit_array:
+            0x000398f8      .dword 0x000140f4                          ; RELOC 32  ; [19] -rw- section size 4 named .preinit_array
+0x00039ca4 = 0x00
+0x00039ca5 = 0x05
+0x00039ca6 = 0x06
+0x00039ca7 = 0x7c
+            ;-- section..plt:
+            ;-- _Jv_RegisterClasses:
+            0x00039ca4      .dword 0x0005067c ; section..glink         ; RELOC 32 _Jv_RegisterClasses ; [23] -rw- section size 4 named .plt
+EOF
+RUN
