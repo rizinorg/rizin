@@ -12,6 +12,7 @@
 #include <propeller_disas.h>
 
 static int propeller_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	rz_return_val_if_fail(analysis && op && buf && len >= 4, -1);
 	int ret;
 	struct propeller_cmd cmd;
 
