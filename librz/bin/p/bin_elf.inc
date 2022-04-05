@@ -912,11 +912,11 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		int low = 0, word = 0;
 		switch (rel->type) {
 		case RZ_PPC64_REL16_HA:
-			word = 16;
+			word = 2;
 			val = (S + A - P + 0x8000) >> 16;
 			break;
 		case RZ_PPC64_REL16_LO:
-			word = 16;
+			word = 2;
 			val = (S + A - P) & 0xffff;
 			break;
 		case RZ_PPC64_REL14:
@@ -928,7 +928,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			val = (st64)(S + A - P) >> 2;
 			break;
 		case RZ_PPC64_REL32:
-			word = 32;
+			word = 4;
 			val = S + A - P;
 			break;
 		default:
@@ -952,11 +952,11 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			}
 		} else if (word) {
 			switch (word) {
-			case 16:
+			case 2:
 				rz_buf_write_ble16_at(rbuf, patch_addr, val, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
 				break;
-			case 32:
+			case 4:
 				rz_buf_write_ble16_at(rbuf, patch_addr, val, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
 				break;
