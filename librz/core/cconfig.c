@@ -2493,7 +2493,7 @@ static bool cb_binprefix(void *user, void *data) {
 			char *name = (char *)rz_file_basename(core->bin->file);
 			if (name) {
 				rz_name_filter(name, strlen(name), true);
-				rz_str_filter(name, strlen(name));
+				rz_str_filter(name);
 				core->bin->prefix = strdup(name);
 				free(name);
 			}

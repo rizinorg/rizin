@@ -1028,7 +1028,7 @@ static RzList *maps(RzBinFile *bf) {
 		char segname[17];
 		struct MACH0_(segment_command) *seg = &kobj->mach0->segs[i];
 		rz_str_ncpy(segname, seg->segname, 17);
-		rz_str_filter(segname, -1);
+		rz_str_filter(segname);
 		map->name = rz_str_newf("%d.%s", i, segname);
 		map->paddr = seg->fileoff + bf->o->boffset;
 		map->psize = seg->vmsize;
@@ -1088,7 +1088,7 @@ static RzList *sections(RzBinFile *bf) {
 
 		seg = &kobj->mach0->segs[i];
 		rz_str_ncpy(segname, seg->segname, 17);
-		rz_str_filter(segname, -1);
+		rz_str_filter(segname);
 		ptr->name = rz_str_newf("%d.%s", i, segname);
 		ptr->size = seg->vmsize;
 		ptr->vsize = seg->vmsize;
