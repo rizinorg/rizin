@@ -292,6 +292,7 @@ static inline void *rz_new_copy(int size, void *data) {
 #define RZ_PTR_ALIGN_NEXT(v, t) \
 	((char *)(((size_t)(v) + (t - 1)) & ~(t - 1)))
 
+#define RZ_BIT_MASK32(x, y) ((1UL << (x)) - (1UL << (y)))
 #define RZ_BIT_SET(x, y)    (((ut8 *)x)[y >> 4] |= (1 << (y & 0xf)))
 #define RZ_BIT_UNSET(x, y)  (((ut8 *)x)[y >> 4] &= ~(1 << (y & 0xf)))
 #define RZ_BIT_TOGGLE(x, y) (RZ_BIT_CHK(x, y) ? RZ_BIT_UNSET(x, y) : RZ_BIT_SET(x, y))
