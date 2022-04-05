@@ -704,13 +704,16 @@ RZ_IPI RzCmdStatus rz_open_binary_show_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, const char **argv) {
-	RzListIter *iter;
-	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
-	RzBinFile *bf = NULL;
 	RzBin *bin = core->bin;
 	if (!bin) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
+	if (!list) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzListIter *iter;
+	RzBinFile *bf = NULL;
 	rz_list_foreach (bin->binfiles, iter, bf) {
 		char temp[64];
 		RzInterval inter = (RzInterval){ bf->o->opts.baseaddr, bf->o->size };
