@@ -3898,7 +3898,7 @@ RZ_OWN RzList /* RzBinSymbol */ *PE_(rz_bin_pe_get_clr_symbols)(struct PE_(rz_bi
 	char *type_name = NULL;
 	char *type_namespace = NULL;
 
-	ut32 type_methods_start = rz_list_length(bin->clr->methoddefs) + 1;
+	ut32 type_methods_start = rz_pvector_len(bin->clr->methoddefs) + 1;
 	ut32 type_methods_end = type_methods_start;
 
 	if (type_it) {
@@ -3907,7 +3907,7 @@ RZ_OWN RzList /* RzBinSymbol */ *PE_(rz_bin_pe_get_clr_symbols)(struct PE_(rz_bi
 		type_namespace = rz_buf_get_string(bin->clr->strings, typedef_->namespace);
 
 		type_methods_start = ((Pe_image_metadata_typedef *)type_it->data)->methodlist;
-		type_methods_end = rz_list_length(bin->clr->methoddefs) + 1;
+		type_methods_end = rz_pvector_len(bin->clr->methoddefs) + 1;
 
 		type_it = type_it->n;
 		if (type_it) {
@@ -3916,9 +3916,10 @@ RZ_OWN RzList /* RzBinSymbol */ *PE_(rz_bin_pe_get_clr_symbols)(struct PE_(rz_bi
 	}
 
 	int i = 1;
-	RzListIter *it;
-	Pe_image_metadata_methoddef *methoddef;
-	rz_list_foreach (bin->clr->methoddefs, it, methoddef) {
+	void **it;
+	rz_pvector_foreach (bin->clr->methoddefs, it) {
+		Pe_image_metadata_methoddef *methoddef = *it;
+
 		if ((type_name || type_namespace) && i >= type_methods_start && i >= type_methods_end) {
 			// Update class and namespace
 			free(type_name);
@@ -3933,7 +3934,7 @@ RZ_OWN RzList /* RzBinSymbol */ *PE_(rz_bin_pe_get_clr_symbols)(struct PE_(rz_bi
 			if (type_it) {
 				type_methods_end = ((Pe_image_metadata_typedef *)type_it->data)->methodlist;
 			} else {
-				type_methods_end = rz_list_length(bin->clr->methoddefs) + 1;
+				type_methods_end = rz_pvector_len(bin->clr->methoddefs) + 1;
 			}
 		}
 

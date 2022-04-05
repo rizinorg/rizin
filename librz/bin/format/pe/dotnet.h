@@ -160,7 +160,7 @@ typedef struct {
 	// header data
 	Pe_image_metadata_tilde_header *tilde;
 	RzBuffer *strings;
-	RzList /* Pe_image_metadata_methoddef */ *methoddefs;
+	RzPVector /* Pe_image_metadata_methoddef */ *methoddefs;
 	RzList /* Pe_image_metadata_typedef */ *typedefs;
 } Pe_image_clr;
 

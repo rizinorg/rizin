@@ -392,7 +392,7 @@ static int read_image_metadata_tilde_header(RzBuffer *b, ut64 addr, Pe_image_clr
 				READ_BUF_INDEX_SIZE(methoddef->signature, index_sizes.blob)
 				READ_BUF_INDEX_SIZE(methoddef->paramlist, index_sizes.param)
 
-				rz_list_append(clr->methoddefs, methoddef);
+				rz_pvector_push(clr->methoddefs, methoddef);
 			}
 			free(rows);
 			break;
@@ -901,7 +901,7 @@ int bin_pe_dotnet_init_metadata(Pe_image_clr *clr, bool big_endian, RzBuffer *b,
 	}
 
 	if (clr->tilde_stream && clr->blob_stream && clr->strings) {
-		clr->methoddefs = rz_list_newf(free);
+		clr->methoddefs = rz_pvector_new(free);
 		clr->typedefs = rz_list_newf(free);
 		if (!clr->methoddefs || !clr->typedefs) {
 			goto fail;
@@ -973,7 +973,7 @@ void bin_pe_dotnet_destroy_clr(Pe_image_clr *clr) {
 	rz_list_free(clr->streams);
 	rz_buf_free(clr->strings);
 
-	rz_list_free(clr->methoddefs);
+	rz_pvector_free(clr->methoddefs);
 	rz_list_free(clr->typedefs);
 
 	free(clr);

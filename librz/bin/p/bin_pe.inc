@@ -741,7 +741,7 @@ static ut64 get_offset(RzBinFile *bf, int type, int idx) {
 	}
 
 	if (type == 'd') { // MethodDef index
-		Pe_image_metadata_methoddef *methoddef = rz_list_get_n(clr->methoddefs, idx - 1);
+		Pe_image_metadata_methoddef *methoddef = rz_pvector_at(clr->methoddefs, idx - 1);
 		return PE_(rz_bin_pe_get_clr_methoddef_offset)(bin, methoddef);
 	}
 
