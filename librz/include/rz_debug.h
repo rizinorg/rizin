@@ -318,6 +318,8 @@ typedef struct rz_debug_t {
 	bool verbose;
 	bool main_arena_resolved; /* is the main_arena resolved already? */
 	int glibc_version;
+
+	bool nt_x86_xstate_supported; ///< Track whether X86_FEATURE_XSAVE feature is supported on current kernel
 } RzDebug;
 
 typedef struct rz_debug_desc_plugin_t {
