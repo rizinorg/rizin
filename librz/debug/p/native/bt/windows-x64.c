@@ -285,6 +285,7 @@ static bool backtrace_windows_x64(RZ_IN RzDebug *dbg, RZ_INOUT RzList **out_fram
 		ut8 *arena = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_GPR, &arena_size);
 		if (!arena || arena_size < sizeof(*context)) {
 			rz_list_free(modules);
+			free(arena);
 			return true;
 		}
 		memcpy(context, arena, sizeof(*context));
