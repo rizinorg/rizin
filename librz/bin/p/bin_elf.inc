@@ -934,35 +934,33 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		default:
 			break;
 		}
-		RzBuffer *rbuf = rz_buf_new_with_bytes(buf, sizeof(buf));
 		if (low) {
 			switch (low) {
 			case 14:
 				val &= (1 << 14) - 1;
 				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 2);
-				rz_buf_write_ble32_at(rbuf, patch_addr, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(16, 2))) | val << 2, big_endian);
+				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(16, 2))) | val << 2, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
 				break;
 			case 24:
 				val &= (1 << 24) - 1;
 				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-				rz_buf_write_ble32_at(rbuf, patch_addr, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(26, 2))) | val << 2, big_endian);
+				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(26, 2))) | val << 2, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
 				break;
 			}
 		} else if (word) {
 			switch (word) {
 			case 2:
-				rz_buf_write_ble16_at(rbuf, patch_addr, val, big_endian);
+				rz_write_ble16(buf, val, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
 				break;
 			case 4:
-				rz_buf_write_ble16_at(rbuf, patch_addr, val, big_endian);
+				rz_write_ble32(buf, val, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
 				break;
 			}
 		}
-		rz_buf_free(rbuf);
 		break;
 	}
 	case EM_386:
