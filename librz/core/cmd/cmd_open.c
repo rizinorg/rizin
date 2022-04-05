@@ -1089,6 +1089,7 @@ RZ_IPI RzCmdStatus rz_reopen_debug_rzrun_handler(RzCore *core, int argc, const c
 	rz_str_replace_char(s, ',', '\n');
 	rz_file_dump(file, (const ut8 *)s, strlen(s), 0);
 	rz_file_dump(file, (const ut8 *)"\n", 1, 1);
+	free(s);
 	free(file);
 	rz_core_file_reopen_debug(core, "");
 	return RZ_CMD_STATUS_OK;
