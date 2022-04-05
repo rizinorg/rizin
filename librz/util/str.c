@@ -2196,12 +2196,14 @@ RZ_API void rz_str_filter_zeroline(char *str, int len) {
 	str[i] = 0;
 }
 
-RZ_API void rz_str_filter(char *str, int len) {
+/**
+ * \brief Convert all non-printable characters in \p str with '.'
+ *
+ * \param str String to make printable.
+ */
+RZ_API void rz_str_filter(char *str) {
 	size_t i;
-	if (len < 1) {
-		len = strlen(str);
-	}
-	for (i = 0; i < len; i++) {
+	for (i = 0; str[i]; i++) {
 		if (!IS_PRINTABLE(str[i])) {
 			str[i] = '.';
 		}
