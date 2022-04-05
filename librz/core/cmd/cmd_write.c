@@ -530,7 +530,9 @@ RZ_IPI RzCmdStatus rz_write_mask_set_handler(RzCore *core, int argc, const char 
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int size = rz_hex_str2bin(argv[1], buf);
-	return bool2status(rz_io_set_write_mask(core->io, buf, size));
+	bool result = rz_io_set_write_mask(core->io, buf, size);
+	free(buf);
+	return bool2status(result);
 }
 
 RZ_IPI RzCmdStatus rz_write_mask_reset_handler(RzCore *core, int argc, const char **argv) {
