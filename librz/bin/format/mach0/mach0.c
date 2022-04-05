@@ -2277,7 +2277,7 @@ RzList *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 		map->vaddr = seg->vmaddr;
 		map->vsize = seg->vmsize;
 		map->name = rz_str_ndup(seg->segname, 16);
-		rz_str_filter(map->name, -1);
+		rz_str_filter(map->name);
 		map->perm = prot2perm(seg->initprot);
 		if (MACH0_(segment_needs_rebasing_and_stripping)(bin, i)) {
 			map->vfile_name = strdup(MACH0_VFILE_NAME_REBASED_STRIPPED);
@@ -2331,7 +2331,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			// TODO s->flags = seg->flags;
 			s->name = rz_str_ndup(seg->segname, 16);
 			s->is_segment = true;
-			rz_str_filter(s->name, -1);
+			rz_str_filter(s->name);
 			s->perm = prot2perm(seg->initprot);
 			rz_list_append(list, s);
 		}
@@ -2469,7 +2469,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin) {
 			sections[i].flags = seg->flags;
 			rz_strf(sectname, "%.16s", seg->segname);
 			sectname[16] = 0;
-			rz_str_filter(sectname, -1);
+			rz_str_filter(sectname);
 			// hack to support multiple sections with same name
 			sections[i].perm = prot2perm(seg->initprot);
 			sections[i].last = 0;
@@ -2496,7 +2496,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin) {
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
 		rz_strf(sectname, "%.16s", bin->sects[i].sectname);
-		rz_str_filter(sectname, -1);
+		rz_str_filter(sectname);
 		rz_strf(raw_segname, "%.16s", bin->sects[i].segname);
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
@@ -2615,7 +2615,7 @@ RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, boo
 	if (len > 0) {
 		char *res = rz_str_ndup(symstr, len);
 		if (filter) {
-			rz_str_filter(res, -1);
+			rz_str_filter(res);
 		}
 		return res;
 	}
