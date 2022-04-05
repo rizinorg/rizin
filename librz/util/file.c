@@ -1373,7 +1373,7 @@ RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src) {
 	bool ret = false;
 	unsigned char *header = (unsigned char *)rz_file_slurp_range(src, 0, 3, NULL);
 
-	if (!header || strlen((char *)header) != 3) {
+	if (!header || rz_str_nlen((char *)header, 3) != 3) {
 		goto return_goto;
 	}
 

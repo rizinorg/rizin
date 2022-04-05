@@ -139,6 +139,7 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL 
 	return sigs;
 
 fail:
+	rz_list_free(files);
 	rz_list_free(sigs);
 	return NULL;
 }

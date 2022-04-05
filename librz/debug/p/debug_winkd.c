@@ -221,6 +221,7 @@ static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
 		RzDebugPid *newpid = RZ_NEW0(RzDebugPid);
 		if (!newpid) {
 			rz_list_free(ret);
+			rz_list_free(threads);
 			return NULL;
 		}
 		newpid->pid = t->uniqueid;
