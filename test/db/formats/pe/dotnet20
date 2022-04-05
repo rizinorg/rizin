@@ -1,6 +1,12 @@
 NAME=PE: corkami dotnet20.exe - open
 FILE=bins/pe/dotnet20.exe
-CMDS=q!
+CMDS=<<EOF
+s sym.HelloWorld::Main; s
+s sym.HelloWorld::.ctor; s
+q!
+EOF
 EXPECT=<<EOF
+0x402051
+0x40205f
 EOF
 RUN

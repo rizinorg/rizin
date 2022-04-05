@@ -1,0 +1,243 @@
+d "nop" 00
+d "break" 01
+d "ldarg.0" 02
+d "ldarg.1" 03
+d "ldarg.2" 04
+d "ldarg.3" 05
+d "ldloc.0" 06
+d "ldloc.1" 07
+d "ldloc.2" 08
+d "ldloc.3" 09
+d "stloc.0" 0A
+d "stloc.1" 0B
+d "stloc.2" 0C
+d "stloc.3" 0D
+d "ldnull" 14
+d "ldc.i4.m1" 15
+d "ldc.i4.0" 16
+d "ldc.i4.2" 18
+d "ldc.i4.3" 19
+d "ldc.i4.4" 1A
+d "ldc.i4.5" 1B
+d "ldc.i4.6" 1C
+d "ldc.i4.7" 1D
+d "ldc.i4.8" 1E
+d "dup" 25
+d "pop" 26
+d "ret" 2A
+d "ldind.i1" 46
+d "ldind.u1" 47
+d "ldind.i2" 48
+d "ldind.u2" 49
+d "ldind.i4" 4A
+d "ldind.u4" 4B
+d "ldind.i8" 4C
+d "ldind.i" 4D
+d "ldind.r4" 4E
+d "ldind.r8" 4F
+d "ldind.ref" 50
+d "stind.ref" 51
+d "stind.i1" 52
+d "stind.i2" 53
+d "stind.i4" 54
+d "stind.i8" 55
+d "stind.r4" 56
+d "stind.r8" 57
+d "add" 58
+d "sub" 59
+d "mul" 5A
+d "div" 5B
+d "div.un" 5C
+d "rem" 5D
+d "rem.un" 5E
+d "and" 5F
+d "or" 60
+d "xor" 61
+d "shl" 62
+d "shr" 63
+d "shr.un" 64
+d "neg" 65
+d "not" 66
+d "conv.i1" 67
+d "conv.i2" 68
+d "conv.i4" 69
+d "conv.i8" 6A
+d "conv.r4" 6B
+d "conv.r8" 6C
+d "conv.u4" 6D
+d "conv.u8" 6E
+d "conv.r.un" 76
+d "throw" 7A
+d "conv.ovf.i1.un" 82
+d "conv.ovf.i2.un" 83
+d "conv.ovf.i4.un" 84
+d "conv.ovf.i8.un" 85
+d "conv.ovf.u1.un" 86
+d "conv.ovf.u2.un" 87
+d "conv.ovf.u4.un" 88
+d "conv.ovf.u8.un" 89
+d "conv.ovf.i.un" 8A
+d "conv.ovf.u.un" 8B
+d "ldlen" 8E
+d "ldelem.i1" 90
+d "ldelem.u1" 91
+d "ldelem.i2" 92
+d "ldelem.u2" 93
+d "ldelem.i4" 94
+d "ldelem.u4" 95
+d "ldelem.i8" 96
+d "ldelem.i" 97
+d "ldelem.r4" 98
+d "ldelem.r8" 99
+d "ldelem.ref" 9A
+d "stelem.i" 9B
+d "stelem.i1" 9C
+d "stelem.i2" 9D
+d "stelem.i4" 9E
+d "stelem.i8" 9F
+d "stelem.r4" A0
+d "stelem.r8" A1
+d "stelem.ref" A2
+d "conv.ovf.i1" B3
+d "conv.ovf.u1" B4
+d "conv.ovf.i2" B5
+d "conv.ovf.u2" B6
+d "conv.ovf.i4" B7
+d "conv.ovf.u4" B8
+d "conv.ovf.i8" B9
+d "conv.ovf.u8" BA
+d "ckfinite" C3
+d "conv.u2" D1
+d "conv.u1" D2
+d "conv.i" D3
+d "conv.ovf.i" D4
+d "conv.ovf.u" D5
+d "add.ovf" D6
+d "add.ovf.un" D7
+d "mul.ovf" D8
+d "mul.ovf.un" D9
+d "sub.ovf" DA
+d "sub.ovf.un" DB
+d "endfinally" DC
+d "stind.i" DF
+d "conv.u" E0
+
+d "ldarg.s 0x0" 0e00
+d "ldarg.s 0xFF" 0eff
+d "ldarga.s 0x0" 0f00
+d "ldarga.s 0xFF" 0fff
+d "starg.s 0x0" 1000
+d "starg.s 0xFF" 10ff
+d "ldloc.s 0x0" 1100
+d "ldloc.s 0xFF" 11ff
+d "ldloca.s 0x0" 1200
+d "ldloca.s 0xFF" 12ff
+d "stloc.s 0x0" 1300
+d "stloc.s 0xFF" 13ff
+
+d "ldc.i4.s 0x0" 1f00
+d "ldc.i4.s 0x7F" 1f7f
+d "ldc.i4 0x0" 2000000000
+d "ldc.i4 0xFFFFFFFF" 20ffffffff
+d "ldc.i8 0x0" 210000000000000000
+d "ldc.i8 0xFFFFFFFFFFFFFFFF" 21ffffffffffffffff
+d "ldc.r4 3.141590" 22d00f4940
+d "ldc.r8 3.141590" 236e861bf0f9210940
+
+d "jmp 0x6000001" 2701000006
+d "call 0x6000002" 2802000006
+d "callvirt 0xA000001" 6f0100000a
+d "newobj 0xA000002" 730200000a
+
+d "arglist" fe00
+d "ceq" fe01
+d "cgt" fe02
+d "cgt.un" fe03
+d "clt" fe04
+d "clt.un" fe05
+d "unused" fe08
+d "localloc" fe0F
+d "unused" fe10
+d "endfilter" fe11
+d "cpblk" fe17
+d "initblk" fe18
+d "unused" fe19
+d "rethrow" fe1A
+d "unused" fe1B
+d "refanytype" fe1D
+d "unused" fe1F
+d "unused" fe20
+d "unused" fe21
+d "unused" fe22
+
+d "br.s -2" 2bfe
+d "br.s 48" 2b30
+d "brfalse.s -6" 2cfa
+d "brfalse.s 44" 2c2c
+d "brtrue.s -10" 2df6
+d "brtrue.s 40" 2d28
+d "beq.s -14" 2ef2
+d "beq.s 36" 2e24
+d "bge.s -18" 2fee
+d "bge.s 32" 2f20
+d "bgt.s -22" 30ea
+d "bgt.s 28" 301c
+d "ble.s -26" 31e6
+d "ble.s 24" 3118
+d "blt.s -30" 32e2
+d "blt.s 20" 3214
+d "bne.un.s -34" 33de
+d "bne.un.s 16" 3310
+d "bge.un.s -38" 34da
+d "bge.un.s 12" 340c
+d "bgt.un.s -42" 35d6
+d "bgt.un.s 8" 3508
+d "ble.un.s -46" 36d2
+d "ble.un.s 4" 3604
+d "blt.un.s -50" 37ce
+d "blt.un.s 0" 3700
+d "br -57" 38c7ffffff
+d "br 120" 3878000000
+d "brfalse -67" 39bdffffff
+d "brfalse 110" 396e000000
+d "brtrue -77" 3ab3ffffff
+d "brtrue 100" 3a64000000
+d "beq -87" 3ba9ffffff
+d "beq 90" 3b5a000000
+d "bge -97" 3c9fffffff
+d "bge 80" 3c50000000
+d "bgt -107" 3d95ffffff
+d "bgt 70" 3d46000000
+d "ble -117" 3e8bffffff
+d "ble 60" 3e3c000000
+d "blt -127" 3f81ffffff
+d "blt 50" 3f32000000
+d "bne.un -137" 4077ffffff
+d "bne.un 40" 4028000000
+d "bge.un -147" 416dffffff
+d "bge.un 30" 411e000000
+d "bgt.un -157" 4263ffffff
+d "bgt.un 20" 4214000000
+d "ble.un -167" 4359ffffff
+d "ble.un 10" 430a000000
+d "blt.un -177" 444fffffff
+d "blt.un 0" 4400000000
+
+d "arglist" fe00
+d "ceq" fe01
+d "cgt" fe02
+d "cgt.un" fe03
+d "clt" fe04
+d "clt.un" fe05
+d "localloc" fe0f
+d "endfilter" fe11
+d "cpblk" fe17
+d "initblk" fe18
+d "rethrow" fe1a
+d "refanytype" fe1d
+
+d "unaligned. 0x0 initblk" fe1200fe18
+d "unaligned. 0xFF initblk" fe12fffe18
+d "unaligned. 0xFF volatile. initblk" fe12fffe13fe18
+d "tail. call 0x6000007" fe142807000006
+d "constrained. 0x2000002 callvirt 0xA000003" fe16020000026f0300000a

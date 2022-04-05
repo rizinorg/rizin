@@ -1,0 +1,68 @@
+NAME=PE: AStyleWhore.exe - open
+FILE=bins/cil/AStyleWhore.exe
+CMDS=<<EOF
+s sym.AStyleInterface::AStyleGetVersion; s
+s sym.AStyleInterface::AStyleMainUtf16; s
+s sym.AStyleMemAllocDelgate::.ctor; s
+s sym.AStyleMemAllocDelgate::Invoke; s
+s sym.AStyleMemAllocDelgate::BeginInvoke; s
+s sym.AStyleMemAllocDelgate::EndInvoke; s
+s sym.AStyleErrorDelgate::.ctor; s
+s sym.AStyleErrorDelgate::Invoke; s
+s sym.AStyleErrorDelgate::BeginInvoke; s
+s sym.AStyleErrorDelgate::EndInvoke; s
+s sym.AStyleWhore::Form1::Dispose; s
+s sym.AStyleWhore::Form1::InitializeComponent; s
+s sym.AStyleWhore::Form1::.ctor; s
+s sym.AStyleWhore::Form1::btnAStyleDirectory_Click; s
+s sym.AStyleWhore::Program::Main; s
+s sym.AStyleWhore.Properties::Settings::get_Default; s
+s sym.AStyleWhore.Properties::Settings::.cctor; s
+s sym.AStyleWhore.Properties::Settings::.ctor; s
+s sym.AStyleInterface::.ctor; s
+s sym.AStyleInterface::FormatSource; s
+s sym.AStyleInterface::GetVersion; s
+s sym.AStyleInterface::OnAStyleMemAlloc; s
+s sym.AStyleInterface::OnAStyleError; s
+s sym.AStyleWhore.Properties::Resources::.ctor; s
+s sym.AStyleWhore.Properties::Resources::get_ResourceManager; s
+s sym.AStyleWhore.Properties::Resources::get_Culture; s
+s sym.AStyleWhore.Properties::Resources::set_Culture; s
+s sym.AStyleWhore::AStyleWhore::GetFilesInDir; s
+s sym.AStyleWhore::AStyleWhore::AStyleDirectory; s
+s sym.AStyleWhore::AStyleWhore::.ctor; s
+q!
+EOF
+EXPECT=<<EOF
+0x400000
+0x400000
+0x400000
+0x400000
+0x400000
+0x400000
+0x400000
+0x400000
+0x400000
+0x400000
+0x402051
+0x40207c
+0x4021a7
+0x4021c0
+0x402230
+0x40228e
+0x402295
+0x4022ab
+0x4022b3
+0x4022ec
+0x402398
+0x402425
+0x402438
+0x40246a
+0x402480
+0x4024b4
+0x4024bb
+0x4024d0
+0x40253c
+0x40260a
+EOF
+RUN

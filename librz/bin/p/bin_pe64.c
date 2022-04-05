@@ -566,6 +566,7 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.fields = &fields,
 	.libs = &libs,
 	.relocs = &relocs,
+	.get_offset = &get_offset,
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
 	.hashes = &compute_hashes,

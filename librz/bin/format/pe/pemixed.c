@@ -173,7 +173,7 @@ struct rz_bin_pemixed_obj_t *rz_bin_pemixed_from_bytes_new(const ut8 *buf, ut64 
 		(pe_bin);
 		return rz_bin_pemixed_free(bin);
 	}
-	if (!pe_bin->clr_hdr) {
+	if (!pe_bin->clr || !pe_bin->clr->header) {
 		PE_(rz_bin_pe_free)
 		(pe_bin);
 		return rz_bin_pemixed_free(bin);
@@ -181,7 +181,7 @@ struct rz_bin_pemixed_obj_t *rz_bin_pemixed_from_bytes_new(const ut8 *buf, ut64 
 	// check if binary only contains managed code
 	// check implemented here cuz we need to intialize
 	// the pe header to access the clr hdr
-	if (check_il_only(pe_bin->clr_hdr->Flags)) {
+	if (check_il_only(pe_bin->clr->header->Flags)) {
 		PE_(rz_bin_pe_free)
 		(pe_bin);
 		return rz_bin_pemixed_free(bin);

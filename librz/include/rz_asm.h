@@ -209,6 +209,7 @@ extern RzAsmPlugin rz_asm_plugin_avr;
 extern RzAsmPlugin rz_asm_plugin_bf;
 extern RzAsmPlugin rz_asm_plugin_null;
 extern RzAsmPlugin rz_asm_plugin_chip8;
+extern RzAsmPlugin rz_asm_plugin_cil;
 extern RzAsmPlugin rz_asm_plugin_cr16;
 extern RzAsmPlugin rz_asm_plugin_cris_gnu;
 extern RzAsmPlugin rz_asm_plugin_dalvik;

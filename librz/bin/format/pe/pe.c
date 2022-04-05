@@ -13,9 +13,8 @@
 #include <time.h>
 #include <ht_uu.h>
 
-#define MAX_METADATA_STRING_LENGTH                          256
-#define COFF_SYMBOL_SIZE                                    18
-#define PE_READ_STRUCT_FIELD(var, struct_type, field, size) var->field = rz_read_le##size(buf + offsetof(struct_type, field))
+#define MAX_METADATA_STRING_LENGTH 256
+#define COFF_SYMBOL_SIZE           18
 
 struct SCV_NB10_HEADER;
 typedef struct {
@@ -1213,136 +1212,25 @@ int PE_(bin_pe_get_overlay)(struct PE_(rz_bin_pe_obj_t) * bin, ut64 *size) {
 	return 0;
 }
 
-static int bin_pe_read_metadata_string(char *to, RzBuffer *frombuf, int fromoff) {
-	int covered = 0;
-	while (covered < MAX_METADATA_STRING_LENGTH) {
-		ut8 covch;
-		if (!rz_buf_read8_at(frombuf, covered, &covch)) {
-			return 0;
-		}
+static int bin_pe_init_clr(struct PE_(rz_bin_pe_obj_t) * bin) {
+	PE_(image_data_directory) *clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
+	PE_DWord image_clr_hdr_paddr = bin_pe_rva_to_paddr(bin, clr_dir->VirtualAddress);
 
-		to[covered] = covch;
-		if (covch == '\0') {
-			covered += 1;
-			break;
-		}
-		covered++;
-	}
-	while (covered % 4 != 0) {
-		covered++;
-	}
-	return covered;
-}
-
-static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t) * bin) {
-	PE_DWord metadata_directory = bin->clr_hdr ? bin_pe_rva_to_paddr(bin, bin->clr_hdr->MetaDataDirectoryAddress) : 0;
-	PE_(image_metadata_header) *metadata = RZ_NEW0(PE_(image_metadata_header));
-	int rr;
-	if (!metadata) {
-		return 0;
-	}
-	if (!metadata_directory) {
-		free(metadata);
-		return 0;
+	Pe_image_clr *clr = RZ_NEW0(Pe_image_clr);
+	if (!clr) {
+		return -1;
 	}
 
-	rr = rz_buf_fread_at(bin->b, metadata_directory,
-		(ut8 *)metadata, bin->big_endian ? "1I2S" : "1i2s", 1);
-	if (rr < 1) {
-		goto fail;
+	if (bin_pe_dotnet_init_clr(clr, bin->b, image_clr_hdr_paddr)) {
+		return -1;
 	}
 
-	rr = rz_buf_fread_at(bin->b, metadata_directory + 8,
-		(ut8 *)(&metadata->Reserved), bin->big_endian ? "1I" : "1i", 1);
-	if (rr < 1) {
-		goto fail;
+	if (clr->header) {
+		PE_DWord metadata_directory = bin_pe_rva_to_paddr(bin, clr->header->MetaDataDirectoryAddress);
+		bin_pe_dotnet_init_metadata(clr, bin->big_endian, bin->b, metadata_directory);
 	}
 
-	rr = rz_buf_fread_at(bin->b, metadata_directory + 12,
-		(ut8 *)(&metadata->VersionStringLength), bin->big_endian ? "1I" : "1i", 1);
-	if (rr < 1) {
-		goto fail;
-	}
-
-	// read the version string
-	int len = metadata->VersionStringLength; // XXX: dont trust this length
-	if (len > 0) {
-		metadata->VersionString = calloc(1, len + 1);
-		if (!metadata->VersionString) {
-			goto fail;
-		}
-
-		rr = rz_buf_read_at(bin->b, metadata_directory + 16, (ut8 *)(metadata->VersionString), len);
-		if (rr != len) {
-			RZ_LOG_ERROR("read (metadata header) - cannot parse version string\n");
-			free(metadata->VersionString);
-			free(metadata);
-			return 0;
-		}
-	}
-
-	// read the header after the string
-	rr = rz_buf_fread_at(bin->b, metadata_directory + 16 + metadata->VersionStringLength,
-		(ut8 *)(&metadata->Flags), bin->big_endian ? "2S" : "2s", 1);
-
-	if (rr < 1) {
-		goto fail;
-	}
-
-	bin->metadata_header = metadata;
-
-	// read metadata streams
-	int start_of_stream = metadata_directory + 20 + metadata->VersionStringLength;
-	PE_(image_metadata_stream) * stream;
-	PE_(image_metadata_stream) **streams = calloc(sizeof(PE_(image_metadata_stream) *), metadata->NumberOfStreams);
-	if (!streams) {
-		goto fail;
-	}
-	int count = 0;
-
-	while (count < metadata->NumberOfStreams) {
-		stream = RZ_NEW0(PE_(image_metadata_stream));
-		if (!stream) {
-			free(streams);
-			goto fail;
-		}
-
-		if (rz_buf_fread_at(bin->b, start_of_stream, (ut8 *)stream, bin->big_endian ? "2I" : "2i", 1) < 1) {
-			free(stream);
-			free(streams);
-			goto fail;
-		}
-		char *stream_name = calloc(1, MAX_METADATA_STRING_LENGTH + 1);
-
-		if (!stream_name) {
-			free(stream);
-			free(streams);
-			goto fail;
-		}
-
-		if (rz_buf_size(bin->b) < (start_of_stream + 8 + MAX_METADATA_STRING_LENGTH)) {
-			free(stream_name);
-			free(stream);
-			free(streams);
-			goto fail;
-		}
-		int c = bin_pe_read_metadata_string(stream_name, bin->b, start_of_stream + 8);
-		if (c == 0) {
-			free(stream_name);
-			free(stream);
-			free(streams);
-			goto fail;
-		}
-		stream->Name = stream_name;
-		streams[count] = stream;
-		start_of_stream += 8 + c;
-		count += 1;
-	}
-	bin->streams = streams;
-	return 1;
-fail:
-	RZ_LOG_ERROR("read (metadata header)\n");
-	free(metadata);
+	bin->clr = clr;
 	return 0;
 }
 
@@ -1354,65 +1242,6 @@ static int bin_pe_init_overlay(struct PE_(rz_bin_pe_obj_t) * bin) {
 		sdb_num_set(bin->kv, "pe_overlay.size", pe_overlay_size, 0);
 	}
 	return 0;
-}
-
-static int read_image_clr_header(RzBuffer *b, ut64 addr, PE_(image_clr_header) * header) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return -1;
-	}
-	ut8 buf[sizeof(PE_(image_clr_header))];
-	rz_buf_read(b, buf, sizeof(buf));
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), HeaderSize, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), MajorRuntimeVersion, 16);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), MinorRuntimeVersion, 16);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), MetaDataDirectoryAddress, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), MetaDataDirectorySize, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), Flags, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), EntryPointToken, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), ResourcesDirectoryAddress, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), ResourcesDirectorySize, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), StrongNameSignatureAddress, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), StrongNameSignatureSize, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), CodeManagerTableAddress, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), CodeManagerTableSize, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), VTableFixupsAddress, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), VTableFixupsSize, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), ExportAddressTableJumpsAddress, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), ExportAddressTableJumpsSize, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), ManagedNativeHeaderAddress, 32);
-	PE_READ_STRUCT_FIELD(header, PE_(image_clr_header), ManagedNativeHeaderSize, 32);
-	rz_buf_seek(b, o_addr, RZ_BUF_SET);
-	return sizeof(PE_(image_clr_header));
-}
-
-static int bin_pe_init_clr_hdr(struct PE_(rz_bin_pe_obj_t) * bin) {
-	PE_(image_data_directory) *clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
-	PE_DWord image_clr_hdr_paddr = bin_pe_rva_to_paddr(bin, clr_dir->VirtualAddress);
-	// int clr_dir_size = clr_dir? clr_dir->Size: 0;
-	PE_(image_clr_header) *clr_hdr = RZ_NEW0(PE_(image_clr_header));
-	int rr, len = sizeof(PE_(image_clr_header));
-
-	if (!clr_hdr) {
-		return 0;
-	}
-	rr = read_image_clr_header(bin->b, image_clr_hdr_paddr, clr_hdr);
-
-	//	printf("%x\n", clr_hdr->HeaderSize);
-
-	if (clr_hdr->HeaderSize != 0x48) {
-		// probably not a .NET binary
-		// 64bit?
-		free(clr_hdr);
-		return 0;
-	}
-	if (rr != len) {
-		free(clr_hdr);
-		return 0;
-	}
-
-	bin->clr_hdr = clr_hdr;
-	return 1;
 }
 
 static int read_image_import_directory(RzBuffer *b, ut64 addr, PE_(image_import_directory) * import_dir) {
@@ -3374,8 +3203,7 @@ static int bin_pe_init(struct PE_(rz_bin_pe_obj_t) * bin) {
 
 	bin_pe_init_rich_info(bin);
 	bin_pe_init_tls(bin);
-	bin_pe_init_clr_hdr(bin);
-	bin_pe_init_metadata_hdr(bin);
+	bin_pe_init_clr(bin);
 	bin_pe_init_overlay(bin);
 	PE_(bin_pe_parse_resource)
 	(bin);
@@ -4048,6 +3876,118 @@ out_error:
 	return NULL;
 }
 
+RZ_OWN RzList /* RzBinSymbol */ *PE_(rz_bin_pe_get_clr_symbols)(struct PE_(rz_bin_pe_obj_t) * bin) {
+	if (!bin || !bin->clr || !bin->clr->methoddefs) {
+		return NULL;
+	}
+	RzList /* RzBinSymbol */ *methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	if (!methods) {
+		return NULL;
+	}
+
+	// Namespace and classes
+
+	// Each typedef contains a methodlist field which indexes into
+	// the MethodDef table and marks the start of methods
+	// belonging to that type
+
+	// In order to determine the end of the methods of that type,
+	// we mark the start of the next run with `type_methods_end`
+	RzListIter *type_it = rz_list_iterator(bin->clr->typedefs);
+
+	char *type_name = NULL;
+	char *type_namespace = NULL;
+
+	ut32 type_methods_start = rz_list_length(bin->clr->methoddefs) + 1;
+	ut32 type_methods_end = type_methods_start;
+
+	if (type_it) {
+		Pe_image_metadata_typedef *typedef_ = type_it->data;
+		type_name = rz_buf_get_string(bin->clr->strings, typedef_->name);
+		type_namespace = rz_buf_get_string(bin->clr->strings, typedef_->namespace);
+
+		type_methods_start = ((Pe_image_metadata_typedef *)type_it->data)->methodlist;
+		type_methods_end = rz_list_length(bin->clr->methoddefs) + 1;
+
+		type_it = type_it->n;
+		if (type_it) {
+			type_methods_end = ((Pe_image_metadata_typedef *)type_it->data)->methodlist;
+		}
+	}
+
+	int i = 1;
+	RzListIter *it;
+	Pe_image_metadata_methoddef *methoddef;
+	rz_list_foreach (bin->clr->methoddefs, it, methoddef) {
+		if ((type_name || type_namespace) && i >= type_methods_start && i >= type_methods_end) {
+			// Update class and namespace
+			free(type_name);
+			free(type_namespace);
+
+			Pe_image_metadata_typedef *typedef_ = type_it->data;
+			type_name = rz_buf_get_string(bin->clr->strings, typedef_->name);
+			type_namespace = rz_buf_get_string(bin->clr->strings, typedef_->namespace);
+
+			// Update next end
+			type_it = type_it->n;
+			if (type_it) {
+				type_methods_end = ((Pe_image_metadata_typedef *)type_it->data)->methodlist;
+			} else {
+				type_methods_end = rz_list_length(bin->clr->methoddefs) + 1;
+			}
+		}
+
+		RzBinSymbol *sym;
+		if (!(sym = RZ_NEW0(RzBinSymbol))) {
+			break;
+		}
+		char *name = rz_buf_get_string(bin->clr->strings, methoddef->name);
+		sym->name = rz_str_newf("%s%s%s::%s",
+			type_namespace ? type_namespace : "",
+			type_namespace && type_namespace[0] != '\x00' ? "::" : "", // separator
+			type_name ? type_name : "",
+			name ? name : "");
+		free(name);
+
+		sym->type = RZ_BIN_TYPE_FUNC_STR;
+		sym->vaddr = bin_pe_rva_to_va(bin, methoddef->rva);
+		sym->paddr = bin_pe_rva_to_paddr(bin, methoddef->rva);
+
+		if (!(methoddef->implflags & 0x01) && methoddef->rva) { // not native
+			if (bin_pe_dotnet_read_method_header(bin->clr, bin->b, sym) < 0) {
+				break;
+			}
+		}
+
+		rz_list_append(methods, sym);
+		i++;
+	}
+
+	// Cleanup class / namespace strings
+	free(type_name);
+	free(type_namespace);
+
+	return methods;
+}
+
+ut64 PE_(rz_bin_pe_get_clr_methoddef_offset)(struct PE_(rz_bin_pe_obj_t) * bin, Pe_image_metadata_methoddef *methoddef) {
+	if (!bin || !bin->clr || !methoddef) {
+		return UT64_MAX;
+	}
+
+	RzBinSymbol sym;
+	sym.vaddr = bin_pe_rva_to_va(bin, methoddef->rva);
+	sym.paddr = bin_pe_rva_to_paddr(bin, methoddef->rva);
+
+	if (!(methoddef->implflags & 0x01) && methoddef->rva) { // not native
+		if (bin_pe_dotnet_read_method_header(bin->clr, bin->b, &sym) < 0) {
+			return UT64_MAX;
+		}
+	}
+
+	return sym.vaddr;
+}
+
 int PE_(rz_bin_pe_get_image_size)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	return bin->nt_headers->optional_header.SizeOfImage;
 }
@@ -4589,6 +4529,7 @@ void *PE_(rz_bin_pe_free)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	free(bin->resource_directory);
 	free_security_directory(bin->security_directory);
 	free(bin->delay_import_directory);
+	bin_pe_dotnet_destroy_clr(bin->clr);
 	free(bin->tls_directory);
 	free(bin->sections);
 	free(bin->authentihash);

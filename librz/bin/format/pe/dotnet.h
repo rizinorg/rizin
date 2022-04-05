@@ -1,85 +1,173 @@
-// SPDX-FileCopyrightText: 2015. The YARA Authors. All Rights Reserved.
+// SPDX-FileCopyrightText: 2022. The YARA Authors. All Rights Reserved.
+// SPDX-FileCopyrightText: 2022 wingdeans <wingdeans@protonmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
-/* Forked by pancake in 2017 */
-
-#ifndef YR_DOTNET_H
-#define YR_DOTNET_H
-
 #include <rz_types.h>
-#include "pe_specs.h"
+#include <rz_vector.h>
 
-#pragma pack(push, 1)
+#ifndef _INCLUDE_RZ_BIN_DOTNET_H_
+#define _INCLUDE_RZ_BIN_DOTNET_H_
 
-#define fits_in_pe(pe, pointer, size) \
-	((size_t)size <= pe->data_size && \
-		(uint8_t *)(pointer) >= pe->data && \
-		(uint8_t *)(pointer) <= pe->data + pe->data_size - size)
+typedef struct {
+	ut32 HeaderSize;
+	ut16 MajorRuntimeVersion;
+	ut16 MinorRuntimeVersion;
+	ut32 MetaDataDirectoryAddress;
+	ut32 MetaDataDirectorySize;
+	ut32 Flags;
+	ut32 EntryPointToken;
+	ut32 ResourcesDirectoryAddress;
+	ut32 ResourcesDirectorySize;
+	ut32 StrongNameSignatureAddress;
+	ut32 StrongNameSignatureSize;
+	ut32 CodeManagerTableAddress;
+	ut32 CodeManagerTableSize;
+	ut32 VTableFixupsAddress;
+	ut32 VTableFixupsSize;
+	ut32 ExportAddressTableJumpsAddress;
+	ut32 ExportAddressTableJumpsSize;
+	ut32 ManagedNativeHeaderAddress;
+	ut32 ManagedNativeHeaderSize;
+} Pe_image_clr_header;
 
-#define struct_fits_in_pe(pe, pointer, struct_type) \
-	fits_in_pe(pe, pointer, sizeof(struct_type))
+typedef struct {
+	ut64 Signature;
+	ut16 MajorVersion;
+	ut16 MinorVersion;
+	ut32 Reserved;
+	ut32 VersionStringLength;
+	char *VersionString;
+	ut16 Flags;
+	ut16 NumberOfStreams;
+} Pe_image_metadata_header;
 
-//
-// CLI header.
-// ECMA-335 Section II.25.3.3
-//
-typedef struct _CLI_HEADER {
-	DWORD Size; // Called "Cb" in documentation.
-	WORD MajorRuntimeVersion;
-	WORD MinorRuntimeVersion;
-	IMAGE_DATA_DIRECTORY MetaData;
-	DWORD Flags;
-	DWORD EntryPointToken;
-	IMAGE_DATA_DIRECTORY Resources;
-	IMAGE_DATA_DIRECTORY StrongNameSignature;
-	ULONGLONG CodeManagerTable;
-	IMAGE_DATA_DIRECTORY VTableFixups;
-	ULONGLONG ExportAddressTableJumps;
-	ULONGLONG ManagedNativeHeader;
-} CLI_HEADER, *PCLI_HEADER;
+typedef struct {
+	ut32 Offset;
+	ut32 Size;
+	char *Name;
+} Pe_image_metadata_stream;
 
-#define NET_METADATA_MAGIC 0x424a5342
+// Used to store the number of rows of each table.
+typedef struct {
+	ut32 module;
+	ut32 typeref;
+	ut32 typedef_;
+	ut32 fieldptr;
+	ut32 field;
+	ut32 methoddefptr;
+	ut32 methoddef;
+	ut32 param;
+	ut32 interfaceimpl;
+	ut32 memberref;
+	ut32 constant;
+	ut32 customattribute;
+	ut32 fieldmarshal;
+	ut32 declsecurity;
+	ut32 classlayout;
+	ut32 fieldlayout;
+	ut32 standalonesig;
+	ut32 eventmap;
+	ut32 eventptr;
+	ut32 event;
+	ut32 propertymap;
+	ut32 propertyptr;
+	ut32 property;
+	ut32 methodsemantics;
+	ut32 methodimpl;
+	ut32 moduleref;
+	ut32 typespec;
+	ut32 implmap;
+	ut32 fieldrva;
+	ut32 enclog;
+	ut32 encmap;
+	ut32 assembly;
+	ut32 assemblyprocessor;
+	ut32 assemblyos;
+	ut32 assemblyref;
+	ut32 assemblyrefprocessor;
+	ut32 assemblyrefos;
+	ut32 file;
+	ut32 exportedtype;
+	ut32 manifestresource;
+	ut32 nestedclass;
+	ut32 genericparam;
+	ut32 methodspec;
+	ut32 genericparamconstraint;
+} Pe_image_metadata_tilde_rowcounts;
 
-//
-// CLI MetaData
-// ECMA-335 Section II.24.2.1
-//
-// Note: This is only part of the struct, as the rest of it is variable length.
-//
-typedef struct _NET_METADATA {
-	DWORD Magic;
-	WORD MajorVersion;
-	WORD MinorVersion;
-	DWORD Reserved;
-	DWORD Length;
-	char Version[0];
-} NET_METADATA, *PNET_METADATA;
+typedef struct {
+	ut32 Reserved1;
+	ut8 MajorVersion;
+	ut8 MinorVersion;
+	ut8 HeapSizes;
+	ut8 Reserved2;
+	ut64 Valid;
+	ut64 Sorted;
+} Pe_image_metadata_tilde_header;
 
-#define DOTNET_STREAM_NAME_SIZE 32
+typedef struct {
+	ut8 string;
+	ut8 guid;
+	ut8 blob;
+	ut8 field;
+	ut8 methoddef;
+	ut8 memberref;
+	ut8 param;
+	ut8 event;
+	ut8 typedef_;
+	ut8 property;
+	ut8 moduleref;
+	ut8 assemblyrefprocessor;
+	ut8 assemblyref;
+	ut8 genericparam;
+} Pe_image_metadata_index_sizes;
 
-//
-// CLI Stream Header
-// ECMA-335 Section II.24.2.2
-//
-typedef struct _STREAM_HEADER {
-	DWORD Offset;
-	DWORD Size;
-	char Name[0];
-} STREAM_HEADER, *PSTREAM_HEADER;
+typedef struct {
+	ut32 rva;
+	ut16 implflags;
+	ut16 flags;
+	ut32 name;
+	ut32 signature;
+	ut32 paramlist;
+} Pe_image_metadata_methoddef;
 
-//
-// CLI #~ Stream Header
-// ECMA-335 Section II.24.2.6
-//
-typedef struct _TILDE_HEADER {
-	DWORD Reserved1;
-	BYTE MajorVersion;
-	BYTE MinorVersion;
-	BYTE HeapSizes;
-	BYTE Reserved2;
-	ULONGLONG Valid;
-	ULONGLONG Sorted;
-} TILDE_HEADER, *PTILDE_HEADER;
+typedef struct {
+	ut32 flags;
+	ut32 name;
+	ut32 namespace;
+	ut32 extends;
+	ut32 fieldlist;
+	ut32 methodlist;
+} Pe_image_metadata_typedef;
+
+typedef struct {
+	ut16 flags;
+	ut16 maxstack;
+	ut32 size;
+	ut32 tok;
+} Pe_image_clr_methodheader;
+
+typedef struct {
+	Pe_image_clr_header *header;
+	Pe_image_metadata_header *metadata_header;
+	RzList /* Pe_image_metadata_stream */ *streams;
+
+	// special streams
+	Pe_image_metadata_stream *tilde_stream;
+	Pe_image_metadata_stream *strings_stream;
+	Pe_image_metadata_stream *blob_stream;
+
+	// header data
+	Pe_image_metadata_tilde_header *tilde;
+	RzBuffer *strings;
+	RzList /* Pe_image_metadata_methoddef */ *methoddefs;
+	RzList /* Pe_image_metadata_typedef */ *typedefs;
+} Pe_image_clr;
+
+int bin_pe_dotnet_init_metadata(Pe_image_clr *clr, bool big_endian, RzBuffer *b, ut64 metadata_directory);
+int bin_pe_dotnet_init_clr(Pe_image_clr *clr, RzBuffer *b, ut64 image_clr_hdr_paddr);
+void bin_pe_dotnet_destroy_clr(Pe_image_clr *clr);
+int bin_pe_dotnet_read_method_header(Pe_image_clr *clr, RzBuffer *b, RzBinSymbol *sym);
 
 // These are the bit positions in Valid which will be set if the table
 // exists.
@@ -128,215 +216,5 @@ typedef struct _TILDE_HEADER {
 #define BIT_GENERICPARAM           0x2A
 #define BIT_METHODSPEC             0x2B
 #define BIT_GENERICPARAMCONSTRAINT 0x2C
-// These are not documented in ECMA-335 nor is it clear what the format is.
-// They are for debugging information as far as I can tell.
-//#define BIT_DOCUMENT               0x30
-//#define BIT_METHODDEBUGINFORMATION 0x31
-//#define BIT_LOCALSCOPE             0x32
-//#define BIT_LOCALVARIABLE          0x33
-//#define BIT_LOCALCONSTANT          0x34
-//#define BIT_IMPORTSCOPE            0x35
-//#define BIT_STATEMACHINEMETHOD     0x36
 
-//
-// Element types. Note this is not a complete list as we aren't parsing all of
-// them. This only includes the ones we care about.
-// ECMA-335 Section II.23.1.16
-//
-#define ELEMENT_TYPE_STRING 0x0E
-
-// The string length of a typelib attribute is at most 0xFF.
-#define MAX_TYPELIB_SIZE 0xFF
-
-//
-// Module table
-// ECMA-335 Section II.22.30
-//
-typedef struct _MODULE_TABLE {
-	WORD Generation;
-	union {
-		WORD Name_Short;
-		DWORD Name_Long;
-	} Name;
-	union {
-		WORD Mvid_Short;
-		DWORD Mvid_Long;
-	} Mvid;
-	union {
-		WORD EncId_Short;
-		DWORD EncId_Long;
-	} EncId;
-	union {
-		WORD EncBaseId_Short;
-		DWORD EncBaseId_Long;
-	} EncBaseId;
-} MODULE_TABLE, *PMODULE_TABLE;
-
-//
-// Assembly Table
-// ECMA-335 Section II.22.2
-//
-typedef struct _ASSEMBLY_TABLE {
-	DWORD HashAlgId;
-	WORD MajorVersion;
-	WORD MinorVersion;
-	WORD BuildNumber;
-	WORD RevisionNumber;
-	DWORD Flags;
-	union {
-		WORD PublicKey_Short;
-		DWORD PublicKey_Long;
-	} PublicKey;
-	union {
-		WORD Name_Short;
-		DWORD Name_Long;
-	} Name;
-} ASSEMBLY_TABLE, *PASSEMBLY_TABLE;
-
-//
-// Assembly Reference Table
-// ECMA-335 Section II.22.5
-//
-typedef struct _ASSEMBLYREF_TABLE {
-	WORD MajorVersion;
-	WORD MinorVersion;
-	WORD BuildNumber;
-	WORD RevisionNumber;
-	DWORD Flags;
-	union {
-		WORD PublicKeyOrToken_Short;
-		DWORD PublicKeyOrToken_Long;
-	} PublicKeyOrToken;
-	union {
-		WORD Name_Short;
-		DWORD Name_Long;
-	} Name;
-} ASSEMBLYREF_TABLE, *PASSEMBLYREF_TABLE;
-
-//
-// Manifest Resource Table
-// ECMA-335 Section II.22.24
-//
-typedef struct _MANIFESTRESOURCE_TABLE {
-	DWORD Offset;
-	DWORD Flags;
-	union {
-		WORD Name_Short;
-		DWORD Name_Long;
-	} Name;
-	union {
-		WORD Implementation_Short;
-		DWORD Implementation_Long;
-	} Implementation;
-} MANIFESTRESOURCE_TABLE, *PMANIFESTRESOURCE_TABLE;
-
-//
-// ModuleRef Table
-// ECMA-335 Section II.22.31
-//
-// This is a short table, but necessary because the field size can change.
-//
-typedef struct _MODULEREF_TABLE {
-	union {
-		WORD Name_Short;
-		DWORD Name_Long;
-	} Name;
-} MODULEREF_TABLE, *PMODULEREF_TABLE;
-
-//
-// CustomAttribute Table
-// ECMA-335 Section II.22.10
-//
-typedef struct _CUSTOMATTRIBUTE_TABLE {
-	union {
-		WORD Parent_Short;
-		DWORD Parent_Long;
-	} Parent;
-	union {
-		WORD Type_Short;
-		DWORD Type_Long;
-	} Type;
-	union {
-		WORD Value_Short;
-		DWORD Value_Long;
-	} Value;
-} CUSTOMATTRIBUTE_TABLE, *PCUSTOMATTRIBUTE_TABLE;
-
-//
-// Constant TAble
-// ECMA-335 Section II.22.9
-//
-typedef struct _CONSTANT_TABLE {
-	WORD Type;
-	union {
-		WORD Parent_Short;
-		DWORD Parent_Long;
-	} Parent;
-	union {
-		WORD Value_Short;
-		DWORD Value_Long;
-	} Value;
-} CONSTANT_TABLE, *PCONSTANT_TABLE;
-
-// Used to return offsets to the various headers.
-typedef struct _STREAMS {
-	PSTREAM_HEADER guid;
-	PSTREAM_HEADER tilde;
-	PSTREAM_HEADER string;
-	PSTREAM_HEADER blob;
-	PSTREAM_HEADER us;
-} STREAMS, *PSTREAMS;
-
-// Used to return the value of parsing a #US or #Blob entry.
-// ECMA-335 Section II.24.2.4
-typedef struct _BLOB_PARSE_RESULT {
-	uint8_t size; // Number of bytes parsed. This is the new offset.
-	DWORD length; // Value of the bytes parsed. This is the blob length.
-} BLOB_PARSE_RESULT, *PBLOB_PARSE_RESULT;
-
-// Used to store the number of rows of each table.
-typedef struct _ROWS {
-	uint32_t module;
-	uint32_t moduleref;
-	uint32_t assemblyref;
-	uint32_t typeref;
-	uint32_t methoddef;
-	uint32_t memberref;
-	uint32_t typedef_;
-	uint32_t typespec;
-	uint32_t field;
-	uint32_t param;
-	uint32_t property;
-	uint32_t interfaceimpl;
-	uint32_t event;
-	uint32_t standalonesig;
-	uint32_t assembly;
-	uint32_t file;
-	uint32_t exportedtype;
-	uint32_t manifestresource;
-	uint32_t genericparam;
-	uint32_t genericparamconstraint;
-	uint32_t methodspec;
-	uint32_t assemblyrefprocessor;
-} ROWS, *PROWS;
-
-// Used to store the index sizes for the various tables.
-typedef struct _INDEX_SIZES {
-	uint8_t string;
-	uint8_t guid;
-	uint8_t blob;
-	uint8_t field;
-	uint8_t methoddef;
-	uint8_t memberref;
-	uint8_t param;
-	uint8_t event;
-	uint8_t typedef_;
-	uint8_t property;
-	uint8_t moduleref;
-	uint8_t assemblyrefprocessor;
-	uint8_t assemblyref;
-	uint8_t genericparam;
-} INDEX_SIZES, *PINDEX_SIZES;
-
-#pragma pack(pop)
-#endif
+#endif /* #ifndef _INCLUDE_RZ_BIN_DOTNET_H_ */
