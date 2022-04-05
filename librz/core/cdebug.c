@@ -593,9 +593,9 @@ RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input,
 
 /**
  * Print all traces
- * @param dbg core->dbg
- * @param mode output mode, default RZ_OUTPUT_MODE_STANDARD
- * @param offset offset of address
+ * \param dbg core->dbg
+ * \param mode output mode, default RZ_OUTPUT_MODE_STANDARD
+ * \param offset offset of address
  */
 RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 offset) {
 	rz_return_if_fail(dbg);
@@ -624,8 +624,8 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
 
 /**
  * Print trace info in ASCII Art
- * @param dbg core->dbg
- * @param offset offset of address
+ * \param dbg core->dbg
+ * \param offset offset of address
  */
 RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	rz_return_if_fail(dbg);
@@ -634,7 +634,9 @@ RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	table->cons = rz_cons_singleton();
 	rz_table_visual_list(table, info_list, offset, 1,
 		rz_cons_get_size(NULL), dbg->iob.io->va);
-	rz_cons_printf("\n%s\n", rz_table_tostring(table));
+	char *s = rz_table_tostring(table);
+	rz_cons_printf("\n%s\n", s);
+	free(s);
 	rz_table_free(table);
 	rz_list_free(info_list);
 }
