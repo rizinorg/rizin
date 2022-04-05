@@ -7162,9 +7162,10 @@ RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char *
 		char *code = rz_lang_byte_array(core->block, core->blocksize, type); \
 		if (RZ_STR_ISNOTEMPTY(code)) { \
 			rz_cons_println(code); \
-			free(code); \
 		} \
-		return code ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR; \
+		RzCmdStatus result = code ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR; \
+		free(code); \
+		return result; \
 	}
 
 #define CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN(name, type) \
@@ -7173,9 +7174,10 @@ RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char *
 		char *code = rz_lang_byte_array(core->block, core->blocksize, big_endian ? type##_BE : type##_LE); \
 		if (RZ_STR_ISNOTEMPTY(code)) { \
 			rz_cons_println(code); \
-			free(code); \
 		} \
-		return code ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR; \
+		RzCmdStatus result = code ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR; \
+		free(code); \
+		return result; \
 	}
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_rizin_handler, RZ_LANG_BYTE_ARRAY_RIZIN);
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_asm_handler, RZ_LANG_BYTE_ARRAY_ASM);
