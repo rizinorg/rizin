@@ -658,6 +658,7 @@ RZ_IPI RzCmdStatus rz_write_extend_hexbytes_handler(RzCore *core, int argc, cons
 	int len = rz_hex_str2bin(argv[1], bytes);
 	if (len <= 0) {
 		RZ_LOG_ERROR("Cannot convert '%s' to bytes values.\n", argv[1]);
+		free(bytes);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -665,9 +666,12 @@ RZ_IPI RzCmdStatus rz_write_extend_hexbytes_handler(RzCore *core, int argc, cons
 	bool res = rz_core_extend_at(core, addr, len);
 	if (!res) {
 		RZ_LOG_ERROR("Cannot extend the file.\n");
+		free(bytes);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	return bool2status(rz_core_write_at(core, addr, bytes, len));
+	bool result = rz_core_write_at(core, addr, bytes, len);
+	free(bytes);
+	return bool2status(result);
 }
 
 RZ_IPI RzCmdStatus rz_write_op_2byteswap_handler(RzCore *core, int argc, const char **argv) {
