@@ -275,6 +275,8 @@ RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
 }
 
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
+	char buf[20];
+
 	rz_debug_reg_profile_sync(core->dbg);
 	if (pid > 0) {
 		rz_debug_attach(core->dbg, pid);
@@ -285,7 +287,7 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 	}
 	rz_debug_select(core->dbg, core->dbg->pid, core->dbg->tid);
 	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->cur && !core->dbg->cur->canstep));
-	rz_core_cmdf(core, "R! \"pid %d\"", core->dbg->pid);
+	rz_io_system(core->io, rz_strf(buf, "pid %d", core->dbg->pid));
 }
 
 RZ_API RzCmdStatus rz_core_debug_plugin_print(RzDebug *dbg, RzDebugPlugin *plugin, RzCmdStateOutput *state, int count, char *spaces) {
