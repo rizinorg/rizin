@@ -1064,7 +1064,7 @@ RZ_API void rz_cons_print_fps(int col) {
 		if (diff < 0) {
 			fps = 0;
 		} else {
-			fps = (diff < 1000000) ? (1000000.0 / diff) : 0;
+			fps = (diff < 1000000) ? (int)(1000000.0 / diff + 0.5) : 0;
 		}
 		prev = now;
 	} else {
