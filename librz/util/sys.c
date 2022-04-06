@@ -1771,14 +1771,27 @@ RZ_API FILE *rz_sys_fopen(const char *path, const char *mode) {
 	return ret;
 }
 
+/**
+ * \brief Send signal \p sig to process with pid \p pid.
+ *
+ * \param pid PID of the process to send the signal to
+ * \param sig Signal to send to the process.
+ * \return 0 on success, -1 on failure.
+ */
 RZ_API int rz_sys_kill(int pid, int sig) {
 	rz_return_val_if_fail(pid != -1, -1);
 #if __UNIX__
 	return kill(pid, sig);
-#endif
+#else
 	return -1;
+#endif
 }
 
+/**
+ * \brief Send SIGTSTP signal to every process in this process group
+ *
+ * \return true if at least one signal was sent, false otherwise
+ */
 RZ_API bool rz_sys_stop(void) {
 #if __UNIX__
 	return !rz_sys_kill(0, SIGTSTP);
