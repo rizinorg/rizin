@@ -16,10 +16,7 @@ typedef enum {
 
 typedef struct sh_opcode_t {
 	SHOpMnem mnemonic;
-	ut16 mask;
-	ut16 param[4];
-	ut16 cycles;
-	ut16 size;
+	ut8 param[4];
 } SHOp;
 
 ut32 sh_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, SHOp* aop, RzStrBuf *sb);
