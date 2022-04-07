@@ -2751,6 +2751,15 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_except_handler(RzCore *core, int a
 	return RZ_CMD_STATUS_OK;
 }
 
+// aecb
+RZ_IPI RzCmdStatus analysis_continue_until_breakpoint(RzCore *core, int argc, const char **argv) {
+	if (!rz_core_esil_continue_back(core)) {
+		RZ_LOG_ERROR("cannnot continue back\n");
+	}
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
 // aecs
 RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int argc, const char **argv) {
 	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);

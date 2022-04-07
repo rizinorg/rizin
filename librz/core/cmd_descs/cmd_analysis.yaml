@@ -533,8 +533,8 @@ commands:
         cname: analysis_continue_until_except
         args: []
       - name: aecb
-        summary: Continue back
-        cname: analysis_continue_back
+        summary: Continue back until breakpoint
+        cname: analysis_continue_until_breakpoint
         args: []
       - name: aecs
         summary: Continue until syscall
