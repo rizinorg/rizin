@@ -30,7 +30,7 @@
 		return v; \
 	}
 
- /**
+/**
  * Registers available as global variables in the IL
  */
 static char *sh_global_registers[] = {
@@ -67,7 +67,7 @@ static inline RzILOpEffect *sh_il_assign_imm(const char *reg, ut8 imm) {
 }
 
 static inline RzILOpEffect *sh_il_assign_signed_imm(const char *reg, ut8 imm) {
-	RzILOpBitVector *_bv = SN(SH_REG_SIZE, (st8) imm);
+	RzILOpBitVector *_bv = SN(SH_REG_SIZE, (st8)imm);
 	return SETG(reg, _bv);
 }
 
