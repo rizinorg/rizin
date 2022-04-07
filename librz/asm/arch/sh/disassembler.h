@@ -9,16 +9,15 @@
 typedef enum {
 	SH_OP_INVALID = 0,
 	SH_OP_MOV,
-    /* end */
-    SH_OP_SIZE
+	/* end */
+	SH_OP_SIZE
 } SHOpMnem;
-
 
 typedef struct sh_opcode_t {
 	SHOpMnem mnemonic;
 	ut8 param[4];
 } SHOp;
 
-ut32 sh_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, SHOp* aop, RzStrBuf *sb);
+ut32 sh_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, SHOp *aop, RzStrBuf *sb);
 
 #endif /* RZ_ASM_AVR_DISASSEMBLER_H */
