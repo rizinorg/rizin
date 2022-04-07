@@ -61,8 +61,13 @@ static char *sh_registers[] = {
 
 /* Utilities */
 
-static inline RzILOpEffect *sh_il_assign_imm(const char *reg, ut16 imm) {
+static inline RzILOpEffect *sh_il_assign_imm(const char *reg, ut8 imm) {
 	RzILOpBitVector *_bv = UN(SH_REG_SIZE, imm);
+	return SETG(reg, _bv);
+}
+
+static inline RzILOpEffect *sh_il_assign_signed_imm(const char *reg, ut8 imm) {
+	RzILOpBitVector *_bv = SN(SH_REG_SIZE, (st8) imm);
 	return SETG(reg, _bv);
 }
 
@@ -81,10 +86,10 @@ static RzILOpEffect *sh_il_unk(SHOp *op, SHOp *next_op, ut64 pc, RzAnalysis *ana
  * 1110nnnniiiiiiii
  */
 static RzILOpEffect *sh_il_mov(SHOp *op, SHOp *next_op, ut64 pc, RzAnalysis *analysis) {
-	ut16 reg = op->param[1];
+	ut8 reg = op->param[1];
 	sh_return_val_if_invalid_gpr(reg, NULL);
 
-	return sh_il_assign_imm(sh_registers[reg], op->param[0]);
+	return sh_il_assign_signed_imm(sh_registers[reg], op->param[0]);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
