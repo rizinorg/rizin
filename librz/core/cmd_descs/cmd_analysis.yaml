@@ -577,11 +577,29 @@ commands:
           - name: aeim
             summary: initialize ESIL VM stack
             cname: analysis_esil_init_mem
-            args: []
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: size
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
           - name: aeim-
             summary: remove ESIL VM stack
             cname: analysis_esil_init_mem_remove
-            args: []
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: size
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
           - name: aeimp
             summary: initialize ESIL VM stack to "aeim.stack" or ?
             cname: analysis_esil_init_mem_p

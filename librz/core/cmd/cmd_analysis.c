@@ -2676,7 +2676,7 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 // aeC
 RZ_IPI RzCmdStatus rz_analysis_appcall_handler(RzCore *core, int argc, const char **argv) {
 	for (int i = 1; i < argc; ++i) {
-		const char *alias = sdb_fmt("A%d", i - 1);
+		const char *alias = rz_str_newf("A%d", i - 1);
 		rz_reg_setv(core->analysis->reg, alias, rz_num_math(core->num, argv[i]));
 	}
 
@@ -2811,18 +2811,18 @@ RZ_IPI RzCmdStatus rz_analysis_esil_init_p_handler(RzCore *core, int argc, const
 
 // aeim
 RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc > 0 ? rz_num_math(core->num, argv[0]) : UT64_MAX;
-	ut32 size = argc > 1 ? (ut32)rz_num_math(core->num, argv[1]) : UT32_MAX;
-	const char *name = argc > 2 ? argv[2] : NULL;
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : UT64_MAX;
+	ut32 size = argc > 2 ? (ut32)rz_num_math(core->num, argv[2]) : UT32_MAX;
+	const char *name = argc > 3 ? argv[3] : NULL;
 	rz_core_analysis_esil_init_mem(core, name, addr, size);
 	return RZ_CMD_STATUS_OK;
 }
 
 // aeim-
 RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_remove_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = argc > 0 ? rz_num_math(core->num, argv[0]) : UT64_MAX;
-	ut32 size = argc > 1 ? (ut32)rz_num_math(core->num, argv[1]) : UT32_MAX;
-	const char *name = argc > 2 ? argv[2] : NULL;
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : UT64_MAX;
+	ut32 size = argc > 2 ? (ut32)rz_num_math(core->num, argv[2]) : UT32_MAX;
+	const char *name = argc > 3 ? argv[3] : NULL;
 	rz_core_analysis_esil_init_mem_del(core, name, addr, size);
 	return RZ_CMD_STATUS_OK;
 }

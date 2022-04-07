@@ -123,6 +123,8 @@ static const RzCmdDescArg analysis_function_rename_args[2];
 static const RzCmdDescArg analysis_appcall_args[2];
 static const RzCmdDescArg analysis_continue_until_addr_args[2];
 static const RzCmdDescArg analysis_continue_until_esil_args[2];
+static const RzCmdDescArg analysis_esil_init_mem_args[4];
+static const RzCmdDescArg analysis_esil_init_mem_remove_args[4];
 static const RzCmdDescArg il_vm_step_args[2];
 static const RzCmdDescArg il_vm_step_with_events_args[2];
 static const RzCmdDescArg il_vm_step_until_addr_args[2];
@@ -2142,6 +2144,25 @@ static const RzCmdDescHelp aeim_help = {
 	.summary = "ESIL VM stack",
 };
 static const RzCmdDescArg analysis_esil_init_mem_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_esil_init_mem_help = {
@@ -2150,6 +2171,25 @@ static const RzCmdDescHelp analysis_esil_init_mem_help = {
 };
 
 static const RzCmdDescArg analysis_esil_init_mem_remove_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_esil_init_mem_remove_help = {
