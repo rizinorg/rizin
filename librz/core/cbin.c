@@ -1905,7 +1905,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 	RzListIter *iter;
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "dXXssdss", "nth", "paddr", "vaddr", "bind", "type", "size", "lib", "name");
+	rz_cmd_state_output_set_columnsf(state, "dXXssnss", "nth", "paddr", "vaddr", "bind", "type", "size", "lib", "name");
 
 	rz_list_foreach (symbols, iter, symbol) {
 		if (!symbol->name) {
@@ -1937,11 +1937,12 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			free(rz_symbol_name);
 			rz_symbol_name = tmp;
 		}
+		ut64 size = symbol->size;
 
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("0x%08" PFMT64x " %d %s%s%s\n",
-				addr, (int)symbol->size,
+			rz_cons_printf("0x%08" PFMT64x " %" PFMT64u " %s%s%s\n",
+				addr, size,
 				sn.libname ? sn.libname : "", sn.libname ? " " : "",
 				rz_symbol_name);
 			break;
@@ -1958,7 +1959,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			pj_ks(state->d.pj, "realname", symbol->name);
 			pj_ki(state->d.pj, "ordinal", symbol->ordinal);
 			pj_ks(state->d.pj, "bind", symbol->bind);
-			pj_kn(state->d.pj, "size", (ut64)symbol->size);
+			pj_kn(state->d.pj, "size", size);
 			pj_ks(state->d.pj, "type", symbol->type);
 			pj_kn(state->d.pj, "vaddr", addr);
 			pj_kn(state->d.pj, "paddr", symbol->paddr);
@@ -1967,13 +1968,13 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			rz_table_add_rowf(state->d.t, "dXXssdss",
+			rz_table_add_rowf(state->d.t, "dXXssnss",
 				symbol->ordinal,
 				symbol->paddr,
 				addr,
 				symbol->bind ? symbol->bind : "NONE",
 				symbol->type ? symbol->type : "NONE",
-				symbol->size,
+				size,
 				rz_str_get(symbol->libname),
 				rz_str_get_null(rz_symbol_name));
 			break;

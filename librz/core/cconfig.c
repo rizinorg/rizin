@@ -2096,12 +2096,6 @@ static bool cb_scr_gadgets(void *user, void *data) {
 	return true;
 }
 
-static bool cb_fps(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->fps = node->i_value;
-	return true;
-}
-
 static bool cb_scrbreakword(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (*node->value) {
@@ -3574,7 +3568,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("scr.dumpcols", "false", "Prefer pC commands before p ones");
 	SETCB("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
 	SETICB("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
-	SETCB("scr.fps", "false", &cb_fps, "Show FPS in Visual");
 	SETICB("scr.fix.rows", 0, &cb_fixrows, "Workaround for Linux TTY");
 	SETICB("scr.fix.columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS SSH client");
 	SETCB("scr.highlight", "", &cb_scrhighlight, "Highlight that word at RzCons level");
