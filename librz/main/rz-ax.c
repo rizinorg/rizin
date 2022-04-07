@@ -27,6 +27,7 @@
 #define RZ_AX_FLAG_DUMP_C_BYTES     (1ull << 21) // -i (dump as C byte array)
 #define RZ_AX_FLAG_OCTAL_TO_RAW     (1ull << 22) // -o (octalstr -> raw)
 #define RZ_AX_FLAG_IPADDR_TO_LONG   (1ull << 23) // -I (IP address <-> LONG)
+#define RZ_AX_FLAG_BIN_SET_BYTES    (1ull << 24) // -p (count set bits)
 
 #define has_flag(f, x) (f & x)
 
@@ -229,7 +230,8 @@ static int help(void) {
 		"  -x      hash string          ;  rz-ax -x linux osx\n"
 		"  -u      units                ;  rz-ax -u 389289238 # 317.0M\n"
 		"  -w      signed word          ;  rz-ax -w 16 0xffff\n"
-		"  -v      version              ;  rz-ax -v\n");
+		"  -v      version              ;  rz-ax -v\n"
+		"  -p      count set bits       ;  rz-ax -p 0xb3\n");
 	return true;
 }
 
@@ -269,6 +271,7 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'S': flags ^= RZ_AX_FLAG_RAW_TO_HEX; break;
 			case 'b': flags ^= RZ_AX_FLAG_BIN_TO_STR; break;
 			case 'B': flags ^= RZ_AX_FLAG_STR_TO_BIN; break;
+			case 'p': flags ^= RZ_AX_FLAG_BIN_SET_BYTES; break;
 			case 'x': flags ^= RZ_AX_FLAG_STR_TO_DJB2; break;
 			case 'k': flags ^= RZ_AX_FLAG_KEEP_BASE; break;
 			case 'f': flags ^= RZ_AX_FLAG_FLOATING_POINT; break;
