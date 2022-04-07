@@ -532,6 +532,10 @@ commands:
         summary: Continue until exception
         cname: analysis_continue_until_except
         args: []
+      - name: aecb
+        summary: Continue back
+        cname: analysis_continue_back
+        args: []
       - name: aecs
         summary: Continue until syscall
         cname: analysis_continue_until_syscall

@@ -115,6 +115,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_strings_handler(RzCore *core, int argc, 
 RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_analysis_appcall_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_continue_until_except_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_continue_back_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_continue_until_addr_handler(RzCore *core, int argc, const char **argv);

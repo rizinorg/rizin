@@ -2060,6 +2060,14 @@ static const RzCmdDescHelp analysis_continue_until_except_help = {
 	.args = analysis_continue_until_except_args,
 };
 
+static const RzCmdDescArg analysis_continue_back_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_back_help = {
+	.summary = "Continue back",
+	.args = analysis_continue_back_args,
+};
+
 static const RzCmdDescArg analysis_continue_until_syscall_args[] = {
 	{ 0 },
 };
@@ -13288,6 +13296,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aec_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aec", rz_analysis_continue_until_except_handler, &analysis_continue_until_except_help, &aec_help);
 	rz_warn_if_fail(aec_cd);
+	RzCmdDesc *analysis_continue_back_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecb", rz_analysis_continue_back_handler, &analysis_continue_back_help);
+	rz_warn_if_fail(analysis_continue_back_cd);
+
 	RzCmdDesc *analysis_continue_until_syscall_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecs", rz_analysis_continue_until_syscall_handler, &analysis_continue_until_syscall_help);
 	rz_warn_if_fail(analysis_continue_until_syscall_cd);
 
