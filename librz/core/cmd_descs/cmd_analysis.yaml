@@ -556,6 +556,36 @@ commands:
         args:
           - name: expr
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: aei
+    summary: ESIL VM state
+    subcommands:
+      - name: aei
+        summary: initialize ESIL VM state
+        cname: analysis_esil_init
+        args: []
+      - name: aei-
+        summary: deinitialize ESIL VM state
+        cname: analysis_esil_deinit
+        args: []
+      - name: aeip
+        summary: initialize ESIL program counter to curseek
+        cname: analysis_esil_init_p
+        args: []
+      - name: aeim
+        summary: ESIL VM stack
+        subcommands:
+          - name: aeim
+            summary: initialize ESIL VM stack
+            cname: analysis_esil_init_mem
+            args: []
+          - name: aeim-
+            summary: remove ESIL VM stack
+            cname: analysis_esil_init_mem_remove
+            args: []
+          - name: aeimp
+            summary: initialize ESIL VM stack to "aeim.stack" or ?
+            cname: analysis_esil_init_mem_p
+            args: []
   - name: aez
     summary: RzIL Emulation
     type: RZ_CMD_DESC_TYPE_GROUP

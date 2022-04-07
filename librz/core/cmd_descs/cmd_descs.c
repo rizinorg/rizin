@@ -2060,12 +2060,12 @@ static const RzCmdDescHelp analysis_continue_until_except_help = {
 	.args = analysis_continue_until_except_args,
 };
 
-static const RzCmdDescArg analysis_continue_back_args[] = {
+static const RzCmdDescArg analysis_continue_until_breakpoint_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp analysis_continue_back_help = {
-	.summary = "Continue back",
-	.args = analysis_continue_back_args,
+static const RzCmdDescHelp analysis_continue_until_breakpoint_help = {
+	.summary = "Continue back until breakpoint",
+	.args = analysis_continue_until_breakpoint_args,
 };
 
 static const RzCmdDescArg analysis_continue_until_syscall_args[] = {
@@ -2109,6 +2109,60 @@ static const RzCmdDescArg analysis_continue_until_esil_args[] = {
 static const RzCmdDescHelp analysis_continue_until_esil_help = {
 	.summary = "Continue until esil expression",
 	.args = analysis_continue_until_esil_args,
+};
+
+static const RzCmdDescHelp aei_help = {
+	.summary = "ESIL VM state",
+};
+static const RzCmdDescArg analysis_esil_init_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_help = {
+	.summary = "initialize ESIL VM state",
+	.args = analysis_esil_init_args,
+};
+
+static const RzCmdDescArg analysis_esil_deinit_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_deinit_help = {
+	.summary = "deinitialize ESIL VM state",
+	.args = analysis_esil_deinit_args,
+};
+
+static const RzCmdDescArg analysis_esil_init_p_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_p_help = {
+	.summary = "initialize ESIL program counter to curseek",
+	.args = analysis_esil_init_p_args,
+};
+
+static const RzCmdDescHelp aeim_help = {
+	.summary = "ESIL VM stack",
+};
+static const RzCmdDescArg analysis_esil_init_mem_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_mem_help = {
+	.summary = "initialize ESIL VM stack",
+	.args = analysis_esil_init_mem_args,
+};
+
+static const RzCmdDescArg analysis_esil_init_mem_remove_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_mem_remove_help = {
+	.summary = "remove ESIL VM stack",
+	.args = analysis_esil_init_mem_remove_args,
+};
+
+static const RzCmdDescArg analysis_esil_init_mem_p_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_mem_p_help = {
+	.summary = "initialize ESIL VM stack to \"aeim.stack\" or ?",
+	.args = analysis_esil_init_mem_p_args,
 };
 
 static const RzCmdDescHelp aez_help = {
@@ -13296,8 +13350,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aec_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aec", rz_analysis_continue_until_except_handler, &analysis_continue_until_except_help, &aec_help);
 	rz_warn_if_fail(aec_cd);
-	RzCmdDesc *analysis_continue_back_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecb", rz_analysis_continue_back_handler, &analysis_continue_back_help);
-	rz_warn_if_fail(analysis_continue_back_cd);
+	RzCmdDesc *analysis_continue_until_breakpoint_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecb", rz_analysis_continue_until_breakpoint_handler, &analysis_continue_until_breakpoint_help);
+	rz_warn_if_fail(analysis_continue_until_breakpoint_cd);
 
 	RzCmdDesc *analysis_continue_until_syscall_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecs", rz_analysis_continue_until_syscall_handler, &analysis_continue_until_syscall_help);
 	rz_warn_if_fail(analysis_continue_until_syscall_cd);
@@ -13310,6 +13364,22 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_continue_until_esil_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecue", rz_analysis_continue_until_esil_handler, &analysis_continue_until_esil_help);
 	rz_warn_if_fail(analysis_continue_until_esil_cd);
+
+	RzCmdDesc *aei_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aei", rz_analysis_esil_init_handler, &analysis_esil_init_help, &aei_help);
+	rz_warn_if_fail(aei_cd);
+	RzCmdDesc *analysis_esil_deinit_cd = rz_cmd_desc_argv_new(core->rcmd, aei_cd, "aei-", rz_analysis_esil_deinit_handler, &analysis_esil_deinit_help);
+	rz_warn_if_fail(analysis_esil_deinit_cd);
+
+	RzCmdDesc *analysis_esil_init_p_cd = rz_cmd_desc_argv_new(core->rcmd, aei_cd, "aeip", rz_analysis_esil_init_p_handler, &analysis_esil_init_p_help);
+	rz_warn_if_fail(analysis_esil_init_p_cd);
+
+	RzCmdDesc *aeim_cd = rz_cmd_desc_group_new(core->rcmd, aei_cd, "aeim", rz_analysis_esil_init_mem_handler, &analysis_esil_init_mem_help, &aeim_help);
+	rz_warn_if_fail(aeim_cd);
+	RzCmdDesc *analysis_esil_init_mem_remove_cd = rz_cmd_desc_argv_new(core->rcmd, aeim_cd, "aeim-", rz_analysis_esil_init_mem_remove_handler, &analysis_esil_init_mem_remove_help);
+	rz_warn_if_fail(analysis_esil_init_mem_remove_cd);
+
+	RzCmdDesc *analysis_esil_init_mem_p_cd = rz_cmd_desc_argv_new(core->rcmd, aeim_cd, "aeimp", rz_analysis_esil_init_mem_p_handler, &analysis_esil_init_mem_p_help);
+	rz_warn_if_fail(analysis_esil_init_mem_p_cd);
 
 	RzCmdDesc *aez_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aez", NULL, NULL, &aez_help);
 	rz_warn_if_fail(aez_cd);

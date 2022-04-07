@@ -2307,59 +2307,6 @@ static void cmd_analysis_info(RzCore *core, const char *input) {
 	}
 }
 
-static void cmd_esil_mem_args(RzCore *core, const char *input, ut64 *addr, ut32 *size, char **name) {
-	int argc;
-	*addr = UT64_MAX;
-	*size = UT32_MAX;
-	*name = NULL;
-	if (!input) {
-		return;
-	}
-	char **argv = rz_str_argv(input, &argc);
-	if (argc > 0) {
-		*addr = rz_num_math(core->num, argv[0]);
-	}
-	if (argc > 1) {
-		*size = (ut32)rz_num_math(core->num, argv[1]);
-	}
-	if (argc > 2) {
-		*name = strdup(argv[2]);
-	}
-	rz_str_argv_free(argv);
-}
-
-static void cmd_esil_mem(RzCore *core, const char *input) {
-	ut64 addr;
-	ut32 size;
-	char *name;
-
-	switch (*input) {
-	case 'p':
-		rz_core_analysis_esil_init_mem_p(core);
-		break;
-	case '-':
-		cmd_esil_mem_args(core, input + 1, &addr, &size, &name);
-		rz_core_analysis_esil_init_mem_del(core, name, addr, size);
-		free(name);
-		break;
-	case ' ':
-		cmd_esil_mem_args(core, input + 1, &addr, &size, &name);
-		rz_core_analysis_esil_init_mem(core, name, addr, size);
-		free(name);
-		break;
-	case '\0':
-		cmd_esil_mem_args(core, NULL, &addr, &size, &name);
-		rz_core_analysis_esil_init_mem(core, name, addr, size);
-		free(name);
-		break;
-	default:
-		eprintf("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
-		eprintf("Default: 0x100000 0xf0000\n");
-		eprintf("See ae? for more help\n");
-		return;
-	}
-}
-
 typedef struct {
 	RzList *regs;
 	RzList *regread;
@@ -2752,7 +2699,7 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_except_handler(RzCore *core, int a
 }
 
 // aecb
-RZ_IPI RzCmdStatus analysis_continue_until_breakpoint(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_analysis_continue_until_breakpoint_handler(RzCore *core, int argc, const char **argv) {
 	if (!rz_core_esil_continue_back(core)) {
 		RZ_LOG_ERROR("cannnot continue back\n");
 	}
@@ -2836,6 +2783,53 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_addr_handler(RzCore *core, int arg
 RZ_IPI RzCmdStatus rz_analysis_continue_until_esil_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_esil_step(core, UT64_MAX, argv[1], NULL, false);
 	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aei
+RZ_IPI RzCmdStatus rz_analysis_esil_init_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_reinit(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aei-
+RZ_IPI RzCmdStatus rz_analysis_esil_deinit_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (esil) {
+		sdb_reset(esil->stats);
+	}
+	rz_analysis_esil_free(esil);
+	core->analysis->esil = NULL;
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeip
+RZ_IPI RzCmdStatus rz_analysis_esil_init_p_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_set_reg(core, "PC", core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeim
+RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 0 ? rz_num_math(core->num, argv[0]) : UT64_MAX;
+	ut32 size = argc > 1 ? (ut32)rz_num_math(core->num, argv[1]) : UT32_MAX;
+	const char *name = argc > 2 ? argv[2] : NULL;
+	rz_core_analysis_esil_init_mem(core, name, addr, size);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeim-
+RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_remove_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 0 ? rz_num_math(core->num, argv[0]) : UT64_MAX;
+	ut32 size = argc > 1 ? (ut32)rz_num_math(core->num, argv[1]) : UT32_MAX;
+	const char *name = argc > 2 ? argv[2] : NULL;
+	rz_core_analysis_esil_init_mem_del(core, name, addr, size);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeimp
+RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_p_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init_mem_p(core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3139,30 +3133,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		default:
 			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
 			rz_core_reg_update_flags(core);
-			break;
-		}
-		break;
-	case 'i': // "aei"
-		switch (input[1]) {
-		case 's': // "aeis"
-		case 'm': // "aeim"
-			cmd_esil_mem(core, input + 2);
-			break;
-		case 'p': // "aeip" // initialize pc = $$
-			rz_core_analysis_set_reg(core, "PC", core->offset);
-			break;
-		case '?': // "aei?"
-			cmd_esil_mem(core, "?");
-			break;
-		case '-': // "aei-"
-			if (esil) {
-				sdb_reset(esil->stats);
-			}
-			rz_analysis_esil_free(esil);
-			core->analysis->esil = NULL;
-			break;
-		case 0: // "aei"
-			rz_core_analysis_esil_reinit(core);
 			break;
 		}
 		break;
