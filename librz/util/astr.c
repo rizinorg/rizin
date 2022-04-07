@@ -60,8 +60,8 @@ RZ_API RASN1String *rz_asn1_stringify_string(const ut8 *buffer, ut32 length) {
 	if (!str) {
 		return NULL;
 	}
-	rz_str_filter(str, length);
-	return rz_asn1_create_string(str, true, length);
+	rz_str_filter(str);
+	return rz_asn1_create_string(str, true, strlen(str));
 }
 
 RZ_API RASN1String *rz_asn1_stringify_utctime(const ut8 *buffer, ut32 length) {

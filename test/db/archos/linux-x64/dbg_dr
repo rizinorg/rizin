@@ -13,6 +13,9 @@ flg
 seg
 sys
 sec
+vc
+vcc
+ctr
 EOF
 RUN
 

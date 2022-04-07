@@ -409,7 +409,7 @@ RZ_API bool rz_io_is_listener(RzIO *io) {
 }
 
 RZ_API char *rz_io_system(RzIO *io, const char *cmd) {
-	if (io && io->desc && io->desc->plugin && io->desc->plugin->system) {
+	if (io && io->desc && io->desc->plugin && io->desc->plugin->system && RZ_STR_ISNOTEMPTY(cmd)) {
 		return io->desc->plugin->system(io, io->desc, cmd);
 	}
 	return NULL;

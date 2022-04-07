@@ -6,19 +6,9 @@
 #include <rz_basefind.h>
 #include <rz_th.h>
 #include <rz_windows.h>
+#include <rz_config.h>
 
 #include "core_private.h"
-
-#define NODECB(w, x, y)    rz_config_set_cb(cfg, w, x, y)
-#define NODEICB(w, x, y)   rz_config_set_i_cb(cfg, w, x, y)
-#define SETDESC(x, y)      rz_config_node_desc(x, y)
-#define SETOPTIONS(x, ...) set_options(x, __VA_ARGS__)
-#define SETI(x, y, z)      SETDESC(rz_config_set_i(cfg, x, y), z)
-#define SETB(x, y, z)      SETDESC(rz_config_set_b(cfg, x, y), z)
-#define SETICB(w, x, y, z) SETDESC(NODEICB(w, x, y), z)
-#define SETPREF(x, y, z)   SETDESC(rz_config_set(cfg, x, y), z)
-#define SETCB(w, x, y, z)  SETDESC(NODECB(w, x, y), z)
-#define SETBPREF(x, y, z)  SETDESC(NODECB(x, y, boolify_var_cb), z)
 
 static bool boolify_var_cb(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -849,13 +839,6 @@ static bool cb_asm_immhash(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->rasm->immdisp = node->i_value ? true : false;
-	return true;
-}
-
-static bool cb_asm_immsign(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->immsign = node->i_value;
 	return true;
 }
 
@@ -2496,13 +2479,6 @@ static bool cb_bindbginfo(void *user, void *data) {
 	return true;
 }
 
-static bool cb_hexsdk(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->hex_sdk = (bool)node->i_value;
-	return true;
-}
-
 static bool cb_binprefix(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2517,7 +2493,7 @@ static bool cb_binprefix(void *user, void *data) {
 			char *name = (char *)rz_file_basename(core->bin->file);
 			if (name) {
 				rz_name_filter(name, strlen(name), true);
-				rz_str_filter(name, strlen(name));
+				rz_str_filter(name);
 				core->bin->prefix = strdup(name);
 				free(name);
 			}
@@ -2858,15 +2834,7 @@ static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
 static bool cb_dbg_verbose(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	const char *value = node->value;
-	switch (value[0]) {
-	case 't':
-	case 'T':
-		core->dbg->verbose = true;
-		break;
-	default:
-		core->dbg->verbose = false;
-	}
+	core->dbg->verbose = node->i_value;
 	return true;
 }
 
@@ -3077,7 +3045,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETBPREF("asm.decode", "false", "Use code analysis as a disassembler");
 	SETICB("asm.imm.hash", 0, &cb_asm_immhash, "Display # for immediates in ARM and Hexagon (0 = on)");
-	SETCB("asm.imm.sign", "true", &cb_asm_immsign, "False: Print signed immediates in unsigned representation. True: Print them with sign.");
 	SETBPREF("asm.imm.str", "true", "Show immediates values as strings");
 	SETBPREF("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
 	SETBPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
@@ -3249,9 +3216,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETCB("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
 
-	/* plugins */
-	SETCB("plugins.hexagon.sdk", "false", &cb_hexsdk, "Print packet syntax in objdump style. Hexagon only.");
-
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");
 	SETBPREF("prj.compress", "false", "Compress the project file while saving");
@@ -3373,7 +3337,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("dbg.skipover", "false", "Make dso perform a dss (same goes for esil and visual/graph");
 	SETI("dbg.hwbp", 0, "Set HW or SW breakpoints");
 	SETCB("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
-	SETCB("dbg.verbose", "true", &cb_dbg_verbose, "Verbose debug output");
+	SETCB("dbg.verbose", "false", &cb_dbg_verbose, "Verbose debug output");
 	SETBPREF("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
 	SETBPREF("dbg.funcarg", "false", "Display arguments to function call in visual mode");
 

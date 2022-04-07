@@ -275,6 +275,8 @@ RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
 }
 
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
+	char buf[20];
+
 	rz_debug_reg_profile_sync(core->dbg);
 	if (pid > 0) {
 		rz_debug_attach(core->dbg, pid);
@@ -285,7 +287,7 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 	}
 	rz_debug_select(core->dbg, core->dbg->pid, core->dbg->tid);
 	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->cur && !core->dbg->cur->canstep));
-	rz_core_cmdf(core, "R! \"pid %d\"", core->dbg->pid);
+	rz_io_system(core->io, rz_strf(buf, "pid %d", core->dbg->pid));
 }
 
 RZ_API RzCmdStatus rz_core_debug_plugin_print(RzDebug *dbg, RzDebugPlugin *plugin, RzCmdStateOutput *state, int count, char *spaces) {
@@ -593,9 +595,9 @@ RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input,
 
 /**
  * Print all traces
- * @param dbg core->dbg
- * @param mode output mode, default RZ_OUTPUT_MODE_STANDARD
- * @param offset offset of address
+ * \param dbg core->dbg
+ * \param mode output mode, default RZ_OUTPUT_MODE_STANDARD
+ * \param offset offset of address
  */
 RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 offset) {
 	rz_return_if_fail(dbg);
@@ -624,8 +626,8 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
 
 /**
  * Print trace info in ASCII Art
- * @param dbg core->dbg
- * @param offset offset of address
+ * \param dbg core->dbg
+ * \param offset offset of address
  */
 RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	rz_return_if_fail(dbg);
@@ -634,7 +636,9 @@ RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	table->cons = rz_cons_singleton();
 	rz_table_visual_list(table, info_list, offset, 1,
 		rz_cons_get_size(NULL), dbg->iob.io->va);
-	rz_cons_printf("\n%s\n", rz_table_tostring(table));
+	char *s = rz_table_tostring(table);
+	rz_cons_printf("\n%s\n", s);
+	free(s);
 	rz_table_free(table);
 	rz_list_free(info_list);
 }

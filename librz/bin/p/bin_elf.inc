@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <rz_types.h>
 #include <rz_util.h>
+#include <rz_util/rz_buf.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
 #include <rz_io.h>
@@ -889,6 +890,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	RzBinRelocFormularSymbols formular_sym = { .A = A, .B = B, .GOT = GOT, .L = L, .S = S, .P = P, .MB = 0, .G = 0, .GP = 0, .T = 0, .TLS = 0 };
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(obj, rel->vaddr);
 	ut8 buf[8];
+	bool big_endian = obj->big_endian;
 	switch (e_machine) {
 	case EM_QDSP6:
 		patch_reloc_hexagon(obj->buf_patched, patch_addr, rel->type, &formular_sym);
@@ -933,30 +935,28 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			break;
 		}
 		if (low) {
-			// TODO big-endian
 			switch (low) {
 			case 14:
 				val &= (1 << 14) - 1;
 				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 2);
-				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 16) - (1 << 2))) | val << 2);
+				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(16, 2))) | val << 2, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
 				break;
 			case 24:
 				val &= (1 << 24) - 1;
 				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 26) - (1 << 2))) | val << 2);
+				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(26, 2))) | val << 2, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
 				break;
 			}
 		} else if (word) {
-			// TODO big-endian
 			switch (word) {
 			case 2:
-				rz_write_le16(buf, val);
+				rz_write_ble16(buf, val, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
 				break;
 			case 4:
-				rz_write_le32(buf, val);
+				rz_write_ble32(buf, val, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
 				break;
 			}
@@ -1212,6 +1212,12 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_PPC_NONE: break;
 		case RZ_PPC_GLOB_DAT: ADD(32, 0);
 		case RZ_PPC_JMP_SLOT: ADD(32, 0);
+		case RZ_PPC_COPY: ADD(32, 0); // copy symbol at runtime
+		case RZ_PPC_REL24: ADD(24, -P);
+		case RZ_PPC_REL14: ADD(16, -P);
+		case RZ_PPC_REL32: ADD(32, -P);
+		case RZ_PPC_RELATIVE: ADD(32, -P);
+		case RZ_PPC_PLT32: ADD(32, -P);
 		default:
 			eprintf("unimplemented ELF/PPC reloc type %d\n", rel->type);
 			break;

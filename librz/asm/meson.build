@@ -299,6 +299,7 @@ rz_asm = library('rz_asm', rz_asm_sources,
   c_args: library_cflags,
   dependencies: [
     rz_util_dep,
+    rz_config_dep,
     rz_syscall_dep,
     rz_flag_dep,
     rz_parse_dep,

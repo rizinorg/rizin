@@ -218,6 +218,7 @@ RZ_API void rz_egg_append(RzEgg *egg, const char *src);
 RZ_API int rz_egg_run(RzEgg *egg);
 RZ_API int rz_egg_run_rop(RzEgg *egg);
 RZ_API int rz_egg_patch(RzEgg *egg, int off, const ut8 *b, int l);
+RZ_API bool rz_egg_patch_num(RzEgg *egg, int off, ut64 val, ut32 bits);
 RZ_API void rz_egg_finalize(RzEgg *egg);
 
 /* rz_egg_Cfile.c */

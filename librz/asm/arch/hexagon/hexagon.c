@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-01-24 07:53:55-05:00
+// Date of code generation: 2022-04-02 10:52:25-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -21,159 +21,154 @@
 #include "hexagon_insn.h"
 #include "hexagon_arch.h"
 
-char *hex_get_ctr_regs(int opcode_reg) {
+char *hex_get_ctr_regs(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
-	case HEX_REG_CTR_REGS_LC0:
-		return "LC0";
-	case HEX_REG_CTR_REGS_SA0:
-		return "SA0";
-	case HEX_REG_CTR_REGS_LC1:
-		return "LC1";
-	case HEX_REG_CTR_REGS_SA1:
-		return "SA1";
-	case HEX_REG_CTR_REGS_P3_0:
-		return "P3:0";
+	default: return "<err>";
+	case HEX_REG_CTR_REGS_C1:
+		return get_alias ? "LC0" : "C1";
+	case HEX_REG_CTR_REGS_C0:
+		return get_alias ? "SA0" : "C0";
+	case HEX_REG_CTR_REGS_C3:
+		return get_alias ? "LC1" : "C3";
+	case HEX_REG_CTR_REGS_C2:
+		return get_alias ? "SA1" : "C2";
+	case HEX_REG_CTR_REGS_C4:
+		return get_alias ? "P3:0" : "C4";
 	case HEX_REG_CTR_REGS_C5:
-		return "C5";
-	case HEX_REG_CTR_REGS_PC:
-		return "PC";
-	case HEX_REG_CTR_REGS_UGP:
-		return "UGP";
-	case HEX_REG_CTR_REGS_GP:
-		return "GP";
-	case HEX_REG_CTR_REGS_CS0:
-		return "CS0";
-	case HEX_REG_CTR_REGS_CS1:
-		return "CS1";
-	case HEX_REG_CTR_REGS_UPCYCLELO:
-		return "UPCYCLELO";
-	case HEX_REG_CTR_REGS_UPCYCLEHI:
-		return "UPCYCLEHI";
-	case HEX_REG_CTR_REGS_FRAMELIMIT:
-		return "FRAMELIMIT";
-	case HEX_REG_CTR_REGS_FRAMEKEY:
-		return "FRAMEKEY";
-	case HEX_REG_CTR_REGS_PKTCOUNTLO:
-		return "PKTCOUNTLO";
-	case HEX_REG_CTR_REGS_PKTCOUNTHI:
-		return "PKTCOUNTHI";
-	case HEX_REG_CTR_REGS_UTIMERLO:
-		return "UTIMERLO";
-	case HEX_REG_CTR_REGS_UTIMERHI:
-		return "UTIMERHI";
-	case HEX_REG_CTR_REGS_M0:
-		return "M0";
-	case HEX_REG_CTR_REGS_M1:
-		return "M1";
-	case HEX_REG_CTR_REGS_USR:
-		return "USR";
+		return get_alias ? "C5" : "C5";
+	case HEX_REG_CTR_REGS_C9:
+		return get_alias ? "PC" : "C9";
+	case HEX_REG_CTR_REGS_C10:
+		return get_alias ? "UGP" : "C10";
+	case HEX_REG_CTR_REGS_C11:
+		return get_alias ? "GP" : "C11";
+	case HEX_REG_CTR_REGS_C12:
+		return get_alias ? "CS0" : "C12";
+	case HEX_REG_CTR_REGS_C13:
+		return get_alias ? "CS1" : "C13";
+	case HEX_REG_CTR_REGS_C14:
+		return get_alias ? "UPCYCLELO" : "C14";
+	case HEX_REG_CTR_REGS_C15:
+		return get_alias ? "UPCYCLEHI" : "C15";
+	case HEX_REG_CTR_REGS_C16:
+		return get_alias ? "FRAMELIMIT" : "C16";
+	case HEX_REG_CTR_REGS_C17:
+		return get_alias ? "FRAMEKEY" : "C17";
+	case HEX_REG_CTR_REGS_C18:
+		return get_alias ? "PKTCOUNTLO" : "C18";
+	case HEX_REG_CTR_REGS_C19:
+		return get_alias ? "PKTCOUNTHI" : "C19";
+	case HEX_REG_CTR_REGS_C30:
+		return get_alias ? "UTIMERLO" : "C30";
+	case HEX_REG_CTR_REGS_C31:
+		return get_alias ? "UTIMERHI" : "C31";
+	case HEX_REG_CTR_REGS_C6:
+		return get_alias ? "M0" : "C6";
+	case HEX_REG_CTR_REGS_C7:
+		return get_alias ? "M1" : "C7";
+	case HEX_REG_CTR_REGS_C8:
+		return get_alias ? "USR" : "C8";
 	}
 }
 
-char *hex_get_ctr_regs64(int opcode_reg) {
+char *hex_get_ctr_regs64(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
+	default: return "<err>";
 	case HEX_REG_CTR_REGS64_C1_0:
-		return "C1:0";
+		return get_alias ? "LC0:SA0" : "C1:0";
 	case HEX_REG_CTR_REGS64_C3_2:
-		return "C3:2";
+		return get_alias ? "LC1:SA1" : "C3:2";
 	case HEX_REG_CTR_REGS64_C5_4:
 		return "C5:4";
 	case HEX_REG_CTR_REGS64_C7_6:
-		return "C7:6";
+		return get_alias ? "M1:0" : "C7:6";
 	case HEX_REG_CTR_REGS64_C9_8:
 		return "C9:8";
 	case HEX_REG_CTR_REGS64_C11_10:
 		return "C11:10";
-	case HEX_REG_CTR_REGS64_CS:
-		return "C13:12";
-	case HEX_REG_CTR_REGS64_UPCYCLE:
-		return "C15:14";
+	case HEX_REG_CTR_REGS64_C13_12:
+		return get_alias ? "CS1:0" : "C13:12";
+	case HEX_REG_CTR_REGS64_C15_14:
+		return get_alias ? "UPCYCLE" : "C15:14";
 	case HEX_REG_CTR_REGS64_C17_16:
 		return "C17:16";
-	case HEX_REG_CTR_REGS64_PKTCOUNT:
-		return "C19:18";
-	case HEX_REG_CTR_REGS64_UTIMER:
-		return "C31:30";
+	case HEX_REG_CTR_REGS64_C19_18:
+		return get_alias ? "PKTCOUNT" : "C19:18";
+	case HEX_REG_CTR_REGS64_C31_30:
+		return get_alias ? "UTIMER" : "C31:30";
 	}
 }
 
-char *hex_get_double_regs(int opcode_reg) {
+char *hex_get_double_regs(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
-	case HEX_REG_DOUBLE_REGS_D0:
+	default: return "<err>";
+	case HEX_REG_DOUBLE_REGS_R1_0:
 		return "R1:0";
-	case HEX_REG_DOUBLE_REGS_D1:
+	case HEX_REG_DOUBLE_REGS_R3_2:
 		return "R3:2";
-	case HEX_REG_DOUBLE_REGS_D2:
+	case HEX_REG_DOUBLE_REGS_R5_4:
 		return "R5:4";
-	case HEX_REG_DOUBLE_REGS_D3:
+	case HEX_REG_DOUBLE_REGS_R7_6:
 		return "R7:6";
-	case HEX_REG_DOUBLE_REGS_D4:
+	case HEX_REG_DOUBLE_REGS_R9_8:
 		return "R9:8";
-	case HEX_REG_DOUBLE_REGS_D6:
+	case HEX_REG_DOUBLE_REGS_R13_12:
 		return "R13:12";
-	case HEX_REG_DOUBLE_REGS_D7:
+	case HEX_REG_DOUBLE_REGS_R15_14:
 		return "R15:14";
-	case HEX_REG_DOUBLE_REGS_D8:
+	case HEX_REG_DOUBLE_REGS_R17_16:
 		return "R17:16";
-	case HEX_REG_DOUBLE_REGS_D9:
+	case HEX_REG_DOUBLE_REGS_R19_18:
 		return "R19:18";
-	case HEX_REG_DOUBLE_REGS_D10:
+	case HEX_REG_DOUBLE_REGS_R21_20:
 		return "R21:20";
-	case HEX_REG_DOUBLE_REGS_D11:
+	case HEX_REG_DOUBLE_REGS_R23_22:
 		return "R23:22";
-	case HEX_REG_DOUBLE_REGS_D12:
+	case HEX_REG_DOUBLE_REGS_R25_24:
 		return "R25:24";
-	case HEX_REG_DOUBLE_REGS_D13:
+	case HEX_REG_DOUBLE_REGS_R27_26:
 		return "R27:26";
-	case HEX_REG_DOUBLE_REGS_D5:
+	case HEX_REG_DOUBLE_REGS_R11_10:
 		return "R11:10";
-	case HEX_REG_DOUBLE_REGS_D14:
+	case HEX_REG_DOUBLE_REGS_R29_28:
 		return "R29:28";
-	case HEX_REG_DOUBLE_REGS_D15:
-		return "R31:30";
+	case HEX_REG_DOUBLE_REGS_R31_30:
+		return get_alias ? "LR:FP" : "R31:30";
 	}
 }
 
-char *hex_get_general_double_low8_regs(int opcode_reg) {
+char *hex_get_general_double_low8_regs(int opcode_reg, bool get_alias) {
 	opcode_reg = opcode_reg << 1;
 	if (opcode_reg > 6) { // HEX_REG_D3 == 6
 		opcode_reg = (opcode_reg & 0x7) | 0x10;
 	}
 	switch (opcode_reg) {
-	default:
-		return "<err>";
-	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_D11:
+	default: return "<err>";
+	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_R23_22:
 		return "R23:22";
-	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_D10:
+	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_R21_20:
 		return "R21:20";
-	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_D9:
+	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_R19_18:
 		return "R19:18";
-	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_D8:
+	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_R17_16:
 		return "R17:16";
-	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_D3:
+	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_R7_6:
 		return "R7:6";
-	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_D2:
+	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_R5_4:
 		return "R5:4";
-	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_D1:
+	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_R3_2:
 		return "R3:2";
-	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_D0:
+	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_R1_0:
 		return "R1:0";
 	}
 }
 
-char *hex_get_general_sub_regs(int opcode_reg) {
+char *hex_get_general_sub_regs(int opcode_reg, bool get_alias) {
 	if (opcode_reg > 7) { // HEX_REG_R7 == 7
 		opcode_reg = (opcode_reg & 0x7) | 0x10;
 	}
 	switch (opcode_reg) {
-	default:
-		return "<err>";
+	default: return "<err>";
 	case HEX_REG_GENERAL_SUB_REGS_R23:
 		return "R23";
 	case HEX_REG_GENERAL_SUB_REGS_R22:
@@ -209,18 +204,17 @@ char *hex_get_general_sub_regs(int opcode_reg) {
 	}
 }
 
-char *hex_get_guest_regs(int opcode_reg) {
+char *hex_get_guest_regs(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
-	case HEX_REG_GUEST_REGS_GELR:
-		return "GELR";
-	case HEX_REG_GUEST_REGS_GSR:
-		return "GSR";
-	case HEX_REG_GUEST_REGS_GOSP:
-		return "GOSP";
+	default: return "<err>";
+	case HEX_REG_GUEST_REGS_G0:
+		return get_alias ? "GELR" : "G0";
+	case HEX_REG_GUEST_REGS_G1:
+		return get_alias ? "GSR" : "G1";
+	case HEX_REG_GUEST_REGS_G2:
+		return get_alias ? "GOSP" : "G2";
 	case HEX_REG_GUEST_REGS_G3:
-		return "GBADVA";
+		return get_alias ? "GBADVA" : "G3";
 	case HEX_REG_GUEST_REGS_G4:
 		return "G4";
 	case HEX_REG_GUEST_REGS_G5:
@@ -245,14 +239,14 @@ char *hex_get_guest_regs(int opcode_reg) {
 		return "G14";
 	case HEX_REG_GUEST_REGS_G15:
 		return "G15";
-	case HEX_REG_GUEST_REGS_GPMUCNT4:
-		return "GPMUCNT4";
-	case HEX_REG_GUEST_REGS_GPMUCNT5:
-		return "GPMUCNT5";
-	case HEX_REG_GUEST_REGS_GPMUCNT6:
-		return "GPMUCNT6";
-	case HEX_REG_GUEST_REGS_GPMUCNT7:
-		return "GPMUCNT7";
+	case HEX_REG_GUEST_REGS_G16:
+		return get_alias ? "GPMUCNT4" : "G16";
+	case HEX_REG_GUEST_REGS_G17:
+		return get_alias ? "GPMUCNT5" : "G17";
+	case HEX_REG_GUEST_REGS_G18:
+		return get_alias ? "GPMUCNT6" : "G18";
+	case HEX_REG_GUEST_REGS_G19:
+		return get_alias ? "GPMUCNT7" : "G19";
 	case HEX_REG_GUEST_REGS_G20:
 		return "G20";
 	case HEX_REG_GUEST_REGS_G21:
@@ -261,18 +255,18 @@ char *hex_get_guest_regs(int opcode_reg) {
 		return "G22";
 	case HEX_REG_GUEST_REGS_G23:
 		return "G23";
-	case HEX_REG_GUEST_REGS_GPCYCLELO:
-		return "GPCYCLELO";
-	case HEX_REG_GUEST_REGS_GPCYCLEHI:
-		return "GPCYCLEHI";
-	case HEX_REG_GUEST_REGS_GPMUCNT0:
-		return "GPMUCNT0";
-	case HEX_REG_GUEST_REGS_GPMUCNT1:
-		return "GPMUCNT1";
-	case HEX_REG_GUEST_REGS_GPMUCNT2:
-		return "GPMUCNT2";
-	case HEX_REG_GUEST_REGS_GPMUCNT3:
-		return "GPMUCNT3";
+	case HEX_REG_GUEST_REGS_G24:
+		return get_alias ? "GPCYCLELO" : "G24";
+	case HEX_REG_GUEST_REGS_G25:
+		return get_alias ? "GPCYCLEHI" : "G25";
+	case HEX_REG_GUEST_REGS_G26:
+		return get_alias ? "GPMUCNT0" : "G26";
+	case HEX_REG_GUEST_REGS_G27:
+		return get_alias ? "GPMUCNT1" : "G27";
+	case HEX_REG_GUEST_REGS_G28:
+		return get_alias ? "GPMUCNT2" : "G28";
+	case HEX_REG_GUEST_REGS_G29:
+		return get_alias ? "GPMUCNT3" : "G29";
 	case HEX_REG_GUEST_REGS_G30:
 		return "G30";
 	case HEX_REG_GUEST_REGS_G31:
@@ -280,10 +274,9 @@ char *hex_get_guest_regs(int opcode_reg) {
 	}
 }
 
-char *hex_get_guest_regs64(int opcode_reg) {
+char *hex_get_guest_regs64(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
+	default: return "<err>";
 	case HEX_REG_GUEST_REGS64_G1_0:
 		return "G1:0";
 	case HEX_REG_GUEST_REGS64_G3_2:
@@ -319,10 +312,9 @@ char *hex_get_guest_regs64(int opcode_reg) {
 	}
 }
 
-char *hex_get_hvx_qr(int opcode_reg) {
+char *hex_get_hvx_qr(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
+	default: return "<err>";
 	case HEX_REG_HVX_QR_Q0:
 		return "Q0";
 	case HEX_REG_HVX_QR_Q1:
@@ -334,33 +326,31 @@ char *hex_get_hvx_qr(int opcode_reg) {
 	}
 }
 
-char *hex_get_hvx_vqr(int opcode_reg) {
+char *hex_get_hvx_vqr(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
-	case HEX_REG_HVX_VQR_VQ0:
+	default: return "<err>";
+	case HEX_REG_HVX_VQR_V3_0:
 		return "V3:0";
-	case HEX_REG_HVX_VQR_VQ1:
+	case HEX_REG_HVX_VQR_V7_4:
 		return "V7:4";
-	case HEX_REG_HVX_VQR_VQ2:
+	case HEX_REG_HVX_VQR_V11_8:
 		return "V11:8";
-	case HEX_REG_HVX_VQR_VQ3:
+	case HEX_REG_HVX_VQR_V15_12:
 		return "V15:12";
-	case HEX_REG_HVX_VQR_VQ4:
+	case HEX_REG_HVX_VQR_V19_16:
 		return "V19:16";
-	case HEX_REG_HVX_VQR_VQ5:
+	case HEX_REG_HVX_VQR_V23_20:
 		return "V23:20";
-	case HEX_REG_HVX_VQR_VQ6:
+	case HEX_REG_HVX_VQR_V27_24:
 		return "V27:24";
-	case HEX_REG_HVX_VQR_VQ7:
+	case HEX_REG_HVX_VQR_V31_28:
 		return "V31:28";
 	}
 }
 
-char *hex_get_hvx_vr(int opcode_reg) {
+char *hex_get_hvx_vr(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
+	default: return "<err>";
 	case HEX_REG_HVX_VR_V0:
 		return "V0";
 	case HEX_REG_HVX_VR_V1:
@@ -428,49 +418,47 @@ char *hex_get_hvx_vr(int opcode_reg) {
 	}
 }
 
-char *hex_get_hvx_wr(int opcode_reg) {
+char *hex_get_hvx_wr(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
-	case HEX_REG_HVX_WR_W0:
+	default: return "<err>";
+	case HEX_REG_HVX_WR_V1_0:
 		return "V1:0";
-	case HEX_REG_HVX_WR_W1:
+	case HEX_REG_HVX_WR_V3_2:
 		return "V3:2";
-	case HEX_REG_HVX_WR_W2:
+	case HEX_REG_HVX_WR_V5_4:
 		return "V5:4";
-	case HEX_REG_HVX_WR_W3:
+	case HEX_REG_HVX_WR_V7_6:
 		return "V7:6";
-	case HEX_REG_HVX_WR_W4:
+	case HEX_REG_HVX_WR_V9_8:
 		return "V9:8";
-	case HEX_REG_HVX_WR_W5:
+	case HEX_REG_HVX_WR_V11_10:
 		return "V11:10";
-	case HEX_REG_HVX_WR_W6:
+	case HEX_REG_HVX_WR_V13_12:
 		return "V13:12";
-	case HEX_REG_HVX_WR_W7:
+	case HEX_REG_HVX_WR_V15_14:
 		return "V15:14";
-	case HEX_REG_HVX_WR_W8:
+	case HEX_REG_HVX_WR_V17_16:
 		return "V17:16";
-	case HEX_REG_HVX_WR_W9:
+	case HEX_REG_HVX_WR_V19_18:
 		return "V19:18";
-	case HEX_REG_HVX_WR_W10:
+	case HEX_REG_HVX_WR_V21_20:
 		return "V21:20";
-	case HEX_REG_HVX_WR_W11:
+	case HEX_REG_HVX_WR_V23_22:
 		return "V23:22";
-	case HEX_REG_HVX_WR_W12:
+	case HEX_REG_HVX_WR_V25_24:
 		return "V25:24";
-	case HEX_REG_HVX_WR_W13:
+	case HEX_REG_HVX_WR_V27_26:
 		return "V27:26";
-	case HEX_REG_HVX_WR_W14:
+	case HEX_REG_HVX_WR_V29_28:
 		return "V29:28";
-	case HEX_REG_HVX_WR_W15:
+	case HEX_REG_HVX_WR_V31_30:
 		return "V31:30";
 	}
 }
 
-char *hex_get_int_regs(int opcode_reg) {
+char *hex_get_int_regs(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
+	default: return "<err>";
 	case HEX_REG_INT_REGS_R0:
 		return "R0";
 	case HEX_REG_INT_REGS_R1:
@@ -530,18 +518,17 @@ char *hex_get_int_regs(int opcode_reg) {
 	case HEX_REG_INT_REGS_R11:
 		return "R11";
 	case HEX_REG_INT_REGS_R29:
-		return "R29";
+		return get_alias ? "SP" : "R29";
 	case HEX_REG_INT_REGS_R30:
-		return "R30";
+		return get_alias ? "FP" : "R30";
 	case HEX_REG_INT_REGS_R31:
-		return "R31";
+		return get_alias ? "LR" : "R31";
 	}
 }
 
-char *hex_get_int_regs_low8(int opcode_reg) {
+char *hex_get_int_regs_low8(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
+	default: return "<err>";
 	case HEX_REG_INT_REGS_LOW8_R7:
 		return "R7";
 	case HEX_REG_INT_REGS_LOW8_R6:
@@ -561,23 +548,20 @@ char *hex_get_int_regs_low8(int opcode_reg) {
 	}
 }
 
-char *hex_get_mod_regs(int opcode_reg) {
+char *hex_get_mod_regs(int opcode_reg, bool get_alias) {
 	opcode_reg |= 6;
-
 	switch (opcode_reg) {
-	default:
-		return "<err>";
-	case HEX_REG_MOD_REGS_M0:
-		return "M0";
-	case HEX_REG_MOD_REGS_M1:
-		return "M1";
+	default: return "<err>";
+	case HEX_REG_MOD_REGS_C6:
+		return get_alias ? "M0" : "C6";
+	case HEX_REG_MOD_REGS_C7:
+		return get_alias ? "M1" : "C7";
 	}
 }
 
-char *hex_get_pred_regs(int opcode_reg) {
+char *hex_get_pred_regs(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
+	default: return "<err>";
 	case HEX_REG_PRED_REGS_P0:
 		return "P0";
 	case HEX_REG_PRED_REGS_P1:
@@ -589,32 +573,31 @@ char *hex_get_pred_regs(int opcode_reg) {
 	}
 }
 
-char *hex_get_sys_regs(int opcode_reg) {
+char *hex_get_sys_regs(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
-	case HEX_REG_SYS_REGS_SGP0:
-		return "SGP0";
-	case HEX_REG_SYS_REGS_SGP1:
-		return "SGP1";
-	case HEX_REG_SYS_REGS_STID:
-		return "STID";
-	case HEX_REG_SYS_REGS_ELR:
-		return "ELR";
-	case HEX_REG_SYS_REGS_BADVA0:
-		return "BADVA0";
-	case HEX_REG_SYS_REGS_BADVA1:
-		return "BADVA1";
-	case HEX_REG_SYS_REGS_SSR:
-		return "SSR";
-	case HEX_REG_SYS_REGS_CCR:
-		return "CCR";
-	case HEX_REG_SYS_REGS_HTID:
-		return "HTID";
-	case HEX_REG_SYS_REGS_BADVA:
-		return "BADVA";
-	case HEX_REG_SYS_REGS_IMASK:
-		return "IMASK";
+	default: return "<err>";
+	case HEX_REG_SYS_REGS_S0:
+		return get_alias ? "SGP0" : "S0";
+	case HEX_REG_SYS_REGS_S1:
+		return get_alias ? "SGP1" : "S1";
+	case HEX_REG_SYS_REGS_S2:
+		return get_alias ? "STID" : "S2";
+	case HEX_REG_SYS_REGS_S3:
+		return get_alias ? "ELR" : "S3";
+	case HEX_REG_SYS_REGS_S4:
+		return get_alias ? "BADVA0" : "S4";
+	case HEX_REG_SYS_REGS_S5:
+		return get_alias ? "BADVA1" : "S5";
+	case HEX_REG_SYS_REGS_S6:
+		return get_alias ? "SSR" : "S6";
+	case HEX_REG_SYS_REGS_S7:
+		return get_alias ? "CCR" : "S7";
+	case HEX_REG_SYS_REGS_S8:
+		return get_alias ? "HTID" : "S8";
+	case HEX_REG_SYS_REGS_S9:
+		return get_alias ? "BADVA" : "S9";
+	case HEX_REG_SYS_REGS_S10:
+		return get_alias ? "IMASK" : "S10";
 	case HEX_REG_SYS_REGS_S11:
 		return "S11";
 	case HEX_REG_SYS_REGS_S12:
@@ -626,61 +609,61 @@ char *hex_get_sys_regs(int opcode_reg) {
 	case HEX_REG_SYS_REGS_S15:
 		return "S15";
 	case HEX_REG_SYS_REGS_S19:
-		return "S19";
+		return get_alias ? "S19" : "S19";
 	case HEX_REG_SYS_REGS_S23:
 		return "S23";
 	case HEX_REG_SYS_REGS_S25:
 		return "S25";
-	case HEX_REG_SYS_REGS_EVB:
-		return "EVB";
-	case HEX_REG_SYS_REGS_MODECTL:
-		return "MODECTL";
-	case HEX_REG_SYS_REGS_SYSCFG:
-		return "SYSCFG";
+	case HEX_REG_SYS_REGS_S16:
+		return get_alias ? "EVB" : "S16";
+	case HEX_REG_SYS_REGS_S17:
+		return get_alias ? "MODECTL" : "S17";
+	case HEX_REG_SYS_REGS_S18:
+		return get_alias ? "SYSCFG" : "S18";
 	case HEX_REG_SYS_REGS_S20:
-		return "S20";
-	case HEX_REG_SYS_REGS_VID:
-		return "VID";
+		return get_alias ? "S20" : "S20";
+	case HEX_REG_SYS_REGS_S21:
+		return get_alias ? "VID" : "S21";
 	case HEX_REG_SYS_REGS_S22:
-		return "S22";
+		return get_alias ? "S22" : "S22";
 	case HEX_REG_SYS_REGS_S24:
 		return "S24";
 	case HEX_REG_SYS_REGS_S26:
 		return "S26";
-	case HEX_REG_SYS_REGS_CFGBASE:
-		return "CFGBASE";
-	case HEX_REG_SYS_REGS_DIAG:
-		return "DIAG";
-	case HEX_REG_SYS_REGS_REV:
-		return "REV";
-	case HEX_REG_SYS_REGS_PCYCLEHI:
-		return "PCYCLEHI";
-	case HEX_REG_SYS_REGS_PCYCLELO:
-		return "PCYCLELO";
-	case HEX_REG_SYS_REGS_ISDBST:
-		return "ISDBST";
-	case HEX_REG_SYS_REGS_ISDBCFG0:
-		return "ISDBCFG0";
-	case HEX_REG_SYS_REGS_ISDBCFG1:
-		return "ISDBCFG1";
+	case HEX_REG_SYS_REGS_S27:
+		return get_alias ? "CFGBASE" : "S27";
+	case HEX_REG_SYS_REGS_S28:
+		return get_alias ? "DIAG" : "S28";
+	case HEX_REG_SYS_REGS_S29:
+		return get_alias ? "REV" : "S29";
+	case HEX_REG_SYS_REGS_S31:
+		return get_alias ? "PCYCLEHI" : "S31";
+	case HEX_REG_SYS_REGS_S30:
+		return get_alias ? "PCYCLELO" : "S30";
+	case HEX_REG_SYS_REGS_S32:
+		return get_alias ? "ISDBST" : "S32";
+	case HEX_REG_SYS_REGS_S33:
+		return get_alias ? "ISDBCFG0" : "S33";
+	case HEX_REG_SYS_REGS_S34:
+		return get_alias ? "ISDBCFG1" : "S34";
 	case HEX_REG_SYS_REGS_S35:
 		return "S35";
-	case HEX_REG_SYS_REGS_BRKPTPC0:
-		return "BRKPTPC0";
-	case HEX_REG_SYS_REGS_BRKPTCFG0:
-		return "BRKPTCFG0";
-	case HEX_REG_SYS_REGS_BRKPTPC1:
-		return "BRKPTPC1";
-	case HEX_REG_SYS_REGS_BRKPTCFG1:
-		return "BRKPTCFG1";
-	case HEX_REG_SYS_REGS_ISDBMBXIN:
-		return "ISDBMBXIN";
-	case HEX_REG_SYS_REGS_ISDBMBXOUT:
-		return "ISDBMBXOUT";
-	case HEX_REG_SYS_REGS_ISDBEN:
-		return "ISDBEN";
-	case HEX_REG_SYS_REGS_ISDBGPR:
-		return "ISDBGPR";
+	case HEX_REG_SYS_REGS_S36:
+		return get_alias ? "BRKPTPC0" : "S36";
+	case HEX_REG_SYS_REGS_S37:
+		return get_alias ? "BRKPTCFG0" : "S37";
+	case HEX_REG_SYS_REGS_S38:
+		return get_alias ? "BRKPTPC1" : "S38";
+	case HEX_REG_SYS_REGS_S39:
+		return get_alias ? "BRKPTCFG1" : "S39";
+	case HEX_REG_SYS_REGS_S40:
+		return get_alias ? "ISDBMBXIN" : "S40";
+	case HEX_REG_SYS_REGS_S41:
+		return get_alias ? "ISDBMBXOUT" : "S41";
+	case HEX_REG_SYS_REGS_S42:
+		return get_alias ? "ISDBEN" : "S42";
+	case HEX_REG_SYS_REGS_S43:
+		return get_alias ? "ISDBGPR" : "S43";
 	case HEX_REG_SYS_REGS_S44:
 		return "S44";
 	case HEX_REG_SYS_REGS_S45:
@@ -689,18 +672,18 @@ char *hex_get_sys_regs(int opcode_reg) {
 		return "S46";
 	case HEX_REG_SYS_REGS_S47:
 		return "S47";
-	case HEX_REG_SYS_REGS_PMUCNT0:
-		return "PMUCNT0";
-	case HEX_REG_SYS_REGS_PMUCNT1:
-		return "PMUCNT1";
-	case HEX_REG_SYS_REGS_PMUCNT2:
-		return "PMUCNT2";
-	case HEX_REG_SYS_REGS_PMUCNT3:
-		return "PMUCNT3";
-	case HEX_REG_SYS_REGS_PMUEVTCFG:
-		return "PMUEVTCFG";
-	case HEX_REG_SYS_REGS_PMUCFG:
-		return "PMUCFG";
+	case HEX_REG_SYS_REGS_S48:
+		return get_alias ? "PMUCNT0" : "S48";
+	case HEX_REG_SYS_REGS_S49:
+		return get_alias ? "PMUCNT1" : "S49";
+	case HEX_REG_SYS_REGS_S50:
+		return get_alias ? "PMUCNT2" : "S50";
+	case HEX_REG_SYS_REGS_S51:
+		return get_alias ? "PMUCNT3" : "S51";
+	case HEX_REG_SYS_REGS_S52:
+		return get_alias ? "PMUEVTCFG" : "S52";
+	case HEX_REG_SYS_REGS_S53:
+		return get_alias ? "PMUCFG" : "S53";
 	case HEX_REG_SYS_REGS_S54:
 		return "S54";
 	case HEX_REG_SYS_REGS_S55:
@@ -758,18 +741,17 @@ char *hex_get_sys_regs(int opcode_reg) {
 	}
 }
 
-char *hex_get_sys_regs64(int opcode_reg) {
+char *hex_get_sys_regs64(int opcode_reg, bool get_alias) {
 	switch (opcode_reg) {
-	default:
-		return "<err>";
-	case HEX_REG_SYS_REGS64_SGP1_0:
-		return "S1:0";
+	default: return "<err>";
+	case HEX_REG_SYS_REGS64_S1_0:
+		return get_alias ? "SGP1:0" : "S1:0";
 	case HEX_REG_SYS_REGS64_S3_2:
 		return "S3:2";
 	case HEX_REG_SYS_REGS64_S5_4:
-		return "S5:4";
+		return get_alias ? "BADVA1:0" : "S5:4";
 	case HEX_REG_SYS_REGS64_S7_6:
-		return "S7:6";
+		return get_alias ? "CCR:SSR" : "S7:6";
 	case HEX_REG_SYS_REGS64_S9_8:
 		return "S9:8";
 	case HEX_REG_SYS_REGS64_S11_10:
@@ -793,7 +775,7 @@ char *hex_get_sys_regs64(int opcode_reg) {
 	case HEX_REG_SYS_REGS64_S29_28:
 		return "S29:28";
 	case HEX_REG_SYS_REGS64_S31_30:
-		return "S31:30";
+		return get_alias ? "PCYCLE" : "S31:30";
 	case HEX_REG_SYS_REGS64_S33_32:
 		return "S33:32";
 	case HEX_REG_SYS_REGS64_S35_34:

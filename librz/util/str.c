@@ -858,16 +858,23 @@ RZ_API int rz_str_ccpy(char *dst, char *src, int ch) {
 	return i;
 }
 
-RZ_API char *rz_str_ndup(const char *ptr, int len) {
-	if (len < 0) {
+/**
+ * \brief Create new copy of string \p ptr limited to size \p len
+ * \param[in] ptr String to create new copy from
+ * \param[in] len Upper limit for new string size
+ * \return New copy of string \p ptr with size limited by \p len or NULL if \p ptr is NULL
+ */
+RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len) {
+	if (!ptr || len < 0) {
 		return NULL;
 	}
-	char *out = malloc(len + 1);
+	const size_t str_len = rz_str_nlen(ptr, len);
+	char *out = malloc(str_len + 1);
 	if (!out) {
 		return NULL;
 	}
-	strncpy(out, ptr, len);
-	out[len] = 0;
+	memcpy(out, ptr, str_len);
+	out[str_len] = 0;
 	return out;
 }
 
@@ -2189,12 +2196,14 @@ RZ_API void rz_str_filter_zeroline(char *str, int len) {
 	str[i] = 0;
 }
 
-RZ_API void rz_str_filter(char *str, int len) {
+/**
+ * \brief Convert all non-printable characters in \p str with '.'
+ *
+ * \param str String to make printable.
+ */
+RZ_API void rz_str_filter(char *str) {
 	size_t i;
-	if (len < 1) {
-		len = strlen(str);
-	}
-	for (i = 0; i < len; i++) {
+	for (i = 0; str[i]; i++) {
 		if (!IS_PRINTABLE(str[i])) {
 			str[i] = '.';
 		}

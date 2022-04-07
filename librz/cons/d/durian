@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: 2022 Florian Märkl <info@florianmaerkl.de>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+# Based on Armin Ronacher's summerfruit.vim
+# https://www.vim.org/scripts/script.php?script_id=1872
+
+ec ai.exec ""
+ec ai.read ""
+ec ai.write ""
+ec args rgb:0086d2
+ec b0x00 rgb:70796b
+ec b0x7f rgb:70796b
+ec b0xff rgb:abb0b6
+ec btext rgb:fb660a
+ec creg rgb:fb660a
+ec flag rgb:ff0086
+ec fline rgb:70796b
+ec flow rgb:70796b
+ec flow2 rgb:70796b
+ec fname rgb:fb660a
+ec graph.traced rgb:2eb
+ec graph.box rgb:70796b
+ec graph.box2 rgb:ff6a00
+ec graph.box3 rgb:66d9ef
+ec graph.box4 rgb:66d9ef
+ec graph.current rgb:fff
+ec graph.false rgb:ff0086
+ec graph.true rgb:22a21f
+ec graph.ujump rgb:0086d2
+ec help rgb:22a21f
+ec input rgb:fb660a
+ec jmp rgb:ff7733
+ec label rgb:ff0086
+ec linehl rgb:f00 rgb:b7dce8
+ec mov rgb:0086f7
+ec nop rgb:70796b
+ec num rgb:0086f7
+ec offset rgb:0086d2
+ec other rgb:70796b
+ec prompt rgb:0086d2
+ec call rgb:ff7733 "" bold
+ec reg ""
+ec ret rgb:fb660a
+ec swi rgb:0086f7
+ec trap rgb:ff0086
+ec cmp rgb:0086f7
+ec push rgb:0086f7
+ec math rgb:0086f7
+ec bin rgb:0086f7
+ec pop rgb:0086f7
+ec cjmp rgb:ff7733
+ec ucall rgb:ff7733 "" bold
+ec ujmp rgb:ff7733
+ec comment rgb:22a21f
+ec usrcmt rgb:22a21f
+
+ec func_var rgb:22a21f
+ec func_var_type rgb:fd8900
+ec func_var_addr rgb:0086d2
+
+ec widget_bg rgb:888 rgb:000
+ec widget_sel rgb:5de rgb:333

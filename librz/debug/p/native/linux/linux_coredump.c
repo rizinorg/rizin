@@ -929,8 +929,7 @@ void *linux_get_xsave_data(RzDebug *dbg, int tid, ut32 size) {
 	}
 	transfer.iov_base = xsave_data;
 	transfer.iov_len = size;
-	if (rz_debug_ptrace(dbg, PTRACE_GETREGSET, tid, (void *)NT_X86_XSTATE, &transfer) < 0) {
-		perror("linux_get_xsave_data");
+	if (rz_debug_ptrace_get_x86_xstate(dbg, tid, &transfer) < 0) {
 		free(xsave_data);
 		return NULL;
 	}
@@ -1339,8 +1338,7 @@ static int get_xsave_size(RzDebug *dbg, int pid) {
 	We could also check this by cpuid instruction https://en.wikipedia.org/wiki/CPUID#EAX.3D1:_Processor_Info_and_Feature_Bits*/
 	local.iov_base = xstate_hdr;
 	local.iov_len = sizeof(xstate_hdr);
-	if (rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)NT_X86_XSTATE, &local) < 0) {
-		perror("NT_X86_XSTATE");
+	if (rz_debug_ptrace_get_x86_xstate(dbg, pid, &local) < 0) {
 		return 0;
 	}
 

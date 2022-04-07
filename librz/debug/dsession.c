@@ -590,7 +590,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 		baby = rz_json_get(child, "arena");
 		CHECK_TYPE(baby, RZ_JSON_INTEGER);
 		int arena = baby->num.s_value;
-		if (arena < RZ_REG_TYPE_GPR || arena > RZ_REG_TYPE_SEG) {
+		if (arena < RZ_REG_TYPE_GPR || arena >= RZ_REG_TYPE_LAST) {
 			continue;
 		}
 		baby = rz_json_get(child, "size");
