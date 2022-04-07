@@ -2702,6 +2702,7 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_except_handler(RzCore *core, int a
 RZ_IPI RzCmdStatus rz_analysis_continue_until_breakpoint_handler(RzCore *core, int argc, const char **argv) {
 	if (!rz_core_esil_continue_back(core)) {
 		RZ_LOG_ERROR("cannnot continue back\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_reg_update_flags(core);
 	return RZ_CMD_STATUS_OK;
