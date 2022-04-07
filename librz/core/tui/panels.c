@@ -4761,9 +4761,6 @@ void __panels_refresh(RzCore *core) {
 		rz_core_gadget_print(core);
 	}
 	rz_cons_flush();
-	if (rz_cons_singleton()->fps) {
-		rz_cons_print_fps(40);
-	}
 }
 
 void __do_panels_resize(RzCore *core) {

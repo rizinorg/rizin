@@ -563,7 +563,6 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.enable_highlight = true;
 	I.highlight = NULL;
 	I.is_wine = -1;
-	I.fps = 0;
 	I.blankline = true;
 	I.teefile = NULL;
 	I.fix_columns = 0;
@@ -1049,40 +1048,6 @@ RZ_API void rz_cons_visual_flush(void) {
 #endif
 	}
 	rz_cons_reset();
-	if (I.fps) {
-		rz_cons_print_fps(0);
-	}
-}
-
-RZ_API void rz_cons_print_fps(int col) {
-	int fps = 0, w = rz_cons_get_size(NULL);
-	static ut64 prev = 0LL; // rz_time_now_mono ();
-	fps = 0;
-	if (prev) {
-		ut64 now = rz_time_now_mono();
-		st64 diff = (st64)(now - prev);
-		if (diff < 0) {
-			fps = 0;
-		} else {
-			fps = (diff < 1000000) ? (1000000.0 / diff) : 0;
-		}
-		prev = now;
-	} else {
-		prev = rz_time_now_mono();
-	}
-	if (col < 1) {
-		col = 12;
-	}
-#ifdef __WINDOWS__
-	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
-		eprintf("\x1b[0;%dH[%d FPS] \n", w - col, fps);
-	} else {
-		rz_cons_w32_gotoxy(2, w - col, 0);
-		eprintf(" [%d FPS] \n", fps);
-	}
-#else
-	eprintf("\x1b[0;%dH[%d FPS] \n", w - col, fps);
-#endif
 }
 
 static int real_strlen(const char *ptr, int len) {
