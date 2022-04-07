@@ -76,7 +76,7 @@ static inline RzILOpEffect *sh_il_assign_signed_imm(const char *reg, ut8 imm) {
 /**
  * Unknown instruction
  */
-static RzILOpEffect *sh_il_unk(SHOp *op, SHOp *next_op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_unk(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return NULL; // rz_il_op_new_nop();
 }
 
@@ -85,7 +85,7 @@ static RzILOpEffect *sh_il_unk(SHOp *op, SHOp *next_op, ut64 pc, RzAnalysis *ana
  * imm -> sign extension -> Rn
  * 1110nnnniiiiiiii
  */
-static RzILOpEffect *sh_il_mov(SHOp *op, SHOp *next_op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_mov(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	ut8 reg = op->param[1];
 	sh_return_val_if_invalid_gpr(reg, NULL);
 
@@ -94,7 +94,7 @@ static RzILOpEffect *sh_il_mov(SHOp *op, SHOp *next_op, ut64 pc, RzAnalysis *ana
 
 #include <rz_il/rz_il_opbuilder_end.h>
 
-typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, SHOp *next_op, ut64 pc, RzAnalysis *analysis);
+typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
 
 static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_unk,
