@@ -10,6 +10,9 @@
  * Converts SuperH-4 instructions to RzIL statements
  * References:
  *  - https://www.st.com/resource/en/user_manual/cd00147165-sh-4-32-bit-cpu-core-architecture-stmicroelectronics.pdf (SH-4 32-bit architecture manual)
+ *  - https://www.renesas.com/in/en/document/mas/sh-4-software-manual?language=en (SH-4 manual by Renesas)
+ *
+ * Both the above references are almost the same
  */
 
 #define SH_REG_SIZE   32
@@ -61,12 +64,12 @@ static char *sh_registers[] = {
 
 /* Utilities */
 
-static inline RzILOpEffect *sh_il_assign_imm(const char *reg, ut8 imm) {
+static inline RzILOpEffect *sh_il_assign_imm(const char *reg, ut64 imm) {
 	RzILOpBitVector *_bv = UN(SH_REG_SIZE, imm);
 	return SETG(reg, _bv);
 }
 
-static inline RzILOpEffect *sh_il_assign_signed_imm(const char *reg, ut8 imm) {
+static inline RzILOpEffect *sh_il_assign_signed_imm(const char *reg, st64 imm) {
 	RzILOpBitVector *_bv = SN(SH_REG_SIZE, (st8)imm);
 	return SETG(reg, _bv);
 }
@@ -92,11 +95,25 @@ static RzILOpEffect *sh_il_mov(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_assign_signed_imm(sh_registers[reg], op->param[0]);
 }
 
+/**
+ * MOV.W	@(disp, PC), Rn
+ * (disp * 2 + PC + 4) -> sign extension -> Rn
+ * 1001nnnndddddddd
+ */
+static RzILOpEffect *sh_il_movw(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	ut8 reg = op->param[1];
+	sh_return_val_if_invalid_gpr(reg, NULL);
+	ut64 addr = 2LL * op->param[0] + pc + 4;
+
+	return sh_il_assign_signed_imm(sh_registers[reg], addr);
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
 
 static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_unk,
-	sh_il_mov
+	sh_il_mov,
+	sh_il_movw
 };
