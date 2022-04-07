@@ -228,22 +228,6 @@ static const char *help_msg_aea[] = {
 	NULL
 };
 
-static const char *help_msg_aec[] = {
-	"Examples:", "aec", " continue until ^c",
-	"aec", "", "Continue until exception",
-	"aecs", "", "Continue until syscall",
-	"aecc", "", "Continue until call",
-	"aecu", "[addr]", "Continue until address",
-	"aecue", "[addr]", "Continue until esil expression",
-	NULL
-};
-
-static const char *help_msg_aeC[] = {
-	"Examples:", "aeC", " arg0 arg1 ... @ calladdr",
-	"aeC", " 1 2 @ sym._add", "Call sym._add(1,2)",
-	NULL
-};
-
 static const char *help_msg_aets[] = {
 	"Usage:", "aets ", " [...]",
 	"aets+", "", "Start ESIL trace session",
@@ -2742,6 +2726,112 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	return true;
 }
 
+RZ_IPI RzCmdStatus rz_analysis_appcall_handler(RzCore *core, int argc, const char **argv){
+    for (int i = 1; i <argc; ++i)
+    {
+        const char *alias = sdb_fmt("A%d", i-1);
+        rz_reg_setv(core->analysis->reg, alias, rz_num_math(core->num, argv[i]));
+    }
+
+    ut64 sp = rz_reg_getv(core->analysis->reg, "SP");
+    rz_reg_setv(core->analysis->reg, "SP", 0);
+
+    rz_reg_setv(core->analysis->reg, "PC", core->offset);
+    rz_core_esil_step(core, 0, NULL, NULL, false);
+    rz_core_reg_update_flags(core);
+
+    rz_reg_setv(core->analysis->reg, "SP", sp);
+    return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_continue_until_except_handler(RzCore *core, int argc, const char **argv){
+    rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
+    rz_core_reg_update_flags(core);
+    return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int argc, const char **argv){
+    const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+    RzAnalysisOp *op;
+    for (;;)
+    {
+        if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false))
+        {
+            break;
+        }
+        rz_core_reg_update_flags(core);
+        ut64 addr = rz_num_get(core->num, pc);
+        op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+        if (!op)
+        {
+            break;
+        }
+        if (op->type == RZ_ANALYSIS_OP_TYPE_SWI)
+        {
+            RZ_LOG_ERROR("syscall at 0x%08" PFMT64x "\n", addr);
+            break;
+        }
+        else if (op->type == RZ_ANALYSIS_OP_TYPE_TRAP)
+        {
+            RZ_LOG_ERROR("trap at 0x%08" PFMT64x "\n", addr);
+            break;
+        }
+        rz_analysis_op_free(op);
+        op = NULL;
+        if (core->analysis->esil->trap || core->analysis->esil->trap_code)
+        {
+            break;
+        }
+    }
+    if (op) {
+        rz_analysis_op_free(op);
+        op = NULL;
+    }
+    return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int argc, const char **argv){
+    const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+    RzAnalysisOp *op;
+    for (;;) {
+        if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
+            break;
+        }
+        rz_core_reg_update_flags(core);
+        ut64 addr = rz_num_get(core->num, pc);
+        op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
+        if (!op) {
+            break;
+        }
+        if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
+            eprintf("call at 0x%08" PFMT64x "\n", addr);
+            break;
+        }
+        rz_analysis_op_free(op);
+        op = NULL;
+        if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
+            break;
+        }
+    }
+    if (op) {
+        rz_analysis_op_free(op);
+        op = NULL;
+    }
+    return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_continue_until_addr_handler(RzCore *core, int argc, const char **argv){
+    rz_core_esil_step(core, rz_num_math(core->num, argv[1]), NULL, NULL, false);
+    rz_core_reg_update_flags(core);
+    return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_continue_until_esil_handler(RzCore *core, int argc, const char **argv){
+    rz_core_esil_step(core, UT64_MAX, argv[1], NULL, false);
+    rz_core_reg_update_flags(core);
+    return RZ_CMD_STATUS_OK;
+}
+
 static const char _handler_no_name[] = "<no name>";
 static bool _aeli_iter(void *user, const ut64 key, const void *value) {
 	const RzAnalysisEsilInterrupt *interrupt = value;
@@ -2782,31 +2872,6 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 	// the logic of identifying args by function types and
 	// show json format and arg name goes into arA
 	rz_core_cmd0(core, "arA");
-}
-
-static void __core_analysis_appcall(RzCore *core, const char *input) {
-	//	rz_reg_arena_push (core->dbg->reg);
-	RzListIter *iter;
-	char *arg;
-	char *inp = strdup(input);
-	RzList *args = rz_str_split_list(inp, " ", 0);
-	int i = 0;
-	rz_list_foreach (args, iter, arg) {
-		const char *alias = sdb_fmt("A%d", i);
-		rz_reg_setv(core->analysis->reg, alias, rz_num_math(core->num, arg));
-		i++;
-	}
-	ut64 sp = rz_reg_getv(core->analysis->reg, "SP");
-	rz_reg_setv(core->analysis->reg, "SP", 0);
-
-	rz_reg_setv(core->analysis->reg, "PC", core->offset);
-	rz_core_esil_step(core, 0, NULL, NULL, false);
-	rz_core_reg_update_flags(core);
-
-	rz_reg_setv(core->analysis->reg, "SP", sp);
-	free(inp);
-
-	//	rz_reg_arena_pop (core->dbg->reg);
 }
 
 RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil) {
@@ -2887,7 +2952,6 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 
 static void cmd_analysis_esil(RzCore *core, const char *input) {
 	RzAnalysisEsil *esil = core->analysis->esil;
-	ut64 addr = core->offset;
 	ut64 adr;
 	char *n, *n1;
 	int off;
@@ -2900,7 +2964,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
 
 	const char *until_expr = NULL;
-	RzAnalysisOp *op = NULL;
 
 	switch (input[0]) {
 	case 'p':
@@ -3070,91 +3133,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
 			rz_core_reg_update_flags(core);
 			break;
-		}
-		break;
-	case 'C': // "aeC"
-		if (input[1] == '?') { // "aec?"
-			rz_core_cmd_help(core, help_msg_aeC);
-		} else {
-			__core_analysis_appcall(core, rz_str_trim_head_ro(input + 1));
-		}
-		break;
-	case 'c': // "aec"
-		if (input[1] == '?') { // "aec?"
-			rz_core_cmd_help(core, help_msg_aec);
-		} else if (input[1] == 'b') { // "aecb"
-			if (!rz_core_esil_continue_back(core)) {
-				eprintf("cannnot continue back\n");
-			}
-			rz_core_reg_update_flags(core);
-			break;
-		} else if (input[1] == 's') { // "aecs"
-			const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-			for (;;) {
-				if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-					break;
-				}
-				rz_core_reg_update_flags(core);
-				addr = rz_num_get(core->num, pc);
-				op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-				if (!op) {
-					break;
-				}
-				if (op->type == RZ_ANALYSIS_OP_TYPE_SWI) {
-					eprintf("syscall at 0x%08" PFMT64x "\n", addr);
-					break;
-				} else if (op->type == RZ_ANALYSIS_OP_TYPE_TRAP) {
-					eprintf("trap at 0x%08" PFMT64x "\n", addr);
-					break;
-				}
-				rz_analysis_op_free(op);
-				op = NULL;
-				if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-					break;
-				}
-			}
-			if (op) {
-				rz_analysis_op_free(op);
-				op = NULL;
-			}
-		} else if (input[1] == 'c') { // "aecc"
-			const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-			for (;;) {
-				if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-					break;
-				}
-				rz_core_reg_update_flags(core);
-				addr = rz_num_get(core->num, pc);
-				op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
-				if (!op) {
-					break;
-				}
-				if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
-					eprintf("call at 0x%08" PFMT64x "\n", addr);
-					break;
-				}
-				rz_analysis_op_free(op);
-				op = NULL;
-				if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-					break;
-				}
-			}
-			if (op) {
-				rz_analysis_op_free(op);
-			}
-		} else {
-			// "aec"  -> continue until ^C
-			// "aecu" -> until address
-			// "aecue" -> until esil expression
-			if (input[1] == 'u' && input[2] == 'e') {
-				until_expr = input + 3;
-			} else if (input[1] == 'u') {
-				until_addr = rz_num_math(core->num, input + 2);
-			} else {
-				until_expr = "0";
-			}
-			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			rz_core_reg_update_flags(core);
 		}
 		break;
 	case 'i': // "aei"

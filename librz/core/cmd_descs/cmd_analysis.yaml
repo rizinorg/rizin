@@ -512,6 +512,46 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
             args: []
+  - name: aeC
+    summary: appcall in esil
+    cname: analysis_appcall
+    args:
+      - name: args
+        type: RZ_CMD_ARG_TYPE_NUM
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+    details:
+      - name: Examples
+        entries:
+          - text: aeC
+            arg_str: " 1 2 @ sym._add"
+            comment: Call sym._add(1,2)
+  - name: aec
+    summary: continue until ^C
+    subcommands:
+      - name: aec
+        summary: Continue until exception
+        cname: analysis_continue_until_except
+        args: []
+      - name: aecs
+        summary: Continue until syscall
+        cname: analysis_continue_until_syscall
+        args: []
+      - name: aecc
+        summary: Continue until call
+        cname: analysis_continue_until_call
+        args: []
+      - name: aecu
+        summary: Continue until address
+        cname: analysis_continue_until_addr
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: aecue
+        summary: Continue until esil expression
+        cname: analysis_continue_until_esil
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_STRING
   - name: aez
     summary: RzIL Emulation
     type: RZ_CMD_DESC_TYPE_GROUP

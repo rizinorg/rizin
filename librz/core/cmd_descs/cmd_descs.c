@@ -13,6 +13,7 @@ static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail analysis_all_esil_details[2];
+static const RzCmdDescDetail analysis_appcall_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
 static const RzCmdDescDetail analysis_hint_set_arch_details[2];
@@ -119,6 +120,9 @@ static const RzCmdDescArg analysis_function_import_list_args[2];
 static const RzCmdDescArg analysis_function_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_rename_args[2];
+static const RzCmdDescArg analysis_appcall_args[2];
+static const RzCmdDescArg analysis_continue_until_addr_args[2];
+static const RzCmdDescArg analysis_continue_until_esil_args[2];
 static const RzCmdDescArg il_vm_step_args[2];
 static const RzCmdDescArg il_vm_step_with_events_args[2];
 static const RzCmdDescArg il_vm_step_until_addr_args[2];
@@ -2020,6 +2024,83 @@ static const RzCmdDescArg analysis_function_strings_args[] = {
 static const RzCmdDescHelp analysis_function_strings_help = {
 	.summary = "Print all strings referenced by the function in current seek",
 	.args = analysis_function_strings_args,
+};
+
+static const RzCmdDescDetailEntry analysis_appcall_Examples_detail_entries[] = {
+	{ .text = "aeC", .arg_str = " 1 2 @ sym._add", .comment = "Call sym._add(1,2)" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_appcall_details[] = {
+	{ .name = "Examples", .entries = analysis_appcall_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_appcall_args[] = {
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_appcall_help = {
+	.summary = "appcall in esil",
+	.details = analysis_appcall_details,
+	.args = analysis_appcall_args,
+};
+
+static const RzCmdDescHelp aec_help = {
+	.summary = "continue until ^C",
+};
+static const RzCmdDescArg analysis_continue_until_except_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_except_help = {
+	.summary = "Continue until exception",
+	.args = analysis_continue_until_except_args,
+};
+
+static const RzCmdDescArg analysis_continue_until_syscall_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_syscall_help = {
+	.summary = "Continue until syscall",
+	.args = analysis_continue_until_syscall_args,
+};
+
+static const RzCmdDescArg analysis_continue_until_call_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_call_help = {
+	.summary = "Continue until call",
+	.args = analysis_continue_until_call_args,
+};
+
+static const RzCmdDescArg analysis_continue_until_addr_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_addr_help = {
+	.summary = "Continue until address",
+	.args = analysis_continue_until_addr_args,
+};
+
+static const RzCmdDescArg analysis_continue_until_esil_args[] = {
+	{
+		.name = "expr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_esil_help = {
+	.summary = "Continue until esil expression",
+	.args = analysis_continue_until_esil_args,
 };
 
 static const RzCmdDescHelp aez_help = {
@@ -13201,6 +13282,23 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, afn_cd, "afns", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_strings_handler, &analysis_function_strings_help);
 	rz_warn_if_fail(analysis_function_strings_cd);
+
+	RzCmdDesc *analysis_appcall_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aeC", rz_analysis_appcall_handler, &analysis_appcall_help);
+	rz_warn_if_fail(analysis_appcall_cd);
+
+	RzCmdDesc *aec_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aec", rz_analysis_continue_until_except_handler, &analysis_continue_until_except_help, &aec_help);
+	rz_warn_if_fail(aec_cd);
+	RzCmdDesc *analysis_continue_until_syscall_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecs", rz_analysis_continue_until_syscall_handler, &analysis_continue_until_syscall_help);
+	rz_warn_if_fail(analysis_continue_until_syscall_cd);
+
+	RzCmdDesc *analysis_continue_until_call_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecc", rz_analysis_continue_until_call_handler, &analysis_continue_until_call_help);
+	rz_warn_if_fail(analysis_continue_until_call_cd);
+
+	RzCmdDesc *analysis_continue_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecu", rz_analysis_continue_until_addr_handler, &analysis_continue_until_addr_help);
+	rz_warn_if_fail(analysis_continue_until_addr_cd);
+
+	RzCmdDesc *analysis_continue_until_esil_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecue", rz_analysis_continue_until_esil_handler, &analysis_continue_until_esil_help);
+	rz_warn_if_fail(analysis_continue_until_esil_cd);
 
 	RzCmdDesc *aez_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aez", NULL, NULL, &aez_help);
 	rz_warn_if_fail(aez_cd);
