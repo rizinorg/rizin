@@ -9,6 +9,7 @@
 typedef enum {
 	SH_OP_INVALID = 0,
 	SH_OP_MOV,
+	SH_OP_MOVW,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
