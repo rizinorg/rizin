@@ -625,10 +625,10 @@ RZ_API RzCons *rz_cons_new(void) {
 	return &I;
 }
 
-RZ_API RzCons *rz_cons_free(void) {
+RZ_API void rz_cons_free(void) {
 	I.refcnt--;
 	if (I.refcnt != 0) {
-		return NULL;
+		return;
 	}
 #if __WINDOWS__
 	rz_cons_enable_mouse(false);
@@ -646,7 +646,6 @@ RZ_API RzCons *rz_cons_free(void) {
 	RZ_FREE(CTX(lastOutput));
 	CTX(lastLength) = 0;
 	RZ_FREE(I.pager);
-	return NULL;
 }
 
 #define MOAR (4096 * 8)
