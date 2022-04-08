@@ -38,7 +38,6 @@ extern "C" {
  */
 
 typedef int (*RzPVectorComparator)(const void *a, const void *b);
-typedef int (*RzVectorComparator)(const void *a, const void *b);
 typedef void (*RzVectorFree)(void *e, void *user);
 typedef void (*RzPVectorFree)(void *e);
 
@@ -153,9 +152,6 @@ RZ_API void *rz_vector_shrink(RzVector *vec);
  * intermediate step to generate a fixed-size array in the end.
  */
 RZ_API void *rz_vector_flush(RzVector *vec);
-
-// sort vector
-RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse);
 
 /*
  * example:
