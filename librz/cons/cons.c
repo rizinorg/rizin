@@ -628,7 +628,7 @@ RZ_API RzCons *rz_cons_new(void) {
 RZ_API RzCons *rz_cons_free(void) {
 	I.refcnt--;
 	if (I.refcnt != 0) {
-		return NULL;
+		return &I;
 	}
 #if __WINDOWS__
 	rz_cons_enable_mouse(false);
