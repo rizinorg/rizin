@@ -12,7 +12,11 @@
 #include <propeller_disas.h>
 
 static int propeller_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(analysis && op && buf && len >= 4, -1);
+	rz_return_val_if_fail(analysis && op && buf, -1);
+	if (len < 4) {
+		RZ_LOG_WARN("Couldn't disassemble instruction at 0x%x. Less than 4 bytes were provided.\n", (ut32)addr);
+		return -1;
+	}
 	int ret;
 	struct propeller_cmd cmd;
 
