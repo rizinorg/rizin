@@ -2746,7 +2746,7 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int 
 RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int argc, const char **argv) {
 	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	RzAnalysisOp *op;
-	for (;;) {
+	while (!rz_cons_is_breaked()) {
 		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
 			break;
 		}
