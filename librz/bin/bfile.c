@@ -252,6 +252,7 @@ RZ_IPI void rz_bin_file_free(void /*RzBinFile*/ *_bf) {
 		// TODO: use rz_storage api
 		rz_id_pool_kick_id(bf->rbin->ids->pool, bf->id);
 	}
+	sdb_free(bf->sdb);
 	free(bf);
 }
 
