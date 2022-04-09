@@ -142,7 +142,7 @@ typedef struct rz_bin_reloc_formular_symbols_t {
 	ut64 G; // Offset into GOT for symbol entry.
 	ut64 GOT; // Address of entry zero in GOT.
 	ut64 L; // Offset into POT for symbol entry.
-	ut64 P; // Place address of the field being relocated.
+	ut64 P; // Place address of the field being relocated. The address of the bytes to patch.
 	ut64 S; // Value of symbol.
 	ut64 TLS; // Thread-pointer-relative offset to a thread-local symbol.
 	ut64 T; // Base address of the static thread-local tmeplate that contains a thread-local symbol.
@@ -767,6 +767,51 @@ static ut64 reloc_targets_vfile_size(RzBinFile *bf, ELFOBJ *obj) {
 }
 
 /**
+ * \brief Spreads the value bits according to the bitmask and returns the result.
+ *
+ * The immediated bits in Hexagon opcodes are not sequential.
+ * If a relocation value is patched into the opcode, its bits must be aligned with bit locations in the opcode.
+ * The parameter \p bitmask indicates where the immediate bits are lcoated in the opcode.
+ *
+ * \param mask The bitmask which indicates where the value bits should be placed.
+ * \param val The relocation value.
+ * \return ut32 New value which can be patched into the opcode.
+ */
+static ut32 apply_bitmask(const ut32 mask, const ut32 val) {
+	ut32 result = 0;
+	ut32 off = 0;
+
+	for (ut32 bit = 0; bit != 32; ++bit) {
+		ut32 valBit = (val >> off) & 1;
+		ut32 maskBit = (mask >> bit) & 1;
+		if (maskBit) {
+			result |= (valBit << bit);
+			++off;
+		}
+	}
+	return result;
+}
+
+/**
+ * \brief Patches a given value into a Hexagon opcode.
+ *
+ * \param buf_patched Pointer to buffer.
+ * \param addr Address the opcode is located.
+ * \param mask The bitmask (patchable bits) of the opcode.
+ * \param val The value patched into opcode.
+ */
+static void patch_val_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut32 addr, const ut32 mask, const ut32 val) {
+	rz_return_if_fail(buf_patched);
+	ut8 buf[8] = { 0 };
+
+	rz_buf_read_at(buf_patched, addr, buf, 4);
+	ut32 opcode = rz_read_le32(buf) | apply_bitmask(mask, val);
+
+	rz_write_le32(buf, opcode);
+	rz_buf_write_at(buf_patched, addr, buf, 4);
+}
+
+/**
  * \brief Patches the opcode at a given address depending on the relocation type.
  *
  * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
@@ -775,10 +820,10 @@ static ut64 reloc_targets_vfile_size(RzBinFile *bf, ELFOBJ *obj) {
  * \param fs Formular values to calculate the new relocation value.
  */
 static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RzBinRelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && fs);
 	ut8 buf[8] = { 0 };
-	ut8 word = 0;
 	ut64 val = 0;
-	ut64 bitmask = UT64_MAX; // Mask of patched opcode bits.
+	ut64 bitmask = UT64_MAX; // Mask of value and opcode bits.
 
 	switch (rel_type) {
 	default:
@@ -790,252 +835,175 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 	case R_HEX_NONE:
 		return;
 	case R_HEX_GLOB_DAT:
-		word = 4;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_JMP_SLOT:
-		word = 4;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_RELATIVE:
-		word = 4;
 		val = (fs->B + fs->A);
 		break;
 	case R_HEX_B22_PCREL:
 		bitmask = 0x01ff3ffe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_B15_PCREL:
 		bitmask = 0x00df20fe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_B7_PCREL:
 		bitmask = 0x00001f18;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_LO16:
 		bitmask = 0x00c03fff;
-		word = 4;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_HI16:
 		bitmask = 0x00c03fff;
-		word = 4;
 		val = (fs->S + fs->A) >> 16;
 		break;
 	case R_HEX_32:
-		word = 4;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_16:
 		bitmask = 0xffff;
-		word = 2;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_8:
 		bitmask = 0xff;
-		word = 1;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_HL16:
 		bitmask = 0x00c03fff;
-		word = 4;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_B13_PCREL:
 		bitmask = 0x00202ffe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_B9_PCREL:
 		bitmask = 0x003000fe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_B32_PCREL_X:
 		bitmask = 0x0fff3fff;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) >> 6;
 		break;
 	case R_HEX_32_6_X:
 		bitmask = 0x0fff3fff;
-		word = 4;
 		val = (fs->S + fs->A) >> 6;
 		break;
 	case R_HEX_B22_PCREL_X:
 		bitmask = 0x01ff3ffe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_B15_PCREL_X:
 		bitmask = 0x00df20fe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_B13_PCREL_X:
 		bitmask = 0x00202ffe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_B9_PCREL_X:
 		bitmask = 0x003000fe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_B7_PCREL_X:
 		bitmask = 0x00001f18;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_12_X:
 		bitmask = 0x000007e0;
-		word = 4;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_32_PCREL:
-		word = 4;
 		val = (fs->S + fs->A - fs->P);
 		break;
 	case R_HEX_PLT_B22_PCREL:
 		bitmask = 0x01ff3ffe;
-		word = 4;
 		val = (fs->L + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_GOTREL_LO16:
 		bitmask = 0x00c03fff;
-		word = 4;
 		val = (fs->S + fs->A - fs->GOT);
 		break;
 	case R_HEX_GOTREL_HI16:
 		bitmask = 0x00c03fff;
-		word = 4;
 		val = (fs->S + fs->A - fs->GOT) >> 16;
 		break;
 	case R_HEX_GOTREL_32:
-		word = 4;
 		val = (fs->S + fs->A - fs->GOT);
 		break;
 	case R_HEX_GOTREL_32_6_X:
 		bitmask = 0x0fff3fff;
-		word = 4;
 		val = (fs->S + fs->A - fs->GOT) >> 6;
 		break;
 	case R_HEX_LD_PLT_B22_PCREL:
 		bitmask = 0x01ff3ffe;
-		word = 4;
 		val = (fs->L + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_GD_PLT_B22_PCREL:
 		bitmask = 0x01ff3ffe;
-		word = 4;
 		val = (fs->L + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_GD_PLT_B22_PCREL_X:
 		bitmask = 0x01ff3ffe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_GD_PLT_B32_PCREL_X:
 		bitmask = 0x0fff3fff;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) >> 6;
 		break;
 	case R_HEX_LD_PLT_B22_PCREL_X:
 		bitmask = 0x01ff3ffe;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_LD_PLT_B32_PCREL_X:
 		bitmask = 0x0fff3fff;
-		word = 4;
 		val = (fs->S + fs->A - fs->P) >> 6;
 		break;
 	case R_HEX_16_X:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
-		word = 4;
 		val = (fs->S + fs->A) & 0x3f;
 		break;
 	case R_HEX_11_X:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
-		word = 4;
 		val = (fs->S + fs->A) & 0x3f;
 		break;
 	case R_HEX_10_X:
 		bitmask = 0x00203fe0;
-		word = 4;
 		val = (fs->S + fs->A) & 0x3f;
 		break;
 	case R_HEX_9_X:
 		bitmask = 0x00003fe0;
-		word = 4;
 		val = (fs->S + fs->A) & 0x3f;
 		break;
 	case R_HEX_8_X:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r8(rz_read_le32(buf));
-		word = 4;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_6_PCREL_X:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r6(rz_read_le32(buf));
-		word = 4;
 		val = (fs->S + fs->A - fs->P);
 		break;
 	case R_HEX_6_X:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r6(rz_read_le32(buf));
-		word = 4;
 		val = (fs->S + fs->A);
 		break;
 	}
-
 	// Patch two opcodes at once.
 	if (rel_type == R_HEX_HL16) {
-		ut32 val1 = val >> 16;
-		ut32 val2 = val & 0xffffffff;
-		ut32 opcode_val1 = 0, opcode_val2 = 0, pos = 1, vpos = 1;
-		for (ut8 i = 0; i < 32; ++i) {
-			if (bitmask & pos) {
-				opcode_val1 |= (val1 & vpos);
-				opcode_val2 |= (val2 & vpos);
-				vpos = vpos << 1;
-			}
-			pos = pos << 1;
-		}
-		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
-		ut64 opcode1 = (rz_read_le64(buf) & 0xffffffff);
-		ut64 opcode2 = (rz_read_le64(buf) >> 32);
-		opcode1 &= ~bitmask;
-		opcode2 &= ~bitmask;
-		opcode1 |= opcode_val1;
-		opcode2 |= opcode_val2;
-		ut64 opcode12 = opcode1 & (opcode2 << 32);
-		rz_write_le64(buf, opcode12);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
+		patch_val_hexagon(buf_patched, patch_addr, bitmask, val & 0xffffffff);
+		patch_val_hexagon(buf_patched, patch_addr + 4, bitmask, val >> 32);
 	} else {
-		ut64 opcode_val = 0;
-		// Reposition bits of val to fit bit position in the opcode.
-		ut64 pos = 1, vpos = 1;
-
-		for (ut8 i = 0; i < word * 8; ++i) {
-			if (bitmask & pos) {
-				opcode_val |= (val & vpos);
-				vpos = vpos << 1;
-			}
-			pos = pos << 1;
-		}
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		ut32 opcode = rz_read_le32(buf);
-		opcode &= ~bitmask;
-		opcode |= opcode_val;
-		rz_write_le32(buf, opcode);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		patch_val_hexagon(buf_patched, patch_addr, bitmask, val);
 	}
 }
 
