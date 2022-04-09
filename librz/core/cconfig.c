@@ -554,7 +554,6 @@ static bool cb_asmarch(void *user, void *data) {
 		rz_config_set_i(core->config, "asm.bits", bits);
 	}
 
-	// rz_debug_set_arch (core->dbg, rz_sys_arch_id (node->value), bits);
 	rz_debug_set_arch(core->dbg, node->value, bits);
 	if (!rz_config_set(core->config, "analysis.arch", node->value)) {
 		char *p, *s = strdup(node->value);
@@ -574,10 +573,7 @@ static bool cb_asmarch(void *user, void *data) {
 	if (core->analysis) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 		const char *platform = rz_config_get(core->config, "asm.platform");
-		if (!rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos)) {
-			// eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
-			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
-		}
+		rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos);
 		update_syscall_ns(core);
 		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
 		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
@@ -586,8 +582,6 @@ static bool cb_asmarch(void *user, void *data) {
 		free(platforms_dir);
 		free(cpus_dir);
 	}
-	// if (!strcmp (node->value, "bf"))
-	//	rz_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff(core->config, node->value, core->rasm->bits);
 
 	// set a default endianness
@@ -670,13 +664,6 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
-#if 0
-// TODO: pretty good optimization, but breaks many tests when arch is different i think
-	if (bits == core->rasm->bits && bits == core->analysis->bits && bits == core->dbg->bits) {
-		// early optimization
-		return true;
-	}
-#endif
 	if (bits > 0) {
 		ret = rz_asm_set_bits(core->rasm, bits);
 		if (!ret) {
@@ -2093,12 +2080,6 @@ static bool cb_scr_gadgets(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->scr_gadgets = node->i_value;
-	return true;
-}
-
-static bool cb_fps(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->fps = node->i_value;
 	return true;
 }
 
@@ -3574,7 +3555,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("scr.dumpcols", "false", "Prefer pC commands before p ones");
 	SETCB("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
 	SETICB("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
-	SETCB("scr.fps", "false", &cb_fps, "Show FPS in Visual");
 	SETICB("scr.fix.rows", 0, &cb_fixrows, "Workaround for Linux TTY");
 	SETICB("scr.fix.columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS SSH client");
 	SETCB("scr.highlight", "", &cb_scrhighlight, "Highlight that word at RzCons level");

@@ -308,7 +308,7 @@ static ut32 avr_dddddcccc_ym(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 
 static ut32 avr_qcqqcdddddcqqq_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 q = data[0] & 0x0007;
-	ut16 Rd = ((data[0] & 0x01F0) >> 5);
+	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 	q |= ((data[0] & 0x0C00) >> 7);
 	q |= ((data[0] & 0x2000) >> 8);
 

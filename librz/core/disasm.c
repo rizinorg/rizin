@@ -141,7 +141,6 @@ typedef struct {
 	bool show_section_name;
 	bool show_symbols;
 	int show_symbols_col;
-	bool show_offseg;
 	bool show_flags;
 	bool bblined;
 	bool show_bytes;
@@ -759,7 +758,6 @@ static RzDisasmState *ds_init(RzCore *core) {
 		}
 	}
 	ds->stackptr = core->analysis->stackptr;
-	ds->show_offseg = rz_config_get_b(core->config, "asm.segoff");
 	ds->show_flags = rz_config_get_b(core->config, "asm.flags");
 	ds->show_bytes = rz_config_get_b(core->config, "asm.bytes");
 	ds->show_bytes_right = rz_config_get_b(core->config, "asm.bytes.right");
@@ -2891,12 +2889,12 @@ static void ds_print_offset(RzDisasmState *ds) {
 			int of = core->print->flags;
 			core->print->flags = 0;
 			rz_print_offset_sg(core->print, at, (at == ds->dest) || show_trace,
-				ds->show_offseg, seggrn, ds->show_offdec, delta, label);
+				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label);
 			core->print->flags = of;
 			rz_cons_strcat(Color_RESET);
 		} else {
 			rz_print_offset_sg(core->print, at, (at == ds->dest) || show_trace,
-				ds->show_offseg, seggrn, ds->show_offdec, delta, label);
+				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label);
 		}
 	}
 	if (ds->atabsoff > 0 && ds->show_offset) {
@@ -5251,6 +5249,13 @@ RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, i
 	ut8 *nbuf = NULL;
 	const int addrbytes = core->io->addrbytes;
 
+	RzConfigHold *rch = rz_config_hold_new(core->config);
+	if (!rch) {
+		return 0;
+	}
+	rz_config_hold_i(rch, "asm.bits", NULL);
+	rz_config_hold_s(rch, "asm.arch", NULL);
+
 	// TODO: All those ds must be print flags
 	RzDisasmState *ds = ds_init(core);
 	ds->cbytes = cbytes;
@@ -5267,6 +5272,8 @@ RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, i
 		ds->pj = pj ? pj : pj_new();
 		if (!ds->pj) {
 			ds_free(ds);
+			rz_config_hold_restore(rch);
+			rz_config_hold_free(rch);
 			return 0;
 		}
 		rz_cons_push();
@@ -5342,6 +5349,8 @@ toro:
 				rz_cons_pop();
 			}
 			rz_cons_break_pop();
+			rz_config_hold_restore(rch);
+			rz_config_hold_free(rch);
 			ds_free(ds);
 			return 0; // break;
 		}
@@ -5682,6 +5691,8 @@ toro:
 	// TODO: this too (must review)
 	ds_print_esil_analysis_fini(ds);
 	ds_reflines_fini(ds);
+	rz_config_hold_restore(rch);
+	rz_config_hold_free(rch);
 	ds_free(ds);
 	RZ_FREE(nbuf);
 	p->calc_row_offsets = calc_row_offsets;

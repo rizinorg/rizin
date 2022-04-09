@@ -268,6 +268,7 @@ static const char *help_msg_af[] = {
 	"afM", " name", "print functions map",
 	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
 	"aft", "[?]", "type matching, type propagation",
+	"afv", "[?]", "Manipulate arguments/variables in a function",
 	NULL
 };
 
