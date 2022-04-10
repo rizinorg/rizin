@@ -172,14 +172,10 @@ static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_star
 }
 
 static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
-	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt) {
+	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt, ut8 *strbuf) {
 
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
 
-	ut8 *tmp = malloc(opt->buf_size);
-	if (!tmp) {
-		return NULL;
-	}
 	ut64 str_addr = needle;
 	int rc, i, runes;
 
@@ -240,11 +236,11 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 					r = 0;
 				}
 			}
-			rc = rz_utf8_encode(tmp + i, r);
+			rc = rz_utf8_encode(strbuf + i, r);
 			runes++;
 		} else if (r && r < 0x100 && is_c_escape_sequence((char)r)) {
 			if ((i + 32) < opt->buf_size && r < 93) {
-				rc = rz_utf8_encode(tmp + i, r);
+				rc = rz_utf8_encode(strbuf + i, r);
 			} else {
 				// string too long
 				break;
@@ -257,18 +253,15 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	}
 
 	if (runes >= opt->min_str_length) {
-		FalsePositiveResult false_positive_result = reduce_false_positives(opt, tmp, i - 1, str_type);
+		FalsePositiveResult false_positive_result = reduce_false_positives(opt, strbuf, i - 1, str_type);
 		if (false_positive_result == SKIP_STRING) {
-			free(tmp);
 			return NULL;
 		} else if (false_positive_result == RETRY_ASCII) {
-			free(tmp);
-			return process_one_string(buf, from, str_addr, to, str_type, true, opt);
+			return process_one_string(buf, from, str_addr, to, str_type, true, opt, strbuf);
 		}
 
 		RzDetectedString *ds = RZ_NEW0(RzDetectedString);
 		if (!ds) {
-			free(tmp);
 			return NULL;
 		}
 		ds->type = str_type;
@@ -280,12 +273,10 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		ds->addr -= off_adj;
 		ds->size += off_adj;
 
-		ds->string = rz_str_ndup((const char *)tmp, i);
-		free(tmp);
+		ds->string = rz_str_ndup((const char *)strbuf, i);
 		return ds;
 	}
 
-	free(tmp);
 	return NULL;
 }
 
@@ -366,6 +357,11 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 	if (!buf) {
 		return -1;
 	}
+	ut8 *strbuf = malloc(opt->buf_size);
+	if (!strbuf) {
+		free(buf);
+		return -1;
+	}
 
 	rz_buf_read_at(buf_to_scan, from, buf, len);
 
@@ -385,8 +381,8 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 			} else if (can_be_utf32_be(ptr, size)) {
 				if (to - needle > 3 && can_be_utf32_le(ptr + 3, size - 3)) {
 					// The string can be either utf32-le or utf32-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt);
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt);
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt, strbuf);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt, strbuf);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -421,8 +417,8 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 			} else if (can_be_utf16_be(ptr, size)) {
 				if (to - needle > 1 && can_be_utf16_le(ptr + 1, size - 1)) {
 					// The string can be either utf16-le or utf16-be
-					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt);
-					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt);
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt, strbuf);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt, strbuf);
 
 					RzDetectedString *to_add = NULL;
 					RzDetectedString *to_delete = NULL;
@@ -456,8 +452,7 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
 				ut8 sz = RZ_MIN(size, 15);
-				RzRune *runes = RZ_NEWS(RzRune, sz);
-				rz_return_val_if_fail(runes, -1);
+				RzRune runes[15];
 				int i = 0;
 				for (; i < sz; i++) {
 					rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
@@ -466,7 +461,6 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 					}
 				}
 				int s = score(runes, i);
-				RZ_FREE(runes);
 				if (s >= 36) {
 					str_type = RZ_STRING_ENC_IBM037;
 				} else {
@@ -486,7 +480,7 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 			str_type = RZ_STRING_ENC_8BIT; // initial assumption
 		}
 
-		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt);
+		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt, strbuf);
 		if (!ds) {
 			needle++;
 			continue;
@@ -500,5 +494,6 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 		needle += ds->size;
 	}
 	free(buf);
+	free(strbuf);
 	return count;
 }
