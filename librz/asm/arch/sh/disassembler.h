@@ -36,6 +36,9 @@ const ut8 sh_scaling_size[] = { -1, 1, 2, 4, 8 };
 typedef enum {
 	SH_OP_INVALID = 0,
 	SH_OP_MOV,
+	SH_OP_MOVT,
+	SH_OP_SWAP,
+	SH_OP_XTRCT,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
@@ -53,4 +56,4 @@ typedef struct sh_opcode_t {
 
 ut32 sh_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, SHOp *aop, RzStrBuf *sb);
 
-#endif /* RZ_ASM_AVR_DISASSEMBLER_H */
+#endif /* RZ_ASM_SH_DISASSEMBLER_H */
