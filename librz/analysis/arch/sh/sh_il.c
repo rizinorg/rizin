@@ -283,7 +283,7 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RzILOpPure *val, SHSc
 		pre = ret_h.pre;
 		post = ret_h.post;
 	}
-	
+
 	return sh_apply_effects(ret, pre, post);
 }
 
