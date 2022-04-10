@@ -428,10 +428,14 @@ static RzList *trycatch(RzBinFile *bf) {
 		if (!rfcn.BeginAddress) {
 			break;
 		}
+		rfcn.BeginAddress = rz_read_ble32((ut8 *)&rfcn.BeginAddress, bin->big_endian);
+		rfcn.EndAddress = rz_read_ble32((ut8 *)&rfcn.EndAddress, bin->big_endian);
+		rfcn.UnwindData = rz_read_ble32((ut8 *)&rfcn.UnwindData, bin->big_endian);
 		ut32 savedBeginOff = rfcn.BeginAddress;
 		ut32 savedEndOff = rfcn.EndAddress;
 		while (suc && rfcn.UnwindData & 1) {
 			suc = rz_buf_read_at(bin->b, rva_to_paddr(pdata, rfcn.UnwindData & ~1), (ut8 *)&rfcn, sizeof(rfcn));
+			rfcn.UnwindData = rz_read_ble32((ut8 *)&rfcn.UnwindData, bin->big_endian);
 		}
 		rfcn.BeginAddress = savedBeginOff;
 		rfcn.EndAddress = savedEndOff;
@@ -463,6 +467,9 @@ static RzList *trycatch(RzBinFile *bf) {
 				if (!rz_buf_read_at(bin->b, exceptionDataOff, (ut8 *)&rfcn, sizeof(rfcn))) {
 					break;
 				}
+				rfcn.BeginAddress = rz_read_ble32((ut8 *)&rfcn.BeginAddress, bin->big_endian);
+				rfcn.EndAddress = rz_read_ble32((ut8 *)&rfcn.EndAddress, bin->big_endian);
+				rfcn.UnwindData = rz_read_ble32((ut8 *)&rfcn.UnwindData, bin->big_endian);
 				unwind_data_section = get_section(bin, unwind_data_section, rfcn.UnwindData);
 				if (!unwind_data_section) {
 					break;
@@ -474,6 +481,7 @@ static RzList *trycatch(RzBinFile *bf) {
 				}
 				while (suc && (unwind_data_paddr & 1)) {
 					suc = rz_buf_read_at(bin->b, unwind_data_paddr & ~1, (ut8 *)&rfcn, sizeof(rfcn));
+					rfcn.UnwindData = rz_read_ble32((ut8 *)&rfcn.UnwindData, bin->big_endian);
 					unwind_data_paddr = rva_to_paddr(unwind_data_section, rfcn.UnwindData);
 				}
 				if (!suc || info.Version != 1) {
@@ -500,7 +508,7 @@ static RzList *trycatch(RzBinFile *bf) {
 		if (!rz_buf_read_at(bin->b, exceptionDataOff, (ut8 *)&tbl, sizeof(tbl))) {
 			continue;
 		}
-
+		tbl.Count = rz_read_ble32((ut8 *)&tbl.Count, bin->big_endian);
 		const ut64 last_scope_addr = RZ_MIN(rz_buf_size(bin->b), unwind_data_section->paddr + unwind_data_section->size) - sizeof(PE64_SCOPE_RECORD);
 		PE64_SCOPE_RECORD scope;
 		ut64 scopeRecOff = exceptionDataOff + sizeof(tbl);
@@ -509,6 +517,10 @@ static RzList *trycatch(RzBinFile *bf) {
 			if (!rz_buf_read_at(bin->b, scopeRecOff, (ut8 *)&scope, sizeof(PE64_SCOPE_RECORD))) {
 				break;
 			}
+			scope.BeginAddress = rz_read_ble32((ut8 *)&scope.BeginAddress, bin->big_endian);
+			scope.EndAddress = rz_read_ble32((ut8 *)&scope.EndAddress, bin->big_endian);
+			scope.HandlerAddress = rz_read_ble32((ut8 *)&scope.HandlerAddress, bin->big_endian);
+			scope.JumpTarget = rz_read_ble32((ut8 *)&scope.JumpTarget, bin->big_endian);
 			if (scope.BeginAddress > scope.EndAddress || scope.BeginAddress == UT32_MAX || scope.EndAddress == UT32_MAX || !scope.BeginAddress || !scope.EndAddress) {
 				break;
 			}
