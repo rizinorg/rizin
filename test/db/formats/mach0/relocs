@@ -1475,3 +1475,12 @@ call reloc.target.bzero
             0x000720c8      .qword 0x0000000000000000                  ; RELOC TARGET 2 bzero
 EOF
 RUN
+
+NAME=reloc symbol overflow CVE-2022-1240
+FILE=bins/mach0/reloc-symidx-overflow
+CMDS=<<EOF
+q
+EOF
+EXPECT=<<EOF
+EOF
+RUN
