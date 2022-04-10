@@ -22,12 +22,10 @@
 #define SH_BANKED_REG_COUNT 8
 #define BITS_PER_BYTE       8
 
-#define SH_U_ADDR(x)       UN(SH_ADDR_SIZE, x)
-#define SH_S_ADDR(x)       SN(SH_ADDR_SIZE, x)
-#define SH_U_REG(x)        UN(SH_REG_SIZE, (x))
-#define SH_S_REG(x)        SN(SH_REG_SIZE, (x))
-#define SH_REG(reg)        sh_il_get_reg(reg)
-#define SH_REG_SET(reg, x) sh_il_set_reg(reg, x)
+#define SH_U_ADDR(x) UN(SH_ADDR_SIZE, x)
+#define SH_S_ADDR(x) SN(SH_ADDR_SIZE, x)
+#define SH_U_REG(x)  UN(SH_REG_SIZE, (x))
+#define SH_S_REG(x)  SN(SH_REG_SIZE, (x))
 
 // SR register in SH
 // SR = x|D|R|B|xxxxxxxxxxxx|F|xxxxx|M|Q|IIII|xx|S|T
@@ -52,12 +50,6 @@
 #define sh_return_val_if_invalid_gpr(x, v) \
 	if (x >= SH_GPR_COUNT) { \
 		RZ_LOG_ERROR("RzIL: SH: invalid register R%u\n", x); \
-		return v; \
-	}
-
-#define sh_return_val_if_invalid_scaling(x, v) \
-	if (x == SH_SCALING_INVALID) { \
-		RZ_LOG_ERROR("RzIL: SH: invalid scaling\n"); \
 		return v; \
 	}
 
@@ -148,19 +140,19 @@ static inline RzILOpPure *sh_il_get_effective_addr(SHParam param, SHScaling scal
 	case SH_REG_INDIRECT_D:
 		return sh_il_get_reg(param.param[0]);
 	case SH_REG_INDIRECT_DISP:
-		return ADD(sh_il_get_reg(param.param[0]), MUL(SH_U_ADDR(param.param[1]), SH_U_ADDR(scaling)));
+		return ADD(sh_il_get_reg(param.param[0]), MUL(SH_U_ADDR(param.param[1]), SH_U_ADDR(sh_scaling_size[scaling])));
 	case SH_REG_INDIRECT_INDEXED:
 		return ADD(sh_il_get_reg(param.param[0]), sh_il_get_reg(param.param[1]));
 	case SH_GBR_INDIRECT_DISP:
-		return ADD(VARG("gbr"), MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(scaling)));
+		return ADD(VARG("gbr"), MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 	case SH_GBR_INDIRECT_INDEXED:
 		return ADD(VARG("gbr"), sh_il_get_reg(param.param[0]));
 	case SH_PC_RELATIVE_DISP: {
 		RzILOpBitVector *pc = VARG("pc");
-		// mask lower 2 bits if scaling == 4
-		pc = ITE(EQ(SH_U_ADDR(scaling), SH_U_ADDR(4)), LOGAND(pc, SH_U_ADDR(0xfffffffc)), pc);
+		// mask lower 2 bits if sh_scaling_size[scaling] == 4
+		pc = ITE(EQ(SH_U_ADDR(sh_scaling_size[scaling]), SH_U_ADDR(4)), LOGAND(pc, SH_U_ADDR(0xfffffffc)), pc);
 		pc = ADD(pc, SH_U_ADDR(4));
-		return ADD(pc, MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(scaling)));
+		return ADD(pc, MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 	}
 	case SH_PC_RELATIVE: {
 		RzILOpBitVector *relative = MUL(SH_S_ADDR(param.param[0]), SH_S_ADDR(2)); // sign-extended
@@ -186,37 +178,37 @@ static inline SHParamHelper sh_il_get_param(SHParam param, SHScaling scaling) {
 		ret.pure = sh_il_get_reg(param.param[0]);
 		break;
 	case SH_REG_INDIRECT:
-		ret.pure = sh_il_get_effective_addr(param, scaling);
+		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
 		break;
 	case SH_REG_INDIRECT_I:
-		ret.pure = sh_il_get_effective_addr(param, scaling);
-		ret.post = sh_il_set_reg(param.param[0], ADD(sh_il_get_reg(param.param[0]), SH_U_ADDR(scaling)));
+		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
+		ret.post = sh_il_set_reg(param.param[0], ADD(sh_il_get_reg(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 		break;
 	case SH_REG_INDIRECT_D:
-		ret.pre = sh_il_set_reg(param.param[0], SUB(sh_il_get_reg(param.param[0]), SH_U_ADDR(scaling)));
-		ret.pure = sh_il_get_effective_addr(param, scaling);
+		ret.pre = sh_il_set_reg(param.param[0], SUB(sh_il_get_reg(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
+		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
 		break;
 	case SH_REG_INDIRECT_DISP:
-		ret.pure = LOADW(BITS_PER_BYTE * scaling, sh_il_get_effective_addr(param, scaling));
+		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, sh_scaling_size[scaling]));
 		break;
 	case SH_REG_INDIRECT_INDEXED:
-		ret.pure = LOADW(BITS_PER_BYTE * scaling, sh_il_get_effective_addr(param, scaling));
+		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, sh_scaling_size[scaling]));
 		break;
 	case SH_GBR_INDIRECT_DISP: {
-		ret.pure = LOADW(BITS_PER_BYTE * scaling, sh_il_get_effective_addr(param, scaling));
+		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, sh_scaling_size[scaling]));
 		break;
 	}
 	case SH_GBR_INDIRECT_INDEXED:
-		ret.pure = LOADW(BITS_PER_BYTE * scaling, sh_il_get_effective_addr(param, scaling));
+		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, sh_scaling_size[scaling]));
 		break;
 	case SH_PC_RELATIVE_DISP:
-		ret.pure = sh_il_get_effective_addr(param, scaling);
+		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
 		break;
 	case SH_PC_RELATIVE:
-		ret.pure = sh_il_get_effective_addr(param, scaling);
+		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
 		break;
 	case SH_PC_RELATIVE_REG:
-		ret.pure = sh_il_get_effective_addr(param, scaling);
+		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
 		break;
 	case SH_IMM_U:
 		ret.pure = SH_U_REG(param.param[0]);
@@ -277,9 +269,9 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RzILOpPure *val, SHSc
 	}
 
 	if (!ret) {
-		SHParamHelper ret_h = sh_il_get_param(param, scaling);
+		SHParamHelper ret_h = sh_il_get_param(param, sh_scaling_size[scaling]);
 		rz_il_op_pure_free(ret_h.pure);
-		ret = STOREW(sh_il_get_effective_addr(param, scaling), val);
+		ret = STOREW(sh_il_get_effective_addr(param, sh_scaling_size[scaling]), val);
 		pre = ret_h.pre;
 		post = ret_h.post;
 	}
@@ -300,12 +292,61 @@ static RzILOpEffect *sh_il_unk(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * MOV family instructions
  */
 static RzILOpEffect *sh_il_mov(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	sh_return_val_if_invalid_scaling(op->scaling, NULL);
-
 	RzILOpEffect *ret = NULL;
 	SHParamHelper shp = sh_il_get_param(op->param[0], op->scaling);
 	sh_apply_effects(ret, shp.pre, shp.post);
 	return SEQ2(ret, sh_il_set_param(op->param[1], shp.pure, op->scaling));
+}
+
+/**
+ * MOVT	Rn
+ * T -> Rn
+ * 0000nnnn00101001
+ */
+static RzILOpEffect *sh_il_movt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_param(op->param[0], VARG(SH_SR_T), op->scaling);
+}
+
+/**
+ * SWAP.B Rm, Rn
+ * Rm -> swap lower 2 bytes -> REG
+ * 0110nnnnmmmm1000
+ *
+ * SWAP.W Rm, Rn
+ * Rm -> swap upper/lower words -> Rn
+ * 0110nnnnmmmm1001
+ */
+static RzILOpEffect *sh_il_swap(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	if (op->scaling == SH_SCALING_B) {
+		// swap lower two bytes
+		RzILOpEffect *r0 = SETL("swap_r0", sh_il_get_reg(op->param->param[0]));
+		RzILOpEffect *r1 = SETL("swap_r1", sh_il_get_reg(op->param->param[1]));
+		RzILOpPure *r0_low = LOGAND(SH_U_REG(0xffff), VARL("swap_r0"));
+		RzILOpPure *r1_low = LOGAND(SH_U_REG(0xffff), VARL("swap_r1"));
+		RzILOpPure *r0_high = LOGAND(SH_U_REG(0xffff0000), VARL("swap_r0"));
+		RzILOpPure *r1_high = LOGAND(SH_U_REG(0xffff0000), VARL("swap_r1"));
+		RzILOpPure *r0_new = LOGOR(r0_high, r1_low);
+		RzILOpPure *r1_new = LOGOR(r1_high, r0_low);
+		return SEQ4(r0, r1, sh_il_set_reg(op->param->param[0], r0_new), sh_il_set_reg(op->param->param[1], r1_new));
+	} else if (op->scaling == SH_SCALING_W) {
+		// swap upper and lower words and store in dst
+		RzILOpPure *high = SHIFTL0(sh_il_get_reg(op->param->param[0]), SH_U_REG(BITS_PER_BYTE * 2));
+		RzILOpPure *low = SHIFTR0(sh_il_get_reg(op->param->param[0]), SH_U_REG(BITS_PER_BYTE * 2));
+		return sh_il_set_reg(op->param->param[1], LOGOR(high, low));
+	}
+
+	return NULL;
+}
+
+/**
+ * XTRCT Rm, Rn
+ * Rm:Rn middle 32 bits -> Rn
+ * 0010nnnnmmmm1101
+ */
+static RzILOpEffect *sh_il_xtrct(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *high = SHIFTL0(sh_il_get_reg(op->param->param[0]), SH_U_REG(BITS_PER_BYTE * 2));
+	RzILOpPure *low = SHIFTR0(sh_il_get_reg(op->param->param[1]), SH_U_REG(BITS_PER_BYTE * 2));
+	return sh_il_set_reg(op->param->param[1], LOGOR(high, low));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
@@ -315,4 +356,7 @@ typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
 static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_unk,
 	sh_il_mov,
+	sh_il_movt,
+	sh_il_swap,
+	sh_il_xtrct
 };
