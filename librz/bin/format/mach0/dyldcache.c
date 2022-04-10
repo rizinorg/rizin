@@ -153,27 +153,27 @@ static void populate_cache_maps(RzDyldCache *cache) {
 
 	ut32 i;
 	ut32 n_maps = 0;
+	ut64 max_count = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		if (!hdr->mappingCount || !hdr->mappingOffset) {
 			continue;
 		}
+		max_count = RZ_MAX(hdr->mappingCount, max_count);
 		n_maps += hdr->mappingCount;
 	}
 
-	cache_map_t *maps = NULL;
-	if (n_maps != 0) {
-		cache->maps_index = RZ_NEWS0(ut32, cache->n_hdr);
-		if (!cache->maps_index) {
-			return;
-		}
-		maps = RZ_NEWS0(cache_map_t, n_maps);
-	}
-	if (!maps) {
+	if (n_maps < 1 || n_maps < max_count /* overflow */) {
 		cache->maps = NULL;
 		cache->n_maps = 0;
 		return;
 	}
+
+	cache->maps_index = RZ_NEWS0(ut32, cache->n_hdr);
+	if (!cache->maps_index) {
+		return;
+	}
+	cache_map_t *maps = RZ_NEWS0(cache_map_t, n_maps);
 
 	ut32 next_map = 0;
 	ut32 last_idx = UT32_MAX;
