@@ -933,14 +933,19 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		/* stdin/batch mode */
 		char *buf = rz_stdin_slurp(&sz);
 		eprintf("^D\n");
-		rz_cons_set_raw(false);
 #if __WINDOWS__
 		const char *con_dev = "CON";
 #else
 		const char *con_dev = "/dev/tty";
 #endif
-		// TODO: keep flags :?
+		ut64 scr_color = rz_config_get_i(r->config, "scr.color");
+		const char *scr_interactive = rz_config_get(r->config, "scr.interactive");
+		while (rz_cons_free())
+			;
 		rz_xfreopen(con_dev, "r", stdin);
+		rz_cons_new();
+		rz_config_set_i(r->config, "scr.color", scr_color);
+		rz_config_set(r->config, "scr.interactive", scr_interactive);
 		if (buf && sz > 0) {
 			char *path = rz_str_newf("malloc://%d", sz);
 			fh = rz_core_file_open(r, path, perms, mapaddr);
