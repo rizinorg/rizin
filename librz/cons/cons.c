@@ -626,7 +626,9 @@ RZ_API RzCons *rz_cons_new(void) {
 }
 
 RZ_API RzCons *rz_cons_free(void) {
-	rz_return_val_if_fail(I.refcnt > 0, NULL);
+	if (I.refcnt <= 0) {
+		return NULL;
+	}
 	I.refcnt--;
 	if (I.refcnt != 0) {
 		return &I;
