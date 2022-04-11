@@ -231,7 +231,7 @@ static int help(void) {
 		"  -u      units                ;  rz-ax -u 389289238 # 317.0M\n"
 		"  -w      signed word          ;  rz-ax -w 16 0xffff\n"
 		"  -v      version              ;  rz-ax -v\n"
-		"  -p      count set bits       ;  rz-ax -p 0xb3\n");
+		"  -p      position of set bits ;  rz-ax -p 0xb3\n");
 	return true;
 }
 
