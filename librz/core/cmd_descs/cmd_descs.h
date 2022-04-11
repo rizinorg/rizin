@@ -132,6 +132,8 @@ RZ_IPI RzCmdStatus rz_il_step_back_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_il_step_over_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_il_step_over_until_addr_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_il_step_skip_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_il_step_skip_until_addr_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_il_step_skip_until_expr_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_il_step_until_addr_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_il_step_until_expr_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_il_step_until_opt_handler(RzCore *core, int argc, const char **argv);

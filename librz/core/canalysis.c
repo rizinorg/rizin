@@ -6627,22 +6627,22 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
  * \param core The RzCore instance
  * \return false when an error occurs otherwise true
  */
-RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core){
-    RzAnalysisEsil *esil = core->analysis->esil;
-    if (!esil) {
-        RZ_LOG_ERROR("ESIL is not initialized. Use `aeim` first.\n");
-        return false;
-    }
-    if (esil->trace) {
-        RZ_LOG_ERROR("ESIL trace already started\n");
-        return false;
-    }
-    esil->trace = rz_analysis_esil_trace_new(esil);
-    if (!esil->trace) {
-        return false;
-    }
-    rz_config_set_i(core->config, "dbg.trace", true);
-    return true;
+RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (!esil) {
+		RZ_LOG_ERROR("ESIL is not initialized. Use `aeim` first.\n");
+		return false;
+	}
+	if (esil->trace) {
+		RZ_LOG_ERROR("ESIL trace already started\n");
+		return false;
+	}
+	esil->trace = rz_analysis_esil_trace_new(esil);
+	if (!esil->trace) {
+		return false;
+	}
+	rz_config_set_i(core->config, "dbg.trace", true);
+	return true;
 }
 
 /**
@@ -6651,18 +6651,18 @@ RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core){
  * \param core The RzCore instance
  * \return false when an error occurs otherwise true
  */
-RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core){
-    RzAnalysisEsil *esil = core->analysis->esil;
-    if (!esil) {
-        RZ_LOG_ERROR("ESIL is not initialized. Use `aeim` first.\n");
-        return false;
-    }
-    if (!esil->trace) {
-        RZ_LOG_ERROR("No ESIL trace started\n");
-        return false;
-    }
-    rz_analysis_esil_trace_free(esil->trace);
-    esil->trace = NULL;
-    rz_config_set_i(core->config, "dbg.trace", false);
-    return true;
+RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (!esil) {
+		RZ_LOG_ERROR("ESIL is not initialized. Use `aeim` first.\n");
+		return false;
+	}
+	if (!esil->trace) {
+		RZ_LOG_ERROR("No ESIL trace started\n");
+		return false;
+	}
+	rz_analysis_esil_trace_free(esil->trace);
+	esil->trace = NULL;
+	rz_config_set_i(core->config, "dbg.trace", false);
+	return true;
 }

@@ -2830,8 +2830,13 @@ RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_p_handler(RzCore *core, int argc, c
 
 // aes
 RZ_IPI RzCmdStatus rz_il_step_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-	rz_core_reg_update_flags(core);
+	if (argc <= 1) {
+		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
+		rz_core_reg_update_flags(core);
+	} else if (argc == 2) {
+		int n = (int)rz_num_math(core->num, argv[1]);
+		rz_core_analysis_esil_emulate(core, -1, -1, n);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2871,16 +2876,31 @@ RZ_IPI RzCmdStatus rz_il_step_skip_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 
+// aessu
+RZ_IPI RzCmdStatus rz_il_step_skip_until_addr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 until_addr = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_esil_step_over_until(core, until_addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aessue
+RZ_IPI RzCmdStatus rz_il_step_skip_until_expr_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_step_over_untilexpr(core, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
 // aesu
 RZ_IPI RzCmdStatus rz_il_step_until_addr_handler(RzCore *core, int argc, const char **argv) {
 	ut64 until_addr = rz_num_math(core->num, argv[1]);
-	rz_core_analysis_esil_step_over_until(core, until_addr);
+	rz_core_esil_step(core, until_addr, NULL, NULL, false);
+	rz_core_reg_update_flags(core);
 	return RZ_CMD_STATUS_OK;
 }
 
 // aesue
 RZ_IPI RzCmdStatus rz_il_step_until_expr_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_esil_step_over_untilexpr(core, argv[1]);
+	rz_core_reg_update_flags(core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2888,6 +2908,7 @@ RZ_IPI RzCmdStatus rz_il_step_until_expr_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_il_step_until_opt_handler(RzCore *core, int argc, const char **argv) {
 	RzList *optypes_list = rz_list_new_from_array((const void **)&argv[1], argc - 1);
 	step_until_optype(core, optypes_list);
+	rz_core_reg_update_flags(core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3021,18 +3042,12 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 
 static void cmd_analysis_esil(RzCore *core, const char *input) {
 	RzAnalysisEsil *esil = core->analysis->esil;
-	ut64 adr;
-	char *n, *n1;
-	int off;
 	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
 	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
 	int romem = rz_config_get_i(core->config, "esil.romem");
 	int stats = rz_config_get_i(core->config, "esil.stats");
 	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-	ut64 until_addr = UT64_MAX;
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-
-	const char *until_expr = NULL;
 
 	switch (input[0]) {
 	case 'p':

@@ -125,6 +125,7 @@ static const RzCmdDescArg analysis_continue_until_addr_args[2];
 static const RzCmdDescArg analysis_continue_until_esil_args[2];
 static const RzCmdDescArg analysis_esil_init_mem_args[4];
 static const RzCmdDescArg analysis_esil_init_mem_remove_args[4];
+static const RzCmdDescArg il_step_args[2];
 static const RzCmdDescArg il_step_evaluate_args[2];
 static const RzCmdDescArg il_step_over_until_addr_args[2];
 static const RzCmdDescArg il_step_until_addr_args[2];
@@ -2214,6 +2215,13 @@ static const RzCmdDescHelp aes_help = {
 	.summary = "ESIL emulated debugger step",
 };
 static const RzCmdDescArg il_step_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp il_step_help = {
@@ -2265,6 +2273,9 @@ static const RzCmdDescHelp il_step_over_until_addr_help = {
 	.args = il_step_over_until_addr_args,
 };
 
+static const RzCmdDescHelp aess_help = {
+	.summary = "step skip",
+};
 static const RzCmdDescArg il_step_skip_args[] = {
 	{ 0 },
 };
@@ -2273,6 +2284,25 @@ static const RzCmdDescHelp il_step_skip_help = {
 	.args = il_step_skip_args,
 };
 
+static const RzCmdDescArg il_step_skip_until_addr_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_skip_until_addr_help = {
+	.summary = "step skip (in case of CALL, just skip, instead of step into)",
+	.args = il_step_skip_until_addr_args,
+};
+
+static const RzCmdDescArg il_step_skip_until_expr_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_skip_until_expr_help = {
+	.summary = "step skip (in case of CALL, just skip, instead of step into)",
+	.args = il_step_skip_until_expr_args,
+};
+
+static const RzCmdDescHelp aesu_help = {
+	.summary = "step until",
+};
 static const RzCmdDescArg il_step_until_addr_args[] = {
 	{
 		.name = "addr",
@@ -13564,16 +13594,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *il_step_over_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aes_cd, "aesou", rz_il_step_over_until_addr_handler, &il_step_over_until_addr_help);
 	rz_warn_if_fail(il_step_over_until_addr_cd);
 
-	RzCmdDesc *il_step_skip_cd = rz_cmd_desc_argv_new(core->rcmd, aes_cd, "aess", rz_il_step_skip_handler, &il_step_skip_help);
-	rz_warn_if_fail(il_step_skip_cd);
+	RzCmdDesc *aess_cd = rz_cmd_desc_group_new(core->rcmd, aes_cd, "aess", rz_il_step_skip_handler, &il_step_skip_help, &aess_help);
+	rz_warn_if_fail(aess_cd);
+	RzCmdDesc *il_step_skip_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aess_cd, "aessu", rz_il_step_skip_until_addr_handler, &il_step_skip_until_addr_help);
+	rz_warn_if_fail(il_step_skip_until_addr_cd);
 
-	RzCmdDesc *il_step_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aes_cd, "aesu", rz_il_step_until_addr_handler, &il_step_until_addr_help);
-	rz_warn_if_fail(il_step_until_addr_cd);
+	RzCmdDesc *il_step_skip_until_expr_cd = rz_cmd_desc_argv_new(core->rcmd, aess_cd, "aessue", rz_il_step_skip_until_expr_handler, &il_step_skip_until_expr_help);
+	rz_warn_if_fail(il_step_skip_until_expr_cd);
 
-	RzCmdDesc *il_step_until_expr_cd = rz_cmd_desc_argv_new(core->rcmd, aes_cd, "aesue", rz_il_step_until_expr_handler, &il_step_until_expr_help);
+	RzCmdDesc *aesu_cd = rz_cmd_desc_group_new(core->rcmd, aes_cd, "aesu", rz_il_step_until_addr_handler, &il_step_until_addr_help, &aesu_help);
+	rz_warn_if_fail(aesu_cd);
+	RzCmdDesc *il_step_until_expr_cd = rz_cmd_desc_argv_new(core->rcmd, aesu_cd, "aesue", rz_il_step_until_expr_handler, &il_step_until_expr_help);
 	rz_warn_if_fail(il_step_until_expr_cd);
 
-	RzCmdDesc *il_step_until_opt_cd = rz_cmd_desc_argv_new(core->rcmd, aes_cd, "aesuo", rz_il_step_until_opt_handler, &il_step_until_opt_help);
+	RzCmdDesc *il_step_until_opt_cd = rz_cmd_desc_argv_new(core->rcmd, aesu_cd, "aesuo", rz_il_step_until_opt_handler, &il_step_until_opt_help);
 	rz_warn_if_fail(il_step_until_opt_cd);
 
 	RzCmdDesc *aets_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aets", NULL, NULL, &aets_help);

@@ -610,7 +610,10 @@ commands:
       - name: aes
         summary: perform emulated debugger step
         cname: il_step
-        args: []
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: aesp
         summary: evaluate N instr from core->offset
         cname: il_step_evaluate
@@ -632,28 +635,42 @@ commands:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
       - name: aess
-        summary: step skip (in case of CALL, just skip, instead of step into)
-        cname: il_step_skip
-        args: []
+        summary: step skip
+        subcommands:
+          - name: aess
+            summary: step skip (in case of CALL, just skip, instead of step into)
+            cname: il_step_skip
+            args: []
+          - name: aessu
+            summary: step skip (in case of CALL, just skip, instead of step into)
+            cname: il_step_skip_until_addr
+            args: []
+          - name: aessue
+            summary: step skip (in case of CALL, just skip, instead of step into)
+            cname: il_step_skip_until_expr
+            args: []
       - name: aesu
-        summary: step until given address
-        cname: il_step_until_addr
-        args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: aesue
-        summary: step until esil expression match
-        cname: il_step_until_expr
-        args:
-          - name: esil
-            type: RZ_CMD_ARG_TYPE_STRING
-      - name: aesuo
-        summary: step until given opcode type
-        cname: il_step_until_opt
-        args:
-          - name: optype
-            type: RZ_CMD_ARG_TYPE_STRING
-            flags: RZ_CMD_ARG_FLAG_ARRAY
+        summary: step until
+        subcommands:
+          - name: aesu
+            summary: step until given address
+            cname: il_step_until_addr
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: aesue
+            summary: step until esil expression match
+            cname: il_step_until_expr
+            args:
+              - name: esil
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: aesuo
+            summary: step until given opcode type
+            cname: il_step_until_opt
+            args:
+              - name: optype
+                type: RZ_CMD_ARG_TYPE_STRING
+                flags: RZ_CMD_ARG_FLAG_ARRAY
   - name: aets
     summary: ESIL Trace session
     subcommands:
