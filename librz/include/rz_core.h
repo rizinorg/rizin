@@ -1124,6 +1124,7 @@ RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
 
 /* PLUGINS */
 extern RzCorePlugin rz_core_plugin_java;
+extern RzCorePlugin rz_core_plugin_dex;
 
 /* DECOMPILER PRINTING FUNCTIONS */
 /**

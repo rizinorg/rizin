@@ -34,6 +34,7 @@ FILE==
 CMDS=Lc
 EXPECT=<<EOF
 java: Suite of java commands, type `java` for more info (Made by deroad, v1.0, LGPL-3.0-only)
+dex: Suite of dex commands, type `dex` for more info (Made by deroad, v1.0, LGPL-3.0-only)
 EOF
 RUN
 
@@ -41,7 +42,7 @@ NAME=Print the core plugins in JSON
 FILE==
 CMDS=Lcj
 EXPECT=<<EOF
-[{"name":"java","description":"Suite of java commands, type `java` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"}]
+[{"name":"java","description":"Suite of java commands, type `java` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"},{"name":"dex","description":"Suite of dex commands, type `dex` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"}]
 EOF
 RUN
 
