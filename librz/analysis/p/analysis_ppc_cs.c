@@ -429,9 +429,60 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		// 0 |---/32/---|---pvr---| 63
 		"ctr	pvr	.32	11680	0	# Processor Version Register\n"
 		// 0 |---/32/---|---pir---| 63
-		"ctr	pir	.32	11744	0	# Processor Version Register\n";
-	// Registers up to 7.2.1 ISA 3.1b
-	// TODO
+		"ctr	pir	.32	11744	0	# Processor Version Register\n"
+		// 0 |---/32/---|---pidr--| 63
+		"ctr	pidr	.32	11776	0	# Processor Identification Register\n"
+		// 0 |---/32/---|---ctrl--| 63
+		"ctr	ctrl	.32	11840	0	# Control Register\n"
+		// 0 |---/32/---|---pspb--| 63
+		"ctr	pspb	.32	11872	0	# Problem State Priority Boost Register\n"
+		"ctr	rpr	.64	11904	0	# Relative Priority Register\n"
+		"ctr	hashkey	.64	11968	0	# Hash Key Register\n"
+		"ctr	hashpkey	.64	12032	0	# Hash Privileged Key Register\n"
+		"ctr	sprg0	.64	12096	0	# Software-use SPR 0\n"
+		"ctr	sprg1	.64	12160	0	# Software-use SPR 1\n"
+		"ctr	sprg2	.64	12224	0	# Software-use SPR 2\n"
+		"ctr	sprg3	.64	12288	0	# Software-use SPR 3\n"
+		"ctr	hsprg0	.64	12352	0	# Hypervisor Software-use SPR 0\n"
+		"ctr	hsprg1	.64	12416	0	# Hypervisor Software-use SPR 1\n"
+		"ctr	usprg0	.64	12480	0	# Ultravisor Software-use SPR 0\n"
+		"ctr	usprg1	.64	12544	0	# Ultravisor Software-use SPR 1\n"
+		"ctr	srr0	.64	12608	0	# Machine Status Save/Restore Register 0\n"
+		"ctr	srr1	.64	12672	0	# Machine Status Save/Restore Register 1\n"
+		"ctr	hsrr0	.64	12736	0	# Hypervisor Machine Status Save/Restore Register 0\n"
+		"ctr	hsrr1	.64	12800	0	# Hypervisor Machine Status Save/Restore Register 1\n"
+		"ctr	usrr0	.64	12864	0	# Hypervisor Machine Status Save/Restore Register 0\n"
+		"ctr	usrr1	.64	12928	0	# Ultravisor Machine Status Save/Restore Register 1\n"
+		"ctr	asdr	.64	12992	0	# Access Segment Descriptor Register\n"
+		"ctr	dar	.64	13056	0	# Data Address Register\n"
+		"ctr	hdar	.64	13120	0	# Hypervisor Data Address Register\n"
+		// 0 |---/32/---|--dsisr--| 63
+		"ctr	dsisr	.32	13216	0	# Data Storage Interrupt Status Register\n"
+		// 0 |---/32/---|-hdsisr--| 63
+		"ctr	hdsisr	.32	13280	0	# Hypervisor Data Storage Interrupt Status Register\n"
+		"ctr	heir	.64	13312	0	# Hypervisor Emulation Instruction Register\n"
+		"ctr	hmer	.64	13376	0	# Hypervisor Maintenance Exception Register\n"
+		"ctr	hmeer	.64	13440	0	# Hypervisor Maintenance Exception Enable Register\n"
+		"ctr	fscr	.64	13504	0	# Facility Status and Control Register\n"
+		"ctr	hfscr	.64	13568	0	# Hypervisor Facility Status and Control Register\n"
+		"ctr	purr	.64	13632	0	# Process Utilization of Resources Register\n"
+		"ctr	spurr	.64	13696	0	# Scaled Process Utilization of Resources Register\n"
+		"ctr	dexcr	.64	13760	0	# Dynamic Execution Control Register\n"
+		"ctr	hdexcr	.64	13824	0	# Hypervisor Dynamic Execution Control Register\n"
+		"ctr	udexcr	.64	13888	0	# Ultravisor Dynamic Execution Control Register\n"
+		"ctr	cfar	.64	13952	0	# Come-From Address Register\n"
+		"ctr	mmcr0	.64	14016	0	# Monitor Mode Control Register 0\n"
+		"ctr	mmcr1	.64	14080	0	# Monitor Mode Control Register 1\n"
+		"ctr	mmcr2	.64	14144	0	# Monitor Mode Control Register 2\n"
+		"ctr	mmcra	.64	14208	0	# Monitor Mode Control Register A\n"
+		"ctr	siar	.64	14272	0	# Sampled Instruction Address Register\n"
+		"ctr	sdar	.64	14336	0	# Sampled Data Address Register\n"
+		"ctr	sier	.64	14400	0	# Sampled Instruction Event Register\n"
+		"ctr	sier2	.64	14464	0	# Sampled Instruction Event Register 2\n"
+		"ctr	sier3	.64	14528	0	# Sampled Instruction Event Register 3\n"
+		"ctr	mmcr3	.64	14592	0	# Monitor Mode Control Register 2\n"
+		"ctr	dpdes	.64	14656	0	# Directed Privileged Doorbell Exception State Register\n"
+		;
 	return strdup(p);
 }
 
