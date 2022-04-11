@@ -2830,38 +2830,12 @@ RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_p_handler(RzCore *core, int argc, c
 
 // aets+
 RZ_IPI RzCmdStatus rz_esil_trace_start_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisEsil *esil = core->analysis->esil;
-	if (!esil) {
-		RZ_LOG_ERROR("ESIL is not initialized. Use `aeim` first.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (esil->trace) {
-		RZ_LOG_ERROR("ESIL trace already started\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	esil->trace = rz_analysis_esil_trace_new(esil);
-	if (!esil->trace) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_config_set_i(core->config, "dbg.trace", true);
-	return RZ_CMD_STATUS_OK;
+	return rz_core_analysis_esil_trace_start(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // aets-
 RZ_IPI RzCmdStatus rz_esil_trace_stop_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisEsil *esil = core->analysis->esil;
-	if (!esil) {
-		RZ_LOG_ERROR("ESIL is not initialized. Use `aeim` first.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (!esil->trace) {
-		RZ_LOG_ERROR("No ESIL trace started\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_analysis_esil_trace_free(esil->trace);
-	esil->trace = NULL;
-	rz_config_set_i(core->config, "dbg.trace", false);
-	return RZ_CMD_STATUS_OK;
+	return rz_core_analysis_esil_trace_stop(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 static const char _handler_no_name[] = "<no name>";
