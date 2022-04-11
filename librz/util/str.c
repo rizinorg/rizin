@@ -142,6 +142,23 @@ RZ_API void rz_str_reverse(char *str) {
 	}
 }
 
+RZ_API void rz_str_to_bin(char *str) {
+		int i = 0;
+		// TODO: move to rz_util
+		for (i = 0; i < strlen(str); i++) {
+			ut8 ch = str[i];
+			printf("%d%d%d%d"
+			       "%d%d%d%d",
+				ch & 128 ? 1 : 0,
+				ch & 64 ? 1 : 0,
+				ch & 32 ? 1 : 0,
+				ch & 16 ? 1 : 0,
+				ch & 8 ? 1 : 0,
+				ch & 4 ? 1 : 0,
+				ch & 2 ? 1 : 0,
+				ch & 1 ? 1 : 0);
+		}
+}
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1
 // TODO: this functions needs some stabilization
 RZ_API int rz_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {

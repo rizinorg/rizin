@@ -195,6 +195,7 @@ typedef void (*str_operation)(char *c);
 RZ_API int rz_str_do_until_token(str_operation op, char *str, const char tok);
 
 RZ_API void rz_str_reverse(char *str);
+RZ_API void rz_str_to_bin(char *str);
 RZ_API int rz_str_re_match(const char *str, const char *reg);
 RZ_API int rz_str_re_replace(const char *str, const char *reg, const char *sub);
 RZ_API int rz_str_path_unescape(char *path);

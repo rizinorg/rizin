@@ -396,21 +396,7 @@ dotherax:
 		}
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_STR_TO_BIN)) { // -B (bin -> str)
-		int i = 0;
-		// TODO: move to rz_util
-		for (i = 0; i < strlen(str); i++) {
-			ut8 ch = str[i];
-			printf("%d%d%d%d"
-			       "%d%d%d%d",
-				ch & 128 ? 1 : 0,
-				ch & 64 ? 1 : 0,
-				ch & 32 ? 1 : 0,
-				ch & 16 ? 1 : 0,
-				ch & 8 ? 1 : 0,
-				ch & 4 ? 1 : 0,
-				ch & 2 ? 1 : 0,
-				ch & 1 ? 1 : 0);
-		}
+		rz_str_to_bin(str);
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_SIGNED_WORD)) { // -w
 		ut64 n = rz_num_math(num, str);
