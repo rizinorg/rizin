@@ -188,6 +188,7 @@ static void dex_class_def_free(DexClassDef *class_def) {
 	rz_list_free(class_def->instance_fields);
 	rz_list_free(class_def->direct_methods);
 	rz_list_free(class_def->virtual_methods);
+	free(class_def->interfaces);
 	free(class_def);
 }
 
@@ -275,9 +276,11 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzP
 	class_def->direct_methods = /* */ rz_list_newf((RzListFree)free);
 	class_def->virtual_methods = /**/ rz_list_newf((RzListFree)free);
 
-	read_le32_or_fail(buf, class_def->class_idx, dex_class_def_new_fail);
+	read_le16_or_fail(buf, class_def->class_idx, dex_class_def_new_fail);
+	read_le16_or_fail(buf, class_def->_padding1, dex_class_def_new_fail);
 	read_le32_or_fail(buf, class_def->access_flags, dex_class_def_new_fail);
-	read_le32_or_fail(buf, class_def->superclass_idx, dex_class_def_new_fail);
+	read_le16_or_fail(buf, class_def->superclass_idx, dex_class_def_new_fail);
+	read_le16_or_fail(buf, class_def->_padding2, dex_class_def_new_fail);
 	read_le32_or_fail(buf, class_def->interfaces_offset, dex_class_def_new_fail);
 	read_le32_or_fail(buf, class_def->source_file_idx, dex_class_def_new_fail);
 	read_le32_or_fail(buf, class_def->annotations_offset, dex_class_def_new_fail);
@@ -323,6 +326,22 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzP
 		if (!encoded_method || !rz_list_append(class_def->virtual_methods, encoded_method)) {
 			free(encoded_method);
 			goto dex_class_def_new_fail;
+		}
+	}
+
+	if (class_def->interfaces_offset > 0) {
+		if (rz_buf_seek(buf, class_def->interfaces_offset, RZ_BUF_SET) < 0) {
+			goto dex_class_def_new_fail;
+		}
+		read_le32_or_fail(buf, class_def->n_interfaces, dex_class_def_new_fail);
+		if (class_def->n_interfaces > 0) {
+			class_def->interfaces = RZ_NEWS0(ut16, class_def->n_interfaces);
+			if (!class_def->interfaces) {
+				goto dex_class_def_new_fail;
+			}
+			for (ut32 i = 0; i < class_def->n_interfaces; ++i) {
+				read_le16_or_fail(buf, class_def->interfaces[i], dex_class_def_new_fail);
+			}
 		}
 	}
 
@@ -684,7 +703,7 @@ RZ_API RZ_OWN RzBinDex *rz_bin_dex_new(RZ_NONNULL RzBuffer *buf, ut64 base, RZ_N
 	return dex;
 }
 
-static char *dex_access_flags_readable(ut32 access_flags) {
+RZ_API char *rz_bin_dex_access_flags_readable(ut32 access_flags) {
 	RzStrBuf *sb = NULL;
 	for (ut32 i = 0; i < CLASS_ACCESS_FLAGS_SIZE; ++i) {
 		const DexAccessFlagsReadable *afr = &access_flags_list[i];
@@ -897,7 +916,7 @@ static RzBinSymbol *dex_method_to_symbol(RzBinDex *dex, DexEncodedMethod *encode
 	symbol->bind = dex_is_static(encoded_method->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 	symbol->is_imported = is_imported;
 	symbol->visibility = encoded_method->access_flags & UT32_MAX;
-	symbol->visibility_str = dex_access_flags_readable(symbol->visibility);
+	symbol->visibility_str = rz_bin_dex_access_flags_readable(symbol->visibility);
 	symbol->size = encoded_method->code_size;
 	if (encoded_method->code_offset < RZ_DEX_RELOC_ADDRESS) {
 		symbol->vaddr = RZ_DEX_VIRT_ADDRESS + encoded_method->code_offset;
@@ -974,7 +993,7 @@ static RzBinField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *encode
 	field->vaddr = RZ_DEX_VIRT_ADDRESS + encoded_field->offset;
 	field->paddr = encoded_field->offset;
 	field->visibility = encoded_field->access_flags & UT32_MAX;
-	field->visibility_str = dex_access_flags_readable(access_flags);
+	field->visibility_str = rz_bin_dex_access_flags_readable(access_flags);
 	field->name = dex_resolve_string_id(dex, field_id->name_idx);
 	field->type = dex_resolve_type_id(dex, field_id->type_idx);
 	field->flags = dex_access_flags_to_bin_flags(access_flags);
@@ -1039,7 +1058,7 @@ static RzBinSymbol *dex_field_to_symbol(RzBinDex *dex, DexEncodedField *encoded_
 	field->bind = dex_is_static(encoded_field->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 	field->is_imported = false;
 	field->visibility = encoded_field->access_flags & UT32_MAX;
-	field->visibility_str = dex_access_flags_readable(encoded_field->access_flags);
+	field->visibility_str = rz_bin_dex_access_flags_readable(encoded_field->access_flags);
 	field->vaddr = RZ_DEX_VIRT_ADDRESS + encoded_field->offset;
 	field->paddr = encoded_field->offset;
 	field->ordinal = encoded_field->field_idx;
@@ -1141,7 +1160,7 @@ RZ_API RZ_OWN RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *
 		bclass->name = dex_resolve_type_id(dex, class_def->class_idx);
 		bclass->super = dex_resolve_type_id(dex, class_def->superclass_idx);
 		bclass->visibility = class_def->access_flags;
-		bclass->visibility_str = dex_access_flags_readable(class_def->access_flags);
+		bclass->visibility_str = rz_bin_dex_access_flags_readable(class_def->access_flags);
 		bclass->index = class_def->class_idx;
 		bclass->addr = class_def->offset;
 		bclass->methods = dex_resolve_methods_in_class(dex, class_def, inserted_methods);
@@ -1918,6 +1937,20 @@ RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut
 		return method->code_offset;
 	}
 	return UT64_MAX;
+}
+
+/**
+ * \brief Returns the resolved string linked to the given type id
+ */
+RZ_API RZ_OWN char *rz_bin_dex_resolve_type_id_by_idx(RZ_NONNULL RzBinDex *dex, ut32 type_idx) {
+	rz_return_val_if_fail(dex, NULL);
+
+	if (type_idx >= dex->type_ids_size) {
+		RZ_LOG_INFO("cannot find type_id with index %u\n", type_idx);
+		return NULL;
+	}
+	DexTypeId type_id = dex->types[type_idx];
+	return rz_bin_dex_resolve_string_by_idx(dex, type_id);
 }
 
 /**
