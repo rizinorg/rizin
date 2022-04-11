@@ -126,6 +126,8 @@ RZ_IPI RzCmdStatus rz_analysis_esil_init_p_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_remove_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_p_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_esil_trace_start_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_esil_trace_stop_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_il_vm_initialize_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_il_vm_step_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_il_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);

@@ -228,13 +228,6 @@ static const char *help_msg_aea[] = {
 	NULL
 };
 
-static const char *help_msg_aets[] = {
-	"Usage:", "aets ", " [...]",
-	"aets+", "", "Start ESIL trace session",
-	"aets-", "", "Stop ESIL trace session",
-	NULL
-};
-
 static const char *help_msg_af[] = {
 	"Usage:", "af", "",
 	"af", " ([name]) ([addr])", "analyze functions (start at addr or $$)",
@@ -2758,7 +2751,7 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int arg
 			break;
 		}
 		if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
-			eprintf("call at 0x%08" PFMT64x "\n", addr);
+			RZ_LOG_ERROR("call at 0x%08" PFMT64x "\n", addr);
 			break;
 		}
 		rz_analysis_op_free(op);
@@ -2832,6 +2825,42 @@ RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_remove_handler(RzCore *core, int ar
 // aeimp
 RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_p_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_esil_init_mem_p(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aets+
+RZ_IPI RzCmdStatus rz_esil_trace_start_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (!esil) {
+		RZ_LOG_ERROR("ESIL is not initialized. Use `aeim` first.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (esil->trace) {
+		RZ_LOG_ERROR("ESIL trace already started\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	esil->trace = rz_analysis_esil_trace_new(esil);
+	if (!esil->trace) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_config_set_i(core->config, "dbg.trace", true);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aets-
+RZ_IPI RzCmdStatus rz_esil_trace_stop_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (!esil) {
+		RZ_LOG_ERROR("ESIL is not initialized. Use `aeim` first.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!esil->trace) {
+		RZ_LOG_ERROR("No ESIL trace started\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_esil_trace_free(esil->trace);
+	esil->trace = NULL;
+	rz_config_set_i(core->config, "dbg.trace", false);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3191,48 +3220,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			rz_analysis_aefa(core, rz_str_trim_head_ro(input + 2));
 		} else { // This should be aefb -> because its emulating all the bbs
 			__analysis_esil_function(core, core->offset);
-		}
-		break;
-	case 't': // "aet"
-		switch (input[1]) {
-		case 's': // "aets"
-			switch (input[2]) {
-			case '+': // "aets+"
-				if (!esil) {
-					eprintf("Error: ESIL is not initialized. Use `aeim` first.\n");
-					break;
-				}
-				if (esil->trace) {
-					eprintf("ESIL trace already started\n");
-					break;
-				}
-				esil->trace = rz_analysis_esil_trace_new(esil);
-				if (!esil->trace) {
-					break;
-				}
-				rz_config_set_i(core->config, "dbg.trace", true);
-				break;
-			case '-': // "aets-"
-				if (!esil) {
-					eprintf("Error: ESIL is not initialized. Use `aeim` first.\n");
-					break;
-				}
-				if (!esil->trace) {
-					eprintf("No ESIL trace started\n");
-					break;
-				}
-				rz_analysis_esil_trace_free(esil->trace);
-				esil->trace = NULL;
-				rz_config_set_i(core->config, "dbg.trace", false);
-				break;
-			default:
-				rz_core_cmd_help(core, help_msg_aets);
-				break;
-			}
-			break;
-		default:
-			eprintf("Unknown command. Use `aets?`.\n");
-			break;
 		}
 		break;
 	case 'A': // "aeA"

@@ -2205,6 +2205,25 @@ static const RzCmdDescHelp analysis_esil_init_mem_p_help = {
 	.args = analysis_esil_init_mem_p_args,
 };
 
+static const RzCmdDescHelp aets_help = {
+	.summary = "ESIL Trace session",
+};
+static const RzCmdDescArg esil_trace_start_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp esil_trace_start_help = {
+	.summary = "Start ESIL trace session",
+	.args = esil_trace_start_args,
+};
+
+static const RzCmdDescArg esil_trace_stop_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp esil_trace_stop_help = {
+	.summary = "Stop ESIL trace session",
+	.args = esil_trace_stop_args,
+};
+
 static const RzCmdDescHelp aez_help = {
 	.summary = "RzIL Emulation",
 };
@@ -13420,6 +13439,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_esil_init_mem_p_cd = rz_cmd_desc_argv_new(core->rcmd, aeim_cd, "aeimp", rz_analysis_esil_init_mem_p_handler, &analysis_esil_init_mem_p_help);
 	rz_warn_if_fail(analysis_esil_init_mem_p_cd);
+
+	RzCmdDesc *aets_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aets", NULL, NULL, &aets_help);
+	rz_warn_if_fail(aets_cd);
+	RzCmdDesc *esil_trace_start_cd = rz_cmd_desc_argv_new(core->rcmd, aets_cd, "aets+", rz_esil_trace_start_handler, &esil_trace_start_help);
+	rz_warn_if_fail(esil_trace_start_cd);
+
+	RzCmdDesc *esil_trace_stop_cd = rz_cmd_desc_argv_new(core->rcmd, aets_cd, "aets-", rz_esil_trace_stop_handler, &esil_trace_stop_help);
+	rz_warn_if_fail(esil_trace_stop_cd);
 
 	RzCmdDesc *aez_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aez", NULL, NULL, &aez_help);
 	rz_warn_if_fail(aez_cd);
