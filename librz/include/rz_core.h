@@ -614,6 +614,7 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 RZ_API RzReg *rz_core_reg_default(RzCore *core);
 RZ_API ut64 rz_core_reg_getv_by_role_or_name(RzCore *core, const char *name);
 RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64 num);
+RZ_API void rz_core_reg_update_flags(RzCore *core);
 
 /* cdebug.c */
 RZ_API bool rz_core_is_debug(RzCore *core);
