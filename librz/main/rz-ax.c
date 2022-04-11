@@ -400,7 +400,6 @@ dotherax:
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_STR_TO_BIN)) { // -B (bin -> str)
 		int i = 0;
-		// TODO: move to rz_util
 		for (i = 0; i < strlen(str); i++) {
 			ut8 ch = str[i];
 			printf("%d%d%d%d"
