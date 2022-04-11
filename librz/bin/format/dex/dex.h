@@ -129,16 +129,26 @@ typedef struct dex_encoded_method_t {
 	/*encoded_catch_handler_list handlers */
 } DexEncodedMethod;
 
+// small note: on the official documentation all the
+// variables are set as uint (aka ut32) but on their
+// libdexfile defines some fields within class_def
+// as ut16 + padding; to uniform with the real used
+// code you will find some useless _padding variables
 typedef struct dex_class_def_t {
-	ut32 class_idx;
+	ut16 class_idx;
+	ut16 _padding1;
 	ut32 access_flags;
-	ut32 superclass_idx;
+	ut16 superclass_idx;
+	ut16 _padding2;
 	ut32 interfaces_offset;
 	ut32 source_file_idx;
 	ut32 annotations_offset;
 	ut32 class_data_offset;
 	ut32 static_values_offset;
 	ut64 offset;
+
+	ut32 n_interfaces;
+	ut16 *interfaces;
 
 	RzList /*<DexEncodedField>*/ *static_fields;
 	RzList /*<DexEncodedField>*/ *instance_fields;
@@ -213,6 +223,8 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_field_by_idx(RZ_NONNULL RzBinDex *dex, ut
 RZ_API RZ_OWN char *rz_bin_dex_resolve_class_by_idx(RZ_NONNULL RzBinDex *dex, ut32 class_idx);
 RZ_API RZ_OWN char *rz_bin_dex_resolve_string_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx);
 RZ_API RZ_OWN char *rz_bin_dex_resolve_proto_by_idx(RZ_NONNULL RzBinDex *dex, ut32 proto_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_type_id_by_idx(RZ_NONNULL RzBinDex *dex, ut32 type_idx);
+RZ_API RZ_OWN char *rz_bin_dex_access_flags_readable(ut32 access_flags);
 
 RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx);
 RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 type_idx);
