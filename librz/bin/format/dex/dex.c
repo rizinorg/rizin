@@ -288,6 +288,26 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzP
 	read_le32_or_fail(buf, class_def->static_values_offset, dex_class_def_new_fail);
 	class_def->offset = offset;
 
+	if (class_def->interfaces_offset > 0) {
+		if (rz_buf_seek(buf, class_def->interfaces_offset, RZ_BUF_SET) < 0) {
+			goto dex_class_def_new_fail;
+		}
+		read_le32_or_fail(buf, class_def->n_interfaces, dex_class_def_new_fail);
+		if (class_def->n_interfaces > 0) {
+			class_def->interfaces = RZ_NEWS0(ut16, class_def->n_interfaces);
+			if (!class_def->interfaces) {
+				goto dex_class_def_new_fail;
+			}
+			for (ut32 i = 0; i < class_def->n_interfaces; ++i) {
+				read_le16_or_fail(buf, class_def->interfaces[i], dex_class_def_new_fail);
+			}
+		}
+	}
+
+	if (!class_def->class_data_offset) {
+		return class_def;
+	}
+
 	if (rz_buf_seek(buf, class_def->class_data_offset, RZ_BUF_SET) < 0) {
 		goto dex_class_def_new_fail;
 	}
@@ -326,22 +346,6 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzP
 		if (!encoded_method || !rz_list_append(class_def->virtual_methods, encoded_method)) {
 			free(encoded_method);
 			goto dex_class_def_new_fail;
-		}
-	}
-
-	if (class_def->interfaces_offset > 0) {
-		if (rz_buf_seek(buf, class_def->interfaces_offset, RZ_BUF_SET) < 0) {
-			goto dex_class_def_new_fail;
-		}
-		read_le32_or_fail(buf, class_def->n_interfaces, dex_class_def_new_fail);
-		if (class_def->n_interfaces > 0) {
-			class_def->interfaces = RZ_NEWS0(ut16, class_def->n_interfaces);
-			if (!class_def->interfaces) {
-				goto dex_class_def_new_fail;
-			}
-			for (ut32 i = 0; i < class_def->n_interfaces; ++i) {
-				read_le16_or_fail(buf, class_def->interfaces[i], dex_class_def_new_fail);
-			}
 		}
 	}
 
