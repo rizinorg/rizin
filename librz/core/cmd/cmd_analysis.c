@@ -2828,13 +2828,76 @@ RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_p_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
+// aes
+RZ_IPI RzCmdStatus rz_il_step_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesp
+RZ_IPI RzCmdStatus rz_il_step_evaluate_handler(RzCore *core, int argc, const char **argv) {
+	int n = (int)rz_num_math(core->num, argv[1]);
+	rz_core_analysis_esil_emulate(core, core->offset, -1, n);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesb
+RZ_IPI RzCmdStatus rz_il_step_back_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_core_esil_step_back(core)) {
+		RZ_LOG_ERROR("cannnot step back\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeso
+RZ_IPI RzCmdStatus rz_il_step_over_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_step_over(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesou
+RZ_IPI RzCmdStatus rz_il_step_over_until_addr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 until_addr = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_esil_step_over_until(core, until_addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aess
+RZ_IPI RzCmdStatus rz_il_step_skip_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_step_over_until(core, UT64_MAX);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesu
+RZ_IPI RzCmdStatus rz_il_step_until_addr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 until_addr = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_esil_step_over_until(core, until_addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesue
+RZ_IPI RzCmdStatus rz_il_step_until_expr_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_step_over_untilexpr(core, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesuo
+RZ_IPI RzCmdStatus rz_il_step_until_opt_handler(RzCore *core, int argc, const char **argv) {
+	RzList *optypes_list = rz_list_new_from_array((const void **)&argv[1], argc - 1);
+	step_until_optype(core, optypes_list);
+	return RZ_CMD_STATUS_OK;
+}
+
 // aets+
-RZ_IPI RzCmdStatus rz_esil_trace_start_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_il_trace_start_handler(RzCore *core, int argc, const char **argv) {
 	return rz_core_analysis_esil_trace_start(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // aets-
-RZ_IPI RzCmdStatus rz_esil_trace_stop_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_il_trace_stop_handler(RzCore *core, int argc, const char **argv) {
 	return rz_core_analysis_esil_trace_stop(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
@@ -3007,139 +3070,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		rz_analysis_esil_parse(esil, input + 1);
 		rz_core_esil_dumpstack(esil);
 		rz_analysis_esil_stack_free(esil);
-		break;
-	case 's': // "aes"
-		// "aes" "aeso" "aesu" "aesue"
-		// aes -> single step
-		// aesb -> single step back
-		// aeso -> single step over
-		// aesu -> until address
-		// aesue -> until esil expression
-		switch (input[1]) {
-		case '?': // "ae?"
-			rz_core_cmd0(core, "ae?~aes");
-			break;
-		// TODO : doc this or remove
-		case 'l': // "aesl"
-		{
-			ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-			RzAnalysisOp *op = rz_core_analysis_op(core, pc, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-			// TODO: honor hint
-			if (!op) {
-				break;
-			}
-			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-			rz_debug_reg_set(core->dbg, "PC", pc + op->size);
-			rz_analysis_esil_set_pc(esil, pc + op->size);
-			rz_core_reg_update_flags(core);
-			rz_analysis_op_free(op);
-		} break;
-		case 'b': // "aesb"
-			if (!rz_core_esil_step_back(core)) {
-				eprintf("cannnot step back\n");
-			}
-			rz_core_reg_update_flags(core);
-			break;
-		case 'B': // "aesB"
-		{
-			n = strchr(input + 2, ' ');
-			char *n2 = NULL;
-			if (n) {
-				n = (char *)rz_str_trim_head_ro(n + 1);
-			}
-			if (n) {
-				n2 = strchr(n, ' ');
-				if (n2) {
-					*n2++ = 0;
-				}
-				ut64 off = rz_num_math(core->num, n);
-				ut64 nth = n2 ? rz_num_math(core->num, n2) : 1;
-				rz_core_analysis_esil_emulate(core, core->offset, off, (int)nth);
-			} else {
-				eprintf("Usage: aesB [until-addr] [nth-opcodes] @ [from-addr]\n");
-			}
-		} break;
-		case 'u': // "aesu"
-			until_expr = NULL;
-			until_addr = UT64_MAX;
-			if (rz_str_endswith(input, "?")) {
-				rz_core_cmd0(core, "ae?~aesu");
-			} else
-				switch (input[2]) {
-				case 'e': // "aesue"
-					until_expr = input + 3;
-					break;
-				case ' ': // "aesu"
-					until_addr = rz_num_math(core->num, input + 2);
-					break;
-				case 'o': { // "aesuo"
-					char *optypes = strdup(rz_str_trim_head_ro((char *)input + 3));
-					RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
-					step_until_optype(core, optypes_list);
-					free(optypes);
-					rz_list_free(optypes_list);
-					break;
-				}
-				default:
-					rz_core_cmd0(core, "ae?~aesu");
-					break;
-				}
-			if (until_expr || until_addr != UT64_MAX) {
-				rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			}
-			rz_core_reg_update_flags(core);
-			break;
-		case 's': // "aess"
-			if (input[2] == 'u') { // "aessu"
-				if (input[3] == 'e') {
-					rz_core_analysis_esil_step_over_untilexpr(core, input + 3);
-				} else {
-					until_addr = rz_num_math(core->num, input + 2);
-					rz_core_analysis_esil_step_over_until(core, until_addr);
-				}
-			} else {
-				rz_core_analysis_esil_step_over_until(core, UT64_MAX);
-			}
-			break;
-		case 'o': // "aeso"
-			if (input[2] == 'u') { // "aesou"
-				if (input[3] == 'e') {
-					rz_core_analysis_esil_step_over_untilexpr(core, input + 3);
-				} else {
-					until_addr = rz_num_math(core->num, input + 2);
-					rz_core_analysis_esil_step_over_until(core, until_addr);
-				}
-			} else if (!input[2] || input[2] == ' ') { // "aeso [addr]"
-				rz_core_analysis_esil_step_over(core);
-			} else {
-				eprintf("Usage: aesou [addr] # step over until given address\n");
-			}
-			break;
-		case 'p': //"aesp"
-			n = strchr(input, ' ');
-			n1 = n ? strchr(n + 1, ' ') : NULL;
-			if ((!n || !n1) || (!(n + 1) || !(n1 + 1))) {
-				eprintf("aesp [offset] [num]\n");
-				break;
-			}
-			adr = rz_num_math(core->num, n + 1);
-			off = rz_num_math(core->num, n1 + 1);
-			rz_core_analysis_esil_emulate(core, adr, -1, off);
-			break;
-		case ' ': //"aes?"
-			n = strchr(input, ' ');
-			if (!(n + 1)) {
-				rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-				break;
-			}
-			off = rz_num_math(core->num, n + 1);
-			rz_core_analysis_esil_emulate(core, -1, -1, off);
-			break;
-		default:
-			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			rz_core_reg_update_flags(core);
-			break;
-		}
 		break;
 	case 'k': // "aek"
 		switch (input[1]) {
