@@ -1293,70 +1293,70 @@ RZ_DEPRECATE RZ_API RZ_BORROW const ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut6
 }
 
 /**
- * \brief ...
- * \param b ...
- * \param v ...
- * \return ...
+ * \brief  Decodes ULEB128 from RzBuffer
  *
- * ...
+ * \param  buffer Buffer used to decode the ULEB128.
+ * \param  value  Decoded value.
+ * \return The number of bytes used.
  */
-RZ_API st64 rz_buf_uleb128(RzBuffer *b, ut64 *v) {
-	ut8 c = 0xff;
-	ut64 s = 0, sum = 0, l = 0;
+RZ_API st64 rz_buf_uleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL ut64 *value) {
+	rz_return_val_if_fail(buffer && value, -1);
+
+	ut64 sum = 0, used = 0, slice;
+	ut32 shift = 0;
+	ut8 byte = 0;
 	do {
-		ut8 data;
-		st64 r = rz_buf_read(b, &data, sizeof(data));
-		if (r <= 0) {
+		if (rz_buf_read(buffer, &byte, sizeof(byte)) < 1) {
+			// malformed uleb128 due end of buffer
 			return -1;
 		}
-		c = data & 0xff;
-		if (s < 64) {
-			sum |= ((ut64)(c & 0x7f) << s);
-			s += 7;
-		} else {
-			sum = 0;
+		used++;
+		slice = byte & 0x7f;
+		if ((shift >= 64 && slice != 0) || ((slice << shift) >> shift) != slice) {
+			// uleb128 too big for ut64
+			return -1;
 		}
-		l++;
-	} while (c & 0x80);
-	if (v) {
-		*v = sum;
-	}
-	return l;
+		sum += slice << shift;
+		shift += 7;
+	} while (byte >= 128);
+	*value = sum;
+	return used;
 }
 
 /**
- * \brief ...
- * \param b ...
- * \param v ...
- * \return ...
+ * \brief  Decodes SLEB128 from RzBuffer
  *
- * ...
+ * \param  buffer Buffer used to decode the SLEB128.
+ * \param  value  Decoded value.
+ * \return The number of bytes used.
  */
-RZ_API st64 rz_buf_sleb128(RzBuffer *b, st64 *v) {
-	st64 result = 0, offset = 0;
-	ut8 value;
+RZ_API st64 rz_buf_sleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL st64 *value) {
+	rz_return_val_if_fail(buffer && value, -1);
+
+	ut64 used = 0, slice;
+	st64 sum = 0;
+	ut32 shift = 0;
+	ut8 byte = 0;
 	do {
-		st64 chunk;
-		st64 r = rz_buf_read(b, &value, sizeof(value));
-		if (r != sizeof(value)) {
+		if (rz_buf_read(buffer, &byte, sizeof(byte)) < 1) {
+			// malformed sleb128 due end of buffer
 			return -1;
 		}
-		chunk = value & 0x7f;
-		if (offset < 64) {
-			result |= (chunk << offset);
-			offset += 7;
-		} else {
-			result = 0;
+		used++;
+		slice = byte & 0x7f;
+		if ((shift >= 64 && slice != (sum < 0 ? 0x7f : 0x00)) ||
+			(shift == 63 && slice != 0 && slice != 0x7f)) {
+			// sleb128 too big for st64
+			return -1;
 		}
-	} while (value & 0x80);
+		sum |= slice << shift;
+		shift += 7;
+	} while (byte >= 128);
 
-	if ((value & 0x40) != 0) {
-		if (offset < 64) {
-			result |= ~0ULL << offset;
-		}
+	if (shift < 64 && (byte & 0x40)) {
+		// extends negative sign
+		sum |= (-1ull) << shift;
 	}
-	if (v) {
-		*v = result;
-	}
-	return offset / 7;
+	*value = sum;
+	return used;
 }
