@@ -27,7 +27,7 @@
 #define RZ_AX_FLAG_DUMP_C_BYTES     (1ull << 21) // -i (dump as C byte array)
 #define RZ_AX_FLAG_OCTAL_TO_RAW     (1ull << 22) // -o (octalstr -> raw)
 #define RZ_AX_FLAG_IPADDR_TO_LONG   (1ull << 23) // -I (IP address <-> LONG)
-#define RZ_AX_FLAG_SET_BITS         (1ull << 24) // -p (count set bits)
+#define RZ_AX_FLAG_SET_BITS         (1ull << 24) // -p (find position of set bits)
 
 #define has_flag(f, x) (f & x)
 
@@ -415,7 +415,7 @@ dotherax:
 				ch & 1 ? 1 : 0);
 		}
 		return true;
-	} else if (has_flag(flags, RZ_AX_FLAG_SET_BITS)) { // -p (count set bits)
+	} else if (has_flag(flags, RZ_AX_FLAG_SET_BITS)) { // -p (find position of set bits)
 		ut64 n = rz_num_math(num, str);
 		char strbits[65];
 		int i = 0, set_bits_ctr = 0;
@@ -433,11 +433,16 @@ dotherax:
 			if (strbits[i] == '0' && strbits[i - 1] == '1') {
 				if (set_bits_ctr == 1) {
 					printf("]: 1\n");
+				} else if (strbits[i + 1] == '\0') {
+					printf("-%d]: 1\n", i);
 				} else
 					printf("-%d]: 1\n", i - 1);
 				set_bits_ctr = 0;
 			} else if (strbits[i] == '1' && strbits[i + 1] == '\0') {
-				printf("]: 1\n");
+				if (set_bits_ctr == 1) {
+					printf("]: 1\n");
+				} else
+					printf("-%d]: 1\n", i);
 				set_bits_ctr = 0;
 			}
 
