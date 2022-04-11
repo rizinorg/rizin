@@ -420,29 +420,23 @@ dotherax:
 		char strbits[65];
 		int i = 0, set_bits_ctr = 0;
 		rz_num_to_bits(strbits, n);
-		rz_str_reverse(strbits);	// because we count Right to Left
+		rz_str_reverse(strbits); // because we count Right to Left
 		while (strbits[i] != '\0') {
 			if (strbits[i] == '1') {
 				++set_bits_ctr;
-				if (i == 0)
-				{
-					printf("[%d",i);
-				} else 	if (strbits[i] == '1' && strbits[i-1] == '0')
-			{
-				printf("[%d",i);
-			}
-			}
-			if ( strbits[i] == '0' && strbits[i-1] == '1' )
-			{
-				if (set_bits_ctr == 1)
-				{
-					printf("]: 1\n");
+				if (i == 0) {
+					printf("[%d", i);
+				} else if (strbits[i] == '1' && strbits[i - 1] == '0') {
+					printf("[%d", i);
 				}
-				else
-					printf("-%d]: 1\n",i-1);
+			}
+			if (strbits[i] == '0' && strbits[i - 1] == '1') {
+				if (set_bits_ctr == 1) {
+					printf("]: 1\n");
+				} else
+					printf("-%d]: 1\n", i - 1);
 				set_bits_ctr = 0;
-			} else if (strbits[i] == '1' && strbits[i+1] == '\0')
-			{
+			} else if (strbits[i] == '1' && strbits[i + 1] == '\0') {
 				printf("]: 1\n");
 				set_bits_ctr = 0;
 			}
