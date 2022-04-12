@@ -555,6 +555,8 @@ RZ_API bool cmd_analysis_objc(RzCore *core, bool auto_analysis);
 RZ_API void rz_core_analysis_cc_init(RzCore *core);
 RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr);
+RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core);
+RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core);
 
 RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra);
 RZ_API void rz_listinfo_free(RzListInfo *info);
@@ -612,6 +614,7 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 RZ_API RzReg *rz_core_reg_default(RzCore *core);
 RZ_API ut64 rz_core_reg_getv_by_role_or_name(RzCore *core, const char *name);
 RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64 num);
+RZ_API void rz_core_reg_update_flags(RzCore *core);
 
 /* cdebug.c */
 RZ_API bool rz_core_is_debug(RzCore *core);

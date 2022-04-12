@@ -121,7 +121,6 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state);
 
 /* creg.c */
-RZ_IPI void rz_core_reg_update_flags(RzCore *core);
 RZ_IPI RzList /*<RzRegItem>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
 RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items);
 
