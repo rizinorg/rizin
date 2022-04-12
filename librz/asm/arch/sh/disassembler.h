@@ -39,6 +39,17 @@ typedef enum {
 	SH_OP_MOVT,
 	SH_OP_SWAP,
 	SH_OP_XTRCT,
+	SH_OP_ADD,
+	SH_OP_ADDC,
+	SH_OP_ADDV,
+	SH_OP_CMP_EQ,
+	SH_OP_CMP_HS,
+	SH_OP_CMP_GE,
+	SH_OP_CMP_HI,
+	SH_OP_CMP_GT,
+	SH_OP_CMP_PZ,
+	SH_OP_CMP_PL,
+	SH_OP_CMP_STR,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
