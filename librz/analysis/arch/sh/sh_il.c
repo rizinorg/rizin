@@ -26,6 +26,7 @@
 #define SH_S_ADDR(x) SN(SH_ADDR_SIZE, x)
 #define SH_U_REG(x)  UN(SH_REG_SIZE, (x))
 #define SH_S_REG(x)  SN(SH_REG_SIZE, (x))
+#define SH_BIT(x)    UN(1, x)
 
 // SR register in SH
 // SR = x|D|R|B|xxxxxxxxxxxx|F|xxxxx|M|Q|IIII|xx|S|T
@@ -52,6 +53,12 @@
 		RZ_LOG_ERROR("RzIL: SH: invalid register R%u\n", x); \
 		return v; \
 	}
+
+#define sh_il_get_pure_param(x) \
+	sh_il_get_param(op->param[x], op->scaling).pure
+
+#define sh_il_set_pure_param(x, val) \
+	sh_il_set_param(op->param[x], val, op->scaling)
 
 /**
  * Registers available as global variables in the IL
@@ -277,6 +284,74 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RzILOpPure *val, SHSc
 	}
 
 	return sh_apply_effects(ret, pre, post);
+}
+
+static inline RzILOpBool *sh_il_is_add_carry(RzILOpPure *res, RzILOpPure *x, RzILOpPure *y) {
+	// res = x + y
+	// x & y
+	RzILOpPure *xy = LOGAND(x, y);
+
+	RzILOpPure *nres = LOGNOT(res);
+	// !res & y
+	RzILOpPure *ry = LOGAND(nres, y);
+	// x & !res
+	RzILOpPure *xr = LOGAND(x, nres);
+
+	// bit = xy | ry | xr
+	RzILOpPure * or = LOGOR(xy, ry);
+	or = LOGOR(or, xr);
+
+	RzILOpPure *mask = SH_U_REG(1u << 31);
+	mask = LOGAND(mask, or);
+	return NON_ZERO(mask);
+}
+
+static inline RzILOpBool *sh_il_is_sub_carry(RzILOpPure *res, RzILOpPure *x, RzILOpPure *y) {
+	// res = x - y
+	// !x & y
+	RzILOpPure *nx = LOGNOT(x);
+	RzILOpPure *nxy = LOGAND(nx, y);
+
+	// y & res
+	RzILOpPure *rny = LOGAND(y, res);
+	// res & !x
+	RzILOpPure *rnx = LOGAND(res, nx);
+
+	// bit = nxy | rny | rnx
+	RzILOpPure * or = LOGOR(nxy, rny);
+	or = LOGOR(or, rnx);
+
+	RzILOpPure *mask = SH_U_REG(1u << 31);
+	mask = LOGAND(mask, or);
+	return NON_ZERO(mask);
+}
+
+static inline RzILOpBool *sh_il_is_add_overflow(RzILOpPure *res, RzILOpPure *x, RzILOpPure *y) {
+	// res = x + y
+	// !res & x & y
+	RzILOpPure *nrxy = LOGAND(LOGAND(LOGNOT(res), x), y);
+	// res & !x & !y
+	RzILOpPure *rnxny = LOGAND(LOGAND(res, LOGNOT(x)), LOGNOT(y));
+	// or = nrxy | rnxny
+	RzILOpPure * or = LOGOR(nrxy, rnxny);
+
+	RzILOpPure *mask = SH_U_REG(1u << 31);
+	mask = LOGAND(mask, or);
+	return NON_ZERO(mask);
+}
+
+static inline RzILOpBool *sh_il_is_sub_overflow(RzILOpPure *res, RzILOpPure *x, RzILOpPure *y) {
+	// res = x - y
+	// !res & x & !y
+	RzILOpPure *nrxny = LOGAND(LOGAND(LOGNOT(res), x), LOGNOT(y));
+	// res & !x & y
+	RzILOpPure *rnxy = LOGAND(LOGAND(res, LOGNOT(x)), y);
+	// or = nrxny | rnxy
+	RzILOpPure * or = LOGOR(nrxny, rnxy);
+
+	RzILOpPure *mask = SH_U_REG(1u << 31);
+	mask = LOGAND(mask, or);
+	return NON_ZERO(mask);
 }
 
 /* Instruction implementations */
