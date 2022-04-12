@@ -429,7 +429,7 @@ dotherax:
 					printf("[%d", i);
 				}
 			}
-			if (strbits[i] == '0' && strbits[i - 1] == '1') {
+			if (strbits[i] == '0' && strbits[i - 1] == '1' && i != 0) {
 				if (set_bits_ctr == 1) {
 					printf("]: 1\n");
 				} else if (strbits[i + 1] == '\0') {
