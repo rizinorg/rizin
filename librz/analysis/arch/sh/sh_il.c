@@ -374,7 +374,7 @@ static RzILOpEffect *sh_il_mov(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 }
 
 /**
- * MOVT	Rn
+ * MOVT	 Rn
  * T -> Rn
  * 0000nnnn00101001
  */
@@ -383,45 +383,178 @@ static RzILOpEffect *sh_il_movt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 }
 
 /**
- * SWAP.B Rm, Rn
+ * SWAP.B  Rm, Rn
  * Rm -> swap lower 2 bytes -> REG
  * 0110nnnnmmmm1000
  *
- * SWAP.W Rm, Rn
+ * SWAP.W  Rm, Rn
  * Rm -> swap upper/lower words -> Rn
  * 0110nnnnmmmm1001
  */
 static RzILOpEffect *sh_il_swap(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	if (op->scaling == SH_SCALING_B) {
 		// swap lower two bytes
-		RzILOpEffect *r0 = SETL("swap_r0", sh_il_get_reg(op->param->param[0]));
-		RzILOpEffect *r1 = SETL("swap_r1", sh_il_get_reg(op->param->param[1]));
+		RzILOpEffect *r0 = SETL("swap_r0", sh_il_get_pure_param(0));
+		RzILOpEffect *r1 = SETL("swap_r1", sh_il_get_pure_param(1));
 		RzILOpPure *r0_low = LOGAND(SH_U_REG(0xffff), VARL("swap_r0"));
 		RzILOpPure *r1_low = LOGAND(SH_U_REG(0xffff), VARL("swap_r1"));
 		RzILOpPure *r0_high = LOGAND(SH_U_REG(0xffff0000), VARL("swap_r0"));
 		RzILOpPure *r1_high = LOGAND(SH_U_REG(0xffff0000), VARL("swap_r1"));
 		RzILOpPure *r0_new = LOGOR(r0_high, r1_low);
 		RzILOpPure *r1_new = LOGOR(r1_high, r0_low);
-		return SEQ4(r0, r1, sh_il_set_reg(op->param->param[0], r0_new), sh_il_set_reg(op->param->param[1], r1_new));
+		return SEQ4(r0, r1, sh_il_set_pure_param(0, r0_new), sh_il_set_pure_param(1, r1_new));
 	} else if (op->scaling == SH_SCALING_W) {
 		// swap upper and lower words and store in dst
-		RzILOpPure *high = SHIFTL0(sh_il_get_reg(op->param->param[0]), SH_U_REG(BITS_PER_BYTE * 2));
-		RzILOpPure *low = SHIFTR0(sh_il_get_reg(op->param->param[0]), SH_U_REG(BITS_PER_BYTE * 2));
-		return sh_il_set_reg(op->param->param[1], LOGOR(high, low));
+		RzILOpPure *p0 = sh_il_get_pure_param(0);
+		RzILOpPure *high = SHIFTL0(p0, SH_U_REG(BITS_PER_BYTE * 2));
+		RzILOpPure *low = SHIFTR0(p0, SH_U_REG(BITS_PER_BYTE * 2));
+		return sh_il_set_pure_param(1, LOGOR(high, low));
 	}
 
 	return NULL;
 }
 
 /**
- * XTRCT Rm, Rn
+ * XTRCT  Rm, Rn
  * Rm:Rn middle 32 bits -> Rn
  * 0010nnnnmmmm1101
  */
 static RzILOpEffect *sh_il_xtrct(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *high = SHIFTL0(sh_il_get_reg(op->param->param[0]), SH_U_REG(BITS_PER_BYTE * 2));
-	RzILOpPure *low = SHIFTR0(sh_il_get_reg(op->param->param[1]), SH_U_REG(BITS_PER_BYTE * 2));
-	return sh_il_set_reg(op->param->param[1], LOGOR(high, low));
+	RzILOpPure *high = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(BITS_PER_BYTE * 2));
+	RzILOpPure *low = SHIFTR0(sh_il_get_pure_param(1), SH_U_REG(BITS_PER_BYTE * 2));
+	return sh_il_set_pure_param(1, LOGOR(high, low));
+}
+
+/**
+ * ADD  Rm, Rn
+ * Rn + Rm -> Rn
+ * 0011nnnnmmmm1100
+ *
+ * ADD #imm, Rn
+ * Rn + imm -> Rn
+ * 0111nnnniiiiiiii
+ */
+static RzILOpEffect *sh_il_add(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(1, ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
+}
+
+/**
+ * ADDC  Rm, Rn
+ * Rn + Rm + T -> Rn
+ * carry -> T
+ * 0011nnnnmmmm1110
+ */
+static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *p0 = sh_il_get_pure_param(0);
+	RzILOpPure *p1 = sh_il_get_pure_param(1);
+	RzILOpPure *sum = ADD(p0, p1);
+	sum = ADD(sum, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
+
+	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
+	RzILOpEffect *tbit = BRANCH(sh_il_is_add_carry(sum, p0, p1), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SEQ2(ret, tbit);
+}
+
+/**
+ * ADDV  Rm, Rn
+ * Rn + Rm -> Rn
+ * overflow -> T
+ * 0011nnnnmmmm1111
+ */
+static RzILOpEffect *sh_il_addv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *p0 = sh_il_get_pure_param(0);
+	RzILOpPure *p1 = sh_il_get_pure_param(1);
+	RzILOpPure *sum = ADD(p0, p1);
+
+	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
+	RzILOpEffect *tbit = BRANCH(sh_il_is_add_overflow(sum, p0, p1), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SEQ2(ret, tbit);
+}
+
+/**
+ * CMP/EQ  #imm, R0
+ * When R0 = imm, 1 -> T ; Otherwise, 0 -> T
+ * 10001000iiiiiiii
+ *
+ * CMP/EQ  Rm, Rn
+ * When Rn = Rm, 1 -> T ; Otherwise, 0 -> T
+ * 0011nnnnmmmm0000
+ */
+static RzILOpEffect *sh_il_cmp_eq(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return BRANCH(EQ(sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+}
+
+/**
+ * CMP/HS  Rm, Rn
+ * When Rn >= Rm (unsigned), 1 -> T ; Otherwise, 0 -> T
+ * 0011nnnnmmmm0010
+ */
+static RzILOpEffect *sh_il_cmp_hs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return BRANCH(UGE(sh_il_get_pure_param(1), sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+}
+
+/**
+ * CMP/GE  Rm, Rn
+ * When Rn >= Rm (signed), 1 -> T ; Otherwise, 0 -> T
+ * 0011nnnnmmmm0011
+ */
+static RzILOpEffect *sh_il_cmp_ge(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return BRANCH(SGE(sh_il_get_pure_param(1), sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+}
+
+/**
+ * CMP/HI  Rm, Rn
+ * When Rn > Rm (unsigned), 1 -> T ; Otherwise, 0 -> T
+ * 0011nnnnmmmm0110
+ */
+static RzILOpEffect *sh_il_cmp_hi(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return BRANCH(UGT(sh_il_get_pure_param(1), sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+}
+
+/**
+ * CMP/GT  Rm, Rn
+ * When Rn > Rm (signed), 1 -> T ; Otherwise, 0 -> T
+ * 0011nnnnmmmm0111
+ */
+static RzILOpEffect *sh_il_cmp_gt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return BRANCH(SGT(sh_il_get_pure_param(1), sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+}
+
+/**
+ * CMP/PZ  Rn
+ * When Rn >= 0, 1 -> T ; Otherwise, 0 -> T
+ * 0100nnnn00010001
+ */
+static RzILOpEffect *sh_il_cmp_pz(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return BRANCH(SGE(sh_il_get_pure_param(0), SH_S_REG(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+}
+
+/**
+ * CMP/PL  Rn
+ * When Rn > 0, 1 -> T ; Otherwise, 0 -> T
+ * 0100nnnn00010101
+ */
+static RzILOpEffect *sh_il_cmp_pl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return BRANCH(SGT(sh_il_get_pure_param(0), SH_S_REG(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+}
+
+/**
+ * CMP/STR  Rm, Rn
+ * When any bytes are equal, 1 -> T ; Otherwise, 0 -> T
+ * 0010nnnnmmmm1100
+ */
+static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure * xor = XOR(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
+
+	RzILOpPure *eq = EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0xff));
+	xor = SHIFTL0(xor, SH_U_REG(BITS_PER_BYTE));
+	eq = AND(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0xff)));
+	xor = SHIFTL0(xor, SH_U_REG(BITS_PER_BYTE));
+	eq = AND(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0xff)));
+	xor = SHIFTL0(xor, SH_U_REG(BITS_PER_BYTE));
+	eq = AND(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0xff)));
+
+	return BRANCH(eq, SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
@@ -433,5 +566,16 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_mov,
 	sh_il_movt,
 	sh_il_swap,
-	sh_il_xtrct
+	sh_il_xtrct,
+	sh_il_add,
+	sh_il_addc,
+	sh_il_addv,
+	sh_il_cmp_eq,
+	sh_il_cmp_hs,
+	sh_il_cmp_ge,
+	sh_il_cmp_hi,
+	sh_il_cmp_gt,
+	sh_il_cmp_pz,
+	sh_il_cmp_pl,
+	sh_il_cmp_str
 };
