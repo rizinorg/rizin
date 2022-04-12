@@ -7332,6 +7332,11 @@ static void print_stats(RzCore *core, HtPU *ht, RzAnalysisFunction *fcn, RzCmdSt
 			rz_table_add_column(t, typeNumber, name, 0);
 		}
 		RzPVector *items = rz_pvector_new(free);
+		if (!items) {
+			RZ_LOG_ERROR("Failed to allocate memory.\n");
+			rz_list_free(list);
+			return;
+		}
 		rz_pvector_push(items, strdup(fcn->name));
 		rz_list_foreach (list, iter, name) {
 			int nv = (int)ht_pu_find(ht, name, NULL);
@@ -7859,6 +7864,12 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name, b
 			int i = 1;
 			rz_vector_foreach(methods, meth) {
 				RzPVector *row_vec = rz_pvector_new(free);
+				if (!row_vec) {
+					RZ_LOG_ERROR("Failed to allocate memory.\n");
+					rz_table_free(table);
+					rz_vector_free(methods);
+					return;
+				}
 				rz_pvector_push(row_vec, rz_str_newf("%d", i++));
 				rz_pvector_push(row_vec, rz_str_new(meth->real_name));
 				rz_pvector_push(row_vec, rz_str_newf("0x%" PFMT64x, meth->addr));

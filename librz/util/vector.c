@@ -249,8 +249,8 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorCo
 	t = (void *)malloc(elem_size);
 	pivot = (void *)malloc(elem_size);
 	if (!t || !pivot) {
-		RZ_FREE(t);
-		RZ_FREE(pivot);
+		free(t);
+		free(pivot);
 		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return;
 	}
@@ -275,6 +275,13 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorCo
 }
 #undef VEC_INDEX
 
+/**
+ * \brief Sort function for RzVector
+ *
+ * \param vec pointer to RzVector
+ * \param cmp function used for comparing elements while sorting
+ * \param reverse sort order, ascending order when reverse = False
+ */
 RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse) {
 	rz_return_if_fail(vec && cmp);
 	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse);

@@ -1336,6 +1336,10 @@ RZ_OWN RZ_API RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 
 	if (transpose->rows) {
 		rz_vector_foreach(t->rows, row) {
+			if (!row) {
+				RZ_LOG_WARN("Invalid row while doing transpose.\n");
+				continue;
+			}
 			i = 0;
 			rz_pvector_foreach (row->items, pitem) {
 				item = *pitem;
