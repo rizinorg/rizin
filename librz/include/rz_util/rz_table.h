@@ -37,13 +37,12 @@ enum {
 };
 
 typedef struct {
-	// TODO: use RzVector
-	RzList *items;
+	RzPVector *items;
 } RzTableRow;
 
 typedef struct {
-	RzList *rows;
-	RzList *cols;
+	RzVector *rows;
+	RzVector *cols;
 	int totalCols;
 	bool showHeader;
 	bool showFancy;
@@ -56,8 +55,8 @@ typedef struct {
 
 typedef void (*RzTableSelector)(RzTableRow *acc, RzTableRow *new_row, int nth);
 
-RZ_API void rz_table_row_free(void *_row);
-RZ_API void rz_table_column_free(void *_col);
+RZ_API void rz_table_row_fini(void *_row);
+RZ_API void rz_table_column_fini(void *_col);
 RZ_API RzTableColumn *rz_table_column_clone(RzTableColumn *col);
 RZ_API RzTableColumnType *rz_table_type(const char *name);
 RZ_API RzTable *rz_table_new(void);
@@ -66,16 +65,16 @@ RZ_API int rz_table_column_nth(RzTable *t, const char *name);
 RZ_API void rz_table_add_column(RzTable *t, RzTableColumnType *type, const char *name, int maxWidth);
 RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...);
 RZ_API void rz_table_set_vcolumnsf(RzTable *t, const char *fmt, va_list ap);
-RZ_API RzTableRow *rz_table_row_new(RzList *items);
+RZ_API RzTableRow *rz_table_row_new(RzPVector *items);
 RZ_API void rz_table_add_row(RzTable *t, const char *name, ...);
 RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...);
 RZ_API void rz_table_add_row_columnsf(RzTable *t, const char *fmt, ...);
-RZ_API void rz_table_add_row_list(RzTable *t, RzList *items);
-RZ_API char *rz_table_tofancystring(RzTable *t);
+RZ_API void rz_table_add_row_vec(RzTable *t, RzPVector *items);
+RZ_API RZ_OWN char *rz_table_tofancystring(RzTable *t);
 RZ_API char *rz_table_tosimplestring(RzTable *t);
 RZ_API char *rz_table_tostring(RzTable *t);
 RZ_API char *rz_table_tocsv(RzTable *t);
-RZ_API char *rz_table_tojson(RzTable *t);
+RZ_API RZ_OWN char *rz_table_tojson(RzTable *t);
 RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un);
 RZ_API void rz_table_sort(RzTable *t, int nth, bool inc);
 RZ_API void rz_table_uniq(RzTable *t);
