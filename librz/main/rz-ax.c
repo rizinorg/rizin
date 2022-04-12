@@ -416,20 +416,21 @@ dotherax:
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_SET_BITS)) { // -p (find position of set bits)
 		ut64 n = rz_num_math(num, str);
-		char strbits[65];
+		char strbits[65] = { 0 };
 		int i = 0, set_bits_ctr = 0;
 		rz_num_to_bits(strbits, n);
 		rz_str_reverse(strbits); // because we count Right to Left
+		char last_char = 0;
 		while (strbits[i] != '\0') {
 			if (strbits[i] == '1') {
 				++set_bits_ctr;
 				if (i == 0) {
 					printf("[%d", i);
-				} else if (strbits[i] == '1' && strbits[i - 1] == '0') {
+				} else if (strbits[i] == '1' && last_char == '0') {
 					printf("[%d", i);
 				}
 			}
-			if (strbits[i] == '0' && strbits[i - 1] == '1') {
+			if (strbits[i] == '0' && last_char == '1') {
 				if (set_bits_ctr == 1) {
 					printf("]: 1\n");
 				} else if (strbits[i + 1] == '\0') {
@@ -444,7 +445,7 @@ dotherax:
 					printf("-%d]: 1\n", i);
 				set_bits_ctr = 0;
 			}
-
+			last_char = strbits[i];
 			++i;
 		}
 		return true;
