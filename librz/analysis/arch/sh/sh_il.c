@@ -546,13 +546,13 @@ static RzILOpEffect *sh_il_cmp_pl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure * xor = XOR(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 
-	RzILOpPure *eq = EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0xff));
-	xor = SHIFTL0(xor, SH_U_REG(BITS_PER_BYTE));
-	eq = AND(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0xff)));
-	xor = SHIFTL0(xor, SH_U_REG(BITS_PER_BYTE));
-	eq = AND(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0xff)));
-	xor = SHIFTL0(xor, SH_U_REG(BITS_PER_BYTE));
-	eq = AND(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0xff)));
+	RzILOpPure *eq = EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0));
+	xor = SHIFTR0(xor, SH_U_REG(BITS_PER_BYTE));
+	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
+	xor = SHIFTR0(xor, SH_U_REG(BITS_PER_BYTE));
+	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
+	xor = SHIFTR0(xor, SH_U_REG(BITS_PER_BYTE));
+	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
 
 	return BRANCH(eq, SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
 }
