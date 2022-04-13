@@ -54,7 +54,7 @@ static const char *sdb_elf_machine_cparse = "enum elf_machine {EM_NONE=0, EM_M32
 					    " EM_INTEL208=208, EM_INTEL209=209, EM_KM32=210, EM_KMX32=211, EM_KMX16=212,"
 					    " EM_KMX8=213, EM_KVARC=214, EM_CDP=215, EM_COGE=216, EM_COOL=217, EM_NORC=218,"
 					    " EM_CSR_KALIMBA=219, EM_AMDGPU=224, EM_RISCV=243, EM_LANAI=244, EM_BPF=247,"
-					    " EM_CSKY=252}";
+					    " EM_CSKY=252, EM_KVX=256}";
 
 static const char *sdb_elf_class_cparse = "enum elf_class {ELFCLASSNONE=0, ELFCLASS32=1, ELFCLASS64=2};";
 
