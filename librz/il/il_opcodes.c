@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_bitvector.h"
 #include <rz_il/rz_il_opcodes.h>
+
+#define PURE_BV_GET(bv) bv->op.bitv.value
 
 #define rz_il_op_new_0(sort, id) \
 	do { \
@@ -166,6 +169,31 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv(RZ_NONNULL RzBitVector *value) 
 }
 
 /**
+ *  \brief op structure for new bitvector of a given \p length with all bits set.
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_max(ut32 length) {
+	RzBitVector *value = rz_bv_new(length);
+	if (!value) {
+		return NULL;
+	}
+	RzBitVector *tmp = rz_bv_not(value);
+	if (!tmp) {
+		rz_bv_free(value);
+		return NULL;
+	}
+	rz_bv_free(value);
+	value = tmp;
+	RzILOpBool *ret = RZ_NEW0(RzILOpBool);
+	if (!ret) {
+		rz_bv_free(value);
+		return NULL;
+	}
+	ret->code = RZ_IL_OP_BITV;
+	ret->op.bitv.value = value;
+	return ret;
+}
+
+/**
  *  \brief op structure for bitvector converted from ut64
  *
  *  value is a bitvector constant.
@@ -203,6 +231,26 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) 
 	ret->code = RZ_IL_OP_BITV;
 	ret->op.bitv.value = value;
 	return ret;
+}
+
+/**
+ * \brief Creates a new bitvector from the bits \p n to \p m of src bitvector \p v ('s bitv -> 'a bitv).
+ *
+ * \param v Src bitvector
+ * \param n Start index (counted from LSB).
+ * \param m End index (counted from LSB).
+ * \return Bitvector with bits m:n from \p v.
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_bitv(RZ_NONNULL RZ_BORROW RzILOpBitVector *v, ut32 m, ut32 n) {
+	rz_return_val_if_fail(v, NULL);
+	rz_return_val_if_fail(m <= n, NULL);
+	RzILOpBitVector *res = rz_il_op_new_bitv_from_ut64(m-n, 0);
+	if (!res) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	rz_bv_copy_nbits(PURE_BV_GET(v), n, PURE_BV_GET(res), 0, m-n);
+	return res;
 }
 
 /**
