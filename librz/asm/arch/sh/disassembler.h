@@ -50,6 +50,12 @@ typedef enum {
 	SH_OP_CMP_PZ,
 	SH_OP_CMP_PL,
 	SH_OP_CMP_STR,
+	SH_OP_DIV1,
+	SH_OP_DIV0S,
+	SH_OP_DIV0U,
+	SH_OP_DMULS,
+	SH_OP_DMULU,
+	SH_OP_DT,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
