@@ -21,10 +21,6 @@ struct Getarg {
 	int bits;
 };
 
-#define INSOPS   insn->detail->ppc.op_count
-#define INSOP(n) insn->detail->ppc.operands[n]
-#define IMM(x)   (ut64)(insn->detail->ppc.operands[x].imm)
-
 #ifndef PFMT32x
 #define PFMT32x "lx"
 #endif
@@ -393,6 +389,11 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 
 		// Control registers
 		"ctr	xer .64 10240	0	# Fixed-Point Exception Register\n"
+		"ctr	so	.1	10272	0	# Summary Overflow\n"
+		"ctr	ov	.1	10273	0	# Overflow\n"
+		"ctr	ca	.1	10274	0	# Carry\n"
+		"ctr	ov32	.1	10284	0	# Overflow 32\n"
+		"ctr	ca32	.1	10285	0	# Carry 32\n"
 		// 0 |---/32/---|--vrsave--| 63
 		"vcc	vrsave .32	10336	0	# VR Save Register\n"
 		"ctr	fpscr .64	10368	0	# Floating-Point Status and Control Register\n"
