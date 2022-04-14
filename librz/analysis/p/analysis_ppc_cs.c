@@ -5,7 +5,9 @@
 #include <rz_lib.h>
 #include <capstone.h>
 #include <ppc.h>
+#include <rz_types.h>
 #include "../../asm/arch/ppc/libvle/vle.h"
+#include "../arch/ppc/ppc_analysis.h"
 #include "../arch/ppc/ppc_il.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
@@ -706,6 +708,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 
 	// capstone-next
 	n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
+	op->il_op = rz_ppc_cs_get_il_op(handle, insn, mode);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	} else {

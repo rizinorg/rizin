@@ -35,6 +35,8 @@
 
 #include <rz_il/rz_il_opcodes.h>
 
+#define PURE_BV_LEN(x) x->op.bitv.value->len
+
 #define ITE(c, t, f) rz_il_op_new_ite(c, t, f)
 
 #define UN(l, val)      rz_il_op_new_bitv_from_ut64(l, val)

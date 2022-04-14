@@ -155,6 +155,8 @@ rz_analysis_sources = [
   'arch/arm/arm_il32.c',
   'arch/arm/arm_il64.c',
   'arch/ppc/ppc_il.c',
+  'arch/ppc/ppc_il_ops.c',
+  'arch/ppc/ppc_il_flag_ops.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cr16/cr16_disas.c',
