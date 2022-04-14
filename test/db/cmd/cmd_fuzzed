@@ -57,3 +57,13 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=Escaping crash #2
+FILE==
+CMDS=<<EOF
+e scr.null=true
+af \\
+EOF
+EXPECT=<<EOF
+EOF
+RUN
