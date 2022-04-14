@@ -51,7 +51,8 @@ static bool check_buffer(RzBuffer *b) {
 			return false;
 		}
 	}
-	const ut8 *buf = rz_buf_data(b, NULL);
+	ut64 size;
+	const ut8 *buf = rz_buf_data(b, &size);
 	if (buf == NULL) {
 		// hackaround until we make this plugin not use RBuf.data
 		ut8 buf[1024] = { 0 };
