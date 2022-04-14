@@ -60,7 +60,28 @@ typedef struct float_t {
     RzFloatException exception; ///< exception of float algorithm
 } RzFloat;
 
-RZ_API void test_internal_in_develop(void);
 RZ_API ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info);
+RZ_API void rz_float_fini(RZ_NONNULL RzFloat *f);
+RZ_API void rz_float_free(RZ_NULLABLE RzFloat *f);
+RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzFloat *rz_float_new(RzFloatFormat format);
+RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzFloat *rz_float_new_from_single(float value);
+RZ_API bool rz_float_set_from_double(RZ_NONNULL RzFloat *f, double value);
+RZ_API RZ_OWN RzBitVector *rz_float_get_exponent_squashed(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_squashed(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_stretched(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzBitVector *rz_float_get_exponent(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_get_sign(RZ_NONNULL RzFloat *f);
+RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_is_inf(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_is_nan(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode);
 
 #endif //RZ_FLOAT_H
