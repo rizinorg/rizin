@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ppc_il.h"
+#include "ppc_analysis.h"
 #include <rz_types.h>
 
 #include <rz_il/rz_il_opbuilder_begin.h>
@@ -20,8 +21,7 @@
  * \return RZ_OWN* Effect which sets the carry bits.
  */
 RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, cs_mode mode, bool add) {
-	bool mode_64 = (mode & CS_MODE_64);
-	ut32 bits = mode_64 ? 64 : 32;
+	ut32 bits = IN_64BIT_MODE ? 64 : 32;
 	RzILOpBitVector *r;
 	if (add) {
 		r = ADD(EXTEND(bits + 1, a), EXTEND(bits + 1, b));
@@ -29,7 +29,7 @@ RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpB
 		r = SUB(EXTEND(bits + 1, a), EXTEND(bits + 1, b));
 	}
 	RzILOpBool *c = ITE(MSB(r), IL_TRUE, IL_FALSE);
-	return mode_64 ? SETG("ca", c) : SEQ2(SETG("ca", c), SETG("ca32", c));
+	return IN_64BIT_MODE ? SETG("ca", c) : SEQ2(SETG("ca", c), SETG("ca32", c));
 }
 
 /**

@@ -8,4 +8,6 @@
 #define INSOP(n) insn->detail->ppc.operands[n]
 #define IMM(x)   (ut64)(insn->detail->ppc.operands[x].imm)
 
+#define IN_64BIT_MODE (mode & CS_MODE_64)
+
 #endif /* PPC_ANALYSIS_H */

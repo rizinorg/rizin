@@ -8,11 +8,11 @@
 #include <capstone.h>
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-#define UA(i)    ((mode & CS_MODE_64) ? U64(i) : U32(i))
-#define SA(i)    ((mode & CS_MODE_64) ? S64(i) : S32(i))
-#define IMM_U(i) ((mode & CS_MODE_64) ? U64(i) : U32(i))
-#define IMM_S(i) ((mode & CS_MODE_64) ? S64(i) : S32(i))
-// Extends x from s on with sign bits.
+#define UA(i) 	 (IN_64BIT_MODE ? U64(i) : U32(i))
+#define SA(i)	 (IN_64BIT_MODE ? S64(i) : S32(i))
+#define IMM_U(i) UA(i)
+#define IMM_S(i) SA(i)
+// Extends x from bit s on with sign bits.
 #define EXTS(x, s) ITE(MSB(x), \
 	LOGOR(x, SHIFTL0(UNMAX(PURE_BV_LEN(x)), s)), \
 	LOGAND(x, UNMAX(PURE_BV_LEN(x))))
@@ -26,7 +26,7 @@
 static RzILOpPure *get_bit_dependend_reg(const char *name, cs_mode mode) {
 	rz_return_val_if_fail(name, NULL);
 
-	if (mode & CS_MODE_64) {
+	if (IN_64BIT_MODE) {
 		return VARG(name);
 	}
 	char *reg = strdup(name);
@@ -39,7 +39,7 @@ static RzILOpPure *get_bit_dependend_reg(const char *name, cs_mode mode) {
 static RzILOpEffect *set_bit_dependend_reg(const char *name, RZ_NONNULL RzILOpPure *x, cs_mode mode) {
 	rz_return_val_if_fail(name, NULL);
 
-	if (mode & CS_MODE_64) {
+	if (IN_64BIT_MODE) {
 		return SETG(name, x);
 	}
 	char *reg = strdup(name);
