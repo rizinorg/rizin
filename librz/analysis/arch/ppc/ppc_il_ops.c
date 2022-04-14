@@ -55,7 +55,7 @@ static RzILOpEffect *set_bit_dependend_reg(const char *name, RZ_NONNULL RzILOpPu
 /**
  * \brief Handles all supported ADD operations.
  *
- * NOTE: Any operations which set the 'OV' bit are not supported yet.
+ * NOTE: Instructions which set the 'OV' bit are not supported yet.
  *
  * \param handle The capstone handle.
  * \param insn The capstone instruction.

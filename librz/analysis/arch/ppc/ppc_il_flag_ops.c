@@ -10,9 +10,9 @@
 #define EXTEND(n, v) ITE(MSB(v), SIGNED(n, v), UNSIGNED(n, v))
 
 /**
- * \brief Set "ca" and "ca32" bit if after an add or sub operation on \p a and \p b the M+1 bit is set
+ * \brief Set "ca" bit if, after an add or sub operation on \p a and \p b , the M+1 bit is set
  *
- * In 32bit mode the "ca32" bit is set as well. Otherwise only the "ca" bit.
+ * NOTE: In 32bit mode the "ca32" bit is set as well.
  *
  * \param a Value a.
  * \param b Value b.
