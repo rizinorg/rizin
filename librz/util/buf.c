@@ -212,7 +212,7 @@ err:
 }
 
 static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {
-	rz_return_val_if_fail(b && b->methods, NULL);
+	rz_return_val_if_fail(b && size && b->methods, NULL);
 
 	buf_whole_buf_free(b);
 
@@ -236,9 +236,7 @@ static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {
 		return NULL;
 	}
 
-	if (size) {
-		*size = buf_size;
-	}
+	*size = buf_size;
 
 	return b->whole_buf;
 }
@@ -1279,15 +1277,15 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff) {
 
 /**
  * \brief Return a borrowed array of bytes representing the buffer data.
- * \param b ...
- * \param size ...
+ * \param b Buffer to get the data from.
+ * \param size Size of the returned data.
  *
  * WARNING: this function should be used with care because it may allocate the
  * entire buffer in memory. Consider using the rz_buf_read* APIs or rz_buf_fwd_scan API instead and
  * read only the chunks you need.
  */
-RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size) {
-	rz_return_val_if_fail(b, NULL);
+RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *size) {
+	rz_return_val_if_fail(b && size, NULL);
 
 	return get_whole_buf(b, size);
 }

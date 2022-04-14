@@ -1262,9 +1262,10 @@ bool test_rz_buf_with_methods(void) {
 
 bool test_rz_buf_whole_buf(void) {
 	RzBuffer *b = rz_buf_new_with_bytes((ut8 *)"AAA", 3);
-	const ut8 *bb1 = rz_buf_data(b, NULL);
+	ut64 size;
+	const ut8 *bb1 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb1, "buf_data is not NULL");
-	const ut8 *bb2 = rz_buf_data(b, NULL);
+	const ut8 *bb2 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb2, "buf_data is not NULL");
 	rz_buf_free(b);
 	mu_end;
@@ -1296,10 +1297,11 @@ const RzBufferMethods custom_methods2 = {
 
 bool test_rz_buf_whole_buf_alloc(void) {
 	CustomCtx ctx = { 0 };
+	ut64 size;
 	RzBuffer *b = rz_buf_new_with_methods(&custom_methods2, &ctx);
-	const ut8 *bb1 = rz_buf_data(b, NULL);
+	const ut8 *bb1 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb1, "buf_data is not NULL");
-	const ut8 *bb2 = rz_buf_data(b, NULL);
+	const ut8 *bb2 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb2, "buf_data is not NULL");
 	rz_buf_free(b);
 	mu_end;
