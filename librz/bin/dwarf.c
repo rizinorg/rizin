@@ -1198,19 +1198,13 @@ static bool init_debug_info(RzBinDwarfDebugInfo *inf) {
 	if (!inf->comp_units) {
 		return false;
 	}
-	inf->lookup_table = ht_up_new0();
-	if (!inf->lookup_table) {
-		goto wurzelbert_comp_units;
-	}
 	inf->line_info_offset_comp_dir = ht_up_new(NULL, free_ht_comp_dir, NULL);
 	if (!inf->line_info_offset_comp_dir) {
-		goto wurzelbert_lookup_table;
+		goto wurzelbert_comp_units;
 	}
 	inf->capacity = DEBUG_INFO_CAPACITY;
 	inf->count = 0;
 	return true;
-wurzelbert_lookup_table:
-	ht_up_free(inf->lookup_table);
 wurzelbert_comp_units:
 	RZ_FREE(inf->comp_units);
 	return false;
@@ -1964,6 +1958,8 @@ static RzBinDwarfDebugInfo *parse_info_raw(RzBinDwarfDebugAbbrev *da,
 			goto cleanup;
 		}
 
+		info->n_dwarf_dies += unit->count;
+
 		unit_idx++;
 	}
 
@@ -2093,7 +2089,11 @@ RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwa
 	if (!info) {
 		goto cave_buf;
 	}
-
+	info->lookup_table = ht_up_new_size(info->n_dwarf_dies, NULL, NULL, NULL);
+	if (!info->lookup_table) {
+		rz_bin_dwarf_debug_info_free(info);
+		goto cave_buf;
+	}
 	// build hashtable after whole parsing because of possible relocations
 	if (info) {
 		size_t i, j;

@@ -771,6 +771,7 @@ typedef struct {
 	size_t capacity;
 	RzBinDwarfCompUnit *comp_units;
 	HtUP /*<ut64 offset, DwarfDie *die>*/ *lookup_table;
+	size_t n_dwarf_dies;
 
 	/**
 	 * Cache mapping from an offset in the debug_line section to a string
