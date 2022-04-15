@@ -222,6 +222,7 @@ extern RzAsmPlugin rz_asm_plugin_hppa_gnu;
 extern RzAsmPlugin rz_asm_plugin_i4004;
 extern RzAsmPlugin rz_asm_plugin_i8080;
 extern RzAsmPlugin rz_asm_plugin_java;
+extern RzAsmPlugin rz_asm_plugin_kvx;
 extern RzAsmPlugin rz_asm_plugin_lanai_gnu;
 extern RzAsmPlugin rz_asm_plugin_lh5801;
 extern RzAsmPlugin rz_asm_plugin_lm32;

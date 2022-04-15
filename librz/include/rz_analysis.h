@@ -2249,6 +2249,7 @@ extern RzAnalysisPlugin rz_analysis_plugin_hexagon;
 extern RzAnalysisPlugin rz_analysis_plugin_i4004;
 extern RzAnalysisPlugin rz_analysis_plugin_i8080;
 extern RzAnalysisPlugin rz_analysis_plugin_java;
+extern RzAnalysisPlugin rz_analysis_plugin_kvx;
 extern RzAnalysisPlugin rz_analysis_plugin_m68k_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_m680x_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_malbolge;
