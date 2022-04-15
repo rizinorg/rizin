@@ -8,20 +8,30 @@
 #include <capstone.h>
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-#define UA(i) 	 (IN_64BIT_MODE ? U64(i) : U32(i))
-#define SA(i)	 (IN_64BIT_MODE ? S64(i) : S32(i))
+#define UA(i)    (IN_64BIT_MODE ? U64(i) : U32(i))
+#define SA(i)    (IN_64BIT_MODE ? S64(i) : S32(i))
 #define IMM_U(i) UA(i)
 #define IMM_S(i) SA(i)
 // Extends x from bit s on with sign bits.
-#define EXTS(x, s) ITE(MSB(x), \
-	LOGOR(x, SHIFTL0(UNMAX(PURE_BV_LEN(x)), s)), \
-	LOGAND(x, UNMAX(PURE_BV_LEN(x))))
-
+#define EXTS(x, s) sign_extend_imm(x, s, mode)
 #define NOT_IMPLEMENTED \
 	do { \
 		RZ_LOG_INFO("IL instruction not implemented."); \
 		return NOP; \
 	} while (0)
+
+static RZ_OWN RzILOpPure *sign_extend_imm(RZ_BORROW RzILOpPure *x, ut32 sign_at, cs_mode mode) {
+	RzILOpPure *is_neg = MSB(DUP(x));
+
+	// Sign bits 1s
+	RzILOpPure *t = SHIFTL0(UNMAX(PURE_BV_LEN(x)), UA(sign_at));
+	RzILOpPure *signed_neg = LOGOR(DUP(x), t);
+
+	// Sign bits 0s
+	RzILOpPure *signed_pos = LOGAND(DUP(x), UNMAX(sign_at));
+
+	return ITE(is_neg, signed_neg, signed_pos);
+}
 
 static RzILOpPure *get_bit_dependend_reg(const char *name, cs_mode mode) {
 	rz_return_val_if_fail(name, NULL);
@@ -63,6 +73,7 @@ static RzILOpEffect *set_bit_dependend_reg(const char *name, RZ_NONNULL RzILOpPu
  * \return RzILOpEffect* Sequence of effects.
  */
 static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, NOP);
 	// READ
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).reg);
@@ -99,11 +110,11 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		op1 = IMM_S(sI);
 		add = ADD(op0, op1);
 		break;
-	case PPC_INS_ADDIS:
-		op0 = ITE(EQ(GET_GPR(rA), UA(0)),
-			UA(0),
-			GET_GPR(rA));
-		op1 = EXTS(LOGOR(U16(0), IMM_S(sI)), UA(16));
+	case PPC_INS_ADDIS:;
+		RzILOpPure *si_16_0 = LOGOR(U16(0), IMM_S(sI));
+		op0 = ITE(EQ(VARG(rA), UA(0)), UA(0), VARG(rA)); // RA == 0 ? 0 : (RA)
+		op1 = EXTS(si_16_0, 16); // SI_16:0 || sign_bits
+		rz_il_op_pure_free(si_16_0);
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDME:
@@ -132,6 +143,8 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 }
 
 RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, NOP);
+	rz_return_val_if_fail(insn->detail, NOP);
 	RzILOpEffect *lop;
 
 	switch (insn->id) {
@@ -149,6 +162,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_ADDME:
 	case PPC_INS_ADDZE:
 		lop = add_op(handle, insn, mode);
+		break;
 	}
 	return lop;
 }

@@ -182,14 +182,13 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_max(ut32 length) {
 		return NULL;
 	}
 	rz_bv_free(value);
-	value = tmp;
 	RzILOpBool *ret = RZ_NEW0(RzILOpBool);
 	if (!ret) {
-		rz_bv_free(value);
+		rz_bv_free(tmp);
 		return NULL;
 	}
 	ret->code = RZ_IL_OP_BITV;
-	ret->op.bitv.value = value;
+	ret->op.bitv.value = tmp;
 	return ret;
 }
 
