@@ -94,19 +94,19 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		NOT_IMPLEMENTED;
 	case PPC_INS_ADD:
 	case PPC_INS_ADDC:
-		op0 = GET_GPR(rA);
-		op1 = GET_GPR(rB);
+		op0 = VARG(rA);
+		op1 = VARG(rB);
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDE:
-		op0 = GET_GPR(rA);
-		op1 = GET_GPR(rB);
-		op2 = ADD(op1, VARG("ca"));
-		add = ADD(op0, op2);
+		op0 = VARG(rA);
+		op2 = VARG(rB);
+		op1 = ADD(op2, VARG("ca"));
+		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDI:
 	case PPC_INS_ADDIC:
-		op0 = GET_GPR(rA);
+		op0 = VARG(rA);
 		op1 = IMM_S(sI);
 		add = ADD(op0, op1);
 		break;
@@ -117,14 +117,14 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		rz_il_op_pure_free(si_16_0);
 		add = ADD(op0, op1);
 		break;
-	case PPC_INS_ADDME:
-		op0 = GET_GPR(rA);
-		op1 = VARG("ca");
-		op2 = ADD(op1, SA(-1));
-		add = ADD(op0, op2);
+	case PPC_INS_ADDME:;
+		op0 = VARG(rA);
+		op2 = VARG("ca");
+		op1 = ADD(op2, SA(-1));
+		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDZE:
-		op0 = GET_GPR(rA);
+		op0 = VARG(rA);
 		op1 = VARG("ca");
 		add = ADD(op0, op1);
 		break;
