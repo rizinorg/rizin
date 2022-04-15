@@ -50,6 +50,44 @@ static RzILOpEffect *set_bit_dependend_reg(const char *name, RZ_NONNULL RzILOpPu
 #define SET_GPR(name, x) set_bit_dependend_reg(name, x, mode)
 
 /**
+ * \brief Handles all supported LOAD operations.
+ *
+ * \param handle The capstone handle.
+ * \param insn The capstone instruction.
+ * \param mode The capstone mode.
+ * \return RzILOpEffect* Sequence of effects.
+ */
+static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, NOP);
+	// READ
+	const char *rT = cs_reg_name(handle, INSOP(0).reg);
+	const char *rA = cs_reg_name(handle, INSOP(1).reg);
+	st64 sI = INSOP(2).imm;
+
+	RzILOpPure *op0;
+	RzILOpPure *load;
+
+	// EXEC
+	switch (insn->id) {
+	default:
+		NOT_IMPLEMENTED;
+	case PPC_INS_LI: // Equvialent to ADDI with 0
+		op0 = VARG(rA);
+		load = op0;
+		break;
+	case PPC_INS_LIS:; // Equvialent to ADDIS with 0
+		RzILOpPure *si_16_0 = LOGOR(U16(0), IMM_S(sI));
+		op0 = EXTS(si_16_0, 16);
+		rz_il_op_pure_free(si_16_0);
+		load = op0;
+		break;
+	}
+
+	RzILOpEffect *res = SET_GPR(rT, load);
+	return res;
+}
+
+/**
  * \brief Handles all supported ADD operations.
  *
  * NOTE: Instructions which set the 'OV' bit are not supported yet.
@@ -150,6 +188,10 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_ADDME:
 	case PPC_INS_ADDZE:
 		lop = add_op(handle, insn, mode);
+		break;
+	case PPC_INS_LI:
+	case PPC_INS_LIS:
+		lop = load_op(handle, insn, mode);
 		break;
 	}
 	return lop;
