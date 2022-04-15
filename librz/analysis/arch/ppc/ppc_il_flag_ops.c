@@ -7,7 +7,7 @@
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-#define EXTEND(n, v) ITE(MSB(v), SIGNED(n, v), UNSIGNED(n, v))
+#define EXTEND(n, v) ITE(MSB(v), SIGNED(n, DUP(v)), UNSIGNED(n, DUP(v)))
 
 /**
  * \brief Set "ca" bit if, after an add or sub operation on \p a and \p b , the M+1 bit is set
@@ -28,8 +28,9 @@ RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpB
 	} else {
 		r = SUB(EXTEND(bits + 1, a), EXTEND(bits + 1, b));
 	}
-	RzILOpBool *c = ITE(MSB(r), IL_TRUE, IL_FALSE);
-	return IN_64BIT_MODE ? SETG("ca", c) : SEQ2(SETG("ca", c), SETG("ca32", c));
+
+	RzILOpEffect *set_ca = SETL("carry", ITE(MSB(r), IL_TRUE, IL_FALSE));
+	return IN_64BIT_MODE ? SEQ2(set_ca, SETG("ca", VARL("carry"))) : SEQ3(set_ca, SETG("ca", VARL("carry")), SETG("ca32", VARL("carry")));
 }
 
 /**
@@ -38,7 +39,7 @@ RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpB
  * \param val Value which is compared to 0.
  * \return RzILOpEffect* Set cr0 effect.
  */
-RZ_OWN RzILOpEffect *set_cr0(RZ_NONNULL RzILOpPure *val) {
+RZ_OWN RzILOpEffect *set_cr0(RZ_NONNULL RZ_BORROW RzILOpPure *val) {
 	rz_return_val_if_fail(val, NULL);
 	RzILOpBool *so_bit = VARG("so");
 	RzILOpPure *n = U64(0);
