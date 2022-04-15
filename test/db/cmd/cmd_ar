@@ -1008,3 +1008,26 @@ EXPECT=<<EOF
 0x00000000 8 rbx
 EOF
 RUN
+
+NAME=ar 4 bit register
+FILE==
+CMDS=<<EOF
+e asm.arch=ppc
+e analysis.arch=ppc
+ar cr0
+ar cr0 = 15
+ar cr0
+ar cr1
+ar cr1 = 15
+ar cr1
+ar cr1 = 7
+ar cr1
+EOF
+EXPECT=<<EOF
+cr0 = 0x00000000
+cr0 = 0x0000000f
+cr1 = 0x00000000
+cr1 = 0x0000000f
+cr1 = 0x00000007
+EOF
+RUN
