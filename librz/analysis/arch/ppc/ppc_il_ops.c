@@ -33,19 +33,6 @@ static RZ_OWN RzILOpPure *sign_extend_imm(RZ_BORROW RzILOpPure *x, ut32 sign_at,
 	return ITE(is_neg, signed_neg, signed_pos);
 }
 
-static RzILOpPure *get_bit_dependend_reg(const char *name, cs_mode mode) {
-	rz_return_val_if_fail(name, NULL);
-
-	if (IN_64BIT_MODE) {
-		return VARG(name);
-	}
-	char *reg = strdup(name);
-	char *reg_32 = rz_str_append(reg, "_32");
-	RzILOpPure *res = VARG(reg_32);
-	free(reg_32);
-	return res;
-}
-
 static RzILOpEffect *set_bit_dependend_reg(const char *name, RZ_NONNULL RzILOpPure *x, cs_mode mode) {
 	rz_return_val_if_fail(name, NULL);
 
