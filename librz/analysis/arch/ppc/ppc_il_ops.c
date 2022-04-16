@@ -67,8 +67,13 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
 	st64 sI = INSOP(2).imm;
 
-	bool rc = insn->detail->ppc.update_cr0;
 	bool set_ca = (insn->id == PPC_INS_ADD || insn->id == PPC_INS_ADDI) ? false : true;
+	bool cr0 = insn->detail->ppc.update_cr0;
+	if (cr0) {
+		RZ_LOG_WARN("Capstone fixed a bug!"
+			    "The implcit \"cr0\" write is now stored in \"insn->detail->ppc.update_cr0\"."
+			    "Explicit flag setting can be removed. Please fix me.\n");
+	}
 
 	RzILOpPure *op0;
 	RzILOpPure *op1;
@@ -81,11 +86,13 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		NOT_IMPLEMENTED;
 	case PPC_INS_ADD:
 	case PPC_INS_ADDC:
+		cr0 = true;
 		op0 = VARG(rA);
 		op1 = VARG(rB);
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDE:
+		cr0 = true;
 		op0 = VARG(rA);
 		op2 = VARG(rB);
 		op1 = ADD(op2, BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS));
@@ -93,6 +100,7 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		break;
 	case PPC_INS_ADDI:
 	case PPC_INS_ADDIC:
+		cr0 = insn->id == PPC_INS_ADDIC;
 		op0 = VARG(rA);
 		op1 = IMM_S(sI);
 		add = ADD(op0, op1);
@@ -103,17 +111,20 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDME:
+		cr0 = true;
 		op0 = VARG(rA);
 		op2 = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
 		op1 = ADD(op2, SA(-1));
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDZE:
+		cr0 = true;
 		op0 = VARG(rA);
 		op1 = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
 		add = ADD(op0, op1);
 		break;
 	}
+	rz_return_val_if_fail(op0 && op1, NULL);
 
 	// WRITE
 	RzILOpEffect *res;
