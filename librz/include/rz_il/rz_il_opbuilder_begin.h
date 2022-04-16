@@ -42,8 +42,6 @@
 #define U16(val)      UN(16, val)
 #define U32(val)      UN(32, val)
 #define U64(val)      UN(64, val)
-#define UNMAX(l)      rz_il_op_new_bitv_max(l)
-#define UNBV(v, m, n) rz_il_op_new_bitv_from_bitv(v, m, n)
 #define CAST(l, f, v) rz_il_op_new_cast(l, f, v)
 
 #define SN(l, val) rz_il_op_new_bitv_from_st64(l, val)
