@@ -16,15 +16,20 @@
 #define PPC_DWORD 64
 #define PPC_QWORD 128
 
-#define UA(i)    (IN_64BIT_MODE ? U64(i) : U32(i))
-#define SA(i)    (IN_64BIT_MODE ? S64(i) : S32(i))
-#define IMM_U(i) UA(i)
-#define IMM_S(i) SA(i)
+#define UA(i)        (IN_64BIT_MODE ? U64(i) : U32(i))
+#define SA(i)        (IN_64BIT_MODE ? S64(i) : S32(i))
+#define IMM_U(i)     UA(i)
+#define IMM_S(i)     SA(i)
+#define IMM_UN(n, v) UN(n, v)
+#define IMM_SN(n, v) SN(n, v)
+
 #define NOT_IMPLEMENTED \
 	do { \
 		RZ_LOG_INFO("IL instruction not implemented."); \
 		return NOP; \
 	} while (0)
+
+#define EXTEND(n, v) ITE(MSB(v), SIGNED(n, DUP(v)), UNSIGNED(n, DUP(v)))
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);

@@ -7,8 +7,6 @@
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-#define EXTEND(n, v) ITE(MSB(v), SIGNED(n, v), UNSIGNED(n, v))
-
 /**
  * \brief Set "ca" bit if, after an add or sub operation on \p a and \p b , the M+1 bit is set
  *

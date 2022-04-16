@@ -40,7 +40,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		op0 = VARG(rA);
 		break;
 	case PPC_INS_LIS:; // Equvialent to ADDIS with 0
-		op0 = LOGAND(UA(0xffff), IMM_S(sI));
+		op0 = EXTEND(PPC_ARCH_BITS, IMM_SN(16, sI));
 		break;
 	}
 
@@ -99,7 +99,7 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		break;
 	case PPC_INS_ADDIS:
 		op0 = ITE(EQ(VARG(rA), UA(0)), UA(0), VARG(rA)); // RA == 0 ? 0 : (RA)
-		op1 = LOGAND(UA(0xffff), IMM_S(sI));
+		op1 = EXTEND(PPC_ARCH_BITS, IMM_SN(16, sI));
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDME:
