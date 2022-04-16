@@ -16,6 +16,16 @@
 #define PPC_DWORD 64
 #define PPC_QWORD 128
 
+#define UA(i)    (IN_64BIT_MODE ? U64(i) : U32(i))
+#define SA(i)    (IN_64BIT_MODE ? S64(i) : S32(i))
+#define IMM_U(i) UA(i)
+#define IMM_S(i) SA(i)
+#define NOT_IMPLEMENTED \
+	do { \
+		RZ_LOG_INFO("IL instruction not implemented."); \
+		return NOP; \
+	} while (0)
+
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
 

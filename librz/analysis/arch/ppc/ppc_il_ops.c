@@ -8,16 +8,6 @@
 #include <capstone.h>
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-#define UA(i)    (IN_64BIT_MODE ? U64(i) : U32(i))
-#define SA(i)    (IN_64BIT_MODE ? S64(i) : S32(i))
-#define IMM_U(i) UA(i)
-#define IMM_S(i) SA(i)
-#define NOT_IMPLEMENTED \
-	do { \
-		RZ_LOG_INFO("IL instruction not implemented."); \
-		return NOP; \
-	} while (0)
-
 /**
  * \brief Handles all supported LOAD operations.
  *
