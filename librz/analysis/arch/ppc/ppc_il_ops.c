@@ -50,8 +50,8 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		op0 = VARG(rA);
 		break;
 	case PPC_INS_LIS:; // Equvialent to ADDIS with 0
-		RzILOpPure *imm = LOGOR(U32(0), IMM_S(sI));
-		op0 = CAST(16, MSB(imm), DUP(imm));
+		RzILOpPure *imm = LOGOR(U16(0), IMM_S(sI));
+		op0 = CAST(32, MSB(imm), DUP(imm));
 		rz_return_val_if_fail(imm && op0, NULL);
 		break;
 	}
