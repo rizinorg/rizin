@@ -485,8 +485,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"ctr	sier3	.64	14528	0	# Sampled Instruction Event Register 3\n"
 		"ctr	mmcr3	.64	14592	0	# Monitor Mode Control Register 2\n"
 		"ctr	dpdes	.64	14656	0	# Directed Privileged Doorbell Exception State Register\n"
-		"ctr	pc		.64	14720	0	# Programm Counter\n"
-		;
+		"ctr	pc		.64	14720	0	# Programm Counter\n";
 	return strdup(p);
 }
 
