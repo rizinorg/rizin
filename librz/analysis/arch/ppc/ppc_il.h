@@ -37,6 +37,6 @@ RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
 RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode);
 
 RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, cs_mode mode, bool add);
-RZ_OWN RzILOpEffect *set_cr0(RZ_NONNULL RZ_BORROW RzILOpPure *val);
+RZ_OWN RzILOpEffect *set_cr0(RZ_BORROW RzILOpPure *val, cs_mode mode);
 
 #endif /* PPC_IL_H */

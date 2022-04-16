@@ -7,6 +7,9 @@
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
+#define OR_SO_FLAG(x) LOGOR(SHIFTL0(VARL("so_flag"), UA(3)), x)
+#define CAST_4BITS(y) CAST(4, IL_FALSE, y)
+
 /**
  * \brief Set "ca" bit if, after an add or sub operation on \p a and \p b , the M+1 bit is set
  *
@@ -36,19 +39,22 @@ RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpB
  * \brief Set the cr0 register depending how \p val compares to 0.
  *
  * \param val Value which is compared to 0.
+ * \param mode Capstone mode.
  * \return RzILOpEffect* Set cr0 effect.
  */
-RZ_OWN RzILOpEffect *set_cr0(RZ_NONNULL RZ_BORROW RzILOpPure *val) {
+RZ_OWN RzILOpEffect *set_cr0(RZ_BORROW RzILOpPure *val, cs_mode mode) {
 	rz_return_val_if_fail(val, NULL);
 
-	RzILOpEffect *cond_geq = BRANCH(SGT(DUP(val), U64(0)),
-		SETG("cr0", LOGOR(SHIFTL0(VARG("so"), U8(3)), UN(4, 0b010))), // val > 0
-		SETG("cr0", LOGOR(SHIFTL0(VARG("so"), U8(3)), UN(4, 0b100))) // val == 0
+	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), PPC_ARCH_BITS));
+
+	RzILOpEffect *cond_geq = BRANCH(SGT(DUP(val), UA(0)),
+		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b010)))), // val > 0
+		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b100)))) // val == 0
 	);
-	RzILOpEffect *cond_l = BRANCH(SLT(DUP(val), U64(0)),
-		SETG("cr0", LOGOR(SHIFTL0(VARG("so"), U8(3)), UN(4, 0b001))), // val < 0
+	RzILOpEffect *cond_l = BRANCH(SLT(DUP(val), UA(0)),
+		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b001)))), // val < 0
 		cond_geq);
-	return cond_l;
+	return SEQ2(set_so, cond_l);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
