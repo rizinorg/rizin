@@ -18,21 +18,6 @@
 		return NOP; \
 	} while (0)
 
-static RzILOpEffect *set_bit_dependend_reg(const char *name, RZ_BORROW RzILOpPure *x, cs_mode mode) {
-	rz_return_val_if_fail(name && x, NULL);
-
-	if (IN_64BIT_MODE) {
-		return SETG(name, DUP(x));
-	}
-	char *reg = strdup(name);
-	char *reg_32 = rz_str_append(reg, "_32");
-	RzILOpEffect *res = SETG(reg_32, x);
-	free(reg_32);
-	return res;
-}
-
-#define SET_GPR(name, x) set_bit_dependend_reg(name, x, mode)
-
 /**
  * \brief Handles all supported LOAD operations.
  *
@@ -71,7 +56,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		break;
 	}
 
-	RzILOpEffect *res = SET_GPR(rT, op0);
+	RzILOpEffect *res = SETG(rT, op0);
 	return res;
 }
 
@@ -151,7 +136,7 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 	RzILOpEffect *overflow = NOP;
 	RzILOpEffect *update_cr0 = rc ? set_cr0(DUP(add)) : NOP;
 
-	res = SET_GPR(rT, add);
+	res = SETG(rT, add);
 	return SEQ4(res, set_carry, overflow, update_cr0);
 }
 
