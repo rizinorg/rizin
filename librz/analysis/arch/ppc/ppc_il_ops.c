@@ -44,6 +44,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		break;
 	}
 
+	rz_return_val_if_fail(op0, NULL);
 	RzILOpEffect *res = SETG(rT, op0);
 	return res;
 }
@@ -87,7 +88,7 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 	case PPC_INS_ADDE:
 		op0 = VARG(rA);
 		op2 = VARG(rB);
-		op1 = ADD(op2, VARG("ca"));
+		op1 = ADD(op2, BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS));
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDI:
@@ -103,13 +104,13 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		break;
 	case PPC_INS_ADDME:
 		op0 = VARG(rA);
-		op2 = VARG("ca");
+		op2 = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
 		op1 = ADD(op2, SA(-1));
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDZE:
 		op0 = VARG(rA);
-		op1 = VARG("ca");
+		op1 = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
 		add = ADD(op0, op1);
 		break;
 	}
@@ -123,6 +124,7 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 	RzILOpEffect *overflow = NOP;
 	RzILOpEffect *update_cr0 = rc ? set_cr0(DUP(add)) : NOP;
 
+	rz_return_val_if_fail(op0 && op1, NULL);
 	res = SETG(rT, add);
 	return SEQ4(res, set_carry, overflow, update_cr0);
 }

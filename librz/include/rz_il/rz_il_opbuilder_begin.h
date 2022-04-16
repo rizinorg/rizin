@@ -37,12 +37,13 @@
 
 #define ITE(c, t, f) rz_il_op_new_ite(c, t, f)
 
-#define UN(l, val)    rz_il_op_new_bitv_from_ut64(l, val)
-#define U8(val)       UN(8, val)
-#define U16(val)      UN(16, val)
-#define U32(val)      UN(32, val)
-#define U64(val)      UN(64, val)
-#define CAST(l, f, v) rz_il_op_new_cast(l, f, v)
+#define UN(l, val)       rz_il_op_new_bitv_from_ut64(l, val)
+#define U8(val)          UN(8, val)
+#define U16(val)         UN(16, val)
+#define U32(val)         UN(32, val)
+#define U64(val)         UN(64, val)
+#define CAST(l, f, v)    rz_il_op_new_cast(l, f, v)
+#define BOOL_TO_BV(b, l) ITE(b, UN(l, 1), UN(l, 0))
 
 #define SN(l, val) rz_il_op_new_bitv_from_st64(l, val)
 #define S8(val)    SN(8, val)
