@@ -170,6 +170,7 @@ RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector
 	rz_return_val_if_fail(src && dst, 0);
 
 	if (dst->len != src->len) {
+		rz_warn_if_reached();
 		return 0;
 	} else if (dst->len <= 64) {
 		dst->bits.small_u = src->bits.small_u;
@@ -529,6 +530,7 @@ RZ_API bool rz_bv_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_b
 RZ_API RZ_OWN RzBitVector *rz_bv_and(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	if (x->len != y->len) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
@@ -556,6 +558,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_and(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 RZ_API RZ_OWN RzBitVector *rz_bv_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	if (x->len != y->len) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
@@ -583,6 +586,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitV
 RZ_API RZ_OWN RzBitVector *rz_bv_xor(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	if (x->len != y->len) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
