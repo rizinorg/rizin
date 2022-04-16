@@ -393,11 +393,6 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 
 		// Control registers
 		"ctr	xer .64 10240	0	# Fixed-Point Exception Register\n"
-		"flg	so	.1	10272	0	# Summary Overflow\n"
-		"flg	ov	.1	10273	0	# Overflow\n"
-		"flg	ca	.1	10274	0	# Carry\n"
-		"flg	ov32	.1	10284	0	# Overflow 32\n"
-		"flg	ca32	.1	10285	0	# Carry 32\n"
 		// 0 |---/32/---|--vrsave--| 63
 		"vcc	vrsave .32	10336	0	# VR Save Register\n"
 		"ctr	fpscr .64	10368	0	# Floating-Point Status and Control Register\n"
@@ -405,18 +400,9 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"vcc	vscr	.32	10528	0	# Vector Status and Control Register\n"
 		// 0 |---/32/---|----cr----| 63
 		"ctr	cr	.32	10592	0	# Condition Register\n"
-		"ctr	cr0 .4	10592	0	# Condition Register Field 0\n"
-		"ctr	cr1 .4	10596	0	# Condition Register Field 1\n"
-		"ctr	cr2 .4	10600	0	# Condition Register Field 2\n"
-		"ctr	cr3 .4	10604	0	# Condition Register Field 3\n"
-		"ctr	cr4 .4	10608	0	# Condition Register Field 4\n"
-		"ctr	cr5 .4	10612	0	# Condition Register Field 5\n"
-		"ctr	cr6 .4	10616	0	# Condition Register Field 6\n"
-		"ctr	cr7 .4	10620	0	# Condition Register Field 7\n"
 		"ctr	lr	.64	10624	0	# Link Register\n"
 		"ctr	ctr .64	10688	0	# Count Register\n"
 		"ctr	tar .64	10752	0	# Target Address Register\n"
-		"ctr	ppr32 .32	10816	0	# Process Priority Register 32-bit\n"
 		"ctr	ppr .64	10816	0	# Process Priority Register\n"
 		"ctr	dscr	.64	10880	0	# Data Stream Control Register\n"
 		"ctr	bescr .64	10944	0	# Branch Event Status and Control Register\n"
@@ -487,7 +473,21 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"ctr	sier3	.64	14528	0	# Sampled Instruction Event Register 3\n"
 		"ctr	mmcr3	.64	14592	0	# Monitor Mode Control Register 2\n"
 		"ctr	dpdes	.64	14656	0	# Directed Privileged Doorbell Exception State Register\n"
-		"ctr	pc		.64	14720	0	# Programm Counter\n";
+		"ctr	pc		.64	14720	0	# Programm Counter\n"
+		"ctr	cr0 .4	14784	0	# Condition Register Field 0\n"
+		"ctr	cr1 .4	14788	0	# Condition Register Field 1\n"
+		"ctr	cr2 .4	14792	0	# Condition Register Field 2\n"
+		"ctr	cr3 .4	14796	0	# Condition Register Field 3\n"
+		"ctr	cr4 .4	14800	0	# Condition Register Field 4\n"
+		"ctr	cr5 .4	14804	0	# Condition Register Field 5\n"
+		"ctr	cr6 .4	14808	0	# Condition Register Field 6\n"
+		"ctr	cr7 .4	14812	0	# Condition Register Field 7\n"
+		"ctr	ppr32 .32	14844	0	# Process Priority Register 32-bit\n"
+		"flg	so	.1	14845	0	# Summary Overflow\n"
+		"flg	ov	.1	14846	0	# Overflow\n"
+		"flg	ca	.1	14847	0	# Carry\n"
+		"flg	ov32	.1	14848	0	# Overflow 32\n"
+		"flg	ca32	.1	14849	0	# Carry 32\n";
 	return strdup(p);
 }
 
