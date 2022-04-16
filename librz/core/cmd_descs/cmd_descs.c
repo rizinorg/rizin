@@ -417,6 +417,10 @@ static const RzCmdDescArg open_maps_prioritize_binid_args[2];
 static const RzCmdDescArg open_maps_deprioritize_args[2];
 static const RzCmdDescArg open_maps_prioritize_fd_args[2];
 static const RzCmdDescArg open_exchange_args[3];
+static const RzCmdDescArg cmd_disassembly_n_instructions_args[2];
+static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_args[2];
+static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_treeview_args[2];
+static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -9685,6 +9689,68 @@ static const RzCmdDescHelp cmd_print_byte_array_rizin_help = {
 	.args = cmd_print_byte_array_rizin_args,
 };
 
+static const RzCmdDescHelp cmd_print_disassembly_help = {
+	.summary = "Print Disassembly",
+};
+static const RzCmdDescArg cmd_disassembly_n_instructions_args[] = {
+	{
+		.name = "n_instrs",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_n_instructions_help = {
+	.summary = "Disassemble N instructions (can be negative)",
+	.args = cmd_disassembly_n_instructions_args,
+};
+
+static const RzCmdDescHelp cmd_disassembly_all_opcodes_help = {
+	.summary = "Disassemble all possible opcodes (byte per byte)",
+};
+static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_all_possible_opcodes_help = {
+	.summary = "Disassemble all possible opcodes (byte per byte)",
+	.args = cmd_disassembly_all_possible_opcodes_args,
+};
+
+static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_treeview_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_all_possible_opcodes_treeview_help = {
+	.summary = "Disassemble all possible opcodes (treeview)",
+	.args = cmd_disassembly_all_possible_opcodes_treeview_args,
+};
+
+static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[] = {
+	{
+		.name = "n_instrs",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_n_instrs_as_text_json_help = {
+	.summary = "Formatted disassembly like pd but as json",
+	.args = cmd_disassembly_n_instrs_as_text_json_args,
+};
+
 static const RzCmdDescHelp cmd_print_gadget_help = {
 	.summary = "Print gadgets",
 };
@@ -15285,6 +15351,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_byte_array_rizin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pc*", rz_cmd_print_byte_array_rizin_handler, &cmd_print_byte_array_rizin_help);
 	rz_warn_if_fail(cmd_print_byte_array_rizin_cd);
+
+	RzCmdDesc *cmd_print_disassembly_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "pd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_n_instructions_handler, &cmd_disassembly_n_instructions_help, &cmd_print_disassembly_help);
+	rz_warn_if_fail(cmd_print_disassembly_cd);
+	RzCmdDesc *cmd_disassembly_all_opcodes_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_disassembly_cd, "pda", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_all_possible_opcodes_handler, &cmd_disassembly_all_possible_opcodes_help, &cmd_disassembly_all_opcodes_help);
+	rz_warn_if_fail(cmd_disassembly_all_opcodes_cd);
+	RzCmdDesc *cmd_disassembly_all_possible_opcodes_treeview_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disassembly_all_opcodes_cd, "pda=", rz_cmd_disassembly_all_possible_opcodes_treeview_handler, &cmd_disassembly_all_possible_opcodes_treeview_help);
+	rz_warn_if_fail(cmd_disassembly_all_possible_opcodes_treeview_cd);
+
+	RzCmdDesc *cmd_disassembly_n_instrs_as_text_json_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_disassembly_cd, "pdJ", RZ_OUTPUT_MODE_STANDARD, rz_cmd_disassembly_n_instrs_as_text_json_handler, &cmd_disassembly_n_instrs_as_text_json_help);
+	rz_warn_if_fail(cmd_disassembly_n_instrs_as_text_json_cd);
 
 	RzCmdDesc *cmd_print_gadget_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pg", rz_cmd_print_gadget_add_handler, &cmd_print_gadget_add_help, &cmd_print_gadget_help);
 	rz_warn_if_fail(cmd_print_gadget_cd);

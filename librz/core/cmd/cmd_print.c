@@ -7198,3 +7198,237 @@ CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_swift_handler, RZ_LA
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_yara_handler, RZ_LANG_BYTE_ARRAY_YARA);
 #undef CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL
 #undef CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN
+
+static void disassembly_n_instructions_as_table(RzTable *t, RzCore *core, int n_instrs) {
+	ut8 buffer[256];
+	rz_table_set_columnsf(t, "snssssss", "name", "addr", "bytes", "disasm", "comment", "esil", "refs", "xrefs");
+	const int minopsz = 1;
+	const int options = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_ESIL;
+	ut64 offset = core->offset;
+	for (int i = 0; i < n_instrs; i++) {
+		RzAnalysisOp *op = rz_core_analysis_op(core, offset, options);
+		if (!op || op->size < 1) {
+			i += minopsz;
+			offset += minopsz;
+			continue;
+		}
+		const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, offset);
+		if (!comment) {
+			comment = "";
+		}
+		rz_io_read_at(core->io, offset, buffer, RZ_MIN(op->size, sizeof(buffer)));
+		char *bytes = rz_hex_bin2strdup(buffer, op->size);
+		RzFlagItem *flag = rz_flag_get_i(core->flags, offset);
+		char *function_name = flag ? flag->name : "";
+		const char *esil = RZ_STRBUF_SAFEGET(&op->esil);
+		char *refs = __op_refs(core, op, 0);
+		char *xrefs = __op_refs(core, op, 1);
+		rz_table_add_rowf(t, "sXssssss", function_name, offset, bytes, op->mnemonic, comment, esil, refs, xrefs);
+		free(bytes);
+		free(xrefs);
+		free(refs);
+		offset += op->size;
+		rz_analysis_op_free(op);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut32 old_blocksize = core->blocksize;
+	ut64 old_offset = core->offset;
+
+	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
+	if (parsed > ST16_MAX || parsed < ST16_MIN) {
+		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_instrs = parsed;
+	if (n_instrs < 0) {
+		ut64 new_offset = old_offset;
+		if (!rz_core_prevop_addr(core, old_offset, -n_instrs, &new_offset)) {
+			new_offset = rz_core_prevop_addr_force(core, old_offset, -n_instrs);
+		}
+		ut32 new_blocksize = new_offset - old_blocksize;
+		if (new_blocksize > old_blocksize) {
+			rz_core_block_size(core, new_blocksize);
+		}
+		rz_core_seek(core, new_offset, true);
+	}
+
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_core_print_disasm(core->print, core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), 0, 1, false, NULL, NULL);
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		disassembly_n_instructions_as_table(state->d.t, core, RZ_ABS(n_instrs));
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		rz_cmd_state_output_array_start(state);
+		rz_core_print_disasm_json(core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), state->d.pj);
+		rz_cmd_state_output_array_end(state);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+
+	if (n_instrs < 0) {
+		rz_core_block_size(core, old_blocksize);
+		rz_core_seek(core, old_offset, true);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	bool color = rz_config_get_i(core->config, "scr.color") > 0;
+	RzAsmOp asm_op = { 0 };
+	ut32 old_blocksize = core->blocksize;
+	const char *pal_reg = core->cons->context->pal.reg;
+	const char *pal_num = core->cons->context->pal.num;
+
+	if (n_bytes > old_blocksize) {
+		rz_core_block_size(core, n_bytes);
+		rz_core_block_read(core);
+	}
+
+	rz_cmd_state_output_array_start(state);
+	rz_cons_break_push(NULL, NULL);
+	for (ut64 position = 0; position < n_bytes && !rz_cons_is_breaked(); position++) {
+		ut64 offset = core->offset + position;
+		rz_asm_set_pc(core->rasm, offset);
+		ut8 *buffer = core->block + position;
+		ut32 length = n_bytes - position;
+		int op_size = rz_asm_disassemble(core->rasm, &asm_op, buffer, length);
+		char *op_hex = rz_hex_bin2strdup(buffer, RZ_MAX(op_size, 1));
+		char *assembly = strdup(op_size > 0 ? rz_asm_op_get_asm(&asm_op) : "illegal");
+		char *colored = NULL;
+
+		if (color && state->mode != RZ_OUTPUT_MODE_JSON) {
+			RzAnalysisOp aop = { 0 };
+			rz_analysis_op(core->analysis, &aop, offset, buffer, length, RZ_ANALYSIS_OP_MASK_ALL);
+			char *tmp = rz_print_colorize_opcode(core->print, assembly, pal_reg, pal_num, false, 0);
+			colored = rz_str_newf("%s%s" Color_RESET, rz_print_color_op_type(core->print, aop.type), tmp);
+			free(tmp);
+		}
+
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("0x%08" PFMT64x " %20s  %s\n", offset, op_hex, colored ? colored : assembly);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "addr", offset);
+			pj_ks(state->d.pj, "bytes", op_hex);
+			pj_ks(state->d.pj, "inst", assembly);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_cons_printf("%s\n", colored ? colored : assembly);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		free(op_hex);
+		free(assembly);
+		free(colored);
+	}
+	rz_cons_break_pop();
+	rz_cmd_state_output_array_end(state);
+
+	if (n_bytes > old_blocksize) {
+		rz_core_block_size(core, old_blocksize);
+		rz_core_block_read(core);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCore *core, int argc, const char **argv) {
+	bool color = rz_config_get_i(core->config, "scr.color") > 0;
+	RzAsmOp asm_op = { 0 };
+	const ut32 n_bytes = 28; // uses 56 chars
+	ut32 old_blocksize = core->blocksize;
+	const char *pal_reg = core->cons->context->pal.reg;
+	const char *pal_num = core->cons->context->pal.num;
+
+	if (old_blocksize < n_bytes) {
+		rz_core_block_size(core, 256);
+		rz_core_block_read(core);
+	}
+
+	rz_cons_break_push(NULL, NULL);
+	for (ut32 position = 0; position < n_bytes && !rz_cons_is_breaked(); position++) {
+		ut64 offset = core->offset + position;
+		rz_asm_set_pc(core->rasm, offset);
+		ut8 *buffer = core->block + position;
+		ut32 length = RZ_MAX(n_bytes - position, core->blocksize - position);
+		int op_size = rz_asm_disassemble(core->rasm, &asm_op, buffer, length);
+		if (op_size < 1) {
+			continue;
+		}
+		op_size = RZ_MAX(op_size, 1);
+		char *op_hex = rz_hex_bin2strdup(buffer, op_size);
+		char *assembly = strdup(op_size > 0 ? rz_asm_op_get_asm(&asm_op) : "illegal");
+		char *colored = NULL;
+
+		if (color) {
+			RzAnalysisOp aop = { 0 };
+			rz_analysis_op(core->analysis, &aop, offset, buffer, length, RZ_ANALYSIS_OP_MASK_ALL);
+			char *tmp = rz_print_colorize_opcode(core->print, assembly, pal_reg, pal_num, false, 0);
+			colored = rz_str_newf("%s%s" Color_RESET, rz_print_color_op_type(core->print, aop.type), tmp);
+			free(tmp);
+		}
+
+		int padding = position * 2;
+		int space = 60 - padding;
+
+		if ((position + op_size) >= 30) {
+			ut32 last = (30 - position) * 2;
+			op_hex[last - 1] = '.';
+			op_hex[last] = 0;
+		}
+
+		rz_cons_printf("0x%08" PFMT64x " %*s%*s %s\n", offset, padding, "", -space, op_hex, colored ? colored : assembly);
+		free(op_hex);
+		free(assembly);
+		free(colored);
+	}
+	rz_cons_break_pop();
+
+	if (old_blocksize < n_bytes) {
+		rz_core_block_size(core, old_blocksize);
+		rz_core_block_read(core);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut32 old_blocksize = core->blocksize;
+	ut64 old_offset = core->offset;
+
+	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
+	if (parsed > ST16_MAX || parsed < ST16_MIN) {
+		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_instrs = parsed;
+	if (n_instrs < 0) {
+		ut64 new_offset = old_offset;
+		if (!rz_core_prevop_addr(core, old_offset, -n_instrs, &new_offset)) {
+			new_offset = rz_core_prevop_addr_force(core, old_offset, -n_instrs);
+		}
+		ut32 new_blocksize = new_offset - old_blocksize;
+		if (new_blocksize > old_blocksize) {
+			rz_core_block_size(core, new_blocksize);
+		}
+		rz_core_seek(core, new_offset, true);
+	}
+
+	rz_core_print_disasm(core->print, core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), 0, 1, true, NULL, NULL);
+
+	if (n_instrs < 0) {
+		rz_core_block_size(core, old_blocksize);
+		rz_core_seek(core, old_offset, true);
+	}
+	return RZ_CMD_STATUS_OK;
+}

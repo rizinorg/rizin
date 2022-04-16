@@ -90,6 +90,55 @@ commands:
         summary: Generate a rizin commands for writing the byte array.
         cname: cmd_print_byte_array_rizin
         args: []
+  - name: pd
+    summary: Print Disassembly
+    cname: cmd_print_disassembly
+    subcommands:
+      - name: pd
+        summary: Disassemble N instructions (can be negative)
+        cname: cmd_disassembly_n_instructions
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: n_instrs
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pda
+        summary: Disassemble all possible opcodes (byte per byte)
+        cname: cmd_disassembly_all_opcodes
+        subcommands:
+          - name: pda
+            summary: Disassemble all possible opcodes (byte per byte)
+            cname: cmd_disassembly_all_possible_opcodes
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: n_bytes
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: pda=
+            summary: Disassemble all possible opcodes (treeview)
+            cname: cmd_disassembly_all_possible_opcodes_treeview
+            args:
+              - name: n_bytes
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+      - name: pdJ
+        summary: Formatted disassembly like pd but as json
+        cname: cmd_disassembly_n_instrs_as_text_json
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: n_instrs
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget
