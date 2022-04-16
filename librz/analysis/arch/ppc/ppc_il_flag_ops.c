@@ -19,12 +19,13 @@
  * \return RZ_OWN* Effect which sets the carry bits.
  */
 RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, cs_mode mode, bool add) {
+	rz_return_val_if_fail(a && b, NULL);
 	ut32 bits = PPC_ARCH_BITS;
 	RzILOpBitVector *r;
 	if (add) {
-		r = ADD(EXTEND(bits + 1, DUP(a)), EXTEND(bits + 1, DUP(b)));
+		r = ADD(UNSIGNED(bits + 1, DUP(a)), UNSIGNED(bits + 1, DUP(b)));
 	} else {
-		r = SUB(EXTEND(bits + 1, DUP(a)), EXTEND(bits + 1, DUP(b)));
+		r = SUB(UNSIGNED(bits + 1, DUP(a)), UNSIGNED(bits + 1, DUP(b)));
 	}
 
 	RzILOpEffect *set_ca = SETL("carry", ITE(MSB(r), IL_TRUE, IL_FALSE));
