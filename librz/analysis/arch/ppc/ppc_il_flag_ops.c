@@ -21,7 +21,7 @@
  * \return RZ_OWN* Effect which sets the carry bits.
  */
 RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, cs_mode mode, bool add) {
-	ut32 bits = IN_64BIT_MODE ? 64 : 32;
+	ut32 bits = PPC_ARCH_BITS;
 	RzILOpBitVector *r;
 	if (add) {
 		r = ADD(EXTEND(bits + 1, DUP(a)), EXTEND(bits + 1, DUP(b)));

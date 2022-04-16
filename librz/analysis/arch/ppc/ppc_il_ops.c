@@ -51,8 +51,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		break;
 	case PPC_INS_LIS:; // Equvialent to ADDIS with 0
 		RzILOpPure *imm = LOGOR(U16(0), IMM_S(sI));
-		op0 = CAST(32, MSB(imm), DUP(imm));
-		rz_return_val_if_fail(imm && op0, NULL);
+		op0 = CAST(PPC_ARCH_BITS, MSB(imm), DUP(imm));
 		break;
 	}
 
@@ -109,9 +108,9 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDIS:;
-		RzILOpPure *imm = LOGOR(U16(0), IMM_S(sI));
 		op0 = ITE(EQ(VARG(rA), UA(0)), UA(0), VARG(rA)); // RA == 0 ? 0 : (RA)
-		op1 = CAST(32, MSB(imm), DUP(imm));
+		RzILOpPure *imm = LOGOR(U16(0), IMM_S(sI));
+		op1 = CAST(PPC_ARCH_BITS, MSB(imm), DUP(imm));
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDME:;
