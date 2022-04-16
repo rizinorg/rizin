@@ -12,27 +12,11 @@
 #define SA(i)    (IN_64BIT_MODE ? S64(i) : S32(i))
 #define IMM_U(i) UA(i)
 #define IMM_S(i) SA(i)
-// Extends x from bit s on with sign bits.
-#define EXTS(x, s) sign_extend_imm(x, s, mode)
 #define NOT_IMPLEMENTED \
 	do { \
 		RZ_LOG_INFO("IL instruction not implemented."); \
 		return NOP; \
 	} while (0)
-
-static RZ_OWN RzILOpPure *sign_extend_imm(RZ_BORROW RzILOpPure *x, ut32 sign_at, cs_mode mode) {
-	rz_return_val_if_fail(x, NULL);
-	RzILOpPure *is_neg = MSB(DUP(x));
-
-	// Sign bits 1s
-	RzILOpPure *t = SHIFTL0(UNMAX(PURE_BV_LEN(x)), UA(sign_at));
-	RzILOpPure *signed_neg = LOGOR(DUP(x), t);
-
-	// Sign bits 0s
-	RzILOpPure *signed_pos = LOGAND(DUP(x), UNMAX(sign_at));
-
-	return ITE(is_neg, signed_neg, signed_pos);
-}
 
 static RzILOpEffect *set_bit_dependend_reg(const char *name, RZ_BORROW RzILOpPure *x, cs_mode mode) {
 	rz_return_val_if_fail(name && x, NULL);
@@ -47,7 +31,6 @@ static RzILOpEffect *set_bit_dependend_reg(const char *name, RZ_BORROW RzILOpPur
 	return res;
 }
 
-#define GET_GPR(name)    get_bit_dependend_reg(name, mode)
 #define SET_GPR(name, x) set_bit_dependend_reg(name, x, mode)
 
 /**
@@ -63,8 +46,8 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	// READ
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).reg);
-	st64 sI = INSOP(2).imm;
-	RzILOpPure *op1;
+	st64 sI = INSOP(1).imm;
+	RzILOpPure *op0;
 
 	if (!rA && insn->id == PPC_INS_LI) {
 		// LLVM/capstone bug?
@@ -79,16 +62,16 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	default:
 		NOT_IMPLEMENTED;
 	case PPC_INS_LI: // Equvialent to ADDI with 0
-		op1 = VARG(rA);
+		op0 = VARG(rA);
 		break;
 	case PPC_INS_LIS:; // Equvialent to ADDIS with 0
-		RzILOpPure *si_16_0 = LOGOR(U16(0), IMM_S(sI));
-		op1 = EXTS(si_16_0, 16);
-		rz_il_op_pure_free(si_16_0);
+		RzILOpPure *imm = LOGOR(U32(0), IMM_S(sI));
+		op0 = CAST(16, MSB(imm), DUP(imm));
+		rz_return_val_if_fail(imm && op0, NULL);
 		break;
 	}
 
-	RzILOpEffect *res = SET_GPR(rT, op1);
+	RzILOpEffect *res = SET_GPR(rT, op0);
 	return res;
 }
 
@@ -141,10 +124,9 @@ static RzILOpEffect *add_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDIS:;
-		RzILOpPure *si_16_0 = LOGOR(U16(0), IMM_S(sI));
+		RzILOpPure *imm = LOGOR(U16(0), IMM_S(sI));
 		op0 = ITE(EQ(VARG(rA), UA(0)), UA(0), VARG(rA)); // RA == 0 ? 0 : (RA)
-		op1 = EXTS(si_16_0, 16); // SI_16:0 || sign_bits
-		rz_il_op_pure_free(si_16_0);
+		op1 = CAST(32, MSB(imm), DUP(imm));
 		add = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDME:;
