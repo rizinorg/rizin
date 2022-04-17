@@ -1030,6 +1030,44 @@ static bool test_rz_bv_set_to_bytes_le(void) {
 	mu_end;
 }
 
+bool test_rz_bv_copy_nbits(void) {
+	const ut32 size = 20;
+	const ut32 part_sz = 8;
+	ut32 actual_copy = 0;
+	/// 1010 0000 0000 1111 1111
+	RzBitVector *src = rz_bv_new(size);
+	for (ut32 i = 0; i < part_sz; ++i) {
+		rz_bv_set(src, i, true);
+	}
+	rz_bv_set(src, src->len - 1, true);
+	rz_bv_set(src, src->len - 3, true);
+
+	/// copy part of bv to a new one with the same size
+	RzBitVector *small = rz_bv_new(part_sz);
+	actual_copy = rz_bv_copy_nbits(src, 0, small, 0, part_sz);
+	mu_assert_eq(actual_copy, part_sz, "copy part_sz to normal");
+	mu_assert_streq_free(rz_bv_as_string(small), "11111111", "copy nbits small bv");
+
+	/// copy part of bv to a new one which has more spaces
+	RzBitVector *normal = rz_bv_new(size);
+	actual_copy = rz_bv_copy_nbits(src, 0, normal, 0, part_sz);
+	mu_assert_eq(actual_copy, part_sz, "copy part_sz bits to normal");
+	mu_assert_streq_free(rz_bv_as_string(normal), "00000000000011111111", "copy nbits normal length bv");
+
+	/// copy part of bv to the medium
+	RzBitVector *res = rz_bv_new(size);
+	actual_copy = rz_bv_copy_nbits(src, 0, res, 8, part_sz);
+	mu_assert_eq(actual_copy, part_sz, "copy part_sz bits to medium");
+	mu_assert_streq_free(rz_bv_as_string(res), "00001111111100000000", "copy nbits to medium");
+
+	/// would fail (do nothing) if copy overflow is possible
+	RzBitVector *too_small = rz_bv_new(part_sz);
+	actual_copy = rz_bv_copy_nbits(src, 0, too_small, 0, part_sz + 2);
+	mu_assert_eq(actual_copy, 0, "copy 0 bits");
+	mu_assert_true(rz_bv_is_zero_vector(too_small), "copy nothing");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
@@ -1053,6 +1091,8 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_len_bytes);
 	mu_run_test(test_rz_bv_set_all);
 	mu_run_test(test_rz_bv_set_to_bytes_le);
+	mu_run_test(test_rz_bv_copy_nbits);
+	
 	return tests_passed != tests_run;
 }
 
