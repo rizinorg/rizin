@@ -16,10 +16,13 @@
 #define PPC_DWORD 64
 #define PPC_QWORD 128
 
-#define UA(i)        (IN_64BIT_MODE ? U64(i) : U32(i))
-#define SA(i)        (IN_64BIT_MODE ? S64(i) : S32(i))
-#define IMM_U(i)     UA(i)
-#define IMM_S(i)     SA(i)
+// Un/signed value with 32/64 bits.
+#define UA(i) (IN_64BIT_MODE ? U64(i) : U32(i))
+#define SA(i) (IN_64BIT_MODE ? S64(i) : S32(i))
+// Un/signed immediate with 32/64 bits.
+#define IMM_U(i) UA(i)
+#define IMM_S(i) SA(i)
+// Un/signed immediate with n bits.
 #define IMM_UN(n, v) UN(n, v)
 #define IMM_SN(n, v) SN(n, v)
 
@@ -29,7 +32,13 @@
 		return NOP; \
 	} while (0)
 
+// Extend value with sign bits to a width of n.
 #define EXTEND(n, v) ITE(MSB(v), SIGNED(n, DUP(v)), UNSIGNED(n, DUP(v)))
+// Extend value with 0s to a width of 32/64 bit.
+#define EXTZ(v) UNSIGNED(PPC_ARCH_BITS, v)
+
+// If the rX reg is 0 it returns the value 0. Otherwise the value store in rX.
+#define IFREG0(rX) ITE(EQ(VARG(rX), UA(0)), UA(0), VARG(rX))
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
@@ -38,5 +47,9 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 
 RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, cs_mode mode, bool add);
 RZ_OWN RzILOpEffect *set_cr0(RZ_BORROW RzILOpPure *val, cs_mode mode);
+
+bool ppc_is_x_form(ut32 insn_id);
+ut32 ppc_get_mem_acc_size(ut32 insn_id);
+bool ppc_updates_ra_with_ea(ut32 insn_id);
 
 #endif /* PPC_IL_H */

@@ -18,35 +18,110 @@
  */
 static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
+	ut32 id = insn->id;
 	// READ
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).reg);
-	st64 sI = INSOP(1).imm;
+	const char *rB = cs_reg_name(handle, INSOP(2).reg);
+	st64 d = INSOP(1).imm;
+	st64 sI = d;
+	bool update_ra = false; // Save ea in RA?
+	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
 	RzILOpPure *op0;
+	RzILOpPure *op1;
+	RzILOpPure *ea;
+	RzILOpPure *into_rt;
 
-	if (!rA && insn->id == PPC_INS_LI) {
+	if (!rA && id == PPC_INS_LI) {
 		// LLVM/capstone bug?
-		// rA is NULL although it the instruction is marked as LI.
+		// rA is NULL although it shouldn't (`li RT, RA`).
 		// Possibly a confusion?
 		// Because "li rA, rB" becomes "lis rA, 0" if (rB) = 0.
-		insn->id = PPC_INS_LIS;
+		// We set the id here again.
+		id = PPC_INS_LIS;
 	}
 
 	// EXEC
-	switch (insn->id) {
+	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
-	case PPC_INS_LI: // Equvialent to ADDI with 0
-		op0 = VARG(rA);
+	case PPC_INS_LI: // RT = RA
+		into_rt = VARG(rA);
 		break;
-	case PPC_INS_LIS:; // Equvialent to ADDIS with 0
-		op0 = EXTEND(PPC_ARCH_BITS, IMM_SN(16, sI));
+	case PPC_INS_LIS:; // RT = SI
+		into_rt = EXTEND(PPC_ARCH_BITS, APPEND(IMM_SN(32, sI), U16(0)));
 		break;
+	case PPC_INS_LA: // RT = EA
+		op0 = IFREG0(rA);
+		op1 = EXTEND(PPC_ARCH_BITS, IMM_SN(16, d));
+		ea = ADD(op0, op1);
+		into_rt = ea;
+		break;
+	case PPC_INS_LBZ:
+	case PPC_INS_LBZX:
+	case PPC_INS_LBZU:
+	case PPC_INS_LBZUX:
+	case PPC_INS_LHZ:
+	case PPC_INS_LHZX:
+	case PPC_INS_LHZU:
+	case PPC_INS_LHZUX:
+	case PPC_INS_LWZ:
+	case PPC_INS_LWZU:
+	case PPC_INS_LWZUX:
+	case PPC_INS_LWZX:
+	case PPC_INS_LD:
+	case PPC_INS_LDX:
+	case PPC_INS_LDU:
+	case PPC_INS_LDUX:
+		op0 = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
+		op1 = ppc_is_x_form(id) ? VARG(rB) : EXTEND(PPC_ARCH_BITS, IMM_SN(16, d));
+		ea = ADD(op0, op1);
+		into_rt = (mem_acc_size == 64) ? LOADW(mem_acc_size, ea) : EXTZ(LOADW(mem_acc_size, ea));
+		update_ra = ppc_updates_ra_with_ea(id);
+		break;
+	case PPC_INS_LBZCIX:
+	case PPC_INS_LHZCIX:
+	case PPC_INS_LWZCIX:
+	case PPC_INS_LDCIX:
+	case PPC_INS_LDARX:
+	case PPC_INS_LHA:
+	case PPC_INS_LHAU:
+	case PPC_INS_LHAUX:
+	case PPC_INS_LHAX:
+	case PPC_INS_LHBRX:
+	case PPC_INS_LDBRX:
+		NOT_IMPLEMENTED;
+	case PPC_INS_LSWI:
+	case PPC_INS_LVEBX:
+	case PPC_INS_LVEHX:
+	case PPC_INS_LVEWX:
+	case PPC_INS_LVSL:
+	case PPC_INS_LVSR:
+	case PPC_INS_LVX:
+	case PPC_INS_LVXL:
+	case PPC_INS_LXSDX:
+	case PPC_INS_LXVD2X:
+	case PPC_INS_LXVDSX:
+	case PPC_INS_LXVW4X:
+		NOT_IMPLEMENTED;
+	// Floats
+	case PPC_INS_LFD:
+	case PPC_INS_LFDU:
+	case PPC_INS_LFDUX:
+	case PPC_INS_LFDX:
+	case PPC_INS_LFIWAX:
+	case PPC_INS_LFIWZX:
+	case PPC_INS_LFS:
+	case PPC_INS_LFSU:
+	case PPC_INS_LFSUX:
+	case PPC_INS_LFSX:
+		NOT_IMPLEMENTED;
 	}
 
-	rz_return_val_if_fail(op0, NULL);
-	RzILOpEffect *res = SETG(rT, op0);
-	return res;
+	// rz_return_val_if_fail(op0, NULL);
+	RzILOpEffect *res = SETG(rT, into_rt);
+	RzILOpEffect *update = update_ra ? SETG(rA, ea) : NOP;
+	return SEQ2(res, update);
 }
 
 /**
@@ -176,6 +251,39 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		break;
 	case PPC_INS_LI:
 	case PPC_INS_LIS:
+	case PPC_INS_LA:
+	case PPC_INS_LBZ:
+	case PPC_INS_LBZCIX:
+	case PPC_INS_LBZU:
+	case PPC_INS_LBZUX:
+	case PPC_INS_LBZX:
+	case PPC_INS_LD:
+	case PPC_INS_LDARX:
+	case PPC_INS_LDBRX:
+	case PPC_INS_LDCIX:
+	case PPC_INS_LDU:
+	case PPC_INS_LDUX:
+	case PPC_INS_LDX:
+	case PPC_INS_LHA:
+	case PPC_INS_LHAU:
+	case PPC_INS_LHAUX:
+	case PPC_INS_LHAX:
+	case PPC_INS_LHBRX:
+	case PPC_INS_LHZ:
+	case PPC_INS_LHZCIX:
+	case PPC_INS_LHZU:
+	case PPC_INS_LHZUX:
+	case PPC_INS_LHZX:
+	case PPC_INS_LWA:
+	case PPC_INS_LWARX:
+	case PPC_INS_LWAUX:
+	case PPC_INS_LWAX:
+	case PPC_INS_LWBRX:
+	case PPC_INS_LWZ:
+	case PPC_INS_LWZCIX:
+	case PPC_INS_LWZU:
+	case PPC_INS_LWZUX:
+	case PPC_INS_LWZX:
 		lop = load_op(handle, insn, mode);
 		break;
 	}
