@@ -17,6 +17,7 @@ d "?   R1:0 = memd(R29+#0x40) ; if (P0) dealloc_return" 441f403e 0x0
 d "?   R7:6 = memd(R29+#0x40) ; if (!P0) dealloc_return" 451f433e 0x0
 d "?   R23:22 = combine(#0,#0x2) ; R17:16 = memd(R29+#0x40)" 443e475c 0x0
 d "?   if (!P0.new) R23 = #0 ; jumpr R31" c03f5f5a 0x0
+d "?   R4 = add(R4,##0x4) ; R5 = add(R5,#1)" 55314420
 
 d "?   G9:8 = R9:8" 08c00863 0x0
 d "?   GELR = LR" 00c01f62 0x0
