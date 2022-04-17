@@ -191,6 +191,12 @@ static bool __is_blockdevice(RzIODesc *desc) {
 }
 #endif
 
+static ut8 *io_default_get_buf(RzIODesc *desc, ut64 *size) {
+	rz_return_val_if_fail(desc && size, NULL);
+	RzIOMMapFileObj *mmo = desc->data;
+	return rz_buf_data(mmo->buf, size);
+}
+
 RzIOPlugin rz_io_plugin_default = {
 	.name = "default",
 	.desc = "Open local files",
@@ -206,6 +212,7 @@ RzIOPlugin rz_io_plugin_default = {
 #if __UNIX__
 	.is_blockdevice = __is_blockdevice,
 #endif
+	.get_buf = io_default_get_buf
 };
 
 #ifndef RZ_PLUGIN_INCORE

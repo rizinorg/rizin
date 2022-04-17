@@ -1017,6 +1017,27 @@ int PE_(bin_pe_get_claimed_checksum)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	return bin->optional_header->CheckSum;
 }
 
+typedef struct {
+	ut64 *computed_cs;
+	bool big_endian;
+} checksum_ctx;
+
+static ut64 buf_fwd_checksum(const ut8 *buf, ut64 size, void *user) {
+	checksum_ctx *ctx = user;
+	ut64 computed_cs = *ctx->computed_cs;
+	ut64 i;
+	for (i = 0; i < size; i += 4) {
+		ut32 cur = rz_read_at_ble32(buf, i, ctx->big_endian);
+
+		computed_cs = (computed_cs & 0xFFFFFFFF) + cur + (computed_cs >> 32);
+		if (computed_cs >> 32) {
+			computed_cs = (computed_cs & 0xFFFFFFFF) + (computed_cs >> 32);
+		}
+	}
+	*ctx->computed_cs = computed_cs;
+	return i;
+}
+
 int PE_(bin_pe_get_actual_checksum)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	size_t i, j, checksum_offset = 0;
 	ut64 computed_cs = 0;
@@ -1036,29 +1057,13 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		return 0;
 	}
 	checksum_offset = bin->nt_header_offset + 4 + sizeof(PE_(image_file_header)) + 0x40;
-	for (i = 0, j = 0; i < bin->size / 4; i++) {
-		cur = rz_read_at_ble32(buf, j * 4, bin->endian);
-		j++;
-		// skip the checksum bytes
-		if (i * 4 == checksum_offset) {
-			continue;
-		}
-
-		computed_cs = (computed_cs & 0xFFFFFFFF) + cur + (computed_cs >> 32);
-		if (computed_cs >> 32) {
-			computed_cs = (computed_cs & 0xFFFFFFFF) + (computed_cs >> 32);
-		}
-		if (j == buf_sz / 4) {
-			if (rz_buf_read_at(bin->b, (i + 1) * 4, (ut8 *)buf, buf_sz) < 0) {
-				break;
-			}
-			j = 0;
-		}
-	}
+	checksum_ctx ctx = { &computed_cs, bin->big_endian };
+	rz_buf_fwd_scan(bin->b, 0, checksum_offset, buf_fwd_checksum, &ctx);
+	rz_buf_fwd_scan(bin->b, checksum_offset + 4, bin->size - checksum_offset - 4 - bin->size % 4, buf_fwd_checksum, &ctx);
 
 	// add resultant bytes to checksum
 	remaining_bytes = bin->size % 4;
-	i = i * 4;
+	i = bin->size - remaining_bytes;
 	if (remaining_bytes != 0) {
 		ut8 tmp;
 		if (!rz_buf_read8_at(bin->b, i, &tmp)) {
@@ -1098,6 +1103,10 @@ static const char *PE_(bin_pe_get_claimed_authentihash)(struct PE_(rz_bin_pe_obj
 	return rz_hex_bin2strdup(digest->binary, digest->length);
 }
 
+static ut64 buf_fwd_hash(const ut8 *buf, ut64 size, void *user) {
+	return rz_msg_digest_update((RzMsgDigest *)user, buf, size) ? size : 0;
+}
+
 char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	if (!bin->spcinfo) {
 		return NULL;
@@ -1116,26 +1125,14 @@ char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	PE_(image_data_directory) *data_dir_security = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY];
 	PE_DWord security_dir_offset = data_dir_security->VirtualAddress;
 	ut32 security_dir_size = data_dir_security->Size;
+	rz_buf_fwd_scan(bin->b, 0, checksum_paddr, buf_fwd_hash, md);
+	rz_buf_fwd_scan(bin->b, checksum_paddr + 4, security_entry_offset - checksum_paddr - 4, buf_fwd_hash, md);
+	rz_buf_fwd_scan(bin->b, security_entry_offset + 8, security_dir_offset - security_entry_offset - 8, buf_fwd_hash, md);
+	rz_buf_fwd_scan(bin->b, security_dir_offset + security_dir_size, rz_buf_size(bin->b) - security_dir_offset - security_dir_size, buf_fwd_hash, md);
 
-	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
-	rz_buf_append_buf_slice(buf, bin->b, 0, checksum_paddr);
-	rz_buf_append_buf_slice(buf, bin->b,
-		checksum_paddr + 4,
-		security_entry_offset - checksum_paddr - 4);
-	rz_buf_append_buf_slice(buf, bin->b,
-		security_entry_offset + 8,
-		security_dir_offset - security_entry_offset - 8);
-	rz_buf_append_buf_slice(buf, bin->b,
-		security_dir_offset + security_dir_size,
-		rz_buf_size(bin->b) - security_dir_offset - security_dir_size);
-
-	ut64 datalen;
-	const ut8 *data = rz_buf_data(buf, &datalen);
 	RzMsgDigestSize digest_size = 0;
 	const ut8 *digest = NULL;
-
-	if (datalen < 1 || !rz_msg_digest_update(md, data, datalen) ||
-		!rz_msg_digest_final(md) ||
+	if (!rz_msg_digest_final(md) ||
 		!(digest = rz_msg_digest_get_result(md, hashtype, &digest_size))) {
 
 		free(hashtype);
