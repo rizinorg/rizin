@@ -41,6 +41,14 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		id = PPC_INS_LIS;
 	}
 
+	// How to read instruction ids:
+	// Letter			Meaning
+	// L 				Load
+	// B/H/.. 			Byte, Half Word, ...
+	// Z/A/B/C			Zero extend, Algebraic, ???
+	// U/R				Update (store EA in RA), Reverse bytes
+	// X				X Form instruction (uses RB instead of immediate)
+
 	// EXEC
 	switch (id) {
 	default:
@@ -136,6 +144,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
  * \return RzILOpEffect* Sequence of effects.
  */
 static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, bool add, const cs_mode mode) {
+	ut32 id = insn->id;
 	rz_return_val_if_fail(handle && insn, NOP);
 	// READ
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
@@ -156,8 +165,14 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	RzILOpPure *op2;
 	RzILOpPure *res;
 
+	// How to read instruction ids:
+	// Letter		Meaning
+	// ADD/SUBF		Add, Subtract from
+	// I/M/Z 		Immediate, Minus one, Zero extend,
+	// C/E/S		Carry (sets it), Extends (adds carry it), Shift immediate
+
 	// EXEC
-	switch (insn->id) {
+	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
 	case PPC_INS_ADD:
@@ -179,31 +194,29 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 		break;
 	case PPC_INS_ADDI:
 	case PPC_INS_ADDIC:
+	case PPC_INS_ADDIS:
 	case PPC_INS_SUBFIC:
-		cr0 = insn->id == PPC_INS_ADDIC;
-		op0 = add ? VARG(rA) : ADD(LOGNOT(VARG(rA)), UA(1));
-		op1 = IMM_S(sI);
-		res = ADD(op0, op1);
-		break;
-	case PPC_INS_ADDIS:;
+		cr0 = (id == PPC_INS_ADDIC);
 		RzILOpPure *a = add ? VARG(rA) : ADD(LOGNOT(VARG(rA)), UA(1));
 		op0 = ITE(EQ(a, UA(0)), UA(0), DUP(a)); // RA == 0 ? 0 : (RA)
-		op1 = EXTEND(PPC_ARCH_BITS, IMM_SN(16, sI));
+		if (id == PPC_INS_ADDIS) {
+			op1 = EXTEND(PPC_ARCH_BITS, APPEND(IMM_SN(16, sI), U16(0))); // Shift immediate << 16
+		} else {
+			op1 = IMM_S(sI);
+		}
 		res = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDME:
-	case PPC_INS_SUBFME:
-		cr0 = true;
-		op0 = add ? VARG(rA) : LOGNOT(VARG(rA));
-		op2 = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
-		op1 = ADD(op2, SA(-1));
-		res = ADD(op0, op1);
-		break;
 	case PPC_INS_ADDZE:
+	case PPC_INS_SUBFME:
 	case PPC_INS_SUBFZE:
 		cr0 = true;
 		op0 = add ? VARG(rA) : LOGNOT(VARG(rA));
-		op1 = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
+		if (id == PPC_INS_ADDME || id == PPC_INS_SUBFME) {
+			op1 = ADD(BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS), SA(-1)); // Minus 1
+		} else {
+			op1 = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
+		}
 		res = ADD(op0, op1);
 		break;
 	}
