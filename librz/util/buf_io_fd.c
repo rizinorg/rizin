@@ -80,6 +80,11 @@ static st64 buf_io_fd_write(RzBuffer *b, const ut8 *buf, ut64 len) {
 	return priv->iob->fd_write(priv->iob->io, priv->fd, buf, len);
 }
 
+static ut8 *buf_io_fd_get_whole_buf(RzBuffer *b, ut64 *size) {
+	struct buf_io_fd_priv *priv = get_priv_io(b);
+	return priv->iob->fd_getbuf(priv->iob->io, priv->fd, size);
+}
+
 static const RzBufferMethods buffer_io_fd_methods = {
 	.init = buf_io_fd_init,
 	.fini = buf_io_fd_fini,
@@ -88,4 +93,5 @@ static const RzBufferMethods buffer_io_fd_methods = {
 	.get_size = buf_io_fd_get_size,
 	.resize = buf_io_fd_resize,
 	.seek = buf_io_fd_seek,
+	.get_whole_buf = buf_io_fd_get_whole_buf
 };

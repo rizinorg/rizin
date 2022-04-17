@@ -139,6 +139,7 @@ typedef struct rz_io_plugin_t {
 	bool (*accept)(RzIO *io, RzIODesc *desc, int fd);
 	int (*create)(RzIO *io, const char *file, int mode, int type);
 	bool (*check)(RzIO *io, const char *, bool many);
+	ut8 *(*get_buf)(RzIODesc *desc, ut64 *size);
 } RzIOPlugin;
 
 typedef struct rz_io_map_t {
@@ -212,6 +213,7 @@ typedef bool (*RzIOFdIsDbg)(RzIO *io, int fd);
 typedef const char *(*RzIOFdGetName)(RzIO *io, int fd);
 typedef RzList *(*RzIOFdGetMap)(RzIO *io, int fd);
 typedef bool (*RzIOFdRemap)(RzIO *io, int fd, ut64 addr);
+typedef ut8 *(*RzIOFdGetBuf)(RzIO *io, int fd, ut64 *size);
 typedef bool (*RzIOIsValidOff)(RzIO *io, ut64 addr, int hasperm);
 typedef RzIOMap *(*RzIOMapGet)(RzIO *io, ut64 addr);
 typedef RzIOMap *(*RzIOMapGetPaddr)(RzIO *io, ut64 paddr);
@@ -251,6 +253,7 @@ typedef struct rz_io_bind_t {
 	RzIOFdGetName fd_get_name;
 	RzIOFdGetMap fd_get_map;
 	RzIOFdRemap fd_remap;
+	RzIOFdGetBuf fd_getbuf;
 	RzIOIsValidOff is_valid_offset;
 	RzIOAddrIsMapped addr_is_mapped;
 	RzIOMapGet map_get;
@@ -369,6 +372,7 @@ RZ_API RzIODesc *rz_io_desc_get(RzIO *io, int fd);
 RZ_API ut64 rz_io_desc_seek(RzIODesc *desc, ut64 offset, int whence);
 RZ_API bool rz_io_desc_resize(RzIODesc *desc, ut64 newsize);
 RZ_API ut64 rz_io_desc_size(RzIODesc *desc);
+RZ_API ut8 *rz_io_desc_get_buf(RzIODesc *desc, RZ_OUT RZ_NONNULL ut64 *size);
 RZ_API bool rz_io_desc_is_blockdevice(RzIODesc *desc);
 RZ_API bool rz_io_desc_is_chardevice(RzIODesc *desc);
 RZ_API bool rz_io_desc_exchange(RzIO *io, int fd, int fdx); // this should get 2 descs
@@ -415,6 +419,7 @@ RZ_API int rz_io_fd_read(RzIO *io, int fd, ut8 *buf, int len);
 RZ_API int rz_io_fd_write(RzIO *io, int fd, const ut8 *buf, int len);
 RZ_API ut64 rz_io_fd_seek(RzIO *io, int fd, ut64 addr, int whence);
 RZ_API ut64 rz_io_fd_size(RzIO *io, int fd);
+RZ_API ut8 *rz_io_fd_get_buf(RzIO *io, int fd, RZ_OUT RZ_NONNULL ut64 *size);
 RZ_API bool rz_io_fd_resize(RzIO *io, int fd, ut64 newsize);
 RZ_API bool rz_io_fd_is_blockdevice(RzIO *io, int fd);
 RZ_API bool rz_io_fd_is_chardevice(RzIO *io, int fd);
