@@ -232,6 +232,21 @@ RZ_API ut64 rz_io_desc_size(RzIODesc *desc) {
 	return ret;
 }
 
+/**
+ * \brief Returns the underlying buffer of the io descriptor
+ * \param[in] desc The io descriptor
+ * \param[out] size Size of buffer returned
+ * \return The buffer or NULL if the buffer is not available
+ */
+RZ_API ut8 *rz_io_desc_get_buf(RzIODesc *desc, RZ_OUT RZ_NONNULL ut64 *size) {
+	rz_return_val_if_fail(size, NULL);
+	if (!desc || !desc->plugin || !desc->plugin->get_buf) {
+		*size = 0;
+		return NULL;
+	}
+	return desc->plugin->get_buf(desc, size);
+}
+
 RZ_API bool rz_io_desc_resize(RzIODesc *desc, ut64 newsize) {
 	if (desc && desc->plugin && desc->plugin->resize) {
 		bool ret = desc->plugin->resize(desc->io, desc, newsize);
