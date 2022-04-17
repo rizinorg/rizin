@@ -243,12 +243,12 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) 
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_bitv(RZ_NONNULL RZ_BORROW RzILOpBitVector *v, ut32 m, ut32 n) {
 	rz_return_val_if_fail(v, NULL);
 	rz_return_val_if_fail(m <= n, NULL);
-	RzILOpBitVector *res = rz_il_op_new_bitv_from_ut64(m-n, 0);
+	RzILOpBitVector *res = rz_il_op_new_bitv_from_ut64(m - n, 0);
 	if (!res) {
 		rz_warn_if_reached();
 		return NULL;
 	}
-	rz_bv_copy_nbits(PURE_BV_GET(v), n, PURE_BV_GET(res), 0, m-n);
+	rz_bv_copy_nbits(PURE_BV_GET(v), n, PURE_BV_GET(res), 0, m - n);
 	return res;
 }
 
