@@ -1,9 +1,10 @@
 
 NAME=ppc add instructions
-FILE=bins/elf/ppc/ppc_insn_tests
+FILE=bins/elf/ppc/ppc_insn_tests_64
 ARGS=-appc
 CMDS=<<EOF
-s 0x8000040
+af
+s loc.add_insns
 aezi
 aezse 14
 EOF
