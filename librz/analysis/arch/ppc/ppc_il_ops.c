@@ -45,16 +45,16 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	// Letter			Meaning
 	// L 				Load
 	// B/H/.. 			Byte, Half Word, ...
-	// Z/A/B/C			Zero extend, Algebraic, ???
-	// U/R				Update (store EA in RA), Reverse bytes
+	// Z/A/BR			Zero extend, Algebraic, Byte reversal
+	// U				Update (store EA in RA)
 	// X				X Form instruction (uses RB instead of immediate)
 
 	// EXEC
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
-	case PPC_INS_LI: // RT = RA
-		into_rt = VARG(rA);
+	case PPC_INS_LI: // RT = sI
+		into_rt = EXTEND(PPC_ARCH_BITS, IMM_SN(16, sI));
 		break;
 	case PPC_INS_LIS:; // RT = SI
 		into_rt = EXTEND(PPC_ARCH_BITS, APPEND(IMM_SN(32, sI), U16(0)));
@@ -152,7 +152,7 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
 	st64 sI = INSOP(2).imm;
 
-	bool set_ca = (insn->id != PPC_INS_ADD && insn->id != PPC_INS_ADDI && insn->id != PPC_INS_SUBF);
+	bool set_ca = (id != PPC_INS_ADD && id != PPC_INS_ADDI && id != PPC_INS_ADDIS && id != PPC_INS_SUBF);
 	bool cr0 = insn->detail->ppc.update_cr0;
 	if (cr0) {
 		RZ_LOG_WARN("Capstone fixed a bug!"
@@ -202,7 +202,7 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 		if (id == PPC_INS_ADDIS) {
 			op1 = EXTEND(PPC_ARCH_BITS, APPEND(IMM_SN(16, sI), U16(0))); // Shift immediate << 16
 		} else {
-			op1 = IMM_S(sI);
+			op1 = EXTEND(PPC_ARCH_BITS, IMM_SN(16, sI));
 		}
 		res = ADD(op0, op1);
 		break;
