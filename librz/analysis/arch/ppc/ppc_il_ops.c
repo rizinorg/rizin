@@ -45,9 +45,11 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	// Letter			Meaning
 	// L 				Load
 	// B/H/.. 			Byte, Half Word, ...
-	// Z/A/BR			Zero extend, Algebraic, Byte reversal
-	// U				Update (store EA in RA)
+	// Z/A/B			Zero extend, Algebraic, Byte reversal
+	// U/R				Update (store EA in RA), Reserve indexed
 	// X				X Form instruction (uses RB instead of immediate)
+	// CIX				Caching Inhibited Indexed
+	// V				Vector indexed
 
 	// EXEC
 	switch (id) {
@@ -81,25 +83,48 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LDX:
 	case PPC_INS_LDU:
 	case PPC_INS_LDUX:
+	case PPC_INS_LHA:
+	case PPC_INS_LHAX:
+	case PPC_INS_LHAU:
+	case PPC_INS_LHAUX:
+	case PPC_INS_LWA:
+	case PPC_INS_LWAX:
+	case PPC_INS_LWAUX:
 		op0 = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
 		op1 = ppc_is_x_form(id) ? VARG(rB) : EXTEND(PPC_ARCH_BITS, IMM_SN(16, d));
 		ea = ADD(op0, op1);
-		into_rt = (mem_acc_size == 64) ? LOADW(mem_acc_size, ea) : EXTZ(LOADW(mem_acc_size, ea));
+		if (ppc_is_algebraic(id)) {
+			into_rt = (mem_acc_size == 64) ? LOADW(mem_acc_size, ea) : EXTEND(PPC_ARCH_BITS, LOADW(mem_acc_size, ea));
+		} else {
+			into_rt = (mem_acc_size == 64) ? LOADW(mem_acc_size, ea) : EXTZ(LOADW(mem_acc_size, ea));
+		}
 		update_ra = ppc_updates_ra_with_ea(id);
 		break;
+	// Byte reverse and reserved indexed
+	case PPC_INS_LWARX:
+	case PPC_INS_LHBRX:
+	case PPC_INS_LDARX:
+	case PPC_INS_LDBRX:
+		NOT_IMPLEMENTED;
+	// Floats
+	case PPC_INS_LFD:
+	case PPC_INS_LFDX:
+	case PPC_INS_LFDU:
+	case PPC_INS_LFDUX:
+	case PPC_INS_LFIWAX:
+	case PPC_INS_LFIWZX:
+	case PPC_INS_LFS:
+	case PPC_INS_LFSX:
+	case PPC_INS_LFSU:
+	case PPC_INS_LFSUX:
+		NOT_IMPLEMENTED;
+	// Caching Inhibited Indexed
 	case PPC_INS_LBZCIX:
 	case PPC_INS_LHZCIX:
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
-	case PPC_INS_LDARX:
-	case PPC_INS_LHA:
-	case PPC_INS_LHAU:
-	case PPC_INS_LHAUX:
-	case PPC_INS_LHAX:
-	case PPC_INS_LHBRX:
-	case PPC_INS_LDBRX:
 		NOT_IMPLEMENTED;
-	case PPC_INS_LSWI:
+	// Vector
 	case PPC_INS_LVEBX:
 	case PPC_INS_LVEHX:
 	case PPC_INS_LVEWX:
@@ -107,22 +132,16 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LVSR:
 	case PPC_INS_LVX:
 	case PPC_INS_LVXL:
+		NOT_IMPLEMENTED;
+	// String word
+	case PPC_INS_LSWI:
+		NOT_IMPLEMENTED;
+	// VSX Scalar
 	case PPC_INS_LXSDX:
+	// VSX Vector
 	case PPC_INS_LXVD2X:
 	case PPC_INS_LXVDSX:
 	case PPC_INS_LXVW4X:
-		NOT_IMPLEMENTED;
-	// Floats
-	case PPC_INS_LFD:
-	case PPC_INS_LFDU:
-	case PPC_INS_LFDUX:
-	case PPC_INS_LFDX:
-	case PPC_INS_LFIWAX:
-	case PPC_INS_LFIWZX:
-	case PPC_INS_LFS:
-	case PPC_INS_LFSU:
-	case PPC_INS_LFSUX:
-	case PPC_INS_LFSX:
 		NOT_IMPLEMENTED;
 	}
 

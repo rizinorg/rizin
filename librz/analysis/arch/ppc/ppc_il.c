@@ -112,3 +112,21 @@ bool ppc_updates_ra_with_ea(ut32 insn_id) {
 		return true;
 	}
 }
+
+bool ppc_is_algebraic(ut32 insn_id) {
+	switch (insn_id) {
+	default:
+		return false;
+	case PPC_INS_LA:
+	case PPC_INS_LDARX:
+	case PPC_INS_LHA:
+	case PPC_INS_LHAU:
+	case PPC_INS_LHAUX:
+	case PPC_INS_LHAX:
+	case PPC_INS_LWA:
+	case PPC_INS_LWAX:
+	case PPC_INS_LWARX:
+	case PPC_INS_LWAUX:
+		return true;
+	}
+}
