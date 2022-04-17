@@ -1092,7 +1092,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_set_all);
 	mu_run_test(test_rz_bv_set_to_bytes_le);
 	mu_run_test(test_rz_bv_copy_nbits);
-	
+
 	return tests_passed != tests_run;
 }
 
