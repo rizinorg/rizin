@@ -512,6 +512,25 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
             args: []
+      - name: aft
+        summary: Type matching analysis for the function in current seek
+        cname: analysis_function_type_matching
+        args: []
+      - name: afM
+        summary: Print functions map
+        cname: analysis_functions_map
+        args: []
+      - name: afm
+        summary: Merge two functions
+        cname: analysis_functions_merge
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_FCN
+        details:
+          - name: ""
+            entries:
+              - text: "afm 0xbeef @ 0x42"
+                comment: "Merge function at address 0xbeef to function at address 0x42"
   - name: aeC
     summary: appcall in esil
     cname: analysis_appcall

@@ -13,6 +13,7 @@ static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail analysis_all_esil_details[2];
+static const RzCmdDescDetail analysis_functions_merge_details[2];
 static const RzCmdDescDetail analysis_appcall_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
@@ -120,6 +121,7 @@ static const RzCmdDescArg analysis_function_import_list_args[2];
 static const RzCmdDescArg analysis_function_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_rename_args[2];
+static const RzCmdDescArg analysis_functions_merge_args[2];
 static const RzCmdDescArg analysis_appcall_args[2];
 static const RzCmdDescArg analysis_continue_until_addr_args[2];
 static const RzCmdDescArg analysis_continue_until_esil_args[2];
@@ -2032,6 +2034,44 @@ static const RzCmdDescArg analysis_function_strings_args[] = {
 static const RzCmdDescHelp analysis_function_strings_help = {
 	.summary = "Print all strings referenced by the function in current seek",
 	.args = analysis_function_strings_args,
+};
+
+static const RzCmdDescArg analysis_function_type_matching_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_type_matching_help = {
+	.summary = "Type matching analysis for the function in current seek",
+	.args = analysis_function_type_matching_args,
+};
+
+static const RzCmdDescArg analysis_functions_map_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_functions_map_help = {
+	.summary = "Print functions map",
+	.args = analysis_functions_map_args,
+};
+
+static const RzCmdDescDetailEntry analysis_functions_merge_empty_detail_entries[] = {
+	{ .text = "afm 0xbeef @ 0x42", .arg_str = NULL, .comment = "Merge function at address 0xbeef to function at address 0x42" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_functions_merge_details[] = {
+	{ .name = "", .entries = analysis_functions_merge_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_functions_merge_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_FCN,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_functions_merge_help = {
+	.summary = "Merge two functions",
+	.details = analysis_functions_merge_details,
+	.args = analysis_functions_merge_args,
 };
 
 static const RzCmdDescDetailEntry analysis_appcall_Examples_detail_entries[] = {
@@ -13543,6 +13583,15 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, afn_cd, "afns", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_strings_handler, &analysis_function_strings_help);
 	rz_warn_if_fail(analysis_function_strings_cd);
+
+	RzCmdDesc *analysis_function_type_matching_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "aft", rz_analysis_function_type_matching_handler, &analysis_function_type_matching_help);
+	rz_warn_if_fail(analysis_function_type_matching_cd);
+
+	RzCmdDesc *analysis_functions_map_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afM", rz_analysis_functions_map_handler, &analysis_functions_map_help);
+	rz_warn_if_fail(analysis_functions_map_cd);
+
+	RzCmdDesc *analysis_functions_merge_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afm", rz_analysis_functions_merge_handler, &analysis_functions_merge_help);
+	rz_warn_if_fail(analysis_functions_merge_cd);
 
 	RzCmdDesc *analysis_appcall_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aeC", rz_analysis_appcall_handler, &analysis_appcall_help);
 	rz_warn_if_fail(analysis_appcall_cd);
