@@ -182,7 +182,7 @@ RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector
 }
 
 /**
- * Copy n bits from start position of source to start position of dest
+ * Copy n bits from start position of source to start position of dest, return num of copied bits
  * \param src RzBitVector, data source
  * \param src_start_pos ut32, start position in source bitvector of copy
  * \param dst RzBitVector, destination of copy
@@ -202,7 +202,7 @@ RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_p
 	}
 
 	// normal case here
-	for (ut32 i = 0; i < max_nbit; ++i) {
+	for (ut32 i = 0; i < nbit; ++i) {
 		bool c = rz_bv_get(src, src_start_pos + i);
 		rz_bv_set(dst, dst_start_pos + i, c);
 	}
