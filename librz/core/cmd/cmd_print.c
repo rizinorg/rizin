@@ -1005,7 +1005,7 @@ static void findMethodBounds(RzList *methods, ut64 *min, ut64 *max) {
 	*max = at_max;
 }
 
-static ut64 findClassBounds(RzCore *core, const char *input, int *len) {
+static ut64 findClassBounds(RzCore *core, int *len) {
 	ut64 min = 0, max = 0;
 	RzListIter *iter;
 	RzBinClass *c;
@@ -5478,7 +5478,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'k': // "pdk" -print class
 		{
 			int len = 0;
-			ut64 at = findClassBounds(core, rz_str_trim_head_ro(input + 2), &len);
+			ut64 at = findClassBounds(core, &len);
 			return rz_core_cmdf(core, "pD %d @ %" PFMT64u, len, at);
 		}
 		case 'i': // "pdi" // "pDi"
@@ -7266,6 +7266,9 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int a
 		rz_core_print_disasm_json(core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), state->d.pj);
 		rz_cmd_state_output_array_end(state);
 		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_core_disasm_pdi(core, RZ_ABS(n_instrs), 0, 0);
+		break;
 	default:
 		rz_warn_if_reached();
 		break;
@@ -7402,6 +7405,168 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCo
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_disassembly_basic_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
+	core->num->value = 0;
+	if (!b) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut8 *block = malloc(b->size + 1);
+	if (!block) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_read_at(core->io, b->addr, block, b->size);
+
+	rz_cmd_state_output_array_start(state);
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_core_print_disasm(core->print, core, b->addr, block, b->size, 9999, 0, 2, false, NULL, NULL);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		rz_core_print_disasm_json(core, b->addr, block, b->size, 0, state->d.pj);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	rz_cmd_state_output_array_end(state);
+
+	free(block);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_basic_block_as_text_json_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
+	core->num->value = 0;
+	if (!b) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut8 *block = malloc(b->size + 1);
+	if (!block) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_read_at(core->io, b->addr, block, b->size);
+
+	rz_core_print_disasm(core->print, core, b->addr, block, b->size, 9999, 0, 2, true, state->d.pj, NULL);
+
+	free(block);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_comments_in_n_instructions_handler(RzCore *core, int argc, const char **argv) {
+	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (parsed > ST16_MAX || parsed < ST16_MIN) {
+		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_instrs = parsed;
+	if (rz_core_disasm_pdi(core, n_instrs, 0, 'C') < 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_with_flow_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : (core->blocksize / 4);
+	if (parsed > ST16_MAX || parsed < ST16_MIN) {
+		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_instrs = parsed;
+	int mode = 0;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		mode = RZ_MODE_PRINT;
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		mode = RZ_MODE_JSON;
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		mode = RZ_MODE_SIMPLE;
+		break;
+	case RZ_OUTPUT_MODE_QUIETEST:
+		mode = RZ_MODE_SIMPLEST;
+		break;
+	default:
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// this command is going to be removed when esil will be removed.
+	rz_core_disasm_pde(core, n_instrs, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut32 old_blocksize = core->blocksize;
+	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
+	if (!function) {
+		function = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	}
+	if (!function) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		bool ret = rz_core_print_function_disasm_json(core, function, state->d.pj);
+		rz_core_block_size(core, old_blocksize);
+		return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	}
+
+	ut64 linear_size = rz_analysis_function_linear_size(function);
+	ut64 max_real_size = rz_analysis_function_realsize(function) + 4096;
+	if (max_real_size < linear_size) {
+		RZ_LOG_ERROR("Linear size differs too much from the bbsum, please use pdr instead.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut64 start = function->addr; // For pdf, start disassembling at the entrypoint
+	ut64 end = rz_analysis_function_max_addr(function);
+	if (end <= start) {
+		RZ_LOG_ERROR("Cannot print function because the end offset is less or equal to the start offset\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut64 size = end - start;
+	ut8 *bytes = malloc(size);
+	if (!bytes) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	(void)rz_io_read_at(core->io, start, bytes, size);
+	rz_core_print_disasm(core->print, core, start, bytes, size, size, 0, 1, 0, NULL, function);
+	free(bytes);
+
+	rz_core_block_size(core, old_blocksize);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_function_summary_handler(RzCore *core, int argc, const char **argv) {
+	ut64 old_offset = core->offset;
+	ut32 old_blocksize = core->blocksize;
+	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
+	if (!function) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut32 rs = rz_analysis_function_realsize(function);
+	ut32 fs = rz_analysis_function_linear_size(function);
+	rz_core_seek(core, old_offset, SEEK_SET);
+	rz_core_block_size(core, RZ_MAX(rs, fs));
+	disasm_strings(core, "dfs", function);
+
+	rz_core_block_size(core, old_blocksize);
+	rz_core_seek(core, old_offset, SEEK_SET);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut32 old_blocksize = core->blocksize;
 	ut64 old_offset = core->offset;
@@ -7431,4 +7596,276 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 		rz_core_seek(core, old_offset, true);
 	}
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_all_methods_class_handler(RzCore *core, int argc, const char **argv) {
+	ut32 old_blocksize = core->blocksize;
+	ut64 old_offset = core->offset;
+
+	int len = 0;
+	ut64 at = findClassBounds(core, &len);
+	if (!at) {
+		RZ_LOG_ERROR("Cannot find class at 0x%" PFMT64x ".\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_core_seek(core, at, true);
+
+	// TODO: remove this and use C api.
+	// on success returns 0 else negative
+	int ret = rz_core_cmdf(core, "pD %d", len);
+
+	rz_core_block_size(core, old_blocksize);
+	rz_core_seek(core, old_offset, true);
+	return ret >= 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_sizes_of_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut32 old_blocksize = core->blocksize;
+	ut64 old_offset = core->offset;
+	st64 ret = 0;
+
+	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : (core->blocksize / 4);
+	if (parsed > ST16_MAX || parsed < ST16_MIN) {
+		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_instrs = parsed;
+	if (n_instrs < 0) {
+		ut64 new_offset = old_offset;
+		if (!rz_core_prevop_addr(core, old_offset, -n_instrs, &new_offset)) {
+			new_offset = rz_core_prevop_addr_force(core, old_offset, -n_instrs);
+		}
+		ut32 new_blocksize = new_offset - old_blocksize;
+		if (new_blocksize > old_blocksize) {
+			rz_core_block_size(core, new_blocksize);
+		}
+		rz_core_seek(core, new_offset, true);
+	}
+
+	rz_cmd_state_output_array_start(state);
+	rz_cons_break_push(NULL, NULL);
+	for (ut32 i = 0, j = 0; i < core->blocksize && j < RZ_ABS(n_instrs); i += ret, j++) {
+		RzAsmOp asm_op = { 0 };
+		ret = rz_asm_disassemble(core->rasm, &asm_op, core->block + i, core->blocksize - i);
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		// be sure to return 0 when it fails to disassemble the
+		// instruction to uniform the output across all disassemblers.
+		int op_size = ret < 1 ? 0 : ret;
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("%d\n", op_size);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_N(state->d.pj, op_size);
+			break;
+		default:
+			rz_warn_if_reached();
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (ret < 1) {
+			ret = 1;
+		}
+	}
+	rz_cons_break_pop();
+	rz_cmd_state_output_array_end(state);
+
+	if (n_instrs < 0) {
+		rz_core_block_size(core, old_blocksize);
+		rz_core_seek(core, old_offset, true);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+static void disassemble_till_return_is_found(RzCore *core, ut64 offset, ut64 limit, RzCmdStateOutput *state) {
+	bool src_color = rz_config_get_i(core->config, "scr.color") > 0;
+	const char *off_color = src_color ? rz_cons_singleton()->context->pal.b0x00 : "";
+	const char *ret_color = src_color ? rz_cons_singleton()->context->pal.jmp : "";
+	const char *end_color = src_color ? Color_RESET : "";
+
+	for (ut64 i = 0; i < limit; i++) {
+		RzAnalysisOp *op = rz_core_analysis_op(core, offset, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
+		if (!op) {
+			return;
+		}
+
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_cons_printf("%s%s%s\n", ret_color, op->mnemonic, end_color);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("%s0x%08" PFMT64x "%s %-11s%s\n", off_color, core->offset + i, ret_color, op->mnemonic, end_color);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_ks(state->d.pj, "mnemonic", op->mnemonic);
+			pj_kn(state->d.pj, "address", core->offset + i);
+			pj_end(state->d.pj);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+
+		if (!(op->type & (RZ_ANALYSIS_OP_TYPE_RET | RZ_ANALYSIS_OP_TYPE_UJMP))) {
+			rz_analysis_op_free(op);
+			return;
+		}
+
+		if (op->type == RZ_ANALYSIS_OP_TYPE_JMP) {
+			offset = op->jump;
+		} else {
+			offset += op->size;
+		}
+
+		rz_analysis_op_free(op);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassemble_ropchain_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut64 limit = argc > 1 ? rz_num_math(core->num, argv[1]) : 1024;
+	if (limit > 1024) {
+		RZ_LOG_ERROR("the limit value exceeds the max value (1024).\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 asm_bits = core->rasm->bits;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	bool src_color = rz_config_get_i(core->config, "scr.color") > 0;
+
+	const char *off_color = src_color ? rz_cons_singleton()->context->pal.offset : "";
+	const char *num_color = src_color ? rz_cons_singleton()->context->pal.num : "";
+	const char *end_color = src_color ? Color_RESET : "";
+
+	if (asm_bits < 64) {
+		asm_bits = 32;
+	}
+
+	ut32 asm_bytes = asm_bits / 8;
+	if (core->blocksize < asm_bytes) {
+		RZ_LOG_ERROR("block size is not enough big to host a word (needs to be >= %u bytes).\n", asm_bytes);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut8 *bytes = RZ_NEWS0(ut8, core->blocksize);
+	if (!bytes) {
+		RZ_LOG_ERROR("cannot allocate buffer.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	(void)rz_io_read_at(core->io, core->offset, bytes, core->blocksize);
+
+	rz_cmd_state_output_array_start(state);
+	for (ut32 i = 0; i < core->blocksize - asm_bytes; i += asm_bytes) {
+		ut64 number = rz_read_ble(bytes + i, big_endian, asm_bits);
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_cons_printf("%s0x%08" PFMT64x "%s %s0x%08" PFMT64x "%s\n", off_color, core->offset + i, end_color, num_color, number, end_color);
+			disassemble_till_return_is_found(core, core->offset + i, limit, state);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("[%s0x%08" PFMT64x "%s] %s0x%08" PFMT64x "%s\n", off_color, core->offset + i, end_color, num_color, number, end_color);
+			disassemble_till_return_is_found(core, core->offset + i, limit, state);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "address", core->offset + i);
+			pj_kn(state->d.pj, "bits", asm_bits);
+			pj_kn(state->d.pj, "word", number);
+			pj_ka(state->d.pj, "opcodes");
+			disassemble_till_return_is_found(core, core->offset + i, limit, state);
+			pj_end(state->d.pj);
+			pj_end(state->d.pj);
+			break;
+		default:
+			rz_warn_if_reached();
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmdStateOutput *state, char type_print, bool fromHere) {
+	RzListIter *iter;
+	RzAnalysisBlock *b = NULL;
+	const char *orig_bb_middle = rz_config_get(core->config, "asm.bb.middle");
+	rz_config_set_i(core->config, "asm.bb.middle", false);
+
+	if (rz_list_length(f->bbs) >= 1) {
+		ut32 fcn_size = rz_analysis_function_realsize(f);
+		b = rz_list_get_top(f->bbs);
+		if (b->size > fcn_size) {
+			b->size = fcn_size;
+		}
+	}
+
+	rz_list_sort(f->bbs, (RzListComparator)bbcmp);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		rz_list_foreach (f->bbs, iter, b) {
+			ut8 *buf = malloc(b->size);
+			if (!buf) {
+				RZ_LOG_ERROR("cannot allocate %" PFMT64u " byte(s)\n", b->size);
+				return false;
+			}
+			(void)rz_io_read_at(core->io, b->addr, buf, b->size);
+			rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, state->d.pj);
+			free(buf);
+		}
+	} else {
+		bool asm_lines = rz_config_get_i(core->config, "asm.lines.bb");
+		bool emu = rz_config_get_i(core->config, "asm.emu");
+		ut64 saved_gp = 0;
+		ut8 *saved_arena = NULL;
+		int saved_stackptr = core->analysis->stackptr;
+		if (emu) {
+			saved_gp = core->analysis->gp;
+			saved_arena = rz_reg_arena_peek(core->analysis->reg);
+		}
+		rz_config_set_i(core->config, "asm.lines.bb", 0);
+		rz_list_foreach (f->bbs, iter, b) {
+			pr_bb(core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
+		}
+		if (emu) {
+			core->analysis->gp = saved_gp;
+			if (saved_arena) {
+				rz_reg_arena_poke(core->analysis->reg, saved_arena);
+				RZ_FREE(saved_arena);
+			}
+		}
+		core->analysis->stackptr = saved_stackptr;
+		rz_config_set_i(core->config, "asm.lines.bb", asm_lines);
+	}
+	rz_config_set(core->config, "asm.bb.middle", orig_bb_middle);
+	return true;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	// RZ_ANALYSIS_FCN_TYPE_FCN|RZ_ANALYSIS_FCN_TYPE_SYM);
+	if (!function) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_cmd_state_output_array_start(state);
+	bool ret = core_walk_function_blocks(core, function, state, 'D', false);
+	rz_cmd_state_output_array_end(state);
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_from_here_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	// RZ_ANALYSIS_FCN_TYPE_FCN|RZ_ANALYSIS_FCN_TYPE_SYM);
+	if (!function) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_cmd_state_output_array_start(state);
+	bool ret = core_walk_function_blocks(core, function, state, 'D', true);
+	rz_cmd_state_output_array_end(state);
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
