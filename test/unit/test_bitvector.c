@@ -1060,11 +1060,29 @@ bool test_rz_bv_copy_nbits(void) {
 	mu_assert_eq(actual_copy, part_sz, "copy part_sz bits to medium");
 	mu_assert_streq_free(rz_bv_as_string(res), "00001111111100000000", "copy nbits to medium");
 
+	/// copy non-zero, copy last 11 bits of `b` to the head of `a`
+	/// dst : a = 0001 0010 0011 ...
+	/// src : b = ... .001 1000 0110
+	/// expect : 0011 0000 1101 ... = 0x30d45678
+	RzBitVector *a = rz_bv_new_from_ut64(32, 0x12345678);
+	RzBitVector *b = rz_bv_new_from_ut64(32, 0x1986);
+	actual_copy = rz_bv_copy_nbits(b, 0, a, a->len - 11, 11);
+	mu_assert_eq(actual_copy, 11, "copy non-zero 11 bits");
+	mu_assert_streq_free(rz_bv_as_hex_string(a, false), "0x30d45678", "copy non zero");
+
 	/// would fail (do nothing) if copy overflow is possible
 	RzBitVector *too_small = rz_bv_new(part_sz);
 	actual_copy = rz_bv_copy_nbits(src, 0, too_small, 0, part_sz + 2);
 	mu_assert_eq(actual_copy, 0, "copy 0 bits");
 	mu_assert_true(rz_bv_is_zero_vector(too_small), "copy nothing");
+
+	rz_bv_free(src);
+	rz_bv_free(small);
+	rz_bv_free(normal);
+	rz_bv_free(res);
+	rz_bv_free(too_small);
+	rz_bv_free(a);
+	rz_bv_free(b);
 	mu_end;
 }
 
