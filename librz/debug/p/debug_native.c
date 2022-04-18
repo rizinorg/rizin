@@ -1450,7 +1450,7 @@ static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 		return set
 			? arm32_hwbp_add(dbg, bp, b)
 			: arm32_hwbp_del(dbg, bp, b);
-#elif __riscv
+#elif __riscv || __s390__ || __s390x__ || __zarch__
 		dbg = NULL;
 		return false;
 #endif
