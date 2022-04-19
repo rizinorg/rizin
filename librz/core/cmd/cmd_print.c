@@ -18,7 +18,7 @@ static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
 	"paD", " [hexpairs]", "print assembly expression from hexpairs and show hexpairs",
-	"pad", " [hexpairs]", "print assembly expression from hexpairs (alias for pdx, pix)",
+	"pad", " [hexpairs]", "print assembly expression from hexpairs (alias for pix)",
 	"pade", " [hexpairs]", "print ESIL expression from hexpairs",
 	"pae", " [assembly]", "print ESIL expression of the given assembly expression",
 	NULL
@@ -328,7 +328,6 @@ static const char *help_msg_pd[] = {
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 	"pdt", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
-	"pdx", " [hex]", "alias for pad or pix",
 	NULL
 };
 
@@ -451,7 +450,7 @@ static const char *help_msg_pi[] = {
 	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
 	"piu", "[q] [limit]", "disasm until ujmp or ret is found (see pdp)",
-	"pix", "  [hexpairs]", "alias for pdx and pad",
+	"pix", "  [hexpairs]", "alias for pad",
 	NULL
 };
 
@@ -5426,11 +5425,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				ret = 0;
 				goto beach;
 			}
-		}
-
-		if (input[1] == 'x') { // pdx
-			__cmd_pad(core, rz_str_trim_head_ro(input + 2));
-			return 0;
 		}
 
 		const char *sp = NULL;
