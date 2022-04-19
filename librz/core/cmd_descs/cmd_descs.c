@@ -9868,12 +9868,12 @@ static const RzCmdDescHelp cmd_disassemble_recursively_help = {
 	.args = cmd_disassemble_recursively_args,
 };
 
-static const RzCmdDescArg cmd_disassemble_recursively_from_here_args[] = {
+static const RzCmdDescArg cmd_disassemble_recursively_from_current_block_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_disassemble_recursively_from_here_help = {
+static const RzCmdDescHelp cmd_disassemble_recursively_from_current_block_help = {
 	.summary = "Disassemble recursively across the function graph (from current basic block)",
-	.args = cmd_disassemble_recursively_from_here_args,
+	.args = cmd_disassemble_recursively_from_current_block_args,
 };
 
 static const RzCmdDescHelp cmd_print_gadget_help = {
@@ -15514,8 +15514,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_disassemble_recursive_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_disassembly_cd, "pdr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_recursively_handler, &cmd_disassemble_recursively_help, &cmd_disassemble_recursive_help);
 	rz_warn_if_fail(cmd_disassemble_recursive_cd);
-	RzCmdDesc *cmd_disassemble_recursively_from_here_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_disassemble_recursive_cd, "pdr.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_recursively_from_here_handler, &cmd_disassemble_recursively_from_here_help);
-	rz_warn_if_fail(cmd_disassemble_recursively_from_here_cd);
+	RzCmdDesc *cmd_disassemble_recursively_from_current_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_disassemble_recursive_cd, "pdr.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_recursively_from_current_block_handler, &cmd_disassemble_recursively_from_current_block_help);
+	rz_warn_if_fail(cmd_disassemble_recursively_from_current_block_cd);
 
 	RzCmdDesc *cmd_print_gadget_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pg", rz_cmd_print_gadget_add_handler, &cmd_print_gadget_add_help, &cmd_print_gadget_help);
 	rz_warn_if_fail(cmd_print_gadget_cd);

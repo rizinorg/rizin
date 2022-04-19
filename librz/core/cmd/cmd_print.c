@@ -7856,7 +7856,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_handler(RzCore *core, int argc
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_from_here_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_from_current_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	// RZ_ANALYSIS_FCN_TYPE_FCN|RZ_ANALYSIS_FCN_TYPE_SYM);
 	if (!function) {
