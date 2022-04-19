@@ -243,7 +243,7 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 		sb->buf[sb->len + l] = 0;
 		RZ_FREE(sb->ptr);
 	} else {
-		int newlen = sb->len + l + 128;
+		size_t newlen = sb->len + l + 128;
 		char *p = sb->ptr;
 		bool allocated = true;
 		if (!sb->ptr) {
@@ -252,6 +252,10 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 				memcpy(p, sb->buf, sb->len);
 			}
 		} else if (sb->len + l + 1 > sb->ptrlen) {
+			if (SZT_MUL_OVFCHK(newlen, 2)) {
+				return false;
+			}
+			newlen *= 2;
 			p = realloc(sb->ptr, newlen);
 		} else {
 			allocated = false;
