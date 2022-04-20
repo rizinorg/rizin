@@ -7430,9 +7430,10 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_basic_block_handler(RzCore *core, int argc
 	rz_cmd_state_output_array_start(state);
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_print_disasm(core->print, core, b->addr, block, b->size, 9999, 0, 2, false, NULL, NULL);
+		core->num->value = rz_core_print_disasm(core->print, core, b->addr, block, b->size, 9999, 0, 2, false, NULL, NULL);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
+		core->num->value = 1;
 		rz_core_print_disasm_json(core, b->addr, block, b->size, 0, state->d.pj);
 		break;
 	default:
@@ -7460,7 +7461,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_basic_block_as_text_json_handler(RzCore *c
 	}
 	rz_io_read_at(core->io, b->addr, block, b->size);
 
-	rz_core_print_disasm(core->print, core, b->addr, block, b->size, 9999, 0, 2, true, state->d.pj, NULL);
+	core->num->value = rz_core_print_disasm(core->print, core, b->addr, block, b->size, 9999, 0, 2, true, state->d.pj, NULL);
 
 	free(block);
 	return RZ_CMD_STATUS_OK;
@@ -7510,6 +7511,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_with_flow_handler(RzCore *c
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	core->num->value = 0;
 	ut32 old_blocksize = core->blocksize;
 	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
 	if (!function) {
@@ -7548,7 +7550,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 	}
 
 	(void)rz_io_read_at(core->io, start, bytes, size);
-	rz_core_print_disasm(core->print, core, start, bytes, size, size, 0, 1, 0, NULL, function);
+	core->num->value = rz_core_print_disasm(core->print, core, start, bytes, size, size, 0, 1, 0, NULL, function);
 	free(bytes);
 
 	rz_core_block_size(core, old_blocksize);
@@ -7577,6 +7579,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_summary_handler(RzCore *core, int
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut32 old_blocksize = core->blocksize;
 	ut64 old_offset = core->offset;
+	core->num->value = 0;
 
 	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
 	if (parsed > ST16_MAX || parsed < ST16_MIN) {
@@ -7595,13 +7598,12 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 		}
 		rz_core_seek(core, new_offset, true);
 	}
-
 	if (rz_cons_singleton()->is_html) {
 		rz_cons_singleton()->is_html = false;
 		rz_cons_singleton()->was_html = true;
 	}
 
-	rz_core_print_disasm(core->print, core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), 0, 1, true, NULL, NULL);
+	core->num->value = rz_core_print_disasm(core->print, core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), 0, 1, true, NULL, NULL);
 	rz_cons_newline();
 
 	if (n_instrs < 0) {
