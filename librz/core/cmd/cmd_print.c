@@ -7226,16 +7226,10 @@ static void disassembly_n_instructions_as_table(RzTable *t, RzCore *core, int n_
 	}
 }
 
-RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+static void core_disassembly_n_instructions(RzCore *core, int n_instrs, RzCmdStateOutput *state) {
 	ut32 old_blocksize = core->blocksize;
 	ut64 old_offset = core->offset;
 
-	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
-	if (parsed > ST16_MAX || parsed < ST16_MIN) {
-		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	int n_instrs = parsed;
 	if (n_instrs < 0) {
 		ut64 new_offset = old_offset;
 		if (!rz_core_prevop_addr(core, old_offset, -n_instrs, &new_offset)) {
@@ -7272,6 +7266,16 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int a
 		rz_core_block_size(core, old_blocksize);
 		rz_core_seek(core, old_offset, true);
 	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
+	if (parsed > ST16_MAX || parsed < ST16_MIN) {
+		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_instrs = parsed;
+	core_disassembly_n_instructions(core, n_instrs, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -7862,4 +7866,71 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_from_current_block_handler(RzC
 	bool ret = core_walk_function_blocks(core, function, state, 'D', true);
 	rz_cmd_state_output_array_end(state);
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut64 old_offset = core->offset;
+	RzAnalysisOp aop = { 0 };
+	ut32 aop_type;
+	ut64 aop_jump;
+	int aop_size;
+
+	rz_cmd_state_output_array_start(state);
+	for (ut64 count = core->blocksize, offset = core->offset; count > 0; count--) {
+		rz_core_seek(core, offset, true);
+
+		rz_analysis_op_init(&aop);
+		int ret = rz_analysis_op(core->analysis, &aop, offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (ret > 0) {
+			aop_type = aop.type;
+			aop_jump = aop.jump;
+			aop_size = aop.size;
+		}
+		rz_analysis_op_fini(&aop);
+
+		if (ret < 1 || aop_size < 1) {
+			offset++;
+			continue;
+		}
+
+		core_disassembly_n_instructions(core, 1, state);
+
+		switch (aop_type) {
+		case RZ_ANALYSIS_OP_TYPE_JMP:
+			offset = aop_jump;
+			continue;
+		case RZ_ANALYSIS_OP_TYPE_UCJMP:
+			break;
+		case RZ_ANALYSIS_OP_TYPE_RET:
+			count = 1; // stop disassembling when hitting RET
+			break;
+		default:
+			break;
+		}
+		offset += aop_size;
+	}
+	rz_cmd_state_output_array_end(state);
+
+	rz_core_seek(core, old_offset, true);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_function_handler(RzCore *core, int argc, const char **argv) {
+	disasm_strings(core, "dsf", NULL);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_block_handler(RzCore *core, int argc, const char **argv) {
+	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+	if (!n_bytes) {
+		RZ_LOG_ERROR("Invalid number of bytes\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	// small patch to reuse disasm_strings which
+	// needs to be rewritten entirely
+	char input_cmd[256];
+	rz_strf(input_cmd, "dsb 0x%" PFMT64x, n_bytes);
+	disasm_strings(core, input_cmd, NULL);
+	return RZ_CMD_STATUS_OK;
 }

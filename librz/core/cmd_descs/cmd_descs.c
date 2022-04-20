@@ -425,6 +425,7 @@ static const RzCmdDescArg cmd_disassembly_n_instructions_with_flow_args[2];
 static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[2];
 static const RzCmdDescArg cmd_sizes_of_n_instructions_args[2];
 static const RzCmdDescArg cmd_disassemble_ropchain_args[2];
+static const RzCmdDescArg cmd_disassemble_summarize_block_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -9876,6 +9877,38 @@ static const RzCmdDescHelp cmd_disassemble_recursively_from_current_block_help =
 	.args = cmd_disassemble_recursively_from_current_block_args,
 };
 
+static const RzCmdDescArg cmd_disassemble_recursively_no_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_recursively_no_function_help = {
+	.summary = "Disassemble recursively the block size bytes without analyzing functions",
+	.args = cmd_disassemble_recursively_no_function_args,
+};
+
+static const RzCmdDescHelp cmd_disassemble_summarize_help = {
+	.summary = "Summarize N bytes or a function (strings, calls, jumps, refs)",
+};
+static const RzCmdDescArg cmd_disassemble_summarize_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_summarize_function_help = {
+	.summary = "Summarize the current function",
+	.args = cmd_disassemble_summarize_function_args,
+};
+
+static const RzCmdDescArg cmd_disassemble_summarize_block_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_summarize_block_help = {
+	.summary = "Summarize current block",
+	.args = cmd_disassemble_summarize_block_args,
+};
+
 static const RzCmdDescHelp cmd_print_gadget_help = {
 	.summary = "Print gadgets",
 };
@@ -15516,6 +15549,17 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_disassemble_recursive_cd);
 	RzCmdDesc *cmd_disassemble_recursively_from_current_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_disassemble_recursive_cd, "pdr.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_recursively_from_current_block_handler, &cmd_disassemble_recursively_from_current_block_help);
 	rz_warn_if_fail(cmd_disassemble_recursively_from_current_block_cd);
+
+	RzCmdDesc *cmd_disassemble_recursively_no_function_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_disassembly_cd, "pdR", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_recursively_no_function_handler, &cmd_disassemble_recursively_no_function_help);
+	rz_warn_if_fail(cmd_disassemble_recursively_no_function_cd);
+
+	RzCmdDesc *cmd_disassemble_summarize_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_disassembly_cd, "pds", NULL, NULL, &cmd_disassemble_summarize_help);
+	rz_warn_if_fail(cmd_disassemble_summarize_cd);
+	RzCmdDesc *cmd_disassemble_summarize_function_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disassemble_summarize_cd, "pdsf", rz_cmd_disassemble_summarize_function_handler, &cmd_disassemble_summarize_function_help);
+	rz_warn_if_fail(cmd_disassemble_summarize_function_cd);
+
+	RzCmdDesc *cmd_disassemble_summarize_block_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disassemble_summarize_cd, "pdsb", rz_cmd_disassemble_summarize_block_handler, &cmd_disassemble_summarize_block_help);
+	rz_warn_if_fail(cmd_disassemble_summarize_block_cd);
 
 	RzCmdDesc *cmd_print_gadget_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pg", rz_cmd_print_gadget_add_handler, &cmd_print_gadget_add_help, &cmd_print_gadget_help);
 	rz_warn_if_fail(cmd_print_gadget_cd);

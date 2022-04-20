@@ -242,6 +242,29 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
             args: []
+      - name: pdR
+        summary: Disassemble recursively the block size bytes without analyzing functions
+        cname: cmd_disassemble_recursively_no_function
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pds
+        summary: Summarize N bytes or a function (strings, calls, jumps, refs)
+        cname: cmd_disassemble_summarize
+        subcommands:
+          - name: pdsf
+            summary: Summarize the current function
+            cname: cmd_disassemble_summarize_function
+            args: []
+          - name: pdsb
+            summary: Summarize current block
+            cname: cmd_disassemble_summarize_block
+            args:
+              - name: n_bytes
+                type: RZ_CMD_ARG_TYPE_NUM
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget
