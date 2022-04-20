@@ -7244,7 +7244,7 @@ static void core_disassembly_n_instructions(RzCore *core, int n_instrs, RzCmdSta
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_print_disasm(core->print, core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), 0, 1, false, NULL, NULL);
+		rz_core_print_disasm(core->print, core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), 0, 0, false, NULL, NULL);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		disassembly_n_instructions_as_table(state->d.t, core, RZ_ABS(n_instrs));
@@ -7274,8 +7274,17 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int a
 		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	ut32 old_blocksize = core->blocksize;
 	int n_instrs = parsed;
+	if (argc > 1 && !n_instrs) {
+		core->blocksize = 0;
+	}
+
 	core_disassembly_n_instructions(core, n_instrs, state);
+
+	if (argc > 1 && !n_instrs) {
+		core->blocksize = old_blocksize;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -7587,7 +7596,13 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 		rz_core_seek(core, new_offset, true);
 	}
 
+	if (rz_cons_singleton()->is_html) {
+		rz_cons_singleton()->is_html = false;
+		rz_cons_singleton()->was_html = true;
+	}
+
 	rz_core_print_disasm(core->print, core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), 0, 1, true, NULL, NULL);
+	rz_cons_newline();
 
 	if (n_instrs < 0) {
 		rz_core_block_size(core, old_blocksize);
@@ -7912,6 +7927,17 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 	rz_cmd_state_output_array_end(state);
 
 	rz_core_seek(core, old_offset, true);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, int argc, const char **argv) {
+	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+
+	// small patch to reuse disasm_strings which
+	// needs to be rewritten entirely
+	char input_cmd[256];
+	rz_strf(input_cmd, "ds 0x%" PFMT64x, n_bytes);
+	disasm_strings(core, argc > 1 ? input_cmd : "ds", NULL);
 	return RZ_CMD_STATUS_OK;
 }
 

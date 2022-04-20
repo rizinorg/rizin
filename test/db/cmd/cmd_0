@@ -219,6 +219,7 @@ NAME=pdj 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pdj 0
 EXPECT=<<EOF
+[]
 EOF
 RUN
 
@@ -267,6 +268,8 @@ NAME=pdt 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pdt 0
 EXPECT=<<EOF
+name addr bytes disasm comment esil refs xrefs 
+-----------------------------------------------
 EOF
 RUN
 

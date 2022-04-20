@@ -425,6 +425,7 @@ static const RzCmdDescArg cmd_disassembly_n_instructions_with_flow_args[2];
 static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[2];
 static const RzCmdDescArg cmd_sizes_of_n_instructions_args[2];
 static const RzCmdDescArg cmd_disassemble_ropchain_args[2];
+static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
 static const RzCmdDescArg cmd_disassemble_summarize_block_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
@@ -9700,7 +9701,8 @@ static const RzCmdDescHelp cmd_print_disassembly_help = {
 static const RzCmdDescArg cmd_disassembly_n_instructions_args[] = {
 	{
 		.name = "n_instrs",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -9717,7 +9719,8 @@ static const RzCmdDescHelp cmd_disassembly_all_opcodes_help = {
 static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_args[] = {
 	{
 		.name = "n_bytes",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -9731,7 +9734,8 @@ static const RzCmdDescHelp cmd_disassembly_all_possible_opcodes_help = {
 static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_treeview_args[] = {
 	{
 		.name = "n_bytes",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -9764,7 +9768,8 @@ static const RzCmdDescHelp cmd_disassembly_basic_block_as_text_json_help = {
 static const RzCmdDescArg cmd_comments_in_n_instructions_args[] = {
 	{
 		.name = "n_instrs",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -9778,7 +9783,8 @@ static const RzCmdDescHelp cmd_comments_in_n_instructions_help = {
 static const RzCmdDescArg cmd_disassembly_n_instructions_with_flow_args[] = {
 	{
 		.name = "n_instrs",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -9811,7 +9817,8 @@ static const RzCmdDescHelp cmd_disassembly_function_summary_help = {
 static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[] = {
 	{
 		.name = "n_instrs",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -9833,7 +9840,8 @@ static const RzCmdDescHelp cmd_disassembly_all_methods_class_help = {
 static const RzCmdDescArg cmd_sizes_of_n_instructions_args[] = {
 	{
 		.name = "n_instrs",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -9886,8 +9894,23 @@ static const RzCmdDescHelp cmd_disassemble_recursively_no_function_help = {
 };
 
 static const RzCmdDescHelp cmd_disassemble_summarize_help = {
-	.summary = "Summarize N bytes or a function (strings, calls, jumps, refs)",
+	.summary = "Summarize N bytes or current block or a function (strings, calls, jumps, refs)",
 };
+static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_summarize_n_bytes_help = {
+	.summary = "Summarize N bytes",
+	.args = cmd_disassemble_summarize_n_bytes_args,
+};
+
 static const RzCmdDescArg cmd_disassemble_summarize_function_args[] = {
 	{ 0 },
 };
@@ -9899,7 +9922,8 @@ static const RzCmdDescHelp cmd_disassemble_summarize_function_help = {
 static const RzCmdDescArg cmd_disassemble_summarize_block_args[] = {
 	{
 		.name = "n_bytes",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -15553,7 +15577,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_disassemble_recursively_no_function_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_disassembly_cd, "pdR", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_recursively_no_function_handler, &cmd_disassemble_recursively_no_function_help);
 	rz_warn_if_fail(cmd_disassemble_recursively_no_function_cd);
 
-	RzCmdDesc *cmd_disassemble_summarize_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_disassembly_cd, "pds", NULL, NULL, &cmd_disassemble_summarize_help);
+	RzCmdDesc *cmd_disassemble_summarize_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_disassembly_cd, "pds", rz_cmd_disassemble_summarize_n_bytes_handler, &cmd_disassemble_summarize_n_bytes_help, &cmd_disassemble_summarize_help);
 	rz_warn_if_fail(cmd_disassemble_summarize_cd);
 	RzCmdDesc *cmd_disassemble_summarize_function_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disassemble_summarize_cd, "pdsf", rz_cmd_disassemble_summarize_function_handler, &cmd_disassemble_summarize_function_help);
 	rz_warn_if_fail(cmd_disassemble_summarize_function_cd);

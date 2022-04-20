@@ -105,7 +105,7 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args:
           - name: n_instrs
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pda
         summary: Disassemble all possible opcodes (byte per byte)
@@ -121,14 +121,14 @@ commands:
               - RZ_OUTPUT_MODE_JSON
             args:
               - name: n_bytes
-                type: RZ_CMD_ARG_TYPE_NUM
+                type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
           - name: pda=
             summary: Disassemble all possible opcodes (treeview)
             cname: cmd_disassembly_all_possible_opcodes_treeview
             args:
               - name: n_bytes
-                type: RZ_CMD_ARG_TYPE_NUM
+                type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
       - name: pdb
         summary: Disassemble basic block
@@ -154,7 +154,7 @@ commands:
         cname: cmd_comments_in_n_instructions
         args:
           - name: n_instrs
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pde
         summary: Disassemble N instructions following execution flow from current PC
@@ -167,7 +167,7 @@ commands:
           - RZ_OUTPUT_MODE_QUIETEST
         args:
           - name: n_instrs
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pdf
         summary: Disassemble a function
@@ -193,7 +193,7 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
         args:
           - name: n_instrs
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pdk
         summary: Disassemble all methods of a class
@@ -208,7 +208,7 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args:
           - name: n_instrs
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pdp
         summary: Disassemble instructions and follows pointers to read ropchains
@@ -252,9 +252,16 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: pds
-        summary: Summarize N bytes or a function (strings, calls, jumps, refs)
+        summary: Summarize N bytes or current block or a function (strings, calls, jumps, refs)
         cname: cmd_disassemble_summarize
         subcommands:
+          - name: pds
+            summary: Summarize N bytes
+            cname: cmd_disassemble_summarize_n_bytes
+            args:
+              - name: n_bytes
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
           - name: pdsf
             summary: Summarize the current function
             cname: cmd_disassemble_summarize_function
@@ -264,7 +271,7 @@ commands:
             cname: cmd_disassemble_summarize_block
             args:
               - name: n_bytes
-                type: RZ_CMD_ARG_TYPE_NUM
+                type: RZ_CMD_ARG_TYPE_RZNUM
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget
