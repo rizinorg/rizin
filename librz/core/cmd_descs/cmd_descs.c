@@ -31,6 +31,7 @@ static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
+static const RzCmdDescDetail cw_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
@@ -4501,8 +4502,19 @@ static const RzCmdDescHelp cmd_cmp_unified_disasm_help = {
 	.args = cmd_cmp_unified_disasm_args,
 };
 
+static const RzCmdDescDetailEntry cw_Compare_space_memory_space_locations_space_and_space_check_space_if_space_there_space_is_space_a_space_difference_detail_entries[] = {
+	{ .text = "cw 32 'pD 32' @ 0x1234", .arg_str = NULL, .comment = "Adds a memory region watcher of 32 bytes at 0x1234, where it executes the command 'pD 32'." },
+	{ .text = "cwl", .arg_str = NULL, .comment = "Lists all the memory region watchers and notifies of any changes" },
+	{ .text = "cwx @ 0x1234", .arg_str = NULL, .comment = "Removes the memory region watchers at 0x1234" },
+	{ 0 },
+};
+static const RzCmdDescDetail cw_details[] = {
+	{ .name = "Compare memory locations and check if there is a difference", .entries = cw_Compare_space_memory_space_locations_space_and_space_check_space_if_space_there_space_is_space_a_space_difference_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp cw_help = {
 	.summary = "Compare watcher commands",
+	.details = cw_details,
 };
 static const RzCmdDescArg cmd_cmp_add_memory_watcher_args[] = {
 	{
