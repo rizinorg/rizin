@@ -241,10 +241,7 @@ static const char *help_msg_af[] = {
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afj", " [tableaddr] [count]", "analyze function jumptable",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
-	"afm", " name", "merge two functions",
-	"afM", " name", "print functions map",
 	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
-	"aft", "[?]", "type matching, type propagation",
 	"afv", "[?]", "Manipulate arguments/variables in a function",
 	NULL
 };
@@ -268,12 +265,6 @@ static const char *help_msg_afC[] = {
 	"afC", "", "function cycles cost",
 	"afCc", "", "cyclomatic complexity",
 	"afCl", "", "loop count (backward jumps)",
-	NULL
-};
-
-static const char *help_msg_aft[] = {
-	"Usage:", "aft", "",
-	"aft", "", "type matching analysis for current function",
 	NULL
 };
 
@@ -382,28 +373,6 @@ static int cmpaddr(const void *_a, const void *_b) {
 static bool listOpDescriptions(void *_core, const char *k, const char *v) {
 	rz_cons_printf("%s=%s\n", k, v);
 	return true;
-}
-
-static void type_cmd(RzCore *core, const char *input) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
-	if (!fcn && *input != '?') {
-		eprintf("cant find function here\n");
-		return;
-	}
-	ut64 seek;
-	rz_cons_break_push(NULL, NULL);
-	switch (*input) {
-	case '\0': // "aft"
-		seek = core->offset;
-		rz_analysis_esil_set_pc(core->analysis->esil, fcn ? fcn->addr : core->offset);
-		rz_core_analysis_type_match(core, fcn, NULL);
-		rz_core_seek(core, seek, true);
-		break;
-	case '?': // "aft?"
-		rz_core_cmd_help(core, help_msg_aft);
-		break;
-	}
-	rz_cons_break_pop();
 }
 
 static void var_accesses_list(RzAnalysisFunction *fcn, RzAnalysisVar *var, PJ *pj, int access_type, const char *name) {
@@ -1382,67 +1351,6 @@ static void rz_core_analysis_nofunclist(RzCore *core, const char *input) {
 	free(bitmap);
 }
 
-static void rz_core_analysis_fmap(RzCore *core, const char *input) {
-	int show_color = rz_config_get_i(core->config, "scr.color");
-	int cols = rz_config_get_i(core->config, "hex.cols") * 4;
-	ut64 code_size = rz_num_get(core->num, "$SS");
-	ut64 base_addr = rz_num_get(core->num, "$S");
-	RzListIter *iter, *iter2;
-	RzAnalysisFunction *fcn;
-	RzAnalysisBlock *b;
-	char *bitmap;
-	int assigned;
-	ut64 i;
-
-	if (code_size < 1) {
-		return;
-	}
-	bitmap = calloc(1, code_size + 64);
-	if (!bitmap) {
-		return;
-	}
-
-	// for each function
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		// for each basic block in the function
-		rz_list_foreach (fcn->bbs, iter2, b) {
-			// if it is not within range, continue
-			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr + code_size))
-				continue;
-			// otherwise mark each byte in the BB in the bitmap
-			int counter = 1;
-			for (counter = 0; counter < b->size; counter++) {
-				bitmap[b->addr + counter - base_addr] = '=';
-			}
-			bitmap[fcn->addr - base_addr] = 'F';
-		}
-	}
-	// print the bitmap
-	assigned = 0;
-	if (cols < 1) {
-		cols = 1;
-	}
-	for (i = 0; i < code_size; i += 1) {
-		if (!(i % cols)) {
-			rz_cons_printf("\n0x%08" PFMT64x "  ", base_addr + i);
-		}
-		if (bitmap[i]) {
-			assigned++;
-		}
-		if (show_color) {
-			if (bitmap[i]) {
-				rz_cons_printf("%s%c\x1b[0m", Color_GREEN, bitmap[i]);
-			} else {
-				rz_cons_printf(".");
-			}
-		} else {
-			rz_cons_printf("%c", bitmap[i] ? bitmap[i] : '.');
-		}
-	}
-	rz_cons_printf("\n%d / %" PFMT64u " (%.2lf%%) bytes assigned to a function\n", assigned, code_size, 100.0 * ((float)assigned) / code_size);
-	free(bitmap);
-}
-
 static void afCc(RzCore *core, const char *input) {
 	ut64 addr;
 	RzAnalysisFunction *fcn;
@@ -1659,15 +1567,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			}
 		} break;
 		}
-		break;
-	case 'm': // "afm" - merge two functions
-		rz_core_analysis_fcn_merge(core, core->offset, rz_num_math(core->num, input + 1));
-		break;
-	case 'M': // "afM" - print functions map
-		rz_core_analysis_fmap(core, input);
-		break;
-	case 't': // "aft"
-		type_cmd(core, input + 1);
 		break;
 	case 'C': // "afC"
 		if (input[1] == 'c') {
@@ -7474,6 +7373,83 @@ RZ_IPI RzCmdStatus rz_analysis_function_strings_handler(RzCore *core, int argc, 
 	}
 	PJ *pj = state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL;
 	rz_core_analysis_function_strings_print(core, fcn, pj);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_type_matching_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 seek = core->offset;
+	rz_analysis_esil_set_pc(core->analysis->esil, fcn->addr);
+	rz_core_analysis_type_match(core, fcn, NULL);
+	rz_core_seek(core, seek, true);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_functions_map_handler(RzCore *core, int argc, const char **argv) {
+	int show_color = rz_config_get_i(core->config, "scr.color");
+	int cols = rz_config_get_i(core->config, "hex.cols") * 4;
+	ut64 code_size = rz_num_get(core->num, "$SS");
+	ut64 base_addr = rz_num_get(core->num, "$S");
+
+	if (code_size < 1) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	char *bitmap = calloc(1, code_size + 64);
+	if (!bitmap) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzListIter *iter, *iter2;
+	RzAnalysisFunction *fcn;
+	RzAnalysisBlock *b;
+	// for each function
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		// for each basic block in the function
+		rz_list_foreach (fcn->bbs, iter2, b) {
+			// if it is not within range, continue
+			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr + code_size))
+				continue;
+			// otherwise mark each byte in the BB in the bitmap
+			int counter = 1;
+			for (counter = 0; counter < b->size; counter++) {
+				bitmap[b->addr + counter - base_addr] = '=';
+			}
+			bitmap[fcn->addr - base_addr] = 'F';
+		}
+	}
+	// print the bitmap
+	int assigned = 0;
+	if (cols < 1) {
+		cols = 1;
+	}
+	for (ut64 i = 0; i < code_size; i += 1) {
+		if (!(i % cols)) {
+			rz_cons_printf("\n0x%08" PFMT64x "  ", base_addr + i);
+		}
+		if (bitmap[i]) {
+			assigned++;
+		}
+		if (show_color) {
+			if (bitmap[i]) {
+				rz_cons_printf("%s%c\x1b[0m", Color_GREEN, bitmap[i]);
+			} else {
+				rz_cons_printf(".");
+			}
+		} else {
+			rz_cons_printf("%c", bitmap[i] ? bitmap[i] : '.');
+		}
+	}
+	rz_cons_printf("\n%d / %" PFMT64u " (%.2lf%%) bytes assigned to a function\n", assigned, code_size, 100.0 * ((float)assigned) / code_size);
+	free(bitmap);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_functions_merge_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_fcn_merge(core, core->offset, addr);
 	return RZ_CMD_STATUS_OK;
 }
 
