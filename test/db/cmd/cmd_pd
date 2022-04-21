@@ -658,6 +658,29 @@ EXPECT=<<EOF
 0x100001114 call sym.imp.getenv
 0x100001121 call sym.imp.atoi
 0x10000112c call sym.imp.getuid
+0x10000116e call newname
+0x100001179 str.1_ABCFGHLOPRSTUWabcdefghiklmnopqrstuvwx
+0x100001186 call sym.imp.getopt
+0x100001233 str.CLICOLOR
+0x100001246 call sym.imp.setenv
+0x100001253 str.bin_ls
+0x10000125a str.Unix2003
+0x100001261 call sym.imp.compat_mode
+0x10000128c str.bin_ls
+0x100001293 str.Unix2003
+0x10000129a call sym.imp.compat_mode
+0x1000013a2 str.bin_ls
+0x1000013a9 str.Unix2003
+0x1000013b0 call sym.imp.compat_mode
+0x1000013d3 str.bin_ls
+0x1000013da str.Unix2003
+0x1000013e1 call sym.imp.compat_mode
+0x10000143a str.bin_ls
+0x100001441 str.Unix2003
+0x100001448 call sym.imp.compat_mode
+0x10000145a str.bin_ls
+0x100001461 str.Unix2003
+0x100001468 call sym.imp.compat_mode
 EOF
 RUN
 
@@ -2505,5 +2528,20 @@ xor   ebp, ebp
 lbz   r10, -0x12cf(r9)
 xor   ebp, ebp
 xor   ebp, ebp
+EOF
+RUN
+
+NAME=pd is not limited by blocksize
+FILE==
+CMDS=<<EOF
+b 10
+pd~?
+pd 3~?
+pd 20~?
+EOF
+EXPECT=<<EOF
+10
+3
+20
 EOF
 RUN

@@ -147,6 +147,17 @@ commands:
         summary: Remove watcher at current offset
         cname: cmd_cmp_remove_watcher
         args: []
+    details:
+      - name: Compare memory locations and check if there is a difference
+        entries:
+          - text: "cw 32 'pD 32' @ 0x1234"
+            comment:
+              Adds a memory region watcher of 32 bytes
+              at 0x1234, where it executes the command 'pD 32'.
+          - text: "cwl"
+            comment: Lists all the memory region watchers and notifies of any changes
+          - text: "cwx @ 0x1234"
+            comment: Removes the memory region watchers at 0x1234
   - name: cx
     summary: Compare data at current offset with a hexpair string <hexpair> (also return in $?)
     cname: cmd_cmp_hexpair_string
