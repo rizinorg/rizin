@@ -235,7 +235,6 @@ static const char *help_msg_af[] = {
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
-	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afd", "[addr]", "show function + delta for given offset",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
@@ -257,14 +256,6 @@ static const char *help_msg_afc[] = {
 	"afcl", "", "List all available calling conventions",
 	"afco", " path", "Open Calling Convention sdb profile from given path",
 	"afcR", "", "Register telescoping using the calling conventions order",
-	NULL
-};
-
-static const char *help_msg_afC[] = {
-	"Usage:", "afC", " [addr]",
-	"afC", "", "function cycles cost",
-	"afCc", "", "cyclomatic complexity",
-	"afCl", "", "loop count (backward jumps)",
 	NULL
 };
 
@@ -1351,29 +1342,6 @@ static void rz_core_analysis_nofunclist(RzCore *core, const char *input) {
 	free(bitmap);
 }
 
-static void afCc(RzCore *core, const char *input) {
-	ut64 addr;
-	RzAnalysisFunction *fcn;
-	if (*input == ' ') {
-		addr = rz_num_math(core->num, input);
-	} else {
-		addr = core->offset;
-	}
-	if (addr == 0LL) {
-		fcn = rz_analysis_get_function_byname(core->analysis, input + 3);
-	} else {
-		fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	}
-	if (fcn) {
-		ut32 totalCycles = rz_analysis_function_cost(fcn);
-		// FIXME: This defeats the purpose of the function, but afC is used in project files.
-		// cf. canalysis.c
-		rz_cons_printf("%d\n", totalCycles);
-	} else {
-		eprintf("afCc: Cannot find function\n");
-	}
-}
-
 RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 
@@ -1566,27 +1534,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 				rz_cons_printf("0x%08" PFMT64x "\n", fcn->addr);
 			}
 		} break;
-		}
-		break;
-	case 'C': // "afC"
-		if (input[1] == 'c') {
-			RzAnalysisFunction *fcn;
-			if ((fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0)) != NULL) {
-				rz_cons_printf("%i\n", rz_analysis_function_complexity(fcn));
-			} else {
-				eprintf("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
-			}
-		} else if (input[1] == 'l') {
-			RzAnalysisFunction *fcn;
-			if ((fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0)) != NULL) {
-				rz_cons_printf("%d\n", rz_analysis_function_loops(fcn));
-			} else {
-				eprintf("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
-			}
-		} else if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_afC);
-		} else {
-			afCc(core, rz_str_trim_head_ro(input + 1));
 		}
 		break;
 	case 'c': { // "afc"
@@ -6529,6 +6476,7 @@ static void function_list_print_to_table(RzCore *core, RzList *list, RzTable *t,
 		rz_table_add_column(t, typeNumber, "locals", 0);
 		rz_table_add_column(t, typeNumber, "args", 0);
 		rz_table_add_column(t, typeNumber, "frame", 0);
+		rz_table_add_column(t, typeNumber, "loops", 0);
 	}
 
 	RzListIter *iter;
@@ -6558,14 +6506,14 @@ static void function_list_print_to_table(RzCore *core, RzList *list, RzTable *t,
 			args += rz_analysis_var_count(core->analysis, fcn, 'b', 1);
 			args += rz_analysis_var_count(core->analysis, fcn, 'r', 1);
 
-			rz_table_add_rowf(t, "XsndddddddbXnXddd", fcn->addr,
+			rz_table_add_rowf(t, "XsndddddddbXnXdddd", fcn->addr,
 				fcn->name, rz_analysis_function_realsize(fcn),
 				xref_to_num, xref_from_num, calls_num,
 				rz_list_length(fcn->bbs), rz_analysis_function_count_edges(fcn, NULL),
 				rz_analysis_function_complexity(fcn), rz_analysis_function_cost(fcn),
 				fcn->is_noreturn, rz_analysis_function_min_addr(fcn),
 				rz_analysis_function_linear_size(fcn), rz_analysis_function_max_addr(fcn),
-				locals, args, fcn->maxstack, NULL);
+				locals, args, fcn->maxstack, rz_analysis_function_loops(fcn), NULL);
 		} else {
 			rz_table_add_rowf(t, "Xsndddddddb", fcn->addr,
 				fcn->name, rz_analysis_function_realsize(fcn),
@@ -6698,6 +6646,7 @@ static void function_print_to_json(RzCore *core, RzAnalysisFunction *fcn, RzCmdS
 	}
 	pj_ki(state->d.pj, "cost", rz_analysis_function_cost(fcn)); // execution cost
 	pj_ki(state->d.pj, "cc", rz_analysis_function_complexity(fcn)); // cyclic cost
+	pj_ki(state->d.pj, "loops", rz_analysis_function_loops(fcn));
 	pj_ki(state->d.pj, "bits", fcn->bits);
 	pj_ks(state->d.pj, "type", rz_analysis_fcntype_tostring(fcn->type));
 	pj_ki(state->d.pj, "nbbs", rz_list_length(fcn->bbs));
@@ -7011,6 +6960,7 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 	}
 	rz_cons_printf("\ncyclomatic-cost: %d", rz_analysis_function_cost(fcn));
 	rz_cons_printf("\ncyclomatic-complexity: %d", rz_analysis_function_complexity(fcn));
+	rz_cons_printf("\nloops: %d", rz_analysis_function_loops(fcn));
 	rz_cons_printf("\nbits: %d", fcn->bits);
 	rz_cons_printf("\ntype: %s", rz_analysis_fcntype_tostring(fcn->type));
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
