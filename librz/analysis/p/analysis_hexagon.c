@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-04-02 11:40:33-04:00
+// Date of code generation: 2022-04-17 16:44:52+02:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -21,7 +21,6 @@
 RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	rz_return_val_if_fail(analysis && op && buf, -1);
 	if (len < 4) {
-		RZ_LOG_WARN("Couldn't disassemble instruction at 0x%x. Less than 4 bytes were provided.\n", (ut32)addr);
 		return -1;
 	}
 	if (analysis->pcalign == 0) {

@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-04-02 10:52:25-04:00
+// Date of code generation: 2022-04-11 18:58:34+02:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -824,6 +824,46 @@ char *hex_get_sys_regs64(int opcode_reg, bool get_alias) {
 		return "S77:76";
 	case HEX_REG_SYS_REGS64_S79_78:
 		return "S79:78";
+	}
+}
+char *hex_get_reg_in_class(HexRegClass cls, int opcode_reg, bool get_alias) {
+	switch (cls) {
+	case HEX_REG_CLASS_CTR_REGS:
+		return hex_get_ctr_regs(opcode_reg, get_alias);
+	case HEX_REG_CLASS_CTR_REGS64:
+		return hex_get_ctr_regs64(opcode_reg, get_alias);
+	case HEX_REG_CLASS_DOUBLE_REGS:
+		return hex_get_double_regs(opcode_reg, get_alias);
+	case HEX_REG_CLASS_GENERAL_DOUBLE_LOW8_REGS:
+		return hex_get_general_double_low8_regs(opcode_reg, get_alias);
+	case HEX_REG_CLASS_GENERAL_SUB_REGS:
+		return hex_get_general_sub_regs(opcode_reg, get_alias);
+	case HEX_REG_CLASS_GUEST_REGS:
+		return hex_get_guest_regs(opcode_reg, get_alias);
+	case HEX_REG_CLASS_GUEST_REGS64:
+		return hex_get_guest_regs64(opcode_reg, get_alias);
+	case HEX_REG_CLASS_HVX_QR:
+		return hex_get_hvx_qr(opcode_reg, get_alias);
+	case HEX_REG_CLASS_HVX_VQR:
+		return hex_get_hvx_vqr(opcode_reg, get_alias);
+	case HEX_REG_CLASS_HVX_VR:
+		return hex_get_hvx_vr(opcode_reg, get_alias);
+	case HEX_REG_CLASS_HVX_WR:
+		return hex_get_hvx_wr(opcode_reg, get_alias);
+	case HEX_REG_CLASS_INT_REGS:
+		return hex_get_int_regs(opcode_reg, get_alias);
+	case HEX_REG_CLASS_INT_REGS_LOW8:
+		return hex_get_int_regs_low8(opcode_reg, get_alias);
+	case HEX_REG_CLASS_MOD_REGS:
+		return hex_get_mod_regs(opcode_reg, get_alias);
+	case HEX_REG_CLASS_PRED_REGS:
+		return hex_get_pred_regs(opcode_reg, get_alias);
+	case HEX_REG_CLASS_SYS_REGS:
+		return hex_get_sys_regs(opcode_reg, get_alias);
+	case HEX_REG_CLASS_SYS_REGS64:
+		return hex_get_sys_regs64(opcode_reg, get_alias);
+	default:
+		return NULL;
 	}
 }
 
