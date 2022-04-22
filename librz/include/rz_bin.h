@@ -989,7 +989,6 @@ RZ_API ut64 rz_bin_file_get_vaddr(RzBinFile *bf, ut64 paddr, ut64 vaddr);
 // RzBinFile.add
 RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *binfile, const char *name, const char *super, int view);
 RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *classname, const char *name, int nargs);
-RZ_API RzBinField *rz_bin_file_add_field(RzBinFile *binfile, const char *classname, const char *name);
 // RzBinFile.find
 RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits);
 RZ_API RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bin_id);
