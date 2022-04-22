@@ -3,6 +3,7 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
 #include "luac_specs_53.h"
+
 static void lua_load_block(RzBuffer *buffer, void *dest, size_t size, ut64 offset, ut64 data_size) {
 	if (offset + size > data_size) {
 		RZ_LOG_ERROR("Truncated load block at 0x%llx\n", offset);

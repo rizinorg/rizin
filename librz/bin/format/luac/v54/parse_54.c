@@ -5,7 +5,7 @@
 
 static void lua_load_block(RzBuffer *buffer, void *dest, size_t size, ut64 offset, ut64 data_size) {
 	if (offset + size > data_size) {
-		eprintf("Bad Luac File : Truncated load block at 0x%llx\n", offset);
+		RZ_LOG_ERROR("Truncated load block at 0x%llx\n", offset);
 		return;
 	}
 	rz_buf_read_at(buffer, offset, dest, size);
@@ -34,7 +34,7 @@ static ut64 lua_parse_szint(RzBuffer *buffer, int *size, ut64 offset, ut64 data_
 
 	// 1 byte at least
 	if (offset + 1 > data_size) {
-		eprintf("Bad Luac File : Truncated read size at 0x%llx\n", offset);
+		RZ_LOG_ERROR("Truncated integer size at 0x%llx\n", offset);
 		return 0;
 	}
 
@@ -48,7 +48,7 @@ static ut64 lua_parse_szint(RzBuffer *buffer, int *size, ut64 offset, ut64 data_
 
 		i += 1;
 		if (x >= limit) {
-			eprintf("integer overflow\n");
+			RZ_LOG_ERROR("integer overflow while decoding integer size\n");
 			return 0;
 		}
 		x = (x << 7) | (b & 0x7f);
@@ -88,7 +88,7 @@ static ut64 lua_parse_string(RzBuffer *buffer, ut8 **dest, int *str_len, ut64 of
 		*dest = ret;
 		*str_len = string_len;
 	} else {
-		eprintf("cannot store string\n");
+		RZ_LOG_ERROR("cannot store string\n");
 	}
 
 	total_offset = size_offset + string_len;
@@ -130,7 +130,7 @@ static ut64 lua_parse_code(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 
 	total_size = code_size * 4 + size_offset;
 
 	if (total_size + offset > data_size) {
-		eprintf("Bad Luac File : Truncated Code at [0x%llx]\n", offset);
+		RZ_LOG_ERROR("Truncated Code at [0x%llx]\n", offset);
 		return 0;
 	}
 
@@ -487,7 +487,7 @@ RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor) {
 
 	st64 reat = bf->size;
 	if (reat < LUAC_54_HDRSIZE) {
-		eprintf("Truncated Header\n");
+		RZ_LOG_ERROR("Truncated Header\n");
 		return NULL;
 	}
 	buffer = bf->buf;
@@ -541,17 +541,16 @@ RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor) {
 	if ((instruction_size != sizeof(LUA_INSTRUCTION)) ||
 		(integer_size != sizeof(LUA_INTEGER)) ||
 		(number_size != sizeof(LUA_NUMBER))) {
-		eprintf("Size Definition not matched\n");
+		RZ_LOG_ERROR("Size definition does not match with the expected size\n");
 		return ret;
 	}
 
 	/* Check endian */
 	if (int_valid != LUAC_54_INT_VALIDATION) {
-		eprintf("Integer Format Not Matched\n");
+		RZ_LOG_ERROR("Integer format does not match with the expected integer\n");
 		return ret;
-	}
-	if (number_valid != LUAC_54_NUMBER_VALIDATION) {
-		eprintf("Number Format Not Matched\n");
+	} else if (number_valid != LUAC_54_NUMBER_VALIDATION) {
+		RZ_LOG_ERROR("Number format does not match with the expected number\n");
 		return ret;
 	}
 
