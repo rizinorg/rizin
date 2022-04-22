@@ -235,7 +235,7 @@ RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 		opt->fd = iob->fd_open(iob->io, file, RZ_PERM_R, 0644);
 	}
 	if (opt->fd < 0) {
-		eprintf("Couldn't open bin for file '%s'\n", file);
+		RZ_LOG_ERROR("Couldn't open bin for file '%s'\n", file);
 		return NULL;
 	}
 	opt->sz = 0;
@@ -283,7 +283,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 		// <xtr_name>:<bin_type_name>
 		rz_list_foreach (bin->binxtrs, it, xtr) {
 			if (!xtr->check_buffer) {
-				eprintf("Missing check_buffer callback for '%s'\n", xtr->name);
+				RZ_LOG_ERROR("Missing check_buffer callback for '%s'\n", xtr->name);
 				continue;
 			}
 			if (xtr->check_buffer(buf)) {
@@ -577,7 +577,7 @@ RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json) {
 		return true;
 	}
 
-	eprintf("Cannot find plugin %s\n", name);
+	RZ_LOG_ERROR("Cannot find plugin %s\n", name);
 	return false;
 }
 
@@ -599,25 +599,17 @@ RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr) {
 	rz_return_if_fail(bin);
 	RzBinFile *bf = rz_bin_cur(bin);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	if (o) {
-		if (!o->plugin || !o->plugin->baddr) {
-			return;
-		}
-		ut64 file_baddr = o->plugin->baddr(bf);
-		if (baddr == UT64_MAX) {
-			o->opts.baseaddr = file_baddr;
-			o->baddr_shift = 0; // o->baddr; // - file_baddr;
-		} else {
-			if (file_baddr != UT64_MAX) {
-				o->opts.baseaddr = baddr;
-				o->baddr_shift = baddr - file_baddr;
-			}
-		}
-	} else {
-		eprintf("Warning: This should be an assert probably.\n");
+	if (!o || !o->plugin || !o->plugin->baddr) {
+		return;
 	}
-	// XXX - update all the infos?
-	// maybe in RzBinFile.rebase() ?
+	ut64 file_baddr = o->plugin->baddr(bf);
+	if (baddr == UT64_MAX) {
+		o->opts.baseaddr = file_baddr;
+		o->baddr_shift = 0; // o->baddr; // - file_baddr;
+	} else if (file_baddr != UT64_MAX) {
+		o->opts.baseaddr = baddr;
+		o->baddr_shift = baddr - file_baddr;
+	}
 }
 
 // XXX: those accessors are redundant
