@@ -292,9 +292,8 @@ static RzList *sections(RzBinFile *bf) {
 			}
 		}
 	}
-	eprintf("[INFO] Parsing data sections for large dumps can take time, "
-		"please be patient (but if strings ain't your thing try with "
-		"-z)!\n");
+	RZ_LOG_WARN("Parsing data sections for large dumps can take time, "
+		    "please be patient (if strings are not needed, try with -z)!\n");
 	return ret;
 }
 
