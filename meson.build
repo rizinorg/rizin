@@ -18,7 +18,6 @@ create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
-tree_sitter_wrap_py = files('sys/meson_tree_sitter_generate.py')
 cmake_package_prefix_dir_py = files('sys/meson_cmake_prefix_dir.py')
 
 is_static_build = get_option('static_runtime')
@@ -363,8 +362,8 @@ tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_s
 if not tree_sitter_dep.found()
   tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
   tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
+  meson.override_dependency('tree-sitter', tree_sitter_dep)
 endif
-meson.override_dependency('tree-sitter', tree_sitter_dep)
 
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos', 'haiku'].contains(host_machine.system())
