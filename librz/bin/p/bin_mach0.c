@@ -112,7 +112,7 @@ static void process_constructors(RzBinFile *bf, RzList *ret, int bits) {
 			}
 			int read = rz_buf_read_at(bf->buf, sec->paddr, buf, sec->size);
 			if (read < sec->size) {
-				eprintf("process_constructors: cannot process section %s\n", sec->name);
+				RZ_LOG_ERROR("process_constructors: cannot process section %s\n", sec->name);
 				continue;
 			}
 			if (bits == 32) {
@@ -560,7 +560,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, 
 	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 #ifndef RZ_BIN_MACH064
 	if (opt->bits == 64) {
-		eprintf("TODO: Please use mach064 instead of mach0\n");
+		RZ_LOG_ERROR("Please use mach064 instead of mach0\n");
 		free(buf);
 		return NULL;
 	}
