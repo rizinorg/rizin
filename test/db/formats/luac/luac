@@ -144,10 +144,11 @@ EOF
 EXPECT=<<EOF
 EOF
 REGEXP_FILTER_ERR=<<EOF
-Bad Luac File : .*\]
+ERROR:.+
 EOF
 EXPECT_ERR=<<EOF
-Bad Luac File : Truncated Code at [0x2f]
+ERROR: Truncated Code at [0x2f]
+ERROR: Invalid luac file
 EOF
 RUN
 

@@ -39,7 +39,7 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_dos(struct PE_(rz_bin_pe_obj_t
 	}
 
 	if ((rz_buf_read_at(pe_bin->b, 0, tmp_buf, pe_hdr_off)) == -1) {
-		eprintf("Error reading to buffer\n");
+		RZ_LOG_ERROR("Cannot read buffer\n");
 		return NULL;
 	}
 
@@ -66,7 +66,7 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_ob
 	// copy pe_bin->b and assign to sub_bin_native
 
 	// if (!(tmp_buf = malloc (b_size))) {
-	// 	eprintf("bad malloc\n");
+	// 	RZ_LOG_ERROR("bad malloc\n");
 	// };
 
 	// if (!(rz_buf_read_at (pe_bin->b, 0, tmp_buf, b_size))) {
@@ -76,7 +76,7 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_ob
 
 	if (!(sub_bin_native->b = rz_buf_new_with_buf(pe_bin->b))) {
 		free(sub_bin_native);
-		eprintf("failed\n");
+		RZ_LOG_ERROR("failed to create new buffer\n");
 		return NULL;
 	}
 
@@ -95,7 +95,7 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_ob
 	}
 
 	if (rz_buf_write_at(sub_bin_native->b, dotnet_offset, zero_out, sizeof(PE_(image_data_directory))) < -1) {
-		eprintf("Zeroing out dotnet offset failed\n");
+		RZ_LOG_ERROR("Zeroing out dotnet offset failed\n");
 		rz_buf_free(sub_bin_native->b);
 		free(sub_bin_native);
 		free(zero_out);

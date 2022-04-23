@@ -13,10 +13,7 @@
 #include <time.h>
 #include <ht_uu.h>
 
-#define MAX_METADATA_STRING_LENGTH 256
-#define bprintf \
-	if (bin->verbose) \
-	eprintf
+#define MAX_METADATA_STRING_LENGTH                          256
 #define COFF_SYMBOL_SIZE                                    18
 #define PE_READ_STRUCT_FIELD(var, struct_type, field, size) var->field = rz_read_le##size(buf + offsetof(struct_type, field))
 
@@ -88,7 +85,7 @@ struct rz_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	struct rz_bin_pe_addr_t *entry = PE_(rz_bin_pe_get_entrypoint)(bin);
 	ZERO_FILL(b);
 	if (rz_buf_read_at(bin->b, entry->paddr, b, sizeof(b)) < 0) {
-		bprintf("Warning: Cannot read entry at 0x%08" PFMT64x "\n", entry->paddr);
+		RZ_LOG_INFO("Cannot read entry at 0x%08" PFMT64x "\n", entry->paddr);
 		free(entry);
 		return NULL;
 	}
@@ -291,7 +288,7 @@ struct rz_bin_pe_addr_t *PE_(check_mingw)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	entry = PE_(rz_bin_pe_get_entrypoint)(bin);
 	ZERO_FILL(b);
 	if (rz_buf_read_at(bin->b, entry->paddr, b, sizeof(b)) < 0) {
-		bprintf("Warning: Cannot read entry at 0x%08" PFMT64x "\n", entry->paddr);
+		RZ_LOG_INFO("Cannot read entry at 0x%08" PFMT64x "\n", entry->paddr);
 		free(entry);
 		return NULL;
 	}
@@ -347,7 +344,7 @@ struct rz_bin_pe_addr_t *PE_(check_unknow)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	entry = PE_(rz_bin_pe_get_entrypoint)(bin);
 	// option2: /x 8bff558bec83ec20
 	if (rz_buf_read_at(bin->b, entry->paddr, b, 512) < 1) {
-		bprintf("Warning: Cannot read entry at 0x%08" PFMT64x "\n", entry->paddr);
+		RZ_LOG_INFO("Cannot read entry at 0x%08" PFMT64x "\n", entry->paddr);
 		free(entry);
 		return NULL;
 	}
@@ -470,7 +467,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t) * bin,
 			break;
 		}
 		if (!RZ_BUF_READ_PE_DWORD_AT(bin->b, off + i * sizeof(PE_DWord), &import_table)) {
-			bprintf("Warning: read (import table)\n");
+			RZ_LOG_INFO("read (import table)\n");
 			goto error;
 		} else if (import_table) {
 			if (import_table & ILT_MASK1) {
@@ -516,24 +513,24 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t) * bin,
 						RZ_FREE(symname);
 					}
 				} else {
-					bprintf("Cannot find %s\n", filename);
+					RZ_LOG_INFO("Cannot find %s\n", filename);
 				}
 				RZ_FREE(filename);
 			} else {
 				import_ordinal++;
 				const ut64 off = bin_pe_rva_to_paddr(bin, import_table);
 				if (off > bin->size || (off + sizeof(PE_Word)) > bin->size) {
-					bprintf("Warning: off > bin->size\n");
+					RZ_LOG_INFO("off > bin->size\n");
 					goto error;
 				}
 				if (!rz_buf_read_le16_at(bin->b, off, &import_hint)) {
-					bprintf("Warning: read import hint at 0x%08" PFMT64x "\n", off);
+					RZ_LOG_INFO("read import hint at 0x%08" PFMT64x "\n", off);
 					goto error;
 				}
 				name[0] = '\0';
 				len = rz_buf_read_at(bin->b, off + sizeof(PE_Word), (ut8 *)name, PE_NAME_LENGTH);
 				if (len < 1) {
-					bprintf("Warning: read (import name)\n");
+					RZ_LOG_INFO("read (import name)\n");
 					goto error;
 				} else if (!*name) {
 					break;
@@ -541,7 +538,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t) * bin,
 				name[PE_NAME_LENGTH] = '\0';
 				int len = snprintf(import_name, sizeof(import_name), "%s", name);
 				if (len >= sizeof(import_name)) {
-					eprintf("Import name '%s' has been truncated.\n", import_name);
+					RZ_LOG_WARN("Import name '%s' has been truncated.\n", import_name);
 				}
 			}
 			struct rz_bin_pe_import_t *new_importp = realloc(*importp, (*nimp + 1) * sizeof(struct rz_bin_pe_import_t));
@@ -704,7 +701,7 @@ static int bin_pe_init_hdr(struct PE_(rz_bin_pe_obj_t) * bin) {
 		return false;
 	}
 	if (!PE_(read_dos_header)(bin->b, bin->dos_header)) {
-		bprintf("Warning: read (dos header)\n");
+		RZ_LOG_INFO("read (dos header)\n");
 		return false;
 	}
 	sdb_num_set(bin->kv, "pe_dos_header.offset", 0, 0);
@@ -714,7 +711,7 @@ static int bin_pe_init_hdr(struct PE_(rz_bin_pe_obj_t) * bin) {
 						 " e_oeminfo e_res2 e_lfanew",
 		0);
 	if (bin->dos_header->e_lfanew > (unsigned int)bin->size) {
-		bprintf("Invalid e_lfanew field\n");
+		RZ_LOG_INFO("Invalid e_lfanew field\n");
 		return false;
 	}
 	if (!(bin->nt_headers = malloc(sizeof(PE_(image_nt_headers))))) {
@@ -723,7 +720,7 @@ static int bin_pe_init_hdr(struct PE_(rz_bin_pe_obj_t) * bin) {
 	}
 	bin->nt_header_offset = bin->dos_header->e_lfanew;
 	if (!PE_(read_nt_headers)(bin->b, bin->dos_header->e_lfanew, bin->nt_headers)) {
-		bprintf("Warning: read (nt header)\n");
+		RZ_LOG_INFO("read (nt header)\n");
 		return false;
 	}
 	sdb_set(bin->kv, "pe_magic.cparse", "enum pe_magic { IMAGE_NT_OPTIONAL_HDR32_MAGIC=0x10b, IMAGE_NT_OPTIONAL_HDR64_MAGIC=0x20b, IMAGE_ROM_OPTIONAL_HDR_MAGIC=0x107 };", 0);
@@ -870,7 +867,7 @@ static struct rz_bin_pe_export_t *parse_symbol_table(struct PE_(rz_bin_pe_obj_t)
 				break;
 			}
 			memcpy(&sr, buf + i, sizeof(sr));
-			// bprintf ("SECNUM %d\n", sr.secnum);
+			// RZ_LOG_INFO("SECNUM %d\n", sr.secnum);
 			if (sr.secnum == textn) {
 				if (sr.symtype == 32) {
 					char shortname[9];
@@ -948,7 +945,7 @@ static int bin_pe_init_sections(struct PE_(rz_bin_pe_obj_t) * bin) {
 		sections_size = bin->size;
 		bin->num_sections = bin->size / sizeof(PE_(image_section_header));
 		// massage this to make corkami happy
-		// bprintf ("Invalid NumberOfSections value\n");
+		// RZ_LOG_INFO("Invalid NumberOfSections value\n");
 		// goto out_error;
 	}
 	if (!(bin->section_header = malloc(sections_size))) {
@@ -961,7 +958,7 @@ static int bin_pe_init_sections(struct PE_(rz_bin_pe_obj_t) * bin) {
 	for (i = 0; i < bin->num_sections; i++) {
 		if (!PE_(read_image_section_header)(bin->b, bin->section_header_offset + i * sizeof(PE_(image_section_header)),
 			    bin->section_header + i)) {
-			bprintf("Warning: read (sections)\n");
+			RZ_LOG_INFO("read (sections)\n");
 			RZ_FREE(bin->section_header);
 			goto out_error;
 		}
@@ -1277,7 +1274,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t) * bin) {
 
 		rr = rz_buf_read_at(bin->b, metadata_directory + 16, (ut8 *)(metadata->VersionString), len);
 		if (rr != len) {
-			eprintf("Warning: read (metadata header) - cannot parse version string\n");
+			RZ_LOG_ERROR("read (metadata header) - cannot parse version string\n");
 			free(metadata->VersionString);
 			free(metadata);
 			return 0;
@@ -1344,7 +1341,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t) * bin) {
 	bin->streams = streams;
 	return 1;
 fail:
-	eprintf("Warning: read (metadata header)\n");
+	RZ_LOG_ERROR("read (metadata header)\n");
 	free(metadata);
 	return 0;
 }
@@ -1493,7 +1490,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t) * bin) {
 	RZ_FREE(bin->import_directory);
 	if (import_dir_paddr != 0) {
 		if (import_dir_size < 1 || import_dir_size > maxidsz) {
-			bprintf("Warning: Invalid import directory size: 0x%x is now 0x%x\n", import_dir_size, maxidsz);
+			RZ_LOG_INFO("Invalid import directory size: 0x%x is now 0x%x\n", import_dir_size, maxidsz);
 			import_dir_size = maxidsz;
 		}
 		bin->import_directory_offset = import_dir_offset;
@@ -1510,7 +1507,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t) * bin) {
 			new_import_dir = NULL;
 			curr_import_dir = import_dir + indx;
 			if (read_image_import_directory(bin->b, import_dir_offset + indx * dir_size, curr_import_dir) <= 0) {
-				bprintf("Warning: read (import directory)\n");
+				RZ_LOG_INFO("read (import directory)\n");
 				RZ_FREE(import_dir);
 				break; // return false;
 			}
@@ -1536,7 +1533,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t) * bin) {
 				indx++;
 				off = indx * delay_import_size;
 				if (off >= rz_buf_size(bin->b)) {
-					bprintf("Warning: Cannot find end of import symbols\n");
+					RZ_LOG_INFO("Cannot find end of import symbols\n");
 					break;
 				}
 				new_delay_import_dir = (PE_(image_delay_import_directory) *)realloc(
@@ -1551,7 +1548,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t) * bin) {
 				rr = read_image_delay_import_directory(bin->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
 					curr_delay_import_dir);
 				if (rr != dir_size) {
-					bprintf("Warning: read (delay import directory)\n");
+					RZ_LOG_INFO("read (delay import directory)\n");
 					goto fail;
 				}
 			} while (curr_delay_import_dir->Name != 0);
@@ -1594,17 +1591,17 @@ static int bin_pe_init_exports(struct PE_(rz_bin_pe_obj_t) * bin) {
 	PE_DWord export_dir_paddr = bin_pe_rva_to_paddr(bin, data_dir_export->VirtualAddress);
 	if (!export_dir_paddr) {
 		// This export-dir-paddr should only appear in DLL files
-		// bprintf ("Warning: Cannot find the paddr of the export directory\n");
+		// RZ_LOG_INFO("Warning: Cannot find the paddr of the export directory\n");
 		return false;
 	}
 	// sdb_setn (DB, "hdr.exports_directory", export_dir_paddr);
-	// bprintf ("Pexports paddr at 0x%"PFMT64x"\n", export_dir_paddr);
+	// RZ_LOG_INFO("Pexports paddr at 0x%"PFMT64x"\n", export_dir_paddr);
 	if (!(bin->export_directory = malloc(sizeof(PE_(image_export_directory))))) {
 		rz_sys_perror("malloc (export directory)");
 		return false;
 	}
 	if (read_image_export_directory(bin->b, export_dir_paddr, bin->export_directory) < 0) {
-		bprintf("Warning: read (export directory)\n");
+		RZ_LOG_INFO("read (export directory)\n");
 		RZ_FREE(bin->export_directory);
 		return false;
 	}
@@ -1668,7 +1665,7 @@ static int bin_pe_init_resource(struct PE_(rz_bin_pe_obj_t) * bin) {
 		return false;
 	}
 	if (read_image_resource_directory(bin->b, resource_dir_paddr, bin->resource_directory) < 0) {
-		bprintf("Warning: read (resource directory)\n");
+		RZ_LOG_INFO("read (resource directory)\n");
 		RZ_FREE(bin->resource_directory);
 		return false;
 	}
@@ -1684,7 +1681,7 @@ static void bin_pe_store_tls_callbacks(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWo
 
 	while (addressOfTLSCallback != 0) {
 		if (!RZ_BUF_READ_PE_DWORD_AT(bin->b, callbacks, &addressOfTLSCallback)) {
-			bprintf("Warning: read (tls_callback)\n");
+			RZ_LOG_INFO("read (tls_callback)\n");
 			return;
 		}
 		if (!addressOfTLSCallback) {
@@ -1746,7 +1743,7 @@ static int bin_pe_init_tls(struct PE_(rz_bin_pe_obj_t) * bin) {
 
 	image_tls_directory = RZ_NEW0(PE_(image_tls_directory));
 	if (read_tls_directory(bin->b, tls_paddr, image_tls_directory) < 0) {
-		bprintf("Warning: read (image_tls_directory)\n");
+		RZ_LOG_INFO("read (image_tls_directory)\n");
 		free(image_tls_directory);
 		return 0;
 	}
@@ -1839,65 +1836,65 @@ void PE_(free_VS_VERSIONINFO)(PE_VS_VERSIONINFO *vs_VersionInfo) {
 static Var *Pe_r_bin_pe_parse_var(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWord *curAddr) {
 	Var *var = calloc(1, sizeof(*var));
 	if (!var) {
-		bprintf("Warning: calloc (Var)\n");
+		RZ_LOG_INFO("calloc (Var)\n");
 		return NULL;
 	}
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &var->wLength)) {
-		bprintf("Warning: read (Var wLength)\n");
+		RZ_LOG_INFO("read (Var wLength)\n");
 		free_Var(var);
 		return NULL;
 	}
 	*curAddr += sizeof(var->wLength);
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &var->wValueLength)) {
-		bprintf("Warning: read (Var wValueLength)\n");
+		RZ_LOG_INFO("read (Var wValueLength)\n");
 		free_Var(var);
 		return NULL;
 	}
 	*curAddr += sizeof(var->wValueLength);
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &var->wType)) {
-		bprintf("Warning: read (Var wType)\n");
+		RZ_LOG_INFO("read (Var wType)\n");
 		free_Var(var);
 		return NULL;
 	}
 	*curAddr += sizeof(var->wType);
 	if (var->wType != 0 && var->wType != 1) {
-		bprintf("Warning: check (Var wType)\n");
+		RZ_LOG_INFO("check (Var wType)\n");
 		free_Var(var);
 		return NULL;
 	}
 
 	var->szKey = (ut16 *)malloc(UT16_ALIGN(TRANSLATION_UTF_16_LEN)); // L"Translation"
 	if (!var->szKey) {
-		bprintf("Warning: malloc (Var szKey)\n");
+		RZ_LOG_INFO("malloc (Var szKey)\n");
 		free_Var(var);
 		return NULL;
 	}
 	if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)var->szKey, TRANSLATION_UTF_16_LEN) < 1) {
-		bprintf("Warning: read (Var szKey)\n");
+		RZ_LOG_INFO("read (Var szKey)\n");
 		free_Var(var);
 		return NULL;
 	}
 	*curAddr += TRANSLATION_UTF_16_LEN;
 	if (memcmp(var->szKey, TRANSLATION_UTF_16, TRANSLATION_UTF_16_LEN)) {
-		bprintf("Warning: check (Var szKey)\n");
+		RZ_LOG_INFO("check (Var szKey)\n");
 		free_Var(var);
 		return NULL;
 	}
 	align32(*curAddr);
 	var->numOfValues = var->wValueLength / 4;
 	if (!var->numOfValues) {
-		bprintf("Warning: check (Var numOfValues)\n");
+		RZ_LOG_INFO("check (Var numOfValues)\n");
 		free_Var(var);
 		return NULL;
 	}
 	var->Value = (ut32 *)malloc(var->wValueLength);
 	if (!var->Value) {
-		bprintf("Warning: malloc (Var Value)\n");
+		RZ_LOG_INFO("malloc (Var Value)\n");
 		free_Var(var);
 		return NULL;
 	}
 	if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)var->Value, var->wValueLength) != var->wValueLength) {
-		bprintf("Warning: read (Var Value)\n");
+		RZ_LOG_INFO("read (Var Value)\n");
 		free_Var(var);
 		return NULL;
 	}
@@ -1908,58 +1905,58 @@ static Var *Pe_r_bin_pe_parse_var(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWord *c
 static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWord *curAddr) {
 	VarFileInfo *varFileInfo = calloc(1, sizeof(*varFileInfo));
 	if (!varFileInfo) {
-		bprintf("Warning: calloc (VarFileInfo)\n");
+		RZ_LOG_INFO("calloc (VarFileInfo)\n");
 		return NULL;
 	}
 	PE_DWord startAddr = *curAddr;
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &varFileInfo->wLength)) {
-		bprintf("Warning: read (VarFileInfo wLength)\n");
+		RZ_LOG_INFO("read (VarFileInfo wLength)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
 	}
 	*curAddr += sizeof(varFileInfo->wLength);
 
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &varFileInfo->wValueLength)) {
-		bprintf("Warning: read (VarFileInfo wValueLength)\n");
+		RZ_LOG_INFO("read (VarFileInfo wValueLength)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
 	}
 	*curAddr += sizeof(varFileInfo->wValueLength);
 
 	if (varFileInfo->wValueLength != 0) {
-		bprintf("Warning: check (VarFileInfo wValueLength)\n");
+		RZ_LOG_INFO("check (VarFileInfo wValueLength)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
 	}
 
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &varFileInfo->wType)) {
-		bprintf("Warning: read (VarFileInfo wType)\n");
+		RZ_LOG_INFO("read (VarFileInfo wType)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
 	}
 	*curAddr += sizeof(varFileInfo->wType);
 	if (varFileInfo->wType && varFileInfo->wType != 1) {
-		bprintf("Warning: check (VarFileInfo wType)\n");
+		RZ_LOG_INFO("check (VarFileInfo wType)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
 	}
 
 	varFileInfo->szKey = (ut16 *)malloc(UT16_ALIGN(VARFILEINFO_UTF_16_LEN)); // L"VarFileInfo"
 	if (!varFileInfo->szKey) {
-		bprintf("Warning: malloc (VarFileInfo szKey)\n");
+		RZ_LOG_INFO("malloc (VarFileInfo szKey)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
 	}
 
 	if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)varFileInfo->szKey, VARFILEINFO_UTF_16_LEN) != VARFILEINFO_UTF_16_LEN) {
-		bprintf("Warning: read (VarFileInfo szKey)\n");
+		RZ_LOG_INFO("read (VarFileInfo szKey)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
 	}
 	*curAddr += VARFILEINFO_UTF_16_LEN;
 
 	if (memcmp(varFileInfo->szKey, VARFILEINFO_UTF_16, VARFILEINFO_UTF_16_LEN)) {
-		bprintf("Warning: check (VarFileInfo szKey)\n");
+		RZ_LOG_INFO("check (VarFileInfo szKey)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
 	}
@@ -1967,13 +1964,13 @@ static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(struct PE_(rz_bin_pe_obj_t) 
 	while (startAddr + varFileInfo->wLength > *curAddr) {
 		Var **tmp = (Var **)realloc(varFileInfo->Children, (varFileInfo->numOfChildren + 1) * sizeof(*varFileInfo->Children));
 		if (!tmp) {
-			bprintf("Warning: realloc (VarFileInfo Children)\n");
+			RZ_LOG_INFO("realloc (VarFileInfo Children)\n");
 			free_VarFileInfo(varFileInfo);
 			return NULL;
 		}
 		varFileInfo->Children = tmp;
 		if (!(varFileInfo->Children[varFileInfo->numOfChildren] = Pe_r_bin_pe_parse_var(bin, curAddr))) {
-			bprintf("Warning: bad parsing Var\n");
+			RZ_LOG_INFO("bad parsing Var\n");
 			free_VarFileInfo(varFileInfo);
 			return NULL;
 		}
@@ -1989,7 +1986,7 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t) * bin, PE_DW
 	int len_value = 0;
 	int i = 0;
 	if (!string) {
-		bprintf("Warning: calloc (String)\n");
+		RZ_LOG_INFO("calloc (String)\n");
 		return NULL;
 	}
 	if (begAddr > bin->size || begAddr + sizeof(string->wLength) > bin->size) {
@@ -1997,7 +1994,7 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t) * bin, PE_DW
 		return NULL;
 	}
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &string->wLength)) {
-		bprintf("Warning: read (String wLength)\n");
+		RZ_LOG_INFO("read (String wLength)\n");
 		goto out_error;
 	}
 	*curAddr += sizeof(string->wLength);
@@ -2005,7 +2002,7 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t) * bin, PE_DW
 		goto out_error;
 	}
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &string->wValueLength)) {
-		bprintf("Warning: read (String wValueLength)\n");
+		RZ_LOG_INFO("read (String wValueLength)\n");
 		goto out_error;
 	}
 	*curAddr += sizeof(string->wValueLength);
@@ -2014,12 +2011,12 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t) * bin, PE_DW
 		goto out_error;
 	}
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &string->wType)) {
-		bprintf("Warning: read (String wType)\n");
+		RZ_LOG_INFO("read (String wType)\n");
 		goto out_error;
 	}
 	*curAddr += sizeof(string->wType);
 	if (string->wType != 0 && string->wType != 1) {
-		bprintf("Warning: check (String wType)\n");
+		RZ_LOG_INFO("check (String wType)\n");
 		goto out_error;
 	}
 
@@ -2030,12 +2027,12 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t) * bin, PE_DW
 			goto out_error;
 		}
 		if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)&utf16_char, sizeof(ut16)) != sizeof(ut16)) {
-			bprintf("Warning: check (String szKey)\n");
+			RZ_LOG_INFO("check (String szKey)\n");
 			goto out_error;
 		}
 		tmpKey = (ut16 *)realloc(string->szKey, (i + 1) * sizeof(ut16));
 		if (!tmpKey) {
-			bprintf("Warning: realloc (String szKey)\n");
+			RZ_LOG_INFO("realloc (String szKey)\n");
 			goto out_error;
 		}
 		string->szKey = tmpKey;
@@ -2054,14 +2051,14 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t) * bin, PE_DW
 	}
 	string->Value = (ut16 *)calloc(len_value + 1, 1);
 	if (!string->Value) {
-		bprintf("Warning: malloc (String Value)\n");
+		RZ_LOG_INFO("malloc (String Value)\n");
 		goto out_error;
 	}
 	if (*curAddr > bin->size || *curAddr + len_value > bin->size) {
 		goto out_error;
 	}
 	if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)string->Value, len_value) != len_value) {
-		bprintf("Warning: read (String Value)\n");
+		RZ_LOG_INFO("read (String Value)\n");
 		goto out_error;
 	}
 	*curAddr += len_value;
@@ -2074,51 +2071,51 @@ out_error:
 static StringTable *Pe_r_bin_pe_parse_string_table(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWord *curAddr) {
 	StringTable *stringTable = calloc(1, sizeof(*stringTable));
 	if (!stringTable) {
-		bprintf("Warning: calloc (stringTable)\n");
+		RZ_LOG_INFO("calloc (stringTable)\n");
 		return NULL;
 	}
 
 	PE_DWord startAddr = *curAddr;
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringTable->wLength)) {
-		bprintf("Warning: read (StringTable wLength)\n");
+		RZ_LOG_INFO("read (StringTable wLength)\n");
 		free_StringTable(stringTable);
 		return NULL;
 	}
 	*curAddr += sizeof(stringTable->wLength);
 
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringTable->wValueLength)) {
-		bprintf("Warning: read (StringTable wValueLength)\n");
+		RZ_LOG_INFO("read (StringTable wValueLength)\n");
 		free_StringTable(stringTable);
 		return NULL;
 	}
 	*curAddr += sizeof(stringTable->wValueLength);
 
 	if (stringTable->wValueLength) {
-		bprintf("Warning: check (StringTable wValueLength)\n");
+		RZ_LOG_INFO("check (StringTable wValueLength)\n");
 		free_StringTable(stringTable);
 		return NULL;
 	}
 
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringTable->wType)) {
-		bprintf("Warning: read (StringTable wType)\n");
+		RZ_LOG_INFO("read (StringTable wType)\n");
 		free_StringTable(stringTable);
 		return NULL;
 	}
 	*curAddr += sizeof(stringTable->wType);
 	if (stringTable->wType && stringTable->wType != 1) {
-		bprintf("Warning: check (StringTable wType)\n");
+		RZ_LOG_INFO("check (StringTable wType)\n");
 		free_StringTable(stringTable);
 		return NULL;
 	}
 	stringTable->szKey = (ut16 *)malloc(UT16_ALIGN(EIGHT_HEX_DIG_UTF_16_LEN)); // EIGHT_HEX_DIG_UTF_16_LEN
 	if (!stringTable->szKey) {
-		bprintf("Warning: malloc (stringTable szKey)\n");
+		RZ_LOG_INFO("malloc (stringTable szKey)\n");
 		free_StringTable(stringTable);
 		return NULL;
 	}
 
 	if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)stringTable->szKey, EIGHT_HEX_DIG_UTF_16_LEN) != EIGHT_HEX_DIG_UTF_16_LEN) {
-		bprintf("Warning: read (StringTable szKey)\n");
+		RZ_LOG_INFO("read (StringTable szKey)\n");
 		free_StringTable(stringTable);
 		return NULL;
 	}
@@ -2127,13 +2124,13 @@ static StringTable *Pe_r_bin_pe_parse_string_table(struct PE_(rz_bin_pe_obj_t) *
 	while (startAddr + stringTable->wLength > *curAddr) {
 		String **tmp = (String **)realloc(stringTable->Children, (stringTable->numOfChildren + 1) * sizeof(*stringTable->Children));
 		if (!tmp) {
-			bprintf("Warning: realloc (StringTable Children)\n");
+			RZ_LOG_INFO("realloc (StringTable Children)\n");
 			free_StringTable(stringTable);
 			return NULL;
 		}
 		stringTable->Children = tmp;
 		if (!(stringTable->Children[stringTable->numOfChildren] = Pe_r_bin_pe_parse_string(bin, curAddr))) {
-			bprintf("Warning: bad parsing String\n");
+			RZ_LOG_INFO("bad parsing String\n");
 			free_StringTable(stringTable);
 			return NULL;
 		}
@@ -2142,7 +2139,7 @@ static StringTable *Pe_r_bin_pe_parse_string_table(struct PE_(rz_bin_pe_obj_t) *
 	}
 
 	if (!stringTable->numOfChildren) {
-		bprintf("Warning: check (StringTable numOfChildren)\n");
+		RZ_LOG_INFO("check (StringTable numOfChildren)\n");
 		free_StringTable(stringTable);
 		return NULL;
 	}
@@ -2153,61 +2150,61 @@ static StringTable *Pe_r_bin_pe_parse_string_table(struct PE_(rz_bin_pe_obj_t) *
 static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWord *curAddr) {
 	StringFileInfo *stringFileInfo = calloc(1, sizeof(*stringFileInfo));
 	if (!stringFileInfo) {
-		bprintf("Warning: calloc (StringFileInfo)\n");
+		RZ_LOG_INFO("calloc (StringFileInfo)\n");
 		return NULL;
 	}
 
 	PE_DWord startAddr = *curAddr;
 
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringFileInfo->wLength)) {
-		bprintf("Warning: read (StringFileInfo wLength)\n");
+		RZ_LOG_INFO("read (StringFileInfo wLength)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
 	*curAddr += sizeof(stringFileInfo->wLength);
 
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringFileInfo->wValueLength)) {
-		bprintf("Warning: read (StringFileInfo wValueLength)\n");
+		RZ_LOG_INFO("read (StringFileInfo wValueLength)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
 	*curAddr += sizeof(stringFileInfo->wValueLength);
 
 	if (stringFileInfo->wValueLength) {
-		bprintf("Warning: check (StringFileInfo wValueLength)\n");
+		RZ_LOG_INFO("check (StringFileInfo wValueLength)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
 
 	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringFileInfo->wType)) {
-		bprintf("Warning: read (StringFileInfo wType)\n");
+		RZ_LOG_INFO("read (StringFileInfo wType)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
 	*curAddr += sizeof(stringFileInfo->wType);
 
 	if (stringFileInfo->wType && stringFileInfo->wType != 1) {
-		bprintf("Warning: check (StringFileInfo wType)\n");
+		RZ_LOG_INFO("check (StringFileInfo wType)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
 
 	stringFileInfo->szKey = (ut16 *)malloc(UT16_ALIGN(STRINGFILEINFO_UTF_16_LEN)); // L"StringFileInfo"
 	if (!stringFileInfo->szKey) {
-		bprintf("Warning: malloc (StringFileInfo szKey)\n");
+		RZ_LOG_INFO("malloc (StringFileInfo szKey)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
 
 	if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)stringFileInfo->szKey, STRINGFILEINFO_UTF_16_LEN) != STRINGFILEINFO_UTF_16_LEN) {
-		bprintf("Warning: read (StringFileInfo szKey)\n");
+		RZ_LOG_INFO("read (StringFileInfo szKey)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
 	*curAddr += STRINGFILEINFO_UTF_16_LEN;
 
 	if (memcmp(stringFileInfo->szKey, STRINGFILEINFO_UTF_16, STRINGFILEINFO_UTF_16_LEN) != 0) {
-		bprintf("Warning: check (StringFileInfo szKey)\n");
+		RZ_LOG_INFO("check (StringFileInfo szKey)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
@@ -2217,13 +2214,13 @@ static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(struct PE_(rz_bin_pe_o
 	while (startAddr + stringFileInfo->wLength > *curAddr) {
 		StringTable **tmp = (StringTable **)realloc(stringFileInfo->Children, (stringFileInfo->numOfChildren + 1) * sizeof(*stringFileInfo->Children));
 		if (!tmp) {
-			bprintf("Warning: realloc (StringFileInfo Children)\n");
+			RZ_LOG_INFO("realloc (StringFileInfo Children)\n");
 			free_StringFileInfo(stringFileInfo);
 			return NULL;
 		}
 		stringFileInfo->Children = tmp;
 		if (!(stringFileInfo->Children[stringFileInfo->numOfChildren] = Pe_r_bin_pe_parse_string_table(bin, curAddr))) {
-			bprintf("Warning: bad parsing StringTable\n");
+			RZ_LOG_INFO("bad parsing StringTable\n");
 			free_StringFileInfo(stringFileInfo);
 			return NULL;
 		}
@@ -2232,7 +2229,7 @@ static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(struct PE_(rz_bin_pe_o
 	}
 
 	if (!stringFileInfo->numOfChildren) {
-		bprintf("Warning: check (StringFileInfo numOfChildren)\n");
+		RZ_LOG_INFO("check (StringFileInfo numOfChildren)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
@@ -2260,36 +2257,36 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(rz_bin_pe_ob
 	sz = sizeof(ut16);
 	EXIT_ON_OVERFLOW(sz);
 	if (!rz_buf_read_le16_at(bin->b, curAddr, &vs_VersionInfo->wLength)) {
-		bprintf("Warning: read (VS_VERSIONINFO wLength)\n");
+		RZ_LOG_INFO("read (VS_VERSIONINFO wLength)\n");
 		goto out_error;
 	}
 	curAddr += sz;
 	EXIT_ON_OVERFLOW(sz);
 	if (!rz_buf_read_le16_at(bin->b, curAddr, &vs_VersionInfo->wValueLength)) {
-		bprintf("Warning: read (VS_VERSIONINFO wValueLength)\n");
+		RZ_LOG_INFO("read (VS_VERSIONINFO wValueLength)\n");
 		goto out_error;
 	}
 	curAddr += sz;
 	EXIT_ON_OVERFLOW(sz);
 	if (!rz_buf_read_le16_at(bin->b, curAddr, &vs_VersionInfo->wType)) {
-		bprintf("Warning: read (VS_VERSIONINFO wType)\n");
+		RZ_LOG_INFO("read (VS_VERSIONINFO wType)\n");
 		goto out_error;
 	}
 	curAddr += sz;
 	if (vs_VersionInfo->wType && vs_VersionInfo->wType != 1) {
-		bprintf("Warning: check (VS_VERSIONINFO wType)\n");
+		RZ_LOG_INFO("check (VS_VERSIONINFO wType)\n");
 		goto out_error;
 	}
 
 	vs_VersionInfo->szKey = (ut16 *)malloc(UT16_ALIGN(VS_VERSION_INFO_UTF_16_LEN)); // L"VS_VERSION_INFO"
 	if (!vs_VersionInfo->szKey) {
-		bprintf("Warning: malloc (VS_VERSIONINFO szKey)\n");
+		RZ_LOG_INFO("malloc (VS_VERSIONINFO szKey)\n");
 		goto out_error;
 	}
 	sz = VS_VERSION_INFO_UTF_16_LEN;
 	EXIT_ON_OVERFLOW(sz);
 	if (rz_buf_read_at(bin->b, curAddr, (ut8 *)vs_VersionInfo->szKey, sz) != sz) {
-		bprintf("Warning: read (VS_VERSIONINFO szKey)\n");
+		RZ_LOG_INFO("read (VS_VERSIONINFO szKey)\n");
 		goto out_error;
 	}
 	curAddr += sz;
@@ -2299,24 +2296,24 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(rz_bin_pe_ob
 	align32(curAddr);
 	if (vs_VersionInfo->wValueLength) {
 		if (vs_VersionInfo->wValueLength != sizeof(*vs_VersionInfo->Value)) {
-			bprintf("Warning: check (VS_VERSIONINFO wValueLength != sizeof PE_VS_FIXEDFILEINFO)\n");
+			RZ_LOG_INFO("check (VS_VERSIONINFO wValueLength != sizeof PE_VS_FIXEDFILEINFO)\n");
 			goto out_error;
 		}
 
 		vs_VersionInfo->Value = (PE_VS_FIXEDFILEINFO *)malloc(sizeof(*vs_VersionInfo->Value));
 		if (!vs_VersionInfo->Value) {
-			bprintf("Warning: malloc (VS_VERSIONINFO Value)\n");
+			RZ_LOG_INFO("malloc (VS_VERSIONINFO Value)\n");
 			goto out_error;
 		}
 		sz = sizeof(PE_VS_FIXEDFILEINFO);
 		EXIT_ON_OVERFLOW(sz);
 		if (rz_buf_read_at(bin->b, curAddr, (ut8 *)vs_VersionInfo->Value, sz) != sz) {
-			bprintf("Warning: read (VS_VERSIONINFO Value)\n");
+			RZ_LOG_INFO("read (VS_VERSIONINFO Value)\n");
 			goto out_error;
 		}
 
 		if (vs_VersionInfo->Value->dwSignature != 0xFEEF04BD) {
-			bprintf("Warning: check (PE_VS_FIXEDFILEINFO signature) 0x%08x\n", vs_VersionInfo->Value->dwSignature);
+			RZ_LOG_INFO("check (PE_VS_FIXEDFILEINFO signature) 0x%08x\n", vs_VersionInfo->Value->dwSignature);
 			goto out_error;
 		}
 		curAddr += sz;
@@ -2329,22 +2326,22 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(rz_bin_pe_ob
 			goto out_error;
 		}
 		if (rz_buf_read_at(bin->b, curAddr + 3 * sizeof(ut16), (ut8 *)&t, 1) != 1) {
-			bprintf("Warning: read (VS_VERSIONINFO Children V or S)\n");
+			RZ_LOG_INFO("read (VS_VERSIONINFO Children V or S)\n");
 			goto out_error;
 		}
 		if (!(t == 'S' || t == 'V')) {
-			bprintf("Warning: bad type (VS_VERSIONINFO Children)\n");
+			RZ_LOG_INFO("bad type (VS_VERSIONINFO Children)\n");
 			goto out_error;
 		}
 		if (t == 'S') {
 			if (!(vs_VersionInfo->stringFileInfo = Pe_r_bin_pe_parse_string_file_info(bin, &curAddr))) {
-				bprintf("Warning: bad parsing (VS_VERSIONINFO StringFileInfo)\n");
+				RZ_LOG_INFO("bad parsing (VS_VERSIONINFO StringFileInfo)\n");
 				goto out_error;
 			}
 		}
 		if (t == 'V') {
 			if (!(vs_VersionInfo->varFileInfo = Pe_r_bin_pe_parse_var_file_info(bin, &curAddr))) {
-				bprintf("Warning: bad parsing (VS_VERSIONINFO VarFileInfo)\n");
+				RZ_LOG_INFO("bad parsing (VS_VERSIONINFO VarFileInfo)\n");
 				goto out_error;
 			}
 		}
@@ -2354,17 +2351,17 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(rz_bin_pe_ob
 		if (startAddr + vs_VersionInfo->wLength > curAddr) {
 			if (t == 'V') {
 				if (!(vs_VersionInfo->stringFileInfo = Pe_r_bin_pe_parse_string_file_info(bin, &curAddr))) {
-					bprintf("Warning: bad parsing (VS_VERSIONINFO StringFileInfo)\n");
+					RZ_LOG_INFO("bad parsing (VS_VERSIONINFO StringFileInfo)\n");
 					goto out_error;
 				}
 			} else if (t == 'S') {
 				if (!(vs_VersionInfo->varFileInfo = Pe_r_bin_pe_parse_var_file_info(bin, &curAddr))) {
-					bprintf("Warning: bad parsing (VS_VERSIONINFO VarFileInfo)\n");
+					RZ_LOG_INFO("bad parsing (VS_VERSIONINFO VarFileInfo)\n");
 					goto out_error;
 				}
 			}
 			if (startAddr + vs_VersionInfo->wLength > curAddr) {
-				bprintf("Warning: bad parsing (VS_VERSIONINFO wLength left)\n");
+				RZ_LOG_INFO("bad parsing (VS_VERSIONINFO wLength left)\n");
 				goto out_error;
 			}
 		}
@@ -3054,7 +3051,7 @@ static void _parse_resource_directory(struct PE_(rz_bin_pe_obj_t) * bin, Pe_imag
 			break;
 		}
 		if (read_image_resource_directory_entry(bin->b, off, &entry) < 0) {
-			eprintf("Warning: read resource entry\n");
+			RZ_LOG_ERROR("read resource entry\n");
 			break;
 		}
 		if (entry.u1.Name >> 31) {
@@ -3085,7 +3082,7 @@ static void _parse_resource_directory(struct PE_(rz_bin_pe_obj_t) * bin, Pe_imag
 			off = rsrc_base + OffsetToDirectory;
 			int len = read_image_resource_directory(bin->b, off, &identEntry);
 			if (len < 1 || len != sizeof(Pe_image_resource_directory)) {
-				eprintf("Warning: parsing resource directory\n");
+				RZ_LOG_ERROR("parsing resource directory\n");
 			}
 			_parse_resource_directory(bin, &identEntry, OffsetToDirectory, type, entry.u1.Name & 0xffff, dirs, resourceEntryName);
 			RZ_FREE(resourceEntryName);
@@ -3103,7 +3100,7 @@ static void _parse_resource_directory(struct PE_(rz_bin_pe_obj_t) * bin, Pe_imag
 			break;
 		}
 		if (read_image_resource_data_entry(bin->b, off, data) != sizeof(*data)) {
-			eprintf("Warning: read (resource data entry)\n");
+			RZ_LOG_ERROR("read (resource data entry)\n");
 			free(data);
 			break;
 		}
@@ -3118,14 +3115,14 @@ static void _parse_resource_directory(struct PE_(rz_bin_pe_obj_t) * bin, Pe_imag
 			}
 			PE_DWord data_paddr = bin_pe_rva_to_paddr(bin, data->OffsetToData);
 			if (!data_paddr) {
-				bprintf("Warning: bad RVA in resource data entry\n");
+				RZ_LOG_INFO("bad RVA in resource data entry\n");
 				free(data);
 				sdb_free(sdb);
 				continue;
 			}
 			PE_DWord cur_paddr = data_paddr;
 			if ((cur_paddr & 0x3) != 0) {
-				bprintf("Warning: not aligned version info address\n");
+				RZ_LOG_INFO("not aligned version info address\n");
 				free(data);
 				sdb_free(sdb);
 				continue;
@@ -3218,7 +3215,7 @@ RZ_API void PE_(bin_pe_parse_resource)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	curRes = rs_directory->NumberOfNamedEntries;
 	totalRes = curRes + rs_directory->NumberOfIdEntries;
 	if (totalRes > RZ_PE_MAX_RESOURCES) {
-		eprintf("Error parsing resource directory\n");
+		RZ_LOG_ERROR("Cannot parse resource directory\n");
 		ht_uu_free(dirs);
 		return;
 	}
@@ -3230,7 +3227,7 @@ RZ_API void PE_(bin_pe_parse_resource)(struct PE_(rz_bin_pe_obj_t) * bin) {
 			break;
 		}
 		if (read_image_resource_directory_entry(bin->b, off, &typeEntry) < 0) {
-			eprintf("Warning: read resource directory entry\n");
+			RZ_LOG_ERROR("read resource directory entry\n");
 			break;
 		}
 		if (typeEntry.u2.OffsetToData >> 31) {
@@ -3239,7 +3236,7 @@ RZ_API void PE_(bin_pe_parse_resource)(struct PE_(rz_bin_pe_obj_t) * bin) {
 			off = rsrc_base + OffsetToDirectory;
 			int len = read_image_resource_directory(bin->b, off, &identEntry);
 			if (len != sizeof(identEntry)) {
-				eprintf("Warning: parsing resource directory\n");
+				RZ_LOG_ERROR("parsing resource directory\n");
 			}
 			(void)_parse_resource_directory(bin, &identEntry, OffsetToDirectory, typeEntry.u1.Name & 0xffff, 0, dirs, NULL);
 		}
@@ -3259,7 +3256,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 	PE_DWord paddr = data_dir_security->VirtualAddress;
 	ut32 size = data_dir_security->Size;
 	if (size < 8 || paddr > bin->size || paddr + size > bin->size) {
-		bprintf("Invalid certificate table");
+		RZ_LOG_INFO("Invalid certificate table");
 		return false;
 	}
 
@@ -3286,7 +3283,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 		}
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
 		if (offset + cert->dwLength > paddr + size) {
-			bprintf("Invalid certificate entry");
+			RZ_LOG_INFO("Invalid certificate entry");
 			RZ_FREE(cert);
 			return false;
 		}
@@ -3299,7 +3296,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 			return false;
 		}
 		if (cert->dwLength < 6) {
-			eprintf("Cert.dwLength must be > 6\n");
+			RZ_LOG_ERROR("Invalid cert.dwLength (must be > 6)\n");
 			RZ_FREE(cert);
 			return false;
 		}
@@ -3360,11 +3357,11 @@ static int bin_pe_init(struct PE_(rz_bin_pe_obj_t) * bin) {
 	bin->cms = NULL;
 	bin->spcinfo = NULL;
 	if (!bin_pe_init_hdr(bin)) {
-		eprintf("Warning: File is not PE\n");
+		RZ_LOG_ERROR("File is not PE\n");
 		return false;
 	}
 	if (!bin_pe_init_sections(bin)) {
-		eprintf("Warning: Cannot initialize sections\n");
+		RZ_LOG_ERROR("Cannot initialize sections\n");
 		return false;
 	}
 	bin->sections = PE_(rz_bin_pe_get_sections)(bin);
@@ -3453,8 +3450,8 @@ struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(struct PE_(rz_bin_pe_obj_
 		struct rz_bin_pe_section_t *sections = bin->sections;
 		ut64 paddr = 0;
 		if (!debug) {
-			bprintf("Warning: Invalid entrypoint ... "
-				"trying to fix it but i do not promise nothing\n");
+			RZ_LOG_INFO("Invalid entrypoint ... "
+				    "trying to fix it but i do not promise nothing\n");
 		}
 		for (i = 0; i < bin->num_sections; i++) {
 			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
@@ -3485,7 +3482,7 @@ struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(struct PE_(rz_bin_pe_obj_
 	}
 	if (!entry->paddr) {
 		if (!debug) {
-			bprintf("Warning: NULL entrypoint\n");
+			RZ_LOG_INFO("NULL entrypoint\n");
 		}
 		struct rz_bin_pe_section_t *sections = bin->sections;
 		for (i = 0; i < bin->num_sections; i++) {
@@ -3547,7 +3544,7 @@ struct rz_bin_pe_export_t *PE_(rz_bin_pe_get_exports)(struct PE_(rz_bin_pe_obj_t
 		}
 		if (rz_buf_read_at(bin->b, bin_pe_rva_to_paddr(bin, bin->export_directory->Name), (ut8 *)dll_name, PE_NAME_LENGTH) < 1) {
 			// we dont stop if dll name cant be read, we set dllname to null and continue
-			bprintf("Warning: read (dll name)\n");
+			RZ_LOG_INFO("read (dll name)\n");
 			dll_name[0] = '\0';
 		}
 		functions_paddr = bin_pe_rva_to_paddr(bin, bin->export_directory->AddressOfFunctions);
@@ -3593,7 +3590,7 @@ struct rz_bin_pe_export_t *PE_(rz_bin_pe_get_exports)(struct PE_(rz_bin_pe_obj_t
 					// get the name of the Export
 					name_paddr = bin_pe_rva_to_paddr(bin, name_vaddr);
 					if (rz_buf_read_at(bin->b, name_paddr, (ut8 *)function_name, PE_NAME_LENGTH) < 1) {
-						bprintf("Warning: read (function name)\n");
+						RZ_LOG_INFO("read (function name)\n");
 						exports[i].last = 1;
 						return exports;
 					}
@@ -3693,7 +3690,7 @@ static int get_debug_info(struct PE_(rz_bin_pe_obj_t) * bin, PE_(image_debug_dir
 			SCV_RSDS_HEADER rsds_hdr;
 			init_rsdr_hdr(&rsds_hdr);
 			if (!get_rsds(dbg_data, dbg_data_len, &rsds_hdr)) {
-				bprintf("Warning: Cannot read PE debug info\n");
+				RZ_LOG_INFO("Cannot read PE debug info\n");
 				return 0;
 			}
 			snprintf(res->guidstr, GUIDSTR_LEN,
@@ -3716,7 +3713,7 @@ static int get_debug_info(struct PE_(rz_bin_pe_obj_t) * bin, PE_(image_debug_dir
 			rsds_hdr.free((struct SCV_RSDS_HEADER *)&rsds_hdr);
 		} else if (strncmp((const char *)dbg_data, "NB10", 4) == 0) {
 			if (dbg_data_len < 20) {
-				eprintf("Truncated NB10 entry, not enough data to parse\n");
+				RZ_LOG_ERROR("Truncated NB10 entry, not enough data to parse\n");
 				return 0;
 			}
 			SCV_NB10_HEADER nb10_hdr = { { 0 } };
@@ -3731,12 +3728,12 @@ static int get_debug_info(struct PE_(rz_bin_pe_obj_t) * bin, PE_(image_debug_dir
 			res->file_name[sizeof(res->file_name) - 1] = 0;
 			nb10_hdr.free((struct SCV_NB10_HEADER *)&nb10_hdr);
 		} else {
-			bprintf("CodeView section not NB10 or RSDS\n");
+			RZ_LOG_INFO("CodeView section not NB10 or RSDS\n");
 			return 0;
 		}
 		break;
 	default:
-		// bprintf("get_debug_info(): not supported type\n");
+		// RZ_LOG_INFO("get_debug_info(): not supported type\n");
 		return 0;
 	}
 
@@ -3843,7 +3840,7 @@ struct rz_bin_pe_import_t *PE_(rz_bin_pe_get_imports)(struct PE_(rz_bin_pe_obj_t
 		}
 		if (off + bin->import_directory_size > bin->size) {
 			// why chopping instead of returning and cleaning?
-			bprintf("Warning: read (import directory too big)\n");
+			RZ_LOG_INFO("read (import directory too big)\n");
 			bin->import_directory_size = bin->size - bin->import_directory_offset;
 		}
 		last = bin->import_directory_offset + bin->import_directory_size;
@@ -3953,7 +3950,7 @@ struct rz_bin_pe_lib_t *PE_(rz_bin_pe_get_libs)(struct PE_(rz_bin_pe_obj_t) * bi
 	}
 
 	if (bin->import_directory_offset + bin->import_directory_size > bin->size) {
-		bprintf("import directory offset bigger than file\n");
+		RZ_LOG_INFO("import directory offset bigger than file\n");
 		goto out_error;
 	}
 	lib_map = sdb_ht_new();
@@ -3975,7 +3972,7 @@ struct rz_bin_pe_lib_t *PE_(rz_bin_pe_get_libs)(struct PE_(rz_bin_pe_obj_t) * bi
 				goto next;
 			}
 			if (len < 2 || libs[index].name[0] == 0) { // minimum string length
-				bprintf("Warning: read (libs - import dirs) %d\n", len);
+				RZ_LOG_INFO("read (libs - import dirs) %d\n", len);
 				break;
 			}
 			libs[index].name[len - 1] = '\0';
@@ -4018,7 +4015,7 @@ struct rz_bin_pe_lib_t *PE_(rz_bin_pe_get_libs)(struct PE_(rz_bin_pe_obj_t) * bi
 			}
 			len = rz_buf_read_at(bin->b, name_off, (ut8 *)libs[index].name, PE_STRING_LENGTH);
 			if (len != PE_STRING_LENGTH) {
-				bprintf("Warning: read (libs - delay import dirs)\n");
+				RZ_LOG_INFO("read (libs - delay import dirs)\n");
 				break;
 			}
 			libs[index].name[len - 1] = '\0';
@@ -4228,7 +4225,7 @@ void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) * bin, struct rz_
 					if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
 						if (!(sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE)) {
 							if (bin->verbose) {
-								eprintf("Warning: Found entrypoint in non-executable section.\n");
+								RZ_LOG_ERROR("Found entrypoint in non-executable section.\n");
 							}
 							sections[j].perm |= PE_IMAGE_SCN_MEM_EXECUTE;
 						}
@@ -4453,7 +4450,7 @@ static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin
 					sections[j].vsize += sa - diff;
 				}
 				if (sections[j].vaddr % sa) {
-					bprintf("Warning: section %s not aligned to SectionAlignment.\n",
+					RZ_LOG_INFO("section %s not aligned to SectionAlignment.\n",
 						sections[j].name);
 				}
 			}
@@ -4461,7 +4458,7 @@ static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin
 			if (fa) {
 				const ut64 diff = sections[j].paddr % fa;
 				if (diff) {
-					bprintf("Warning: section %s not aligned to FileAlignment.\n", sections[j].name);
+					RZ_LOG_INFO("section %s not aligned to FileAlignment.\n", sections[j].name);
 					sections[j].paddr -= diff;
 					sections[j].size += diff;
 				}

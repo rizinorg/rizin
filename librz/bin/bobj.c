@@ -226,7 +226,6 @@ static RzList *classes_from_symbols(RzBinFile *bf) {
 			char *dn = sym->dname;
 			char *fn = swiftField(dn, cn);
 			if (fn) {
-				// eprintf ("FIELD %s  %s\n", cn, fn);
 				RzBinField *f = rz_bin_field_new(sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL, false);
 				rz_list_append(c->fields, f);
 				free(fn);
@@ -272,7 +271,7 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	if (plugin && plugin->load_buffer) {
 		if (!plugin->load_buffer(bf, o, bf->buf, sdb)) {
 			if (bf->rbin->verbose) {
-				eprintf("Error in rz_bin_object_new: load_buffer failed for %s plugin\n", plugin->name);
+				RZ_LOG_ERROR("rz_bin_object_new: load_buffer failed for %s plugin\n", plugin->name);
 			}
 			sdb_free(o->kv);
 			free(o);
@@ -330,22 +329,22 @@ static void filter_classes(RzBinFile *bf, RzList *list) {
 		}
 		int namepad_len = strlen(cls->name) + 32;
 		char *namepad = malloc(namepad_len + 1);
-		if (namepad) {
-			char *p;
-			strcpy(namepad, cls->name);
-			p = rz_bin_filter_name(bf, db, cls->index, namepad);
-			if (p) {
-				namepad = p;
+		if (!namepad) {
+			RZ_LOG_ERROR("Cannot allocate %d byte(s)\n", namepad_len);
+			break;
+		}
+
+		strcpy(namepad, cls->name);
+		char *p = rz_bin_filter_name(bf, db, cls->index, namepad);
+		if (p) {
+			namepad = p;
+		}
+		free(cls->name);
+		cls->name = namepad;
+		rz_list_foreach (cls->methods, iter2, sym) {
+			if (sym->name) {
+				rz_bin_filter_sym(bf, ht, sym->vaddr, sym);
 			}
-			free(cls->name);
-			cls->name = namepad;
-			rz_list_foreach (cls->methods, iter2, sym) {
-				if (sym->name) {
-					rz_bin_filter_sym(bf, ht, sym->vaddr, sym);
-				}
-			}
-		} else {
-			eprintf("Cannot alloc %d byte(s)\n", namepad_len);
 		}
 	}
 	ht_pu_free(db);

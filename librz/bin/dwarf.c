@@ -452,7 +452,7 @@ static inline ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **
 	default:
 		result = 0;
 		*buf += size;
-		eprintf("Weird dwarf address size: %zu.", size);
+		RZ_LOG_WARN("Weird dwarf address size: %zu.", size);
 	}
 	return result;
 }
@@ -1483,7 +1483,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->address = READ64(buf);
 			break;
 		default:
-			eprintf("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
+			RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
 			return NULL;
 		}
 		break;
@@ -1701,7 +1701,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		buf = rz_uleb128(buf, buf_end - buf, &value->address, NULL);
 		break;
 	default:
-		eprintf("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
+		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
 		value->uconstant = 0;
 		return NULL;
 	}
@@ -1937,7 +1937,7 @@ static RzBinDwarfDebugInfo *parse_info_raw(RzBinDwarfDebugAbbrev *da,
 		}
 
 		if (da->decls->count >= da->capacity) {
-			eprintf("WARNING: malformed dwarf have not enough buckets for decls.\n");
+			RZ_LOG_WARN("malformed dwarf have not enough buckets for decls.\n");
 		}
 		rz_warn_if_fail(da->count <= da->capacity);
 
