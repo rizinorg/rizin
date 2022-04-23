@@ -6622,6 +6622,67 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 }
 
 /**
+ * \brief Print Calling Convention info
+ *
+ * \param core The RzCore instance
+ * \param cc Calling Convention name
+ * \param pj Optional PJ instance for JSON mode
+ */
+RZ_IPI void rz_core_analysis_cc_print(RzCore *core, RZ_NONNULL const char *cc, RZ_NULLABLE PJ *pj) {
+	rz_return_if_fail(core && cc);
+	if (pj) {
+		pj_o(pj);
+	}
+	if (pj) {
+		pj_ks(pj, "name", cc);
+	} else {
+		rz_cons_printf("name: %s\n", cc);
+	}
+	const char *regname = rz_analysis_cc_ret(core->analysis, cc);
+	if (regname) {
+		if (pj) {
+			pj_ks(pj, "ret", regname);
+		} else {
+			rz_cons_printf("ret: %s\n", regname);
+		}
+	}
+	if (pj) {
+		pj_ka(pj, "args");
+	}
+	int maxargs = rz_analysis_cc_max_arg(core->analysis, cc);
+	for (int i = 0; i < maxargs; i++) {
+		regname = rz_analysis_cc_arg(core->analysis, cc, i);
+		if (pj) {
+			pj_s(pj, regname);
+		} else {
+			rz_cons_printf("arg%d: %s\n", i, regname);
+		}
+	}
+	if (pj) {
+		pj_end(pj);
+	}
+	regname = rz_analysis_cc_self(core->analysis, cc);
+	if (regname) {
+		if (pj) {
+			pj_ks(pj, "self", regname);
+		} else {
+			rz_cons_printf("self: %s\n", regname);
+		}
+	}
+	regname = rz_analysis_cc_error(core->analysis, cc);
+	if (regname) {
+		if (pj) {
+			pj_ks(pj, "error", regname);
+		} else {
+			rz_cons_printf("error: %s\n", regname);
+		}
+	}
+	if (pj) {
+		pj_end(pj);
+	}
+}
+
+/**
  * \brief Start ESIL trace session
  *
  * \param core The RzCore instance

@@ -34,7 +34,7 @@ tccl
 tcc*
 EOF
 EXPECT=<<EOF
-["rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);","rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);","rax ms (rcx, rdx, r8, r9, stack);","rdi reg (rdi, rsi, rdx, rcx);","rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;"]
+[{"name":"amd64","ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"]},{"name":"amd64syscall","ret":"rax","args":["rdi","rsi","rdx","r10","r8","r9"]},{"name":"ms","ret":"rax","args":["rcx","rdx","r8","r9"]},{"name":"reg","ret":"rdi","args":["rdi","rsi","rdx","rcx"]},{"name":"swift","ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"],"self":"r13","error":"r12"}]
 rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
 rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);
 rax ms (rcx, rdx, r8, r9, stack);

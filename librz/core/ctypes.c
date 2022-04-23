@@ -30,10 +30,7 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 		PJ *pj = pj_new();
 		pj_a(pj);
 		rz_list_foreach (list, iter, cc) {
-			char *ccexpr = rz_analysis_cc_get(core->analysis, cc);
-			// TODO: expose this as an object, not just an array of strings
-			pj_s(pj, ccexpr);
-			free(ccexpr);
+			rz_core_analysis_cc_print(core, cc, pj);
 		}
 		pj_end(pj);
 		rz_cons_printf("%s\n", pj_string(pj));
