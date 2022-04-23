@@ -224,7 +224,7 @@ static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	if (rounded_count > rebase_info->page_size) {
 		internal_buf = malloc(rounded_count);
 		if (!internal_buf) {
-			eprintf("Cannot allocate memory for 'internal_buf'\n");
+			RZ_LOG_ERROR("Cannot allocate memory for 'internal_buf'\n");
 			return -1;
 		}
 	}
@@ -235,7 +235,7 @@ static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
 		result = RZ_MIN(len, internal_result);
 		memcpy(buf, internal_buf + page_offset, result);
 	} else {
-		eprintf("ERROR rebasing\n");
+		RZ_LOG_ERROR("Cannot rebase\n");
 		result = rz_buf_read_at(cache->buf, ctx->off, buf, len);
 	}
 

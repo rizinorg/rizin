@@ -973,7 +973,6 @@ RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *na
 RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id);
 RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *name);
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
-RZ_API RzBuffer *rz_bin_package(RzBin *bin, const char *type, const char *file, RzList *files);
 
 RZ_API RZ_BORROW const char *rz_bin_string_type(int type);
 RZ_API const char *rz_bin_entry_type_string(int etype);
@@ -989,7 +988,6 @@ RZ_API ut64 rz_bin_file_get_vaddr(RzBinFile *bf, ut64 paddr, ut64 vaddr);
 // RzBinFile.add
 RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *binfile, const char *name, const char *super, int view);
 RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *classname, const char *name, int nargs);
-RZ_API RzBinField *rz_bin_file_add_field(RzBinFile *binfile, const char *classname, const char *name);
 // RzBinFile.find
 RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits);
 RZ_API RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bin_id);

@@ -144,11 +144,11 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 		return NULL;
 	}
 	if (hdr->version != 1) {
-		eprintf("Unsupported CoreSymbolication cache version (%d)\n", hdr->version);
+		RZ_LOG_ERROR("Unsupported CoreSymbolication cache version (%d)\n", hdr->version);
 		goto beach;
 	}
 	if (hdr->size == 0 || hdr->size > rz_buf_size(buf) - off) {
-		eprintf("Corrupted CoreSymbolication header: size out of bounds (0x%x)\n", hdr->size);
+		RZ_LOG_ERROR("Corrupted CoreSymbolication header: size out of bounds (0x%x)\n", hdr->size);
 		goto beach;
 	}
 	result = RZ_NEW0(RzCoreSymCacheElement);

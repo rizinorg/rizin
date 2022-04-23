@@ -169,7 +169,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		goto another_castle;
 	}
 
-	eprintf("MOD Offset = 0x%" PFMT64x "\n", (ut64)modoff);
+	RZ_LOG_INFO("MOD Offset = 0x%" PFMT64x "\n", (ut64)modoff);
 	parseMod(bin->decompressed, bin, modoff, ba);
 	obj->bin_obj = bin;
 	return true;
