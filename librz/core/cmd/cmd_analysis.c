@@ -235,27 +235,12 @@ static const char *help_msg_af[] = {
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
-	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afd", "[addr]", "show function + delta for given offset",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afj", " [tableaddr] [count]", "analyze function jumptable",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
 	"afv", "[?]", "Manipulate arguments/variables in a function",
-	NULL
-};
-
-static const char *help_msg_afc[] = {
-	"Usage:", "afc[agl?]", "",
-	"afc", " convention", "Manually set calling convention for current function",
-	"afc", "", "Show Calling convention for the Current function",
-	"afcr", "[j]", "Show register usage for the current function",
-	"afca", "", "Analyse function for finding the current calling convention",
-	"afcf", "[j] [name]", "Prints return type function(arg1, arg2...), see afij",
-	"afck", "", "List SDB details of call loaded calling conventions",
-	"afcl", "", "List all available calling conventions",
-	"afco", " path", "Open Calling Convention sdb profile from given path",
-	"afcR", "", "Register telescoping using the calling conventions order",
 	NULL
 };
 
@@ -1536,154 +1521,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 		} break;
 		}
 		break;
-	case 'c': { // "afc"
-		RzAnalysisFunction *fcn = NULL;
-		if (!input[1] || input[1] == ' ' || input[1] == 'r' || input[1] == 'a') {
-			fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-			if (!fcn) {
-				eprintf("afc: Cannot find function here\n");
-				break;
-			}
-		}
-		switch (input[1]) {
-		case '\0': // "afc"
-			rz_cons_println(fcn->cc);
-			break;
-		case ' ': { // "afc "
-			char *argument = strdup(input + 2);
-			char *cc = argument;
-			rz_str_trim(cc);
-			if (!rz_analysis_cc_exist(core->analysis, cc)) {
-				const char *asmOs = rz_config_get(core->config, "asm.os");
-				eprintf("afc: Unknown calling convention '%s' for '%s'\n"
-					"See afcl for available types\n",
-					cc, asmOs);
-			} else {
-				fcn->cc = rz_str_constpool_get(&core->analysis->constpool, cc);
-			}
-			free(argument);
-			break;
-		}
-		case 'f': { // "afcf" "afcfj"
-			RzOutputMode mode = (input[2] == 'j') ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD;
-			char *p = strchr(input, ' ');
-			char *fcn_name = p ? rz_str_trim_dup(p) : NULL;
-			char *sig = rz_core_analysis_function_signature(core, mode, fcn_name);
-			if (sig) {
-				rz_cons_printf("%s\n", sig);
-				free(sig);
-			}
-			break;
-		}
-		case 'k': // "afck"
-			rz_core_kuery_print(core, "analysis/cc/*");
-			break;
-		case 'l': // "afcl" list all function Calling conventions.
-			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		case 'o': { // "afco"
-			char *dbpath = rz_str_trim_dup(input + 2);
-			if (rz_file_exists(dbpath)) {
-				Sdb *db = sdb_new(0, dbpath, 0);
-				sdb_merge(core->analysis->sdb_cc, db);
-				sdb_close(db);
-				sdb_free(db);
-			}
-			free(dbpath);
-			break;
-		}
-		case 'r': { // "afcr"
-			int i;
-			PJ *pj = NULL;
-			bool json = input[2] == 'j';
-			if (json) {
-				pj = pj_new();
-				if (!pj) {
-					return false;
-				}
-				pj_o(pj);
-			}
-
-			char *cmd = rz_str_newf("cc.%s.ret", fcn->cc);
-			const char *regname = sdb_const_get(core->analysis->sdb_cc, cmd, 0);
-			if (regname) {
-				if (json) {
-					pj_ks(pj, "ret", regname);
-				} else {
-					rz_cons_printf("%s: %s\n", cmd, regname);
-				}
-			}
-			free(cmd);
-			if (json) {
-				pj_ka(pj, "args");
-			}
-			for (i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
-				cmd = rz_str_newf("cc.%s.arg%d", fcn->cc, i);
-				regname = sdb_const_get(core->analysis->sdb_cc, cmd, 0);
-				if (regname) {
-					if (json) {
-						pj_s(pj, regname);
-					} else {
-						rz_cons_printf("%s: %s\n", cmd, regname);
-					}
-				}
-				free(cmd);
-			}
-			if (json) {
-				pj_end(pj);
-			}
-
-			cmd = rz_str_newf("cc.%s.self", fcn->cc);
-			regname = sdb_const_get(core->analysis->sdb_cc, cmd, 0);
-			if (regname) {
-				if (json) {
-					pj_ks(pj, "self", regname);
-				} else {
-					rz_cons_printf("%s: %s\n", cmd, regname);
-				}
-			}
-			free(cmd);
-			cmd = rz_str_newf("cc.%s.error", fcn->cc);
-			regname = sdb_const_get(core->analysis->sdb_cc, cmd, 0);
-			if (regname) {
-				if (json) {
-					pj_ks(pj, "error", regname);
-				} else {
-					rz_cons_printf("%s: %s\n", cmd, regname);
-				}
-			}
-			free(cmd);
-			if (json) {
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-				pj_free(pj);
-			}
-		} break;
-		case 'R': { // "afcR"
-			/* very slow, but im tired of waiting for having this, so this is the quickest implementation */
-			int i;
-			char *cc = sdb_querys(core->sdb, NULL, 0, "analysis/cc/default.cc");
-			rz_str_trim(cc);
-			for (i = 0; i < 6; i++) {
-				char *k = rz_str_newf("analysis/cc/cc.%s.arg%d", cc, i);
-				char *res = sdb_querys(core->sdb, NULL, 0, k);
-				free(k);
-				rz_str_trim_nc(res);
-				if (*res) {
-					char *row = rz_core_cmd_strf(core, "drr~%s 0x", res);
-					rz_str_trim(row);
-					rz_cons_printf("arg[%d] %s\n", i, row);
-					free(row);
-				}
-				free(res);
-			}
-			free(cc);
-		} break;
-		case '?': // "afc?"
-		default:
-			rz_core_cmd_help(core, help_msg_afc);
-		}
-	} break;
 	case '?': // "af?"
 		rz_core_cmd_help(core, help_msg_af);
 		break;
@@ -7400,6 +7237,53 @@ RZ_IPI RzCmdStatus rz_analysis_functions_map_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_analysis_functions_merge_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = rz_num_math(core->num, argv[1]);
 	rz_core_analysis_fcn_merge(core, core->offset, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_cc_set_get_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (argc == 1) {
+		rz_cons_println(fcn->cc);
+		return RZ_CMD_STATUS_OK;
+	}
+	if (!rz_analysis_cc_exist(core->analysis, argv[1])) {
+		RZ_LOG_ERROR("Unknown calling convention. See `afcl` for available ones.\n");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	fcn->cc = rz_str_constpool_get(&core->analysis->constpool, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_cc_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_core_types_calling_conventions_print(core, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_cc_load_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_file_exists(argv[1])) {
+		RZ_LOG_ERROR("File \"%s\" does not exist\n", argv[1]);
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	Sdb *db = sdb_new(0, argv[1], 0);
+	if (!db) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	sdb_merge(core->analysis->sdb_cc, db);
+	sdb_close(db);
+	sdb_free(db);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_cc_reg_usage_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	PJ *pj = state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL;
+	rz_core_analysis_cc_print(core, fcn->cc, pj);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -1858,7 +1858,6 @@ RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	RzAnalysis *a = function->analysis;
 	PJ *pj = pj_new();
-	unsigned int i;
 	char *ret_type_str = NULL;
 	RzType *ret_type = rz_type_func_ret(a->typedb, function->name);
 	if (ret_type) {
@@ -1876,7 +1875,7 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	}
 	pj_k(pj, "args");
 	pj_a(pj);
-	for (i = 0; i < argc; i++) {
+	for (int i = 0; i < argc; i++) {
 		pj_o(pj);
 		const char *arg_name = rz_type_func_args_name(a->typedb, function->name, i);
 		RzType *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
