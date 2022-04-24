@@ -269,32 +269,30 @@ size: 12
 EOF
 RUN
 
-NAME=afcf
+NAME=afs
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 af @ main
-afcf main @ 0
-afcf @ main
-afcfj @ main
+afs @ main
+afsj @ main
 EOF
 EXPECT=<<EOF
-int main (int argc, char **argv, char **envp);
-int main (int argc, char **argv, char **envp);
-[{"name":"main","return":"int","args":[{"name":"argc","type":"int"},{"name":"argv","type":"char **"},{"name":"envp","type":"char **"}],"count":3}]
+int main(int argc, char **argv, char **envp);
+{"name":"main","noreturn":false,"ret":"int","cc":"cdecl","args":[{"name":"argc","type":"int","cc":"eax"},{"name":"argv","type":"char **","cc":"ebx"},{"name":"envp","type":"char **","cc":"ecx"}]}
 EOF
 RUN
 
-NAME=afcf (vars)
+NAME=afs (vars)
 FILE=bins/elf/ls
 CMDS=<<EOF
 s 0x00013c70
 af
-afcf
-afcfj
+afs
+afsj
 EOF
 EXPECT=<<EOF
-fcn.00013c70 (int64_t arg1, int64_t arg2, int64_t arg3);
-[{"name":"fcn.00013c70","args":[{"name":"arg1","type":"int64_t"},{"name":"arg2","type":"int64_t"},{"name":"arg3","type":"int64_t"}],"count":3}]
+void fcn.00013c70(int64_t arg1, int64_t arg2, int64_t arg3);
+{"name":"fcn.00013c70","noreturn":false,"ret":"void","cc":"amd64","args":[]}
 EOF
 RUN
 

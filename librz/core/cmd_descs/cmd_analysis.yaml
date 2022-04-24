@@ -531,6 +531,41 @@ commands:
             entries:
               - text: "afm 0xbeef @ 0x42"
                 comment: "Merge function at address 0xbeef to function at address 0x42"
+      - name: afc
+        summary: Calling convention
+        subcommands:
+          - name: afc
+            summary: Set/Get calling convention for current function
+            cname: analysis_function_cc_set_get
+            args:
+              - name: convention
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: afcl
+            summary: List all available calling conventions
+            cname: analysis_function_cc_list
+            type: RZ_CMD_DESC_TYPE_ARGV_MODES
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_SDB
+            args: []
+          - name: afco
+            summary: Open Calling Convention sdb profile from given path
+            cname: analysis_function_cc_load
+            args:
+              - name: db_path
+                type: RZ_CMD_ARG_TYPE_FILE
+          - name: afcr
+            summary: Show register usage for the current function
+            cname: analysis_function_cc_reg_usage
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
   - name: aeC
     summary: appcall in esil
     cname: analysis_appcall
