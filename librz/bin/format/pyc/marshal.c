@@ -250,7 +250,7 @@ static pyc_object *get_stringref_object(RzBuffer *buffer) {
 
 	n = get_st32(buffer, &error);
 	if (n >= rz_list_length(interned_table)) {
-		eprintf("bad marshal data (string ref out of range)");
+		RZ_LOG_ERROR("bad marshal data (string ref out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -419,7 +419,7 @@ static pyc_object *get_string_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (string size out of range)");
+		RZ_LOG_ERROR("bad marshal data (string size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -445,7 +445,7 @@ static pyc_object *get_unicode_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (unicode size out of range)");
+		RZ_LOG_ERROR("bad marshal data (unicode size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -468,7 +468,7 @@ static pyc_object *get_interned_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (string size out of range)");
+		RZ_LOG_ERROR("bad marshal data (string size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -545,7 +545,7 @@ static pyc_object *get_tuple_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (tuple size out of range)\n");
+		RZ_LOG_ERROR("bad marshal data (tuple size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -566,7 +566,7 @@ static pyc_object *get_list_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (list size out of range)\n");
+		RZ_LOG_ERROR("bad marshal data (list size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -627,7 +627,7 @@ static pyc_object *get_set_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (set size out of range)\n");
+		RZ_LOG_ERROR("bad marshal data (set size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -775,10 +775,10 @@ static void free_object(pyc_object *object) {
 	case TYPE_LONG:
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
-		eprintf("Free not implemented for type %x\n", object->type);
+		RZ_LOG_ERROR("Free not implemented for type %x\n", object->type);
 		break;
 	default:
-		eprintf("Undefined type in free_object (%x)\n", object->type);
+		RZ_LOG_ERROR("Undefined type in free_object (%x)\n", object->type);
 		break;
 	}
 	free(object);
@@ -847,10 +847,10 @@ static pyc_object *copy_object(pyc_object *object) {
 	case TYPE_SET:
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
-		eprintf("Copy not implemented for type %x\n", object->type);
+		RZ_LOG_ERROR("Copy not implemented for type %x\n", object->type);
 		break;
 	default:
-		eprintf("Undefined type in copy_object (%x)\n", object->type);
+		RZ_LOG_ERROR("Undefined type in copy_object (%x)\n", object->type);
 		break;
 	}
 	if (!copy->data) {
@@ -1120,10 +1120,10 @@ static pyc_object *get_object(RzBuffer *buffer) {
 		ret = RZ_NEW0(pyc_object);
 		break;
 	case TYPE_UNKNOWN:
-		eprintf("Get not implemented for type 0x%x\n", type);
+		RZ_LOG_ERROR("Get not implemented for type 0x%x\n", type);
 		return NULL;
 	default:
-		eprintf("Undefined type in get_object (0x%x)\n", type);
+		RZ_LOG_ERROR("Undefined type in get_object (0x%x)\n", type);
 		return NULL;
 	}
 

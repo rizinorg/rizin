@@ -5432,7 +5432,7 @@ vaddr      paddr      hvaddr     haddr      type
 0x00000d28 0x00000d28 0x00000018 0x00000018 program
 EOF
 EXPECT_ERR=<<EOF
-Cannot determine entrypoint, using 0x00000d28.
+ERROR: Cannot determine entrypoint, using 0x00000d28.
 EOF
 RUN
 

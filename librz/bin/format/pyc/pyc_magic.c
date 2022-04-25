@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "pyc_magic.h"
+#include <rz_util.h>
 #include <stdlib.h>
 
 static struct pyc_version versions[] = {
@@ -235,7 +236,7 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	}
 	if (ti == size) {
 		*error = true;
-		eprintf("target_magic not found in versions[]");
+		RZ_LOG_ERROR("Cannot find pyc target_magic.\n");
 		return false;
 	}
 
@@ -243,7 +244,7 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	}
 	if (li == size) {
 		*error = true;
-		eprintf("lower magic_int not found in versions[]");
+		RZ_LOG_ERROR("Cannot find pyc lower magic_int.\n");
 		return false;
 	}
 
@@ -251,7 +252,7 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	}
 	if (ui == size) {
 		*error = true;
-		eprintf("upper magic_int not found in versions[]");
+		RZ_LOG_ERROR("Cannot find pyc upper magic_int.\n");
 		return false;
 	}
 
