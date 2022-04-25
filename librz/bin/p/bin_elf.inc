@@ -827,7 +827,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 
 	switch (rel_type) {
 	default:
-		RZ_LOG_ERROR("Patching for reloc type %d not implemented.", rel_type);
+		RZ_LOG_WARN("Patching for reloc type %d not implemented.", rel_type);
 		rz_warn_if_reached();
 		// For more implementetations check out the LLVM src:
 		// https://github.com/llvm/llvm-project/blob/abc17a67519747be36f1fd03e227c5103da4c677/lld/ELF/Arch/Hexagon.cpp
@@ -982,6 +982,126 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r6(rz_read_le32(buf));
 		val = (fs->S + fs->A);
+		break;
+	case R_HEX_TPREL_16:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->TLS - fs->S - fs->A);
+		break;
+	case R_HEX_GOTREL_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->S + fs->A - fs->GOT);
+		break;
+	case R_HEX_GOTREL_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->S + fs->A - fs->GOT);
+		break;
+	case R_HEX_GOT_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->G) >> 6;
+		break;
+	case R_HEX_GOT_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->G);
+		break;
+	case R_HEX_GOT_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->G);
+		break;
+	case R_HEX_DTPREL_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->S + fs->A - fs->T) >> 6;
+		break;
+	case R_HEX_DTPREL_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->S + fs->A - fs->T);
+		break;
+	case R_HEX_DTPREL_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->S + fs->A - fs->T);
+		break;
+	case R_HEX_GD_GOT_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->G) >> 6;
+		break;
+	case R_HEX_GD_GOT_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->G);
+		break;
+	case R_HEX_GD_GOT_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->G);
+		break;
+	case R_HEX_IE_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->G + fs->GOT) >> 6;
+		break;
+	case R_HEX_IE_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->G + fs->GOT);
+		break;
+	case R_HEX_IE_GOT_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->G) >> 6;
+		break;
+	case R_HEX_IE_GOT_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->G);
+		break;
+	case R_HEX_IE_GOT_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->G);
+		break;
+	case R_HEX_TPREL_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->TLS - fs->S - fs->A) >> 6;
+		break;
+	case R_HEX_TPREL_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->TLS - fs->S - fs->A);
+		break;
+	case R_HEX_TPREL_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->TLS - fs->S - fs->A);
+		break;
+	case R_HEX_LD_GOT_LO16:
+		bitmask = R_HEX_BITMASK_WORD32_LO;
+		val = (fs->G);
+		break;
+	case R_HEX_LD_GOT_HI16:
+		bitmask = R_HEX_BITMASK_WORD32_LO;
+		val = (fs->G) >> 16;
+		break;
+	case R_HEX_LD_GOT_32:
+		bitmask = R_HEX_BITMASK_WORD32;
+		val = (fs->G);
+		break;
+	case R_HEX_LD_GOT_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->G) >> 6;
+		break;
+	case R_HEX_LD_GOT_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->G);
+		break;
+	case R_HEX_LD_GOT_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->G);
 		break;
 	}
 	// Patch two opcodes at once.
