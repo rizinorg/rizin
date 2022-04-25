@@ -51,7 +51,7 @@ static const HexagonRelocMask hex_rel6_x_masks[] = {
 };
 
 /**
- * \brief Returns the bitmask for reloc patching for an Hexagon instruction
+ * \brief Returns the bitmask for reloc patching of a Hexagon instruction
  * of type R_HEX_6_X.
  *
  * \param insn The instruction bits.
@@ -72,7 +72,7 @@ static ut32 hexagon_get_bitmask_r6(ut32 insn) {
 }
 
 /**
- * \brief Returns the bitmask for reloc patching for an Hexagon instruction
+ * \brief Returns the bitmask for reloc patching of a Hexagon instruction
  * of type R_HEX_8_X.
  *
  * \param insn The instruction bits.
@@ -89,7 +89,7 @@ static ut32 hexagon_get_bitmask_r8(ut32 insn) {
 }
 
 /**
- * \brief Returns the bitmask for reloc patching for an Hexagon instruction
+ * \brief Returns the bitmask for reloc patching of a Hexagon instruction
  * of type R_HEX_11_X.
  *
  * \param insn The instruction bits.
@@ -103,7 +103,7 @@ static ut32 hexagon_get_bitmask_r11(ut32 insn) {
 }
 
 /**
- * \brief Returns the bitmask for reloc patching for an Hexagon instruction
+ * \brief Returns the bitmask for reloc patching of a Hexagon instruction
  * of type R_HEX_16_X.
  *
  * \param insn The instruction bits.
@@ -830,7 +830,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 		RZ_LOG_ERROR("Patching for reloc type %d not implemented.", rel_type);
 		rz_warn_if_reached();
 		// For more implementetations check out the LLVM src:
-		// https://github.com/llvm/llvm-project/lld/ELF/Arch/Hexagon.cpp
+		// https://github.com/llvm/llvm-project/blob/abc17a67519747be36f1fd03e227c5103da4c677/lld/ELF/Arch/Hexagon.cpp
 		return;
 	case R_HEX_NONE:
 		return;
