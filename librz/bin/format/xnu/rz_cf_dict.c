@@ -94,7 +94,7 @@ RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size,
 
 		yxml_ret_t r = yxml_parse(&x, doc);
 		if (r < 0) {
-			eprintf("Parsing error at :%" PRIu32 ":%" PRIu64 " byte offset %" PRIu64 "\n",
+			RZ_LOG_ERROR("Parsing error at :%" PRIu32 ":%" PRIu64 " byte offset %" PRIu64 "\n",
 				x.line, x.byte, x.total);
 			goto beach;
 		}
@@ -161,7 +161,7 @@ RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size,
 			if (next_state) {
 				rz_list_push(stack, next_state);
 			} else {
-				eprintf("Missing next state for elem: %s phase: %d\n", x.elem, state->phase);
+				RZ_LOG_ERROR("Missing next state for elem: %s phase: %d\n", x.elem, state->phase);
 				break;
 			}
 			depth++;
@@ -181,14 +181,14 @@ RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size,
 					rz_cf_parse_state_free(state);
 					break;
 				} else {
-					eprintf("Root element is not a dict\n");
+					RZ_LOG_ERROR("Root element is not a dict\n");
 					goto beach;
 				}
 			}
 
 			if (next_state->phase == RZ_CF_STATE_IN_DICT && state->phase == RZ_CF_STATE_IN_KEY) {
 				if (!content) {
-					eprintf("NULL key not supported");
+					RZ_LOG_ERROR("NULL key is not supported");
 					goto beach;
 				}
 				next_state->key = content;
@@ -240,7 +240,7 @@ RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size,
 						RCFKeyValue *key_value = rz_cf_key_value_new(next_state->key, value);
 						rz_cf_value_dict_add(next_state->dict, key_value);
 					} else if (state->phase != RZ_CF_STATE_IN_IGNORE) {
-						eprintf("Missing value for key %s\n", next_state->key);
+						RZ_LOG_ERROR("Missing value for key %s\n", next_state->key);
 						rz_cf_value_free((RCFValue *)value);
 						goto beach;
 					}
@@ -248,7 +248,7 @@ RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size,
 					if (value) {
 						rz_cf_value_array_add(next_state->array, value);
 					} else if (state->phase != RZ_CF_STATE_IN_IGNORE) {
-						eprintf("Missing value for array\n");
+						RZ_LOG_ERROR("Missing value for array\n");
 						rz_cf_value_free((RCFValue *)value);
 						goto beach;
 					}
@@ -283,7 +283,7 @@ RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size,
 
 	yxml_ret_t r = yxml_eof(&x);
 	if (r < 0) {
-		eprintf("Invalid xml\n");
+		RZ_LOG_ERROR("Invalid xml\n");
 	}
 
 beach:
