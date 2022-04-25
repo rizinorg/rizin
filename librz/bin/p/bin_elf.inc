@@ -823,7 +823,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 	rz_return_if_fail(buf_patched && fs);
 	ut8 buf[8] = { 0 };
 	ut64 val = 0;
-	ut64 bitmask = UT64_MAX; // Mask of value and opcode bits.
+	ut64 bitmask = R_HEX_BITMASK_WORD32; // Mask of value and opcode bits.
 
 	switch (rel_type) {
 	default:
@@ -844,124 +844,124 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 		val = (fs->B + fs->A);
 		break;
 	case R_HEX_B22_PCREL:
-		bitmask = 0x01ff3ffe;
+		bitmask = R_HEX_BITMASK_WORD32_B22;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_B15_PCREL:
-		bitmask = 0x00df20fe;
+		bitmask = R_HEX_BITMASK_WORD32_B15;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_B7_PCREL:
-		bitmask = 0x00001f18;
+		bitmask = R_HEX_BITMASK_WORD32_B7;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_LO16:
-		bitmask = 0x00c03fff;
+		bitmask = R_HEX_BITMASK_WORD32_LO;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_HI16:
-		bitmask = 0x00c03fff;
+		bitmask = R_HEX_BITMASK_WORD32_HL;
 		val = (fs->S + fs->A) >> 16;
 		break;
 	case R_HEX_32:
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_16:
-		bitmask = 0xffff;
+		bitmask = R_HEX_BITMASK_WORD16;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_8:
-		bitmask = 0xff;
+		bitmask = R_HEX_BITMASK_WORD8;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_HL16:
-		bitmask = 0x00c03fff;
+		bitmask = R_HEX_BITMASK_WORD32_HL;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_B13_PCREL:
-		bitmask = 0x00202ffe;
+		bitmask = R_HEX_BITMASK_WORD32_B13;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_B9_PCREL:
-		bitmask = 0x003000fe;
+		bitmask = R_HEX_BITMASK_WORD32_B9;
 		val = (fs->S + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_B32_PCREL_X:
-		bitmask = 0x0fff3fff;
+		bitmask = R_HEX_BITMASK_WORD32_X26;
 		val = (fs->S + fs->A - fs->P) >> 6;
 		break;
 	case R_HEX_32_6_X:
-		bitmask = 0x0fff3fff;
+		bitmask = R_HEX_BITMASK_WORD32_X26;
 		val = (fs->S + fs->A) >> 6;
 		break;
 	case R_HEX_B22_PCREL_X:
-		bitmask = 0x01ff3ffe;
+		bitmask = R_HEX_BITMASK_WORD32_B22;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_B15_PCREL_X:
-		bitmask = 0x00df20fe;
+		bitmask = R_HEX_BITMASK_WORD32_B15;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_B13_PCREL_X:
-		bitmask = 0x00202ffe;
+		bitmask = R_HEX_BITMASK_WORD32_B13;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_B9_PCREL_X:
-		bitmask = 0x003000fe;
+		bitmask = R_HEX_BITMASK_WORD32_B9;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_B7_PCREL_X:
-		bitmask = 0x00001f18;
+		bitmask = R_HEX_BITMASK_WORD32_B7;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_12_X:
-		bitmask = 0x000007e0;
+		bitmask = R_HEX_BITMASK_WORD32_R6;
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_32_PCREL:
 		val = (fs->S + fs->A - fs->P);
 		break;
 	case R_HEX_PLT_B22_PCREL:
-		bitmask = 0x01ff3ffe;
+		bitmask = R_HEX_BITMASK_WORD32_B22;
 		val = (fs->L + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_GOTREL_LO16:
-		bitmask = 0x00c03fff;
+		bitmask = R_HEX_BITMASK_WORD32_LO;
 		val = (fs->S + fs->A - fs->GOT);
 		break;
 	case R_HEX_GOTREL_HI16:
-		bitmask = 0x00c03fff;
+		bitmask = R_HEX_BITMASK_WORD32_HL;
 		val = (fs->S + fs->A - fs->GOT) >> 16;
 		break;
 	case R_HEX_GOTREL_32:
 		val = (fs->S + fs->A - fs->GOT);
 		break;
 	case R_HEX_GOTREL_32_6_X:
-		bitmask = 0x0fff3fff;
+		bitmask = R_HEX_BITMASK_WORD32_X26;
 		val = (fs->S + fs->A - fs->GOT) >> 6;
 		break;
 	case R_HEX_LD_PLT_B22_PCREL:
-		bitmask = 0x01ff3ffe;
+		bitmask = R_HEX_BITMASK_WORD32_B22;
 		val = (fs->L + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_GD_PLT_B22_PCREL:
-		bitmask = 0x01ff3ffe;
+		bitmask = R_HEX_BITMASK_WORD32_B22;
 		val = (fs->L + fs->A - fs->P) >> 2;
 		break;
 	case R_HEX_GD_PLT_B22_PCREL_X:
-		bitmask = 0x01ff3ffe;
+		bitmask = R_HEX_BITMASK_WORD32_B22;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_GD_PLT_B32_PCREL_X:
-		bitmask = 0x0fff3fff;
+		bitmask = R_HEX_BITMASK_WORD32_X26;
 		val = (fs->S + fs->A - fs->P) >> 6;
 		break;
 	case R_HEX_LD_PLT_B22_PCREL_X:
-		bitmask = 0x01ff3ffe;
+		bitmask = R_HEX_BITMASK_WORD32_B22;
 		val = (fs->S + fs->A - fs->P) & 0x3f;
 		break;
 	case R_HEX_LD_PLT_B32_PCREL_X:
-		bitmask = 0x0fff3fff;
+		bitmask = R_HEX_BITMASK_WORD32_X26;
 		val = (fs->S + fs->A - fs->P) >> 6;
 		break;
 	case R_HEX_16_X:
