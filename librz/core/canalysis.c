@@ -6793,6 +6793,9 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		}
 		ret = rz_analysis_op(core->analysis, ab->op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
+		if (ret < 1) {
+			ret = min_op_size;
+		}
 
 		char *mnem;
 		if (rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx) < 1) {
