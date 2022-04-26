@@ -48,15 +48,18 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		NOT_IMPLEMENTED;
 	case PPC_INS_LI: // RT = sI
 		into_rt = EXTEND(PPC_ARCH_BITS, IMM_SN(16, sI));
+		update_ra = false;
 		break;
-	case PPC_INS_LIS:; // RT = SI
-		into_rt = EXTEND(PPC_ARCH_BITS, APPEND(IMM_SN(32, sI), U16(0)));
+	case PPC_INS_LIS: // RT = SI << 16
+		into_rt = EXTEND(PPC_ARCH_BITS, APPEND(IMM_SN(16, sI), U16(0)));
+		update_ra = false;
 		break;
 	case PPC_INS_LA: // RT = EA
 		op0 = IFREG0(rA);
 		op1 = EXTEND(PPC_ARCH_BITS, IMM_SN(16, d));
 		ea = ADD(op0, op1);
 		into_rt = ea;
+		update_ra = false;
 		break;
 	case PPC_INS_LBZ:
 	case PPC_INS_LBZX:
@@ -142,7 +145,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 
 	rz_return_val_if_fail(into_rt, NULL);
 	RzILOpEffect *res = SETG(rT, into_rt);
-	RzILOpEffect *update = update_ra ? SETG(rA, ea) : NOP;
+	RzILOpEffect *update = update_ra ? SETG(rA, DUP(ea)) : NOP;
 	return SEQ2(res, update);
 }
 
@@ -233,7 +236,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	}
 
 	rz_return_val_if_fail(ea, NULL);
-	RzILOpEffect *update = update_ra ? SETG(rA, ea) : NOP;
+	RzILOpEffect *update = update_ra ? SETG(rA, DUP(ea)) : NOP;
 	return SEQ2(store, update);
 }
 
