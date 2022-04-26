@@ -32,15 +32,6 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	RzILOpPure *ea;
 	RzILOpPure *into_rt;
 
-	if (!rA && id == PPC_INS_LI) {
-		// LLVM/capstone bug?
-		// rA is NULL although it shouldn't (`li RT, RA`).
-		// Possibly a confusion?
-		// Because "li rA, rB" becomes "lis rA, 0" if (rB) = 0.
-		// We set the id here again.
-		id = PPC_INS_LIS;
-	}
-
 	// How to read instruction ids:
 	// Letter			Meaning
 	// L 				Load
