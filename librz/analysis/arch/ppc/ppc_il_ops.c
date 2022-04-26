@@ -25,7 +25,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
 	st64 d = INSOP(1).imm;
 	st64 sI = d;
-	bool update_ra = false; // Save ea in RA?
+	bool update_ra = ppc_updates_ra_with_ea(id); // Save ea in RA?
 	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
 	RzILOpPure *op0;
 	RzILOpPure *op1;
@@ -82,14 +82,18 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LWAX:
 	case PPC_INS_LWAUX:
 		op0 = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
-		op1 = ppc_is_x_form(id) ? VARG(rB) : EXTEND(PPC_ARCH_BITS, IMM_SN(16, d));
+		if (ppc_is_x_form(id)) {
+			op1 = VARG(rB);
+		} else {
+			RzILOpPure *imm = (id == PPC_INS_LD || id == PPC_INS_LWA) ? APPEND(IMM_SN(16, d), UN(2, 0)) : IMM_SN(16, d);
+			op1 = EXTEND(PPC_ARCH_BITS, imm);
+		}
 		ea = ADD(op0, op1);
 		if (ppc_is_algebraic(id)) {
 			into_rt = (mem_acc_size == 64) ? LOADW(mem_acc_size, ea) : EXTEND(PPC_ARCH_BITS, LOADW(mem_acc_size, ea));
 		} else {
 			into_rt = (mem_acc_size == 64) ? LOADW(mem_acc_size, ea) : EXTZ(LOADW(mem_acc_size, ea));
 		}
-		update_ra = ppc_updates_ra_with_ea(id);
 		break;
 	// Byte reverse and reserved indexed
 	case PPC_INS_LWARX:
@@ -136,7 +140,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		NOT_IMPLEMENTED;
 	}
 
-	// rz_return_val_if_fail(op0, NULL);
+	rz_return_val_if_fail(into_rt, NULL);
 	RzILOpEffect *res = SETG(rT, into_rt);
 	RzILOpEffect *update = update_ra ? SETG(rA, ea) : NOP;
 	return SEQ2(res, update);

@@ -109,6 +109,22 @@ bool ppc_updates_ra_with_ea(ut32 insn_id) {
 	case PPC_INS_LWAUX:
 	case PPC_INS_LWZU:
 	case PPC_INS_LWZUX:
+	case PPC_INS_LFDU:
+	case PPC_INS_LFDUX:
+	case PPC_INS_LFSU:
+	case PPC_INS_LFSUX:
+	case PPC_INS_STBU:
+	case PPC_INS_STDU:
+	case PPC_INS_STHU:
+	case PPC_INS_STWU:
+	case PPC_INS_STBUX:
+	case PPC_INS_STHUX:
+	case PPC_INS_STWUX:
+	case PPC_INS_STDUX:
+	case PPC_INS_STFDU:
+	case PPC_INS_STFDUX:
+	case PPC_INS_STFSU:
+	case PPC_INS_STFSUX:
 		return true;
 	}
 }
