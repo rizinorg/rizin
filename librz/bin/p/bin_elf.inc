@@ -928,6 +928,10 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			word = 2;
 			val = (S + A - P + 0x8000) >> 16;
 			break;
+		case RZ_PPC64_ADDR16_LO:
+			word = 2;
+			val = (S + A) & 0xffff;
+			break;
 		case RZ_PPC64_REL16_LO:
 			word = 2;
 			val = (S + A - P) & 0xffff;
@@ -1232,6 +1236,8 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_PPC_REL32: ADD(32, -P);
 		case RZ_PPC_RELATIVE: ADD(32, -P);
 		case RZ_PPC_PLT32: ADD(32, -P);
+		case RZ_PPC_ADDR16: ADD(16, 0);
+		case RZ_PPC_ADDR32: ADD(32, 0);
 		default:
 			RZ_LOG_WARN("unimplemented ELF/PPC reloc type %d\n", rel->type);
 			break;
