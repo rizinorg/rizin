@@ -1181,9 +1181,9 @@ RZ_API bool rz_file_copy(const char *src, const char *dst) {
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
 #if HAVE_COPYFILE
 	return copyfile(src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
-#elif HAVE_COPY_FILE_RANGE && !defined(__FreeBSD__)
+#elif HAVE_COPY_FILE_RANGE
 	/**
-	 * Unfortunately on FreeBSD the syscall 
+	 * Unfortunately on FreeBSD the syscall
 	 * does not live up to the promise
 	 */
 	int srcfd = open(src, O_RDONLY);
@@ -1198,8 +1198,8 @@ RZ_API bool rz_file_copy(const char *src, const char *dst) {
 		close(srcfd);
 		return false;
 	}
-	/* copy_file_path can handle large file up to SSIZE_MAX 
-	 * with optimised performances. 
+	/* copy_file_range can handle large file up to SSIZE_MAX
+	 * with optimised performances.
 	 */
 	off_t sz = lseek(srcfd, 0, SEEK_END);
 	lseek(srcfd, 0, SEEK_SET);
