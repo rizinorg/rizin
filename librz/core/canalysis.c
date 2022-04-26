@@ -6766,7 +6766,8 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	int ret, i, idx;
 	RzAsmOp asmop;
 	ut64 addr;
-	RzPVector *vec = rz_pvector_new_with_len(rz_analysis_bytes_free, nops);
+	RzPVector *vec = rz_pvector_new(rz_analysis_bytes_free);
+	rz_pvector_reserve(vec, nops);
 	RzAnalysisBytes *ab;
 	if (!vec) {
 		return NULL;
@@ -6786,6 +6787,10 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		rz_asm_set_pc(core->rasm, addr);
 		ab->hint = rz_analysis_hint_get(core->analysis, addr);
 		ab->op = rz_analysis_op_new();
+		if (!ab->op) {
+			rz_pvector_free(vec);
+			return NULL;
+		}
 		ret = rz_analysis_op(core->analysis, ab->op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 
@@ -6796,7 +6801,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 			ab->bytes = rz_hex_bin2strdup(buf + idx, min_op_size);
 			continue;
 		}
-		ab->opcode = rz_asm_op_get_asm(&asmop);
+		ab->opcode = strdup(rz_asm_op_get_asm(&asmop));
 		mnem = strdup(rz_asm_op_get_asm(&asmop));
 		char *sp = strchr(mnem, ' ');
 		if (sp) {
@@ -6818,17 +6823,17 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 			addr,
 			asmop.size, rz_asm_op_get_asm(&asmop),
 			strsub, sizeof(strsub));
-		ut64 killme = UT64_MAX;
-		if (rz_io_read_i(core->io, ab->op->ptr, &killme, ab->op->refptr, be)) {
-			core->parser->subrel_addr = killme;
+		ut64 subrel_addr = UT64_MAX;
+		if (rz_io_read_i(core->io, ab->op->ptr, &subrel_addr, ab->op->refptr, be)) {
+			core->parser->subrel_addr = subrel_addr;
 		}
 		// 0x33->sym.xx
 		char *p = strdup(strsub);
-		if (p) {
+		if (p && ab->hint) {
 			rz_parse_filter(core->parser, addr, core->flags, ab->hint, p,
 				strsub, sizeof(strsub), be);
-			free(p);
 		}
+		free(p);
 		if (!*strsub) {
 			rz_str_ncpy(strsub, rz_asm_op_get_asm(&asmop), sizeof(strsub) - 1);
 		}

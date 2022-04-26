@@ -826,15 +826,26 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
 	RzPVector *vec = rz_core_analysis_bytes(core, buf, len, nops);
+	if (!vec) {
+		return;
+	}
+
 	void **iter;
 	RzAnalysisBytes *ab;
 
 	pj_a(pj);
 	rz_pvector_foreach (vec, iter) {
+		if (!iter) {
+			break;
+		}
 		ab = *iter;
+		if (!ab || !ab->op) {
+			break;
+		}
 		RzAnalysisOp *op = ab->op;
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
 		const char *opexstr = RZ_STRBUF_SAFEGET(&op->opex);
+		RzAnalysisHint *hint = ab->hint;
 
 		pj_o(pj);
 		PJ_KS(pj, "opcode", ab->opcode);
@@ -843,11 +854,14 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		PJ_KS(pj, "description", ab->description);
 		PJ_KS(pj, "mnemonic", op->mnemonic);
 		PJ_KS(pj, "mask", ab->mask);
-		PJ_KS(pj, "ophint", ab->hint->opcode);
 
-		PJ_KN(pj, "jump", op->jump);
-		PJ_KN(pj, "fail", op->fail);
-		PJ_KS(pj, "esil", (ab->hint && ab->hint->esil) ? ab->hint->esil : esilstr);
+		if (hint){
+			PJ_KS(pj, "ophint", hint->opcode);
+			PJ_KN(pj, "jump", op->jump);
+			PJ_KN(pj, "fail", op->fail);
+			PJ_KS(pj, "esil", hint->esil ? hint->esil : esilstr);
+		}
+
 		if (op->il_op) {
 			pj_k(pj, "rzil");
 			rz_il_op_effect_json(op->il_op, pj);
@@ -862,7 +876,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		PJ_KN(pj, "disp", op->disp);
 		PJ_KN(pj, "ptr", op->ptr);
 		pj_ki(pj, "size", op->size);
-		pj_ks(pj, "type", rz_analysis_optype_to_string((int)op->type));
+		PJ_KS(pj, "type", rz_analysis_optype_to_string((int)op->type));
 		PJ_KS(pj, "datatype", rz_analysis_datatype_to_string(op->datatype));
 		if (esilstr) {
 			pj_ki(pj, "esilcost", esil_cost(core, op->addr, esilstr));
@@ -878,10 +892,10 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		pj_ki(pj, "delay", op->delay);
 		const char *p1 = rz_analysis_stackop_tostring(op->stackop);
 		if (strcmp(p1, "null") != 0) {
-			pj_ks(pj, "stack", p1);
+			PJ_KS(pj, "stack", p1);
 		}
 		pj_kn(pj, "stackptr", op->stackptr);
-		pj_ks(pj, "cond", (op->type & RZ_ANALYSIS_OP_TYPE_COND) ? rz_type_cond_tostring(op->cond) : NULL);
+		PJ_KS(pj, "cond", (op->type & RZ_ANALYSIS_OP_TYPE_COND) ? rz_type_cond_tostring(op->cond) : NULL);
 		PJ_KS(pj, "family", rz_analysis_op_family_to_string(op->family));
 		pj_end(pj);
 	}
