@@ -548,6 +548,17 @@ RZ_API ut64 rz_core_get_asmqjmps(RzCore *core, const char *str);
 RZ_API void rz_core_set_asmqjmps(RzCore *core, char *str, size_t len, int i);
 RZ_API char *rz_core_add_asmqjmp(RzCore *core, ut64 addr);
 
+typedef struct analysis_bytes_t {
+	RzAnalysisOp *op;
+	RzAnalysisHint *hint;
+	char *opcode;
+	char *disasm;
+	char *pseudo;
+	char *description;
+	char *mask;
+	char *bytes;
+} RzAnalysisBytes;
+
 RZ_API void rz_core_analysis_type_init(RzCore *core);
 RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj, int depth);
 RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn);
@@ -557,6 +568,8 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr);
 RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core);
 RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core);
+RZ_API void rz_analysis_bytes_free(void *ptr);
+RZ_API RZ_OWN RzList *rz_core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops);
 
 RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra);
 RZ_API void rz_listinfo_free(RzListInfo *info);

@@ -6727,3 +6727,129 @@ RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core) {
 	rz_config_set_i(core->config, "dbg.trace", false);
 	return true;
 }
+
+/**
+ * Free RzAnalysisBytes
+ *
+ * @param ptr RzAnalysisBytes pointer
+ */
+RZ_API void rz_analysis_bytes_free(void *ptr) {
+	rz_return_if_fail(ptr);
+	RzAnalysisBytes *ab = ptr;
+	rz_analysis_op_free(ab->op);
+	ab->op = NULL;
+	rz_analysis_hint_free(ab->hint);
+	ab->hint = NULL;
+	RZ_FREE(ab->opcode);
+	RZ_FREE(ab->disasm);
+	RZ_FREE(ab->pseudo);
+	RZ_FREE(ab->description);
+	RZ_FREE(ab->mask);
+	RZ_FREE(ab->bytes);
+	RZ_FREE(ab);
+}
+
+/**
+ *
+ * Analysis and disassemble bytes use rz_analysis_op and rz_asm_disassemble
+ *
+ * @param core The RzCore instance
+ * @param buf data to analysis
+ * @param len analysis len bytes
+ * @param nops analysis n ops
+ * @return list of RzAnalysisBytes
+ */
+RZ_API RZ_OWN RzList *rz_core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops) {
+	bool be = core->print->big_endian;
+	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
+	int ret, i, idx;
+	RzAsmOp asmop;
+	ut64 addr;
+	RzList *list = rz_list_newf(rz_analysis_bytes_free);
+	RzAnalysisBytes *ab;
+
+	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
+		ab = RZ_NEW0(RzAnalysisBytes);
+		rz_list_append(list, ab);
+		addr = core->offset + idx;
+		rz_asm_set_pc(core->rasm, addr);
+		ab->hint = rz_analysis_hint_get(core->analysis, addr);
+		ab->op = rz_analysis_op_new();
+		ret = rz_analysis_op(core->analysis, ab->op, addr, buf + idx, len - idx,
+			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
+
+		(void)rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx);
+		ab->opcode = rz_asm_op_get_asm(&asmop);
+
+		char *mnem = strdup(rz_asm_op_get_asm(&asmop));
+		char *sp = strchr(mnem, ' ');
+		if (sp) {
+			*sp = 0;
+			if (ab->op->prefix) {
+				char *arg = strdup(sp + 1);
+				sp = strchr(arg, ' ');
+				if (sp) {
+					*sp = 0;
+				}
+				free(mnem);
+				mnem = arg;
+			}
+		}
+		if (ret < 1) {
+			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", addr);
+			free(mnem);
+			rz_list_free(list);
+			return NULL;
+		}
+
+		char strsub[128] = { 0 };
+		// pc+33
+		rz_parse_subvar(core->parser, NULL,
+			addr,
+			asmop.size, rz_asm_op_get_asm(&asmop),
+			strsub, sizeof(strsub));
+		ut64 killme = UT64_MAX;
+		if (rz_io_read_i(core->io, ab->op->ptr, &killme, ab->op->refptr, be)) {
+			core->parser->subrel_addr = killme;
+		}
+		{
+			// 0x33->sym.xx
+			char *p = strdup(strsub);
+			if (p) {
+				rz_parse_filter(core->parser, addr, core->flags, ab->hint, p,
+					strsub, sizeof(strsub), be);
+				free(p);
+			}
+		}
+		if (!*strsub) {
+			rz_str_ncpy(strsub, rz_asm_op_get_asm(&asmop), sizeof(strsub) - 1);
+		}
+		{
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+			if (fcn) {
+				rz_parse_subvar(core->parser, fcn, addr, asmop.size,
+					strsub, strsub, sizeof(strsub));
+			}
+			ab->disasm = strdup(strsub);
+		}
+		// apply pseudo if needed
+		ab->pseudo = rz_parse_pseudocode(core->parser, strsub);
+		{
+			char *opname = strdup(strsub);
+			sp = strchr(opname, ' ');
+			if (sp) {
+				*sp = 0;
+			}
+			ab->description = rz_asm_describe(core->rasm, opname);
+			free(opname);
+		}
+		ab->op->mnemonic = mnem;
+		{
+			ut8 *mask = rz_analysis_mask(core->analysis, len - idx, buf + idx, addr);
+			ab->mask = rz_hex_bin2strdup(mask, ab->op->size);
+			free(mask);
+		}
+		ab->bytes = rz_hex_bin2strdup(buf + idx, ab->op->size);
+	}
+	return list;
+}

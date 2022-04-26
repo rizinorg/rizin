@@ -717,6 +717,15 @@ static void cmd_syscall_do(RzCore *core, st64 n, ut64 addr) {
 			rz_cons_println(msg); \
 	}
 
+#define _pj_ks(pj, key, value) \
+	if (RZ_STR_ISNOTEMPTY(value)) { \
+		pj_ks(pj, key, value); \
+	}
+#define _pj_kn(pj, key, value) \
+	if (value != UT64_MAX) { \
+		pj_kn(pj, key, value); \
+	}
+
 static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int nops) {
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
 	int ret, i, idx;
@@ -816,199 +825,67 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 }
 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
-	bool be = core->print->big_endian;
-	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
-	int ret, i, idx, size;
-	const char *esilstr;
-	const char *opexstr;
-	RzAnalysisHint *hint;
-	RzAnalysisEsil *esil = NULL;
-	RzAsmOp asmop;
-	RzAnalysisOp op = { 0 };
-	ut64 addr;
+	RzList *list = rz_core_analysis_bytes(core, buf, len, nops);
+	RzListIter *iter;
+	RzAnalysisBytes *ab;
 
 	pj_a(pj);
-
-	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
-		addr = core->offset + idx;
-		rz_asm_set_pc(core->rasm, addr);
-		hint = rz_analysis_hint_get(core->analysis, addr);
-		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
-			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
-		(void)rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx);
-		esilstr = RZ_STRBUF_SAFEGET(&op.esil);
-		opexstr = RZ_STRBUF_SAFEGET(&op.opex);
-		char *mnem = strdup(rz_asm_op_get_asm(&asmop));
-		char *sp = strchr(mnem, ' ');
-		if (sp) {
-			*sp = 0;
-			if (op.prefix) {
-				char *arg = strdup(sp + 1);
-				char *sp = strchr(arg, ' ');
-				if (sp) {
-					*sp = 0;
-				}
-				free(mnem);
-				mnem = arg;
-			}
-		}
-		if (ret < 1) {
-			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", core->offset + idx);
-			free(mnem);
-			break;
-		}
-		size = op.size;
-
-		char strsub[128] = { 0 };
-		// pc+33
-		rz_parse_subvar(core->parser, NULL,
-			core->offset + idx,
-			asmop.size, rz_asm_op_get_asm(&asmop),
-			strsub, sizeof(strsub));
-		ut64 killme = UT64_MAX;
-		if (rz_io_read_i(core->io, op.ptr, &killme, op.refptr, be)) {
-			core->parser->subrel_addr = killme;
-		}
-		// 0x33->sym.xx
-		char *p = strdup(strsub);
-		if (p) {
-			rz_parse_filter(core->parser, addr, core->flags, hint, p,
-				strsub, sizeof(strsub), be);
-			free(p);
-		}
+	rz_list_foreach (list, iter, ab) {
 		pj_o(pj);
-		pj_ks(pj, "opcode", rz_asm_op_get_asm(&asmop));
-		if (!*strsub) {
-			rz_str_ncpy(strsub, rz_asm_op_get_asm(&asmop), sizeof(strsub) - 1);
-		}
-		{
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-			if (fcn) {
-				rz_parse_subvar(core->parser, fcn, addr, asmop.size,
-					strsub, strsub, sizeof(strsub));
-			}
-		}
-		pj_ks(pj, "disasm", strsub);
-		// apply pseudo if needed
-		{
-			char *pseudo = rz_parse_pseudocode(core->parser, strsub);
-			if (RZ_STR_ISNOTEMPTY(pseudo)) {
-				pj_ks(pj, "pseudo", pseudo);
-			}
-			free(pseudo);
-		}
-		{
-			char *opname = strdup(strsub);
-			char *sp = strchr(opname, ' ');
-			if (sp) {
-				*sp = 0;
-			}
-			char *d = rz_asm_describe(core->rasm, opname);
-			if (d && *d) {
-				pj_ks(pj, "description", d);
-			}
-			free(d);
-			free(opname);
-		}
-		pj_ks(pj, "mnemonic", mnem);
-		{
-			ut8 *mask = rz_analysis_mask(core->analysis, len - idx, buf + idx, core->offset + idx);
-			char *maskstr = rz_hex_bin2strdup(mask, size);
-			pj_ks(pj, "mask", maskstr);
-			free(mask);
-			free(maskstr);
-		}
-		if (hint && hint->opcode) {
-			pj_ks(pj, "ophint", hint->opcode);
-		}
-		if (hint && hint->jump != UT64_MAX) {
-			op.jump = hint->jump;
-		}
-		if (hint && hint->fail != UT64_MAX) {
-			op.fail = hint->fail;
-		}
-		if (op.jump != UT64_MAX) {
-			pj_kn(pj, "jump", op.jump);
-		}
-		if (op.fail != UT64_MAX) {
-			pj_kn(pj, "fail", op.fail);
-		}
-		const char *jesil = (hint && hint->esil) ? hint->esil : esilstr;
-		if (RZ_STR_ISNOTEMPTY(jesil)) {
-			pj_ks(pj, "esil", jesil);
-		}
-		if (op.il_op) {
+		_pj_ks(pj, "opcode", ab->opcode);
+		_pj_ks(pj, "disasm", ab->disasm);
+		_pj_ks(pj, "pseudo", ab->pseudo);
+		_pj_ks(pj, "description", ab->description);
+		pj_ks(pj, "mnemonic", "");
+		pj_ks(pj, "mask", ab->mask);
+		pj_ks(pj, "ophint", ab->hint->opcode);
+
+		RzAnalysisOp *op = ab->op;
+		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
+		const char *opexstr = RZ_STRBUF_SAFEGET(&op->opex);
+		_pj_kn(pj, "jump", op->jump);
+		_pj_kn(pj, "fail", op->fail);
+		_pj_ks(pj, "esil", (ab->hint && ab->hint->esil) ? ab->hint->esil : esilstr);
+		if (op->il_op) {
 			pj_k(pj, "rzil");
-			rz_il_op_effect_json(op.il_op, pj);
+			rz_il_op_effect_json(op->il_op, pj);
 		}
-		pj_kb(pj, "sign", op.sign);
-		pj_kn(pj, "prefix", op.prefix);
-		pj_ki(pj, "id", op.id);
-		if (RZ_STR_ISNOTEMPTY(opexstr)) {
-			pj_k(pj, "opex");
-			pj_j(pj, opexstr);
-		}
-		pj_kn(pj, "addr", core->offset + idx);
-		{
-			char *bytes = rz_hex_bin2strdup(buf + idx, size);
-			pj_ks(pj, "bytes", bytes);
-			free(bytes);
-		}
-		if (op.val != UT64_MAX) {
-			pj_kn(pj, "val", op.val);
-		}
-		if (op.disp && op.disp != UT64_MAX) {
-			pj_kn(pj, "disp", op.disp);
-		}
-		if (op.ptr != UT64_MAX) {
-			pj_kn(pj, "ptr", op.ptr);
-		}
-		pj_ki(pj, "size", size);
-		pj_ks(pj, "type", rz_analysis_optype_to_string(op.type));
-		{
-			const char *datatype = rz_analysis_datatype_to_string(op.datatype);
-			if (datatype) {
-				pj_ks(pj, "datatype", datatype);
-			}
-		}
+		pj_kb(pj, "sign", op->sign);
+		pj_kn(pj, "prefix", op->prefix);
+		pj_ki(pj, "id", op->id);
+		_pj_ks(pj, "opex", opexstr);
+		_pj_kn(pj, "addr", op->addr);
+		_pj_ks(pj, "bytes", ab->bytes);
+		_pj_kn(pj, "val", op->val);
+		_pj_kn(pj, "disp", op->disp);
+		_pj_kn(pj, "ptr", op->ptr);
+		pj_ki(pj, "size", op->size);
+		pj_ks(pj, "type", rz_analysis_optype_to_string((int)op->type));
+		_pj_ks(pj, "datatype", rz_analysis_datatype_to_string(op->datatype));
 		if (esilstr) {
-			int ec = esil_cost(core, addr, esilstr);
-			pj_ki(pj, "esilcost", ec);
+			pj_ki(pj, "esilcost", esil_cost(core, op->addr, esilstr));
 		}
-		if (op.reg) {
-			pj_ks(pj, "reg", op.reg);
+		_pj_ks(pj, "reg", op->reg);
+		_pj_ks(pj, "ireg", op->ireg);
+		pj_ki(pj, "scale", op->scale);
+		if (op->refptr != -1) {
+			pj_ki(pj, "refptr", op->refptr);
 		}
-		if (op.ireg) {
-			pj_ks(pj, "ireg", op.ireg);
-		}
-		pj_ki(pj, "scale", op.scale);
-		if (op.refptr != -1) {
-			pj_ki(pj, "refptr", op.refptr);
-		}
-		pj_ki(pj, "cycles", op.cycles);
-		pj_ki(pj, "failcycles", op.failcycles);
-		pj_ki(pj, "delay", op.delay);
-		const char *p1 = rz_analysis_stackop_tostring(op.stackop);
-		if (strcmp(p1, "null")) {
+		pj_ki(pj, "cycles", op->cycles);
+		pj_ki(pj, "failcycles", op->failcycles);
+		pj_ki(pj, "delay", op->delay);
+		const char *p1 = rz_analysis_stackop_tostring(op->stackop);
+		if (strcmp(p1, "null") != 0) {
 			pj_ks(pj, "stack", p1);
 		}
-		pj_kn(pj, "stackptr", op.stackptr);
-		const char *arg = (op.type & RZ_ANALYSIS_OP_TYPE_COND)
-			? rz_type_cond_tostring(op.cond)
-			: NULL;
-		if (arg) {
-			pj_ks(pj, "cond", arg);
-		}
-		pj_ks(pj, "family", rz_analysis_op_family_to_string(op.family));
+		pj_kn(pj, "stackptr", op->stackptr);
+		pj_ks(pj, "cond", (op->type & RZ_ANALYSIS_OP_TYPE_COND) ? rz_type_cond_tostring(op->cond) : NULL);
+		_pj_ks(pj, "family", rz_analysis_op_family_to_string(op->family));
 		pj_end(pj);
-
-		free(mnem);
-		rz_analysis_hint_free(hint);
-		rz_analysis_op_fini(&op);
 	}
-	rz_analysis_op_fini(&op);
+
 	pj_end(pj);
-	rz_analysis_esil_free(esil);
+	rz_list_free(list);
 }
 
 static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, int nops) {
