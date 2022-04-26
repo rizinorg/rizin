@@ -42,6 +42,14 @@ bool ppc_is_x_form(ut32 insn_id) {
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LWZUX:
 	case PPC_INS_LWZX:
+	case PPC_INS_STBUX:
+	case PPC_INS_STHUX:
+	case PPC_INS_STWUX:
+	case PPC_INS_STDUX:
+	case PPC_INS_STBX:
+	case PPC_INS_STHX:
+	case PPC_INS_STWX:
+	case PPC_INS_STDX:
 		return true;
 	}
 }
@@ -60,6 +68,11 @@ ut32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_LBZU:
 	case PPC_INS_LBZUX:
 	case PPC_INS_LBZX:
+	case PPC_INS_STB:
+	case PPC_INS_STBCIX:
+	case PPC_INS_STBU:
+	case PPC_INS_STBUX:
+	case PPC_INS_STBX:
 		return PPC_BYTE;
 	case PPC_INS_LHA:
 	case PPC_INS_LHAU:
@@ -71,6 +84,12 @@ ut32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_LHZU:
 	case PPC_INS_LHZUX:
 	case PPC_INS_LHZX:
+	case PPC_INS_STH:
+	case PPC_INS_STHBRX:
+	case PPC_INS_STHCIX:
+	case PPC_INS_STHU:
+	case PPC_INS_STHUX:
+	case PPC_INS_STHX:
 		return PPC_HWORD;
 	case PPC_INS_LWA:
 	case PPC_INS_LWARX:
@@ -82,6 +101,13 @@ ut32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_LWZU:
 	case PPC_INS_LWZUX:
 	case PPC_INS_LWZX:
+	case PPC_INS_STW:
+	case PPC_INS_STWBRX:
+	case PPC_INS_STWCIX:
+	case PPC_INS_STWCX:
+	case PPC_INS_STWU:
+	case PPC_INS_STWUX:
+	case PPC_INS_STWX:
 		return PPC_WORD;
 	case PPC_INS_LD:
 	case PPC_INS_LDARX:
@@ -90,6 +116,13 @@ ut32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_LDU:
 	case PPC_INS_LDUX:
 	case PPC_INS_LDX:
+	case PPC_INS_STD:
+	case PPC_INS_STDBRX:
+	case PPC_INS_STDCIX:
+	case PPC_INS_STDCX:
+	case PPC_INS_STDU:
+	case PPC_INS_STDUX:
+	case PPC_INS_STDX:
 		return PPC_DWORD;
 	}
 }

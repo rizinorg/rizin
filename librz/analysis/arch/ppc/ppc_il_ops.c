@@ -146,6 +146,97 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	return SEQ2(res, update);
 }
 
+static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, NOP);
+	ut32 id = insn->id;
+	// READ
+	const char *rS = cs_reg_name(handle, INSOP(0).reg);
+	const char *rA = cs_reg_name(handle, INSOP(1).reg);
+	const char *rB = cs_reg_name(handle, INSOP(2).reg);
+	st64 d = INSOP(1).imm;
+	bool update_ra = ppc_updates_ra_with_ea(id); // Save ea in RA?
+	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
+	RzILOpPure *op0;
+	RzILOpPure *op1;
+	RzILOpPure *ea;
+	RzILOpEffect *store;
+
+	switch (id) {
+	case PPC_INS_STB:
+	case PPC_INS_STH:
+	case PPC_INS_STW:
+	case PPC_INS_STD:
+	case PPC_INS_STBX:
+	case PPC_INS_STHX:
+	case PPC_INS_STWX:
+	case PPC_INS_STDX:
+	case PPC_INS_STBU:
+	case PPC_INS_STDU:
+	case PPC_INS_STHU:
+	case PPC_INS_STWU:
+	case PPC_INS_STBUX:
+	case PPC_INS_STHUX:
+	case PPC_INS_STWUX:
+	case PPC_INS_STDUX:
+		op0 = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
+		if (ppc_is_x_form(id)) {
+			op1 = VARG(rB);
+		} else {
+			RzILOpPure *imm = (id == PPC_INS_STD) ? APPEND(IMM_SN(16, d), UN(2, 0)) : IMM_SN(16, d);
+			op1 = EXTEND(PPC_ARCH_BITS, imm);
+		}
+		ea = ADD(op0, op1);
+		store = STOREW(ea, CAST(mem_acc_size, IL_FALSE, VARG(rS)));
+		break;
+	// Float
+	case PPC_INS_STFD:
+	case PPC_INS_STFDU:
+	case PPC_INS_STFDUX:
+	case PPC_INS_STFDX:
+	case PPC_INS_STFIWX:
+	case PPC_INS_STFS:
+	case PPC_INS_STFSU:
+	case PPC_INS_STFSUX:
+	case PPC_INS_STFSX:
+		NOT_IMPLEMENTED;
+	// Caching Inhibited Indexed
+	case PPC_INS_STBCIX:
+	case PPC_INS_STHCIX:
+	case PPC_INS_STWCIX:
+	case PPC_INS_STDCIX:
+		NOT_IMPLEMENTED;
+	case PPC_INS_STDCX:
+	case PPC_INS_STWCX:
+		NOT_IMPLEMENTED;
+	// Byte reverse and reserved indexed
+	case PPC_INS_STHBRX:
+	case PPC_INS_STWBRX:
+	case PPC_INS_STDBRX:
+		NOT_IMPLEMENTED;
+	case PPC_INS_STMW:
+		NOT_IMPLEMENTED;
+	// String word
+	case PPC_INS_STSWI:
+		NOT_IMPLEMENTED;
+	// Vector
+	case PPC_INS_STVEBX:
+	case PPC_INS_STVEHX:
+	case PPC_INS_STVEWX:
+	case PPC_INS_STVX:
+	case PPC_INS_STVXL:
+		NOT_IMPLEMENTED;
+	// VSX Vector
+	case PPC_INS_STXSDX:
+	case PPC_INS_STXVD2X:
+	case PPC_INS_STXVW4X:
+		NOT_IMPLEMENTED;
+	}
+
+	rz_return_val_if_fail(ea, NULL);
+	RzILOpEffect *update = update_ra ? SETG(rA, ea) : NOP;
+	return SEQ2(store, update);
+}
+
 /**
  * \brief Handles all supported ADD operations.
  *
@@ -312,6 +403,52 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_LWZUX:
 	case PPC_INS_LWZX:
 		lop = load_op(handle, insn, mode);
+		break;
+	case PPC_INS_STB:
+	case PPC_INS_STBCIX:
+	case PPC_INS_STBU:
+	case PPC_INS_STBUX:
+	case PPC_INS_STBX:
+	case PPC_INS_STD:
+	case PPC_INS_STDBRX:
+	case PPC_INS_STDCIX:
+	case PPC_INS_STDCX:
+	case PPC_INS_STDU:
+	case PPC_INS_STDUX:
+	case PPC_INS_STDX:
+	case PPC_INS_STFD:
+	case PPC_INS_STFDU:
+	case PPC_INS_STFDUX:
+	case PPC_INS_STFDX:
+	case PPC_INS_STFIWX:
+	case PPC_INS_STFS:
+	case PPC_INS_STFSU:
+	case PPC_INS_STFSUX:
+	case PPC_INS_STFSX:
+	case PPC_INS_STH:
+	case PPC_INS_STHBRX:
+	case PPC_INS_STHCIX:
+	case PPC_INS_STHU:
+	case PPC_INS_STHUX:
+	case PPC_INS_STHX:
+	case PPC_INS_STMW:
+	case PPC_INS_STSWI:
+	case PPC_INS_STVEBX:
+	case PPC_INS_STVEHX:
+	case PPC_INS_STVEWX:
+	case PPC_INS_STVX:
+	case PPC_INS_STVXL:
+	case PPC_INS_STW:
+	case PPC_INS_STWBRX:
+	case PPC_INS_STWCIX:
+	case PPC_INS_STWCX:
+	case PPC_INS_STWU:
+	case PPC_INS_STWUX:
+	case PPC_INS_STWX:
+	case PPC_INS_STXSDX:
+	case PPC_INS_STXVD2X:
+	case PPC_INS_STXVW4X:
+		lop = store_op(handle, insn, mode);
 		break;
 	}
 	return lop;
