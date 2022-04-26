@@ -12,6 +12,31 @@ typedef enum foperation_enum {
     INTERN_FOP_REM
 } InternalFOpEnum;
 
+static void print_f_bv(RzBitVector *bv, const char *mark) {
+    if (mark)
+        printf("%s", mark);
+    for (ut32 i = bv->len - 1, j = 0; i > 0; --i, j++) {
+        putchar(rz_bv_get(bv, i) ? '1' : '0');
+    }
+    printf("\n");
+}
+
+static void print_float(RzFloat *f) {
+    RzBitVector *exp = rz_float_get_exponent(f);
+    char *exp_s = rz_bv_as_string(exp);
+    RzBitVector *sig = rz_float_get_mantissa(f);
+    char *m_s = rz_bv_as_string(sig);
+    printf("[FLOAT-%p] format : %d\n",f, f->r);
+    printf("[FLOAT-%p] sign : %c\n", f, rz_float_get_sign(f) ? '+' : '-');
+    printf("[FLOAT-%p] exponent : %s\n", f, exp_s);
+    printf("[FLOAT-%p] mantissa : %s\n", f, m_s);
+
+    rz_bv_free(exp);
+    rz_bv_free(sig);
+    free(exp_s);
+    free(m_s);
+}
+
 /**
  * Get const attribute from float
  * @param format RzFloatFormat, format of a float
@@ -460,7 +485,11 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
     RzBitVector *l_exp_squashed = get_exp_squashed(left->s, left->r);
     RzBitVector *r_exp_squashed = get_exp_squashed(right->s, right->r);
     RzBitVector *l_mantissa = get_man(left->s, left->r);
-    RzBitVector *r_mantissa = get_man(left->s, left->r);
+    RzBitVector *r_mantissa = get_man(right->s, right->r);
+
+    print_f_bv(l_mantissa, "L Mantissa\n");
+    print_f_bv(r_mantissa, "R Mantissa\n");
+
     RzBitVector *l_borrowed_exp = l_exp_squashed;
     RzBitVector *r_borrowed_exp = r_exp_squashed;
     RzBitVector *l_borrowed_sig = l_mantissa;
@@ -471,7 +500,9 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
     bool unused;
 
     /// Handle normal float add
-    st32 exp_diff = (st32) (rz_bv_to_ut32(l_exp_squashed) - rz_bv_to_ut32(r_exp_squashed));
+    ut32 l_exp_val = rz_bv_to_ut32(l_exp_squashed);
+    ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
+    st32 exp_diff = (st32) (l_exp_val - r_exp_val);
     ut32 abs_exp_diff = exp_diff;
 
     /// left shift to prevent some tail bits being discard during calculating
@@ -516,6 +547,9 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
             abs_exp_diff = -exp_diff;
         }
 
+        print_f_bv(l_borrowed_sig, "[FLOAT] lsig before calc");
+        print_f_bv(r_borrowed_sig, "[FLOAT] rsig before calc");
+
         /// check if the small one (right) is normalized ?
         if (!rz_bv_is_zero_vector(r_borrowed_exp)) {
             /// normalized, and then we recover the leading bit 1
@@ -543,6 +577,17 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
     /// now l_exp == r_exp
     /// calculate significant
     result_sig = rz_bv_add(l_borrowed_sig, r_borrowed_sig, &unused);
+    char *l_borrowed_sig_s = rz_bv_as_string(l_borrowed_sig);
+    char *r_borrowed_sig_s = rz_bv_as_string(r_borrowed_sig);
+    char *res_sig_s = rz_bv_as_string(result_sig);
+
+    printf("Shift Dist : %d\n", shift_dist);
+    printf("L Sig : %s\nR sig : %s\n", l_borrowed_sig_s, r_borrowed_sig_s);
+    printf("F Sig : %s\n", res_sig_s);
+
+    free(res_sig_s);
+    free(l_borrowed_sig_s);
+    free(r_borrowed_sig_s);
 
     /// if it produce a carry bit, we should normalize it (rshift 1 and exp + 1)
     /// but we do nothing, instead, we makes every non-carry number have the same

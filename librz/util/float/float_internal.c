@@ -396,17 +396,13 @@ round_float_bv(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFl
             }
 
             rz_bv_free(possible_sig);
-            rz_bv_free(sig);
             rz_bv_free(round_inc_bv);
             return ret;
         }
     }
 
     /// shift for packing
-    rz_bv_free(sig);
-    sig = possible_sig;
-    possible_sig = NULL;
-    rz_bv_rshift(sig, round_bits_bound);
+    rz_bv_rshift(possible_sig, round_bits_bound);
 
     if (should_round) {
         ret->exception |= RZ_FLOAT_E_INEXACT;
@@ -416,10 +412,10 @@ round_float_bv(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFl
     if (is_halfway && is_rne)
     {
         /// set lsb == 0
-        rz_bv_set(sig, 0, false);
+        rz_bv_set(possible_sig, 0, false);
     }
 
-    if (rz_bv_is_zero_vector(sig))
+    if (rz_bv_is_zero_vector(possible_sig))
     {
         /// NaN
         exp = 0;
@@ -427,13 +423,13 @@ round_float_bv(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFl
 
     /// pack float
     RzBitVector *exp_bv = rz_bv_new_from_ut64(total_len, exp);
-    ret->s = rz_bv_add(exp_bv, sig, &unused);
+    ret->s = rz_bv_add(exp_bv, possible_sig, &unused);
     rz_bv_set(ret->s, total_len - 1, sign);
 
     /// clean
     rz_bv_free(round_inc_bv);
     rz_bv_free(exp_bv);
-    rz_bv_free(sig);
+    rz_bv_free(possible_sig);
 
     return ret;
 }

@@ -24,10 +24,39 @@ bool f32_ieee_format_test(void) {
     free(m_s);
     free(str);
     rz_float_free(f);
+    mu_end;
 }
+
+bool f32_ieee_add_test(void) {
+    float a = 1.5f;
+    float b = 0.25f;
+    RzFloat *fa = rz_float_new_from_single(a);
+    RzFloat *fb = rz_float_new_from_single(b);
+    RzFloat *fz = rz_float_new_from_single(a + b);
+
+    printf("[FLOAT] =========== ADD ============\n");
+    /// test precisely add
+    RzFloat *fz_calc = rz_float_add_ieee_bin(fa, fb, RZ_FLOAT_RMODE_RNE);
+    printf("[DEBUG]After add\n");
+    char *fz_str = rz_bv_as_string(fz->s);
+    char *fz_calc_str = rz_bv_as_string(fz_calc->s);
+
+    printf("[FLOAT]1.5f + 0.25f : %s\n", fz_str);
+    printf("[FLOAT]1.75f : %s\n", fz_calc_str);
+
+    rz_float_free(fa);
+    rz_float_free(fb);
+    rz_float_free(fz);
+    rz_float_free(fz_calc);
+    free(fz_str);
+    free(fz_calc_str);
+
+    mu_end;
+};
 
 bool all_tests() {
     f32_ieee_format_test();
+    f32_ieee_add_test();
     mu_end;
 }
 
