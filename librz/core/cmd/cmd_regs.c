@@ -130,7 +130,7 @@ static void print_reg_not_found(const char *arg) {
  * \param core The RzCore instance
  * \param reg The RzReg instance
  * \param sync_cb Callback for synchronizing register state in command
- * \param name Reg name
+ * \param name Register name
  * \param val Value
  * \return success
  */
