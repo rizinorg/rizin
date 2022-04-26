@@ -6797,7 +6797,6 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		char *mnem;
 		if (rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx) < 1) {
 			ab->opcode = "invalid";
-			mnem = "invalid";
 			ab->bytes = rz_hex_bin2strdup(buf + idx, min_op_size);
 			continue;
 		}

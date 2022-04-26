@@ -859,8 +859,8 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 			PJ_KS(pj, "ophint", hint->opcode);
 			PJ_KN(pj, "jump", op->jump);
 			PJ_KN(pj, "fail", op->fail);
-			PJ_KS(pj, "esil", hint->esil ? hint->esil : esilstr);
 		}
+		PJ_KS(pj, "esil", (hint && hint->esil) ? hint->esil : esilstr);
 
 		if (op->il_op) {
 			pj_k(pj, "rzil");
@@ -869,7 +869,10 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		pj_kb(pj, "sign", op->sign);
 		pj_kn(pj, "prefix", op->prefix);
 		pj_ki(pj, "id", op->id);
-		PJ_KS(pj, "opex", opexstr);
+		if (RZ_STR_ISNOTEMPTY(opexstr)) {
+			pj_k(pj, "opex");
+			pj_j(pj, opexstr);
+		}
 		PJ_KN(pj, "addr", op->addr);
 		PJ_KS(pj, "bytes", ab->bytes);
 		PJ_KN(pj, "val", op->val);
