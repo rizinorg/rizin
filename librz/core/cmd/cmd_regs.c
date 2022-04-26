@@ -193,9 +193,9 @@ static const char *get_reg_role_name(RzReg *reg, RzRegItem *item) {
 /**
  * Filter a list of RzRegItem and sync read
  *
-* \param core The RzCore instance
-* \param reg The RzReg instance
-* \param sync_cb Callback for synchronizing register state in command
+ * \param core The RzCore instance
+ * \param reg The RzReg instance
+ * \param sync_cb Callback for synchronizing register state in command
  * \param filter Filter registers
  * \return List of RzRegItem
  */
