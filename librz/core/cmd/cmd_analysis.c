@@ -836,9 +836,9 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		_pj_ks(pj, "disasm", ab->disasm);
 		_pj_ks(pj, "pseudo", ab->pseudo);
 		_pj_ks(pj, "description", ab->description);
-		pj_ks(pj, "mnemonic", "");
-		pj_ks(pj, "mask", ab->mask);
-		pj_ks(pj, "ophint", ab->hint->opcode);
+		_pj_ks(pj, "mnemonic", ab->op->mnemonic);
+		_pj_ks(pj, "mask", ab->mask);
+		_pj_ks(pj, "ophint", ab->hint->opcode);
 
 		RzAnalysisOp *op = ab->op;
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
