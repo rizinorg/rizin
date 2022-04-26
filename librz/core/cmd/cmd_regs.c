@@ -165,7 +165,7 @@ static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ
 	rz_str_trim(str);
 	rz_str_trim(val);
 	ut64 nval = rz_num_math(core->num, val);
-	return rz_core_reg_assign_sync(core, reg, sync_cb, str, nval) ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
+	return rz_core_reg_assign_sync(core, reg, sync_cb, str, nval) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 static const char *get_reg_color(RzCore *core, RzReg *reg, RzRegItem *item) {
