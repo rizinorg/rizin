@@ -717,11 +717,11 @@ static void cmd_syscall_do(RzCore *core, st64 n, ut64 addr) {
 			rz_cons_println(msg); \
 	}
 
-#define _pj_ks(pj, key, value) \
+#define PJ_KS(pj, key, value) \
 	if (RZ_STR_ISNOTEMPTY(value)) { \
 		pj_ks(pj, key, value); \
 	}
-#define _pj_kn(pj, key, value) \
+#define PJ_KN(pj, key, value) \
 	if (value != UT64_MAX) { \
 		pj_kn(pj, key, value); \
 	}
@@ -831,21 +831,22 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 
 	pj_a(pj);
 	rz_list_foreach (list, iter, ab) {
-		pj_o(pj);
-		_pj_ks(pj, "opcode", ab->opcode);
-		_pj_ks(pj, "disasm", ab->disasm);
-		_pj_ks(pj, "pseudo", ab->pseudo);
-		_pj_ks(pj, "description", ab->description);
-		_pj_ks(pj, "mnemonic", ab->op->mnemonic);
-		_pj_ks(pj, "mask", ab->mask);
-		_pj_ks(pj, "ophint", ab->hint->opcode);
-
 		RzAnalysisOp *op = ab->op;
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
 		const char *opexstr = RZ_STRBUF_SAFEGET(&op->opex);
-		_pj_kn(pj, "jump", op->jump);
-		_pj_kn(pj, "fail", op->fail);
-		_pj_ks(pj, "esil", (ab->hint && ab->hint->esil) ? ab->hint->esil : esilstr);
+
+		pj_o(pj);
+		PJ_KS(pj, "opcode", ab->opcode);
+		PJ_KS(pj, "disasm", ab->disasm);
+		PJ_KS(pj, "pseudo", ab->pseudo);
+		PJ_KS(pj, "description", ab->description);
+		PJ_KS(pj, "mnemonic", op->mnemonic);
+		PJ_KS(pj, "mask", ab->mask);
+		PJ_KS(pj, "ophint", ab->hint->opcode);
+
+		PJ_KN(pj, "jump", op->jump);
+		PJ_KN(pj, "fail", op->fail);
+		PJ_KS(pj, "esil", (ab->hint && ab->hint->esil) ? ab->hint->esil : esilstr);
 		if (op->il_op) {
 			pj_k(pj, "rzil");
 			rz_il_op_effect_json(op->il_op, pj);
@@ -853,20 +854,20 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		pj_kb(pj, "sign", op->sign);
 		pj_kn(pj, "prefix", op->prefix);
 		pj_ki(pj, "id", op->id);
-		_pj_ks(pj, "opex", opexstr);
-		_pj_kn(pj, "addr", op->addr);
-		_pj_ks(pj, "bytes", ab->bytes);
-		_pj_kn(pj, "val", op->val);
-		_pj_kn(pj, "disp", op->disp);
-		_pj_kn(pj, "ptr", op->ptr);
+		PJ_KS(pj, "opex", opexstr);
+		PJ_KN(pj, "addr", op->addr);
+		PJ_KS(pj, "bytes", ab->bytes);
+		PJ_KN(pj, "val", op->val);
+		PJ_KN(pj, "disp", op->disp);
+		PJ_KN(pj, "ptr", op->ptr);
 		pj_ki(pj, "size", op->size);
 		pj_ks(pj, "type", rz_analysis_optype_to_string((int)op->type));
-		_pj_ks(pj, "datatype", rz_analysis_datatype_to_string(op->datatype));
+		PJ_KS(pj, "datatype", rz_analysis_datatype_to_string(op->datatype));
 		if (esilstr) {
 			pj_ki(pj, "esilcost", esil_cost(core, op->addr, esilstr));
 		}
-		_pj_ks(pj, "reg", op->reg);
-		_pj_ks(pj, "ireg", op->ireg);
+		PJ_KS(pj, "reg", op->reg);
+		PJ_KS(pj, "ireg", op->ireg);
 		pj_ki(pj, "scale", op->scale);
 		if (op->refptr != -1) {
 			pj_ki(pj, "refptr", op->refptr);
@@ -880,7 +881,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		}
 		pj_kn(pj, "stackptr", op->stackptr);
 		pj_ks(pj, "cond", (op->type & RZ_ANALYSIS_OP_TYPE_COND) ? rz_type_cond_tostring(op->cond) : NULL);
-		_pj_ks(pj, "family", rz_analysis_op_family_to_string(op->family));
+		PJ_KS(pj, "family", rz_analysis_op_family_to_string(op->family));
 		pj_end(pj);
 	}
 
@@ -1103,6 +1104,8 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 	rz_analysis_esil_free(esil);
 }
 
+#undef PJ_KS
+#undef PJ_KN
 #undef printline
 #undef printline_noarg
 
