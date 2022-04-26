@@ -6771,6 +6771,8 @@ RZ_API RZ_OWN RzList *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL
 	if (!list) {
 		return NULL;
 	}
+	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	min_op_size = min_op_size > 0 ? min_op_size : 1;
 
 	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		ab = RZ_NEW0(RzAnalysisBytes);
@@ -6787,10 +6789,15 @@ RZ_API RZ_OWN RzList *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL
 		ret = rz_analysis_op(core->analysis, ab->op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 
-		(void)rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx);
+		char *mnem;
+		if (rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx) < 1) {
+			ab->opcode = "invalid";
+			mnem = "invalid";
+			ab->bytes = rz_hex_bin2strdup(buf + idx, min_op_size);
+			continue;
+		}
 		ab->opcode = rz_asm_op_get_asm(&asmop);
-
-		char *mnem = strdup(rz_asm_op_get_asm(&asmop));
+		mnem = strdup(rz_asm_op_get_asm(&asmop));
 		char *sp = strchr(mnem, ' ');
 		if (sp) {
 			*sp = 0;
