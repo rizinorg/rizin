@@ -125,6 +125,32 @@ static void print_reg_not_found(const char *arg) {
 }
 
 /**
+ * register assignments like reg=0x42
+ *
+ * \param core The RzCore instance
+ * \param reg The RzReg instance
+ * \param sync_cb Callback for synchronizing register state in command
+ * \param name Reg name
+ * \param val Value
+ * \return success
+ */
+RZ_API bool rz_core_reg_assign_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NONNULL const char *name, ut64 val) {
+	rz_return_val_if_fail(core && reg && name, false);
+	RzRegItem *ri = rz_reg_get(reg, name, RZ_REG_TYPE_ANY);
+	if (!ri) {
+		return false;
+	}
+	bool failed;
+	SYNC_READ(ri->type, failed);
+	if (failed) {
+		return false;
+	}
+	rz_reg_set_value(reg, ri, val);
+	SYNC_WRITE(ri->type, failed);
+	return true;
+}
+
+/**
  * \brief (Sub)handler for register assignments like reg=0x42
  * \param arg the full argument string, like "reg = 0x42"
  * \param eq_pos index of the '=' in arg
@@ -138,20 +164,8 @@ static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ
 	char *val = str + eq_pos + 1;
 	rz_str_trim(str);
 	rz_str_trim(val);
-	RzRegItem *ri = rz_reg_get(reg, str, RZ_REG_TYPE_ANY);
-	if (!ri) {
-		free(str);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	bool failed;
-	SYNC_READ(ri->type, failed);
-	if (failed) {
-		return RZ_CMD_STATUS_ERROR;
-	}
 	ut64 nval = rz_num_math(core->num, val);
-	rz_reg_set_value(reg, ri, nval);
-	SYNC_WRITE(ri->type, failed);
-	return failed ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
+	return rz_core_reg_assign_sync(core, reg, sync_cb, str, nval) ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
 }
 
 static const char *get_reg_color(RzCore *core, RzReg *reg, RzRegItem *item) {
@@ -176,17 +190,35 @@ static const char *get_reg_role_name(RzReg *reg, RzRegItem *item) {
 	return NULL;
 }
 
-static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const char *filter, RzCmdStateOutput *state) {
+/**
+ * Filter a list of RzRegItem and sync read
+ *
+* \param core The RzCore instance
+* \param reg The RzReg instance
+* \param sync_cb Callback for synchronizing register state in command
+ * \param filter Filter registers
+ * \return List of RzRegItem
+ */
+RZ_API RZ_OWN RzList *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter) {
+	rz_return_val_if_fail(core && reg, NULL);
 	RzList *ritems = filter_reg_items(reg, filter);
 	if (!ritems) {
-		print_reg_not_found(filter);
-		return RZ_CMD_STATUS_ERROR;
+		return NULL;
 	}
 
 	bool failed;
 	SYNC_READ_LIST(ritems, failed);
 	if (failed) {
 		rz_list_free(ritems);
+		return NULL;
+	}
+	return ritems;
+}
+
+static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const char *filter, RzCmdStateOutput *state) {
+	RzList *ritems = rz_core_reg_filter_items_sync(core, reg, sync_cb, filter);
+	if (!ritems) {
+		print_reg_not_found(filter);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -264,16 +296,9 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 
 RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
 	const char *filter = argc > 1 ? argv[1] : NULL;
-	RzList *ritems = filter_reg_items(reg, filter);
+	RzList *ritems = rz_core_reg_filter_items_sync(core, reg, sync_cb, filter);
 	if (!ritems) {
 		print_reg_not_found(filter);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	bool failed;
-	SYNC_READ_LIST(ritems, failed);
-	if (failed) {
-		rz_list_free(ritems);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
