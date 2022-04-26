@@ -233,26 +233,6 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) 
 }
 
 /**
- * \brief Creates a new bitvector from the bits \p n to \p m of src bitvector \p v ('s bitv -> 'a bitv).
- *
- * \param v Src bitvector
- * \param n Start index (counted from LSB).
- * \param m End index (counted from LSB).
- * \return Bitvector with bits m:n from \p v.
- */
-RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_bitv(RZ_NONNULL RZ_BORROW RzILOpBitVector *v, ut32 m, ut32 n) {
-	rz_return_val_if_fail(v, NULL);
-	rz_return_val_if_fail(m <= n, NULL);
-	RzILOpBitVector *res = rz_il_op_new_bitv_from_ut64(m - n, 0);
-	if (!res) {
-		rz_warn_if_reached();
-		return NULL;
-	}
-	rz_bv_copy_nbits(PURE_BV_GET(v), n, PURE_BV_GET(res), 0, m - n);
-	return res;
-}
-
-/**
  *  \brief op structure for `msb` ('s bitv -> bool)
  *  [MSB] msb x is the most significant bit of x.
  */
