@@ -6767,11 +6767,11 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	RzAsmOp asmop;
 	ut64 addr;
 	RzPVector *vec = rz_pvector_new(rz_analysis_bytes_free);
-	rz_pvector_reserve(vec, nops);
-	RzAnalysisBytes *ab;
 	if (!vec) {
 		return NULL;
 	}
+	rz_pvector_reserve(vec, nops);
+	RzAnalysisBytes *ab;
 	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	min_op_size = min_op_size > 0 ? min_op_size : 1;
 
