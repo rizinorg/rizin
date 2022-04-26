@@ -857,9 +857,9 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 
 		if (hint) {
 			PJ_KS(pj, "ophint", hint->opcode);
-			PJ_KN(pj, "jump", op->jump);
-			PJ_KN(pj, "fail", op->fail);
 		}
+		PJ_KN(pj, "jump", op->jump);
+		PJ_KN(pj, "fail", op->fail);
 		PJ_KS(pj, "esil", (hint && hint->esil) ? hint->esil : esilstr);
 
 		if (op->il_op) {
