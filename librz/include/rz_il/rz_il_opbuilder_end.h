@@ -48,7 +48,7 @@
 #undef ULT
 #undef ULE
 #undef UGT
-#undef UGR
+#undef UGE
 #undef SLT
 #undef SLE
 #undef SGT
