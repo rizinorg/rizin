@@ -6773,7 +6773,8 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	min_op_size = min_op_size > 0 ? min_op_size : 1;
 
-	for (int i = 0, idx = 0; idx < len && (!nops || (nops && i < nops)); i++) {
+	int ret;
+	for (int i = 0, idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		RzAnalysisBytes *ab = RZ_NEW0(RzAnalysisBytes);
 		if (!ab) {
 			rz_pvector_free(vec);
@@ -6789,12 +6790,11 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 			rz_pvector_free(vec);
 			return NULL;
 		}
-		int ret = rz_analysis_op(core->analysis, ab->op, addr, buf + idx, len - idx,
+		ret = rz_analysis_op(core->analysis, ab->op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 		if (ret < 1) {
 			ret = min_op_size;
 		}
-		idx += ret;
 
 		char *mnem;
 		if (rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx) < 1) {
