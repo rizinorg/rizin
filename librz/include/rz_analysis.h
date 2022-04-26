@@ -2203,6 +2203,21 @@ RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void);
 RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalVarParser parser);
 RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RzJson *json);
 
+/**
+ * Save useful infomation when analyze and disassemble bytes
+ * \see rz_core_analysis_bytes
+ */
+typedef struct analysis_bytes_t {
+	RzAnalysisOp *op;
+	RzAnalysisHint *hint;
+	char *opcode;
+	char *disasm;
+	char *pseudo;
+	char *description;
+	char *mask;
+	char *bytes;
+} RzAnalysisBytes;
+
 RZ_API void rz_serialize_analysis_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
 RZ_API void rz_serialize_analysis_function_noreturn_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
