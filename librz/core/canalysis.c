@@ -6759,16 +6759,16 @@ RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr) {
  * \param nops analysis n ops
  * \return list of RzAnalysisBytes
  */
-RZ_API RZ_OWN RzList *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops) {
+RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops) {
 	rz_return_val_if_fail(core && buf, NULL);
 	bool be = core->print->big_endian;
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
 	int ret, i, idx;
 	RzAsmOp asmop;
 	ut64 addr;
-	RzList *list = rz_list_newf(rz_analysis_bytes_free);
+	RzPVector *vec = rz_pvector_new_with_len(rz_analysis_bytes_free, nops);
 	RzAnalysisBytes *ab;
-	if (!list) {
+	if (!vec) {
 		return NULL;
 	}
 	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
@@ -6777,11 +6777,11 @@ RZ_API RZ_OWN RzList *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL
 	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		ab = RZ_NEW0(RzAnalysisBytes);
 		if (!ab) {
-			rz_list_free(list);
+			rz_pvector_free(vec);
 			return NULL;
 		}
 
-		rz_list_append(list, ab);
+		rz_pvector_push(vec, ab);
 		addr = core->offset + idx;
 		rz_asm_set_pc(core->rasm, addr);
 		ab->hint = rz_analysis_hint_get(core->analysis, addr);
@@ -6859,5 +6859,5 @@ RZ_API RZ_OWN RzList *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL
 
 		ab->bytes = rz_hex_bin2strdup(buf + idx, ab->op->size);
 	}
-	return list;
+	return vec;
 }

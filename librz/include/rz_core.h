@@ -558,7 +558,7 @@ RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr);
 RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core);
 RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core);
 RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr);
-RZ_API RZ_OWN RzList *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops);
+RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops);
 
 RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra);
 RZ_API void rz_listinfo_free(RzListInfo *info);

@@ -825,12 +825,13 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 }
 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
-	RzList *list = rz_core_analysis_bytes(core, buf, len, nops);
-	RzListIter *iter;
+	RzPVector *vec = rz_core_analysis_bytes(core, buf, len, nops);
+	void **iter;
 	RzAnalysisBytes *ab;
 
 	pj_a(pj);
-	rz_list_foreach (list, iter, ab) {
+	rz_pvector_foreach (vec, iter) {
+		ab = *iter;
 		RzAnalysisOp *op = ab->op;
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
 		const char *opexstr = RZ_STRBUF_SAFEGET(&op->opex);
@@ -886,7 +887,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 	}
 
 	pj_end(pj);
-	rz_list_free(list);
+	rz_pvector_free(vec);
 }
 
 static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, int nops) {
