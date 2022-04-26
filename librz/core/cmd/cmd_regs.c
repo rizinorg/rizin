@@ -125,7 +125,7 @@ static void print_reg_not_found(const char *arg) {
 }
 
 /**
- * register assignments like reg=0x42
+ * Register assignment like reg=0x42
  *
  * \param core The RzCore instance
  * \param reg The RzReg instance
