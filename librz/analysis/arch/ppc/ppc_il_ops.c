@@ -23,8 +23,9 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).reg);
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
-	st64 d = INSOP(1).imm;
-	st64 sI = d;
+	// Capstone bug (https://github.com/capstone-engine/capstone/issues/1874). The immediate for lX instructions is not set.
+	st64 d = INSOP(2).imm;
+	st64 sI = INSOP(1).imm; // liX instructions (alias for addX).
 	bool update_ra = ppc_updates_ra_with_ea(id); // Save ea in RA?
 	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
 	RzILOpPure *op0;
@@ -156,7 +157,8 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	const char *rS = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).reg);
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
-	st64 d = INSOP(1).imm;
+	// Capstone bug (https://github.com/capstone-engine/capstone/issues/1874). The immediate for stX instructions is not set.
+	st64 d = INSOP(2).imm;
 	bool update_ra = ppc_updates_ra_with_ea(id); // Save ea in RA?
 	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
 	RzILOpPure *op0;

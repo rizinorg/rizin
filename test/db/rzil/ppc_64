@@ -44,7 +44,7 @@ var_write(name: cr0, old: 0x0, new: 0x1)
 EOF
 RUN
 
-NAME=ppc add instructions
+NAME=ppc sub instructions
 FILE=bins/elf/ppc/ppc_insn_tests_64
 ARGS=-appc
 CMDS=<<EOF
@@ -95,5 +95,31 @@ var_write(name: cr0, old: 0x0, new: 0x4)
 var_write(name: r10, old: 0x0, new: 0x0)
 var_write(name: ca, old: 0x1, new: 0x1)
 var_write(name: cr0, old: 0x0, new: 0x4)
+EOF
+RUN
+
+NAME=ppc fixed-point store instructions
+FILE=bins/elf/ppc/ppc_insn_tests_64
+ARGS=-appc
+CMDS=<<EOF
+aaa
+s loc.store_insns
+aezi
+aezse 15~mem_write
+aezse 4~var_write
+EOF
+EXPECT=<<EOF
+mem_write(addr: 0x8000140, old: 0x0, new: 0xff)
+mem_write(addr: 0x8000150, old: 0x0, new: 0xffff)
+mem_write(addr: 0x8000160, old: 0x0, new: 0xffffffff)
+mem_write(addr: 0x8000170, old: 0x0, new: 0xffffffffffffffff)
+mem_write(addr: 0x8000140, old: 0x0, new: 0xff)
+mem_write(addr: 0x8000150, old: 0x0, new: 0xffff)
+mem_write(addr: 0x8000160, old: 0x0, new: 0xffffffff)
+mem_write(addr: 0x8000170, old: 0x0, new: 0xffffffffffffffff)
+var_write(name: r21, old: 0x8000140, new: 0x8000140)
+var_write(name: r21, old: 0x8000140, new: 0x8000150)
+var_write(name: r21, old: 0x8000150, new: 0x8000160)
+var_write(name: r21, old: 0x8000160, new: 0x8000170)
 EOF
 RUN
