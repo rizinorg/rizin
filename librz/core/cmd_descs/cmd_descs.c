@@ -123,6 +123,8 @@ static const RzCmdDescArg analysis_function_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_rename_args[2];
 static const RzCmdDescArg analysis_functions_merge_args[2];
+static const RzCmdDescArg analysis_function_cc_set_get_args[2];
+static const RzCmdDescArg analysis_function_cc_load_args[2];
 static const RzCmdDescArg analysis_appcall_args[2];
 static const RzCmdDescArg analysis_continue_until_addr_args[2];
 static const RzCmdDescArg analysis_continue_until_esil_args[2];
@@ -2083,6 +2085,53 @@ static const RzCmdDescHelp analysis_functions_merge_help = {
 	.summary = "Merge two functions",
 	.details = analysis_functions_merge_details,
 	.args = analysis_functions_merge_args,
+};
+
+static const RzCmdDescHelp afc_help = {
+	.summary = "Calling convention",
+};
+static const RzCmdDescArg analysis_function_cc_set_get_args[] = {
+	{
+		.name = "convention",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_cc_set_get_help = {
+	.summary = "Set/Get calling convention for current function",
+	.args = analysis_function_cc_set_get_args,
+};
+
+static const RzCmdDescArg analysis_function_cc_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_cc_list_help = {
+	.summary = "List all available calling conventions",
+	.args = analysis_function_cc_list_args,
+};
+
+static const RzCmdDescArg analysis_function_cc_load_args[] = {
+	{
+		.name = "db_path",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_cc_load_help = {
+	.summary = "Open Calling Convention sdb profile from given path",
+	.args = analysis_function_cc_load_args,
+};
+
+static const RzCmdDescArg analysis_function_cc_reg_usage_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_cc_reg_usage_help = {
+	.summary = "Show register usage for the current function",
+	.args = analysis_function_cc_reg_usage_args,
 };
 
 static const RzCmdDescDetailEntry analysis_appcall_Examples_detail_entries[] = {
@@ -13852,6 +13901,17 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_functions_merge_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afm", rz_analysis_functions_merge_handler, &analysis_functions_merge_help);
 	rz_warn_if_fail(analysis_functions_merge_cd);
+
+	RzCmdDesc *afc_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_fcn_cd, "afc", rz_analysis_function_cc_set_get_handler, &analysis_function_cc_set_get_help, &afc_help);
+	rz_warn_if_fail(afc_cd);
+	RzCmdDesc *analysis_function_cc_list_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afc_cd, "afcl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_analysis_function_cc_list_handler, &analysis_function_cc_list_help);
+	rz_warn_if_fail(analysis_function_cc_list_cd);
+
+	RzCmdDesc *analysis_function_cc_load_cd = rz_cmd_desc_argv_new(core->rcmd, afc_cd, "afco", rz_analysis_function_cc_load_handler, &analysis_function_cc_load_help);
+	rz_warn_if_fail(analysis_function_cc_load_cd);
+
+	RzCmdDesc *analysis_function_cc_reg_usage_cd = rz_cmd_desc_argv_state_new(core->rcmd, afc_cd, "afcr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_cc_reg_usage_handler, &analysis_function_cc_reg_usage_help);
+	rz_warn_if_fail(analysis_function_cc_reg_usage_cd);
 
 	RzCmdDesc *analysis_appcall_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aeC", rz_analysis_appcall_handler, &analysis_appcall_help);
 	rz_warn_if_fail(analysis_appcall_cd);

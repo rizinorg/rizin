@@ -6,10 +6,6 @@
 
 #include "coff.h"
 
-#define bprintf \
-	if (obj->verbose) \
-	eprintf
-
 RZ_API bool rz_coff_supported_arch(const ut8 *buf) {
 	ut16 arch = *(ut16 *)buf;
 	switch (arch) {
@@ -248,20 +244,20 @@ static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RzBuffer *buf, bool ver
 	obj->imp_ht = ht_up_new0();
 	obj->imp_index = ht_uu_new0();
 	if (!rz_bin_coff_init_hdr(obj)) {
-		bprintf("Warning: failed to init hdr\n");
+		RZ_LOG_ERROR("failed to init hdr\n");
 		return false;
 	}
 	rz_bin_coff_init_opt_hdr(obj);
 	if (!rz_bin_coff_init_scn_hdr(obj)) {
-		bprintf("Warning: failed to init section header\n");
+		RZ_LOG_ERROR("failed to init section header\n");
 		return false;
 	}
 	if (!rz_bin_coff_init_scn_va(obj)) {
-		bprintf("Warning: failed to init section VA table\n");
+		RZ_LOG_ERROR("failed to init section VA table\n");
 		return false;
 	}
 	if (!rz_bin_coff_init_symtable(obj)) {
-		bprintf("Warning: failed to init symtable\n");
+		RZ_LOG_ERROR("failed to init symtable\n");
 		return false;
 	}
 	return true;

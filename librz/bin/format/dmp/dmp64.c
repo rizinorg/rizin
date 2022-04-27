@@ -50,12 +50,12 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	int i, j;
 	dmp64_p_memory_desc *mem_desc = &obj->header->PhysicalMemoryBlock;
 	if (!memcmp(mem_desc, DMP_UNUSED_MAGIC, 4)) {
-		eprintf("Warning: Invalid PhysicalMemoryDescriptor\n");
+		RZ_LOG_ERROR("Invalid PhysicalMemoryDescriptor magic\n");
 		return false;
 	}
 	ut64 num_runs = mem_desc->NumberOfRuns;
 	if (num_runs * sizeof(dmp_p_memory_run) >= rz_offsetof(dmp64_header, ContextRecord)) {
-		eprintf("Warning: Invalid PhysicalMemoryDescriptor\n");
+		RZ_LOG_ERROR("Invalid PhysicalMemoryDescriptor offset\n");
 		return false;
 	}
 	obj->pages = rz_list_newf(free);
@@ -65,7 +65,7 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	dmp_p_memory_run *runs = calloc(num_runs, sizeof(dmp_p_memory_run));
 	ut64 num_runs_offset = rz_offsetof(dmp64_header, PhysicalMemoryBlockBuffer) + rz_offsetof(dmp64_p_memory_desc, NumberOfRuns);
 	if (rz_buf_read_at(obj->b, num_runs_offset, (ut8 *)runs, num_runs * sizeof(dmp_p_memory_run)) < 0) {
-		eprintf("Warning: read memory runs\n");
+		RZ_LOG_ERROR("Cannot read memory runs value from dmp64.\n");
 		free(runs);
 		return false;
 	};
@@ -87,7 +87,7 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 		}
 	}
 	if (mem_desc->NumberOfPages != num_page) {
-		eprintf("Warning: Number of Pages not matches\n");
+		RZ_LOG_WARN("The number of pages in the structure does not match with the counted one.\n");
 	}
 
 	free(runs);
@@ -96,11 +96,11 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 
 static int rz_bin_dmp64_init_header(struct rz_bin_dmp64_obj_t *obj) {
 	if (!(obj->header = RZ_NEW0(dmp64_header))) {
-		rz_sys_perror("RZ_NEW0 (header)");
+		RZ_LOG_ERROR("Cannot allocate dmp64_header.\n");
 		return false;
 	}
 	if (rz_buf_read_at(obj->b, 0, (ut8 *)obj->header, sizeof(dmp64_header)) < 0) {
-		eprintf("Warning: read header\n");
+		RZ_LOG_ERROR("cannot read dmp64 header\n");
 		return false;
 	}
 	obj->dtb = obj->header->DirectoryTableBase;
@@ -244,7 +244,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		create_new_page = false;
 	}
 	if (obj->bmp_header->TotalPresentPages != num_bitset) {
-		eprintf("Warning: TotalPresentPages not matched\n");
+		RZ_LOG_ERROR("The total present pages number in the header does not match with the counted one.\n");
 		rz_bitmap_free(bitmap);
 		return false;
 	}
@@ -255,22 +255,22 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 
 static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 	if (!(obj->bmp_header = RZ_NEW0(dmp_bmp_header))) {
-		rz_sys_perror("RZ_NEW0 (dmp_bmp_header)");
+		RZ_LOG_ERROR("Cannot allocate dmp_bmp_header.\n");
 		return false;
 	}
 	if (rz_buf_read_at(obj->b, sizeof(dmp64_header), (ut8 *)obj->bmp_header, rz_offsetof(dmp_bmp_header, Bitmap)) < 0) {
-		eprintf("Warning: read bmp_header\n");
+		RZ_LOG_ERROR("Cannot read bmp_header\n");
 		return false;
 	}
 	if (memcmp(obj->bmp_header, DMP_BMP_MAGIC, 8) &&
 		memcmp(obj->bmp_header, DMP_BMP_FULL_MAGIC, 8)) {
-		eprintf("Warning: Invalid Bitmap Magic\n");
+		RZ_LOG_ERROR("Invalid Bitmap Magic\n");
 		return false;
 	}
 	ut64 bitmapsize = obj->bmp_header->Pages / 8;
 	obj->bitmap = calloc(1, bitmapsize);
 	if (rz_buf_read_at(obj->b, sizeof(dmp64_header) + rz_offsetof(dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
-		eprintf("Warning: read bitmap\n");
+		RZ_LOG_ERROR("Cannot read bitmap\n");
 		return false;
 	}
 
@@ -279,7 +279,7 @@ static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 
 static int rz_bin_dmp64_init(struct rz_bin_dmp64_obj_t *obj) {
 	if (!rz_bin_dmp64_init_header(obj)) {
-		eprintf("Warning: Invalid Kernel Dump x64 Format\n");
+		RZ_LOG_ERROR("Invalid Kernel Dump x64 Format\n");
 		return false;
 	}
 	switch (obj->header->DumpType) {

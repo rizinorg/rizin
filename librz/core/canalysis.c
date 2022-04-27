@@ -6622,6 +6622,67 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 }
 
 /**
+ * \brief Print Calling Convention info
+ *
+ * \param core The RzCore instance
+ * \param cc Calling Convention name
+ * \param pj Optional PJ instance for JSON mode
+ */
+RZ_IPI void rz_core_analysis_cc_print(RzCore *core, RZ_NONNULL const char *cc, RZ_NULLABLE PJ *pj) {
+	rz_return_if_fail(core && cc);
+	if (pj) {
+		pj_o(pj);
+	}
+	if (pj) {
+		pj_ks(pj, "name", cc);
+	} else {
+		rz_cons_printf("name: %s\n", cc);
+	}
+	const char *regname = rz_analysis_cc_ret(core->analysis, cc);
+	if (regname) {
+		if (pj) {
+			pj_ks(pj, "ret", regname);
+		} else {
+			rz_cons_printf("ret: %s\n", regname);
+		}
+	}
+	if (pj) {
+		pj_ka(pj, "args");
+	}
+	int maxargs = rz_analysis_cc_max_arg(core->analysis, cc);
+	for (int i = 0; i < maxargs; i++) {
+		regname = rz_analysis_cc_arg(core->analysis, cc, i);
+		if (pj) {
+			pj_s(pj, regname);
+		} else {
+			rz_cons_printf("arg%d: %s\n", i, regname);
+		}
+	}
+	if (pj) {
+		pj_end(pj);
+	}
+	regname = rz_analysis_cc_self(core->analysis, cc);
+	if (regname) {
+		if (pj) {
+			pj_ks(pj, "self", regname);
+		} else {
+			rz_cons_printf("self: %s\n", regname);
+		}
+	}
+	regname = rz_analysis_cc_error(core->analysis, cc);
+	if (regname) {
+		if (pj) {
+			pj_ks(pj, "error", regname);
+		} else {
+			rz_cons_printf("error: %s\n", regname);
+		}
+	}
+	if (pj) {
+		pj_end(pj);
+	}
+}
+
+/**
  * \brief Start ESIL trace session
  *
  * \param core The RzCore instance
@@ -6665,4 +6726,144 @@ RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core) {
 	esil->trace = NULL;
 	rz_config_set_i(core->config, "dbg.trace", false);
 	return true;
+}
+
+/**
+ * Free RzAnalysisBytes
+ *
+ * \param ptr RzAnalysisBytes pointer
+ */
+RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr) {
+	if (!ptr) {
+		return;
+	}
+	RzAnalysisBytes *ab = ptr;
+	rz_analysis_op_free(ab->op);
+	rz_analysis_hint_free(ab->hint);
+	free(ab->opcode);
+	free(ab->disasm);
+	free(ab->pseudo);
+	free(ab->description);
+	free(ab->mask);
+	free(ab->bytes);
+	free(ab);
+}
+
+/**
+ *
+ * Analyze and disassemble bytes use rz_analysis_op and rz_asm_disassemble
+ *
+ * \param core The RzCore instance
+ * \param buf data to analysis
+ * \param len analysis len bytes
+ * \param nops analysis n ops
+ * \return list of RzAnalysisBytes
+ */
+RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops) {
+	rz_return_val_if_fail(core && buf, NULL);
+	bool be = rz_config_get_b(core->config, "cfg.bigendian");
+	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
+	RzAsmOp asmop;
+	ut64 addr;
+	RzPVector *vec = rz_pvector_new(rz_analysis_bytes_free);
+	if (!vec) {
+		return NULL;
+	}
+	rz_pvector_reserve(vec, nops);
+	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	min_op_size = min_op_size > 0 ? min_op_size : 1;
+
+	int ret;
+	for (int i = 0, idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
+		RzAnalysisBytes *ab = RZ_NEW0(RzAnalysisBytes);
+		if (!ab) {
+			rz_pvector_free(vec);
+			return NULL;
+		}
+
+		rz_pvector_push(vec, ab);
+		addr = core->offset + idx;
+		rz_asm_set_pc(core->rasm, addr);
+		ab->hint = rz_analysis_hint_get(core->analysis, addr);
+		ab->op = rz_analysis_op_new();
+		if (!ab->op) {
+			rz_pvector_free(vec);
+			return NULL;
+		}
+		ret = rz_analysis_op(core->analysis, ab->op, addr, buf + idx, len - idx,
+			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
+		if (ret < 1) {
+			ret = min_op_size;
+		}
+
+		char *mnem;
+		if (rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx) < 1) {
+			ab->opcode = strdup("invalid");
+			ab->bytes = rz_hex_bin2strdup(buf + idx, min_op_size);
+			continue;
+		}
+		ab->opcode = strdup(rz_asm_op_get_asm(&asmop));
+		mnem = strdup(rz_asm_op_get_asm(&asmop));
+		char *sp = strchr(mnem, ' ');
+		if (sp) {
+			*sp = 0;
+			if (ab->op->prefix) {
+				char *arg = strdup(sp + 1);
+				sp = strchr(arg, ' ');
+				if (sp) {
+					*sp = 0;
+				}
+				free(mnem);
+				mnem = arg;
+			}
+		}
+
+		char strsub[128] = { 0 };
+		// pc+33
+		rz_parse_subvar(core->parser, NULL,
+			addr,
+			asmop.size, rz_asm_op_get_asm(&asmop),
+			strsub, sizeof(strsub));
+		ut64 subrel_addr = UT64_MAX;
+		if (rz_io_read_i(core->io, ab->op->ptr, &subrel_addr, ab->op->refptr, be)) {
+			core->parser->subrel_addr = subrel_addr;
+		}
+		// 0x33->sym.xx
+		char *p = strdup(strsub);
+		if (p && ab->hint) {
+			rz_parse_filter(core->parser, addr, core->flags, ab->hint, p,
+				strsub, sizeof(strsub), be);
+		}
+		free(p);
+		if (!*strsub) {
+			rz_str_ncpy(strsub, rz_asm_op_get_asm(&asmop), sizeof(strsub) - 1);
+		}
+
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+		if (fcn) {
+			rz_parse_subvar(core->parser, fcn, addr, asmop.size,
+				strsub, strsub, sizeof(strsub));
+		}
+		ab->disasm = strdup(strsub);
+
+		// apply pseudo if needed
+		ab->pseudo = rz_parse_pseudocode(core->parser, strsub);
+
+		char *opname = strdup(strsub);
+		sp = strchr(opname, ' ');
+		if (sp) {
+			*sp = 0;
+		}
+		ab->description = rz_asm_describe(core->rasm, opname);
+		free(opname);
+
+		ab->op->mnemonic = mnem;
+
+		ut8 *mask = rz_analysis_mask(core->analysis, len - idx, buf + idx, addr);
+		ab->mask = rz_hex_bin2strdup(mask, ab->op->size);
+		free(mask);
+
+		ab->bytes = rz_hex_bin2strdup(buf + idx, ab->op->size);
+	}
+	return vec;
 }

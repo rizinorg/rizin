@@ -914,7 +914,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'R': set_action(RZ_BIN_REQ_RELOCS); break;
 		case 'Y': set_action(RZ_BIN_REQ_BASEFIND); break;
 		case 'x': set_action(RZ_BIN_REQ_EXTRACT); break;
-		case 'X': set_action(RZ_BIN_REQ_PACKAGE); break;
 		case 'O':
 			op = opt.arg;
 			set_action(RZ_BIN_REQ_OPERATION);
@@ -1148,39 +1147,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_core_fini(&core);
 		return 0;
 	}
-	if (action & RZ_BIN_REQ_PACKAGE) {
-		RzList *files = rz_list_newf(NULL);
-		const char *format = argv[opt.ind];
-		const char *file = argv[opt.ind + 1];
-		int i, rc = 0;
 
-		if (opt.ind + 3 > argc) {
-			eprintf("Usage: rz-bin -X [fat|zip] foo.zip a b c\n");
-			rz_core_fini(&core);
-			return 1;
-		}
-
-		eprintf("FMT %s\n", format);
-		eprintf("PKG %s\n", file);
-		for (i = opt.ind + 2; i < argc; i++) {
-			eprintf("ADD %s\n", argv[i]);
-			rz_list_append(files, (void *)argv[i]);
-		}
-		RzBuffer *buf = rz_bin_package(core.bin, format, file, files);
-		/* TODO: return bool or something to catch errors\n") */
-		if (buf) {
-			bool ret = rz_buf_dump(buf, file);
-			rz_buf_free(buf);
-			if (!ret) {
-				rc = 1;
-			}
-		}
-		rz_core_fini(&core);
-		rz_list_free(files);
-		return rc;
-	}
-
-	if (file && *file) {
+	if (RZ_STR_ISNOTEMPTY(file)) {
 		if ((fh = rz_core_file_open(&core, file, RZ_PERM_R, 0))) {
 			fd = rz_io_fd_get_current(core.io);
 			if (fd == -1) {
