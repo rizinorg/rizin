@@ -228,18 +228,18 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 		rz_write_ble8(src, (ut8)(value & UT8_MAX));
 		break;
 	case 4:;
-		// Example: 4bit Register is located at bit offset: 1025
-		// Byte at bit offset 1024 = 0b101xxxx1
+		// Example: 4bit Register is located at bit 1 of a byte.
+		// Example byte = 0b101xxxx1
 		// 'xxxx' are the bits where the new 'value' is set.
 
-		ut8 *cur_byte_addr = reg->regset[item->arena].arena->bytes + BITS2BYTES(item->offset);
-		ut8 cur_byte = cur_byte_addr[0]; // Byte at bit 1024
-		ut8 shift = item->offset % 8; // Bits we have to shift the 4 new bits so they align with the 'x'.
+		ut8 *buf = reg->regset[item->arena].arena->bytes + (item->offset / 8);
+		ut8 reg_byte = buf[0];
+		// Number of bits we have to shift the bits of the new value so they align with the 'xxxx' (in example: 1).
+		ut8 shift = item->offset % 8;
 		ut8 mask_xxxx = 0xf << shift;
 		ut8 xxxx = (value & 0xf) << shift;
-		// Invert xxxx mask and set the xxxx bits to 0. Then OR the new 4 bits into it.
-		ut8 new_val = (cur_byte & ~mask_xxxx) | xxxx;
-		rz_mem_copybits(cur_byte_addr, &new_val, 8); // Write byte back.
+		ut8 new_val = (reg_byte & ~mask_xxxx) | xxxx;
+		rz_mem_copybits(buf, &new_val, 8); // Write byte back.
 		return true;
 	case 1:
 		if (value) {
