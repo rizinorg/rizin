@@ -100,10 +100,10 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		}
 		break;
 	// Byte reverse and reserved indexed
-	case PPC_INS_LWARX:
 	case PPC_INS_LHBRX:
-	case PPC_INS_LDARX:
 	case PPC_INS_LDBRX:
+	case PPC_INS_LWARX:
+	case PPC_INS_LDARX:
 		NOT_IMPLEMENTED;
 	// Floats
 	case PPC_INS_LFD:
@@ -339,6 +339,75 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	return SEQ4(set, set_carry, overflow, update_cr0);
 }
 
+static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, NOP);
+	ut32 id = insn->id;
+	// READ
+	const char *rS = cs_reg_name(handle, INSOP(0).reg);
+	const char *rA = cs_reg_name(handle, INSOP(1).reg);
+	const char *rB = cs_reg_name(handle, INSOP(2).reg);
+	st64 uI = INSOP(2).imm;
+	RzILOpPure *op0;
+	RzILOpPure *op1;
+
+	// How to read instruction ids:
+	// Letter			Meaning
+	// AND/OR/... 		AND, OR etc.
+	// B/H/.. 			Byte, Half Word, ...
+	// I/C/S			Immediate, Complement, Shifted
+
+	// EXEC
+	switch (id) {
+	default:
+		NOT_IMPLEMENTED;
+	case PPC_INS_AND:
+	case PPC_INS_ANDC:
+	case PPC_INS_ANDIS:
+	case PPC_INS_ANDI:
+	case PPC_INS_OR:
+	case PPC_INS_ORC:
+	case PPC_INS_ORI:
+	case PPC_INS_ORIS:
+	case PPC_INS_XOR:
+	case PPC_INS_XORI:
+	case PPC_INS_XORIS:
+		NOT_IMPLEMENTED;
+	case PPC_INS_NAND:
+	case PPC_INS_NEG:
+	case PPC_INS_NOR:
+		NOT_IMPLEMENTED;
+	// Equivalent
+	case PPC_INS_EQV:
+		NOT_IMPLEMENTED;
+	// Extend
+	case PPC_INS_EXTSB:
+	case PPC_INS_EXTSH:
+	case PPC_INS_EXTSW:
+		NOT_IMPLEMENTED;
+	// Compare
+	case PPC_INS_CMPB:
+	case PPC_INS_CMPD:
+	case PPC_INS_CMPDI:
+	case PPC_INS_CMPLD:
+	case PPC_INS_CMPLDI:
+	case PPC_INS_CMPLW:
+	case PPC_INS_CMPLWI:
+	case PPC_INS_CMPW:
+	case PPC_INS_CMPWI:
+		NOT_IMPLEMENTED;
+	// Count leading zeros
+	case PPC_INS_CNTLZD:
+	case PPC_INS_CNTLZW:
+		NOT_IMPLEMENTED;
+	// Population count
+	case PPC_INS_POPCNTD:
+	case PPC_INS_POPCNTW:
+		NOT_IMPLEMENTED;
+	}
+
+	// WRITE
+}
+
 RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
 	rz_return_val_if_fail(insn->detail, NOP);
@@ -450,7 +519,41 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_STXVW4X:
 		lop = store_op(handle, insn, mode);
 		break;
+	case PPC_INS_AND:
+	case PPC_INS_ANDC:
+	case PPC_INS_ANDIS:
+	case PPC_INS_ANDI:
+	case PPC_INS_OR:
+	case PPC_INS_ORC:
+	case PPC_INS_ORI:
+	case PPC_INS_ORIS:
+	case PPC_INS_NAND:
+	case PPC_INS_NEG:
+	case PPC_INS_NOR:
+	case PPC_INS_XOR:
+	case PPC_INS_XORI:
+	case PPC_INS_XORIS:
+	case PPC_INS_EQV:
+	case PPC_INS_EXTSB:
+	case PPC_INS_EXTSH:
+	case PPC_INS_EXTSW:
+	case PPC_INS_CMPB:
+	case PPC_INS_CMPD:
+	case PPC_INS_CMPDI:
+	case PPC_INS_CMPLD:
+	case PPC_INS_CMPLDI:
+	case PPC_INS_CMPLW:
+	case PPC_INS_CMPLWI:
+	case PPC_INS_CMPW:
+	case PPC_INS_CMPWI:
+	case PPC_INS_CNTLZD:
+	case PPC_INS_CNTLZW:
+	case PPC_INS_POPCNTD:
+	case PPC_INS_POPCNTW:
+		lop = logical_op(handle, insn, mode);
+		break;
 	}
+
 	return lop;
 }
 
