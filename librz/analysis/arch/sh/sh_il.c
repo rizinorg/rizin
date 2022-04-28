@@ -655,6 +655,50 @@ static RzILOpEffect *sh_il_dt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ2(sh_il_set_pure_param(0, SUB(sh_il_get_pure_param(0), SH_U_REG(1))), BRANCH(NON_ZERO(sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(0)), SETG(SH_SR_T, SH_BIT(1))));
 }
 
+/**
+ * EXTS.B  Rm, Rn
+ * Rm sign-extended from byte -> Rn
+ * 0110nnnnmmmm1110
+ *
+ * EXTS.W  Rm, Rn
+ * Rm sign-extended from word -> Rn
+ * 0110nnnnmmmm1111
+ */
+static RzILOpEffect *sh_il_exts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpEffect *eff = NULL;
+	if (op->scaling == SH_SCALING_B) {
+		RzILOpPure *byte = LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xff));
+		RzILOpBool *msb = MSB(byte);
+		eff = BRANCH(msb, sh_il_set_pure_param(1, LOGOR(DUP(byte), SH_U_REG(0xffffff00))), sh_il_set_pure_param(1, DUP(byte)));
+	} else if (op->scaling == SH_SCALING_W) {
+		RzILOpPure *word = LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xffff));
+		RzILOpBool *msb = MSB(word);
+		eff = BRANCH(msb, sh_il_set_pure_param(1, LOGOR(DUP(word), SH_U_REG(0xffff0000))), sh_il_set_pure_param(1, DUP(word)));
+	}
+
+	return eff;
+}
+
+/**
+ * EXTU.B  Rm, Rn
+ * Rm zero-extended from byte -> Rn
+ * 0110nnnnmmmm1100
+ *
+ * EXTU.W  Rm, Rn
+ * Rm zero-extended from word -> Rn
+ * 0110nnnnmmmm1101
+ */
+static RzILOpEffect *sh_il_extu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpEffect *eff = NULL;
+	if (op->scaling == SH_SCALING_B) {
+		eff = sh_il_set_pure_param(1, LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xff)));
+	} else if (op->scaling == SH_SCALING_W) {
+		eff = sh_il_set_pure_param(1, LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xffff)));
+	}
+
+	return eff;
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
@@ -682,4 +726,6 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_dmuls,
 	sh_il_dmulu,
 	sh_il_dt,
+	sh_il_exts,
+	sh_il_extu
 };
