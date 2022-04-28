@@ -11,6 +11,7 @@
  * References:
  *  - https://www.st.com/resource/en/user_manual/cd00147165-sh-4-32-bit-cpu-core-architecture-stmicroelectronics.pdf (SH-4 32-bit architecture manual)
  *  - https://www.renesas.com/in/en/document/mas/sh-4-software-manual?language=en (SH-4 manual by Renesas)
+ *  - https://www.renesas.com/eu/en/document/mah/sh-1sh-2sh-dsp-software-manual?language=en
  *
  * Both the above references are almost the same
  */
@@ -405,9 +406,8 @@ static RzILOpEffect *sh_il_swap(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 		return SEQ4(r0, r1, sh_il_set_pure_param(0, r0_new), sh_il_set_pure_param(1, r1_new));
 	} else if (op->scaling == SH_SCALING_W) {
 		// swap upper and lower words and store in dst
-		RzILOpPure *p0 = sh_il_get_pure_param(0);
-		RzILOpPure *high = SHIFTL0(p0, SH_U_REG(BITS_PER_BYTE * 2));
-		RzILOpPure *low = SHIFTR0(p0, SH_U_REG(BITS_PER_BYTE * 2));
+		RzILOpPure *high = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(BITS_PER_BYTE * 2));
+		RzILOpPure *low = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(BITS_PER_BYTE * 2));
 		return sh_il_set_pure_param(1, LOGOR(high, low));
 	}
 
@@ -445,13 +445,11 @@ static RzILOpEffect *sh_il_add(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0011nnnnmmmm1110
  */
 static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *p0 = sh_il_get_pure_param(0);
-	RzILOpPure *p1 = sh_il_get_pure_param(1);
-	RzILOpPure *sum = ADD(p0, p1);
+	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 	sum = ADD(sum, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
 
 	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
-	RzILOpEffect *tbit = BRANCH(sh_il_is_add_carry(sum, p0, p1), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	RzILOpEffect *tbit = BRANCH(sh_il_is_add_carry(sum, sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
 	return SEQ2(ret, tbit);
 }
 
@@ -462,12 +460,10 @@ static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0011nnnnmmmm1111
  */
 static RzILOpEffect *sh_il_addv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *p0 = sh_il_get_pure_param(0);
-	RzILOpPure *p1 = sh_il_get_pure_param(1);
-	RzILOpPure *sum = ADD(p0, p1);
+	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 
 	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
-	RzILOpEffect *tbit = BRANCH(sh_il_is_add_overflow(sum, p0, p1), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	RzILOpEffect *tbit = BRANCH(sh_il_is_add_overflow(sum, sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
 	return SEQ2(ret, tbit);
 }
 
@@ -561,10 +557,45 @@ static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * DIV1  Rm, Rn
  * 1-step division (Rn ÷ Rm) ; Calculation result -> T
  * 0011nnnnmmmm0100
+ *
+ * Implementation details at page 162 (of 512) in https://www.renesas.com/eu/en/document/mah/sh-1sh-2sh-dsp-software-manual?language=en
  */
 static RzILOpEffect *sh_il_div1(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	// TODO
-	return NULL;
+	RzILOpEffect *old_q = SETL("old_q", VARG(SH_SR_Q));
+	RzILOpEffect *q = SETG(SH_SR_Q, MSB(sh_il_get_pure_param(1)));
+	RzILOpEffect *shl = sh_il_set_pure_param(1, SHIFTL0(sh_il_get_pure_param(1), SH_U_REG(1)));
+	RzILOpEffect *ort = sh_il_set_pure_param(1, OR(sh_il_get_pure_param(1), UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T))));
+	RzILOpEffect *init = SEQ4(old_q, q, shl, ort);
+
+	RzILOpEffect *tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
+	RzILOpEffect *sub = sh_il_set_pure_param(1, SUB(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
+	RzILOpEffect *tmp1 = SETL("tmp1", UGT(sh_il_get_pure_param(1), VARL("tmp0")));
+	RzILOpEffect *q_bit = BRANCH(VARG(SH_SR_Q), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))), SETG(SH_SR_Q, VARL("tmp1")));
+	RzILOpEffect *q0m0 = SEQ4(tmp0, sub, tmp1, q_bit);
+
+	tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
+	RzILOpEffect *add = sh_il_set_pure_param(1, ADD(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
+	tmp1 = SETL("tmp1", ULT(sh_il_get_pure_param(1), VARL("tmp0")));
+	q_bit = BRANCH(VARG(SH_SR_Q), SETG(SH_SR_Q, VARL("tmp1")), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))));
+	RzILOpEffect *q0m1 = SEQ4(tmp0, add, tmp1, q_bit);
+
+	tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
+	add = sh_il_set_pure_param(1, ADD(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
+	tmp1 = SETL("tmp1", ULT(sh_il_get_pure_param(1), VARL("tmp0")));
+	q_bit = BRANCH(VARG(SH_SR_Q), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))), SETG(SH_SR_Q, VARL("tmp1")));
+	RzILOpEffect *q1m0 = SEQ4(tmp0, add, tmp1, q_bit);
+
+	tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
+	sub = sh_il_set_pure_param(1, SUB(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
+	tmp1 = SETL("tmp1", UGT(sh_il_get_pure_param(1), VARL("tmp0")));
+	q_bit = BRANCH(VARG(SH_SR_Q), SETG(SH_SR_Q, VARL("tmp1")), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))));
+	RzILOpEffect *q1m1 = SEQ4(tmp0, sub, tmp1, q_bit);
+
+	RzILOpEffect *q0 = BRANCH(VARG(SH_SR_M), q0m1, q0m0);
+	RzILOpEffect *q1 = BRANCH(VARG(SH_SR_M), q1m1, q1m0);
+	RzILOpEffect *q_switch = BRANCH(VARL("old_q"), q1, q0);
+
+	return SEQ3(init, q_switch, SETG(SH_SR_T, EQ(VARG(SH_SR_Q), VARG(SH_SR_M))));
 }
 
 /**
@@ -573,10 +604,11 @@ static RzILOpEffect *sh_il_div1(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0010nnnnmmmm0111
  */
 static RzILOpEffect *sh_il_div0s(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpBool *rm = MSB(sh_il_get_pure_param(0));
-	RzILOpBool *rn = MSB(sh_il_get_pure_param(1));
+	RzILOpEffect *setm = SETG(SH_SR_M, MSB(sh_il_get_pure_param(0)));
+	RzILOpEffect *setq = SETG(SH_SR_Q, MSB(sh_il_get_pure_param(1)));
+	RzILOpEffect *sett = SETG(SH_SR_T, XOR(MSB(sh_il_get_pure_param(0)), MSB(sh_il_get_pure_param(1))));
 
-	return SEQ3(SETG(SH_SR_M, rm), SETG(SH_SR_Q, rn), SETG(SH_SR_T, XOR(rn, rm)));
+	return SEQ3(setm, setq, sett);
 }
 
 /**
