@@ -1,6 +1,6 @@
 
 NAME=ppc add instructions
-FILE=bins/elf/ppc/ppc_insn_tests_64
+FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
 af
@@ -45,7 +45,7 @@ EOF
 RUN
 
 NAME=ppc sub instructions
-FILE=bins/elf/ppc/ppc_insn_tests_64
+FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
 af
@@ -99,7 +99,7 @@ EOF
 RUN
 
 NAME=ppc fixed-point store instructions
-FILE=bins/elf/ppc/ppc_insn_tests_64
+FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
 aaa
@@ -125,7 +125,7 @@ EOF
 RUN
 
 NAME=ppc fixed-point store instructions
-FILE=bins/elf/ppc/ppc_insn_tests_64
+FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
 aaa
