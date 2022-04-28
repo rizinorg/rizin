@@ -56,6 +56,8 @@ typedef enum {
 	SH_OP_DMULS,
 	SH_OP_DMULU,
 	SH_OP_DT,
+	SH_OP_EXTS,
+	SH_OP_EXTU,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
