@@ -125,14 +125,14 @@ static inline RzILOpPure *sh_il_get_reg(ut16 reg) {
 	return ITE(condition, VARG(sh_get_banked_reg(reg, 1)), VARG(sh_get_banked_reg(reg, 0)));
 }
 
-static inline RzILOpEffect *sh_il_set_reg(ut16 reg, RzILOpPure *val) {
+static inline RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
 		return SETG(sh_registers[reg], val);
 	}
 
 	RzILOpPure *condition = AND(VARG(SH_SR_D), VARG(SH_SR_R));
-	return BRANCH(condition, SETG(sh_get_banked_reg(reg, 1), val), SETG(sh_get_banked_reg(reg, 0), val));
+	return BRANCH(condition, SETG(sh_get_banked_reg(reg, 1), val), SETG(sh_get_banked_reg(reg, 0), DUP(val)));
 }
 
 typedef struct sh_param_helper_t {
@@ -158,7 +158,7 @@ static inline RzILOpPure *sh_il_get_effective_addr(SHParam param, SHScaling scal
 	case SH_PC_RELATIVE_DISP: {
 		RzILOpBitVector *pc = VARG("pc");
 		// mask lower 2 bits if sh_scaling_size[scaling] == 4
-		pc = ITE(EQ(SH_U_ADDR(sh_scaling_size[scaling]), SH_U_ADDR(4)), LOGAND(pc, SH_U_ADDR(0xfffffffc)), pc);
+		pc = ITE(EQ(SH_U_ADDR(sh_scaling_size[scaling]), SH_U_ADDR(4)), LOGAND(pc, SH_U_ADDR(0xfffffffc)), DUP(pc));
 		pc = ADD(pc, SH_U_ADDR(4));
 		return ADD(pc, MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 	}
@@ -253,7 +253,7 @@ append:
 	return target;
 }
 
-static inline RzILOpEffect *sh_il_set_param(SHParam param, RzILOpPure *val, SHScaling scaling) {
+static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *val, SHScaling scaling) {
 	RzILOpEffect *ret = NULL, *pre = NULL, *post = NULL;
 	switch (param.mode) {
 	case SH_REG_DIRECT:
@@ -287,52 +287,52 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RzILOpPure *val, SHSc
 	return sh_apply_effects(ret, pre, post);
 }
 
-static inline RzILOpBool *sh_il_is_add_carry(RzILOpPure *res, RzILOpPure *x, RzILOpPure *y) {
+static inline RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	// x & y
 	RzILOpPure *xy = LOGAND(x, y);
 
 	RzILOpPure *nres = LOGNOT(res);
 	// !res & y
-	RzILOpPure *ry = LOGAND(nres, y);
+	RzILOpPure *ry = LOGAND(nres, DUP(y));
 	// x & !res
-	RzILOpPure *xr = LOGAND(x, nres);
+	RzILOpPure *xr = LOGAND(DUP(x), nres);
 
 	// bit = xy | ry | xr
 	RzILOpPure * or = LOGOR(xy, ry);
 	or = LOGOR(or, xr);
 
 	RzILOpPure *mask = SH_U_REG(1u << 31);
-	mask = LOGAND(mask, or);
+	mask = LOGAND(mask, DUP(or));
 	return NON_ZERO(mask);
 }
 
-static inline RzILOpBool *sh_il_is_sub_carry(RzILOpPure *res, RzILOpPure *x, RzILOpPure *y) {
+static inline RzILOpBool *sh_il_is_sub_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	// !x & y
 	RzILOpPure *nx = LOGNOT(x);
 	RzILOpPure *nxy = LOGAND(nx, y);
 
 	// y & res
-	RzILOpPure *rny = LOGAND(y, res);
+	RzILOpPure *rny = LOGAND(DUP(y), res);
 	// res & !x
-	RzILOpPure *rnx = LOGAND(res, nx);
+	RzILOpPure *rnx = LOGAND(DUP(res), nx);
 
 	// bit = nxy | rny | rnx
 	RzILOpPure * or = LOGOR(nxy, rny);
 	or = LOGOR(or, rnx);
 
 	RzILOpPure *mask = SH_U_REG(1u << 31);
-	mask = LOGAND(mask, or);
+	mask = LOGAND(mask, DUP(or));
 	return NON_ZERO(mask);
 }
 
-static inline RzILOpBool *sh_il_is_add_overflow(RzILOpPure *res, RzILOpPure *x, RzILOpPure *y) {
+static inline RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	// !res & x & y
 	RzILOpPure *nrxy = LOGAND(LOGAND(LOGNOT(res), x), y);
 	// res & !x & !y
-	RzILOpPure *rnxny = LOGAND(LOGAND(res, LOGNOT(x)), LOGNOT(y));
+	RzILOpPure *rnxny = LOGAND(LOGAND(DUP(res), LOGNOT(DUP(x))), LOGNOT(DUP(y)));
 	// or = nrxy | rnxny
 	RzILOpPure * or = LOGOR(nrxy, rnxny);
 
@@ -341,12 +341,12 @@ static inline RzILOpBool *sh_il_is_add_overflow(RzILOpPure *res, RzILOpPure *x, 
 	return NON_ZERO(mask);
 }
 
-static inline RzILOpBool *sh_il_is_sub_overflow(RzILOpPure *res, RzILOpPure *x, RzILOpPure *y) {
+static inline RzILOpBool *sh_il_is_sub_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	// !res & x & !y
 	RzILOpPure *nrxny = LOGAND(LOGAND(LOGNOT(res), x), LOGNOT(y));
 	// res & !x & y
-	RzILOpPure *rnxy = LOGAND(LOGAND(res, LOGNOT(x)), y);
+	RzILOpPure *rnxy = LOGAND(LOGAND(DUP(res), LOGNOT(DUP(x))), DUP(y));
 	// or = nrxny | rnxy
 	RzILOpPure * or = LOGOR(nrxny, rnxy);
 
@@ -449,7 +449,7 @@ static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	sum = ADD(sum, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
 
 	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
-	RzILOpEffect *tbit = BRANCH(sh_il_is_add_carry(sum, sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	RzILOpEffect *tbit = BRANCH(sh_il_is_add_carry(DUP(sum), sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
 	return SEQ2(ret, tbit);
 }
 
@@ -463,7 +463,7 @@ static RzILOpEffect *sh_il_addv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 
 	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
-	RzILOpEffect *tbit = BRANCH(sh_il_is_add_overflow(sum, sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	RzILOpEffect *tbit = BRANCH(sh_il_is_add_overflow(DUP(sum), sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
 	return SEQ2(ret, tbit);
 }
 
@@ -543,11 +543,11 @@ static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure * xor = XOR(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 
 	RzILOpPure *eq = EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0));
-	xor = SHIFTR0(xor, SH_U_REG(BITS_PER_BYTE));
+	xor = SHIFTR0(DUP(xor), SH_U_REG(BITS_PER_BYTE));
 	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
-	xor = SHIFTR0(xor, SH_U_REG(BITS_PER_BYTE));
+	xor = SHIFTR0(DUP(xor), SH_U_REG(BITS_PER_BYTE));
 	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
-	xor = SHIFTR0(xor, SH_U_REG(BITS_PER_BYTE));
+	xor = SHIFTR0(DUP(xor), SH_U_REG(BITS_PER_BYTE));
 	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
 
 	return BRANCH(eq, SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
@@ -627,9 +627,8 @@ static RzILOpEffect *sh_il_div0u(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_dmuls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = SETL("res_wide", MUL(SIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(0)), SIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(1))));
-	RzILOpPure *res = VARL("res_wide");
-	RzILOpPure *lower_bits = UNSIGNED(32, LOGAND(res, UN(2 * SH_REG_SIZE, 0xffffffff)));
-	RzILOpPure *higher_bits = UNSIGNED(32, SHIFTR0(res, SH_U_REG(SH_REG_SIZE)));
+	RzILOpPure *lower_bits = UNSIGNED(32, LOGAND(VARL("res_wide"), UN(2 * SH_REG_SIZE, 0xffffffff)));
+	RzILOpPure *higher_bits = UNSIGNED(32, SHIFTR0(VARL("res_wide"), SH_U_REG(SH_REG_SIZE)));
 	return SEQ3(eff, SETG("macl", lower_bits), SETG("mach", higher_bits));
 }
 
@@ -640,9 +639,8 @@ static RzILOpEffect *sh_il_dmuls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_dmulu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = SETL("res_wide", MUL(UNSIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(0)), UNSIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(1))));
-	RzILOpPure *res = VARL("res_wide");
-	RzILOpPure *lower_bits = UNSIGNED(32, LOGAND(res, UN(2 * SH_REG_SIZE, 0xffffffff)));
-	RzILOpPure *higher_bits = UNSIGNED(32, SHIFTR0(res, SH_U_REG(SH_REG_SIZE)));
+	RzILOpPure *lower_bits = UNSIGNED(32, LOGAND(VARL("res_wide"), UN(2 * SH_REG_SIZE, 0xffffffff)));
+	RzILOpPure *higher_bits = UNSIGNED(32, SHIFTR0(VARL("res_wide"), SH_U_REG(SH_REG_SIZE)));
 	return SEQ3(eff, SETG("macl", lower_bits), SETG("mach", higher_bits));
 }
 
