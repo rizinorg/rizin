@@ -50,7 +50,7 @@
 #define SH_SR_D     "sr_d" ///< SR.MD: Processor mode
 
 #define sh_return_val_if_invalid_gpr(x, v) \
-	if (x >= SH_GPR_COUNT) { \
+	if (!sh_valid_gpr(x)) { \
 		RZ_LOG_ERROR("RzIL: SH: invalid register R%u\n", x); \
 		return v; \
 	}
@@ -100,7 +100,7 @@ static const char *sh_status_bit_registers[] = {
 /* Utilities */
 
 static inline bool sh_valid_gpr(ut16 reg) {
-	return reg < SH_REG_SIZE;
+	return reg < SH_GPR_COUNT;
 }
 
 static inline bool sh_banked_reg(ut16 reg) {
