@@ -264,11 +264,6 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 
 	bool set_ca = (id != PPC_INS_ADD && id != PPC_INS_ADDI && id != PPC_INS_ADDIS && id != PPC_INS_SUBF);
 	bool cr0 = insn->detail->ppc.update_cr0;
-	if (cr0) {
-		RZ_LOG_WARN("Capstone fixed a bug!"
-			    "The implcit \"cr0\" write is now stored in \"insn->detail->ppc.update_cr0\"."
-			    "Explicit flag setting can be removed. Please fix me.\n");
-	}
 
 	RzILOpPure *op0;
 	RzILOpPure *op1;
