@@ -109,17 +109,47 @@ aezse 15~mem_write
 aezse 4~var_write
 EOF
 EXPECT=<<EOF
-mem_write(addr: 0x8000140, old: 0x0, new: 0xff)
-mem_write(addr: 0x8000150, old: 0x0, new: 0xffff)
-mem_write(addr: 0x8000160, old: 0x0, new: 0xffffffff)
-mem_write(addr: 0x8000170, old: 0x0, new: 0xffffffffffffffff)
-mem_write(addr: 0x8000140, old: 0x0, new: 0xff)
-mem_write(addr: 0x8000150, old: 0x0, new: 0xffff)
-mem_write(addr: 0x8000160, old: 0x0, new: 0xffffffff)
-mem_write(addr: 0x8000170, old: 0x0, new: 0xffffffffffffffff)
-var_write(name: r21, old: 0x8000140, new: 0x8000140)
-var_write(name: r21, old: 0x8000140, new: 0x8000150)
-var_write(name: r21, old: 0x8000150, new: 0x8000160)
-var_write(name: r21, old: 0x8000160, new: 0x8000170)
+mem_write(addr: 0x8000170, old: 0x0, new: 0xff)
+mem_write(addr: 0x8000180, old: 0x0, new: 0xffff)
+mem_write(addr: 0x8000190, old: 0x0, new: 0xffffffff)
+mem_write(addr: 0x8000200, old: 0x0, new: 0xffffffffffffffff)
+mem_write(addr: 0x8000170, old: 0x0, new: 0xff)
+mem_write(addr: 0x8000180, old: 0x0, new: 0xffff)
+mem_write(addr: 0x8000190, old: 0x0, new: 0xffffffff)
+mem_write(addr: 0x8000200, old: 0x0, new: 0xffffffffffffffff)
+var_write(name: r21, old: 0x8000170, new: 0x8000170)
+var_write(name: r21, old: 0x8000170, new: 0x8000180)
+var_write(name: r21, old: 0x8000180, new: 0x8000190)
+var_write(name: r21, old: 0x8000190, new: 0x8000200)
+EOF
+RUN
+
+NAME=ppc fixed-point store instructions
+FILE=bins/elf/ppc/ppc_insn_tests_64
+ARGS=-appc
+CMDS=<<EOF
+aaa
+s loc.store_insns
+aezi
+aezs 19
+aezse 16~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r11, old: 0xffffffffffffffff, new: 0x0)
+var_write(name: r12, old: 0x10, new: 0x10)
+var_write(name: r13, old: 0x20, new: 0x20)
+var_write(name: r14, old: 0x30, new: 0x30)
+var_write(name: r21, old: 0x8000200, new: 0x8000000)
+var_write(name: r21, old: 0x8000000, new: 0x8000170)
+var_write(name: r11, old: 0x0, new: 0xff)
+var_write(name: r11, old: 0xff, new: 0xffff)
+var_write(name: r11, old: 0xffff, new: 0xffffffff)
+var_write(name: r11, old: 0xffffffff, new: 0xffffffffffffffff)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xff)
+var_write(name: r11, old: 0xff, new: 0xffff)
+var_write(name: r11, old: 0xffff, new: 0xffffffff)
+var_write(name: r11, old: 0xffffffff, new: 0xffffffffffffffff)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
 EOF
 RUN
