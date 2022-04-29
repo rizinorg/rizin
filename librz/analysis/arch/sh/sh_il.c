@@ -829,6 +829,49 @@ static RzILOpEffect *sh_il_subv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ2(ret, tbit);
 }
 
+/**
+ * AND  Rm, Rn
+ * Rn & Rm -> Rn
+ * 0010nnnnmmmm1001
+ *
+ * AND  #imm, R0
+ * R0 & imm -> R0
+ * 11001001iiiiiiii
+ *
+ * AND.B  #imm, @(R0, GBR)
+ * (R0 + GBR) & imm -> (R0 + GBR)
+ * 11001101iiiiiiii
+ */
+static RzILOpEffect *sh_il_and(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_param(op->param[1], LOGAND(sh_il_get_param(op->param[0], op->scaling).pure, sh_il_get_param(op->param[1], op->scaling).pure), op->scaling);
+}
+
+/**
+ * NOT  Rm, Rn
+ * ~Rm -> Rn
+ * 0110nnnnmmmm0111
+ */
+static RzILOpEffect *sh_il_not(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(1, LOGNOT(sh_il_get_pure_param(0)));
+}
+
+/**
+ * OR  Rm, Rn
+ * Rn | Rm -> Rn
+ * 0010nnnnmmmm1011
+ *
+ * OR  #imm, R0
+ * R0 | imm -> R0
+ * 11001011iiiiiiii
+ *
+ * OR.B  #imm, @(R0, GBR)
+ * (R0 + GBR) | imm -> (R0 + GBR)
+ * 11001111iiiiiiii
+ */
+static RzILOpEffect *sh_il_or(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_param(op->param[1], LOGOR(sh_il_get_param(op->param[0], op->scaling).pure, sh_il_get_param(op->param[1], op->scaling).pure), op->scaling);
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
@@ -866,5 +909,8 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_negc,
 	sh_il_sub,
 	sh_il_subc,
-	sh_il_subv
+	sh_il_subv,
+	sh_il_and,
+	sh_il_not,
+	sh_il_or,
 };
