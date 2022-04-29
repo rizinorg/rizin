@@ -307,7 +307,7 @@ static inline RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzIL
 	return NON_ZERO(mask);
 }
 
-static inline RzILOpBool *sh_il_is_sub_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+static inline RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	// !x & y
 	RzILOpPure *nx = LOGNOT(x);
@@ -341,7 +341,7 @@ static inline RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN R
 	return NON_ZERO(mask);
 }
 
-static inline RzILOpBool *sh_il_is_sub_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+static inline RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	// !res & x & !y
 	RzILOpPure *nrxny = LOGAND(LOGAND(LOGNOT(res), x), LOGNOT(y));
@@ -445,7 +445,7 @@ static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	sum = ADD(sum, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
 
 	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
-	RzILOpEffect *tbit = BRANCH(sh_il_is_add_carry(DUP(sum), sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_add_carry(DUP(sum), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 	return SEQ2(ret, tbit);
 }
 
@@ -459,7 +459,7 @@ static RzILOpEffect *sh_il_addv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 
 	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
-	RzILOpEffect *tbit = BRANCH(sh_il_is_add_overflow(DUP(sum), sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_add_overflow(DUP(sum), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 	return SEQ2(ret, tbit);
 }
 
@@ -473,7 +473,7 @@ static RzILOpEffect *sh_il_addv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0011nnnnmmmm0000
  */
 static RzILOpEffect *sh_il_cmp_eq(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return BRANCH(EQ(sh_il_get_pure_param(0), sh_il_get_pure_param(1)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SETG(SH_SR_T, EQ(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 }
 
 /**
@@ -482,7 +482,7 @@ static RzILOpEffect *sh_il_cmp_eq(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0011nnnnmmmm0010
  */
 static RzILOpEffect *sh_il_cmp_hs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return BRANCH(UGE(sh_il_get_pure_param(1), sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SETG(SH_SR_T, UGE(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 }
 
 /**
@@ -491,7 +491,7 @@ static RzILOpEffect *sh_il_cmp_hs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0011nnnnmmmm0011
  */
 static RzILOpEffect *sh_il_cmp_ge(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return BRANCH(SGE(sh_il_get_pure_param(1), sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SETG(SH_SR_T, SGE(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 }
 
 /**
@@ -500,7 +500,7 @@ static RzILOpEffect *sh_il_cmp_ge(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0011nnnnmmmm0110
  */
 static RzILOpEffect *sh_il_cmp_hi(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return BRANCH(UGT(sh_il_get_pure_param(1), sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SETG(SH_SR_T, UGT(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 }
 
 /**
@@ -509,7 +509,7 @@ static RzILOpEffect *sh_il_cmp_hi(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0011nnnnmmmm0111
  */
 static RzILOpEffect *sh_il_cmp_gt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return BRANCH(SGT(sh_il_get_pure_param(1), sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SETG(SH_SR_T, SGT(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 }
 
 /**
@@ -518,7 +518,7 @@ static RzILOpEffect *sh_il_cmp_gt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0100nnnn00010001
  */
 static RzILOpEffect *sh_il_cmp_pz(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return BRANCH(SGE(sh_il_get_pure_param(0), SH_S_REG(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SETG(SH_SR_T, SGE(sh_il_get_pure_param(0), SH_S_REG(0)));
 }
 
 /**
@@ -527,7 +527,7 @@ static RzILOpEffect *sh_il_cmp_pz(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0100nnnn00010101
  */
 static RzILOpEffect *sh_il_cmp_pl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return BRANCH(SGT(sh_il_get_pure_param(0), SH_S_REG(0)), SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SETG(SH_SR_T, SGT(sh_il_get_pure_param(0), SH_S_REG(0)));
 }
 
 /**
@@ -546,7 +546,7 @@ static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	xor = SHIFTR0(DUP(xor), SH_U_REG(BITS_PER_BYTE));
 	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
 
-	return BRANCH(eq, SETG(SH_SR_T, SH_BIT(1)), SETG(SH_SR_T, SH_BIT(0)));
+	return SETG(SH_SR_T, eq);
 }
 
 /**
@@ -646,7 +646,7 @@ static RzILOpEffect *sh_il_dmulu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0100nnnn00010000
  */
 static RzILOpEffect *sh_il_dt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return SEQ2(sh_il_set_pure_param(0, SUB(sh_il_get_pure_param(0), SH_U_REG(1))), BRANCH(NON_ZERO(sh_il_get_pure_param(0)), SETG(SH_SR_T, SH_BIT(0)), SETG(SH_SR_T, SH_BIT(1))));
+	return SEQ2(sh_il_set_pure_param(0, SUB(sh_il_get_pure_param(0), SH_U_REG(1))), SETG(SH_SR_T, NON_ZERO(sh_il_get_pure_param(0))));
 }
 
 /**
