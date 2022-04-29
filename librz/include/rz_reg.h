@@ -95,9 +95,9 @@ typedef enum {
 typedef struct rz_reg_item_t {
 	char *name;
 	RzRegisterType type;
+	RzRegisterType second_type; ///< Secondary type (like xmm to fpu)
 	int size; ///< in bits> 8,16,32,64 ... 128/256
-	int offset; ///< Byte offset in register profile
-	ut8 offset_bit; ///< The bit offset into .offset (this is NOT offset * 8!).
+	int offset; ///< Offset into register profile in bits.
 	int packed_size; ///< 0 means no packed register, 1byte pack, 2b pack...
 	bool is_float; ///< Flag for float registers.
 	char *flags;
@@ -113,11 +113,11 @@ typedef struct rz_reg_arena_t {
 
 typedef struct rz_reg_set_t {
 	RzRegArena *arena;
-	RzList *pool; /* RzRegArena */
-	RzList *regs; /* RzRegItem */
-	HtPP *ht_regs; /* name:RzRegItem */
+	RzList *pool; ///< RzRegArena
+	RzList *regs; ///< RzRegItem
+	HtPP *ht_regs; ///< name:RzRegItem
 	RzListIter *cur;
-	int maskregstype; /* which type of regs have this reg set (logic mask with RzRegisterType  RZ_REG_TYPE_XXX) */
+	int maskregstype; ///< which type of regs has this register set (logic mask with 1 << RZ_REG_TYPE_XXX)
 } RzRegSet;
 
 typedef struct rz_reg_t {
@@ -149,7 +149,7 @@ typedef struct rz_reg_flags_t {
 RZ_API void rz_reg_free(RzReg *reg);
 RZ_API void rz_reg_free_internal(RzReg *reg, bool init);
 RZ_API RzReg *rz_reg_new(void);
-RZ_API bool rz_reg_set_name(RzReg *reg, int role, const char *name);
+RZ_API bool rz_reg_set_name(RZ_BORROW RzReg *reg, RzRegisterId role, RZ_BORROW const char *name);
 RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *profile);
 RZ_API char *rz_reg_profile_to_cc(RzReg *reg);
 RZ_API bool rz_reg_set_profile(RzReg *reg, const char *profile);
@@ -181,7 +181,7 @@ RZ_API RzRegItem *rz_reg_index_get(RzReg *reg, int idx);
 RZ_API void rz_reg_item_free(RzRegItem *item);
 
 /* XXX: dupped ?? */
-RZ_API int rz_reg_type_by_name(const char *str);
+RZ_API RzRegisterType rz_reg_type_by_name(const char *str);
 RZ_API int rz_reg_get_name_idx(const char *type);
 
 RZ_API RzRegItem *rz_reg_cond_get(RzReg *reg, const char *name);
