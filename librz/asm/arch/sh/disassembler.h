@@ -67,6 +67,9 @@ typedef enum {
 	SH_OP_SUB,
 	SH_OP_SUBC,
 	SH_OP_SUBV,
+	SH_OP_AND,
+	SH_OP_NOT,
+	SH_OP_OR,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
