@@ -94,14 +94,15 @@ typedef enum {
 
 typedef struct rz_reg_item_t {
 	char *name;
-	int /*RzRegisterType*/ type;
-	int size; /* 8,16,32,64 ... 128/256 ??? */
-	int offset; /* offset in data structure */
-	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
-	bool is_float;
+	RzRegisterType type;
+	int size; ///< in bits> 8,16,32,64 ... 128/256
+	int offset; ///< Byte offset in register profile
+	ut8 offset_bit; ///< The bit offset into .offset (this is NOT offset * 8!).
+	int packed_size; ///< 0 means no packed register, 1byte pack, 2b pack...
+	bool is_float; ///< Flag for float registers.
 	char *flags;
-	char *comment;
-	int index;
+	char *comment; ///< Comment to register.
+	int index; ///< Index in register profile.
 	int arena; /* in which arena is this reg living */
 } RzRegItem;
 
