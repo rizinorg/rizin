@@ -149,16 +149,12 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 		return NULL;
 	}
 
-	if (kdctx->plist_cache) {
-		return kdctx->plist_cache;
-	}
-
 	RzList *ret = rz_list_newf((RzListFree)rz_debug_pid_free);
 	if (!ret) {
 		return NULL;
 	}
 
-	RzList *pids = winkd_list_process(&kdctx->windctx);
+	RzList *pids = kdctx->plist_cache ? kdctx->plist_cache : winkd_list_process(&kdctx->windctx);
 	if (!pids) {
 		rz_list_free(ret);
 		return NULL;
@@ -178,13 +174,16 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 		newpid->runnable = true;
 		rz_list_append(ret, newpid);
 	}
-	rz_list_free(pids);
-	kdctx->plist_cache = ret;
+	kdctx->plist_cache = pids;
 	return ret;
 }
 
 static int rz_debug_winkd_select(RzDebug *dbg, int pid, int tid) {
 	ut32 old = winkd_get_target(&kdctx->windctx);
+	if (pid != old) {
+		rz_list_free(kdctx->tlist_cache);
+		kdctx->tlist_cache = NULL;
+	}
 	int ret = winkd_set_target(&kdctx->windctx, pid, tid);
 	if (!ret) {
 		return false;
@@ -203,15 +202,11 @@ static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
 		return NULL;
 	}
 
-	if (kdctx->tlist_cache) {
-		return kdctx->tlist_cache;
-	}
-
 	RzList *ret = rz_list_newf(free);
 	if (!ret) {
 		return NULL;
 	}
-	RzList *threads = winkd_list_threads(&kdctx->windctx);
+	RzList *threads = kdctx->tlist_cache ? kdctx->tlist_cache : winkd_list_threads(&kdctx->windctx);
 	if (!threads) {
 		rz_list_free(ret);
 		return NULL;
@@ -230,8 +225,7 @@ static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
 		newpid->runnable = t->runnable;
 		rz_list_append(ret, newpid);
 	}
-	rz_list_free(threads);
-	kdctx->tlist_cache = ret;
+	kdctx->tlist_cache = threads;
 	return ret;
 }
 
@@ -253,7 +247,7 @@ static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
 			rz_list_free(ret);
 			return NULL;
 		}
-		mod->file = m->name;
+		RZ_PTR_MOVE(mod->file, m->name);
 		mod->size = m->size;
 		mod->addr = m->addr;
 		mod->addr_end = m->addr + m->size;
