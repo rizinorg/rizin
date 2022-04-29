@@ -89,9 +89,13 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	kdctx = (KdCtx *)desc->data;
 
 	// Handshake
-	if (!winkd_sync(kdctx)) {
+	int ret = winkd_sync(kdctx);
+	if (ret < 0) {
 		RZ_LOG_ERROR("Could not connect to winkd\n");
 		return false;
+	} else if (!ret) {
+		RZ_LOG_VERBOSE("Already synced\n");
+		return true;
 	}
 	if (!winkd_read_ver(kdctx)) {
 		return false;
@@ -104,6 +108,7 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 
 static int rz_debug_winkd_detach(RzDebug *dbg, int pid) {
 	eprintf("Detaching...\n");
+	kdctx->syncd = 0;
 	return true;
 }
 
