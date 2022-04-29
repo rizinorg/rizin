@@ -24,7 +24,6 @@
 #include <winkd.h>
 
 typedef struct {
-	RzIO *io;
 	RzIODesc *fd;
 } ReadAtCtx;
 
@@ -44,7 +43,7 @@ static int write_at_phys(void *user, ut64 address, const ut8 *buf, int len) {
 
 static int read_at_kernel_virtual(void *user, ut64 address, ut8 *buf, int len) {
 	ReadAtCtx *ctx = user;
-	return winkd_read_at(ctx->fd->data, ctx->io->off, buf, len);
+	return winkd_read_at(ctx->fd->data, address, buf, len);
 }
 
 static bool __plugin_open(RzIO *io, const char *file, bool many) {
@@ -96,7 +95,6 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		free(ctx);
 		return NULL;
 	}
-	c->io = io;
 	c->fd = rz_io_desc_new(io, &rz_io_plugin_winkd, file, rw, mode, ctx);
 	if (!c->fd) {
 		free(c);
@@ -122,7 +120,7 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	case RZ_IO_SEEK_SET:
 		return io->off = offset;
 	case RZ_IO_SEEK_CUR:
-		return io->off + offset;
+		return io->off += offset;
 	case RZ_IO_SEEK_END:
 		return ST64_MAX;
 	default:
