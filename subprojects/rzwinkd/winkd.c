@@ -923,11 +923,11 @@ int winkd_sync(KdCtx *ctx) {
 	kd_packet_t *s;
 
 	if (!ctx || !ctx->desc) {
-		return 0;
+		return -1;
 	}
 
 	if (ctx->syncd) {
-		return 1;
+		return 0;
 	}
 
 	winkd_lock_enter(ctx);
@@ -937,14 +937,13 @@ int winkd_sync(KdCtx *ctx) {
 		// The first packet will always be type of KD_PACKET_TYPE_UNUSED
 		ret = kd_read_packet(ctx->desc, &s);
 		if (ret != KD_E_OK) {
-			ret = 0;
 			goto end;
 		}
 	}
 
 	// Send the breakin packet
 	if (iob_write(ctx->desc, (const uint8_t *)"b", 1) != 1) {
-		ret = 0;
+		ret = KD_E_IOERR;
 		goto end;
 	}
 
@@ -952,14 +951,12 @@ int winkd_sync(KdCtx *ctx) {
 		// Reset the host
 		ret = kd_send_ctrl_packet(ctx->desc, KD_PACKET_TYPE_RESET, 0);
 		if (ret != KD_E_OK) {
-			ret = 0;
 			goto end;
 		}
 
 		// Wait for the response
 		ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_RESET, NULL);
 		if (ret != KD_E_OK) {
-			ret = 0;
 			goto end;
 		}
 	}
@@ -967,7 +964,6 @@ int winkd_sync(KdCtx *ctx) {
 	// Syncronize with the first KD_PACKET_TYPE_STATE_CHANGE64 packet
 	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_CHANGE64, &s);
 	if (ret != KD_E_OK) {
-		ret = 0;
 		goto end;
 	}
 
