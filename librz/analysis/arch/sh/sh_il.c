@@ -380,7 +380,7 @@ static RzILOpEffect *sh_il_mov(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0000nnnn00101001
  */
 static RzILOpEffect *sh_il_movt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return sh_il_set_param(op->param[0], VARG(SH_SR_T), op->scaling);
+	return sh_il_set_pure_param(0, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
 }
 
 /**
@@ -623,8 +623,8 @@ static RzILOpEffect *sh_il_div0u(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_dmuls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = SETL("res_wide", MUL(SIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(0)), SIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(1))));
-	RzILOpPure *lower_bits = UNSIGNED(32, LOGAND(VARL("res_wide"), UN(2 * SH_REG_SIZE, 0xffffffff)));
-	RzILOpPure *higher_bits = UNSIGNED(32, SHIFTR0(VARL("res_wide"), SH_U_REG(SH_REG_SIZE)));
+	RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(VARL("res_wide"), UN(2 * SH_REG_SIZE, 0xffffffff)));
+	RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(VARL("res_wide"), SH_U_REG(SH_REG_SIZE)));
 	return SEQ3(eff, SETG("macl", lower_bits), SETG("mach", higher_bits));
 }
 
@@ -635,8 +635,8 @@ static RzILOpEffect *sh_il_dmuls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_dmulu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = SETL("res_wide", MUL(UNSIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(0)), UNSIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(1))));
-	RzILOpPure *lower_bits = UNSIGNED(32, LOGAND(VARL("res_wide"), UN(2 * SH_REG_SIZE, 0xffffffff)));
-	RzILOpPure *higher_bits = UNSIGNED(32, SHIFTR0(VARL("res_wide"), SH_U_REG(SH_REG_SIZE)));
+	RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(VARL("res_wide"), UN(2 * SH_REG_SIZE, 0xffffffff)));
+	RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(VARL("res_wide"), SH_U_REG(SH_REG_SIZE)));
 	return SEQ3(eff, SETG("macl", lower_bits), SETG("mach", higher_bits));
 }
 
@@ -693,6 +693,54 @@ static RzILOpEffect *sh_il_extu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return eff;
 }
 
+/**
+ * MAC.L  @Rm+, @Rn+
+ * Rn * Rm + MAC -> MAC (Signed) (32 * 32 + 64 -> 64 bits)
+ * Rn + 4 -> Rn ; Rm + 4 -> Rm
+ * 0000nnnnmmmm1111
+ *
+ * When S bit is enabled, the MAC addition is a saturation operation of 48 bits
+ * So only the lower 48 bits of result and MAC are considered
+ *
+ * MAC.W  @Rm+, @Rn+
+ * Rn * Rm + MAC -> MAC (Signed) (16 * 16 + 64 -> 64 bits)
+ * Rn + 2 -> Rn ; Rm + 2 -> Rm
+ * 0000nnnnmmmm1111
+ *
+ * When S bit is enabled, the MAC addition is a saturation operation of 32 bits
+ * So only the lower 32 bits of result and MAC are considered (which is basically MACL register)
+ */
+static RzILOpEffect *sh_il_mac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	SHParamHelper shp_rm = sh_il_get_param(op->param[0], op->scaling);
+	SHParamHelper shp_rn = sh_il_get_param(op->param[1], op->scaling);
+	RzILOpEffect *eff = NULL;
+
+	if (op->scaling == SH_SCALING_L) {
+		RzILOpEffect *mac = SETL("mac", LOGOR(SHIFTL0((UNSIGNED(2 * SH_REG_SIZE, VARG("mach"))), SH_U_REG(SH_REG_SIZE)), UNSIGNED(2 * SH_REG_SIZE, VARG("macl"))));
+		RzILOpPure *mul = MUL(SIGNED(2 * SH_REG_SIZE, shp_rm.pure), SIGNED(2 * SH_REG_SIZE, shp_rn.pure));
+		RzILOpPure *add = ADD(mul, VARL("mac"));
+		RzILOpPure *low = UNSIGNED(48, LOGAND(add, UN(2 * SH_REG_SIZE, 0xffffffffffff)));
+		RzILOpPure *sat = SIGNED(2 * SH_REG_SIZE, low);
+
+		eff = SEQ2(mac, BRANCH(VARG(SH_SR_S), SETL("mac", sat), SETG("mac", DUP(add))));
+		RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(VARL("mac"), UN(2 * SH_REG_SIZE, 0xffffffff)));
+		RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(VARL("mac"), SH_U_REG(SH_REG_SIZE)));
+		eff = SEQ3(eff, SETG("macl", lower_bits), SETG("mach", higher_bits));
+	} else if (op->scaling == SH_SCALING_W) {
+		RzILOpEffect *mac = SETL("mac", LOGOR(SHIFTL0((UNSIGNED(2 * SH_REG_SIZE, VARG("mach"))), SH_U_REG(SH_REG_SIZE)), UNSIGNED(2 * SH_REG_SIZE, VARG("macl"))));
+		RzILOpPure *mul = UNSIGNED(2 * SH_REG_SIZE, MUL(SIGNED(SH_REG_SIZE, shp_rm.pure), SIGNED(SH_REG_SIZE, shp_rn.pure)));
+		RzILOpPure *add = ADD(mul, VARG("mac"));
+		RzILOpPure *sat_add = ADD(UNSIGNED(SH_REG_SIZE, DUP(mul)), VARG("macl"));
+		RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(add, UN(2 * SH_REG_SIZE, 0xffffffff)));
+		RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(DUP(add), SH_U_REG(SH_REG_SIZE)));
+
+		eff = SEQ2(mac, BRANCH(VARG(SH_SR_S), SETG("macl", sat_add), SEQ2(SETG("macl", lower_bits), SETG("mach", higher_bits))));
+	}
+
+	eff = SEQ3(eff, shp_rn.post, shp_rm.post);
+	return eff;
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
@@ -721,5 +769,6 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_dmulu,
 	sh_il_dt,
 	sh_il_exts,
-	sh_il_extu
+	sh_il_extu,
+	sh_il_mac
 };
