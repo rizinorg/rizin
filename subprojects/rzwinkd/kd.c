@@ -141,8 +141,8 @@ int kd_read_packet(io_desc_t *desc, kd_packet_t **p) {
 				return KD_E_MALFORMED;
 			}
 		}
-		kd_send_ctrl_packet(desc, KD_PACKET_TYPE_ACKNOWLEDGE, ((kd_packet_t *)buf)->id & ~(0x800));
 	}
+	kd_send_ctrl_packet(desc, KD_PACKET_TYPE_ACKNOWLEDGE, pkt.id);
 
 	*p = (kd_packet_t *)buf;
 
