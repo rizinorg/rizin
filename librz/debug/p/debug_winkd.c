@@ -7,10 +7,6 @@
 
 static KdCtx *kdctx = NULL;
 
-static int rz_debug_winkd_step(RzDebug *dbg) {
-	return true;
-}
-
 static int rz_debug_winkd_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	int ret = winkd_read_reg(kdctx, buf, size);
 	if (!ret || size != ret) {
@@ -273,7 +269,7 @@ RzDebugPlugin rz_debug_plugin_winkd = {
 	.arch = "x86",
 	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.init = &rz_debug_winkd_init,
-	.step = &rz_debug_winkd_step,
+	// TODO: .step = &rz_debug_winkd_step,
 	.cont = &rz_debug_winkd_continue,
 	.attach = &rz_debug_winkd_attach,
 	.detach = &rz_debug_winkd_detach,
