@@ -907,9 +907,7 @@ bool winkd_read_ver(KdCtx *ctx) {
 	ctx->windctx.is_pae = pae_enabled & 1;
 	ctx->windctx.profile = winkd_get_profile(32 << ctx->windctx.is_64bit, rr->rz_ver.minor, winkd_get_sp(&ctx->windctx));
 	if (!ctx->windctx.profile) {
-		RZ_LOG_ERROR("Could not find a suitable profile for the target OS\n");
-		free(pkt);
-		return false;
+		RZ_LOG_WARN("Could not find a suitable profile for the target OS\n");
 	}
 	free(pkt);
 	return true;
