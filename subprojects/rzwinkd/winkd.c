@@ -1014,8 +1014,6 @@ int winkd_continue(KdCtx *ctx) {
 	if (ret == KD_E_OK) {
 		ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 		if (ret == KD_E_OK) {
-			rz_list_free(ctx->plist_cache);
-			ctx->plist_cache = NULL;
 			ret = true;
 			goto end;
 		}
@@ -1023,6 +1021,10 @@ int winkd_continue(KdCtx *ctx) {
 	ret = false;
 
 end:
+	rz_list_free(ctx->plist_cache);
+	ctx->plist_cache = NULL;
+	rz_list_free(ctx->tlist_cache);
+	ctx->tlist_cache = NULL;
 	winkd_lock_leave(ctx);
 	return ret;
 }
