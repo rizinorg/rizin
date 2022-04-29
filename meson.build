@@ -486,6 +486,8 @@ foreach item : [
     ['forkpty', '', [utl]],
     ['login_tty', '', [utl]],
     ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []],
+    # copy_file_range for now disable on freebsd as it s not reliable even for small chunks
+    ['copy_file_range', '#ifdef __linux__\n#define _GNU_SOURCE\n#include <unistd.h>\n#endif', []],
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1], dependencies: item[2])
