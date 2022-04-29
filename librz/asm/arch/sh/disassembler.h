@@ -62,6 +62,11 @@ typedef enum {
 	SH_OP_MUL,
 	SH_OP_MULS,
 	SH_OP_MULU,
+	SH_OP_NEG,
+	SH_OP_NEGC,
+	SH_OP_SUB,
+	SH_OP_SUBC,
+	SH_OP_SUBV,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;

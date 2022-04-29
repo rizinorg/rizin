@@ -772,6 +772,63 @@ static RzILOpEffect *sh_il_mulu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG("macl", MUL(m, n));
 }
 
+/**
+ * NEG  Rm, Rn
+ * 0 - Rm -> Rn
+ * 0110nnnnmmmm1011
+ */
+static RzILOpEffect *sh_il_neg(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *sub = SUB(UNSIGNED(SH_REG_SIZE, 0), sh_il_get_pure_param(0));
+	return sh_il_set_pure_param(1, sub);
+}
+
+/**
+ * NEGC  Rm, Rn
+ * 0 - Rm - T -> Rn ; borrow -> T
+ * 0110nnnnmmmm1010
+ */
+static RzILOpEffect *sh_il_negc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *sub = SUB(UNSIGNED(SH_REG_SIZE, 0), sh_il_get_pure_param(0));
+	sub = SUB(sub, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
+	return SEQ2(sh_il_set_pure_param(1, sub), SETG(SH_SR_T, sh_il_is_sub_borrow(sub, UNSIGNED(SH_REG_SIZE, 0), sh_il_get_pure_param(0))));
+}
+
+/**
+ * SUB  Rm, Rn
+ * Rn - Rm -> Rn
+ * 0011nnnnmmmm1000
+ */
+static RzILOpEffect *sh_il_sub(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(1, SUB(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
+}
+
+/**
+ * SUBC  Rm, Rn
+ * Rn - Rm - T -> Rn ; borrow -> T
+ * 0011nnnnmmmm1010
+ */
+static RzILOpEffect *sh_il_subc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *dif = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
+	dif = SUB(dif, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
+
+	RzILOpEffect *ret = sh_il_set_pure_param(1, dif);
+	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_sub_borrow(DUP(dif), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
+	return SEQ2(ret, tbit);
+}
+
+/**
+ * SUBV  Rm, Rn
+ * Rn - Rm -> Rn ; underflow -> T
+ * 0011nnnnmmmm1011
+ */
+static RzILOpEffect *sh_il_subv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *dif = SUB(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
+
+	RzILOpEffect *ret = sh_il_set_pure_param(1, dif);
+	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_sub_underflow(DUP(dif), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
+	return SEQ2(ret, tbit);
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
@@ -804,5 +861,10 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_mac,
 	sh_il_mul,
 	sh_il_muls,
-	sh_il_mulu
+	sh_il_mulu,
+	sh_il_neg,
+	sh_il_negc,
+	sh_il_sub,
+	sh_il_subc,
+	sh_il_subv
 };
