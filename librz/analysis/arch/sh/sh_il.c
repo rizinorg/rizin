@@ -395,15 +395,11 @@ static RzILOpEffect *sh_il_movt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 static RzILOpEffect *sh_il_swap(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	if (op->scaling == SH_SCALING_B) {
 		// swap lower two bytes
-		RzILOpEffect *r0 = SETL("swap_r0", sh_il_get_pure_param(0));
-		RzILOpEffect *r1 = SETL("swap_r1", sh_il_get_pure_param(1));
-		RzILOpPure *r0_low = LOGAND(SH_U_REG(0xffff), VARL("swap_r0"));
-		RzILOpPure *r1_low = LOGAND(SH_U_REG(0xffff), VARL("swap_r1"));
-		RzILOpPure *r0_high = LOGAND(SH_U_REG(0xffff0000), VARL("swap_r0"));
-		RzILOpPure *r1_high = LOGAND(SH_U_REG(0xffff0000), VARL("swap_r1"));
-		RzILOpPure *r0_new = LOGOR(r0_high, r1_low);
-		RzILOpPure *r1_new = LOGOR(r1_high, r0_low);
-		return SEQ4(r0, r1, sh_il_set_pure_param(0, r0_new), sh_il_set_pure_param(1, r1_new));
+		RzILOpPure *lower_byte = AND(sh_il_get_pure_param(0), SH_U_REG(0xff));
+		RzILOpPure *new_lower_byte = AND(SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(BITS_PER_BYTE)), SH_U_REG(0xff));
+		RzILOpPure *new_upper_byte = SHIFTL0(lower_byte, SH_U_REG(BITS_PER_BYTE));
+		RzILOpPure *upper_word = LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xffff0000));
+		return sh_il_set_pure_param(1, LOGOR(upper_word, LOGOR(new_upper_byte, new_lower_byte)));
 	} else if (op->scaling == SH_SCALING_W) {
 		// swap upper and lower words and store in dst
 		RzILOpPure *high = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(BITS_PER_BYTE * 2));
