@@ -4,6 +4,7 @@
 #include <rz_debug.h>
 #include <winkd.h>
 #include <kd.h>
+#include "common_winkd.h"
 
 static KdCtx *kdctx = NULL;
 
@@ -95,6 +96,40 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	}
 	if (!winkd_read_ver(kdctx)) {
 		return false;
+	}
+
+	// Load PDB for kernel
+	RzList *modules = winkd_list_modules(&kdctx->windctx);
+	RzListIter *it;
+	WindModule *m, *mod = NULL;
+	rz_list_foreach (modules, it, m) {
+		RZ_LOG_DEBUG("%" PFMT64x " %s\n", m->addr, m->name);
+		if (rz_str_endswith(m->name, "\\ntoskrnl.exe")) {
+			mod = m;
+			break;
+		}
+	}
+	if (!mod) {
+		RZ_LOG_ERROR("Failed to find ntoskrnl.exe module\n");
+		rz_list_free(modules);
+		return false;
+	}
+	char *exepath, *pdbpath;
+	if (!winkd_download_module_and_pdb(mod,
+		    dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server"),
+		    dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore"),
+		    &exepath, &pdbpath)) {
+		RZ_LOG_ERROR("Failed to download module and pdb\n");
+		rz_list_free(modules);
+		return false;
+	}
+	dbg->corebind.cmdf(dbg->corebind.core, "e bin.baddr=0x%" PFMT64x "", mod->addr, pdbpath);
+	dbg->corebind.cmdf(dbg->corebind.core, "idp %s", pdbpath);
+	rz_list_free(modules);
+
+	if (!kdctx->windctx.profile) {
+		RZ_LOG_INFO("Trying to build profile dinamically by using the ntoskrnl.exe's PDB\n");
+		winkd_build_profile(&kdctx->windctx, dbg->analysis->typedb);
 	}
 	dbg->bits = winkd_get_bits(&kdctx->windctx);
 	// Make rz_debug_is_dead happy
