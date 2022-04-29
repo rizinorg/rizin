@@ -122,7 +122,7 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	case RZ_IO_SEEK_CUR:
 		return io->off += offset;
 	case RZ_IO_SEEK_END:
-		return ST64_MAX;
+		return io->off = UT64_MAX;
 	default:
 		return offset;
 	}
