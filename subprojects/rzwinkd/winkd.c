@@ -499,6 +499,14 @@ void winkd_windmodule_free(void *ptr) {
 	free(mod);
 }
 
+static int read_at_uva_or_kernel(WindCtx *ctx, ut64 address, ut8 *buf, int count) {
+	const bool is_target_kernel = ctx->target.uniqueid <= 4;
+	if (is_target_kernel) {
+		return ctx->read_at_kernel_virtual(ctx->user, address, buf, count);
+	}
+	return winkd_read_at_uva(ctx, address, buf, count);
+}
+
 RzList *winkd_list_modules(WindCtx *ctx) {
 	RzList *ret = rz_list_newf(winkd_windmodule_free);
 	if (!ret) {
@@ -514,7 +522,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 		}
 		ptr = ctx->PsLoadedModuleList;
 		base = ptr;
-		if (!winkd_read_at_uva(ctx, ptr, (uint8_t *)&ptr, 4 << ctx->is_64bit)) {
+		if (!ctx->read_at_kernel_virtual(ctx->user, ptr, (uint8_t *)&ptr, 4 << ctx->is_64bit)) {
 			RZ_LOG_ERROR("PsLoadedModuleList not present in mappings\n");
 		}
 		if (ptr == base) {
@@ -569,7 +577,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 	do {
 
 		ut64 next = 0;
-		winkd_read_at_uva(ctx, ptr, (uint8_t *)&next, 4 << ctx->is_64bit);
+		read_at_uva_or_kernel(ctx, ptr, (uint8_t *)&next, 4 << ctx->is_64bit);
 
 		RZ_LOG_DEBUG("_%sLDR_DATA_TABLE_ENTRY : 0x%016" PFMT64x "\n", is_target_kernel ? "K" : "", next);
 		if (!next || next == UT64_MAX) {
@@ -583,22 +591,22 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 		if (!mod) {
 			break;
 		}
-		winkd_read_at_uva(ctx, ptr + baseoff, (uint8_t *)&mod->addr, 4 << ctx->is_64bit);
-		winkd_read_at_uva(ctx, ptr + sizeoff, (uint8_t *)&mod->size, 4);
-		winkd_read_at_uva(ctx, ptr + timestampoff, (uint8_t *)&mod->timestamp, 4);
+		read_at_uva_or_kernel(ctx, ptr + baseoff, (uint8_t *)&mod->addr, 4 << ctx->is_64bit);
+		read_at_uva_or_kernel(ctx, ptr + sizeoff, (uint8_t *)&mod->size, 4);
+		read_at_uva_or_kernel(ctx, ptr + timestampoff, (uint8_t *)&mod->timestamp, 4);
 
 		ut16 length;
-		winkd_read_at_uva(ctx, ptr + nameoff, (uint8_t *)&length, sizeof(ut16));
+		read_at_uva_or_kernel(ctx, ptr + nameoff, (uint8_t *)&length, sizeof(ut16));
 
 		ut64 bufferaddr = 0;
 		int align = ctx->is_64bit ? sizeof(ut64) : sizeof(ut32);
-		winkd_read_at_uva(ctx, ptr + nameoff + align, (uint8_t *)&bufferaddr, 4 << ctx->is_64bit);
+		read_at_uva_or_kernel(ctx, ptr + nameoff + align, (uint8_t *)&bufferaddr, 4 << ctx->is_64bit);
 
 		ut8 *unname = calloc((ut64)length + 2, 1);
 		if (!unname) {
 			break;
 		}
-		winkd_read_at_uva(ctx, bufferaddr, unname, length);
+		read_at_uva_or_kernel(ctx, bufferaddr, unname, length);
 
 		mod->name = calloc((ut64)length + 1, 1);
 		if (!mod->name) {
@@ -883,8 +891,10 @@ bool winkd_read_ver(KdCtx *ctx) {
 		return false;
 	}
 
+	ctx->windctx.PsLoadedModuleList = rr->rz_ver.mod_addr;
 	ctx->windctx.KdDebuggerDataBlock = ptr;
 
+	RZ_LOG_DEBUG("PsLoadedModuleList at 0x%016" PFMT64x "\n", ctx->windctx.PsLoadedModuleList);
 	RZ_LOG_DEBUG("_KDDEBUGGER_DATA64 at 0x%016" PFMT64x "\n", ctx->windctx.KdDebuggerDataBlock);
 
 	// Thanks to this we don't have to find a way to read the cr4
