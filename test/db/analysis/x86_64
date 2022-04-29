@@ -2479,6 +2479,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
+loops: 0
 bits: 64
 type: fcn [new]
 num-bbs: 2
@@ -2538,6 +2539,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 6
 cyclomatic-complexity: 1
+loops: 0
 bits: 64
 type: fcn [new]
 num-bbs: 2
@@ -2611,6 +2613,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
+loops: 0
 bits: 64
 type: fcn [new]
 num-bbs: 2
@@ -2692,6 +2695,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
+loops: 1
 bits: 64
 type: fcn [new]
 num-bbs: 3
@@ -2782,6 +2786,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 9
 cyclomatic-complexity: 0
+loops: 1
 bits: 64
 type: fcn [new]
 num-bbs: 4
@@ -2906,6 +2911,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
+loops: 1
 bits: 64
 type: fcn [new]
 num-bbs: 3
@@ -3025,9 +3031,9 @@ EXPECT=<<EOF
 |                             |
 `-----------------------------'
 
-addr       name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn min bound  range max bound  locals args frame 
--------------------------------------------------------------------------------------------------------------------------------
-0x00000003 fcn.00000003 9    1       1         0     3    3     0  4    false    0x00000000 7     0x00000007 0      0    0
+addr       name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn min bound  range max bound  locals args frame loops 
+-------------------------------------------------------------------------------------------------------------------------------------
+0x00000003 fcn.00000003 9    1       1         0     3    3     0  4    false    0x00000000 7     0x00000007 0      0    0     1
 EOF
 RUN
 

@@ -499,7 +499,7 @@ RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, c
 	} else if (xtr->extractall_from_bytes) {
 		ut64 sz = 0;
 		const ut8 *bytes = rz_buf_data(buf, &sz);
-		eprintf("TODO: Implement extractall_from_buffer in '%s' xtr.bin plugin\n", xtr->name);
+		RZ_LOG_INFO("TODO: Implement extractall_from_buffer in '%s' xtr.bin plugin\n", xtr->name);
 		bf->xtr_data = xtr->extractall_from_bytes(bin, bytes, sz);
 	}
 	if (bf->xtr_data) {
@@ -654,7 +654,7 @@ static inline bool add_file_hash(RzMsgDigest *md, const char *name, RzList *list
 
 	RzBinFileHash *fh = RZ_NEW0(RzBinFileHash);
 	if (!fh) {
-		eprintf("Cannot allocate file hash\n");
+		RZ_LOG_ERROR("Cannot allocate RzBinFileHash\n");
 		return false;
 	}
 
@@ -685,19 +685,19 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 	buf_len = rz_io_desc_size(iod);
 	if (buf_len > limit) {
 		if (bin->verbose) {
-			eprintf("Warning: rz_bin_file_hash: file exceeds bin.hashlimit\n");
+			RZ_LOG_WARN("rz_bin_file_hash: file exceeds bin.hashlimit\n");
 		}
 		return NULL;
 	}
 	buf = malloc(blocksize);
 	if (!buf) {
-		eprintf("Cannot allocate computation buffer\n");
+		RZ_LOG_ERROR("Cannot allocate buffer for hash computation\n");
 		return NULL;
 	}
 
 	file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
 	if (!file_hashes) {
-		eprintf("Cannot allocate list\n");
+		RZ_LOG_ERROR("Cannot allocate file hash list\n");
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
@@ -830,7 +830,7 @@ RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *klass, con
 
 	RzBinClass *c = rz_bin_file_add_class(bf, klass, NULL, 0);
 	if (!c) {
-		eprintf("Cannot allocate class %s\n", klass);
+		RZ_LOG_ERROR("Cannot allocate RzBinClass for '%s'\n", klass);
 		return NULL;
 	}
 	RzBinSymbol *sym = __getMethod(bf, klass, method);
@@ -844,12 +844,6 @@ RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *klass, con
 		}
 	}
 	return sym;
-}
-
-RZ_API RzBinField *rz_bin_file_add_field(RzBinFile *binfile, const char *classname, const char *name) {
-	// TODO: add_field into class
-	// eprintf ("TODO add field: %s \n", name);
-	return NULL;
 }
 
 RZ_API RzList *rz_bin_file_get_trycatch(RzBinFile *bf) {

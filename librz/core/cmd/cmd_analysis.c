@@ -228,29 +228,6 @@ static const char *help_msg_aea[] = {
 	NULL
 };
 
-static const char *help_msg_aec[] = {
-	"Examples:", "aec", " continue until ^c",
-	"aec", "", "Continue until exception",
-	"aecs", "", "Continue until syscall",
-	"aecc", "", "Continue until call",
-	"aecu", "[addr]", "Continue until address",
-	"aecue", "[addr]", "Continue until esil expression",
-	NULL
-};
-
-static const char *help_msg_aeC[] = {
-	"Examples:", "aeC", " arg0 arg1 ... @ calladdr",
-	"aeC", " 1 2 @ sym._add", "Call sym._add(1,2)",
-	NULL
-};
-
-static const char *help_msg_aets[] = {
-	"Usage:", "aets ", " [...]",
-	"aets+", "", "Start ESIL trace session",
-	"aets-", "", "Stop ESIL trace session",
-	NULL
-};
-
 static const char *help_msg_af[] = {
 	"Usage:", "af", "",
 	"af", " ([name]) ([addr])", "analyze functions (start at addr or $$)",
@@ -258,45 +235,12 @@ static const char *help_msg_af[] = {
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
-	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
-	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afd", "[addr]", "show function + delta for given offset",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afj", " [tableaddr] [count]", "analyze function jumptable",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
-	"afm", " name", "merge two functions",
-	"afM", " name", "print functions map",
 	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
-	"aft", "[?]", "type matching, type propagation",
 	"afv", "[?]", "Manipulate arguments/variables in a function",
-	NULL
-};
-
-static const char *help_msg_afc[] = {
-	"Usage:", "afc[agl?]", "",
-	"afc", " convention", "Manually set calling convention for current function",
-	"afc", "", "Show Calling convention for the Current function",
-	"afcr", "[j]", "Show register usage for the current function",
-	"afca", "", "Analyse function for finding the current calling convention",
-	"afcf", "[j] [name]", "Prints return type function(arg1, arg2...), see afij",
-	"afck", "", "List SDB details of call loaded calling conventions",
-	"afcl", "", "List all available calling conventions",
-	"afco", " path", "Open Calling Convention sdb profile from given path",
-	"afcR", "", "Register telescoping using the calling conventions order",
-	NULL
-};
-
-static const char *help_msg_afC[] = {
-	"Usage:", "afC", " [addr]",
-	"afC", "", "function cycles cost",
-	"afCc", "", "cyclomatic complexity",
-	"afCl", "", "loop count (backward jumps)",
-	NULL
-};
-
-static const char *help_msg_aft[] = {
-	"Usage:", "aft", "",
-	"aft", "", "type matching analysis for current function",
 	NULL
 };
 
@@ -405,28 +349,6 @@ static int cmpaddr(const void *_a, const void *_b) {
 static bool listOpDescriptions(void *_core, const char *k, const char *v) {
 	rz_cons_printf("%s=%s\n", k, v);
 	return true;
-}
-
-static void type_cmd(RzCore *core, const char *input) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
-	if (!fcn && *input != '?') {
-		eprintf("cant find function here\n");
-		return;
-	}
-	ut64 seek;
-	rz_cons_break_push(NULL, NULL);
-	switch (*input) {
-	case '\0': // "aft"
-		seek = core->offset;
-		rz_analysis_esil_set_pc(core->analysis->esil, fcn ? fcn->addr : core->offset);
-		rz_core_analysis_type_match(core, fcn, NULL);
-		rz_core_seek(core, seek, true);
-		break;
-	case '?': // "aft?"
-		rz_core_cmd_help(core, help_msg_aft);
-		break;
-	}
-	rz_cons_break_pop();
 }
 
 static void var_accesses_list(RzAnalysisFunction *fcn, RzAnalysisVar *var, PJ *pj, int access_type, const char *name) {
@@ -795,6 +717,15 @@ static void cmd_syscall_do(RzCore *core, st64 n, ut64 addr) {
 			rz_cons_println(msg); \
 	}
 
+#define PJ_KS(pj, key, value) \
+	if (RZ_STR_ISNOTEMPTY(value)) { \
+		pj_ks(pj, key, value); \
+	}
+#define PJ_KN(pj, key, value) \
+	if (value != UT64_MAX) { \
+		pj_kn(pj, key, value); \
+	}
+
 static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int nops) {
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
 	int ret, i, idx;
@@ -894,199 +825,86 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 }
 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
-	bool be = core->print->big_endian;
-	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
-	int ret, i, idx, size;
-	const char *esilstr;
-	const char *opexstr;
-	RzAnalysisHint *hint;
-	RzAnalysisEsil *esil = NULL;
-	RzAsmOp asmop;
-	RzAnalysisOp op = { 0 };
-	ut64 addr;
+	RzPVector *vec = rz_core_analysis_bytes(core, buf, len, nops);
+	if (!vec) {
+		return;
+	}
+
+	void **iter;
+	RzAnalysisBytes *ab;
 
 	pj_a(pj);
-
-	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
-		addr = core->offset + idx;
-		rz_asm_set_pc(core->rasm, addr);
-		hint = rz_analysis_hint_get(core->analysis, addr);
-		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
-			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
-		(void)rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx);
-		esilstr = RZ_STRBUF_SAFEGET(&op.esil);
-		opexstr = RZ_STRBUF_SAFEGET(&op.opex);
-		char *mnem = strdup(rz_asm_op_get_asm(&asmop));
-		char *sp = strchr(mnem, ' ');
-		if (sp) {
-			*sp = 0;
-			if (op.prefix) {
-				char *arg = strdup(sp + 1);
-				char *sp = strchr(arg, ' ');
-				if (sp) {
-					*sp = 0;
-				}
-				free(mnem);
-				mnem = arg;
-			}
-		}
-		if (ret < 1) {
-			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", core->offset + idx);
-			free(mnem);
+	rz_pvector_foreach (vec, iter) {
+		if (!iter) {
 			break;
 		}
-		size = op.size;
+		ab = *iter;
+		if (!ab || !ab->op) {
+			break;
+		}
+		RzAnalysisOp *op = ab->op;
+		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
+		const char *opexstr = RZ_STRBUF_SAFEGET(&op->opex);
+		RzAnalysisHint *hint = ab->hint;
 
-		char strsub[128] = { 0 };
-		// pc+33
-		rz_parse_subvar(core->parser, NULL,
-			core->offset + idx,
-			asmop.size, rz_asm_op_get_asm(&asmop),
-			strsub, sizeof(strsub));
-		ut64 killme = UT64_MAX;
-		if (rz_io_read_i(core->io, op.ptr, &killme, op.refptr, be)) {
-			core->parser->subrel_addr = killme;
-		}
-		// 0x33->sym.xx
-		char *p = strdup(strsub);
-		if (p) {
-			rz_parse_filter(core->parser, addr, core->flags, hint, p,
-				strsub, sizeof(strsub), be);
-			free(p);
-		}
 		pj_o(pj);
-		pj_ks(pj, "opcode", rz_asm_op_get_asm(&asmop));
-		if (!*strsub) {
-			rz_str_ncpy(strsub, rz_asm_op_get_asm(&asmop), sizeof(strsub) - 1);
+		PJ_KS(pj, "opcode", ab->opcode);
+		PJ_KS(pj, "disasm", ab->disasm);
+		PJ_KS(pj, "pseudo", ab->pseudo);
+		PJ_KS(pj, "description", ab->description);
+		PJ_KS(pj, "mnemonic", op->mnemonic);
+		PJ_KS(pj, "mask", ab->mask);
+
+		if (hint) {
+			PJ_KS(pj, "ophint", hint->opcode);
 		}
-		{
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-			if (fcn) {
-				rz_parse_subvar(core->parser, fcn, addr, asmop.size,
-					strsub, strsub, sizeof(strsub));
-			}
-		}
-		pj_ks(pj, "disasm", strsub);
-		// apply pseudo if needed
-		{
-			char *pseudo = rz_parse_pseudocode(core->parser, strsub);
-			if (RZ_STR_ISNOTEMPTY(pseudo)) {
-				pj_ks(pj, "pseudo", pseudo);
-			}
-			free(pseudo);
-		}
-		{
-			char *opname = strdup(strsub);
-			char *sp = strchr(opname, ' ');
-			if (sp) {
-				*sp = 0;
-			}
-			char *d = rz_asm_describe(core->rasm, opname);
-			if (d && *d) {
-				pj_ks(pj, "description", d);
-			}
-			free(d);
-			free(opname);
-		}
-		pj_ks(pj, "mnemonic", mnem);
-		{
-			ut8 *mask = rz_analysis_mask(core->analysis, len - idx, buf + idx, core->offset + idx);
-			char *maskstr = rz_hex_bin2strdup(mask, size);
-			pj_ks(pj, "mask", maskstr);
-			free(mask);
-			free(maskstr);
-		}
-		if (hint && hint->opcode) {
-			pj_ks(pj, "ophint", hint->opcode);
-		}
-		if (hint && hint->jump != UT64_MAX) {
-			op.jump = hint->jump;
-		}
-		if (hint && hint->fail != UT64_MAX) {
-			op.fail = hint->fail;
-		}
-		if (op.jump != UT64_MAX) {
-			pj_kn(pj, "jump", op.jump);
-		}
-		if (op.fail != UT64_MAX) {
-			pj_kn(pj, "fail", op.fail);
-		}
-		const char *jesil = (hint && hint->esil) ? hint->esil : esilstr;
-		if (RZ_STR_ISNOTEMPTY(jesil)) {
-			pj_ks(pj, "esil", jesil);
-		}
-		if (op.il_op) {
+		PJ_KN(pj, "jump", op->jump);
+		PJ_KN(pj, "fail", op->fail);
+		PJ_KS(pj, "esil", (hint && hint->esil) ? hint->esil : esilstr);
+
+		if (op->il_op) {
 			pj_k(pj, "rzil");
-			rz_il_op_effect_json(op.il_op, pj);
+			rz_il_op_effect_json(op->il_op, pj);
 		}
-		pj_kb(pj, "sign", op.sign);
-		pj_kn(pj, "prefix", op.prefix);
-		pj_ki(pj, "id", op.id);
+		pj_kb(pj, "sign", op->sign);
+		pj_kn(pj, "prefix", op->prefix);
+		pj_ki(pj, "id", op->id);
 		if (RZ_STR_ISNOTEMPTY(opexstr)) {
 			pj_k(pj, "opex");
 			pj_j(pj, opexstr);
 		}
-		pj_kn(pj, "addr", core->offset + idx);
-		{
-			char *bytes = rz_hex_bin2strdup(buf + idx, size);
-			pj_ks(pj, "bytes", bytes);
-			free(bytes);
-		}
-		if (op.val != UT64_MAX) {
-			pj_kn(pj, "val", op.val);
-		}
-		if (op.disp && op.disp != UT64_MAX) {
-			pj_kn(pj, "disp", op.disp);
-		}
-		if (op.ptr != UT64_MAX) {
-			pj_kn(pj, "ptr", op.ptr);
-		}
-		pj_ki(pj, "size", size);
-		pj_ks(pj, "type", rz_analysis_optype_to_string(op.type));
-		{
-			const char *datatype = rz_analysis_datatype_to_string(op.datatype);
-			if (datatype) {
-				pj_ks(pj, "datatype", datatype);
-			}
-		}
+		PJ_KN(pj, "addr", op->addr);
+		PJ_KS(pj, "bytes", ab->bytes);
+		PJ_KN(pj, "val", op->val);
+		PJ_KN(pj, "disp", op->disp);
+		PJ_KN(pj, "ptr", op->ptr);
+		pj_ki(pj, "size", op->size);
+		PJ_KS(pj, "type", rz_analysis_optype_to_string((int)op->type));
+		PJ_KS(pj, "datatype", rz_analysis_datatype_to_string(op->datatype));
 		if (esilstr) {
-			int ec = esil_cost(core, addr, esilstr);
-			pj_ki(pj, "esilcost", ec);
+			pj_ki(pj, "esilcost", esil_cost(core, op->addr, esilstr));
 		}
-		if (op.reg) {
-			pj_ks(pj, "reg", op.reg);
+		PJ_KS(pj, "reg", op->reg);
+		PJ_KS(pj, "ireg", op->ireg);
+		pj_ki(pj, "scale", op->scale);
+		if (op->refptr != -1) {
+			pj_ki(pj, "refptr", op->refptr);
 		}
-		if (op.ireg) {
-			pj_ks(pj, "ireg", op.ireg);
+		pj_ki(pj, "cycles", op->cycles);
+		pj_ki(pj, "failcycles", op->failcycles);
+		pj_ki(pj, "delay", op->delay);
+		const char *p1 = rz_analysis_stackop_tostring(op->stackop);
+		if (strcmp(p1, "null") != 0) {
+			PJ_KS(pj, "stack", p1);
 		}
-		pj_ki(pj, "scale", op.scale);
-		if (op.refptr != -1) {
-			pj_ki(pj, "refptr", op.refptr);
-		}
-		pj_ki(pj, "cycles", op.cycles);
-		pj_ki(pj, "failcycles", op.failcycles);
-		pj_ki(pj, "delay", op.delay);
-		const char *p1 = rz_analysis_stackop_tostring(op.stackop);
-		if (strcmp(p1, "null")) {
-			pj_ks(pj, "stack", p1);
-		}
-		pj_kn(pj, "stackptr", op.stackptr);
-		const char *arg = (op.type & RZ_ANALYSIS_OP_TYPE_COND)
-			? rz_type_cond_tostring(op.cond)
-			: NULL;
-		if (arg) {
-			pj_ks(pj, "cond", arg);
-		}
-		pj_ks(pj, "family", rz_analysis_op_family_to_string(op.family));
+		pj_kn(pj, "stackptr", op->stackptr);
+		PJ_KS(pj, "cond", (op->type & RZ_ANALYSIS_OP_TYPE_COND) ? rz_type_cond_tostring(op->cond) : NULL);
+		PJ_KS(pj, "family", rz_analysis_op_family_to_string(op->family));
 		pj_end(pj);
-
-		free(mnem);
-		rz_analysis_hint_free(hint);
-		rz_analysis_op_fini(&op);
 	}
-	rz_analysis_op_fini(&op);
+
 	pj_end(pj);
-	rz_analysis_esil_free(esil);
+	rz_pvector_free(vec);
 }
 
 static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, int nops) {
@@ -1304,6 +1122,8 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 	rz_analysis_esil_free(esil);
 }
 
+#undef PJ_KS
+#undef PJ_KN
 #undef printline
 #undef printline_noarg
 
@@ -1403,90 +1223,6 @@ static void rz_core_analysis_nofunclist(RzCore *core, const char *input) {
 		}
 	}
 	free(bitmap);
-}
-
-static void rz_core_analysis_fmap(RzCore *core, const char *input) {
-	int show_color = rz_config_get_i(core->config, "scr.color");
-	int cols = rz_config_get_i(core->config, "hex.cols") * 4;
-	ut64 code_size = rz_num_get(core->num, "$SS");
-	ut64 base_addr = rz_num_get(core->num, "$S");
-	RzListIter *iter, *iter2;
-	RzAnalysisFunction *fcn;
-	RzAnalysisBlock *b;
-	char *bitmap;
-	int assigned;
-	ut64 i;
-
-	if (code_size < 1) {
-		return;
-	}
-	bitmap = calloc(1, code_size + 64);
-	if (!bitmap) {
-		return;
-	}
-
-	// for each function
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		// for each basic block in the function
-		rz_list_foreach (fcn->bbs, iter2, b) {
-			// if it is not within range, continue
-			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr + code_size))
-				continue;
-			// otherwise mark each byte in the BB in the bitmap
-			int counter = 1;
-			for (counter = 0; counter < b->size; counter++) {
-				bitmap[b->addr + counter - base_addr] = '=';
-			}
-			bitmap[fcn->addr - base_addr] = 'F';
-		}
-	}
-	// print the bitmap
-	assigned = 0;
-	if (cols < 1) {
-		cols = 1;
-	}
-	for (i = 0; i < code_size; i += 1) {
-		if (!(i % cols)) {
-			rz_cons_printf("\n0x%08" PFMT64x "  ", base_addr + i);
-		}
-		if (bitmap[i]) {
-			assigned++;
-		}
-		if (show_color) {
-			if (bitmap[i]) {
-				rz_cons_printf("%s%c\x1b[0m", Color_GREEN, bitmap[i]);
-			} else {
-				rz_cons_printf(".");
-			}
-		} else {
-			rz_cons_printf("%c", bitmap[i] ? bitmap[i] : '.');
-		}
-	}
-	rz_cons_printf("\n%d / %" PFMT64u " (%.2lf%%) bytes assigned to a function\n", assigned, code_size, 100.0 * ((float)assigned) / code_size);
-	free(bitmap);
-}
-
-static void afCc(RzCore *core, const char *input) {
-	ut64 addr;
-	RzAnalysisFunction *fcn;
-	if (*input == ' ') {
-		addr = rz_num_math(core->num, input);
-	} else {
-		addr = core->offset;
-	}
-	if (addr == 0LL) {
-		fcn = rz_analysis_get_function_byname(core->analysis, input + 3);
-	} else {
-		fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	}
-	if (fcn) {
-		ut32 totalCycles = rz_analysis_function_cost(fcn);
-		// FIXME: This defeats the purpose of the function, but afC is used in project files.
-		// cf. canalysis.c
-		rz_cons_printf("%d\n", totalCycles);
-	} else {
-		eprintf("afCc: Cannot find function\n");
-	}
 }
 
 RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
@@ -1683,184 +1419,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 		} break;
 		}
 		break;
-	case 'm': // "afm" - merge two functions
-		rz_core_analysis_fcn_merge(core, core->offset, rz_num_math(core->num, input + 1));
-		break;
-	case 'M': // "afM" - print functions map
-		rz_core_analysis_fmap(core, input);
-		break;
-	case 't': // "aft"
-		type_cmd(core, input + 1);
-		break;
-	case 'C': // "afC"
-		if (input[1] == 'c') {
-			RzAnalysisFunction *fcn;
-			if ((fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0)) != NULL) {
-				rz_cons_printf("%i\n", rz_analysis_function_complexity(fcn));
-			} else {
-				eprintf("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
-			}
-		} else if (input[1] == 'l') {
-			RzAnalysisFunction *fcn;
-			if ((fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0)) != NULL) {
-				rz_cons_printf("%d\n", rz_analysis_function_loops(fcn));
-			} else {
-				eprintf("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
-			}
-		} else if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_afC);
-		} else {
-			afCc(core, rz_str_trim_head_ro(input + 1));
-		}
-		break;
-	case 'c': { // "afc"
-		RzAnalysisFunction *fcn = NULL;
-		if (!input[1] || input[1] == ' ' || input[1] == 'r' || input[1] == 'a') {
-			fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-			if (!fcn) {
-				eprintf("afc: Cannot find function here\n");
-				break;
-			}
-		}
-		switch (input[1]) {
-		case '\0': // "afc"
-			rz_cons_println(fcn->cc);
-			break;
-		case ' ': { // "afc "
-			char *argument = strdup(input + 2);
-			char *cc = argument;
-			rz_str_trim(cc);
-			if (!rz_analysis_cc_exist(core->analysis, cc)) {
-				const char *asmOs = rz_config_get(core->config, "asm.os");
-				eprintf("afc: Unknown calling convention '%s' for '%s'\n"
-					"See afcl for available types\n",
-					cc, asmOs);
-			} else {
-				fcn->cc = rz_str_constpool_get(&core->analysis->constpool, cc);
-			}
-			free(argument);
-			break;
-		}
-		case 'f': { // "afcf" "afcfj"
-			RzOutputMode mode = (input[2] == 'j') ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD;
-			char *p = strchr(input, ' ');
-			char *fcn_name = p ? rz_str_trim_dup(p) : NULL;
-			char *sig = rz_core_analysis_function_signature(core, mode, fcn_name);
-			if (sig) {
-				rz_cons_printf("%s\n", sig);
-				free(sig);
-			}
-			break;
-		}
-		case 'k': // "afck"
-			rz_core_kuery_print(core, "analysis/cc/*");
-			break;
-		case 'l': // "afcl" list all function Calling conventions.
-			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		case 'o': { // "afco"
-			char *dbpath = rz_str_trim_dup(input + 2);
-			if (rz_file_exists(dbpath)) {
-				Sdb *db = sdb_new(0, dbpath, 0);
-				sdb_merge(core->analysis->sdb_cc, db);
-				sdb_close(db);
-				sdb_free(db);
-			}
-			free(dbpath);
-			break;
-		}
-		case 'r': { // "afcr"
-			int i;
-			PJ *pj = NULL;
-			bool json = input[2] == 'j';
-			if (json) {
-				pj = pj_new();
-				if (!pj) {
-					return false;
-				}
-				pj_o(pj);
-			}
-
-			char *cmd = rz_str_newf("cc.%s.ret", fcn->cc);
-			const char *regname = sdb_const_get(core->analysis->sdb_cc, cmd, 0);
-			if (regname) {
-				if (json) {
-					pj_ks(pj, "ret", regname);
-				} else {
-					rz_cons_printf("%s: %s\n", cmd, regname);
-				}
-			}
-			free(cmd);
-			if (json) {
-				pj_ka(pj, "args");
-			}
-			for (i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
-				cmd = rz_str_newf("cc.%s.arg%d", fcn->cc, i);
-				regname = sdb_const_get(core->analysis->sdb_cc, cmd, 0);
-				if (regname) {
-					if (json) {
-						pj_s(pj, regname);
-					} else {
-						rz_cons_printf("%s: %s\n", cmd, regname);
-					}
-				}
-				free(cmd);
-			}
-			if (json) {
-				pj_end(pj);
-			}
-
-			cmd = rz_str_newf("cc.%s.self", fcn->cc);
-			regname = sdb_const_get(core->analysis->sdb_cc, cmd, 0);
-			if (regname) {
-				if (json) {
-					pj_ks(pj, "self", regname);
-				} else {
-					rz_cons_printf("%s: %s\n", cmd, regname);
-				}
-			}
-			free(cmd);
-			cmd = rz_str_newf("cc.%s.error", fcn->cc);
-			regname = sdb_const_get(core->analysis->sdb_cc, cmd, 0);
-			if (regname) {
-				if (json) {
-					pj_ks(pj, "error", regname);
-				} else {
-					rz_cons_printf("%s: %s\n", cmd, regname);
-				}
-			}
-			free(cmd);
-			if (json) {
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-				pj_free(pj);
-			}
-		} break;
-		case 'R': { // "afcR"
-			/* very slow, but im tired of waiting for having this, so this is the quickest implementation */
-			int i;
-			char *cc = sdb_querys(core->sdb, NULL, 0, "analysis/cc/default.cc");
-			rz_str_trim(cc);
-			for (i = 0; i < 6; i++) {
-				char *k = rz_str_newf("analysis/cc/cc.%s.arg%d", cc, i);
-				char *res = sdb_querys(core->sdb, NULL, 0, k);
-				free(k);
-				rz_str_trim_nc(res);
-				if (*res) {
-					char *row = rz_core_cmd_strf(core, "drr~%s 0x", res);
-					rz_str_trim(row);
-					rz_cons_printf("arg[%d] %s\n", i, row);
-					free(row);
-				}
-				free(res);
-			}
-			free(cc);
-		} break;
-		case '?': // "afc?"
-		default:
-			rz_core_cmd_help(core, help_msg_afc);
-		}
-	} break;
 	case '?': // "af?"
 		rz_core_cmd_help(core, help_msg_af);
 		break;
@@ -2324,59 +1882,6 @@ static void cmd_analysis_info(RzCore *core, const char *input) {
 	}
 }
 
-static void cmd_esil_mem_args(RzCore *core, const char *input, ut64 *addr, ut32 *size, char **name) {
-	int argc;
-	*addr = UT64_MAX;
-	*size = UT32_MAX;
-	*name = NULL;
-	if (!input) {
-		return;
-	}
-	char **argv = rz_str_argv(input, &argc);
-	if (argc > 0) {
-		*addr = rz_num_math(core->num, argv[0]);
-	}
-	if (argc > 1) {
-		*size = (ut32)rz_num_math(core->num, argv[1]);
-	}
-	if (argc > 2) {
-		*name = strdup(argv[2]);
-	}
-	rz_str_argv_free(argv);
-}
-
-static void cmd_esil_mem(RzCore *core, const char *input) {
-	ut64 addr;
-	ut32 size;
-	char *name;
-
-	switch (*input) {
-	case 'p':
-		rz_core_analysis_esil_init_mem_p(core);
-		break;
-	case '-':
-		cmd_esil_mem_args(core, input + 1, &addr, &size, &name);
-		rz_core_analysis_esil_init_mem_del(core, name, addr, size);
-		free(name);
-		break;
-	case ' ':
-		cmd_esil_mem_args(core, input + 1, &addr, &size, &name);
-		rz_core_analysis_esil_init_mem(core, name, addr, size);
-		free(name);
-		break;
-	case '\0':
-		cmd_esil_mem_args(core, NULL, &addr, &size, &name);
-		rz_core_analysis_esil_init_mem(core, name, addr, size);
-		free(name);
-		break;
-	default:
-		eprintf("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
-		eprintf("Default: 0x100000 0xf0000\n");
-		eprintf("See ae? for more help\n");
-		return;
-	}
-}
-
 typedef struct {
 	RzList *regs;
 	RzList *regread;
@@ -2743,6 +2248,261 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	return true;
 }
 
+// aeC
+RZ_IPI RzCmdStatus rz_analysis_appcall_handler(RzCore *core, int argc, const char **argv) {
+	for (int i = 1; i < argc; ++i) {
+		const char *alias = rz_str_newf("A%d", i - 1);
+		rz_reg_setv(core->analysis->reg, alias, rz_num_math(core->num, argv[i]));
+	}
+
+	ut64 sp = rz_reg_getv(core->analysis->reg, "SP");
+	rz_reg_setv(core->analysis->reg, "SP", 0);
+
+	rz_reg_setv(core->analysis->reg, "PC", core->offset);
+	rz_core_esil_step(core, 0, NULL, NULL, false);
+	rz_core_reg_update_flags(core);
+
+	rz_reg_setv(core->analysis->reg, "SP", sp);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aec
+RZ_IPI RzCmdStatus rz_analysis_continue_until_except_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aecb
+RZ_IPI RzCmdStatus rz_analysis_continue_until_breakpoint_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_core_esil_continue_back(core)) {
+		RZ_LOG_ERROR("cannnot continue back\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aecs
+RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int argc, const char **argv) {
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+	RzAnalysisOp *op;
+	while (!rz_cons_is_breaked()) {
+		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
+			break;
+		}
+		rz_core_reg_update_flags(core);
+		ut64 addr = rz_num_get(core->num, pc);
+		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+		if (!op) {
+			break;
+		}
+		if (op->type == RZ_ANALYSIS_OP_TYPE_SWI) {
+			RZ_LOG_ERROR("syscall at 0x%08" PFMT64x "\n", addr);
+			break;
+		} else if (op->type == RZ_ANALYSIS_OP_TYPE_TRAP) {
+			RZ_LOG_ERROR("trap at 0x%08" PFMT64x "\n", addr);
+			break;
+		}
+		rz_analysis_op_free(op);
+		op = NULL;
+		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
+			break;
+		}
+	}
+	if (op) {
+		rz_analysis_op_free(op);
+		op = NULL;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// aecc
+RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int argc, const char **argv) {
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+	RzAnalysisOp *op;
+	while (!rz_cons_is_breaked()) {
+		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
+			break;
+		}
+		rz_core_reg_update_flags(core);
+		ut64 addr = rz_num_get(core->num, pc);
+		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (!op) {
+			break;
+		}
+		if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
+			RZ_LOG_ERROR("call at 0x%08" PFMT64x "\n", addr);
+			break;
+		}
+		rz_analysis_op_free(op);
+		op = NULL;
+		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
+			break;
+		}
+	}
+	if (op) {
+		rz_analysis_op_free(op);
+		op = NULL;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// aecu
+RZ_IPI RzCmdStatus rz_analysis_continue_until_addr_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_esil_step(core, rz_num_math(core->num, argv[1]), NULL, NULL, false);
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aecue
+RZ_IPI RzCmdStatus rz_analysis_continue_until_esil_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_esil_step(core, UT64_MAX, argv[1], NULL, false);
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aei
+RZ_IPI RzCmdStatus rz_analysis_esil_init_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_reinit(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aei-
+RZ_IPI RzCmdStatus rz_analysis_esil_deinit_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (esil) {
+		sdb_reset(esil->stats);
+	}
+	rz_analysis_esil_free(esil);
+	core->analysis->esil = NULL;
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeip
+RZ_IPI RzCmdStatus rz_analysis_esil_init_p_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_set_reg(core, "PC", core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeim
+RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : UT64_MAX;
+	ut32 size = argc > 2 ? (ut32)rz_num_math(core->num, argv[2]) : UT32_MAX;
+	const char *name = argc > 3 ? argv[3] : NULL;
+	rz_core_analysis_esil_init_mem(core, name, addr, size);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeim-
+RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_remove_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : UT64_MAX;
+	ut32 size = argc > 2 ? (ut32)rz_num_math(core->num, argv[2]) : UT32_MAX;
+	const char *name = argc > 3 ? argv[3] : NULL;
+	rz_core_analysis_esil_init_mem_del(core, name, addr, size);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeimp
+RZ_IPI RzCmdStatus rz_analysis_esil_init_mem_p_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_init_mem_p(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aes
+RZ_IPI RzCmdStatus rz_il_step_handler(RzCore *core, int argc, const char **argv) {
+	if (argc <= 1) {
+		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
+		rz_core_reg_update_flags(core);
+	} else if (argc == 2) {
+		int n = (int)rz_num_math(core->num, argv[1]);
+		rz_core_analysis_esil_emulate(core, -1, -1, n);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesp
+RZ_IPI RzCmdStatus rz_il_step_evaluate_handler(RzCore *core, int argc, const char **argv) {
+	int n = (int)rz_num_math(core->num, argv[1]);
+	rz_core_analysis_esil_emulate(core, core->offset, -1, n);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesb
+RZ_IPI RzCmdStatus rz_il_step_back_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_core_esil_step_back(core)) {
+		RZ_LOG_ERROR("cannnot step back\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aeso
+RZ_IPI RzCmdStatus rz_il_step_over_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_step_over(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesou
+RZ_IPI RzCmdStatus rz_il_step_over_until_addr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 until_addr = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_esil_step_over_until(core, until_addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aess
+RZ_IPI RzCmdStatus rz_il_step_skip_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_step_over_until(core, UT64_MAX);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aessu
+RZ_IPI RzCmdStatus rz_il_step_skip_until_addr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 until_addr = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_esil_step_over_until(core, until_addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aessue
+RZ_IPI RzCmdStatus rz_il_step_skip_until_expr_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_step_over_untilexpr(core, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesu
+RZ_IPI RzCmdStatus rz_il_step_until_addr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 until_addr = rz_num_math(core->num, argv[1]);
+	rz_core_esil_step(core, until_addr, NULL, NULL, false);
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesue
+RZ_IPI RzCmdStatus rz_il_step_until_expr_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_step_over_untilexpr(core, argv[1]);
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aesuo
+RZ_IPI RzCmdStatus rz_il_step_until_opt_handler(RzCore *core, int argc, const char **argv) {
+	RzList *optypes_list = rz_list_new_from_array((const void **)&argv[1], argc - 1);
+	step_until_optype(core, optypes_list);
+	rz_core_reg_update_flags(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// aets+
+RZ_IPI RzCmdStatus rz_il_trace_start_handler(RzCore *core, int argc, const char **argv) {
+	return rz_core_analysis_esil_trace_start(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// aets-
+RZ_IPI RzCmdStatus rz_il_trace_stop_handler(RzCore *core, int argc, const char **argv) {
+	return rz_core_analysis_esil_trace_stop(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
 static const char _handler_no_name[] = "<no name>";
 static bool _aeli_iter(void *user, const ut64 key, const void *value) {
 	const RzAnalysisEsilInterrupt *interrupt = value;
@@ -2783,31 +2543,6 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 	// the logic of identifying args by function types and
 	// show json format and arg name goes into arA
 	rz_core_cmd0(core, "arA");
-}
-
-static void __core_analysis_appcall(RzCore *core, const char *input) {
-	//	rz_reg_arena_push (core->dbg->reg);
-	RzListIter *iter;
-	char *arg;
-	char *inp = strdup(input);
-	RzList *args = rz_str_split_list(inp, " ", 0);
-	int i = 0;
-	rz_list_foreach (args, iter, arg) {
-		const char *alias = sdb_fmt("A%d", i);
-		rz_reg_setv(core->analysis->reg, alias, rz_num_math(core->num, arg));
-		i++;
-	}
-	ut64 sp = rz_reg_getv(core->analysis->reg, "SP");
-	rz_reg_setv(core->analysis->reg, "SP", 0);
-
-	rz_reg_setv(core->analysis->reg, "PC", core->offset);
-	rz_core_esil_step(core, 0, NULL, NULL, false);
-	rz_core_reg_update_flags(core);
-
-	rz_reg_setv(core->analysis->reg, "SP", sp);
-	free(inp);
-
-	//	rz_reg_arena_pop (core->dbg->reg);
 }
 
 RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil) {
@@ -2888,20 +2623,12 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 
 static void cmd_analysis_esil(RzCore *core, const char *input) {
 	RzAnalysisEsil *esil = core->analysis->esil;
-	ut64 addr = core->offset;
-	ut64 adr;
-	char *n, *n1;
-	int off;
 	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
 	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
 	int romem = rz_config_get_i(core->config, "esil.romem");
 	int stats = rz_config_get_i(core->config, "esil.stats");
 	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-	ut64 until_addr = UT64_MAX;
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-
-	const char *until_expr = NULL;
-	RzAnalysisOp *op = NULL;
 
 	switch (input[0]) {
 	case 'p':
@@ -2939,248 +2666,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		rz_analysis_esil_parse(esil, input + 1);
 		rz_core_esil_dumpstack(esil);
 		rz_analysis_esil_stack_free(esil);
-		break;
-	case 's': // "aes"
-		// "aes" "aeso" "aesu" "aesue"
-		// aes -> single step
-		// aesb -> single step back
-		// aeso -> single step over
-		// aesu -> until address
-		// aesue -> until esil expression
-		switch (input[1]) {
-		case '?': // "ae?"
-			rz_core_cmd0(core, "ae?~aes");
-			break;
-		// TODO : doc this or remove
-		case 'l': // "aesl"
-		{
-			ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-			RzAnalysisOp *op = rz_core_analysis_op(core, pc, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-			// TODO: honor hint
-			if (!op) {
-				break;
-			}
-			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-			rz_debug_reg_set(core->dbg, "PC", pc + op->size);
-			rz_analysis_esil_set_pc(esil, pc + op->size);
-			rz_core_reg_update_flags(core);
-			rz_analysis_op_free(op);
-		} break;
-		case 'b': // "aesb"
-			if (!rz_core_esil_step_back(core)) {
-				eprintf("cannnot step back\n");
-			}
-			rz_core_reg_update_flags(core);
-			break;
-		case 'B': // "aesB"
-		{
-			n = strchr(input + 2, ' ');
-			char *n2 = NULL;
-			if (n) {
-				n = (char *)rz_str_trim_head_ro(n + 1);
-			}
-			if (n) {
-				n2 = strchr(n, ' ');
-				if (n2) {
-					*n2++ = 0;
-				}
-				ut64 off = rz_num_math(core->num, n);
-				ut64 nth = n2 ? rz_num_math(core->num, n2) : 1;
-				rz_core_analysis_esil_emulate(core, core->offset, off, (int)nth);
-			} else {
-				eprintf("Usage: aesB [until-addr] [nth-opcodes] @ [from-addr]\n");
-			}
-		} break;
-		case 'u': // "aesu"
-			until_expr = NULL;
-			until_addr = UT64_MAX;
-			if (rz_str_endswith(input, "?")) {
-				rz_core_cmd0(core, "ae?~aesu");
-			} else
-				switch (input[2]) {
-				case 'e': // "aesue"
-					until_expr = input + 3;
-					break;
-				case ' ': // "aesu"
-					until_addr = rz_num_math(core->num, input + 2);
-					break;
-				case 'o': { // "aesuo"
-					char *optypes = strdup(rz_str_trim_head_ro((char *)input + 3));
-					RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
-					step_until_optype(core, optypes_list);
-					free(optypes);
-					rz_list_free(optypes_list);
-					break;
-				}
-				default:
-					rz_core_cmd0(core, "ae?~aesu");
-					break;
-				}
-			if (until_expr || until_addr != UT64_MAX) {
-				rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			}
-			rz_core_reg_update_flags(core);
-			break;
-		case 's': // "aess"
-			if (input[2] == 'u') { // "aessu"
-				if (input[3] == 'e') {
-					rz_core_analysis_esil_step_over_untilexpr(core, input + 3);
-				} else {
-					until_addr = rz_num_math(core->num, input + 2);
-					rz_core_analysis_esil_step_over_until(core, until_addr);
-				}
-			} else {
-				rz_core_analysis_esil_step_over_until(core, UT64_MAX);
-			}
-			break;
-		case 'o': // "aeso"
-			if (input[2] == 'u') { // "aesou"
-				if (input[3] == 'e') {
-					rz_core_analysis_esil_step_over_untilexpr(core, input + 3);
-				} else {
-					until_addr = rz_num_math(core->num, input + 2);
-					rz_core_analysis_esil_step_over_until(core, until_addr);
-				}
-			} else if (!input[2] || input[2] == ' ') { // "aeso [addr]"
-				rz_core_analysis_esil_step_over(core);
-			} else {
-				eprintf("Usage: aesou [addr] # step over until given address\n");
-			}
-			break;
-		case 'p': //"aesp"
-			n = strchr(input, ' ');
-			n1 = n ? strchr(n + 1, ' ') : NULL;
-			if ((!n || !n1) || (!(n + 1) || !(n1 + 1))) {
-				eprintf("aesp [offset] [num]\n");
-				break;
-			}
-			adr = rz_num_math(core->num, n + 1);
-			off = rz_num_math(core->num, n1 + 1);
-			rz_core_analysis_esil_emulate(core, adr, -1, off);
-			break;
-		case ' ': //"aes?"
-			n = strchr(input, ' ');
-			if (!(n + 1)) {
-				rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-				break;
-			}
-			off = rz_num_math(core->num, n + 1);
-			rz_core_analysis_esil_emulate(core, -1, -1, off);
-			break;
-		default:
-			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			rz_core_reg_update_flags(core);
-			break;
-		}
-		break;
-	case 'C': // "aeC"
-		if (input[1] == '?') { // "aec?"
-			rz_core_cmd_help(core, help_msg_aeC);
-		} else {
-			__core_analysis_appcall(core, rz_str_trim_head_ro(input + 1));
-		}
-		break;
-	case 'c': // "aec"
-		if (input[1] == '?') { // "aec?"
-			rz_core_cmd_help(core, help_msg_aec);
-		} else if (input[1] == 'b') { // "aecb"
-			if (!rz_core_esil_continue_back(core)) {
-				eprintf("cannnot continue back\n");
-			}
-			rz_core_reg_update_flags(core);
-			break;
-		} else if (input[1] == 's') { // "aecs"
-			const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-			for (;;) {
-				if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-					break;
-				}
-				rz_core_reg_update_flags(core);
-				addr = rz_num_get(core->num, pc);
-				op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-				if (!op) {
-					break;
-				}
-				if (op->type == RZ_ANALYSIS_OP_TYPE_SWI) {
-					eprintf("syscall at 0x%08" PFMT64x "\n", addr);
-					break;
-				} else if (op->type == RZ_ANALYSIS_OP_TYPE_TRAP) {
-					eprintf("trap at 0x%08" PFMT64x "\n", addr);
-					break;
-				}
-				rz_analysis_op_free(op);
-				op = NULL;
-				if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-					break;
-				}
-			}
-			if (op) {
-				rz_analysis_op_free(op);
-				op = NULL;
-			}
-		} else if (input[1] == 'c') { // "aecc"
-			const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-			for (;;) {
-				if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-					break;
-				}
-				rz_core_reg_update_flags(core);
-				addr = rz_num_get(core->num, pc);
-				op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
-				if (!op) {
-					break;
-				}
-				if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
-					eprintf("call at 0x%08" PFMT64x "\n", addr);
-					break;
-				}
-				rz_analysis_op_free(op);
-				op = NULL;
-				if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-					break;
-				}
-			}
-			if (op) {
-				rz_analysis_op_free(op);
-			}
-		} else {
-			// "aec"  -> continue until ^C
-			// "aecu" -> until address
-			// "aecue" -> until esil expression
-			if (input[1] == 'u' && input[2] == 'e') {
-				until_expr = input + 3;
-			} else if (input[1] == 'u') {
-				until_addr = rz_num_math(core->num, input + 2);
-			} else {
-				until_expr = "0";
-			}
-			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			rz_core_reg_update_flags(core);
-		}
-		break;
-	case 'i': // "aei"
-		switch (input[1]) {
-		case 's': // "aeis"
-		case 'm': // "aeim"
-			cmd_esil_mem(core, input + 2);
-			break;
-		case 'p': // "aeip" // initialize pc = $$
-			rz_core_analysis_set_reg(core, "PC", core->offset);
-			break;
-		case '?': // "aei?"
-			cmd_esil_mem(core, "?");
-			break;
-		case '-': // "aei-"
-			if (esil) {
-				sdb_reset(esil->stats);
-			}
-			rz_analysis_esil_free(esil);
-			core->analysis->esil = NULL;
-			break;
-		case 0: // "aei"
-			rz_core_analysis_esil_reinit(core);
-			break;
-		}
 		break;
 	case 'k': // "aek"
 		switch (input[1]) {
@@ -3235,48 +2720,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			rz_analysis_aefa(core, rz_str_trim_head_ro(input + 2));
 		} else { // This should be aefb -> because its emulating all the bbs
 			__analysis_esil_function(core, core->offset);
-		}
-		break;
-	case 't': // "aet"
-		switch (input[1]) {
-		case 's': // "aets"
-			switch (input[2]) {
-			case '+': // "aets+"
-				if (!esil) {
-					eprintf("Error: ESIL is not initialized. Use `aeim` first.\n");
-					break;
-				}
-				if (esil->trace) {
-					eprintf("ESIL trace already started\n");
-					break;
-				}
-				esil->trace = rz_analysis_esil_trace_new(esil);
-				if (!esil->trace) {
-					break;
-				}
-				rz_config_set_i(core->config, "dbg.trace", true);
-				break;
-			case '-': // "aets-"
-				if (!esil) {
-					eprintf("Error: ESIL is not initialized. Use `aeim` first.\n");
-					break;
-				}
-				if (!esil->trace) {
-					eprintf("No ESIL trace started\n");
-					break;
-				}
-				rz_analysis_esil_trace_free(esil->trace);
-				esil->trace = NULL;
-				rz_config_set_i(core->config, "dbg.trace", false);
-				break;
-			default:
-				rz_core_cmd_help(core, help_msg_aets);
-				break;
-			}
-			break;
-		default:
-			eprintf("Unknown command. Use `aets?`.\n");
-			break;
 		}
 		break;
 	case 'A': // "aeA"
@@ -6768,6 +6211,7 @@ static void function_list_print_to_table(RzCore *core, RzList *list, RzTable *t,
 		rz_table_add_column(t, typeNumber, "locals", 0);
 		rz_table_add_column(t, typeNumber, "args", 0);
 		rz_table_add_column(t, typeNumber, "frame", 0);
+		rz_table_add_column(t, typeNumber, "loops", 0);
 	}
 
 	RzListIter *iter;
@@ -6797,14 +6241,14 @@ static void function_list_print_to_table(RzCore *core, RzList *list, RzTable *t,
 			args += rz_analysis_var_count(core->analysis, fcn, 'b', 1);
 			args += rz_analysis_var_count(core->analysis, fcn, 'r', 1);
 
-			rz_table_add_rowf(t, "XsndddddddbXnXddd", fcn->addr,
+			rz_table_add_rowf(t, "XsndddddddbXnXdddd", fcn->addr,
 				fcn->name, rz_analysis_function_realsize(fcn),
 				xref_to_num, xref_from_num, calls_num,
 				rz_list_length(fcn->bbs), rz_analysis_function_count_edges(fcn, NULL),
 				rz_analysis_function_complexity(fcn), rz_analysis_function_cost(fcn),
 				fcn->is_noreturn, rz_analysis_function_min_addr(fcn),
 				rz_analysis_function_linear_size(fcn), rz_analysis_function_max_addr(fcn),
-				locals, args, fcn->maxstack, NULL);
+				locals, args, fcn->maxstack, rz_analysis_function_loops(fcn), NULL);
 		} else {
 			rz_table_add_rowf(t, "Xsndddddddb", fcn->addr,
 				fcn->name, rz_analysis_function_realsize(fcn),
@@ -6937,6 +6381,7 @@ static void function_print_to_json(RzCore *core, RzAnalysisFunction *fcn, RzCmdS
 	}
 	pj_ki(state->d.pj, "cost", rz_analysis_function_cost(fcn)); // execution cost
 	pj_ki(state->d.pj, "cc", rz_analysis_function_complexity(fcn)); // cyclic cost
+	pj_ki(state->d.pj, "loops", rz_analysis_function_loops(fcn));
 	pj_ki(state->d.pj, "bits", fcn->bits);
 	pj_ks(state->d.pj, "type", rz_analysis_fcntype_tostring(fcn->type));
 	pj_ki(state->d.pj, "nbbs", rz_list_length(fcn->bbs));
@@ -7250,6 +6695,7 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 	}
 	rz_cons_printf("\ncyclomatic-cost: %d", rz_analysis_function_cost(fcn));
 	rz_cons_printf("\ncyclomatic-complexity: %d", rz_analysis_function_complexity(fcn));
+	rz_cons_printf("\nloops: %d", rz_analysis_function_loops(fcn));
 	rz_cons_printf("\nbits: %d", fcn->bits);
 	rz_cons_printf("\ntype: %s", rz_analysis_fcntype_tostring(fcn->type));
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
@@ -7469,13 +6915,18 @@ static void print_stats(RzCore *core, HtPU *ht, RzAnalysisFunction *fcn, RzCmdSt
 		rz_list_foreach (list, iter, name) {
 			rz_table_add_column(t, typeNumber, name, 0);
 		}
-		RzList *items = rz_list_newf(free);
-		rz_list_append(items, strdup(fcn->name));
+		RzPVector *items = rz_pvector_new(free);
+		if (!items) {
+			RZ_LOG_ERROR("Failed to allocate memory.\n");
+			rz_list_free(list);
+			return;
+		}
+		rz_pvector_push(items, strdup(fcn->name));
 		rz_list_foreach (list, iter, name) {
 			int nv = (int)ht_pu_find(ht, name, NULL);
-			rz_list_append(items, rz_str_newf("%d", nv));
+			rz_pvector_push(items, rz_str_newf("%d", nv));
 		}
-		rz_table_add_row_list(t, items);
+		rz_table_add_row_vec(t, items);
 	} else {
 		rz_list_foreach (list, iter, name) {
 			ut32 nv = (ut32)ht_pu_find(ht, name, NULL);
@@ -7560,19 +7011,19 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 
 	RzListIter *iter2;
 	rz_list_foreach (dbs, iter2, db) {
-		RzList *items = rz_list_newf(free);
+		RzPVector *items = rz_pvector_new(free);
 		if (!items) {
 			break;
 		}
 		ut64 fcnAddr = ht_pu_find(db, ".addr", NULL);
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fcnAddr);
-		rz_list_append(items, fcn ? strdup(fcn->name) : strdup(""));
-		rz_list_append(items, fcn ? rz_str_newf("0x%08" PFMT64x, fcnAddr) : strdup("0"));
+		rz_pvector_push(items, fcn ? strdup(fcn->name) : strdup(""));
+		rz_pvector_push(items, fcn ? rz_str_newf("0x%08" PFMT64x, fcnAddr) : strdup("0"));
 		rz_list_foreach (keys, iter, key) {
 			ut32 n = (ut32)ht_pu_find(db, key, NULL);
-			rz_list_append(items, rz_str_newf("%u", n));
+			rz_pvector_push(items, rz_str_newf("%u", n));
 		}
-		rz_table_add_row_list(t, items);
+		rz_table_add_row_vec(t, items);
 	}
 	res = RZ_CMD_STATUS_OK;
 exit:
@@ -7607,6 +7058,130 @@ RZ_IPI RzCmdStatus rz_analysis_function_strings_handler(RzCore *core, int argc, 
 	}
 	PJ *pj = state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL;
 	rz_core_analysis_function_strings_print(core, fcn, pj);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_type_matching_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 seek = core->offset;
+	rz_analysis_esil_set_pc(core->analysis->esil, fcn->addr);
+	rz_core_analysis_type_match(core, fcn, NULL);
+	rz_core_seek(core, seek, true);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_functions_map_handler(RzCore *core, int argc, const char **argv) {
+	int show_color = rz_config_get_i(core->config, "scr.color");
+	int cols = rz_config_get_i(core->config, "hex.cols") * 4;
+	ut64 code_size = rz_num_get(core->num, "$SS");
+	ut64 base_addr = rz_num_get(core->num, "$S");
+
+	if (code_size < 1) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	char *bitmap = calloc(1, code_size + 64);
+	if (!bitmap) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzListIter *iter, *iter2;
+	RzAnalysisFunction *fcn;
+	RzAnalysisBlock *b;
+	// for each function
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		// for each basic block in the function
+		rz_list_foreach (fcn->bbs, iter2, b) {
+			// if it is not within range, continue
+			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr + code_size))
+				continue;
+			// otherwise mark each byte in the BB in the bitmap
+			int counter = 1;
+			for (counter = 0; counter < b->size; counter++) {
+				bitmap[b->addr + counter - base_addr] = '=';
+			}
+			bitmap[fcn->addr - base_addr] = 'F';
+		}
+	}
+	// print the bitmap
+	int assigned = 0;
+	if (cols < 1) {
+		cols = 1;
+	}
+	for (ut64 i = 0; i < code_size; i += 1) {
+		if (!(i % cols)) {
+			rz_cons_printf("\n0x%08" PFMT64x "  ", base_addr + i);
+		}
+		if (bitmap[i]) {
+			assigned++;
+		}
+		if (show_color) {
+			if (bitmap[i]) {
+				rz_cons_printf("%s%c\x1b[0m", Color_GREEN, bitmap[i]);
+			} else {
+				rz_cons_printf(".");
+			}
+		} else {
+			rz_cons_printf("%c", bitmap[i] ? bitmap[i] : '.');
+		}
+	}
+	rz_cons_printf("\n%d / %" PFMT64u " (%.2lf%%) bytes assigned to a function\n", assigned, code_size, 100.0 * ((float)assigned) / code_size);
+	free(bitmap);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_functions_merge_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_fcn_merge(core, core->offset, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_cc_set_get_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (argc == 1) {
+		rz_cons_println(fcn->cc);
+		return RZ_CMD_STATUS_OK;
+	}
+	if (!rz_analysis_cc_exist(core->analysis, argv[1])) {
+		RZ_LOG_ERROR("Unknown calling convention. See `afcl` for available ones.\n");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	fcn->cc = rz_str_constpool_get(&core->analysis->constpool, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_cc_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_core_types_calling_conventions_print(core, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_cc_load_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_file_exists(argv[1])) {
+		RZ_LOG_ERROR("File \"%s\" does not exist\n", argv[1]);
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	Sdb *db = sdb_new(0, argv[1], 0);
+	if (!db) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	sdb_merge(core->analysis->sdb_cc, db);
+	sdb_close(db);
+	sdb_free(db);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_cc_reg_usage_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	PJ *pj = state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL;
+	rz_core_analysis_cc_print(core, fcn->cc, pj);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -7996,17 +7571,23 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name, b
 			RzAnalysisMethod *meth;
 			int i = 1;
 			rz_vector_foreach(methods, meth) {
-				RzList *row_list = rz_list_newf(free);
-				rz_list_append(row_list, rz_str_newf("%d", i++));
-				rz_list_append(row_list, rz_str_new(meth->real_name));
-				rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, meth->addr));
-				if (meth->vtable_offset >= 0) {
-					rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, meth->vtable_offset));
-				} else {
-					rz_list_append(row_list, rz_str_new("-1"));
+				RzPVector *row_vec = rz_pvector_new(free);
+				if (!row_vec) {
+					RZ_LOG_ERROR("Failed to allocate memory.\n");
+					rz_table_free(table);
+					rz_vector_free(methods);
+					return;
 				}
-				rz_list_append(row_list, rz_str_new(method_type[meth->method_type]));
-				rz_table_add_row_list(table, row_list);
+				rz_pvector_push(row_vec, rz_str_newf("%d", i++));
+				rz_pvector_push(row_vec, rz_str_new(meth->real_name));
+				rz_pvector_push(row_vec, rz_str_newf("0x%" PFMT64x, meth->addr));
+				if (meth->vtable_offset >= 0) {
+					rz_pvector_push(row_vec, rz_str_newf("0x%" PFMT64x, meth->vtable_offset));
+				} else {
+					rz_pvector_push(row_vec, rz_str_new("-1"));
+				}
+				rz_pvector_push(row_vec, rz_str_new(method_type[meth->method_type]));
+				rz_table_add_row_vec(table, row_vec);
 			}
 			char *s = rz_table_tostring(table);
 			rz_cons_printf("%s\n", s);

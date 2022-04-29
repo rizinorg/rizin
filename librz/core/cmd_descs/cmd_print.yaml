@@ -90,6 +90,188 @@ commands:
         summary: Generate a rizin commands for writing the byte array.
         cname: cmd_print_byte_array_rizin
         args: []
+  - name: pd
+    summary: Print Disassembly
+    cname: cmd_print_disassembly
+    subcommands:
+      - name: pd
+        summary: Disassemble N instructions (can be negative)
+        cname: cmd_disassembly_n_instructions
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET # replaces pdi
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: n_instrs
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pda
+        summary: Disassemble all possible opcodes (byte per byte)
+        cname: cmd_disassembly_all_opcodes
+        subcommands:
+          - name: pda
+            summary: Disassemble all possible opcodes (byte per byte)
+            cname: cmd_disassembly_all_possible_opcodes
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: n_bytes
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pda=
+            summary: Disassemble all possible opcodes (treeview)
+            cname: cmd_disassembly_all_possible_opcodes_treeview
+            args:
+              - name: n_bytes
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+      - name: pdb
+        summary: Disassemble basic block
+        cname: cmd_disasm_basic_block
+        subcommands:
+          - name: pdb
+            summary: Disassemble basic block
+            cname: cmd_disassembly_basic_block
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+          - name: pdbJ
+            summary: Disassemble basic block as json containing the printed text
+            cname: cmd_disassembly_basic_block_as_text_json
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+            args: []
+      - name: pdC
+        summary: Prints the comments found in N instructions
+        cname: cmd_comments_in_n_instructions
+        args:
+          - name: n_instrs
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pde
+        summary: Disassemble N instructions following execution flow from current PC
+        cname: cmd_disassembly_n_instructions_with_flow
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_QUIETEST
+        args:
+          - name: n_instrs
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pdf
+        summary: Disassemble a function
+        cname: cmd_disasm_func
+        subcommands:
+          - name: pdf
+            summary: Disassemble a function
+            cname: cmd_disassembly_function
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+          - name: pdfs
+            summary: Disassemble a function and outputs the summary of it.
+            cname: cmd_disassembly_function_summary
+            args: []
+      - name: pdJ
+        summary: Disassemble N instructions as json containing the printed text
+        cname: cmd_disassembly_n_instrs_as_text_json
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: n_instrs
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pdk
+        summary: Disassemble all methods of a class
+        cname: cmd_disassembly_all_methods_class
+        args: []
+      - name: pdl
+        summary: Disassemble N instructions and prints its sizes
+        cname: cmd_sizes_of_n_instructions
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: n_instrs
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pdp
+        summary: Disassemble instructions and follows pointers to read ropchains
+        cname: cmd_disassemble_ropchain
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: limit
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pdr
+        summary: Disassemble recursively across the function graph
+        cname: cmd_disassemble_recursive
+        subcommands:
+          - name: pdr
+            summary: Disassemble recursively across the function graph
+            cname: cmd_disassemble_recursively
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+          - name: pdr.
+            summary: Disassemble recursively across the function graph (from current basic block)
+            cname: cmd_disassemble_recursively_from_current_block
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+      - name: pdR
+        summary: Disassemble recursively the block size bytes without analyzing functions
+        cname: cmd_disassemble_recursively_no_function
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pds
+        summary: Summarize N bytes or current block or a function (strings, calls, jumps, refs)
+        cname: cmd_disassemble_summarize
+        subcommands:
+          - name: pds
+            summary: Summarize N bytes
+            cname: cmd_disassemble_summarize_n_bytes
+            args:
+              - name: n_bytes
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pdsf
+            summary: Summarize the current function
+            cname: cmd_disassemble_summarize_function
+            args: []
+          - name: pdsb
+            summary: Summarize current block
+            cname: cmd_disassemble_summarize_block
+            args:
+              - name: n_bytes
+                type: RZ_CMD_ARG_TYPE_RZNUM
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget

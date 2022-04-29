@@ -512,6 +512,230 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
             args: []
+      - name: aft
+        summary: Type matching analysis for the function in current seek
+        cname: analysis_function_type_matching
+        args: []
+      - name: afM
+        summary: Print functions map
+        cname: analysis_functions_map
+        args: []
+      - name: afm
+        summary: Merge two functions
+        cname: analysis_functions_merge
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_FCN
+        details:
+          - name: ""
+            entries:
+              - text: "afm 0xbeef @ 0x42"
+                comment: "Merge function at address 0xbeef to function at address 0x42"
+      - name: afc
+        summary: Calling convention
+        subcommands:
+          - name: afc
+            summary: Set/Get calling convention for current function
+            cname: analysis_function_cc_set_get
+            args:
+              - name: convention
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: afcl
+            summary: List all available calling conventions
+            cname: analysis_function_cc_list
+            type: RZ_CMD_DESC_TYPE_ARGV_MODES
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_SDB
+            args: []
+          - name: afco
+            summary: Open Calling Convention sdb profile from given path
+            cname: analysis_function_cc_load
+            args:
+              - name: db_path
+                type: RZ_CMD_ARG_TYPE_FILE
+          - name: afcr
+            summary: Show register usage for the current function
+            cname: analysis_function_cc_reg_usage
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+  - name: aeC
+    summary: appcall in esil
+    cname: analysis_appcall
+    args:
+      - name: args
+        type: RZ_CMD_ARG_TYPE_NUM
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+    details:
+      - name: Examples
+        entries:
+          - text: aeC
+            arg_str: " 1 2 @ sym._add"
+            comment: Call sym._add(1,2)
+  - name: aec
+    summary: continue until ^C
+    subcommands:
+      - name: aec
+        summary: Continue until exception
+        cname: analysis_continue_until_except
+        args: []
+      - name: aecb
+        summary: Continue back until breakpoint
+        cname: analysis_continue_until_breakpoint
+        args: []
+      - name: aecs
+        summary: Continue until syscall
+        cname: analysis_continue_until_syscall
+        args: []
+      - name: aecc
+        summary: Continue until call
+        cname: analysis_continue_until_call
+        args: []
+      - name: aecu
+        summary: Continue until address
+        cname: analysis_continue_until_addr
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: aecue
+        summary: Continue until esil expression
+        cname: analysis_continue_until_esil
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: aei
+    summary: ESIL VM state
+    subcommands:
+      - name: aei
+        summary: initialize ESIL VM state
+        cname: analysis_esil_init
+        args: []
+      - name: aei-
+        summary: deinitialize ESIL VM state
+        cname: analysis_esil_deinit
+        args: []
+      - name: aeip
+        summary: initialize ESIL program counter to curseek
+        cname: analysis_esil_init_p
+        args: []
+      - name: aeim
+        summary: ESIL VM stack
+        subcommands:
+          - name: aeim
+            summary: initialize ESIL VM stack
+            cname: analysis_esil_init_mem
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: size
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aeim-
+            summary: remove ESIL VM stack
+            cname: analysis_esil_init_mem_remove
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: size
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aeimp
+            summary: initialize ESIL VM stack to "aeim.stack" or ?
+            cname: analysis_esil_init_mem_p
+            args: []
+  - name: aes
+    summary: ESIL emulated debugger step
+    subcommands:
+      - name: aes
+        summary: perform emulated debugger step
+        cname: il_step
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: aesp
+        summary: evaluate N instr from core->offset
+        cname: il_step_evaluate
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: aesb
+        summary: step back
+        cname: il_step_back
+        args: []
+      - name: aeso
+        summary: step over
+        cname: il_step_over
+        args: []
+      - name: aesou
+        summary: step over until given address
+        cname: il_step_over_until_addr
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: aess
+        summary: step skip
+        subcommands:
+          - name: aess
+            summary: step skip (in case of CALL, just skip, instead of step into)
+            cname: il_step_skip
+            args: []
+          - name: aessu
+            summary: step skip (in case of CALL, just skip, instead of step into)
+            cname: il_step_skip_until_addr
+            args: []
+          - name: aessue
+            summary: step skip (in case of CALL, just skip, instead of step into)
+            cname: il_step_skip_until_expr
+            args: []
+      - name: aesu
+        summary: step until
+        subcommands:
+          - name: aesu
+            summary: step until given address
+            cname: il_step_until_addr
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: aesue
+            summary: step until esil expression match
+            cname: il_step_until_expr
+            args:
+              - name: esil
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: aesuo
+            summary: step until given opcode type
+            cname: il_step_until_opt
+            args:
+              - name: optype
+                type: RZ_CMD_ARG_TYPE_STRING
+                flags: RZ_CMD_ARG_FLAG_ARRAY
+  - name: aets
+    summary: ESIL Trace session
+    subcommands:
+      - name: aets+
+        summary: Start ESIL trace session
+        cname: il_trace_start
+        args: []
+      - name: aets-
+        summary: Stop ESIL trace session
+        cname: il_trace_stop
+        args: []
   - name: aez
     summary: RzIL Emulation
     type: RZ_CMD_DESC_TYPE_GROUP

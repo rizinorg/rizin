@@ -24,7 +24,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	memset(&ihdr, 0, INES_HDR_SIZE);
 	int reat = rz_buf_read_at(bf->buf, 0, (ut8 *)&ihdr, INES_HDR_SIZE);
 	if (reat != INES_HDR_SIZE) {
-		eprintf("Truncated Header\n");
+		RZ_LOG_ERROR("Truncated Header\n");
 		return NULL;
 	}
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
@@ -89,7 +89,7 @@ static RzList *sections(RzBinFile *bf) {
 	memset(&ihdr, 0, INES_HDR_SIZE);
 	int reat = rz_buf_read_at(bf->buf, 0, (ut8 *)&ihdr, INES_HDR_SIZE);
 	if (reat != INES_HDR_SIZE) {
-		eprintf("Truncated Header\n");
+		RZ_LOG_ERROR("Truncated Header\n");
 		return NULL;
 	}
 	if (!(ret = rz_list_new())) {

@@ -6258,8 +6258,6 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	rz_analysis_op_fini(&ds->analysis_op);
 	ds_free(ds);
 	if (!result) {
-		pj_o(pj);
-		pj_end(pj);
 		result = true;
 	}
 	return result;

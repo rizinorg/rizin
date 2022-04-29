@@ -337,11 +337,13 @@ RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr) {
 RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd) {
 	rz_return_val_if_fail(core, false);
 	RzCoreCmpWatcher *cmpw;
+	bool to_add = false;
 	if (size < 1) {
 		return false;
 	}
 	cmpw = rz_core_cmpwatch_get(core, addr);
 	if (!cmpw) {
+		to_add = true;
 		cmpw = RZ_NEW(RzCoreCmpWatcher);
 		if (!cmpw) {
 			return false;
@@ -357,7 +359,9 @@ RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *
 		return false;
 	}
 	rz_io_nread_at(core->io, addr, cmpw->ndata, size);
-	rz_list_append(core->watchers, cmpw);
+	if (to_add) {
+		rz_list_append(core->watchers, cmpw);
+	}
 	return true;
 }
 
@@ -402,8 +406,8 @@ RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzOutputMode mode) {
 		int is_diff = w->odata ? memcmp(w->odata, w->ndata, w->size) : 0;
 		switch (mode) {
 		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("cw 0x%08" PFMT64x " %d %s%s\n",
-				w->addr, w->size, w->cmd, is_diff ? " # differs" : "");
+			rz_cons_printf("cw %d '%s' @  0x%08" PFMT64x "%s\n",
+				w->size, w->cmd, w->addr, is_diff ? " # differs" : "");
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("0x%08" PFMT64x "%s\n", w->addr, is_diff ? " modified" : "");

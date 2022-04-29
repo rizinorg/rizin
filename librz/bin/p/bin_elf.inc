@@ -228,7 +228,7 @@ static void add_entry_offset(ELFOBJ *bin, RzList *result) {
 	tmp->hvaddr = bin->baddr + tmp->hpaddr;
 
 	if (tmp->vaddr != (ut64)bin->ehdr.e_entry && Elf_(rz_bin_elf_is_executable)(bin)) {
-		eprintf("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", tmp->vaddr);
+		RZ_LOG_ERROR("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", tmp->vaddr);
 	}
 
 	rz_list_append(result, tmp);
@@ -364,7 +364,7 @@ static RzBuffer *create_elf(RzBin *bin, const ut8 *code, int codelen, const ut8 
 
 	if (data && datalen > 0) {
 		// ut32 data_section = buf->length;
-		eprintf("Warning: DATA section not support for ELF yet\n");
+		RZ_LOG_WARN("DATA section not support for ELF yet\n");
 		rz_buf_append_bytes(result, data, datalen);
 	}
 
@@ -456,7 +456,7 @@ static char *regstate(RzBinFile *bf) {
 	}
 
 	char *machine_name = Elf_(rz_bin_elf_get_machine_name)(obj);
-	eprintf("Cannot retrieve regstate on: %s (not yet supported)\n", machine_name);
+	RZ_LOG_ERROR("Cannot retrieve regstate on: %s (not yet supported)\n", machine_name);
 	free(machine_name);
 	return NULL;
 }
@@ -1040,7 +1040,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			val = B + A;
 			break;
 		default:
-			// eprintf ("relocation %d not handle at this time\n", rel->type);
+			// RZ_LOG_ERROR("relocation %d not handle at this time\n", rel->type);
 			break;
 		}
 		switch (word) {
@@ -1233,7 +1233,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_PPC_ADDR16: ADD(16, 0);
 		case RZ_PPC_ADDR32: ADD(32, 0);
 		default:
-			eprintf("unimplemented ELF/PPC reloc type %d\n", rel->type);
+			RZ_LOG_WARN("unimplemented ELF/PPC reloc type %d\n", rel->type);
 			break;
 		}
 		break;

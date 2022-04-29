@@ -153,27 +153,27 @@ static void populate_cache_maps(RzDyldCache *cache) {
 
 	ut32 i;
 	ut32 n_maps = 0;
+	ut64 max_count = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		if (!hdr->mappingCount || !hdr->mappingOffset) {
 			continue;
 		}
+		max_count = RZ_MAX(hdr->mappingCount, max_count);
 		n_maps += hdr->mappingCount;
 	}
 
-	cache_map_t *maps = NULL;
-	if (n_maps != 0) {
-		cache->maps_index = RZ_NEWS0(ut32, cache->n_hdr);
-		if (!cache->maps_index) {
-			return;
-		}
-		maps = RZ_NEWS0(cache_map_t, n_maps);
-	}
-	if (!maps) {
+	if (n_maps < 1 || n_maps < max_count /* overflow */) {
 		cache->maps = NULL;
 		cache->n_maps = 0;
 		return;
 	}
+
+	cache->maps_index = RZ_NEWS0(ut32, cache->n_hdr);
+	if (!cache->maps_index) {
+		return;
+	}
+	cache_map_t *maps = RZ_NEWS0(cache_map_t, n_maps);
 
 	ut32 next_map = 0;
 	ut32 last_idx = UT32_MAX;
@@ -821,7 +821,7 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 		if (slide == UT64_MAX) {
 			rebase_info->slide = estimate_slide(cache, 0x7ffffffffffffULL, 0);
 			if (rebase_info->slide) {
-				eprintf("dyldcache is slid: 0x%" PFMT64x "\n", rebase_info->slide);
+				RZ_LOG_INFO("dyldcache is slid: 0x%" PFMT64x "\n", rebase_info->slide);
 			}
 		} else {
 			rebase_info->slide = slide;
@@ -898,7 +898,7 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 		if (slide == UT64_MAX) {
 			rebase_info->slide = estimate_slide(cache, rebase_info->value_mask, rebase_info->value_add);
 			if (rebase_info->slide) {
-				eprintf("dyldcache is slid: 0x%" PFMT64x "\n", rebase_info->slide);
+				RZ_LOG_INFO("dyldcache is slid: 0x%" PFMT64x "\n", rebase_info->slide);
 			}
 		} else {
 			rebase_info->slide = slide;
@@ -969,7 +969,7 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 		if (slide == UT64_MAX) {
 			rebase_info->slide = estimate_slide(cache, UT64_MAX, 0);
 			if (rebase_info->slide) {
-				eprintf("dyldcache is slid: 0x%" PFMT64x "\n", rebase_info->slide);
+				RZ_LOG_INFO("dyldcache is slid: 0x%" PFMT64x "\n", rebase_info->slide);
 			}
 		} else {
 			rebase_info->slide = slide;
@@ -977,7 +977,7 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 
 		return (RzDyldRebaseInfo *)rebase_info;
 	} else {
-		eprintf("unsupported slide info version %d\n", slide_info_version);
+		RZ_LOG_ERROR("Unsupported slide info version %d\n", slide_info_version);
 		return NULL;
 	}
 
@@ -1118,7 +1118,7 @@ RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage 
 
 	if (bin->nlist_start_index >= locsym->nlists_count ||
 		bin->nlist_start_index + bin->nlist_count > locsym->nlists_count) {
-		eprintf("dyldcache: malformed local symbol entry\n");
+		RZ_LOG_ERROR("dyldcache: malformed local symbol entry\n");
 		return;
 	}
 
@@ -1260,11 +1260,11 @@ static RzDyldLocSym *rz_dyld_locsym_new(RzDyldCache *cache) {
 			goto beach;
 		}
 		if (rz_buf_fread_at(cache->buf, hdr->localSymbolsOffset, (ut8 *)info, "6i", 1) != info_size) {
-			eprintf("locsym err 01\n");
+			RZ_LOG_ERROR("Cannot read cache_locsym_info_t from header\n");
 			goto beach;
 		}
 		if (info->entriesCount != cache->hdr->imagesCount) {
-			eprintf("locsym err 02\n");
+			RZ_LOG_ERROR("The number of entries count differs from cache header image count\n");
 			goto beach;
 		}
 
@@ -1277,7 +1277,7 @@ static RzDyldLocSym *rz_dyld_locsym_new(RzDyldCache *cache) {
 			}
 			if (rz_buf_fread_at(cache->buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8 *)large_entries, "lii",
 				    info->entriesCount) != entries_size) {
-				eprintf("locsym err 03\n");
+				RZ_LOG_ERROR("Cannot read cache_locsym_entry_large_t\n");
 				goto beach;
 			}
 			entries = large_entries;
@@ -1289,7 +1289,7 @@ static RzDyldLocSym *rz_dyld_locsym_new(RzDyldCache *cache) {
 			}
 			if (rz_buf_fread_at(cache->buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8 *)regular_entries, "iii",
 				    info->entriesCount) != entries_size) {
-				eprintf("locsym err 04\n");
+				RZ_LOG_ERROR("Cannot read cache_locsym_entry_t\n");
 				goto beach;
 			}
 			entries = regular_entries;
@@ -1316,7 +1316,7 @@ static RzDyldLocSym *rz_dyld_locsym_new(RzDyldCache *cache) {
 		free(info);
 		free(entries);
 
-		eprintf("dyldcache: malformed local symbols metadata\n");
+		RZ_LOG_ERROR("dyldcache: malformed local symbols metadata\n");
 		break;
 	}
 	return NULL;

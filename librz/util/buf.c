@@ -212,7 +212,7 @@ err:
 }
 
 static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {
-	rz_return_val_if_fail(b && b->methods, NULL);
+	rz_return_val_if_fail(b && size && b->methods, NULL);
 
 	buf_whole_buf_free(b);
 
@@ -236,9 +236,7 @@ static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {
 		return NULL;
 	}
 
-	if (size) {
-		*size = buf_size;
-	}
+	*size = buf_size;
 
 	return b->whole_buf;
 }
@@ -1279,84 +1277,137 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff) {
 
 /**
  * \brief Return a borrowed array of bytes representing the buffer data.
- * \param b ...
- * \param size ...
+ * \param b Buffer to get the data from.
+ * \param size Size of the returned data.
  *
  * WARNING: this function should be used with care because it may allocate the
- * entire buffer in memory. Consider using the rz_buf_read* APIs instead and
+ * entire buffer in memory. Consider using the rz_buf_read* APIs or rz_buf_fwd_scan API instead and
  * read only the chunks you need.
  */
-RZ_DEPRECATE RZ_API RZ_BORROW const ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size) {
-	rz_return_val_if_fail(b, NULL);
+RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *size) {
+	rz_return_val_if_fail(b && size, NULL);
 
 	return get_whole_buf(b, size);
 }
 
 /**
- * \brief ...
- * \param b ...
- * \param v ...
- * \return ...
+ * \brief Scans buffer linearly in chunks calling \p fwd_scan for each chunk.
  *
- * ...
+ * \param b RzBuffer to read
+ * \param start Start address
+ * \param amount Amount of bytes to read
+ * \param fwd_scan Function to call for each chunk
+ * \param user User data to pass to fwd_scan
+ * \return Number of bytes read
  */
-RZ_API st64 rz_buf_uleb128(RzBuffer *b, ut64 *v) {
-	ut8 c = 0xff;
-	ut64 s = 0, sum = 0, l = 0;
-	do {
-		ut8 data;
-		st64 r = rz_buf_read(b, &data, sizeof(data));
-		if (r <= 0) {
-			return -1;
-		}
-		c = data & 0xff;
-		if (s < 64) {
-			sum |= ((ut64)(c & 0x7f) << s);
-			s += 7;
-		} else {
-			sum = 0;
-		}
-		l++;
-	} while (c & 0x80);
-	if (v) {
-		*v = sum;
+RZ_API ut64 rz_buf_fwd_scan(RZ_NONNULL RzBuffer *b, ut64 start, ut64 amount, RZ_NONNULL RzBufferFwdScan fwd_scan, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(b && fwd_scan, 0);
+	if (!amount) {
+		return 0;
 	}
-	return l;
+	if (b->methods->get_whole_buf) {
+		ut64 sz;
+		const ut8 *buf = b->methods->get_whole_buf(b, &sz);
+		if (buf) {
+			if (sz <= start) {
+				return 0;
+			}
+			return fwd_scan(buf + start, RZ_MIN(sz - start, amount), user);
+		}
+	}
+	const ut64 size = rz_buf_size(b);
+	if (size <= start) {
+		return 0;
+	}
+	if (b->whole_buf) {
+		return fwd_scan(b->whole_buf + start, RZ_MIN(size - start, amount), user);
+	}
+	ut64 addr = start;
+	const ut64 user_end = UT64_ADD_OVFCHK(start, amount) ? UT64_MAX : start + amount;
+	const ut64 end = RZ_MIN(user_end, size);
+	const size_t buf_size = RZ_MIN(end - start, 0x1000);
+	ut8 *buf = malloc(buf_size);
+	if (!buf) {
+		return 0;
+	}
+	while (addr < end) {
+		const ut64 read_amount = RZ_MIN(buf_size, end - addr);
+		rz_buf_read_at(b, addr, buf, read_amount);
+		ut64 read = fwd_scan(buf, read_amount, user);
+		if (!read) {
+			break;
+		}
+		addr += read;
+	}
+	free(buf);
+	return addr - start;
 }
 
 /**
- * \brief ...
- * \param b ...
- * \param v ...
- * \return ...
+ * \brief  Decodes ULEB128 from RzBuffer
  *
- * ...
+ * \param  buffer Buffer used to decode the ULEB128.
+ * \param  value  Decoded value.
+ * \return The number of bytes used.
  */
-RZ_API st64 rz_buf_sleb128(RzBuffer *b, st64 *v) {
-	st64 result = 0, offset = 0;
-	ut8 value;
+RZ_API st64 rz_buf_uleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL ut64 *value) {
+	rz_return_val_if_fail(buffer && value, -1);
+
+	ut64 sum = 0, used = 0, slice;
+	ut32 shift = 0;
+	ut8 byte = 0;
 	do {
-		st64 chunk;
-		st64 r = rz_buf_read(b, &value, sizeof(value));
-		if (r != sizeof(value)) {
+		if (rz_buf_read(buffer, &byte, sizeof(byte)) < 1) {
+			// malformed uleb128 due end of buffer
 			return -1;
 		}
-		chunk = value & 0x7f;
-		if (offset < 64) {
-			result |= (chunk << offset);
-			offset += 7;
-		} else {
-			result = 0;
+		used++;
+		slice = byte & 0x7f;
+		if ((shift >= 64 && slice != 0) || ((slice << shift) >> shift) != slice) {
+			// uleb128 too big for ut64
+			return -1;
 		}
-	} while (value & 0x80);
+		sum += slice << shift;
+		shift += 7;
+	} while (byte >= 128);
+	*value = sum;
+	return used;
+}
 
-	if ((value & 0x40) != 0) {
-		if (offset < 64) {
-			result |= ~0ULL << offset;
+/**
+ * \brief  Decodes SLEB128 from RzBuffer
+ *
+ * \param  buffer Buffer used to decode the SLEB128.
+ * \param  value  Decoded value.
+ * \return The number of bytes used.
+ */
+RZ_API st64 rz_buf_sleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL st64 *value) {
+	rz_return_val_if_fail(buffer && value, -1);
+
+	ut64 used = 0, slice;
+	st64 sum = 0;
+	ut32 shift = 0;
+	ut8 byte = 0;
+	do {
+		if (rz_buf_read(buffer, &byte, sizeof(byte)) < 1) {
+			// malformed sleb128 due end of buffer
+			return -1;
 		}
+		used++;
+		slice = byte & 0x7f;
+		if ((shift >= 64 && slice != (sum < 0 ? 0x7f : 0x00)) ||
+			(shift == 63 && slice != 0 && slice != 0x7f)) {
+			// sleb128 too big for st64
+			return -1;
+		}
+		sum |= slice << shift;
+		shift += 7;
+	} while (byte >= 128);
+
+	if (shift < 64 && (byte & 0x40)) {
+		// extends negative sign
+		sum |= (-1ull) << shift;
 	}
-	if (v) {
-		*v = result;
-	}
-	return offset / 7;
+	*value = sum;
+	return used;
 }

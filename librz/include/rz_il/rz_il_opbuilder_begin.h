@@ -87,7 +87,7 @@
 #define ULT(x, y)   rz_il_op_new_ult(x, y)
 #define ULE(x, y)   rz_il_op_new_ule(x, y)
 #define UGT(x, y)   rz_il_op_new_ugt(x, y)
-#define UGR(x, y)   rz_il_op_new_ugr(x, y)
+#define UGE(x, y)   rz_il_op_new_uge(x, y)
 #define SLT(x, y)   rz_il_op_new_slt(x, y)
 #define SLE(x, y)   rz_il_op_new_sle(x, y)
 #define SGT(x, y)   rz_il_op_new_sgt(x, y)

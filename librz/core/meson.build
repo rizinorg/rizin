@@ -1,5 +1,6 @@
 core_plugins = [
   'java',
+  'dex',
 ]
 
 subdir('cmd_descs')
@@ -53,6 +54,7 @@ rz_core_sources = [
   'task.c',
   'vmarks.c',
   'yank.c',
+  'p/core_dex.c',
   'p/core_java.c',
   cmd_descs_ch,
   'cmd/cmd.c',

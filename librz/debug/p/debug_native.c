@@ -1450,6 +1450,9 @@ static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 		return set
 			? arm32_hwbp_add(dbg, bp, b)
 			: arm32_hwbp_del(dbg, bp, b);
+#elif __riscv
+		dbg = NULL;
+		return false;
 #endif
 	}
 	return false;
@@ -1672,9 +1675,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.modules_get = rz_debug_native_modules_get,
 	.map_protect = rz_debug_native_map_protect,
 	.breakpoint = rz_debug_native_bp,
-#if __i386__ || __x86_64__
 	.drx = rz_debug_native_drx,
-#endif
 	.gcore = rz_debug_gcore,
 };
 

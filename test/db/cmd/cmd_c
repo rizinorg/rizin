@@ -1132,7 +1132,7 @@ FILE=bins/elf/ls
 CMDS=<<EOF
 cwl
 ?e --------
-cw 8 pd @ 0x5ae0
+cw 8 'pd 2' @ 0x5ae0
 cwl
 ?e --------
 cwx @ 0x5ae0
@@ -1145,6 +1145,20 @@ EXPECT=<<EOF
             0x00005ae0      endbr64
             0x00005ae4      xor   ebp, ebp
 --------
+EOF
+RUN
+
+NAME=add memory watcher at the same address multiple times and do not crash
+FILE=bins/elf/ls
+CMDS=<<EOF
+cw 8 'pd 2' @ 0x5ae0
+cw 8 'pd 2' @ 0x5ae0
+cw 8 'pd 2' @ 0x5ae0
+cw 8 'pd 2' @ 0x5ae0
+cwl*
+EOF
+EXPECT=<<EOF
+cw 8 'pd 2' @  0x00005ae0
 EOF
 RUN
 

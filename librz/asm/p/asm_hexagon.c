@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-04-02 09:49:53-04:00
+// Date of code generation: 2022-04-17 16:44:52+02:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -27,6 +27,10 @@
  * \return int Size of the reversed opcode.
  */
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
+	rz_return_val_if_fail(a && op && buf, -1);
+	if (l < 4) {
+		return -1;
+	}
 	ut32 addr = (ut32)a->pc;
 	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
 

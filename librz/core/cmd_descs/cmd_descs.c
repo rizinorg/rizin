@@ -13,6 +13,8 @@ static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail analysis_all_esil_details[2];
+static const RzCmdDescDetail analysis_functions_merge_details[2];
+static const RzCmdDescDetail analysis_appcall_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
 static const RzCmdDescDetail analysis_hint_set_arch_details[2];
@@ -30,6 +32,7 @@ static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
+static const RzCmdDescDetail cw_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
@@ -119,6 +122,20 @@ static const RzCmdDescArg analysis_function_import_list_args[2];
 static const RzCmdDescArg analysis_function_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_rename_args[2];
+static const RzCmdDescArg analysis_functions_merge_args[2];
+static const RzCmdDescArg analysis_function_cc_set_get_args[2];
+static const RzCmdDescArg analysis_function_cc_load_args[2];
+static const RzCmdDescArg analysis_appcall_args[2];
+static const RzCmdDescArg analysis_continue_until_addr_args[2];
+static const RzCmdDescArg analysis_continue_until_esil_args[2];
+static const RzCmdDescArg analysis_esil_init_mem_args[4];
+static const RzCmdDescArg analysis_esil_init_mem_remove_args[4];
+static const RzCmdDescArg il_step_args[2];
+static const RzCmdDescArg il_step_evaluate_args[2];
+static const RzCmdDescArg il_step_over_until_addr_args[2];
+static const RzCmdDescArg il_step_until_addr_args[2];
+static const RzCmdDescArg il_step_until_expr_args[2];
+static const RzCmdDescArg il_step_until_opt_args[2];
 static const RzCmdDescArg il_vm_step_args[2];
 static const RzCmdDescArg il_vm_step_with_events_args[2];
 static const RzCmdDescArg il_vm_step_until_addr_args[2];
@@ -405,6 +422,16 @@ static const RzCmdDescArg open_maps_prioritize_binid_args[2];
 static const RzCmdDescArg open_maps_deprioritize_args[2];
 static const RzCmdDescArg open_maps_prioritize_fd_args[2];
 static const RzCmdDescArg open_exchange_args[3];
+static const RzCmdDescArg cmd_disassembly_n_instructions_args[2];
+static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_args[2];
+static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_treeview_args[2];
+static const RzCmdDescArg cmd_comments_in_n_instructions_args[2];
+static const RzCmdDescArg cmd_disassembly_n_instructions_with_flow_args[2];
+static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[2];
+static const RzCmdDescArg cmd_sizes_of_n_instructions_args[2];
+static const RzCmdDescArg cmd_disassemble_ropchain_args[2];
+static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
+static const RzCmdDescArg cmd_disassemble_summarize_block_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -2020,6 +2047,421 @@ static const RzCmdDescArg analysis_function_strings_args[] = {
 static const RzCmdDescHelp analysis_function_strings_help = {
 	.summary = "Print all strings referenced by the function in current seek",
 	.args = analysis_function_strings_args,
+};
+
+static const RzCmdDescArg analysis_function_type_matching_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_type_matching_help = {
+	.summary = "Type matching analysis for the function in current seek",
+	.args = analysis_function_type_matching_args,
+};
+
+static const RzCmdDescArg analysis_functions_map_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_functions_map_help = {
+	.summary = "Print functions map",
+	.args = analysis_functions_map_args,
+};
+
+static const RzCmdDescDetailEntry analysis_functions_merge_empty_detail_entries[] = {
+	{ .text = "afm 0xbeef @ 0x42", .arg_str = NULL, .comment = "Merge function at address 0xbeef to function at address 0x42" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_functions_merge_details[] = {
+	{ .name = "", .entries = analysis_functions_merge_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_functions_merge_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_FCN,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_functions_merge_help = {
+	.summary = "Merge two functions",
+	.details = analysis_functions_merge_details,
+	.args = analysis_functions_merge_args,
+};
+
+static const RzCmdDescHelp afc_help = {
+	.summary = "Calling convention",
+};
+static const RzCmdDescArg analysis_function_cc_set_get_args[] = {
+	{
+		.name = "convention",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_cc_set_get_help = {
+	.summary = "Set/Get calling convention for current function",
+	.args = analysis_function_cc_set_get_args,
+};
+
+static const RzCmdDescArg analysis_function_cc_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_cc_list_help = {
+	.summary = "List all available calling conventions",
+	.args = analysis_function_cc_list_args,
+};
+
+static const RzCmdDescArg analysis_function_cc_load_args[] = {
+	{
+		.name = "db_path",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_cc_load_help = {
+	.summary = "Open Calling Convention sdb profile from given path",
+	.args = analysis_function_cc_load_args,
+};
+
+static const RzCmdDescArg analysis_function_cc_reg_usage_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_cc_reg_usage_help = {
+	.summary = "Show register usage for the current function",
+	.args = analysis_function_cc_reg_usage_args,
+};
+
+static const RzCmdDescDetailEntry analysis_appcall_Examples_detail_entries[] = {
+	{ .text = "aeC", .arg_str = " 1 2 @ sym._add", .comment = "Call sym._add(1,2)" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_appcall_details[] = {
+	{ .name = "Examples", .entries = analysis_appcall_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_appcall_args[] = {
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_appcall_help = {
+	.summary = "appcall in esil",
+	.details = analysis_appcall_details,
+	.args = analysis_appcall_args,
+};
+
+static const RzCmdDescHelp aec_help = {
+	.summary = "continue until ^C",
+};
+static const RzCmdDescArg analysis_continue_until_except_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_except_help = {
+	.summary = "Continue until exception",
+	.args = analysis_continue_until_except_args,
+};
+
+static const RzCmdDescArg analysis_continue_until_breakpoint_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_breakpoint_help = {
+	.summary = "Continue back until breakpoint",
+	.args = analysis_continue_until_breakpoint_args,
+};
+
+static const RzCmdDescArg analysis_continue_until_syscall_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_syscall_help = {
+	.summary = "Continue until syscall",
+	.args = analysis_continue_until_syscall_args,
+};
+
+static const RzCmdDescArg analysis_continue_until_call_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_call_help = {
+	.summary = "Continue until call",
+	.args = analysis_continue_until_call_args,
+};
+
+static const RzCmdDescArg analysis_continue_until_addr_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_addr_help = {
+	.summary = "Continue until address",
+	.args = analysis_continue_until_addr_args,
+};
+
+static const RzCmdDescArg analysis_continue_until_esil_args[] = {
+	{
+		.name = "expr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_continue_until_esil_help = {
+	.summary = "Continue until esil expression",
+	.args = analysis_continue_until_esil_args,
+};
+
+static const RzCmdDescHelp aei_help = {
+	.summary = "ESIL VM state",
+};
+static const RzCmdDescArg analysis_esil_init_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_help = {
+	.summary = "initialize ESIL VM state",
+	.args = analysis_esil_init_args,
+};
+
+static const RzCmdDescArg analysis_esil_deinit_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_deinit_help = {
+	.summary = "deinitialize ESIL VM state",
+	.args = analysis_esil_deinit_args,
+};
+
+static const RzCmdDescArg analysis_esil_init_p_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_p_help = {
+	.summary = "initialize ESIL program counter to curseek",
+	.args = analysis_esil_init_p_args,
+};
+
+static const RzCmdDescHelp aeim_help = {
+	.summary = "ESIL VM stack",
+};
+static const RzCmdDescArg analysis_esil_init_mem_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_mem_help = {
+	.summary = "initialize ESIL VM stack",
+	.args = analysis_esil_init_mem_args,
+};
+
+static const RzCmdDescArg analysis_esil_init_mem_remove_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_mem_remove_help = {
+	.summary = "remove ESIL VM stack",
+	.args = analysis_esil_init_mem_remove_args,
+};
+
+static const RzCmdDescArg analysis_esil_init_mem_p_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_esil_init_mem_p_help = {
+	.summary = "initialize ESIL VM stack to \"aeim.stack\" or ?",
+	.args = analysis_esil_init_mem_p_args,
+};
+
+static const RzCmdDescHelp aes_help = {
+	.summary = "ESIL emulated debugger step",
+};
+static const RzCmdDescArg il_step_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_help = {
+	.summary = "perform emulated debugger step",
+	.args = il_step_args,
+};
+
+static const RzCmdDescArg il_step_evaluate_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_evaluate_help = {
+	.summary = "evaluate N instr from core->offset",
+	.args = il_step_evaluate_args,
+};
+
+static const RzCmdDescArg il_step_back_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_back_help = {
+	.summary = "step back",
+	.args = il_step_back_args,
+};
+
+static const RzCmdDescArg il_step_over_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_over_help = {
+	.summary = "step over",
+	.args = il_step_over_args,
+};
+
+static const RzCmdDescArg il_step_over_until_addr_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_over_until_addr_help = {
+	.summary = "step over until given address",
+	.args = il_step_over_until_addr_args,
+};
+
+static const RzCmdDescHelp aess_help = {
+	.summary = "step skip",
+};
+static const RzCmdDescArg il_step_skip_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_skip_help = {
+	.summary = "step skip (in case of CALL, just skip, instead of step into)",
+	.args = il_step_skip_args,
+};
+
+static const RzCmdDescArg il_step_skip_until_addr_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_skip_until_addr_help = {
+	.summary = "step skip (in case of CALL, just skip, instead of step into)",
+	.args = il_step_skip_until_addr_args,
+};
+
+static const RzCmdDescArg il_step_skip_until_expr_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_skip_until_expr_help = {
+	.summary = "step skip (in case of CALL, just skip, instead of step into)",
+	.args = il_step_skip_until_expr_args,
+};
+
+static const RzCmdDescHelp aesu_help = {
+	.summary = "step until",
+};
+static const RzCmdDescArg il_step_until_addr_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_until_addr_help = {
+	.summary = "step until given address",
+	.args = il_step_until_addr_args,
+};
+
+static const RzCmdDescArg il_step_until_expr_args[] = {
+	{
+		.name = "esil",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_until_expr_help = {
+	.summary = "step until esil expression match",
+	.args = il_step_until_expr_args,
+};
+
+static const RzCmdDescArg il_step_until_opt_args[] = {
+	{
+		.name = "optype",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp il_step_until_opt_help = {
+	.summary = "step until given opcode type",
+	.args = il_step_until_opt_args,
+};
+
+static const RzCmdDescHelp aets_help = {
+	.summary = "ESIL Trace session",
+};
+static const RzCmdDescArg il_trace_start_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp il_trace_start_help = {
+	.summary = "Start ESIL trace session",
+	.args = il_trace_start_args,
+};
+
+static const RzCmdDescArg il_trace_stop_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp il_trace_stop_help = {
+	.summary = "Stop ESIL trace session",
+	.args = il_trace_stop_args,
 };
 
 static const RzCmdDescHelp aez_help = {
@@ -4149,8 +4591,19 @@ static const RzCmdDescHelp cmd_cmp_unified_disasm_help = {
 	.args = cmd_cmp_unified_disasm_args,
 };
 
+static const RzCmdDescDetailEntry cw_Compare_space_memory_space_locations_space_and_space_check_space_if_space_there_space_is_space_a_space_difference_detail_entries[] = {
+	{ .text = "cw 32 'pD 32' @ 0x1234", .arg_str = NULL, .comment = "Adds a memory region watcher of 32 bytes at 0x1234, where it executes the command 'pD 32'." },
+	{ .text = "cwl", .arg_str = NULL, .comment = "Lists all the memory region watchers and notifies of any changes" },
+	{ .text = "cwx @ 0x1234", .arg_str = NULL, .comment = "Removes the memory region watchers at 0x1234" },
+	{ 0 },
+};
+static const RzCmdDescDetail cw_details[] = {
+	{ .name = "Compare memory locations and check if there is a difference", .entries = cw_Compare_space_memory_space_locations_space_and_space_check_space_if_space_there_space_is_space_a_space_difference_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp cw_help = {
 	.summary = "Compare watcher commands",
+	.details = cw_details,
 };
 static const RzCmdDescArg cmd_cmp_add_memory_watcher_args[] = {
 	{
@@ -9343,6 +9796,244 @@ static const RzCmdDescHelp cmd_print_byte_array_rizin_help = {
 	.args = cmd_print_byte_array_rizin_args,
 };
 
+static const RzCmdDescHelp cmd_print_disassembly_help = {
+	.summary = "Print Disassembly",
+};
+static const RzCmdDescArg cmd_disassembly_n_instructions_args[] = {
+	{
+		.name = "n_instrs",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_n_instructions_help = {
+	.summary = "Disassemble N instructions (can be negative)",
+	.args = cmd_disassembly_n_instructions_args,
+};
+
+static const RzCmdDescHelp cmd_disassembly_all_opcodes_help = {
+	.summary = "Disassemble all possible opcodes (byte per byte)",
+};
+static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_all_possible_opcodes_help = {
+	.summary = "Disassemble all possible opcodes (byte per byte)",
+	.args = cmd_disassembly_all_possible_opcodes_args,
+};
+
+static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_treeview_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_all_possible_opcodes_treeview_help = {
+	.summary = "Disassemble all possible opcodes (treeview)",
+	.args = cmd_disassembly_all_possible_opcodes_treeview_args,
+};
+
+static const RzCmdDescHelp cmd_disasm_basic_block_help = {
+	.summary = "Disassemble basic block",
+};
+static const RzCmdDescArg cmd_disassembly_basic_block_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_basic_block_help = {
+	.summary = "Disassemble basic block",
+	.args = cmd_disassembly_basic_block_args,
+};
+
+static const RzCmdDescArg cmd_disassembly_basic_block_as_text_json_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_basic_block_as_text_json_help = {
+	.summary = "Disassemble basic block as json containing the printed text",
+	.args = cmd_disassembly_basic_block_as_text_json_args,
+};
+
+static const RzCmdDescArg cmd_comments_in_n_instructions_args[] = {
+	{
+		.name = "n_instrs",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_comments_in_n_instructions_help = {
+	.summary = "Prints the comments found in N instructions",
+	.args = cmd_comments_in_n_instructions_args,
+};
+
+static const RzCmdDescArg cmd_disassembly_n_instructions_with_flow_args[] = {
+	{
+		.name = "n_instrs",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_n_instructions_with_flow_help = {
+	.summary = "Disassemble N instructions following execution flow from current PC",
+	.args = cmd_disassembly_n_instructions_with_flow_args,
+};
+
+static const RzCmdDescHelp cmd_disasm_func_help = {
+	.summary = "Disassemble a function",
+};
+static const RzCmdDescArg cmd_disassembly_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_function_help = {
+	.summary = "Disassemble a function",
+	.args = cmd_disassembly_function_args,
+};
+
+static const RzCmdDescArg cmd_disassembly_function_summary_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_function_summary_help = {
+	.summary = "Disassemble a function and outputs the summary of it.",
+	.args = cmd_disassembly_function_summary_args,
+};
+
+static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[] = {
+	{
+		.name = "n_instrs",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_n_instrs_as_text_json_help = {
+	.summary = "Disassemble N instructions as json containing the printed text",
+	.args = cmd_disassembly_n_instrs_as_text_json_args,
+};
+
+static const RzCmdDescArg cmd_disassembly_all_methods_class_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_all_methods_class_help = {
+	.summary = "Disassemble all methods of a class",
+	.args = cmd_disassembly_all_methods_class_args,
+};
+
+static const RzCmdDescArg cmd_sizes_of_n_instructions_args[] = {
+	{
+		.name = "n_instrs",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_sizes_of_n_instructions_help = {
+	.summary = "Disassemble N instructions and prints its sizes",
+	.args = cmd_sizes_of_n_instructions_args,
+};
+
+static const RzCmdDescArg cmd_disassemble_ropchain_args[] = {
+	{
+		.name = "limit",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_ropchain_help = {
+	.summary = "Disassemble instructions and follows pointers to read ropchains",
+	.args = cmd_disassemble_ropchain_args,
+};
+
+static const RzCmdDescHelp cmd_disassemble_recursive_help = {
+	.summary = "Disassemble recursively across the function graph",
+};
+static const RzCmdDescArg cmd_disassemble_recursively_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_recursively_help = {
+	.summary = "Disassemble recursively across the function graph",
+	.args = cmd_disassemble_recursively_args,
+};
+
+static const RzCmdDescArg cmd_disassemble_recursively_from_current_block_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_recursively_from_current_block_help = {
+	.summary = "Disassemble recursively across the function graph (from current basic block)",
+	.args = cmd_disassemble_recursively_from_current_block_args,
+};
+
+static const RzCmdDescArg cmd_disassemble_recursively_no_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_recursively_no_function_help = {
+	.summary = "Disassemble recursively the block size bytes without analyzing functions",
+	.args = cmd_disassemble_recursively_no_function_args,
+};
+
+static const RzCmdDescHelp cmd_disassemble_summarize_help = {
+	.summary = "Summarize N bytes or current block or a function (strings, calls, jumps, refs)",
+};
+static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_summarize_n_bytes_help = {
+	.summary = "Summarize N bytes",
+	.args = cmd_disassemble_summarize_n_bytes_args,
+};
+
+static const RzCmdDescArg cmd_disassemble_summarize_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_summarize_function_help = {
+	.summary = "Summarize the current function",
+	.args = cmd_disassemble_summarize_function_args,
+};
+
+static const RzCmdDescArg cmd_disassemble_summarize_block_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassemble_summarize_block_help = {
+	.summary = "Summarize current block",
+	.args = cmd_disassemble_summarize_block_args,
+};
+
 static const RzCmdDescHelp cmd_print_gadget_help = {
 	.summary = "Print gadgets",
 };
@@ -13202,6 +13893,100 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, afn_cd, "afns", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_strings_handler, &analysis_function_strings_help);
 	rz_warn_if_fail(analysis_function_strings_cd);
 
+	RzCmdDesc *analysis_function_type_matching_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "aft", rz_analysis_function_type_matching_handler, &analysis_function_type_matching_help);
+	rz_warn_if_fail(analysis_function_type_matching_cd);
+
+	RzCmdDesc *analysis_functions_map_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afM", rz_analysis_functions_map_handler, &analysis_functions_map_help);
+	rz_warn_if_fail(analysis_functions_map_cd);
+
+	RzCmdDesc *analysis_functions_merge_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afm", rz_analysis_functions_merge_handler, &analysis_functions_merge_help);
+	rz_warn_if_fail(analysis_functions_merge_cd);
+
+	RzCmdDesc *afc_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_fcn_cd, "afc", rz_analysis_function_cc_set_get_handler, &analysis_function_cc_set_get_help, &afc_help);
+	rz_warn_if_fail(afc_cd);
+	RzCmdDesc *analysis_function_cc_list_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afc_cd, "afcl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_analysis_function_cc_list_handler, &analysis_function_cc_list_help);
+	rz_warn_if_fail(analysis_function_cc_list_cd);
+
+	RzCmdDesc *analysis_function_cc_load_cd = rz_cmd_desc_argv_new(core->rcmd, afc_cd, "afco", rz_analysis_function_cc_load_handler, &analysis_function_cc_load_help);
+	rz_warn_if_fail(analysis_function_cc_load_cd);
+
+	RzCmdDesc *analysis_function_cc_reg_usage_cd = rz_cmd_desc_argv_state_new(core->rcmd, afc_cd, "afcr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_cc_reg_usage_handler, &analysis_function_cc_reg_usage_help);
+	rz_warn_if_fail(analysis_function_cc_reg_usage_cd);
+
+	RzCmdDesc *analysis_appcall_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aeC", rz_analysis_appcall_handler, &analysis_appcall_help);
+	rz_warn_if_fail(analysis_appcall_cd);
+
+	RzCmdDesc *aec_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aec", rz_analysis_continue_until_except_handler, &analysis_continue_until_except_help, &aec_help);
+	rz_warn_if_fail(aec_cd);
+	RzCmdDesc *analysis_continue_until_breakpoint_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecb", rz_analysis_continue_until_breakpoint_handler, &analysis_continue_until_breakpoint_help);
+	rz_warn_if_fail(analysis_continue_until_breakpoint_cd);
+
+	RzCmdDesc *analysis_continue_until_syscall_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecs", rz_analysis_continue_until_syscall_handler, &analysis_continue_until_syscall_help);
+	rz_warn_if_fail(analysis_continue_until_syscall_cd);
+
+	RzCmdDesc *analysis_continue_until_call_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecc", rz_analysis_continue_until_call_handler, &analysis_continue_until_call_help);
+	rz_warn_if_fail(analysis_continue_until_call_cd);
+
+	RzCmdDesc *analysis_continue_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecu", rz_analysis_continue_until_addr_handler, &analysis_continue_until_addr_help);
+	rz_warn_if_fail(analysis_continue_until_addr_cd);
+
+	RzCmdDesc *analysis_continue_until_esil_cd = rz_cmd_desc_argv_new(core->rcmd, aec_cd, "aecue", rz_analysis_continue_until_esil_handler, &analysis_continue_until_esil_help);
+	rz_warn_if_fail(analysis_continue_until_esil_cd);
+
+	RzCmdDesc *aei_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aei", rz_analysis_esil_init_handler, &analysis_esil_init_help, &aei_help);
+	rz_warn_if_fail(aei_cd);
+	RzCmdDesc *analysis_esil_deinit_cd = rz_cmd_desc_argv_new(core->rcmd, aei_cd, "aei-", rz_analysis_esil_deinit_handler, &analysis_esil_deinit_help);
+	rz_warn_if_fail(analysis_esil_deinit_cd);
+
+	RzCmdDesc *analysis_esil_init_p_cd = rz_cmd_desc_argv_new(core->rcmd, aei_cd, "aeip", rz_analysis_esil_init_p_handler, &analysis_esil_init_p_help);
+	rz_warn_if_fail(analysis_esil_init_p_cd);
+
+	RzCmdDesc *aeim_cd = rz_cmd_desc_group_new(core->rcmd, aei_cd, "aeim", rz_analysis_esil_init_mem_handler, &analysis_esil_init_mem_help, &aeim_help);
+	rz_warn_if_fail(aeim_cd);
+	RzCmdDesc *analysis_esil_init_mem_remove_cd = rz_cmd_desc_argv_new(core->rcmd, aeim_cd, "aeim-", rz_analysis_esil_init_mem_remove_handler, &analysis_esil_init_mem_remove_help);
+	rz_warn_if_fail(analysis_esil_init_mem_remove_cd);
+
+	RzCmdDesc *analysis_esil_init_mem_p_cd = rz_cmd_desc_argv_new(core->rcmd, aeim_cd, "aeimp", rz_analysis_esil_init_mem_p_handler, &analysis_esil_init_mem_p_help);
+	rz_warn_if_fail(analysis_esil_init_mem_p_cd);
+
+	RzCmdDesc *aes_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aes", rz_il_step_handler, &il_step_help, &aes_help);
+	rz_warn_if_fail(aes_cd);
+	RzCmdDesc *il_step_evaluate_cd = rz_cmd_desc_argv_new(core->rcmd, aes_cd, "aesp", rz_il_step_evaluate_handler, &il_step_evaluate_help);
+	rz_warn_if_fail(il_step_evaluate_cd);
+
+	RzCmdDesc *il_step_back_cd = rz_cmd_desc_argv_new(core->rcmd, aes_cd, "aesb", rz_il_step_back_handler, &il_step_back_help);
+	rz_warn_if_fail(il_step_back_cd);
+
+	RzCmdDesc *il_step_over_cd = rz_cmd_desc_argv_new(core->rcmd, aes_cd, "aeso", rz_il_step_over_handler, &il_step_over_help);
+	rz_warn_if_fail(il_step_over_cd);
+
+	RzCmdDesc *il_step_over_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aes_cd, "aesou", rz_il_step_over_until_addr_handler, &il_step_over_until_addr_help);
+	rz_warn_if_fail(il_step_over_until_addr_cd);
+
+	RzCmdDesc *aess_cd = rz_cmd_desc_group_new(core->rcmd, aes_cd, "aess", rz_il_step_skip_handler, &il_step_skip_help, &aess_help);
+	rz_warn_if_fail(aess_cd);
+	RzCmdDesc *il_step_skip_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aess_cd, "aessu", rz_il_step_skip_until_addr_handler, &il_step_skip_until_addr_help);
+	rz_warn_if_fail(il_step_skip_until_addr_cd);
+
+	RzCmdDesc *il_step_skip_until_expr_cd = rz_cmd_desc_argv_new(core->rcmd, aess_cd, "aessue", rz_il_step_skip_until_expr_handler, &il_step_skip_until_expr_help);
+	rz_warn_if_fail(il_step_skip_until_expr_cd);
+
+	RzCmdDesc *aesu_cd = rz_cmd_desc_group_new(core->rcmd, aes_cd, "aesu", rz_il_step_until_addr_handler, &il_step_until_addr_help, &aesu_help);
+	rz_warn_if_fail(aesu_cd);
+	RzCmdDesc *il_step_until_expr_cd = rz_cmd_desc_argv_new(core->rcmd, aesu_cd, "aesue", rz_il_step_until_expr_handler, &il_step_until_expr_help);
+	rz_warn_if_fail(il_step_until_expr_cd);
+
+	RzCmdDesc *il_step_until_opt_cd = rz_cmd_desc_argv_new(core->rcmd, aesu_cd, "aesuo", rz_il_step_until_opt_handler, &il_step_until_opt_help);
+	rz_warn_if_fail(il_step_until_opt_cd);
+
+	RzCmdDesc *aets_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aets", NULL, NULL, &aets_help);
+	rz_warn_if_fail(aets_cd);
+	RzCmdDesc *il_trace_start_cd = rz_cmd_desc_argv_new(core->rcmd, aets_cd, "aets+", rz_il_trace_start_handler, &il_trace_start_help);
+	rz_warn_if_fail(il_trace_start_cd);
+
+	RzCmdDesc *il_trace_stop_cd = rz_cmd_desc_argv_new(core->rcmd, aets_cd, "aets-", rz_il_trace_stop_handler, &il_trace_stop_help);
+	rz_warn_if_fail(il_trace_stop_cd);
+
 	RzCmdDesc *aez_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aez", NULL, NULL, &aez_help);
 	rz_warn_if_fail(aez_cd);
 	RzCmdDesc *il_vm_initialize_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezi", rz_il_vm_initialize_handler, &il_vm_initialize_help);
@@ -14869,6 +15654,57 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_byte_array_rizin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pc*", rz_cmd_print_byte_array_rizin_handler, &cmd_print_byte_array_rizin_help);
 	rz_warn_if_fail(cmd_print_byte_array_rizin_cd);
+
+	RzCmdDesc *cmd_print_disassembly_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "pd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_n_instructions_handler, &cmd_disassembly_n_instructions_help, &cmd_print_disassembly_help);
+	rz_warn_if_fail(cmd_print_disassembly_cd);
+	RzCmdDesc *cmd_disassembly_all_opcodes_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_disassembly_cd, "pda", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_all_possible_opcodes_handler, &cmd_disassembly_all_possible_opcodes_help, &cmd_disassembly_all_opcodes_help);
+	rz_warn_if_fail(cmd_disassembly_all_opcodes_cd);
+	RzCmdDesc *cmd_disassembly_all_possible_opcodes_treeview_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disassembly_all_opcodes_cd, "pda=", rz_cmd_disassembly_all_possible_opcodes_treeview_handler, &cmd_disassembly_all_possible_opcodes_treeview_help);
+	rz_warn_if_fail(cmd_disassembly_all_possible_opcodes_treeview_cd);
+
+	RzCmdDesc *cmd_disasm_basic_block_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_disassembly_cd, "pdb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_basic_block_handler, &cmd_disassembly_basic_block_help, &cmd_disasm_basic_block_help);
+	rz_warn_if_fail(cmd_disasm_basic_block_cd);
+	RzCmdDesc *cmd_disassembly_basic_block_as_text_json_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_disasm_basic_block_cd, "pdbJ", RZ_OUTPUT_MODE_STANDARD, rz_cmd_disassembly_basic_block_as_text_json_handler, &cmd_disassembly_basic_block_as_text_json_help);
+	rz_warn_if_fail(cmd_disassembly_basic_block_as_text_json_cd);
+
+	RzCmdDesc *cmd_comments_in_n_instructions_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_disassembly_cd, "pdC", rz_cmd_comments_in_n_instructions_handler, &cmd_comments_in_n_instructions_help);
+	rz_warn_if_fail(cmd_comments_in_n_instructions_cd);
+
+	RzCmdDesc *cmd_disassembly_n_instructions_with_flow_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_disassembly_cd, "pde", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_disassembly_n_instructions_with_flow_handler, &cmd_disassembly_n_instructions_with_flow_help);
+	rz_warn_if_fail(cmd_disassembly_n_instructions_with_flow_cd);
+
+	RzCmdDesc *cmd_disasm_func_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_disassembly_cd, "pdf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_function_handler, &cmd_disassembly_function_help, &cmd_disasm_func_help);
+	rz_warn_if_fail(cmd_disasm_func_cd);
+	RzCmdDesc *cmd_disassembly_function_summary_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disasm_func_cd, "pdfs", rz_cmd_disassembly_function_summary_handler, &cmd_disassembly_function_summary_help);
+	rz_warn_if_fail(cmd_disassembly_function_summary_cd);
+
+	RzCmdDesc *cmd_disassembly_n_instrs_as_text_json_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_disassembly_cd, "pdJ", RZ_OUTPUT_MODE_STANDARD, rz_cmd_disassembly_n_instrs_as_text_json_handler, &cmd_disassembly_n_instrs_as_text_json_help);
+	rz_warn_if_fail(cmd_disassembly_n_instrs_as_text_json_cd);
+
+	RzCmdDesc *cmd_disassembly_all_methods_class_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_disassembly_cd, "pdk", rz_cmd_disassembly_all_methods_class_handler, &cmd_disassembly_all_methods_class_help);
+	rz_warn_if_fail(cmd_disassembly_all_methods_class_cd);
+
+	RzCmdDesc *cmd_sizes_of_n_instructions_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_disassembly_cd, "pdl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_sizes_of_n_instructions_handler, &cmd_sizes_of_n_instructions_help);
+	rz_warn_if_fail(cmd_sizes_of_n_instructions_cd);
+
+	RzCmdDesc *cmd_disassemble_ropchain_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_disassembly_cd, "pdp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_ropchain_handler, &cmd_disassemble_ropchain_help);
+	rz_warn_if_fail(cmd_disassemble_ropchain_cd);
+
+	RzCmdDesc *cmd_disassemble_recursive_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_disassembly_cd, "pdr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_recursively_handler, &cmd_disassemble_recursively_help, &cmd_disassemble_recursive_help);
+	rz_warn_if_fail(cmd_disassemble_recursive_cd);
+	RzCmdDesc *cmd_disassemble_recursively_from_current_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_disassemble_recursive_cd, "pdr.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_recursively_from_current_block_handler, &cmd_disassemble_recursively_from_current_block_help);
+	rz_warn_if_fail(cmd_disassemble_recursively_from_current_block_cd);
+
+	RzCmdDesc *cmd_disassemble_recursively_no_function_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_disassembly_cd, "pdR", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_cmd_disassemble_recursively_no_function_handler, &cmd_disassemble_recursively_no_function_help);
+	rz_warn_if_fail(cmd_disassemble_recursively_no_function_cd);
+
+	RzCmdDesc *cmd_disassemble_summarize_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_disassembly_cd, "pds", rz_cmd_disassemble_summarize_n_bytes_handler, &cmd_disassemble_summarize_n_bytes_help, &cmd_disassemble_summarize_help);
+	rz_warn_if_fail(cmd_disassemble_summarize_cd);
+	RzCmdDesc *cmd_disassemble_summarize_function_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disassemble_summarize_cd, "pdsf", rz_cmd_disassemble_summarize_function_handler, &cmd_disassemble_summarize_function_help);
+	rz_warn_if_fail(cmd_disassemble_summarize_function_cd);
+
+	RzCmdDesc *cmd_disassemble_summarize_block_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disassemble_summarize_cd, "pdsb", rz_cmd_disassemble_summarize_block_handler, &cmd_disassemble_summarize_block_help);
+	rz_warn_if_fail(cmd_disassemble_summarize_block_cd);
 
 	RzCmdDesc *cmd_print_gadget_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pg", rz_cmd_print_gadget_add_handler, &cmd_print_gadget_add_help, &cmd_print_gadget_help);
 	rz_warn_if_fail(cmd_print_gadget_cd);

@@ -291,12 +291,12 @@ static bool run_commands(RzCore *r, RzList *cmds, RzList *files, bool quiet, int
 	/* -i */
 	rz_list_foreach (files, iter, file) {
 		if (!rz_file_exists(file)) {
-			eprintf("Script '%s' not found.\n", file);
+			RZ_LOG_ERROR("Script '%s' not found.\n", file);
 			goto beach;
 		}
 		ret = rz_core_run_script(r, file);
 		if (ret == -2) {
-			eprintf("[c] Cannot open '%s'\n", file);
+			RZ_LOG_ERROR("[c] Cannot open '%s'\n", file);
 		}
 		if (ret < 0 || (ret == 0 && quiet)) {
 			rz_cons_flush();
@@ -455,7 +455,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	r = rz_core_new();
 	if (!r) {
-		eprintf("Cannot initialize RzCore\n");
+		RZ_LOG_ERROR("Cannot initialize RzCore\n");
 		LISTS_FREE();
 		free(envprofile);
 		return 1;
@@ -494,7 +494,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
-			eprintf("%c: invalid combinations of argument flags - %s\n", opt.opt, opt.argv[2]);
+			RZ_LOG_ERROR("%c: invalid combinations of argument flags - %s\n", opt.opt, opt.argv[2]);
 			ret = 1;
 			goto beach;
 			break;
@@ -544,7 +544,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'd': debug = 1; break;
 #else
 		case 'd':
-			eprintf("Sorry. No debugger backend available.\n");
+			RZ_LOG_ERROR("Sorry. No debugger backend available.\n");
 			return 1;
 #endif
 		case 'D': {
@@ -586,7 +586,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			return 0;
 		case 'i':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
-				eprintf("Cannot open empty script path\n");
+				RZ_LOG_ERROR("Cannot open empty script path\n");
 				ret = 1;
 				goto beach;
 			}
@@ -594,7 +594,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'I':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
-				eprintf("Cannot open empty script path\n");
+				RZ_LOG_ERROR("Cannot open empty script path\n");
 				ret = 1;
 				goto beach;
 			}
@@ -651,7 +651,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'r':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
-				eprintf("Cannot open empty rz-run profile path\n");
+				RZ_LOG_ERROR("Cannot open empty rz-run profile path\n");
 				ret = 1;
 				goto beach;
 			}
@@ -705,7 +705,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 	if (noStderr) {
 		if (-1 == close(2)) {
-			eprintf("Failed to close stderr");
+			RZ_LOG_ERROR("Failed to close stderr");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
@@ -713,20 +713,20 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		const char nul[] = RZ_SYS_DEVNULL;
 		int new_stderr = open(nul, O_RDWR);
 		if (-1 == new_stderr) {
-			eprintf("Failed to open %s", nul);
+			RZ_LOG_ERROR("Failed to open %s", nul);
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2(new_stderr, 2)) {
-				eprintf("Failed to dup2 stderr");
+				RZ_LOG_ERROR("Failed to dup2 stderr");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				return 1;
 			}
 			if (-1 == close(new_stderr)) {
-				eprintf("Failed to close %s", nul);
+				RZ_LOG_ERROR("Failed to close %s", nul);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				return 1;
@@ -762,7 +762,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	if (pfile && !*pfile) {
-		eprintf("Cannot open empty path\n");
+		RZ_LOG_ERROR("Cannot open empty path\n");
 		ret = 1;
 		goto beach;
 	}
@@ -805,7 +805,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 	if (debug == 1) {
 		if (opt.ind >= argc && !haveRarunProfile) {
-			eprintf("Missing argument for -d\n");
+			RZ_LOG_ERROR("Missing argument for -d\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
@@ -852,7 +852,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (do_connect) {
 		const char *uri = argv[opt.ind];
 		if (opt.ind >= argc) {
-			eprintf("Missing URI for -C\n");
+			RZ_LOG_ERROR("Missing URI for -C\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
@@ -908,14 +908,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (pfile && rz_file_is_directory(pfile)) {
 		if (debug) {
-			eprintf("Error: Cannot debug directories, yet.\n");
+			RZ_LOG_ERROR("Error: Cannot debug directories, yet.\n");
 			LISTS_FREE();
 			free(pfile);
 			RZ_FREE(debugbackend);
 			return 1;
 		}
 		if (rz_sys_chdir(argv[opt.ind])) {
-			eprintf("[d] Cannot open directory\n");
+			RZ_LOG_ERROR("[d] Cannot open directory\n");
 			LISTS_FREE();
 			free(pfile);
 			RZ_FREE(debugbackend);
@@ -926,28 +926,33 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #if __WINDOWS__
 		int result = _setmode(_fileno(stdin), _O_BINARY);
 		if (result == -1) {
-			eprintf("Cannot set stdin to binary mode");
+			RZ_LOG_ERROR("Cannot set stdin to binary mode");
 			return 1;
 		}
 #endif
 		/* stdin/batch mode */
 		char *buf = rz_stdin_slurp(&sz);
 		eprintf("^D\n");
-		rz_cons_set_raw(false);
 #if __WINDOWS__
 		const char *con_dev = "CON";
 #else
 		const char *con_dev = "/dev/tty";
 #endif
-		// TODO: keep flags :?
+		ut64 scr_color = rz_config_get_i(r->config, "scr.color");
+		const char *scr_interactive = rz_config_get(r->config, "scr.interactive");
+		while (rz_cons_free())
+			;
 		rz_xfreopen(con_dev, "r", stdin);
+		rz_cons_new();
+		rz_config_set_i(r->config, "scr.color", scr_color);
+		rz_config_set(r->config, "scr.interactive", scr_interactive);
 		if (buf && sz > 0) {
 			char *path = rz_str_newf("malloc://%d", sz);
 			fh = rz_core_file_open(r, path, perms, mapaddr);
 			if (!fh) {
 				rz_cons_flush();
 				free(buf);
-				eprintf("[=] Cannot open '%s'\n", path);
+				RZ_LOG_ERROR("[=] Cannot open '%s'\n", path);
 				LISTS_FREE();
 				free(path);
 				return 1;
@@ -960,7 +965,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			free(path);
 			// TODO: load rbin thing
 		} else {
-			eprintf("Cannot slurp from stdin\n");
+			RZ_LOG_ERROR("Cannot slurp from stdin\n");
 			free(buf);
 			LISTS_FREE();
 			return 1;
@@ -974,7 +979,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_config_set(r->config, "cfg.debug", "true");
 			perms = RZ_PERM_RWX;
 			if (opt.ind >= argc) {
-				eprintf("No program given to -d\n");
+				RZ_LOG_ERROR("No program given to -d\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				return 1;
@@ -1094,7 +1099,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			const char *dbg_profile = rz_config_get(r->config, "dbg.profile");
 			if (opt.ind == argc && dbg_profile && *dbg_profile) {
 				if (RZ_STR_ISEMPTY(pfile)) {
-					eprintf("Missing file to open\n");
+					RZ_LOG_ERROR("Missing file to open\n");
 					ret = 1;
 					RZ_FREE(debugbackend);
 					goto beach;
@@ -1224,12 +1229,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (pfile && *pfile) {
 				rz_cons_flush();
 				if (perms & RZ_PERM_W) {
-					eprintf("[w] Cannot open '%s' for writing.\n", pfile);
+					RZ_LOG_ERROR("[w] Cannot open '%s' for writing.\n", pfile);
 				} else {
-					eprintf("[r] Cannot open '%s'\n", pfile);
+					RZ_LOG_ERROR("[r] Cannot open '%s'\n", pfile);
 				}
 			} else {
-				eprintf("Missing file to open\n");
+				RZ_LOG_ERROR("Missing file to open\n");
 			}
 			ret = 1;
 			goto beach;
@@ -1482,7 +1487,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				free(question);
 			}
 			if (prj_err != RZ_PROJECT_ERR_SUCCESS) {
-				eprintf("Failed to save project: %s\n", rz_project_err_message(prj_err));
+				RZ_LOG_ERROR("Failed to save project: %s\n", rz_project_err_message(prj_err));
 				continue;
 			}
 

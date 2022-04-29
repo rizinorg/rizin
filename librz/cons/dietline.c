@@ -1634,7 +1634,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			case 127: // alt+bkspace
 				backward_kill_word(MINOR_BREAK);
 				break;
-			case -1: // escape key, goto vi mode
+			case 27: // escape key, goto vi mode
 				if (I.enable_vi_mode) {
 					if (I.hud) {
 						I.hud->vi = true;

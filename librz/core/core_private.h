@@ -50,6 +50,7 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state);
 RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
+RZ_IPI void rz_core_analysis_cc_print(RzCore *core, RZ_NONNULL const char *cc, RZ_NULLABLE PJ *pj);
 
 /* cmeta.c */
 RZ_IPI void rz_core_spaces_print(RzCore *core, RzSpaces *spaces, RzCmdStateOutput *state);
@@ -121,7 +122,6 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state);
 
 /* creg.c */
-RZ_IPI void rz_core_reg_update_flags(RzCore *core);
 RZ_IPI RzList /*<RzRegItem>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
 RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items);
 

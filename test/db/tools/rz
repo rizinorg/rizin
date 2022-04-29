@@ -116,7 +116,7 @@ EOF
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
-Script 'script/missing.rz' not found.
+ERROR: Script 'script/missing.rz' not found.
 EOF
 RUN
 
@@ -124,7 +124,7 @@ NAME=rizin empty -i
 FILE==
 CMDS=!rizin -i "" =
 EXPECT_ERR=<<EOF
-Cannot open empty script path
+ERROR: Cannot open empty script path
 EOF
 RUN
 
@@ -132,7 +132,7 @@ NAME=rizin empty -I
 FILE==
 CMDS=!rizin -I "" =
 EXPECT_ERR=<<EOF
-Cannot open empty script path
+ERROR: Cannot open empty script path
 EOF
 RUN
 
