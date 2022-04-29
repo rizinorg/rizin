@@ -32,19 +32,25 @@ extern bool rz_core_is_project(RzCore *core, const char *name);
  *
  * \return Returns the same pointer as message
  */
-RZ_API const char *rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message) {
-	rz_return_val_if_fail(core && message, NULL);
+RZ_API void rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) {
+	rz_return_if_fail(core && format);
+	va_list args;
 	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
 	bool verbose = rz_config_get_b(core->config, "scr.prompt");
 	if (!verbose) {
-		return message;
+		return;
 	}
+	va_start(args, format);
 	if (use_color) {
-		fprintf(stderr, "[ ] " Color_YELLOW "%s\r[" Color_RESET, message);
+		fprintf(stderr, "[ ] " Color_YELLOW);
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\r[" Color_RESET);
 	} else {
-		fprintf(stderr, "[ ] %s\r[", message);
+		fprintf(stderr, "[ ] ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\r[");
 	}
-	return message;
+	va_end(args);
 }
 
 /**
@@ -53,18 +59,25 @@ RZ_API const char *rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL cons
  * \param  core     The RzCore to use
  * \param  message  The message to notify
  */
-RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message) {
-	rz_return_if_fail(core && message);
+RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) {
+	rz_return_if_fail(core && format);
+	va_list args;
 	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
 	bool verbose = rz_config_get_b(core->config, "scr.prompt");
 	if (!verbose) {
 		return;
 	}
+	va_start(args, format);
 	if (use_color) {
-		fprintf(stderr, "\r" Color_GREEN "[x]" Color_RESET " %s\n", message);
-		return;
+		fprintf(stderr, "\r" Color_GREEN "[x]" Color_RESET " ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
+	} else {
+		fprintf(stderr, "\r[x] ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
 	}
-	fprintf(stderr, "\r[x] %s\n", message);
+	va_end(args);
 }
 
 static int on_fcn_new(RzAnalysis *_analysis, void *_user, RzAnalysisFunction *fcn) {
