@@ -741,6 +741,37 @@ static RzILOpEffect *sh_il_mac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return eff;
 }
 
+/**
+ * MUL.L  Rm, Rn
+ * Rn * Rm -> MACL (32 * 32 -> 32 bits)
+ * 0000nnnnmmmm0111
+ */
+static RzILOpEffect *sh_il_mul(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return SETG("macl", MUL(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
+}
+
+/**
+ * MULS.W  Rm, Rn
+ * Rn * Rm -> MACL (Signed) (16 * 16 -> 32 bits)
+ * 0010nnnnmmmm1111
+ */
+static RzILOpEffect *sh_il_muls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *m = SIGNED(SH_REG_SIZE, SIGNED(16, sh_il_get_pure_param(0)));
+	RzILOpPure *n = SIGNED(SH_REG_SIZE, SIGNED(16, sh_il_get_pure_param(1)));
+	return SETG("macl", MUL(m, n));
+}
+
+/**
+ * MULU.W  Rm, Rn
+ * Rn * Rm -> MACL (Unsigned) (16 * 16 -> 32 bits)
+ * 0010nnnnmmmm1110
+ */
+static RzILOpEffect *sh_il_mulu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *m = UNSIGNED(SH_REG_SIZE, UNSIGNED(16, sh_il_get_pure_param(0)));
+	RzILOpPure *n = UNSIGNED(SH_REG_SIZE, UNSIGNED(16, sh_il_get_pure_param(1)));
+	return SETG("macl", MUL(m, n));
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
@@ -770,5 +801,8 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_dt,
 	sh_il_exts,
 	sh_il_extu,
-	sh_il_mac
+	sh_il_mac,
+	sh_il_mul,
+	sh_il_muls,
+	sh_il_mulu
 };
