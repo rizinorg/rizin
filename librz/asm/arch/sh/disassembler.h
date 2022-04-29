@@ -70,6 +70,9 @@ typedef enum {
 	SH_OP_AND,
 	SH_OP_NOT,
 	SH_OP_OR,
+	SH_OP_TAS,
+	SH_OP_TST,
+	SH_OP_XOR,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
