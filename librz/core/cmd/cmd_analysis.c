@@ -4161,7 +4161,9 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_core_analysis_propagate_noreturn(core, UT64_MAX);
 			break;
 		case 'g': // "aang"
-			rz_core_analysis_recover_golang_functions(core);
+			if (rz_core_analysis_recover_golang_functions(core)) {
+				rz_core_analysis_resolve_golang_strings(core);
+			}
 			break;
 		case '?': // "aan?"
 			eprintf("Usage: aan[rg]\n");
