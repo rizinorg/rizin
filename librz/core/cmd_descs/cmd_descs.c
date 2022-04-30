@@ -274,6 +274,11 @@ static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[3];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
+static const RzCmdDescArg cmd_debug_step_args[2];
+static const RzCmdDescArg cmd_debug_step_cond_args[2];
+static const RzCmdDescArg cmd_debug_step_line_args[2];
+static const RzCmdDescArg cmd_debug_step_over_args[2];
+static const RzCmdDescArg cmd_debug_step_skip_args[2];
 static const RzCmdDescArg cmd_debug_step_until_args[2];
 static const RzCmdDescArg cmd_debug_step_until_instr_args[2];
 static const RzCmdDescArg cmd_debug_step_until_instr_regex_args[2];
@@ -5959,9 +5964,107 @@ static const RzCmdDescHelp cmd_debug_continue_until_help = {
 	.summary = "Debug continue until",
 };
 
-static const RzCmdDescHelp cmd_debug_step_help = {
+static const RzCmdDescHelp ds_help = {
 	.summary = "Debug step commands",
 };
+static const RzCmdDescArg cmd_debug_step_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_help = {
+	.summary = "Step (one|<num>) instruction",
+	.args = cmd_debug_step_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_back_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_back_help = {
+	.summary = "Step back one instruction",
+	.args = cmd_debug_step_back_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_frame_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_frame_help = {
+	.summary = "Step until end of frame",
+	.args = cmd_debug_step_frame_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_cond_args[] = {
+	{
+		.name = "cond",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_cond_help = {
+	.summary = "Continue until condition matches",
+	.args = cmd_debug_step_cond_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_line_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_line_help = {
+	.summary = "Step (one|<num>) source line",
+	.args = cmd_debug_step_line_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_over_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_over_help = {
+	.summary = "Step over <num> instructions",
+	.args = cmd_debug_step_over_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_prog_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_prog_help = {
+	.summary = "Step into program (skip libs)",
+	.args = cmd_debug_step_prog_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_skip_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_skip_help = {
+	.summary = "Skip <num> step instructions",
+	.args = cmd_debug_step_skip_args,
+};
+
 static const RzCmdDescHelp dsu_help = {
 	.summary = "Debug step until commands",
 };
@@ -14748,9 +14851,30 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_continue_until_cd = rz_cmd_desc_oldinput_new(core->rcmd, dc_cd, "dcu", rz_cmd_debug_continue_until, &cmd_debug_continue_until_help);
 	rz_warn_if_fail(cmd_debug_continue_until_cd);
 
-	RzCmdDesc *cmd_debug_step_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_cd, "ds", rz_cmd_debug_step, &cmd_debug_step_help);
-	rz_warn_if_fail(cmd_debug_step_cd);
-	RzCmdDesc *dsu_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_step_cd, "dsu", rz_cmd_debug_step_until_handler, &cmd_debug_step_until_help, &dsu_help);
+	RzCmdDesc *ds_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "ds", rz_cmd_debug_step_handler, &cmd_debug_step_help, &ds_help);
+	rz_warn_if_fail(ds_cd);
+	RzCmdDesc *cmd_debug_step_back_cd = rz_cmd_desc_argv_new(core->rcmd, ds_cd, "dsb", rz_cmd_debug_step_back_handler, &cmd_debug_step_back_help);
+	rz_warn_if_fail(cmd_debug_step_back_cd);
+
+	RzCmdDesc *cmd_debug_step_frame_cd = rz_cmd_desc_argv_new(core->rcmd, ds_cd, "dsf", rz_cmd_debug_step_frame_handler, &cmd_debug_step_frame_help);
+	rz_warn_if_fail(cmd_debug_step_frame_cd);
+
+	RzCmdDesc *cmd_debug_step_cond_cd = rz_cmd_desc_argv_new(core->rcmd, ds_cd, "dsi", rz_cmd_debug_step_cond_handler, &cmd_debug_step_cond_help);
+	rz_warn_if_fail(cmd_debug_step_cond_cd);
+
+	RzCmdDesc *cmd_debug_step_line_cd = rz_cmd_desc_argv_new(core->rcmd, ds_cd, "dsl", rz_cmd_debug_step_line_handler, &cmd_debug_step_line_help);
+	rz_warn_if_fail(cmd_debug_step_line_cd);
+
+	RzCmdDesc *cmd_debug_step_over_cd = rz_cmd_desc_argv_new(core->rcmd, ds_cd, "dso", rz_cmd_debug_step_over_handler, &cmd_debug_step_over_help);
+	rz_warn_if_fail(cmd_debug_step_over_cd);
+
+	RzCmdDesc *cmd_debug_step_prog_cd = rz_cmd_desc_argv_new(core->rcmd, ds_cd, "dsp", rz_cmd_debug_step_prog_handler, &cmd_debug_step_prog_help);
+	rz_warn_if_fail(cmd_debug_step_prog_cd);
+
+	RzCmdDesc *cmd_debug_step_skip_cd = rz_cmd_desc_argv_new(core->rcmd, ds_cd, "dss", rz_cmd_debug_step_skip_handler, &cmd_debug_step_skip_help);
+	rz_warn_if_fail(cmd_debug_step_skip_cd);
+
+	RzCmdDesc *dsu_cd = rz_cmd_desc_group_new(core->rcmd, ds_cd, "dsu", rz_cmd_debug_step_until_handler, &cmd_debug_step_until_help, &dsu_help);
 	rz_warn_if_fail(dsu_cd);
 	RzCmdDesc *cmd_debug_step_until_instr_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsui", rz_cmd_debug_step_until_instr_handler, &cmd_debug_step_until_instr_help);
 	rz_warn_if_fail(cmd_debug_step_until_instr_cd);
