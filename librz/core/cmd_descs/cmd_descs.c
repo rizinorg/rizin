@@ -5982,14 +5982,6 @@ static const RzCmdDescHelp cmd_debug_process_profile_edit_help = {
 	.args = cmd_debug_process_profile_edit_args,
 };
 
-static const RzCmdDescHelp cmd_debug_process_doo_help = {
-	.summary = "Reopen in debug mode with args (alias for 'ood')",
-};
-
-static const RzCmdDescHelp cmd_debug_process_doof_help = {
-	.summary = "Reopen in debug mode from file (alias for 'oodf')",
-};
-
 static const RzCmdDescArg cmd_debug_process_close_args[] = {
 	{ 0 },
 };
@@ -14797,12 +14789,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_process_profile_edit_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doe!", rz_cmd_debug_process_profile_edit_handler, &cmd_debug_process_profile_edit_help);
 	rz_warn_if_fail(cmd_debug_process_profile_edit_cd);
-
-	RzCmdDesc *cmd_debug_process_doo_cd = rz_cmd_desc_oldinput_new(core->rcmd, do_cd, "doo", rz_cmd_debug_process_doo, &cmd_debug_process_doo_help);
-	rz_warn_if_fail(cmd_debug_process_doo_cd);
-
-	RzCmdDesc *cmd_debug_process_doof_cd = rz_cmd_desc_oldinput_new(core->rcmd, do_cd, "doof", rz_cmd_debug_process_doof, &cmd_debug_process_doof_help);
-	rz_warn_if_fail(cmd_debug_process_doof_cd);
 
 	RzCmdDesc *cmd_debug_process_close_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doc", rz_cmd_debug_process_close_handler, &cmd_debug_process_close_help);
 	rz_warn_if_fail(cmd_debug_process_close_cd);

@@ -3864,31 +3864,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, co
 		RZ_LOG_ERROR("No open debug session\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	// Stop trace session
-	if (core->dbg->session) {
-		rz_debug_session_free(core->dbg->session);
-		core->dbg->session = NULL;
-	}
-	// Kill debugee and all child processes
-	if (core->dbg && core->dbg->cur && core->dbg->cur->pids && core->dbg->pid != -1) {
-		RzList *list = core->dbg->cur->pids(core->dbg, core->dbg->pid);
-		RzListIter *iter;
-		RzDebugPid *p;
-		if (list) {
-			rz_list_foreach (list, iter, p) {
-				rz_debug_kill(core->dbg, p->pid, p->pid, SIGKILL);
-				rz_debug_detach(core->dbg, p->pid);
-			}
-		} else {
-			rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->pid, SIGKILL);
-			rz_debug_detach(core->dbg, core->dbg->pid);
-		}
-	}
-	// Remove the target's registers from the flag list
-	rz_core_cmd0(core, ".dr-");
-	// Reopen and rebase the original file
-	rz_core_io_file_open(core, core->io->desc->fd);
-	return RZ_CMD_STATUS_OK;
+	return rz_core_debug_process_close(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 #define CMD_REGS_PREFIX   debug

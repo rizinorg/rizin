@@ -643,6 +643,11 @@ RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	rz_list_free(info_list);
 }
 
+/**
+ * \brief close debug process
+ * \param core The RzCore instance
+ * \return success
+ */
 RZ_API bool rz_core_debug_process_close(RzCore *core) {
 	rz_return_val_if_fail(core && core->dbg, false);
 	RzDebug *dbg = core->dbg;
@@ -667,7 +672,8 @@ RZ_API bool rz_core_debug_process_close(RzCore *core) {
 		}
 	}
 	// Remove the target's registers from the flag list
-
+	rz_core_debug_clear_register_flags(core);
 	// Reopen and rebase the original file
 	rz_core_io_file_open(core, core->io->desc->fd);
+	return true;
 }
