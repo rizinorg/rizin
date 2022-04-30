@@ -5687,10 +5687,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	bool plugin_supports_esil = core->analysis->cur->esil;
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
 		rz_core_notify_done(core, "Find function and symbol names from golang binaries (aang)");
-		rz_core_analysis_autoname_all_golang_fcns(core);
-		rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
-		rz_core_cmd0(core, "aF @@f:sym.go.*");
-		rz_core_notify_done(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+		if (rz_core_analysis_recover_golang_functions(core)) {
+			rz_core_analysis_resolve_golang_strings(core);
+		}
 	}
 	rz_core_task_yield(&core->tasks);
 	if (!cfg_debug) {
