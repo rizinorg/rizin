@@ -423,6 +423,7 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
 
 RZ_API void rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) RZ_PRINTF_CHECK(2, 3);
+RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) RZ_PRINTF_CHECK(2, 3);
 
 /**
  * \brief APIs to handle Visual Gadgets
@@ -731,7 +732,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 RZ_API RZ_OWN char *rz_core_analysis_function_autoname(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn);
 RZ_API void rz_core_analysis_function_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE PJ *pj);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
-RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core);
+RZ_API void rz_core_analysis_recover_golang_functions(RzCore *core);
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
 RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalysisFunction *fcn);
