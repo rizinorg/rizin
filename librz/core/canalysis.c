@@ -523,69 +523,6 @@ RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core) {
 	}
 }
 
-/* reads .gopclntab section in go binaries to recover function names
-   and adds them as sym.go.* flags */
-RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core) {
-	RzList *section_list = rz_bin_get_sections(core->bin);
-	RzListIter *iter;
-	const char *oldstr = NULL;
-	RzBinSection *section;
-	ut64 gopclntab = 0;
-	rz_list_foreach (section_list, iter, section) {
-		if (strstr(section->name, ".gopclntab")) {
-			gopclntab = section->vaddr;
-			break;
-		}
-	}
-	if (!gopclntab) {
-		rz_core_notify_done(core, "Could not find .gopclntab section");
-		return;
-	}
-	int ptr_size = core->analysis->bits / 8;
-	ut64 offset = gopclntab + 2 * ptr_size;
-	ut64 size_offset = gopclntab + 3 * ptr_size;
-	ut8 temp_size[4] = { 0 };
-	if (!rz_io_nread_at(core->io, size_offset, temp_size, 4)) {
-		return;
-	}
-	ut32 size = rz_read_le32(temp_size);
-	int num_syms = 0;
-	// rz_cons_print ("[x] Reading .gopclntab...\n");
-	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
-	while (offset < gopclntab + size) {
-		ut8 temp_delta[4] = { 0 };
-		ut8 temp_func_addr[4] = { 0 };
-		ut8 temp_func_name[4] = { 0 };
-		if (!rz_io_nread_at(core->io, offset + ptr_size, temp_delta, 4)) {
-			break;
-		}
-		ut32 delta = rz_read_le32(temp_delta);
-		ut64 func_offset = gopclntab + delta;
-		if (!rz_io_nread_at(core->io, func_offset, temp_func_addr, 4) ||
-			!rz_io_nread_at(core->io, func_offset + ptr_size, temp_func_name, 4)) {
-			break;
-		}
-		ut32 func_addr = rz_read_le32(temp_func_addr);
-		ut32 func_name_offset = rz_read_le32(temp_func_name);
-		ut8 func_name[64] = { 0 };
-		rz_io_read_at(core->io, gopclntab + func_name_offset, func_name, 63);
-		if (func_name[0] == 0xff) {
-			break;
-		}
-		rz_name_filter((char *)func_name, 0, true);
-		// rz_cons_printf ("[x] Found symbol %s at 0x%x\n", func_name, func_addr);
-		rz_flag_set(core->flags, sdb_fmt("sym.go.%s", func_name), func_addr, 1);
-		offset += 2 * ptr_size;
-		num_syms++;
-	}
-	rz_flag_space_pop(core->flags);
-	if (num_syms) {
-		rz_core_notify_done(core, "Found %d symbols and saved them at sym.go.*", num_syms);
-	} else {
-		rz_core_notify_done(core, "No sym.go.* symbols found.");
-	}
-}
-
 static bool blacklisted_word(const char *name) {
 	const char *list[] = {
 		"__stack_chk_guard",

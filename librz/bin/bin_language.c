@@ -10,7 +10,8 @@
 #define language_apply_blocks_string(x, b) (RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ? (b LANGUAGE_WITH_BLOCKS) : (b))
 
 static inline bool check_rust(RzBinSymbol *sym) {
-	return strstr(sym->name, "_$LT$");
+	return strstr(sym->name, "_$LT$") ||
+		strstr(sym->name, "_rust_oom");
 }
 
 static inline bool check_objc(RzBinSymbol *sym) {
@@ -29,7 +30,8 @@ static inline bool check_swift(RzBinSymbol *sym) {
 }
 
 static inline bool check_golang(RzBinSymbol *sym) {
-	return !strncmp(sym->name, "go.", 3);
+	return !strncmp(sym->name, "go.", 3) ||
+		strstr(sym->name, "gopclntab");
 }
 
 static inline bool check_cxx(RzBinSymbol *sym) {
@@ -69,6 +71,7 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	RzBinObject *o = binfile->o;
 	RzBinInfo *info = o->info;
 	RzBinSymbol *sym;
+	RzBinSection *section;
 	RzListIter *iter;
 
 	if (!info) {
@@ -160,6 +163,20 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 		} else if (check_dart(sym)) {
 			info->lang = "dart";
 			return RZ_BIN_LANGUAGE_DART;
+		}
+	}
+
+	if (is_macho || is_elf) {
+		rz_list_foreach (o->sections, iter, section) {
+			if (!section->name) {
+				continue;
+			}
+			if (strstr(section->name, "note.go.buildid") ||
+				strstr(section->name, "gopclntab") ||
+				strstr(section->name, "go_export")) {
+				info->lang = "go";
+				return RZ_BIN_LANGUAGE_GO;
+			}
 		}
 	}
 	if (is_cpp) {
