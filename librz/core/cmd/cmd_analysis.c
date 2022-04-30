@@ -2276,7 +2276,7 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_except_handler(RzCore *core, int a
 // aecb
 RZ_IPI RzCmdStatus rz_analysis_continue_until_breakpoint_handler(RzCore *core, int argc, const char **argv) {
 	if (!rz_core_esil_continue_back(core)) {
-		RZ_LOG_ERROR("cannnot continue back\n");
+		RZ_LOG_ERROR("cannot continue back\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_reg_update_flags(core);
@@ -2431,7 +2431,7 @@ RZ_IPI RzCmdStatus rz_il_step_evaluate_handler(RzCore *core, int argc, const cha
 // aesb
 RZ_IPI RzCmdStatus rz_il_step_back_handler(RzCore *core, int argc, const char **argv) {
 	if (!rz_core_esil_step_back(core)) {
-		RZ_LOG_ERROR("cannnot step back\n");
+		RZ_LOG_ERROR("cannot step back\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_reg_update_flags(core);
@@ -4283,7 +4283,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_core_analysis_propagate_noreturn(core, UT64_MAX);
 			break;
 		case 'g': // "aang"
-			rz_core_analysis_autoname_all_golang_fcns(core);
+			rz_core_analysis_recover_golang_functions(core);
 			break;
 		case '?': // "aan?"
 			eprintf("Usage: aan[rg]\n");
