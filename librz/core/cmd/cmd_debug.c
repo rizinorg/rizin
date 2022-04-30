@@ -2602,9 +2602,6 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int follow = 0;
-	RzListIter *iter;
-	RzList *list;
-	RzDebugPid *p;
 
 	if (!strncmp(input, "ate", 3)) {
 		char *now = rz_time_date_now_to_string();
