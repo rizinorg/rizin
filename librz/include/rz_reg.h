@@ -92,6 +92,27 @@ typedef enum {
 #define RZ_REG_COND_LE   12
 #define RZ_REG_COND_LAST 13
 
+typedef struct {
+	RzRegisterId role; ///< Register role (PC, Argument etc.)
+	char *alias; ///< Alias of register.
+	char *reg_name; ///< Real register name of alias.
+} RzRegProfileAlias;
+typedef struct {
+	RzRegisterType type; ///< Main type of register (gpr, fpu etc.)
+	RzRegisterType sub_type; ///< Sub-type (like xmm is for fpu)
+	char *name; ///< Register name.
+	ut32 size; ///< Register size in bits.
+	ut32 packed; ///< Packet size of register in bytes.
+	ut32 offset; ///< Offset into profile in bits.
+	char *comment; ///< Comment about register.
+	char *flags; ///< String describing the flags of the register.
+} RzRegProfileDef;
+
+typedef struct {
+	RzList /* RzRegProfileAlias */ *alias;
+	RzList /* RzRegProfileDef */ *defs;
+} RzRegProfile;
+
 typedef struct rz_reg_item_t {
 	char *name;
 	RzRegisterType type;
@@ -124,6 +145,7 @@ typedef struct rz_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
 	char *reg_profile_str;
+	RzRegProfile *reg_profile;
 	char *name[RZ_REG_NAME_LAST]; // aliases
 	RzRegSet regset[RZ_REG_TYPE_LAST];
 	RzList *allregs;
@@ -150,8 +172,9 @@ RZ_API void rz_reg_free(RzReg *reg);
 RZ_API void rz_reg_free_internal(RzReg *reg, bool init);
 RZ_API RzReg *rz_reg_new(void);
 RZ_API bool rz_reg_set_name(RZ_BORROW RzReg *reg, RzRegisterId role, RZ_BORROW const char *name);
-RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *profile);
+RZ_API bool rz_reg_set_profile_string(RZ_BORROW RzReg *reg, const char *profile);
 RZ_API char *rz_reg_profile_to_cc(RzReg *reg);
+RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg);
 RZ_API bool rz_reg_set_profile(RzReg *reg, const char *profile);
 RZ_API char *rz_reg_parse_gdb_profile(const char *profile);
 RZ_API bool rz_reg_is_readonly(RzReg *reg, RzRegItem *item);
@@ -181,7 +204,7 @@ RZ_API RzRegItem *rz_reg_index_get(RzReg *reg, int idx);
 RZ_API void rz_reg_item_free(RzRegItem *item);
 
 /* XXX: dupped ?? */
-RZ_API RzRegisterType rz_reg_type_by_name(const char *str);
+RZ_API int rz_reg_type_by_name(const char *str);
 RZ_API int rz_reg_get_name_idx(const char *type);
 
 RZ_API RzRegItem *rz_reg_cond_get(RzReg *reg, const char *name);

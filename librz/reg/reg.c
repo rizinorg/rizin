@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_list.h"
 #include <rz_reg.h>
 #include <rz_util.h>
 
@@ -77,9 +78,9 @@ RZ_API const char *rz_reg_get_name_by_type(RzReg *reg, const char *alias_name) {
  * \brief Returns the register type for the given type abbreviation.
  *
  * \param str The type abbreviation (gpr, flg, sys etc.)
- * \return RzRegisterType The register type or -1 on failure.
+ * \return int The register type or -1 on failure.
  */
-RZ_API RzRegisterType rz_reg_type_by_name(const char *str) {
+RZ_API int rz_reg_type_by_name(const char *str) {
 	rz_return_val_if_fail(str, -1);
 	for (ut32 i = 0; i < RZ_REG_TYPE_LAST && types[i]; i++) {
 		if (!strcmp(types[i], str)) {
@@ -196,6 +197,10 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	reg->roregs = NULL;
 	RZ_FREE(reg->reg_profile_str);
 	RZ_FREE(reg->reg_profile_cmt);
+	if (reg->reg_profile) {
+		rz_list_free(reg->reg_profile->alias);
+		rz_list_free(reg->reg_profile->defs);
+	}
 
 	for (i = 0; i < RZ_REG_NAME_LAST; i++) {
 		if (reg->name[i]) {

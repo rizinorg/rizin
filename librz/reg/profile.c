@@ -8,32 +8,35 @@
 #include <rz_util.h>
 #include <rz_util/rz_assert.h>
 #include <rz_lib.h>
+#include <string.h>
 
-/**
- * \brief Parses a register alias.
- *
- * The alias is of the form:
- * "=<alias>  <reg name>"
- *
- * \param reg
- * \param tok
- * \return true
- * \return false
- */
-static bool parse_alias(RZ_OUT RzReg *reg, RZ_BORROW RzList *tokens) {
-	rz_return_val_if_fail(reg && tokens, false);
-	const char *alias = rz_list_get_n(tokens, 0);
-	const char *target = rz_list_get_n(tokens, 1);
+static void rz_reg_profile_def_free(RzRegProfileDef *def) {
+	if (!def) {
+		return;
+	}
+	if (def->name) {
+		free(def->name);
+	}
+	if (def->comment) {
+		free(def->comment);
+	}
+	if (def->flags) {
+		free(def->flags);
+	}
+	free(def);
+}
+
+static void rz_reg_profile_alias_free(RzRegProfileAlias *alias) {
 	if (!alias) {
-		RZ_LOG_WARN("Failed to get alias name from token.\n")
-		return false;
+		return;
 	}
-	RzRegisterId role = rz_reg_get_name_idx(alias + 1);
-	if (rz_reg_set_name(reg, role, target)) {
-		return true;
+	if (alias->reg_name) {
+		free(alias->reg_name);
 	}
-	RZ_LOG_WARN("Invalid alias\n");
-	return false;
+	if (alias->alias) {
+		free(alias->alias);
+	}
+	free(alias);
 }
 
 /**
@@ -50,29 +53,25 @@ static bool parse_alias(RZ_OUT RzReg *reg, RZ_BORROW RzList *tokens) {
  * \return true On success.
  * \return false On failure.
  */
-static bool parse_type(RZ_OUT RzRegItem *item, const char *type_str) {
-	rz_return_val_if_fail(item && type_str, false);
+static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
+	rz_return_val_if_fail(def && type_str, false);
 	char *s = strdup(type_str);
 
 	char *at = strchr(s, '@');
 	if (at) {
 		// This register has a secondary type e.g. xmm@fpu
-		item->sub_type = rz_reg_type_by_name(at + 1);
-		if (item->sub_type < 0) {
+		def->sub_type = rz_reg_type_by_name(at + 1);
+		if (def->sub_type < 0) {
 			RZ_LOG_WARN("Illegal secondary type appreviation \"%s\"\n", s);
 			free(s);
 			return false;
 		}
 		s[at - s] = '\0';
-		item->type = rz_reg_type_by_name(s);
+		def->type = rz_reg_type_by_name(s);
 	} else {
-		item->type = rz_reg_type_by_name(s);
+		def->type = rz_reg_type_by_name(s);
 	}
-	/* Hack to put flags in the same arena as gpr */
-	if (item->type == RZ_REG_TYPE_FLG) {
-		item->sub_type = RZ_REG_TYPE_GPR;
-	}
-	if (item->type < 0) {
+	if (def->type < 0) {
 		RZ_LOG_WARN("Illegal type appreviation \"%s\"\n", s);
 		free(s);
 		return false;
@@ -86,10 +85,10 @@ static bool parse_type(RZ_OUT RzRegItem *item, const char *type_str) {
  * Sizes with . in fornt are in bits. Otherwise in bytes.
  *
  * \param s Size string.
- * \return ut64 The size as integer or -1 if it fails.
+ * \return ut32 The size as integer or UT64_MAX if it fails.
  */
-static ut64 parse_size(char *s) {
-	rz_return_val_if_fail(s, -1);
+static ut32 parse_size(char *s) {
+	rz_return_val_if_fail(s, UT32_MAX);
 	if (s[0] == '.') {
 		return strtoul(s + 1, NULL, 0);
 	} else { // packed size.
@@ -98,44 +97,80 @@ static ut64 parse_size(char *s) {
 }
 
 /**
- * \brief Parses the offset of a register defintion and sets the offset in \p item->offset.
+ * \brief Parses the offset of a register defintion and sets the offset in \p def->offset.
  *
  * Offset is of the form: <byte>.<bit>
  * .<bit> is optional.
  *
  * \param s Offset string.
- * \param item RzRegItem to store the offset into \p item->offset in bits.
- * \return false On failure (sets item->offset = -1).
+ * \param def The defintion item to store the offset into \p def->offset in bits.
+ * \return false On failure (sets def->offset = UT32_MAX).
  * \return true On success.
  */
-static bool parse_offset(const char *s, RZ_OUT RzRegItem *item) {
-	rz_return_val_if_fail(s && item, false);
+static bool parse_offset(const char *s, RZ_OUT RzRegProfileDef *def) {
+	rz_return_val_if_fail(s && def, false);
 	if (s[0] == '?') {
-		item->offset = -1;
+		def->offset = -1;
+		return true;
 	}
-	item->offset = strtoul(s, NULL, 0) * 8;
-	if (item->offset < 0) {
-		return false;
-	}
+	def->offset = strtoul(s, NULL, 0) * 8;
+
 	const char *bi = strchr(s, '.');
 	if (!bi) {
-		return false;
+		// No bit offset given.
+		return true;
 	}
+
 	ut8 bit_offset = strtoul(bi + 1, NULL, 0);
-	if (bit_offset < 0) {
-		RZ_LOG_WARN("Bit offset should not be negative.\n");
-		item->offset = -1;
+	def->offset += bit_offset;
+	return true;
+}
+
+/**
+ * \brief Parses a register alias.
+ *
+ * The alias is of the form:
+ * "=<alias>  <reg name>"
+ *
+ * \param reg The RzReg struct with the register profile.
+ * \param tokens A list with both tokens of the alias string.
+ * \return true On success.
+ * \return false On Failure.
+ */
+static bool parse_alias(RZ_OUT RzReg *reg, RZ_BORROW RzList *tokens) {
+	rz_return_val_if_fail(reg && tokens, false);
+	RzRegProfileAlias *pa = RZ_NEW0(RzRegProfileAlias);
+	if (!pa) {
+		RZ_LOG_WARN("Unable to allocate memory.\n");
 		return false;
 	}
-	item->offset += bit_offset;
+
+	const char *real_name = rz_list_get_n(tokens, 1);
+	const char *alias = rz_list_get_n(tokens, 0);
+	if (!alias) {
+		RZ_LOG_WARN("Failed to get alias name from token.\n")
+		return false;
+	}
+
+	RzRegisterId role = rz_reg_get_name_idx(alias + 1);
+	if (!(role >= 0 && role < RZ_REG_NAME_LAST)) {
+		RZ_LOG_WARN("Invalid alias\n");
+		return false;
+	}
+
+	pa->alias = strdup(alias);
+	pa->reg_name = strdup(real_name);
+	pa->role = role;
+	rz_list_append(reg->reg_profile->alias, pa);
+
 	return true;
 }
 
 /**
  * \brief Parses a register definition.
  *
- * \param reg Register struct which holds all register items.
- * \param tokens List of defintion string tokens (each token is a line in the profile).
+ * \param reg Register struct with the register profile.
+ * \param tokens List of strings of a single register definition.
  * \return false On failure.
  * \return true On success.
  */
@@ -149,37 +184,34 @@ static bool parse_def(RZ_INOUT RzReg *reg, RZ_OWN RzList *tokens) {
 		return true;
 	}
 
-	RzRegItem *item = RZ_NEW0(RzRegItem);
-	if (!item) {
+	RzRegProfileDef *def = RZ_NEW0(RzRegProfileDef);
+	if (!def) {
 		RZ_LOG_WARN("Unable to allocate memory.\n");
 		return false;
 	}
-	item->name = strdup(name);
+	def->name = strdup(name);
 
-	if (!parse_type(item, rz_list_get_n(tokens, 0))) {
+	if (!parse_type(def, rz_list_get_n(tokens, 0))) {
 		RZ_LOG_WARN("Invalid register type.\n");
 		goto reg_parse_error;
 	}
 
-	item->size = parse_size(rz_list_get_n(tokens, 2));
-	if (item->size <= 0) {
+	def->size = parse_size(rz_list_get_n(tokens, 2));
+	if (def->size == UT32_MAX || def->size == 0) {
 		RZ_LOG_WARN("Invalid register size.\n");
 		goto reg_parse_error;
 	}
 
-	if (!parse_offset(rz_list_get_n(tokens, 3), item)) {
-		RZ_LOG_WARN("Invalid register offset.\n");
-		goto reg_parse_error;
-	}
-
-	item->packed_size = parse_size(rz_list_get_n(tokens, 4));
-	if (item->packed_size < 0) {
+	def->packed = parse_size(rz_list_get_n(tokens, 4));
+	if (def->packed == UT32_MAX) {
 		RZ_LOG_WARN("Invalid register packed size.\n");
 		goto reg_parse_error;
 	}
 
-	// Dynamically update the list of supported bit sizes
-	reg->bits |= item->size;
+	if (!parse_offset(rz_list_get_n(tokens, 3), def)) {
+		RZ_LOG_WARN("Invalid register offset.\n");
+		goto reg_parse_error;
+	}
 
 	// Comments and flags are optional
 	if (rz_list_length(tokens) == 6) {
@@ -187,33 +219,18 @@ static bool parse_def(RZ_INOUT RzReg *reg, RZ_OWN RzList *tokens) {
 		rz_return_val_if_fail(comment_flag, false);
 		if (comment_flag[0] == '#') {
 			// Remove # from the comment
-			item->comment = strdup(comment_flag + 1);
+			def->comment = strdup(comment_flag + 1);
 		} else {
-			item->flags = strdup(comment_flag);
+			def->flags = strdup(comment_flag);
 		}
 	}
 
-	item->arena = item->type;
-	if (!reg->regset[item->type].regs) {
-		reg->regset[item->type].regs = rz_list_newf((RzListFree)rz_reg_item_free);
-	}
-	rz_list_append(reg->regset[item->type].regs, item);
-	if (!reg->regset[item->type].ht_regs) {
-		reg->regset[item->type].ht_regs = ht_pp_new0();
-	}
-	ht_pp_insert(reg->regset[item->type].ht_regs, item->name, item);
-
-	// Update the overall profile size
-	if (item->offset + item->size > reg->size) {
-		reg->size = item->offset + item->size;
-	}
-	// Update the overall type of registers into a regset
-	reg->regset[item->type].maskregstype |= ((int)1 << item->sub_type);
+	rz_list_append(reg->reg_profile->defs, def);
 
 	return true;
 
 reg_parse_error:
-	rz_reg_item_free(item);
+	rz_reg_profile_def_free(def);
 	return false;
 }
 
@@ -245,22 +262,18 @@ reg_parse_error:
  * \return false On failure.
  * \return true On success.
  */
-RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *profile) {
+static bool parse_reg_profile_str(RZ_BORROW RzReg *reg, const char *profile) {
 	rz_return_val_if_fail(reg && profile, false);
 
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp(reg->reg_profile_str, profile)) {
 		return true;
 	}
-
-	// we should reset all the arenas before setting the new reg profile
-	rz_reg_arena_pop(reg);
-	// Purge the old registers
-	rz_reg_free_internal(reg, true);
-	rz_reg_arena_shrink(reg);
-
 	// Cache the profile string
 	reg->reg_profile_str = strdup(profile);
+	reg->reg_profile = RZ_NEW0(RzRegProfile);
+	reg->reg_profile->defs = rz_list_newf((RzListFree)rz_reg_profile_def_free);
+	reg->reg_profile->alias = rz_list_newf((RzListFree)rz_reg_profile_alias_free);
 
 	RzList *def_lines = rz_str_split_duplist_n(profile, "\n", 0, true);
 	rz_return_val_if_fail(def_lines, false);
@@ -271,17 +284,17 @@ RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *profile) {
 	RzListIter *it;
 	RzList *toks = NULL;
 	rz_list_foreach (def_lines, it, line) {
+		++l;
 		if (strcmp(line, "") == 0) {
 			continue;
 		}
-		++l;
 		toks = rz_str_split_duplist_n(line, "\t", 0, true);
 		if (!toks) {
 			continue;
 		}
 		ut32 toks_len = rz_list_length(toks);
 
-		const char *first_tok = rz_list_get_n(toks, 0); // First token of the line.
+		const char *first_tok = rz_list_get_n(toks, 0);
 		if (first_tok[0] == '#') { // Comment line
 			continue;
 		} else if (first_tok[0] == '=') { // Alias
@@ -314,20 +327,119 @@ RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *profile) {
 	}
 	rz_list_free(def_lines);
 
+	return true;
+}
+
+static void add_item_to_regset(RZ_BORROW RzReg *reg, RZ_BORROW RzRegItem *item) {
+	rz_return_if_fail(reg && item);
+	RzRegisterType t = item->type;
+
+	if (!reg->regset[t].regs) {
+		reg->regset[t].regs = rz_list_newf((RzListFree)rz_reg_item_free);
+	}
+	if (!reg->regset[t].ht_regs) {
+		reg->regset[t].ht_regs = ht_pp_new0();
+	}
+
+	rz_list_append(reg->regset[t].regs, item);
+	ht_pp_insert(reg->regset[t].ht_regs, item->name, item);
+
+	// Update the overall type of registers into a regset
+	reg->regset[t].maskregstype |= ((int)1 << item->type);
+	reg->regset[t].maskregstype |= ((int)1 << item->sub_type);
+}
+
+RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
+	rz_return_val_if_fail(reg && reg->reg_profile, false);
+	rz_return_val_if_fail(reg->reg_profile->alias && reg->reg_profile->defs, false);
+
+	RzListIter *it;
+	RzRegProfileAlias *alias;
+	rz_list_foreach (reg->reg_profile->alias, it, alias) {
+		if (!rz_reg_set_name(reg, alias->role, alias->reg_name)) {
+			RZ_LOG_WARN("Invalid alias gviven.\n");
+			return false;
+		}
+	}
+	RzRegProfileDef *def;
+	rz_list_foreach (reg->reg_profile->defs, it, def) {
+		RzRegItem *item = RZ_NEW0(RzRegItem);
+		if (!item) {
+			RZ_LOG_WARN("Unable to allocate memory.\n");
+			return false;
+		}
+
+		item->name = strdup(def->name);
+
+		item->arena = def->type;
+		item->type = def->type;
+		item->sub_type = def->sub_type;
+		/* Hack to put flags in the same arena as gpr */
+		if (def->type == RZ_REG_TYPE_FLG) {
+			def->sub_type = RZ_REG_TYPE_GPR;
+			item->sub_type = RZ_REG_TYPE_GPR;
+		}
+		item->size = def->size;
+		item->offset = def->offset;
+		// Update the overall profile size
+		if (item->offset + item->size > reg->size) {
+			reg->size = item->offset + item->size;
+		}
+		// Dynamically update the list of supported bit sizes
+		reg->bits |= def->size;
+		item->packed_size = def->packed;
+
+		if (def->comment) {
+			item->comment = strdup(def->comment);
+		}
+		if (def->flags) {
+			item->flags = strdup(def->flags);
+		}
+
+		add_item_to_regset(reg, item);
+	}
+
+	return true;
+}
+
+/**
+ * \brief Parses a register profile string and sets up all registers accordingly in \p reg.
+ *
+ * \param reg The RzReg struct which should hold the register data.
+ * \param profile The register profile string.
+ * \return false On failure;
+ * \return true On success.
+ */
+RZ_API bool rz_reg_set_profile_string(RZ_BORROW RzReg *reg, const char *profile) {
+	rz_return_val_if_fail(reg && profile, false);
+	// we should reset all the arenas before setting the new reg profile
+	rz_reg_arena_pop(reg);
+	// Purge the old registers
+	rz_reg_free_internal(reg, true);
+	rz_reg_arena_shrink(reg);
+
+	if (!parse_reg_profile_str(reg, profile)) {
+		RZ_LOG_WARN("Could not parse register profile string.\n")
+		return false;
+	}
+
+	if (!rz_reg_set_reg_profile(reg)) {
+		RZ_LOG_WARN("Could not set reg profile.\n");
+		return false;
+	}
+
 	reg->size = 0;
 	for (ut32 i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegSet *rs = &reg->regset[i];
 		if (rs && rs->arena) {
-			reg->size += rs->arena->size;
+			reg->size += rs->arena->size; // Sums minimum arena size.
 		}
 	}
 
-	// reg->size >>= 3; // bits to bytes (divide by 8)
 	rz_reg_fit_arena(reg);
 	// dup the last arena to allow regdiffing
 	rz_reg_arena_push(reg);
 	rz_reg_reindex(reg);
-	// reset arenas
 	return true;
 }
 
