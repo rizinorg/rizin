@@ -1184,6 +1184,12 @@ RZ_API bool rz_core_project_load_for_cli(RzCore *core, const char *file, bool lo
 
 RZ_API bool rz_arch_platform_add_flags_comments(RzCore *core);
 
+/* regs */
+/// Callback for synchronizing register state in commands (only relevant for debug, not for analysis)
+typedef bool (*RzCmdRegSync)(RzCore *core, RzRegisterType type, bool write);
+RZ_API bool rz_core_reg_assign_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NONNULL const char *name, ut64 val);
+RZ_API RZ_OWN RzList *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter);
+
 #endif
 
 #ifdef __cplusplus
