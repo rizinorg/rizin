@@ -40,9 +40,6 @@ static const char *help_msg_d[] = {
 	"dk", "[?]", "List, send, get, set, signal handlers of child",
 	"dL", "[?]", "List or set debugger handler",
 	"dm", "[?]", "Show memory maps",
-	"do", "[?]", "Open process (reload, alias for 'oo')",
-	"doo", "[args]", "Reopen in debug mode with args (alias for 'ood')",
-	"doof", "[file]", "Reopen in debug mode from file (alias for 'oodf')",
 	"doc", "", "Close debug session",
 	"dp", "[?]", "List, attach to process or thread id",
 	"dr", "[?]", "Cpu registers",
@@ -147,12 +144,9 @@ static const char *help_msg_dmi[] = {
 
 static const char *help_msg_do[] = {
 	"Usage:", "do", " # Debug (re)open commands",
-	"do", "", "Open process (reload, alias for 'oo')",
 	"dor", " [rz-run]", "Comma separated list of k=v rz-run profile options (e dbg.profile)",
 	"doe", "", "Show rz-run startup profile",
 	"doe!", "", "Edit rz-run startup profile with $EDITOR",
-	"doo", " [args]", "Reopen in debug mode with args (alias for 'ood')",
-	"doof", " [args]", "Reopen in debug mode from file (alias for 'oodf')",
 	"doc", "", "Close debug session",
 	NULL
 };
@@ -873,7 +867,7 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 	}
 }
 
-#define MAX_MAP_SIZE 1024 * 1024 * 512
+#define MAX_MAP_SIZE (1024 * 1024 * 512)
 static int dump_maps(RzCore *core, int perm, const char *filename) {
 	RzDebugMap *map;
 	RzListIter *iter;
@@ -2930,81 +2924,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'k': // "dk"
 		rz_core_debug_kill(core, input + 1);
 		break;
-	case 'o': // "do"
-		switch (input[1]) {
-		case '\0': // "do"
-			rz_core_file_reopen(core, input[1] ? input + 2 : NULL, 0, 1);
-			break;
-		case 'e': // "doe"
-			switch (input[2]) {
-			case '\0': // "doe"
-				if (core->io->envprofile) {
-					rz_cons_println(core->io->envprofile);
-				}
-				break;
-			case '!': // "doe!"
-			{
-				char *out = rz_core_editor(core, NULL, core->io->envprofile);
-				if (out) {
-					free(core->io->envprofile);
-					core->io->envprofile = out;
-					eprintf("%s\n", core->io->envprofile);
-				}
-			} break;
-			default:
-				break;
-			}
-			break;
-		case 'r': // "dor" : rarun profile
-			if (input[2] == ' ') {
-				setRarunProfileString(core, input + 3);
-			} else {
-				// TODO use the api
-				rz_sys_xsystem("rz-run -h");
-			}
-			break;
-		case 'o': // "doo" : reopen in debug mode
-			if (input[2] == 'f') { // "doof" : reopen in debug mode from the given file
-				rz_config_set_b(core->config, "cfg.debug", true);
-				rz_core_cmd0(core, sdb_fmt("oodf %s", input + 3));
-			} else {
-				rz_core_file_reopen_debug(core, input + 2);
-			}
-			break;
-		case 'c': // "doc" : close current debug session
-			if (!core || !core->io || !core->io->desc || !rz_config_get_b(core->config, "cfg.debug")) {
-				eprintf("No open debug session\n");
-				break;
-			}
-			// Stop trace session
-			if (core->dbg->session) {
-				rz_debug_session_free(core->dbg->session);
-				core->dbg->session = NULL;
-			}
-			// Kill debugee and all child processes
-			if (core->dbg && core->dbg->cur && core->dbg->cur->pids && core->dbg->pid != -1) {
-				list = core->dbg->cur->pids(core->dbg, core->dbg->pid);
-				if (list) {
-					rz_list_foreach (list, iter, p) {
-						rz_debug_kill(core->dbg, p->pid, p->pid, SIGKILL);
-						rz_debug_detach(core->dbg, p->pid);
-					}
-				} else {
-					rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->pid, SIGKILL);
-					rz_debug_detach(core->dbg, core->dbg->pid);
-				}
-			}
-			// Remove the target's registers from the flag list
-			rz_core_cmd0(core, ".dr-");
-			// Reopen and rebase the original file
-			rz_core_io_file_open(core, core->io->desc->fd);
-			break;
-		case '?': // "do?"
-		default:
-			rz_core_cmd_help(core, help_msg_do);
-			break;
-		}
-		break;
 #if __WINDOWS__
 	case 'W': // "dW"
 		if (input[1] == 'i') {
@@ -3901,6 +3820,74 @@ RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
 	}
 	rz_cons_break_pop();
 	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dor
+RZ_IPI int rz_cmd_debug_process_dor(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	if (input && input[0] == '?') {
+		rz_core_cmd_help(core, help_msg_do);
+		return 0;
+	}
+	if (input) {
+		setRarunProfileString(core, input);
+	} else {
+		// TODO use the api
+		rz_sys_xsystem("rz-run -h");
+	}
+	return 0;
+}
+
+// doe
+RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, const char **argv) {
+	if (core->io->envprofile) {
+		rz_cons_println(core->io->envprofile);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// doe!
+RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int argc, const char **argv) {
+	char *out = rz_core_editor(core, NULL, core->io->envprofile);
+	if (out) {
+		free(core->io->envprofile);
+		core->io->envprofile = out;
+		rz_cons_printf("%s\n", core->io->envprofile);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// doc
+RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, const char **argv) {
+	if (!core || !core->io || !core->io->desc || !rz_core_is_debug(core)) {
+		RZ_LOG_ERROR("No open debug session\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// Stop trace session
+	if (core->dbg->session) {
+		rz_debug_session_free(core->dbg->session);
+		core->dbg->session = NULL;
+	}
+	// Kill debugee and all child processes
+	if (core->dbg && core->dbg->cur && core->dbg->cur->pids && core->dbg->pid != -1) {
+		RzList *list = core->dbg->cur->pids(core->dbg, core->dbg->pid);
+		RzListIter *iter;
+		RzDebugPid *p;
+		if (list) {
+			rz_list_foreach (list, iter, p) {
+				rz_debug_kill(core->dbg, p->pid, p->pid, SIGKILL);
+				rz_debug_detach(core->dbg, p->pid);
+			}
+		} else {
+			rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->pid, SIGKILL);
+			rz_debug_detach(core->dbg, core->dbg->pid);
+		}
+	}
+	// Remove the target's registers from the flag list
+	rz_core_cmd0(core, ".dr-");
+	// Reopen and rebase the original file
+	rz_core_io_file_open(core, core->io->desc->fd);
 	return RZ_CMD_STATUS_OK;
 }
 

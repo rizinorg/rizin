@@ -408,6 +408,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_ret_handler(RzCore *core, int argc, con
 RZ_IPI int rz_cmd_debug_continue_syscall(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_traptrace_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input);
+RZ_IPI int rz_cmd_debug_process_dor(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI int rz_cmd_debug_process_doo(void *data, const char *input);
+RZ_IPI int rz_cmd_debug_process_doof(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int argc, const char **argv);

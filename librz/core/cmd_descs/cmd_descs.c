@@ -5959,6 +5959,45 @@ static const RzCmdDescHelp cmd_debug_continue_until_help = {
 	.summary = "Debug continue until",
 };
 
+static const RzCmdDescHelp do_help = {
+	.summary = "Debug (re)open commands",
+};
+static const RzCmdDescHelp cmd_debug_process_dor_help = {
+	.summary = "Comma separated list of k=v rz-run profile options (e dbg.profile)",
+};
+
+static const RzCmdDescArg cmd_debug_process_profile_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_process_profile_help = {
+	.summary = "Show rz-run startup profile",
+	.args = cmd_debug_process_profile_args,
+};
+
+static const RzCmdDescArg cmd_debug_process_profile_edit_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_process_profile_edit_help = {
+	.summary = "Edit rz-run startup profile with $EDITOR",
+	.args = cmd_debug_process_profile_edit_args,
+};
+
+static const RzCmdDescHelp cmd_debug_process_doo_help = {
+	.summary = "Reopen in debug mode with args (alias for 'ood')",
+};
+
+static const RzCmdDescHelp cmd_debug_process_doof_help = {
+	.summary = "Reopen in debug mode from file (alias for 'oodf')",
+};
+
+static const RzCmdDescArg cmd_debug_process_close_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_process_close_help = {
+	.summary = "Close debug session",
+	.args = cmd_debug_process_close_args,
+};
+
 static const RzCmdDescHelp cmd_debug_step_help = {
 	.summary = "Debug step commands",
 };
@@ -14747,6 +14786,26 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_continue_until_cd = rz_cmd_desc_oldinput_new(core->rcmd, dc_cd, "dcu", rz_cmd_debug_continue_until, &cmd_debug_continue_until_help);
 	rz_warn_if_fail(cmd_debug_continue_until_cd);
+
+	RzCmdDesc *do_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "do", NULL, NULL, &do_help);
+	rz_warn_if_fail(do_cd);
+	RzCmdDesc *cmd_debug_process_dor_cd = rz_cmd_desc_oldinput_new(core->rcmd, do_cd, "dor", rz_cmd_debug_process_dor, &cmd_debug_process_dor_help);
+	rz_warn_if_fail(cmd_debug_process_dor_cd);
+
+	RzCmdDesc *cmd_debug_process_profile_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doe", rz_cmd_debug_process_profile_handler, &cmd_debug_process_profile_help);
+	rz_warn_if_fail(cmd_debug_process_profile_cd);
+
+	RzCmdDesc *cmd_debug_process_profile_edit_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doe!", rz_cmd_debug_process_profile_edit_handler, &cmd_debug_process_profile_edit_help);
+	rz_warn_if_fail(cmd_debug_process_profile_edit_cd);
+
+	RzCmdDesc *cmd_debug_process_doo_cd = rz_cmd_desc_oldinput_new(core->rcmd, do_cd, "doo", rz_cmd_debug_process_doo, &cmd_debug_process_doo_help);
+	rz_warn_if_fail(cmd_debug_process_doo_cd);
+
+	RzCmdDesc *cmd_debug_process_doof_cd = rz_cmd_desc_oldinput_new(core->rcmd, do_cd, "doof", rz_cmd_debug_process_doof, &cmd_debug_process_doof_help);
+	rz_warn_if_fail(cmd_debug_process_doof_cd);
+
+	RzCmdDesc *cmd_debug_process_close_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doc", rz_cmd_debug_process_close_handler, &cmd_debug_process_close_help);
+	rz_warn_if_fail(cmd_debug_process_close_cd);
 
 	RzCmdDesc *cmd_debug_step_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_cd, "ds", rz_cmd_debug_step, &cmd_debug_step_help);
 	rz_warn_if_fail(cmd_debug_step_cd);

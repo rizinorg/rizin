@@ -312,6 +312,25 @@ commands:
         summary: Debug continue until
         cname: cmd_debug_continue_until
         type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: do
+    summary: Debug (re)open commands
+    subcommands:
+      - name: dor
+        summary: Comma separated list of k=v rz-run profile options (e dbg.profile)
+        cname: cmd_debug_process_dor
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+      - name: doe
+        summary: Show rz-run startup profile
+        cname: cmd_debug_process_profile
+        args: []
+      - name: doe!
+        summary: Edit rz-run startup profile with $EDITOR
+        cname: cmd_debug_process_profile_edit
+        args: []
+      - name: doc
+        summary: Close debug session
+        cname: cmd_debug_process_close
+        args: []
   - name: ds
     summary: Debug step commands
     cname: cmd_debug_step
