@@ -197,10 +197,10 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	reg->roregs = NULL;
 	RZ_FREE(reg->reg_profile_str);
 	RZ_FREE(reg->reg_profile_cmt);
-	if (reg->reg_profile) {
-		rz_list_free(reg->reg_profile->alias);
-		rz_list_free(reg->reg_profile->defs);
-	}
+	rz_list_free(reg->reg_profile.alias);
+	rz_list_free(reg->reg_profile.defs);
+	reg->reg_profile.alias = 0;
+	reg->reg_profile.defs = 0;
 
 	for (i = 0; i < RZ_REG_NAME_LAST; i++) {
 		if (reg->name[i]) {

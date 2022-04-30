@@ -145,7 +145,7 @@ typedef struct rz_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
 	char *reg_profile_str;
-	RzRegProfile *reg_profile;
+	RzRegProfile reg_profile;
 	char *name[RZ_REG_NAME_LAST]; // aliases
 	RzRegSet regset[RZ_REG_TYPE_LAST];
 	RzList *allregs;

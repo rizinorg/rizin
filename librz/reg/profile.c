@@ -110,7 +110,10 @@ static ut32 parse_size(char *s) {
 static bool parse_offset(const char *s, RZ_OUT RzRegProfileDef *def) {
 	rz_return_val_if_fail(s && def, false);
 	if (s[0] == '?') {
-		def->offset = -1;
+		def->offset = UT32_MAX;
+		return true;
+	} else if (s[0] == '.') {
+		def->offset = strtoul(s + 1, NULL, 0);
 		return true;
 	}
 	def->offset = strtoul(s, NULL, 0) * 8;
@@ -161,7 +164,7 @@ static bool parse_alias(RZ_OUT RzReg *reg, RZ_BORROW RzList *tokens) {
 	pa->alias = strdup(alias);
 	pa->reg_name = strdup(real_name);
 	pa->role = role;
-	rz_list_append(reg->reg_profile->alias, pa);
+	rz_list_append(reg->reg_profile.alias, pa);
 
 	return true;
 }
@@ -225,7 +228,7 @@ static bool parse_def(RZ_INOUT RzReg *reg, RZ_OWN RzList *tokens) {
 		}
 	}
 
-	rz_list_append(reg->reg_profile->defs, def);
+	rz_list_append(reg->reg_profile.defs, def);
 
 	return true;
 
@@ -271,9 +274,9 @@ static bool parse_reg_profile_str(RZ_BORROW RzReg *reg, const char *profile) {
 	}
 	// Cache the profile string
 	reg->reg_profile_str = strdup(profile);
-	reg->reg_profile = RZ_NEW0(RzRegProfile);
-	reg->reg_profile->defs = rz_list_newf((RzListFree)rz_reg_profile_def_free);
-	reg->reg_profile->alias = rz_list_newf((RzListFree)rz_reg_profile_alias_free);
+	reg->reg_profile.defs = rz_list_newf((RzListFree)rz_reg_profile_def_free);
+	reg->reg_profile.alias = rz_list_newf((RzListFree)rz_reg_profile_alias_free);
+	rz_return_val_if_fail(reg->reg_profile.defs && reg->reg_profile.defs, false);
 
 	RzList *def_lines = rz_str_split_duplist_n(profile, "\n", 0, true);
 	rz_return_val_if_fail(def_lines, false);
@@ -350,19 +353,19 @@ static void add_item_to_regset(RZ_BORROW RzReg *reg, RZ_BORROW RzRegItem *item) 
 }
 
 RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
-	rz_return_val_if_fail(reg && reg->reg_profile, false);
-	rz_return_val_if_fail(reg->reg_profile->alias && reg->reg_profile->defs, false);
+	rz_return_val_if_fail(reg, false);
+	rz_return_val_if_fail(reg->reg_profile.alias && reg->reg_profile.defs, false);
 
 	RzListIter *it;
 	RzRegProfileAlias *alias;
-	rz_list_foreach (reg->reg_profile->alias, it, alias) {
+	rz_list_foreach (reg->reg_profile.alias, it, alias) {
 		if (!rz_reg_set_name(reg, alias->role, alias->reg_name)) {
 			RZ_LOG_WARN("Invalid alias gviven.\n");
 			return false;
 		}
 	}
 	RzRegProfileDef *def;
-	rz_list_foreach (reg->reg_profile->defs, it, def) {
+	rz_list_foreach (reg->reg_profile.defs, it, def) {
 		RzRegItem *item = RZ_NEW0(RzRegItem);
 		if (!item) {
 			RZ_LOG_WARN("Unable to allocate memory.\n");
@@ -419,7 +422,8 @@ RZ_API bool rz_reg_set_profile_string(RZ_BORROW RzReg *reg, const char *profile)
 	rz_reg_arena_shrink(reg);
 
 	if (!parse_reg_profile_str(reg, profile)) {
-		RZ_LOG_WARN("Could not parse register profile string.\n")
+		RZ_LOG_WARN("Could not parse register profile string.\n");
+		rz_reg_free_internal(reg, false);
 		return false;
 	}
 
