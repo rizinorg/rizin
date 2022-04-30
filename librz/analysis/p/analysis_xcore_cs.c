@@ -3,8 +3,8 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
-#include <capstone.h>
-#include <xcore.h>
+#include <capstone/capstone.h>
+#include <capstone/xcore.h>
 
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported

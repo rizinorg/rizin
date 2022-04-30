@@ -12,7 +12,7 @@
 
 #include <rz_util.h>
 #include <ht_uu.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 typedef struct rz_arm_it_context_t {
 	HtUU *ht_itblock; ///< addr -> ArmCSITBlock
