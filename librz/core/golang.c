@@ -399,7 +399,8 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 		if (section->vsize >= 16 && strstr(section->name, "gopclntab")) {
 			pclntab.vaddr = section->vaddr;
 			pclntab.size = section->vsize;
-		} else if (!pclntab.text_start && !strcmp(section->name, ".text")) {
+		} else if (!pclntab.text_start &&
+			(!strcmp(section->name, ".text") || strstr(section->name, "__text"))) {
 			pclntab.text_start = section->vaddr;
 		}
 	}
@@ -626,6 +627,131 @@ end:
 	return nlen;
 }
 
+// Possible arm64 signatures
+// -------
+// adrp   reg0, base_str
+// add    reg0, reg0, offset_str
+// str    reg, [sp, ..]
+// orr    reg1, reg1, string_size
+// -------
+// adrp   reg0, base_str
+// add    reg0, reg0, offset_str
+// str    reg, [sp, ..]
+// mov[z] reg1, string_size
+static ut32 golang_recover_string_arm64(GoStrRecover *ctx) {
+	const ut32 opmask = RZ_ANALYSIS_OP_MASK_DISASM;
+	RzAnalysis *analysis = ctx->core->analysis;
+	ut8 *bytes = ctx->bytes;
+	ut32 size = ctx->size;
+	RzAnalysisOp aop0, aop1, aop2;
+	ut32 nlen = 0;
+	ut64 str_addr = 0, str_size = 0, pc = ctx->pc;
+	rz_analysis_op_init(&aop0);
+	rz_analysis_op_init(&aop1);
+	rz_analysis_op_init(&aop2);
+
+	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop0, pc, bytes, size, opmask) < 1) {
+		nlen = 0;
+		goto end;
+	}
+	nlen += aop0.size;
+
+	// check if first op is ADRP, otherwise skip
+	if (strncmp(aop0.mnemonic, "adrp", 4)) {
+		goto end;
+	} else { // ADRP
+		str_addr = aop0.ptr;
+	}
+
+	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop1, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
+		nlen = 0;
+		goto end;
+	}
+	nlen += aop1.size;
+
+	// check if second op is ADD, otherwise skip
+	if (strncmp(aop1.mnemonic, "add", 3) || aop1.val < 1 || aop1.val > GO_MAX_STRING_SIZE) {
+		goto end;
+	} else { // ADD
+		str_addr += aop1.val;
+	}
+
+	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop2, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
+		nlen = 0;
+		goto end;
+	}
+	nlen += aop2.size;
+
+	// expect third op to be STR, otherwise skip
+	if (strncmp(aop2.mnemonic, "str", 3)) {
+		goto end;
+	}
+
+	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop2, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
+		nlen = 0;
+		goto end;
+	}
+	nlen += aop2.size;
+
+	// expect last op to be ORR or MOV[Z], otherwise skip
+	if (strncmp(aop2.mnemonic, "orr", 3) && strncmp(aop2.mnemonic, "mov", 3)) {
+		goto end;
+	} else { // ORR/MOV/MOVN
+		str_size = aop2.val;
+	}
+
+	// check that the values are acceptable.
+	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
+		nlen = aop0.size;
+		goto end;
+	}
+
+	const size_t n_prefix = strlen("str.");
+	// string size + strlen('str.') + \0
+	char *flag = malloc(str_size + n_prefix + 1);
+	if (!flag) {
+		RZ_LOG_ERROR("Cannot allocate buffer to read string.");
+		goto end;
+	} else if (0 > rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)flag + n_prefix, str_size)) {
+		free(flag);
+		RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
+		goto end;
+	} else if (!IS_PRINTABLE(flag[n_prefix]) && !IS_WHITESPACE(flag[n_prefix])) {
+		free(flag);
+		nlen = aop0.size;
+		goto end;
+	}
+
+	// set prefix and zero-terminator
+	flag[0] = 's';
+	flag[1] = 't';
+	flag[2] = 'r';
+	flag[3] = '.';
+	flag[str_size + 4] = 0;
+
+	// add new string to string list
+	add_new_string(ctx->core, flag + n_prefix, str_addr, str_size);
+
+	// apply any filter to the new flag name
+	rz_name_filter(flag + n_prefix, str_size, true);
+
+	// remove any flag already set at this address
+	rz_flag_unset_all_off(ctx->core->flags, str_addr);
+
+	// add string to string flag space.
+	rz_flag_space_push(ctx->core->flags, RZ_FLAGS_FS_STRINGS);
+	rz_flag_set(ctx->core->flags, flag, str_addr, str_size);
+	rz_flag_space_pop(ctx->core->flags);
+	free(flag);
+	ctx->n_recovered++;
+
+end:
+	rz_analysis_op_fini(&aop0);
+	rz_analysis_op_fini(&aop1);
+	rz_analysis_op_fini(&aop2);
+	return nlen;
+}
+
 /**
  * \brief      Attempts to recover all golang string
  *
@@ -651,10 +777,10 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 	} else if (!strcmp(asm_arch, "arm")) {
 		switch (asm_bits) {
 		case 32:
-			// recover_cb = &golang_recover_string_arm_32;
+			// recover_cb = &golang_recover_string_arm32;
 			break;
 		case 64:
-			// recover_cb = &golang_recover_string_arm_64;
+			recover_cb = &golang_recover_string_arm64;
 			break;
 		default:
 			break;

@@ -712,6 +712,9 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		} else {
 			op->stackop = RZ_ANALYSIS_STACK_RESET;
 			op->stackptr = 0;
+			if (ISIMM64(2)) {
+				op->val = IMM64(2);
+			}
 		}
 		op->cycles = 1;
 		/* fallthru */
@@ -733,6 +736,9 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		if (REGID64(0) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_RESET;
 			op->stackptr = 0;
+		}
+		if (ISIMM64(1)) {
+			op->val = IMM64(1);
 		}
 		op->cycles = 1;
 		/* fallthru */
@@ -843,6 +849,9 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	case ARM64_INS_ORR:
 	case ARM64_INS_ORN:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
+		if (ISIMM64(2)) {
+			op->val = IMM64(2);
+		}
 		break;
 	case ARM64_INS_EOR:
 	case ARM64_INS_EON:

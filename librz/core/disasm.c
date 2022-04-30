@@ -3922,7 +3922,7 @@ static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refad
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment(ds);
-		ds_comment(ds, true, "; %s%s\"%s\"%s", inv ? Color_INVERT : "", prefix, escstr,
+		ds_comment(ds, true, "; %s%s\"%.128s\"%s", inv ? Color_INVERT : "", prefix, escstr,
 			inv ? Color_INVERT_RESET : "");
 		ds->printed_str_addr = refaddr;
 		free(escstr);
