@@ -73,6 +73,34 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	return reason;
 }
 
+static bool get_module_timestamp(ut64 addr, ut32 *timestamp) {
+	ut8 mz[2];
+	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr, mz, 2) != 2) {
+		return false;
+	}
+	if (memcmp(mz, "MZ", 2)) {
+		return false;
+	}
+	ut8 pe_off_buf[2];
+	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + 0x3c, pe_off_buf, 2) != 2) {
+		return false;
+	}
+	ut16 pe_off = rz_read_le16(pe_off_buf);
+	ut8 pe[2];
+	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + pe_off, pe, 2) != 2) {
+		return false;
+	}
+	if (memcmp(pe, "PE", 2)) {
+		return false;
+	}
+	ut8 ts[4];
+	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + pe_off + 8, ts, 4) != 4) {
+		return false;
+	}
+	*timestamp = rz_read_le32(ts);
+	return true;
+}
+
 static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	RzIODesc *desc = dbg->iob.io->desc;
 
@@ -101,14 +129,24 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	}
 
 	// Load PDB for kernel
-	RzList *modules = winkd_list_modules(&kdctx->windctx);
-	RzListIter *it;
 	WindModule *m, *mod = NULL;
-	rz_list_foreach (modules, it, m) {
-		RZ_LOG_DEBUG("%" PFMT64x " %s\n", m->addr, m->name);
-		if (rz_str_endswith(m->name, "\\ntoskrnl.exe")) {
-			mod = m;
-			break;
+	RzList *modules = NULL;
+	if (kdctx->kernel_module.addr) {
+		ut32 timestamp;
+		if (get_module_timestamp(kdctx->kernel_module.addr, &timestamp)) {
+			mod = &kdctx->kernel_module;
+			mod->timestamp = timestamp;
+		}
+	}
+	if (!mod && kdctx->windctx.PsLoadedModuleList) {
+		modules = winkd_list_modules(&kdctx->windctx);
+		RzListIter *it;
+		rz_list_foreach (modules, it, m) {
+			RZ_LOG_DEBUG("%" PFMT64x " %s\n", m->addr, m->name);
+			if (rz_str_endswith(m->name, "\\ntoskrnl.exe")) {
+				mod = m;
+				break;
+			}
 		}
 	}
 	if (!mod) {
