@@ -3,7 +3,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 #include "../arch/ppc/libvle/vle.h"
 #include "../arch/ppc/libps/libps.h"
 

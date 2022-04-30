@@ -3,8 +3,8 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone.h>
-#include <mips.h>
+#include <capstone/capstone.h>
+#include <capstone/mips.h>
 
 static ut64 t9_pre = UT64_MAX;
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
