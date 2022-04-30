@@ -73,6 +73,10 @@ typedef enum {
 	SH_OP_TAS,
 	SH_OP_TST,
 	SH_OP_XOR,
+	SH_OP_ROTL,
+	SH_OP_ROTR,
+	SH_OP_ROTCL,
+	SH_OP_ROTCR,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
