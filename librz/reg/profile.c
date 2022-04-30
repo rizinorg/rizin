@@ -36,6 +36,20 @@ static bool parse_alias(RZ_OUT RzReg *reg, RZ_BORROW RzList *tokens) {
 	return false;
 }
 
+/**
+ * \brief Parses a register type string.
+ *
+ * The type string must be of the following form:
+ *
+ * <sub-type>@<main-type>
+ *
+ * "<sub-type>@" is optional.
+ *
+ * \param item Register item whichs types are set.
+ * \param type_str The type string.
+ * \return true On success.
+ * \return false On failure.
+ */
 static bool parse_type(RZ_OUT RzRegItem *item, const char *type_str) {
 	rz_return_val_if_fail(item && type_str, false);
 	char *s = strdup(type_str);
@@ -43,8 +57,8 @@ static bool parse_type(RZ_OUT RzRegItem *item, const char *type_str) {
 	char *at = strchr(s, '@');
 	if (at) {
 		// This register has a secondary type e.g. xmm@fpu
-		item->second_type = rz_reg_type_by_name(at + 1);
-		if (item->second_type < 0) {
+		item->sub_type = rz_reg_type_by_name(at + 1);
+		if (item->sub_type < 0) {
 			RZ_LOG_WARN("Illegal secondary type appreviation \"%s\"\n", s);
 			free(s);
 			return false;
@@ -56,7 +70,7 @@ static bool parse_type(RZ_OUT RzRegItem *item, const char *type_str) {
 	}
 	/* Hack to put flags in the same arena as gpr */
 	if (item->type == RZ_REG_TYPE_FLG) {
-		item->second_type = RZ_REG_TYPE_GPR;
+		item->sub_type = RZ_REG_TYPE_GPR;
 	}
 	if (item->type < 0) {
 		RZ_LOG_WARN("Illegal type appreviation \"%s\"\n", s);
@@ -67,9 +81,13 @@ static bool parse_type(RZ_OUT RzRegItem *item, const char *type_str) {
 	return true;
 }
 
-// Sizes prepended with a dot are expressed in bits
-// strtoul with base 0 allows the input to be in decimal/octal/hex format
-
+/**
+ * \brief Parses the size of a register definition.
+ * Sizes with . in fornt are in bits. Otherwise in bytes.
+ *
+ * \param s Size string.
+ * \return ut64 The size as integer or -1 if it fails.
+ */
 static ut64 parse_size(char *s) {
 	rz_return_val_if_fail(s, -1);
 	if (s[0] == '.') {
@@ -80,42 +98,46 @@ static ut64 parse_size(char *s) {
 }
 
 /**
- * \brief Parses the offset of a register defintion.
+ * \brief Parses the offset of a register defintion and sets the offset in \p item->offset.
  *
  * Offset is of the form: <byte>.<bit>
  * .<bit> is optional.
  *
- * \param s Size string.
- * \param item RzRegItem to store the size values.
+ * \param s Offset string.
+ * \param item RzRegItem to store the offset into \p item->offset in bits.
+ * \return false On failure (sets item->offset = -1).
+ * \return true On success.
  */
-static void parse_offset(const char *s, RZ_OUT RzRegItem *item) {
-	rz_return_if_fail(s && item);
+static bool parse_offset(const char *s, RZ_OUT RzRegItem *item) {
+	rz_return_val_if_fail(s && item, false);
 	if (s[0] == '?') {
 		item->offset = -1;
 	}
 	item->offset = strtoul(s, NULL, 0) * 8;
 	if (item->offset < 0) {
-		return;
+		return false;
 	}
 	const char *bi = strchr(s, '.');
 	if (!bi) {
-		return;
+		return false;
 	}
 	ut8 bit_offset = strtoul(bi + 1, NULL, 0);
 	if (bit_offset < 0) {
 		RZ_LOG_WARN("Bit offset should not be negative.\n");
 		item->offset = -1;
-		return;
+		return false;
 	}
 	item->offset += bit_offset;
+	return true;
 }
 
 /**
  * \brief Parses a register definition.
  *
  * \param reg Register struct which holds all register items.
- * \param tokens List of defintion string tokens.
- * \return bool True on success, False otherwise.
+ * \param tokens List of defintion string tokens (each token is a line in the profile).
+ * \return false On failure.
+ * \return true On success.
  */
 static bool parse_def(RZ_INOUT RzReg *reg, RZ_OWN RzList *tokens) {
 	rz_return_val_if_fail(reg && tokens, false);
@@ -145,8 +167,7 @@ static bool parse_def(RZ_INOUT RzReg *reg, RZ_OWN RzList *tokens) {
 		goto reg_parse_error;
 	}
 
-	parse_offset(rz_list_get_n(tokens, 3), item);
-	if (item->offset < 0) {
+	if (!parse_offset(rz_list_get_n(tokens, 3), item)) {
 		RZ_LOG_WARN("Invalid register offset.\n");
 		goto reg_parse_error;
 	}
@@ -187,7 +208,7 @@ static bool parse_def(RZ_INOUT RzReg *reg, RZ_OWN RzList *tokens) {
 		reg->size = item->offset + item->size;
 	}
 	// Update the overall type of registers into a regset
-	reg->regset[item->type].maskregstype |= ((int)1 << item->second_type);
+	reg->regset[item->type].maskregstype |= ((int)1 << item->sub_type);
 
 	return true;
 
@@ -197,30 +218,32 @@ reg_parse_error:
 }
 
 /**
- * \brief Parses a register profile. Each line is either a register alias or a register definiton.
+ * \brief Parses a register profile string. Each line is either a register alias or a register definiton.
  *
  * A register alias string is of the following form:
  * "=<alias>  <name>\n"
  *
  * A register definition string is of the following form:
- * "<type>(@type2)  <name>  .<size>  <byte offset>(.<bit offset>)  <packed val>  (# <comment>)\n"
+ * "(<sub-type>@)main-type  <name>  .<size>  <byte offset>(.<bit offset>)  <packed>  (# <comment> OR <flags>)\n"
  *
  * Elements in "()" are optional.
  * Each "<...>" token is separated by a tab character.
  *
- * alias: Register alias (e.g. PC, A1 etc.)
- * type: Register type: gpr, fpr, ctr, flg etc.
- * type2: The second register type. This is the main type (e.g. fpu is main, xmm is secondary = xmm@fpu)
- * name: Register name.
- * size: Register size in bits.
- * byte offset: Offset into register profile in bytes.
- * bit offset: Offset into the byte offset in bits.
- * packed val: Packed size of the register in bytes.
- * comment: A comment about the register.
+ * * alias: Register alias (e.g. PC, A1 etc.)
+ * * name: Register name.
+ * * size: Register size in bits.
+ * * main-type: Register type: gpr, fpr, ctr, flg etc.
+ * * sub-type: The second register type (e.g. xmm@fpu : xmm is sub-type of fpu)
+ * * byte offset: Offset into register profile in bytes.
+ * * bit offset: Offset into the byte offset in bits.
+ * * packed: Packed size of the register in bytes.
+ * * comment: A comment about the register.
+ * * Flags this register holds.
  *
- * \param reg
- * \param profile
- * \return bool
+ * \param reg Register struct which holds all register items.
+ * \param profile Register profile string.
+ * \return false On failure.
+ * \return true On success.
  */
 RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *profile) {
 	rz_return_val_if_fail(reg && profile, false);

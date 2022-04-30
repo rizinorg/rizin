@@ -95,7 +95,7 @@ typedef enum {
 typedef struct rz_reg_item_t {
 	char *name;
 	RzRegisterType type;
-	RzRegisterType second_type; ///< Secondary type (like xmm to fpu)
+	RzRegisterType sub_type; ///< Sub-type (like xmm is for fpu)
 	int size; ///< in bits> 8,16,32,64 ... 128/256
 	int offset; ///< Offset into register profile in bits.
 	int packed_size; ///< 0 means no packed register, 1byte pack, 2b pack...
