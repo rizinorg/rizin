@@ -918,6 +918,58 @@ static RzILOpEffect *sh_il_xor(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_param(op->param[1], LOGXOR(sh_il_get_param(op->param[0], op->scaling).pure, sh_il_get_param(op->param[1], op->scaling).pure), op->scaling);
 }
 
+/**
+ * ROTL  Rn
+ * T <- Rn <- MSB
+ * 0100nnnn00000100
+ */
+static RzILOpEffect *sh_il_rotl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpBool *msb = MSB(sh_il_get_pure_param(0));
+	RzILOpEffect *tbit = SETG(SH_SR_T, msb);
+	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
+	RzILOpPure *lsb = ITE(DUP(msb), OR(shl, SH_U_REG(1)), AND(DUP(shl), SH_U_REG(0xfffffffe)));
+	return SEQ2(tbit, sh_il_set_pure_param(0, lsb));
+}
+
+/**
+ * ROTR  Rn
+ * LSB -> Rn -> T
+ * 0100nnnn00000101
+ */
+static RzILOpEffect *sh_il_rotr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpBool *lsb = LSB(sh_il_get_pure_param(0));
+	RzILOpEffect *tbit = SETG(SH_SR_T, lsb);
+	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
+	RzILOpPure *msb = ITE(DUP(lsb), OR(shr, SH_U_REG(0x80000000)), AND(DUP(shr), SH_U_REG(0x7fffffff)));
+	return SEQ2(tbit, sh_il_set_pure_param(0, msb));
+}
+
+/**
+ * ROTCL  Rn
+ * T <- Rn <- T
+ * 0100nnnn00100100
+ */
+static RzILOpEffect *sh_il_rotcl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpEffect *msb = SETL("msb", MSB(sh_il_get_pure_param(0)));
+	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
+	RzILOpPure *lsb = ITE(VARG(SH_SR_T), OR(shl, SH_U_REG(1)), AND(DUP(shl), SH_U_REG(0xfffffffe)));
+	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("msb"));
+	return SEQ3(msb, sh_il_set_pure_param(0, lsb), tbit);
+}
+
+/**
+ * ROTCR  Rn
+ * T -> Rn -> T
+ * 0100nnnn00100101
+ */
+static RzILOpEffect *sh_il_rotcr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpEffect *lsb = SETL("lsb", LSB(sh_il_get_pure_param(0)));
+	RzILOpPure *shl = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
+	RzILOpPure *msb = ITE(VARG(SH_SR_T), OR(shl, SH_U_REG(0x80000000)), AND(DUP(shl), SH_U_REG(0x7fffffff)));
+	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("lsb"));
+	return SEQ3(lsb, sh_il_set_pure_param(0, msb), tbit);
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
@@ -961,5 +1013,9 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_or,
 	sh_il_tas,
 	sh_il_tst,
-	sh_il_xor
+	sh_il_xor,
+	sh_il_rotl,
+	sh_il_rotr,
+	sh_il_rotcl,
+	sh_il_rotcr
 };
