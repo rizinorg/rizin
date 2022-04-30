@@ -4,9 +4,8 @@
 #include <rz_analysis.h>
 #include <rz_lib.h>
 #include <ht_uu.h>
-#include <arm.h>
-#include <capstone.h>
-#include <arm.h>
+#include <capstone/capstone.h>
+#include <capstone/arm.h>
 #include <rz_util/rz_assert.h>
 #include "./analysis_arm_hacks.inc"
 

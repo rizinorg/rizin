@@ -3,8 +3,8 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
-#include <capstone.h>
-#include <x86.h>
+#include <capstone/capstone.h>
+#include <capstone/x86.h>
 
 #if 0
 CYCLES:
