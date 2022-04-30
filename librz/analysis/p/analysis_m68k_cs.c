@@ -713,13 +713,13 @@ fin:
 
 static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
-		"=PC    pc\n"
-		"=SP    a7\n"
-		"=BP    a6\n"
-		"=A0    a0\n"
-		"=A1    a1\n"
-		"=A2    a2\n"
-		"=A3    a3\n"
+		"=PC	pc\n"
+		"=SP	a7\n"
+		"=BP	a6\n"
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
 		"gpr	d0	.32	0	0\n"
 		"gpr	d1	.32	4	0\n"
 		"gpr	d2	.32	8	0\n"
@@ -730,24 +730,24 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	d7	.32	28	0\n"
 		"gpr	a0	.32	32	0\n"
 		"gpr	a1	.32	36	0\n"
-		"gpr	a2 	.32	40	0\n"
-		"gpr	a3 	.32	44	0\n"
-		"gpr	a4 	.32	48	0\n"
+		"gpr	a2	.32	40	0\n"
+		"gpr	a3	.32	44	0\n"
+		"gpr	a4	.32	48	0\n"
 		"gpr	a5	.32	52	0\n"
-		"gpr	a6 	.32	56	0\n"
-		"gpr	a7 	.32	60	0\n"
+		"gpr	a6	.32	56	0\n"
+		"gpr	a7	.32	60	0\n"
 		"gpr	fp0	.32	64	0\n" // FPU register 0, 96bits to write and read max
 		"gpr	fp1	.32	68	0\n" // FPU register 1, 96bits to write and read max
 		"gpr	fp2	.32	72	0\n" // FPU register 2, 96bits to write and read max
-		"gpr	fp3 	.32	76	0\n" // FPU register 3, 96bits to write and read max
-		"gpr	fp4 	.32	80	0\n" // FPU register 4, 96bits to write and read max
-		"gpr	fp5 	.32	84	0\n" // FPU register 5, 96bits to write and read max
-		"gpr	fp6 	.32	88	0\n" // FPU register 6, 96bits to write and read max
-		"gpr	fp7 	.32	92	0\n" // FPU register 7, 96bits to write and read max
-		"gpr	pc 	.32	96	0\n"
-		"gpr	sr 	.32	100	0\n" // only available for read and write access during supervisor mode 16bit
-		"gpr	ccr 	.32	104	0\n" // subset of the SR, available from any mode
-		"gpr	sfc 	.32	108	0\n" // source function code register
+		"gpr	fp3	.32	76	0\n" // FPU register 3, 96bits to write and read max
+		"gpr	fp4	.32	80	0\n" // FPU register 4, 96bits to write and read max
+		"gpr	fp5	.32	84	0\n" // FPU register 5, 96bits to write and read max
+		"gpr	fp6	.32	88	0\n" // FPU register 6, 96bits to write and read max
+		"gpr	fp7	.32	92	0\n" // FPU register 7, 96bits to write and read max
+		"gpr	pc	.32	96	0\n"
+		"gpr	sr	.32	100	0\n" // only available for read and write access during supervisor mode 16bit
+		"gpr	ccr	.32	104	0\n" // subset of the SR, available from any mode
+		"gpr	sfc	.32	108	0\n" // source function code register
 		"gpr	dfc	.32	112	0\n" // destination function code register
 		"gpr	usp	.32	116	0\n" // user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
 		"gpr	vbr	.32	120	0\n" // vector base register, this is a Address pointer

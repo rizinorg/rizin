@@ -123,8 +123,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"=A4	garbage\n"
 		"=A5	garbage\n"
 		"=A6	garbage\n"
-		"gpr	pc	    .32 0  0\n"
-		"gpr	garbage	.32 32 0\n";
+		"gpr	pc	.32	0	0\n"
+		"gpr	garbage	.32	32	0\n";
 	return strdup(p);
 }
 

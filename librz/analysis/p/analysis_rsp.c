@@ -580,14 +580,14 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 
 static char *get_reg_profile(RzAnalysis *analysis) {
 	static const char *p =
-		"=PC    pc\n"
-		"=SP    sp\n"
-		"=A0    a0\n"
-		"=A1    a1\n"
-		"=A2    a2\n"
-		"=A3    a3\n"
-		"=R0    v0\n"
-		"=R1    v1\n"
+		"=PC	pc\n"
+		"=SP	sp\n"
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"=R0	v0\n"
+		"=R1	v1\n"
 		/* GP registers */
 		"gpr	zero	.32	0	0\n"
 		"gpr	at	.32	4	0\n"
@@ -674,9 +674,9 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	$v30	.128	676	0\n"
 		"gpr	$v31	.128	692	0\n"
 		/* C2 control registers - (vco, vcc, vce) */
-		"gpr    $vco	.128	708	0\n"
-		"gpr    $vcc	.128	724	0\n"
-		"gpr    $vce	.128	740	0\n";
+		"gpr	$vco	.128	708	0\n"
+		"gpr	$vcc	.128	724	0\n"
+		"gpr	$vce	.128	740	0\n";
 
 	return strdup(p);
 }
