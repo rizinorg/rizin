@@ -5754,11 +5754,11 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		bool pcache = rz_config_get_b(core->config, "io.pcache");
 		rz_config_set_b(core->config, "io.pcache", false);
 		const char *notify = "Emulate functions to find computed references (aaef)";
-		rz_core_notify_begin(core, notify);
+		rz_core_notify_begin(core, "%s", notify);
 		if (plugin_supports_esil) {
 			rz_core_analysis_esil_references_all_functions(core);
 		}
-		rz_core_notify_done(core, notify);
+		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 		rz_config_set_b(core->config, "io.pcache", pcache);
 		if (rz_cons_is_breaked()) {
@@ -5768,9 +5768,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (rz_config_get_i(core->config, "analysis.autoname")) {
 		const char *notify = "Speculatively constructing a function name "
 				     "for fcn.* and sym.func.* functions (aan)";
-		rz_core_notify_begin(core, notify);
+		rz_core_notify_begin(core, "%s", notify);
 		rz_core_analysis_autoname_all_fcns(core);
-		rz_core_notify_done(core, notify);
+		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 	}
 	if (core->analysis->opt.vars) {
@@ -5793,24 +5793,24 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 	if (!sdb_isempty(core->analysis->sdb_zigns)) {
 		const char *notify = "Check for zignature from zigns folder (z/)";
-		rz_core_notify_begin(core, notify);
+		rz_core_notify_begin(core, "%s", notify);
 		rz_core_cmd0(core, "z/");
-		rz_core_notify_done(core, notify);
+		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 	}
 	if (plugin_supports_esil) {
 		const char *notify = "Type matching analysis for all functions (aaft)";
-		rz_core_notify_begin(core, notify);
+		rz_core_notify_begin(core, "%s", notify);
 		rz_core_analysis_types_propagation(core);
-		rz_core_notify_done(core, notify);
+		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 	}
 
 	{
 		const char *notify = "Propagate noreturn information";
-		rz_core_notify_begin(core, notify);
+		rz_core_notify_begin(core, "%s", notify);
 		rz_core_analysis_propagate_noreturn(core, UT64_MAX);
-		rz_core_notify_done(core, notify);
+		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 	}
 
@@ -5818,9 +5818,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	Sdb *dwarf_sdb = sdb_ns(core->analysis->sdb, "dwarf", 0);
 	if (dwarf_sdb) {
 		const char *notify = "Integrate dwarf function information.";
-		rz_core_notify_begin(core, notify);
+		rz_core_notify_begin(core, "%s", notify);
 		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags, dwarf_sdb);
-		rz_core_notify_done(core, notify);
+		rz_core_notify_done(core, "%s", notify);
 	}
 
 	rz_core_notify_done(core, "Use -AA or aaaa to perform additional experimental analysis.");
@@ -5828,15 +5828,15 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (experimental) {
 		if (!didAap) {
 			const char *notify = "Finding function preludes";
-			rz_core_notify_begin(core, notify);
+			rz_core_notify_begin(core, "%s", notify);
 			(void)rz_core_search_preludes(core, false); // "aap"
-			rz_core_notify_done(core, notify);
+			rz_core_notify_done(core, "%s", notify);
 			rz_core_task_yield(&core->tasks);
 		}
 		const char *notify = "Enable constraint types analysis for variables";
-		rz_core_notify_begin(core, notify);
+		rz_core_notify_begin(core, "%s", notify);
 		rz_config_set(core->config, "analysis.types.constraint", "true");
-		rz_core_notify_done(core, notify);
+		rz_core_notify_done(core, "%s", notify);
 	}
 	rz_core_seek_undo(core);
 	if (dh_orig) {

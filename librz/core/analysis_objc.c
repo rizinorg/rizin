@@ -79,7 +79,7 @@ static ut64 readQword(RzCoreObjc *objc, ut64 addr, bool *success) {
 
 static void objc_analyze(RzCore *core) {
 	const char *notify = "Analyzing code to find selfref references";
-	rz_core_notify_begin(core, notify);
+	rz_core_notify_begin(core, "%s", notify);
 	(void)rz_core_analysis_refs(core, "");
 	if (!strcmp("arm", rz_config_get(core->config, "asm.arch"))) {
 		const bool emu_lazy = rz_config_get_i(core->config, "emu.lazy");
@@ -87,7 +87,7 @@ static void objc_analyze(RzCore *core) {
 		rz_core_analysis_esil_default(core);
 		rz_config_set_i(core->config, "emu.lazy", emu_lazy);
 	}
-	rz_core_notify_done(core, notify);
+	rz_core_notify_done(core, "%s", notify);
 }
 
 static ut64 getRefPtr(RzCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
@@ -224,7 +224,7 @@ static bool objc_find_refs(RzCore *core) {
 		return false;
 	}
 	const char *notify = "Parsing metadata in ObjC to find hidden xrefs";
-	rz_core_notify_begin(core, notify);
+	rz_core_notify_begin(core, "%s", notify);
 
 	size_t total_xrefs = 0;
 	bool readSuccess = true;
@@ -281,7 +281,7 @@ static bool objc_find_refs(RzCore *core) {
 			}
 		}
 	}
-	rz_core_notify_done(core, notify);
+	rz_core_notify_done(core, "%s", notify);
 
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;

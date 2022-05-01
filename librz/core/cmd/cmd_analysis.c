@@ -4198,11 +4198,11 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			}
 			ut64 curseek = core->offset;
 			const char *notify = "Analyze all flags starting with sym. and entry0 (aa)";
-			rz_core_notify_begin(core, notify);
+			rz_core_notify_begin(core, "%s", notify);
 			rz_cons_break_push(NULL, NULL);
 			rz_cons_break_timeout(rz_config_get_i(core->config, "analysis.timeout"));
 			rz_core_analysis_all(core);
-			rz_core_notify_done(core, notify);
+			rz_core_notify_done(core, "%s", notify);
 			rz_core_task_yield(&core->tasks);
 			// Run pending analysis immediately after analysis
 			// Usefull when running commands with ";" or via rizin -c,-i
