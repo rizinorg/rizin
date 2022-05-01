@@ -11,8 +11,6 @@
 #include <signal.h>
 #include <sys/types.h>
 
-#if DEBUGGER
-
 #include "native/drx.c" // x86 specific
 #include "rz_cons.h"
 
@@ -84,8 +82,6 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 #else
 #define WAITPID_FLAGS 0
 #endif
-
-#endif /* IF DEBUGGER */
 
 /* begin of debugger code */
 #if DEBUGGER
