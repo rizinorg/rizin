@@ -141,8 +141,8 @@ static bool parse_offset(const char *s, RZ_OUT RzRegProfileDef *def) {
  * \return true On success.
  * \return false On Failure.
  */
-static bool parse_alias(RZ_OUT RzReg *reg, RZ_BORROW RzList *tokens) {
-	rz_return_val_if_fail(reg && tokens, false);
+static bool parse_alias(RZ_OUT RzList *alias_list, RZ_BORROW RzList *tokens) {
+	rz_return_val_if_fail(alias_list && tokens, false);
 	RzRegProfileAlias *pa = RZ_NEW0(RzRegProfileAlias);
 	if (!pa) {
 		RZ_LOG_WARN("Unable to allocate memory.\n");
@@ -165,7 +165,7 @@ static bool parse_alias(RZ_OUT RzReg *reg, RZ_BORROW RzList *tokens) {
 	pa->alias = strdup(alias);
 	pa->reg_name = strdup(real_name);
 	pa->role = role;
-	rz_list_append(reg->reg_profile.alias, pa);
+	rz_list_append(alias_list, pa);
 
 	return true;
 }
@@ -178,15 +178,11 @@ static bool parse_alias(RZ_OUT RzReg *reg, RZ_BORROW RzList *tokens) {
  * \return false On failure.
  * \return true On success.
  */
-static bool parse_def(RZ_INOUT RzReg *reg, RZ_OWN RzList *tokens) {
-	rz_return_val_if_fail(reg && tokens, false);
+static bool parse_def(RZ_OUT RzList *def_list, RZ_BORROW RzList *tokens) {
+	rz_return_val_if_fail(def_list && tokens, false);
 
 	const char *name = rz_list_get_n(tokens, 1);
 	rz_return_val_if_fail(name, false);
-	if (rz_reg_get(reg, name, RZ_REG_TYPE_ANY)) {
-		RZ_LOG_WARN("Ignoring duplicated register definition '%s'.\n", name);
-		return true;
-	}
 
 	RzRegProfileDef *def = RZ_NEW0(RzRegProfileDef);
 	if (!def) {
@@ -229,7 +225,7 @@ static bool parse_def(RZ_INOUT RzReg *reg, RZ_OWN RzList *tokens) {
 		}
 	}
 
-	rz_list_append(reg->reg_profile.defs, def);
+	rz_list_append(def_list, def);
 
 	return true;
 
@@ -266,16 +262,10 @@ reg_parse_error:
  * \return false On failure.
  * \return true On success.
  */
-static bool parse_reg_profile_str(RZ_BORROW RzReg *reg, const char *profile) {
-	rz_return_val_if_fail(reg && profile, false);
+static bool parse_reg_profile_str(RZ_OUT RzList *alias_list, RZ_OUT RzList *def_list, const char *profile_str) {
+	rz_return_val_if_fail(alias_list && def_list && profile_str, false);
 
-	// Cache the profile string
-	reg->reg_profile_str = strdup(profile);
-	reg->reg_profile.defs = rz_list_newf((RzListFree)rz_reg_profile_def_free);
-	reg->reg_profile.alias = rz_list_newf((RzListFree)rz_reg_profile_alias_free);
-	rz_return_val_if_fail(reg->reg_profile.defs && reg->reg_profile.defs, false);
-
-	RzList *def_lines = rz_str_split_duplist_n(profile, "\n", 0, true);
+	RzList *def_lines = rz_str_split_duplist_n(profile_str, "\n", 0, true);
 	rz_return_val_if_fail(def_lines, false);
 
 	st32 l = 0; // Line number
@@ -313,11 +303,10 @@ static bool parse_reg_profile_str(RZ_BORROW RzReg *reg, const char *profile) {
 			continue;
 		}
 		bool success = is_alias
-			? parse_alias(reg, toks)
-			: parse_def(reg, toks);
+			? parse_alias(alias_list, toks)
+			: parse_def(def_list, toks);
 		if (!success) {
 			RZ_LOG_WARN("Parsing error in \"%s\" at line %d.\n", line, l);
-			rz_reg_free_internal(reg, false);
 			rz_list_free(toks);
 			rz_list_free(def_lines);
 			return false;
@@ -412,22 +401,39 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
  * \return false On failure;
  * \return true On success.
  */
-RZ_API bool rz_reg_set_profile_string(RZ_BORROW RzReg *reg, const char *profile) {
-	rz_return_val_if_fail(reg && profile, false);
+RZ_API bool rz_reg_set_profile_string(RZ_BORROW RzReg *reg, const char *profile_str) {
+	rz_return_val_if_fail(reg && profile_str, false);
 	// Same profile, no need to change
-	if (reg->reg_profile_str && !strcmp(reg->reg_profile_str, profile)) {
+	if (reg->reg_profile_str && !strcmp(reg->reg_profile_str, profile_str)) {
 		return true;
 	}
+
 	// we should reset all the arenas before setting the new reg profile
 	rz_reg_arena_pop(reg);
 	// Purge the old registers
 	rz_reg_free_internal(reg, true);
 	rz_reg_arena_shrink(reg);
 
-	if (!parse_reg_profile_str(reg, profile)) {
+	// Cache the profile string
+	reg->reg_profile_str = strdup(profile_str);
+	reg->reg_profile.defs = rz_list_newf((RzListFree)rz_reg_profile_def_free);
+	reg->reg_profile.alias = rz_list_newf((RzListFree)rz_reg_profile_alias_free);
+	rz_return_val_if_fail(reg->reg_profile.defs && reg->reg_profile.alias, true);
+
+	if (!parse_reg_profile_str(reg->reg_profile.alias, reg->reg_profile.defs, profile_str)) {
 		RZ_LOG_WARN("Could not parse register profile string.\n");
 		rz_reg_free_internal(reg, false);
 		return false;
+	}
+
+	// Check for duplicates
+	RzListIter *it, *tmp;
+	RzRegProfileDef *def;
+	rz_list_foreach_safe (reg->reg_profile.defs, it, tmp, def) {
+		if (rz_reg_get(reg, def->name, RZ_REG_TYPE_ANY)) {
+			RZ_LOG_WARN("Ignoring duplicated register definition '%s'.\n", def->name);
+			rz_list_delete(reg->reg_profile.defs, it);
+		}
 	}
 
 	if (!rz_reg_set_reg_profile(reg)) {
