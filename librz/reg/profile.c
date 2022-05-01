@@ -310,6 +310,11 @@ static bool parse_reg_profile_str(RZ_OUT RzList *alias_list, RZ_OUT RzList *def_
 static void add_item_to_regset(RZ_BORROW RzReg *reg, RZ_BORROW RzRegItem *item) {
 	rz_return_if_fail(reg && item);
 	RzRegisterType t = item->type;
+	/* Hack to put flags in the same arena as gpr */
+	if (t == RZ_REG_TYPE_FLG) {
+		t = RZ_REG_TYPE_GPR;
+		item->arena = RZ_REG_TYPE_GPR;
+	}
 
 	if (!reg->regset[t].regs) {
 		reg->regset[t].regs = rz_list_newf((RzListFree)rz_reg_item_free);
@@ -357,11 +362,6 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 
 		item->name = strdup(def->name);
 
-		/* Hack to put flags in the same arena as gpr */
-		if (def->type == RZ_REG_TYPE_FLG) {
-			def->sub_type = RZ_REG_TYPE_FLG;
-			def->type = RZ_REG_TYPE_GPR;
-		}
 		item->type = def->type;
 		item->sub_type = def->sub_type;
 		item->arena = def->type;
