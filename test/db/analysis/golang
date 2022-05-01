@@ -4,6 +4,7 @@ CMDS=<<EOF
 aang
 fl~sym.go.~?
 pdfs @ main ~str.
+izq~?
 EOF
 EXPECT=<<EOF
 4759
@@ -15,6 +16,7 @@ EXPECT=<<EOF
 0x0063e3af str.Got_response__d:__s__s
 0x0063e49b str.version
 0x0063e4ac str.HT
+14310
 EOF
 RUN
 
@@ -24,6 +26,7 @@ CMDS=<<EOF
 aang
 fl~sym.go.~?
 pdfs @ main ~str.
+izq~?
 EOF
 EXPECT=<<EOF
 4657
@@ -39,6 +42,7 @@ EXPECT=<<EOF
 ;-- str.flag:
 ;-- str.sort:
 ;-- str.sync:
+13215
 EOF
 RUN
 
@@ -48,6 +52,7 @@ CMDS=<<EOF
 aang
 fl~sym.go.~?
 pdfs @ main ~str.
+izq~?
 EOF
 EXPECT=<<EOF
 5406
@@ -59,6 +64,7 @@ EXPECT=<<EOF
 0x0065dca5 str.Got_response__d:__s__s
 0x0065de6d str.version
 0x0065de8a str.HT
+13380
 EOF
 RUN
 
@@ -68,6 +74,7 @@ CMDS=<<EOF
 aang
 fl~sym.go.~?
 pdfs @ main ~str.
+izq~?
 EOF
 EXPECT=<<EOF
 5122
@@ -117,7 +124,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-13273
+13274
 EOF
 RUN
 
@@ -127,6 +134,7 @@ CMDS=<<EOF
 aang
 fl~sym.go.~?
 pdfs @ main ~str.
+izq~?
 EOF
 EXPECT=<<EOF
 5069
@@ -176,7 +184,7 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-14828
+14815
 EOF
 RUN
 
@@ -186,12 +194,14 @@ CMDS=<<EOF
 aang
 fl~sym.go.~?
 pdfs @ sym.go.runtime.panicwrap ~str.
+izq~?
 EOF
 EXPECT=<<EOF
 1429
 0x100006dd8 str.value_method
 0x100006e48 str.called_using_nil
 0x100006e64 str.pointer
+13
 EOF
 RUN
 
@@ -201,9 +211,11 @@ CMDS=<<EOF
 aang
 fl~sym.go.~?
 pdfs @ main ~str.
+izq~?
 EOF
 EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
+9032
 EOF
 RUN
