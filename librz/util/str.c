@@ -3248,7 +3248,7 @@ static RzList *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRege
 	}
 
 	if (dup) {
-		aux = rz_str_ndup(str + j, s);
+		aux = rz_str_ndup(str + j, strlen(str + j));
 	} else {
 		// Overwrite split chararcters.
 		memset(str + j + s, 0, e);

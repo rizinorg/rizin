@@ -200,7 +200,7 @@ bool test_rz_str_split_list(void) {
 	mu_assert_streq(rz_list_get_n(l, 3), "  Everyone", "fourth item");
 	rz_list_free(l);
 
-	char s1[] = "Hello  World\tAnd \t Everyone\t";
+	char s1[] = "Hello  World\tAnd \t Everyone";
 	RzList *l1 = rz_str_split_duplist_n_regex(s1, "[[:blank:]]+", 0, false);
 	mu_assert_eq(rz_list_length(l1), 4, "string has been split in 4 items");
 	mu_assert_streq(rz_list_get_n(l1, 0), "Hello", "first item");
