@@ -49,19 +49,14 @@ static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
 	char *at = strchr(s, '@');
 	if (at) {
 		// This register has a secondary type e.g. xmm@fpu
-		def->type = rz_reg_type_by_name(at + 1);
-		if (def->type < 0) {
-			RZ_LOG_WARN("Illegal secondary type appreviation \"%s\"\n", s);
-			free(s);
-			return false;
-		}
+		def->sub_type = rz_reg_type_by_name(at + 1);
 		s[at - s] = '\0';
-		def->sub_type = rz_reg_type_by_name(s);
+		def->type = rz_reg_type_by_name(s);
 	} else {
 		def->type = rz_reg_type_by_name(s);
 		def->sub_type = def->type;
 	}
-	if (def->type < 0) {
+	if (def->type < 0 || def->sub_type < 0) {
 		RZ_LOG_WARN("Illegal type appreviation \"%s\"\n", s);
 		free(s);
 		return false;
