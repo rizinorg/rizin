@@ -438,10 +438,9 @@ static bool is_repeatable_inst(RzCore *core, ut64 addr) {
 }
 
 static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
-	rz_return_val_if_fail(core, false);
 	instr = rz_str_trim_head_ro(instr);
 	if (!instr || !core->dbg) {
-		eprintf("Wrong debugger state\n");
+		RZ_LOG_ERROR("wrong debugger state\n");
 		return false;
 	}
 	RzAsmOp asmop;
@@ -491,8 +490,8 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core) {
-	int follow = rz_config_get_i(core->config, "dbg.follow");
+RZ_API void rz_core_dbg_follow_seek_register(RzCore *core) {
+	ut64 follow = rz_config_get_i(core->config, "dbg.follow");
 	if (follow > 0) {
 		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
@@ -512,12 +511,12 @@ static int step_until_optype(RzCore *core, RzList *optypes_list) {
 	char *optype;
 
 	if (!core || !core->dbg) {
-		eprintf("Wrong state\n");
+		RZ_LOG_ERROR("wrong state\n");
 		res = false;
 		goto end;
 	}
 	if (!optypes_list) {
-		eprintf("Missing optypes. Usage example: 'dsuo ucall ujmp'\n");
+		RZ_LOG_ERROR("missing optypes. Usage example: 'dsuo ucall ujmp'\n");
 		res = false;
 		goto end;
 	}
@@ -539,12 +538,12 @@ static int step_until_optype(RzCore *core, RzList *optypes_list) {
 			pc = rz_debug_reg_get(core->dbg, core->dbg->reg->name[RZ_REG_NAME_PC]);
 			// 'Copy' from rz_debug_step_soft
 			if (!core->dbg->iob.read_at) {
-				eprintf("ERROR\n");
+				RZ_LOG_ERROR("ERROR\n");
 				res = false;
 				goto cleanup_after_push;
 			}
 			if (!core->dbg->iob.read_at(core->dbg->iob.io, pc, buf, sizeof(buf))) {
-				eprintf("ERROR\n");
+				RZ_LOG_ERROR("ERROR\n");
 				res = false;
 				goto cleanup_after_push;
 			}
@@ -555,7 +554,7 @@ static int step_until_optype(RzCore *core, RzList *optypes_list) {
 		rz_io_read_at(core->io, pc, buf, sizeof(buf));
 
 		if (!rz_analysis_op(core->dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC)) {
-			eprintf("Error: rz_analysis_op failed\n");
+			RZ_LOG_ERROR("rz_analysis_op failed\n");
 			res = false;
 			goto cleanup_after_push;
 		}
@@ -578,15 +577,15 @@ end:
 	return res;
 }
 
-static int step_until_flag(RzCore *core, const char *instr) {
+static int step_until_flag(RzCore *core, const char *flagstr) {
 	const RzList *list;
 	RzListIter *iter;
-	RzFlagItem *f;
+	RzFlagItem *flag;
 	ut64 pc;
 
-	instr = rz_str_trim_head_ro(instr);
-	if (!core || !instr || !core->dbg) {
-		eprintf("Wrong state\n");
+	flagstr = rz_str_trim_head_ro(flagstr);
+	if (!core || !flagstr || !core->dbg) {
+		RZ_LOG_ERROR("wrong state\n");
 		return false;
 	}
 	rz_cons_break_push(NULL, NULL);
@@ -601,10 +600,10 @@ static int step_until_flag(RzCore *core, const char *instr) {
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 		pc = rz_debug_reg_get(core->dbg, "PC");
 		list = rz_flag_get_list(core->flags, pc);
-		rz_list_foreach (list, iter, f) {
-			if (!instr || !*instr || (f->realname && strstr(f->realname, instr))) {
+		rz_list_foreach (list, iter, flag) {
+			if (flag->realname && strstr(flag->realname, flagstr)) {
 				rz_cons_printf("[ 0x%08" PFMT64x " ] %s\n",
-					f->offset, f->realname);
+					flag->offset, flag->realname);
 				goto beach;
 			}
 		}
@@ -615,18 +614,29 @@ beach:
 	return true;
 }
 
-/* until end of frame */
-static int step_until_eof(RzCore *core) {
+/**
+ * \brief Step until end of frame
+ * \param core The RzCore instance
+ * \return success
+ */
+RZ_API bool rz_core_debug_step_until_frame(RzCore *core) {
+	rz_return_val_if_fail(core && core->dbg, false);
 	int maxLoops = 200000;
 	ut64 off, now = rz_debug_reg_get(core->dbg, "SP");
 	rz_cons_break_push(NULL, NULL);
 	do {
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		if (rz_debug_is_dead(core->dbg)) {
+			break;
+		}
 		// XXX (HACK!)
 		rz_debug_step_over(core->dbg, 1);
 		off = rz_debug_reg_get(core->dbg, "SP");
 		// check breakpoint here
 		if (--maxLoops < 0) {
-			eprintf("Step loop limit exceeded\n");
+			RZ_LOG_INFO("step loop limit exceeded\n");
 			break;
 		}
 	} while (off <= now);
@@ -641,19 +651,19 @@ static int step_line(RzCore *core, int times) {
 	char *tmp_ptr = NULL;
 	ut64 off = rz_debug_reg_get(core->dbg, "PC");
 	if (off == 0LL) {
-		eprintf("Cannot 'drn PC'\n");
+		RZ_LOG_ERROR("cannot 'drn PC'\n");
 		return false;
 	}
 	file[0] = 0;
 	file2[0] = 0;
 	if (rz_bin_addr2line(core->bin, off, file, sizeof(file), &line)) {
 		char *ptr = rz_file_slurp_line(file, line, 0);
-		eprintf("--> 0x%08" PFMT64x " %s : %d\n", off, file, line);
-		eprintf("--> %s\n", ptr);
+		RZ_LOG_INFO("--> 0x%08" PFMT64x " %s : %d\n", off, file, line);
+		RZ_LOG_INFO("--> %s\n", ptr);
 		find_meta = false;
 		free(ptr);
 	} else {
-		eprintf("--> Stepping until dwarf line\n");
+		RZ_LOG_INFO("--> Stepping until dwarf line\n");
 		find_meta = true;
 	}
 	do {
@@ -664,18 +674,78 @@ static int step_line(RzCore *core, int times) {
 				continue;
 			}
 			rz_core_reg_update_flags(core);
-			eprintf("Cannot retrieve dwarf info at 0x%08" PFMT64x "\n", off);
+			RZ_LOG_ERROR("cannot retrieve dwarf info at 0x%08" PFMT64x "\n", off);
 			return false;
 		}
 	} while (!strcmp(file, file2) && line == line2);
 
-	eprintf("--> 0x%08" PFMT64x " %s : %d\n", off, file2, line2);
+	RZ_LOG_INFO("--> 0x%08" PFMT64x " %s : %d\n", off, file2, line2);
 	tmp_ptr = rz_file_slurp_line(file2, line2, 0);
-	eprintf("--> %s\n", tmp_ptr);
+	RZ_LOG_INFO("--> %s\n", tmp_ptr);
 	free(tmp_ptr);
 	rz_core_reg_update_flags(core);
-
 	return true;
+}
+
+/**
+ * \brief Step over
+ * \param core The RzCore instance
+ * \param steps Step steps
+ */
+RZ_API void rz_core_debug_step_over(RzCore *core, int steps) {
+	if (rz_config_get_i(core->config, "dbg.skipover")) {
+		rz_core_debug_step_skip(core, steps);
+	} else {
+		if (rz_core_is_debug(core)) {
+			bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
+			ut64 addr = rz_debug_reg_get(core->dbg, "PC");
+			RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
+			rz_bp_del(core->dbg->bp, addr);
+			rz_reg_arena_swap(core->dbg->reg, true);
+			rz_debug_step_over(core->dbg, steps);
+			if (bpi) {
+				(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+			}
+			rz_core_reg_update_flags(core);
+		} else {
+			for (int i = 0; i < steps; i++) {
+				rz_core_analysis_esil_step_over(core);
+			}
+		}
+	}
+}
+
+/**
+ * \brief Skip operations
+ * \param core The RzCore instance
+ * \param times Skip op times
+ */
+RZ_API void rz_core_debug_step_skip(RzCore *core, int times) {
+	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
+	ut64 addr = rz_debug_reg_get(core->dbg, "PC");
+	ut8 buf[64];
+	RzAnalysisOp aop;
+	RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
+	rz_reg_arena_swap(core->dbg->reg, true);
+	for (int i = 0; i < times; i++) {
+		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
+		rz_io_read_at(core->io, addr, buf, sizeof(buf));
+		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
+#if 0
+				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
+					RZ_LOG_ERROR ("don't know how to skip this instruction\n");
+					if (bpi) rz_core_cmd0 (core, delb);
+					break;
+				}
+#endif
+		addr += aop.size;
+	}
+	rz_debug_reg_set(core->dbg, "PC", addr);
+	rz_reg_setv(core->analysis->reg, "PC", addr);
+	rz_core_reg_update_flags(core);
+	if (bpi) {
+		(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+	}
 }
 
 static void cmd_debug_pid(RzCore *core, const char *input) {
@@ -3737,7 +3807,7 @@ fail:
 
 // dsf
 RZ_IPI RzCmdStatus rz_cmd_debug_step_frame_handler(RzCore *core, int argc, const char **argv) {
-	step_until_eof(core);
+	rz_core_debug_step_until_frame(core);
 	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
@@ -3775,26 +3845,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_line_handler(RzCore *core, int argc, const 
 // dso
 RZ_IPI RzCmdStatus rz_cmd_debug_step_over_handler(RzCore *core, int argc, const char **argv) {
 	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
-	if (rz_config_get_i(core->config, "dbg.skipover")) {
-		rz_core_cmdf(core, "dss %s", argv[1]);
-	} else {
-		if (rz_core_is_debug(core)) {
-			bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
-			ut64 addr = rz_debug_reg_get(core->dbg, "PC");
-			RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
-			rz_bp_del(core->dbg->bp, addr);
-			rz_reg_arena_swap(core->dbg->reg, true);
-			rz_debug_step_over(core->dbg, times);
-			if (bpi) {
-				(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
-			}
-			rz_core_reg_update_flags(core);
-		} else {
-			for (int i = 0; i < times; i++) {
-				rz_core_analysis_esil_step_over(core);
-			}
-		}
-	}
+	rz_core_debug_step_over(core, times);
 	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
@@ -3828,31 +3879,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_prog_handler(RzCore *core, int argc, const 
 // dss
 RZ_IPI RzCmdStatus rz_cmd_debug_step_skip_handler(RzCore *core, int argc, const char **argv) {
 	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
-	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
-	ut64 addr = rz_debug_reg_get(core->dbg, "PC");
-	ut8 buf[64];
-	RzAnalysisOp aop;
-	RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
-	rz_reg_arena_swap(core->dbg->reg, true);
-	for (int i = 0; i < times; i++) {
-		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-		rz_io_read_at(core->io, addr, buf, sizeof(buf));
-		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
-#if 0
-				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
-					RZ_LOG_ERROR ("don't know how to skip this instruction\n");
-					if (bpi) rz_core_cmd0 (core, delb);
-					break;
-				}
-#endif
-		addr += aop.size;
-	}
-	rz_debug_reg_set(core->dbg, "PC", addr);
-	rz_reg_setv(core->analysis->reg, "PC", addr);
-	rz_core_reg_update_flags(core);
-	if (bpi) {
-		(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
-	}
+	rz_core_debug_step_skip(core, times);
 	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }

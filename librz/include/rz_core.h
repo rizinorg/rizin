@@ -628,6 +628,11 @@ RZ_API void rz_core_debug_ri(RzCore *core);
 RZ_API void rz_core_debug_set_register_flags(RzCore *core);
 RZ_API void rz_core_debug_clear_register_flags(RzCore *core);
 
+RZ_API bool rz_core_debug_step_until_frame(RzCore *core);
+RZ_API void rz_core_debug_step_over(RzCore *core, int steps);
+RZ_API void rz_core_debug_step_skip(RzCore *core, int times);
+RZ_API void rz_core_dbg_follow_seek_register(RzCore *core);
+
 RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *state);
 
 /* chash.c */
