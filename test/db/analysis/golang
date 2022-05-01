@@ -117,6 +117,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
+13273
 EOF
 RUN
 
@@ -162,6 +163,7 @@ EXPECT=<<EOF
 0x0026dbe8 str.error_reading_json_reply:__v
 0x0026dcec str.d__s
 0x0026dd70 str.s
+0x0026df84 str.d._d._d
 0x0026dfc0 str.beta
 0x0026e0a0 str.s__s
 0x0026e1e0 str.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
@@ -174,6 +176,7 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
+14828
 EOF
 RUN
 
