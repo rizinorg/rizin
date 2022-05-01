@@ -192,8 +192,7 @@ static ut32 core_recover_golang_functions_go_1_18(RzCore *core, GoPcLnTab *pclnt
 		(void)rz_io_nread_at(pclntab->io, name_off, (ut8 *)name, sizeof(name));
 		name[sizeof(name) - 1] = 0;
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
-
-		if (strlen(name) > 0) {
+		if (rz_str_len_utf8_ansi(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -269,7 +268,7 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 		name[sizeof(name) - 1] = 0;
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
-		if (strlen(name) > 0) {
+		if (rz_str_len_utf8_ansi(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -356,7 +355,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 		name[sizeof(name) - 1] = 0;
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
-		if (strlen(name) > 0) {
+		if (rz_str_len_utf8_ansi(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -464,18 +463,18 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	return false;
 }
 
-static void add_new_string(RzCore *core, const char *string, ut64 vaddr, ut32 size) {
+static bool add_new_bin_string(RzCore *core, const char *string, ut64 vaddr, ut32 size) {
 	RzListIter *it;
 	RzBinString *bstr;
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!bf || !bf->o || !bf->o->strings) {
-		return;
+		return false;
 	}
 	ut64 paddr = rz_io_v2p(core->io, vaddr);
 
 	rz_list_foreach (bf->o->strings, it, bstr) {
 		if (bstr->vaddr == vaddr && bstr->size == size) {
-			return;
+			return true;
 		}
 		ut64 end = bstr->vaddr + bstr->size;
 		if (vaddr >= bstr->vaddr && (vaddr + size) < end) {
@@ -489,7 +488,7 @@ static void add_new_string(RzCore *core, const char *string, ut64 vaddr, ut32 si
 	bstr = RZ_NEW0(RzBinString);
 	if (!bstr) {
 		RZ_LOG_ERROR("Failed allocate new go string\n");
-		return;
+		return false;
 	}
 	bstr->paddr = paddr;
 	bstr->vaddr = vaddr;
@@ -500,7 +499,59 @@ static void add_new_string(RzCore *core, const char *string, ut64 vaddr, ut32 si
 	if (!rz_list_append(bf->o->strings, bstr)) {
 		RZ_LOG_ERROR("Failed append new go string to strings list\n");
 		rz_bin_string_free(bstr);
+		return false;
 	}
+	return true;
+}
+
+static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
+	// check that the values are acceptable.
+	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
+		return false;
+	}
+
+	const size_t n_prefix = strlen("str.");
+	// string size + strlen('str.') + \0
+	char *flag = malloc(str_size + n_prefix + 1);
+	if (!flag) {
+		RZ_LOG_ERROR("Cannot allocate buffer to read string.");
+		return false;
+	}
+
+	// set prefix and zero-terminator
+	flag[0] = 's';
+	flag[1] = 't';
+	flag[2] = 'r';
+	flag[3] = '.';
+	flag[str_size + 4] = 0;
+
+	if (0 > rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)flag + n_prefix, str_size)) {
+		free(flag);
+		RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
+		return false;
+	} else if (rz_str_len_utf8_ansi(flag + n_prefix) < 1) {
+		free(flag);
+		return false;
+	} else if (!add_new_bin_string(ctx->core, flag + n_prefix, str_addr, str_size)) {
+		// add new string to string list
+		free(flag);
+		return false;
+	}
+
+	// apply any filter to the new flag name
+	rz_name_filter(flag + n_prefix, str_size, true);
+
+	// remove any flag already set at this address
+	rz_flag_unset_all_off(ctx->core->flags, str_addr);
+
+	// add string to string flag space.
+	rz_flag_space_push(ctx->core->flags, RZ_FLAGS_FS_STRINGS);
+	rz_flag_set(ctx->core->flags, flag, str_addr, str_size);
+	rz_flag_space_pop(ctx->core->flags);
+	free(flag);
+	ctx->n_recovered++;
+
+	return true;
 }
 
 // Possible x64/x86 signatures
@@ -576,50 +627,11 @@ static ut32 golang_recover_string_x86(GoStrRecover *ctx) {
 		str_addr = aop1.ptr;
 	}
 
-	// check that the values are acceptable.
-	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
+	// try to recover the string.
+	if (!recover_string_at(ctx, str_addr, str_size)) {
 		nlen = aop0.size;
 		goto end;
 	}
-
-	const size_t n_prefix = strlen("str.");
-	// string size + strlen('str.') + \0
-	char *flag = malloc(str_size + n_prefix + 1);
-	if (!flag) {
-		RZ_LOG_ERROR("Cannot allocate buffer to read string.");
-		goto end;
-	} else if (0 > rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)flag + n_prefix, str_size)) {
-		free(flag);
-		RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
-		goto end;
-	} else if (!IS_PRINTABLE(flag[n_prefix]) && !IS_WHITESPACE(flag[n_prefix])) {
-		free(flag);
-		nlen = aop0.size;
-		goto end;
-	}
-
-	// set prefix and zero-terminator
-	flag[0] = 's';
-	flag[1] = 't';
-	flag[2] = 'r';
-	flag[3] = '.';
-	flag[str_size + 4] = 0;
-
-	// add new string to string list
-	add_new_string(ctx->core, flag + n_prefix, str_addr, str_size);
-
-	// apply any filter to the new flag name
-	rz_name_filter(flag + n_prefix, str_size, true);
-
-	// remove any flag already set at this address
-	rz_flag_unset_all_off(ctx->core->flags, str_addr);
-
-	// add string to string flag space.
-	rz_flag_space_push(ctx->core->flags, RZ_FLAGS_FS_STRINGS);
-	rz_flag_set(ctx->core->flags, flag, str_addr, str_size);
-	rz_flag_space_pop(ctx->core->flags);
-	free(flag);
-	ctx->n_recovered++;
 
 	if (!strncmp(aop0.mnemonic, "lea", 3)) {
 		rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_REF_TYPE_STRING);
@@ -677,6 +689,7 @@ static ut32 golang_recover_string_arm64(GoStrRecover *ctx) {
 
 	// check if second op is ADD, otherwise skip
 	if (strncmp(aop1.mnemonic, "add", 3) || aop1.val < 1 || aop1.val > GO_MAX_STRING_SIZE) {
+		nlen = aop0.size;
 		goto end;
 	} else { // ADD
 		str_addr += aop1.val;
@@ -690,6 +703,7 @@ static ut32 golang_recover_string_arm64(GoStrRecover *ctx) {
 
 	// expect third op to be STR, otherwise skip
 	if (strncmp(aop2.mnemonic, "str", 3)) {
+		nlen = aop0.size;
 		goto end;
 	}
 	rz_analysis_op_fini(&aop2);
@@ -703,55 +717,17 @@ static ut32 golang_recover_string_arm64(GoStrRecover *ctx) {
 
 	// expect last op to be ORR or MOV[Z], otherwise skip
 	if (strncmp(aop2.mnemonic, "orr", 3) && strncmp(aop2.mnemonic, "mov", 3)) {
+		nlen = aop0.size;
 		goto end;
 	} else { // ORR/MOV/MOVN
 		str_size = aop2.val;
 	}
 
-	// check that the values are acceptable.
-	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
-		nlen = aop0.size;
+	// try to recover the string.
+	if (!recover_string_at(ctx, str_addr, str_size)) {
+		nlen = 0;
 		goto end;
 	}
-
-	const size_t n_prefix = strlen("str.");
-	// string size + strlen('str.') + \0
-	char *flag = malloc(str_size + n_prefix + 1);
-	if (!flag) {
-		RZ_LOG_ERROR("Cannot allocate buffer to read string.");
-		goto end;
-	} else if (0 > rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)flag + n_prefix, str_size)) {
-		free(flag);
-		RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
-		goto end;
-	} else if (!IS_PRINTABLE(flag[n_prefix]) && !IS_WHITESPACE(flag[n_prefix])) {
-		free(flag);
-		nlen = aop0.size;
-		goto end;
-	}
-
-	// set prefix and zero-terminator
-	flag[0] = 's';
-	flag[1] = 't';
-	flag[2] = 'r';
-	flag[3] = '.';
-	flag[str_size + 4] = 0;
-
-	// add new string to string list
-	add_new_string(ctx->core, flag + n_prefix, str_addr, str_size);
-
-	// apply any filter to the new flag name
-	rz_name_filter(flag + n_prefix, str_size, true);
-
-	// remove any flag already set at this address
-	rz_flag_unset_all_off(ctx->core->flags, str_addr);
-
-	// add string to string flag space.
-	rz_flag_space_push(ctx->core->flags, RZ_FLAGS_FS_STRINGS);
-	rz_flag_set(ctx->core->flags, flag, str_addr, str_size);
-	rz_flag_space_pop(ctx->core->flags);
-	free(flag);
-	ctx->n_recovered++;
 
 	// add xref
 	rz_analysis_xrefs_set(analysis, pc + aop0.size, str_addr, RZ_ANALYSIS_REF_TYPE_STRING);
@@ -835,46 +811,11 @@ static ut32 golang_recover_string_arm32(GoStrRecover *ctx) {
 	}
 	str_addr = rz_read_ble32(tmp, analysis->big_endian);
 
-	const size_t n_prefix = strlen("str.");
-	// string size + strlen('str.') + \0
-	char *flag = malloc(str_size + n_prefix + 1);
-	if (!flag) {
-		RZ_LOG_ERROR("Cannot allocate buffer to read string.");
-		nlen = 0;
-		goto end;
-	} else if (0 > rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)flag + n_prefix, str_size)) {
-		free(flag);
-		RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
-		nlen = 0;
-		goto end;
-	} else if (!IS_PRINTABLE(flag[n_prefix]) && !IS_WHITESPACE(flag[n_prefix])) {
-		free(flag);
+	// try to recover the string.
+	if (!recover_string_at(ctx, str_addr, str_size)) {
 		nlen = 0;
 		goto end;
 	}
-
-	// set prefix and zero-terminator
-	flag[0] = 's';
-	flag[1] = 't';
-	flag[2] = 'r';
-	flag[3] = '.';
-	flag[str_size + 4] = 0;
-
-	// add new string to string list
-	add_new_string(ctx->core, flag + n_prefix, str_addr, str_size);
-
-	// apply any filter to the new flag name
-	rz_name_filter(flag + n_prefix, str_size, true);
-
-	// remove any flag already set at this address
-	rz_flag_unset_all_off(ctx->core->flags, str_addr);
-
-	// add string to string flag space.
-	rz_flag_space_push(ctx->core->flags, RZ_FLAGS_FS_STRINGS);
-	rz_flag_set(ctx->core->flags, flag, str_addr, str_size);
-	rz_flag_space_pop(ctx->core->flags);
-	free(flag);
-	ctx->n_recovered++;
 
 	// add xref
 	rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_REF_TYPE_STRING);
