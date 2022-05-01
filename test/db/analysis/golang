@@ -1,0 +1,206 @@
+NAME=Resolve all symbols on a stripped linux go1.18 binary
+FILE=bins/golang/example-server-1.18-stripped
+CMDS=<<EOF
+aang
+fl~sym.go.~?
+pdfs @ main ~str.
+EOF
+EXPECT=<<EOF
+4759
+0x0063dfdc str.server.crt
+0x0063e01e str.Reading_server_certificate:__s
+0x0063e1d1 str.https:__localhost:8000
+0x0063e20e str.Failed_get:__s
+0x0063e2e4 str.Failed_reading_response_body:__s
+0x0063e3af str.Got_response__d:__s__s
+0x0063e49b str.version
+0x0063e4ac str.HT
+EOF
+RUN
+
+NAME=Resolve all symbols on a stripped linux go1.16 binary
+FILE=bins/golang/example-server-1.16-stripped
+CMDS=<<EOF
+aang
+fl~sym.go.~?
+pdfs @ main ~str.
+EOF
+EXPECT=<<EOF
+4657
+0x0066d583 str.server.crt
+0x0066d5f3 str.Reading_server_certificate:__s
+0x0066d722 str.https:__localhost:8000
+0x0066d77c str.Failed_get:__s
+0x0066d863 str.Failed_reading_response_body:__s
+0x0066d9a3 str.Got_response__d:__s__s
+0x0066db8c str.version
+0x0066dbaa str.HT
+0x0066e68d str.Addr
+;-- str.flag:
+;-- str.sort:
+;-- str.sync:
+EOF
+RUN
+
+NAME=Resolve all symbols on a stripped linux go1.12 binary
+FILE=bins/golang/example-server-1.12-stripped
+CMDS=<<EOF
+aang
+fl~sym.go.~?
+pdfs @ main ~str.
+EOF
+EXPECT=<<EOF
+5406
+0x0065d876 str.server.crt
+0x0065d8e0 str.Reading_server_certificate:__s
+0x0065da03 str.https:__localhost:8000
+0x0065da57 str.Failed_get:__s
+0x0065db5a str.Failed_reading_response_body:__s
+0x0065dca5 str.Got_response__d:__s__s
+0x0065de6d str.version
+0x0065de8a str.HT
+EOF
+RUN
+
+NAME=Resolve all symbols on a linux go1.16 binary (arm32)
+FILE=bins/golang/btcctl-linux-armv7-v0.22.0-beta
+CMDS=<<EOF
+aang
+fl~sym.go.~?
+pdfs @ main ~str.
+EOF
+EXPECT=<<EOF
+5122
+0x00270aac str.Failed_to_read_data_from_stdin:__v
+0x00270d70 str.s_command:__v
+0x00270db8 str.1.0
+0x002710ec str.Failed_to_unmarshal_result:__v
+0x0027124c str.Failed_to_format_result:__v
+0x00271338 str.PH2
+0x0027140c str.s_command:__v__code:__s
+0x002714b0 str.The___s__command_can_only_be_used_via_websockets
+0x00271580 str.Unrecognized_command___s
+0x00271608 str.No_command_specified
+0x0027186c str.Chain_Server_Commands:DEBUG_HTTP2
+0x0027187c str.Wallet_Server_Commands____wallet_:adding_nil_Certificate_to_CertPoolbad_scalar_length:__d__expected__dchacha20:_wrong_HChaCha20_key_sizecrypto_aes:_invalid_buffer_overlapcrypto_des:_invalid_buffer_overlapcrypto_rc4:_invalid_buffer_overlapcrypto_rsa:_missing_public_modulusdoaddtimer:_P_already_set_in_timerexceeded_max_operation_limit_of__dexpected_an_RSA_public_key__got__TforEachP:_sched.safePointWait____0http2:_aborting_request_body_writehttp:_connection_has_been_hijackedhttp:_persistConn.readLoop_exitinghttp:_read_on_closed_response_bodyillegal_base64_data_at_input_byte_in__u_hexadecimal_character_escapeinvalid_descriptor_range_value:__vinvalid_nested_repetition_operatorinvalid_or_unsupported_Perl_syntaxinvalid_padding_bits_in_BIT_STRINGmalformed_signature:_R_is_negativemalformed_signature:_S_is_negativemax_hash_string_length_is__v_bytesmspan.ensureSwept:_m_is_not_lockedout_of_memory_allocating_allArenasreflect.FuncOf:_too_many_argumentsreflect:_ChanDir_of_non_chan_type_reflect:_Field_index_out_
+0x00271ab4 str.PH2
+0x00271bbc str.cannot_use__wallet_with__regtest__btcwallet_not_yet_compatible_with_regtest
+0x00272018 str.Use__s__h_to_show_options
+0x002720ec str.btcwallet.conf
+0x00272188 str.Error_creating_a_default_config_file:__v
+0x00272618 str.s:_Multiple_network_params_can_t_be_used_together____choose_one
+0x0027271c str.Error_parsing_config_file:__v
+0x002727f8 str.btcd.conf
+0x00272c0c str.m___s_rpcuser_____s
+0x00272c60 str.m___s_rpcpass_____s
+0x00272cb4 str.m___s_notls__0_1___:_s
+0x00272e4c str.rpcuser__s_rpcpass__s
+0x00272edc str.notls__s
+0x00273460 str.http
+0x0027347c str.:
+0x00273514 str.POST
+0x00273574 str.Content_Type
+0x0027373c str.error_reading_json_reply:__v
+0x00273834 str.d__s
+0x002738bc str.s
+0x00273a58 str.https
+0x00273b18 str.d._d._d
+0x00273b50 str.beta
+0x00273c20 str.s__s
+0x00273d74 str.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+0x00273efc str.linux
+0x00273f0c str.btcd
+0x00273f50 str.linux
+0x00273f60 str.btcctl
+0x00273fa4 str.linux
+0x00273fb4 str.btcwallet
+0x0027401c str.btcctl.conf
+0x00274090 str.rpc.cert
+0x00274104 str.rpc.cert
+EOF
+RUN
+
+NAME=Resolve all symbols on a linux go1.16 binary (arm64)
+FILE=bins/golang/btcctl-linux-arm64-v0.22.0-beta
+CMDS=<<EOF
+aang
+fl~sym.go.~?
+pdfs @ main ~str.
+EOF
+EXPECT=<<EOF
+5069
+0x0026b000 str.s_command:__v
+0x0026b04c str.1.0
+0x0026b314 str.Failed_to_unmarshal_result:__v
+0x0026b444 str.Failed_to_format_result:__v
+0x0026b5dc str.s_command:__v__code:__s
+0x0026b730 str.Failed_to_read_data_from_stdin:__v
+0x0026b7a8 str.
+0x0026b998 str.The___s__command_can_only_be_used_via_websockets
+0x0026ba70 str.Unrecognized_command___s
+0x0026bb00 str.No_command_specified
+0x0026bc28 str.Chain_Server_Commands:DEBUG_HTTP2
+0x0026bc3c str.Wallet_Server_Commands____wallet_:adding_nil_Certificate_to_CertPoolbad_scalar_length:__d__expected__dchacha20:_wrong_HChaCha20_key_sizecrypto_aes:_invalid_buffer_overlapcrypto_des:_invalid_buffer_overlapcrypto_rc4:_invalid_buffer_overlapcrypto_rsa:_missing_public_modulusdoaddtimer:_P_already_set_in_timerexceeded_max_operation_limit_of__dexpected_an_RSA_public_key__got__TforEachP:_sched.safePointWait____0http2:_aborting_request_body_writehttp:_connection_has_been_hijackedhttp:_persistConn.readLoop_exitinghttp:_read_on_closed_response_bodyillegal_base64_data_at_input_byte_in__u_hexadecimal_character_escapeinvalid_descriptor_range_value:__vinvalid_nested_repetition_operatorinvalid_or_unsupported_Perl_syntaxinvalid_padding_bits_in_BIT_STRINGmalformed_signature:_R_is_negativemalformed_signature:_S_is_negativemax_hash_string_length_is__v_bytesmspan.ensureSwept:_m_is_not_lockedout_of_memory_allocating_allArenasreflect.FuncOf:_too_many_argumentsreflect:_ChanDir_of_non_chan_type_reflect:_Field_index_out_of_boundsreflect:_Field_of_non_struct_type_reflect:_Method_index_out_of_rangereflect:_string_index_out_of_rangeruntime.SetFinalizer:_cannot_pass_runtime:_g_is_running_but_p_is_notruntime:_netpollBreak_write_failedruntime:_unexpected_return_pc_for_schedule:_spinning_with_local_workslice_bounds_out_of_range___x:_y:_slice_bounds_out_of_range__:_x:_y_stream_error:_stream_ID__d___v___vtestnet_seed.bitcoin.schildbach.detimeout_waiting_for_client_prefacetls:_malformed_key_share_extensiontoo_many_references:_cannot_splicetype_must_be__struct_not___s___s__unsupported_authentication_method_x509:_Ed25519_verification_failurex509:_unhandled_critical_extension_d_response_missing_Location_header____must_separate_successive_digits177635683940025046467781066894531252006_01_02T15:04:05.999999999Z07:0088817841970012523233890533447265625CONTINUATION_frame_with_stream_ID_0Failed_to_read_data_from_stdin:__v_attempt_to_clear_non_empty_span_setattempt_to_drop__d_items_from_stackchacha20:_output_smaller_than_inputcrypto_md5:_invalid_hash_sta
+0x0026c090 str.cannot_use__wallet_with__regtest__btcwallet_not_yet_compatible_with_regtest
+0x0026c520 str.Use__s__h_to_show_options
+0x0026c5f4 str.btcwallet.conf
+0x0026c688 str.Error_creating_a_default_config_file:__v
+0x0026cae4 str.s:_Multiple_network_params_can_t_be_used_together____choose_one
+0x0026cbd4 str.Error_parsing_config_file:__v
+0x0026ccb8 str.btcd.conf
+0x0026d0a8 str.m___s_rpcuser_____s
+0x0026d0fc str.m___s_rpcpass_____s
+0x0026d150 str.m___s_notls__0_1___:_s
+0x0026d2e0 str.rpcuser__s_rpcpass__s
+0x0026d368 str.notls__s
+0x0026d900 str.http
+0x0026d908 str.https
+0x0026d90c str.http
+0x0026d928 str.:
+0x0026d9c4 str.POST
+0x0026da28 str.Content_Type
+0x0026dbe8 str.error_reading_json_reply:__v
+0x0026dcec str.d__s
+0x0026dd70 str.s
+0x0026dfc0 str.beta
+0x0026e0a0 str.s__s
+0x0026e1e0 str.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+0x0026e370 str.linux
+0x0026e384 str.btcd
+0x0026e3d0 str.linux
+0x0026e3e4 str.btcctl
+0x0026e430 str.linux
+0x0026e444 str.btcwallet
+0x0026e4b8 str.btcctl.conf
+0x0026e53c str.rpc.cert
+0x0026e5c0 str.rpc.cert
+EOF
+RUN
+
+NAME=Resolve all symbols on a stripped mach0 go1.18 binary (arm64)
+FILE=bins/golang/hello.mach0.stripped
+CMDS=<<EOF
+aang
+fl~sym.go.~?
+pdfs @ sym.go.runtime.panicwrap ~str.
+EOF
+EXPECT=<<EOF
+1429
+0x100006dd8 str.value_method
+0x100006e48 str.called_using_nil
+0x100006e64 str.pointer
+EOF
+RUN
+
+NAME=Resolve all symbols on a stripped PE go1.12 binary (x64)
+FILE=bins/golang/hello_go_strip.exe
+CMDS=<<EOF
+aang
+fl~sym.go.~?
+pdfs @ main ~str.
+EOF
+EXPECT=<<EOF
+1788
+0x004a699b str.hello__hacktivity
+EOF
+RUN
