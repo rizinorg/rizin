@@ -1,4 +1,5 @@
-//
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
 
@@ -378,7 +379,6 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 /**
  * \brief      reads pclntab table in go binaries and recovers functions.
  * Follows the code https://github.com/golang/go/blob/master/src/debug/gosym/pclntab.go#L188
- *
  * \param      core  The RzCore to use
  *
  * \return  Returns true when 1 or more symbols have been recovered.
