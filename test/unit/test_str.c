@@ -207,7 +207,7 @@ bool test_rz_str_split_list(void) {
 	mu_assert_streq(rz_list_get_n(l1, 1), "World", "second item");
 	mu_assert_streq(rz_list_get_n(l1, 2), "And", "third item");
 	mu_assert_streq(rz_list_get_n(l1, 3), "Everyone", "fourth item");
-	rz_list_free(l);
+	rz_list_free(l1);
 
 	char s2[] = "Hello=World=Everyone";
 	RzList *l2 = rz_str_split_duplist_n(s2, "=", 1, false);
@@ -224,7 +224,7 @@ bool test_rz_str_split_list(void) {
 	mu_assert_streq(rz_list_get_n(l3, 1), "World", "second item");
 	mu_assert_streq(rz_list_get_n(l3, 2), "And", "third item");
 	mu_assert_streq(rz_list_get_n(l3, 3), "Everyone", "fourth item");
-	rz_list_free(l);
+	rz_list_free(l3);
 }
 
 bool test_rz_str_split_lines(void) {
