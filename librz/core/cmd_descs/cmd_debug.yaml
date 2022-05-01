@@ -324,8 +324,11 @@ commands:
             optional: true
       - name: dsb
         cname: cmd_debug_step_back
-        summary: Step back one instruction
-        args: []
+        summary: Step back (one|<num>) instruction
+        args:
+          - name: num
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: dsf
         cname: cmd_debug_step_frame
         summary: Step until end of frame

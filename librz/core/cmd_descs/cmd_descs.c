@@ -275,6 +275,7 @@ static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
 static const RzCmdDescArg cmd_debug_step_args[2];
+static const RzCmdDescArg cmd_debug_step_back_args[2];
 static const RzCmdDescArg cmd_debug_step_cond_args[2];
 static const RzCmdDescArg cmd_debug_step_line_args[2];
 static const RzCmdDescArg cmd_debug_step_over_args[2];
@@ -5983,10 +5984,17 @@ static const RzCmdDescHelp cmd_debug_step_help = {
 };
 
 static const RzCmdDescArg cmd_debug_step_back_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_step_back_help = {
-	.summary = "Step back one instruction",
+	.summary = "Step back (one|<num>) instruction",
 	.args = cmd_debug_step_back_args,
 };
 

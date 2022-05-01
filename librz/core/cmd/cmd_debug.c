@@ -688,6 +688,33 @@ static int step_line(RzCore *core, int times) {
 }
 
 /**
+ * \brief Step back
+ * \param core The RzCore instance
+ * \param steps Step steps
+ * \return success
+ */
+RZ_API bool rz_core_debug_step_back(RzCore *core, int steps) {
+	if (!rz_core_is_debug(core)) {
+		RZ_LOG_ERROR("outside of debug mode, run ood?\n");
+		return false;
+	}
+	if (!rz_core_esil_step_back(core)) {
+		RZ_LOG_ERROR("cannot step back\n");
+		return false;
+	}
+	if (!core->dbg->session) {
+		RZ_LOG_ERROR("session has not started\n");
+		return false;
+	}
+	if (rz_debug_step_back(core->dbg, steps) < 0) {
+		RZ_LOG_ERROR("stepping back failed\n");
+		return false;
+	}
+	rz_core_reg_update_flags(core);
+	return true;
+}
+
+/**
  * \brief Step over
  * \param core The RzCore instance
  * \param steps Step steps
@@ -3780,29 +3807,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_handler(RzCore *core, int argc, const char 
 // dsb
 RZ_IPI RzCmdStatus rz_cmd_debug_step_back_handler(RzCore *core, int argc, const char **argv) {
 	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
-	if (!rz_core_is_debug(core)) {
-		RZ_LOG_ERROR("outside of debug mode, run ood?\n");
-		goto fail;
-	}
-	if (!rz_core_esil_step_back(core)) {
-		RZ_LOG_ERROR("cannot step back\n");
-		goto fail;
-	}
-	if (!core->dbg->session) {
-		RZ_LOG_ERROR("session has not started\n");
-		goto fail;
-	}
-	if (rz_debug_step_back(core->dbg, times) < 0) {
-		RZ_LOG_ERROR("stepping back failed\n");
-		goto fail;
-	}
-
-	rz_core_reg_update_flags(core);
+	bool ret = rz_core_debug_step_back(core, times);
 	rz_core_dbg_follow_seek_register(core);
-	return RZ_CMD_STATUS_OK;
-fail:
-	rz_core_dbg_follow_seek_register(core);
-	return RZ_CMD_STATUS_ERROR;
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // dsf
