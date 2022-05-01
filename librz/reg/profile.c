@@ -14,15 +14,9 @@ static void rz_reg_profile_def_free(RzRegProfileDef *def) {
 	if (!def) {
 		return;
 	}
-	if (def->name) {
-		free(def->name);
-	}
-	if (def->comment) {
-		free(def->comment);
-	}
-	if (def->flags) {
-		free(def->flags);
-	}
+	free(def->name);
+	free(def->comment);
+	free(def->flags);
 	free(def);
 }
 
@@ -30,12 +24,8 @@ static void rz_reg_profile_alias_free(RzRegProfileAlias *alias) {
 	if (!alias) {
 		return;
 	}
-	if (alias->reg_name) {
-		free(alias->reg_name);
-	}
-	if (alias->alias) {
-		free(alias->alias);
-	}
+	free(alias->reg_name);
+	free(alias->alias);
 	free(alias);
 }
 
@@ -56,7 +46,6 @@ static void rz_reg_profile_alias_free(RzRegProfileAlias *alias) {
 static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
 	rz_return_val_if_fail(def && type_str, false);
 	char *s = strdup(type_str);
-
 	char *at = strchr(s, '@');
 	if (at) {
 		// This register has a secondary type e.g. xmm@fpu
@@ -83,7 +72,7 @@ static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
 
 /**
  * \brief Parses the size of a register definition.
- * Sizes with . in fornt are in bits. Otherwise in bytes.
+ * Sizes with . in front are in bits. Otherwise in bytes.
  *
  * \param s Size string.
  * \return ut32 The size as integer or UT64_MAX if it fails.
@@ -182,8 +171,6 @@ static bool parse_def(RZ_OUT RzList *def_list, RZ_BORROW RzList *tokens) {
 	rz_return_val_if_fail(def_list && tokens, false);
 
 	const char *name = rz_list_get_n(tokens, 1);
-	rz_return_val_if_fail(name, false);
-
 	RzRegProfileDef *def = RZ_NEW0(RzRegProfileDef);
 	if (!def) {
 		RZ_LOG_WARN("Unable to allocate memory.\n");
@@ -340,6 +327,13 @@ static void add_item_to_regset(RZ_BORROW RzReg *reg, RZ_BORROW RzRegItem *item) 
 	reg->regset[t].maskregstype |= ((int)1 << item->sub_type);
 }
 
+/**
+ * \brief Fills \p reg->regset with the definitions and alias of the register profile.
+ *
+ * \param reg The RzReg struct which holds the register profile and an empty \p reg->regset
+ * \return false On failure.
+ * \return true On success.
+ */
 RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 	rz_return_val_if_fail(reg, false);
 	rz_return_val_if_fail(reg->reg_profile.alias && reg->reg_profile.defs, false);

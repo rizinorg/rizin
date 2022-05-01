@@ -97,6 +97,7 @@ typedef struct {
 	char *alias; ///< Alias of register.
 	char *reg_name; ///< Real register name of alias.
 } RzRegProfileAlias;
+
 typedef struct {
 	RzRegisterType type; ///< Main type of register (gpr, fpu etc.)
 	RzRegisterType sub_type; ///< Sub-type (like xmm is for fpu)
