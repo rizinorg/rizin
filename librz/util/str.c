@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_regex.h>
+#include "rz_list.h"
 #include "rz_types.h"
 #include "rz_util.h"
 #include "rz_cons.h"
@@ -3212,6 +3214,54 @@ static RzList *str_split_list_common(char *str, const char *c, int n, bool trim,
 	return lst;
 }
 
+static RzList *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRegex *r, int n, bool trim, bool dup) {
+	rz_return_val_if_fail(str && r, NULL);
+	RzList *lst = rz_list_newf(dup ? free : NULL);
+	RzRegexMatch m[1];
+	char *aux;
+	int i = 0;
+	int s = 0, e = 0;
+	int j = 0;
+	while (rz_regex_exec(r, str + j, 1, m, 0) == 0) {
+		if (n == i && n > 0) {
+			break;
+		}
+		s = m[0].rm_so; // Match start in string str + j
+		e = m[0].rm_eo; // Match end in string str + j
+		if (dup) {
+			aux = rz_str_ndup(str + j, s);
+		} else {
+			// Overwrite split chararcters.
+			memset(str + j + s, 0, e);
+			aux = str + j;
+		}
+		if (trim) {
+			rz_str_trim(aux);
+		}
+		rz_list_append(lst, aux);
+		j += e;
+		++i;
+	}
+	if (*(str + j) == 0 || (n == i && n > 0) || rz_list_length(lst) == 0) {
+		// No token left.
+		return lst;
+	}
+
+	if (dup) {
+		aux = rz_str_ndup(str + j, s);
+	} else {
+		// Overwrite split chararcters.
+		memset(str + j + s, 0, e);
+		aux = str + j;
+	}
+	if (trim) {
+		rz_str_trim(aux);
+	}
+	rz_list_append(lst, aux);
+
+	return lst;
+}
+
 /**
  * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
  *
@@ -3226,6 +3276,23 @@ static RzList *str_split_list_common(char *str, const char *c, int n, bool trim,
 RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
 	rz_return_val_if_fail(str && c, NULL);
 	return str_split_list_common(str, c, n, true, false);
+}
+
+/**
+ * \brief Split the string \p str according to the regex \p r and returns a \p RzList with the result.
+ *
+ * Split a string \p str according to the regex specified in \p r and it
+ * considers at most \p n delimiters. The result is a \p RzList with pointers
+ * to the input string \p str. Each token is trimmed as well.
+ *
+ * \param str Input string to split. It will be modified by this function.
+ * \param r Delimiter regex used to split \p str
+ * \param n If > 0 at most this number of delimiters are considered.
+ */
+RZ_API RzList *rz_str_split_list_regex(char *str, const char *r, int n) {
+	rz_return_val_if_fail(str && r, NULL);
+	RzRegex *regex = rz_regex_new(r, "e");
+	return str_split_list_common_regex(str, regex, n, false, false);
 }
 
 /**
@@ -3265,6 +3332,29 @@ RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bo
 	char *str = strdup(_str);
 	RzList *res = str_split_list_common(str, c, n, trim, true);
 	free(str);
+	return res;
+}
+
+/**
+ * \brief Split the string \p str according to the regex \p r and returns a \p RzList with the result.
+ *
+ * Split a string \p str according to the regex specified in \p r. It can
+ * optionally trim (aka remove spaces) the tokens and/or consider at most \p n
+ * delimiters. The result is a \p RzList with newly allocated strings for each
+ * token.
+ *
+ * \param str Input string to split
+ * \param r Delimiter regex string used to split \p str
+ * \param n If > 0 at most this number of delimiters are considered.
+ * \param trim If true each token is considered without trailing/leading whitespaces.
+ */
+RZ_API RzList *rz_str_split_duplist_n_regex(const char *_str, const char *r, int n, bool trim) {
+	rz_return_val_if_fail(_str && r, NULL);
+	char *str = strdup(_str);
+	RzRegex *regex = rz_regex_new(r, "e");
+	RzList *res = str_split_list_common_regex(str, regex, n, trim, true);
+	free(str);
+	rz_regex_free(regex);
 	return res;
 }
 
