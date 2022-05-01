@@ -49,19 +49,23 @@ static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
 	char *at = strchr(s, '@');
 	if (at) {
 		// This register has a secondary type e.g. xmm@fpu
-		def->sub_type = rz_reg_type_by_name(at + 1);
+		def->arena_type = rz_reg_type_by_name(at + 1);
 		s[at - s] = '\0';
 		def->type = rz_reg_type_by_name(s);
 	} else {
 		def->type = rz_reg_type_by_name(s);
-		def->sub_type = def->type;
-	}
-	if (def->type < 0 || def->sub_type < 0) {
-		RZ_LOG_WARN("Illegal type appreviation \"%s\"\n", s);
-		free(s);
-		return false;
+		def->arena_type = def->type;
+		if (def->type == RZ_REG_TYPE_FLG) { // Hack to put flgs into gpr arena.
+			def->arena_type = RZ_REG_TYPE_GPR;
+		} else {
+			def->arena_type = def->type;
+		}
 	}
 	free(s);
+	if (def->type < 0 || def->arena_type < 0) {
+		RZ_LOG_WARN("Illegal type appreviation \"%s\"\n", s);
+		return false;
+	}
 	return true;
 }
 
@@ -304,12 +308,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList *alias_list, RZ_OUT RzList *def_
 
 static void add_item_to_regset(RZ_BORROW RzReg *reg, RZ_BORROW RzRegItem *item) {
 	rz_return_if_fail(reg && item);
-	RzRegisterType t = item->type;
-	/* Hack to put flags in the same arena as gpr */
-	if (t == RZ_REG_TYPE_FLG) {
-		t = RZ_REG_TYPE_GPR;
-		item->arena = RZ_REG_TYPE_GPR;
-	}
+	RzRegisterType t = item->arena;
 
 	if (!reg->regset[t].regs) {
 		reg->regset[t].regs = rz_list_newf((RzListFree)rz_reg_item_free);
@@ -325,7 +324,6 @@ static void add_item_to_regset(RZ_BORROW RzReg *reg, RZ_BORROW RzRegItem *item) 
 
 	// Update the overall type of registers into a regset
 	reg->regset[t].maskregstype |= ((int)1 << item->type);
-	reg->regset[t].maskregstype |= ((int)1 << item->sub_type);
 }
 
 /**
@@ -358,8 +356,7 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 		item->name = strdup(def->name);
 
 		item->type = def->type;
-		item->sub_type = def->sub_type;
-		item->arena = def->type;
+		item->arena = def->arena_type;
 
 		item->size = def->size;
 		item->offset = def->offset;

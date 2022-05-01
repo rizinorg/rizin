@@ -99,8 +99,8 @@ typedef struct {
 } RzRegProfileAlias;
 
 typedef struct {
-	RzRegisterType type; ///< Main type of register (gpr, fpu etc.)
-	RzRegisterType sub_type; ///< Sub-type (like xmm is for fpu)
+	RzRegisterType type; ///< Reg type.
+	RzRegisterType arena_type; ///< The arena the register belongs to (e.g. flags belong to gpr; xmm into fpu).
 	char *name; ///< Register name.
 	ut32 size; ///< Register size in bits.
 	ut32 packed; ///< Packet size of register in tes.
@@ -116,8 +116,7 @@ typedef struct {
 
 typedef struct rz_reg_item_t {
 	char *name;
-	RzRegisterType type;
-	RzRegisterType sub_type; ///< Sub-type (like xmm is for fpu)
+	RzRegisterType type; ///< Register type.
 	int size; ///< in bits> 8,16,32,64 ... 128/256
 	int offset; ///< Offset into register profile in bits.
 	int packed_size; ///< 0 means no packed register, 1byte pack, 2b pack...
@@ -125,7 +124,7 @@ typedef struct rz_reg_item_t {
 	char *flags;
 	char *comment; ///< Comment to register.
 	int index; ///< Index in register profile.
-	int arena; /* in which arena is this reg living */
+	int arena; ///< In which arena is this reg living. Usually equals type.
 } RzRegItem;
 
 typedef struct rz_reg_arena_t {
