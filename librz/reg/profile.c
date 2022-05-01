@@ -248,7 +248,7 @@ reg_parse_error:
  * "(<sub-type>@)main-type  <name>  .<size>  <byte offset>(.<bit offset>)  <packed>  (# <comment> OR <flags>)\n"
  *
  * Elements in "()" are optional.
- * Each "<...>" token is separated by a tab character.
+ * Each "<...>" token is separated by tab or space characters.
  *
  * * alias: Register alias (e.g. PC, A1 etc.)
  * * name: Register name.
@@ -288,8 +288,8 @@ static bool parse_reg_profile_str(RZ_BORROW RzReg *reg, const char *profile) {
 		if (strcmp(line, "") == 0) {
 			continue;
 		}
-		toks = rz_str_split_duplist_n(line, "\t", 0, true);
-		if (!toks) {
+		toks = rz_str_split_duplist_n_regex(line, "[[:blank:]]+", 0, true);
+		if (!toks || rz_list_length(toks) == 0) {
 			continue;
 		}
 		ut32 toks_len = rz_list_length(toks);
