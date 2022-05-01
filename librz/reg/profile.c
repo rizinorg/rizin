@@ -177,6 +177,7 @@ static bool parse_def(RZ_OUT RzList *def_list, RZ_BORROW RzList *tokens) {
 		return false;
 	}
 	def->name = strdup(name);
+	rz_return_val_if_fail(name, false);
 
 	if (!parse_type(def, rz_list_get_n(tokens, 0))) {
 		RZ_LOG_WARN("Invalid register type.\n");
@@ -189,7 +190,7 @@ static bool parse_def(RZ_OUT RzList *def_list, RZ_BORROW RzList *tokens) {
 		goto reg_parse_error;
 	}
 
-	def->packed = parse_size(rz_list_get_n(tokens, 4)) * 8;
+	def->packed = parse_size(rz_list_get_n(tokens, 4));
 	if (def->packed == UT32_MAX) {
 		RZ_LOG_WARN("Invalid register packed size.\n");
 		goto reg_parse_error;
