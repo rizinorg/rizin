@@ -695,22 +695,21 @@ static int step_line(RzCore *core, int times) {
  */
 RZ_API bool rz_core_debug_step_back(RzCore *core, int steps) {
 	if (!rz_core_is_debug(core)) {
-		RZ_LOG_ERROR("outside of debug mode, run ood?\n");
-		return false;
+		if (!rz_core_esil_step_back(core)) {
+			RZ_LOG_ERROR("cannot step back\n");
+			return false;
+		}
+	} else {
+		if (!core->dbg->session) {
+			RZ_LOG_ERROR("session has not started\n");
+			return false;
+		}
+		if (rz_debug_step_back(core->dbg, steps) < 0) {
+			RZ_LOG_ERROR("stepping back failed\n");
+			return false;
+		}
+		rz_core_reg_update_flags(core);
 	}
-	if (!rz_core_esil_step_back(core)) {
-		RZ_LOG_ERROR("cannot step back\n");
-		return false;
-	}
-	if (!core->dbg->session) {
-		RZ_LOG_ERROR("session has not started\n");
-		return false;
-	}
-	if (rz_debug_step_back(core->dbg, steps) < 0) {
-		RZ_LOG_ERROR("stepping back failed\n");
-		return false;
-	}
-	rz_core_reg_update_flags(core);
 	return true;
 }
 
@@ -759,7 +758,7 @@ RZ_API void rz_core_debug_step_skip(RzCore *core, int times) {
 		rz_io_read_at(core->io, addr, buf, sizeof(buf));
 		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 #if 0
-				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
+                                                                                                                                if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
 					RZ_LOG_ERROR ("don't know how to skip this instruction\n");
 					if (bpi) rz_core_cmd0 (core, delb);
 					break;
@@ -1115,7 +1114,8 @@ static RzOutputMode rad2mode(int mode) {
 	}
 }
 
-static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, int mode, bool symbols_only, RzCoreBinFilter *filter) {
+static bool
+get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, int mode, bool symbols_only, RzCoreBinFilter *filter) {
 	int fd;
 	if ((fd = rz_io_fd_open(core->io, file, RZ_PERM_R, 0)) == -1) {
 		return false;
@@ -1699,7 +1699,8 @@ static void asciiart_backtrace(RzCore *core, RzList *frames) {
 	}
 }
 
-static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr, char **flagdesc, char **flagdesc2, char **pcstr, char **spstr) {
+static void
+get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr, char **flagdesc, char **flagdesc2, char **pcstr, char **spstr) {
 	RzFlagItem *f = rz_flag_get_at(core->flags, frame->addr, true);
 	*flagdesc = NULL;
 	*flagdesc2 = NULL;
@@ -1934,7 +1935,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 		}
 		case RZ_ANALYSIS_OP_TYPE_RET:
 #if 0
-			// TODO: we must store ret value for each call in the graph path to do this check
+                                                                                                                                    // TODO: we must store ret value for each call in the graph path to do this check
 			rz_debug_step (dbg, 1);
 			rz_debug_reg_sync (dbg, RZ_REG_TYPE_GPR, false);
 			addr = rz_debug_reg_get (dbg, "PC");
@@ -1945,7 +1946,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 				cur = cur->parent;
 			}
 #if 0
-			if (addr != gn->addr) {
+                                                                                                                                    if (addr != gn->addr) {
 				eprintf ("Oops. invalid return address 0x%08"PFMT64x
 						"\n0x%08"PFMT64x"\n", addr, gn->addr);
 			}
@@ -2139,7 +2140,7 @@ static void rz_core_debug_kill(RzCore *core, const char *input) {
 	} else if (!*input) {
 		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
 #if 0
-		RzListIter *iter;
+                                                                                                                                RzListIter *iter;
 		RzDebugSignal *ds;
 		eprintf ("TODO: list signal handlers of child\n");
 		RzList *list = rz_debug_kill_list (core->dbg);
@@ -2594,22 +2595,21 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			}
 		} break;
 		case '-': // "dd-"
-			// close file
-			{
-				int fd = atoi(input + 2);
-				// rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, input + 2));
-				RzBuffer *buf = rz_core_syscallf(core, "close", "%d", fd);
-				consumeBuffer(buf, "dx ", "Cannot close");
-			}
-			break;
+			  // close file
+		{
+			int fd = atoi(input + 2);
+			// rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, input + 2));
+			RzBuffer *buf = rz_core_syscallf(core, "close", "%d", fd);
+			consumeBuffer(buf, "dx ", "Cannot close");
+		} break;
 		case ' ': // "dd"
-			// TODO: handle read, readwrite, append
-			{
-				RzBuffer *buf = rz_core_syscallf(core, "open", "%s, %d, %d", input + 2, 2, 0644);
-				consumeBuffer(buf, "dx ", "Cannot open");
-			}
-			// open file
-			break;
+			  // TODO: handle read, readwrite, append
+		{
+			RzBuffer *buf = rz_core_syscallf(core, "open", "%s, %d, %d", input + 2, 2, 0644);
+			consumeBuffer(buf, "dx ", "Cannot open");
+		}
+		// open file
+		break;
 		case '?':
 		default:
 			rz_core_cmd_help(core, help_msg_dd);
