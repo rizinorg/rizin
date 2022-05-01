@@ -81,8 +81,8 @@ static ut32 parse_size(char *s) {
 	rz_return_val_if_fail(s, UT32_MAX);
 	if (s[0] == '.') {
 		return strtoul(s + 1, NULL, 0);
-	} else { // packed size.
-		return strtoul(s, NULL, 0);
+	} else {
+		return strtoul(s, NULL, 0) * 8;
 	}
 }
 
