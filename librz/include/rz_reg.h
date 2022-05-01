@@ -102,7 +102,7 @@ typedef struct {
 	RzRegisterType sub_type; ///< Sub-type (like xmm is for fpu)
 	char *name; ///< Register name.
 	ut32 size; ///< Register size in bits.
-	ut32 packed; ///< Packet size of register in bytes.
+	ut32 packed; ///< Packet size of register in tes.
 	ut32 offset; ///< Offset into profile in bits.
 	char *comment; ///< Comment about register.
 	char *flags; ///< String describing the flags of the register.

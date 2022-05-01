@@ -60,16 +60,17 @@ static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
 	char *at = strchr(s, '@');
 	if (at) {
 		// This register has a secondary type e.g. xmm@fpu
-		def->sub_type = rz_reg_type_by_name(at + 1);
-		if (def->sub_type < 0) {
+		def->type = rz_reg_type_by_name(at + 1);
+		if (def->type < 0) {
 			RZ_LOG_WARN("Illegal secondary type appreviation \"%s\"\n", s);
 			free(s);
 			return false;
 		}
 		s[at - s] = '\0';
-		def->type = rz_reg_type_by_name(s);
+		def->sub_type = rz_reg_type_by_name(s);
 	} else {
 		def->type = rz_reg_type_by_name(s);
+		def->sub_type = def->type;
 	}
 	if (def->type < 0) {
 		RZ_LOG_WARN("Illegal type appreviation \"%s\"\n", s);
@@ -205,7 +206,7 @@ static bool parse_def(RZ_INOUT RzReg *reg, RZ_OWN RzList *tokens) {
 		goto reg_parse_error;
 	}
 
-	def->packed = parse_size(rz_list_get_n(tokens, 4));
+	def->packed = parse_size(rz_list_get_n(tokens, 4)) * 8;
 	if (def->packed == UT32_MAX) {
 		RZ_LOG_WARN("Invalid register packed size.\n");
 		goto reg_parse_error;
@@ -268,10 +269,6 @@ reg_parse_error:
 static bool parse_reg_profile_str(RZ_BORROW RzReg *reg, const char *profile) {
 	rz_return_val_if_fail(reg && profile, false);
 
-	// Same profile, no need to change
-	if (reg->reg_profile_str && !strcmp(reg->reg_profile_str, profile)) {
-		return true;
-	}
 	// Cache the profile string
 	reg->reg_profile_str = strdup(profile);
 	reg->reg_profile.defs = rz_list_newf((RzListFree)rz_reg_profile_def_free);
@@ -344,6 +341,8 @@ static void add_item_to_regset(RZ_BORROW RzReg *reg, RZ_BORROW RzRegItem *item) 
 		reg->regset[t].ht_regs = ht_pp_new0();
 	}
 
+	// Dynamically update the list of supported bit sizes
+	reg->bits |= item->size;
 	rz_list_append(reg->regset[t].regs, item);
 	ht_pp_insert(reg->regset[t].ht_regs, item->name, item);
 
@@ -374,22 +373,22 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 
 		item->name = strdup(def->name);
 
-		item->arena = def->type;
-		item->type = def->type;
-		item->sub_type = def->sub_type;
 		/* Hack to put flags in the same arena as gpr */
 		if (def->type == RZ_REG_TYPE_FLG) {
-			def->sub_type = RZ_REG_TYPE_GPR;
-			item->sub_type = RZ_REG_TYPE_GPR;
+			def->sub_type = RZ_REG_TYPE_FLG;
+			def->type = RZ_REG_TYPE_GPR;
 		}
+		item->type = def->type;
+		item->sub_type = def->sub_type;
+		item->arena = def->type;
+
 		item->size = def->size;
 		item->offset = def->offset;
 		// Update the overall profile size
 		if (item->offset + item->size > reg->size) {
 			reg->size = item->offset + item->size;
 		}
-		// Dynamically update the list of supported bit sizes
-		reg->bits |= def->size;
+
 		item->packed_size = def->packed;
 
 		if (def->comment) {
@@ -415,6 +414,10 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
  */
 RZ_API bool rz_reg_set_profile_string(RZ_BORROW RzReg *reg, const char *profile) {
 	rz_return_val_if_fail(reg && profile, false);
+	// Same profile, no need to change
+	if (reg->reg_profile_str && !strcmp(reg->reg_profile_str, profile)) {
+		return true;
+	}
 	// we should reset all the arenas before setting the new reg profile
 	rz_reg_arena_pop(reg);
 	// Purge the old registers
