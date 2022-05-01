@@ -1084,11 +1084,11 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		//		page accessed by movx @ri op (PDATA, XREG)
 		//		r2 addr = (_pdata & 0xff) << 8 + x_data
 		//		if 0xffffffnn, addr = ([SFRnn] << 8) + _xdata (TODO)
-		"gpr	_code	.32	20	0\n"
-		"gpr	_idata	.32	24	0\n"
-		"gpr	_sfr	.32	28	0\n"
-		"gpr	_xdata	.32	32	0\n"
-		"gpr	_pdata	.32	36	0\n";
+		"gpr	_code	.32	20 0\n"
+		"gpr	_idata	.32 24 0\n"
+		"gpr	_sfr	.32	28 0\n"
+		"gpr	_xdata	.32 32 0\n"
+		"gpr	_pdata	.32	36 0\n";
 	return strdup(p);
 }
 

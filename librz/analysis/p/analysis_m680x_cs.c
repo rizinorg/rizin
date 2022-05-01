@@ -517,10 +517,10 @@ fin:
 
 static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
-		"=PC	pc\n"
-		"=SP	sp\n"
-		"=A0	a0\n"
-		"=A1	a1\n"
+		"=PC    pc\n"
+		"=SP    sp\n"
+		"=A0    a0\n"
+		"=A1    a1\n"
 		"gpr	pc	.16	48	0\n"
 		"gpr	sp	.16	48	0\n"
 		"gpr	a0	.16	48	0\n"

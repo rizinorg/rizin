@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 return strdup(
-	"=PC	pc\n"
-	"=SP	r15\n"
-	"=BP	r14\n"
+	"=PC    pc\n"
+	"=SP    r15\n"
+	"=BP    r14\n"
 	"gpr	r0	.32	0	0\n"
 	"gpr	r1	.32	4	0\n"
 	"gpr	r2	.32	8	0\n"
