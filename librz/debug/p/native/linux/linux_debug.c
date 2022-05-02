@@ -3,7 +3,6 @@
 
 #include <rz_userconf.h>
 
-#if DEBUGGER
 #include <rz_debug.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
@@ -1388,5 +1387,3 @@ fail:
 	closedir(dd);
 	return NULL;
 }
-
-#endif

@@ -330,11 +330,11 @@ EXPECT=<<EOF
 3  dbg  esil     LGPL3
 4  ---  gdb      LGPL3
 5  ---  io       MIT
-6  ---  native   LGPL3
-7  ---  null     MIT
-8  ---  rap      LGPL3
-9  ---  winkd    LGPL3
-10  ---  qnx      LGPL3
+6  ---  null     MIT
+7  ---  rap      LGPL3
+8  ---  winkd    LGPL3
+9  ---  qnx      LGPL3
+10  ---  native   LGPL3
 EOF
 RUN
 
@@ -348,11 +348,11 @@ EXPECT=<<EOF
 3  ---  esil     LGPL3
 4  ---  gdb      LGPL3
 5  ---  io       MIT
-6  dbg  native   LGPL3
-7  ---  null     MIT
-8  ---  rap      LGPL3
-9  ---  winkd    LGPL3
-10  ---  qnx      LGPL3
+6  ---  null     MIT
+7  ---  rap      LGPL3
+8  ---  winkd    LGPL3
+9  ---  qnx      LGPL3
+10  dbg  native   LGPL3
 EOF
 RUN
 
@@ -365,12 +365,12 @@ Ldj~{[2]}
 Ldj~{[3]}
 Ldj~{[4]}
 Ldj~{[5]}
-Ldj~{[6].name}
-Ldj~{[6].license}
+Ldj~{[6]}
 Ldj~{[7]}
 Ldj~{[8]}
 Ldj~{[9]}
-Ldj~{[10]}
+Ldj~{[10].name}
+Ldj~{[10].license}
 EOF
 EXPECT=<<EOF
 {"arch":"bf","name":"bf","license":"LGPL3"}
@@ -379,12 +379,12 @@ EXPECT=<<EOF
 {"arch":"any","name":"esil","license":"LGPL3"}
 {"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2","name":"gdb","license":"LGPL3"}
 {"arch":"any","name":"io","license":"MIT"}
-native
-LGPL3
 {"arch":"any","name":"null","license":"MIT"}
 {"arch":"any","name":"rap","license":"LGPL3"}
 {"arch":"x86","name":"winkd","license":"LGPL3"}
 {"arch":"x86,arm","name":"qnx","license":"LGPL3"}
+native
+LGPL3
 EOF
 RUN
 
