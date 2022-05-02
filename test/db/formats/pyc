@@ -1,3 +1,19 @@
+NAME=pyc load version39
+FILE=bins/pyc/py39.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.9.0 VM (rev 3a819e5c9d3feae85762ae87cebf55f9c8d2b526)
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
 NAME=pyc load version38
 FILE=bins/pyc/py38.pyc
 CMDS=<<EOF
@@ -62,7 +78,7 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc symbols
+NAME=pyc 3.7 symbols
 FILE=bins/pyc/py37.pyc
 CMDS=<<EOF
 is~?Human
@@ -78,7 +94,7 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc sections
+NAME=pyc 3.9 sections
 FILE=bins/pyc/py37.pyc
 CMDS=<<EOF
 iS~Bat
@@ -100,7 +116,29 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc maps
+NAME=pyc 3.7 sections
+FILE=bins/pyc/py37.pyc
+CMDS=<<EOF
+iS~Bat
+EOF
+EXPECT=<<EOF
+0x00001f0d 0x2a  0x00001f0d 0x2a  0x0   ---- module_.Bat                     
+0x00001f5f 0xa   0x00001f5f 0xa   0x0   ---- module_.Bat.__init              
+0x00001fca 0x8   0x00001fca 0x8   0x0   ---- module_.Bat.say                 
+0x00002037 0x4   0x00002037 0x4   0x0   ---- module_.Bat.sonar               
+0x00002103 0x1c  0x00002103 0x1c  0x0   ---- module_.Batman                  
+0x00002143 0x44  0x00002143 0x44  0x0   ---- module_.Batman.__init           
+0x00002235 0x4   0x00002235 0x4   0x0   ---- module_.Batman.sing             
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=pyc 3.7 maps
 FILE=bins/pyc/py37.pyc
 CMDS=<<EOF
 oml
@@ -110,7 +148,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pyc entry
+NAME=pyc 3.7 entry
 FILE=bins/pyc/py37.pyc
 CMDS=<<EOF
 ie~program
@@ -126,7 +164,37 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc disasm
+NAME=pyc 3.9 disasm
+FILE=bins/pyc/py39.pyc
+CMDS=<<EOF
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section.module:
+            ;-- <module>:
+            0x0000002e      LOAD_CONST Multiline strings can be written
+    using three "s, and are often used
+    as documentation. ; [00] ---- section size 3248 named module
+            0x00000030      STORE_NAME             __doc__
+            0x00000032      LOAD_CONST                True
+        ,=< 0x00000034      JUMP_IF_FALSE_OR_POP                  10
+        |   0x00000036      LOAD_CONST               False
+        `-> 0x00000038      POP_TOP
+            0x0000003a      LOAD_CONST               False
+        ,=< 0x0000003c      JUMP_IF_TRUE_OR_POP                  18
+        |   0x0000003e      LOAD_CONST                True
+        `-> 0x00000040      POP_TOP
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=pyc 3.7 disasm
 FILE=bins/pyc/py37.pyc
 CMDS=<<EOF
 pd 10
