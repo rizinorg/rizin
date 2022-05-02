@@ -2611,8 +2611,6 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_clone_type(RzAnalysis *analysis, 
  */
 RZ_API RZ_OWN RzCallable *rz_analysis_function_create_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
 	// TODO: Figure out if we should use shortname or a fullname here
-	// At this point the `callable` pointer is *owned*
-	// This means we have to free it after
 	RzCallable *callable = rz_type_func_new(analysis->typedb, f->name, NULL);
 	if (!callable) {
 		return NULL;
