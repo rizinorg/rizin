@@ -2610,6 +2610,9 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_clone_type(RzAnalysis *analysis, 
  * \param f Function to update
  */
 RZ_API RZ_OWN RzCallable *rz_analysis_function_create_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
+	// TODO: Figure out if we should use shortname or a fullname here
+	// At this point the `callable` pointer is *owned*
+	// This means we have to free it after
 	RzCallable *callable = rz_type_func_new(analysis->typedb, f->name, NULL);
 	if (!callable) {
 		return NULL;
@@ -2662,6 +2665,7 @@ RZ_API bool rz_analysis_function_derive_args(RzAnalysis *analysis, RzAnalysisFun
 			rz_pvector_free(args);
 			rz_type_callable_free(*callable);
 			RZ_LOG_ERROR("Cannot parse function's argument type\n");
+			rz_warn_if_reached();
 			return false;
 		}
 		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, cloned_type);
@@ -2669,6 +2673,7 @@ RZ_API bool rz_analysis_function_derive_args(RzAnalysis *analysis, RzAnalysisFun
 			rz_pvector_free(args);
 			rz_type_callable_free(*callable);
 			RZ_LOG_ERROR("Cannot create callable argument\n");
+			rz_warn_if_reached();
 			return false;
 		}
 		rz_type_callable_arg_add(*callable, arg);
