@@ -2572,6 +2572,15 @@ RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_types_from_fcn(RzAnalysis *analys
 	return uniq;
 }
 
+/**
+ * \brief Clones the RzCallable type for the given function
+ *
+ * Searches the types database for the given function and
+ * returns a clone of the RzCallable type.
+ *
+ * \param analysis RzAnalysis instance
+ * \param f Function to update
+ */
 RZ_API RZ_OWN RzCallable *rz_analysis_function_clone_type(RzAnalysis *analysis, const RzAnalysisFunction *f) {
 	rz_return_val_if_fail(analysis && f, NULL);
 	// Check first if there is a match with some pre-existing RzCallable type in the database
@@ -2595,11 +2604,10 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_clone_type(RzAnalysis *analysis, 
  * \brief Creates the RzCallable type for the given function
  *
  * Creates the RzCallable type for the given function
- * by searching in the types database and returns it.
+ * by searching in the types database and returning it.
  *
  * \param analysis RzAnalysis instance
  * \param f Function to update
- * \param callable A function type
  */
 RZ_API RZ_OWN RzCallable *rz_analysis_function_create_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
 	// TODO: Figure out if we should use shortname or a fullname here
@@ -2622,7 +2630,7 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_create_type(RzAnalysis *analysis,
  * \param f Function to update
  * \param callable A function type
  */
-RZ_API RZ_OWN void rz_analysis_function_derive_return_type(RzAnalysisFunction *f, RzCallable **callable) {
+RZ_API void rz_analysis_function_derive_return_type(RzAnalysisFunction *f, RzCallable **callable) {
 	if (f->ret_type) {
 		(*callable)->ret = rz_type_clone(f->ret_type);
 	}
@@ -2639,7 +2647,7 @@ RZ_API RZ_OWN void rz_analysis_function_derive_return_type(RzAnalysisFunction *f
  * \param f Function to update
  * \param callable A function type
  */
-RZ_API RZ_OWN bool rz_analysis_function_derive_args(RzAnalysis *analysis, RzAnalysisFunction *f, RzCallable **callable) {
+RZ_API bool rz_analysis_function_derive_args(RzAnalysis *analysis, RzAnalysisFunction *f, RzCallable **callable) {
 	RzPVector *args = rz_analysis_function_args(analysis, f);
 	if (!args || rz_pvector_empty(args)) {
 		rz_pvector_free(args);
