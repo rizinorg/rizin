@@ -64,13 +64,14 @@ bin_xtr_plugins = [
 ]
 
 rz_bin_sources = [
+  'bfile.c',
   'bin.c',
   'bin_language.c',
+  'bobj.c',
   'dbginfo.c',
   'dwarf.c',
   'filter.c',
-  'bfile.c',
-  'bobj.c',
+  'golang.c',
   'relocs_patch.c',
   'p/bin_any.c',
   'p/bin_art.c',

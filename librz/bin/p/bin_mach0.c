@@ -501,7 +501,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 		ret->lang = bin->lang;
 	}
 	ret->intrp = rz_str_dup(NULL, MACH0_(get_intrp)(bf->o->bin_obj));
-	ret->compiler = rz_str_dup(NULL, "");
+	ret->compiler = rz_bin_file_golang_compiler(bf);
+	if (ret->compiler) {
+		ret->lang = "go";
+	} else {
+		ret->compiler = rz_str_dup(NULL, "");
+	}
 	ret->rclass = strdup("mach0");
 	ret->os = strdup(MACH0_(get_os)(bf->o->bin_obj));
 	ret->subsystem = strdup("darwin");
@@ -519,6 +524,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie)(bf->o->bin_obj);
 	ret->has_nx = MACH0_(has_nx)(bf->o->bin_obj);
+
 	return ret;
 }
 

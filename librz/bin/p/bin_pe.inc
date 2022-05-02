@@ -267,7 +267,7 @@ static bool is_go_pclntab(ut8 *magic) {
 }
 
 static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
-	ut8 magic[8];
+	ut8 magic[16];
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	struct rz_bin_pe_section_t *sections = bin->sections;
 	if (!sections) {
@@ -631,7 +631,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (is_vb6(bf)) {
 		ret->lang = "vb";
 	}
-	if (find_go_pclntab(bf, NULL, NULL)) {
+
+	ret->compiler = rz_bin_file_golang_compiler(bf);
+	if (ret->compiler) {
 		ret->lang = "go";
 	}
 	if (PE_(rz_bin_pe_is_dll)(bf->o->bin_obj)) {
