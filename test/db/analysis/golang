@@ -124,7 +124,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-13274
+13273
 EOF
 RUN
 
@@ -184,7 +184,7 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-14815
+14828
 EOF
 RUN
 
@@ -195,6 +195,7 @@ aang
 fl~sym.go.~?
 pdfs @ sym.go.runtime.panicwrap ~str.
 izq~?
+iI~compiler
 EOF
 EXPECT=<<EOF
 1429
@@ -202,6 +203,7 @@ EXPECT=<<EOF
 0x100006e48 str.called_using_nil
 0x100006e64 str.pointer
 13
+compiler go1.18 (cmd -compiler=gc CGO_ENABLED=1 CGO_CFLAGS= CGO_CPPFLAGS= CGO_CXXFLAGS= CGO_LDFLAGS= GOARCH=arm64 GOOS=darwin)
 EOF
 RUN
 
@@ -212,10 +214,20 @@ aang
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
+iI~compiler
 EOF
 EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
 9032
+compiler go1.15
+EOF
+RUN
+
+NAME=Parse Golang 1.18 BuildInfo ELF
+FILE=bins/golang/GoReSym_118_tip_stripped
+CMDS=iI~compiler
+EXPECT=<<EOF
+compiler devel go1.18-2d1d548 Tue Dec 21 03:55:43 2021 +0000 (path github.com/stevemk14ebr/GoReSym mod github.com/stevemk14ebr/GoReSym (devel)  dep golang.org/x/arch v0.0.0-20201008161808-52c3e6f60cff h1:XmKBi9R6duxOB3lfc72wyrwiOY7X2Jl1wuI+RFOyMDE= -compiler=gc -ldflags=-s -w CGO_ENABLED=1 CGO_CFLAGS= CGO_CPPFLAGS= CGO_CXXFLAGS= CGO_LDFLAGS= GOARCH=amd64 GOOS=linux GOAMD64=v1 vcs=git vcs.revision=4bd670890aee5a14e36be1a72d19ca8573f2433b vcs.time=2021-12-06T17:40:21Z vcs.modified=true)
 EOF
 RUN

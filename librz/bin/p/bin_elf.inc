@@ -1726,6 +1726,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	lookup_sections(bf, ret);
 	lookup_symbols(bf, ret);
+
+	if (RZ_STR_ISEMPTY(ret->compiler)) {
+		free(ret->compiler);
+		ret->compiler = rz_bin_file_golang_compiler(bf);
+		if (ret->compiler) {
+			ret->lang = "go";
+		}
+	}
 	return ret;
 }
 
