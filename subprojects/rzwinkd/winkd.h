@@ -168,5 +168,4 @@ int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const
 void winkd_break(void *ctx);
 bool winkd_lock_enter(KdCtx *ctx);
 bool winkd_lock_leave(KdCtx *ctx);
-bool winkd_lock_tryenter(KdCtx *ctx);
 #endif
