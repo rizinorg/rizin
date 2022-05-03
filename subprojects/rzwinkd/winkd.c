@@ -237,7 +237,7 @@ static int do_io_reply(KdCtx *ctx, kd_packet_t *pkt) {
 	};
 	id = pkt->id;
 	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_FILE_IO,
-		(ctx->seq_id ^= 1), (uint8_t *)&ioc, sizeof(kd_ioc_t), NULL, 0);
+		ctx->seq_id, (uint8_t *)&ioc, sizeof(kd_ioc_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
@@ -326,6 +326,7 @@ int winkd_wait_packet(KdCtx *ctx, const uint32_t type, kd_packet_t **p) {
 			case KD_PACKET_TYPE_ACKNOWLEDGE:
 				RZ_LOG_DEBUG("ACK received\n");
 				if (type == KD_PACKET_TYPE_ACKNOWLEDGE) {
+					ctx->seq_id ^= 1;
 					free(pkt);
 					return KD_E_OK;
 				}
@@ -873,7 +874,7 @@ static bool winkd_send_state_manipulate_req(KdCtx *ctx, kd_req_t *req, const ut8
 	}
 	do {
 		ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-			(ctx->seq_id ^= 1), (uint8_t *)req, sizeof(kd_req_t), buf, buf_len);
+			ctx->seq_id, (uint8_t *)req, sizeof(kd_req_t), buf, buf_len);
 		if (ret != KD_E_OK) {
 			break;
 		}
@@ -1024,7 +1025,7 @@ int winkd_sync(KdCtx *ctx) {
 	}
 
 	// Reset the sequence id
-	ctx->seq_id = 0x80800001;
+	ctx->seq_id = KD_INITIAL_PACKET_ID;
 
 	kd_stc_64 *stc64 = (kd_stc_64 *)s->data;
 	ctx->cpu = stc64->cpu;
