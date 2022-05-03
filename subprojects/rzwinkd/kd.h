@@ -192,6 +192,15 @@ RZ_PACKED(
 					uint64_t ex_addr;
 				})
 			exception;
+			RZ_PACKED(
+				struct {
+					uint64_t pathsize;
+					uint64_t base;
+					uint64_t unknown;
+					uint32_t checksum;
+					uint32_t size;
+				})
+			load_symbols;
 		};
 	})
 kd_stc_64;
