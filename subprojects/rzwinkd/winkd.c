@@ -206,6 +206,7 @@ void winkd_kdctx_free(KdCtx **ctx) {
 	RZ_FREE(desc);
 	rz_th_lock_free((*ctx)->dontmix);
 	winkd_ctx_fini(&(*ctx)->windctx);
+	free((*ctx)->kernel_module.name);
 	RZ_FREE(*ctx);
 }
 
@@ -307,6 +308,11 @@ int winkd_wait_packet(KdCtx *ctx, const uint32_t type, kd_packet_t **p) {
 					char *path = (char *)pkt->data + pkt->length - stc->load_symbols.pathsize;
 					path[stc->load_symbols.pathsize - 1] = 0;
 					RZ_LOG_VERBOSE("        Image     : %s\n", path);
+					if (rz_str_endswith(path, "\\ntoskrnl.exe")) {
+						ctx->kernel_module.addr = stc->load_symbols.base;
+						ctx->kernel_module.size = stc->load_symbols.size;
+						ctx->kernel_module.name = strdup(path);
+					}
 				}
 			} else if (stc->state == DbgKdCommandStringStateChange) {
 				RZ_LOG_VERBOSE("CommandString\n");
