@@ -6,9 +6,6 @@
 #include <sdb.h>
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%" PFMT64u
-#ifndef SIGKILL
-#define SIGKILL 9
-#endif
 
 #include "rz_heap_glibc.h"
 
@@ -40,6 +37,7 @@ static const char *help_msg_d[] = {
 	"dk", "[?]", "List, send, get, set, signal handlers of child",
 	"dL", "[?]", "List or set debugger handler",
 	"dm", "[?]", "Show memory maps",
+	"do", "[?]", "Open process (reload, alias for 'oo')",
 	"doc", "", "Close debug session",
 	"dp", "[?]", "List, attach to process or thread id",
 	"dr", "[?]", "Cpu registers",
@@ -142,15 +140,6 @@ static const char *help_msg_dmi[] = {
 	NULL
 };
 
-static const char *help_msg_do[] = {
-	"Usage:", "do", " # Debug (re)open commands",
-	"dor", " [rz-run]", "Comma separated list of k=v rz-run profile options (e dbg.profile)",
-	"doe", "", "Show rz-run startup profile",
-	"doe!", "", "Edit rz-run startup profile with $EDITOR",
-	"doc", "", "Close debug session",
-	NULL
-};
-
 static const char *help_msg_dp[] = {
 	"Usage:", "dp", " # Process commands",
 	"dp", "", "List current pid and children",
@@ -235,12 +224,13 @@ struct trace_node {
 };
 
 // XXX those tmp files are never removed and we shuoldnt use files for this
-static void setRarunProfileString(RzCore *core, const char *str) {
-	char *file = rz_file_temp("rz-run");
-	char *s = strdup(str);
-	rz_config_set(core->config, "dbg.profile", file);
-	rz_str_replace_char(s, ',', '\n');
-	rz_file_dump(file, (const ut8 *)s, strlen(s), 0);
+static void set_profile_string(RzCore *core, const char *str) {
+	char *file = strdup(rz_config_get(core->config, "dbg.profile"));
+	if (RZ_STR_ISEMPTY(file)) {
+		file = rz_file_temp("rz-run");
+		rz_config_set(core->config, "dbg.profile", file);
+	}
+	rz_file_dump(file, (const ut8 *)str, (int)strlen(str), 0);
 	rz_file_dump(file, (const ut8 *)"\n", 1, 1);
 	free(file);
 }
@@ -3821,37 +3811,40 @@ RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
 }
 
 // dor
-RZ_IPI int rz_cmd_debug_process_dor(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input && input[0] == '?') {
-		rz_core_cmd_help(core, help_msg_do);
-		return 0;
-	}
-	if (input) {
-		setRarunProfileString(core, input);
-	} else {
-		// TODO use the api
-		rz_sys_xsystem("rz-run -h");
-	}
-	return 0;
-}
-
-// doe
 RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, const char **argv) {
-	if (core->io->envprofile) {
-		rz_cons_println(core->io->envprofile);
+	RzList *list = rz_list_new();
+	int i;
+	for (i = 1; i < argc; i++) {
+		RzList *l = rz_str_split_duplist_n(argv[i], "=", 1, false);
+		if (!l) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		size_t llen = rz_list_length(l);
+		if (llen < 2) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		char *key = rz_list_get_n(l, 0);
+		char *val = rz_list_get_n(l, 1);
+		if (RZ_STR_ISEMPTY(key) || RZ_STR_ISEMPTY(val)) {
+			RZ_LOG_ERROR("Make sure to use the format <key>=<value> without spaces.\n");
+			continue;
+		}
+		rz_list_append(list, (void *)argv[i]);
+		rz_list_free(l);
 	}
+	set_profile_string(core, rz_list_to_str(list, '\n'));
 	return RZ_CMD_STATUS_OK;
 }
 
-// doe!
+// doe
 RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int argc, const char **argv) {
 	char *out = rz_core_editor(core, NULL, core->io->envprofile);
-	if (out) {
-		free(core->io->envprofile);
-		core->io->envprofile = out;
-		rz_cons_printf("%s\n", core->io->envprofile);
+	if (!out) {
+		return RZ_CMD_STATUS_ERROR;
 	}
+	free(core->io->envprofile);
+	core->io->envprofile = out;
+	rz_cons_printf("%s\n", core->io->envprofile);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3861,7 +3854,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, co
 		RZ_LOG_ERROR("No open debug session\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	return rz_core_debug_process_close(core) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return bool2status(rz_core_debug_process_close(core));
 }
 
 #define CMD_REGS_PREFIX   debug

@@ -316,14 +316,14 @@ commands:
     summary: Debug (re)open commands
     subcommands:
       - name: dor
-        summary: Comma separated list of k=v rz-run profile options (e dbg.profile)
-        cname: cmd_debug_process_dor
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
-      - name: doe
-        summary: Show rz-run startup profile
+        summary: Set rz-run profile options (e dbg.profile)
         cname: cmd_debug_process_profile
-        args: []
-      - name: doe!
+        args_str: " [<key>=<val> [<key>=<val> ...]]"
+        args:
+          - name: key=val
+            type: RZ_CMD_ARG_TYPE_EVAL_FULL
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+      - name: doe
         summary: Edit rz-run startup profile with $EDITOR
         cname: cmd_debug_process_profile_edit
         args: []

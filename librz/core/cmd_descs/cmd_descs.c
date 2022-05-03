@@ -274,6 +274,7 @@ static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[3];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
+static const RzCmdDescArg cmd_debug_process_profile_args[2];
 static const RzCmdDescArg cmd_debug_step_until_args[2];
 static const RzCmdDescArg cmd_debug_step_until_instr_args[2];
 static const RzCmdDescArg cmd_debug_step_until_instr_regex_args[2];
@@ -5962,15 +5963,18 @@ static const RzCmdDescHelp cmd_debug_continue_until_help = {
 static const RzCmdDescHelp do_help = {
 	.summary = "Debug (re)open commands",
 };
-static const RzCmdDescHelp cmd_debug_process_dor_help = {
-	.summary = "Comma separated list of k=v rz-run profile options (e dbg.profile)",
-};
-
 static const RzCmdDescArg cmd_debug_process_profile_args[] = {
+	{
+		.name = "key=val",
+		.type = RZ_CMD_ARG_TYPE_EVAL_FULL,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_process_profile_help = {
-	.summary = "Show rz-run startup profile",
+	.summary = "Set rz-run profile options (e dbg.profile)",
+	.args_str = " [<key>=<val> [<key>=<val> ...]]",
 	.args = cmd_debug_process_profile_args,
 };
 
@@ -14781,13 +14785,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *do_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "do", NULL, NULL, &do_help);
 	rz_warn_if_fail(do_cd);
-	RzCmdDesc *cmd_debug_process_dor_cd = rz_cmd_desc_oldinput_new(core->rcmd, do_cd, "dor", rz_cmd_debug_process_dor, &cmd_debug_process_dor_help);
-	rz_warn_if_fail(cmd_debug_process_dor_cd);
-
-	RzCmdDesc *cmd_debug_process_profile_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doe", rz_cmd_debug_process_profile_handler, &cmd_debug_process_profile_help);
+	RzCmdDesc *cmd_debug_process_profile_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "dor", rz_cmd_debug_process_profile_handler, &cmd_debug_process_profile_help);
 	rz_warn_if_fail(cmd_debug_process_profile_cd);
 
-	RzCmdDesc *cmd_debug_process_profile_edit_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doe!", rz_cmd_debug_process_profile_edit_handler, &cmd_debug_process_profile_edit_help);
+	RzCmdDesc *cmd_debug_process_profile_edit_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doe", rz_cmd_debug_process_profile_edit_handler, &cmd_debug_process_profile_edit_help);
 	rz_warn_if_fail(cmd_debug_process_profile_edit_cd);
 
 	RzCmdDesc *cmd_debug_process_close_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doc", rz_cmd_debug_process_close_handler, &cmd_debug_process_close_help);
