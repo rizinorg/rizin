@@ -496,6 +496,14 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 		REBASE_PADDR(o, o->strings, RzBinString);
 	}
 
+	if (o->info && RZ_STR_ISEMPTY(o->info->compiler)) {
+		free(o->info->compiler);
+		o->info->compiler = rz_bin_file_golang_compiler(bf);
+		if (o->info->compiler) {
+			o->info->lang = "go";
+		}
+	}
+
 	o->lang = rz_bin_language_detect(bf);
 
 	if (bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES)) {
