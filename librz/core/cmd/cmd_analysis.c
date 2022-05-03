@@ -6851,7 +6851,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_create_handler(RzCore *core, int argc, c
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc == 4) {
-		switch (argv[3][0])	{
+		switch (argv[3][0]) {
 		case 'm':
 			diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
 			break;
