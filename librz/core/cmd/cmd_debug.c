@@ -3660,7 +3660,7 @@ RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
 
 // ds
 RZ_IPI RzCmdStatus rz_cmd_debug_step_handler(RzCore *core, int argc, const char **argv) {
-	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
+	const int times = (int)rz_num_math(core->num, argv[1]);
 	bool ret = rz_core_debug_step_one(core, times);
 	rz_core_dbg_follow_seek_register(core);
 	return bool2status(ret);
@@ -3669,7 +3669,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_handler(RzCore *core, int argc, const char 
 // dsb
 RZ_IPI RzCmdStatus rz_cmd_debug_step_back_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
-	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
+	const int times = (int)rz_num_math(core->num, argv[1]);
 	bool ret = rz_core_debug_step_back(core, times);
 	rz_core_dbg_follow_seek_register(core);
 	return bool2status(ret);
@@ -3682,6 +3682,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_frame_handler(RzCore *core, int argc, const
 	rz_core_dbg_follow_seek_register(core);
 	return bool2status(ret);
 }
+
 // dsi
 RZ_IPI RzCmdStatus rz_cmd_debug_step_cond_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
@@ -3708,7 +3709,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_cond_handler(RzCore *core, int argc, const 
 // dsl
 RZ_IPI RzCmdStatus rz_cmd_debug_step_line_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
-	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
+	const int times = (int)rz_num_math(core->num, argv[1]);
 	rz_reg_arena_swap(core->dbg->reg, true);
 	bool ret = step_line(core, times);
 	rz_core_dbg_follow_seek_register(core);
@@ -3718,7 +3719,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_line_handler(RzCore *core, int argc, const 
 // dso
 RZ_IPI RzCmdStatus rz_cmd_debug_step_over_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
-	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
+	const int times = (int)rz_num_math(core->num, argv[1]);
 	bool ret = rz_core_debug_step_over(core, times);
 	rz_core_dbg_follow_seek_register(core);
 	return bool2status(ret);
@@ -3727,7 +3728,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_over_handler(RzCore *core, int argc, const 
 // dsp
 RZ_IPI RzCmdStatus rz_cmd_debug_step_prog_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
-	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
+	const int times = (int)rz_num_math(core->num, argv[1]);
 	rz_reg_arena_swap(core->dbg->reg, true);
 	ut8 buf[64];
 	for (int i = 0; i < times; i++) {
@@ -3754,7 +3755,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_prog_handler(RzCore *core, int argc, const 
 // dss
 RZ_IPI RzCmdStatus rz_cmd_debug_step_skip_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
-	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
+	const int times = (int)rz_num_math(core->num, argv[1]);
 	bool ret = rz_core_debug_step_skip(core, times);
 	rz_core_dbg_follow_seek_register(core);
 	return bool2status(ret);
