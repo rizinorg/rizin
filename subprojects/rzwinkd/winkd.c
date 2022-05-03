@@ -948,7 +948,7 @@ bool winkd_read_ver(KdCtx *ctx) {
 		return false;
 	}
 
-	ctx->windctx.is_64bit = (rr->rz_ver.machine == KD_MACH_AMD64);
+	ctx->windctx.is_64bit = rr->rz_ver.flags & DBGKD_VERS_FLAG_PTR64;
 
 	ut64 ptr = 0;
 	if (!winkd_read_at(ctx, rr->rz_ver.dbg_addr, (uint8_t *)&ptr, 4 << ctx->windctx.is_64bit)) {
