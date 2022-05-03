@@ -491,6 +491,10 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 	return true;
 }
 
+/**
+ * \brief Seek to `PC` if needed
+ * \param core The RzCore instance
+ */
 RZ_API void rz_core_dbg_follow_seek_register(RzCore *core) {
 	ut64 follow = rz_config_get_i(core->config, "dbg.follow");
 	if (follow <= 0) {
@@ -2451,23 +2455,23 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				RzBuffer *buf = rz_core_syscallf(core, "write", "%d, 0x%" PFMT64x ", %d", fd, off, (int)len);
 				consumeBuffer(buf, "dx ", "Cannot write");
 			}
-		} break;
+			break;
+		}
 		case '-': // "dd-"
-			  // close file
 		{
 			int fd = atoi(input + 2);
 			// rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, input + 2));
 			RzBuffer *buf = rz_core_syscallf(core, "close", "%d", fd);
 			consumeBuffer(buf, "dx ", "Cannot close");
-		} break;
+			break;
+		}
 		case ' ': // "dd"
-			  // TODO: handle read, readwrite, append
 		{
+			// TODO: handle read, readwrite, append
 			RzBuffer *buf = rz_core_syscallf(core, "open", "%s, %d, %d", input + 2, 2, 0644);
 			consumeBuffer(buf, "dx ", "Cannot open");
+			break;
 		}
-		// open file
-		break;
 		case '?':
 		default:
 			rz_core_cmd_help(core, help_msg_dd);
