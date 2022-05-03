@@ -17,14 +17,6 @@
 #define O_(n)        ctx->profile->f[n]
 #include "profiles.h"
 
-#define LOG_REQ(r) \
-	{ \
-		RZ_LOG_DEBUG("Request : %08x\nProcessor : %08x\nReturn : %08x\n", \
-			(r)->req, \
-			(r)->cpu, \
-			(r)->ret); \
-	}
-
 #define KOBJECT_PROCESS 3
 #define KOBJECT_THREAD  6
 
@@ -503,7 +495,7 @@ int winkd_op_at_uva(WindCtx *ctx, ut64 address, uint8_t *buf, int count, bool wr
 		ut64 pa;
 		const ut32 restOfPage = 0x1000 - (address & 0xfff);
 		if (!winkd_va_to_pa(ctx, ctx->target.dir_base_table, address, &pa)) {
-			RZ_LOG_DEBUG("0x%" PFMT64x " not mapped\n", address);
+			RZ_LOG_VERBOSE("0x%" PFMT64x " not mapped\n", address);
 			if (UT64_ADD_OVFCHK(address, restOfPage)) {
 				break;
 			}
