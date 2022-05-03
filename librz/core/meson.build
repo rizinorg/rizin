@@ -37,6 +37,7 @@ rz_core_sources = [
   'csign.c',
   'ctypes.c',
   'cvfile.c',
+  'csyscall.c',
   'disasm.c',
   'fortune.c',
   'gdiff.c',

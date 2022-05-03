@@ -296,19 +296,6 @@ static const char *help_msg_agn[] = {
 	NULL
 };
 
-static const char *help_msg_as[] = {
-	"Usage: as[ljk?]", "", "syscall name <-> number utility",
-	"as", "", "show current syscall and arguments",
-	"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
-	"asc[a]", " 4", "dump syscall info in .asm or .h",
-	"asj", "", "list of syscalls in JSON",
-	"asl", "", "list of syscalls by asm.os and asm.arch",
-	"asl", " close", "returns the syscall number for close",
-	"asl", " 4", "returns the name of the syscall number 4",
-	"ask", " [query]", "perform syscall/ queries",
-	NULL
-};
-
 /**
  * \brief Helper to get function in \p offset
  *
@@ -583,86 +570,6 @@ static void cmd_analysis_trampoline(RzCore *core, const char *input) {
 	}
 }
 
-static const char *syscallNumber(int n) {
-	return sdb_fmt(n > 1000 ? "0x%x" : "%d", n);
-}
-
-RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
-	int i;
-	char str[64];
-	st64 N = n;
-	int defVector = rz_syscall_get_swi(core->analysis->syscall);
-	if (defVector > 0) {
-		n = -1;
-	}
-	if (n == -1 || defVector > 0) {
-		n = (int)rz_core_reg_getv_by_role_or_name(core, "oeax");
-		if (!n || n == -1) {
-			const char *a0 = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
-			n = (a0 == NULL) ? -1 : (int)rz_core_reg_getv_by_role_or_name(core, a0);
-		}
-	}
-	RzSyscallItem *item = rz_syscall_get(core->analysis->syscall, n, defVector);
-	if (!item) {
-		item = rz_syscall_get(core->analysis->syscall, N, -1);
-	}
-	if (!item) {
-		return rz_str_newf("%s = unknown ()", syscallNumber(n));
-	}
-	char *res = rz_str_newf("%s = %s (", syscallNumber(item->num), item->name);
-	// TODO: move this to rz_syscall
-	const char *cc = rz_analysis_syscc_default(core->analysis);
-	// TODO replace the hardcoded CC with the sdb ones
-	for (i = 0; i < item->args; i++) {
-		// XXX this is a hack to make syscall args work on x86-32 and x86-64
-		// we need to shift sn first.. which is bad, but needs to be redesigned
-		int regidx = i;
-		if (core->rasm->bits == 32 && core->rasm->cur && !strcmp(core->rasm->cur->arch, "x86")) {
-			regidx++;
-		}
-		ut64 arg = rz_core_arg_get(core, cc, regidx); // TODO here
-		// rz_cons_printf ("(%d:0x%"PFMT64x")\n", i, arg);
-		if (item->sargs) {
-			switch (item->sargs[i]) {
-			case 'p': // pointer
-				res = rz_str_appendf(res, "0x%08" PFMT64x "", arg);
-				break;
-			case 'i':
-				res = rz_str_appendf(res, "%" PFMT64u "", arg);
-				break;
-			case 'z':
-				memset(str, 0, sizeof(str));
-				rz_io_read_at(core->io, arg, (ut8 *)str, sizeof(str) - 1);
-				rz_str_filter(str);
-				res = rz_str_appendf(res, "\"%s\"", str);
-				break;
-			case 'Z': {
-				// TODO replace the hardcoded CC with the sdb ones
-				ut64 len = rz_core_arg_get(core, cc, i + 2);
-				len = RZ_MIN(len + 1, sizeof(str) - 1);
-				if (len == 0) {
-					len = 16; // override default
-				}
-				(void)rz_io_read_at(core->io, arg, (ut8 *)str, len);
-				str[len] = 0;
-				rz_str_filter(str);
-				res = rz_str_appendf(res, "\"%s\"", str);
-			} break;
-			default:
-				res = rz_str_appendf(res, "0x%08" PFMT64x "", arg);
-				break;
-			}
-		} else {
-			res = rz_str_appendf(res, "0x%08" PFMT64x "", arg);
-		}
-		if (i + 1 < item->args) {
-			res = rz_str_appendf(res, ", ");
-		}
-	}
-	rz_syscall_item_free(item);
-	return rz_str_appendf(res, ")");
-}
-
 static int mw(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int *ec = (int *)esil->user;
 	*ec += (len * 2);
@@ -688,14 +595,6 @@ static int esil_cost(RzCore *core, ut64 addr, const char *expr) {
 	rz_analysis_esil_parse(e, expr);
 	rz_analysis_esil_free(e);
 	return ec;
-}
-
-static void cmd_syscall_do(RzCore *core, st64 n, ut64 addr) {
-	char *msg = cmd_syscall_dostr(core, n, addr);
-	if (msg) {
-		rz_cons_println(msg);
-		free(msg);
-	}
 }
 
 #define printline(k, fmt, arg) \
@@ -3095,143 +2994,122 @@ RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCom
 	rz_list_free(ranges);
 }
 
-static void cmd_sdbk(Sdb *db, const char *input) {
-	char *out = (input[0] == ' ')
-		? sdb_querys(db, NULL, 0, input + 1)
-		: sdb_querys(db, NULL, 0, "*");
-	if (out) {
-		rz_cons_println(out);
-		free(out);
+RZ_IPI RzCmdStatus rz_analysis_syscall_show_handler(RzCore *core, int argc, const char **argv) {
+	st64 n = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
+	char *sysc = rz_core_syscall_as_string(core, n, core->offset);
+	if (!sysc) {
+		RZ_LOG_ERROR("Cannot resolve syscall: %" PFMT64d "\n", n);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(sysc);
+	free(sysc);
+	return RZ_CMD_STATUS_OK;
+}
+
+static const char *syscallNumber(int n) {
+	return sdb_fmt(n > 1000 ? "0x%x" : "%d", n);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_syscall_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzListIter *iter;
+	RzSyscallItem *si;
+	RzList *list = rz_syscall_list(core->analysis->syscall);
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (list, iter, si) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("%s = 0x%02x.%s\n",
+				si->name, si->swi, syscallNumber(si->num));
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_ks(state->d.pj, "name", si->name);
+			pj_ki(state->d.pj, "swi", si->swi);
+			pj_ki(state->d.pj, "num", si->num);
+			pj_end(state->d.pj);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	rz_list_free(list);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_syscall_name_handler(RzCore *core, int argc, const char **argv) {
+	st64 num = rz_syscall_get_num(core->analysis->syscall, argv[1]);
+	if (num < 1) {
+		RZ_LOG_ERROR("Cannot resolve syscall: %s\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(syscallNumber(num));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_syscall_number_handler(RzCore *core, int argc, const char **argv) {
+	st64 num = rz_num_math(NULL, argv[1]);
+	if (num < 1) {
+		RZ_LOG_ERROR("Cannot resolve syscall: %s\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzSyscallItem *si = rz_syscall_get(core->analysis->syscall, num, -1);
+	if (!si) {
+		RZ_LOG_ERROR("Cannot resolve syscall: %" PFMT64d "\n", num);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(si->name);
+	return RZ_CMD_STATUS_OK;
+}
+
+static void syscall_dump(RzSyscallItem *si, bool is_c) {
+	if (is_c) {
+		rz_cons_printf("#define SYS_%s %s\n", si->name, syscallNumber(si->num));
 	} else {
-		eprintf("|ERROR| Usage: ask [query]\n");
+		rz_cons_printf(".equ SYS_%s %s\n", si->name, syscallNumber(si->num));
 	}
 }
 
-static void cmd_analysis_syscall(RzCore *core, const char *input) {
-	PJ *pj = NULL;
-	RzSyscallItem *si;
-	RzListIter *iter;
-	RzList *list;
-	RzNum *num = NULL;
-	int n;
-
-	switch (input[0]) {
-	case 'c': // "asc"
-		if (input[1] == 'a') {
-			if (input[2] == ' ') {
-				if (!isalpha((ut8)input[3]) && (n = rz_num_math(num, input + 3)) >= 0) {
-					si = rz_syscall_get(core->analysis->syscall, n, -1);
-					if (si) {
-						rz_cons_printf(".equ SYS_%s %s\n", si->name, syscallNumber(n));
-						rz_syscall_item_free(si);
-					} else
-						eprintf("Unknown syscall number\n");
-				} else {
-					n = rz_syscall_get_num(core->analysis->syscall, input + 3);
-					if (n != -1) {
-						rz_cons_printf(".equ SYS_%s %s\n", input + 3, syscallNumber(n));
-					} else {
-						eprintf("Unknown syscall name\n");
-					}
-				}
-			} else {
-				list = rz_syscall_list(core->analysis->syscall);
-				rz_list_foreach (list, iter, si) {
-					rz_cons_printf(".equ SYS_%s %s\n",
-						si->name, syscallNumber(si->num));
-				}
-				rz_list_free(list);
+static RzCmdStatus syscalls_dump(RzCore *core, int argc, const char **argv, bool is_c) {
+	if (argc > 1) {
+		st64 n = rz_num_math(core->num, argv[1]);
+		if (n < 1) {
+			n = rz_syscall_get_num(core->analysis->syscall, argv[1]);
+			if (n == -1) {
+				RZ_LOG_ERROR("Cannot resolve syscall: %s\n", argv[1]);
+				return RZ_CMD_STATUS_ERROR;
 			}
-		} else {
-			if (input[1] == ' ') {
-				if (!isalpha((ut8)input[2]) && (n = rz_num_math(num, input + 2)) >= 0) {
-					si = rz_syscall_get(core->analysis->syscall, n, -1);
-					if (si) {
-						rz_cons_printf("#define SYS_%s %s\n", si->name, syscallNumber(n));
-						rz_syscall_item_free(si);
-					} else
-						eprintf("Unknown syscall number\n");
-				} else {
-					n = rz_syscall_get_num(core->analysis->syscall, input + 2);
-					if (n != -1) {
-						rz_cons_printf("#define SYS_%s %s\n", input + 2, syscallNumber(n));
-					} else {
-						eprintf("Unknown syscall name\n");
-					}
-				}
-			} else {
-				list = rz_syscall_list(core->analysis->syscall);
-				rz_list_foreach (list, iter, si) {
-					rz_cons_printf("#define SYS_%s %s\n",
-						si->name, syscallNumber(si->num));
-				}
-				rz_list_free(list);
-			}
+			rz_cons_printf(".equ SYS_%s %s\n", argv[1], syscallNumber(n));
+			return RZ_CMD_STATUS_OK;
 		}
-		break;
-	case 'k': // "ask"
-		cmd_sdbk(core->analysis->syscall->db, input + 1);
-		break;
-	case 'l': // "asl"
-		if (input[1] == ' ') {
-			if (!isalpha((ut8)input[2]) && (n = rz_num_math(num, input + 2)) >= 0) {
-				si = rz_syscall_get(core->analysis->syscall, n, -1);
-				if (si) {
-					rz_cons_println(si->name);
-					rz_syscall_item_free(si);
-				} else
-					eprintf("Unknown syscall number\n");
-			} else {
-				n = rz_syscall_get_num(core->analysis->syscall, input + 2);
-				if (n != -1) {
-					rz_cons_printf("%s\n", syscallNumber(n));
-				} else {
-					eprintf("Unknown syscall name\n");
-				}
-			}
-		} else {
-			list = rz_syscall_list(core->analysis->syscall);
-			rz_list_foreach (list, iter, si) {
-				rz_cons_printf("%s = 0x%02x.%s\n",
-					si->name, si->swi, syscallNumber(si->num));
-			}
-			rz_list_free(list);
+		RzSyscallItem *si = rz_syscall_get(core->analysis->syscall, n, -1);
+		if (!si) {
+			RZ_LOG_ERROR("Cannot resolve syscall: %" PFMT64d "\n", n);
+			return RZ_CMD_STATUS_ERROR;
 		}
-		break;
-	case 'j': // "asj"
-		pj = pj_new();
-		pj_a(pj);
-		list = rz_syscall_list(core->analysis->syscall);
+		// Workaround until syscalls searching code is fixed
+		si->num = n;
+		syscall_dump(si, is_c);
+		rz_syscall_item_free(si);
+	} else {
+		RzListIter *iter;
+		RzSyscallItem *si;
+		RzList *list = rz_syscall_list(core->analysis->syscall);
 		rz_list_foreach (list, iter, si) {
-			pj_o(pj);
-			pj_ks(pj, "name", si->name);
-			pj_ki(pj, "swi", si->swi);
-			pj_ki(pj, "num", si->num);
-			pj_end(pj);
+			syscall_dump(si, is_c);
 		}
-		pj_end(pj);
-		if (pj) {
-			rz_cons_println(pj_string(pj));
-			pj_free(pj);
-		}
-		break;
-	case '\0': // "as"
-		cmd_syscall_do(core, -1, core->offset);
-		break;
-	case ' ': // "as "
-	{
-		const char *sn = rz_str_trim_head_ro(input + 1);
-		st64 num = rz_syscall_get_num(core->analysis->syscall, sn);
-		if (num < 1) {
-			num = (int)rz_num_get(core->num, sn);
-		}
-		cmd_syscall_do(core, num, -1);
-	} break;
-	default:
-	case '?': // "as?"
-		rz_core_cmd_help(core, help_msg_as);
-		break;
+		rz_list_free(list);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_syscall_dump_assembly_handler(RzCore *core, int argc, const char **argv) {
+	return syscalls_dump(core, argc, argv, false);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_syscall_dump_c_handler(RzCore *core, int argc, const char **argv) {
+	return syscalls_dump(core, argc, argv, true);
 }
 
 static void cmd_analysis_ucall_ref(RzCore *core, ut64 addr) {
@@ -4773,9 +4651,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	} break;
 	case 'g': // "ag"
 		cmd_analysis_graph(core, input + 1);
-		break;
-	case 's': // "as"
-		cmd_analysis_syscall(core, input + 1);
 		break;
 	case '*': // "a*"
 		rz_core_cmd0_rzshell(core, "afl*");

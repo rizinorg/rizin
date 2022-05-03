@@ -4770,7 +4770,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 	}
 	switch (ds->analysis_op.type) {
 	case RZ_ANALYSIS_OP_TYPE_SWI: {
-		char *s = cmd_syscall_dostr(core, ds->analysis_op.val, at);
+		char *s = rz_core_syscall_as_string(core, ds->analysis_op.val, at);
 		if (s) {
 			ds_comment_esil(ds, true, true, "; %s", s);
 			free(s);

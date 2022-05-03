@@ -208,6 +208,11 @@ static const RzCmdDescArg analyze_cycles_args[2];
 static const RzCmdDescArg convert_mne_args[2];
 static const RzCmdDescArg analyse_name_args[2];
 static const RzCmdDescArg analysis_basic_block_find_paths_args[2];
+static const RzCmdDescArg analysis_syscall_show_args[2];
+static const RzCmdDescArg analysis_syscall_dump_assembly_args[2];
+static const RzCmdDescArg analysis_syscall_dump_c_args[2];
+static const RzCmdDescArg analysis_syscall_name_args[2];
+static const RzCmdDescArg analysis_syscall_number_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -4280,6 +4285,88 @@ static const RzCmdDescArg analysis_basic_block_find_paths_args[] = {
 static const RzCmdDescHelp analysis_basic_block_find_paths_help = {
 	.summary = "Find paths from current seek to the given address",
 	.args = analysis_basic_block_find_paths_args,
+};
+
+static const RzCmdDescHelp as_help = {
+	.summary = "Syscalls",
+};
+static const RzCmdDescArg analysis_syscall_show_args[] = {
+	{
+		.name = "syscall",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_syscall_show_help = {
+	.summary = "Show syscall and arguments",
+	.args = analysis_syscall_show_args,
+};
+
+static const RzCmdDescArg analysis_syscall_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_syscall_print_help = {
+	.summary = "List syscalls",
+	.args = analysis_syscall_print_args,
+};
+
+static const RzCmdDescArg analysis_syscall_dump_assembly_args[] = {
+	{
+		.name = "syscall",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_syscall_dump_assembly_help = {
+	.summary = "Dump syscall info into .asm file",
+	.args = analysis_syscall_dump_assembly_args,
+};
+
+static const RzCmdDescArg analysis_syscall_dump_c_args[] = {
+	{
+		.name = "syscall",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_syscall_dump_c_help = {
+	.summary = "Dump syscall info into .h file",
+	.args = analysis_syscall_dump_c_args,
+};
+
+static const RzCmdDescArg analysis_syscall_name_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_syscall_name_help = {
+	.summary = "Returns the syscall number by the name",
+	.args = analysis_syscall_name_args,
+};
+
+static const RzCmdDescArg analysis_syscall_number_args[] = {
+	{
+		.name = "number",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_syscall_number_help = {
+	.summary = "Returns the syscall name by the number",
+	.args = analysis_syscall_number_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -14354,6 +14441,24 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_basic_block_find_paths_cd = rz_cmd_desc_argv_state_new(core->rcmd, ab_cd, "abt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_basic_block_find_paths_handler, &analysis_basic_block_find_paths_help);
 	rz_warn_if_fail(analysis_basic_block_find_paths_cd);
+
+	RzCmdDesc *as_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "as", rz_analysis_syscall_show_handler, &analysis_syscall_show_help, &as_help);
+	rz_warn_if_fail(as_cd);
+	RzCmdDesc *analysis_syscall_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, as_cd, "asl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_syscall_print_handler, &analysis_syscall_print_help);
+	rz_warn_if_fail(analysis_syscall_print_cd);
+	rz_cmd_desc_set_default_mode(analysis_syscall_print_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *analysis_syscall_dump_assembly_cd = rz_cmd_desc_argv_new(core->rcmd, as_cd, "asca", rz_analysis_syscall_dump_assembly_handler, &analysis_syscall_dump_assembly_help);
+	rz_warn_if_fail(analysis_syscall_dump_assembly_cd);
+
+	RzCmdDesc *analysis_syscall_dump_c_cd = rz_cmd_desc_argv_new(core->rcmd, as_cd, "asc", rz_analysis_syscall_dump_c_handler, &analysis_syscall_dump_c_help);
+	rz_warn_if_fail(analysis_syscall_dump_c_cd);
+
+	RzCmdDesc *analysis_syscall_name_cd = rz_cmd_desc_argv_new(core->rcmd, as_cd, "asn", rz_analysis_syscall_name_handler, &analysis_syscall_name_help);
+	rz_warn_if_fail(analysis_syscall_name_cd);
+
+	RzCmdDesc *analysis_syscall_number_cd = rz_cmd_desc_argv_new(core->rcmd, as_cd, "asr", rz_analysis_syscall_number_handler, &analysis_syscall_number_help);
+	rz_warn_if_fail(analysis_syscall_number_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);

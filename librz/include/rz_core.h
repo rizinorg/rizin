@@ -1027,8 +1027,7 @@ RZ_API void rz_core_analysis_stats_free(RzCoreAnalStats *s);
 RZ_API int rz_line_hist_offset_up(RzLine *line);
 RZ_API int rz_line_hist_offset_down(RzLine *line);
 
-// TODO : move into debug or syscall++
-RZ_API char *cmd_syscall_dostr(RzCore *core, st64 num, ut64 addr);
+RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 num, ut64 addr);
 
 /* tasks */
 
