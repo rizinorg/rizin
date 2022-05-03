@@ -3660,7 +3660,6 @@ RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
 
 // ds
 RZ_IPI RzCmdStatus rz_cmd_debug_step_handler(RzCore *core, int argc, const char **argv) {
-	CMD_CHECK_DEBUG_DEAD(core);
 	const int times = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 1;
 	bool ret = rz_core_debug_step_one(core, times);
 	rz_core_dbg_follow_seek_register(core);
