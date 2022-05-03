@@ -350,6 +350,11 @@ int winkd_wait_packet(KdCtx *ctx, const uint32_t type, kd_packet_t **p) {
 		return ret;
 	}
 
+	if (!retries) {
+		free(pkt);
+		return KD_E_TIMEOUT;
+	}
+
 	if (p) {
 		*p = pkt;
 	} else {
