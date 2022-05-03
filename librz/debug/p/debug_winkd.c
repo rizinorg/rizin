@@ -41,7 +41,9 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
-	winkd_lock_enter(kdctx);
+	if (!winkd_lock_enter(kdctx)) {
+		return RZ_DEBUG_REASON_UNKNOWN;
+	}
 	for (;;) {
 		void *bed = rz_cons_sleep_begin();
 		int ret = winkd_wait_packet(kdctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);

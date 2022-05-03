@@ -30,15 +30,12 @@
 
 bool winkd_lock_enter(KdCtx *ctx) {
 	rz_cons_break_push(winkd_break, ctx);
-	rz_th_lock_enter(ctx->dontmix);
-	return true;
-}
-
-bool winkd_lock_tryenter(KdCtx *ctx) {
-	if (!rz_th_lock_tryenter(ctx->dontmix)) {
-		return false;
+	while (!rz_th_lock_tryenter(ctx->dontmix)) {
+		if (rz_cons_is_breaked()) {
+			rz_cons_break_pop();
+			return false;
+		}
 	}
-	rz_cons_break_push(winkd_break, ctx);
 	return true;
 }
 
@@ -244,7 +241,8 @@ static int do_io_reply(KdCtx *ctx, kd_packet_t *pkt) {
 	int ret;
 	ioc.req = 0x3430;
 	ioc.ret = KD_RET_ENOENT;
-	winkd_lock_enter(ctx);
+	while (!winkd_lock_enter(ctx)) {
+	};
 	id = pkt->id;
 	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_FILE_IO,
 		(ctx->seq_id ^= 1), (uint8_t *)&ioc, sizeof(kd_ioc_t), NULL, 0);
@@ -990,7 +988,8 @@ int winkd_sync(KdCtx *ctx) {
 		return 0;
 	}
 
-	winkd_lock_enter(ctx);
+	while (!winkd_lock_enter(ctx)) {
+	};
 
 	if (ctx->desc->iob->type == KD_IO_NET) {
 		// Read a KD packet to initialize KDNet interface
