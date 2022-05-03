@@ -5973,13 +5973,13 @@ static const RzCmdDescArg cmd_debug_step_args[] = {
 		.name = "num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = "1",
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_step_help = {
-	.summary = "Step (one|<num>) instruction",
+	.summary = "Step <num> instruction",
 	.args = cmd_debug_step_args,
 };
 
@@ -5988,13 +5988,13 @@ static const RzCmdDescArg cmd_debug_step_back_args[] = {
 		.name = "num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = "1",
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_step_back_help = {
-	.summary = "Step back (one|<num>) instruction",
+	.summary = "Step back <num> instruction",
 	.args = cmd_debug_step_back_args,
 };
 
@@ -6025,13 +6025,13 @@ static const RzCmdDescArg cmd_debug_step_line_args[] = {
 		.name = "num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = "1",
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_step_line_help = {
-	.summary = "Step (one|<num>) source line",
+	.summary = "Step <num> source line",
 	.args = cmd_debug_step_line_args,
 };
 
@@ -6040,7 +6040,7 @@ static const RzCmdDescArg cmd_debug_step_over_args[] = {
 		.name = "num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = "1",
 
 	},
 	{ 0 },
@@ -6063,7 +6063,7 @@ static const RzCmdDescArg cmd_debug_step_skip_args[] = {
 		.name = "num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = "1",
 
 	},
 	{ 0 },

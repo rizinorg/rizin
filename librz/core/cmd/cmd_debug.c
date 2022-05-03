@@ -438,6 +438,7 @@ static bool is_repeatable_inst(RzCore *core, ut64 addr) {
 }
 
 static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
+	rz_return_val_if_fail(core, false);
 	instr = rz_str_trim_head_ro(instr);
 	if (!instr || !core->dbg) {
 		RZ_LOG_ERROR("wrong debugger state\n");
@@ -2007,17 +2008,6 @@ static void rz_core_debug_kill(RzCore *core, const char *input) {
 		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_JSON);
 	} else if (!*input) {
 		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
-#if 0
-                                                                                                                                RzListIter *iter;
-		RzDebugSignal *ds;
-		eprintf ("TODO: list signal handlers of child\n");
-		RzList *list = rz_debug_kill_list (core->dbg);
-		rz_list_foreach (list, iter, ds) {
-			// TODO: resolve signal name by number and show handler offset
-			eprintf ("--> %d\n", ds->num);
-		}
-		rz_list_free (list);
-#endif
 	} else {
 		int sig = atoi(input);
 		char *p = strchr(input, '=');
