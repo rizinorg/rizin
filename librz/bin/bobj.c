@@ -456,7 +456,6 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			}
 		}
 	}
-	o->info = p->info ? p->info(bf) : NULL;
 	if (p->libs) {
 		o->libs = p->libs(bf);
 	}
@@ -470,6 +469,9 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			rz_bin_filter_sections(bf, o->sections);
 		}
 	}
+
+	o->info = p->info ? p->info(bf) : NULL;
+
 	if (bin->filter_rules & (RZ_BIN_REQ_RELOCS | RZ_BIN_REQ_IMPORTS)) {
 		if (p->relocs) {
 			RzList *l = p->relocs(bf);

@@ -1005,6 +1005,7 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 RZ_API RzList *rz_bin_file_set_hashes(RzBin *bin, RzList *new_hashes);
 RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *binfile);
 RZ_API void rz_bin_file_hash_free(RzBinFileHash *fhash);
+RZ_API RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *binfile);
 
 // binobject functions
 RZ_API int rz_bin_object_set_items(RzBinFile *binfile, RzBinObject *o);

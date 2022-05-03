@@ -1838,3 +1838,48 @@ commands:
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: as
+    summary: Syscalls
+    subcommands:
+      - name: as
+        summary: Show syscall and arguments
+        cname: analysis_syscall_show
+        args:
+          - name: syscall
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: asl
+        summary: List syscalls
+        cname: analysis_syscall_print
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: asca
+        summary: Dump syscall info into .asm file
+        cname: analysis_syscall_dump_assembly
+        args:
+          - name: syscall
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: asc
+        summary: Dump syscall info into .h file
+        cname: analysis_syscall_dump_c
+        args:
+          - name: syscall
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: asn
+        summary: Returns the syscall number by the name
+        cname: analysis_syscall_name
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: asr
+        summary: Returns the syscall name by the number
+        cname: analysis_syscall_number
+        args:
+          - name: number
+            type: RZ_CMD_ARG_TYPE_NUM

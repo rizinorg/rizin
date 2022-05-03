@@ -248,8 +248,66 @@ static inline bool is_thumb(struct PE_(rz_bin_pe_obj_t) * bin, ut64 address) {
 	}
 }
 
+static bool is_go_pclntab(ut8 *magic) {
+#define IS_GOPCLNTAB_1_2_LE(x)  (x[0] == 0xfb && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_2_BE(x)  (x[3] == 0xfb && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_16_LE(x) (x[0] == 0xfa && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_16_BE(x) (x[3] == 0xfa && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_18_LE(x) (x[0] == 0xf0 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_18_BE(x) (x[3] == 0xf0 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+	return IS_GOPCLNTAB_1_2_LE(magic) || IS_GOPCLNTAB_1_2_BE(magic) ||
+		IS_GOPCLNTAB_1_16_LE(magic) || IS_GOPCLNTAB_1_16_BE(magic) ||
+		IS_GOPCLNTAB_1_18_LE(magic) || IS_GOPCLNTAB_1_18_BE(magic);
+#undef IS_GOPCLNTAB_1_2_LE
+#undef IS_GOPCLNTAB_1_2_BE
+#undef IS_GOPCLNTAB_1_16_LE
+#undef IS_GOPCLNTAB_1_16_BE
+#undef IS_GOPCLNTAB_1_18_LE
+#undef IS_GOPCLNTAB_1_18_BE
+}
+
+static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
+	ut8 magic[16];
+	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
+	struct rz_bin_pe_section_t *sections = bin->sections;
+	if (!sections) {
+		return 0;
+	}
+	ut64 ba = baddr(bf);
+	for (int i = 0; !sections[i].last; i++) {
+		if (!strstr((char *)sections[i].name, "data")) {
+			continue;
+		}
+		ut64 offset = sections[i].paddr;
+		ut32 section_size = sections[i].size;
+		for (ut32 pos = 0; pos < section_size; pos += 8) {
+			if ((section_size - pos) < 16) {
+				break;
+			}
+			rz_buf_read_at(bf->buf, offset + pos, magic, sizeof(magic));
+			if ((magic[6] != 1 && magic[6] != 2 && magic[6] != 4) || // pc quantum
+				(magic[7] != 4 && magic[7] != 8)) { // pointer size
+				continue;
+			}
+			if (is_go_pclntab(magic)) {
+				if (size) {
+					*size = section_size - pos;
+				}
+				if (vaddr) {
+					*vaddr = ba + sections[i].vaddr + pos;
+				}
+				return offset + pos;
+			}
+		}
+	}
+	return 0;
+}
+
 static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
+	ut64 go_pclntab_paddr = 0;
+	ut64 go_pclntab_vaddr = 0;
+	ut32 go_pclntab_size = 0;
 	RzBinSymbol *ptr = NULL;
 	struct rz_bin_pe_export_t *symbols = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
@@ -285,6 +343,20 @@ static RzList *symbols(RzBinFile *bf) {
 			rz_list_append(ret, ptr);
 		}
 		free(symbols);
+	}
+
+	if ((go_pclntab_paddr = find_go_pclntab(bf, &go_pclntab_size, &go_pclntab_vaddr))) {
+		if (!(ptr = RZ_NEW0(RzBinSymbol))) {
+			return ret;
+		}
+		ptr->name = strdup("gopclntab");
+		ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
+		ptr->type = RZ_BIN_TYPE_NOTYPE_STR;
+		ptr->size = go_pclntab_size;
+		ptr->bits = file_bits;
+		ptr->vaddr = go_pclntab_vaddr;
+		ptr->paddr = go_pclntab_paddr;
+		rz_list_append(ret, ptr);
 	}
 
 	if ((imports = PE_(rz_bin_pe_get_imports)(bf->o->bin_obj))) {
@@ -470,7 +542,7 @@ err:
 	return NULL;
 }
 
-static int is_dot_net(RzBinFile *bf) {
+static bool is_dot_net(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
 	int i;
 	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
@@ -486,7 +558,7 @@ static int is_dot_net(RzBinFile *bf) {
 	return false;
 }
 
-static int is_vb6(RzBinFile *bf) {
+static bool is_vb6(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
 	int i;
 	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
@@ -558,6 +630,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	if (is_vb6(bf)) {
 		ret->lang = "vb";
+	}
+
+	ret->compiler = rz_bin_file_golang_compiler(bf);
+	if (ret->compiler) {
+		ret->lang = "go";
 	}
 	if (PE_(rz_bin_pe_is_dll)(bf->o->bin_obj)) {
 		ret->type = strdup("DLL (Dynamic Link Library)");

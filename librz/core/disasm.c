@@ -3922,7 +3922,7 @@ static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refad
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment(ds);
-		ds_comment(ds, true, "; %s%s\"%s\"%s", inv ? Color_INVERT : "", prefix, escstr,
+		ds_comment(ds, true, "; %s%s\"%.128s\"%s", inv ? Color_INVERT : "", prefix, escstr,
 			inv ? Color_INVERT_RESET : "");
 		ds->printed_str_addr = refaddr;
 		free(escstr);
@@ -4770,7 +4770,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 	}
 	switch (ds->analysis_op.type) {
 	case RZ_ANALYSIS_OP_TYPE_SWI: {
-		char *s = cmd_syscall_dostr(core, ds->analysis_op.val, at);
+		char *s = rz_core_syscall_as_string(core, ds->analysis_op.val, at);
 		if (s) {
 			ds_comment_esil(ds, true, true, "; %s", s);
 			free(s);
