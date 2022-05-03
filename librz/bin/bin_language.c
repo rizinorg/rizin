@@ -76,16 +76,13 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 
 	if (!info) {
 		return RZ_BIN_LANGUAGE_UNKNOWN;
-	} else if (RZ_STR_ISNOTEMPTY(info->lang)) {
-		if (strstr(info->lang, "dart")) {
-			return RZ_BIN_LANGUAGE_DART;
-		} else if (strstr(info->lang, "kotlin")) {
-			return RZ_BIN_LANGUAGE_KOTLIN;
-		} else if (strstr(info->lang, "groovy")) {
-			return RZ_BIN_LANGUAGE_GROOVY;
-		} else if (strstr(info->lang, "swift")) {
-			return RZ_BIN_LANGUAGE_SWIFT;
-		}
+	}
+	RzBinLanguage lang = rz_bin_language_to_id(info->lang);
+	if (lang != RZ_BIN_LANGUAGE_UNKNOWN &&
+		lang != RZ_BIN_LANGUAGE_C &&
+		lang != RZ_BIN_LANGUAGE_OBJC) {
+		// avoid detecting a language if was already specified.
+		return lang;
 	}
 
 	bool is_macho = info->rclass ? strstr(info->rclass, "mach") : false;
