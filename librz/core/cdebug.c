@@ -644,7 +644,7 @@ RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 }
 
 /**
- * \brief Close debug process(Kill debugee and all child processes)
+ * \brief Close debug process (Kill debugee and all child processes)
  * \param core The RzCore instance
  * \return success
  */
@@ -674,7 +674,6 @@ RZ_API bool rz_core_debug_process_close(RzCore *core) {
 			rz_debug_detach(dbg, dbg->pid);
 		}
 	}
-#undef SIGKILL
 	// Remove the target's registers from the flag list
 	rz_core_debug_clear_register_flags(core);
 	// Reopen and rebase the original file
