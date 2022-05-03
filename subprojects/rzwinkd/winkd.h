@@ -95,6 +95,9 @@ typedef struct _KdCtx {
 	RzList *tlist_cache;
 	RzThreadLock *dontmix;
 	WindModule kernel_module;
+	ut8 *context_cache;
+	int context_cache_size;
+	bool context_cache_valid;
 } KdCtx;
 
 #define TARGET_BACKEND  0

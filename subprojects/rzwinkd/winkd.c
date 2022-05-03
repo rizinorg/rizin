@@ -1105,25 +1105,30 @@ bool winkd_write_reg(KdCtx *ctx, const uint8_t *buf, int size) {
 		return false;
 	}
 
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
-	if (ret != KD_E_OK) {
-		goto error;
+	if (size > ctx->context_cache_size) {
+		free(ctx->context_cache);
+		ctx->context_cache = malloc(size);
+		ctx->context_cache_size = size;
 	}
 
+	memcpy(ctx->context_cache, buf, size);
 
 	free(pkt);
 	return size;
 }
 
 int winkd_read_reg(KdCtx *ctx, uint8_t *buf, int size) {
-	kd_req_t req;
+	kd_req_t req = { 0 };
 	kd_packet_t *pkt = NULL;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
 	}
 
-	memset(&req, 0, sizeof(kd_req_t));
+	if (ctx->context_cache_size >= size && ctx->context_cache_valid) {
+		memcpy(buf, ctx->context_cache, size);
+		return size;
+	}
 
 	req.req = DbgKdGetContextApi;
 	req.cpu = ctx->cpu;
@@ -1143,21 +1148,32 @@ int winkd_read_reg(KdCtx *ctx, uint8_t *buf, int size) {
 	}
 
 	memcpy(buf, rr->data, RZ_MIN(size, pkt->length - sizeof(*rr)));
-
 	free(pkt);
 
+	if (size > ctx->context_cache_size || !ctx->context_cache) {
+		void *tmp = realloc(ctx->context_cache, size);
+		if (!tmp) {
+			free(ctx->context_cache);
+			ctx->context_cache = NULL;
+			ctx->context_cache_size = 0;
+			ctx->context_cache_valid = false;
+			return 0;
+		}
+		ctx->context_cache = tmp;
+		ctx->context_cache_size = size;
+	}
+	memcpy(ctx->context_cache, buf, size);
+	ctx->context_cache_valid = true;
 	return size;
 }
 
 int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags) {
-	kd_req_t req;
+	kd_req_t req = { 0 };
 	kd_packet_t *pkt;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
 	}
-
-	memset(&req, 0, sizeof(kd_req_t));
 
 	req.req = DbgKdQueryMemoryApi;
 	req.cpu = ctx->cpu;
@@ -1188,9 +1204,7 @@ int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags)
 }
 
 int winkd_bkpt(KdCtx *ctx, const ut64 addr, const int set, const int hw, int *handle) {
-	kd_req_t req = {
-		0
-	};
+	kd_req_t req = { 0 };
 	kd_packet_t *pkt;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {

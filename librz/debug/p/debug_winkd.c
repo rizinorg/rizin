@@ -217,9 +217,13 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 
 static int rz_debug_winkd_select(RzDebug *dbg, int pid, int tid) {
 	ut32 old = winkd_get_target(&kdctx->windctx);
-	if (pid != old) {
-		rz_list_free(kdctx->tlist_cache);
-		kdctx->tlist_cache = NULL;
+	ut32 old_tid = winkd_get_target_thread(&kdctx->windctx);
+	if (pid != old || tid != old_tid) {
+		kdctx->context_cache_valid = false;
+		if (pid != old) {
+			rz_list_free(kdctx->tlist_cache);
+			kdctx->tlist_cache = NULL;
+		}
 	}
 	int ret = winkd_set_target(&kdctx->windctx, pid, tid);
 	if (!ret) {
