@@ -870,12 +870,45 @@ bool winkd_va_to_pa(WindCtx *ctx, ut64 directory_table, ut64 va, ut64 *pa) {
 	return false;
 }
 
-bool winkd_read_ver(KdCtx *ctx) {
-	kd_req_t req = {
-		0
-	};
-	kd_packet_t *pkt;
+static bool winkd_send_state_manipulate_req(KdCtx *ctx, kd_req_t *req, const ut8 *buf, const ut32 buf_len, kd_packet_t **pkt) {
 	int ret;
+	*pkt = NULL;
+	if (!winkd_lock_enter(ctx)) {
+		return false;
+	}
+	do {
+		ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
+			(ctx->seq_id ^= 1), (uint8_t *)req, sizeof(kd_req_t), buf, buf_len);
+		if (ret != KD_E_OK) {
+			break;
+		}
+
+		ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+		if (ret == KD_E_OK) {
+			ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, pkt);
+		}
+	} while (ret == KD_E_MALFORMED);
+
+	winkd_lock_leave(ctx);
+
+	if (ret != KD_E_OK) {
+		return false;
+	}
+
+	kd_req_t *rr = PKT_REQ(*pkt);
+
+	if (rr->ret) {
+		RZ_LOG_DEBUG("%s : req returned %08x\n", __FUNCTION__, rr->ret);
+		RZ_FREE(*pkt);
+		return false;
+	}
+
+	return true;
+}
+
+bool winkd_read_ver(KdCtx *ctx) {
+	kd_req_t req = { 0 };
+	kd_packet_t *pkt;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return false;
@@ -884,32 +917,16 @@ bool winkd_read_ver(KdCtx *ctx) {
 	req.req = 0x3146;
 	req.cpu = ctx->cpu;
 
-	winkd_lock_enter(ctx);
-
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), NULL, 0);
-	if (ret != KD_E_OK) {
-		goto error;
+	if (!winkd_send_state_manipulate_req(ctx, &req, NULL, 0, &pkt)) {
+		return false;
 	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	winkd_lock_leave(ctx);
 
 	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
 		RZ_LOG_DEBUG("%s : req returned %08x\n", __FUNCTION__, rr->ret);
 		free(pkt);
-		return 0;
+		return false;
 	}
 
 	RZ_LOG_DEBUG("Major : %i Minor %i\n", rr->rz_ver.major, rr->rz_ver.minor);
@@ -922,13 +939,13 @@ bool winkd_read_ver(KdCtx *ctx) {
 	if (rr->rz_ver.machine != KD_MACH_I386 && rr->rz_ver.machine != KD_MACH_AMD64) {
 		RZ_LOG_ERROR("Unsupported target host\n");
 		free(pkt);
-		return 0;
+		return false;
 	}
 
 	if (!(rr->rz_ver.flags & DBGKD_VERS_FLAG_DATA)) {
 		RZ_LOG_ERROR("No _KDDEBUGGER_DATA64 pointer has been supplied by the debugee!\n");
 		free(pkt);
-		return 0;
+		return false;
 	}
 
 	ctx->windctx.is_64bit = (rr->rz_ver.machine == KD_MACH_AMD64);
@@ -959,9 +976,6 @@ bool winkd_read_ver(KdCtx *ctx) {
 	}
 	free(pkt);
 	return true;
-error:
-	winkd_lock_leave(ctx);
-	return 0;
 }
 
 int winkd_sync(KdCtx *ctx) {
@@ -1038,10 +1052,7 @@ end:
 }
 
 int winkd_continue(KdCtx *ctx) {
-	kd_req_t req = {
-		0
-	};
-	int ret;
+	kd_req_t req = { 0 };
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
@@ -1053,34 +1064,34 @@ int winkd_continue(KdCtx *ctx) {
 	// behave like suggested by ReactOS source
 	req.rz_cont.tf = 0x400;
 
-	winkd_lock_enter(ctx);
-
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), NULL, 0);
-	if (ret == KD_E_OK) {
+	if (!winkd_lock_enter(ctx)) {
+		return KD_E_TIMEOUT;
+	}
+	int ret;
+	do {
+		ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
+			ctx->seq_id, (uint8_t *)&req, sizeof(kd_req_t), NULL, 0);
+		if (ret != KD_E_OK) {
+			break;
+		}
 		ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 		if (ret == KD_E_OK) {
-			ret = true;
-			goto end;
+			break;
 		}
-	}
-	ret = false;
+	} while (ret == KD_E_MALFORMED);
 
-end:
 	rz_list_free(ctx->plist_cache);
 	ctx->plist_cache = NULL;
 	rz_list_free(ctx->tlist_cache);
 	ctx->tlist_cache = NULL;
+	ctx->context_cache_valid = false;
 	winkd_lock_leave(ctx);
-	return ret;
+	return ret == KD_E_OK;
 }
 
 bool winkd_write_reg(KdCtx *ctx, const uint8_t *buf, int size) {
 	kd_packet_t *pkt;
-	kd_req_t req = {
-		0
-	};
-	int ret;
+	kd_req_t req = { 0 };
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return false;
@@ -1091,17 +1102,8 @@ bool winkd_write_reg(KdCtx *ctx, const uint8_t *buf, int size) {
 
 	RZ_LOG_DEBUG("Regwrite() size: %x\n", size);
 
-	winkd_lock_enter(ctx);
-
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), buf, size);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
-	if (ret != KD_E_OK) {
-		goto error;
+	if (!winkd_send_state_manipulate_req(ctx, &req, buf, size, &pkt)) {
+		return false;
 	}
 
 	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
@@ -1109,28 +1111,14 @@ bool winkd_write_reg(KdCtx *ctx, const uint8_t *buf, int size) {
 		goto error;
 	}
 
-	winkd_lock_leave(ctx);
-
-	kd_req_t *rr = PKT_REQ(pkt);
-
-	if (rr->ret) {
-		RZ_LOG_DEBUG("%s: req returned %08x\n", __FUNCTION__, rr->ret);
-		free(pkt);
-		return 0;
-	}
 
 	free(pkt);
-
 	return size;
-error:
-	winkd_lock_leave(ctx);
-	return 0;
 }
 
 int winkd_read_reg(KdCtx *ctx, uint8_t *buf, int size) {
 	kd_req_t req;
 	kd_packet_t *pkt = NULL;
-	int ret;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
@@ -1143,29 +1131,9 @@ int winkd_read_reg(KdCtx *ctx, uint8_t *buf, int size) {
 
 	req.rz_ctx.flags = 0x1003F;
 
-	// Don't wait on the lock in read_reg since it's frequently called. Otherwise the user
-	// will be forced to interrupt exit read_reg constantly while another task is in progress
-	if (!winkd_lock_tryenter(ctx)) {
-		goto error;
+	if (!winkd_send_state_manipulate_req(ctx, &req, NULL, 0, &pkt)) {
+		return 0;
 	}
-
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof(kd_req_t), NULL, 0);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	winkd_lock_leave(ctx);
 
 	kd_req_t *rr = PKT_REQ(pkt);
 
@@ -1180,15 +1148,11 @@ int winkd_read_reg(KdCtx *ctx, uint8_t *buf, int size) {
 	free(pkt);
 
 	return size;
-error:
-	winkd_lock_leave(ctx);
-	return 0;
 }
 
 int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags) {
 	kd_req_t req;
 	kd_packet_t *pkt;
-	int ret;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
@@ -1202,25 +1166,9 @@ int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags)
 	req.rz_query_mem.addr = addr;
 	req.rz_query_mem.address_space = 0; // Tells the kernel that 'addr' is a virtual address
 
-	winkd_lock_enter(ctx);
-
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof(kd_req_t), NULL, 0);
-	if (ret != KD_E_OK) {
-		goto error;
+	if (!winkd_send_state_manipulate_req(ctx, &req, NULL, 0, &pkt)) {
+		return 0;
 	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	winkd_lock_leave(ctx);
 
 	kd_req_t *rr = PKT_REQ(pkt);
 
@@ -1237,11 +1185,7 @@ int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags)
 	}
 
 	free(pkt);
-
-	return ret;
-error:
-	winkd_lock_leave(ctx);
-	return 0;
+	return 1;
 }
 
 int winkd_bkpt(KdCtx *ctx, const ut64 addr, const int set, const int hw, int *handle) {
@@ -1249,7 +1193,6 @@ int winkd_bkpt(KdCtx *ctx, const ut64 addr, const int set, const int hw, int *ha
 		0
 	};
 	kd_packet_t *pkt;
-	int ret;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
@@ -1264,25 +1207,9 @@ int winkd_bkpt(KdCtx *ctx, const ut64 addr, const int set, const int hw, int *ha
 		req.rz_del_bp.handle = *handle;
 	}
 
-	winkd_lock_enter(ctx);
-
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof(kd_req_t), NULL, 0);
-	if (ret != KD_E_OK) {
-		goto error;
+	if (!winkd_send_state_manipulate_req(ctx, &req, NULL, 0, &pkt)) {
+		return 0;
 	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	winkd_lock_leave(ctx);
 
 	kd_req_t *rr = PKT_REQ(pkt);
 
@@ -1291,21 +1218,13 @@ int winkd_bkpt(KdCtx *ctx, const ut64 addr, const int set, const int hw, int *ha
 		return 0;
 	}
 	*handle = rr->rz_set_bp.handle;
-	ret = !!rr->ret;
 	free(pkt);
-	return ret;
-error:
-	winkd_lock_leave(ctx);
-	return 0;
+	return 1;
 }
 
 int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) {
-	kd_req_t req = {
-		0
-	},
-		 *rr;
+	kd_req_t req = { 0 };
 	kd_packet_t *pkt;
-	int ret;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
@@ -1316,31 +1235,11 @@ int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int co
 	req.rz_mem.length = RZ_MIN(count, KD_MAX_PAYLOAD);
 	req.rz_mem.read = 0; // Default caching option
 
-	// Don't wait on the lock in read_reg since it's frequently called. Otherwise the user
-	// will be forced to interrupt exit read_at_phys constantly while another task is in progress
-	if (!winkd_lock_tryenter(ctx)) {
-		goto error;
+	if (!winkd_send_state_manipulate_req(ctx, &req, NULL, 0, &pkt)) {
+		return 0;
 	}
 
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1),
-		(uint8_t *)&req, sizeof(kd_req_t), NULL, 0);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	winkd_lock_leave(ctx);
-
-	rr = PKT_REQ(pkt);
+	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
 		free(pkt);
@@ -1348,18 +1247,14 @@ int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int co
 	}
 
 	memcpy(buf, rr->data, rr->rz_mem.read);
-	ret = rr->rz_mem.read;
+	int ret = rr->rz_mem.read;
 	free(pkt);
 	return ret;
-error:
-	winkd_lock_leave(ctx);
-	return 0;
 }
 
 int winkd_read_at(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) {
-	kd_req_t *rr, req = { 0 };
+	kd_req_t req = { 0 };
 	kd_packet_t *pkt;
-	int ret;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
@@ -1369,31 +1264,11 @@ int winkd_read_at(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) 
 	req.rz_mem.addr = offset;
 	req.rz_mem.length = RZ_MIN(count, KD_MAX_PAYLOAD);
 
-	// Don't wait on the lock in read_at since it's frequently called, including each
-	// time "enter" is pressed. Otherwise the user will be forced to interrupt exit
-	// read_registers constantly while another task is in progress
-	if (!winkd_lock_tryenter(ctx)) {
-		goto error;
-	}
-
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), NULL, 0);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
-	if (ret != KD_E_OK) {
+	if (!winkd_send_state_manipulate_req(ctx, &req, NULL, 0, &pkt)) {
 		return 0;
 	}
 
-	winkd_lock_leave(ctx);
-
-	rr = PKT_REQ(pkt);
+	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
 		free(pkt);
@@ -1401,79 +1276,50 @@ int winkd_read_at(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) 
 	}
 
 	memcpy(buf, rr->data, rr->rz_mem.read);
-	ret = rr->rz_mem.read;
+	int ret = rr->rz_mem.read;
 	free(pkt);
 	return ret;
-error:
-	winkd_lock_leave(ctx);
-	return 0;
 }
 
 int winkd_write_at(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int count) {
-	kd_packet_t *pkt;
-	kd_req_t req = {
-		0
-	},
-		 *rr;
-	int payload, ret;
+	kd_packet_t *pkt = NULL;
+	kd_req_t req = { 0 };
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
 	}
 
-	payload = RZ_MIN(count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
+	int payload = RZ_MIN(count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
 	req.req = DbgKdWriteVirtualMemoryApi;
 	req.cpu = ctx->cpu;
 	req.rz_mem.addr = offset;
 	req.rz_mem.length = payload;
 
-	winkd_lock_enter(ctx);
-
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof(kd_req_t), buf, payload);
-	if (ret != KD_E_OK) {
-		goto error;
+	if (!winkd_send_state_manipulate_req(ctx, &req, buf, payload, &pkt)) {
+		return 0;
 	}
 
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	winkd_lock_leave(ctx);
-
-	rr = PKT_REQ(pkt);
+	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
 		free(pkt);
 		return 0;
 	}
 
-	ret = rr->rz_mem.read;
+	int ret = rr->rz_mem.read;
 	free(pkt);
 	return ret;
-error:
-	winkd_lock_leave(ctx);
-	return 0;
 }
 
 int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int count) {
 	kd_packet_t *pkt;
-	kd_req_t req;
-	int ret;
-	int payload;
+	kd_req_t req = { 0 };
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
 	}
 
-	payload = RZ_MIN(count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
+	int payload = RZ_MIN(count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
 
 	memset(&req, 0, sizeof(kd_req_t));
 
@@ -1484,25 +1330,9 @@ int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const
 	req.rz_mem.length = payload;
 	req.rz_mem.read = 0; // Default caching option
 
-	winkd_lock_enter(ctx);
-
-	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), buf, payload);
-	if (ret != KD_E_OK) {
-		goto error;
+	if (!winkd_send_state_manipulate_req(ctx, &req, buf, payload, &pkt)) {
+		return 0;
 	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
-	if (ret != KD_E_OK) {
-		goto error;
-	}
-
-	winkd_lock_leave(ctx);
 
 	kd_req_t *rr = PKT_REQ(pkt);
 
@@ -1510,12 +1340,9 @@ int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const
 		free(pkt);
 		return 0;
 	}
-	ret = rr->rz_mem.read;
+	int ret = rr->rz_mem.read;
 	free(pkt);
 	return ret;
-error:
-	winkd_lock_leave(ctx);
-	return 0;
 }
 
 void winkd_break(void *arg) {
