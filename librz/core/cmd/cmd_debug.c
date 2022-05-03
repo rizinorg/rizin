@@ -3850,10 +3850,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int a
 
 // doc
 RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, const char **argv) {
-	if (!core || !core->io || !core->io->desc || !rz_core_is_debug(core)) {
-		RZ_LOG_ERROR("No open debug session\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
+	CMD_CHECK_DEBUG_DEAD(core);
 	return bool2status(rz_core_debug_process_close(core));
 }
 
