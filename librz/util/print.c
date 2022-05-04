@@ -2169,7 +2169,6 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 		}
 		i = i + l;
 	}
-	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false);
 	return toks;
 }
 
