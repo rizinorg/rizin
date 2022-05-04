@@ -2018,7 +2018,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_custom(RZ_BORROW RzStrBuf 
  */
 static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType type) {
 	rz_return_val_if_fail(str, 0);
-	size_t l = i;
+	size_t j = i;
 
 	switch (type) {
 	default:
@@ -2027,34 +2027,34 @@ static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType typ
 	case RZ_ASM_TOKEN_MNEMONIC:
 	case RZ_ASM_TOKEN_REGISTER:
 		do {
-			++l;
-		} while (is_alpha_num(str + l));
+			++j;
+		} while (is_alpha_num(str + j));
 		break;
 	case RZ_ASM_TOKEN_NUMBER:
 		do {
-			if (is_hex_prefix(str + l)) {
-				l += 2;
+			if (is_hex_prefix(str + j)) {
+				j += 2;
 			} else {
-				++l;
+				++j;
 			}
-		} while (is_num(str + l));
+		} while (is_num(str + j));
 		break;
 	case RZ_ASM_TOKEN_SEPARATOR:
 		do {
-			++l;
-		} while (is_separator(*(str + l)));
+			++j;
+		} while (is_separator(*(str + j)));
 		break;
 	case RZ_ASM_TOKEN_OPERATOR:
 		do {
-			++l;
-		} while (is_operator(*(str + l)));
+			++j;
+		} while (is_operator(*(str + j)));
 		break;
 	case RZ_ASM_TOKEN_UNKNOWN:
 		do {
-			++l;
-		} while (!is_operator(*(str + l)) && !is_separator(*(str + l)) && !is_alpha_num(str + l));
+			++j;
+		} while (!is_operator(*(str + j)) && !is_separator(*(str + j)) && !is_alpha_num(str + j));
 	}
-	return l - i;
+	return j - i;
 }
 
 static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE const RzAsmParseParam *param) {
