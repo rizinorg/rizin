@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_vector.h>
+#include <rz_util/rz_strbuf.h>
 #include <rz_regex.h>
 #include <rz_util/rz_assert.h>
 #include <rz_list.h>
@@ -1301,6 +1303,18 @@ RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks) {
 	rz_strbuf_free(toks->str);
 	rz_vector_free(toks->tokens);
 	free(toks);
+}
+
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RzAsmTokenString *toks) {
+	rz_return_val_if_fail(toks, NULL);
+
+	RzAsmTokenString *new = RZ_NEW0(RzAsmTokenString);
+	new->tokens = rz_vector_clone(toks->tokens);
+	new->str = rz_strbuf_new(rz_strbuf_get(toks->str));
+	new->op_type = toks->op_type;
+
+	rz_return_val_if_fail(new->tokens && new->str, NULL);
+	return new;
 }
 
 RZ_API void rz_asm_token_pattern_free(void *p) {

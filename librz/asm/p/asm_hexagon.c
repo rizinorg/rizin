@@ -30,7 +30,6 @@ static RZ_OWN RzList /* RzAsmTokenPattern */ *get_token_patterns() {
 	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_META;
 	pat->pattern = strdup(
-		"(#{1,2})|" // Immediate prefix
 		"(^[\\[\\?\\/\\|\\\\┌│└\\{])|" // Packet prefix
 		"([∎<\\}][ :]endloop[01]{1,2})" // Endloop markers
 	);
@@ -39,6 +38,7 @@ static RZ_OWN RzList /* RzAsmTokenPattern */ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_META;
 	pat->pattern = strdup(
+		"(#{1,2})|" // Immediate prefix
 		"(\\}$)|\\.new|:n?t|:raw|<err>" // Closing packet bracket, .new and jump hints
 	);
 	rz_list_append(l, pat);
@@ -46,8 +46,14 @@ static RZ_OWN RzList /* RzAsmTokenPattern */ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_REGISTER;
 	pat->pattern = strdup(
-		"([CNPRMQVO][[:digit:]]{1,2}(:[[:digit:]]{1,2})?(in)?)|" // Registers and double registers
-		"GP|HTID|UGP" // Other regs
+		"([CNPRMQVO][[:digit:]]{1,2}(:[[:digit:]]{1,2})?(in)?)" // Registers and double registers
+	);
+	rz_list_append(l, pat);
+
+	pat = RZ_NEW0(RzAsmTokenPattern);
+	pat->type = RZ_ASM_TOKEN_REGISTER;
+	pat->pattern = strdup(
+		"GP|HTID|UGP|LR|FP" // Other regs
 	);
 	rz_list_append(l, pat);
 
@@ -76,7 +82,7 @@ static RZ_OWN RzList /* RzAsmTokenPattern */ *get_token_patterns() {
 	pat->type = RZ_ASM_TOKEN_SEPARATOR;
 	pat->pattern = strdup(
 		"([[:blank:]]+)|" // Spaces and tabs
-		"([,;\\.\\(\\)\\{\\}:_])" // Brackets and others
+		"([,;\\.\\(\\)\\{\\}:])" // Brackets and others
 	);
 	rz_list_append(l, pat);
 
@@ -90,7 +96,8 @@ static RZ_OWN RzList /* RzAsmTokenPattern */ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_MNEMONIC;
 	pat->pattern = strdup(
-		"([[:alnum:]]+)" // Everything else.
+		"([[:alnum:]]+)|" // Alphanumeric mnemonics
+		"([[:alnum:]]+_[[:alnum:]]+)" // Menmonics with "_" e.g dealloc_return
 	);
 	rz_list_append(l, pat);
 

@@ -110,6 +110,7 @@ typedef struct {
 	RzAsmTokenString *tokens; ///< The tokenized asm string.
 	RzAsmOp asm_op;
 	RzAnalysisOp ana_op;
+	RzStrBuf *asm_str; ///< Asm string. Equals mnem. 
 } HexInsn;
 
 typedef struct {
