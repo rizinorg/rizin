@@ -1123,7 +1123,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 				asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks);
 			} else {
 				asm_str = rz_strbuf_new(source);
-				RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+				RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 				rz_strbuf_free(asm_str);
 				toks->op_type = ds->analysis_op.type;
 				asm_str = rz_print_colorize_asm_str(core->print, toks);
@@ -1172,7 +1172,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 				asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks);
 			} else {
 				asm_str = rz_strbuf_new(source);
-				RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+				RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 				rz_strbuf_free(asm_str);
 				toks->op_type = ds->analysis_op.type;
 				asm_str = rz_print_colorize_asm_str(core->print, toks);
@@ -5959,7 +5959,7 @@ toro:
 						asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks);
 					} else {
 						asm_str = rz_strbuf_new(source);
-						RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+						RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 						rz_strbuf_free(asm_str);
 						toks->op_type = ds->analysis_op.type;
 						asm_str = rz_print_colorize_asm_str(core->print, toks);

@@ -242,12 +242,6 @@ RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, co
 RZ_API char *rz_print_json_human(const char *s);
 RZ_API char *rz_print_json_path(const char *s, int pos);
 
-// String tokenizing
-RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_new(const char *asm_str);
-RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks);
-RZ_API void rz_asm_token_pattern_free(void *p);
-RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_custom(RZ_BORROW RzStrBuf *asm_str, RzList /* RzAsmTokenPattern */ *patterns);
-RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE RzAsmParseParam *param);
 RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks);
 #endif
 

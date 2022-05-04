@@ -201,6 +201,13 @@ RZ_API int rz_asm_op_set_hexbuf(RzAsmOp *op, const ut8 *buf, int len);
 RZ_API void rz_asm_op_set_buf(RzAsmOp *op, const ut8 *str, int len);
 RZ_API ut8 *rz_asm_op_get_buf(RzAsmOp *op);
 
+// String tokenizing
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_new(const char *asm_str);
+RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks);
+RZ_API void rz_asm_token_pattern_free(void *p);
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_custom(RZ_BORROW RzStrBuf *asm_str, RzList /* RzAsmTokenPattern */ *patterns);
+RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE RzAsmParseParam *param);
+
 /* plugin pointers */
 extern RzAsmPlugin rz_asm_plugin_6502;
 extern RzAsmPlugin rz_asm_plugin_8051;

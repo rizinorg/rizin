@@ -41,7 +41,7 @@ static bool test_rz_tokenize_generic_0_no_reg_profile(void) {
 		{ .start = 6, .len = 2, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 },
 		{ .start = 8, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 17 }
 	};
-	RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, NULL);
+	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, NULL);
 
 	mu_assert_eq(rz_vector_len(toks->tokens), 5, "Number of generated tokens");
 
@@ -70,7 +70,7 @@ static bool test_rz_tokenize_generic_0(void) {
 		{ .start = 8, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 17 }
 	};
 	RzAsmParseParam param = { .reg_sets = a->reg->regset };
-	RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 
 	mu_assert_eq(rz_vector_len(toks->tokens), 5, "Number of generated tokens");
 
@@ -114,7 +114,7 @@ static bool test_rz_tokenize_generic_1(void) {
 		{ .start = 32, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 } // )
 	};
 	RzAsmParseParam param = { .reg_sets = a->reg->regset };
-	RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 
 	mu_assert_eq(rz_vector_len(toks->tokens), 20, "Number of generated tokens");
 
@@ -143,7 +143,7 @@ static bool test_rz_tokenize_generic_2(void) {
 		{ .start = 8, .len = 4, .type = RZ_ASM_TOKEN_UNKNOWN, .val.number = 0 }
 	};
 	RzAsmParseParam param = { .reg_sets = a->reg->regset };
-	RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 
 	mu_assert_eq(rz_vector_len(toks->tokens), 5, "Number generated tokens");
 
@@ -172,7 +172,7 @@ static bool test_rz_tokenize_generic_3(void) {
 		{ .start = 9, .len = 10, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0xffffffff }
 	};
 	RzAsmParseParam param = { .reg_sets = a->reg->regset };
-	RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
 
 	mu_assert_eq(rz_vector_len(toks->tokens), 5, "Number of generated tokens");
 
