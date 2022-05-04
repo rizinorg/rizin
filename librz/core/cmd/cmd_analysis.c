@@ -6840,8 +6840,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_add_recu_handler(RzCore *core, int argc,
 	if (!strcmp(argv[0], "af")) {
 		analyze_recursively = rz_config_get_i(core->config, "analysis.calls");
 	}
-	bool result = rz_core_analysis_function_add(core, name, core->offset, analyze_recursively);
-	return result ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return bool2status(rz_core_analysis_function_add(core, name, core->offset, analyze_recursively));
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_create_handler(RzCore *core, int argc, const char **argv) {
