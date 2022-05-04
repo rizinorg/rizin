@@ -5,6 +5,8 @@
 
 #include <rz_core.h>
 #include <rz_socket.h>
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_print.h>
 #include "core_private.h"
 
 #define HASRETRY      1
@@ -936,44 +938,6 @@ static void ds_free(RzDisasmState *ds) {
 	RZ_FREE(ds);
 }
 
-/* XXX move to rz_print */
-static char *colorize_asm_string(RzCore *core, RzDisasmState *ds, bool print_color) {
-	char *source = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);
-	const char *hlstr = rz_meta_get_string(ds->core->analysis, RZ_META_TYPE_HIGHLIGHT, ds->at);
-	bool partial_reset = line_highlighted(ds) ? true : ((hlstr && *hlstr) ? true : false);
-	RzAnalysisFunction *f = ds->show_color_args ? fcnIn(ds, ds->vat, RZ_ANALYSIS_FCN_TYPE_NULL) : NULL;
-
-	if (!ds->show_color || !ds->colorop) {
-		return strdup(source);
-	}
-
-	if (print_color) {
-		rz_cons_strcat(rz_print_color_op_type(core->print, ds->analysis_op.type));
-	}
-	// workaround dummy colorizer in case of paired commands (tms320 & friends)
-	char *spacer = strstr(source, "||");
-	if (spacer) {
-		char *scol1, *s1 = rz_str_ndup(source, spacer - source);
-		char *scol2, *s2 = strdup(spacer + 2);
-
-		scol1 = rz_print_colorize_opcode(ds->core->print, s1, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
-		free(s1);
-		scol2 = rz_print_colorize_opcode(ds->core->print, s2, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
-		free(s2);
-		if (!scol1) {
-			scol1 = strdup("");
-		}
-		if (!scol2) {
-			scol2 = strdup("");
-		}
-		source = rz_str_newf("%s||%s", scol1, scol2);
-		free(scol1);
-		free(scol2);
-		return source;
-	}
-	return rz_print_colorize_opcode(ds->core->print, source, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
-}
-
 static bool ds_must_strip(RzDisasmState *ds) {
 	if (ds && ds->strip && *ds->strip) {
 		const char *optype = rz_analysis_optype_to_string(ds->analysis_op.type);
@@ -1018,6 +982,7 @@ static const char *get_reg_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr) {
 
 static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 	RzCore *core = ds->core;
+	bool colorize_asm = print_color && ds->show_color && ds->colorop;
 
 	if (ds->use_esil) {
 		free(ds->opstr);
@@ -1147,10 +1112,27 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 				core->parser->subrel_addr = killme;
 			}
 		}
-		char *asm_str = colorize_asm_string(core, ds, print_color);
-		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, asm_str,
+		char *source;
+		if (colorize_asm) {
+			source = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);
+			bool partial_reset = line_highlighted(ds);
+			RzAsmColorizeOptions opts = { 0 };
+			opts.reset_bg = partial_reset;
+			opts.analysis_op_type = ds->analysis_op.type;
+			RzStrBuf *asm_str;
+			if (ds->asmop.asm_toks) {
+				asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks, opts);
+			} else {
+				asm_str = rz_print_tokenize_colorize_asm_str(core->print, source, NULL, opts);
+			}
+			rz_return_if_fail(asm_str);
+			source = rz_strbuf_drain(asm_str);
+		} else {
+			source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
+		}
+
+		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, source,
 			ds->str, sizeof(ds->str), core->print->big_endian);
-		free(asm_str);
 		// subvar depends on filter
 		if (ds->subvar) {
 			// HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
@@ -1175,9 +1157,27 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		free(ds->opstr);
 		ds->opstr = strdup(ds->str);
 	} else {
-		char *asm_str = colorize_asm_string(core, ds, print_color);
+		char *source;
+		if (colorize_asm) {
+			source = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);
+			bool partial_reset = line_highlighted(ds);
+			RzAsmColorizeOptions opts = { 0 };
+			opts.reset_bg = partial_reset;
+			opts.analysis_op_type = ds->analysis_op.type;
+			RzStrBuf *asm_str;
+			if (ds->asmop.asm_toks) {
+				asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks, opts);
+			} else {
+				asm_str = rz_print_tokenize_colorize_asm_str(core->print, source, NULL, opts);
+			}
+			rz_return_if_fail(asm_str);
+			source = rz_strbuf_drain(asm_str);
+		} else {
+			source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
+		}
+
 		free(ds->opstr);
-		ds->opstr = asm_str;
+		ds->opstr = source;
 	}
 	rz_str_trim_char(ds->opstr, '\n');
 	// updates ds->opstr
@@ -5923,7 +5923,6 @@ toro:
 					ds->opstr = strdup(RZ_STRBUF_SAFEGET(&ds->analysis_op.esil));
 				}
 			} else if (ds->subnames) {
-				char *asm_str;
 				RzSpace *ofs = core->parser->flagspace;
 				RzSpace *fs = ds->flagspace_ports;
 				if (ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_IO) {
@@ -5941,11 +5940,29 @@ toro:
 				ds_build_op_str(ds, true);
 				free(ds->opstr);
 				ds->opstr = strdup(ds->str);
-				asm_str = colorize_asm_string(core, ds, true);
-				core->parser->flagspace = ofs;
+
+				char *source;
+				if (ds->show_color && ds->colorop) {
+					source = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);
+					bool partial_reset = line_highlighted(ds);
+					RzAsmColorizeOptions opts = { 0 };
+					opts.reset_bg = partial_reset;
+					opts.analysis_op_type = ds->analysis_op.type;
+					RzStrBuf *asm_str;
+					if (ds->asmop.asm_toks) {
+						asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks, opts);
+					} else {
+						asm_str = rz_print_tokenize_colorize_asm_str(core->print, source, NULL, opts);
+					}
+					rz_return_val_if_fail(asm_str, 0);
+					source = rz_strbuf_drain(asm_str);
+				} else {
+					source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
+				}
+
 				free(ds->opstr);
-				ds->opstr = asm_str;
-				core->parser->flagspace = ofs; // ???
+				ds->opstr = source;
+				core->parser->flagspace = ofs;
 			} else {
 				ds->opstr = strdup(rz_asm_op_get_asm(&ds->asmop));
 			}

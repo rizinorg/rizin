@@ -98,6 +98,7 @@ if get_option('enable_tests')
     'table',
     'task',
     'threads',
+    'tokens',
     'tree',
     'type',
     'uleb128',

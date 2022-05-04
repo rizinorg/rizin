@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_regex.h>
+#include <rz_util/rz_assert.h>
 #include <rz_list.h>
 #include <stdio.h>
 #include <rz_core.h>
@@ -346,6 +348,14 @@ static void unset_plugins_config(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pc
 }
 
 // TODO: this can be optimized using rz_str_hash()
+/**
+ * \brief Puts an Asm plugin in use and disables the previous one.
+ *
+ * \param a Current RzAsm struct.
+ * \param name Name of the asm plugin to enable.
+ * \return true Put Asm plugin successfully in use.
+ * \return false Asm plugin failed to be enabled.
+ */
 RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 	RzAsmPlugin *h;
 	RzListIter *iter;
@@ -374,6 +384,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
 				return false;
 			}
+
 			if (a->cur && a->cur->get_config && core) {
 				rz_config_lock(core->config, false);
 				unset_plugins_config(a, a->cur->get_config());

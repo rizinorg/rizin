@@ -5,6 +5,7 @@
 #ifndef RZ_ASM_H
 #define RZ_ASM_H
 
+#include <rz_util/rz_print.h>
 #include <rz_types.h>
 #include <rz_bin.h> // only for binding, no hard dep required
 #include <rz_util.h>
@@ -70,6 +71,7 @@ typedef struct rz_asm_op_t {
 	RzStrBuf buf;
 	RzStrBuf buf_asm;
 	RzBuffer *buf_inc; // must die
+	RzAsmTokenString *asm_toks; ///< Tokenized asm string.
 } RzAsmOp;
 
 typedef struct rz_asm_code_t {
@@ -116,6 +118,7 @@ typedef struct rz_asm_t {
 	int pcalign;
 	int dataalign;
 	int bitshift;
+	bool immsign; // Print signed immediates as negative values, not their unsigned representation.
 	bool immdisp; // Display immediates with # symbol (for arm architectures). false = show hashs
 	bool utf8; // Flag for plugins: Use utf-8 characters.
 	HtPP *flags;

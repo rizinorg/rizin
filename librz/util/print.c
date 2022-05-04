@@ -1,8 +1,19 @@
 // SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_str.h>
+#include <rz_list.h>
+#include <rz_regex.h>
+#include <rz_types.h>
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_strbuf.h>
+#include <rz_vector.h>
 #include <rz_util/rz_print.h>
 #include <rz_analysis.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define DFLT_ROWS 16
 
@@ -1495,8 +1506,66 @@ static bool check_arg_name(RzPrint *print, char *p, ut64 func_addr) {
 	return false;
 }
 
-static bool ishexprefix(char *p) {
+static bool is_hex_prefix(const char *p) {
+	rz_return_val_if_fail(p, false);
+	if (p[0] & 0x80) {
+		return false; // UTF-8
+	}
 	return (p[0] == '0' && p[1] == 'x');
+}
+
+static bool is_num(const char *c) {
+	rz_return_val_if_fail(c, false);
+	if (c[0] & 0x80) {
+		return false; // UTF-8
+	}
+	return is_hex_prefix(c) || (c[0] >= '0' && c[0] <= '9');
+}
+
+static bool is_alpha(const char c) {
+	if (c & 0x80) {
+		return false; // UTF-8
+	}
+	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
+
+static bool is_alpha_num(const char *c) {
+	rz_return_val_if_fail(c, false);
+	if (c[0] & 0x80) {
+		return false; // UTF-8
+	}
+	return is_num(c) || is_alpha(c[0]);
+}
+
+static bool is_separator(const char c) {
+	if (c & 0x80) {
+		return false; // UTF-8
+	}
+	return (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ',' || c == '.' || c == '#' || c == ':' || c == ' ');
+}
+
+static bool is_operator(const char c) {
+	if (c & 0x80) {
+		return false; // UTF-8
+	}
+	return (c == '+' || c == '-' || c == '/' || c == '>' || c == '<' || c == '*' || c == '%' || c == '|' || c == '&' || c == '=' || c == '!');
+}
+
+static bool is_register(const char *name, RZ_BORROW RzReg *reg_profile) {
+	rz_return_val_if_fail(name, false);
+	if (name[0] & 0x80) {
+		return false; // UTF-8
+	}
+	bool found = false;
+	for (ut32 i = 0; i < RZ_REG_TYPE_LAST; ++i) {
+		if (reg_profile->regset[i].ht_regs) {
+			ht_pp_find(reg_profile->regset[i].ht_regs, name, &found);
+			if (found) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
@@ -1522,7 +1591,7 @@ RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, 
 	memset(o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
 		/* colorize numbers */
-		if ((ishexprefix(&p[i]) && previous != ':') || (isdigit((ut8)p[i]) && issymbol(previous))) {
+		if ((is_hex_prefix(&p[i]) && previous != ':') || (isdigit((ut8)p[i]) && issymbol(previous))) {
 			const char *num2 = num;
 			ut64 n = rz_num_get(NULL, p + i);
 			const char *name = print->offname(print->user, n) ? color_flag : NULL;
@@ -1765,4 +1834,435 @@ RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize) 
 	}
 	p->cb_printf("]\n");
 	return words;
+}
+
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_new(const char *asm_str) {
+	RzAsmTokenString *s = RZ_NEW0(RzAsmTokenString);
+	rz_return_val_if_fail(s, NULL);
+	s->tokens = rz_vector_new(sizeof(RzAsmToken), NULL, NULL);
+	s->str = rz_strbuf_new(asm_str);
+	rz_return_val_if_fail(s->tokens && s->str, NULL);
+	return s;
+}
+
+RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks) {
+	if (!toks) {
+		return;
+	}
+	rz_strbuf_free(toks->str);
+	rz_vector_free(toks->tokens);
+	free(toks);
+}
+
+RZ_API void rz_asm_token_pattern_free(void *p) {
+	if (!p) {
+		return;
+	}
+	RzAsmTokenPattern *pat = (RzAsmTokenPattern *)p;
+	free(pat->pattern);
+	rz_regex_free(pat->regex);
+	free(p);
+}
+
+/**
+ * \brief Creates a token and returns it.
+ *
+ * \param start Index in the asm string of the token.
+ * \param len The length in bytes of the token.
+ * \param type The token type.
+ * \param val The value of the token (should be 0 if token has no value).
+ * \return RzAsmToken* Pointer to the newly created token or NULL in case of failure.
+ */
+static RZ_OWN RzAsmToken *asm_token_create(const size_t start, const size_t len, const RzAsmTokenType type, const ut64 val) {
+	rz_return_val_if_fail(len > 0, NULL);
+	RzAsmToken *t = RZ_NEW0(RzAsmToken);
+	rz_return_val_if_fail(t, NULL);
+
+	t->start = start;
+	t->type = type;
+	t->len = len;
+	switch (type) {
+	default:
+		break;
+	case RZ_ASM_TOKEN_NUMBER:
+		t->val.number = val;
+		break;
+	}
+	return t;
+}
+
+/**
+ * \brief Creates a token and adds it to the token string vector \p toks.
+ *
+ * \param toks The token string to which the token is added.
+ * \param i The start index if the token.
+ * \param j The length of the token.
+ * \param type The type of the token.
+ * \param token_val The token value if it was a number otherwise should be 0.
+ */
+static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_t j, const RzAsmTokenType type, ut64 token_val) {
+	rz_return_if_fail(toks);
+	RzAsmToken *t = asm_token_create(i, j - i, type, token_val);
+	if (!t) {
+		RZ_LOG_WARN("Failed to create token. Asm strings will be flawed.\n");
+		rz_warn_if_reached();
+		return;
+	}
+	// TODO Add sort for vectors and sort tokens during coloring.
+	size_t k = 0;
+	RzAsmToken *it;
+	rz_vector_foreach(toks->tokens, it) {
+		if (it->start > t->start) {
+			rz_vector_insert(toks->tokens, k, t);
+			return;
+		}
+		++k;
+	}
+	rz_vector_push(toks->tokens, t);
+}
+
+static bool range_part_of_token(RZ_BORROW RzAsmTokenString *toks, const size_t s, const size_t e) {
+	rz_return_val_if_fail(toks, false);
+	size_t x, y;
+	RzAsmToken *it;
+	rz_vector_foreach(toks->tokens, it) {
+		x = it->start;
+		y = it->start + it->len - 1;
+		if (((x <= s) && (e <= y)) || ((y <= s) && (e <= y))) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
+	rz_return_val_if_fail(a && b, 0);
+	if (a->start < b->start) {
+		return -1;
+	} else if (a->start > b->start) {
+		return 1;
+	}
+	return 0;
+}
+
+static void check_token_coverage(RzAsmTokenString *toks) {
+	// Check if all characters belong to a token.
+	RzAsmToken *cur, *prev;
+	int i = -1;
+	rz_vector_foreach(toks->tokens, cur) {
+		if (i + 1 == cur->start) {
+			prev = cur;
+			continue;
+		}
+		if (i + 1 > cur->start) {
+			RZ_LOG_WARN("Token at index %ld overlaps with previous token"
+				    "prev start: %ld len: %ld\n",
+				cur->start, prev ? prev->start : UT32_MAX, prev ? prev->len : UT32_MAX);
+		} else {
+			RZ_LOG_WARN("Part of asm string does not belong to a token."
+				    "Previous token ended at %ld next token starts at %ld\n",
+				prev ? prev->start : UT32_MAX, cur->start);
+		}
+		i = cur->len;
+		prev = cur;
+	}
+}
+
+/**
+ * \brief Splits an asm string into tokens by using the given patterns. The result is written into \p toks.
+ *
+ * \param str The asm string.
+ * \param toks The token string. The tokens are stored here.
+ * \param patterns RzList<RzAsmTokenPattern> with the regex patterns describing each token type.
+ */
+RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_custom(RZ_BORROW RzStrBuf *asm_str, RzList /* RzAsmTokenPattern */ *patterns) {
+	rz_return_val_if_fail(asm_str && patterns, NULL);
+
+	const char *str = rz_strbuf_get(asm_str);
+	RzRegexMatch m[1];
+	st64 s = 0; // Start of matched token
+	st64 e = 0; // End of matched token
+	size_t x, y, j = 0;
+	RzAsmTokenString *toks = rz_asm_token_string_new(str);
+	RzAsmTokenPattern *pat;
+	RzListIter *it;
+	rz_list_foreach (patterns, it, pat) {
+		rz_return_val_if_fail(pat && pat->regex, NULL);
+
+		x = 0, y = 0, j = 0;
+		while (rz_regex_exec(pat->regex, str + j, 1, m, 0) == 0) {
+			s = m[0].rm_so; // Match start in string str + j
+			e = m[0].rm_eo; // Match end in string str + j
+			x = j + s; // Match start in str
+			y = j + e; // Match end in str
+			j += e;
+			if (range_part_of_token(toks, x, y - 1)) {
+				continue;
+			}
+			if (!is_num(str + x)) {
+				add_token(toks, x, y, pat->type, 0);
+				continue;
+			}
+			add_token(toks, x, y, pat->type, strtoull(str + x, NULL, is_hex_prefix(str + x) ? 16 : 10));
+		}
+	}
+
+#if RZ_CHECKS_LEVEL == 2
+	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false);
+	check_token_coverage(toks);
+#endif
+
+	return toks;
+}
+
+/**
+ * \brief Seeks to the end of the token at \p str + \p i and returns the length of it.
+ *
+ * \param str The asm string.
+ * \param i Index into \p str where the token starts.
+ * \param type Type of the token.
+ * \return size_t Size of token
+ */
+static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType type) {
+	rz_return_val_if_fail(str, 0);
+	size_t j = i;
+
+	switch (type) {
+	default:
+		rz_warn_if_reached();
+		break;
+	case RZ_ASM_TOKEN_MNEMONIC:
+	case RZ_ASM_TOKEN_REGISTER:
+		do {
+			++j;
+		} while (is_alpha_num(str + j));
+		break;
+	case RZ_ASM_TOKEN_NUMBER:
+		do {
+			if (is_hex_prefix(str + j)) {
+				j += 2;
+			} else {
+				++j;
+			}
+		} while (is_num(str + j));
+		break;
+	case RZ_ASM_TOKEN_SEPARATOR:
+		do {
+			++j;
+		} while (is_separator(*(str + j)));
+		break;
+	case RZ_ASM_TOKEN_OPERATOR:
+		do {
+			++j;
+		} while (is_operator(*(str + j)));
+		break;
+	case RZ_ASM_TOKEN_UNKNOWN:
+		do {
+			++j;
+		} while (!is_operator(*(str + j)) && !is_separator(*(str + j)) && !is_alpha_num(str + j));
+	}
+	return j;
+}
+
+static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE const RzAsmParseParam *param) {
+	rz_return_val_if_fail(asm_str, NULL);
+	if (rz_strbuf_is_empty(asm_str)) {
+		return NULL;
+	}
+	// Splitting the asm string into tokens is relatively straight forward.
+	//
+	// The target is to split an asm string into separate tokens of a given type.
+	// For example:
+	//
+	// Asm string: mov r0, 0x122
+	//
+	// is split into:
+	//   "mov"   : Mnemonic token
+	//   " "     : Separator token
+	//   "r0"    : Register token
+	//   ", "    : Separator token
+	//   "0x122" : Number token
+	//
+	// In order to do this we associated a list of characters with a certain token type.
+	//
+	// E.g. alphanumeric characters are associated with numbers, registers and mnemonics.
+	// Comma and brackets are interpreted as separators.
+	// Plus, minus and pipe are associated with the operator token type and so forth.
+	//
+	// A sequence of characters of the same type are interpreted as a token.
+	//
+	// Of cause, this interpretation of characters does not fit all architectures well.
+	// The dot '.' could be interpreted as operator token instead of a separator (think of struct access).
+	// Other example: 'lr' could be a mnemonic or a special register.
+	//
+	// In the generic method we ignore these ambiguities
+	// because it produces acceptable results as well.
+	//
+	// To extract the tokens we set the following variables:
+	// i = 0                // Start of token
+	// j = 0                // Walks until end of token.
+	//
+	// - j is incremented until it points to a character of a different token type then j-1.
+	// - Now we create the token `str[i:j-1]`.
+	// - The tokens type matches the characters type at j-1 or is of type register if it fits one.
+	// - Set i = j and start to increment j again.
+
+	const char *str = rz_strbuf_get(asm_str);
+	if (!str) {
+		return NULL;
+	}
+	RzAsmTokenString *toks = rz_asm_token_string_new(str);
+	if (!toks) {
+		return NULL;
+	}
+	// Start of token.
+	size_t i = 0;
+	// End of token.
+	size_t j = 0;
+	// Guessed token type
+	RzAsmTokenType type = RZ_ASM_TOKEN_UNKNOWN;
+	// Flag: Set if a number token is in hex format.
+	bool val_is_hex = false;
+	// Flag: Set once the mnemonic was parsed (the mnemonic is always the first alphabetic token in our string).
+	bool mnemonic_parsed = false;
+
+	while (str[i]) {
+		if (!str[j]) {
+			// j reached end of str. Finish last token and return.
+			add_token(toks, i, j, type, strtoull(str + i, NULL, val_is_hex ? 16 : 10));
+			return toks;
+		}
+		// Alphanumeric tokens
+		if (is_alpha_num(str + j)) {
+			// Number tokens
+			if (is_num(str + j)) {
+				val_is_hex = is_hex_prefix(str + j);
+				j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_NUMBER);
+				add_token(toks, i, j, RZ_ASM_TOKEN_NUMBER, strtoull(str + i, NULL, val_is_hex ? 16 : 10));
+			} else if (mnemonic_parsed) {
+				j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_REGISTER);
+				char *op_name = rz_str_ndup(str + i, j);
+				if (op_name) { // Placeholder to check for op name in register profile.
+					add_token(toks, i, j, RZ_ASM_TOKEN_REGISTER, 0);
+				} else {
+					add_token(toks, i, j, RZ_ASM_TOKEN_UNKNOWN, 0);
+				}
+				free(op_name);
+			} else {
+				mnemonic_parsed = true;
+				j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_MNEMONIC);
+				add_token(toks, i, j, RZ_ASM_TOKEN_MNEMONIC, 0);
+			}
+		} else if (is_operator(str[j])) {
+			j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_OPERATOR);
+			add_token(toks, i, j, RZ_ASM_TOKEN_OPERATOR, 0);
+		} else if (is_separator(str[j])) {
+			j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_SEPARATOR);
+			add_token(toks, i, j, RZ_ASM_TOKEN_SEPARATOR, 0);
+		} else { // Unknown tokens. UTF-8 and others.
+			j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_UNKNOWN);
+			add_token(toks, i, j, RZ_ASM_TOKEN_UNKNOWN, 0);
+		}
+		i = j;
+	}
+	return toks;
+}
+
+/**
+ * \brief Parses an asm string generically. It parses the string like: <mnemmonic> <op>, <op>.
+ * Every <op> (which is not a number) is parsed as a register. Unless a register profile is given.
+ * In this case <op> is only parsed as register if it occurs in the register profile. Otherwise as UNKNOWN.
+ *
+ * DEPRECATED: Please implement your custom parsing method and set RzArchOpcode.XXX.
+ *
+ */
+RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE RzAsmParseParam *param) {
+	rz_return_val_if_fail(asm_str, NULL);
+
+	return tokenize_asm_generic(asm_str, param);
+}
+
+/**
+ * \brief Colorizes a tokenized asm string.
+ *
+ * \param p The RzPrint struct. Used to retrieve the color palette.
+ * \param toks The tokenized asm string.
+ * \param opt Options for colorizing. E.g. reset background color, an address to highlight etc.
+ *
+ * \return The colorized asm string.
+ */
+RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks, const RzAsmColorizeOptions opt) {
+	// Color palette.
+	RzConsPrintablePalette palette = p->cons->context->pal;
+	// Black white asm string.
+	char *bw_str = rz_strbuf_get(toks->str);
+	rz_return_val_if_fail(bw_str, NULL);
+	char *reset = opt.reset_bg ? Color_RESET_NOBG : Color_RESET;
+	// mnemonic color
+	const char *mnem_col = rz_print_color_op_type(p, opt.analysis_op_type);
+
+	RzStrBuf *out = rz_strbuf_new("");
+	rz_return_val_if_fail(out, NULL);
+
+	const char *color;
+	RzAsmToken *tok;
+	rz_vector_foreach(toks->tokens, tok) {
+		switch (tok->type) {
+		default:
+			rz_warn_if_reached();
+			return NULL;
+		case RZ_ASM_TOKEN_UNKNOWN:
+			color = palette.other;
+			break;
+		case RZ_ASM_TOKEN_MNEMONIC:
+			color = mnem_col;
+			break;
+		case RZ_ASM_TOKEN_NUMBER:
+			if (tok->val.number == opt.hl_addr) {
+				color = palette.func_var_type;
+			} else {
+				color = palette.num;
+			}
+			break;
+		case RZ_ASM_TOKEN_OPERATOR:
+		case RZ_ASM_TOKEN_SEPARATOR:
+			color = palette.other;
+			break;
+		case RZ_ASM_TOKEN_REGISTER:
+			color = palette.reg;
+			break;
+		case RZ_ASM_TOKEN_META:
+			color = palette.meta;
+			break;
+		}
+
+		rz_strbuf_append(out, color);
+		rz_strbuf_append_n(out, bw_str + tok->start, tok->len);
+		rz_strbuf_append(out, reset);
+	}
+	rz_strbuf_append(out, "\0");
+	return out;
+}
+
+/**
+ * \brief Converts a not colored asm string into a colored one. First it splits it into tokens, then colorizes it.
+ *
+ * DEPRECATED: Please implement your custom parsing method and set RzArchOpcode.XXX and use rz_print_colorize_asm_str on it.
+ *
+ * \param p The RzPrint struct.
+ * \param str The plain asm string.
+ * \param param Parameters for parsing.
+ * \param opt Options for colorizing.
+ *
+ * \return char* The colorized asm string. NULL in case of failure.
+ */
+RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_print_tokenize_colorize_asm_str(RZ_BORROW RzPrint *p, const char *str, RZ_NULLABLE const RzAsmParseParam *param, const RzAsmColorizeOptions opt) {
+	rz_return_val_if_fail(p && str, NULL);
+	RzStrBuf *asm_str = rz_strbuf_new(str);
+	RzAsmTokenString *toks = tokenize_asm_generic(asm_str, param);
+	rz_strbuf_free(asm_str);
+	RzStrBuf *clr_asm = rz_print_colorize_asm_str(p, toks, opt);
+
+	rz_asm_token_string_free(toks);
+	return clr_asm;
 }

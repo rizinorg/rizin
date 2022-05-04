@@ -16,6 +16,7 @@
 #include <rz_config.h>
 #include <rz_list.h>
 #include <rz_types.h>
+#include <rz_util/rz_print.h>
 
 #define HEX_MAX_OPERANDS    6
 #define HEX_PARSE_BITS_MASK 0xc000
@@ -106,6 +107,7 @@ typedef struct {
 	char mnem_infix[128]; // The mnemonic without the pre- and postfix.
 	char mnem[192]; // Instruction mnemonic
 	ut32 addr; // Memory address the instruction is located.
+	RzAsmTokenString *tokens; ///< The tokenized asm string.
 	RzAsmOp asm_op;
 	RzAnalysisOp ana_op;
 } HexInsn;
@@ -135,6 +137,7 @@ typedef struct {
 	RzList *const_ext_l; // Constant extender values.
 	RzAsm rz_asm; // Copy of RzAsm struct. Holds certain flags of interesed for disassembly formatting.
 	RzConfig *cfg;
+	RzList /* RzAsmTokenPattern */ *token_patterns; ///< NULL terminated arry with token patterns.
 } HexState;
 
 typedef enum {
