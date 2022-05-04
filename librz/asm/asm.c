@@ -1436,13 +1436,13 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 #endif
 
 /**
- * \brief Splits an asm string into tokens by using the given patterns.
+ * \brief Splits an asm string into tokens by using the given regex patterns.
  *
  * \param str The asm string.
  * \param patterns RzList<RzAsmTokenPattern> with the regex patterns describing each token type.
  * \return RzAsmTokenString* The tokens.
  */
-RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_custom(RZ_BORROW RzStrBuf *asm_str, RzList /* RzAsmTokenPattern */ *patterns) {
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzList /* RzAsmTokenPattern */ *patterns) {
 	rz_return_val_if_fail(asm_str && patterns, NULL);
 
 	const char *str = rz_strbuf_get(asm_str);
