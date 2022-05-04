@@ -1922,11 +1922,20 @@ static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_
 	rz_vector_push(toks->tokens, t);
 }
 
-static bool range_part_of_token(RZ_BORROW RzAsmTokenString *toks, const size_t s, const size_t e) {
+/**
+ * \brief Checks if indicies s, e overlap with other tokens start/end.
+ * 
+ * \param toks Tokens to compare to.
+ * \param s Start index of token into asm string.
+ * \param e End index of token into asm string.
+ * \return true Overlaps with token from token vector.
+ * \return false Does not overap with other token.
+ */
+static bool overlaps_with_token(RZ_BORROW RzVector /* RzAsmTokenString */ *toks, const size_t s, const size_t e) {
 	rz_return_val_if_fail(toks, false);
-	size_t x, y;
+	size_t x, y; // Other tokens start/end
 	RzAsmToken *it;
-	rz_vector_foreach(toks->tokens, it) {
+	rz_vector_foreach(toks, it) {
 		x = it->start;
 		y = it->start + it->len - 1;
 		if (((x <= s) && (e <= y)) || ((y <= s) && (e <= y))) {
@@ -1970,41 +1979,41 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 }
 
 /**
- * \brief Splits an asm string into tokens by using the given patterns. The result is written into \p toks.
+ * \brief Splits an asm string into tokens by using the given patterns.
  *
  * \param str The asm string.
- * \param toks The token string. The tokens are stored here.
  * \param patterns RzList<RzAsmTokenPattern> with the regex patterns describing each token type.
+ * \return RzAsmTokenString* The tokens.
  */
 RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_custom(RZ_BORROW RzStrBuf *asm_str, RzList /* RzAsmTokenPattern */ *patterns) {
 	rz_return_val_if_fail(asm_str && patterns, NULL);
 
 	const char *str = rz_strbuf_get(asm_str);
 	RzRegexMatch m[1];
-	st64 s = 0; // Start of matched token
-	st64 e = 0; // End of matched token
-	size_t x, y, j = 0;
+	size_t j = 0; // Offset into str. Regex patterns are only searched in substring str[j:].
+	st64 i = 0; // Start of token in str.
+	st64 s = 0; // Start of matched token in str[j:]
+	st64 l = 0; // Length of token.
 	RzAsmTokenString *toks = rz_asm_token_string_new(str);
 	RzAsmTokenPattern *pat;
 	RzListIter *it;
 	rz_list_foreach (patterns, it, pat) {
 		rz_return_val_if_fail(pat && pat->regex, NULL);
 
-		x = 0, y = 0, j = 0;
 		while (rz_regex_exec(pat->regex, str + j, 1, m, 0) == 0) {
-			s = m[0].rm_so; // Match start in string str + j
-			e = m[0].rm_eo; // Match end in string str + j
-			x = j + s; // Match start in str
-			y = j + e; // Match end in str
-			j += e;
-			if (range_part_of_token(toks, x, y - 1)) {
+			s = m[0].rm_so; // Token start in str[j:]
+			l = m[0].rm_eo - s; // End in str[j:] - start in str[j:] = Length of token.
+			i = j + s; // Start of token in str.
+			if (overlaps_with_token(toks->tokens, i, i + l)) {
+				// If this is true a token with higher priority was already matched before.
 				continue;
 			}
-			if (!is_num(str + x)) {
-				add_token(toks, x, y, pat->type, 0);
+			if (!is_num(str + i)) {
+				add_token(toks, i, l, pat->type, 0);
 				continue;
 			}
-			add_token(toks, x, y, pat->type, strtoull(str + x, NULL, is_hex_prefix(str + x) ? 16 : 10));
+			add_token(toks, i, l, pat->type, strtoull(str + i, NULL, 0));
+			j = i + l;
 		}
 	}
 
