@@ -75,7 +75,7 @@ typedef struct {
 } RzAsmTokenString;
 
 typedef struct {
-	RzRegSet *reg_set; ///< Array of reg sets used to lookup register names during parsing.
+	RzRegSet *reg_sets; ///< Array of reg sets used to lookup register names during parsing.
 } RzAsmParseParam;
 
 /**

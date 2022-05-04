@@ -1120,7 +1120,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 			opts.reset_bg = partial_reset;
 			opts.analysis_op_type = ds->analysis_op.type;
 			RzAsmParseParam param = { 0 };
-			param.reg_set = core->analysis ? core->analysis->reg->regset : NULL;
+			param.reg_sets = core->analysis ? core->analysis->reg->regset : NULL;
 			RzStrBuf *asm_str;
 			if (ds->asmop.asm_toks) {
 				asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks, opts);
@@ -1167,7 +1167,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 			opts.reset_bg = partial_reset;
 			opts.analysis_op_type = ds->analysis_op.type;
 			RzAsmParseParam param = { 0 };
-			param.reg_set = core->analysis ? core->analysis->reg->regset : NULL;
+			param.reg_sets = core->analysis ? core->analysis->reg->regset : NULL;
 			RzStrBuf *asm_str;
 			if (ds->asmop.asm_toks) {
 				asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks, opts);
@@ -5953,7 +5953,7 @@ toro:
 					opts.reset_bg = partial_reset;
 					opts.analysis_op_type = ds->analysis_op.type;
 					RzAsmParseParam param = { 0 };
-					param.reg_set = core->analysis ? core->analysis->reg->regset : NULL;
+					param.reg_sets = core->analysis ? core->analysis->reg->regset : NULL;
 					RzStrBuf *asm_str;
 					if (ds->asmop.asm_toks) {
 						asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks, opts);

@@ -2136,7 +2136,7 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 			} else if (mnemonic_parsed) {
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_REGISTER);
 				char *op_name = rz_str_ndup(str + i, l);
-				if (param && is_register(op_name, param->reg_set)) {
+				if (param && is_register(op_name, param->reg_sets)) {
 					add_token(toks, i, l, RZ_ASM_TOKEN_REGISTER, 0);
 				} else {
 					add_token(toks, i, l, RZ_ASM_TOKEN_UNKNOWN, 0);
