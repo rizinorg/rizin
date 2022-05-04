@@ -1509,44 +1509,52 @@ static bool check_arg_name(RzPrint *print, char *p, ut64 func_addr) {
 
 static bool is_hex_prefix(const char *p) {
 	rz_return_val_if_fail(p, false);
-	if (p[0] & 0x80) {
+	if (!isascii(*p)) {
 		return false; // UTF-8
 	}
 	return (p[0] == '0' && p[1] == 'x');
 }
 
+/**
+ * \brief Checks if the first character of \p c is a digit character
+ * OR if the first two chars are a hex prefix.
+ *
+ * \param c The character string.
+ * \return true First char is a digit or the first two chars are a hex prefix.
+ * \return false Otherwise.
+ */
 static bool is_num(const char *c) {
 	rz_return_val_if_fail(c, false);
-	if (c[0] & 0x80) {
+	if (!isascii(*c)) {
 		return false; // UTF-8
 	}
 	return is_hex_prefix(c) || isxdigit(c[0]);
 }
 
-static bool is_alpha(const char c) {
-	if (c & 0x80) {
-		return false; // UTF-8
-	}
-	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-}
-
+/**
+ * \brief Checks if the first character of \p c is an alphanumeric character OR if it is a hex prefix.
+ *
+ * \param c The character string.
+ * \return true If it is alphanumeric or a hex prefix.
+ * \return false Otherwise.
+ */
 static bool is_alpha_num(const char *c) {
 	rz_return_val_if_fail(c, false);
-	if (c[0] & 0x80) {
+	if (!isascii(*c)) {
 		return false; // UTF-8
 	}
-	return is_num(c) || is_alpha(c[0]);
+	return is_num(c) || isalpha(c[0]);
 }
 
 static bool is_separator(const char c) {
-	if (c & 0x80) {
+	if (!isascii(c)) {
 		return false; // UTF-8
 	}
 	return (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ',' || c == '.' || c == '#' || c == ':' || c == ' ');
 }
 
 static bool is_operator(const char c) {
-	if (c & 0x80) {
+	if (!isascii(c)) {
 		return false; // UTF-8
 	}
 	return (c == '+' || c == '-' || c == '/' || c == '>' || c == '<' || c == '*' || c == '%' || c == '|' || c == '&' || c == '=' || c == '!');
