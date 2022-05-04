@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <ctype.h>
 #include <rz_util/rz_str.h>
 #include <rz_list.h>
 #include <rz_regex.h>
@@ -1519,7 +1520,7 @@ static bool is_num(const char *c) {
 	if (c[0] & 0x80) {
 		return false; // UTF-8
 	}
-	return is_hex_prefix(c) || (c[0] >= '0' && c[0] <= '9');
+	return is_hex_prefix(c) || isxdigit(c[0]);
 }
 
 static bool is_alpha(const char c) {
@@ -1897,13 +1898,13 @@ static RZ_OWN RzAsmToken *asm_token_create(const size_t start, const size_t len,
  *
  * \param toks The token string to which the token is added.
  * \param i The start index if the token.
- * \param j The length of the token.
+ * \param l The length of the token.
  * \param type The type of the token.
  * \param token_val The token value if it was a number otherwise should be 0.
  */
-static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_t j, const RzAsmTokenType type, ut64 token_val) {
+static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_t l, const RzAsmTokenType type, const ut64 token_val) {
 	rz_return_if_fail(toks);
-	RzAsmToken *t = asm_token_create(i, j - i, type, token_val);
+	RzAsmToken *t = asm_token_create(i, l, type, token_val);
 	if (!t) {
 		RZ_LOG_WARN("Failed to create token. Asm strings will be flawed.\n");
 		rz_warn_if_reached();
@@ -2013,11 +2014,11 @@ RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_custom(RZ_BORROW RzStrBuf 
  * \param str The asm string.
  * \param i Index into \p str where the token starts.
  * \param type Type of the token.
- * \return size_t Size of token
+ * \return size_t Length of token
  */
 static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType type) {
 	rz_return_val_if_fail(str, 0);
-	size_t j = i;
+	size_t l = i;
 
 	switch (type) {
 	default:
@@ -2026,34 +2027,34 @@ static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType typ
 	case RZ_ASM_TOKEN_MNEMONIC:
 	case RZ_ASM_TOKEN_REGISTER:
 		do {
-			++j;
-		} while (is_alpha_num(str + j));
+			++l;
+		} while (is_alpha_num(str + l));
 		break;
 	case RZ_ASM_TOKEN_NUMBER:
 		do {
-			if (is_hex_prefix(str + j)) {
-				j += 2;
+			if (is_hex_prefix(str + l)) {
+				l += 2;
 			} else {
-				++j;
+				++l;
 			}
-		} while (is_num(str + j));
+		} while (is_num(str + l));
 		break;
 	case RZ_ASM_TOKEN_SEPARATOR:
 		do {
-			++j;
-		} while (is_separator(*(str + j)));
+			++l;
+		} while (is_separator(*(str + l)));
 		break;
 	case RZ_ASM_TOKEN_OPERATOR:
 		do {
-			++j;
-		} while (is_operator(*(str + j)));
+			++l;
+		} while (is_operator(*(str + l)));
 		break;
 	case RZ_ASM_TOKEN_UNKNOWN:
 		do {
-			++j;
-		} while (!is_operator(*(str + j)) && !is_separator(*(str + j)) && !is_alpha_num(str + j));
+			++l;
+		} while (!is_operator(*(str + l)) && !is_separator(*(str + l)) && !is_alpha_num(str + l));
 	}
-	return j;
+	return l - i;
 }
 
 static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE const RzAsmParseParam *param) {
@@ -2091,13 +2092,12 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 	// because it produces acceptable results as well.
 	//
 	// To extract the tokens we set the following variables:
-	// i = 0                // Start of token
-	// j = 0                // Walks until end of token.
+	// i = 0				// Start of token
+	// l = 0				// Length of token.
+	// i + l				// Is the start of the next token.
 	//
-	// - j is incremented until it points to a character of a different token type then j-1.
-	// - Now we create the token `str[i:j-1]`.
-	// - The tokens type matches the characters type at j-1 or is of type register if it fits one.
-	// - Set i = j and start to increment j again.
+	// - The character at str[i] determines the type (alphanum = reg/number/mnem etc.).
+	// - Search
 
 	const char *str = rz_strbuf_get(asm_str);
 	if (!str) {
@@ -2109,54 +2109,57 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 	}
 	// Start of token.
 	size_t i = 0;
-	// End of token.
-	size_t j = 0;
-	// Guessed token type
-	RzAsmTokenType type = RZ_ASM_TOKEN_UNKNOWN;
-	// Flag: Set if a number token is in hex format.
-	bool val_is_hex = false;
+	// Length of token.
+	size_t l = 0;
 	// Flag: Set once the mnemonic was parsed (the mnemonic is always the first alphabetic token in our string).
 	bool mnemonic_parsed = false;
 
 	while (str[i]) {
-		if (!str[j]) {
-			// j reached end of str. Finish last token and return.
-			add_token(toks, i, j, type, strtoull(str + i, NULL, val_is_hex ? 16 : 10));
-			return toks;
-		}
 		// Alphanumeric tokens
-		if (is_alpha_num(str + j)) {
-			// Number tokens
-			if (is_num(str + j)) {
-				val_is_hex = is_hex_prefix(str + j);
-				j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_NUMBER);
-				add_token(toks, i, j, RZ_ASM_TOKEN_NUMBER, strtoull(str + i, NULL, val_is_hex ? 16 : 10));
+		if (is_alpha_num(str + i)) {
+			bool is_number = false;
+			if (isxdigit(*(str + i))) {
+				// Register/mnemonic names can be ambiguous compared to hex numbers.
+				// E.g. "eax" could be parsed as hex number token "ea".
+				// Here we check the character after the token.
+				// If this char is an alphabetic char (like the "x" in "eax"), the token isn't a number.
+				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_NUMBER);
+				if (!str[i + l]) { // End of asm string => token is number.
+					is_number = true;
+				} else if (!isalpha(str[i + l])) { // Next char is something non alphabetic => token is number.
+					is_number = true;
+				}
+			}
+
+			if (is_number) {
+				add_token(toks, i, l, RZ_ASM_TOKEN_NUMBER, strtoull(str + i, NULL, 0));
 			} else if (mnemonic_parsed) {
-				j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_REGISTER);
-				char *op_name = rz_str_ndup(str + i, j);
+				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_REGISTER);
+				char *op_name = rz_str_ndup(str + i, l);
 				if (param && is_register(op_name, param->reg_set)) {
-					add_token(toks, i, j, RZ_ASM_TOKEN_REGISTER, 0);
+					add_token(toks, i, l, RZ_ASM_TOKEN_REGISTER, 0);
 				} else {
-					add_token(toks, i, j, RZ_ASM_TOKEN_UNKNOWN, 0);
+					add_token(toks, i, l, RZ_ASM_TOKEN_UNKNOWN, 0);
 				}
 				free(op_name);
 			} else {
 				mnemonic_parsed = true;
-				j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_MNEMONIC);
-				add_token(toks, i, j, RZ_ASM_TOKEN_MNEMONIC, 0);
+				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_MNEMONIC);
+				add_token(toks, i, l, RZ_ASM_TOKEN_MNEMONIC, 0);
 			}
-		} else if (is_operator(str[j])) {
-			j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_OPERATOR);
-			add_token(toks, i, j, RZ_ASM_TOKEN_OPERATOR, 0);
-		} else if (is_separator(str[j])) {
-			j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_SEPARATOR);
-			add_token(toks, i, j, RZ_ASM_TOKEN_SEPARATOR, 0);
+		} else if (is_operator(str[i])) {
+			l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_OPERATOR);
+			add_token(toks, i, l, RZ_ASM_TOKEN_OPERATOR, 0);
+		} else if (is_separator(str[i])) {
+			l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_SEPARATOR);
+			add_token(toks, i, l, RZ_ASM_TOKEN_SEPARATOR, 0);
 		} else { // Unknown tokens. UTF-8 and others.
-			j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_UNKNOWN);
-			add_token(toks, i, j, RZ_ASM_TOKEN_UNKNOWN, 0);
+			l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_UNKNOWN);
+			add_token(toks, i, l, RZ_ASM_TOKEN_UNKNOWN, 0);
 		}
-		i = j;
+		i = i + l;
 	}
+	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false);
 	return toks;
 }
 
