@@ -204,7 +204,9 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 	};
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
 	a->cur->disassemble(a, op, buf, 4);
-
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
 	mu_assert_eq(rz_vector_len(op->asm_toks->tokens), 7, "Number of generated tokens.");
 
 	int i = 0;
@@ -251,7 +253,9 @@ static bool test_rz_tokenize_custom_hexagon_1(void) {
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
 	a->pc += 4;
 	a->cur->disassemble(a, op, buf, 4);
-
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
 	mu_assert_eq(rz_vector_len(op->asm_toks->tokens), 21, "Number of generated tokens.");
 	int i = 0;
 	RzAsmToken *it;
