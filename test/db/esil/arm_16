@@ -1093,7 +1093,7 @@ RUN
 NAME=arm s110 syscalls asl ascii
 FILE==
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=asl sd_evt_get
+CMDS=asn sd_evt_get
 EXPECT=<<EOF
 81
 EOF
@@ -1102,7 +1102,7 @@ RUN
 NAME=arm s110 syscalls asl num
 FILE==
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=asl 0x51
+CMDS=asr 0x51
 EXPECT=<<EOF
 sd_evt_get
 EOF

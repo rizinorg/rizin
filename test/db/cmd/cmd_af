@@ -292,7 +292,7 @@ afsj
 EOF
 EXPECT=<<EOF
 void fcn.00013c70(int64_t arg1, int64_t arg2, int64_t arg3);
-{"name":"fcn.00013c70","noreturn":false,"ret":"void","cc":"amd64","args":[]}
+{"name":"fcn.00013c70","noreturn":false,"ret":"void","cc":"amd64","args":[{"name":"arg1","type":"int64_t","cc":"rdi"},{"name":"arg2","type":"int64_t","cc":"rsi"},{"name":"arg3","type":"int64_t","cc":"rdx"}]}
 EOF
 RUN
 

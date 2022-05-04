@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_userconf.h>
-#if DEBUGGER
 
 #if XNU_USE_PTRACE
 #define XNU_USE_EXCTHR 0
@@ -1431,5 +1430,3 @@ RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 	rz_list_free(modules);
 	return list;
 }
-
-#endif

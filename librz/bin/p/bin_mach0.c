@@ -519,6 +519,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie)(bf->o->bin_obj);
 	ret->has_nx = MACH0_(has_nx)(bf->o->bin_obj);
+
 	return ret;
 }
 
