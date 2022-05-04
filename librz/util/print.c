@@ -1999,8 +1999,8 @@ RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_custom(RZ_BORROW RzStrBuf 
 		}
 	}
 
-#if RZ_CHECKS_LEVEL == 2
 	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false);
+#if RZ_CHECKS_LEVEL == 2
 	check_token_coverage(toks);
 #endif
 
