@@ -2057,6 +2057,15 @@ static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType typ
 	return j - i;
 }
 
+/**
+ * \brief Parses an asm string into tokens.
+ *
+ * \p param->regsets must be set if this function is expected to detect register names.
+ *
+ * \param asm_str The asm string.
+ * \param param Several parameter which alter the parsing.
+ * \return RzAsmTokenString* The asm tokens.
+ */
 static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE const RzAsmParseParam *param) {
 	rz_return_val_if_fail(asm_str, NULL);
 	if (rz_strbuf_is_empty(asm_str)) {
@@ -2067,16 +2076,16 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 	// The target is to split an asm string into separate tokens of a given type.
 	// For example:
 	//
-	// Asm string: mov r0, 0x122
+	// Asm string: `mov eax, 0x122`
 	//
 	// is split into:
-	//   "mov"   : Mnemonic token
-	//   " "     : Separator token
-	//   "r0"    : Register token
-	//   ", "    : Separator token
-	//   "0x122" : Number token
+	//   `mov`   : Mnemonic token
+	//   ` `     : Separator token
+	//   `eax`   : Register token
+	//   `, `    : Separator token
+	//   `0x122` : Number token
 	//
-	// In order to do this we associated a list of characters with a certain token type.
+	// In order to do this we associated a certain characters with a token type.
 	//
 	// E.g. alphanumeric characters are associated with numbers, registers and mnemonics.
 	// Comma and brackets are interpreted as separators.
@@ -2084,20 +2093,21 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 	//
 	// A sequence of characters of the same type are interpreted as a token.
 	//
-	// Of cause, this interpretation of characters does not fit all architectures well.
-	// The dot '.' could be interpreted as operator token instead of a separator (think of struct access).
-	// Other example: 'lr' could be a mnemonic or a special register.
+	// For example: `lr` could be a mnemonic or a special register.
 	//
-	// In the generic method we ignore these ambiguities
-	// because it produces acceptable results as well.
+	// In this generic method we ignore these ambiguities and parse the first alphabetic token always as mnemonic
+	// and alphabetic tokens after that as registers/unknowns.
 	//
 	// To extract the tokens we set the following variables:
-	// i = 0				// Start of token
-	// l = 0				// Length of token.
-	// i + l				// Is the start of the next token.
+	// `i = 0`				// Start of token
+	// `l = 0`				// Length of token.
+	// `i + l`				// Is the start of the next token.
 	//
-	// - The character at str[i] determines the type (alphanum = reg/number/mnem etc.).
-	// - Search
+	// Parsing is done sequentially:
+	// - The character at `str[i]` determines the token type.
+	// - Iterate over characters from `i` on and stop if a character of another token type appears (char at `str[l]`).
+	// - Create token from `i` to `l-1` with length `l`.
+	// - Start again from `i + l`
 
 	const char *str = rz_strbuf_get(asm_str);
 	if (!str) {
@@ -2111,7 +2121,7 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 	size_t i = 0;
 	// Length of token.
 	size_t l = 0;
-	// Flag: Set once the mnemonic was parsed (the mnemonic is always the first alphabetic token in our string).
+	// Set flag once the mnemonic was parsed (the mnemonic is always the first alphabetic token in our string).
 	bool mnemonic_parsed = false;
 
 	while (str[i]) {
@@ -2119,7 +2129,7 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 		if (is_alpha_num(str + i)) {
 			bool is_number = false;
 			if (isxdigit(*(str + i))) {
-				// Register/mnemonic names can be ambiguous compared to hex numbers.
+				// Register/mnemonic names can be ambiguous in comparison to hex numbers.
 				// E.g. "eax" could be parsed as hex number token "ea".
 				// Here we check the character after the token.
 				// If this char is an alphabetic char (like the "x" in "eax"), the token isn't a number.
