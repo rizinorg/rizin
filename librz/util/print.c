@@ -1383,7 +1383,7 @@ RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int s
 }
 
 // probably move somewhere else. RzPrint doesnt needs to know about the RZ_ANALYSIS_ enums
-RZ_API const char *rz_print_color_op_type(RzPrint *p, ut32 analysis_type) {
+RZ_API const char *rz_print_color_op_type(RzPrint *p, _RzAnalysisOpType analysis_type) {
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
 	switch (analysis_type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_NOP:
@@ -2235,15 +2235,15 @@ RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_string(RZ_BOR
  *
  * \return The colorized asm string.
  */
-RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks, const RzAsmColorizeOptions opt) {
+RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks) {
 	// Color palette.
 	RzConsPrintablePalette palette = p->cons->context->pal;
 	// Black white asm string.
 	char *bw_str = rz_strbuf_get(toks->str);
 	rz_return_val_if_fail(bw_str, NULL);
-	char *reset = opt.reset_bg ? Color_RESET_NOBG : Color_RESET;
+	char *reset = p->colorize_opts.reset_bg ? Color_RESET_NOBG : Color_RESET;
 	// mnemonic color
-	const char *mnem_col = rz_print_color_op_type(p, opt.analysis_op_type);
+	const char *mnem_col = rz_print_color_op_type(p, toks->op_type);
 
 	RzStrBuf *out = rz_strbuf_new("");
 	rz_return_val_if_fail(out, NULL);
@@ -2262,7 +2262,7 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 			color = mnem_col;
 			break;
 		case RZ_ASM_TOKEN_NUMBER:
-			if (tok->val.number == opt.hl_addr) {
+			if (tok->val.number == p->colorize_opts.hl_addr && tok->val.number != 0) {
 				color = palette.func_var_type;
 			} else {
 				color = palette.num;
@@ -2300,12 +2300,12 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
  *
  * \return char* The colorized asm string. NULL in case of failure.
  */
-RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_print_tokenize_colorize_asm_str(RZ_BORROW RzPrint *p, const char *str, RZ_NULLABLE const RzAsmParseParam *param, const RzAsmColorizeOptions opt) {
+RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_print_tokenize_colorize_asm_str(RZ_BORROW RzPrint *p, const char *str, RZ_NULLABLE const RzAsmParseParam *param) {
 	rz_return_val_if_fail(p && str, NULL);
 	RzStrBuf *asm_str = rz_strbuf_new(str);
 	RzAsmTokenString *toks = tokenize_asm_generic(asm_str, param);
 	rz_strbuf_free(asm_str);
-	RzStrBuf *clr_asm = rz_print_colorize_asm_str(p, toks, opt);
+	RzStrBuf *clr_asm = rz_print_colorize_asm_str(p, toks);
 
 	rz_asm_token_string_free(toks);
 	return clr_asm;

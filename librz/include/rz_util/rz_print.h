@@ -70,6 +70,7 @@ typedef struct {
  * \brief An tokenized asm string.
  */
 typedef struct {
+	ut32 op_type; ///< RzAnalysisOpType. Mnemonic color depends on this.
 	RzStrBuf *str; //< Contains the raw asm string
 	RzVector /* <RzAsmToken> */ *tokens; //< Contains only the tokenization meta-info without strings, ordered by start for log2(n) access
 } RzAsmTokenString;
@@ -94,8 +95,7 @@ typedef struct {
 typedef struct {
 	bool reset_bg; // Reset the background color?
 	ut64 hl_addr; // Address which should be highlighted. Usually the function address.
-	ut32 analysis_op_type; // The analysis type of the instruction.
-} RzAsmColorizeOptions;
+} RzPrintAsmColorOpts;
 
 typedef struct rz_print_zoom_t {
 	ut8 *buf;
@@ -178,6 +178,7 @@ typedef struct rz_print_t {
 	ut64 screen_bounds;
 	// Memoized current row number to calculate screen_bounds
 	int rows;
+	RzPrintAsmColorOpts colorize_opts; ///< Coloize options for asm strings.
 } RzPrint;
 
 #ifdef RZ_API
@@ -228,7 +229,6 @@ RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, 
 RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
 RZ_API void rz_print_progressbar(RzPrint *pr, int pc, int _cols);
 RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
-RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks, const RzAsmColorizeOptions opt);
 RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
 RZ_API const char *rz_print_color_op_type(RzPrint *p, ut32 analysis_type);
 RZ_API void rz_print_init_rowoffsets(RzPrint *p);
@@ -248,8 +248,8 @@ RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks);
 RZ_API void rz_asm_token_pattern_free(void *p);
 RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_custom(RZ_BORROW RzStrBuf *asm_str, RzList /* RzAsmTokenPattern */ *patterns);
 RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE RzAsmParseParam *param);
-RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_print_tokenize_colorize_asm_str(RZ_BORROW RzPrint *p, const char *str, RZ_NULLABLE const RzAsmParseParam *param, const RzAsmColorizeOptions opt);
-RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks, const RzAsmColorizeOptions opt);
+RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_print_tokenize_colorize_asm_str(RZ_BORROW RzPrint *p, const char *str, RZ_NULLABLE const RzAsmParseParam *param);
+RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks);
 #endif
 
 #ifdef __cplusplus
