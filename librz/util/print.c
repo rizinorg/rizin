@@ -1551,15 +1551,16 @@ static bool is_operator(const char c) {
 	return (c == '+' || c == '-' || c == '/' || c == '>' || c == '<' || c == '*' || c == '%' || c == '|' || c == '&' || c == '=' || c == '!');
 }
 
-static bool is_register(const char *name, RZ_BORROW RzReg *reg_profile) {
-	rz_return_val_if_fail(name, false);
-	if (name[0] & 0x80) {
-		return false; // UTF-8
+static bool is_register(const char *name, RZ_BORROW RzRegSet *regset) {
+	rz_return_val_if_fail(name && regset, false);
+	if (!regset) {
+		return false;
 	}
+
 	bool found = false;
 	for (ut32 i = 0; i < RZ_REG_TYPE_LAST; ++i) {
-		if (reg_profile->regset[i].ht_regs) {
-			ht_pp_find(reg_profile->regset[i].ht_regs, name, &found);
+		if (regset[i].ht_regs) {
+			ht_pp_find(regset[i].ht_regs, name, &found);
 			if (found) {
 				return true;
 			}
@@ -2142,7 +2143,7 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 			} else if (mnemonic_parsed) {
 				j = seek_to_end_of_token(str, j, RZ_ASM_TOKEN_REGISTER);
 				char *op_name = rz_str_ndup(str + i, j);
-				if (op_name) { // Placeholder to check for op name in register profile.
+				if (param && is_register(op_name, param->reg_set)) {
 					add_token(toks, i, j, RZ_ASM_TOKEN_REGISTER, 0);
 				} else {
 					add_token(toks, i, j, RZ_ASM_TOKEN_UNKNOWN, 0);
