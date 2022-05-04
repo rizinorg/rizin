@@ -1924,10 +1924,10 @@ static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_
 
 /**
  * \brief Checks if indicies s, e overlap with other tokens start/end.
- * 
+ *
  * \param toks Tokens to compare to.
  * \param s Start index of token into asm string.
- * \param e End index of token into asm string.
+ * \param e End index of token into asm string (points to last char of token).
  * \return true Overlaps with token from token vector.
  * \return false Does not overap with other token.
  */
@@ -1938,7 +1938,10 @@ static bool overlaps_with_token(RZ_BORROW RzVector /* RzAsmTokenString */ *toks,
 	rz_vector_foreach(toks, it) {
 		x = it->start;
 		y = it->start + it->len - 1;
-		if (((x <= s) && (e <= y)) || ((y <= s) && (e <= y))) {
+		if ((e > x && e < y) // e within x:y
+			|| (s > x && s < y) // s within x:y
+			|| (x <= s && e <= y)) // s:e equal or in x:y
+		{
 			return true;
 		}
 	}
@@ -1956,25 +1959,41 @@ static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
 }
 
 static void check_token_coverage(RzAsmTokenString *toks) {
+	rz_return_if_fail(toks);
+	if (rz_vector_len(toks->tokens) == 0) {
+		RZ_LOG_WARN("No tokens given.\n");
+		return;
+	}
+	bool error = false;
 	// Check if all characters belong to a token.
-	RzAsmToken *cur, *prev;
-	int i = -1;
+	RzAsmToken *cur, *prev = NULL;
+	int i = 0;
+	ut32 ci, cj, pi, pj; // Current and previous token indices.
 	rz_vector_foreach(toks->tokens, cur) {
-		if (i + 1 == cur->start) {
+		if (i == cur->start) {
 			prev = cur;
+			i = cur->start + cur->len;
 			continue;
 		}
-		if (i + 1 > cur->start) {
-			RZ_LOG_WARN("Token at index %ld overlaps with previous token"
-				    "prev start: %ld len: %ld\n",
-				cur->start, prev ? prev->start : UT32_MAX, prev ? prev->len : UT32_MAX);
+		ci = cur->start;
+		cj = cur->start + cur->len;
+		pi = prev ? prev->start : 0;
+		pj = prev ? prev->start + prev->len : 0;
+		if (i > cur->start) {
+			RZ_LOG_WARN("i = %d Token at %d:%d overlaps with token %d:%d\n",
+				i, pi, pj, ci, cj);
+			error = true;
 		} else {
-			RZ_LOG_WARN("Part of asm string does not belong to a token."
-				    "Previous token ended at %ld next token starts at %ld\n",
-				prev ? prev->start : UT32_MAX, cur->start);
+			RZ_LOG_WARN("i = %d, Part of asm string is not covered by a token."
+				    " Empty range between token %d:%d and token %d:%d\n",
+				i, pi, pj, ci, cj);
+			error = true;
 		}
-		i = cur->len;
+		i = cur->start + cur->len;
 		prev = cur;
+	}
+	if (error) {
+		RZ_LOG_WARN("Parsing errors in asm str: %s\n", rz_strbuf_get(toks->str));
 	}
 }
 
@@ -1999,17 +2018,22 @@ RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_custom(RZ_BORROW RzStrBuf 
 	RzListIter *it;
 	rz_list_foreach (patterns, it, pat) {
 		rz_return_val_if_fail(pat && pat->regex, NULL);
-
+		j = 0;
+		if (!pat->regex) {
+			continue;
+		}
 		while (rz_regex_exec(pat->regex, str + j, 1, m, 0) == 0) {
 			s = m[0].rm_so; // Token start in str[j:]
 			l = m[0].rm_eo - s; // End in str[j:] - start in str[j:] = Length of token.
 			i = j + s; // Start of token in str.
-			if (overlaps_with_token(toks->tokens, i, i + l)) {
-				// If this is true a token with higher priority was already matched before.
+			if (overlaps_with_token(toks->tokens, i, i + l - 1)) {
+				// If this is true a token with higher priority was matched before.
+				j = i + l;
 				continue;
 			}
 			if (!is_num(str + i)) {
 				add_token(toks, i, l, pat->type, 0);
+				j = i + l;
 				continue;
 			}
 			add_token(toks, i, l, pat->type, strtoull(str + i, NULL, 0));
@@ -2069,7 +2093,7 @@ static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType typ
 	case RZ_ASM_TOKEN_UNKNOWN:
 		do {
 			++j;
-		} while (!is_operator(*(str + j)) && !is_separator(*(str + j)) && !is_alpha_num(str + j));
+		} while (!isascii(*(str + j)) && !is_operator(*(str + j)) && !is_separator(*(str + j)) && !is_alpha_num(str + j));
 	}
 	return j - i;
 }

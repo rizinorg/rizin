@@ -32,8 +32,14 @@ static RZ_OWN RzList /* RzAsmTokenPattern */ *get_token_patterns() {
 	pat->pattern = strdup(
 		"(#{1,2})|" // Immediate prefix
 		"(^[\\[\\?\\/\\|\\\\┌│└\\{])|" // Packet prefix
-		"([∎<\\}][ :]endloop[01]{1,2})|" // Endloop markers
-		"(\\}$)|\\.new|:n?t|:raw" // Closing packet bracket, .new and jump hints
+		"([∎<\\}][ :]endloop[01]{1,2})" // Endloop markers
+	);
+	rz_list_append(l, pat);
+
+	pat = RZ_NEW0(RzAsmTokenPattern);
+	pat->type = RZ_ASM_TOKEN_META;
+	pat->pattern = strdup(
+		"(\\}$)|\\.new|:n?t|:raw|<err>" // Closing packet bracket, .new and jump hints
 	);
 	rz_list_append(l, pat);
 
