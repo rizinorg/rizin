@@ -1938,10 +1938,7 @@ static bool overlaps_with_token(RZ_BORROW RzVector /* RzAsmTokenString */ *toks,
 	rz_vector_foreach(toks, it) {
 		x = it->start;
 		y = it->start + it->len - 1;
-		if ((e > x && e < y) // e within x:y
-			|| (s > x && s < y) // s within x:y
-			|| (x <= s && e <= y)) // s:e equal or in x:y
-		{
+		if (!(s > y || e < x)) { // s:e not outside of x:y
 			return true;
 		}
 	}
