@@ -2287,26 +2287,3 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	rz_strbuf_append(out, "\0");
 	return out;
 }
-
-/**
- * \brief Converts a not colored asm string into a colored one. First it splits it into tokens, then colorizes it.
- *
- * DEPRECATED: Please implement your custom parsing method and set RzArchOpcode.XXX and use rz_print_colorize_asm_str on it.
- *
- * \param p The RzPrint struct.
- * \param str The plain asm string.
- * \param param Parameters for parsing.
- * \param opt Options for colorizing.
- *
- * \return char* The colorized asm string. NULL in case of failure.
- */
-RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_print_tokenize_colorize_asm_str(RZ_BORROW RzPrint *p, const char *str, RZ_NULLABLE const RzAsmParseParam *param) {
-	rz_return_val_if_fail(p && str, NULL);
-	RzStrBuf *asm_str = rz_strbuf_new(str);
-	RzAsmTokenString *toks = tokenize_asm_generic(asm_str, param);
-	rz_strbuf_free(asm_str);
-	RzStrBuf *clr_asm = rz_print_colorize_asm_str(p, toks);
-
-	rz_asm_token_string_free(toks);
-	return clr_asm;
-}

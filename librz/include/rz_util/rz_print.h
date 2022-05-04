@@ -248,7 +248,6 @@ RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks);
 RZ_API void rz_asm_token_pattern_free(void *p);
 RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_custom(RZ_BORROW RzStrBuf *asm_str, RzList /* RzAsmTokenPattern */ *patterns);
 RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_print_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE RzAsmParseParam *param);
-RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_print_tokenize_colorize_asm_str(RZ_BORROW RzPrint *p, const char *str, RZ_NULLABLE const RzAsmParseParam *param);
 RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks);
 #endif
 

@@ -1122,7 +1122,12 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 			if (ds->asmop.asm_toks) {
 				asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks);
 			} else {
-				asm_str = rz_print_tokenize_colorize_asm_str(core->print, source, &param);
+				asm_str = rz_strbuf_new(source);
+				RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+				rz_strbuf_free(asm_str);
+				toks->op_type = ds->analysis_op.type;
+				asm_str = rz_print_colorize_asm_str(core->print, toks);
+				rz_asm_token_string_free(toks);
 			}
 			rz_return_if_fail(asm_str);
 			source = rz_strbuf_drain(asm_str);
@@ -1166,7 +1171,11 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 			if (ds->asmop.asm_toks) {
 				asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks);
 			} else {
-				asm_str = rz_print_tokenize_colorize_asm_str(core->print, source, &param);
+				asm_str = rz_strbuf_new(source);
+				RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+				rz_strbuf_free(asm_str);
+				toks->op_type = ds->analysis_op.type;
+				asm_str = rz_print_colorize_asm_str(core->print, toks);
 			}
 			rz_return_if_fail(asm_str);
 			source = rz_strbuf_drain(asm_str);
@@ -5943,14 +5952,18 @@ toro:
 				if (ds->show_color && ds->colorop) {
 					source = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);
 					core->print->colorize_opts.reset_bg = line_highlighted(ds);
-					// opts.analysis_op_type = ds->analysis_op.type;
 					RzAsmParseParam param = { 0 };
 					param.reg_sets = core->analysis ? core->analysis->reg->regset : NULL;
 					RzStrBuf *asm_str;
 					if (ds->asmop.asm_toks) {
 						asm_str = rz_print_colorize_asm_str(core->print, ds->asmop.asm_toks);
 					} else {
-						asm_str = rz_print_tokenize_colorize_asm_str(core->print, source, &param);
+						asm_str = rz_strbuf_new(source);
+						RzAsmTokenString *toks = rz_print_tokenize_asm_string(asm_str, &param);
+						rz_strbuf_free(asm_str);
+						toks->op_type = ds->analysis_op.type;
+						asm_str = rz_print_colorize_asm_str(core->print, toks);
+						rz_asm_token_string_free(toks);
 					}
 					rz_return_val_if_fail(asm_str, 0);
 					source = rz_strbuf_drain(asm_str);
