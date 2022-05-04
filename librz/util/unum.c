@@ -8,6 +8,14 @@
 
 static ut64 rz_num_tailff(RzNum *num, const char *hex);
 
+RZ_API bool rz_num_is_hex_prefix(const char *p) {
+	rz_return_val_if_fail(p, false);
+	if (!isascii(*p)) {
+		return false; // UTF-8
+	}
+	return (p[0] == '0' && p[1] == 'x');
+}
+
 // TODO: rename to rz_num_srand()
 static void rz_srand(int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM

@@ -20,14 +20,6 @@
 
 static const char hex[16] = "0123456789ABCDEF";
 
-static bool is_hex_prefix(const char *p) {
-	rz_return_val_if_fail(p, false);
-	if (!isascii(*p)) {
-		return false; // UTF-8
-	}
-	return (p[0] == '0' && p[1] == 'x');
-}
-
 static int nullprinter(const char *a, ...) {
 	return 0;
 }
@@ -1538,7 +1530,7 @@ RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, 
 	memset(o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
 		/* colorize numbers */
-		if ((is_hex_prefix(&p[i]) && previous != ':') || (isdigit((ut8)p[i]) && issymbol(previous))) {
+		if ((rz_num_is_hex_prefix(&p[i]) && previous != ':') || (isdigit((ut8)p[i]) && issymbol(previous))) {
 			const char *num2 = num;
 			ut64 n = rz_num_get(NULL, p + i);
 			const char *name = print->offname(print->user, n) ? color_flag : NULL;

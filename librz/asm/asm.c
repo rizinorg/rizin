@@ -16,14 +16,6 @@
 
 RZ_LIB_VERSION(rz_asm);
 
-static bool is_hex_prefix(const char *p) {
-	rz_return_val_if_fail(p, false);
-	if (!isascii(*p)) {
-		return false; // UTF-8
-	}
-	return (p[0] == '0' && p[1] == 'x');
-}
-
 /**
  * \brief Checks if the first character of \p c is a digit character
  * OR if the first two chars are a hex prefix.
@@ -37,7 +29,7 @@ static bool is_num(const char *c) {
 	if (!isascii(*c)) {
 		return false; // UTF-8
 	}
-	return is_hex_prefix(c) || isxdigit(c[0]);
+	return rz_num_is_hex_prefix(c) || isxdigit(c[0]);
 }
 
 /**
@@ -1519,7 +1511,7 @@ static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType typ
 		break;
 	case RZ_ASM_TOKEN_NUMBER:
 		do {
-			if (is_hex_prefix(str + j)) {
+			if (rz_num_is_hex_prefix(str + j)) {
 				j += 2;
 			} else {
 				++j;
