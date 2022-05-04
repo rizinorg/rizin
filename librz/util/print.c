@@ -1909,16 +1909,7 @@ static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_
 		rz_warn_if_reached();
 		return;
 	}
-	// TODO Add sort for vectors and sort tokens during coloring.
-	size_t k = 0;
-	RzAsmToken *it;
-	rz_vector_foreach(toks->tokens, it) {
-		if (it->start > t->start) {
-			rz_vector_insert(toks->tokens, k, t);
-			return;
-		}
-		++k;
-	}
+
 	rz_vector_push(toks->tokens, t);
 }
 
