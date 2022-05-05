@@ -961,3 +961,76 @@ err:
 	rz_list_free(sections);
 	return res;
 }
+
+static ut64 map_p2v(RzBinMap *m, ut64 paddr) {
+	ut64 delta = paddr - m->paddr;
+	if (delta >= m->vsize) {
+		return UT64_MAX;
+	}
+	return m->vaddr + delta;
+}
+
+/**
+ * \brief Convert offset in the file to virtual address according to binary mappings
+ *
+ * \param obj Reference to \p RzBinObject
+ * \param paddr Offset in the file
+ * \return Converted offset to virtual address or UT64_MAX if the conversion cannot be done
+ */
+RZ_API ut64 rz_bin_object_p2v(RzBinObject *obj, ut64 paddr) {
+	rz_return_val_if_fail(obj, UT64_MAX);
+	RzBinMap *m = rz_bin_object_get_map_at(obj, paddr, false);
+	if (!m) {
+		return UT64_MAX;
+	}
+
+	return map_p2v(m, paddr);
+}
+
+/**
+ * \brief Convert offset in the file to all possible virtual addresses according to binary mappings
+ *
+ * \param obj Reference to \p RzBinObject
+ * \param paddr Offset in the file
+ * \return Vector containing \p ut64 values of all possible virtual addresses
+ */
+RZ_API RzVector *rz_bin_object_p2v_all(RzBinObject *obj, ut64 paddr) {
+	rz_return_val_if_fail(obj, NULL);
+	RzPVector *maps = rz_bin_object_get_maps_at(obj, paddr, false);
+	if (!maps) {
+		return NULL;
+	}
+
+	RzVector *res = rz_vector_new(sizeof(ut64), NULL, NULL);
+	void **it;
+	rz_pvector_foreach (maps, it) {
+		RzBinMap *map = *(RzBinMap **)it;
+		ut64 vaddr = map_p2v(map, paddr);
+		if (vaddr != UT64_MAX) {
+			rz_vector_push(res, &vaddr);
+		}
+	}
+
+	return res;
+}
+
+/**
+ * \brief Convert virtual address to offset in the file according to binary mappings
+ *
+ * \param obj Reference to \p RzBinObject
+ * \param paddr Virtual address
+ * \return Converted virtual address to offset in the file or UT64_MAX if the conversion cannot be done
+ */
+RZ_API ut64 rz_bin_object_v2p(RzBinObject *obj, ut64 vaddr) {
+	rz_return_val_if_fail(obj, UT64_MAX);
+	RzBinMap *m = rz_bin_object_get_map_at(obj, vaddr, true);
+	if (!m) {
+		return UT64_MAX;
+	}
+
+	ut64 delta = vaddr - m->vaddr;
+	if (delta >= m->psize) {
+		return UT64_MAX;
+	}
+	return m->paddr + delta;
+}

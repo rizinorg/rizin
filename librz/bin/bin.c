@@ -649,6 +649,14 @@ RZ_API RzList *rz_bin_get_sections(RzBin *bin) {
 	return o ? (RzList *)rz_bin_object_get_sections_all(o) : NULL;
 }
 
+/**
+ * \brief Find the binary section at offset \p off.
+ *
+ * \param o Reference to the \p RzBinObject instance
+ * \param off Address to search
+ * \param va When 0 the offset \p off is considered a physical address, otherwise a virtual address
+ * \return Pointer to a \p RzBinSection containing the address
+ */
 RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 	RzBinSection *section;
 	RzListIter *iter;
@@ -667,6 +675,61 @@ RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 		}
 	}
 	return NULL;
+}
+
+/**
+ * \brief Find the first binary map at offset \p off .
+ *
+ * \param o Reference to the \p RzBinObject instance
+ * \param off Address to search
+ * \param va When false the offset \p off is considered a physical address, otherwise a virtual address
+ * \return Pointer to a \p RzBinMap containing the address
+ */
+RZ_API RzBinMap *rz_bin_object_get_map_at(RzBinObject *o, ut64 off, bool va) {
+	rz_return_val_if_fail(o, NULL);
+
+	RzBinMap *map;
+	RzListIter *iter;
+	ut64 from, to;
+
+	rz_list_foreach (o->maps, iter, map) {
+		from = va ? rz_bin_object_addr_with_base(o, map->vaddr) : map->paddr;
+		to = from + (va ? map->vsize : map->psize);
+		if (off >= from && off < to) {
+			return map;
+		}
+	}
+	return NULL;
+}
+
+/**
+ * \brief Find all binary maps at offset \p off .
+ *
+ * \param o Reference to the \p RzBinObject instance
+ * \param off Address to search
+ * \param va When false the offset \p off is considered a physical address, otherwise a virtual address
+ * \return Vector of \p RzBinMap pointers
+ */
+RZ_API RzPVector *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, bool va) {
+	rz_return_val_if_fail(o, NULL);
+
+	RzBinMap *map;
+	RzListIter *iter;
+	ut64 from, to;
+
+	RzPVector *res = rz_pvector_new(NULL);
+	if (!res) {
+		return NULL;
+	}
+
+	rz_list_foreach (o->maps, iter, map) {
+		from = va ? rz_bin_object_addr_with_base(o, map->vaddr) : map->paddr;
+		to = from + (va ? map->vsize : map->psize);
+		if (off >= from && off < to) {
+			rz_pvector_push(res, map);
+		}
+	}
+	return res;
 }
 
 RZ_API RzList *rz_bin_reset_strings(RzBin *bin) {
