@@ -163,7 +163,7 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 		rz_list_free(modules);
 		return false;
 	}
-	dbg->corebind.cmdf(dbg->corebind.core, "e bin.baddr=0x%" PFMT64x "", mod->addr, pdbpath);
+	dbg->corebind.cfgSetI(dbg->corebind.core, "bin.baddr", mod->addr);
 	// TODO: Convert to API call
 	dbg->corebind.cmdf(dbg->corebind.core, "idp \"%s\"", pdbpath);
 	rz_list_free(modules);

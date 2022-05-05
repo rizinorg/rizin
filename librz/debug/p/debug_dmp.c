@@ -73,7 +73,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		rz_io_map_del(core->io, map->id);
 	}
 	if (ctx->type == DMP_DUMPTYPE_TRIAGE) {
-		dbg->corebind.cmd(dbg->corebind.core, "e io.va=1");
+		dbg->corebind.cfgSetI(dbg->corebind.core, "io.va", 1);
 		ctx->target = TARGET_BACKEND;
 		ctx->kernelDirectoryTable = TARGET_BACKEND;
 	} else {
