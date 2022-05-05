@@ -107,10 +107,8 @@ typedef struct {
 	char mnem_infix[128]; // The mnemonic without the pre- and postfix.
 	char mnem[192]; // Instruction mnemonic
 	ut32 addr; // Memory address the instruction is located.
-	RzAsmTokenString *tokens; ///< The tokenized asm string.
 	RzAsmOp asm_op;
 	RzAnalysisOp ana_op;
-	RzStrBuf *asm_str; ///< Asm string. Equals mnem. 
 } HexInsn;
 
 typedef struct {

@@ -53662,12 +53662,6 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 		sprintf(hi->mnem_infix, "invalid");
 		sprintf(hi->mnem, "%s%s%s", hi->pkt_info.mnem_prefix, hi->mnem_infix, hi->pkt_info.mnem_postfix);
 	}
-	hi->asm_str = RZ_NEW0(RzStrBuf);
-	rz_strbuf_set(hi->asm_str, hi->mnem);
-	hi->tokens = rz_asm_tokenize_asm_regex(hi->asm_str, state->token_patterns);
-	if (!hi->tokens) {
-		return -1;
-	}
-	hi->tokens->op_type = hi->ana_op.type;
+
 	return 4;
 }
