@@ -47,7 +47,7 @@ typedef struct {
 #define HEX_PKT_MID_UTF8      "│   "
 #define HEX_PKT_LAST_UTF8     "└   "
 #define HEX_PKT_FIRST_SDK     "{   "
-#define HEX_PKT_SDK_PADDING   "   "
+#define HEX_PKT_SDK_PADDING   "    "
 #define HEX_PKT_LAST_SDK      " }"
 #define HEX_PKT_FIRST         "/   "
 #define HEX_PKT_MID           "|   "
