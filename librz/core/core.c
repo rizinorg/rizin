@@ -342,12 +342,20 @@ static void archbits(RzCore *core, ut64 addr) {
 	rz_core_seek_arch_bits(core, addr);
 }
 
-static int cfggeti(RzCore *core, const char *k) {
+static ut64 cfggeti(RzCore *core, const char *k) {
 	return rz_config_get_i(core->config, k);
 }
 
 static const char *cfgget(RzCore *core, const char *k) {
 	return rz_config_get(core->config, k);
+}
+
+static bool cfgseti(RzCore *core, const char *k, ut64 v) {
+	return rz_config_set_i(core->config, k, v);
+}
+
+static bool cfgset(RzCore *core, const char *k, const char *v) {
+	return rz_config_set(core->config, k, v);
 }
 
 static ut64 numget(RzCore *core, const char *k) {
@@ -373,6 +381,8 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->archbits = (RzCoreSeekArchBits)archbits;
 	bnd->cfggeti = (RzCoreConfigGetI)cfggeti;
 	bnd->cfgGet = (RzCoreConfigGet)cfgget;
+	bnd->cfgSetI = (RzCoreConfigSetI)cfgseti;
+	bnd->cfgSet = (RzCoreConfigSet)cfgset;
 	bnd->numGet = (RzCoreNumGet)numget;
 	bnd->flagsGet = (RzCoreFlagsGet)__flagsGet;
 	bnd->applyBinInfo = (RzCoreBinApplyInfo)rz_core_bin_apply_info;
