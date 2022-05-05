@@ -164,7 +164,8 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 		return false;
 	}
 	dbg->corebind.cmdf(dbg->corebind.core, "e bin.baddr=0x%" PFMT64x "", mod->addr, pdbpath);
-	dbg->corebind.cmdf(dbg->corebind.core, "idp %s", pdbpath);
+	// TODO: Convert to API call
+	dbg->corebind.cmdf(dbg->corebind.core, "idp \"%s\"", pdbpath);
 	rz_list_free(modules);
 
 	if (!kdctx->windctx.profile) {
