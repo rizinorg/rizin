@@ -632,10 +632,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 		ret->lang = "vb";
 	}
 
-	ret->compiler = rz_bin_file_golang_compiler(bf);
-	if (ret->compiler) {
-		ret->lang = "go";
-	}
 	if (PE_(rz_bin_pe_is_dll)(bf->o->bin_obj)) {
 		ret->type = strdup("DLL (Dynamic Link Library)");
 	} else {

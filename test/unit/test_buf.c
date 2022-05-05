@@ -1318,7 +1318,7 @@ ut64 fwd_adder(const ut8 *buf, ut64 sz, void *user) {
 	if (!user || !sz) {
 		return -1;
 	}
-	ut32 *result = user;
+	ut64 *result = user;
 	ut64 i;
 	for (i = 0; i < sz; i++) {
 		*result += buf[i];
