@@ -80,10 +80,9 @@ static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedStr
 	free(src);
 }
 
-static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut64 from, const ut64 to, RzStrEnc type, RzBinSection *section) {
+static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut64 from, const ut64 to, RzStrEnc type) {
 	RzListIter *it;
 	RzDetectedString *str;
-	RzBinSection *s = NULL;
 
 	RzList *str_list = rz_list_new();
 	if (!str_list) {
@@ -105,31 +104,15 @@ static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut6
 
 	int ord = 0;
 	rz_list_foreach (str_list, it, str) {
-		if (!s) {
-			if (section) {
-				s = section;
-			} else if (bf->o) {
-				s = rz_bin_get_section_at(bf->o, str->addr, false);
-			}
-		}
-
 		RzBinString *bs = RZ_NEW0(RzBinString);
 		detected_string_to_bin_string(bs, str);
 		bs->ordinal = ord++;
-
-		if (s) {
-			bs->vaddr = bs->paddr - s->paddr + s->vaddr;
-		}
-
 		if (bf->o) {
+			bs->paddr += bf->o->boffset;
+			bs->vaddr = rz_bin_object_p2v(bf->o, bs->paddr);
 			ht_up_insert(bf->o->strings_db, bs->vaddr, bs);
 		}
 		rz_list_append(list, bs);
-
-		if (from == 0 && to == bf->size) {
-			/* force lookup section at the next one */
-			s = NULL;
-		}
 	}
 
 	rz_list_free(str_list);
@@ -145,7 +128,7 @@ static bool __isDataSection(RzBinFile *a, RzBinSection *s) {
 	return strstr(s->name, "_const") != NULL;
 }
 
-static void get_strings_range(RzBinFile *bf, RzList *list, size_t min, ut64 from, ut64 to, RzBinSection *section) {
+static void get_strings_range(RzBinFile *bf, RzList *list, size_t min, ut64 from, ut64 to) {
 	rz_return_if_fail(bf && bf->buf && bf->rbin);
 
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
@@ -202,7 +185,7 @@ static void get_strings_range(RzBinFile *bf, RzList *list, size_t min, ut64 from
 		RZ_LOG_ERROR("bin: encoding %s not supported\n", enc);
 		return;
 	}
-	string_scan_range(list, bf, min, from, to, type, section);
+	string_scan_range(list, bf, min, from, to, type);
 }
 
 RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
@@ -552,13 +535,13 @@ RZ_API RzList *rz_bin_file_strings(RzBinFile *bf, size_t min_length, bool raw_st
 
 	if (raw_strings) {
 		// returns all the strings found on the RzBinFile
-		get_strings_range(bf, ret, min_length, 0, bf->size, NULL);
+		get_strings_range(bf, ret, min_length, 0, bf->size);
 	} else if (bf->o && bf->o->sections && !rz_list_empty(bf->o->sections)) {
 		// returns only the strings found on the RzBinFile but within the data section
 		RzBinObject *o = bf->o;
 		rz_list_foreach (o->sections, iter, section) {
 			if (__isDataSection(bf, section)) {
-				get_strings_range(bf, ret, min_length, section->paddr, section->paddr + section->size, section);
+				get_strings_range(bf, ret, min_length, section->paddr, section->paddr + section->size);
 			}
 		}
 		rz_list_foreach (o->sections, iter, section) {

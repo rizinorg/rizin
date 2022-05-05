@@ -2620,6 +2620,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 	RzBinString b64 = { 0 };
 	rz_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
+		char quiet_val[20];
 		ut64 paddr, vaddr;
 		paddr = string->paddr;
 		vaddr = obj ? rva(obj, paddr, string->vaddr, va) : paddr;
@@ -2751,7 +2752,12 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			break;
 		}
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("0x%" PFMT64x " %d %d %s\n", vaddr,
+			if (vaddr == UT64_MAX) {
+				rz_strf(quiet_val, "----------");
+			} else {
+				rz_strf(quiet_val, "0x%" PFMT64x, vaddr);
+			}
+			rz_cons_printf("%s %d %d %s\n", quiet_val,
 				string->size, string->length, escaped_string);
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:

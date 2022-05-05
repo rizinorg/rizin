@@ -961,7 +961,7 @@ RZ_API bool rz_bin_object_is_big_endian(RZ_NONNULL RzBinObject *obj);
 RZ_API bool rz_bin_object_is_static(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzPVector *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, bool va);
-RZ_API RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va);
+RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va);
 RZ_API ut64 rz_bin_object_p2v(RZ_NONNULL RzBinObject *obj, ut64 paddr);
 RZ_API RzVector *rz_bin_object_p2v_all(RZ_NONNULL RzBinObject *obj, ut64 paddr);
 RZ_API ut64 rz_bin_object_v2p(RZ_NONNULL RzBinObject *obj, ut64 vaddr);
@@ -1024,7 +1024,7 @@ RZ_API void rz_bin_mem_free(void *data);
 RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const char *language, RZ_NULLABLE const char *symbol, ut64 vaddr, bool libs);
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact);
 
-RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);
+RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);
 
 /* dbginfo.c */
 RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line);

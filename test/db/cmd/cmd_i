@@ -4265,7 +4265,7 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izzq~puts
 EXPECT=<<EOF
 0x4002fa 5 4 puts
-0x15b 18 17 puts@@GLIBC_2.2.5
+---------- 18 17 puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -4321,7 +4321,7 @@ e bin.str.purge=all,!0x4002fa,!0x15b
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"}]
 EOF
 RUN
 
@@ -5223,7 +5223,7 @@ NAME=izz
 FILE=bins/mach0/fatmach0-3true
 CMDS=izz~http~codesigning
 EXPECT=<<EOF
-97  0x00002f3c 0x00002f3c 47  48           ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
+97  0x00003f3c 0x100002f3c 47  48                           ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
 EOF
 RUN
 

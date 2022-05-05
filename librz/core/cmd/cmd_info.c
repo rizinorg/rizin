@@ -369,11 +369,6 @@ RZ_IPI RzCmdStatus rz_cmd_info_whole_strings_handler(RzCore *core, int argc, con
 	return bool2status(rz_core_bin_whole_strings_print(core, bf, state));
 }
 
-RZ_IPI RzCmdStatus rz_cmd_info_dump_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	GET_CHECK_CUR_BINFILE(core);
-	return bool2status(rz_core_bin_whole_strings_print(core, bf, state));
-}
-
 RZ_IPI RzCmdStatus rz_cmd_info_purge_string_handler(RzCore *core, int argc, const char **argv) {
 	bool old_tmpseek = core->tmpseek;
 	core->tmpseek = false;
