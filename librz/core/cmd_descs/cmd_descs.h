@@ -632,6 +632,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_sections_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_cmd_info_cur_section_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_info_segments_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_info_cur_segment_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_info_versions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_info_trycatch_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);

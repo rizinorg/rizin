@@ -8874,6 +8874,14 @@ static const RzCmdDescHelp cmd_info_segments_help = {
 	.args = cmd_info_segments_args,
 };
 
+static const RzCmdDescArg cmd_info_cur_segment_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_cur_segment_help = {
+	.summary = "Current segment",
+	.args = cmd_info_cur_segment_args,
+};
+
 static const RzCmdDescArg cmd_info_hashes_args[] = {
 	{ 0 },
 };
@@ -15739,6 +15747,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_segments_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iSS", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_info_segments_handler, &cmd_info_segments_help);
 	rz_warn_if_fail(cmd_info_segments_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_segments_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_cur_segment_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iSS.", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_info_cur_segment_handler, &cmd_info_cur_segment_help);
+	rz_warn_if_fail(cmd_info_cur_segment_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_cur_segment_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_info_hashes_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "it", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_hashes_handler, &cmd_info_hashes_help);
 	rz_warn_if_fail(cmd_info_hashes_cd);
