@@ -690,7 +690,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.lines.fcn=true
 s 0x004017c0
-af+ 0x004017c0 fcn2.0x004017c0
+af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 pdf
 ?e
@@ -720,7 +720,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.lines.fcn=true
 s 0x004017c0
-af+ 0x004017c0 fcn2.0x004017c0
+af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 pdf
 ?e

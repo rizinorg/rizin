@@ -513,7 +513,7 @@ RUN
 NAME=Analyze function with 0 basic blocks
 FILE=bins/elf/ls
 CMDS=<<EOF
-af+ 0 a
+af+ a @ 0
 aa
 EOF
 EXPECT=
