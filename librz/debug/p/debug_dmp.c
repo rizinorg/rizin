@@ -136,7 +136,8 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		const char *symstore = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore");
 		char *pdbpath, *exepath;
 		if (winkd_download_module_and_pdb(&mod, server, symstore, &exepath, &pdbpath)) {
-			dbg->corebind.cmdf(dbg->corebind.core, "idp %s", pdbpath);
+			// TODO: Convert to API call
+			dbg->corebind.cmdf(dbg->corebind.core, "idp \"%s\"", pdbpath);
 			free(exepath);
 			kernel_pdb = strdup(rz_file_basename(pdbpath));
 			free(pdbpath);
