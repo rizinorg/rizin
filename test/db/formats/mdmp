@@ -379,7 +379,7 @@ EXPECT=<<EOF
 0x00128fa8 0x74fc93d6 11 24 C:_Windows_System32_wow64win.dll utf16le VarFileInfo
 0x000cdc38 0x74f66066 15 32 C:_Windows_System32_wow64cpu.dll utf16le VS_VERSION_INFO
 0x000cdf84 0x74f663b2 11 24 C:_Windows_System32_wow64cpu.dll utf16le VarFileInfo
-0x00299106 0x77087534 11 12 C:_Windows_SysWOW64_kernel32.dll ascii _vfprintf_l
+0x00299106 0x77378534 11 12 C:_Windows_SysWOW64_kernel32.dll ascii _vfprintf_l
 0x001adff0 0x75d9341e 11 24 C:_Windows_SysWOW64_KERNELBASE.dll utf16le VarFileInfo
 0x0033641a 0x77415848 39 40 C:_Windows_SysWOW64_msvcrt.dll ascii Assertion failed:
 0x00337f88 0x774173b6 11 24 C:_Windows_SysWOW64_msvcrt.dll utf16le VarFileInfo

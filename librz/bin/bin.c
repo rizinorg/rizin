@@ -678,7 +678,11 @@ RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 }
 
 /**
- * \brief Find the first binary map at offset \p off .
+ * \brief Find the last binary map at offset \p off .
+ *
+ * This function returns the last binary map that contains offset \p off,
+ * because it assumes that maps are sorted by priority, thus the last one will
+ * be the most important one.
  *
  * \param o Reference to the \p RzBinObject instance
  * \param off Address to search
@@ -692,7 +696,7 @@ RZ_API RzBinMap *rz_bin_object_get_map_at(RzBinObject *o, ut64 off, bool va) {
 	RzListIter *iter;
 	ut64 from, to;
 
-	rz_list_foreach (o->maps, iter, map) {
+	rz_list_foreach_prev(o->maps, iter, map) {
 		from = va ? rz_bin_object_addr_with_base(o, map->vaddr) : map->paddr;
 		to = from + (va ? map->vsize : map->psize);
 		if (off >= from && off < to) {
