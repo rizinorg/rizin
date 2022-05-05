@@ -2508,6 +2508,14 @@ RZ_API bool rz_core_bin_cur_section_print(RzCore *core, RzBinFile *bf, RzCmdStat
 	return rz_core_bin_sections_print(core, bf, state, &filter, hashes);
 }
 
+RZ_API bool rz_core_bin_cur_segment_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzList *hashes) {
+	rz_return_val_if_fail(core && bf && state, false);
+
+	RzCoreBinFilter filter = { 0 };
+	filter.offset = core->offset;
+	return rz_core_bin_segments_print(core, bf, state, &filter, hashes);
+}
+
 RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 	RzListIter *it = NULL;
