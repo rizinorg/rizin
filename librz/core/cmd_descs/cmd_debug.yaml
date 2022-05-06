@@ -314,9 +314,56 @@ commands:
         type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: ds
     summary: Debug step commands
-    cname: cmd_debug_step
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands:
+      - name: ds
+        cname: cmd_debug_step
+        summary: Step <num> instruction
+        args:
+          - name: num
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 1
+      - name: dsb
+        cname: cmd_debug_step_back
+        summary: Step back <num> instruction
+        args:
+          - name: num
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 1
+      - name: dsf
+        cname: cmd_debug_step_frame
+        summary: Step until end of frame
+        args: []
+      - name: dsi
+        cname: cmd_debug_step_cond
+        summary: Continue until condition matches
+        args:
+          - name: cond
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dsl
+        cname: cmd_debug_step_line
+        summary: Step <num> source line
+        args:
+          - name: num
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 1
+      - name: dso
+        cname: cmd_debug_step_over
+        summary: Step over <num> instructions
+        args:
+          - name: num
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 1
+      - name: dsp
+        cname: cmd_debug_step_prog
+        summary: Step into program (skip libs)
+        args: []
+      - name: dss
+        cname: cmd_debug_step_skip
+        summary: Skip <num> step instructions
+        args:
+          - name: num
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 1
       - name: dsu
         summary: Debug step until commands
         subcommands:
