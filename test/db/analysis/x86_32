@@ -412,7 +412,7 @@ RUN
 
 NAME=af- bug
 FILE==
-CMDS=af+ $$ foo; af- $$;afl~?
+CMDS=af+ foo @ $$; af- @ $$;afl~?
 EXPECT=<<EOF
 0
 EOF

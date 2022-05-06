@@ -3,7 +3,6 @@
 
 #include <rz_userconf.h>
 
-#if DEBUGGER
 #include <rz_debug.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
@@ -119,7 +118,7 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 		// ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 		dbg->reason.signum = siginfo.si_signo;
-		dbg->stopaddr = (ut64)siginfo.si_addr;
+		dbg->stopaddr = (ut64)(size_t)siginfo.si_addr;
 		// dbg->errno = siginfo.si_errno;
 		//  siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
 		//  TODO: DO MORE RDEBUGREASON HERE
@@ -1038,7 +1037,7 @@ static void print_fpu(void *f) {
 	}
 #endif // __ANDROID__
 #elif __i386__
-	int i, j;
+	int i;
 #if __ANDROID__
 	struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct *)f;
 	rz_cons_printf("---- x86-32 ----\n");
@@ -1388,5 +1387,3 @@ fail:
 	closedir(dd);
 	return NULL;
 }
-
-#endif

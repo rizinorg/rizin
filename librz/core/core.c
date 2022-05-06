@@ -27,44 +27,82 @@ extern bool rz_core_is_project(RzCore *core, const char *name);
 /**
  * \brief  Prints a message definining the beginning of a task
  *
- * \param  core     The RzCore to use
- * \param  message  The message to notify
- *
- * \return Returns the same pointer as message
+ * \param  core    The RzCore to use
+ * \param  format  The message to notify
  */
-RZ_API const char *rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message) {
-	rz_return_val_if_fail(core && message, NULL);
+RZ_API void rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) {
+	rz_return_if_fail(core && format);
+	va_list args;
 	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
 	bool verbose = rz_config_get_b(core->config, "scr.prompt");
 	if (!verbose) {
-		return message;
+		return;
 	}
+	va_start(args, format);
 	if (use_color) {
-		fprintf(stderr, "[ ] " Color_YELLOW "%s\r[" Color_RESET, message);
+		fprintf(stderr, "[ ] " Color_YELLOW);
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\r[" Color_RESET);
 	} else {
-		fprintf(stderr, "[ ] %s\r[", message);
+		fprintf(stderr, "[ ] ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\r[");
 	}
-	return message;
+	va_end(args);
 }
 
 /**
- * \brief  Prints a message definining the end of a task
+ * \brief  Prints a message definining the end of a task which succeeded
  *
- * \param  core     The RzCore to use
- * \param  message  The message to notify
+ * \param  core    The RzCore to use
+ * \param  format  The message to notify
  */
-RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message) {
-	rz_return_if_fail(core && message);
+RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) {
+	rz_return_if_fail(core && format);
+	va_list args;
 	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
 	bool verbose = rz_config_get_b(core->config, "scr.prompt");
 	if (!verbose) {
 		return;
 	}
+	va_start(args, format);
 	if (use_color) {
-		fprintf(stderr, "\r" Color_GREEN "[x]" Color_RESET " %s\n", message);
+		fprintf(stderr, "\r" Color_GREEN "[x]" Color_RESET " ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
+	} else {
+		fprintf(stderr, "\r[x] ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
+	}
+	va_end(args);
+}
+
+/**
+ * \brief  Prints a message definining the end of a task which errored
+ *
+ * \param  core    The RzCore to use
+ * \param  format  The message to notify
+ */
+RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) {
+	rz_return_if_fail(core && format);
+	va_list args;
+	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
+	bool verbose = rz_config_get_b(core->config, "scr.prompt");
+	if (!verbose) {
 		return;
 	}
-	fprintf(stderr, "\r[x] %s\n", message);
+	va_start(args, format);
+	if (use_color) {
+		fprintf(stderr, "\r" Color_RED "[!]" Color_RESET " ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
+	} else {
+		fprintf(stderr, "\r[!] ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
+	}
+	va_end(args);
 }
 
 static int on_fcn_new(RzAnalysis *_analysis, void *_user, RzAnalysisFunction *fcn) {
@@ -854,11 +892,6 @@ static const char *rizin_argv[] = {
 	"aef", "aefa",
 	"aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc",
 	"aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
-	"af?", "af", "afr", "af+", "af-",
-	"afa", "afan",
-	"afd", "aff",
-	"afn?", "afna", "afns", "afnsj",
-	"afo", "af*",
 	"aF",
 	"ag?", "ag", "aga", "agA", "agc", "agC", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-",
 	"agn?", "agn", "agn-", "age?", "age", "age-",
