@@ -940,6 +940,9 @@ RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RzBinObject *obj) {
 	rz_vector_reserve(res, rz_list_length(segments));
 
 	rz_list_foreach (segments, iter, segment) {
+		if (segment->vaddr == UT64_MAX) {
+			continue;
+		}
 		RzInterval segment_itv = (RzInterval){ segment->vaddr, segment->size };
 		RzListIter *iter2;
 
@@ -948,7 +951,10 @@ RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RzBinObject *obj) {
 		rz_pvector_init(&map.sections, NULL);
 
 		rz_list_foreach (sections, iter2, section) {
-			RzInterval section_itv = (RzInterval){ section->vaddr, section->size };
+			if (section->vaddr == UT64_MAX) {
+				continue;
+			}
+			RzInterval section_itv = (RzInterval){ section->vaddr, section->vsize };
 			if (rz_itv_begin(section_itv) >= rz_itv_begin(segment_itv) && rz_itv_end(section_itv) <= rz_itv_end(segment_itv) && section->name[0]) {
 				rz_pvector_push(&map.sections, section);
 			}
