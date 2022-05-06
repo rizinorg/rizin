@@ -3821,18 +3821,23 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, 
 		}
 		size_t llen = rz_list_length(l);
 		if (llen < 2) {
+			rz_list_free(l);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		char *key = rz_list_get_n(l, 0);
 		char *val = rz_list_get_n(l, 1);
 		if (RZ_STR_ISEMPTY(key) || RZ_STR_ISEMPTY(val)) {
 			RZ_LOG_ERROR("Make sure to use the format <key>=<value> without spaces.\n");
+			rz_list_free(l);
 			continue;
 		}
 		rz_list_append(list, (void *)argv[i]);
 		rz_list_free(l);
 	}
-	set_profile_string(core, rz_list_to_str(list, '\n'));
+	char *str = rz_list_to_str(list, '\n');
+	set_profile_string(core, str);
+	free(str);
+	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
 
