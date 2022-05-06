@@ -678,9 +678,10 @@ RZ_API bool rz_core_debug_process_close(RzCore *core) {
 	rz_core_debug_clear_register_flags(core);
 	// Reopen and rebase the original file
 	rz_core_io_file_open(core, core->io->desc->fd);
-  return true;
+	return true;
 }
-  
+
+/**
  * \brief Step until end of frame
  * \param core The RzCore instance
  * \return success

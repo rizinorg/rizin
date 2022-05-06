@@ -6210,7 +6210,7 @@ static const RzCmdDescHelp cmd_debug_process_close_help = {
 	.args = cmd_debug_process_close_args,
 };
 
-static const RzCmdDescHelp cmd_debug_step_help = {
+static const RzCmdDescHelp ds_help = {
 	.summary = "Debug step commands",
 };
 static const RzCmdDescArg cmd_debug_step_args[] = {
@@ -15146,7 +15146,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_continue_until_cd = rz_cmd_desc_oldinput_new(core->rcmd, dc_cd, "dcu", rz_cmd_debug_continue_until, &cmd_debug_continue_until_help);
 	rz_warn_if_fail(cmd_debug_continue_until_cd);
 
-
 	RzCmdDesc *do_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "do", NULL, NULL, &do_help);
 	rz_warn_if_fail(do_cd);
 	RzCmdDesc *cmd_debug_process_profile_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "dor", rz_cmd_debug_process_profile_handler, &cmd_debug_process_profile_help);
@@ -15157,10 +15156,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_process_close_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doc", rz_cmd_debug_process_close_handler, &cmd_debug_process_close_help);
 	rz_warn_if_fail(cmd_debug_process_close_cd);
-
-	RzCmdDesc *cmd_debug_step_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_cd, "ds", rz_cmd_debug_step, &cmd_debug_step_help);
-	rz_warn_if_fail(cmd_debug_step_cd);
-	RzCmdDesc *dsu_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_step_cd, "dsu", rz_cmd_debug_step_until_handler, &cmd_debug_step_until_help, &dsu_help);
 
 	RzCmdDesc *ds_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "ds", rz_cmd_debug_step_handler, &cmd_debug_step_help, &ds_help);
 	rz_warn_if_fail(ds_cd);
@@ -15186,7 +15181,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_debug_step_skip_cd);
 
 	RzCmdDesc *dsu_cd = rz_cmd_desc_group_new(core->rcmd, ds_cd, "dsu", rz_cmd_debug_step_until_handler, &cmd_debug_step_until_help, &dsu_help);
-
 	rz_warn_if_fail(dsu_cd);
 	RzCmdDesc *cmd_debug_step_until_instr_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsui", rz_cmd_debug_step_until_instr_handler, &cmd_debug_step_until_instr_help);
 	rz_warn_if_fail(cmd_debug_step_until_instr_cd);
