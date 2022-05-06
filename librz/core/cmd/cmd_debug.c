@@ -3246,7 +3246,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
 			rz_cons_printf("%d  %s sp: %s  %-5d"
 				       "[%s]  %s %s\n",
-				i++, pcstr, spstr, (int)frame->size, fcn ? fcn->name : "??", flagdesc ? flagdesc : "", flagdesc2 ? flagdesc2 : "");
+				i++, pcstr, spstr, (int)frame->size, fcn ? fcn->name : "??", rz_str_get(flagdesc), rz_str_get(flagdesc2));
 			free(flagdesc);
 			free(flagdesc2);
 			free(pcstr);
