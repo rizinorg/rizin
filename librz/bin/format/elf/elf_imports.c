@@ -291,12 +291,11 @@ static ut64 get_import_offset(ELFOBJ *bin, RzBinElfSymbol *symbol) {
 }
 
 static void convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	symbol->size = 16;
-
-	if (symbol->vaddr && symbol->vaddr != UT64_MAX) {
+	if (symbol->vaddr == UT64_MAX) {
 		return;
 	}
 
+	symbol->size = 16;
 	symbol->vaddr = get_import_offset(bin, symbol);
 	symbol->paddr = Elf_(rz_bin_elf_v2p)(bin, symbol->vaddr);
 }

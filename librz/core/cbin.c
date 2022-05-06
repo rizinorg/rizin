@@ -544,6 +544,9 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 	RzListIter *iter;
 	RzBinString *string;
 	rz_list_foreach (l, iter, string) {
+		if ((va && string->vaddr == UT64_MAX) || (!va && string->paddr == UT64_MAX)) {
+			continue;
+		}
 		ut64 vaddr = rva(o, string->paddr, string->vaddr, va);
 		if (!rz_bin_string_filter(r->bin, string->string, string->length, vaddr)) {
 			continue;
@@ -713,6 +716,9 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 			if (entry->hvaddr) {
 				hvaddr = rva(o, hpaddr, entry->hvaddr, va);
 			}
+		}
+		if ((va && entry->vaddr == UT64_MAX) || (!va && paddr == UT64_MAX)) {
+			continue;
 		}
 		ut64 at = rva(o, paddr, entry->vaddr, va);
 		const char *type = rz_bin_entry_type_string(entry->type);
@@ -944,6 +950,9 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 		int va_sect = va ? VA_TRUE : VA_FALSE;
 		if (va && !(section->perm & RZ_PERM_R)) {
 			va_sect = VA_NOREBASE;
+		}
+		if ((va_sect != VA_FALSE && section->vaddr == UT64_MAX) || (va_sect == VA_FALSE && section->paddr == UT64_MAX)) {
+			continue;
 		}
 		ut64 addr = rva(o, section->paddr, section->vaddr, va_sect);
 
@@ -1216,6 +1225,9 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 	char *sdb_module = NULL;
 	for (size_t i = 0; i < relocs->relocs_count; i++) {
 		RzBinReloc *reloc = relocs->relocs[i];
+		if ((va && reloc->vaddr == UT64_MAX) || (!va && reloc->paddr == UT64_MAX)) {
+			continue;
+		}
 		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
 		if ((is_section_reloc(reloc) || is_file_reloc(reloc))) {
 			/*
@@ -1260,6 +1272,9 @@ RZ_API bool rz_core_bin_apply_imports(RzCore *core, RzBinFile *binfile, bool va)
 		}
 		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(o, import);
 		if (!sym) {
+			continue;
+		}
+		if ((va && sym->vaddr == UT64_MAX) || (!va && sym->paddr == UT64_MAX)) {
 			continue;
 		}
 		ut64 addr = rva(o, sym->paddr, sym->vaddr, va ? VA_TRUE : VA_FALSE);
@@ -1439,6 +1454,9 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	RzBinSymbol *symbol;
 	rz_list_foreach (symbols, iter, symbol) {
 		if (!symbol->name) {
+			continue;
+		}
+		if ((va && symbol->vaddr == UT64_MAX) || (!va && symbol->paddr == UT64_MAX)) {
 			continue;
 		}
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);

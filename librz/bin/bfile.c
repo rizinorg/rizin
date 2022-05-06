@@ -587,7 +587,7 @@ RZ_API RzList *rz_bin_file_strings(RzBinFile *bf, size_t min_length, bool raw_st
 				bs->size = s->size;
 				bs->ordinal = s->ordinal;
 				bs->vaddr = cfstr_vaddr;
-				bs->paddr = cfstr_vaddr; // XXX should be paddr instead
+				bs->paddr = rz_bin_object_v2p(o, bs->vaddr);
 				bs->string = rz_str_newf("cstr.%s", s->string);
 				rz_list_append(ret, bs);
 				ht_up_insert(o->strings_db, bs->vaddr, bs);

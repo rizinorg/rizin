@@ -641,3 +641,15 @@ bla ~
 EOF
 RUN
 
+NAME=no useless flags at 0
+FILE=bins/elf/ls
+CMDS=<<EOF
+fl. @ 0
+EOF
+EXPECT=<<EOF
+0x00000000 0 section.
+0x00000000 13440 segment.LOAD0
+0x00000000 0 segment.GNU_STACK
+0x00000000 64 segment.ehdr
+EOF
+RUN
