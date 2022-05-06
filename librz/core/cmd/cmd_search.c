@@ -326,10 +326,6 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	return preludecnt;
 }
 
-static int count_functions(RzCore *core) {
-	return rz_list_length(core->analysis->fcns);
-}
-
 RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 	int ret = -1;
 	ut64 from = UT64_MAX;
