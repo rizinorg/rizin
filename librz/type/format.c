@@ -1740,7 +1740,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 			} else if (fmt[i + 1] == '8') {
 				size += tabsize * 8;
 			} else {
-				eprintf("Invalid n format in (%s)\n", fmt);
+				eprintf("Invalid '%c' format in (%s)\n", fmt[i + 1], fmt);
 				free(o);
 				free(args);
 				return -2;

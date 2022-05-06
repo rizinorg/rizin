@@ -2971,7 +2971,6 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 	PJ *pj = state->d.pj;
 	RzTable *t = state->d.t;
 	int i, j, u, v, uv;
-	Sdb *sdb_info = sdb_ns(obj->kv, "info", false);
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
@@ -3073,7 +3072,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 			pj_ki(pj, "pcalign", uv);
 		}
 
-		tmp_buf = sdb_get(sdb_info, "elf.relro", 0);
+		tmp_buf = sdb_get(obj->kv, "elf.relro", 0);
 		if (tmp_buf) {
 			pj_ks(pj, "relro", tmp_buf);
 			free(tmp_buf);
@@ -3181,7 +3180,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 			rz_table_add_rowf(t, "sd", "pcalign", uv);
 		}
 
-		tmp_buf = sdb_get(sdb_info, "elf.relro", 0);
+		tmp_buf = sdb_get(obj->kv, "elf.relro", 0);
 		if (tmp_buf) {
 			rz_table_add_rowf(t, "ss", "relro", tmp_buf);
 			free(tmp_buf);

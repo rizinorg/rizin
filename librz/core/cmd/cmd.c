@@ -637,7 +637,7 @@ RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k) {
 }
 
 RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
-	char buf[1024], *out;
+	char buf[1024], *out, *tofree;
 	RzCore *core = (RzCore *)data;
 	const char *sp, *p = "[sdb]> ";
 	Sdb *s = core->sdb;
@@ -646,9 +646,8 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 	char *temp_pos = NULL, *temp_cmd = NULL;
 
 	switch (input[0]) {
-
 	case 'j':
-		out = sdb_querys(s, NULL, 0, "analysis/**");
+		tofree = out = sdb_querys(s, NULL, 0, "analysis/**");
 		if (!out) {
 			rz_cons_println("No Output from sdb");
 			break;
@@ -687,6 +686,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 				}
 				temp_cmd = rz_str_ndup(temp, temp_pos - temp);
 				pj_s(pj, temp_cmd);
+				free(temp_cmd);
 				temp = temp_pos + 1;
 			}
 			out = cur_pos + 1;
@@ -700,6 +700,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		RZ_FREE(next_cmd);
 		free(next_cmd);
 		free(cur_cmd);
+		free(tofree);
 		break;
 
 	case ' ':

@@ -4515,7 +4515,7 @@ RUN
 
 NAME=ik-relro
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ik info/elf.relro
+CMDS=ik elf.relro
 EXPECT=<<EOF
 no
 EOF
@@ -4525,7 +4525,7 @@ NAME=ibk use after free
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 obR
-ik info/*~?elf.relro
+ik *~?elf.relro
 EOF
 EXPECT=<<EOF
 1
@@ -5074,7 +5074,7 @@ RUN
 
 NAME=ik-macho
 FILE=bins/mach0/fatmach0-3true
-CMDS=ik info/mach0.entry.vaddr~?0x100000ef8
+CMDS=ik mach0.entry.vaddr~?0x100000ef8
 EXPECT=<<EOF
 1
 EOF
@@ -5082,7 +5082,7 @@ RUN
 
 NAME=ikv
 FILE=bins/mach0/fatmach0-3true
-CMDS=ikv info/mach0.entry.vaddr
+CMDS=ikv mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -5090,7 +5090,7 @@ RUN
 
 NAME=ik.
 FILE=bins/mach0/fatmach0-3true
-CMDS=ik. info/mach0.entry.vaddr
+CMDS=ik. mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
