@@ -3539,7 +3539,7 @@ int __program_cb(void *user) {
 
 int __calls_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_cmd_analysis_calls(core, "", false, false);
+	rz_cmd_analysis_calls(core, false, false);
 	return 0;
 }
 
@@ -3574,8 +3574,10 @@ int __watch_points_cb(void *user) {
 }
 
 int __references_cb(void *user) {
+	RzCmdStateOutput state = { 0 };
+	state.mode = RZ_OUTPUT_MODE_STANDARD;
 	RzCore *core = (RzCore *)user;
-	rz_core_analysis_refs(core, "");
+	rz_core_analysis_refs(core, &state, 0);
 	return 0;
 }
 

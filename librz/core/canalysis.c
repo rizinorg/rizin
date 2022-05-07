@@ -3246,12 +3246,11 @@ static bool is_valid_xref(RzCore *core, ut64 xref_to, RzAnalysisXRefType type, i
  * \param at The address where the xref is located.
  * \param xref_to The target address of the xref.
  * \param type The xref type.
- * \param pj The print JSON object.
- * \param out_mode The output mode. If set to RZ_OUTPUT_MODE_JSON the \p 'pj' parameter will be filled with the xrefs found.
+ * \param state The command state mode.
  * \param cfg_analysis_strings
  */
-static void print_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType type, PJ *pj, RzOutputMode out_mode, bool cfg_analysis_strings) {
-	if (out_mode == RZ_OUTPUT_MODE_STANDARD) {
+static void print_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType type, RzCmdStateOutput *state, bool cfg_analysis_strings) {
+	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		if (cfg_analysis_strings && type == RZ_ANALYSIS_REF_TYPE_DATA) {
 			int len = 0;
 			char *str_string = is_string_at(core, xref_to, &len);
@@ -3273,11 +3272,13 @@ static void print_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
 		if (xref_to) {
 			rz_analysis_xrefs_set(core->analysis, at, xref_to, type);
 		}
-	} else if (out_mode == RZ_OUTPUT_MODE_JSON) {
+	} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		char *key = sdb_fmt("0x%" PFMT64x, xref_to);
 		char *value = sdb_fmt("0x%" PFMT64x, at);
-		pj_ks(pj, key, value);
-	} else {
+		pj_ks(state->d.pj, key, value);
+	} else if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		rz_table_add_rowf(state->d.t, "XX", xref_to, at);
+	} else if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
 		int len = 0;
 		// Display in rizin commands format
 		char *cmd;
@@ -3307,11 +3308,12 @@ static void print_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
  * \param core The Rizin core.
  * \param from Start of search interval.
  * \param to End of search interval.
- * \param pj The print JSON object.
- * \param out_mode The output mode. If set to RZ_OUTPUT_MODE_JSON the \p 'pj' parameter will be filled with the xrefs found.
+ * \param state The output state mode.
  * \return int Number of found xrefs. -1 in case of failure.
  */
-RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, RzOutputMode out_mode) {
+RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut64 to, RZ_NONNULL RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && state, -1);
+
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
 	ut64 at;
@@ -3321,30 +3323,33 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 
 	if (from == to) {
 		return -1;
-	}
-	if (from > to) {
-		eprintf("Invalid range (0x%" PFMT64x
-			" >= 0x%" PFMT64x ")\n",
-			from, to);
+	} else if (from > to) {
+		RZ_LOG_ERROR("Invalid range (0x%" PFMT64x " >= 0x%" PFMT64x ")\n", from, to);
+		return -1;
+	} else if (core->blocksize <= OPSZ) {
+		RZ_LOG_ERROR("block size is too small (blocksize <= %u)\n", OPSZ);
 		return -1;
 	}
 
-	if (core->blocksize <= OPSZ) {
-		eprintf("Error: block size too small\n");
-		return -1;
-	}
 	ut8 *buf = malloc(bsz);
 	if (!buf) {
-		eprintf("Error: cannot allocate a block\n");
+		RZ_LOG_ERROR("cannot allocate a block\n");
 		return -1;
 	}
+
 	ut8 *block = malloc(bsz);
 	if (!block) {
-		eprintf("Error: cannot allocate a temp block\n");
+		RZ_LOG_ERROR("cannot allocate a temp block\n");
 		free(buf);
 		return -1;
 	}
+
 	rz_cons_break_push(NULL, NULL);
+
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		rz_cmd_state_output_set_columnsf(state, "XX", "xref to", "xref at");
+	}
+
 	at = from;
 	st64 asm_sub_varmin = rz_config_get_i(core->config, "asm.sub.varmin");
 	while (at < to && !rz_cons_is_breaked()) {
@@ -3355,13 +3360,11 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 		(void)rz_io_read_at(core->io, at, buf, bsz);
 		memset(block, -1, bsz);
 		if (!memcmp(buf, block, bsz)) {
-			//	eprintf ("Error: skipping uninitialized block \n");
 			at += ret;
 			continue;
 		}
 		memset(block, 0, bsz);
 		if (!memcmp(buf, block, bsz)) {
-			//	eprintf ("Error: skipping uninitialized block \n");
 			at += ret;
 			continue;
 		}
@@ -3375,7 +3378,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			// find references
 			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
 				if (is_valid_xref(core, op.val, RZ_ANALYSIS_REF_TYPE_DATA, cfg_debug)) {
-					print_xref(core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, pj, out_mode, cfg_analysis_strings);
+					print_xref(core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, state, cfg_analysis_strings);
 					count++;
 				}
 			}
@@ -3383,7 +3386,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 				st64 aval = op.analysis_vals[i].imm;
 				if (aval > asm_sub_varmin && aval != UT64_MAX && aval != UT32_MAX) {
 					if (is_valid_xref(core, aval, RZ_ANALYSIS_REF_TYPE_DATA, cfg_debug)) {
-						print_xref(core, op.addr, aval, RZ_ANALYSIS_REF_TYPE_DATA, pj, out_mode, cfg_analysis_strings);
+						print_xref(core, op.addr, aval, RZ_ANALYSIS_REF_TYPE_DATA, state, cfg_analysis_strings);
 						count++;
 					}
 				}
@@ -3391,35 +3394,35 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 				if (is_valid_xref(core, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, cfg_debug)) {
-					print_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, pj, out_mode, cfg_analysis_strings);
+					print_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, state, cfg_analysis_strings);
 					count++;
 				}
 			}
 			// find references
 			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
 				if (is_valid_xref(core, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, cfg_debug)) {
-					print_xref(core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, pj, out_mode, cfg_analysis_strings);
+					print_xref(core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, state, cfg_analysis_strings);
 					count++;
 				}
 			}
 			switch (op.type) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
 				if (is_valid_xref(core, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, cfg_debug)) {
-					print_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, out_mode, cfg_analysis_strings);
+					print_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, state, cfg_analysis_strings);
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CJMP:
 				if (rz_config_get_b(core->config, "analysis.jmp.cref") &&
 					is_valid_xref(core, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, cfg_debug)) {
-					print_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, out_mode, cfg_analysis_strings);
+					print_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, state, cfg_analysis_strings);
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CALL:
 			case RZ_ANALYSIS_OP_TYPE_CCALL:
 				if (is_valid_xref(core, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, cfg_debug)) {
-					print_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, pj, out_mode, cfg_analysis_strings);
+					print_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, state, cfg_analysis_strings);
 					count++;
 				}
 				break;
@@ -3431,7 +3434,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			case RZ_ANALYSIS_OP_TYPE_UCJMP:
 				count++;
 				if (is_valid_xref(core, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, cfg_debug)) {
-					print_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, pj, out_mode, cfg_analysis_strings);
+					print_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, state, cfg_analysis_strings);
 					count++;
 				}
 				break;
@@ -3441,7 +3444,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			case RZ_ANALYSIS_OP_TYPE_IRCALL:
 			case RZ_ANALYSIS_OP_TYPE_UCCALL:
 				if (is_valid_xref(core, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, cfg_debug)) {
-					print_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, pj, out_mode, cfg_analysis_strings);
+					print_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, state, cfg_analysis_strings);
 					count++;
 				}
 				break;
@@ -5681,6 +5684,8 @@ static bool is_apple_target(RzCore *core) {
  * \param dh_orig Name of the debug handler, e.g. "esil"
  */
 RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig) {
+	RzCmdStateOutput state = { 0 };
+	state.mode = RZ_OUTPUT_MODE_STANDARD;
 	bool didAap = false;
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
@@ -5707,7 +5712,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 
 	rz_core_notify_begin(core, "Analyze function calls (aac)");
-	(void)rz_cmd_analysis_calls(core, "", false, false); // "aac"
+	(void)rz_cmd_analysis_calls(core, false, false); // "aac"
 	rz_core_seek(core, curseek, true);
 	rz_core_notify_done(core, "Analyze function calls (aac)");
 	rz_core_task_yield(&core->tasks);
@@ -5727,7 +5732,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 
 	rz_core_notify_begin(core, "Analyze len bytes of instructions for references (aar)");
-	(void)rz_core_analysis_refs(core, ""); // "aar"
+	(void)rz_core_analysis_refs(core, &state, 0); // "aar"
 	rz_core_notify_done(core, "Analyze len bytes of instructions for references (aar)");
 	rz_core_task_yield(&core->tasks);
 	if (rz_cons_is_breaked()) {
@@ -5892,18 +5897,14 @@ static RzList *core_load_all_signatures_from_sigdb(RzCore *core, bool with_detai
  *
  * \param core The RzCore instance
  */
-RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
+RZ_API void rz_core_analysis_sigdb_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTable *table) {
+	rz_return_if_fail(core && table);
+
 	RzList *sigdb = core_load_all_signatures_from_sigdb(core, true);
 	if (!sigdb) {
 		return;
 	}
 
-	RzTable *table = rz_table_new();
-	if (!table) {
-		rz_list_free(sigdb);
-		rz_warn_if_reached();
-		return;
-	}
 	rz_table_set_columnsf(table, "ssnsns", "bin", "arch", "bits", "name", "modules", "details");
 
 	RzSigDBEntry *sig = NULL;
@@ -5916,13 +5917,7 @@ RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
 		rz_table_add_rowf(table, "ssnsns", sig->bin_name, sig->arch_name, bits, sig->base_name, nmods, sig->details);
 	}
 
-	char *output = rz_table_tostring(table);
-	if (output) {
-		rz_cons_printf("%s", output);
-		free(output);
-	}
 	rz_list_free(sigdb);
-	rz_table_free(table);
 }
 
 /**
@@ -5933,7 +5928,7 @@ RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
  * \param filter     Filters the signatures found following the user input
  * \return fail when an error occurs otherwise true
  */
-RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const char *filter) {
+RZ_API bool rz_core_analysis_sigdb_apply(RZ_NONNULL RzCore *core, RZ_NULLABLE int *n_applied, RZ_NULLABLE const char *filter) {
 	rz_return_val_if_fail(core, false);
 	const char *bin = NULL;
 	const char *arch = NULL;
