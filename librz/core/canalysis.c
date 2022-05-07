@@ -3277,7 +3277,15 @@ static void print_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
 		char *value = sdb_fmt("0x%" PFMT64x, at);
 		pj_ks(state->d.pj, key, value);
 	} else if (state->mode == RZ_OUTPUT_MODE_TABLE) {
-		rz_table_add_rowf(state->d.t, "XX", xref_to, at);
+		const char *str_type;
+		switch (type) {
+		case RZ_ANALYSIS_REF_TYPE_CODE: str_type = "CODE"; break;
+		case RZ_ANALYSIS_REF_TYPE_CALL: str_type = "CALL"; break;
+		case RZ_ANALYSIS_REF_TYPE_DATA: str_type = "DATA"; break;
+		case RZ_ANALYSIS_REF_TYPE_STRING: str_type = "STR"; break;
+		default: str_type = "UNKN"; break;
+		}
+		rz_table_add_rowf(state->d.t, "sXX", str_type, xref_to, at);
 	} else if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
 		int len = 0;
 		// Display in rizin commands format
@@ -3347,7 +3355,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 	rz_cons_break_push(NULL, NULL);
 
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
-		rz_cmd_state_output_set_columnsf(state, "XX", "xref to", "xref at");
+		rz_cmd_state_output_set_columnsf(state, "sXX", "type", "xref to", "xref at");
 	}
 
 	at = from;
