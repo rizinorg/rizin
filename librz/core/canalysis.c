@@ -5699,7 +5699,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool plugin_supports_esil = core->analysis->cur->esil;
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
-		rz_core_notify_done(core, "Find function and symbol names from golang binaries (aang)");
+		rz_core_notify_done(core, "Find function and symbol names from golang binaries (aalg)");
 		if (rz_core_analysis_recover_golang_functions(core)) {
 			rz_core_analysis_resolve_golang_strings(core);
 		}
@@ -5747,9 +5747,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 	if (is_apple_target(core)) {
-		rz_core_notify_begin(core, "Check for objc references");
+		rz_core_notify_begin(core, "Check for objc references (aalo)");
 		cmd_analysis_objc(core, true);
-		rz_core_notify_done(core, "Check for objc references");
+		rz_core_notify_done(core, "Check for objc references (aalo)");
 	}
 	rz_core_task_yield(&core->tasks);
 	rz_core_notify_begin(core, "Check for classes");
