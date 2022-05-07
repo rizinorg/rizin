@@ -644,6 +644,44 @@ RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 }
 
 /**
+ * \brief Close debug process (Kill debugee and all child processes)
+ * \param core The RzCore instance
+ * \return success
+ */
+RZ_API bool rz_core_debug_process_close(RzCore *core) {
+	rz_return_val_if_fail(core && core->dbg, false);
+	RzDebug *dbg = core->dbg;
+	// Stop trace session
+	if (dbg->session) {
+		rz_debug_session_free(dbg->session);
+		dbg->session = NULL;
+	}
+#ifndef SIGKILL
+#define SIGKILL 9
+#endif
+	// Kill debugee and all child processes
+	if (dbg->cur && dbg->cur->pids && dbg->pid != -1) {
+		RzList *list = dbg->cur->pids(dbg, dbg->pid);
+		RzListIter *iter;
+		RzDebugPid *p;
+		if (list) {
+			rz_list_foreach (list, iter, p) {
+				rz_debug_kill(dbg, p->pid, p->pid, SIGKILL);
+				rz_debug_detach(dbg, p->pid);
+			}
+		} else {
+			rz_debug_kill(dbg, dbg->pid, dbg->pid, SIGKILL);
+			rz_debug_detach(dbg, dbg->pid);
+		}
+	}
+	// Remove the target's registers from the flag list
+	rz_core_debug_clear_register_flags(core);
+	// Reopen and rebase the original file
+	rz_core_io_file_open(core, core->io->desc->fd);
+	return true;
+}
+
+/**
  * \brief Step until end of frame
  * \param core The RzCore instance
  * \return success
