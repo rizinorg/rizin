@@ -98,7 +98,7 @@ var_write(name: cr0, old: 0x0, new: 0x4)
 EOF
 RUN
 
-NAME=ppc store instructions
+NAME=ppc store instructions mem_write
 FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
@@ -151,5 +151,35 @@ var_write(name: r11, old: 0xffff, new: 0xffffffff)
 var_write(name: r11, old: 0xffffffff, new: 0xffffffffffffffff)
 var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
 var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+EOF
+RUN
+
+NAME=ppc logical instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.logical_insns
+aezi
+aezse 18~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: r1, old: 0x0, new: 0x1)
+var_write(name: r11, old: 0x0, new: 0xffffffffffffffff)
+var_write(name: r21, old: 0x0, new: 0x1)
+var_write(name: r12, old: 0x0, new: 0xfffffffffffffffe)
+var_write(name: r1, old: 0x1, new: 0x1)
+var_write(name: cr0, old: 0x0, new: 0x2)
+var_write(name: r30, old: 0x0, new: 0xffff0000)
+var_write(name: cr0, old: 0x2, new: 0x2)
+var_write(name: r1, old: 0x1, new: 0x1)
+var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
+var_write(name: r5, old: 0x0, new: 0x5555)
+var_write(name: r5, old: 0x5555, new: 0x55550000)
+var_write(name: r5, old: 0x55550000, new: 0xffffffffaaaaffff)
+var_write(name: r5, old: 0xffffffffaaaaffff, new: 0xffffffffaaaa3333)
+var_write(name: r5, old: 0xffffffffaaaa3333, new: 0xffffffff66663333)
+var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
+var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
 EOF
 RUN

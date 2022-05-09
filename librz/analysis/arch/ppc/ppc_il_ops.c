@@ -347,8 +347,8 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	rz_return_val_if_fail(handle && insn, NOP);
 	ut32 id = insn->id;
 	// READ
-	const char *rS = cs_reg_name(handle, INSOP(0).reg);
-	const char *rA = cs_reg_name(handle, INSOP(1).reg);
+	const char *rA = cs_reg_name(handle, INSOP(0).reg);
+	const char *rS = cs_reg_name(handle, INSOP(1).reg);
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
 	st64 uI = INSOP(2).imm;
 	bool cr0 = insn->detail->ppc.update_cr0;
@@ -372,7 +372,7 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	case PPC_INS_ANDI:
 		op0 = VARG(rS);
 		if (id == PPC_INS_AND || id == PPC_INS_ANDC) {
-			op1 = (id == PPC_INS_AND) ? VARG(rB) : LOGNOT(VARG(rA));
+			op1 = (id == PPC_INS_AND) ? VARG(rB) : LOGNOT(VARG(rB));
 		} else {
 			op1 = (id == PPC_INS_ANDI) ? EXTZ(U16(uI)) : EXTZ(APPEND(U16(uI), U16(0)));
 		}
@@ -384,7 +384,7 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	case PPC_INS_ORIS:
 		op0 = VARG(rS);
 		if (id == PPC_INS_OR || id == PPC_INS_ORC) {
-			op1 = (id == PPC_INS_OR) ? VARG(rB) : LOGNOT(VARG(rA));
+			op1 = (id == PPC_INS_OR) ? VARG(rB) : LOGNOT(VARG(rB));
 		} else {
 			op1 = (id == PPC_INS_ORI) ? EXTZ(U16(uI)) : EXTZ(APPEND(U16(uI), U16(0)));
 		}
