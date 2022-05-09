@@ -2106,7 +2106,7 @@ pthread_mutex_unlock
 0x00005eb8 16 imp.strncpy
 0x00005ec4 16 imp.remove
 0x00005ed0 16 imp.__stack_chk_fail
-0xffffffffffffffff 0 imp.__stack_chk_guard
+---------- 0 imp.__stack_chk_guard
 0x00005edc 16 imp.__gnu_Unwind_Find_exidx
 0x00005ee8 16 imp.abort
 0x00005ef4 16 operator delete(void*)
@@ -2118,7 +2118,7 @@ pthread_mutex_unlock
 0x00005f3c 16 imp.strcmp
 0x00005f48 16 imp.fputs
 0x00005f54 16 imp.fputc
-0xffffffffffffffff 0 imp.__sF
+---------- 0 imp.__sF
 0x00005f60 16 imp.memcmp
 0x00005f6c 16 imp.realloc
 0x00005f78 16 imp.sprintf
