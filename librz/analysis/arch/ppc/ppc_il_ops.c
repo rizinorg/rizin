@@ -408,6 +408,7 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		res = LOGNOT(
 			(id == PPC_INS_NAND) ? AND(op0, op1) : OR(op0, op1)
 			);
+		break;
 	// Equivalent
 	case PPC_INS_EQV:
 		NOT_IMPLEMENTED;
