@@ -26,12 +26,6 @@
 #define IMM_UN(n, v) UN(n, v)
 #define IMM_SN(n, v) SN(n, v)
 
-#define NOT_IMPLEMENTED \
-	do { \
-		RZ_LOG_INFO("IL instruction not implemented."); \
-		return NOP; \
-	} while (0)
-
 // Extend value with sign bits to a width of n.
 #define EXTEND(n, v) ITE(MSB(v), SIGNED(n, DUP(v)), UNSIGNED(n, DUP(v)))
 // Extend value with 0s to a width of 32/64 bit.

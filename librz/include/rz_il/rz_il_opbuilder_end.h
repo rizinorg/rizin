@@ -83,4 +83,6 @@
 #undef JMP
 #undef GOTO
 
+#undef NOT_IMPLEMENTED
+
 #undef RZ_IL_OPBUILDER_BEGIN_H

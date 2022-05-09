@@ -120,4 +120,10 @@
 #define JMP(tgt)        rz_il_op_new_jmp(tgt)
 #define GOTO(lbl)       rz_il_op_new_goto(lbl)
 
+#define NOT_IMPLEMENTED \
+	do { \
+		RZ_LOG_INFO("IL instruction not implemented."); \
+		return NOP; \
+	} while (0)
+
 #endif
