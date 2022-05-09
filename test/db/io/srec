@@ -124,7 +124,7 @@ RELROCS  true
 NX       true
 paddr      size    vaddr      vsize   align perm name              type              flags            
 ------------------------------------------------------------------------------------------------------
-0x00000000 0x0     0x00000000 0x0     0x0   ----                   NULL              
+0x00000000 0x0     ---------- 0x0     0x0   ----                   NULL              
 0x00000114 0x20    0x00008114 0x20    0x0   -r-- .note.ABI-tag     NOTE              alloc
 0x00000134 0x14    0x00008134 0x14    0x0   -r-x .init             PROGBITS          alloc,execute
 0x00000150 0x5d3a8 0x00008150 0x5d3a8 0x0   -r-x .text             PROGBITS          alloc,execute
@@ -146,17 +146,17 @@ paddr      size    vaddr      vsize   align perm name              type         
 0x00074070 0x6e4   0x00084070 0x6e4   0x0   -rw- .data             PROGBITS          write,alloc
 0x00074754 0x0     0x00084758 0x1880  0x0   -rw- .bss              NOBITS            write,alloc
 0x00074754 0x0     0x00085fd8 0x14    0x0   -rw- libc_freeres_ptrs NOBITS            write,alloc
-0x00074754 0x4472  0x00000000 0x4472  0x0   ---- .comment          PROGBITS          
-0x00078bc8 0x58    0x00000000 0x58    0x0   ---- .debug_aranges    PROGBITS          
-0x00078c20 0x25    0x00000000 0x25    0x0   ---- .debug_pubnames   PROGBITS          
-0x00078c45 0x17b   0x00000000 0x17b   0x0   ---- .debug_info       PROGBITS          
-0x00078dc0 0x6f    0x00000000 0x6f    0x0   ---- .debug_abbrev     PROGBITS          
-0x00078e2f 0x130   0x00000000 0x130   0x0   ---- .debug_line       PROGBITS          
-0x00078f5f 0xa4    0x00000000 0xa4    0x0   ---- .debug_str        PROGBITS          merge,strings
-0x00079008 0x48    0x00000000 0x48    0x0   ---- .debug_ranges     PROGBITS          
-0x00079050 0x2d    0x00000000 0x2d    0x0   ---- .ARM.attributes   LOPROC+0x00000003 
-0x0007907d 0x167   0x00000000 0x167   0x0   ---- .shstrtab         STRTAB            
-0x00079734 0xbf00  0x00000000 0xbf00  0x0   ---- .symtab           SYMTAB            
-0x00085634 0x6394  0x00000000 0x6394  0x0   ---- .strtab           STRTAB            
+0x00074754 0x4472  ---------- 0x4472  0x0   ---- .comment          PROGBITS          
+0x00078bc8 0x58    ---------- 0x58    0x0   ---- .debug_aranges    PROGBITS          
+0x00078c20 0x25    ---------- 0x25    0x0   ---- .debug_pubnames   PROGBITS          
+0x00078c45 0x17b   ---------- 0x17b   0x0   ---- .debug_info       PROGBITS          
+0x00078dc0 0x6f    ---------- 0x6f    0x0   ---- .debug_abbrev     PROGBITS          
+0x00078e2f 0x130   ---------- 0x130   0x0   ---- .debug_line       PROGBITS          
+0x00078f5f 0xa4    ---------- 0xa4    0x0   ---- .debug_str        PROGBITS          merge,strings
+0x00079008 0x48    ---------- 0x48    0x0   ---- .debug_ranges     PROGBITS          
+0x00079050 0x2d    ---------- 0x2d    0x0   ---- .ARM.attributes   LOPROC+0x00000003 
+0x0007907d 0x167   ---------- 0x167   0x0   ---- .shstrtab         STRTAB            
+0x00079734 0xbf00  ---------- 0xbf00  0x0   ---- .symtab           SYMTAB            
+0x00085634 0x6394  ---------- 0x6394  0x0   ---- .strtab           STRTAB            
 EOF
 RUN

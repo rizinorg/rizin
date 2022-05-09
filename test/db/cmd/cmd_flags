@@ -212,7 +212,7 @@ aaa
 flj~{254}
 EOF
 EXPECT=<<EOF
-{"name":"reloc.operator_delete_void","realname":"operator delete(void*)","size":8,"offset":16432}
+{"name":"obj.__dso_handle","realname":"__dso_handle","size":0,"offset":16496}
 EOF
 RUN
 
@@ -647,7 +647,6 @@ CMDS=<<EOF
 fl. @ 0
 EOF
 EXPECT=<<EOF
-0x00000000 0 section.
 0x00000000 13440 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 64 segment.ehdr

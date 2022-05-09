@@ -290,7 +290,7 @@ static ut64 get_import_offset(ELFOBJ *bin, RzBinElfSymbol *symbol) {
 }
 
 static void convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	if (symbol->vaddr != UT64_MAX) {
+	if (symbol->vaddr && symbol->vaddr != UT64_MAX) {
 		return;
 	}
 
