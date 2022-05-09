@@ -3,7 +3,7 @@
 
 #include <rz_analysis.h>
 #include <rz_core.h>
-#include "minunit.h"
+#include "../unit/minunit.h"
 
 bool test_rz_analysis_global_var() {
 	RzCore *core = rz_core_new();

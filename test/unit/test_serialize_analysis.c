@@ -4,6 +4,7 @@
 #include <rz_analysis.h>
 #include <rz_sign.h>
 #include <rz_util/rz_path.h>
+#include "test_config.h"
 #include "minunit.h"
 #include "test_sdb.h"
 
@@ -550,9 +551,8 @@ bool test_analysis_var_save() {
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
-	free(types_dir);
 
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
 
