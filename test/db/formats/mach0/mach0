@@ -265,11 +265,11 @@ NAME=osx mach0 ik
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=ik~uuid
 EXPECT=<<EOF
-mach0_uuid_command.format=[4]Ed[16]b (mach0_load_command_type)cmd cmdsize uuid
-mach0_cmd_8.format=mach0_uuid_command
-uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8
-mach0_cmd_8.cmd=uuid
 EOF
+mach0_cmd_8.cmd=uuid
+mach0_cmd_8.format=mach0_uuid_command
+mach0_uuid_command.format=[4]Ed[16]b (mach0_load_command_type)cmd cmdsize uuid
+uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8
 RUN
 
 NAME=mach0 exports trie
