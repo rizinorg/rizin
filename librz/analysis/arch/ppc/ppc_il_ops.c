@@ -324,6 +324,10 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 		}
 		res = ADD(op0, op1);
 		break;
+	case PPC_INS_NEG:
+		op0 = LOGNOT(VARG(rA));
+		op1 = UA(1);
+		res = ADD(op0, op1);
 	}
 	rz_return_val_if_fail(op0 && op1, NULL);
 
@@ -347,8 +351,10 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	const char *rA = cs_reg_name(handle, INSOP(1).reg);
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
 	st64 uI = INSOP(2).imm;
+	bool cr0 = insn->detail->ppc.update_cr0;
 	RzILOpPure *op0;
 	RzILOpPure *op1;
+	RzILOpPure *res;
 
 	// How to read instruction ids:
 	// Letter			Meaning
@@ -364,18 +370,44 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	case PPC_INS_ANDC:
 	case PPC_INS_ANDIS:
 	case PPC_INS_ANDI:
+		op0 = VARG(rS);
+		if (id == PPC_INS_AND || id == PPC_INS_ANDC) {
+			op1 = (id == PPC_INS_AND) ? VARG(rB) : LOGNOT(VARG(rA));
+		} else {
+			op1 = (id == PPC_INS_ANDI) ? EXTZ(U16(uI)) : EXTZ(APPEND(U16(uI), U16(0)));
+		}
+		res = LOGAND(op0, op1);
+		break;
 	case PPC_INS_OR:
 	case PPC_INS_ORC:
 	case PPC_INS_ORI:
 	case PPC_INS_ORIS:
+		op0 = VARG(rS);
+		if (id == PPC_INS_OR || id == PPC_INS_ORC) {
+			op1 = (id == PPC_INS_OR) ? VARG(rB) : LOGNOT(VARG(rA));
+		} else {
+			op1 = (id == PPC_INS_ORI) ? EXTZ(U16(uI)) : EXTZ(APPEND(U16(uI), U16(0)));
+		}
+		res = LOGOR(op0, op1);
+		break;
 	case PPC_INS_XOR:
 	case PPC_INS_XORI:
 	case PPC_INS_XORIS:
-		NOT_IMPLEMENTED;
+		op0 = VARG(rS);
+		if (id == PPC_INS_XOR) {
+			op1 = VARG(rB);
+		} else {
+			op1 = (id == PPC_INS_XORI) ? EXTZ(U16(uI)) : EXTZ(APPEND(U16(uI), U16(0)));
+		}
+		res = LOGXOR(op0, op1);
+		break;
 	case PPC_INS_NAND:
-	case PPC_INS_NEG:
 	case PPC_INS_NOR:
-		NOT_IMPLEMENTED;
+		op0 = VARG(rS);
+		op1 = VARG(rB);
+		res = LOGNOT(
+			(id == PPC_INS_NAND) ? AND(op0, op1) : OR(op0, op1)
+			);
 	// Equivalent
 	case PPC_INS_EQV:
 		NOT_IMPLEMENTED;
@@ -406,6 +438,9 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	}
 
 	// WRITE
+	RzILOpEffect *update_cr0 = cr0 ? set_cr0(res, mode) : NOP;
+	RzILOpEffect *set = SETG(rA, res);
+	return SEQ2(set, update_cr0);
 }
 
 RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
