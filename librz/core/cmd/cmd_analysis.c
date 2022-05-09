@@ -2388,15 +2388,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	}
 }
 
-/**
- * \brief      Prints commands to create functions after traps calls
- *
- * \param[in]  core    The RzCore to use
- * \param[in]  n_bytes The number of bytes after the trap calls (set to 0 for auto-mode)
- *
- * \return    False on failure, otherwise true
- */
-RZ_API bool rz_core_analysis_after_traps_print(RZ_NONNULL RzCore *core, ut64 n_bytes) {
+static bool print_cmd_analysis_after_traps_print(RZ_NONNULL RzCore *core, ut64 n_bytes) {
 	int bufi = 0, minop = 1; // 4
 	ut8 *buf = NULL;
 	RzAnalysisOp op = { 0 };
@@ -3479,65 +3471,6 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		rz_core_cmd_help(core, help_msg_ag);
 		break;
 	}
-}
-
-static bool core_search_for_xrefs_in_boundaries(RzCore *core, ut64 from, ut64 to) {
-	if ((from == UT64_MAX && to == UT64_MAX) ||
-		(!from && !to) ||
-		(to - from > rz_io_size(core->io))) {
-		return false;
-	}
-	return rz_core_analysis_search_xrefs(core, from, to);
-}
-
-/**
- * \brief      Analyze xrefs and prints the result.
- *
- * \param[in]  core    The RzCore to use
- * \param[in]  nbytes  Sets a custom boundary from current offset for N bytes (set it to 0 to use the maps)
- *
- * \return     False on failure, otherwise true
- */
-RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, size_t nbytes) {
-	rz_return_val_if_fail(core, false);
-
-	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
-	ut64 from = 0, to = 0;
-
-	if (nbytes) {
-		from = core->offset;
-		to = core->offset + nbytes;
-		return core_search_for_xrefs_in_boundaries(core, from, to);
-	} else if (cfg_debug) {
-		// get boundaries of current memory map, section or io map
-		RzDebugMap *map = rz_debug_map_get(core->dbg, core->offset);
-		if (!map) {
-			RZ_LOG_ERROR("Cannot find debug map boundaries at current offset\n");
-			return false;
-		}
-		from = map->addr;
-		to = map->addr_end;
-		return core_search_for_xrefs_in_boundaries(core, from, to);
-	}
-
-	RzList *list = rz_core_get_boundaries_prot(core, RZ_PERM_X, NULL, "analysis");
-	RzListIter *iter;
-	RzIOMap *map;
-	if (!list) {
-		RZ_LOG_ERROR("cannot find maps with exec permisions\n");
-		return false;
-	}
-
-	rz_list_foreach (list, iter, map) {
-		from = map->itv.addr;
-		to = rz_itv_end(map->itv);
-		if (rz_cons_is_breaked()) {
-			break;
-		}
-		core_search_for_xrefs_in_boundaries(core, from, to);
-	}
-	rz_list_free(list);
-	return true;
 }
 
 static st64 compute_coverage(RzCore *core) {
@@ -7928,7 +7861,7 @@ RZ_IPI RzCmdStatus rz_analyze_all_data_references_to_code_handler(RzCore *core, 
 RZ_IPI RzCmdStatus rz_analyze_all_functions_handler(RzCore *core, int argc, const char **argv) {
 	const bool old_hasnext = rz_config_get_b(core->config, "analysis.hasnext");
 	rz_config_set_b(core->config, "analysis.hasnext", true);
-	rz_core_cmd0(core, "afr@@c:isq"); // TODO: replace with C apis.
+	rz_core_cmd0(core, "afr @@c:isq"); // TODO: replace with C apis.
 	rz_config_set_b(core->config, "analysis.hasnext", old_hasnext);
 	return RZ_CMD_STATUS_OK;
 }
@@ -8120,7 +8053,7 @@ RZ_IPI RzCmdStatus rz_analyze_function_linked_offsets_handler(RzCore *core, int 
 // aaT
 RZ_IPI RzCmdStatus rz_print_commands_after_traps_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n_bytes = argc == 2 ? rz_num_math(core->num, argv[1]) : 0;
-	rz_core_analysis_after_traps_print(core, n_bytes);
+	print_cmd_analysis_after_traps_print(core, n_bytes);
 	return RZ_CMD_STATUS_OK;
 }
 
