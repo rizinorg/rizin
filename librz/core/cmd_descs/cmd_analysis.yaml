@@ -25,17 +25,9 @@ commands:
             summary: Analyze function calls
             cname: analyze_all_function_calls
             args: []
-          - name: aac*
-            summary: Print commands to perform manual function calls analysis
-            cname: print_manual_analysis_function_calls
-            args: []
           - name: aaci
             summary: Analyze all function calls to imports
             cname: analyze_all_function_calls_to_imports
-            args: []
-          - name: aaci*
-            summary: Print commands to perform manual function calls analysis to imports
-            cname: print_manual_analysis_function_calls_to_imports
             args: []
       - name: aad
         summary: Analyze data references to code
@@ -155,12 +147,6 @@ commands:
       - name: aar
         summary: Analyze xrefs in current section or by n_bytes
         cname: analyze_xrefs_section_bytes
-        type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        modes:
-          - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_TABLE
-          - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: n_bytes
             type: RZ_CMD_ARG_TYPE_NUM

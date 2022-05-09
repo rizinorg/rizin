@@ -1260,28 +1260,12 @@ static const RzCmdDescHelp analyze_all_function_calls_help = {
 	.args = analyze_all_function_calls_args,
 };
 
-static const RzCmdDescArg print_manual_analysis_function_calls_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp print_manual_analysis_function_calls_help = {
-	.summary = "Print commands to perform manual function calls analysis",
-	.args = print_manual_analysis_function_calls_args,
-};
-
 static const RzCmdDescArg analyze_all_function_calls_to_imports_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_all_function_calls_to_imports_help = {
 	.summary = "Analyze all function calls to imports",
 	.args = analyze_all_function_calls_to_imports_args,
-};
-
-static const RzCmdDescArg print_manual_analysis_function_calls_to_imports_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp print_manual_analysis_function_calls_to_imports_help = {
-	.summary = "Print commands to perform manual function calls analysis to imports",
-	.args = print_manual_analysis_function_calls_to_imports_args,
 };
 
 static const RzCmdDescArg analyze_all_data_references_to_code_args[] = {
@@ -14395,14 +14379,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aac_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aac", rz_analyze_all_function_calls_handler, &analyze_all_function_calls_help, &aac_help);
 	rz_warn_if_fail(aac_cd);
-	RzCmdDesc *print_manual_analysis_function_calls_cd = rz_cmd_desc_argv_new(core->rcmd, aac_cd, "aac*", rz_print_manual_analysis_function_calls_handler, &print_manual_analysis_function_calls_help);
-	rz_warn_if_fail(print_manual_analysis_function_calls_cd);
-
 	RzCmdDesc *analyze_all_function_calls_to_imports_cd = rz_cmd_desc_argv_new(core->rcmd, aac_cd, "aaci", rz_analyze_all_function_calls_to_imports_handler, &analyze_all_function_calls_to_imports_help);
 	rz_warn_if_fail(analyze_all_function_calls_to_imports_cd);
-
-	RzCmdDesc *print_manual_analysis_function_calls_to_imports_cd = rz_cmd_desc_argv_new(core->rcmd, aac_cd, "aaci*", rz_print_manual_analysis_function_calls_to_imports_handler, &print_manual_analysis_function_calls_to_imports_help);
-	rz_warn_if_fail(print_manual_analysis_function_calls_to_imports_cd);
 
 	RzCmdDesc *analyze_all_data_references_to_code_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aad", rz_analyze_all_data_references_to_code_handler, &analyze_all_data_references_to_code_help);
 	rz_warn_if_fail(analyze_all_data_references_to_code_cd);
@@ -14451,7 +14429,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analyze_all_preludes_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aap", rz_analyze_all_preludes_handler, &analyze_all_preludes_help);
 	rz_warn_if_fail(analyze_all_preludes_cd);
 
-	RzCmdDesc *analyze_xrefs_section_bytes_cd = rz_cmd_desc_argv_state_new(core->rcmd, aa_cd, "aar", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analyze_xrefs_section_bytes_handler, &analyze_xrefs_section_bytes_help);
+	RzCmdDesc *analyze_xrefs_section_bytes_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aar", rz_analyze_xrefs_section_bytes_handler, &analyze_xrefs_section_bytes_help);
 	rz_warn_if_fail(analyze_xrefs_section_bytes_cd);
 
 	RzCmdDesc *analyze_symbols_entries_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aas", rz_analyze_symbols_entries_handler, &analyze_symbols_entries_help);

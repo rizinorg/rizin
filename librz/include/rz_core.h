@@ -723,7 +723,7 @@ RZ_API void rz_core_analysis_undefine(RzCore *core, ut64 off);
 RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, RzCmdStateOutput *state);
 RZ_API void rz_core_analysis_hint_list_print(RzAnalysis *a, RzCmdStateOutput *state);
 RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int mode);
-RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, RzCmdStateOutput *state);
+RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to);
 RZ_API bool rz_core_analysis_after_traps_print(RZ_NONNULL RzCore *core, ut64 n_bytes);
 RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize);
 RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr);
@@ -731,7 +731,7 @@ RZ_API void rz_core_analysis_coderefs(RzCore *core, ut64 addr);
 RZ_API RzGraph /*RzGraphNodeInfo*/ *rz_core_analysis_codexrefs(RzCore *core, ut64 addr);
 RZ_API RzGraph /*RzGraphNodeInfo*/ *rz_core_analysis_importxrefs(RzCore *core);
 RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt);
-RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdStateOutput *state, size_t nbytes);
+RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, size_t nbytes);
 RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input);
 RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
 RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name);
@@ -754,7 +754,7 @@ RZ_API bool rz_core_analysis_sigdb_apply(RZ_NONNULL RzCore *core, RZ_NULLABLE in
 RZ_API void rz_core_analysis_sigdb_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTable *table);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
-RZ_API void rz_cmd_analysis_calls(RZ_NONNULL RzCore *core, bool print_commands, bool imports_only);
+RZ_API void rz_core_analysis_calls(RZ_NONNULL RzCore *core, bool imports_only);
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 
 /*tp.c*/

@@ -3240,73 +3240,34 @@ static bool is_valid_xref(RzCore *core, ut64 xref_to, RzAnalysisXRefType type, i
 }
 
 /**
- * \brief Prints a xref according to the given \p out_mode.
+ * \brief Sets a new xref according to the given to and from addresses.
  *
- * \param core The rizin core.
- * \param at The address where the xref is located.
- * \param xref_to The target address of the xref.
- * \param type The xref type.
- * \param state The command state mode.
- * \param cfg_analysis_strings
+ * \param core       The rizin core.
+ * \param xref_from  The address where the xref is located.
+ * \param xref_to    The target address of the xref.
+ * \param type       The xref type.
+ * \param decode_str When set to true, checks if the RZ_ANALYSIS_REF_TYPE_DATA address is a string and adds a flag.
  */
-static void print_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType type, RzCmdStateOutput *state, bool cfg_analysis_strings) {
-	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
-		if (cfg_analysis_strings && type == RZ_ANALYSIS_REF_TYPE_DATA) {
-			int len = 0;
-			char *str_string = is_string_at(core, xref_to, &len);
-			if (str_string) {
-				rz_name_filter(str_string, -1, true);
-				char *str_flagname = rz_str_newf("str.%s", str_string);
-				rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
-				(void)rz_flag_set(core->flags, str_flagname, xref_to, 1);
-				rz_flag_space_pop(core->flags);
-				free(str_flagname);
-				if (len > 0) {
-					rz_meta_set(core->analysis, RZ_META_TYPE_STRING, xref_to,
-						len, (const char *)str_string);
-				}
-				free(str_string);
-			}
-		}
-		// Add to SDB
-		if (xref_to) {
-			rz_analysis_xrefs_set(core->analysis, at, xref_to, type);
-		}
-	} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		char *key = sdb_fmt("0x%" PFMT64x, xref_to);
-		char *value = sdb_fmt("0x%" PFMT64x, at);
-		pj_ks(state->d.pj, key, value);
-	} else if (state->mode == RZ_OUTPUT_MODE_TABLE) {
-		const char *str_type;
-		switch (type) {
-		case RZ_ANALYSIS_REF_TYPE_CODE: str_type = "CODE"; break;
-		case RZ_ANALYSIS_REF_TYPE_CALL: str_type = "CALL"; break;
-		case RZ_ANALYSIS_REF_TYPE_DATA: str_type = "DATA"; break;
-		case RZ_ANALYSIS_REF_TYPE_STRING: str_type = "STR"; break;
-		default: str_type = "UNKN"; break;
-		}
-		rz_table_add_rowf(state->d.t, "sXX", str_type, xref_to, at);
-	} else if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
+static void set_new_xref(RzCore *core, ut64 xref_from, ut64 xref_to, RzAnalysisXRefType type, bool decode_str) {
+	if (decode_str && type == RZ_ANALYSIS_REF_TYPE_DATA) {
 		int len = 0;
-		// Display in rizin commands format
-		char *cmd;
-		switch (type) {
-		case RZ_ANALYSIS_REF_TYPE_CODE: cmd = "axc"; break;
-		case RZ_ANALYSIS_REF_TYPE_CALL: cmd = "axC"; break;
-		case RZ_ANALYSIS_REF_TYPE_DATA: cmd = "axd"; break;
-		default: cmd = "ax"; break;
-		}
-		rz_cons_printf("%s 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", cmd, xref_to, at);
-		if (cfg_analysis_strings && type == RZ_ANALYSIS_REF_TYPE_DATA) {
-			char *str_flagname = is_string_at(core, xref_to, &len);
-			if (str_flagname) {
-				ut64 str_addr = xref_to;
-				rz_name_filter(str_flagname, -1, true);
-				rz_cons_printf("f str.%s @ 0x%" PFMT64x "\n", str_flagname, str_addr);
-				rz_cons_printf("Cs %d @ 0x%" PFMT64x "\n", len, str_addr);
-				free(str_flagname);
+		char *str_string = is_string_at(core, xref_to, &len);
+		if (str_string) {
+			rz_name_filter(str_string, -1, true);
+			char *str_flagname = rz_str_newf("str.%s", str_string);
+			rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
+			(void)rz_flag_set(core->flags, str_flagname, xref_to, 1);
+			rz_flag_space_pop(core->flags);
+			free(str_flagname);
+			if (len > 0) {
+				rz_meta_set(core->analysis, RZ_META_TYPE_STRING, xref_to, len, (const char *)str_string);
 			}
+			free(str_string);
 		}
+	}
+	// Add to SDB
+	if (xref_to) {
+		rz_analysis_xrefs_set(core->analysis, xref_from, xref_to, type);
 	}
 }
 
@@ -3316,14 +3277,13 @@ static void print_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
  * \param core The Rizin core.
  * \param from Start of search interval.
  * \param to End of search interval.
- * \param state The output state mode.
  * \return int Number of found xrefs. -1 in case of failure.
  */
-RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut64 to, RZ_NONNULL RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && state, -1);
+RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut64 to) {
+	rz_return_val_if_fail(core, -1);
 
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
-	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
+	bool decode_str = rz_config_get_i(core->config, "analysis.strings");
 	ut64 at;
 	int count = 0;
 	const int bsz = 8096;
@@ -3354,10 +3314,6 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 
 	rz_cons_break_push(NULL, NULL);
 
-	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
-		rz_cmd_state_output_set_columnsf(state, "sXX", "type", "xref to", "xref at");
-	}
-
 	at = from;
 	st64 asm_sub_varmin = rz_config_get_i(core->config, "asm.sub.varmin");
 	while (at < to && !rz_cons_is_breaked()) {
@@ -3386,7 +3342,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			// find references
 			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
 				if (is_valid_xref(core, op.val, RZ_ANALYSIS_REF_TYPE_DATA, cfg_debug)) {
-					print_xref(core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, state, cfg_analysis_strings);
+					set_new_xref(core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, decode_str);
 					count++;
 				}
 			}
@@ -3394,7 +3350,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 				st64 aval = op.analysis_vals[i].imm;
 				if (aval > asm_sub_varmin && aval != UT64_MAX && aval != UT32_MAX) {
 					if (is_valid_xref(core, aval, RZ_ANALYSIS_REF_TYPE_DATA, cfg_debug)) {
-						print_xref(core, op.addr, aval, RZ_ANALYSIS_REF_TYPE_DATA, state, cfg_analysis_strings);
+						set_new_xref(core, op.addr, aval, RZ_ANALYSIS_REF_TYPE_DATA, decode_str);
 						count++;
 					}
 				}
@@ -3402,35 +3358,35 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 				if (is_valid_xref(core, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, cfg_debug)) {
-					print_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, state, cfg_analysis_strings);
+					set_new_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, decode_str);
 					count++;
 				}
 			}
 			// find references
 			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
 				if (is_valid_xref(core, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, cfg_debug)) {
-					print_xref(core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, state, cfg_analysis_strings);
+					set_new_xref(core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, decode_str);
 					count++;
 				}
 			}
 			switch (op.type) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
 				if (is_valid_xref(core, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, cfg_debug)) {
-					print_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, state, cfg_analysis_strings);
+					set_new_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, decode_str);
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CJMP:
 				if (rz_config_get_b(core->config, "analysis.jmp.cref") &&
 					is_valid_xref(core, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, cfg_debug)) {
-					print_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, state, cfg_analysis_strings);
+					set_new_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, decode_str);
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CALL:
 			case RZ_ANALYSIS_OP_TYPE_CCALL:
 				if (is_valid_xref(core, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, cfg_debug)) {
-					print_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, state, cfg_analysis_strings);
+					set_new_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, decode_str);
 					count++;
 				}
 				break;
@@ -3442,7 +3398,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			case RZ_ANALYSIS_OP_TYPE_UCJMP:
 				count++;
 				if (is_valid_xref(core, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, cfg_debug)) {
-					print_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, state, cfg_analysis_strings);
+					set_new_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, decode_str);
 					count++;
 				}
 				break;
@@ -3452,7 +3408,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			case RZ_ANALYSIS_OP_TYPE_IRCALL:
 			case RZ_ANALYSIS_OP_TYPE_UCCALL:
 				if (is_valid_xref(core, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, cfg_debug)) {
-					print_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, state, cfg_analysis_strings);
+					set_new_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, decode_str);
 					count++;
 				}
 				break;
@@ -5692,8 +5648,6 @@ static bool is_apple_target(RzCore *core) {
  * \param dh_orig Name of the debug handler, e.g. "esil"
  */
 RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig) {
-	RzCmdStateOutput state = { 0 };
-	state.mode = RZ_OUTPUT_MODE_STANDARD;
 	bool didAap = false;
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
@@ -5720,7 +5674,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 
 	rz_core_notify_begin(core, "Analyze function calls (aac)");
-	(void)rz_cmd_analysis_calls(core, false, false); // "aac"
+	(void)rz_core_analysis_calls(core, false); // "aac"
 	rz_core_seek(core, curseek, true);
 	rz_core_notify_done(core, "Analyze function calls (aac)");
 	rz_core_task_yield(&core->tasks);
@@ -5740,7 +5694,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 
 	rz_core_notify_begin(core, "Analyze len bytes of instructions for references (aar)");
-	(void)rz_core_analysis_refs(core, &state, 0); // "aar"
+	(void)rz_core_analysis_refs(core, 0); // "aar"
 	rz_core_notify_done(core, "Analyze len bytes of instructions for references (aar)");
 	rz_core_task_yield(&core->tasks);
 	if (rz_cons_is_breaked()) {

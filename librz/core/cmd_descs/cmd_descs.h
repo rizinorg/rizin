@@ -56,9 +56,7 @@ RZ_IPI RzCmdStatus rz_analyze_simple_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_analyze_everything_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_everything_experimental_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_print_manual_analysis_function_calls_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_to_imports_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_print_manual_analysis_function_calls_to_imports_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_all_data_references_to_code_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_all_esil_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_all_esil_functions_handler(RzCore *core, int argc, const char **argv);
@@ -75,7 +73,7 @@ RZ_IPI RzCmdStatus rz_analyze_all_objc_references_handler(RzCore *core, int argc
 RZ_IPI RzCmdStatus rz_autoname_all_functions_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_autoname_all_functions_noreturn_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_all_preludes_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_analyze_xrefs_section_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_analyze_xrefs_section_bytes_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_symbols_entries_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_symbols_entries_flags_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_function_linked_offsets_handler(RzCore *core, int argc, const char **argv);

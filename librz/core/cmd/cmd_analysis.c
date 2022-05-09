@@ -2495,7 +2495,7 @@ RZ_API bool rz_core_analysis_after_traps_print(RZ_NONNULL RzCore *core, ut64 n_b
 	return true;
 }
 
-static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
+static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool importsOnly) {
 	RzAnalysisOp op;
 	int depth = rz_config_get_i(core->config, "analysis.depth");
 	const int addrbytes = core->io->addrbytes;
@@ -2565,15 +2565,10 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool printCo
 					isValidCall = memcmp(buf, "\x00\x00\x00\x00", 4);
 				}
 				if (isValidCall) {
-					if (printCommands) {
-						rz_cons_printf("ax 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", op.jump, addr);
-						rz_cons_printf("af @ 0x%08" PFMT64x "\n", op.jump);
-					} else {
-						// add xref here
-						rz_analysis_xrefs_set(core->analysis, addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL);
-						if (rz_io_is_valid_offset(core->io, op.jump, 1)) {
-							rz_core_analysis_fcn(core, op.jump, addr, RZ_ANALYSIS_REF_TYPE_CALL, depth);
-						}
+					// add xref here
+					rz_analysis_xrefs_set(core->analysis, addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL);
+					if (rz_io_is_valid_offset(core->io, op.jump, 1)) {
+						rz_core_analysis_fcn(core, op.jump, addr, RZ_ANALYSIS_REF_TYPE_CALL, depth);
 					}
 				}
 			}
@@ -2593,7 +2588,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool printCo
 	free(block1);
 }
 
-RZ_API void rz_cmd_analysis_calls(RZ_NONNULL RzCore *core, bool print_commands, bool imports_only) {
+RZ_API void rz_core_analysis_calls(RZ_NONNULL RzCore *core, bool imports_only) {
 	rz_return_if_fail(core);
 
 	RzList *ranges = NULL;
@@ -2613,7 +2608,7 @@ RZ_API void rz_cmd_analysis_calls(RZ_NONNULL RzCore *core, bool print_commands, 
 		if (ranges) {
 			rz_list_foreach (ranges, iter, map) {
 				ut64 addr = map->itv.addr;
-				_analysis_calls(core, addr, rz_itv_end(map->itv), print_commands, imports_only);
+				_analysis_calls(core, addr, rz_itv_end(map->itv), imports_only);
 			}
 		}
 	} else {
@@ -2626,7 +2621,7 @@ RZ_API void rz_cmd_analysis_calls(RZ_NONNULL RzCore *core, bool print_commands, 
 				if (rz_cons_is_breaked()) {
 					break;
 				}
-				_analysis_calls(core, addr, rz_itv_end(r->itv), print_commands, imports_only);
+				_analysis_calls(core, addr, rz_itv_end(r->itv), imports_only);
 			}
 		}
 	}
@@ -3486,36 +3481,25 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 	}
 }
 
-static bool core_search_for_xrefs_in_boundaries(RzCore *core, ut64 from, ut64 to, RzCmdStateOutput *state) {
-	if (from == UT64_MAX && to == UT64_MAX) {
+static bool core_search_for_xrefs_in_boundaries(RzCore *core, ut64 from, ut64 to) {
+	if ((from == UT64_MAX && to == UT64_MAX) ||
+		(!from && !to) ||
+		(to - from > rz_io_size(core->io))) {
 		return false;
-	} else if (!from && !to) {
-		return false;
-	} else if (to - from > rz_io_size(core->io)) {
-		return false;
-	} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_o(state->d.pj);
 	}
-
-	bool res = rz_core_analysis_search_xrefs(core, from, to, state);
-
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(state->d.pj);
-	}
-	return res;
+	return rz_core_analysis_search_xrefs(core, from, to);
 }
 
 /**
  * \brief      Analyze xrefs and prints the result.
  *
  * \param[in]  core    The RzCore to use
- * \param[in]  state   The output configuration
  * \param[in]  nbytes  Sets a custom boundary from current offset for N bytes (set it to 0 to use the maps)
  *
  * \return     False on failure, otherwise true
  */
-RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdStateOutput *state, size_t nbytes) {
-	rz_return_val_if_fail(core && state, false);
+RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, size_t nbytes) {
+	rz_return_val_if_fail(core, false);
 
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	ut64 from = 0, to = 0;
@@ -3523,7 +3507,7 @@ RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdState
 	if (nbytes) {
 		from = core->offset;
 		to = core->offset + nbytes;
-		return core_search_for_xrefs_in_boundaries(core, from, to, state);
+		return core_search_for_xrefs_in_boundaries(core, from, to);
 	} else if (cfg_debug) {
 		// get boundaries of current memory map, section or io map
 		RzDebugMap *map = rz_debug_map_get(core->dbg, core->offset);
@@ -3533,7 +3517,7 @@ RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdState
 		}
 		from = map->addr;
 		to = map->addr_end;
-		return core_search_for_xrefs_in_boundaries(core, from, to, state);
+		return core_search_for_xrefs_in_boundaries(core, from, to);
 	}
 
 	RzList *list = rz_core_get_boundaries_prot(core, RZ_PERM_X, NULL, "analysis");
@@ -3542,8 +3526,6 @@ RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdState
 	if (!list) {
 		RZ_LOG_ERROR("cannot find maps with exec permisions\n");
 		return false;
-	} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_o(state->d.pj);
 	}
 
 	rz_list_foreach (list, iter, map) {
@@ -3552,28 +3534,9 @@ RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdState
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		if (!from && !to) {
-			RZ_LOG_INFO("Cannot determine xref search boundaries\n");
-			continue;
-		} else if (to - from > UT32_MAX) {
-			RZ_LOG_INFO("Skipping huge range (0x%08" PFMT64x ":0x%08" PFMT64x "\n", from, to);
-			continue;
-		} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
-			pj_ki(state->d.pj, "mapid", map->id);
-			pj_ko(state->d.pj, "refs");
-		}
-
-		rz_core_analysis_search_xrefs(core, from, to, state);
-
-		if (state->mode == RZ_OUTPUT_MODE_JSON) {
-			pj_end(state->d.pj);
-		}
+		core_search_for_xrefs_in_boundaries(core, from, to);
 	}
 	rz_list_free(list);
-
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(state->d.pj);
-	}
 	return true;
 }
 
@@ -7937,25 +7900,13 @@ RZ_IPI RzCmdStatus rz_analyze_everything_experimental_handler(RzCore *core, int 
 
 // aac
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_analysis_calls(core, false, false);
-	return RZ_CMD_STATUS_OK;
-}
-
-// aac*
-RZ_IPI RzCmdStatus rz_print_manual_analysis_function_calls_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_analysis_calls(core, true, false);
+	rz_core_analysis_calls(core, false);
 	return RZ_CMD_STATUS_OK;
 }
 
 // aaci
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_to_imports_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_analysis_calls(core, false, true);
-	return RZ_CMD_STATUS_OK;
-}
-
-// aaci*
-RZ_IPI RzCmdStatus rz_print_manual_analysis_function_calls_to_imports_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_analysis_calls(core, true, true);
+	rz_core_analysis_calls(core, true);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -8119,9 +8070,9 @@ RZ_IPI RzCmdStatus rz_analyze_all_preludes_handler(RzCore *core, int argc, const
 }
 
 // aar
-RZ_IPI RzCmdStatus rz_analyze_xrefs_section_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_analyze_xrefs_section_bytes_handler(RzCore *core, int argc, const char **argv) {
 	size_t n_bytes = argc == 2 ? rz_num_math(core->num, argv[1]) : 0;
-	return bool2status(rz_core_analysis_refs(core, state, n_bytes));
+	return bool2status(rz_core_analysis_refs(core, n_bytes));
 }
 
 // aas
