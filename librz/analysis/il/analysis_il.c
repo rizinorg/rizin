@@ -286,6 +286,7 @@ RZ_API bool rz_analysis_il_vm_setup(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, false);
 	rz_analysis_il_vm_cleanup(analysis);
 	if (!analysis->cur || !analysis->cur->il_config) {
+		RZ_LOG_WARN("Could not set up VM. Analysis plugin or RZIL config was NULL.\n");
 		return false;
 	}
 	analysis->il_vm = rz_analysis_il_vm_new(analysis, analysis->reg);
