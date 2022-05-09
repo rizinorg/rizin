@@ -1242,14 +1242,15 @@ RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 at) {
 	RzListIter *it;
 	RzBinFile *bf;
 	rz_list_foreach (bin->binfiles, it, bf) {
-		if (bf->o) {
-			RzBinMap *map = rz_bin_object_get_map_at(bf->o, at, true);
-			if (map) {
-				return bf;
-			}
-			if (at >= bf->o->opts.baseaddr && at < (bf->o->opts.baseaddr + bf->size)) {
-				return bf;
-			}
+		if (!bf->o) {
+			continue;
+		}
+		RzBinMap *map = rz_bin_object_get_map_at(bf->o, at, true);
+		if (map) {
+			return bf;
+		}
+		if (at >= bf->o->opts.baseaddr && at < (bf->o->opts.baseaddr + bf->size)) {
+			return bf;
 		}
 	}
 	return NULL;
