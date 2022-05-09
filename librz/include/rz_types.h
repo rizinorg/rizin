@@ -357,7 +357,7 @@ static inline void *rz_new_copy(int size, void *data) {
 		x = NULL; \
 	}
 
-#define RZ_FREE2(x, y) \
+#define RZ_FREE_CUSTOM(x, y) \
 	{ \
 		y(x); \
 		x = NULL; \

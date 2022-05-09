@@ -2648,49 +2648,49 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_task_join(&c->tasks, NULL, -1);
 	rz_core_wait(c);
 	//  avoid double free
-	RZ_FREE2(c->ropchain, rz_list_free);
-	RZ_FREE2(c->ev, rz_event_free);
+	RZ_FREE_CUSTOM(c->ropchain, rz_list_free);
+	RZ_FREE_CUSTOM(c->ev, rz_event_free);
 	RZ_FREE(c->cmdlog);
 	RZ_FREE(c->lastsearch);
 	RZ_FREE(c->cons->pager);
 	RZ_FREE(c->cmdqueue);
 	RZ_FREE(c->lastcmd);
 	RZ_FREE(c->stkcmd);
-	RZ_FREE2(c->visual.tabs, rz_list_free);
+	RZ_FREE_CUSTOM(c->visual.tabs, rz_list_free);
 	RZ_FREE(c->block);
-	RZ_FREE2(c->autocomplete, rz_core_autocomplete_free);
+	RZ_FREE_CUSTOM(c->autocomplete, rz_core_autocomplete_free);
 
-	RZ_FREE2(c->gadgets, rz_list_free);
-	RZ_FREE2(c->num, rz_num_free);
+	RZ_FREE_CUSTOM(c->gadgets, rz_list_free);
+	RZ_FREE_CUSTOM(c->num, rz_num_free);
 	RZ_FREE(c->table_query);
-	RZ_FREE2(c->io, rz_io_free);
-	RZ_FREE2(c->files, rz_list_free);
-	RZ_FREE2(c->watchers, rz_list_free);
-	RZ_FREE2(c->scriptstack, rz_list_free);
+	RZ_FREE_CUSTOM(c->io, rz_io_free);
+	RZ_FREE_CUSTOM(c->files, rz_list_free);
+	RZ_FREE_CUSTOM(c->watchers, rz_list_free);
+	RZ_FREE_CUSTOM(c->scriptstack, rz_list_free);
 	rz_core_task_scheduler_fini(&c->tasks);
-	RZ_FREE2(c->rcmd, rz_cmd_free);
-	RZ_FREE2(c->cmd_descriptors, rz_list_free);
-	RZ_FREE2(c->analysis, rz_analysis_free);
-	RZ_FREE2(c->rasm, rz_asm_free);
-	RZ_FREE2(c->print, rz_print_free);
-	RZ_FREE2(c->bin, rz_bin_free);
-	RZ_FREE2(c->lang, rz_lang_free);
-	RZ_FREE2(c->dbg, rz_debug_free);
-	RZ_FREE2(c->config, rz_config_free);
+	RZ_FREE_CUSTOM(c->rcmd, rz_cmd_free);
+	RZ_FREE_CUSTOM(c->cmd_descriptors, rz_list_free);
+	RZ_FREE_CUSTOM(c->analysis, rz_analysis_free);
+	RZ_FREE_CUSTOM(c->rasm, rz_asm_free);
+	RZ_FREE_CUSTOM(c->print, rz_print_free);
+	RZ_FREE_CUSTOM(c->bin, rz_bin_free);
+	RZ_FREE_CUSTOM(c->lang, rz_lang_free);
+	RZ_FREE_CUSTOM(c->dbg, rz_debug_free);
+	RZ_FREE_CUSTOM(c->config, rz_config_free);
 	/* after rz_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a rz_config_free_payload callback */
 	rz_cons_free();
 	rz_cons_singleton()->teefile = NULL; // HACK
-	RZ_FREE2(c->search, rz_search_free);
-	RZ_FREE2(c->flags, rz_flag_free);
-	RZ_FREE2(c->egg, rz_egg_free);
-	RZ_FREE2(c->lib, rz_lib_free);
-	RZ_FREE2(c->yank_buf, rz_buf_free);
-	RZ_FREE2(c->graph, rz_agraph_free);
+	RZ_FREE_CUSTOM(c->search, rz_search_free);
+	RZ_FREE_CUSTOM(c->flags, rz_flag_free);
+	RZ_FREE_CUSTOM(c->egg, rz_egg_free);
+	RZ_FREE_CUSTOM(c->lib, rz_lib_free);
+	RZ_FREE_CUSTOM(c->yank_buf, rz_buf_free);
+	RZ_FREE_CUSTOM(c->graph, rz_agraph_free);
 	RZ_FREE(c->asmqjmps);
-	RZ_FREE2(c->sdb, sdb_free);
-	RZ_FREE2(c->parser, rz_parse_free);
+	RZ_FREE_CUSTOM(c->sdb, sdb_free);
+	RZ_FREE_CUSTOM(c->parser, rz_parse_free);
 	RZ_FREE(c->times);
 	rz_core_seek_free(c);
 	RZ_FREE(c->rtr_host);
