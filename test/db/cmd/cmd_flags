@@ -209,7 +209,7 @@ NAME=flj shows demangled symbols
 FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
 aaa
-flj~{240}
+flj~{243}
 EOF
 EXPECT=<<EOF
 {"name":"reloc.operator_delete_void","realname":"operator delete(void*)","size":8,"offset":16432}
