@@ -21,15 +21,14 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	ut32 id = insn->id;
 	// READ
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
-	const char *rA = cs_reg_name(handle, INSOP(1).reg);
+	const char *rA = cs_reg_name(handle, INSOP(1).mem.base);
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
-	// Capstone bug (https://github.com/capstone-engine/capstone/issues/1874). The immediate for lX instructions is not set.
-	st64 d = INSOP(2).imm;
+	st64 d = INSOP(1).mem.disp; // RA = base ; D = Disposition
 	st64 sI = INSOP(1).imm; // liX instructions (alias for addX).
 	bool update_ra = ppc_updates_ra_with_ea(id); // Save ea in RA?
 	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
-	RzILOpPure *op0;
-	RzILOpPure *op1;
+	RzILOpPure *base;
+	RzILOpPure *disp;
 	RzILOpPure *ea;
 	RzILOpPure *into_rt;
 
@@ -56,9 +55,9 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		update_ra = false;
 		break;
 	case PPC_INS_LA: // RT = EA
-		op0 = IFREG0(rA);
-		op1 = EXTEND(PPC_ARCH_BITS, IMM_SN(16, d));
-		ea = ADD(op0, op1);
+		base = IFREG0(rA);
+		disp = EXTEND(PPC_ARCH_BITS, IMM_SN(16, d));
+		ea = ADD(base, disp);
 		into_rt = ea;
 		update_ra = false;
 		break;
@@ -85,14 +84,14 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LWA:
 	case PPC_INS_LWAX:
 	case PPC_INS_LWAUX:
-		op0 = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
+		base = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
 		if (ppc_is_x_form(id)) {
-			op1 = VARG(rB);
+			disp = VARG(rB);
 		} else {
 			RzILOpPure *imm = (id == PPC_INS_LD || id == PPC_INS_LWA) ? APPEND(IMM_SN(16, d), UN(2, 0)) : IMM_SN(16, d);
-			op1 = EXTEND(PPC_ARCH_BITS, imm);
+			disp = EXTEND(PPC_ARCH_BITS, imm);
 		}
-		ea = ADD(op0, op1);
+		ea = ADD(base, disp);
 		if (ppc_is_algebraic(id)) {
 			into_rt = (mem_acc_size == 64) ? LOADW(mem_acc_size, ea) : EXTEND(PPC_ARCH_BITS, LOADW(mem_acc_size, ea));
 		} else {
@@ -153,19 +152,20 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
 	ut32 id = insn->id;
+
 	// READ
 	const char *rS = cs_reg_name(handle, INSOP(0).reg);
-	const char *rA = cs_reg_name(handle, INSOP(1).reg);
+	const char *rA = cs_reg_name(handle, INSOP(1).mem.base);
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
-	// Capstone bug (https://github.com/capstone-engine/capstone/issues/1874). The immediate for stX instructions is not set.
-	st64 d = INSOP(2).imm;
+	st64 d = INSOP(1).mem.disp; // RA = base ; D = Disposition
 	bool update_ra = ppc_updates_ra_with_ea(id); // Save ea in RA?
 	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
-	RzILOpPure *op0;
-	RzILOpPure *op1;
+	RzILOpPure *base;
+	RzILOpPure *disp;
 	RzILOpPure *ea;
 	RzILOpEffect *store;
 
+	// EXEC
 	switch (id) {
 	case PPC_INS_STB:
 	case PPC_INS_STH:
@@ -183,14 +183,14 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STHUX:
 	case PPC_INS_STWUX:
 	case PPC_INS_STDUX:
-		op0 = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
+		base = IFREG0(rA); // Not all instructions use the plain value 0 if (rA) == 0. But we ignore this here.
 		if (ppc_is_x_form(id)) {
-			op1 = VARG(rB);
+			disp = VARG(rB);
 		} else {
-			RzILOpPure *imm = (id == PPC_INS_STD) ? APPEND(IMM_SN(16, d), UN(2, 0)) : IMM_SN(16, d);
-			op1 = EXTEND(PPC_ARCH_BITS, imm);
+			RzILOpPure *imm = (id == PPC_INS_STD || id == PPC_INS_STDU) ? APPEND(S16(d), UN(2, 0)) : S16(d);
+			disp = EXTEND(PPC_ARCH_BITS, imm);
 		}
-		ea = ADD(op0, op1);
+		ea = ADD(base, disp);
 		store = STOREW(ea, CAST(mem_acc_size, IL_FALSE, VARG(rS)));
 		break;
 	// Float
@@ -237,6 +237,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		NOT_IMPLEMENTED;
 	}
 
+	// WRITE
 	rz_return_val_if_fail(ea, NULL);
 	RzILOpEffect *update = update_ra ? SETG(rA, DUP(ea)) : NOP;
 	return SEQ2(store, update);

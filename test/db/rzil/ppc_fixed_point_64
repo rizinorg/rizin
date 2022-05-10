@@ -98,7 +98,7 @@ var_write(name: cr0, old: 0x4, new: 0x4)
 EOF
 RUN
 
-NAME=ppc store instructions mem_write
+NAME=ppc store instructions
 FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
@@ -124,7 +124,7 @@ var_write(name: r21, old: 0x9000030, new: 0x9000040)
 EOF
 RUN
 
-NAME=ppc store instructions
+NAME=ppc load instructions
 FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
