@@ -3,7 +3,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #ifdef CAPSTONE_M68K_H
 #define CAPSTONE_HAS_M68K 1

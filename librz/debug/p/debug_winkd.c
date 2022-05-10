@@ -4,12 +4,9 @@
 #include <rz_debug.h>
 #include <winkd.h>
 #include <kd.h>
+#include "common_winkd.h"
 
 static KdCtx *kdctx = NULL;
-
-static int rz_debug_winkd_step(RzDebug *dbg) {
-	return true;
-}
 
 static int rz_debug_winkd_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	int ret = winkd_read_reg(kdctx, buf, size);
@@ -44,7 +41,9 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
-	winkd_lock_enter(kdctx);
+	if (!winkd_lock_enter(kdctx)) {
+		return RZ_DEBUG_REASON_UNKNOWN;
+	}
 	for (;;) {
 		void *bed = rz_cons_sleep_begin();
 		int ret = winkd_wait_packet(kdctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
@@ -74,6 +73,34 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	return reason;
 }
 
+static bool get_module_timestamp(ut64 addr, ut32 *timestamp) {
+	ut8 mz[2];
+	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr, mz, 2) != 2) {
+		return false;
+	}
+	if (memcmp(mz, "MZ", 2)) {
+		return false;
+	}
+	ut8 pe_off_buf[2];
+	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + 0x3c, pe_off_buf, 2) != 2) {
+		return false;
+	}
+	ut16 pe_off = rz_read_le16(pe_off_buf);
+	ut8 pe[2];
+	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + pe_off, pe, 2) != 2) {
+		return false;
+	}
+	if (memcmp(pe, "PE", 2)) {
+		return false;
+	}
+	ut8 ts[4];
+	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + pe_off + 8, ts, 4) != 4) {
+		return false;
+	}
+	*timestamp = rz_read_le32(ts);
+	return true;
+}
+
 static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	RzIODesc *desc = dbg->iob.io->desc;
 
@@ -89,12 +116,61 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	kdctx = (KdCtx *)desc->data;
 
 	// Handshake
-	if (!winkd_sync(kdctx)) {
+	int ret = winkd_sync(kdctx);
+	if (ret < 0) {
 		RZ_LOG_ERROR("Could not connect to winkd\n");
 		return false;
+	} else if (!ret) {
+		RZ_LOG_VERBOSE("Already synced\n");
+		return true;
 	}
 	if (!winkd_read_ver(kdctx)) {
 		return false;
+	}
+
+	// Load PDB for kernel
+	WindModule *m, *mod = NULL;
+	RzList *modules = NULL;
+	if (kdctx->kernel_module.addr) {
+		ut32 timestamp;
+		if (get_module_timestamp(kdctx->kernel_module.addr, &timestamp)) {
+			mod = &kdctx->kernel_module;
+			mod->timestamp = timestamp;
+		}
+	}
+	if (!mod && kdctx->windctx.PsLoadedModuleList) {
+		modules = winkd_list_modules(&kdctx->windctx);
+		RzListIter *it;
+		rz_list_foreach (modules, it, m) {
+			RZ_LOG_DEBUG("%" PFMT64x " %s\n", m->addr, m->name);
+			if (rz_str_endswith(m->name, "\\ntoskrnl.exe")) {
+				mod = m;
+				break;
+			}
+		}
+	}
+	if (!mod) {
+		RZ_LOG_ERROR("Failed to find ntoskrnl.exe module\n");
+		rz_list_free(modules);
+		return false;
+	}
+	char *exepath, *pdbpath;
+	if (!winkd_download_module_and_pdb(mod,
+		    dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server"),
+		    dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore"),
+		    &exepath, &pdbpath)) {
+		RZ_LOG_ERROR("Failed to download module and pdb\n");
+		rz_list_free(modules);
+		return false;
+	}
+	dbg->corebind.cfgSetI(dbg->corebind.core, "bin.baddr", mod->addr);
+	// TODO: Convert to API call
+	dbg->corebind.cmdf(dbg->corebind.core, "idp \"%s\"", pdbpath);
+	rz_list_free(modules);
+
+	if (!kdctx->windctx.profile) {
+		RZ_LOG_INFO("Trying to build profile dinamically by using the ntoskrnl.exe's PDB\n");
+		winkd_build_profile(&kdctx->windctx, dbg->analysis->typedb);
 	}
 	dbg->bits = winkd_get_bits(&kdctx->windctx);
 	// Make rz_debug_is_dead happy
@@ -104,6 +180,7 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 
 static int rz_debug_winkd_detach(RzDebug *dbg, int pid) {
 	eprintf("Detaching...\n");
+	kdctx->syncd = 0;
 	return true;
 }
 
@@ -148,16 +225,12 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 		return NULL;
 	}
 
-	if (kdctx->plist_cache) {
-		return kdctx->plist_cache;
-	}
-
 	RzList *ret = rz_list_newf((RzListFree)rz_debug_pid_free);
 	if (!ret) {
 		return NULL;
 	}
 
-	RzList *pids = winkd_list_process(&kdctx->windctx);
+	RzList *pids = kdctx->plist_cache ? kdctx->plist_cache : winkd_list_process(&kdctx->windctx);
 	if (!pids) {
 		rz_list_free(ret);
 		return NULL;
@@ -177,13 +250,20 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 		newpid->runnable = true;
 		rz_list_append(ret, newpid);
 	}
-	rz_list_free(pids);
-	kdctx->plist_cache = ret;
+	kdctx->plist_cache = pids;
 	return ret;
 }
 
 static int rz_debug_winkd_select(RzDebug *dbg, int pid, int tid) {
 	ut32 old = winkd_get_target(&kdctx->windctx);
+	ut32 old_tid = winkd_get_target_thread(&kdctx->windctx);
+	if (pid != old || tid != old_tid) {
+		kdctx->context_cache_valid = false;
+		if (pid != old) {
+			rz_list_free(kdctx->tlist_cache);
+			kdctx->tlist_cache = NULL;
+		}
+	}
 	int ret = winkd_set_target(&kdctx->windctx, pid, tid);
 	if (!ret) {
 		return false;
@@ -202,15 +282,11 @@ static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
 		return NULL;
 	}
 
-	if (kdctx->tlist_cache) {
-		return kdctx->tlist_cache;
-	}
-
 	RzList *ret = rz_list_newf(free);
 	if (!ret) {
 		return NULL;
 	}
-	RzList *threads = winkd_list_threads(&kdctx->windctx);
+	RzList *threads = kdctx->tlist_cache ? kdctx->tlist_cache : winkd_list_threads(&kdctx->windctx);
 	if (!threads) {
 		rz_list_free(ret);
 		return NULL;
@@ -229,8 +305,7 @@ static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
 		newpid->runnable = t->runnable;
 		rz_list_append(ret, newpid);
 	}
-	rz_list_free(threads);
-	kdctx->tlist_cache = ret;
+	kdctx->tlist_cache = threads;
 	return ret;
 }
 
@@ -252,7 +327,7 @@ static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
 			rz_list_free(ret);
 			return NULL;
 		}
-		mod->file = m->name;
+		RZ_PTR_MOVE(mod->file, m->name);
 		mod->size = m->size;
 		mod->addr = m->addr;
 		mod->addr_end = m->addr + m->size;
@@ -268,7 +343,7 @@ RzDebugPlugin rz_debug_plugin_winkd = {
 	.arch = "x86",
 	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.init = &rz_debug_winkd_init,
-	.step = &rz_debug_winkd_step,
+	// TODO: .step = &rz_debug_winkd_step,
 	.cont = &rz_debug_winkd_continue,
 	.attach = &rz_debug_winkd_attach,
 	.detach = &rz_debug_winkd_detach,

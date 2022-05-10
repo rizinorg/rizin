@@ -97,6 +97,22 @@ Profile WIN10_19H1_X64 = {
 	0,
 	{ 0x02f0, 0x02e8, 0x03f8, 0x0450, 0x0658, 0x0488, 0x0028, 0x0010, 0x0020, 0x0060, 0x0000, 0x06b8, 0x06a0, 0x0648, 0x0008 },
 };
+Profile WIN10_20H2_X64 = {
+	// Windows 10 (October 2020 Update)
+	19041,
+	0,
+	64,
+	0,
+	{ 0x0448, 0x0440, 0x0550, 0x05a8, 0x07d8, 0x05e0, 0x0028, 0x0010, 0x0020, 0x0060, 0x0000, 0x04e8, 0x04d0, 0x0478, 0x0008 },
+};
+Profile WIN10_21H2_X64 = {
+	// Windows 10 (November 2021 Update)
+	19044,
+	0,
+	64,
+	0,
+	{ 0x0448, 0x0440, 0x0550, 0x05a8, 0x07d8, 0x05e0, 0x0028, 0x0010, 0x0020, 0x0060, 0x0000, 0x04e8, 0x04d0, 0x0478, 0x0008 },
+};
 Profile WIN11_22000 = {
 	22000,
 	0,
@@ -207,6 +223,8 @@ static Profile *p_table[] = {
 	&WIN10_RS1_X64, // Windows 10 (Anniversary Update)
 	&WIN10_RS4_X64, // Windows 10 (April 2018 Update)
 	&WIN10_19H1_X64, // Windows 10 (May 2019 Update)
+	&WIN10_20H2_X64, // Windows 10 (October 2020 Update)
+	&WIN10_21H2_X64, // Windows 10 (November 2021 Update)
 	&WIN11_22000, // Windows 11 (Initial Release)
 	NULL,
 };

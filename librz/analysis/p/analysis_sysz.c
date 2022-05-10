@@ -3,8 +3,8 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
-#include <capstone.h>
-#include <systemz.h>
+#include <capstone/capstone.h>
+#include <capstone/systemz.h>
 // instruction set: http://www.tachyonsoft.com/inst390m.htm
 
 #if CS_API_MAJOR < 2

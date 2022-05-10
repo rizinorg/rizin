@@ -4,8 +4,8 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 
-#include <capstone.h>
-#include <riscv.h>
+#include <capstone/capstone.h>
+#include <capstone/riscv.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/RISCVir.html
 
