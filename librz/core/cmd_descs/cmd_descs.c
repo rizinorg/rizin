@@ -1386,12 +1386,12 @@ static const RzCmdDescHelp print_analysis_details_help = {
 	.args = print_analysis_details_args,
 };
 
-static const RzCmdDescArg analyze_all_jumps_args[] = {
+static const RzCmdDescArg analyze_all_unresolved_jumps_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp analyze_all_jumps_help = {
-	.summary = "Analyze all jumps",
-	.args = analyze_all_jumps_args,
+static const RzCmdDescHelp analyze_all_unresolved_jumps_help = {
+	.summary = "Analyze all unresolved jumps",
+	.args = analyze_all_unresolved_jumps_args,
 };
 
 static const RzCmdDescHelp aal_help = {
@@ -14410,8 +14410,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_analysis_details_cd = rz_cmd_desc_argv_state_new(core->rcmd, aa_cd, "aai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_analysis_details_handler, &print_analysis_details_help);
 	rz_warn_if_fail(print_analysis_details_cd);
 
-	RzCmdDesc *analyze_all_jumps_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaj", rz_analyze_all_jumps_handler, &analyze_all_jumps_help);
-	rz_warn_if_fail(analyze_all_jumps_cd);
+	RzCmdDesc *analyze_all_unresolved_jumps_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaj", rz_analyze_all_unresolved_jumps_handler, &analyze_all_unresolved_jumps_help);
+	rz_warn_if_fail(analyze_all_unresolved_jumps_cd);
 
 	RzCmdDesc *aal_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aal", NULL, NULL, &aal_help);
 	rz_warn_if_fail(aal_cd);

@@ -3223,6 +3223,33 @@ static bool core_search_for_xrefs_in_boundaries(RzCore *core, ut64 from, ut64 to
 }
 
 /**
+ * \brief      Resolves any unresolved jump
+ *
+ * \param[in]  core  The RzCore to use
+ */
+RZ_API void rz_core_analysis_resolve_jumps(RZ_NONNULL RzCore *core) {
+	RzListIter *iter;
+	RzAnalysisXRef *xref;
+	RzList *xrefs = rz_analysis_xrefs_list(core->analysis);
+	bool analyze_recursively = rz_config_get_b(core->config, "analysis.calls");
+
+	rz_list_foreach (xrefs, iter, xref) {
+		if (xref->type != RZ_ANALYSIS_REF_TYPE_CALL) {
+			continue;
+		}
+
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, -1);
+		if (fcn) {
+			continue;
+		}
+
+		rz_core_analysis_function_add(core, NULL, xref->from, analyze_recursively);
+	}
+
+	rz_list_free(xrefs);
+}
+
+/**
  * \brief      Analyze xrefs and prints the result.
  *
  * \param[in]  core    The RzCore to use
@@ -5759,12 +5786,14 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (rz_cons_is_breaked()) {
 		return false;
 	}
+
 	if (is_apple_target(core)) {
 		rz_core_notify_begin(core, "Check for objc references (aalo)");
 		cmd_analysis_objc(core, true);
 		rz_core_notify_done(core, "Check for objc references (aalo)");
 	}
 	rz_core_task_yield(&core->tasks);
+
 	rz_core_notify_begin(core, "Check for classes");
 	rz_analysis_class_recover_all(core->analysis);
 	rz_core_notify_done(core, "Check for classes");
@@ -5774,6 +5803,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (rz_cons_is_breaked()) {
 		return false;
 	}
+
 	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
 		rz_core_analysis_value_pointers(core, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_task_yield(&core->tasks);

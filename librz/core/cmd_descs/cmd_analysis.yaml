@@ -106,8 +106,8 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: aaj
-        summary: Analyze all jumps
-        cname: analyze_all_jumps
+        summary: Analyze all unresolved jumps
+        cname: analyze_all_unresolved_jumps
         args: []
       - name: aal
         summary: Language specific analysis commands

@@ -6323,7 +6323,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_add_recu_handler(RzCore *core, int argc,
 	const char *name = argc == 2 ? argv[1] : NULL;
 	bool analyze_recursively = true;
 	if (!strcmp(argv[0], "af")) {
-		analyze_recursively = rz_config_get_i(core->config, "analysis.calls");
+		analyze_recursively = rz_config_get_b(core->config, "analysis.calls");
 	}
 	return bool2status(rz_core_analysis_function_add(core, name, core->offset, analyze_recursively));
 }
@@ -7949,8 +7949,8 @@ RZ_IPI RzCmdStatus rz_print_analysis_details_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_analyze_all_jumps_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_cmdf(core, "af @@= `axl~ref.code.jmp[1]`"); // TODO: replace with C apis.
+RZ_IPI RzCmdStatus rz_analyze_all_unresolved_jumps_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_resolve_jumps(core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -7988,15 +7988,35 @@ RZ_IPI RzCmdStatus rz_analyze_xrefs_section_bytes_handler(RzCore *core, int argc
 	return bool2status(rz_core_analysis_refs(core, n_bytes));
 }
 
+static bool analyze_function_at_flag(RzFlagItem *fi, RzCore *core) {
+	bool analyze_recursively = rz_config_get_b(core->config, "analysis.calls");
+	rz_core_analysis_function_add(core, NULL, fi->offset, analyze_recursively);
+	return true;
+}
+
 RZ_IPI RzCmdStatus rz_analyze_symbols_entries_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_cmd0(core, "af @@= `isq~[0]`"); // TODO: replace with C apis.
-	rz_core_cmd0(core, "af @@f:entry*"); // TODO: replace with C apis.
+	bool analyze_recursively = rz_config_get_b(core->config, "analysis.calls");
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj) {
+		RZ_LOG_ERROR("Cannot get current bin object\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const RzList *symbols = rz_bin_object_get_symbols(obj);
+	RzListIter *it;
+	RzBinSymbol *symbol;
+
+	rz_list_foreach (symbols, it, symbol) {
+		rz_core_analysis_function_add(core, NULL, symbol->vaddr, analyze_recursively);
+	}
+
+	rz_flag_foreach_glob(core->flags, "entry", (RzFlagItemCb)analyze_function_at_flag, core);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_symbols_entries_flags_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_cmd0(core, "af @@f:sym.*"); // TODO: replace with C apis.
-	rz_core_cmd0(core, "af @@f:entry*"); // TODO: replace with C apis.
+	rz_flag_foreach_glob(core->flags, "sym.", (RzFlagItemCb)analyze_function_at_flag, core);
+	rz_flag_foreach_glob(core->flags, "entry", (RzFlagItemCb)analyze_function_at_flag, core);
 	return RZ_CMD_STATUS_OK;
 }
 
