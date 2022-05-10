@@ -48,8 +48,8 @@ mkdir .tmp
 !rz-sign -o .tmp/hello_world.pat bins/elf/hello_world
 EOF
 EXPECT=<<EOF
-rz-sign: written 11 signatures to .tmp/hello_world.sig.
-rz-sign: written 11 signatures to .tmp/hello_world.pat.
+rz-sign: written 10 signatures to .tmp/hello_world.sig.
+rz-sign: written 10 signatures to .tmp/hello_world.pat.
 EOF
 RUN
 

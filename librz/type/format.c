@@ -1546,7 +1546,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 	if (fmt[0] == '{') {
 		char *end = strchr(fmt + 1, '}');
 		if (!end) {
-			eprintf("No end curly bracket.\n");
+			RZ_LOG_ERROR("No end curly bracket.\n");
 			free(o);
 			free(args);
 			return -1;
@@ -1568,7 +1568,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 		if (fmt[i] == '[') {
 			char *end = strchr(fmt + i, ']');
 			if (!end) {
-				eprintf("No end bracket.\n");
+				RZ_LOG_ERROR("No end bracket.\n");
 				continue;
 			}
 			*end = '\0';
@@ -1627,7 +1627,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 		case 'E':
 			if (tabsize_set) {
 				if (tabsize < 1 || tabsize > 8) {
-					eprintf("Unknown enum format size: %d\n", tabsize);
+					RZ_LOG_ERROR("Unknown enum format size: %d\n", tabsize);
 					break;
 				}
 				size += tabsize;
@@ -1641,7 +1641,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 			char *endname = NULL, *structname = NULL;
 			char tmp = 0;
 			if (words < idx) {
-				eprintf("Index out of bounds\n");
+				RZ_LOG_ERROR("Index out of bounds\n");
 			} else {
 				wordAtIndex = rz_str_word_get0(args, idx);
 			}
@@ -1677,14 +1677,14 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 				}
 			}
 			if (!format) {
-				eprintf("Cannot find format for struct `%s'\n", structname + 1);
+				RZ_LOG_ERROR("Cannot find format for struct `%s'\n", structname + 1);
 				free(structname);
 				free(o);
 				return 0;
 			}
 			int newsize = rz_type_format_struct_size(typedb, format, mode, n + 1);
 			if (newsize < 1) {
-				eprintf("Cannot find size for `%s'\n", format);
+				RZ_LOG_ERROR("Cannot find size for `%s'\n", format);
 				free(structname);
 				free(o);
 				return 0;
@@ -1740,7 +1740,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 			} else if (fmt[i + 1] == '8') {
 				size += tabsize * 8;
 			} else {
-				eprintf("Invalid n format in (%s)\n", fmt);
+				RZ_LOG_ERROR("Invalid '%c' format in (%s)\n", fmt[i + 1], fmt);
 				free(o);
 				free(args);
 				return -2;

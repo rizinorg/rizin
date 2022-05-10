@@ -403,7 +403,7 @@ e asm.cmt.right=0
 pd 10
 EOF
 EXPECT=<<EOF
-                 ; [14] -r-x section size 2466 named .text
+                 ; [13] -r-x section size 2466 named .text
                  ;-- entry0:
                  ;-- section..text:
                  xor ebp, ebp

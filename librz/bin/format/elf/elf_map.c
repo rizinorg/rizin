@@ -24,6 +24,9 @@ static ut64 get_targets_map_base_from_sections(ELFOBJ *bin) {
 
 	RzBinElfSection *section;
 	rz_bin_elf_foreach_sections(bin, section) {
+		if (section->rva == UT64_MAX) {
+			continue;
+		}
 		result = RZ_MAX(result, section->rva + section->size);
 	}
 
