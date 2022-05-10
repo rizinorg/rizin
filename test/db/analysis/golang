@@ -1,7 +1,7 @@
 NAME=Resolve all symbols on a stripped linux go1.18 binary
 FILE=bins/golang/example-server-1.18-stripped
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
@@ -23,7 +23,7 @@ RUN
 NAME=Resolve all symbols on a stripped linux go1.16 binary
 FILE=bins/golang/example-server-1.16-stripped
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
@@ -49,7 +49,7 @@ RUN
 NAME=Resolve all symbols on a stripped linux go1.12 binary
 FILE=bins/golang/example-server-1.12-stripped
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
@@ -71,7 +71,7 @@ RUN
 NAME=Resolve all symbols on a linux go1.16 binary (arm32)
 FILE=bins/golang/btcctl-linux-armv7-v0.22.0-beta
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
@@ -131,7 +131,7 @@ RUN
 NAME=Resolve all symbols on a linux go1.16 binary (arm64)
 FILE=bins/golang/btcctl-linux-arm64-v0.22.0-beta
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
@@ -191,7 +191,7 @@ RUN
 NAME=Resolve all symbols on a stripped mach0 go1.18 binary (arm64)
 FILE=bins/golang/hello.mach0.stripped
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ sym.go.runtime.panicwrap ~str.
 izq~?
@@ -210,7 +210,7 @@ RUN
 NAME=Resolve all symbols on a stripped PE go1.12 binary (x64)
 FILE=bins/golang/hello_go_strip.exe
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
