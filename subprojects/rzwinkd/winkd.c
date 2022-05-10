@@ -331,11 +331,15 @@ int winkd_wait_packet(KdCtx *ctx, const uint32_t type, kd_packet_t **p) {
 					return KD_E_OK;
 				}
 				retries++;
-				continue;
+				break;
 			case KD_PACKET_TYPE_RESET:
 				RZ_LOG_DEBUG("Reset received\n");
 				ctx->seq_id = KD_INITIAL_PACKET_ID;
-				/* fallthrough */
+				free(pkt);
+				if (type == KD_PACKET_TYPE_RESET) {
+					return KD_E_OK;
+				}
+				return KD_E_MALFORMED;
 			case KD_PACKET_TYPE_RESEND:
 				// The host didn't like our request
 				rz_sys_backtrace();
