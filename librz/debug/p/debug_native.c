@@ -11,8 +11,6 @@
 #include <signal.h>
 #include <sys/types.h>
 
-#if DEBUGGER
-
 #include "native/drx.c" // x86 specific
 #include "rz_cons.h"
 
@@ -84,8 +82,6 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 #else
 #define WAITPID_FLAGS 0
 #endif
-
-#endif /* IF DEBUGGER */
 
 /* begin of debugger code */
 #if DEBUGGER
@@ -1532,7 +1528,7 @@ static int rz_debug_native_map_protect(RzDebug *dbg, ut64 addr, int size, int pe
 		"main@global(0) { sc(%p,%d,%d);\n"
 		":int3\n"
 		"}\n",
-		num, (void *)addr, size, io_perms_to_prot(perms));
+		num, (void *)(size_t)addr, size, io_perms_to_prot(perms));
 
 	rz_egg_reset(dbg->egg);
 	rz_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);

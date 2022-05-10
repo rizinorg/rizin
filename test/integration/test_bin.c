@@ -299,12 +299,46 @@ bool test_rz_bin_sections_mapping(void) {
 	mu_end;
 }
 
+bool test_rz_bin_p2v2p(void) {
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ls", &opt);
+	mu_assert_notnull(bf, "ls binary could not be opened");
+
+	RzBinObject *o = bf->o;
+	mu_assert_eq(rz_bin_object_p2v(o, 0x0001c0f8), 0x0001c0f8, "xstrtoumax string p2v");
+	mu_assert_eq(rz_bin_object_v2p(o, 0x0001c0f8), 0x0001c0f8, "xstrtoumax string v2p");
+	mu_assert_eq(rz_bin_object_p2v(o, 0x00021260), 0x00022260, "obstack_alloc_failed_handler symbol p2v");
+	mu_assert_eq(rz_bin_object_v2p(o, 0x00022260), 0x00021260, "obstack_alloc_failed_handler symbol v2p");
+
+	mu_assert_eq(rz_bin_object_v2p(o, 0xcafebabe), UT64_MAX, "non existing vaddr");
+	mu_assert_eq(rz_bin_object_p2v(o, 0xcafebabe), UT64_MAX, "non existing paddr");
+
+	RzVector *v = rz_bin_object_p2v_all(o, 0xcafebabe);
+	mu_assert_eq(rz_vector_len(v), 0, "non existing paddr should have 0 elements in vector");
+	rz_vector_free(v);
+
+	v = rz_bin_object_p2v_all(o, 0x21260);
+	mu_assert_eq(rz_vector_len(v), 1, "p2v_all of obstack_alloc_failed_handler paddr should have 1 element");
+	mu_assert_eq(*(ut64 *)rz_vector_head(v), 0x22260, "obstack_alloc_failed_handler symbol p2v_all");
+	rz_vector_free(v);
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bin);
 	mu_run_test(test_rz_bin_reloc_storage);
 	mu_run_test(test_rz_bin_file_delete);
 	mu_run_test(test_rz_bin_file_delete_all);
 	mu_run_test(test_rz_bin_sections_mapping);
+	mu_run_test(test_rz_bin_p2v2p);
 	return tests_passed != tests_run;
 }
 

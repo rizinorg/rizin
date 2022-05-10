@@ -27,44 +27,82 @@ extern bool rz_core_is_project(RzCore *core, const char *name);
 /**
  * \brief  Prints a message definining the beginning of a task
  *
- * \param  core     The RzCore to use
- * \param  message  The message to notify
- *
- * \return Returns the same pointer as message
+ * \param  core    The RzCore to use
+ * \param  format  The message to notify
  */
-RZ_API const char *rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message) {
-	rz_return_val_if_fail(core && message, NULL);
+RZ_API void rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) {
+	rz_return_if_fail(core && format);
+	va_list args;
 	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
 	bool verbose = rz_config_get_b(core->config, "scr.prompt");
 	if (!verbose) {
-		return message;
+		return;
 	}
+	va_start(args, format);
 	if (use_color) {
-		fprintf(stderr, "[ ] " Color_YELLOW "%s\r[" Color_RESET, message);
+		fprintf(stderr, "[ ] " Color_YELLOW);
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\r[" Color_RESET);
 	} else {
-		fprintf(stderr, "[ ] %s\r[", message);
+		fprintf(stderr, "[ ] ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\r[");
 	}
-	return message;
+	va_end(args);
 }
 
 /**
- * \brief  Prints a message definining the end of a task
+ * \brief  Prints a message definining the end of a task which succeeded
  *
- * \param  core     The RzCore to use
- * \param  message  The message to notify
+ * \param  core    The RzCore to use
+ * \param  format  The message to notify
  */
-RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *message) {
-	rz_return_if_fail(core && message);
+RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) {
+	rz_return_if_fail(core && format);
+	va_list args;
 	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
 	bool verbose = rz_config_get_b(core->config, "scr.prompt");
 	if (!verbose) {
 		return;
 	}
+	va_start(args, format);
 	if (use_color) {
-		fprintf(stderr, "\r" Color_GREEN "[x]" Color_RESET " %s\n", message);
+		fprintf(stderr, "\r" Color_GREEN "[x]" Color_RESET " ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
+	} else {
+		fprintf(stderr, "\r[x] ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
+	}
+	va_end(args);
+}
+
+/**
+ * \brief  Prints a message definining the end of a task which errored
+ *
+ * \param  core    The RzCore to use
+ * \param  format  The message to notify
+ */
+RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) {
+	rz_return_if_fail(core && format);
+	va_list args;
+	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
+	bool verbose = rz_config_get_b(core->config, "scr.prompt");
+	if (!verbose) {
 		return;
 	}
-	fprintf(stderr, "\r[x] %s\n", message);
+	va_start(args, format);
+	if (use_color) {
+		fprintf(stderr, "\r" Color_RED "[!]" Color_RESET " ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
+	} else {
+		fprintf(stderr, "\r[!] ");
+		vfprintf(stderr, format, args);
+		fprintf(stderr, "\n");
+	}
+	va_end(args);
 }
 
 static int on_fcn_new(RzAnalysis *_analysis, void *_user, RzAnalysisFunction *fcn) {
@@ -304,12 +342,20 @@ static void archbits(RzCore *core, ut64 addr) {
 	rz_core_seek_arch_bits(core, addr);
 }
 
-static int cfggeti(RzCore *core, const char *k) {
+static ut64 cfggeti(RzCore *core, const char *k) {
 	return rz_config_get_i(core->config, k);
 }
 
 static const char *cfgget(RzCore *core, const char *k) {
 	return rz_config_get(core->config, k);
+}
+
+static bool cfgseti(RzCore *core, const char *k, ut64 v) {
+	return rz_config_set_i(core->config, k, v);
+}
+
+static bool cfgset(RzCore *core, const char *k, const char *v) {
+	return rz_config_set(core->config, k, v);
 }
 
 static ut64 numget(RzCore *core, const char *k) {
@@ -335,6 +381,8 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->archbits = (RzCoreSeekArchBits)archbits;
 	bnd->cfggeti = (RzCoreConfigGetI)cfggeti;
 	bnd->cfgGet = (RzCoreConfigGet)cfgget;
+	bnd->cfgSetI = (RzCoreConfigSetI)cfgseti;
+	bnd->cfgSet = (RzCoreConfigSet)cfgset;
 	bnd->numGet = (RzCoreNumGet)numget;
 	bnd->flagsGet = (RzCoreFlagsGet)__flagsGet;
 	bnd->applyBinInfo = (RzCoreBinApplyInfo)rz_core_bin_apply_info;
@@ -854,11 +902,6 @@ static const char *rizin_argv[] = {
 	"aef", "aefa",
 	"aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc",
 	"aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
-	"af?", "af", "afr", "af+", "af-",
-	"afa", "afan",
-	"afd", "aff",
-	"afn?", "afna", "afns", "afnsj",
-	"afo", "af*",
 	"aF",
 	"ag?", "ag", "aga", "agA", "agc", "agC", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-",
 	"agn?", "agn", "agn-", "age?", "age", "age-",
@@ -2614,68 +2657,59 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_task_break_all(&c->tasks);
 	rz_core_task_join(&c->tasks, NULL, -1);
 	rz_core_wait(c);
-	/* TODO: it leaks badly */
-	// update_sdb (c);
 	//  avoid double free
-	rz_list_free(c->ropchain);
-	rz_event_free(c->ev);
-	free(c->cmdlog);
-	free(c->lastsearch);
+	RZ_FREE_CUSTOM(c->ropchain, rz_list_free);
+	RZ_FREE_CUSTOM(c->ev, rz_event_free);
+	RZ_FREE(c->cmdlog);
+	RZ_FREE(c->lastsearch);
 	RZ_FREE(c->cons->pager);
-	free(c->cmdqueue);
-	free(c->lastcmd);
-	free(c->stkcmd);
-	rz_list_free(c->visual.tabs);
-	free(c->block);
-	rz_core_autocomplete_free(c->autocomplete);
+	RZ_FREE(c->cmdqueue);
+	RZ_FREE(c->lastcmd);
+	RZ_FREE(c->stkcmd);
+	RZ_FREE_CUSTOM(c->visual.tabs, rz_list_free);
+	RZ_FREE(c->block);
+	RZ_FREE_CUSTOM(c->autocomplete, rz_core_autocomplete_free);
 
-	rz_list_free(c->gadgets);
-	rz_num_free(c->num);
-	// TODO: sync or not? sdb_sync (c->sdb);
-	// TODO: sync all dbs?
-	// rz_core_file_free (c->file);
-	// c->file = NULL;
+	RZ_FREE_CUSTOM(c->gadgets, rz_list_free);
+	RZ_FREE_CUSTOM(c->num, rz_num_free);
 	RZ_FREE(c->table_query);
-	rz_io_free(c->io);
-	rz_list_free(c->files);
-	rz_list_free(c->watchers);
-	rz_list_free(c->scriptstack);
+	RZ_FREE_CUSTOM(c->io, rz_io_free);
+	RZ_FREE_CUSTOM(c->files, rz_list_free);
+	RZ_FREE_CUSTOM(c->watchers, rz_list_free);
+	RZ_FREE_CUSTOM(c->scriptstack, rz_list_free);
 	rz_core_task_scheduler_fini(&c->tasks);
-	c->rcmd = rz_cmd_free(c->rcmd);
-	rz_list_free(c->cmd_descriptors);
-	c->analysis = rz_analysis_free(c->analysis);
-	rz_asm_free(c->rasm);
-	c->rasm = NULL;
-	c->print = rz_print_free(c->print);
-	c->bin = (rz_bin_free(c->bin), NULL);
-	c->lang = (rz_lang_free(c->lang), NULL);
-	c->dbg = (rz_debug_free(c->dbg), NULL);
-	rz_config_free(c->config);
+	RZ_FREE_CUSTOM(c->rcmd, rz_cmd_free);
+	RZ_FREE_CUSTOM(c->cmd_descriptors, rz_list_free);
+	RZ_FREE_CUSTOM(c->analysis, rz_analysis_free);
+	RZ_FREE_CUSTOM(c->rasm, rz_asm_free);
+	RZ_FREE_CUSTOM(c->print, rz_print_free);
+	RZ_FREE_CUSTOM(c->bin, rz_bin_free);
+	RZ_FREE_CUSTOM(c->lang, rz_lang_free);
+	RZ_FREE_CUSTOM(c->dbg, rz_debug_free);
+	RZ_FREE_CUSTOM(c->config, rz_config_free);
 	/* after rz_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a rz_config_free_payload callback */
 	rz_cons_free();
 	rz_cons_singleton()->teefile = NULL; // HACK
-	rz_search_free(c->search);
-	rz_flag_free(c->flags);
-	rz_egg_free(c->egg);
-	rz_lib_free(c->lib);
-	rz_buf_free(c->yank_buf);
-	rz_agraph_free(c->graph);
-	free(c->asmqjmps);
-	sdb_free(c->sdb);
-	rz_parse_free(c->parser);
-	free(c->times);
+	RZ_FREE_CUSTOM(c->search, rz_search_free);
+	RZ_FREE_CUSTOM(c->flags, rz_flag_free);
+	RZ_FREE_CUSTOM(c->egg, rz_egg_free);
+	RZ_FREE_CUSTOM(c->lib, rz_lib_free);
+	RZ_FREE_CUSTOM(c->yank_buf, rz_buf_free);
+	RZ_FREE_CUSTOM(c->graph, rz_agraph_free);
+	RZ_FREE(c->asmqjmps);
+	RZ_FREE_CUSTOM(c->sdb, sdb_free);
+	RZ_FREE_CUSTOM(c->parser, rz_parse_free);
+	RZ_FREE(c->times);
 	rz_core_seek_free(c);
-	free(c->rtr_host);
+	RZ_FREE(c->rtr_host);
 	RZ_FREE(c->curtheme);
 }
 
 RZ_API void rz_core_free(RzCore *c) {
-	if (c) {
-		rz_core_fini(c);
-		free(c);
-	}
+	rz_core_fini(c);
+	free(c);
 }
 
 RZ_API void rz_core_prompt_loop(RzCore *r) {

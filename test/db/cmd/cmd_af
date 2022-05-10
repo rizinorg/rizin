@@ -157,7 +157,7 @@ FILE=bins/pe/a.exe
 CMDS=<<EOF
 e asm.bytes=true
 s 0x004017c0
-af+ 0x004017c0 fcn2.0x004017c0
+af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 afi~size
 afb
@@ -165,7 +165,7 @@ afb
 pdf
 ?e
 af-
-af+ 0x004017c0 fcn2.0x004017c0
+af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 6 0x4017dd 0x4017cd
 afi~size
 afb
@@ -214,7 +214,7 @@ FILE=bins/pe/a.exe
 CMDS=<<EOF
 e asm.bytes=true
 s 0x004017c0
-af+ 0x004017c0 fcn2.0x004017c0
+af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 9 0x4017dd 0x4017cd
 afi~size
 afb
@@ -292,7 +292,7 @@ afsj
 EOF
 EXPECT=<<EOF
 void fcn.00013c70(int64_t arg1, int64_t arg2, int64_t arg3);
-{"name":"fcn.00013c70","noreturn":false,"ret":"void","cc":"amd64","args":[]}
+{"name":"fcn.00013c70","noreturn":false,"ret":"void","cc":"amd64","args":[{"name":"arg1","type":"int64_t","cc":"rdi"},{"name":"arg2","type":"int64_t","cc":"rsi"},{"name":"arg3","type":"int64_t","cc":"rdx"}]}
 EOF
 RUN
 
@@ -375,9 +375,9 @@ RUN
 NAME=duplicate af+
 FILE==
 CMDS=<<EOF
-af+ 0x1337 func
-af+ 0x1337 func
-af+ 0x1337 func
+af+ func @ 0x1337
+af+ func @ 0x1337
+af+ func @ 0x1337
 afl
 EOF
 EXPECT=<<EOF
@@ -385,9 +385,9 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Invalid function name 'func' at 0x00001337
-Cannot add function (duplicated)
+ERROR: Cannot add function (duplicated)
 ERROR: Invalid function name 'func' at 0x00001337
-Cannot add function (duplicated)
+ERROR: Cannot add function (duplicated)
 EOF
 RUN
 
@@ -452,5 +452,16 @@ EXPECT=<<EOF
 0x00000006    1 1            sym
 0x00000007    1 1            sym.
 0x00000008    1 1            sym.b
+EOF
+RUN
+
+NAME=afd
+FILE=bins/elf/ls
+CMDS=<<EOF
+af @ main
+afd @ main+12
+EOF
+EXPECT=<<EOF
+main + 12
 EOF
 RUN

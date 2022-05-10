@@ -657,12 +657,16 @@ bool rz_bin_ne_buf_init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 }
 
 void rz_bin_ne_free(rz_bin_ne_obj_t *bin) {
+	if (!bin) {
+		return;
+	}
 	// rz_list_free (bin->imports); // double free
 	rz_list_free(bin->resources);
 	free(bin->entry_table);
 	free(bin->ne_header);
 	free(bin->resident_name_table);
 	free(bin->segment_entries);
+	free(bin);
 }
 
 rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose) {
@@ -671,7 +675,7 @@ rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose) {
 		return NULL;
 	}
 	if (!rz_bin_ne_buf_init(buf, bin)) {
-		free(bin);
+		rz_bin_ne_free(bin);
 		return NULL;
 	}
 	return bin;

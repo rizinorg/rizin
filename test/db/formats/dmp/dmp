@@ -222,7 +222,7 @@ mov qword [rsp + 0x20], r9
 33  0xfffff8047bc25975 sp: 0xffff850429892b70  152  [??]  pdb.ntkrnlmp.ExpWorkerThread+261 
 34  0xfffff8047bd17e25 sp: 0xffff850429892c10  72   [??]  pdb.ntkrnlmp.PspSystemThreadStartup+85 
 35  0xfffff8047bdfd0d8 sp: 0xffff850429892c60  40   [??]  pdb.ntkrnlmp.KiStartSystemThread+40 
-36  0x0                sp: 0xffff850429892c90  0    [??]  str.PAGEDU64 str.PAGEDU640
+36  0x0                sp: 0xffff850429892c90  0    [??]   
 EOF
 RUN
 

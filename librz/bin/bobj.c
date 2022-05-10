@@ -146,9 +146,12 @@ RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_to(RzBinRelocStorage *storage,
 	return r->target_vaddr == vaddr ? r : NULL;
 }
 
-static void object_delete_items(RzBinObject *o) {
-	ut32 i = 0;
-	rz_return_if_fail(o);
+RZ_IPI void rz_bin_object_free(RzBinObject *o) {
+	if (!o) {
+		return;
+	}
+	free(o->regstate);
+	rz_bin_info_free(o->info);
 	ht_up_free(o->addrzklassmethod);
 	rz_list_free(o->entries);
 	rz_list_free(o->maps);
@@ -166,21 +169,11 @@ static void object_delete_items(RzBinObject *o) {
 	ht_pp_free(o->classes_ht);
 	ht_pp_free(o->methods_ht);
 	rz_bin_source_line_info_free(o->lines);
-	sdb_free(o->kv);
 	rz_list_free(o->mem);
-	for (i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
+	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 		free(o->binsym[i]);
 	}
-}
-
-RZ_IPI void rz_bin_object_free(void /*RzBinObject*/ *o_) {
-	RzBinObject *o = o_;
-	if (o) {
-		free(o->regstate);
-		rz_bin_info_free(o->info);
-		object_delete_items(o);
-		free(o);
-	}
+	free(o);
 }
 
 static char *swiftField(const char *dn, const char *cn) {
@@ -247,7 +240,6 @@ static RzList *classes_from_symbols(RzBinFile *bf) {
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz) {
 	rz_return_val_if_fail(bf && plugin, NULL);
 	ut64 bytes_sz = rz_buf_size(bf->buf);
-	Sdb *sdb = bf->sdb;
 	RzBinObject *o = RZ_NEW0(RzBinObject);
 	if (!o) {
 		return NULL;
@@ -261,7 +253,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	o->boffset = offset;
 	o->strings_db = ht_up_new0();
 	o->regstate = NULL;
-	o->kv = sdb_new0(); // XXX bf->sdb bf->o->sdb
 	o->classes = rz_list_newf((RzListFree)rz_bin_class_free);
 	o->classes_ht = ht_pp_new0();
 	o->methods_ht = ht_pp_new0();
@@ -269,18 +260,16 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	o->plugin = plugin;
 
 	if (plugin && plugin->load_buffer) {
-		if (!plugin->load_buffer(bf, o, bf->buf, sdb)) {
+		if (!plugin->load_buffer(bf, o, bf->buf, bf->sdb)) {
 			if (bf->rbin->verbose) {
 				RZ_LOG_ERROR("rz_bin_object_new: load_buffer failed for %s plugin\n", plugin->name);
 			}
-			sdb_free(o->kv);
-			free(o);
+			rz_bin_object_free(o);
 			return NULL;
 		}
 	} else {
 		RZ_LOG_WARN("Plugin %s should implement load_buffer method.\n", plugin->name);
-		sdb_free(o->kv);
-		free(o);
+		rz_bin_object_free(o);
 		return NULL;
 	}
 
@@ -292,28 +281,19 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	rz_bin_set_baddr(bf->rbin, o->opts.baseaddr);
 	rz_bin_object_set_items(bf, o);
 
-	bf->sdb_info = o->kv;
-	sdb = bf->rbin->sdb;
-	if (sdb) {
-		Sdb *bdb = bf->sdb; // sdb_new0 ();
-		sdb_ns_set(bdb, "info", o->kv);
-		o->kv = bdb;
-		// bf->sdb = o->kv;
-		// bf->sdb_info = o->kv;
-		// sdb_ns_set (bf->sdb, "info", o->kv);
-		// sdb_ns (sdb, sdb_fmt ("fd.%d", bf->fd), 1);
-		sdb_set(bf->sdb, "archs", "0:0:x86:32", 0); // x86??
-		/* NOTE */
-		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all
-		 * sub-namespaces */
-		/* And if any namespace is referenced backwards it gets
-		 * double-freed */
-		// bf->sdb_info = sdb_ns (bf->sdb, "info", 1);
-		sdb_ns_set(sdb, "cur", bdb); // bf->sdb);
-		const char *fdns = sdb_fmt("fd.%d", bf->fd);
-		sdb_ns_set(sdb, fdns, bdb); // bf->sdb);
-		bf->sdb->refs++;
+	if (!bf->rbin->sdb) {
+		return o;
 	}
+
+	sdb_ns_set(bf->sdb, "info", o->kv);
+	sdb_ns_set(bf->rbin->sdb, "cur", bf->sdb);
+	char *fdns = rz_str_newf("fd.%d", bf->fd);
+	if (fdns) {
+		sdb_ns_set(bf->rbin->sdb, fdns, bf->sdb);
+		free(fdns);
+	}
+	bf->sdb->refs++;
+
 	return o;
 }
 
@@ -456,7 +436,6 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			}
 		}
 	}
-	o->info = p->info ? p->info(bf) : NULL;
 	if (p->libs) {
 		o->libs = p->libs(bf);
 	}
@@ -470,6 +449,9 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			rz_bin_filter_sections(bf, o->sections);
 		}
 	}
+
+	o->info = p->info ? p->info(bf) : NULL;
+
 	if (bin->filter_rules & (RZ_BIN_REQ_RELOCS | RZ_BIN_REQ_IMPORTS)) {
 		if (p->relocs) {
 			RzList *l = p->relocs(bf);
@@ -492,6 +474,14 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			rz_bin_object_filter_strings(o);
 		}
 		REBASE_PADDR(o, o->strings, RzBinString);
+	}
+
+	if (o->info && RZ_STR_ISEMPTY(o->info->compiler)) {
+		free(o->info->compiler);
+		o->info->compiler = rz_bin_file_golang_compiler(bf);
+		if (o->info->compiler) {
+			o->info->lang = "go";
+		}
 	}
 
 	o->lang = rz_bin_language_detect(bf);
@@ -930,6 +920,9 @@ RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RzBinObject *obj) {
 	rz_vector_reserve(res, rz_list_length(segments));
 
 	rz_list_foreach (segments, iter, segment) {
+		if (segment->vaddr == UT64_MAX) {
+			continue;
+		}
 		RzInterval segment_itv = (RzInterval){ segment->vaddr, segment->size };
 		RzListIter *iter2;
 
@@ -938,7 +931,10 @@ RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RzBinObject *obj) {
 		rz_pvector_init(&map.sections, NULL);
 
 		rz_list_foreach (sections, iter2, section) {
-			RzInterval section_itv = (RzInterval){ section->vaddr, section->size };
+			if (section->vaddr == UT64_MAX) {
+				continue;
+			}
+			RzInterval section_itv = (RzInterval){ section->vaddr, section->vsize };
 			if (rz_itv_begin(section_itv) >= rz_itv_begin(segment_itv) && rz_itv_end(section_itv) <= rz_itv_end(segment_itv) && section->name[0]) {
 				rz_pvector_push(&map.sections, section);
 			}
@@ -950,4 +946,77 @@ err:
 	rz_list_free(segments);
 	rz_list_free(sections);
 	return res;
+}
+
+static ut64 map_p2v(RzBinMap *m, ut64 paddr) {
+	ut64 delta = paddr - m->paddr;
+	if (delta >= m->vsize) {
+		return UT64_MAX;
+	}
+	return m->vaddr + delta;
+}
+
+/**
+ * \brief Convert offset in the file to virtual address according to binary mappings
+ *
+ * \param obj Reference to \p RzBinObject
+ * \param paddr Offset in the file
+ * \return Converted offset to virtual address or UT64_MAX if the conversion cannot be done
+ */
+RZ_API ut64 rz_bin_object_p2v(RzBinObject *obj, ut64 paddr) {
+	rz_return_val_if_fail(obj, UT64_MAX);
+	RzBinMap *m = rz_bin_object_get_map_at(obj, paddr, false);
+	if (!m) {
+		return UT64_MAX;
+	}
+
+	return map_p2v(m, paddr);
+}
+
+/**
+ * \brief Convert offset in the file to all possible virtual addresses according to binary mappings
+ *
+ * \param obj Reference to \p RzBinObject
+ * \param paddr Offset in the file
+ * \return Vector containing \p ut64 values of all possible virtual addresses
+ */
+RZ_API RzVector *rz_bin_object_p2v_all(RzBinObject *obj, ut64 paddr) {
+	rz_return_val_if_fail(obj, NULL);
+	RzPVector *maps = rz_bin_object_get_maps_at(obj, paddr, false);
+	if (!maps) {
+		return NULL;
+	}
+
+	RzVector *res = rz_vector_new(sizeof(ut64), NULL, NULL);
+	void **it;
+	rz_pvector_foreach (maps, it) {
+		RzBinMap *map = *(RzBinMap **)it;
+		ut64 vaddr = map_p2v(map, paddr);
+		if (vaddr != UT64_MAX) {
+			rz_vector_push(res, &vaddr);
+		}
+	}
+
+	return res;
+}
+
+/**
+ * \brief Convert virtual address to offset in the file according to binary mappings
+ *
+ * \param obj Reference to \p RzBinObject
+ * \param paddr Virtual address
+ * \return Converted virtual address to offset in the file or UT64_MAX if the conversion cannot be done
+ */
+RZ_API ut64 rz_bin_object_v2p(RzBinObject *obj, ut64 vaddr) {
+	rz_return_val_if_fail(obj, UT64_MAX);
+	RzBinMap *m = rz_bin_object_get_map_at(obj, vaddr, true);
+	if (!m) {
+		return UT64_MAX;
+	}
+
+	ut64 delta = vaddr - m->vaddr;
+	if (delta >= m->psize) {
+		return UT64_MAX;
+	}
+	return m->paddr + delta;
 }

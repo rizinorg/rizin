@@ -211,14 +211,14 @@ fl~?
 fl~main
 EOF
 EXPECT=<<EOF
-117
+111
 0x08048364 16 sym.imp.__libc_start_main
 0x08048540 256 main
 0x08048540 92 sym.renamedmain
 0x0804a000 4 reloc.__libc_start_main
 --
 --
-117
+111
 0x08048364 16 sym.imp.__libc_start_main
 0x08048540 92 sym.renamedmain
 0x08048540 256 main
@@ -286,7 +286,7 @@ RUN
 NAME=analysis
 FILE==
 CMDS=<<EOF
-af+ 0x100 windowpane
+af+ windowpane @ 0x100
 afb+ windowpane 0x100 0x30
 afl
 Ps .tmp_analysis.rzdb

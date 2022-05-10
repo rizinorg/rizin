@@ -4,7 +4,7 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 #include <ht_uu.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 #include "../arch/arm/asm-arm.h"
 #include "../arch/arm/arm_it.h"
 #include "./asm_arm_hacks.inc"

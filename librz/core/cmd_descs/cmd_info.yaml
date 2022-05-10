@@ -370,6 +370,15 @@ commands:
         type: RZ_CMD_ARG_TYPE_STRING
         flags: RZ_CMD_ARG_FLAG_ARRAY
         optional: true
+  - name: iSS.
+    cname: cmd_info_cur_segment
+    summary: Current segment
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+    args: []
   - name: it
     cname: cmd_info_hashes
     summary: Show file hashes

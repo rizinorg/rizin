@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_userconf.h>
-#if DEBUGGER
 
 // TODO much work remains to be done
 #include "xnu_debug.h"
@@ -375,4 +374,3 @@ static int xnu_update_thread_list(RzDebug *dbg) {
 		thread_count * sizeof(thread_t));
 	return true;
 }
-#endif

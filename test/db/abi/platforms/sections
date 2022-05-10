@@ -6,7 +6,7 @@ EOF
 EXPECT=<<EOF
 0x00000378 0x48  0x00008378 0x48  0x0   -r-- .rel.plt               REL               alloc
 0x000003c0 0x80  0x000083c0 0x80  0x0   -r-x .plt                   PROGBITS          alloc,execute
-0x00000bac 0x1c  0x00000000 0x1c  0x0   ---- .note.gnu.gold-version NOTE              
+0x00000bac 0x1c  ---------- 0x1c  0x0   ---- .note.gnu.gold-version NOTE              
 EOF
 RUN
 

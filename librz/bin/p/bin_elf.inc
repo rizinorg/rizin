@@ -1626,17 +1626,10 @@ static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
 	RzList *sections_list = sections(bf);
 	RzListIter *iter;
 	RzBinSection *section;
-	bool is_go = false;
 	ret->has_retguard = -1;
 	rz_list_foreach (sections_list, iter, section) {
-		if (ret->has_retguard != -1 && is_go == true) {
+		if (ret->has_retguard != -1) {
 			break;
-		}
-		if (strstr(section->name, "note.go.buildid") ||
-			strstr(section->name, ".gopclntab") ||
-			strstr(section->name, ".go_export")) {
-			ret->lang = "go";
-			is_go = true;
 		}
 #define RZ_BIN_RANDOMDATA_RETGUARD_SZ 48
 		if (!strcmp(section->name, ".openbsd.randomdata")) {
@@ -1747,6 +1740,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	lookup_sections(bf, ret);
 	lookup_symbols(bf, ret);
+
 	return ret;
 }
 

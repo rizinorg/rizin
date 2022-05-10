@@ -993,8 +993,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					if (!haveRarunProfile) {
 						pfile = strdup(argv[opt.ind++]);
 					}
-					perms = RZ_PERM_RX; // XXX. should work with rw too
-					debug = 2;
+					// If plugin is winkd we should keep RWX permission to be able to write to the fd
+					if (strcmp(debugbackend, "winkd")) {
+						perms = RZ_PERM_RX; // XXX. should work with rw too
+					}
 					if (!strstr(pfile, "://")) {
 						opt.ind--; // take filename
 					}

@@ -9,6 +9,7 @@ if get_option('enable_tests')
 
   tests = [
     'analysis_il',
+    'analysis_global_var',
     'autocmplt',
     'bin',
     'bin_vfiles',
