@@ -80,6 +80,10 @@ static void header(RzBinFile *bf) {
 	}
 }
 
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 4, false);
+}
+
 static RzList *fields(RzBinFile *bf) {
 	RzList *fields = rz_list_newf((RzListFree)rz_bin_field_free);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
@@ -276,6 +280,7 @@ RzBinPlugin rz_bin_plugin_dmp64 = {
 	.destroy = &destroy,
 	.get_sdb = &get_sdb,
 	.header = &header,
+	.strings = &strings,
 	.info = &info,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,

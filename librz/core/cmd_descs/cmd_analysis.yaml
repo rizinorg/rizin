@@ -27,9 +27,61 @@ commands:
     args: []
   - name: af
     summary: Analyze Functions commands
-    cname: cmd_analysis_fcn
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands:
+      - name: af
+        summary: Analyze functions recursively (honors `analysis.calls`)
+        cname: analysis_function_add_recu
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: afr
+        summary: Analyze functions recursively
+        cname: analysis_function_add_recu_force
+        handler: analysis_function_add_recu
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: af+
+        summary: Hand craft a function (requires `afb+`)
+        cname: analysis_function_create
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: type
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            optional: true
+            choices: ["l", "i", "s"]
+          - name: diff
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            optional: true
+            choices: ["m", "u"]
+      - name: af-
+        summary: Delete function
+        cname: analysis_function_del
+        args: []
+      - name: af-*
+        summary: Delete all function analysis data
+        cname: analysis_function_del_all
+        args: []
+      - name: afj
+        summary: Analyze function jumptable
+        cname: analysis_function_analyze_jmptable
+        args:
+          - name: tbl_addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: elements
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afa
+        summary: Analyze function arguments in a call
+        cname: analysis_function_analyze_args
+        args: []
+      - name: afal
+        summary: Analyze function arguments in a call (honors `dbg.funcarg`)
+        cname: analysis_function_analyze_args_l
+        handler: analysis_function_analyze_args
+        args: []
       - name: afb
         summary: Basic blocks commands
         subcommands:
@@ -566,6 +618,10 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
             args: []
+      - name: afd
+        summary: Show function + delta for given offset
+        cname: analysis_function_describe_offset
+        args: []
   - name: aeC
     summary: appcall in esil
     cname: analysis_appcall

@@ -315,7 +315,7 @@ CMDS=<<EOF
 e emu.str=true
 e io.cache=true
 s 0x0008049c
-af+ 0x0008049c super_mario_fix
+af+ super_mario_fix @ 0x0008049c
 afb+ 0x0008049c 0x0008049c 8
 wx c2a2c2a2c2a2 @ 0x80510
 e bin.str.enc=utf8

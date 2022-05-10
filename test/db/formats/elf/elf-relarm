@@ -10,9 +10,9 @@ EOF
 EXPECT=<<EOF
 nth vaddr      bind   type   lib name              
 ---------------------------------------------------
-1   0x00000000 GLOBAL FUNC       printf
-2   0x00000000 WEAK   NOTYPE     __gmon_start__
-3   0x00000000 GLOBAL FUNC       __libc_start_main
+1   ---------- GLOBAL FUNC       printf
+2   ---------- WEAK   NOTYPE     __gmon_start__
+3   ---------- GLOBAL FUNC       __libc_start_main
 vaddr      paddr      type   name              
 -----------------------------------------------
 0x10020008 0x00010008 ADD_32 __gmon_start__
@@ -56,14 +56,14 @@ EXPECT=<<EOF
 0x000b58c3 = 0x00
             ;-- section..fini_array:
             ;-- segment.LOAD1:
-            0x000b58c0      .dword 0x00004524 ; entry0 ; entry.fini0 ; section..text; RELOC 32  ; [14] -rw- section size 4 named .fini_array
+            0x000b58c0      .dword 0x00004524 ; entry0 ; entry.fini0 ; section..text; RELOC 32  ; [13] -rw- section size 4 named .fini_array
 0x000b58c4 = 0x60
 0x000b58c5 = 0x45
 0x000b58c6 = 0x00
 0x000b58c7 = 0x00
             ;-- section..init_array:
             ;-- .datadiv_decode1794556967687044894:
-            0x000b58c4      .dword 0x00004560 ; reloc.target..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 ; [15] -rw- section size 364 named .init_array
+            0x000b58c4      .dword 0x00004560 ; reloc.target..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 ; [14] -rw- section size 364 named .init_array
 0x000b58d8 = 0x44
 0x000b58d9 = 0x8b
 0x000b58da = 0x09
@@ -96,7 +96,7 @@ EXPECT=<<EOF
 427
             ;-- section..init_array:
             ;-- .datadiv_decode1794556967687044894:
-            0x000b58c4      .dword 0x00004560 ; reloc.target..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 ; [15] -rw- section size 364 named .init_array
+            0x000b58c4      .dword 0x00004560 ; reloc.target..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 ; [14] -rw- section size 364 named .init_array
             ;-- .datadiv_decode12875440098136793118:
             0x000b58c8      .dword 0x00004570 ; reloc.target..datadiv_decode12875440098136793118 ; sym..datadiv_decode12875440098136793118; RELOC 32 .datadiv_decode12875440098136793118 @ 0x00004570
             ;-- .datadiv_decode11893604691534341392:
@@ -127,7 +127,7 @@ EXPECT=<<EOF
 231
             ;-- section..init_array:
             ;-- segment.LOAD1:
-            0x00126510      .qword 0x0000000000005a6c ; sym..datadiv_decode9958896245423089702 ; [13] -rw- section size 728 named .init_array
+            0x00126510      .qword 0x0000000000005a6c ; sym..datadiv_decode9958896245423089702 ; [12] -rw- section size 728 named .init_array
             0x00126518      .qword 0x0000000000005a80 ; sym..datadiv_decode10476194973746341988
             0x00126520      .qword 0x00000000000efddc ; sym..datadiv_decode16323044921667855934
             0x00126528      .qword 0x0000000000009080 ; entry.init0    ; RELOC 64 

@@ -94,6 +94,10 @@ typedef struct _KdCtx {
 	RzList *plist_cache;
 	RzList *tlist_cache;
 	RzThreadLock *dontmix;
+	WindModule kernel_module;
+	ut8 *context_cache;
+	int context_cache_size;
+	bool context_cache_valid;
 } KdCtx;
 
 #define TARGET_BACKEND  0
@@ -167,5 +171,4 @@ int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const
 void winkd_break(void *ctx);
 bool winkd_lock_enter(KdCtx *ctx);
 bool winkd_lock_leave(KdCtx *ctx);
-bool winkd_lock_tryenter(KdCtx *ctx);
 #endif

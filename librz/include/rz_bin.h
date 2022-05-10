@@ -303,7 +303,7 @@ typedef struct rz_bin_object_t {
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
 	RzBinLanguage lang;
-	RZ_DEPRECATE Sdb *kv; ///< deprecated, put info in C structures instead of this
+	RZ_DEPRECATE RZ_BORROW Sdb *kv; ///< deprecated, put info in C structures instead of this (holds a copy of another pointer.)
 	HtUP *addrzklassmethod;
 	void *bin_obj; // internal pointer used by formats
 } RzBinObject;
@@ -328,7 +328,6 @@ struct rz_bin_file_t {
 	// struct rz_bin_plugin_t *curplugin; // use o->plugin
 	RzList *xtr_data;
 	RZ_DEPRECATE Sdb *sdb; ///< deprecated, put info in C structures instead of this
-	RZ_DEPRECATE Sdb *sdb_info; ///< deprecated, put info in C structures instead of this
 	struct rz_bin_t *rbin;
 }; // RzBinFile
 
@@ -960,6 +959,11 @@ RZ_API bool rz_bin_object_is_string(RZ_NONNULL RzBinObject *obj, ut64 va);
 RZ_API bool rz_bin_object_is_big_endian(RZ_NONNULL RzBinObject *obj);
 RZ_API bool rz_bin_object_is_static(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj);
+RZ_API RZ_OWN RzPVector *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, bool va);
+RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va);
+RZ_API ut64 rz_bin_object_p2v(RZ_NONNULL RzBinObject *obj, ut64 paddr);
+RZ_API RzVector *rz_bin_object_p2v_all(RZ_NONNULL RzBinObject *obj, ut64 paddr);
+RZ_API ut64 rz_bin_object_v2p(RZ_NONNULL RzBinObject *obj, ut64 vaddr);
 
 RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile);
 RZ_API RzBinLanguage rz_bin_language_to_id(const char *language);
@@ -983,8 +987,6 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBi
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
 RZ_API RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
 RZ_API RzList *rz_bin_file_get_symbols(RzBinFile *bf);
-//
-RZ_API ut64 rz_bin_file_get_vaddr(RzBinFile *bf, ut64 paddr, ut64 vaddr);
 // RzBinFile.add
 RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *binfile, const char *name, const char *super, int view);
 RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *classname, const char *name, int nargs);
@@ -1021,7 +1023,7 @@ RZ_API void rz_bin_mem_free(void *data);
 RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const char *language, RZ_NULLABLE const char *symbol, ut64 vaddr, bool libs);
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact);
 
-RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);
+RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);
 
 /* dbginfo.c */
 RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line);
