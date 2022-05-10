@@ -1,4 +1,12 @@
 if get_option('enable_tests')
+  test_conf_data = configuration_data()
+  test_conf_data.set_quoted('TEST_BUILD_TYPES_DIR', fs.as_posix(types_build_dir))
+  test_config_h = configure_file(
+    input: 'test_config.h.in',
+    output: 'test_config.h',
+    configuration: test_conf_data,
+  )
+
   subdir('auxiliary')
 
   tests = [
@@ -12,7 +20,6 @@ if get_option('enable_tests')
     'analysis_meta',
     'analysis_op',
     'analysis_var',
-    'analysis_global_var',
     'analysis_xrefs',
     'annotated_code',
     'base64',
@@ -101,7 +108,7 @@ if get_option('enable_tests')
   foreach test : tests
     exe = executable('test_@0@'.format(test), 'test_@0@.c'.format(test),
       c_args: executable_cflags,
-      include_directories: [platform_inc],
+      include_directories: [platform_inc, '.'],
       dependencies: [
         rz_util_dep,
         rz_main_dep,
@@ -133,6 +140,6 @@ if get_option('enable_tests')
       implicit_include_directories: false,
       link_args: executable_linkflags
     )
-    test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env, depends: auxiliaries, suite: 'unit')
+    test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env, depends: [auxiliaries, types_files], suite: 'unit')
   endforeach
 endif
