@@ -4903,6 +4903,9 @@ static RzCmdStatus do_iter_sections(struct tsr2cmd_state *state, TSNode node, bo
 		if ((sec->is_segment && show_sections) || (!sec->is_segment && !show_sections)) {
 			continue;
 		}
+		if (sec->vaddr == UT64_MAX) {
+			continue;
+		}
 		rz_core_seek(core, sec->vaddr, true);
 		rz_core_block_size(core, sec->vsize);
 		RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);

@@ -692,7 +692,7 @@ C.
 EOF
 EXPECT=<<EOF
 0x0007a23c ascii[13] "match_symbol"
-0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
+0x00083fc4 CCu "[13] -rw- section size 4 named .init_array"
 0x00083fc4 data Cd 4
 EOF
 RUN
