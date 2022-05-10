@@ -146,9 +146,12 @@ RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_to(RzBinRelocStorage *storage,
 	return r->target_vaddr == vaddr ? r : NULL;
 }
 
-static void object_delete_items(RzBinObject *o) {
-	ut32 i = 0;
-	rz_return_if_fail(o);
+RZ_IPI void rz_bin_object_free(RzBinObject *o) {
+	if (!o) {
+		return;
+	}
+	free(o->regstate);
+	rz_bin_info_free(o->info);
 	ht_up_free(o->addrzklassmethod);
 	rz_list_free(o->entries);
 	rz_list_free(o->maps);
@@ -166,21 +169,11 @@ static void object_delete_items(RzBinObject *o) {
 	ht_pp_free(o->classes_ht);
 	ht_pp_free(o->methods_ht);
 	rz_bin_source_line_info_free(o->lines);
-	sdb_free(o->kv);
 	rz_list_free(o->mem);
-	for (i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
+	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 		free(o->binsym[i]);
 	}
-}
-
-RZ_IPI void rz_bin_object_free(void /*RzBinObject*/ *o_) {
-	RzBinObject *o = o_;
-	if (o) {
-		free(o->regstate);
-		rz_bin_info_free(o->info);
-		object_delete_items(o);
-		free(o);
-	}
+	free(o);
 }
 
 static char *swiftField(const char *dn, const char *cn) {
@@ -247,7 +240,6 @@ static RzList *classes_from_symbols(RzBinFile *bf) {
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz) {
 	rz_return_val_if_fail(bf && plugin, NULL);
 	ut64 bytes_sz = rz_buf_size(bf->buf);
-	Sdb *sdb = bf->sdb;
 	RzBinObject *o = RZ_NEW0(RzBinObject);
 	if (!o) {
 		return NULL;
@@ -261,7 +253,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	o->boffset = offset;
 	o->strings_db = ht_up_new0();
 	o->regstate = NULL;
-	o->kv = sdb_new0(); // XXX bf->sdb bf->o->sdb
 	o->classes = rz_list_newf((RzListFree)rz_bin_class_free);
 	o->classes_ht = ht_pp_new0();
 	o->methods_ht = ht_pp_new0();
@@ -269,18 +260,16 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	o->plugin = plugin;
 
 	if (plugin && plugin->load_buffer) {
-		if (!plugin->load_buffer(bf, o, bf->buf, sdb)) {
+		if (!plugin->load_buffer(bf, o, bf->buf, bf->sdb)) {
 			if (bf->rbin->verbose) {
 				RZ_LOG_ERROR("rz_bin_object_new: load_buffer failed for %s plugin\n", plugin->name);
 			}
-			sdb_free(o->kv);
-			free(o);
+			rz_bin_object_free(o);
 			return NULL;
 		}
 	} else {
 		RZ_LOG_WARN("Plugin %s should implement load_buffer method.\n", plugin->name);
-		sdb_free(o->kv);
-		free(o);
+		rz_bin_object_free(o);
 		return NULL;
 	}
 
@@ -292,28 +281,19 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	rz_bin_set_baddr(bf->rbin, o->opts.baseaddr);
 	rz_bin_object_set_items(bf, o);
 
-	bf->sdb_info = o->kv;
-	sdb = bf->rbin->sdb;
-	if (sdb) {
-		Sdb *bdb = bf->sdb; // sdb_new0 ();
-		sdb_ns_set(bdb, "info", o->kv);
-		o->kv = bdb;
-		// bf->sdb = o->kv;
-		// bf->sdb_info = o->kv;
-		// sdb_ns_set (bf->sdb, "info", o->kv);
-		// sdb_ns (sdb, sdb_fmt ("fd.%d", bf->fd), 1);
-		sdb_set(bf->sdb, "archs", "0:0:x86:32", 0); // x86??
-		/* NOTE */
-		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all
-		 * sub-namespaces */
-		/* And if any namespace is referenced backwards it gets
-		 * double-freed */
-		// bf->sdb_info = sdb_ns (bf->sdb, "info", 1);
-		sdb_ns_set(sdb, "cur", bdb); // bf->sdb);
-		const char *fdns = sdb_fmt("fd.%d", bf->fd);
-		sdb_ns_set(sdb, fdns, bdb); // bf->sdb);
-		bf->sdb->refs++;
+	if (!bf->rbin->sdb) {
+		return o;
 	}
+
+	sdb_ns_set(bf->sdb, "info", o->kv);
+	sdb_ns_set(bf->rbin->sdb, "cur", bf->sdb);
+	char *fdns = rz_str_newf("fd.%d", bf->fd);
+	if (fdns) {
+		sdb_ns_set(bf->rbin->sdb, fdns, bf->sdb);
+		free(fdns);
+	}
+	bf->sdb->refs++;
+
 	return o;
 }
 

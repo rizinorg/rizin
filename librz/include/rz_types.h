@@ -357,6 +357,12 @@ static inline void *rz_new_copy(int size, void *data) {
 		x = NULL; \
 	}
 
+#define RZ_FREE_CUSTOM(x, y) \
+	{ \
+		y(x); \
+		x = NULL; \
+	}
+
 #if __WINDOWS__
 #define PFMT64x "I64x"
 #define PFMT64d "I64d"

@@ -113,7 +113,6 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		return;
 	}
 	Sdb *db = sdb_ns(bf->sdb, "info", 0);
-	;
 	if (!db) {
 		return;
 	}
@@ -3003,7 +3002,6 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 	PJ *pj = state->d.pj;
 	RzTable *t = state->d.t;
 	int i, j, u, v, uv;
-	Sdb *sdb_info = sdb_ns(obj->kv, "info", false);
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
@@ -3105,7 +3103,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 			pj_ki(pj, "pcalign", uv);
 		}
 
-		tmp_buf = sdb_get(sdb_info, "elf.relro", 0);
+		tmp_buf = sdb_get(obj->kv, "elf.relro", 0);
 		if (tmp_buf) {
 			pj_ks(pj, "relro", tmp_buf);
 			free(tmp_buf);
@@ -3213,7 +3211,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 			rz_table_add_rowf(t, "sd", "pcalign", uv);
 		}
 
-		tmp_buf = sdb_get(sdb_info, "elf.relro", 0);
+		tmp_buf = sdb_get(obj->kv, "elf.relro", 0);
 		if (tmp_buf) {
 			rz_table_add_rowf(t, "ss", "relro", tmp_buf);
 			free(tmp_buf);
@@ -4204,14 +4202,14 @@ static void bin_pe_versioninfo(RzCore *r, PJ *pj, int mode) {
 }
 
 static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
-	if (IS_MODE_JSON(mode)) {
-		pj_o(pj);
-		pj_ka(pj, "versym");
-	}
-
 	Sdb *sdb = sdb_ns_path(r->sdb, "bin/cur/info/versioninfo/versym", 0);
 	if (!sdb) {
 		return;
+	}
+
+	if (IS_MODE_JSON(mode)) {
+		pj_o(pj);
+		pj_ka(pj, "versym");
 	}
 
 	const ut64 addr = sdb_num_get(sdb, "addr", 0);
@@ -4257,14 +4255,14 @@ static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
 }
 
 static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
-	if (IS_MODE_JSON(mode)) {
-		pj_end(pj);
-		pj_ka(pj, "verneed");
-	}
-
 	Sdb *sdb = sdb_ns_path(r->sdb, "bin/cur/info/versioninfo/verneed", 0);
 	if (!sdb) {
 		return;
+	}
+
+	if (IS_MODE_JSON(mode)) {
+		pj_end(pj);
+		pj_ka(pj, "verneed");
 	}
 
 	const ut64 address = sdb_num_get(sdb, "addr", 0);
