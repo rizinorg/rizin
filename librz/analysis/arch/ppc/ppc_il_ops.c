@@ -285,14 +285,12 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	case PPC_INS_ADDC:
 	case PPC_INS_SUBF:
 	case PPC_INS_SUBFC:
-		cr0 = true;
 		op0 = add ? VARG(rA) : ADD(LOGNOT(VARG(rA)), UA(1));
 		op1 = VARG(rB);
 		res = ADD(op0, op1);
 		break;
 	case PPC_INS_ADDE:
 	case PPC_INS_SUBFE:
-		cr0 = true;
 		op0 = add ? VARG(rA) : LOGNOT(VARG(rA));
 		op2 = VARG(rB);
 		op1 = ADD(op2, BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS));
@@ -301,8 +299,7 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	case PPC_INS_ADDI:
 	case PPC_INS_ADDIC:
 	case PPC_INS_ADDIS:
-	case PPC_INS_SUBFIC:
-		cr0 = (id == PPC_INS_ADDIC);
+	case PPC_INS_SUBFIC:;
 		RzILOpPure *a = add ? VARG(rA) : ADD(LOGNOT(VARG(rA)), UA(1));
 		op0 = ITE(EQ(a, UA(0)), UA(0), DUP(a)); // RA == 0 ? 0 : (RA)
 		if (id == PPC_INS_ADDIS) {
@@ -316,7 +313,6 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	case PPC_INS_ADDZE:
 	case PPC_INS_SUBFME:
 	case PPC_INS_SUBFZE:
-		cr0 = true;
 		op0 = add ? VARG(rA) : LOGNOT(VARG(rA));
 		if (id == PPC_INS_ADDME || id == PPC_INS_SUBFME) {
 			op1 = ADD(BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS), SA(-1)); // Minus 1
