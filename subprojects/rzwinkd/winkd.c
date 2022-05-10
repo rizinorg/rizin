@@ -1261,8 +1261,8 @@ int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int co
 		return 0;
 	}
 
-	memcpy(buf, rr->data, rr->rz_mem.read);
-	int ret = rr->rz_mem.read;
+	int ret = RZ_MIN(rr->rz_mem.read, count);
+	memcpy(buf, rr->data, ret);
 	free(pkt);
 	return ret;
 }
@@ -1290,8 +1290,8 @@ int winkd_read_at(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) 
 		return 0;
 	}
 
-	memcpy(buf, rr->data, rr->rz_mem.read);
-	int ret = rr->rz_mem.read;
+	int ret = RZ_MIN(rr->rz_mem.read, count);
+	memcpy(buf, rr->data, ret);
 	free(pkt);
 	return ret;
 }
