@@ -102,6 +102,7 @@ NAME=ppc store instructions
 FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
+e io.cache=true
 aaa
 s loc.store_insns
 aezi
@@ -113,10 +114,10 @@ mem_write(addr: 0x9000010, old: 0x0, new: 0xff)
 mem_write(addr: 0x9000020, old: 0x0, new: 0xffff)
 mem_write(addr: 0x9000030, old: 0x0, new: 0xffffffff)
 mem_write(addr: 0x9000040, old: 0x0, new: 0xffffffffffffffff)
-mem_write(addr: 0x9000010, old: 0x0, new: 0xff)
-mem_write(addr: 0x9000020, old: 0x0, new: 0xffff)
-mem_write(addr: 0x9000030, old: 0x0, new: 0xffffffff)
-mem_write(addr: 0x9000040, old: 0x0, new: 0xffffffffffffffff)
+mem_write(addr: 0x9000010, old: 0xff, new: 0xff)
+mem_write(addr: 0x9000020, old: 0xffff, new: 0xffff)
+mem_write(addr: 0x9000030, old: 0xffffffff, new: 0xffffffff)
+mem_write(addr: 0x9000040, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
 var_write(name: r21, old: 0x9000010, new: 0x9000010)
 var_write(name: r21, old: 0x9000010, new: 0x9000020)
 var_write(name: r21, old: 0x9000020, new: 0x9000030)
@@ -128,6 +129,7 @@ NAME=ppc load instructions
 FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
+e io.cache=true
 aaa
 s loc.store_insns
 aezi
