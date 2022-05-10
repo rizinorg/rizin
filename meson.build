@@ -1,5 +1,5 @@
 project('rizin', 'c',
-  version: 'v0.4.0-git',
+  version: 'v0.4.0',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
   default_options: [
@@ -28,10 +28,6 @@ endif
 
 # Get rizin version and compute various version parts
 rizin_version = meson.project_version().split('v')[1]
-if host_machine.system() == 'darwin'
-  rizin_version = rizin_version.split('-')[0]
-endif
-
 rizin_version_split = rizin_version.split('.')
 rizin_version_major = rizin_version_split[0].to_int()
 rizin_version_minor = rizin_version_split[1].to_int()
@@ -91,7 +87,7 @@ else
   rizinbirth = rizinbirth.stdout().strip()
 endif
 
-rizin_libversion = host_machine.system() == 'windows' ? '' : rizin_version
+rizin_libversion = '@0@.@1@'.format(rizin_version_major, rizin_version_minor)
 message('rizin lib version: ' + rizin_libversion)
 
 # system dependencies
