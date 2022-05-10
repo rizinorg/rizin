@@ -7813,37 +7813,31 @@ finish:
 	RZ_FREE(debugger);
 }
 
-// aa
 RZ_IPI RzCmdStatus rz_analyze_simple_handler(RzCore *core, int argc, const char **argv) {
 	core_perform_auto_analysis(core, CORE_ANALYSIS_SIMPLE);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaa
 RZ_IPI RzCmdStatus rz_analyze_everything_handler(RzCore *core, int argc, const char **argv) {
 	core_perform_auto_analysis(core, CORE_ANALYSIS_DEEP);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaaa
 RZ_IPI RzCmdStatus rz_analyze_everything_experimental_handler(RzCore *core, int argc, const char **argv) {
 	core_perform_auto_analysis(core, CORE_ANALYSIS_EXPERIMENTAL);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aac
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_calls(core, false);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaci
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_to_imports_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_calls(core, true);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aad
 RZ_IPI RzCmdStatus rz_analyze_all_data_references_to_code_handler(RzCore *core, int argc, const char **argv) {
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
@@ -7857,7 +7851,6 @@ RZ_IPI RzCmdStatus rz_analyze_all_data_references_to_code_handler(RzCore *core, 
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaf
 RZ_IPI RzCmdStatus rz_analyze_all_functions_handler(RzCore *core, int argc, const char **argv) {
 	const bool old_hasnext = rz_config_get_b(core->config, "analysis.hasnext");
 	rz_config_set_b(core->config, "analysis.hasnext", true);
@@ -7866,13 +7859,11 @@ RZ_IPI RzCmdStatus rz_analyze_all_functions_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
-// aafe
 RZ_IPI RzCmdStatus rz_analyze_all_functions_esil_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_cmd0(core, "aef @@F"); // TODO: replace with C apis.
 	return RZ_CMD_STATUS_OK;
 }
 
-// aafr
 RZ_IPI RzCmdStatus rz_analyze_all_consecutive_functions_in_section_handler(RzCore *core, int argc, const char **argv) {
 	ut64 old_offset = core->offset;
 	RzListIter *iter;
@@ -7896,26 +7887,22 @@ RZ_IPI RzCmdStatus rz_analyze_all_consecutive_functions_in_section_handler(RzCor
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaft
 RZ_IPI RzCmdStatus rz_analyze_recursively_all_function_types_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_types_propagation(core);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaF
 RZ_IPI RzCmdStatus rz_apply_signatures_from_sigdb_handler(RzCore *core, int argc, const char **argv) {
 	const char *filter = argc == 2 ? argv[1] : NULL;
 	rz_core_analysis_sigdb_apply(core, NULL, filter);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaFl
 RZ_IPI RzCmdStatus rz_list_signatures_in_sigdb_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_core_analysis_sigdb_print(core, state->d.t);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aai
 RZ_IPI RzCmdStatus rz_print_analysis_details_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	st64 fcns = rz_list_length(core->analysis->fcns);
 	st64 strs = rz_flag_count(core->flags, "str.*");
@@ -7962,13 +7949,11 @@ RZ_IPI RzCmdStatus rz_print_analysis_details_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaj
 RZ_IPI RzCmdStatus rz_analyze_all_jumps_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_cmdf(core, "af @@= `axl~ref.code.jmp[1]`"); // TODO: replace with C apis.
 	return RZ_CMD_STATUS_OK;
 }
 
-// aalg
 RZ_IPI RzCmdStatus rz_recover_all_golang_functions_strings_handler(RzCore *core, int argc, const char **argv) {
 	if (!rz_core_analysis_recover_golang_functions(core)) {
 		RZ_LOG_ERROR("cannot recover golang functions.\n");
@@ -7978,51 +7963,43 @@ RZ_IPI RzCmdStatus rz_recover_all_golang_functions_strings_handler(RzCore *core,
 	return RZ_CMD_STATUS_OK;
 }
 
-// aalo
 RZ_IPI RzCmdStatus rz_analyze_all_objc_references_handler(RzCore *core, int argc, const char **argv) {
 	cmd_analysis_objc(core, false);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aan
 RZ_IPI RzCmdStatus rz_autoname_all_functions_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_autoname_all_fcns(core);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aanr
 RZ_IPI RzCmdStatus rz_autoname_all_functions_noreturn_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_propagate_noreturn(core, UT64_MAX);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aap
 RZ_IPI RzCmdStatus rz_analyze_all_preludes_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_search_preludes(core, true);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aar
 RZ_IPI RzCmdStatus rz_analyze_xrefs_section_bytes_handler(RzCore *core, int argc, const char **argv) {
 	size_t n_bytes = argc == 2 ? rz_num_math(core->num, argv[1]) : 0;
 	return bool2status(rz_core_analysis_refs(core, n_bytes));
 }
 
-// aas
 RZ_IPI RzCmdStatus rz_analyze_symbols_entries_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_cmd0(core, "af @@= `isq~[0]`"); // TODO: replace with C apis.
 	rz_core_cmd0(core, "af @@f:entry*"); // TODO: replace with C apis.
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaS
 RZ_IPI RzCmdStatus rz_analyze_symbols_entries_flags_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_cmd0(core, "af @@f:sym.*"); // TODO: replace with C apis.
 	rz_core_cmd0(core, "af @@f:entry*"); // TODO: replace with C apis.
 	return RZ_CMD_STATUS_OK;
 }
 
-// aat
 RZ_IPI RzCmdStatus rz_analyze_function_linked_offsets_handler(RzCore *core, int argc, const char **argv) {
 	ut64 func_offset = argc == 2 ? rz_num_math(core->num, argv[1]) : UT64_MAX;
 	RzAnalysisFunction *fcn;
@@ -8050,14 +8027,12 @@ RZ_IPI RzCmdStatus rz_analyze_function_linked_offsets_handler(RzCore *core, int 
 	return RZ_CMD_STATUS_OK;
 }
 
-// aaT
 RZ_IPI RzCmdStatus rz_print_commands_after_traps_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n_bytes = argc == 2 ? rz_num_math(core->num, argv[1]) : 0;
 	print_cmd_analysis_after_traps_print(core, n_bytes);
 	return RZ_CMD_STATUS_OK;
 }
 
-// aau
 RZ_IPI RzCmdStatus rz_print_areas_no_functions_handler(RzCore *core, int argc, const char **argv) {
 	size_t min_len = argc == 2 ? rz_num_math(core->num, argv[1]) : 16;
 	if (min_len < 1) {
@@ -8134,7 +8109,6 @@ RZ_IPI RzCmdStatus rz_print_areas_no_functions_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
-// aav
 RZ_IPI RzCmdStatus rz_analyze_value_to_maps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_core_analysis_value_pointers(core, state->mode);
 	return RZ_CMD_STATUS_OK;
