@@ -200,6 +200,7 @@ typedef enum {
 	RZ_TYPE_COND_HEX_SCL_FALSE, // Hexagon only: Scalar instruction if(!Pu)
 	RZ_TYPE_COND_HEX_VEC_TRUE, // Hexagon only: Vector instruction if(Pu)
 	RZ_TYPE_COND_HEX_VEC_FALSE, // Hexagon only: Vector instruction if(!Pu)
+	RZ_TYPE_COND_EXCEPTION, // when the jump is taken only during an exception
 } RzTypeCond;
 
 /**

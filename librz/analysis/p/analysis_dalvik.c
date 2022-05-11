@@ -400,7 +400,6 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0xf1: // return-void-barrier
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->eob = true;
-		// TODO: handle return if(0x0e) {} else {}
 		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 			if (data[0] == 0x0e) { // return-void
 				esilprintf(op, "sp,[8],ip,=,8,sp,+=");
@@ -411,9 +410,8 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		}
 		break;
 	case 0x28: // goto
-		op->jump = addr + ((char)data[1]) * 2;
+		op->jump = addr + (((short)(char)data[1]) * 2);
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->eob = true;
 		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 			esilprintf(op, "0x%" PFMT64x ",ip,=", op->jump);
 		}
@@ -422,7 +420,6 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		if (len > 3) {
 			op->jump = addr + (short)(data[2] | data[3] << 8) * 2;
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-			op->eob = true;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				esilprintf(op, "0x%" PFMT64x ",ip,=", op->jump);
 			}
@@ -433,7 +430,6 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 			st64 dst = (st64)(data[2] | (data[3] << 8) | (data[4] << 16) | ((ut32)data[5] << 24));
 			op->jump = addr + (dst * 2);
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-			op->eob = true;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				esilprintf(op, "0x%" PFMT64x ",ip,=", op->jump);
 			}
@@ -468,11 +464,9 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0x36: // if-gt
 	case 0x37: // if-le
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		// XXX fix this better the check is to avoid an oob
-		if (len > 2) {
-			op->jump = addr + (len > 3 ? (short)(data[2] | data[3] << 8) * 2 : 0);
+		if (len > 3) {
+			op->jump = addr + ((short)(data[2] | data[3] << 8) * 2);
 			op->fail = addr + sz;
-			op->eob = true;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				ut32 vA = data[1];
 				ut32 vB = data[2];
@@ -488,11 +482,9 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0x3c: // if-gtz
 	case 0x3d: // if-lez
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		// XXX fix this better the check is to avoid an oob
-		if (len > 2) {
-			op->jump = addr + (len > 3 ? (short)(data[2] | data[3] << 8) * 2 : 0);
+		if (len > 3) {
+			op->jump = addr + ((short)(data[2] | data[3] << 8) * 2);
 			op->fail = addr + sz;
-			op->eob = true;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				ut32 vA = data[1];
 				const char *cond = getCondz(data[0]);
@@ -695,6 +687,15 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
 	}
+
+	if ((op->type == RZ_ANALYSIS_OP_TYPE_JMP || op->type == RZ_ANALYSIS_OP_TYPE_RET) &&
+		len > op->size && data[op->size] == 0x0d) {
+		// if the return/goto is followed by a move-exception then the analysis should keep going.
+		// this is because the function is supposed to have a try-catch
+		op->eob = false;
+		op->cond = RZ_TYPE_COND_EXCEPTION;
+	}
+
 	return sz;
 }
 
