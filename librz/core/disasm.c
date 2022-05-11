@@ -1127,7 +1127,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 			RzListIter *iter;
 			RzAnalysisXRef *xref;
 			rz_list_foreach (list, iter, xref) {
-				if ((xref->type == RZ_ANALYSIS_REF_TYPE_DATA || xref->type == RZ_ANALYSIS_REF_TYPE_STRING) && ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_LEA) {
+				if ((xref->type == RZ_ANALYSIS_XREF_TYPE_DATA || xref->type == RZ_ANALYSIS_XREF_TYPE_STRING) && ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_LEA) {
 					core->parser->subrel_addr = xref->to;
 					break;
 				}
@@ -1355,7 +1355,7 @@ static void ds_show_refs(RzDisasmState *ds) {
 			ds_begin_comment(ds);
 			ds_comment(ds, true, "; (%s)", cmt);
 		}
-		if (xref->type & RZ_ANALYSIS_REF_TYPE_CALL) {
+		if (xref->type & RZ_ANALYSIS_XREF_TYPE_CALL) {
 			RzAnalysisOp aop;
 			ut8 buf[12];
 			rz_io_read_at(ds->core->io, xref->from, buf, sizeof(buf));
@@ -1438,7 +1438,7 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 	RzAnalysisFunction *fun, *next_fun;
 	RzFlagItem *f, *next_f;
 	rz_list_foreach (xrefs, iter, xrefi) {
-		if (!ds->asm_xrefs_code && xrefi->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+		if (!ds->asm_xrefs_code && xrefi->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
 			continue;
 		}
 		if (xrefi->to == ds->at) {
@@ -4001,7 +4001,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 	RzAnalysisXRef *xref;
 	RzList *list = rz_analysis_xrefs_get_from(core->analysis, ds->at);
 	rz_list_foreach (list, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_STRING || xref->type == RZ_ANALYSIS_REF_TYPE_DATA) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_STRING || xref->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
 			if ((f = rz_flag_get_i(core->flags, xref->to))) {
 				refaddr = xref->to;
 				break;
