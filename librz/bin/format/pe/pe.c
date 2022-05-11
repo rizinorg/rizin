@@ -580,20 +580,20 @@ error:
 }
 
 static bool read_dos_header_aux(RzBuffer *buf, ut64 *offset, PE_(image_dos_header) * header) {
-	return rz_bin_pe_buffer_read_le16(buf, offset, &header->e_magic) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_cblp) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_cp) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_crlc) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_cparhdr) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_minalloc) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_maxalloc) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_ss) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_sp) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_csum) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_ip) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_cs) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_lfarlc) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &header->e_ovno);
+	return rz_buf_read_le16_offset(buf, offset, &header->e_magic) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_cblp) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_cp) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_crlc) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_cparhdr) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_minalloc) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_maxalloc) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_ss) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_sp) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_csum) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_ip) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_cs) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_lfarlc) &&
+		rz_buf_read_le16_offset(buf, offset, &header->e_ovno);
 }
 
 bool PE_(read_dos_header)(RzBuffer *buf, PE_(image_dos_header) * header) {
@@ -603,81 +603,81 @@ bool PE_(read_dos_header)(RzBuffer *buf, PE_(image_dos_header) * header) {
 	}
 
 	for (size_t i = 0; i < 4; i++) {
-		if (!rz_bin_pe_buffer_read_le16(buf, &offset, &header->e_res[i])) {
+		if (!rz_buf_read_le16_offset(buf, &offset, &header->e_res[i])) {
 			return false;
 		}
 	}
 
-	if (!rz_bin_pe_buffer_read_le16(buf, &offset, &header->e_oemid)) {
+	if (!rz_buf_read_le16_offset(buf, &offset, &header->e_oemid)) {
 		return false;
 	}
 
-	if (!rz_bin_pe_buffer_read_le16(buf, &offset, &header->e_oeminfo)) {
+	if (!rz_buf_read_le16_offset(buf, &offset, &header->e_oeminfo)) {
 		return false;
 	}
 
 	for (size_t i = 0; i < 10; i++) {
-		if (!rz_bin_pe_buffer_read_le16(buf, &offset, &header->e_res2[i])) {
+		if (!rz_buf_read_le16_offset(buf, &offset, &header->e_res2[i])) {
 			return false;
 		}
 	}
 
-	if (!rz_bin_pe_buffer_read_le32(buf, &offset, &header->e_lfanew)) {
+	if (!rz_buf_read_le32_offset(buf, &offset, &header->e_lfanew)) {
 		return false;
 	}
 	return true;
 }
 
 static bool read_nt_headers_aux(RzBuffer *buf, ut64 *offset, PE_(image_nt_headers) * headers) {
-	return rz_bin_pe_buffer_read_le32(buf, offset, &headers->Signature) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->file_header.Machine) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->file_header.NumberOfSections) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->file_header.TimeDateStamp) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->file_header.PointerToSymbolTable) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->file_header.NumberOfSymbols) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->file_header.SizeOfOptionalHeader) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->file_header.Characteristics) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->optional_header.Magic) &&
-		rz_bin_pe_buffer_read_le8(buf, offset, &headers->optional_header.MajorLinkerVersion) &&
-		rz_bin_pe_buffer_read_le8(buf, offset, &headers->optional_header.MinorLinkerVersion) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SizeOfCode) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SizeOfInitializedData) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SizeOfUninitializedData) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.AddressOfEntryPoint) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.BaseOfCode) &&
+	return rz_buf_read_le32_offset(buf, offset, &headers->Signature) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->file_header.Machine) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->file_header.NumberOfSections) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->file_header.TimeDateStamp) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->file_header.PointerToSymbolTable) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->file_header.NumberOfSymbols) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->file_header.SizeOfOptionalHeader) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->file_header.Characteristics) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->optional_header.Magic) &&
+		rz_buf_read8_offset(buf, offset, &headers->optional_header.MajorLinkerVersion) &&
+		rz_buf_read8_offset(buf, offset, &headers->optional_header.MinorLinkerVersion) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SizeOfCode) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SizeOfInitializedData) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SizeOfUninitializedData) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.AddressOfEntryPoint) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.BaseOfCode) &&
 #ifdef RZ_BIN_PE64
-		rz_bin_pe_buffer_read_le64(buf, offset, &headers->optional_header.ImageBase) &&
+		rz_buf_read_le64_offset(buf, offset, &headers->optional_header.ImageBase) &&
 #else
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.BaseOfData) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.ImageBase) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.BaseOfData) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.ImageBase) &&
 #endif
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SectionAlignment) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.FileAlignment) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->optional_header.MajorOperatingSystemVersion) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->optional_header.MinorOperatingSystemVersion) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->optional_header.MajorImageVersion) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->optional_header.MinorImageVersion) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->optional_header.MajorSubsystemVersion) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->optional_header.MinorSubsystemVersion) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.Win32VersionValue) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SizeOfImage) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SizeOfHeaders) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.CheckSum) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->optional_header.Subsystem) &&
-		rz_bin_pe_buffer_read_le16(buf, offset, &headers->optional_header.DllCharacteristics) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SectionAlignment) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.FileAlignment) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->optional_header.MajorOperatingSystemVersion) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->optional_header.MinorOperatingSystemVersion) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->optional_header.MajorImageVersion) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->optional_header.MinorImageVersion) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->optional_header.MajorSubsystemVersion) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->optional_header.MinorSubsystemVersion) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.Win32VersionValue) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SizeOfImage) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SizeOfHeaders) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.CheckSum) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->optional_header.Subsystem) &&
+		rz_buf_read_le16_offset(buf, offset, &headers->optional_header.DllCharacteristics) &&
 #ifdef RZ_BIN_PE64
-		rz_bin_pe_buffer_read_le64(buf, offset, &headers->optional_header.SizeOfStackReserve) &&
-		rz_bin_pe_buffer_read_le64(buf, offset, &headers->optional_header.SizeOfStackCommit) &&
-		rz_bin_pe_buffer_read_le64(buf, offset, &headers->optional_header.SizeOfHeapReserve) &&
-		rz_bin_pe_buffer_read_le64(buf, offset, &headers->optional_header.SizeOfHeapCommit) &&
+		rz_buf_read_le64_offset(buf, offset, &headers->optional_header.SizeOfStackReserve) &&
+		rz_buf_read_le64_offset(buf, offset, &headers->optional_header.SizeOfStackCommit) &&
+		rz_buf_read_le64_offset(buf, offset, &headers->optional_header.SizeOfHeapReserve) &&
+		rz_buf_read_le64_offset(buf, offset, &headers->optional_header.SizeOfHeapCommit) &&
 #else
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SizeOfStackReserve) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SizeOfStackCommit) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SizeOfHeapReserve) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.SizeOfHeapCommit) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SizeOfStackReserve) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SizeOfStackCommit) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SizeOfHeapReserve) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.SizeOfHeapCommit) &&
 #endif
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.LoaderFlags) &&
-		rz_bin_pe_buffer_read_le32(buf, offset, &headers->optional_header.NumberOfRvaAndSizes);
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.LoaderFlags) &&
+		rz_buf_read_le32_offset(buf, offset, &headers->optional_header.NumberOfRvaAndSizes);
 }
 
 bool PE_(read_nt_headers)(RzBuffer *buf, ut64 addr, PE_(image_nt_headers) * headers) {
@@ -687,7 +687,7 @@ bool PE_(read_nt_headers)(RzBuffer *buf, ut64 addr, PE_(image_nt_headers) * head
 	}
 
 	for (size_t i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
-		if (!rz_bin_pe_buffer_read_le32(buf, &offset, &headers->optional_header.DataDirectory[i].VirtualAddress) || !rz_bin_pe_buffer_read_le32(buf, &offset, &headers->optional_header.DataDirectory[i].Size)) {
+		if (!rz_buf_read_le32_offset(buf, &offset, &headers->optional_header.DataDirectory[i].VirtualAddress) || !rz_buf_read_le32_offset(buf, &offset, &headers->optional_header.DataDirectory[i].Size)) {
 			return false;
 		}
 	}
