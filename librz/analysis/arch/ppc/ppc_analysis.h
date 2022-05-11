@@ -6,6 +6,7 @@
 
 #define INSOPS   insn->detail->ppc.op_count
 #define INSOP(n) insn->detail->ppc.operands[n]
+#define OP_CNT   insn->detail->ppc.op_count
 #define IMM(x)   (ut64)(insn->detail->ppc.operands[x].imm)
 
 #define IN_64BIT_MODE (mode & CS_MODE_64)

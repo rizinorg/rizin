@@ -339,15 +339,28 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
 	ut32 id = insn->id;
-	// READ
-	const char *rA = cs_reg_name(handle, INSOP(0).reg);
-	const char *rS = cs_reg_name(handle, INSOP(1).reg);
-	const char *rB = cs_reg_name(handle, INSOP(2).reg);
-	st64 uI = INSOP(2).imm;
-	bool cr0 = insn->detail->ppc.update_cr0;
-	RzILOpPure *op0;
-	RzILOpPure *op1;
+	const char *crX;
+	const char *rA;
+	const char *rB;
+	st64 imm;
+
+	RzILOpPure *left;
+	RzILOpPure *right;
 	RzILOpPure *res;
+
+	// READ
+	// cr0 reg is not explicitly stored in the operands list.
+	if (OP_CNT == 2) {
+		crX = "cr0";
+		rA = cs_reg_name(handle, INSOP(0).reg);
+		rB = cs_reg_name(handle, INSOP(1).reg);
+		imm = INSOP(1).imm;
+	} else {
+		crX = cs_reg_name(handle, INSOP(0).imm);
+		rA = cs_reg_name(handle, INSOP(1).reg);
+		rB = cs_reg_name(handle, INSOP(2).reg);
+		imm = INSOP(2).imm;
+	}
 
 	// How to read instruction ids:
 	// Letter			Meaning
