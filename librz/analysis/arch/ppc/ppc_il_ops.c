@@ -326,7 +326,44 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	return SEQ4(set, set_carry, overflow, update_cr0);
 }
 
-static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, NOP);
+	ut32 id = insn->id;
+	// READ
+	const char *rA = cs_reg_name(handle, INSOP(0).reg);
+	const char *rS = cs_reg_name(handle, INSOP(1).reg);
+	const char *rB = cs_reg_name(handle, INSOP(2).reg);
+	st64 uI = INSOP(2).imm;
+	bool cr0 = insn->detail->ppc.update_cr0;
+	RzILOpPure *op0;
+	RzILOpPure *op1;
+	RzILOpPure *res;
+
+	// How to read instruction ids:
+	// Letter			Meaning
+	// CMP				Compare
+	// B/H/.. 			Byte, Half Word, ...
+	// I				Immediate
+
+	// EXEC
+	switch (id) {
+	default:
+		NOT_IMPLEMENTED;
+	// Compare
+	case PPC_INS_CMPB:
+	case PPC_INS_CMPD:
+	case PPC_INS_CMPDI:
+	case PPC_INS_CMPLD:
+	case PPC_INS_CMPLDI:
+	case PPC_INS_CMPLW:
+	case PPC_INS_CMPLWI:
+	case PPC_INS_CMPW:
+	case PPC_INS_CMPWI:
+		NOT_IMPLEMENTED;
+	}
+}
+
+static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
 	ut32 id = insn->id;
 	// READ
@@ -398,17 +435,6 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	case PPC_INS_EXTSB:
 	case PPC_INS_EXTSH:
 	case PPC_INS_EXTSW:
-		NOT_IMPLEMENTED;
-	// Compare
-	case PPC_INS_CMPB:
-	case PPC_INS_CMPD:
-	case PPC_INS_CMPDI:
-	case PPC_INS_CMPLD:
-	case PPC_INS_CMPLDI:
-	case PPC_INS_CMPLW:
-	case PPC_INS_CMPLWI:
-	case PPC_INS_CMPW:
-	case PPC_INS_CMPWI:
 		NOT_IMPLEMENTED;
 	// Count leading zeros
 	case PPC_INS_CNTLZD:
@@ -564,6 +590,12 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_EXTSB:
 	case PPC_INS_EXTSH:
 	case PPC_INS_EXTSW:
+	case PPC_INS_CNTLZD:
+	case PPC_INS_CNTLZW:
+	case PPC_INS_POPCNTD:
+	case PPC_INS_POPCNTW:
+		lop = bitwise_op(handle, insn, mode);
+		break;
 	case PPC_INS_CMPB:
 	case PPC_INS_CMPD:
 	case PPC_INS_CMPDI:
@@ -573,12 +605,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CMPLWI:
 	case PPC_INS_CMPW:
 	case PPC_INS_CMPWI:
-	case PPC_INS_CNTLZD:
-	case PPC_INS_CNTLZW:
-	case PPC_INS_POPCNTD:
-	case PPC_INS_POPCNTW:
-		lop = logical_op(handle, insn, mode);
-		break;
+		lop = compare_op(handle, insn, mode);
 	}
 
 	return lop;
