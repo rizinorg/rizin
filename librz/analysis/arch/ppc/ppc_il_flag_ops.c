@@ -3,6 +3,7 @@
 
 #include "ppc_il.h"
 #include "ppc_analysis.h"
+#include "rz_il/rz_il_opcodes.h"
 #include <rz_types.h>
 
 #include <rz_il/rz_il_opbuilder_begin.h>
@@ -46,15 +47,16 @@ RZ_OWN RzILOpEffect *set_cr0(RZ_BORROW RzILOpPure *val, cs_mode mode) {
 	rz_return_val_if_fail(val, NULL);
 
 	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), PPC_ARCH_BITS));
+	RzILOpEffect *set_val = SETL("val", DUP(val));
 
-	RzILOpEffect *cond_geq = BRANCH(SGT(DUP(val), UA(0)),
+	RzILOpEffect *cond_geq = BRANCH(SGT(VARL("val"), UA(0)),
 		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b010)))), // val > 0
-		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b001)))) // val == 0
+		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b001))))  // val == 0
 	);
-	RzILOpEffect *cond_l = BRANCH(SLT(DUP(val), UA(0)),
+	RzILOpEffect *cond_l = BRANCH(SLT(VARL("val"), UA(0)),
 		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b100)))), // val < 0
 		cond_geq);
-	return SEQ2(set_so, cond_l);
+	return SEQ3(set_val, set_so, cond_l);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
