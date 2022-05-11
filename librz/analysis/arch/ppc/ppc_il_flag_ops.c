@@ -49,10 +49,10 @@ RZ_OWN RzILOpEffect *set_cr0(RZ_BORROW RzILOpPure *val, cs_mode mode) {
 
 	RzILOpEffect *cond_geq = BRANCH(SGT(DUP(val), UA(0)),
 		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b010)))), // val > 0
-		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b100)))) // val == 0
+		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b001)))) // val == 0
 	);
 	RzILOpEffect *cond_l = BRANCH(SLT(DUP(val), UA(0)),
-		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b001)))), // val < 0
+		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b100)))), // val < 0
 		cond_geq);
 	return SEQ2(set_so, cond_l);
 }
