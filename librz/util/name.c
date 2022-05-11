@@ -7,12 +7,18 @@ RZ_API bool rz_name_validate_char(const char ch, bool strict) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT(ch))) {
 		return true;
 	}
-	const char *vaild_char_str = strict ? ":._" : ":.-_[]";
-	char *pos = strchr(vaild_char_str, ch);
-	if (pos) {
+	switch (ch) {
+	case ':':
+	case '.':
+	case '_':
 		return true;
+	case '-':
+	case '[':
+	case ']':
+		return !strict;
+	default:
+		return false;
 	}
-	return false;
 }
 
 RZ_API bool rz_name_check(const char *name, bool strict) {
