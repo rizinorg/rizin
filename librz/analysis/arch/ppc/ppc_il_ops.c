@@ -299,9 +299,8 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	case PPC_INS_ADDI:
 	case PPC_INS_ADDIC:
 	case PPC_INS_ADDIS:
-	case PPC_INS_SUBFIC:;
-		RzILOpPure *a = add ? VARG(rA) : ADD(LOGNOT(VARG(rA)), UA(1));
-		op0 = ITE(EQ(a, UA(0)), UA(0), DUP(a)); // RA == 0 ? 0 : (RA)
+	case PPC_INS_SUBFIC:
+		op0 = add ? ((id == PPC_INS_ADDIS) ? IFREG0(rA) : VARG(rA)) : ADD(LOGNOT(VARG(rA)), UA(1));
 		if (id == PPC_INS_ADDIS) {
 			op1 = EXTEND(PPC_ARCH_BITS, APPEND(IMM_SN(16, sI), U16(0))); // Shift immediate << 16
 		} else {
