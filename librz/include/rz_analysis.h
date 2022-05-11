@@ -902,11 +902,11 @@ typedef struct rz_analysis_task_item {
 } RzAnalysisTaskItem;
 
 typedef enum {
-	RZ_ANALYSIS_REF_TYPE_NULL = 0,
-	RZ_ANALYSIS_REF_TYPE_CODE = 'c', // code ref
-	RZ_ANALYSIS_REF_TYPE_CALL = 'C', // code ref (call)
-	RZ_ANALYSIS_REF_TYPE_DATA = 'd', // mem ref
-	RZ_ANALYSIS_REF_TYPE_STRING = 's' // string ref
+	RZ_ANALYSIS_XREF_TYPE_NULL = 0,
+	RZ_ANALYSIS_XREF_TYPE_CODE = 'c', // code ref
+	RZ_ANALYSIS_XREF_TYPE_CALL = 'C', // code ref (call)
+	RZ_ANALYSIS_XREF_TYPE_DATA = 'd', // mem ref
+	RZ_ANALYSIS_XREF_TYPE_STRING = 's' // string ref
 } RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {

@@ -275,7 +275,7 @@ static bool objc_find_refs(RzCore *core) {
 				RzListIter *iter;
 				RzAnalysisXRef *xref;
 				rz_list_foreach (list, iter, xref) {
-					rz_analysis_xrefs_set(core->analysis, xref->from, funcVA, RZ_ANALYSIS_REF_TYPE_CODE);
+					rz_analysis_xrefs_set(core->analysis, xref->from, funcVA, RZ_ANALYSIS_XREF_TYPE_CODE);
 					total_xrefs++;
 				}
 			}

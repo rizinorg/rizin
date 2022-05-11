@@ -1448,7 +1448,7 @@ static bool store_xref_cb(void *j, const ut64 k, const void *v) {
 	const RzAnalysisXRef *xref = v;
 	pj_o(j);
 	pj_kn(j, "to", k);
-	if (xref->type != RZ_ANALYSIS_REF_TYPE_NULL) {
+	if (xref->type != RZ_ANALYSIS_XREF_TYPE_NULL) {
 		char type[2] = { xref->type, '\0' };
 		pj_ks(j, "type", type);
 	}
@@ -1508,7 +1508,7 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 		}
 		ut64 to = baby->num.u_value;
 
-		RzAnalysisXRefType type = RZ_ANALYSIS_REF_TYPE_NULL;
+		RzAnalysisXRefType type = RZ_ANALYSIS_XREF_TYPE_NULL;
 		baby = rz_json_get(child, "type");
 		if (baby) {
 			// must be a 1-char string
@@ -1516,10 +1516,10 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 				goto error;
 			}
 			switch (baby->str_value[0]) {
-			case RZ_ANALYSIS_REF_TYPE_CODE:
-			case RZ_ANALYSIS_REF_TYPE_CALL:
-			case RZ_ANALYSIS_REF_TYPE_DATA:
-			case RZ_ANALYSIS_REF_TYPE_STRING:
+			case RZ_ANALYSIS_XREF_TYPE_CODE:
+			case RZ_ANALYSIS_XREF_TYPE_CALL:
+			case RZ_ANALYSIS_XREF_TYPE_DATA:
+			case RZ_ANALYSIS_XREF_TYPE_STRING:
 				type = baby->str_value[0];
 				break;
 			default:

@@ -752,7 +752,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			if (str[2] == 'B') { // $DD
 				return rz_debug_get_baddr(core->dbg, NULL);
 			} else if (IS_DIGIT(str[2])) {
-				return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_REF_TYPE_DATA);
+				return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_XREF_TYPE_DATA);
 			} else {
 				RzDebugMap *map;
 				RzListIter *iter;
@@ -778,11 +778,11 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			}
 			return core->offset;
 		case 'C': // $C nth call
-			return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_REF_TYPE_CALL);
+			return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_XREF_TYPE_CALL);
 		case 'J': // $J nth jump
-			return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_REF_TYPE_CODE);
+			return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_XREF_TYPE_CODE);
 		case 'X': // $X nth xref
-			return getref(core, atoi(str + 2), 'x', RZ_ANALYSIS_REF_TYPE_CALL);
+			return getref(core, atoi(str + 2), 'x', RZ_ANALYSIS_XREF_TYPE_CALL);
 		case 'F': // $F function size
 			fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 			if (fcn) {

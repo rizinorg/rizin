@@ -326,7 +326,7 @@ static void check_purity(HtUP *ht, RzAnalysisFunction *fcn) {
 	ht_up_insert(ht, fcn->addr, NULL);
 	fcn->is_pure = true;
 	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_CALL || xref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL || xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
 			RzAnalysisFunction *called_fcn = rz_analysis_get_fcn_in(fcn->analysis, xref->to, 0);
 			if (!called_fcn) {
 				continue;
@@ -339,7 +339,7 @@ static void check_purity(HtUP *ht, RzAnalysisFunction *fcn) {
 				break;
 			}
 		}
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_DATA) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
 			fcn->is_pure = false;
 			break;
 		}
@@ -795,7 +795,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					handle = rz_str_replace(handle, ".catch", ".filter", 0);
 					ut64 filter_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
 					if (filter_addr) {
-						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_REF_TYPE_CALL);
+						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_XREF_TYPE_CALL);
 					}
 					bb->jump = at + oplen;
 					if (from_addr != bb->addr) {
@@ -895,7 +895,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters
-			rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA);
+			rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_DATA);
 		}
 		analyze_retpoline(analysis, &op);
 
@@ -1052,7 +1052,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			if (analysis->opt.jmpref) {
-				(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE);
+				(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE);
 			}
 			if (!analysis->opt.jmpabove && (op.jump < fcn->addr)) {
 				gotoBeach(RZ_ANALYSIS_RET_END);
@@ -1111,7 +1111,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
 					}
 				} else if (RZ_ABS(diff) > tc) {
-					(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL);
+					(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
 					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
@@ -1143,10 +1143,10 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_UCJMP:
 			if (op.prefix & RZ_ANALYSIS_OP_PREFIX_HWLOOP_END) {
 				if (op.jump != 0) {
-					rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE);
+					rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE);
 				}
 				if (op.fail != 0) {
-					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_REF_TYPE_CODE);
+					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_XREF_TYPE_CODE);
 				}
 				if (continue_after_jump) {
 					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
@@ -1158,9 +1158,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 			}
 			if (analysis->opt.cjmpref) {
-				rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE);
+				rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE);
 				if (is_hexagon) {
-					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_REF_TYPE_CODE);
+					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_XREF_TYPE_CODE);
 				}
 			}
 			if (!overlapped) {
@@ -1232,7 +1232,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_IRCALL:
 			/* call [dst] */
 			// XXX: this is TYPE_MCALL or indirect-call
-			(void)rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL);
+			(void)rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_CALL);
 
 			if (rz_analysis_noreturn_at(analysis, op.ptr)) {
 				RzAnalysisFunction *f = rz_analysis_get_function_at(analysis, op.ptr);
@@ -1245,7 +1245,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_CCALL:
 		case RZ_ANALYSIS_OP_TYPE_CALL:
 			/* call dst */
-			(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL);
+			(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
 
 			if (rz_analysis_noreturn_at(analysis, op.jump)) {
 				RzAnalysisFunction *f = rz_analysis_get_function_at(analysis, op.jump);
@@ -1399,7 +1399,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			last_is_push = true;
 			last_push_addr = op.val;
 			if (analysis->iob.is_valid_offset(analysis->iob.io, last_push_addr, 1)) {
-				(void)rz_analysis_xrefs_set(analysis, op.addr, last_push_addr, RZ_ANALYSIS_REF_TYPE_DATA);
+				(void)rz_analysis_xrefs_set(analysis, op.addr, last_push_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
 			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_UPUSH:
@@ -1407,7 +1407,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				last_is_push = true;
 				last_push_addr = last_reg_mov_lea_val;
 				if (analysis->iob.is_valid_offset(analysis->iob.io, last_push_addr, 1)) {
-					(void)rz_analysis_xrefs_set(analysis, op.addr, last_push_addr, RZ_ANALYSIS_REF_TYPE_DATA);
+					(void)rz_analysis_xrefs_set(analysis, op.addr, last_push_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
 				}
 			}
 			break;
@@ -1582,7 +1582,7 @@ RZ_API void rz_analysis_trim_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *f
 	const bool is_x86 = analysis->cur->arch && !strcmp(analysis->cur->arch, "x86"); // HACK
 
 	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_CODE && rz_analysis_function_contains(fcn, xref->to) && (!is_x86 || !rz_analysis_function_contains(fcn, xref->from))) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CODE && rz_analysis_function_contains(fcn, xref->to) && (!is_x86 || !rz_analysis_function_contains(fcn, xref->from))) {
 			rz_analysis_xrefs_deln(analysis, xref->from, xref->to, xref->type);
 		}
 	}
@@ -1595,7 +1595,7 @@ RZ_API void rz_analysis_del_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fc
 	RzListIter *iter;
 
 	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
 			rz_analysis_xrefs_deln(analysis, xref->from, xref->to, xref->type);
 		}
 	}
@@ -1635,7 +1635,7 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 		}
 	}
 	/* defines fcn. or loc. prefix */
-	fcn->type = (reftype == RZ_ANALYSIS_REF_TYPE_CODE) ? RZ_ANALYSIS_FCN_TYPE_LOC : RZ_ANALYSIS_FCN_TYPE_FCN;
+	fcn->type = (reftype == RZ_ANALYSIS_XREF_TYPE_CODE) ? RZ_ANALYSIS_FCN_TYPE_LOC : RZ_ANALYSIS_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) {
 		fcn->addr = addr;
 	}

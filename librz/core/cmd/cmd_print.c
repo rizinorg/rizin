@@ -4129,7 +4129,7 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 			rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, origin, "switch table");
 			rz_core_cmdf(core, "f switch.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", origin, origin);
 			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", offset, offset); // origin, origin);
-			rz_analysis_xrefs_set(core->analysis, offset, origin, RZ_ANALYSIS_REF_TYPE_DATA);
+			rz_analysis_xrefs_set(core->analysis, offset, origin, RZ_ANALYSIS_XREF_TYPE_DATA);
 			break;
 		}
 	} else if (mode == '.') {
@@ -4159,8 +4159,8 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		} else if (mode == '.') {
 			const char *case_name = rz_str_newf("case.%d.0x%" PFMT64x, n, offset);
 			rz_core_analysis_function_add(core, case_name, addr, false);
-			rz_analysis_xrefs_set(core->analysis, addr, offset, RZ_ANALYSIS_REF_TYPE_NULL);
-			rz_analysis_xrefs_set(core->analysis, offset, addr, RZ_ANALYSIS_REF_TYPE_NULL); // wrong, but useful because forward xrefs dont work :?
+			rz_analysis_xrefs_set(core->analysis, addr, offset, RZ_ANALYSIS_XREF_TYPE_NULL);
+			rz_analysis_xrefs_set(core->analysis, offset, addr, RZ_ANALYSIS_XREF_TYPE_NULL); // wrong, but useful because forward xrefs dont work :?
 			const char *case_comment = rz_str_newf("case %d:", n);
 			rz_core_meta_comment_add(core, case_comment, addr);
 			rz_analysis_hint_set_type(core->analysis, offset + i, RZ_ANALYSIS_OP_TYPE_CASE); // wrong, but useful because forward xrefs dont work :?
