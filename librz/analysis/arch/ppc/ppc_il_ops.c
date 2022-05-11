@@ -8,14 +8,6 @@
 #include <capstone.h>
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-/**
- * \brief Handles all supported LOAD operations.
- *
- * \param handle The capstone handle.
- * \param insn The capstone instruction.
- * \param mode The capstone mode.
- * \return RzILOpEffect* Sequence of effects.
- */
 static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
 	ut32 id = insn->id;
@@ -246,19 +238,12 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 }
 
 /**
- * \brief Handles all supported ADD operations.
- *
- * NOTE: Instructions which set the 'OV' bit are not supported yet.
- *
- * \param handle The capstone handle.
- * \param insn The capstone instruction.
- * \param add Is add instructions.
- * \param mode The capstone mode.
- * \return RzILOpEffect* Sequence of effects.
+ * NOTE: Instructions which set the 'OV' bit are not yet supported.
  */
 static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, bool add, const cs_mode mode) {
 	ut32 id = insn->id;
 	rz_return_val_if_fail(handle && insn, NOP);
+
 	// READ
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).reg);
@@ -441,6 +426,15 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	return SEQ2(set, update_cr0);
 }
 
+/**
+ * \brief Returns the RZIL implementation of a given capstone instruction.
+ * Or NULL if the instruction is not yet implemented.
+ *
+ * \param handle The capstone handle.
+ * \param insn The capstone instruction.
+ * \param mode The capstone mode.
+ * \return RzILOpEffect* Sequence of effects which emulate the instruction.
+ */
 RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
 	rz_return_val_if_fail(insn->detail, NOP);
