@@ -51,12 +51,41 @@ RZ_OWN RzILOpEffect *set_cr0(RZ_BORROW RzILOpPure *val, cs_mode mode) {
 
 	RzILOpEffect *cond_geq = BRANCH(SGT(VARL("val"), UA(0)),
 		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b010)))), // val > 0
-		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b001))))  // val == 0
+		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b001)))) // val == 0
 	);
 	RzILOpEffect *cond_l = BRANCH(SLT(VARL("val"), UA(0)),
 		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b100)))), // val < 0
 		cond_geq);
 	return SEQ3(set_val, set_so, cond_l);
+}
+
+/**
+ * \brief Compares two values and sets the given cr field.
+ *
+ * \param left The left operand of the comparison.
+ * \param right The right operand of the comparison.
+ * \param signed_cmp True: Signed comparison. False: Unsigned comparison.
+ * \param crX The cr field to set.
+ * \param mode Capstone mode.
+ * \return RzILOpEffect* Sequence of effects which set the cr field accordingly.
+ */
+RZ_OWN RzILOpEffect *cmp_set_cr(RZ_BORROW RzILOpPure *left, RZ_BORROW RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode) {
+	rz_return_val_if_fail(left && right && crX, NULL);
+
+	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), PPC_ARCH_BITS));
+	RzILOpEffect *set_left = SETL("l", DUP(left));
+	RzILOpEffect *set_right = SETL("r", DUP(right));
+	RzILOpPure *cmp_gt = signed_cmp ? SGT(VARL("l"), VARL("r")) : UGT(VARL("l"), VARL("r"));
+	RzILOpPure *cmp_lt = signed_cmp ? SLT(VARL("l"), VARL("r")) : ULT(VARL("l"), VARL("r"));
+
+	RzILOpEffect *cond_geq = BRANCH(cmp_gt,
+		SETG(crX, CAST_4BITS(OR_SO_FLAG(UA(0b010)))), // left > right
+		SETG(crX, CAST_4BITS(OR_SO_FLAG(UA(0b001)))) // left == right
+	);
+	RzILOpEffect *cond_l = BRANCH(cmp_lt,
+		SETG(crX, CAST_4BITS(OR_SO_FLAG(UA(0b100)))), // left < right
+		cond_geq);
+	return SEQ4(set_left, set_right, set_so, cond_l);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
