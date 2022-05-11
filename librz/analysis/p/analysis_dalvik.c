@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021-2022 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -410,15 +411,19 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		}
 		break;
 	case 0x28: // goto
-		op->jump = addr + (((short)(char)data[1]) * 2);
-		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-			esilprintf(op, "0x%" PFMT64x ",ip,=", op->jump);
+		if (len > 1) {
+			st32 rel = (signed char)data[1];
+			op->jump = addr + (rel * 2);
+			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+				esilprintf(op, "0x%" PFMT64x ",ip,=", op->jump);
+			}
 		}
 		break;
 	case 0x29: // goto/16
 		if (len > 3) {
-			op->jump = addr + (short)(data[2] | data[3] << 8) * 2;
+			st32 rel = (short)(data[3] << 8 | data[2]);
+			op->jump = addr + (rel * 2);
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				esilprintf(op, "0x%" PFMT64x ",ip,=", op->jump);
@@ -427,8 +432,8 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		break;
 	case 0x2a: // goto/32
 		if (len > 5) {
-			st64 dst = (st64)(data[2] | (data[3] << 8) | (data[4] << 16) | ((ut32)data[5] << 24));
-			op->jump = addr + (dst * 2);
+			st32 rel = (st32)(data[2] | (data[3] << 8) | (data[4] << 16) | (data[5] << 24));
+			op->jump = addr + (rel * 2);
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				esilprintf(op, "0x%" PFMT64x ",ip,=", op->jump);
@@ -465,7 +470,8 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0x37: // if-le
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		if (len > 3) {
-			op->jump = addr + ((short)(data[2] | data[3] << 8) * 2);
+			int rel = (int)(data[3] << 8 | data[2]);
+			op->jump = addr + (rel * 2);
 			op->fail = addr + sz;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				ut32 vA = data[1];
@@ -483,7 +489,8 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0x3d: // if-lez
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		if (len > 3) {
-			op->jump = addr + ((short)(data[2] | data[3] << 8) * 2);
+			int rel = (int)(data[3] << 8 | data[2]);
+			op->jump = addr + (rel * 2);
 			op->fail = addr + sz;
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				ut32 vA = data[1];
