@@ -27,7 +27,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	// How to read instruction ids:
 	// Letter			Meaning
 	// L 				Load
-	// B/H/.. 			Byte, Half Word, ...
+	// B/H/W/D/F 		Byte, Half Word, Word, Double Word, Float
 	// Z/A/B			Zero extend, Algebraic, Byte reversal
 	// U/R				Update (store EA in RA), Reserve indexed
 	// X				X Form instruction (uses RB instead of immediate)
@@ -147,6 +147,15 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	rz_return_val_if_fail(handle && insn, NOP);
 	ut32 id = insn->id;
 
+	// How to read instruction ids:
+	// Letter			Meaning
+	// ST 				Store
+	// B/H/W/D/F 		Byte, Half Word, Word, Double Word, Float
+	// BR				Byte reversal
+	// U/X				Update (store EA in RA), X Form instruction (uses RB instead of immediate)
+	// MW/CIX			Multiple word, Caching Inhibited Indexed
+	// V				Vector
+
 	// READ
 	const char *rS = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).mem.base);
@@ -212,6 +221,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STWBRX:
 	case PPC_INS_STDBRX:
 		NOT_IMPLEMENTED;
+	// Multiple word
 	case PPC_INS_STMW:
 		NOT_IMPLEMENTED;
 	// String word
@@ -238,7 +248,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 }
 
 /**
- * NOTE: Instructions which set the 'OV' bit are not yet supported.
+ * NOTE: Instructions which set the 'OV' bit are not yet supported by capstone.
  */
 static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, bool add, const cs_mode mode) {
 	ut32 id = insn->id;
@@ -342,8 +352,8 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	// How to read instruction ids:
 	// Letter			Meaning
 	// CMP				Compare
-	// B/H/.. 			Byte, Half Word, ...
-	// I				Immediate
+	// B/H/W/D	 		Byte, Half Word, Word, Double Word
+	// I/L				Immediate, Logical
 
 	// EXEC
 	switch (id) {
@@ -352,13 +362,13 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	// Compare
 	case PPC_INS_CMPB:
 	case PPC_INS_CMPD:
+	case PPC_INS_CMPW:
+	case PPC_INS_CMPWI:
 	case PPC_INS_CMPDI:
 	case PPC_INS_CMPLD:
 	case PPC_INS_CMPLDI:
 	case PPC_INS_CMPLW:
 	case PPC_INS_CMPLWI:
-	case PPC_INS_CMPW:
-	case PPC_INS_CMPWI:
 		NOT_IMPLEMENTED;
 	}
 }
@@ -379,7 +389,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	// How to read instruction ids:
 	// Letter			Meaning
 	// AND/OR/... 		AND, OR etc.
-	// B/H/.. 			Byte, Half Word, ...
+	// B/H/W/D	 		Byte, Half Word, Word, Double Word
 	// I/C/S			Immediate, Complement, Shifted
 
 	// EXEC
