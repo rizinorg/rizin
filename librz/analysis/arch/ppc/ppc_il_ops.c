@@ -88,7 +88,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {
-			RzILOpPure *imm = (id == PPC_INS_LD || id == PPC_INS_LWA) ? APPEND(IMM_SN(16, d), UN(2, 0)) : IMM_SN(16, d);
+			RzILOpPure *imm = (mem_acc_size == 64 || id == PPC_INS_LWA) ? APPEND(IMM_SN(16, d), UN(2, 0)) : IMM_SN(16, d);
 			disp = EXTEND(PPC_ARCH_BITS, imm);
 		}
 		ea = ADD(base, disp);
@@ -187,7 +187,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {
-			RzILOpPure *imm = (id == PPC_INS_STD || id == PPC_INS_STDU) ? APPEND(S16(d), UN(2, 0)) : S16(d);
+			RzILOpPure *imm = (mem_acc_size == 64) ? APPEND(S16(d), UN(2, 0)) : S16(d);
 			disp = EXTEND(PPC_ARCH_BITS, imm);
 		}
 		ea = ADD(base, disp);
