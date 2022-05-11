@@ -402,7 +402,7 @@ static RzILOpEffect *logical_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		op0 = VARG(rS);
 		op1 = VARG(rB);
 		res = LOGNOT(
-			(id == PPC_INS_NAND) ? AND(op0, op1) : OR(op0, op1));
+			(id == PPC_INS_NAND) ? LOGAND(op0, op1) : LOGOR(op0, op1));
 		break;
 	// Equivalent
 	case PPC_INS_EQV:
