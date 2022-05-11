@@ -384,6 +384,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	case PPC_INS_CMPLWI:
 		NOT_IMPLEMENTED;
 	}
+	rz_return_val_if_fail(crX && rA && rB && imm == 0 && left && right && res, NULL);
 }
 
 static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
