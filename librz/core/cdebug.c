@@ -828,12 +828,9 @@ static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
 		} else {
 			*flagdesc = rz_str_newf("%s", f->name);
 		}
-	}
-	f = rz_flag_get_at(core->flags, frame->addr, true);
-	if (f && !strchr(f->name, '.')) {
-		f = rz_flag_get_at(core->flags, frame->addr - 1, true);
-	}
-	if (f) {
+		if (!strchr(f->name, '.')) {
+			f = rz_flag_get_at(core->flags, frame->addr - 1, true);
+		}
 		if (f->offset != addr) {
 			int delta = (int)(frame->addr - 1 - f->offset);
 			if (delta > 0) {
@@ -851,17 +848,18 @@ static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
 		free(*flagdesc2);
 		*flagdesc2 = NULL;
 	}
-	if (pcstr && spstr) {
-		if (core->dbg->bits & RZ_SYS_BITS_64) {
-			*pcstr = rz_str_newf("0x%-16" PFMT64x, frame->addr);
-			*spstr = rz_str_newf("0x%-16" PFMT64x, frame->sp);
-		} else if (core->dbg->bits & RZ_SYS_BITS_32) {
-			*pcstr = rz_str_newf("0x%-8" PFMT64x, frame->addr);
-			*spstr = rz_str_newf("0x%-8" PFMT64x, frame->sp);
-		} else {
-			*pcstr = rz_str_newf("0x%" PFMT64x, frame->addr);
-			*spstr = rz_str_newf("0x%" PFMT64x, frame->sp);
-		}
+	if (!(pcstr && spstr)) {
+		return;
+	}
+	if (core->dbg->bits & RZ_SYS_BITS_64) {
+		*pcstr = rz_str_newf("0x%-16" PFMT64x, frame->addr);
+		*spstr = rz_str_newf("0x%-16" PFMT64x, frame->sp);
+	} else if (core->dbg->bits & RZ_SYS_BITS_32) {
+		*pcstr = rz_str_newf("0x%-8" PFMT64x, frame->addr);
+		*spstr = rz_str_newf("0x%-8" PFMT64x, frame->sp);
+	} else {
+		*pcstr = rz_str_newf("0x%" PFMT64x, frame->addr);
+		*spstr = rz_str_newf("0x%" PFMT64x, frame->sp);
 	}
 }
 

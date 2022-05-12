@@ -3055,7 +3055,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 		case RZ_OUTPUT_MODE_STANDARD: {
 			rz_cons_printf("%d  %s sp: %s  %-5d"
 				       "[%s]  %s %s\n",
-				i++, bt->pcstr, bt->spstr, (int)bt->frame->size, bt->fcn ? bt->fcn->name : "??", rz_str_get(bt->flagdesc), rz_str_get(bt->flagdesc2));
+				i++, bt->pcstr, bt->spstr, bt->frame->size, bt->fcn ? bt->fcn->name : "??", rz_str_get(bt->flagdesc), rz_str_get(bt->flagdesc2));
 			break;
 		}
 		case RZ_OUTPUT_MODE_RIZIN: {
