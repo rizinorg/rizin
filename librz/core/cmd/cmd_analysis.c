@@ -6685,55 +6685,7 @@ RZ_IPI RzCmdStatus rz_analysis_hint_del_immbase_handler(RzCore *core, int argc, 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_hint_set_offset_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisOp op = { 0 };
-	ut8 code[128] = { 0 };
-	if (!rz_io_read_at(core->io, core->offset, code, sizeof(code))) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
-	int ret = rz_analysis_op(core->analysis, &op, core->offset, code, sizeof(code), RZ_ANALYSIS_OP_MASK_VAL);
-	if (ret < 1) {
-		goto exit;
-	}
-	// HACK: Just convert only the first imm seen
-	ut64 offimm = 0;
-	for (int i = 0; i < 3; i++) {
-		if (op.src[i]) {
-			if (op.src[i]->imm) {
-				offimm = op.src[i]->imm;
-			} else if (op.src[i]->delta) {
-				offimm = op.src[i]->delta;
-			}
-		}
-	}
-	if (!offimm && op.dst) {
-		if (op.dst->imm) {
-			offimm = op.dst->imm;
-		} else if (op.dst->delta) {
-			offimm = op.dst->delta;
-		}
-	}
-	if (!offimm) {
-		goto exit;
-	}
-	// TODO: Allow to select from multiple choices
-	RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
-	RzListIter *iter;
-	RzTypePath *tpath;
-	rz_list_foreach (otypes, iter, tpath) {
-		// TODO: Support also arrays and pointers
-		if (tpath->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
-			if (!strcmp(argv[1], tpath->path)) {
-				rz_analysis_hint_set_offset(core->analysis, core->offset, tpath->path);
-				break;
-			}
-		}
-	}
-	rz_list_free(otypes);
-	res = RZ_CMD_STATUS_OK;
-exit:
-	rz_analysis_op_fini(&op);
-	return res;
+	return bool2status(rz_core_analysis_hint_set_offset(core, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_analysis_hint_del_offset_handler(RzCore *core, int argc, const char **argv) {

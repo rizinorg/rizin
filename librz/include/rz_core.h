@@ -756,6 +756,7 @@ RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
 RZ_API void rz_core_analysis_calls(RZ_NONNULL RzCore *core, bool imports_only);
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
+RZ_API bool rz_core_analysis_hint_set_offset(RzCore *core, const char *struct_member);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
