@@ -105,7 +105,7 @@ CMDS=<<EOF
 %RZ_CURL=1
 e cfg.debug=1
 iH
-dL dmp
+dLs dmp
 dpa
 dr
 s rip
@@ -232,7 +232,7 @@ CMDS=<<EOF
 %RZ_CURL=1
 e cfg.debug=1
 iH
-dL dmp
+dLs dmp
 dpa
 dr
 s pc
@@ -337,7 +337,7 @@ FILE=dmp://bins/dmp/bmp.dmp
 CMDS=<<EOF
 %RZ_CURL=1
 iH
-dL dmp
+dLs dmp
 dpa
 e cfg.debug=1
 dr
