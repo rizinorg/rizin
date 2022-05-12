@@ -1,6 +1,6 @@
-NAME=dbg.dL
+NAME=dbg.dll
 FILE=/bin/ls
-CMDS=dL
+CMDS=dll
 EXPECT=<<EOF
 0  ---  bf       LGPL3
 1  ---  bochs    LGPL3
