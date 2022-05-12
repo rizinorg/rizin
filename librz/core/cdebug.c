@@ -831,17 +831,19 @@ static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
 		if (!strchr(f->name, '.')) {
 			f = rz_flag_get_at(core->flags, frame->addr - 1, true);
 		}
-		if (f->offset != addr) {
-			int delta = (int)(frame->addr - 1 - f->offset);
-			if (delta > 0) {
-				*flagdesc2 = rz_str_newf("%s+%d", f->name, delta + 1);
-			} else if (delta < 0) {
-				*flagdesc2 = rz_str_newf("%s%d", f->name, delta + 1);
+		if (f) {
+			if (f->offset != addr) {
+				int delta = (int)(frame->addr - 1 - f->offset);
+				if (delta > 0) {
+					*flagdesc2 = rz_str_newf("%s+%d", f->name, delta + 1);
+				} else if (delta < 0) {
+					*flagdesc2 = rz_str_newf("%s%d", f->name, delta + 1);
+				} else {
+					*flagdesc2 = rz_str_newf("%s+1", f->name);
+				}
 			} else {
-				*flagdesc2 = rz_str_newf("%s+1", f->name);
+				*flagdesc2 = rz_str_newf("%s", f->name);
 			}
-		} else {
-			*flagdesc2 = rz_str_newf("%s", f->name);
 		}
 	}
 	if (!rz_str_cmp(*flagdesc, *flagdesc2, -1)) {
