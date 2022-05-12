@@ -3452,9 +3452,6 @@ RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
 
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_core_debug_plugins_print(core, state);
-	rz_cmd_state_output_print(state);
-	rz_cmd_state_output_fini(state);
-	rz_cons_flush();
 	return RZ_CMD_STATUS_OK;
 }
 
