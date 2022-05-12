@@ -12,6 +12,7 @@
 #include <rz_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
+#include "rz_util/rz_assert.h"
 #include <ht_uu.h>
 
 #define rz_bin_file_get_elf(bf) ((ELFOBJ *)bf->o->bin_obj)
@@ -911,6 +912,10 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	case EM_PPC64: {
 		int low = 0, word = 0;
 		switch (rel->type) {
+		case RZ_PPC64_ADDR24:
+			low = 24;
+			val = (S + A) >> 2;
+			break;
 		case RZ_PPC64_ADDR16_HI:
 			word = 2;
 			val = (S + A) >> 16;
@@ -944,6 +949,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			val = S + A - P;
 			break;
 		default:
+			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
 			break;
 		}
 		if (low) {
