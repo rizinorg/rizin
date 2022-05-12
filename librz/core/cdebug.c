@@ -794,14 +794,11 @@ RZ_API bool rz_core_debug_step_skip(RzCore *core, int times) {
 	return true;
 }
 
-/**
- * \brief Free RzBacktrace
- * \param bt The RzBacktrace instance
- */
 RZ_API void rz_backtrace_free(RZ_NULLABLE RzBacktrace *bt) {
 	if (!bt) {
 		return;
 	}
+    free(bt->frame);
 	free(bt->desc);
 	free(bt->pcstr);
 	free(bt->spstr);
@@ -884,6 +881,7 @@ RZ_API RZ_OWN RzList *rz_core_debug_backtraces(RzCore *core) {
 	rz_list_foreach (list, iter, frame) {
 		RzBacktrace *bt = RZ_NEW0(RzBacktrace);
 		if (!bt) {
+            rz_list_free(bts);
 			return NULL;
 		}
 		rz_list_append(bts, bt);
@@ -892,6 +890,5 @@ RZ_API RZ_OWN RzList *rz_core_debug_backtraces(RzCore *core) {
 		bt->frame = frame;
 		bt->desc = rz_str_newf("%s%s", rz_str_get_null(bt->flagdesc), rz_str_get_null(bt->flagdesc2));
 	}
-	rz_list_free(list);
 	return bts;
 }
