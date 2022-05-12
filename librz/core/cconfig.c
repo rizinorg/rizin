@@ -3571,6 +3571,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("scr.highlight.grep", "false", &cb_scr_color_grep_highlight, "Highlight (INVERT) the grepped words");
 	SETBPREF("scr.prompt.file", "false", "Show user prompt file (used by rizin -q)");
 	SETBPREF("scr.prompt.flag", "false", "Show flag name in the prompt");
+	SETBPREF("scr.prompt.flag.only", "false", "Show the flag name only in the prompt");
 	SETBPREF("scr.prompt.sect", "false", "Show section name in the prompt");
 	SETCB("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
 	SETCB("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by rizin -q)");
