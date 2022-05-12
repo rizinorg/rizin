@@ -8,9 +8,6 @@
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-#define OR_SO_FLAG(x) LOGOR(SHIFTL0(VARL("so_flag"), UA(3)), x)
-#define CAST_4BITS(y) CAST(4, IL_FALSE, y)
-
 /**
  * \brief Set "ca" bit if, after an add or sub operation on \p a and \p b , the M+1 bit is set
  *
@@ -46,15 +43,15 @@ RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpB
 RZ_OWN RzILOpEffect *set_cr0(RZ_BORROW RzILOpPure *val, cs_mode mode) {
 	rz_return_val_if_fail(val, NULL);
 
-	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), PPC_ARCH_BITS));
+	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), 1));
 	RzILOpEffect *set_val = SETL("val", DUP(val));
 
 	RzILOpEffect *cond_geq = BRANCH(SGT(VARL("val"), UA(0)),
-		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b010)))), // val > 0
-		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b001)))) // val == 0
+		SETG("cr0", APPEND(UN(3, 0b010), VARL("so_flag"))), // val > 0
+		SETG("cr0", APPEND(UN(3, 0b001), VARL("so_flag"))) // val == 0
 	);
 	RzILOpEffect *cond_l = BRANCH(SLT(VARL("val"), UA(0)),
-		SETG("cr0", CAST_4BITS(OR_SO_FLAG(UA(0b100)))), // val < 0
+		SETG("cr0", APPEND(UN(3, 0b100), VARL("so_flag"))), // val < 0
 		cond_geq);
 	return SEQ3(set_val, set_so, cond_l);
 }
@@ -72,18 +69,18 @@ RZ_OWN RzILOpEffect *set_cr0(RZ_BORROW RzILOpPure *val, cs_mode mode) {
 RZ_OWN RzILOpEffect *cmp_set_cr(RZ_BORROW RzILOpPure *left, RZ_BORROW RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode) {
 	rz_return_val_if_fail(left && right && crX, NULL);
 
-	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), PPC_ARCH_BITS));
+	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), 1));
 	RzILOpEffect *set_left = SETL("l", DUP(left));
 	RzILOpEffect *set_right = SETL("r", DUP(right));
 	RzILOpPure *cmp_gt = signed_cmp ? SGT(VARL("l"), VARL("r")) : UGT(VARL("l"), VARL("r"));
 	RzILOpPure *cmp_lt = signed_cmp ? SLT(VARL("l"), VARL("r")) : ULT(VARL("l"), VARL("r"));
 
 	RzILOpEffect *cond_geq = BRANCH(cmp_gt,
-		SETG(crX, CAST_4BITS(OR_SO_FLAG(UA(0b010)))), // left > right
-		SETG(crX, CAST_4BITS(OR_SO_FLAG(UA(0b001)))) // left == right
+		SETG(crX, APPEND(UN(3, 0b010), VARL("so_flag"))), // left > right
+		SETG(crX, APPEND(UN(3, 0b001), VARL("so_flag"))) // left == right
 	);
 	RzILOpEffect *cond_l = BRANCH(cmp_lt,
-		SETG(crX, CAST_4BITS(OR_SO_FLAG(UA(0b100)))), // left < right
+		SETG(crX, APPEND(UN(3, 0b100), VARL("so_flag"))), // left < right
 		cond_geq);
 	return SEQ4(set_left, set_right, set_so, cond_l);
 }
