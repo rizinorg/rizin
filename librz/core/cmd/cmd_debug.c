@@ -3457,7 +3457,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, con
 
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_set_handler(RzCore *core, int argc, const char **argv) {
 	rz_config_set(core->config, "dbg.backend", argv[1]);
-	// implicit by config.set rz_debug_use (core->dbg, str);
 	return RZ_CMD_STATUS_OK;
 }
 
