@@ -6916,7 +6916,7 @@ static const RzCmdDescArg cmd_debug_handler_list_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_handler_list_help = {
-	.summary = "List set debugger handler",
+	.summary = "List debugger handler",
 	.args = cmd_debug_handler_list_args,
 };
 

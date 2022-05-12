@@ -178,15 +178,6 @@ static const char *help_msg_dx[] = {
 	NULL
 };
 
-static const char *help_msg_dL[] = {
-	"Usage: dL", "", " # List or set debugger handler",
-	"dL", "", "List debugger handlers",
-	"dLq", "", "List debugger handlers in quiet mode",
-	"dLj", "", "List debugger handlers in json mode",
-	"dL", " <handler>", "Set debugger handler",
-	NULL
-};
-
 struct dot_trace_ght {
 	RzGraph *graph;
 	Sdb *graphnodes;
@@ -2410,36 +2401,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'p': // "dp"
 		cmd_debug_pid(core, input);
 		break;
-	case 'L': { // "dL"
-		RzCmdStateOutput state = { 0 };
-		switch (input[1]) {
-		case 'q':
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
-			break;
-		case 'j':
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
-			break;
-		case ' ': {
-			char *backend = rz_str_trim_dup(input + 2);
-			rz_config_set(core->config, "dbg.backend", backend);
-			// implicit by config.set rz_debug_use (core->dbg, str);
-			free(backend);
-			return RZ_CMD_STATUS_OK;
-		}
-		case '?': {
-			rz_core_cmd_help(core, help_msg_dL);
-			break;
-		}
-		default:
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		}
-		rz_core_debug_plugins_print(core, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		rz_cons_flush();
-		break;
-	}
 	case 'i': // "di"
 	{
 		RzDebugInfo *rdi = rz_debug_info(core->dbg, input + 2);

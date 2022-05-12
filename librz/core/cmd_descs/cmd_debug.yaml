@@ -550,7 +550,7 @@ commands:
     summary: Debug handler
     subcommands:
       - name: dL
-        summary: List set debugger handler
+        summary: List debugger handler
         cname: cmd_debug_handler_list
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
