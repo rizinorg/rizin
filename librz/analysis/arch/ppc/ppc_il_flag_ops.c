@@ -34,29 +34,6 @@ RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpB
 }
 
 /**
- * \brief Set the cr0 register depending how \p val compares to 0.
- *
- * \param val Value which is compared to 0.
- * \param mode Capstone mode.
- * \return RzILOpEffect* Set cr0 effect.
- */
-RZ_OWN RzILOpEffect *set_cr0(RZ_BORROW RzILOpPure *val, cs_mode mode) {
-	rz_return_val_if_fail(val, NULL);
-
-	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), 1));
-	RzILOpEffect *set_val = SETL("val", DUP(val));
-
-	RzILOpEffect *cond_geq = BRANCH(SGT(VARL("val"), UA(0)),
-		SETG("cr0", APPEND(UN(3, 0b010), VARL("so_flag"))), // val > 0
-		SETG("cr0", APPEND(UN(3, 0b001), VARL("so_flag"))) // val == 0
-	);
-	RzILOpEffect *cond_l = BRANCH(SLT(VARL("val"), UA(0)),
-		SETG("cr0", APPEND(UN(3, 0b100), VARL("so_flag"))), // val < 0
-		cond_geq);
-	return SEQ3(set_val, set_so, cond_l);
-}
-
-/**
  * \brief Compares two values and sets the given cr field.
  *
  * \param left The left operand of the comparison.
