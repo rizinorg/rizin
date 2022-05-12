@@ -6,6 +6,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_util/rz_buf.h>
+#include <rz_util/rz_assert.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
 #include <rz_io.h>
@@ -911,6 +912,18 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	case EM_PPC64: {
 		int low = 0, word = 0;
 		switch (rel->type) {
+		case RZ_PPC64_ADDR24:
+			low = 24;
+			val = (S + A) >> 2;
+			break;
+		case RZ_PPC64_ADDR16_HI:
+			word = 2;
+			val = (S + A) >> 16;
+			break;
+		case RZ_PPC64_ADDR16_HA:
+			word = 2;
+			val = (S + A + 0x8000) >> 16;
+			break;
 		case RZ_PPC64_REL16_HA:
 			word = 2;
 			val = (S + A - P + 0x8000) >> 16;
@@ -932,6 +945,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			val = S + A - P;
 			break;
 		default:
+			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
 			break;
 		}
 		if (low) {

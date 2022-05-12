@@ -2497,7 +2497,7 @@ enum {
 /* PowerPC64 relocations defined by the ABIs */
 #define RZ_PPC64_NONE            RZ_PPC_NONE
 #define RZ_PPC64_ADDR32          RZ_PPC_ADDR32 /* 32bit absolute address */
-#define RZ_PPC64_ADDR24          RZ_PPC_ADDR24 /* 26bit address, word aligned */
+#define RZ_PPC64_ADDR24          RZ_PPC_ADDR24 /* 24bit address, word aligned */
 #define RZ_PPC64_ADDR16          RZ_PPC_ADDR16 /* 16bit absolute address */
 #define RZ_PPC64_ADDR16_LO       RZ_PPC_ADDR16_LO /* lower 16bits of address */
 #define RZ_PPC64_ADDR16_HI       RZ_PPC_ADDR16_HI /* high 16bits of address. */
