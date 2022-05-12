@@ -48,5 +48,6 @@ bool ppc_is_x_form(ut32 insn_id);
 ut32 ppc_get_mem_acc_size(ut32 insn_id);
 bool ppc_updates_ra_with_ea(ut32 insn_id);
 bool ppc_is_algebraic(ut32 insn_id);
+bool ppc_sets_lr(ut32 insn_id);
 
 #endif /* PPC_IL_H */

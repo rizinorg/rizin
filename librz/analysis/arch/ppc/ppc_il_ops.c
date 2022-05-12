@@ -494,6 +494,67 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	return SEQ2(set, update_cr0);
 }
 
+static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, NOP);
+	ut32 id = insn->id;
+	ut64 cia = insn->address;
+	st64 li;
+	// st64 bd;
+	// RzILOpPure *ea;
+	RzILOpEffect *lr; // Set Link Register
+	RzILOpEffect *ctr; // Set counter
+	RzILOpEffect *set_cia; // Current instruction address
+	RzILOpEffect *set_nia; // Next instruction address
+
+	// READ
+	li = INSOP(0).imm;
+	// bd = INSOP(0).imm;
+	
+	// EXEC
+	switch (id) {
+	case PPC_INS_BL:
+	case PPC_INS_BLA:;
+		RzILOpPure *nia = UA(li); // (id == PPC_INS_BLA) ? EXTS(APPEND(SN(24, li), UN(2, 0))) : ADD(UA(cia), EXTS(APPEND(SN(24, li), UN(2, 0))));
+		set_nia = SETL("NIA", nia);
+		break;
+	case PPC_INS_BLR:
+		set_nia = SETL("NIA", VARG("lr"));
+		break;
+	case PPC_INS_B:
+	case PPC_INS_BA:
+	case PPC_INS_BC:
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BCTR:
+	case PPC_INS_BCTRL:
+	case PPC_INS_BCT:
+	case PPC_INS_BDNZ:
+	case PPC_INS_BDNZA:
+	case PPC_INS_BDNZL:
+	case PPC_INS_BDNZLA:
+	case PPC_INS_BDNZLR:
+	case PPC_INS_BDNZLRL:
+	case PPC_INS_BDZ:
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZL:
+	case PPC_INS_BDZLA:
+	case PPC_INS_BDZLR:
+	case PPC_INS_BDZLRL:
+	case PPC_INS_BLRL:
+	case PPC_INS_BRINC:
+		NOT_IMPLEMENTED;
+	}
+
+	// WRITE
+	set_cia = SETL("CIA", UA(cia));
+	lr = ppc_sets_lr(id) ? SETG("lr", ADD(VARL("CIA"), UA(4))) : NOP;
+	ctr = NOP;
+	return SEQ5(set_cia, set_nia, ctr, lr, JMP(VARL("NIA")));
+}
+
 /**
  * \brief Returns the RZIL implementation of a given capstone instruction.
  * Or NULL if the instruction is not yet implemented.
@@ -648,6 +709,37 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CMPW:
 	case PPC_INS_CMPWI:
 		lop = compare_op(handle, insn, mode);
+		break;
+	case PPC_INS_B:
+	case PPC_INS_BA:
+	case PPC_INS_BC:
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BCTR:
+	case PPC_INS_BCTRL:
+	case PPC_INS_BCT:
+	case PPC_INS_BDNZ:
+	case PPC_INS_BDNZA:
+	case PPC_INS_BDNZL:
+	case PPC_INS_BDNZLA:
+	case PPC_INS_BDNZLR:
+	case PPC_INS_BDNZLRL:
+	case PPC_INS_BDZ:
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZL:
+	case PPC_INS_BDZLA:
+	case PPC_INS_BDZLR:
+	case PPC_INS_BDZLRL:
+	case PPC_INS_BL:
+	case PPC_INS_BLA:
+	case PPC_INS_BLR:
+	case PPC_INS_BLRL:
+	case PPC_INS_BRINC:
+		lop = branch_op(handle, insn, mode);
+		break;
 	}
 
 	return lop;
