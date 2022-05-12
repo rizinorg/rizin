@@ -798,7 +798,7 @@ RZ_API void rz_backtrace_free(RZ_NULLABLE RzBacktrace *bt) {
 	if (!bt) {
 		return;
 	}
-    free(bt->frame);
+	free(bt->frame);
 	free(bt->desc);
 	free(bt->pcstr);
 	free(bt->spstr);
@@ -881,7 +881,7 @@ RZ_API RZ_OWN RzList *rz_core_debug_backtraces(RzCore *core) {
 	rz_list_foreach (list, iter, frame) {
 		RzBacktrace *bt = RZ_NEW0(RzBacktrace);
 		if (!bt) {
-            rz_list_free(bts);
+			rz_list_free(bts);
 			return NULL;
 		}
 		rz_list_append(bts, bt);
