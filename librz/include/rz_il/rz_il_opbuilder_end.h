@@ -9,6 +9,7 @@
 #undef U8
 #undef U16
 #undef U32
+#undef U48
 #undef U64
 #undef CAST
 #undef BOOL_TO_BV

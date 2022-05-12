@@ -41,6 +41,7 @@
 #define U8(val)          UN(8, val)
 #define U16(val)         UN(16, val)
 #define U32(val)         UN(32, val)
+#define U48(val)         UN(48, val)
 #define U64(val)         UN(64, val)
 #define CAST(l, f, v)    rz_il_op_new_cast(l, f, v)
 #define BOOL_TO_BV(b, l) ITE(b, UN(l, 1), UN(l, 0))

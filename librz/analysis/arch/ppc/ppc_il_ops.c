@@ -346,7 +346,8 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 	RzILOpPure *left;
 	RzILOpPure *right;
-	RzILOpPure *res;
+
+	bool signed_cmp = false;
 
 	// READ
 	// cr0 reg is not explicitly stored in the operands list.
@@ -366,25 +367,41 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	// Letter			Meaning
 	// CMP				Compare
 	// B/H/W/D	 		Byte, Half Word, Word, Double Word
-	// I/L				Immediate, Logical
+	// I/L				Immediate, Logical (unsigned compare)
 
 	// EXEC
+	// Logical <=> unsigned comparisons ; Not logical <=> signed comparison.
+	signed_cmp = (id == PPC_INS_CMPW || id == PPC_INS_CMPD || id == PPC_INS_CMPWI || id == PPC_INS_CMPDI);
+
+	// Left operand is always RA
+	if (id == PPC_INS_CMPW || id == PPC_INS_CMPWI || id == PPC_INS_CMPLW || id == PPC_INS_CMPLWI) {
+		left = EXTS(CAST(32, IL_FALSE, VARG(rA)));
+	} else {
+		left = VARG(rA);
+	}
+
+	// Right operand differs between instructions.
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
-	// Compare
-	case PPC_INS_CMPB:
-	case PPC_INS_CMPD:
 	case PPC_INS_CMPW:
-	case PPC_INS_CMPWI:
-	case PPC_INS_CMPDI:
-	case PPC_INS_CMPLD:
-	case PPC_INS_CMPLDI:
 	case PPC_INS_CMPLW:
+		right = EXTS(CAST(32, IL_FALSE, VARG(rB)));
+		break;
+	case PPC_INS_CMPD:
+	case PPC_INS_CMPLD:
+		right = VARG(rB);
+		break;
+	case PPC_INS_CMPWI:
 	case PPC_INS_CMPLWI:
-		NOT_IMPLEMENTED;
+		right = (id == PPC_INS_CMPWI) ? EXTS(S16(imm)) : EXTZ(U16(imm));
+		break;
+	case PPC_INS_CMPDI:
+	case PPC_INS_CMPLDI:
+		right = (id == PPC_INS_CMPDI) ? EXTEND(64, S16(imm)) : APPEND(U48(0), U16(imm));
+		break;
 	}
-	rz_return_val_if_fail(crX && rA && rB && imm == 0 && left && right && res, NULL);
+	return cmp_set_cr(left, right, signed_cmp, crX, mode);
 }
 
 static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
@@ -452,7 +469,8 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		res = LOGNOT(
 			(id == PPC_INS_NAND) ? LOGAND(op0, op1) : LOGOR(op0, op1));
 		break;
-	// Equivalent
+	// Compare bytes & Equivalent
+	case PPC_INS_CMPB:
 	case PPC_INS_EQV:
 		NOT_IMPLEMENTED;
 	// Extend
