@@ -6853,7 +6853,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 }
 
 /**
- * \brief Set hint offset
+ * \brief Set analysis hint offset
  * \param core The RzCore instance
  * \param struct_member struct.member
  */
