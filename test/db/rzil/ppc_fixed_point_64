@@ -185,3 +185,44 @@ var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
 var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
 EOF
 RUN
+
+NAME=ppc compare instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.compare_insns
+aezi
+aezs 1 # li r0, 0
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezse 4~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: cr0, old: 0x0, new: 0x8)
+var_write(name: cr0, old: 0x8, new: 0x8)
+var_write(name: cr1, old: 0x0, new: 0x4)
+var_write(name: cr1, old: 0x4, new: 0x4)
+var_write(name: cr2, old: 0x0, new: 0x8)
+var_write(name: cr2, old: 0x8, new: 0x8)
+var_write(name: cr3, old: 0x0, new: 0x2)
+var_write(name: cr3, old: 0x2, new: 0x2)
+var_write(name: cr4, old: 0x0, new: 0x4)
+var_write(name: cr5, old: 0x0, new: 0x8)
+var_write(name: cr6, old: 0x0, new: 0x8)
+var_write(name: cr7, old: 0x0, new: 0x8)
+EOF
+RUN
