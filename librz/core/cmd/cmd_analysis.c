@@ -5196,7 +5196,7 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 	RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, addr);
 	bool open_object = false;
 	if (!rz_list_empty(xrefs)) {
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in_bounds(core->analysis, addr, -1);
 		if (fcn) {
 			if (is_rz) {
 				rz_cons_printf("agn 0x%08" PFMT64x " %s\n", fcn->addr, fcn->name);
@@ -5224,7 +5224,7 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 		}
 	}
 	rz_list_foreach (xrefs, iter, xref) {
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, -1);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in_bounds(core->analysis, xref->from, -1);
 		if (fcn) {
 			if (is_rz) {
 				rz_cons_printf("agn 0x%08" PFMT64x " %s\n", fcn->addr, fcn->name);
