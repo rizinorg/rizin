@@ -7,7 +7,7 @@
  *     cs_insn *insn
  */
 
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #define IMM64(x)   (ut64)(insn->detail->arm64.operands[x].imm)
 #define INSOP64(x) insn->detail->arm64.operands[x]

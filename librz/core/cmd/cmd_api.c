@@ -2503,8 +2503,10 @@ static char *unescape_special_chars(const char *s, const char *special_chars) {
 			dst[j++] = s[i];
 			continue;
 		}
-		dst[j++] = s[i + 1];
-		i++;
+		dst[j++] = s[++i];
+		if (!s[i]) {
+			break;
+		}
 	}
 	dst[j++] = '\0';
 	return dst;

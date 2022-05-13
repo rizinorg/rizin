@@ -1,5 +1,6 @@
 core_plugins = [
   'java',
+  'dex',
 ]
 
 subdir('cmd_descs')
@@ -36,9 +37,11 @@ rz_core_sources = [
   'csign.c',
   'ctypes.c',
   'cvfile.c',
+  'csyscall.c',
   'disasm.c',
   'fortune.c',
   'gdiff.c',
+  'golang.c',
   'hack.c',
   'libs.c',
   'linux_heap_glibc.c',
@@ -53,6 +56,7 @@ rz_core_sources = [
   'task.c',
   'vmarks.c',
   'yank.c',
+  'p/core_dex.c',
   'p/core_java.c',
   cmd_descs_ch,
   'cmd/cmd.c',
@@ -155,6 +159,7 @@ rz_core = library('rz_core', rz_core_sources,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
   soversion: rizin_libversion,
+  version: rizin_version,
   name_suffix: lib_name_suffix,
   name_prefix: lib_name_prefix,
 )

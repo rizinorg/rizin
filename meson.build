@@ -1,5 +1,5 @@
 project('rizin', 'c',
-  version: 'v0.4.0-git',
+  version: 'v0.4.0',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
   default_options: [
@@ -18,7 +18,6 @@ create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
-tree_sitter_wrap_py = files('sys/meson_tree_sitter_generate.py')
 cmake_package_prefix_dir_py = files('sys/meson_cmake_prefix_dir.py')
 
 is_static_build = get_option('static_runtime')
@@ -29,10 +28,6 @@ endif
 
 # Get rizin version and compute various version parts
 rizin_version = meson.project_version().split('v')[1]
-if host_machine.system() == 'darwin'
-  rizin_version = rizin_version.split('-')[0]
-endif
-
 rizin_version_split = rizin_version.split('.')
 rizin_version_major = rizin_version_split[0].to_int()
 rizin_version_minor = rizin_version_split[1].to_int()
@@ -92,7 +87,7 @@ else
   rizinbirth = rizinbirth.stdout().strip()
 endif
 
-rizin_libversion = host_machine.system() == 'windows' ? '' : rizin_version
+rizin_libversion = '@0@.@1@'.format(rizin_version_major, rizin_version_minor)
 message('rizin lib version: ' + rizin_libversion)
 
 # system dependencies
@@ -363,8 +358,8 @@ tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_s
 if not tree_sitter_dep.found()
   tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
   tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
+  meson.override_dependency('tree-sitter', tree_sitter_dep)
 endif
-meson.override_dependency('tree-sitter', tree_sitter_dep)
 
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos', 'haiku'].contains(host_machine.system())
@@ -487,6 +482,8 @@ foreach item : [
     ['forkpty', '', [utl]],
     ['login_tty', '', [utl]],
     ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []],
+    # copy_file_range for now disable on freebsd as it s not reliable even for small chunks
+    ['copy_file_range', '#ifdef __linux__\n#define _GNU_SOURCE\n#include <unistd.h>\n#endif', []],
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1], dependencies: item[2])

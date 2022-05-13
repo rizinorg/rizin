@@ -3284,9 +3284,10 @@ onemoretime:
 			}
 		}
 		break;
-	case 'j':
-		rz_core_cmdf(core, "afm $$+$F @0x%08" PFMT64x, off);
-		break;
+	case 'j': {
+		ut64 addr = rz_num_math(core->num, "$$+$F");
+		rz_core_analysis_fcn_merge(core, off, addr);
+	} break;
 	case 'k':
 		eprintf("TODO: merge up\n");
 		rz_cons_any_key(NULL);

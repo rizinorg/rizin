@@ -50,6 +50,7 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state);
 RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
+RZ_IPI void rz_core_analysis_cc_print(RzCore *core, RZ_NONNULL const char *cc, RZ_NULLABLE PJ *pj);
 
 /* cmeta.c */
 RZ_IPI void rz_core_spaces_print(RzCore *core, RzSpaces *spaces, RzCmdStateOutput *state);
@@ -121,7 +122,6 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state);
 
 /* creg.c */
-RZ_IPI void rz_core_reg_update_flags(RzCore *core);
 RZ_IPI RzList /*<RzRegItem>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
 RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items);
 
@@ -160,12 +160,9 @@ RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 add
 RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzCmdStateOutput *state);
 
 /* cmd_debug.c */
-RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core);
 RZ_IPI void rz_core_static_debug_stop(void *u);
 
 /* cmd_regs.c */
-/// Callback for synchronizing register state in commands (only relevant for debug, not for analysis)
-typedef bool (*RzCmdRegSync)(RzCore *core, RzRegisterType type, bool write);
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_regs_references_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzOutputMode mode);

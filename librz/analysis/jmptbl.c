@@ -16,7 +16,7 @@ static void apply_case(RzAnalysis *analysis, RzAnalysisBlock *block, ut64 switch
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
 	rz_meta_set_data_at(analysis, case_addr_loc, offset_sz);
 	rz_analysis_hint_set_immbase(analysis, case_addr_loc, 10);
-	rz_analysis_xrefs_set(analysis, switch_addr, case_addr, RZ_ANALYSIS_REF_TYPE_CODE);
+	rz_analysis_xrefs_set(analysis, switch_addr, case_addr, RZ_ANALYSIS_XREF_TYPE_CODE);
 	if (block) {
 		rz_analysis_block_add_switch_case(block, switch_addr, id, case_addr);
 	}
@@ -35,7 +35,7 @@ static void apply_switch(RzAnalysis *analysis, ut64 switch_addr, ut64 jmptbl_add
 		snprintf(tmp, sizeof(tmp), "switch.0x%08" PFMT64x, switch_addr);
 		analysis->flb.set(analysis->flb.f, tmp, switch_addr, 1);
 		if (default_case_addr != UT64_MAX) {
-			rz_analysis_xrefs_set(analysis, switch_addr, default_case_addr, RZ_ANALYSIS_REF_TYPE_CODE);
+			rz_analysis_xrefs_set(analysis, switch_addr, default_case_addr, RZ_ANALYSIS_XREF_TYPE_CODE);
 			snprintf(tmp, sizeof(tmp), "case.default.0x%" PFMT64x, switch_addr);
 			analysis->flb.set(analysis->flb.f, tmp, default_case_addr, 1);
 		}

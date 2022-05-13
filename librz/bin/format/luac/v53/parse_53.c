@@ -3,9 +3,10 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
 #include "luac_specs_53.h"
+
 static void lua_load_block(RzBuffer *buffer, void *dest, size_t size, ut64 offset, ut64 data_size) {
 	if (offset + size > data_size) {
-		eprintf("Bad Luac File : Truncated load block at 0x%llx\n", offset);
+		RZ_LOG_ERROR("Truncated load block at 0x%llx\n", offset);
 		return;
 	}
 	rz_buf_read_at(buffer, offset, dest, size);
@@ -91,7 +92,7 @@ static ut64 lua_parse_string(RzBuffer *buffer, ut8 **dest, int *str_len, ut64 of
 		*dest = ret;
 		*str_len = len;
 	} else {
-		eprintf("cannot store string\n");
+		RZ_LOG_ERROR("Cannot store string\n");
 	}
 
 	return offset + len - base_offset;
@@ -114,7 +115,7 @@ static ut64 lua_parse_code(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 
 	total_size = code_size * 4 + size_offset;
 
 	if (total_size + offset > data_size) {
-		eprintf("Bad Luac File : Truncated Code at [0x%llx]\n", offset);
+		RZ_LOG_ERROR("Truncated Code at [0x%llx]\n", offset);
 		return 0;
 	}
 
@@ -409,7 +410,6 @@ LuaProto *lua_parse_body_53(RzBuffer *buffer, ut64 base_offset, ut64 data_size) 
 
 	LuaProto *ret_proto = lua_new_proto_entry();
 	if (!ret_proto) {
-		eprintf("unable to init proto\n");
 		return NULL;
 	}
 
@@ -486,7 +486,7 @@ RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
 
 	st64 reat = bf->size;
 	if (reat < LUAC_53_HDRSIZE) {
-		eprintf("Truncated Header\n");
+		RZ_LOG_ERROR("Truncated header\n");
 		return NULL;
 	}
 	buffer = bf->buf;
@@ -547,17 +547,16 @@ RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
 		(number_size != sizeof(LUA_NUMBER)) ||
 		(int_size != sizeof(LUA_INT)) ||
 		(sizet_size != sizeof(size_t))) {
-		eprintf("Size Definition not matched\n");
+		RZ_LOG_ERROR("Size definition does not match with the expected size\n");
 		return ret;
 	}
 
 	/* Check endian */
 	if (integer_valid != LUAC_53_INT_VALIDATION) {
-		eprintf("Integer Format Not Matched\n");
+		RZ_LOG_ERROR("Integer format does not match with the expected integer\n");
 		return ret;
-	}
-	if (number_valid != LUAC_53_NUMBER_VALIDATION) {
-		eprintf("Number Format Not Matched\n");
+	} else if (number_valid != LUAC_53_NUMBER_VALIDATION) {
+		RZ_LOG_ERROR("Number format does not match with the expected number\n");
 		return ret;
 	}
 

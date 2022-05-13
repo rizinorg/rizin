@@ -1262,9 +1262,10 @@ bool test_rz_buf_with_methods(void) {
 
 bool test_rz_buf_whole_buf(void) {
 	RzBuffer *b = rz_buf_new_with_bytes((ut8 *)"AAA", 3);
-	const ut8 *bb1 = rz_buf_data(b, NULL);
+	ut64 size;
+	const ut8 *bb1 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb1, "buf_data is not NULL");
-	const ut8 *bb2 = rz_buf_data(b, NULL);
+	const ut8 *bb2 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb2, "buf_data is not NULL");
 	rz_buf_free(b);
 	mu_end;
@@ -1296,12 +1297,83 @@ const RzBufferMethods custom_methods2 = {
 
 bool test_rz_buf_whole_buf_alloc(void) {
 	CustomCtx ctx = { 0 };
+	ut64 size;
 	RzBuffer *b = rz_buf_new_with_methods(&custom_methods2, &ctx);
-	const ut8 *bb1 = rz_buf_data(b, NULL);
+	const ut8 *bb1 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb1, "buf_data is not NULL");
-	const ut8 *bb2 = rz_buf_data(b, NULL);
+	const ut8 *bb2 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb2, "buf_data is not NULL");
 	rz_buf_free(b);
+	mu_end;
+}
+
+ut64 fwd_cmp(const ut8 *buf, ut64 sz, void *user) {
+	if (!user || !sz) {
+		return -1;
+	}
+	return memcmp(buf, user, sz) ? 0 : sz;
+}
+
+ut64 fwd_adder(const ut8 *buf, ut64 sz, void *user) {
+	if (!user || !sz) {
+		return -1;
+	}
+	ut64 *result = user;
+	ut64 i;
+	for (i = 0; i < sz; i++) {
+		*result += buf[i];
+	}
+	return sz;
+}
+
+bool test_rz_buf_fwd_scan_helper(RzBuffer *b) {
+	ut64 res = rz_buf_fwd_scan(b, 0, 4, fwd_cmp, (void *)"ABCD");
+	mu_assert_eq(res, 4, "rz_buf_fwd_scan should return 4");
+	res = rz_buf_fwd_scan(b, 0, UT64_MAX, fwd_cmp, (void *)"ABCD");
+	mu_assert_eq(res, 4, "rz_buf_fwd_scan should return 4");
+	res = rz_buf_fwd_scan(b, 1, UT64_MAX, fwd_cmp, (void *)"BCD");
+	mu_assert_eq(res, 3, "rz_buf_fwd_scan should return 3");
+	res = rz_buf_fwd_scan(b, 2, UT64_MAX, fwd_cmp, (void *)"CD");
+	mu_assert_eq(res, 2, "rz_buf_fwd_scan should return 3");
+	res = rz_buf_fwd_scan(b, 3, UT64_MAX, fwd_cmp, (void *)"D");
+	mu_assert_eq(res, 1, "rz_buf_fwd_scan should return 1");
+	res = rz_buf_fwd_scan(b, 4, UT64_MAX, fwd_cmp, NULL);
+	mu_assert_eq(res, 0, "rz_buf_fwd_scan should return 0");
+	res = rz_buf_fwd_scan(b, 5, UT64_MAX, fwd_cmp, NULL);
+	mu_assert_eq(res, 0, "rz_buf_fwd_scan should return 0");
+	res = rz_buf_fwd_scan(b, 0, 3, fwd_cmp, (void *)"ABCD");
+	mu_assert_eq(res, 3, "rz_buf_fwd_scan should return 3");
+	res = rz_buf_fwd_scan(b, 1, 2, fwd_cmp, (void *)"BC");
+	mu_assert_eq(res, 2, "rz_buf_fwd_scan should return 2");
+	res = rz_buf_fwd_scan(b, 1, 1, fwd_cmp, (void *)"B");
+	mu_assert_eq(res, 1, "rz_buf_fwd_scan should return 1");
+	res = rz_buf_fwd_scan(b, 1, 0, fwd_cmp, (void *)"B");
+	mu_assert_eq(res, 0, "rz_buf_fwd_scan should return 0");
+	res = rz_buf_fwd_scan(b, 2, 4, fwd_cmp, (void *)"CD");
+	mu_assert_eq(res, 2, "rz_buf_fwd_scan should return 2");
+	return true;
+}
+
+bool test_rz_buf_fwd_scan(void) {
+	RzBuffer *b = rz_buf_new_with_bytes((ut8 *)"ABCD", 4);
+	mu_assert_true(test_rz_buf_fwd_scan_helper(b), "rz_buf_fwd_scan with whole buffer available failed");
+	RzBufferMethods methods = *b->methods;
+	methods.get_whole_buf = NULL;
+	b->methods = &methods;
+	mu_assert_true(test_rz_buf_fwd_scan_helper(b), "rz_buf_fwd_scan with whole buffer unavailable failed");
+	ut8 zero_buf[0x1000 - 4] = { 0 };
+	rz_buf_append_bytes(b, zero_buf, 0x1000 - 4);
+	rz_buf_append_bytes(b, (ut8 *)"EFGH", 4);
+	ut64 res = rz_buf_fwd_scan(b, 0, 4, fwd_cmp, (void *)"ABCD");
+	mu_assert_eq(res, 4, "rz_buf_fwd_scan should return 4");
+	res = rz_buf_fwd_scan(b, 0x1000, UT64_MAX, fwd_cmp, (void *)"EFGH");
+	mu_assert_eq(res, 4, "rz_buf_fwd_scan should return 4");
+	res = rz_buf_fwd_scan(b, 0x1000, 3, fwd_cmp, (void *)"EFG");
+	mu_assert_eq(res, 3, "rz_buf_fwd_scan should return 3");
+	ut64 add_result = 0;
+	res = rz_buf_fwd_scan(b, 0, UT64_MAX, fwd_adder, &add_result);
+	mu_assert_eq(res, 0x1004, "rz_buf_fwd_scan should return 0x1004");
+	mu_assert_eq(add_result, 'A' + 'B' + 'C' + 'D' + 'E' + 'F' + 'G' + 'H', "add_result should return be the sum of all bytes");
 	mu_end;
 }
 
@@ -1342,6 +1414,7 @@ int all_tests() {
 	mu_run_test(test_rz_buf_with_methods);
 	mu_run_test(test_rz_buf_whole_buf);
 	mu_run_test(test_rz_buf_whole_buf_alloc);
+	mu_run_test(test_rz_buf_fwd_scan);
 	return tests_passed != tests_run;
 }
 

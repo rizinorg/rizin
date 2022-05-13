@@ -1059,7 +1059,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 				RZ_LOG_INFO("Resolved %s with address 0x%08" PFMT64x "\n", name, linkdata.addr);
 				ut64 a = linkdata.addr;
 				ut64 b = imp_addr;
-				rz_analysis_xrefs_set(r->analysis, b, a, RZ_ANALYSIS_REF_TYPE_NULL);
+				rz_analysis_xrefs_set(r->analysis, b, a, RZ_ANALYSIS_XREF_TYPE_NULL);
 			} else {
 				RZ_LOG_ERROR("Cannot resolve %s\n", name);
 			}

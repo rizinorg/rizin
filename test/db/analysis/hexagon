@@ -215,7 +215,7 @@ EXPECT=<<EOF
 |   P2 = cmp.eq(R1,##0x1)
 \   P3 = cmp.eq(R1,##0x2)
 /   R3 = add(R3,##0x4)
-\   R4 = add(R4in,##0x4) ; R5 = add(R5,#1)     < endloop0
+\   R4 = add(R4,##0x4) ; R5 = add(R5,#1)     < endloop0
 EOF
 RUN
 

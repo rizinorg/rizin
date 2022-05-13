@@ -78,15 +78,16 @@ static ut64 readQword(RzCoreObjc *objc, ut64 addr, bool *success) {
 }
 
 static void objc_analyze(RzCore *core) {
-	const char *oldstr = rz_core_notify_begin(core, "Analyzing code to find selref references");
-	(void)rz_core_analysis_refs(core, "");
+	const char *notify = "Analyzing code to find selfref references";
+	rz_core_notify_begin(core, "%s", notify);
+	(void)rz_core_analysis_refs(core, 0);
 	if (!strcmp("arm", rz_config_get(core->config, "asm.arch"))) {
 		const bool emu_lazy = rz_config_get_i(core->config, "emu.lazy");
 		rz_config_set_i(core->config, "emu.lazy", true);
 		rz_core_analysis_esil_default(core);
 		rz_config_set_i(core->config, "emu.lazy", emu_lazy);
 	}
-	rz_core_notify_done(core, oldstr);
+	rz_core_notify_done(core, "%s", notify);
 }
 
 static ut64 getRefPtr(RzCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
@@ -144,7 +145,7 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 	}
 	const size_t word_size = objc->word_size; // assuming 8 because of the read_le64
 	if (!rz_io_read_at(objc->core->io, objc->_const->vaddr, buf, ss_const)) {
-		eprintf("aao: Cannot read the whole const section %zu\n", ss_const);
+		RZ_LOG_ERROR("aao: Cannot read the whole const section %zu\n", ss_const);
 		return false;
 	}
 	for (off = 0; off + word_size < ss_const; off += word_size) {
@@ -155,7 +156,7 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 		}
 	}
 	if (!rz_io_read_at(objc->core->io, va_selrefs, buf, ss_selrefs)) {
-		eprintf("aao: Cannot read the whole selrefs section\n");
+		RZ_LOG_ERROR("aao: Cannot read the whole selrefs section\n");
 		return false;
 	}
 	for (off = 0; off + word_size < ss_selrefs; off += word_size) {
@@ -178,7 +179,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 	o->core = core;
 	o->word_size = (core->rasm->bits == 64) ? 8 : 4;
 	if (o->word_size != 8) {
-		eprintf("Warning: aao experimental on 32bit binaries\n");
+		RZ_LOG_WARN("aao is experimental on 32bit binaries\n");
 	}
 
 	RzBinSection *s;
@@ -222,12 +223,12 @@ static bool objc_find_refs(RzCore *core) {
 		core_objc_free(objc);
 		return false;
 	}
-	const char *oldstr = rz_core_notify_begin(core, "Parsing metadata in ObjC to find hidden xrefs");
+	const char *notify = "Parsing metadata in ObjC to find hidden xrefs";
+	rz_core_notify_begin(core, "%s", notify);
 
-	ut64 off;
 	size_t total_xrefs = 0;
 	bool readSuccess = true;
-	for (off = 0; off < objc->_data->vsize && readSuccess; off += objc2ClassSize) {
+	for (ut64 off = 0; off < objc->_data->vsize && readSuccess; off += objc2ClassSize) {
 		if (!readSuccess || rz_cons_is_breaked()) {
 			break;
 		}
@@ -274,29 +275,25 @@ static bool objc_find_refs(RzCore *core) {
 				RzListIter *iter;
 				RzAnalysisXRef *xref;
 				rz_list_foreach (list, iter, xref) {
-					rz_analysis_xrefs_set(core->analysis, xref->from, funcVA, RZ_ANALYSIS_REF_TYPE_CODE);
+					rz_analysis_xrefs_set(core->analysis, xref->from, funcVA, RZ_ANALYSIS_XREF_TYPE_CODE);
 					total_xrefs++;
 				}
 			}
 		}
 	}
-	rz_core_notify_done(core, oldstr);
+	rz_core_notify_done(core, "%s", notify);
 
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
 
-	char message[128];
-	rz_strf(message, "Found %zu objc xrefs...", total_xrefs);
-	rz_core_notify_begin(core, message);
+	rz_core_notify_begin(core, "Found %zu objc xrefs...", total_xrefs);
 	size_t total_words = 0;
-	ut64 a;
 	const size_t word_size = objc->word_size;
-	for (a = va_selrefs; a < ss_selrefs; a += word_size) {
+	for (ut64 a = va_selrefs; a < ss_selrefs; a += word_size) {
 		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}
-	rz_strf(message, "Found %zu objc xrefs in %zu dwords.", total_xrefs, total_words);
-	rz_core_notify_done(core, message);
+	rz_core_notify_done(core, "Found %zu objc xrefs in %zu dwords.", total_xrefs, total_words);
 	core_objc_free(objc);
 	return true;
 }

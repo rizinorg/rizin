@@ -19,8 +19,6 @@
 // 16 KB is the maximum size for a basic block
 #define MAX_FLG_NAME_SIZE 64
 
-#define FIX_JMP_FWD 0
-
 // 64KB max size
 // 256KB max function size
 #define MAX_FCN_SIZE (1024 * 256)
@@ -326,7 +324,7 @@ static void check_purity(HtUP *ht, RzAnalysisFunction *fcn) {
 	ht_up_insert(ht, fcn->addr, NULL);
 	fcn->is_pure = true;
 	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_CALL || xref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL || xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
 			RzAnalysisFunction *called_fcn = rz_analysis_get_fcn_in(fcn->analysis, xref->to, 0);
 			if (!called_fcn) {
 				continue;
@@ -339,7 +337,7 @@ static void check_purity(HtUP *ht, RzAnalysisFunction *fcn) {
 				break;
 			}
 		}
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_DATA) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
 			fcn->is_pure = false;
 			break;
 		}
@@ -367,14 +365,15 @@ static RzAnalysisBlock *bbget(RzAnalysis *analysis, ut64 addr, bool jumpmid) {
 	RzAnalysisBlock *ret = NULL;
 	rz_list_foreach (intersecting, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
-		if (((bb->addr >= eaddr && addr == bb->addr) || rz_analysis_block_contains(bb, addr)) && (!jumpmid || rz_analysis_block_op_starts_at(bb, addr))) {
+		if (((bb->addr >= eaddr && addr == bb->addr) ||
+			    rz_analysis_block_contains(bb, addr)) &&
+			(!jumpmid || rz_analysis_block_op_starts_at(bb, addr))) {
 			if (analysis->opt.delay) {
 				ut8 *buf = malloc(bb->size);
 				if (analysis->iob.read_at(analysis->iob.io, bb->addr, buf, bb->size)) {
 					const int last_instr_idx = bb->ninstr - 1;
 					bool in_delay_slot = false;
-					int i;
-					for (i = last_instr_idx; i >= 0; i--) {
+					for (int i = last_instr_idx; i >= 0; i--) {
 						const ut64 off = rz_analysis_block_get_op_offset(bb, i);
 						const ut64 at = bb->addr + off;
 						if (addr <= at || off >= bb->size) {
@@ -588,13 +587,18 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	} delay = {
 		0
 	};
-	bool arch_destroys_dst = does_arch_destroys_dst(analysis->cur->arch);
-	bool is_arm = analysis->cur->arch && !strncmp(analysis->cur->arch, "arm", 3);
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
-	bool is_x86 = is_arm ? false : analysis->cur->arch && !strncmp(analysis->cur->arch, "x86", 3);
-	bool is_amd64 = is_x86 ? fcn->cc && !strcmp(fcn->cc, "amd64") : false;
-	bool is_dalvik = is_x86 ? false : analysis->cur->arch && !strncmp(analysis->cur->arch, "dalvik", 6);
-	bool is_hexagon = is_x86 ? false : analysis->cur->arch && !strncmp(analysis->cur->arch, "hexagon", 7);
+	bool arch_destroys_dst = does_arch_destroys_dst(analysis->cur->arch);
+	bool is_arm = false, is_x86 = false, is_amd64 = false, is_dalvik = false, is_hexagon = false;
+	if (analysis->cur->arch) {
+		is_arm = !strncmp(analysis->cur->arch, "arm", 3);
+		is_x86 = !strncmp(analysis->cur->arch, "x86", 3);
+		is_dalvik = !strncmp(analysis->cur->arch, "dalvik", 6);
+		is_hexagon = !strncmp(analysis->cur->arch, "hexagon", 7);
+	}
+	is_amd64 = is_x86 ? fcn->cc && !strcmp(fcn->cc, "amd64") : false;
+	bool can_jmpmid = analysis->opt.jmpmid && (is_dalvik || is_x86);
+
 	RzRegItem *variadic_reg = NULL;
 	if (is_amd64) {
 		variadic_reg = rz_reg_get(analysis->reg, "rax", RZ_REG_TYPE_GPR);
@@ -623,7 +627,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	}
 
 	if (!bb) {
-		RzAnalysisBlock *existing_bb = bbget(analysis, addr, analysis->opt.jmpmid && is_x86);
+		RzAnalysisBlock *existing_bb = bbget(analysis, addr, can_jmpmid);
 		if (existing_bb) {
 			bool existing_in_fcn = rz_list_contains(existing_bb->fcns, fcn);
 			existing_bb = rz_analysis_block_split(existing_bb, addr);
@@ -730,6 +734,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			// RET_END causes infinite loops somehow
 			gotoBeach(RZ_ANALYSIS_RET_END);
 		}
+
 		const char *bp_reg = analysis->reg->name[RZ_REG_NAME_BP];
 		const char *sp_reg = analysis->reg->name[RZ_REG_NAME_SP];
 		bool has_stack_regs = bp_reg && sp_reg;
@@ -756,14 +761,15 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 			}
 		}
+
 		if (op.hint.new_bits) {
 			rz_analysis_hint_set_bits(analysis, op.jump, op.hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
-			bbg = bbget(analysis, at, analysis->opt.jmpmid && is_x86);
+			bbg = bbget(analysis, at, can_jmpmid);
 			if (bbg && bbg != bb) {
 				bb->jump = at;
-				if (analysis->opt.jmpmid && is_x86) {
+				if (can_jmpmid) {
 					// This happens when we purposefully walked over another block and overlapped it
 					// and now we hit an offset where the instructions match again.
 					// So we need to split the overwalked block.
@@ -795,7 +801,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					handle = rz_str_replace(handle, ".catch", ".filter", 0);
 					ut64 filter_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
 					if (filter_addr) {
-						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_REF_TYPE_CALL);
+						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_XREF_TYPE_CALL);
 					}
 					bb->jump = at + oplen;
 					if (from_addr != bb->addr) {
@@ -895,7 +901,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters
-			rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA);
+			rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_DATA);
 		}
 		analyze_retpoline(analysis, &op);
 
@@ -1052,7 +1058,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			if (analysis->opt.jmpref) {
-				(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE);
+				(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE);
 			}
 			if (!analysis->opt.jmpabove && (op.jump < fcn->addr)) {
 				gotoBeach(RZ_ANALYSIS_RET_END);
@@ -1087,17 +1093,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
 			}
-#if FIX_JMP_FWD
-			bb->jump = op.jump;
-			bb->fail = UT64_MAX;
-			FITFCNSZ();
-			gotoBeach(RZ_ANALYSIS_RET_END);
-#else
 			if (!overlapped) {
 				set_bb_branches(bb, op.jump, UT64_MAX);
 			}
 			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
-			if (continue_after_jump && is_hexagon) {
+			if (continue_after_jump && (is_hexagon || (is_dalvik && op.cond == RZ_TYPE_COND_EXCEPTION))) {
 				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
 				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 			}
@@ -1111,13 +1111,12 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
 					}
 				} else if (RZ_ABS(diff) > tc) {
-					(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL);
+					(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
 					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
 			}
 			goto beach;
-#endif
 			break;
 		case RZ_ANALYSIS_OP_TYPE_SUB:
 			if (op.val != UT64_MAX && op.val > 0 && op.val < analysis->opt.jmptbl_maxcount) {
@@ -1143,10 +1142,10 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_UCJMP:
 			if (op.prefix & RZ_ANALYSIS_OP_PREFIX_HWLOOP_END) {
 				if (op.jump != 0) {
-					rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE);
+					rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE);
 				}
 				if (op.fail != 0) {
-					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_REF_TYPE_CODE);
+					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_XREF_TYPE_CODE);
 				}
 				if (continue_after_jump) {
 					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
@@ -1158,9 +1157,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 			}
 			if (analysis->opt.cjmpref) {
-				rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE);
+				rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE);
 				if (is_hexagon) {
-					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_REF_TYPE_CODE);
+					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_XREF_TYPE_CODE);
 				}
 			}
 			if (!overlapped) {
@@ -1223,7 +1222,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			// without which the analysis is really slow,
 			// presumably because each opcode would get revisited
 			// (and already covered by a bb) many times
-			goto beach;
+			if (!is_dalvik) {
+				goto beach;
+			}
 			// For some reason, branch delayed code (MIPS) needs to continue
 			break;
 		case RZ_ANALYSIS_OP_TYPE_UCALL:
@@ -1232,7 +1233,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_IRCALL:
 			/* call [dst] */
 			// XXX: this is TYPE_MCALL or indirect-call
-			(void)rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL);
+			(void)rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_CALL);
 
 			if (rz_analysis_noreturn_at(analysis, op.ptr)) {
 				RzAnalysisFunction *f = rz_analysis_get_function_at(analysis, op.ptr);
@@ -1245,7 +1246,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_CCALL:
 		case RZ_ANALYSIS_OP_TYPE_CALL:
 			/* call dst */
-			(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL);
+			(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
 
 			if (rz_analysis_noreturn_at(analysis, op.jump)) {
 				RzAnalysisFunction *f = rz_analysis_get_function_at(analysis, op.jump);
@@ -1399,7 +1400,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			last_is_push = true;
 			last_push_addr = op.val;
 			if (analysis->iob.is_valid_offset(analysis->iob.io, last_push_addr, 1)) {
-				(void)rz_analysis_xrefs_set(analysis, op.addr, last_push_addr, RZ_ANALYSIS_REF_TYPE_DATA);
+				(void)rz_analysis_xrefs_set(analysis, op.addr, last_push_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
 			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_UPUSH:
@@ -1407,7 +1408,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				last_is_push = true;
 				last_push_addr = last_reg_mov_lea_val;
 				if (analysis->iob.is_valid_offset(analysis->iob.io, last_push_addr, 1)) {
-					(void)rz_analysis_xrefs_set(analysis, op.addr, last_push_addr, RZ_ANALYSIS_REF_TYPE_DATA);
+					(void)rz_analysis_xrefs_set(analysis, op.addr, last_push_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
 				}
 			}
 			break;
@@ -1582,7 +1583,7 @@ RZ_API void rz_analysis_trim_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *f
 	const bool is_x86 = analysis->cur->arch && !strcmp(analysis->cur->arch, "x86"); // HACK
 
 	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_CODE && rz_analysis_function_contains(fcn, xref->to) && (!is_x86 || !rz_analysis_function_contains(fcn, xref->from))) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CODE && rz_analysis_function_contains(fcn, xref->to) && (!is_x86 || !rz_analysis_function_contains(fcn, xref->from))) {
 			rz_analysis_xrefs_deln(analysis, xref->from, xref->to, xref->type);
 		}
 	}
@@ -1595,7 +1596,7 @@ RZ_API void rz_analysis_del_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fc
 	RzListIter *iter;
 
 	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
 			rz_analysis_xrefs_deln(analysis, xref->from, xref->to, xref->type);
 		}
 	}
@@ -1604,6 +1605,12 @@ RZ_API void rz_analysis_del_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fc
 
 /* Does NOT invalidate read-ahead cache. */
 RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 len, int reftype) {
+	bool can_jmpmid = false;
+	if (analysis->cur->arch) {
+		bool is_x86 = !strncmp(analysis->cur->arch, "x86", 3);
+		bool is_dalvik = !strncmp(analysis->cur->arch, "dalvik", 6);
+		can_jmpmid = analysis->opt.jmpmid && (is_dalvik || is_x86);
+	}
 	RzPVector *metas = rz_meta_get_all_in(analysis, addr, RZ_META_TYPE_ANY);
 	void **it;
 	rz_pvector_foreach (metas, it) {
@@ -1635,7 +1642,7 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 		}
 	}
 	/* defines fcn. or loc. prefix */
-	fcn->type = (reftype == RZ_ANALYSIS_REF_TYPE_CODE) ? RZ_ANALYSIS_FCN_TYPE_LOC : RZ_ANALYSIS_FCN_TYPE_FCN;
+	fcn->type = (reftype == RZ_ANALYSIS_XREF_TYPE_CODE) ? RZ_ANALYSIS_FCN_TYPE_LOC : RZ_ANALYSIS_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) {
 		fcn->addr = addr;
 	}
@@ -1654,14 +1661,13 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 		RzListIter *iter;
 		RzAnalysisBlock *bb;
 		ut64 endaddr = fcn->addr;
-		const bool is_x86 = analysis->cur->arch && !strcmp(analysis->cur->arch, "x86");
 
 		// set function size as length of continuous sequence of bbs
 		rz_list_sort(fcn->bbs, &cmpaddr);
 		rz_list_foreach (fcn->bbs, iter, bb) {
 			if (endaddr == bb->addr) {
 				endaddr += bb->size;
-			} else if ((endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN) || (analysis->opt.jmpmid && is_x86 && endaddr > bb->addr && bb->addr + bb->size > endaddr)) {
+			} else if ((endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN) || (can_jmpmid && endaddr > bb->addr && bb->addr + bb->size > endaddr)) {
 				endaddr = bb->addr + bb->size;
 			} else {
 				break;
@@ -1854,17 +1860,34 @@ RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 	return result;
 }
 
+/**
+ * \brief Gets the RzCallable's arg count for the given function
+ *
+ * Derives the RzCallable type for the given function,
+ * saves it if it exists, and returns its arguments count.
+ *
+ * \param analysis RzAnalysis instance
+ * \param f Function to update
+ */
+RZ_API int rz_analysis_function_get_arg_count(RzAnalysis *analysis, RzAnalysisFunction *f) {
+	RzCallable *callable = rz_analysis_function_derive_type(analysis, f);
+	if (!callable) {
+		return -1;
+	}
+	rz_type_func_save(analysis->typedb, callable);
+	return rz_pvector_len(callable->args);
+}
+
 // tfj and afsj call this function
 RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	RzAnalysis *a = function->analysis;
 	PJ *pj = pj_new();
-	unsigned int i;
 	char *ret_type_str = NULL;
 	RzType *ret_type = rz_type_func_ret(a->typedb, function->name);
 	if (ret_type) {
 		ret_type_str = rz_type_as_string(a->typedb, ret_type);
 	}
-	int argc = rz_type_func_args_count(a->typedb, function->name);
+	int argc = rz_analysis_function_get_arg_count(a, function);
 
 	pj_o(pj);
 	pj_ks(pj, "name", function->name);
@@ -1876,7 +1899,7 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	}
 	pj_k(pj, "args");
 	pj_a(pj);
-	for (i = 0; i < argc; i++) {
+	for (int i = 0; i < argc; i++) {
 		pj_o(pj);
 		const char *arg_name = rz_type_func_args_name(a->typedb, function->name, i);
 		RzType *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
@@ -2048,11 +2071,16 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_in(const RzAnalysis *analysis, RzA
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	const bool is_x86 = analysis->cur->arch && !strcmp(analysis->cur->arch, "x86");
+	bool can_jmpmid = false;
+	if (analysis->cur->arch) {
+		bool is_x86 = !strncmp(analysis->cur->arch, "x86", 3);
+		bool is_dalvik = !strncmp(analysis->cur->arch, "dalvik", 6);
+		can_jmpmid = analysis->opt.jmpmid && (is_dalvik || is_x86);
+	}
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (addr >= bb->addr && addr < (bb->addr + bb->size) && (!analysis->opt.jmpmid || !is_x86 || rz_analysis_block_op_starts_at(bb, addr))) {
+		if (addr >= bb->addr && addr < (bb->addr + bb->size) && (!can_jmpmid || rz_analysis_block_op_starts_at(bb, addr))) {
 			return bb;
 		}
 	}
@@ -2556,17 +2584,15 @@ RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_types_from_fcn(RzAnalysis *analys
 }
 
 /**
- * \brief Derives the RzCallable type for the given function
+ * \brief Clones the RzCallable type for the given function
  *
- * Checks if the type is defined already for this function, if yes -
- * it returns pointer to the one stored in the types database.
- * If not - it creates a new RzCallable instance based on the function name,
- * its arguments' names and types.
+ * Searches the types database for the given function and
+ * returns a clone of the RzCallable type.
  *
  * \param analysis RzAnalysis instance
  * \param f Function to update
  */
-RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
+RZ_API RZ_OWN RzCallable *rz_analysis_function_clone_type(RzAnalysis *analysis, const RzAnalysisFunction *f) {
 	rz_return_val_if_fail(analysis && f, NULL);
 	// Check first if there is a match with some pre-existing RzCallable type in the database
 	char *shortname = rz_analysis_function_name_guess(analysis->typedb, f->name);
@@ -2582,22 +2608,59 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 		// RzAnalysisFunction
 		return rz_type_callable_clone(callable);
 	}
-	// If there is no match - create a new one.
+	return NULL;
+}
+
+/**
+ * \brief Creates the RzCallable type for the given function
+ *
+ * Creates the RzCallable type for the given function
+ * by searching in the types database and returning it.
+ *
+ * \param analysis RzAnalysis instance
+ * \param f Function to update
+ */
+RZ_API RZ_OWN RzCallable *rz_analysis_function_create_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
 	// TODO: Figure out if we should use shortname or a fullname here
-	// At this point the `callable` pointer is *owned*
-	// This means we have to free it after
-	callable = rz_type_func_new(analysis->typedb, f->name, NULL);
+	RzCallable *callable = rz_type_func_new(analysis->typedb, f->name, NULL);
 	if (!callable) {
 		return NULL;
 	}
-	// Derive retvar and args from that function
+	return callable;
+}
+
+/**
+ * \brief Sets the RzCallable return type for the given function
+ *
+ * Checks if the given function's return type exists
+ * and adds it to RzCallable by cloning it.
+ *
+ * \param analysis RzAnalysis instance
+ * \param f Function to update
+ * \param callable A function type
+ */
+RZ_API void rz_analysis_function_derive_return_type(RzAnalysisFunction *f, RzCallable **callable) {
 	if (f->ret_type) {
-		callable->ret = rz_type_clone(f->ret_type);
+		(*callable)->ret = rz_type_clone(f->ret_type);
 	}
+}
+
+/**
+ * \brief Sets the RzCallable args for the given function
+ *
+ * Gets the given function's arguments (names and types)
+ * and if it has none it simply returns. Otherwise, it
+ * creates RzCallableArgs and adds them to RzCallable.
+ *
+ * \param analysis RzAnalysis instance
+ * \param f Function to update
+ * \param callable A function type
+ */
+RZ_API bool rz_analysis_function_derive_args(RzAnalysis *analysis, RzAnalysisFunction *f, RzCallable **callable) {
 	RzPVector *args = rz_analysis_function_args(analysis, f);
 	if (!args || rz_pvector_empty(args)) {
 		rz_pvector_free(args);
-		return callable;
+		return true;
 	}
 	void **it;
 	rz_pvector_foreach (args, it) {
@@ -2609,17 +2672,47 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 		RzType *cloned_type = rz_type_clone(var->type);
 		if (!cloned_type) {
 			rz_pvector_free(args);
-			rz_type_callable_free(callable);
-			return NULL;
+			rz_type_callable_free(*callable);
+			RZ_LOG_ERROR("Cannot parse function's argument type\n");
+			return false;
 		}
 		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, cloned_type);
 		if (!arg) {
 			rz_pvector_free(args);
-			rz_type_callable_free(callable);
-			return NULL;
+			rz_type_callable_free(*callable);
+			RZ_LOG_ERROR("Cannot create callable argument\n");
+			return false;
 		}
-		rz_type_callable_arg_add(callable, arg);
+		rz_type_callable_arg_add(*callable, arg);
 	}
 	rz_pvector_free(args);
+	return true;
+}
+
+/**
+ * \brief Derives the RzCallable type for the given function
+ *
+ * Checks if the type is defined already for this function, if yes -
+ * it returns pointer to the one stored in the types database.
+ * If not - it creates a new RzCallable instance based on the function name,
+ * its arguments' names and types.
+ *
+ * \param analysis RzAnalysis instance
+ * \param f Function to update
+ */
+RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
+	RzCallable *callable = rz_analysis_function_clone_type(analysis, f);
+	if (!callable) {
+		// If there is no match - create a new one.
+		callable = rz_analysis_function_create_type(analysis, f);
+		if (!callable) {
+			return NULL;
+		}
+		// Derive retvar and args from that function
+		rz_analysis_function_derive_return_type(f, &callable);
+		if (!rz_analysis_function_derive_args(analysis, f, &callable)) {
+			return NULL;
+		}
+	}
 	return callable;
 }

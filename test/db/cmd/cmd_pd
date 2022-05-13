@@ -403,7 +403,7 @@ e asm.cmt.right=0
 pd 10
 EOF
 EXPECT=<<EOF
-                 ; [14] -r-x section size 2466 named .text
+                 ; [13] -r-x section size 2466 named .text
                  ;-- entry0:
                  ;-- section..text:
                  xor ebp, ebp
@@ -658,6 +658,29 @@ EXPECT=<<EOF
 0x100001114 call sym.imp.getenv
 0x100001121 call sym.imp.atoi
 0x10000112c call sym.imp.getuid
+0x10000116e call newname
+0x100001179 str.1_ABCFGHLOPRSTUWabcdefghiklmnopqrstuvwx
+0x100001186 call sym.imp.getopt
+0x100001233 str.CLICOLOR
+0x100001246 call sym.imp.setenv
+0x100001253 str.bin_ls
+0x10000125a str.Unix2003
+0x100001261 call sym.imp.compat_mode
+0x10000128c str.bin_ls
+0x100001293 str.Unix2003
+0x10000129a call sym.imp.compat_mode
+0x1000013a2 str.bin_ls
+0x1000013a9 str.Unix2003
+0x1000013b0 call sym.imp.compat_mode
+0x1000013d3 str.bin_ls
+0x1000013da str.Unix2003
+0x1000013e1 call sym.imp.compat_mode
+0x10000143a str.bin_ls
+0x100001441 str.Unix2003
+0x100001448 call sym.imp.compat_mode
+0x10000145a str.bin_ls
+0x100001461 str.Unix2003
+0x100001468 call sym.imp.compat_mode
 EOF
 RUN
 
@@ -667,7 +690,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.lines.fcn=true
 s 0x004017c0
-af+ 0x004017c0 fcn2.0x004017c0
+af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 pdf
 ?e
@@ -697,7 +720,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.lines.fcn=true
 s 0x004017c0
-af+ 0x004017c0 fcn2.0x004017c0
+af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 pdf
 ?e
@@ -1023,7 +1046,7 @@ EXPECT=<<EOF
             0x004016c0      mov   edi, 0x40230c                        ; " %B%"
             0x004016c0      mov   edi, 0x40230c                        ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
             0x004016ca      mov   edi, 0x40235a                        ; 'Z#@' ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
-            0x004016d4      mov   edi, str.e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k ; u"\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\n"
+            0x004016d4      mov   edi, str.e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k ; u"\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u"
 EOF
 RUN
 
@@ -1052,7 +1075,7 @@ EXPECT=<<EOF
             0x004016ed      mov   edi, 0x40258c                        ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m \xa2\u20ac\U00010348 \e[0m\n"
             0x004016f7      mov   edi, 0x40266c                        ; U"Mountain range with embedded quad zeros: \U00010300A\U00010300A\U00010300A\n"
             0x00401701      mov   edi, 0x402730                        ; '0'@' ; "e%"
-            0x00401701      mov   edi, 0x402730                        ; '0'@' ; U"\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565"
+            0x00401701      mov   edi, 0x402730                        ; '0'@' ; U"\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u"
 EOF
 RUN
 
@@ -2505,5 +2528,20 @@ xor   ebp, ebp
 lbz   r10, -0x12cf(r9)
 xor   ebp, ebp
 xor   ebp, ebp
+EOF
+RUN
+
+NAME=pd is not limited by blocksize
+FILE==
+CMDS=<<EOF
+b 10
+pd~?
+pd 3~?
+pd 20~?
+EOF
+EXPECT=<<EOF
+10
+3
+20
 EOF
 RUN

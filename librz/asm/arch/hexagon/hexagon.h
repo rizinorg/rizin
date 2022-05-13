@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-04-02 10:48:34-04:00
+// Date of code generation: 2022-04-17 16:07:17+02:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -16,6 +16,9 @@
 #include <rz_config.h>
 #include <rz_list.h>
 #include <rz_types.h>
+
+#define HEX_MAX_OPERANDS    6
+#define HEX_PARSE_BITS_MASK 0xc000
 
 #define MAX_CONST_EXT      512
 #define HEXAGON_STATE_PKTS 8
@@ -99,7 +102,7 @@ typedef struct {
 	int shift; // Optional shift left is it true?
 	HexPktInfo pkt_info; // Packet related information. First/last instr., prefix and postfix for mnemonic etc.
 	ut8 op_count;
-	HexOp ops[6];
+	HexOp ops[HEX_MAX_OPERANDS];
 	char mnem_infix[128]; // The mnemonic without the pre- and postfix.
 	char mnem[192]; // Instruction mnemonic
 	ut32 addr; // Memory address the instruction is located.
@@ -133,6 +136,27 @@ typedef struct {
 	RzAsm rz_asm; // Copy of RzAsm struct. Holds certain flags of interesed for disassembly formatting.
 	RzConfig *cfg;
 } HexState;
+
+typedef enum {
+	HEX_REG_CLASS_CTR_REGS,
+	HEX_REG_CLASS_CTR_REGS64,
+	HEX_REG_CLASS_DOUBLE_REGS,
+	HEX_REG_CLASS_GENERAL_DOUBLE_LOW8_REGS,
+	HEX_REG_CLASS_GENERAL_SUB_REGS,
+	HEX_REG_CLASS_GUEST_REGS,
+	HEX_REG_CLASS_GUEST_REGS64,
+	HEX_REG_CLASS_HVX_QR,
+	HEX_REG_CLASS_HVX_VQR,
+	HEX_REG_CLASS_HVX_VR,
+	HEX_REG_CLASS_HVX_WR,
+	HEX_REG_CLASS_INT_REGS,
+	HEX_REG_CLASS_INT_REGS_LOW8,
+	HEX_REG_CLASS_MOD_REGS,
+	HEX_REG_CLASS_PRED_REGS,
+	HEX_REG_CLASS_SYS_REGS,
+	HEX_REG_CLASS_SYS_REGS64
+} HexRegClass;
+
 typedef enum {
 	HEX_REG_CTR_REGS_C0 = 0, // sa0
 	HEX_REG_CTR_REGS_C1 = 1, // lc0
@@ -555,6 +579,7 @@ char *hex_get_mod_regs(int opcode_reg, bool get_alias);
 char *hex_get_pred_regs(int opcode_reg, bool get_alias);
 char *hex_get_sys_regs(int opcode_reg, bool get_alias);
 char *hex_get_sys_regs64(int opcode_reg, bool get_alias);
+char *hex_get_reg_in_class(HexRegClass cls, int opcode_reg, bool get_alias);
 
 RZ_API RZ_BORROW RzConfig *hexagon_get_config();
 RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_new_extender, const ut32 addr);

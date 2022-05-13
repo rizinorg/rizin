@@ -128,10 +128,13 @@ RZ_API ut64 rz_buf_size(RZ_NONNULL RzBuffer *b);
 RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b);
 RZ_API void rz_buf_free(RzBuffer *b);
 RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff);
-RZ_DEPRECATE RZ_API RZ_BORROW const ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size);
+RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *size);
 
-RZ_API st64 rz_buf_uleb128(RzBuffer *b, ut64 *v);
-RZ_API st64 rz_buf_sleb128(RzBuffer *b, st64 *v);
+typedef ut64 (*RzBufferFwdScan)(RZ_BORROW RZ_NONNULL const ut8 *buf, ut64 len, RZ_NULLABLE void *user);
+RZ_API ut64 rz_buf_fwd_scan(RZ_NONNULL RzBuffer *b, ut64 start, ut64 amount, RZ_NONNULL RzBufferFwdScan fwd_scan, RZ_NULLABLE void *user);
+
+RZ_API st64 rz_buf_uleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL ut64 *value);
+RZ_API st64 rz_buf_sleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL st64 *value);
 
 static inline st64 rz_buf_uleb128_at(RzBuffer *b, ut64 addr, ut64 *v) {
 	rz_buf_seek(b, addr, RZ_BUF_SET);

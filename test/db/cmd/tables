@@ -6,7 +6,7 @@ EOF
 EXPECT=<<EOF
 size  
 ------
-16.8K
+12.9K
 EOF
 RUN
 
@@ -28,7 +28,6 @@ size
 9
 13
 16
-17
 21
 23
 24
@@ -55,7 +54,6 @@ size
 203
 240
 256
-268
 272
 432
 448
@@ -65,8 +63,6 @@ size
 540
 978
 1160
-1255
-2424
 4132
 EOF
 RUN
@@ -77,7 +73,7 @@ CMDS=<<EOF
 flt:size/ne/0:addr/ne/0x00000000:/head/10:csv~:..20
 flt:space/eq/relocs:addr/cols/name:/head/3:json~{}
 flt:/head/10:/tail/4:space/cols/name
-flt:/page/2/10:sort/cols/space/size/name:size/sort/inc:fancy
+flt:/page/2/10:sort/cols/space/size/name:name/sort/inc:fancy
 EOF
 EXPECT=<<EOF
 addr,size,space,name
@@ -105,28 +101,28 @@ addr,size,space,name
     "name": "reloc.operator_delete_void"
   }
 ]
-space            name                                
------------------------------------------------------
-segments         segment.GNU_STACK
-symbols.sections sym..comment
-imports          loc.imp.__gmon_start
-imports          loc.imp._Jv_RegisterClasses
-imports          loc.imp._ITM_deregisterTMCloneTable
-.----------------------------------------------------------------------------------------------------.
-| space     | size  | name                                                                           |
-)----------------------------------------------------------------------------------------------------(
-| classes   | 1     | class.std::ostream                                                             |
-| classes   | 1     | class.std::ios_base::Init                                                      |
-| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char_____std::operator____std  |
-| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char_____std::endl_char__std   |
-| classes   | 1     | class.B                                                                        |
-| classes   | 1     | class.A                                                                        |
-| classes   | 1     | class.C                                                                        |
-| imports   | 16    | loc.imp._ITM_registerTMCloneTable                                              |
-| imports   | 16    | loc.imp._ITM_deregisterTMCloneTable                                            |
-| segments  | 64    | segment.ehdr                                                                   |
-| segments  | 4132  | segment.LOAD0                                                                  |
-`----------------------------------------------------------------------------------------------------'
+space    name                                                                         
+--------------------------------------------------------------------------------------
+classes  class.std::basic_ostream_char__std::char_traits_char_____std::endl_char__std
+classes  class.B
+classes  class.A
+classes  class.C
+segments segment.LOAD0
+.---------------------------------------------------------.
+| space             | size  | name                        |
+)---------------------------------------------------------(
+| sections          | 28    | section..interp             |
+| sections          | 32    | section..note.ABI_tag       |
+| sections          | 36    | section..note.gnu.build_id  |
+| segments          | 28    | segment.INTERP              |
+| segments          | 4132  | segment.LOAD0               |
+| segments          | 68    | segment.NOTE                |
+| segments          | 448   | segment.PHDR                |
+| segments          | 64    | segment.ehdr                |
+| symbols.sections  | 0     | sym..interp                 |
+| symbols.sections  | 0     | sym..note.ABI_tag           |
+| symbols.sections  | 0     | sym..note.gnu.build_id      |
+`---------------------------------------------------------'
 EOF
 RUN
 

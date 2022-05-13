@@ -5,7 +5,6 @@ debug_plugins = [
   'esil',
   'gdb',
   'io',
-  'native',
   'null',
   'rap',
   'winkd'
@@ -13,10 +12,6 @@ debug_plugins = [
 
 if get_option('use_gpl')
   debug_plugins += 'qnx'
-endif
-
-if host_machine.system() == 'windows'
-  debug_plugins += 'windbg'
 endif
 
 rz_debug_sources = [
@@ -40,7 +35,6 @@ rz_debug_sources = [
   'p/debug_esil.c',
   'p/debug_gdb.c',
   'p/debug_io.c',
-  'p/debug_native.c',
   'p/debug_null.c',
   'p/debug_rap.c',
   'p/debug_winkd.c',
@@ -76,11 +70,39 @@ if get_option('use_gpl')
   rz_debug_sources += 'p/debug_qnx.c'
 endif
 
-if host_machine.system() == 'linux' or host_machine.system() == 'android'
-  rz_debug_sources += ['p/native/linux/linux_debug.c']
-endif
-if host_machine.system() == 'linux'
-  rz_debug_sources += ['p/native/linux/linux_coredump.c']
+if has_debugger
+  debug_plugins += ['native']
+  rz_debug_sources += ['p/debug_native.c']
+
+  if host_machine.system() == 'linux' or host_machine.system() == 'android'
+    rz_debug_sources += ['p/native/linux/linux_debug.c']
+  endif
+  if host_machine.system() == 'linux'
+    rz_debug_sources += ['p/native/linux/linux_coredump.c']
+  endif
+
+  if host_machine.system() != 'windows'
+    rz_debug_sources += [
+      'p/native/procfs.c'
+    ]
+  endif
+
+  if host_machine.system() == 'darwin'
+    rz_debug_sources += [
+      'p/native/xnu/xnu_debug.c',
+      #'p/native/xnu/trap_arm.c',
+      #'p/native/xnu/trap_x86.c',
+      #'p/native/xnu/xnu_excthreads.c',
+      #'p/native/xnu/xnu_threads.c',
+    ]
+  endif
+
+  if ['netbsd', 'openbsd', 'freebsd', 'dragonfly'].contains(host_machine.system())
+    rz_debug_deps += cc.find_library('kvm', required: true, static: is_static_build)
+    rz_debug_sources += [
+      'p/native/bsd/bsd_debug.c',
+    ]
+  endif
 endif
 
 if host_machine.system() == 'windows'
@@ -91,29 +113,8 @@ if host_machine.system() == 'windows'
     'p/native/windows/windows_message.c',
   ]
   rz_debug_deps += dependency('rzw32dbg_wrap')
-endif
 
-if host_machine.system() != 'windows'
-  rz_debug_sources += [
-    'p/native/procfs.c'
-  ]
-endif
-
-if host_machine.system() == 'darwin'
-  rz_debug_sources += [
-    'p/native/xnu/xnu_debug.c',
-    #'p/native/xnu/trap_arm.c',
-    #'p/native/xnu/trap_x86.c',
-    #'p/native/xnu/xnu_excthreads.c',
-    #'p/native/xnu/xnu_threads.c',
-  ]
-endif
-
-if ['netbsd', 'openbsd', 'freebsd', 'dragonfly'].contains(host_machine.system())
-  rz_debug_deps += cc.find_library('kvm', required: true, static: is_static_build)
-  rz_debug_sources += [
-    'p/native/bsd/bsd_debug.c',
-  ]
+  debug_plugins += 'windbg'
 endif
 
 rz_debug_inc = [
@@ -135,6 +136,7 @@ rz_debug = library('rz_debug', rz_debug_sources,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
   soversion: rizin_libversion,
+  version: rizin_version,
   name_suffix: lib_name_suffix,
   name_prefix: lib_name_prefix,
 )

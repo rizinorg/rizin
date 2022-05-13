@@ -27,6 +27,7 @@
 #define RZ_AX_FLAG_DUMP_C_BYTES     (1ull << 21) // -i (dump as C byte array)
 #define RZ_AX_FLAG_OCTAL_TO_RAW     (1ull << 22) // -o (octalstr -> raw)
 #define RZ_AX_FLAG_IPADDR_TO_LONG   (1ull << 23) // -I (IP address <-> LONG)
+#define RZ_AX_FLAG_SET_BITS         (1ull << 24) // -p (find position of set bits)
 
 #define has_flag(f, x) (f & x)
 
@@ -229,7 +230,8 @@ static int help(void) {
 		"  -x      hash string          ;  rz-ax -x linux osx\n"
 		"  -u      units                ;  rz-ax -u 389289238 # 317.0M\n"
 		"  -w      signed word          ;  rz-ax -w 16 0xffff\n"
-		"  -v      version              ;  rz-ax -v\n");
+		"  -v      version              ;  rz-ax -v\n"
+		"  -p      position of set bits ;  rz-ax -p 0xb3\n");
 	return true;
 }
 
@@ -269,6 +271,7 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'S': flags ^= RZ_AX_FLAG_RAW_TO_HEX; break;
 			case 'b': flags ^= RZ_AX_FLAG_BIN_TO_STR; break;
 			case 'B': flags ^= RZ_AX_FLAG_STR_TO_BIN; break;
+			case 'p': flags ^= RZ_AX_FLAG_SET_BITS; break;
 			case 'x': flags ^= RZ_AX_FLAG_STR_TO_DJB2; break;
 			case 'k': flags ^= RZ_AX_FLAG_KEEP_BASE; break;
 			case 'f': flags ^= RZ_AX_FLAG_FLOATING_POINT; break;
@@ -397,7 +400,6 @@ dotherax:
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_STR_TO_BIN)) { // -B (bin -> str)
 		int i = 0;
-		// TODO: move to rz_util
 		for (i = 0; i < strlen(str); i++) {
 			ut8 ch = str[i];
 			printf("%d%d%d%d"
@@ -410,6 +412,41 @@ dotherax:
 				ch & 4 ? 1 : 0,
 				ch & 2 ? 1 : 0,
 				ch & 1 ? 1 : 0);
+		}
+		return true;
+	} else if (has_flag(flags, RZ_AX_FLAG_SET_BITS)) { // -p (find position of set bits)
+		ut64 n = rz_num_math(num, str);
+		char strbits[65] = { 0 };
+		int i = 0, set_bits_ctr = 0;
+		rz_num_to_bits(strbits, n);
+		rz_str_reverse(strbits); // because we count Right to Left
+		char last_char = 0;
+		while (strbits[i] != '\0') {
+			if (strbits[i] == '1') {
+				++set_bits_ctr;
+				if (i == 0) {
+					printf("[%d", i);
+				} else if (strbits[i] == '1' && last_char == '0') {
+					printf("[%d", i);
+				}
+			}
+			if (strbits[i] == '0' && last_char == '1') {
+				if (set_bits_ctr == 1) {
+					printf("]: 1\n");
+				} else if (strbits[i + 1] == '\0') {
+					printf("-%d]: 1\n", i);
+				} else
+					printf("-%d]: 1\n", i - 1);
+				set_bits_ctr = 0;
+			} else if (strbits[i] == '1' && strbits[i + 1] == '\0') {
+				if (set_bits_ctr == 1) {
+					printf("]: 1\n");
+				} else
+					printf("-%d]: 1\n", i);
+				set_bits_ctr = 0;
+			}
+			last_char = strbits[i];
+			++i;
 		}
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_SIGNED_WORD)) { // -w

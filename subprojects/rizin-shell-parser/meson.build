@@ -4,6 +4,7 @@ project('rizin-shell-parser', 'c',
 
 tree_sitter_dep = dependency('tree-sitter')
 grammar_js = files('grammar.js')
+tree_sitter_wrap_py = files('meson_tree_sitter_generate.py')
 
 subdir('src')
 

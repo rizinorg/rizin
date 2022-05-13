@@ -11,8 +11,6 @@
 #include <signal.h>
 #include <sys/types.h>
 
-#if DEBUGGER
-
 #include "native/drx.c" // x86 specific
 #include "rz_cons.h"
 
@@ -84,8 +82,6 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 #else
 #define WAITPID_FLAGS 0
 #endif
-
-#endif /* IF DEBUGGER */
 
 /* begin of debugger code */
 #if DEBUGGER
@@ -1450,6 +1446,9 @@ static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 		return set
 			? arm32_hwbp_add(dbg, bp, b)
 			: arm32_hwbp_del(dbg, bp, b);
+#elif __riscv
+		dbg = NULL;
+		return false;
 #endif
 	}
 	return false;
@@ -1529,7 +1528,7 @@ static int rz_debug_native_map_protect(RzDebug *dbg, ut64 addr, int size, int pe
 		"main@global(0) { sc(%p,%d,%d);\n"
 		":int3\n"
 		"}\n",
-		num, (void *)addr, size, io_perms_to_prot(perms));
+		num, (void *)(size_t)addr, size, io_perms_to_prot(perms));
 
 	rz_egg_reset(dbg->egg);
 	rz_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
@@ -1672,9 +1671,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.modules_get = rz_debug_native_modules_get,
 	.map_protect = rz_debug_native_map_protect,
 	.breakpoint = rz_debug_native_bp,
-#if __i386__ || __x86_64__
 	.drx = rz_debug_native_drx,
-#endif
 	.gcore = rz_debug_gcore,
 };
 

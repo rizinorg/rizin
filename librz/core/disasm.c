@@ -1127,7 +1127,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 			RzListIter *iter;
 			RzAnalysisXRef *xref;
 			rz_list_foreach (list, iter, xref) {
-				if ((xref->type == RZ_ANALYSIS_REF_TYPE_DATA || xref->type == RZ_ANALYSIS_REF_TYPE_STRING) && ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_LEA) {
+				if ((xref->type == RZ_ANALYSIS_XREF_TYPE_DATA || xref->type == RZ_ANALYSIS_XREF_TYPE_STRING) && ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_LEA) {
 					core->parser->subrel_addr = xref->to;
 					break;
 				}
@@ -1355,7 +1355,7 @@ static void ds_show_refs(RzDisasmState *ds) {
 			ds_begin_comment(ds);
 			ds_comment(ds, true, "; (%s)", cmt);
 		}
-		if (xref->type & RZ_ANALYSIS_REF_TYPE_CALL) {
+		if (xref->type & RZ_ANALYSIS_XREF_TYPE_CALL) {
 			RzAnalysisOp aop;
 			ut8 buf[12];
 			rz_io_read_at(ds->core->io, xref->from, buf, sizeof(buf));
@@ -1438,7 +1438,7 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 	RzAnalysisFunction *fun, *next_fun;
 	RzFlagItem *f, *next_f;
 	rz_list_foreach (xrefs, iter, xrefi) {
-		if (!ds->asm_xrefs_code && xrefi->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+		if (!ds->asm_xrefs_code && xrefi->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
 			continue;
 		}
 		if (xrefi->to == ds->at) {
@@ -3922,7 +3922,7 @@ static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refad
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment(ds);
-		ds_comment(ds, true, "; %s%s\"%s\"%s", inv ? Color_INVERT : "", prefix, escstr,
+		ds_comment(ds, true, "; %s%s\"%.128s\"%s", inv ? Color_INVERT : "", prefix, escstr,
 			inv ? Color_INVERT_RESET : "");
 		ds->printed_str_addr = refaddr;
 		free(escstr);
@@ -4001,7 +4001,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 	RzAnalysisXRef *xref;
 	RzList *list = rz_analysis_xrefs_get_from(core->analysis, ds->at);
 	rz_list_foreach (list, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_STRING || xref->type == RZ_ANALYSIS_REF_TYPE_DATA) {
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_STRING || xref->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
 			if ((f = rz_flag_get_i(core->flags, xref->to))) {
 				refaddr = xref->to;
 				break;
@@ -4770,7 +4770,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 	}
 	switch (ds->analysis_op.type) {
 	case RZ_ANALYSIS_OP_TYPE_SWI: {
-		char *s = cmd_syscall_dostr(core, ds->analysis_op.val, at);
+		char *s = rz_core_syscall_as_string(core, ds->analysis_op.val, at);
 		if (s) {
 			ds_comment_esil(ds, true, true, "; %s", s);
 			free(s);
@@ -6258,8 +6258,6 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	rz_analysis_op_fini(&ds->analysis_op);
 	ds_free(ds);
 	if (!result) {
-		pj_o(pj);
-		pj_end(pj);
 		result = true;
 	}
 	return result;

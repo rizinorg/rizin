@@ -283,7 +283,7 @@ static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzCore *core = (RzCore *)user;
 	int depth = rz_config_get_i(core->config, "analysis.depth");
 	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
-	rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth);
+	rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth);
 	preludecnt++;
 	return 1;
 }
@@ -326,71 +326,58 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	return preludecnt;
 }
 
-static int count_functions(RzCore *core) {
-	return rz_list_length(core->analysis->fcns);
-}
-
 RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 	int ret = -1;
-	const char *prelude = rz_config_get(core->config, "analysis.prelude");
 	ut64 from = UT64_MAX;
 	ut64 to = UT64_MAX;
+	int keyword_length = 0;
+	ut8 *keyword = NULL;
+	const char *prelude = rz_config_get(core->config, "analysis.prelude");
 	const char *where = rz_config_get(core->config, "analysis.in");
 
 	RzList *list = rz_core_get_boundaries_prot(core, RZ_PERM_X, where, "search");
-	RzListIter *iter;
-	RzIOMap *p;
+	RzList *arch_preludes = NULL;
+	RzListIter *iter = NULL, *iter2 = NULL;
+	RzIOMap *p = NULL;
+	RzSearchKeyword *kw = NULL;
 
 	if (!list) {
 		return -1;
 	}
 
-	int fc0 = count_functions(core);
+	if (RZ_STR_ISNOTEMPTY(prelude)) {
+		keyword = malloc(strlen(prelude) + 1);
+		if (!keyword) {
+			RZ_LOG_ERROR("aap: cannot allocate 'analysis.prelude' buffer\n");
+			return -1;
+		}
+		keyword_length = rz_hex_str2bin(prelude, keyword);
+	} else {
+		arch_preludes = rz_analysis_preludes(core->analysis);
+		if (!arch_preludes) {
+			return -1;
+		}
+	}
+
 	rz_list_foreach (list, iter, p) {
-		if (log) {
-			eprintf("\r[>] Scanning %s 0x%" PFMT64x " - 0x%" PFMT64x " ",
-				rz_str_rwx_i(p->perm), p->itv.addr, rz_itv_end(p->itv));
-			if (!(p->perm & RZ_PERM_X)) {
-				eprintf("skip\n");
-				continue;
-			}
+		if (!(p->perm & RZ_PERM_X)) {
+			continue;
 		}
 		from = p->itv.addr;
 		to = rz_itv_end(p->itv);
-		if (prelude && *prelude) {
-			ut8 *kw = malloc(strlen(prelude) + 1);
-			int kwlen = rz_hex_str2bin(prelude, kw);
-			ret = rz_core_search_prelude(core, from, to, kw, kwlen, NULL, 0);
-			free(kw);
+		if (keyword && keyword_length > 0) {
+			ret = rz_core_search_prelude(core, from, to, keyword, keyword_length, NULL, 0);
 		} else {
-			RzList *preds = rz_analysis_preludes(core->analysis);
-			if (preds) {
-				RzListIter *iter;
-				RzSearchKeyword *kw;
-				rz_list_foreach (preds, iter, kw) {
-					ret = rz_core_search_prelude(core, from, to,
-						kw->bin_keyword, kw->keyword_length,
-						kw->bin_binmask, kw->binmask_length);
-				}
-			} else {
-				if (log) {
-					eprintf("ap: Unsupported asm.arch and asm.bits\n");
-				}
+			rz_list_foreach (arch_preludes, iter2, kw) {
+				ret = rz_core_search_prelude(core, from, to,
+					kw->bin_keyword, kw->keyword_length,
+					kw->bin_binmask, kw->binmask_length);
 			}
 		}
-		if (log) {
-			eprintf("done\n");
-		}
 	}
-	int fc1 = count_functions(core);
-	if (log) {
-		if (list) {
-			eprintf("Analyzed %d functions based on preludes\n", fc1 - fc0);
-		} else {
-			eprintf("No executable section found, cannot analyze anything. Use 'S' to change or define permissions of sections\n");
-		}
-	}
+	free(keyword);
 	rz_list_free(list);
+	rz_list_free(arch_preludes);
 	return ret;
 }
 

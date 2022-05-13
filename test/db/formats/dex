@@ -1489,3 +1489,114 @@ EXPECT=<<EOF
  6 - r-x 0x0000000a vfile://1/reloc-targets
 EOF
 RUN
+
+NAME=dexdump like output of the dex data 
+FILE=bins/dex/Hello.dex
+CMDS=dexs
+EXPECT=<<EOF
+DEX file header:
+version             : Android 3.2 (API level 13 and earlier)
+checksum            : 1b1f79b5
+signature           : 3c99...7f13
+file_size           : 1000
+header_size         : 112
+link_size           : 0
+link_off            : 0 (0x000000)
+string_ids_size     : 22
+string_ids_off      : 112 (0x000070)
+type_ids_size       : 8
+type_ids_off        : 200 (0x0000c8)
+proto_ids_size      : 5
+proto_ids_off       : 232 (0x0000e8)
+field_ids_size      : 2
+field_ids_off       : 292 (0x000124)
+method_ids_size     : 8
+method_ids_off      : 308 (0x000134)
+class_defs_size     : 1
+class_defs_off      : 372 (0x000174)
+data_size           : 596
+data_off            : 404 (0x000194)
+
+Class #0 header:
+offset              : 0x174
+class_idx           : 0
+access_flags        : 1 (0x0001)
+superclass_idx      : 2
+interfaces_off      : 0 (0x000000)
+source_file_idx     : 2
+annotations_off     : 0 (0x000000)
+class_data_off      : 818 (0x000332)
+static_values_offset: 0 (0x000000)
+static_fields_size  : 0
+instance_fields_size: 1
+direct_methods_size : 2
+virtual_methods_size: 1
+
+Class #0            -
+  Class descriptor  : 'LHello;'
+  Access flags      : 0x0001 (PUBLIC)
+  Superclass        : 'Ljava/lang/Object;'
+  Interfaces        -
+  Static fields     -
+  Instance fields   -
+    #0             : (in LHello;)
+      name          : 'who'
+      type          : 'Ljava/lang/String;'
+      access        : 0x0002 (PRIVATE)
+  Direct methods    -
+    #0             : (in LHello;)
+      name          : '<init>'
+      type          : '(Ljava/lang/String;)V'
+      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      method_idx    : 0
+      code          : (available)
+    #1             : (in LHello;)
+      name          : 'main'
+      type          : '([Ljava/lang/String;)V'
+      access        : 0x0009 (PUBLIC STATIC)
+      method_idx    : 1
+      code          : (available)
+  Virtual methods   -
+    #0             : (in LHello;)
+      name          : 'say'
+      type          : '()V'
+      access        : 0x0001 (PUBLIC)
+      method_idx    : 2
+      code          : (available)
+EOF
+RUN
+
+
+NAME=dexdump like output of the dex exportable symbols (public/protected) 
+FILE=bins/dex/Hello.dex
+CMDS=dexe
+EXPECT=<<EOF
+Class #0            -
+  Class descriptor  : 'LHello;'
+  Access flags      : 0x0001 (PUBLIC)
+  Superclass        : 'Ljava/lang/Object;'
+  Interfaces        -
+  Static fields     -
+  Instance fields   -
+  Direct methods    -
+    #0             : (in LHello;)
+      name          : '<init>'
+      type          : '(Ljava/lang/String;)V'
+      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      method_idx    : 0
+      code          : (available)
+    #1             : (in LHello;)
+      name          : 'main'
+      type          : '([Ljava/lang/String;)V'
+      access        : 0x0009 (PUBLIC STATIC)
+      method_idx    : 1
+      code          : (available)
+  Virtual methods   -
+    #0             : (in LHello;)
+      name          : 'say'
+      type          : '()V'
+      access        : 0x0001 (PUBLIC)
+      method_idx    : 2
+      code          : (available)
+EOF
+RUN

@@ -102,7 +102,7 @@ static void regs_to_flags(RzCore *core, RzReg *regs) {
  * "makes sens" currently means regs that have the same size as an address,
  * but this may change in case a better heuristic is found.
  */
-RZ_IPI void rz_core_reg_update_flags(RzCore *core) {
+RZ_API void rz_core_reg_update_flags(RzCore *core) {
 	if (rz_core_is_debug(core) && !rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
 		return;
 	}

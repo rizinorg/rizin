@@ -3,7 +3,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 

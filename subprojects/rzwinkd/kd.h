@@ -86,6 +86,8 @@ enum KD_PACKET_MANIPULATE_TYPE {
 #define KD_PACKET_DATA   0x30303030
 #define KD_PACKET_CTRL   0x69696969
 
+#define KD_INITIAL_PACKET_ID 0x80800000
+
 #define KD_MAX_PAYLOAD     0x800
 #define KD_PACKET_MAX_SIZE 4000 // Not used ? What is max payload ?
 
@@ -192,6 +194,15 @@ RZ_PACKED(
 					uint64_t ex_addr;
 				})
 			exception;
+			RZ_PACKED(
+				struct {
+					uint64_t pathsize;
+					uint64_t base;
+					uint64_t unknown;
+					uint32_t checksum;
+					uint32_t size;
+				})
+			load_symbols;
 		};
 	})
 kd_stc_64;

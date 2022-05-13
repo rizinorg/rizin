@@ -4,6 +4,7 @@
 #include <rz_analysis.h>
 #include <rz_sign.h>
 #include <rz_util/rz_path.h>
+#include "test_config.h"
 #include "minunit.h"
 #include "test_sdb.h"
 
@@ -550,9 +551,8 @@ bool test_analysis_var_save() {
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
-	free(types_dir);
 
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
 
@@ -718,11 +718,11 @@ Sdb *xrefs_ref_db() {
 bool test_analysis_xrefs_save() {
 	RzAnalysis *analysis = rz_analysis_new();
 
-	rz_analysis_xrefs_set(analysis, 0x1337, 4242, RZ_ANALYSIS_REF_TYPE_NULL);
-	rz_analysis_xrefs_set(analysis, 0x1337, 4243, RZ_ANALYSIS_REF_TYPE_CODE);
-	rz_analysis_xrefs_set(analysis, 1234, 4243, RZ_ANALYSIS_REF_TYPE_CALL);
-	rz_analysis_xrefs_set(analysis, 42, 4321, RZ_ANALYSIS_REF_TYPE_DATA);
-	rz_analysis_xrefs_set(analysis, 666, 333, RZ_ANALYSIS_REF_TYPE_STRING);
+	rz_analysis_xrefs_set(analysis, 0x1337, 4242, RZ_ANALYSIS_XREF_TYPE_NULL);
+	rz_analysis_xrefs_set(analysis, 0x1337, 4243, RZ_ANALYSIS_XREF_TYPE_CODE);
+	rz_analysis_xrefs_set(analysis, 1234, 4243, RZ_ANALYSIS_XREF_TYPE_CALL);
+	rz_analysis_xrefs_set(analysis, 42, 4321, RZ_ANALYSIS_XREF_TYPE_DATA);
+	rz_analysis_xrefs_set(analysis, 666, 333, RZ_ANALYSIS_XREF_TYPE_STRING);
 
 	Sdb *db = sdb_new0();
 	rz_serialize_analysis_xrefs_save(db, analysis);
@@ -748,41 +748,41 @@ bool test_analysis_xrefs_load() {
 	mu_assert_eq(rz_list_length(xrefs), 2, "xrefs from count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 0x1337, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4242, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_NULL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_NULL, "xref type");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->from, 0x1337, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->to, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_XREF_TYPE_CODE, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 1234);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 1234, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_CALL, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 42);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 42, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4321, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_DATA, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_DATA, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 666);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 666, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 333, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_STRING, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_STRING, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_to(analysis, 4243);
 	mu_assert_eq(rz_list_length(xrefs), 2, "xrefs to count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 1234, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_CALL, "xref type");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->from, 0x1337, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->to, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_XREF_TYPE_CODE, "xref type");
 	rz_list_free(xrefs);
 
 	sdb_free(db);
@@ -1598,8 +1598,8 @@ bool test_analysis_save() {
 
 	rz_analysis_noreturn_add(analysis, NULL, 0x800800);
 
-	rz_analysis_xrefs_set(analysis, 0x42, 1337, RZ_ANALYSIS_REF_TYPE_CALL);
-	rz_analysis_xrefs_set(analysis, 1337, 0xc0ffee, RZ_ANALYSIS_REF_TYPE_DATA);
+	rz_analysis_xrefs_set(analysis, 0x42, 1337, RZ_ANALYSIS_XREF_TYPE_CALL);
+	rz_analysis_xrefs_set(analysis, 1337, 0xc0ffee, RZ_ANALYSIS_XREF_TYPE_DATA);
 
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x1337, "some comment");
 

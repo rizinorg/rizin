@@ -577,6 +577,7 @@ RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd) {
 	bnd->fd_get_name = rz_io_fd_get_name;
 	bnd->fd_get_map = rz_io_map_get_for_fd;
 	bnd->fd_remap = rz_io_map_remap_fd;
+	bnd->fd_getbuf = rz_io_fd_get_buf;
 	bnd->is_valid_offset = rz_io_is_valid_offset;
 	bnd->map_get = rz_io_map_get;
 	bnd->map_get_paddr = rz_io_map_get_paddr;

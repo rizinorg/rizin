@@ -62,7 +62,7 @@ static bool check_buffer(RzBuffer *b) {
 		case '2':
 			return true;
 		}
-		eprintf("Unsupported MENUET version header\n");
+		RZ_LOG_ERROR("Unsupported MENUET version header\n");
 	}
 	return false;
 }

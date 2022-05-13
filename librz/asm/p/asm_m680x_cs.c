@@ -3,7 +3,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
 #define CAPSTONE_HAS_M680X 1

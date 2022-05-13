@@ -26,7 +26,7 @@ static RzAnalysisXRef *rz_analysis_xref_new(ut64 from, ut64 to, ut64 type) {
 	if (xref) {
 		xref->from = from;
 		xref->to = to;
-		xref->type = (type == -1) ? RZ_ANALYSIS_REF_TYPE_CODE : type;
+		xref->type = (type == -1) ? RZ_ANALYSIS_XREF_TYPE_CODE : type;
 	}
 	return xref;
 }
@@ -162,11 +162,11 @@ RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzA
 
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to) {
 	bool res = false;
-	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_REF_TYPE_NULL);
-	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_REF_TYPE_CODE);
-	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_REF_TYPE_CALL);
-	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_REF_TYPE_DATA);
-	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_REF_TYPE_STRING);
+	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_XREF_TYPE_NULL);
+	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_XREF_TYPE_CODE);
+	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_XREF_TYPE_CALL);
+	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_XREF_TYPE_DATA);
+	res |= rz_analysis_xrefs_deln(analysis, from, to, RZ_ANALYSIS_XREF_TYPE_STRING);
 	return res;
 }
 
@@ -215,15 +215,15 @@ RZ_API RZ_OWN RzList *rz_analysis_xrefs_list(RzAnalysis *analysis) {
 
 RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type) {
 	switch (type) {
-	case RZ_ANALYSIS_REF_TYPE_CODE:
+	case RZ_ANALYSIS_XREF_TYPE_CODE:
 		return "CODE";
-	case RZ_ANALYSIS_REF_TYPE_CALL:
+	case RZ_ANALYSIS_XREF_TYPE_CALL:
 		return "CALL";
-	case RZ_ANALYSIS_REF_TYPE_DATA:
+	case RZ_ANALYSIS_XREF_TYPE_DATA:
 		return "DATA";
-	case RZ_ANALYSIS_REF_TYPE_STRING:
+	case RZ_ANALYSIS_XREF_TYPE_STRING:
 		return "STRING";
-	case RZ_ANALYSIS_REF_TYPE_NULL:
+	case RZ_ANALYSIS_XREF_TYPE_NULL:
 	default:
 		return "UNKNOWN";
 	}
@@ -231,14 +231,14 @@ RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type) {
 
 RZ_API RzAnalysisXRefType rz_analysis_xrefs_type(char ch) {
 	switch (ch) {
-	case RZ_ANALYSIS_REF_TYPE_CODE:
-	case RZ_ANALYSIS_REF_TYPE_CALL:
-	case RZ_ANALYSIS_REF_TYPE_DATA:
-	case RZ_ANALYSIS_REF_TYPE_STRING:
-	case RZ_ANALYSIS_REF_TYPE_NULL:
+	case RZ_ANALYSIS_XREF_TYPE_CODE:
+	case RZ_ANALYSIS_XREF_TYPE_CALL:
+	case RZ_ANALYSIS_XREF_TYPE_DATA:
+	case RZ_ANALYSIS_XREF_TYPE_STRING:
+	case RZ_ANALYSIS_XREF_TYPE_NULL:
 		return (RzAnalysisXRefType)ch;
 	default:
-		return RZ_ANALYSIS_REF_TYPE_NULL;
+		return RZ_ANALYSIS_XREF_TYPE_NULL;
 	}
 }
 
@@ -306,15 +306,15 @@ RZ_API RzList *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn) {
 
 RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t) {
 	switch (t) {
-	case RZ_ANALYSIS_REF_TYPE_NULL:
+	case RZ_ANALYSIS_XREF_TYPE_NULL:
 		return "null";
-	case RZ_ANALYSIS_REF_TYPE_CODE:
+	case RZ_ANALYSIS_XREF_TYPE_CODE:
 		return "code";
-	case RZ_ANALYSIS_REF_TYPE_CALL:
+	case RZ_ANALYSIS_XREF_TYPE_CALL:
 		return "call";
-	case RZ_ANALYSIS_REF_TYPE_DATA:
+	case RZ_ANALYSIS_XREF_TYPE_DATA:
 		return "data";
-	case RZ_ANALYSIS_REF_TYPE_STRING:
+	case RZ_ANALYSIS_XREF_TYPE_STRING:
 		return "string";
 	}
 	return "unknown";

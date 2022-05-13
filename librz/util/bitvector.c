@@ -9,8 +9,25 @@
 #define BV_ELEM_SIZE      8U
 
 // optimization for reversing 8 bits which uses 32 bits
-// https://graphics.stanford.edu/~seander/bithacks.html#BitReverseObvious
+// https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith32Bits
 #define reverse_byte(x) ((((x)*0x0802LU & 0x22110LU) | ((x)*0x8020LU & 0x88440LU)) * 0x10101LU >> 16)
+
+// https://graphics.stanford.edu/~seander/bithacks.html#BitReverseObvious
+// With changes.
+ut8 reverse_lt_8bits(ut8 x, ut8 w) {
+	ut8 m = ~(UT8_MAX << w); // values bitmask
+	ut8 v = (x & m); // input bits to be reversed
+	ut8 r = v; // r will be reversed bits of v; first get LSB of v
+	int s = w - 1; // extra shift needed at end
+
+	for (v >>= 1; v; v >>= 1) {
+		r <<= 1;
+		r |= v & 1;
+		s--;
+	}
+	r <<= s; // shift when v's highest bits are zero
+	return r;
+}
 
 /**
  * \brief Initialize a RzBitVector structure
@@ -182,7 +199,7 @@ RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector
 }
 
 /**
- * Copy n bits from start position of source to start position of dest
+ * Copy n bits from start position of source to start position of dest, return num of copied bits
  * \param src RzBitVector, data source
  * \param src_start_pos ut32, start position in source bitvector of copy
  * \param dst RzBitVector, destination of copy
@@ -202,7 +219,7 @@ RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_p
 	}
 
 	// normal case here
-	for (ut32 i = 0; i < max_nbit; ++i) {
+	for (ut32 i = 0; i < nbit; ++i) {
 		bool c = rz_bv_get(src, src_start_pos + i);
 		rz_bv_set(dst, dst_start_pos + i, c);
 	}
@@ -1269,8 +1286,9 @@ RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL
 }
 
 /**
- * Set the bitvector's contents from the given bits. The bitvector's size is unchanged.
+ * \brief Set the bitvector's contents from the given bits. The bitvector's size is unchanged.
  * If bv->len < size, additional bits are cut off, if bv->len > size, the rest is filled up with 0.
+ *
  * \param buf big endian buffer of at least (bit_offset + size + 7) / 8 bytes
  * \param bit_offset offset inside buf to start reading from, in bits
  * \param size number of bits to read from buf
@@ -1285,7 +1303,7 @@ RZ_API void rz_bv_set_from_bytes_be(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL
 			ut32 idx = (bit_offset + i) >> 3;
 			ut32 sh = ((bit_offset + i) & 7);
 			ut8 b8 = buf[idx];
-			b8 = reverse_byte(b8);
+			b8 = (size < 8) ? reverse_lt_8bits(b8, size) : (ut8)reverse_byte(b8);
 			bit = (b8 >> sh) & 1;
 		}
 		rz_bv_set(bv, bv->len - 1 - i, bit);

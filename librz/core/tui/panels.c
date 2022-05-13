@@ -3539,7 +3539,7 @@ int __program_cb(void *user) {
 
 int __calls_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_cmd_analysis_calls(core, "", false, false);
+	rz_core_analysis_calls(core, false);
 	return 0;
 }
 
@@ -3575,7 +3575,7 @@ int __watch_points_cb(void *user) {
 
 int __references_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_analysis_refs(core, "");
+	rz_core_analysis_refs(core, 0);
 	return 0;
 }
 

@@ -3,7 +3,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	csh handle;

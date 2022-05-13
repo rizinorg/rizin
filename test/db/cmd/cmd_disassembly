@@ -55,7 +55,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd 4;?=
+NAME=pd 4
 FILE==
 CMDS=<<EOF
 wx 00000000000000000000
@@ -63,28 +63,12 @@ e asm.arch=x86
 e asm.bytes=true
 e asm.bits=32
 pd 4
-?=
 EOF
 EXPECT=<<EOF
             0x00000000      0000           add   byte [eax], al
             0x00000002      0000           add   byte [eax], al
             0x00000004      0000           add   byte [eax], al
             0x00000006      0000           add   byte [eax], al
-0x8
-EOF
-RUN
-
-NAME=pd 4 > /dev/null; ?=
-FILE==
-CMDS=<<EOF
-wx 00000000000000000000
-e asm.arch=x86
-e asm.bits=32
-pd 4 > /dev/null
-?=
-EOF
-EXPECT=<<EOF
-0x8
 EOF
 RUN
 
