@@ -6851,3 +6851,61 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	}
 	return vec;
 }
+
+/**
+ * \brief Set analysis hint for the first immediate of the instruction at current offset to \p struct_member.
+ * \param core The RzCore instance
+ * \param struct_member struct.member
+ */
+RZ_API bool rz_core_analysis_hint_set_offset(RzCore *core, RZ_NONNULL const char *struct_member) {
+	rz_return_val_if_fail(core && struct_member, false);
+	RzAnalysisOp op = { 0 };
+	ut8 code[128] = { 0 };
+	if (!rz_io_read_at(core->io, core->offset, code, sizeof(code))) {
+		return false;
+	}
+	bool res = false;
+	int ret = rz_analysis_op(core->analysis, &op, core->offset, code, sizeof(code), RZ_ANALYSIS_OP_MASK_VAL);
+	if (ret < 1) {
+		goto exit;
+	}
+	// HACK: Just convert only the first imm seen
+	ut64 offimm = 0;
+	for (int i = 0; i < 3; i++) {
+		if (op.src[i]) {
+			if (op.src[i]->imm) {
+				offimm = op.src[i]->imm;
+			} else if (op.src[i]->delta) {
+				offimm = op.src[i]->delta;
+			}
+		}
+	}
+	if (!offimm && op.dst) {
+		if (op.dst->imm) {
+			offimm = op.dst->imm;
+		} else if (op.dst->delta) {
+			offimm = op.dst->delta;
+		}
+	}
+	if (!offimm) {
+		goto exit;
+	}
+	// TODO: Allow to select from multiple choices
+	RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
+	RzListIter *iter;
+	RzTypePath *tpath;
+	rz_list_foreach (otypes, iter, tpath) {
+		// TODO: Support also arrays and pointers
+		if (tpath->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
+			if (!strcmp(struct_member, tpath->path)) {
+				rz_analysis_hint_set_offset(core->analysis, core->offset, tpath->path);
+				break;
+			}
+		}
+	}
+	rz_list_free(otypes);
+	res = true;
+exit:
+	rz_analysis_op_fini(&op);
+	return res;
+}

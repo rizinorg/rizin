@@ -416,6 +416,16 @@ typedef struct rz_debug_pid_t {
 	ut64 pc;
 } RzDebugPid;
 
+typedef struct rz_backtrace_t {
+	RzDebugFrame *frame;
+	RzAnalysisFunction *fcn;
+	char *desc;
+	char *pcstr;
+	char *spstr;
+	char *flagdesc;
+	char *flagdesc2;
+} RzBacktrace;
+
 #ifdef RZ_API
 RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);

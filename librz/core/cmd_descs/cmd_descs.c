@@ -310,6 +310,7 @@ static const RzCmdDescArg cmd_debug_trace_esil_args[2];
 static const RzCmdDescArg cmd_debug_save_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_trace_tag_args[2];
+static const RzCmdDescArg cmd_debug_handler_set_args[2];
 static const RzCmdDescArg cmd_debug_allocate_maps_args[2];
 static const RzCmdDescArg cmd_debug_dump_maps_args[2];
 static const RzCmdDescArg cmd_heap_chunks_print_args[2];
@@ -6906,6 +6907,30 @@ static const RzCmdDescArg cmd_debug_trace_tag_args[] = {
 static const RzCmdDescHelp cmd_debug_trace_tag_help = {
 	.summary = "Select trace tag (no arg unsets)",
 	.args = cmd_debug_trace_tag_args,
+};
+
+static const RzCmdDescHelp dl_help = {
+	.summary = "Debug handler",
+};
+static const RzCmdDescArg cmd_debug_handler_set_args[] = {
+	{
+		.name = "handler",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_handler_set_help = {
+	.summary = "Set debugger handler",
+	.args = cmd_debug_handler_set_args,
+};
+
+static const RzCmdDescArg cmd_debug_handler_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_handler_list_help = {
+	.summary = "List debugger handler",
+	.args = cmd_debug_handler_list_args,
 };
 
 static const RzCmdDescHelp dm_help = {
@@ -15620,6 +15645,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_trace_tag_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtt", rz_cmd_debug_trace_tag_handler, &cmd_debug_trace_tag_help);
 	rz_warn_if_fail(cmd_debug_trace_tag_cd);
+
+	RzCmdDesc *dl_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dl", rz_cmd_debug_handler_set_handler, &cmd_debug_handler_set_help, &dl_help);
+	rz_warn_if_fail(dl_cd);
+	RzCmdDesc *cmd_debug_handler_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, dl_cd, "dll", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_handler_list_handler, &cmd_debug_handler_list_help);
+	rz_warn_if_fail(cmd_debug_handler_list_cd);
+	rz_cmd_desc_set_default_mode(cmd_debug_handler_list_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *dm_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "dm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_maps_handler, &cmd_debug_list_maps_help, &dm_help);
 	rz_warn_if_fail(dm_cd);
