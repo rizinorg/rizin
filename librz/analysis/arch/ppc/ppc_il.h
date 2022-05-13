@@ -27,7 +27,7 @@
 #define IMM_SN(n, v) SN(n, v)
 
 // Extend value with sign bits to a width of n.
-#define EXTEND(n, v) LET("v", DUP(v), ITE(MSB(v), SIGNED(n, VARLP("v")), UNSIGNED(n, VARLP("v"))))
+#define EXTEND(n, v) LET("v", v, ITE(MSB(VARLP("v")), SIGNED(n, VARLP("v")), UNSIGNED(n, VARLP("v"))))
 // Extend value with sign bits to a width of 32/64 bit.
 #define EXTS(v) SIGNED(PPC_ARCH_BITS, v)
 // Extend value with 0s to a width of 32/64 bit.
