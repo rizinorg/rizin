@@ -1359,3 +1359,47 @@ sys S75:74_tmp
 sys S77:76_tmp
 EOF
 RUN
+
+NAME=hexagon relocation tests I
+FILE=bins/elf/hexagon/relocs
+CMDS=<<EOF
+pi 30
+s loc.r_hex_32
+px 16~[1-8]
+EOF
+EXPECT=<<EOF
+?   nop
+[   nop
+[   nop
+[   nop
+[   jump 0x8000038
+[   if (P0) jump:nt loc.test_sym
+[   loop1(loc.test_sym,#0x0)
+[   R0.l = #0x34
+[   R0.h = #0x800
+[   if (R0!=#0) jump:nt loc.test_sym
+[   R0 = #0x0 ; jump loc.test_sym
+/   immext(##0xffffffc0)
+\   jump loc.test_sym
+/   immext(##0x8000000)
+\   R0 = ##0x8000034
+/   immext(##0xffffffc0)
+\   jump loc.test_sym
+/   immext(##0xffffff80)
+\   if (P0) jump:nt loc.test_sym
+/   immext(##0xffffff80)
+\   loop1(loc.test_sym,#0x0)
+[   jump loc.test_sym
+/   immext(##0xffffff80)
+\   R0 = ##0xffffffa8 ; R1 = R1
+/   immext(##0x8000000)
+\   R0 = ##0x8000034
+/   immext(##0x8000000)
+\   R0 = ##0x8000034
+/   immext(##0x8000000)
+\   R0 = memw(R0+##0x8000034)
+offset - 0 1 2 3 4 5
+3400 0008 3400 0000 3400 0000 7cff ffff
+EOF
+RUN
+
