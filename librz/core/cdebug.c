@@ -876,6 +876,7 @@ RZ_API RZ_OWN RzList *rz_core_debug_backtraces(RzCore *core) {
 	RzDebugFrame *frame;
 	RzList *bts = rz_list_newf((RzListFree)rz_backtrace_free);
 	if (!bts) {
+		rz_list_free(list);
 		return NULL;
 	}
 	rz_list_foreach (list, iter, frame) {
