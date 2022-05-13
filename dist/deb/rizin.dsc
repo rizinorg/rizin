@@ -8,7 +8,7 @@ Homepage: https://rizin.re/
 Standards-Version: 4.5.1
 Vcs-Browser: https://github.com/rizinorg/rizin
 Vcs-Git: https://github.com/rizinorg/rizin
-Build-Depends: debhelper (>= 12), meson, pkg-config, python3, python3-setuptools
+Build-Depends: debhelper (>= 12), meson (>= 0.55.0), pkg-config, python3, python3-setuptools
 Package-List:
  rizin deb devel optional arch=any
  rizin-common deb devel optional arch=all

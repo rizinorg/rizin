@@ -634,9 +634,9 @@ static ut32 golang_recover_string_x86(GoStrRecover *ctx) {
 	}
 
 	if (!strncmp(aop0.mnemonic, "lea", 3)) {
-		rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_REF_TYPE_STRING);
+		rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
 	} else {
-		rz_analysis_xrefs_set(analysis, pc + aop0.size, str_addr, RZ_ANALYSIS_REF_TYPE_STRING);
+		rz_analysis_xrefs_set(analysis, pc + aop0.size, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
 	}
 
 end:
@@ -730,7 +730,7 @@ static ut32 golang_recover_string_arm64(GoStrRecover *ctx) {
 	}
 
 	// add xref
-	rz_analysis_xrefs_set(analysis, pc + aop0.size, str_addr, RZ_ANALYSIS_REF_TYPE_STRING);
+	rz_analysis_xrefs_set(analysis, pc + aop0.size, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
 
 end:
 	rz_analysis_op_fini(&aop0);
@@ -818,7 +818,7 @@ static ut32 golang_recover_string_arm32(GoStrRecover *ctx) {
 	}
 
 	// add xref
-	rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_REF_TYPE_STRING);
+	rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
 
 end:
 	rz_analysis_op_fini(&aop0);

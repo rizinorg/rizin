@@ -100,22 +100,24 @@ information
 %{_includedir}/librz
 %{_libdir}/librz*.so
 %{_libdir}/pkgconfig/*.pc
+%{_libdir}/cmake/**/*.cmake
+%dir %{_libdir}/cmake
+%dir %{_libdir}/cmake/**
 
 
 %files common
-%{_datadir}/%{name}/%{version}/asm
-%{_datadir}/%{name}/%{version}/cons
-%{_datadir}/%{name}/%{version}/flag
-%{_datadir}/%{name}/%{version}/format
-%{_datadir}/%{name}/%{version}/fortunes
-%{_datadir}/%{name}/%{version}/hud
-%{_datadir}/%{name}/%{version}/magic
-%{_datadir}/%{name}/%{version}/opcodes
-%{_datadir}/%{name}/%{version}/reg
-%{_datadir}/%{name}/%{version}/syscall
-%{_datadir}/%{name}/%{version}/types
+%{_datadir}/%{name}/asm
+%{_datadir}/%{name}/cons
+%{_datadir}/%{name}/flag
+%{_datadir}/%{name}/format
+%{_datadir}/%{name}/fortunes
+%{_datadir}/%{name}/hud
+%{_datadir}/%{name}/magic
+%{_datadir}/%{name}/opcodes
+%{_datadir}/%{name}/reg
+%{_datadir}/%{name}/syscall
+%{_datadir}/%{name}/types
 %dir %{_datadir}/%{name}
-%dir %{_datadir}/%{name}/%{version}
 
 
 %changelog

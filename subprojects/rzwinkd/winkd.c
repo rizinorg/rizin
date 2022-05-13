@@ -331,11 +331,15 @@ int winkd_wait_packet(KdCtx *ctx, const uint32_t type, kd_packet_t **p) {
 					return KD_E_OK;
 				}
 				retries++;
-				continue;
+				break;
 			case KD_PACKET_TYPE_RESET:
 				RZ_LOG_DEBUG("Reset received\n");
 				ctx->seq_id = KD_INITIAL_PACKET_ID;
-				/* fallthrough */
+				free(pkt);
+				if (type == KD_PACKET_TYPE_RESET) {
+					return KD_E_OK;
+				}
+				return KD_E_MALFORMED;
 			case KD_PACKET_TYPE_RESEND:
 				// The host didn't like our request
 				rz_sys_backtrace();
@@ -1257,8 +1261,8 @@ int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int co
 		return 0;
 	}
 
-	memcpy(buf, rr->data, rr->rz_mem.read);
-	int ret = rr->rz_mem.read;
+	int ret = RZ_MIN(rr->rz_mem.read, count);
+	memcpy(buf, rr->data, ret);
 	free(pkt);
 	return ret;
 }
@@ -1286,8 +1290,8 @@ int winkd_read_at(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) 
 		return 0;
 	}
 
-	memcpy(buf, rr->data, rr->rz_mem.read);
-	int ret = rr->rz_mem.read;
+	int ret = RZ_MIN(rr->rz_mem.read, count);
+	memcpy(buf, rr->data, ret);
 	free(pkt);
 	return ret;
 }

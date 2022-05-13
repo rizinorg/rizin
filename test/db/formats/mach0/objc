@@ -92,9 +92,9 @@ address    index class                                flags name
 EOF
 RUN
 
-NAME=infinite aao
+NAME=infinite aalo
 FILE=bins/mach0/r2_hang_test
-CMDS=aao
+CMDS=aalo
 EXPECT=
 RUN
 
@@ -109,11 +109,11 @@ address     min         max         name                                  super
 EOF
 RUN
 
-NAME=aao hello-objc selrefs
+NAME=aalo hello-objc selrefs
 FILE=bins/mach0/hello-objc
 CMDS=<<EOF
 e analysis.jmp.cref=true
-aao
+aalo
 axl~?
 axl~selref
 EOF
@@ -129,9 +129,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=aao hello-objc methods references
+NAME=aalo hello-objc methods references
 FILE=bins/mach0/hello-objc
-CMDS=aao;axl~method
+CMDS=aalo;axl~method
 EXPECT=<<EOF
               section.0.__TEXT.__text+20 0x100000db4 ->      CODE -> 0x100000df0 method.Person.name
                                  main+45 0x100000e7d ->      CODE -> 0x100000e20 method.Person.setName:

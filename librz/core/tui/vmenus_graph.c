@@ -72,7 +72,7 @@ static RzList *__xrefs(RzCore *core, ut64 addr) {
 	RzAnalysisXRef *xref;
 	RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, addr);
 	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type != 'C') {
+		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
 			continue;
 		}
 		RzCoreVisualViewGraphItem *item = RZ_NEW0(RzCoreVisualViewGraphItem);
@@ -99,7 +99,7 @@ static RzList *__refs(RzCore *core, ut64 addr) {
 	}
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type != 'C') {
+		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
 			continue;
 		}
 		RzCoreVisualViewGraphItem *item = RZ_NEW0(RzCoreVisualViewGraphItem);

@@ -30,6 +30,7 @@ rz_sign = library('rz_sign', rz_sign_sources,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
   soversion: rizin_libversion,
+  version: rizin_version,
   name_suffix: lib_name_suffix,
   name_prefix: lib_name_prefix,
 )

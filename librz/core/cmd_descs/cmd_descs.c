@@ -13,6 +13,7 @@ static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail analysis_all_esil_details[2];
+static const RzCmdDescDetail analyze_all_preludes_details[2];
 static const RzCmdDescDetail analysis_functions_merge_details[2];
 static const RzCmdDescDetail analysis_appcall_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
@@ -89,6 +90,12 @@ static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg cmd_help_search_args[2];
 static const RzCmdDescArg push_escaped_args[2];
 static const RzCmdDescArg analysis_all_esil_args[2];
+static const RzCmdDescArg analyze_all_consecutive_functions_in_section_args[2];
+static const RzCmdDescArg apply_signatures_from_sigdb_args[2];
+static const RzCmdDescArg analyze_xrefs_section_bytes_args[2];
+static const RzCmdDescArg analyze_function_linked_offsets_args[2];
+static const RzCmdDescArg print_commands_after_traps_args[2];
+static const RzCmdDescArg print_areas_no_functions_args[2];
 static const RzCmdDescArg analysis_function_add_recu_args[2];
 static const RzCmdDescArg analysis_function_add_recu_force_args[2];
 static const RzCmdDescArg analysis_function_create_args[4];
@@ -1215,6 +1222,63 @@ static const RzCmdDescHelp push_escaped_help = {
 static const RzCmdDescHelp cmd_analysis_help = {
 	.summary = "Analysis commands",
 };
+static const RzCmdDescHelp aa_help = {
+	.summary = "Analysis commands",
+};
+static const RzCmdDescArg analyze_simple_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_simple_help = {
+	.summary = "Analyze all flags starting with sym. and entry",
+	.args = analyze_simple_args,
+};
+
+static const RzCmdDescArg analyze_everything_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_everything_help = {
+	.summary = "Analyze all calls, references, emulation and applies signatures",
+	.args = analyze_everything_args,
+};
+
+static const RzCmdDescArg analyze_everything_experimental_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_everything_experimental_help = {
+	.summary = "Experimental analysis",
+	.args = analyze_everything_experimental_args,
+};
+
+static const RzCmdDescHelp aac_help = {
+	.summary = "Analysis function calls commands",
+};
+static const RzCmdDescArg analyze_all_function_calls_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_function_calls_help = {
+	.summary = "Analyze function calls",
+	.args = analyze_all_function_calls_args,
+};
+
+static const RzCmdDescArg analyze_all_function_calls_to_imports_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_function_calls_to_imports_help = {
+	.summary = "Analyze all function calls to imports",
+	.args = analyze_all_function_calls_to_imports_args,
+};
+
+static const RzCmdDescArg analyze_all_data_references_to_code_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_data_references_to_code_help = {
+	.summary = "Analyze data references to code",
+	.args = analyze_all_data_references_to_code_args,
+};
+
+static const RzCmdDescHelp aae_help = {
+	.summary = "Analysis commands using ESIL",
+};
 static const RzCmdDescDetailEntry analysis_all_esil_Examples_detail_entries[] = {
 	{ .text = "aae", .arg_str = "", .comment = "analyze ranges given by analysis.in" },
 	{ .text = "aae", .arg_str = " $SS @ $S", .comment = "analyze the whole section" },
@@ -1235,7 +1299,7 @@ static const RzCmdDescArg analysis_all_esil_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_all_esil_help = {
-	.summary = "analyze references with ESIL",
+	.summary = "Analyze references with ESIL",
 	.details = analysis_all_esil_details,
 	.args = analysis_all_esil_args,
 };
@@ -1244,8 +1308,226 @@ static const RzCmdDescArg analysis_all_esil_functions_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_all_esil_functions_help = {
-	.summary = "analyze references with ESIL in all functions",
+	.summary = "Analyze references with ESIL in all functions",
 	.args = analysis_all_esil_functions_args,
+};
+
+static const RzCmdDescHelp aaf_help = {
+	.summary = "Analysis function commands",
+};
+static const RzCmdDescArg analyze_all_functions_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_functions_help = {
+	.summary = "Analyze all functions",
+	.args = analyze_all_functions_args,
+};
+
+static const RzCmdDescArg analyze_all_functions_esil_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_functions_esil_help = {
+	.summary = "Analyze all functions using ESIL",
+	.args = analyze_all_functions_esil_args,
+};
+
+static const RzCmdDescArg analyze_all_consecutive_functions_in_section_args[] = {
+	{
+		.name = "length",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_consecutive_functions_in_section_help = {
+	.summary = "Analyze all consecutive functions in section",
+	.args = analyze_all_consecutive_functions_in_section_args,
+};
+
+static const RzCmdDescArg analyze_recursively_all_function_types_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_recursively_all_function_types_help = {
+	.summary = "Performs recursive type matching in all functions",
+	.args = analyze_recursively_all_function_types_args,
+};
+
+static const RzCmdDescHelp aaF_help = {
+	.summary = "Signature database commands",
+};
+static const RzCmdDescArg apply_signatures_from_sigdb_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp apply_signatures_from_sigdb_help = {
+	.summary = "Apply signatures from sigdb",
+	.args = apply_signatures_from_sigdb_args,
+};
+
+static const RzCmdDescArg list_signatures_in_sigdb_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp list_signatures_in_sigdb_help = {
+	.summary = "Lists all available signatures in sigdb",
+	.args = list_signatures_in_sigdb_args,
+};
+
+static const RzCmdDescArg print_analysis_details_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_analysis_details_help = {
+	.summary = "Print preformed analysis details",
+	.args = print_analysis_details_args,
+};
+
+static const RzCmdDescArg analyze_all_unresolved_jumps_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_unresolved_jumps_help = {
+	.summary = "Analyze all unresolved jumps",
+	.args = analyze_all_unresolved_jumps_args,
+};
+
+static const RzCmdDescHelp aal_help = {
+	.summary = "Language specific analysis commands",
+};
+static const RzCmdDescArg recover_all_golang_functions_strings_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp recover_all_golang_functions_strings_help = {
+	.summary = "Recovers and analyze all Golang functions and strings",
+	.args = recover_all_golang_functions_strings_args,
+};
+
+static const RzCmdDescArg analyze_all_objc_references_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_objc_references_help = {
+	.summary = "Analyze all Objective-C references",
+	.args = analyze_all_objc_references_args,
+};
+
+static const RzCmdDescHelp aan_help = {
+	.summary = "Automatic rename functions commands",
+};
+static const RzCmdDescArg autoname_all_functions_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp autoname_all_functions_help = {
+	.summary = "Renames all functions based on their strings or calls",
+	.args = autoname_all_functions_args,
+};
+
+static const RzCmdDescArg autoname_all_functions_noreturn_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp autoname_all_functions_noreturn_help = {
+	.summary = "Renames all functions which does not return",
+	.args = autoname_all_functions_noreturn_args,
+};
+
+static const RzCmdDescDetailEntry analyze_all_preludes_Search_space_a_space_custom_space_prelude_detail_entries[] = {
+	{ .text = "e analysis.prelude='90AEF630'", .arg_str = "", .comment = "Set new prelude" },
+	{ .text = "aap", .arg_str = "", .comment = "Search for 90AEF630 and create a new function" },
+	{ 0 },
+};
+static const RzCmdDescDetail analyze_all_preludes_details[] = {
+	{ .name = "Search a custom prelude", .entries = analyze_all_preludes_Search_space_a_space_custom_space_prelude_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analyze_all_preludes_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_preludes_help = {
+	.summary = "Analyze all preludes",
+	.details = analyze_all_preludes_details,
+	.args = analyze_all_preludes_args,
+};
+
+static const RzCmdDescArg analyze_xrefs_section_bytes_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_xrefs_section_bytes_help = {
+	.summary = "Analyze xrefs in current section or by n_bytes",
+	.args = analyze_xrefs_section_bytes_args,
+};
+
+static const RzCmdDescArg analyze_symbols_entries_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_symbols_entries_help = {
+	.summary = "Analyze only the symbols",
+	.args = analyze_symbols_entries_args,
+};
+
+static const RzCmdDescArg analyze_symbols_entries_flags_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_symbols_entries_flags_help = {
+	.summary = "Analyze only the flags starting as sym.* and entry*",
+	.args = analyze_symbols_entries_flags_args,
+};
+
+static const RzCmdDescArg analyze_function_linked_offsets_args[] = {
+	{
+		.name = "func_name",
+		.type = RZ_CMD_ARG_TYPE_FCN,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_function_linked_offsets_help = {
+	.summary = "Analyze all/given function to convert immediate to linked structure offsets",
+	.args = analyze_function_linked_offsets_args,
+};
+
+static const RzCmdDescArg print_commands_after_traps_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_commands_after_traps_help = {
+	.summary = "Prints commands to create functions after a trap call",
+	.args = print_commands_after_traps_args,
+};
+
+static const RzCmdDescArg print_areas_no_functions_args[] = {
+	{
+		.name = "min_len",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_areas_no_functions_help = {
+	.summary = "Print memory areas not covered by functions",
+	.args = print_areas_no_functions_args,
+};
+
+static const RzCmdDescArg analyze_value_to_maps_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_value_to_maps_help = {
+	.summary = "Analyze values referencing a specific section or map",
+	.args = analyze_value_to_maps_args,
 };
 
 static const RzCmdDescHelp af_help = {
@@ -14087,11 +14369,86 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "a", rz_cmd_analysis, &cmd_analysis_help);
 	rz_warn_if_fail(cmd_analysis_cd);
-	RzCmdDesc *analysis_all_esil_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aae", rz_analysis_all_esil_handler, &analysis_all_esil_help);
-	rz_warn_if_fail(analysis_all_esil_cd);
+	RzCmdDesc *aa_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aa", rz_analyze_simple_handler, &analyze_simple_help, &aa_help);
+	rz_warn_if_fail(aa_cd);
+	RzCmdDesc *analyze_everything_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaa", rz_analyze_everything_handler, &analyze_everything_help);
+	rz_warn_if_fail(analyze_everything_cd);
 
-	RzCmdDesc *analysis_all_esil_functions_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aaef", rz_analysis_all_esil_functions_handler, &analysis_all_esil_functions_help);
+	RzCmdDesc *analyze_everything_experimental_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaaa", rz_analyze_everything_experimental_handler, &analyze_everything_experimental_help);
+	rz_warn_if_fail(analyze_everything_experimental_cd);
+
+	RzCmdDesc *aac_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aac", rz_analyze_all_function_calls_handler, &analyze_all_function_calls_help, &aac_help);
+	rz_warn_if_fail(aac_cd);
+	RzCmdDesc *analyze_all_function_calls_to_imports_cd = rz_cmd_desc_argv_new(core->rcmd, aac_cd, "aaci", rz_analyze_all_function_calls_to_imports_handler, &analyze_all_function_calls_to_imports_help);
+	rz_warn_if_fail(analyze_all_function_calls_to_imports_cd);
+
+	RzCmdDesc *analyze_all_data_references_to_code_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aad", rz_analyze_all_data_references_to_code_handler, &analyze_all_data_references_to_code_help);
+	rz_warn_if_fail(analyze_all_data_references_to_code_cd);
+
+	RzCmdDesc *aae_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aae", rz_analysis_all_esil_handler, &analysis_all_esil_help, &aae_help);
+	rz_warn_if_fail(aae_cd);
+	RzCmdDesc *analysis_all_esil_functions_cd = rz_cmd_desc_argv_new(core->rcmd, aae_cd, "aaef", rz_analysis_all_esil_functions_handler, &analysis_all_esil_functions_help);
 	rz_warn_if_fail(analysis_all_esil_functions_cd);
+
+	RzCmdDesc *aaf_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aaf", rz_analyze_all_functions_handler, &analyze_all_functions_help, &aaf_help);
+	rz_warn_if_fail(aaf_cd);
+	RzCmdDesc *analyze_all_functions_esil_cd = rz_cmd_desc_argv_new(core->rcmd, aaf_cd, "aafe", rz_analyze_all_functions_esil_handler, &analyze_all_functions_esil_help);
+	rz_warn_if_fail(analyze_all_functions_esil_cd);
+
+	RzCmdDesc *analyze_all_consecutive_functions_in_section_cd = rz_cmd_desc_argv_new(core->rcmd, aaf_cd, "aafr", rz_analyze_all_consecutive_functions_in_section_handler, &analyze_all_consecutive_functions_in_section_help);
+	rz_warn_if_fail(analyze_all_consecutive_functions_in_section_cd);
+
+	RzCmdDesc *analyze_recursively_all_function_types_cd = rz_cmd_desc_argv_new(core->rcmd, aaf_cd, "aaft", rz_analyze_recursively_all_function_types_handler, &analyze_recursively_all_function_types_help);
+	rz_warn_if_fail(analyze_recursively_all_function_types_cd);
+
+	RzCmdDesc *aaF_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aaF", rz_apply_signatures_from_sigdb_handler, &apply_signatures_from_sigdb_help, &aaF_help);
+	rz_warn_if_fail(aaF_cd);
+	RzCmdDesc *list_signatures_in_sigdb_cd = rz_cmd_desc_argv_state_new(core->rcmd, aaF_cd, "aaFl", RZ_OUTPUT_MODE_TABLE, rz_list_signatures_in_sigdb_handler, &list_signatures_in_sigdb_help);
+	rz_warn_if_fail(list_signatures_in_sigdb_cd);
+	rz_cmd_desc_set_default_mode(list_signatures_in_sigdb_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *print_analysis_details_cd = rz_cmd_desc_argv_state_new(core->rcmd, aa_cd, "aai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_analysis_details_handler, &print_analysis_details_help);
+	rz_warn_if_fail(print_analysis_details_cd);
+
+	RzCmdDesc *analyze_all_unresolved_jumps_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaj", rz_analyze_all_unresolved_jumps_handler, &analyze_all_unresolved_jumps_help);
+	rz_warn_if_fail(analyze_all_unresolved_jumps_cd);
+
+	RzCmdDesc *aal_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aal", NULL, NULL, &aal_help);
+	rz_warn_if_fail(aal_cd);
+	RzCmdDesc *recover_all_golang_functions_strings_cd = rz_cmd_desc_argv_new(core->rcmd, aal_cd, "aalg", rz_recover_all_golang_functions_strings_handler, &recover_all_golang_functions_strings_help);
+	rz_warn_if_fail(recover_all_golang_functions_strings_cd);
+
+	RzCmdDesc *analyze_all_objc_references_cd = rz_cmd_desc_argv_new(core->rcmd, aal_cd, "aalo", rz_analyze_all_objc_references_handler, &analyze_all_objc_references_help);
+	rz_warn_if_fail(analyze_all_objc_references_cd);
+
+	RzCmdDesc *aan_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aan", rz_autoname_all_functions_handler, &autoname_all_functions_help, &aan_help);
+	rz_warn_if_fail(aan_cd);
+	RzCmdDesc *autoname_all_functions_noreturn_cd = rz_cmd_desc_argv_new(core->rcmd, aan_cd, "aanr", rz_autoname_all_functions_noreturn_handler, &autoname_all_functions_noreturn_help);
+	rz_warn_if_fail(autoname_all_functions_noreturn_cd);
+
+	RzCmdDesc *analyze_all_preludes_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aap", rz_analyze_all_preludes_handler, &analyze_all_preludes_help);
+	rz_warn_if_fail(analyze_all_preludes_cd);
+
+	RzCmdDesc *analyze_xrefs_section_bytes_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aar", rz_analyze_xrefs_section_bytes_handler, &analyze_xrefs_section_bytes_help);
+	rz_warn_if_fail(analyze_xrefs_section_bytes_cd);
+
+	RzCmdDesc *analyze_symbols_entries_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aas", rz_analyze_symbols_entries_handler, &analyze_symbols_entries_help);
+	rz_warn_if_fail(analyze_symbols_entries_cd);
+
+	RzCmdDesc *analyze_symbols_entries_flags_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaS", rz_analyze_symbols_entries_flags_handler, &analyze_symbols_entries_flags_help);
+	rz_warn_if_fail(analyze_symbols_entries_flags_cd);
+
+	RzCmdDesc *analyze_function_linked_offsets_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aat", rz_analyze_function_linked_offsets_handler, &analyze_function_linked_offsets_help);
+	rz_warn_if_fail(analyze_function_linked_offsets_cd);
+
+	RzCmdDesc *print_commands_after_traps_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaT", rz_print_commands_after_traps_handler, &print_commands_after_traps_help);
+	rz_warn_if_fail(print_commands_after_traps_cd);
+
+	RzCmdDesc *print_areas_no_functions_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aau", rz_print_areas_no_functions_handler, &print_areas_no_functions_help);
+	rz_warn_if_fail(print_areas_no_functions_cd);
+
+	RzCmdDesc *analyze_value_to_maps_cd = rz_cmd_desc_argv_state_new(core->rcmd, aa_cd, "aav", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_analyze_value_to_maps_handler, &analyze_value_to_maps_help);
+	rz_warn_if_fail(analyze_value_to_maps_cd);
 
 	RzCmdDesc *af_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "af", rz_analysis_function_add_recu_handler, &analysis_function_add_recu_help, &af_help);
 	rz_warn_if_fail(af_cd);
