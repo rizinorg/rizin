@@ -881,14 +881,16 @@ RZ_API RZ_OWN RzList *rz_core_debug_backtraces(RzCore *core) {
 	rz_list_foreach (list, iter, frame) {
 		RzBacktrace *bt = RZ_NEW0(RzBacktrace);
 		if (!bt) {
+			rz_list_free(list);
 			rz_list_free(bts);
 			return NULL;
 		}
 		rz_list_append(bts, bt);
 		get_backtrace_info(core, frame, UT64_MAX, &bt->flagdesc, &bt->flagdesc2, &bt->pcstr, &bt->spstr);
 		bt->fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
-		bt->frame = frame;
+		bt->frame = RZ_NEWCOPY(RzDebugFrame, frame);
 		bt->desc = rz_str_newf("%s%s", rz_str_get_null(bt->flagdesc), rz_str_get_null(bt->flagdesc2));
 	}
+	rz_list_free(list);
 	return bts;
 }
