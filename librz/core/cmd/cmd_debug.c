@@ -3466,10 +3466,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, 
 	for (i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], "=", 1, false);
 		if (!l) {
+			rz_list_free(list);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		size_t llen = rz_list_length(l);
 		if (llen < 2) {
+			rz_list_free(list);
 			rz_list_free(l);
 			return RZ_CMD_STATUS_ERROR;
 		}
