@@ -780,6 +780,7 @@ RZ_IPI RzCmdStatus rz_open_binary_file_handler(RzCore *core, int argc, const cha
 		RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
 		rz_core_bin_apply_all_info(core, bf);
 	}
+	rz_list_free(files);
 
 	rz_io_desc_close(desc);
 	rz_io_use_fd(core->io, saved_fd);
