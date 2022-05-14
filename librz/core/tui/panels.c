@@ -5431,7 +5431,9 @@ RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
 				free(panels_config);
 				return false;
 			}
-			__set_read_only(core, p, rz_strbuf_drain(rsb));
+			char *helptxt = rz_strbuf_drain(rsb);
+			__set_read_only(core, p, helptxt);
+			free(helptxt);
 		}
 	}
 	rz_json_free(json);
