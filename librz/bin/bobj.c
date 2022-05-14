@@ -997,6 +997,7 @@ RZ_API RzVector *rz_bin_object_p2v_all(RzBinObject *obj, ut64 paddr) {
 		}
 	}
 
+	rz_pvector_free(maps);
 	return res;
 }
 
