@@ -457,7 +457,9 @@ static RzTypeStructMember *parse_struct_member(Context *ctx, ut64 idx, RzTypeStr
 	}
 	result->offset = offset;
 	result->size = size;
+	free(type);
 	return result;
+
 cleanup:
 	free(name);
 	free(type);
