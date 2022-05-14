@@ -5080,7 +5080,7 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 				xref->type ? xref->type : ' ', xref->to, desc);
 
 			if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
-				RzAnalysisOp aop;
+				RzAnalysisOp aop = { 0 };
 				rz_analysis_op(core->analysis, &aop, xref->to, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 				if (aop.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
 					cmd_analysis_ucall_ref(core, xref->to);
