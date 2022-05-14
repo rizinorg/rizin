@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ppc_il.h"
+#include "ppc_analysis.h"
 #include <rz_util/rz_assert.h>
 #include <rz_analysis.h>
 #include <rz_il.h>
@@ -202,3 +203,133 @@ bool ppc_sets_lr(ut32 insn_id) {
 		return true;
 	}
 }
+
+bool ppc_is_conditional(ut32 insn_id) {
+	switch (insn_id) {
+	default:
+		return false;
+	}
+}
+
+bool ppc_decrements_ctr(ut32 insn_id) {
+	switch (insn_id) {
+	default:
+		return false;
+	}
+}
+
+//
+// IL helper BEGINN
+//
+
+#include <rz_il/rz_il_opbuilder_begin.h>
+
+/**
+ * \brief Get the branch condition for a given instruction.
+ * Checkout the "Simple Branch Mnemonics" in Appendix C in PowerISA v3.1B and
+ * the chapter about branch instructions for an overview of possible conditions.
+ *
+ * \param insn The capstone instructions.
+ * \param mode The capstone mode.
+ * \return RzILOpPure* The condition the branch occurs as a Pure.
+ */
+RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(insn, NULL);
+	ut32 id = insn->id;
+
+	switch (id) {
+	default:
+		RZ_LOG_WARN("Instruction %d has no branch condition set. Emulation will be flawed.\n", id);
+		return IL_FALSE;
+	case PPC_INS_BL:
+	case PPC_INS_BLA:
+	case PPC_INS_BLR:
+	case PPC_INS_B:
+	case PPC_INS_BA:
+	case PPC_INS_BC:
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BCTR:
+	case PPC_INS_BCTRL:
+	case PPC_INS_BCT:
+	case PPC_INS_BDNZ:
+	case PPC_INS_BDNZA:
+	case PPC_INS_BDNZL:
+	case PPC_INS_BDNZLA:
+	case PPC_INS_BDNZLR:
+	case PPC_INS_BDNZLRL:
+	case PPC_INS_BDZ:
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZL:
+	case PPC_INS_BDZLA:
+	case PPC_INS_BDZLR:
+	case PPC_INS_BDZLRL:
+	case PPC_INS_BLRL:
+	case PPC_INS_BRINC:
+		NOT_IMPLEMENTED;
+	}
+}
+
+/**
+ * \brief Get the branch instruction's target address.
+ * In case of conditional branches it returns the address if the condition would be fullfilled.
+ *
+ * There are five types of target addresses:
+ * * Absolute address
+ * * Relative address (relative to current instruction address)
+ * * Address stored in LR
+ * * Address stored in CTR
+ * * Address stored in TAR
+ *
+ * \param insn The capstone instructions.
+ * \param mode The capstone mode.
+ * \return RzILOpPure* The condition the branch occurs as a Pure.
+ */
+RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(insn, NULL);
+	ut32 id = insn->id;
+
+	switch (id) {
+	default:
+		RZ_LOG_WARN("Target address of branch instruction %d can not be determined. Emulation will be flawed.\n", id);
+		return UA(0);
+	case PPC_INS_BL:
+	case PPC_INS_BLA:
+	case PPC_INS_BLR:
+	case PPC_INS_B:
+	case PPC_INS_BA:
+	case PPC_INS_BC:
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BCTR:
+	case PPC_INS_BCTRL:
+	case PPC_INS_BCT:
+	case PPC_INS_BDNZ:
+	case PPC_INS_BDNZA:
+	case PPC_INS_BDNZL:
+	case PPC_INS_BDNZLA:
+	case PPC_INS_BDNZLR:
+	case PPC_INS_BDNZLRL:
+	case PPC_INS_BDZ:
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZL:
+	case PPC_INS_BDZLA:
+	case PPC_INS_BDZLR:
+	case PPC_INS_BDZLRL:
+	case PPC_INS_BLRL:
+	case PPC_INS_BRINC:
+		NOT_IMPLEMENTED;
+	}
+}
+
+#include <rz_il/rz_il_opbuilder_end.h>
+
+//
+// IL helper END
+//

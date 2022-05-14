@@ -49,5 +49,10 @@ ut32 ppc_get_mem_acc_size(ut32 insn_id);
 bool ppc_updates_ra_with_ea(ut32 insn_id);
 bool ppc_is_algebraic(ut32 insn_id);
 bool ppc_sets_lr(ut32 insn_id);
+bool ppc_is_conditional(ut32 insn_id);
+bool ppc_decrements_ctr(ut32 insn_id);
+
+RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode);
+RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mode);
 
 #endif /* PPC_IL_H */

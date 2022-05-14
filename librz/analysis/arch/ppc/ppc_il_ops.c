@@ -497,62 +497,31 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
 	ut32 id = insn->id;
-	ut64 cia = insn->address;
-	st64 li;
-	// st64 bd;
-	// RzILOpPure *ea;
-	RzILOpEffect *lr; // Set Link Register
-	RzILOpEffect *ctr; // Set counter
+	bool is_conditional = ppc_is_conditional(id);
 	RzILOpEffect *set_cia; // Current instruction address
 	RzILOpEffect *set_nia; // Next instruction address
+	RzILOpEffect *set_lr; // Set Link Register
+	RzILOpEffect *decr_ctr; // Effect to decrement CTR
 
-	// READ
-	li = INSOP(0).imm;
-	// bd = INSOP(0).imm;
-	
-	// EXEC
-	switch (id) {
-	case PPC_INS_BL:
-	case PPC_INS_BLA:;
-		RzILOpPure *nia = UA(li); // (id == PPC_INS_BLA) ? EXTS(APPEND(SN(24, li), UN(2, 0))) : ADD(UA(cia), EXTS(APPEND(SN(24, li), UN(2, 0))));
-		set_nia = SETL("NIA", nia);
-		break;
-	case PPC_INS_BLR:
-		set_nia = SETL("NIA", VARG("lr"));
-		break;
-	case PPC_INS_B:
-	case PPC_INS_BA:
-	case PPC_INS_BC:
-	case PPC_INS_BCCTR:
-	case PPC_INS_BCCTRL:
-	case PPC_INS_BCL:
-	case PPC_INS_BCLR:
-	case PPC_INS_BCLRL:
-	case PPC_INS_BCTR:
-	case PPC_INS_BCTRL:
-	case PPC_INS_BCT:
-	case PPC_INS_BDNZ:
-	case PPC_INS_BDNZA:
-	case PPC_INS_BDNZL:
-	case PPC_INS_BDNZLA:
-	case PPC_INS_BDNZLR:
-	case PPC_INS_BDNZLRL:
-	case PPC_INS_BDZ:
-	case PPC_INS_BDZA:
-	case PPC_INS_BDZL:
-	case PPC_INS_BDZLA:
-	case PPC_INS_BDZLR:
-	case PPC_INS_BDZLRL:
-	case PPC_INS_BLRL:
-	case PPC_INS_BRINC:
-		NOT_IMPLEMENTED;
+	// How to read instruction ids:
+	// Letter			Meaning
+	// B 				Branch
+	// C/D				Conditional, Decrement CTR
+	// Z/NZ/T/F			Branch if CTR is: zero/not zero, branch if CR=1 (true)/CR=0 (false)
+	// L/A/LR/CTR/TAR	Set LR, branch to absolute address, branch to LR, branch to CTR, branch to target address register
+
+	// Determine next instruction address.
+	if (!is_conditional) {
+		set_nia = SETL("NIA", ppc_get_branch_ta(insn, mode));
+	} else {
+		set_nia = SETL("NIA", ITE(ppc_get_branch_cond(insn, mode), ppc_get_branch_ta(insn, mode), ADD(VARL("CIA"), UA(4))));
 	}
 
-	// WRITE
-	set_cia = SETL("CIA", UA(cia));
-	lr = ppc_sets_lr(id) ? SETG("lr", ADD(VARL("CIA"), UA(4))) : NOP;
-	ctr = NOP;
-	return SEQ5(set_cia, set_nia, ctr, lr, JMP(VARL("NIA")));
+	set_cia = SETL("CIA", UA(insn->address));
+	set_lr = ppc_sets_lr(id) ? SETG("lr", ADD(VARL("CIA"), UA(4))) : NOP;
+	decr_ctr = ppc_decrements_ctr(id) ? SETG("ctr", SUB(VARG("ctr"), UA(1))) : NOP;
+
+	return SEQ5(set_cia, decr_ctr, set_lr, set_nia, JMP(VARL("NIA")));
 }
 
 /**
