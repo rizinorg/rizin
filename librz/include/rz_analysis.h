@@ -1781,10 +1781,10 @@ RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis);
 #define RZ_ANALYSIS_THRESHOLDBB  0.7F
 
 /* diff.c */
-RZ_API RzAnalysisDiff *rz_analysis_diff_new(void);
+RZ_API RZ_OWN RzAnalysisDiff *rz_analysis_diff_new(void);
 RZ_API void rz_analysis_diff_setup(RzAnalysis *analysis, int doops, double thbb, double thfcn);
 RZ_API void rz_analysis_diff_setup_i(RzAnalysis *analysis, int doops, int thbb, int thfcn);
-RZ_API void *rz_analysis_diff_free(RzAnalysisDiff *diff);
+RZ_API void rz_analysis_diff_free(RzAnalysisDiff *diff);
 RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *analysis, RzAnalysisBlock *bb);
 RZ_API size_t rz_analysis_diff_fingerprint_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisFunction *fcn2);
