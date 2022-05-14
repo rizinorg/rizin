@@ -2031,6 +2031,7 @@ RZ_IPI RzCmdStatus rz_il_step_until_expr_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_il_step_until_opt_handler(RzCore *core, int argc, const char **argv) {
 	RzList *optypes_list = rz_list_new_from_array((const void **)&argv[1], argc - 1);
 	step_until_optype(core, optypes_list);
+	rz_list_free(optypes_list);
 	rz_core_reg_update_flags(core);
 	return RZ_CMD_STATUS_OK;
 }

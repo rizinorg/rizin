@@ -483,7 +483,7 @@ RZ_API void rz_core_dbg_follow_seek_register(RzCore *core) {
 	rz_core_debug_sync_bits(core);
 }
 
-static int step_until_optype(RzCore *core, RzList *optypes_list) {
+static bool step_until_optype(RzCore *core, RzList *optypes_list) {
 	RzAnalysisOp op;
 	ut8 buf[32];
 	ut64 pc;
