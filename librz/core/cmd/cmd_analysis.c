@@ -5769,7 +5769,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_ascii_handler(RzCore *core, int arg
 	RzTable *table = rz_core_table(core);
 	rz_table_visual_list(table, flist, core->offset, core->blocksize,
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
-	rz_cons_printf("\n%s\n", rz_table_tostring(table));
+	char *tablestr = rz_table_tostring(table);
+	rz_cons_printf("\n%s\n", tablestr);
+	free(tablestr);
 	rz_table_free(table);
 	rz_list_free(flist);
 	rz_list_free(fcns);
