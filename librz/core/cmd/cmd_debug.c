@@ -192,6 +192,7 @@ struct trace_node {
 static void set_profile_string(RzCore *core, const char *str) {
 	char *file = strdup(rz_config_get(core->config, "dbg.profile"));
 	if (RZ_STR_ISEMPTY(file)) {
+		free(file);
 		file = rz_file_temp("rz-run");
 		rz_config_set(core->config, "dbg.profile", file);
 	}
