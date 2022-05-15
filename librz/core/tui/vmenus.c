@@ -1674,9 +1674,8 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 			case 0: // new flag space
 				rz_cons_show_cursor(true);
 				rz_line_set_prompt("add flagspace: ");
-				strcpy(cmd, "fs ");
-				if (rz_cons_fgets(cmd + 3, sizeof(cmd) - 3, 0, NULL) > 0) {
-					rz_core_cmd(core, cmd, 0);
+				if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) > 0) {
+					rz_flag_space_set(core->flags, cmd);
 					rz_cons_set_raw(1);
 					rz_cons_show_cursor(false);
 				}
