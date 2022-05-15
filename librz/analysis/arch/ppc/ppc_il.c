@@ -3,6 +3,7 @@
 
 #include "ppc_il.h"
 #include "ppc_analysis.h"
+#include "rz_il/rz_il_opcodes.h"
 #include <rz_util/rz_assert.h>
 #include <rz_analysis.h>
 #include <rz_il.h>
@@ -211,8 +212,11 @@ bool ppc_is_conditional(ut32 insn_id) {
 	}
 }
 
-bool ppc_decrements_ctr(ut32 insn_id) {
-	switch (insn_id) {
+bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(insn, NULL);
+	ut32 id = insn->id;
+
+	switch (id) {
 	default:
 		return false;
 	}
@@ -225,9 +229,57 @@ bool ppc_decrements_ctr(ut32 insn_id) {
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 /**
+ * \brief Returns the value of the a bit at position \p pos in CR.
+ *
+ * NOTE: The Condition Register and its fields (cr0-cr7) start at bit 32.
+ * The CR reg is not defined for bits at positions smaller than 32 or larger than 63.
+ *
+ * \param pos The bit position to look up.
+ * \return RzILOpBool* The value of the bit at position \p pos in the CR register.
+ * Or IL_FALSE for invalid access.
+ */
+static RZ_OWN RzILOpBool *get_cr_bit(const ut8 pos) {
+	if (pos > 63 || pos < 32) {
+		RZ_LOG_WARN("Undefined access into CR register.\n");
+		return IL_FALSE;
+	}
+	RzILOpPure *field_bit;
+	RzILOpPure *cr_field;
+	if (pos < 36) {
+		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 32));
+		cr_field = VARG("cr0");
+	} else if (pos < 40) {
+		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 36));
+		cr_field = VARG("cr1");
+	} else if (pos < 44) {
+		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 40));
+		cr_field = VARG("cr2");
+	} else if (pos < 48) {
+		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 44));
+		cr_field = VARG("cr3");
+	} else if (pos < 52) {
+		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 48));
+		cr_field = VARG("cr4");
+	} else if (pos < 56) {
+		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 52));
+		cr_field = VARG("cr5");
+	} else if (pos < 60) {
+		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 56));
+		cr_field = VARG("cr6");
+	} else {
+		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 60));
+		cr_field = VARG("cr7");
+	}
+	return NON_ZERO(AND(cr_field, field_bit));
+}
+
+/**
  * \brief Get the branch condition for a given instruction.
  * Checkout the "Simple Branch Mnemonics" in Appendix C in PowerISA v3.1B and
  * the chapter about branch instructions for an overview of possible conditions.
+ *
+ * NODE: This function *does not* decrement CTR, if required by the instruction.
+ * This should have been done before.
  *
  * \param insn The capstone instructions.
  * \param mode The capstone mode.
@@ -237,39 +289,58 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	rz_return_val_if_fail(insn, NULL);
 	ut32 id = insn->id;
 
+	ut8 bo = INSOP(0).imm;
+	ut8 bi = INSOP(1).imm;
+	RzILOpPure *ctr_ok;
+	RzILOpPure *cond_ok;
+	RzILOpPure *bo_0;
+	RzILOpPure *bo_1;
+	RzILOpPure *bo_2;
+	RzILOpPure *bo_3;
+
 	switch (id) {
 	default:
-		RZ_LOG_WARN("Instruction %d has no branch condition set. Emulation will be flawed.\n", id);
+		RZ_LOG_WARN("Instruction %d has no condition implemented.\n", id);
 		return IL_FALSE;
-	case PPC_INS_BL:
-	case PPC_INS_BLA:
-	case PPC_INS_BLR:
-	case PPC_INS_B:
-	case PPC_INS_BA:
 	case PPC_INS_BC:
-	case PPC_INS_BCCTR:
-	case PPC_INS_BCCTRL:
 	case PPC_INS_BCL:
 	case PPC_INS_BCLR:
-	case PPC_INS_BCLRL:
-	case PPC_INS_BCTR:
-	case PPC_INS_BCTRL:
-	case PPC_INS_BCT:
+	case PPC_INS_BCLRL:;
+		bo_2 = NON_ZERO(AND(UN(5, 0b001000), VARLP("bo")));
+		bo_3 = NON_ZERO(AND(UN(5, 0b000100), VARLP("bo")));
+		ctr_ok = OR(bo_2, XOR(NON_ZERO(VARG("ctr")), bo_3)); // BO_2 | (CTR_M:63 ≠ 0) ⊕ BO_3
+
+		bo_0 = NON_ZERO(AND(UN(5, 0b100000), VARLP("bo")));
+		bo_1 = NON_ZERO(AND(UN(5, 0b010000), VARLP("bo")));
+		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
+
+		return LET("bo", UN(5, bo), AND(cond_ok, ctr_ok));
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:;
+		bo_0 = NON_ZERO(AND(UN(5, 0b100000), VARLP("bo")));
+		bo_1 = NON_ZERO(AND(UN(5, 0b010000), VARLP("bo")));
+		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
+
+		return LET("bo", UN(5, bo), cond_ok);
+	// CTR != 0
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZL:
 	case PPC_INS_BDNZLA:
 	case PPC_INS_BDNZLR:
 	case PPC_INS_BDNZLRL:
+		return NON_ZERO(VARG("ctr"));
+	// CTR == 0
 	case PPC_INS_BDZ:
 	case PPC_INS_BDZA:
 	case PPC_INS_BDZL:
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
-	case PPC_INS_BLRL:
-	case PPC_INS_BRINC:
-		NOT_IMPLEMENTED;
+		return IS_ZERO(VARG("ctr"));
+	// ???
+	case PPC_INS_BCT:
+		return IL_FALSE;
 	}
 }
 
@@ -294,37 +365,51 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 
 	switch (id) {
 	default:
-		RZ_LOG_WARN("Target address of branch instruction %d can not be determined. Emulation will be flawed.\n", id);
+		RZ_LOG_WARN("Target address of branch instruction %d can not be resolved.\n", id);
 		return UA(0);
-	case PPC_INS_BL:
-	case PPC_INS_BLA:
-	case PPC_INS_BLR:
-	case PPC_INS_B:
+	// Banch to absolute address
 	case PPC_INS_BA:
-	case PPC_INS_BC:
-	case PPC_INS_BCCTR:
-	case PPC_INS_BCCTRL:
-	case PPC_INS_BCL:
-	case PPC_INS_BCLR:
-	case PPC_INS_BCLRL:
-	case PPC_INS_BCTR:
-	case PPC_INS_BCTRL:
-	case PPC_INS_BCT:
-	case PPC_INS_BDNZ:
+	case PPC_INS_BLA:
+		// EXTS(LI || 0b00)
+		return EXTS(APPEND(UN(24, INSOP(0).imm), UN(2, 0)));
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZLA:
 	case PPC_INS_BDNZA:
-	case PPC_INS_BDNZL:
 	case PPC_INS_BDNZLA:
+		// EXTS(BD || 0b00)
+		return EXTS(APPEND(UN(14, INSOP(0).imm), UN(2, 0)));
+	// Branch to relative address
+	case PPC_INS_B:
+	case PPC_INS_BL:
+		// CIA + EXTS(LI || 0b00)
+		return EXTS(ADD(UA(insn->address), APPEND(UN(24, INSOP(0).imm), UN(2, 0))));
+	case PPC_INS_BC:
+	case PPC_INS_BCL:
+	case PPC_INS_BCT:
+	case PPC_INS_BDZ:
+	case PPC_INS_BDZL:
+	case PPC_INS_BDNZ:
+	case PPC_INS_BDNZL:
+		// CIA + EXTS(BD || 0b00)
+		return EXTS(ADD(UA(insn->address), APPEND(UN(14, INSOP(0).imm), UN(2, 0))));
+	// Branch to LR
+	case PPC_INS_BLR:
+	case PPC_INS_BLRL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BDZLR:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BDZLRL:
 	case PPC_INS_BDNZLR:
 	case PPC_INS_BDNZLRL:
-	case PPC_INS_BDZ:
-	case PPC_INS_BDZA:
-	case PPC_INS_BDZL:
-	case PPC_INS_BDZLA:
-	case PPC_INS_BDZLR:
-	case PPC_INS_BDZLRL:
-	case PPC_INS_BLRL:
-	case PPC_INS_BRINC:
-		NOT_IMPLEMENTED;
+		//  LR_0:61 || 0b00
+		return AND(UA(-4), VARG("lr"));
+	// Branch to CTR
+	case PPC_INS_BCTR:
+	case PPC_INS_BCTRL:
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:
+		//  CTR_0:61 || 0b00
+		return AND(UA(-4), VARG("ctr"));
 	}
 }
 
