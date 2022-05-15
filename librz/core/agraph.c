@@ -3502,7 +3502,7 @@ static int agraph_print(RzAGraph *g, int is_interactive, RzCore *core, RzAnalysi
 			mustFlush = true;
 		}
 		if (core && core->scr_gadgets) {
-			rz_core_cmd0(core, "pg");
+			rz_core_gadget_print(core);
 		}
 		if (mustFlush) {
 			rz_cons_flush();
