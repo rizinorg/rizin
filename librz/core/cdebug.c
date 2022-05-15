@@ -217,7 +217,8 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 			rz_core_dbg_follow_seek_register(core);
 			core->print->cur_enabled = 0;
 		} else {
-			rz_core_cmd(core, "dso", 0);
+			rz_core_debug_step_over(core, 1);
+			rz_core_dbg_follow_seek_register(core);
 			rz_core_reg_update_flags(core);
 		}
 	} else {
