@@ -1560,31 +1560,43 @@ RZ_API RzCoreFile *rz_core_file_cur(RzCore *r) {
 /* --------------------------------------------------------------------------------- */
 
 RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && rz_file_exists(bf->file)) {
-			// Escape spaces so that o's argv parse will detect the path properly
-			char *file = rz_str_path_escape(bf->file);
-			// Backup the baddr and sections that were already rebased to
-			// revert the rebase after the debug session is closed
-			ut64 orig_baddr = core->bin->cur->o->baddr_shift;
-			RzList *orig_sections = __save_old_sections(core);
-
-			rz_bin_file_delete_all(core->bin);
-			rz_io_close_all(core->io);
-			rz_config_set_b(core->config, "cfg.debug", false);
-			rz_core_cmdf(core, "o %s", file);
-
-			rz_core_block_read(core);
-			__rebase_everything(core, orig_sections, orig_baddr);
-			rz_list_free(orig_sections);
-			free(file);
-		} else {
-			eprintf("Nothing to do.\n");
-		}
-	} else {
+	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		rz_io_reopen(core->io, fd, RZ_PERM_R, 644);
+		return;
 	}
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!(bf && rz_file_exists(bf->file))) {
+		RZ_LOG_WARN("Cannot open current RzBinFile.\n");
+		return;
+	}
+
+	// Escape spaces so that o's argv parse will detect the path properly
+	char *file = rz_str_path_escape(bf->file);
+	// Backup the baddr and sections that were already rebased to
+	// revert the rebase after the debug session is closed
+	ut64 orig_baddr = core->bin->cur->o->baddr_shift;
+	RzList *orig_sections = __save_old_sections(core);
+
+	rz_bin_file_delete_all(core->bin);
+	rz_io_close_all(core->io);
+	rz_config_set_b(core->config, "cfg.debug", false);
+
+	RzCoreFile *cfile = rz_core_file_open(core, file, RZ_PERM_R, 0);
+	if (!cfile) {
+		RZ_LOG_ERROR("Cannot open file '%s'\n", file);
+		return;
+	}
+	core->num->value = cfile->fd;
+	// If no baddr defined, use the one provided by the file
+	if (!rz_core_bin_load(core, file, UT64_MAX)) {
+		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", file);
+		return;
+	}
+	rz_core_block_read(core);
+
+	__rebase_everything(core, orig_sections, orig_baddr);
+	rz_list_free(orig_sections);
+	free(file);
 }
 
 RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
