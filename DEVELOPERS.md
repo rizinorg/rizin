@@ -184,6 +184,8 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 * Never ever use `%lld` or `%llx`. This is not portable. Always use the `PFMT64x`
   macros. Those are similar to the ones in GLIB. See all macroses in `librz/include/rz_types.h`.
 
+* Never use `offsetof()` macros - it's not supported by some compilers. Use `rz_offsetof()` instead.
+
 * Add a single space after the `//` when writing inline comments:
 
 ```c
@@ -253,6 +255,13 @@ There are a number of helper functions for 64, 32, 16, and 8 bit reads and write
 
 (Note that 8 bit reads are equivalent to casting a single byte of the buffer
 to a `ut8` value, ie endian is irrelevant).
+
+In case of the access to the `RzBuffer *buffer` type, there are also helpers like
+`rz_buf_read_bleXX()`/`rz_buf_write_bleXX()`, `rz_buf_read_bleXX_at()`/`rz_buf_write_bleXX_at()`,
+and `rz_buf_read_bleXX_offset()`/`rz_buf_write_bleXX_offset()`. In
+addition to them there are corresponding little-endian or big-endian-only functions
+like `rz_buf_read_leXX()`/`rz_buf_read_beXX()`, `rz_buf_read_leXX_at()`/`rz_buf_read_beXX()`,
+`rz_buf_read_leXX_offset()`/`rz_buf_read_beXX_offset()`, and corresponding writing functions.
 
 ## Packed structures
 
