@@ -13,7 +13,7 @@ extern "C" {
 	case (x):; \
 	}
 
-RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
+RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 
 #if defined(__GNUC__) && defined(__cplusplus)
 #define RZ_FUNCTION ((const char *)(__PRETTY_FUNCTION__))
