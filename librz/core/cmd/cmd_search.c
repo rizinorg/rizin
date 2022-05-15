@@ -1978,14 +1978,22 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 					rz_cons_println(str);
 				}
 				break;
-			case 's': // "als"
-				rz_core_cmd0(core, "asl");
+			case 's': { // "/als"
+				RzListIter *iter;
+				RzSyscallItem *si;
+				RzList *list = rz_syscall_list(core->analysis->syscall);
+				rz_list_foreach (list, iter, si) {
+					rz_cons_printf("%s = 0x%02x.%s\n",
+						si->name, si->swi, syscallNumber(si->num));
+				}
+				rz_list_free(list);
 				break;
+			}
 			case 0:
 				rz_core_cmd0(core, "aoml");
 				break;
 			default:
-				eprintf("wat\n");
+				RZ_LOG_ERROR("/al%c - unknown command\n", type);
 				break;
 			}
 			return false;
@@ -2005,14 +2013,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 		input++;
 	}
 	if (type == 's') {
-		eprintf("Shouldn't reach\n");
-// ??
-#if 0
-	case 's': // "/s"
-		do_syscall_search (core, &param);
-		dosearch = false;
-		break;
-#endif
+		rz_warn_if_reached();
 		return true;
 	}
 	if (mode == 'j') {
