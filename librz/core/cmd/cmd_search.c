@@ -349,12 +349,14 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 		keyword = malloc(strlen(prelude) + 1);
 		if (!keyword) {
 			RZ_LOG_ERROR("aap: cannot allocate 'analysis.prelude' buffer\n");
+			rz_list_free(list);
 			return -1;
 		}
 		keyword_length = rz_hex_str2bin(prelude, keyword);
 	} else {
 		arch_preludes = rz_analysis_preludes(core->analysis);
 		if (!arch_preludes) {
+			rz_list_free(list);
 			return -1;
 		}
 	}
@@ -571,7 +573,7 @@ static bool maskMatches(int perm, int mask, bool only) {
 	return false;
 }
 
-RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
+RZ_API RZ_OWN RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
 	rz_return_val_if_fail(core, NULL);
 
 	RzList *list = rz_list_newf(free); // XXX rz_io_map_free);

@@ -377,6 +377,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NON
 
 	root->child_list = rz_list_newf((RzListFree)rz_sign_flirt_node_free);
 	if (!root->child_list) {
+		free(root);
 		RZ_LOG_ERROR("FLIRT: cannot allocate root node child list\n");
 		return NULL;
 	}

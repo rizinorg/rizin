@@ -3,14 +3,13 @@
 
 #include <rz_flag.h>
 
-RZ_API RzList *rz_flag_tags_set(RzFlag *f, const char *name, const char *words) {
-	rz_return_val_if_fail(f && name && words, NULL);
+RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words) {
+	rz_return_if_fail(f && name && words);
 	const char *k = sdb_fmt("tag.%s", name);
 	sdb_set(f->tags, k, words, -1);
-	return NULL;
 }
 
-RZ_API RzList *rz_flag_tags_list(RzFlag *f) {
+RZ_API RZ_OWN RzList *rz_flag_tags_list(RzFlag *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzList *res = rz_list_newf(free);
 	SdbList *o = sdb_foreach_list(f->tags, false);

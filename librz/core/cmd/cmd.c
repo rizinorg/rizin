@@ -3678,6 +3678,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 		free(command_str);
 		res = core_cmd_tsrzcmd(state->core, exec_string, state->split_lines, false);
 		free(exec_string);
+		free(command_extra_str);
 		return res;
 	}
 

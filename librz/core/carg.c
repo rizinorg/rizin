@@ -286,6 +286,7 @@ RZ_API RZ_OWN RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) 
 	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
 	int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 	if (!rz_analysis_cc_func(core->analysis, key)) {
+		rz_list_free(list);
 		return NULL;
 	}
 	char *cc = strdup(rz_analysis_cc_func(core->analysis, key));
@@ -293,6 +294,7 @@ RZ_API RZ_OWN RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) 
 	if (!cc) {
 		// unsupported calling convention
 		free(key);
+		rz_list_free(list);
 		return NULL;
 	}
 	int i;
@@ -311,6 +313,7 @@ RZ_API RZ_OWN RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) 
 			RzAnalysisFuncArg *arg = RZ_NEW0(RzAnalysisFuncArg);
 			if (!arg) {
 				free(cc);
+				rz_list_free(list);
 				return NULL;
 			}
 			set_fcn_args_info(arg, core->analysis, key, cc, i);

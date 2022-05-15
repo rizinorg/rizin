@@ -285,6 +285,7 @@ RZ_API RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
 			break;
 		}
 	}
+	rz_list_free(sections);
 
 	if (!go_info.version) {
 		return NULL;

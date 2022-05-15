@@ -2626,7 +2626,9 @@ static ut8 *old_transform_op(RzCore *core, const char *val, char op, int *buflen
 
 		hexlen = rz_hex_str2bin(val, hex);
 	}
-	return rz_core_transform_op(core, core->offset, wop, hex, hexlen, buflen);
+	ut8 *result = rz_core_transform_op(core, core->offset, wop, hex, hexlen, buflen);
+	free(hex);
+	return result;
 }
 
 static void cmd_print_op(RzCore *core, const char *input) {

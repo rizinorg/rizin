@@ -192,6 +192,7 @@ struct trace_node {
 static void set_profile_string(RzCore *core, const char *str) {
 	char *file = strdup(rz_config_get(core->config, "dbg.profile"));
 	if (RZ_STR_ISEMPTY(file)) {
+		free(file);
 		file = rz_file_temp("rz-run");
 		rz_config_set(core->config, "dbg.profile", file);
 	}
@@ -482,7 +483,7 @@ RZ_API void rz_core_dbg_follow_seek_register(RzCore *core) {
 	rz_core_debug_sync_bits(core);
 }
 
-static int step_until_optype(RzCore *core, RzList *optypes_list) {
+static bool step_until_optype(RzCore *core, RzList *optypes_list) {
 	RzAnalysisOp op;
 	ut8 buf[32];
 	ut64 pc;
@@ -3465,10 +3466,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, 
 	for (i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], "=", 1, false);
 		if (!l) {
+			rz_list_free(list);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		size_t llen = rz_list_length(l);
 		if (llen < 2) {
+			rz_list_free(list);
 			rz_list_free(l);
 			return RZ_CMD_STATUS_ERROR;
 		}

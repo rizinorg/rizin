@@ -1828,7 +1828,7 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_breakpoint_handler(RzCore *core, i
 // aecs
 RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int argc, const char **argv) {
 	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	RzAnalysisOp *op;
+	RzAnalysisOp *op = NULL;
 	while (!rz_cons_is_breaked()) {
 		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
 			break;
@@ -1862,7 +1862,7 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int 
 // aecc
 RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int argc, const char **argv) {
 	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	RzAnalysisOp *op;
+	RzAnalysisOp *op = NULL;
 	while (!rz_cons_is_breaked()) {
 		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
 			break;
@@ -2031,6 +2031,7 @@ RZ_IPI RzCmdStatus rz_il_step_until_expr_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_il_step_until_opt_handler(RzCore *core, int argc, const char **argv) {
 	RzList *optypes_list = rz_list_new_from_array((const void **)&argv[1], argc - 1);
 	step_until_optype(core, optypes_list);
+	rz_list_free(optypes_list);
 	rz_core_reg_update_flags(core);
 	return RZ_CMD_STATUS_OK;
 }
@@ -5079,7 +5080,7 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 				xref->type ? xref->type : ' ', xref->to, desc);
 
 			if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
-				RzAnalysisOp aop;
+				RzAnalysisOp aop = { 0 };
 				rz_analysis_op(core->analysis, &aop, xref->to, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 				if (aop.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
 					cmd_analysis_ucall_ref(core, xref->to);
@@ -5768,7 +5769,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_ascii_handler(RzCore *core, int arg
 	RzTable *table = rz_core_table(core);
 	rz_table_visual_list(table, flist, core->offset, core->blocksize,
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
-	rz_cons_printf("\n%s\n", rz_table_tostring(table));
+	char *tablestr = rz_table_tostring(table);
+	rz_cons_printf("\n%s\n", tablestr);
+	free(tablestr);
 	rz_table_free(table);
 	rz_list_free(flist);
 	rz_list_free(fcns);
