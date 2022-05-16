@@ -88,6 +88,9 @@ typedef enum {
 	SH_OP_SHLR8,
 	SH_OP_SHLL16,
 	SH_OP_SHLR16,
+	SH_OP_CLRMAC,
+	SH_OP_CLRS,
+	SH_OP_CLRT,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
