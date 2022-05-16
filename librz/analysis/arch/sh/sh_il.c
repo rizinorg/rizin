@@ -1092,6 +1092,33 @@ static RzILOpEffect *sh_il_shlr16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(0, SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(16)));
 }
 
+/**
+ * CLRMAC
+ * 0 -> MACH, MACL
+ * 0000000000101000
+ */
+static RzILOpEffect *sh_il_clrmac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return SEQ2(SETG("mach", UN(SH_REG_SIZE, 0)), SETG("macl", UN(SH_REG_SIZE, 0)));
+}
+
+/**
+ * CLRS
+ * 0 -> S
+ * 0000000001001000
+ */
+static RzILOpEffect *sh_il_clrs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return SETG(SH_SR_S, IL_FALSE);
+}
+
+/**
+ * CLRT
+ * 0 -> T
+ * 0000000000001000
+ */
+static RzILOpEffect *sh_il_clrt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return SETG(SH_SR_T, IL_FALSE);
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
@@ -1150,5 +1177,8 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_shll8,
 	sh_il_shlr8,
 	sh_il_shll16,
-	sh_il_shlr16
+	sh_il_shlr16,
+	sh_il_clrmac,
+	sh_il_clrs,
+	sh_il_clrt
 };
