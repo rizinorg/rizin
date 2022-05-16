@@ -252,7 +252,7 @@ static void find_go_build_info(RzBinFile *bf, GoBuildInfo *go_info, RzBinSection
  *
  * \return  Returns a string on success, otherwise NULL
  */
-RZ_API RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
+RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	bool is_pe = false;
