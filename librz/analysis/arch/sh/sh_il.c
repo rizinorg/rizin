@@ -11,17 +11,16 @@
  * References:
  *  - https://www.st.com/resource/en/user_manual/cd00147165-sh-4-32-bit-cpu-core-architecture-stmicroelectronics.pdf (SH-4 32-bit architecture manual)
  *  - https://www.renesas.com/in/en/document/mas/sh-4-software-manual?language=en (SH-4 manual by Renesas)
- *  - https://www.renesas.com/eu/en/document/mah/sh-1sh-2sh-dsp-software-manual?language=en
  *
  * Both the above references are almost the same
  */
 
-#define SH_REG_SIZE         32
-#define SH_ADDR_SIZE        32
-#define SH_INSTR_SIZE       16
+#define BITS_PER_BYTE       8
+#define SH_REG_SIZE         4 * BITS_PER_BYTE
+#define SH_ADDR_SIZE        4 * BITS_PER_BYTE
+#define SH_INSTR_SIZE       2 * BITS_PER_BYTE
 #define SH_GPR_COUNT        16
 #define SH_BANKED_REG_COUNT 8
-#define BITS_PER_BYTE       8
 
 #define SH_U_ADDR(x) UN(SH_ADDR_SIZE, x)
 #define SH_S_ADDR(x) SN(SH_ADDR_SIZE, x)
@@ -183,7 +182,7 @@ static inline SHParamHelper sh_il_get_param(SHParam param, SHScaling scaling) {
 	};
 	switch (param.mode) {
 	case SH_REG_DIRECT:
-		ret.pure = sh_il_get_reg(param.param[0]);
+		ret.pure = UNSIGNED(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_reg(param.param[0]));
 		break;
 	case SH_REG_INDIRECT:
 		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
@@ -257,7 +256,7 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *va
 	RzILOpEffect *ret = NULL, *pre = NULL, *post = NULL;
 	switch (param.mode) {
 	case SH_REG_DIRECT:
-		ret = sh_il_set_reg(param.param[0], val);
+		ret = sh_il_set_reg(param.param[0], UNSIGNED(SH_REG_SIZE, val));
 		break;
 	case SH_REG_INDIRECT:
 	case SH_REG_INDIRECT_I:
@@ -279,7 +278,7 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *va
 	if (!ret) {
 		SHParamHelper ret_h = sh_il_get_param(param, sh_scaling_size[scaling]);
 		rz_il_op_pure_free(ret_h.pure);
-		ret = STOREW(sh_il_get_effective_addr(param, sh_scaling_size[scaling]), val);
+		ret = STOREW(sh_il_get_effective_addr(param, sh_scaling_size[scaling]), UNSIGNED(sh_scaling_size[scaling], val));
 		pre = ret_h.pre;
 		post = ret_h.post;
 	}
@@ -964,10 +963,133 @@ static RzILOpEffect *sh_il_rotcl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_rotcr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *lsb = SETL("lsb", LSB(sh_il_get_pure_param(0)));
-	RzILOpPure *shl = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
-	RzILOpPure *msb = ITE(VARG(SH_SR_T), OR(shl, SH_U_REG(0x80000000)), AND(DUP(shl), SH_U_REG(0x7fffffff)));
+	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
+	RzILOpPure *msb = ITE(VARG(SH_SR_T), OR(shr, SH_U_REG(0x80000000)), AND(DUP(shr), SH_U_REG(0x7fffffff)));
 	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("lsb"));
 	return SEQ3(lsb, sh_il_set_pure_param(0, msb), tbit);
+}
+
+/**
+ * SHAD  Rm, Rn
+ * If Rn >= 0, Rn << Rm -> Rn
+ * If Rn < 0, Rn >> Rm -> [MSB -> Rn]
+ * MSB -> Rn
+ * 0100nnnnmmmm1100
+ */
+static RzILOpEffect *sh_il_shad(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpEffect *op1 = SETL("op1", SIGNED(32, sh_il_get_pure_param(0)));
+	RzILOpEffect *op2 = SETL("op2", SIGNED(32, sh_il_get_pure_param(1)));
+	RzILOpPure *shift_amount = UNSIGNED(5, VARL("op1"));
+
+	RzILOpPure *shl = SHIFTL0(VARL("op2"), shift_amount);
+	RzILOpPure *shr = SHIFTRA(VARL("op2"), SUB(UN(5, 32), DUP(shift_amount)));
+
+	return BRANCH(SGE(VARL("op1"), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr));
+}
+
+/**
+ * SHAL  RN
+ * T <- Rn <- 0
+ * 0100nnnn00100000
+ */
+static RzILOpEffect *sh_il_shal(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *msb = MSB(sh_il_get_pure_param(0));
+	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
+	return SEQ2(SETG(SH_SR_T, msb), sh_il_set_pure_param(0, shl));
+}
+
+/**
+ * SHLD  Rm, Rn
+ * If Rn >= 0, Rn << Rm -> Rn
+ * If Rn < 0, Rn >> Rm -> [0 -> Rn]
+ * MSB -> Rn
+ * 0100nnnnmmmm1101
+ */
+static RzILOpEffect *sh_il_shld(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpEffect *op1 = SETL("op1", SIGNED(32, sh_il_get_pure_param(0)));
+	RzILOpEffect *op2 = SETL("op2", UNSIGNED(32, sh_il_get_pure_param(1)));
+	RzILOpPure *shift_amount = UNSIGNED(5, VARL("op1"));
+
+	RzILOpPure *shl = SHIFTL0(VARL("op2"), shift_amount);
+	RzILOpPure *shr = SHIFTR0(VARL("op2"), SUB(UN(5, 32), DUP(shift_amount)));
+
+	return BRANCH(SGE(VARL("op1"), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr));
+}
+
+/**
+ * SHLL  Rn
+ * T <- Rn <- 0
+ * 0100nnnn00000000
+ */
+static RzILOpEffect *sh_il_shll(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *msb = MSB(sh_il_get_pure_param(0));
+	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
+	return SEQ2(SETG(SH_SR_T, msb), sh_il_set_pure_param(0, shl));
+}
+
+/**
+ * SHLR  Rn
+ * 0 -> Rn -> T
+ * 0100nnnn00000001
+ */
+static RzILOpEffect *sh_il_shlr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *lsb = LSB(sh_il_get_pure_param(0));
+	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
+	return SEQ2(SETG(SH_SR_T, lsb), sh_il_set_pure_param(0, shr));
+}
+
+/**
+ * SHLL2  Rn
+ * Rn << 2 -> Rn
+ * 0100nnnn00001000
+ */
+static RzILOpEffect *sh_il_shll2(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(0, SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(2)));
+}
+
+/**
+ * SHLR2  Rn
+ * Rn >> 2 -> Rn
+ * 0100nnnn00001001
+ */
+static RzILOpEffect *sh_il_shlr2(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(0, SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(2)));
+}
+
+/**
+ * SHLL8  Rn
+ * Rn << 8 -> Rn
+ * 0100nnnn00011000
+ */
+static RzILOpEffect *sh_il_shll8(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(0, SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(8)));
+}
+
+/**
+ * SHLR8  Rn
+ * Rn >> 8 -> Rn
+ * 0100nnnn00011001
+ */
+static RzILOpEffect *sh_il_shlr8(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(0, SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(8)));
+}
+
+/**
+ * SHLL16  Rn
+ * Rn << 16 -> Rn
+ * 0100nnnn00101000
+ */
+static RzILOpEffect *sh_il_shll16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(0, SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(16)));
+}
+
+/**
+ * SHLR16  Rn
+ * Rn >> 16 -> Rn
+ * 0100nnnn00101001
+ */
+static RzILOpEffect *sh_il_shlr16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(0, SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(16)));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
@@ -1017,5 +1139,16 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_rotl,
 	sh_il_rotr,
 	sh_il_rotcl,
-	sh_il_rotcr
+	sh_il_rotcr,
+	sh_il_shad,
+	sh_il_shal,
+	sh_il_shld,
+	sh_il_shll,
+	sh_il_shlr,
+	sh_il_shll2,
+	sh_il_shlr2,
+	sh_il_shll8,
+	sh_il_shlr8,
+	sh_il_shll16,
+	sh_il_shlr16
 };
