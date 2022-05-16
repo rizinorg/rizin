@@ -20,6 +20,7 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_any(RzBin *bin);
 RZ_IPI RzBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RzBin *bin, const char *name);
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name);
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin);
+RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *binfile);
 
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 
