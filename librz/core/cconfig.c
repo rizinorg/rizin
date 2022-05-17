@@ -179,13 +179,6 @@ static bool cb_analysis_delay(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analysis_endsize(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.endsize = node->i_value;
-	return true;
-}
-
 static bool cb_analysis_vars(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2905,7 +2898,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.armthumb", "false", &cb_analysis_armthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB("analysis.jmp.after", "true", &cb_analysis_afterjmp, "Continue analysis after jmp/ujmp");
 	SETCB("analysis.trap.after", "false", &cb_analysis_aftertrap, "Continue analysis after trap instructions.");
-	SETCB("analysis.endsize", "true", &cb_analysis_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
 	SETCB("analysis.delay", "true", &cb_analysis_delay, "Enable delay slot analysis if supported by the architecture");
 	SETICB("analysis.depth", 64, &cb_analysis_depth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB("analysis.graph_depth", 256, &cb_analysis_graphdepth, "Max depth for path search");
