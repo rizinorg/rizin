@@ -35,7 +35,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 #define rz_warn_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			rz_assert_log(RZ_LOGLVL_WARN, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
+			rz_assert_log(RZ_LOGLVL_WARN, "(%s:%d):%s%s runtime check failed: (%s)\n", \
 				__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : "", #expr); \
 		} \
 	} while (0)
