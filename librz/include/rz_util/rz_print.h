@@ -120,6 +120,8 @@ typedef struct rz_print_t {
 	// represents the first not-visible offset on the screen
 	// (only when in visual disasm mode)
 	ut64 screen_bounds;
+	// Memoized current row number to calculate screen_bounds
+	int rows;
 } RzPrint;
 
 #ifdef RZ_API
