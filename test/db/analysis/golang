@@ -44,7 +44,7 @@ EXPECT=<<EOF
 ;-- str.flag:
 ;-- str.sort:
 ;-- str.sync:
-13208
+13207
 EOF
 RUN
 
@@ -410,5 +410,30 @@ EXPECT=<<EOF
 | 0x0009a308      lis   r8, 0xd ; 0xb8207 ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
 | 0x0009a384      lis   r7, 0xd ; 0xb820e ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
 | 0x0009a3e0      lis   r8, 0xd ; 0xbd845 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+EOF
+RUN
+
+NAME=Parse Golang 1.18 riscv64 Strings
+FILE=bins/golang/go-re-sample-linux-riscv64
+CMDS=<<EOF
+aalg
+e asm.cmt.col=0
+pdr~"
+EOF
+EXPECT=<<EOF
+| 0x00099898      auipc t2, 0x1e ; 0xb7b60 ; "foogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGC"
+| 0x00099910      auipc t0, 0x1e ; 0xb7f74 ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
+| 0x00099944      auipc t2, 0x1e ; 0xb7c70 ; "namepc  profra  roots + s0  s1  s10 s11 s2  s3  s4  s5  s6  s7  s8  s9  sbrksp  t0  t1  t2  t3  t4  t5  t6  tp  trueuint  -%s .."
+| 0x00099998      auipc t2, 0x1e ; 0xb7b57 ; "barendfinfoogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomCha"
+| 0x00099a10      auipc t0, 0x1e ; 0xb7dd8 ; "levelmheappanicscav schedsleepslicesudogsweeptracetrap:uint8valuewrite B ->  Value addr= alloc base  code= ctxt: curg= free  goi"
+| 0x00099a60      auipc t1, 0x3e ; 0xbd602 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+| 0x00099b4c      auipc t1, 0x3e ; 0xb99cd ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
+| 0x00099ba4      auipc t1, 0x3e ; 0xb81c2 ; "  level: bytes,  etypes  is not  maxpc=  mcount= minLC=  minutes nalloc= newval= nfreed= packed= pointer stack=[ status ) errno="
+| 0x00099c30      auipc s0, 0x3e ; 0xb7fc3 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x00099cf8      auipc t1, 0x3e ; 0xb99dd ; "subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABCDEFX0123456789ab"
+| 0x00099d50      auipc t1, 0x3e ; 0xb83c2 ; "  enable: (forced) -> node= B exp.)  B work ( blocked= in use)\n lockedg= lockedm= m->curg= marked   method:  ms cpu,  not in [ "
+| 0x00099dd0      auipc t1, 0x3e ; 0xb7fbc ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
+| 0x00099e64      auipc s0, 0x3e ; 0xb7fc3 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x00099edc      auipc t0, 0x3e ; 0xbd602 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 EOF
 RUN
