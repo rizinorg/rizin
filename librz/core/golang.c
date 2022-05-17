@@ -604,7 +604,7 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 	ut32 nlen = 0;
 	memset(info, 0, sizeof(GoStrInfo));
 
-	// if ((ctx->pc + nlen) >= 0x000be5e0 && (ctx->pc + nlen) < 0x000be5fc) {
+	// if ((ctx->pc + nlen) >= 0x0009a008 && (ctx->pc + nlen) < 0x0009a018) {
 	//	eprintf("n_sigs: %lu\n", n_sigs);
 	// }
 	for (size_t i = 0; i < n_sigs; ++i) {
@@ -627,7 +627,7 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 			copy[j] = copy[j] & sig->pasm->mask[j];
 		}
 
-		// if ((ctx->pc + nlen) >= 0x000be5e0 && (ctx->pc + nlen) <= 0x000be5fc) {
+		// if ((ctx->pc + nlen) >= 0x0009a008 && (ctx->pc + nlen) <= 0x0009a018) {
 		//	char *p0 = rz_hex_bin2strdup(sig->pasm->pattern, sig->pasm->size);
 		//	char *p1 = rz_hex_bin2strdup(copy, sig->pasm->size);
 		//	eprintf("0x%08" PFMT64x " pat = %s\n", ctx->pc + nlen, p0);
@@ -653,7 +653,7 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 
 		nlen += sig->pasm->size;
 	}
-	// if ((ctx->pc) >= 0x000be5e0 && (ctx->pc) < 0x000be5fc) {
+	// if ((ctx->pc) >= 0x0009a008 && (ctx->pc) < 0x0009a018) {
 	//	eprintf("found 0x%08" PFMT64x "\n", ctx->pc);
 	// }
 	return true;
@@ -696,6 +696,18 @@ static bool decode_val_set_size(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 		return false;
 	}
 	info->size = aop.val;
+	rz_analysis_op_fini(&aop);
+	return true;
+}
+
+static bool decode_val_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
+	RzAnalysisOp aop;
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+		rz_analysis_op_fini(&aop);
+		return false;
+	}
+	info->addr = aop.val;
 	rz_analysis_op_fini(&aop);
 	return true;
 }
@@ -1298,7 +1310,7 @@ static GoSignature go_mipsle64_table_signature[] = {
 	// daddiu v0, v0, low_string_offset
 	{ &go_asm_pattern_name(mipsle, 64, daddiu), &decode_val_add_addr },
 	// sd    v0, 8(at)
-	{ &go_asm_pattern_name(mips, 64, any), decode_from_table },
+	{ &go_asm_pattern_name(mips, 64, any), &decode_from_table },
 };
 
 // ---- BE ----
@@ -1347,7 +1359,7 @@ static GoSignature go_mipsbe64_table_signature[] = {
 	// daddiu v0, v0, low_string_offset
 	{ &go_asm_pattern_name(mipsbe, 64, daddiu), &decode_val_add_addr },
 	// sd    v0, 8(at)
-	{ &go_asm_pattern_name(mips, 64, any), decode_from_table },
+	{ &go_asm_pattern_name(mips, 64, any), &decode_from_table },
 };
 
 static ut32 golang_recover_string_mips64(GoStrRecover *ctx) {
@@ -1377,6 +1389,127 @@ static ut32 golang_recover_string_mips64(GoStrRecover *ctx) {
 	return 4;
 }
 
+go_asm_pattern_define(ppc, 64, any, "\x00\x00\x00\x00", "\x00\x00\x00\x00", false);
+go_asm_pattern_define(ppcle, 64, lis, "\x00\x00\x00\x3c", "\x00\x00\x00\xfc", true);
+go_asm_pattern_define(ppcbe, 64, lis, "\x3c\x00\x00\x00", "\xfc\x00\x00\x00", true);
+go_asm_pattern_define(ppcle, 64, addi, "\x00\x00\x00\x38", "\x00\x00\x00\xfc", false);
+go_asm_pattern_define(ppcbe, 64, addi, "\x38\x00\x00\x00", "\xfc\x00\x00\x00", false);
+go_asm_pattern_define(ppcle, 64, li, "\x00\x00\x00\x38", "\x00\x00\x1f\xfc", false);
+go_asm_pattern_define(ppcbe, 64, li, "\x38\x00\x00\x00", "\xfc\x1f\x00\x00", false);
+
+// ---- LE ----
+static GoSignature go_ppcle64_lis_addi_std_li_signature[] = {
+	// lis   r3, high_string_offset
+	{ &go_asm_pattern_name(ppcle, 64, lis), &decode_val_set_addr },
+	// addi  r3, r3, low_string_offset
+	{ &go_asm_pattern_name(ppcle, 64, addi), &decode_val_add_addr },
+	// std   r3, 0x20(r1)
+	{ &go_asm_pattern_name(ppc, 64, any), NULL },
+	// li    r3, string_size
+	{ &go_asm_pattern_name(ppcle, 64, li), &decode_val_set_size },
+};
+
+static GoSignature go_ppcle64_li_std_lis_addi_signature[] = {
+	// li    r3, string_size
+	{ &go_asm_pattern_name(ppcle, 64, li), &decode_val_set_size },
+	// std   r3, 0x20(r1)
+	{ &go_asm_pattern_name(ppc, 64, any), NULL },
+	// lis   r3, high_string_offset
+	{ &go_asm_pattern_name(ppcle, 64, lis), &decode_val_set_addr },
+	// addi  r3, r3, low_string_offset
+	{ &go_asm_pattern_name(ppcle, 64, addi), &decode_val_add_addr },
+};
+
+static GoSignature go_ppcle64_lis_addi_li_signature[] = {
+	// lis   r3, high_string_offset
+	{ &go_asm_pattern_name(ppcle, 64, lis), &decode_val_set_addr },
+	// addi  r3, r3, low_string_offset
+	{ &go_asm_pattern_name(ppcle, 64, addi), &decode_val_add_addr },
+	// li    r3, string_size
+	{ &go_asm_pattern_name(ppcle, 64, li), &decode_val_set_size },
+};
+
+static GoSignature go_ppcle64_table_signature[] = {
+	// lis   r3, high_string_offset
+	{ &go_asm_pattern_name(ppcle, 64, lis), &decode_val_set_addr },
+	// addi  r3, r3, low_string_offset
+	{ &go_asm_pattern_name(ppcle, 64, addi), &decode_val_add_addr },
+	// std   r3, 0x20(r1)
+	{ &go_asm_pattern_name(ppc, 64, any), &decode_from_table },
+};
+
+// ---- BE ----
+static GoSignature go_ppcbe64_lis_addi_std_li_signature[] = {
+	// lis   r3, high_string_offset
+	{ &go_asm_pattern_name(ppcbe, 64, lis), &decode_val_set_addr },
+	// addi  r3, r3, low_string_offset
+	{ &go_asm_pattern_name(ppcbe, 64, addi), &decode_val_add_addr },
+	// std   r3, 0x20(r1)
+	{ &go_asm_pattern_name(ppc, 64, any), NULL },
+	// li    r3, string_size
+	{ &go_asm_pattern_name(ppcbe, 64, li), &decode_val_set_size },
+};
+
+static GoSignature go_ppcbe64_li_std_lis_addi_signature[] = {
+	// li    r3, string_size
+	{ &go_asm_pattern_name(ppcbe, 64, li), &decode_val_set_size },
+	// std   r3, 0x20(r1)
+	{ &go_asm_pattern_name(ppc, 64, any), NULL },
+	// lis   r3, high_string_offset
+	{ &go_asm_pattern_name(ppcbe, 64, lis), &decode_val_set_addr },
+	// addi  r3, r3, low_string_offset
+	{ &go_asm_pattern_name(ppcbe, 64, addi), &decode_val_add_addr },
+};
+
+static GoSignature go_ppcbe64_lis_addi_li_signature[] = {
+	// lis   r3, high_string_offset
+	{ &go_asm_pattern_name(ppcbe, 64, lis), &decode_val_set_addr },
+	// addi  r3, r3, low_string_offset
+	{ &go_asm_pattern_name(ppcbe, 64, addi), &decode_val_add_addr },
+	// li    r3, string_size
+	{ &go_asm_pattern_name(ppcbe, 64, li), &decode_val_set_size },
+};
+
+static GoSignature go_ppcbe64_table_signature[] = {
+	// lis   r3, high_string_offset
+	{ &go_asm_pattern_name(ppcbe, 64, lis), &decode_val_set_addr },
+	// addi  r3, r3, low_string_offset
+	{ &go_asm_pattern_name(ppcbe, 64, addi), &decode_val_add_addr },
+	// std   r3, 0x20(r1)
+	{ &go_asm_pattern_name(ppc, 64, any), &decode_from_table },
+};
+
+static ut32 golang_recover_string_ppc64(GoStrRecover *ctx) {
+	RzAnalysis *analysis = ctx->core->analysis;
+	GoStrInfo info = { 0 };
+
+	if (analysis->big_endian &&
+		!go_is_sign_match_autosize(ctx, &info, go_ppcbe64_lis_addi_std_li_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_ppcbe64_li_std_lis_addi_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_ppcbe64_table_signature)) {
+		return 4;
+	} else if (!analysis->big_endian &&
+		!go_is_sign_match_autosize(ctx, &info, go_ppcle64_lis_addi_std_li_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_ppcle64_li_std_lis_addi_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_ppcle64_table_signature)) {
+		return 4;
+	}
+
+	// try to recover the string.
+	if (!recover_string_at(ctx, info.addr, info.size)) {
+		if (analysis->big_endian && !go_is_sign_match_autosize(ctx, &info, go_ppcbe64_lis_addi_li_signature)) {
+			return 4;
+		} else if (!analysis->big_endian && !go_is_sign_match_autosize(ctx, &info, go_ppcle64_lis_addi_li_signature)) {
+			return 4;
+		} else if (!recover_string_at(ctx, info.addr, info.size)) {
+			return 4;
+		}
+	}
+
+	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	return 4;
+}
+
 #define read_op_at_or_fail(aop, nbytes, label) \
 	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) { \
 		nlen = nbytes; \
@@ -1387,7 +1520,6 @@ static ut32 golang_recover_string_mips64(GoStrRecover *ctx) {
 	rz_analysis_op_fini(&aop); \
 	rz_analysis_op_init(&aop); \
 	read_op_at_or_fail(aop, nbytes, label)
-
 // Possible riscv64 signatures
 // -------
 // auipc gp, high_string_offset
@@ -1459,100 +1591,6 @@ static ut32 golang_recover_string_riscv64(GoStrRecover *ctx) {
 		str_size = rz_read_ble64(tmp + 8, analysis->big_endian);
 	} else { // ADDIW or ADDI
 		str_size = aop1.val;
-	}
-	nlen = aop0.size;
-
-	// check that the values are acceptable.
-	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
-		goto end;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, str_addr, str_size)) {
-		goto end;
-	}
-
-	// add xref
-	rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-
-end:
-	rz_analysis_op_fini(&aop0);
-	rz_analysis_op_fini(&aop1);
-	return nlen;
-}
-
-// Possible ppc64 signatures
-// -------
-// lis   r3, high_string_offset
-// addi  r3, r3, low_string_offset
-// std   r3, 0x20(r1)
-// li    r3, string_size
-// -------
-// lis   r3, high_string_offset
-// addi  r3, r3, low_string_offset
-// li    r3, string_size
-// -------
-// lis   r3, high_string_table
-// addi  r3, r3, low_string_table
-// std   r3, 0x20(r1)
-static ut32 golang_recover_string_ppc64(GoStrRecover *ctx) {
-	const ut32 opmask = RZ_ANALYSIS_OP_MASK_DISASM;
-	RzAnalysis *analysis = ctx->core->analysis;
-	ut8 *bytes = ctx->bytes;
-	ut32 size = ctx->size;
-	RzAnalysisOp aop0, aop1;
-	ut32 nlen = 0;
-	ut64 str_addr = 0, str_size = 0, pc = ctx->pc;
-	rz_analysis_op_init(&aop0);
-	rz_analysis_op_init(&aop1);
-
-	read_op_at_or_fail(aop0, 0, end);
-	nlen += aop0.size;
-
-	// check if first op is LIS, otherwise skip
-	if (!aop0.mnemonic || strncmp(aop0.mnemonic, "lis", 3)) {
-		goto end;
-	} else { // LIS
-		str_addr = aop0.val;
-	}
-
-	read_op_at_or_fail(aop1, aop0.size, end);
-	nlen += aop1.size;
-
-	// check if second op is ADDI, otherwise skip
-	if (!aop1.mnemonic || strncmp(aop1.mnemonic, "addi", 4)) {
-		nlen = aop0.size;
-		goto end;
-	} else { // ADDI
-		str_addr += (st64)aop1.val;
-	}
-
-	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
-	nlen += aop1.size;
-
-	// check if third op is STD, otherwise skip
-	if (!aop1.mnemonic || (strncmp(aop1.mnemonic, "std", 3) && strcmp(aop1.mnemonic, "li"))) {
-		nlen = aop0.size;
-		goto end;
-	} else if (!strcmp(aop1.mnemonic, "li")) { // LI
-		str_size = aop1.val;
-	} else {
-		reset_and_read_op_at_or_fail(aop1, aop0.size, end);
-		nlen += aop1.size;
-
-		// expect last op to be LI, otherwise skip
-		if (strcmp(aop1.mnemonic, "li")) {
-			ut8 tmp[16];
-			if (0 > rz_io_nread_at(ctx->core->io, str_addr, tmp, sizeof(tmp))) {
-				RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
-				nlen = 0;
-				goto end;
-			}
-			str_addr = rz_read_ble64(tmp, analysis->big_endian);
-			str_size = rz_read_ble64(tmp + 8, analysis->big_endian);
-		} else { // LI
-			str_size = aop1.val;
-		}
 	}
 	nlen = aop0.size;
 
