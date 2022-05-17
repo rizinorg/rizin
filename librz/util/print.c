@@ -463,11 +463,16 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 	p("%8" PFMT64x " ]\n", addr + i);
 }
 
-/* set screen_bounds to addr if the cursor is not visible on the screen anymore.
- * Note: screen_bounds is set only the first time this happens. */
+/**
+ * \brief Sets screen_bounds member of \p p to \p addr if the cursor is not visible on the screen.
+ * \param p RzPrint instance
+ * \param addr Address to set screen_bounds if not visible
+ *
+ * This function will only calculate the screen_bounds if the current value of screen_bounds is 1.
+ * It caches the number of rows visible on the first call to this function. The cache is invalidated when
+ * screen_bounds is set.
+ */
 RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr) {
-	int r, rc;
-
 	rz_return_if_fail(p);
 
 	if (!p->screen_bounds) {
@@ -481,11 +486,15 @@ RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr) {
 	}
 
 	if (p->screen_bounds == 1) {
-		(void)p->consbind.get_size(&r);
+		int rc;
+		if (!p->rows) {
+			(void)p->consbind.get_size(&p->rows);
+		}
 		(void)p->consbind.get_cursor(&rc);
 
-		if (rc > r - 1) {
+		if (rc > p->rows - 1) {
 			p->screen_bounds = addr;
+			p->rows = 0;
 		}
 	}
 }
