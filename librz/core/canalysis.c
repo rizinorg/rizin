@@ -6915,7 +6915,7 @@ exit:
  * \param core The RzCore instance
  * \return success
  */
-RZ_API bool rz_analysis_continue_until_syscall(RZ_NONNULL RzCore *core) {
+RZ_API bool rz_core_analysis_continue_until_syscall(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, false);
 	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	RzAnalysisOp *op = NULL;
@@ -6942,10 +6942,7 @@ RZ_API bool rz_analysis_continue_until_syscall(RZ_NONNULL RzCore *core) {
 			break;
 		}
 	}
-	if (op) {
-		rz_analysis_op_free(op);
-		op = NULL;
-	}
+	rz_analysis_op_free(op);
 	return true;
 }
 
@@ -6954,7 +6951,7 @@ RZ_API bool rz_analysis_continue_until_syscall(RZ_NONNULL RzCore *core) {
  * \param core The RzCore instance
  * \return success
  */
-RZ_API bool rz_analysis_continue_until_call(RZ_NONNULL RzCore *core) {
+RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, false);
 	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	RzAnalysisOp *op = NULL;
@@ -6978,9 +6975,6 @@ RZ_API bool rz_analysis_continue_until_call(RZ_NONNULL RzCore *core) {
 			break;
 		}
 	}
-	if (op) {
-		rz_analysis_op_free(op);
-		op = NULL;
-	}
+	rz_analysis_op_free(op);
 	return true;
 }

@@ -1827,12 +1827,12 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_breakpoint_handler(RzCore *core, i
 
 // aecs
 RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int argc, const char **argv) {
-	return bool2status(rz_analysis_continue_until_syscall(core));
+	return bool2status(rz_core_analysis_continue_until_syscall(core));
 }
 
 // aecc
 RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int argc, const char **argv) {
-	return bool2status(rz_analysis_continue_until_call(core));
+	return bool2status(rz_core_analysis_continue_until_call(core));
 }
 
 // aecu
