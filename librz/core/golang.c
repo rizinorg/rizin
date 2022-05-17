@@ -47,6 +47,26 @@ typedef struct go_string_recover_t {
 	ut32 n_recovered;
 } GoStrRecover;
 
+typedef struct go_string_info_t {
+	ut64 addr;
+	ut64 size;
+	ut64 xref;
+} GoStrInfo;
+
+typedef struct go_asm_pattern_t {
+	const ut8 *pattern;
+	const ut8 *mask;
+	ut32 size;
+	bool xrefs;
+} GoAsmPattern;
+
+typedef bool (*GoDecodeCb)(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size);
+
+typedef struct go_signature_t {
+	GoAsmPattern *pasm;
+	GoDecodeCb decode;
+} GoSignature;
+
 typedef ut32 (*GoStrRecoverCb)(GoStrRecover *ctx);
 
 ut32 go_func_tab_field_size(GoPcLnTab *pclntab) {
@@ -463,17 +483,19 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	return false;
 }
 
-static bool add_new_bin_string(RzCore *core, const char *string, ut64 vaddr, ut32 size) {
+static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size) {
 	RzListIter *it;
 	RzBinString *bstr;
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!bf || !bf->o || !bf->o->strings) {
+		free(string);
 		return false;
 	}
 	ut64 paddr = rz_io_v2p(core->io, vaddr);
 
 	rz_list_foreach (bf->o->strings, it, bstr) {
 		if (bstr->vaddr == vaddr && bstr->size == size) {
+			free(string);
 			return true;
 		}
 		ut64 end = bstr->vaddr + bstr->size;
@@ -488,13 +510,14 @@ static bool add_new_bin_string(RzCore *core, const char *string, ut64 vaddr, ut3
 	bstr = RZ_NEW0(RzBinString);
 	if (!bstr) {
 		RZ_LOG_ERROR("Failed allocate new go string\n");
+		free(string);
 		return false;
 	}
 	bstr->paddr = paddr;
 	bstr->vaddr = vaddr;
 	bstr->ordinal = rz_list_length(bf->o->strings);
 	bstr->length = bstr->size = size;
-	bstr->string = rz_str_ndup(string, size);
+	bstr->string = string;
 	bstr->type = RZ_BIN_STRING_ENC_UTF8;
 	if (!rz_list_append(bf->o->strings, bstr)) {
 		RZ_LOG_ERROR("Failed append new go string to strings list\n");
@@ -513,8 +536,11 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	const size_t n_prefix = strlen("str.");
 	// string size + strlen('str.') + \0
 	char *flag = malloc(str_size + n_prefix + 1);
-	if (!flag) {
+	char *raw = malloc(str_size + 1);
+	if (!flag || !raw) {
 		RZ_LOG_ERROR("Cannot allocate buffer to read string.");
+		free(flag);
+		free(raw);
 		return false;
 	}
 
@@ -524,22 +550,35 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	flag[2] = 'r';
 	flag[3] = '.';
 	flag[str_size + 4] = 0;
+	raw[str_size] = 0;
 
-	if (0 > rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)flag + n_prefix, str_size)) {
-		free(flag);
+	if (0 > rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)raw, str_size)) {
 		RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
-		return false;
-	} else if (rz_str_len_utf8_ansi(flag + n_prefix) < 1) {
 		free(flag);
+		free(raw);
 		return false;
-	} else if (!add_new_bin_string(ctx->core, flag + n_prefix, str_addr, str_size)) {
-		// add new string to string list
+	} else if (rz_str_len_utf8_ansi(raw) != str_size) {
 		free(flag);
+		free(raw);
 		return false;
 	}
+	memcpy(flag + n_prefix, raw, str_size);
 
 	// apply any filter to the new flag name
 	rz_name_filter(flag + n_prefix, str_size, true);
+
+	// verify is a valid flag.
+	if (rz_str_len_utf8_ansi(flag) < 5) {
+		free(flag);
+		free(raw);
+		return false;
+	}
+
+	// add new string to string list (raw is freed/owned by add_new_bin_string)
+	if (!add_new_bin_string(ctx->core, raw, str_addr, str_size)) {
+		free(flag);
+		return false;
+	}
 
 	// remove any flag already set at this address
 	rz_flag_unset_all_off(ctx->core->flags, str_addr);
@@ -554,18 +593,543 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	return true;
 }
 
-// Possible x64/x86 signatures
-// -------
-// mov   reg, string_size
-// lea   reg, [esp/rsp + string_offset]
-// -------
-// lea   reg, [esp/rsp + string_offset]
-// mov   reg, string_size
-// -------
-// lea   reg, [string_offset]
-// mov   [esp/rsp + 0x..], reg
-// mov   [esp/rsp + 0x..], string_size
+static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *sigs, const size_t n_sigs) {
+	ut8 copy[32]; // big enough to handle any pattern.
+	ut32 nlen = 0;
+	memset(info, 0, sizeof(GoStrInfo));
+
+	// if ((ctx->pc + nlen) >= 0x000959f4 && (ctx->pc + nlen) < 0x00095a04) {
+	//	eprintf("n_sigs: %lu\n", n_sigs);
+	// }
+	for (size_t i = 0; i < n_sigs; ++i) {
+		if (nlen >= ctx->size) {
+			return false;
+		}
+
+		GoSignature *sig = &sigs[i];
+		ut8 *bytes = ctx->bytes + nlen;
+		ut32 size = ctx->size - nlen;
+		if (sig->pasm->size > size) {
+			return false;
+		}
+
+		// copy opcodes
+		memcpy(copy, bytes, sig->pasm->size);
+
+		// apply mask
+		for (ut32 j = 0; j < sig->pasm->size; ++j) {
+			copy[j] = copy[j] & sig->pasm->mask[j];
+		}
+
+		// if ((ctx->pc + nlen) >= 0x000959f4 && (ctx->pc + nlen) <= 0x00095a04) {
+		//	char *p0 = rz_hex_bin2strdup(sig->pasm->pattern, sig->pasm->size);
+		//	char *p1 = rz_hex_bin2strdup(copy, sig->pasm->size);
+		//	eprintf("0x%08" PFMT64x " pat = %s\n", ctx->pc + nlen, p0);
+		//	eprintf("0x%08" PFMT64x " cop = %s\n", ctx->pc + nlen, p1);
+		//	free(p1);
+		//	free(p0);
+		// }
+
+		// verify the masked input matches the pattern
+		if (memcmp(copy, sig->pasm->pattern, sig->pasm->size)) {
+			return false;
+		}
+
+		// decode info
+		if (sig->decode && !sig->decode(ctx->core, info, ctx->pc + nlen, bytes, size)) {
+			return false;
+		}
+
+		// sets from where the xrefs starts.
+		if (sig->pasm->xrefs) {
+			info->xref = ctx->pc + nlen;
+		}
+
+		nlen += sig->pasm->size;
+	}
+	return true;
+}
+
+static ut32 decode_one_opcode_size(GoStrRecover *ctx) {
+	RzAnalysisOp aop;
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(ctx->core->analysis, &aop, ctx->pc, ctx->bytes, ctx->size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+		rz_analysis_op_fini(&aop);
+		return 0;
+	}
+	int size = aop.size;
+	rz_analysis_op_fini(&aop);
+	return size > 0 ? size : 0;
+}
+
+#define go_is_sign_match_autosize(ctx, info, sigs) go_is_sign_match(ctx, info, sigs, RZ_ARRAY_SIZE(sigs))
+#define go_asm_pattern_name(arch, bits, mnemonic)  go_##arch##_##bits##_##mnemonic
+#define go_asm_pattern_define(arch, bits, mnemonic, pattern, mask, set_xref) \
+	static GoAsmPattern go_asm_pattern_name(arch, bits, mnemonic) = { (const ut8 *)pattern, (const ut8 *)mask, (sizeof(pattern) - 1), set_xref }
+
+static bool decode_from_table(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
+	RzAnalysis *analysis = core->analysis;
+	ut8 tmp[16];
+	if (0 > rz_io_nread_at(core->io, info->addr, tmp, sizeof(tmp))) {
+		return false;
+	}
+	ut32 offset = analysis->bits / 8;
+	info->addr = rz_read_ble(tmp, analysis->big_endian, analysis->bits);
+	info->size = rz_read_ble(tmp + offset, analysis->big_endian, analysis->bits);
+	return true;
+}
+
+static bool decode_val_set_size(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
+	RzAnalysisOp aop;
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+		rz_analysis_op_fini(&aop);
+		return false;
+	}
+	info->size = aop.val;
+	rz_analysis_op_fini(&aop);
+	return true;
+}
+
+static bool decode_val_add_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
+	RzAnalysisOp aop;
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+		rz_analysis_op_fini(&aop);
+		return false;
+	}
+	info->addr += aop.val;
+	rz_analysis_op_fini(&aop);
+	return true;
+}
+
+static bool decode_ptr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
+	RzAnalysisOp aop;
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+		rz_analysis_op_fini(&aop);
+		return false;
+	}
+	info->addr = aop.ptr;
+	rz_analysis_op_fini(&aop);
+	return true;
+}
+
+static bool decode_disp_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
+	RzAnalysisOp aop;
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+		rz_analysis_op_fini(&aop);
+		return false;
+	}
+	info->addr = aop.disp;
+	rz_analysis_op_fini(&aop);
+	return true;
+}
+// 0x004881da      48c7401003000000       mov   qword [rax + 0x10], 3
+// 0x004881e2      488d0d8d8c0100         lea   rcx, [0x004a0e76]
+go_asm_pattern_define(x86, 64, lea, "\x48\x00\x00\x00\x00\x00\x00", "\xff\x00\x00\x00\x00\x00\x00", true);
+go_asm_pattern_define(x86, 64, mov_imm0, "\xb9\x00\x00\x00\x00", "\xff\x00\x00\x00\x00", false);
+go_asm_pattern_define(x86, 64, mov_imm1, "\x48\xc7\x00\x00\x00\x00\x00\x00", "\xff\xff\x00\x00\x00\x00\x00\x00", false);
+go_asm_pattern_define(x86, 64, mov_imm2, "\x41\x00\x00\x00\x00\x00", "\xff\x00\x00\x00\x00\x00", false);
+go_asm_pattern_define(x86, 64, mov_imm3, "\xbb\x00\x00\x00\x00", "\xff\x00\x00\x00\x00", false);
+go_asm_pattern_define(x86, 64, mov_imm4, "\xbf\x00\x00\x00\x00", "\xff\x00\x00\x00\x00", false);
+go_asm_pattern_define(x86, 64, mov_reg0, "\x48\x00\x00\x00", "\xff\x00\x00\x00", false);
+go_asm_pattern_define(x86, 64, mov_reg1, "\x48\x00\x00\x00\x00", "\xff\x00\x00\x00\x00", false);
+
+static GoSignature go_x64_lea_mov0_mov_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+	// mov   [esp/rsp + 0x..], reg
+	{ &go_asm_pattern_name(x86, 64, mov_reg0), NULL },
+	// mov   [esp/rsp + 0x..], string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm1), &decode_val_set_size },
+};
+
+static GoSignature go_x64_lea_mov1_mov_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+	// mov   [esp/rsp + 0x..], reg
+	{ &go_asm_pattern_name(x86, 64, mov_reg1), NULL },
+	// mov   [esp/rsp + 0x..], string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm1), &decode_val_set_size },
+};
+
+static GoSignature go_x64_lea_mov0_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm0), &decode_val_set_size },
+};
+
+static GoSignature go_x64_lea_mov1_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm2), &decode_val_set_size },
+};
+
+static GoSignature go_x64_lea_mov2_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm3), &decode_val_set_size },
+};
+
+static GoSignature go_x64_lea_mov3_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm4), &decode_val_set_size },
+};
+
+static GoSignature go_x64_mov0_lea_signature[] = {
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm0), &decode_val_set_size },
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+};
+
+static GoSignature go_x64_mov1_lea_signature[] = {
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm1), &decode_val_set_size },
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+};
+
+static GoSignature go_x64_mov2_lea_signature[] = {
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm3), &decode_val_set_size },
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+};
+
+static GoSignature go_x64_mov3_lea_signature[] = {
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 64, mov_imm4), &decode_val_set_size },
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+};
+
+static GoSignature go_x64_table0_signature[] = {
+	// lea   reg, [table_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+	// mov   reg, reg
+	{ &go_asm_pattern_name(x86, 64, mov_reg0), &decode_from_table },
+};
+
+static GoSignature go_x64_table1_signature[] = {
+	// lea   reg, [table_offset]
+	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
+	// mov   reg, reg
+	{ &go_asm_pattern_name(x86, 64, mov_reg1), &decode_from_table },
+};
+
+static ut32 golang_recover_string_x64(GoStrRecover *ctx) {
+	RzAnalysis *analysis = ctx->core->analysis;
+	ut32 oplen = decode_one_opcode_size(ctx);
+	GoStrInfo info = { 0 };
+
+	if (!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov0_mov_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov1_mov_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov0_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov1_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov2_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov3_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_mov0_lea_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_mov1_lea_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_mov2_lea_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_mov3_lea_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_table0_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x64_table1_signature)) {
+		return oplen;
+	}
+
+	// try to recover the string.
+	if (!recover_string_at(ctx, info.addr, info.size)) {
+		return oplen;
+	}
+
+	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	return oplen;
+}
+
+go_asm_pattern_define(x86, 32, lea, "\x8d\x00\x00\x00\x00\x00", "\xff\x00\x00\x00\x00\x00", true);
+go_asm_pattern_define(x86, 32, mov_imm0, "\xc7\x00\x00\x00\x00\x00\x00", "\xff\x00\x00\x00\x00\x00\x00", false);
+go_asm_pattern_define(x86, 32, mov_imm1, "\xc7\x00\x00\x00\x00\x00\x00\x00", "\xff\x00\x00\x00\x00\x00\x00\x00", false);
+go_asm_pattern_define(x86, 32, mov_reg0, "\x89\x00\x00", "\xff\x00\x00", false);
+go_asm_pattern_define(x86, 32, mov_reg1, "\x89\x00\x00\x00", "\xff\x00\x00\x00", false);
+
+static GoSignature go_x86_lea_mov0_mov_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
+	// mov   [esp/rsp + 0x..], reg
+	{ &go_asm_pattern_name(x86, 32, mov_reg0), NULL },
+	// mov   [esp/rsp + 0x..], string_size
+	{ &go_asm_pattern_name(x86, 32, mov_imm1), &decode_val_set_size },
+};
+
+static GoSignature go_x86_lea_mov1_mov_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
+	// mov   [esp/rsp + 0x..], reg
+	{ &go_asm_pattern_name(x86, 32, mov_reg1), NULL },
+	// mov   [esp/rsp + 0x..], string_size
+	{ &go_asm_pattern_name(x86, 32, mov_imm1), &decode_val_set_size },
+};
+
+static GoSignature go_x86_lea_mov0_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 32, mov_imm0), &decode_val_set_size },
+};
+
+static GoSignature go_x86_lea_mov1_signature[] = {
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 32, mov_imm1), &decode_val_set_size },
+};
+
+static GoSignature go_x86_mov_lea_signature[] = {
+	// mov   reg, string_size
+	{ &go_asm_pattern_name(x86, 32, mov_imm0), &decode_val_set_size },
+	// lea   reg, [string_offset]
+	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
+};
+
+static GoSignature go_x86_table_signature[] = {
+	// lea   reg, [table_offset]
+	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
+	// mov   reg, reg
+	{ &go_asm_pattern_name(x86, 32, mov_reg0), &decode_from_table },
+};
+
 static ut32 golang_recover_string_x86(GoStrRecover *ctx) {
+	RzAnalysis *analysis = ctx->core->analysis;
+	ut32 oplen = decode_one_opcode_size(ctx);
+	GoStrInfo info = { 0 };
+
+	if (!go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov0_mov_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov1_mov_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov0_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov1_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x86_mov_lea_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_x86_table_signature)) {
+		return oplen;
+	}
+
+	// try to recover the string.
+	if (!recover_string_at(ctx, info.addr, info.size)) {
+		return oplen;
+	}
+
+	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	return oplen;
+}
+
+go_asm_pattern_define(arm, 64, adrp, "\x00\x00\x00\x80", "\x00\x00\x00\x8f", true);
+go_asm_pattern_define(arm, 64, add, "\x00\x00\x00\x01", "\x00\x00\x00\x6f", false);
+go_asm_pattern_define(arm, 64, orr, "\x00\x00\x00\x22", "\x00\x00\x80\x6f", false);
+go_asm_pattern_define(arm, 64, movz, "\x00\x00\x80\x42", "\x00\x00\x80\x6f", false);
+go_asm_pattern_define(arm, 64, any, "\x00\x00\x00\x00", "\x00\x00\x00\x00", false);
+
+static GoSignature go_arm64_adrp_add_str_orr_signature[] = {
+	// adrp   reg0, base_str
+	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
+	// add    reg0, reg0, offset_str
+	{ &go_asm_pattern_name(arm, 64, add), &decode_val_add_addr },
+	// str    reg, [sp, ..]
+	{ &go_asm_pattern_name(arm, 64, any), NULL },
+	// orr    reg1, 0, string_size
+	{ &go_asm_pattern_name(arm, 64, orr), &decode_val_set_size },
+};
+
+static GoSignature go_arm64_adrp_add_str_movz_signature[] = {
+	// adrp   reg0, base_str
+	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
+	// add    reg0, reg0, offset_str
+	{ &go_asm_pattern_name(arm, 64, add), &decode_val_add_addr },
+	// str    reg, [sp, ..]
+	{ &go_asm_pattern_name(arm, 64, any), NULL },
+	// movz   reg1, string_size
+	{ &go_asm_pattern_name(arm, 64, movz), &decode_val_set_size },
+};
+
+static GoSignature go_arm64_orr_str_adrp_add_signature[] = {
+	// orr    reg1, 0, string_size
+	{ &go_asm_pattern_name(arm, 64, orr), &decode_val_set_size },
+	// str    reg, [sp, ..]
+	{ &go_asm_pattern_name(arm, 64, any), NULL },
+	// adrp   reg0, base_str
+	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
+	// add    reg0, reg0, offset_str
+	{ &go_asm_pattern_name(arm, 64, add), &decode_val_add_addr },
+};
+
+static GoSignature go_arm64_movz_str_adrp_add_signature[] = {
+	// movz   reg1, string_size
+	{ &go_asm_pattern_name(arm, 64, movz), &decode_val_set_size },
+	// str    reg, [sp, ..]
+	{ &go_asm_pattern_name(arm, 64, any), NULL },
+	// adrp   reg0, base_str
+	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
+	// add    reg0, reg0, offset_str
+	{ &go_asm_pattern_name(arm, 64, add), &decode_val_add_addr },
+};
+
+static GoSignature go_arm64_adrp_add_orr_signature[] = {
+	// adrp   reg0, base_str
+	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
+	// add    reg0, reg0, offset_str
+	{ &go_asm_pattern_name(arm, 64, add), &decode_val_add_addr },
+	// orr    reg1, 0, string_size
+	{ &go_asm_pattern_name(arm, 64, orr), &decode_val_set_size },
+};
+
+static GoSignature go_arm64_adrp_add_movz_signature[] = {
+	// adrp   reg0, base_str
+	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
+	// add    reg0, reg0, offset_str
+	{ &go_asm_pattern_name(arm, 64, add), &decode_val_add_addr },
+	// movz   reg1, string_size
+	{ &go_asm_pattern_name(arm, 64, movz), &decode_val_set_size },
+};
+
+static GoSignature go_arm64_table_signature[] = {
+	// adrp   reg0, base_str
+	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
+	// add    reg0, reg0, offset_str
+	{ &go_asm_pattern_name(arm, 64, add), &decode_val_add_addr },
+	// str    reg, [sp, ..]
+	{ &go_asm_pattern_name(arm, 64, any), &decode_from_table },
+};
+
+static ut32 golang_recover_string_arm64(GoStrRecover *ctx) {
+	RzAnalysis *analysis = ctx->core->analysis;
+	GoStrInfo info = { 0 };
+
+	if (!go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_str_orr_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_str_movz_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_arm64_orr_str_adrp_add_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_arm64_movz_str_adrp_add_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_orr_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_movz_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_arm64_table_signature)) {
+		return 4;
+	}
+
+	// try to recover the string.
+	if (!recover_string_at(ctx, info.addr, info.size)) {
+		return 4;
+	}
+
+	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	return 4;
+}
+
+static bool decode_ldr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
+	RzAnalysisOp aop;
+	ut8 tmp[4];
+	ut64 addr = 0;
+
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+		rz_analysis_op_fini(&aop);
+		return false;
+	}
+	addr = aop.ptr;
+	rz_analysis_op_fini(&aop);
+
+	if (0 > rz_io_nread_at(core->io, addr, tmp, sizeof(tmp))) {
+		return false;
+	}
+	info->addr = rz_read_ble32(tmp, core->analysis->big_endian);
+	return true;
+}
+
+go_asm_pattern_define(arm, 32, ldr, "\x00\x00\x9f\xe5", "\x00\x00\x9f\xe5", true);
+go_asm_pattern_define(arm, 32, mov, "\x00\x00\xa0\xe3", "\x00\x00\xa0\xe3", false);
+go_asm_pattern_define(arm, 32, any, "\x00\x00\x00\x00", "\x00\x00\x00\x00", false);
+
+static GoSignature go_arm32_ldr_str_mov_signature[] = {
+	// ldr    reg0, string_offset
+	{ &go_asm_pattern_name(arm, 32, ldr), &decode_ldr_set_addr },
+	// str    reg, [sp, ..]
+	{ &go_asm_pattern_name(arm, 32, any), NULL },
+	// mov    reg1, string_size
+	{ &go_asm_pattern_name(arm, 32, mov), &decode_val_set_size },
+};
+
+static GoSignature go_arm32_mov_str_ldr_signature[] = {
+	// mov    reg1, string_size
+	{ &go_asm_pattern_name(arm, 32, mov), &decode_val_set_size },
+	// str    reg, [sp, ..]
+	{ &go_asm_pattern_name(arm, 32, any), NULL },
+	// ldr    reg0, string_offset
+	{ &go_asm_pattern_name(arm, 32, ldr), &decode_ldr_set_addr },
+};
+
+static GoSignature go_arm32_ldr_mov_signature[] = {
+	// ldr    reg0, string_offset
+	{ &go_asm_pattern_name(arm, 32, ldr), &decode_ldr_set_addr },
+	// mov    reg1, string_size
+	{ &go_asm_pattern_name(arm, 32, mov), &decode_val_set_size },
+};
+
+static GoSignature go_arm32_table_signature[] = {
+	// ldr    reg0, string_offset
+	{ &go_asm_pattern_name(arm, 32, ldr), &decode_ldr_set_addr },
+	// str    reg, [sp, ..]
+	{ &go_asm_pattern_name(arm, 32, any), &decode_from_table },
+};
+
+static ut32 golang_recover_string_arm32(GoStrRecover *ctx) {
+	RzAnalysis *analysis = ctx->core->analysis;
+	GoStrInfo info = { 0 };
+
+	if (!go_is_sign_match_autosize(ctx, &info, go_arm32_ldr_str_mov_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_arm32_mov_str_ldr_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_arm32_ldr_mov_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_arm32_table_signature)) {
+		return 4;
+	}
+
+	// try to recover the string.
+	if (!recover_string_at(ctx, info.addr, info.size)) {
+		return 4;
+	}
+
+	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	return 4;
+}
+
+#define read_op_at_or_fail(aop, nbytes, label) \
+	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) { \
+		nlen = nbytes; \
+		goto label; \
+	}
+
+#define reset_and_read_op_at_or_fail(aop, nbytes, label) \
+	rz_analysis_op_fini(&aop); \
+	rz_analysis_op_init(&aop); \
+	read_op_at_or_fail(aop, nbytes, label)
+
+// Possible mips32 signatures
+// -------
+// lui   v0, high_string_offset
+// addiu v0, v0, low_string_offset
+// sw    v0, 0x08(at)
+// addiu v0, zero, string_size
+// -------
+// lui   v0, high_string_table
+// addiu v0, v0, low_string_table
+// sw    v0, (var_44h)
+static ut32 golang_recover_string_mips32(GoStrRecover *ctx) {
+	if (ctx->size < 16) {
+		return ctx->size;
+	}
 	const ut32 opmask = RZ_ANALYSIS_OP_MASK_DISASM;
 	RzAnalysis *analysis = ctx->core->analysis;
 	ut8 *bytes = ctx->bytes;
@@ -576,175 +1140,82 @@ static ut32 golang_recover_string_x86(GoStrRecover *ctx) {
 	rz_analysis_op_init(&aop0);
 	rz_analysis_op_init(&aop1);
 
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop0, pc, bytes, size, opmask) < 1) {
-		nlen = 0;
-		goto end;
-	}
+	read_op_at_or_fail(aop0, 0, end);
 	nlen += aop0.size;
 
-	// check if first op is LEA or MOV, otherwise skip
-	if (strncmp(aop0.mnemonic, "lea", 3) && strncmp(aop0.mnemonic, "mov", 3)) {
+	// check if first op is LUI, otherwise skip
+	if (strncmp(aop0.mnemonic, "lui", 3)) {
 		goto end;
-	} else if (!strncmp(aop0.mnemonic, "mov", 3)) {
-		str_size = aop0.val;
-	} else { // LEA
-		str_addr = aop0.ptr;
+	} else { // LUI
+		str_addr = aop0.val;
+		str_addr <<= 16;
 	}
 
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop1, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
-		nlen = 0;
-		goto end;
-	}
+	read_op_at_or_fail(aop1, aop0.size, end);
 	nlen += aop1.size;
 
-	// check if first op is LEA but second is not MOV
-	if (!strncmp(aop0.mnemonic, "lea", 3) && strncmp(aop1.mnemonic, "mov", 3)) {
+	// check if second op is ADDIU, otherwise skip
+	if (strncmp(aop1.mnemonic, "addiu", 5)) {
 		nlen = aop0.size;
 		goto end;
-		// check if first op is MOV but second is not LEA
-	} else if (!strncmp(aop0.mnemonic, "mov", 3) && strncmp(aop1.mnemonic, "lea", 3)) {
-		nlen = aop0.size;
-		goto end;
-		// check if first op is LEA but has an invalid pointer
+	} else { // ADDIU
+		str_addr += (st64)aop1.val;
 	}
 
-	if (!strncmp(aop1.mnemonic, "mov", 3) && (aop1.val < 2 || aop1.val > GO_MAX_STRING_SIZE)) {
-		// so we found another MOV in between LEA and the MOV with the string size (3rd scenario)
-		rz_analysis_op_fini(&aop1);
-		rz_analysis_op_init(&aop1);
-		if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop1, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
+	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
+	nlen += aop1.size;
+
+	// check if third op is SW, otherwise skip
+	if (strncmp(aop1.mnemonic, "sw", 2)) {
+		nlen = aop0.size;
+		goto end;
+	}
+
+	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
+	nlen += aop1.size;
+
+	// expect last op to be ADDIU or could be a pointer, otherwise skip
+	if (strncmp(aop1.mnemonic, "addiu", 5)) {
+		ut8 tmp[8];
+		if (0 > rz_io_nread_at(ctx->core->io, str_addr, tmp, sizeof(tmp))) {
+			RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
+			nlen = 0;
 			goto end;
 		}
-		nlen += aop1.size;
-		if (strncmp(aop1.mnemonic, "mov", 3)) {
-			nlen = aop0.size;
-			goto end;
-		}
+		str_addr = rz_read_ble32(tmp, analysis->big_endian);
+		str_size = rz_read_ble32(tmp + 4, analysis->big_endian);
+	} else { // ADDIU
 		str_size = aop1.val;
-	} else if (!strncmp(aop1.mnemonic, "mov", 3)) {
-		str_size = aop1.val;
-	} else { // LEA
-		str_addr = aop1.ptr;
+	}
+	nlen = aop0.size;
+
+	// check that the values are acceptable.
+	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
+		goto end;
 	}
 
 	// try to recover the string.
 	if (!recover_string_at(ctx, str_addr, str_size)) {
-		nlen = aop0.size;
-		goto end;
-	}
-
-	if (!strncmp(aop0.mnemonic, "lea", 3)) {
-		rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	} else {
-		rz_analysis_xrefs_set(analysis, pc + aop0.size, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	}
-
-end:
-	rz_analysis_op_fini(&aop0);
-	rz_analysis_op_fini(&aop1);
-	return nlen;
-}
-
-// Possible arm64 signatures
-// -------
-// adrp   reg0, base_str
-// add    reg0, reg0, offset_str
-// str    reg, [sp, ..]
-// orr    reg1, reg1, string_size
-// -------
-// adrp   reg0, base_str
-// add    reg0, reg0, offset_str
-// str    reg, [sp, ..]
-// mov[z] reg1, string_size
-static ut32 golang_recover_string_arm64(GoStrRecover *ctx) {
-	const ut32 opmask = RZ_ANALYSIS_OP_MASK_DISASM;
-	RzAnalysis *analysis = ctx->core->analysis;
-	ut8 *bytes = ctx->bytes;
-	ut32 size = ctx->size;
-	RzAnalysisOp aop0, aop1, aop2;
-	ut32 nlen = 0;
-	ut64 str_addr = 0, str_size = 0, pc = ctx->pc;
-	rz_analysis_op_init(&aop0);
-	rz_analysis_op_init(&aop1);
-	rz_analysis_op_init(&aop2);
-
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop0, pc, bytes, size, opmask) < 1) {
-		nlen = 0;
-		goto end;
-	}
-	nlen += aop0.size;
-
-	// check if first op is ADRP, otherwise skip
-	if (strncmp(aop0.mnemonic, "adrp", 4)) {
-		goto end;
-	} else { // ADRP
-		str_addr = aop0.ptr;
-	}
-
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop1, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
-		nlen = 0;
-		goto end;
-	}
-	nlen += aop1.size;
-
-	// check if second op is ADD, otherwise skip
-	if (strncmp(aop1.mnemonic, "add", 3) || aop1.val < 1 || aop1.val > GO_MAX_STRING_SIZE) {
-		nlen = aop0.size;
-		goto end;
-	} else { // ADD
-		str_addr += aop1.val;
-	}
-
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop2, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
-		nlen = 0;
-		goto end;
-	}
-	nlen += aop2.size;
-
-	// expect third op to be STR, otherwise skip
-	if (strncmp(aop2.mnemonic, "str", 3)) {
-		nlen = aop0.size;
-		goto end;
-	}
-	rz_analysis_op_fini(&aop2);
-	rz_analysis_op_init(&aop2);
-
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop2, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
-		nlen = 0;
-		goto end;
-	}
-	nlen += aop2.size;
-
-	// expect last op to be ORR or MOV[Z], otherwise skip
-	if (strncmp(aop2.mnemonic, "orr", 3) && strncmp(aop2.mnemonic, "mov", 3)) {
-		nlen = aop0.size;
-		goto end;
-	} else { // ORR/MOV/MOVN
-		str_size = aop2.val;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, str_addr, str_size)) {
-		nlen = 0;
 		goto end;
 	}
 
 	// add xref
-	rz_analysis_xrefs_set(analysis, pc + aop0.size, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
 
 end:
 	rz_analysis_op_fini(&aop0);
 	rz_analysis_op_fini(&aop1);
-	rz_analysis_op_fini(&aop2);
 	return nlen;
 }
 
-// Possible arm32 signatures
+// Possible mips64 signatures
 // -------
-// ldr   r0, [pc, string_offset]
-// str   r0, [sp, 4]
-// mov   r0, string_size
-static ut32 golang_recover_string_arm32(GoStrRecover *ctx) {
+// lui   v0, high_string_offset
+// daddu v0, v0, gp
+// daddiu v0, v0, low_string_offset
+// sd    v0, 8(at)
+// daddiu v0, zero, string_size
+static ut32 golang_recover_string_mips64(GoStrRecover *ctx) {
 	const ut32 opmask = RZ_ANALYSIS_OP_MASK_DISASM;
 	RzAnalysis *analysis = ctx->core->analysis;
 	ut8 *bytes = ctx->bytes;
@@ -755,65 +1226,258 @@ static ut32 golang_recover_string_arm32(GoStrRecover *ctx) {
 	rz_analysis_op_init(&aop0);
 	rz_analysis_op_init(&aop1);
 
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop0, pc, bytes, size, opmask) < 1) {
-		nlen = 0;
-		goto end;
-	}
+	read_op_at_or_fail(aop0, 0, end);
 	nlen += aop0.size;
 
-	// check if first op is LDR, otherwise skip
-	if (strncmp(aop0.mnemonic, "ldr", 3)) {
-		nlen = 0;
+	// check if first op is LUI, otherwise skip
+	if (strncmp(aop0.mnemonic, "lui", 3)) {
 		goto end;
-	} else { // LDR
-		str_addr = ((pc + 8) & (~3ull)) + aop0.disp;
+	} else { // LUI
+		str_addr = aop0.val;
+		str_addr <<= 16;
 	}
 
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop1, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
-		nlen = 0;
-		goto end;
-	}
+	read_op_at_or_fail(aop1, aop0.size, end);
 	nlen += aop1.size;
 
-	// check if second op is STR, otherwise skip
-	if (strncmp(aop1.mnemonic, "str", 3)) {
+	// check if third op is DADDU, otherwise skip
+	if (strncmp(aop1.mnemonic, "daddu", 5)) {
 		nlen = aop0.size;
 		goto end;
 	}
-	rz_analysis_op_fini(&aop1);
-	rz_analysis_op_init(&aop1);
 
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop1, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) {
-		nlen = 0;
-		goto end;
-	}
+	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
 	nlen += aop1.size;
 
-	// expect last op to be MOV, otherwise skip
-	if (strncmp(aop1.mnemonic, "mov", 3)) {
-		nlen = 0;
+	// check if second op is DADDIU, otherwise skip
+	if (strncmp(aop1.mnemonic, "daddiu", 6)) {
+		nlen = aop0.size;
 		goto end;
-	} else { // MOV
+	} else { // DADDIU
+		str_addr += (st64)aop1.val;
+	}
+
+	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
+	nlen += aop1.size;
+
+	// check if third op is SD, otherwise skip
+	if (strncmp(aop1.mnemonic, "sd", 2)) {
+		nlen = aop0.size;
+		goto end;
+	}
+
+	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
+	nlen += aop1.size;
+
+	// expect last op to be DADDIU, otherwise skip
+	if (strncmp(aop1.mnemonic, "daddiu", 6)) {
+		ut8 tmp[16];
+		if (0 > rz_io_nread_at(ctx->core->io, str_addr, tmp, sizeof(tmp))) {
+			RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
+			nlen = 0;
+			goto end;
+		}
+		str_addr = rz_read_ble64(tmp, analysis->big_endian);
+		str_size = rz_read_ble64(tmp + 8, analysis->big_endian);
+	} else { // DADDIU
 		str_size = aop1.val;
 	}
+	nlen = aop0.size;
 
 	// check that the values are acceptable.
 	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
-		nlen = 0;
 		goto end;
 	}
-
-	ut8 tmp[4];
-	if (0 > rz_io_nread_at(ctx->core->io, str_addr, tmp, sizeof(tmp))) {
-		RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
-		nlen = 0;
-		goto end;
-	}
-	str_addr = rz_read_ble32(tmp, analysis->big_endian);
 
 	// try to recover the string.
 	if (!recover_string_at(ctx, str_addr, str_size)) {
-		nlen = 0;
+		goto end;
+	}
+
+	// add xref
+	rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+
+end:
+	rz_analysis_op_fini(&aop0);
+	rz_analysis_op_fini(&aop1);
+	return nlen;
+}
+
+// Possible riscv64 signatures
+// -------
+// auipc gp, high_string_offset
+// addi  gp, gp, low_string_offset
+// sd    gp, 8(sp)
+// addiw gp, zero, string_size
+// -------
+// auipc gp, high_string_offset
+// addi  gp, gp, low_string_offset
+// sd    gp, 8(sp)
+// li    gp, zero, string_size
+// -------
+// auipc gp, high_string_offset
+// addi  gp, gp, low_string_offset
+// sd    gp, 8(sp)
+static ut32 golang_recover_string_riscv64(GoStrRecover *ctx) {
+	const ut32 opmask = RZ_ANALYSIS_OP_MASK_DISASM;
+	RzAnalysis *analysis = ctx->core->analysis;
+	ut8 *bytes = ctx->bytes;
+	ut32 size = ctx->size;
+	RzAnalysisOp aop0, aop1;
+	ut32 nlen = 0;
+	ut64 str_addr = 0, str_size = 0, pc = ctx->pc;
+	rz_analysis_op_init(&aop0);
+	rz_analysis_op_init(&aop1);
+
+	read_op_at_or_fail(aop0, 0, end);
+	nlen += aop0.size;
+
+	// check if first op is AUIPC or LUI, otherwise skip
+	if (strncmp(aop0.mnemonic, "auipc", 5)) {
+		goto end;
+	} else { // AUIPC
+		str_addr = pc + (ut64)aop0.val;
+	}
+
+	read_op_at_or_fail(aop1, aop0.size, end);
+	nlen += aop1.size;
+
+	// check if second op is ADDI or JALR, otherwise skip
+	if (strncmp(aop1.mnemonic, "addi", 4)) {
+		nlen = aop0.size;
+		goto end;
+	} else { // ADDI
+		str_addr += (st64)aop1.val;
+	}
+
+	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
+	nlen += aop1.size;
+
+	// check if third op is SD, otherwise skip
+	if (strncmp(aop1.mnemonic, "sd", 2)) {
+		nlen = aop0.size;
+		goto end;
+	}
+
+	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
+	nlen += aop1.size;
+
+	// expect last op to be ADDIW or ADDI, otherwise skip
+	if (strcmp(aop1.mnemonic, "addiw") && strcmp(aop1.mnemonic, "addi")) {
+		ut8 tmp[16];
+		if (0 > rz_io_nread_at(ctx->core->io, str_addr, tmp, sizeof(tmp))) {
+			RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
+			nlen = 0;
+			goto end;
+		}
+		str_addr = rz_read_ble64(tmp, analysis->big_endian);
+		str_size = rz_read_ble64(tmp + 8, analysis->big_endian);
+	} else { // ADDIW or ADDI
+		str_size = aop1.val;
+	}
+	nlen = aop0.size;
+
+	// check that the values are acceptable.
+	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
+		goto end;
+	}
+
+	// try to recover the string.
+	if (!recover_string_at(ctx, str_addr, str_size)) {
+		goto end;
+	}
+
+	// add xref
+	rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+
+end:
+	rz_analysis_op_fini(&aop0);
+	rz_analysis_op_fini(&aop1);
+	return nlen;
+}
+
+// Possible ppc64 signatures
+// -------
+// lis   r3, high_string_offset
+// addi  r3, r3, low_string_offset
+// std   r3, 0x20(r1)
+// li    r3, string_size
+// -------
+// lis   r3, high_string_offset
+// addi  r3, r3, low_string_offset
+// li    r3, string_size
+// -------
+// lis   r3, high_string_table
+// addi  r3, r3, low_string_table
+// std   r3, 0x20(r1)
+static ut32 golang_recover_string_ppc64(GoStrRecover *ctx) {
+	const ut32 opmask = RZ_ANALYSIS_OP_MASK_DISASM;
+	RzAnalysis *analysis = ctx->core->analysis;
+	ut8 *bytes = ctx->bytes;
+	ut32 size = ctx->size;
+	RzAnalysisOp aop0, aop1;
+	ut32 nlen = 0;
+	ut64 str_addr = 0, str_size = 0, pc = ctx->pc;
+	rz_analysis_op_init(&aop0);
+	rz_analysis_op_init(&aop1);
+
+	read_op_at_or_fail(aop0, 0, end);
+	nlen += aop0.size;
+
+	// check if first op is LIS, otherwise skip
+	if (!aop0.mnemonic || strncmp(aop0.mnemonic, "lis", 3)) {
+		goto end;
+	} else { // LIS
+		str_addr = aop0.val;
+	}
+
+	read_op_at_or_fail(aop1, aop0.size, end);
+	nlen += aop1.size;
+
+	// check if second op is ADDI, otherwise skip
+	if (!aop1.mnemonic || strncmp(aop1.mnemonic, "addi", 4)) {
+		nlen = aop0.size;
+		goto end;
+	} else { // ADDI
+		str_addr += (st64)aop1.val;
+	}
+
+	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
+	nlen += aop1.size;
+
+	// check if third op is STD, otherwise skip
+	if (!aop1.mnemonic || (strncmp(aop1.mnemonic, "std", 3) && strcmp(aop1.mnemonic, "li"))) {
+		nlen = aop0.size;
+		goto end;
+	} else if (!strcmp(aop1.mnemonic, "li")) { // LI
+		str_size = aop1.val;
+	} else {
+		reset_and_read_op_at_or_fail(aop1, aop0.size, end);
+		nlen += aop1.size;
+
+		// expect last op to be LI, otherwise skip
+		if (strcmp(aop1.mnemonic, "li")) {
+			ut8 tmp[16];
+			if (0 > rz_io_nread_at(ctx->core->io, str_addr, tmp, sizeof(tmp))) {
+				RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
+				nlen = 0;
+				goto end;
+			}
+			str_addr = rz_read_ble64(tmp, analysis->big_endian);
+			str_size = rz_read_ble64(tmp + 8, analysis->big_endian);
+		} else { // LI
+			str_size = aop1.val;
+		}
+	}
+	nlen = aop0.size;
+
+	// check that the values are acceptable.
+	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
+		goto end;
+	}
+
+	// try to recover the string.
+	if (!recover_string_at(ctx, str_addr, str_size)) {
 		goto end;
 	}
 
@@ -836,7 +1500,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 	rz_core_notify_begin(core, "Analyze all instructions to recover all strings used in sym.go.*");
 
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
-	ut64 asm_bits = rz_config_get_i(core->config, "asm.bits");
+	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
 	RzListIter *it, *it2;
 	RzAnalysisFunction *func;
 	RzAnalysisBlock *block;
@@ -847,7 +1511,16 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 	ctx.core = core;
 
 	if (!strcmp(asm_arch, "x86")) {
-		recover_cb = &golang_recover_string_x86;
+		switch (asm_bits) {
+		case 32:
+			recover_cb = &golang_recover_string_x86;
+			break;
+		case 64:
+			recover_cb = &golang_recover_string_x64;
+			break;
+		default:
+			break;
+		}
 	} else if (!strcmp(asm_arch, "arm")) {
 		switch (asm_bits) {
 		case 32:
@@ -859,10 +1532,43 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 		default:
 			break;
 		}
+	} else if (!strcmp(asm_arch, "mips")) {
+		switch (asm_bits) {
+		case 32:
+			recover_cb = &golang_recover_string_mips32;
+			break;
+		case 64:
+			recover_cb = &golang_recover_string_mips64;
+			break;
+		default:
+			break;
+		}
+	} else if (!strcmp(asm_arch, "riscv")) {
+		switch (asm_bits) {
+		case 64:
+			recover_cb = &golang_recover_string_riscv64;
+			break;
+		default:
+			break;
+		}
+	} else if (!strcmp(asm_arch, "ppc")) {
+		switch (asm_bits) {
+		case 64:
+			recover_cb = &golang_recover_string_ppc64;
+			break;
+		default:
+			break;
+		}
+	} else if (!strcmp(asm_arch, "sysz")) {
+		// sysz uses strings that are all null terminated
+		// also they are already handled by rizin.
+		// example: 'larl  %r0, str.XXXX' with the correct length.
+		rz_core_notify_done(core, "Analyze all instructions to recover all strings used in sym.go.*");
+		return;
 	}
 
 	if (!recover_cb) {
-		rz_core_notify_error(core, "Cannot resolve go strings because arch '%s' is not supported.", asm_arch);
+		rz_core_notify_error(core, "Cannot resolve go strings because arch '%s:%u' is not supported.", asm_arch, asm_bits);
 		return;
 	}
 
