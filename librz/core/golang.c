@@ -604,9 +604,6 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 	ut32 nlen = 0;
 	memset(info, 0, sizeof(GoStrInfo));
 
-	// if ((ctx->pc + nlen) >= 0x0009a008 && (ctx->pc + nlen) < 0x0009a018) {
-	//	eprintf("n_sigs: %lu\n", n_sigs);
-	// }
 	for (size_t i = 0; i < n_sigs; ++i) {
 		if (nlen >= ctx->size) {
 			return false;
@@ -627,15 +624,6 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 			copy[j] = copy[j] & sig->pasm->mask[j];
 		}
 
-		// if ((ctx->pc + nlen) >= 0x0009a008 && (ctx->pc + nlen) <= 0x0009a018) {
-		//	char *p0 = rz_hex_bin2strdup(sig->pasm->pattern, sig->pasm->size);
-		//	char *p1 = rz_hex_bin2strdup(copy, sig->pasm->size);
-		//	eprintf("0x%08" PFMT64x " pat = %s\n", ctx->pc + nlen, p0);
-		//	eprintf("0x%08" PFMT64x " cop = %s\n", ctx->pc + nlen, p1);
-		//	free(p1);
-		//	free(p0);
-		// }
-
 		// verify the masked input matches the pattern
 		if (memcmp(copy, sig->pasm->pattern, sig->pasm->size)) {
 			return false;
@@ -653,9 +641,7 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 
 		nlen += sig->pasm->size;
 	}
-	// if ((ctx->pc) >= 0x0009a008 && (ctx->pc) < 0x0009a018) {
-	//	eprintf("found 0x%08" PFMT64x "\n", ctx->pc);
-	// }
+
 	return true;
 }
 
@@ -1510,107 +1496,116 @@ static ut32 golang_recover_string_ppc64(GoStrRecover *ctx) {
 	return 4;
 }
 
-#define read_op_at_or_fail(aop, nbytes, label) \
-	if ((size - nlen) < 1 || rz_analysis_op(analysis, &aop, pc + nlen, bytes + nlen, size - nlen, opmask) < 1) { \
-		nlen = nbytes; \
-		goto label; \
+static bool decode_auipc_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
+	RzAnalysisOp aop;
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+		rz_analysis_op_fini(&aop);
+		return false;
 	}
+	info->addr = pc + aop.val;
+	rz_analysis_op_fini(&aop);
+	return true;
+}
 
-#define reset_and_read_op_at_or_fail(aop, nbytes, label) \
-	rz_analysis_op_fini(&aop); \
-	rz_analysis_op_init(&aop); \
-	read_op_at_or_fail(aop, nbytes, label)
-// Possible riscv64 signatures
-// -------
-// auipc gp, high_string_offset
-// addi  gp, gp, low_string_offset
-// sd    gp, 8(sp)
-// addiw gp, zero, string_size
-// -------
-// auipc gp, high_string_offset
-// addi  gp, gp, low_string_offset
-// sd    gp, 8(sp)
-// li    gp, zero, string_size
-// -------
-// auipc gp, high_string_offset
-// addi  gp, gp, low_string_offset
-// sd    gp, 8(sp)
+go_asm_pattern_define(riscv, 64, auipc, "\x17\x00\x00\x00", "\x7f\x00\x00\x00", true);
+go_asm_pattern_define(riscv, 64, addi, "\x13\x00\x00\x00", "\x7f\x00\x00\x00", false);
+go_asm_pattern_define(riscv, 64, addiw, "\x1b\x00\x00\x00", "\x7f\x70\x00\x00", false);
+go_asm_pattern_define(riscv, 64, li, "\x13\x00\x00\x00", "\x7f\x80\x0F\x00", false);
+go_asm_pattern_define(riscv, 64, any, "\x00\x00\x00\x00", "\x00\x00\x00\x00", false);
+
+static GoSignature go_riscv64_auipc_add_sd_addiw_signature[] = {
+	// auipc gp, high_string_offset
+	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
+	// addi  gp, gp, low_string_offset
+	{ &go_asm_pattern_name(riscv, 64, addi), &decode_val_add_addr },
+	// sd    gp, 8(sp)
+	{ &go_asm_pattern_name(riscv, 64, any), NULL },
+	// addiw gp, zero, string_size
+	{ &go_asm_pattern_name(riscv, 64, addiw), &decode_val_set_size },
+};
+
+static GoSignature go_riscv64_auipc_add_sd_li_signature[] = {
+	// auipc gp, high_string_offset
+	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
+	// addi  gp, gp, low_string_offset
+	{ &go_asm_pattern_name(riscv, 64, addi), &decode_val_add_addr },
+	// sd    gp, 8(sp)
+	{ &go_asm_pattern_name(riscv, 64, any), NULL },
+	// li    gp, zero, string_size
+	{ &go_asm_pattern_name(riscv, 64, li), &decode_val_set_size },
+};
+
+static GoSignature go_riscv64_li_sd_auipc_add_signature[] = {
+	// li    gp, zero, string_size
+	{ &go_asm_pattern_name(riscv, 64, li), &decode_val_set_size },
+	// sd    gp, 8(sp)
+	{ &go_asm_pattern_name(riscv, 64, any), NULL },
+	// auipc gp, high_string_offset
+	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
+	// addi  gp, gp, low_string_offset
+	{ &go_asm_pattern_name(riscv, 64, addi), &decode_val_add_addr },
+};
+
+static GoSignature go_riscv64_addiw_sd_auipc_add_signature[] = {
+	// addiw gp, zero, string_size
+	{ &go_asm_pattern_name(riscv, 64, addiw), &decode_val_set_size },
+	// sd    gp, 8(sp)
+	{ &go_asm_pattern_name(riscv, 64, any), NULL },
+	// auipc gp, high_string_offset
+	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
+	// addi  gp, gp, low_string_offset
+	{ &go_asm_pattern_name(riscv, 64, addi), &decode_val_add_addr },
+};
+
+static GoSignature go_riscv64_auipc_add_addiw_signature[] = {
+	// auipc gp, high_string_offset
+	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
+	// addi  gp, gp, low_string_offset
+	{ &go_asm_pattern_name(riscv, 64, addi), &decode_val_add_addr },
+	// addiw gp, zero, string_size
+	{ &go_asm_pattern_name(riscv, 64, addiw), &decode_val_set_size },
+};
+
+static GoSignature go_riscv64_auipc_add_li_signature[] = {
+	// auipc gp, high_string_offset
+	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
+	// addi  gp, gp, low_string_offset
+	{ &go_asm_pattern_name(riscv, 64, addi), &decode_val_add_addr },
+	// li    gp, zero, string_size
+	{ &go_asm_pattern_name(riscv, 64, li), &decode_val_set_size },
+};
+
+static GoSignature go_riscv64_table_signature[] = {
+	// auipc gp, high_string_offset
+	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
+	// addi  gp, gp, low_string_offset
+	{ &go_asm_pattern_name(riscv, 64, addi), &decode_val_add_addr },
+	// sd    gp, 8(sp)
+	{ &go_asm_pattern_name(riscv, 64, any), &decode_from_table },
+};
+
 static ut32 golang_recover_string_riscv64(GoStrRecover *ctx) {
-	const ut32 opmask = RZ_ANALYSIS_OP_MASK_DISASM;
 	RzAnalysis *analysis = ctx->core->analysis;
-	ut8 *bytes = ctx->bytes;
-	ut32 size = ctx->size;
-	RzAnalysisOp aop0, aop1;
-	ut32 nlen = 0;
-	ut64 str_addr = 0, str_size = 0, pc = ctx->pc;
-	rz_analysis_op_init(&aop0);
-	rz_analysis_op_init(&aop1);
+	GoStrInfo info = { 0 };
 
-	read_op_at_or_fail(aop0, 0, end);
-	nlen += aop0.size;
-
-	// check if first op is AUIPC or LUI, otherwise skip
-	if (strncmp(aop0.mnemonic, "auipc", 5)) {
-		goto end;
-	} else { // AUIPC
-		str_addr = pc + (ut64)aop0.val;
-	}
-
-	read_op_at_or_fail(aop1, aop0.size, end);
-	nlen += aop1.size;
-
-	// check if second op is ADDI or JALR, otherwise skip
-	if (strncmp(aop1.mnemonic, "addi", 4)) {
-		nlen = aop0.size;
-		goto end;
-	} else { // ADDI
-		str_addr += (st64)aop1.val;
-	}
-
-	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
-	nlen += aop1.size;
-
-	// check if third op is SD, otherwise skip
-	if (strncmp(aop1.mnemonic, "sd", 2)) {
-		nlen = aop0.size;
-		goto end;
-	}
-
-	reset_and_read_op_at_or_fail(aop1, aop0.size, end);
-	nlen += aop1.size;
-
-	// expect last op to be ADDIW or ADDI, otherwise skip
-	if (strcmp(aop1.mnemonic, "addiw") && strcmp(aop1.mnemonic, "addi")) {
-		ut8 tmp[16];
-		if (0 > rz_io_nread_at(ctx->core->io, str_addr, tmp, sizeof(tmp))) {
-			RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
-			nlen = 0;
-			goto end;
-		}
-		str_addr = rz_read_ble64(tmp, analysis->big_endian);
-		str_size = rz_read_ble64(tmp + 8, analysis->big_endian);
-	} else { // ADDIW or ADDI
-		str_size = aop1.val;
-	}
-	nlen = aop0.size;
-
-	// check that the values are acceptable.
-	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
-		goto end;
+	if (!go_is_sign_match_autosize(ctx, &info, go_riscv64_auipc_add_sd_addiw_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_riscv64_auipc_add_sd_li_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_riscv64_li_sd_auipc_add_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_riscv64_addiw_sd_auipc_add_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_riscv64_auipc_add_addiw_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_riscv64_auipc_add_li_signature) &&
+		!go_is_sign_match_autosize(ctx, &info, go_riscv64_table_signature)) {
+		return 4;
 	}
 
 	// try to recover the string.
-	if (!recover_string_at(ctx, str_addr, str_size)) {
-		goto end;
+	if (!recover_string_at(ctx, info.addr, info.size)) {
+		return 4;
 	}
 
-	// add xref
-	rz_analysis_xrefs_set(analysis, pc, str_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-
-end:
-	rz_analysis_op_fini(&aop0);
-	rz_analysis_op_fini(&aop1);
-	return nlen;
+	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+	return 4;
 }
 
 /**
