@@ -88,11 +88,6 @@ RZ_API void rz_analysis_fcn_invalidate_read_ahead_cache(void) {
 #endif
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
-	const RzAnalysisBlock *a = _a, *b = _b;
-	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
-}
-
 RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
 	RzAnalysis *analysis = fcn->analysis;
 	RzAnalysisBlock *bb;
@@ -1605,12 +1600,6 @@ RZ_API void rz_analysis_del_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fc
 
 /* Does NOT invalidate read-ahead cache. */
 RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	bool can_jmpmid = false;
-	if (analysis->cur->arch) {
-		bool is_x86 = !strncmp(analysis->cur->arch, "x86", 3);
-		bool is_dalvik = !strncmp(analysis->cur->arch, "dalvik", 6);
-		can_jmpmid = analysis->opt.jmpmid && (is_dalvik || is_x86);
-	}
 	RzPVector *metas = rz_meta_get_all_in(analysis, addr, RZ_META_TYPE_ANY);
 	void **it;
 	rz_pvector_foreach (metas, it) {
@@ -1657,26 +1646,6 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 	rz_analysis_task_item_new(analysis, &tasks, fcn, NULL, addr);
 	int ret = rz_analysis_run_tasks(&tasks);
 	rz_vector_fini(&tasks);
-	if (analysis->opt.endsize && ret == RZ_ANALYSIS_RET_END && rz_analysis_function_realsize(fcn)) { // cfg analysis completed
-		RzListIter *iter;
-		RzAnalysisBlock *bb;
-		ut64 endaddr = fcn->addr;
-
-		// set function size as length of continuous sequence of bbs
-		rz_list_sort(fcn->bbs, &cmpaddr);
-		rz_list_foreach (fcn->bbs, iter, bb) {
-			if (endaddr == bb->addr) {
-				endaddr += bb->size;
-			} else if ((endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN) || (can_jmpmid && endaddr > bb->addr && bb->addr + bb->size > endaddr)) {
-				endaddr = bb->addr + bb->size;
-			} else {
-				break;
-			}
-		}
-		// fcn is not yet in analysis => pass NULL
-		rz_analysis_function_resize(fcn, endaddr - fcn->addr);
-		rz_analysis_trim_jmprefs(analysis, fcn);
-	}
 	return ret;
 }
 
