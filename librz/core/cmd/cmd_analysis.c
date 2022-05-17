@@ -1827,67 +1827,12 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_breakpoint_handler(RzCore *core, i
 
 // aecs
 RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int argc, const char **argv) {
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	RzAnalysisOp *op = NULL;
-	while (!rz_cons_is_breaked()) {
-		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-			break;
-		}
-		rz_core_reg_update_flags(core);
-		ut64 addr = rz_num_get(core->num, pc);
-		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-		if (!op) {
-			break;
-		}
-		if (op->type == RZ_ANALYSIS_OP_TYPE_SWI) {
-			RZ_LOG_ERROR("syscall at 0x%08" PFMT64x "\n", addr);
-			break;
-		} else if (op->type == RZ_ANALYSIS_OP_TYPE_TRAP) {
-			RZ_LOG_ERROR("trap at 0x%08" PFMT64x "\n", addr);
-			break;
-		}
-		rz_analysis_op_free(op);
-		op = NULL;
-		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-			break;
-		}
-	}
-	if (op) {
-		rz_analysis_op_free(op);
-		op = NULL;
-	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_analysis_continue_until_syscall(core));
 }
 
 // aecc
 RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int argc, const char **argv) {
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	RzAnalysisOp *op = NULL;
-	while (!rz_cons_is_breaked()) {
-		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-			break;
-		}
-		rz_core_reg_update_flags(core);
-		ut64 addr = rz_num_get(core->num, pc);
-		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
-		if (!op) {
-			break;
-		}
-		if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
-			RZ_LOG_ERROR("call at 0x%08" PFMT64x "\n", addr);
-			break;
-		}
-		rz_analysis_op_free(op);
-		op = NULL;
-		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-			break;
-		}
-	}
-	if (op) {
-		rz_analysis_op_free(op);
-		op = NULL;
-	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_analysis_continue_until_call(core));
 }
 
 // aecu
