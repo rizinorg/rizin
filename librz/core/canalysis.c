@@ -6857,7 +6857,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
  * \param core The RzCore instance
  * \param struct_member struct.member
  */
-RZ_API bool rz_core_analysis_hint_set_offset(RzCore *core, RZ_NONNULL const char *struct_member) {
+RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL const char *struct_member) {
 	rz_return_val_if_fail(core && struct_member, false);
 	RzAnalysisOp op = { 0 };
 	ut8 code[128] = { 0 };
@@ -6908,4 +6908,79 @@ RZ_API bool rz_core_analysis_hint_set_offset(RzCore *core, RZ_NONNULL const char
 exit:
 	rz_analysis_op_fini(&op);
 	return res;
+}
+
+/**
+ * \brief Continue until syscall
+ * \param core The RzCore instance
+ * \return success
+ */
+RZ_API bool rz_analysis_continue_until_syscall(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, false);
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+	RzAnalysisOp *op = NULL;
+	while (!rz_cons_is_breaked()) {
+		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
+			break;
+		}
+		rz_core_reg_update_flags(core);
+		ut64 addr = rz_num_get(core->num, pc);
+		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+		if (!op) {
+			break;
+		}
+		if (op->type == RZ_ANALYSIS_OP_TYPE_SWI) {
+			RZ_LOG_ERROR("syscall at 0x%08" PFMT64x "\n", addr);
+			break;
+		} else if (op->type == RZ_ANALYSIS_OP_TYPE_TRAP) {
+			RZ_LOG_ERROR("trap at 0x%08" PFMT64x "\n", addr);
+			break;
+		}
+		rz_analysis_op_free(op);
+		op = NULL;
+		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
+			break;
+		}
+	}
+	if (op) {
+		rz_analysis_op_free(op);
+		op = NULL;
+	}
+	return true;
+}
+
+/**
+ * \brief Continue until call
+ * \param core The RzCore instance
+ * \return success
+ */
+RZ_API bool rz_analysis_continue_until_call(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, false);
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+	RzAnalysisOp *op = NULL;
+	while (!rz_cons_is_breaked()) {
+		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
+			break;
+		}
+		rz_core_reg_update_flags(core);
+		ut64 addr = rz_num_get(core->num, pc);
+		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (!op) {
+			break;
+		}
+		if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
+			RZ_LOG_ERROR("call at 0x%08" PFMT64x "\n", addr);
+			break;
+		}
+		rz_analysis_op_free(op);
+		op = NULL;
+		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
+			break;
+		}
+	}
+	if (op) {
+		rz_analysis_op_free(op);
+		op = NULL;
+	}
+	return true;
 }
