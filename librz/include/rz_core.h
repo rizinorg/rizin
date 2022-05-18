@@ -539,7 +539,7 @@ RZ_API void rz_core_visual_asm(RzCore *core, ut64 addr);
 RZ_API void rz_core_visual_colors(RzCore *core);
 RZ_API void rz_core_visual_showcursor(RzCore *core, int x);
 RZ_API void rz_core_visual_offset(RzCore *core);
-RZ_API int rz_core_visual_hud(RzCore *core);
+RZ_API bool rz_core_visual_hud(RzCore *core);
 RZ_API void rz_core_visual_jump(RzCore *core, ut8 ch);
 RZ_API void rz_core_visual_disasm_up(RzCore *core, int *cols);
 RZ_API void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols);
