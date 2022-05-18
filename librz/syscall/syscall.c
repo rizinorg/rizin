@@ -276,17 +276,9 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 	}
 
 	if (sysregs_changed) {
-		rz_sysregs_db_free(s->srdb);
-		s->srdb = rz_sysregs_db_new();
-		char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("reg", "%s-%s-%d"),
-			arch, cpu, bits);
-		if (dbName) {
-			if (!rz_sysreg_load_sdb(s->srdb, dbName)) {
-				rz_sysregs_db_free(s->srdb);
-				s->srdb = rz_sysregs_db_new();
-			}
-			free(dbName);
-		}
+		char *regs_dir = rz_path_system(RZ_SDB_REG);
+		rz_sysreg_set_arch(s, arch, regs_dir);
+		free(regs_dir);
 	}
 	if (s->fd) {
 		fclose(s->fd);
