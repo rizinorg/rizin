@@ -41,6 +41,7 @@ RZ_API void rz_arch_platform_target_free(RzArchPlatformTarget *target) {
 		return;
 	}
 	ht_up_free(target->platforms);
+	free(target->path);
 	free(target);
 }
 
@@ -132,9 +133,8 @@ RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
  */
 RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
 	const char *platform, RZ_NONNULL const char *platforms_dir) {
-
-	if (!platform) {
-		return false;
+	if (RZ_STR_ISEMPTY(platform)) {
+		return true;
 	}
 	rz_return_val_if_fail(arch && cpu && platforms_dir, false);
 
@@ -143,7 +143,11 @@ RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char
 	if (!path) {
 		return false;
 	}
-	rz_arch_load_platform_sdb(t, path);
-	free(path);
-	return true;
+	if (t->path && !strcmp(t->path, path)) {
+		free(path);
+		return true;
+	}
+	free(t->path);
+	t->path = path;
+	return rz_arch_load_platform_sdb(t, path);
 }
