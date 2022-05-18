@@ -5787,6 +5787,13 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
+	if (rz_config_get_b(core->config, "analysis.apply.signature")) {
+		int n_applied = 0;
+		rz_core_notify_begin(core, "Applying signatures from sigdb");
+		rz_core_analysis_sigdb_apply(core, &n_applied, NULL);
+		rz_core_notify_done(core, "Applied %d FLIRT signatures via sigdb", n_applied);
+	}
+
 	if (is_apple_target(core)) {
 		rz_core_notify_begin(core, "Check for objc references (aalo)");
 		cmd_analysis_objc(core, true);
@@ -5901,13 +5908,6 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 	if (!is_unknown_file(core)) {
 		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
-	}
-
-	if (rz_config_get_b(core->config, "analysis.apply.signature")) {
-		int n_applied = 0;
-		rz_core_notify_begin(core, "Applying signatures from sigdb");
-		rz_core_analysis_sigdb_apply(core, &n_applied, NULL);
-		rz_core_notify_done(core, "Applied %d FLIRT signatures via sigdb", n_applied);
 	}
 
 	return true;
