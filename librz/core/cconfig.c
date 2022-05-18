@@ -615,9 +615,6 @@ static bool cb_asmarch(void *user, void *data) {
 	rz_core_analysis_cc_init(core);
 
 	const char *platform = rz_config_get(core->config, "asm.platform");
-	char *regs_dir = rz_path_system(RZ_SDB_REG);
-	rz_sysreg_set_arch(core->analysis->syscall, node->value, regs_dir);
-	free(regs_dir);
 	if (asmcpu) {
 		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
 		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
