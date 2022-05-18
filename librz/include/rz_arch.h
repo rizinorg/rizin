@@ -39,6 +39,7 @@ typedef struct rz_platform_item_t {
 
 typedef struct rz_platform_target_t {
 	HtUP /* <ut64 , RzArchPlatformItem> */ *platforms;
+	char *path; ///< Path used to load the platforms, used to avoid reloading
 } RzArchPlatformTarget;
 
 RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new();
