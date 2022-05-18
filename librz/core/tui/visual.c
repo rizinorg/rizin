@@ -468,7 +468,7 @@ static inline void prevPrintFormat(RzCore *core) {
 	printFormat(core, -1);
 }
 
-RZ_API int rz_core_visual_hud(RzCore *core) {
+RZ_API bool rz_core_visual_hud(RzCore *core) {
 	const char *c = rz_config_get(core->config, "hud.path");
 	char *system_hud_dir = rz_path_system(RZ_HUD);
 	char *f = rz_file_path_join(system_hud_dir, "main");
@@ -491,6 +491,7 @@ RZ_API int rz_core_visual_hud(RzCore *core) {
 	}
 	if (!res) {
 		rz_cons_message("Cannot find hud file");
+		return false;
 	}
 
 	rz_cons_clear();
@@ -507,7 +508,7 @@ RZ_API int rz_core_visual_hud(RzCore *core) {
 	rz_cons_flush();
 	free(homehud);
 	free(f);
-	return (int)(size_t)p;
+	return true;
 }
 
 RZ_API void rz_core_visual_jump(RzCore *core, ut8 ch) {
