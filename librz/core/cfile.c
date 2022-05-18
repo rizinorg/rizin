@@ -7,8 +7,6 @@
 #include "core_private.h"
 #include "core_private_base.h"
 
-#define UPDATE_TIME(a) (r->times->file_open_time = rz_time_now_mono() - (a))
-
 static bool core_file_do_load_for_debug(RzCore *r, ut64 loadaddr, const char *filenameuri);
 static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
 
