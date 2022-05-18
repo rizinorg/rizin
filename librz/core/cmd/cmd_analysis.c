@@ -6312,6 +6312,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_create_handler(RzCore *core, int argc, c
 	}
 	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, argv[1], core->offset, type, diff);
 	if (!fcn) {
+		rz_analysis_diff_free(diff);
 		RZ_LOG_ERROR("Cannot add function (duplicated)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
