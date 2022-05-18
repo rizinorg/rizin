@@ -55,7 +55,7 @@ static void loadGP(RzCore *core) {
 	}
 }
 
-static RzList *__save_old_sections(RzCore *core) {
+static RZ_OWN RzList *__save_old_sections(RzCore *core) {
 	RzList *sections = rz_bin_get_sections(core->bin);
 	RzListIter *it;
 	RzBinSection *sec;
@@ -63,7 +63,7 @@ static RzList *__save_old_sections(RzCore *core) {
 
 	// Return an empty list
 	if (!sections) {
-		eprintf("WARNING: No sections found, functions and flags won't be rebased");
+		RZ_LOG_WARN("No sections found, functions and flags won't be rebased\n"");
 		return old_sections;
 	}
 
@@ -219,7 +219,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 		}
 		rz_core_bin_load(core, uri, addr);
 	} else {
-		eprintf("cannot open file %s\n", uri);
+		RZ_LOG_ERROR("Cannot open file '%s'\n", uri);
 		rz_list_free(old_sections);
 		return;
 	}
@@ -1583,12 +1583,14 @@ RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
 
 	RzCoreFile *cfile = rz_core_file_open(core, file, RZ_PERM_R, 0);
 	if (!cfile) {
+		rz_list_free(orig_sections);
 		RZ_LOG_ERROR("Cannot open file '%s'\n", file);
 		return;
 	}
 	core->num->value = cfile->fd;
 	// If no baddr defined, use the one provided by the file
 	if (!rz_core_bin_load(core, file, UT64_MAX)) {
+		rz_list_free(orig_sections);
 		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", file);
 		return;
 	}
