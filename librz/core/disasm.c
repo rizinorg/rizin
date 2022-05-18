@@ -17,6 +17,9 @@
 #define COLOR_CONST(ds, color) ((ds)->show_color ? Color_##color : "")
 #define COLOR_RESET(ds)        COLOR_CONST(ds, RESET)
 
+#define DS_ANALYSIS_OP_MASK (RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL | \
+	RZ_ANALYSIS_OP_MASK_VAL | (ds->show_cmt_il ? RZ_ANALYSIS_OP_MASK_IL : 0))
+
 // ugly globals but meh
 static ut64 emustack_min = 0LL;
 static ut64 emustack_max = 0LL;
@@ -1347,7 +1350,7 @@ static void ds_show_refs(RzDisasmState *ds) {
 			RzAnalysisOp aop;
 			ut8 buf[12];
 			rz_io_read_at(ds->core->io, xref->from, buf, sizeof(buf));
-			rz_analysis_op(ds->core->analysis, &aop, xref->from, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
+			rz_analysis_op(ds->core->analysis, &aop, xref->from, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 			if ((aop.type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_UCALL) {
 				RzAnalysisFunction *fcn = rz_analysis_get_function_at(ds->core->analysis, xref->to);
 				ds_begin_comment(ds);
@@ -4234,7 +4237,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 }
 
 static void ds_print_cmt_esil(RzDisasmState *ds) {
-	if (!ds->show_cmt_esil || !ds->analysis_op.il_op) {
+	if (!ds->show_cmt_esil) {
 		return;
 	}
 	const char *esil = RZ_STRBUF_SAFEGET(&ds->analysis_op.esil);
@@ -5307,7 +5310,7 @@ toro:
 		// TODO: support in-the-middle-of-instruction too
 		rz_analysis_op_fini(&ds->analysis_op);
 		if (rz_analysis_op(core->analysis, &ds->analysis_op, core->offset + core->print->cur,
-			    buf + core->print->cur, (int)(len - core->print->cur), RZ_ANALYSIS_OP_MASK_ALL)) {
+			    buf + core->print->cur, (int)(len - core->print->cur), DS_ANALYSIS_OP_MASK)) {
 			// TODO: check for ds->analysis_op.type and ret
 			ds->dest = ds->analysis_op.jump;
 		}
@@ -5366,7 +5369,7 @@ toro:
 		rz_asm_set_pc(core->rasm, ds->at);
 		ds_update_ref_lines(ds);
 		rz_analysis_op_fini(&ds->analysis_op);
-		rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), RZ_ANALYSIS_OP_MASK_ALL);
+		rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), DS_ANALYSIS_OP_MASK);
 		if (ds_must_strip(ds)) {
 			inc = ds->analysis_op.size;
 			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
@@ -5412,7 +5415,7 @@ toro:
 		ds_atabs_option(ds);
 		if (ds->analysis_op.addr != ds->at) {
 			rz_analysis_op_fini(&ds->analysis_op);
-			rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), RZ_ANALYSIS_OP_MASK_ALL);
+			rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), DS_ANALYSIS_OP_MASK);
 		}
 		if (ret < 1) {
 			rz_strbuf_fini(&ds->analysis_op.esil);
