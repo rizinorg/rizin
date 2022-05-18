@@ -38,6 +38,12 @@ typedef struct {
 
 static void cons_grep_reset(RzConsGrep *grep);
 
+static void ctx_rowcol_calc_reset(void) {
+	CTX(row) = 0;
+	CTX(col) = 0;
+	CTX(rowcol_calc_start) = 0;
+}
+
 static void break_stack_free(void *ptr) {
 	RzConsBreakStack *b = (RzConsBreakStack *)ptr;
 	free(b);
@@ -72,6 +78,7 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 		}
 		if (recreate && CTX(buffer_sz) > 0) {
 			CTX(buffer) = malloc(CTX(buffer_sz));
+			ctx_rowcol_calc_reset();
 			if (!CTX(buffer)) {
 				CTX(buffer) = data->buf;
 				free(data);
@@ -98,6 +105,7 @@ static void cons_stack_load(RzConsStack *data, bool free_current) {
 		memcpy(&CTX(grep), data->grep, sizeof(RzConsGrep));
 	}
 	CTX(noflush) = data->noflush;
+	ctx_rowcol_calc_reset();
 }
 
 static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext *parent) {
@@ -782,6 +790,7 @@ RZ_API void rz_cons_reset(void) {
 	I.lastline = CTX(buffer);
 	cons_grep_reset(&CTX(grep));
 	CTX(pageable) = true;
+	ctx_rowcol_calc_reset();
 }
 
 /**
@@ -819,6 +828,7 @@ RZ_API void rz_cons_filter(void) {
 		CTX(buffer) = res;
 		CTX(buffer_len) = newlen;
 		CTX(buffer_sz) = newlen;
+		ctx_rowcol_calc_reset();
 		free(input);
 	}
 	if (I.was_html) {
@@ -1260,38 +1270,51 @@ now the console color is reset with each \n (same stuff do it here but in correc
 #endif
 }
 
-/* return the aproximated x,y of cursor before flushing */
-// XXX this function is a huge bottleneck
-RZ_API int rz_cons_get_cursor(int *rows) {
-	int i, col = 0;
-	int row = 0;
-	// TODO: we need to handle GOTOXY and CLRSCR ansi escape code too
-	for (i = 0; i < CTX(buffer_len); i++) {
+/**
+ * \brief Calculates the aproximated x,y coordinates of the cursor before flushing
+ * \param[out] rows Row number of the cursor
+ * \return Column number of the cursor
+ */
+RZ_API int rz_cons_get_cursor(RZ_NONNULL int *rows) {
+	rz_return_val_if_fail(rows, 0);
+	int col = CTX(col);
+	int row = CTX(row);
+	if (CTX(rowcol_calc_start) > CTX(buffer_len)) {
+		rz_warn_if_reached();
+		CTX(rowcol_calc_start) = 0;
+	}
+	if (!CTX(buffer)) {
+		*rows = 0;
+		return 0;
+	}
+	const char *last_line = CTX(buffer) + CTX(rowcol_calc_start);
+	const char *ptr;
+	while ((ptr = strchr(last_line, '\n'))) {
+		last_line = ++ptr;
+		row++;
+	};
+	const char *last_escape = last_line;
+	while ((ptr = strchr(last_escape, '\x1b'))) {
 		// ignore ansi chars, copypasta from rz_str_ansi_len
-		if (CTX(buffer)[i] == 0x1b) {
-			char ch2 = CTX(buffer)[i + 1];
-			char *str = CTX(buffer);
-			if (ch2 == '\\') {
-				i++;
-			} else if (ch2 == ']') {
-				if (!strncmp(str + 2 + 5, "rgb:", 4)) {
-					i += 18;
-				}
-			} else if (ch2 == '[') {
-				for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
-					;
-				}
+		col += ptr - last_escape;
+		char ch2 = *++ptr;
+		if (ch2 == '\\') {
+			ptr++;
+		} else if (ch2 == ']') {
+			if (!strncmp(ptr + 2 + 5, "rgb:", 4)) {
+				ptr += 18;
 			}
-		} else if (CTX(buffer)[i] == '\n') {
-			row++;
-			col = 0;
-		} else {
-			col++;
+		} else if (ch2 == '[') {
+			for (++ptr; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ptr++) {
+				;
+			}
 		}
+		last_escape = ptr;
 	}
-	if (rows) {
-		*rows = row;
-	}
+	*rows = row;
+	CTX(row) = row;
+	CTX(col) = col;
+	CTX(rowcol_calc_start) = CTX(buffer_len);
 	return col;
 }
 
@@ -1753,6 +1776,7 @@ RZ_API void rz_cons_highlight(const char *word) {
 		free(rword);
 		free(clean);
 		free(cpos);
+		ctx_rowcol_calc_reset();
 		/* don't free orig - it's assigned
 		 * to CTX(buffer) and possibly realloc'd */
 	} else {

@@ -55,7 +55,7 @@ RZ_LIB_VERSION_HEADER(rz_cons);
 #define RZ_CONS_CMD_DEPTH 100
 
 typedef int (*RzConsGetSize)(int *rows);
-typedef int (*RzConsGetCursor)(int *rows);
+typedef int (*RzConsGetCursor)(RZ_NONNULL int *rows);
 typedef bool (*RzConsIsBreaked)(void);
 typedef void (*RzConsFlush)(void);
 typedef void (*RzConsGrepCallback)(const char *grep);
@@ -487,6 +487,11 @@ typedef struct rz_cons_context_t {
 	int color_mode;
 	RzConsPalette cpal;
 	RzConsPrintablePalette pal;
+
+	// Memoized last calculated row/column inside buffer
+	int row;
+	int col;
+	int rowcol_calc_start;
 } RzConsContext;
 
 #define HUD_BUF_SIZE 512
@@ -943,7 +948,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg);
 RZ_API void rz_cons_pal_show(void);
 RZ_API int rz_cons_get_size(int *rows);
 RZ_API bool rz_cons_isatty(void);
-RZ_API int rz_cons_get_cursor(int *rows);
+RZ_API int rz_cons_get_cursor(RZ_NONNULL int *rows);
 RZ_API int rz_cons_arrow_to_hjkl(int ch);
 RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen);
 RZ_API char *rz_cons_rainbow_get(int idx, int last, bool bg);

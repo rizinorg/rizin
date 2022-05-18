@@ -462,6 +462,9 @@ static int cmp(const void *a, const void *b) {
 
 RZ_API void rz_cons_grepbuf(void) {
 	RzCons *cons = rz_cons_singleton();
+	cons->context->row = 0;
+	cons->context->col = 0;
+	cons->context->rowcol_calc_start = 0;
 	const char *buf = cons->context->buffer;
 	const int len = cons->context->buffer_len;
 	RzConsGrep *grep = &cons->context->grep;
