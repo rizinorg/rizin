@@ -50,7 +50,7 @@ static void loadGP(RzCore *core) {
 			rz_config_set(core->config, "analysis.roregs", "zero,gp");
 			gp = rz_reg_getv(core->analysis->reg, "gp");
 		}
-		// eprintf ("[mips] gp: 0x%08"PFMT64x"\n", gp);
+		// RZ_LOG_DEBUG("[mips] gp: 0x%08"PFMT64x"\n", gp);
 		rz_config_set_i(core->config, "analysis.gp", gp);
 	}
 }
@@ -63,7 +63,7 @@ static RZ_OWN RzList *__save_old_sections(RzCore *core) {
 
 	// Return an empty list
 	if (!sections) {
-		RZ_LOG_WARN("No sections found, functions and flags won't be rebased\n"");
+		RZ_LOG_WARN("No sections found, functions and flags won't be rebased\n");
 		return old_sections;
 	}
 
@@ -191,7 +191,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 	int fd;
 
 	if (!ofile || !(desc = rz_io_desc_get(core->io, ofile->fd)) || !desc->uri) {
-		eprintf("No file open?\n");
+		RZ_LOG_ERROR("No file open?\n");
 		return;
 	}
 
@@ -236,15 +236,15 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	RzIODesc *desc;
 
 	if (!ofile || !(desc = rz_io_desc_get(core->io, ofile->fd)) || !desc->uri) {
-		eprintf("No file open?\n");
+		RZ_LOG_ERROR("No file open?\n");
 		return;
 	}
 
 	// Reopen the original file as read only since we can't open native debug while the
 	// file is open with write permissions
 	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & RZ_PERM_W)) {
-		eprintf("Cannot debug file (%s) with permissions set to 0x%x.\n"
-			"Reopening the original file in read-only mode.\n",
+		RZ_LOG_ERROR("Cannot debug file (%s) with permissions set to 0x%x.\n"
+			     "Reopening the original file in read-only mode.\n",
 			desc->name, desc->perm);
 		rz_io_reopen(core->io, ofile->fd, RZ_PERM_R, 644);
 		desc = rz_io_desc_get(core->io, ofile->fd);
@@ -318,7 +318,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 	}
 
 	if (!core->file) {
-		eprintf("No file opened to reopen\n");
+		RZ_LOG_ERROR("No file opened to reopen\n");
 		free(ofilepath);
 		free(obinfilepath);
 		return false;
@@ -338,7 +338,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		}
 	}
 	if (!ofilepath) {
-		eprintf("Unknown file path");
+		RZ_LOG_ERROR("Unknown file path");
 		free(obinfilepath);
 		return false;
 	}
@@ -389,7 +389,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		ofile = NULL;
 		odesc = NULL;
 		//	core->file = file;
-		eprintf("File %s reopened in %s mode\n", path,
+		RZ_LOG_ERROR("File %s reopened in %s mode\n", path,
 			(perm & RZ_PERM_W) ? "read-write" : "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
@@ -404,7 +404,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 			ret = rz_core_bin_load(core, obinfilepath, baddr);
 			rz_core_bin_update_arch_bits(core);
 			if (!ret) {
-				eprintf("Error: Failed to reload rbin for: %s", path);
+				RZ_LOG_ERROR("Error: Failed to reload rbin for: '%s'", path);
 			}
 			origoff = rz_num_math(core->num, "entry0");
 		}
@@ -415,14 +415,14 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		}
 		// close old file
 	} else if (ofile) {
-		eprintf("rz_core_file_reopen: Cannot reopen file: %s with perms 0x%x,"
-			" attempting to open read-only.\n",
+		RZ_LOG_ERROR("rz_core_file_reopen: Cannot reopen file: '%s' with perms 0x%x,"
+			     " attempting to open read-only.\n",
 			path, perm);
 		// lower it down back
 		// ofile = rz_core_file_open (core, path, RZ_PERM_R, addr);
 		rz_core_file_set_by_file(core, ofile);
 	} else {
-		eprintf("Cannot reopen\n");
+		RZ_LOG_ERROR("Cannot reopen '%s'\n", path);
 	}
 	if (core->file) {
 		rz_io_use_fd(core->io, core->file->fd);
@@ -460,7 +460,7 @@ static bool file_resize(RzCore *core, ut64 newsize, st64 delta) {
 	if (grow) {
 		ret = rz_io_resize(core->io, newsize);
 		if (ret < 1) {
-			eprintf("rz_io_resize: cannot resize\n");
+			RZ_LOG_ERROR("rz_io_resize: cannot resize\n");
 			return false;
 		}
 	}
@@ -470,7 +470,7 @@ static bool file_resize(RzCore *core, ut64 newsize, st64 delta) {
 	if (!grow) {
 		ret = rz_io_resize(core->io, newsize);
 		if (ret < 1) {
-			eprintf("rz_io_resize: cannot resize\n");
+			RZ_LOG_ERROR("rz_io_resize: cannot resize\n");
 			return false;
 		}
 	}
@@ -589,7 +589,7 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 #endif
 		return true;
 	}
-	eprintf("Cannot set breakpoint at %s\n", sym);
+	RZ_LOG_ERROR("Cannot set breakpoint at %s\n", sym);
 	return false;
 }
 #endif
@@ -637,7 +637,7 @@ static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *fi
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open(r->bin, filenameuri, &opt);
 	if (!binfile) {
-		RZ_LOG_ERROR("bin: debug: Cannot open %s\n", filenameuri);
+		RZ_LOG_ERROR("bin: debug: Cannot open '%s'\n", filenameuri);
 		return false;
 	}
 
@@ -691,7 +691,7 @@ static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loada
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open_io(r->bin, &opt);
 	if (!binfile) {
-		// eprintf ("Failed to load the bin with an IO Plugin.\n");
+		// RZ_LOG_ERROR("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
 	if (cf) {
@@ -799,7 +799,6 @@ RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr) {
 }
 
 static void load_scripts_for(RzCore *core, const char *name) {
-	// TODO:
 	char *file;
 	RzListIter *iter;
 	char *binrc = rz_path_home_prefix(RZ_BINRC);
@@ -808,12 +807,14 @@ static void load_scripts_for(RzCore *core, const char *name) {
 	free(binrc);
 	RzList *files = rz_sys_dir(hdir);
 	if (!rz_list_empty(files)) {
-		eprintf("[binrc] path: %s\n", hdir);
+		RZ_LOG_INFO("[binrc] path: '%s'\n", hdir);
 	}
 	rz_list_foreach (files, iter, file) {
 		if (*file && *file != '.') {
-			eprintf("[binrc] loading %s\n", file);
-			rz_core_cmdf(core, ". %s/%s", hdir, file);
+			RZ_LOG_INFO("[binrc] loading '%s'\n", file);
+			char *fullpath = rz_file_path_join(hdir, file);
+			rz_core_run_script(core, fullpath);
+			free(fullpath);
 		}
 	}
 	rz_list_free(files);
