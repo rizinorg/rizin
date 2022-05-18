@@ -71,6 +71,8 @@ RZ_API void rz_arch_target_free(RzArchTarget *t) {
 		return;
 	}
 	rz_arch_profile_free(t->profile);
+	free(t->cpu);
+	free(t->arch);
 	free(t);
 }
 
@@ -225,8 +227,7 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 	}
 	char buf[50];
 	char *path = rz_file_path_join(cpus_dir, rz_strf(buf, "%s-%s.sdb", arch, cpu));
-	if (!path || !arch) {
-		free(path);
+	if (!path) {
 		return false;
 	}
 	if (!is_cpu_valid(cpus_dir, cpu)) {
@@ -235,6 +236,10 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 			path = rz_file_path_join(cpus_dir, "avr-ATmega8.sdb");
 		}
 	}
+	free(t->cpu);
+	free(t->arch);
+	t->cpu = strdup(cpu);
+	t->arch = strdup(arch);
 	rz_arch_load_profile_sdb(t, path);
 	free(path);
 	return true;
