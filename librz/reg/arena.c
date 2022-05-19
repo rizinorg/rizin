@@ -311,35 +311,33 @@ RZ_API ut8 *rz_reg_arena_dup(RzReg *reg, const ut8 *source) {
 	return ret;
 }
 
-RZ_API int rz_reg_arena_set_bytes(RzReg *reg, const char *str) {
-	str = rz_str_trim_head_ro(str);
-	int len = rz_hex_str_is_valid(str);
-	if (len == -1) {
-		eprintf("Invalid input\n");
-		return -1;
+RZ_API bool rz_reg_arena_set_bytes(RzReg *reg, const char *hex) {
+	hex = rz_str_trim_head_ro(hex);
+	int len = rz_hex_str_is_valid(hex);
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid register arena bytes\n");
+		return false;
 	}
-	int bin_str_len = (len + 1) / 2; // 2 hex chrs for 1 byte
-	ut8 *bin_str = malloc(bin_str_len);
-	if (!bin_str) {
-		eprintf("Failed to decode hex str.\n");
-		return -1;
-	}
-	rz_hex_str2bin(str, bin_str);
 
-	int i, n = 0; // n - cumulative sum of arena's sizes
-	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		int sz = reg->regset[i].arena->size;
-		int bl = bin_str_len - n; // bytes left
-		int bln = bl - n;
-		if (bln > 0 && bln < sz) {
-			rz_reg_set_bytes(reg, i, bin_str + n, bln);
+	int bytes_len = (len + 1) / 2; // 2 hex chrs for 1 byte
+	ut8 *bytes = malloc(bytes_len);
+	if (!bytes) {
+		RZ_LOG_ERROR("Failed to allocate buffer for hex decoding\n");
+		return false;
+	}
+	rz_hex_str2bin(hex, bytes);
+
+	for (int i = 0, n = 0; i < RZ_REG_TYPE_LAST; i++) {
+		int reg_size = reg->regset[i].arena->size;
+		int leftovers = bytes_len - (n * 2);
+		rz_reg_set_bytes(reg, i, bytes + n, leftovers);
+		if (leftovers > 0 && leftovers < reg_size) {
 			break;
 		}
-		rz_reg_set_bytes(reg, i, bin_str + n, bin_str_len - n);
-		n += sz;
+		n += reg_size;
 	}
-	free(bin_str);
-	return 0;
+	free(bytes);
+	return true;
 }
 
 RZ_API void rz_reg_arena_shrink(RzReg *reg) {

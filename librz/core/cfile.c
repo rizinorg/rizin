@@ -33,12 +33,13 @@ RZ_IPI void rz_core_file_free(RzCoreFile *cf) {
 	free(cf);
 }
 
-static bool __isMips(RzAsm *a) {
-	return a && a->cur && a->cur->arch && strstr(a->cur->arch, "mips");
+static bool is_arch_mips(RzCore *core) {
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	return strstr(arch, "mips");
 }
 
-static void loadGP(RzCore *core) {
-	if (__isMips(core->rasm)) {
+static void core_load_global_pointer(RzCore *core) {
+	if (is_arch_mips(core)) {
 		ut64 gp = rz_num_math(core->num, "loc._gp");
 		if (!gp || gp == UT64_MAX) {
 			rz_config_set(core->config, "analysis.roregs", "zero");
@@ -432,7 +433,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		rz_core_reg_update_flags(core);
 		rz_core_seek_to_register(core, "PC", false);
 	} else {
-		loadGP(core);
+		core_load_global_pointer(core);
 	}
 	// update analysis io bind
 	rz_io_bind(core->io, &(core->analysis->iob));
@@ -797,6 +798,9 @@ RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr) {
 }
 
 static void load_scripts_for(RzCore *core, const char *name) {
+	if (!name) {
+		return;
+	}
 	char *file;
 	RzListIter *iter;
 	char *binrc = rz_path_home_prefix(RZ_BINRC);
@@ -902,189 +906,247 @@ static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 	return true;
 }
 
-RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filenameuri, ut64 baddr) {
-	rz_return_val_if_fail(r, false);
+static bool is_apk_uri_with_file_path(const char *uri) {
+	return rz_str_startswith(uri, "apk://") && (strstr(uri + 6, ".apk//") || strstr(uri + 6, ".zip//"));
+}
 
-	RzCoreFile *cf = rz_core_file_cur(r);
-	RzIODesc *desc = cf ? rz_io_desc_get(r->io, cf->fd) : NULL;
-	ut64 laddr = rz_config_get_i(r->config, "bin.laddr");
-	RzBinFile *binfile = NULL;
-	RzBinPlugin *plugin = NULL;
-	bool is_io_load = false;
-	const char *cmd_load;
-	if (!cf) {
-		return false;
+static RzIODesc *core_open_file_using_io_desc(RzCore *core, const char *uri, ut64 base_address) {
+	RzCoreFile *file = rz_core_file_cur(core);
+	if (!file) {
+		return NULL;
 	}
 
-	is_io_load = desc && desc->plugin;
-	if (desc && RZ_STR_ISEMPTY(filenameuri)) {
-		filenameuri = desc->name;
+	RzIODesc *io_desc = rz_io_desc_get(core->io, file->fd);
+	if (!io_desc || !io_desc->plugin) {
+		return io_desc;
 	}
 
-	if (RZ_STR_ISEMPTY(filenameuri)) {
-		RZ_LOG_ERROR("rz_core_bin_load: no file specified\n");
-		return false;
+	if (!uri) {
+		uri = io_desc->name;
 	}
 
-	r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
-	r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
-	if (is_io_load) {
-		// TODO? necessary to restore the desc back?
-		// Fix to select pid before trying to load the binary
-		if ((desc->plugin && desc->plugin->isdbg) || rz_config_get_b(r->config, "cfg.debug")) {
-			core_file_do_load_for_debug(r, baddr, filenameuri);
-		} else {
-			core_file_do_load_for_io_plugin(r, baddr, 0LL);
-			if (!strncmp(filenameuri, "apk://", 6) && r->io->files->size > 1) {
-				RZ_LOG_INFO("Found multidex APK, mapping extra files\n");
-				rz_id_storage_foreach(r->io->files, (RzIDStorageForeachCb)map_multi_dex, r);
-				// forbid loading libraries even when set.
-				rz_config_set_b(r->config, "bin.libs", false);
-			}
-		}
-		// Restore original desc
-		rz_io_use_fd(r->io, desc->fd);
-	}
-	binfile = rz_bin_cur(r->bin);
-	if (cf && binfile && desc) {
-		binfile->fd = desc->fd;
-	}
-	// rz_core_bin_apply_all_info (r, binfile);
-	plugin = rz_bin_file_cur_plugin(binfile);
-	if (plugin) {
-		if (plugin->strfilter) {
-			char msg[2];
-			msg[0] = plugin->strfilter;
-			msg[1] = 0;
-			rz_config_set(r->config, "bin.str.filter", msg);
-		}
-		if (plugin->name) {
-			load_scripts_for(r, plugin->name);
-		}
+	bool is_debugger = rz_config_get_b(core->config, "cfg.debug");
+	if (io_desc->plugin->isdbg || is_debugger) {
+		core_file_do_load_for_debug(core, base_address, io_desc->name);
+		goto end;
 	}
 
-	cmd_load = rz_config_get(r->config, "cmd.load");
-	if (cmd_load && *cmd_load) {
-		rz_core_cmd(r, cmd_load, 0);
+	core_file_do_load_for_io_plugin(core, base_address, 0LL);
+
+	if (core->io->files->size < 2 || is_apk_uri_with_file_path(uri)) {
+		goto end;
 	}
 
-	if (plugin && plugin->name) {
-		if (!strcmp(plugin->name, "any")) {
-			if (rz_str_startswith(desc->name, "rap") && strstr(desc->name, "://")) {
-				rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, UT64_MAX);
-			} else {
-				rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
-			}
-			// set use of raw strings
-			// rz_config_set_i (r->config, "io.va", false);
-			// get bin.minstr
-			r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
-			r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
-		} else if (binfile) {
-			RzBinObject *obj = rz_bin_cur_object(r->bin);
-			if (obj) {
-				bool va = obj->info ? obj->info->has_va : 0;
-				if (!va) {
-					rz_config_set_i(r->config, "io.va", 0);
-				}
-				// workaround to map correctly malloc:// and raw binaries
-				if (rz_io_desc_is_dbg(desc) || (!obj->maps || !va)) {
-					rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
-				}
-				RzBinInfo *info = obj->info;
-				if (info) {
-					rz_core_bin_set_arch_bits(r, binfile->file, info->arch, info->bits);
-				} else {
-					rz_core_bin_set_arch_bits(r, binfile->file,
-						rz_config_get(r->config, "asm.arch"),
-						rz_config_get_i(r->config, "asm.bits"));
-				}
-			}
-		}
-	} else {
-		if (desc) {
-			rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
-		}
-		if (binfile) {
-			ut16 bits = rz_config_get_i(r->config, "asm.bits");
-			const char *arch = rz_config_get(r->config, "asm.arch");
-			rz_core_bin_set_arch_bits(r, binfile->file, arch, bits);
-		}
+	RZ_LOG_INFO("Found multidex APK, mapping extra files\n");
+	rz_id_storage_foreach(core->io->files, (RzIDStorageForeachCb)map_multi_dex, core);
+
+	// forbid loading libraries even when set.
+	rz_config_set_b(core->config, "bin.libs", false);
+
+end:
+	rz_io_use_fd(core->io, io_desc->fd);
+	return io_desc;
+}
+
+static void core_link_bin_fd_and_load_scripts(RzCore *core, RzIODesc *io_desc) {
+	RzBin *bin = core->bin;
+
+	// links the current io file description to the RzBinFile
+	RzBinFile *bin_file = rz_bin_cur(bin);
+	if (bin_file && io_desc) {
+		bin_file->fd = io_desc->fd;
 	}
-	if (desc && rz_config_get_i(r->config, "io.exec")) {
-		desc->perm |= RZ_PERM_X;
+
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bin_file);
+	if (!plugin) {
+		return;
 	}
-	if (!rz_config_get_b(r->config, "cfg.debug")) {
-		loadGP(r);
+
+	if (plugin->strfilter) {
+		char msg[2];
+		msg[0] = plugin->strfilter;
+		msg[1] = 0;
+		rz_config_set(core->config, "bin.str.filter", msg);
 	}
-	if (rz_config_get_b(r->config, "bin.libs")) {
-		const char *lib;
-		RzListIter *iter;
-		RzList *libs = rz_bin_get_libs(r->bin);
-		rz_list_foreach (libs, iter, lib) {
-			if (file_is_loaded(r, lib)) {
-				continue;
-			}
+
+	load_scripts_for(core, plugin->name);
+}
+
+static void core_memory_map_loaded_uri(RzCore *core, RzIODesc *io_desc) {
+	// fetch option related to base addess in phys memory
+	ut64 load_address = rz_config_get_i(core->config, "bin.laddr");
+	// fetch options related to asm arch & bits
+	const char *asm_arch = rz_config_get(core->config, "asm.arch");
+	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
+
+	ut64 io_size = UT64_MAX;
+	if (io_desc) {
+		io_size = rz_io_desc_size(io_desc);
+	}
+
+	// fetch RzBinFile and RzBinPlugin
+	RzBinFile *bin_file = rz_bin_cur(core->bin);
+	RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
+	RzBinPlugin *plugin = bin_obj ? bin_obj->plugin : NULL;
+
+	if (!bin_obj || !io_desc || !plugin || !plugin->name) {
+		if (io_desc) {
+			rz_io_map_new(core->io, io_desc->fd, io_desc->perm, 0, load_address, io_size);
+		}
+		if (bin_file) {
+			rz_core_bin_set_arch_bits(core, bin_file->file, asm_arch, asm_bits);
+		}
+		return;
+	}
+
+	if (!strcmp(plugin->name, "any")) {
+		if (rz_str_startswith(io_desc->name, "rap://")) {
+			io_size = UT64_MAX;
+		}
+		rz_io_map_new(core->io, io_desc->fd, io_desc->perm, 0, load_address, io_size);
+		return;
+	}
+
+	bool use_va = false;
+	RzBinInfo *bin_info = NULL;
+
+	if (bin_obj->info) {
+		asm_arch = bin_obj->info->arch;
+		asm_bits = bin_obj->info->bits;
+		use_va = bin_obj->info->has_va;
+	}
+
+	if (!use_va) {
+		rz_config_set_b(core->config, "io.va", false);
+	}
+
+	// map malloc:// and raw binaries
+	if (rz_io_desc_is_dbg(io_desc) || !bin_obj->maps || !use_va) {
+		rz_io_map_new(core->io, io_desc->fd, io_desc->perm, 0, load_address, io_size);
+	}
+
+	if (plugin->info) {
+		RzBinInfo *bin_info = plugin->info(bin_file);
+		asm_arch = bin_info->arch;
+		asm_bits = bin_info->bits;
+	}
+
+	rz_core_bin_set_arch_bits(core, bin_file->file, asm_arch, asm_bits);
+	rz_bin_info_free(bin_info);
+
+	if (bin_obj->regstate && plugin->file_type &&
+		plugin->file_type(bin_file) == RZ_BIN_TYPE_CORE &&
+		!rz_reg_arena_set_bytes(core->analysis->reg, bin_obj->regstate)) {
+		RZ_LOG_ERROR("coredump: failed setting the registers bytes\n");
+	}
+}
+
+// this code was left untouched from the original code
+// TODO: refactoring to properly load libraries.
+static void core_load_libraries(RzCore *core) {
+	if (!rz_config_get_b(core->config, "bin.libs")) {
+		return;
+	}
+
+	const char *lib = NULL;
+	RzBinImport *imp = NULL;
+	RzListIter *iter = NULL;
+	RzList *list = NULL;
+
+	list = rz_bin_get_libs(core->bin);
+	rz_list_foreach (list, iter, lib) {
+		if (file_is_loaded(core, lib)) {
+			continue;
+		}
+
+		ut64 base_address = rz_io_map_location(core->io, 0x200000);
+		if (base_address != UT64_MAX) {
 			RZ_LOG_INFO("Opening library %s\n", lib);
-			ut64 baddr = rz_io_map_location(r->io, 0x200000);
-			if (baddr != UT64_MAX) {
-				rz_core_file_loadlib(r, lib, baddr);
-			}
+			rz_core_file_loadlib(core, lib, base_address);
 		}
+	}
 
-		rz_core_bin_raise(r, 0);
-		ut64 ocurr = r->offset;
-		ut64 entry0addr = rz_num_math(r->num, "entry0");
-		rz_core_seek(r, entry0addr, true);
+	rz_core_bin_raise(core, 0);
+	ut64 old_offset = core->offset;
+	ut64 entry0_address = rz_num_math(core->num, "entry0");
+	rz_core_seek(core, entry0_address, true);
+	rz_config_set_b(core->config, "bin.at", true);
 
-		rz_config_set_b(r->config, "bin.at", true);
-		RZ_LOG_INFO("Linking imports...\n");
-		RzBinImport *imp;
-		RzList *imports = rz_bin_get_imports(r->bin);
-		rz_list_foreach (imports, iter, imp) {
-			char *name = rz_str_newf("sym.imp.%s", imp->name);
-			rz_name_filter(name + 8, strlen(name + 8) + 1, true);
+	RZ_LOG_INFO("Linking imports...\n");
+	list = rz_bin_get_imports(core->bin);
+	rz_list_foreach (list, iter, imp) {
+		char *name = rz_str_newf("sym.imp.%s", imp->name);
+		rz_name_filter(name + 8, strlen(name + 8) + 1, true);
 
-			RzFlagItem *flag = rz_flag_get(r->flags, name);
-			if (!flag) {
-				// RZ_LOG_DEBUG("Cannot find flag %s\n", name);
-				free(name);
-				continue;
-			}
-			ut64 imp_addr = flag->offset;
-			RzCoreLinkData linkdata = { imp->name, UT64_MAX, r->bin };
-			rz_id_storage_foreach(r->io->files, (RzIDStorageForeachCb)resolve_import_cb, &linkdata);
-			if (linkdata.addr != UT64_MAX) {
-				RZ_LOG_INFO("Resolved %s with address 0x%08" PFMT64x "\n", name, linkdata.addr);
-				ut64 a = linkdata.addr;
-				ut64 b = imp_addr;
-				rz_analysis_xrefs_set(r->analysis, b, a, RZ_ANALYSIS_XREF_TYPE_NULL);
-			} else {
-				RZ_LOG_ERROR("Cannot resolve %s\n", name);
-			}
+		RzFlagItem *flag = rz_flag_get(core->flags, name);
+		if (!flag) {
+			// RZ_LOG_DEBUG("Cannot find flag %s\n", name);
 			free(name);
+			continue;
 		}
-		rz_core_seek(r, ocurr, true);
+
+		ut64 imp_addr = flag->offset;
+		RzCoreLinkData linkdata = { imp->name, UT64_MAX, core->bin };
+		rz_id_storage_foreach(core->io->files, (RzIDStorageForeachCb)resolve_import_cb, &linkdata);
+		if (linkdata.addr == UT64_MAX) {
+			RZ_LOG_ERROR("Cannot resolve %s\n", name);
+			free(name);
+			continue;
+		}
+
+		RZ_LOG_INFO("Resolved %s with address 0x%08" PFMT64x "\n", name, linkdata.addr);
+		rz_analysis_xrefs_set(core->analysis, imp_addr, linkdata.addr, RZ_ANALYSIS_XREF_TYPE_NULL);
+		free(name);
 	}
 
-	// If type == RZ_BIN_TYPE_CORE, we need to create all the maps
-	if (plugin && binfile && plugin->file_type && plugin->file_type(binfile) == RZ_BIN_TYPE_CORE) {
-		// Setting the right arch and bits, so regstate will be shown correctly
-		if (plugin->info) {
-			RzBinInfo *inf = plugin->info(binfile);
-			RZ_LOG_INFO("Setting up coredump arch-bits to: %s-%d\n", inf->arch, inf->bits);
-			rz_config_set(r->config, "asm.arch", inf->arch);
-			rz_config_set_i(r->config, "asm.bits", inf->bits);
-			rz_bin_info_free(inf);
-		}
-		if (binfile->o->regstate) {
-			if (rz_reg_arena_set_bytes(r->analysis->reg, binfile->o->regstate)) {
-				RZ_LOG_WARN("Setting up coredump: Problem while setting the registers\n");
-			} else {
-				RZ_LOG_INFO("Setting up coredump: Registers have been set\n");
-			}
-		}
+	// seek back to the previous offset.
+	rz_core_seek(core, old_offset, true);
+}
+
+/**
+ * \brief      Loads a file based on the uri.
+ *
+ * \param      core          The RzCore struct to use
+ * \param[in]  uri           The uri to use to open a file
+ * \param[in]  base_address  The base address of the file to open
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *uri, ut64 base_address) {
+	rz_return_val_if_fail(core, false);
+
+	RzIODesc *io_desc = NULL;
+
+	// set RzBin string options from core config
+	core->bin->minstrlen = rz_config_get_i(core->config, "bin.minstr");
+	core->bin->maxstrbuf = rz_config_get_i(core->config, "bin.maxstrbuf");
+
+	if (!(io_desc = core_open_file_using_io_desc(core, uri, base_address)) && RZ_STR_ISEMPTY(uri)) {
+		RZ_LOG_ERROR("core: load: uri was empty and no file was previously opened.\n");
+		return false;
 	}
+
+	core_link_bin_fd_and_load_scripts(core, io_desc);
+
+	// executes a command after the binary being loaded.
+	const char *exec_on_load = rz_config_get(core->config, "cmd.load");
+	if (RZ_STR_ISNOTEMPTY(exec_on_load)) {
+		rz_core_cmd(core, exec_on_load, 0);
+	}
+
+	core_memory_map_loaded_uri(core, io_desc);
+
+	// sets the exec permission on the current RzIODesc
+	if (io_desc && rz_config_get_i(core->config, "io.exec")) {
+		io_desc->perm |= RZ_PERM_X;
+	}
+
+	// load global pointer unless is debugger mode.
+	if (!rz_config_get_b(core->config, "cfg.debug")) {
+		core_load_global_pointer(core);
+	}
+
+	core_load_libraries(core);
 	return true;
 }
 
