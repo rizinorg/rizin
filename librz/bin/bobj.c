@@ -17,9 +17,16 @@ RZ_API void rz_bin_mem_free(void *data) {
 	free(mem);
 }
 
-/// size of the reloc (where it is supposed to be patched) in bits
+/**
+ * \brief Get the size of the reloc (where it is supposed to be patched) in bits
+ *
+ * \param reloc reference to the relocation
+ * \return Size of the relocation in bits.
+ */
 RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc) {
 	switch (reloc->type) {
+	case RZ_BIN_RELOC_UNKNOWN:
+		return 0;
 	case RZ_BIN_RELOC_8:
 		return 8;
 	case RZ_BIN_RELOC_16:
@@ -546,25 +553,8 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	return true;
 }
 
-RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
-	rz_return_val_if_fail(bf && o, NULL);
-
-	static bool first = true;
-	// rz_bin_object_set_items set o->relocs but there we don't have access
-	// to io so we need to be run from bin_relocs, free the previous reloc and get
-	// the patched ones
-	if (first && o->plugin && o->plugin->patch_relocs) {
-		RzList *tmp = o->plugin->patch_relocs(bf);
-		first = false;
-		if (!tmp) {
-			return o->relocs;
-		}
-		rz_bin_reloc_storage_free(o->relocs);
-		REBASE_PADDR(o, tmp, RzBinReloc);
-		o->relocs = rz_bin_reloc_storage_new(tmp);
-		first = false;
-		bf->rbin->is_reloc_patched = true;
-	}
+RZ_API RzBinRelocStorage *rz_bin_object_get_relocs(RZ_NONNULL RzBinObject *o) {
+	rz_return_val_if_fail(o, NULL);
 	return o->relocs;
 }
 

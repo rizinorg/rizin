@@ -1385,8 +1385,8 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 #undef SET
 #undef ADD
 
-	free(r);
-	return NULL;
+	r->type = RZ_BIN_RELOC_UNKNOWN;
+	return r;
 }
 
 static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {

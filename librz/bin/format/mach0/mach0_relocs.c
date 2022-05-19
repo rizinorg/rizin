@@ -611,7 +611,7 @@ static bool _patch_reloc(struct MACH0_(obj_t) * bin, struct reloc_t *reloc, ut64
  *
  * see also mach0_rebase.c for additional modification of the data that might happen.
  */
-RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj) {
+void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj) {
 	rz_return_if_fail(obj);
 	if (obj->relocs_patched || !MACH0_(needs_reloc_patching)(obj)) {
 		return;

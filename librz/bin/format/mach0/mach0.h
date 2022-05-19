@@ -231,6 +231,8 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) * hdr);
 struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf);
 void MACH0_(mach_headerfields)(RzBinFile *bf);
 RzList *MACH0_(mach_fields)(RzBinFile *bf);
+void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
+
 RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, bool filter);
 RZ_API ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * bin, ut64 offset);
 RZ_API ut64 MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * bin, ut64 addr);
@@ -243,6 +245,5 @@ RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * 
 RZ_API bool MACH0_(needs_reloc_patching)(struct MACH0_(obj_t) * obj);
 RZ_API ut64 MACH0_(reloc_targets_vfile_size)(struct MACH0_(obj_t) * obj);
 RZ_API ut64 MACH0_(reloc_targets_map_base)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
-RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
 
 #endif

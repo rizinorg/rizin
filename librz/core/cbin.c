@@ -1055,20 +1055,6 @@ static bool is_file_reloc(RzBinReloc *r) {
 	return is_file_symbol(r->symbol);
 }
 
-static ut8 bin_reloc_size(RzBinReloc *reloc) {
-#define CASE(T) \
-	case RZ_BIN_RELOC_##T: return (T) / 8
-	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(24);
-		CASE(32);
-		CASE(64);
-	}
-	return 0;
-#undef CASE
-}
-
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
 	char *foo = sdb_get(db, sdb_fmt("%d", ordinal), 0);
@@ -1132,7 +1118,7 @@ static void reloc_set_flag(RzCore *r, RzBinReloc *reloc, const char *prefix, ut6
 		// We don't want hundreds of reloc.target.<fcnname>.<xyz> flags at the same location
 		return;
 	}
-	RzFlagItem *fi = rz_flag_set_next(r->flags, flagname, flag_addr, bin_reloc_size(reloc));
+	RzFlagItem *fi = rz_flag_set_next(r->flags, flagname, flag_addr, rz_bin_reloc_size(reloc) / 8);
 	if (demname) {
 		rz_flag_item_set_realname(fi, demname);
 		free(demname);
@@ -1212,7 +1198,7 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 	}
 
 	int va = VA_TRUE; // XXX relocs always vaddr?
-	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(binfile, o);
+	RzBinRelocStorage *relocs = rz_bin_object_get_relocs(o);
 	if (!relocs) {
 		relocs = o->relocs;
 		if (!relocs) {
@@ -1817,8 +1803,9 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 		CASE(24);
 		CASE(32);
 		CASE(64);
+	default:
+		return "UNKNOWN";
 	}
-	return "UNKNOWN";
 #undef CASE
 }
 
@@ -2224,7 +2211,7 @@ RZ_API bool rz_core_bin_relocs_print(RzCore *core, RzBinFile *bf, RzCmdStateOutp
 	int va = VA_TRUE; // XXX relocs always vaddr?
 	char *name = NULL;
 
-	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, o);
+	RzBinRelocStorage *relocs = rz_bin_object_get_relocs(o);
 	if (!relocs) {
 		RZ_LOG_WARN("Could not get relocations for current bin file.\n");
 		return false;

@@ -186,6 +186,7 @@ enum {
 };
 
 typedef enum {
+	RZ_BIN_RELOC_UNKNOWN = 0,
 	RZ_BIN_RELOC_8 = 8,
 	RZ_BIN_RELOC_16 = 16,
 	RZ_BIN_RELOC_24 = 24,
@@ -560,7 +561,6 @@ typedef struct rz_bin_plugin_t {
 	RzList /*<RzBinTrycatch>*/ *(*trycatch)(RzBinFile *bf);
 	RzList /*<RzBinClass>*/ *(*classes)(RzBinFile *bf);
 	RzList /*<RzBinMem>*/ *(*mem)(RzBinFile *bf);
-	RzList /*<RzBinReloc>*/ *(*patch_relocs)(RzBinFile *bf);
 	RzList /*<RzBinFileHash>*/ *(*hashes)(RzBinFile *bf);
 	RzList /*<RzBinResource>*/ *(*resources)(RzBinFile *bf);
 	void (*header)(RzBinFile *bf);
@@ -945,8 +945,8 @@ RZ_API const RzList *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj);
-RZ_API const RBNode *rz_bin_object_get_relocs(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj);
+RZ_API RzBinRelocStorage *rz_bin_object_get_relocs(RZ_NONNULL RzBinObject *o);
 RZ_API RZ_OWN RzList *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzList *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj);
@@ -1013,7 +1013,6 @@ RZ_API int rz_bin_object_set_items(RzBinFile *binfile, RzBinObject *o);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
 RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym);
-RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImport *imp);
 RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const char *name);
 RZ_API void rz_bin_mem_free(void *data);
