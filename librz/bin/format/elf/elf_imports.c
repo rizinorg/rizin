@@ -74,7 +74,7 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_sparc(ELFOBJ *bin, RzBinElfReloc *rel) {
-	if (rel->type != RZ_SPARC_JMP_SLOT) {
+	if (rel->type != R_SPARC_JMP_SLOT) {
 		RZ_LOG_WARN("Unknown sparc reloc type %d\n", rel->type);
 		return UT64_MAX;
 	}
@@ -215,22 +215,22 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
 
 	switch (rel->type) {
-	case RZ_ARM_JUMP_SLOT:
+	case R_ARM_JUMP_SLOT:
 		plt_addr += pos * 12 + 20;
 		if (Elf_(rz_bin_elf_is_thumb_addr)(plt_addr)) {
 			plt_addr--;
 		}
 		return plt_addr;
-	case RZ_AARCH64_RELATIVE:
+	case R_AARCH64_RELATIVE:
 		RZ_LOG_WARN("Unsupported relocation type for imports %d\n", rel->type);
 		return UT64_MAX;
-	case RZ_AARCH64_IRELATIVE:
+	case R_AARCH64_IRELATIVE:
 		if (rel->addend > plt_addr) { // start
 			return (plt_addr + pos * 16 + 32) + rel->addend;
 		}
 		// same as fallback to JUMP_SLOT
 		return plt_addr + pos * 16 + 32;
-	case RZ_AARCH64_JUMP_SLOT:
+	case R_AARCH64_JUMP_SLOT:
 		return plt_addr + pos * 16 + 32;
 	default:
 		RZ_LOG_WARN("Unsupported relocation type for imports %d\n", rel->type);

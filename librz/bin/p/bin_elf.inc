@@ -1048,39 +1048,39 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	case EM_PPC64: {
 		int low = 0, word = 0;
 		switch (rel->type) {
-		case RZ_PPC64_ADDR24:
+		case R_PPC64_ADDR24:
 			low = 24;
 			val = (S + A) >> 2;
 			break;
-		case RZ_PPC64_ADDR16_HI:
+		case R_PPC64_ADDR16_HI:
 			word = 2;
 			val = (S + A) >> 16;
 			break;
-		case RZ_PPC64_ADDR16_HA:
+		case R_PPC64_ADDR16_HA:
 			word = 2;
 			val = (S + A + 0x8000) >> 16;
 			break;
-		case RZ_PPC64_REL16_HA:
+		case R_PPC64_REL16_HA:
 			word = 2;
 			val = (S + A - P + 0x8000) >> 16;
 			break;
-		case RZ_PPC64_ADDR16_LO:
+		case R_PPC64_ADDR16_LO:
 			word = 2;
 			val = (S + A) & 0xffff;
 			break;
-		case RZ_PPC64_REL16_LO:
+		case R_PPC64_REL16_LO:
 			word = 2;
 			val = (S + A - P) & 0xffff;
 			break;
-		case RZ_PPC64_REL14:
+		case R_PPC64_REL14:
 			low = 14;
 			val = (st64)(S + A - P) >> 2;
 			break;
-		case RZ_PPC64_REL24:
+		case R_PPC64_REL24:
 			low = 24;
 			val = (st64)(S + A - P) >> 2;
 			break;
-		case RZ_PPC64_REL32:
+		case R_PPC64_REL32:
 			word = 4;
 			val = S + A - P;
 			break;
@@ -1119,11 +1119,11 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	}
 	case EM_386:
 		switch (rel->type) {
-		case RZ_386_32:
-		case RZ_386_PC32:
+		case R_386_32:
+		case R_386_PC32:
 			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 			val = rz_read_le32(buf) + S + A;
-			if (rel->type == RZ_386_PC32) {
+			if (rel->type == R_386_PC32) {
 				val -= P;
 			}
 			rz_write_le32(buf, val);
@@ -1135,49 +1135,49 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	case EM_X86_64: {
 		int word = 0;
 		switch (rel->type) {
-		case RZ_X86_64_8:
+		case R_X86_64_8:
 			word = 1;
 			val = S + A;
 			break;
-		case RZ_X86_64_16:
+		case R_X86_64_16:
 			word = 2;
 			val = S + A;
 			break;
-		case RZ_X86_64_32:
-		case RZ_X86_64_32S:
+		case R_X86_64_32:
+		case R_X86_64_32S:
 			word = 4;
 			val = S + A;
 			break;
-		case RZ_X86_64_64:
+		case R_X86_64_64:
 			word = 8;
 			val = S + A;
 			break;
-		case RZ_X86_64_GLOB_DAT:
-		case RZ_X86_64_JUMP_SLOT:
+		case R_X86_64_GLOB_DAT:
+		case R_X86_64_JUMP_SLOT:
 			word = 4;
 			val = S;
 			break;
-		case RZ_X86_64_PC8:
+		case R_X86_64_PC8:
 			word = 1;
 			val = S + A - P;
 			break;
-		case RZ_X86_64_PC16:
+		case R_X86_64_PC16:
 			word = 2;
 			val = S + A - P;
 			break;
-		case RZ_X86_64_PC32:
+		case R_X86_64_PC32:
 			word = 4;
 			val = S + A - P;
 			break;
-		case RZ_X86_64_PC64:
+		case R_X86_64_PC64:
 			word = 8;
 			val = S + A - P;
 			break;
-		case RZ_X86_64_PLT32:
+		case R_X86_64_PLT32:
 			word = 4;
 			val = L + A - P;
 			break;
-		case RZ_X86_64_RELATIVE:
+		case R_X86_64_RELATIVE:
 			word = 8;
 			val = B + A;
 			break;
@@ -1264,116 +1264,116 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	switch (bin->ehdr.e_machine) {
 	case EM_386:
 		switch (rel->type) {
-		case RZ_386_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_386_32: ADD(32, 0);
-		case RZ_386_PC32: ADD(32, -P);
-		case RZ_386_GLOB_DAT: SET(32);
-		case RZ_386_JMP_SLOT: SET(32);
-		case RZ_386_RELATIVE: ADD(32, B);
-		case RZ_386_GOTOFF: ADD(32, -GOT);
-		case RZ_386_GOTPC: ADD(32, GOT - P);
-		case RZ_386_16: ADD(16, 0);
-		case RZ_386_PC16: ADD(16, -P);
-		case RZ_386_8: ADD(8, 0);
-		case RZ_386_PC8: ADD(8, -P);
-		case RZ_386_COPY: ADD(32, 0); // XXX: copy symbol at runtime
-		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32);
+		case R_386_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case R_386_32: ADD(32, 0);
+		case R_386_PC32: ADD(32, -P);
+		case R_386_GLOB_DAT: SET(32);
+		case R_386_JMP_SLOT: SET(32);
+		case R_386_RELATIVE: ADD(32, B);
+		case R_386_GOTOFF: ADD(32, -GOT);
+		case R_386_GOTPC: ADD(32, GOT - P);
+		case R_386_16: ADD(16, 0);
+		case R_386_PC16: ADD(16, -P);
+		case R_386_8: ADD(8, 0);
+		case R_386_PC8: ADD(8, -P);
+		case R_386_COPY: ADD(32, 0); // XXX: copy symbol at runtime
+		case R_386_IRELATIVE: r->is_ifunc = true; SET(32);
 		default: break;
 		}
 		break;
 	case EM_X86_64:
 		switch (rel->type) {
-		case RZ_X86_64_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_X86_64_64: ADD(64, 0);
-		case RZ_X86_64_PLT32: ADD(32, -P /* +L */);
-		case RZ_X86_64_GOT32: ADD(32, GOT);
-		case RZ_X86_64_PC32: ADD(32, -P);
-		case RZ_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
-		case RZ_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
-		case RZ_X86_64_RELATIVE: ADD(64, B);
-		case RZ_X86_64_32: ADD(32, 0);
-		case RZ_X86_64_32S: ADD(32, 0);
-		case RZ_X86_64_16: ADD(16, 0);
-		case RZ_X86_64_PC16: ADD(16, -P);
-		case RZ_X86_64_8: ADD(8, 0);
-		case RZ_X86_64_PC8: ADD(8, -P);
-		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P);
-		case RZ_X86_64_COPY: ADD(64, 0); // XXX: copy symbol at runtime
-		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
+		case R_X86_64_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case R_X86_64_64: ADD(64, 0);
+		case R_X86_64_PLT32: ADD(32, -P /* +L */);
+		case R_X86_64_GOT32: ADD(32, GOT);
+		case R_X86_64_PC32: ADD(32, -P);
+		case R_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
+		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
+		case R_X86_64_RELATIVE: ADD(64, B);
+		case R_X86_64_32: ADD(32, 0);
+		case R_X86_64_32S: ADD(32, 0);
+		case R_X86_64_16: ADD(16, 0);
+		case R_X86_64_PC16: ADD(16, -P);
+		case R_X86_64_8: ADD(8, 0);
+		case R_X86_64_PC8: ADD(8, -P);
+		case R_X86_64_GOTPCREL: ADD(64, GOT - P);
+		case R_X86_64_COPY: ADD(64, 0); // XXX: copy symbol at runtime
+		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
 		default: break;
 		}
 		break;
 	case EM_ARM:
 		switch (rel->type) {
-		case RZ_ARM_NONE: break;
-		case RZ_ARM_ABS32: ADD(32, 0);
-		case RZ_ARM_REL32: ADD(32, -P);
-		case RZ_ARM_ABS16: ADD(16, 0);
-		case RZ_ARM_ABS8: ADD(8, 0);
-		case RZ_ARM_SBREL32: ADD(32, -B);
-		case RZ_ARM_GLOB_DAT: ADD(32, 0);
-		case RZ_ARM_JUMP_SLOT: ADD(32, 0);
-		case RZ_ARM_COPY: ADD(32, 0); // copy symbol at runtime
-		case RZ_ARM_RELATIVE: ADD(32, B);
-		case RZ_ARM_GOTOFF: ADD(32, -GOT);
-		case RZ_ARM_GOTPC: ADD(32, GOT - P);
-		case RZ_ARM_CALL: ADD(24, -P);
-		case RZ_ARM_JUMP24: ADD(24, -P);
-		case RZ_ARM_THM_JUMP24: ADD(24, -P);
-		case RZ_ARM_PREL31: ADD(32, -P);
-		case RZ_ARM_MOVW_PREL_NC: ADD(16, -P);
-		case RZ_ARM_MOVT_PREL: ADD(32, -P);
-		case RZ_ARM_THM_MOVW_PREL_NC: ADD(16, -P);
-		case RZ_ARM_REL32_NOI: ADD(32, -P);
-		case RZ_ARM_ABS32_NOI: ADD(32, 0);
-		case RZ_ARM_ALU_PC_G0_NC: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G0: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G1_NC: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G1: ADD(32, -P);
-		case RZ_ARM_ALU_PC_G2: ADD(32, -P);
-		case RZ_ARM_LDR_PC_G1: ADD(32, -P);
-		case RZ_ARM_LDR_PC_G2: ADD(32, -P);
-		case RZ_ARM_LDRS_PC_G0: ADD(32, -P);
-		case RZ_ARM_LDRS_PC_G1: ADD(32, -P);
-		case RZ_ARM_LDRS_PC_G2: ADD(32, -P);
-		case RZ_ARM_LDC_PC_G0: ADD(32, -P);
-		case RZ_ARM_LDC_PC_G1: ADD(32, -P);
-		case RZ_ARM_LDC_PC_G2: ADD(32, -P);
+		case R_ARM_NONE: break;
+		case R_ARM_ABS32: ADD(32, 0);
+		case R_ARM_REL32: ADD(32, -P);
+		case R_ARM_ABS16: ADD(16, 0);
+		case R_ARM_ABS8: ADD(8, 0);
+		case R_ARM_SBREL32: ADD(32, -B);
+		case R_ARM_GLOB_DAT: ADD(32, 0);
+		case R_ARM_JUMP_SLOT: ADD(32, 0);
+		case R_ARM_COPY: ADD(32, 0); // copy symbol at runtime
+		case R_ARM_RELATIVE: ADD(32, B);
+		case R_ARM_GOTOFF: ADD(32, -GOT);
+		case R_ARM_GOTPC: ADD(32, GOT - P);
+		case R_ARM_CALL: ADD(24, -P);
+		case R_ARM_JUMP24: ADD(24, -P);
+		case R_ARM_THM_JUMP24: ADD(24, -P);
+		case R_ARM_PREL31: ADD(32, -P);
+		case R_ARM_MOVW_PREL_NC: ADD(16, -P);
+		case R_ARM_MOVT_PREL: ADD(32, -P);
+		case R_ARM_THM_MOVW_PREL_NC: ADD(16, -P);
+		case R_ARM_REL32_NOI: ADD(32, -P);
+		case R_ARM_ABS32_NOI: ADD(32, 0);
+		case R_ARM_ALU_PC_G0_NC: ADD(32, -P);
+		case R_ARM_ALU_PC_G0: ADD(32, -P);
+		case R_ARM_ALU_PC_G1_NC: ADD(32, -P);
+		case R_ARM_ALU_PC_G1: ADD(32, -P);
+		case R_ARM_ALU_PC_G2: ADD(32, -P);
+		case R_ARM_LDR_PC_G1: ADD(32, -P);
+		case R_ARM_LDR_PC_G2: ADD(32, -P);
+		case R_ARM_LDRS_PC_G0: ADD(32, -P);
+		case R_ARM_LDRS_PC_G1: ADD(32, -P);
+		case R_ARM_LDRS_PC_G2: ADD(32, -P);
+		case R_ARM_LDC_PC_G0: ADD(32, -P);
+		case R_ARM_LDC_PC_G1: ADD(32, -P);
+		case R_ARM_LDC_PC_G2: ADD(32, -P);
 		default: ADD(32, GOT); break; // reg relocations
 		}
 		break;
 	case EM_RISCV:
 		switch (rel->type) {
-		case RZ_RISCV_NONE: break;
-		case RZ_RISCV_JUMP_SLOT: ADD(64, 0);
-		case RZ_RISCV_RELATIVE: ADD(64, B);
+		case R_RISCV_NONE: break;
+		case R_RISCV_JUMP_SLOT: ADD(64, 0);
+		case R_RISCV_RELATIVE: ADD(64, B);
 		default: ADD(64, GOT); break; // reg relocations
 		}
 		break;
 	case EM_AARCH64:
 		switch (rel->type) {
-		case RZ_AARCH64_NONE: break;
-		case RZ_AARCH64_ABS32: ADD(32, 0);
-		case RZ_AARCH64_ABS16: ADD(16, 0);
-		case RZ_AARCH64_GLOB_DAT: SET(64);
-		case RZ_AARCH64_JUMP_SLOT: SET(64);
-		case RZ_AARCH64_RELATIVE: ADD(64, B);
+		case R_AARCH64_NONE: break;
+		case R_AARCH64_ABS32: ADD(32, 0);
+		case R_AARCH64_ABS16: ADD(16, 0);
+		case R_AARCH64_GLOB_DAT: SET(64);
+		case R_AARCH64_JUMP_SLOT: SET(64);
+		case R_AARCH64_RELATIVE: ADD(64, B);
 		default: break; // reg relocations
 		}
 		break;
 	case EM_PPC:
 		switch (rel->type) {
-		case RZ_PPC_NONE: break;
-		case RZ_PPC_GLOB_DAT: ADD(32, 0);
-		case RZ_PPC_JMP_SLOT: ADD(32, 0);
-		case RZ_PPC_COPY: ADD(32, 0); // copy symbol at runtime
-		case RZ_PPC_REL24: ADD(24, -P);
-		case RZ_PPC_REL14: ADD(16, -P);
-		case RZ_PPC_REL32: ADD(32, -P);
-		case RZ_PPC_RELATIVE: ADD(32, -P);
-		case RZ_PPC_PLT32: ADD(32, -P);
-		case RZ_PPC_ADDR16: ADD(16, 0);
-		case RZ_PPC_ADDR32: ADD(32, 0);
+		case R_PPC_NONE: break;
+		case R_PPC_GLOB_DAT: ADD(32, 0);
+		case R_PPC_JMP_SLOT: ADD(32, 0);
+		case R_PPC_COPY: ADD(32, 0); // copy symbol at runtime
+		case R_PPC_REL24: ADD(24, -P);
+		case R_PPC_REL14: ADD(16, -P);
+		case R_PPC_REL32: ADD(32, -P);
+		case R_PPC_RELATIVE: ADD(32, -P);
+		case R_PPC_PLT32: ADD(32, -P);
+		case R_PPC_ADDR16: ADD(16, 0);
+		case R_PPC_ADDR32: ADD(32, 0);
 		default:
 			RZ_LOG_WARN("unimplemented ELF/PPC reloc type %d\n", rel->type);
 			break;
