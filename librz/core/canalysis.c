@@ -6887,8 +6887,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		char strsub[128] = { 0 };
 		// pc+33
 		rz_parse_subvar(core->parser, NULL,
-			addr,
-			asmop.size, rz_asm_op_get_asm(&asmop),
+			ab->op, rz_asm_op_get_asm(&asmop),
 			strsub, sizeof(strsub));
 		ut64 subrel_addr = UT64_MAX;
 		if (rz_io_read_i(core->io, ab->op->ptr, &subrel_addr, ab->op->refptr, be)) {
@@ -6907,7 +6906,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
 		if (fcn) {
-			rz_parse_subvar(core->parser, fcn, addr, asmop.size,
+			rz_parse_subvar(core->parser, fcn, ab->op,
 				strsub, strsub, sizeof(strsub));
 		}
 		ab->disasm = strdup(strsub);

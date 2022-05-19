@@ -253,7 +253,9 @@ static char *mount_oldstr(RzParse *p, const char *reg, st64 delta, bool ucase) {
 	return oldstr;
 }
 
-static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
+	const ut64 addr = op->addr;
+	const int oplen = op->size;
 	RzList *spargs = NULL;
 	RzList *bpargs = NULL;
 	RzListIter *iter;
