@@ -596,6 +596,8 @@ RZ_API bool rz_core_raw_file_print(RzCore *core);
 RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode);
 RZ_API int rz_core_file_binlist(RzCore *core);
 RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 num);
+RZ_API void rz_core_io_file_open(RzCore *core, int fd);
+RZ_API void rz_core_io_file_reopen(RzCore *core, int fd, int perms);
 RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, ut64 size);
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz);

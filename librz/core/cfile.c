@@ -1556,9 +1556,7 @@ RZ_API RzCoreFile *rz_core_file_cur(RzCore *r) {
 	return r->file;
 }
 
-/* --------------------------------------------------------------------------------- */
-
-RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
+RZ_API void rz_core_io_file_open(RzCore *core, int fd) {
 	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		rz_io_reopen(core->io, fd, RZ_PERM_R, 644);
 		return;
@@ -1600,7 +1598,7 @@ RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
 	free(file);
 }
 
-RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
+RZ_API void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
 	if (rz_io_reopen(core->io, fd, perms, 644)) {
 		void **it;
 		RzPVector *maps = rz_io_maps(core->io);
@@ -1612,6 +1610,8 @@ RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
 		}
 	}
 }
+
+/* --------------------------------------------------------------------------------- */
 
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig) {
 	RzCoreIOMapInfo *info = RZ_NEW(RzCoreIOMapInfo);
