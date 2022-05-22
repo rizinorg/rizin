@@ -1556,6 +1556,11 @@ RZ_API RzCoreFile *rz_core_file_cur(RzCore *r) {
 	return r->file;
 }
 
+/**
+ * \brief Open file use read-only Permission
+ * \param core RzCore instance
+ * \param fd File descriptor
+ */
 RZ_API void rz_core_io_file_open(RzCore *core, int fd) {
 	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		rz_io_reopen(core->io, fd, RZ_PERM_R, 644);
@@ -1598,6 +1603,12 @@ RZ_API void rz_core_io_file_open(RzCore *core, int fd) {
 	free(file);
 }
 
+/**
+ * \brief Reopen file
+ * \param core RzCore instance
+ * \param fd File descriptor
+ * \param perms Permission \s RZ_PERM_R
+ */
 RZ_API void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
 	if (rz_io_reopen(core->io, fd, perms, 644)) {
 		void **it;

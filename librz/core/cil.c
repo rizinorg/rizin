@@ -47,6 +47,10 @@ RZ_IPI void rz_core_analysis_esil_init(RzCore *core) {
 	core_esil_init(core);
 }
 
+/**
+ * \brief Reinitialize ESIL
+ * \param core RzCore reference
+ */
 RZ_API void rz_core_analysis_esil_reinit(RzCore *core) {
 	rz_analysis_esil_free(core->analysis->esil);
 	core_esil_init(core);
@@ -127,7 +131,7 @@ static char *get_esil_stack_name(RzCore *core, const char *name, ut64 *addr, ut3
  * \param addr Base address of the stack region, if UT64_MAX it is automatically computed
  * \param size Size of the stack region, if UT32_MAX it is automatically computed
  */
-RZ_API void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 addr, ut32 size) {
+RZ_API void rz_core_analysis_esil_init_mem(RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size) {
 	ut64 current_offset = core->offset;
 	rz_core_analysis_esil_init(core);
 	RzAnalysisEsil *esil = core->analysis->esil;

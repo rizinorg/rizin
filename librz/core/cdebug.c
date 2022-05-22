@@ -227,12 +227,17 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 	rz_config_set_b(core->config, "io.cache", io_cache);
 }
 
+/**
+ * \brief Toggle breakpoint
+ * \param core RzCore instance
+ * \param addr Breakpoint addr
+ */
 RZ_API void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
 	RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
 	if (bpi) {
 		rz_bp_del(core->dbg->bp, addr);
 	} else {
-		int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
+		int hwbp = (int)rz_config_get_i(core->config, "dbg.hwbp");
 		bpi = rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
 		if (!bpi) {
 			eprintf("Cannot set breakpoint at 0x%" PFMT64x "\n", addr);
