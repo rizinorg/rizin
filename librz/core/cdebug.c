@@ -227,7 +227,7 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 	rz_config_set_b(core->config, "io.cache", io_cache);
 }
 
-RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
+RZ_API void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
 	RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
 	if (bpi) {
 		rz_bp_del(core->dbg->bp, addr);
