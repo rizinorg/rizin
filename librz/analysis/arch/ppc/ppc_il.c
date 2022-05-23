@@ -415,7 +415,7 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 	case PPC_INS_B:
 	case PPC_INS_BL:
 		// CIA + EXTS(LI || 0b00)
-		return EXTS(ADD(UA(insn->address), APPEND(UN(24, INSOP(0).imm), UN(2, 0))));
+		return EXTS(ADD(UA(insn->address), EXTS(APPEND(UN(24, INSOP(0).imm), UN(2, 0)))));
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
 	case PPC_INS_BCT:
@@ -424,7 +424,7 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZL:
 		// CIA + EXTS(BD || 0b00)
-		return EXTS(ADD(UA(insn->address), APPEND(UN(14, INSOP(0).imm), UN(2, 0))));
+		return EXTS(ADD(UA(insn->address), EXTS(APPEND(UN(14, INSOP(0).imm), UN(2, 0)))));
 	// Branch to LR
 	case PPC_INS_BLR:
 	case PPC_INS_BLRL:
