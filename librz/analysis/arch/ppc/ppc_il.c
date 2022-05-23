@@ -234,6 +234,24 @@ bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	switch (id) {
 	default:
 		return false;
+	case PPC_INS_BC:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BDNZ:
+	case PPC_INS_BDNZA:
+	case PPC_INS_BDNZL:
+	case PPC_INS_BDNZLA:
+	case PPC_INS_BDNZLR:
+	case PPC_INS_BDNZLRL:
+	case PPC_INS_BDZ:
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZL:
+	case PPC_INS_BDZLA:
+	case PPC_INS_BDZLR:
+	case PPC_INS_BDZLRL:
+	case PPC_INS_BCT:
+		return !((0x4) & INSOP(0).imm); // not BO_2
 	}
 }
 
