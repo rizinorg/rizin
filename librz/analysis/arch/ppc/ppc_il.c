@@ -205,6 +205,25 @@ bool ppc_is_conditional(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
+	case PPC_INS_BC:
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BCT:
+	case PPC_INS_BDNZ:
+	case PPC_INS_BDNZA:
+	case PPC_INS_BDNZL:
+	case PPC_INS_BDNZLA:
+	case PPC_INS_BDNZLR:
+	case PPC_INS_BDNZLRL:
+	case PPC_INS_BDZ:
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZL:
+	case PPC_INS_BDZLA:
+	case PPC_INS_BDZLR:
+	case PPC_INS_BDZLRL:
+		return true;
 	}
 }
 
@@ -353,7 +372,7 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
  *
  * \param insn The capstone instructions.
  * \param mode The capstone mode.
- * \return RzILOpPure* The condition the branch occurs as a Pure.
+ * \return RzILOpPure* The target address of the jump.
  */
 RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, NULL);
