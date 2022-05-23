@@ -452,7 +452,10 @@ static char *langFromHashbang(RzCore *core, const char *file) {
 	return NULL;
 }
 
-RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
+/* \brief Run the script defined by path in \p file. Could be a Rizin script, or rz-pipe one.
+ */
+RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
+	rz_return_val_if_fail(file, false);
 	bool ret = false;
 	RzListIter *iter;
 	RzLangPlugin *p;
@@ -460,7 +463,7 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 
 	rz_list_foreach (core->scriptstack, iter, name) {
 		if (!strcmp(file, name)) {
-			eprintf("WARNING: ignored nested source: %s\n", file);
+			RZ_LOG_WARN("Ignored nested source: '%s'\n", file);
 			return false;
 		}
 	}
@@ -3678,6 +3681,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 		free(command_str);
 		res = core_cmd_tsrzcmd(state->core, exec_string, state->split_lines, false);
 		free(exec_string);
+		free(command_extra_str);
 		return res;
 	}
 

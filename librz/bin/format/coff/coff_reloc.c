@@ -43,7 +43,7 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 		if (!bin->scn_hdrs[i].s_nreloc) {
 			continue;
 		}
-		int len = 0, size = bin->scn_hdrs[i].s_nreloc * sizeof(struct coff_reloc);
+		int size = bin->scn_hdrs[i].s_nreloc * sizeof(struct coff_reloc);
 		if (size < 0) {
 			break;
 		}
@@ -56,8 +56,18 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 			free(rel);
 			break;
 		}
-		len = rz_buf_read_at(bin->b, bin->scn_hdrs[i].s_relptr, (ut8 *)rel, size);
-		if (len != size) {
+		ut64 offset = bin->scn_hdrs[i].s_relptr;
+		bool read_success = false;
+		for (size_t j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
+			struct coff_reloc *coff_rel = rel + j;
+			read_success = rz_buf_read_le32_offset(bin->b, &offset, &coff_rel->rz_vaddr) &&
+				rz_buf_read_le32_offset(bin->b, &offset, &coff_rel->rz_symndx) &&
+				rz_buf_read_le16_offset(bin->b, &offset, &coff_rel->rz_type);
+			if (!read_success) {
+				break;
+			}
+		}
+		if (!read_success) {
 			free(rel);
 			break;
 		}

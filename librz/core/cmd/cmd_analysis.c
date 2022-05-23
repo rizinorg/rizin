@@ -1827,67 +1827,12 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_breakpoint_handler(RzCore *core, i
 
 // aecs
 RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int argc, const char **argv) {
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	RzAnalysisOp *op;
-	while (!rz_cons_is_breaked()) {
-		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-			break;
-		}
-		rz_core_reg_update_flags(core);
-		ut64 addr = rz_num_get(core->num, pc);
-		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-		if (!op) {
-			break;
-		}
-		if (op->type == RZ_ANALYSIS_OP_TYPE_SWI) {
-			RZ_LOG_ERROR("syscall at 0x%08" PFMT64x "\n", addr);
-			break;
-		} else if (op->type == RZ_ANALYSIS_OP_TYPE_TRAP) {
-			RZ_LOG_ERROR("trap at 0x%08" PFMT64x "\n", addr);
-			break;
-		}
-		rz_analysis_op_free(op);
-		op = NULL;
-		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-			break;
-		}
-	}
-	if (op) {
-		rz_analysis_op_free(op);
-		op = NULL;
-	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_analysis_continue_until_syscall(core));
 }
 
 // aecc
 RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int argc, const char **argv) {
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	RzAnalysisOp *op;
-	while (!rz_cons_is_breaked()) {
-		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-			break;
-		}
-		rz_core_reg_update_flags(core);
-		ut64 addr = rz_num_get(core->num, pc);
-		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
-		if (!op) {
-			break;
-		}
-		if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
-			RZ_LOG_ERROR("call at 0x%08" PFMT64x "\n", addr);
-			break;
-		}
-		rz_analysis_op_free(op);
-		op = NULL;
-		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-			break;
-		}
-	}
-	if (op) {
-		rz_analysis_op_free(op);
-		op = NULL;
-	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_analysis_continue_until_call(core));
 }
 
 // aecu
@@ -2031,6 +1976,7 @@ RZ_IPI RzCmdStatus rz_il_step_until_expr_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_il_step_until_opt_handler(RzCore *core, int argc, const char **argv) {
 	RzList *optypes_list = rz_list_new_from_array((const void **)&argv[1], argc - 1);
 	step_until_optype(core, optypes_list);
+	rz_list_free(optypes_list);
 	rz_core_reg_update_flags(core);
 	return RZ_CMD_STATUS_OK;
 }
@@ -5079,7 +5025,7 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 				xref->type ? xref->type : ' ', xref->to, desc);
 
 			if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
-				RzAnalysisOp aop;
+				RzAnalysisOp aop = { 0 };
 				rz_analysis_op(core->analysis, &aop, xref->to, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 				if (aop.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
 					cmd_analysis_ucall_ref(core, xref->to);
@@ -5768,7 +5714,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_ascii_handler(RzCore *core, int arg
 	RzTable *table = rz_core_table(core);
 	rz_table_visual_list(table, flist, core->offset, core->blocksize,
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
-	rz_cons_printf("\n%s\n", rz_table_tostring(table));
+	char *tablestr = rz_table_tostring(table);
+	rz_cons_printf("\n%s\n", tablestr);
+	free(tablestr);
 	rz_table_free(table);
 	rz_list_free(flist);
 	rz_list_free(fcns);
@@ -6364,6 +6312,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_create_handler(RzCore *core, int argc, c
 	}
 	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, argv[1], core->offset, type, diff);
 	if (!fcn) {
+		rz_analysis_diff_free(diff);
 		RZ_LOG_ERROR("Cannot add function (duplicated)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -6685,55 +6634,7 @@ RZ_IPI RzCmdStatus rz_analysis_hint_del_immbase_handler(RzCore *core, int argc, 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_hint_set_offset_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisOp op = { 0 };
-	ut8 code[128] = { 0 };
-	if (!rz_io_read_at(core->io, core->offset, code, sizeof(code))) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
-	int ret = rz_analysis_op(core->analysis, &op, core->offset, code, sizeof(code), RZ_ANALYSIS_OP_MASK_VAL);
-	if (ret < 1) {
-		goto exit;
-	}
-	// HACK: Just convert only the first imm seen
-	ut64 offimm = 0;
-	for (int i = 0; i < 3; i++) {
-		if (op.src[i]) {
-			if (op.src[i]->imm) {
-				offimm = op.src[i]->imm;
-			} else if (op.src[i]->delta) {
-				offimm = op.src[i]->delta;
-			}
-		}
-	}
-	if (!offimm && op.dst) {
-		if (op.dst->imm) {
-			offimm = op.dst->imm;
-		} else if (op.dst->delta) {
-			offimm = op.dst->delta;
-		}
-	}
-	if (!offimm) {
-		goto exit;
-	}
-	// TODO: Allow to select from multiple choices
-	RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
-	RzListIter *iter;
-	RzTypePath *tpath;
-	rz_list_foreach (otypes, iter, tpath) {
-		// TODO: Support also arrays and pointers
-		if (tpath->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
-			if (!strcmp(argv[1], tpath->path)) {
-				rz_analysis_hint_set_offset(core->analysis, core->offset, tpath->path);
-				break;
-			}
-		}
-	}
-	rz_list_free(otypes);
-	res = RZ_CMD_STATUS_OK;
-exit:
-	rz_analysis_op_fini(&op);
-	return res;
+	return bool2status(rz_core_analysis_hint_set_offset(core, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_analysis_hint_del_offset_handler(RzCore *core, int argc, const char **argv) {

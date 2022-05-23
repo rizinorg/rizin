@@ -546,6 +546,25 @@ commands:
         args:
           - name: tag
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: dl
+    summary: Debug handler
+    subcommands:
+      - name: dl
+        summary: Set debugger handler
+        cname: cmd_debug_handler_set
+        args:
+          - name: handler
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: dll
+        summary: List debugger handler
+        cname: cmd_debug_handler_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        args: []
   - name: dm
     summary: Memory map commands
     subcommands:

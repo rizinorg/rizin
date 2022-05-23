@@ -217,10 +217,8 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 		return false;
 	}
 
-	if (lang->cur->prompt) {
-		if (lang->cur->prompt(lang)) {
-			return true;
-		}
+	if (lang->cur->prompt && lang->cur->prompt(lang)) {
+		return true;
 	}
 	/* init line */
 	RzLine *line = rz_line_singleton();
@@ -237,13 +235,6 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 		rz_cons_flush();
 		snprintf(buf, sizeof(buf) - 1, "%s> ", lang->cur->name);
 		rz_line_set_prompt(buf);
-#if 0
-		printf ("%s> ", lang->cur->name);
-		fflush (stdout);
-		fgets (buf, sizeof (buf), stdin);
-		if (feof (stdin)) break;
-		rz_str_trim_tail (buf);
-#endif
 		p = rz_line_readline();
 		if (!p) {
 			break;

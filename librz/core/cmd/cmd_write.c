@@ -517,6 +517,7 @@ RZ_IPI RzCmdStatus rz_write_block_handler(RzCore *core, int argc, const char **a
 
 	int len = rz_hex_str2bin(argv[1], hex);
 	if (len <= 0) {
+		free(hex);
 		RZ_LOG_ERROR("Cannot convert '%s' to hex data.\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}

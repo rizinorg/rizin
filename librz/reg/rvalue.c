@@ -186,6 +186,7 @@ RZ_API ut64 rz_reg_get_value_by_role(RzReg *reg, RzRegisterId role) {
 RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 	ut8 bytes[12];
 	ut8 *src = bytes;
+	bool unset_src = false;
 	rz_return_val_if_fail(reg && item, false);
 
 	if (rz_reg_is_readonly(reg, item)) {
@@ -202,6 +203,7 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 	case 80:
 	case 96: // long floating value
 		rz_reg_set_longdouble(reg, item, (long double)value);
+		unset_src = true;
 		break;
 	case 64:
 		if (reg->big_endian) {
@@ -264,11 +266,11 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 		// XXX 128 & 256 bit
 		return false; // (ut64)rz_reg_get_longdouble (reg, item);
 	default:
-		eprintf("rz_reg_set_value: Bit size %d not supported\n", item->size);
+		RZ_LOG_ERROR("rz_reg_set_value: Bit size %d not supported\n", item->size);
 		return false;
 	}
 	const bool fits_in_arena = (arena->size - BITS2BYTES(item->offset) - BITS2BYTES(item->size)) >= 0;
-	if (src && fits_in_arena) {
+	if (!unset_src && fits_in_arena) {
 		rz_mem_copybits(reg->regset[item->arena].arena->bytes +
 				BITS2BYTES(item->offset),
 			src, item->size);

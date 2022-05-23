@@ -384,7 +384,7 @@ RZ_IPI RzCmdStatus rz_meta_data_handler(RzCore *core, int argc, const char **arg
 	ut64 size = rz_num_math(core->num, argv[1]);
 	ut64 repeat = argc > 2 ? rz_num_math(core->num, argv[2]) : 1;
 	if (size == 0 || repeat == 0) {
-		RZ_LOG_ERROR("Data size or repeat count cannot be zero");
+		RZ_LOG_ERROR("Data size or repeat count cannot be zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (i = 0; i < repeat; i++, addr += size) {
@@ -413,7 +413,7 @@ RZ_IPI RzCmdStatus rz_meta_data_remove_handler(RzCore *core, int argc, const cha
 		ut64 size = rz_num_math(core->num, argv[1]);
 		ut64 repeat = argc > 2 ? rz_num_math(core->num, argv[2]) : 1;
 		if (size == 0 || repeat == 0) {
-			RZ_LOG_ERROR("Data size or repeat count cannot be zero");
+			RZ_LOG_ERROR("Data size or repeat count cannot be zero\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		for (i = 0; i < repeat; i++, addr += size) {

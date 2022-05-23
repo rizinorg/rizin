@@ -379,10 +379,11 @@ RZ_API bool rz_cons_is_breaked(void) {
 RZ_API int rz_cons_get_cur_line(void) {
 	int curline = 0;
 #if __WINDOWS__
-	POINT point;
-	if (GetCursorPos(&point)) {
-		curline = point.y;
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	if (!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info)) {
+		return 0;
 	}
+	curline = info.dwCursorPosition.Y - info.srWindow.Top;
 #endif
 #if __UNIX__
 	char buf[8];

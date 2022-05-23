@@ -5,7 +5,7 @@ aap
 aflc
 EOF
 EXPECT=<<EOF
-445
+444
 EOF
 RUN
 
@@ -638,7 +638,7 @@ aac
 afl~?
 EOF
 EXPECT=<<EOF
-1270
+1268
 EOF
 RUN
 
@@ -4018,5 +4018,68 @@ arg int64_t arg4 @ rcx
 arg const char ** s @ rdx
 arg int64_t arg2 @ rsi
 arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=double jump function
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 7421eb1a4889c3488d45d04889c7e8450000004889d84889c7e874feffffe82ffeffff4883c4485b5dc3
+af
+afbt
+EOF
+EXPECT=<<EOF
+addr size jump fail 
+--------------------
+0x0  2    0x23 0x2
+0x2  2    0x1e -1
+0x1e 5    0x23 -1
+0x23 7    -1   -1
+EOF
+RUN
+
+NAME=analysis endsize 
+FILE=bins/elf/libc.so.6
+CMDS=<<EOF
+s 0x000a3a20
+af
+afbt
+EOF
+EXPECT=<<EOF
+addr    size jump    fail    
+-----------------------------
+0xa3a20 17   0xa3b4b 0xa3a31
+0xa3a31 10   0xa3b9a 0xa3a3b
+0xa3a3b 17   -1      -1
+0xa3b4a 1    -1      -1
+0xa3b4b 5    0xa3b62 0xa3b50
+0xa3b50 5    0xa3b73 0xa3b55
+0xa3b55 5    0xa3b80 0xa3b5a
+0xa3b5a 2    0xa3b61 0xa3b5c
+0xa3b5c 5    0xa3b61 -1
+0xa3b61 1    -1      -1
+0xa3b62 17   -1      -1
+0xa3b73 13   -1      -1
+0xa3b80 17   -1      -1
+0xa3b9a 9    0xa3c13 0xa3ba3
+0xa3ba3 6    0xa3bf0 0xa3ba9
+0xa3ba9 71   -1      -1
+0xa3bf0 35   -1      -1
+0xa3c13 9    0xa3ca8 0xa3c1c
+0xa3c1c 6    0xa3b4a 0xa3c22
+0xa3c22 65   0xa3d2f 0xa3c63
+0xa3c63 48   0xa3c63 0xa3c93
+0xa3c93 21   -1      -1
+0xa3ca8 63   0xa3d96 0xa3ce7
+0xa3ce7 52   0xa3ce7 0xa3d1b
+0xa3d1b 20   -1      -1
+0xa3d2f 13   0xa3c63 0xa3d3c
+0xa3d3c 66   0xa3d3c 0xa3d7e
+0xa3d7e 24   -1      -1
+0xa3d96 13   0xa3ce7 0xa3da3
+0xa3da3 67   0xa3da3 0xa3de6
+0xa3de6 23   -1      -1
 EOF
 RUN

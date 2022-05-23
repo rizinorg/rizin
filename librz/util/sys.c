@@ -71,6 +71,7 @@ extern char **environ;
 #if __WINDOWS__
 #include <io.h>
 #include <rz_windows.h>
+#include <VersionHelpers.h>
 #include <signal.h>
 #define TMP_BUFSIZE 4096
 #ifdef _MSC_VER
@@ -199,12 +200,18 @@ static HANDLE sys_opendir(const char *path, WIN32_FIND_DATAW *entry) {
 	rz_return_val_if_fail(path, NULL);
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath = 0;
+	static bool win_ver_initialized = false;
+	static bool is_win_7_or_greater = false;
+	if (!win_ver_initialized) {
+		is_win_7_or_greater = IsWindows7OrGreater();
+		win_ver_initialized = true;
+	}
 	if (!(wcpath = rz_utf8_to_utf16(path))) {
 		return NULL;
 	}
 	swprintf(dir, MAX_PATH, L"%ls\\*.*", wcpath);
 	free(wcpath);
-	return FindFirstFileW(dir, entry);
+	return FindFirstFileExW(dir, is_win_7_or_greater ? FindExInfoBasic : FindExInfoStandard, entry, FindExSearchNameMatch, NULL, 0);
 }
 #else
 static DIR *sys_opendir(const char *path) {
@@ -227,8 +234,7 @@ RZ_API RzList *rz_sys_dir(const char *path) {
 	if (list) {
 		do {
 			if ((cfname = rz_utf16_to_utf8(entry.cFileName))) {
-				rz_list_append(list, strdup(cfname));
-				free(cfname);
+				rz_list_append(list, cfname);
 			}
 		} while (FindNextFileW(fh, &entry));
 	}

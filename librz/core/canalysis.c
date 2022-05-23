@@ -5735,11 +5735,12 @@ static bool is_apple_target(RzCore *core) {
  */
 RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig) {
 	bool didAap = false;
+	const char *notify = NULL;
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool plugin_supports_esil = core->analysis->cur->esil;
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
-		rz_core_notify_done(core, "Find function and symbol names from golang binaries (aalg)");
+		rz_core_notify_done(core, "Find function and symbol names from golang binaries");
 		if (rz_core_analysis_recover_golang_functions(core)) {
 			rz_core_analysis_resolve_golang_strings(core);
 		}
@@ -5759,45 +5760,51 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
-	rz_core_notify_begin(core, "Analyze function calls (aac)");
+	notify = "Analyze function calls";
+	rz_core_notify_begin(core, "%s", notify);
 	(void)rz_core_analysis_calls(core, false); // "aac"
 	rz_core_seek(core, curseek, true);
-	rz_core_notify_done(core, "Analyze function calls (aac)");
+	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
 	if (rz_cons_is_breaked()) {
 		return false;
 	}
 
 	if (is_unknown_file(core)) {
-		rz_core_notify_begin(core, "find and analyze function preludes (aap)");
+		notify = "find and analyze function preludes";
+		rz_core_notify_begin(core, "%s", notify);
 		(void)rz_core_search_preludes(core, false); // "aap"
 		didAap = true;
-		rz_core_notify_done(core, "find and analyze function preludes (aap)");
+		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 		if (rz_cons_is_breaked()) {
 			return false;
 		}
 	}
 
-	rz_core_notify_begin(core, "Analyze len bytes of instructions for references (aar)");
+	notify = "Analyze len bytes of instructions for references";
+	rz_core_notify_begin(core, "%s", notify);
 	(void)rz_core_analysis_refs(core, 0); // "aar"
-	rz_core_notify_done(core, "Analyze len bytes of instructions for references (aar)");
+	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
 	if (rz_cons_is_breaked()) {
 		return false;
 	}
 
 	if (is_apple_target(core)) {
-		rz_core_notify_begin(core, "Check for objc references (aalo)");
+		notify = "Check for objc references";
+		rz_core_notify_begin(core, "%s", notify);
 		cmd_analysis_objc(core, true);
-		rz_core_notify_done(core, "Check for objc references (aalo)");
+		rz_core_notify_done(core, "%s", notify);
 	}
 	rz_core_task_yield(&core->tasks);
 
-	rz_core_notify_begin(core, "Check for classes");
+	notify = "Check for classes";
+	rz_core_notify_begin(core, "%s", notify);
 	rz_analysis_class_recover_all(core->analysis);
-	rz_core_notify_done(core, "Check for classes");
+	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
+
 	rz_config_set_i(core->config, "analysis.calls", c);
 	rz_core_task_yield(&core->tasks);
 	if (rz_cons_is_breaked()) {
@@ -5809,7 +5816,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_task_yield(&core->tasks);
 		bool pcache = rz_config_get_b(core->config, "io.pcache");
 		rz_config_set_b(core->config, "io.pcache", false);
-		const char *notify = "Emulate functions to find computed references (aaef)";
+		notify = "Emulate functions to find computed references";
 		rz_core_notify_begin(core, "%s", notify);
 		if (plugin_supports_esil) {
 			rz_core_analysis_esil_references_all_functions(core);
@@ -5821,15 +5828,19 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 			return false;
 		}
 	}
+
 	if (rz_config_get_i(core->config, "analysis.autoname")) {
-		const char *notify = "Speculatively constructing a function name "
-				     "for fcn.* and sym.func.* functions (aan)";
+		notify = "Speculatively constructing a function name "
+			 "for fcn.* and sym.func.* functions (aan)";
 		rz_core_notify_begin(core, "%s", notify);
 		rz_core_analysis_autoname_all_fcns(core);
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 	}
+
 	if (core->analysis->opt.vars) {
+		notify = "Analyze local variables and arguments";
+		rz_core_notify_begin(core, "%s", notify);
 		RzAnalysisFunction *fcni;
 		RzListIter *iter;
 		rz_list_foreach (core->analysis->fcns, iter, fcni) {
@@ -5845,62 +5856,24 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 			rz_core_recover_vars(core, fcni, true);
 			rz_list_free(list);
 		}
+		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 	}
+
 	if (!sdb_isempty(core->analysis->sdb_zigns)) {
-		const char *notify = "Check for zignature from zigns folder (z/)";
+		notify = "Check for zignature from zigns folder";
 		rz_core_notify_begin(core, "%s", notify);
 		rz_core_cmd0(core, "z/");
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 	}
+
 	if (plugin_supports_esil) {
-		const char *notify = "Type matching analysis for all functions (aaft)";
+		notify = "Type matching analysis for all functions";
 		rz_core_notify_begin(core, "%s", notify);
 		rz_core_analysis_types_propagation(core);
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
-	}
-
-	{
-		const char *notify = "Propagate noreturn information";
-		rz_core_notify_begin(core, "%s", notify);
-		rz_core_analysis_propagate_noreturn(core, UT64_MAX);
-		rz_core_notify_done(core, "%s", notify);
-		rz_core_task_yield(&core->tasks);
-	}
-
-	// Apply DWARF function information
-	Sdb *dwarf_sdb = sdb_ns(core->analysis->sdb, "dwarf", 0);
-	if (dwarf_sdb) {
-		const char *notify = "Integrate dwarf function information.";
-		rz_core_notify_begin(core, "%s", notify);
-		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags, dwarf_sdb);
-		rz_core_notify_done(core, "%s", notify);
-	}
-
-	rz_core_notify_done(core, "Use -AA or aaaa to perform additional experimental analysis.");
-
-	if (experimental) {
-		if (!didAap) {
-			const char *notify = "Finding function preludes";
-			rz_core_notify_begin(core, "%s", notify);
-			(void)rz_core_search_preludes(core, false); // "aap"
-			rz_core_notify_done(core, "%s", notify);
-			rz_core_task_yield(&core->tasks);
-		}
-		const char *notify = "Enable constraint types analysis for variables";
-		rz_core_notify_begin(core, "%s", notify);
-		rz_config_set(core->config, "analysis.types.constraint", "true");
-		rz_core_notify_done(core, "%s", notify);
-	}
-	rz_core_seek_undo(core);
-	if (dh_orig) {
-		rz_config_set(core->config, "dbg.backend", dh_orig);
-		rz_core_task_yield(&core->tasks);
-	}
-	if (!is_unknown_file(core)) {
-		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
 	}
 
 	if (rz_config_get_b(core->config, "analysis.apply.signature")) {
@@ -5908,6 +5881,48 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_notify_begin(core, "Applying signatures from sigdb");
 		rz_core_analysis_sigdb_apply(core, &n_applied, NULL);
 		rz_core_notify_done(core, "Applied %d FLIRT signatures via sigdb", n_applied);
+		rz_core_task_yield(&core->tasks);
+	}
+
+	notify = "Propagate noreturn information";
+	rz_core_notify_begin(core, "%s", notify);
+	rz_core_analysis_propagate_noreturn(core, UT64_MAX);
+	rz_core_notify_done(core, "%s", notify);
+	rz_core_task_yield(&core->tasks);
+
+	// Apply DWARF function information
+	Sdb *dwarf_sdb = sdb_ns(core->analysis->sdb, "dwarf", 0);
+	if (dwarf_sdb) {
+		notify = "Integrate dwarf function information.";
+		rz_core_notify_begin(core, "%s", notify);
+		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags, dwarf_sdb);
+		rz_core_notify_done(core, "%s", notify);
+	}
+
+	if (experimental) {
+		if (!didAap) {
+			notify = "Finding function preludes";
+			rz_core_notify_begin(core, "%s", notify);
+			(void)rz_core_search_preludes(core, false); // "aap"
+			rz_core_notify_done(core, "%s", notify);
+			rz_core_task_yield(&core->tasks);
+		}
+		notify = "Enable constraint types analysis for variables";
+		rz_core_notify_begin(core, "%s", notify);
+		rz_config_set(core->config, "analysis.types.constraint", "true");
+		rz_core_notify_done(core, "%s", notify);
+	} else {
+		rz_core_notify_done(core, "Use -AA or aaaa to perform additional experimental analysis.");
+	}
+
+	rz_core_seek_undo(core);
+	if (dh_orig) {
+		rz_config_set(core->config, "dbg.backend", dh_orig);
+		rz_core_task_yield(&core->tasks);
+	}
+
+	if (!is_unknown_file(core)) {
+		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
 	}
 
 	return true;
@@ -6028,6 +6043,9 @@ RZ_API bool rz_core_analysis_sigdb_apply(RZ_NONNULL RzCore *core, RZ_NULLABLE in
 
 	n_flags_old = rz_flag_count(core->flags, "flirt");
 	rz_list_foreach (sigdb, iter, sig) {
+		if (rz_cons_is_breaked()) {
+			break;
+		}
 		if (RZ_STR_ISEMPTY(filter)) {
 			// apply signatures automatically based on bin, arch and bits
 			if (strcmp(bin, sig->bin_name) || strcmp(arch, sig->arch_name) || bits != sig->arch_bits) {
@@ -6850,4 +6868,131 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		ab->bytes = rz_hex_bin2strdup(buf + idx, ab->op->size);
 	}
 	return vec;
+}
+
+/**
+ * \brief Set analysis hint for the first immediate of the instruction at current offset to \p struct_member.
+ * \param core The RzCore instance
+ * \param struct_member struct.member
+ */
+RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL const char *struct_member) {
+	rz_return_val_if_fail(core && struct_member, false);
+	RzAnalysisOp op = { 0 };
+	ut8 code[128] = { 0 };
+	if (!rz_io_read_at(core->io, core->offset, code, sizeof(code))) {
+		return false;
+	}
+	bool res = false;
+	int ret = rz_analysis_op(core->analysis, &op, core->offset, code, sizeof(code), RZ_ANALYSIS_OP_MASK_VAL);
+	if (ret < 1) {
+		goto exit;
+	}
+	// HACK: Just convert only the first imm seen
+	ut64 offimm = 0;
+	for (int i = 0; i < 3; i++) {
+		if (op.src[i]) {
+			if (op.src[i]->imm) {
+				offimm = op.src[i]->imm;
+			} else if (op.src[i]->delta) {
+				offimm = op.src[i]->delta;
+			}
+		}
+	}
+	if (!offimm && op.dst) {
+		if (op.dst->imm) {
+			offimm = op.dst->imm;
+		} else if (op.dst->delta) {
+			offimm = op.dst->delta;
+		}
+	}
+	if (!offimm) {
+		goto exit;
+	}
+	// TODO: Allow to select from multiple choices
+	RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
+	RzListIter *iter;
+	RzTypePath *tpath;
+	rz_list_foreach (otypes, iter, tpath) {
+		// TODO: Support also arrays and pointers
+		if (tpath->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
+			if (!strcmp(struct_member, tpath->path)) {
+				rz_analysis_hint_set_offset(core->analysis, core->offset, tpath->path);
+				break;
+			}
+		}
+	}
+	rz_list_free(otypes);
+	res = true;
+exit:
+	rz_analysis_op_fini(&op);
+	return res;
+}
+
+/**
+ * \brief Continue until syscall
+ * \param core The RzCore instance
+ * \return success
+ */
+RZ_API bool rz_core_analysis_continue_until_syscall(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, false);
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+	RzAnalysisOp *op = NULL;
+	while (!rz_cons_is_breaked()) {
+		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
+			break;
+		}
+		rz_core_reg_update_flags(core);
+		ut64 addr = rz_num_get(core->num, pc);
+		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+		if (!op) {
+			break;
+		}
+		if (op->type == RZ_ANALYSIS_OP_TYPE_SWI) {
+			RZ_LOG_ERROR("syscall at 0x%08" PFMT64x "\n", addr);
+			break;
+		} else if (op->type == RZ_ANALYSIS_OP_TYPE_TRAP) {
+			RZ_LOG_ERROR("trap at 0x%08" PFMT64x "\n", addr);
+			break;
+		}
+		rz_analysis_op_free(op);
+		op = NULL;
+		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
+			break;
+		}
+	}
+	rz_analysis_op_free(op);
+	return true;
+}
+
+/**
+ * \brief Continue until call
+ * \param core The RzCore instance
+ * \return success
+ */
+RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, false);
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+	RzAnalysisOp *op = NULL;
+	while (!rz_cons_is_breaked()) {
+		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
+			break;
+		}
+		rz_core_reg_update_flags(core);
+		ut64 addr = rz_num_get(core->num, pc);
+		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (!op) {
+			break;
+		}
+		if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
+			RZ_LOG_ERROR("call at 0x%08" PFMT64x "\n", addr);
+			break;
+		}
+		rz_analysis_op_free(op);
+		op = NULL;
+		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
+			break;
+		}
+	}
+	rz_analysis_op_free(op);
+	return true;
 }

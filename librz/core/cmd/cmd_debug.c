@@ -178,15 +178,6 @@ static const char *help_msg_dx[] = {
 	NULL
 };
 
-static const char *help_msg_dL[] = {
-	"Usage: dL", "", " # List or set debugger handler",
-	"dL", "", "List debugger handlers",
-	"dLq", "", "List debugger handlers in quiet mode",
-	"dLj", "", "List debugger handlers in json mode",
-	"dL", " <handler>", "Set debugger handler",
-	NULL
-};
-
 struct dot_trace_ght {
 	RzGraph *graph;
 	Sdb *graphnodes;
@@ -201,6 +192,7 @@ struct trace_node {
 static void set_profile_string(RzCore *core, const char *str) {
 	char *file = strdup(rz_config_get(core->config, "dbg.profile"));
 	if (RZ_STR_ISEMPTY(file)) {
+		free(file);
 		file = rz_file_temp("rz-run");
 		rz_config_set(core->config, "dbg.profile", file);
 	}
@@ -491,7 +483,7 @@ RZ_API void rz_core_dbg_follow_seek_register(RzCore *core) {
 	rz_core_debug_sync_bits(core);
 }
 
-static int step_until_optype(RzCore *core, RzList *optypes_list) {
+static bool step_until_optype(RzCore *core, RzList *optypes_list) {
 	RzAnalysisOp op;
 	ut8 buf[32];
 	ut64 pc;
@@ -1570,61 +1562,6 @@ static void asciiart_backtrace(RzCore *core, RzList *frames) {
 	}
 }
 
-static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
-	char **flagdesc, char **flagdesc2, char **pcstr, char **spstr) {
-	RzFlagItem *f = rz_flag_get_at(core->flags, frame->addr, true);
-	*flagdesc = NULL;
-	*flagdesc2 = NULL;
-	if (f) {
-		if (f->offset != addr) {
-			int delta = (int)(frame->addr - f->offset);
-			if (delta > 0) {
-				*flagdesc = rz_str_newf("%s+%d", f->name, delta);
-			} else if (delta < 0) {
-				*flagdesc = rz_str_newf("%s%d", f->name, delta);
-			} else {
-				*flagdesc = rz_str_newf("%s", f->name);
-			}
-		} else {
-			*flagdesc = rz_str_newf("%s", f->name);
-		}
-	}
-	f = rz_flag_get_at(core->flags, frame->addr, true);
-	if (f && !strchr(f->name, '.')) {
-		f = rz_flag_get_at(core->flags, frame->addr - 1, true);
-	}
-	if (f) {
-		if (f->offset != addr) {
-			int delta = (int)(frame->addr - 1 - f->offset);
-			if (delta > 0) {
-				*flagdesc2 = rz_str_newf("%s+%d", f->name, delta + 1);
-			} else if (delta < 0) {
-				*flagdesc2 = rz_str_newf("%s%d", f->name, delta + 1);
-			} else {
-				*flagdesc2 = rz_str_newf("%s+1", f->name);
-			}
-		} else {
-			*flagdesc2 = rz_str_newf("%s", f->name);
-		}
-	}
-	if (!rz_str_cmp(*flagdesc, *flagdesc2, -1)) {
-		free(*flagdesc2);
-		*flagdesc2 = NULL;
-	}
-	if (pcstr && spstr) {
-		if (core->dbg->bits & RZ_SYS_BITS_64) {
-			*pcstr = rz_str_newf("0x%-16" PFMT64x, frame->addr);
-			*spstr = rz_str_newf("0x%-16" PFMT64x, frame->sp);
-		} else if (core->dbg->bits & RZ_SYS_BITS_32) {
-			*pcstr = rz_str_newf("0x%-8" PFMT64x, frame->addr);
-			*spstr = rz_str_newf("0x%-8" PFMT64x, frame->sp);
-		} else {
-			*pcstr = rz_str_newf("0x%" PFMT64x, frame->addr);
-			*spstr = rz_str_newf("0x%" PFMT64x, frame->sp);
-		}
-	}
-}
-
 RZ_IPI void rz_core_static_debug_stop(void *u) {
 	RzDebug *dbg = (RzDebug *)u;
 	rz_debug_stop(dbg);
@@ -2465,36 +2402,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'p': // "dp"
 		cmd_debug_pid(core, input);
 		break;
-	case 'L': { // "dL"
-		RzCmdStateOutput state = { 0 };
-		switch (input[1]) {
-		case 'q':
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
-			break;
-		case 'j':
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
-			break;
-		case ' ': {
-			char *backend = rz_str_trim_dup(input + 2);
-			rz_config_set(core->config, "dbg.backend", backend);
-			// implicit by config.set rz_debug_use (core->dbg, str);
-			free(backend);
-			return RZ_CMD_STATUS_OK;
-		}
-		case '?': {
-			rz_core_cmd_help(core, help_msg_dL);
-			break;
-		}
-		default:
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		}
-		rz_core_debug_plugins_print(core, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		rz_cons_flush();
-		break;
-	}
 	case 'i': // "di"
 	{
 		RzDebugInfo *rdi = rz_debug_info(core->dbg, input + 2);
@@ -3128,70 +3035,50 @@ RZ_IPI RzCmdStatus rz_cmd_debug_remove_bp_plugin_handler(RzCore *core, int argc,
 
 // dbt
 RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
+	RzList *list = rz_core_debug_backtraces(core);
 	if (!list) {
 		RZ_LOG_ERROR("Unable to find debug backtrace frames\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	int i = 0;
-	RzListIter *iter;
-	RzDebugFrame *frame;
 	RzOutputMode mode = state->mode;
-	PJ *pj = state->d.pj;
-
 	if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_list_reverse(list);
 		rz_cons_printf("f-bt.*\n");
 	}
+
+	int i = 0;
+	RzListIter *iter;
+	RzBacktrace *bt;
+	PJ *pj = state->d.pj;
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (list, iter, frame) {
+	rz_list_foreach (list, iter, bt) {
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD: {
-			char *flagdesc, *flagdesc2, *pcstr, *spstr;
-			get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, &pcstr, &spstr);
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
 			rz_cons_printf("%d  %s sp: %s  %-5d"
 				       "[%s]  %s %s\n",
-				i++, pcstr, spstr, (int)frame->size, fcn ? fcn->name : "??", rz_str_get(flagdesc), rz_str_get(flagdesc2));
-			free(flagdesc);
-			free(flagdesc2);
-			free(pcstr);
-			free(spstr);
+				i++, bt->pcstr, bt->spstr, bt->frame->size, bt->fcn ? bt->fcn->name : "??", rz_str_get(bt->flagdesc), rz_str_get(bt->flagdesc2));
 			break;
 		}
 		case RZ_OUTPUT_MODE_RIZIN: {
-			rz_cons_printf("f bt.frame%d @ 0x%08" PFMT64x "\n", i, frame->addr);
-			rz_cons_printf("f bt.frame%d.stack %d @ 0x%08" PFMT64x "\n", i, frame->size, frame->sp);
+			rz_cons_printf("f bt.frame%d @ 0x%08" PFMT64x "\n", i, bt->frame->addr);
+			rz_cons_printf("f bt.frame%d.stack %d @ 0x%08" PFMT64x "\n", i, bt->frame->size, bt->frame->sp);
 			i++;
 			break;
 		}
 		case RZ_OUTPUT_MODE_JSON: {
-			char *flagdesc, *flagdesc2, *desc;
-			get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, NULL, NULL);
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
-			desc = rz_str_newf("%s%s", rz_str_get_null(flagdesc), rz_str_get_null(flagdesc2));
 			pj_o(pj);
 			pj_ki(pj, "idx", i);
-			pj_kn(pj, "pc", frame->addr);
-			pj_kn(pj, "sp", frame->sp);
-			pj_ki(pj, "frame_size", frame->size);
-			pj_ks(pj, "fname", fcn ? fcn->name : "");
-			pj_ks(pj, "desc", desc);
+			pj_kn(pj, "pc", bt->frame->addr);
+			pj_kn(pj, "sp", bt->frame->sp);
+			pj_ki(pj, "frame_size", bt->frame->size);
+			pj_ks(pj, "fname", bt->fcn ? bt->fcn->name : "");
+			pj_ks(pj, "desc", bt->desc);
 			pj_end(pj);
 			i++;
-			free(flagdesc);
-			free(flagdesc2);
-			free(desc);
 			break;
 		}
 		case RZ_OUTPUT_MODE_QUIET: {
-			char *flagdesc, *flagdesc2, *pcstr, *spstr;
-			get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, &pcstr, &spstr);
-			rz_cons_printf("%s\n", pcstr);
-			free(flagdesc);
-			free(flagdesc2);
-			free(pcstr);
-			free(spstr);
+			rz_cons_printf("%s\n", bt->pcstr);
 			break;
 		}
 		default:
@@ -3564,6 +3451,14 @@ RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_debug_plugins_print(core, state);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_handler_set_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(rz_config_set(core->config, "dbg.backend", argv[1]));
+}
+
 // dor
 RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, const char **argv) {
 	RzList *list = rz_list_new();
@@ -3571,10 +3466,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, 
 	for (i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], "=", 1, false);
 		if (!l) {
+			rz_list_free(list);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		size_t llen = rz_list_length(l);
 		if (llen < 2) {
+			rz_list_free(list);
 			rz_list_free(l);
 			return RZ_CMD_STATUS_ERROR;
 		}

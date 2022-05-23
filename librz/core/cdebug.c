@@ -217,7 +217,8 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 			rz_core_dbg_follow_seek_register(core);
 			core->print->cur_enabled = 0;
 		} else {
-			rz_core_cmd(core, "dso", 0);
+			rz_core_debug_step_over(core, 1);
+			rz_core_dbg_follow_seek_register(core);
 			rz_core_reg_update_flags(core);
 		}
 	} else {
@@ -792,4 +793,106 @@ RZ_API bool rz_core_debug_step_skip(RzCore *core, int times) {
 		(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
 	}
 	return true;
+}
+
+RZ_API void rz_backtrace_free(RZ_NULLABLE RzBacktrace *bt) {
+	if (!bt) {
+		return;
+	}
+	free(bt->frame);
+	free(bt->desc);
+	free(bt->pcstr);
+	free(bt->spstr);
+	free(bt->flagdesc);
+	free(bt->flagdesc2);
+	free(bt);
+}
+
+static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
+	char **flagdesc, char **flagdesc2, char **pcstr, char **spstr) {
+	RzFlagItem *f = rz_flag_get_at(core->flags, frame->addr, true);
+	*flagdesc = NULL;
+	*flagdesc2 = NULL;
+	if (f) {
+		if (f->offset != addr) {
+			int delta = (int)(frame->addr - f->offset);
+			if (delta > 0) {
+				*flagdesc = rz_str_newf("%s+%d", f->name, delta);
+			} else if (delta < 0) {
+				*flagdesc = rz_str_newf("%s%d", f->name, delta);
+			} else {
+				*flagdesc = rz_str_newf("%s", f->name);
+			}
+		} else {
+			*flagdesc = rz_str_newf("%s", f->name);
+		}
+		if (!strchr(f->name, '.')) {
+			f = rz_flag_get_at(core->flags, frame->addr - 1, true);
+		}
+		if (f) {
+			if (f->offset != addr) {
+				int delta = (int)(frame->addr - 1 - f->offset);
+				if (delta > 0) {
+					*flagdesc2 = rz_str_newf("%s+%d", f->name, delta + 1);
+				} else if (delta < 0) {
+					*flagdesc2 = rz_str_newf("%s%d", f->name, delta + 1);
+				} else {
+					*flagdesc2 = rz_str_newf("%s+1", f->name);
+				}
+			} else {
+				*flagdesc2 = rz_str_newf("%s", f->name);
+			}
+		}
+	}
+	if (!rz_str_cmp(*flagdesc, *flagdesc2, -1)) {
+		free(*flagdesc2);
+		*flagdesc2 = NULL;
+	}
+	if (!(pcstr && spstr)) {
+		return;
+	}
+	if (core->dbg->bits & RZ_SYS_BITS_64) {
+		*pcstr = rz_str_newf("0x%-16" PFMT64x, frame->addr);
+		*spstr = rz_str_newf("0x%-16" PFMT64x, frame->sp);
+	} else if (core->dbg->bits & RZ_SYS_BITS_32) {
+		*pcstr = rz_str_newf("0x%-8" PFMT64x, frame->addr);
+		*spstr = rz_str_newf("0x%-8" PFMT64x, frame->sp);
+	} else {
+		*pcstr = rz_str_newf("0x%" PFMT64x, frame->addr);
+		*spstr = rz_str_newf("0x%" PFMT64x, frame->sp);
+	}
+}
+
+/**
+ * \brief Get backtraces based on dbg.btdepth and dbg.btalgo
+ * \param core The RzCore instance
+ * \return A list of RzBacktrace
+ */
+RZ_API RZ_OWN RzList *rz_core_debug_backtraces(RzCore *core) {
+	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
+	if (!list) {
+		return NULL;
+	}
+	RzListIter *iter;
+	RzDebugFrame *frame;
+	RzList *bts = rz_list_newf((RzListFree)rz_backtrace_free);
+	if (!bts) {
+		rz_list_free(list);
+		return NULL;
+	}
+	rz_list_foreach (list, iter, frame) {
+		RzBacktrace *bt = RZ_NEW0(RzBacktrace);
+		if (!bt) {
+			rz_list_free(list);
+			rz_list_free(bts);
+			return NULL;
+		}
+		rz_list_append(bts, bt);
+		get_backtrace_info(core, frame, UT64_MAX, &bt->flagdesc, &bt->flagdesc2, &bt->pcstr, &bt->spstr);
+		bt->fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
+		bt->frame = RZ_NEWCOPY(RzDebugFrame, frame);
+		bt->desc = rz_str_newf("%s%s", rz_str_get_null(bt->flagdesc), rz_str_get_null(bt->flagdesc2));
+	}
+	rz_list_free(list);
+	return bts;
 }

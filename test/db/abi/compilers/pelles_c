@@ -17,7 +17,7 @@ fsl
 EOF
 EXPECT=<<EOF
     0 * classes
-  110 * functions
+  108 * functions
    38 * imports
     0 * platform.ports
     0 * registers
@@ -60,7 +60,7 @@ fsl
 EOF
 EXPECT=<<EOF
     0 * classes
-   85 * functions
+   86 * functions
    38 * imports
     0 * platform.ports
     0 * registers

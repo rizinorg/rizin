@@ -254,9 +254,9 @@ RUN
 
 NAME=complex symbol of arm PDB
 FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep "??_C@_1BK@FIHMCKAM@?$AAs?$AAo?$AAu?$AAt?$AAh?$AA?5?$AAa?$AAf?$AAr?$AAi?$AAc?$AAa@"
+CMDS=!rz-bin -P ${RZ_FILE} | grep "south africa"
 EXPECT=<<EOF
-0x000820c4  0  .rdata  ??_C@_1BK@FIHMCKAM@?$AAs?$AAo?$AAu?$AAt?$AAh?$AA?5?$AAa?$AAf?$AAr?$AAi?$AAc?$AAa@
+0x000820c4  0  .rdata  `string'::1484532236::"south africa"
 EOF
 RUN
 

@@ -714,7 +714,7 @@ RZ_API RzBinMap *rz_bin_object_get_map_at(RzBinObject *o, ut64 off, bool va) {
  * \param va When false the offset \p off is considered a physical address, otherwise a virtual address
  * \return Vector of \p RzBinMap pointers
  */
-RZ_API RzPVector *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, bool va) {
+RZ_API RZ_OWN RzPVector *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, bool va) {
 	rz_return_val_if_fail(o, NULL);
 
 	RzBinMap *map;

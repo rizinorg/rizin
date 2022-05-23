@@ -176,8 +176,8 @@ static inline bool rz_flag_space_is_empty(RzFlag *f) {
 #define rz_flag_space_foreach(f, it, s) rz_spaces_foreach(&(f)->spaces, (it), (s))
 
 /* tags */
-RZ_API RzList *rz_flag_tags_list(RzFlag *f);
-RZ_API RzList *rz_flag_tags_set(RzFlag *f, const char *name, const char *words);
+RZ_API RZ_OWN RzList *rz_flag_tags_list(RzFlag *f);
+RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words);
 RZ_API void rz_flag_tags_reset(RzFlag *f, const char *name);
 RZ_API RzList *rz_flag_tags_get(RzFlag *f, const char *name);
 

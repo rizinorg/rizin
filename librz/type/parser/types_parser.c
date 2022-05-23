@@ -469,6 +469,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				result = -1;
 				goto srnexit;
 			}
+			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Struct bitfield identifier should not be NULL!\n");
@@ -1906,7 +1907,9 @@ int parse_type_nodes_save(CParserState *state, TSNode node, const char *text) {
 	}
 
 	if (result) {
-		parser_error(state, "Unsupported type definition: %s\n", ts_node_sub_string(node, text));
+		char *typetext = ts_node_sub_string(node, text);
+		parser_error(state, "Unsupported type definition: %s\n", typetext);
+		free(typetext);
 	}
 
 	// In case of anonymous type we could use identifier as a name for this type?
