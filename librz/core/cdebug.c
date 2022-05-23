@@ -232,7 +232,8 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
  * \param core RzCore instance
  * \param addr Breakpoint addr
  */
-RZ_API void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
+RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_if_fail(core && core->dbg);
 	RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
 	if (bpi) {
 		rz_bp_del(core->dbg->bp, addr);
