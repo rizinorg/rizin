@@ -404,18 +404,18 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 	case PPC_INS_BA:
 	case PPC_INS_BLA:
 		// EXTS(LI || 0b00)
-		return EXTS(APPEND(UN(24, INSOP(0).imm), UN(2, 0)));
+		return UA(INSOP(0).imm); // Capstone does the shift/add etc.
 	case PPC_INS_BDZA:
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZLA:
 		// EXTS(BD || 0b00)
-		return EXTS(APPEND(UN(14, INSOP(0).imm), UN(2, 0)));
+		return UA(INSOP(0).imm);
 	// Branch to relative address
 	case PPC_INS_B:
 	case PPC_INS_BL:
 		// CIA + EXTS(LI || 0b00)
-		return EXTS(ADD(UA(insn->address), EXTS(APPEND(UN(24, INSOP(0).imm), UN(2, 0)))));
+		return UA(INSOP(0).imm);
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
 	case PPC_INS_BCT:
@@ -424,7 +424,7 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZL:
 		// CIA + EXTS(BD || 0b00)
-		return EXTS(ADD(UA(insn->address), EXTS(APPEND(UN(14, INSOP(0).imm), UN(2, 0)))));
+		return UA(INSOP(0).imm);
 	// Branch to LR
 	case PPC_INS_BLR:
 	case PPC_INS_BLRL:
@@ -435,14 +435,14 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 	case PPC_INS_BDNZLR:
 	case PPC_INS_BDNZLRL:
 		//  LR_0:61 || 0b00
-		return AND(UA(-4), VARG("lr"));
+		return LOGAND(UA(-4), VARG("lr"));
 	// Branch to CTR
 	case PPC_INS_BCTR:
 	case PPC_INS_BCTRL:
 	case PPC_INS_BCCTR:
 	case PPC_INS_BCCTRL:
 		//  CTR_0:61 || 0b00
-		return AND(UA(-4), VARG("ctr"));
+		return LOGAND(UA(-4), VARG("ctr"));
 	}
 }
 
