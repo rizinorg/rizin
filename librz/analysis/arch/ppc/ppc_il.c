@@ -186,9 +186,10 @@ bool ppc_sets_lr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
-	case PPC_INS_BLA:
+	case PPC_INS_BCCTRL:
 	case PPC_INS_BCL:
 	case PPC_INS_BCLRL:
+	case PPC_INS_BCTRL:
 	case PPC_INS_BDNZL:
 	case PPC_INS_BDNZLA:
 	case PPC_INS_BDNZLRL:
@@ -196,9 +197,11 @@ bool ppc_sets_lr(ut32 insn_id) {
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDZLRL:
 	case PPC_INS_BL:
+	case PPC_INS_BLA:
 	case PPC_INS_BLRL:
 		return true;
 	}
+
 }
 
 bool ppc_is_conditional(ut32 insn_id) {
