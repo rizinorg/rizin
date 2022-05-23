@@ -145,11 +145,12 @@ typedef struct rz_bin_reloc_formular_symbols_t {
 	ut64 L; // Offset into POT for symbol entry.
 	ut64 P; // Place address of the field being relocated. The address of the bytes to patch.
 	ut64 S; // Value of symbol.
+	ut64 Z; // Size of symbol.
 	ut64 TLS; // Thread-pointer-relative offset to a thread-local symbol.
 	ut64 T; // Base address of the static thread-local tmeplate that contains a thread-local symbol.
 	ut64 MB; // Base address of all strings consumed by compiler message base optimization (Hexagon specific).
 	ut64 GP; // Value of GP register (Hexagon specific).
-} RzBinRelocFormularSymbols;
+} RelocFormularSymbols;
 
 static RzBinInfo *info(RzBinFile *bf);
 static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -767,6 +768,10 @@ static ut64 reloc_targets_vfile_size(RzBinFile *bf, ELFOBJ *obj) {
 	return Elf_(rz_bin_elf_get_relocs_count)(obj) * reloc_target_size(obj);
 }
 
+static ut64 get_patch_addr(ELFOBJ *obj, RzBinElfReloc *rel) {
+	return rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(obj, rel->vaddr);
+}
+
 /**
  * \brief Spreads the value bits according to the bitmask and returns the result.
  *
@@ -822,15 +827,15 @@ static void patch_val_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut32 addr, c
  * \param rel_type The relocation type.
  * \param fs Formular values to calculate the new relocation value.
  */
-static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RzBinRelocFormularSymbols *fs) {
-	rz_return_if_fail(buf_patched && fs);
+static void patch_reloc_hexagon(ELFOBJ *obj, RzBinElfReloc *rel, const RelocFormularSymbols *fs) {
+	ut64 patch_addr = get_patch_addr(obj, rel);
 	ut8 buf[8] = { 0 };
 	ut64 val = 0;
 	ut64 bitmask = R_HEX_BITMASK_WORD32; // Mask of value and opcode bits.
 
-	switch (rel_type) {
+	switch (rel->type) {
 	default:
-		RZ_LOG_WARN("Patching for reloc type %d not implemented.", rel_type);
+		RZ_LOG_WARN("Patching for reloc type %d not implemented.", rel->type);
 		rz_warn_if_reached();
 		// For more implementetations check out the LLVM src:
 		// https://github.com/llvm/llvm-project/blob/abc17a67519747be36f1fd03e227c5103da4c677/lld/ELF/Arch/Hexagon.cpp
@@ -954,12 +959,12 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 		val = (fs->S + fs->A - fs->P) >> 6;
 		break;
 	case R_HEX_16_X:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
 		val = (fs->S + fs->A) & 0x3f;
 		break;
 	case R_HEX_11_X:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
 		val = (fs->S + fs->A) & 0x3f;
 		break;
@@ -972,27 +977,27 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 		val = (fs->S + fs->A) & 0x3f;
 		break;
 	case R_HEX_8_X:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r8(rz_read_le32(buf));
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_6_PCREL_X:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r6(rz_read_le32(buf));
 		val = (fs->S + fs->A - fs->P);
 		break;
 	case R_HEX_6_X:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r6(rz_read_le32(buf));
 		val = (fs->S + fs->A);
 		break;
 	case R_HEX_GOTREL_16_X:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
 		val = (fs->S + fs->A - fs->GOT);
 		break;
 	case R_HEX_GOTREL_11_X:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
 		val = (fs->S + fs->A - fs->GOT);
 		break;
@@ -1001,210 +1006,238 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 		val = (fs->S + fs->A - fs->T) >> 6;
 		break;
 	case R_HEX_DTPREL_16_X:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
 		val = (fs->S + fs->A - fs->T);
 		break;
 	case R_HEX_DTPREL_11_X:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
 		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
 		val = (fs->S + fs->A - fs->T);
 		break;
 	}
 	// Patch two opcodes at once.
-	if (rel_type == R_HEX_HL16) {
-		patch_val_hexagon(buf_patched, patch_addr, bitmask, val & 0xffffffff);
-		patch_val_hexagon(buf_patched, patch_addr + 4, bitmask, val >> 32);
+	if (rel->type == R_HEX_HL16) {
+		patch_val_hexagon(obj->buf_patched, patch_addr, bitmask, val & 0xffffffff);
+		patch_val_hexagon(obj->buf_patched, patch_addr + 4, bitmask, val >> 32);
 	} else {
-		patch_val_hexagon(buf_patched, patch_addr, bitmask, val);
+		patch_val_hexagon(obj->buf_patched, patch_addr, bitmask, val);
 	}
 }
 
-static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
-	ut16 e_machine = obj->ehdr.e_machine;
-	ut64 val = 0;
-	ut64 A = rel->addend, P = rel->vaddr;
-	RzBinRelocFormularSymbols formular_sym = { .A = A, .B = B, .GOT = GOT, .L = L, .S = S, .P = P, .MB = 0, .G = 0, .GP = 0, .T = 0, .TLS = 0 };
-	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(obj, rel->vaddr);
-	ut8 buf[8];
-	bool big_endian = obj->big_endian;
-	switch (e_machine) {
-	case EM_QDSP6:
-		patch_reloc_hexagon(obj->buf_patched, patch_addr, rel->type, &formular_sym);
-		break;
-	case EM_ARM:
-		val = S + A;
-		if (!rel->sym && rel->mode == DT_REL) {
-			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-			val += obj->big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
-		}
-		rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
-		break;
-	case EM_AARCH64:
-		val = S + A;
-		rz_write_le64(buf, val);
-		rz_buf_write_at(obj->buf_patched, patch_addr, buf, 8);
-		break;
-	case EM_PPC64: {
-		int low = 0, word = 0;
-		switch (rel->type) {
-		case R_PPC64_ADDR24:
-			low = 24;
-			val = (S + A) >> 2;
-			break;
-		case R_PPC64_ADDR16_HI:
-			word = 2;
-			val = (S + A) >> 16;
-			break;
-		case R_PPC64_ADDR16_HA:
-			word = 2;
-			val = (S + A + 0x8000) >> 16;
-			break;
-		case R_PPC64_REL16_HA:
-			word = 2;
-			val = (S + A - P + 0x8000) >> 16;
-			break;
-		case R_PPC64_ADDR16_LO:
-			word = 2;
-			val = (S + A) & 0xffff;
-			break;
-		case R_PPC64_REL16_LO:
-			word = 2;
-			val = (S + A - P) & 0xffff;
-			break;
-		case R_PPC64_REL14:
-			low = 14;
-			val = (st64)(S + A - P) >> 2;
-			break;
-		case R_PPC64_REL24:
-			low = 24;
-			val = (st64)(S + A - P) >> 2;
-			break;
-		case R_PPC64_REL32:
-			word = 4;
-			val = S + A - P;
-			break;
-		default:
-			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
-			break;
-		}
-		if (low) {
-			switch (low) {
-			case 14:
-				val &= (1 << 14) - 1;
-				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 2);
-				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(16, 2))) | val << 2, big_endian);
-				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
-				break;
-			case 24:
-				val &= (1 << 24) - 1;
-				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(26, 2))) | val << 2, big_endian);
-				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
-				break;
-			}
-		} else if (word) {
-			switch (word) {
-			case 2:
-				rz_write_ble16(buf, val, big_endian);
-				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
-				break;
-			case 4:
-				rz_write_ble32(buf, val, big_endian);
-				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
-				break;
-			}
-		}
-		break;
+static void patch_reloc_arm(ELFOBJ *obj, RzBinElfReloc *rel, RelocFormularSymbols *rfs) {
+	ut64 patch_addr = get_patch_addr(obj, rel);
+	ut64 val = rfs->S + rfs->A;
+	if (!rel->sym && rel->mode == DT_REL) {
+		ut8 buf[4];
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+		val += obj->big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
 	}
-	case EM_386:
-		switch (rel->type) {
-		case R_386_32:
-		case R_386_PC32:
-			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-			val = rz_read_le32(buf) + S + A;
-			if (rel->type == R_386_PC32) {
-				val -= P;
-			}
-			rz_write_le32(buf, val);
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
-		default:
-			break;
-		}
+	rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+}
+
+static void patch_reloc_aarch64(ELFOBJ *obj, RzBinElfReloc *rel, RelocFormularSymbols *rfs) {
+	ut64 patch_addr = get_patch_addr(obj, rel);
+	ut64 val = rfs->S + rfs->A;
+	rz_buf_write_le64_at(obj->buf_patched, patch_addr, val);
+}
+
+static void patch_reloc_ppc64(ELFOBJ *obj, RzBinElfReloc *rel, RelocFormularSymbols *rfs) {
+	ut64 patch_addr = get_patch_addr(obj, rel);
+	ut64 val = 0;
+	int low = 0, word = 0;
+	switch (rel->type) {
+	case R_PPC64_ADDR24:
+		low = 24;
+		val = (rfs->S + rfs->A) >> 2;
 		break;
-	case EM_X86_64: {
-		int word = 0;
-		switch (rel->type) {
-		case R_X86_64_8:
-			word = 1;
-			val = S + A;
-			break;
-		case R_X86_64_16:
-			word = 2;
-			val = S + A;
-			break;
-		case R_X86_64_32:
-		case R_X86_64_32S:
-			word = 4;
-			val = S + A;
-			break;
-		case R_X86_64_64:
-			word = 8;
-			val = S + A;
-			break;
-		case R_X86_64_GLOB_DAT:
-		case R_X86_64_JUMP_SLOT:
-			word = 4;
-			val = S;
-			break;
-		case R_X86_64_PC8:
-			word = 1;
-			val = S + A - P;
-			break;
-		case R_X86_64_PC16:
-			word = 2;
-			val = S + A - P;
-			break;
-		case R_X86_64_PC32:
-			word = 4;
-			val = S + A - P;
-			break;
-		case R_X86_64_PC64:
-			word = 8;
-			val = S + A - P;
-			break;
-		case R_X86_64_PLT32:
-			word = 4;
-			val = L + A - P;
-			break;
-		case R_X86_64_RELATIVE:
-			word = 8;
-			val = B + A;
-			break;
-		default:
-			// RZ_LOG_ERROR("relocation %d not handle at this time\n", rel->type);
-			break;
-		}
-		switch (word) {
-		case 0:
-			break;
-		case 1:
-			buf[0] = val;
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 1);
-			break;
-		case 2:
-			rz_write_le16(buf, val);
+	case R_PPC64_ADDR16_HI:
+		word = 2;
+		val = (rfs->S + rfs->A) >> 16;
+		break;
+	case R_PPC64_ADDR16_HA:
+		word = 2;
+		val = (rfs->S + rfs->A + 0x8000) >> 16;
+		break;
+	case R_PPC64_REL16_HA:
+		word = 2;
+		val = (rfs->S + rfs->A - rfs->P + 0x8000) >> 16;
+		break;
+	case R_PPC64_ADDR16_LO:
+		word = 2;
+		val = (rfs->S + rfs->A) & 0xffff;
+		break;
+	case R_PPC64_REL16_LO:
+		word = 2;
+		val = (rfs->S + rfs->A - rfs->P) & 0xffff;
+		break;
+	case R_PPC64_REL14:
+		low = 14;
+		val = (st64)(rfs->S + rfs->A - rfs->P) >> 2;
+		break;
+	case R_PPC64_REL24:
+		low = 24;
+		val = (st64)(rfs->S + rfs->A - rfs->P) >> 2;
+		break;
+	case R_PPC64_REL32:
+		word = 4;
+		val = rfs->S + rfs->A - rfs->P;
+		break;
+	default:
+		RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
+		return;
+	}
+	if (low) {
+		ut8 buf[4];
+		switch (low) {
+		case 14:
+			val &= (1 << 14) - 1;
+			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 2);
+			rz_write_ble32(buf, (rz_read_ble32(buf, obj->big_endian) & ~(RZ_BIT_MASK32(16, 2))) | val << 2, obj->big_endian);
 			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
 			break;
-		case 4:
-			rz_write_le32(buf, val);
+		case 24:
+			val &= (1 << 24) - 1;
+			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+			rz_write_ble32(buf, (rz_read_ble32(buf, obj->big_endian) & ~(RZ_BIT_MASK32(26, 2))) | val << 2, obj->big_endian);
 			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
 			break;
-		case 8:
-			rz_write_le64(buf, val);
-			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 8);
+		}
+	} else if (word) {
+		switch (word) {
+		case 2:
+			rz_buf_write_ble16_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+			break;
+		case 4:
+			rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
 			break;
 		}
+	}
+}
+
+static void patch_reloc_386(ELFOBJ *obj, RzBinElfReloc *rel, RelocFormularSymbols *rfs) {
+	ut64 patch_addr = get_patch_addr(obj, rel);
+	ut64 val = 0;
+	ut32 val_add = 0;
+	switch (rel->type) {
+	case R_386_32:
+	case R_386_PC32:
+		if (!rz_buf_read_le32_at(obj->buf_patched, patch_addr, &val_add)) {
+			return;
+		}
+		val = val_add + rfs->S + rfs->A;
+		if (rel->type == R_386_PC32) {
+			val -= rfs->P;
+		}
+		rz_buf_write_le32_at(obj->buf_patched, patch_addr, val);
+		break;
+	default:
+		RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
+		return;
+	}
+}
+
+static void patch_reloc_x86_64(ELFOBJ *obj, RzBinElfReloc *rel, RelocFormularSymbols *rfs) {
+	ut64 patch_addr = get_patch_addr(obj, rel);
+	ut64 val = 0;
+	int word = 0;
+	switch (rel->type) {
+	case R_X86_64_8:
+		word = 1;
+		val = rfs->S + rfs->A;
+		break;
+	case R_X86_64_16:
+		word = 2;
+		val = rfs->S + rfs->A;
+		break;
+	case R_X86_64_32:
+	case R_X86_64_32S:
+		word = 4;
+		val = rfs->S + rfs->A;
+		break;
+	case R_X86_64_64:
+		word = 8;
+		val = rfs->S + rfs->A;
+		break;
+	case R_X86_64_GLOB_DAT:
+	case R_X86_64_JUMP_SLOT:
+		word = 4;
+		val = rfs->S;
+		break;
+	case R_X86_64_GOTPCREL:
+		word = 4;
+		val = rfs->S + rfs->GOT + rfs->A - rfs->P;
+		break;
+	case R_X86_64_PC8:
+		word = 1;
+		val = rfs->S + rfs->A - rfs->P;
+		break;
+	case R_X86_64_PC16:
+		word = 2;
+		val = rfs->S + rfs->A - rfs->P;
+		break;
+	case R_X86_64_PC32:
+		word = 4;
+		val = rfs->S + rfs->A - rfs->P;
+		break;
+	case R_X86_64_PC64:
+		word = 8;
+		val = rfs->S + rfs->A - rfs->P;
+		break;
+	case R_X86_64_PLT32:
+		word = 4;
+		val = rfs->L + rfs->A - rfs->P;
+		break;
+	case R_X86_64_RELATIVE:
+		word = 8;
+		val = rfs->B + rfs->A;
+		break;
+	default:
+		RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
+		return;
+	}
+	switch (word) {
+	case 0:
+		break;
+	case 1:
+		rz_buf_write8_at(obj->buf_patched, patch_addr, val);
+		break;
+	case 2:
+		rz_buf_write_le16_at(obj->buf_patched, patch_addr, val);
+		break;
+	case 4:
+		rz_buf_write_le32_at(obj->buf_patched, patch_addr, val);
+		break;
+	case 8:
+		rz_buf_write_le64_at(obj->buf_patched, patch_addr, val);
+		break;
+	}
+}
+
+static void patch_reloc(ELFOBJ *obj, RzBinElfReloc *rel, RelocFormularSymbols *rfs) {
+	switch (obj->ehdr.e_machine) {
+	case EM_QDSP6:
+		patch_reloc_hexagon(obj, rel, rfs);
+		break;
+	case EM_ARM:
+		patch_reloc_arm(obj, rel, rfs);
+		break;
+	case EM_AARCH64:
+		patch_reloc_aarch64(obj, rel, rfs);
+		break;
+	case EM_PPC64:
+		patch_reloc_ppc64(obj, rel, rfs);
+		break;
+	case EM_386:
+		patch_reloc_386(obj, rel, rfs);
+		break;
+	case EM_X86_64:
+		patch_reloc_x86_64(obj, rel, rfs);
+		break;
+	default: {
+		char *machine_name = Elf_(rz_bin_elf_get_machine_name)(obj);
+		RZ_LOG_WARN("Cannot patch relocations as they are not implemented for machine %s\n", machine_name);
+		free(machine_name);
 		break;
 	}
 	}
@@ -1228,10 +1261,10 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 	return 0;
 }
 
-static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+static RzBinReloc *reloc_convert(RzBinObject *bfo, ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
 
-	ut64 B = bin->baddr;
+	ut64 B = bfo->baddr_shift;
 	ut64 P = rel->vaddr; // rva has taken baddr into account
 	RzBinReloc *r = RZ_NEW0(RzBinReloc);
 	if (!r) {
@@ -1278,7 +1311,9 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case R_386_PC8: ADD(8, -P);
 		case R_386_COPY: ADD(32, 0); // XXX: copy symbol at runtime
 		case R_386_IRELATIVE: r->is_ifunc = true; SET(32);
-		default: break;
+		default:
+			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
+			break;
 		}
 		break;
 	case EM_X86_64:
@@ -1288,8 +1323,8 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case R_X86_64_PLT32: ADD(32, -P /* +L */);
 		case R_X86_64_GOT32: ADD(32, GOT);
 		case R_X86_64_PC32: ADD(32, -P);
-		case R_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
-		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
+		case R_X86_64_GLOB_DAT: SET(64);
+		case R_X86_64_JUMP_SLOT: SET(64);
 		case R_X86_64_RELATIVE: ADD(64, B);
 		case R_X86_64_32: ADD(32, 0);
 		case R_X86_64_32S: ADD(32, 0);
@@ -1297,10 +1332,12 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case R_X86_64_PC16: ADD(16, -P);
 		case R_X86_64_8: ADD(8, 0);
 		case R_X86_64_PC8: ADD(8, -P);
-		case R_X86_64_GOTPCREL: ADD(64, GOT - P);
+		case R_X86_64_GOTPCREL: ADD(32, GOT + GOT - P);
 		case R_X86_64_COPY: ADD(64, 0); // XXX: copy symbol at runtime
 		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
-		default: break;
+		default:
+			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
+			break;
 		}
 		break;
 	case EM_ARM:
@@ -1339,7 +1376,10 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case R_ARM_LDC_PC_G0: ADD(32, -P);
 		case R_ARM_LDC_PC_G1: ADD(32, -P);
 		case R_ARM_LDC_PC_G2: ADD(32, -P);
-		default: ADD(32, GOT); break; // reg relocations
+		default:
+			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
+			ADD(32, GOT);
+			break;
 		}
 		break;
 	case EM_RISCV:
@@ -1347,7 +1387,10 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case R_RISCV_NONE: break;
 		case R_RISCV_JUMP_SLOT: ADD(64, 0);
 		case R_RISCV_RELATIVE: ADD(64, B);
-		default: ADD(64, GOT); break; // reg relocations
+		default:
+			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
+			ADD(64, GOT);
+			break;
 		}
 		break;
 	case EM_AARCH64:
@@ -1358,7 +1401,9 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case R_AARCH64_GLOB_DAT: SET(64);
 		case R_AARCH64_JUMP_SLOT: SET(64);
 		case R_AARCH64_RELATIVE: ADD(64, B);
-		default: break; // reg relocations
+		default:
+			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
+			break;
 		}
 		break;
 	case EM_PPC:
@@ -1375,11 +1420,16 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case R_PPC_ADDR16: ADD(16, 0);
 		case R_PPC_ADDR32: ADD(32, 0);
 		default:
-			RZ_LOG_WARN("unimplemented ELF/PPC reloc type %d\n", rel->type);
+			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
 			break;
 		}
 		break;
-	default: break;
+	default: {
+		char *machine_name = Elf_(rz_bin_elf_get_machine_name)(bin);
+		RZ_LOG_WARN("Cannot patch relocations as they are not implemented for machine %s\n", machine_name);
+		free(machine_name);
+		break;
+	}
 	}
 
 #undef SET
@@ -1415,14 +1465,16 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	}
 	RzBinElfReloc *reloc;
 	ut64 got_addr = get_got_addr(bin);
-	ut64 baddr = bf->o->opts.baseaddr;
+	ut64 baddr = bf->o->baddr_shift;
 
 	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
+		ut64 sym_size = 0;
 		if (reloc->sym) {
 			RzBinElfSymbol *import = Elf_(rz_bin_elf_get_import)(bin, reloc->sym);
 			if (import) {
 				sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
+				sym_size = cdsz;
 			} else {
 				RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, reloc->sym);
 				if (symbol) {
@@ -1430,12 +1482,29 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 						Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
 					}
+					sym_size = symbol->size;
 				} else {
 					sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
+					sym_size = cdsz;
 				}
 			}
 		}
-		patch_reloc(bin, reloc, sym_addr, baddr, sym_addr, got_addr);
+
+		RelocFormularSymbols formular_sym = {
+			.A = reloc->addend,
+			.B = baddr,
+			.GOT = got_addr,
+			.L = sym_addr,
+			.S = sym_addr,
+			.P = reloc->vaddr,
+			.MB = 0,
+			.G = 0,
+			.GP = 0,
+			.T = 0,
+			.TLS = 0,
+			.Z = sym_size,
+		};
+		patch_reloc(bin, reloc, &formular_sym);
 		reloc->target_vaddr = sym_addr;
 	}
 	rz_bin_reloc_target_builder_free(targets);
@@ -1727,7 +1796,7 @@ static RzList *relocs(RzBinFile *bf) {
 
 	RzBinElfReloc *reloc;
 	rz_bin_elf_foreach_relocs(bin, reloc) {
-		if (!(ptr = reloc_convert(bin, reloc, got_addr))) {
+		if (!(ptr = reloc_convert(bf->o, bin, reloc, got_addr))) {
 			continue;
 		}
 

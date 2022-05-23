@@ -150,7 +150,6 @@ typedef struct rz_bin_elf_reloc_t {
 	ut64 vaddr; ///< source vaddr of the reloc, calculated from offset
 	ut64 target_vaddr; ///< after patching, the target that this reloc points to
 	ut16 section;
-	ut64 sto;
 } RzBinElfReloc;
 
 typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
