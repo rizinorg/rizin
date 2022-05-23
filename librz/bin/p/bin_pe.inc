@@ -464,7 +464,7 @@ static RzList *imports(RzBinFile *bf) {
 static RzList *relocs(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
 	if (obj) {
-		return obj->relocs;
+		return rz_list_clone(obj->relocs);
 	}
 	return NULL;
 }

@@ -4593,6 +4593,7 @@ void *PE_(rz_bin_pe_free)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	free(bin->sections);
 	free(bin->authentihash);
 	rz_list_free(bin->rich_entries);
+	rz_list_free(bin->relocs);
 	rz_list_free(bin->resources);
 	rz_pkcs7_free_cms(bin->cms);
 	rz_pkcs7_free_spcinfo(bin->spcinfo);
