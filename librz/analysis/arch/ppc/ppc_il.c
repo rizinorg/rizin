@@ -329,7 +329,7 @@ static RZ_OWN RzILOpBool *get_cr_bit(const ut8 pos) {
 		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 60));
 		cr_field = VARG("cr7");
 	}
-	return NON_ZERO(AND(cr_field, field_bit));
+	return NON_ZERO(LOGAND(cr_field, field_bit));
 }
 
 /**
@@ -365,19 +365,19 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	case PPC_INS_BCL:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:;
-		bo_2 = NON_ZERO(AND(UN(5, 0b001000), VARLP("bo")));
-		bo_3 = NON_ZERO(AND(UN(5, 0b000100), VARLP("bo")));
+		bo_2 = NON_ZERO(LOGAND(UN(5, 0b001000), VARLP("bo")));
+		bo_3 = NON_ZERO(LOGAND(UN(5, 0b000100), VARLP("bo")));
 		ctr_ok = OR(bo_2, XOR(NON_ZERO(VARG("ctr")), bo_3)); // BO_2 | (CTR_M:63 ≠ 0) ⊕ BO_3
 
-		bo_0 = NON_ZERO(AND(UN(5, 0b100000), VARLP("bo")));
-		bo_1 = NON_ZERO(AND(UN(5, 0b010000), VARLP("bo")));
+		bo_0 = NON_ZERO(LOGAND(UN(5, 0b100000), VARLP("bo")));
+		bo_1 = NON_ZERO(LOGAND(UN(5, 0b010000), VARLP("bo")));
 		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
 
 		return LET("bo", UN(5, bo), AND(cond_ok, ctr_ok));
 	case PPC_INS_BCCTR:
 	case PPC_INS_BCCTRL:;
-		bo_0 = NON_ZERO(AND(UN(5, 0b100000), VARLP("bo")));
-		bo_1 = NON_ZERO(AND(UN(5, 0b010000), VARLP("bo")));
+		bo_0 = NON_ZERO(LOGAND(UN(5, 0b100000), VARLP("bo")));
+		bo_1 = NON_ZERO(LOGAND(UN(5, 0b010000), VARLP("bo")));
 		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
 
 		return LET("bo", UN(5, bo), cond_ok);
