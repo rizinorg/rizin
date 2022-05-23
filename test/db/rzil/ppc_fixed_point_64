@@ -226,3 +226,51 @@ var_write(name: cr6, old: 0x0, new: 0x8)
 var_write(name: cr7, old: 0x0, new: 0x8)
 EOF
 RUN
+
+NAME=ppc branch instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.branch_insns
+aezi
+aezse 15
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x80002ec, new: 0x80002f0)
+var_write(name: r1, old: 0x0, new: 0x1)
+pc_write(old: 0x80002f0, new: 0x80002f4)
+var_write(name: r20, old: 0x0, new: 0x0)
+pc_write(old: 0x80002f4, new: 0x80002f8)
+var_write(name: lr, old: 0x0, new: 0x80002f8)
+pc_write(old: 0x80002f8, new: 0x8000318)
+pc_write(old: 0x8000318, new: 0x800031c)
+pc_write(old: 0x800031c, new: 0x80002f8)
+pc_write(old: 0x80002f8, new: 0x80002fc)
+var_write(name: r20, old: 0x0, new: 0x8000000)
+pc_write(old: 0x80002fc, new: 0x8000300)
+var_write(name: r20, old: 0x8000000, new: 0x8000318)
+pc_write(old: 0x8000300, new: 0x8000304)
+var_write(name: ctr, old: 0x0, new: 0x8000318)
+pc_write(old: 0x8000304, new: 0x8000308)
+var_write(name: lr, old: 0x80002f8, new: 0x8000308)
+pc_write(old: 0x8000308, new: 0x8000318)
+pc_write(old: 0x8000318, new: 0x800031c)
+pc_write(old: 0x800031c, new: 0x8000308)
+pc_write(old: 0x8000308, new: 0x800030c)
+var_write(name: ctr, old: 0x8000318, new: 0x8000317)
+var_write(name: lr, old: 0x8000308, new: 0x800030c)
+pc_write(old: 0x800030c, new: 0x8000318)
+pc_write(old: 0x8000318, new: 0x800031c)
+pc_write(old: 0x800031c, new: 0x800030c)
+pc_write(old: 0x800030c, new: 0x8000310)
+var_write(name: ctr, old: 0x8000317, new: 0x1)
+pc_write(old: 0x8000310, new: 0x8000314)
+var_write(name: ctr, old: 0x1, new: 0x0)
+var_write(name: lr, old: 0x800030c, new: 0x8000314)
+pc_write(old: 0x8000314, new: 0x8000318)
+pc_write(old: 0x8000318, new: 0x800031c)
+pc_write(old: 0x800031c, new: 0x8000314)
+pc_write(old: 0x8000314, new: 0x8000318)
+pc_write(old: 0x8000318, new: 0xc0ffe0)
+EOF
+RUN
