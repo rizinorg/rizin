@@ -227,6 +227,29 @@ bool ppc_is_conditional(ut32 insn_id) {
 	}
 }
 
+bool ppc_moves_to_spr(ut32 insn_id) {
+	switch (insn_id) {
+	default:
+		return false;
+	case PPC_INS_MTCTR:
+	case PPC_INS_MTCRF:
+	case PPC_INS_MTDCR:
+	case PPC_INS_MTFSB0:
+	case PPC_INS_MTFSB1:
+	case PPC_INS_MTFSF:
+	case PPC_INS_MTFSFI:
+	case PPC_INS_MTLR:
+	case PPC_INS_MTMSR:
+	case PPC_INS_MTMSRD:
+	case PPC_INS_MTOCRF:
+	case PPC_INS_MTSPR:
+	case PPC_INS_MTSR:
+	case PPC_INS_MTSRIN:
+	case PPC_INS_MTVSCR:
+		return true;
+	}
+}
+
 bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, NULL);
 	ut32 id = insn->id;

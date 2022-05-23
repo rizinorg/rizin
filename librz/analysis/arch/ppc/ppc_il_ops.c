@@ -524,6 +524,53 @@ static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, co
 	return SEQ5(set_cia, decr_ctr, set_lr, set_nia, JMP(VARL("NIA")));
 }
 
+static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, NOP);
+	ut32 id = insn->id;
+
+	const char *rS = cs_reg_name(handle, INSOP(0).reg);
+	const char *rT = cs_reg_name(handle, INSOP(0).reg);
+	const char *spr_name;
+
+	switch (id) {
+	default:
+		NOT_IMPLEMENTED;
+	case PPC_INS_MFCR:
+	case PPC_INS_MFDCR:
+	case PPC_INS_MFFS:
+	case PPC_INS_MFLR:
+	case PPC_INS_MFMSR:
+	case PPC_INS_MFOCRF:
+	case PPC_INS_MFSPR:
+	case PPC_INS_MFSR:
+	case PPC_INS_MFSRIN:
+	case PPC_INS_MFTB:
+	case PPC_INS_MFVSCR:
+		NOT_IMPLEMENTED;
+	case PPC_INS_MFCTR:
+	case PPC_INS_MTCTR:
+		spr_name = "ctr";
+		break;
+	// Move to <spr>
+	case PPC_INS_MTCRF:
+	case PPC_INS_MTDCR:
+	case PPC_INS_MTFSB0:
+	case PPC_INS_MTFSB1:
+	case PPC_INS_MTFSF:
+	case PPC_INS_MTFSFI:
+	case PPC_INS_MTLR:
+	case PPC_INS_MTMSR:
+	case PPC_INS_MTMSRD:
+	case PPC_INS_MTOCRF:
+	case PPC_INS_MTSPR:
+	case PPC_INS_MTSR:
+	case PPC_INS_MTSRIN:
+	case PPC_INS_MTVSCR:
+		NOT_IMPLEMENTED;
+	}
+	return ppc_moves_to_spr(id) ? SETG(spr_name, VARG(rS)) : SETG(rT, VARG(spr_name));
+}
+
 /**
  * \brief Returns the RZIL implementation of a given capstone instruction.
  * Or NULL if the instruction is not yet implemented.
@@ -710,6 +757,36 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		break;
 	case PPC_INS_BRINC: // This instruction is not in the ISA manual (v3.1B).
 		NOT_IMPLEMENTED;
+	case PPC_INS_MFCR:
+	case PPC_INS_MFCTR:
+	case PPC_INS_MFDCR:
+	case PPC_INS_MFFS:
+	case PPC_INS_MFLR:
+	case PPC_INS_MFMSR:
+	case PPC_INS_MFOCRF:
+	case PPC_INS_MFSPR:
+	case PPC_INS_MFSR:
+	case PPC_INS_MFSRIN:
+	case PPC_INS_MFTB:
+	case PPC_INS_MFVSCR:
+	case PPC_INS_MSYNC:
+	case PPC_INS_MTCRF:
+	case PPC_INS_MTCTR:
+	case PPC_INS_MTDCR:
+	case PPC_INS_MTFSB0:
+	case PPC_INS_MTFSB1:
+	case PPC_INS_MTFSF:
+	case PPC_INS_MTFSFI:
+	case PPC_INS_MTLR:
+	case PPC_INS_MTMSR:
+	case PPC_INS_MTMSRD:
+	case PPC_INS_MTOCRF:
+	case PPC_INS_MTSPR:
+	case PPC_INS_MTSR:
+	case PPC_INS_MTSRIN:
+	case PPC_INS_MTVSCR:
+		lop = move_from_to_spr_op(handle, insn, mode);
+		break;
 	}
 
 	return lop;
