@@ -213,6 +213,7 @@ bool ppc_is_conditional(ut32 insn_id) {
 	case PPC_INS_BCCTRL:
 	case PPC_INS_BCL:
 	case PPC_INS_BCLR:
+	case PPC_INS_BCLRL:
 	case PPC_INS_BCT:
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
@@ -364,7 +365,7 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
 	case PPC_INS_BCLR:
-	case PPC_INS_BCLRL:;
+	case PPC_INS_BCLRL:
 		bo_2 = NON_ZERO(LOGAND(UN(5, 0b00100), VARLP("bo")));
 		bo_3 = NON_ZERO(LOGAND(UN(5, 0b00010), VARLP("bo")));
 		ctr_ok = OR(bo_2, XOR(NON_ZERO(VARG("ctr")), bo_3)); // BO_2 | (CTR_M:63 ≠ 0) ⊕ BO_3
