@@ -1556,9 +1556,13 @@ RZ_API RzCoreFile *rz_core_file_cur(RzCore *r) {
 	return r->file;
 }
 
-/* --------------------------------------------------------------------------------- */
-
-RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
+/**
+ * \brief Open file use read-only Permission
+ * \param core RzCore instance
+ * \param fd File descriptor
+ */
+RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
+	rz_return_if_fail(core && fd >= 0);
 	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		rz_io_reopen(core->io, fd, RZ_PERM_R, 644);
 		return;
@@ -1600,10 +1604,20 @@ RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
 	free(file);
 }
 
-RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
+/**
+ * \brief Reopen file
+ * \param core RzCore instance
+ * \param fd File descriptor
+ * \param perms Permission \s RZ_PERM_R
+ */
+RZ_API void rz_core_io_file_reopen(RZ_NONNULL RzCore *core, int fd, int perms) {
+	rz_return_if_fail(core && fd >= 0);
 	if (rz_io_reopen(core->io, fd, perms, 644)) {
 		void **it;
 		RzPVector *maps = rz_io_maps(core->io);
+		if (!maps) {
+			return;
+		}
 		rz_pvector_foreach_prev(maps, it) {
 			RzIOMap *map = *it;
 			if (map->fd == fd) {
@@ -1612,6 +1626,8 @@ RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
 		}
 	}
 }
+
+/* --------------------------------------------------------------------------------- */
 
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig) {
 	RzCoreIOMapInfo *info = RZ_NEW(RzCoreIOMapInfo);

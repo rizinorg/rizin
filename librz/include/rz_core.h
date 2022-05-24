@@ -596,6 +596,8 @@ RZ_API bool rz_core_raw_file_print(RzCore *core);
 RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode);
 RZ_API int rz_core_file_binlist(RzCore *core);
 RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 num);
+RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd);
+RZ_API void rz_core_io_file_reopen(RZ_NONNULL RzCore *core, int fd, int perms);
 RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, ut64 size);
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz);
@@ -624,6 +626,7 @@ RZ_API bool rz_core_is_debug(RzCore *core);
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
 RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
 RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core);
+RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr);
 
 RZ_API void rz_core_debug_ri(RzCore *core);
 RZ_API void rz_core_debug_set_register_flags(RzCore *core);
@@ -716,6 +719,11 @@ RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut6
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 RZ_API int rz_core_esil_step_back(RzCore *core);
 RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil);
+RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_analysis_esil_step_over(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_analysis_esil_reinit(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size);
+RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core);
 
 /* canalysis.c */
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
