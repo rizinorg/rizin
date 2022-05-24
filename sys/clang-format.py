@@ -38,6 +38,7 @@ skiplist = [
     "librz/bin/d/jni.h",
     "librz/util/bdiff.c",
     "librz/asm/arch/tms320/c55x/table.h",
+    "librz/include/sflib/",
 ]
 
 patterns = ["*.c", "*.cpp", "*.h", "*.hpp", "*.inc"]
