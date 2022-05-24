@@ -414,6 +414,9 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
  * * Address stored in CTR
  * * Address stored in TAR
  *
+ * NOTE: Capstone calculates the NIA and fills the operand member with it.
+ * We don't need to do the shift, add and extend here.
+ *
  * \param insn The capstone instructions.
  * \param mode The capstone mode.
  * \return RzILOpPure* The target address of the jump.
@@ -430,27 +433,29 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 	case PPC_INS_BA:
 	case PPC_INS_BLA:
 		// EXTS(LI || 0b00)
-		return UA(INSOP(0).imm); // Capstone does the shift/add etc.
-	case PPC_INS_BDZA:
-	case PPC_INS_BDZLA:
-	case PPC_INS_BDNZA:
-	case PPC_INS_BDNZLA:
-		// EXTS(BD || 0b00)
-		return UA(INSOP(0).imm);
 	// Branch to relative address
 	case PPC_INS_B:
 	case PPC_INS_BL:
 		// CIA + EXTS(LI || 0b00)
 		return UA(INSOP(0).imm);
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZLA:
+	case PPC_INS_BDNZA:
+	case PPC_INS_BDNZLA:
+		// EXTS(BD || 0b00)
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
-	case PPC_INS_BCT:
 	case PPC_INS_BDZ:
 	case PPC_INS_BDZL:
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZL:
+		// If bits in cr0 are checked, the opcount is 1.
 		// CIA + EXTS(BD || 0b00)
-		return UA(INSOP(0).imm);
+		if (insn->detail->ppc.op_count == 2) {
+			return UA(INSOP(1).imm);
+		} else {
+			return UA(INSOP(0).imm);
+		}
 	// Branch to LR
 	case PPC_INS_BLR:
 	case PPC_INS_BLRL:
