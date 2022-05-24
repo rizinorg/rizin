@@ -37,6 +37,7 @@ skiplist = [
     "librz/bin/mangling/cxx/",
     "librz/util/bdiff.c",
     "librz/asm/arch/tms320/c55x/table.h",
+    "librz/include/sflib/",
 ]
 
 patterns = ["*.c", "*.cpp", "*.h", "*.hpp", "*.inc"]
