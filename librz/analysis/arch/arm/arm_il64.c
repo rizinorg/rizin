@@ -221,6 +221,9 @@ static const char *reg_var_name(arm64_reg reg) {
 	}
 }
 
+/**
+ * Get the bits of the given register or 0, if it is not known (e.g. not implemented yet)
+ */
 static ut32 reg_bits(arm64_reg reg) {
 	if (is_xreg(reg) || reg == ARM64_REG_XZR) {
 		return 64;
@@ -228,7 +231,6 @@ static ut32 reg_bits(arm64_reg reg) {
 	if (is_wreg(reg) || reg == ARM64_REG_WZR) {
 		return 32;
 	}
-	rz_warn_if_reached();
 	return 0;
 }
 
@@ -369,6 +371,9 @@ static RzILOpBitVector *arg(cs_insn *insn, size_t n, ut32 *bits_inout) {
 	case ARM64_OP_REG: {
 		if (!bits_requested) {
 			bits_requested = REGBITS(n);
+			if (!bits_requested) {
+				return NULL;
+			}
 			if (bits_inout) {
 				*bits_inout = bits_requested;
 			}
@@ -444,6 +449,9 @@ static RzILOpEffect *add_sub(cs_insn *insn) {
 #endif
 		;
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *a = ARG(1, &bits);
 	RzILOpBitVector *b = ARG(2, &bits);
 	if (!a || !b) {
@@ -502,6 +510,9 @@ static RzILOpEffect *bitwise(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *a = ARG(1, &bits);
 	RzILOpBitVector *b = ARG(2, &bits);
 	if (!a || !b) {
@@ -546,6 +557,9 @@ static RzILOpEffect *shift(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *a = ARG(1, &bits);
 	if (!a) {
 		return NULL;
@@ -652,6 +666,9 @@ static RzILOpEffect *bic(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *a = ARG(1, &bits);
 	RzILOpBitVector *b = ARG(2, &bits);
 	if (!a || !b) {
@@ -690,6 +707,9 @@ static RzILOpEffect *cas(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	switch (insn->id) {
 	case ARM64_INS_CASB:
 	case ARM64_INS_CASAB:
@@ -825,6 +845,9 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(dst_idx);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *src0 = ARG(src0_idx, &bits);
 	if (!src0) {
 		return NULL;
@@ -874,7 +897,7 @@ static RzILOpEffect *csinc(cs_insn *insn) {
  * ARM: cset, csetm
  */
 static RzILOpEffect *cset(cs_insn *insn) {
-	if (!ISREG(0)) {
+	if (!ISREG(0) || !REGBITS(0)) {
 		return NULL;
 	}
 	RzILOpBool *c = cond(insn->detail->arm64.cc);
@@ -941,6 +964,9 @@ static RzILOpEffect *extr(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *h = ARG(1, &bits);
 	RzILOpBitVector *l = ARG(2, &bits);
 	ut32 dist_bits = 6;
@@ -1141,7 +1167,7 @@ static RzILOpEffect *ldr(cs_insn *insn) {
  *           stxrh, stxp, stlxr, stlxrb. stlxrh, stlxp, stnp, sttr, sttrb, sttrh
  */
 static RzILOpEffect *str(cs_insn *insn) {
-	if (!ISREG(0)) {
+	if (!ISREG(0) || !REGBITS(0)) {
 		return NULL;
 	}
 	bool result = insn->id == ARM64_INS_STXR || insn->id == ARM64_INS_STXRB || insn->id == ARM64_INS_STXRH || insn->id == ARM64_INS_STXP ||
@@ -1184,6 +1210,10 @@ static RzILOpEffect *str(cs_insn *insn) {
 		// ARM64_INS_STR, ARM64_INS_STUR, ARM64_INS_STLLR, ARM64_INS_STLR, ARM64_INS_STLUR, ARM64_INS_STP,
 		// ARM64_INS_STXR, ARM64_INS_STXP, ARM64_INS_STLXR, ARM64_INS_STLXP, ARM64_INS_STNP, ARM64_INS_STTR
 		bits = REGBITS(src_op);
+		if (!bits) {
+			rz_il_op_pure_free(addr);
+			return NULL;
+		}
 		break;
 	}
 	RzILOpBitVector *val = ARG(src_op, &bits);
@@ -1563,6 +1593,9 @@ static RzILOpEffect *madd(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *ma = ARG(1, &bits);
 	RzILOpBitVector *mb = ARG(2, &bits);
 	RzILOpBitVector *addend = ARG(3, &bits);
@@ -1587,6 +1620,9 @@ static RzILOpEffect *mul(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *ma = ARG(1, &bits);
 	RzILOpBitVector *mb = ARG(2, &bits);
 	if (!ma || !mb) {
@@ -1617,6 +1653,9 @@ static RzILOpEffect *mov(cs_insn *insn) {
 		return movn(insn);
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *src = ARG(1, &bits);
 	if (!src) {
 		return NULL;
@@ -1655,7 +1694,11 @@ static RzILOpEffect *movn(cs_insn *insn) {
 	// Unfortunately, capstone v4 seems to always disassemble as movn, so we still have to implement this.
 	cs_arm64_op *op = &insn->detail->arm64.operands[1];
 	ut32 shift = op->shift.type == ARM64_SFT_LSL ? op->shift.value : 0;
-	return write_reg(REGID(0), UN(REGBITS(0), ~(((ut64)op->imm) << shift)));
+	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
+	return write_reg(REGID(0), UN(bits, ~(((ut64)op->imm) << shift)));
 }
 
 /**
@@ -1729,6 +1772,9 @@ static RzILOpEffect *sbfx(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *src = ARG(1, &bits);
 	if (!src) {
 		return NULL;
@@ -1860,6 +1906,9 @@ static RzILOpEffect *rev(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 dst_bits = REGBITS(0);
+	if (!dst_bits) {
+		return NULL;
+	}
 	arm64_reg src_reg = xreg_of_reg(REGID(1));
 	ut32 container_bits = dst_bits;
 	if (insn->id == ARM64_INS_REV32) {
@@ -1923,6 +1972,9 @@ static RzILOpEffect *sdiv(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *a = ARG(1, &bits);
 	RzILOpBitVector *b = ARG(2, &bits);
 	if (!a || !b) {
@@ -1946,6 +1998,9 @@ static RzILOpEffect *udiv(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+	if (!bits) {
+		return NULL;
+	}
 	RzILOpBitVector *a = ARG(1, &bits);
 	RzILOpBitVector *b = ARG(2, &bits);
 	if (!a || !b) {
@@ -2078,6 +2133,9 @@ static RzILOpEffect *swp(cs_insn *insn) {
 		break;
 	default: // ARM64_INS_SWP, ARM64_INS_SWPA, ARM64_INS_SWPAL, ARM64_INS_SWPL:
 		bits = REGBITS(0);
+		if (!bits) {
+			return NULL;
+		}
 		break;
 	}
 	ut32 addr_bits = 64;
@@ -2113,7 +2171,7 @@ static RzILOpEffect *swp(cs_insn *insn) {
  * ARM: sxtb, sxth, sxtw, uxtb, uxth
  */
 static RzILOpEffect *sxt(cs_insn *insn) {
-	if (!ISREG(0)) {
+	if (!ISREG(0) || !REGBITS(0)) {
 		return NULL;
 	}
 	ut32 bits;
