@@ -622,7 +622,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 
 /**
  * \brief Returns the RZIL implementation of a given capstone instruction.
- * Or NULL if the instruction is not yet implemented.
+ * Or NOP if the instruction is not yet implemented.
  *
  * \param handle The capstone handle.
  * \param insn The capstone instruction.
