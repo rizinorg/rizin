@@ -5,6 +5,7 @@
 #include "ppc_analysis.h"
 #include "rz_il/rz_il_opcodes.h"
 #include <rz_util/rz_assert.h>
+#include <rz_endian.h>
 #include <rz_analysis.h>
 #include <rz_il.h>
 #include <rz_types.h>
@@ -201,7 +202,6 @@ bool ppc_sets_lr(ut32 insn_id) {
 	case PPC_INS_BLRL:
 		return true;
 	}
-
 }
 
 bool ppc_is_conditional(ut32 insn_id) {
@@ -277,7 +277,7 @@ bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
 	case PPC_INS_BCT:
-		return !((0x4) & INSOP(0).imm); // not BO_2
+		return !(0x4 & PPC_READ_BO_FIELD); // not BO_2
 	}
 }
 
@@ -348,8 +348,8 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	rz_return_val_if_fail(insn, NULL);
 	ut32 id = insn->id;
 
-	ut8 bo = INSOP(0).imm;
-	ut8 bi = INSOP(1).imm;
+	ut8 bo = PPC_READ_BO_FIELD;
+	ut8 bi = PPC_READ_BI_FIELD;
 	RzILOpPure *ctr_ok;
 	RzILOpPure *cond_ok;
 	RzILOpPure *bo_0;
@@ -365,19 +365,19 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	case PPC_INS_BCL:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:;
-		bo_2 = NON_ZERO(LOGAND(UN(5, 0b001000), VARLP("bo")));
-		bo_3 = NON_ZERO(LOGAND(UN(5, 0b000100), VARLP("bo")));
+		bo_2 = NON_ZERO(LOGAND(UN(5, 0b00100), VARLP("bo")));
+		bo_3 = NON_ZERO(LOGAND(UN(5, 0b00010), VARLP("bo")));
 		ctr_ok = OR(bo_2, XOR(NON_ZERO(VARG("ctr")), bo_3)); // BO_2 | (CTR_M:63 ≠ 0) ⊕ BO_3
 
-		bo_0 = NON_ZERO(LOGAND(UN(5, 0b100000), VARLP("bo")));
-		bo_1 = NON_ZERO(LOGAND(UN(5, 0b010000), VARLP("bo")));
+		bo_0 = NON_ZERO(LOGAND(UN(5, 0b10000), VARLP("bo")));
+		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));
 		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
 
 		return LET("bo", UN(5, bo), AND(cond_ok, ctr_ok));
 	case PPC_INS_BCCTR:
 	case PPC_INS_BCCTRL:;
-		bo_0 = NON_ZERO(LOGAND(UN(5, 0b100000), VARLP("bo")));
-		bo_1 = NON_ZERO(LOGAND(UN(5, 0b010000), VARLP("bo")));
+		bo_0 = NON_ZERO(LOGAND(UN(5, 0b10000), VARLP("bo")));
+		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));
 		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
 
 		return LET("bo", UN(5, bo), cond_ok);
