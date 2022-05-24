@@ -571,6 +571,55 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	return ppc_moves_to_spr(id) ? SETG(spr_name, VARG(rS)) : SETG(rT, VARG(spr_name));
 }
 
+static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, NOP);
+	ut32 id = insn->id;
+	bool sets_cr = insn->detail->ppc.update_cr0;
+
+	// How to read instruction ids:
+	// Letter			Meaning
+	// R/S				Rotate, Shift
+	// L/R				Left, Right
+	// W/D		 		Word, Double Word
+	// A/I				Algebraic, Immediate
+	// C/CL/CR			Clear, clear left/right
+	// M/NM/MI			Mask, AND with mask, mask insert
+
+	switch (id) {
+	default:
+		NOT_IMPLEMENTED;
+	case PPC_INS_RLDCL:
+	case PPC_INS_RLDCR:
+	case PPC_INS_RLDIC:
+	case PPC_INS_RLDICL:
+	case PPC_INS_RLDICR:
+	case PPC_INS_RLDIMI:
+	case PPC_INS_RLWIMI:
+	case PPC_INS_RLWINM:
+	case PPC_INS_RLWNM:
+	case PPC_INS_SLBIA:
+	case PPC_INS_SLBIE:
+	case PPC_INS_SLBMFEE:
+	case PPC_INS_SLBMTE:
+	case PPC_INS_SLD:
+	case PPC_INS_SLW:
+	case PPC_INS_SRAD:
+	case PPC_INS_SRADI:
+	case PPC_INS_SRAW:
+	case PPC_INS_SRAWI:
+	case PPC_INS_SRD:
+	case PPC_INS_SRW:
+	// Extended Mnemonics
+	case PPC_INS_ROTLD:
+	case PPC_INS_ROTLDI:
+	case PPC_INS_ROTLWI:
+	case PPC_INS_ROTLW:
+	case PPC_INS_CLRLDI:
+	case PPC_INS_CLRLWI:
+		NOT_IMPLEMENTED;
+	}
+}
+
 /**
  * \brief Returns the RZIL implementation of a given capstone instruction.
  * Or NULL if the instruction is not yet implemented.
@@ -786,6 +835,36 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MTVSCR:
 		lop = move_from_to_spr_op(handle, insn, mode);
+		break;
+	// Rotate and rotate
+	case PPC_INS_RLDCL:
+	case PPC_INS_RLDCR:
+	case PPC_INS_RLDIC:
+	case PPC_INS_RLDICL:
+	case PPC_INS_RLDICR:
+	case PPC_INS_RLDIMI:
+	case PPC_INS_RLWIMI:
+	case PPC_INS_RLWINM:
+	case PPC_INS_RLWNM:
+	case PPC_INS_ROTLD:
+	case PPC_INS_ROTLDI:
+	case PPC_INS_CLRLDI:
+	case PPC_INS_ROTLWI:
+	case PPC_INS_CLRLWI:
+	case PPC_INS_ROTLW:
+	case PPC_INS_SLBIA:
+	case PPC_INS_SLBIE:
+	case PPC_INS_SLBMFEE:
+	case PPC_INS_SLBMTE:
+	case PPC_INS_SLD:
+	case PPC_INS_SLW:
+	case PPC_INS_SRAD:
+	case PPC_INS_SRADI:
+	case PPC_INS_SRAW:
+	case PPC_INS_SRAWI:
+	case PPC_INS_SRD:
+	case PPC_INS_SRW:
+		lop = shift_and_rotate(handle, insn, mode);
 		break;
 	}
 

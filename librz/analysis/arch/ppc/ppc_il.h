@@ -36,6 +36,11 @@
 // If the rX reg is 0 it returns the value 0. Otherwise the value store in rX.
 #define IFREG0(rX) ITE(EQ(VARG(rX), UA(0)), UA(0), VARG(rX))
 
+// Rotate x left by y bits
+#define ROTL64(x, y) (NOP)
+// Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead.
+#define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, x), y) : NOP)
+
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
 
