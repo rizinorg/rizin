@@ -574,7 +574,18 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
 	ut32 id = insn->id;
-	bool sets_cr = insn->detail->ppc.update_cr0;
+	bool sets_cr0 = insn->detail->ppc.update_cr0;
+
+	// READ
+	const char *rA = cs_reg_name(handle, INSOP(0).reg);
+	const char *rS = cs_reg_name(handle, INSOP(1).reg);
+	const char *rB = cs_reg_name(handle, INSOP(2).reg);
+	ut64 sH = INSOP(2).imm;
+	ut64 mB = INSOP(3).imm;
+	ut64 mE = INSOP(4).imm;
+
+	RzILOpPure *into_rA;
+	RzILOpEffect *set_mask = NOP;
 
 	// How to read instruction ids:
 	// Letter			Meaning
@@ -588,15 +599,23 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
+	case PPC_INS_RLWIMI:
+	case PPC_INS_RLWINM:
+	case PPC_INS_RLWNM:;
+		RzILOpPure *n = (id == PPC_INS_RLWNM) ? CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x1f))) : U8(sH);
+		RzILOpPure *r = ROTL32(VARG(rS), n);
+		set_mask = SETL("m", MASK(ADD(U8(mB), U8(32)), ADD(U8(mE), U8(32))));
+		into_rA = LOGAND(r, VARL("m"));
+		if (id == PPC_INS_RLWIMI) {
+			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("m"))));
+		}
+		break;
 	case PPC_INS_RLDCL:
 	case PPC_INS_RLDCR:
 	case PPC_INS_RLDIC:
 	case PPC_INS_RLDICL:
 	case PPC_INS_RLDICR:
 	case PPC_INS_RLDIMI:
-	case PPC_INS_RLWIMI:
-	case PPC_INS_RLWINM:
-	case PPC_INS_RLWNM:
 	case PPC_INS_SLBIA:
 	case PPC_INS_SLBIE:
 	case PPC_INS_SLBMFEE:
@@ -618,6 +637,10 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_CLRLWI:
 		NOT_IMPLEMENTED;
 	}
+
+	RzILOpEffect *update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : NOP;
+
+	return SEQ3(set_mask, SETG(rA, into_rA), update_cr0);
 }
 
 /**

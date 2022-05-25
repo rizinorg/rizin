@@ -38,6 +38,7 @@
 #define ITE(c, t, f) rz_il_op_new_ite(c, t, f)
 
 #define UN(l, val)       rz_il_op_new_bitv_from_ut64(l, val)
+#define UNMAX(l)         rz_il_op_new_bitv_max(l)
 #define U8(val)          UN(8, val)
 #define U16(val)         UN(16, val)
 #define U32(val)         UN(32, val)

@@ -4,6 +4,7 @@
 #ifndef PPC_IL_H
 #define PPC_IL_H
 
+#include "ppc_analysis.h"
 #include <rz_reg.h>
 #include <rz_analysis.h>
 #include <rz_il.h>
@@ -36,10 +37,16 @@
 // If the rX reg is 0 it returns the value 0. Otherwise the value store in rX.
 #define IFREG0(rX) ITE(EQ(VARG(rX), UA(0)), UA(0), VARG(rX))
 
+// y should be U8() for the rotate macros. x shoudl be 32 and 64bit.
 // Rotate x left by y bits
-#define ROTL64(x, y) (LOGOR(SHIFTL0(x, U8(y)), SHIFTR0(DUP(x), SUB(U8(64), U8(y)))))
+#define ROTL64(x, y) (LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(64), DUP(y)))))
 // Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead.
-#define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, DUP(x)), y) : LOGOR(SHIFTL0(x, U8(y)), SHIFTR0(DUP(x), SUB(U8(32), U8(y)))))
+#define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, DUP(x)), y) : LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(32), DUP(y)))))
+
+#define MASK(mstart, mstop) \
+	ITE(ULE(mstart, mstop), \
+		LOGAND(SHIFTL0(UNMAX(PPC_ARCH_BITS), mstart), SHIFTR0(UNMAX(PPC_ARCH_BITS), mstop)), \
+		LOGNOT(LOGAND(SHIFTL0(UNMAX(PPC_ARCH_BITS), mstart), SHIFTR0(UNMAX(PPC_ARCH_BITS), mstart))))
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
