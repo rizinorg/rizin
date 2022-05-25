@@ -941,6 +941,15 @@ jobs:
           asset_path: ./rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip/rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip
           asset_name: rizin-windows-static-${{ steps.extract_version.outputs.branch }}.zip
           asset_content_type: application/zip
+      - name: Upload rizin windows dynamic archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./rizin-clang_cl-${{ steps.extract_version.outputs.branch }}.zip/rizin-clang_cl-${{ steps.extract_version.outputs.branch }}.zip
+          asset_name: rizin-windows-shared64-${{ steps.extract_version.outputs.branch }}.zip
+          asset_content_type: application/zip
       - name: Upload rizin windows installer (x64)
         uses: actions/upload-release-asset@v1
         env:
