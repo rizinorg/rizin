@@ -1093,3 +1093,37 @@ RZ_API bool rz_core_write_seq_at(RzCore *core, ut64 addr, ut64 from, ut64 to, ut
 	free(buf);
 	return true;
 }
+
+/**
+ * \brief Copy \p len bytes from \p from to \p addr
+ *
+ * \param core Reference to RzCore instance
+ * \param addr Where the data should be copied to
+ * \param from Where the data should be read from
+ * \param len Number of bytes to copy, expected to not be negative
+ * \return true if the write operation succeeds, false otherwise
+ */
+RZ_API bool rz_core_write_duplicate_at(RzCore *core, ut64 addr, ut64 from, int len) {
+	rz_return_val_if_fail(core, false);
+	rz_return_val_if_fail(len >= 0, false);
+
+	bool res = false;
+	ut8 *data = RZ_NEWS(ut8, len);
+	if (!data) {
+		return false;
+	}
+
+	int n = rz_io_nread_at(core->io, from, data, len);
+	if (n < 0) {
+		RZ_LOG_ERROR("Cannot read data from %" PFMT64x ".\n", from);
+		goto err;
+	}
+	if (!rz_core_write_at(core, addr, data, n)) {
+		RZ_LOG_ERROR("Cannot write %d bytes to %" PFMT64x ".\n", n, addr);
+		goto err;
+	}
+	res = true;
+err:
+	free(data);
+	return res;
+}

@@ -610,6 +610,7 @@ RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, RZ_NONNULL const c
 RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len);
 RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen);
+RZ_API bool rz_core_write_duplicate_at(RzCore *core, ut64 addr, ut64 from, int len);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen, int *buflen);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state);
