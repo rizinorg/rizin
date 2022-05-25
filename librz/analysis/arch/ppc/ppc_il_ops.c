@@ -584,8 +584,10 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	ut64 mB = INSOP(3).imm;
 	ut64 mE = INSOP(4).imm;
 
+	RzILOpPure *n; // Shift/rotate steps
+	RzILOpPure *r; // Rotate result
 	RzILOpPure *into_rA;
-	RzILOpEffect *set_mask = NOP;
+	RzILOpEffect *set_mask = NULL;
 
 	// How to read instruction ids:
 	// Letter			Meaning
@@ -602,8 +604,8 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_RLWIMI:
 	case PPC_INS_RLWINM:
 	case PPC_INS_RLWNM:;
-		RzILOpPure *n = (id == PPC_INS_RLWNM) ? CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x1f))) : U8(sH);
-		RzILOpPure *r = ROTL32(VARG(rS), n);
+		n = (id == PPC_INS_RLWNM) ? CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x1f))) : U8(sH);
+		r = ROTL32(VARG(rS), n);
 		set_mask = SETL("m", MASK(ADD(U8(mB), U8(32)), ADD(U8(mE), U8(32))));
 		into_rA = LOGAND(r, VARL("m"));
 		if (id == PPC_INS_RLWIMI) {
@@ -615,7 +617,32 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_RLDIC:
 	case PPC_INS_RLDICL:
 	case PPC_INS_RLDICR:
-	case PPC_INS_RLDIMI:
+	case PPC_INS_RLDIMI:;
+		if (id == PPC_INS_RLDCR || id == PPC_INS_RLDCL) {
+			// For these instruction ME is the third operand, not MB.
+			mE = INSOP(3).imm;
+			n = CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x3f)));
+		} else {
+			n = U8(((sH & 1) << 4) | (sH >> 1)); // n ← sh5 || sh0:4
+		}
+		r = ROTL64(VARG(rS), n);
+		RzILOpPure *b, *e; // Mask begin/end
+		if (id == PPC_INS_RLDICR || id == PPC_INS_RLDCR) {
+			e = U8(((mE & 1) << 4) | (mE >> 1)); // e ← me5 || me0:4
+			set_mask = SETL("m", MASK(U8(0), e));
+		} else {
+			b = U8(((mB & 1) << 4) | (mB >> 1)); // b ← mb5 || mb0:4
+			if (id == PPC_INS_RLDCL || id == PPC_INS_RLDICL) {
+				set_mask = SETL("m", MASK(b, U8(63)));
+			} else {
+				set_mask = SETL("m", MASK(b, LOGNOT(n)));
+			}
+		}
+		into_rA = LOGAND(r, VARL("m"));
+		if (id == PPC_INS_RLWIMI) {
+			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("m"))));
+		}
+		break;
 	case PPC_INS_SLBIA:
 	case PPC_INS_SLBIE:
 	case PPC_INS_SLBMFEE:
@@ -640,7 +667,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 
 	RzILOpEffect *update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : NOP;
 
-	return SEQ3(set_mask, SETG(rA, into_rA), update_cr0);
+	return SEQ3(set_mask ? set_mask : NOP, SETG(rA, into_rA), update_cr0);
 }
 
 /**
