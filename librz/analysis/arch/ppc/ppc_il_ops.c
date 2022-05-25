@@ -586,6 +586,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 
 	RzILOpPure *n; // Shift/rotate steps
 	RzILOpPure *r; // Rotate result
+	RzILOpPure *b, *e; // Mask begin/end
 	RzILOpPure *into_rA;
 	RzILOpEffect *set_mask = NULL;
 
@@ -604,9 +605,21 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_RLWIMI:
 	case PPC_INS_RLWINM:
 	case PPC_INS_RLWNM:;
-		n = (id == PPC_INS_RLWNM) ? CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x1f))) : U8(sH);
+		if (id == PPC_INS_RLWNM || id == PPC_INS_ROTLW) {
+			n = CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x1f)));
+		} else {
+			n = U8(sH);
+		}
 		r = ROTL32(VARG(rS), n);
-		set_mask = SETL("m", MASK(ADD(U8(mB), U8(32)), ADD(U8(mE), U8(32))));
+		if (id == PPC_INS_ROTLW || id == PPC_INS_ROTLWI) {
+			b = ADD(U8(0), U8(32));
+			e = ADD(U8(31), U8(32));
+			set_mask = SET_MASK(b, e);
+		} else {
+			b = ADD(U8(mB), U8(32));
+			e = ADD(U8(mE), U8(32));
+			set_mask = SET_MASK(b, e);
+		}
 		into_rA = LOGAND(r, VARL("m"));
 		if (id == PPC_INS_RLWIMI) {
 			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("m"))));
@@ -626,16 +639,15 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			n = U8(((sH & 1) << 4) | (sH >> 1)); // n ← sh5 || sh0:4
 		}
 		r = ROTL64(VARG(rS), n);
-		RzILOpPure *b, *e; // Mask begin/end
 		if (id == PPC_INS_RLDICR || id == PPC_INS_RLDCR) {
 			e = U8(((mE & 1) << 4) | (mE >> 1)); // e ← me5 || me0:4
-			set_mask = SETL("m", MASK(U8(0), e));
+			set_mask = SET_MASK(U8(0), e);
 		} else {
 			b = U8(((mB & 1) << 4) | (mB >> 1)); // b ← mb5 || mb0:4
 			if (id == PPC_INS_RLDCL || id == PPC_INS_RLDICL) {
-				set_mask = SETL("m", MASK(b, U8(63)));
+				set_mask = SET_MASK(b, U8(63));
 			} else {
-				set_mask = SETL("m", MASK(b, LOGNOT(n)));
+				set_mask = SET_MASK(b, LOGNOT(n));
 			}
 		}
 		into_rA = LOGAND(r, VARL("m"));

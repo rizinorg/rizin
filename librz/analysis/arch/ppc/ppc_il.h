@@ -43,10 +43,45 @@
 // Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead.
 #define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, DUP(x)), y) : LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(32), DUP(y)))))
 
-#define MASK(mstart, mstop) \
-	ITE(ULE(mstart, mstop), \
-		LOGAND(SHIFTL0(UNMAX(PPC_ARCH_BITS), mstart), SHIFTR0(UNMAX(PPC_ARCH_BITS), mstop)), \
-		LOGNOT(LOGAND(SHIFTL0(UNMAX(PPC_ARCH_BITS), mstart), SHIFTR0(UNMAX(PPC_ARCH_BITS), mstart))))
+// Sets bit `i` in the local variable with width `w` of the name `vn`.
+// Please note: The left most bit is bit 0.
+#define SET_BIT(vn, w, i) SETL(vn, LOGOR(VARL(vn), SHIFTR0(SHIFTR(UN(w, 0), IL_TRUE, U8(1)), i)))
+// Implements the mask generation from the Reference Manual.
+//
+// if mstart ≤ mstop then
+//      mask[mstart:mstop] = ones
+//      mask[all other bits] = zeros
+// else
+//      mask[mstart:63] = ones
+//      mask[0:mstop] = ones
+//      mask[all other bits] = zeros
+//
+// The algorithm implemented here is:
+//
+// ```
+// count = (mstart == mstop) ? PPC_ARCH_BITS :
+//                             ((mstart < mstop) ?
+//                                                (mstop - mstart) :
+//                                                (mstop + (PPC_ARCH_BITS - mstart)));
+// mask = 0
+// while (count != 0) {
+//     mask[mstart] = 1;
+//     mstart = ((mstart + 1) % PPC_ARCH_BITS) + 32;
+//     count--;
+// }
+// ```
+//
+// mstart and mstop should be U8 pures.
+// The local variable "m" will hold the mask
+
+#define SET_MASK(mstart, mstop) \
+	SEQ5(SETL("mstart", mstart), \
+		SETL("mstop", mstop), \
+		SETL("count", ITE(EQ(VARL("mstart"), VARL("mstop")), U8(PPC_ARCH_BITS), ITE(ULT(VARL("mstart"), VARL("mstop")), SUB(VARL("mstop"), VARL("mstart")), ADD(VARL("mstop"), SUB(U8(PPC_ARCH_BITS), VARL("mstart")))))), \
+		SETL("m", UA(0)), \
+		REPEAT(EQ(VARL("count"), U8(0)), \
+			SEQ2(SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
+				SETL("count", SUB(VARL("count"), U8(1))))))
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
