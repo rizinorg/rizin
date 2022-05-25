@@ -37,9 +37,9 @@
 #define IFREG0(rX) ITE(EQ(VARG(rX), UA(0)), UA(0), VARG(rX))
 
 // Rotate x left by y bits
-#define ROTL64(x, y) (NOP)
+#define ROTL64(x, y) (LOGOR(SHIFTL0(x, U8(y)), SHIFTR0(DUP(x), SUB(U8(64), U8(y)))))
 // Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead.
-#define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, x), y) : NOP)
+#define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, DUP(x)), y) : LOGOR(SHIFTL0(x, U8(y)), SHIFTR0(DUP(x), SUB(U8(32), U8(y)))))
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
