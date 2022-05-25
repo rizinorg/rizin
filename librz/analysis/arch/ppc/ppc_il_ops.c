@@ -593,6 +593,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	RzILOpPure *r; // Rotate result
 	RzILOpPure *b, *e; // Mask begin/end
 	RzILOpPure *into_rA;
+	RzILOpPure *ca_val; // Arithmetic shift instructions set the ca and ca32 field.
 	RzILOpEffect *set_mask = NULL, *set_ca = NULL;
 
 	// How to read instruction ids:
@@ -679,22 +680,35 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		}
 		into_rA = SHIFTRA(VARG(rS), n);
 		// Set ca, ca32 to 1 if RS is negative and 1s were shifted out.
-		RzILOpPure *ca_val = ITE(AND(SLT(VARG(rS), UA(0)),
-						 NON_ZERO(MOD(VARG(rS), SHIFTL0(UA(1), n)))), // is_zero(RS % (1 << n))
+		ca_val = ITE(AND(SLT(VARG(rS), UA(0)),
+				     NON_ZERO(MOD(VARG(rS), SHIFTL0(UA(1), n)))), // (RS % (1 << n)) != 0
 			IL_TRUE,
 			IL_FALSE);
 		set_ca = SEQ2(SETG("ca", ca_val), SETG("ca32", DUP(ca_val)));
 		break;
 	case PPC_INS_SLW:
 	case PPC_INS_SRW:
+		into_rA = (id == PPC_INS_SLW) ? SHIFTL0(UNSIGNED(32, VARG(rS)), VARG(rB)) : SHIFTR0(UNSIGNED(32, VARG(rS)), VARG(rB));
+		if (IN_64BIT_MODE) {
+			into_rA = APPEND(U32(0), into_rA);
+		}
+		break;
 	case PPC_INS_SRAW:
 	case PPC_INS_SRAWI:
+		n = (id == PPC_INS_SRAW) ? CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x3f))) : U8(sH);
+		into_rA = EXTS(SHIFTRA(UNSIGNED(32, VARG(rS)), n));
+		ca_val = ITE(AND(SLT(UNSIGNED(32, VARG(rS)), U32(0)),
+				     NON_ZERO(MOD(UNSIGNED(32, VARG(rS)), SHIFTL0(UA(1), n)))), // (RS % (1 << n)) != 0
+			IL_TRUE,
+			IL_FALSE);
+		set_ca = SEQ2(SETG("ca", ca_val), SETG("ca32", DUP(ca_val)));
 		break;
+	// Extended Mnemonics
 	case PPC_INS_SLBIA:
 	case PPC_INS_SLBIE:
 	case PPC_INS_SLBMFEE:
 	case PPC_INS_SLBMTE:
-	// Extended Mnemonics
+		NOT_IMPLEMENTED;
 	case PPC_INS_CLRLDI:
 	case PPC_INS_CLRLWI:
 		n = U8(0);
