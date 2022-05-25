@@ -444,3 +444,26 @@ err:
 	rz_list_free(res);
 	return NULL;
 }
+
+/* \brief Seek to the \p index instruction in the current basic block
+ *
+ * Allows \p index to be negative, in this case it will count
+ * the instructions from the end of the block
+ * */
+RZ_IPI bool rz_core_seek_bb_instruction(RzCore *core, int index) {
+	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
+	if (!bb) {
+		RZ_LOG_ERROR("Can't find a basic block for 0x%08" PFMT64x "\n", core->offset);
+		return false;
+	}
+	// handle negative indices
+	if (index < 0) {
+		index = bb->ninstr + index;
+	}
+	if (!(index >= 0 && index < bb->ninstr)) {
+		RZ_LOG_ERROR("The current basic block has %d instructions\n", bb->ninstr);
+		return false;
+	}
+	ut64 inst_addr = rz_analysis_block_get_op_addr(bb, index);
+	return rz_core_seek(core, inst_addr, true);
+}
