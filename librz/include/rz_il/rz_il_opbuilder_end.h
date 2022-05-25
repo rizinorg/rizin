@@ -6,6 +6,7 @@
 #undef ITE
 
 #undef UN
+#undef UNMAX
 #undef U8
 #undef U16
 #undef U32
@@ -31,6 +32,8 @@
 #undef MUL
 #undef DIV
 #undef SDIV
+#undef MOD
+#undef SMOD
 #undef SHIFTL
 #undef SHIFTR
 #undef SHIFTL0

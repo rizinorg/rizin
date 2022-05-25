@@ -571,6 +571,11 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	return ppc_moves_to_spr(id) ? SETG(spr_name, VARG(rS)) : SETG(rT, VARG(spr_name));
 }
 
+/**
+ *
+ * NOTE: Shft instructions are not implemented as in the programmer reference manual.
+ * The manual uses rotate, but here we simply use the SHIFT ops.
+ */
 static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
 	ut32 id = insn->id;
@@ -588,7 +593,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	RzILOpPure *r; // Rotate result
 	RzILOpPure *b, *e; // Mask begin/end
 	RzILOpPure *into_rA;
-	RzILOpEffect *set_mask = NULL;
+	RzILOpEffect *set_mask = NULL, *set_ca = NULL;
 
 	// How to read instruction ids:
 	// Letter			Meaning
@@ -661,18 +666,34 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("m"))));
 		}
 		break;
+	case PPC_INS_SLD:
+	case PPC_INS_SRD:
+		into_rA = (id == PPC_INS_SLD) ? SHIFTL0(VARG(rS), VARG(rB)) : SHIFTR0(VARG(rS), VARG(rB));
+		break;
+	case PPC_INS_SRAD:
+	case PPC_INS_SRADI:
+		if (id == PPC_INS_SRAD) {
+			n = CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x3f)));
+		} else {
+			n = U8(((sH & 1) << 4) | (sH >> 1)); // n ← sh5 || sh0:4
+		}
+		into_rA = SHIFTRA(VARG(rS), n);
+		// Set ca, ca32 to 1 if RS is negative and 1s were shifted out.
+		RzILOpPure *ca_val = ITE(AND(SLT(VARG(rS), UA(0)),
+						 NON_ZERO(MOD(VARG(rS), SHIFTL0(UA(1), n)))), // is_zero(RS % (1 << n))
+			IL_TRUE,
+			IL_FALSE);
+		set_ca = SEQ2(SETG("ca", ca_val), SETG("ca32", DUP(ca_val)));
+		break;
+	case PPC_INS_SLW:
+	case PPC_INS_SRW:
+	case PPC_INS_SRAW:
+	case PPC_INS_SRAWI:
+		break;
 	case PPC_INS_SLBIA:
 	case PPC_INS_SLBIE:
 	case PPC_INS_SLBMFEE:
 	case PPC_INS_SLBMTE:
-	case PPC_INS_SLD:
-	case PPC_INS_SLW:
-	case PPC_INS_SRAD:
-	case PPC_INS_SRADI:
-	case PPC_INS_SRAW:
-	case PPC_INS_SRAWI:
-	case PPC_INS_SRD:
-	case PPC_INS_SRW:
 	// Extended Mnemonics
 	case PPC_INS_CLRLDI:
 	case PPC_INS_CLRLWI:
@@ -687,7 +708,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 
 	RzILOpEffect *update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : NOP;
 
-	return SEQ3(set_mask ? set_mask : NOP, SETG(rA, into_rA), update_cr0);
+	return SEQ4(set_mask ? set_mask : NOP, SETG(rA, into_rA), update_cr0, set_ca);
 }
 
 /**
