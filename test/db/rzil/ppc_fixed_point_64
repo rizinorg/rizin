@@ -286,3 +286,34 @@ pc_write(old: 0x8000320, new: 0x8000324)
 pc_write(old: 0x8000324, new: 0xc0ffe0)
 EOF
 RUN
+
+NAME=ppc shift instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.shift_insns
+aezi
+aezs 4
+aezse 6~var_write
+aezs 3
+aezse 2~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r10, old: 0x0, new: 0xedcba98765432100)
+var_write(name: r10, old: 0xedcba98765432100, new: 0xfedcba987654321)
+var_write(name: r10, old: 0xfedcba987654321, new: 0x65432100)
+var_write(name: r10, old: 0x65432100, new: 0x7654321)
+var_write(name: r10, old: 0x7654321, new: 0xffedcba987654321)
+var_write(name: ca, old: 0x0, new: 0x0)
+var_write(name: ca32, old: 0x0, new: 0x0)
+var_write(name: r10, old: 0xffedcba987654321, new: 0xffedcba987654321)
+var_write(name: ca, old: 0x0, new: 0x0)
+var_write(name: ca32, old: 0x0, new: 0x0)
+var_write(name: r10, old: 0xffedcba987654321, new: 0xfffffffff89abcde)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: ca32, old: 0x0, new: 0x1)
+var_write(name: r10, old: 0xfffffffff89abcde, new: 0xfffffffff89abcde)
+var_write(name: ca, old: 0x1, new: 0x1)
+var_write(name: ca32, old: 0x1, new: 0x1)
+EOF
+RUN
