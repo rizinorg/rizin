@@ -66,7 +66,7 @@
 // mask = 0
 // while (count != 0) {
 //     mask[mstart] = 1;
-//     mstart = ((mstart + 1) % PPC_ARCH_BITS) + 32;
+//     mstart = (mstart + 1) % PPC_ARCH_BITS;
 //     count--;
 // }
 // ```
@@ -80,7 +80,8 @@
 		SETL("count", ITE(EQ(VARL("mstart"), VARL("mstop")), U8(PPC_ARCH_BITS), ITE(ULT(VARL("mstart"), VARL("mstop")), SUB(VARL("mstop"), VARL("mstart")), ADD(VARL("mstop"), SUB(U8(PPC_ARCH_BITS), VARL("mstart")))))), \
 		SETL("m", UA(0)), \
 		REPEAT(EQ(VARL("count"), U8(0)), \
-			SEQ2(SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
+			SEQ3(SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
+				SETL("mstart", ADD(MOD(VARL("mstart"), UA(1)), UA(PPC_ARCH_BITS))), \
 				SETL("count", SUB(VARL("count"), U8(1))))))
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
