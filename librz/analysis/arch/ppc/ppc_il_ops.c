@@ -614,7 +614,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_RLWINM:
 	case PPC_INS_RLWNM:;
 		if (id == PPC_INS_RLWNM || id == PPC_INS_ROTLW) {
-			n = CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x1f)));
+			n = CAST(6, IL_FALSE, LOGAND(VARG(rB), UA(0x1f)));
 		} else {
 			n = U8(sH);
 		}
@@ -644,7 +644,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		if (id == PPC_INS_RLDCR || id == PPC_INS_RLDCL || id == PPC_INS_ROTLD) {
 			// For these instruction ME is the third operand, not MB.
 			mE = INSOP(3).imm;
-			n = CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x3f)));
+			n = CAST(6, IL_FALSE, LOGAND(VARG(rB), UA(0x3f)));
 		} else {
 			n = U8(sH);
 		}
@@ -659,11 +659,12 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			} else if (id == PPC_INS_ROTLDI || id == PPC_INS_ROTLD) {
 				set_mask = SET_MASK(U8(0), U8(63));
 			} else {
-				set_mask = SET_MASK(b, LOGNOT(DUP(n)));
+				set_mask = SET_MASK(b, LOGAND(U8(0x3f), LOGNOT(DUP(n)))); // AND with 0x3f since n is a 6bit number.
 			}
 		}
+
 		into_rA = LOGAND(r, VARL("m"));
-		if (id == PPC_INS_RLWIMI) {
+		if (id == PPC_INS_RLDIMI) {
 			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("m"))));
 		}
 		break;
@@ -674,7 +675,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_SRAD:
 	case PPC_INS_SRADI:
 		if (id == PPC_INS_SRAD) {
-			n = CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x3f)));
+			n = CAST(6, IL_FALSE, LOGAND(VARG(rB), UA(0x3f)));
 		} else {
 			n = U8(sH);
 		}
@@ -695,7 +696,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		break;
 	case PPC_INS_SRAW:
 	case PPC_INS_SRAWI:
-		n = (id == PPC_INS_SRAW) ? CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x3f))) : U8(sH);
+		n = (id == PPC_INS_SRAW) ? CAST(6, IL_FALSE, LOGAND(VARG(rB), UA(0x3f))) : U8(sH);
 		into_rA = EXTS(SHIFTRA(UNSIGNED(32, VARG(rS)), n));
 		ca_val = ITE(AND(SLT(UNSIGNED(32, VARG(rS)), U32(0)),
 				     NON_ZERO(MOD(UNSIGNED(32, VARG(rS)), UNSIGNED(32, SHIFTL0(UA(1), DUP(n)))))), // (RS % (1 << n)) != 0

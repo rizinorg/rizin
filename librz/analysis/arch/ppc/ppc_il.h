@@ -39,9 +39,9 @@
 
 // y should be U8, x should be U32 and U64 respectively.
 // Rotate x left by y bits
-#define ROTL64(x, y) (LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(64), DUP(y)))))
+#define ROTL64(x, y) (LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(64), CAST(8, IL_FALSE, DUP(y))))))
 // Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead.
-#define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, DUP(x)), y) : LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(32), DUP(y)))))
+#define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, DUP(x)), y) : LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(32), CAST(8, IL_FALSE, DUP(y))))))
 
 // Sets bit `i` in the local variable with width `w` of the name `vn`.
 // Please note: The left most bit is bit 0.
@@ -59,29 +59,29 @@
 // The algorithm implemented here is:
 //
 // ```
-// count = (mstart == mstop) ? PPC_ARCH_BITS :
-//                             ((mstart < mstop) ? (mstop - mstart) :
-//                                                 (mstop + (PPC_ARCH_BITS - mstart)));
 // mask = 0
-// while (count != 0) {
-//     mask[mstart] = 1;
-//     mstart = (mstart + 1) % PPC_ARCH_BITS;
-//     count--;
+// mask[mstart] = 1
+// mstart = (mstart + 1) % PPC_ARCH_BITS  // In case mstart == mstop all bits must be set.
+// while (mstart != mstop) {
+//     mask[mstart] = 1
+//     mstart = (mstart + 1) % PPC_ARCH_BITS
 // }
+// mask[mstop] = 1
 // ```
 //
-// mstart and mstop should be U8 pures.
+// mstart and mstop should be U6 pures.
 // The local variable "m" will hold the mask
 
 #define SET_MASK(mstart, mstop) \
-	SEQ5(SETL("mstart", mstart), \
+	SEQ7(SETL("mstart", mstart), \
 		SETL("mstop", mstop), \
-		SETL("count", ITE(EQ(VARL("mstart"), VARL("mstop")), U8(PPC_ARCH_BITS), ITE(ULT(VARL("mstart"), VARL("mstop")), SUB(VARL("mstop"), VARL("mstart")), ADD(VARL("mstop"), SUB(U8(PPC_ARCH_BITS), VARL("mstart")))))), \
 		SETL("m", UA(0)), \
-		REPEAT(NON_ZERO(VARL("count")), \
-			SEQ3(SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
-				SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(PPC_ARCH_BITS))), \
-				SETL("count", SUB(VARL("count"), U8(1))))))
+		SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
+		SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(PPC_ARCH_BITS))), \
+		REPEAT(INV(EQ(VARL("mstart"), VARL("mstop"))), \
+			SEQ2(SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
+				SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(PPC_ARCH_BITS))))), \
+		SET_BIT("m", PPC_ARCH_BITS, VARL("mstop")))
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
