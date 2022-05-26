@@ -618,7 +618,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		} else {
 			n = U8(sH);
 		}
-		r = ROTL32(VARG(rS), n);
+		r = ROTL32(UNSIGNED(32, VARG(rS)), n);
 		if (id == PPC_INS_ROTLW || id == PPC_INS_ROTLWI) {
 			b = U8(32);
 			e = U8(63);

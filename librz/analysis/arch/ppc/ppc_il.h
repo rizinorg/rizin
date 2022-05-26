@@ -45,7 +45,7 @@
 
 // Sets bit `i` in the local variable with width `w` of the name `vn`.
 // Please note: The left most bit is bit 0.
-#define SET_BIT(vn, w, i) SETL(vn, LOGOR(VARL(vn), SHIFTR0(SHIFTR(UN(w, 0), IL_TRUE, U8(1)), i)))
+#define SET_BIT(vn, w, i) SETL(vn, LOGOR(VARL(vn), SHIFTR0(SHIFTR(IL_TRUE, UN(w, 0), U8(1)), i)))
 // Implements the mask generation from the Reference Manual.
 //
 // if mstart ≤ mstop then
@@ -78,7 +78,7 @@
 		SETL("mstop", mstop), \
 		SETL("count", ITE(EQ(VARL("mstart"), VARL("mstop")), U8(PPC_ARCH_BITS), ITE(ULT(VARL("mstart"), VARL("mstop")), SUB(VARL("mstop"), VARL("mstart")), ADD(VARL("mstop"), SUB(U8(PPC_ARCH_BITS), VARL("mstart")))))), \
 		SETL("m", UA(0)), \
-		REPEAT(EQ(VARL("count"), U8(0)), \
+		REPEAT(NON_ZERO(VARL("count")), \
 			SEQ3(SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
 				SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(PPC_ARCH_BITS))), \
 				SETL("count", SUB(VARL("count"), U8(1))))))
