@@ -81,7 +81,7 @@
 		SETL("m", UA(0)), \
 		REPEAT(EQ(VARL("count"), U8(0)), \
 			SEQ3(SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
-				SETL("mstart", ADD(MOD(VARL("mstart"), UA(1)), UA(PPC_ARCH_BITS))), \
+				SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(PPC_ARCH_BITS))), \
 				SETL("count", SUB(VARL("count"), U8(1))))))
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
