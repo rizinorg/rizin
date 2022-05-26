@@ -703,12 +703,6 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			IL_FALSE);
 		set_ca = SEQ2(SETG("ca", ca_val), SETG("ca32", DUP(ca_val)));
 		break;
-	// Extended Mnemonics
-	case PPC_INS_SLBIA:
-	case PPC_INS_SLBIE:
-	case PPC_INS_SLBMFEE:
-	case PPC_INS_SLBMTE:
-		NOT_IMPLEMENTED;
 	case PPC_INS_CLRLDI:
 	case PPC_INS_CLRLWI:
 		n = U8(0);
@@ -957,10 +951,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_ROTLWI:
 	case PPC_INS_CLRLWI:
 	case PPC_INS_ROTLW:
-	case PPC_INS_SLBIA:
-	case PPC_INS_SLBIE:
-	case PPC_INS_SLBMFEE:
-	case PPC_INS_SLBMTE:
 	case PPC_INS_SLD:
 	case PPC_INS_SLW:
 	case PPC_INS_SRAD:
