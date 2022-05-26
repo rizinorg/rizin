@@ -1995,22 +1995,8 @@ escape_backtick:
 			case 'B': // "@B:#" // seek to the last instruction in current bb
 			{
 				int index = (int)rz_num_math(core->num, ptr + 2);
-				RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
-				if (bb) {
-					// handle negative indices
-					if (index < 0) {
-						index = bb->ninstr + index;
-					}
-
-					if (index >= 0 && index < bb->ninstr) {
-						ut64 inst_addr = rz_analysis_block_get_op_addr(bb, index);
-						rz_core_seek(core, inst_addr, true);
-						cmd_tmpseek = core->tmpseek = true;
-					} else {
-						eprintf("The current basic block has %d instructions\n", bb->ninstr);
-					}
-				} else {
-					eprintf("Can't find a basic block for 0x%08" PFMT64x "\n", core->offset);
+				if (rz_core_seek_bb_instruction(core, index)) {
+					cmd_tmpseek = core->tmpseek = true;
 				}
 				break;
 			} break;
@@ -4112,21 +4098,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_nthi_stmt) {
 
 	ut64 orig_offset = state->core->offset;
 	int index = rz_num_math(core->num, arg_str);
-	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
-	if (bb) {
-		// handle negative indices
-		if (index < 0) {
-			index = bb->ninstr + index;
-		}
-
-		if (index >= 0 && index < bb->ninstr) {
-			ut16 inst_off = rz_analysis_block_get_op_offset(bb, index);
-			rz_core_seek(core, bb->addr + inst_off, true);
-		} else {
-			eprintf("The current basic block has just %d instructions\n", bb->ninstr);
-		}
-	} else {
-		eprintf("Can't find a basic block for 0x%08" PFMT64x "\n", core->offset);
+	if (rz_core_seek_bb_instruction(core, index)) {
+		core->tmpseek = true;
 	}
 
 	RzCmdStatus res = handle_ts_stmt_tmpseek(state, command);
