@@ -34,10 +34,10 @@
 // Extend value with 0s to a width of 32/64 bit.
 #define EXTZ(v) UNSIGNED(PPC_ARCH_BITS, v)
 
-// If the rX reg is 0 it returns the value 0. Otherwise the value store in rX.
+// If the rX is 0 it returns the value 0. Otherwise the value stored in rX.
 #define IFREG0(rX) ITE(EQ(VARG(rX), UA(0)), UA(0), VARG(rX))
 
-// y should be U8() for the rotate macros. x shoudl be 32 and 64bit.
+// y should be U8, x should be U32 and U64 respectively.
 // Rotate x left by y bits
 #define ROTL64(x, y) (LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(64), DUP(y)))))
 // Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead.
@@ -60,9 +60,8 @@
 //
 // ```
 // count = (mstart == mstop) ? PPC_ARCH_BITS :
-//                             ((mstart < mstop) ?
-//                                                (mstop - mstart) :
-//                                                (mstop + (PPC_ARCH_BITS - mstart)));
+//                             ((mstart < mstop) ? (mstop - mstart) :
+//                                                 (mstop + (PPC_ARCH_BITS - mstart)));
 // mask = 0
 // while (count != 0) {
 //     mask[mstart] = 1;
