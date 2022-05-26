@@ -659,7 +659,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			} else if (id == PPC_INS_ROTLDI || id == PPC_INS_ROTLD) {
 				set_mask = SET_MASK(U8(0), U8(63));
 			} else {
-				set_mask = SET_MASK(b, LOGNOT(n));
+				set_mask = SET_MASK(b, LOGNOT(DUP(n)));
 			}
 		}
 		into_rA = LOGAND(r, VARL("m"));
@@ -681,7 +681,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		into_rA = SHIFTRA(VARG(rS), n);
 		// Set ca, ca32 to 1 if RS is negative and 1s were shifted out.
 		ca_val = ITE(AND(SLT(VARG(rS), UA(0)),
-				     NON_ZERO(MOD(VARG(rS), SHIFTL0(UA(1), n)))), // (RS % (1 << n)) != 0
+				     NON_ZERO(MOD(VARG(rS), SHIFTL0(UA(1), DUP(n))))), // (RS % (1 << n)) != 0
 			IL_TRUE,
 			IL_FALSE);
 		set_ca = SEQ2(SETG("ca", ca_val), SETG("ca32", DUP(ca_val)));
@@ -698,7 +698,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		n = (id == PPC_INS_SRAW) ? CAST(8, IL_FALSE, LOGAND(VARG(rB), UA(0x3f))) : U8(sH);
 		into_rA = EXTS(SHIFTRA(UNSIGNED(32, VARG(rS)), n));
 		ca_val = ITE(AND(SLT(UNSIGNED(32, VARG(rS)), U32(0)),
-				     NON_ZERO(MOD(UNSIGNED(32, VARG(rS)), SHIFTL0(UA(1), n)))), // (RS % (1 << n)) != 0
+				     NON_ZERO(MOD(UNSIGNED(32, VARG(rS)), SHIFTL0(UA(1), DUP(n))))), // (RS % (1 << n)) != 0
 			IL_TRUE,
 			IL_FALSE);
 		set_ca = SEQ2(SETG("ca", ca_val), SETG("ca32", DUP(ca_val)));
