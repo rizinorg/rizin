@@ -573,8 +573,8 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 
 /**
  *
- * NOTE: Shft instructions are not implemented as in the programmer reference manual.
- * The manual uses rotate, but here we simply use the SHIFT ops.
+ * NOTE: Shift instructions are not implemented as in the programmer reference manual.
+ * The manual uses rotate, here we simply use SHIFT ops.
  */
 static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, NOP);
