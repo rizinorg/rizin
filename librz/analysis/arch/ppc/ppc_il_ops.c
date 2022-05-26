@@ -594,7 +594,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	RzILOpPure *b, *e; // Mask begin/end
 	RzILOpPure *into_rA;
 	RzILOpPure *ca_val; // Arithmetic shift instructions set the ca and ca32 field.
-	RzILOpEffect *set_mask = NULL, *set_ca = NULL;
+	RzILOpEffect *set_mask = NULL, *set_ca = NULL, *update_cr0 = NULL;
 
 	// How to read instruction ids:
 	// Letter			Meaning
@@ -714,9 +714,11 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		NOT_IMPLEMENTED;
 	}
 
-	RzILOpEffect *update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : NOP;
+	update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : NOP;
+	set_mask = set_mask ? set_mask : NOP;
+	set_ca = set_ca ? set_ca : NOP;
 
-	return SEQ4(set_mask ? set_mask : NOP, SETG(rA, into_rA), update_cr0, set_ca);
+	return SEQ4(set_mask, SETG(rA, into_rA), update_cr0, set_ca);
 }
 
 /**
