@@ -12,46 +12,101 @@
 #include <rz_windows.h>
 #endif
 
+#if RZ_IS_PORTABLE
+#include <rz_constructor.h>
+#include <rz_th.h>
+
+static char *portable_prefix = NULL;
+static bool portable_prefix_searched = false;
+static RzThreadLock *portable_prefix_mutex = NULL;
+
+#ifdef RZ_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(init_portable_prefix)
+#endif
+RZ_DEFINE_CONSTRUCTOR(init_portable_prefix)
+static void init_portable_prefix(void) {
+	portable_prefix_mutex = rz_th_lock_new(false);
+}
+
+#ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(fini_portable_prefix)
+#endif
+RZ_DEFINE_DESTRUCTOR(fini_portable_prefix)
+static void fini_portable_prefix(void) {
+	RZ_FREE(portable_prefix);
+	portable_prefix_searched = false;
+	rz_th_lock_free(portable_prefix_mutex);
+}
+
+static char *set_portable_prefix(void) {
+	char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
+	if (!pid_to_path) {
+		return NULL;
+	}
+
+	const char *filename = rz_file_basename(pid_to_path);
+	char *it = rz_file_dirname(pid_to_path);
+	free(pid_to_path);
+
+	for (int i = 0; i < RZ_BINDIR_DEPTH && it; i++) {
+		char *tmp = it;
+		it = rz_file_dirname(tmp);
+		free(tmp);
+	}
+	if (!it) {
+		goto err;
+	}
+
+	char *bindir = rz_file_path_join(it, RZ_BINDIR);
+	if (!bindir) {
+		goto err;
+	}
+	char *bindir_real = rz_path_realpath(bindir);
+	free(bindir);
+	bool in_bindir = bindir_real != NULL;
+	if (!in_bindir) {
+		goto err;
+	}
+
+	char *exe_path = rz_file_path_join(bindir_real, filename);
+	free(bindir_real);
+	char *exe_path_real = rz_path_realpath(exe_path);
+	free(exe_path);
+	bool exe_exists = exe_path_real != NULL;
+	free(exe_path_real);
+
+	if (in_bindir && exe_exists && rz_file_is_directory(it)) {
+		return it;
+	}
+err:
+	free(it);
+	return NULL;
+}
+#endif
+
 /**
  * \brief Return \p path prefixed by the Rizin install prefix
+ *
+ * The install prefix is taken from the build-time configuration RZ_PREFIX,
+ * unless Rizin was not compiled as "portable". In such a case the prefix is
+ * discovered from the path of the executable calling this function.
  *
  * \param path Path to put in the install prefix context or NULL to just get the install prefix
  * \return \p path prefixed by the Rizin install prefix or just the install prefix
  */
 RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path) {
 #if RZ_IS_PORTABLE
-	char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
-	if (!pid_to_path) {
-		goto prefix;
+	rz_th_lock_enter(portable_prefix_mutex);
+	if (!portable_prefix_searched) {
+		portable_prefix = set_portable_prefix();
+		portable_prefix_searched = true;
 	}
-	char *bindir = rz_path_realpath(RZ_JOIN_2_PATHS(RZ_PREFIX, RZ_BINDIR));
-	if (!bindir) {
-		goto prefix;
+	rz_th_lock_leave(portable_prefix_mutex);
+
+	if (portable_prefix) {
+		return rz_file_path_join(portable_prefix, path);
 	}
 
-	char *it = rz_file_dirname(pid_to_path);
-	free(pid_to_path);
-
-	bool in_bindir = rz_str_endswith(it, rz_file_basename(bindir));
-	free(bindir);
-	// When rz_path_prefix is called from a unit test or from a
-	// not-yet-installed rizin binary this would return the wrong path.
-	// In those cases, just return RZ_PREFIX.
-	if (in_bindir) {
-		for (int i = 0; i < RZ_BINDIR_DEPTH; i++) {
-			char *tmp = it;
-			it = rz_file_dirname(tmp);
-			free(tmp);
-		}
-
-		if (rz_file_is_directory(it)) {
-			char *result = rz_file_path_join(it, path);
-			free(it);
-			return result;
-		}
-	}
-	free(it);
-prefix:
 #endif
 	return rz_file_path_join(RZ_PREFIX, path);
 }

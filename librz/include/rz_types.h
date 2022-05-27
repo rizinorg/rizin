@@ -179,6 +179,7 @@ typedef enum {
 #endif
 
 #include <rz_types_base.h>
+#include <rz_constructor.h>
 
 #undef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64
@@ -260,7 +261,9 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #define RZ_LIB_VERSION_HEADER(x) \
 	RZ_API const char *x##_version(void)
 #define RZ_LIB_VERSION(x) \
-	RZ_API const char *x##_version(void) { return "" RZ_VERSION; }
+	RZ_API const char *x##_version(void) { \
+		return "" RZ_VERSION; \
+	}
 
 #define BITS2BYTES(x)    (((x) / 8) + (((x) % 8) ? 1 : 0))
 #define ZERO_FILL(x)     memset(&x, 0, sizeof(x))
@@ -652,7 +655,11 @@ typedef int RzRef;
 
 #define RZ_REF_TYPE RzRef RZ_REF_NAME
 #define RZ_REF_FUNCTIONS(s, n) \
-	static inline void n##_ref(s *x) { x->RZ_REF_NAME++; } \
-	static inline void n##_unref(s *x) { rz_unref(x, n##_free); }
+	static inline void n##_ref(s *x) { \
+		x->RZ_REF_NAME++; \
+	} \
+	static inline void n##_unref(s *x) { \
+		rz_unref(x, n##_free); \
+	}
 
 #endif // RZ_TYPES_H
