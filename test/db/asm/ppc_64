@@ -89,4 +89,8 @@ dE "bl 0x4" 48000005 0x0 (seq (set CIA (bv 64 0x0)) nop (set lr (+ (var CIA) (bv
 dE "bla 0x4" 48000007 0x0 (seq (set CIA (bv 64 0x0)) nop (set lr (+ (var CIA) (bv 64 0x4))) (set NIA (bv 64 0x4)) (jmp (var NIA)))
 dE "blr" 4e800020 0x0 (seq (set CIA (bv 64 0x0)) nop nop (set NIA (& (bv 64 0xfffffffffffffffc) (var lr))) (jmp (var NIA)))
 dE "blrl" 4e800021 0x0 (seq (set CIA (bv 64 0x0)) nop (set lr (+ (var CIA) (bv 64 0x4))) (set NIA (& (bv 64 0xfffffffffffffffc) (var lr))) (jmp (var NIA)))
-dE "nop" 60000000 0x0 (nop)
+dE "nop" 60000000 0x0 nop
+dE "mtctr r28" 7f8903a6 0x0 (set ctr (var r28))
+dE "mfctr r28" 7f8902a6 0x0 (set r28 (var ctr))
+dE "mtlr r28" 7f8803a6 0x0 (set lr (var r28))
+dE "mflr r28" 7f8802a6 0x0 (set r28 (var lr))

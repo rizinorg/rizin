@@ -550,6 +550,10 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFTB:
 	case PPC_INS_MFVSCR:
 		NOT_IMPLEMENTED;
+	case PPC_INS_MFLR:
+	case PPC_INS_MTLR:
+		spr_name = "lr";
+		break;
 	case PPC_INS_MFCTR:
 	case PPC_INS_MTCTR:
 		spr_name = "ctr";

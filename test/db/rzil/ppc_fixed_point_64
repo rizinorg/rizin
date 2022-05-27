@@ -364,3 +364,20 @@ EXPECT=<<EOF
 pc_write(old: 0x800017c, new: 0x8000180)
 EOF
 RUN
+
+NAME=ppc move to from spr instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.read_set_spr
+aezi
+aezs 5
+aezse 4~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: ctr, old: 0x0, new: 0xffffffffffffffff)
+var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: lr, old: 0x80003c4, new: 0xffffffffffffffff)
+var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+EOF
+RUN
