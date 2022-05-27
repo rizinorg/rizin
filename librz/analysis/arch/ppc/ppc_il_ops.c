@@ -620,8 +620,8 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		}
 		r = ROTL32(UNSIGNED(32, VARG(rS)), n);
 		if (id == PPC_INS_ROTLW || id == PPC_INS_ROTLWI) {
-			b = U8(32);
-			e = U8(63);
+			b = U8(32); // mb: 0 + 32
+			e = U8(63); // me: 31 + 32
 			set_mask = SET_MASK(b, e);
 		} else {
 			b = ADD(U8(mB), U8(32));
@@ -708,11 +708,10 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_CLRLWI:
 		n = U8(0);
 		r = ROTL64(VARG(rS), n);
-		b = U8(INSOP(2).imm);
-		e = (id == PPC_INS_CLRLWI) ? U8(31) : U8(63);
+		b = (id == PPC_INS_CLRLWI) ? ADD(U8(INSOP(2).imm), U8(32)) : U8(INSOP(2).imm);
+		e = U8(63);
 		set_mask = SET_MASK(b, e);
 		into_rA = LOGAND(r, VARL("m"));
-		NOT_IMPLEMENTED;
 	}
 
 	update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : NOP;
