@@ -325,7 +325,7 @@ CMDS=<<EOF
 s loc.rotate_insns
 aezi
 aezs 4
-aezse 13~var_write
+aezse 16~var_write
 EOF
 EXPECT=<<EOF
 var_write(name: r10, old: 0x0, new: 0x4320000)
@@ -341,5 +341,11 @@ var_write(name: r10, old: 0xcba98765432100, new: 0xedcba9876543210f)
 var_write(name: r10, old: 0xedcba9876543210f, new: 0x65432107)
 var_write(name: r10, old: 0x65432107, new: 0xcba9876543210)
 var_write(name: r10, old: 0xcba9876543210, new: 0x43210)
+var_write(name: r10, old: 0x43210, new: 0x7edcba9876543210)
+var_write(name: cr0, old: 0x0, new: 0x4)
+var_write(name: r10, old: 0x7edcba9876543210, new: 0xfedcba9876543210)
+var_write(name: cr0, old: 0x4, new: 0x8)
+var_write(name: r10, old: 0xfedcba9876543210, new: 0x0)
+var_write(name: cr0, old: 0x8, new: 0x2)
 EOF
 RUN
