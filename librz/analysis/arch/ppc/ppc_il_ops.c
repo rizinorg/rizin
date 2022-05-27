@@ -538,17 +538,32 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
-	case PPC_INS_MFCR:
+	// ???
+	case PPC_INS_MTDCR:
 	case PPC_INS_MFDCR:
-	case PPC_INS_MFFS:
-	case PPC_INS_MFLR:
-	case PPC_INS_MFMSR:
-	case PPC_INS_MFOCRF:
-	case PPC_INS_MFSPR:
-	case PPC_INS_MFSR:
-	case PPC_INS_MFSRIN:
-	case PPC_INS_MFTB:
+		NOT_IMPLEMENTED;
 	case PPC_INS_MFVSCR:
+	case PPC_INS_MTVSCR:
+		NOT_IMPLEMENTED;
+		break;
+	// IBM POWER specific: One Condition Register Field
+	case PPC_INS_MFOCRF:
+	case PPC_INS_MTOCRF:
+		NOT_IMPLEMENTED;
+	case PPC_INS_MTMSR:
+	case PPC_INS_MFMSR:
+		NOT_IMPLEMENTED;
+		break;
+	case PPC_INS_MFCR:
+	case PPC_INS_MTCR:
+
+	// IBM POWER specific Segment Register
+	case PPC_INS_MTSRIN:
+	case PPC_INS_MFSRIN:
+		// Indirect set.
+	case PPC_INS_MFSR:
+	case PPC_INS_MTSR:
+		// Direct set.
 		NOT_IMPLEMENTED;
 	case PPC_INS_MFLR:
 	case PPC_INS_MTLR:
@@ -558,21 +573,86 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTCTR:
 		spr_name = "ctr";
 		break;
-	// Move to <spr>
-	case PPC_INS_MTCRF:
-	case PPC_INS_MTDCR:
+	// WRITE/READ only
 	case PPC_INS_MTFSB0:
 	case PPC_INS_MTFSB1:
 	case PPC_INS_MTFSF:
 	case PPC_INS_MTFSFI:
-	case PPC_INS_MTLR:
-	case PPC_INS_MTMSR:
+	case PPC_INS_MFFS:
 	case PPC_INS_MTMSRD:
-	case PPC_INS_MTOCRF:
+	case PPC_INS_MFTB:
+	case PPC_INS_MTCRF:
+	case PPC_INS_MFSPR:
 	case PPC_INS_MTSPR:
-	case PPC_INS_MTSR:
-	case PPC_INS_MTSRIN:
-	case PPC_INS_MTVSCR:
+	case PPC_INS_MFRTCU:
+	case PPC_INS_MFRTCL:
+		NOT_IMPLEMENTED;
+	// Not yet handled
+	case PPC_INS_MFBR0:
+	case PPC_INS_MFBR1:
+	case PPC_INS_MFBR2:
+	case PPC_INS_MFBR3:
+	case PPC_INS_MFBR4:
+	case PPC_INS_MFBR5:
+	case PPC_INS_MFBR6:
+	case PPC_INS_MFBR7:
+	case PPC_INS_MTBR0:
+	case PPC_INS_MTBR1:
+	case PPC_INS_MTBR2:
+	case PPC_INS_MTBR3:
+	case PPC_INS_MTBR4:
+	case PPC_INS_MTBR5:
+	case PPC_INS_MTBR6:
+	case PPC_INS_MTBR7:
+	case PPC_INS_MFXER:
+	case PPC_INS_MTXER:
+		NOT_IMPLEMENTED;
+	case PPC_INS_MFDSCR:
+	case PPC_INS_MTDSCR:
+		NOT_IMPLEMENTED;
+	case PPC_INS_MFDSISR:
+	case PPC_INS_MFDAR:
+	case PPC_INS_MFSRR2:
+	case PPC_INS_MFSRR3:
+	case PPC_INS_MFCFAR:
+	case PPC_INS_MFAMR:
+	case PPC_INS_MFPID:
+	case PPC_INS_MFTBLO:
+	case PPC_INS_MFTBHI:
+	case PPC_INS_MFDBATU:
+	case PPC_INS_MFDBATL:
+	case PPC_INS_MFIBATU:
+	case PPC_INS_MFIBATL:
+	case PPC_INS_MFDCCR:
+	case PPC_INS_MFICCR:
+	case PPC_INS_MFDEAR:
+	case PPC_INS_MFESR:
+	case PPC_INS_MFSPEFSCR:
+	case PPC_INS_MFTCR:
+	case PPC_INS_MFASR:
+	case PPC_INS_MFPVR:
+	case PPC_INS_MFTBU:
+	case PPC_INS_MTDSISR:
+	case PPC_INS_MTDAR:
+	case PPC_INS_MTSRR2:
+	case PPC_INS_MTSRR3:
+	case PPC_INS_MTCFAR:
+	case PPC_INS_MTAMR:
+	case PPC_INS_MTPID:
+	case PPC_INS_MTTBL:
+	case PPC_INS_MTTBU:
+	case PPC_INS_MTTBLO:
+	case PPC_INS_MTTBHI:
+	case PPC_INS_MTDBATU:
+	case PPC_INS_MTDBATL:
+	case PPC_INS_MTIBATU:
+	case PPC_INS_MTIBATL:
+	case PPC_INS_MTDCCR:
+	case PPC_INS_MTICCR:
+	case PPC_INS_MTDEAR:
+	case PPC_INS_MTESR:
+	case PPC_INS_MTSPEFSCR:
+	case PPC_INS_MTTCR:
 		NOT_IMPLEMENTED;
 	}
 	return ppc_moves_to_spr(id) ? SETG(spr_name, VARG(rS)) : SETG(rT, VARG(spr_name));
@@ -946,6 +1026,72 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTSR:
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MTVSCR:
+	case PPC_INS_MFBR0:
+	case PPC_INS_MFBR1:
+	case PPC_INS_MFBR2:
+	case PPC_INS_MFBR3:
+	case PPC_INS_MFBR4:
+	case PPC_INS_MFBR5:
+	case PPC_INS_MFBR6:
+	case PPC_INS_MFBR7:
+	case PPC_INS_MFXER:
+	case PPC_INS_MFRTCU:
+	case PPC_INS_MFRTCL:
+	case PPC_INS_MFDSCR:
+	case PPC_INS_MFDSISR:
+	case PPC_INS_MFDAR:
+	case PPC_INS_MFSRR2:
+	case PPC_INS_MFSRR3:
+	case PPC_INS_MFCFAR:
+	case PPC_INS_MFAMR:
+	case PPC_INS_MFPID:
+	case PPC_INS_MFTBLO:
+	case PPC_INS_MFTBHI:
+	case PPC_INS_MFDBATU:
+	case PPC_INS_MFDBATL:
+	case PPC_INS_MFIBATU:
+	case PPC_INS_MFIBATL:
+	case PPC_INS_MFDCCR:
+	case PPC_INS_MFICCR:
+	case PPC_INS_MFDEAR:
+	case PPC_INS_MFESR:
+	case PPC_INS_MFSPEFSCR:
+	case PPC_INS_MFTCR:
+	case PPC_INS_MFASR:
+	case PPC_INS_MFPVR:
+	case PPC_INS_MFTBU:
+	case PPC_INS_MTCR:
+	case PPC_INS_MTBR0:
+	case PPC_INS_MTBR1:
+	case PPC_INS_MTBR2:
+	case PPC_INS_MTBR3:
+	case PPC_INS_MTBR4:
+	case PPC_INS_MTBR5:
+	case PPC_INS_MTBR6:
+	case PPC_INS_MTBR7:
+	case PPC_INS_MTXER:
+	case PPC_INS_MTDSCR:
+	case PPC_INS_MTDSISR:
+	case PPC_INS_MTDAR:
+	case PPC_INS_MTSRR2:
+	case PPC_INS_MTSRR3:
+	case PPC_INS_MTCFAR:
+	case PPC_INS_MTAMR:
+	case PPC_INS_MTPID:
+	case PPC_INS_MTTBL:
+	case PPC_INS_MTTBU:
+	case PPC_INS_MTTBLO:
+	case PPC_INS_MTTBHI:
+	case PPC_INS_MTDBATU:
+	case PPC_INS_MTDBATL:
+	case PPC_INS_MTIBATU:
+	case PPC_INS_MTIBATL:
+	case PPC_INS_MTDCCR:
+	case PPC_INS_MTICCR:
+	case PPC_INS_MTDEAR:
+	case PPC_INS_MTESR:
+	case PPC_INS_MTSPEFSCR:
+	case PPC_INS_MTTCR:
 		lop = move_from_to_spr_op(handle, insn, mode);
 		break;
 	// Rotate and rotate
