@@ -351,3 +351,16 @@ var_write(name: r10, old: 0xfedcba9876543210, new: 0x0)
 var_write(name: cr0, old: 0x8, new: 0x2)
 EOF
 RUN
+
+NAME=ppc special instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.special_insns
+aezi
+aezse 1
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x800017c, new: 0x8000180)
+EOF
+RUN

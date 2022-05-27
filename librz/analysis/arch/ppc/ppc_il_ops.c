@@ -743,6 +743,9 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_INVALID:
 		// TODO Exception
 		return NOP;
+	case PPC_INS_NOP:
+		lop = NOP;
+		break;
 	case PPC_INS_ADD:
 	case PPC_INS_ADDC:
 	case PPC_INS_ADDE:
