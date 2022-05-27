@@ -423,6 +423,7 @@ ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
 userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 ok = cc.has_header_symbol('linux/ashmem.h', 'ASHMEM_NAME_LEN')
 userconf.set10('HAVE_DECL_ASHMEM_NAME_LEN', ok)
+userconf.set10('HAVE_PTHREAD', pth.found())
 
 if host_machine.system() == 'freebsd' or host_machine.system() == 'dragonfly'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
