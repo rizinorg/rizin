@@ -6,7 +6,7 @@ CMDS=<<EOF
 af
 s loc.add_insns
 aezi
-aezse 15~var_write
+aezse 16~var_write
 EOF
 EXPECT=<<EOF
 var_write(name: r1, old: 0x0, new: 0x1)
@@ -41,6 +41,7 @@ var_write(name: cr0, old: 0x2, new: 0x2)
 var_write(name: r17, old: 0x1, new: 0xffffffffffffffff)
 var_write(name: ca, old: 0x0, new: 0x0)
 var_write(name: cr0, old: 0x2, new: 0x8)
+var_write(name: r17, old: 0xffffffffffffffff, new: 0x1)
 EOF
 RUN
 

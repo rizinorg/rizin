@@ -260,7 +260,7 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
 	st64 sI = INSOP(2).imm;
 
-	bool set_ca = (id != PPC_INS_ADD && id != PPC_INS_ADDI && id != PPC_INS_ADDIS && id != PPC_INS_SUBF);
+	bool set_ca = (id != PPC_INS_ADD && id != PPC_INS_ADDI && id != PPC_INS_ADDIS && id != PPC_INS_SUBF && id != PPC_INS_NEG);
 	bool cr0 = insn->detail->ppc.update_cr0;
 
 	RzILOpPure *op0;
@@ -750,6 +750,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_ADDZE:
 		lop = add_sub_op(handle, insn, true, mode);
 		break;
+	case PPC_INS_NEG:
 	case PPC_INS_SUBF:
 	case PPC_INS_SUBFC:
 	case PPC_INS_SUBFE:
@@ -850,7 +851,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_ORI:
 	case PPC_INS_ORIS:
 	case PPC_INS_NAND:
-	case PPC_INS_NEG:
 	case PPC_INS_NOR:
 	case PPC_INS_XOR:
 	case PPC_INS_XORI:
