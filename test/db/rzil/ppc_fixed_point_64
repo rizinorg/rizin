@@ -317,3 +317,29 @@ var_write(name: ca, old: 0x1, new: 0x1)
 var_write(name: ca32, old: 0x1, new: 0x1)
 EOF
 RUN
+
+NAME=ppc rotate instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.rotate_insns
+aezi
+aezs 4
+aezse 13~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r10, old: 0x0, new: 0x4320000)
+var_write(name: r10, old: 0x4320000, new: 0x5432107654321076)
+var_write(name: r10, old: 0x5432107654321076, new: 0x0)
+var_write(name: r10, old: 0x0, new: 0x5432107650001076)
+var_write(name: r10, old: 0x5432107650001076, new: 0x0)
+var_write(name: r10, old: 0x0, new: 0x5432107654321076)
+var_write(name: r10, old: 0x5432107654321076, new: 0xa9876543210f)
+var_write(name: r10, old: 0xa9876543210f, new: 0x0)
+var_write(name: r10, old: 0x0, new: 0xcba98765432100)
+var_write(name: r10, old: 0xcba98765432100, new: 0xedcba9876543210f)
+var_write(name: r10, old: 0xedcba9876543210f, new: 0x65432107)
+var_write(name: r10, old: 0x65432107, new: 0xcba9876543210)
+var_write(name: r10, old: 0xcba9876543210, new: 0x43210)
+EOF
+RUN
