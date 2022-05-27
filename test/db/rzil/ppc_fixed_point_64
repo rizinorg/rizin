@@ -298,7 +298,7 @@ aezi
 aezs 4
 aezse 6~var_write
 aezs 3
-aezse 2~var_write
+aezse 4~var_write
 EOF
 EXPECT=<<EOF
 var_write(name: r10, old: 0x0, new: 0xedcba98765432100)
@@ -317,6 +317,8 @@ var_write(name: ca32, old: 0x0, new: 0x1)
 var_write(name: r10, old: 0xfffffffff89abcde, new: 0xfffffffff89abcde)
 var_write(name: ca, old: 0x1, new: 0x1)
 var_write(name: ca32, old: 0x1, new: 0x1)
+var_write(name: r10, old: 0xfffffffff89abcde, new: 0x32100000)
+var_write(name: r10, old: 0x32100000, new: 0x7654)
 EOF
 RUN
 

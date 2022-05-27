@@ -755,9 +755,29 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("m"))));
 		}
 		break;
+	case PPC_INS_SLDI:
+		// Currently broken in rizins capstone version.
+		// Immediate is not in instruction.
+		NOT_IMPLEMENTED;
 	case PPC_INS_SLD:
 	case PPC_INS_SRD:
-		into_rA = (id == PPC_INS_SLD) ? SHIFTL0(VARG(rS), VARG(rB)) : SHIFTR0(VARG(rS), VARG(rB));
+	case PPC_INS_SLWI:
+	case PPC_INS_SRWI:
+		if (id == PPC_INS_SLD || id == PPC_INS_SRD) {
+			n = VARG(rB);
+		} else {
+			n = U8(sH);
+		}
+		if (id == PPC_INS_SRD) {
+			into_rA = SHIFTR0(VARG(rS), n);
+		} else if (id == PPC_INS_SRWI) {
+			into_rA = SHIFTR0(LOGAND(VARG(rS), UA(0xffffffff)), n);
+		} else {
+			into_rA = SHIFTL0(VARG(rS), n);
+		}
+		if (id == PPC_INS_SLWI || id == PPC_INS_SRWI) {
+			into_rA = LOGAND(into_rA, UA(0xffffffff)); // Clear high 32bits
+		}
 		break;
 	case PPC_INS_SRAD:
 	case PPC_INS_SRADI:
@@ -1118,6 +1138,9 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_SRAWI:
 	case PPC_INS_SRD:
 	case PPC_INS_SRW:
+	case PPC_INS_SLWI:
+	case PPC_INS_SLDI:
+	case PPC_INS_SRWI:
 		lop = shift_and_rotate(handle, insn, mode);
 		break;
 	}
