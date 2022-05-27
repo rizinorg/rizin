@@ -439,6 +439,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		}
 		res = LOGAND(op0, op1);
 		break;
+	case PPC_INS_MR:
 	case PPC_INS_OR:
 	case PPC_INS_ORC:
 	case PPC_INS_ORI:
@@ -446,6 +447,8 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		op0 = VARG(rS);
 		if (id == PPC_INS_OR || id == PPC_INS_ORC) {
 			op1 = (id == PPC_INS_OR) ? VARG(rB) : LOGNOT(VARG(rB));
+		} else if (id == PPC_INS_MR) {
+			op1 = DUP(op0); // Extended Mnemonic for `or   RA, RS, RS`
 		} else {
 			op1 = (id == PPC_INS_ORI) ? EXTZ(U16(uI)) : EXTZ(APPEND(U16(uI), U16(0)));
 		}
@@ -842,6 +845,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_STXVW4X:
 		lop = store_op(handle, insn, mode);
 		break;
+	case PPC_INS_MR:
 	case PPC_INS_AND:
 	case PPC_INS_ANDC:
 	case PPC_INS_ANDIS:
