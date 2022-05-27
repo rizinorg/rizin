@@ -12,6 +12,7 @@ include_files = [
   'rz_cmp.h',
   'rz_config.h',
   'rz_cons.h',
+  'rz_constructor.h',
   'rz_core.h',
   'rz_crypto.h',
   'rz_debug.h',

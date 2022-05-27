@@ -163,7 +163,7 @@ CONVERT_TO_TWO_COMPLEMENT(64)
  * \param divisor must be non-zero
  */
 static inline ut64 rz_num_2_pow_64_div(ut64 divisor) {
-	return (-divisor) / divisor + 1;
+	return (-(st64)divisor) / divisor + 1;
 }
 
 #ifdef __cplusplus

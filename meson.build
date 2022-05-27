@@ -94,7 +94,8 @@ message('rizin lib version: ' + rizin_libversion)
 cc = meson.get_compiler('c')
 # required for linux
 ldl = cc.find_library('dl', required: false, static: is_static_build)
-pth = dependency('threads', required: false, static: is_static_build)
+th = dependency('threads', required: false, static: is_static_build)
+have_pthread = th.found() and host_machine.system() != 'windows'
 utl = cc.find_library('util', required: false, static: is_static_build)
 if host_machine.system() == 'sunos'
   # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
@@ -222,7 +223,7 @@ endif
 
 # Calcualte BINDIR's depth to be able to find the root directory during runtime
 # in portable builds
-py_cmd = 'import os; print(len(os.path.normpath(r"@0@").split(os.sep)) - len(os.path.normpath(r"@1@").split(os.sep)))'.format(rizin_prefix / rizin_bindir, rizin_prefix)
+py_cmd = 'import os; print(1 if r"@0@" == os.sep else len(os.path.normpath(r"@0@").split(os.sep)) - 1 if r"@1@" == os.sep else len(os.path.normpath(r"@1@").split(os.sep)))'.format(rizin_prefix / rizin_bindir, rizin_prefix)
 py_cmd = run_command(py3_exe, '-c', py_cmd, check: true)
 bindir_depth = py_cmd.stdout().strip()
 
@@ -423,6 +424,8 @@ ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
 userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 ok = cc.has_header_symbol('linux/ashmem.h', 'ASHMEM_NAME_LEN')
 userconf.set10('HAVE_DECL_ASHMEM_NAME_LEN', ok)
+userconf.set10('HAVE_THREADS', th.found())
+userconf.set10('HAVE_PTHREAD', have_pthread)
 
 if host_machine.system() == 'freebsd' or host_machine.system() == 'dragonfly'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
