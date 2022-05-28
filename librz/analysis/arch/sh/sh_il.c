@@ -1193,19 +1193,19 @@ static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	}
 	if (op->scaling == SH_SCALING_INVALID) {
 		if (state & 0b10) {
-			return BRANCH(VARG(SH_SR_D), sh_il_set_param(op->param[1], sh_il_get_pure_param(0), op->scaling), NOP);
+			return BRANCH(VARG(SH_SR_D), sh_il_set_param(op->param[1], sh_il_get_pure_param(0), op->scaling), NOP());
 		} else {
 			return sh_il_set_param(op->param[1], sh_il_get_pure_param(0), op->scaling);
 		}
 	} else if (op->scaling == SH_SCALING_L) {
 		SHParamHelper rm = sh_il_get_param(op->param[0], op->scaling);
 		if (state & 0b10) {
-			return SEQ2(rm.post, BRANCH(VARG(SH_SR_D), sh_il_set_param(op->param[1], rm.pure, op->scaling), NOP));
+			return SEQ2(rm.post, BRANCH(VARG(SH_SR_D), sh_il_set_param(op->param[1], rm.pure, op->scaling), NOP()));
 		} else {
 			return SEQ2(rm.post, sh_il_set_param(op->param[1], rm.pure, op->scaling));
 		}
 	}
-	return NOP;
+	return NOP();
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
