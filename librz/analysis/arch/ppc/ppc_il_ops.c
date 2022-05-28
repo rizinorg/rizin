@@ -478,9 +478,14 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		NOT_IMPLEMENTED;
 	// Extend
 	case PPC_INS_EXTSB:
+		res = EXTS(UNSIGNED(PPC_BYTE, VARG(rS)));
+		break;
 	case PPC_INS_EXTSH:
+		res = EXTS(UNSIGNED(PPC_HWORD, VARG(rS)));
+		break;
 	case PPC_INS_EXTSW:
-		NOT_IMPLEMENTED;
+		res = EXTS(UNSIGNED(PPC_WORD, VARG(rS)));
+		break;
 	// Count leading zeros
 	case PPC_INS_CNTLZD:
 	case PPC_INS_CNTLZW:

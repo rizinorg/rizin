@@ -164,6 +164,19 @@ CMDS=<<EOF
 s loc.logical_insns
 aezi
 aezse 17~var_write
+# EXTS tests
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
 EOF
 EXPECT=<<EOF
 var_write(name: r0, old: 0x0, new: 0x0)
@@ -185,6 +198,12 @@ var_write(name: r5, old: 0xffffffffaaaa3333, new: 0xffffffff66663333)
 var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
 var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
 var_write(name: r20, old: 0x0, new: 0xffffffff66663333)
+var_write(name: r10, old: 0x0, new: 0xffffffffffffff80)
+var_write(name: r10, old: 0xffffffffffffff80, new: 0x7f)
+var_write(name: r10, old: 0x7f, new: 0xffffffffffff8000)
+var_write(name: r10, old: 0xffffffffffff8000, new: 0x7fff)
+var_write(name: r10, old: 0x7fff, new: 0xffffffff80000000)
+var_write(name: r10, old: 0xffffffff80000000, new: 0x7fffffff)
 EOF
 RUN
 
