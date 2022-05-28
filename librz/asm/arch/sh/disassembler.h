@@ -6,7 +6,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
-typedef enum {
+typedef enum sh_addr_mode_t {
 	SH_ADDR_INVALID = 0,
 	SH_REG_DIRECT,
 	SH_REG_INDIRECT,
@@ -23,7 +23,7 @@ typedef enum {
 	SH_IMM_S, ///< 8-bit immediate value (sign-extended)
 } SHAddrMode;
 
-typedef enum {
+typedef enum sh_scaling_t {
 	SH_SCALING_INVALID = 0,
 	SH_SCALING_B, ///< byte
 	SH_SCALING_W, ///< word
@@ -32,6 +32,73 @@ typedef enum {
 } SHScaling;
 
 const ut8 sh_scaling_size[] = { -1, 1, 2, 4, 8 };
+
+/**
+ * Enum for register indexes
+ */
+typedef enum sh_register_index_t {
+	SH_REG_IND_R0,
+	SH_REG_IND_R1,
+	SH_REG_IND_R2,
+	SH_REG_IND_R3,
+	SH_REG_IND_R4,
+	SH_REG_IND_R5,
+	SH_REG_IND_R6,
+	SH_REG_IND_R7,
+	SH_REG_IND_R8,
+	SH_REG_IND_R9,
+	SH_REG_IND_R10,
+	SH_REG_IND_R11,
+	SH_REG_IND_R12,
+	SH_REG_IND_R13,
+	SH_REG_IND_R14,
+	SH_REG_IND_R15,
+	SH_REG_IND_PC,
+	SH_REG_IND_SR,
+	SH_REG_IND_GBR,
+	SH_REG_IND_SSR,
+	SH_REG_IND_SPC,
+	SH_REG_IND_SGR,
+	SH_REG_IND_DBR,
+	SH_REG_IND_VBR,
+	SH_REG_IND_MACH,
+	SH_REG_IND_MACL,
+	SH_REG_IND_PR,
+	SH_REG_IND_FPUL,
+	SH_REG_IND_FPSCR,
+	SH_REG_IND_FR0,
+	SH_REG_IND_FR1,
+	SH_REG_IND_FR2,
+	SH_REG_IND_FR3,
+	SH_REG_IND_FR4,
+	SH_REG_IND_FR5,
+	SH_REG_IND_FR6,
+	SH_REG_IND_FR7,
+	SH_REG_IND_FR8,
+	SH_REG_IND_FR9,
+	SH_REG_IND_FR10,
+	SH_REG_IND_FR11,
+	SH_REG_IND_FR12,
+	SH_REG_IND_FR13,
+	SH_REG_IND_FR14,
+	SH_REG_IND_FR15,
+	SH_REG_IND_XF0,
+	SH_REG_IND_XF1,
+	SH_REG_IND_XF2,
+	SH_REG_IND_XF3,
+	SH_REG_IND_XF4,
+	SH_REG_IND_XF5,
+	SH_REG_IND_XF6,
+	SH_REG_IND_XF7,
+	SH_REG_IND_XF8,
+	SH_REG_IND_XF9,
+	SH_REG_IND_XF10,
+	SH_REG_IND_XF11,
+	SH_REG_IND_XF12,
+	SH_REG_IND_XF13,
+	SH_REG_IND_XF14,
+	SH_REG_IND_XF15
+} SHRegisterIndex;
 
 typedef enum {
 	SH_OP_INVALID = 0,
@@ -91,6 +158,7 @@ typedef enum {
 	SH_OP_CLRMAC,
 	SH_OP_CLRS,
 	SH_OP_CLRT,
+	SH_OP_LDC,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
