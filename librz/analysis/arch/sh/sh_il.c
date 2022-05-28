@@ -35,6 +35,8 @@
 #define SH_SR_T     "sr_t" ///< SR.T: True/False condition or carry/borrow bit
 #define SH_SR_S_BIT 1u << 1
 #define SH_SR_S     "sr_s" ///< SR.S: Specifies a saturation operation for a MAC instruction
+#define SH_SR_I_BIT 1u << 4
+#define SH_SR_I     "sr_i" ///< SR.I: Interrupt mask level: External interrupts of a lower level than IMASK are masked.
 #define SH_SR_Q_BIT 1u << 8
 #define SH_SR_Q     "sr_q" ///< SR.Q: State for divide step (Used by the DIV0S, DIV0U and DIV1 instructions)
 #define SH_SR_M_BIT 1u << 9
@@ -67,7 +69,7 @@ static const char *sh_global_registers[] = {
 	"r0b0", "r1b0", "r2b0", "r3b0", "r4b0", "r5b0", "r6b0", "r7b0", ///< bank 0 registers
 	"r0b1", "r1b1", "r2b1", "r3b1", "r4b1", "r5b1", "r6b1", "r7b1", ///< bank 1 registers
 	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "pc",
-	"sr", "gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl",
+	"gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl",
 	"pr", "fpul", "fpscr",
 	"fr0", "fr1", "fr2", "fr3", "fr4", "fr5", "fr6", "fr7",
 	"fr8", "fr9", "fr10", "fr11", "fr12", "fr13", "fr14", "fr15",
@@ -113,9 +115,57 @@ static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
 	return sh_global_registers[reg + bank * SH_BANKED_REG_COUNT];
 }
 
+static inline RzILOpPure *sh_il_get_status_reg() {
+	RzILOpPure *val = SH_U_REG(0);
+	val = LOGOR(VARG(SH_SR_D), val);
+	val = SHIFTL0(DUP(val), SH_U_REG(1));
+	val = LOGOR(VARG(SH_SR_R), val);
+	val = SHIFTL0(DUP(val), SH_U_REG(1));
+	val = LOGOR(VARG(SH_SR_B), val);
+	val = SHIFTL0(DUP(val), SH_U_REG(13));
+	val = LOGOR(VARG(SH_SR_F), val);
+	val = SHIFTL0(DUP(val), SH_U_REG(6));
+	val = LOGOR(VARG(SH_SR_M), val);
+	val = SHIFTL0(DUP(val), SH_U_REG(1));
+	val = LOGOR(VARG(SH_SR_Q), val);
+	val = SHIFTL0(DUP(val), SH_U_REG(4));
+	val = LOGOR(VARG(SH_SR_I), val);
+	val = SHIFTL0(DUP(val), SH_U_REG(3));
+	val = LOGOR(VARG(SH_SR_S), val);
+	val = SHIFTL0(DUP(val), SH_U_REG(1));
+	val = LOGOR(VARG(SH_SR_T), val);
+
+	return val;
+}
+
+static inline RzILOpEffect *sh_il_set_status_reg(RzILOpPure *val) {
+	RzILOpEffect *eff = SETG(SH_SR_T, LOGAND(SH_U_REG(0b1), val));
+	val = SHIFTR0(DUP(val), SH_U_REG(1));
+	eff = SEQ2(eff, SETG(SH_SR_S, LOGAND(SH_U_REG(0b1), val)));
+	val = SHIFTR0(DUP(val), SH_U_REG(3));
+	eff = SEQ2(eff, SETG(SH_SR_I, LOGAND(SH_U_REG(0b1111), val)));
+	val = SHIFTR0(DUP(val), SH_U_REG(4));
+	eff = SEQ2(eff, SETG(SH_SR_Q, LOGAND(SH_U_REG(0b1), val)));
+	val = SHIFTR0(DUP(val), SH_U_REG(1));
+	eff = SEQ2(eff, SETG(SH_SR_M, LOGAND(SH_U_REG(0b1), val)));
+	val = SHIFTR0(DUP(val), SH_U_REG(6));
+	eff = SEQ2(eff, SETG(SH_SR_F, LOGAND(SH_U_REG(0b1), val)));
+	val = SHIFTR0(DUP(val), SH_U_REG(13));
+	eff = SEQ2(eff, SETG(SH_SR_B, LOGAND(SH_U_REG(0b1), val)));
+	val = SHIFTR0(DUP(val), SH_U_REG(1));
+	eff = SEQ2(eff, SETG(SH_SR_R, LOGAND(SH_U_REG(0b1), val)));
+	val = SHIFTR0(DUP(val), SH_U_REG(1));
+	eff = SEQ2(eff, SETG(SH_SR_D, LOGAND(SH_U_REG(0b1), val)));
+
+	return eff;
+}
+
 static inline RzILOpPure *sh_il_get_reg(ut16 reg) {
 	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
+		if (reg == SH_REG_IND_SR) {
+			return sh_il_get_status_reg();
+		}
 		return VARG(sh_registers[reg]);
 	}
 
@@ -127,6 +177,9 @@ static inline RzILOpPure *sh_il_get_reg(ut16 reg) {
 static inline RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
+		if (reg == SH_REG_IND_SR) {
+			return sh_il_set_status_reg(val);
+		}
 		return SETG(sh_registers[reg], val);
 	}
 
@@ -360,7 +413,7 @@ static inline RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN 
  * Unknown instruction
  */
 static RzILOpEffect *sh_il_unk(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return NULL; // rz_il_op_new_nop();
+	return NULL;
 }
 
 /**
@@ -1119,6 +1172,42 @@ static RzILOpEffect *sh_il_clrt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, IL_FALSE);
 }
 
+// TODO: This needs to be fixed for banked register LDC
+/**
+ * LDC  Rm, REG
+ * REG := SR/GBR/VBR/SSR/SPC/DBR/Rn_BANK
+ * Rm -> REG
+ * PRIVILEGED (Only GBR is not privileged)
+ *
+ * LDC.L  @Rm+, REG
+ * REG := SR/GBR/VBR/SSR/SPC/DBR/Rn_BANK
+ * (Rm) -> REG ; Rm + 4 -> Rm
+ * PRIVILEGED (Only GBR is not privileged)
+ */
+static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, VARG(SH_SR_D));
+	ut8 state = priv_bit->bits.small_u == 0 ? 0b1 : 0b0;
+	state += op->param[1].param[0] != SH_REG_IND_GBR ? 0b10 : 0b00;
+	if ((state & 0x11) == 0x11) {
+		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SH: RESINST"));
+	}
+	if (op->scaling == SH_SCALING_INVALID) {
+		if (state & 0b10) {
+			return BRANCH(VARG(SH_SR_D), sh_il_set_param(op->param[1], sh_il_get_pure_param(0), op->scaling), NOP);
+		} else {
+			return sh_il_set_param(op->param[1], sh_il_get_pure_param(0), op->scaling);
+		}
+	} else if (op->scaling == SH_SCALING_L) {
+		SHParamHelper rm = sh_il_get_param(op->param[0], op->scaling);
+		if (state & 0b10) {
+			return SEQ2(rm.post, BRANCH(VARG(SH_SR_D), sh_il_set_param(op->param[1], rm.pure, op->scaling), NOP));
+		} else {
+			return SEQ2(rm.post, sh_il_set_param(op->param[1], rm.pure, op->scaling));
+		}
+	}
+	return NOP;
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
@@ -1180,5 +1269,6 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_shlr16,
 	sh_il_clrmac,
 	sh_il_clrs,
-	sh_il_clrt
+	sh_il_clrt,
+	sh_il_ldc
 };
