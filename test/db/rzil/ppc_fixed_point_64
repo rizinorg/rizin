@@ -379,7 +379,7 @@ EOF
 EXPECT=<<EOF
 var_write(name: ctr, old: 0x0, new: 0xffffffffffffffff)
 var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
-var_write(name: lr, old: 0x80003c4, new: 0xffffffffffffffff)
+var_write(name: lr, old: 0x8000184, new: 0xffffffffffffffff)
 var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
 EOF
 RUN
