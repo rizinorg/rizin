@@ -154,6 +154,18 @@ CONVERT_TO_TWO_COMPLEMENT(64)
 /// Typical comparison (1/0/-1) for two numbers of arbitrary types, including unsigned
 #define RZ_NUM_CMP(a, b) ((a) > (b) ? 1 : ((b) > (a) ? -1 : 0))
 
+/**
+ * Divide 2^64 by the given divisor
+ *
+ * Idea: https://stackoverflow.com/a/55584872
+ * Proof: https://git.sr.ht/~thestr4ng3r/isa-bit-twiddling/tree/808253ab4d262f9e7dd7b87d0396f1afd7c5804b/item/Bit_Twiddling.thy#L26-43
+ *
+ * \param divisor must be non-zero
+ */
+static inline ut64 rz_num_2_pow_64_div(ut64 divisor) {
+	return (-divisor) / divisor + 1;
+}
+
 #ifdef __cplusplus
 }
 #endif

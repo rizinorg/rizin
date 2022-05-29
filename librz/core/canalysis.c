@@ -3685,64 +3685,80 @@ RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, 
 struct block_flags_stat_t {
 	ut64 step;
 	ut64 from;
-	RzCoreAnalStats *as;
+	RzCoreAnalysisStatsItem *blocks;
 };
 
 static bool block_flags_stat(RzFlagItem *fi, void *user) {
 	struct block_flags_stat_t *u = (struct block_flags_stat_t *)user;
-	int piece = (fi->offset - u->from) / u->step;
-	u->as->block[piece].flags++;
+	size_t piece = (fi->offset - u->from) / u->step;
+	u->blocks[piece].flags++;
 	return true;
 }
 
-/* core analysis stats */
-/* stats --- colorful bar */
-RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *core, ut64 from, ut64 to, ut64 step) {
+/**
+ * Generate statistics for a range of memory, e.g. for a colorful overview bar.
+ *
+ * Let `fullsz = to + 1 - from`.
+ * If `fullsz % step = 0`, then the result will be `fullsz / step` blocks of size `step`.
+ * Otherwise, it will be `fullsz / step` blocks of size `step` and one additional block
+ * covering the rest.
+ *
+ * \param lowest address to consider
+ * \param highest address to consider, inclusive. Must be greater than or equal to from.
+ * \param size of a single block in the output
+ */
+RZ_API RzCoreAnalysisStats *rz_core_analysis_get_stats(RzCore *core, ut64 from, ut64 to, ut64 step) {
+	rz_return_val_if_fail(core && to >= from && step, NULL);
 	RzAnalysisFunction *F;
 	RzAnalysisBlock *B;
 	RzBinSymbol *S;
 	RzListIter *iter, *iter2;
-	RzCoreAnalStats *as = NULL;
-	int piece, as_size, blocks;
 	ut64 at;
-
-	if (from == to || from == UT64_MAX || to == UT64_MAX) {
-		eprintf("Cannot alloc for this range\n");
-		return NULL;
-	}
-	as = RZ_NEW0(RzCoreAnalStats);
+	RzCoreAnalysisStats *as = RZ_NEW0(RzCoreAnalysisStats);
 	if (!as) {
 		return NULL;
 	}
-	if (step < 1) {
-		step = 1;
+	as->from = from;
+	as->to = to;
+	as->step = step;
+	rz_vector_init(&as->blocks, sizeof(RzCoreAnalysisStatsItem), NULL, NULL);
+	size_t count = (to == UT64_MAX && from == 0) ? rz_num_2_pow_64_div(step) : (to + 1 - from) / step;
+	if (from + count * step != to + 1) {
+		count++;
 	}
-	blocks = (to - from) / step;
-	as_size = (1 + blocks) * sizeof(RzCoreAnalStatsItem);
-	as->block = malloc(as_size);
-	if (!as->block) {
-		free(as);
+	if (!count || SZT_MUL_OVFCHK(count, sizeof(RzCoreAnalysisStatsItem))) {
+		rz_core_analysis_stats_free(as);
 		return NULL;
 	}
-	memset(as->block, 0, as_size);
-	for (at = from; at < to; at += step) {
+	RzCoreAnalysisStatsItem *blocks = rz_vector_insert_range(&as->blocks, 0, NULL, count);
+	if (!blocks) {
+		rz_core_analysis_stats_free(as);
+		return NULL;
+	}
+	memset(blocks, 0, count * sizeof(RzCoreAnalysisStatsItem));
+	for (at = from; at < to;) {
 		RzIOMap *map = rz_io_map_get(core->io, at);
-		piece = (at - from) / step;
-		as->block[piece].perm = map ? map->perm : (core->io->desc ? core->io->desc->perm : 0);
+		size_t piece = (at - from) / step;
+		blocks[piece].perm = map ? map->perm : (core->io->desc ? core->io->desc->perm : 0);
+		ut64 prev = at;
+		at += step;
+		if (at < prev) {
+			break;
+		}
 	}
 	// iter all flags
-	struct block_flags_stat_t u = { .step = step, .from = from, .as = as };
-	rz_flag_foreach_range(core->flags, from, to + 1, block_flags_stat, &u);
+	struct block_flags_stat_t u = { .step = step, .from = from, .blocks = blocks };
+	rz_flag_foreach_range(core->flags, from, to, block_flags_stat, &u);
 	// iter all functions
 	rz_list_foreach (core->analysis->fcns, iter, F) {
 		if (F->addr < from || F->addr > to) {
 			continue;
 		}
-		piece = (F->addr - from) / step;
-		as->block[piece].functions++;
-		ut64 last_piece = RZ_MIN((F->addr + rz_analysis_function_linear_size(F) - 1) / step, blocks - 1);
+		size_t piece = (F->addr - from) / step;
+		blocks[piece].functions++;
+		ut64 last_piece = RZ_MIN((F->addr + rz_analysis_function_linear_size(F) - 1) / step, count - 1);
 		for (; piece <= last_piece; piece++) {
-			as->block[piece].in_functions++;
+			blocks[piece].in_functions++;
 		}
 		// iter all basic blocks
 		rz_list_foreach (F->bbs, iter2, B) {
@@ -3750,7 +3766,7 @@ RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *core, ut64 from, ut64
 				continue;
 			}
 			piece = (B->addr - from) / step;
-			as->block[piece].blocks++;
+			blocks[piece].blocks++;
 		}
 	}
 	// iter all symbols
@@ -3758,8 +3774,8 @@ RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *core, ut64 from, ut64
 		if (S->vaddr < from || S->vaddr > to) {
 			continue;
 		}
-		piece = (S->vaddr - from) / step;
-		as->block[piece].symbols++;
+		size_t piece = (S->vaddr - from) / step;
+		blocks[piece].symbols++;
 	}
 	RzPVector *metas = to > from ? rz_meta_get_all_intersect(core->analysis, from, to - from, RZ_META_TYPE_ANY) : NULL;
 	if (metas) {
@@ -3770,13 +3786,13 @@ RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *core, ut64 from, ut64
 			if (node->start < from || node->end > to) {
 				continue;
 			}
-			piece = (node->start - from) / step;
+			size_t piece = (node->start - from) / step;
 			switch (mi->type) {
 			case RZ_META_TYPE_STRING:
-				as->block[piece].strings++;
+				blocks[piece].strings++;
 				break;
 			case RZ_META_TYPE_COMMENT:
-				as->block[piece].comments++;
+				blocks[piece].comments++;
 				break;
 			default:
 				break;
@@ -3787,11 +3803,31 @@ RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *core, ut64 from, ut64
 	return as;
 }
 
-RZ_API void rz_core_analysis_stats_free(RzCoreAnalStats *s) {
-	if (s) {
-		free(s->block);
+RZ_API void rz_core_analysis_stats_free(RzCoreAnalysisStats *s) {
+	if (!s) {
+		return;
 	}
+	rz_vector_fini(&s->blocks);
 	free(s);
+}
+
+/**
+ * Get the lowest address that the i-th block in s covers (inclusive)
+ */
+RZ_API ut64 rz_core_analysis_stats_get_block_from(const RzCoreAnalysisStats *s, size_t i) {
+	return s->from + s->step * i;
+}
+
+/**
+ * Get the highest address that the i-th block in s covers (inclusive)
+ */
+RZ_API ut64 rz_core_analysis_stats_get_block_to(const RzCoreAnalysisStats *s, size_t i) {
+	size_t count = rz_vector_len(&s->blocks);
+	rz_return_val_if_fail(i < count, 0);
+	if (i + 1 == count) {
+		return s->to;
+	}
+	return rz_core_analysis_stats_get_block_from(s, i + 1) - 1;
 }
 
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl) {

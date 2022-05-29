@@ -3306,7 +3306,7 @@ static bool cmd_print_blocks(RzCore *core, const char *input) {
 	bool result = false;
 	char mode = input[0];
 	RzList *list = NULL;
-	RzCoreAnalStats *as = NULL;
+	RzCoreAnalysisStats *as = NULL;
 	RzTable *t = NULL;
 	PJ *pj = NULL;
 	if (mode == '?') {
@@ -3321,19 +3321,20 @@ static bool cmd_print_blocks(RzCore *core, const char *input) {
 	int w = (input[0] == ' ')
 		? (int)rz_num_math(core->num, input + 1)
 		: (int)(core->print->cols * 2.7);
-
 	if (w == 0) {
 		rz_core_cmd_help(core, help_msg_p_minus);
 		return false;
 	}
 	int cols = rz_config_get_i(core->config, "hex.cols");
-	// int cols = rz_cons_get_size (NULL) - 30;
+	w = RZ_MAX(cols, w);
+
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
 
 	list = rz_core_get_boundaries_prot(core, -1, NULL, "search");
-	if (!list) {
+	if (!list || rz_list_empty(list)) {
+		RZ_LOG_ERROR("No range to calculate stats for.\n");
 		result = true;
 		goto cleanup;
 	}
@@ -3351,8 +3352,12 @@ static bool cmd_print_blocks(RzCore *core, const char *input) {
 	}
 	rz_list_free(list);
 	list = NULL;
-	ut64 piece = RZ_MAX((to - from) / RZ_MAX(cols, w), 1);
-	as = rz_core_analysis_get_stats(core, from, to, piece);
+	ut64 piece = RZ_MAX((to - from) / w, 1);
+	if (piece * w != to - from) {
+		// add 1 to compute `piece = ceil((to - from) / w)` instead
+		piece++;
+	}
+	as = rz_core_analysis_get_stats(core, from, to - 1, piece);
 	if (!as) {
 		goto cleanup;
 	}
@@ -3386,46 +3391,45 @@ static bool cmd_print_blocks(RzCore *core, const char *input) {
 
 	bool use_color = rz_config_get_i(core->config, "scr.color");
 	int len = 0;
-	int i;
-	for (i = 0; i < ((to - from) / piece); i++) {
-		ut64 at = from + (piece * i);
-		ut64 ate = at + piece;
-		ut64 p = (at - from) / piece;
+	for (size_t i = 0; i < rz_vector_len(&as->blocks); i++) {
+		RzCoreAnalysisStatsItem *block = rz_vector_index_ptr(&as->blocks, i);
+		ut64 at = rz_core_analysis_stats_get_block_from(as, i);
+		ut64 ate = rz_core_analysis_stats_get_block_to(as, i) + 1;
 		switch (mode) {
 		case 'j':
 			pj_o(pj);
-			if ((as->block[p].flags) || (as->block[p].functions) || (as->block[p].comments) || (as->block[p].symbols) || (as->block[p].perm) || (as->block[p].strings)) {
+			if ((block->flags) || (block->functions) || (block->comments) || (block->symbols) || (block->perm) || (block->strings)) {
 				pj_kn(pj, "offset", at);
-				pj_kn(pj, "size", piece);
+				pj_kn(pj, "size", ate - at);
 			}
-			if (as->block[p].flags) {
-				pj_ki(pj, "flags", as->block[p].flags);
+			if (block->flags) {
+				pj_ki(pj, "flags", block->flags);
 			}
-			if (as->block[p].functions) {
-				pj_ki(pj, "functions", as->block[p].functions);
+			if (block->functions) {
+				pj_ki(pj, "functions", block->functions);
 			}
-			if (as->block[p].in_functions) {
-				pj_ki(pj, "in_functions", as->block[p].in_functions);
+			if (block->in_functions) {
+				pj_ki(pj, "in_functions", block->in_functions);
 			}
-			if (as->block[p].comments) {
-				pj_ki(pj, "comments", as->block[p].comments);
+			if (block->comments) {
+				pj_ki(pj, "comments", block->comments);
 			}
-			if (as->block[p].symbols) {
-				pj_ki(pj, "symbols", as->block[p].symbols);
+			if (block->symbols) {
+				pj_ki(pj, "symbols", block->symbols);
 			}
-			if (as->block[p].strings) {
-				pj_ki(pj, "strings", as->block[p].strings);
+			if (block->strings) {
+				pj_ki(pj, "strings", block->strings);
 			}
-			if (as->block[p].perm) {
-				pj_ks(pj, "perm", rz_str_rwx_i(as->block[p].perm));
+			if (block->perm) {
+				pj_ks(pj, "perm", rz_str_rwx_i(block->perm));
 			}
 			pj_end(pj);
 			len++;
 			break;
 		case 'h':
-			if ((as->block[p].flags) || (as->block[p].functions) || (as->block[p].comments) || (as->block[p].symbols) || (as->block[p].strings)) {
-				rz_table_add_rowf(t, "sddddd", sdb_fmt("0x%09" PFMT64x "", at), as->block[p].flags,
-					as->block[p].functions, as->block[p].comments, as->block[p].symbols, as->block[p].strings);
+			if ((block->flags) || (block->functions) || (block->comments) || (block->symbols) || (block->strings)) {
+				rz_table_add_rowf(t, "sddddd", sdb_fmt("0x%09" PFMT64x "", at), block->flags,
+					block->functions, block->comments, block->symbols, block->strings);
 			}
 			break;
 		case 'e': // p-e
@@ -3447,17 +3451,17 @@ static bool cmd_print_blocks(RzCore *core, const char *input) {
 						rz_cons_print(rz_cons_singleton()->context->pal.graph_false);
 					}
 				}
-				if (as->block[p].strings > 0) {
+				if (block->strings > 0) {
 					rz_cons_memcat("z", 1);
-				} else if (as->block[p].symbols > 0) {
+				} else if (block->symbols > 0) {
 					rz_cons_memcat("s", 1);
-				} else if (as->block[p].functions > 0) {
+				} else if (block->functions > 0) {
 					rz_cons_memcat("F", 1);
-				} else if (as->block[p].comments > 0) {
+				} else if (block->comments > 0) {
 					rz_cons_memcat("c", 1);
-				} else if (as->block[p].flags > 0) {
+				} else if (block->flags > 0) {
 					rz_cons_memcat(".", 1);
-				} else if (as->block[p].in_functions > 0) {
+				} else if (block->in_functions > 0) {
 					rz_cons_memcat("f", 1);
 				} else {
 					rz_cons_memcat("_", 1);
@@ -3547,29 +3551,29 @@ static ut8 *analBars(RzCore *core, size_t type, size_t nblocks, size_t blocksize
 		eprintf("Error: failed to malloc memory");
 		return NULL;
 	}
-	// XXX: unused memblock
-	ut8 *p = malloc(blocksize);
-	if (!p) {
-		RZ_FREE(ptr);
-		eprintf("Error: failed to malloc memory");
-		return NULL;
-	}
 	if (type == 'A') {
-		ut64 to = from + (blocksize * nblocks);
-		RzCoreAnalStats *as = rz_core_analysis_get_stats(core, from, to, blocksize);
-		for (i = 0; i < nblocks; i++) {
+		ut64 to = from + (blocksize * nblocks) - 1;
+		if (to < from) {
+			return NULL;
+		}
+		RzCoreAnalysisStats *as = rz_core_analysis_get_stats(core, from, to, blocksize);
+		if (!as) {
+			free(ptr);
+			return NULL;
+		}
+		for (size_t i = 0; i < RZ_MIN(nblocks, rz_vector_len(&as->blocks)); i++) {
 			int value = 0;
-			value += as->block[i].functions;
-			value += as->block[i].in_functions;
-			value += as->block[i].comments;
-			value += as->block[i].symbols;
-			value += as->block[i].flags;
-			value += as->block[i].strings;
-			value += as->block[i].blocks;
+			RzCoreAnalysisStatsItem *block = rz_vector_index_ptr(&as->blocks, i);
+			value += block->functions;
+			value += block->in_functions;
+			value += block->comments;
+			value += block->symbols;
+			value += block->flags;
+			value += block->strings;
+			value += block->blocks;
 			ptr[i] = RZ_MIN(255, value);
 		}
 		rz_core_analysis_stats_free(as);
-		free(p);
 		return ptr;
 	}
 	for (i = 0; i < nblocks; i++) {
@@ -3608,7 +3612,6 @@ static ut8 *analBars(RzCore *core, size_t type, size_t nblocks, size_t blocksize
 			}
 		}
 	}
-	free(p);
 	return ptr;
 }
 
@@ -3789,17 +3792,26 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 			}
 			int len = 0;
 			if (submode == 'A') {
-				ut64 to = from + totalsize; //  (blocksize * nblocks);
-				RzCoreAnalStats *as = rz_core_analysis_get_stats(core, from, to, blocksize);
-				for (i = 0; i < nblocks; i++) {
+				ut64 to = from + totalsize - 1;
+				if (to < from) {
+					free(p);
+					goto beach;
+				}
+				RzCoreAnalysisStats *as = rz_core_analysis_get_stats(core, from, to, blocksize);
+				if (!as) {
+					free(p);
+					goto beach;
+				}
+				for (size_t i = 0; i < RZ_MIN(nblocks, rz_vector_len(&as->blocks)); i++) {
+					RzCoreAnalysisStatsItem *block = rz_vector_index_ptr(&as->blocks, i);
 					int value = 0;
-					value += as->block[i].functions;
-					value += as->block[i].in_functions;
-					value += as->block[i].comments;
-					value += as->block[i].symbols;
-					value += as->block[i].flags;
-					value += as->block[i].strings;
-					value += as->block[i].blocks;
+					value += block->functions;
+					value += block->in_functions;
+					value += block->comments;
+					value += block->symbols;
+					value += block->flags;
+					value += block->strings;
+					value += block->blocks;
 					ptr[i] = 256 * value / blocksize;
 					ptr[i] *= 3;
 				}

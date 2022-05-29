@@ -1040,15 +1040,21 @@ typedef struct {
 	ut32 symbols;
 	ut32 strings;
 	ut32 perm;
-} RzCoreAnalStatsItem;
+} RzCoreAnalysisStatsItem;
+
 typedef struct {
-	RzCoreAnalStatsItem *block;
-} RzCoreAnalStats;
+	ut64 from;
+	ut64 to;
+	ut64 step;
+	RzVector blocks;
+} RzCoreAnalysisStats;
 
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);
-RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *a, ut64 from, ut64 to, ut64 step);
-RZ_API void rz_core_analysis_stats_free(RzCoreAnalStats *s);
+RZ_API RzCoreAnalysisStats *rz_core_analysis_get_stats(RzCore *a, ut64 from, ut64 to, ut64 step);
+RZ_API void rz_core_analysis_stats_free(RzCoreAnalysisStats *s);
+RZ_API ut64 rz_core_analysis_stats_get_block_from(const RzCoreAnalysisStats *s, size_t i);
+RZ_API ut64 rz_core_analysis_stats_get_block_to(const RzCoreAnalysisStats *s, size_t i);
 
 RZ_API int rz_line_hist_offset_up(RzLine *line);
 RZ_API int rz_line_hist_offset_down(RzLine *line);
