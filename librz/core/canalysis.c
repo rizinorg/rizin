@@ -3707,7 +3707,7 @@ static bool block_flags_stat(RzFlagItem *fi, void *user) {
  * \param highest address to consider, inclusive. Must be greater than or equal to from.
  * \param size of a single block in the output
  */
-RZ_API RzCoreAnalysisStats *rz_core_analysis_get_stats(RzCore *core, ut64 from, ut64 to, ut64 step) {
+RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore *core, ut64 from, ut64 to, ut64 step) {
 	rz_return_val_if_fail(core && to >= from && step, NULL);
 	RzAnalysisFunction *F;
 	RzAnalysisBlock *B;
@@ -3814,14 +3814,16 @@ RZ_API void rz_core_analysis_stats_free(RzCoreAnalysisStats *s) {
 /**
  * Get the lowest address that the i-th block in s covers (inclusive)
  */
-RZ_API ut64 rz_core_analysis_stats_get_block_from(const RzCoreAnalysisStats *s, size_t i) {
+RZ_API ut64 rz_core_analysis_stats_get_block_from(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i) {
+	rz_return_val_if_fail(s, 0);
 	return s->from + s->step * i;
 }
 
 /**
  * Get the highest address that the i-th block in s covers (inclusive)
  */
-RZ_API ut64 rz_core_analysis_stats_get_block_to(const RzCoreAnalysisStats *s, size_t i) {
+RZ_API ut64 rz_core_analysis_stats_get_block_to(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i) {
+	rz_return_val_if_fail(s, 0);
 	size_t count = rz_vector_len(&s->blocks);
 	rz_return_val_if_fail(i < count, 0);
 	if (i + 1 == count) {

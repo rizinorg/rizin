@@ -810,7 +810,8 @@ RZ_API void rz_flag_foreach_prefix(RzFlag *f, const char *pfx, int pfx_len, RzFl
  * \param from inclusive
  * \param to inclusive
  */
-RZ_API void rz_flag_foreach_range(RzFlag *f, ut64 from, ut64 to, RzFlagItemCb cb, void *user) {
+RZ_API void rz_flag_foreach_range(RZ_NONNULL RzFlag *f, ut64 from, ut64 to, RzFlagItemCb cb, void *user) {
+	rz_return_if_fail(f);
 	FOREACH_BODY(fi->offset >= from && fi->offset <= to);
 }
 

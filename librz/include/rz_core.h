@@ -1030,6 +1030,11 @@ RZ_API const char **rz_core_help_vars_get(RzCore *core);
 
 /* analysis stats */
 
+/**
+ * Single sub-range of statistics as part of an entire RzCoreAnalysisStats.
+ *
+ * The range that this covers is given by rz_core_analysis_stats_get_block_from()/to().
+ */
 typedef struct {
 	ut32 youarehere;
 	ut32 flags;
@@ -1042,6 +1047,9 @@ typedef struct {
 	ut32 perm;
 } RzCoreAnalysisStatsItem;
 
+/**
+ * Statistics for a range of memory, split up into smaller blocks.
+ */
 typedef struct {
 	ut64 from;
 	ut64 to;
@@ -1051,10 +1059,10 @@ typedef struct {
 
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);
-RZ_API RzCoreAnalysisStats *rz_core_analysis_get_stats(RzCore *a, ut64 from, ut64 to, ut64 step);
+RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore *a, ut64 from, ut64 to, ut64 step);
 RZ_API void rz_core_analysis_stats_free(RzCoreAnalysisStats *s);
-RZ_API ut64 rz_core_analysis_stats_get_block_from(const RzCoreAnalysisStats *s, size_t i);
-RZ_API ut64 rz_core_analysis_stats_get_block_to(const RzCoreAnalysisStats *s, size_t i);
+RZ_API ut64 rz_core_analysis_stats_get_block_from(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
+RZ_API ut64 rz_core_analysis_stats_get_block_to(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
 
 RZ_API int rz_line_hist_offset_up(RzLine *line);
 RZ_API int rz_line_hist_offset_down(RzLine *line);
