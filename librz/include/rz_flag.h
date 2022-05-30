@@ -127,7 +127,7 @@ RZ_API const char *rz_flag_color(RzFlag *f, RzFlagItem *it, const char *color);
 RZ_API int rz_flag_count(RzFlag *f, const char *glob);
 RZ_API void rz_flag_foreach(RzFlag *f, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_prefix(RzFlag *f, const char *pfx, int pfx_len, RzFlagItemCb cb, void *user);
-RZ_API void rz_flag_foreach_range(RzFlag *f, ut64 from, ut64 to, RzFlagItemCb cb, void *user);
+RZ_API void rz_flag_foreach_range(RZ_NONNULL RzFlag *f, ut64 from, ut64 to, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_glob(RzFlag *f, const char *glob, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_space(RzFlag *f, const RzSpace *space, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_space_glob(RzFlag *f, const char *glob, const RzSpace *space, RzFlagItemCb cb, void *user);
