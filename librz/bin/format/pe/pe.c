@@ -4104,13 +4104,21 @@ char *PE_(rz_bin_pe_get_os)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		return NULL;
 	}
 	switch (bin->nt_headers->optional_header.Subsystem) {
+	case PE_IMAGE_SUBSYSTEM_UNKNOWN:
+		os = strdup("unknown os");
+		break;
 	case PE_IMAGE_SUBSYSTEM_NATIVE:
 		os = strdup("native");
 		break;
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
+	case PE_IMAGE_SUBSYSTEM_NATIVE_WINDOWS:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
+	case PE_IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION:
 		os = strdup("windows");
+		break;
+	case PE_IMAGE_SUBSYSTEM_OS2_CUI:
+		os = strdup("os/2");
 		break;
 	case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
 		os = strdup("posix");
@@ -4125,8 +4133,7 @@ char *PE_(rz_bin_pe_get_os)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		os = strdup("xbox");
 		break;
 	default:
-		// XXX: this is unknown
-		os = strdup("windows");
+		os = strdup("invalid");
 	}
 	return os;
 }
