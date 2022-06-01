@@ -349,6 +349,26 @@ static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
 	return ret;
 }
 
+#include "native/bt/windows-x64.c"
+
+static RzList *rz_debug_winkd_frames(RzDebug *dbg, ut64 at) {
+	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
+		return NULL;
+	}
+	RzList *ret = NULL;
+	if (kdctx->windctx.is_arm) {
+		// TODO
+	} else {
+		if (kdctx->windctx.is_64bit) {
+			struct context_type_amd64 context = { 0 };
+			backtrace_windows_x64(dbg, &ret, &context);
+		} else {
+			return NULL;
+		}
+	}
+	return ret;
+}
+
 static RzList *rz_debug_winkd_maps(RzDebug *dbg) {
 	RzList *maps = winkd_list_maps(&kdctx->windctx);
 	RzListIter *it;
@@ -399,6 +419,7 @@ RzDebugPlugin rz_debug_plugin_winkd = {
 	.threads = &rz_debug_winkd_threads,
 	.modules_get = &rz_debug_winkd_modules,
 	.map_get = &rz_debug_winkd_maps,
+	.frames = &rz_debug_winkd_frames,
 };
 
 #ifndef RZ_PLUGIN_INCORE
