@@ -1138,7 +1138,7 @@ end:
 	return ret;
 }
 
-int winkd_continue(KdCtx *ctx) {
+int winkd_continue(KdCtx *ctx, bool handled) {
 	kd_req_t req = { 0 };
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
@@ -1146,7 +1146,7 @@ int winkd_continue(KdCtx *ctx) {
 	}
 	req.req = DbgKdContinueApi;
 	req.cpu = ctx->cpu;
-	req.rz_cont.reason = 0x10001;
+	req.rz_cont.reason = handled ? 0x10001 : 0x80010001;
 	// The meaning of 0x400 is unknown, but Windows doesn't
 	// behave like suggested by ReactOS source
 	req.rz_cont.tf = 0x400;

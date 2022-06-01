@@ -453,9 +453,7 @@ RZ_API int rz_debug_continue_syscall(RzDebug *dbg, int sc);
 RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc);
 RZ_API int rz_debug_continue(RzDebug *dbg);
 RZ_API int rz_debug_continue_kill(RzDebug *dbg, int signal);
-#if __WINDOWS__
 RZ_API int rz_debug_continue_pass_exception(RzDebug *dbg);
-#endif
 
 /* process/thread handling */
 RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);

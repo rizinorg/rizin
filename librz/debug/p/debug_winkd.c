@@ -45,7 +45,7 @@ static int rz_debug_winkd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int 
 }
 
 static int rz_debug_winkd_continue(RzDebug *dbg, int pid, int tid, int sig) {
-	return winkd_continue(kdctx);
+	return winkd_continue(kdctx, !sig);
 }
 
 static void get_current_process_and_thread(RzDebug *dbg, ut64 thread_address) {
@@ -102,6 +102,7 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 		if (stc->state == DbgKdExceptionStateChange) {
 			dbg->reason.type = RZ_DEBUG_REASON_INT;
 			reason = RZ_DEBUG_REASON_INT;
+			dbg->reason.signum = stc->exception.code;
 			break;
 		} else if (stc->state == DbgKdLoadSymbolsStateChange) {
 			dbg->reason.type = RZ_DEBUG_REASON_NEW_LIB;
