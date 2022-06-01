@@ -1125,6 +1125,7 @@ int winkd_sync(KdCtx *ctx) {
 	rz_list_free(ctx->tlist_cache);
 	ctx->tlist_cache = NULL;
 	ctx->windctx.is_pae = 0;
+	ctx->windctx.target_thread.ethread = stc64->kthread;
 	// We're ready to go
 	ctx->syncd = 1;
 

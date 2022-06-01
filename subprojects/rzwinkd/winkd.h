@@ -43,6 +43,7 @@ enum {
 	K_PaeEnabled = 0x036,
 	K_PsActiveProcessHead = 0x050,
 	K_CmNtCSDVersion = 0x268,
+	K_OffsetKThreadApcProcess = 0x2a0
 };
 
 enum {
@@ -56,7 +57,7 @@ enum {
 	P_ImageBaseAddress, // PEB
 	P_ProcessParameters, // PEB
 	RZ_ImagePathName, // RTL_USER_PROCESS_PARAMETERS
-	ET_Tcb, // ETHREAD
+	ET_ApcProcess, // ETHREAD
 	ET_ThreadListEntry, // ETHREAD
 	ET_Win32StartAddress, // ETHREAD
 	ET_Cid, // ETHREAD
