@@ -5,6 +5,7 @@
 #include <winkd.h>
 #include <kd.h>
 #include "common_winkd.h"
+#include "common_windows.h"
 #include "mdmp_windefs.h"
 
 #define O_(n) kdctx->windctx.profile->f[n]
@@ -100,9 +101,11 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 		}
 		winkd_set_cpu(kdctx, stc->cpu);
 		if (stc->state == DbgKdExceptionStateChange) {
-			dbg->reason.type = RZ_DEBUG_REASON_INT;
-			reason = RZ_DEBUG_REASON_INT;
+			windows_print_exception_event(kdctx->windctx.target.uniqueid, kdctx->windctx.target_thread.uniqueid, stc->exception.code, stc->exception.flags);
+			dbg->reason.type = windows_exception_to_reason(stc->exception.code);
+			dbg->reason.addr = stc->exception.ex_addr;
 			dbg->reason.signum = stc->exception.code;
+			reason = dbg->reason.type;
 			break;
 		} else if (stc->state == DbgKdLoadSymbolsStateChange) {
 			dbg->reason.type = RZ_DEBUG_REASON_NEW_LIB;
