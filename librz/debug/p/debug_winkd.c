@@ -85,7 +85,7 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	return reason;
 }
 
-static bool get_module_timestamp(ut64 addr, ut32 *timestamp) {
+static bool get_module_timestamp(ut64 addr, ut32 *timestamp, ut32 *sizeofimage) {
 	ut8 mz[2];
 	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr, mz, 2) != 2) {
 		return false;
@@ -97,7 +97,7 @@ static bool get_module_timestamp(ut64 addr, ut32 *timestamp) {
 	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + 0x3c, pe_off_buf, 2) != 2) {
 		return false;
 	}
-	ut16 pe_off = rz_read_le16(pe_off_buf);
+	const ut16 pe_off = rz_read_le16(pe_off_buf);
 	ut8 pe[2];
 	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + pe_off, pe, 2) != 2) {
 		return false;
@@ -109,7 +109,12 @@ static bool get_module_timestamp(ut64 addr, ut32 *timestamp) {
 	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + pe_off + 8, ts, 4) != 4) {
 		return false;
 	}
+	ut8 sz[4];
+	if (kdctx->windctx.read_at_kernel_virtual(kdctx->windctx.user, addr + pe_off + 0x50, sz, 4) != 4) {
+		return false;
+	};
 	*timestamp = rz_read_le32(ts);
+	*sizeofimage = rz_read_le32(sz);
 	return true;
 }
 
@@ -141,30 +146,16 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	}
 
 	// Load PDB for kernel
-	WindModule *m, *mod = NULL;
+	WindModule *mod = &kdctx->kernel_module;
 	RzList *modules = NULL;
-	if (kdctx->kernel_module.addr) {
-		ut32 timestamp;
-		if (get_module_timestamp(kdctx->kernel_module.addr, &timestamp)) {
-			mod = &kdctx->kernel_module;
-			mod->timestamp = timestamp;
+	if (!mod->timestamp || !mod->size) {
+		if (!get_module_timestamp(kdctx->kernel_module.addr, &kdctx->kernel_module.timestamp, &kdctx->kernel_module.size)) {
+			RZ_LOG_ERROR("Could not get timestamp for kernel module\n");
+			return false;
 		}
 	}
-	if (!mod && kdctx->windctx.PsLoadedModuleList) {
-		modules = winkd_list_modules(&kdctx->windctx);
-		RzListIter *it;
-		rz_list_foreach (modules, it, m) {
-			RZ_LOG_DEBUG("%" PFMT64x " %s\n", m->addr, m->name);
-			if (rz_str_endswith(m->name, "\\ntoskrnl.exe")) {
-				mod = m;
-				break;
-			}
-		}
-	}
-	if (!mod) {
-		RZ_LOG_ERROR("Failed to find ntoskrnl.exe module\n");
-		rz_list_free(modules);
-		return false;
+	if (!mod->name) {
+		mod->name = strdup("\\ntoskrnl.exe");
 	}
 	char *exepath, *pdbpath;
 	if (!winkd_download_module_and_pdb(mod,

@@ -1015,6 +1015,7 @@ bool winkd_read_ver(KdCtx *ctx) {
 	RZ_LOG_DEBUG("Protocol version : %i.%i\n", rr->rz_ver.proto_major, rr->rz_ver.proto_minor);
 	RZ_LOG_DEBUG("Flags : %08x\n", rr->rz_ver.flags);
 	RZ_LOG_DEBUG("Machine : %08x\n", rr->rz_ver.machine);
+	RZ_LOG_DEBUG("Kernel Base : %016" PFMT64x "\n", rr->rz_ver.kernel_base);
 	RZ_LOG_DEBUG("Module list : %016" PFMT64x "\n", (ut64)rr->rz_ver.mod_addr);
 	RZ_LOG_DEBUG("Debug block : %016" PFMT64x "\n", (ut64)rr->rz_ver.dbg_addr);
 
@@ -1030,6 +1031,7 @@ bool winkd_read_ver(KdCtx *ctx) {
 		return false;
 	}
 
+	ctx->kernel_module.addr = rr->rz_ver.kernel_base;
 	ctx->windctx.is_64bit = rr->rz_ver.flags & DBGKD_VERS_FLAG_PTR64;
 
 	ut64 ptr = 0;
