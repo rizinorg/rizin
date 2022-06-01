@@ -187,6 +187,9 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	dbg->bits = winkd_get_bits(&kdctx->windctx);
 	// Make rz_debug_is_dead happy
 	dbg->pid = 0;
+
+	// Mapping from the vad is unreliable so just tell core that its ok to put breakpoints everywhere
+	dbg->corebind.cfgSetI(dbg->corebind.core, "dbg.bpinmaps", 0);
 	return true;
 }
 
