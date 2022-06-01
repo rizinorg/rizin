@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "kd.h"
+#include <rz_util/rz_log.h>
 
 #define KD_DBG if (false)
 
@@ -45,8 +46,9 @@ int kd_send_data_packet(io_desc_t *desc, const uint32_t type, const uint32_t id,
 		return KD_E_MALFORMED;
 	}
 
-	// kd_req_t *r = (kd_req_t*) req;
-	// eprintf ("==== Send ====\n%08x\n", r->req);
+	RZ_LOG_DEBUG("==== Send Data ====\n");
+	RZ_LOG_DEBUG("ID: 0x%" PFMT32x "\n", id);
+	RZ_LOG_DEBUG("Type: 0x%" PFMT32x "\n", type);
 
 	pkt.leader = KD_PACKET_DATA;
 	pkt.length = req_len + buf_len;
