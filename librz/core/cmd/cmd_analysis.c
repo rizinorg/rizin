@@ -95,6 +95,7 @@ static const char *help_msg_ae[] = {
 	"aesuo", " [optype]", "step until given opcode type",
 	"aets", "[?]", "ESIL Trace session",
 	"aex", " [hex]", "evaluate opcode expression",
+	"aez", "[?]", "RzIL Emulation",
 	NULL
 };
 
