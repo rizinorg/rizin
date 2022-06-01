@@ -32,6 +32,13 @@ typedef struct WindModule {
 	ut32 timestamp;
 } WindModule;
 
+typedef struct WindMap {
+	char *file;
+	ut64 start;
+	ut64 end;
+	ut32 perm;
+} WindMap;
+
 enum {
 	K_PaeEnabled = 0x036,
 	K_PsActiveProcessHead = 0x050,
@@ -148,6 +155,7 @@ RzList *winkd_list_process(WindCtx *ctx);
 RzList *winkd_list_threads(WindCtx *ctx);
 void winkd_windmodule_free(void *ptr);
 RzList *winkd_list_modules(WindCtx *ctx);
+RzList *winkd_list_maps(WindCtx *ctx);
 int winkd_read_at_uva(WindCtx *ctx, ut64 offset, uint8_t *buf, int count);
 int winkd_write_at_uva(WindCtx *ctx, ut64 offset, const uint8_t *buf, int count);
 

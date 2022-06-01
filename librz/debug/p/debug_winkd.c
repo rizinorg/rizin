@@ -337,6 +337,36 @@ static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
 	return ret;
 }
 
+static RzList *rz_debug_winkd_maps(RzDebug *dbg) {
+	RzList *maps = winkd_list_maps(&kdctx->windctx);
+	RzListIter *it;
+	WindMap *m;
+	RzList *ret = rz_list_newf((RzListFree)rz_debug_map_free);
+	if (!ret) {
+		rz_list_free(maps);
+		return NULL;
+	}
+	rz_list_foreach (maps, it, m) {
+		RzDebugMap *map = RZ_NEW0(RzDebugMap);
+		if (!map) {
+			rz_list_free(maps);
+			rz_list_free(ret);
+			return NULL;
+		}
+		if (m->file) {
+			RZ_PTR_MOVE(map->file, m->file);
+			map->name = strdup(rz_file_dos_basename(map->file));
+		}
+		map->size = m->end - m->start;
+		map->addr = m->start;
+		map->addr_end = m->end;
+		map->perm = m->perm;
+		rz_list_append(ret, map);
+	}
+	rz_list_free(maps);
+	return ret;
+}
+
 RzDebugPlugin rz_debug_plugin_winkd = {
 	.name = "winkd",
 	.license = "LGPL3",
@@ -355,7 +385,8 @@ RzDebugPlugin rz_debug_plugin_winkd = {
 	.reg_write = &rz_debug_winkd_reg_write,
 	.reg_profile = &rz_debug_winkd_reg_profile,
 	.threads = &rz_debug_winkd_threads,
-	.modules_get = &rz_debug_winkd_modules
+	.modules_get = &rz_debug_winkd_modules,
+	.map_get = &rz_debug_winkd_maps,
 };
 
 #ifndef RZ_PLUGIN_INCORE

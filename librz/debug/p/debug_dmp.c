@@ -458,8 +458,8 @@ static RzList *rz_debug_dmp_modules(RzDebug *dbg) {
 			rz_list_free(ret);
 			return NULL;
 		}
-		mod->file = strdup(m->name);
-		mod->name = strdup(rz_file_dos_basename(m->name));
+		RZ_PTR_MOVE(mod->file, m->name);
+		mod->name = strdup(rz_file_dos_basename(mod->file));
 		mod->size = m->size;
 		mod->addr = m->addr;
 		mod->addr_end = m->addr + m->size;
@@ -470,7 +470,34 @@ static RzList *rz_debug_dmp_modules(RzDebug *dbg) {
 }
 
 static RzList *rz_debug_dmp_maps(RzDebug *dbg) {
-	return NULL;
+	DmpCtx *ctx = dbg->plugin_data;
+	RzList *maps = winkd_list_maps(&ctx->windctx);
+	RzListIter *it;
+	WindMap *m;
+	RzList *ret = rz_list_newf((RzListFree)rz_debug_map_free);
+	if (!ret) {
+		rz_list_free(maps);
+		return NULL;
+	}
+	rz_list_foreach (maps, it, m) {
+		RzDebugMap *map = RZ_NEW0(RzDebugMap);
+		if (!map) {
+			rz_list_free(maps);
+			rz_list_free(ret);
+			return NULL;
+		}
+		if (m->file) {
+			RZ_PTR_MOVE(map->file, m->file);
+			map->name = strdup(rz_file_dos_basename(map->file));
+		}
+		map->size = m->end - m->start;
+		map->addr = m->start;
+		map->addr_end = m->end;
+		map->perm = m->perm;
+		rz_list_append(ret, map);
+	}
+	rz_list_free(maps);
+	return ret;
 }
 
 static bool rz_debug_dmp_kill(RzDebug *dbg, int pid, int tid, int sig) {

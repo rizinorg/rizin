@@ -369,54 +369,103 @@ int winkd_wait_packet(KdCtx *ctx, const uint32_t type, kd_packet_t **p) {
 	return KD_E_OK;
 }
 
-#if 0 // Unused for now
+void winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent, RzList *out) {
+	ut8 buf[4];
+	const ut8 ptr_size = ctx->is_64bit ? 8 : 4;
+	const ut64 self = address;
+	const ut64 tag_addr = self - ptr_size - 4;
 
-// http://dfrws.org/2007/proceedings/p62-dolan-gavitt.pdf
-RZ_PACKED(
-	typedef struct {
-		char tag[4];
-		uint32_t start_vpn;
-		uint32_t end_vpn;
-		uint32_t parent;
-		uint32_t left;
-		uint32_t right;
-		uint32_t flags;
-	})
-mmvad_short;
-
-int winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent) {
-	mmvad_short entry = { { 0 } };
-	ut64 start, end;
-	int prot;
-
-	if (ctx->read_at_kernel_virtual(ctx, address - 0x4, (uint8_t *)&entry, sizeof(mmvad_short)) != sizeof(mmvad_short)) {
-		RZ_LOG_DEBUG("0x%" PFMT64x " Could not read the node!\n", (ut64)address);
-		return 0;
+	if (ctx->read_at_kernel_virtual(ctx->user, tag_addr, buf, 4) != 4) {
+		RZ_LOG_DEBUG("Failed to read vadtree\n");
+		return;
 	}
 
-	if (parent != UT64_MAX && entry.parent != parent) {
+	if (memcmp(buf, "Vad", 3)) {
+		RZ_LOG_DEBUG("Failed to read VAD: Tag is not 'Vad'\n");
+		return;
+	}
+
+	const bool is_vad_short = buf[3] == 'S';
+
+	ut64 left = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, address);
+	address += ptr_size;
+	ut64 right = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, address);
+	address += ptr_size;
+	ut64 parent_value = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, address);
+	address += ptr_size;
+
+	if (parent != UT64_MAX && (parent_value & ~3) != (parent & ~3)) {
 		RZ_LOG_DEBUG("Wrong parent!\n");
-		return 0;
+		return;
 	}
 
-	start = entry.start_vpn << 12;
-	end = ((entry.end_vpn + 1) << 12) - 1;
-	prot = (entry.flags >> 24) & 0x1F;
-
-	RZ_LOG_DEBUG("Start 0x%016" PFMT64x " End 0x%016" PFMT64x " Prot 0x%08" PFMT64x "\n",
-		(ut64)start, (ut64)end, (ut64)prot);
-
-	if (entry.left) {
-		winkd_walk_vadtree(ctx, entry.left, address);
+	if (ctx->read_at_kernel_virtual(ctx->user, address, buf, 4) != 4) {
+		RZ_LOG_DEBUG("Failed to read vadtree\n");
+		return;
 	}
-	if (entry.right) {
-		winkd_walk_vadtree(ctx, entry.right, address);
+	address += 4;
+	const ut64 start_vpn = rz_read_le32(buf);
+
+	if (ctx->read_at_kernel_virtual(ctx->user, address, buf, 4) != 4) {
+		RZ_LOG_DEBUG("Failed to read vadtree\n");
+		return;
+	}
+	address += 4;
+	const ut64 end_vpn = rz_read_le32(buf);
+	ut8 start_vpn_high = 0;
+	ut8 end_vpn_high = 0;
+	if (ctx->is_64bit) {
+		if (ctx->read_at_kernel_virtual(ctx->user, address, &start_vpn_high, 1) != 1) {
+			RZ_LOG_DEBUG("Failed to read vadtree\n");
+			return;
+		}
+		address++;
+		if (ctx->read_at_kernel_virtual(ctx->user, address, &end_vpn_high, 1) != 1) {
+			RZ_LOG_DEBUG("Failed to read vadtree\n");
+			return;
+		}
+		address++;
 	}
 
-	return 1;
+	const ut64 start = (start_vpn | (ut64)start_vpn_high << 32) << 12;
+	const ut64 end = (((end_vpn | (ut64)end_vpn_high << 32) + 1) << 12) - 1;
+
+	if (!is_vad_short) {
+		// TODO: get file info that vad is based from
+		// either in nt!_MMVAD->FileObject or in nt!_MMVAD->Subsection->ControlArea->FilePointer
+	}
+
+	WindMap *map = RZ_NEW0(WindMap);
+	if (!map) {
+		return;
+	}
+	map->start = start;
+	map->end = end;
+	// TODO: get permission from nt!_MMVAD_FLAGS bitfield,
+	// Protection is an index into nt!MmProtectToValue
+	// that contains the PAGE_* memory protection constants
+	map->perm = RZ_PERM_RWX;
+	rz_list_append(out, map);
+
+	if (left) {
+		winkd_walk_vadtree(ctx, left, self, out);
+	}
+	if (right) {
+		winkd_walk_vadtree(ctx, right, self, out);
+	}
 }
 
-#endif
+RzList *winkd_list_maps(WindCtx *ctx) {
+	if (!ctx->target.vadroot) {
+		return NULL;
+	}
+	RzList *maps = rz_list_newf(free);
+	if (!maps) {
+		return NULL;
+	}
+	winkd_walk_vadtree(ctx, ctx->target.vadroot, UT64_MAX, maps);
+	return maps;
+}
 
 WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address) {
 	ut8 type;
