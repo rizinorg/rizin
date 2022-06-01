@@ -7,6 +7,8 @@
 #include "common_winkd.h"
 #include "mdmp_windefs.h"
 
+#define O_(n) kdctx->windctx.profile->f[n]
+
 static KdCtx *kdctx = NULL;
 
 static int rz_debug_winkd_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
@@ -46,6 +48,31 @@ static int rz_debug_winkd_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	return winkd_continue(kdctx);
 }
 
+static void get_current_process_and_thread(RzDebug *dbg, ut64 thread_address) {
+	if (!O_(ET_ApcProcess)) {
+		return;
+	}
+	WindThread *thread = winkd_get_thread_at(&kdctx->windctx, thread_address);
+	if (!thread) {
+		return;
+	}
+	// Read the process pointer from the current thread
+	const ut64 address_process = winkd_read_ptr_at(&kdctx->windctx, kdctx->windctx.read_at_kernel_virtual, thread->ethread + O_(ET_ApcProcess));
+	if (address_process && address_process != kdctx->windctx.target.eprocess) {
+		// Then read the process
+		WindProc *proc = winkd_get_process_at(&kdctx->windctx, address_process);
+		if (proc) {
+			kdctx->windctx.target = *proc;
+			dbg->pid = kdctx->windctx.target.uniqueid;
+			free(proc);
+		}
+	}
+
+	kdctx->windctx.target_thread = *thread;
+	dbg->tid = kdctx->windctx.target_thread.uniqueid;
+	free(thread);
+}
+
 static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
@@ -68,6 +95,9 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 		dbg->reason.addr = stc->pc;
 		dbg->reason.tid = stc->kthread;
 		dbg->reason.signum = stc->state;
+		if (stc->kthread && stc->kthread != kdctx->windctx.target_thread.ethread) {
+			get_current_process_and_thread(dbg, stc->kthread);
+		}
 		winkd_set_cpu(kdctx, stc->cpu);
 		if (stc->state == DbgKdExceptionStateChange) {
 			dbg->reason.type = RZ_DEBUG_REASON_INT;
@@ -178,6 +208,12 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	dbg->bits = winkd_get_bits(&kdctx->windctx);
 	// Make rz_debug_is_dead happy
 	dbg->pid = 0;
+	ut8 buf[2];
+	// Get structure offset of current process pointer inside a KTHREAD from the kd debugger data
+	if (winkd_read_at(kdctx, kdctx->windctx.KdDebuggerDataBlock + K_OffsetKThreadApcProcess, buf, 2) == 2) {
+		O_(ET_ApcProcess) = rz_read_le16(buf);
+		get_current_process_and_thread(dbg, kdctx->windctx.target_thread.ethread);
+	}
 
 	// Mapping from the vad is unreliable so just tell core that its ok to put breakpoints everywhere
 	dbg->corebind.cfgSetI(dbg->corebind.core, "dbg.bpinmaps", 0);
