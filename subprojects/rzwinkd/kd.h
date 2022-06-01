@@ -12,6 +12,7 @@ enum {
 	KD_E_TIMEOUT = -2,
 	KD_E_MALFORMED = -3,
 	KD_E_IOERR = -4,
+	KD_E_BREAK = -5,
 };
 
 enum KD_PACKET_TYPE {
@@ -83,6 +84,13 @@ enum KD_PACKET_MANIPULATE_TYPE {
 	DbgKdGetContextEx = 0x0000315F,
 	DbgKdSetContextEx = 0x00003160,
 	DbgKdMaximumManipulate = 0x00003161
+};
+
+enum KD_PACKET_FILE_IO_TYPE {
+	DbgKdCreateFileApi = 0x00003430,
+	DbgKdReadFileApi = 0x00003431,
+	DbgKdWriteFileApi = 0x00003432,
+	DbgKdCloseFileApi = 0x00003433
 };
 
 #define KD_PACKET_UNUSED 0x00000000
@@ -206,9 +214,10 @@ RZ_PACKED(
 				struct {
 					uint64_t pathsize;
 					uint64_t base;
-					uint64_t unknown;
+					uint64_t pid;
 					uint32_t checksum;
 					uint32_t size;
+					uint8_t unload;
 				})
 			load_symbols;
 		};

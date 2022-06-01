@@ -55,7 +55,10 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	}
 	for (;;) {
 		void *bed = rz_cons_sleep_begin();
-		int ret = winkd_wait_packet(kdctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
+		int ret;
+		do {
+			ret = winkd_wait_packet(kdctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
+		} while (ret == KD_E_BREAK || ret == KD_E_MALFORMED);
 		rz_cons_sleep_end(bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = RZ_DEBUG_REASON_ERROR;

@@ -201,6 +201,7 @@ void winkd_kdctx_free(KdCtx **ctx) {
 
 #define PKT_REQ(p) ((kd_req_t *)(((kd_packet_t *)p)->data))
 #define PKT_STC(p) ((kd_stc_64 *)(((kd_packet_t *)p)->data))
+#define PKT_IO(p)  ((kd_ioc_t *)(((kd_packet_t *)p)->data))
 
 #if 0
 static void dump_stc(kd_packet_t *p) {
@@ -225,17 +226,11 @@ static int do_io_reply(KdCtx *ctx, kd_packet_t *pkt) {
 	kd_ioc_t ioc = {
 		0
 	};
-	static int id = 0;
-	if (id == pkt->id) {
-		RZ_LOG_DEBUG("Host resent io packet, ignoring.\n");
-		return true;
-	}
 	int ret;
-	ioc.req = 0x3430;
+	ioc.req = PKT_IO(pkt)->req;
 	ioc.ret = KD_RET_ENOENT;
 	while (!winkd_lock_enter(ctx)) {
 	};
-	id = pkt->id;
 	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_FILE_IO,
 		ctx->seq_id, (uint8_t *)&ioc, sizeof(kd_ioc_t), NULL, 0);
 	if (ret != KD_E_OK) {
@@ -246,118 +241,141 @@ static int do_io_reply(KdCtx *ctx, kd_packet_t *pkt) {
 	if (ret != KD_E_OK) {
 		goto error;
 	}
-	id = 0;
 	winkd_lock_leave(ctx);
 	RZ_LOG_DEBUG("Ack received, restore flow\n");
 	return true;
 error:
-	id = 0;
 	winkd_lock_leave(ctx);
 	return 0;
+}
+
+static inline bool load_symbol_path_is_valid(kd_packet_t *pkt) {
+	kd_stc_64 *stc = PKT_STC(pkt);
+	return stc->load_symbols.pathsize &&
+		(stc->load_symbols.pathsize < pkt->length - (rz_offsetof(kd_stc_64, load_symbols.unload) + sizeof(stc->load_symbols.unload)));
 }
 
 int winkd_wait_packet(KdCtx *ctx, const uint32_t type, kd_packet_t **p) {
 	kd_packet_t *pkt = NULL;
 	int ret;
-	int retries = 10;
+	if (p) {
+		*p = NULL;
+	}
 
+	bool is_repeated_packet;
 	do {
-		if (pkt) {
-			RZ_FREE(pkt);
-		}
+		free(pkt);
 		// Try to read a whole packet
 		ret = kd_read_packet(ctx->desc, &pkt);
-		if (ret != KD_E_OK || !pkt) {
-			break;
+		if (ret != KD_E_OK) {
+			return ret;
+		}
+		RZ_LOG_DEBUG("=== Received Packet ===\n");
+		RZ_LOG_DEBUG("PACKET ID : 0x%x\n", pkt->id);
+		is_repeated_packet = ctx->last_received_id == pkt->id;
+		if (is_repeated_packet) {
+			RZ_LOG_DEBUG("Repeated packet, skipping\n");
+		} else if (pkt->leader == KD_PACKET_DATA) {
+			ctx->last_received_id = pkt->id;
 		}
 		if (pkt->type == KD_PACKET_TYPE_UNUSED) {
-			retries++;
+			is_repeated_packet = true;
 			continue;
 		}
+	} while (is_repeated_packet);
 
-		// eprintf ("Received %08x\n", pkt->type);
-		if (pkt->type != type) {
-			RZ_LOG_DEBUG("We were not waiting for this... %08x\n", pkt->type);
-		}
-		if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_STATE_CHANGE64) {
-			RZ_LOG_VERBOSE("Got STATE_CHANGE64 packet\n");
-			kd_stc_64 *stc = PKT_STC(pkt);
-			if (stc->state == DbgKdExceptionStateChange) {
-				RZ_LOG_VERBOSE("    Exception\n");
-				RZ_LOG_VERBOSE("        Code   : %08x\n", stc->exception.code);
-				RZ_LOG_VERBOSE("        Flags  : %08x\n", stc->exception.flags);
-				RZ_LOG_VERBOSE("        Record : %016" PFMT64x "\n", (ut64)stc->exception.ex_record);
-				RZ_LOG_VERBOSE("        Addr   : %016" PFMT64x "\n", (ut64)stc->exception.ex_addr);
-			} else if (stc->state == DbgKdLoadSymbolsStateChange) {
-				RZ_LOG_VERBOSE(stc->load_symbols.size ? "    Load Symbols\n" : "    Unload Symbols\n");
-				RZ_LOG_VERBOSE("        Path Size : %016" PFMT64x "\n", (ut64)stc->load_symbols.pathsize);
-				RZ_LOG_VERBOSE("        Base      : %016" PFMT64x "\n", (ut64)stc->load_symbols.base);
-				RZ_LOG_VERBOSE("        Checksum  : %016" PFMT64x "\n", (ut64)stc->load_symbols.checksum);
-				RZ_LOG_VERBOSE("        ImageSize : %016" PFMT64x "\n", (ut64)stc->load_symbols.size);
-				if (stc->load_symbols.pathsize < pkt->length - rz_offsetof(kd_stc_64, load_symbols.size) - sizeof(stc->load_symbols.size)) {
-					char *path = (char *)pkt->data + pkt->length - stc->load_symbols.pathsize;
-					path[stc->load_symbols.pathsize - 1] = 0;
-					RZ_LOG_VERBOSE("        Image     : %s\n", path);
-					if (rz_str_endswith(path, "\\ntoskrnl.exe")) {
-						ctx->kernel_module.addr = stc->load_symbols.base;
-						ctx->kernel_module.size = stc->load_symbols.size;
-						ctx->kernel_module.name = strdup(path);
-					}
-				}
-			} else if (stc->state == DbgKdCommandStringStateChange) {
-				RZ_LOG_VERBOSE("CommandString\n");
-			} else {
-				RZ_LOG_WARN("Unknown state change packet type: 0x%" PFMT32x "\n", (ut32)pkt->type);
+	if (pkt->type != type) {
+		RZ_LOG_DEBUG("We were not waiting for this: %02x Expected: %02x\n", pkt->type, type);
+	}
+	if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_STATE_CHANGE64) {
+		RZ_LOG_VERBOSE("Got STATE_CHANGE64 packet\n");
+		kd_stc_64 *stc = PKT_STC(pkt);
+		if (stc->state == DbgKdExceptionStateChange) {
+			RZ_LOG_VERBOSE("    Exception\n");
+			RZ_LOG_VERBOSE("        Code   : %08x\n", stc->exception.code);
+			RZ_LOG_VERBOSE("        Flags  : %08x\n", stc->exception.flags);
+			RZ_LOG_VERBOSE("        Record : %016" PFMT64x "\n", (ut64)stc->exception.ex_record);
+			RZ_LOG_VERBOSE("        Addr   : %016" PFMT64x "\n", (ut64)stc->exception.ex_addr);
+			if (ctx->breaked) {
+				RZ_LOG_VERBOSE("    BREAKED\n");
 			}
-		} else if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_FILE_IO) {
-			RZ_LOG_DEBUG("Replying IO\n");
-			do_io_reply(ctx, pkt);
-		} else if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_STATE_MANIPULATE) {
-			// Log dump kd_req_t
-			RZ_LOG_DEBUG("State_manipulate\n");
-			RZ_LOG_DEBUG("  req: %08" PFMT32x "\n", PKT_REQ(pkt)->req);
-			RZ_LOG_DEBUG("  cpu_level: %08x\n", PKT_REQ(pkt)->cpu_level);
-			RZ_LOG_DEBUG("  cpu: %i\n", PKT_REQ(pkt)->cpu);
-			RZ_LOG_DEBUG("  ret: %08" PFMT32x "\n", PKT_REQ(pkt)->ret);
-		}
-
-		if (pkt->leader == KD_PACKET_CTRL) {
-			switch (pkt->type) {
-			case KD_PACKET_TYPE_ACKNOWLEDGE:
-				RZ_LOG_DEBUG("ACK received\n");
-				if (type == KD_PACKET_TYPE_ACKNOWLEDGE) {
-					ctx->seq_id ^= 1;
-					free(pkt);
-					return KD_E_OK;
+		} else if (stc->state == DbgKdLoadSymbolsStateChange) {
+			RZ_LOG_VERBOSE(stc->load_symbols.unload ? "    Unload Symbols\n" : "    Load Symbols\n");
+			RZ_LOG_VERBOSE("        Path Size : %016" PFMT64x "\n", (ut64)stc->load_symbols.pathsize);
+			RZ_LOG_VERBOSE("        Base      : %016" PFMT64x "\n", (ut64)stc->load_symbols.base);
+			RZ_LOG_VERBOSE("        Checksum  : %016" PFMT64x "\n", (ut64)stc->load_symbols.checksum);
+			RZ_LOG_VERBOSE("        ImageSize : %016" PFMT64x "\n", (ut64)stc->load_symbols.size);
+			if (load_symbol_path_is_valid(pkt)) {
+				char *path = (char *)pkt->data + pkt->length - stc->load_symbols.pathsize;
+				path[stc->load_symbols.pathsize - 1] = 0;
+				RZ_LOG_VERBOSE("        Image     : %s\n", path);
+				if (rz_str_endswith(path, "\\ntoskrnl.exe")) {
+					ctx->kernel_module.addr = stc->load_symbols.base;
+					ctx->kernel_module.size = stc->load_symbols.size;
+					ctx->kernel_module.name = strdup(path);
 				}
-				retries++;
-				break;
-			case KD_PACKET_TYPE_RESET:
-				RZ_LOG_DEBUG("Reset received\n");
-				ctx->seq_id = KD_INITIAL_PACKET_ID;
-				free(pkt);
-				if (type == KD_PACKET_TYPE_RESET) {
-					return KD_E_OK;
-				}
-				return KD_E_MALFORMED;
-			case KD_PACKET_TYPE_RESEND:
-				// The host didn't like our request
-				rz_sys_backtrace();
-				RZ_LOG_DEBUG("Waoh. You probably sent a malformed packet!\n");
-				free(pkt);
-				return KD_E_MALFORMED;
 			}
+		} else if (stc->state == DbgKdCommandStringStateChange) {
+			RZ_LOG_VERBOSE("CommandString\n");
+		} else {
+			RZ_LOG_WARN("Unknown state change packet type: 0x%" PFMT32x "\n", (ut32)pkt->type);
 		}
-	} while (pkt->type != type && retries--);
+	} else if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_FILE_IO) {
+		RZ_LOG_DEBUG("File IO\n");
+		RZ_LOG_DEBUG("  req: %08" PFMT32x "\n", PKT_IO(pkt)->req);
+		RZ_LOG_DEBUG("  ret: %08" PFMT32x "\n", PKT_IO(pkt)->ret);
+		RZ_LOG_DEBUG("Replying IO\n");
+		do_io_reply(ctx, pkt);
+	} else if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_STATE_MANIPULATE) {
+		RZ_LOG_DEBUG("State_manipulate\n");
+		RZ_LOG_DEBUG("  req: %08" PFMT32x "\n", PKT_REQ(pkt)->req);
+		RZ_LOG_DEBUG("  cpu_level: %08x\n", PKT_REQ(pkt)->cpu_level);
+		RZ_LOG_DEBUG("  cpu: %i\n", PKT_REQ(pkt)->cpu);
+		RZ_LOG_DEBUG("  ret: %08" PFMT32x "\n", PKT_REQ(pkt)->ret);
+	}
 
+	if (pkt->leader == KD_PACKET_CTRL) {
+		switch (pkt->type) {
+		case KD_PACKET_TYPE_ACKNOWLEDGE:
+			RZ_LOG_DEBUG("ACK received\n");
+			if (pkt->id == ctx->seq_id) {
+				ctx->seq_id ^= 1;
+			}
+			if (type == KD_PACKET_TYPE_ACKNOWLEDGE) {
+				free(pkt);
+				return KD_E_OK;
+			}
+			break;
+		case KD_PACKET_TYPE_RESET:
+			RZ_LOG_DEBUG("Reset received\n");
+			ctx->seq_id = KD_INITIAL_PACKET_ID;
+			ctx->last_received_id = KD_INITIAL_PACKET_ID;
+			free(pkt);
+			if (type == KD_PACKET_TYPE_RESET) {
+				return KD_E_OK;
+			}
+			return KD_E_MALFORMED;
+		case KD_PACKET_TYPE_RESEND:
+			// The host didn't like our request
+			rz_sys_backtrace();
+			RZ_LOG_DEBUG("Waoh. You probably sent a malformed packet!\n");
+			free(pkt);
+			return KD_E_MALFORMED;
+		}
+	}
+	if (pkt->type != type) {
+		free(pkt);
+		if (ctx->breaked) {
+			ctx->breaked = false;
+			return KD_E_BREAK;
+		} else {
+			return KD_E_MALFORMED;
+		}
+	}
+	ctx->breaked = false;
 	if (ret != KD_E_OK) {
 		free(pkt);
 		return ret;
-	}
-
-	if (!retries) {
-		free(pkt);
-		return KD_E_TIMEOUT;
 	}
 
 	if (p) {
@@ -920,11 +938,14 @@ bool winkd_va_to_pa(WindCtx *ctx, ut64 directory_table, ut64 va, ut64 *pa) {
 }
 
 static bool winkd_send_state_manipulate_req(KdCtx *ctx, kd_req_t *req, const ut8 *buf, const ut32 buf_len, kd_packet_t **pkt) {
+	if (pkt) {
+		*pkt = NULL;
+	}
 	int ret;
-	*pkt = NULL;
 	if (!winkd_lock_enter(ctx)) {
 		return false;
 	}
+	const ut32 cur_seq_id = ctx->seq_id;
 	do {
 		ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
 			ctx->seq_id, (uint8_t *)req, sizeof(kd_req_t), buf, buf_len);
@@ -935,8 +956,26 @@ static bool winkd_send_state_manipulate_req(KdCtx *ctx, kd_req_t *req, const ut8
 		ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 		if (ret == KD_E_OK) {
 			ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, pkt);
+			if (ret == KD_E_OK) {
+				kd_req_t *rr = PKT_REQ(*pkt);
+				if (rr->req != req->req) {
+					RZ_LOG_DEBUG("Got wrong packet %x for request %x\n", rr->req, req->req);
+					ret = KD_E_MALFORMED;
+				} else if ((*pkt)->length < sizeof(kd_req_t)) {
+					RZ_LOG_DEBUG("Got too small of a packet: %u bytes\n", (*pkt)->length);
+					ret = KD_E_MALFORMED;
+				}
+			}
+		}
+		if (rz_cons_is_breaked()) {
+			break;
 		}
 	} while (ret == KD_E_MALFORMED);
+
+	if (ret == KD_E_OK && cur_seq_id == ctx->seq_id) {
+		RZ_LOG_DEBUG("We didn't get and ACK but got the packet\n");
+		ctx->seq_id ^= 1;
+	}
 
 	winkd_lock_leave(ctx);
 
@@ -971,12 +1010,6 @@ bool winkd_read_ver(KdCtx *ctx) {
 	}
 
 	kd_req_t *rr = PKT_REQ(pkt);
-
-	if (rr->ret) {
-		RZ_LOG_DEBUG("%s : req returned %08x\n", __FUNCTION__, rr->ret);
-		free(pkt);
-		return false;
-	}
 
 	RZ_LOG_DEBUG("Major : %i Minor %i\n", rr->rz_ver.major, rr->rz_ver.minor);
 	RZ_LOG_DEBUG("Protocol version : %i.%i\n", rr->rz_ver.proto_major, rr->rz_ver.proto_minor);
@@ -1070,6 +1103,7 @@ int winkd_sync(KdCtx *ctx) {
 			goto end;
 		}
 	}
+	ctx->last_received_id = KD_INITIAL_PACKET_ID;
 
 	// Syncronize with the first KD_PACKET_TYPE_STATE_CHANGE64 packet
 	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_CHANGE64, &s);
@@ -1080,7 +1114,7 @@ int winkd_sync(KdCtx *ctx) {
 	// Reset the sequence id
 	ctx->seq_id = KD_INITIAL_PACKET_ID;
 
-	kd_stc_64 *stc64 = (kd_stc_64 *)s->data;
+	kd_stc_64 *stc64 = PKT_STC(s);
 	ctx->cpu = stc64->cpu;
 	ctx->cpu_count = stc64->cpu_count;
 	ctx->windctx.target.eprocess = 0;
@@ -1406,5 +1440,6 @@ void winkd_break(void *arg) {
 	// This command shouldn't be wrapped by locks since it can always be sent and we don't
 	// want break queued up after another background task
 	KdCtx *ctx = (KdCtx *)arg;
+	ctx->breaked = true;
 	(void)iob_write(ctx->desc, (const uint8_t *)"b", 1);
 }

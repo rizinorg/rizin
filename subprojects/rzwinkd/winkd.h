@@ -95,6 +95,7 @@ typedef struct _KdCtx {
 	WindCtx windctx;
 	io_desc_t *desc;
 	uint32_t seq_id;
+	uint32_t last_received_id;
 	int syncd;
 	int cpu_count;
 	int cpu;
@@ -105,6 +106,7 @@ typedef struct _KdCtx {
 	ut8 *context_cache;
 	int context_cache_size;
 	bool context_cache_valid;
+	bool breaked;
 } KdCtx;
 
 #define TARGET_BACKEND  0
