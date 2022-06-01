@@ -5,32 +5,41 @@
 #include <winkd.h>
 #include <kd.h>
 #include "common_winkd.h"
+#include "mdmp_windefs.h"
 
 static KdCtx *kdctx = NULL;
 
 static int rz_debug_winkd_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	int ret = winkd_read_reg(kdctx, buf, size);
-	if (!ret || size != ret) {
+	if (!ret) {
 		return -1;
 	}
-	rz_reg_read_regs(dbg->reg, buf, ret);
-	// Report as if no register has been written as we've already updated the arena here
-	return 0;
+	return ret;
 }
 
 static int rz_debug_winkd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	if (!dbg->reg) {
 		return false;
 	}
-	int arena_size;
-	ut8 *arena = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_ANY, &arena_size);
-	if (!arena) {
-		eprintf("Could not retrieve the register arena!\n");
-		return false;
+	ut32 flags;
+	if (kdctx->windctx.is_arm) {
+		if (kdctx->windctx.is_64bit) {
+			const struct context_type_arm64 *ctx = (void *)buf;
+			flags = ctx->ContextFlags;
+		} else {
+			const struct context_type_arm *ctx = (void *)buf;
+			flags = ctx->context_flags;
+		}
+	} else {
+		if (kdctx->windctx.is_64bit) {
+			const struct context_type_amd64 *ctx = (void *)buf;
+			flags = ctx->context_flags;
+		} else {
+			const struct context_type_i386 *ctx = (void *)buf;
+			flags = ctx->context_flags;
+		}
 	}
-	int ret = winkd_write_reg(kdctx, arena, arena_size);
-	free(arena);
-	return ret;
+	return winkd_write_reg(kdctx, flags, buf, size);
 }
 
 static int rz_debug_winkd_continue(RzDebug *dbg, int pid, int tid, int sig) {

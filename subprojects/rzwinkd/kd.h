@@ -79,7 +79,10 @@ enum KD_PACKET_MANIPULATE_TYPE {
 	DbgKdFillMemoryApi = 0x0000315B,
 	DbgKdQueryMemoryApi = 0x0000315C,
 	DbgKdSwitchPartition = 0x0000315D,
-	DbgKdMaximumManipulate = 0x0000315E
+	DbgKdWriteCustomBreakpointApi = 0x0000315E,
+	DbgKdGetContextEx = 0x0000315F,
+	DbgKdSetContextEx = 0x00003160,
+	DbgKdMaximumManipulate = 0x00003161
 };
 
 #define KD_PACKET_UNUSED 0x00000000
@@ -88,7 +91,7 @@ enum KD_PACKET_MANIPULATE_TYPE {
 
 #define KD_INITIAL_PACKET_ID 0x80800000
 
-#define KD_MAX_PAYLOAD     0x800
+#define KD_MAX_PAYLOAD     0x480
 #define KD_PACKET_MAX_SIZE 4000 // Not used ? What is max payload ?
 
 // http://msdn.microsoft.com/en-us/library/cc704588.aspx
@@ -162,6 +165,11 @@ RZ_PACKED(
 				uint32_t flags;
 			} rz_ctx;
 			struct {
+				uint32_t offset;
+				uint32_t count;
+				uint32_t copied;
+			} rz_ctx_ex;
+			struct {
 				uint64_t addr;
 				uint64_t reserved;
 				uint32_t address_space;
@@ -171,7 +179,7 @@ RZ_PACKED(
 			// Pad the struct to 56 bytes
 			uint8_t raw[40];
 		};
-		uint8_t data[0];
+		uint8_t data[];
 	})
 kd_req_t;
 
@@ -220,7 +228,7 @@ RZ_PACKED(
 		uint16_t length;
 		uint32_t id;
 		uint32_t checksum;
-		uint8_t data[0];
+		uint8_t data[];
 	})
 kd_packet_t;
 
