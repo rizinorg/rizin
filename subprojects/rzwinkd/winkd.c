@@ -1139,21 +1139,44 @@ int winkd_continue(KdCtx *ctx) {
 	return ret == KD_E_OK;
 }
 
-bool winkd_write_reg(KdCtx *ctx, const uint8_t *buf, int size) {
-	kd_packet_t *pkt;
+bool winkd_write_reg(KdCtx *ctx, ut32 flags, const uint8_t *buf, int size) {
+	kd_packet_t *pkt = NULL;
 	kd_req_t req = { 0 };
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return false;
 	}
-	req.req = DbgKdSetContextApi;
-	req.cpu = ctx->cpu;
-	req.rz_ctx.flags = 0x1003F;
-
+	const ut64 max_ctx_size = KD_MAX_PAYLOAD - sizeof(kd_req_t);
 	RZ_LOG_DEBUG("Regwrite() size: %x\n", size);
-
-	if (!winkd_send_state_manipulate_req(ctx, &req, buf, size, &pkt)) {
-		return false;
+	if (size > max_ctx_size) {
+		ut32 offset = 0;
+		ut32 left = size;
+		req.req = DbgKdSetContextEx;
+		req.cpu = ctx->cpu;
+		req.rz_ctx_ex.copied = size;
+		do {
+			const ut64 rest = RZ_MIN(left, max_ctx_size);
+			req.rz_ctx_ex.count = rest;
+			req.rz_ctx_ex.offset = offset;
+			RZ_FREE(pkt);
+			if (!winkd_send_state_manipulate_req(ctx, &req, buf + offset, rest, &pkt)) {
+				break;
+			}
+			if (PKT_REQ(pkt)->rz_ctx_ex.count > left) {
+				offset = size;
+				break;
+			}
+			left -= PKT_REQ(pkt)->rz_ctx_ex.count;
+			offset += PKT_REQ(pkt)->rz_ctx_ex.count;
+		} while (left);
+		size = offset;
+	} else {
+		req.req = DbgKdSetContextApi;
+		req.cpu = ctx->cpu;
+		req.rz_ctx.flags = flags;
+		if (!winkd_send_state_manipulate_req(ctx, &req, buf, size, &pkt)) {
+			return false;
+		}
 	}
 
 	if (size > ctx->context_cache_size) {
@@ -1191,18 +1214,12 @@ int winkd_read_reg(KdCtx *ctx, uint8_t *buf, int size) {
 	}
 
 	kd_req_t *rr = PKT_REQ(pkt);
-
-	if (rr->ret) {
-		RZ_LOG_DEBUG("%s: req returned %08x\n", __FUNCTION__, rr->ret);
-		free(pkt);
-		return 0;
-	}
-
-	memcpy(buf, rr->data, RZ_MIN(size, pkt->length - sizeof(*rr)));
+	const size_t context_rq_sz = pkt->length - sizeof(kd_req_t);
+	memcpy(buf, rr->data, RZ_MIN(size, context_rq_sz));
 	free(pkt);
 
-	if (size > ctx->context_cache_size || !ctx->context_cache) {
-		void *tmp = realloc(ctx->context_cache, size);
+	if (context_rq_sz > ctx->context_cache_size || !ctx->context_cache) {
+		void *tmp = realloc(ctx->context_cache, context_rq_sz);
 		if (!tmp) {
 			free(ctx->context_cache);
 			ctx->context_cache = NULL;
@@ -1211,11 +1228,12 @@ int winkd_read_reg(KdCtx *ctx, uint8_t *buf, int size) {
 			return 0;
 		}
 		ctx->context_cache = tmp;
-		ctx->context_cache_size = size;
+		ctx->context_cache_size = context_rq_sz;
 	}
-	memcpy(ctx->context_cache, buf, size);
+	memcpy(ctx->context_cache, rr->data, context_rq_sz);
 	ctx->context_cache_valid = true;
-	return size;
+	ctx->context_cache_valid = context_rq_sz;
+	return context_rq_sz;
 }
 
 int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags) {
