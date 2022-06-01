@@ -170,7 +170,7 @@ int winkd_get_cpu(KdCtx *ctx);
 int winkd_wait_packet(KdCtx *ctx, const ut32 type, kd_packet_t **p);
 int winkd_sync(KdCtx *ctx);
 bool winkd_read_ver(KdCtx *ctx);
-int winkd_continue(KdCtx *ctx);
+int winkd_continue(KdCtx *ctx, bool handled);
 bool winkd_write_reg(KdCtx *ctx, ut32 flags, const uint8_t *buf, int size);
 int winkd_read_reg(KdCtx *ctx, uint8_t *buf, int size);
 int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags);

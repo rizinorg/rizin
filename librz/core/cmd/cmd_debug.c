@@ -3302,14 +3302,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_unknown_call_handler(RzCore *core, int 
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_exception_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
 	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
-
-#if __WINDOWS__
 	rz_reg_arena_swap(core->dbg->reg, true);
 	rz_debug_continue_pass_exception(core->dbg);
-#else
-	eprintf("dce not available on this platform\n");
-#endif
-
 	rz_cons_break_pop();
 	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;

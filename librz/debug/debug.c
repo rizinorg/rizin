@@ -1331,11 +1331,9 @@ RZ_API int rz_debug_continue(RzDebug *dbg) {
 	return rz_debug_continue_kill(dbg, 0); // dbg->reason.signum);
 }
 
-#if __WINDOWS__
 RZ_API int rz_debug_continue_pass_exception(RzDebug *dbg) {
-	return rz_debug_continue_kill(dbg, DBG_EXCEPTION_NOT_HANDLED);
+	return rz_debug_continue_kill(dbg, dbg->reason.signum);
 }
-#endif
 
 RZ_API int rz_debug_continue_until_nontraced(RzDebug *dbg) {
 	eprintf("TODO\n");

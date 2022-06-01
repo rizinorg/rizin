@@ -274,7 +274,7 @@ int w32_step(RzDebug *dbg) {
 	if (!w32_reg_write(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
 		return false;
 	}
-	return w32_continue(dbg, dbg->pid, dbg->tid, dbg->reason.signum);
+	return w32_continue(dbg, dbg->pid, dbg->tid, 0);
 }
 
 static int get_avx(HANDLE th, ut128 xmm[16], ut128 ymm[16]) {
@@ -1198,6 +1198,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			// XXX unknown ret = RZ_DEBUG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
+			dbg->reason.signum = DBG_EXCEPTION_NOT_HANDLED;
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
 			case DBG_CONTROL_C:
 				eprintf("Received CTRL+C, suspending execution\n");
