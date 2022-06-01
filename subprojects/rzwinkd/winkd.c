@@ -568,8 +568,8 @@ int winkd_op_at_uva(WindCtx *ctx, ut64 address, uint8_t *buf, int count, bool wr
 		} else {
 			result = ctx->read_at_physical(ctx->user, pa, buf + offset, RZ_MIN(count - offset, restOfPage));
 		}
-		address += restOfPage;
-		offset += restOfPage;
+		address += result;
+		offset += result;
 		total += result;
 	}
 	return total;
@@ -1286,63 +1286,44 @@ int winkd_bkpt(KdCtx *ctx, const ut64 addr, const int set, const int hw, int *ha
 	return 1;
 }
 
-int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) {
-	kd_req_t req = { 0 };
-	kd_packet_t *pkt;
+static int read_at(KdCtx *ctx, enum KD_PACKET_MANIPULATE_TYPE type, ut8 *buf, const ut64 offset, const int count) {
+	kd_req_t req = {
+		.req = type,
+		.cpu = ctx->cpu
+	};
+	int ret = 0;
+	int left = count;
+	do {
+		req.rz_mem.addr = offset + ret;
+		req.rz_mem.length = RZ_MIN(left, KD_MAX_PAYLOAD - sizeof(kd_req_t));
+		kd_packet_t *pkt;
+		if (!winkd_send_state_manipulate_req(ctx, &req, NULL, 0, &pkt)) {
+			return ret;
+		}
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
-		return 0;
-	}
-	req.req = DbgKdReadPhysicalMemoryApi;
-	req.cpu = ctx->cpu;
-	req.rz_mem.addr = offset;
-	req.rz_mem.length = RZ_MIN(count, KD_MAX_PAYLOAD);
-	req.rz_mem.read = 0; // Default caching option
-
-	if (!winkd_send_state_manipulate_req(ctx, &req, NULL, 0, &pkt)) {
-		return 0;
-	}
-
-	kd_req_t *rr = PKT_REQ(pkt);
-
-	if (rr->ret) {
+		kd_req_t *rr = PKT_REQ(pkt);
+		const int returned_bytes = RZ_MIN(rr->rz_mem.read, pkt->length - sizeof(kd_req_t));
+		const int read_len = RZ_MIN(returned_bytes, RZ_MIN(rr->rz_mem.read, left));
+		memcpy(buf + ret, rr->data, read_len);
+		ret += read_len;
+		left -= read_len;
 		free(pkt);
-		return 0;
-	}
-
-	int ret = RZ_MIN(rr->rz_mem.read, count);
-	memcpy(buf, rr->data, ret);
-	free(pkt);
+	} while (left);
 	return ret;
 }
 
-int winkd_read_at(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) {
-	kd_req_t req = { 0 };
-	kd_packet_t *pkt;
-
+int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) {
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
 	}
-	req.req = DbgKdReadVirtualMemoryApi;
-	req.cpu = ctx->cpu;
-	req.rz_mem.addr = offset;
-	req.rz_mem.length = RZ_MIN(count, KD_MAX_PAYLOAD);
+	return read_at(ctx, DbgKdReadPhysicalMemoryApi, buf, offset, count);
+}
 
-	if (!winkd_send_state_manipulate_req(ctx, &req, NULL, 0, &pkt)) {
+int winkd_read_at(KdCtx *ctx, const ut64 offset, uint8_t *buf, const int count) {
+	if (!ctx || !ctx->desc || !ctx->syncd || count < 0) {
 		return 0;
 	}
-
-	kd_req_t *rr = PKT_REQ(pkt);
-
-	if (rr->ret) {
-		free(pkt);
-		return 0;
-	}
-
-	int ret = RZ_MIN(rr->rz_mem.read, count);
-	memcpy(buf, rr->data, ret);
-	free(pkt);
-	return ret;
+	return read_at(ctx, DbgKdReadVirtualMemoryApi, buf, offset, count);
 }
 
 int winkd_write_at(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int count) {
@@ -1364,12 +1345,6 @@ int winkd_write_at(KdCtx *ctx, const ut64 offset, const uint8_t *buf, const int 
 	}
 
 	kd_req_t *rr = PKT_REQ(pkt);
-
-	if (rr->ret) {
-		free(pkt);
-		return 0;
-	}
-
 	int ret = rr->rz_mem.read;
 	free(pkt);
 	return ret;
