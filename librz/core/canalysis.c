@@ -5982,7 +5982,7 @@ static int core_sigdb_sorter(const RzSigDBEntry *a, const RzSigDBEntry *b) {
  * \param[in]  with_details  The reads the signature details and sets them in RzSigDBEntry
  * \return     On success a RzList containing RzSigDBEntry entries, otherwise NULL.
  */
-RZ_API RzList *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool with_details) {
+RZ_API RZ_OWN RzList *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool with_details) {
 	rz_return_val_if_fail(core, NULL);
 
 	RzList *list = NULL, *sigs = NULL;
