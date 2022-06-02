@@ -110,8 +110,20 @@ static bool dict2keylist(void *user, const void *key, const ut64 value) {
 	return true;
 }
 
-RZ_API RZ_OWN RzList *rz_core_theme_list(RzCore *core) {
+/**
+ * \brief      Returns the list of the rizin themes.
+ *
+ * \param      core  The RzCore struct to use
+ * \return     On success, an RzList pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN RzList *rz_core_theme_list(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, NULL);
+
 	HtPU *themes = ht_pu_new0();
+	if (!themes) {
+		return NULL;
+	}
+
 	char *path = rz_path_home_prefix(RZ_THEMES);
 	if (path) {
 		list_themes_in_path(themes, path);
