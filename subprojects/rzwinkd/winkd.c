@@ -20,7 +20,7 @@
 #define KOBJECT_PROCESS 3
 #define KOBJECT_THREAD  6
 
-bool winkd_lock_enter(KdCtx *ctx) {
+bool winkd_lock_enter(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
 	rz_cons_break_push(winkd_break, ctx);
 	while (!rz_th_lock_tryenter(ctx->dontmix)) {
 		if (rz_cons_is_breaked()) {
@@ -31,13 +31,13 @@ bool winkd_lock_enter(KdCtx *ctx) {
 	return true;
 }
 
-bool winkd_lock_leave(KdCtx *ctx) {
+bool winkd_lock_leave(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
 	rz_cons_break_pop();
 	rz_th_lock_leave(ctx->dontmix);
 	return true;
 }
 
-int winkd_get_sp(WindCtx *ctx) {
+int winkd_get_sp(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	ut64 ptr = 0;
 	// Grab the CmNtCSDVersion field to extract the Service Pack number
 	if (!ctx->read_at_kernel_virtual(ctx->user, ctx->KdDebuggerDataBlock + K_CmNtCSDVersion, (ut8 *)&ptr, 8)) {
@@ -77,18 +77,18 @@ Profile *winkd_get_profile(int bits, int build, int sp) {
 	return NULL;
 }
 
-int winkd_get_bits(WindCtx *ctx) {
+int winkd_get_bits(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	return ctx->is_64bit ? RZ_SYS_BITS_64 : RZ_SYS_BITS_32;
 }
 
-int winkd_get_cpus(KdCtx *ctx) {
+int winkd_get_cpus(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
 	if (!ctx) {
 		return -1;
 	}
 	return ctx->cpu_count;
 }
 
-bool winkd_set_cpu(KdCtx *ctx, int cpu) {
+bool winkd_set_cpu(RZ_BORROW RZ_NONNULL KdCtx *ctx, int cpu) {
 	if (!ctx || cpu > ctx->cpu_count) {
 		return false;
 	}
@@ -96,14 +96,14 @@ bool winkd_set_cpu(KdCtx *ctx, int cpu) {
 	return true;
 }
 
-int winkd_get_cpu(KdCtx *ctx) {
+int winkd_get_cpu(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
 	if (!ctx) {
 		return -1;
 	}
 	return ctx->cpu;
 }
 
-bool winkd_set_target(WindCtx *ctx, ut32 pid, ut32 tid) {
+bool winkd_set_target(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut32 pid, ut32 tid) {
 	WindProc *p;
 	WindThread *t;
 	RzList *l;
@@ -155,15 +155,15 @@ bool winkd_set_target(WindCtx *ctx, ut32 pid, ut32 tid) {
 	return true;
 }
 
-ut32 winkd_get_target(WindCtx *ctx) {
+ut32 winkd_get_target(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	return ctx->target.uniqueid;
 }
 
-ut32 winkd_get_target_thread(WindCtx *ctx) {
+ut32 winkd_get_target_thread(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	return ctx->target_thread.uniqueid;
 }
 
-ut64 winkd_get_target_base(WindCtx *ctx) {
+ut64 winkd_get_target_base(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	ut64 base = 0;
 
 	if (!winkd_read_at_uva(ctx, ctx->target.peb + O_(P_ImageBaseAddress),
@@ -174,7 +174,7 @@ ut64 winkd_get_target_base(WindCtx *ctx) {
 	return base;
 }
 
-KdCtx *winkd_kdctx_new(io_desc_t *desc) {
+KdCtx *winkd_kdctx_new(RZ_BORROW RZ_NONNULL io_desc_t *desc) {
 	KdCtx *ctx = RZ_NEW0(KdCtx);
 	if (!ctx) {
 		return NULL;
@@ -184,7 +184,7 @@ KdCtx *winkd_kdctx_new(io_desc_t *desc) {
 	return ctx;
 }
 
-void winkd_kdctx_free(KdCtx **ctx) {
+void winkd_kdctx_free(RZ_OWN KdCtx **ctx) {
 	if (!ctx || !*ctx) {
 		return;
 	}
@@ -222,7 +222,7 @@ static void dump_stc(kd_packet_t *p) {
 }
 #endif
 
-static int do_io_reply(KdCtx *ctx, kd_packet_t *pkt) {
+static int do_io_reply(RZ_BORROW RZ_NONNULL KdCtx *ctx, kd_packet_t *pkt) {
 	kd_ioc_t ioc = {
 		0
 	};
@@ -255,7 +255,7 @@ static inline bool load_symbol_path_is_valid(kd_packet_t *pkt) {
 		(stc->load_symbols.pathsize < pkt->length - (rz_offsetof(kd_stc_64, load_symbols.unload) + sizeof(stc->load_symbols.unload)));
 }
 
-int winkd_wait_packet(KdCtx *ctx, const ut32 type, kd_packet_t **p) {
+int winkd_wait_packet(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut32 type, RZ_NULLABLE RZ_OUT kd_packet_t **p) {
 	kd_packet_t *pkt = NULL;
 	int ret;
 	if (p) {
@@ -387,7 +387,7 @@ int winkd_wait_packet(KdCtx *ctx, const ut32 type, kd_packet_t **p) {
 	return KD_E_OK;
 }
 
-void winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent, RzList *out) {
+void winkd_walk_vadtree(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address, ut64 parent, RzList *out) {
 	ut8 buf[4];
 	const ut8 ptr_size = ctx->is_64bit ? 8 : 4;
 	const ut64 self = address;
@@ -473,7 +473,7 @@ void winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent, RzList *out) {
 	}
 }
 
-RzList *winkd_list_maps(WindCtx *ctx) {
+RzList *winkd_list_maps(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	if (!ctx->target.vadroot) {
 		return NULL;
 	}
@@ -485,7 +485,7 @@ RzList *winkd_list_maps(WindCtx *ctx) {
 	return maps;
 }
 
-WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address) {
+WindProc *winkd_get_process_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address) {
 	ut8 type;
 	if (!ctx->read_at_kernel_virtual(ctx->user, address, &type, 1)) {
 		RZ_LOG_WARN("Failed to read DISPACHER_HEAD.Type at: 0x%" PFMT64x "\n", address);
@@ -510,7 +510,7 @@ WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address) {
 	return proc;
 }
 
-RzList *winkd_list_process(WindCtx *ctx) {
+RzList *winkd_list_process(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	RzList *ret = NULL;
 	bool current_process_found = false;
 	// Grab the PsActiveProcessHead from _KDDEBUGGER_DATA64
@@ -564,7 +564,7 @@ get_cur_process:
 	return ret;
 }
 
-int winkd_op_at_uva(WindCtx *ctx, ut64 address, ut8 *buf, int count, bool write) {
+int winkd_op_at_uva(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address, ut8 *buf, int count, bool write) {
 	ut32 total = 0;
 	ut32 offset = 0;
 	const ut64 end = address + count;
@@ -593,11 +593,11 @@ int winkd_op_at_uva(WindCtx *ctx, ut64 address, ut8 *buf, int count, bool write)
 	return total;
 }
 
-int winkd_read_at_uva(WindCtx *ctx, ut64 address, ut8 *buf, int count) {
+int winkd_read_at_uva(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, int count) {
 	return winkd_op_at_uva(ctx, address, buf, count, false);
 }
 
-int winkd_write_at_uva(WindCtx *ctx, ut64 address, const ut8 *buf, int count) {
+int winkd_write_at_uva(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, int count) {
 	return winkd_op_at_uva(ctx, address, (ut8 *)buf, count, true);
 }
 
@@ -614,7 +614,7 @@ void winkd_windmodule_free(void *ptr) {
 	free(mod);
 }
 
-static int read_at_uva_or_kernel(WindCtx *ctx, ut64 address, ut8 *buf, int count) {
+static int read_at_uva_or_kernel(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address, ut8 *buf, int count) {
 	const bool is_target_kernel = ctx->target.uniqueid <= 4;
 	if (is_target_kernel) {
 		return ctx->read_at_kernel_virtual(ctx->user, address, buf, count);
@@ -622,7 +622,7 @@ static int read_at_uva_or_kernel(WindCtx *ctx, ut64 address, ut8 *buf, int count
 	return winkd_read_at_uva(ctx, address, buf, count);
 }
 
-RzList *winkd_list_modules(WindCtx *ctx) {
+RzList *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	RzList *ret = rz_list_newf(winkd_windmodule_free);
 	if (!ret) {
 		return NULL;
@@ -736,7 +736,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 	return ret;
 }
 
-WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address) {
+WindThread *winkd_get_thread_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address) {
 	int running_offset;
 	if (ctx->profile->build < 9200) {
 		running_offset = ctx->is_64bit ? 0x49 : 0x39;
@@ -779,7 +779,7 @@ WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address) {
 	return thread;
 }
 
-RzList *winkd_list_threads(WindCtx *ctx) {
+RzList *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	RzList *ret;
 	ut64 ptr, base;
 	bool current_thread_found = false;
@@ -847,7 +847,7 @@ get_cur_thread:
 #define PTE_PROTOTYPE  0x0400
 #define ARM_DESCRIPTOR 0x0002
 
-static inline bool is_page_large(WindCtx *ctx, ut64 page_descriptor) {
+static inline bool is_page_large(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 page_descriptor) {
 	if (ctx->is_arm) {
 		return !(page_descriptor & ARM_DESCRIPTOR);
 	}
@@ -857,7 +857,7 @@ static inline bool is_page_large(WindCtx *ctx, ut64 page_descriptor) {
 // http://blogs.msdn.com/b/ntdebugging/archive/2010/02/05/understanding-pte-part-1-let-s-get-physical.aspx
 // http://blogs.msdn.com/b/ntdebugging/archive/2010/04/14/understanding-pte-part2-flags-and-large-pages.aspx
 // http://blogs.msdn.com/b/ntdebugging/archive/2010/06/22/part-3-understanding-pte-non-pae-and-x64.aspx
-bool winkd_va_to_pa(WindCtx *ctx, ut64 directory_table, ut64 va, ut64 *pa) {
+bool winkd_va_to_pa(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 directory_table, ut64 va, RZ_BORROW RZ_NONNULL RZ_OUT ut64 *pa) {
 	ut64 pml4i, pdpi, pdi, pti;
 	ut64 tmp, mask;
 
@@ -937,7 +937,7 @@ bool winkd_va_to_pa(WindCtx *ctx, ut64 directory_table, ut64 va, ut64 *pa) {
 	return false;
 }
 
-static bool winkd_send_state_manipulate_req(KdCtx *ctx, kd_req_t *req, const ut8 *buf, const ut32 buf_len, kd_packet_t **pkt) {
+static bool winkd_send_state_manipulate_req(RZ_BORROW RZ_NONNULL KdCtx *ctx, kd_req_t *req, RZ_BORROW RZ_NULLABLE RZ_IN const ut8 *buf, const ut32 buf_len, RZ_BORROW RZ_NULLABLE RZ_OUT kd_packet_t **pkt) {
 	if (pkt) {
 		*pkt = NULL;
 	}
@@ -994,7 +994,7 @@ static bool winkd_send_state_manipulate_req(KdCtx *ctx, kd_req_t *req, const ut8
 	return true;
 }
 
-bool winkd_read_ver(KdCtx *ctx) {
+bool winkd_read_ver(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
 	kd_req_t req = { 0 };
 	kd_packet_t *pkt;
 
@@ -1062,7 +1062,7 @@ bool winkd_read_ver(KdCtx *ctx) {
 	return true;
 }
 
-int winkd_sync(KdCtx *ctx) {
+int winkd_sync(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
 	int ret = -1;
 	kd_packet_t *s;
 
@@ -1138,7 +1138,7 @@ end:
 	return ret;
 }
 
-int winkd_continue(KdCtx *ctx, bool handled) {
+int winkd_continue(RZ_BORROW RZ_NONNULL KdCtx *ctx, bool handled) {
 	kd_req_t req = { 0 };
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
@@ -1176,7 +1176,7 @@ int winkd_continue(KdCtx *ctx, bool handled) {
 	return ret == KD_E_OK;
 }
 
-bool winkd_write_reg(KdCtx *ctx, ut32 flags, const ut8 *buf, int size) {
+bool winkd_write_reg(RZ_BORROW RZ_NONNULL KdCtx *ctx, ut32 flags, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, int size) {
 	kd_packet_t *pkt = NULL;
 	kd_req_t req = { 0 };
 
@@ -1228,7 +1228,7 @@ bool winkd_write_reg(KdCtx *ctx, ut32 flags, const ut8 *buf, int size) {
 	return size;
 }
 
-int winkd_read_reg(KdCtx *ctx, ut8 *buf, int size) {
+int winkd_read_reg(RZ_BORROW RZ_NONNULL KdCtx *ctx, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, int size) {
 	kd_req_t req = { 0 };
 	kd_packet_t *pkt = NULL;
 
@@ -1273,7 +1273,7 @@ int winkd_read_reg(KdCtx *ctx, ut8 *buf, int size) {
 	return context_rq_sz;
 }
 
-int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags) {
+int winkd_query_mem(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 addr, int *address_space, int *flags) {
 	kd_req_t req = { 0 };
 	kd_packet_t *pkt;
 
@@ -1309,7 +1309,7 @@ int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags)
 	return 1;
 }
 
-int winkd_bkpt(KdCtx *ctx, const ut64 addr, const int set, const int hw, int *handle) {
+int winkd_bkpt(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 addr, const int set, const int hw, RZ_BORROW RZ_NONNULL int *handle) {
 	kd_req_t req = { 0 };
 	kd_packet_t *pkt;
 
@@ -1341,7 +1341,7 @@ int winkd_bkpt(KdCtx *ctx, const ut64 addr, const int set, const int hw, int *ha
 	return 1;
 }
 
-static int read_at(KdCtx *ctx, enum KD_PACKET_MANIPULATE_TYPE type, ut8 *buf, const ut64 offset, const int count) {
+static int read_at(RZ_BORROW RZ_NONNULL KdCtx *ctx, enum KD_PACKET_MANIPULATE_TYPE type, ut8 *buf, const ut64 offset, const int count) {
 	kd_req_t req = {
 		.req = type,
 		.cpu = ctx->cpu
@@ -1367,21 +1367,21 @@ static int read_at(KdCtx *ctx, enum KD_PACKET_MANIPULATE_TYPE type, ut8 *buf, co
 	return ret;
 }
 
-int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, ut8 *buf, const int count) {
+int winkd_read_at_phys(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 offset, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, const int count) {
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
 	}
 	return read_at(ctx, DbgKdReadPhysicalMemoryApi, buf, offset, count);
 }
 
-int winkd_read_at(KdCtx *ctx, const ut64 offset, ut8 *buf, const int count) {
+int winkd_read_at(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 offset, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, const int count) {
 	if (!ctx || !ctx->desc || !ctx->syncd || count < 0) {
 		return 0;
 	}
 	return read_at(ctx, DbgKdReadVirtualMemoryApi, buf, offset, count);
 }
 
-int winkd_write_at(KdCtx *ctx, const ut64 offset, const ut8 *buf, const int count) {
+int winkd_write_at(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 offset, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, const int count) {
 	kd_packet_t *pkt = NULL;
 	kd_req_t req = { 0 };
 
@@ -1405,7 +1405,7 @@ int winkd_write_at(KdCtx *ctx, const ut64 offset, const ut8 *buf, const int coun
 	return ret;
 }
 
-int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const ut8 *buf, const int count) {
+int winkd_write_at_phys(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 offset, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, const int count) {
 	kd_packet_t *pkt;
 	kd_req_t req = { 0 };
 
