@@ -223,7 +223,7 @@ endif
 
 # Calcualte BINDIR's depth to be able to find the root directory during runtime
 # in portable builds
-py_cmd = 'import os; print(1 if r"@0@" == os.sep else len(os.path.normpath(r"@0@").split(os.sep)) - 1 if r"@1@" == os.sep else len(os.path.normpath(r"@1@").split(os.sep)))'.format(rizin_prefix / rizin_bindir, rizin_prefix)
+py_cmd = 'import os; print((1 if r"@0@" == os.sep else len(os.path.normpath(r"@0@").split(os.sep))) - (1 if r"@1@" == os.sep else len(os.path.normpath(r"@1@").split(os.sep))))'.format(rizin_prefix / rizin_bindir, rizin_prefix)
 py_cmd = run_command(py3_exe, '-c', py_cmd, check: true)
 bindir_depth = py_cmd.stdout().strip()
 
