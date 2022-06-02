@@ -4,7 +4,12 @@
 
 #include <rz_flirt.h>
 
-static void sigdb_signature_free(RzSigDBEntry *entry) {
+/**
+ * \brief      Frees a RzSigDBEntry structure
+ *
+ * \param[in]  entry The RzSigDBEntry to free
+ */
+RZ_API void rz_sign_sigdb_signature_free(RZ_NULLABLE RzSigDBEntry *entry) {
 	if (!entry) {
 		return;
 	}
@@ -105,9 +110,9 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL 
 		return NULL;
 	}
 	size_t path_len = strlen(sigdb_path) + 1; // ignoring also the filesystem separator
-	RzList *sigs = rz_list_newf((RzListFree)sigdb_signature_free);
+	RzList *sigs = rz_list_newf((RzListFree)rz_sign_sigdb_signature_free);
 	if (!sigs) {
-		rz_warn_if_reached();
+		RZ_LOG_ERROR("cannot allocate signature list\n");
 		return NULL;
 	}
 
@@ -129,7 +134,7 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL 
 
 		sig->file_path = strdup(file);
 		if (!sig->file_path || !sigdb_signature_resolve_details(sig, path_len, with_details)) {
-			sigdb_signature_free(sig);
+			rz_sign_sigdb_signature_free(sig);
 			goto fail;
 		}
 		rz_list_append(sigs, sig);
