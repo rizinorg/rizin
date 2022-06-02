@@ -5970,37 +5970,63 @@ static int core_sigdb_sorter(const RzSigDBEntry *a, const RzSigDBEntry *b) {
 	return strcmp(a->short_path, b->short_path);
 }
 
-static RzList *core_load_all_signatures_from_sigdb(RzCore *core, bool with_details) {
-	RzList *sysdb = NULL, *userdb = NULL;
+/**
+ * \brief Returns all the signatures found in the default path.
+ *
+ * Scans for signature in the following paths:
+ * - home path + RZ_SIGDB
+ * - system install prefix path + RZ_SIGDB
+ * - flirt.sigdb.path user custom sigdb path
+ *
+ * \param      core          The RzCore to use.
+ * \param[in]  with_details  The reads the signature details and sets them in RzSigDBEntry
+ * \return     On success a RzList containing RzSigDBEntry entries, otherwise NULL.
+ */
+RZ_API RzList *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool with_details) {
+	rz_return_val_if_fail(core, NULL);
+
+	RzList *list = NULL, *sigs = NULL;
+
+	sigs = rz_list_newf((RzListFree)rz_sign_sigdb_signature_free);
+	if (!sigs) {
+		return NULL;
+	}
+
+	char *home_sigdb = rz_path_home_prefix(RZ_SIGDB);
+	if (RZ_STR_ISNOTEMPTY(home_sigdb) && rz_file_is_directory(home_sigdb)) {
+		list = rz_sign_sigdb_load_database(home_sigdb, with_details);
+	}
+	free(home_sigdb);
+
+	if (list) {
+		rz_list_join(sigs, list);
+		RZ_FREE_CUSTOM(list, rz_list_free);
+	}
+
 	char *system_sigdb = rz_path_system(RZ_SIGDB);
 	if (RZ_STR_ISNOTEMPTY(system_sigdb) && rz_file_is_directory(system_sigdb)) {
-		sysdb = rz_sign_sigdb_load_database(system_sigdb, with_details);
+		list = rz_sign_sigdb_load_database(system_sigdb, with_details);
 	}
 	free(system_sigdb);
 
-	const char *user_sigdb = rz_config_get(core->config, "flirt.sigdb.path");
-	if (RZ_STR_ISEMPTY(user_sigdb)) {
-		return sysdb;
-	} else if (!rz_file_is_directory(user_sigdb)) {
-		RZ_LOG_ERROR("Invalid signature database path (flirt.sigdb.path)\n");
-		return sysdb;
-	} else {
-		userdb = rz_sign_sigdb_load_database(user_sigdb, with_details);
+	if (list) {
+		rz_list_join(sigs, list);
+		RZ_FREE_CUSTOM(list, rz_list_free);
 	}
-	if (sysdb && userdb) {
-		rz_list_join(userdb, sysdb);
-		rz_list_free(sysdb);
-		rz_list_sort(userdb, (RzListComparator)core_sigdb_sorter);
-		sysdb = NULL;
-	}
-	return userdb ? userdb : sysdb;
-}
 
-/**
- * \brief Outputs the list of signatures found in the flirt.sigdb.path
- *
- * \param core The RzCore instance
- */
+	const char *user_sigdb = rz_config_get(core->config, "flirt.sigdb.path");
+	if (RZ_STR_ISNOTEMPTY(user_sigdb) && rz_file_is_directory(user_sigdb)) {
+		list = rz_sign_sigdb_load_database(user_sigdb, with_details);
+	}
+
+	if (list) {
+		rz_list_join(sigs, list);
+		RZ_FREE_CUSTOM(list, rz_list_free);
+	}
+
+	rz_list_sort(sigs, (RzListComparator)core_sigdb_sorter);
+	return sigs;
+}
 
 /**
  * \brief Adds all the signatures to a RzTable structure.
@@ -6011,7 +6037,7 @@ static RzList *core_load_all_signatures_from_sigdb(RzCore *core, bool with_detai
 RZ_API void rz_core_analysis_sigdb_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTable *table) {
 	rz_return_if_fail(core && table);
 
-	RzList *sigdb = core_load_all_signatures_from_sigdb(core, true);
+	RzList *sigdb = rz_core_analysis_sigdb_list(core, true);
 	if (!sigdb) {
 		return;
 	}
@@ -6074,7 +6100,7 @@ RZ_API bool rz_core_analysis_sigdb_apply(RZ_NONNULL RzCore *core, RZ_NULLABLE in
 		return false;
 	}
 
-	sigdb = core_load_all_signatures_from_sigdb(core, false);
+	sigdb = rz_core_analysis_sigdb_list(core, false);
 	if (!sigdb) {
 		return false;
 	}
