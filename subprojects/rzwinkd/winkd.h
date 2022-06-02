@@ -73,8 +73,8 @@ typedef struct {
 	int f[O_Max];
 } Profile;
 
-typedef int WindReadAt(void *user, ut64 address, RZ_NONNULL RZ_OUT ut8 *buf, int count);
-typedef int WindWriteAt(void *user, ut64 address, RZ_NONNULL RZ_IN const ut8 *buf, int count);
+typedef int WindReadAt(RZ_NONNULL void *user, ut64 address, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, int count);
+typedef int WindWriteAt(RZ_NONNULL void *user, ut64 address, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, int count);
 
 typedef struct _WindCtx {
 	Profile *profile;
@@ -130,7 +130,7 @@ typedef struct _DmpCtx {
 	void *bf; // RzBinFile * of DMP File
 } DmpCtx;
 
-static inline ut64 winkd_read_ptr_at(WindCtx *ctx, WindReadAt *read_at_func, ut64 at) {
+static inline ut64 winkd_read_ptr_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, RZ_BORROW RZ_NONNULL WindReadAt *read_at_func, ut64 at) {
 	ut8 ptr_buf[8];
 	if (!read_at_func(ctx->user, at, ptr_buf, ctx->is_64bit ? 8 : 4)) {
 		return 0;
@@ -138,48 +138,48 @@ static inline ut64 winkd_read_ptr_at(WindCtx *ctx, WindReadAt *read_at_func, ut6
 	return ctx->is_64bit ? rz_read_le64(ptr_buf) : rz_read_le32(ptr_buf);
 }
 
-static inline void winkd_ctx_fini(WindCtx *ctx) {
+static inline void winkd_ctx_fini(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	free(ctx->user);
 	free(ctx->profile);
 }
 
 // grep -e "^winkd_" subprojects/rzwinkd/winkd.c | sed -e 's/ {$/;/' -e 's/^/int /'
-int winkd_get_bits(WindCtx *ctx);
-int winkd_get_sp(WindCtx *ctx);
+int winkd_get_bits(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+int winkd_get_sp(RZ_BORROW RZ_NONNULL WindCtx *ctx);
 Profile *winkd_get_profile(int bits, int build, int sp);
-bool winkd_va_to_pa(WindCtx *ctx, ut64 directory_table, ut64 va, ut64 *pa);
-ut64 winkd_get_target_base(WindCtx *ctx);
-ut32 winkd_get_target(WindCtx *ctx);
-ut32 winkd_get_target_thread(WindCtx *ctx);
-bool winkd_set_target(WindCtx *ctx, ut32 pid, ut32 tid);
-WindProc *winkd_get_process_at(WindCtx *ctx, ut64 address);
-WindThread *winkd_get_thread_at(WindCtx *ctx, ut64 address);
-RzList *winkd_list_process(WindCtx *ctx);
-RzList *winkd_list_threads(WindCtx *ctx);
+bool winkd_va_to_pa(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 directory_table, ut64 va, RZ_BORROW RZ_NONNULL RZ_OUT ut64 *pa);
+ut64 winkd_get_target_base(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+ut32 winkd_get_target(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+ut32 winkd_get_target_thread(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+bool winkd_set_target(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut32 pid, ut32 tid);
+WindProc *winkd_get_process_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address);
+WindThread *winkd_get_thread_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address);
+RzList *winkd_list_process(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+RzList *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx);
 void winkd_windmodule_free(void *ptr);
-RzList *winkd_list_modules(WindCtx *ctx);
-RzList *winkd_list_maps(WindCtx *ctx);
-int winkd_read_at_uva(WindCtx *ctx, ut64 offset, ut8 *buf, int count);
-int winkd_write_at_uva(WindCtx *ctx, ut64 offset, const ut8 *buf, int count);
+RzList *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+RzList *winkd_list_maps(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+int winkd_read_at_uva(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 offset, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, int count);
+int winkd_write_at_uva(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 offset, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, int count);
 
-KdCtx *winkd_kdctx_new(io_desc_t *desc);
-void winkd_kdctx_free(KdCtx **ctx);
-int winkd_get_cpus(KdCtx *ctx);
-bool winkd_set_cpu(KdCtx *ctx, int cpu);
-int winkd_get_cpu(KdCtx *ctx);
-int winkd_wait_packet(KdCtx *ctx, const ut32 type, kd_packet_t **p);
-int winkd_sync(KdCtx *ctx);
-bool winkd_read_ver(KdCtx *ctx);
-int winkd_continue(KdCtx *ctx, bool handled);
-bool winkd_write_reg(KdCtx *ctx, ut32 flags, const ut8 *buf, int size);
-int winkd_read_reg(KdCtx *ctx, ut8 *buf, int size);
-int winkd_query_mem(KdCtx *ctx, const ut64 addr, int *address_space, int *flags);
-int winkd_bkpt(KdCtx *ctx, const ut64 addr, const int set, const int hw, int *handle);
-int winkd_read_at(KdCtx *ctx, const ut64 offset, ut8 *buf, const int count);
-int winkd_read_at_phys(KdCtx *ctx, const ut64 offset, ut8 *buf, const int count);
-int winkd_write_at(KdCtx *ctx, const ut64 offset, const ut8 *buf, const int count);
-int winkd_write_at_phys(KdCtx *ctx, const ut64 offset, const ut8 *buf, const int count);
+KdCtx *winkd_kdctx_new(RZ_BORROW RZ_NONNULL io_desc_t *desc);
+void winkd_kdctx_free(RZ_OWN KdCtx **ctx);
+int winkd_get_cpus(RZ_BORROW RZ_NONNULL KdCtx *ctx);
+bool winkd_set_cpu(RZ_BORROW RZ_NONNULL KdCtx *ctx, int cpu);
+int winkd_get_cpu(RZ_BORROW RZ_NONNULL KdCtx *ctx);
+int winkd_wait_packet(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut32 type, RZ_NULLABLE RZ_OUT kd_packet_t **p);
+int winkd_sync(RZ_BORROW RZ_NONNULL KdCtx *ctx);
+bool winkd_read_ver(RZ_BORROW RZ_NONNULL KdCtx *ctx);
+int winkd_continue(RZ_BORROW RZ_NONNULL KdCtx *ctx, bool handled);
+bool winkd_write_reg(RZ_BORROW RZ_NONNULL KdCtx *ctx, ut32 flags, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, int size);
+int winkd_read_reg(RZ_BORROW RZ_NONNULL KdCtx *ctx, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, int size);
+int winkd_query_mem(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 addr, int *address_space, int *flags);
+int winkd_bkpt(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 addr, const int set, const int hw, RZ_BORROW RZ_NONNULL int *handle);
+int winkd_read_at(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 offset, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, const int count);
+int winkd_read_at_phys(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 offset, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, const int count);
+int winkd_write_at(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 offset, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, const int count);
+int winkd_write_at_phys(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 offset, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, const int count);
 void winkd_break(void *ctx);
-bool winkd_lock_enter(KdCtx *ctx);
-bool winkd_lock_leave(KdCtx *ctx);
+bool winkd_lock_enter(RZ_BORROW RZ_NONNULL KdCtx *ctx);
+bool winkd_lock_leave(RZ_BORROW RZ_NONNULL KdCtx *ctx);
 #endif

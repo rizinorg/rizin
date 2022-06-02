@@ -12,7 +12,7 @@
 
 static KdCtx *kdctx = NULL;
 
-static int rz_debug_winkd_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
+static int rz_debug_winkd_reg_read(RZ_BORROW RZ_NONNULL RzDebug *dbg, int type, ut8 *buf, int size) {
 	int ret = winkd_read_reg(kdctx, buf, size);
 	if (!ret) {
 		return -1;
@@ -20,7 +20,7 @@ static int rz_debug_winkd_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	return ret;
 }
 
-static int rz_debug_winkd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
+static int rz_debug_winkd_reg_write(RZ_BORROW RZ_NONNULL RzDebug *dbg, int type, const ut8 *buf, int size) {
 	if (!dbg->reg) {
 		return false;
 	}
@@ -45,11 +45,11 @@ static int rz_debug_winkd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int 
 	return winkd_write_reg(kdctx, flags, buf, size);
 }
 
-static int rz_debug_winkd_continue(RzDebug *dbg, int pid, int tid, int sig) {
+static int rz_debug_winkd_continue(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid, int tid, int sig) {
 	return winkd_continue(kdctx, !sig);
 }
 
-static void get_current_process_and_thread(RzDebug *dbg, ut64 thread_address) {
+static void get_current_process_and_thread(RZ_BORROW RZ_NONNULL RzDebug *dbg, ut64 thread_address) {
 	if (!O_(ET_ApcProcess)) {
 		return;
 	}
@@ -74,7 +74,7 @@ static void get_current_process_and_thread(RzDebug *dbg, ut64 thread_address) {
 	free(thread);
 }
 
-static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType rz_debug_winkd_wait(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
@@ -152,7 +152,7 @@ static bool get_module_timestamp(ut64 addr, ut32 *timestamp, ut32 *sizeofimage) 
 	return true;
 }
 
-static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
+static int rz_debug_winkd_attach(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	RzIODesc *desc = dbg->iob.io->desc;
 
 	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data) {
@@ -224,13 +224,13 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	return true;
 }
 
-static int rz_debug_winkd_detach(RzDebug *dbg, int pid) {
+static int rz_debug_winkd_detach(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	eprintf("Detaching...\n");
 	kdctx->syncd = 0;
 	return true;
 }
 
-static char *rz_debug_winkd_reg_profile(RzDebug *dbg) {
+static char *rz_debug_winkd_reg_profile(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
 	if (!dbg) {
 		return NULL;
 	}
@@ -246,7 +246,7 @@ static char *rz_debug_winkd_reg_profile(RzDebug *dbg) {
 	return NULL;
 }
 
-static int rz_debug_winkd_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
+static int rz_debug_winkd_breakpoint(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, RZ_BORROW RZ_NULLABLE RzBreakpointItem *b, bool set) {
 	int *tag;
 	if (!b) {
 		return false;
@@ -262,11 +262,11 @@ static int rz_debug_winkd_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool
 	return winkd_bkpt(kdctx, b->addr, set, b->hw, tag);
 }
 
-static bool rz_debug_winkd_init(RzDebug *dbg, void **user) {
+static bool rz_debug_winkd_init(RZ_BORROW RZ_NONNULL RzDebug *dbg, void **user) {
 	return true;
 }
 
-static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
+static RzList *rz_debug_winkd_pids(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
 		return NULL;
 	}
@@ -300,7 +300,7 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 	return ret;
 }
 
-static int rz_debug_winkd_select(RzDebug *dbg, int pid, int tid) {
+static int rz_debug_winkd_select(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid, int tid) {
 	ut32 old = winkd_get_target(&kdctx->windctx);
 	ut32 old_tid = winkd_get_target_thread(&kdctx->windctx);
 	if (pid != old || tid != old_tid) {
@@ -323,7 +323,7 @@ static int rz_debug_winkd_select(RzDebug *dbg, int pid, int tid) {
 	return true;
 }
 
-static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
+static RzList *rz_debug_winkd_threads(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
 		return NULL;
 	}
@@ -355,7 +355,7 @@ static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
 	return ret;
 }
 
-static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
+static RzList *rz_debug_winkd_modules(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
 	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
 		return NULL;
 	}
@@ -386,7 +386,7 @@ static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
 #include "native/bt/windows-x64.c"
 #include "native/bt/generic-all.c"
 
-static RzList *rz_debug_winkd_frames(RzDebug *dbg, ut64 at) {
+static RzList *rz_debug_winkd_frames(RZ_BORROW RZ_NONNULL RzDebug *dbg, ut64 at) {
 	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
 		return NULL;
 	}
@@ -400,7 +400,7 @@ static RzList *rz_debug_winkd_frames(RzDebug *dbg, ut64 at) {
 	return ret;
 }
 
-static RzList *rz_debug_winkd_maps(RzDebug *dbg) {
+static RzList *rz_debug_winkd_maps(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
 	RzList *maps = winkd_list_maps(&kdctx->windctx);
 	RzListIter *it;
 	WindMap *m;
