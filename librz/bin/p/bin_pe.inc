@@ -26,6 +26,18 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
 		obj->bin_obj = res;
+
+		// Hint on bogus files
+		if (PE_(rz_bin_pe_get_image_base)(res) < 0x10000)
+			if (obj->opts.baseaddr == UT64_MAX)
+				eprintf("%s",
+					"Note: ImageBase below 0x10000 is invalid on Windows.\n"
+					"Preferred addresses are:\n"
+					"0x10000000 DLLs\n"
+					"0x00010000 Windows CE EXEs\n"
+					"0x00400000 Windows NT, 2000, XP, 95, 98, and Me\n"
+					"Use the -B option to relocate.\n"
+				);
 		return true;
 	}
 	return false;
