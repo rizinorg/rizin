@@ -7,6 +7,7 @@ RUN
 
 NAME=PE: corkami virtrelocXP.exe - entrypoint
 FILE=bins/pe/virtrelocXP.exe
+ARGS=-B 0x10000
 CMDS=s
 EXPECT=<<EOF
 0x10138
