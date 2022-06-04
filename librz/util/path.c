@@ -35,7 +35,7 @@ RZ_DEFINE_DESTRUCTOR(fini_portable_prefix)
 static void fini_portable_prefix(void) {
 	RZ_FREE(portable_prefix);
 	portable_prefix_searched = false;
-	rz_th_lock_free(portable_prefix_mutex);
+	RZ_FREE_CUSTOM(portable_prefix_mutex, rz_th_lock_free);
 }
 
 static char *set_portable_prefix(void) {
@@ -83,6 +83,30 @@ err:
 	return NULL;
 }
 #endif
+
+/**
+ * \brief Return \p path prefixed by the Rizin install prefix
+ *
+ * The install prefix is taken from the build-time configuration RZ_PREFIX,
+ * unless Rizin was not compiled as "portable". In such a case the prefix is
+ * either discovered from the path of the executable calling this function or
+ * stored via the path variable
+ *
+ * \param path Path to use when to prefix or NULL to use the binary location
+ */
+RZ_API void rz_path_set_prefix(RZ_NONNULL const char *path) {
+#if RZ_IS_PORTABLE
+	rz_th_lock_enter(portable_prefix_mutex);
+	free(portable_prefix);
+	if (RZ_STR_ISNOTEMPTY(path)) {
+		portable_prefix = strdup(path);
+	} else {
+		portable_prefix = set_portable_prefix();
+	}
+	portable_prefix_searched = true;
+	rz_th_lock_leave(portable_prefix_mutex);
+#endif
+}
 
 /**
  * \brief Return \p path prefixed by the Rizin install prefix
