@@ -254,7 +254,7 @@ RZ_API int rz_lib_close(RzLib *lib, const char *file) {
 				ret = p->handler->destructor(p,
 					p->handler->user, p->data);
 			}
-			eprintf("Unloaded %s\n", p->file);
+			RZ_LOG_INFO("Unloaded %s\n", p->file);
 			free(p->file);
 			rz_list_delete(lib->plugins, iter);
 			return ret;
@@ -349,7 +349,7 @@ RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStr
 		free(mm0);
 		free(mm1);
 		if (mismatch) {
-			eprintf("Module version mismatch %s (%s) vs (%s)\n",
+			RZ_LOG_WARN("Module version mismatch %s (%s) vs (%s)\n",
 				file, stru->version, RZ_VERSION);
 			if (stru->pkgname) {
 				const char *dot = strchr(stru->version, '.');
