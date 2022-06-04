@@ -3251,7 +3251,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 	PE_DWord paddr = data_dir_security->VirtualAddress;
 	ut32 size = data_dir_security->Size;
 	if (size < 8 || paddr > bin->size || paddr + size > bin->size) {
-		RZ_LOG_INFO("Invalid certificate table");
+		RZ_LOG_INFO("Invalid certificate table\n");
 		return false;
 	}
 
@@ -3278,7 +3278,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 		}
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
 		if (offset + cert->dwLength > paddr + size) {
-			RZ_LOG_INFO("Invalid certificate entry");
+			RZ_LOG_INFO("Invalid certificate entry\n");
 			RZ_FREE(cert);
 			return false;
 		}
