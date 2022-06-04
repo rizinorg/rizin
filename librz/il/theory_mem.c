@@ -29,8 +29,7 @@ bool rz_il_handler_store(RzILVM *vm, RzILOpEffect *op) {
 
 	bool ret = false;
 	if (addr && value) {
-		ret = true;
-		rz_il_vm_mem_store(vm, op_store->mem, addr, value);
+		ret = rz_il_vm_mem_store(vm, op_store->mem, addr, value);
 	}
 	rz_bv_free(addr);
 	rz_bv_free(value);
@@ -62,8 +61,7 @@ bool rz_il_handler_storew(RzILVM *vm, RzILOpEffect *op) {
 
 	bool ret = false;
 	if (addr && value) {
-		ret = true;
-		rz_il_vm_mem_storew(vm, op_storew->mem, addr, value);
+		ret = rz_il_vm_mem_storew(vm, op_storew->mem, addr, value);
 	}
 
 	rz_bv_free(addr);

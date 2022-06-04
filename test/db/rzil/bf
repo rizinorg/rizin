@@ -1,6 +1,5 @@
 NAME=hello world
 FILE=bins/bf/hello-ok.bf
-ARGS=-eio.cache=1
 CMDS=<<EOF
 e asm.arch=bf
 e asm.bytes=true
@@ -38,7 +37,6 @@ RUN
 
 NAME=loopy hello world
 FILE=bins/bf/hello-loops.bf
-ARGS=-eio.cache=1
 CMDS=<<EOF
 s 0
 aezi
@@ -51,7 +49,6 @@ RUN
 
 NAME=instructions
 FILE=bins/bf/hello-loops.bf
-ARGS=-eio.cache=1
 CMDS=<<EOF
 e asm.arch=bf
 e analysis.arch=bf
@@ -110,7 +107,6 @@ RUN
 
 NAME=instruction event trace
 FILE=bins/bf/hello-loops.bf
-ARGS=-eio.cache=1
 CMDS=<<EOF
 e asm.arch=bf
 e analysis.arch=bf
@@ -1705,7 +1701,6 @@ RUN
 NAME=2+5.bf
 FILE=bins/bf/2+5.bf
 CMDS=<<EOF
-e io.cache=1
 aezi
 aezsu $s; ?e
 EOF

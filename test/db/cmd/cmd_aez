@@ -1,6 +1,5 @@
 NAME=aezsu: RzIL step until
 FILE=bins/bf/hello-ok.bf
-ARGS=-eio.cache=1
 CMDS=<<EOF
 s 0
 aezi
@@ -155,7 +154,6 @@ RUN
 NAME=double aezsu with different start pc
 FILE=bins/bf/2+5.bf
 CMDS=<<EOF
-e io.cache=1
 aezi
 (emu_pc pc; ar pc=$0; ar; aezsu $s; ?e)
 .(emu_pc 1)
@@ -175,7 +173,6 @@ RUN
 NAME=double aezi with different offsets
 FILE=bins/bf/2+5.bf
 CMDS=<<EOF
-e io.cache=1
 (emu_start start; aezi @ $0; aezsu $s; ?e)
 .(emu_start 1)
 w0 1 @ ptr

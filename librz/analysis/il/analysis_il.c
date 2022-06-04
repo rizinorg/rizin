@@ -105,6 +105,8 @@ RZ_API RZ_OWN RzAnalysisILVM *rz_analysis_il_vm_new(RzAnalysis *a, RZ_NULLABLE R
 	if (!r) {
 		goto ruby_pool;
 	}
+	a->iob.io->cached |= RZ_PERM_RW;
+	RZ_LOG_INFO("Enabling `io.cache` to make memory write/read operations work.\n");
 	r->io_buf = rz_buf_new_with_io(&a->iob);
 	setup_vm_from_config(a, r, config);
 	if (!r->vm) {

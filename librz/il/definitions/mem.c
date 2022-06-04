@@ -149,7 +149,7 @@ static bool write_n_bits(RzBuffer *buf, RzBitVector *key, RzBitVector *value, bo
 }
 
 /**
- * Load an entire work of the given size from the given address
+ * Load an entire word of the given size from the given address
  * \param key address (bitvector)
  * \param n_bits How many bits to read. This also determines the size of the returned bitvector
  * \return data (bitvector)
@@ -161,7 +161,7 @@ RZ_API RzBitVector *rz_il_mem_loadw(RzILMem *mem, RzBitVector *key, ut32 n_bits,
 }
 
 /**
- * Store an entire word or arbitrary size at an address
+ * Store an entire word of the given size at an address
  * \param key address
  * \param value data
  * \return whether the store succeeded

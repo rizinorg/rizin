@@ -236,7 +236,6 @@ ARGS=-a 6502 -F prg
 TIMEOUT=4
 CMDS=<<EOF
 s 0x84c
-e io.cache=1
 aezi
 aezsu 0x84f
 ps @ 0x91b
