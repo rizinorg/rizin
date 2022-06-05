@@ -209,7 +209,7 @@ RZ_API int rz_lib_run_handler(RzLib *lib, RzLibPlugin *plugin, RzLibStruct *symb
 		RZ_LOG_DEBUG("PLUGIN LOADED %p fcn %p\n", h, h->constructor);
 		return h->constructor(plugin, h->user, symbol->data);
 	}
-	RZ_LOG_INFO("Cannot find plugin constructor\n");
+	RZ_LOG_WARN("Cannot find plugin constructor\n");
 	return -1;
 }
 
