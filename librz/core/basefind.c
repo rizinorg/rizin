@@ -287,10 +287,14 @@ static RzThreadStatus basefind_thread_cons(BaseFindThreadCons *th_cons) {
 static inline bool create_thread_interval(RzThreadPool *pool, BaseFindThreadData *bfd) {
 	RzThread *thread = rz_th_new((RzThreadFunction)basefind_thread_runner, bfd);
 	if (!thread) {
-		RZ_LOG_ERROR("basefind: cannot allocate BaseFindData\n");
+		RZ_LOG_ERROR("basefind: cannot allocate RzThread\n");
+		return false;
+	} else if (!rz_th_pool_add_thread(pool, thread)) {
+		RZ_LOG_ERROR("basefind: cannot add thread to pool\n");
+		rz_th_free(thread);
 		return false;
 	}
-	return rz_th_pool_add_thread(pool, thread);
+	return true;
 }
 
 /**
@@ -370,7 +374,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 
 	pool = rz_th_pool_new(max_threads);
 	if (!pool) {
-		RZ_LOG_ERROR("basefind: cannot thread pool.\n");
+		RZ_LOG_ERROR("basefind: cannot allocate thread pool.\n");
 		goto rz_basefind_end;
 	}
 	pool_size = rz_th_pool_size(pool);
