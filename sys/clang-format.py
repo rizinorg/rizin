@@ -35,6 +35,7 @@ skiplist = [
     "librz/asm/arch/arm/aarch64/",
     "librz/hash/xxhash/",
     "librz/bin/mangling/cxx/",
+    "librz/bin/d/jni.h",
     "librz/util/bdiff.c",
     "librz/asm/arch/tms320/c55x/table.h",
 ]
