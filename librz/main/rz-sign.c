@@ -122,7 +122,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	input_file = argv[opt.ind];
 
 	if (option == RZ_SIGN_OPT_CREATE_FLIRT && complexity > 2) {
-		RZ_LOG_ERROR("rz-sign: Invalid analysis complexity (too many -a defined)\n");
+		RZ_LOG_ERROR("rz-sign: Invalid analysis complexity (too many -a defined, max -aa)\n");
 		rz_sign_show_help();
 		ret = -1;
 		goto rz_sign_end;
@@ -165,7 +165,10 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		}
 	}
 
-	if (option == RZ_SIGN_OPT_DUMP_FLIRT) {
+	if (option == RZ_SIGN_OPT_NONE) {
+		RZ_LOG_ERROR("rz-sign: missing option, please set -c or -d or -o\n");
+		ret = -1;
+	} else if (option == RZ_SIGN_OPT_DUMP_FLIRT) {
 		// dump flirt file
 		if (!rz_core_flirt_dump_file(input_file)) {
 			ret = -1;
