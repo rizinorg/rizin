@@ -58,7 +58,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		return -1;
 	}
 
-	rz_getopt_init(&opt, argc, argv, "aqdc:o:e:v");
+	rz_getopt_init(&opt, argc, argv, "aqhdc:o:e:v");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -103,9 +103,6 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			break;
 		case 'v':
 			return rz_main_version_print("rz-sign");
-		case 'h':
-			rz_sign_show_help();
-			goto rz_sign_end;
 		default:
 			rz_sign_show_help();
 			ret = -1;
