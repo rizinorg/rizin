@@ -61,7 +61,7 @@ RZ_API void *rz_lib_dl_open(const char *libname) {
 		ret = dlopen(NULL, RTLD_NOW);
 	}
 	if (!ret) {
-		RZ_LOG_INFO("rz_lib_dl_open: error: %s (%s)\n", libname, dlerror());
+		RZ_LOG_ERROR("rz_lib_dl_open: error: %s (%s)\n", libname, dlerror());
 	}
 #elif __WINDOWS__
 	LPTSTR libname_;
@@ -80,7 +80,7 @@ RZ_API void *rz_lib_dl_open(const char *libname) {
 	ret = LoadLibrary(libname_);
 	free(libname_);
 	if (!ret) {
-		RZ_LOG_INFO("rz_lib_dl_open: error: %s\n", libname);
+		RZ_LOG_ERROR("rz_lib_dl_open: error: %s\n", libname);
 	}
 #endif
 #endif
