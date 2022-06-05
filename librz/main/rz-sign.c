@@ -103,7 +103,11 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			break;
 		case 'v':
 			return rz_main_version_print("rz-sign");
+		case 'h':
+			rz_sign_show_help();
+			goto rz_sign_end;
 		default:
+			RZ_LOG_ERROR("rz-sign: invalid option -%c\n", c);
 			rz_sign_show_help();
 			ret = -1;
 			goto rz_sign_end;
