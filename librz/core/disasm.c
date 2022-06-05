@@ -1020,17 +1020,6 @@ static void __replaceImports(RzDisasmState *ds) {
 	}
 }
 
-static char *get_op_ireg(void *user, ut64 addr) {
-	RzCore *core = (RzCore *)user;
-	char *res = NULL;
-	RzAnalysisOp *op = rz_core_analysis_op(core, addr, 0);
-	if (op && op->ireg) {
-		res = strdup(op->ireg);
-	}
-	rz_analysis_op_free(op);
-	return res;
-}
-
 static st64 get_ptr_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr) {
 	return rz_analysis_function_get_var_stackptr_at(fcn, delta, addr);
 }
@@ -1114,10 +1103,9 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 	if (ds->subvar && ds->opstr) {
 		ut64 at = ds->vat;
 		RzAnalysisFunction *f = fcnIn(ds, at, RZ_ANALYSIS_FCN_TYPE_NULL);
-		core->parser->get_op_ireg = get_op_ireg;
 		core->parser->get_ptr_at = get_ptr_at;
 		core->parser->get_reg_at = get_reg_at;
-		rz_parse_subvar(core->parser, f, at, ds->analysis_op.size, ds->opstr, ds->strsub, sizeof(ds->strsub));
+		rz_parse_subvar(core->parser, f, &ds->analysis_op, ds->opstr, ds->strsub, sizeof(ds->strsub));
 		if (*ds->strsub) {
 			free(ds->opstr);
 			ds->opstr = strdup(ds->strsub);
@@ -6087,7 +6075,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 			char *ba = malloc(ba_len);
 			if (ba) {
 				strcpy(ba, rz_asm_op_get_asm(&asmop));
-				rz_parse_subvar(core->parser, f, at, ds->analysis_op.size,
+				rz_parse_subvar(core->parser, f, &ds->analysis_op,
 					ba, ba, ba_len);
 				rz_asm_op_set_asm(&asmop, ba);
 				free(ba);
@@ -6864,9 +6852,11 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	if (asm_subvar) {
 		core->parser->get_ptr_at = rz_analysis_function_get_var_stackptr_at;
 		core->parser->get_reg_at = rz_analysis_function_get_var_reg_at;
-		core->parser->get_op_ireg = get_op_ireg;
-		rz_parse_subvar(core->parser, fcn, addr, asmop.size,
+		RzAnalysisOp op;
+		rz_analysis_op(core->analysis, &op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
+		rz_parse_subvar(core->parser, fcn, &op,
 			ba, ba, sizeof(asmop.buf_asm));
+		rz_analysis_op_fini(&op);
 	}
 	RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, addr);
 	rz_parse_filter(core->parser, addr, core->flags, hint,

@@ -798,8 +798,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 
 		char disasm[128] = { 0 };
 		rz_parse_subvar(core->parser, NULL,
-			core->offset + idx,
-			asmop.size, rz_asm_op_get_asm(&asmop),
+			&op, rz_asm_op_get_asm(&asmop),
 			disasm, sizeof(disasm));
 		ut64 killme = UT64_MAX;
 		if (rz_io_read_i(core->io, op.ptr, &killme, op.refptr, be)) {
@@ -820,7 +819,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		{
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
 			if (fcn) {
-				rz_parse_subvar(core->parser, fcn, addr, asmop.size,
+				rz_parse_subvar(core->parser, fcn, &op,
 					disasm, disasm, sizeof(disasm));
 			}
 		}

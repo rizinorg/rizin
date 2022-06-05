@@ -154,9 +154,19 @@ RZ_API char *rz_parse_immtrim(char *opstr) {
 	return opstr;
 }
 
-RZ_API bool rz_parse_subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+/*
+ * \brief Substitutes register relative accesses with function variable names
+ * \param p The parser
+ * \param f The function
+ * \param op The analysis op of the current instruction
+ * \param data The disassembly of the current instruction
+ * \param str The string buffer to write the output to
+ * \param len The length of the string buffer
+ */
+RZ_API bool rz_parse_subvar(RzParse *p, RZ_NULLABLE RzAnalysisFunction *f, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL RZ_IN char *data, RZ_BORROW RZ_NONNULL RZ_OUT char *str, int len) {
+	rz_return_val_if_fail(op && data && str, false);
 	if (p->cur && p->cur->subvar) {
-		return p->cur->subvar(p, f, addr, oplen, data, str, len);
+		return p->cur->subvar(p, f, op, data, str, len);
 	}
 	return false;
 }
