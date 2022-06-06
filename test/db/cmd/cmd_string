@@ -1,0 +1,90 @@
+NAME=izz
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=izz
+EXPECT=<<EOF
+nth paddr      vaddr      len size section   type    string                                 
+--------------------------------------------------------------------------------------------
+0   0x00000034 0x00400034 4   10             utf16le @8\b@
+1   0x00000200 0x00400200 25  26   .interp   ascii   /lib/ld-linux-x86-64.so.2
+2   0x000002e1 0x004002e1 14  15   .dynstr   ascii   __gmon_start__
+3   0x000002f0 0x004002f0 9   10   .dynstr   ascii   libc.so.6
+4   0x000002fa 0x004002fa 4   5    .dynstr   ascii   puts
+5   0x000002ff 0x004002ff 17  18   .dynstr   ascii   __libc_start_main
+6   0x00000311 0x00400311 11  12   .dynstr   ascii   GLIBC_2.2.5
+7   0x00000588 0x00400588 4   5    .text     ascii   \$\bH
+8   0x00000597 0x00400597 4   5    .text     ascii   l$ L
+9   0x0000059c 0x0040059c 4   5    .text     ascii   t$(L
+10  0x000005a1 0x004005a1 4   5    .text     ascii   |$0H
+11  0x000005c4 0x004005c4 11  12   .rodata   ascii   Hello World
+12  0x00000618 0x00400618 4   5    .eh_frame ascii   \e\f\a\b
+13  0x00000648 0x00400648 4   5    .eh_frame ascii   \e\f\a\b
+14  0x0000066f 0x0040066f 5   6    .eh_frame ascii   ;*3$"
+15  0x00000691 0x00400691 4   5    .eh_frame ascii   P\f\a\b
+16  0x00000910 ---------- 16  17   .comment  ascii   GCC: (GNU) 4.7.2
+17  0x00000922 ---------- 7   8    .shstrtab ascii   .symtab
+18  0x0000092a ---------- 7   8    .shstrtab ascii   .strtab
+19  0x00000932 ---------- 9   10   .shstrtab ascii   .shstrtab
+20  0x0000093c ---------- 7   8    .shstrtab ascii   .interp
+21  0x00000944 ---------- 13  14   .shstrtab ascii   .note.ABI-tag
+22  0x00000952 ---------- 18  19   .shstrtab ascii   .note.gnu.build-id
+23  0x00000965 ---------- 9   10   .shstrtab ascii   .gnu.hash
+24  0x0000096f ---------- 7   8    .shstrtab ascii   .dynsym
+25  0x00000977 ---------- 7   8    .shstrtab ascii   .dynstr
+26  0x0000097f ---------- 12  13   .shstrtab ascii   .gnu.version
+27  0x0000098c ---------- 14  15   .shstrtab ascii   .gnu.version_r
+28  0x0000099b ---------- 9   10   .shstrtab ascii   .rela.dyn
+29  0x000009a5 ---------- 9   10   .shstrtab ascii   .rela.plt
+30  0x000009af ---------- 5   6    .shstrtab ascii   .init
+31  0x000009b5 ---------- 5   6    .shstrtab ascii   .text
+32  0x000009bb ---------- 5   6    .shstrtab ascii   .fini
+33  0x000009c1 ---------- 7   8    .shstrtab ascii   .rodata
+34  0x000009c9 ---------- 13  14   .shstrtab ascii   .eh_frame_hdr
+35  0x000009d7 ---------- 9   10   .shstrtab ascii   .eh_frame
+36  0x000009e1 ---------- 11  12   .shstrtab ascii   .init_array
+37  0x000009ed ---------- 11  12   .shstrtab ascii   .fini_array
+38  0x000009f9 ---------- 4   5    .shstrtab ascii   .jcr
+39  0x000009fe ---------- 8   9    .shstrtab ascii   .dynamic
+40  0x00000a07 ---------- 4   5    .shstrtab ascii   .got
+41  0x00000a0c ---------- 8   9    .shstrtab ascii   .got.plt
+42  0x00000a15 ---------- 5   6    .shstrtab ascii   .data
+43  0x00000a1b ---------- 4   5    .shstrtab ascii   .bss
+44  0x00000a20 ---------- 8   9    .shstrtab ascii   .comment
+45  0x000017f9 ---------- 6   7    .strtab   ascii   init.c
+46  0x00001800 ---------- 10  11   .strtab   ascii   crtstuff.c
+47  0x0000180b ---------- 12  13   .strtab   ascii   __JCR_LIST__
+48  0x00001818 ---------- 20  21   .strtab   ascii   deregister_tm_clones
+49  0x0000182d ---------- 18  19   .strtab   ascii   register_tm_clones
+50  0x00001840 ---------- 21  22   .strtab   ascii   __do_global_dtors_aux
+51  0x00001856 ---------- 14  15   .strtab   ascii   completed.6724
+52  0x00001865 ---------- 38  39   .strtab   ascii   __do_global_dtors_aux_fini_array_entry
+53  0x0000188c ---------- 11  12   .strtab   ascii   frame_dummy
+54  0x00001898 ---------- 30  31   .strtab   ascii   __frame_dummy_init_array_entry
+55  0x000018b7 ---------- 7   8    .strtab   ascii   hello.c
+56  0x000018bf ---------- 13  14   .strtab   ascii   __FRAME_END__
+57  0x000018cd ---------- 11  12   .strtab   ascii   __JCR_END__
+58  0x000018d9 ---------- 16  17   .strtab   ascii   __init_array_end
+59  0x000018ea ---------- 8   9    .strtab   ascii   _DYNAMIC
+60  0x000018f3 ---------- 18  19   .strtab   ascii   __init_array_start
+61  0x00001906 ---------- 21  22   .strtab   ascii   _GLOBAL_OFFSET_TABLE_
+62  0x0000191c ---------- 15  16   .strtab   ascii   __libc_csu_fini
+63  0x0000192c ---------- 27  28   .strtab   ascii   _ITM_deregisterTMCloneTable
+64  0x00001948 ---------- 10  11   .strtab   ascii   data_start
+65  0x00001953 ---------- 17  18   .strtab   ascii   puts@@GLIBC_2.2.5
+66  0x00001965 ---------- 6   7    .strtab   ascii   _edata
+67  0x0000196c ---------- 5   6    .strtab   ascii   _fini
+68  0x00001972 ---------- 30  31   .strtab   ascii   __libc_start_main@@GLIBC_2.2.5
+69  0x00001991 ---------- 12  13   .strtab   ascii   __data_start
+70  0x0000199e ---------- 14  15   .strtab   ascii   __gmon_start__
+71  0x000019ad ---------- 12  13   .strtab   ascii   __dso_handle
+72  0x000019ba ---------- 14  15   .strtab   ascii   _IO_stdin_used
+73  0x000019c9 ---------- 15  16   .strtab   ascii   __libc_csu_init
+74  0x000019d9 ---------- 4   5    .strtab   ascii   _end
+75  0x000019de ---------- 6   7    .strtab   ascii   _start
+76  0x000019e5 ---------- 11  12   .strtab   ascii   __bss_start
+77  0x000019f1 ---------- 4   5    .strtab   ascii   main
+78  0x000019f6 ---------- 19  20   .strtab   ascii   _Jv_RegisterClasses
+79  0x00001a0a ---------- 11  12   .strtab   ascii   __TMC_END__
+80  0x00001a16 ---------- 25  26   .strtab   ascii   _ITM_registerTMCloneTable
+81  0x00001a30 ---------- 5   6    .strtab   ascii   _init
+EOF
+RUN

@@ -28,9 +28,11 @@ RUN
 
 NAME=PE: corkami CoST.exe - sections list
 FILE=bins/pe/CoST.exe
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x7efd0000 - 0x7efd5169 r-x fmap.blob
+ 1 fd: 4 +0x00000000 0x7efd5169 - 0x7efd5fff r-- mmap.header
+ 2 fd: 3 +0x00000000 0x7efd0000 - 0x7efd5168 r-- fmap.header
+ 3 fd: 3 +0x00000000 0x7efd0000 * 0x7efd5169 r-x fmap.blob
 EOF
 RUN
 

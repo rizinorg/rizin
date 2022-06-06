@@ -67,7 +67,7 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	}
 	b = RzIOSPARSE_BUF(fd);
 	rz_offset = rz_buf_seek(b, offset, whence);
-	//if (rz_offset != UT64_MAX)
+	// if (rz_offset != UT64_MAX)
 	RzIOSPARSE_OFF(fd) = rz_offset;
 	return rz_offset;
 }

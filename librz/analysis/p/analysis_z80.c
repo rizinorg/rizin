@@ -162,8 +162,8 @@ static int z80_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 			op->refptr = 2;
 			op->ptr = data[2] | data[3] << 8;
 			break;
-		case 0x45: //retn
-		case 0x4d: //reti
+		case 0x45: // retn
+		case 0x4d: // reti
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			op->eob = true;
 			break;
@@ -264,35 +264,35 @@ static int z80_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		break;
 
-	case 0xc7: //rst 0
+	case 0xc7: // rst 0
 		op->jump = 0x00;
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
-	case 0xcf: //rst 8
+	case 0xcf: // rst 8
 		op->jump = 0x08;
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
-	case 0xd7: //rst 16
+	case 0xd7: // rst 16
 		op->jump = 0x10;
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
-	case 0xdf: //rst 24
+	case 0xdf: // rst 24
 		op->jump = 0x18;
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
-	case 0xe7: //rst 32
+	case 0xe7: // rst 32
 		op->jump = 0x20;
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
-	case 0xef: //rst 40
+	case 0xef: // rst 40
 		op->jump = 0x28;
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
-	case 0xf7: //rst 48
+	case 0xf7: // rst 48
 		op->jump = 0x30;
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
-	case 0xff: //rst 56
+	case 0xff: // rst 56
 		op->jump = 0x38;
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
@@ -319,12 +319,12 @@ static int z80_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		op->stackptr = 2;
 		op->jump = data[1] | data[2] << 8;
 		break;
-	case 0xcb: //the same as for gameboy
+	case 0xcb: // the same as for gameboy
 		switch (data[1] / 8) {
 		case 0:
 		case 2:
 		case 4:
-		case 6: //swap
+		case 6: // swap
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;
 			break;
 		case 1:
@@ -342,7 +342,7 @@ static int z80_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		case 14:
 		case 15:
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
-			break; //bit
+			break; // bit
 		case 16:
 		case 17:
 		case 18:
@@ -352,7 +352,7 @@ static int z80_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		case 22:
 		case 23:
 			op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-			break; //set
+			break; // set
 		case 24:
 		case 25:
 		case 26:
@@ -362,14 +362,14 @@ static int z80_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		case 30:
 		case 31:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-			break; //res
+			break; // res
 		}
 		break;
 	}
 	return ilen;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"
@@ -408,7 +408,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	mbcram	.16	16	0\n"
 
 		"gpr	ime	.1	18	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -420,7 +420,7 @@ RzAnalysisPlugin rz_analysis_plugin_z80 = {
 	.arch = "z80",
 	.license = "LGPL3",
 	.bits = 16,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.desc = "Z80 CPU code analysis plugin",
 	.archinfo = archinfo,
 	.op = &z80_analysis_op,

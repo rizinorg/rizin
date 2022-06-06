@@ -12,7 +12,7 @@ RZ_API bool rz_io_fd_close(RzIO *io, int fd) {
 	return rz_io_desc_close(rz_io_desc_get(io, fd));
 }
 
-//returns length of read bytes
+// returns length of read bytes
 RZ_API int rz_io_fd_read(RzIO *io, int fd, ut8 *buf, int len) {
 	rz_return_val_if_fail(io && buf, -1);
 	if (len < 0) {
@@ -22,7 +22,7 @@ RZ_API int rz_io_fd_read(RzIO *io, int fd, ut8 *buf, int len) {
 	return desc ? rz_io_desc_read(desc, buf, len) : -1;
 }
 
-//returns length of written bytes
+// returns length of written bytes
 RZ_API int rz_io_fd_write(RzIO *io, int fd, const ut8 *buf, int len) {
 	rz_return_val_if_fail(io && buf, -1);
 	if (len < 0) {
@@ -43,6 +43,18 @@ RZ_API ut64 rz_io_fd_size(RzIO *io, int fd) {
 	return rz_io_desc_size(rz_io_desc_get(io, fd));
 }
 
+/**
+ * \brief Returns the underlying buffer of the file descriptor
+ * \param[in] io The RzIO instance
+ * \param[in] fd The file descriptor
+ * \param[out] size Size of the buffer returned
+ * \return The buffer or NULL if the file descriptor is invalid or the buffer is not available
+ */
+RZ_API ut8 *rz_io_fd_get_buf(RzIO *io, int fd, RZ_OUT RZ_NONNULL ut64 *size) {
+	rz_return_val_if_fail(io && size, NULL);
+	return rz_io_desc_get_buf(rz_io_desc_get(io, fd), size);
+}
+
 RZ_API bool rz_io_fd_resize(RzIO *io, int fd, ut64 newsize) {
 	return rz_io_desc_resize(rz_io_desc_get(io, fd), newsize);
 }
@@ -55,7 +67,7 @@ RZ_API bool rz_io_fd_is_chardevice(RzIO *io, int fd) {
 	return rz_io_desc_is_chardevice(rz_io_desc_get(io, fd));
 }
 
-//returns length of read bytes
+// returns length of read bytes
 RZ_API int rz_io_fd_read_at(RzIO *io, int fd, ut64 addr, ut8 *buf, int len) {
 	RzIODesc *desc;
 	if (!io || !buf || (len < 1) || !(desc = rz_io_desc_get(io, fd))) {
@@ -64,7 +76,7 @@ RZ_API int rz_io_fd_read_at(RzIO *io, int fd, ut64 addr, ut8 *buf, int len) {
 	return rz_io_desc_read_at(desc, addr, buf, len);
 }
 
-//returns length of written bytes
+// returns length of written bytes
 RZ_API int rz_io_fd_write_at(RzIO *io, int fd, ut64 addr, const ut8 *buf, int len) {
 	rz_return_val_if_fail(io && buf, false);
 	RzIODesc *desc = rz_io_desc_get(io, fd);
@@ -111,7 +123,7 @@ RZ_API bool rz_io_use_fd(RzIO *io, int fd) {
 	}
 	if (io->desc->fd != fd) {
 		RzIODesc *desc;
-		//update io->desc if fd is not the same
+		// update io->desc if fd is not the same
 		if (!(desc = rz_io_desc_get(io, fd))) {
 			return false;
 		}

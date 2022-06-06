@@ -11,17 +11,13 @@ RUN
 
 NAME=LANGUAGES: freepascal main detection
 FILE=bins/abi_bins/elf/languages/freepascal/pick_random
-ARGS=-A
+BROKEN=1 # EXPECT must have output, EXPECT_ERR must be empty
 CMDS=<<EOF
 s main
 pdf
 EOF
 EXPECT=<<EOF
 EOF
-REGEXP_FILTER_ERR=<<EOF
-0x48c1c748
-EOF
 EXPECT_ERR=<<EOF
-0x48c1c748
 EOF
 RUN

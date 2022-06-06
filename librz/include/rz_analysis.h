@@ -22,6 +22,7 @@
 #include <rz_flag.h>
 #include <rz_bin.h>
 #include <rz_type.h>
+#include <rz_il.h>
 #include <rz_arch.h>
 #include <rz_cmd.h>
 
@@ -277,7 +278,7 @@ typedef struct rz_analysis_func_arg_t {
 	RzType *orig_c_type;
 	RzType *c_type;
 	ut64 size;
-	ut64 src; //Function-call argument value or pointer to it
+	ut64 src; // Function-call argument value or pointer to it
 } RzAnalysisFuncArg;
 
 struct rz_analysis_type_t {
@@ -289,16 +290,15 @@ struct rz_analysis_type_t {
 
 typedef enum {
 	RZ_META_TYPE_ANY = -1,
-	RZ_META_TYPE_DATA = 'd',
-	RZ_META_TYPE_CODE = 'c',
-	RZ_META_TYPE_STRING = 's',
-	RZ_META_TYPE_FORMAT = 'f',
-	RZ_META_TYPE_MAGIC = 'm',
-	RZ_META_TYPE_HIDE = 'h',
-	RZ_META_TYPE_COMMENT = 'C',
-	RZ_META_TYPE_RUN = 'r',
-	RZ_META_TYPE_HIGHLIGHT = 'H',
-	RZ_META_TYPE_VARTYPE = 't',
+	RZ_META_TYPE_DATA = 'd', //< marks the data as data (not a code)
+	RZ_META_TYPE_CODE = 'c', //< marks the data as code
+	RZ_META_TYPE_STRING = 's', //< marks the data as string
+	RZ_META_TYPE_FORMAT = 'f', //< sets the specified format (pf) to the data
+	RZ_META_TYPE_MAGIC = 'm', //< sets the magic string to the data
+	RZ_META_TYPE_HIDE = 'h', //< set the data as hidden
+	RZ_META_TYPE_COMMENT = 'C', //< attaches the comment to the data
+	RZ_META_TYPE_HIGHLIGHT = 'H', //< sets the specified highlight to the data
+	RZ_META_TYPE_VARTYPE = 't', //< sets the specified type to the variable/address
 } RzAnalysisMetaType;
 
 /* meta */
@@ -306,6 +306,7 @@ typedef struct rz_analysis_meta_item_t {
 	RzAnalysisMetaType type;
 	int subtype;
 	char *str;
+	size_t size;
 	const RzSpace *space;
 } RzAnalysisMetaItem;
 
@@ -352,7 +353,8 @@ typedef enum {
 	RZ_ANALYSIS_OP_PREFIX_REPNE = 1 << 2,
 	RZ_ANALYSIS_OP_PREFIX_LOCK = 1 << 3,
 	RZ_ANALYSIS_OP_PREFIX_LIKELY = 1 << 4,
-	RZ_ANALYSIS_OP_PREFIX_UNLIKELY = 1 << 5
+	RZ_ANALYSIS_OP_PREFIX_UNLIKELY = 1 << 5,
+	RZ_ANALYSIS_OP_PREFIX_HWLOOP_END = 1 << 6, /* Hexagon specific. Last instruction in a hardware loop */
 	/* TODO: add segment override typemods? */
 } RzAnalysisOpPrefix;
 
@@ -361,7 +363,7 @@ typedef enum {
 #define RZ_ANALYSIS_OP_HINT_MASK 0xf0000000
 typedef enum {
 	RZ_ANALYSIS_OP_TYPE_COND = 0x80000000, // TODO must be moved to prefix?
-	//TODO: MOVE TO PREFIX .. it is used by analysis_java.. must be updated
+	// TODO: MOVE TO PREFIX .. it is used by analysis_java.. must be updated
 	RZ_ANALYSIS_OP_TYPE_REP = 0x40000000, /* repeats next instruction N times */
 	RZ_ANALYSIS_OP_TYPE_MEM = 0x20000000, // TODO must be moved to prefix?
 	RZ_ANALYSIS_OP_TYPE_REG = 0x10000000, // operand is a register
@@ -431,7 +433,7 @@ typedef enum {
 	RZ_ANALYSIS_OP_TYPE_CPL = 45, /* complement */
 	RZ_ANALYSIS_OP_TYPE_CRYPTO = 46,
 	RZ_ANALYSIS_OP_TYPE_SYNC = 47,
-//RZ_ANALYSIS_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
+// RZ_ANALYSIS_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
 #if 0
 	RZ_ANALYSIS_OP_TYPE_PRIV = 40, /* privileged instruction */
 	RZ_ANALYSIS_OP_TYPE_FPU = 41, /* floating point stuff */
@@ -440,12 +442,13 @@ typedef enum {
 
 typedef enum {
 	RZ_ANALYSIS_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
-	RZ_ANALYSIS_OP_MASK_ESIL = 1, // It fills RzAnalysisop->esil info
-	RZ_ANALYSIS_OP_MASK_VAL = 2, // It fills RzAnalysisop->dst/src info
-	RZ_ANALYSIS_OP_MASK_HINT = 4, // It calls rz_analysis_op_hint to override analysis options
-	RZ_ANALYSIS_OP_MASK_OPEX = 8, // It fills RzAnalysisop->opex info
-	RZ_ANALYSIS_OP_MASK_DISASM = 16, // It fills RzAnalysisop->mnemonic // should be RzAnalysisOp->disasm // only from rz_core_analysis_op()
-	RZ_ANALYSIS_OP_MASK_ALL = 1 | 2 | 4 | 8 | 16
+	RZ_ANALYSIS_OP_MASK_ESIL = (1 << 0), // It fills RzAnalysisop->esil info
+	RZ_ANALYSIS_OP_MASK_VAL = (1 << 1), // It fills RzAnalysisop->dst/src info
+	RZ_ANALYSIS_OP_MASK_HINT = (1 << 2), // It calls rz_analysis_op_hint to override analysis options
+	RZ_ANALYSIS_OP_MASK_OPEX = (1 << 3), // It fills RzAnalysisop->opex info
+	RZ_ANALYSIS_OP_MASK_DISASM = (1 << 4), // It fills RzAnalysisop->mnemonic // should be RzAnalysisOp->disasm // only from rz_core_analysis_op()
+	RZ_ANALYSIS_OP_MASK_IL = (1 << 5), // It fills RzAnalysisop->il_op
+	RZ_ANALYSIS_OP_MASK_ALL = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL
 } RzAnalysisOpMask;
 
 typedef enum {
@@ -466,17 +469,17 @@ enum {
 	RZ_ANALYSIS_REFLINE_TYPE_UTF8 = 1,
 	RZ_ANALYSIS_REFLINE_TYPE_WIDE = 2, /* reflines have a space between them */
 	RZ_ANALYSIS_REFLINE_TYPE_MIDDLE_BEFORE = 4, /* do not consider starts/ends of
-	                                        * reflines (used for comment lines before disasm) */
+						     * reflines (used for comment lines before disasm) */
 	RZ_ANALYSIS_REFLINE_TYPE_MIDDLE_AFTER = 8 /* as above but for lines after disasm */
 };
 
-enum {
+typedef enum {
 	RZ_ANALYSIS_RET_NOP = 0,
-	RZ_ANALYSIS_RET_ERROR = -1,
-	RZ_ANALYSIS_RET_DUP = -2,
-	RZ_ANALYSIS_RET_NEW = -3,
-	RZ_ANALYSIS_RET_END = -4
-};
+	RZ_ANALYSIS_RET_ERROR = -1, // Basic block ended because of analysis error.
+	RZ_ANALYSIS_RET_END = -4, // Basic block ended because of return instruction.
+	RZ_ANALYSIS_RET_BRANCH = -5, // Basic block ended because of branch instruction.
+	RZ_ANALYSIS_RET_COND = -6, // Basic block ended because of conditional return.
+} RzAnalysisBBEndCause;
 
 typedef struct rz_analysis_case_obj_t {
 	ut64 addr;
@@ -506,7 +509,7 @@ typedef struct rz_analysis_callbacks_t {
 typedef struct rz_analysis_options_t {
 	int depth;
 	int graph_depth;
-	bool vars; //analysisyze local var and arguments
+	bool vars; // analysisyze local var and arguments
 	bool varname_stack; // name vars based on their offset in the stack
 	int cjmpref;
 	int jmpref;
@@ -522,6 +525,7 @@ typedef struct rz_analysis_options_t {
 	bool trycatch;
 	bool norevisit;
 	int afterjmp; // continue analysis after jmp eax or forward jmp // option
+	int aftertrap; // continue analysis after trap instructions
 	int recont; // continue on recurse analysis mode
 	int noncode;
 	int nopskip; // skip nops at the beginning of functions
@@ -531,7 +535,6 @@ typedef struct rz_analysis_options_t {
 	int nonull;
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //
-	bool endsize; // chop function size which is known to be buggy but goodie too
 	bool delay;
 	int tailcall;
 	bool retpoline;
@@ -543,9 +546,11 @@ typedef enum {
 } RzAnalysisCPPABI;
 
 typedef struct rz_analysis_hint_cb_t {
-	//add more cbs as needed
+	// add more cbs as needed
 	void (*on_bits)(struct rz_analysis_t *a, ut64 addr, int bits, bool set);
 } RHintCb;
+
+typedef struct rz_analysis_il_vm_t RzAnalysisILVM;
 
 typedef struct rz_analysis_t {
 	char *cpu; // analysis.cpu
@@ -579,6 +584,7 @@ typedef struct rz_analysis_t {
 	int esil_goto_limit; // esil.gotolimit
 	int pcalign; // asm.pcalign
 	struct rz_analysis_esil_t *esil;
+	RzAnalysisILVM *il_vm; ///< user-faced VM, NEVER use this for any analysis passes!
 	struct rz_analysis_plugin_t *cur;
 	RzAnalysisRange *limit; // analysis.from, analysis.to
 	RzList *plugins;
@@ -590,10 +596,8 @@ typedef struct rz_analysis_t {
 	bool recursive_noreturn; // analysis.rnr
 	RzSpaces zign_spaces;
 	char *zign_path; // dir.zigns
-	PrintfCallback cb_printf;
-	//moved from RzAnalysisFcn
+	// moved from RzAnalysisFcn
 	Sdb *sdb; // root
-	Sdb *sdb_pins;
 	HtUP /*<RzVector<RzAnalysisAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
 	RBTree /*<RzAnalysisArchHintRecord>*/ arch_hints;
 	RBTree /*<RzAnalysisArchBitsRecord>*/ bits_hints;
@@ -608,12 +612,11 @@ typedef struct rz_analysis_t {
 	RzAnalysisCallbacks cb;
 	RzAnalysisOptions opt;
 	RzList *reflines;
-	//RzList *noreturn;
+	// RzList *noreturn;
 	RzListComparator columnSort;
 	int stackptr;
 	bool (*log)(struct rz_analysis_t *analysis, const char *msg);
 	bool (*read_at)(struct rz_analysis_t *analysis, ut64 addr, ut8 *buf, int len);
-	bool verbose;
 	int seggrn;
 	RzFlagGetAtAddr flag_get;
 	RzEvent *ev;
@@ -784,6 +787,7 @@ typedef struct rz_analysis_value_t {
 	RzRegItem *seg; // segment selector register
 	RzRegItem *reg; // register / register base used (-1 if no reg)
 	RzRegItem *regdelta; // register index used (-1 if no reg)
+	ut64 plugin_specific; // Can be used differently by each analysis plugin.
 } RzAnalysisValue;
 
 typedef enum {
@@ -805,6 +809,8 @@ typedef enum rz_analysis_data_type_t {
 	RZ_ANALYSIS_DATATYPE_INT64,
 	RZ_ANALYSIS_DATATYPE_FLOAT,
 } RzAnalysisDataType;
+
+typedef RzILOpEffect *RzAnalysisLiftedILOp;
 
 typedef struct rz_analysis_op_t {
 	char *mnemonic; /* mnemonic.. it actually contains the args too, we should replace rasm with this */
@@ -829,6 +835,7 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisOpDirection direction;
 	st64 ptr; /* reference to memory */ /* XXX signed? */
 	ut64 val; /* reference to value */ /* XXX signed? */
+	RzAnalysisValue analysis_vals[6]; /* Analyzable values */
 	int ptrsize; /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr; /* stack pointer */
 	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
@@ -838,6 +845,7 @@ typedef struct rz_analysis_op_t {
 	RzList *access; /* RzAnalysisValue access information */
 	RzStrBuf esil;
 	RzStrBuf opex;
+	RzAnalysisLiftedILOp il_op;
 	const char *reg; /* destination register */
 	const char *ireg; /* register used for indirect memory computation*/
 	int scale;
@@ -893,11 +901,11 @@ typedef struct rz_analysis_task_item {
 } RzAnalysisTaskItem;
 
 typedef enum {
-	RZ_ANALYSIS_REF_TYPE_NULL = 0,
-	RZ_ANALYSIS_REF_TYPE_CODE = 'c', // code ref
-	RZ_ANALYSIS_REF_TYPE_CALL = 'C', // code ref (call)
-	RZ_ANALYSIS_REF_TYPE_DATA = 'd', // mem ref
-	RZ_ANALYSIS_REF_TYPE_STRING = 's' // string ref
+	RZ_ANALYSIS_XREF_TYPE_NULL = 0,
+	RZ_ANALYSIS_XREF_TYPE_CODE = 'c', // code ref
+	RZ_ANALYSIS_XREF_TYPE_CALL = 'C', // code ref (call)
+	RZ_ANALYSIS_XREF_TYPE_DATA = 'd', // mem ref
+	RZ_ANALYSIS_XREF_TYPE_STRING = 's' // string ref
 } RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
@@ -918,12 +926,12 @@ typedef struct rz_analysis_refline_t {
 } RzAnalysisRefline;
 
 typedef struct rz_analysis_cycle_frame_t {
-	ut64 naddr; //next addr
+	ut64 naddr; // next addr
 	RzList *hooks;
 	struct rz_analysis_cycle_frame_t *prev;
 } RzAnalysisCycleFrame;
 
-typedef struct rz_analysis_cycle_hook_t { //rename ?
+typedef struct rz_analysis_cycle_hook_t { // rename ?
 	ut64 addr;
 	int cycles;
 } RzAnalysisCycleHook;
@@ -971,7 +979,7 @@ typedef struct rz_analysis_ref_char {
 // must be a char
 #define ESIL_INTERNAL_PREFIX '$'
 #define ESIL_STACK_NAME      "esil.ram"
-#define ESIL                 struct rz_analysis_esil_t
+#define ANALYSIS_ESIL        struct rz_analysis_esil_t
 
 typedef struct rz_analysis_esil_source_t {
 	ut32 id;
@@ -979,19 +987,19 @@ typedef struct rz_analysis_esil_source_t {
 	void *content;
 } RzAnalysisEsilSource;
 
-RZ_API void rz_analysis_esil_sources_init(ESIL *esil);
-RZ_API ut32 rz_analysis_esil_load_source(ESIL *esil, const char *path);
-RZ_API void *rz_analysis_esil_get_source(ESIL *esil, ut32 src_id);
-RZ_API bool rz_analysis_esil_claim_source(ESIL *esil, ut32 src_id);
-RZ_API void rz_analysis_esil_release_source(ESIL *esil, ut32 src_id);
-RZ_API void rz_analysis_esil_sources_fini(ESIL *esil);
+RZ_API void rz_analysis_esil_sources_init(ANALYSIS_ESIL *esil);
+RZ_API ut32 rz_analysis_esil_load_source(ANALYSIS_ESIL *esil, const char *path);
+RZ_API void *rz_analysis_esil_get_source(ANALYSIS_ESIL *esil, ut32 src_id);
+RZ_API bool rz_analysis_esil_claim_source(ANALYSIS_ESIL *esil, ut32 src_id);
+RZ_API void rz_analysis_esil_release_source(ANALYSIS_ESIL *esil, ut32 src_id);
+RZ_API void rz_analysis_esil_sources_fini(ANALYSIS_ESIL *esil);
 
-typedef bool (*RzAnalysisEsilInterruptCB)(ESIL *esil, ut32 interrupt, void *user);
+typedef bool (*RzAnalysisEsilInterruptCB)(ANALYSIS_ESIL *esil, ut32 interrupt, void *user);
 
 typedef struct rz_analysis_esil_interrupt_handler_t {
 	const ut32 num;
 	const char *name;
-	void *(*init)(ESIL *esil);
+	void *(*init)(ANALYSIS_ESIL *esil);
 	RzAnalysisEsilInterruptCB cb;
 	void (*fini)(void *user);
 } RzAnalysisEsilInterruptHandler;
@@ -1019,21 +1027,21 @@ typedef struct rz_analysis_esil_trace_t {
 	RzPVector *instructions;
 } RzAnalysisEsilTrace;
 
-typedef int (*RzAnalysisEsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
+typedef int (*RzAnalysisEsilHookRegWriteCB)(ANALYSIS_ESIL *esil, const char *name, ut64 *val);
 
 typedef struct rz_analysis_esil_callbacks_t {
 	void *user;
 	/* callbacks */
-	int (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
-	int (*hook_command)(ESIL *esil, const char *op);
-	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
-	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
-	int (*hook_mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
-	int (*mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
-	int (*hook_reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
-	int (*reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
+	int (*hook_flag_read)(ANALYSIS_ESIL *esil, const char *flag, ut64 *num);
+	int (*hook_command)(ANALYSIS_ESIL *esil, const char *op);
+	int (*hook_mem_read)(ANALYSIS_ESIL *esil, ut64 addr, ut8 *buf, int len);
+	int (*mem_read)(ANALYSIS_ESIL *esil, ut64 addr, ut8 *buf, int len);
+	int (*hook_mem_write)(ANALYSIS_ESIL *esil, ut64 addr, const ut8 *buf, int len);
+	int (*mem_write)(ANALYSIS_ESIL *esil, ut64 addr, const ut8 *buf, int len);
+	int (*hook_reg_read)(ANALYSIS_ESIL *esil, const char *name, ut64 *res, int *size);
+	int (*reg_read)(ANALYSIS_ESIL *esil, const char *name, ut64 *res, int *size);
 	RzAnalysisEsilHookRegWriteCB hook_reg_write;
-	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
+	int (*reg_write)(ANALYSIS_ESIL *esil, const char *name, ut64 val);
 } RzAnalysisEsilCallbacks;
 
 typedef struct rz_analysis_esil_t {
@@ -1061,9 +1069,9 @@ typedef struct rz_analysis_esil_t {
 	int trap;
 	ut32 trap_code; // extend into a struct to store more exception info?
 	// parity flag? done with cur
-	ut64 old; //used for carry-flagging and borrow-flagging
-	ut64 cur; //used for carry-flagging and borrow-flagging
-	ut8 lastsz; //in bits //used for signature-flag
+	ut64 old; // used for carry-flagging and borrow-flagging
+	ut64 cur; // used for carry-flagging and borrow-flagging
+	ut8 lastsz; // in bits //used for signature-flag
 	/* native ops and custom ops */
 	HtPP *ops;
 	RzStrBuf current_opstr;
@@ -1083,10 +1091,84 @@ typedef struct rz_analysis_esil_t {
 	char *cmd_todo; // rizin (external) command to run when esil expr contains TODO
 	char *cmd_ioer; // rizin (external) command to run when esil fails to IO
 	char *mdev_range; // string containing the rz_str_range to match for read/write accesses
-	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
+	bool (*cmd)(ANALYSIS_ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd; // ahem, let's not do this
 } RzAnalysisEsil;
+
+/* Alias RegChange and MemChange */
+typedef RzAnalysisEsilRegChange RzAnalysisRzilRegChange;
+typedef RzAnalysisEsilMemChange RzAnalysisRzilMemChange;
+
+/* Alias esil strace */
+typedef RzAnalysisEsilTrace RzAnalysisRzilTrace;
+
+/**
+ * \brief Description of the contents of a single IL variable
+ */
+typedef struct rz_analysis_il_init_state_var_t {
+	RZ_NONNULL const char *name;
+	RZ_NONNULL RzILVal *val;
+} RzAnalysisILInitStateVar;
+
+/**
+ * \brief Description of an initial state of an RzAnalysisILVM
+ *
+ * This may be used by an analysis plugin to communicate how to initialize
+ * variables/registers for a clean vm.
+ * Everything unspecified by this may be initialized to anything (for example
+ * whatever contents the RzReg currently has).
+ */
+typedef struct rz_analysis_il_init_state_t {
+	RzVector /* <RzAnalysisILInitStateVar> */ vars; ///< Contents of global variables
+} RzAnalysisILInitState;
+
+/**
+ * \brief Description of the global context of an RzAnalysisILVM
+ *
+ * This defines all information needed to initialize an IL vm in order to run
+ * in a declarative way, in particular:
+ *
+ * * Size of the program counter: given explicitly in `pc_size`
+ * * Endian: given explicitly in `big_endian`
+ * * Memories: currently always one memory with index 0 bound against IO, with key size given by `mem_key_size` and value size of 8
+ * * Registers: given explicitly in `reg_bindings` or derived from the register profile with `rz_il_reg_binding_derive()`
+ * * Labels: given explicitly in `labels`
+ * * Initial State of Variables: optionally given in `init_state`
+ */
+typedef struct rz_analysis_il_config_t {
+	ut32 pc_size; ///< size of the program counter in bits
+	bool big_endian;
+	/**
+	 * Optional null-terminated array of registers to bind to global vars of the same name.
+	 * If not specified, rz_il_reg_binding_derive will be used.
+	 */
+	RZ_NULLABLE const char **reg_bindings;
+	ut32 mem_key_size; ///< address size for memory 0, bound against IO
+	RzPVector /* <RzILEffectLabel> */ labels; ///< global labels, primarily for syscall/hook callbacks
+	RZ_NULLABLE RzAnalysisILInitState *init_state; ///< optional, initial contents for variables/registers, etc.
+	// more information might go in here, for example additional memories, etc.
+} RzAnalysisILConfig;
+
+/**
+ * \brief High-level RzIL vm to emulate disassembled code
+ *
+ * This builds upon the low-level `RzILVM`, which by itself does not know about
+ * IO and lifting, and enables emulation of instructions obtained by disassembling
+ * and lifting with analysis plugins.
+ */
+struct rz_analysis_il_vm_t {
+	RZ_NONNULL RzILVM *vm; ///< low-level vm to execute IL code
+	RZ_NONNULL RzBuffer *io_buf; ///< buffer to use for memory 0 (io)
+	RZ_NONNULL RzILRegBinding *reg_binding; ///< specifies which (global) variables are bound to registers
+} /* RzAnalysisILVM */;
+
+typedef enum {
+	RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS,
+	RZ_ANALYSIS_IL_STEP_RESULT_NOT_SET_UP,
+	RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR,
+	RZ_ANALYSIS_IL_STEP_INVALID_OP
+} RzAnalysisILStepResult;
 
 #undef ESIL
 
@@ -1132,8 +1214,8 @@ typedef enum {
 typedef struct rz_analysis_esil_basic_block_t {
 	RzAnalysisEsilEOffset first;
 	RzAnalysisEsilEOffset last;
-	char *expr; //synthesized esil-expression for this block
-	RzAnalysisEsilBlockEnterType enter; //maybe more type is needed here
+	char *expr; // synthesized esil-expression for this block
+	RzAnalysisEsilBlockEnterType enter; // maybe more type is needed here
 } RzAnalysisEsilBB;
 
 // TODO: rm data + len
@@ -1151,6 +1233,8 @@ typedef int (*RzAnalysisEsilCB)(RzAnalysisEsil *esil);
 typedef int (*RzAnalysisEsilLoopCB)(RzAnalysisEsil *esil, RzAnalysisOp *op);
 typedef int (*RzAnalysisEsilTrapCB)(RzAnalysisEsil *esil, int trap_type, int trap_code);
 
+typedef RzAnalysisILConfig *(*RzAnalysisILConfigCB)(RzAnalysis *analysis);
+
 typedef struct rz_analysis_plugin_t {
 	const char *name;
 	const char *desc;
@@ -1163,15 +1247,20 @@ typedef struct rz_analysis_plugin_t {
 	int fileformat_type;
 	bool (*init)(void **user);
 	bool (*fini)(void *user);
-	//int (*reset_counter) (RzAnalysis *analysis, ut64 start_addr);
+	// int (*reset_counter) (RzAnalysis *analysis, ut64 start_addr);
 	int (*archinfo)(RzAnalysis *analysis, int query);
 	ut8 *(*analysis_mask)(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
 	RzList *(*preludes)(RzAnalysis *analysis);
 
+	/**
+	 * The actual bit-size of an address for given analysis.bits.
+	 * If unimplemented or returns <= 0, analysis.bits will be used as-is.
+	 */
+	int (*address_bits)(RzAnalysis *analysis, int bits);
+
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
 
-	RzAnalysisRegProfCallback set_reg_profile;
 	RzAnalysisRegProfGetCallback get_reg_profile;
 	RzAnalysisFPBBCallback fingerprint_bb;
 	RzAnalysisFPFcnCallback fingerprint_fcn;
@@ -1180,9 +1269,11 @@ typedef struct rz_analysis_plugin_t {
 	RzAnalysisDiffEvalCallback diff_eval;
 
 	RzAnalysisEsilCB esil_init; // initialize esil-related stuff
-	RzAnalysisEsilLoopCB esil_post_loop; //cycle-counting, firing interrupts, ...
+	RzAnalysisEsilLoopCB esil_post_loop; // cycle-counting, firing interrupts, ...
 	RzAnalysisEsilTrapCB esil_trap; // traps / exceptions
 	RzAnalysisEsilCB esil_fini; // deinitialize
+	RzAnalysisILConfigCB il_config; ///< return an IL config to execute lifted code of the given analysis' arch/cpu/bits
+
 } RzAnalysisPlugin;
 
 /*----------------------------------------------------------------------------------------------*/
@@ -1396,7 +1487,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits);
 RZ_API bool rz_analysis_set_os(RzAnalysis *analysis, const char *os);
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu);
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int boolean);
-RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
+RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, ut64 at);
 RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr);
 RZ_API const char *rz_analysis_fcntype_tostring(int type);
 RZ_API void rz_analysis_bind(RzAnalysis *b, RzAnalysisBind *bnd);
@@ -1404,6 +1495,7 @@ RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, const char *os, const 
 RZ_API void rz_analysis_add_import(RzAnalysis *analysis, const char *imp);
 RZ_API void rz_analysis_remove_import(RzAnalysis *analysis, const char *imp);
 RZ_API void rz_analysis_purge_imports(RzAnalysis *analysis);
+RZ_API int rz_analysis_get_address_bits(RzAnalysis *analysis);
 
 /* op.c */
 RZ_API const char *rz_analysis_stackop_tostring(int s);
@@ -1424,7 +1516,6 @@ RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, RzAnalysis *analysis, i
 RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil);
 RZ_API bool rz_analysis_esil_runword(RzAnalysisEsil *esil, const char *word);
 RZ_API bool rz_analysis_esil_parse(RzAnalysisEsil *esil, const char *str);
-RZ_API bool rz_analysis_esil_dumpstack(RzAnalysisEsil *esil);
 RZ_API int rz_analysis_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len);
 RZ_API int rz_analysis_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len);
 RZ_API int rz_analysis_esil_reg_read(RzAnalysisEsil *esil, const char *regname, ut64 *num, int *size);
@@ -1432,6 +1523,7 @@ RZ_API int rz_analysis_esil_reg_write(RzAnalysisEsil *esil, const char *dst, ut6
 RZ_API bool rz_analysis_esil_pushnum(RzAnalysisEsil *esil, ut64 num);
 RZ_API bool rz_analysis_esil_push(RzAnalysisEsil *esil, const char *str);
 RZ_API char *rz_analysis_esil_pop(RzAnalysisEsil *esil);
+RZ_API const char *rz_analysis_esil_trapstr(int type);
 RZ_API bool rz_analysis_esil_set_op(RzAnalysisEsil *esil, const char *op, RzAnalysisEsilOpCb code, ut32 push, ut32 pop, ut32 type);
 RZ_API void rz_analysis_esil_stack_free(RzAnalysisEsil *esil);
 RZ_API int rz_analysis_esil_get_parm_type(RzAnalysisEsil *esil, const char *str);
@@ -1507,13 +1599,27 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil);
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx);
 RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
 
-/* pin */
-RZ_API void rz_analysis_pin_init(RzAnalysis *a);
-RZ_API void rz_analysis_pin_fini(RzAnalysis *a);
-RZ_API void rz_analysis_pin(RzAnalysis *a, ut64 addr, const char *name);
-RZ_API void rz_analysis_pin_unset(RzAnalysis *a, ut64 addr);
-RZ_API const char *rz_analysis_pin_call(RzAnalysis *a, ut64 addr);
-RZ_API void rz_analysis_pin_list(RzAnalysis *a);
+/* RzIL */
+RZ_API RzAnalysisILInitState *rz_analysis_il_init_state_new();
+RZ_API void rz_analysis_il_init_state_free(RzAnalysisILInitState *state);
+RZ_API void rz_analysis_il_init_state_set_var(RZ_NONNULL RzAnalysisILInitState *state,
+	RZ_NONNULL const char *name, RZ_NONNULL RZ_OWN RzILVal *val);
+RZ_API RZ_OWN RzAnalysisILConfig *rz_analysis_il_config_new(ut32 pc_size, bool big_endian, ut32 mem_key_size);
+RZ_API void rz_analysis_il_config_free(RzAnalysisILConfig *cfg);
+RZ_API void rz_analysis_il_config_add_label(RZ_NONNULL RzAnalysisILConfig *cfg, RZ_NONNULL RZ_OWN RzILEffectLabel *label);
+
+RZ_API RZ_OWN RzAnalysisILVM *rz_analysis_il_vm_new(RzAnalysis *a, RZ_NULLABLE RzReg *init_state_reg);
+RZ_API void rz_analysis_il_vm_free(RZ_NULLABLE RzAnalysisILVM *vm);
+RZ_API void rz_analysis_il_vm_sync_from_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg);
+RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg);
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg);
+RZ_API bool rz_analysis_il_vm_setup(RzAnalysis *analysis);
+RZ_API void rz_analysis_il_vm_cleanup(RzAnalysis *analysis);
+
+/* trace */
+RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzAnalysisILVM *rzil);
+RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisILVM *rzil, RzAnalysisLiftedILOp op);
 
 RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis);
 
@@ -1575,7 +1681,7 @@ RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type);
 RZ_API RzAnalysisXRefType rz_analysis_xrefs_type(char ch);
 RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr);
 RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr);
-RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad);
+RZ_API RzList *rz_analysis_xrefs_list(RzAnalysis *analysis);
 RZ_API RzList *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn);
 RZ_API RzList *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
@@ -1602,7 +1708,8 @@ RZ_API RZ_BORROW RzPVector *rz_analysis_function_get_vars_used_at(RzAnalysisFunc
 RZ_API RZ_DEPRECATE RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr);
 
 RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, bool verbose);
-RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type);
+RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var);
+RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps);
 RZ_API void rz_analysis_var_delete(RzAnalysisVar *var);
 RZ_API ut64 rz_analysis_var_addr(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
@@ -1673,10 +1780,10 @@ RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis);
 #define RZ_ANALYSIS_THRESHOLDBB  0.7F
 
 /* diff.c */
-RZ_API RzAnalysisDiff *rz_analysis_diff_new(void);
+RZ_API RZ_OWN RzAnalysisDiff *rz_analysis_diff_new(void);
 RZ_API void rz_analysis_diff_setup(RzAnalysis *analysis, int doops, double thbb, double thfcn);
 RZ_API void rz_analysis_diff_setup_i(RzAnalysis *analysis, int doops, int thbb, int thfcn);
-RZ_API void *rz_analysis_diff_free(RzAnalysisDiff *diff);
+RZ_API void rz_analysis_diff_free(RzAnalysisDiff *diff);
 RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *analysis, RzAnalysisBlock *bb);
 RZ_API size_t rz_analysis_diff_fingerprint_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisFunction *fcn2);
@@ -1728,8 +1835,6 @@ RZ_API RzList * /*<RzAnalysisRefline>*/ rz_analysis_reflines_get(RzAnalysis *ana
 RZ_API int rz_analysis_reflines_middle(RzAnalysis *analysis, RzList *list, ut64 addr, int len);
 RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *core, ut64 addr, int opts);
 RZ_API void rz_analysis_reflines_str_free(RzAnalysisRefStr *refstr);
-/* TODO move to rz_core */
-RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *fcn, int kind, int mode, PJ *pj);
 RZ_API RzList *rz_analysis_var_list(RzAnalysis *analysis, RzAnalysisFunction *fcn, int kind);
 RZ_API RZ_DEPRECATE RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API RZ_DEPRECATE RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, int kind);
@@ -1838,10 +1943,6 @@ RZ_API void rz_meta_rebase(RzAnalysis *analysis, ut64 diff);
 RZ_API ut64 rz_meta_get_size(RzAnalysis *a, RzAnalysisMetaType type);
 
 RZ_API const char *rz_meta_type_to_string(int type);
-RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
-RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, int rad);
-RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, int rad);
-RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, int rad, ut64 addr);
 
 /* hints */
 
@@ -1945,7 +2046,7 @@ typedef struct {
 } RVTableContext;
 
 typedef struct vtable_info_t {
-	ut64 saddr; //starting address
+	ut64 saddr; // starting address
 	RzVector methods;
 } RVTableInfo;
 
@@ -2025,7 +2126,7 @@ typedef enum {
 
 RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis);
 RZ_API void rz_analysis_class_recover_all(RzAnalysis *analysis);
-RZ_API void rz_analysis_class_create(RzAnalysis *analysis, const char *name);
+RZ_API RzAnalysisClassErr rz_analysis_class_create(RzAnalysis *analysis, const char *name);
 RZ_API void rz_analysis_class_delete(RzAnalysis *analysis, const char *name);
 RZ_API bool rz_analysis_class_exists(RzAnalysis *analysis, const char *name);
 RZ_API SdbList *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted);
@@ -2055,12 +2156,6 @@ RZ_API RzVector /*<RzAnalysisVTable>*/ *rz_analysis_class_vtable_get_all(RzAnaly
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, const char *class_name, RzAnalysisVTable *vtable);
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, const char *class_name, const char *vtable_id);
 
-RZ_API void rz_analysis_class_print(RzAnalysis *analysis, const char *class_name, bool detailed);
-RZ_API void rz_analysis_class_json(RzAnalysis *analysis, PJ *j, const char *class_name);
-RZ_API void rz_analysis_class_list(RzAnalysis *analysis, int mode);
-RZ_API void rz_analysis_class_list_bases(RzAnalysis *analysis, const char *class_name);
-RZ_API void rz_analysis_class_list_vtables(RzAnalysis *analysis, const char *class_name);
-RZ_API void rz_analysis_class_list_vtable_offset_functions(RzAnalysis *analysis, const char *class_name, ut64 offset);
 RZ_API RzGraph /*<RzGraphNodeInfo>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
 
 RZ_API size_t rz_analysis_function_arg_count(RzAnalysis *a, RzAnalysisFunction *fcn);
@@ -2107,6 +2202,21 @@ RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void);
 RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalVarParser parser);
 RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RzJson *json);
 
+/**
+ * Save useful infomation when analyze and disassemble bytes
+ * \see rz_core_analysis_bytes
+ */
+typedef struct analysis_bytes_t {
+	RzAnalysisOp *op;
+	RzAnalysisHint *hint;
+	char *opcode;
+	char *disasm;
+	char *pseudo;
+	char *description;
+	char *mask;
+	char *bytes;
+} RzAnalysisBytes;
+
 RZ_API void rz_serialize_analysis_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
 RZ_API void rz_serialize_analysis_function_noreturn_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
@@ -2136,12 +2246,10 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 /* plugin pointers */
 extern RzAnalysisPlugin rz_analysis_plugin_null;
 extern RzAnalysisPlugin rz_analysis_plugin_6502;
-extern RzAnalysisPlugin rz_analysis_plugin_6502_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_8051;
 extern RzAnalysisPlugin rz_analysis_plugin_amd29k;
 extern RzAnalysisPlugin rz_analysis_plugin_arc;
 extern RzAnalysisPlugin rz_analysis_plugin_arm_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_arm_gnu;
 extern RzAnalysisPlugin rz_analysis_plugin_avr;
 extern RzAnalysisPlugin rz_analysis_plugin_bf;
 extern RzAnalysisPlugin rz_analysis_plugin_chip8;
@@ -2166,7 +2274,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_nios2;
 extern RzAnalysisPlugin rz_analysis_plugin_or1k;
 extern RzAnalysisPlugin rz_analysis_plugin_pic;
 extern RzAnalysisPlugin rz_analysis_plugin_ppc_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_ppc_gnu;
 extern RzAnalysisPlugin rz_analysis_plugin_propeller;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv_cs;

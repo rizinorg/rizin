@@ -12,11 +12,10 @@
 
 #include <rz_types.h>
 #include <rz_debug.h>
-#include <psapi.h>
-
-#include <windows.h>
+#include <rz_windows.h>
 #include <tlhelp32.h> // CreateToolhelp32Snapshot
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
+#include <winternl.h>
 #include <tchar.h>
 #include <w32dbg_wrap.h>
 
@@ -68,12 +67,6 @@ typedef enum _POOL_TYPE {
 	NonPagedPoolCacheAlignedMustS
 } POOL_TYPE,
 	*PPOOL_TYPE;
-
-typedef struct _UNICODE_STRING {
-	USHORT Length;
-	USHORT MaximumLength;
-	PWSTR Buffer;
-} UNICODE_STRING, *PUNICODE_STRING;
 
 typedef struct _OBJECT_TYPE_INFORMATION {
 	UNICODE_STRING Name;
@@ -190,4 +183,10 @@ RzDebugInfo *w32_info(RzDebug *dbg, const char *arg);
 RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list);
 
 RzList *w32_desc_list(int pid);
+
+#if __arm64__
+int w32_hwbp_arm_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b);
+int w32_hwbp_arm_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b);
+#endif
+
 #endif

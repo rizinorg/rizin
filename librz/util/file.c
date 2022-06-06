@@ -18,12 +18,13 @@
 #include <copyfile.h>
 #endif
 #if _MSC_VER
+#include <rz_windows.h>
 #include <process.h>
 #endif
 
 #define BS 1024
 #ifdef __WINDOWS__
-#define StructStat struct _stat
+#define StructStat struct _stat64
 #else
 #define StructStat struct stat
 #endif
@@ -35,7 +36,7 @@ static int file_stat(const char *file, StructStat *pStat) {
 	if (!wfile) {
 		return -1;
 	}
-	int ret = _wstat(wfile, pStat);
+	int ret = _wstati64(wfile, pStat);
 	free(wfile);
 	return ret;
 #else // __WINDOWS__
@@ -84,10 +85,28 @@ RZ_API const char *rz_file_basename(const char *path) {
 	const char *ptr = rz_str_rchr(path, NULL, '/');
 	if (ptr) {
 		path = ptr + 1;
-	} else {
-		if ((ptr = rz_str_rchr(path, NULL, '\\'))) {
-			path = ptr + 1;
-		}
+	}
+#if __WINDOWS__
+	if ((ptr = rz_str_rchr(path, NULL, '\\'))) {
+		path = ptr + 1;
+	}
+#endif
+	return path;
+}
+
+/* \brief Returns file name from a path accepting both `/` and `\` as directory separators
+ *
+ * \param path Path of file to get the file name
+ * \return const char * Pointer to the file name
+ */
+RZ_API const char *rz_file_dos_basename(RZ_BORROW RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(path, NULL);
+	const char *ptr = rz_str_rchr(path, NULL, '/');
+	if (ptr) {
+		path = ptr + 1;
+	}
+	if ((ptr = rz_str_rchr(path, NULL, '\\'))) {
+		path = ptr + 1;
 	}
 	return path;
 }
@@ -118,7 +137,9 @@ RZ_API char *rz_file_dirname(const char *path) {
 				ptr++;
 			}
 		}
-		*ptr = 0;
+		if (ptr) {
+			*ptr = 0;
+		}
 	}
 	return newpath;
 }
@@ -203,31 +224,41 @@ RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 	if (strstr(file, "://")) {
 		return strdup(file);
 	}
-	if (!strncmp(file, "~/", 2) || !strncmp(file, "~\\", 2)) {
-		ret = rz_str_home(file + 2);
-	} else {
+	ret = rz_path_home_expand(file);
 #if __UNIX__
-		if (cwd && *file != '/') {
-			ret = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, file);
+	if (cwd && *ret != '/') {
+		char *tmp = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, ret);
+		if (!tmp) {
+			free(ret);
+			return NULL;
 		}
-#elif __WINDOWS__
-		// Network path
-		if (!strncmp(file, "\\\\", 2)) {
-			return strdup(file);
-		}
-		if (!strchr(file, ':')) {
-			ret = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, file);
-		}
-#endif
-	}
-	if (!ret) {
-		ret = strdup(file);
-	}
-#if __UNIX__
-	char *abspath = realpath(ret, NULL);
-	if (abspath) {
 		free(ret);
-		ret = abspath;
+		ret = tmp;
+	}
+#elif __WINDOWS__
+	// Network path
+	if (!strncmp(ret, "\\\\", 2)) {
+		return strdup(ret);
+	}
+	if (!strchr(ret, ':')) {
+		char *tmp = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, ret);
+		if (!tmp) {
+			free(ret);
+			return NULL;
+		}
+		free(ret);
+		ret = tmp;
+	}
+#endif
+#if HAVE_REALPATH
+	char rp[PATH_MAX] = { 0 };
+	char *abspath = realpath(ret, rp); // second arg == NULL is only an extension
+	if (abspath) {
+		abspath = strdup(abspath);
+		if (abspath) {
+			free(ret);
+			ret = abspath;
+		}
 	}
 #endif
 	return ret;
@@ -390,6 +421,7 @@ RZ_API char *rz_stdin_slurp(int *sz) {
 		if (!new) {
 			eprintf("Cannot realloc to %d\n", i + BS);
 			free(buf);
+			close(newfd);
 			return NULL;
 		}
 		buf = new;
@@ -605,8 +637,8 @@ RZ_API char *rz_file_slurp_random_line_count(const char *file, int *line) {
 		rz_num_irand();
 		for (i = 0; str[i]; i++) {
 			if (str[i] == '\n') {
-				//here rand doesn't have any security implication
-				// https://www.securecoding.cert.org/confluence/display/c/MSC30-C.+Do+not+use+the+rand()+function+for+generating+pseudorandom+numbers
+				// here rand doesn't have any security implication
+				//  https://www.securecoding.cert.org/confluence/display/c/MSC30-C.+Do+not+use+the+rand()+function+for+generating+pseudorandom+numbers
 				if (!(rz_num_rand((++(*line))))) {
 					selection = (*line - 1); /* The line we want. */
 				}
@@ -911,7 +943,7 @@ static RzMmap *file_mmap(RzMmap *m) {
 	m->len = lseek(m->fd, (off_t)0, SEEK_END);
 	if (m->len) {
 		bool is_write = (m->perm & O_WRONLY) || (m->perm & O_RDWR);
-		m->buf = mmap((void *)m->base,
+		m->buf = mmap((void *)(size_t)m->base,
 			m->len,
 			is_write ? PROT_READ | PROT_WRITE : PROT_READ,
 			MAP_SHARED, m->fd, 0);
@@ -1149,6 +1181,28 @@ RZ_API bool rz_file_copy(const char *src, const char *dst) {
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
 #if HAVE_COPYFILE
 	return copyfile(src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
+#elif HAVE_COPY_FILE_RANGE
+	int srcfd = open(src, O_RDONLY);
+	if (srcfd == -1) {
+		RZ_LOG_ERROR("rz_file_copy: Failed to open %s\n", src);
+		return false;
+	}
+	int mask = (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	int dstfd = open(dst, O_WRONLY | O_CREAT | O_TRUNC, mask);
+	if (dstfd == -1) {
+		RZ_LOG_ERROR("rz_file_copy: Failed to open %s\n", dst);
+		close(srcfd);
+		return false;
+	}
+	/* copy_file_path can handle large file up to SSIZE_MAX
+	 * with optimised performances.
+	 */
+	off_t sz = lseek(srcfd, 0, SEEK_END);
+	lseek(srcfd, 0, SEEK_SET);
+	ssize_t ret = copy_file_range(srcfd, 0, dstfd, 0, SSIZE_MAX, 0);
+	close(dstfd);
+	close(srcfd);
+	return ret == sz;
 #elif __WINDOWS__
 	PWCHAR s = rz_utf8_to_utf16(src);
 	PWCHAR d = rz_utf8_to_utf16(dst);
@@ -1188,6 +1242,7 @@ static void recursive_search_glob(const char *path, const char *glob, RzList *li
 		}
 		char *filename = malloc(strlen(path) + strlen(file) + 2);
 		if (!filename) {
+			rz_list_free(dir);
 			return;
 		}
 		strcpy(filename, path);
@@ -1247,7 +1302,19 @@ RZ_API RzList *rz_file_globsearch(const char *_globbed_path, int maxdepth) {
 	return files;
 }
 
-RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
+/**
+ * \brief Concatenate two paths to create a new one with s1+s2 with the correct path separator
+ *
+ * \param s1 First path
+ * \param s2 Second path, can be NULL
+ * \return Full path
+ */
+RZ_API RZ_OWN char *rz_file_path_join(RZ_NONNULL const char *s1, RZ_NULLABLE const char *s2) {
+	rz_return_val_if_fail(s1, NULL);
+
+	if (!s2) {
+		return strdup(s1);
+	}
 	bool ends_with_dir = s1[strlen(s1) - 1] == RZ_SYS_DIR[0];
 	const char *sep = ends_with_dir ? "" : RZ_SYS_DIR;
 	return rz_str_newf("%s%s%s", s1, sep, s2);
@@ -1328,7 +1395,7 @@ RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src) {
 	bool ret = false;
 	unsigned char *header = (unsigned char *)rz_file_slurp_range(src, 0, 3, NULL);
 
-	if (!header || strlen((char *)header) != 3) {
+	if (!header || rz_str_nlen((char *)header, 3) != 3) {
 		goto return_goto;
 	}
 

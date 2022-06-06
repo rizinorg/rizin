@@ -10,7 +10,7 @@
 LuaOpNameList get_lua53_opnames(void) {
 	LuaOpNameList list = RZ_NEWS(char *, LUA_NUM_OPCODES + 1);
 	if (list == NULL) {
-		eprintf("No Op Names\n");
+		RZ_LOG_ERROR("Cannot allocate lua53 opcode list.\n");
 		return NULL;
 	}
 
@@ -118,5 +118,5 @@ ut8 get_lua53_opcode_by_name(const char *name, int limit) {
 	lua_strcase("vararg") return OP_VARARG;
 	lua_strcase("extraarg") return OP_EXTRAARG;
 
-	return OP_EXTRAARG + 1; //invalid
+	return OP_EXTRAARG + 1; // invalid
 }

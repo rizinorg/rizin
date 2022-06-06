@@ -44,7 +44,7 @@ static char **env = NULL;
 #if __APPLE__
 #include <errno.h>
 
-#if HAVE_ENVIRON
+#if HAVE_ENVIRON || __APPLE__
 #include <execinfo.h>
 #endif
 // iOS don't have this we can't hardcode
@@ -70,7 +70,8 @@ extern char **environ;
 #endif
 #if __WINDOWS__
 #include <io.h>
-#include <winbase.h>
+#include <rz_windows.h>
+#include <VersionHelpers.h>
 #include <signal.h>
 #define TMP_BUFSIZE 4096
 #ifdef _MSC_VER
@@ -199,12 +200,18 @@ static HANDLE sys_opendir(const char *path, WIN32_FIND_DATAW *entry) {
 	rz_return_val_if_fail(path, NULL);
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath = 0;
+	static bool win_ver_initialized = false;
+	static bool is_win_7_or_greater = false;
+	if (!win_ver_initialized) {
+		is_win_7_or_greater = IsWindows7OrGreater();
+		win_ver_initialized = true;
+	}
 	if (!(wcpath = rz_utf8_to_utf16(path))) {
 		return NULL;
 	}
 	swprintf(dir, MAX_PATH, L"%ls\\*.*", wcpath);
 	free(wcpath);
-	return FindFirstFileW(dir, entry);
+	return FindFirstFileExW(dir, is_win_7_or_greater ? FindExInfoBasic : FindExInfoStandard, entry, FindExSearchNameMatch, NULL, 0);
 }
 #else
 static DIR *sys_opendir(const char *path) {
@@ -220,15 +227,14 @@ RZ_API RzList *rz_sys_dir(const char *path) {
 	char *cfname;
 	HANDLE fh = sys_opendir(path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
-		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
+		// IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
 		return list;
 	}
 	list = rz_list_newf(free);
 	if (list) {
 		do {
 			if ((cfname = rz_utf16_to_utf8(entry.cFileName))) {
-				rz_list_append(list, strdup(cfname));
-				free(cfname);
+				rz_list_append(list, cfname);
 			}
 		} while (FindNextFileW(fh, &entry));
 	}
@@ -508,8 +514,14 @@ RZ_API char *rz_sys_getdir(void) {
 #endif
 }
 
-RZ_API bool rz_sys_chdir(const char *s) {
-	rz_return_val_if_fail(s, 0);
+RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
+	rz_return_val_if_fail(s, false);
+	char *homepath = rz_path_home_expand(s);
+	if (homepath) {
+		int ret = chdir(homepath);
+		free(homepath);
+		return ret == 0;
+	}
 	return chdir(s) == 0;
 }
 
@@ -557,191 +569,48 @@ RZ_API bool rz_sys_aslr(int val) {
 	return ret;
 }
 
-#if __UNIX__
 RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	char *mysterr = NULL;
-	if (!sterr) {
-		sterr = &mysterr;
-	}
-	char buffer[1024], *outputptr = NULL;
-	char *inputptr = (char *)input;
-	int pid, bytes = 0, status = 0;
-	int sh_in[2], sh_out[2], sh_err[2];
-
-	if (len) {
-		*len = 0;
-	}
-	if (rz_sys_pipe(sh_in, true)) {
+	int argc;
+	char **argv = rz_str_argv(cmd, &argc);
+	if (!argv) {
 		return false;
 	}
+	RzSubprocessOpt opts = {
+		.file = argv[0],
+		.args = (const char **)&argv[1],
+		.args_size = argc - 1,
+		.envvars = NULL,
+		.envvals = NULL,
+		.env_size = 0,
+		.stdin_pipe = input ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+		.stdout_pipe = output ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+		.stderr_pipe = sterr ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+	};
+
+	if (!rz_subprocess_init()) {
+		RZ_LOG_ERROR("Failed to initialize subprocess\n");
+		return false;
+	}
+	RzSubprocess *subprocess = rz_subprocess_start_opt(&opts);
+	if (!subprocess) {
+		rz_subprocess_fini();
+		return false;
+	}
+	if (input) {
+		rz_subprocess_stdin_write(subprocess, (ut8 *)input, strlen(input) + 1);
+	}
+	rz_subprocess_wait(subprocess, UT64_MAX);
 	if (output) {
-		if (rz_sys_pipe(sh_out, true)) {
-			rz_sys_pipe_close(sh_in[0]);
-			rz_sys_pipe_close(sh_in[1]);
-			rz_sys_pipe_close(sh_out[0]);
-			rz_sys_pipe_close(sh_out[1]);
-			return false;
-		}
+		*output = (char *)rz_subprocess_out(subprocess, len);
 	}
-	if (rz_sys_pipe(sh_err, true)) {
-		rz_sys_pipe_close(sh_in[0]);
-		rz_sys_pipe_close(sh_in[1]);
-		return false;
+	if (sterr) {
+		*sterr = (char *)rz_subprocess_err(subprocess, NULL);
 	}
-
-	switch ((pid = rz_sys_fork())) {
-	case -1:
-		return false;
-	case 0: {
-		while ((dup2(sh_in[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
-		}
-		rz_sys_pipe_close(sh_in[0]);
-		rz_sys_pipe_close(sh_in[1]);
-		if (output) {
-			while ((dup2(sh_out[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
-			}
-			rz_sys_pipe_close(sh_out[0]);
-			rz_sys_pipe_close(sh_out[1]);
-		}
-		if (sterr) {
-			while ((dup2(sh_err[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
-			}
-			rz_sys_pipe_close(sh_err[0]);
-			rz_sys_pipe_close(sh_err[1]);
-		} else {
-			close(2);
-		}
-		char *bin_sh = rz_file_binsh();
-		int ret = rz_sys_execl(bin_sh, "sh", "-c", cmd, (const char *)NULL);
-		free(bin_sh);
-		exit(ret);
-	}
-	default:
-		outputptr = strdup("");
-		if (!outputptr) {
-			return false;
-		}
-		if (sterr) {
-			*sterr = strdup("");
-			if (!*sterr) {
-				free(outputptr);
-				return false;
-			}
-		}
-		if (output) {
-			rz_sys_pipe_close(sh_out[1]);
-		}
-		rz_sys_pipe_close(sh_err[1]);
-		rz_sys_pipe_close(sh_in[0]);
-		if (!inputptr || !*inputptr) {
-			rz_sys_pipe_close(sh_in[1]);
-			sh_in[1] = -1;
-		}
-		// we should handle broken pipes somehow better
-		rz_sys_signal(SIGPIPE, SIG_IGN);
-		size_t err_len = 0, out_len = 0;
-		for (;;) {
-			fd_set rfds, wfds;
-			int nfd;
-			FD_ZERO(&rfds);
-			FD_ZERO(&wfds);
-			if (output) {
-				FD_SET(sh_out[0], &rfds);
-			}
-			if (sterr) {
-				FD_SET(sh_err[0], &rfds);
-			}
-			if (inputptr && *inputptr) {
-				FD_SET(sh_in[1], &wfds);
-			}
-			memset(buffer, 0, sizeof(buffer));
-			nfd = select(sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
-			if (nfd < 0) {
-				break;
-			}
-			if (output && FD_ISSET(sh_out[0], &rfds)) {
-				if ((bytes = read(sh_out[0], buffer, sizeof(buffer))) < 1) {
-					break;
-				}
-				char *tmp = realloc(outputptr, out_len + bytes + 1);
-				if (!tmp) {
-					RZ_FREE(outputptr);
-					break;
-				}
-				outputptr = tmp;
-				memcpy(outputptr + out_len, buffer, bytes);
-				out_len += bytes;
-			} else if (FD_ISSET(sh_err[0], &rfds) && sterr) {
-				if ((bytes = read(sh_err[0], buffer, sizeof(buffer))) < 1) {
-					break;
-				}
-				char *tmp = realloc(*sterr, err_len + bytes + 1);
-				if (!tmp) {
-					RZ_FREE(*sterr);
-					break;
-				}
-				*sterr = tmp;
-				memcpy(*sterr + err_len, buffer, bytes);
-				err_len += bytes;
-			} else if (FD_ISSET(sh_in[1], &wfds) && inputptr && *inputptr) {
-				int inputptr_len = strlen(inputptr);
-				bytes = write(sh_in[1], inputptr, inputptr_len);
-				if (bytes != inputptr_len) {
-					break;
-				}
-				inputptr += bytes;
-				if (!*inputptr) {
-					rz_sys_pipe_close(sh_in[1]);
-					/* If neither stdout nor stderr should be captured,
-					 * abort now - nothing more to do for select(). */
-					if (!output && !sterr) {
-						break;
-					}
-				}
-			}
-		}
-		if (output) {
-			rz_sys_pipe_close(sh_out[0]);
-		}
-		rz_sys_pipe_close(sh_err[0]);
-		if (sh_in[1] != -1) {
-			rz_sys_pipe_close(sh_in[1]);
-		}
-		waitpid(pid, &status, 0);
-		bool ret = true;
-		if (status) {
-			ret = false;
-		}
-
-		if (len) {
-			*len = out_len;
-		}
-		if (*sterr) {
-			(*sterr)[err_len] = 0;
-		}
-		if (outputptr) {
-			outputptr[out_len] = 0;
-		}
-		if (output) {
-			*output = outputptr;
-		} else {
-			free(outputptr);
-		}
-		free(mysterr);
-		return ret;
-	}
-	return false;
+	rz_subprocess_free(subprocess);
+	rz_subprocess_fini();
+	rz_str_argv_free(argv);
+	return true;
 }
-#elif __WINDOWS__
-RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	return rz_sys_cmd_str_full_w32(cmd, input, output, len, sterr);
-}
-#else
-RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	eprintf("rz_sys_cmd_str: not yet implemented for this platform\n");
-	return false;
-}
-#endif
 
 RZ_API int rz_sys_cmdf(const char *fmt, ...) {
 	int ret;
@@ -792,10 +661,9 @@ RZ_API bool rz_sys_mkdir(const char *dir) {
 	bool ret;
 
 #if __WINDOWS__
-	LPTSTR dir_ = rz_sys_conv_utf8_to_win(dir);
-
-	ret = CreateDirectory(dir_, NULL) != 0;
-	free(dir_);
+	wchar_t *dir_utf16 = rz_utf8_to_utf16(dir);
+	ret = _wmkdir(dir_utf16) != -1;
+	free(dir_utf16);
 #else
 	ret = mkdir(dir, 0755) != -1;
 #endif
@@ -940,7 +808,7 @@ RZ_API int rz_sys_run(const ut8 *buf, int len) {
 	}
 	memcpy(ptr, buf, len);
 	rz_mem_protect(ptr, sz, "rx");
-	//rz_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
+	// rz_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (int (*)())ptr;
 #if USE_FORK
 #if __UNIX__
@@ -1120,10 +988,6 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	}
 	return result;
 #elif __APPLE__
-#if __POWERPC__
-#warning TODO getpidproc
-	return NULL;
-#else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pathbuf[0] = 0;
 	int ret = proc_pidpath(pid, pathbuf, sizeof(pathbuf));
@@ -1131,7 +995,6 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		return NULL;
 	}
 	return strdup(pathbuf);
-#endif
 #else
 	int ret;
 #if __FreeBSD__ || __DragonFly__
@@ -1246,7 +1109,9 @@ RZ_API char **rz_sys_get_environ(void) {
 
 RZ_API void rz_sys_set_environ(char **e) {
 	env = e;
-#if HAVE_ENVIRON
+#if __APPLE__ && !HAVE_ENVIRON
+	*_NSGetEnviron() = e;
+#elif HAVE_ENVIRON
 	environ = e;
 #endif
 }
@@ -1271,36 +1136,6 @@ RZ_API int rz_sys_getpid(void) {
 #warning rz_sys_getpid not implemented for this platform
 	return -1;
 #endif
-}
-
-RZ_API const char *rz_sys_prefix(const char *pfx) {
-	static char *prefix = NULL;
-	if (!prefix) {
-#if RZ_IS_PORTABLE
-		char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
-		if (pid_to_path) {
-			char *t = rz_file_dirname(pid_to_path);
-			free(pid_to_path);
-			// When rz_sys_prefix is called from a unit test or from a
-			// not-yet-installed rizin binary this would return the wrong path.
-			// In those cases, just return RZ_PREFIX.
-			if (rz_str_endswith(t, RZ_SYS_DIR RZ_BINDIR)) {
-				prefix = rz_file_dirname(t);
-			}
-			free(t);
-		}
-		if (!prefix) {
-			prefix = strdup(RZ_PREFIX);
-		}
-#else
-		prefix = strdup(RZ_PREFIX);
-#endif
-	}
-	if (RZ_STR_ISNOTEMPTY(pfx)) {
-		free(prefix);
-		prefix = strdup(pfx);
-	}
-	return prefix;
 }
 
 RZ_API RSysInfo *rz_sys_info(void) {
@@ -1405,11 +1240,19 @@ RZ_API int rz_sys_pipe_close(int fd) {
 static RzThreadLock *sys_pipe_mutex;
 static bool is_child = false;
 
-__attribute__((constructor)) static void sys_pipe_constructor(void) {
+#ifdef RZ_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(sys_pipe_constructor)
+#endif
+RZ_DEFINE_CONSTRUCTOR(sys_pipe_constructor)
+static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new(true);
 }
 
-__attribute__((destructor)) static void sys_pipe_destructor(void) {
+#ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(sys_pipe_destructor)
+#endif
+RZ_DEFINE_DESTRUCTOR(sys_pipe_destructor)
+static void sys_pipe_destructor(void) {
 	rz_th_lock_free(sys_pipe_mutex);
 }
 
@@ -1474,12 +1317,20 @@ static HtUU *fd2close;
 static RzThreadLock *sys_pipe_mutex;
 static bool is_child = false;
 
-__attribute__((constructor)) static void sys_pipe_constructor(void) {
+#ifdef RZ_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(sys_pipe_constructor)
+#endif
+RZ_DEFINE_CONSTRUCTOR(sys_pipe_constructor)
+static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new(false);
 	fd2close = ht_uu_new0();
 }
 
-__attribute__((destructor)) static void sys_pipe_destructor(void) {
+#ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(sys_pipe_destructor)
+#endif
+RZ_DEFINE_DESTRUCTOR(sys_pipe_destructor)
+static void sys_pipe_destructor(void) {
 	ht_uu_free(fd2close);
 	rz_th_lock_free(sys_pipe_mutex);
 }
@@ -1788,10 +1639,6 @@ RZ_API int rz_sys_fork(void) {
 }
 #endif
 
-static inline char *expand_home(const char *p) {
-	return (*p == '~') ? rz_str_home(p) : strdup(p);
-}
-
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length) {
 #ifdef _MSC_VER
 	return _chsize_s(fd, length);
@@ -1850,7 +1697,7 @@ RZ_API int rz_sys_open_perms(int rizin_perms) {
 /* perm <-> mode */
 RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 	rz_return_val_if_fail(path, -1);
-	char *epath = expand_home(path);
+	char *epath = rz_path_home_expand(path);
 	int ret = -1;
 #if __WINDOWS__
 	if (!strcmp(path, "/dev/null")) {
@@ -1921,10 +1768,7 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 RZ_API FILE *rz_sys_fopen(const char *path, const char *mode) {
 	rz_return_val_if_fail(path && mode, NULL);
 	FILE *ret = NULL;
-	char *epath = NULL;
-	if (!epath) {
-		epath = expand_home(path);
-	}
+	char *epath = rz_path_home_expand(path);
 	if ((strchr(mode, 'w') || strchr(mode, 'a') || rz_file_is_regular(epath))) {
 #if __WINDOWS__
 		wchar_t *wepath = rz_utf8_to_utf16(epath);
@@ -1949,14 +1793,27 @@ RZ_API FILE *rz_sys_fopen(const char *path, const char *mode) {
 	return ret;
 }
 
+/**
+ * \brief Send signal \p sig to process with pid \p pid.
+ *
+ * \param pid PID of the process to send the signal to
+ * \param sig Signal to send to the process.
+ * \return 0 on success, -1 on failure.
+ */
 RZ_API int rz_sys_kill(int pid, int sig) {
 	rz_return_val_if_fail(pid != -1, -1);
 #if __UNIX__
 	return kill(pid, sig);
-#endif
+#else
 	return -1;
+#endif
 }
 
+/**
+ * \brief Send SIGTSTP signal to every process in this process group
+ *
+ * \return true if at least one signal was sent, false otherwise
+ */
 RZ_API bool rz_sys_stop(void) {
 #if __UNIX__
 	return !rz_sys_kill(0, SIGTSTP);

@@ -1,0 +1,294 @@
+======================
+Temporary changes help
+======================
+
+@?
+
+---
+
+(statements
+  (help_stmt (cmd_identifier)))
+
+==============
+Temporary seek
+==============
+
+p8 10 @ 0xdeadbeef
+p8 10 @ flag
+
+---
+
+(statements
+  (tmp_seek_stmt
+    (arged_stmt (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (args (arg (arg_identifier))))
+  (tmp_seek_stmt
+    (arged_stmt (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
+
+
+===================
+Temporary blocksize
+===================
+
+p8 10 @! 30
+
+---
+
+(statements
+  (tmp_blksz_stmt
+    (arged_stmt (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
+
+
+=================
+Temporary from/to
+=================
+
+/x 9090 @(0xbeef 0xdead)
+
+---
+
+(statements
+  (tmp_fromto_stmt
+    (arged_stmt (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
+
+
+=================
+Temporary arch
+=================
+
+pd 2 @a:x86
+
+---
+
+(statements
+  (tmp_arch_stmt
+    (arged_stmt (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (arg (arg_identifier))))
+
+=================
+Temporary bits
+=================
+
+pd 2 @b:16
+
+---
+
+(statements
+  (tmp_bits_stmt
+    (arged_stmt (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
+
+=================
+Temporary seek to nth instr
+=================
+
+pd 2 @B:3
+
+---
+
+(statements
+  (tmp_nthi_stmt
+    (arged_stmt (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (arg (arg_identifier))))
+
+=================
+Temporary eval
+=================
+
+pd 2 @e:scr.utf8=false
+pd 2 @e:asm.arch=x86,scr.utf8=true
+
+---
+
+(statements
+  (tmp_eval_stmt
+    (arged_stmt command: (cmd_identifier)
+      args: (args (arg (arg_identifier))))
+    (args (arg (arg_identifier))))
+  (tmp_eval_stmt
+    (arged_stmt command: (cmd_identifier)
+      args: (args (arg (arg_identifier))))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
+
+=================
+Temporary flagspace
+=================
+
+f @F:symbols
+
+---
+
+(statements
+  (tmp_fs_stmt
+    (arged_stmt (cmd_identifier))
+    (arg (arg_identifier))))
+
+=================
+Temporary relative instruction
+=================
+
+pd 2 @i:4
+
+---
+
+(statements
+  (tmp_reli_stmt
+    (arged_stmt (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
+
+=================
+Temporary seek to sdb key
+=================
+
+pd @k:key
+
+---
+
+(statements
+  (tmp_kuery_stmt
+    (arged_stmt (cmd_identifier))
+    (arg (arg_identifier))))
+
+=================
+Temporary switch fd
+=================
+
+pd @o:3
+
+---
+
+(statements
+  (tmp_fd_stmt
+    (arged_stmt (cmd_identifier))
+    (args (arg (arg_identifier)))))
+
+=================
+Temporary seek to reg value
+=================
+
+pd @r:rax
+
+---
+
+(statements
+  (tmp_reg_stmt
+    (arged_stmt (cmd_identifier))
+    (arg (arg_identifier))))
+
+=================
+Temporary file content
+=================
+
+pd @f:myfile
+
+---
+
+(statements
+  (tmp_file_stmt
+    (arged_stmt (cmd_identifier))
+    (arg (arg_identifier))))
+
+
+=================
+Temporary string content
+=================
+
+pd @s:mystring
+
+---
+
+(statements
+  (tmp_string_stmt
+    (arged_stmt (cmd_identifier))
+    (arg (arg_identifier))))
+
+
+=================
+Temporary hex content
+=================
+
+pd @x:90deadbeef
+
+---
+
+(statements
+  (tmp_hex_stmt
+    (arged_stmt (cmd_identifier))
+    (arg (arg_identifier))))
+
+
+=================================
+2 Temporary changes + Redirection
+=================================
+
+p8 4 @ 0xdead @a:x86 > /tmp/out.txt
+
+---
+
+(statements
+  (redirect_stmt
+    (tmp_arch_stmt
+      (tmp_seek_stmt
+        (arged_stmt (cmd_identifier)
+	  (args (arg (arg_identifier))))
+	(args (arg (arg_identifier))))
+      (arg (arg_identifier)))
+    (fdn_redirect_operator)
+    (arg (arg_identifier))))
+
+
+=====================
+Spaces after tmp_seek
+=====================
+wx  0x68a0a@ entry0 
+---
+(statements
+  (tmp_seek_stmt
+    (arged_stmt (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))
+
+
+=======================
+Spaces in tmp_seek args
+=======================
+
+pd @ entry0 + 2
+
+---
+
+(statements
+  (tmp_seek_stmt
+    (arged_stmt (cmd_identifier))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
+
+===============
+Temporary value
+===============
+
+pv4 @v:0xdeadbeef
+
+---
+
+(statements
+  (tmp_value_stmt
+    (arged_stmt (cmd_identifier))
+	(arg (arg_identifier))))

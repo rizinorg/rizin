@@ -16,7 +16,7 @@ static bool check_buffer(RzBuffer *b) {
 	if (length < 0x8000) {
 		return false;
 	}
-	//determine if ROM is headered, and add a 0x200 gap if so.
+	// determine if ROM is headered, and add a 0x200 gap if so.
 	ut16 cksum1;
 	if (!rz_buf_read_le16_at(b, 0x7fdc, &cksum1)) {
 		return false;
@@ -61,7 +61,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	int reat = rz_buf_read_at(bf->buf, 0x7FC0 + hdroffset,
 		(ut8 *)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
-		eprintf("Unable to read SFC/SNES header\n");
+		RZ_LOG_ERROR("Unable to read SFC/SNES header\n");
 		return NULL;
 	}
 
@@ -71,13 +71,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 		reat = rz_buf_read_at(bf->buf, 0xFFC0 + hdroffset, (ut8 *)&sfchdr, SFC_HDR_SIZE);
 		if (reat != SFC_HDR_SIZE) {
-			eprintf("Unable to read SFC/SNES header\n");
+			RZ_LOG_ERROR("Unable to read SFC/SNES header\n");
 			return NULL;
 		}
 
 		if ((sfchdr.comp_check != (ut16) ~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 1)) {
 
-			eprintf("Cannot determine if this is a LoROM or HiROM file\n");
+			RZ_LOG_ERROR("Cannot determine if this is a LoROM or HiROM file\n");
 			return NULL;
 		}
 	}
@@ -131,7 +131,7 @@ static RzList *sections(RzBinFile *bf) {
 	// RzBinSection *ptr = NULL;
 	int hdroffset = 0;
 	bool is_hirom = false;
-	int i = 0; //0x8000-long bank number for loops
+	int i = 0; // 0x8000-long bank number for loops
 #if THIS_IS_ALWAYS_FALSE_WTF
 	if ((bf->size & 0x8000) == 0x200) {
 		hdroffset = 0x200;
@@ -141,7 +141,7 @@ static RzList *sections(RzBinFile *bf) {
 
 	int reat = rz_buf_read_at(bf->buf, 0x7FC0 + hdroffset, (ut8 *)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
-		eprintf("Unable to read SFC/SNES header\n");
+		RZ_LOG_ERROR("Unable to read SFC/SNES header\n");
 		return NULL;
 	}
 
@@ -151,13 +151,13 @@ static RzList *sections(RzBinFile *bf) {
 
 		reat = rz_buf_read_at(bf->buf, 0xFFC0 + hdroffset, (ut8 *)&sfchdr, SFC_HDR_SIZE);
 		if (reat != SFC_HDR_SIZE) {
-			eprintf("Unable to read SFC/SNES header\n");
+			RZ_LOG_ERROR("Unable to read SFC/SNES header\n");
 			return NULL;
 		}
 
 		if ((sfchdr.comp_check != (ut16) ~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 1)) {
 
-			eprintf("Cannot determine if this is a LoROM or HiROM file\n");
+			RZ_LOG_ERROR("Cannot determine if this is a LoROM or HiROM file\n");
 			return NULL;
 		}
 		is_hirom = true;
@@ -268,7 +268,7 @@ static RzList *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RzList *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RzList *ret;
 	if (!(ret = rz_list_new())) {
 		return NULL;

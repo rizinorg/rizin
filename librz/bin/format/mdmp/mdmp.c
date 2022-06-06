@@ -414,17 +414,17 @@ static bool rz_bin_mdmp_init_hdr(struct rz_bin_mdmp_obj *obj) {
 	read_hdr(obj->b, obj->hdr);
 
 	if (obj->hdr->number_of_streams == 0) {
-		eprintf("[WARN] No streams present!\n");
+		RZ_LOG_WARN("No streams present!\n");
 		return false;
 	}
 
 	if (obj->hdr->stream_directory_rva < sizeof(struct minidump_header)) {
-		eprintf("[ERROR] RVA for directory resides in the header!\n");
+		RZ_LOG_ERROR("RVA for directory resides in the header!\n");
 		return false;
 	}
 
 	if (obj->hdr->check_sum) {
-		eprintf("[INFO] Checksum present but needs validating!\n");
+		RZ_LOG_INFO("Checksum present but needs validating!\n");
 		return false;
 	}
 
@@ -681,7 +681,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 	/* We could confirm data sizes but a malcious MDMP will always get around
 	** this! But we can ensure that the data is not outside of the file */
 	if ((ut64)entry->location.rva + entry->location.data_size > rz_buf_size(obj->b)) {
-		eprintf("[ERROR] Size Mismatch - Stream data is larger than file size!\n");
+		RZ_LOG_ERROR("Size Mismatch - Stream data is larger than file size!\n");
 		return false;
 	}
 
@@ -1142,7 +1142,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		/* Silently ignore reserved streams */
 		break;
 	default:
-		eprintf("[WARN] Invalid or unsupported enumeration encountered %d\n", entry->stream_type);
+		RZ_LOG_WARN("Invalid or unsupported enumeration encountered %d\n", entry->stream_type);
 		break;
 	}
 	return true;
@@ -1198,7 +1198,7 @@ static bool rz_bin_mdmp_init_directory(struct rz_bin_mdmp_obj *obj) {
 	ut64 bytes_left = rvadir < obj->size ? obj->size - rvadir : 0;
 	size_t max_entries = RZ_MIN(obj->hdr->number_of_streams, bytes_left / sizeof(struct minidump_directory));
 	if (max_entries < obj->hdr->number_of_streams) {
-		eprintf("[ERROR] Number of streams = %u is greater than is supportable by bin size\n",
+		RZ_LOG_ERROR("Number of streams = %u is greater than is supportable by bin size\n",
 			obj->hdr->number_of_streams);
 	}
 	/* Parse each entry in the directory */
@@ -1369,17 +1369,17 @@ static int rz_bin_mdmp_init(struct rz_bin_mdmp_obj *obj) {
 	rz_bin_mdmp_init_parsing(obj);
 
 	if (!rz_bin_mdmp_init_hdr(obj)) {
-		eprintf("[ERROR] Failed to initialise header\n");
+		RZ_LOG_ERROR("Failed to initialise header\n");
 		return false;
 	}
 
 	if (!rz_bin_mdmp_init_directory(obj)) {
-		eprintf("[ERROR] Failed to initialise directory structures!\n");
+		RZ_LOG_ERROR("Failed to initialise directory structures!\n");
 		return false;
 	}
 
 	if (!rz_bin_mdmp_init_pe_bins(obj)) {
-		eprintf("[ERROR] Failed to initialise pe binaries!\n");
+		RZ_LOG_ERROR("Failed to initialise pe binaries!\n");
 		return false;
 	}
 

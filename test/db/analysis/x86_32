@@ -25,7 +25,7 @@ e asm.var=false
 pdb
 EOF
 EXPECT=<<EOF
-/ (loc) entry0 (int32_t arg_40h, int32_t arg_44h);
+/ (loc) entry0 (int32_t arg_44h);
 |           0x006453a1      e8d8170000     call  fcn.00646b7e
 |           0x006453a6      8d642444       lea   esp, [arg_44h]
 |       ,=< 0x006453aa      0f85a6300000   jne   0x648456
@@ -37,12 +37,12 @@ FILE=bins/pe/NoREpls.exe
 CMDS=<<EOF
 aaa
 s 0x00401e80
-afi.
+afl.
 aap
-afi.
+afl.
 EOF
 EXPECT=<<EOF
-fcn.00401e80
+0x00401e80 fcn.00401e80
 EOF
 RUN
 
@@ -51,7 +51,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"wa push 10;ret;nop;nop;nop;nop;nop;nop;nop;ret"
+wa "push 10;ret;nop;nop;nop;nop;nop;nop;nop;ret"
 e analysis.pushret=true
 af
 afi~size
@@ -80,7 +80,7 @@ NAME=aaa with axt
 FILE=bins/pe/keygen.exe
 CMDS=<<EOF
 aar
-axt 0x4bffb0
+axt @ 0x4bffb0
 EOF
 EXPECT=<<EOF
 (nofunc) 0x4bfe53 [DATA] mov edx, 0x4bffb0
@@ -103,7 +103,7 @@ NAME=cyclomatic
 FILE=bins/pe/rz-bin.exe
 CMDS=<<EOF
 s 0x140002510;af;afi~complex[1]
-afbi@0x14000253e
+afbi@ 0x14000253e
 EOF
 EXPECT=<<EOF
 67
@@ -346,8 +346,7 @@ EXPECT=<<EOF
 0x004010e4    4 148          fcn.004010e4
 0x004010c7    1 29           fcn.004010c7
 0x0040104a    4 109          fcn.0040104a
-0x0040103b    3 15           fcn.0040103b
-0x00401335    3 262          loc.00401335
+0x0040103b    6 1024 -> 277  fcn.0040103b
 0x00404ad7    1 8            fcn.00404ad7
 EOF
 RUN
@@ -365,8 +364,7 @@ EXPECT=<<EOF
 0x004010e4    4 148          root.004010e4
 0x004010c7    1 29           root.004010c7
 0x0040104a    4 109          root.0040104a
-0x0040103b    3 15           root.0040103b
-0x00401335    3 262          loc.00401335
+0x0040103b    6 1024 -> 277  root.0040103b
 0x00404ad7    1 8            root.00404ad7
 EOF
 RUN
@@ -412,7 +410,7 @@ RUN
 
 NAME=af- bug
 FILE==
-CMDS=af+ $$ foo; af- $$;afl~?
+CMDS=af+ foo @ $$; af- @ $$;afl~?
 EXPECT=<<EOF
 0
 EOF
@@ -428,8 +426,62 @@ afb @ 0x401012
 afb @ 0x40dfd0
 EOF
 EXPECT=<<EOF
-0x00401000 0x00401002 00:0000 2
-0x00401012 0x00401059 00:0000 71
+0x00401000 0x00401002 00:0000 2 j 0x00401012
+0x00401012 0x00401059 00:0000 71 j 0x0040dfd0
+0x0040dfd0 0x0040e075 00:0000 165 j 0x0040e0af f 0x0040e075
+0x0040e075 0x0040e094 00:0000 31 j 0x0040e0a8
+0x0040e094 0x0040e0a8 00:0000 20 j 0x0040e0a8
+0x0040e0a8 0x0040e0af 00:0000 7 j 0x0040e094 f 0x0040e0af
+0x0040e0af 0x0040e0c4 00:0000 21 j 0x0040e12b f 0x0040e0c4
+0x0040e0c4 0x0040e0cc 00:0000 8 j 0x0040e0cd
+0x0040e0cc 0x0040e0cd 00:0000 1 j 0x0040e0cd
+0x0040e0cd 0x0040e0d3 00:0000 6 j 0x0040e0cc f 0x0040e0d3
+0x0040e0d3 0x0040e0d7 00:0000 4 j 0x0040e0cc f 0x0040e0d7
+0x0040e0d7 0x0040e0dc 00:0000 5 j 0x0040e0e1 f 0x0040e0dc
+0x0040e0dc 0x0040e0e1 00:0000 5 j 0x0040e0e6
+0x0040e0e1 0x0040e0e5 00:0000 4 j 0x0040e0e6
+0x0040e0e5 0x0040e0e6 00:0000 1 j 0x0040e0e6
+0x0040e0e6 0x0040e0ec 00:0000 6 j 0x0040e0f4 f 0x0040e0ec
+0x0040e0ec 0x0040e0f0 00:0000 4 j 0x0040e0f4 f 0x0040e0f0
+0x0040e0f0 0x0040e0f4 00:0000 4 j 0x0040e0e5 f 0x0040e0f4
+0x0040e0f4 0x0040e0f9 00:0000 5 j 0x0040e0fd f 0x0040e0f9
+0x0040e0f9 0x0040e0fc 00:0000 3 j 0x0040e0fd
+0x0040e0fc 0x0040e0fd 00:0000 1 j 0x0040e0fd
+0x0040e0fd 0x0040e103 00:0000 6 j 0x0040e107 f 0x0040e103
+0x0040e103 0x0040e107 00:0000 4 j 0x0040e0fc f 0x0040e107
+0x0040e107 0x0040e10b 00:0000 4 j 0x0040e0fc f 0x0040e10b
+0x0040e10b 0x0040e12b 00:0000 32 j 0x0040e14c
+0x0040e12b 0x0040e14c 00:0000 33 j 0x0040e14c
+0x0040e14c 0x0040e153 00:0000 7
+0x00401000 0x00401002 00:0000 2 j 0x00401012
+0x00401012 0x00401059 00:0000 71 j 0x0040dfd0
+0x0040dfd0 0x0040e075 00:0000 165 j 0x0040e0af f 0x0040e075
+0x0040e075 0x0040e094 00:0000 31 j 0x0040e0a8
+0x0040e094 0x0040e0a8 00:0000 20 j 0x0040e0a8
+0x0040e0a8 0x0040e0af 00:0000 7 j 0x0040e094 f 0x0040e0af
+0x0040e0af 0x0040e0c4 00:0000 21 j 0x0040e12b f 0x0040e0c4
+0x0040e0c4 0x0040e0cc 00:0000 8 j 0x0040e0cd
+0x0040e0cc 0x0040e0cd 00:0000 1 j 0x0040e0cd
+0x0040e0cd 0x0040e0d3 00:0000 6 j 0x0040e0cc f 0x0040e0d3
+0x0040e0d3 0x0040e0d7 00:0000 4 j 0x0040e0cc f 0x0040e0d7
+0x0040e0d7 0x0040e0dc 00:0000 5 j 0x0040e0e1 f 0x0040e0dc
+0x0040e0dc 0x0040e0e1 00:0000 5 j 0x0040e0e6
+0x0040e0e1 0x0040e0e5 00:0000 4 j 0x0040e0e6
+0x0040e0e5 0x0040e0e6 00:0000 1 j 0x0040e0e6
+0x0040e0e6 0x0040e0ec 00:0000 6 j 0x0040e0f4 f 0x0040e0ec
+0x0040e0ec 0x0040e0f0 00:0000 4 j 0x0040e0f4 f 0x0040e0f0
+0x0040e0f0 0x0040e0f4 00:0000 4 j 0x0040e0e5 f 0x0040e0f4
+0x0040e0f4 0x0040e0f9 00:0000 5 j 0x0040e0fd f 0x0040e0f9
+0x0040e0f9 0x0040e0fc 00:0000 3 j 0x0040e0fd
+0x0040e0fc 0x0040e0fd 00:0000 1 j 0x0040e0fd
+0x0040e0fd 0x0040e103 00:0000 6 j 0x0040e107 f 0x0040e103
+0x0040e103 0x0040e107 00:0000 4 j 0x0040e0fc f 0x0040e107
+0x0040e107 0x0040e10b 00:0000 4 j 0x0040e0fc f 0x0040e10b
+0x0040e10b 0x0040e12b 00:0000 32 j 0x0040e14c
+0x0040e12b 0x0040e14c 00:0000 33 j 0x0040e14c
+0x0040e14c 0x0040e153 00:0000 7
+0x00401000 0x00401002 00:0000 2 j 0x00401012
+0x00401012 0x00401059 00:0000 71 j 0x0040dfd0
 0x0040dfd0 0x0040e075 00:0000 165 j 0x0040e0af f 0x0040e075
 0x0040e075 0x0040e094 00:0000 31 j 0x0040e0a8
 0x0040e094 0x0040e0a8 00:0000 20 j 0x0040e0a8
@@ -590,8 +642,8 @@ RUN
 NAME=calc switch table
 FILE=bins/elf/calc.file
 CMDS=<<EOF
-af@0x8049203
-f~?switch
+af@ 0x8049203
+fl~?switch
 EOF
 EXPECT=<<EOF
 7
@@ -602,7 +654,7 @@ NAME=mac-ls switch count
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 aaa
-f~?switch
+fl~?switch
 EOF
 EXPECT=<<EOF
 3
@@ -613,8 +665,8 @@ NAME=mac-ls main switch
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 s main;af
-f~switch
-f~?case
+fl~switch
+fl~?case
 EOF
 EXPECT=<<EOF
 0x1000011b5 1 switch.0x1000011b5
@@ -626,7 +678,7 @@ NAME=mac-ls switch count2
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 aaa
-f~?case
+fl~?case
 EOF
 EXPECT=<<EOF
 91
@@ -950,8 +1002,8 @@ NAME=clang_3.8_32 switch/case flags
 FILE=bins/jmptbl/test_clang_3.8_32.out
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x080483fd 1 switch.0x080483fd
@@ -977,8 +1029,8 @@ NAME=clang_5.0_32 switch/case flags
 FILE=bins/jmptbl/test_clang_5.0_32.out
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x080483fd 1 switch.0x080483fd
@@ -1004,8 +1056,8 @@ NAME=msvc_1900_32 switch/case flags
 FILE=bins/jmptbl/test_msvc_1900_32.exe
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x0040100e 1 switch.0x0040100e
@@ -1049,8 +1101,8 @@ NAME=msvc_1913_32 switch/case flags
 FILE=bins/jmptbl/test_msvc_1913_32.exe
 CMDS=<<EOF
 aaa
-f~switch
-f~case.
+fl~switch
+fl~case.
 EOF
 EXPECT=<<EOF
 0x0040100e 1 switch.0x0040100e
@@ -1093,8 +1145,8 @@ NAME=cmu_binary_bomb switch case detection
 FILE=bins/jmptbl/cmu_binary_bomb
 CMDS=<<EOF
 aa
-f~switch
-f~case
+fl~switch
+fl~case
 EOF
 EXPECT=<<EOF
 0x08048bd6 1 switch.0x08048bd6
@@ -1184,22 +1236,22 @@ e analysis.hasnext=0
 # wx 48c7c0fcffffff 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8
 wx b8fcffffff d1f8 d1f8 d1f8 d1f8 d1f8 d1f8
 aes
-dr?eax
+ar eax
 aes
-dr?eax
+ar eax
 aes
-dr?eax
+ar eax
 aes
-dr?eax
+ar eax
 aes
-dr?eax
+ar eax
 EOF
 EXPECT=<<EOF
-0xfffffffc
-0xfffffffe
-0xffffffff
-0xffffffff
-0xffffffff
+eax = 0xfffffffc
+eax = 0xfffffffe
+eax = 0xffffffff
+eax = 0xffffffff
+eax = 0xffffffff
 EOF
 RUN
 
@@ -1282,7 +1334,7 @@ b 0x4e
 wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
 af
 pif~?
-afi $$~size[1]
+afi @ $$~size[1]
 EOF
 EXPECT=<<EOF
 32
@@ -1372,7 +1424,7 @@ RUN
 NAME=xref aar on op.val
 FILE=bins/elf/analysis/ch2.bin
 CMDS=<<EOF
-af@main
+af@ main
 aar
 axt @ str.john
 EOF
@@ -2911,7 +2963,7 @@ wx 488d4768488d7e684889c6c9e9013a0000554889e54883c6684883c768c9e9ef390000554889e
 sd -0x40
 b 0x100
 af
-pIf @0
+pIf @ 0
 EOF
 EXPECT=<<EOF
 push 0
@@ -3234,7 +3286,7 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
 e emu.str=true
-wa jmp 0x100
+wa "jmp 0x100"
 w hello @ 0x100
 pd 1
 EOF
@@ -3351,13 +3403,13 @@ NAME=Indirect jump table case detection
 FILE=--
 CMDS=<<EOF
 o malloc://0x500 0x401000
-omf 1 rwx
+omf rwx 1
 s 0x401000
 e asm.arch=x86
 e asm.bits=32
 wx 568b74240856ff15c02040004e83c40483fe270f87df0000000fb6863c114000ff24850c114000b8f820400050ff15b420400083c40433c05ec3b80021400050ff15b420400083c40433c05ec3b80821400050ff15b420400083c40433c05ec3b81021400050ff15b420400083c40433c05ec3b81821400050ff15b420400083c40433c05ec3b82021400050ff15b420400083c40433c05ec3b82821400050ff15b420400083c40433c05ec3b83021400050ff15b420400083c40433c05ec3b83821400050ff15b420400083c40433c05ec3b84021400050ff15b420400083c40433c05ec3b84821400050ff15b420400083c40433c05ec38b44240850ff15b420400083c40433c05ec36690271040003a1040004d104000e510400060104000731040008610400099104000d2104000bf104000ac104000f81040000001020b0b0b0b0b0b03020b040b05060b0b07080b0b0b0b0b0b0b0b0b090b0b0b0b0b0a0b0a0a0a
 af
-f~case
+fl~case
 EOF
 EXPECT=<<EOF
 0x00401027 1 case.0x401020.1
@@ -3442,10 +3494,10 @@ NAME=tiny1 aae non-start-bb first
 FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
 e io.cache=true
-$orig_end=?e `omtq:va_end`
-omr 1 `omtq:size`+2
+$orig_end=?e `omlt:va_end:quiet`
+omr 1 `omlt:size:quiet`+2
 s `$orig_end`
-wa jmp entry0
+wa "jmp entry0"
 aF
 aae
 agf
@@ -3489,7 +3541,7 @@ NAME=push [esp + 8] variable detection
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"wa push ebp; mov esp, ebp; sub esp, 64; mov [esp+4], 4; mov [esp+8], 8; mov [esp+0xC], 0xC; push dword [esp+8]; ret"
+wa "push ebp; mov esp, ebp; sub esp, 64; mov [esp+4], 4; mov [esp+8], 8; mov [esp+0xC], 0xC; push dword [esp+8]; ret"
 af
 pdf
 EOF
@@ -3522,6 +3574,6 @@ aes
 ar xmm0
 EOF
 EXPECT=<<EOF
-0x000000000000000000000000a0a1a2a3
+xmm0 = 0x000000000000000000000000a0a1a2a3
 EOF
 RUN

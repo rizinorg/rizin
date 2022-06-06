@@ -9,14 +9,16 @@
 #include <rz_core.h>
 #define LOOP_MAX 10
 
-static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et) {
+static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et, RzAnalysisRzilTrace **rt) {
 	if (!core->analysis->esil) {
 		return false;
 	}
 	*dt = core->dbg->trace;
 	*et = core->analysis->esil->trace;
+
 	core->dbg->trace = rz_debug_trace_new();
 	core->analysis->esil->trace = rz_analysis_esil_trace_new(core->analysis->esil);
+
 	rz_config_hold_i(hc, "esil.romem", "dbg.trace",
 		"esil.nonull", "dbg.follow", NULL);
 	rz_config_set(core->config, "esil.romem", "true");
@@ -33,7 +35,7 @@ static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt
 	return (core->dbg->trace && core->analysis->esil->trace);
 }
 
-static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et) {
+static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et, RzAnalysisRzilTrace *rt) {
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
 	rz_debug_trace_free(core->dbg->trace);
@@ -107,7 +109,7 @@ static bool var_type_simple_to_complex(const RzTypeDB *typedb, RzType *a, RzType
 }
 
 // TODO: Handle also non-atomic types here
-static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzType *type, bool ref) {
+static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzType *type, bool ref, bool resolve_overlaps) {
 	rz_return_if_fail(analysis && var && type);
 	RzTypeDB *typedb = analysis->typedb;
 	// removing this return makes 64bit vars become 32bit
@@ -135,11 +137,22 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 			eprintf("Cannot convert the type for the variable \"%s.%s\" into pointer\n", var->fcn->name, var->name);
 			return;
 		}
-		rz_analysis_var_set_type(var, ptrtype);
+		rz_analysis_var_set_type(var, ptrtype, resolve_overlaps);
 		return;
 	}
 
-	rz_analysis_var_set_type(var, cloned);
+	rz_analysis_var_set_type(var, cloned, resolve_overlaps);
+}
+
+static void var_type_set_resolve_overlaps(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzType *type, bool ref) {
+	var_type_set(analysis, var, type, ref, true);
+}
+
+static void vars_resolve_overlaps(RzPVector *vars) {
+	for (size_t i = 0; i < rz_pvector_len(vars); i++) {
+		RzAnalysisVar *var = rz_pvector_at(vars, i);
+		rz_analysis_var_resolve_overlaps(var);
+	}
 }
 
 static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const char *type, bool ref) {
@@ -151,7 +164,7 @@ static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const cha
 		free(error_msg);
 		return;
 	}
-	var_type_set(analysis, var, realtype, ref);
+	var_type_set_resolve_overlaps(analysis, var, realtype, ref);
 	// Since we clone the type here, free it
 	rz_type_free(realtype);
 }
@@ -245,7 +258,7 @@ static void retype_callee_arg(RzAnalysis *analysis, const char *callee_name, boo
 		if (!var) {
 			return;
 		}
-		var_type_set(analysis, var, type, false);
+		var_type_set_resolve_overlaps(analysis, var, type, false);
 	} else {
 		RzRegItem *item = rz_reg_get(analysis->reg, place, -1);
 		if (!item) {
@@ -255,10 +268,10 @@ static void retype_callee_arg(RzAnalysis *analysis, const char *callee_name, boo
 		if (!rvar) {
 			return;
 		}
-		var_type_set(analysis, rvar, type, false);
+		var_type_set_resolve_overlaps(analysis, rvar, type, false);
 		RzAnalysisVar *lvar = rz_analysis_var_get_dst_var(rvar);
 		if (lvar) {
-			var_type_set(analysis, lvar, type, false);
+			var_type_set_resolve_overlaps(analysis, lvar, type, false);
 		}
 	}
 }
@@ -394,7 +407,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			continue;
 		}
 		if (!in_stack) {
-			//XXX: param arg_num must be fixed to support floating point register
+			// XXX: param arg_num must be fixed to support floating point register
 			place = rz_analysis_cc_arg(analysis, cc, arg_num);
 			if (place && rz_str_startswith("stack", place)) {
 				in_stack = true;
@@ -453,7 +466,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				if (var) {
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
-						var_type_set(analysis, var, type, memref);
+						var_type_set_resolve_overlaps(analysis, var, type, memref);
 						var_rename(analysis, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
@@ -470,7 +483,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				if (var) {
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
-						var_type_set(analysis, var, type, memref);
+						var_type_set_resolve_overlaps(analysis, var, type, memref);
 						var_rename(analysis, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
@@ -496,7 +509,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				ut64 ptr = get_addr(analysis, tmp, j);
 				if (ptr == xaddr) {
 					if (type) {
-						var_type_set(analysis, var, type, memref);
+						var_type_set_resolve_overlaps(analysis, var, type, memref);
 					} else {
 						var_type_set_str(analysis, var, "int", memref);
 					}
@@ -567,8 +580,9 @@ static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVe
 		if (used_vars && !rz_pvector_empty(used_vars)) {
 			rz_pvector_foreach (used_vars, uvit) {
 				RzAnalysisVar *var = *uvit;
-				var_type_set(core->analysis, var, ctx->ret_type, true);
+				var_type_set(core->analysis, var, ctx->ret_type, true, false);
 			}
+			vars_resolve_overlaps(used_vars);
 		}
 	}
 }
@@ -590,8 +604,9 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 		if (used_vars && !rz_pvector_empty(used_vars) && aop->direction == RZ_ANALYSIS_OP_DIR_WRITE) {
 			rz_pvector_foreach (used_vars, uvit) {
 				RzAnalysisVar *var = *uvit;
-				var_type_set(core->analysis, var, ctx->ret_type, false);
+				var_type_set(core->analysis, var, ctx->ret_type, false, false);
 			}
+			vars_resolve_overlaps(used_vars);
 			ctx->resolved = true;
 		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV) {
 			RZ_FREE(ctx->ret_reg);
@@ -716,7 +731,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 				}
 				if (prop && match && prev_var && prev_type) {
 					// Here we clone the type
-					var_type_set(core->analysis, var, prev_type, false);
+					var_type_set(core->analysis, var, prev_type, false, false);
 				}
 			}
 			if (chk_constraint && var && (type == RZ_ANALYSIS_OP_TYPE_CMP && aop->disp != UT64_MAX) && next_op && next_op->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
@@ -747,6 +762,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 				rz_analysis_var_add_constraint(var, &constr);
 			}
 		}
+		vars_resolve_overlaps(used_vars);
 	}
 	prev_var = (used_vars && !rz_pvector_empty(used_vars) && aop->direction == RZ_ANALYSIS_OP_DIR_READ);
 	ctx->str_flag = false;
@@ -808,6 +824,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 
 	RzAnalysis *analysis = core->analysis;
+	RzReg *reg = analysis->reg;
 	const int mininstrsz = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX(1, mininstrsz);
 	RzConfigHold *hc = rz_config_hold_new(core->config);
@@ -816,8 +833,9 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 	RzDebugTrace *dt = NULL;
 	RzAnalysisEsilTrace *et = NULL;
-	if (!analysis_emul_init(core, hc, &dt, &et) || !fcn) {
-		analysis_emul_restore(core, hc, dt, et);
+	RzAnalysisRzilTrace *rt = NULL;
+	if (!analysis_emul_init(core, hc, &dt, &et, &rt) || !fcn) {
+		analysis_emul_restore(core, hc, dt, et, rt);
 		return;
 	}
 
@@ -843,11 +861,11 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	};
 
 	HtUP *op_cache = NULL;
-	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
+	const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 	if (!pc) {
 		goto out_function;
 	}
-	RzRegItem *r = rz_reg_get(core->dbg->reg, pc, -1);
+	RzRegItem *r = rz_reg_get(reg, pc, -1);
 	if (!r) {
 		goto out_function;
 	}
@@ -857,7 +875,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, it, bb) {
 		ut64 addr = bb->addr;
-		rz_reg_set_value(core->dbg->reg, r, addr);
+		rz_reg_set_value(reg, r, addr);
 		ht_up_free(op_cache);
 		op_cache = ht_up_new(NULL, free_op_cache_kv, NULL);
 		if (!op_cache) {
@@ -867,7 +885,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			if (rz_cons_is_breaked()) {
 				goto out_function;
 			}
-			ut64 pcval = rz_reg_getv(analysis->reg, pc);
+			ut64 pcval = rz_reg_getv(reg, pc);
 			if ((addr >= bb->addr + bb->size) || (addr < bb->addr) || pcval != addr) {
 				break;
 			}
@@ -893,7 +911,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			}
 
 			if (rz_analysis_op_nonlinear(aop->type)) { // skip the instr
-				rz_reg_set_value(core->dbg->reg, r, addr + aop->size);
+				rz_reg_set_value(reg, r, addr + aop->size);
 			} else {
 				rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			}
@@ -913,30 +931,31 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			rz_list_free(fcns);
 		}
 	}
+
 	// Type propagation for register based args
 	void **vit;
-	//RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&fcn->vars);
 	rz_pvector_foreach (&fcn->vars, vit) {
 		RzAnalysisVar *rvar = *vit;
 		if (rvar->kind == RZ_ANALYSIS_VAR_KIND_REG) {
 			RzAnalysisVar *lvar = rz_analysis_var_get_dst_var(rvar);
-			RzRegItem *i = rz_reg_index_get(analysis->reg, rvar->delta);
+			RzRegItem *i = rz_reg_index_get(reg, rvar->delta);
 			if (!i) {
 				continue;
 			}
-			// Note that every `var_type_set()` call could remove some variables
+			// Note that every `var_type_set_resolve_overlaps()` call could remove some variables
 			// due to the overlaps resolution
 			if (lvar) {
 				// Propagate local var type = to => register-based var
-				var_type_set(analysis, rvar, lvar->type, false);
+				var_type_set(analysis, rvar, lvar->type, false, false);
 				// Propagate local var type <= from = register-based var
-				var_type_set(analysis, lvar, rvar->type, false);
+				var_type_set(analysis, lvar, rvar->type, false, false);
 			}
 		}
 	}
+	vars_resolve_overlaps(&fcn->vars);
 out_function:
 	free(retctx.ret_reg);
 	ht_up_free(op_cache);
 	rz_cons_break_pop();
-	analysis_emul_restore(core, hc, dt, et);
+	analysis_emul_restore(core, hc, dt, et, rt);
 }

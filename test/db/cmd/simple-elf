@@ -8,9 +8,9 @@ RUN
 
 NAME=display mapped flag in sections list
 FILE=bins/elf/analysis/x86-simple
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x08048000 - 0x08048071 r-x fmap.LOAD0
+ 1 fd: 3 +0x00000000 0x08048000 * 0x08048071 r-x fmap.LOAD0
 EOF
 RUN
 
@@ -23,7 +23,7 @@ EOF
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section..text:
-            0x08048060      call  0x8048065                            ; [01] -r-x section size 18 named .text
+            0x08048060      call  0x8048065                            ; [00] -r-x section size 18 named .text
             0x08048065      pop   ebx
             0x08048066      mov   eax, 1
             0x0804806b      mov   ebx, 0x2a                            ; '*' ; 42

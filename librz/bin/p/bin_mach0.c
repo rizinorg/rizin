@@ -84,7 +84,7 @@ static RzBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 		ptr->hpaddr = hpaddr;
 		ptr->bits = bits;
 		ptr->type = type;
-		//realign due to thumb
+		// realign due to thumb
 		if (bits == 16 && ptr->vaddr & 1) {
 			ptr->paddr--;
 			ptr->vaddr--;
@@ -112,7 +112,7 @@ static void process_constructors(RzBinFile *bf, RzList *ret, int bits) {
 			}
 			int read = rz_buf_read_at(bf->buf, sec->paddr, buf, sec->size);
 			if (read < sec->size) {
-				eprintf("process_constructors: cannot process section %s\n", sec->name);
+				RZ_LOG_ERROR("process_constructors: cannot process section %s\n", sec->name);
 				continue;
 			}
 			if (bits == 32) {
@@ -158,7 +158,7 @@ static RzList *entries(RzBinFile *bf) {
 		ptr->vaddr = entry->addr;
 		ptr->hpaddr = entry->haddr;
 		ptr->bits = bits;
-		//realign due to thumb
+		// realign due to thumb
 		if (bits == 16) {
 			if (ptr->vaddr & 1) {
 				ptr->paddr--;
@@ -271,7 +271,7 @@ static RzList *symbols(RzBinFile *bf) {
 #endif
 		rz_list_append(ret, ptr);
 	}
-	//functions from LC_FUNCTION_STARTS
+	// functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
 		ut64 value = 0, address = 0;
 		const ut8 *temp = bin->func_start;
@@ -428,9 +428,6 @@ static RzList *relocs(RzBinFile *bf) {
 	RzSkipListNode *it;
 	struct reloc_t *reloc;
 	rz_skiplist_foreach (relocs, it, reloc) {
-		if (reloc->external) {
-			continue;
-		}
 		RzBinReloc *ptr = NULL;
 		if (!(ptr = RZ_NEW0(RzBinReloc))) {
 			break;
@@ -440,6 +437,7 @@ static RzList *relocs(RzBinFile *bf) {
 		if (reloc->name[0]) {
 			RzBinImport *imp;
 			if (!(imp = import_from_name(bf->rbin, (char *)reloc->name, bin->imports_by_name))) {
+				free(ptr);
 				break;
 			}
 			ptr->import = imp;
@@ -451,10 +449,9 @@ static RzList *relocs(RzBinFile *bf) {
 		ptr->addend = reloc->addend;
 		ptr->vaddr = reloc->addr;
 		ptr->paddr = reloc->offset;
+		ptr->target_vaddr = reloc->target;
 		rz_list_append(ret, ptr);
 	}
-
-	rz_skiplist_free(relocs);
 
 	return ret;
 }
@@ -522,171 +519,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie)(bf->o->bin_obj);
 	ret->has_nx = MACH0_(has_nx)(bf->o->bin_obj);
+
 	return ret;
 }
 
-static bool _patch_reloc(struct MACH0_(obj_t) * bin, RzIOBind *iob, struct reloc_t *reloc, ut64 symbol_at) {
-	ut64 pc = reloc->addr;
-	ut64 ins_len = 0;
-
-	switch (bin->hdr.cputype) {
-	case CPU_TYPE_X86_64: {
-		switch (reloc->type) {
-		case X86_64_RELOC_UNSIGNED:
-			break;
-		case X86_64_RELOC_BRANCH:
-			pc -= 1;
-			ins_len = 5;
-			break;
-		default:
-			eprintf("Warning: unsupported reloc type for X86_64 (%d), please file a bug.\n", reloc->type);
-			return false;
-		}
-		break;
-	}
-	case CPU_TYPE_ARM64:
-	case CPU_TYPE_ARM64_32:
-		pc = reloc->addr & ~3;
-		ins_len = 4;
-		break;
-	case CPU_TYPE_ARM:
-		break;
-	default:
-		eprintf("Warning: unsupported architecture for patching relocs, please file a bug. %s\n", MACH0_(get_cputype_from_hdr)(&bin->hdr));
-		return false;
-	}
-
-	ut64 val = symbol_at;
-	if (reloc->pc_relative) {
-		val = symbol_at - pc - ins_len;
-	}
-
-	ut8 buf[8];
-	rz_write_ble(buf, val, false, reloc->size * 8);
-	iob->write_at(iob->io, reloc->addr, buf, reloc->size);
-
-	return true;
-}
-
-static RzList *patch_relocs(RzBinFile *bf) {
-	rz_return_val_if_fail(bf, NULL);
-	RzBin *b = bf->rbin;
-	RzList *ret = NULL;
-	RzIOMap *g = NULL;
-	HtUU *relocs_by_sym = NULL;
-	RzIODesc *gotrzdesc = NULL;
-
-	RzIO *io = b->iob.io;
-	if (!io) {
-		return NULL;
-	}
-	RzBinObject *obj = bf->o;
-	if (!obj) {
-		return NULL;
-	}
-	struct MACH0_(obj_t) *bin = obj->bin_obj;
-
-	RzSkipList *all_relocs = MACH0_(get_relocs)(bin);
-	if (!all_relocs) {
-		return NULL;
-	}
-	RzList *ext_relocs = rz_list_new();
-	if (!ext_relocs) {
-		goto beach;
-	}
-	RzSkipListNode *it;
-	struct reloc_t *reloc;
-	rz_skiplist_foreach (all_relocs, it, reloc) {
-		if (!reloc->external) {
-			continue;
-		}
-		rz_list_append(ext_relocs, reloc);
-	}
-	ut64 num_ext_relocs = rz_list_length(ext_relocs);
-	if (!num_ext_relocs) {
-		goto beach;
-	}
-
-	if (!io->cached) {
-		eprintf("Warning: run rizin with -e io.cache=true to fix relocations in disassembly\n");
-		goto beach;
-	}
-
-	int cdsz = obj->info ? obj->info->bits / 8 : 8;
-
-	ut64 offset = 0;
-	void **vit;
-	RzPVector *maps = rz_io_maps(io);
-	rz_pvector_foreach (maps, vit) {
-		RzIOMap *map = *vit;
-		if (map->itv.addr > offset) {
-			offset = map->itv.addr;
-			g = map;
-		}
-	}
-	if (!g) {
-		goto beach;
-	}
-	ut64 n_vaddr = g->itv.addr + g->itv.size;
-	ut64 size = num_ext_relocs * cdsz;
-	char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-	RzIOMap *gotrzmap;
-	gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr, &gotrzmap);
-	free(muri);
-	if (!gotrzdesc) {
-		goto beach;
-	}
-	gotrzmap->name = strdup(".got.rz");
-
-	if (!(ret = rz_list_newf((RzListFree)free))) {
-		goto beach;
-	}
-	if (!(relocs_by_sym = ht_uu_new0())) {
-		goto beach;
-	}
-	ut64 vaddr = n_vaddr;
-	RzListIter *liter;
-	rz_list_foreach (ext_relocs, liter, reloc) {
-		ut64 sym_addr = 0;
-		sym_addr = ht_uu_find(relocs_by_sym, reloc->ord, NULL);
-		if (!sym_addr) {
-			sym_addr = vaddr;
-			ht_uu_insert(relocs_by_sym, reloc->ord, vaddr);
-			vaddr += cdsz;
-		}
-		if (!_patch_reloc(bin, &b->iob, reloc, sym_addr)) {
-			continue;
-		}
-		RzBinReloc *ptr = NULL;
-		if (!(ptr = RZ_NEW0(RzBinReloc))) {
-			goto beach;
-		}
-		ptr->type = reloc->type;
-		ptr->additive = 0;
-		RzBinImport *imp;
-		if (!(imp = import_from_name(b, (char *)reloc->name, bin->imports_by_name))) {
-			RZ_FREE(ptr);
-			goto beach;
-		}
-		ptr->target_vaddr = sym_addr;
-		ptr->import = imp;
-		rz_list_append(ret, ptr);
-	}
-	if (rz_list_empty(ret)) {
-		goto beach;
-	}
-	ht_uu_free(relocs_by_sym);
-	rz_list_free(ext_relocs);
-	rz_skiplist_free(all_relocs);
-	return ret;
-
-beach:
-	rz_list_free(ext_relocs);
-	rz_skiplist_free(all_relocs);
-	rz_io_desc_free(gotrzdesc);
-	rz_list_free(ret);
-	ht_uu_free(relocs_by_sym);
-	return NULL;
+static RzList *classes(RzBinFile *bf) {
+	return MACH0_(parse_classes)(bf, NULL);
 }
 
 #if !RZ_BIN_MACH064
@@ -703,6 +541,7 @@ static bool check_buffer(RzBuffer *b) {
 	}
 	return false;
 }
+
 static RzBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, int dlen, RzBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
@@ -722,7 +561,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, 
 	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 #ifndef RZ_BIN_MACH064
 	if (opt->bits == 64) {
-		eprintf("TODO: Please use mach064 instead of mach0\n");
+		RZ_LOG_ERROR("Please use mach064 instead of mach0\n");
 		free(buf);
 		return NULL;
 	}
@@ -981,8 +820,8 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 		if (addr == UT64_MAX || !(ret = RZ_NEW0(RzBinAddr))) {
 			return NULL;
 		}
-		//if (bf->o->info && bf->o->info->bits == 16) {
-		// align for thumb
+		// if (bf->o->info && bf->o->info->bits == 16) {
+		//  align for thumb
 		ret->vaddr = ((addr >> 1) << 1);
 		//}
 		ret->paddr = ret->vaddr;
@@ -1010,6 +849,10 @@ static ut64 size(RzBinFile *bf) {
 	return off + len;
 }
 
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 4, false);
+}
+
 RzBinPlugin rz_bin_plugin_mach0 = {
 	.name = "mach0",
 	.desc = "mach0 bin plugin",
@@ -1027,17 +870,17 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
+	.strings = &strings,
 	.size = &size,
 	.info = &info,
 	.header = MACH0_(mach_headerfields),
 	.fields = MACH0_(mach_fields),
 	.libs = &libs,
 	.relocs = &relocs,
-	.patch_relocs = &patch_relocs,
 	.create = &create,
-	.classes = &MACH0_(parse_classes),
+	.classes = &classes,
 	.section_type_to_string = &MACH0_(section_type_to_string),
-	.section_flag_to_rzlist = &MACH0_(section_flag_to_rzlist),
+	.section_flag_to_rzlist = &MACH0_(section_flag_to_rzlist)
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -4,7 +4,7 @@ CMDS=<<EOF
 w aac
 p8 3
 /x 616163
-f~?
+fl~?
 EOF
 EXPECT=<<EOF
 616163
@@ -19,7 +19,7 @@ CMDS=<<EOF
 w aac
 p8 3
 /x 6163
-f~?
+fl~?
 EOF
 EXPECT=<<EOF
 616163

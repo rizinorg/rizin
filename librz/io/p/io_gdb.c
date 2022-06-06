@@ -15,7 +15,7 @@ typedef struct {
 	libgdbr_t desc;
 } RzIOGdb;
 
-#define RZ_GDB_MAGIC rz_str_hash("gdb")
+#define RZ_GDB_MAGIC rz_str_djb2_hash("gdb")
 
 static int __close(RzIODesc *fd);
 static libgdbr_t *desc = NULL;
@@ -256,7 +256,9 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (rz_str_startswith(cmd, "pkt ")) {
-		gdbr_lock_enter(desc);
+		if (!gdbr_lock_enter(desc)) {
+			goto gdb_lock_leave;
+		}
 		if (send_msg(desc, cmd + 4) >= 0) {
 			(void)read_packet(desc, false);
 			desc->data[desc->data_len] = '\0';
@@ -265,8 +267,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 				eprintf("[waiting for ack]\n");
 			}
 		}
-		gdbr_lock_leave(desc);
-		return NULL;
+		goto gdb_lock_leave;
 	}
 	if (rz_str_startswith(cmd, "rd")) {
 		PJ *pj = pj_new();
@@ -283,7 +284,9 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			eprintf("Stepping backwards is not supported in this gdbserver implementation\n");
 			return NULL;
 		}
-		gdbr_lock_enter(desc);
+		if (!gdbr_lock_enter(desc)) {
+			goto gdb_lock_leave;
+		}
 		if (send_msg(desc, "bs") >= 0) {
 			(void)read_packet(desc, false);
 			desc->data[desc->data_len] = '\0';
@@ -298,15 +301,16 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			}
 			gdbr_invalidate_reg_cache();
 		}
-		gdbr_lock_leave(desc);
-		return NULL;
+		goto gdb_lock_leave;
 	}
 	if (rz_str_startswith(cmd, "dcb")) {
 		if (!desc->stub_features.ReverseContinue) {
 			eprintf("Continue backwards is not supported in this gdbserver implementation\n");
 			return NULL;
 		}
-		gdbr_lock_enter(desc);
+		if (!gdbr_lock_enter(desc)) {
+			goto gdb_lock_leave;
+		}
 		if (send_msg(desc, "bc") >= 0) {
 			(void)read_packet(desc, false);
 			desc->data[desc->data_len] = '\0';
@@ -321,8 +325,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			}
 			gdbr_invalidate_reg_cache();
 		}
-		gdbr_lock_leave(desc);
-		return NULL;
+		goto gdb_lock_leave;
 	}
 	if (rz_str_startswith(cmd, "pid")) {
 		int pid = desc ? desc->pid : -1;
@@ -398,10 +401,14 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	}
 	eprintf("Try: 'R!?'\n");
 	return NULL;
+
+gdb_lock_leave:
+	gdbr_lock_leave(desc);
+	return NULL;
 }
 
 RzIOPlugin rz_io_plugin_gdb = {
-	//void *plugin;
+	// void *plugin;
 	.name = "gdb",
 	.license = "LGPL3",
 	.desc = "Attach to gdbserver instance",

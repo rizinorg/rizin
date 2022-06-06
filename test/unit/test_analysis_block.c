@@ -3,6 +3,7 @@
 
 #include <rz_analysis.h>
 #include <rz_core.h>
+#include <rz_windows.h>
 #include "minunit.h"
 
 #include "mock_io.inl"
@@ -483,7 +484,7 @@ bool test_rz_analysis_block_query() {
 
 bool addr_list_cb(ut64 addr, void *user) {
 	RzList *list = user;
-	rz_list_push(list, (void *)addr);
+	rz_list_push(list, (void *)(size_t)addr);
 	return true;
 }
 
@@ -626,7 +627,7 @@ bool test_rz_analysis_block_automerge() {
 
 		rz_analysis_block_automerge(shuffled_blocks);
 		assert_block_invariants(analysis);
-		//mu_assert_eq (rz_list_length (shuffled_blocks), 4, "length after automerge");
+		// mu_assert_eq (rz_list_length (shuffled_blocks), 4, "length after automerge");
 		mu_assert("remaining blocks a", rz_list_contains(shuffled_blocks, a));
 		mu_assert("remaining blocks b", rz_list_contains(shuffled_blocks, b));
 		mu_assert("remaining blocks c", rz_list_contains(shuffled_blocks, c));

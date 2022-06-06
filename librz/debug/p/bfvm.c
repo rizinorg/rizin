@@ -90,7 +90,7 @@ RZ_API ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
 }
 
 RZ_API ut8 *bfvm_get_ptr(BfvmCPU *c) {
-	//return bfvm_cpu.mem;
+	// return bfvm_cpu.mem;
 	return bfvm_get_ptr_at(c, c->ptr);
 }
 
@@ -154,6 +154,7 @@ RZ_API int bfvm_trace_op(BfvmCPU *c, ut8 op) {
 	switch (op) {
 	case '\0':
 		eprintf(" ; trap (%02x)\n", op);
+		// fallthrough
 	case '.':
 	case ',':
 	case '+':
@@ -186,7 +187,7 @@ RZ_API int bfvm_step(BfvmCPU *c, int over) {
 			/* trap */
 			return 1;
 		case '.':
-			//bfvm_get_ptr (c);
+			// bfvm_get_ptr (c);
 			bfvm_poke(c);
 			break;
 		case ',':

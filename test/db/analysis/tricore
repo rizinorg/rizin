@@ -48,7 +48,7 @@ RUN
 
 NAME=TriCore return_0.elf
 FILE=bins/tricore/return_0.elf
-CMDS=drp
+CMDS=arp
 EXPECT=<<EOF
 =PC	pc
 =SP	a10
@@ -154,5 +154,41 @@ EXPECT=<<EOF
             0x80000060      8f005001       or    d0, d0, 256           ; bitwise or
             0x80000064      cd40e00f       mtcr  #0xfe04, d0           ; move to core register
             0x80000068      0d00c004       isync                       ; synchronize instructions
+EOF
+RUN
+
+NAME=tricore regs
+FILE=
+CMDS=<<EOF
+e asm.arch=tricore
+ar
+EOF
+EXPECT=<<EOF
+p0 = 0x00000000
+p2 = 0x00000000
+p4 = 0x00000000
+p6 = 0x00000000
+p8 = 0x00000000
+p10 = 0x00000000
+p12 = 0x00000000
+p14 = 0x00000000
+e0 = 0x00000000
+e2 = 0x00000000
+e4 = 0x00000000
+e6 = 0x00000000
+e8 = 0x00000000
+e10 = 0x00000000
+e12 = 0x00000000
+e14 = 0x00000000
+PSW = 0x00000000
+PCXI = 0x00000000
+FCX = 0x00000000
+LCX = 0x00000000
+ISP = 0x00000000
+ICR = 0x00000000
+PIPN = 0x00000000
+BIV = 0x00000000
+BTV = 0x00000000
+pc = 0x00000000
 EOF
 RUN

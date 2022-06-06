@@ -87,25 +87,25 @@ static RzVector *get_annotations_for_hello_world(void) {
 	RzVector *test_annotations = rz_vector_new(sizeof(RzCodeAnnotation), NULL, NULL);
 	RzCodeAnnotation annotation;
 	// rz_vector_init (&test_annotations, sizeof (RzCodeAnnotation), NULL, NULL);
-	//Code Annotations for a hello world program
+	// Code Annotations for a hello world program
 	annotation = make_code_annotation(1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
-	rz_vector_push(test_annotations, &annotation); //1
+	rz_vector_push(test_annotations, &annotation); // 1
 	annotation = make_code_annotation(6, 10, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME);
-	rz_vector_push(test_annotations, &annotation); //2
+	rz_vector_push(test_annotations, &annotation); // 2
 	annotation = make_code_annotation(11, 15, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	rz_vector_push(test_annotations, &annotation); //3
+	rz_vector_push(test_annotations, &annotation); // 3
 	annotation = make_code_annotation(23, 35, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME);
-	rz_vector_push(test_annotations, &annotation); //4
+	rz_vector_push(test_annotations, &annotation); // 4
 	annotation = make_code_annotation(36, 51, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE);
-	rz_vector_push(test_annotations, &annotation); //5
+	rz_vector_push(test_annotations, &annotation); // 5
 	annotation = make_code_annotation(23, 52, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4440, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	rz_vector_push(test_annotations, &annotation); //6
+	rz_vector_push(test_annotations, &annotation); // 6
 	annotation = make_code_annotation(58, 64, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4447, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	rz_vector_push(test_annotations, &annotation); //7
+	rz_vector_push(test_annotations, &annotation); // 7
 	annotation = make_code_annotation(58, 64, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	rz_vector_push(test_annotations, &annotation); //8
+	rz_vector_push(test_annotations, &annotation); // 8
 	annotation = make_code_annotation(58, 64, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4447, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	rz_vector_push(test_annotations, &annotation); //9
+	rz_vector_push(test_annotations, &annotation); // 9
 
 	return test_annotations;
 }
@@ -142,7 +142,7 @@ static RzAnnotatedCode *get_all_context_annotated_code(void) {
 }
 
 static bool test_rz_annotated_code_new(void) {
-	//Testing RAnnoatedCode->code
+	// Testing RAnnoatedCode->code
 	char *test_string = strdup("How are you?");
 	RzAnnotatedCode *code = rz_annotated_code_new(test_string);
 	mu_assert_streq(code->code, test_string, "Code in RzAnnotatedCode is not set as expected");
@@ -195,7 +195,7 @@ static bool test_rz_annotated_code_add_annotation(void) {
 		rz_annotated_code_add_annotation(code, annotation);
 	}
 
-	//Comparing
+	// Comparing
 	if (!test_equal(rz_vector_index_ptr(&code->annotations, 0), rz_vector_index_ptr(test_annotations, 0))) {
 		return false;
 	}
@@ -220,7 +220,7 @@ static bool test_rz_annotated_code_annotations_in(void) {
 	}
 
 	RzPVector *out = rz_annotated_code_annotations_in(code, 11);
-	//Expecting indices = 3, 4, 5
+	// Expecting indices = 3, 4, 5
 	mu_assert_eq(out->v.len, 3, "Additional annotations found. Bad output.");
 	if (!test_equal(*rz_pvector_index_ptr(out, 0), rz_vector_index_ptr(test_annotations, 3))) {
 		return false;
@@ -331,7 +331,7 @@ static bool test_rz_core_annotated_code_print_json_context_annotations(void) {
 static bool test_rz_core_annotated_code_print(void) {
 	RzAnnotatedCode *code = get_hello_world();
 	char *actual;
-	//Checking without line offset
+	// Checking without line offset
 	char *expected_first = "\n"
 			       "void main(void)\n"
 			       "{\n"
@@ -346,7 +346,7 @@ static bool test_rz_core_annotated_code_print(void) {
 	mu_assert_streq(actual, expected_first, "pdg OUTPUT DOES NOT MATCH");
 	rz_cons_pop();
 
-	//Checking with offset - pdgo
+	// Checking with offset - pdgo
 	RzVector *offsets = rz_annotated_code_line_offsets(code);
 	char *expected_second = "                  |\n"
 				"                  |void main(void)\n"

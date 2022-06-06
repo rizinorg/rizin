@@ -18,6 +18,7 @@
 #undef __UNIX__
 #undef __WINDOWS__
 
+// TODO: these modes should be dropped when oldshell is removed in favour of RzOutputMode.
 #define RZ_MODE_PRINT     0x000
 #define RZ_MODE_RIZINCMD  0x001
 #define RZ_MODE_SET       0x002
@@ -136,32 +137,10 @@ typedef enum {
 #define __UNIX__ 1
 #endif
 #if __WINDOWS__ || _WIN32
-#ifdef _MSC_VER
-#include <sdkddkver.h>
-#ifdef NTDDI_WIN10_TH2
-/* Avoid using Developer Preview and default to Windows 10/Windows Server 2016 */
-#undef _WIN32_WINNT
-#undef NTDDI_VERSION
-#define _WIN32_WINNT  _WIN32_WINNT_WIN10
-#define NTDDI_VERSION NTDDI_WIN10
-#endif
-/* Must be included before windows.h */
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#endif
-typedef int socklen_t;
-#undef USE_SOCKETS
-#define __WINDOWS__ 1
+#define __WINDOWS__  1
+#define _WINSOCKAPI_ /* Prevent inclusion of winsock.h in windows.h */
 #undef __UNIX__
 #undef __BSD__
-#endif
-#if __WINDOWS__ || _WIN32
-#define __addr_t_defined
-#include <windows.h>
-#include <direct.h>
 #endif
 
 #if defined(__APPLE__) && ((__arm__ || __arm64__ || __aarch64__) && IS_IOS)
@@ -200,6 +179,7 @@ typedef int socklen_t;
 #endif
 
 #include <rz_types_base.h>
+#include <rz_constructor.h>
 
 #undef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64
@@ -217,16 +197,12 @@ typedef int socklen_t;
 extern "C" {
 #endif
 
-// TODO: FS or RZ_SYS_DIR ??
-#undef FS
 #if __WINDOWS__
-#define FS            "\\"
 #define RZ_SYS_DIR    "\\"
 #define RZ_SYS_ENVSEP ";"
 #define RZ_SYS_HOME   "USERPROFILE"
 #define RZ_SYS_TMP    "TEMP"
 #else
-#define FS            "/"
 #define RZ_SYS_DIR    "/"
 #define RZ_SYS_ENVSEP ":"
 #define RZ_SYS_HOME   "HOME"
@@ -285,7 +261,9 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #define RZ_LIB_VERSION_HEADER(x) \
 	RZ_API const char *x##_version(void)
 #define RZ_LIB_VERSION(x) \
-	RZ_API const char *x##_version(void) { return "" RZ_VERSION; }
+	RZ_API const char *x##_version(void) { \
+		return "" RZ_VERSION; \
+	}
 
 #define BITS2BYTES(x)    (((x) / 8) + (((x) % 8) ? 1 : 0))
 #define ZERO_FILL(x)     memset(&x, 0, sizeof(x))
@@ -317,6 +295,7 @@ static inline void *rz_new_copy(int size, void *data) {
 #define RZ_PTR_ALIGN_NEXT(v, t) \
 	((char *)(((size_t)(v) + (t - 1)) & ~(t - 1)))
 
+#define RZ_BIT_MASK32(x, y) ((1UL << (x)) - (1UL << (y)))
 #define RZ_BIT_SET(x, y)    (((ut8 *)x)[y >> 4] |= (1 << (y & 0xf)))
 #define RZ_BIT_UNSET(x, y)  (((ut8 *)x)[y >> 4] &= ~(1 << (y & 0xf)))
 #define RZ_BIT_TOGGLE(x, y) (RZ_BIT_CHK(x, y) ? RZ_BIT_UNSET(x, y) : RZ_BIT_SET(x, y))
@@ -365,7 +344,7 @@ static inline void *rz_new_copy(int size, void *data) {
 
 // There is a bug of using "offsetof()" in the structure
 // initialization in GCC < 5.0 versions
-#if !(defined(__GNUC__) && __GNUC__ < 5)
+#if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
 #define rz_offsetof(type, member) offsetof(type, member)
 #else
 #if __SDB_WINDOWS__
@@ -378,6 +357,12 @@ static inline void *rz_new_copy(int size, void *data) {
 #define RZ_FREE(x) \
 	{ \
 		free((void *)x); \
+		x = NULL; \
+	}
+
+#define RZ_FREE_CUSTOM(x, y) \
+	{ \
+		y(x); \
 		x = NULL; \
 	}
 
@@ -497,16 +482,26 @@ static inline void *rz_new_copy(int size, void *data) {
 #endif
 #else
 #ifdef _MSC_VER
-#ifdef _WIN64
+#if defined(_M_X64) || defined(_M_AMD64)
 #define RZ_SYS_ARCH   "x86"
 #define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
 #define RZ_SYS_ENDIAN 0
 #define __x86_64__    1
-#else
+#elif defined(_M_IX86)
 #define RZ_SYS_ARCH   "x86"
 #define RZ_SYS_BITS   (RZ_SYS_BITS_32)
-#define __i386__      1
 #define RZ_SYS_ENDIAN 0
+#define __i386__      1
+#elif defined(_M_ARM64)
+#define RZ_SYS_ARCH   "arm"
+#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+#define RZ_SYS_ENDIAN 0
+#define __arm64__     1
+#elif defined(_M_ARM)
+#define RZ_SYS_ARCH   "arm"
+#define RZ_SYS_BITS   RZ_SYS_BITS_32
+#define RZ_SYS_ENDIAN 0
+#define __arm__       1
 #endif
 #else
 #define RZ_SYS_ARCH   "unknown"
@@ -660,7 +655,11 @@ typedef int RzRef;
 
 #define RZ_REF_TYPE RzRef RZ_REF_NAME
 #define RZ_REF_FUNCTIONS(s, n) \
-	static inline void n##_ref(s *x) { x->RZ_REF_NAME++; } \
-	static inline void n##_unref(s *x) { rz_unref(x, n##_free); }
+	static inline void n##_ref(s *x) { \
+		x->RZ_REF_NAME++; \
+	} \
+	static inline void n##_unref(s *x) { \
+		rz_unref(x, n##_free); \
+	}
 
 #endif // RZ_TYPES_H

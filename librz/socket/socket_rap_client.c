@@ -108,7 +108,7 @@ RZ_API char *rz_socket_rap_client_command(RzSocket *s, const char *cmd, RzCoreBi
 		return NULL;
 	}
 	rz_socket_read_block(s, (ut8 *)cmd_output, cmd_len);
-	//ensure the termination
+	// ensure the termination
 	cmd_output[cmd_len] = 0;
 	return cmd_output;
 }

@@ -8,6 +8,7 @@
 
 typedef enum {
 	RZ_BUFFER_FILE,
+	RZ_BUFFER_IO_FD,
 	RZ_BUFFER_IO,
 	RZ_BUFFER_BYTES,
 	RZ_BUFFER_MMAP,
@@ -19,6 +20,7 @@ typedef enum {
 #include "buf_sparse.c"
 #include "buf_bytes.c"
 #include "buf_mmap.c"
+#include "buf_io_fd.c"
 #include "buf_io.c"
 #include "buf_ref.c"
 
@@ -189,27 +191,28 @@ static bool buf_move_back(RZ_NONNULL RzBuffer *b, ut64 addr, ut64 length) {
 		return false;
 	}
 
+	bool res = false;
 	st64 tmp_length = rz_buf_read_at(b, addr, tmp, size - addr);
 	if (tmp_length < 0) {
-		free(tmp);
-		return false;
+		goto err;
 	}
 
 	if (!rz_buf_resize(b, size + length)) {
-		free(tmp);
-		return false;
+		goto err;
 	}
 
 	if (rz_buf_write_at(b, addr + length, tmp, tmp_length) < 0) {
-		free(tmp);
-		return false;
+		goto err;
 	}
 
-	return true;
+	res = true;
+err:
+	free(tmp);
+	return res;
 }
 
 static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {
-	rz_return_val_if_fail(b && b->methods, NULL);
+	rz_return_val_if_fail(b && size && b->methods, NULL);
 
 	buf_whole_buf_free(b);
 
@@ -233,9 +236,7 @@ static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {
 		return NULL;
 	}
 
-	if (size) {
-		*size = buf_size;
-	}
+	*size = buf_size;
 
 	return b->whole_buf;
 }
@@ -255,6 +256,9 @@ static RzBuffer *new_buffer(RzBufferType type, void *user) {
 		break;
 	case RZ_BUFFER_FILE:
 		methods = &buffer_file_methods;
+		break;
+	case RZ_BUFFER_IO_FD:
+		methods = &buffer_io_fd_methods;
 		break;
 	case RZ_BUFFER_IO:
 		methods = &buffer_io_methods;
@@ -458,7 +462,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_buf(RzBuffer *b) {
  * passed as argument. The bytes parameter can be NULL, but the length should
  * be set to 0.
  */
-RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_OWN const ut8 *bytes, ut64 len) {
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_BORROW const ut8 *bytes, ut64 len) {
 	rz_return_val_if_fail(bytes || !len, NULL); // if bytes == NULL, then len must be 0
 
 	struct buf_bytes_user u = { 0 };
@@ -483,15 +487,28 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_OWN const ut8 *byte
  * The function creates a new buffer wrapping access to a file descriptor
  * through the RzIOBind methods specified in librz/io.
  */
-RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob, int fd) {
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void *iob, int fd) {
 	rz_return_val_if_fail(iob && fd >= 0, NULL);
 
-	struct buf_io_user u = { 0 };
+	struct buf_io_fd_user u = { 0 };
 
 	u.iob = (RzIOBind *)iob;
 	u.fd = fd;
 
-	return new_buffer(RZ_BUFFER_IO, &u);
+	return new_buffer(RZ_BUFFER_IO_FD, &u);
+}
+
+/**
+ * \brief Creates a new buffer wrapping the memory map exposed by RzIOBind.
+ * \param iob Pointer to RzIOBind structure.
+ * \return Return the new allocated buffer.
+ *
+ * This buffer will use `rz_io_read_at()`/`rz_io_write_at()` as implemented by
+ * the RzIOBind given.
+ */
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob) {
+	rz_return_val_if_fail(iob, NULL);
+	return new_buffer(RZ_BUFFER_IO, iob);
 }
 
 /**
@@ -555,7 +572,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg) {
 }
 
 /**
- * \brief Get a string whith a max length from the buffer
+ * \brief Get a string with a max length from the buffer
  * \param b RzBuffer pointer
  * \param addr The address of the string
  * \param size The max length authorized
@@ -571,14 +588,14 @@ RZ_API RZ_OWN char *rz_buf_get_nstring(RzBuffer *b, ut64 addr, size_t size) {
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 
 	while (true) {
-		char tmp[GET_STRING_BUFFER_SIZE];
-		st64 r = rz_buf_read_at(b, addr, (ut8 *)tmp, sizeof(tmp));
+		char tmp[GET_STRING_BUFFER_SIZE + 1];
+		st64 r = rz_buf_read_at(b, addr, (ut8 *)tmp, sizeof(tmp) - 1);
 		if (r < 1) {
 			rz_strbuf_free(buf);
 			return NULL;
 		}
 
-		size_t count = strnlen(tmp, r);
+		size_t count = rz_str_nlen(tmp, r);
 		rz_strbuf_append_n(buf, tmp, count);
 
 		if (count > size) {
@@ -853,354 +870,13 @@ RZ_API bool rz_buf_read8(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut8 *result) 
  * \param result ...
  * \return Return the status of the operation.
  *
+ * \see rz_buf_read8()
  * ...
  */
 RZ_API bool rz_buf_read8_at(RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut8 *result) {
 	rz_return_val_if_fail(b && result, false);
 
 	return rz_buf_read_at(b, addr, result, sizeof(ut8)) == sizeof(ut8);
-}
-
-/**
- * \brief Read a big endian ut16 at the cursor in the buffer.
- * \param b ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be16()
- *
- * ...
- */
-RZ_API bool rz_buf_read_be16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble16(b, true, result);
-}
-
-/**
- * \brief Read a big endian ut16 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be16()
- *
- * ...
- */
-RZ_API bool rz_buf_read_be16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut16 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble16_at(b, addr, true, result);
-}
-
-/**
- * \brief Read a big endian ut32 at the cursor in the buffer.
- * \param b ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be32()
- * ...
- */
-RZ_API bool rz_buf_read_be32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble32(b, true, result);
-}
-
-/**
- * \brief Read a big endian ut32 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be32()
- *
- * ...
- */
-RZ_API bool rz_buf_read_be32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut32 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble32_at(b, addr, true, result);
-}
-
-/**
- * \brief Read a big endian ut64 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be64()
- *
- * ...
- */
-RZ_API bool rz_buf_read_be64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble64(b, true, result);
-}
-
-/**
- * \brief Read a big endian ut64 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be64()
- *
- * ...
- */
-RZ_API bool rz_buf_read_be64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble64_at(b, addr, true, result);
-}
-
-/**
- * \brief Read a big endian or little endian ut16 at the cursor in the buffer.
- * \param b ...
- * \param result ...
- * \param big_endian ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be16()
- * \see rz_read_le16()
- *
- * ...
- */
-RZ_API bool rz_buf_read_ble16(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut16 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	ut8 tmp[sizeof(ut16)];
-	if (rz_buf_read(b, tmp, sizeof(tmp)) != sizeof(tmp)) {
-		return false;
-	}
-
-	*result = big_endian ? rz_read_be16(tmp) : rz_read_le16(tmp);
-	return true;
-}
-
-/**
- * \brief Read a big endian or little endian ut16 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be16()
- * \see rz_read_le16()
- *
- * ...
- */
-RZ_API bool rz_buf_read_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut16 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	ut8 tmp[sizeof(ut16)];
-	if (rz_buf_read_at(b, addr, tmp, sizeof(tmp)) != sizeof(tmp)) {
-		return false;
-	}
-
-	*result = big_endian ? rz_read_be16(tmp) : rz_read_le16(tmp);
-	return true;
-}
-
-/**
- * \brief Read a big endian or little endian ut32 at the cursor in the buffer.
- * \param b ...
- * \param result ...
- * \param big_endian ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be32()
- * \see rz_read_le32()
- *
- * ...
- */
-RZ_API bool rz_buf_read_ble32(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut32 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	ut8 tmp[sizeof(ut32)];
-	if (rz_buf_read(b, tmp, sizeof(tmp)) != sizeof(tmp)) {
-		return false;
-	}
-
-	*result = big_endian ? rz_read_be32(tmp) : rz_read_le32(tmp);
-	return true;
-}
-
-/**
- * \brief Read a big endian or little endian ut32 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be32()
- * \see rz_read_le32()
- *
- * ...
- */
-RZ_API bool rz_buf_read_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut32 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	ut8 tmp[sizeof(ut32)];
-	if (rz_buf_read_at(b, addr, tmp, sizeof(tmp)) != sizeof(tmp)) {
-		return false;
-	}
-
-	*result = big_endian ? rz_read_be32(tmp) : rz_read_le32(tmp);
-	return true;
-}
-
-/**
- * \brief Read a big endian or little endian ut64 at the cursor in the buffer.
- * \param b ...
- * \param result ...
- * \param big_endian ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be64()
- * \see rz_read_le64()
- *
- * ...
- */
-RZ_API bool rz_buf_read_ble64(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut64 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	ut8 tmp[sizeof(ut64)];
-	if (rz_buf_read(b, tmp, sizeof(tmp)) != sizeof(tmp)) {
-		return false;
-	}
-
-	*result = big_endian ? rz_read_be64(tmp) : rz_read_le64(tmp);
-	return true;
-}
-
-/**
- * \brief Read a big endian or little endian ut64 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_be64()
- * \see rz_read_le64()
- *
- * ...
- */
-RZ_API bool rz_buf_read_ble64_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut64 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	ut8 tmp[sizeof(ut64)];
-	if (rz_buf_read_at(b, addr, tmp, sizeof(tmp)) != sizeof(tmp)) {
-		return false;
-	}
-
-	*result = big_endian ? rz_read_be64(tmp) : rz_read_le64(tmp);
-	return true;
-}
-
-/**
- * \brief Read a big little ut16 at the cursor in the buffer.
- * \param b ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_le16()
- *
- * ...
- */
-RZ_API bool rz_buf_read_le16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble16(b, false, result);
-}
-
-/**
- * \brief Read a little endian ut16 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_le16()
- *
- * ...
- */
-RZ_API bool rz_buf_read_le16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut16 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble16_at(b, addr, false, result);
-}
-
-/**
- * \brief Read a big little ut32 at the cursor in the buffer.
- * \param b ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_le32()
- *
- * ...
- */
-RZ_API bool rz_buf_read_le32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble32(b, false, result);
-}
-
-/**
- * \brief Read a little endian ut32 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_le32()
- *
- * ...
- */
-RZ_API bool rz_buf_read_le32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut32 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble32_at(b, addr, false, result);
-}
-
-/**
- * \brief Read a big little ut64 at the cursor in the buffer.
- * \param b ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_le64()
- *
- * ...
- */
-RZ_API bool rz_buf_read_le64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble64(b, false, result);
-}
-
-/**
- * \brief Read a little endian ut64 at the specified address in the buffer.
- * \param b ...
- * \param addr ...
- * \param result ...
- * \return Return the status of the operation.
- *
- * \see rz_read_le64()
- *
- * ...
- */
-RZ_API bool rz_buf_read_le64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result) {
-	rz_return_val_if_fail(b && result, false);
-
-	return rz_buf_read_ble64_at(b, addr, false, result);
 }
 
 /**
@@ -1242,6 +918,37 @@ RZ_API bool rz_buf_set_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, 
 	}
 
 	return rz_buf_seek(b, 0, RZ_BUF_SET) >= 0;
+}
+
+/**
+ * \brief Write a byte at the cursor in the buffer.
+ * \param b ...
+ * \param result ...
+ * \return Return the status of the operation.
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write8(RZ_NONNULL RzBuffer *b, ut8 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write(b, &value, sizeof(ut8)) == sizeof(ut8);
+}
+
+/**
+ * \brief Write a byte at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_buf_write8()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write8_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut8 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_at(b, addr, &value, sizeof(ut8)) == sizeof(ut8);
 }
 
 /**
@@ -1448,7 +1155,7 @@ RZ_API st64 rz_buf_read_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT 
 }
 
 /**
- * \brief Modified the current cursor position in the buffer.
+ * \brief Modify the current cursor position in the buffer.
  * \param b ...
  * \param addr ...
  * \param whence The relative position of the address.
@@ -1544,6 +1251,9 @@ RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b) {
  * ...
  */
 RZ_API void rz_buf_free(RzBuffer *b) {
+	if (!b) {
+		return;
+	}
 	if (rz_buf_fini(b)) {
 		free(b);
 	}
@@ -1567,84 +1277,137 @@ RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff) {
 
 /**
  * \brief Return a borrowed array of bytes representing the buffer data.
- * \param b ...
- * \param size ...
+ * \param b Buffer to get the data from.
+ * \param size Size of the returned data.
  *
  * WARNING: this function should be used with care because it may allocate the
- * entire buffer in memory. Consider using the rz_buf_read* APIs instead and
+ * entire buffer in memory. Consider using the rz_buf_read* APIs or rz_buf_fwd_scan API instead and
  * read only the chunks you need.
  */
-RZ_DEPRECATE RZ_API RZ_BORROW const ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size) {
-	rz_return_val_if_fail(b, NULL);
+RZ_DEPRECATE RZ_API RZ_BORROW ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *size) {
+	rz_return_val_if_fail(b && size, NULL);
 
 	return get_whole_buf(b, size);
 }
 
 /**
- * \brief ...
- * \param b ...
- * \param v ...
- * \return ...
+ * \brief Scans buffer linearly in chunks calling \p fwd_scan for each chunk.
  *
- * ...
+ * \param b RzBuffer to read
+ * \param start Start address
+ * \param amount Amount of bytes to read
+ * \param fwd_scan Function to call for each chunk
+ * \param user User data to pass to fwd_scan
+ * \return Number of bytes read
  */
-RZ_API st64 rz_buf_uleb128(RzBuffer *b, ut64 *v) {
-	ut8 c = 0xff;
-	ut64 s = 0, sum = 0, l = 0;
-	do {
-		ut8 data;
-		st64 r = rz_buf_read(b, &data, sizeof(data));
-		if (r <= 0) {
-			return -1;
-		}
-		c = data & 0xff;
-		if (s < 64) {
-			sum |= ((ut64)(c & 0x7f) << s);
-			s += 7;
-		} else {
-			sum = 0;
-		}
-		l++;
-	} while (c & 0x80);
-	if (v) {
-		*v = sum;
+RZ_API ut64 rz_buf_fwd_scan(RZ_NONNULL RzBuffer *b, ut64 start, ut64 amount, RZ_NONNULL RzBufferFwdScan fwd_scan, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(b && fwd_scan, 0);
+	if (!amount) {
+		return 0;
 	}
-	return l;
+	if (b->methods->get_whole_buf) {
+		ut64 sz;
+		const ut8 *buf = b->methods->get_whole_buf(b, &sz);
+		if (buf) {
+			if (sz <= start) {
+				return 0;
+			}
+			return fwd_scan(buf + start, RZ_MIN(sz - start, amount), user);
+		}
+	}
+	const ut64 size = rz_buf_size(b);
+	if (size <= start) {
+		return 0;
+	}
+	if (b->whole_buf) {
+		return fwd_scan(b->whole_buf + start, RZ_MIN(size - start, amount), user);
+	}
+	ut64 addr = start;
+	const ut64 user_end = UT64_ADD_OVFCHK(start, amount) ? UT64_MAX : start + amount;
+	const ut64 end = RZ_MIN(user_end, size);
+	const size_t buf_size = RZ_MIN(end - start, 0x1000);
+	ut8 *buf = malloc(buf_size);
+	if (!buf) {
+		return 0;
+	}
+	while (addr < end) {
+		const ut64 read_amount = RZ_MIN(buf_size, end - addr);
+		rz_buf_read_at(b, addr, buf, read_amount);
+		ut64 read = fwd_scan(buf, read_amount, user);
+		if (!read) {
+			break;
+		}
+		addr += read;
+	}
+	free(buf);
+	return addr - start;
 }
 
 /**
- * \brief ...
- * \param b ...
- * \param v ...
- * \return ...
+ * \brief  Decodes ULEB128 from RzBuffer
  *
- * ...
+ * \param  buffer Buffer used to decode the ULEB128.
+ * \param  value  Decoded value.
+ * \return The number of bytes used.
  */
-RZ_API st64 rz_buf_sleb128(RzBuffer *b, st64 *v) {
-	st64 result = 0, offset = 0;
-	ut8 value;
+RZ_API st64 rz_buf_uleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL ut64 *value) {
+	rz_return_val_if_fail(buffer && value, -1);
+
+	ut64 sum = 0, used = 0, slice;
+	ut32 shift = 0;
+	ut8 byte = 0;
 	do {
-		st64 chunk;
-		st64 r = rz_buf_read(b, &value, sizeof(value));
-		if (r != sizeof(value)) {
+		if (rz_buf_read(buffer, &byte, sizeof(byte)) < 1) {
+			// malformed uleb128 due end of buffer
 			return -1;
 		}
-		chunk = value & 0x7f;
-		if (offset < 64) {
-			result |= (chunk << offset);
-			offset += 7;
-		} else {
-			result = 0;
+		used++;
+		slice = byte & 0x7f;
+		if ((shift >= 64 && slice != 0) || ((slice << shift) >> shift) != slice) {
+			// uleb128 too big for ut64
+			return -1;
 		}
-	} while (value & 0x80);
+		sum += slice << shift;
+		shift += 7;
+	} while (byte >= 128);
+	*value = sum;
+	return used;
+}
 
-	if ((value & 0x40) != 0) {
-		if (offset < 64) {
-			result |= ~0ULL << offset;
+/**
+ * \brief  Decodes SLEB128 from RzBuffer
+ *
+ * \param  buffer Buffer used to decode the SLEB128.
+ * \param  value  Decoded value.
+ * \return The number of bytes used.
+ */
+RZ_API st64 rz_buf_sleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL st64 *value) {
+	rz_return_val_if_fail(buffer && value, -1);
+
+	ut64 used = 0, slice;
+	st64 sum = 0;
+	ut32 shift = 0;
+	ut8 byte = 0;
+	do {
+		if (rz_buf_read(buffer, &byte, sizeof(byte)) < 1) {
+			// malformed sleb128 due end of buffer
+			return -1;
 		}
+		used++;
+		slice = byte & 0x7f;
+		if ((shift >= 64 && slice != (sum < 0 ? 0x7f : 0x00)) ||
+			(shift == 63 && slice != 0 && slice != 0x7f)) {
+			// sleb128 too big for st64
+			return -1;
+		}
+		sum |= slice << shift;
+		shift += 7;
+	} while (byte >= 128);
+
+	if (shift < 64 && (byte & 0x40)) {
+		// extends negative sign
+		sum |= (-1ull) << shift;
 	}
-	if (v) {
-		*v = result;
-	}
-	return offset / 7;
+	*value = sum;
+	return used;
 }

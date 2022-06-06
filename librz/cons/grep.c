@@ -154,7 +154,7 @@ static void parse_grep_expression(const char *str) {
 			break;
 		case '<':
 			grep->zoom = atoi(++str);
-			//grep->zoomy = atoi (arg);
+			// grep->zoomy = atoi (arg);
 			break;
 		case '+':
 			if (first) {
@@ -345,7 +345,7 @@ static char *find_next_intgrep(char *cmd, const char *quotes) {
 		if (p == cmd || *(p - 1) != '\\') {
 			return (char *)p;
 		}
-		//twiddle unescape
+		// twiddle unescape
 		memmove(p - 1, p, strlen(p) + 1);
 		cmd = p + 1;
 	} while (*cmd);
@@ -466,7 +466,7 @@ RZ_API void rz_cons_grepbuf(void) {
 	const int len = cons->context->buffer_len;
 	RzConsGrep *grep = &cons->context->grep;
 	const char *in = buf;
-	int ret, total_lines = 0, buffer_len = 0, l = 0, tl = 0;
+	int ret, total_lines = 0, l = 0, tl = 0;
 	bool show = false;
 	if (cons->filter) {
 		cons->context->buffer_len = 0;
@@ -648,7 +648,6 @@ RZ_API void rz_cons_grepbuf(void) {
 						rz_strbuf_append(ob, str);
 						rz_strbuf_append(ob, "\n");
 					}
-					buffer_len += ret + 1;
 					free(str);
 				}
 				if (!grep->range_line) {

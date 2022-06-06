@@ -452,7 +452,7 @@ static inline ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **
 	default:
 		result = 0;
 		*buf += size;
-		eprintf("Weird dwarf address size: %zu.", size);
+		RZ_LOG_WARN("Weird dwarf address size: %zu.", size);
 	}
 	return result;
 }
@@ -528,7 +528,7 @@ static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const 
 			goto beach;
 		}
 		RzBinDwarfLineFileEntry *entry = rz_vector_push(&file_names, NULL);
-		entry->name = strdup(filename);
+		entry->name = rz_str_ndup(filename, len);
 		entry->id_idx = id_idx;
 		entry->mod_time = mod_time;
 		entry->file_len = file_len;
@@ -1198,21 +1198,15 @@ static bool init_debug_info(RzBinDwarfDebugInfo *inf) {
 	if (!inf->comp_units) {
 		return false;
 	}
-	inf->lookup_table = ht_up_new0();
-	if (!inf->lookup_table) {
-		goto wurzelbert_comp_units;
-	}
 	inf->line_info_offset_comp_dir = ht_up_new(NULL, free_ht_comp_dir, NULL);
 	if (!inf->line_info_offset_comp_dir) {
-		goto wurzelbert_lookup_table;
+		goto wurzelbert_comp_units;
 	}
 	inf->capacity = DEBUG_INFO_CAPACITY;
 	inf->count = 0;
 	return true;
-wurzelbert_lookup_table:
-	ht_up_free(inf->lookup_table);
 wurzelbert_comp_units:
-	free(inf->comp_units);
+	RZ_FREE(inf->comp_units);
 	return false;
 }
 
@@ -1489,7 +1483,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->address = READ64(buf);
 			break;
 		default:
-			eprintf("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
+			RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
 			return NULL;
 		}
 		break;
@@ -1524,8 +1518,8 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
-		value->string.content = *buf ? strdup((const char *)buf) : NULL;
-		buf += (strlen((const char *)buf) + 1);
+		value->string.content = *buf ? rz_str_ndup((char *)buf, buf_end - buf) : NULL;
+		buf += value->string.content ? strlen(value->string.content) + 1 : 1;
 		break;
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1568,7 +1562,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->string.offset = dwarf_read_offset(hdr->is_64bit, big_endian, &buf, buf_end);
 		if (debug_str && value->string.offset < debug_str_len) {
 			value->string.content =
-				strdup((const char *)(debug_str + value->string.offset));
+				rz_str_ndup((char *)debug_str + value->string.offset, debug_str_len - value->string.offset);
 		} else {
 			value->string.content = NULL; // Means malformed DWARF, should we print error message?
 		}
@@ -1628,9 +1622,9 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_strx:
 		value->kind = DW_AT_KIND_STRING;
 		// value->string.offset = dwarf_read_offset (hdr->is_64bit, big_endian, &buf, buf_end);
-		// if (debug_str && value->string.offset < debug_line_str_len) {
+		// if (debug_str && value->string.offset < debug_str_len) {
 		// 	value->string.content =
-		// 		strdup ((const char *)(debug_str + value->string.offset));
+		// 		rz_str_ndup ((const char *)(debug_str + value->string.offset), debug_str_len - value->string.offset);
 		// } else {
 		// 	value->string.content = NULL; // Means malformed DWARF, should we print error message?
 		// }
@@ -1685,7 +1679,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->string.offset = dwarf_read_offset(hdr->is_64bit, big_endian, &buf, buf_end);
 		// if (debug_str && value->string.offset < debug_line_str_len) {
 		// 	value->string.content =
-		// 		strdupsts
+		// 		rz_str_ndup
 		break;
 	// offset in the supplementary object file
 	case DW_FORM_ref_sup4:
@@ -1707,7 +1701,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		buf = rz_uleb128(buf, buf_end - buf, &value->address, NULL);
 		break;
 	default:
-		eprintf("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
+		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
 		value->uconstant = 0;
 		return NULL;
 	}
@@ -1943,7 +1937,7 @@ static RzBinDwarfDebugInfo *parse_info_raw(RzBinDwarfDebugAbbrev *da,
 		}
 
 		if (da->decls->count >= da->capacity) {
-			eprintf("WARNING: malformed dwarf have not enough buckets for decls.\n");
+			RZ_LOG_WARN("malformed dwarf have not enough buckets for decls.\n");
 		}
 		rz_warn_if_fail(da->count <= da->capacity);
 
@@ -1963,6 +1957,8 @@ static RzBinDwarfDebugInfo *parse_info_raw(RzBinDwarfDebugAbbrev *da,
 		if (!buf) {
 			goto cleanup;
 		}
+
+		info->n_dwarf_dies += unit->count;
 
 		unit_idx++;
 	}
@@ -2035,7 +2031,7 @@ static RzBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 	return da;
 }
 
-RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
+static RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
 	rz_return_val_if_fail(binfile && sn, NULL);
 	RzListIter *iter;
 	RzBinSection *section = NULL;
@@ -2060,10 +2056,10 @@ static ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t 
 	if (!section) {
 		return NULL;
 	}
-	if (section->size > binfile->size) {
+	if (section->paddr >= binfile->size) {
 		return NULL;
 	}
-	*len = section->size;
+	*len = RZ_MIN(section->size, binfile->size - section->paddr);
 	ut8 *buf = calloc(1, *len);
 	rz_buf_read_at(binfile->buf, section->paddr, buf, *len);
 	return buf;
@@ -2078,46 +2074,27 @@ static ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t 
  */
 RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwarfDebugAbbrev *da) {
 	rz_return_val_if_fail(binfile && da, NULL);
-	RzBinSection *section = getsection(binfile, "debug_info");
-	if (!section) {
-		return NULL;
-	}
-
 	RzBinDwarfDebugInfo *info = NULL;
-	ut64 debug_str_len = 0;
-	ut8 *debug_str_buf = NULL;
 
-	RzBinSection *debug_str = debug_str = getsection(binfile, "debug_str");
-	if (debug_str) {
-		debug_str_len = debug_str->size;
-		debug_str_buf = RZ_NEWS0(ut8, debug_str_len + 1);
-		if (!debug_str_buf) {
-			goto cave;
-		}
-		st64 ret = rz_buf_read_at(binfile->buf, debug_str->paddr,
-			debug_str_buf, debug_str_len);
-		if (!ret) {
-			goto cave_debug_str_buf;
-		}
-	}
+	size_t debug_str_len = 0;
+	ut8 *debug_str_buf = get_section_bytes(binfile, "debug_str", &debug_str_len);
 
-	ut64 len = section->size;
-	if (!len) {
-		goto cave_debug_str_buf;
-	}
-	ut8 *buf = RZ_NEWS0(ut8, len);
+	size_t len;
+	ut8 *buf = get_section_bytes(binfile, "debug_info", &len);
 	if (!buf) {
 		goto cave_debug_str_buf;
-	}
-	if (!rz_buf_read_at(binfile->buf, section->paddr, buf, len)) {
-		goto cave_buf;
 	}
 	info = parse_info_raw(da, buf, len, debug_str_buf, debug_str_len,
 		binfile->o && binfile->o->info && binfile->o->info->big_endian);
 	if (!info) {
 		goto cave_buf;
 	}
-
+	info->lookup_table = ht_up_new_size(info->n_dwarf_dies, NULL, NULL, NULL);
+	if (!info->lookup_table) {
+		rz_bin_dwarf_debug_info_free(info);
+		info = NULL;
+		goto cave_buf;
+	}
 	// build hashtable after whole parsing because of possible relocations
 	if (info) {
 		size_t i, j;
@@ -2133,7 +2110,6 @@ cave_buf:
 	free(buf);
 cave_debug_str_buf:
 	free(debug_str_buf);
-cave:
 	return info;
 }
 
@@ -2142,21 +2118,9 @@ cave:
  */
 RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RzBinFile *binfile, RZ_NULLABLE RzBinDwarfDebugInfo *info, RzBinDwarfLineInfoMask mask) {
 	rz_return_val_if_fail(binfile, NULL);
-	RzBinSection *section = getsection(binfile, "debug_line");
-	if (!section) {
-		return NULL;
-	}
-	ut64 len = section->size;
-	if (len < 1) {
-		return NULL;
-	}
-	ut8 *buf = RZ_NEWS0(ut8, len + 1);
+	size_t len;
+	ut8 *buf = get_section_bytes(binfile, "debug_line", &len);
 	if (!buf) {
-		return NULL;
-	}
-	int ret = rz_buf_read_at(binfile->buf, section->paddr, buf, len);
-	if (ret != len) {
-		free(buf);
 		return NULL;
 	}
 	// Actually parse the section
@@ -2167,18 +2131,9 @@ RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RzBinFile *binfile, RZ_NULLAB
 
 RZ_API RzList /*<RzBinDwarfARangeSet>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
-	RzBinSection *section = getsection(binfile, "debug_aranges");
-	if (!section) {
-		return NULL;
-	}
-	size_t len = section->size;
-	if (!len) {
-		return NULL;
-	}
-	ut8 *buf = RZ_NEWS0(ut8, len);
-	int ret = rz_buf_read_at(binfile->buf, section->paddr, buf, len);
-	if (!ret) {
-		free(buf);
+	size_t len;
+	ut8 *buf = get_section_bytes(binfile, "debug_aranges", &len);
+	if (!buf) {
 		return NULL;
 	}
 	RzList *r = parse_aranges_raw(buf, len, binfile->o && binfile->o->info && binfile->o->info->big_endian);

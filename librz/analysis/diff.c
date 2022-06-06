@@ -6,24 +6,25 @@
 #include <rz_util.h>
 #include <rz_diff.h>
 
-RZ_API RzAnalysisDiff *rz_analysis_diff_new(void) {
+RZ_API RZ_OWN RzAnalysisDiff *rz_analysis_diff_new(void) {
 	RzAnalysisDiff *diff = RZ_NEW0(RzAnalysisDiff);
-	if (diff) {
-		diff->type = RZ_ANALYSIS_DIFF_TYPE_NULL;
-		diff->addr = UT64_MAX;
-		diff->dist = 0;
-		diff->name = NULL;
-		diff->size = 0;
+	if (!diff) {
+		return NULL;
 	}
+	diff->type = RZ_ANALYSIS_DIFF_TYPE_NULL;
+	diff->addr = UT64_MAX;
+	diff->dist = 0;
+	diff->name = NULL;
+	diff->size = 0;
 	return diff;
 }
 
-RZ_API void *rz_analysis_diff_free(RzAnalysisDiff *diff) {
-	if (diff && diff->name) {
-		RZ_FREE(diff->name);
+RZ_API void rz_analysis_diff_free(RzAnalysisDiff *diff) {
+	if (!diff) {
+		return;
 	}
+	free(diff->name);
 	free(diff);
-	return NULL;
 }
 
 /* 0-1 */

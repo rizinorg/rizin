@@ -1,0 +1,180 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_cmp
+commands:
+  - name: c
+    summary: Compare an escaped <string> with data at current offset
+    cname: cmd_cmp_string
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: c1
+    summary: Compare 8-bit data at current offset with the data at <addr>
+    cname: cmd_cmp_bits
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: ca
+    summary: Compare <n> bytes of data at <addr> with the data at current offset
+    cname: cmd_cmp_addr
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: cb
+    summary: Compare <n> (up to 8) bytes at current offset with a number <num>
+    cname: cmd_cmp_bytes
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: num
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: cc
+    summary: Compare hexdump of data of block size at <addr> with the data at current offset
+    cname: cmd_cmp_hex_block
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: ccc
+    summary: Show different lines between hexdump of a block of data at <addr> wth the data at current offset
+    cname: cmd_cmp_hex_diff_lines
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: ccd
+    summary: Compare disassembly of block size at <addr> and at the current offset
+    cname: cmd_cmp_disasm
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: cf
+    summary: Compare the contents of <file> with the data at current offset
+    cname: cmd_cmp_file
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: cu
+    summary: Unified diff commands
+    subcommands:
+      - name: cu
+        summary: Compare data at <offset> with the current offset
+        cname: cmd_cmp_unified
+        args:
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: Applying patches
+            entries:
+              - text: "Apply unified hex patch"
+                comment: "cu <offset> > file; wu file"
+      - name: cu1
+        summary: Compare bytes at <offset> with the current offset
+        cname: cmd_cmp_unified1
+        args:
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: cu2
+        summary: Compare words (16-bit) at <offset> with the current offset
+        cname: cmd_cmp_unified2
+        args:
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: cu4
+        summary: Compare dwords (32-bit) at <offset> with the current offset
+        cname: cmd_cmp_unified4
+        args:
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: cu8
+        summary: Compare qwords (64-bit) at <offset> with the current offset
+        cname: cmd_cmp_unified8
+        args:
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: cud
+        summary: Compare disassembly at <offset> with the current offset
+        cname: cmd_cmp_unified_disasm
+        args:
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: cw
+    summary: Compare watcher commands
+    subcommands:
+      - name: cw
+        summary: Add a memory watcher of size <sz> and command <cmd> at current offset
+        cname: cmd_cmp_add_memory_watcher
+        args:
+          - name: sz
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: cmd
+            type: RZ_CMD_ARG_TYPE_CMD
+      - name: cwl
+        summary: List all compare watchers
+        cname: cmd_cmp_list_compare_watchers
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: cwr
+        summary: Reset/revert watcher at current offset
+        cname: cmd_cmp_reset_watcher
+        args: []
+      - name: cwu
+        summary: Update watcher at current offset
+        cname: cmd_cmp_update_watcher
+        args: []
+      - name: cwx
+        summary: Remove watcher at current offset
+        cname: cmd_cmp_remove_watcher
+        args: []
+    details:
+      - name: Compare memory locations and check if there is a difference
+        entries:
+          - text: "cw 32 'pD 32' @ 0x1234"
+            comment:
+              Adds a memory region watcher of 32 bytes
+              at 0x1234, where it executes the command 'pD 32'.
+          - text: "cwl"
+            comment: Lists all the memory region watchers and notifies of any changes
+          - text: "cwx @ 0x1234"
+            comment: Removes the memory region watchers at 0x1234
+  - name: cx
+    summary: Compare data at current offset with a hexpair string <hexpair> (also return in $?)
+    cname: cmd_cmp_hexpair_string
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: hexpair
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: cX
+    summary: Compare hexdump of data of block size at <addr> with the data at current offset using hexdiff output
+    cname: cmd_cmp_hex_block_hexdiff
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM

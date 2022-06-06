@@ -34,7 +34,7 @@ CMDS=<<EOF
 b 2
 wx 0xff
 e zoom.in=raw
-p=b 2 2@0
+p=b 2 2@ 0
 EOF
 EXPECT=<<EOF
 0x00000000 000 00ff |###################################################
@@ -68,7 +68,7 @@ RUN
 
 NAME=p=e 5
 FILE=bins/elf/arm1.bin
-CMDS=p=e 5@0
+CMDS=p=e 5@ 0
 EXPECT=<<EOF
 0x00000000 000 009f |########
 0x0001bec1 001 00c3 |#
@@ -113,7 +113,7 @@ RUN
 NAME=p=p 5
 FILE=bins/elf/arm1.bin
 ARGS=-n
-CMDS=p=p 5@0
+CMDS=p=p 5@ 0
 EXPECT=<<EOF
 0x00000000 000 0032 |##########
 0x0001bec1 001 0031 |#
@@ -152,6 +152,34 @@ EXPECT=<<EOF
 0x00000066 002 001e |##
 0x00000099 003 0028 |#######
 0x000000cc 004 001e |######
+EOF
+RUN
+
+NAME=p=Aq
+FILE==
+CMDS=<<EOF
+f test @ 0
+f ulu @ 2
+f mulu @ 0x100
+p=Aq 0x10
+EOF
+EXPECT=<<EOF
+0x00000000 0 2
+0x00000020 1 0
+0x00000040 2 0
+0x00000060 3 0
+0x00000080 4 0
+0x000000a0 5 0
+0x000000c0 6 0
+0x000000e0 7 0
+0x00000100 8 1
+0x00000120 9 0
+0x00000140 10 0
+0x00000160 11 0
+0x00000180 12 0
+0x000001a0 13 0
+0x000001c0 14 0
+0x000001e0 15 0
 EOF
 RUN
 
@@ -568,6 +596,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pmj elf/main
+FILE=bins/elf/analysis/main
+ARGS=-n
+CMDS=pmj
+EXPECT=<<EOF
+{"offset":0,"depth":1,"info":"ELF 64-bit LSB executable, x86-64, version 1"}
+EOF
+RUN
+
 NAME=pm mach0/fatmach0-3true
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
@@ -653,22 +690,7 @@ nop
 EOF
 RUN
 
-NAME=p- with "r2 --"
-FILE=--
-CMDS=p-
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=p- with malloc://512
-FILE=malloc://512
-CMDS=p-
-EXPECT=<<EOF
-0x00000000 [^_____________________________________________] 0x00000200
-EOF
-RUN
-
-NAME=psW 32 widestring
+NAME=psW 32 utf32le
 FILE=bins/elf/crackme0x00b
 CMDS=psW @ obj.pass.1964
 EXPECT=<<EOF
@@ -676,9 +698,9 @@ w0wgreat
 EOF
 RUN
 
-NAME=psW 32 widestring leading zeros
+NAME=psM 32 utf32be
 FILE=bins/elf/crackme0x00b
-CMDS=psW @ 0x0804a03e
+CMDS=psM @ 0x0804a03d
 EXPECT=<<EOF
 w0wgreat
 EOF

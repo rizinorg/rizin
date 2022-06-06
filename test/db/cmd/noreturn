@@ -116,7 +116,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"wa call 0x10;ret"
+wa "call 0x10;ret"
 tn 0x10
 af
 pif
@@ -131,11 +131,11 @@ FILE=bins/elf/noreturn
 CMDS=<<EOF
 aa
 ?e -- before --
-afb@sym.might_not_return
+afb@ sym.might_not_return
 tn 0x00001050 # TODO: this should be done automatically
 aanr
 ?e -- after --
-afb@sym.might_not_return
+afb@ sym.might_not_return
 EOF
 EXPECT=<<EOF
 -- before --

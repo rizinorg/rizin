@@ -1,4 +1,4 @@
-project('libzip', ['c'],
+project('libzip', 'c',
   default_options : ['c_std=c99', 'buildtype=release'],
   version: '1.7.3')
 
@@ -50,13 +50,18 @@ else
 endif
 
 underscore_functions = ['close', 'dup', 'fdopen', 'fileno', 'setmode', 'snprintf', 'strdup', 'stricmp', 'strtoi64', 'strtoui64', 'umask', 'unlink']
-functions = ['arc4random', 'clonefile', 'explicit_bzero', 'explicit_memset', 'fileno', 'fseeko', 'ftello', 'getprogname', 'localtime_r', 'mkstemp', 'setmode', 'snprintf', 'strdup', 'stricmp', 'strtoll', 'strtoull']
+functions = ['clonefile', 'explicit_bzero', 'explicit_memset', 'fileno', 'fseeko', 'ftello', 'getprogname', 'localtime_r', 'mkstemp', 'setmode', 'snprintf', 'strdup', 'stricmp', 'strtoll', 'strtoull']
 headers = ['stdbool.h', 'strings.h', 'unistd.h', 'dirent.h', 'fts.h', 'ndir.h', 'sys/dir.h', 'sys/ndir.h', 'sys/attr.h']
 types = ['off_t', 'size_t']
 # special case because clang-cl finds strcasecmp but has problem while linking
 if cc.get_id() != 'clang-cl' and cc.has_function('strcasecmp')
   conf_data.set10('HAVE_STRCASECMP', true)
   have_strcasecmp = true
+endif
+# both arc4random_buf and arc4random are needed if any
+if cc.has_function('arc4random_buf') and cc.has_function('arc4random')
+  conf_data.set10('HAVE_ARC4RANDOM', true)
+  have_arc4random = true
 endif
 foreach fcn : functions
   if cc.has_function(fcn) or cc.has_function(fcn, prefix: '#include <stdio.h>')

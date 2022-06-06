@@ -150,6 +150,17 @@ static RzList *maps(RzBinFile *bf) {
 		return NULL;
 	}
 	ut64 ba = baddr(bf);
+	RzBinMap *map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		return ret;
+	}
+	map->name = strdup("header");
+	map->paddr = 0;
+	map->psize = RZ_MIN(bin->size, RZ_ROUND(bin->nt_headers->optional_header.SizeOfHeaders, bin->nt_headers->optional_header.FileAlignment));
+	map->vaddr = ba;
+	map->vsize = RZ_ROUND(map->psize, 4096);
+	map->perm = RZ_PERM_R;
+	rz_list_append(ret, map);
 	PE_(rz_bin_pe_check_sections)
 	(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
@@ -164,7 +175,7 @@ static RzList *maps(RzBinFile *bf) {
 			if (sections[i].vsize < bin->size) {
 				map->psize = sections[i].vsize;
 			} else {
-				//hack give it page size
+				// hack give it page size
 				map->psize = 4096;
 			}
 		}
@@ -206,14 +217,14 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->perm = perm_of_section_perm(sections[i].perm);
-		if ((ptr->perm & RZ_PERM_RW) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
-			if (!strcmp(ptr->name, ".rsrc") ||
-				!strcmp(ptr->name, ".data") ||
-				!strcmp(ptr->name, ".rdata")) {
-				ptr->is_data = true;
-			}
+		if ((ptr->perm & RZ_PERM_R) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
+			ptr->is_data = true;
 		}
 		rz_list_append(ret, ptr);
+	}
+	if (rz_list_length(ret) == 1 && ptr->perm & RZ_PERM_R) {
+		// if there is only one section, then we expect to have data in here also.
+		ptr->is_data = true;
 	}
 	return ret;
 }
@@ -237,8 +248,66 @@ static inline bool is_thumb(struct PE_(rz_bin_pe_obj_t) * bin, ut64 address) {
 	}
 }
 
+static bool is_go_pclntab(ut8 *magic) {
+#define IS_GOPCLNTAB_1_2_LE(x)  (x[0] == 0xfb && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_2_BE(x)  (x[3] == 0xfb && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_16_LE(x) (x[0] == 0xfa && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_16_BE(x) (x[3] == 0xfa && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_18_LE(x) (x[0] == 0xf0 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_18_BE(x) (x[3] == 0xf0 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+	return IS_GOPCLNTAB_1_2_LE(magic) || IS_GOPCLNTAB_1_2_BE(magic) ||
+		IS_GOPCLNTAB_1_16_LE(magic) || IS_GOPCLNTAB_1_16_BE(magic) ||
+		IS_GOPCLNTAB_1_18_LE(magic) || IS_GOPCLNTAB_1_18_BE(magic);
+#undef IS_GOPCLNTAB_1_2_LE
+#undef IS_GOPCLNTAB_1_2_BE
+#undef IS_GOPCLNTAB_1_16_LE
+#undef IS_GOPCLNTAB_1_16_BE
+#undef IS_GOPCLNTAB_1_18_LE
+#undef IS_GOPCLNTAB_1_18_BE
+}
+
+static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
+	ut8 magic[16];
+	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
+	struct rz_bin_pe_section_t *sections = bin->sections;
+	if (!sections) {
+		return 0;
+	}
+	ut64 ba = baddr(bf);
+	for (int i = 0; !sections[i].last; i++) {
+		if (!strstr((char *)sections[i].name, "data")) {
+			continue;
+		}
+		ut64 offset = sections[i].paddr;
+		ut32 section_size = sections[i].size;
+		for (ut32 pos = 0; pos < section_size; pos += 8) {
+			if ((section_size - pos) < 16) {
+				break;
+			}
+			rz_buf_read_at(bf->buf, offset + pos, magic, sizeof(magic));
+			if ((magic[6] != 1 && magic[6] != 2 && magic[6] != 4) || // pc quantum
+				(magic[7] != 4 && magic[7] != 8)) { // pointer size
+				continue;
+			}
+			if (is_go_pclntab(magic)) {
+				if (size) {
+					*size = section_size - pos;
+				}
+				if (vaddr) {
+					*vaddr = ba + sections[i].vaddr + pos;
+				}
+				return offset + pos;
+			}
+		}
+	}
+	return 0;
+}
+
 static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
+	ut64 go_pclntab_paddr = 0;
+	ut64 go_pclntab_vaddr = 0;
+	ut32 go_pclntab_size = 0;
 	RzBinSymbol *ptr = NULL;
 	struct rz_bin_pe_export_t *symbols = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
@@ -257,7 +326,7 @@ static RzList *symbols(RzBinFile *bf) {
 			ptr->name = strdup((char *)symbols[i].name);
 			ptr->libname = *symbols[i].libname ? strdup((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = rz_str_constpool_get(&bf->rbin->constpool, (char *)symbols[i].forwarder);
-			//strncpy (ptr->bind, "NONE", RZ_BIN_SIZEOF_STRINGS);
+			// strncpy (ptr->bind, "NONE", RZ_BIN_SIZEOF_STRINGS);
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
@@ -276,16 +345,30 @@ static RzList *symbols(RzBinFile *bf) {
 		free(symbols);
 	}
 
+	if ((go_pclntab_paddr = find_go_pclntab(bf, &go_pclntab_size, &go_pclntab_vaddr))) {
+		if (!(ptr = RZ_NEW0(RzBinSymbol))) {
+			return ret;
+		}
+		ptr->name = strdup("gopclntab");
+		ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
+		ptr->type = RZ_BIN_TYPE_NOTYPE_STR;
+		ptr->size = go_pclntab_size;
+		ptr->bits = file_bits;
+		ptr->vaddr = go_pclntab_vaddr;
+		ptr->paddr = go_pclntab_paddr;
+		rz_list_append(ret, ptr);
+	}
+
 	if ((imports = PE_(rz_bin_pe_get_imports)(bf->o->bin_obj))) {
 		for (i = 0; !imports[i].last; i++) {
 			if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 				break;
 			}
-			//strncpy (ptr->name, (char*)symbols[i].name, RZ_BIN_SIZEOF_STRINGS);
+			// strncpy (ptr->name, (char*)symbols[i].name, RZ_BIN_SIZEOF_STRINGS);
 			ptr->name = strdup((const char *)imports[i].name);
 			ptr->libname = strdup((const char *)imports[i].libname);
 			ptr->is_imported = true;
-			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, RZ_BIN_SIZEOF_STRINGS);
+			// strncpy (ptr->forwarder, (char*)imports[i].forwarder, RZ_BIN_SIZEOF_STRINGS);
 			ptr->bind = "NONE";
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
@@ -351,7 +434,7 @@ static RzList *imports(RzBinFile *bf) {
 		ptr->ordinal = imports[i].ordinal;
 		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
 		// index for the import. There is no point in exposing it.
-		//ptr->hint = imports[i].hint;
+		// ptr->hint = imports[i].hint;
 		rz_list_append(ret, ptr);
 
 		if (!(rel = RZ_NEW0(RzBinReloc))) {
@@ -407,7 +490,59 @@ static RzList *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static int is_dot_net(RzBinFile *bf) {
+static RzList *resources(RzBinFile *bf) {
+	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
+	if (!obj) {
+		return NULL;
+	}
+
+	RzList *res = rz_list_newf((RzListFree)rz_bin_resource_free);
+	if (!res) {
+		return NULL;
+	}
+	rz_pe_resource *rs;
+	RzListIter *it;
+	size_t index = 0;
+	rz_list_foreach (obj->resources, it, rs) {
+		RzBinResource *br = RZ_NEW0(RzBinResource);
+		if (!br) {
+			goto err;
+		}
+
+		br->index = index++;
+		br->name = strdup(rs->name);
+		if (!br->name) {
+			rz_bin_resource_free(br);
+			goto err;
+		}
+		br->time = strdup(rs->timestr);
+		if (!br->time) {
+			rz_bin_resource_free(br);
+			goto err;
+		}
+		br->vaddr = PE_(rz_bin_pe_get_image_base)(obj) + rs->data->OffsetToData;
+		br->size = rs->data->Size;
+		br->type = strdup(rs->type);
+		if (!br->type) {
+			rz_bin_resource_free(br);
+			goto err;
+		}
+		br->language = strdup(rs->language);
+		if (!br->language) {
+			rz_bin_resource_free(br);
+			goto err;
+		}
+
+		rz_list_append(res, br);
+	}
+	return res;
+
+err:
+	rz_list_free(res);
+	return NULL;
+}
+
+static bool is_dot_net(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
 	int i;
 	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
@@ -423,7 +558,7 @@ static int is_dot_net(RzBinFile *bf) {
 	return false;
 }
 
-static int is_vb6(RzBinFile *bf) {
+static bool is_vb6(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
 	int i;
 	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
@@ -468,24 +603,8 @@ static int has_canary(RzBinFile *bf) {
 	return false;
 }
 
-static int haschr(const RzBinFile *bf, ut16 dllCharacteristic) {
-	const ut8 *buf;
-	unsigned int idx;
-	ut64 sz;
-	if (!bf) {
-		return false;
-	}
-	buf = rz_buf_data(bf->buf, &sz);
-	if (!buf) {
-		return false;
-	}
-	idx = (buf[0x3c] | (buf[0x3d] << 8));
-	if (idx + 0x5E + 1 >= sz) {
-		return false;
-	}
-	//it's funny here idx+0x5E can be 158 and sz 159 but with
-	//the cast it reads two bytes until 160
-	return ((*(ut16 *)(buf + idx + 0x5E)) & dllCharacteristic);
+static inline bool haschr(const struct PE_(rz_bin_pe_obj_t) * bin, ut16 dllCharacteristic) {
+	return bin->nt_headers->optional_header.DllCharacteristics & dllCharacteristic;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -512,6 +631,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (is_vb6(bf)) {
 		ret->lang = "vb";
 	}
+
 	if (PE_(rz_bin_pe_is_dll)(bf->o->bin_obj)) {
 		ret->type = strdup("DLL (Dynamic Link Library)");
 	} else {
@@ -524,25 +644,25 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->big_endian = PE_(rz_bin_pe_is_big_endian)(bf->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_canary = has_canary(bf);
-	ret->has_nx = haschr(bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
-	ret->has_pi = haschr(bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
+	ret->has_nx = haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
+	ret->has_pi = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 	ret->claimed_checksum = strdup(sdb_fmt("0x%08x", claimed_checksum));
 	ret->actual_checksum = strdup(sdb_fmt("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
 	sdb_bool_set(db, "canary", has_canary(bf), 0);
-	sdb_bool_set(db, "highva", haschr(bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
-	sdb_bool_set(db, "aslr", haschr(bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
-	sdb_bool_set(db, "forceintegrity", haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set(db, "nx", haschr(bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
-	sdb_bool_set(db, "isolation", !haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set(db, "seh", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
-	sdb_bool_set(db, "bind", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
-	sdb_bool_set(db, "appcontainer", haschr(bf, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
-	sdb_bool_set(db, "wdmdriver", haschr(bf, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
-	sdb_bool_set(db, "guardcf", haschr(bf, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
-	sdb_bool_set(db, "terminalserveraware", haschr(bf, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
+	sdb_bool_set(db, "highva", haschr(bin, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
+	sdb_bool_set(db, "aslr", haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
+	sdb_bool_set(db, "forceintegrity", haschr(bin, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set(db, "nx", haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
+	sdb_bool_set(db, "isolation", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_ISOLATION), 0);
+	sdb_bool_set(db, "seh", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
+	sdb_bool_set(db, "bind", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
+	sdb_bool_set(db, "appcontainer", haschr(bin, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
+	sdb_bool_set(db, "wdmdriver", haschr(bin, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
+	sdb_bool_set(db, "guardcf", haschr(bin, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
+	sdb_bool_set(db, "terminalserveraware", haschr(bin, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
 	sdb_num_set(db, "bits", ret->bits, 0);
 	sdb_set(db, "claimed_checksum", ret->claimed_checksum, 0);
 	sdb_set(db, "actual_checksum", ret->actual_checksum, 0);
@@ -581,15 +701,19 @@ static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 
 static RzList *compute_hashes(RzBinFile *bf) {
 	RzList *file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
-	const char *authentihash = PE_(bin_pe_compute_authentihash)(bf->o->bin_obj);
+	const char *authentihash = PE_(bin_pe_get_authentihash)(bf->o->bin_obj);
 	if (authentihash) {
 		RzBinFileHash *authhash = RZ_NEW0(RzBinFileHash);
 		if (authhash) {
 			authhash->type = strdup("authentihash");
-			authhash->hex = authentihash;
+			authhash->hex = strdup(authentihash);
 			rz_list_push(file_hashes, authhash);
 		}
 	}
 
 	return file_hashes;
+}
+
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 4, false);
 }

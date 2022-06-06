@@ -26,7 +26,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	psxexe_header psxheader;
 
 	if (rz_buf_read_at(bf->buf, 0, (ut8 *)&psxheader, sizeof(psxexe_header)) < sizeof(psxexe_header)) {
-		eprintf("Truncated Header\n");
+		RZ_LOG_ERROR("Truncated Header\n");
 		return NULL;
 	}
 
@@ -60,7 +60,7 @@ static RzList *sections(RzBinFile *bf) {
 	}
 
 	if (rz_buf_fread_at(bf->buf, 0, (ut8 *)&psxheader, "8c17i", 1) < sizeof(psxexe_header)) {
-		eprintf("Truncated Header\n");
+		RZ_LOG_ERROR("Truncated Header\n");
 		free(sect);
 		rz_list_free(ret);
 		return NULL;
@@ -95,7 +95,7 @@ static RzList *entries(RzBinFile *bf) {
 	}
 
 	if (rz_buf_fread_at(bf->buf, 0, (ut8 *)&psxheader, "8c17i", 1) < sizeof(psxexe_header)) {
-		eprintf("PSXEXE Header truncated\n");
+		RZ_LOG_ERROR("Truncated Header\n");
 		rz_list_free(ret);
 		free(addr);
 		return NULL;
@@ -110,7 +110,7 @@ static RzList *entries(RzBinFile *bf) {
 
 static RzList *strings(RzBinFile *bf) {
 	// hardcode minstrlen = 20
-	return rz_bin_file_get_strings(bf, 20, 0, 2);
+	return rz_bin_file_strings(bf, 20, true);
 }
 
 RzBinPlugin rz_bin_plugin_psxexe = {

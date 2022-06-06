@@ -7,9 +7,9 @@ e asm.bits=16
 e asm.nbytes=2
 e asm.cmt.col=0
 wx 66b801000000b90f006683fb02e2fa66bb01000000c3
-af+ 0000:0000 fcn1
+af+ fcn1 @ 0000:0000
 afb+ 0 0 22
-f .loop1 @ 0000:0009
+f. loop1 @ 0000:0009
 pd 1 @ 0000:000d
 EOF
 EXPECT=<<EOF
@@ -25,9 +25,9 @@ e asm.arch=x86
 e asm.bits=16
 e asm.nbytes=2
 wx 66b801000000b90f006683fb02e2fa66bb01000000c3
-af+ 0 fnc1
+af+ fnc1 @ 0
 afb+ 0 0 22
-f .loop1 @ 9
+f. loop1 @ 9
 pd 1 @ 9
 EOF
 EXPECT=<<EOF
@@ -53,7 +53,7 @@ EXPECT=<<EOF
 0x100000f50      55             push  rbp
 0x100000000 0 __mh_execute_header
 0x100000f60 0 _main
-0x100000f50 0 _r\x1b#8qt
+0x100000f50 0 _r\e#8qt
 0x100000f8a 0 imp.printf
 0x100000f50 0 func.100000f50
 0x100000f60 0 func.100000f60

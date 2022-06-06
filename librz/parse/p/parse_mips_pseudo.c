@@ -141,7 +141,8 @@ static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
 	return rz_pseudo_convert(&mips_config, assembly, sb);
 }
 
-static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
+	const ut64 addr = op->addr;
 	RzListIter *iter;
 	char *oldstr;
 	char *tstr = strdup(data);
@@ -172,7 +173,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 			reg = analysis->reg->name[RZ_REG_NAME_SP];
 		}
 		char *tmpf;
-		//TODO: honor asm pseudo
+		// TODO: honor asm pseudo
 		if (RZ_ABS(delta) < 10) {
 			tmpf = "%d(%s)";
 		} else if (delta > 0) {

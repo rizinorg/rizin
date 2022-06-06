@@ -206,6 +206,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 	fcns = rz_analysis_get_fcns(c->analysis);
 	if (rz_list_empty(fcns)) {
 		eprintf("functions list is empty. analyze the binary first\n");
+		pj_free(pj);
 		return;
 	}
 	rz_list_sort(fcns, c->analysis->columnSort);
@@ -446,6 +447,13 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 				core2->config = core->config;
 
 				char *modified = rz_core_cmd_strf(core2, "pdb @ 0x%08" PFMT64x, bbi->diff->addr);
+				if (!modified || !strcmp(original, modified)) {
+					// sometimes the mismatch is on a call value
+					// but the output is actually the same due sym./imp.
+					free(modified);
+					core2->config = oc;
+					goto graph_construct_nodes_is_same;
+				}
 
 				RzDiff *dff = rz_diff_lines_new(original, modified, NULL);
 				char *diffstr = rz_diff_unified_text(dff, norig, nmodi, false, false);
@@ -462,6 +470,8 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 				free(modified);
 				core2->config = oc;
 			} else {
+			graph_construct_nodes_is_same:
+
 				rz_str_replace_char(original, '"', '\'');
 				original = rz_str_replace(original, "\n", "\\l", 1);
 				printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","

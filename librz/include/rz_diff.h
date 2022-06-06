@@ -7,7 +7,7 @@
 
 #include <rz_types.h>
 #include <rz_list.h>
-#include <rz_util/pj.h>
+#include <rz_util/rz_pj.h>
 #include <rz_util/rz_strbuf.h>
 
 #ifdef __cplusplus
@@ -30,7 +30,7 @@ typedef enum rz_diff_op_type_t {
  * elem_hash(elem)         [required] must return the hash value of the element (use rz_diff_hash_data)
  * compare(a_elem, b_elem) [required] must return true if the two elements are the same
  * stringify(elem, sb)     [required] appends into sb the stringified element of the array
- * ignore(elem)            [optional] must return true if the element matches the user define 
+ * ignore(elem)            [optional] must return true if the element matches the user define
  *                                     rule (if set to NULL, it will be considered as always false)
  */
 typedef const void *(*RzDiffMethodElemAt)(RZ_BORROW const void *array, ut32 index);

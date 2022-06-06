@@ -234,11 +234,11 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	}
 #endif
 	op->size = opsize;
-	//op->delay = 1;
+	// op->delay = 1;
 	return opsize;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r14\n" // XXX
@@ -272,7 +272,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	r15	.32	60	0\n"
 		// ADD P REGISTERS
 		;
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_cris = {
@@ -281,7 +281,7 @@ RzAnalysisPlugin rz_analysis_plugin_cris = {
 	.license = "LGPL3",
 	.esil = false,
 	.arch = "cris",
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 	.bits = 32,
 	.op = &analop,
 };

@@ -53,7 +53,9 @@ static char *__read_nonnull_str_at(RzBuffer *buf, ut64 offset) {
 }
 
 static char *__func_name_from_ord(char *module, ut16 ordinal) {
-	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"), rz_sys_prefix(NULL), module);
+	char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
+	char *path = rz_str_newf(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, module);
+	free(formats_dir);
 	char *ord = rz_str_newf("%d", ordinal);
 	char *name;
 	if (rz_file_exists(path)) {
@@ -655,12 +657,16 @@ bool rz_bin_ne_buf_init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 }
 
 void rz_bin_ne_free(rz_bin_ne_obj_t *bin) {
+	if (!bin) {
+		return;
+	}
 	// rz_list_free (bin->imports); // double free
 	rz_list_free(bin->resources);
 	free(bin->entry_table);
 	free(bin->ne_header);
 	free(bin->resident_name_table);
 	free(bin->segment_entries);
+	free(bin);
 }
 
 rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose) {
@@ -669,7 +675,7 @@ rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose) {
 		return NULL;
 	}
 	if (!rz_bin_ne_buf_init(buf, bin)) {
-		free(bin);
+		rz_bin_ne_free(bin);
 		return NULL;
 	}
 	return bin;

@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <math.h>
 #include <rz_cons.h>
 #include <rz_util/rz_assert.h>
 
-#define useUtf8      (rz_cons_singleton()->use_utf8)
-#define useUtf8Curvy (rz_cons_singleton()->use_utf8_curvy)
+#define USE_UTF8       (rz_cons_singleton()->use_utf8)
+#define USE_UTF8_CURVY (rz_cons_singleton()->use_utf8_curvy)
 
 #define W(y)    rz_cons_canvas_write(c, y)
 #define G(x, y) rz_cons_canvas_gotoxy(c, x, y)
@@ -200,7 +201,7 @@ RZ_API bool rz_cons_canvas_gotoxy(RzConsCanvas *c, int x, int y) {
 		ret = false;
 	}
 	if (x < 0) {
-		//c->x = 0;
+		// c->x = 0;
 		ret = false;
 	}
 	if (x > c->blen[y] * 2) {
@@ -347,7 +348,7 @@ RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *s) {
 	c->x = orig_x;
 }
 
-RZ_API char *rz_cons_canvas_to_string(RzConsCanvas *c) {
+RZ_API RZ_OWN char *rz_cons_canvas_to_string(RzConsCanvas *c) {
 	rz_return_val_if_fail(c, NULL);
 
 	int x, y, olen = 0, attr_x = 0;
@@ -408,21 +409,24 @@ RZ_API char *rz_cons_canvas_to_string(RzConsCanvas *c) {
 
 RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c) {
 	char *o = rz_cons_canvas_to_string(c);
-	if (o) {
-		rz_str_trim_tail(o);
-		if (*o) {
-			rz_cons_strcat(o);
-		}
+	if (RZ_STR_ISEMPTY(o)) {
 		free(o);
+		return;
 	}
+	rz_str_trim_tail(o);
+	if (RZ_STR_ISNOTEMPTY(o)) {
+		rz_cons_strcat(o);
+	}
+	free(o);
 }
 
 RZ_API void rz_cons_canvas_print(RzConsCanvas *c) {
 	char *o = rz_cons_canvas_to_string(c);
-	if (o) {
-		rz_cons_strcat(o);
-		free(o);
+	if (!o) {
+		return;
 	}
+	rz_cons_strcat(o);
+	free(o);
 }
 
 RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h) {
@@ -479,60 +483,33 @@ RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h) {
 	return true;
 }
 
-#include <math.h>
-#define PI 3.1415
-RZ_API void rz_cons_canvas_circle(RzConsCanvas *c, int x, int y, int w, int h, const char *color) {
-	if (color) {
-		c->attr = color;
-	}
-	double xfactor = 1; //(double)w / (double)h;
-	double yfactor = (double)h / 24; // 0.8; // 24  10
-	double size = w;
-	float a = 0.0;
-	double s = size / 2;
-	while (a < (2 * PI)) {
-		double sa = rz_num_sin(a);
-		double ca = rz_num_cos(a);
-		double cx = s * ca + (size / 2);
-		double cy = s * sa + (size / 4);
-		int X = x + (xfactor * cx) - 2;
-		int Y = y + ((yfactor / 2) * cy);
-		if (G(X, Y)) {
-			W("=");
-		}
-		a += 0.1;
-	}
-	if (color) {
-		c->attr = Color_RESET;
-	}
-}
-
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color) {
-	const char *hline = useUtf8 ? RUNECODESTR_LINE_HORIZ : "-";
-	const char *vtmp = useUtf8 ? RUNECODESTR_LINE_VERT : "|";
-	RzStrBuf *vline = rz_strbuf_new(NULL);
-	rz_strbuf_appendf(vline, Color_RESET "%s%s", color, vtmp);
-	const char *tl_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
-	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
-	const char *bl_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
-	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
-	int i, x_mod;
-	int roundcorners = 0;
-	char *row = NULL, *row_ptr;
+	rz_return_if_fail(c && w && h);
 
-	if (w < 1 || h < 1) {
-		return;
-	}
 	if (color) {
 		c->attr = color;
 	}
 	if (!c->color) {
 		c->attr = Color_RESET;
 	}
-	row = malloc(w + 1);
+	char *row = malloc(w + 1);
 	if (!row) {
 		return;
 	}
+
+	const char *hline = USE_UTF8 ? RUNECODESTR_LINE_HORIZ : "-";
+	const char *vtmp = USE_UTF8 ? RUNECODESTR_LINE_VERT : "|";
+	const char *tl_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
+	const char *tr_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
+	const char *bl_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
+	const char *br_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
+	int i, x_mod;
+	int roundcorners = 0;
+	char *row_ptr;
+
+	RzStrBuf *vline = rz_strbuf_new(NULL);
+	rz_strbuf_appendf(vline, Color_RESET "%s%s", color, vtmp);
+
 	row[0] = roundcorners ? '.' : tl_corner[0];
 	if (w > 2) {
 		memset(row + 1, hline[0], w - 2);

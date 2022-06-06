@@ -74,7 +74,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	W(p_lsrlc, &n, 2); // Fix SizeOfOptionalHeader
 
 	/* Sections */
-	p_start = 0x7c; //HACK: Headersize
+	p_start = 0x7c; // HACK: Headersize
 	hdrsize = 0x7c;
 
 	D(RZ_ROUND(codelen, 4)); // SizeOfCode (Unused)
@@ -107,8 +107,8 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	B(code, codelen);
 
 	if (data && datalen > 0) {
-		//ut32 data_section = buf->length;
-		eprintf("Warning: DATA section not support for PE yet\n");
+		// ut32 data_section = buf->length;
+		RZ_LOG_WARN("DATA section not support for PE yet\n");
 		B(data, datalen);
 	}
 	return buf;
@@ -472,6 +472,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.signature = &signature,
 	.symbols = &symbols,
 	.imports = &imports,
+	.strings = &strings,
 	.info = &info,
 	.header = &header,
 	.fields = &fields,
@@ -481,6 +482,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.create = &create,
 	.get_vaddr = &get_vaddr,
 	.hashes = &compute_hashes,
+	.resources = &resources,
 	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };
 

@@ -396,16 +396,16 @@ static void emit_load_ptr(RzEgg *egg, const char *dst) {
 			d = atoi(p + 1);
 		}
 	}
-	//eprintf ("emit_load_ptr: HACK\n");
-	// XXX: 32/64bit care
-	//rz_egg_printf (egg, "# DELTA IS (%s)\n", dst);
+	// eprintf ("emit_load_ptr: HACK\n");
+	//  XXX: 32/64bit care
+	// rz_egg_printf (egg, "# DELTA IS (%s)\n", dst);
 	if (attsyntax) {
 		rz_egg_printf(egg, "  leal %d(%%" RZ_BP "), %%" RZ_AX "\n", d);
 	} else {
 		rz_egg_printf(egg, "  lea " RZ_AX ", [" RZ_BP "+%d]\n", d);
 	}
-	//rz_egg_printf (egg, "  movl %%"RZ_BP", %%"RZ_AX"\n");
-	//rz_egg_printf (egg, "  addl $%d, %%"RZ_AX"\n", d);
+	// rz_egg_printf (egg, "  movl %%"RZ_BP", %%"RZ_AX"\n");
+	// rz_egg_printf (egg, "  addl $%d, %%"RZ_AX"\n", d);
 }
 
 static void emit_branch(RzEgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {

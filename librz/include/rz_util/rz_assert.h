@@ -13,7 +13,7 @@ extern "C" {
 	case (x):; \
 	}
 
-RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
+RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 
 #if defined(__GNUC__) && defined(__cplusplus)
 #define RZ_FUNCTION ((const char *)(__PRETTY_FUNCTION__))
@@ -35,7 +35,7 @@ RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK
 #define rz_warn_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			rz_assert_log(RZ_LOGLVL_WARN, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
+			rz_assert_log(RZ_LOGLVL_WARN, "(%s:%d):%s%s runtime check failed: (%s)\n", \
 				__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : "", #expr); \
 		} \
 	} while (0)
@@ -123,6 +123,12 @@ RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK
 	do { \
 		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, RZ_FUNCTION); \
 		return (val); \
+	} while (0)
+
+#define rz_goto_if_reached(where) \
+	do { \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; jumping to %s\n", __FILE__, __LINE__, RZ_FUNCTION, #where); \
+		goto where; \
 	} while (0)
 
 #else // RZ_CHECKS_LEVEL

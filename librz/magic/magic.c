@@ -183,7 +183,7 @@ static const char *file_or_fd(RzMagic *ms, const char *inname, int fd) {
 	if (ispipe) {
 		ssize_t r = 0;
 
-		//while ((r = sread(fd, (void *)&buf[nbytes],
+		// while ((r = sread(fd, (void *)&buf[nbytes],
 		while ((r = read(fd, (void *)&buf[nbytes],
 				(size_t)(HOWMANY - nbytes))) > 0) {
 			nbytes += r;

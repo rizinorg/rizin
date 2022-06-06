@@ -6,8 +6,8 @@
 #include <rz_types.h>
 #include "io_private.h"
 
-//This helper function only check if the given vaddr is mapped, it does not account
-//for map perms
+// This helper function only check if the given vaddr is mapped, it does not account
+// for map perms
 RZ_API bool rz_io_addr_is_mapped(RzIO *io, ut64 vaddr) {
 	rz_return_val_if_fail(io, false);
 	return (io->va && rz_io_map_get(io, vaddr));
@@ -45,7 +45,7 @@ RZ_API bool rz_io_read_i(RzIO *io, ut64 addr, ut64 *val, int size, bool endian) 
 	if (!rz_io_read_at(io, addr, buf, size)) {
 		return false;
 	}
-	//size says the number of bytes to read transform to bits for rz_read_ble
+	// size says the number of bytes to read transform to bits for rz_read_ble
 	*val = rz_read_ble(buf, endian, size * 8);
 	return true;
 }
@@ -54,7 +54,7 @@ RZ_API bool rz_io_write_i(RzIO *io, ut64 addr, ut64 *val, int size, bool endian)
 	ut8 buf[8];
 	rz_return_val_if_fail(io && val, false);
 	size = RZ_DIM(size, 1, 8);
-	//size says the number of bytes to read transform to bits for rz_read_ble
+	// size says the number of bytes to read transform to bits for rz_read_ble
 	rz_write_ble(buf, *val, endian, size * 8);
 	return rz_io_write_at(io, addr, buf, size) == size;
 }

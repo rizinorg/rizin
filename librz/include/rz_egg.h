@@ -95,7 +95,7 @@ typedef struct rz_egg_t {
 	RzBuffer *buf;
 	RzBuffer *bin;
 	RzList *list;
-	//RzList *shellcodes; // XXX is plugins nao?
+	// RzList *shellcodes; // XXX is plugins nao?
 	RzAsm *rasm;
 	RzSyscall *syscall;
 	RzEggLang lang;
@@ -153,12 +153,12 @@ typedef struct rz_egg_emit_t {
 	const char *arch;
 	int size; /* in bytes.. 32bit arch is 4, 64bit is 8 .. */
 	const char *retvar;
-	//const char *syscall_body;
+	// const char *syscall_body;
 	const char *(*regs)(RzEgg *egg, int idx);
 	void (*init)(RzEgg *egg);
 	void (*call)(RzEgg *egg, const char *addr, int ptr);
 	void (*jmp)(RzEgg *egg, const char *addr, int ptr);
-	//void (*sc)(int num);
+	// void (*sc)(int num);
 	void (*frame)(RzEgg *egg, int sz);
 	char *(*syscall)(RzEgg *egg, int num);
 	void (*trap)(RzEgg *egg);
@@ -184,13 +184,15 @@ typedef struct rz_egg_emit_t {
 RZ_API RzEgg *rz_egg_new(void);
 RZ_API void rz_egg_lang_init(RzEgg *egg);
 RZ_API void rz_egg_lang_free(RzEgg *egg);
+RZ_API const char *rz_egg_os_as_string(int os);
 RZ_API char *rz_egg_to_string(RzEgg *egg);
 RZ_API void rz_egg_free(RzEgg *egg);
 RZ_API int rz_egg_add(RzEgg *a, RzEggPlugin *foo);
 RZ_API void rz_egg_reset(RzEgg *egg);
-RZ_API int rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os);
+RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os);
 RZ_API int rz_egg_include(RzEgg *egg, const char *file, int format);
 RZ_API void rz_egg_load(RzEgg *egg, const char *code, int format);
+RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file);
 RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API void rz_egg_alloc(RzEgg *egg, int n);
 RZ_API void rz_egg_label(RzEgg *egg, const char *name);
@@ -208,7 +210,7 @@ RZ_API bool rz_egg_assemble(RzEgg *egg);
 RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list);
 RZ_API void rz_egg_pattern(RzEgg *egg, int size);
 RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg);
-//RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
+// RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
 RZ_API char *rz_egg_get_source(RzEgg *egg);
 RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg);
 RZ_API char *rz_egg_get_assembly(RzEgg *egg);
@@ -216,6 +218,7 @@ RZ_API void rz_egg_append(RzEgg *egg, const char *src);
 RZ_API int rz_egg_run(RzEgg *egg);
 RZ_API int rz_egg_run_rop(RzEgg *egg);
 RZ_API int rz_egg_patch(RzEgg *egg, int off, const ut8 *b, int l);
+RZ_API bool rz_egg_patch_num(RzEgg *egg, int off, ut64 val, ut32 bits);
 RZ_API void rz_egg_finalize(RzEgg *egg);
 
 /* rz_egg_Cfile.c */

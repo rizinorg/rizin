@@ -3,6 +3,7 @@ sdb_files = [
   'cc-arm-32',
   'cc-arm-64',
   'cc-avr-8',
+  'cc-hexagon-32',
   'cc-m68k-32',
   'cc-mips-32',
   'cc-mips-64',
@@ -76,6 +77,8 @@ win_types_extra = [
 ]
 
 fs = import('fs')
+types_build_dir = meson.current_build_dir()
+types_files = []
 
 foreach file : sdb_files
   outfile = '@0@.sdb'.format(file)
@@ -93,7 +96,7 @@ foreach file : sdb_files
       infiles += 'functions-windows_@0@.sdb.txt'.format(f)
     endforeach
   endif
-  custom_target(outfile,
+  types_files += [custom_target(outfile,
     input: infiles,
     output: outfile,
     command: sdb_gen_cmd,
@@ -101,5 +104,5 @@ foreach file : sdb_files
     build_by_default: true,
     install: true,
     install_dir: join_paths(rizin_sdb, 'types')
-  )
+  )]
 endforeach

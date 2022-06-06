@@ -165,13 +165,13 @@ static int rz_debug_qnx_step(RzDebug *dbg) {
 	return true;
 }
 
-static int rz_debug_qnx_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType rz_debug_qnx_wait(RzDebug *dbg, int pid) {
 	ptid_t ptid = qnxr_wait(desc, pid);
 	if (!ptid_equal(ptid, null_ptid)) {
 		dbg->reason.signum = desc->signal;
 		return desc->notify_type;
 	}
-	return 0;
+	return RZ_DEBUG_REASON_NONE;
 }
 
 static int rz_debug_qnx_stop(RzDebug *dbg) {

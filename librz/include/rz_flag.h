@@ -51,7 +51,6 @@ typedef struct rz_flag_t {
 	RzNum *num;
 	RzSkipList *by_off; /* flags sorted by offset, value=RzFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RzFlagItem * */
-	PrintfCallback cb_printf;
 	RzList *zones;
 } RzFlag;
 
@@ -61,6 +60,7 @@ typedef bool (*RzFlagExistAt)(RzFlag *f, const char *flag_prefix, ut16 fp_size, 
 typedef RzFlagItem *(*RzFlagGet)(RzFlag *f, const char *name);
 typedef RzFlagItem *(*RzFlagGetAtAddr)(RzFlag *f, ut64);
 typedef RzFlagItem *(*RzFlagGetAt)(RzFlag *f, ut64 addr, bool closest);
+typedef RzFlagItem *(*RzFlagGetAtBySpaces)(RzFlag *f, ut64 off, ...);
 typedef const RzList *(*RzFlagGetList)(RzFlag *f, ut64 addr);
 typedef RzFlagItem *(*RzFlagSet)(RzFlag *f, const char *name, ut64 addr, ut32 size);
 typedef bool (*RzFlagUnset)(RzFlag *f, RzFlagItem *item);
@@ -69,6 +69,7 @@ typedef bool (*RzFlagUnsetOff)(RzFlag *f, ut64 addr);
 typedef RzSpace *(*RzFlagSetSpace)(RzFlag *f, const char *name);
 typedef bool (*RzFlagPopSpace)(RzFlag *f);
 typedef bool (*RzFlagPushSpace)(RzFlag *f, const char *name);
+typedef int (*RzFlagRename)(RzFlag *f, RzFlagItem *item, const char *name);
 
 typedef bool (*RzFlagItemCb)(RzFlagItem *fi, void *user);
 
@@ -78,6 +79,7 @@ typedef struct rz_flag_bind_t {
 	RzFlagExistAt exist_at;
 	RzFlagGet get;
 	RzFlagGetAt get_at;
+	RzFlagGetAtBySpaces get_at_by_spaces;
 	RzFlagGetList get_list;
 	RzFlagSet set;
 	RzFlagUnset unset;
@@ -86,6 +88,7 @@ typedef struct rz_flag_bind_t {
 	RzFlagSetSpace set_fs;
 	RzFlagPushSpace push_fs;
 	RzFlagPopSpace pop_fs;
+	RzFlagRename rename;
 } RzFlagBind;
 
 #define rz_flag_bind_init(x) memset(&x, 0, sizeof(x))
@@ -94,7 +97,6 @@ RZ_API void rz_flag_bind(RzFlag *io, RzFlagBind *bnd);
 #ifdef RZ_API
 RZ_API RzFlag *rz_flag_new(void);
 RZ_API RzFlag *rz_flag_free(RzFlag *f);
-RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx);
 RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name);
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off);
@@ -106,6 +108,7 @@ RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off);
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item);
 RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name);
 RZ_API bool rz_flag_unset_off(RzFlag *f, ut64 addr);
+RZ_API bool rz_flag_unset_all_off(RzFlag *f, ut64 off);
 RZ_API void rz_flag_unset_all(RzFlag *f);
 RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name);
 RZ_API RzFlagItem *rz_flag_set(RzFlag *fo, const char *name, ut64 addr, ut32 size);
@@ -124,7 +127,7 @@ RZ_API const char *rz_flag_color(RzFlag *f, RzFlagItem *it, const char *color);
 RZ_API int rz_flag_count(RzFlag *f, const char *glob);
 RZ_API void rz_flag_foreach(RzFlag *f, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_prefix(RzFlag *f, const char *pfx, int pfx_len, RzFlagItemCb cb, void *user);
-RZ_API void rz_flag_foreach_range(RzFlag *f, ut64 from, ut64 to, RzFlagItemCb cb, void *user);
+RZ_API void rz_flag_foreach_range(RZ_NONNULL RzFlag *f, ut64 from, ut64 to, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_glob(RzFlag *f, const char *glob, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_space(RzFlag *f, const RzSpace *space, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_space_glob(RzFlag *f, const char *glob, const RzSpace *space, RzFlagItemCb cb, void *user);
@@ -173,8 +176,8 @@ static inline bool rz_flag_space_is_empty(RzFlag *f) {
 #define rz_flag_space_foreach(f, it, s) rz_spaces_foreach(&(f)->spaces, (it), (s))
 
 /* tags */
-RZ_API RzList *rz_flag_tags_list(RzFlag *f, const char *name);
-RZ_API RzList *rz_flag_tags_set(RzFlag *f, const char *name, const char *words);
+RZ_API RZ_OWN RzList *rz_flag_tags_list(RzFlag *f);
+RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words);
 RZ_API void rz_flag_tags_reset(RzFlag *f, const char *name);
 RZ_API RzList *rz_flag_tags_get(RzFlag *f, const char *name);
 

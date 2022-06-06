@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_resize
+commands:
+  - name: r
+    cname: resize
+    summary: Resize file / Display file size
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: r-
+    cname: resize_remove
+    summary: Remove num bytes, move following data down
+    args:
+      - name: num
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: r+
+    cname: resize_insert
+    summary: Insert num bytes, move following data up
+    args:
+      - name: num
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: rb
+    cname: rebase
+    summary: Rebase all flags, binary information, breakpoints, and analysis
+    args:
+      - name: oldbase
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: rh
+    cname: resize_human
+    summary: Display size in human-friendly format
+    args: []

@@ -35,7 +35,7 @@ static char sc[] =
 	"\x24\x0f\xff\xfd" // li      t7,-3
 	"\x01\xe0\x28\x27" // nor     a1,t7,zero
 	"\x8f\xa4\xff\xff" // lw      a0,-1(sp)
-	//dup2_loop:
+	// dup2_loop:
 	"\x24\x02\x0f\xdf" // li      v0,4063 ( sys_dup2 )
 	"\x01\x01\x01\x0c" // syscall 0x40404
 	"\x20\xa5\xff\xff" // addi    a1,a1,-1

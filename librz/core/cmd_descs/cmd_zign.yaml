@@ -185,15 +185,21 @@ commands:
   - name: zf
     summary: Manage FLIRT signatures
     subcommands:
+      - name: zfc
+        cname: zign_flirt_create
+        summary: Create a FLIRT file (.pat or .sig)
+        args:
+          - name: filename
+            type: RZ_CMD_ARG_TYPE_FILE
       - name: zfd
         cname: zign_flirt_dump
-        summary: Open FLIRT file and dump
+        summary: Open a FLIRT file (.pat or .sig) and dumps its contents
         args:
           - name: filename
             type: RZ_CMD_ARG_TYPE_FILE
       - name: zfs
         cname: zign_flirt_scan
-        summary: Open FLIRT file and scan
+        summary: Open a FLIRT file (.pat or .sig) and tries to apply the signatures to the loaded binary
         args:
           - name: filename
             type: RZ_CMD_ARG_TYPE_FILE
@@ -282,6 +288,8 @@ commands:
         cname: zign_info
         summary: Show zignatures matching information
         args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -290,6 +298,11 @@ commands:
       - name: zii
         cname: zign_info_range
         summary: Show zignatures matching information in range
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: from
             type: RZ_CMD_ARG_TYPE_NUM

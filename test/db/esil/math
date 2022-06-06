@@ -70,19 +70,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=div by zero 0 / 3
+NAME=div by zero 3 / 0
 FILE==
 CMDS=<<EOF
 ae 0,3,/
 ae*
 EOF
 EXPECT=<<EOF
+ESIL TRAP type 3 code 0x00000000 divbyzero
 trap: 3
 trap-code: 0
 EOF
 RUN
 
-NAME=div by zero 3 / 0
+NAME=div 0 / 3
 FILE==
 CMDS=<<EOF
 ae 3,0,/

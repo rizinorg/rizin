@@ -3,13 +3,13 @@ FILE=bins/pe/65535sects.exe
 TIMEOUT=2040
 CMDS=<<EOF
 aa
-om~?
+oml~?
 s
 pi 1
 q!
 EOF
 EXPECT=<<EOF
-65536
+65538
 0x291120
 mov edi, 0x7027aff9
 EOF

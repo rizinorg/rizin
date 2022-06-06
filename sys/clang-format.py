@@ -14,15 +14,13 @@ from git import Repo
 dirlist = [
     "binrz",
     "librz",
-    "shlr/ar",
-    "shlr/bochs",
-    "shlr/gdb",
-    "shlr/java",
-    "shlr/ptrace-wrap",
-    "shlr/qnx",
-    "shlr/rar",
-    "shlr/w32dbg_wrap",
-    "shlr/winkd",
+    "subprojects/rzar",
+    "subprojects/rzbochs",
+    "subprojects/rzgdb",
+    "subprojects/ptrace-wrap",
+    "subprojects/rzqnx",
+    "subprojects/rzw32dbg_wrap",
+    "subprojects/rzwinkd",
     "test/unit",
 ]
 
@@ -37,6 +35,7 @@ skiplist = [
     "librz/asm/arch/arm/aarch64/",
     "librz/hash/xxhash/",
     "librz/bin/mangling/cxx/",
+    "librz/bin/d/jni.h",
     "librz/util/bdiff.c",
     "librz/asm/arch/tms320/c55x/table.h",
 ]
@@ -70,20 +69,22 @@ def get_edited_files(args):
             yield filename
 
 
-def build_command(check, filenames):
+def build_command(check, filenames, verbose):
+    cmd = ["clang-format", "--style=file"]
+    if verbose:
+        cmd += ["--verbose"]
     if check:
-        return ["clang-format", "--style=file", "--Werror", "--dry-run"] + filenames
-
-    return ["clang-format", "--style=file", "-i"] + filenames
+        cmd += ["--Werror", "--dry-run"]
+    else:
+        cmd += ["-i"]
+    return cmd + filenames
 
 
 def format_files(args, files):
     if len(files) == 0:
         print("No C files to format.")
         sys.exit(0)
-    cmd = build_command(args.check, files)
-    if args.verbose:
-        print(cmd)
+    cmd = build_command(args.check, files, args.verbose)
     r = subprocess.run(cmd, check=False)
     sys.exit(r.returncode)
 

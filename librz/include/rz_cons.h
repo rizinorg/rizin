@@ -6,12 +6,12 @@ extern "C" {
 #endif
 
 #include <rz_types.h>
-#include <rz_util/pj.h>
 #include <rz_util/rz_graph.h>
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_panels.h>
+#include <rz_util/rz_pj.h>
 #include <rz_util/rz_signal.h>
 #include <rz_util/rz_stack.h>
 #include <rz_util/rz_str.h>
@@ -33,17 +33,7 @@ extern "C" {
 #include <sys/wait.h>
 #include <sys/socket.h>
 #endif
-#if __WINDOWS__
-#include <windows.h>
-#include <wincon.h>
-#include <winuser.h>
-#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
-#endif
-#ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
-#define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
-#endif
-#else
+#if !__WINDOWS__
 #include <unistd.h>
 #endif
 
@@ -95,8 +85,8 @@ typedef struct rz_cons_grep_t {
 	int sort;
 	int sort_row;
 	bool sort_invert;
-	int f_line; //first line
-	int l_line; //last line
+	int f_line; // first line
+	int l_line; // last line
 	int tokens[RZ_CONS_GREP_TOKENS];
 	int tokens_used;
 	int amp;
@@ -363,7 +353,7 @@ typedef struct rz_cons_canvas_t {
 	char **b;
 	int *blen;
 	int *bsize;
-	const char *attr; //The current attr (inserted on each write)
+	const char *attr; // The current attr (inserted on each write)
 	HtUP *attrs; // all the different attributes <key: unsigned int loc, const char *attr>
 	RzStrConstPool constpool; // Pool for non-compile-time attrs
 	int sx; // scrollx
@@ -459,6 +449,17 @@ typedef enum {
 	RZ_VIRT_TERM_MODE_COMPLETE, ///< All the sequences goes through VT (Windows Terminal, mintty, all OSs)
 } RzVirtTermMode;
 
+typedef struct rz_cons_input_context_t {
+	size_t readbuffer_length;
+	char *readbuffer;
+	bool bufactive;
+} RzConsInputContext;
+
+typedef enum {
+	RZ_CONS_PAL_SEEK_PREVIOUS,
+	RZ_CONS_PAL_SEEK_NEXT,
+} RzConsPalSeekMode;
+
 typedef struct rz_cons_context_t {
 	RzConsGrep grep;
 	RzStack *cons_stack;
@@ -473,7 +474,7 @@ typedef struct rz_cons_context_t {
 	int cmd_depth;
 
 	// Used for per-task logging redirection
-	RLogCallback log_callback; // TODO: RzList of callbacks
+	RzLogCallback log_callback; // TODO: RzList of callbacks
 
 	char *lastOutput;
 	int lastLength;
@@ -492,13 +493,13 @@ typedef struct rz_cons_context_t {
 
 typedef struct rz_cons_t {
 	RzConsContext *context;
+	RzConsInputContext *input;
 	char *lastline;
 	bool is_html;
 	bool was_html;
 	int lines;
 	int rows;
 	int echo; // dump to stdout in realtime
-	int fps;
 	int columns;
 	int force_rows;
 	int force_columns;
@@ -527,9 +528,9 @@ typedef struct rz_cons_t {
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
-	DWORD term_raw, term_buf, term_xterm;
-	UINT old_cp;
-	UINT old_ocp;
+	unsigned long term_raw, term_buf, term_xterm;
+	ut32 old_cp;
+	ut32 old_ocp;
 #endif
 	RzNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the
@@ -566,17 +567,6 @@ typedef struct rz_cons_t {
 	// TODO: move into instance? + avoid unnecessary copies
 } RzCons;
 
-// XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RzCons */
-/* XXX : global variables? or a struct with a singleton? */
-//extern FILE *stdin_fd;
-//extern FILE *rz_cons_stdin_fd;
-//extern int rz_cons_stdout_fd;
-//extern int rz_cons_stdout_file;
-//extern char *rz_cons_filterline;
-//extern char *rz_cons_teefile;
-// not needed anymoar
-//extern int (*rz_cons_user_fgets)(char *buf, int len);
-
 #define RZ_CONS_KEY_F1  0xf1
 #define RZ_CONS_KEY_F2  0xf2
 #define RZ_CONS_KEY_F3  0xf3
@@ -608,12 +598,12 @@ typedef struct rz_cons_t {
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
 /* See 'man 4 console_codes' for details:
-      * "ESC c"        -- Reset
-      * "ESC ( K"      -- Select user mapping
-      * "ESC [ 0 m"    -- Reset all display attributes
-      * "ESC [ J"      -- Erase to the end of screen
-      * "ESC [ ? 25 h" -- Make cursor visible
-      */
+ * "ESC c"        -- Reset
+ * "ESC ( K"      -- Select user mapping
+ * "ESC [ 0 m"    -- Reset all display attributes
+ * "ESC [ J"      -- Erase to the end of screen
+ * "ESC [ ? 25 h" -- Make cursor visible
+ */
 #define Color_RESET_TERMINAL "\x1b" \
 			     "c\x1b(K\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */
@@ -793,19 +783,6 @@ typedef struct rz_cons_canvas_line_style_t {
 } RzCanvasLineStyle;
 
 // UTF-8 symbols indexes
-// XXX. merge with RUNE/RUNECODE/RUNECODESTR
-#if 0
-#define LINE_VERT   0
-#define LINE_CROSS  1
-#define LINE_HORIZ  2
-#define LINE_UP     3
-#define CORNER_BR   4
-#define CORNER_BL   5
-#define CORNER_TL   6
-#define CORNER_TR   7
-#define ARROW_RIGHT 8
-#define ARROW_LEFT  9
-#else
 #define LINE_VERT   0
 #define LINE_CROSS  1
 #define LINE_HORIZ  2
@@ -816,7 +793,7 @@ typedef struct rz_cons_canvas_line_style_t {
 #define CORNER_TR   6
 #define ARROW_RIGHT 8
 #define ARROW_LEFT  9
-#endif
+#define SELF_LOOP   10
 
 #ifdef RZ_API
 RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);
@@ -824,13 +801,12 @@ RZ_API void rz_cons_canvas_free(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_clear(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_print(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c);
-RZ_API char *rz_cons_canvas_to_string(RzConsCanvas *c);
+RZ_API RZ_OWN char *rz_cons_canvas_to_string(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_attr(RzConsCanvas *c, const char *attr);
 RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *_s);
 RZ_API bool rz_cons_canvas_gotoxy(RzConsCanvas *c, int x, int y);
 RZ_API void rz_cons_canvas_goto_write(RzConsCanvas *c, int x, int y, const char *s);
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color);
-RZ_API void rz_cons_canvas_circle(RzConsCanvas *c, int x, int y, int w, int h, const char *color);
 RZ_API void rz_cons_canvas_line(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
 RZ_API void rz_cons_canvas_line_diagonal(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
 RZ_API void rz_cons_canvas_line_square(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
@@ -872,7 +848,7 @@ RZ_API void rz_cons_w32_gotoxy(int fd, int x, int y);
 RZ_API int rz_cons_w32_print(const char *ptr, int len, bool vmode);
 RZ_API int rz_cons_win_printf(bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_cons_win_eprintf(bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
-RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap);
+RZ_API int rz_cons_win_vhprintf(unsigned long hdl, bool vmode, const char *fmt, va_list ap);
 #endif
 
 RZ_API void rz_cons_push(void);
@@ -888,7 +864,6 @@ RZ_API void rz_cons_context_break_push(RzConsContext *context, RzConsBreak cb, v
 RZ_API void rz_cons_context_break_pop(RzConsContext *context, bool sig);
 
 /* control */
-RZ_API char *rz_cons_editor(const char *file, const char *str);
 RZ_API void rz_cons_reset(void);
 RZ_API void rz_cons_reset_colors(void);
 RZ_API void rz_cons_goto_origin_reset(void);
@@ -928,7 +903,6 @@ RZ_API void rz_cons_newline(void);
 RZ_API void rz_cons_filter(void);
 RZ_API void rz_cons_flush(void);
 RZ_API void rz_cons_set_flush(bool flush);
-RZ_API void rz_cons_print_fps(int col);
 RZ_API void rz_cons_last(void);
 RZ_API int rz_cons_less_str(const char *str, const char *exitkeys);
 RZ_API void rz_cons_less(void);
@@ -1006,7 +980,7 @@ RZ_API char *rz_cons_input(const char *msg);
 RZ_API bool rz_cons_set_cup(bool enable);
 RZ_API void rz_cons_column(int c);
 RZ_API int rz_cons_get_column(void);
-RZ_API char *rz_cons_message(const char *msg);
+RZ_API void rz_cons_message(RZ_NONNULL const char *msg);
 RZ_API void rz_cons_set_title(const char *str);
 RZ_API bool rz_cons_enable_mouse(const bool enable);
 RZ_API void rz_cons_enable_highlight(const bool enable);
@@ -1154,7 +1128,7 @@ struct rz_line_t {
 RZ_API RzLine *rz_line_new(void);
 RZ_API RzLine *rz_line_singleton(void);
 RZ_API void rz_line_free(void);
-RZ_API char *rz_line_get_prompt(void);
+RZ_API RZ_OWN char *rz_line_get_prompt(void);
 RZ_API void rz_line_set_prompt(const char *prompt);
 RZ_API int rz_line_dietline_init(void);
 RZ_API void rz_line_clipboard_push(const char *str);
@@ -1165,9 +1139,9 @@ typedef int(RzLineReadCallback)(void *user, const char *line);
 RZ_API const char *rz_line_readline(void);
 RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user);
 
-RZ_API int rz_line_hist_load(const char *file);
+RZ_API int rz_line_hist_load(RZ_NONNULL const char *file);
 RZ_API int rz_line_hist_add(const char *line);
-RZ_API int rz_line_hist_save(const char *file);
+RZ_API int rz_line_hist_save(RZ_NONNULL const char *file);
 RZ_API int rz_line_hist_label(const char *label, void (*cb)(const char *));
 RZ_API void rz_line_label_show(void);
 RZ_API int rz_line_hist_list(void);
@@ -1186,6 +1160,7 @@ RZ_API void rz_line_completion_clear(RzLineCompletion *completion);
 RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, size_t end, const char *end_string);
 RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res);
 RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option);
+RZ_API void rz_line_ns_completion_result_propose(RzLineNSCompletionResult *res, const char *option, const char *cur, size_t cur_len);
 
 #define RZ_CONS_INVERT(x, y) (y ? (x ? Color_INVERT : Color_INVERT_RESET) : (x ? "[" : "]"))
 

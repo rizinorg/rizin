@@ -80,7 +80,7 @@ static struct {
 static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
 	//^this will keep the below mips_r fuctions working
 	// diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
-	//static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
+	// static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
 	if (rs < 0 || rt < 0 || rd < 0 || sa < 0) {
 		return -1;
 	}
@@ -121,8 +121,8 @@ static int mips_j(ut8 *b, int op, int addr) {
 
 static int getreg(const char *p) {
 	int n;
-	if (!p || !*p) {
-		eprintf("Missing argument\n");
+	if (RZ_STR_ISEMPTY(p)) {
+		RZ_LOG_ERROR("assembler: mips: invalid assembly (missing an argument).\n");
 		return -1;
 	}
 	/* check if it's a register */
@@ -141,7 +141,7 @@ static int getreg(const char *p) {
 	if (n != 0 || p[0] == '0') {
 		return n;
 	}
-	eprintf("Invalid reg name (%s) at pos %d\n", p, n);
+	RZ_LOG_ERROR("assembler: mips: invalid reg name (%s) at pos %d.\n", p, n);
 	return -1;
 }
 

@@ -5,8 +5,8 @@ e io.va=true
 o malloc://512
 p8 64
 o malloc://32 0x10 rw
-om~?
-o~?
+oml~?
+ol~?
 p8 64
 e io.va=false
 wox 0x90
@@ -48,7 +48,7 @@ NAME=omp 2
 FILE=malloc://3
 CMDS=<<EOF
 b 3
-wow 90
+wb 90
 p8
 o malloc://1 1 rw
 p8
@@ -67,7 +67,7 @@ FILE=--
 CMDS=<<EOF
 o malloc://8 0 rw
 o malloc://12 4 rw
-om~?
+oml~?
 b 16
 p8
 omp 1

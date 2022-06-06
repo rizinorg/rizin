@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <rz_types.h>
 #include <rz_util.h>
+#include <rz_util/rz_buf.h>
+#include <rz_util/rz_assert.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
 #include <rz_io.h>
@@ -13,12 +15,478 @@
 #include "elf/elf.h"
 #include <ht_uu.h>
 
+#define rz_bin_file_get_elf(bf) ((ELFOBJ *)bf->o->bin_obj)
+
 #define VFILE_NAME_RELOC_TARGETS "reloc-targets"
 #define VFILE_NAME_PATCHED       "patched"
+
+#ifdef RZ_BIN_ELF64
+#define rz_buf_append_word rz_buf_append_ut64
+#else
+#define rz_buf_append_word rz_buf_append_ut32
+#endif
+
+typedef struct {
+	ut32 cmpMask; // Opcode bits of instruction.
+	ut32 relocMask; // Relocation bitmask for patching.
+} HexagonRelocMask;
+
+/**
+ * \brief Maps instructions of the R_HEX_6_X relocation typ
+ * to its bitmask patched during relocation.
+ */
+static const HexagonRelocMask hex_rel6_x_masks[] = {
+	{ 0x38000000, 0x0000201f }, { 0x39000000, 0x0000201f },
+	{ 0x3e000000, 0x00001f80 }, { 0x3f000000, 0x00001f80 },
+	{ 0x40000000, 0x000020f8 }, { 0x41000000, 0x000007e0 },
+	{ 0x42000000, 0x000020f8 }, { 0x43000000, 0x000007e0 },
+	{ 0x44000000, 0x000020f8 }, { 0x45000000, 0x000007e0 },
+	{ 0x46000000, 0x000020f8 }, { 0x47000000, 0x000007e0 },
+	{ 0x6a000000, 0x00001f80 }, { 0x7c000000, 0x001f2000 },
+	{ 0x9a000000, 0x00000f60 }, { 0x9b000000, 0x00000f60 },
+	{ 0x9c000000, 0x00000f60 }, { 0x9d000000, 0x00000f60 },
+	{ 0x9f000000, 0x001f0100 }, { 0xab000000, 0x0000003f },
+	{ 0xad000000, 0x0000003f }, { 0xaf000000, 0x00030078 },
+	{ 0xd7000000, 0x006020e0 }, { 0xd8000000, 0x006020e0 },
+	{ 0xdb000000, 0x006020e0 }, { 0xdf000000, 0x006020e0 }
+};
+
+/**
+ * \brief Returns the bitmask for reloc patching of a Hexagon instruction
+ * of type R_HEX_6_X.
+ *
+ * \param insn The instruction bits.
+ * \return ut32 The bitmask for patching.
+ */
+static ut32 hexagon_get_bitmask_r6(ut32 insn) {
+	if ((insn & 0xc000) == 0) { // Duplex instruction
+		return 0x03f00000;
+	}
+
+	for (int i = 0; i < sizeof(hex_rel6_x_masks) / sizeof(HexagonRelocMask); ++i) {
+		if ((0xff000000 & insn) == hex_rel6_x_masks[i].cmpMask) {
+			return hex_rel6_x_masks[i].relocMask;
+		}
+	}
+	RZ_LOG_ERROR("Unrecognized instruction for 6_X relocation: 0x%x", insn);
+	return 0;
+}
+
+/**
+ * \brief Returns the bitmask for reloc patching of a Hexagon instruction
+ * of type R_HEX_8_X.
+ *
+ * \param insn The instruction bits.
+ * \return ut32 The bitmask for patching.
+ */
+static ut32 hexagon_get_bitmask_r8(ut32 insn) {
+	if ((0xff000000 & insn) == 0xde000000) {
+		return 0x00e020e8;
+	}
+	if ((0xff000000 & insn) == 0x3c000000) {
+		return 0x0000207f;
+	}
+	return 0x00001fe0;
+}
+
+/**
+ * \brief Returns the bitmask for reloc patching of a Hexagon instruction
+ * of type R_HEX_11_X.
+ *
+ * \param insn The instruction bits.
+ * \return ut32 The bitmask for patching.
+ */
+static ut32 hexagon_get_bitmask_r11(ut32 insn) {
+	if ((0xff000000 & insn) == 0xa1000000) {
+		return 0x060020ff;
+	}
+	return 0x06003fe0;
+}
+
+/**
+ * \brief Returns the bitmask for reloc patching of a Hexagon instruction
+ * of type R_HEX_16_X.
+ *
+ * \param insn The instruction bits.
+ * \return ut32 The bitmask for patching.
+ */
+static ut32 hexagon_get_bitmask_r16(ut32 insn) {
+	if ((0xff000000 & insn) == 0x48000000) {
+		return 0x061f20ff;
+	}
+	if ((0xff000000 & insn) == 0x49000000) {
+		return 0x061f3fe0;
+	}
+	if ((0xff000000 & insn) == 0x78000000) {
+		return 0x00df3fe0;
+	}
+	if ((0xff000000 & insn) == 0xb0000000) {
+		return 0x0fe03fe0;
+	}
+	if ((insn & 0xc000) == 0) { // Duplex instruction
+		return 0x03f00000;
+	}
+
+	for (int i = 0; i < sizeof(hex_rel6_x_masks) / sizeof(HexagonRelocMask); ++i) {
+		if ((0xff000000 & insn) == hex_rel6_x_masks[i].cmpMask) {
+			return hex_rel6_x_masks[i].relocMask;
+		}
+	}
+
+	RZ_LOG_ERROR("Unrecognized instruction for 16_X relocation: 0x%x", insn);
+	return 0;
+}
+
+typedef struct rz_bin_reloc_formular_symbols_t {
+	ut64 A; // Appendend
+	ut64 B; // Base address
+	ut64 G; // Offset into GOT for symbol entry.
+	ut64 GOT; // Address of entry zero in GOT.
+	ut64 L; // Offset into POT for symbol entry.
+	ut64 P; // Place address of the field being relocated. The address of the bytes to patch.
+	ut64 S; // Value of symbol.
+	ut64 TLS; // Thread-pointer-relative offset to a thread-local symbol.
+	ut64 T; // Base address of the static thread-local tmeplate that contains a thread-local symbol.
+	ut64 MB; // Base address of all strings consumed by compiler message base optimization (Hexagon specific).
+	ut64 GP; // Value of GP register (Hexagon specific).
+} RzBinRelocFormularSymbols;
 
 static RzBinInfo *info(RzBinFile *bf);
 static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin);
 static RzList *imports(RzBinFile *bf);
+
+struct special_symbol_translation {
+	RzBinSpecialSymbol symbol;
+	ut64 (*get_addr)(ELFOBJ *bin);
+};
+
+static struct special_symbol_translation special_symbol_translation_table[] = {
+	{ RZ_BIN_SPECIAL_SYMBOL_ENTRY, Elf_(rz_bin_elf_get_entry_offset) },
+	{ RZ_BIN_SPECIAL_SYMBOL_MAIN, Elf_(rz_bin_elf_get_main_offset) },
+	{ RZ_BIN_SPECIAL_SYMBOL_INIT, Elf_(rz_bin_elf_get_init_offset) },
+	{ RZ_BIN_SPECIAL_SYMBOL_FINI, Elf_(rz_bin_elf_get_fini_offset) },
+};
+
+static Sdb *get_sdb(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	ELFOBJ *bin = rz_bin_file_get_elf(bf);
+	return bin->kv;
+}
+
+#ifndef RZ_BIN_CGC
+static int check_buffer_aux(RzBuffer *buf) {
+	rz_return_val_if_fail(buf, ELFCLASSNONE);
+
+	ut8 tmp[SELFMAG + 1] = { 0 };
+
+	if (rz_buf_read_at(buf, 0, tmp, SELFMAG + 1) < 0) {
+		return ELFCLASSNONE;
+	}
+
+	if (memcmp(tmp, ELFMAG, SELFMAG)) {
+		return ELFCLASSNONE;
+	}
+
+	return tmp[SELFMAG];
+}
+#endif
+
+static bool load_buffer(RZ_UNUSED RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, RZ_UNUSED Sdb *sdb) {
+	rz_return_val_if_fail(obj, NULL);
+
+	ELFOBJ *bin = Elf_(rz_bin_elf_new_buf)(buf, &obj->opts);
+	if (!bin) {
+		return false;
+	}
+
+	obj->bin_obj = bin;
+	return true;
+}
+
+static ut64 baddr(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, UT64_MAX);
+
+	ELFOBJ *bin = rz_bin_file_get_elf(bf);
+	return Elf_(rz_bin_elf_get_baddr)(bin);
+}
+
+static ut64 boffset(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, UT64_MAX);
+
+	ELFOBJ *bin = rz_bin_file_get_elf(bf);
+	return Elf_(rz_bin_elf_get_boffset)(bin);
+}
+
+static ut64 binsym_aux(ELFOBJ *bin, RzBinSpecialSymbol sym) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(special_symbol_translation_table); i++) {
+		if (sym == special_symbol_translation_table[i].symbol) {
+			return special_symbol_translation_table[i].get_addr(bin);
+		}
+	}
+
+	return UT64_MAX;
+}
+
+static RzBinAddr *rz_bin_addr_new_aux(ELFOBJ *bin, ut64 paddr, ut64 vaddr) {
+	RzBinAddr *result = RZ_NEW0(RzBinAddr);
+	if (!result) {
+		return NULL;
+	}
+
+	result->paddr = paddr;
+	result->vaddr = vaddr;
+	result->bits = bin->bits;
+
+	if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin)) {
+		rz_bin_elf_fix_arm_thumb_object_dispatch(result);
+	}
+
+	return result;
+}
+
+static RzBinAddr *rz_bin_addr_new_from_paddr(ELFOBJ *bin, ut64 paddr) {
+	ut64 vaddr = Elf_(rz_bin_elf_p2v)(bin, paddr);
+	if (vaddr == UT64_MAX) {
+		vaddr = paddr;
+	}
+
+	return rz_bin_addr_new_aux(bin, paddr, vaddr);
+}
+
+static RzBinAddr *rz_bin_addr_new_from_vaddr(ELFOBJ *bin, ut64 vaddr) {
+	ut64 paddr = Elf_(rz_bin_elf_v2p)(bin, vaddr);
+
+	return rz_bin_addr_new_aux(bin, paddr, vaddr);
+}
+
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
+	rz_return_val_if_fail(bf && bf->o && bf->o, NULL);
+
+	ELFOBJ *bin = rz_bin_file_get_elf(bf);
+
+	ut64 paddr = binsym_aux(bin, sym);
+	if (paddr == UT64_MAX) {
+		return NULL;
+	}
+
+	return rz_bin_addr_new_from_paddr(bin, paddr);
+}
+
+static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzList *result) {
+	ut64 constructor_offset = Elf_(rz_bin_elf_v2p)(bin, addr);
+	if (constructor_offset == UT64_MAX) {
+		return;
+	}
+
+	ut64 pos = 0;
+
+	while (pos < size) {
+		ut64 offset = constructor_offset + pos;
+
+		Elf_(Addr) vaddr;
+		if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &vaddr)) {
+			break;
+		}
+
+		if (!vaddr) {
+			pos += sizeof(Elf_(Addr));
+			continue;
+		}
+
+		RzBinAddr *tmp = rz_bin_addr_new_from_vaddr(bin, vaddr);
+		if (!tmp) {
+			break;
+		}
+
+		tmp->hpaddr = constructor_offset + pos;
+		tmp->hvaddr = addr + pos;
+		tmp->type = type;
+
+		rz_list_append(result, tmp);
+
+		pos += sizeof(Elf_(Addr));
+	}
+}
+
+static void add_constructors(ELFOBJ *bin, RzList *result) {
+	ut64 addr, size;
+
+	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_PREINIT_ARRAY, &addr) && Elf_(rz_bin_elf_get_dt_info)(bin, DT_PREINIT_ARRAYSZ, &size)) {
+		add_constructor(bin, addr, size, RZ_BIN_ENTRY_TYPE_PREINIT, result);
+	}
+
+	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_INIT_ARRAY, &addr) && Elf_(rz_bin_elf_get_dt_info)(bin, DT_INIT_ARRAYSZ, &size)) {
+		add_constructor(bin, addr, size, RZ_BIN_ENTRY_TYPE_INIT, result);
+	}
+
+	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_FINI_ARRAY, &addr) && Elf_(rz_bin_elf_get_dt_info)(bin, DT_FINI_ARRAYSZ, &size)) {
+		add_constructor(bin, addr, size, RZ_BIN_ENTRY_TYPE_FINI, result);
+	}
+}
+
+static void add_entry_offset(ELFOBJ *bin, RzList *result) {
+	ut64 paddr = Elf_(rz_bin_elf_get_entry_offset)(bin);
+	if (paddr == UT64_MAX) {
+		return;
+	}
+
+	RzBinAddr *tmp = rz_bin_addr_new_from_paddr(bin, paddr);
+	if (!tmp) {
+		return;
+	}
+
+	tmp->hpaddr = E_ENTRYPOINT_OFFSET;
+	tmp->hvaddr = bin->baddr + tmp->hpaddr;
+
+	if (tmp->vaddr != (ut64)bin->ehdr.e_entry && Elf_(rz_bin_elf_is_executable)(bin)) {
+		RZ_LOG_ERROR("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", tmp->vaddr);
+	}
+
+	rz_list_append(result, tmp);
+}
+
+static void add_java_libraries(ELFOBJ *bin, RzList *result) {
+	RzBinElfSymbol *symbol;
+	rz_bin_elf_foreach_symbols(bin, symbol) {
+		if (symbol->name && rz_str_startswith(symbol->name, "Java") && rz_str_endswith(symbol->name, "_init")) {
+			RzBinAddr *tmp = rz_bin_addr_new_from_paddr(bin, symbol->paddr);
+			tmp->type = RZ_BIN_ENTRY_TYPE_INIT;
+
+			rz_list_append(result, tmp);
+			break;
+		}
+	}
+}
+
+static RzList *entries(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, NULL);
+
+	ELFOBJ *bin = rz_bin_file_get_elf(bf);
+
+	RzList *result = rz_list_newf((RzListFree)free);
+	if (!result) {
+		return NULL;
+	}
+
+	add_entry_offset(bin, result);
+	add_java_libraries(bin, result);
+	add_constructors(bin, result);
+
+	return result;
+}
+
+#ifndef RZ_BIN_CGC
+static void headers(RzBinFile *bf) {
+	rz_return_if_fail(bf && bf->o && bf->o->bin_obj);
+
+	ELFOBJ *bin = rz_bin_file_get_elf(bf);
+
+	Elf_(rz_bin_elf_print_ehdr)(bin, bf->rbin->cb_printf);
+}
+
+static bool create_set_e_ident(RzBuffer *result) {
+	return rz_buf_append_bytes(result, (ut8 *)ELFMAG, SELFMAG) &&
+#ifdef RZ_BIN_ELF64
+		rz_buf_append_bytes(result, (ut8 *)"\x2\x1\x1\x0", 4) &&
+#else
+		rz_buf_append_bytes(result, (ut8 *)"\x1\x1\x1\x0", 4) &&
+#endif
+		rz_buf_append_nbytes(result, 8);
+}
+
+static bool create_set_e_machine(RzBuffer *result, bool is_arm) {
+#ifdef RZ_BIN_ELF64
+	return rz_buf_append_ut16(result, EM_X86_64);
+#else
+	if (is_arm) {
+		return rz_buf_append_ut16(result, EM_ARM);
+	}
+
+	return rz_buf_append_ut16(result, EM_386);
+#endif
+}
+
+static bool create_set_ehdr(RzBuffer *result, bool is_arm) {
+	return create_set_e_ident(result) &&
+		rz_buf_append_ut16(result, ET_EXEC) &&
+		create_set_e_machine(result, is_arm) &&
+		rz_buf_append_ut32(result, EV_CURRENT) &&
+		rz_buf_append_word(result, sizeof(Elf_(Ehdr)) + sizeof(Elf_(Phdr))) && // e_entry
+		rz_buf_append_word(result, sizeof(Elf_(Ehdr))) && // e_phoff
+		rz_buf_append_word(result, 0) && // e_shoff
+		rz_buf_append_ut32(result, 0) && // e_flags
+		rz_buf_append_ut16(result, sizeof(Elf_(Ehdr))) && // e_ehsize
+		rz_buf_append_ut16(result, sizeof(Elf_(Phdr))) && // e_phentsize
+		rz_buf_append_ut16(result, 1) && // e_phnum
+		rz_buf_append_ut16(result, 0) && // e_shentsize
+		rz_buf_append_ut16(result, 0) && // e_shnum
+		rz_buf_append_ut16(result, 0); // e_shstrndx
+}
+
+static bool create_set_phdr(RzBuffer *result, Elf_(Word) baddr, int codelen) {
+	ut64 length = sizeof(Elf_(Ehdr)) + sizeof(Elf_(Phdr)) + codelen;
+
+	return rz_buf_append_ut32(result, PT_LOAD) &&
+#ifdef RZ_BIN_ELF64
+		rz_buf_append_ut32(result, PF_X | PF_R) &&
+		rz_buf_append_ut64(result, 0) && // p_offset
+		rz_buf_append_ut64(result, baddr) && // p_vaddr
+		rz_buf_append_ut64(result, baddr) && // p_paddr
+		rz_buf_append_ut64(result, length) && // p_filesz
+		rz_buf_append_ut64(result, length) && // p_memsz
+		rz_buf_append_ut64(result, 0x200000); // p_align
+#else
+		rz_buf_append_ut32(result, 0) && // p_offset
+		rz_buf_append_ut32(result, baddr) && // p_vaddr
+		rz_buf_append_ut32(result, baddr) && // p_paddr
+		rz_buf_append_ut32(result, length) && // p_filesz
+		rz_buf_append_ut32(result, length) && // p_memsz
+		rz_buf_append_ut32(result, PF_X | PF_R) && // p_flags
+		rz_buf_append_ut64(result, 0x1000); // p_align
+#endif
+}
+
+static Elf_(Word) create_get_baddr(bool is_arm) {
+#ifdef RZ_BIN_ELF64
+	return 0x400000LL;
+#else
+	if (is_arm) {
+		return 0x40000;
+	}
+
+	return 0x8048000;
+#endif
+}
+
+static RzBuffer *create_elf(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+	rz_return_val_if_fail(bin && opt && opt->arch, NULL);
+
+	RzBuffer *result = rz_buf_new_with_bytes(NULL, 0);
+
+	bool is_arm = !strcmp(opt->arch, "arm");
+	Elf_(Word) baddr = create_get_baddr(is_arm);
+
+	if (!create_set_ehdr(result, is_arm) ||
+		!create_set_phdr(result, baddr, codelen) ||
+		!rz_buf_append_bytes(result, code, codelen)) {
+		rz_buf_free(result);
+		return NULL;
+	}
+
+	if (data && datalen > 0) {
+		// ut32 data_section = buf->length;
+		RZ_LOG_WARN("DATA section not support for ELF yet\n");
+		rz_buf_append_bytes(result, data, datalen);
+	}
+
+	return result;
+}
+#endif
+
+static void destroy(RzBinFile *bf) {
+	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
+}
 
 static RzBinSymbol *convert_symbol(ELFOBJ *bin, RzBinElfSymbol *elf_symbol) {
 	RzBinSymbol *result = RZ_NEW0(RzBinSymbol);
@@ -100,7 +568,7 @@ static char *regstate(RzBinFile *bf) {
 	}
 
 	char *machine_name = Elf_(rz_bin_elf_get_machine_name)(obj);
-	eprintf("Cannot retrieve regstate on: %s (not yet supported)\n", machine_name);
+	RZ_LOG_ERROR("Cannot retrieve regstate on: %s (not yet supported)\n", machine_name);
 	free(machine_name);
 	return NULL;
 }
@@ -120,69 +588,6 @@ static char *setphname(ut16 mach, Elf_(Word) ptyp) {
 	}
 
 	return strdup("UNKNOWN");
-}
-
-static Sdb *get_sdb(RzBinFile *bf) {
-	RzBinObject *o = bf->o;
-	if (o && o->bin_obj) {
-		struct Elf_(rz_bin_elf_obj_t) *bin = (struct Elf_(rz_bin_elf_obj_t) *)o->bin_obj;
-		return bin->kv;
-	}
-	return NULL;
-}
-
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	ELFOBJ *res = Elf_(rz_bin_elf_new_buf)(buf, &obj->opts);
-	if (res) {
-		obj->bin_obj = res;
-		return true;
-	}
-
-	return false;
-}
-
-static ut64 baddr(RzBinFile *bf) {
-	return Elf_(rz_bin_elf_get_baddr)(bf->o->bin_obj);
-}
-
-static ut64 boffset(RzBinFile *bf) {
-	return Elf_(rz_bin_elf_get_boffset)(bf->o->bin_obj);
-}
-
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
-	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
-	RzBinAddr *ret = NULL;
-	ut64 addr = 0LL;
-
-	switch (sym) {
-	case RZ_BIN_SPECIAL_SYMBOL_ENTRY:
-		addr = Elf_(rz_bin_elf_get_entry_offset)(bf->o->bin_obj);
-		break;
-	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
-		addr = Elf_(rz_bin_elf_get_main_offset)(bf->o->bin_obj);
-		break;
-	case RZ_BIN_SPECIAL_SYMBOL_INIT:
-		addr = Elf_(rz_bin_elf_get_init_offset)(bf->o->bin_obj);
-		break;
-	case RZ_BIN_SPECIAL_SYMBOL_FINI:
-		addr = Elf_(rz_bin_elf_get_fini_offset)(bf->o->bin_obj);
-		break;
-	default:
-		break;
-	}
-	if (addr && addr != UT64_MAX && (ret = RZ_NEW0(RzBinAddr))) {
-		struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
-		ret->paddr = addr;
-		ret->vaddr = Elf_(rz_bin_elf_p2v_new)(obj, addr);
-		ret->bits = obj->bits;
-		if (ret->vaddr == UT64_MAX) {
-			ret->vaddr = addr;
-		}
-		if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin)) {
-			rz_bin_elf_fix_arm_thumb_object_dispatch(ret);
-		}
-	}
-	return ret;
 }
 
 static bool is_wordable_section(const char *name) {
@@ -353,31 +758,6 @@ static ut64 reloc_target_size(ELFOBJ *obj) {
 	return obj->bits / 8;
 }
 
-/// base vaddr where to map the artificial reloc target vfile
-static ut64 reloc_targets_map_base(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * obj) {
-	if (obj->reloc_targets_map_base_calculated) {
-		return obj->reloc_targets_map_base;
-	}
-	// find the lowest unmapped address
-	ut64 max = 0;
-	RzList *maps = maps_unpatched(bf);
-	if (maps) {
-		RzListIter *it;
-		RzBinMap *map;
-		rz_list_foreach (maps, it, map) {
-			ut64 addr = map->vaddr + map->vsize;
-			if (addr > max) {
-				max = addr;
-			}
-		}
-		rz_list_free(maps);
-	}
-	obj->reloc_targets_map_base_calculated = true;
-	max += 0x8; // small additional shift to not overlap with symbols like _end
-	obj->reloc_targets_map_base = max + rz_num_align_delta(max, reloc_target_size(obj));
-	return obj->reloc_targets_map_base;
-}
-
 /// size of the artificial reloc target vfile
 static ut64 reloc_targets_vfile_size(RzBinFile *bf, ELFOBJ *obj) {
 	if (!bf->o || !bf->o->opts.patch_relocs || !Elf_(rz_bin_elf_has_relocs)(obj)) {
@@ -387,17 +767,278 @@ static ut64 reloc_targets_vfile_size(RzBinFile *bf, ELFOBJ *obj) {
 	return Elf_(rz_bin_elf_get_relocs_count)(obj) * reloc_target_size(obj);
 }
 
-static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+/**
+ * \brief Spreads the value bits according to the bitmask and returns the result.
+ *
+ * The immediated bits in Hexagon opcodes are not sequential.
+ * If a relocation value is patched into the opcode, its bits must be aligned with bit locations in the opcode.
+ * The parameter \p bitmask indicates where the immediate bits are located.
+ *
+ * \param mask The bitmask which indicates where the value bits should be placed.
+ * \param val The relocation value.
+ * \return ut32 New value which can be patched into the opcode.
+ */
+static ut32 apply_bitmask(const ut32 mask, const ut32 val) {
+	ut32 result = 0;
+	ut32 off = 0;
+
+	for (ut32 bit = 0; bit != 32; ++bit) {
+		ut32 valBit = (val >> off) & 1;
+		ut32 maskBit = (mask >> bit) & 1;
+		if (maskBit) {
+			result |= (valBit << bit);
+			++off;
+		}
+	}
+	return result;
+}
+
+/**
+ * \brief Patches a given value into a Hexagon opcode.
+ *
+ * \param buf_patched Pointer to buffer.
+ * \param addr Address the opcode is located.
+ * \param mask The bitmask (patchable bits) of the opcode.
+ * \param val The value patched into opcode.
+ */
+static void patch_val_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut32 addr, const ut32 mask, const ut32 val) {
+	rz_return_if_fail(buf_patched);
+	ut8 buf[8] = { 0 };
+
+	rz_buf_read_at(buf_patched, addr, buf, 4);
+	ut32 opcode = rz_read_le32(buf) | apply_bitmask(mask, val);
+
+	rz_write_le32(buf, opcode);
+	rz_buf_write_at(buf_patched, addr, buf, 4);
+}
+
+/**
+ * \brief Patches the opcode at a given address depending on the relocation type.
+ *
+ * NOTE: Some relocation symbols (e.g. TLS, G) are not yet implemented and are set to 0.
+ *
+ * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
+ * \param patch_addr The address of the opcode being patched.
+ * \param rel_type The relocation type.
+ * \param fs Formular values to calculate the new relocation value.
+ */
+static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RzBinRelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && fs);
+	ut8 buf[8] = { 0 };
+	ut64 val = 0;
+	ut64 bitmask = R_HEX_BITMASK_WORD32; // Mask of value and opcode bits.
+
+	switch (rel_type) {
+	default:
+		RZ_LOG_WARN("Patching for reloc type %d not implemented.", rel_type);
+		rz_warn_if_reached();
+		// For more implementetations check out the LLVM src:
+		// https://github.com/llvm/llvm-project/blob/abc17a67519747be36f1fd03e227c5103da4c677/lld/ELF/Arch/Hexagon.cpp
+		return;
+	case R_HEX_NONE:
+		return;
+	case R_HEX_GLOB_DAT:
+	case R_HEX_JMP_SLOT:
+		val = (fs->S + fs->A);
+		break;
+	case R_HEX_RELATIVE:
+		val = (fs->B + fs->A);
+		break;
+	case R_HEX_B22_PCREL:
+		bitmask = R_HEX_BITMASK_WORD32_B22;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_HEX_B15_PCREL:
+		bitmask = R_HEX_BITMASK_WORD32_B15;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_HEX_B7_PCREL:
+		bitmask = R_HEX_BITMASK_WORD32_B7;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_HEX_LO16:
+		bitmask = R_HEX_BITMASK_WORD32_LO;
+		val = (fs->S + fs->A);
+		break;
+	case R_HEX_HI16:
+		bitmask = R_HEX_BITMASK_WORD32_HL;
+		val = (fs->S + fs->A) >> 16;
+		break;
+	case R_HEX_32:
+		val = (fs->S + fs->A);
+		break;
+	case R_HEX_16:
+		bitmask = R_HEX_BITMASK_WORD16;
+		val = (fs->S + fs->A);
+		break;
+	case R_HEX_8:
+		bitmask = R_HEX_BITMASK_WORD8;
+		val = (fs->S + fs->A);
+		break;
+	case R_HEX_HL16:
+		bitmask = R_HEX_BITMASK_WORD32_HL;
+		val = (fs->S + fs->A);
+		break;
+	case R_HEX_B13_PCREL:
+		bitmask = R_HEX_BITMASK_WORD32_B13;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_HEX_B9_PCREL:
+		bitmask = R_HEX_BITMASK_WORD32_B9;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_HEX_B32_PCREL_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->S + fs->A - fs->P) >> 6;
+		break;
+	case R_HEX_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->S + fs->A) >> 6;
+		break;
+	case R_HEX_B22_PCREL_X:
+		bitmask = R_HEX_BITMASK_WORD32_B22;
+		val = (fs->S + fs->A - fs->P) & 0x3f;
+		break;
+	case R_HEX_B15_PCREL_X:
+		bitmask = R_HEX_BITMASK_WORD32_B15;
+		val = (fs->S + fs->A - fs->P) & 0x3f;
+		break;
+	case R_HEX_B13_PCREL_X:
+		bitmask = R_HEX_BITMASK_WORD32_B13;
+		val = (fs->S + fs->A - fs->P) & 0x3f;
+		break;
+	case R_HEX_B9_PCREL_X:
+		bitmask = R_HEX_BITMASK_WORD32_B9;
+		val = (fs->S + fs->A - fs->P) & 0x3f;
+		break;
+	case R_HEX_B7_PCREL_X:
+		bitmask = R_HEX_BITMASK_WORD32_B7;
+		val = (fs->S + fs->A - fs->P) & 0x3f;
+		break;
+	case R_HEX_12_X:
+		bitmask = R_HEX_BITMASK_WORD32_R6;
+		val = (fs->S + fs->A);
+		break;
+	case R_HEX_32_PCREL:
+		val = (fs->S + fs->A - fs->P);
+		break;
+	case R_HEX_GOTREL_LO16:
+		bitmask = R_HEX_BITMASK_WORD32_LO;
+		val = (fs->S + fs->A - fs->GOT);
+		break;
+	case R_HEX_GOTREL_HI16:
+		bitmask = R_HEX_BITMASK_WORD32_HL;
+		val = (fs->S + fs->A - fs->GOT) >> 16;
+		break;
+	case R_HEX_GOTREL_32:
+		val = (fs->S + fs->A - fs->GOT);
+		break;
+	case R_HEX_GOTREL_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->S + fs->A - fs->GOT) >> 6;
+		break;
+	case R_HEX_PLT_B22_PCREL:
+	case R_HEX_LD_PLT_B22_PCREL:
+	case R_HEX_GD_PLT_B22_PCREL:
+		bitmask = R_HEX_BITMASK_WORD32_B22;
+		val = (fs->L + fs->A - fs->P) >> 2;
+		break;
+	case R_HEX_GD_PLT_B22_PCREL_X:
+	case R_HEX_LD_PLT_B22_PCREL_X:
+		bitmask = R_HEX_BITMASK_WORD32_B22;
+		val = (fs->S + fs->A - fs->P) & 0x3f;
+		break;
+	case R_HEX_GD_PLT_B32_PCREL_X:
+	case R_HEX_LD_PLT_B32_PCREL_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->S + fs->A - fs->P) >> 6;
+		break;
+	case R_HEX_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->S + fs->A) & 0x3f;
+		break;
+	case R_HEX_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->S + fs->A) & 0x3f;
+		break;
+	case R_HEX_10_X:
+		bitmask = 0x00203fe0;
+		val = (fs->S + fs->A) & 0x3f;
+		break;
+	case R_HEX_9_X:
+		bitmask = 0x00003fe0;
+		val = (fs->S + fs->A) & 0x3f;
+		break;
+	case R_HEX_8_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r8(rz_read_le32(buf));
+		val = (fs->S + fs->A);
+		break;
+	case R_HEX_6_PCREL_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r6(rz_read_le32(buf));
+		val = (fs->S + fs->A - fs->P);
+		break;
+	case R_HEX_6_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r6(rz_read_le32(buf));
+		val = (fs->S + fs->A);
+		break;
+	case R_HEX_GOTREL_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->S + fs->A - fs->GOT);
+		break;
+	case R_HEX_GOTREL_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->S + fs->A - fs->GOT);
+		break;
+	case R_HEX_DTPREL_32_6_X:
+		bitmask = R_HEX_BITMASK_WORD32_X26;
+		val = (fs->S + fs->A - fs->T) >> 6;
+		break;
+	case R_HEX_DTPREL_16_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r16(rz_read_le32(buf));
+		val = (fs->S + fs->A - fs->T);
+		break;
+	case R_HEX_DTPREL_11_X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		bitmask = hexagon_get_bitmask_r11(rz_read_le32(buf));
+		val = (fs->S + fs->A - fs->T);
+		break;
+	}
+	// Patch two opcodes at once.
+	if (rel_type == R_HEX_HL16) {
+		patch_val_hexagon(buf_patched, patch_addr, bitmask, val & 0xffffffff);
+		patch_val_hexagon(buf_patched, patch_addr + 4, bitmask, val >> 32);
+	} else {
+		patch_val_hexagon(buf_patched, patch_addr, bitmask, val);
+	}
+}
+
+static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
-	ut64 val;
+	ut64 val = 0;
 	ut64 A = rel->addend, P = rel->vaddr;
-	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p_new)(obj, rel->vaddr);
+	RzBinRelocFormularSymbols formular_sym = { .A = A, .B = B, .GOT = GOT, .L = L, .S = S, .P = P, .MB = 0, .G = 0, .GP = 0, .T = 0, .TLS = 0 };
+	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(obj, rel->vaddr);
 	ut8 buf[8];
+	bool big_endian = obj->big_endian;
 	switch (e_machine) {
+	case EM_QDSP6:
+		patch_reloc_hexagon(obj->buf_patched, patch_addr, rel->type, &formular_sym);
+		break;
 	case EM_ARM:
 		val = S + A;
-		rz_write_le32(buf, val);
-		rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+		if (!rel->sym && rel->mode == DT_REL) {
+			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+			val += obj->big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
+		}
+		rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
 		break;
 	case EM_AARCH64:
 		val = S + A;
@@ -407,9 +1048,25 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	case EM_PPC64: {
 		int low = 0, word = 0;
 		switch (rel->type) {
+		case RZ_PPC64_ADDR24:
+			low = 24;
+			val = (S + A) >> 2;
+			break;
+		case RZ_PPC64_ADDR16_HI:
+			word = 2;
+			val = (S + A) >> 16;
+			break;
+		case RZ_PPC64_ADDR16_HA:
+			word = 2;
+			val = (S + A + 0x8000) >> 16;
+			break;
 		case RZ_PPC64_REL16_HA:
 			word = 2;
 			val = (S + A - P + 0x8000) >> 16;
+			break;
+		case RZ_PPC64_ADDR16_LO:
+			word = 2;
+			val = (S + A) & 0xffff;
 			break;
 		case RZ_PPC64_REL16_LO:
 			word = 2;
@@ -428,39 +1085,53 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			val = S + A - P;
 			break;
 		default:
+			RZ_LOG_WARN("Reloc type %d not implemented.\n", rel->type);
 			break;
 		}
 		if (low) {
-			// TODO big-endian
 			switch (low) {
 			case 14:
 				val &= (1 << 14) - 1;
 				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 2);
-				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 16) - (1 << 2))) | val << 2);
+				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(16, 2))) | val << 2, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
 				break;
 			case 24:
 				val &= (1 << 24) - 1;
 				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 26) - (1 << 2))) | val << 2);
+				rz_write_ble32(buf, (rz_read_ble32(buf, big_endian) & ~(RZ_BIT_MASK32(26, 2))) | val << 2, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
 				break;
 			}
 		} else if (word) {
-			// TODO big-endian
 			switch (word) {
 			case 2:
-				rz_write_le16(buf, val);
+				rz_write_ble16(buf, val, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
 				break;
 			case 4:
-				rz_write_le32(buf, val);
+				rz_write_ble32(buf, val, big_endian);
 				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
 				break;
 			}
 		}
 		break;
 	}
+	case EM_386:
+		switch (rel->type) {
+		case RZ_386_32:
+		case RZ_386_PC32:
+			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+			val = rz_read_le32(buf) + S + A;
+			if (rel->type == RZ_386_PC32) {
+				val -= P;
+			}
+			rz_write_le32(buf, val);
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+		default:
+			break;
+		}
+		break;
 	case EM_X86_64: {
 		int word = 0;
 		switch (rel->type) {
@@ -511,7 +1182,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			val = B + A;
 			break;
 		default:
-			//eprintf ("relocation %d not handle at this time\n", rel->type);
+			// RZ_LOG_ERROR("relocation %d not handle at this time\n", rel->type);
 			break;
 		}
 		switch (word) {
@@ -537,6 +1208,24 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		break;
 	}
 	}
+}
+
+static ut64 get_got_addr(ELFOBJ *bin) {
+	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
+		return 0;
+	}
+
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
+	if (section) {
+		return section->offset;
+	}
+
+	section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt");
+	if (section) {
+		return section->offset;
+	}
+
+	return 0;
 }
 
 static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
@@ -624,8 +1313,32 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_ARM_SBREL32: ADD(32, -B);
 		case RZ_ARM_GLOB_DAT: ADD(32, 0);
 		case RZ_ARM_JUMP_SLOT: ADD(32, 0);
+		case RZ_ARM_COPY: ADD(32, 0); // copy symbol at runtime
 		case RZ_ARM_RELATIVE: ADD(32, B);
 		case RZ_ARM_GOTOFF: ADD(32, -GOT);
+		case RZ_ARM_GOTPC: ADD(32, GOT - P);
+		case RZ_ARM_CALL: ADD(24, -P);
+		case RZ_ARM_JUMP24: ADD(24, -P);
+		case RZ_ARM_THM_JUMP24: ADD(24, -P);
+		case RZ_ARM_PREL31: ADD(32, -P);
+		case RZ_ARM_MOVW_PREL_NC: ADD(16, -P);
+		case RZ_ARM_MOVT_PREL: ADD(32, -P);
+		case RZ_ARM_THM_MOVW_PREL_NC: ADD(16, -P);
+		case RZ_ARM_REL32_NOI: ADD(32, -P);
+		case RZ_ARM_ABS32_NOI: ADD(32, 0);
+		case RZ_ARM_ALU_PC_G0_NC: ADD(32, -P);
+		case RZ_ARM_ALU_PC_G0: ADD(32, -P);
+		case RZ_ARM_ALU_PC_G1_NC: ADD(32, -P);
+		case RZ_ARM_ALU_PC_G1: ADD(32, -P);
+		case RZ_ARM_ALU_PC_G2: ADD(32, -P);
+		case RZ_ARM_LDR_PC_G1: ADD(32, -P);
+		case RZ_ARM_LDR_PC_G2: ADD(32, -P);
+		case RZ_ARM_LDRS_PC_G0: ADD(32, -P);
+		case RZ_ARM_LDRS_PC_G1: ADD(32, -P);
+		case RZ_ARM_LDRS_PC_G2: ADD(32, -P);
+		case RZ_ARM_LDC_PC_G0: ADD(32, -P);
+		case RZ_ARM_LDC_PC_G1: ADD(32, -P);
+		case RZ_ARM_LDC_PC_G2: ADD(32, -P);
 		default: ADD(32, GOT); break; // reg relocations
 		}
 		break;
@@ -653,8 +1366,16 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_PPC_NONE: break;
 		case RZ_PPC_GLOB_DAT: ADD(32, 0);
 		case RZ_PPC_JMP_SLOT: ADD(32, 0);
+		case RZ_PPC_COPY: ADD(32, 0); // copy symbol at runtime
+		case RZ_PPC_REL24: ADD(24, -P);
+		case RZ_PPC_REL14: ADD(16, -P);
+		case RZ_PPC_REL32: ADD(32, -P);
+		case RZ_PPC_RELATIVE: ADD(32, -P);
+		case RZ_PPC_PLT32: ADD(32, -P);
+		case RZ_PPC_ADDR16: ADD(16, 0);
+		case RZ_PPC_ADDR32: ADD(32, 0);
 		default:
-			eprintf("unimplemented ELF/PPC reloc type %d\n", rel->type);
+			RZ_LOG_WARN("unimplemented ELF/PPC reloc type %d\n", rel->type);
 			break;
 		}
 		break;
@@ -683,30 +1404,25 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	if (!size) {
 		return;
 	}
-	ut64 n_vaddr = reloc_targets_map_base(bf, bin);
-	HtUUOptions opt = { 0 };
-	HtUU *relocs_by_sym = ht_uu_new_opt(&opt);
-	if (!relocs_by_sym) {
+	RzBinRelocTargetBuilder *targets = rz_bin_reloc_target_builder_new(cdsz, bin->reloc_targets_map_base);
+	if (!targets) {
 		return;
 	}
 	bin->buf_patched = rz_buf_new_sparse_overlay(bf->buf, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
 	if (!bin->buf_patched) {
-		ht_uu_free(relocs_by_sym);
+		rz_bin_reloc_target_builder_free(targets);
 		return;
 	}
-	ut64 vaddr = n_vaddr;
 	RzBinElfReloc *reloc;
+	ut64 got_addr = get_got_addr(bin);
+	ut64 baddr = bf->o->opts.baseaddr;
+
 	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
-		ut64 plt_entry_addr = vaddr;
 		if (reloc->sym) {
 			RzBinElfSymbol *import = Elf_(rz_bin_elf_get_import)(bin, reloc->sym);
 			if (import) {
-				bool found;
-				sym_addr = ht_uu_find(relocs_by_sym, reloc->sym, &found);
-				if (found) {
-					plt_entry_addr = sym_addr;
-				}
+				sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
 			} else {
 				RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, reloc->sym);
 				if (symbol) {
@@ -714,30 +1430,15 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 						Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
 					}
-					plt_entry_addr = sym_addr;
+				} else {
+					sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
 				}
 			}
 		}
-		// TODO relocation types B, L
-		patch_reloc(bin, reloc, sym_addr ? sym_addr : vaddr, 0, plt_entry_addr);
-
-		// TODO: do this in regular relocs cb
-#if 0
-		RzBinReloc *ptr = NULL;
-		if (!(ptr = reloc_convert(bin, &relcs[i], n_vaddr))) {
-			continue;
-		}
-#endif
-
-		if (sym_addr) {
-			reloc->target_vaddr = sym_addr;
-		} else {
-			reloc->target_vaddr = vaddr;
-			ht_uu_insert(relocs_by_sym, reloc->sym, vaddr);
-			vaddr += cdsz;
-		}
+		patch_reloc(bin, reloc, sym_addr, baddr, sym_addr, got_addr);
+		reloc->target_vaddr = sym_addr;
 	}
-	ht_uu_free(relocs_by_sym);
+	rz_bin_reloc_target_builder_free(targets);
 	// from now on, all writes should propagate through to the actual file
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }
@@ -762,6 +1463,7 @@ static RzList *virtual_files(RzBinFile *bf) {
 		}
 		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
 		if (!vf) {
+			rz_buf_free(buf);
 			return r;
 		}
 		vf->buf = buf;
@@ -794,41 +1496,10 @@ static RzList *maps(RzBinFile *bf) {
 
 	// if relocs should be patched, use the patched vfile for everything from the file
 	patch_relocs(bf, obj);
-	if (obj->buf_patched) {
-		RzListIter *it;
-		RzBinMap *map;
-		rz_list_foreach (ret, it, map) {
-			if (map->vfile_name) {
-				continue;
-			}
-			if (!map->psize || !rz_buf_sparse_populated_in(obj->buf_patched, map->paddr, map->paddr + map->psize - 1)) {
-				// avoid using the patched file if there is nothing different in this range
-				continue;
-			}
-			map->vfile_name = strdup(VFILE_NAME_PATCHED);
-		}
-	}
-
-	ut64 rtmsz = reloc_targets_vfile_size(bf, obj);
-	if (rtmsz) {
-		// virtual file for reloc targets (where the relocs will point into)
-		RzBinMap *map = RZ_NEW0(RzBinMap);
-		if (!map) {
-			return ret;
-		}
-		ut64 ehdr_size = sizeof(obj->ehdr);
-		if (bf->size < ehdr_size) {
-			ehdr_size = bf->size;
-		}
-		map->name = strdup("reloc-targets");
-		map->paddr = 0;
-		map->psize = rtmsz;
-		map->vaddr = reloc_targets_map_base(bf, obj);
-		map->vsize = rtmsz;
-		map->perm = RZ_PERM_R;
-		map->vfile_name = strdup(VFILE_NAME_RELOC_TARGETS);
-		rz_list_prepend(ret, map);
-	}
+	rz_bin_relocs_patch_maps(ret, obj->buf_patched, 0, obj->reloc_targets_map_base,
+		reloc_targets_vfile_size(bf, obj),
+		VFILE_NAME_PATCHED,
+		VFILE_NAME_RELOC_TARGETS);
 	return ret;
 }
 
@@ -841,8 +1512,8 @@ static RzList *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	//there is not leak in section since they are cached by elf.c
-	//and freed within Elf_(rz_bin_elf_free)
+	// there is not leak in section since they are cached by elf.c
+	// and freed within Elf_(rz_bin_elf_free)
 	size_t i;
 	RzBinElfSection *section;
 	rz_bin_elf_enumerate_sections(obj, section, i) {
@@ -859,7 +1530,7 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->is_data = true;
 		}
 		if (is_wordable_section(ptr->name)) {
-			ptr->format = rz_str_newf("Cd %zu[%" PFMT64d "]", sizeof(Elf_(Addr)), section->size / sizeof(Elf_(Addr)));
+			ptr->format = rz_str_newf("Cd %zu %" PFMT64d, sizeof(Elf_(Addr)), section->size / sizeof(Elf_(Addr)));
 		}
 		ptr->size = section->type != SHT_NOBITS ? section->size : 0;
 		ptr->vsize = section->size;
@@ -959,141 +1630,6 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzBinAddr *newEntry(RzBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-
-	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
-	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
-	if (ptr) {
-		ptr->paddr = Elf_(rz_bin_elf_v2p_new)(obj, vaddr);
-		ptr->vaddr = vaddr;
-		ptr->hpaddr = hpaddr;
-		ptr->hvaddr = hvaddr;
-		ptr->bits = bits;
-		ptr->type = type;
-		//realign due to thumb
-		if (bits == 16 && Elf_(rz_bin_elf_is_thumb_addr)(ptr->vaddr)) {
-			ptr->paddr--;
-			ptr->vaddr--;
-		}
-	}
-	return ptr;
-}
-
-static void process_constructors(RzBinFile *bf, RzList *ret, int bits) {
-	RzList *secs = sections(bf);
-	RzListIter *iter;
-	RzBinSection *sec;
-	int i, type;
-	rz_list_foreach (secs, iter, sec) {
-		type = -1;
-		if (!strcmp(sec->name, ".fini_array")) {
-			type = RZ_BIN_ENTRY_TYPE_FINI;
-		} else if (!strcmp(sec->name, ".init_array")) {
-			type = RZ_BIN_ENTRY_TYPE_INIT;
-		} else if (!strcmp(sec->name, ".preinit_array")) {
-			type = RZ_BIN_ENTRY_TYPE_PREINIT;
-		}
-		if (type != -1) {
-			ut8 *buf = calloc(sec->size, 1);
-			if (!buf) {
-				continue;
-			}
-			(void)rz_buf_read_at(bf->buf, sec->paddr, buf, sec->size);
-			if (bits == 32) {
-				for (i = 0; (i + 3) < sec->size; i += 4) {
-					ut32 addr32 = rz_read_le32(buf + i);
-					if (addr32) {
-						RzBinAddr *ba = newEntry(bf, sec->paddr + i, sec->vaddr + i,
-							(ut64)addr32, type, bits);
-						rz_list_append(ret, ba);
-					}
-				}
-			} else {
-				for (i = 0; (i + 7) < sec->size; i += 8) {
-					ut64 addr64 = rz_read_le64(buf + i);
-					if (addr64) {
-						RzBinAddr *ba = newEntry(bf, sec->paddr + i, sec->vaddr + i,
-							addr64, type, bits);
-						rz_list_append(ret, ba);
-					}
-				}
-			}
-			free(buf);
-		}
-	}
-	rz_list_free(secs);
-}
-
-static RzList *entries(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-
-	RzBinAddr *ptr = NULL;
-	ELFOBJ *obj = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)free);
-	if (!ret) {
-		return NULL;
-	}
-	ut64 pa = Elf_(rz_bin_elf_get_entry_offset)(obj);
-	if (pa != UT64_MAX) {
-		if (!(ptr = RZ_NEW0(RzBinAddr))) {
-			return ret;
-		}
-		ptr->paddr = pa;
-		ptr->vaddr = Elf_(rz_bin_elf_p2v_new)(obj, ptr->paddr);
-		ptr->hpaddr = 0x18; // e_entry offset in ELF header
-		ptr->hvaddr = UT64_MAX;
-		ptr->bits = obj->bits;
-
-		if (ptr->vaddr != (ut64)obj->ehdr.e_entry && Elf_(rz_bin_elf_is_executable)(obj)) {
-			eprintf("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", ptr->vaddr);
-		}
-
-		if (bf->o->sections) {
-			RzListIter *iter;
-			RzBinSection *section;
-			rz_list_foreach_prev(bf->o->sections, iter, section) {
-				if (!strcmp(section->name, "ehdr")) {
-					ptr->hvaddr = section->vaddr + ptr->hpaddr;
-					break;
-				}
-			}
-		}
-
-		if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(obj)) {
-			rz_bin_elf_fix_arm_thumb_object_dispatch(ptr);
-		}
-
-		rz_list_append(ret, ptr);
-	}
-
-	// add entrypoint for jni libraries
-	// NOTE: this is slow, we shouldnt find for java constructors here
-	if (!Elf_(rz_bin_elf_has_symbols)(obj)) {
-		return ret;
-	}
-
-	RzBinElfSymbol *symbol;
-	rz_bin_elf_foreach_symbols(obj, symbol) {
-		if (symbol->name && !strncmp(symbol->name, "Java", 4)) {
-			if (rz_str_endswith(symbol->name, "_init")) {
-				if (!(ptr = RZ_NEW0(RzBinAddr))) {
-					return ret;
-				}
-				ptr->paddr = symbol->paddr;
-				ptr->vaddr = symbol->vaddr;
-				ptr->hpaddr = UT64_MAX;
-				ptr->type = RZ_BIN_ENTRY_TYPE_INIT;
-				rz_list_append(ret, ptr);
-				break;
-			}
-		}
-	}
-	int bin_bits = obj->bits;
-	process_constructors(bf, ret, bin_bits < 32 ? 32 : bin_bits);
-	return ret;
-}
-
 static RzList *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
@@ -1163,24 +1699,6 @@ static RzList *libs(RzBinFile *bf) {
 	return Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
 }
 
-static ut64 get_got_addr(ELFOBJ *bin) {
-	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
-		return 0;
-	}
-
-	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
-	if (section) {
-		return section->offset;
-	}
-
-	section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt");
-	if (section) {
-		return section->offset;
-	}
-
-	return 0;
-}
-
 static RzList *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	RzList *ret = NULL;
@@ -1204,7 +1722,7 @@ static RzList *relocs(RzBinFile *bf) {
 	ut64 got_addr = get_got_addr(bin);
 
 	if (!got_addr) {
-		got_addr = reloc_targets_map_base(bf, bin);
+		got_addr = bin->reloc_targets_map_base;
 	}
 
 	RzBinElfReloc *reloc;
@@ -1250,17 +1768,10 @@ static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
 	RzList *sections_list = sections(bf);
 	RzListIter *iter;
 	RzBinSection *section;
-	bool is_go = false;
 	ret->has_retguard = -1;
 	rz_list_foreach (sections_list, iter, section) {
-		if (ret->has_retguard != -1 && is_go == true) {
+		if (ret->has_retguard != -1) {
 			break;
-		}
-		if (strstr(section->name, "note.go.buildid") ||
-			strstr(section->name, ".gopclntab") ||
-			strstr(section->name, ".go_export")) {
-			ret->lang = "go";
-			is_go = true;
 		}
 #define RZ_BIN_RANDOMDATA_RETGUARD_SZ 48
 		if (!strcmp(section->name, ".openbsd.randomdata")) {
@@ -1371,170 +1882,67 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	lookup_sections(bf, ret);
 	lookup_symbols(bf, ret);
+
 	return ret;
 }
 
+static bool add_fields_aux(ELFOBJ *bin, RzList *result, ut64 offset, size_t size, const char *name, char *(get_value)(ELFOBJ *bin), const char *fmt) {
+	char *value = get_value(bin);
+	if (!value) {
+		return false;
+	}
+
+	RzBinField *field = rz_bin_field_new(offset, offset, size, name, value, fmt, false);
+	if (!field) {
+		free(value);
+		return false;
+	}
+
+	if (!rz_list_append(result, field)) {
+		rz_bin_field_free(field);
+		free(value);
+		return false;
+	}
+
+	free(value);
+	return true;
+}
+
+static bool add_fields(ELFOBJ *bin, RzList *result) {
+	size_t size = bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64 ? 8 : 4;
+
+	return add_fields_aux(bin, result, E_IDENT_OFFSET, 16, "MAGIC", Elf_(rz_bin_elf_get_e_indent_as_string), "x") &&
+		add_fields_aux(bin, result, E_TYPE_OFFSET, 2, "Type", Elf_(rz_bin_elf_get_e_type_as_string), "x") &&
+		add_fields_aux(bin, result, E_MACHINE_OFFSET, 2, "Machine", Elf_(rz_bin_elf_get_e_machine_as_string), "x") &&
+		add_fields_aux(bin, result, E_VERSION_OFFSET, 4, "Version", Elf_(rz_bin_elf_get_e_version_as_string), "x") &&
+		add_fields_aux(bin, result, E_ENTRYPOINT_OFFSET, size, "Entrypoint", Elf_(rz_bin_elf_get_e_entry_as_string), "x") &&
+		add_fields_aux(bin, result, E_PHOFF_OFFSET, size, "PhOff", Elf_(rz_bin_elf_get_e_phoff_as_string), "x") &&
+		add_fields_aux(bin, result, E_SHOFF_OFFSET, size, "ShOff", Elf_(rz_bin_elf_get_e_shoff_as_string), "x") &&
+		add_fields_aux(bin, result, E_FLAGS_OFFSET, 4, "Flags", Elf_(rz_bin_elf_get_e_flags_as_string), "x") &&
+		add_fields_aux(bin, result, E_EHSIZE_OFFSET, 2, "EhSize", Elf_(rz_bin_elf_get_e_ehsize_as_string), "x") &&
+		add_fields_aux(bin, result, E_PHENTSIZE_OFFSET, 2, "PhentSize", Elf_(rz_bin_elf_get_e_phentsize_as_string), "d") &&
+		add_fields_aux(bin, result, E_PHNUM_OFFSET, 2, "PhNum", Elf_(rz_bin_elf_get_e_phnum_as_string), "d") &&
+		add_fields_aux(bin, result, E_SHENTSIZE_OFFSET, 2, "ShentSize", Elf_(rz_bin_elf_get_e_shentsize_as_string), "d") &&
+		add_fields_aux(bin, result, E_SHNUM_OFFSET, 2, "ShNum", Elf_(rz_bin_elf_get_e_shnum_as_string), "d") &&
+		add_fields_aux(bin, result, E_SHSTRNDX_OFFSET, 2, "ShStrndx", Elf_(rz_bin_elf_get_e_shstrndx_as_string), "d");
+}
+
 static RzList *fields(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
-	if (!ret) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	ELFOBJ *bin = rz_bin_file_get_elf(bf);
+
+	RzList *result = rz_list_newf((RzListFree)rz_bin_field_free);
+	if (!result) {
 		return NULL;
 	}
 
-#define ROW(name, siz, val, fmt) \
-	rz_list_append(ret, rz_bin_field_new(addr, addr, siz, name, sdb_fmt("0x%08" PFMT64x, (ut64)val), fmt, false));
-
-	if (rz_buf_size(bf->buf) < sizeof(Elf_(Ehdr))) {
-		return ret;
-	}
-
-	ut32 magic;
-	ut64 addr = 0;
-	if (!rz_buf_read_le32_at(bf->buf, addr, &magic)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("ELF", 4, magic, "x");
-
-	ut16 type;
-	addr += 0x10;
-	if (!rz_buf_read_le16_at(bf->buf, addr, &type)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("Type", 2, type, "x");
-
-	ut16 machine;
-	addr += 0x2;
-	if (!rz_buf_read_le16_at(bf->buf, addr, &machine)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("Machine", 2, machine, "x");
-
-	ut32 version;
-	addr += 0x2;
-	if (!rz_buf_read_le32_at(bf->buf, addr, &version)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("Version", 4, version, "x");
-
-	ut8 tmp;
-	if (!rz_buf_read8_at(bf->buf, 0x04, &tmp)) {
-		rz_list_free(ret);
+	if (!add_fields(bin, result)) {
+		rz_list_free(result);
 		return NULL;
 	}
 
-	if (tmp == 1) {
-		ut32 entry;
-		addr += 0x4;
-		if (!rz_buf_read_le32_at(bf->buf, addr, &entry)) {
-			rz_list_free(ret);
-			return NULL;
-		}
-		ROW("Entry point", 4, entry, "x");
-
-		ut32 phoff;
-		addr += 0x4;
-		if (!rz_buf_read_le32_at(bf->buf, addr, &phoff)) {
-			rz_list_free(ret);
-			return NULL;
-		}
-		ROW("PhOff", 4, phoff, "x");
-
-		ut32 shoff;
-		addr += 0x4;
-		if (!rz_buf_read_le32_at(bf->buf, addr, &shoff)) {
-			rz_list_free(ret);
-			return NULL;
-		}
-		ROW("ShOff", 4, shoff, "x");
-
-		addr += 0x4;
-	} else {
-		ut64 entry;
-		addr += 0x4;
-		if (!rz_buf_read_le64_at(bf->buf, addr, &entry)) {
-			rz_list_free(ret);
-			return NULL;
-		}
-		ROW("Entry point", 8, entry, "x");
-
-		ut64 phoff;
-		addr += 0x8;
-		if (!rz_buf_read_le64_at(bf->buf, addr, &phoff)) {
-			rz_list_free(ret);
-			return NULL;
-		}
-		ROW("PhOff", 8, phoff, "x");
-
-		ut64 shoff;
-		addr += 0x8;
-		if (!rz_buf_read_le64_at(bf->buf, addr, &shoff)) {
-			rz_list_free(ret);
-			return NULL;
-		}
-		ROW("ShOff", 8, shoff, "x");
-
-		addr += 0x8;
-	}
-
-	ut32 flags;
-	if (!rz_buf_read_le32_at(bf->buf, addr, &flags)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("Flags", 4, flags, "x");
-
-	ut16 ehsize;
-	addr += 0x4;
-	if (!rz_buf_read_le16_at(bf->buf, addr, &ehsize)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("EhSize", 2, ehsize, "x");
-
-	ut16 phentsize;
-	addr += 0x2;
-	if (!rz_buf_read_le16_at(bf->buf, addr, &phentsize)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("PhentSize", 2, phentsize, "x");
-
-	ut16 phnum;
-	addr += 0x2;
-	if (!rz_buf_read_le16_at(bf->buf, addr, &phnum)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("PhNum", 2, phnum, "x");
-
-	ut16 shentsize;
-	addr += 0x2;
-	if (!rz_buf_read_le16_at(bf->buf, addr, &shentsize)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("ShentSize", 2, shentsize, "x");
-
-	ut16 shnum;
-	addr += 0x2;
-	if (!rz_buf_read_le16_at(bf->buf, addr, &shnum)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("ShNum", 2, shnum, "x");
-
-	ut16 shrstrndx;
-	addr += 0x2;
-	if (!rz_buf_read_le16_at(bf->buf, addr, &shrstrndx)) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ROW("ShrStrndx", 2, shrstrndx, "x");
-
-	return ret;
+	return result;
 }
 
 static ut64 size(RzBinFile *bf) {
@@ -1552,4 +1960,8 @@ static ut64 size(RzBinFile *bf) {
 		}
 	}
 	return off + len;
+}
+
+static RzList *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, 4, false);
 }

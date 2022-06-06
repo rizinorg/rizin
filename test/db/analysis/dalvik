@@ -1,13 +1,19 @@
 NAME=Dalvik HelloWorld afl
 FILE=bins/dex/HelloWorld.dex
-CMDS=e io.va=0; aa; afl
+CMDS=aa; afl
 EXPECT=<<EOF
-0x0000025c    1 34           entry0
-0x00000238    1 20           method.public.constructor.LHello_._init___V
-0x00000290    1 84           method.public.LHello_.foo_I_V
-0x000002f4    1 20           method.public.constructor.LWorld_._init___V
-0x00000318    1 68           method.public.LWorld_.foo_I_V
-0x00000000    4 72           sym.Ljava_lang_System_.out
+0x10000025c    1 34           entry0
+0x8000000000    1 2            sym.Ljava_io_PrintStream_.println_Ljava_lang_String__V
+0x100000238    1 20           method.public.constructor.LHello_._init___V
+0x8000000006    1 2            sym.Ljava_lang_Object_._init___V
+0x100000290    1 84           method.public.LHello_.foo_I_V
+0x8000000008    1 2            sym.Ljava_lang_StringBuilder_._init___V
+0x800000000a    1 2            sym.Ljava_lang_StringBuilder_.append_Ljava_lang_String__Ljava_lang_StringBuilder
+0x8000000002    1 2            sym.Ljava_lang_Integer_._init__I_V
+0x8000000004    1 2            sym.Ljava_lang_Integer_.toString__Ljava_lang_String
+0x800000000c    1 2            sym.Ljava_lang_StringBuilder_.toString__Ljava_lang_String
+0x1000002f4    1 20           method.public.constructor.LWorld_._init___V
+0x100000318    1 68           method.public.LWorld_.foo_I_V
 EOF
 RUN
 
@@ -15,29 +21,177 @@ NAME=Dalvik HelloWorld string xref
 FILE=bins/dex/HelloWorld.dex
 CMDS=aa; axt @ str.Findus
 EXPECT=<<EOF
-entry0 0x260 [DATA] const-string v1, str.Findus
+entry0 0x100000260 [DATA] const-string v1, str.Findus
 EOF
 RUN
 
 NAME=Dalvik HelloWorld func xref
 FILE=bins/dex/HelloWorld.dex
-CMDS=aa; axt @sym.LHello_._init___V
+CMDS=aa; axt @ sym.LHello_._init___V
 EXPECT=<<EOF
-sym.Ljava_lang_System_.out 0x24 [CALL] invoke-direct {}, LHello;-><init>()V
-sym.Ljava_lang_System_.out 0x3c [CALL] invoke-direct {}, LHello;-><init>()V
-entry0 0x26e [CALL] invoke-direct {v0}, LHello;-><init>()V
-method.public.LHello_.foo_I_V 0x298 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
-method.public.constructor.LWorld_._init___V; [03] -r-x section size 20 named code.World._init 0x2f4 [CALL] invoke-direct {v1}, Ljava/lang/Object;-><init>()V
-method.public.LWorld_.foo_I_V 0x320 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+entry0 0x10000026e [CALL] invoke-direct {v0}, LHello;-><init>()V
+EOF
+RUN
+
+NAME=Dalvik HelloWorld func xref to super method
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=aaa; axt @ sym.Landroid_app_Activity_.onDestroy__V~invoke-super
+EXPECT=<<EOF
+method.public.Lorg_radare_radare2installer_ConsoleActivity_.onDestroy__V; void onDestroy() 0x100019e50 [CALL] invoke-super {v1}, Landroid/app/Activity;->onDestroy()V
+method.public.Lorg_radare_radare2installer_LaunchActivity_.onDestroy__V 0x10001a256 [CALL] invoke-super {v1}, Landroid/app/Activity;->onDestroy()V
+method.public.Lorg_radare_radare2installer_WebActivity_.onDestroy__V; void onDestroy() 0x10001e574 [CALL] invoke-super {v2}, Landroid/app/Activity;->onDestroy()V
 EOF
 RUN
 
 NAME=Dalvik resolve virtual methods called via invoke-virtual
 FILE=apk://bins/dex/org.radare.radare2installer.apk
-CMDS=e scr.prompt=false ; aaa ; axt @ sym.Lcom_ice_tar_TarEntry_.getUserName__Ljava_lang_String
+CMDS=aaa ; axt @ sym.Lcom_ice_tar_TarEntry_.getUserName__Ljava_lang_String
 EXPECT=<<EOF
-entry0 0xc8ba [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
-entry0 0xc9e6 [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
-method.public.Lcom_ice_tar_TarEntry_.toString__Ljava_lang_String 0xf04a [CALL] invoke-virtual {v4}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+entry0 0x10000c8ba [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+entry0 0x10000c9e6 [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+method.public.Lcom_ice_tar_TarEntry_.toString__Ljava_lang_String 0x10000f04a [CALL] invoke-virtual {v4}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+EOF
+RUN
+
+NAME=Dalvik resolve imports called via invoke-virtual
+FILE=apk://bins/dex/org.radare.radare2installer.apk
+CMDS=aaa ; axt @ sym.Ljava_net_URL_.openStream__Ljava_io_InputStream
+EXPECT=<<EOF
+method.public.Ljavax_activation_URLDataSource_.getInputStream__Ljava_io_InputStream 0x100021180 [CALL] invoke-virtual {v0}, Ljava/net/URL;->openStream()Ljava/io/InputStream;
+EOF
+RUN
+
+NAME=Dalvik regs
+FILE=
+CMDS=<<EOF
+e asm.arch=dalvik
+ar
+EOF
+EXPECT=<<EOF
+v0 = 0x00000000
+v1 = 0x00000000
+v2 = 0x00000000
+v3 = 0x00000000
+v4 = 0x00000000
+v5 = 0x00000000
+v6 = 0x00000000
+v7 = 0x00000000
+v8 = 0x00000000
+v9 = 0x00000000
+v10 = 0x00000000
+v11 = 0x00000000
+v12 = 0x00000000
+v13 = 0x00000000
+v14 = 0x00000000
+v15 = 0x00000000
+v16 = 0x00000000
+v17 = 0x00000000
+v18 = 0x00000000
+v19 = 0x00000000
+v20 = 0x00000000
+v21 = 0x00000000
+v22 = 0x00000000
+v23 = 0x00000000
+v24 = 0x00000000
+v25 = 0x00000000
+v26 = 0x00000000
+v27 = 0x00000000
+v28 = 0x00000000
+v29 = 0x00000000
+v30 = 0x00000000
+v31 = 0x00000000
+v32 = 0x00000000
+v33 = 0x00000000
+v34 = 0x00000000
+ip = 0x00000000
+sp = 0x00000000
+bp = 0x00000000
+EOF
+RUN
+
+NAME=Resolve also exception paths found after gotos/returns
+FILE=apk://bins/dex/ade8bef0ac29fa363fc9afd958af0074478aef650adeb0318517b48bd996d5d5.apk
+CMDS=<<EOF
+aaa
+axg @ 0x800000021c
+EOF
+EXPECT=<<EOF
+- 0x800000021c fcn 0x800000021c sym.Landroid_telephony_TelephonyManager_.getDeviceId__Ljava_lang_String
+  - 0x100018936 fcn 0x1000186b0 method.public.static.Lcom_network_android_SmsReceiver_.a_Lorg_xmlpull_v1_XmlSerializer_Ljava_io_StringWriter_Landroid_content_Context__V
+  - 0x1000186b0 fcn 0x1000186b0 method.public.static.Lcom_network_android_SmsReceiver_.a_Lorg_xmlpull_v1_XmlSerializer_Ljava_io_StringWriter_Landroid_content_Context__V
+    - 0x100025f78 fcn 0x100025f70 method.private.static.Lcom_network_android_g_.a_Landroid_content_Context__B_BLjava_io_StringWriter_Ljava_lang_String_Ljava_util_Vector__V
+    - 0x100025f70 fcn 0x100025f70 method.private.static.Lcom_network_android_g_.a_Landroid_content_Context__B_BLjava_io_StringWriter_Ljava_lang_String_Ljava_util_Vector__V
+      - 0x10002666c fcn 0x10002653c method.public.static.Lcom_network_android_g_.a_Ljava_lang_String_Ljava_lang_String_Lcom_network_android_x__Ljava_lang_String___BLandroid_content_Context__B_V
+      - 0x10002653c fcn 0x10002653c method.public.static.Lcom_network_android_g_.a_Ljava_lang_String_Ljava_lang_String_Lcom_network_android_x__Ljava_lang_String___BLandroid_content_Context__B_V
+        - 0x100019cac fcn 0x100019c60 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_I_V
+        - 0x100019c60 fcn 0x100019c60 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_I_V
+          - 0x100019d1c fcn 0x100019c60 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_I_V
+          - 0x100019e00 fcn 0x100019c60 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_I_V
+          - 0x10001c7a0 fcn 0x10001c6f0 method.public.final.Lcom_network_android_a_j_.run__V
+        - 0x10001ac02 fcn 0x10001abb8 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context__BZZ_V
+        - 0x10001abb8 fcn 0x10001abb8 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context__BZZ_V
+          - 0x10001ab9e fcn 0x10001ab9c method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context__B_V
+          - 0x10001ab9c fcn 0x10001ab9c method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context__B_V
+            - 0x100027fe2 fcn 0x100027fb4 method.public.static.Lcom_network_android_j_.a_Landroid_content_Context_ZZS_Z
+            - 0x100027fb4 fcn 0x100027fb4 method.public.static.Lcom_network_android_j_.a_Landroid_content_Context_ZZS_Z
+              - 0x100027e8e fcn 0x100027df0 method.public.static.Lcom_network_android_j_.a_Landroid_content_Context_ZZ_Z
+              - 0x100027df0 fcn 0x100027df0 method.public.static.Lcom_network_android_j_.a_Landroid_content_Context_ZZ_Z
+                - 0x10001c948 fcn 0x10001c918 method.public.final.Lcom_network_android_a_l_.run__V
+                - 0x10001c918 fcn 0x10001c918 method.public.final.Lcom_network_android_a_l_.run__V
+                  - 0x10000ed93 ???
+                - 0x10001dcd4 fcn 0x10001dcb0 method.public.static.Lcom_network_android_agent_NetworkApp_.b_Landroid_content_Context__V
+                - 0x10001dcb0 fcn 0x10001dcb0 method.public.static.Lcom_network_android_agent_NetworkApp_.b_Landroid_content_Context__V
+                  - 0x10001dc44 fcn 0x10001daf4 method.static.synthetic.Lcom_network_android_agent_NetworkApp_.a_Lcom_network_android_agent_NetworkApp__V
+                  - 0x10001daf4 fcn 0x10001daf4 method.static.synthetic.Lcom_network_android_agent_NetworkApp_.a_Lcom_network_android_agent_NetworkApp__V
+                    - 0x10001e918 fcn 0x10001e914 method.public.final.Lcom_network_android_agent_c_.run__V
+                  - 0x10001ea30 fcn 0x10001ea2c method.public.final.Lcom_network_android_agent_e_.run__V
+                - 0x10001dd60 fcn 0x10001dcb0 method.public.static.Lcom_network_android_agent_NetworkApp_.b_Landroid_content_Context__V
+                - 0x10001ddb0 fcn 0x10001dcb0 method.public.static.Lcom_network_android_agent_NetworkApp_.b_Landroid_content_Context__V
+                - 0x10001ed72 fcn 0x10001eca0 method.protected.final.Lcom_network_android_android_monitor_AppServicePinger_.onHandleIntent_Landroid_content_Intent__V
+                - 0x1000285e2 fcn 0x1000285d4 method.public.static.Lcom_network_android_j_.c_Landroid_content_Context__Z
+                - 0x1000285d4 fcn 0x1000285d4 method.public.static.Lcom_network_android_j_.c_Landroid_content_Context__Z
+                  - 0x100028322 fcn 0x1000282fc method.public.static.Lcom_network_android_j_.b_Landroid_content_Context__V
+                  - 0x1000282fc fcn 0x1000282fc method.public.static.Lcom_network_android_j_.b_Landroid_content_Context__V
+                    - 0x100028812 fcn 0x1000287f4 method.public.final.Lcom_network_android_l_.run__V
+                  - 0x100028802 fcn 0x1000287f4 method.public.final.Lcom_network_android_l_.run__V
+                - 0x100045a44 fcn 0x100045a1c method.public.final.Lcom_network_h_k_.run__V
+              - 0x10002d7aa fcn 0x10002d714 method.protected.static.Lcom_network_android_monitor_observer_BatteryReceiver_.a_Landroid_content_Intent_Landroid_content_Context__V
+              - 0x10002d714 fcn 0x10002d714 method.protected.static.Lcom_network_android_monitor_observer_BatteryReceiver_.a_Landroid_content_Intent_Landroid_content_Context__V
+                - 0x10002d6f8 fcn 0x10002d6c4 method.public.static.Lcom_network_android_monitor_observer_BatteryReceiver_.a_Landroid_content_Context__Ljava_lang_String
+                - 0x10002d6c4 fcn 0x10002d6c4 method.public.static.Lcom_network_android_monitor_observer_BatteryReceiver_.a_Landroid_content_Context__Ljava_lang_String
+                  - 0x1000188ec fcn 0x1000186b0 method.public.static.Lcom_network_android_SmsReceiver_.a_Lorg_xmlpull_v1_XmlSerializer_Ljava_io_StringWriter_Landroid_content_Context__V
+                - 0x10002fc8c fcn 0x10002fc84 method.public.final.Lcom_network_android_monitor_observer_s_.run__V
+            - 0x10002811a fcn 0x100028064 method.public.static.Lcom_network_android_j_.a_Landroid_telephony_TelephonyManager_Landroid_content_Context_ZLandroid_net_ConnectivityManager__Z
+            - 0x100028064 fcn 0x100028064 method.public.static.Lcom_network_android_j_.a_Landroid_telephony_TelephonyManager_Landroid_content_Context_ZLandroid_net_ConnectivityManager__Z
+              - 0x10001eb52 fcn 0x10001eac4 method.public.final.Lcom_network_android_agent_g_.run__V
+              - 0x100027f7a fcn 0x100027df0 method.public.static.Lcom_network_android_j_.a_Landroid_content_Context_ZZ_Z
+          - 0x10001c09c fcn 0x10001c074 method.private.static.Lcom_network_android_a_c_.g_Landroid_content_Context__V
+          - 0x10001c074 fcn 0x10001c074 method.private.static.Lcom_network_android_a_c_.g_Landroid_content_Context__V
+            - 0x100019eae fcn 0x100019e34 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_III_V
+            - 0x100019e34 fcn 0x100019e34 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_III_V
+              - 0x10001c440 fcn 0x10001c404 method.public.final.Lcom_network_android_a_f_.run__V
+              - 0x10001c48a fcn 0x10001c404 method.public.final.Lcom_network_android_a_f_.run__V
+              - 0x10001ea86 fcn 0x10001ea68 method.public.final.Lcom_network_android_agent_f_.run__V
+            - 0x100019f70 fcn 0x100019ed8 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_ILjava_lang_String__V
+            - 0x100019ed8 fcn 0x100019ed8 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_ILjava_lang_String__V
+              - 0x10001c8d0 fcn 0x10001c7f8 method.public.final.Lcom_network_android_a_k_.onReceive_Landroid_content_Context_Landroid_content_Intent__V
+            - 0x10001a1a2 fcn 0x100019f98 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_ILjava_lang_String_I_V
+            - 0x100019f98 fcn 0x100019f98 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_ILjava_lang_String_I_V
+              - 0x100019d90 fcn 0x100019c60 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_I_V
+              - 0x100019de0 fcn 0x100019c60 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_I_V
+              - 0x10001b088 fcn 0x10001b084 method.public.static.Lcom_network_android_a_c_.b_Landroid_content_Context_I_V
+              - 0x10001b084 fcn 0x10001b084 method.public.static.Lcom_network_android_a_c_.b_Landroid_content_Context_I_V
+                - 0x10001c2e2 fcn 0x10001c1c8 method.public.final.Lcom_network_android_a_e_.run__V
+                - 0x10001c39e fcn 0x10001c1c8 method.public.final.Lcom_network_android_a_e_.run__V
+                - 0x10001c41c fcn 0x10001c404 method.public.final.Lcom_network_android_a_f_.run__V
+                - 0x10001c74c fcn 0x10001c6f0 method.public.final.Lcom_network_android_a_j_.run__V
+              - 0x10001bf4a fcn 0x10001befc method.public.static.Lcom_network_android_a_c_.e_Landroid_content_Context__V
+              - 0x10001befc fcn 0x10001befc method.public.static.Lcom_network_android_a_c_.e_Landroid_content_Context__V
+                - 0x10001c9f4 fcn 0x10001c9f0 method.public.final.Lcom_network_android_a_m_.run__V
+              - 0x10001c6ba fcn 0x10001c6ac method.public.final.Lcom_network_android_a_i_.run__V
+          - 0x10001c962 fcn 0x10001c918 method.public.final.Lcom_network_android_a_l_.run__V
+        - 0x10001c248 fcn 0x10001c1c8 method.public.final.Lcom_network_android_a_e_.run__V
+        - 0x100028408 fcn 0x1000282fc method.public.static.Lcom_network_android_j_.b_Landroid_content_Context__V
+  - 0x10001a24e fcn 0x100019f98 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_ILjava_lang_String_I_V
 EOF
 RUN

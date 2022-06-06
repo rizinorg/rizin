@@ -7,11 +7,13 @@
  * \brief Modified read proxy of Mach-O binaries for use as part of a virtual file.
  *
  * This is used in Mach-O binaries that either contain LC_DYLD_CHANGED_FIXUPS/LC_DYLD_EXPORTS_TRIE
- * load commands or BIND_OPCODE_THREADED in their dyld info. This is currently only known
- * to exist on binaries with the "arm64e" architecture, as Apple calls it, which is essentially
+ * load commands or BIND_OPCODE_THREADED in their dyld info. This is especially present in, but not
+ * limited to binaries with the "arm64e" architecture, as Apple calls it, which is essentially
  * arm64 with pointer authentication.
  * In particular, we strip away additional info stored inside of pointers in the binary so we get
  * the raw pointers out for convenient analysis.
+ *
+ * see also mach0_relocs.c for additional modification of the data that might happen.
  */
 
 #include "mach0.h"
@@ -19,10 +21,11 @@
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
-static void rebase_buffer(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf, int count) {
+RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf, ut64 count) {
 	rz_return_if_fail(obj && buf);
 	ut64 eob = off + count;
-	for (int i = 0; i < obj->nsegs; i++) {
+	int nsegs_to_rebase = RZ_MIN(obj->nchained_starts, obj->nsegs);
+	for (int i = 0; i < nsegs_to_rebase; i++) {
 		if (!obj->chained_starts[i]) {
 			continue;
 		}
@@ -50,36 +53,101 @@ static void rebase_buffer(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf, int co
 				}
 				ut64 raw_ptr = rz_read_le64(tmp);
 				bool is_auth = IS_PTR_AUTH(raw_ptr);
-				bool is_bind = IS_PTR_BIND(raw_ptr);
 				ut64 ptr_value = raw_ptr;
 				ut64 delta;
-				if (is_auth && is_bind) {
-					struct dyld_chained_ptr_arm64e_auth_bind *p =
-						(struct dyld_chained_ptr_arm64e_auth_bind *)&raw_ptr;
-					delta = p->next;
-				} else if (!is_auth && is_bind) {
-					struct dyld_chained_ptr_arm64e_bind *p =
-						(struct dyld_chained_ptr_arm64e_bind *)&raw_ptr;
-					delta = p->next;
-				} else if (is_auth && !is_bind) {
-					struct dyld_chained_ptr_arm64e_auth_rebase *p =
-						(struct dyld_chained_ptr_arm64e_auth_rebase *)&raw_ptr;
-					delta = p->next;
-					ptr_value = p->target + obj->baddr;
-				} else {
-					struct dyld_chained_ptr_arm64e_rebase *p =
-						(struct dyld_chained_ptr_arm64e_rebase *)&raw_ptr;
-					delta = p->next;
-					ptr_value = ((ut64)p->high8 << 56) | p->target;
+				ut64 stride = 8;
+				switch (obj->chained_starts[i]->pointer_format) {
+				case DYLD_CHAINED_PTR_ARM64E: {
+					bool is_bind = IS_PTR_BIND(raw_ptr);
+					if (is_auth && is_bind) {
+						struct dyld_chained_ptr_arm64e_auth_bind *p =
+							(struct dyld_chained_ptr_arm64e_auth_bind *)&raw_ptr;
+						delta = p->next;
+					} else if (!is_auth && is_bind) {
+						struct dyld_chained_ptr_arm64e_bind *p =
+							(struct dyld_chained_ptr_arm64e_bind *)&raw_ptr;
+						delta = p->next;
+					} else if (is_auth && !is_bind) {
+						struct dyld_chained_ptr_arm64e_auth_rebase *p =
+							(struct dyld_chained_ptr_arm64e_auth_rebase *)&raw_ptr;
+						delta = p->next;
+						ptr_value = p->target + obj->baddr;
+					} else {
+						struct dyld_chained_ptr_arm64e_rebase *p =
+							(struct dyld_chained_ptr_arm64e_rebase *)&raw_ptr;
+						delta = p->next;
+						ptr_value = ((ut64)p->high8 << 56) | p->target;
+					}
+					break;
+				}
+				case DYLD_CHAINED_PTR_64_KERNEL_CACHE:
+				case DYLD_CHAINED_PTR_ARM64E_KERNEL: {
+					stride = 4;
+					if (is_auth) {
+						struct dyld_chained_ptr_arm64e_cache_auth_rebase *p =
+							(struct dyld_chained_ptr_arm64e_cache_auth_rebase *)&raw_ptr;
+						delta = p->next;
+						ptr_value = p->target + obj->baddr;
+					} else {
+						struct dyld_chained_ptr_arm64e_cache_rebase *p =
+							(struct dyld_chained_ptr_arm64e_cache_rebase *)&raw_ptr;
+						delta = p->next;
+						ptr_value = ((ut64)p->high8 << 56) | p->target;
+						ptr_value += obj->baddr;
+					}
+					break;
+				}
+				case DYLD_CHAINED_PTR_64_OFFSET: {
+					stride = 4;
+					struct dyld_chained_ptr_64_bind *bind =
+						(struct dyld_chained_ptr_64_bind *)&raw_ptr;
+					if (bind->bind) {
+						delta = bind->next;
+					} else {
+						struct dyld_chained_ptr_64_rebase *p =
+							(struct dyld_chained_ptr_64_rebase *)&raw_ptr;
+						delta = p->next;
+						ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
+					}
+					break;
+				}
+				case DYLD_CHAINED_PTR_ARM64E_USERLAND24: {
+					stride = 8;
+					struct dyld_chained_ptr_arm64e_bind24 *bind =
+						(struct dyld_chained_ptr_arm64e_bind24 *)&raw_ptr;
+					if (bind->bind) {
+						delta = bind->next;
+					} else {
+						if (bind->auth) {
+							struct dyld_chained_ptr_arm64e_auth_rebase *p =
+								(struct dyld_chained_ptr_arm64e_auth_rebase *)&raw_ptr;
+							delta = p->next;
+							ptr_value = p->target + obj->baddr;
+						} else {
+							struct dyld_chained_ptr_arm64e_rebase *p =
+								(struct dyld_chained_ptr_arm64e_rebase *)&raw_ptr;
+							delta = p->next;
+							ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
+						}
+					}
+					break;
+				}
+				default:
+					RZ_LOG_WARN("Unsupported Mach-O pointer format: %u at paddr 0x%" PFMT64x "\n",
+						obj->chained_starts[i]->pointer_format, cursor);
+					goto break_it_all;
 				}
 				ut64 in_buf = cursor - off;
 				if (cursor >= off && cursor <= eob - 8) {
 					rz_write_le64(&buf[in_buf], ptr_value);
 				}
-				cursor += delta * 8;
+				cursor += delta * stride;
 				if (!delta) {
 					break;
 				}
+				continue;
+			break_it_all:
+				break;
 			}
 		}
 	}
@@ -117,7 +185,8 @@ static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	if (r <= 0 || !len) {
 		return r;
 	}
-	rebase_buffer(ctx->obj, ctx->off, buf, RZ_MIN(r, len));
+	MACH0_(rebase_buffer)
+	(ctx->obj, ctx->off, buf, RZ_MIN(r, len));
 	return r;
 }
 
@@ -161,7 +230,7 @@ RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj) {
 }
 
 RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj, size_t seg_index) {
-	if (seg_index >= obj->nsegs) {
+	if (seg_index >= obj->nsegs || seg_index >= obj->nchained_starts) {
 		return false;
 	}
 	return obj->chained_starts && obj->chained_starts[seg_index];

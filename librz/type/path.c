@@ -96,7 +96,7 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 					return -1;
 				}
 			}
-			offset += rz_type_db_struct_member_offset(typedb, parent->identifier.name, member);
+			offset += rz_type_db_struct_member_packed_offset(typedb, parent->identifier.name, member);
 			path = member + membsize;
 			break;
 		default:
@@ -174,7 +174,6 @@ static bool structured_member_walker(const RzTypeDB *typedb, RzList /* RzTypePat
  * \param offset The offset of the path to match against
  */
 RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset) {
-	bool nofail = true;
 	RzList *list = rz_list_newf((RzListFree)rz_type_path_free);
 	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
 		RzType *t = rz_type_identifier_of_base_type(typedb, btype, false);
@@ -189,7 +188,7 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *ty
 			}
 			// We go into the nested structures/unions if they are members of the structure
 			char *path = rz_str_newf("%s.%s", btype->name, memb->name);
-			nofail &= structured_member_walker(typedb, list, t, memb->type, path, memb_offset + offset);
+			structured_member_walker(typedb, list, t, memb->type, path, memb_offset + offset);
 			memb_offset += rz_type_db_get_bitsize(typedb, memb->type) / 8;
 			free(path);
 		}
@@ -202,7 +201,7 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *ty
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&btype->union_data.members, memb) {
 			char *path = rz_str_newf("%s.%s", btype->name, memb->name);
-			nofail &= structured_member_walker(typedb, list, t, memb->type, path, offset);
+			structured_member_walker(typedb, list, t, memb->type, path, offset);
 			free(path);
 		}
 	} else {
@@ -236,13 +235,13 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_db_get_by_offset(const RzTypeDB *
 }
 
 /**
- * \brief Returns the offset of the structure member if there is a match
+ * \brief Returns the packed offset in bits of the structure member if there is a match
  *
  * \param typedb Types Database instance
  * \param name The structure type name
  * \param name The structure member name
  */
-RZ_API ut64 rz_type_db_struct_member_offset(const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member) {
+RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member) {
 	rz_return_val_if_fail(typedb && name && member, 0);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
@@ -258,4 +257,26 @@ RZ_API ut64 rz_type_db_struct_member_offset(const RzTypeDB *typedb, RZ_NONNULL c
 		result += rz_type_db_get_bitsize(typedb, memb->type);
 	}
 	return result;
+}
+
+/**
+ * \brief Returns the offset in bytes of the structure member if there is a match
+ *
+ * \param typedb Types Database instance
+ * \param name The structure type name
+ * \param name The structure member name
+ */
+RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member) {
+	rz_return_val_if_fail(typedb && name && member, 0);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+		return 0;
+	}
+	RzTypeStructMember *memb;
+	rz_vector_foreach(&btype->struct_data.members, memb) {
+		if (!strcmp(memb->name, member)) {
+			return memb->offset;
+		}
+	}
+	return 0;
 }

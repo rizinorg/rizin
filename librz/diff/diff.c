@@ -5,15 +5,15 @@
 /** \file diff.c
  * Ratcliff/Obershelp Pattern Recognition
  * Ratcliff/Obershelp Pattern Recognition algorithm applied to generic data.
- * 
+ *
  * The code for diffing is quite simple, given 2 arrays containing
  * data, you calculate the longest sequences of data that matches
- * between the two inputs; to do that you need to create a map in 
+ * between the two inputs; to do that you need to create a map in
  * which you will store all the hits found within an array:
  * - as key, each single element of one of the arrays.
- * - as value, a list of all the locations of which each element 
+ * - as value, a list of all the locations of which each element
  *   appears within the array itself.
- * 
+ *
  * Once this map is created, you will need to find the longest
  * subsequence that can be found in both arrays by using the hit-map.
  * then you remove that subsequence from the area of search, and
@@ -21,7 +21,7 @@
  * of the first subsequence).
  * Then you keep doing this, till all areas and longest matches have
  * been found.
- * 
+ *
  * Now that you know all the matching areas, you can generate a series
  * of steps/operations which can transform the first array into the
  * second one, by removing the non matching areas in the 1st array
@@ -30,7 +30,7 @@
  * Example:
  *    array_a = [A,B,C,D,E,F,G,H,I]
  *    array_b = [Y,Z,B,C,D,L,Z,N,H,I]
- * 
+ *
  * 1: create map of hits and their positions:
  * 	- hit_map(array_b) = {
  * 	  B: [2]
@@ -43,7 +43,7 @@
  * 	  Y: [0]
  * 	  Z: [1,6]
  * 	}
- * 
+ *
  * 2: find all matching areas using the hit-map:
  *  - match_0 = [B,C,D] from array_a[1] to array_a[3] and from array_b[3] to array_b[4]
  *  - match_1 = [H,I]   from array_a[1] to array_a[8] and from array_b[8] to array_b[9]

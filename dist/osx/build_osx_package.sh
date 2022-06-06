@@ -22,6 +22,9 @@ cd "${RIZININSTALL}" && find . | cpio -o --format odc | gzip -c > "${OSXPKGDIR}/
 mkbom "${RIZININSTALL}" "${OSXPKGDIR}/Bom"
 pkgutil --flatten "${OSXPKGDIR}" "${RIZINDIR}/dist/osx/rizin.pkg"
 
+convert -size 620x418 xc:none -background none /tmp/bg.png || { echo convert failed, is imagemagick installed?; exit 1; }
+composite -geometry +30+230 -background none \( "${RIZINDIR}/doc/img/rizin.svg" -resize 25% \) /tmp/bg.png  -colorspace sRGB "${RIZINDIR}/dist/osx/Resources/rizin-logo.png"
+
 cd "${RIZINDIR}/dist/osx" && productbuild --resources Resources --distribution Distribution "rizin-${VERSION}.pkg"
 mv "${RIZINDIR}/dist/osx/rizin-${VERSION}.pkg" "${RIZINDIR}/rizin-${VERSION}.pkg"
 

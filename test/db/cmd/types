@@ -23,7 +23,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
-wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf0600000
+wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf06000000
 e asm.comments=false
 s 2
 tl short
@@ -72,7 +72,7 @@ RUN
 NAME=typelinks- test for tlj json
 FILE==
 CMDS=<<EOF
-wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf0600000
+wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf06000000
 s 2
 tl short
 sd +6
@@ -188,52 +188,54 @@ pdr~JNI?
 EOF
 EXPECT=<<EOF
 | ; var struct JNINativeInterface JNINativeInterface @ sp+0x12c
-| 0x00000f62      cdb0           sub   JNINativeInterface.GetSuperclassx134
+| 0x00000f62      cdb0           sub   JNINativeInterface.DefineClassx134
 | 0x00000f74      4b93           str   r3, [JNINativeInterface.reserved0]
 | 0x00000f76      039b           ldr   r3, [var_134h]                  ; JNINativeInterface.reserved0
+| 0x00000f7e      d358           ldr   r3, [r2, r3]                    ; JNINativeInterface.GetStringUTFChars
 | 0x00000f82      019a           ldr   r2, [var_13ch]                  ; JNINativeInterface.reserved0
-| 0x00000f8e      4693           str   r3, [JNINativeInterface.GetSuperclassx118]
-| 0x00000f98      4593           str   r3, [JNINativeInterface.GetSuperclassx114]
-| 0x00000f9a      35ab           add   r3, JNINativeInterface.GetSuperclassxd4
-| 0x00000fb0      29ab           add   r3, JNINativeInterface.GetSuperclassxa4
-| 0x00000fc6      1dab           add   r3, JNINativeInterface.GetSuperclassx74
-| 0x00000fdc      11ab           add   r3, JNINativeInterface.GetSuperclassx44
-| 0x00000ff8      469a           ldr   r2, [JNINativeInterface.GetSuperclassx118]
-| 0x00001000      4393           str   r3, [JNINativeInterface.GetSuperclassx10c]
-| 0x00001004      4293           str   r3, [JNINativeInterface.GetSuperclassx108]
+| 0x00000f8e      4693           str   r3, [JNINativeInterface.DefineClassx118]
+| 0x00000f98      4593           str   r3, [JNINativeInterface.DefineClassx114]
+| 0x00000f9a      35ab           add   r3, JNINativeInterface.DefineClassxd4
+| 0x00000fb0      29ab           add   r3, JNINativeInterface.DefineClassxa4
+| 0x00000fc6      1dab           add   r3, JNINativeInterface.DefineClassx74
+| 0x00000fdc      11ab           add   r3, JNINativeInterface.DefineClassx44
+| 0x00000ff8      469a           ldr   r2, [JNINativeInterface.DefineClassx118]
+| 0x00001000      4393           str   r3, [JNINativeInterface.DefineClassx10c]
+| 0x00001004      4293           str   r3, [JNINativeInterface.DefineClassx108]
+| 0x0000100e      d358           ldr   r3, [r2, r3]                    ; JNINativeInterface.GetStringLength
 | 0x00001012      019a           ldr   r2, [var_13ch]                  ; JNINativeInterface.reserved0
-| 0x0000101c      4193           str   r3, [JNINativeInterface.GetSuperclassx104]
-| 0x00001020      4ca8           add   r0, JNINativeInterface.reserved2
-| 0x0000103a      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
-| 0x00001040      439a           ldr   r2, [JNINativeInterface.GetSuperclassx10c]
-| 0x00001042      29ab           add   r3, JNINativeInterface.GetSuperclassxa4
-| 0x00001048      4399           ldr   r1, [JNINativeInterface.GetSuperclassx10c]
-| 0x0000104a      1dab           add   r3, JNINativeInterface.GetSuperclassx74
-| 0x00001052      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
-| 0x00001054      4699           ldr   r1, [JNINativeInterface.GetSuperclassx118]
-| 0x00001066      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.reserved0
-| 0x00001078      439a           ldr   r2, [JNINativeInterface.GetSuperclassx10c]
-| 0x0000107a      4399           ldr   r1, [JNINativeInterface.GetSuperclassx10c]
-| 0x0000107e      4cad           add   r5, JNINativeInterface.reserved2
-| 0x00001086      4398           ldr   r0, [JNINativeInterface.GetSuperclassx10c]
-| 0x00001088      11ab           add   r3, JNINativeInterface.GetSuperclassx44
-| 0x00001092      4ca8           add   r0, JNINativeInterface.reserved2
-| 0x0000109a      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
-| 0x0000109e      4393           str   r3, [JNINativeInterface.GetSuperclassx10c]
-| 0x000010a0      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
-| 0x000010a4      4293           str   r3, [JNINativeInterface.GetSuperclassx108]
-| 0x000010a6      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
-| 0x000010a8      469a           ldr   r2, [JNINativeInterface.GetSuperclassx118]
-| 0x000010ca      4493           str   r3, [JNINativeInterface.GetSuperclassx110]
-| 0x000010d2      419b           ldr   r3, [JNINativeInterface.GetSuperclassx104]
-| 0x000010d8      459a           ldr   r2, [JNINativeInterface.GetSuperclassx114]
-| 0x000010da      449b           ldr   r3, [JNINativeInterface.GetSuperclassx110]
-| 0x00001114      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.reserved0
-| 0x0000112e      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.reserved0
+| 0x0000101c      4193           str   r3, [JNINativeInterface.DefineClassx104]
+| 0x00001020      4ca8           add   r0, JNINativeInterface.reserved1
+| 0x0000103a      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
+| 0x00001040      439a           ldr   r2, [JNINativeInterface.DefineClassx10c]
+| 0x00001042      29ab           add   r3, JNINativeInterface.DefineClassxa4
+| 0x00001048      4399           ldr   r1, [JNINativeInterface.DefineClassx10c]
+| 0x0000104a      1dab           add   r3, JNINativeInterface.DefineClassx74
+| 0x00001052      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
+| 0x00001054      4699           ldr   r1, [JNINativeInterface.DefineClassx118]
+| 0x00001066      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.NewStringUTF
+| 0x00001078      439a           ldr   r2, [JNINativeInterface.DefineClassx10c]
+| 0x0000107a      4399           ldr   r1, [JNINativeInterface.DefineClassx10c]
+| 0x0000107e      4cad           add   r5, JNINativeInterface.reserved1
+| 0x00001086      4398           ldr   r0, [JNINativeInterface.DefineClassx10c]
+| 0x00001088      11ab           add   r3, JNINativeInterface.DefineClassx44
+| 0x00001092      4ca8           add   r0, JNINativeInterface.reserved1
+| 0x0000109a      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
+| 0x0000109e      4393           str   r3, [JNINativeInterface.DefineClassx10c]
+| 0x000010a0      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
+| 0x000010a4      4293           str   r3, [JNINativeInterface.DefineClassx108]
+| 0x000010a6      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
+| 0x000010a8      469a           ldr   r2, [JNINativeInterface.DefineClassx118]
+| 0x000010ca      4493           str   r3, [JNINativeInterface.DefineClassx110]
+| 0x000010d2      419b           ldr   r3, [JNINativeInterface.DefineClassx104]
+| 0x000010d8      459a           ldr   r2, [JNINativeInterface.DefineClassx114]
+| 0x000010da      449b           ldr   r3, [JNINativeInterface.DefineClassx110]
+| 0x00001114      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.NewStringUTF
+| 0x0000112e      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.NewStringUTF
 | 0x00001144      4b9a           ldr   r2, [JNINativeInterface.reserved0]
 | 0x00001148      9a42           cmp   r2, r3                          ; JNINativeInterface.reserved0
-| 0x00001150      4db0           add   JNINativeInterface.GetSuperclassx134
-46
+| 0x00001150      4db0           add   JNINativeInterface.DefineClassx134
+48
 EOF
 RUN
 
@@ -297,7 +299,6 @@ EXPECT=<<EOF
 pf d int
 EOF
 EXPECT_ERR=<<EOF
-Cannot find base type "int"
 Cannot find 'int' type
 EOF
 RUN
@@ -348,9 +349,7 @@ union xoo {
 };
 EOF
 EXPECT_ERR=<<EOF
-Cannot find base type "xoo"
 Cannot find 'xoo' type
-Cannot find base type "xoo"
 ERROR: Cannot find "xoo" union type
 EOF
 RUN
@@ -383,9 +382,9 @@ A = 0x0
 B = 0x1
 G = 0x2
 enum bar {
-	A = 0,
-	B = 1,
-	G = 2
+	A = 0x0,
+	B = 0x1,
+	G = 0x2
 };
 EOF
 RUN
@@ -443,7 +442,7 @@ EXPECT=<<EOF
 const_reference = const_reference
 typedef const_reference const_reference;
 pf 
-typedef const_reference const_reference;
+const_reference;
 EOF
 RUN
 
@@ -550,7 +549,7 @@ tsd test_struct
 EOF
 EXPECT=<<EOF
 pf dd x y
-struct test_struct {int x; int y;};
+struct test_struct { int x; int y; };
 EOF
 RUN
 
@@ -566,14 +565,14 @@ te v 0x123
 te v 0x321
 EOF
 EXPECT=<<EOF
-enum v {t = 291, p = 801};
+enum v { t = 0x123, p = 0x321 };
 enum v {
-	t = 291,
-	p = 801
+	t = 0x123,
+	p = 0x321
 };
 enum v {
-	t = 291,
-	p = 801
+	t = 0x123,
+	p = 0x321
 };
 t = 0x123
 p = 0x321
@@ -594,14 +593,14 @@ te v 0x8000000000000001
 te v 0x8000000000000008
 EOF
 EXPECT=<<EOF
-enum v {t = 9223372036854775809, p = 9223372036854775816};
+enum v { t = 0x8000000000000001, p = 0x8000000000000008 };
 enum v {
-	t = 9223372036854775809,
-	p = 9223372036854775816
+	t = 0x8000000000000001,
+	p = 0x8000000000000008
 };
 enum v {
-	t = 9223372036854775809,
-	p = 9223372036854775816
+	t = 0x8000000000000001,
+	p = 0x8000000000000008
 };
 t = 0x8000000000000001
 p = 0x8000000000000008
@@ -684,27 +683,27 @@ ttc dox_t
 EOF
 EXPECT=<<EOF
 pf [40]c[40]c[40]c first middle last
-struct name {char first[40]; char middle[40]; char last[40];};
+struct name { char first[40]; char middle[40]; char last[40]; };
 struct name {
 	char first[40];
 	char middle[40];
 	char last[40];
 };
 pf bbw day month year
-struct date {uint8_t day; uint8_t month; uint16_t year;};
+struct date { uint8_t day; uint8_t month; uint16_t year; };
 struct date {
 	uint8_t day;
 	uint8_t month;
 	uint16_t year;
 };
 pf [127]c[40]cd street city zip
-struct addr {char street[127]; char city[40]; uint32_t zip;};
+struct addr { char street[127]; char city[40]; uint32_t zip; };
 struct addr {
 	char street[127];
 	char city[40];
 	uint32_t zip;
 };
-struct dox {addr_t address; name_t name; date_t bday;};
+struct dox { addr_t address; name_t name; date_t bday; };
 struct dox {
 	addr_t address;
 	name_t name;
@@ -1268,7 +1267,7 @@ tsc boo
 EOF
 EXPECT=<<EOF
 pf dpz x (fp)fp b
-struct foo {int x; int (*fp)(int a, int b); char *b;};
+struct foo { int x; int (*fp)(int a, int b); char *b; };
 struct foo {
 	int x;
 	int (*fp)(int a, int b);
@@ -1278,7 +1277,7 @@ struct foo {
 (fp)fp : 0x00000004 = (qword)0x0000000000000000
   b : 0x0000000c = "\x05hello"
 pf dpz x (ffp)ffp b
-struct boo {int x; int (***ffp)(int a, int b); char *b;};
+struct boo { int x; int (***ffp)(int a, int b); char *b; };
 struct boo {
 	int x;
 	int (***ffp)(int a, int b);
@@ -1369,8 +1368,8 @@ tec Foo
 EOF
 EXPECT=<<EOF
 enum Foo {
-	COW = 1,
-	BAR = 2
+	COW = 0x1,
+	BAR = 0x2
 };
 EOF
 RUN
@@ -1382,7 +1381,7 @@ td "enum Foo {COW=1,BAR=2};"
 ted Foo
 EOF
 EXPECT=<<EOF
-enum Foo {COW = 1, BAR = 2};
+enum Foo { COW = 0x1, BAR = 0x2 };
 EOF
 RUN
 
@@ -1426,9 +1425,9 @@ tcd~Foo
 EOF
 EXPECT=<<EOF
 typedef char FILE_NAME;
-union xxx {int x; int y; int z;};
-struct three_elements {int x; char y; float z;};
-enum Foo {COW = 1, BAR = 2};
+union xxx { int x; int y; int z; };
+struct three_elements { int x; char y; float z; };
+enum Foo { COW = 0x1, BAR = 0x2 };
 EOF
 RUN
 
@@ -1499,6 +1498,46 @@ struct anonymous struct 0 {
 struct anonymous struct 1 {
 	char ch;
 };
+EOF
+RUN
+
+NAME=Variable character array
+FILE=bins/elf/ls
+CMDS=<<EOF
+aaa
+s 0x4070
+afv
+afvt var_18h "char [20]"
+afv
+afvd var_18h
+EOF
+EXPECT=<<EOF
+var uint64_t var_8h @ rsp+0x18
+var uint64_t var_17h @ rsp+0x27
+var int64_t var_18h @ rsp+0x28
+var char * var_28h @ rsp+0x38
+var int64_t var_30h @ rsp+0x40
+var int64_t var_32h @ rsp+0x42
+var int64_t var_38h @ rsp+0x48
+var int64_t var_45h @ rsp+0x55
+var int64_t var_46h @ rsp+0x56
+var int64_t var_47h @ rsp+0x57
+var int64_t var_48h @ rsp+0x58
+arg char ** argv @ rsi
+arg int argc @ rdi
+var uint64_t var_8h @ rsp+0x18
+var uint64_t var_17h @ rsp+0x27
+var char [20] var_18h @ rsp+0x28
+var int64_t var_30h @ rsp+0x40
+var int64_t var_32h @ rsp+0x42
+var int64_t var_38h @ rsp+0x48
+var int64_t var_45h @ rsp+0x55
+var int64_t var_46h @ rsp+0x56
+var int64_t var_47h @ rsp+0x57
+var int64_t var_48h @ rsp+0x58
+arg char ** argv @ rsi
+arg int argc @ rdi
+var var_18h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
 EOF
 RUN
 
@@ -1732,7 +1771,6 @@ afv
 EOF
 EXPECT=<<EOF
 var void * va_args @ rbp-0x34
-var uint64_t var_30h @ rbp-0x30
 var uint64_t var_2ch @ rbp-0x2c
 var FILE * stream @ rbp-0x28
 var const char * s @ rbp-0x20
@@ -1769,7 +1807,6 @@ EXPECT=<<EOF
 var char ** var_14e0h @ rbp-0x14e0
 var int var_14d4h @ rbp-0x14d4
 var int * wstatus @ rbp-0x14cc
-var int * options @ rbp-0x14c8
 var int64_t var_14c4h @ rbp-0x14c4
 var int64_t var_14c0h @ rbp-0x14c0
 var int64_t var_14bch @ rbp-0x14bc
@@ -1973,7 +2010,7 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 s main
 af
-"afs int main(int argc);"
+afs "int main(int argc);"
 tf main
 EOF
 EXPECT=<<EOF
@@ -1988,9 +2025,9 @@ e analysis.vars.stackname=true
 s 0x4e2420
 af
 afs
-"afs void no_type(int a, char **b);"
+afs "void no_type(int a, char **b);"
 afs
-"afs char type(int a, char **b);"
+afs "char type(int a, char **b);"
 afs
 EOF
 EXPECT=<<EOF
@@ -2005,9 +2042,9 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 af
 afs
-"afs void foo.bar();"
+afs "void foo.bar();"
 afs
-"afs char foo.bar(int a, ...);"
+afs "char foo.bar(int a, ...);"
 afs
 EOF
 EXPECT=<<EOF
@@ -2033,9 +2070,13 @@ NAME=td crash
 FILE==
 CMDS=<<EOF
 td "struct;"
+td "stract;"
 td "struct crash __attribute__((packed)) { };"
 EOF
-EXPECT=<<EOF
+EXPECT_ERR=<<EOF
+Unsupported type definition: struct
+Unsupported type definition: stract;
+Unsupported type definition: struct crash __attribute__((packed)) { }
 EOF
 RUN
 
@@ -8093,5 +8134,26 @@ EXPECT=<<EOF
 fun1
 fun2
 ["fun1","fun2"]
+EOF
+RUN
+
+NAME=no ESIL memory in aaft
+FILE=bins/elf/back1
+CMDS=<<EOF
+aa
+s main
+oml
+aaft
+oml
+EOF
+EXPECT=<<EOF
+ 1 fd: 4 +0x00000000 0x00201020 - 0x00201087 r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x00000000 * 0x000009af r-x fmap.LOAD0
+ 3 fd: 5 +0x00000000 0x00201010 - 0x00201017 rw- mmap.LOAD1
+ 4 fd: 6 +0x00000d98 0x00200d98 - 0x0020100f r-- vmap.LOAD1
+ 1 fd: 4 +0x00000000 0x00201020 - 0x00201087 r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x00000000 * 0x000009af r-x fmap.LOAD0
+ 3 fd: 5 +0x00000000 0x00201010 - 0x00201017 rw- mmap.LOAD1
+ 4 fd: 6 +0x00000d98 0x00200d98 - 0x0020100f r-- vmap.LOAD1
 EOF
 RUN

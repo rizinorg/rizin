@@ -266,7 +266,7 @@ RZ_API char *rz_asn1_to_string(RASN1Object *object, ut32 depth, RzStrBuf *sb) {
 		sb = rz_strbuf_new("");
 		root = true;
 	}
-	//this shall not be freed. it's a pointer into the buffer.
+	// this shall not be freed. it's a pointer into the buffer.
 	RASN1String *asn1str = NULL;
 	static char temp_name[4096] = { 0 };
 	const char *name = "";

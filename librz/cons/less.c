@@ -171,11 +171,3 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 RZ_API void rz_cons_less(void) {
 	(void)rz_cons_less_str(rz_cons_singleton()->context->buffer, NULL);
 }
-
-#if 0
-main (int argc, char **argv) {
-	char *s = rz_file_slurp (argv[1], NULL);
-	rz_cons_new ();
-	rz_cons_less (s);
-}
-#endif

@@ -5,33 +5,11 @@
 #include <string.h>
 #if __UNIX__
 #include <errno.h>
+#elif __WINDOWS__
+#include <rz_windows.h>
 #endif
 
 #define I rz_cons_singleton()
-
-// TODO: Support binary, use RzBuffer and remove globals
-static char *readbuffer = NULL;
-static int readbuffer_length = 0;
-static bool bufactive = true;
-
-#if 0
-//__UNIX__
-#include <poll.h>
-static int __is_fd_ready(int fd) {
-	fd_set rfds;
-	struct timeval tv;
-	if (fd==-1)
-		return 0;
-	FD_ZERO (&rfds);
-	FD_SET (fd, &rfds);
-	tv.tv_sec = 0;
-	tv.tv_usec = 1;
-	if (select (1, &rfds, NULL, NULL, &tv) == -1)
-		return 0;
-	return 1;
-	return !FD_ISSET (0, &rfds);
-}
-#endif
 
 RZ_API int rz_cons_controlz(int ch) {
 #if __UNIX__
@@ -181,7 +159,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			do {
 				ch = rz_cons_readchar();
 				// just for debugging
-				//eprintf ( "%c", ch);
+				// eprintf ( "%c", ch);
 				if (sc > 0) {
 					if (ch >= '0' && ch <= '9') {
 						pos[p++] = ch;
@@ -408,7 +386,7 @@ RZ_API int rz_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	}
 	ret = strlen(buf);
 beach:
-	//rz_cons_enable_mouse (mouse);
+	// rz_cons_enable_mouse (mouse);
 	return ret;
 }
 
@@ -420,7 +398,7 @@ RZ_API int rz_cons_any_key(const char *msg) {
 	}
 	rz_cons_flush();
 	return rz_cons_readchar();
-	//rz_cons_strcat ("\x1b[2J\x1b[0;0H");
+	// rz_cons_strcat ("\x1b[2J\x1b[0;0H");
 }
 
 extern void resizeWin(void);
@@ -605,23 +583,23 @@ RZ_API int rz_cons_readchar_timeout(ut32 usec) {
 }
 
 RZ_API bool rz_cons_readpush(const char *str, int len) {
-	char *res = (len + readbuffer_length > 0) ? realloc(readbuffer, len + readbuffer_length) : NULL;
+	char *res = (len + I->input->readbuffer_length > 0) ? realloc(I->input->readbuffer, len + I->input->readbuffer_length) : NULL;
 	if (res) {
-		readbuffer = res;
-		memmove(readbuffer + readbuffer_length, str, len);
-		readbuffer_length += len;
+		I->input->readbuffer = res;
+		memmove(I->input->readbuffer + I->input->readbuffer_length, str, len);
+		I->input->readbuffer_length += len;
 		return true;
 	}
 	return false;
 }
 
 RZ_API void rz_cons_readflush(void) {
-	RZ_FREE(readbuffer);
-	readbuffer_length = 0;
+	RZ_FREE(I->input->readbuffer);
+	I->input->readbuffer_length = 0;
 }
 
 RZ_API void rz_cons_switchbuf(bool active) {
-	bufactive = active;
+	I->input->bufactive = active;
 }
 
 #if !__WINDOWS__
@@ -629,12 +607,12 @@ extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
 RZ_API bool rz_cons_readbuffer_readchar(char *ch) {
-	if (readbuffer_length <= 0) {
+	if (I->input->readbuffer_length <= 0) {
 		return false;
 	}
-	*ch = *readbuffer;
-	readbuffer_length--;
-	memmove(readbuffer, readbuffer + 1, readbuffer_length);
+	*ch = *I->input->readbuffer;
+	I->input->readbuffer_length--;
+	memmove(I->input->readbuffer, I->input->readbuffer + 1, I->input->readbuffer_length);
 	return true;
 }
 
@@ -678,7 +656,7 @@ RZ_API int rz_cons_readchar(void) {
 	if (ret != 1) {
 		return -1;
 	}
-	if (bufactive) {
+	if (I->input->bufactive) {
 		rz_cons_set_raw(0);
 	}
 	return rz_cons_controlz(buf[0]);

@@ -44,7 +44,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RzBinElfReloc *rel) {
 
 	ut8 buf[1024];
 	ut64 plt_addr = jmprel_addr + dt_pltrelsz;
-	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p_new)(bin, plt_addr);
+	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p)(bin, plt_addr);
 	int res = rz_buf_read_at(bin->b, p_plt_addr, buf, sizeof(buf));
 	if (res != sizeof(buf)) {
 		return UT64_MAX;
@@ -90,13 +90,13 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p_new)(bin, plt_addr);
+	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p)(bin, plt_addr);
 	if (p_plt_addr == UT64_MAX) {
 		return UT64_MAX;
 	}
 
 	ut32 tmp;
-	if (!rz_buf_read_ble32_at(bin->b, p_plt_addr, bin->big_endian, &tmp)) {
+	if (!rz_buf_read_ble32_at(bin->b, p_plt_addr, &tmp, bin->big_endian)) {
 		return UT64_MAX;
 	}
 
@@ -124,13 +124,13 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 got_offset = Elf_(rz_bin_elf_v2p_new)(bin, got_addr);
+	ut64 got_offset = Elf_(rz_bin_elf_v2p)(bin, got_addr);
 	if (got_offset == UT64_MAX) {
 		return UT64_MAX;
 	}
 
-	//XXX HACK ALERT!!!! full relro?? try to fix it
-	//will there always be .plt.got, what would happen if is .got.plt?
+	// XXX HACK ALERT!!!! full relro?? try to fix it
+	// will there always be .plt.got, what would happen if is .got.plt?
 	RzBinElfSection *s = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.got");
 	if (Elf_(rz_bin_elf_has_relro)(bin) < RZ_BIN_ELF_PART_RELRO || !s) {
 		return UT64_MAX;
@@ -158,12 +158,12 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 			return UT64_MAX;
 		}
 
-		ut64 tmp = Elf_(rz_bin_elf_v2p_new)(bin, plt_sym_addr);
+		ut64 tmp = Elf_(rz_bin_elf_v2p)(bin, plt_sym_addr);
 		if (tmp == UT64_MAX) {
 			tmp = plt_sym_addr;
 		}
 
-		//relative address
+		// relative address
 		if ((plt_addr + 6 + tmp) == rel->vaddr) {
 			return plt_addr;
 		}
@@ -286,19 +286,20 @@ static ut64 get_import_addr(ELFOBJ *bin, ut64 symbol) {
 }
 
 static ut64 get_import_offset(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	ut64 tmp = get_import_addr(bin, symbol->ordinal);
-	return tmp == -1 ? 0 : tmp;
+	return get_import_addr(bin, symbol->ordinal);
 }
 
 static void convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	symbol->size = 16;
-
 	if (symbol->vaddr && symbol->vaddr != UT64_MAX) {
 		return;
 	}
 
 	symbol->vaddr = get_import_offset(bin, symbol);
-	symbol->paddr = Elf_(rz_bin_elf_v2p_new)(bin, symbol->vaddr);
+	if (symbol->vaddr == UT64_MAX) {
+		return;
+	}
+	symbol->size = 16;
+	symbol->paddr = Elf_(rz_bin_elf_v2p)(bin, symbol->vaddr);
 }
 
 static void convert_elf_symbols_to_elf_imports(ELFOBJ *bin, RzVector *symbols) {

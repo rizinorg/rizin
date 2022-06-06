@@ -23,7 +23,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 		return false;
 	}
 	// Sync all the types sequentially if asked
-	i = (type == RZ_REG_TYPE_ALL) ? RZ_REG_TYPE_GPR : type;
+	i = (type == RZ_REG_TYPE_ANY) ? RZ_REG_TYPE_GPR : type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
 	// if request type is positive and the request regset don't have regs
 	if (i >= RZ_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
@@ -35,9 +35,9 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 			int v = ((int)1 << i);
 			// skip checks on same request arena and check if this arena have inside the request arena type
 			if (n != i && (mask & v)) {
-				//eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
-				//eprintf(" request arena %i found at arena %i\n", i, n );
-				// if this arena have the request arena type, force to use this arena.
+				// eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
+				// eprintf(" request arena %i found at arena %i\n", i, n );
+				//  if this arena have the request arena type, force to use this arena.
 				i = n;
 				break;
 			}
@@ -52,7 +52,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 						"registers %d to %d\n",
 						i, dbg->tid);
 				}
-				if (type != RZ_REG_TYPE_ALL || i == RZ_REG_TYPE_GPR) {
+				if (type != RZ_REG_TYPE_ANY || i == RZ_REG_TYPE_GPR) {
 					free(buf);
 					return false;
 				}
@@ -61,101 +61,56 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 		} else {
 			// int bufsize = RZ_MAX (1024, dbg->reg->size*2); // i know. its hacky
 			int bufsize = dbg->reg->size;
-			//int bufsize = dbg->reg->regset[i].arena->size;
+			// int bufsize = dbg->reg->regset[i].arena->size;
 			if (bufsize > 0) {
 				ut8 *buf = calloc(1 + 1, bufsize);
 				if (!buf) {
 					return false;
 				}
-				//we have already checked dbg->h and dbg->h->reg_read above
+				// we have already checked dbg->h and dbg->h->reg_read above
 				size = dbg->cur->reg_read(dbg, i, buf, bufsize);
 				// we need to check against zero because reg_read can return false
 				if (size > 0) {
-					rz_reg_set_bytes(dbg->reg, i, buf, size); //RZ_MIN (size, bufsize));
+					rz_reg_set_bytes(dbg->reg, i, buf, size); // RZ_MIN (size, bufsize));
 					//		free (buf);
 					//		return true;
 				}
 				free(buf);
 			}
 		}
-		// DO NOT BREAK RZ_REG_TYPE_ALL PLEASE
+		// DO NOT BREAK RZ_REG_TYPE_ANY PLEASE
 		//   break;
 		// Continue the synchronization or just stop if it was asked only for a single type of regs
 		i++;
-	} while ((type == RZ_REG_TYPE_ALL) && (i < RZ_REG_TYPE_LAST));
+	} while ((type == RZ_REG_TYPE_ANY) && (i < RZ_REG_TYPE_LAST));
 	return true;
 }
 
 RZ_API int rz_debug_reg_set(struct rz_debug_t *dbg, const char *name, ut64 num) {
-	RzRegItem *ri;
-	int role = rz_reg_get_name_idx(name);
-	if (!dbg || !dbg->reg) {
+	RzRegItem *ri = rz_reg_get_by_role_or_name(dbg->reg, name);
+	if (!ri) {
 		return false;
 	}
-	if (role != -1) {
-		name = rz_reg_get_name(dbg->reg, role);
-	}
-	ri = rz_reg_get(dbg->reg, name, RZ_REG_TYPE_ALL);
-	if (ri) {
-		rz_reg_set_value(dbg->reg, ri, num);
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, true);
-	}
-	return (ri != NULL);
+	rz_reg_set_value(dbg->reg, ri, num);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, true);
+	return true;
 }
 
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name) {
-	// ignores errors
-	return rz_debug_reg_get_err(dbg, name, NULL, NULL);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	return rz_reg_getv_by_role_or_name(dbg->reg, name);
 }
 
-RZ_API ut64 rz_debug_reg_get_err(RzDebug *dbg, const char *name, int *err, utX *value) {
-	RzRegItem *ri = NULL;
-	ut64 ret = 0LL;
-	int role = rz_reg_get_name_idx(name);
-	const char *pname = name;
-	if (err) {
-		*err = 0;
-	}
-	if (!dbg || !dbg->reg) {
-		if (err) {
-			*err = 1;
-		}
-		return UT64_MAX;
-	}
-	if (role != -1) {
-		name = rz_reg_get_name(dbg->reg, role);
-		if (!name || *name == '\0') {
-			eprintf("No debug register profile defined for '%s'.\n", pname);
-			if (err) {
-				*err = 1;
-			}
-			return UT64_MAX;
-		}
-	}
-	ri = rz_reg_get(dbg->reg, name, RZ_REG_TYPE_ALL);
-	if (ri) {
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, false);
-		if (value && ri->size > 64) {
-			if (err) {
-				*err = ri->size;
-			}
-			ret = rz_reg_get_value_big(dbg->reg, ri, value);
-		} else {
-			ret = rz_reg_get_value(dbg->reg, ri);
-		}
-	} else {
-		if (err) {
-			*err = 1;
-		}
-	}
-	return ret;
-}
-
-// XXX: dup for get_Err!
 RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok) {
 	RzDebug *dbg = (RzDebug *)userptr;
-	// resolve using regnu
-	return rz_debug_reg_get_err(dbg, str, ok, NULL);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	RzRegItem *ri = rz_reg_get_by_role_or_name(dbg->reg, str);
+	if (!ri) {
+		*ok = 0;
+		return UT64_MAX;
+	}
+	*ok = 1;
+	return rz_reg_get_value(dbg->reg, ri);
 }
 
 RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg) {
@@ -163,11 +118,7 @@ RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg) {
 		char *p = dbg->cur->reg_profile(dbg);
 		if (p) {
 			rz_reg_set_profile_string(dbg->reg, p);
-			rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, false);
-			if (dbg->analysis && dbg->reg != dbg->analysis->reg) {
-				rz_reg_free(dbg->analysis->reg);
-				dbg->analysis->reg = dbg->reg;
-			}
+			rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 			free(p);
 		} else {
 			RZ_LOG_WARN("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);

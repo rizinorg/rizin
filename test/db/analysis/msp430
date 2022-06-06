@@ -35,8 +35,9 @@ realsz: 62
 stackframe: 0
 cyclomatic-cost: 0
 cyclomatic-complexity: 1
+loops: 0
 bits: 32
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 5
 edges: 6
 end-bbs: 0
@@ -91,8 +92,9 @@ realsz: 62
 stackframe: 0
 cyclomatic-cost: 0
 cyclomatic-complexity: 1
+loops: 0
 bits: 16
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 5
 edges: 6
 end-bbs: 0

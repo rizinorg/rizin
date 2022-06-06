@@ -1,6 +1,6 @@
 NAME=PE: corkami elf-xnorelro - relro disabled
 FILE=bins/elf/analysis/elf-xnorelro
-CMDS=ik info/*~relro
+CMDS=ik ~relro
 EXPECT=<<EOF
 elf.relro=no
 EOF

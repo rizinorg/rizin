@@ -3,8 +3,8 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone.h>
-#include <mips.h>
+#include <capstone/capstone.h>
+#include <capstone/mips.h>
 
 static ut64 t9_pre = UT64_MAX;
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
@@ -463,7 +463,7 @@ static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 			ESIL_LOAD("1");
 			break;
 		case MIPS_INS_LBU:
-			//one of these is wrong
+			// one of these is wrong
 			ESIL_LOAD("1");
 			break;
 		case MIPS_INS_LW:
@@ -684,7 +684,7 @@ capstone bug
 		} else if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {
 			SET_SRC_DST_2_REGS(op);
 		} else {
-			eprintf("Unknown div at 0x%08" PFMT64x "\n", op->addr);
+			RZ_LOG_ERROR("mips: unknown div opcode at 0x%08" PFMT64x "\n", op->addr);
 		}
 		break;
 	}
@@ -1087,7 +1087,7 @@ beach:
 		op_fillval(analysis, op, &hndl, insn);
 	}
 	cs_free(insn, n);
-	//cs_close (&handle);
+	// cs_close (&handle);
 fin:
 	return opsize;
 }

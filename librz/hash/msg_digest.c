@@ -311,7 +311,7 @@ RZ_API bool rz_msg_digest_hmac(RzMsgDigest *md, const ut8 *key, ut64 key_size) {
 	MsgDigestConfig *mdc = NULL;
 	rz_list_foreach (md->configurations, iter, mdc) {
 		if (!mdc->plugin->support_hmac) {
-			//RZ_LOG_ERROR("msg digest: hmac is not supported by %s.\n", mdc->plugin->name);
+			// RZ_LOG_ERROR("msg digest: hmac is not supported by %s.\n", mdc->plugin->name);
 			continue;
 		}
 

@@ -1,4 +1,4 @@
-project('capstone', 'c', meson_version: '>=0.55.0')
+project('capstone', 'c', version: '4.0', meson_version: '>=0.55.0')
 
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
@@ -73,7 +73,7 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_X86',
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_TMS320C64X',
-]  
+]
 
 libcapstone = library('capstone', cs_files,
   c_args: libcapstone_c_args,

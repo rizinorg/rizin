@@ -18,7 +18,7 @@ RzAsmPlugin rz_asm_plugin_riscv = {
 	.arch = "riscv",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
-	.license = "GPL",
+	.license = "GPL3",
 	.disassemble = &disassemble,
 };
 

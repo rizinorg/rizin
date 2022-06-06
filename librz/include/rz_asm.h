@@ -10,6 +10,7 @@
 #include <rz_util.h>
 #include <rz_parse.h>
 #include <rz_bind.h>
+#include <rz_config.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,13 +116,12 @@ typedef struct rz_asm_t {
 	int pcalign;
 	int dataalign;
 	int bitshift;
-	bool immdisp; // Display immediates with # symbol (for arm stuff).
+	bool immdisp; // Display immediates with # symbol (for arm architectures). false = show hashs
+	bool utf8; // Flag for plugins: Use utf-8 characters.
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;
 } RzAsm;
-
-typedef bool (*RzAsmModifyCallback)(RzAsm *a, ut8 *buf, int field, ut64 val);
 
 typedef struct rz_asm_plugin_t {
 	const char *name;
@@ -137,8 +137,8 @@ typedef struct rz_asm_plugin_t {
 	bool (*fini)(void *user);
 	int (*disassemble)(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RzAsm *a, RzAsmOp *op, const char *buf);
-	RzAsmModifyCallback modify;
 	char *(*mnemonics)(RzAsm *a, int id, bool json);
+	RzConfig *(*get_config)(void);
 	const char *features;
 	const char *platforms;
 } RzAsmPlugin;
@@ -147,7 +147,6 @@ typedef struct rz_asm_plugin_t {
 /* asm.c */
 RZ_API RzAsm *rz_asm_new(void);
 RZ_API void rz_asm_free(RzAsm *a);
-RZ_API bool rz_asm_modify(RzAsm *a, ut8 *buf, int field, ut64 val);
 RZ_API char *rz_asm_mnemonics(RzAsm *a, int id, bool json);
 RZ_API int rz_asm_mnemonics_byname(RzAsm *a, const char *name);
 RZ_API bool rz_asm_add(RzAsm *a, RzAsmPlugin *foo);
@@ -201,14 +200,11 @@ RZ_API ut8 *rz_asm_op_get_buf(RzAsmOp *op);
 
 /* plugin pointers */
 extern RzAsmPlugin rz_asm_plugin_6502;
-extern RzAsmPlugin rz_asm_plugin_6502_cs;
 extern RzAsmPlugin rz_asm_plugin_8051;
 extern RzAsmPlugin rz_asm_plugin_amd29k;
 extern RzAsmPlugin rz_asm_plugin_arc;
 extern RzAsmPlugin rz_asm_plugin_arm_as;
 extern RzAsmPlugin rz_asm_plugin_arm_cs;
-extern RzAsmPlugin rz_asm_plugin_arm_gnu;
-extern RzAsmPlugin rz_asm_plugin_arm_winedbg;
 extern RzAsmPlugin rz_asm_plugin_avr;
 extern RzAsmPlugin rz_asm_plugin_bf;
 extern RzAsmPlugin rz_asm_plugin_null;
@@ -243,7 +239,6 @@ extern RzAsmPlugin rz_asm_plugin_or1k;
 extern RzAsmPlugin rz_asm_plugin_pic;
 extern RzAsmPlugin rz_asm_plugin_ppc_as;
 extern RzAsmPlugin rz_asm_plugin_ppc_cs;
-extern RzAsmPlugin rz_asm_plugin_ppc_gnu;
 extern RzAsmPlugin rz_asm_plugin_propeller;
 extern RzAsmPlugin rz_asm_plugin_riscv;
 extern RzAsmPlugin rz_asm_plugin_riscv_cs;

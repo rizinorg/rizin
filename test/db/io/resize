@@ -7,7 +7,9 @@ r 10
 i~^size[1]
 r 4
 i~^size[1]
-r+6
+r+ 6
+i~^size[1]
+r- 4
 i~^size[1]
 !rm ${RZ_FILE}
 EOF
@@ -16,6 +18,7 @@ EXPECT=<<EOF
 0xa
 0x4
 0xa
+0x6
 EOF
 RUN
 

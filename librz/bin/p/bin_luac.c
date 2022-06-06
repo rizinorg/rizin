@@ -32,7 +32,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	minor = (MAJOR_MINOR_VERSION & 0x0F);
 
 	if (major != 5) {
-		eprintf("currently support lua 5.x only\n");
+		RZ_LOG_ERROR("currently support lua 5.x only\n");
 		return false;
 	}
 
@@ -46,15 +46,14 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		general_info = lua_parse_header_53(bf, major, minor);
 		break;
 	default:
-		proto = NULL;
-		general_info = NULL;
-		eprintf("lua 5.%c not support now\n", minor + '0');
+		RZ_LOG_ERROR("lua 5.%c not support now\n", minor + '0');
 		return false;
 	}
 
 	bin_info_obj = luac_build_info(proto);
 	if (bin_info_obj == NULL) {
 		lua_free_proto_entry(proto);
+		rz_bin_info_free(general_info);
 		return false;
 	}
 	bin_info_obj->general_info = general_info;

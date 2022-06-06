@@ -7,10 +7,6 @@
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
 
-static void destroy(RzBinFile *bf) {
-	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
-}
-
 static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[SCGCMAG + 1];
 	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
@@ -78,7 +74,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	phdrsz = rz_buf_size(buf) - p_phdr;
 	code_pa = rz_buf_size(buf);
 	code_va = code_pa + baddr;
-	phoff = 0x34; //p_phdr ;
+	phoff = 0x34; // p_phdr ;
 	filesize = code_pa + codelen + datalen;
 
 	W(p_start, &code_va, 4);
@@ -97,8 +93,8 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	B(code, codelen);
 
 	if (data && datalen > 0) {
-		//ut32 data_section = buf->length;
-		eprintf("Warning: DATA section not support for ELF yet\n");
+		// ut32 data_section = buf->length;
+		RZ_LOG_WARN("DATA section not support for ELF yet\n");
 		B(data, datalen);
 	}
 	return buf;
@@ -121,6 +117,7 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.symbols = &symbols,
 	.minstrlen = 4,
 	.imports = &imports,
+	.strings = &strings,
 	.info = &info,
 	.fields = &fields,
 	.size = &size,

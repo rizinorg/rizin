@@ -1,0 +1,10 @@
+d "inc ptr" 3e 0 (set ptr (+ (var ptr) (bv 64 0x1)))
+d "dec ptr" 3c 0 (set ptr (- (var ptr) (bv 64 0x1)))
+d "inc [ptr]" 2b 0x0 (store 0 (var ptr) (+ (load 0 (var ptr)) (bv 8 0x1)))
+d "dec [ptr]" 2d 0x0 (store 0 (var ptr) (- (load 0 (var ptr)) (bv 8 0x1)))
+d "out [ptr]" 2e 0 (goto write)
+d "in [ptr]" 2c 0x0 (goto read)
+
+# These just jump to 0 because we have no context here:
+d "while [ptr]" 5b 0x0 (branch (! (is_zero (load 0 (var ptr)))) nop (jmp (bv 64 0x0)))
+d "loop" 5d 0x0 (branch (! (is_zero (load 0 (var ptr)))) (jmp (bv 64 0x0)) nop)

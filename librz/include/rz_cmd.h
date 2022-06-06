@@ -11,7 +11,7 @@ extern "C" {
 
 typedef struct rz_core_t RzCore;
 
-//RZ_LIB_VERSION_HEADER (rz_cmd);
+// RZ_LIB_VERSION_HEADER (rz_cmd);
 
 #define MACRO_LIMIT   1024
 #define MACRO_LABELS  20
@@ -58,6 +58,8 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_CLASS_TYPE, ///< Argument is a C++/etc class name
 	RZ_CMD_ARG_TYPE_ANY_TYPE, ///< Argument is the any of the C or C++ type name
 	RZ_CMD_ARG_TYPE_GLOBAL_VAR, ///< Argument is a user defined global variable
+	RZ_CMD_ARG_TYPE_REG_FILTER, ///< Argument is a register name, size, type or "all"
+	RZ_CMD_ARG_TYPE_REG_TYPE, ///< Argument is a register type/arena like "gpr"
 } RzCmdArgType;
 
 /**
@@ -202,6 +204,18 @@ typedef struct rz_cmd_desc_detail_t {
 } RzCmdDescDetail;
 
 /**
+ * Callback used to dynamically generate the details sections in the help of a command.
+ * NOTE: The array of RzCmdDescDetail returned will be freed, so all fields
+ * within need to be dynamically allocated even if they are marked as `const`.
+ */
+typedef RZ_OWN RzCmdDescDetail *(*RzCmdDescDetailCb)(RzCore *core, int argc, const char **argv);
+
+/**
+ * Callback used to dynamically generate the choices of an argument with type \p RZ_CMD_ARG_TYPE_CHOICES
+ */
+typedef RZ_OWN char **(*RzCmdArgChoiceCb)(RzCore *core);
+
+/**
  * A description of an argument of a RzCmdDesc.
  */
 typedef struct rz_cmd_desc_arg_t {
@@ -245,7 +259,7 @@ typedef struct rz_cmd_desc_arg_t {
 	int flags;
 	/**
 	 * Default value for the argument, if it is not specified. This field
-	 * shall be used only when /p optional is true.
+	 * shall be used only when \p optional is true.
 	 */
 	const char *default_value;
 	/**
@@ -253,9 +267,14 @@ typedef struct rz_cmd_desc_arg_t {
 	 */
 	union {
 		/**
-		 * List of possible values in case /p type is RZ_CMD_ARG_TYPE_CHOICES.
+		 * List of possible values in case \p type is RZ_CMD_ARG_TYPE_CHOICES.
 		 */
 		const char **choices;
+		/**
+		 * Callback used to generate a list of possible values in case \p type is RZ_CMD_ARG_TYPE_CHOICES.
+		 * When this is specified, \p choices is ignored.
+		 */
+		RzCmdArgChoiceCb choices_cb;
 	};
 } RzCmdDescArg;
 
@@ -315,6 +334,15 @@ typedef struct rz_cmd_desc_help_t {
 	 * Optional.
 	 */
 	const RzCmdDescDetail *details;
+	/**
+	 * Function that returns an array of details sections used to better explain
+	 * how to use the command. This is shown together with the long description
+	 * and can be used in addition or in alternative of \p details , when the
+	 * output needs to be generated dynamically.
+	 *
+	 * Optional.
+	 */
+	RzCmdDescDetailCb details_cb;
 	/**
 	 * Description of the arguments accepted by this command.
 	 */
@@ -498,6 +526,7 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *command);
 RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args);
 RZ_API RzCmdDesc *rz_cmd_get_root(RzCmd *cmd);
 RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier);
+RZ_API RzCmdDesc *rz_cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier);
 RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color);
 RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j);
 RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb);
@@ -547,6 +576,8 @@ RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(RzCmd *cmd, const RzCmdDesc *cd, 
 
 #define rz_cmd_desc_children_foreach(root, it_cd) rz_pvector_foreach (&root->children, it_cd)
 
+RZ_API void rz_cmd_desc_details_free(RzCmdDescDetail *details);
+
 /* RzCmdParsedArgs */
 RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_new(const char *cmd, int n_args, char **args);
 RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_newcmd(const char *cmd);
@@ -581,6 +612,7 @@ RZ_API int rz_cmd_macro_rm(RzCmdMacro *mac, const char *_name);
 RZ_API void rz_cmd_macro_list(RzCmdMacro *mac);
 RZ_API void rz_cmd_macro_meta(RzCmdMacro *mac);
 RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name);
+RZ_API int rz_cmd_macro_call_multiple(RzCmdMacro *mac, const char *name);
 RZ_API int rz_cmd_macro_break(RzCmdMacro *mac, const char *value);
 
 RZ_API bool rz_cmd_alias_del(RzCmd *cmd, const char *k);

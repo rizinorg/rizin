@@ -185,7 +185,10 @@ typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 
 struct Elf_(rz_bin_elf_obj_t) {
 	RzBuffer *b;
+
 	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
+	bool relocs_patched;
+	ut64 reloc_targets_map_base;
 
 	Sdb *kv;
 
@@ -207,9 +210,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 	RzBinElfStrtab *shstrtab; // should be use with elf_strtab.c
 
 	RzVector *relocs; // should be use with elf_relocs.c
-	bool reloc_targets_map_base_calculated;
-	bool relocs_patched;
-	ut64 reloc_targets_map_base;
 
 	// This is RzVector of note segment reprensented as RzVector<RzBinElfNote>
 	RzVector *notes; // RzVector<RzVector<RzBinElfNote>>
@@ -221,8 +221,8 @@ struct Elf_(rz_bin_elf_obj_t) {
 // elf.c
 RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, RZ_NONNULL RzBinObjectLoadOptions *options);
 void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin);
-ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
-ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
+ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
+ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 
 // elf_arm.c
 #define rz_bin_elf_fix_arm_thumb_object_dispatch(object) \
@@ -244,6 +244,24 @@ bool Elf_(rz_bin_elf_get_dt_info)(RZ_NONNULL ELFOBJ *bin, ut64 key, RZ_OUT ut64 
 bool Elf_(rz_bin_elf_has_dt_dynamic)(RZ_NONNULL ELFOBJ *bin);
 void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr);
 
+// elf_ehdr.c
+RZ_OWN char *Elf_(rz_bin_elf_get_e_ehsize_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_entry_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_flags_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_indent_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_machine_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_phentsize_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_phnum_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_phoff_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_shentsize_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_shnum_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_shoff_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_shstrndx_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_type_as_string)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_e_version_as_string)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_get_ehdr)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_print_ehdr)(ELFOBJ *bin, RZ_NONNULL PrintfCallback cb);
+
 // elf_hash.c
 bool Elf_(rz_bin_elf_get_gnu_hash_table)(RZ_NONNULL ELFOBJ *bin, RzBinElfGnuHashTable *result);
 bool Elf_(rz_bin_elf_get_hash_table)(RZ_NONNULL ELFOBJ *bin, RzBinElfHashTable *result);
@@ -254,6 +272,9 @@ size_t Elf_(rz_bin_elf_get_number_of_symbols_from_hash_table)(RZ_NONNULL ELFOBJ 
 RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
 RZ_OWN RzVector *Elf_(rz_bin_elf_analyse_imports)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_imports)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_map.c
+ut64 Elf_(rz_bin_elf_get_targets_map_base)(ELFOBJ *bin);
 
 // elf_info.c
 RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);

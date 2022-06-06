@@ -44,7 +44,7 @@ typedef struct { // Keep in sync with io_windbg.c
 	PDEBUG_ADVANCED3 dbgAdvanced;
 } DbgEngContext;
 
-static bool __is_target_kernel(DbgEngContext *idbg) {
+static bool is_target_kernel(DbgEngContext *idbg) {
 	ULONG Class, Qualifier;
 	if (SUCCEEDED(ITHISCALL(dbgCtrl, GetDebuggeeType, &Class, &Qualifier))) {
 		if (Class == DEBUG_CLASS_KERNEL) {
@@ -81,7 +81,7 @@ static int windbg_select(RzDebug *dbg, int pid, int tid) {
 	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG process_id = pid;
 	ULONG thread_id = tid;
-	if (!__is_target_kernel(idbg)) {
+	if (!is_target_kernel(idbg)) {
 		ITHISCALL(dbgSysObj, GetProcessIdBySystemId, pid, &process_id);
 		ITHISCALL(dbgSysObj, GetThreadIdBySystemId, tid, &thread_id);
 	}
@@ -136,10 +136,10 @@ static int windbg_stop(RzDebug *dbg) {
 
 static bool do_break = false;
 
-static void __break(void *user) {
+static void break_debugger(void *user) {
 	RzDebug *dbg = (RzDebug *)user;
 	DbgEngContext *idbg = dbg->plugin_data;
-	if (__is_target_kernel(idbg)) {
+	if (is_target_kernel(idbg)) {
 		windbg_stop(dbg);
 	}
 	do_break = true;
@@ -149,8 +149,8 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->plugin_data;
 	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG Type, ProcessId, ThreadId;
-	rz_cons_break_push(__break, dbg);
-	const ULONG timeout = __is_target_kernel(idbg) ? INFINITE : TIMEOUT;
+	rz_cons_break_push(break_debugger, dbg);
+	const ULONG timeout = is_target_kernel(idbg) ? INFINITE : TIMEOUT;
 	HRESULT hr;
 	while ((hr = ITHISCALL(dbgCtrl, WaitForEvent, DEBUG_WAIT_DEFAULT, timeout)) == S_FALSE) {
 		if (do_break) {
@@ -165,7 +165,7 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 		return RZ_DEBUG_REASON_DEAD;
 	}
 	ITHISCALL(dbgCtrl, GetLastEventInformation, &Type, &ProcessId, &ThreadId, NULL, 0, NULL, NULL, 0, NULL);
-	if (!__is_target_kernel(idbg)) {
+	if (!is_target_kernel(idbg)) {
 		ITHISCALL(dbgSysObj, GetCurrentProcessSystemId, (PULONG)&dbg->pid);
 		ITHISCALL(dbgSysObj, GetCurrentThreadSystemId, (PULONG)&dbg->tid);
 	} else {
@@ -242,16 +242,16 @@ static int windbg_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	flags = set ? flags | DEBUG_BREAKPOINT_ENABLED : flags & ~DEBUG_BREAKPOINT_ENABLED;
 	if (b->hw) {
 		ULONG access_type = 0;
-		if (b->perm & RZ_BP_PROT_EXEC) {
+		if (b->perm & RZ_PERM_X) {
 			access_type |= DEBUG_BREAK_EXECUTE;
 		}
-		if (b->perm & RZ_BP_PROT_READ) {
+		if (b->perm & RZ_PERM_R) {
 			access_type |= DEBUG_BREAK_READ;
 		}
-		if (b->perm & RZ_BP_PROT_WRITE) {
+		if (b->perm & RZ_PERM_W) {
 			access_type |= DEBUG_BREAK_WRITE;
 		}
-		if (b->perm & RZ_BP_PROT_ACCESS) {
+		if (b->perm & RZ_PERM_RW) {
 			access_type |= DEBUG_BREAK_READ;
 			access_type |= DEBUG_BREAK_WRITE;
 		}

@@ -90,13 +90,13 @@ struct rz_bin_source_line_info_builder_t;
 #define DW_TAG_friend                 0x2a
 #define DW_TAG_namelist               0x2b
 /*  Early releases of this header had the following
-            misspelled with a trailing 's' */
+	    misspelled with a trailing 's' */
 #define DW_TAG_namelist_item  0x2c /* DWARF3/2 spelling */
 #define DW_TAG_namelist_items 0x2c /* SGI misspelling/typo */
 #define DW_TAG_packed_type    0x2d
 #define DW_TAG_subprogram     0x2e
 /*  The DWARF2 document had two spellings of the following
-            two TAGs, DWARF3 specifies the longer spelling. */
+	    two TAGs, DWARF3 specifies the longer spelling. */
 #define DW_TAG_template_type_parameter  0x2f /* DWARF3/2 spelling*/
 #define DW_TAG_template_type_param      0x2f /* DWARF2   spelling*/
 #define DW_TAG_template_value_parameter 0x30 /* DWARF3/2 spelling*/
@@ -702,8 +702,8 @@ typedef struct dwarf_attr_kind {
 	ut64 attr_name;
 	ut64 attr_form;
 	RzBinDwarfAttrKind kind;
-	/* This is subideal, as dw_form_data can be anything 
-	   we could lose information example: encoding signed 
+	/* This is subideal, as dw_form_data can be anything
+	   we could lose information example: encoding signed
 	   2 byte int into ut64 and then interpreting it as st64 TODO*/
 	union {
 		ut64 address;
@@ -771,6 +771,7 @@ typedef struct {
 	size_t capacity;
 	RzBinDwarfCompUnit *comp_units;
 	HtUP /*<ut64 offset, DwarfDie *die>*/ *lookup_table;
+	size_t n_dwarf_dies;
 
 	/**
 	 * Cache mapping from an offset in the debug_line section to a string
@@ -884,7 +885,7 @@ typedef struct {
 } RzBinDwarfLineOp;
 
 /**
- * \brief DWARF 3 Standard Section 6.2 Line Number Information 
+ * \brief DWARF 3 Standard Section 6.2 Line Number Information
  * This contains the entire raw line info for one compilation unit.
  */
 typedef struct {

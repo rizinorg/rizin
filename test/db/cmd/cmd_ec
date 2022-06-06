@@ -286,3 +286,56 @@ EXPECT_ERR=<<EOF
 Unknown color xxxx
 EOF
 RUN
+
+NAME=Test eco and eco. - list current theme
+FILE==
+CMDS=<<EOF
+eco xvilka
+eco.
+EOF
+EXPECT=<<EOF
+xvilka
+EOF
+RUN
+
+NAME=Test ecHw, ecHj and ecH- add and list highlight rules
+FILE==
+CMDS=<<EOF
+ecHw eax blue
+ecH
+ecHj
+ecH-*
+ecH
+EOF
+EXPECT=<<EOF
+ecHi rgb:00007f @ 0x00000000
+[{"offset":0,"type":"ecHi","color":"#00007f"}]
+EOF
+RUN
+
+NAME=Test ecp and ecn- load previous and next theme
+FILE==
+CMDS=<<EOF
+eco sepia
+eco.
+ecp
+eco.
+ecn
+eco.
+EOF
+EXPECT=<<EOF
+sepia
+rasta
+sepia
+EOF
+RUN
+
+NAME=Test ecoj- list themes in JSON
+FILE==
+CMDS=<<EOF
+ecoj
+EOF
+EXPECT=<<EOF
+["ayu","basic","behelit","bold","bright","cga","consonance","cutter","dark","darkda","default","defragger","durian","focus","gb","gentoo","lima","matrix","monokai","ogray","onedark","pink","rasta","sepia","smyck","solarized","tango","twilight","white","white2","xvilka","zenburn"]
+EOF
+RUN

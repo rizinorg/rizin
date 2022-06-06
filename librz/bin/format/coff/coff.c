@@ -6,13 +6,12 @@
 
 #include "coff.h"
 
-#define bprintf \
-	if (obj->verbose) \
-	eprintf
-
 RZ_API bool rz_coff_supported_arch(const ut8 *buf) {
-	ut16 arch = *(ut16 *)buf;
+	ut16 arch = rz_read_le16(buf);
 	switch (arch) {
+	case COFF_FILE_MACHINE_MIPS16:
+	case COFF_FILE_MACHINE_MIPSFPU:
+	case COFF_FILE_MACHINE_MIPSFPU16:
 	case COFF_FILE_MACHINE_AMD64:
 	case COFF_FILE_MACHINE_I386:
 	case COFF_FILE_MACHINE_H8300:
@@ -20,6 +19,12 @@ RZ_API bool rz_coff_supported_arch(const ut8 *buf) {
 	case COFF_FILE_MACHINE_R4000:
 	case COFF_FILE_MACHINE_AMD29KBE:
 	case COFF_FILE_MACHINE_AMD29KLE:
+	case COFF_FILE_MACHINE_SH3:
+	case COFF_FILE_MACHINE_SH3DSP:
+	case COFF_FILE_MACHINE_SH4:
+	case COFF_FILE_MACHINE_SH5:
+	case COFF_FILE_MACHINE_THUMB:
+	case COFF_FILE_MACHINE_ARM:
 	case COFF_FILE_MACHINE_ARM64:
 	case COFF_FILE_MACHINE_ARMNT:
 		return true;
@@ -130,7 +135,7 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 
 static bool rz_bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
 	ut16 magic;
-	if (!rz_buf_read_ble16_at(obj->b, 0, COFF_IS_LITTLE_ENDIAN, &magic)) {
+	if (!rz_buf_read_le16_at(obj->b, 0, &magic)) {
 		return false;
 	}
 
@@ -239,20 +244,20 @@ static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RzBuffer *buf, bool ver
 	obj->imp_ht = ht_up_new0();
 	obj->imp_index = ht_uu_new0();
 	if (!rz_bin_coff_init_hdr(obj)) {
-		bprintf("Warning: failed to init hdr\n");
+		RZ_LOG_ERROR("failed to init hdr\n");
 		return false;
 	}
 	rz_bin_coff_init_opt_hdr(obj);
 	if (!rz_bin_coff_init_scn_hdr(obj)) {
-		bprintf("Warning: failed to init section header\n");
+		RZ_LOG_ERROR("failed to init section header\n");
 		return false;
 	}
 	if (!rz_bin_coff_init_scn_va(obj)) {
-		bprintf("Warning: failed to init section VA table\n");
+		RZ_LOG_ERROR("failed to init section VA table\n");
 		return false;
 	}
 	if (!rz_bin_coff_init_symtable(obj)) {
-		bprintf("Warning: failed to init symtable\n");
+		RZ_LOG_ERROR("failed to init symtable\n");
 		return false;
 	}
 	return true;

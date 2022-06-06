@@ -1,14 +1,1010 @@
-NAME=ar rflags
+NAME=ar and ar=
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-ar rflags
-ar rflags=0x137
-ar rflags
+# assignment with or without spaces
+ar rax = 0x1337
+ar rbx=12648430
+?e -- default selection
+ar
+?e -- json
+arj
+?e -- assignment commands
+ar*
+?e -- table
+art
+?e -- columns
+ar=
+ar rbp=-1
+ar rip=-1
+ar=
+?e -- single reg filter
+ar rax
+?e -- quiet single reg
+arq rax
+?e -- register roles
+ar PC
+ar SP
+?e -- specific size filter
+ar 16
+?e -- type filter
+ar drx
+?e -- all
+ar all
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000137
+-- default selection
+rax = 0x00001337
+rbx = 0x00c0ffee
+rcx = 0x00000000
+rdx = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rip = 0x00000000
+rbp = 0x00000000
+rflags = 0x00000000
+rsp = 0x00000000
+-- json
+{"rax":4919,"rbx":12648430,"rcx":0,"rdx":0,"rsi":0,"rdi":0,"r8":0,"r9":0,"r10":0,"r11":0,"r12":0,"r13":0,"r14":0,"r15":0,"rip":0,"rbp":0,"rflags":0,"rsp":0}
+-- assignment commands
+ar rax = 0x00001337
+ar rbx = 0x00c0ffee
+ar rcx = 0x00000000
+ar rdx = 0x00000000
+ar rsi = 0x00000000
+ar rdi = 0x00000000
+ar r8 = 0x00000000
+ar r9 = 0x00000000
+ar r10 = 0x00000000
+ar r11 = 0x00000000
+ar r12 = 0x00000000
+ar r13 = 0x00000000
+ar r14 = 0x00000000
+ar r15 = 0x00000000
+ar rip = 0x00000000
+ar rbp = 0x00000000
+ar rflags = 0x00000000
+ar rsp = 0x00000000
+-- table
+role name   value      size type 
+---------------------------------
+SN   rax    0x00001337 0x40 gpr
+     rbx    0x00c0ffee 0x40 gpr
+A3   rcx    0x00000000 0x40 gpr
+A2   rdx    0x00000000 0x40 gpr
+A1   rsi    0x00000000 0x40 gpr
+A0   rdi    0x00000000 0x40 gpr
+A4   r8     0x00000000 0x40 gpr
+A5   r9     0x00000000 0x40 gpr
+A6   r10    0x00000000 0x40 gpr
+A7   r11    0x00000000 0x40 gpr
+     r12    0x00000000 0x40 gpr
+     r13    0x00000000 0x40 gpr
+     r14    0x00000000 0x40 gpr
+     r15    0x00000000 0x40 gpr
+PC   rip    0x00000000 0x40 gpr
+BP   rbp    0x00000000 0x40 gpr
+     rflags 0x00000000 0x40 flg
+SP   rsp    0x00000000 0x40 gpr
+-- columns
+    rax 0x00001337          rbx 0x00c0ffee          rcx 0x00000000          rdx 0x00000000
+    rsi 0x00000000          rdi 0x00000000           r8 0x00000000           r9 0x00000000
+    r10 0x00000000          r11 0x00000000          r12 0x00000000          r13 0x00000000
+    r14 0x00000000          r15 0x00000000          rip 0x00000000          rbp 0x00000000
+ rflags 0x00000000          rsp 0x00000000      
+    rax 0x00001337          rbx 0x00c0ffee          rcx 0x00000000          rdx 0x00000000
+    rsi 0x00000000          rdi 0x00000000           r8 0x00000000           r9 0x00000000
+    r10 0x00000000          r11 0x00000000          r12 0x00000000          r13 0x00000000
+    r14 0x00000000          r15 0x00000000          rip 0xffffffffffffffff    rbp 0xffffffffffffffff
+ rflags 0x00000000          rsp 0x00000000      
+-- single reg filter
+rax = 0x00001337
+-- quiet single reg
+0x00001337
+-- register roles
+rip = 0xffffffffffffffff
+rsp = 0x00000000
+-- specific size filter
+ax = 0x00001337
+bx = 0x0000ffee
+cx = 0x00000000
+dx = 0x00000000
+si = 0x00000000
+di = 0x00000000
+r8w = 0x00000000
+r9w = 0x00000000
+r10w = 0x00000000
+r11w = 0x00000000
+r12w = 0x00000000
+r13w = 0x00000000
+r14w = 0x00000000
+r15w = 0x00000000
+bp = 0x0000ffff
+sp = 0x00000000
+-- type filter
+dr0 = 0x00000000
+dr1 = 0x00000000
+dr2 = 0x00000000
+dr3 = 0x00000000
+dr6 = 0x00000000
+dr7 = 0x00000000
+-- all
+r15b = 0x00000000
+r15w = 0x00000000
+cwd = 0x00000000
+r15d = 0x00000000
+r15 = 0x00000000
+dr0 = 0x00000000
+swd = 0x00000000
+ftw = 0x00000000
+fop = 0x00000000
+r14b = 0x00000000
+r14w = 0x00000000
+r14d = 0x00000000
+r14 = 0x00000000
+dr1 = 0x00000000
+frip = 0x00000000
+r13b = 0x00000000
+r13w = 0x00000000
+r13d = 0x00000000
+r13 = 0x00000000
+dr2 = 0x00000000
+frdp = 0x00000000
+r12b = 0x00000000
+r12w = 0x00000000
+r12d = 0x00000000
+mxcsr = 0x00000000
+r12 = 0x00000000
+dr3 = 0x00000000
+mxcr_mask = 0x00000000
+bpl = 0x000000ff
+bp = 0x0000ffff
+ebp = 0xffffffff
+rbp = 0xffffffffffffffff
+st0 = 0x00000000
+bl = 0x000000ee
+bx = 0x0000ffee
+ebx = 0x00c0ffee
+rbx = 0x00c0ffee
+bh = 0x000000ff
+r11b = 0x00000000
+r11w = 0x00000000
+r11d = 0x00000000
+r11 = 0x00000000
+dr6 = 0x00000000
+st1 = 0x00000000
+r10b = 0x00000000
+r10w = 0x00000000
+r10d = 0x00000000
+r10 = 0x00000000
+dr7 = 0x00000000
+r9b = 0x00000000
+r9w = 0x00000000
+r9d = 0x00000000
+r9 = 0x00000000
+st2 = 0x00000000
+r8b = 0x00000000
+r8w = 0x00000000
+r8d = 0x00000000
+r8 = 0x00000000
+al = 0x00000037
+ax = 0x00001337
+eax = 0x00001337
+rax = 0x00001337
+st3 = 0x00000000
+ah = 0x00000013
+cl = 0x00000000
+cx = 0x00000000
+ecx = 0x00000000
+rcx = 0x00000000
+ch = 0x00000000
+dl = 0x00000000
+dx = 0x00000000
+edx = 0x00000000
+rdx = 0x00000000
+st4 = 0x00000000
+dh = 0x00000000
+sil = 0x00000000
+si = 0x00000000
+esi = 0x00000000
+rsi = 0x00000000
+dil = 0x00000000
+di = 0x00000000
+edi = 0x00000000
+rdi = 0x00000000
+st5 = 0x00000000
+rip = 0xffffffffffffffff
+st6 = 0x00000000
+cs = 0x00000000
+cf = 0x00000000
+eflags = 0x00000000
+pf = 0x00000000
+rflags = 0x00000000
+st7 = 0x00000000
+af = 0x00000000
+zf = 0x00000000
+sf = 0x00000000
+tf = 0x00000000
+if = 0x00000000
+df = 0x00000000
+of = 0x00000000
+spl = 0x00000000
+sp = 0x00000000
+esp = 0x00000000
+rsp = 0x00000000
+xmm0l = 0x00000000
+ss = 0x00000000
+xmm0 = 0x00000000000000000000000000000000
+xmm0h = 0x00000000
+fs_base = 0x00000000
+xmm1l = 0x00000000
+gs_base = 0x00000000
+xmm1 = 0x00000000000000000000000000000000
+xmm1h = 0x00000000
+ds = 0x00000000
+xmm2l = 0x00000000
+es = 0x00000000
+xmm2 = 0x00000000000000000000000000000000
+xmm2h = 0x00000000
+fs = 0x00000000
+xmm3l = 0x00000000
+gs = 0x00000000
+xmm3 = 0x00000000000000000000000000000000
+xmm3h = 0x00000000
+xmm4l = 0x00000000
+xmm4 = 0x00000000000000000000000000000000
+xmm4h = 0x00000000
+xmm5l = 0x00000000
+xmm5 = 0x00000000000000000000000000000000
+xmm5h = 0x00000000
+xmm6l = 0x00000000
+xmm6 = 0x00000000000000000000000000000000
+xmm6h = 0x00000000
+xmm7l = 0x00000000
+xmm7 = 0x00000000000000000000000000000000
+xmm7h = 0x00000000
+x64 = 0x00000000
+EOF
+RUN
+
+NAME=arr
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+ar eax = 0x804866b
+ar ecx = 0x08048679
+arr
+e scr.color=2 # json refstrings should not contain ansi codes
+arrj
+EOF
+EXPECT=<<EOF
+role reg    value     refstr                                                                
+--------------------------------------------------------------------------------------------
+     oeax   0x0       0
+A0   eax    0x804866b .rodata str.Password_OK,eax R X 'push eax' Password OK!
+A1   ebx    0x0       0
+A2   ecx    0x8048679 .rodata str.Password_Incorrect,ecx R X 'push eax' Password Incorrect!
+A3   edx    0x0       0
+A4   esi    0x0       0
+A5   edi    0x0       0
+SP   esp    0x0       0
+BP   ebp    0x0       0
+PC   eip    0x0       0
+     eflags 0x0       0
+[{"reg":"oeax","value":"0x0","refstr":"0"},{"role":"A0","reg":"eax","value":"0x804866b","refstr":".rodata str.Password_OK,eax R X 'push eax' Password OK!"},{"role":"A1","reg":"ebx","value":"0x0","refstr":"0"},{"role":"A2","reg":"ecx","value":"0x8048679","refstr":".rodata str.Password_Incorrect,ecx R X 'push eax' Password Incorrect!"},{"role":"A3","reg":"edx","value":"0x0","refstr":"0"},{"role":"A4","reg":"esi","value":"0x0","refstr":"0"},{"role":"A5","reg":"edi","value":"0x0","refstr":"0"},{"role":"SP","reg":"esp","value":"0x0","refstr":"0"},{"role":"BP","reg":"ebp","value":"0x0","refstr":"0"},{"role":"PC","reg":"eip","value":"0x0","refstr":"0"},{"reg":"eflags","value":"0x0","refstr":"0"}]
+EOF
+RUN
+
+NAME=ari
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+ar eax = 0x804866b
+ar ecx = 0x08048679
+ar edx = 0x08048679
+ari
+EOF
+EXPECT=<<EOF
+0x00000000  oeax ebx esi edi esp ebp eip eflags
+0x0804866b  eax    ;.rodata str.Password_OK,eax R X 'push eax' Password OK!
+0x08048679  ecx edx    ;.rodata str.Password_Incorrect,ecx,edx R X 'push eax' Password Incorrect!
+EOF
+RUN
+
+NAME=arT
+FILE=
+CMDS=<<EOF
+arT
+EOF
+EXPECT=<<EOF
+gpr
+drx
+fpu
+mmx
+xmm
+ymm
+flg
+seg
+sys
+sec
+vc
+vcc
+ctr
+EOF
+RUN
+
+NAME=arR
+FILE=
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arR
+EOF
+EXPECT=<<EOF
+PC -> rip
+SP -> rsp
+SR
+BP -> rbp
+LR
+A0 -> rdi
+A1 -> rsi
+A2 -> rdx
+A3 -> rcx
+A4 -> r8
+A5 -> r9
+A6 -> r10
+A7 -> r11
+A8
+A9
+R0
+R1
+R2
+R3
+ZF
+SF
+CF
+OF
+SN -> rax
+EOF
+RUN
+
+NAME=ara
+FILE=
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ar rax=0x1337
+ar dr0=0xc0ffee
+araS
+arab gpr
+?e -- default should be gpr too:
+arab
+?e --
+arab drx
+?e -- push
+ara+
+araS
+arab gpr
+?e -- change
+ar rax = 0x4242
+arab gpr
+?e --
+arab drx
+?e -- pop
+ara-
+araS
+arab gpr
+?e --
+arab drx
+?e -- zero just gpr
+ara0 gpr
+arab gpr
+?e --
+arab drx
+?e -- all zero
+ara0
+arab gpr
+?e --
+arab drx
+?e --
+araw 4242 gpr
+arab gpr
+?e --
+araw 1337
+arab gpr
+?e -- no overflow
+araw ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+arab gpr
+EOF
+EXPECT=<<EOF
+2
+0x00000000  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000050  0x00001337 0x00000000 0x00000000 0x00000000  7...............
+0x00000060  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000070  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000080  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000090  0x00000000 0x00000000 0x00000000 0x00000000  ................
+-- default should be gpr too:
+0x00000000  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000050  0x00001337 0x00000000 0x00000000 0x00000000  7...............
+0x00000060  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000070  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000080  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000090  0x00000000 0x00000000 0x00000000 0x00000000  ................
+--
+0x00000000  0x00c0ffee 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+-- push
+3
+0x00000000  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000050  0x00001337 0x00000000 0x00000000 0x00000000  7...............
+0x00000060  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000070  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000080  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000090  0x00000000 0x00000000 0x00000000 0x00000000  ................
+-- change
+0x00000000  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000050  0x00004242 0x00000000 0x00000000 0x00000000  BB..............
+0x00000060  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000070  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000080  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000090  0x00000000 0x00000000 0x00000000 0x00000000  ................
+--
+0x00000000  0x00c0ffee 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+-- pop
+2
+0x00000000  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000050  0x00001337 0x00000000 0x00000000 0x00000000  7...............
+0x00000060  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000070  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000080  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000090  0x00000000 0x00000000 0x00000000 0x00000000  ................
+--
+0x00000000  0x00c0ffee 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+-- zero just gpr
+0x00000000  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000050  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000060  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000070  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000080  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000090  0x00000000 0x00000000 0x00000000 0x00000000  ................
+--
+0x00000000  0x00c0ffee 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+-- all zero
+0x00000000  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000050  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000060  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000070  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000080  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000090  0x00000000 0x00000000 0x00000000 0x00000000  ................
+--
+0x00000000  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+--
+0x00000000  0x00004242 0x00000000 0x00000000 0x00000000  BB..............
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000050  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000060  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000070  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000080  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000090  0x00000000 0x00000000 0x00000000 0x00000000  ................
+--
+0x00000000  0x00003713 0x00000000 0x00000000 0x00000000  .7..............
+0x00000010  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000050  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000060  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000070  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000080  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000090  0x00000000 0x00000000 0x00000000 0x00000000  ................
+-- no overflow
+0x00000000  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+0x00000010  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+0x00000020  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+0x00000030  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+0x00000040  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+0x00000050  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+0x00000060  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+0x00000070  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+0x00000080  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+0x00000090  0xffffffff 0xffffffff 0xffffffff 0xffffffff  ................
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=arf
+FILE=
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arf
+?e --
+.arf
+fsl
+fl
+?e --
+arf-
+?e --------
+arf rax
+?e --
+arf- rax
+EOF
+EXPECT=<<EOF
+fss+ registers
+f+ rax @ 0x0
+f+ rbx @ 0x0
+f+ rcx @ 0x0
+f+ rdx @ 0x0
+f+ rsi @ 0x0
+f+ rdi @ 0x0
+f+ r8 @ 0x0
+f+ r9 @ 0x0
+f+ r10 @ 0x0
+f+ r11 @ 0x0
+f+ r12 @ 0x0
+f+ r13 @ 0x0
+f+ r14 @ 0x0
+f+ r15 @ 0x0
+f+ rip @ 0x0
+f+ rbp @ 0x0
+f+ rflags @ 0x0
+f+ rsp @ 0x0
+fss-
+--
+    0 * classes
+   18 * registers
+    0 * sections
+    0 * segments
+    0 * symbols
+0x00000000 1 rax
+0x00000000 1 rbx
+0x00000000 1 rcx
+0x00000000 1 rdx
+0x00000000 1 rsi
+0x00000000 1 rdi
+0x00000000 1 r8
+0x00000000 1 r9
+0x00000000 1 r10
+0x00000000 1 r11
+0x00000000 1 r12
+0x00000000 1 r13
+0x00000000 1 r14
+0x00000000 1 r15
+0x00000000 1 rip
+0x00000000 1 rbp
+0x00000000 1 rflags
+0x00000000 1 rsp
+--
+f- rax
+f- rbx
+f- rcx
+f- rdx
+f- rsi
+f- rdi
+f- r8
+f- r9
+f- r10
+f- r11
+f- r12
+f- r13
+f- r14
+f- r15
+f- rip
+f- rbp
+f- rflags
+f- rsp
+--------
+fss+ registers
+f+ rax @ 0x0
+fss-
+--
+f- rax
+EOF
+RUN
+
+NAME=arA and arcc
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ar A0 = 0x0804866b
+ar A2 = 0x08048679
+arA
+arAj
+arcc
+EOF
+EXPECT=<<EOF
+role reg value     refstr                                                                          
+---------------------------------------------------------------------------------------------------
+A0   rdi 0x804866b 134514283 .rodata str.Password_OK,rdi R X 'push rax' Password OK!
+A1   rsi 0x0       0
+A2   rdx 0x8048679 134514297 .rodata str.Password_Incorrect,rdx R X 'push rax' Password Incorrect!
+A3   rcx 0x0       0
+A4   r8  0x0       0
+A5   r9  0x0       0
+A6   r10 0x0       0
+A7   r11 0x0       0
+[{"role":"A0","reg":"rdi","value":"0x804866b","refstr":"134514283 .rodata str.Password_OK,rdi R X 'push rax' Password OK!"},{"role":"A1","reg":"rsi","value":"0x0","refstr":"0"},{"role":"A2","reg":"rdx","value":"0x8048679","refstr":"134514297 .rodata str.Password_Incorrect,rdx R X 'push rax' Password Incorrect!"},{"role":"A3","reg":"rcx","value":"0x0","refstr":"0"},{"role":"A4","reg":"r8","value":"0x0","refstr":"0"},{"role":"A5","reg":"r9","value":"0x0","refstr":"0"},{"role":"A6","reg":"r10","value":"0x0","refstr":"0"},{"role":"A7","reg":"r11","value":"0x0","refstr":"0"}]
+rdi reg(rdi, rsi, rdx, rcx)
+EOF
+RUN
+
+NAME=arp
+FILE=
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arp
+arpj
+EOF
+EXPECT=<<EOF
+=PC	rip
+=SP	rsp
+=BP	rbp
+=A0	rdi
+=A1	rsi
+=A2	rdx
+=A3	rcx
+=A4	r8
+=A5	r9
+=A6	r10
+=A7	r11
+=SN	rax
+gpr	rax	.64	80	0
+gpr	eax	.32	80	0
+gpr	ax	.16	80	0
+gpr	al	.8	80	0
+gpr	ah	.8	81	0
+gpr	rbx	.64	40	0
+gpr	ebx	.32	40	0
+gpr	bx	.16	40	0
+gpr	bl	.8	40	0
+gpr	bh	.8	41	0
+gpr	rcx	.64	88	0
+gpr	ecx	.32	88	0
+gpr	cx	.16	88	0
+gpr	cl	.8	88	0
+gpr	ch	.8	89	0
+gpr	rdx	.64	96	0
+gpr	edx	.32	96	0
+gpr	dx	.16	96	0
+gpr	dl	.8	96	0
+gpr	dh	.8	97	0
+gpr	rsi	.64	104	0
+gpr	esi	.32	104	0
+gpr	si	.16	104	0
+gpr	sil	.8	104	0
+gpr	rdi	.64	112	0
+gpr	edi	.32	112	0
+gpr	di	.16	112	0
+gpr	dil	.8	112	0
+gpr	r8	.64	72	0
+gpr	r8d	.32	72	0
+gpr	r8w	.16	72	0
+gpr	r8b	.8	72	0
+gpr	r9	.64	64	0
+gpr	r9d	.32	64	0
+gpr	r9w	.16	64	0
+gpr	r9b	.8	64	0
+gpr	r10	.64	56	0
+gpr	r10d	.32	56	0
+gpr	r10w	.16	56	0
+gpr	r10b	.8	56	0
+gpr	r11	.64	48	0
+gpr	r11d	.32	48	0
+gpr	r11w	.16	48	0
+gpr	r11b	.8	48	0
+gpr	r12	.64	24	0
+gpr	r12d	.32	24	0
+gpr	r12w	.16	24	0
+gpr	r12b	.8	24	0
+gpr	r13	.64	16	0
+gpr	r13d	.32	16	0
+gpr	r13w	.16	16	0
+gpr	r13b	.8	16	0
+gpr	r14	.64	8	0
+gpr	r14d	.32	8	0
+gpr	r14w	.16	8	0
+gpr	r14b	.8	8	0
+gpr	r15	.64	0	0
+gpr	r15d	.32	0	0
+gpr	r15w	.16	0	0
+gpr	r15b	.8	0	0
+gpr	rip	.64	128	0
+gpr	rbp	.64	32	0
+gpr	ebp	.32	32	0
+gpr	bp	.16	32	0
+gpr	bpl	.8	32	0
+seg	cs	.64	136	0
+flg	rflags	.64	144	0	c1p.a.zstido.n.rv
+flg	eflags	.32	144	0	c1p.a.zstido.n.rv
+flg	cf	.1	144.0	0	carry
+flg	pf	.1	144.2	0	parity
+flg	af	.1	144.4	0	adjust
+flg	zf	.1	144.6	0	zero
+flg	sf	.1	144.7	0	sign
+flg	tf	.1	.1160	0	trap
+flg	if	.1	.1161	0	interrupt
+flg	df	.1	.1162	0	direction
+flg	of	.1	.1163	0	overflow
+gpr	rsp	.64	152	0
+gpr	esp	.32	152	0
+gpr	sp	.16	152	0
+gpr	spl	.8	152	0
+seg	ss	.64	160	0
+seg	fs_base	.64	168	0
+seg	gs_base	.64	176	0
+seg	ds	.64	184	0
+seg	es	.64	192	0
+seg	fs	.64	200	0
+seg	gs	.64	208	0
+drx	dr0	.64	0	0
+drx	dr1	.64	8	0
+drx	dr2	.64	16	0
+drx	dr3	.64	24	0
+drx	dr6	.64	48	0
+drx	dr7	.64	56	0
+fpu    cwd .16 0   0
+fpu    swd .16 2   0
+fpu    ftw .16 4   0
+fpu    fop .16 6   0
+fpu    frip .64 8   0
+fpu    frdp .64 16  0
+fpu    mxcsr .32 24  0
+fpu    mxcr_mask .32 28  0
+fpu    st0 .64 32  0
+fpu    st1 .64 48  0
+fpu    st2 .64 64  0
+fpu    st3 .64 80  0
+fpu    st4 .64 96  0
+fpu    st5 .64 112  0
+fpu    st6 .64 128  0
+fpu    st7 .64 144  0
+xmm@fpu    xmm0  .128 160  4
+fpu    xmm0l .64 160  0
+fpu    xmm0h .64 168  0
+xmm@fpu    xmm1  .128 176  4
+fpu    xmm1l .64 176  0
+fpu    xmm1h .64 184  0
+xmm@fpu    xmm2  .128 192  4
+fpu    xmm2l .64 192  0
+fpu    xmm2h .64 200  0
+xmm@fpu    xmm3  .128 208  4
+fpu    xmm3l .64 208  0
+fpu    xmm3h .64 216  0
+xmm@fpu    xmm4  .128 224  4
+fpu    xmm4l .64 224  0
+fpu    xmm4h .64 232  0
+xmm@fpu    xmm5  .128 240  4
+fpu    xmm5l .64 240  0
+fpu    xmm5h .64 248  0
+xmm@fpu    xmm6  .128 256  4
+fpu    xmm6l .64 256  0
+fpu    xmm6h .64 264  0
+xmm@fpu    xmm7  .128 272  4
+fpu    xmm7l .64 272  0
+fpu    xmm7h .64 280  0
+fpu    x64   .64 288  0
+
+{"alias_info":[{"role":0,"role_str":"PC","reg":"rip"},{"role":1,"role_str":"SP","reg":"rsp"},{"role":3,"role_str":"BP","reg":"rbp"},{"role":5,"role_str":"A0","reg":"rdi"},{"role":6,"role_str":"A1","reg":"rsi"},{"role":7,"role_str":"A2","reg":"rdx"},{"role":8,"role_str":"A3","reg":"rcx"},{"role":9,"role_str":"A4","reg":"r8"},{"role":10,"role_str":"A5","reg":"r9"},{"role":11,"role_str":"A6","reg":"r10"},{"role":12,"role_str":"A7","reg":"r11"},{"role":23,"role_str":"SN","reg":"rax"}],"reg_info":[{"type":0,"type_str":"gpr","name":"rax","size":64,"offset":640},{"type":0,"type_str":"gpr","name":"eax","size":32,"offset":640},{"type":0,"type_str":"gpr","name":"ax","size":16,"offset":640},{"type":0,"type_str":"gpr","name":"al","size":8,"offset":640},{"type":0,"type_str":"gpr","name":"ah","size":8,"offset":648},{"type":0,"type_str":"gpr","name":"rbx","size":64,"offset":320},{"type":0,"type_str":"gpr","name":"ebx","size":32,"offset":320},{"type":0,"type_str":"gpr","name":"bx","size":16,"offset":320},{"type":0,"type_str":"gpr","name":"bl","size":8,"offset":320},{"type":0,"type_str":"gpr","name":"bh","size":8,"offset":328},{"type":0,"type_str":"gpr","name":"rcx","size":64,"offset":704},{"type":0,"type_str":"gpr","name":"ecx","size":32,"offset":704},{"type":0,"type_str":"gpr","name":"cx","size":16,"offset":704},{"type":0,"type_str":"gpr","name":"cl","size":8,"offset":704},{"type":0,"type_str":"gpr","name":"ch","size":8,"offset":712},{"type":0,"type_str":"gpr","name":"rdx","size":64,"offset":768},{"type":0,"type_str":"gpr","name":"edx","size":32,"offset":768},{"type":0,"type_str":"gpr","name":"dx","size":16,"offset":768},{"type":0,"type_str":"gpr","name":"dl","size":8,"offset":768},{"type":0,"type_str":"gpr","name":"dh","size":8,"offset":776},{"type":0,"type_str":"gpr","name":"rsi","size":64,"offset":832},{"type":0,"type_str":"gpr","name":"esi","size":32,"offset":832},{"type":0,"type_str":"gpr","name":"si","size":16,"offset":832},{"type":0,"type_str":"gpr","name":"sil","size":8,"offset":832},{"type":0,"type_str":"gpr","name":"rdi","size":64,"offset":896},{"type":0,"type_str":"gpr","name":"edi","size":32,"offset":896},{"type":0,"type_str":"gpr","name":"di","size":16,"offset":896},{"type":0,"type_str":"gpr","name":"dil","size":8,"offset":896},{"type":0,"type_str":"gpr","name":"r8","size":64,"offset":576},{"type":0,"type_str":"gpr","name":"r8d","size":32,"offset":576},{"type":0,"type_str":"gpr","name":"r8w","size":16,"offset":576},{"type":0,"type_str":"gpr","name":"r8b","size":8,"offset":576},{"type":0,"type_str":"gpr","name":"r9","size":64,"offset":512},{"type":0,"type_str":"gpr","name":"r9d","size":32,"offset":512},{"type":0,"type_str":"gpr","name":"r9w","size":16,"offset":512},{"type":0,"type_str":"gpr","name":"r9b","size":8,"offset":512},{"type":0,"type_str":"gpr","name":"r10","size":64,"offset":448},{"type":0,"type_str":"gpr","name":"r10d","size":32,"offset":448},{"type":0,"type_str":"gpr","name":"r10w","size":16,"offset":448},{"type":0,"type_str":"gpr","name":"r10b","size":8,"offset":448},{"type":0,"type_str":"gpr","name":"r11","size":64,"offset":384},{"type":0,"type_str":"gpr","name":"r11d","size":32,"offset":384},{"type":0,"type_str":"gpr","name":"r11w","size":16,"offset":384},{"type":0,"type_str":"gpr","name":"r11b","size":8,"offset":384},{"type":0,"type_str":"gpr","name":"r12","size":64,"offset":192},{"type":0,"type_str":"gpr","name":"r12d","size":32,"offset":192},{"type":0,"type_str":"gpr","name":"r12w","size":16,"offset":192},{"type":0,"type_str":"gpr","name":"r12b","size":8,"offset":192},{"type":0,"type_str":"gpr","name":"r13","size":64,"offset":128},{"type":0,"type_str":"gpr","name":"r13d","size":32,"offset":128},{"type":0,"type_str":"gpr","name":"r13w","size":16,"offset":128},{"type":0,"type_str":"gpr","name":"r13b","size":8,"offset":128},{"type":0,"type_str":"gpr","name":"r14","size":64,"offset":64},{"type":0,"type_str":"gpr","name":"r14d","size":32,"offset":64},{"type":0,"type_str":"gpr","name":"r14w","size":16,"offset":64},{"type":0,"type_str":"gpr","name":"r14b","size":8,"offset":64},{"type":0,"type_str":"gpr","name":"r15","size":64,"offset":0},{"type":0,"type_str":"gpr","name":"r15d","size":32,"offset":0},{"type":0,"type_str":"gpr","name":"r15w","size":16,"offset":0},{"type":0,"type_str":"gpr","name":"r15b","size":8,"offset":0},{"type":0,"type_str":"gpr","name":"rip","size":64,"offset":1024},{"type":0,"type_str":"gpr","name":"rbp","size":64,"offset":256},{"type":0,"type_str":"gpr","name":"ebp","size":32,"offset":256},{"type":0,"type_str":"gpr","name":"bp","size":16,"offset":256},{"type":0,"type_str":"gpr","name":"bpl","size":8,"offset":256},{"type":6,"type_str":"flg","name":"rflags","size":64,"offset":1152},{"type":6,"type_str":"flg","name":"eflags","size":32,"offset":1152},{"type":6,"type_str":"flg","name":"cf","size":1,"offset":1152},{"type":6,"type_str":"flg","name":"pf","size":1,"offset":1154},{"type":6,"type_str":"flg","name":"af","size":1,"offset":1156},{"type":6,"type_str":"flg","name":"zf","size":1,"offset":1158},{"type":6,"type_str":"flg","name":"sf","size":1,"offset":1159},{"type":6,"type_str":"flg","name":"tf","size":1,"offset":1160},{"type":6,"type_str":"flg","name":"if","size":1,"offset":1161},{"type":6,"type_str":"flg","name":"df","size":1,"offset":1162},{"type":6,"type_str":"flg","name":"of","size":1,"offset":1163},{"type":0,"type_str":"gpr","name":"rsp","size":64,"offset":1216},{"type":0,"type_str":"gpr","name":"esp","size":32,"offset":1216},{"type":0,"type_str":"gpr","name":"sp","size":16,"offset":1216},{"type":0,"type_str":"gpr","name":"spl","size":8,"offset":1216},{"type":1,"type_str":"drx","name":"dr0","size":64,"offset":0},{"type":1,"type_str":"drx","name":"dr1","size":64,"offset":64},{"type":1,"type_str":"drx","name":"dr2","size":64,"offset":128},{"type":1,"type_str":"drx","name":"dr3","size":64,"offset":192},{"type":1,"type_str":"drx","name":"dr6","size":64,"offset":384},{"type":1,"type_str":"drx","name":"dr7","size":64,"offset":448},{"type":2,"type_str":"fpu","name":"cwd","size":16,"offset":0},{"type":2,"type_str":"fpu","name":"swd","size":16,"offset":16},{"type":2,"type_str":"fpu","name":"ftw","size":16,"offset":32},{"type":2,"type_str":"fpu","name":"fop","size":16,"offset":48},{"type":2,"type_str":"fpu","name":"frip","size":64,"offset":64},{"type":2,"type_str":"fpu","name":"frdp","size":64,"offset":128},{"type":2,"type_str":"fpu","name":"mxcsr","size":32,"offset":192},{"type":2,"type_str":"fpu","name":"mxcr_mask","size":32,"offset":224},{"type":2,"type_str":"fpu","name":"st0","size":64,"offset":256},{"type":2,"type_str":"fpu","name":"st1","size":64,"offset":384},{"type":2,"type_str":"fpu","name":"st2","size":64,"offset":512},{"type":2,"type_str":"fpu","name":"st3","size":64,"offset":640},{"type":2,"type_str":"fpu","name":"st4","size":64,"offset":768},{"type":2,"type_str":"fpu","name":"st5","size":64,"offset":896},{"type":2,"type_str":"fpu","name":"st6","size":64,"offset":1024},{"type":2,"type_str":"fpu","name":"st7","size":64,"offset":1152},{"type":4,"type_str":"xmm","name":"xmm0","size":128,"offset":1280},{"type":2,"type_str":"fpu","name":"xmm0l","size":64,"offset":1280},{"type":2,"type_str":"fpu","name":"xmm0h","size":64,"offset":1344},{"type":4,"type_str":"xmm","name":"xmm1","size":128,"offset":1408},{"type":2,"type_str":"fpu","name":"xmm1l","size":64,"offset":1408},{"type":2,"type_str":"fpu","name":"xmm1h","size":64,"offset":1472},{"type":4,"type_str":"xmm","name":"xmm2","size":128,"offset":1536},{"type":2,"type_str":"fpu","name":"xmm2l","size":64,"offset":1536},{"type":2,"type_str":"fpu","name":"xmm2h","size":64,"offset":1600},{"type":4,"type_str":"xmm","name":"xmm3","size":128,"offset":1664},{"type":2,"type_str":"fpu","name":"xmm3l","size":64,"offset":1664},{"type":2,"type_str":"fpu","name":"xmm3h","size":64,"offset":1728},{"type":4,"type_str":"xmm","name":"xmm4","size":128,"offset":1792},{"type":2,"type_str":"fpu","name":"xmm4l","size":64,"offset":1792},{"type":2,"type_str":"fpu","name":"xmm4h","size":64,"offset":1856},{"type":4,"type_str":"xmm","name":"xmm5","size":128,"offset":1920},{"type":2,"type_str":"fpu","name":"xmm5l","size":64,"offset":1920},{"type":2,"type_str":"fpu","name":"xmm5h","size":64,"offset":1984},{"type":4,"type_str":"xmm","name":"xmm6","size":128,"offset":2048},{"type":2,"type_str":"fpu","name":"xmm6l","size":64,"offset":2048},{"type":2,"type_str":"fpu","name":"xmm6h","size":64,"offset":2112},{"type":4,"type_str":"xmm","name":"xmm7","size":128,"offset":2176},{"type":2,"type_str":"fpu","name":"xmm7l","size":64,"offset":2176},{"type":2,"type_str":"fpu","name":"xmm7h","size":64,"offset":2240},{"type":2,"type_str":"fpu","name":"x64","size":64,"offset":2304},{"type":7,"type_str":"seg","name":"cs","size":64,"offset":1088},{"type":7,"type_str":"seg","name":"ss","size":64,"offset":1280},{"type":7,"type_str":"seg","name":"fs_base","size":64,"offset":1344},{"type":7,"type_str":"seg","name":"gs_base","size":64,"offset":1408},{"type":7,"type_str":"seg","name":"ds","size":64,"offset":1472},{"type":7,"type_str":"seg","name":"es","size":64,"offset":1536},{"type":7,"type_str":"seg","name":"fs","size":64,"offset":1600},{"type":7,"type_str":"seg","name":"gs","size":64,"offset":1664}]}
+EOF
+RUN
+
+NAME=arc
+FILE=
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arc
+ar cf=1
+arc
+EOF
+EXPECT=<<EOF
+| s:0 z:0 c:0 o:0 p:0
+0 eq
+1 ne
+0 cf
+0 neg
+0 of
+0 hi
+0 he
+1 lo
+1 loe
+1 ge
+1 gt
+0 lt
+0 le
+| s:0 z:0 c:1 o:0 p:0
+0 eq
+1 ne
+1 cf
+0 neg
+0 of
+1 hi
+1 he
+0 lo
+0 loe
+1 ge
+1 gt
+0 lt
+0 le
+EOF
+RUN
+
+NAME=ard and aro
+FILE=
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ar rax = 0x1337
+ar rcx = 0x1234
+aras
+ar rax = 0x1337
+ar rcx = 0x4321
+ard
+?e --
+aro
+?e -- with filter
+aro rcx
+EOF
+EXPECT=<<EOF
+cl = 0x21 was 0x34 delta 0xffffffffffffffed
+cx = 0x4321 was 0x1234 delta 0x30ed
+ecx = 0x4321 was 0x1234 delta 0x30ed
+rcx = 0x4321 was 0x1234 delta 0x30ed
+ch = 0x43 was 0x12 delta 0x31
+--
+rax = 0x00001337
+rbx = 0x00000000
+rcx = 0x00001234
+rdx = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rip = 0x00000000
+rbp = 0x00000000
+rflags = 0x00000000
+rsp = 0x00000000
+-- with filter
+rcx = 0x00001234
+EOF
+RUN
+
+NAME=update flags
+FILE=
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+?e -- initial flags
+fl
+?e --
+ar rax=0x1234
+fl
+?e --
+ar rbx=0x4321
+fl
+?e --
+ara0
+fl
+EOF
+EXPECT=<<EOF
+-- initial flags
+--
+0x00000000 8 rbx
+0x00000000 8 rcx
+0x00000000 8 rdx
+0x00000000 8 rsi
+0x00000000 8 rdi
+0x00000000 8 r8
+0x00000000 8 r9
+0x00000000 8 r10
+0x00000000 8 r11
+0x00000000 8 r12
+0x00000000 8 r13
+0x00000000 8 r14
+0x00000000 8 r15
+0x00000000 8 rip
+0x00000000 8 rbp
+0x00000000 8 rflags
+0x00000000 8 rsp
+0x00001234 8 rax
+--
+0x00000000 8 rcx
+0x00000000 8 rdx
+0x00000000 8 rsi
+0x00000000 8 rdi
+0x00000000 8 r8
+0x00000000 8 r9
+0x00000000 8 r10
+0x00000000 8 r11
+0x00000000 8 r12
+0x00000000 8 r13
+0x00000000 8 r14
+0x00000000 8 r15
+0x00000000 8 rip
+0x00000000 8 rbp
+0x00000000 8 rflags
+0x00000000 8 rsp
+0x00001234 8 rax
+0x00004321 8 rbx
+--
+0x00000000 8 rcx
+0x00000000 8 rdx
+0x00000000 8 rsi
+0x00000000 8 rdi
+0x00000000 8 r8
+0x00000000 8 r9
+0x00000000 8 r10
+0x00000000 8 r11
+0x00000000 8 r12
+0x00000000 8 r13
+0x00000000 8 r14
+0x00000000 8 r15
+0x00000000 8 rip
+0x00000000 8 rbp
+0x00000000 8 rflags
+0x00000000 8 rsp
+0x00000000 8 rax
+0x00000000 8 rbx
 EOF
 RUN

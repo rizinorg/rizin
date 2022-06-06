@@ -10,6 +10,7 @@ environment:
   NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip
   VSVARSALLPATH2017: 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
   VSVARSALLPATH2019: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat'
+  VSVARSALLPATH2022: 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat'
 
   matrix:
     # VS2017 64
@@ -19,11 +20,11 @@ environment:
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
       RUN_TESTS: false
-    # VS2019 64
-    - builder: vs2019_64
+    # VS2022 64
+    - builder: vs2022_64
       PYTHON: 'C:\\Python38-x64'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
       BUILD_DIR: build
       RUN_TESTS: true
     # VS2017 64 (Dynamic linking)
@@ -48,7 +49,6 @@ only_commits:
     - '**/*.in'
     - '**/*.inc'
     - '**/meson.build'
-    - 'shlr/rizin-shell-parser/'
     - 'subprojects/'
     - 'test/'
     - '.appveyor.yml'
@@ -71,13 +71,13 @@ install:
 build_script:
   - appveyor AddMessage "Compiling rizin %RZ_VERSION% (%builder%)"
 
-  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && %PYTHON%\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" --default-library=static -Db_vscrt=static_from_buildtype -Duse_webui=true build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && %PYTHON%\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" --default-library=static -Db_vscrt=static_from_buildtype build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2019_64 ( choco install mingw && refreshenv && set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && %PYTHON%\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" --default-library=static -Db_vscrt=static_from_buildtype -Duse_webui=true build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2022_64 ( choco install mingw && refreshenv && set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2022%" x64 && %PYTHON%\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" --default-library=static -Db_vscrt=static_from_buildtype build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && %PYTHON%\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" -Duse_webui=true build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && %PYTHON%\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && set CC=clang-cl && %PYTHON%\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" -Duse_webui=true build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && set CC=clang-cl && %PYTHON%\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
 # Run tests only conditionally
 for:
@@ -88,7 +88,7 @@ for:
 
     test_script:
       - if %builder% == vs2017_64 ( call "%VSVARSALLPATH2017%" x64 )
-      - if %builder% == vs2019_64 ( call "%VSVARSALLPATH2019%" x64 )
+      - if %builder% == vs2022_64 ( call "%VSVARSALLPATH2022%" x64 )
       - if %builder% == vs2017_64_dyn ( call "%VSVARSALLPATH2017%" x64 )
       - if %builder% == clang_cl_64_dyn ( call "%VSVARSALLPATH2019%" x64 )
       - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\Python38-x64;C:\msys64\mingw64\bin;%PATH%
@@ -98,9 +98,9 @@ for:
       - copy C:\Python38-x64\python.exe C:\Python38-x64\python3.exe
       - python3 -m pip install "git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"
       - cd test
-      - git clone -q --depth 1 https://github.com/rizinorg/rizin-testbins bins
+      - git clone -q --depth 1 -c core.symlinks=true https://github.com/rizinorg/rizin-testbins bins
       - cd ..
-      - "%PYTHON%\\Scripts\\meson test -C build -t 10"
+      - "%PYTHON%\\Scripts\\meson test -C build -t 10 --print-errorlogs"
       - cd test
       - rz-test -o results.json -L db
       - cd ..

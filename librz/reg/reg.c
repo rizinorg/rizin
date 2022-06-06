@@ -7,7 +7,7 @@
 RZ_LIB_VERSION(rz_reg);
 
 static const char *types[RZ_REG_TYPE_LAST + 1] = {
-	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
+	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", "sys", "sec", "vc", "vcc", "ctr", NULL
 };
 
 // Take the 32bits name of a register, and return the 64 bit name of it.
@@ -82,7 +82,7 @@ RZ_API int rz_reg_type_by_name(const char *str) {
 		}
 	}
 	if (!strcmp(str, "all")) {
-		return RZ_REG_TYPE_ALL;
+		return RZ_REG_TYPE_ANY;
 	}
 	return -1;
 }
@@ -145,6 +145,15 @@ RZ_API const char *rz_reg_get_name(RzReg *reg, int role) {
 	return NULL;
 }
 
+RZ_API RzRegItem *rz_reg_get_by_role(RzReg *reg, RzRegisterId role) {
+	rz_return_val_if_fail(reg, NULL);
+	const char *name = rz_reg_get_name(reg, role);
+	if (!name) {
+		return NULL;
+	}
+	return rz_reg_get(reg, name, RZ_REG_TYPE_ANY);
+}
+
 static const char *roles[RZ_REG_NAME_LAST + 1] = {
 	"PC", "SP", "SR", "BP", "LR",
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
@@ -159,6 +168,18 @@ RZ_API const char *rz_reg_get_role(int role) {
 		return roles[role];
 	}
 	return NULL;
+}
+
+/// Get the RzRegisterId with the given name or -1
+RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, -1);
+	int i;
+	for (i = 0; i < RZ_REG_NAME_LAST && roles[i]; i++) {
+		if (!strcmp(roles[i], str)) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
@@ -304,10 +325,16 @@ RZ_API ut64 rz_reg_getv(RzReg *reg, const char *name) {
 	return ri ? rz_reg_get_value(reg, ri) : UT64_MAX;
 }
 
+RZ_API ut64 rz_reg_getv_by_role_or_name(RzReg *reg, const char *name) {
+	rz_return_val_if_fail(reg && name, UT64_MAX);
+	RzRegItem *ri = rz_reg_get_by_role_or_name(reg, name);
+	return ri ? rz_reg_get_value(reg, ri) : UT64_MAX;
+}
+
 RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 	int i, e;
 	rz_return_val_if_fail(reg && name, NULL);
-	//TODO: define flag register as RZ_REG_TYPE_FLG
+	// TODO: define flag register as RZ_REG_TYPE_FLG
 	if (type == RZ_REG_TYPE_FLG) {
 		type = RZ_REG_TYPE_GPR;
 	}
@@ -338,8 +365,19 @@ RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 	return NULL;
 }
 
+RZ_API RzRegItem *rz_reg_get_by_role_or_name(RzReg *reg, const char *name) {
+	int role = rz_reg_get_name_idx(name);
+	if (role != -1) {
+		RzRegItem *r = rz_reg_get_by_role(reg, role);
+		if (r) {
+			return r;
+		}
+	}
+	return rz_reg_get(reg, name, RZ_REG_TYPE_ANY);
+}
+
 RZ_API const RzList *rz_reg_get_list(RzReg *reg, int type) {
-	if (type == RZ_REG_TYPE_ALL) {
+	if (type == RZ_REG_TYPE_ANY) {
 		return reg->allregs;
 	}
 
@@ -408,4 +446,63 @@ RZ_API RzRegSet *rz_reg_regset_get(RzReg *r, int type) {
 	}
 	RzRegSet *rs = &r->regset[type];
 	return rs->arena ? rs : NULL;
+}
+
+static bool foreach_reg_cb(RzIntervalNode *node, void *user) {
+	RzRegItem *from_list = user;
+	RzRegItem *from_tree = node->data;
+	if (from_list == from_tree) {
+		return true;
+	}
+	// Check if from_list is covered entirely by from_tree, but is also smaller than it.
+	// We already know that
+	//   from_tree->offset <= from_list->offset < from_tree->offset + from_tree->size
+	if (from_list->offset + from_list->size > from_tree->offset + from_tree->size) {
+		// from_list expands beyond from_tree, so it's not covered
+		return true;
+	}
+	if (from_list->offset + from_list->size == from_tree->offset + from_tree->size) {
+		// they end at the same position, so it is covered entirely, but is it also smaller?
+		if (from_list->offset == from_tree->offset) {
+			// nope
+			return true;
+		}
+	}
+	// from_list ends before from_tree, so it is covered and smaller
+	return false;
+}
+
+/**
+ * \brief Filter out all register items that are smaller than but covered entirely by some other register
+ * \param regs list of RzRegItem
+ */
+RZ_API RZ_OWN RzList *rz_reg_filter_items_covered(RZ_BORROW RZ_NONNULL const RzList /* <RzRegItem> */ *regs) {
+	rz_return_val_if_fail(regs, NULL);
+	RzList *ret = rz_list_new();
+	if (!ret) {
+		return NULL;
+	}
+	RzIntervalTree t;
+	rz_interval_tree_init(&t, NULL);
+	RzRegItem *item;
+	RzListIter *it;
+	rz_list_foreach (regs, it, item) {
+		if (item->offset < 0 || item->size <= 0) {
+			continue;
+		}
+		rz_interval_tree_insert(&t, item->offset, item->offset + item->size - 1, item);
+	}
+	rz_list_foreach (regs, it, item) {
+		if (item->offset < 0 || item->size <= 0) {
+			rz_list_push(ret, item);
+			continue;
+		}
+		if (!rz_interval_tree_all_in(&t, item->offset, true, foreach_reg_cb, item)) {
+			// foreach_reg_cb break-ed so it found a cover
+			continue;
+		}
+		rz_list_push(ret, item);
+	}
+	rz_interval_tree_fini(&t);
+	return ret;
 }

@@ -5,6 +5,32 @@
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 
+#define RZ_AX_FLAG_HEX_TO_RAW       (1ull << 0) //  -s (hexstr -> raw)
+#define RZ_AX_FLAG_SWAP_ENDIANNESS  (1ull << 1) //  -e (swap endianness)
+#define RZ_AX_FLAG_RAW_TO_HEX       (1ull << 2) //  -S (raw -> hexstr)
+#define RZ_AX_FLAG_BIN_TO_STR       (1ull << 3) //  -b (bin -> str)
+#define RZ_AX_FLAG_STR_TO_DJB2      (1ull << 4) //  -x (str -> djb2 hash)
+#define RZ_AX_FLAG_KEEP_BASE        (1ull << 5) //  -k (keep base)
+#define RZ_AX_FLAG_FLOATING_POINT   (1ull << 6) //  -f (floating point)
+#define RZ_AX_FLAG_FORCE_INTEGER    (1ull << 7) //  -d (force integer)
+#define RZ_AX_FLAG_NUMBER_TO_HEX    (1ull << 9) //  -n (num -> hex)
+#define RZ_AX_FLAG_UNITS            (1ull << 10) // -u (units)
+#define RZ_AX_FLAG_TIMESTAMP_TO_STR (1ull << 11) // -t (timestamp -> str)
+#define RZ_AX_FLAG_BASE64_ENCODE    (1ull << 12) // -E (base64 encode)
+#define RZ_AX_FLAG_BASE64_DECODE    (1ull << 13) // -D (base64 decode)
+#define RZ_AX_FLAG_RAW_TO_LANGBYTES (1ull << 14) // -F (raw -> C or JS or Python bytes)
+#define RZ_AX_FLAG_NUMBER_TO_HEXSTR (1ull << 15) // -N (num -> escaped hex string)
+#define RZ_AX_FLAG_SIGNED_WORD      (1ull << 16) // -w (signed word)
+#define RZ_AX_FLAG_STR_TO_BIN       (1ull << 17) // -B (str -> bin)
+#define RZ_AX_FLAG_RIZIN_CMD        (1ull << 18) // -r (rizin commands)
+#define RZ_AX_FLAG_BIN_TO_BIGNUM    (1ull << 19) // -L (bin -> hex(bignum))
+#define RZ_AX_FLAG_DUMP_C_BYTES     (1ull << 21) // -i (dump as C byte array)
+#define RZ_AX_FLAG_OCTAL_TO_RAW     (1ull << 22) // -o (octalstr -> raw)
+#define RZ_AX_FLAG_IPADDR_TO_LONG   (1ull << 23) // -I (IP address <-> LONG)
+#define RZ_AX_FLAG_SET_BITS         (1ull << 24) // -p (find position of set bits)
+
+#define has_flag(f, x) (f & x)
+
 // don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
 static int rax(RzNum *num, char *str, int len, int last, ut64 *flags, int *fm);
@@ -18,7 +44,7 @@ static int use_stdin(RzNum *num, ut64 *flags, int *fm) {
 	if (!buf) {
 		return 0;
 	}
-	if (!(*flags & (1 << 14))) {
+	if (!(has_flag(*flags, RZ_AX_FLAG_RAW_TO_LANGBYTES))) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read(0, buf + l, STDIN_BUFFER_SIZE - l);
@@ -54,7 +80,7 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 	if (force_mode) {
 		mode = force_mode;
 	}
-	if (flags & 2) {
+	if (has_flag(flags, RZ_AX_FLAG_SWAP_ENDIANNESS)) {
 		ut64 n2 = n;
 		rz_mem_swapendian((ut8 *)&n, (ut8 *)&n2, 8);
 		if (!(int)n) {
@@ -104,6 +130,56 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 	return true;
 }
 
+static void print_hex_from_base2(char *base2) {
+	bool first = true;
+	const int len = strlen(base2);
+	if (len < 1) {
+		return;
+	}
+
+	// we split each section by 8 bits and have bytes.
+	ut32 bytes_size = (len >> 3) + (len & 7 ? 1 : 0);
+	ut8 *bytes = calloc(bytes_size, sizeof(ut8));
+	if (!bytes) {
+		eprintf("cannot allocate %d bytes\n", bytes_size);
+		return;
+	}
+
+	int c = len & 7;
+	if (c) {
+		// align counter to 8 bits
+		c = 8 - c;
+	}
+	for (int i = 0, j = 0; i < len && j < bytes_size; i++, c++) {
+		if (base2[i] != '1' && base2[i] != '0') {
+			eprintf("invalid base2 number %c at char %d\n", base2[i], i);
+			free(bytes);
+			return;
+		}
+		// c & 7 is c % 8
+		if (c > 0 && !(c & 7)) {
+			j++;
+		}
+		bytes[j] <<= 1;
+		bytes[j] |= base2[i] - '0';
+	}
+
+	printf("0x");
+	for (int i = 0; i < bytes_size; ++i) {
+		if (first) {
+			if (i != (bytes_size - 1) && !bytes[i]) {
+				continue;
+			}
+			printf("%x", bytes[i]);
+			first = false;
+		} else {
+			printf("%02x", bytes[i]);
+		}
+	}
+	printf("\n");
+	free(bytes);
+}
+
 static void print_ascii_table(void) {
 	printf("%s", ret_ascii_table());
 }
@@ -143,7 +219,6 @@ static int help(void) {
 		"  -i      dump as C byte array ;  rz-ax -i < bytes\n"
 		"  -I      IP address <-> LONG  ;  rz-ax -I 3530468537\n"
 		"  -k      keep base            ;  rz-ax -k 33+3 -> 36\n"
-		"  -K      randomart            ;  rz-ax -K 0x34 1020304050\n"
 		"  -L      bin -> hex(bignum)   ;  rz-ax -L 111111111 # 0x1ff\n"
 		"  -n      binary number        ;  rz-ax -n 0x1234 # 34120000\n"
 		"  -o      octalstr -> raw      ;  rz-ax -o \\162 \\172 # rz\n"
@@ -155,7 +230,8 @@ static int help(void) {
 		"  -x      hash string          ;  rz-ax -x linux osx\n"
 		"  -u      units                ;  rz-ax -u 389289238 # 317.0M\n"
 		"  -w      signed word          ;  rz-ax -w 16 0xffff\n"
-		"  -v      version              ;  rz-ax -v\n");
+		"  -v      version              ;  rz-ax -v\n"
+		"  -p      position of set bits ;  rz-ax -p 0xb3\n");
 	return true;
 }
 
@@ -163,12 +239,12 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 	ut64 flags = *_flags;
 	const char *nl = "";
 	ut8 *buf;
-	char *p, out_mode = (flags & 128) ? 'I' : '0';
+	char *p, out_mode = has_flag(flags, RZ_AX_FLAG_FORCE_INTEGER) ? 'I' : '0';
 	int i;
-	if (!(flags & 4) || !len) {
+	if (!has_flag(flags, RZ_AX_FLAG_RAW_TO_HEX) || !len) {
 		len = strlen(str);
 	}
-	if ((flags & 4)) {
+	if (has_flag(flags, RZ_AX_FLAG_RAW_TO_HEX)) {
 		goto dotherax;
 	}
 	if (*str == '=') {
@@ -184,41 +260,42 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 		*fm = force_mode;
 		return true;
 	}
+
 	if (*str == '-') {
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
 			case 'l': break;
 			case 'a': print_ascii_table(); return 0;
-			case 's': flags ^= 1 << 0; break;
-			case 'e': flags ^= 1 << 1; break;
-			case 'S': flags ^= 1 << 2; break;
-			case 'b': flags ^= 1 << 3; break;
-			case 'B': flags ^= 1 << 17; break;
-			case 'x': flags ^= 1 << 4; break;
-			case 'k': flags ^= 1 << 5; break;
-			case 'f': flags ^= 1 << 6; break;
-			case 'd': flags ^= 1 << 7; break;
-			case 'K': flags ^= 1 << 8; break;
-			case 'n': flags ^= 1 << 9; break;
-			case 'u': flags ^= 1 << 10; break;
-			case 't': flags ^= 1 << 11; break;
-			case 'E': flags ^= 1 << 12; break;
-			case 'D': flags ^= 1 << 13; break;
-			case 'F': flags ^= 1 << 14; break;
-			case 'N': flags ^= 1 << 15; break;
-			case 'w': flags ^= 1 << 16; break;
-			case 'r': flags ^= 1 << 18; break;
-			case 'L': flags ^= 1 << 19; break;
-			case 'i': flags ^= 1 << 21; break;
-			case 'o': flags ^= 1 << 22; break;
-			case 'I': flags ^= 1 << 23; break;
+			case 's': flags ^= RZ_AX_FLAG_HEX_TO_RAW; break;
+			case 'e': flags ^= RZ_AX_FLAG_SWAP_ENDIANNESS; break;
+			case 'S': flags ^= RZ_AX_FLAG_RAW_TO_HEX; break;
+			case 'b': flags ^= RZ_AX_FLAG_BIN_TO_STR; break;
+			case 'B': flags ^= RZ_AX_FLAG_STR_TO_BIN; break;
+			case 'p': flags ^= RZ_AX_FLAG_SET_BITS; break;
+			case 'x': flags ^= RZ_AX_FLAG_STR_TO_DJB2; break;
+			case 'k': flags ^= RZ_AX_FLAG_KEEP_BASE; break;
+			case 'f': flags ^= RZ_AX_FLAG_FLOATING_POINT; break;
+			case 'd': flags ^= RZ_AX_FLAG_FORCE_INTEGER; break;
+			case 'n': flags ^= RZ_AX_FLAG_NUMBER_TO_HEX; break;
+			case 'u': flags ^= RZ_AX_FLAG_UNITS; break;
+			case 't': flags ^= RZ_AX_FLAG_TIMESTAMP_TO_STR; break;
+			case 'E': flags ^= RZ_AX_FLAG_BASE64_ENCODE; break;
+			case 'D': flags ^= RZ_AX_FLAG_BASE64_DECODE; break;
+			case 'F': flags ^= RZ_AX_FLAG_RAW_TO_LANGBYTES; break;
+			case 'N': flags ^= RZ_AX_FLAG_NUMBER_TO_HEXSTR; break;
+			case 'w': flags ^= RZ_AX_FLAG_SIGNED_WORD; break;
+			case 'r': flags ^= RZ_AX_FLAG_RIZIN_CMD; break;
+			case 'L': flags ^= RZ_AX_FLAG_BIN_TO_BIGNUM; break;
+			case 'i': flags ^= RZ_AX_FLAG_DUMP_C_BYTES; break;
+			case 'o': flags ^= RZ_AX_FLAG_OCTAL_TO_RAW; break;
+			case 'I': flags ^= RZ_AX_FLAG_IPADDR_TO_LONG; break;
 			case 'v': return rz_main_version_print("rz-ax");
 			case '\0':
 				*_flags = flags;
 				return !use_stdin(num, _flags, fm);
 			default:
 				/* not as complete as for positive numbers */
-				out_mode = (flags ^ 32) ? '0' : 'I';
+				out_mode = (flags ^ RZ_AX_FLAG_KEEP_BASE) ? '0' : 'I';
 				if (str[1] >= '0' && str[1] <= '9') {
 					if (str[2] == 'x') {
 						out_mode = 'I';
@@ -249,7 +326,7 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 		}
 	}
 dotherax:
-	if (flags & 1) { // -s
+	if (has_flag(flags, RZ_AX_FLAG_HEX_TO_RAW)) { // -s
 		int n = ((strlen(str)) >> 1) + 1;
 		buf = malloc(n);
 		if (buf) {
@@ -270,13 +347,13 @@ dotherax:
 		}
 		return true;
 	}
-	if (flags & (1 << 2)) { // -S
+	if (has_flag(flags, RZ_AX_FLAG_RAW_TO_HEX)) { // -S
 		for (i = 0; i < len; i++) {
 			printf("%02x", (ut8)str[i]);
 		}
 		printf("\n");
 		return true;
-	} else if (flags & (1 << 3)) { // -b
+	} else if (has_flag(flags, RZ_AX_FLAG_BIN_TO_STR)) { // -b
 		int i;
 		ut8 buf[4096];
 		const int n = rz_str_binstr2bin(str, buf, sizeof(buf));
@@ -284,41 +361,19 @@ dotherax:
 			printf("%c", buf[i]);
 		}
 		return true;
-	} else if (flags & (1 << 4)) { // -x
-		int h = rz_str_hash(str);
+	} else if (has_flag(flags, RZ_AX_FLAG_STR_TO_DJB2)) { // -x
+		int h = rz_str_djb2_hash(str);
 		printf("0x%x\n", h);
 		return true;
-	} else if (flags & (1 << 5)) { // -k
+	} else if (has_flag(flags, RZ_AX_FLAG_KEEP_BASE)) { // -k
 		out_mode = 'I';
-	} else if (flags & (1 << 6)) { // -f
+	} else if (has_flag(flags, RZ_AX_FLAG_FLOATING_POINT)) { // -f
 		out_mode = 'f';
-	} else if (flags & (1 << 8)) { // -K
-		int n = ((strlen(str)) >> 1) + 1;
-		char *s = NULL;
-		buf = (ut8 *)malloc(n);
-		if (!buf) {
-			return false;
-		}
-		ut32 *m = (ut32 *)buf;
-		memset(buf, '\0', n);
-		n = rz_hex_str2bin(str, (ut8 *)buf);
-		if (n < 1 || !memcmp(str, "0x", 2)) {
-			ut64 q = rz_num_math(num, str);
-			s = rz_print_randomart((ut8 *)&q, sizeof(q), q);
-			printf("%s\n", s);
-			free(s);
-		} else {
-			s = rz_print_randomart((ut8 *)buf, n, *m);
-			printf("%s\n", s);
-			free(s);
-		}
-		free(m);
-		return true;
-	} else if (flags & (1 << 9)) { // -n
+	} else if (has_flag(flags, RZ_AX_FLAG_NUMBER_TO_HEX)) { // -n
 		ut64 n = rz_num_math(num, str);
 		if (n >> 32) {
 			/* is 64 bit value */
-			if (flags & 1) {
+			if (has_flag(flags, RZ_AX_FLAG_HEX_TO_RAW)) {
 				fwrite(&n, sizeof(n), 1, stdout);
 			} else {
 				int i;
@@ -331,7 +386,7 @@ dotherax:
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32)n;
-			if (flags & 1) {
+			if (has_flag(flags, RZ_AX_FLAG_HEX_TO_RAW)) {
 				fwrite(&n32, sizeof(n32), 1, stdout);
 			} else {
 				int i;
@@ -343,9 +398,8 @@ dotherax:
 			}
 		}
 		return true;
-	} else if (flags & (1 << 17)) { // -B (bin -> str)
+	} else if (has_flag(flags, RZ_AX_FLAG_STR_TO_BIN)) { // -B (bin -> str)
 		int i = 0;
-		// TODO: move to rz_util
 		for (i = 0; i < strlen(str); i++) {
 			ut8 ch = str[i];
 			printf("%d%d%d%d"
@@ -360,7 +414,42 @@ dotherax:
 				ch & 1 ? 1 : 0);
 		}
 		return true;
-	} else if (flags & (1 << 16)) { // -w
+	} else if (has_flag(flags, RZ_AX_FLAG_SET_BITS)) { // -p (find position of set bits)
+		ut64 n = rz_num_math(num, str);
+		char strbits[65] = { 0 };
+		int i = 0, set_bits_ctr = 0;
+		rz_num_to_bits(strbits, n);
+		rz_str_reverse(strbits); // because we count Right to Left
+		char last_char = 0;
+		while (strbits[i] != '\0') {
+			if (strbits[i] == '1') {
+				++set_bits_ctr;
+				if (i == 0) {
+					printf("[%d", i);
+				} else if (strbits[i] == '1' && last_char == '0') {
+					printf("[%d", i);
+				}
+			}
+			if (strbits[i] == '0' && last_char == '1') {
+				if (set_bits_ctr == 1) {
+					printf("]: 1\n");
+				} else if (strbits[i + 1] == '\0') {
+					printf("-%d]: 1\n", i);
+				} else
+					printf("-%d]: 1\n", i - 1);
+				set_bits_ctr = 0;
+			} else if (strbits[i] == '1' && strbits[i + 1] == '\0') {
+				if (set_bits_ctr == 1) {
+					printf("]: 1\n");
+				} else
+					printf("-%d]: 1\n", i);
+				set_bits_ctr = 0;
+			}
+			last_char = strbits[i];
+			++i;
+		}
+		return true;
+	} else if (has_flag(flags, RZ_AX_FLAG_SIGNED_WORD)) { // -w
 		ut64 n = rz_num_math(num, str);
 		if (n >> 31) {
 			// is >32bit
@@ -372,11 +461,11 @@ dotherax:
 		}
 		printf("%" PFMT64d "\n", n);
 		return true;
-	} else if (flags & (1 << 15)) { // -N
+	} else if (has_flag(flags, RZ_AX_FLAG_NUMBER_TO_HEXSTR)) { // -N
 		ut64 n = rz_num_math(num, str);
 		if (n >> 32) {
 			/* is 64 bit value */
-			if (flags & 1) {
+			if (has_flag(flags, RZ_AX_FLAG_HEX_TO_RAW)) {
 				fwrite(&n, sizeof(n), 1, stdout);
 			} else {
 				int i;
@@ -389,7 +478,7 @@ dotherax:
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32)n;
-			if (flags & 1) {
+			if (has_flag(flags, RZ_AX_FLAG_HEX_TO_RAW)) {
 				fwrite(&n32, sizeof(n32), 1, stdout);
 			} else {
 				int i;
@@ -401,12 +490,12 @@ dotherax:
 			}
 		}
 		return true;
-	} else if (flags & (1 << 10)) { // -u
+	} else if (has_flag(flags, RZ_AX_FLAG_UNITS)) { // -u
 		char buf[8];
 		rz_num_units(buf, sizeof(buf), rz_num_math(NULL, str));
 		printf("%s\n", buf);
 		return true;
-	} else if (flags & (1 << 11)) { // -t
+	} else if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR)) { // -t
 		RzList *split = rz_str_split_list(str, "GMT", 0);
 		char *ts = rz_list_head(split)->data;
 		const char *gmt = NULL;
@@ -414,16 +503,15 @@ dotherax:
 			gmt = (const char *)rz_list_head(split)->n->data;
 		}
 		ut32 n = rz_num_math(num, ts);
-		RzPrint *p = rz_print_new();
-		p->big_endian = RZ_SYS_ENDIAN;
-		if (gmt) {
-			p->datezone = rz_num_math(num, gmt);
-		}
-		rz_print_date_unix(p, (const ut8 *)&n, sizeof(ut32));
-		rz_print_free(p);
+		int timezone = (int)rz_num_math(num, gmt);
+		n += timezone * (60 * 60);
+		char *date = rz_time_date_unix_to_string(n);
+		printf("%s\n", date);
+		fflush(stdout);
+		free(date);
 		rz_list_free(split);
 		return true;
-	} else if (flags & (1 << 12)) { // -E
+	} else if (has_flag(flags, RZ_AX_FLAG_BASE64_ENCODE)) { // -E
 		const int n = strlen(str);
 		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
 		char *out = calloc(1, (n + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
@@ -434,7 +522,7 @@ dotherax:
 			free(out);
 		}
 		return true;
-	} else if (flags & (1 << 13)) { // -D
+	} else if (has_flag(flags, RZ_AX_FLAG_BASE64_DECODE)) { // -D
 		const int n = strlen(str);
 		ut8 *out = calloc(1, n / 4 * 3 + 1);
 		if (out) {
@@ -444,7 +532,7 @@ dotherax:
 			free(out);
 		}
 		return true;
-	} else if (flags & 1 << 14) { // -F
+	} else if (has_flag(flags, RZ_AX_FLAG_RAW_TO_LANGBYTES)) { // -F
 		char *s = rz_stdin_slurp(NULL);
 		if (s) {
 			char *res = rz_hex_from_code(s);
@@ -458,7 +546,7 @@ dotherax:
 			free(s);
 		}
 		return false;
-	} else if (flags & (1 << 18)) { // -r
+	} else if (has_flag(flags, RZ_AX_FLAG_RIZIN_CMD)) { // -r
 		char *asnum, unit[8];
 		char out[128];
 		ut32 n32, s, a;
@@ -524,10 +612,10 @@ dotherax:
 		printf("trits   0t%s\n", out);
 
 		return true;
-	} else if (flags & (1 << 19)) { // -L
-		rz_print_hex_from_base2(NULL, str);
+	} else if (has_flag(flags, RZ_AX_FLAG_BIN_TO_BIGNUM)) { // -L
+		print_hex_from_base2(str);
 		return true;
-	} else if (flags & (1 << 21)) { // -i
+	} else if (has_flag(flags, RZ_AX_FLAG_DUMP_C_BYTES)) { // -i
 		static const char start[] = "unsigned char buf[] = {";
 		printf(start);
 		/* reasonable amount of bytes per line */
@@ -547,9 +635,8 @@ dotherax:
 		printf("};\n");
 		printf("unsigned int buf_len = %d;\n", len);
 		return true;
-	} else if (flags & (1 << 22)) { // -o
+	} else if (has_flag(flags, RZ_AX_FLAG_OCTAL_TO_RAW)) { // -o
 		// check -r
-		// flags & (1 << 18)
 		char *modified_str;
 
 		// To distinguish octal values.
@@ -575,7 +662,7 @@ dotherax:
 			return false;
 		}
 		return true;
-	} else if (flags & (1 << 23)) { // -I
+	} else if (has_flag(flags, RZ_AX_FLAG_IPADDR_TO_LONG)) { // -I
 		if (strchr(str, '.')) {
 			ut8 ip[4];
 			sscanf(str, "%hhd.%hhd.%hhd.%hhd", ip, ip + 1, ip + 2, ip + 3);
@@ -590,7 +677,7 @@ dotherax:
 	}
 
 	if (str[0] == '0' && (tolower(str[1]) == 'x')) {
-		out_mode = (flags & 32) ? '0' : 'I';
+		out_mode = (has_flag(flags, RZ_AX_FLAG_KEEP_BASE)) ? '0' : 'I';
 	} else if (rz_str_startswith(str, "b")) {
 		out_mode = 'B';
 		str++;

@@ -341,6 +341,28 @@ RZ_API bool rz_type_is_identifier(RZ_NONNULL const RzType *type) {
 }
 
 /**
+ * \brief Checks if the RzType is strictly atomic
+ *
+ * \param typedb Type Database instance
+ * \param type RzType type pointer
+ */
+RZ_API bool rz_type_is_strictly_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, false);
+	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
+		return false;
+	}
+	if (type->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED) {
+		return false;
+	}
+	rz_return_val_if_fail(type->identifier.name, false);
+	RzBaseType *btyp = rz_type_db_get_base_type(typedb, type->identifier.name);
+	if (!btyp) {
+		return false;
+	}
+	return btyp->kind == RZ_BASE_TYPE_KIND_ATOMIC;
+}
+
+/**
  * \brief Checks if the RzType is atomic or derivative of it
  *
  * \param typedb Type Database instance
@@ -464,6 +486,11 @@ RZ_API RZ_BORROW const char *rz_type_cond_tostring(RzTypeCond cc) {
 	case RZ_TYPE_COND_GT: return "gt";
 	case RZ_TYPE_COND_LE: return "le";
 	case RZ_TYPE_COND_AL: return "al";
+	case RZ_TYPE_COND_HEX_SCL_TRUE: return "scl-t";
+	case RZ_TYPE_COND_HEX_SCL_FALSE: return "scl-f";
+	case RZ_TYPE_COND_HEX_VEC_TRUE: return "vec-t";
+	case RZ_TYPE_COND_HEX_VEC_FALSE: return "vec-f";
+	case RZ_TYPE_COND_EXCEPTION: return "excptn";
 	}
 	return "??";
 }
@@ -486,6 +513,10 @@ RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond) {
 		return RZ_TYPE_COND_LE;
 	case RZ_TYPE_COND_AL:
 		return RZ_TYPE_COND_NV;
+	case RZ_TYPE_COND_NE:
+		return RZ_TYPE_COND_EQ;
+	case RZ_TYPE_COND_EQ:
+		return RZ_TYPE_COND_NE;
 	default:
 		rz_warn_if_reached();
 		break;

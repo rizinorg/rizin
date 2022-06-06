@@ -37,6 +37,9 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 		olen = rz_base91_encode((char *)obuf, (const ut8 *)buf, len);
 	} else if (cry->dir == 1) {
 		olen = rz_base91_decode(obuf, (const char *)buf, len);
+	} else {
+		free(obuf);
+		return false;
 	}
 	rz_crypto_append(cry, obuf, olen);
 	free(obuf);

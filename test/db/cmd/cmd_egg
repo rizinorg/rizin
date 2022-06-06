@@ -1,0 +1,73 @@
+NAME=gc - get/set config option
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e asm.os=linux
+gc
+gi exec
+gc
+EOF
+EXPECT=<<EOF
+egg.shellcode : 
+egg.encoder : 
+egg.padding : 
+key : 
+cmd : 
+suid : 
+egg.shellcode : exec
+egg.encoder : 
+egg.padding : 
+key : 
+cmd : 
+suid : 
+EOF
+RUN
+
+NAME=gl - list plugins
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e asm.os=linux
+gl
+EOF
+EXPECT=<<EOF
+shc    exec : execute cmd=/bin/sh suid=false
+enc     xor : xor encoder for shellcode
+EOF
+RUN
+
+NAME=g - compile the shellcode
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e asm.os=linux
+gi exec
+g
+gr
+e asm.bits=64
+gi exec
+g
+EOF
+EXPECT=<<EOF
+31c050682f2f7368682f62696e89e3505389e199b00bcd80
+31c048bbd19d9691d08c97ff48f7db53545f995257545eb03b0f05
+EOF
+RUN
+
+NAME=g - compile the shellcode from file
+BROKEN=1
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e asm.os=linux
+g bins/other/rz-gg/simple_cmp.r
+EOF
+EXPECT=<<EOF
+5589e581ec80000000c745086869210ac7450c6e000000c74510000000008d4508898504000000c7450501000000c745060200000055583b45060f8f5a0000006a04546a018b1c248b8c24040000008b942408000000b804000000cd8083c40c6a008b1c24b801000000cd8083c40481c4800000005dc3
+EOF
+RUN
+

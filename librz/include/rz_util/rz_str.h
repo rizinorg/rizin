@@ -10,14 +10,35 @@ extern "C" {
 #endif
 
 typedef enum {
-	RZ_STRING_ENC_LATIN1 = 'a',
+	RZ_STRING_TYPE_RAW, ///< The raw sequence of bytes without any marker of beginning or end
+	RZ_STRING_TYPE_ZERO, ///< C-style strings (ASCII or UTF-8) with zero as the end marker
+	RZ_STRING_TYPE_SIZED, ///< Pascal-style strings with the first byte marking the size of the string
+} RzStrType;
+
+typedef enum {
+	RZ_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
 	RZ_STRING_ENC_UTF8 = '8',
 	RZ_STRING_ENC_UTF16LE = 'u',
 	RZ_STRING_ENC_UTF32LE = 'U',
-	RZ_STRING_ENC_UTF16BE = 'b',
-	RZ_STRING_ENC_UTF32BE = 'B',
+	RZ_STRING_ENC_UTF16BE = 'n',
+	RZ_STRING_ENC_UTF32BE = 'N',
+	RZ_STRING_ENC_IBM037 = 'c',
+	RZ_STRING_ENC_IBM290 = 'd',
+	RZ_STRING_ENC_EBCDIC_UK = 'k',
+	RZ_STRING_ENC_EBCDIC_US = 's',
+	RZ_STRING_ENC_EBCDIC_ES = 't',
 	RZ_STRING_ENC_GUESS = 'g',
 } RzStrEnc;
+
+/**
+ * \brief Group together some common options used by string escaping functions
+ */
+typedef struct {
+	bool show_asciidot; ///< When true, dots `.` are placed instead of unprintable characters
+	bool esc_bslash; ///< When true, backslashes `\` are quoted with `\\`
+	bool esc_double_quotes; ///< When true, double quotes `"` are quoted with `\"`
+	bool dot_nl; ///< When true, \n is converted into the graphiz-compatible newline \l
+} RzStrEscOptions;
 
 /**
  * \brief Convenience macro for local temporary strings
@@ -44,6 +65,7 @@ typedef int (*RzStrRangeCallback)(void *, int);
 #define RZ_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define RZ_STR_DUP(x)        ((x) ? strdup((x)) : NULL)
 #define rz_str_array(x, y)   ((y >= 0 && y < (sizeof(x) / sizeof(*x))) ? x[y] : "")
+RZ_API const char *rz_str_enc_as_string(RzStrEnc enc);
 RZ_API char *rz_str_repeat(const char *ch, int sz);
 RZ_API const char *rz_str_pad(const char ch, int len);
 RZ_API const char *rz_str_rstr(const char *base, const char *p);
@@ -97,6 +119,7 @@ RZ_API void rz_str_argv_free(char **argv);
 RZ_API char *rz_str_new(const char *str);
 RZ_API int rz_snprintf(char *string, int len, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
 RZ_API bool rz_str_is_ascii(const char *str);
+RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str);
 RZ_API char *rz_str_nextword(char *s, char ch);
 RZ_API bool rz_str_is_printable(const char *str);
 RZ_API bool rz_str_is_printable_limited(const char *str, int size);
@@ -126,15 +149,17 @@ static inline const char *rz_str_word_get_next0(const char *str) {
 }
 RZ_API const char *rz_str_word_get0(const char *str, int idx);
 RZ_API char *rz_str_word_get_first(const char *string);
-RZ_API void rz_str_trim(char *str);
+RZ_API void rz_str_trim(RZ_NONNULL RZ_INOUT char *str);
+RZ_API void rz_str_trim_char(RZ_NONNULL RZ_INOUT char *str, const char c);
 RZ_API char *rz_str_trim_dup(const char *str);
 RZ_API char *rz_str_trim_lines(char *str);
-RZ_API void rz_str_trim_head(char *str);
+RZ_API void rz_str_trim_head(RZ_NONNULL char *str);
+RZ_API void rz_str_trim_head_char(RZ_NONNULL RZ_INOUT char *str, const char c);
 RZ_API const char *rz_str_trim_head_ro(const char *str);
 RZ_API const char *rz_str_trim_head_wp(const char *str);
-RZ_API void rz_str_trim_tail(char *str);
-RZ_API ut32 rz_str_hash(const char *str);
-RZ_API ut64 rz_str_hash64(const char *str);
+RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str);
+RZ_API void rz_str_trim_tail_char(RZ_NONNULL RZ_INOUT char *str, const char c);
+RZ_API ut64 rz_str_djb2_hash(const char *str);
 RZ_API char *rz_str_trim_nc(char *str);
 RZ_API const char *rz_str_nstr(const char *from, const char *to, int size);
 RZ_API const char *rz_str_lchr(const char *str, char chr);
@@ -153,11 +178,11 @@ static inline const char *rz_str_get(const char *str) {
 static inline const char *rz_str_get_null(const char *str) {
 	return str ? str : "(null)";
 }
-RZ_API char *rz_str_ndup(const char *ptr, int len);
+RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len);
 RZ_API char *rz_str_dup(char *ptr, const char *string);
 RZ_API int rz_str_inject(char *begin, char *end, char *str, int maxlen);
 RZ_API int rz_str_delta(char *p, char a, char b);
-RZ_API void rz_str_filter(char *str, int len);
+RZ_API void rz_str_filter(char *str);
 RZ_API const char *rz_str_tok(const char *str1, const char b, size_t len);
 RZ_API wchar_t *rz_str_mb_to_wc(const char *buf);
 RZ_API char *rz_str_wc_to_mb(const wchar_t *buf);
@@ -175,27 +200,27 @@ RZ_API int rz_str_re_replace(const char *str, const char *reg, const char *sub);
 RZ_API int rz_str_path_unescape(char *path);
 RZ_API char *rz_str_path_escape(const char *path);
 RZ_API int rz_str_unescape(char *buf);
-RZ_API char *rz_str_escape(const char *buf);
+RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf);
 RZ_API char *rz_str_escape_sh(const char *buf);
 RZ_API char *rz_str_escape_dot(const char *buf);
-RZ_API char *rz_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash, bool colors);
-RZ_API char *rz_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash);
-RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, bool show_asciidot, bool esc_bslash); // like escape_utf8 but leaves valid \uXXXX chars directly in utf-8
-RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
-RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
-RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
-RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
-RZ_API void rz_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash);
+RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEscOptions *opt); // like escape_utf8 but leaves valid \uXXXX chars directly in utf-8
+RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEscOptions *opt);
+RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt);
 RZ_API char *rz_str_format_msvc_argv(size_t argc, const char **argv);
 RZ_API void rz_str_uri_decode(char *buf);
 RZ_API char *rz_str_uri_encode(const char *buf);
 RZ_API char *rz_str_utf16_decode(const ut8 *s, int len);
-RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian);
+RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool little_endian);
 RZ_API char *rz_str_utf16_encode(const char *s, int len);
 RZ_API char *rz_str_escape_utf8_for_json(const char *s, int len);
+RZ_API char *rz_str_escape_mutf8_for_json(const char *s, int len);
 RZ_API char *rz_str_home(const char *str);
-RZ_API char *rz_str_rz_prefix(const char *str);
-RZ_API size_t rz_str_nlen(const char *s, int n);
+RZ_API size_t rz_str_nlen(const char *s, size_t n);
 RZ_API size_t rz_str_nlen_w(const char *s, int n);
 RZ_API size_t rz_wstr_clen(const char *s);
 RZ_API char *rz_str_prepend(char *ptr, const char *string);
@@ -213,12 +238,13 @@ RZ_API char *rz_str_replace_thunked(char *str, char *clean, int *thunk, int clen
 RZ_API bool rz_str_glob(const char *str, const char *glob);
 RZ_API int rz_str_binstr2bin(const char *str, ut8 *out, int outlen);
 RZ_API char *rz_str_between(const char *str, const char *prefix, const char *suffix);
-RZ_API bool rz_str_startswith(const char *str, const char *needle);
-RZ_API bool rz_str_endswith(const char *str, const char *needle);
+RZ_API bool rz_str_startswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle);
+RZ_API bool rz_str_startswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const char *needle);
+RZ_API bool rz_str_endswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle);
+RZ_API bool rz_str_endswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const char *needle);
 RZ_API bool rz_str_isnumber(const char *str);
 RZ_API const char *rz_str_last(const char *in, const char *ch);
 RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
-RZ_API char *rz_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted);
 RZ_API char *rz_str_from_ut64(ut64 val);
 RZ_API void rz_str_stripLine(char *str, const char *key);
 RZ_API char *rz_str_list_join(RzList *str, const char *sep);
@@ -228,6 +254,20 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width);
 RZ_API const char *rz_str_sep(const char *base, const char *sep);
 RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep);
 RZ_API char *rz_str_version(const char *program);
+
+typedef struct rz_str_stringify_opt_t {
+	const ut8 *buffer; ///< String buffer (cannot be NULL).
+	ut32 length; ///< String buffer length.
+	RzStrEnc encoding; ///< String encoding type (cannot be RZ_STRING_ENC_GUESS)
+	ut32 wrap_at; ///< Adds a new line the output when it exeeds this value.
+	bool escape_nl; ///< When enabled escapes new lines (\n).
+	bool json; ///< Encodes the output as a JSON string.
+	bool stop_at_nil; ///< When enabled stops printing when '\0' is found.
+	bool urlencode; ///< Encodes the output following RFC 3986.
+} RzStrStringifyOpt;
+
+RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);
+RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length);
 
 #ifdef __cplusplus
 }

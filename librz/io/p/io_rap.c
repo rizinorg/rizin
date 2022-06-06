@@ -7,6 +7,12 @@
 #include <rz_socket.h>
 #include <sys/types.h>
 
+typedef struct {
+	RzSocket *fd;
+	RzSocket *client;
+	bool listener;
+} RzIORap;
+
 #define RzIORAP_FD(x)        (((x)->data) ? (((RzIORap *)((x)->data))->client) : NULL)
 #define RzIORAP_IS_LISTEN(x) (((RzIORap *)((x)->data))->listener)
 #define RzIORAP_IS_VALID(x)  ((x) && ((x)->data) && ((x)->plugin == &rz_io_plugin_rap))
@@ -88,7 +94,7 @@ static RzIODesc *__rap_open(RzIO *io, const char *pathname, int rw, int mode) {
 			eprintf("rap: cannot listen here. Try rap://:9999\n");
 			return NULL;
 		}
-		//TODO: Handle ^C signal (SIGINT, exit); // ???
+		// TODO: Handle ^C signal (SIGINT, exit); // ???
 		eprintf("rap: listening at port %s ssl %s\n", port, (is_ssl) ? "on" : "off");
 		RzIORap *rior = RZ_NEW0(RzIORap);
 		rior->listener = true;

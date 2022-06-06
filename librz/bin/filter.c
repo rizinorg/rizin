@@ -80,24 +80,21 @@ RZ_API char *rz_bin_filter_name(RzBinFile *bf, HtPU *db, ut64 vaddr, char *name)
 
 RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym) {
 	rz_return_if_fail(ht && sym && sym->name);
-	const char *name = sym->name;
-	// if (!strncmp (sym->name, "imp.", 4)) {
-	// demangle symbol name depending on the language specs if any
-	if (bf && bf->o && bf->o->lang) {
-		const char *lang = rz_bin_lang_tostring(bf->o->lang);
-		char *dn = rz_bin_demangle(bf, lang, sym->name, sym->vaddr, false);
-		if (dn && *dn) {
+	const char *name = sym->dname ? sym->dname : sym->name;
+
+	if (bf && bf->o && bf->o->lang && !sym->dname) {
+		char *dn = rz_bin_demangle(bf, NULL, name, sym->vaddr, false);
+		if (RZ_STR_ISNOTEMPTY(dn)) {
 			sym->dname = dn;
-			// XXX this is wrong but is required for this test to pass
-			// pmb:new pancake$ bin/rz_test.js db/formats/mangling/swift
-			sym->name = dn;
 			// extract class information from demangled symbol name
 			char *p = strchr(dn, '.');
 			if (p) {
 				if (IS_UPPER(*dn)) {
+					free(sym->classname);
 					sym->classname = strdup(dn);
 					sym->classname[p - dn] = 0;
 				} else if (IS_UPPER(p[1])) {
+					free(sym->classname);
 					sym->classname = strdup(p + 1);
 					p = strchr(sym->classname, '.');
 					if (p) {
@@ -276,12 +273,12 @@ static bool bin_strfilter(RzBin *bin, const char *str) {
 		got_uppercase = false;
 		in_esc_seq = false;
 		for (i = 0; str[i]; i++) {
-			char ch = str[i];
+			signed char ch = str[i];
 			if (ch == ' ' ||
 				(in_esc_seq && (ch == 't' || ch == 'n' || ch == 'r'))) {
 				goto loop_end;
 			}
-			if (ch < 0 || !IS_PRINTABLE(ch) || IS_LOWER(ch)) {
+			if (ch < 0 || IS_LOWER(ch)) {
 				return false;
 			}
 			if (IS_UPPER(ch)) {
@@ -334,7 +331,7 @@ static bool bin_strfilter(RzBin *bin, const char *str) {
 			return false;
 		}
 		break;
-	case 'i': //IPV4
+	case 'i': // IPV4
 	{
 		int segment = 0;
 		int segmentsum = 0;

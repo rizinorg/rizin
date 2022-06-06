@@ -244,26 +244,26 @@ mov eax, 'AAAA'
 EOF
 RUN
 
-NAME=ah*
+NAME=ahl*
 FILE=malloc://16
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 4883e4f0
 ahi 10 @ 0x00404879
-ah*
+ahl*
 EOF
 EXPECT=<<EOF
 ahi 10 @ 0x404879
 EOF
 RUN
 
-NAME=ah.
+NAME=ahl.
 FILE=malloc://16
 CMDS=<<EOF
 ahi 10 @ 0x8
 s 0x8
-ah.
+ahl.
 EOF
 EXPECT=<<EOF
  0x00000008 => immbase=10
@@ -301,7 +301,7 @@ e asm.bits=64
 e asm.arch=x86
 wx 67c744246864616572
 pi 1
-ahi1 s
+ahi s 1
 pi 1
 EOF
 EXPECT=<<EOF
@@ -332,7 +332,7 @@ e asm.comments=false
 e asm.bits=64
 e asm.arch=x86
 wx 67c74424681b5b306d
-ahi1 s
+ahi s 1
 e scr.color=0
 pd 1
 e scr.color=1
@@ -355,7 +355,7 @@ pid 1
 ahi 10
 pid 1
 ahi-
-ahi1 10
+ahi 10 1
 pid 1
 EOF
 EXPECT=<<EOF
@@ -370,7 +370,7 @@ ARGS=-a x86 -b 32
 FILE==
 CMDS=<<EOF
 e asm.bytes=false
-"wa cmp eax, -1"
+wa "cmp eax, -1"
 pd 1
 ahi 10
 pd 1
@@ -389,7 +389,7 @@ ARGS=-a x86 -b 64
 FILE==
 CMDS=<<EOF
 e asm.bytes=false
-"wa cmp eax, -1"
+wa "cmp eax, -1"
 pd 1
 ahi 10
 pd 1
@@ -397,7 +397,7 @@ ahi 10u
 pd 1
 ?e
 ah-
-"wa cmp rax, -1"
+wa "cmp rax, -1"
 pd 1
 ahi 10
 pd 1

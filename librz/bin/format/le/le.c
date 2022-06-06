@@ -4,7 +4,7 @@
 #include "le.h"
 #include <rz_bin.h>
 
-const char *__get_module_type(rz_bin_le_obj_t *bin) {
+const char *le_get_module_type(rz_bin_le_obj_t *bin) {
 	switch (bin->header->mflags & M_TYPE_MASK) {
 	case M_TYPE_EXE: return "Program module (EXE)";
 	case M_TYPE_DLL: return "Library module (DLL)";
@@ -14,7 +14,7 @@ const char *__get_module_type(rz_bin_le_obj_t *bin) {
 	}
 }
 
-const char *__get_os_type(rz_bin_le_obj_t *bin) {
+const char *le_get_os_type(rz_bin_le_obj_t *bin) {
 	switch (bin->header->os) {
 	case 1: return "OS/2";
 	case 2: return "Windows";
@@ -25,7 +25,7 @@ const char *__get_os_type(rz_bin_le_obj_t *bin) {
 	}
 }
 
-const char *__get_cpu_type(rz_bin_le_obj_t *bin) {
+const char *le_get_cpu_type(rz_bin_le_obj_t *bin) {
 	switch (bin->header->cpu) {
 	case 1: return "80286";
 	case 2: return "80386";
@@ -39,7 +39,7 @@ const char *__get_cpu_type(rz_bin_le_obj_t *bin) {
 	}
 }
 
-const char *__get_arch(rz_bin_le_obj_t *bin) {
+const char *le_get_arch(rz_bin_le_obj_t *bin) {
 	switch (bin->header->cpu) {
 	case 1:
 	case 2:
@@ -57,7 +57,7 @@ const char *__get_arch(rz_bin_le_obj_t *bin) {
 	}
 }
 
-static char *__read_nonnull_str_at(RzBuffer *buf, ut64 *offset) {
+static char *le_read_nonnull_str_at(RzBuffer *buf, ut64 *offset) {
 	ut8 size;
 	if (!rz_buf_read8_at(buf, *offset, &size)) {
 		return NULL;
@@ -74,28 +74,27 @@ static char *__read_nonnull_str_at(RzBuffer *buf, ut64 *offset) {
 	return str;
 }
 
-static RzBinSymbol *__get_symbol(rz_bin_le_obj_t *bin, ut64 *offset) {
+static RzBinSymbol *le_get_symbol(rz_bin_le_obj_t *bin, ut64 *offset) {
 	RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 	if (!sym) {
 		return NULL;
 	}
-	char *name = __read_nonnull_str_at(bin->buf, offset);
+	char *name = le_read_nonnull_str_at(bin->buf, offset);
 	if (!name) {
 		rz_bin_symbol_free(sym);
 		return NULL;
 	}
 	sym->name = name;
 	ut16 entry_idx;
-	if (!rz_buf_read_le16_at(bin->buf, *offset, &entry_idx)) {
+	if (!rz_buf_read_le16_offset(bin->buf, offset, &entry_idx)) {
 		rz_bin_symbol_free(sym);
 		return NULL;
 	}
-	*offset += 2;
 	sym->ordinal = entry_idx;
 	return sym;
 }
 
-RzList *__get_entries(rz_bin_le_obj_t *bin) {
+RzList *le_get_entries(rz_bin_le_obj_t *bin) {
 	ut64 offset = (ut64)bin->header->enttab + bin->headerOff;
 	RzList *l = rz_list_newf(free);
 	if (!l) {
@@ -104,7 +103,12 @@ RzList *__get_entries(rz_bin_le_obj_t *bin) {
 	while (true) {
 		LE_entry_bundle_header header;
 		LE_entry_bundle_entry e;
-		rz_buf_read_at(bin->buf, offset, (ut8 *)&header, sizeof(header));
+		ut64 off = offset;
+		if (!(rz_buf_read8_offset(bin->buf, &off, &header.count) &&
+			    rz_buf_read8_offset(bin->buf, &off, &header.type) &&
+			    rz_buf_read_le16_offset(bin->buf, &off, &header.objnum))) {
+			break;
+		}
 		if (!header.count) {
 			break;
 		}
@@ -162,9 +166,9 @@ RzList *__get_entries(rz_bin_le_obj_t *bin) {
 	return l;
 }
 
-static void __get_symbols_at(rz_bin_le_obj_t *bin, RzList *syml, RzList *entl, ut64 offset, ut64 end) {
+static void le_get_symbols_at(rz_bin_le_obj_t *bin, RzList *syml, RzList *entl, ut64 offset, ut64 end) {
 	while (offset < end) {
-		RzBinSymbol *sym = __get_symbol(bin, &offset);
+		RzBinSymbol *sym = le_get_symbol(bin, &offset);
 		if (!sym) {
 			break;
 		}
@@ -186,14 +190,14 @@ static void __get_symbols_at(rz_bin_le_obj_t *bin, RzList *syml, RzList *entl, u
 
 RzList *rz_bin_le_get_symbols(rz_bin_le_obj_t *bin) {
 	RzList *l = rz_list_newf((RzListFree)rz_bin_symbol_free);
-	RzList *entries = __get_entries(bin);
+	RzList *entries = le_get_entries(bin);
 	LE_image_header *h = bin->header;
 	ut64 offset = (ut64)h->restab + bin->headerOff;
 	ut32 end = h->enttab + bin->headerOff;
-	__get_symbols_at(bin, l, entries, offset, end);
+	le_get_symbols_at(bin, l, entries, offset, end);
 	offset = h->nrestab;
 	end = h->nrestab + h->cbnrestab;
-	__get_symbols_at(bin, l, entries, offset, end);
+	le_get_symbols_at(bin, l, entries, offset, end);
 	rz_list_free(entries);
 	return l;
 }
@@ -211,7 +215,7 @@ RzList *rz_bin_le_get_imports(rz_bin_le_obj_t *bin) {
 		if (!imp) {
 			break;
 		}
-		imp->name = __read_nonnull_str_at(bin->buf, &offset);
+		imp->name = le_read_nonnull_str_at(bin->buf, &offset);
 		if (!imp->name) {
 			rz_bin_import_free(imp);
 			break;
@@ -247,7 +251,7 @@ RzList *rz_bin_le_get_libs(rz_bin_le_obj_t *bin) {
 	ut64 offset = (ut64)h->impmod + bin->headerOff;
 	ut64 end = offset + h->impproc - h->impmod;
 	while (offset < end) {
-		char *name = __read_nonnull_str_at(bin->buf, &offset);
+		char *name = le_read_nonnull_str_at(bin->buf, &offset);
 		if (!name) {
 			break;
 		}
@@ -257,10 +261,10 @@ RzList *rz_bin_le_get_libs(rz_bin_le_obj_t *bin) {
 }
 
 /*
-*	Creates & appends to l iter_n sections with the same paddr for each iter record.
-*	page->size is the total size of iter records that describe the page
-*	TODO: Don't do this
-*/
+ *	Creates & appends to l iter_n sections with the same paddr for each iter record.
+ *	page->size is the total size of iter records that describe the page
+ *	TODO: Don't do this
+ */
 static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RzBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
 	rz_return_if_fail(l && bin && sec && page);
 	LE_image_header *h = bin->header;
@@ -268,13 +272,13 @@ static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RzBinSection
 
 	// Gets the first iter record
 	ut16 iter_n;
-	if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &iter_n)) {
+	if (!rz_buf_read_ble16_at(bin->buf, offset, &iter_n, h->worder)) {
 		return;
 	}
 
 	offset += sizeof(ut16);
 	ut16 data_size;
-	if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &data_size)) {
+	if (!rz_buf_read_ble16_at(bin->buf, offset, &data_size, h->worder)) {
 		return;
 	}
 
@@ -306,12 +310,12 @@ static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RzBinSection
 		// Get the next iter record
 		offset += data_size;
 
-		if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &iter_n)) {
+		if (!rz_buf_read_ble16_at(bin->buf, offset, &iter_n, h->worder)) {
 			return;
 		}
 		offset += sizeof(ut16);
 
-		if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &data_size)) {
+		if (!rz_buf_read_ble16_at(bin->buf, offset, &data_size, h->worder)) {
 			return;
 		}
 		offset += sizeof(ut16);
@@ -383,8 +387,10 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 
 			int cur_idx = entry->page_tbl_idx + j - 1;
 			ut64 page_entry_off = objpageentrysz * cur_idx + objmaptbloff;
-			int r = rz_buf_read_at(bin->buf, page_entry_off, (ut8 *)&page, sizeof(page));
-			if (r < sizeof(page)) {
+			ut64 offset = page_entry_off;
+			if (!(rz_buf_read_le32_offset(bin->buf, &offset, &page.offset) &&
+				    rz_buf_read_le16_offset(bin->buf, &offset, &page.size) &&
+				    rz_buf_read_le16_offset(bin->buf, &offset, &page.flags))) {
 				RZ_LOG_WARN("Cannot read out of bounds page table entry.\n");
 				rz_bin_section_free(s);
 				break;
@@ -433,12 +439,12 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 	return l;
 }
 
-char *__get_modname_by_ord(rz_bin_le_obj_t *bin, ut32 ordinal) {
+char *le_get_modname_by_ord(rz_bin_le_obj_t *bin, ut32 ordinal) {
 	char *modname = NULL;
 	ut64 off = (ut64)bin->header->impmod + bin->headerOff;
 	while (ordinal > 0) {
 		free(modname);
-		modname = __read_nonnull_str_at(bin->buf, &off);
+		modname = le_read_nonnull_str_at(bin->buf, &off);
 		ordinal--;
 	}
 	return modname;
@@ -449,13 +455,13 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	if (!l) {
 		return NULL;
 	}
-	RzList *entries = __get_entries(bin);
+	RzList *entries = le_get_entries(bin);
 	RzList *sections = rz_bin_le_get_sections(bin);
 	LE_image_header *h = bin->header;
 	ut64 cur_page = 0;
 	const ut64 fix_rec_tbl_off = (ut64)h->frectab + bin->headerOff;
 	ut32 tmp_offset;
-	if (!rz_buf_read_ble32_at(bin->buf, (ut64)h->fpagetab + bin->headerOff + cur_page * sizeof(ut32), h->worder, &tmp_offset)) {
+	if (!rz_buf_read_ble32_at(bin->buf, (ut64)h->fpagetab + bin->headerOff + cur_page * sizeof(ut32), &tmp_offset, h->worder)) {
 		rz_list_free(l);
 		rz_list_free(entries);
 		rz_list_free(sections);
@@ -465,7 +471,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	ut64 offset = tmp_offset + fix_rec_tbl_off;
 
 	ut32 tmp_end;
-	if (!rz_buf_read_ble32_at(bin->buf, (ut64)h->fpagetab + bin->headerOff + (cur_page + 1) * sizeof(ut32), h->worder, &tmp_end)) {
+	if (!rz_buf_read_ble32_at(bin->buf, (ut64)h->fpagetab + bin->headerOff + (cur_page + 1) * sizeof(ut32), &tmp_end, h->worder)) {
 		rz_list_free(l);
 		rz_list_free(entries);
 		rz_list_free(sections);
@@ -515,7 +521,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			}
 			offset += sizeof(ut8);
 		} else {
-			if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &source)) {
+			if (!rz_buf_read_ble16_at(bin->buf, offset, &source, h->worder)) {
 				rz_bin_reloc_free(rel);
 				break;
 			}
@@ -524,7 +530,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		ut32 ordinal;
 		if (header.target & F_TARGET_ORD16) {
 			ut16 tmp;
-			if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+			if (!rz_buf_read_ble16_at(bin->buf, offset, &tmp, h->worder)) {
 				rz_bin_reloc_free(rel);
 				break;
 			}
@@ -546,20 +552,18 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 				if ((header.source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
 					if (header.target & F_TARGET_OFF32) {
 						ut32 tmp;
-						if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &tmp)) {
+						if (!rz_buf_read_ble32_offset(bin->buf, &offset, &tmp, h->worder)) {
 							rz_bin_reloc_free(rel);
 							continue;
 						}
 						rel->addend += tmp;
-						offset += sizeof(ut32);
 					} else {
 						ut16 tmp;
-						if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+						if (!rz_buf_read_ble16_offset(bin->buf, &offset, &tmp, h->worder)) {
 							rz_bin_reloc_free(rel);
 							continue;
 						}
 						rel->addend += tmp;
-						offset += sizeof(ut16);
 					}
 				}
 			}
@@ -569,7 +573,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			if (!imp) {
 				break;
 			}
-			char *mod_name = __get_modname_by_ord(bin, ordinal);
+			char *mod_name = le_get_modname_by_ord(bin, ordinal);
 			if (!mod_name) {
 				rz_bin_import_free(imp);
 				break;
@@ -584,19 +588,17 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 				ordinal = tmp;
 				offset += sizeof(ut8);
 			} else if (header.target & F_TARGET_OFF32) {
-				if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &ordinal)) {
+				if (!rz_buf_read_ble32_offset(bin->buf, &offset, &ordinal, h->worder)) {
 					rz_bin_import_free(imp);
 					break;
 				}
-				offset += sizeof(ut32);
 			} else {
 				ut16 tmp;
-				if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+				if (!rz_buf_read_ble16_offset(bin->buf, &offset, &tmp, h->worder)) {
 					rz_bin_import_free(imp);
 					break;
 				}
 				ordinal = tmp;
-				offset += sizeof(ut16);
 			}
 			imp->name = rz_str_newf("%s.%u", mod_name, ordinal);
 			imp->ordinal = ordinal;
@@ -611,47 +613,43 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			}
 			ut32 nameoff;
 			if (header.target & F_TARGET_OFF32) {
-				if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &nameoff)) {
+				if (!rz_buf_read_ble32_offset(bin->buf, &offset, &nameoff, h->worder)) {
 					rz_bin_import_free(imp);
 					break;
 				}
-				offset += sizeof(ut32);
 			} else {
 				ut16 tmp;
-				if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+				if (!rz_buf_read_ble16_offset(bin->buf, &offset, &tmp, h->worder)) {
 					rz_bin_import_free(imp);
 					break;
 				}
 				nameoff = tmp;
-				offset += sizeof(ut16);
 			}
 			ut64 off = (ut64)h->impproc + nameoff + bin->headerOff;
-			char *proc_name = __read_nonnull_str_at(bin->buf, &off);
-			char *mod_name = __get_modname_by_ord(bin, ordinal);
+			char *proc_name = le_read_nonnull_str_at(bin->buf, &off);
+			char *mod_name = le_get_modname_by_ord(bin, ordinal);
 			imp->name = rz_str_newf("%s.%s", mod_name ? mod_name : "", proc_name ? proc_name : "");
 			rel->import = imp;
 			break;
 		}
 		case INTERNALENTRY:
-			rel->addend = (ut64)rz_list_get_n(entries, ordinal - 1);
+			rel->addend = (ut64)(size_t)rz_list_get_n(entries, ordinal - 1);
 			break;
 		}
 		if (header.target & F_TARGET_ADDITIVE) {
 			ut32 additive = 0;
 			if (header.target & F_TARGET_ADD32) {
-				if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &additive)) {
+				if (!rz_buf_read_ble32_offset(bin->buf, &offset, &additive, h->worder)) {
 					rz_bin_reloc_free(rel);
 					break;
 				}
-				offset += sizeof(ut32);
 			} else {
 				ut16 tmp;
-				if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+				if (!rz_buf_read_ble16_offset(bin->buf, &offset, &tmp, h->worder)) {
 					rz_bin_reloc_free(rel);
 					break;
 				}
 				additive = tmp;
-				offset += sizeof(ut16);
 			}
 			rel->addend += additive;
 		}
@@ -664,13 +662,13 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 
 		if (header.target & F_TARGET_CHAIN) {
 			ut32 fixupinfo;
-			if (!rz_buf_read_ble32_at(bin->buf, cur_page_offset + source, h->worder, &fixupinfo)) {
+			if (!rz_buf_read_ble32_at(bin->buf, cur_page_offset + source, &fixupinfo, h->worder)) {
 				break;
 			}
 
 			ut64 base_target_address = rel->addend - (fixupinfo & 0xFFFFF);
 			do {
-				if (!rz_buf_read_ble32_at(bin->buf, cur_page_offset + source, h->worder, &fixupinfo)) {
+				if (!rz_buf_read_ble32_at(bin->buf, cur_page_offset + source, &fixupinfo, h->worder)) {
 					break;
 				}
 				RzBinReloc *new = RZ_NEW0(RzBinReloc);
@@ -683,7 +681,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 
 		while (repeat) {
 			ut16 off;
-			if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &off)) {
+			if (!rz_buf_read_ble16_offset(bin->buf, &offset, &off, h->worder)) {
 				break;
 			}
 			rel->vaddr = cur_page_offset + off;
@@ -691,7 +689,6 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			RzBinReloc *new = RZ_NEW0(RzBinReloc);
 			*new = *rel;
 			rz_list_append(l, new);
-			offset += sizeof(ut16);
 			repeat--;
 		}
 		while (offset >= end) {
@@ -701,11 +698,11 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			}
 			ut64 at = h->fpagetab + bin->headerOff;
 			ut32 w0;
-			if (!rz_buf_read_ble32_at(bin->buf, at + cur_page * sizeof(ut32), h->worder, &w0)) {
+			if (!rz_buf_read_ble32_at(bin->buf, at + cur_page * sizeof(ut32), &w0, h->worder)) {
 				break;
 			}
 			ut32 w1;
-			if (!rz_buf_read_ble32_at(bin->buf, at + (cur_page + 1) * sizeof(ut32), h->worder, &w1)) {
+			if (!rz_buf_read_ble32_at(bin->buf, at + (cur_page + 1) * sizeof(ut32), &w1, h->worder)) {
 				break;
 			}
 			offset = fix_rec_tbl_off + w0;
@@ -724,7 +721,58 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	return l;
 }
 
-static bool __init_header(rz_bin_le_obj_t *bin, RzBuffer *buf) {
+static bool read_le_header_aux(rz_bin_le_obj_t *bin, RzBuffer *buf) {
+	if (!rz_buf_read_at(buf, bin->headerOff, (ut8 *)bin->header, 4)) {
+		return false;
+	}
+	ut64 offset = bin->headerOff + 4; /* skip magic, border, and worder */
+	return rz_buf_read_le32_offset(buf, &offset, &bin->header->level) &&
+		rz_buf_read_le16_offset(buf, &offset, &bin->header->cpu) &&
+		rz_buf_read_le16_offset(buf, &offset, &bin->header->os) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->ver) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->mflags) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->mpages) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->startobj) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->eip) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->stackobj) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->esp) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->pagesize) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->pageshift) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->fixupsize) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->fixupsum) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->ldrsize) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->ldrsum) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->objtab) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->objcnt) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->objmap) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->itermap) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->rsrctab) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->rsrccnt) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->restab) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->enttab) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->dirtab) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->dircnt) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->fpagetab) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->frectab) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->impmod) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->impmodcnt) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->impproc) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->pagesum) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->datapage) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->preload) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->nrestab) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->cbnrestab) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->nressum) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->autodata) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->debuginfo) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->debuglen) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->instpreload) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->instdemand) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->heapsize) &&
+		rz_buf_read_le32_offset(buf, &offset, &bin->header->stacksize);
+}
+
+static bool le_init_header(rz_bin_le_obj_t *bin, RzBuffer *buf) {
 	ut8 magic[2];
 	rz_buf_read_at(buf, 0, magic, sizeof(magic));
 	if (!memcmp(&magic, "MZ", 2)) {
@@ -737,13 +785,11 @@ static bool __init_header(rz_bin_le_obj_t *bin, RzBuffer *buf) {
 		bin->headerOff = 0;
 	}
 	bin->header = RZ_NEW0(LE_image_header);
-	if (bin->header) {
-		rz_buf_read_at(buf, bin->headerOff, (ut8 *)bin->header, sizeof(LE_image_header));
-	} else {
+	if (!bin->header) {
 		RZ_LOG_ERROR("Failed to allocate memory");
 		return false;
 	}
-	return true;
+	return read_le_header_aux(bin, buf);
 }
 
 void rz_bin_le_free(rz_bin_le_obj_t *bin) {
@@ -760,24 +806,32 @@ rz_bin_le_obj_t *rz_bin_le_new_buf(RzBuffer *buf) {
 		return NULL;
 	}
 
-	__init_header(bin, buf);
+	le_init_header(bin, buf);
 	LE_image_header *h = bin->header;
 	if (!memcmp("LE", h->magic, 2)) {
 		bin->is_le = true;
 	}
-	bin->type = __get_module_type(bin);
-	bin->cpu = __get_cpu_type(bin);
-	bin->os = __get_os_type(bin);
-	bin->arch = __get_arch(bin);
+	bin->type = le_get_module_type(bin);
+	bin->cpu = le_get_cpu_type(bin);
+	bin->os = le_get_os_type(bin);
+	bin->arch = le_get_arch(bin);
 	bin->objtbl = calloc(h->objcnt, sizeof(LE_object_entry));
 	if (!bin->objtbl) {
 		rz_bin_le_free(bin);
 		return NULL;
 	}
 	ut64 offset = (ut64)bin->headerOff + h->restab;
-	bin->filename = __read_nonnull_str_at(buf, &offset);
-	rz_buf_read_at(buf, (ut64)h->objtab + bin->headerOff, (ut8 *)bin->objtbl, h->objcnt * sizeof(LE_object_entry));
-
+	bin->filename = le_read_nonnull_str_at(buf, &offset);
+	offset = (ut64)bin->headerOff + h->objtab;
+	for (ut32 i = 0; i < h->objcnt; i++) {
+		LE_object_entry *le_obj_entry = bin->objtbl + i;
+		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->virtual_size);
+		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->reloc_base_addr);
+		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->flags);
+		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->page_tbl_idx);
+		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->page_tbl_entries);
+		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->reserved);
+	}
 	bin->buf = buf;
 	return bin;
 }

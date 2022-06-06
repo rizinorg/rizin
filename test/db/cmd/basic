@@ -2,8 +2,8 @@ NAME=t/basic
 FILE=malloc://1024
 CMDS=<<EOF
 w test
-w test@333
-w test@666
+w test @ 333
+w test @ 666
 ?e
 e search.in=block
 b 777

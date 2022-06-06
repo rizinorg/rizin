@@ -59,6 +59,7 @@
 #       flags: same as RzCmdDescArg.flags
 #       default_value: same as RzCmdDescArg.default_value
 #       choices: same as RzCmdDescArg.choices (only valid if type is RZ_CMD_ARG_TYPE_CHOICES)
+#       choices_cb: same as RzCmdDescArg.choices_cb (only valid if type is RZ_CMD_ARG_TYPE_CHOICES)
 #
 ---
 name: root
@@ -72,11 +73,10 @@ commands:
     args: []
   - name: "#!"
     cname: hash_bang
-    summary: List all available interpreters / Run interpreter
+    summary: Run interpreter
     args:
       - name: interpreter-name
         type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
         no_space: true
       - name: arg
         type: RZ_CMD_ARG_TYPE_STRING
@@ -94,6 +94,7 @@ commands:
           - text: "#!"
             arg_str: "python foo.py arg1"
             comment: Run foo.py python script and pass it arg1 as argument
+    details_cb: rz_hash_bang_details_cb
   - name: $
     cname: cmd_alias
     summary: Alias commands and strings
@@ -102,9 +103,9 @@ commands:
     cname: env_percentage
     summary: Get/set environment variables
     args_str: "[<varname>[=<varvalue>]]"
-    args: env
-    details: env
-    handler: env
+    args: cmd_shell_env
+    details: cmd_shell_env
+    handler: cmd_shell_env
   - name: "&"
     summary: Manage tasks
     subcommands: cmd_tasks
@@ -156,7 +157,7 @@ commands:
     args:
       - name: search_cmd
         type: RZ_CMD_ARG_TYPE_STRING
-        flags: ''
+        flags: ""
         optional: true
     modes:
       - RZ_OUTPUT_MODE_STANDARD
@@ -172,27 +173,34 @@ commands:
     args:
       - name: characters
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: "0"
-    cname: cmd_ox
-    summary: Alias for `s 0x...`
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: a
     cname: cmd_analysis
     summary: Analysis commands
     type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_analysis
   - name: b
-    cname: cmd_bsize
     summary: Display or change the block size
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_block
+  - name: B
+    summary: Computes the possibles firmware locations in memory (CPU intensive)
+    cname: basefind_compute
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args:
+      - name: pointer_bits
+        type: RZ_CMD_ARG_TYPE_CHOICES
+        optional: true
+        choices: ["32", "64"]
   - name: c
-    cname: cmd_cmp
     summary: Compare block with given data
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_cmp
   - name: C
-    cname: cmd_meta
     summary: Code metadata (comments, format, hints, ..)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_meta
   - name: d
     cname: cmd_debug
     summary: Debugger commands
@@ -201,18 +209,12 @@ commands:
   - name: e
     summary: List/get/set config evaluable vars
     subcommands: cmd_eval
-  - name: exit
-    cname: cmd_exit
-    summary: Exit Rizin
-    args: []
   - name: f
-    cname: cmd_flag
     summary: Manage flags
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_flag
   - name: g
-    cname: cmd_egg
     summary: Generate shellcodes with rz_egg
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_egg
   - name: H
     summary: Rizin history commands.
     subcommands: cmd_history
@@ -223,25 +225,12 @@ commands:
     cname: cmd_kuery
     summary: Run sdb-query
     type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: ls
-    cname: ls
-    summary: List files and directories
-    args:
-      - name: arg
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_ARRAY
-        optional: true
-  - name: m
-    cname: cmd_m
-    summary: Make directories and move files
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: L
     summary: List, unload, load rizin plugins
     subcommands: cmd_plugins
   - name: o
-    cname: cmd_open
-    summary: Open file at optional address
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Open files and handle opened files
+    subcommands: cmd_open
   - name: p
     cname: cmd_print
     summary: Print commands
@@ -254,29 +243,14 @@ commands:
     summary: Quit rizin
     subcommands: cmd_quit
   - name: r
-    cname: cmd_resize
+    subcommands: cmd_resize
     summary: Resize file
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: s
     summary: Seek commands
     subcommands: cmd_seek
   - name: t
     summary: Types, noreturn, signatures, C parser and more
     subcommands: cmd_type
-  - name: uniq
-    cname: uniq
-    summary: List uniq strings in file
-    args:
-      - name: filename
-        type: RZ_CMD_ARG_TYPE_FILE
-  - name: uname
-    cname: uname
-    summary: Provide system info
-    args:
-      - name: r
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_OPTION
-        optional: true
   - name: V
     cname: cmd_visual
     summary: Enter visual mode
@@ -293,9 +267,8 @@ commands:
     summary: Alias for 'px' (print hexadecimal)
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: y
-    cname: cmd_yank
     summary: Yank/paste bytes from/to memory
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_yank
   - name: z
     summary: Zignatures management
     subcommands: cmd_zign
@@ -308,11 +281,11 @@ commands:
     details:
       - name: ""
         entries:
-          - text: "<cmd> @"
-            arg_str: " <addr>"
-            comment: "Temporary seek to <addr>"
-          - text: "<cmd> @.."
+          - text: "<cmd> @ "
             arg_str: "<addr>"
+            comment: "Temporary seek to <addr>"
+          - text: "<cmd> @ "
+            arg_str: "..<addr>"
             comment: "Temporary partial address seek (see s..)"
           - text: "<cmd> @!"
             arg_str: "<blocksize>"
@@ -332,7 +305,7 @@ commands:
               Temporary seek to nth instruction in current basic block
               (negative numbers too)
           - text: "<cmd> @e:"
-            arg_str: "<k>=<v>[<k>=<v>]"
+            arg_str: "<k>=<v>[,<k>=<v>]"
             comment: >
               Temporary change eval vars (multiple vars separated by comma)
           - text: "<cmd> @f:"
@@ -411,6 +384,9 @@ commands:
           - text: "<cmd> @@i"
             arg_str: ""
             comment: "Run <cmd> over all instructions of the current basic block"
+          - text: "<cmd> @@ii"
+            arg_str: ""
+            comment: "Run <cmd> over all imports"
           - text: "<cmd> @@iS"
             arg_str: ""
             comment: "Run <cmd> over all sections"
@@ -607,6 +583,10 @@ commands:
             comment: Only get the first row where column <col> or all columns are unique.
           - text: "*/page/<n_page>/<page_size>"
             comment: Show <page_size> rows starting from the page number <n_page>.
+          - text: "*/head/<n_rows>"
+            comment: Show the first <n_rows> rows.
+          - text: "*/tail/<n_rows>"
+            comment: Show the last <n_rows> rows.
           - text: "<col>/str/<value>"
             comment: Grep rows where string <value> is a substring of column <col>.
           - text: "<col>/strlen/<value>"
@@ -633,5 +613,10 @@ commands:
         entries:
           - text: aflt
             arg_str: ":addr/cols/name/nbbs:nbbs/sort/dec:nbbs/gt/1:nbbs/lt/10:fancy"
-            comment: Show only the address, name and number of basic blocks of the identified functions
+            comment:
+              Show only the address, name and number of basic blocks of the identified functions
               with more than 1 block but less than 10, sorted decrementally by number of blocks.
+  - name: shell
+    summary: Common shell commands
+    sort_subcommands: true
+    subcommands: cmd_shell

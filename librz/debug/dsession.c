@@ -61,7 +61,7 @@ RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg) {
 	RzDebugCheckpoint checkpoint = { 0 };
 
 	// Save current registers arena iter
-	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, 0);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, 0);
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = dbg->reg->regset[i].arena;
 		RzRegArena *b = rz_reg_arena_new(a->size);
@@ -176,7 +176,7 @@ RZ_API void rz_debug_session_restore_reg_mem(RzDebug *dbg, ut32 cnum) {
 
 	// Restore registers
 	_restore_registers(dbg, cnum);
-	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, true);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, true);
 
 	// Restore memory
 	_restore_memory(dbg, cnum);
@@ -590,7 +590,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 		baby = rz_json_get(child, "arena");
 		CHECK_TYPE(baby, RZ_JSON_INTEGER);
 		int arena = baby->num.s_value;
-		if (arena < RZ_REG_TYPE_GPR || arena > RZ_REG_TYPE_SEG) {
+		if (arena < RZ_REG_TYPE_GPR || arena >= RZ_REG_TYPE_LAST) {
 			continue;
 		}
 		baby = rz_json_get(child, "size");

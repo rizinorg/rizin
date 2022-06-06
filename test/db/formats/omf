@@ -37,9 +37,9 @@ RUN
 
 NAME=maps 16 bits omf
 FILE=bins/omf/hello_world
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
- 1 fd: 3 +0x00000073 0x00001000 - 0x00001012 r-x fmap.text_1
+ 1 fd: 3 +0x00000073 0x00001000 * 0x00001012 r-x fmap.text_1
  2 fd: 3 +0x00000095 0x00001013 - 0x00001020 r-x fmap.data_1
 EOF
 RUN
@@ -102,9 +102,9 @@ RUN
 
 NAME=maps 32 bits omf
 FILE=bins/omf/hello_world32
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
- 1 fd: 3 +0x00000074 0x00001000 - 0x0000101c r-x fmap..text_1
+ 1 fd: 3 +0x00000074 0x00001000 * 0x0000101c r-x fmap..text_1
  2 fd: 3 +0x000000a3 0x0000101d - 0x0000102a r-x fmap..data_1
 EOF
 RUN

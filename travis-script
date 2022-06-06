@@ -10,7 +10,7 @@ export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib/$(uname -m)-linux-gnu:${T
 
 echo "Installing with meson + ninja"
 
-OPTS="-Duse_webui=true"
+OPTS=""
 if [ "${RZ_SYS_CAPSTONE}" != "" ] ; then
 	OPTS="${OPTS} -D use_sys_capstone=${RZ_SYS_CAPSTONE}"
 fi

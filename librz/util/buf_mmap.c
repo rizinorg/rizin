@@ -62,6 +62,14 @@ static bool buf_mmap_resize(RzBuffer *b, ut64 newsize) {
 	return true;
 }
 
+static ut8 *buf_mmap_get_whole_buf(RzBuffer *b, ut64 *size) {
+	struct buf_mmap_priv *priv = get_priv_mmap(b);
+	if (size) {
+		*size = priv->mmap->len;
+	}
+	return priv->mmap->buf;
+}
+
 static const RzBufferMethods buffer_mmap_methods = {
 	.init = buf_mmap_init,
 	.fini = buf_mmap_fini,
@@ -70,4 +78,5 @@ static const RzBufferMethods buffer_mmap_methods = {
 	.get_size = buf_bytes_get_size,
 	.resize = buf_mmap_resize,
 	.seek = buf_bytes_seek,
+	.get_whole_buf = buf_mmap_get_whole_buf
 };

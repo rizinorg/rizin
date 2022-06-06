@@ -741,7 +741,7 @@ static void rz_hash_print_digest(RzHashContext *ctx, RzMsgDigest *md, const char
 		printf("%s: 0x%08" PFMT64x "-0x%08" PFMT64x " %s%s: %s%s\n", filename, from, to, hmac, hname, value, has_seed ? " with seed" : "");
 		break;
 	case RZ_HASH_MODE_RANDOMART:
-		rndart = rz_print_randomart(buffer, len, from);
+		rndart = rz_msg_digest_randomart(buffer, len, from);
 		printf("%s%s\n%s\n", hmac, hname, rndart);
 		break;
 	case RZ_HASH_MODE_QUIET:
@@ -855,7 +855,7 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 		bool result = false;
 
 		if (!rz_hash_parse_hexadecimal("-c", ctx->compare, &cmphash, &cmphashlen)) {
-			//RZ_LOG_ERROR("rz-hash: error, cannot allocate block memory\n");
+			// RZ_LOG_ERROR("rz-hash: error, cannot allocate block memory\n");
 			goto calculate_hash_end;
 		}
 

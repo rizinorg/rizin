@@ -3,11 +3,248 @@
 ---
 name: cmd_analysis
 commands:
+  - name: aa
+    summary: Analysis commands
+    subcommands:
+      - name: aa
+        summary: Analyze all flags starting with sym. and entry
+        cname: analyze_simple
+        args: []
+      - name: aaa
+        summary: Analyze all calls, references, emulation and applies signatures
+        cname: analyze_everything
+        args: []
+      - name: aaaa
+        summary: Experimental analysis
+        cname: analyze_everything_experimental
+        args: []
+      - name: aac
+        summary: Analysis function calls commands
+        subcommands:
+          - name: aac
+            summary: Analyze function calls
+            cname: analyze_all_function_calls
+            args: []
+          - name: aaci
+            summary: Analyze all function calls to imports
+            cname: analyze_all_function_calls_to_imports
+            args: []
+      - name: aad
+        summary: Analyze data references to code
+        cname: analyze_all_data_references_to_code
+        args: []
+      - name: aae
+        summary: Analysis commands using ESIL
+        subcommands:
+          - name: aae
+            summary: Analyze references with ESIL
+            cname: analysis_all_esil
+            type: RZ_CMD_DESC_TYPE_ARGV
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+            details:
+              - name: Examples
+                entries:
+                  - text: "aae"
+                    arg_str: ""
+                    comment: analyze ranges given by analysis.in
+                  - text: "aae"
+                    arg_str: " $SS @ $S"
+                    comment: analyze the whole section
+          - name: aaef
+            summary: Analyze references with ESIL in all functions
+            cname: analysis_all_esil_functions
+            type: RZ_CMD_DESC_TYPE_ARGV
+            args: []
+      - name: aaf
+        summary: Analysis function commands
+        subcommands:
+          - name: aaf
+            summary: Analyze all functions
+            cname: analyze_all_functions
+            args: []
+          - name: aafe
+            summary: Analyze all functions using ESIL
+            cname: analyze_all_functions_esil
+            args: []
+          - name: aafr
+            summary: Analyze all consecutive functions in section
+            cname: analyze_all_consecutive_functions_in_section
+            args:
+              - name: length
+                type: RZ_CMD_ARG_TYPE_NUM
+          - name: aaft
+            summary: Performs recursive type matching in all functions
+            cname: analyze_recursively_all_function_types
+            args: []
+      - name: aaF
+        summary: Signature database commands
+        subcommands:
+          - name: aaF
+            summary: Apply signatures from sigdb
+            cname: apply_signatures_from_sigdb
+            args:
+              - name: filter
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aaFl
+            summary: Lists all available signatures in sigdb
+            cname: list_signatures_in_sigdb
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            default_mode: RZ_OUTPUT_MODE_TABLE
+            modes:
+              - RZ_OUTPUT_MODE_TABLE
+            args: []
+      - name: aai
+        summary: Print preformed analysis details
+        cname: print_analysis_details
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: aaj
+        summary: Analyze all unresolved jumps
+        cname: analyze_all_unresolved_jumps
+        args: []
+      - name: aal
+        summary: Language specific analysis commands
+        subcommands:
+          - name: aalg
+            summary: Recovers and analyze all Golang functions and strings
+            cname: recover_all_golang_functions_strings
+            args: []
+          - name: aalo
+            summary: Analyze all Objective-C references
+            cname: analyze_all_objc_references
+            args: []
+      - name: aan
+        summary: Automatic rename functions commands
+        subcommands:
+          - name: aan
+            summary: Renames all functions based on their strings or calls
+            cname: autoname_all_functions
+            args: []
+          - name: aanr
+            summary: Renames all functions which does not return 
+            cname: autoname_all_functions_noreturn
+            args: []
+      - name: aap
+        summary: Analyze all preludes
+        cname: analyze_all_preludes
+        args: []
+        details:
+          - name: Search a custom prelude
+            entries:
+              - text: "e analysis.prelude='90AEF630'"
+                arg_str: ""
+                comment: Set new prelude
+              - text: "aap"
+                arg_str: ""
+                comment: Search for 90AEF630 and create a new function
+      - name: aar
+        summary: Analyze xrefs in current section or by n_bytes
+        cname: analyze_xrefs_section_bytes
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aas
+        summary: Analyze only the symbols
+        cname: analyze_symbols_entries
+        args: []
+      - name: aaS
+        summary: Analyze only the flags starting as sym.* and entry*
+        cname: analyze_symbols_entries_flags
+        args: []
+      - name: aat
+        summary: Analyze all/given function to convert immediate to linked structure offsets
+        cname: analyze_function_linked_offsets
+        args:
+          - name: func_name
+            type: RZ_CMD_ARG_TYPE_FCN
+            optional: true
+      - name: aaT
+        summary: Prints commands to create functions after a trap call
+        cname: print_commands_after_traps
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aau
+        summary: Print memory areas not covered by functions
+        cname: print_areas_no_functions
+        args:
+          - name: min_len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aav
+        summary: Analyze values referencing a specific section or map
+        cname: analyze_value_to_maps
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
   - name: af
     summary: Analyze Functions commands
-    cname: cmd_analysis_fcn
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands:
+      - name: af
+        summary: Analyze functions recursively (honors `analysis.calls`)
+        cname: analysis_function_add_recu
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: afr
+        summary: Analyze functions recursively
+        cname: analysis_function_add_recu_force
+        handler: analysis_function_add_recu
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: af+
+        summary: Hand craft a function (requires `afb+`)
+        cname: analysis_function_create
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: type
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            optional: true
+            choices: ["l", "i", "s"]
+          - name: diff
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            optional: true
+            choices: ["m", "u"]
+      - name: af-
+        summary: Delete function
+        cname: analysis_function_del
+        args: []
+      - name: af-*
+        summary: Delete all function analysis data
+        cname: analysis_function_del_all
+        args: []
+      - name: afj
+        summary: Analyze function jumptable
+        cname: analysis_function_analyze_jmptable
+        args:
+          - name: tbl_addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: elements
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afa
+        summary: Analyze function arguments in a call
+        cname: analysis_function_analyze_args
+        args: []
+      - name: afal
+        summary: Analyze function arguments in a call (honors `dbg.funcarg`)
+        cname: analysis_function_analyze_args_l
+        handler: analysis_function_analyze_args
+        args: []
       - name: afb
         summary: Basic blocks commands
         subcommands:
@@ -21,10 +258,7 @@ commands:
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_TABLE
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afb+
             summary: Add basic block by hand
             cname: analysis_function_blocks_add
@@ -48,17 +282,11 @@ commands:
           - name: afb-
             summary: Remove basic block from function
             cname: analysis_function_blocks_del
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afb-*
             summary: Remove all basic blocks from function
             cname: analysis_function_blocks_del_all
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afbe
             summary: Add basic-block edge for switch-cases
             cname: analysis_function_blocks_edge
@@ -70,17 +298,11 @@ commands:
           - name: afbr
             summary: Show addresses of instructions which leave the function
             cname: analysis_function_returns
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afb=
             summary: Display ascii-art bars for basic block regions
             cname: analysis_function_blocks_asciiart
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afbi
             summary: Print single basic block information
             cname: analysis_function_blocks_info
@@ -92,10 +314,7 @@ commands:
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_TABLE
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            args: []
           - name: afbc
             summary: Set a color for the basic block at a given address
             cname: analysis_function_blocks_color
@@ -149,6 +368,7 @@ commands:
       - name: afx
         cname: analysis_function_xrefs
         summary: List function references
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -165,6 +385,7 @@ commands:
           - name: afv
             cname: analysis_function_vars
             summary: List all variables and arguments of the current function
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
@@ -265,6 +486,7 @@ commands:
               - name: afvb
                 cname: analysis_function_vars_bp
                 summary: List base pointer based arguments and locals / Define a new one
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
                   - RZ_OUTPUT_MODE_RIZIN
@@ -284,6 +506,10 @@ commands:
                 args:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: afvb-*
+                cname: analysis_function_vars_bp_del_all
+                summary: Delete all arguments/locals
+                args: []
               - name: afvbg
                 cname: analysis_function_vars_bp_getref
                 summary: Define var get reference
@@ -305,6 +531,7 @@ commands:
             subcommands:
               - name: afvr
                 cname: analysis_function_vars_regs
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 summary: List register-based arguments and locals / Define a new one
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
@@ -325,6 +552,10 @@ commands:
                 args:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: afvr-*
+                cname: analysis_function_vars_regs_del_all
+                summary: Delete all register-based arguments/locals
+                args: []
               - name: afvrg
                 cname: analysis_function_vars_regs_getref
                 summary: Define register-based arguments and locals get references
@@ -346,6 +577,7 @@ commands:
             subcommands:
               - name: afvs
                 cname: analysis_function_vars_sp
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 summary: List stack based arguments and locals / Define a new one
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
@@ -382,6 +614,665 @@ commands:
                     type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afl
+        summary: List functions
+        subcommands:
+          - name: afl
+            summary: List all functions
+            cname: analysis_function_list
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_TABLE
+            args: []
+          - name: afl.
+            summary: List functions in current seek
+            cname: analysis_function_list_in
+            args: []
+          - name: aflc
+            summary: Display count of all functions
+            cname: analysis_function_count
+            args: []
+          - name: afl+
+            summary: Display sum of all functions sizes
+            cname: analysis_function_size_sum
+            args: []
+          - name: aflm
+            summary: List calls of all functions
+            cname: analysis_function_list_calls
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+            args: []
+          - name: afl=
+            summary: Display ascii-art bars with function ranges
+            cname: analysis_function_list_ascii
+            args: []
+      - name: afi
+        summary: Show/edit function information
+        subcommands:
+          - name: afi
+            summary: Show information of functions in current seek
+            cname: analysis_function_info
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_RIZIN
+            args: []
+          - name: afii
+            summary: Show/add/delete imports used in function in current seek
+            subcommands:
+              - name: afii
+                summary: Show/add imports used in function in current seek
+                cname: analysis_function_import_list
+                args:
+                  - name: import
+                    type: RZ_CMD_ARG_TYPE_STRING
+                    optional: true
+              - name: afii-
+                summary: Delete imports used in function in current seek
+                cname: analysis_function_import_list_del
+                args: []
+          - name: afis
+            summary: Show opcode statistic in function
+            subcommands:
+              - name: afis
+                summary: Enumerate unique opcodes/opcode families/opcode types in function
+                cname: analysis_function_opcode_stat
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_TABLE
+                args:
+                  - name: mode
+                    type: RZ_CMD_ARG_TYPE_CHOICES
+                    optional: true
+                    choices: ["family", "type"]
+              - name: afisa
+                summary: Enumerate unique opcodes/opcode families/opcode types in all functions
+                cname: analysis_function_all_opcode_stat
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_TABLE
+                args:
+                  - name: mode
+                    type: RZ_CMD_ARG_TYPE_CHOICES
+                    optional: true
+                    choices: ["family", "type"]
+      - name: afn
+        summary: Analyze function names
+        subcommands:
+          - name: afn
+            summary: Rename function at current seek
+            cname: analysis_function_rename
+            args:
+              - name: new name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: afna
+            summary: Suggest a name for the function in current seek
+            cname: analysis_function_autoname
+            args: []
+          - name: afns
+            summary: Print all strings referenced by the function in current seek
+            cname: analysis_function_strings
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+      - name: aft
+        summary: Type matching analysis for the function in current seek
+        cname: analysis_function_type_matching
+        args: []
+      - name: afM
+        summary: Print functions map
+        cname: analysis_functions_map
+        args: []
+      - name: afm
+        summary: Merge two functions
+        cname: analysis_functions_merge
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_FCN
+        details:
+          - name: ""
+            entries:
+              - text: "afm 0xbeef @ 0x42"
+                comment: "Merge function at address 0xbeef to function at address 0x42"
+      - name: afc
+        summary: Calling convention
+        subcommands:
+          - name: afc
+            summary: Set/Get calling convention for current function
+            cname: analysis_function_cc_set_get
+            args:
+              - name: convention
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: afcl
+            summary: List all available calling conventions
+            cname: analysis_function_cc_list
+            type: RZ_CMD_DESC_TYPE_ARGV_MODES
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_SDB
+            args: []
+          - name: afco
+            summary: Open Calling Convention sdb profile from given path
+            cname: analysis_function_cc_load
+            args:
+              - name: db_path
+                type: RZ_CMD_ARG_TYPE_FILE
+          - name: afcr
+            summary: Show register usage for the current function
+            cname: analysis_function_cc_reg_usage
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+      - name: afd
+        summary: Show function + delta for given offset
+        cname: analysis_function_describe_offset
+        args: []
+  - name: aeC
+    summary: appcall in esil
+    cname: analysis_appcall
+    args:
+      - name: args
+        type: RZ_CMD_ARG_TYPE_NUM
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+    details:
+      - name: Examples
+        entries:
+          - text: aeC
+            arg_str: " 1 2 @ sym._add"
+            comment: Call sym._add(1,2)
+  - name: aec
+    summary: continue until ^C
+    subcommands:
+      - name: aec
+        summary: Continue until exception
+        cname: analysis_continue_until_except
+        args: []
+      - name: aecb
+        summary: Continue back until breakpoint
+        cname: analysis_continue_until_breakpoint
+        args: []
+      - name: aecs
+        summary: Continue until syscall
+        cname: analysis_continue_until_syscall
+        args: []
+      - name: aecc
+        summary: Continue until call
+        cname: analysis_continue_until_call
+        args: []
+      - name: aecu
+        summary: Continue until address
+        cname: analysis_continue_until_addr
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: aecue
+        summary: Continue until esil expression
+        cname: analysis_continue_until_esil
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: aei
+    summary: ESIL VM state
+    subcommands:
+      - name: aei
+        summary: initialize ESIL VM state
+        cname: analysis_esil_init
+        args: []
+      - name: aei-
+        summary: deinitialize ESIL VM state
+        cname: analysis_esil_deinit
+        args: []
+      - name: aeip
+        summary: initialize ESIL program counter to curseek
+        cname: analysis_esil_init_p
+        args: []
+      - name: aeim
+        summary: ESIL VM stack
+        subcommands:
+          - name: aeim
+            summary: initialize ESIL VM stack
+            cname: analysis_esil_init_mem
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: size
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aeim-
+            summary: remove ESIL VM stack
+            cname: analysis_esil_init_mem_remove
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: size
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aeimp
+            summary: initialize ESIL VM stack to "aeim.stack" or ?
+            cname: analysis_esil_init_mem_p
+            args: []
+  - name: aes
+    summary: ESIL emulated debugger step
+    subcommands:
+      - name: aes
+        summary: perform emulated debugger step
+        cname: il_step
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: aesp
+        summary: evaluate N instr from core->offset
+        cname: il_step_evaluate
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: aesb
+        summary: step back
+        cname: il_step_back
+        args: []
+      - name: aeso
+        summary: step over
+        cname: il_step_over
+        args: []
+      - name: aesou
+        summary: step over until given address
+        cname: il_step_over_until_addr
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: aess
+        summary: step skip
+        subcommands:
+          - name: aess
+            summary: step skip (in case of CALL, just skip, instead of step into)
+            cname: il_step_skip
+            args: []
+          - name: aessu
+            summary: step skip (in case of CALL, just skip, instead of step into)
+            cname: il_step_skip_until_addr
+            args: []
+          - name: aessue
+            summary: step skip (in case of CALL, just skip, instead of step into)
+            cname: il_step_skip_until_expr
+            args: []
+      - name: aesu
+        summary: step until
+        subcommands:
+          - name: aesu
+            summary: step until given address
+            cname: il_step_until_addr
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: aesue
+            summary: step until esil expression match
+            cname: il_step_until_expr
+            args:
+              - name: esil
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: aesuo
+            summary: step until given opcode type
+            cname: il_step_until_opt
+            args:
+              - name: optype
+                type: RZ_CMD_ARG_TYPE_STRING
+                flags: RZ_CMD_ARG_FLAG_ARRAY
+  - name: aets
+    summary: ESIL Trace session
+    subcommands:
+      - name: aets+
+        summary: Start ESIL trace session
+        cname: il_trace_start
+        args: []
+      - name: aets-
+        summary: Stop ESIL trace session
+        cname: il_trace_stop
+        args: []
+  - name: aez
+    summary: RzIL Emulation
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: aezi
+        summary: Initialize the RzIL Virtual Machine at the current offset
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: il_vm_initialize
+        args: []
+      - name: aezs
+        summary: Step N instructions within the RzIL Virtual Machine
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: il_vm_step
+        args:
+          - name: n_times
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aezse
+        summary: Step N instructions within the RzIL VM and output VM changes (read & write)
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: il_vm_step_with_events
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: n_times
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aezsu
+        summary: Step until PC equals given address
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: il_vm_step_until_addr
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: aezv
+        summary: Print or modify the current status of the RzIL Virtual Machine
+        cname: il_vm_status
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: var_name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: number
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  #####################################################
+  # Keep this in sync with dr in cmd_debug.yaml from here...
+  - name: ar
+    summary: Emulation Registers
+    details:
+      - name: Register Filter
+        entries:
+          - text: "ar"
+            arg_str: ""
+            comment: Show a sensible default selection of registers
+          - text: "ar"
+            arg_str: " rax"
+            comment: Show a single register
+          - text: "ar"
+            arg_str: " 16"
+            comment: Show 16 bits wide gpr registers
+          - text: "ar"
+            arg_str: " xmm"
+            comment: Show registers of type xmm (see `arT` for possible types)
+          - text: "ar"
+            arg_str: " PC"
+            comment: Show the register with the given role (see `arR` for possible roles)
+          - text: "ar"
+            arg_str: " all"
+            comment: Show all registers available
+    subcommands:
+      - name: ar
+        summary: Show registers with their values, or assign one (`ar reg=value`)
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        cname: analysis_regs
+        args_str: " [<filter> [= <value>]]"
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            flags: RZ_CMD_ARG_FLAG_LAST
+            optional: true
+      - name: ar=
+        summary: Show registers in columns
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_regs_columns
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            optional: true
+      - name: arr
+        summary: Show register references (telescoping)
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: analysis_regs_references
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            optional: true
+      - name: ari
+        summary: Show register grouped by their values
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_regs_valgroup
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            optional: true
+      - name: arA
+        summary: Show values of default function argument registers (A0, A1, A2, ...) with telescoping
+        cname: analysis_regs_args
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        details: [] # Explicitly empty to not show parent ones
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: arcc
+        summary: Show calling convention defined by registers
+        cname: analysis_reg_cc
+        args: []
+        details: [] # Explicitly empty to not show parent ones
+      - name: ard
+        summary: Show register differences from previous contents
+        cname: analysis_regs_diff
+        args: []
+        details: [] # Explicitly empty to not show parent ones
+      - name: aro
+        summary: Show previous register contents
+        cname: analysis_regs_prev
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            flags: RZ_CMD_ARG_FLAG_LAST
+            optional: true
+      - name: arF
+        summary: Show fpu registers
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_regs_fpu
+        args_str: " [<register> [= <value>]]"
+        args:
+          - name: reg
+            type: RZ_CMD_ARG_TYPE_STRING
+            flags: RZ_CMD_ARG_FLAG_LAST
+            optional: true
+      - name: arf
+        summary: Show commands for setting registers as flags
+        subcommands:
+          - name: arf
+            summary: Show commands for setting registers as flags
+            cname: analysis_reg_flags
+            args:
+              - name: filter
+                type: RZ_CMD_ARG_TYPE_REG_FILTER
+                optional: true
+          - name: arf-
+            summary: Show commands for unsetting flags from `arf`
+            cname: analysis_reg_flags_unset
+            args:
+              - name: filter
+                type: RZ_CMD_ARG_TYPE_REG_FILTER
+                optional: true
+      - name: ara
+        summary: Register arena commands (underlying binary data)
+        details: [] # Explicitly empty to not show parent ones
+        subcommands:
+          - name: ara
+            summary: Show all currently allocated register arenas
+            cname: analysis_reg_arenas
+            args: []
+          - name: ara+
+            summary: Push a new set of arenas to the stack
+            cname: analysis_reg_arenas_push
+            args: []
+          - name: ara-
+            summary: Pop a set of arenas from the stack
+            cname: analysis_reg_arenas_pop
+            args: []
+          - name: araS
+            summary: Show number of stack elements
+            cname: analysis_reg_arenas_stack_size
+            args: []
+          - name: aras
+            summary: Swap last two register arenas on the stack
+            cname: analysis_reg_arenas_swap
+            args: []
+          - name: ara0
+            summary: Reset the specified or all arena contents to 0
+            cname: analysis_reg_arenas_zero
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_REG_TYPE
+                optional: true
+          - name: arab
+            summary: Display hexdump of given arena (or gpr if none given)
+            cname: analysis_reg_arenas_hexdump
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_REG_TYPE
+                optional: true
+          - name: araw
+            summary: Write hexadecimal data <hex> into the given arena (or gpr if none given)
+            cname: analysis_reg_arenas_write_hex
+            args:
+              - name: hex
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: type
+                type: RZ_CMD_ARG_TYPE_REG_TYPE
+                optional: true
+      - name: arp
+        summary: Register profile commands (defining available registers)
+        details: [] # Explicitly empty to not show parent ones
+        subcommands:
+          - name: arp
+            summary: Show the current register profile
+            cname: analysis_reg_profile
+            args: []
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+          - name: arpc
+            summary: Show register profile comments
+            cname: analysis_reg_profile_comments
+            args: []
+          - name: arpo
+            summary: Load a new register profile from file
+            cname: analysis_reg_profile_open
+            args:
+              - name: file
+                type: RZ_CMD_ARG_TYPE_FILE
+          - name: arpg
+            summary: Convert gdb profile from the given file to rizin register profile
+            cname: analysis_reg_profile_gdb
+            args:
+              - name: file
+                type: RZ_CMD_ARG_TYPE_FILE
+      - name: arc
+        summary: Conditional flags (aliases to processor flags)
+        cname: analysis_reg_cond
+        args: []
+        details:
+          - name: Basic
+            entries:
+              - text: eq
+                arg_str: ""
+                comment: equal
+              - text: ne
+                arg_str: ""
+                comment: not equal
+              - text: cf
+                arg_str: ""
+                comment: carry flag set
+              - text: neg
+                arg_str: ""
+                comment: negative value (has sign)
+              - text: of
+                arg_str: ""
+                comment: overflow
+          - name: Unsigned
+            entries:
+              - text: hi
+                arg_str: ""
+                comment: higher
+              - text: he
+                arg_str: ""
+                comment: higher or equal
+              - text: lo
+                arg_str: ""
+                comment: lower
+              - text: loe
+                arg_str: ""
+                comment: lower or equal
+          - name: Signed
+            entries:
+              - text: gt
+                arg_str: ""
+                comment: greater
+              - text: ge
+                arg_str: ""
+                comment: greater or equal
+              - text: lt
+                arg_str: ""
+                comment: less
+              - text: le
+                arg_str: ""
+                comment: less or equal
+      - name: arT
+        summary: List all register types
+        cname: analysis_reg_types
+        details: [] # Explicitly empty to not show parent ones
+        args: []
+      - name: arR
+        summary: List all register roles
+        cname: analysis_reg_roles
+        details: [] # Explicitly empty to not show parent ones
+        args: []
+  # ... to here
+  #####################################################
   - name: av
     summary: C++ vtables and RTTI
     subcommands:
@@ -479,3 +1370,735 @@ commands:
         args:
           - name: classname
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: ax
+    summary: Cross references (xrefs)
+    subcommands:
+      - name: ax
+        summary: Add custom xref to addr from current seek
+        cname: analysis_xrefs_set_0
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axc
+        summary: Add generic code xref to addr from current seek
+        cname: analysis_xrefs_set_c
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axC
+        summary: Add call code xref to addr from current seek
+        cname: analysis_xrefs_set_C
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axd
+        summary: Add data xref to addr from current seek
+        cname: analysis_xrefs_set_d
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axs
+        summary: Add string xref to addr from current seek
+        cname: analysis_xrefs_set_s
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axl
+        summary: List all xrefs
+        cname: analysis_xrefs_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: axt
+        summary: List xrefs to current seek
+        cname: analysis_xrefs_to_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: axf
+        summary: List xrefs from current seek
+        cname: analysis_xrefs_from_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: axtg
+        summary: Display commands to generate graphs according to xrefs
+        cname: analysis_xrefs_to_graph_cmd
+        args: []
+      - name: ax-
+        summary: Delete xrefs to addr
+        cname: analysis_xrefs_del
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: from
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ax-*
+        summary: Delete all xrefs
+        cname: analysis_xrefs_del_all
+        args: []
+      - name: axm
+        summary: Copy xrefs pointing to addr to also point to curseek
+        cname: analysis_xrefs_copy
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axg
+        summary: Show xrefs graph to reach function at current seek
+        cname: analysis_xrefs_graph
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+  - name: ah
+    summary: Analysis hints
+    subcommands:
+      - name: ahl
+        summary: List all analysis hints
+        cname: analysis_hint_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: ahl.
+        summary: List analysis hints at current seek
+        cname: analysis_hint_list_at
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: ah-
+        summary: Delete analysis hints in region starting from current seek
+        cname: analysis_hint_del
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: ah-*
+        summary: Delete all analysis hints
+        cname: analysis_hint_del_all
+        args: []
+      - name: aha
+        summary: Set arch hint
+        cname: analysis_hint_set_arch
+        args:
+          - name: arch
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "aha ppc @ 0x42"
+                comment: "Force arch ppc for all addresses >= 0x42 or until the next hint"
+              - text: "aha 0 @ 0x84"
+                comment: "Disable the effect of arch hints for all addresses >= 0x84 or until the next hint"
+      - name: aha-
+        summary: Delete arch hint
+        cname: analysis_hint_del_arch
+        args: []
+      - name: ahb
+        summary: Set bits hint
+        cname: analysis_hint_set_bits
+        args:
+          - name: bits
+            type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahb 16 @ 0x42"
+                comment: "Force 16bit for all addresses >= 0x42 or until the next hint"
+      - name: ahb-
+        summary: Delete bits hint
+        cname: analysis_hint_del_bits
+        args: []
+      - name: ahh
+        summary: Set highlight hint
+        cname: analysis_hint_set_high
+        args: []
+        details:
+          - name: ""
+            entries:
+              - text: "ahh @ 0x804840"
+                comment: "Highlight this address offset in disasm"
+      - name: ahh-
+        summary: Delete highlight hint
+        cname: analysis_hint_del_high
+        args: []
+      - name: ahc
+        summary: Set jump/call address hint
+        cname: analysis_hint_set_jump
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahc "
+                arg_str: "0x804840"
+                comment: "Replace call/jump address with 0x804840"
+      - name: ahc-
+        summary: Delete jump/call address hint
+        cname: analysis_hint_del_jump
+        args: []
+      - name: ahe
+        summary: Set ESIL string hint
+        cname: analysis_hint_set_esil
+        args:
+          - name: string
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "ahe "
+                arg_str: '"3,eax,+="'
+                comment: "Replace ESIL VM analysis string"
+      - name: ahe-
+        summary: Delete ESIL string hint
+        cname: analysis_hint_del_esil
+        args: []
+      - name: ahd
+        summary: Set opcode hint
+        cname: analysis_hint_set_opcode
+        args:
+          - name: opcode
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "ahd "
+                arg_str: '"foo a0,33"'
+                comment: "Replace opcode string"
+      - name: ahd-
+        summary: Delete opcode hint
+        cname: analysis_hint_del_opcode
+        args: []
+      - name: ahs
+        summary: Set opcode size hint
+        cname: analysis_hint_set_size
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahs "
+                arg_str: "4"
+                comment: "Set opcode size=4"
+      - name: ahs-
+        summary: Delete opcode size hint
+        cname: analysis_hint_del_size
+        args: []
+      - name: ahf
+        summary: Set fallback address hint
+        cname: analysis_hint_set_fail
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahf "
+                arg_str: "0x804840"
+                comment: Replace fallback address for call with 0x804840
+      - name: ahf-
+        summary: Delete fallback address hint
+        cname: analysis_hint_del_fail
+        args: []
+      - name: ahF
+        summary: Set stackframe size hint
+        cname: analysis_hint_set_stackframe
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahF "
+                arg_str: "0x10"
+                comment: Set stackframe size to 0x10
+      - name: ahF-
+        summary: Delete stackframe size hint
+        cname: analysis_hint_del_stackframe
+        args: []
+      - name: ahS
+        summary: Set asm syntax hint
+        cname: analysis_hint_set_syntax
+        args:
+          - name: string
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "ahS "
+                arg_str: jz
+                comment: Set asm.syntax=jz for opcode at current seek
+      - name: ahS-
+        summary: Delete asm syntax hint
+        cname: analysis_hint_del_syntax
+        args: []
+      - name: ahp
+        summary: Set pointer hint
+        cname: analysis_hint_set_ptr
+        args:
+          - name: pointer
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: ahp-
+        summary: Delete pointer hint
+        cname: analysis_hint_del_ptr
+        args: []
+      - name: ahr
+        summary: Set function return value hint
+        cname: analysis_hint_set_ret
+        args:
+          - name: return
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: ahr-
+        summary: Delete function return value hint
+        cname: analysis_hint_del_ret
+        args: []
+      - name: ahv
+        summary: Set opcode value hint
+        cname: analysis_hint_set_val
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahv "
+                arg_str: val
+                comment: Change opcode's value field (useful to set jmptbl sizes in jmp rax)
+      - name: ahv-
+        summary: Delete opcode value hint
+        cname: analysis_hint_del_val
+        args: []
+      - name: aho
+        summary: Set opcode type hint
+        cname: analysis_hint_set_optype
+        args:
+          - name: string
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "aho "
+                arg_str: call
+                comment: "Change opcode type to <call>"
+      - name: aho-
+        summary: Delete opcode type hint
+        cname: analysis_hint_del_optype
+        args: []
+      - name: ahi
+        summary: Set immediate base hint
+        cname: analysis_hint_set_immbase
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices: ["2", "8", "10", "10u", "16", "b", "o", "h", "i", "p", "S", "s"]
+          - name: nword
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+        details:
+          - name: ""
+            entries:
+              - text: "ahi "
+                arg_str: <base>
+                comment: Set numeric <base> (2, 8, 10, 16)
+              - text: ahi 10|d
+                comment: Set base to signed decimal (10), sign bit should depend on receiver size
+              - text: ahi 10u|du
+                comment: Set base to unsigned decimal (11)
+              - text: ahi b
+                comment: Set base to binary (2)
+              - text: ahi o
+                comment: Set base to octal (8)
+              - text: ahi h
+                comment: Set base to hexadecimal (16)
+              - text: ahi i
+                comment: Set base to IP address (32)
+              - text: ahi p
+                comment: Set base to htons(port) (3)
+              - text: ahi S
+                comment: Set base to syscall (80)
+              - text: ahi s
+                comment: Set base to string (1)
+          - name: Set base of the N-th immediate (indexing starts from 0)
+            entries:
+              - text: ahi 16 1
+                comment: Set base of the 1-st immediate to hexadecimal
+      - name: ahi-
+        summary: Delete immediate base hint
+        cname: analysis_hint_del_immbase
+        args: []
+      - name: aht
+        summary: Set structure offset hint
+        cname: analysis_hint_set_offset
+        args:
+          - name: struct.member
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "aht "
+                arg_str: struct.member
+                comment: Replace immediate with <struct.member>
+      - name: aht-
+        summary: Delete structure offset hint
+        cname: analysis_hint_del_offset
+        args: []
+      - name: ahts
+        summary: List all matching structure offsets
+        cname: analysis_list_struct_offsets
+        args:
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: ac
+    summary: Classes
+    subcommands:
+      - name: ac
+        summary: Add class
+        cname: analysis_class_add
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: ac-
+        summary: Delete class
+        cname: analysis_class_del
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: acn
+        summary: Rename class
+        cname: analysis_class_rename
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: new_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: acl
+        summary: List all classes
+        cname: analysis_class_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: aci
+        summary: Show information of class
+        cname: analysis_class_info
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: acg
+        summary: Print inheritance ascii graph
+        cname: analysis_class_graph
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: acm
+        summary: Class methods
+        subcommands:
+          - name: acm
+            summary: Add/edit method
+            cname: analysis_class_method_add
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: method_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: offset
+                type: RZ_CMD_ARG_TYPE_NUM
+              - name: vtable_offset
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: acm-
+            summary: Delete method
+            cname: analysis_class_method_del
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: method_name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: acmn
+            summary: Rename method
+            cname: analysis_class_method_rename
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: method_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: new_method_name
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: acb
+        summary: Base classes
+        subcommands:
+          - name: acb
+            summary: Add base class
+            cname: analysis_class_base_add
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: base_class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: offset
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: acb-
+            summary: Delete base class
+            cname: analysis_class_base_del
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: base_class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: acbl
+            summary: List base classes
+            cname: analysis_class_base_list
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: acv
+        summary: Class vtable
+        subcommands:
+          - name: acv
+            summary: Add vtable address to class
+            cname: analysis_class_vtable_add
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: offset
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: size
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: acv-
+            summary: Delete vtable by id
+            cname: analysis_class_vtable_del
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: vtable_id
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: acvl
+            summary: List class vtables
+            cname: analysis_class_vtable_list
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: acvf
+            summary: Lookup function address on vtable offset
+            cname: analysis_class_vtable_lookup
+            args:
+              - name: offset
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+  - name: a8
+    summary: Analyze bytes
+    cname: analyze_bytes
+    args:
+      - name: hexpairs
+        type: RZ_CMD_ARG_TYPE_STRING
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: aO
+    summary: Analyze next block as instructions
+    subcommands:
+      - name: aO
+        summary: Analyze next block as instructions
+        cname: analyze_n_bytes
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+      - name: aOe
+        summary: Analyze the esil of next block
+        cname: analyze_n_bytes_esil
+        args: []
+      - name: aOd
+        summary: Print the description of next block
+        cname: analyze_n_bytes_desc
+        args: []
+      - name: aOs
+        summary: Print the total instruction size of next block
+        cname: analyze_n_bytes_size
+        args: []
+  - name: ao
+    summary: Analyze N instructions
+    subcommands:
+      - name: ao
+        summary: Analyze next N instructions
+        cname: analyze_n_ins
+        args:
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+      - name: aos
+        summary: Print the total size of next N instructions
+        cname: analyze_n_ins_size
+        args:
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aoe
+        summary: Print the esil of next N instructions
+        cname: analyze_n_ins_esil
+        args:
+          - name: n_instructions
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aod
+        summary: Describe opcode for asm.arch
+        cname: analyze_opcode
+        args:
+          - name: opcode
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: aoda
+        summary: Describe all opcode for asm.arch
+        cname: display_opcode
+        args: []
+      - name: aoc
+        summary: Analyze which op could be executed in [cycles]
+        cname: analyze_cycles
+        args:
+          - name: cycles
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aom
+        summary: convert between mnemonic/id for asm.arch
+        cname: convert_mne
+        args:
+          - name: mne_or_id
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: aoma
+        summary: List mnemonics for asm.arch
+        cname: list_mne
+        args: []
+  - name: an
+    summary: Show/rename/create whatever flag/function is used at addr
+    cname: analyse_name
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: ab
+    summary: Basic blocks
+    subcommands:
+      - name: abi
+        summary: Show basic block information in current seek
+        cname: analysis_basic_block_info
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: abl
+        summary: List all basic blocks
+        cname: analysis_basic_block_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: abt
+        summary: Find paths from current seek to the given address
+        cname: analysis_basic_block_find_paths
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: as
+    summary: Syscalls
+    subcommands:
+      - name: as
+        summary: Show syscall and arguments
+        cname: analysis_syscall_show
+        args:
+          - name: syscall
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: asl
+        summary: List syscalls
+        cname: analysis_syscall_print
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: asca
+        summary: Dump syscall info into .asm file
+        cname: analysis_syscall_dump_assembly
+        args:
+          - name: syscall
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: asc
+        summary: Dump syscall info into .h file
+        cname: analysis_syscall_dump_c
+        args:
+          - name: syscall
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: asn
+        summary: Returns the syscall number by the name
+        cname: analysis_syscall_name
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: asr
+        summary: Returns the syscall name by the number
+        cname: analysis_syscall_number
+        args:
+          - name: number
+            type: RZ_CMD_ARG_TYPE_NUM

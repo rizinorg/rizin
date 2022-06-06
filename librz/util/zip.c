@@ -230,6 +230,7 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 
 	ut8 *src_tmpbuf = malloc(block_size), *dst_tmpbuf = malloc(block_size);
 
+	dst_cursor = rz_buf_tell(dst);
 	while ((src_readlen = rz_buf_read_at(src, src_cursor, src_tmpbuf, block_size)) > 0) {
 		src_cursor += src_readlen;
 		stream.avail_in = src_readlen;
@@ -248,7 +249,7 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 			goto return_goto;
 		}
 
-		dst_cursor += rz_buf_write_at(dst, dst_cursor, dst_tmpbuf, stream.total_out);
+		dst_cursor += rz_buf_write(dst, dst_tmpbuf, stream.total_out);
 	}
 
 	if (src_consumed) {
@@ -289,7 +290,7 @@ RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 
 	int err = 0, flush = Z_NO_FLUSH;
 	bool ret = true;
-	ut64 dst_cursor = 0, src_cursor = 0;
+	ut64 src_cursor = 0;
 	ut64 src_readlen = 0;
 	z_stream stream;
 
@@ -324,7 +325,7 @@ RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 			goto return_goto;
 		}
 
-		dst_cursor += rz_buf_write_at(dst, dst_cursor, dst_tmpbuf, stream.total_out);
+		rz_buf_write(dst, dst_tmpbuf, stream.total_out);
 	}
 
 	if (src_consumed) {

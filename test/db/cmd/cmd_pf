@@ -2,7 +2,7 @@ NAME=pf QeQ
 FILE==
 CMDS=<<EOF
 b 256
-woe 0x11
+woe 0 255 0x11
 e cfg.bigendian=false
 pf Q
 e cfg.bigendian=true
@@ -162,7 +162,7 @@ EOF
 EXPECT=<<EOF
  ulebtest : 0x00000000 = 624485
  ulebtest : 0x00000014 = [ 608101, 4750, 37, 0 ]
-"wx 2a" @ 0x00000019
+wx 2a @ 0x00000019
  ulebtest : 0x00000014 = [ 608101, 4750, 42, 0 ]
 [{"name":"ulebtest","type":"u","offset":20,"value":[ "608101", "4750", "42", "0" ]}]
 EOF
@@ -174,8 +174,8 @@ CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
 e analysis.arch=x86
-dr eax=4000
-dr eip=42
+ar eax=4000
+ar eip=42
 pf.plop rr (eax)reg1 (eip)reg2
 pf.plop
 pfj.plop
@@ -191,11 +191,11 @@ NAME=Pointers
 FILE=malloc://1024
 CMDS=<<EOF
 wx 30
-wx 20@0x04
-wx 40@0x08
-wx 2a@0x20
-w TROLL@0x30
-wx a00f@0x40
+wx 20 @ 0x04
+wx 40 @ 0x08
+wx 2a @ 0x20
+w TROLL @ 0x30
+wx a00f @ 0x40
 e asm.bits=32 # pointer size
 pf.plop *z*i*w nb name blob
 pf.plop
@@ -238,9 +238,9 @@ RUN
 NAME=String pointer
 FILE=malloc://1024
 CMDS=<<EOF
-w TROLL @0x30
+w TROLL @ 0x30
 wx 30
-wx a00f @0x04
+wx a00f @ 0x04
 e asm.bits=32
 pf *zi Pouet Plop
 EOF
@@ -350,10 +350,10 @@ NAME=fixed size str, widechar, and var
 FILE=malloc://1024
 CMDS=<<EOF
 w TROLL
-wx 12@0x02
-wx a00f@0x0a
-ww PLOP@0x16
-wx 2a@0x2a
+wx 12 @ 0x02
+wx a00f @ 0x0a
+ww PLOP @ 0x16
+wx 2a @ 0x2a
 pf [10]z[3]i[10]Zb
 EOF
 EXPECT=<<EOF
@@ -416,11 +416,11 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 2a
-wx a00f@0x04
-wx 2a@0x08
-wx 10@0x0a
-wx efbe@0x0e
-wx 20@0x10
+wx a00f @ 0x04
+wx 2a @ 0x08
+wx 10 @ 0x0a
+wx efbe @ 0x0e
+wx 20 @ 0x10
 pf.troll iw integer word
 pf.plop i??i firstInt (troll)One (troll)Two secondInt
 pf.plop
@@ -444,7 +444,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 2a000000a00f00001234100000006416
-wx 2a0000002a@0x10
+wx 2a0000002a @ 0x10
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w firstInt (troll)Boh plop
 pf.plop
@@ -493,8 +493,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
-wx 800600000040@0x20
-wx 14000000641620000000@0x30
+wx 800600000040 @ 0x20
+wx 14000000641620000000 @ 0x30
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w first (troll)Boh bwa
 pf.gobelin ww?x blah meh (plop)Buh foo
@@ -529,51 +529,51 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 341289679a020000a00f00002a00300000001442
-wx 800600000040@0x20
-wx 14000000641620000000@0x30
+wx 800600000040 @ 0x20
+wx 14000000641620000000 @ 0x30
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w first (troll)Boh bwa
 pf.gobelin ww? blah meh (plop)Buh
 pf*.gobelin
 EOF
 EXPECT=<<EOF
-f blah=0x00000000
-fl 2 @ 0x00000000
+f blah @ 0x00000000
+fL 2 @ 0x00000000
 Cd 2 @ 0x00000000
-f meh=0x00000002
-fl 2 @ 0x00000002
+f meh @ 0x00000002
+fL 2 @ 0x00000002
 Cd 2 @ 0x00000002
-f plop.Buh_first=0x00000004
-fl 4 @ 0x00000004
+f plop.Buh_first @ 0x00000004
+fL 4 @ 0x00000004
 Cd 4 @ 0x00000004
-f troll.Boh_integer=0x00000008
-fl 4 @ 0x00000008
+f troll.Boh_integer @ 0x00000008
+fL 4 @ 0x00000008
 Cd 4 @ 0x00000008
-f word=0x0000000c
-fl 2 @ 0x0000000c
+f word @ 0x0000000c
+fL 2 @ 0x0000000c
 Cd 2 @ 0x0000000c
-f troll.Bah_integer=0x00000030
-fl 4 @ 0x00000030
+f troll.Bah_integer @ 0x00000030
+fL 4 @ 0x00000030
 Cd 4 @ 0x00000030
-f word=0x00000034
-fl 2 @ 0x00000034
+f word @ 0x00000034
+fL 2 @ 0x00000034
 Cd 2 @ 0x00000034
-f troll.Bah_integer=0x00000020
-fl 4 @ 0x00000020
+f troll.Bah_integer @ 0x00000020
+fL 4 @ 0x00000020
 Cd 4 @ 0x00000020
-f word=0x00000024
-fl 2 @ 0x00000024
+f word @ 0x00000024
+fL 2 @ 0x00000024
 Cd 2 @ 0x00000024
-fl 4 @ 0x00000020
+fL 4 @ 0x00000020
 Cd 4 @ 0x00000020
-fl 4 @ 0x00000030
+fL 4 @ 0x00000030
 Cd 4 @ 0x00000030
-fl 10 @ 0x00000008
+fL 10 @ 0x00000008
 Cd 10 @ 0x00000008
-f bwa=0x00000012
-fl 2 @ 0x00000012
+f bwa @ 0x00000012
+fL 2 @ 0x00000012
 Cd 2 @ 0x00000012
-fl 16 @ 0x00000004
+fL 16 @ 0x00000004
 Cd 16 @ 0x00000004
 EOF
 RUN

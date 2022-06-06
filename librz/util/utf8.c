@@ -5,6 +5,7 @@
 
 #include <rz_types.h>
 #include <rz_util.h>
+#include <rz_windows.h>
 
 static const struct { ut32 from, to; } nonprintable_ranges[] = {
 	{ 0x0000, 0x001F }, { 0x007F, 0x009F }, { 0x034F, 0x034F },
@@ -499,22 +500,36 @@ RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 		}
 		return 1;
 	} else if (ptrlen > 1 && (ptr[0] & 0xe0) == 0xc0 && (ptr[1] & 0xc0) == 0x80) {
+		RzRune rune = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
 		if (ch) {
-			*ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
+			*ch = rune;
 		}
-		return 2;
+		return rune < 0x80 ? 0 : 2;
 	} else if (ptrlen > 2 && (ptr[0] & 0xf0) == 0xe0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80) {
+		RzRune rune = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
 		if (ch) {
-			*ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
+			*ch = rune;
 		}
-		return 3;
+		return rune < 0x800 ? 0 : 3;
 	} else if (ptrlen > 3 && (ptr[0] & 0xf8) == 0xf0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80 && (ptr[3] & 0xc0) == 0x80) {
+		RzRune rune = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
 		if (ch) {
-			*ch = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
+			*ch = rune;
 		}
-		return 4;
+		return rune < 0x10000 ? 0 : 4;
 	}
 	return 0;
+}
+
+/* Convert an MUTF-8 buf into a unicode RzRune */
+RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
+	if (ptrlen > 1 && ptr[0] == 0xc0 && ptr[1] == 0x80) {
+		if (ch) {
+			*ch = 0;
+		}
+		return 2;
+	}
+	return rz_utf8_decode(ptr, ptrlen, ch);
 }
 
 /* Convert a unicode RzRune into an UTF-8 buf */
@@ -584,7 +599,13 @@ RZ_API int rz_utf8_strlen(const ut8 *str) {
 	return len;
 }
 
-RZ_API int rz_isprint(const RzRune c) {
+/**
+ * \brief Returns true when the RzRune is a printable symbol
+ *
+ * \param  c RzRune value to test
+ * \return   true if the rune is printable, otherwise false
+ */
+RZ_API bool rz_rune_is_printable(const RzRune c) {
 	// RzRunes are most commonly single byte... We can early out with this common case.
 	if (c < 0x34F) {
 		/*

@@ -22,6 +22,12 @@ commands:
         args:
           - name: value
             type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: Examples
+            entries:
+              - text: wB
+                arg_str: " 0x20"
+                comment: Sets the 5th bit at current offset, leaving all other bits intact.
       - name: wB-
         cname: write_unset_bits
         summary: Unset bits with given value
@@ -32,12 +38,6 @@ commands:
         args:
           - name: value
             type: RZ_CMD_ARG_TYPE_NUM
-    details:
-      - name: Examples
-        entries:
-          - text: wB
-            arg_str: " 0x20"
-            comment: Sets the 5th bit at current offset, leaving all other bits intact.
   - name: wv
     summary: Write value of given size
     subcommands:
@@ -102,7 +102,7 @@ commands:
   - name: w0
     cname: write_zero
     summary: Write <len> bytes with value 0x00
-    description: Fill len bytes starting from the current offset with the value 0.
+    description: Fill <len> bytes starting from the current offset with the value 0.
     args:
       - name: len
         type: RZ_CMD_ARG_TYPE_NUM
@@ -119,7 +119,7 @@ commands:
           - name: w1+
             cname: write_1_inc
             summary: Increment a byte
-            description: Increment a byte at the current offset by 1 or n, if specified
+            description: Increment a byte at the current offset by 1 or <n>, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -127,7 +127,7 @@ commands:
           - name: w1-
             cname: write_1_dec
             summary: Decrement a byte
-            description: Decrement a byte at the current offset by 1 or n, if specified
+            description: Decrement a byte at the current offset by 1 or <n>, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -148,7 +148,7 @@ commands:
           - name: w2+
             cname: write_2_inc
             summary: Increment a word
-            description: Increment a word at the current offset by 1 or n, if specified
+            description: Increment a word at the current offset by 1 or <n>, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -156,7 +156,7 @@ commands:
           - name: w2-
             cname: write_2_dec
             summary: Decrement a word
-            description: Decrement a word at the current offset by 1 or n, if specified
+            description: Decrement a word at the current offset by 1 or <n>, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -177,7 +177,7 @@ commands:
           - name: w4+
             cname: write_4_inc
             summary: Increment a dword
-            description: Increment a dword at the current offset by 1 or n, if specified
+            description: Increment a dword at the current offset by 1 or <n>, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -185,7 +185,7 @@ commands:
           - name: w4-
             cname: write_4_dec
             summary: Decrement a dword
-            description: Decrement a dword at the current offset by 1 or n, if specified
+            description: Decrement a dword at the current offset by 1 or <n>, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -206,7 +206,7 @@ commands:
           - name: w8+
             cname: write_8_inc
             summary: Increment a qword
-            description: Increment a qword at the current offset by 1 or n, if specified
+            description: Increment a qword at the current offset by 1 or <n>, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -214,7 +214,7 @@ commands:
           - name: w8-
             cname: write_8_dec
             summary: Decrement a qword
-            description: Decrement a qword at the current offset by 1 or n, if specified
+            description: Decrement a qword at the current offset by 1 or <n>, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -259,38 +259,122 @@ commands:
           - text: w6e
             arg_str: " 48656c6c6f576f726c64"
             comment: Write the string "SGVsbG9Xb3JsZAo=" (without quotes) at current offset.
-  - name: wh
-    cname: wh_handler_old
-    summary: whereis/which shell command
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: we
-    cname: we_handler_old
     summary: Extend write operations (insert bytes instead of replacing)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: wen
+        cname: write_extend_zero
+        summary: Insert <len> null bytes at <addr> or current offset and extend the file at current offset
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wes
+        cname: write_extend_shift
+        summary: Shift <len> bytes at current offset left or right based on <dist>
+        description: >
+          Shift the bytes at current offset left or right, based on the value of
+          <dist>. Positive <dist> shifts the data right, negative <dist> shifts
+          the data left. The amount of data to be shifted is either <len>, if
+          specified, or the whole remaining file otherwise.
+        args:
+          - name: dist
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wex
+        cname: write_extend_hexbytes
+        summary: Insert <hex_bytes> at <addr> or current offset and extend the file at current offset
+        args:
+          - name: bytes
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: wex
+                arg_str: " 414243"
+                comment: Insert the characters "ABC" at the current offset and extend the file
   - name: wu
-    cname: wu_handler_old
+    cname: write_unified_patch
     summary: Apply unified hex patch (see output of cu)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
   - name: wr
-    cname: wr_handler_old
-    summary: Write <num> random bytes
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: wA
-    cname: wA_handler_old
-    summary: Alter/modify opcode at current seek (see wA?)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    cname: write_random
+    summary: Write <len> random bytes
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
   - name: wc
-    cname: wc_handler_old
     summary: Write cache commands
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: wc
+        cname: write_cache_list
+        summary: List all write changes in the cache
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: wc-
+        cname: write_cache_remove
+        summary: Remove write operation at current offset or in the given range
+        args:
+          - name: from
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: to
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wc-*
+        cname: write_cache_remove_all
+        summary: Reset the cache
+        args: []
+      - name: wc+
+        cname: write_cache_commit
+        summary: Commit cache from address <from> up to <to> or one blocksize
+        args:
+          - name: from
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: to
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wci
+        cname: write_cache_commit_all
+        summary: Commit the cache
+        args: []
+      - name: wcp
+        cname: write_pcache_list
+        summary: List all write changes in the p-cache
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: wcpi
+        cname: write_pcache_commit
+        summary: Commit p-cache for specified <fd> or current file
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
   - name: wz
-    cname: wz_handler_old
+    cname: write_zero_string
     summary: Write zero-terminated string
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: wt
-    cname: wt_handler_old
-    summary: Write to file
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: wf
     summary: Write data from file, socket, offset
     subcommands:
@@ -332,34 +416,293 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
   - name: ww
-    cname: ww_handler_old
-    summary: Write wide string
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    cname: write_wide_string
+    summary: Write wide 16 little endian string
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: wx
-    cname: wx_handler_old
-    summary: Write hexadecimal
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Write hexadecimal data
+    subcommands:
+      - name: wx
+        cname: write_hex
+        summary: Write hexadecimal data <hex> into current offset
+        args:
+          - name: hex
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: wxf
+        cname: write_hex_from_file
+        summary: Write hexadecimal data from file <file> into current offset
+        args:
+          - name: file|-
+            type: RZ_CMD_ARG_TYPE_FILE
   - name: wa
-    cname: wa_handler_old
-    summary: Write opcode, separated by ';'
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Write opcodes
+    subcommands:
+      - name: wa
+        cname: write_assembly
+        summary: Assemble instruction(s) and write bytes at current offset
+        description: >
+          Assemble the <instructions> provided as argument considering the
+          current architecture and bits in asm.arch/asm.bits and write the
+          resulting bytes at the current offset.
+        args:
+          - name: instructions
+            type: RZ_CMD_ARG_TYPE_STRING
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+      - name: wai
+        cname: write_assembly_inside
+        summary: Assemble instruction(s) and write bytes inside the current instruction
+        description: >
+          Assemble the <instructions> provided as argument considering the
+          current architecture and bits in asm.arch/asm.bits and write the
+          resulting bytes "inside" the current instruction, by filling the
+          remaining bytes of the old instruction with nop bytes.
+        args:
+          - name: instructions
+            type: RZ_CMD_ARG_TYPE_STRING
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+      - name: waf
+        cname: write_assembly_file
+        summary: Assemble file and write bytes at current offset
+        description: >
+          Assemble the assembly file <file> provided as argument considering the
+          current architecture and bits in asm.arch/asm.bits and write the
+          resulting bytes at the current offset.
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: wao
+        cname: write_assembly_opcode
+        summary: Write on the current opcode
+        args:
+          - name: op
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Operators
+            entries:
+              - text: wao
+                arg_str: " nop"
+                comment: Make the current instruction a no operation
+              - text: wao
+                arg_str: " jinf"
+                comment: Assemble an infinite loop
+              - text: wao
+                arg_str: " jz"
+                comment: Make the current conditional instruction a jump-if-zero
+              - text: wao
+                arg_str: " jnz"
+                comment: Make the current conditional instruction a jump-if-not-zero
+              - text: wao
+                arg_str: " ret1"
+                comment: Make the current instruction return 1
+              - text: wao
+                arg_str: " ret0"
+                comment: Make the current instruction return 0
+              - text: wao
+                arg_str: " retn"
+                comment: Make the current instruction return -1
+              - text: wao
+                arg_str: " nocj"
+                comment: Make the current conditional instruction unconditional
+              - text: wao
+                arg_str: " trap"
+                comment: Make the current instruction a trap (e.g. int3 in x86)
+              - text: wao
+                arg_str: " recj"
+                comment: Swap the condition of the current conditional instruction
   - name: wb
-    cname: wb_handler_old
-    summary: Write in current block with cyclic hexstring
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    cname: write_block
+    summary: Write in current block an hexstring cyclically
+    args:
+      - name: hex
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: wm
-    cname: wm_handler_old
     summary: Set binary mask hexpair to be used as cyclic write mask
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: wm
+        cname: write_mask_set
+        summary: Set a write mask
+        description: >
+          Set a write mask that is applied whenever a following write operation
+          is performed. Data will be masked as if the first byte of data is in
+          arithmetic AND (&) with the first byte of the mask, the second byte of
+          data with the second byte of the mask, and so on.
+        args:
+          - name: hex_mask
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: wm-
+        cname: write_mask_reset
+        summary: Remove the write mask
+        args: []
   - name: wo
-    cname: wo_handler_old
-    summary: Write in block with operation
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Write a block with a special operation
+    subcommands:
+      - name: wo2
+        cname: write_op_2byteswap
+        summary: Swap the endianess of 2-bytes values in the current block
+        args: []
+      - name: wo4
+        cname: write_op_4byteswap
+        summary: Swap the endianess of 4-bytes values in the current block
+        args: []
+      - name: wo8
+        cname: write_op_8byteswap
+        summary: Swap the endianess of 8-bytes values in the current block
+        args: []
+      - name: woa
+        cname: write_op_add
+        summary: Add each existing byte in the block with the given <value>
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: woA
+        cname: write_op_and
+        summary: Bitwise-and each existing byte in the block with the given <value>
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: wod
+        cname: write_op_div
+        summary: Divide each existing byte in the block with the given <value>
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: wol
+        cname: write_op_shl
+        summary: Bitwise-shift-left each existing byte in the block with the given <value>
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: wom
+        cname: write_op_mul
+        summary: Multiply each existing byte in the block with the given <value>
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: woo
+        cname: write_op_or
+        summary: Bitwise-or each existing byte in the block with the given <value>
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: wor
+        cname: write_op_shr
+        summary: Bitwise-shift-right each existing byte in the block with the given <value>
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: wos
+        cname: write_op_sub
+        summary: Subtract each existing byte in the block with the given <value>
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: wox
+        cname: write_op_xor
+        summary: Bitwise-xor each existing byte in the block with the given <value>
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: woe
+        cname: write_op_sequence
+        summary: Write a sequence repeatedly with values from <from> up to <to> in the block
+        description: >
+          Write a sequence of data to fill the whole block at the current
+          offset. The sequence is formed starting from <from> up to <to>, with
+          an increment specified in <step>. Each value is written as a
+          <value_size>-bytes value, according to the endianess specified in
+          cfg.bigendian.
+        args:
+          - name: from
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: to
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: step
+            type: RZ_CMD_ARG_TYPE_NUM
+            default_value: 1
+          - name: value_size
+            type: RZ_CMD_ARG_TYPE_NUM
+            default_value: 1
+        details:
+          - name: Examples
+            entries:
+              - text: woe
+                arg_str: " 1 3 1"
+                comment: "Write 010203010203010203"
+              - text: woe
+                arg_str: " 1 4 2"
+                comment: "Write 010301030103010301"
+              - text: woe
+                arg_str: " 1 5 2"
+                comment: "Write 010305020401030502"
+              - text: woe
+                arg_str: " 1 3 1 2"
+                comment: "Write 01000200030001000200"
+      - name: woD
+        cname: write_op_decrypt
+        summary: Decrypt current block with given <algo>, <key> and optional <IV>
+        args:
+          - name: algo
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: key
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: IV
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: woE
+        cname: write_op_encrypt
+        summary: Encrypt current block with given <algo>, <key> and optional <IV>
+        args:
+          - name: algo
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: key
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: IV
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: woa
+            arg_str: " 20"
+            comment: "Content before: 1122334455 ; Content after: 3142536475"
+          - text: wos
+            arg_str: " 2021"
+            comment: "Content before: 1122334455 ; Content after: f101132335"
+          - text: wo4
+            arg_str: ""
+            comment: "Content before: 1122334455667788; Content after: 4433221188776655"
+  - name: wD
+    summary: Write De Bruijn Pattern
+    subcommands:
+      - name: wD
+        cname: write_debruijn
+        summary: Write a De Bruijn Pattern of length <len> at the current offset
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: wD/
+        cname: write_debruijn_find
+        summary: Returns the offset where <value> can be found in a De Bruijn Pattern
+        description: >
+          It search for a particular value in the pattern as returned by the
+          `wD` command. <value> is assumed to be a number of as few bytes as
+          necessary, in the endian specified by cfg.bigendian.
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
   - name: wd
-    cname: wd_handler_old
-    summary: Duplicate N bytes from offset at current seek
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Duplicate <len> bytes from <src> offset to current seek
+    cname: write_duplicate
+    args:
+      - name: src
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
   - name: ws
-    cname: ws_handler_old
+    cname: write_length_string
     summary: Write 1 byte for length and then the string
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING

@@ -21,8 +21,8 @@
 #ifndef MACH0_CLASSES_H
 #define MACH0_CLASSES_H
 
-RZ_API RzList *MACH0_(parse_classes)(RzBinFile *bf);
-RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, bool dupe, RzSkipList *relocs);
-RZ_API void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, RzSkipList *relocs);
+RZ_API RzList *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi);
+RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, bool dupe, RzSkipList *relocs, objc_cache_opt_info *oi);
+RZ_API void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, RzSkipList *relocs, objc_cache_opt_info *oi);
 
 #endif // MACH0_CLASSES_H

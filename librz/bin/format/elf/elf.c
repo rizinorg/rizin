@@ -151,93 +151,8 @@ static bool init_ehdr_sdb(ELFOBJ *bin) {
 		sdb_set(bin->kv, "elf_type.cparse", sdb_elf_type_cparse, 0);
 }
 
-static bool is_valid_elf_ident(ut8 *e_ident) {
-	return !memcmp(e_ident, ELFMAG, SELFMAG) || !memcmp(e_ident, CGCMAG, SCGCMAG);
-}
-
-static bool init_ehdr_ident(ELFOBJ *bin) {
-	memset(&bin->ehdr, 0, sizeof(Elf_(Ehdr)));
-
-	if (rz_buf_read_at(bin->b, 0, bin->ehdr.e_ident, EI_NIDENT) < 0) {
-		RZ_LOG_WARN("Failed to read ELF header e_ident.\n")
-		return false;
-	}
-
-	if (!is_valid_elf_ident(bin->ehdr.e_ident)) {
-		RZ_LOG_WARN("Invalid ELF identification.\n");
-		return false;
-	}
-
-	bin->big_endian = bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB;
-
-	return true;
-}
-
-static bool init_ehdr_other_aux(ELFOBJ *bin, ut64 *offset) {
-	return Elf_(rz_bin_elf_read_half)(bin, offset, &bin->ehdr.e_type) &&
-		Elf_(rz_bin_elf_read_half)(bin, offset, &bin->ehdr.e_machine) &&
-		Elf_(rz_bin_elf_read_word)(bin, offset, &bin->ehdr.e_version) &&
-		Elf_(rz_bin_elf_read_addr)(bin, offset, &bin->ehdr.e_entry) &&
-		Elf_(rz_bin_elf_read_off)(bin, offset, &bin->ehdr.e_phoff) &&
-		Elf_(rz_bin_elf_read_off)(bin, offset, &bin->ehdr.e_shoff) &&
-		Elf_(rz_bin_elf_read_word)(bin, offset, &bin->ehdr.e_flags) &&
-		Elf_(rz_bin_elf_read_half)(bin, offset, &bin->ehdr.e_ehsize) &&
-		Elf_(rz_bin_elf_read_half)(bin, offset, &bin->ehdr.e_phentsize);
-}
-
-static bool is_tiny_elf(ELFOBJ *bin) {
-	return bin->size == 45;
-}
-
-static Elf_(Half) get_tiny_elf_phnum(ELFOBJ *bin) {
-	ut64 offset = 44;
-
-	ut8 tmp;
-	if (Elf_(rz_bin_elf_read_char)(bin, &offset, &tmp)) {
-		return tmp;
-	}
-
-	return 0;
-}
-
-static bool init_ehdr_other(ELFOBJ *bin) {
-	ut64 offset = EI_NIDENT;
-
-	if (!init_ehdr_other_aux(bin, &offset)) {
-		RZ_LOG_WARN("Failed to read beginning of the ELF header (until e_phnum).\n")
-		return false;
-	}
-
-	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_phnum)) {
-		RZ_LOG_WARN("Failed to read ELF header (e_phnum).\n")
-	}
-
-	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shentsize)) {
-		RZ_LOG_WARN("Failed to read ELF header (e_shentsize).\n")
-	}
-
-	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shnum)) {
-		RZ_LOG_WARN("Failed to read ELF header (e_shnum).\n")
-	}
-
-	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shstrndx)) {
-		RZ_LOG_WARN("Failed to read ELF header (e_shstrndx).\n")
-	}
-
-	if (is_tiny_elf(bin)) {
-		RZ_LOG_WARN("The binary seems to be a tiny elf (45 bytes). Reload e_phnum value.\n");
-		bin->ehdr.e_phnum = get_tiny_elf_phnum(bin);
-	}
-
-	return true;
-}
-
 static bool init_ehdr(ELFOBJ *bin) {
-	if (!init_ehdr_ident(bin)) {
-		return false;
-	}
-
-	if (!init_ehdr_other(bin)) {
+	if (!Elf_(rz_bin_elf_get_ehdr)(bin)) {
 		return false;
 	}
 
@@ -343,7 +258,7 @@ static bool init_dynstr_aux(ELFOBJ *bin) {
 		return false;
 	}
 
-	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	ut64 offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (offset == UT64_MAX) {
 		RZ_LOG_WARN("Failed to convert DT_STRTAB to a physical offset.\n");
 		return false;
@@ -408,6 +323,7 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
 
 	bin->relocs = Elf_(rz_bin_elf_relocs_new)(bin);
+	bin->reloc_targets_map_base = Elf_(rz_bin_elf_get_targets_map_base)(bin);
 
 	bin->notes = Elf_(rz_bin_elf_notes_new)(bin);
 
@@ -481,7 +397,7 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
  * Converts a physical address to the virtual address, looking
  * at the program headers in the binary bin
  */
-ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
+ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 
 	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
@@ -510,7 +426,7 @@ ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
  * Converts a virtual address to the relative physical address, looking
  * at the program headers in the binary bin
  */
-ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
+ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 
 	if (!Elf_(rz_bin_elf_has_segments)(bin)) {

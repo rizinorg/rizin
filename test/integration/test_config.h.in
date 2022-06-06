@@ -1,0 +1,9 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#ifndef _TEST_CONFIG_H_
+#define _TEST_CONFIG_H_
+
+#define RIZIN_BUILD_PATH @RIZIN_BUILD_PATH@
+
+#endif /* _TEST_CONFIG_H_ */

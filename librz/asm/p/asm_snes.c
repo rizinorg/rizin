@@ -16,14 +16,14 @@ static int dis(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		dlen = 0;
 	}
 	op->size = dlen;
-	if (buf[0] == 0xc2) { //REP
+	if (buf[0] == 0xc2) { // REP
 		if (buf[1] & 0x10) {
 			snesflags->X = 0;
 		}
 		if (buf[1] & 0x20) {
 			snesflags->M = 0;
 		}
-	} else if (buf[0] == 0xe2) { //SEP
+	} else if (buf[0] == 0xe2) { // SEP
 		if (buf[1] & 0x10) {
 			snesflags->X = 1;
 		}

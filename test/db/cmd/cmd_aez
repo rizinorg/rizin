@@ -1,0 +1,188 @@
+NAME=aezsu: RzIL step until
+FILE=bins/bf/hello-ok.bf
+ARGS=-eio.cache=1
+CMDS=<<EOF
+s 0
+aezi
+aezsu 0x10
+aezv
+EOF
+EXPECT=<<EOF
+ PC: 0x0000000000000010 ptr: 0x0000000000010001
+EOF
+RUN
+
+NAME=aezsu: RzIL step until failure
+FILE==
+ARGS=-a bf
+TIMEOUT=4
+CMDS=<<EOF
+w ">>>>"
+aezi
+aezsu 0x10
+ar
+EOF
+EXPECT=<<EOF
+ptr = 0x00010004
+pc = 0x00000004
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RzIL: invalid instruction or lifting not implemented at address 0x00000004
+EOF
+RUN
+
+NAME=aezs: RzIL step many failure
+FILE==
+ARGS=-a bf
+TIMEOUT=4
+CMDS=<<EOF
+w ">>>>"
+aezi
+aezs 9001
+ar
+EOF
+EXPECT=<<EOF
+ptr = 0x00010004
+pc = 0x00000004
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RzIL: invalid instruction or lifting not implemented at address 0x00000004
+EOF
+RUN
+
+NAME=aezse: RzIL step with events many failure
+FILE==
+ARGS=-a bf
+TIMEOUT=4
+CMDS=<<EOF
+w ">>>>"
+aezi
+aezse 9001
+ar
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x0, new: 0x1)
+var_write(name: ptr, old: 0x10000, new: 0x10001)
+pc_write(old: 0x1, new: 0x2)
+var_write(name: ptr, old: 0x10001, new: 0x10002)
+pc_write(old: 0x2, new: 0x3)
+var_write(name: ptr, old: 0x10002, new: 0x10003)
+pc_write(old: 0x3, new: 0x4)
+var_write(name: ptr, old: 0x10003, new: 0x10004)
+ptr = 0x00010004
+pc = 0x00000004
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RzIL: invalid instruction or lifting not implemented at address 0x00000004
+EOF
+RUN
+
+NAME=aezv: RzIL var set
+FILE=bins/bf/hello-ok.bf
+CMDS=<<EOF
+s 0
+aezi
+aezv
+?e --
+aezv PC 0x42
+aezv
+?e --
+aezv ptr 0xc0ffee
+aezv
+EOF
+EXPECT=<<EOF
+ PC: 0x0000000000000000 ptr: 0x0000000000010000
+--
+PC = 0x42
+ PC: 0x0000000000000042 ptr: 0x0000000000010000
+--
+ptr = 0xc0ffee
+ PC: 0x0000000000000042 ptr: 0x0000000000c0ffee
+EOF
+RUN
+
+NAME=aezs regs
+FILE=bins/bf/hello-ok.bf
+CMDS=<<EOF
+s 0
+aezi
+ar
+aezs
+ar
+?e --
+ar pc=0x54
+aezs 1
+aezv
+ar
+fl @F:registers
+EOF
+EXPECT=<<EOF
+ptr = 0x00010000
+pc = 0x00000000
+ptr = 0x00010000
+pc = 0x00000001
+--
+ PC: 0x0000000000000055 ptr: 0x0000000000010001
+ptr = 0x00010001
+pc = 0x00000055
+0x00000055 8 pc
+0x00010001 8 ptr
+EOF
+RUN
+
+NAME=aezi pc and flags
+FILE=bins/bf/hello-ok.bf
+CMDS=<<EOF
+s 0x100
+aezi
+fl @F:registers
+EOF
+EXPECT=<<EOF
+0x00000100 8 pc
+0x00010000 8 ptr
+EOF
+RUN
+
+NAME=double aezsu with different start pc
+FILE=bins/bf/2+5.bf
+CMDS=<<EOF
+e io.cache=1
+aezi
+(emu_pc pc; ar pc=$0; ar; aezsu $s; ?e)
+.(emu_pc 1)
+wv1 0 @ ptr
+.(emu_pc 0)
+EOF
+EXPECT=<<EOF
+ptr = 0x00010000
+pc = 0x00000001
+6
+ptr = 0x00010000
+pc = 0x00000000
+7
+EOF
+RUN
+
+NAME=double aezi with different offsets
+FILE=bins/bf/2+5.bf
+CMDS=<<EOF
+e io.cache=1
+(emu_start start; aezi @ $0; aezsu $s; ?e)
+.(emu_start 1)
+w0 1 @ ptr
+.(emu_start 2)
+EOF
+EXPECT=<<EOF
+6
+5
+EOF
+RUN

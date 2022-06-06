@@ -88,7 +88,7 @@ RUN
 
 NAME=mdmp maps
 FILE=bins/mdmp/calc.dmp
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x000043ac 0x0398f9b8 - 0x0398ffff r-- fmap.memory.0x398f9b8
  2 fd: 3 +0x000049f4 0x77639dea - 0x77639ee9 r-- fmap.memory.0x77639dea
@@ -104,7 +104,7 @@ RUN
 
 NAME=mdmp memory64 maps
 FILE=bins/mdmp/hello64.dmp
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x00002c8f 0x00010000 - 0x0001ffff r-- fmap.memory64.0x10000
  2 fd: 3 +0x00012c8f 0x00020000 - 0x0002ffff r-- fmap.memory64.0x20000
@@ -114,7 +114,7 @@ EXPECT=<<EOF
  6 fd: 3 +0x0002ac8f 0x00250000 - 0x00250fff r-- fmap.memory64.0x250000
  7 fd: 3 +0x0002bc8f 0x00260000 - 0x002c6fff r-- fmap.memory64.0x260000
  8 fd: 3 +0x00092c8f 0x00400000 - 0x00400fff r-- fmap.memory64.0x400000
- 9 fd: 3 +0x00093c8f 0x00401000 - 0x00402fff r-x fmap.memory64.0x401000
+ 9 fd: 3 +0x00093c8f 0x00401000 * 0x00402fff r-x fmap.memory64.0x401000
 10 fd: 3 +0x00095c8f 0x00403000 - 0x00403fff r-- fmap.memory64.0x403000
 11 fd: 3 +0x00096c8f 0x00404000 - 0x00406fff r-- fmap.memory64.0x404000
 12 fd: 3 +0x00099c8f 0x00407000 - 0x00408fff r-- fmap.memory64.0x407000
@@ -322,7 +322,7 @@ RUN
 
 NAME=mdmp 32bit - relocs following
 FILE=bins/mdmp/hello.dmp
-CMDS=e asm.bytes=true;pd 12 @[0x004061cc];
+CMDS=e asm.bytes=true;pd 12 @ [0x004061cc];
 EXPECT=<<EOF
             ;-- vfprintf:
             0x773e7430      8bff           mov   edi, edi
@@ -379,7 +379,7 @@ EXPECT=<<EOF
 0x00128fa8 0x74fc93d6 11 24 C:_Windows_System32_wow64win.dll utf16le VarFileInfo
 0x000cdc38 0x74f66066 15 32 C:_Windows_System32_wow64cpu.dll utf16le VS_VERSION_INFO
 0x000cdf84 0x74f663b2 11 24 C:_Windows_System32_wow64cpu.dll utf16le VarFileInfo
-0x00299106 0x77087534 11 12 C:_Windows_SysWOW64_kernel32.dll ascii _vfprintf_l
+0x00299106 0x77378534 11 12 C:_Windows_SysWOW64_kernel32.dll ascii _vfprintf_l
 0x001adff0 0x75d9341e 11 24 C:_Windows_SysWOW64_KERNELBASE.dll utf16le VarFileInfo
 0x0033641a 0x77415848 39 40 C:_Windows_SysWOW64_msvcrt.dll ascii Assertion failed:
 0x00337f88 0x774173b6 11 24 C:_Windows_SysWOW64_msvcrt.dll utf16le VarFileInfo
@@ -492,7 +492,7 @@ RUN
 
 NAME=mdmp 64bit - relocs following
 FILE=bins/mdmp/hello64.dmp
-CMDS=e asm.bytes=true; pd 9 @[0x004083ac];
+CMDS=e asm.bytes=true; pd 9 @ [0x004083ac];
 EXPECT=<<EOF
             ;-- vfprintf:
             0x7fefdb0a1a4      4883ec38       sub   rsp, 0x38

@@ -30,10 +30,7 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 		PJ *pj = pj_new();
 		pj_a(pj);
 		rz_list_foreach (list, iter, cc) {
-			char *ccexpr = rz_analysis_cc_get(core->analysis, cc);
-			// TODO: expose this as an object, not just an array of strings
-			pj_s(pj, ccexpr);
-			free(ccexpr);
+			rz_core_analysis_cc_print(core, cc, pj);
 		}
 		pj_end(pj);
 		rz_cons_printf("%s\n", pj_string(pj));
@@ -127,21 +124,11 @@ RZ_IPI RZ_OWN char *rz_core_types_enum_as_c(RzTypeDB *typedb, const RzBaseType *
 	rz_return_val_if_fail(btype, NULL);
 	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_ENUM, NULL);
 
-	char *separator;
-	RzStrBuf *buf = rz_strbuf_new("");
-	if (!rz_vector_empty(&btype->enum_data.cases)) {
-		rz_strbuf_appendf(buf, "enum %s {%s", btype->name, multiline ? "\n" : "");
-		separator = multiline ? "\t" : "";
-		RzTypeEnumCase *cas;
-		rz_vector_foreach(&btype->enum_data.cases, cas) {
-			rz_strbuf_appendf(buf, "%s%s = %" PFMT64u, separator, cas->name, cas->val);
-			separator = multiline ? ",\n\t" : ", ";
-		}
-		rz_strbuf_append(buf, multiline ? "\n};\n" : "};\n");
-	} else {
-		rz_strbuf_appendf(buf, "enum %s {};\n", btype->name);
+	unsigned int multiline_opt = 0;
+	if (multiline) {
+		multiline_opt = RZ_TYPE_PRINT_MULTILINE;
 	}
-	return rz_strbuf_drain(buf);
+	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
 RZ_IPI RZ_OWN char *rz_core_types_enum_as_c_all(RzTypeDB *typedb, bool multiline) {
@@ -231,24 +218,11 @@ RZ_IPI RZ_OWN char *rz_core_types_union_as_c(RzTypeDB *typedb, const RzBaseType 
 	rz_return_val_if_fail(btype, NULL);
 	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_UNION, NULL);
 
-	char *separator;
-	RzStrBuf *buf = rz_strbuf_new("");
-	if (!rz_vector_empty(&btype->enum_data.cases)) {
-		rz_strbuf_appendf(buf, "union %s {%s", btype->name, multiline ? "\n" : "");
-		separator = multiline ? "\t" : "";
-		RzTypeUnionMember *memb;
-		rz_vector_foreach(&btype->union_data.members, memb) {
-			char *membdecl = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			rz_strbuf_appendf(buf, "%s%s", separator, membdecl);
-			free(membdecl);
-			separator = multiline ? ";\n\t" : "; ";
-		}
-		rz_strbuf_append(buf, ";");
-		rz_strbuf_append(buf, multiline ? "\n};\n" : "};\n");
-	} else {
-		rz_strbuf_appendf(buf, "union %s {};\n", btype->name);
+	unsigned int multiline_opt = 0;
+	if (multiline) {
+		multiline_opt = RZ_TYPE_PRINT_MULTILINE;
 	}
-	return rz_strbuf_drain(buf);
+	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
 RZ_IPI RZ_OWN char *rz_core_types_union_as_c_all(RzTypeDB *typedb, bool multiline) {
@@ -339,24 +313,8 @@ RZ_IPI RZ_OWN char *rz_core_types_struct_as_c(RzTypeDB *typedb, const RzBaseType
 	rz_return_val_if_fail(btype, NULL);
 	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_STRUCT, NULL);
 
-	char *separator;
-	RzStrBuf *buf = rz_strbuf_new("");
-	if (!rz_vector_empty(&btype->struct_data.members)) {
-		rz_strbuf_appendf(buf, "struct %s {%s", btype->name, multiline ? "\n" : "");
-		separator = multiline ? "\t" : "";
-		RzTypeStructMember *memb;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
-			char *membdecl = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			rz_strbuf_appendf(buf, "%s%s", separator, membdecl);
-			free(membdecl);
-			separator = multiline ? ";\n\t" : "; ";
-		}
-		rz_strbuf_append(buf, ";");
-		rz_strbuf_append(buf, multiline ? "\n};\n" : "};\n");
-	} else {
-		rz_strbuf_appendf(buf, "struct %s {};\n", btype->name);
-	}
-	return rz_strbuf_drain(buf);
+	unsigned int multiline_opt = multiline ? RZ_TYPE_PRINT_MULTILINE : 0;
+	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
 RZ_IPI RZ_OWN char *rz_core_types_struct_as_c_all(RzTypeDB *typedb, bool multiline) {
@@ -428,20 +386,7 @@ RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c(RzTypeDB *typedb, const RzBaseTyp
 	rz_return_val_if_fail(btype, NULL);
 	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF, NULL);
 
-	RzStrBuf *buf = rz_strbuf_new("");
-	char *typestr = rz_type_as_string(typedb, btype->type);
-	if (!typestr) {
-		rz_strbuf_free(buf);
-		return NULL;
-	}
-	// Typedef of the callable is a special case
-	if (rz_type_is_callable_ptr_nested(btype->type)) {
-		rz_strbuf_appendf(buf, "typedef %s;\n", typestr);
-	} else {
-		rz_strbuf_appendf(buf, "typedef %s %s;\n", typestr, btype->name);
-	}
-	free(typestr);
-	return rz_strbuf_drain(buf);
+	return rz_type_db_base_type_as_pretty_string(typedb, btype, RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_SHOW_TYPEDEF, 1);
 }
 
 RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c_all(RzTypeDB *typedb) {
@@ -463,22 +408,11 @@ RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c_all(RzTypeDB *typedb) {
 RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *type, bool multiline) {
 	rz_return_val_if_fail(type, NULL);
 
-	switch (type->kind) {
-	case RZ_BASE_TYPE_KIND_STRUCT:
-		return rz_core_types_struct_as_c(core->analysis->typedb, type, multiline);
-	case RZ_BASE_TYPE_KIND_UNION:
-		return rz_core_types_union_as_c(core->analysis->typedb, type, multiline);
-	case RZ_BASE_TYPE_KIND_ENUM:
-		return rz_core_types_enum_as_c(core->analysis->typedb, type, multiline);
-	case RZ_BASE_TYPE_KIND_TYPEDEF:
-		return rz_core_types_typedef_as_c(core->analysis->typedb, type);
-	case RZ_BASE_TYPE_KIND_ATOMIC:
-		return strdup(type->name);
-	default:
-		rz_warn_if_reached();
-		return NULL;
+	unsigned int multiline_opt = 0;
+	if (multiline) {
+		multiline_opt = RZ_TYPE_PRINT_MULTILINE;
 	}
-	return NULL;
+	return rz_type_db_base_type_as_pretty_string(core->analysis->typedb, type, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
 RZ_IPI RZ_OWN char *rz_core_types_as_c(RzCore *core, RZ_NONNULL const char *name, bool multiline) {
@@ -688,8 +622,8 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 		}
 	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
-		free(cmt);
 	}
+	free(cmt);
 }
 
 struct TLAnalysisContext {
@@ -707,7 +641,7 @@ static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *
 	RzList *slinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr);
 	RzList *dlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->dst_addr);
 	RzList *vlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr + ctx->src_imm);
-	//TODO: Handle register based arg for struct offset propgation
+	// TODO: Handle register based arg for struct offset propgation
 	if (vlinks && rz_list_length(vlinks) && ctx->var && ctx->var->kind != 'r') {
 		RzTypePath *vlink = rz_list_get_top(vlinks);
 		// FIXME: For now we only propagate simple type identifiers,
@@ -721,10 +655,10 @@ static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *
 			if (varbtype) {
 				// if a var addr matches with struct , change it's type and name
 				// var int local_e0h --> var struct foo
-				//if (strcmp(var->name, vlink) && !*resolved) {
+				// if (strcmp(var->name, vlink) && !*resolved) {
 				if (!*resolved) {
 					*resolved = true;
-					rz_analysis_var_set_type(ctx->var, vlink->typ);
+					rz_analysis_var_set_type(ctx->var, vlink->typ, true);
 					rz_analysis_var_rename(ctx->var, vlink->typ->identifier.name, false);
 				}
 			}
@@ -770,7 +704,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 		return;
 	}
 	rz_reg_arena_push(core->analysis->reg);
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
 	ut64 spval = rz_reg_getv(esil->analysis->reg, sp_name);
 	if (spval) {
 		// reset stack pointer to initial value
@@ -778,7 +712,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 		ut64 curpc = rz_reg_getv(esil->analysis->reg, pc_name);
 		int stacksz = rz_core_get_stacksz(core, fcn->addr, curpc);
 		if (stacksz > 0) {
-			rz_reg_arena_zero(esil->analysis->reg); // clear prev reg values
+			rz_reg_arena_zero(esil->analysis->reg, RZ_REG_TYPE_ANY); // clear prev reg values
 			rz_reg_set_value(esil->analysis->reg, sp, spval + stacksz);
 		}
 	} else {
@@ -895,7 +829,7 @@ beach:
 	rz_core_seek(core, oldoff, true);
 	rz_analysis_esil_free(esil);
 	rz_reg_arena_pop(core->analysis->reg);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 	free(buf);
 }
@@ -1018,10 +952,10 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 		pj_a(pj);
 		rz_list_foreach (types, it, btype) {
 			pj_o(pj);
-			//rz_str_trim(format_s);
+			// rz_str_trim(format_s);
 			pj_ks(pj, "type", btype->name);
 			pj_ki(pj, "size", btype->size);
-			//pj_ks(pj, "format", format_s);
+			// pj_ks(pj, "format", format_s);
 			pj_end(pj);
 		}
 		pj_end(pj);
@@ -1069,14 +1003,7 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 	const char *dir = rz_config_get(core->config, "dir.types");
-	char *homefile = NULL;
 	RzTypeDB *typedb = core->analysis->typedb;
-	if (*path == '~') {
-		if (path[1] && path[2]) {
-			homefile = rz_str_home(path + 2);
-			path = homefile;
-		}
-	}
 	if (!strcmp(path, "-")) {
 		char *tmp = rz_core_editor(core, "*.h", "");
 		if (tmp) {
@@ -1091,7 +1018,6 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 	} else {
 		if (!rz_file_exists(path)) {
 			RZ_LOG_ERROR("File \"%s\" does not exist\n", path);
-			free(homefile);
 			return false;
 		}
 		char *error_msg = NULL;
@@ -1101,7 +1027,6 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 			free(error_msg);
 		}
 	}
-	free(homefile);
 	return true;
 }
 

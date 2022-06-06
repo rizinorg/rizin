@@ -181,16 +181,16 @@ static bool gb_parse_ld3(ut8 *buf, char *buf_asm) {
 
 	const ut16 reg = (buf_asm[3] << 8) | buf_asm[4];
 	switch (reg) {
-	case 0x6263: //bc
+	case 0x6263: // bc
 		buf[0] = 0x01;
 		break;
-	case 0x6465: //de
+	case 0x6465: // de
 		buf[0] = 0x11;
 		break;
-	case 0x686c: //hl
+	case 0x686c: // hl
 		buf[0] = 0x21;
 		break;
-	case 0x7370: //sp
+	case 0x7370: // sp
 		buf[0] = 0x31;
 		break;
 	default:
@@ -227,10 +227,10 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 		mn = (mn << 8) | buf_asm[j];
 	}
 	switch (mn) {
-	case 0x6e6f70: //nop
+	case 0x6e6f70: // nop
 		opbuf[0] = 0x00;
 		break;
-	case 0x696e63: //inc
+	case 0x696e63: // inc
 		if ((i = strlen(buf_asm)) < 5) {
 			return op->size = 0;
 		}
@@ -259,7 +259,7 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 			len = 0;
 		}
 		break;
-	case 0x646563: //dec
+	case 0x646563: // dec
 		if ((i = strlen(buf_asm)) < 5) {
 			return op->size = 0;
 		}
@@ -299,28 +299,28 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 			break;
 		}
 		break;
-	case 0x726c6361: //rlca
+	case 0x726c6361: // rlca
 		opbuf[0] = 0x07;
 		break;
-	case 0x72726361: //rrca
+	case 0x72726361: // rrca
 		opbuf[0] = 0xf0;
 		break;
-	case 0x73746f70: //stop
+	case 0x73746f70: // stop
 		opbuf[0] = 0x10;
 		break;
-	case 0x726c61: //rla
+	case 0x726c61: // rla
 		opbuf[0] = 0x17;
 		break;
-	case 0x727261: //rra
+	case 0x727261: // rra
 		opbuf[0] = 0x1f;
 		break;
-	case 0x646161: //daa
+	case 0x646161: // daa
 		opbuf[0] = 0x27;
 		break;
-	case 0x63706c: //cpl
+	case 0x63706c: // cpl
 		opbuf[0] = 0x2f;
 		break;
-	case 0x616464: //add
+	case 0x616464: // add
 		rz_str_replace_in(buf_asm, strlen(buf_asm), ", ", ",", true);
 		if (strlen(buf_asm) < 5)
 			return op->size = 0;
@@ -341,45 +341,45 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 			len = gb_parse_arith1(opbuf, 5, buf_asm, 0x80, 0xc6);
 		}
 		break;
-	case 0x616463: //adc
+	case 0x616463: // adc
 		len = gb_parse_arith1(opbuf, 5, buf_asm, 0x88, 0xce);
 		break;
-	case 0x737562: //sub
+	case 0x737562: // sub
 		len = gb_parse_arith1(opbuf, 5, buf_asm, 0x90, 0xd6);
 		break;
-	case 0x736263: //sbc
+	case 0x736263: // sbc
 		len = gb_parse_arith1(opbuf, 5, buf_asm, 0x98, 0xde);
 		break;
-	case 0x616e64: //and
+	case 0x616e64: // and
 		len = gb_parse_arith1(opbuf, 5, buf_asm, 0xa0, 0xe6);
 		break;
-	case 0x786f72: //xor
+	case 0x786f72: // xor
 		len = gb_parse_arith1(opbuf, 5, buf_asm, 0xa8, 0xee);
 		break;
-	case 0x6f72: //or
+	case 0x6f72: // or
 		len = gb_parse_arith1(opbuf, 4, buf_asm, 0xb0, 0xf6);
 		break;
-	case 0x6370: //cp
+	case 0x6370: // cp
 		len = gb_parse_arith1(opbuf, 4, buf_asm, 0xb8, 0xfe);
 		break;
-	case 0x736366: //scf
+	case 0x736366: // scf
 		opbuf[0] = 0x37;
 		break;
-	case 0x636366: //ccf
+	case 0x636366: // ccf
 		opbuf[0] = 0x3f;
 		break;
-	case 0x68616c74: //halt
+	case 0x68616c74: // halt
 		opbuf[0] = 0x76;
 		break;
-	case 0x726574: //ret
+	case 0x726574: // ret
 		if (strlen(buf_asm) < 5) {
 			opbuf[0] = 0xc9;
 		} else if (strlen(buf_asm) < 6) {
 			// there is no way that there can be "  " - we did rz_str_replace_in
 			str_op(buf_asm + 4);
-			if (buf_asm[4] == 'z') { //ret Z
+			if (buf_asm[4] == 'z') { // ret Z
 				opbuf[0] = 0xc8;
-			} else if (buf_asm[4] == 'c') { //ret C
+			} else if (buf_asm[4] == 'c') { // ret C
 				opbuf[0] = 0xd8;
 			} else {
 				return op->size = 0;
@@ -389,26 +389,26 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 			if (buf_asm[4] != 'n') {
 				return op->size = 0;
 			}
-			str_op(&buf_asm[5]); //if (!(strlen(buf_asm) < 6)) => must be 6 or greater
-			if (buf_asm[5] == 'z') { //ret nZ
+			str_op(&buf_asm[5]); // if (!(strlen(buf_asm) < 6)) => must be 6 or greater
+			if (buf_asm[5] == 'z') { // ret nZ
 				opbuf[0] = 0xc0;
-			} else if (buf_asm[5] == 'c') { //ret nC
+			} else if (buf_asm[5] == 'c') { // ret nC
 				opbuf[0] = 0xd0;
 			} else {
 				return op->size = 0;
 			}
 		}
 		break;
-	case 0x72657469: //reti
+	case 0x72657469: // reti
 		opbuf[0] = 0xd9;
 		break;
-	case 0x6469: //di
+	case 0x6469: // di
 		opbuf[0] = 0xf3;
 		break;
-	case 0x6569: //ei
+	case 0x6569: // ei
 		opbuf[0] = 0xfb;
 		break;
-	case 0x6c64: //ld
+	case 0x6c64: // ld
 		i = strlen(buf_asm);
 		rz_str_replace_in(buf_asm, (ut32)i, "[ ", "[", true);
 		rz_str_replace_in(buf_asm, (ut32)i, " ]", "]", true);
@@ -422,7 +422,7 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 			}
 		}
 		break;
-	case 0x727374: //rst
+	case 0x727374: // rst
 		if (strlen(buf_asm) < 5) {
 			return op->size = 0;
 		}
@@ -432,7 +432,7 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 		}
 		opbuf[0] = (ut8)((num & 0xff) + 0xc7);
 		break;
-	case 0x70757368: //push
+	case 0x70757368: // push
 		if (strlen(buf_asm) < 7) {
 			return op->size = 0;
 		}
@@ -450,7 +450,7 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 			len = 0;
 		}
 		break;
-	case 0x706f70: //pop
+	case 0x706f70: // pop
 		if (strlen(buf_asm) < 6)
 			return op->size = 0;
 		str_op(&buf_asm[4]);
@@ -467,7 +467,7 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 			len = 0;
 		}
 		break;
-	case 0x6a70: //jp
+	case 0x6a70: // jp
 		if (strlen(buf_asm) < 4) {
 			return op->size = 0;
 		}
@@ -558,7 +558,7 @@ static int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
 			}
 		}
 		break;
-	case 0x63616c6c: //call
+	case 0x63616c6c: // call
 		if (strlen(buf_asm) < 6) {
 			return op->size = 0;
 		}

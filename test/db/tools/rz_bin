@@ -106,7 +106,7 @@ EXPECT=<<EOF
 [Sections]
 paddr      size  vaddr      vsize align perm name                        type       flags         
 --------------------------------------------------------------------------------------------------
-0x00000000 0x0   0x00000000 0x0   0x0   ---- prixfixe.                   NULL       
+0x00000000 0x0   ---------- 0x0   0x0   ---- prixfixe.                   NULL       
 0x00000134 0x13  0x08048134 0x13  0x0   -r-- prixfixe..interp            PROGBITS   alloc
 0x00000148 0x20  0x08048148 0x20  0x0   -r-- prixfixe..note.ABI-tag      NOTE       alloc
 0x00000168 0x24  0x08048168 0x24  0x0   -r-- prixfixe..note.gnu.build-id NOTE       alloc
@@ -132,10 +132,10 @@ paddr      size  vaddr      vsize align perm name                        type   
 0x00000694 0x18  0x08049694 0x18  0x0   -rw- prixfixe..got.plt           PROGBITS   write,alloc
 0x000006ac 0x8   0x080496ac 0x8   0x0   -rw- prixfixe..data              PROGBITS   write,alloc
 0x000006b4 0x0   0x080496b4 0x4   0x0   -rw- prixfixe..bss               NOBITS     write,alloc
-0x000006b4 0x11  0x00000000 0x11  0x0   ---- prixfixe..comment           PROGBITS   merge,strings
-0x000006c5 0x106 0x00000000 0x106 0x0   ---- prixfixe..shstrtab          STRTAB     
-0x00000c7c 0x450 0x00000000 0x450 0x0   ---- prixfixe..symtab            SYMTAB     
-0x000010cc 0x257 0x00000000 0x257 0x0   ---- prixfixe..strtab            STRTAB     
+0x000006b4 0x11  ---------- 0x11  0x0   ---- prixfixe..comment           PROGBITS   merge,strings
+0x000006c5 0x106 ---------- 0x106 0x0   ---- prixfixe..shstrtab          STRTAB     
+0x00000c7c 0x450 ---------- 0x450 0x0   ---- prixfixe..symtab            SYMTAB     
+0x000010cc 0x257 ---------- 0x257 0x0   ---- prixfixe..strtab            STRTAB     
 
 [Segments]
 paddr      size  vaddr      vsize align  perm name                  
@@ -165,7 +165,7 @@ NAME=rz-bin -z pe
 FILE=bins/pe/a.exe
 CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
-8
+31
 EOF
 RUN
 
@@ -173,15 +173,7 @@ NAME=rz-bin -zz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rz-bin -zz ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
-86  0x00002619 0x00404019 10  11   .rdata  ascii   Password: 
-EOF
-RUN
-
-NAME=rz-bin -zzz pe
-FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzz ${RZ_FILE} | grep "Password:"
-EXPECT=<<EOF
-086 0x00002619 0x00404019  10  11 (.rdata) ascii Password: 
+102 0x00002619 0x00404019 10 11 (.rdata) ascii Password: 
 EOF
 RUN
 
@@ -193,25 +185,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-bin -zzzq pe
-FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzzq ${RZ_FILE} | grep "Password:"
-EXPECT=<<EOF
-0x00404019 Password: 
-EOF
-RUN
-
 NAME=rz-bin -zzqq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rz-bin -zzqq ${RZ_FILE} | grep "Password:"
-EXPECT=<<EOF
-Password: 
-EOF
-RUN
-
-NAME=rz-bin -zzzqq pe
-FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzzqq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 Password: 
 EOF
@@ -549,7 +525,7 @@ nth paddr      vaddr      bind   type   size lib name
 [Sections]
 paddr      size  vaddr      vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
-0x00000000 0x0   0x00000000 0x0   0x0   ----                    NULL       
+0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
 0x00000134 0x13  0x08048134 0x13  0x0   -r-- .interp            PROGBITS   alloc
 0x00000148 0x20  0x08048148 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
 0x00000168 0x24  0x08048168 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
@@ -575,10 +551,10 @@ paddr      size  vaddr      vsize align perm name               type       flags
 0x00000694 0x18  0x08049694 0x18  0x0   -rw- .got.plt           PROGBITS   write,alloc
 0x000006ac 0x8   0x080496ac 0x8   0x0   -rw- .data              PROGBITS   write,alloc
 0x000006b4 0x0   0x080496b4 0x4   0x0   -rw- .bss               NOBITS     write,alloc
-0x000006b4 0x11  0x00000000 0x11  0x0   ---- .comment           PROGBITS   merge,strings
-0x000006c5 0x106 0x00000000 0x106 0x0   ---- .shstrtab          STRTAB     
-0x00000c7c 0x450 0x00000000 0x450 0x0   ---- .symtab            SYMTAB     
-0x000010cc 0x257 0x00000000 0x257 0x0   ---- .strtab            STRTAB     
+0x000006b4 0x11  ---------- 0x11  0x0   ---- .comment           PROGBITS   merge,strings
+0x000006c5 0x106 ---------- 0x106 0x0   ---- .shstrtab          STRTAB     
+0x00000c7c 0x450 ---------- 0x450 0x0   ---- .symtab            SYMTAB     
+0x000010cc 0x257 ---------- 0x257 0x0   ---- .strtab            STRTAB     
 
 [Segments]
 paddr      size  vaddr      vsize align  perm name         
@@ -613,22 +589,22 @@ vaddr      paddr      type   name
 0x080496a8 0x000006a8 SET_32 __libc_start_main
 
 [Fields]
-paddr      name        vaddr      comment    
----------------------------------------------
-0x00000000 ELF         0x00000000 0x464c457f
-0x00000010 Type        0x00000010 0x00000002
-0x00000012 Machine     0x00000012 0x00000003
-0x00000014 Version     0x00000014 0x00000001
-0x00000018 Entry point 0x00000018 0x08048300
-0x0000001c PhOff       0x0000001c 0x00000034
-0x00000020 ShOff       0x00000020 0x000007cc
-0x00000024 Flags       0x00000024 0x00000000
-0x00000028 EhSize      0x00000028 0x00000034
-0x0000002a PhentSize   0x0000002a 0x00000020
-0x0000002c PhNum       0x0000002c 0x00000008
-0x0000002e ShentSize   0x0000002e 0x00000028
-0x00000030 ShNum       0x00000030 0x0000001e
-0x00000032 ShrStrndx   0x00000032 0x0000001b
+paddr      name       vaddr      comment                                         
+---------------------------------------------------------------------------------
+0x00000000 MAGIC      0x00000000 7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+0x00000010 Type       0x00000010 0x0002
+0x00000012 Machine    0x00000012 0x0003
+0x00000014 Version    0x00000014 0x00000001
+0x00000018 Entrypoint 0x00000018 0x08048300
+0x0000001c PhOff      0x0000001c 0x00000034
+0x00000020 ShOff      0x00000020 0x000007cc
+0x00000024 Flags      0x00000024 0x0000
+0x00000028 EhSize     0x00000028 52
+0x0000002a PhentSize  0x0000002a 32
+0x0000002c PhNum      0x0000002c 8
+0x0000002e ShentSize  0x0000002e 40
+0x00000030 ShNum      0x00000030 30
+0x00000032 ShStrndx   0x00000032 27
 
 [Libs]
 library   
@@ -663,7 +639,7 @@ Segment      Sections
 PHDR         
 INTERP       .interp
 LOAD0        .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame
-LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss
+LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data
 DYNAMIC      .dynamic
 NOTE         .note.ABI-tag .note.gnu.build-id
 GNU_EH_FRAME .eh_frame_hdr
@@ -875,20 +851,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-bin -D swift
-FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -D swift  _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
+
+NAME=rz-bin rust static type
+FILE==
+CMDS=!rz-bin -D rust '_ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE'
 EXPECT=<<EOF
-Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
+<Test + 'static as foo::Bar<Test>>::bar
 EOF
-BROKEN=1
 RUN
 
-NAME=rz-bin -D Unsupported
-FILE=--
-CMDS=!rz-bin -D XXX LOLILOL
+NAME=rz-bin -D java
+FILE==
+CMDS=!rz-bin -D java "Fake([BCDFIJSZ)Ltest/class/name;"
+EXPECT=<<EOF
+test.class.name Fake(byte[], char, double, float, int, long, short, boolean)
+EOF
+RUN
+
+NAME=rz-bin -D Invalid
+FILE==
+CMDS=!rz-bin -D Invalid XXXXX
 EXPECT_ERR=<<EOF
-Unsupported demangler
+EOF
+EXPECT=<<EOF
+Language 'Invalid' is unsupported
+List of supported languages:
+java   LGPL3    deroad
+msvc   LGPL3    inisider
+objc   LGPL3    pancake
+c++    GPL-2    Free Software Foundation
+rust   LGPL3    pancake
+swift  MIT      pancake
 EOF
 RUN
 
@@ -1065,142 +1058,132 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 {
-  "pdb": {
-    "types": [
-      {
-        "type": "structure",
-        "name": "struct_typedef",
-        "size": 7,
-        "members": [
-          {
-            "member_type": "char",
-            "member_name": "a",
-            "offset": 0
-          },
-          {
-            "member_type": "uint16_t",
-            "member_name": "b",
-            "offset": 1
-          },
-          {
-            "member_type": "int32_t",
-            "member_name": "c",
-            "offset": 3
-          }
-        ]
-      },
-      {
-        "type": "structure",
-        "name": "<unnamed-tag>",
-        "size": 4,
-        "members": [
-          {
-            "member_type": "char[4]",
-            "member_name": "a",
-            "offset": 0
-          },
-          {
-            "member_type": "int32_t",
-            "member_name": "b",
-            "offset": 0
-          }
-        ]
-      },
-      {
-        "type": "structure",
-        "name": "unnamed_member_types_typedef",
-        "size": 8,
-        "members": [
-          {
-            "member_type": "union <unnamed-tag>",
-            "member_name": "a",
-            "offset": 0
-          },
-          {
-            "member_type": "int32_t",
-            "member_name": "b",
-            "offset": 4
-          }
-        ]
-      },
-      {
-        "type": "structure",
-        "name": "bitfield_typedef",
-        "size": 1,
-        "members": [
-          {
-            "member_type": "uint8_t /*bitfield:1*/",
-            "member_name": "a",
-            "offset": 0
-          },
-          {
-            "member_type": "uint8_t /*bitfield:2*/",
-            "member_name": "b",
-            "offset": 0
-          },
-          {
-            "member_type": "uint8_t /*bitfield:3*/",
-            "member_name": "c",
-            "offset": 0
-          }
-        ]
-      },
-      {
-        "type": "structure",
-        "name": "union_typedef",
-        "size": 4,
-        "members": [
-          {
-            "member_type": "char",
-            "member_name": "a",
-            "offset": 0
-          },
-          {
-            "member_type": "uint16_t",
-            "member_name": "b",
-            "offset": 0
-          },
-          {
-            "member_type": "int32_t",
-            "member_name": "c",
-            "offset": 0
-          }
-        ]
-      }
-    ],
-    "gvars": [
-      {
-        "address": 12292,
-        "symtype": 0,
-        "section_name": ".data",
-        "gdata_name": "_uninitialized_global"
-      },
-      {
-        "address": 12288,
-        "symtype": 0,
-        "section_name": ".data",
-        "gdata_name": "_initialized_global"
-      },
-      {
-        "address": 4096,
-        "symtype": 2,
-        "section_name": ".text",
-        "gdata_name": "_function"
-      },
-      {
-        "address": 4182,
-        "symtype": 2,
-        "section_name": ".text",
-        "gdata_name": "_mainCRTStartup"
-      },
-      {
-        "address": 4120,
-        "symtype": 2,
-        "section_name": ".text",
-        "gdata_name": "_main"
-      }
-    ]
-  }
+  "pdb": [
+    {
+      "types": [
+        {
+          "type": "structure",
+          "name": "struct_typedef",
+          "size": 7,
+          "members": [
+            {
+              "member_type": "char",
+              "member_name": "a",
+              "offset": 0
+            },
+            {
+              "member_type": "int16_t",
+              "member_name": "b",
+              "offset": 1
+            },
+            {
+              "member_type": "int32_t",
+              "member_name": "c",
+              "offset": 3
+            }
+          ]
+        },
+        {
+          "type": "union",
+          "name": "type_0x1004",
+          "size": 4,
+          "members": [
+            {
+              "member_type": "char [4]",
+              "member_name": "a",
+              "offset": 0
+            },
+            {
+              "member_type": "int32_t",
+              "member_name": "b",
+              "offset": 0
+            }
+          ]
+        },
+        {
+          "type": "structure",
+          "name": "unnamed_member_types_typedef",
+          "size": 8,
+          "members": [
+            {
+              "member_type": "union type_0x1004",
+              "member_name": "a",
+              "offset": 0
+            },
+            {
+              "member_type": "int32_t",
+              "member_name": "b",
+              "offset": 4
+            }
+          ]
+        },
+        {
+          "type": "structure",
+          "name": "bitfield_typedef",
+          "size": 1,
+          "members": [
+            
+          ]
+        },
+        {
+          "type": "union",
+          "name": "union_typedef",
+          "size": 4,
+          "members": [
+            {
+              "member_type": "char",
+              "member_name": "a",
+              "offset": 0
+            },
+            {
+              "member_type": "int16_t",
+              "member_name": "b",
+              "offset": 0
+            },
+            {
+              "member_type": "int32_t",
+              "member_name": "c",
+              "offset": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "gvars": [
+        {
+          "address": 12292,
+          "symtype": 0,
+          "section_name": ".data",
+          "gdata_name": "_uninitialized_global"
+        },
+        {
+          "address": 12288,
+          "symtype": 0,
+          "section_name": ".data",
+          "gdata_name": "_initialized_global"
+        },
+        {
+          "address": 4096,
+          "symtype": 2,
+          "section_name": ".text",
+          "gdata_name": "_function"
+        },
+        {
+          "address": 4182,
+          "symtype": 2,
+          "section_name": ".text",
+          "gdata_name": "_mainCRTStartup"
+        },
+        {
+          "address": 4120,
+          "symtype": 2,
+          "section_name": ".text",
+          "gdata_name": "_main"
+        }
+      ]
+    }
+  ]
 }
 
 EOF
@@ -1211,22 +1194,6 @@ FILE==
 CMDS=!rz-bin -S ""
 EXPECT_ERR=<<EOF
 Cannot open empty path
-EOF
-RUN
-
-NAME=rz-bin rust static type
-FILE==
-CMDS=!rz-bin -D rust '_ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE'
-EXPECT=<<EOF
-<Test + 'static as foo::Bar<Test>>::bar
-EOF
-RUN
-
-NAME=rz-bin rust static type with hash
-FILE==
-CMDS=!rz-bin -D rust '_ZN96_$LT$core..fmt..Write..write_fmt..Adapter$LT$$u27$a$C$$u20$T$GT$$u20$as$u20$core..fmt..Write$GT$9write_str17he4f4768a2f446facE'
-EXPECT=<<EOF
-<core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_str::he4f4768a2f446fac
 EOF
 RUN
 

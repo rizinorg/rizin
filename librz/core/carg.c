@@ -5,6 +5,68 @@
 
 #define MAXSTRLEN 50
 
+/**
+ * \brief Get the value of the num-th argument from the current debug or emulation state
+ *
+ * Warning: this function contains hacks. Rewrite it before using it in new code.
+ */
+RZ_API RZ_DEPRECATE ut64 rz_core_arg_get(RzCore *core, const char *cc, int num) {
+	rz_return_val_if_fail(core, UT64_MAX);
+	if (!cc) {
+		cc = rz_analysis_syscc_default(core->analysis);
+	}
+	if (rz_core_is_debug(core)) {
+		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
+	}
+	if (!RZ_STR_ISEMPTY(cc)) {
+		if (!strcmp(cc, "stdcall") || !strcmp(cc, "pascal")) {
+			ut64 sp = rz_reg_get_value_by_role(rz_core_reg_default(core), RZ_REG_NAME_SP);
+			int bits = rz_core_is_debug(core) ? core->dbg->bits : core->analysis->bits;
+			if (bits) {
+				ut64 n64;
+				sp += 8; // skip return address, assume we are inside the call
+				sp += 8 * num;
+				// FIXME: honor endianness of platform
+				rz_io_read_at(core->io, sp, (ut8 *)&n64, sizeof(ut64));
+				return (ut64)n64;
+			} else {
+				sp += 4; // skip return address, assume we are inside the call
+				sp += 4 * num;
+				ut32 n32;
+				// FIXME: honor endianness of platform
+				rz_io_read_at(core->io, sp, (ut8 *)&n32, sizeof(ut32));
+				return (ut64)n32;
+			}
+		}
+		const char *rn = rz_analysis_cc_arg(core->analysis, cc, num);
+		if (rn) {
+			return rz_core_reg_getv_by_role_or_name(core, rn);
+		}
+	}
+	char reg[32];
+	return rz_core_reg_getv_by_role_or_name(core, rz_strf(reg, "A%d", num));
+}
+
+/**
+ * \brief Set the value of the num-th argument in the current debug or emulation state
+ *
+ * Warning: this function contains hacks. Rewrite it before using it in new code.
+ */
+RZ_API RZ_DEPRECATE bool rz_core_arg_set(RzCore *core, const char *cc, int num, ut64 val) {
+	rz_return_val_if_fail(core, false);
+	if (!RZ_STR_ISEMPTY(cc)) {
+		cc = rz_analysis_syscc_default(core->analysis);
+	}
+	const char *rn = rz_analysis_cc_arg(core->analysis, cc, num);
+	if (rn) {
+		rz_core_reg_set_by_role_or_name(core, rn, val);
+		return true;
+	}
+	char reg[32];
+	rz_core_reg_set_by_role_or_name(core, rz_strf(reg, "A%d", num), val);
+	return true;
+}
+
 static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *analysis, const char *fcn_name, const char *cc, int arg_num) {
 	if (!fcn_name || !arg || !analysis) {
 		return;
@@ -129,7 +191,7 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 		break;
 	}
 	default:
-		//TODO: support types like structs and unions
+		// TODO: support types like structs and unions
 		rz_cons_println("unk_format");
 	}
 	rz_cons_print(Color_RESET);
@@ -186,11 +248,11 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			}
 		} else {
 			int nargs = 4; // TODO: use a correct value here when available
-			//if (nargs > 0) {
+			// if (nargs > 0) {
 			int i;
 			const char *cc = rz_analysis_cc_default(core->analysis); // or use "reg" ?
 			for (i = 0; i < nargs; i++) {
-				ut64 v = rz_debug_arg_get(core->dbg, cc, i);
+				ut64 v = rz_core_arg_get(core, cc, i);
 				print_arg_str(i, "", color);
 				rz_cons_printf("0x%08" PFMT64x, v);
 				rz_cons_newline();
@@ -212,7 +274,7 @@ static void rz_analysis_fcn_arg_free(RzAnalysisFuncArg *arg) {
 }
 
 /* Returns a list of RzAnalysisFuncArg */
-RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
+RZ_API RZ_OWN RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	if (!fcn_name || !core->analysis) {
 		return NULL;
 	}
@@ -224,6 +286,7 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
 	int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 	if (!rz_analysis_cc_func(core->analysis, key)) {
+		rz_list_free(list);
 		return NULL;
 	}
 	char *cc = strdup(rz_analysis_cc_func(core->analysis, key));
@@ -231,6 +294,7 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	if (!cc) {
 		// unsupported calling convention
 		free(key);
+		rz_list_free(list);
 		return NULL;
 	}
 	int i;
@@ -248,6 +312,8 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 		for (i = 0; i < nargs; i++) {
 			RzAnalysisFuncArg *arg = RZ_NEW0(RzAnalysisFuncArg);
 			if (!arg) {
+				free(cc);
+				rz_list_free(list);
 				return NULL;
 			}
 			set_fcn_args_info(arg, core->analysis, key, cc, i);

@@ -3,6 +3,7 @@
 
 #include "rz_types.h"
 #include "rz_list.h"
+#include <ht_pu.h>
 
 #if __UNIX__
 #include <dlfcn.h>
@@ -23,7 +24,6 @@ RZ_LIB_VERSION_HEADER(rz_lib);
 
 /* TODO: This must depend on HOST_OS, and maybe move into rz_types */
 #if __WINDOWS__
-#include <windows.h>
 #define RZ_LIB_EXT "dll"
 #elif __APPLE__
 #define RZ_LIB_EXT "dylib"
@@ -65,7 +65,7 @@ typedef struct rz_lib_struct_t {
 typedef RzLibStruct *(*RzLibStructFunc)(void);
 
 // order matters because of librz/util/lib.c
-enum {
+typedef enum {
 	RZ_LIB_TYPE_IO, /* io layer */
 	RZ_LIB_TYPE_DBG, /* debugger */
 	RZ_LIB_TYPE_LANG, /* language */
@@ -82,8 +82,9 @@ enum {
 	RZ_LIB_TYPE_MD, /* message digests */
 	RZ_LIB_TYPE_CORE, /* RzCore commands */
 	RZ_LIB_TYPE_EGG, /* rz_egg plugin */
-	RZ_LIB_TYPE_LAST
-};
+	RZ_LIB_TYPE_DEMANGLER, /* demanglers */
+	RZ_LIB_TYPE_UNKNOWN
+} RzLibType;
 
 typedef struct rz_lib_t {
 	/* linked list with all the plugin handler */
@@ -93,6 +94,7 @@ typedef struct rz_lib_t {
 	char *symnamefunc;
 	RzList /*RzLibPlugin*/ *plugins;
 	RzList /*RzLibHandler*/ *handlers;
+	HtPU *opened_dirs; ///< Hashtable to keep track of already opened directories
 } RzLib;
 
 #ifdef RZ_API
@@ -109,7 +111,7 @@ RZ_API void rz_lib_free(RzLib *lib);
 RZ_API int rz_lib_run_handler(RzLib *lib, RzLibPlugin *plugin, RzLibStruct *symbol);
 RZ_API RzLibHandler *rz_lib_get_handler(RzLib *lib, int type);
 RZ_API int rz_lib_open(RzLib *lib, const char *file);
-RZ_API bool rz_lib_opendir(RzLib *lib, const char *path);
+RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force);
 RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct *stru);
 RZ_API char *rz_lib_path(const char *libname);
 RZ_API void rz_lib_list(RzLib *lib);

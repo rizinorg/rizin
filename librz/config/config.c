@@ -3,21 +3,21 @@
 
 #include "rz_config.h"
 
-RZ_API RzConfigNode *rz_config_node_new(const char *name, const char *value) {
-	rz_return_val_if_fail(name && *name && value, NULL);
+RZ_API RZ_OWN RzConfigNode *rz_config_node_new(RZ_NONNULL const char *name, RZ_NONNULL const char *value) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name) && value, NULL);
 	RzConfigNode *node = RZ_NEW0(RzConfigNode);
 	if (!node) {
 		return NULL;
 	}
 	node->name = strdup(name);
-	node->value = strdup(value ? value : "");
+	node->value = strdup(value);
 	node->flags = CN_RW | CN_STR;
 	node->i_value = rz_num_get(NULL, value);
 	node->options = rz_list_new();
 	return node;
 }
 
-RZ_API RzConfigNode *rz_config_node_clone(RzConfigNode *n) {
+RZ_API RZ_OWN RzConfigNode *rz_config_node_clone(RzConfigNode *n) {
 	rz_return_val_if_fail(n, NULL);
 	RzConfigNode *cn = RZ_NEW0(RzConfigNode);
 	if (!cn) {
@@ -33,7 +33,7 @@ RZ_API RzConfigNode *rz_config_node_clone(RzConfigNode *n) {
 	return cn;
 }
 
-RZ_API void rz_config_node_free(void *n) {
+RZ_API void rz_config_node_free(RZ_NULLABLE void *n) {
 	RzConfigNode *node = (RzConfigNode *)n;
 	if (!node) {
 		return;
@@ -45,8 +45,8 @@ RZ_API void rz_config_node_free(void *n) {
 	free(node);
 }
 
-RZ_API RzConfigNode *rz_config_node_get(RzConfig *cfg, const char *name) {
-	rz_return_val_if_fail(cfg && name, NULL);
+RZ_API RZ_BORROW RzConfigNode *rz_config_node_get(RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 	return ht_pp_find(cfg->ht, name, NULL);
 }
 
@@ -72,8 +72,8 @@ RZ_API bool rz_config_set_setter(RzConfig *cfg, const char *key, RzConfigCallbac
 /**
  * Returns the value of the config variable of \p name as a string
  */
-RZ_API const char *rz_config_get(RzConfig *cfg, const char *name) {
-	rz_return_val_if_fail(cfg && name, NULL);
+RZ_API RZ_BORROW const char *rz_config_get(RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
 		if (node->getter) {
@@ -94,7 +94,8 @@ RZ_API const char *rz_config_get(RzConfig *cfg, const char *name) {
  * the variable is boolean, then tries to write back the inverted value.
  * Returns true in case of success.
  */
-RZ_API bool rz_config_toggle(RzConfig *cfg, const char *name) {
+RZ_API bool rz_config_toggle(RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (!node) {
 		return false;
@@ -115,7 +116,8 @@ RZ_API bool rz_config_toggle(RzConfig *cfg, const char *name) {
  * Reads the value of the config variable of \p name only and only if
  * the variable is integer.
  */
-RZ_API ut64 rz_config_get_i(RzConfig *cfg, const char *name) {
+RZ_API ut64 rz_config_get_i(RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), 0);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
 		if (node->getter) {
@@ -137,7 +139,8 @@ RZ_API ut64 rz_config_get_i(RzConfig *cfg, const char *name) {
  * Reads the value of the config variable of \p name only and only if
  * the variable is boolean. Returns false in case of the failure.
  */
-RZ_API bool rz_config_get_b(RzConfig *cfg, const char *name) {
+RZ_API bool rz_config_get_b(RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (!node) {
 		return false;
@@ -195,15 +198,13 @@ static bool __is_true_or_false(const char *s) {
  * Writes the boolean \p value in the config variable of \p name only and only if
  * the variable is boolean.
  */
-RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, const char *name, bool value) {
-	RzConfigNode *node = NULL;
-	char *ov = NULL;
-	ut64 oi = 0;
-
+RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name, bool value) {
 	rz_return_val_if_fail(cfg && cfg->ht, NULL);
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 
-	node = rz_config_node_get(cfg, name);
+	char *ov = NULL;
+	ut64 oi = 0;
+	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
 		if (rz_config_node_is_ro(node)) {
 			RZ_LOG_DEBUG("(error: '%s' config key is read only)\n", name);
@@ -263,15 +264,13 @@ beach:
 /**
  * Writes the string \p value in the config variable of \p name.
  */
-RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, const char *name, const char *value) {
-	RzConfigNode *node = NULL;
-	char *ov = NULL;
-	ut64 oi;
-
+RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, const char *value) {
 	rz_return_val_if_fail(cfg && cfg->ht, NULL);
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 
-	node = rz_config_node_get(cfg, name);
+	char *ov = NULL;
+	ut64 oi;
+	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
 		if (rz_config_node_is_ro(node)) {
 			eprintf("(error: '%s' config key is read only)\n", name);
@@ -353,15 +352,35 @@ beach:
 	return node;
 }
 
+/**
+ * \brief Appends the given node to the config \p cfg.
+ *
+ * \param cfg The configuration the node is appended.
+ * \param node The node to append.
+ * \return bool True if the node was successful added. False otherwise.
+ */
+RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *node) {
+	rz_return_val_if_fail(cfg && node, false);
+	if (cfg->lock) {
+		RZ_LOG_WARN("Config locked. Plugin config node not copied.\n");
+		rz_config_node_free(node);
+		return false;
+	}
+	ht_pp_insert(cfg->ht, node->name, node);
+	rz_list_append(cfg->nodes, node);
+	return true;
+}
+
 /* rz_config_desc takes a RzConfig and a name,
  * rz_config_node_desc takes a RzConfigNode
  * Both set and return node->desc */
-RZ_API const char *rz_config_desc(RzConfig *cfg, const char *name, const char *desc) {
+RZ_API const char *rz_config_desc(RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	return rz_config_node_desc(node, desc);
 }
 
-RZ_API const char *rz_config_node_desc(RzConfigNode *node, const char *desc) {
+RZ_API const char *rz_config_node_desc(RzConfigNode *node, RZ_NULLABLE const char *desc) {
 	rz_return_val_if_fail(node, NULL);
 	if (desc) {
 		free(node->desc);
@@ -370,7 +389,8 @@ RZ_API const char *rz_config_node_desc(RzConfigNode *node, const char *desc) {
 	return node->desc;
 }
 
-RZ_API bool rz_config_rm(RzConfig *cfg, const char *name) {
+RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name) && cfg, NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
 		ht_pp_delete(cfg->ht, node->name);

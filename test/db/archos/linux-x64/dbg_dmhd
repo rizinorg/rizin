@@ -22,7 +22,7 @@ NAME=check dmhd fast / tcache with chunks
 FILE=bins/elf/glibc-heap-2.31
 ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
 CMDS=<<EOF
-db 0x004011fa
+db @ 0x004011fa
 dc
 dmhd~?Chunk
 dmhd fast~?size=0x20

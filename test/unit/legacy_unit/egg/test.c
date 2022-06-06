@@ -36,10 +36,10 @@ int main(int argc, char **argv) {
 	rz_egg_include(egg, argv[optind], 0);
 	rz_egg_compile(egg);
 	rz_egg_assemble(egg);
-	//rz_egg_setup (egg, "x86", 32, 0, 0);
-	//rz_egg_setup (egg, "x86", 64, 0, 0);
+	// rz_egg_setup (egg, "x86", 32, 0, 0);
+	// rz_egg_setup (egg, "x86", 64, 0, 0);
 
-	//printf ("src (%s)\n", rz_egg_get_source (egg));
+	// printf ("src (%s)\n", rz_egg_get_source (egg));
 	printf("asm (%s)\n", rz_egg_get_assembly(egg));
 	b = rz_egg_get_bin(egg);
 	if (b == NULL) {

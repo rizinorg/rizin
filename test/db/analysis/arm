@@ -33,10 +33,10 @@ e asm.arch=arm
 e asm.bits=16
 wx dff80000 12000000 34000000
 aes
-dr r0
+ar r0
 EOF
 EXPECT=<<EOF
-0x00000012
+r0 = 0x00000012
 EOF
 RUN
 
@@ -111,7 +111,7 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bytes=true
 e asm.bits=32
-wa mov r0, r0
+wa "mov r0, r0"
 pi 1
 pd 1
 ahb 32
@@ -121,8 +121,8 @@ pd 1 @a:arm @b:16
 ahb 16
 pd 1 @a:arm @b:32
 pd 1 @a:arm @b:16
-pd 1 @a:arm @b:32@2
-pd 1 @a:arm @b:16@2
+pd 1 @a:arm @b:32 @ 2
+pd 1 @a:arm @b:16 @ 2
 EOF
 EXPECT=<<EOF
 mov r0, r0
@@ -157,11 +157,11 @@ FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e cfg.bigendian=1
-wa blx 0x33b8
+wa "blx 0x33b8"
 p8 4
 pi 1
 e cfg.bigendian=0
-wa blx 0x33b8
+wa "blx 0x33b8"
 p8 4
 pi 1
 EOF
@@ -224,7 +224,7 @@ e asm.bits=32
 # pd 2 - note different colors
 pi 2
 ao~type[1]
-ao@4~type[1]
+ao@ 4~type[1]
 EOF
 EXPECT=<<EOF
 ldr ip, [0x00000028]
@@ -237,17 +237,17 @@ RUN
 NAME=endian
 FILE=malloc://32
 CMDS=<<EOF
-e asm.arch=arm.gnu
+e asm.arch=arm
 e asm.bits=32
 wx e59a9ae7
 e cfg.bigendian=false
-pi 1@0
+pi 1@ 0
 e cfg.bigendian=true
-pi 1@0
+pi 1@ 0
 EOF
 EXPECT=<<EOF
-ldr r9, [sl, r5, ror 21]
-ldr r9, [sl, 2791]
+ldr sb, [sl, r5, ror 21]
+ldr sb, [sl, 0xae7]
 EOF
 RUN
 
@@ -258,7 +258,7 @@ e asm.arch=arm
 e asm.bits=16
 wx 2249224a
 ao~^ptr
-ao@2~^ptr
+ao@ 2~^ptr
 EOF
 EXPECT=<<EOF
 ptr: 0x0000008c
@@ -294,7 +294,7 @@ e asm.arch=arm
 e asm.bits=32
 wx fffffffa 04210924
 af
-pi 2 @4
+pi 2 @ 4
 EOF
 EXPECT=<<EOF
 movs r1, 4
@@ -310,7 +310,7 @@ e asm.bits=32
 e analysis.armthumb=true
 wx 0910 a0e3 11ff 2fe1 0421 0924
 aae
-pi 2 @8
+pi 2 @ 8
 EOF
 EXPECT=<<EOF
 movs r1, 4
@@ -342,7 +342,7 @@ e asm.bits=32
 # pd 2 - note different colors
 pi 2
 ao~type[1]
-ao@4~type[1]
+ao@ 4~type[1]
 EOF
 EXPECT=<<EOF
 ldr ip, [0x00000028]
@@ -359,9 +359,9 @@ e asm.arch=arm
 e asm.bits=32
 wx e59a9ae7
 e cfg.bigendian=false
-pi 1@0
+pi 1@ 0
 e cfg.bigendian=true
-pi 1@0
+pi 1@ 0
 EOF
 EXPECT=<<EOF
 ldr sb, [sl, r5, ror 21]
@@ -433,22 +433,6 @@ jump: 0x00000020
 EOF
 RUN
 
-NAME=ARM64 bl gnu
-FILE=malloc://32
-CMDS=<<EOF
-s 4
-wx 07000094
-e asm.arch=arm.gnu
-e asm.bits=64
-pi 1
-ao~jump
-EOF
-EXPECT=<<EOF
-bl 0x00000020
-jump: 0x00000020
-EOF
-RUN
-
 NAME=arm subrel >256
 FILE=malloc://800
 CMDS=<<EOF
@@ -458,7 +442,7 @@ e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
-f sym.callback=0x315
+f sym.callback @ 0x315
 pd 1
 EOF
 EXPECT=<<EOF
@@ -475,7 +459,7 @@ e asm.bits=32
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
-f sym.callback=0x14
+f sym.callback @ 0x14
 pd 1
 e asm.sub.varmin=0
 pd 1
@@ -541,21 +525,6 @@ jump: 0x80000000
 EOF
 RUN
 
-NAME=jump sign extend : arm.gnu
-FILE=malloc://4
-CMDS=<<EOF
-e asm.arch=arm.gnu
-e asm.bits=32
-e io.va=true
-wx ffffffea # bl 0x80000000
-om 3 0x7ffffffc
-ao @ 0x7ffffffc~jump
-EOF
-EXPECT=<<EOF
-jump: 0x80000000
-EOF
-RUN
-
 NAME=ELF ARM: function names
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
@@ -605,11 +574,11 @@ NAME=ELF ARM: aa
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
 aa
-f~sym?
+fl~sym?
 afl~?
 EOF
 EXPECT=<<EOF
-42
+41
 15
 EOF
 RUN
@@ -644,9 +613,9 @@ FILE=bins/elf/analysis/armcall
 CMDS=<<EOF
 e asm.calls=false
 e asm.bytes=true
-afr@main
-afva@sym.call
-pdf@sym.call
+afr@ main
+afva@ sym.call
+pdf@ sym.call
 EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ 0x10468
@@ -672,9 +641,9 @@ FILE=bins/elf/analysis/armcall
 CMDS=<<EOF
 e asm.calls=false
 e asm.bytes=true
-af@main
-afva@main
-pdf@main
+af@ main
+afva@ main
+pdf@ main
 EOF
 EXPECT=<<EOF
 / int main (int argc, char **argv, char **envp);
@@ -864,23 +833,24 @@ FILE=malloc://2048
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-wxs 01380793d3b24ff00109024600bf00bf00bf00bf59b2a1f120005a28139200f28d81404d02eb8004082601270122dfe810f09700850185015c0085015b008501850185018501a2
-wxs 0097008501ac007b008501af005d005d005d005d005d005d005d005d005d008501850185018501850185018501c300850185018501c3008501c30085018501850185019c008501
-wxs 85018501850185018501850185018501850185010d0185018501850185018501850185018501c30085011c01e700c300c300c300b200e700b50085019c00850129016801390185
-wxs 0185014c019f006201850185010e0185019f00b1e6d7e6139ca1f13000224612f9013fa3f1300109293ff686afa21c00eb800012f9013b01eb4000a3f130010a29f5d3dbb2013a
-wxs c0f1000878e700bf07df0100139a104610f9011fcbb22a2b35d0303900274ff00109079709293ff662af901c002303eb830310f9012b01eb4303a2f130010a29f5d34fe758b20a
-wxs 9001200b9096e60cf1010c93e64ff0010c90e609981ef0010f50f8048b099018bfc8f1000886e60122129f85e60120089080e6acf1010c7de64ff0020c7ae6139000e013920998
-wxs 4ff0010950f8041b079109906fe6bcf1010f18bfbcf1000f40f0bb800998ddf830a008300990e7e0ddf830a0139d109c0e98012805d195f90000119900f02dfc05e014f0ff0f04
-wxs bf28780af8010b0d9801300d9018e60cf10200042800f29980dfe810f00500050005000500a901099a52f8040bc1170a9f0029d14d4ff030090b9eb8bf01260b96b8bf2d2710eb
-wxs e1700a9780eae17441ebe17080eae1770a26b3e0c84d129810f0010f52d058b2302141ea00200a90022010260b9001204ae00999bcf1000f01f10400dcbf09688df86b10099001
-wxs 9f0121dfe00cf10200042857d8dfe810f078028102050005008a02099951f8040b099185e20998002250f8044b0990002c00f0c48004920220ac4d10220b900820079047f63000
-wxs 0a9030e0099819f0010f50f8047b099000f0ac80079a30230021002a00f0b080785c002800f0ac8001319142f8d3a7e09d4d0a2602e00020102612900cf10200042817d8dfe800
-wxs f0030308084d00099a52f8044be71748e00998324650f8044b09900020049020463023059014ae029f104662e00696139d2c4614f8010d2528fbd1ddf830a0ac4229d80d980025
-wxs 009901eb00080f98b0f1ff3f06d018eb050002bf0af801bb012010900e98012806d1139e119996f9000000f061fb07e01098139e10f0ff0f04bf30780af8010b01356019b042de
-wxs d90d9828440d90139d109c
+e cfg.wseek=true
+wx 01380793d3b24ff00109024600bf00bf00bf00bf59b2a1f120005a28139200f28d81404d02eb8004082601270122dfe810f09700850185015c0085015b008501850185018501a2
+wx 0097008501ac007b008501af005d005d005d005d005d005d005d005d005d008501850185018501850185018501c300850185018501c3008501c30085018501850185019c008501
+wx 85018501850185018501850185018501850185010d0185018501850185018501850185018501c30085011c01e700c300c300c300b200e700b50085019c00850129016801390185
+wx 0185014c019f006201850185010e0185019f00b1e6d7e6139ca1f13000224612f9013fa3f1300109293ff686afa21c00eb800012f9013b01eb4000a3f130010a29f5d3dbb2013a
+wx c0f1000878e700bf07df0100139a104610f9011fcbb22a2b35d0303900274ff00109079709293ff662af901c002303eb830310f9012b01eb4303a2f130010a29f5d34fe758b20a
+wx 9001200b9096e60cf1010c93e64ff0010c90e609981ef0010f50f8048b099018bfc8f1000886e60122129f85e60120089080e6acf1010c7de64ff0020c7ae6139000e013920998
+wx 4ff0010950f8041b079109906fe6bcf1010f18bfbcf1000f40f0bb800998ddf830a008300990e7e0ddf830a0139d109c0e98012805d195f90000119900f02dfc05e014f0ff0f04
+wx bf28780af8010b0d9801300d9018e60cf10200042800f29980dfe810f00500050005000500a901099a52f8040bc1170a9f0029d14d4ff030090b9eb8bf01260b96b8bf2d2710eb
+wx e1700a9780eae17441ebe17080eae1770a26b3e0c84d129810f0010f52d058b2302141ea00200a90022010260b9001204ae00999bcf1000f01f10400dcbf09688df86b10099001
+wx 9f0121dfe00cf10200042857d8dfe810f078028102050005008a02099951f8040b099185e20998002250f8044b0990002c00f0c48004920220ac4d10220b900820079047f63000
+wx 0a9030e0099819f0010f50f8047b099000f0ac80079a30230021002a00f0b080785c002800f0ac8001319142f8d3a7e09d4d0a2602e00020102612900cf10200042817d8dfe800
+wx f0030308084d00099a52f8044be71748e00998324650f8044b09900020049020463023059014ae029f104662e00696139d2c4614f8010d2528fbd1ddf830a0ac4229d80d980025
+wx 009901eb00080f98b0f1ff3f06d018eb050002bf0af801bb012010900e98012806d1139e119996f9000000f061fb07e01098139e10f0ff0f04bf30780af8010b01356019b042de
+wx d90d9828440d90139d109c
 s 0
 af
-pds 1@0x2e~:1
+pds 1@ 0x2e~:1
 EOF
 EXPECT=<<EOF
 0x0000002e switch table (92 cases) at 0x32
@@ -893,8 +863,8 @@ CMDS=<<EOF
 e asm.cpu=arm1176
 e asm.platform=bcm2835
 aa
-f~AUX
-CC~Broadcom
+fl~AUX
+CCl~Broadcom
 EOF
 EXPECT=<<EOF
 0x07e21500 1 AUX_ENABLES
@@ -930,9 +900,9 @@ NAME=ao 16 after ao 32
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
 e asm.bits=16
-ao@0x568
+ao@ 0x568
 ?e --
-ao@0x50e
+ao@ 0x50e
 EOF
 EXPECT=<<EOF
 address: 0x568
@@ -951,6 +921,7 @@ sign: false
 type: push
 cycles: 1
 esil: 8,sp,-=,lr,r3,2,sp,=[*]
+rzil: (seq (storew 0 (- (var sp) (bv 32 0x8)) (var r3)) (storew 0 (- (var sp) (bv 32 0x4)) (var lr)) (set sp (- (var sp) (bv 32 0x8))))
 family: cpu
 stackop: inc
 stackptr: 8
@@ -972,6 +943,7 @@ sign: false
 type: add
 cycles: 1
 esil: 0,sp,+,0xffffffff,&,r7,=
+rzil: (set r7 (+ (var sp) (bv 32 0x0)))
 family: cpu
 EOF
 RUN
@@ -1007,21 +979,21 @@ e asm.bits=32
 ar=
 EOF
 EXPECT=<<EOF
-     sb 0x00000000       sl 0x00000000       fp 0x00000000       ip 0x00000000
-     sp 0x00000000       lr 0x00000000       pc 0x00000000       r0 0x00000000
-     r1 0x00000000       r2 0x00000000       r3 0x00000000       r4 0x00000000
-     r5 0x00000000       r6 0x00000000       r7 0x00000000       r8 0x00000000
-     r9 0x00000000      r10 0x00000000      r11 0x00000000      r12 0x00000000
-    r13 0x00000000      r14 0x00000000      r15 0x00000000     cpsr 0x00000000
+     sb 0x00000000           sl 0x00000000           fp 0x00000000           ip 0x00000000
+     sp 0x00000000           lr 0x00000000           pc 0x00000000           r0 0x00000000
+     r1 0x00000000           r2 0x00000000           r3 0x00000000           r4 0x00000000
+     r5 0x00000000           r6 0x00000000           r7 0x00000000           r8 0x00000000
+     r9 0x00000000          r10 0x00000000          r11 0x00000000          r12 0x00000000
+    r13 0x00000000          r14 0x00000000          r15 0x00000000         cpsr 0x00000000
 EOF
 RUN
 
 NAME=arm jmptbl flags and comments
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
-af@sym.__gcc_personality_v0
-f~switch.,case.
-CC~switch
+af@ sym.__gcc_personality_v0
+fl~switch.,case.
+CCl~switch
 EOF
 EXPECT=<<EOF
 0x00064c7c 1 switch.0x00064c7c
@@ -1097,7 +1069,7 @@ CMDS=<<EOF
 aav
 aae
 af
-axt str.helloradareworld
+axt @ str.helloradareworld
 EOF
 EXPECT=<<EOF
 main 0xbf9c [DATA] add r0, pc
@@ -1126,5 +1098,57 @@ axt @ str.Hello_world
 EOF
 EXPECT=<<EOF
 main 0x512 [DATA] add r3, pc
+EOF
+RUN
+
+NAME=arm pcalign
+FILE=
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e asm.pcalign
+e asm.bits=16
+e asm.pcalign
+EOF
+EXPECT=<<EOF
+4
+2
+EOF
+RUN
+
+NAME=arm thumb it tracking
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+s 0x100
+wx 54bf53f8182c52181846
+pi 4
+ao @ 0x102~mnemonic
+ao @ 0x106~mnemonic
+ao @ 0x108~mnemonic
+?e -- Update after code change
+wx 1846
+pi 4
+ao @ 0x102~mnemonic
+ao @ 0x106~mnemonic
+ao @ 0x108~mnemonic
+EOF
+EXPECT=<<EOF
+ite pl
+ldrpl r2, [r3, -0x18]
+addmi r2, r2, r1
+mov r0, r3
+mnemonic: ldrpl
+mnemonic: addmi
+mnemonic: mov
+-- Update after code change
+mov r0, r3
+ldr r2, [r3, -0x18]
+adds r2, r2, r1
+mov r0, r3
+mnemonic: ldr
+mnemonic: adds
+mnemonic: mov
 EOF
 RUN

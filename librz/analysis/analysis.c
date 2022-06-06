@@ -5,7 +5,7 @@
 #include <rz_analysis.h>
 #include <rz_util.h>
 #include <rz_list.h>
-#include <rz_io.h>
+#include <rz_util/rz_path.h>
 #include <config.h>
 
 RZ_LIB_VERSION(rz_analysis);
@@ -41,29 +41,8 @@ static void meta_count_for(RzEvent *ev, int type, void *user, void *data) {
 	se->res = rz_meta_space_count_for(analysis, se->data.count.space);
 }
 
-static void zign_unset_for(RzEvent *ev, int type, void *user, void *data) {
-	RzSpaces *s = (RzSpaces *)ev->user;
-	RzAnalysis *analysis = container_of(s, RzAnalysis, zign_spaces);
-	RzSpaceEvent *se = (RzSpaceEvent *)data;
-	rz_sign_space_unset_for(analysis, se->data.unset.space);
-}
-
-static void zign_count_for(RzEvent *ev, int type, void *user, void *data) {
-	RzSpaces *s = (RzSpaces *)ev->user;
-	RzAnalysis *analysis = container_of(s, RzAnalysis, zign_spaces);
-	RzSpaceEvent *se = (RzSpaceEvent *)data;
-	se->res = rz_sign_space_count_for(analysis, se->data.count.space);
-}
-
-static void zign_rename_for(RzEvent *ev, int type, void *user, void *data) {
-	RzSpaces *s = (RzSpaces *)ev->user;
-	RzAnalysis *analysis = container_of(s, RzAnalysis, zign_spaces);
-	RzSpaceEvent *se = (RzSpaceEvent *)data;
-	rz_sign_space_rename_for(analysis, se->data.rename.space,
-		se->data.rename.oldname, se->data.rename.newname);
-}
-
 void rz_analysis_hint_storage_init(RzAnalysis *a);
+
 void rz_analysis_hint_storage_fini(RzAnalysis *a);
 
 static void rz_meta_item_fini(RzAnalysisMetaItem *item) {
@@ -109,10 +88,6 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_event_hook(analysis->meta_spaces.event, RZ_SPACE_EVENT_UNSET, meta_unset_for, NULL);
 	rz_event_hook(analysis->meta_spaces.event, RZ_SPACE_EVENT_COUNT, meta_count_for, NULL);
 
-	rz_spaces_init(&analysis->zign_spaces, "zs");
-	rz_event_hook(analysis->zign_spaces.event, RZ_SPACE_EVENT_UNSET, zign_unset_for, NULL);
-	rz_event_hook(analysis->zign_spaces.event, RZ_SPACE_EVENT_COUNT, zign_count_for, NULL);
-	rz_event_hook(analysis->zign_spaces.event, RZ_SPACE_EVENT_RENAME, zign_rename_for, NULL);
 	rz_analysis_hint_storage_init(analysis);
 	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
 	analysis->typedb = rz_type_db_new();
@@ -124,8 +99,6 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->sdb_classes_attrs = sdb_ns(analysis->sdb_classes, "attrs", 1);
 	analysis->sdb_noret = sdb_ns(analysis->sdb, "noreturn", 1);
 	analysis->zign_path = strdup("");
-	analysis->cb_printf = (PrintfCallback)printf;
-	(void)rz_analysis_pin_init(analysis);
 	(void)rz_analysis_xrefs_init(analysis);
 	analysis->diff_thbb = RZ_ANALYSIS_THRESHOLDBB;
 	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
@@ -150,6 +123,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	}
 	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);
 	analysis->global_var_tree = NULL;
+	analysis->il_vm = NULL;
 	return analysis;
 }
 
@@ -170,6 +144,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 	plugin_fini(a);
 
+	rz_analysis_il_vm_cleanup(a);
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
 	ht_pp_free(a->ht_name_fun);
@@ -183,7 +158,6 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_rbtree_free(a->bb_tree, __block_free_rb, NULL);
 	rz_spaces_fini(&a->meta_spaces);
 	rz_spaces_fini(&a->zign_spaces);
-	rz_analysis_pin_fini(a);
 	rz_syscall_free(a->syscall);
 	rz_arch_target_free(a->arch_target);
 	rz_arch_platform_target_free(a->platform_target);
@@ -227,6 +201,9 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 				return false;
 			}
 			rz_analysis_set_reg_profile(analysis);
+			if (analysis->il_vm) {
+				rz_analysis_il_vm_setup(analysis);
+			}
 			return true;
 		}
 	}
@@ -239,19 +216,14 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
 		: NULL;
 }
 
-// deprecate.. or at least reuse get_reg_profile...
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
 	bool ret = false;
-	if (analysis && analysis->cur && analysis->cur->set_reg_profile) {
-		ret = analysis->cur->set_reg_profile(analysis);
-	} else {
-		char *p = rz_analysis_get_reg_profile(analysis);
-		if (p && *p) {
-			rz_reg_set_profile_string(analysis->reg, p);
-			ret = true;
-		}
-		free(p);
+	char *p = rz_analysis_get_reg_profile(analysis);
+	if (p) {
+		rz_reg_set_profile_string(analysis->reg, p);
+		ret = true;
 	}
+	free(p);
 	return ret;
 }
 
@@ -262,9 +234,10 @@ static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
 	}
 	free(analysis->os);
 	analysis->os = strdup(os);
-	const char *dir_prefix = rz_sys_prefix(NULL);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_set_os(analysis->typedb, os);
-	rz_type_db_reload(analysis->typedb, dir_prefix);
+	rz_type_db_reload(analysis->typedb, types_dir);
+	free(types_dir);
 	return true;
 }
 
@@ -304,17 +277,36 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 	case 64:
 		if (analysis->bits != bits) {
 			bool is_hack = is_arm_thumb_hack(analysis, bits);
-			const char *dir_prefix = rz_sys_prefix(NULL);
 			analysis->bits = bits;
+			int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+			analysis->pcalign = RZ_MAX(0, v);
 			rz_type_db_set_bits(analysis->typedb, bits);
+			rz_type_db_set_address_bits(analysis->typedb, rz_analysis_get_address_bits(analysis));
 			if (!is_hack) {
-				rz_type_db_reload(analysis->typedb, dir_prefix);
+				char *types_dir = rz_path_system(RZ_SDB_TYPES);
+				rz_type_db_reload(analysis->typedb, types_dir);
+				free(types_dir);
 			}
 			rz_analysis_set_reg_profile(analysis);
 		}
 		return true;
 	}
 	return false;
+}
+
+/**
+ * \brief The actual size of an address in bits.
+ *
+ * This may differ from analysis.bits in some cases such as arm thumb
+ * being identified as bits=16, but still using 32-bit addresses,
+ * or "8-bit" architectures like 6502 which still use 16-bit addresses.
+ */
+RZ_API int rz_analysis_get_address_bits(RzAnalysis *analysis) {
+	if (!analysis->cur || !analysis->cur->address_bits) {
+		return analysis->bits;
+	}
+	int r = analysis->cur->address_bits(analysis, analysis->bits);
+	return r > 0 ? r : analysis->bits;
 }
 
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
@@ -324,9 +316,11 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	if (v != -1) {
 		analysis->pcalign = v;
 	}
+	rz_analysis_set_reg_profile(analysis);
 	rz_type_db_set_cpu(analysis->typedb, cpu);
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_reload(analysis->typedb, dir_prefix);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_reload(analysis->typedb, types_dir);
+	free(types_dir);
 }
 
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
@@ -338,10 +332,11 @@ RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
 	return true;
 }
 
-RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at) {
+RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, ut64 at) {
 	RzAnalysisOp *op = NULL;
 	ut8 *ret = NULL;
-	int oplen, idx = 0;
+	int oplen = 0;
+	ut32 idx = 0;
 
 	if (!data) {
 		return NULL;
@@ -371,6 +366,8 @@ RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut
 		}
 		idx += oplen;
 		at += oplen;
+		rz_analysis_op_fini(op);
+		rz_analysis_op_init(op);
 	}
 
 	rz_analysis_op_free(op);
@@ -444,8 +441,6 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	sdb_reset(analysis->sdb_zigns);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);
-	rz_analysis_pin_fini(analysis);
-	rz_analysis_pin_init(analysis);
 	sdb_reset(analysis->sdb_cc);
 	sdb_reset(analysis->sdb_noret);
 	rz_list_free(analysis->fcns);
@@ -489,7 +484,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, addr, -1);
 		RzFlagItem *fi = analysis->flb.get_at(analysis->flb.f, addr, false);
 		if (!fcn && !fi) {
-			eprintf("Can't find Function at given address\n");
+			RZ_LOG_ERROR("Cannot find function and flag at address 0x%" PFMT64x "\n", addr);
 			return false;
 		}
 		tmp_name = fcn ? fcn->name : fi->name;
@@ -504,12 +499,12 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 			if (name) {
 				sdb_bool_set(NDB, K_NORET_FUNC(name), true, 0);
 			} else {
-				eprintf("Can't find prototype for: %s\n", tmp_name);
+				RZ_LOG_ERROR("Cannot find prototype for: %s\n", tmp_name);
 			}
 		} else {
-			eprintf("Can't find prototype for: %s\n", tmp_name);
+			RZ_LOG_ERROR("Cannot find prototype for: %s\n", tmp_name);
 		}
-		//return false;
+		// return false;
 	}
 	if (fnl_name) {
 		sdb_bool_set(NDB, K_NORET_FUNC(fnl_name), true, 0);
@@ -570,7 +565,7 @@ static bool noreturn_recurse(RzAnalysis *analysis, ut64 addr) {
 	ut8 bbuf[0x10] = { 0 };
 	ut64 recurse_addr = UT64_MAX;
 	if (!analysis->iob.read_at(analysis->iob.io, addr, bbuf, sizeof(bbuf))) {
-		eprintf("Couldn't read buffer\n");
+		RZ_LOG_ERROR("Cannot read buffer at 0x%" PFMT64x "\n", addr);
 		return false;
 	}
 	if (rz_analysis_op(analysis, &op, addr, bbuf, sizeof(bbuf), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_VAL) < 1) {

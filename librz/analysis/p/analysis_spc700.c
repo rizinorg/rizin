@@ -17,7 +17,7 @@ static int op(RzAnalysis *analysis, RzAnalysisOp *rz_op, ut64 addr, const ut8 *b
 	return rz_op->size;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -38,7 +38,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	N	.1	.31	0\n"
 		"gpr	sp	.8	4	0\n"
 		"gpr	pc	.16	5	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_spc700 = {
@@ -48,7 +48,7 @@ RzAnalysisPlugin rz_analysis_plugin_spc700 = {
 	.license = "LGPL3",
 	.bits = 16,
 	.op = &op,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

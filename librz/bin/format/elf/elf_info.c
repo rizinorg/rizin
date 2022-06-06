@@ -315,17 +315,19 @@ static ut64 get_main_offset_linux_64_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	}
 	if (buf[bo] == 0x48) {
 		ut8 ch = buf[bo + 1];
-		if (ch == 0x8d) { // lea rdi, qword [rip-0x21c4]
+		if (ch == 0x8d) { // lea rdi, qword [rip + MAINDELTA]
 			ut8 *p = buf + bo + 3;
 			st32 maindelta = (st32)rz_read_le32(p);
-			ut64 vmain = (ut64)(entry + bo + maindelta) + 7;
-			ut64 ventry = Elf_(rz_bin_elf_p2v_new)(bin, entry);
-			if (vmain >> 16 == ventry >> 16) {
-				return (ut64)vmain;
+			ut64 ventry = Elf_(rz_bin_elf_p2v)(bin, entry);
+			if (ventry == UT64_MAX) {
+				return UT64_MAX;
 			}
-		} else if (0xc7) { // mov rdi, 0xADDR
+			ut64 vmain = (ut64)(ventry + bo + maindelta) + 7;
+			return Elf_(rz_bin_elf_v2p)(bin, vmain);
+		} else if (ch == 0xc7) { // mov rdi, 0xADDR
 			ut8 *p = buf + bo + 3;
-			return (ut64)(ut32)rz_read_le32(p);
+			ut64 addr = (ut64)rz_read_le32(p);
+			return Elf_(rz_bin_elf_v2p)(bin, addr);
 		}
 	}
 
@@ -340,12 +342,12 @@ static ut64 get_main_offset_x86_non_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	}
 	if (!memcmp(buf + 29, "\x48\xc7\xc7", 3)) { // linux
 		ut64 addr = (ut64)rz_read_le32(buf + 29 + 3);
-		return Elf_(rz_bin_elf_v2p_new)(bin, addr);
+		return Elf_(rz_bin_elf_v2p)(bin, addr);
 	}
 #else
 	if (buf[23] == '\x68') {
 		ut64 addr = (ut64)rz_read_le32(buf + 23 + 1);
-		return Elf_(rz_bin_elf_v2p_new)(bin, addr);
+		return Elf_(rz_bin_elf_v2p)(bin, addr);
 	}
 #endif
 
@@ -356,8 +358,8 @@ static ut64 get_main_offset_x86_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	// X86-PIE
 	if (buf[0x00] == 0x48 && buf[0x1e] == 0x8d && buf[0x11] == 0xe8) {
 		ut32 *pmain = (ut32 *)(buf + 0x30);
-		ut64 vmain = Elf_(rz_bin_elf_p2v_new)(bin, (ut64)*pmain);
-		ut64 ventry = Elf_(rz_bin_elf_p2v_new)(bin, entry);
+		ut64 vmain = Elf_(rz_bin_elf_p2v)(bin, (ut64)*pmain);
+		ut64 ventry = Elf_(rz_bin_elf_p2v)(bin, entry);
 		if (vmain >> 16 == ventry >> 16) {
 			return vmain;
 		}
@@ -391,9 +393,9 @@ static ut64 get_main_offset_x86_gcc(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 
 	size_t SIZEOF_CALL = 5;
 	ut64 rel_addr = (ut64)(buf[1] + (buf[2] << 8) + (buf[3] << 16) + (buf[4] << 24));
-	ut64 addr = Elf_(rz_bin_elf_p2v_new)(bin, entry + SIZEOF_CALL);
+	ut64 addr = Elf_(rz_bin_elf_p2v)(bin, entry + SIZEOF_CALL);
 	addr += rel_addr;
-	return Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	return Elf_(rz_bin_elf_v2p)(bin, addr);
 }
 
 static ut64 get_main_offset_mips(ELFOBJ *bin, ut64 entry, ut8 *buf, size_t size) {
@@ -416,7 +418,7 @@ static ut64 get_main_offset_mips(ELFOBJ *bin, ut64 entry, ut8 *buf, size_t size)
 		return 0;
 	}
 
-	ut64 got_offset = Elf_(rz_bin_elf_v2p_new)(bin, got_addr);
+	ut64 got_offset = Elf_(rz_bin_elf_v2p)(bin, got_addr);
 	ut64 gp = got_offset + 0x7ff0;
 
 	for (size_t i = 0; i < size; i += 4) {
@@ -424,7 +426,7 @@ static ut64 get_main_offset_mips(ELFOBJ *bin, ut64 entry, ut8 *buf, size_t size)
 		if ((instr & 0xffff0000) == 0x8f840000) { // lw a0, offset(gp)
 			const short delta = instr & 0x0000ffff;
 			rz_buf_read_at(bin->b, /* got_entry_offset = */ gp + delta, buf, 4);
-			return Elf_(rz_bin_elf_v2p_new)(bin, rz_read_le32(buf));
+			return Elf_(rz_bin_elf_v2p)(bin, rz_read_le32(buf));
 		}
 	}
 
@@ -444,7 +446,7 @@ static ut64 get_main_offset_arm_glibc_thumb(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 
 	if (delta) {
 		ut64 tmp = rz_read_le32(buf + delta - 1) & ~1;
-		ut64 pa = Elf_(rz_bin_elf_v2p_new)(bin, tmp);
+		ut64 pa = Elf_(rz_bin_elf_v2p)(bin, tmp);
 		if (pa < rz_buf_size(bin->b)) {
 			return pa;
 		}
@@ -455,11 +457,11 @@ static ut64 get_main_offset_arm_glibc_thumb(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 
 static ut64 get_main_offset_arm_glibc_non_thumb(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	if (!memcmp(buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
-		return Elf_(rz_bin_elf_v2p_new)(bin, rz_read_le32(buf + 0x34) & ~1);
+		return Elf_(rz_bin_elf_v2p)(bin, rz_read_le32(buf + 0x34) & ~1);
 	}
 
 	if (!memcmp(buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
-		return Elf_(rz_bin_elf_v2p_new)(bin, rz_read_le32(buf + 0x30) & ~1);
+		return Elf_(rz_bin_elf_v2p)(bin, rz_read_le32(buf + 0x30) & ~1);
 	}
 
 	return UT64_MAX;
@@ -481,7 +483,7 @@ static ut64 get_main_offset_arm64(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 		return UT64_MAX;
 	}
 
-	ut64 entry_vaddr = Elf_(rz_bin_elf_p2v_new)(bin, entry);
+	ut64 entry_vaddr = Elf_(rz_bin_elf_p2v)(bin, entry);
 	if (entry_vaddr == UT64_MAX) {
 		return UT64_MAX;
 	}
@@ -489,7 +491,7 @@ static ut64 get_main_offset_arm64(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	ut64 main_addr = rz_read_le32(buf + 0x30);
 
 	if (main_addr >> 16 == entry_vaddr >> 16) {
-		return Elf_(rz_bin_elf_v2p_new)(bin, main_addr);
+		return Elf_(rz_bin_elf_v2p)(bin, main_addr);
 	}
 
 	return UT64_MAX;
@@ -882,7 +884,7 @@ RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	Elf_(Word) *iter = NULL;
+	ut64 *iter = NULL;
 	rz_vector_foreach(dt_needed, iter) {
 		char *tmp = Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, *iter);
 		if (!tmp) {
@@ -973,7 +975,7 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 		return false;
 	}
 
-	ut64 verneed_offset = Elf_(rz_bin_elf_v2p_new(bin, verneed_addr));
+	ut64 verneed_offset = Elf_(rz_bin_elf_v2p(bin, verneed_addr));
 
 	if (verneed_offset == UT64_MAX) {
 		return false;
@@ -1031,7 +1033,7 @@ static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *
 		return false;
 	}
 
-	ut64 verdef_offset = Elf_(rz_bin_elf_v2p_new(bin, verdef_addr));
+	ut64 verdef_offset = Elf_(rz_bin_elf_v2p(bin, verdef_addr));
 
 	if (verdef_offset == UT64_MAX) {
 		return false;
@@ -1084,7 +1086,7 @@ static Sdb *get_gnu_versym(ELFOBJ *bin) {
 		return false;
 	}
 
-	ut64 versym_offset = Elf_(rz_bin_elf_v2p_new(bin, versym_addr));
+	ut64 versym_offset = Elf_(rz_bin_elf_v2p(bin, versym_addr));
 
 	if (versym_offset == UT64_MAX) {
 		return NULL;
@@ -1243,7 +1245,7 @@ static Sdb *get_gnu_verneed(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	ut64 verneed_offset = Elf_(rz_bin_elf_v2p_new(bin, verneed_addr));
+	ut64 verneed_offset = Elf_(rz_bin_elf_v2p(bin, verneed_addr));
 	if (verneed_offset == UT64_MAX) {
 		RZ_LOG_WARN("Failed to convert verneed virtual address to physical address.\n");
 		return NULL;
@@ -1810,7 +1812,7 @@ ut64 Elf_(rz_bin_elf_get_entry_offset)(RZ_NONNULL ELFOBJ *bin) {
 
 	ut64 entry = bin->ehdr.e_entry;
 	if (entry) {
-		ut64 tmp = Elf_(rz_bin_elf_v2p_new)(bin, entry);
+		ut64 tmp = Elf_(rz_bin_elf_v2p)(bin, entry);
 		if (tmp == UT64_MAX) {
 			return entry;
 		}
@@ -1841,7 +1843,7 @@ ut64 Elf_(rz_bin_elf_get_fini_offset)(RZ_NONNULL ELFOBJ *bin) {
 		return 0;
 	}
 
-	return Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	return Elf_(rz_bin_elf_v2p)(bin, addr);
 }
 
 /**
@@ -1864,7 +1866,7 @@ ut64 Elf_(rz_bin_elf_get_init_offset)(RZ_NONNULL ELFOBJ *bin) {
 		return 0;
 	}
 
-	return Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	return Elf_(rz_bin_elf_v2p)(bin, addr);
 }
 
 /**

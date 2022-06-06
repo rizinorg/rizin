@@ -13,11 +13,11 @@ NAME=ELF_ABI : Pelles C 32 flagspaces
 FILE=bins/abi_bins/pe/compilers/echo_32_pelleC.exe
 ARGS=-A
 CMDS=<<EOF
-fs
+fsl
 EOF
 EXPECT=<<EOF
     0 * classes
-  110 * functions
+  108 * functions
    38 * imports
     0 * platform.ports
     0 * registers
@@ -26,7 +26,7 @@ EXPECT=<<EOF
    38 * relocs
     4 * sections
     0 * segments
-  116 * strings
+  173 * strings
     1 * symbols
 EOF
 RUN
@@ -56,11 +56,11 @@ NAME=ELF_ABI : Pelles C 64 flagspaces
 FILE=bins/abi_bins/pe/compilers/echo_64_pelleC.exe
 ARGS=-A
 CMDS=<<EOF
-fs
+fsl
 EOF
 EXPECT=<<EOF
     0 * classes
-   85 * functions
+   86 * functions
    38 * imports
     0 * platform.ports
     0 * registers
@@ -69,7 +69,7 @@ EXPECT=<<EOF
    38 * relocs
     5 * sections
     0 * segments
-  115 * strings
+  124 * strings
     1 * symbols
 EOF
 RUN

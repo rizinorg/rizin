@@ -10,13 +10,25 @@
 
 #include <types_parser.h>
 
+#define TS_START_END(node, start, end) \
+	do { \
+		start = ts_node_start_byte(node); \
+		end = ts_node_end_byte(node); \
+	} while (0)
+
+static char *ts_node_sub_string(TSNode node, const char *cstr) {
+	ut32 start, end;
+	TS_START_END(node, start, end);
+	return rz_str_newf("%.*s", end - start, cstr + start);
+}
+
 // Declare the `tree_sitter_c` function, which is
 // implemented by the `tree-sitter-c` library.
 TSLanguage *tree_sitter_c();
 
 // Declare the `tree_sitter_cpp` function, which is
 // implemented by the `tree-sitter-cpp` library.
-//TSLanguage *tree_sitter_cpp();
+// TSLanguage *tree_sitter_cpp();
 
 CParserState *c_parser_state_new(HtPP *base_types, HtPP *callable_types) {
 	CParserState *state = RZ_NEW0(CParserState);
@@ -168,10 +180,12 @@ static int type_parse_string(CParserState *state, const char *code, char **error
 	for (i = 0; i < root_node_child_count; i++) {
 		TSNode child = ts_node_named_child(root_node, i);
 		// We skip ";" or "," - empty expressions
-		const char *node_type = ts_node_type(child);
-		if (!strcmp(node_type, "expression_statement")) {
+		char *node_code = ts_node_sub_string(child, code);
+		if (!strcmp(node_code, ";") || !strcmp(node_code, ",")) {
+			free(node_code);
 			continue;
 		}
+		free(node_code);
 		parser_debug(state, "Processing %d child...\n", i);
 		result += parse_type_nodes_save(state, child, code);
 	}
@@ -257,12 +271,12 @@ RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *di
 }
 
 /**
-* \brief Parses the C type string creating the new parser state
-*
-* \param typedb RzTypeDB instance
-* \param code The C type itself
-* \param error_msg A pointer where all error messages will be stored
-*/
+ * \brief Parses the C type string creating the new parser state
+ *
+ * \param typedb RzTypeDB instance
+ * \param code The C type itself
+ * \param error_msg A pointer where all error messages will be stored
+ */
 RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error_msg) {
 	bool verbose = true;
 	// Create new C parser state
@@ -276,22 +290,22 @@ RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error
 }
 
 /**
-* \brief Reset the C parser state
-*
-* \param typedb RzTypeDB instance
-*/
+ * \brief Reset the C parser state
+ *
+ * \param typedb RzTypeDB instance
+ */
 RZ_API void rz_type_parse_reset(RzTypeDB *typedb) {
 	rz_type_parser_free(typedb->parser);
 	typedb->parser = rz_type_parser_new();
 }
 
 /**
-* \brief Parses the single C type definition
-*
-* \param parser RzTypeParser parser instance
-* \param code The C type itself
-* \param error_msg A pointer where all error messages will be stored
-*/
+ * \brief Parses the single C type definition
+ *
+ * \param parser RzTypeParser parser instance
+ * \param code The C type itself
+ * \param error_msg A pointer where all error messages will be stored
+ */
 RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const char *code, char **error_msg) {
 	rz_return_val_if_fail(parser && code, NULL);
 	if (error_msg) {
@@ -388,12 +402,12 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 }
 
 /**
-* \brief Parses the single C type declaration
-*
-* \param parser RzTypeParser parser instance
-* \param code The C type itself
-* \param error_msg A pointer where all error messages will be stored
-*/
+ * \brief Parses the single C type declaration
+ *
+ * \param parser RzTypeParser parser instance
+ * \param code The C type itself
+ * \param error_msg A pointer where all error messages will be stored
+ */
 RZ_API RZ_OWN RzType *rz_type_parse_string_declaration_single(RzTypeParser *parser, const char *code, char **error_msg) {
 	if (error_msg) {
 		*error_msg = NULL;

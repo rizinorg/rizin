@@ -153,6 +153,7 @@ RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, const ch
 	if (c_parser_base_type_exists(state, name)) {
 		// We don't create the type if it exists already in the parser
 		// state with the same name
+		parser_error(state, "Primitive type \"%s\" already exists\n", name);
 		return NULL;
 	}
 
@@ -273,6 +274,7 @@ RZ_OWN ParserTypePair *c_parser_new_structure_type(CParserState *state, RZ_NONNU
 	if (c_parser_base_type_exists(state, name)) {
 		// We don't create the structure if it exists already in the parser
 		// state with the same name
+		parser_error(state, "Structure type \"%s\" already exists\n", name);
 		return NULL;
 	}
 
@@ -399,6 +401,7 @@ RZ_OWN ParserTypePair *c_parser_new_union_type(CParserState *state, RZ_NONNULL c
 	if (c_parser_base_type_exists(state, name)) {
 		// We don't create the structure if it exists already in the parser
 		// state with the same name
+		parser_error(state, "Union type \"%s\" already exists\n", name);
 		return NULL;
 	}
 
@@ -526,6 +529,7 @@ RZ_OWN ParserTypePair *c_parser_new_enum_type(CParserState *state, RZ_NONNULL co
 	if (c_parser_base_type_exists(state, name)) {
 		// We don't create the structure if it exists already in the parser
 		// state with the same name
+		parser_error(state, "Enum type \"%s\" already exists\n", name);
 		return NULL;
 	}
 

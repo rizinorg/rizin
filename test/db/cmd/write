@@ -51,7 +51,7 @@ RUN
 NAME=quoted comments bug
 FILE=malloc://1024
 CMDS=<<EOF
-"w hello # world"
+w "hello # world"
 ps
 EOF
 EXPECT=<<EOF
@@ -78,8 +78,7 @@ NAME=wa
 FILE=malloc://1024
 ARGS=-a x86 -b 32
 CMDS=<<EOF
-"wa nop;mov eax,33"
-e asm.profile=simple
+wa "nop;mov eax,33"
 pi 2
 EOF
 EXPECT=<<EOF
@@ -92,7 +91,7 @@ NAME=wa je 0x33
 FILE=malloc://1024
 ARGS=-a x86 -b 32
 CMDS=<<EOF
-wa je 0x33 @ 0x10
+wa "je 0x33" @ 0x10
 pi 1 @ 0x10
 EOF
 EXPECT=<<EOF
@@ -233,14 +232,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-## "wt" - write to file
-
-# see bug #503
-NAME=wt
+NAME=write to file 2
 FILE==
 #bins/pe/b.exe
 CMDS=<<EOF
-wt a_piece_of_ls_saved_to_PWD 0x400
+pr 0x400 > a_piece_of_ls_saved_to_PWD
 ls -l a_piece_of_ls_saved_to_PWD~[3]
 rm a_piece_of_ls_saved_to_PWD
 EOF
@@ -248,7 +244,7 @@ EXPECT=<<EOF
 1024
 EOF
 EXPECT_ERR=<<EOF
-Dumped 1024 bytes from 0x00000000 into a_piece_of_ls_saved_to_PWD
+
 EOF
 RUN
 
@@ -414,7 +410,7 @@ RUN
 FILE=malloc://1024
 NAME=data written after multiple wxs
 CMDS=<<EOF
-2 wxs 9090 @ 8
+2 wx 9090 @ 8 @e:cfg.wseek=true
 x 16 @ 0
 EOF
 EXPECT=<<EOF
@@ -426,7 +422,7 @@ RUN
 FILE=malloc://1024
 NAME=address after wxs at tmpseek
 CMDS=<<EOF
-2 wxs 9090 @ 8
+2 wx 9090 @ 8 @e:cfg.wseek=true
 ?vi $$
 EOF
 EXPECT=<<EOF
@@ -453,16 +449,16 @@ FILE==
 ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 e asm.bytes=true
-wa jne 6 @ 2
+wa "jne 6" @ 2
 wa ret @ 8
 af
 pdr
-wa jne 8 @ 4
+wa "jne 8" @ 4
 pdr
-wa mov rax, [rbp-4]
+wa "mov rax, [rbp-4]"
 pdr
 afvn test var_4h
-wa jne 0 @ 4
+wa "jne 0" @ 4
 pdr
 wx 00000000
 afv # check var was deleted
@@ -515,7 +511,7 @@ e asm.bytes=true
 wx e80200000075020000c3
 af
 pdr
-wa jne 9
+wa "jne 9"
 pdr
 wx e802
 pdr
@@ -563,7 +559,7 @@ wx 0000c300c3
 af
 afb+ 0 4 1
 pdr
-wa add byte [rax], bl
+wa "add byte [rax], bl"
 pdr
 EOF
 EXPECT=<<EOF
@@ -626,5 +622,20 @@ EXPECT=<<EOF
 | ; CODE XREF from fcn.00000000 @ 0x8
 \ 0x0000000c      c3             ret
 
+EOF
+RUN
+
+NAME=wd
+FILE=malloc://20
+CMDS=<<EOF
+wx 1122334455667788
+p8 8 @ 0
+s 4
+wd 0 2
+p8 8 @ 0
+EOF
+EXPECT=<<EOF
+1122334455667788
+1122334411227788
 EOF
 RUN

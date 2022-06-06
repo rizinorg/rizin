@@ -3,20 +3,14 @@
 
 #include <rz_flag.h>
 
-RZ_API RzList *rz_flag_tags_set(RzFlag *f, const char *name, const char *words) {
-	rz_return_val_if_fail(f && name && words, NULL);
+RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words) {
+	rz_return_if_fail(f && name && words);
 	const char *k = sdb_fmt("tag.%s", name);
 	sdb_set(f->tags, k, words, -1);
-	return NULL;
 }
 
-RZ_API RzList *rz_flag_tags_list(RzFlag *f, const char *name) {
+RZ_API RZ_OWN RzList *rz_flag_tags_list(RzFlag *f) {
 	rz_return_val_if_fail(f, NULL);
-	if (name) {
-		const char *k = sdb_fmt("tag.%s", name);
-		char *words = sdb_get(f->tags, k, NULL);
-		return rz_str_split_list(words, " ", 0);
-	}
 	RzList *res = rz_list_newf(free);
 	SdbList *o = sdb_foreach_list(f->tags, false);
 	SdbListIter *iter;
@@ -56,7 +50,7 @@ static bool iter_glob_flag(RzFlagItem *fi, void *user) {
 	return true;
 }
 
-RZ_API RzList *rz_flag_tags_get(RzFlag *f, const char *name) {
+RZ_API RzList /* <RzFlagItem> */ *rz_flag_tags_get(RzFlag *f, const char *name) {
 	rz_return_val_if_fail(f && name, NULL);
 	const char *k = sdb_fmt("tag.%s", name);
 	RzList *res = rz_list_newf(NULL);

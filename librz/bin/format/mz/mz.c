@@ -26,7 +26,7 @@ RzBinAddr *rz_bin_mz_get_entrypoint(const struct rz_bin_mz_obj_t *bin) {
 	la = rz_bin_mz_va_to_la(mz->cs, mz->ip);
 	la &= 0xfffff;
 	if (la >= bin->load_module_size) {
-		eprintf("Error: entry point outside load module\n");
+		RZ_LOG_ERROR("The entry point is outside the load module size\n");
 		return NULL;
 	}
 	entrypoint = RZ_NEW0(RzBinAddr);
@@ -154,7 +154,7 @@ RzList *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin) {
 	return seg_list;
 
 err_out:
-	eprintf("Error: alloc (RzBinSection)\n");
+	RZ_LOG_ERROR("Failed to get segment list\n");
 	rz_list_free(seg_list);
 
 	return NULL;
@@ -167,7 +167,7 @@ struct rz_bin_mz_reloc_t *rz_bin_mz_get_relocs(const struct rz_bin_mz_obj_t *bin
 
 	struct rz_bin_mz_reloc_t *relocs = calloc(num_relocs + 1, sizeof(*relocs));
 	if (!relocs) {
-		eprintf("Error: calloc (struct rz_bin_mz_reloc_t)\n");
+		RZ_LOG_ERROR("Cannot allocate struct rz_bin_mz_reloc_t\n");
 		return NULL;
 	}
 	for (i = 0, j = 0; i < num_relocs; i++) {
@@ -202,21 +202,27 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 	int relocations_size, dos_file_size;
 	MZ_image_dos_header *mz;
 	if (!(mz = RZ_NEW0(MZ_image_dos_header))) {
-		rz_sys_perror("malloc (MZ_image_dos_header)");
+		RZ_LOG_ERROR("Cannot allocate MZ_image_dos_header");
 		return false;
 	}
 	bin->dos_header = mz;
 	// TODO: read field by field to avoid endian and alignment issues
 	if (rz_buf_read_at(bin->b, 0, (ut8 *)mz, sizeof(*mz)) == -1) {
-		eprintf("Error: read (MZ_image_dos_header)\n");
+		RZ_LOG_ERROR("Cannot read MZ_image_dos_header\n");
 		return false;
 	}
 	// dos_header is not endian safe here in this point
 	if (mz->blocks_in_file < 1) {
 		return false;
 	}
-	dos_file_size = ((mz->blocks_in_file - 1) << 9) +
-		mz->bytes_in_last_block;
+	if (mz->bytes_in_last_block == 0) {
+		// last block is full
+		dos_file_size = mz->blocks_in_file << 9;
+	} else {
+		// last block is partially full
+		dos_file_size = ((mz->blocks_in_file - 1) << 9) +
+			mz->bytes_in_last_block;
+	}
 
 	bin->dos_file_size = dos_file_size;
 	if (dos_file_size > bin->size) {
@@ -246,25 +252,25 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 	if (bin->dos_extended_header_size > 0) {
 		if (!(bin->dos_extended_header =
 				    malloc(bin->dos_extended_header_size))) {
-			rz_sys_perror("malloc (dos extended header)");
+			RZ_LOG_ERROR("Cannot allocate dos extended header");
 			return false;
 		}
 		if (rz_buf_read_at(bin->b, sizeof(MZ_image_dos_header),
 			    (ut8 *)bin->dos_extended_header,
 			    bin->dos_extended_header_size) == -1) {
-			eprintf("Error: read (dos extended header)\n");
+			RZ_LOG_ERROR("Cannot read dos extended header\n");
 			return false;
 		}
 	}
 
 	if (relocations_size > 0) {
 		if (!(bin->relocation_entries = malloc(relocations_size))) {
-			rz_sys_perror("malloc (dos relocation entries)");
+			RZ_LOG_ERROR("Cannot allocate dos relocation entries");
 			return false;
 		}
 		if (rz_buf_read_at(bin->b, bin->dos_header->reloc_table_offset,
 			    (ut8 *)bin->relocation_entries, relocations_size) == -1) {
-			eprintf("Error: read (dos relocation entries)\n");
+			RZ_LOG_ERROR("Cannot read dos relocation entries\n");
 			RZ_FREE(bin->relocation_entries);
 			return false;
 		}
@@ -278,7 +284,7 @@ static bool rz_bin_mz_init(struct rz_bin_mz_obj_t *bin) {
 	bin->relocation_entries = NULL;
 	bin->kv = sdb_new0();
 	if (!rz_bin_mz_init_hdr(bin)) {
-		eprintf("Warning: File is not MZ\n");
+		RZ_LOG_WARN("File is not MZ\n");
 		return false;
 	}
 	return true;
@@ -333,7 +339,7 @@ RzBinAddr *rz_bin_mz_get_main_vaddr(struct rz_bin_mz_obj_t *bin) {
 	}
 	ZERO_FILL(b);
 	if (rz_buf_read_at(bin->b, entry->paddr, b, sizeof(b)) < 0) {
-		eprintf("Warning: Cannot read entry at 0x%16" PFMT64x "\n", (ut64)entry->paddr);
+		RZ_LOG_ERROR("Cannot read entry at 0x%16" PFMT64x "\n", (ut64)entry->paddr);
 		free(entry);
 		return NULL;
 	}

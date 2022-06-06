@@ -482,17 +482,17 @@ enum StabType {
 };
 
 enum {
-	// Constant values for the rz_symbolnum field in an
-	// llvm::MachO::relocation_info structure when rz_extern is 0.
+	// Constant values for the r_symbolnum field in an
+	// llvm::MachO::relocation_info structure when r_extern is 0.
 	RZ_ABS = 0,
 
-	// Constant bits for the rz_address field in an
+	// Constant bits for the r_address field in an
 	// llvm::MachO::relocation_info structure.
 	RZ_SCATTERED = 0x80000000
 };
 
 enum RelocationInfoType {
-	// Constant values for the rz_type field in an
+	// Constant values for the r_type field in an
 	// llvm::MachO::relocation_info or llvm::MachO::scattered_relocation_info
 	// structure.
 	GENERIC_RELOC_VANILLA = 0,
@@ -502,7 +502,7 @@ enum RelocationInfoType {
 	GENERIC_RELOC_LOCAL_SECTDIFF = 4,
 	GENERIC_RELOC_TLV = 5,
 
-	// Constant values for the rz_type field in a PowerPC architecture
+	// Constant values for the r_type field in a PowerPC architecture
 	// llvm::MachO::relocation_info or llvm::MachO::scattered_relocation_info
 	// structure.
 	PPC_RELOC_VANILLA = GENERIC_RELOC_VANILLA,
@@ -522,7 +522,7 @@ enum RelocationInfoType {
 	PPC_RELOC_LO14_SECTDIFF = 14,
 	PPC_RELOC_LOCAL_SECTDIFF = 15,
 
-	// Constant values for the rz_type field in an ARM architecture
+	// Constant values for the r_type field in an ARM architecture
 	// llvm::MachO::relocation_info or llvm::MachO::scattered_relocation_info
 	// structure.
 	ARM_RELOC_VANILLA = GENERIC_RELOC_VANILLA,
@@ -536,7 +536,7 @@ enum RelocationInfoType {
 	ARM_RELOC_HALF = 8,
 	ARM_RELOC_HALF_SECTDIFF = 9,
 
-	// Constant values for the rz_type field in an ARM64 architecture
+	// Constant values for the r_type field in an ARM64 architecture
 	// llvm::MachO::relocation_info or llvm::MachO::scattered_relocation_info
 	// structure.
 
@@ -548,22 +548,22 @@ enum RelocationInfoType {
 	ARM64_RELOC_BRANCH26 = 2,
 	// PC-rel distance to page of target.
 	ARM64_RELOC_PAGE21 = 3,
-	// Offset within page, scaled by rz_length.
+	// Offset within page, scaled by r_length.
 	ARM64_RELOC_PAGEOFF12 = 4,
 	// PC-rel distance to page of GOT slot.
 	ARM64_RELOC_GOT_LOAD_PAGE21 = 5,
-	// Offset within page of GOT slot, scaled by rz_length.
+	// Offset within page of GOT slot, scaled by r_length.
 	ARM64_RELOC_GOT_LOAD_PAGEOFF12 = 6,
 	// For pointers to GOT slots.
 	ARM64_RELOC_POINTER_TO_GOT = 7,
 	// PC-rel distance to page of TLVP slot.
 	ARM64_RELOC_TLVP_LOAD_PAGE21 = 8,
-	// Offset within page of TLVP slot, scaled by rz_length.
+	// Offset within page of TLVP slot, scaled by r_length.
 	ARM64_RELOC_TLVP_LOAD_PAGEOFF12 = 9,
 	// Must be followed by ARM64_RELOC_PAGE21 or ARM64_RELOC_PAGEOFF12.
 	ARM64_RELOC_ADDEND = 10,
 
-	// Constant values for the rz_type field in an x86_64 architecture
+	// Constant values for the r_type field in an x86_64 architecture
 	// llvm::MachO::relocation_info or llvm::MachO::scattered_relocation_info
 	// structure
 	X86_64_RELOC_UNSIGNED = 0,
@@ -994,34 +994,34 @@ struct fat_arch {
 
 // Structs from <mach-o/reloc.h>
 struct relocation_info {
-	int32_t rz_address;
-	uint32_t rz_symbolnum : 24,
-		rz_pcrel : 1,
-		rz_length : 2,
-		rz_extern : 1,
-		rz_type : 4;
+	int32_t r_address;
+	uint32_t r_symbolnum : 24,
+		r_pcrel : 1,
+		r_length : 2,
+		r_extern : 1,
+		r_type : 4;
 };
 
 struct scattered_relocation_info {
 #if defined(BYTE_ORDER) && defined(BIG_ENDIAN) && (BYTE_ORDER == BIG_ENDIAN)
-	uint32_t rz_scattered : 1,
-		rz_pcrel : 1,
-		rz_length : 2,
-		rz_type : 4,
-		rz_address : 24;
+	uint32_t r_scattered : 1,
+		r_pcrel : 1,
+		r_length : 2,
+		r_type : 4,
+		r_address : 24;
 #else
-	uint32_t rz_address : 24,
-		rz_type : 4,
-		rz_length : 2,
-		rz_pcrel : 1,
-		rz_scattered : 1;
+	uint32_t r_address : 24,
+		r_type : 4,
+		r_length : 2,
+		r_pcrel : 1,
+		r_scattered : 1;
 #endif
-	int32_t rz_value;
+	int32_t r_value;
 };
 
 // Structs NOT from <mach-o/reloc.h>, but that make LLVM's life easier
 struct any_relocation_info {
-	uint32_t rz_word0, rz_word1;
+	uint32_t r_word0, r_word1;
 };
 
 // Structs from <mach-o/nlist.h>
@@ -1477,8 +1477,10 @@ enum {
 	DYLD_CHAINED_PTR_32 = 3,
 	DYLD_CHAINED_PTR_32_CACHE = 4,
 	DYLD_CHAINED_PTR_32_FIRMWARE = 5,
+	DYLD_CHAINED_PTR_64_OFFSET = 6,
 	DYLD_CHAINED_PTR_ARM64E_KERNEL = 7,
 	DYLD_CHAINED_PTR_64_KERNEL_CACHE = 8,
+	DYLD_CHAINED_PTR_ARM64E_USERLAND24 = 12,
 };
 
 struct dyld_chained_ptr_arm64e_rebase {
@@ -1519,6 +1521,22 @@ struct dyld_chained_ptr_arm64e_auth_bind {
 		auth : 1; // == 1
 };
 
+struct dyld_chained_ptr_64_rebase {
+	uint64_t target : 36,
+		high8 : 8,
+		reserved : 7,
+		next : 12,
+		bind : 1; // == 0
+};
+
+struct dyld_chained_ptr_64_bind {
+	uint64_t ordinal : 24,
+		addend : 8,
+		reserved : 19,
+		next : 12,
+		bind : 1; // == 1
+};
+
 /* WARNING: this is guesswork based on trial and error */
 struct dyld_chained_ptr_arm64e_cache_rebase {
 	uint64_t target : 43,
@@ -1533,6 +1551,26 @@ struct dyld_chained_ptr_arm64e_cache_auth_rebase {
 		addrDiv : 1,
 		key : 2,
 		next : 12,
+		auth : 1; // == 1
+};
+
+struct dyld_chained_ptr_arm64e_bind24 {
+	uint64_t ordinal : 24,
+		zero : 8,
+		addend : 19,
+		next : 11,
+		bind : 1, // == 1
+		auth : 1; // == 0
+};
+
+struct dyld_chained_ptr_arm64e_auth_bind24 {
+	uint64_t ordinal : 24,
+		zero : 8,
+		diversity : 16,
+		addrDiv : 1,
+		key : 2,
+		next : 11,
+		bind : 1, // == 1
 		auth : 1; // == 1
 };
 

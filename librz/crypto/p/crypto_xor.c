@@ -27,7 +27,7 @@ static bool xor_init_state(struct xor_state *const state, const ut8 *key, int ke
 
 // Encrypt/Decrypt xor state buffer using the supplied key
 static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	int i; //index for input
+	int i; // index for input
 	for (i = 0; i < buflen; i++) {
 		outbuf[i] = inbuf[i] ^ state->key[(i % state->key_size)];
 	}

@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 /*
- * Following RFC 5280 
+ * Following RFC 5280
  */
 
 typedef struct rz_x509_validity_t {
@@ -49,10 +49,10 @@ typedef struct rz_x509_authoritykeyidentifier_t {
 
 typedef struct rz_x509_subjectpublickeyinfo_t {
 	RX509AlgorithmIdentifier algorithm;
-	//This is a bit string, but it encapsulate mod + pubkey
+	// This is a bit string, but it encapsulate mod + pubkey
 	RASN1Binary *subjectPublicKey; // BIT STRING
-	//This struct won't follow RFC,
-	//just because it should be seen as this.
+	// This struct won't follow RFC,
+	// just because it should be seen as this.
 	RASN1Binary *subjectPublicKeyExponent;
 	RASN1Binary *subjectPublicKeyModule;
 } RX509SubjectPublicKeyInfo;
@@ -69,7 +69,7 @@ typedef struct rz_x509_extensions_t {
 } RX509Extensions;
 
 typedef struct rz_x509_tbscertificate_t {
-	ut32 version; //INTEGER
+	ut32 version; // INTEGER
 	RASN1String *serialNumber; // INTEGER
 	RX509AlgorithmIdentifier signature;
 	RX509Name issuer;
@@ -90,15 +90,15 @@ typedef struct rz_x509_certificate_t {
 // RFC 1422
 
 typedef struct rz_x509_crlentry {
-	RASN1Binary *userCertificate; //INTEGER ?
-	RASN1String *revocationDate; //UTCTime
+	RASN1Binary *userCertificate; // INTEGER ?
+	RASN1String *revocationDate; // UTCTime
 } RX509CRLEntry;
 
 typedef struct rz_x509_certificaterevocationlist {
 	RX509AlgorithmIdentifier signature;
 	RX509Name issuer;
-	RASN1String *lastUpdate; //UTCTime
-	RASN1String *nextUpdate; //UTCTime
+	RASN1String *lastUpdate; // UTCTime
+	RASN1String *nextUpdate; // UTCTime
 	ut32 length;
 	RX509CRLEntry **revokedCertificates;
 } RX509CertificateRevocationList;

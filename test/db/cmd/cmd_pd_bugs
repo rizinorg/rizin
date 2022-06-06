@@ -175,7 +175,7 @@ EXPECT=<<EOF
             ;-- section..text:
             ;-- .text:
             ;-- _start:
-            0x004005c0      31ed           xor   ebp, ebp              ; [14] -r-x section size 584 named .text
+            0x004005c0      31ed           xor   ebp, ebp              ; [13] -r-x section size 584 named .text
             0x004005c2      4989d1         mov   r9, rdx
 xor ebp, ebp
 mov r9, rdx
@@ -188,7 +188,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
-af+ 0 test
+af+ test @ 0
 e asm.lines.fcn=0
 e asm.lines.bb=1
 pd 2
@@ -206,7 +206,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
 e asm.bits=64
-af+ 0 test
+af+ test @ 0
 e asm.lines.fcn=1
 e asm.lines.bb=0
 pd 2
