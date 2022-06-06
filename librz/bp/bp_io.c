@@ -6,14 +6,14 @@
 
 RZ_API void rz_bp_restore_one(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	if (set) {
-		//eprintf ("Setting bp at 0x%08"PFMT64x"\n", b->addr);
+		// eprintf ("Setting bp at 0x%08"PFMT64x"\n", b->addr);
 		if (b->hw || !b->bbytes) {
 			eprintf("hw breakpoints not yet supported\n");
 		} else {
 			bp->iob.write_at(bp->iob.io, b->addr, b->bbytes, b->size);
 		}
 	} else {
-		//eprintf ("Clearing bp at 0x%08"PFMT64x"\n", b->addr);
+		// eprintf ("Clearing bp at 0x%08"PFMT64x"\n", b->addr);
 		if (b->hw || !b->obytes) {
 			eprintf("hw breakpoints not yet supported\n");
 		} else {
@@ -39,8 +39,8 @@ RZ_API bool rz_bp_restore_except(RzBreakpoint *bp, bool set, ut64 addr) {
 	RzListIter *iter;
 	RzBreakpointItem *b;
 
-	if (set && bp->bpinmaps) {
-		bp->corebind.syncDebugMaps(bp->corebind.core);
+	if (set && bp->bpinmaps && bp->ctx.maps_sync) {
+		bp->ctx.maps_sync(bp->ctx.user);
 	}
 
 	rz_list_foreach (bp->bps, iter, b) {

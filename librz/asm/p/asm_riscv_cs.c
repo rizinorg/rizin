@@ -3,9 +3,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone.h>
-
-#if CSNEXT
+#include <capstone/capstone.h>
 
 static csh cd = 0;
 #include "cs_mnemonics.c"
@@ -71,17 +69,4 @@ RZ_API RzLibStruct rizin_plugin = {
 	.data = &rz_asm_plugin_riscv_cs,
 	.version = RZ_VERSION
 };
-#endif
-
-#else
-RzAsmPlugin rz_asm_plugin_riscv_cs = {
-	0
-};
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ASM,
-	.version = RZ_VERSION
-};
-#endif
-
 #endif

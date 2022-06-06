@@ -5,21 +5,23 @@
 #include <rz_cons.h>
 
 #if __WINDOWS__
-static ut8 *remove_cr(ut8 *str) {
-	char *s = (char *)str;
-	char *start = s;
-	while (*s) {
-		if (s[0] == '\r' &&
-			!(s - start >= 4 && !strncmp(s - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
-			memmove(s, s + 1, strlen(s + 1) + 1);
-			continue;
+static ut8 *crlf2lf(ut8 *str) {
+	char *src = (char *)str;
+	char *dest = src;
+	while (*src) {
+		*dest = *src;
+		if (src[0] == '\r' && src[1] == '\n') {
+			// dest does not move
+		} else {
+			dest++;
 		}
-		s++;
+		src++;
 	}
-	return (ut8 *)start;
+	*dest = '\0';
+	return str;
 }
 #else
-#define remove_cr(x) (x)
+#define crlf2lf(x) (x)
 #endif
 
 static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
@@ -35,8 +37,8 @@ static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[
 	RzSubprocessOutput *out = rz_subprocess_drain(proc);
 	if (out) {
 		out->timeout = r == RZ_SUBPROCESS_TIMEDOUT;
-		out->out = remove_cr(out->out);
-		out->err = remove_cr(out->err);
+		out->out = crlf2lf(out->out);
+		out->err = crlf2lf(out->err);
 	}
 	rz_subprocess_free(proc);
 	return out;
@@ -310,7 +312,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto rip;
 		}
-		char *hex = (char *)remove_cr(rz_subprocess_out(proc, NULL));
+		char *hex = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
 		size_t hexlen = strlen(hex);
 		if (!hexlen) {
 			goto rip;
@@ -344,10 +346,35 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto ship;
 		}
-		char *disasm = (char *)remove_cr(rz_subprocess_out(proc, NULL));
+		char *disasm = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
 		rz_str_trim(disasm);
 		out->disasm = disasm;
 	ship:
+		free(hex);
+		rz_pvector_pop(&args);
+		rz_pvector_pop(&args);
+		rz_subprocess_free(proc);
+	}
+	if (test->il) {
+		char *hex = rz_hex_bin2strdup(test->bytes, test->bytes_size);
+		if (!hex) {
+			goto beach;
+		}
+		rz_pvector_push(&args, "-I");
+		rz_pvector_push(&args, hex);
+		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
+			rz_subprocess_kill(proc);
+			out->il_timeout = true;
+		} else {
+			char *il = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
+			rz_str_trim(il);
+			char *il_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
+			rz_str_trim(il_err);
+			out->il = il;
+			out->il_report = il_err;
+			out->il_failed = rz_subprocess_ret(proc) != 0;
+		}
 		free(hex);
 		rz_pvector_pop(&args);
 		rz_pvector_pop(&args);
@@ -379,6 +406,16 @@ RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test) {
 			return false;
 		}
 	}
+	if (test->il) {
+		// expect some IL, no failure, no report and no timeout
+		if (!out->il || out->il_failed || (out->il_report && *out->il_report) || out->il_timeout) {
+			return false;
+		}
+		// IL must also be correct
+		if (strcmp(out->il, test->il) != 0) {
+			return false;
+		}
+	}
 	return true;
 }
 
@@ -388,6 +425,8 @@ RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out) {
 	}
 	free(out->disasm);
 	free(out->bytes);
+	free(out->il);
+	free(out->il_report);
 	free(out);
 }
 
@@ -464,7 +503,7 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		success = rz_test_check_asm_test(out, asm_test);
 		ret->asm_out = out;
 		if (out) {
-			ret->timeout = out->as_timeout || out->disas_timeout;
+			ret->timeout = out->as_timeout || out->disas_timeout || out->il_timeout;
 		}
 		ret->run_failed = !out;
 		break;

@@ -3,7 +3,7 @@
 
 #include <rz_analysis.h>
 
-RZ_API RzAnalysisValue *rz_analysis_value_new(void) { //macro for this ?
+RZ_API RzAnalysisValue *rz_analysis_value_new(void) { // macro for this ?
 	return RZ_NEW0(RzAnalysisValue);
 }
 
@@ -55,8 +55,8 @@ RZ_API ut64 rz_analysis_value_to_ut64(RzAnalysis *analysis, RzAnalysisValue *val
 	case 2:
 	case 4:
 	case 8:
-		//analysis->bio ...
-		eprintf("TODO: memref for to_ut64 not supported\n");
+		// analysis->bio ...
+		RZ_LOG_DEBUG("memref for to_ut64 not supported\n");
 		break;
 	}
 	return num;
@@ -70,14 +70,14 @@ RZ_API int rz_analysis_value_set_ut64(RzAnalysis *analysis, RzAnalysisValue *val
 			rz_mem_set_num(data, val->memref, num);
 			analysis->iob.write_at(analysis->iob.io, addr, data, val->memref);
 		} else {
-			eprintf("No IO binded to rz_analysis\n");
+			RZ_LOG_ERROR("No IO binded to rz_analysis\n");
 		}
 	} else {
 		if (val->reg) {
 			rz_reg_set_value(analysis->reg, val->reg, num);
 		}
 	}
-	return false; //is this necessary
+	return false; // is this necessary
 }
 
 RZ_API char *rz_analysis_value_to_string(RzAnalysisValue *value) {

@@ -62,21 +62,17 @@ static char *stackop2str(int type) {
 	switch (type) {
 	case RZ_ANALYSIS_STACK_NULL: return strdup("null");
 	case RZ_ANALYSIS_STACK_NOP: return strdup("nop");
-	//case RZ_ANALYSIS_STACK_INCSTACK: return strdup ("incstack");
+	// case RZ_ANALYSIS_STACK_INCSTACK: return strdup ("incstack");
 	case RZ_ANALYSIS_STACK_GET: return strdup("get");
 	case RZ_ANALYSIS_STACK_SET: return strdup("set");
 	}
 	return strdup("unknown");
 }
 
-static int showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
-	int ret = rz_analysis_op(as->analysis, op, offset, buf, len, RZ_ANALYSIS_OP_MASK_ESIL);
-	if (ret < 1) {
-		return ret;
-	}
+static void showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
 	char *stackop = stackop2str(op->stackop);
 	const char *optype = rz_analysis_optype_to_string(op->type);
-	char *bytes = rz_hex_bin2strdup(buf, ret);
+	char *bytes = rz_hex_bin2strdup(buf, RZ_MIN(len, op->size));
 	if (as->json) {
 		pj_o(pj);
 		pj_kn(pj, "opcode", offset);
@@ -108,8 +104,8 @@ static int showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf,
 		if (op->fail != -1LL) {
 			printf("fail:     0x%08" PFMT64x "\n", op->fail);
 		}
-		//if (op->ref != -1LL)
-		//      printf ("ref:      0x%08"PFMT64x"\n", op->ref);
+		// if (op->ref != -1LL)
+		//       printf ("ref:      0x%08"PFMT64x"\n", op->ref);
 		if (op->val != -1LL) {
 			printf("value:    0x%08" PFMT64x "\n", op->val);
 		}
@@ -121,32 +117,34 @@ static int showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf,
 	}
 	free(stackop);
 	free(bytes);
-	return ret;
 }
 
 // TODO: add israw/len
 static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	ut8 *buf = (ut8 *)strdup((const char *)arg);
 	int ret, len = rz_hex_str2bin((char *)buf, buf);
-	PJ *pj = pj_new();
-	if (!pj) {
-		free(buf);
-		return 0;
+	PJ *pj = NULL;
+	if (as->json) {
+		pj = pj_new();
+		if (!pj) {
+			free(buf);
+			return 0;
+		}
 	}
 
 	RzAnalysisOp aop = { 0 };
 
-	if (as->json) {
+	if (pj) {
 		pj_a(pj);
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
-		if (rz_analysis_op(as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
+		if (rz_analysis_op(as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 			eprintf("Error analyzing instruction at 0x%08" PFMT64x "\n", offset);
 			break;
 		}
 		if (aop.size < 1) {
-			if (as->json) {
+			if (pj) {
 				pj_o(pj);
 				pj_ks(pj, "bytes", rz_hex_bin2strdup(buf, ret));
 				pj_ks(pj, "type", "Invalid");
@@ -160,7 +158,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 		ret += aop.size;
 		rz_analysis_op_fini(&aop);
 	}
-	if (as->json) {
+	if (pj) {
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
@@ -183,6 +181,7 @@ static int rasm_show_help(int v) {
 		       " -C           Output in C format\n"
 		       " -d, -D       Disassemble from hexpair bytes (-D show hexpairs)\n"
 		       " -e           Use big endian instead of little endian\n"
+		       " -I           Display lifted RzIL code (same input as in -d, IL is also validated)\n"
 		       " -E           Display ESIL expression (same input as in -d)\n"
 		       " -f [file]    Read data from file\n"
 		       " -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
@@ -217,7 +216,56 @@ static int rasm_show_help(int v) {
 	return 0;
 }
 
-static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, int hex) {
+typedef enum {
+	DISASM_MODE_DONT = 0,
+	DISASM_MODE_DEFAULT,
+	DISASM_MODE_WITH_BYTES,
+	DISASM_MODE_ESIL,
+	DISASM_MODE_IL
+} DisasmMode;
+
+static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
+	if (op->size < 1 || !op->il_op) {
+		eprintf("Invalid instruction of lifting not implemented.\n");
+		return false;
+	}
+	RzAnalysisILVM *vm = rz_analysis_il_vm_new(as->analysis, NULL);
+	if (!vm) {
+		eprintf("Failed to initialize IL VM for this architecture.\n");
+		return false;
+	}
+	bool ret = true;
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
+	if (!ctx) {
+		eprintf("Failed to derive context from IL VM.\n");
+		ret = false;
+		goto error_vm;
+	}
+	RzILOpEffect *il_op = op->il_op;
+	if (il_op) {
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		rz_il_op_effect_stringify(il_op, &sb);
+		printf("%s\n", rz_strbuf_get(&sb));
+		fflush(stdout); // to appear before validation report
+		rz_strbuf_fini(&sb);
+	}
+	char *report;
+	if (!rz_il_validate_effect(il_op, ctx, NULL, NULL, &report)) {
+		ret = false;
+		eprintf("IL Validation failed%c\n", report ? ':' : '.');
+	}
+	if (report) {
+		eprintf("%s\n", report);
+		free(report);
+	}
+	rz_il_validate_global_context_free(ctx);
+error_vm:
+	rz_analysis_il_vm_free(vm);
+	return ret;
+}
+
+static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, DisasmMode mode) {
 	RzAsmCode *acode;
 	ut8 *data = NULL;
 	int ret = 0;
@@ -245,7 +293,8 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		len = clen;
 	}
 
-	if (hex == 2) {
+	switch (mode) {
+	case DISASM_MODE_ESIL: {
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
@@ -259,7 +308,28 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 			ret += aop.size;
 			rz_analysis_op_fini(&aop);
 		}
-	} else if (hex) {
+		break;
+	}
+	case DISASM_MODE_IL: {
+		RzAnalysisOp aop = { 0 };
+		while (ret < len) {
+			aop.size = 0;
+			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_IL) <= 0) {
+				eprintf("Invalid\n");
+				ret = 0;
+				break;
+			}
+			if (!print_and_check_il(as, &aop)) {
+				rz_analysis_op_fini(&aop);
+				ret = 0;
+				break;
+			}
+			ret += aop.size;
+			rz_analysis_op_fini(&aop);
+		}
+		break;
+	}
+	case DISASM_MODE_WITH_BYTES: {
 		RzAsmOp op;
 		rz_asm_set_pc(as->a, addr);
 		while ((len - ret) > 0) {
@@ -276,7 +346,9 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 			ret += op.size;
 			rz_asm_set_pc(as->a, addr + ret);
 		}
-	} else {
+		break;
+	}
+	default: {
 		rz_asm_set_pc(as->a, addr);
 		if (!(acode = rz_asm_mdisassemble(as->a, data, len))) {
 			goto beach;
@@ -289,6 +361,8 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		}
 		ret = acode->len;
 		rz_asm_code_free(acode);
+		break;
+	}
 	}
 beach:
 	if (data && data != (ut8 *)buf) {
@@ -315,7 +389,7 @@ static void print_buf(RzAsmState *as, char *str) {
 }
 
 static bool print_label(void *user, const void *k, const void *v) {
-	printf("f label.%s = %s\n", (const char *)k, (const char *)v);
+	printf("f label.%s @ %s\n", (const char *)k, (const char *)v);
 	return true;
 }
 
@@ -373,16 +447,14 @@ static int rasm_asm(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 static int __lib_asm_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzAsmPlugin *hand = (RzAsmPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
-	rz_asm_add(as->a, hand);
-	return true;
+	return rz_asm_add(as->a, hand);
 }
 
 /* analysis callback */
 static int __lib_analysis_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzAnalysisPlugin *hand = (RzAnalysisPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
-	rz_analysis_add(as->analysis, hand);
-	return true;
+	return rz_analysis_add(as->analysis, hand);
 }
 
 static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
@@ -397,8 +469,8 @@ static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, u
 	}
 	int ret = rasm_asm(as, (char *)buf, offset, len, as->a->bits, bin, use_spp, hexwords);
 	if (rad) {
-		printf("f entry = $$\n");
-		printf("f label.main = $$ + 1\n");
+		printf("f entry @ $$\n");
+		printf("f label.main @ $$ + 1\n");
 		ht_pp_foreach(as->a->flags, print_label, NULL);
 	}
 	return ret;
@@ -414,25 +486,20 @@ static void __load_plugins(RzAsmState *as) {
 	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins", &__lib_analysis_cb, NULL, as);
 
 	char *path = rz_sys_getenv(RZ_LIB_ENV);
-	if (path && *path) {
-		rz_lib_opendir(as->l, path);
+	if (!RZ_STR_ISEMPTY(path)) {
+		rz_lib_opendir(as->l, path, false);
 	}
 
-	// load plugins from the home directory
-	char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
-	rz_lib_opendir(as->l, homeplugindir);
+	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
+	// TODO: remove after 0.4.0 is released
+	char *oldhomeplugindir = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
+	char *sysplugindir = rz_path_system(RZ_PLUGINS);
+	rz_lib_opendir(as->l, homeplugindir, false);
+	rz_lib_opendir(as->l, oldhomeplugindir, false);
+	rz_lib_opendir(as->l, sysplugindir, false);
 	free(homeplugindir);
-
-	// load plugins from the system directory
-	char *plugindir = rz_str_rz_prefix(RZ_PLUGINS);
-	char *extrasdir = rz_str_rz_prefix(RZ_EXTRAS);
-	char *bindingsdir = rz_str_rz_prefix(RZ_BINDINGS);
-	rz_lib_opendir(as->l, plugindir);
-	rz_lib_opendir(as->l, extrasdir);
-	rz_lib_opendir(as->l, bindingsdir);
-	free(plugindir);
-	free(extrasdir);
-	free(bindingsdir);
+	free(oldhomeplugindir);
+	free(sysplugindir);
 
 	free(tmp);
 	free(path);
@@ -451,7 +518,8 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	bool use_spp = false;
 	bool hexwords = false;
 	ut64 offset = 0;
-	int fd = -1, dis = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
+	int fd = -1, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
+	DisasmMode dis = DISASM_MODE_DONT;
 	int help = 0;
 	ut64 len = 0, idx = 0, skip = 0;
 	bool analinfo = false;
@@ -463,9 +531,9 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	RzAsmState *as = __as_new();
 
 	// TODO set addrbytes
-	char *r2arch = rz_sys_getenv("RZ_ARCH");
-	if (r2arch) {
-		arch = r2arch;
+	char *rz_arch = rz_sys_getenv("RZ_ARCH");
+	if (rz_arch) {
+		arch = rz_arch;
 	}
 
 	char *r2bits = rz_sys_getenv("RZ_BITS");
@@ -475,7 +543,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx");
+	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:L@:o:O:pqrs:vwx");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -497,16 +565,19 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			as->coutput = true;
 			break;
 		case 'd':
-			dis = 1;
+			dis = DISASM_MODE_DEFAULT;
 			break;
 		case 'D':
-			dis = 2;
+			dis = DISASM_MODE_WITH_BYTES;
 			break;
 		case 'e':
 			isbig = true;
 			break;
 		case 'E':
-			dis = 3;
+			dis = DISASM_MODE_ESIL;
+			break;
+		case 'I':
+			dis = DISASM_MODE_IL;
 			break;
 		case 'f':
 			file = opt.arg;
@@ -516,6 +587,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			break;
 		case 'h':
 			help++;
+			// fallthrough
 		case 'i':
 			skip = rz_num_math(NULL, opt.arg);
 			break;
@@ -529,14 +601,21 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			len = rz_num_math(NULL, opt.arg);
 			break;
 		case 'L': {
+			// create a dummy RzCore with the current RzAsm/RzAnalysis
 			RzCore *core = rz_core_new();
+			RzAsm *tmp_asm = core->rasm;
+			RzAnalysis *tmp_analysis = core->analysis;
+			core->rasm = as->a;
+			core->analysis = as->analysis;
 			RzCmdStateOutput state = { 0 };
 			rz_cmd_state_output_init(&state, as->json ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD);
 			rz_core_asm_plugins_print(core, opt.argv[opt.ind], &state);
 			rz_cmd_state_output_print(&state);
 			rz_cmd_state_output_fini(&state);
 			rz_cons_flush();
-			free(core);
+			core->rasm = tmp_asm;
+			core->analysis = tmp_analysis;
+			rz_core_free(core);
 			ret = 1;
 			goto beach;
 		}
@@ -616,6 +695,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		goto beach;
 	}
 	rz_asm_set_cpu(as->a, cpu);
+	rz_analysis_set_cpu(as->analysis, cpu);
 	rz_asm_set_bits(as->a, (env_bits && *env_bits) ? atoi(env_bits) : bits);
 	rz_analysis_set_bits(as->analysis, (env_bits && *env_bits) ? atoi(env_bits) : bits);
 	as->a->syscall = rz_syscall_new();
@@ -674,7 +754,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 						length -= skip;
 					}
 				}
-				ret = rasm_disasm(as, offset, (char *)buf, len, as->a->bits, bin, dis - 1);
+				ret = rasm_disasm(as, offset, (char *)buf, len, as->a->bits, bin, dis);
 			} else if (analinfo) {
 				ret = show_analinfo(as, (const char *)buf, offset);
 			} else {
@@ -702,7 +782,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 					}
 					if (dis) {
 						ret = rasm_disasm(as, offset, content,
-							length, as->a->bits, bin, dis - 1);
+							length, as->a->bits, bin, dis);
 					} else if (analinfo) {
 						ret = show_analinfo(as, (const char *)content, offset);
 					} else {
@@ -746,7 +826,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 					}
 				}
 				if (dis) {
-					ret = rasm_disasm(as, offset, (char *)buf, length, as->a->bits, bin, dis - 1);
+					ret = rasm_disasm(as, offset, (char *)buf, length, as->a->bits, bin, dis);
 				} else if (analinfo) {
 					ret = show_analinfo(as, (const char *)buf, offset);
 				} else {
@@ -766,7 +846,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			len = strlen(usrstr);
 			if (skip && len > skip) {
 				skip *= 2;
-				//eprintf ("SKIP (%s) (%lld)\n", usrstr, skip);
+				// eprintf ("SKIP (%s) (%lld)\n", usrstr, skip);
 				memmove(usrstr, usrstr + skip, len - skip);
 				len -= skip;
 				usrstr[len] = 0;
@@ -781,8 +861,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 				printf("e asm.bits=%d\n", bits);
 				printf("\"wa ");
 			}
-			ret = rasm_disasm(as, offset, (char *)usrstr, len,
-				as->a->bits, bin, dis - 1);
+			ret = rasm_disasm(as, offset, (char *)usrstr, len, as->a->bits, bin, dis);
 			free(usrstr);
 		} else if (analinfo) {
 			ret = show_analinfo(as, (const char *)opt.argv[opt.ind], offset);
@@ -790,15 +869,12 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			ret = print_assembly_output(as, opt.argv[opt.ind], offset, len, as->a->bits,
 				bin, use_spp, rad, hexwords, arch);
 		}
-		if (!ret) {
-			eprintf("invalid\n");
-		}
 		ret = !ret;
 	}
 beach:
 	__as_free(as);
 
-	free(r2arch);
+	free(rz_arch);
 	if (fd != -1) {
 		close(fd);
 	}

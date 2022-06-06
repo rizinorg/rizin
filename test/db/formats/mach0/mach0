@@ -263,12 +263,12 @@ RUN
 
 NAME=osx mach0 ik
 FILE=bins/mach0/ls-osx-x86_64
-CMDS=ik ***~uuid
+CMDS=ik~uuid
 EXPECT=<<EOF
-info/mach0_uuid_command.format=[4]Ed[16]b (mach0_load_command_type)cmd cmdsize uuid
-info/mach0_cmd_8.format=mach0_uuid_command
-info/uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8
-info/mach0_cmd_8.cmd=uuid
+mach0_cmd_8.cmd=uuid
+mach0_cmd_8.format=mach0_uuid_command
+mach0_uuid_command.format=[4]Ed[16]b (mach0_load_command_type)cmd cmdsize uuid
+uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8
 EOF
 RUN
 
@@ -276,7 +276,7 @@ NAME=mach0 exports trie
 FILE=bins/mach0/Alamofire-stripped
 CMDS=<<EOF
 iE~_AlamofireVersionString?
-psz@sym._AlamofireVersionString
+psz@ sym._AlamofireVersionString
 EOF
 EXPECT=<<EOF
 1
@@ -287,8 +287,8 @@ RUN
 NAME=mach0 arm/thumb symbols bitness
 FILE=bins/mach0/macho-bash
 CMDS=<<EOF
-ah. @ sym._main
-ah. @ sym.__dyld_func_lookup
+ahl. @ sym._main
+ahl. @ sym.__dyld_func_lookup
 EOF
 EXPECT=<<EOF
  0x00002c44 => bits=16

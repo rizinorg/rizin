@@ -1,4 +1,5 @@
 executable('rz-sign', 'rz-sign.c',
+  c_args: executable_cflags,
   include_directories: [platform_inc],
   dependencies: [
     rz_util_dep,
@@ -9,5 +10,6 @@ executable('rz-sign', 'rz-sign.c',
   ],
   install: true,
   install_rpath: rpath_exe,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  link_args: executable_linkflags
 )

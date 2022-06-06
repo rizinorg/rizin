@@ -104,10 +104,11 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			rz_list_append(maps, map);
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
 			RzBinSection *ptr = RZ_NEW0(RzBinSection);
-			if (rz_buf_fread_at(bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof(lmf_data)) {
+			if (!ptr) {
 				goto beach;
 			}
-			if (!ptr) {
+			if (rz_buf_fread_at(bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof(lmf_data)) {
+				free(ptr);
 				goto beach;
 			}
 			ptr->name = strdup("LMF_LOAD");
@@ -129,6 +130,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		} else if (lrec.rec_type == LMF_FIXUP_REC) {
 			RzBinReloc *ptr = RZ_NEW0(RzBinReloc);
 			if (!ptr || rz_buf_fread_at(bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof(lmf_data)) {
+				free(ptr);
 				goto beach;
 			}
 			ptr->vaddr = ptr->paddr = ldata.offset;
@@ -137,6 +139,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		} else if (lrec.rec_type == LMF_8087_FIXUP_REC) {
 			RzBinReloc *ptr = RZ_NEW0(RzBinReloc);
 			if (!ptr || rz_buf_fread_at(bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof(lmf_data)) {
+				free(ptr);
 				goto beach;
 			}
 			ptr->vaddr = ptr->paddr = ldata.offset;

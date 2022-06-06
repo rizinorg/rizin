@@ -38,8 +38,7 @@ static ut8 get_ut8(RzBuffer *buffer, bool *error) {
 static ut16 get_ut16(RzBuffer *buffer, bool *error) {
 	ut16 ret = 0;
 
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size != sizeof(ret)) {
+	if (!rz_buf_read_le16(buffer, &ret)) {
 		*error = true;
 	}
 	return ret;
@@ -47,8 +46,7 @@ static ut16 get_ut16(RzBuffer *buffer, bool *error) {
 
 static ut32 get_ut32(RzBuffer *buffer, bool *error) {
 	ut32 ret = 0;
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size != sizeof(ret)) {
+	if (!rz_buf_read_le32(buffer, &ret)) {
 		*error = true;
 	}
 	return ret;
@@ -56,8 +54,7 @@ static ut32 get_ut32(RzBuffer *buffer, bool *error) {
 
 static st32 get_st32(RzBuffer *buffer, bool *error) {
 	st32 ret = 0;
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size < sizeof(ret)) {
+	if (!rz_buf_read_le32(buffer, (ut32 *)&ret)) {
 		*error = true;
 	}
 	return ret;
@@ -65,8 +62,7 @@ static st32 get_st32(RzBuffer *buffer, bool *error) {
 
 static st64 get_st64(RzBuffer *buffer, bool *error) {
 	st64 ret = 0;
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size < sizeof(ret)) {
+	if (!rz_buf_read_le64(buffer, (ut64 *)&ret)) {
 		*error = true;
 	}
 	return ret;
@@ -74,8 +70,7 @@ static st64 get_st64(RzBuffer *buffer, bool *error) {
 
 static double get_float64(RzBuffer *buffer, bool *error) {
 	double ret = 0;
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size < sizeof(ret)) {
+	if (!rz_buf_read_le64(buffer, (ut64 *)&ret)) {
 		*error = true;
 	}
 	return ret;
@@ -250,7 +245,7 @@ static pyc_object *get_stringref_object(RzBuffer *buffer) {
 
 	n = get_st32(buffer, &error);
 	if (n >= rz_list_length(interned_table)) {
-		eprintf("bad marshal data (string ref out of range)");
+		RZ_LOG_ERROR("bad marshal data (string ref out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -393,7 +388,7 @@ static pyc_object *get_binary_complex_object(RzBuffer *buffer) {
 	bool error = false;
 	double a, b;
 
-	//a + bj
+	// a + bj
 	a = get_float64(buffer, &error);
 	b = get_float64(buffer, &error);
 	if (error) {
@@ -419,7 +414,7 @@ static pyc_object *get_string_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (string size out of range)");
+		RZ_LOG_ERROR("bad marshal data (string size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -445,7 +440,7 @@ static pyc_object *get_unicode_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (unicode size out of range)");
+		RZ_LOG_ERROR("bad marshal data (unicode size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -468,7 +463,7 @@ static pyc_object *get_interned_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (string size out of range)");
+		RZ_LOG_ERROR("bad marshal data (string size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -545,7 +540,7 @@ static pyc_object *get_tuple_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (tuple size out of range)\n");
+		RZ_LOG_ERROR("bad marshal data (tuple size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -566,7 +561,7 @@ static pyc_object *get_list_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (list size out of range)\n");
+		RZ_LOG_ERROR("bad marshal data (list size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -627,7 +622,7 @@ static pyc_object *get_set_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf("bad marshal data (set size out of range)\n");
+		RZ_LOG_ERROR("bad marshal data (set size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -775,10 +770,10 @@ static void free_object(pyc_object *object) {
 	case TYPE_LONG:
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
-		eprintf("Free not implemented for type %x\n", object->type);
+		RZ_LOG_ERROR("Free not implemented for type %x\n", object->type);
 		break;
 	default:
-		eprintf("Undefined type in free_object (%x)\n", object->type);
+		RZ_LOG_ERROR("Undefined type in free_object (%x)\n", object->type);
 		break;
 	}
 	free(object);
@@ -847,10 +842,10 @@ static pyc_object *copy_object(pyc_object *object) {
 	case TYPE_SET:
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
-		eprintf("Copy not implemented for type %x\n", object->type);
+		RZ_LOG_ERROR("Copy not implemented for type %x\n", object->type);
 		break;
 	default:
-		eprintf("Undefined type in copy_object (%x)\n", object->type);
+		RZ_LOG_ERROR("Undefined type in copy_object (%x)\n", object->type);
 		break;
 	}
 	if (!copy->data) {
@@ -870,8 +865,8 @@ static pyc_object *get_code_object(RzBuffer *buffer) {
 		return NULL;
 	}
 
-	//ret->type = TYPE_CODE_v1;
-	// support start from v1.0
+	// ret->type = TYPE_CODE_v1;
+	//  support start from v1.0
 	ret->data = cobj;
 
 	bool v10_to_12 = magic_int_within(magic_int, 39170, 16679, &error); // 1.0.1 - 1.2
@@ -879,7 +874,7 @@ static pyc_object *get_code_object(RzBuffer *buffer) {
 	bool v11_to_14 = magic_int_within(magic_int, 39170, 20117, &error); // 1.0.1 - 1.4
 	bool v15_to_22 = magic_int_within(magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
 	bool v13_to_20 = magic_int_within(magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
-	//bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
+	// bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
 	bool has_posonlyargcount = magic_int_within(magic_int, 3410, 3424, &error); // v3.8.0a4 - latest
 	if (error) {
 		free(ret);
@@ -931,10 +926,10 @@ static pyc_object *get_code_object(RzBuffer *buffer) {
 		cobj->flags = get_ut32(buffer, &error);
 	}
 
-	//to help disassemble the code
+	// to help disassemble the code
 	cobj->start_offset = rz_buf_tell(buffer) + 5; // 1 from get_object() and 4 from get_string_object()
 	if (!refs) {
-		return ret; //return for entried part to get the root object of this file
+		return ret; // return for entried part to get the root object of this file
 	}
 	cobj->code = get_object(buffer);
 	cobj->end_offset = rz_buf_tell(buffer);
@@ -1120,10 +1115,10 @@ static pyc_object *get_object(RzBuffer *buffer) {
 		ret = RZ_NEW0(pyc_object);
 		break;
 	case TYPE_UNKNOWN:
-		eprintf("Get not implemented for type 0x%x\n", type);
+		RZ_LOG_ERROR("Get not implemented for type 0x%x\n", type);
 		return NULL;
 	default:
-		eprintf("Undefined type in get_object (0x%x)\n", type);
+		RZ_LOG_ERROR("Undefined type in get_object (0x%x)\n", type);
 		return NULL;
 	}
 
@@ -1140,7 +1135,7 @@ static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *
 	RzBinSymbol *symbol = NULL;
 	RzListIter *i = NULL;
 
-	//each code object is a section
+	// each code object is a section
 	if_true_return(!obj || (obj->type != TYPE_CODE_v1 && obj->type != TYPE_CODE_v0), false);
 
 	cobj = obj->data;
@@ -1150,7 +1145,7 @@ static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *
 	if_true_return(!cobj->name->data, false);
 	if_true_return(!cobj->consts, false);
 
-	//add the cobj to objs list
+	// add the cobj to objs list
 	if (!rz_list_append(cobjs, cobj)) {
 		goto fail;
 	}
@@ -1175,7 +1170,7 @@ static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *
 	section = NULL;
 	// start building symbol
 	symbol->name = strdup(prefix);
-	//symbol->bind;
+	// symbol->bind;
 	symbol->type = RZ_BIN_TYPE_FUNC_STR;
 	symbol->size = cobj->end_offset - cobj->start_offset;
 	symbol->vaddr = cobj->start_offset;

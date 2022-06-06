@@ -162,7 +162,9 @@ RZ_API void rz_egg_lang_include_path(RzEgg *egg, const char *path) {
 }
 
 RZ_API void rz_egg_lang_include_init(RzEgg *egg) {
-	char *s = rz_str_newf(".:%s/%s", rz_sys_prefix(NULL), RZ_EGG_INCDIR_PATH);
+	char *prefix = rz_path_prefix(NULL);
+	char *s = rz_str_newf(".:%s/%s", prefix, RZ_EGG_INCDIR_PATH);
+	free(prefix);
 	rz_sys_setenv(RZ_EGG_INCDIR_ENV, s);
 	free(s);
 }
@@ -310,15 +312,15 @@ static void rcc_mathop(RzEgg *egg, char **pos, int level) {
 
 	/* following code block sould not handle '-' and '/' well
     if (op_ret < level) {
-        rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)) ,'=');
-        return;
+	rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)) ,'=');
+	return;
     }
     op = *pos, *pos = '\x00', (*pos)++;
     rcc_mathop(egg, pos, op_ret);
     if (op_ret > level) {
-        rcc_internal_mathop(egg, p, strdup(e->regs(egg, op_ret-1)), op);
-        rcc_internal_mathop(egg, (char *)e->regs(egg, op_ret-1)
-                            , strdup(e->regs(egg, level-1)), '=');
+	rcc_internal_mathop(egg, p, strdup(e->regs(egg, op_ret-1)), op);
+	rcc_internal_mathop(egg, (char *)e->regs(egg, op_ret-1)
+			    , strdup(e->regs(egg, level-1)), '=');
     }
     else rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)), op);
 */
@@ -953,15 +955,15 @@ static int parseinlinechar(RzEgg *egg, char c) {
 				return 1;
 			} else /* register */
 				if (egg->lang.dstval && egg->lang.dstvar) {
-				egg->lang.dstval[egg->lang.ndstval] = '\0';
-				// printf(" /* END OF INLINE (%s)(%s) */\n", egg->lang.dstvar, egg->lang.dstval);
-				egg->lang.inlines[egg->lang.ninlines].name = strdup(skipspaces(egg->lang.dstvar));
-				egg->lang.inlines[egg->lang.ninlines].body = strdup(skipspaces(egg->lang.dstval));
-				egg->lang.ninlines++;
-				RZ_FREE(egg->lang.dstvar);
-				RZ_FREE(egg->lang.dstval);
-				return 1;
-			}
+					egg->lang.dstval[egg->lang.ndstval] = '\0';
+					// printf(" /* END OF INLINE (%s)(%s) */\n", egg->lang.dstvar, egg->lang.dstval);
+					egg->lang.inlines[egg->lang.ninlines].name = strdup(skipspaces(egg->lang.dstvar));
+					egg->lang.inlines[egg->lang.ninlines].body = strdup(skipspaces(egg->lang.dstval));
+					egg->lang.ninlines++;
+					RZ_FREE(egg->lang.dstvar);
+					RZ_FREE(egg->lang.dstval);
+					return 1;
+				}
 			eprintf("Parse error\n");
 		}
 	}
@@ -1134,14 +1136,14 @@ static void rcc_next(RzEgg *egg) {
 		    free (str);
 		    str = rz_egg_mkvar (egg, buf, ocn, 0);
 		    if (*buf)
-		        e->get_result (egg, buf); // Why should get_result into ocn?
+			e->get_result (egg, buf); // Why should get_result into ocn?
 		    //else { eprintf("external symbol %s\n", ocn); }
 		}
 		*/
 
 		/* store result of call */
 		if (egg->lang.dstvar) {
-			//if (egg->lang.mode != NAKED) {
+			// if (egg->lang.mode != NAKED) {
 			*buf = 0;
 			free(str);
 			str = rz_egg_mkvar(egg, buf, egg->lang.dstvar, 0);
@@ -1196,17 +1198,17 @@ static void rcc_next(RzEgg *egg) {
 				    p = rz_egg_mkvar (egg, str2, ptr, 0);
 				    vs = egg->lang.varsize;
 				    if (is_var (eq)) {
-				        eq = rz_egg_mkvar (egg, buf, eq, 0);
-				        if (egg->lang.varxs=='*')
-				            e->load (egg, eq, egg->lang.varsize);
-				        else
-				        // XXX this is a hack .. must be integrated with pusharg
-				        if (egg->lang.varxs=='&')
-				            e->load_ptr (egg, eq);
-				        if (eq) {
-				            RZ_FREE (eq);
-				        }
-				        type = ' ';
+					eq = rz_egg_mkvar (egg, buf, eq, 0);
+					if (egg->lang.varxs=='*')
+					    e->load (egg, eq, egg->lang.varsize);
+					else
+					// XXX this is a hack .. must be integrated with pusharg
+					if (egg->lang.varxs=='&')
+					    e->load_ptr (egg, eq);
+					if (eq) {
+					    RZ_FREE (eq);
+					}
+					type = ' ';
 				    } else type = '$';
 				    vs = 'l'; // XXX: add support for != 'l' size
 				eprintf("Getting into e->mathop with ch: %c\n", ch);

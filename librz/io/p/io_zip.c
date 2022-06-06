@@ -435,8 +435,7 @@ static char *find_apk_binary(const char *filename, int rw, int mode, RzIO *io) {
 					eprintf("Warning: File %s does not exist, creating a new one.\n", name);
 				}
 				zfo->io_backref = io;
-				RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_zip,
-					zfo->name, rw, mode, zfo);
+				RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_zip, zfo->name, rw, mode, zfo);
 				desc->name = strdup(name);
 				rz_io_desc_add(io, desc);
 			}
@@ -506,18 +505,18 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 			RZ_FREE(tmp);
 			zip_filename = strdup(uri_path + 3);
 			if (!strcmp(zip_filename, filename_in_zipfile)) {
-				//RZ_FREE (zip_filename);
+				// RZ_FREE (zip_filename);
 				RZ_FREE(filename_in_zipfile);
 			}
 		}
 	}
 
 	if (!zip_filename) { // && !filename_in_zipfile) {
-		//free (zip_uri);
+		// free (zip_uri);
 		eprintf("usage: zip:///path/to/archive//filepath\n"
 			"usage: zip:///path/to/archive::[number]\n"
 			"Archive was not found.\n");
-		//return res;
+		// return res;
 	}
 
 	// Failed to find the file name the archive.
@@ -525,7 +524,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 		RzList *files = NULL;
 		RzListIter *iter;
 		char *name;
-		//eprintf("usage: zip:///path/to/archive//filepath\n");
+		// eprintf("usage: zip:///path/to/archive//filepath\n");
 		files = rz_io_zip_get_files(zip_filename, 0, mode, rw);
 		if (files) {
 			ut32 i = 0;
@@ -537,9 +536,9 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 		}
 		goto done;
 	}
-	//eprintf("After parsing the given uri: %s\n", file);
-	//eprintf("Zip filename the given uri: %s\n", zip_filename);
-	//eprintf("File in the zip: %s\n", filename_in_zipfile);
+	// eprintf("After parsing the given uri: %s\n", file);
+	// eprintf("Zip filename the given uri: %s\n", zip_filename);
+	// eprintf("File in the zip: %s\n", filename_in_zipfile);
 	zfo = rz_io_zip_alloc_zipfileobj(zip_filename,
 		filename_in_zipfile, ZIP_CREATE, mode, rw);
 
@@ -555,7 +554,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 	if (!res) {
 		eprintf("Failed to open the archive %s and file %s\n",
 			zip_filename, filename_in_zipfile);
-		//free (zfo); zfo is already freed by rz_io_desc_new
+		// free (zfo); zfo is already freed by rz_io_desc_new
 		rz_io_desc_free(res);
 		res = NULL;
 	}

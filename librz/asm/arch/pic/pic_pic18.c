@@ -6,9 +6,9 @@
 
 #include "pic_pic18.h"
 
-//PIC18CXXX instruction set
+// PIC18CXXX instruction set
 
-//instruction classification according to the argument types
+// instruction classification according to the argument types
 #define NO_ARG 0
 #define DAF_T  1
 #define F32_T  2
@@ -30,7 +30,7 @@ static struct {
 	ut16 opmax;
 	char *name;
 	ut8 optype;
-	//and some magical hocus pocus ;)
+	// and some magical hocus pocus ;)
 } ops[] = {
 	{ 0xf000, 0xffff, "nop", NO_ARG },
 	{ 0xef00, 0xefff, "goto", GOTO_T },
@@ -113,7 +113,7 @@ static struct {
 
 int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 	int i;
-	if (blen < 2) { //well noone loves reading bitstream of size zero or 1 !!
+	if (blen < 2) { // well noone loves reading bitstream of size zero or 1 !!
 		strcpy(opbuf, "invalid");
 		op->size = blen;
 		return -1;
@@ -160,7 +160,7 @@ int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		op->size = 4;
 		{
 			ut32 dword_instr = *(ut32 *)b;
-			//I dont even know how the bits are arranged but it works !!!
+			// I dont even know how the bits are arranged but it works !!!
 			//`the wierdness of little endianess`
 			if (dword_instr >> 28 != 0xf) {
 				return -1;

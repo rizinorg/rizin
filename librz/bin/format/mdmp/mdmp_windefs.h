@@ -11,8 +11,10 @@
 
 #define SIZE_OF_80387_REGISTERS 80
 
-#define ARM_MAX_BREAKPOINTS 8
-#define ARM_MAX_WATCHPOINTS 1
+#define ARM_MAX_BREAKPOINTS   8
+#define ARM_MAX_WATCHPOINTS   1
+#define ARM64_MAX_BREAKPOINTS 8
+#define ARM64_MAX_WATCHPOINTS 2
 
 RZ_PACKED(
 	struct windows_floating_save_area {
@@ -397,85 +399,84 @@ RZ_PACKED(
 		ut8 reserved_4[224];
 	});
 
-RZ_PACKED(
-	struct context_type_amd64 {
-		ut64 p1_home;
-		ut64 p2_home;
-		ut64 p3_home;
-		ut64 p4_home;
-		ut64 p5_home;
-		ut64 p6_home;
+struct context_type_amd64 {
+	ut64 p1_home;
+	ut64 p2_home;
+	ut64 p3_home;
+	ut64 p4_home;
+	ut64 p5_home;
+	ut64 p6_home;
 
-		ut32 context_flags;
-		ut32 mx_csr;
+	ut32 context_flags;
+	ut32 mx_csr;
 
-		ut16 seg_cs;
-		ut16 seg_ds;
-		ut16 seg_es;
-		ut16 seg_fs;
-		ut16 seg_gs;
-		ut16 seg_ss;
-		ut32 e_flags;
+	ut16 seg_cs;
+	ut16 seg_ds;
+	ut16 seg_es;
+	ut16 seg_fs;
+	ut16 seg_gs;
+	ut16 seg_ss;
+	ut32 e_flags;
 
-		ut64 dr0;
-		ut64 dr1;
-		ut64 dr2;
-		ut64 dr3;
-		ut64 dr6;
-		ut64 dr7;
+	ut64 dr0;
+	ut64 dr1;
+	ut64 dr2;
+	ut64 dr3;
+	ut64 dr6;
+	ut64 dr7;
 
-		ut64 rax;
-		ut64 rcx;
-		ut64 rdx;
-		ut64 rbx;
-		ut64 rsp;
-		ut64 rbp;
-		ut64 rsi;
-		ut64 rdi;
-		ut64 r8;
-		ut64 r9;
-		ut64 r10;
-		ut64 r11;
-		ut64 r12;
-		ut64 r13;
-		ut64 r14;
-		ut64 r15;
+	ut64 rax;
+	ut64 rcx;
+	ut64 rdx;
+	ut64 rbx;
+	ut64 rsp;
+	ut64 rbp;
+	ut64 rsi;
+	ut64 rdi;
+	ut64 r8;
+	ut64 r9;
+	ut64 r10;
+	ut64 r11;
+	ut64 r12;
+	ut64 r13;
+	ut64 r14;
+	ut64 r15;
 
-		ut64 rip;
+	ut64 rip;
 
-		union {
-			struct windows_xsave_format32 flt_save;
-			struct {
-				struct windows_m128a header[2];
-				struct windows_m128a legacy[8];
-				struct windows_m128a xmm_0;
-				struct windows_m128a xmm_1;
-				struct windows_m128a xmm_2;
-				struct windows_m128a xmm_3;
-				struct windows_m128a xmm_4;
-				struct windows_m128a xmm_5;
-				struct windows_m128a xmm_6;
-				struct windows_m128a xmm_7;
-				struct windows_m128a xmm_8;
-				struct windows_m128a xmm_9;
-				struct windows_m128a xmm_10;
-				struct windows_m128a xmm_11;
-				struct windows_m128a xmm_12;
-				struct windows_m128a xmm_13;
-				struct windows_m128a xmm_14;
-				struct windows_m128a xmm_15;
-			};
+	union {
+		struct windows_xsave_format32 flt_save;
+		struct {
+			struct windows_m128a header[2];
+			struct windows_m128a legacy[8];
+			struct windows_m128a xmm_0;
+			struct windows_m128a xmm_1;
+			struct windows_m128a xmm_2;
+			struct windows_m128a xmm_3;
+			struct windows_m128a xmm_4;
+			struct windows_m128a xmm_5;
+			struct windows_m128a xmm_6;
+			struct windows_m128a xmm_7;
+			struct windows_m128a xmm_8;
+			struct windows_m128a xmm_9;
+			struct windows_m128a xmm_10;
+			struct windows_m128a xmm_11;
+			struct windows_m128a xmm_12;
+			struct windows_m128a xmm_13;
+			struct windows_m128a xmm_14;
+			struct windows_m128a xmm_15;
 		};
+	};
 
-		struct windows_m128a vector_register[26];
-		ut64 vector_control;
+	struct windows_m128a vector_register[26];
+	ut64 vector_control;
 
-		ut64 debugcontrol;
-		ut64 last_branch_to_rip;
-		ut64 last_branch_from_rip;
-		ut64 last_exception_to_rip;
-		ut64 last_exception_from_rip;
-	});
+	ut64 debugcontrol;
+	ut64 last_branch_to_rip;
+	ut64 last_branch_from_rip;
+	ut64 last_exception_to_rip;
+	ut64 last_exception_from_rip;
+};
 
 RZ_PACKED(
 	struct windows_exception_record32 {
@@ -503,5 +504,76 @@ RZ_PACKED(
 		struct windows_exception_record32 *exception_record;
 		void /*struct context*/ *context_record;
 	});
+
+struct context_type_arm64 {
+
+	//
+	// Control flags.
+	//
+
+	/* +0x000 */ ut32 ContextFlags;
+
+	//
+	// Integer registers
+	//
+
+	/* +0x004 */ ut32 Cpsr; // NZVF + DAIF + CurrentEL + SPSel
+	/* +0x008 */ union {
+		struct {
+			ut64 X0;
+			ut64 X1;
+			ut64 X2;
+			ut64 X3;
+			ut64 X4;
+			ut64 X5;
+			ut64 X6;
+			ut64 X7;
+			ut64 X8;
+			ut64 X9;
+			ut64 X10;
+			ut64 X11;
+			ut64 X12;
+			ut64 X13;
+			ut64 X14;
+			ut64 X15;
+			ut64 X16;
+			ut64 X17;
+			ut64 X18;
+			ut64 X19;
+			ut64 X20;
+			ut64 X21;
+			ut64 X22;
+			ut64 X23;
+			ut64 X24;
+			ut64 X25;
+			ut64 X26;
+			ut64 X27;
+			ut64 X28;
+			/* +0x0f0 */ ut64 Fp;
+			/* +0x0f8 */ ut64 Lr;
+		};
+		ut64 X[31];
+	};
+	/* +0x100 */ ut64 Sp;
+	/* +0x108 */ ut64 Pc;
+
+	//
+	// Floating Point/NEON Registers
+	//
+
+	/* +0x110 */ struct windows_neon128 V[32];
+	/* +0x310 */ ut32 Fpcr;
+	/* +0x314 */ ut32 Fpsr;
+
+	//
+	// Debug registers
+	//
+
+	/* +0x318 */ ut32 Bcr[ARM64_MAX_BREAKPOINTS];
+	/* +0x338 */ ut64 Bvr[ARM64_MAX_BREAKPOINTS];
+	/* +0x378 */ ut32 Wcr[ARM64_MAX_WATCHPOINTS];
+	/* +0x380 */ ut64 Wvr[ARM64_MAX_WATCHPOINTS];
+	/* +0x390 */
+};
 
 #endif /* MDMP_WINDEFS_H */

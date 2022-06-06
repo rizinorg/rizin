@@ -54,7 +54,7 @@ int main() {
 		ut64 a;
 		RzRegItem *item;
 		item = rz_reg_get(reg, "eflags", RZ_REG_TYPE_GPR);
-		rz_reg_set_value(reg, item, 0x00000346); //0xffffffffffff);
+		rz_reg_set_value(reg, item, 0x00000346); // 0xffffffffffff);
 		a = rz_reg_get_value(reg, item);
 		eprintf("A32 = 0x%x\n", (int)a);
 		if ((int)a != -1) {
@@ -83,7 +83,7 @@ int main() {
 			eprintf("4 FAIL\n");
 		}
 	}
-	show_regs(reg, 1); //32);
+	show_regs(reg, 1); // 32);
 
 	exit(0);
 	show_regs(reg, 32);

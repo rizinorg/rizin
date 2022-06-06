@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_demangler.h>
 #include <rz_types.h>
 #include <rz_util.h>
 #include <stdio.h>
@@ -143,6 +144,9 @@ static ut32 actions2mask(ut64 action) {
 	if (action & RZ_BIN_REQ_SECTIONS_MAPPING) {
 		res |= RZ_CORE_BIN_ACC_SECTIONS_MAPPING;
 	}
+	if (action & RZ_BIN_REQ_BASEFIND) {
+		res |= RZ_CORE_BIN_ACC_BASEFIND;
+	}
 	return res;
 }
 
@@ -204,8 +208,9 @@ static int rabin_show_help(int v) {
 			" -w              display try/catch blocks\n"
 			" -x              extract bins contained in file\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
+			" -Y [fw file]    calculates all the possibles base address candidates of a firmware bin\n"
 			" -z              strings (from data section)\n"
-			" -zz             strings (from raw bins [e bin.rawstr=1])\n"
+			" -zz             strings (from raw strings from bin)\n"
 			" -zzz            dump raw strings to stdout (for huge files)\n"
 			" -Z              guess size of binary program\n");
 	}
@@ -219,7 +224,6 @@ static int rabin_show_help(int v) {
 		       "?' -\n"
 		       " RZ_BIN_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		       " RZ_BIN_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
-		       " RZ_BIN_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		       " RZ_BIN_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		       " RZ_BIN_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
 		       " RZ_BIN_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
@@ -449,7 +453,7 @@ static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, 
 				free(ret);
 				return false;
 			}
-			//it does mean the user specified an output file
+			// it does mean the user specified an output file
 			if (strcmp(output, file)) {
 				rz_file_dump(output, buf, section->size, 0);
 			} else {
@@ -569,6 +573,15 @@ static int rabin_show_srcline(RzBin *bin, ut64 at) {
 }
 
 /* bin callback */
+static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
+	rz_demangler_plugin_add(user, (RzDemanglerPlugin *)data);
+	return true;
+}
+
+static int __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
+	return true;
+}
+
 static int __lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_plugin_t *hand = (struct rz_bin_plugin_t *)data;
 	RzBin *bin = user;
@@ -584,7 +597,7 @@ static int __lib_bin_dt(RzLibPlugin *pl, void *p, void *u) {
 static int __lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_xtr_plugin_t *hand = (struct rz_bin_xtr_plugin_t *)data;
 	RzBin *bin = user;
-	//printf(" * Added (dis)assembly plugin\n");
+	// printf(" * Added (dis)assembly plugin\n");
 	rz_bin_xtr_add(bin, hand);
 	return true;
 }
@@ -597,30 +610,13 @@ static int __lib_bin_xtr_dt(RzLibPlugin *pl, void *p, void *u) {
 static int __lib_bin_ldr_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_ldr_plugin_t *hand = (struct rz_bin_ldr_plugin_t *)data;
 	RzBin *bin = user;
-	//printf(" * Added (dis)assembly plugin\n");
+	// printf(" * Added (dis)assembly plugin\n");
 	rz_bin_ldr_add(bin, hand);
 	return true;
 }
 
 static int __lib_bin_ldr_dt(RzLibPlugin *pl, void *p, void *u) {
 	return true;
-}
-
-static char *__demangleAs(RzBin *bin, int type, const char *file) {
-	bool syscmd = bin ? bin->demanglercmd : false;
-	char *res = NULL;
-	switch (type) {
-	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx(NULL, file, 0); break;
-	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java(file); break;
-	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc(NULL, file); break;
-	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift(file, syscmd); break;
-	case RZ_BIN_NM_MSVC: res = rz_bin_demangle_msvc(file); break;
-	case RZ_BIN_NM_RUST: res = rz_bin_demangle_rust(NULL, file, 0); break;
-	default:
-		eprintf("Unsupported demangler\n");
-		break;
-	}
-	return res;
 }
 
 static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) {
@@ -646,12 +642,61 @@ static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) 
 	}
 }
 
+static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
+	(void)user;
+	printf("%-6s %-8s %s\n", plugin->language, plugin->license, plugin->author);
+	return true;
+}
+
+static void print_string(RzBinFile *bf, RzBinString *string, PJ *pj, int mode) {
+	rz_return_if_fail(bf && string);
+
+	ut64 vaddr;
+	RzBinSection *s = rz_bin_get_section_at(bf->o, string->paddr, false);
+	if (s) {
+		string->vaddr = s->vaddr + (string->paddr - s->paddr);
+	}
+	vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
+	const char *type_string = rz_bin_string_type(string->type);
+	const char *section_name = s ? s->name : "";
+
+	switch (mode) {
+	case RZ_MODE_JSON:
+		pj_o(pj);
+		pj_kn(pj, "vaddr", vaddr);
+		pj_kn(pj, "paddr", string->paddr);
+		pj_kn(pj, "ordinal", string->ordinal);
+		pj_kn(pj, "size", string->size);
+		pj_kn(pj, "length", string->length);
+		pj_ks(pj, "section", section_name);
+		pj_ks(pj, "type", type_string);
+		pj_ks(pj, "string", string->string);
+		pj_end(pj);
+		break;
+	case RZ_MODE_SIMPLEST:
+		printf("%s\n", string->string);
+		break;
+	case RZ_MODE_SIMPLE:
+		printf("0x%" PFMT64x " %u %u %s\n", vaddr, string->size, string->length, string->string);
+		break;
+	case RZ_MODE_PRINT:
+		printf("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %u %u (%s) %s %s\n",
+			string->ordinal, string->paddr, vaddr,
+			string->length, string->size,
+			section_name, type_string, string->string);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
 RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	RzBin *bin = NULL;
 	const char *name = NULL;
 	const char *file = NULL;
 	const char *output = NULL;
-	int rad = 0;
+	int out_mode = RZ_MODE_PRINT;
 	ut64 laddr = UT64_MAX;
 	ut64 baddr = UT64_MAX;
 	const char *do_demangle = NULL;
@@ -667,7 +712,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	RzCoreFile *fh = NULL;
 	RzCoreBinFilter filter;
 	int xtr_idx = 0; // load all files if extraction is necessary.
-	int rawstr = 0;
+	bool rawstr = false;
 	int fd = -1;
 	RzCore core = { 0 };
 	ut64 at = UT64_MAX;
@@ -675,13 +720,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	rz_core_init(&core);
 	bin = core.bin;
-
 	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
-		char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
-		char *plugindir = rz_str_rz_prefix(RZ_PLUGINS);
-		char *extrasdir = rz_str_rz_prefix(RZ_EXTRAS);
-		char *bindingsdir = rz_str_rz_prefix(RZ_BINDINGS);
+		char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
+		// TODO: remove after 0.4.0 is released
+		char *oldhomeplugindir = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
+		char *plugindir = rz_path_system(RZ_PLUGINS);
 		RzLib *l = rz_lib_new(NULL, NULL);
+		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
+			&__lib_demangler_cb, &__lib_demangler_dt, bin->demangler);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN_XTR, "bin xtr plugins",
@@ -690,17 +736,15 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
 		/* load plugins everywhere */
 		char *path = rz_sys_getenv(RZ_LIB_ENV);
-		if (path && *path) {
-			rz_lib_opendir(l, path);
+		if (!RZ_STR_ISEMPTY(path)) {
+			rz_lib_opendir(l, path, false);
 		}
-		rz_lib_opendir(l, homeplugindir);
-		rz_lib_opendir(l, plugindir);
-		rz_lib_opendir(l, extrasdir);
-		rz_lib_opendir(l, bindingsdir);
+		rz_lib_opendir(l, homeplugindir, false);
+		rz_lib_opendir(l, oldhomeplugindir, false);
+		rz_lib_opendir(l, plugindir, false);
 		free(homeplugindir);
+		free(oldhomeplugindir);
 		free(plugindir);
-		free(extrasdir);
-		free(bindingsdir);
 		free(path);
 		rz_lib_free(l);
 	}
@@ -714,10 +758,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		} else {
 			eprintf("Cannot open file specified in RZ_CONFIG\n");
 		}
-		free(tmp);
-	}
-	if ((tmp = rz_sys_getenv("RZ_BIN_DMNGLRCMD"))) {
-		rz_config_set(core.config, "cmd.demangle", tmp);
 		free(tmp);
 	}
 	if ((tmp = rz_sys_getenv("RZ_BIN_LANG"))) {
@@ -757,7 +797,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 #define unset_action(x) action &= ~x
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxXzZ");
+	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxYXzZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'g':
@@ -783,9 +823,9 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'T': set_action(RZ_BIN_REQ_SIGNATURE); break;
 		case 'w': set_action(RZ_BIN_REQ_TRYCATCH); break;
 		case 'q':
-			rad = (rad & RZ_MODE_SIMPLE ? RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE);
+			out_mode = (out_mode & RZ_MODE_SIMPLE ? RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE);
 			break;
-		case 'j': rad = RZ_MODE_JSON; break;
+		case 'j': out_mode = RZ_MODE_JSON; break;
 		case 'A': set_action(RZ_BIN_REQ_LISTARCHS); break;
 		case 'a': arch = opt.arg; break;
 		case 'C':
@@ -829,13 +869,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			break;
 		case 'z':
 			if (is_active(RZ_BIN_REQ_STRINGS)) {
-				if (rawstr) {
-					/* rawstr mode 2 means that we are not going */
-					/* to store them just dump'm all to stdout */
-					rawstr = 2;
-				} else {
-					rawstr = 1;
-				}
+				rawstr = true;
 			} else {
 				set_action(RZ_BIN_REQ_STRINGS);
 			}
@@ -878,8 +912,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'M': set_action(RZ_BIN_REQ_MAIN); break;
 		case 'l': set_action(RZ_BIN_REQ_LIBS); break;
 		case 'R': set_action(RZ_BIN_REQ_RELOCS); break;
+		case 'Y': set_action(RZ_BIN_REQ_BASEFIND); break;
 		case 'x': set_action(RZ_BIN_REQ_EXTRACT); break;
-		case 'X': set_action(RZ_BIN_REQ_PACKAGE); break;
 		case 'O':
 			op = opt.arg;
 			set_action(RZ_BIN_REQ_OPERATION);
@@ -903,7 +937,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			break;
 		case 'o': output = opt.arg; break;
 		case 'p': core.io->va = false; break;
-		case 'r': rad = true; break;
+		case 'r': out_mode = RZ_MODE_RIZINCMD; break;
 		case 'v':
 			rz_core_fini(&core);
 			return rz_main_version_print("rz-bin");
@@ -954,8 +988,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_core_fini(&core);
 			return 1;
 		}
-		__listPlugins(bin, plugin_name, pj, rad);
-		if (rad == RZ_MODE_JSON) {
+		__listPlugins(bin, plugin_name, pj, out_mode);
+		if (out_mode == RZ_MODE_JSON) {
 			rz_cons_println(pj_string(pj));
 			rz_cons_flush();
 		}
@@ -964,28 +998,31 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 
 	if (do_demangle) {
+		int ret_num = 1;
 		char *res = NULL;
-		int type;
+		const RzDemanglerPlugin *plugin = NULL;
 		if ((argc - opt.ind) < 2) {
 			rz_core_fini(&core);
 			return rabin_show_help(0);
 		}
-		type = rz_bin_demangle_type(do_demangle);
 		file = argv[opt.ind + 1];
+		plugin = rz_demangler_plugin_get(bin->demangler, do_demangle);
+		if (!plugin) {
+			printf("Language '%s' is unsupported\nList of supported languages:\n", do_demangle);
+			rz_demangler_plugin_iterate(bin->demangler, (RzDemanglerIter)print_demangler_info, NULL);
+			rz_core_fini(&core);
+			return 1;
+		}
 		if (!strcmp(file, "-")) {
 			for (;;) {
 				file = stdin_gets(false);
 				if (!file || !*file) {
 					break;
 				}
-				res = __demangleAs(bin, type, file);
-				if (!res) {
-					eprintf("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
-					rz_core_fini(&core);
-					return 1;
-				}
-				if (res && *res) {
+				res = rz_demangler_plugin_demangle(plugin, file);
+				if (RZ_STR_ISNOTEMPTY(res)) {
 					printf("%s\n", res);
+					ret_num = 0;
 				} else if (file && *file) {
 					printf("%s\n", file);
 				}
@@ -994,20 +1031,17 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 			stdin_gets(true);
 		} else {
-			res = __demangleAs(bin, type, file);
-			if (res && *res) {
+			res = rz_demangler_plugin_demangle(plugin, file);
+			if (RZ_STR_ISNOTEMPTY(res)) {
 				printf("%s\n", res);
-				free(res);
-				rz_core_fini(&core);
-				return 0;
+				ret_num = 0;
 			} else {
 				printf("%s\n", file);
 			}
 		}
 		free(res);
-		//eprintf ("%s\n", file);
 		rz_core_fini(&core);
-		return 1;
+		return ret_num;
 	}
 	file = argv[opt.ind];
 
@@ -1081,10 +1115,9 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_core_fini(&core);
 		return 0;
 	}
-	if (rawstr == 2) {
+	if (rawstr) {
 		unset_action(RZ_BIN_REQ_STRINGS);
 	}
-	rz_config_set_i(core.config, "bin.rawstr", rawstr);
 
 	if (!file) {
 		eprintf("Missing file.\n");
@@ -1114,39 +1147,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_core_fini(&core);
 		return 0;
 	}
-	if (action & RZ_BIN_REQ_PACKAGE) {
-		RzList *files = rz_list_newf(NULL);
-		const char *format = argv[opt.ind];
-		const char *file = argv[opt.ind + 1];
-		int i, rc = 0;
 
-		if (opt.ind + 3 > argc) {
-			eprintf("Usage: rz-bin -X [fat|zip] foo.zip a b c\n");
-			rz_core_fini(&core);
-			return 1;
-		}
-
-		eprintf("FMT %s\n", format);
-		eprintf("PKG %s\n", file);
-		for (i = opt.ind + 2; i < argc; i++) {
-			eprintf("ADD %s\n", argv[i]);
-			rz_list_append(files, (void *)argv[i]);
-		}
-		RzBuffer *buf = rz_bin_package(core.bin, format, file, files);
-		/* TODO: return bool or something to catch errors\n") */
-		if (buf) {
-			bool ret = rz_buf_dump(buf, file);
-			rz_buf_free(buf);
-			if (!ret) {
-				rc = 1;
-			}
-		}
-		rz_core_fini(&core);
-		rz_list_free(files);
-		return rc;
-	}
-
-	if (file && *file) {
+	if (RZ_STR_ISNOTEMPTY(file)) {
 		if ((fh = rz_core_file_open(&core, file, RZ_PERM_R, 0))) {
 			fd = rz_io_fd_get_current(core.io);
 			if (fd == -1) {
@@ -1167,10 +1169,11 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_bin_load_filter(bin, action);
 
 	RzBinOptions bo;
-	rz_bin_options_init(&bo, fd, baddr, laddr, false, rawstr);
+	rz_bin_options_init(&bo, fd, baddr, laddr, false);
 	bo.obj_opts.elf_load_sections = rz_config_get_b(core.config, "elf.load.sections");
 	bo.obj_opts.elf_checks_sections = rz_config_get_b(core.config, "elf.checks.sections");
 	bo.obj_opts.elf_checks_segments = rz_config_get_b(core.config, "elf.checks.segments");
+	bo.obj_opts.big_endian = rz_config_get_b(core.config, "cfg.bigendian");
 	bo.xtr_idx = xtr_idx;
 
 	RzBinFile *bf = rz_bin_open(bin, file, &bo);
@@ -1185,12 +1188,32 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (baddr != UT64_MAX) {
 		rz_bin_set_baddr(bin, baddr);
 	}
-	if (rawstr == 2) {
-		bf->strmode = rad;
-		rz_bin_dump_strings(bf, bin->minstrlen, bf->rawstr);
+	if (rawstr) {
+		PJ *pj = NULL;
+		if (out_mode == RZ_MODE_JSON) {
+			pj = pj_new();
+			if (!pj) {
+				eprintf("rz-bin: Cannot allocate buffer for json array\n");
+				result = 1;
+				goto err;
+			}
+			pj_a(pj);
+		}
+		RzList *list = rz_bin_file_strings(bf, bin->minstrlen, true);
+		RzListIter *it;
+		RzBinString *string;
+		rz_list_foreach (list, it, string) {
+			print_string(bf, string, pj, out_mode);
+		}
+		rz_list_free(list);
+		if (pj) {
+			pj_end(pj);
+			printf("%s", pj_string(pj));
+			pj_free(pj);
+		}
 	}
 	if (query) {
-		if (rad) {
+		if (out_mode) {
 			rz_core_bin_export_info(&core, RZ_MODE_RIZINCMD);
 			rz_cons_flush();
 		} else {
@@ -1203,7 +1226,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		result = 0;
 		goto err;
 	}
-#define isradjson (rad == RZ_MODE_JSON && actions > 0)
+#define ismodejson (out_mode == RZ_MODE_JSON && actions > 0)
 #define run_action(n, x, y) \
 	if (action & (x)) { \
 		RzCmdStateOutput *st = add_header(&state, mode, n); \
@@ -1226,7 +1249,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_cons_new()->context->is_interactive = false;
 
 	RzCmdStateOutput state;
-	RzOutputMode mode = rad2outputmode(rad);
+	RzOutputMode mode = rad2outputmode(out_mode);
 	if (!rz_cmd_state_output_init(&state, mode)) {
 		result = 1;
 		goto chksum_err;
@@ -1242,7 +1265,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	if (action & RZ_BIN_REQ_PDB_DWNLD) {
 		SPDBOptions pdbopts;
-		pdbopts.user_agent = (char *)rz_config_get(core.config, "pdb.useragent");
 		pdbopts.symbol_server = (char *)rz_config_get(core.config, "pdb.server");
 		pdbopts.extract = rz_config_get_i(core.config, "pdb.extract");
 
@@ -1251,7 +1273,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			RZ_FREE(tmp);
 		}
 		pdbopts.symbol_store_path = (char *)rz_config_get(core.config, "pdb.symstore");
-		result = rz_bin_pdb_download(&core, state.mode == RZ_OUTPUT_MODE_JSON ? state.d.pj : NULL, isradjson, &pdbopts);
+		result = rz_bin_pdb_download(core.bin, state.mode == RZ_OUTPUT_MODE_JSON ? state.d.pj : NULL, ismodejson, &pdbopts);
 	}
 
 	if ((tmp = rz_sys_getenv("RZ_BIN_PREFIX"))) {
@@ -1277,7 +1299,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 	}
 	if (op && action & RZ_BIN_REQ_OPERATION) {
-		rabin_do_operation(bin, op, rad, output, file);
+		rabin_do_operation(bin, op, out_mode, output, file);
 	}
 	end_state(&state);
 	rz_cmd_state_output_fini(&state);

@@ -207,7 +207,7 @@ static ut8 decode_parameter(char *param, int *extra_word_needed, ut16 *extra_wor
 
 	/* Must be a label, store a labelref */
 	*extra_word_needed = 1;
-	/* Allocate blank extra word, this will be where the 
+	/* Allocate blank extra word, this will be where the
 		   pointer to the label will be stored at link stage */
 	*extra_word_value = 0;
 	return 0x1f;
@@ -291,15 +291,15 @@ int dcpu16_assemble(ut8 *out, const char *unoline) {
 			pb = param + cn + 1;
 
 			/* Increment address for the start word */
-			//current_address++;
+			// current_address++;
 
 			/* Parameter A */
 			paramA = decode_parameter(pa, &extraA, &wordA);
-			//if (extraA == 1) current_address++;
+			// if (extraA == 1) current_address++;
 
 			/* Parameter B */
 			paramB = decode_parameter(pb, &extraB, &wordB);
-			//if (extraB == 1) current_address++;
+			// if (extraB == 1) current_address++;
 
 			/* Put everything together */
 			first_word = ((paramB & 0x3F) << 10) | ((paramA & 0x3F) << 4) | (basic_opcode & 0xF);

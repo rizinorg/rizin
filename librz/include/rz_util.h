@@ -10,8 +10,6 @@
 #include <rz_getopt.h>
 #include <rz_list.h> // rizin linked list
 #include <rz_skiplist.h> // skiplist
-#include <rz_flist.h> // rizin fixed pointer array iterators
-#include <rz_binheap.h>
 #include <rz_th.h>
 #if !__WINDOWS__
 #include <dirent.h>
@@ -24,9 +22,10 @@
 #include <openssl/bn.h>
 #endif
 #ifdef _MSC_VER
-#include <windows.h>
+struct timeval;
 int gettimeofday(struct timeval *p, void *tz);
 #endif
+#include "rz_util/rz_axml.h"
 #include "rz_util/rz_event.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_itv.h"
@@ -39,9 +38,9 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_base91.h"
 #include "rz_util/rz_buf.h"
 #include "rz_util/rz_bitmap.h"
+#include "rz_util/rz_bitvector.h"
 #include "rz_util/rz_time.h"
 #include "rz_util/rz_debruijn.h"
-#include "rz_util/rz_cache.h"
 #include "rz_util/rz_file.h"
 #include "rz_util/rz_hex.h"
 #include "rz_util/rz_log.h"
@@ -50,6 +49,7 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_num.h"
 #include "rz_util/rz_table.h"
 #include "rz_util/rz_graph.h"
+#include "rz_util/rz_path.h"
 #include "rz_util/rz_panels.h"
 #include "rz_util/rz_pool.h"
 #include "rz_util/rz_punycode.h"
@@ -72,13 +72,14 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_utf32.h"
 #include "rz_util/rz_idpool.h"
 #include "rz_util/rz_asn1.h"
-#include "rz_util/pj.h"
+#include "rz_util/rz_pj.h"
 #include "rz_util/rz_x509.h"
 #include "rz_util/rz_pkcs7.h"
 #include "rz_util/rz_protobuf.h"
 #include "rz_util/rz_big.h"
 #include "rz_util/rz_subprocess.h"
 #include "rz_util/rz_luhn.h"
+#include "rz_util/rz_lang_byte_array.h"
 // requires io, core, ... #include "rz_util/rz_print.h"
 
 #ifdef __cplusplus

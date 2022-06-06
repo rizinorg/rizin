@@ -29,8 +29,8 @@ static int __esil_step(RzDebug *dbg) {
 	pc = rz_debug_reg_get(dbg, "PC");
 	eprintf("PC = 0x%" PFMT64x "\n", pc);
 	/// XXX. hack to trick vaddr issue
-	//pc = 0x100001478;
-	//memset (buf, 0, sizeof (buf));
+	// pc = 0x100001478;
+	// memset (buf, 0, sizeof (buf));
 	dbg->iob.read_at(dbg->iob.io, pc, buf, 64);
 	eprintf("READ 0x%08" PFMT64x " %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
 	oplen = rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ESIL);
@@ -62,9 +62,9 @@ static int __esil_continue_syscall(RzDebug *dbg, int pid, int num) {
 	return true;
 }
 
-static int __esil_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType __esil_wait(RzDebug *dbg, int pid) {
 	/* do nothing */
-	return true;
+	return RZ_DEBUG_REASON_NONE;
 }
 
 static int __esil_attach(RzDebug *dbg, int pid) {
@@ -111,7 +111,7 @@ static char *__esil_reg_profile(RzDebug *dbg) {
 }
 
 static int __esil_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
-	//rz_io_system (dbg->iob.io, "db");
+	// rz_io_system (dbg->iob.io, "db");
 	return false;
 }
 
@@ -128,7 +128,7 @@ static int __esil_stop(RzDebug *dbg) {
 static int __reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	int sz;
 	/* do nothing */
-	ut8 *bytes = rz_reg_get_bytes(dbg->reg, type, &sz);
+	ut8 *bytes = rz_reg_get_bytes(dbg->analysis->reg, type, &sz);
 	memcpy(buf, bytes, RZ_MIN(size, sz));
 	free(bytes);
 	return size;

@@ -1,51 +1,53 @@
 // SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_windows.h>
 #include <rz_core.h>
 #include <TlHelp32.h>
 #include <windows_heap.h>
 #include "..\..\debug\p\native\maps\windows_maps.h"
 #include "..\..\bin\pdb\pdb_downloader.h"
+#include "..\..\bin\pdb\pdb.h"
 
 /*
-*	Viewer discretion advised: Spaghetti code ahead
-*	Some Code references:
-*	https://securityxploded.com/enumheaps.php
-*	https://bitbucket.org/evolution536/crysearch-memory-scanner/
-*	https://processhacker.sourceforge.io
-*	http://www.tssc.de/winint
-*	https://www.nirsoft.net/kernel_struct/vista/
-*	https://github.com/yoichi/HeapStat/blob/master/heapstat.cpp
-*	https://doxygen.reactos.org/
-*
-*	References:
-*	Windows NT(2000) Native API Reference (Book)
-*	Papers:
-*	http://illmatics.com/Understanding_the_LFH.pdf
-*	http://illmatics.com/Windows%208%20Heap%20Internals.pdf
-*	https://www.blackhat.com/docs/us-16/materials/us-16-Yason-Windows-10-Segment-Heap-Internals-wp.pdf
-*
-*	This code has 2 different approaches to getting the heap info:
-*		1) Calling InitHeapInfo with both PDI_HEAPS and PDI_HEAP_BLOCKS.
-*			This will fill a buffer with HeapBlockBasicInfo like structures which
-*			is then walked through by calling GetFirstHeapBlock and subsequently GetNextHeapBlock
-*			(see 1st link). This approach is the more generic one as it uses Windows functions.
-*			Unfortunately it fails to offer more detailed information about each block (although it is possible to get this info later) and
-*			also fails misteriously once the count of allocated blocks reach a certain threshold (1mil or so) or if segment heap is active for the
-*			program (in this case everything locks in the next call for the function)
-*		2) In case 1 fails, Calling GetHeapBlocks, which will manually read and parse (poorly :[ ) each block.
-*			First it calls InitHeapInfo	with only the PDI_HEAPS flag, with the only objective of getting a list of heap header addresses. It will then
-*			do the job that InitHeapInfo would do if it was called with PDI_HEAP_BLOCKS as well, filling a buffer with HeapBlockBasicInfo structures that
-*			can also be walked with GetFirstHeapBlock and GetNextHeapBlock (and HeapBlockExtraInfo when needed).
-*
-*	TODO:
-*		Var to select algorithm?
-*		x86 vs x64 vs WOW64
-*		Graphs
-*		Print structures
-*		Make sure GetHeapBlocks actually works
-*		Maybe instead of using hardcoded structs we can get the offsets from ntdll.pdb
-*/
+ *	Viewer discretion advised: Spaghetti code ahead
+ *	Some Code references:
+ *	https://securityxploded.com/enumheaps.php
+ *	https://bitbucket.org/evolution536/crysearch-memory-scanner/
+ *	https://processhacker.sourceforge.io
+ *	http://www.tssc.de/winint
+ *	https://www.nirsoft.net/kernel_struct/vista/
+ *	https://github.com/yoichi/HeapStat/blob/master/heapstat.cpp
+ *	https://doxygen.reactos.org/
+ *
+ *	References:
+ *	Windows NT(2000) Native API Reference (Book)
+ *	Papers:
+ *	http://illmatics.com/Understanding_the_LFH.pdf
+ *	http://illmatics.com/Windows%208%20Heap%20Internals.pdf
+ *	https://www.blackhat.com/docs/us-16/materials/us-16-Yason-Windows-10-Segment-Heap-Internals-wp.pdf
+ *
+ *	This code has 2 different approaches to getting the heap info:
+ *		1) Calling InitHeapInfo with both PDI_HEAPS and PDI_HEAP_BLOCKS.
+ *			This will fill a buffer with HeapBlockBasicInfo like structures which
+ *			is then walked through by calling GetFirstHeapBlock and subsequently GetNextHeapBlock
+ *			(see 1st link). This approach is the more generic one as it uses Windows functions.
+ *			Unfortunately it fails to offer more detailed information about each block (although it is possible to get this info later) and
+ *			also fails misteriously once the count of allocated blocks reach a certain threshold (1mil or so) or if segment heap is active for the
+ *			program (in this case everything locks in the next call for the function)
+ *		2) In case 1 fails, Calling GetHeapBlocks, which will manually read and parse (poorly :[ ) each block.
+ *			First it calls InitHeapInfo	with only the PDI_HEAPS flag, with the only objective of getting a list of heap header addresses. It will then
+ *			do the job that InitHeapInfo would do if it was called with PDI_HEAP_BLOCKS as well, filling a buffer with HeapBlockBasicInfo structures that
+ *			can also be walked with GetFirstHeapBlock and GetNextHeapBlock (and HeapBlockExtraInfo when needed).
+ *
+ *	TODO:
+ *		Var to select algorithm?
+ *		x86 vs x64 vs WOW64
+ *		Graphs
+ *		Print structures
+ *		Make sure GetHeapBlocks actually works
+ *		Maybe instead of using hardcoded structs we can get the offsets from ntdll.pdb
+ */
 
 #define PDI_MODULES         0x01
 #define PDI_HEAPS           0x04
@@ -321,11 +323,10 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	if (!rz_file_exists(pdb_path)) {
 		// Download ntdll.pdb
 		SPDBOptions opts;
-		opts.user_agent = rz_config_get(core->config, "pdb.useragent");
 		opts.extract = rz_config_get_i(core->config, "pdb.extract");
 		opts.symbol_store_path = rz_config_get(core->config, "pdb.symstore");
 		opts.symbol_server = rz_config_get(core->config, "pdb.server");
-		if (rz_bin_pdb_download(core, NULL, false, &opts)) {
+		if (rz_bin_pdb_download(core->bin, NULL, false, &opts)) {
 			eprintf("Failed to download ntdll.pdb file\n");
 			free(pdb_path);
 			goto fail;
@@ -333,20 +334,39 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	}
 
 	// Get ntdll.dll PDB info and parse json output
-	PJ *pj = pj_new();
-	if (!rz_core_pdb_info(core, pdb_path, pj, RZ_MODE_JSON)) {
-		pj_free(pj);
+	RzPdb *pdb = rz_bin_pdb_parse_from_file(pdb_path);
+	if (!pdb) {
 		free(pdb_path);
 		goto fail;
 	}
+
 	free(pdb_path);
-	char *j = pj_drain(pj);
+	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
+	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
+		baddr = core->bin->cur->o->opts.baseaddr;
+	} else {
+		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
+	}
+	PJ *pj = pj_new();
+	if (!pj) {
+		rz_bin_pdb_free(pdb);
+		goto fail;
+	}
+	char *j = rz_core_bin_pdb_gvars_as_string(pdb, baddr, pj, RZ_OUTPUT_MODE_JSON);
+	if (!j) {
+		rz_bin_pdb_free(pdb);
+		pj_free(pj);
+		goto fail;
+	}
+	pj_free(pj);
+	rz_bin_pdb_free(pdb);
 	RzJson *json = rz_json_parse(j);
 	if (!json) {
 		RZ_LOG_ERROR("rz_core_pdb_info returned invalid JSON");
 		free(j);
 		goto fail;
 	}
+	free(j);
 
 	// Go through gvars array and search for the heap globals symbols
 	const RzJson *gvars = rz_json_get(json, "gvars");
@@ -467,12 +487,12 @@ static RzList *GetListOfHeaps(RzDebug *dbg, HANDLE ph) {
 }
 
 /*
-*	This function may fail with PDI_HEAP_BLOCKS if:
-*		There's too many allocations
-*		The Segment Heap is activated (will block next time called)
-*		Notes:
-*			Some LFH allocations seem misaligned
-*/
+ *	This function may fail with PDI_HEAP_BLOCKS if:
+ *		There's too many allocations
+ *		The Segment Heap is activated (will block next time called)
+ *		Notes:
+ *			Some LFH allocations seem misaligned
+ */
 static PDEBUG_BUFFER InitHeapInfo(RzDebug *dbg, DWORD mask) {
 	// Check:
 	//	RtlpQueryProcessDebugInformationFromWow64
@@ -636,7 +656,7 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 	}
 
 	// LFH
-	byte numBuckets = _countof(segheapHeader.LfhContext.Buckets);
+	size_t numBuckets = _countof(segheapHeader.LfhContext.Buckets);
 	int j;
 	for (j = 0; j < numBuckets; j++) {
 		if ((WPARAM)segheapHeader.LfhContext.Buckets[j] & 1) {

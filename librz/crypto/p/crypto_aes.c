@@ -3,26 +3,84 @@
 
 #include <rz_lib.h>
 #include <rz_crypto.h>
-#include "crypto_aes_algo.h"
+#include <rz_util.h>
+#include <aes.h>
+
+static void encryptaes(struct aes_ctx *ctx, ut8 *in, ut8 *out) {
+	switch (ctx->key_size) {
+	case AES128_KEY_SIZE:
+		aes128_encrypt(&ctx->u.ctx128, AES_BLOCK_SIZE, out, in);
+		break;
+	case AES192_KEY_SIZE:
+		aes192_encrypt(&ctx->u.ctx192, AES_BLOCK_SIZE, out, in);
+		break;
+	case AES256_KEY_SIZE:
+		aes256_encrypt(&ctx->u.ctx256, AES_BLOCK_SIZE, out, in);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+static void decryptaes(struct aes_ctx *ctx, ut8 *in, ut8 *out) {
+	switch (ctx->key_size) {
+	case AES128_KEY_SIZE:
+		aes128_decrypt(&ctx->u.ctx128, AES_BLOCK_SIZE, out, in);
+		break;
+	case AES192_KEY_SIZE:
+		aes192_decrypt(&ctx->u.ctx192, AES_BLOCK_SIZE, out, in);
+		break;
+	case AES256_KEY_SIZE:
+		aes256_decrypt(&ctx->u.ctx256, AES_BLOCK_SIZE, out, in);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
 
 static bool aes_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	rz_return_val_if_fail(cry->user && key, false);
-	aes_state_t *st = (aes_state_t *)cry->user;
+	struct aes_ctx *st = (struct aes_ctx *)cry->user;
 
-	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
+	if (!(keylen == AES128_KEY_SIZE || keylen == AES192_KEY_SIZE || keylen == AES256_KEY_SIZE)) {
 		return false;
 	}
 	st->key_size = keylen;
-	st->rounds = 6 + (int)(keylen / 4);
-	st->columns = (int)(keylen / 4);
-	memcpy(st->key, key, keylen);
+	switch (keylen) {
+	case AES128_KEY_SIZE:
+		if (direction == RZ_CRYPTO_DIR_ENCRYPT) {
+			aes128_set_encrypt_key(&st->u.ctx128, key);
+		} else {
+			aes128_set_decrypt_key(&st->u.ctx128, key);
+		}
+		break;
+	case AES192_KEY_SIZE:
+		if (direction == RZ_CRYPTO_DIR_ENCRYPT) {
+			aes192_set_encrypt_key(&st->u.ctx192, key);
+		} else {
+			aes192_set_decrypt_key(&st->u.ctx192, key);
+		}
+		break;
+	case AES256_KEY_SIZE:
+		if (direction == RZ_CRYPTO_DIR_ENCRYPT) {
+			aes256_set_encrypt_key(&st->u.ctx256, key);
+		} else {
+			aes256_set_decrypt_key(&st->u.ctx256, key);
+		}
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
 	cry->dir = direction;
 	return true;
 }
 
 static int aes_get_key_size(RzCrypto *cry) {
 	rz_return_val_if_fail(cry->user, 0);
-	aes_state_t *st = (aes_state_t *)cry->user;
+	struct aes_ctx *st = (struct aes_ctx *)cry->user;
 
 	return st->key_size;
 }
@@ -31,20 +89,18 @@ static bool aes_use(const char *algo) {
 	return !strcmp(algo, "aes-ecb");
 }
 
-#define BLOCK_SIZE 16
-
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	rz_return_val_if_fail(cry->user, 0);
-	aes_state_t *st = (aes_state_t *)cry->user;
+	struct aes_ctx *st = (struct aes_ctx *)cry->user;
 
 	if (len < 1) {
 		return false;
 	}
 
 	// Pad to the block size, do not append dummy block
-	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
+	const int diff = (AES_BLOCK_SIZE - (len % AES_BLOCK_SIZE)) % AES_BLOCK_SIZE;
 	const int size = len + diff;
-	const int blocks = size / BLOCK_SIZE;
+	const int blocks = size / AES_BLOCK_SIZE;
 	int i;
 
 	ut8 *const obuf = calloc(1, size);
@@ -61,18 +117,18 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	memcpy(ibuf, buf, len);
 	// Padding should start like 100000...
 	if (diff) {
-		ibuf[len] = 8; //0b1000;
+		ibuf[len] = 8; // 0b1000;
 	}
 
 	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
 		for (i = 0; i < blocks; i++) {
-			const int delta = BLOCK_SIZE * i;
-			aes_encrypt(st, ibuf + delta, obuf + delta);
+			const int delta = AES_BLOCK_SIZE * i;
+			encryptaes(st, ibuf + delta, obuf + delta);
 		}
 	} else {
 		for (i = 0; i < blocks; i++) {
-			const int delta = BLOCK_SIZE * i;
-			aes_decrypt(st, ibuf + delta, obuf + delta);
+			const int delta = AES_BLOCK_SIZE * i;
+			decryptaes(st, ibuf + delta, obuf + delta);
 		}
 	}
 
@@ -91,7 +147,7 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 static bool aes_ecb_init(RzCrypto *cry) {
 	rz_return_val_if_fail(cry, false);
 
-	cry->user = RZ_NEW0(aes_state_t);
+	cry->user = RZ_NEW0(struct aes_ctx);
 	return cry->user != NULL;
 }
 
@@ -104,8 +160,8 @@ static bool aes_ecb_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_aes = {
 	.name = "aes-ecb",
-	.author = "Karl Malbrain",
-	.license = "MS-PL",
+	.author = "Nettle project (algorithm implementation), pancake (plugin)",
+	.license = "LGPL3",
 	.set_key = aes_set_key,
 	.get_key_size = aes_get_key_size,
 	.use = aes_use,

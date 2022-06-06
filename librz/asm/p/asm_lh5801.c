@@ -21,8 +21,8 @@ static int disassemble(RzAsm *as, RzAsmOp *op, const ut8 *buf, int len) {
 	lh5801_print_insn(buf_asm, sizeof(buf_asm), &insn);
 	rz_strbuf_set(&op->buf_asm, buf_asm);
 	op->size = consumed;
-	//op->payload = lh5801_insn_descs[insn.type].format & 3;
-	// ^ MAYBE?
+	// op->payload = lh5801_insn_descs[insn.type].format & 3;
+	//  ^ MAYBE?
 	return op->size;
 }
 

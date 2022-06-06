@@ -385,7 +385,7 @@ RZ_API RZ_OWN const char *rz_bin_java_class_language(RZ_NONNULL RzBinJavaClass *
 			if (!cpool || !java_constant_pool_is_string(cpool)) {
 				continue;
 			}
-			char *string = java_constant_pool_stringify(cpool);
+			string = java_constant_pool_stringify(cpool);
 			if (string && !strncmp(string, "kotlin/jvm", 10)) {
 				language = "kotlin";
 				break;
@@ -732,7 +732,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 	}
 
 	tmp = rz_bin_java_class_name(bin);
-	dem = rz_bin_demangle_java(tmp);
+	dem = rz_demangler_java(tmp);
 	if (dem) {
 		rz_strbuf_appendf(sb, " %s", dem);
 		RZ_FREE(dem);
@@ -764,7 +764,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 				break;
 			}
 			tmp = java_class_constant_pool_stringify_at(bin, index);
-			if ((dem = rz_bin_demangle_java(tmp))) {
+			if ((dem = rz_demangler_java(tmp))) {
 				free(tmp);
 				tmp = dem;
 			}
@@ -814,7 +814,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 			free(desc);
 			free(name);
 
-			dem = rz_bin_demangle_java(tmp);
+			dem = rz_demangler_java(tmp);
 			if (!dem) {
 				rz_strbuf_append(sb, tmp);
 			} else {
@@ -1014,7 +1014,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) 
 			bstr->length = cpool->size;
 			bstr->size = cpool->size;
 			bstr->string = string;
-			bstr->type = RZ_STRING_TYPE_UTF8;
+			bstr->type = RZ_BIN_STRING_ENC_MUTF8;
 			rz_list_append(list, bstr);
 		}
 	}
@@ -1032,7 +1032,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) 
 			bstr->length = attr->attribute_length;
 			bstr->size = attr->attribute_length;
 			bstr->string = strdup(attr->info);
-			bstr->type = RZ_STRING_TYPE_UTF8;
+			bstr->type = RZ_BIN_STRING_ENC_UTF8;
 			rz_list_append(list, bstr);
 		}
 	}
@@ -1105,7 +1105,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_methods_as_symbols(RZ_NONNULL RzBinJavaC
 			symbol->ordinal = rz_list_length(list);
 			symbol->visibility = method->access_flags;
 			symbol->visibility_str = java_method_access_flags_readable(method);
-			symbol->libname = rz_bin_demangle_java(symbol->classname);
+			symbol->libname = rz_demangler_java(symbol->classname);
 			symbol->method_flags = java_access_flags_to_bin_flags(method->access_flags);
 			free(desc);
 			free(method_name);
@@ -1629,7 +1629,7 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RZ_NONNULL RzBinJavaClass *bin,
 				rtext = rz_bin_java_class_const_pool_resolve_index(bin, i);
 			}
 			if (rtext) {
-				char *dem = rz_bin_demangle_java(rtext);
+				char *dem = rz_demangler_java(rtext);
 				if (dem) {
 					free(rtext);
 					rtext = dem;

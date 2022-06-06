@@ -9,6 +9,7 @@
 #include "io_private.h"
 
 #if __WINDOWS__
+#include <rz_windows.h>
 #include <w32dbg_wrap.h>
 #endif
 
@@ -125,7 +126,6 @@ RZ_API RzIO *rz_io_init(RzIO *io) {
 RZ_API void rz_io_free(RzIO *io) {
 	if (io) {
 		rz_io_fini(io);
-		rz_cache_free(io->buffer);
 		free(io);
 	}
 }
@@ -148,7 +148,7 @@ RZ_API RzIODesc *rz_io_open_nomap(RzIO *io, const char *uri, int perm, int mode)
 	if ((io->autofd || !io->desc) && desc) {
 		io->desc = desc;
 	}
-	//set desc as current if autofd or io->desc==NULL
+	// set desc as current if autofd or io->desc==NULL
 	return desc;
 }
 
@@ -218,7 +218,7 @@ RZ_API RzList *rz_io_open_many(RzIO *io, const char *uri, int perm, int mode) {
 			if (!desc->uri) {
 				desc->uri = strdup(uri);
 			}
-			//should autofd be honored here?
+			// should autofd be honored here?
 			rz_io_desc_add(io, desc);
 			if (!io->desc) {
 				io->desc = desc;
@@ -234,9 +234,9 @@ RZ_API bool rz_io_reopen(RzIO *io, int fd, int perm, int mode) {
 	if (!(old = rz_io_desc_get(io, fd))) {
 		return false;
 	}
-	//does this really work, or do we have to handler debuggers ugly
+	// does this really work, or do we have to handler debuggers ugly
 	uri = old->referer ? old->referer : old->uri;
-#if __WINDOWS__ //TODO: workaround, see https://github.com/rizinorg/rizin/issues/8840
+#if __WINDOWS__ // TODO: workaround, see https://github.com/rizinorg/rizin/issues/8840
 	if (old->plugin->close && old->plugin->close(old)) {
 		return false; // TODO: this is an unrecoverable scenario
 	}
@@ -363,7 +363,7 @@ RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (io->write_mask) {
 		mybuf = rz_mem_dup((void *)buf, len);
 		for (i = 0; i < len; i++) {
-			//TODO: this needs some love because it is not optimal.
+			// TODO: this needs some love because it is not optimal.
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
@@ -409,7 +409,7 @@ RZ_API bool rz_io_is_listener(RzIO *io) {
 }
 
 RZ_API char *rz_io_system(RzIO *io, const char *cmd) {
-	if (io && io->desc && io->desc->plugin && io->desc->plugin->system) {
+	if (io && io->desc && io->desc->plugin && io->desc->plugin->system && RZ_STR_ISNOTEMPTY(cmd)) {
 		return io->desc->plugin->system(io, io->desc, cmd);
 	}
 	return NULL;
@@ -442,56 +442,82 @@ RZ_API bool rz_io_close(RzIO *io) {
 	return io ? rz_io_desc_close(io->desc) : false;
 }
 
-RZ_API int rz_io_extend_at(RzIO *io, ut64 addr, ut64 size) {
-	ut64 cur_size, tmp_size;
-	ut8 *buffer;
-	if (!io || !io->desc || !io->desc->plugin || !size) {
+/**
+ * \brief Extend the RzIODesc at \p addr by inserting \p size 0 bytes
+ *
+ * \param io Reference to RzIO instance
+ * \param addr Address where to insert new 0 bytes
+ * \param size Number of 0 bytes to insert
+ * \return true if extend operation was successful, false otherwise
+ */
+RZ_API bool rz_io_extend_at(RzIO *io, ut64 addr, ut64 size) {
+#define IO_EXTEND_BLOCK_SZ 256
+	rz_return_val_if_fail(io, false);
+
+	if (!io->desc || !io->desc->plugin) {
 		return false;
 	}
-	if (io->desc->plugin->extend) {
-		int ret;
-		ut64 cur_off = io->off;
-		rz_io_seek(io, addr, RZ_IO_SEEK_SET);
-		ret = rz_io_desc_extend(io->desc, size);
-		//no need to seek here
-		io->off = cur_off;
-		return ret;
+	if (size == 0) {
+		return true;
 	}
+
 	if ((io->desc->perm & RZ_PERM_RW) != RZ_PERM_RW) {
 		return false;
 	}
-	cur_size = rz_io_desc_size(io->desc);
+	ut64 cur_size = rz_io_desc_size(io->desc);
 	if (addr > cur_size) {
 		return false;
 	}
-	if ((UT64_MAX - size) < cur_size) {
+
+	// Extend the file to include the additional <size> bytes
+	if (UT64_ADD_OVFCHK(cur_size, size)) {
 		return false;
 	}
 	if (!rz_io_resize(io, cur_size + size)) {
 		return false;
 	}
-	if ((tmp_size = cur_size - addr) == 0LL) {
-		return true;
-	}
-	if (!(buffer = calloc(1, (size_t)tmp_size + 1))) {
+
+	// Shift old data to make space for the zero bytes
+	ut64 tmp = cur_size >= IO_EXTEND_BLOCK_SZ ? RZ_MAX(cur_size - IO_EXTEND_BLOCK_SZ, addr) : addr;
+	ut64 remaining = cur_size - addr;
+
+	ut8 *buffer = RZ_NEWS(ut8, IO_EXTEND_BLOCK_SZ);
+	if (!buffer) {
 		return false;
 	}
-	rz_io_pread_at(io, addr, buffer, (int)tmp_size);
-	/* fill with null bytes */
-	ut8 *empty = calloc(1, size);
-	if (empty) {
-		rz_io_pwrite_at(io, addr, empty, size);
-		free(empty);
+	while (remaining) {
+		int sz = rz_io_pread_at(io, tmp, buffer, IO_EXTEND_BLOCK_SZ);
+		rz_io_pwrite_at(io, tmp + size, buffer, sz);
+
+		tmp = tmp - IO_EXTEND_BLOCK_SZ > addr ? tmp - IO_EXTEND_BLOCK_SZ : addr;
+		remaining = remaining > sz ? remaining - sz : 0;
 	}
-	rz_io_pwrite_at(io, addr + size, buffer, (int)tmp_size);
 	free(buffer);
+
+	// Put the zero bytes at the right place
+	ut8 *empty = RZ_NEWS0(ut8, size);
+	if (!empty) {
+		return false;
+	}
+	rz_io_pwrite_at(io, addr, empty, size);
+	free(empty);
+
 	return true;
+#undef IO_EXTEND_BLOCK_SZ
 }
 
+/**
+ * \brief Set a mask that is used on all following write operations
+ *
+ * \param io Reference to RzIo instance
+ * \param mask Mask to apply
+ * \param len Number of bytes in the mask
+ * \return true if the mask was correctly set, false otherwise
+ */
 RZ_API bool rz_io_set_write_mask(RzIO *io, const ut8 *mask, int len) {
-	if (!io || len < 1) {
-		return false;
-	}
+	rz_return_val_if_fail(io, false);
+	rz_return_val_if_fail(mask || len == 0, false);
+
 	free(io->write_mask);
 	if (!mask) {
 		io->write_mask = NULL;
@@ -526,6 +552,7 @@ RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd) {
 
 	bnd->io = io;
 	bnd->init = true;
+	bnd->fd_get_current = rz_io_fd_get_current;
 	bnd->desc_use = rz_io_use_fd;
 	bnd->desc_get = rz_io_desc_get;
 	bnd->desc_size = rz_io_desc_size;
@@ -550,6 +577,7 @@ RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd) {
 	bnd->fd_get_name = rz_io_fd_get_name;
 	bnd->fd_get_map = rz_io_map_get_for_fd;
 	bnd->fd_remap = rz_io_map_remap_fd;
+	bnd->fd_getbuf = rz_io_fd_get_buf;
 	bnd->is_valid_offset = rz_io_is_valid_offset;
 	bnd->map_get = rz_io_map_get;
 	bnd->map_get_paddr = rz_io_map_get_paddr;
@@ -692,7 +720,7 @@ RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io) {
 }
 #endif
 
-//remove all descs and maps
+// remove all descs and maps
 RZ_API int rz_io_fini(RzIO *io) {
 	if (!io) {
 		return false;

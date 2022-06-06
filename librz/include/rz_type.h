@@ -20,6 +20,7 @@ RZ_LIB_VERSION_HEADER(rz_type);
 typedef struct rz_type_target_t {
 	char *cpu;
 	int bits;
+	int addr_bits; ///< size of a pointer if > 0, otherwise bits is used.
 	char *os;
 	bool big_endian;
 	const char *default_type;
@@ -194,7 +195,12 @@ typedef enum {
 	RZ_TYPE_COND_VS, ///< Overflow                   Unordered
 	RZ_TYPE_COND_VC, ///< No overflow                Not unordered
 	RZ_TYPE_COND_HI, ///< Unsigned higher            Greater than, or unordered
-	RZ_TYPE_COND_LS ///< Unsigned lower or same     Less than or equal
+	RZ_TYPE_COND_LS, ///< Unsigned lower or same     Less than or equal
+	RZ_TYPE_COND_HEX_SCL_TRUE, // Hexagon only: Scalar instruction if(Pu)
+	RZ_TYPE_COND_HEX_SCL_FALSE, // Hexagon only: Scalar instruction if(!Pu)
+	RZ_TYPE_COND_HEX_VEC_TRUE, // Hexagon only: Vector instruction if(Pu)
+	RZ_TYPE_COND_HEX_VEC_FALSE, // Hexagon only: Vector instruction if(!Pu)
+	RZ_TYPE_COND_EXCEPTION, // when the jump is taken only during an exception
 } RzTypeCond;
 
 /**
@@ -205,6 +211,18 @@ typedef struct rz_type_constraint_t {
 	ut64 val;
 } RzTypeConstraint;
 
+typedef enum {
+	RZ_TYPE_PRINT_NO_OPTS = 0, // no options
+	RZ_TYPE_PRINT_MULTILINE = 1 << 0, // print multiline string (every single type on a single line)
+	RZ_TYPE_PRINT_UNFOLD_ANON_ONLY = 1 << 1, // only unfold anonymous structs/unions/enums (applies only to inner members, not the root member)
+	RZ_TYPE_PRINT_UNFOLD_ANON_ONLY_STRICT = 1 << 2, // only unfold anonymous structs/unions/enums
+	RZ_TYPE_PRINT_ZERO_VLA = 1 << 3, // use [0] to denote VLA instead of (default) []
+	RZ_TYPE_PRINT_NO_END_SEMICOLON = 1 << 4, // return a string without a semicolon at end
+	RZ_TYPE_PRINT_ANONYMOUS = 1 << 5, // use "[struct|union|enum] anonymous" as the typename for anonymous structs/unions/enums
+	RZ_TYPE_PRINT_END_NEWLINE = 1 << 6, // return a string with a newline at the end
+	RZ_TYPE_PRINT_SHOW_TYPEDEF = 1 << 7 // show typedefs wherever found
+} RzTypePrintOpts;
+
 #ifdef RZ_API
 
 RZ_API RzTypeDB *rz_type_db_new();
@@ -214,6 +232,7 @@ RZ_API bool rz_type_db_load_sdb_str(RzTypeDB *typedb, RZ_NONNULL const char *str
 RZ_API bool rz_type_db_load_callables_sdb(RzTypeDB *typedb, RZ_NONNULL const char *path);
 RZ_API bool rz_type_db_load_callables_sdb_str(RzTypeDB *typedb, RZ_NONNULL const char *str);
 RZ_API void rz_type_db_set_bits(RzTypeDB *typedb, int bits);
+RZ_API void rz_type_db_set_address_bits(RzTypeDB *typedb, int addr_bits);
 RZ_API void rz_type_db_set_os(RzTypeDB *typedb, const char *os);
 RZ_API void rz_type_db_set_cpu(RzTypeDB *typedb, const char *cpu);
 RZ_API void rz_type_db_set_endian(RzTypeDB *typedb, bool big_endian);
@@ -230,6 +249,7 @@ RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 
 RZ_API void rz_type_base_type_free(RzBaseType *type);
 RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind);
+RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kind);
 
 RZ_API void rz_type_base_enum_case_free(void *e, void *user);
 RZ_API void rz_type_base_struct_member_free(void *e, void *user);
@@ -243,7 +263,8 @@ RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType 
 RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind);
 RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(const RzTypeDB *typedb);
 
-RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype);
+RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, unsigned int opts, int unfold_level);
 RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *typestr);
 
 // Compound types
@@ -254,7 +275,7 @@ RZ_API bool rz_types_equal(RZ_NONNULL const RzType *type1, RZ_NONNULL const RzTy
 RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_identifier_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier);
-
+RZ_API RZ_OWN char *rz_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NULLABLE const char *identifier, unsigned int opts, int unfold_level);
 RZ_API void rz_type_free(RzType *type);
 RZ_API bool rz_type_exists(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
@@ -284,7 +305,8 @@ RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath);
 RZ_API st64 rz_type_offset_by_path(const RzTypeDB *typedb, RZ_NONNULL const char *path);
 RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset);
 RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset);
-RZ_API ut64 rz_type_db_struct_member_offset(const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
+RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
+RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
 
 // Type parser low-level API
 
@@ -337,6 +359,7 @@ RZ_API bool rz_type_is_void_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_char_ptr(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_char_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_identifier(RZ_NONNULL const RzType *type);
+RZ_API bool rz_type_is_strictly_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_default(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN RzType *rz_type_new_default(const RzTypeDB *typedb);

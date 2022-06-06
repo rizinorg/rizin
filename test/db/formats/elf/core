@@ -17,7 +17,7 @@ RUN
 
 NAME=core registers
 FILE=bins/elf/analysis/core.1159
-CMDS=dr
+CMDS=ar
 EXPECT=<<EOF
 rax = 0x00000000
 rbx = 0x00000000
@@ -63,7 +63,7 @@ RUN
 NAME=core maps linux x86
 FILE=bins/elf/core/core-linux-x86
 CMDS=<<EOF
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00001000 0x56621000 - 0x56621fff r-- fmap./home/florian/dev/crash/crash-linux-x86
@@ -93,7 +93,7 @@ RUN
 NAME=core regs linux x86
 FILE=bins/elf/core/core-linux-x86
 CMDS=<<EOF
-dr
+ar
 EOF
 EXPECT=<<EOF
 oeax = 0xffffffff
@@ -113,7 +113,7 @@ RUN
 NAME=core maps linux x86_64
 FILE=bins/elf/core/core-linux-x86_64
 CMDS=<<EOF
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
@@ -144,7 +144,7 @@ RUN
 NAME=core regs linux x86_64
 FILE=bins/elf/core/core-linux-x86_64
 CMDS=<<EOF
-dr
+ar
 EOF
 EXPECT=<<EOF
 rax = 0x00000000
@@ -171,7 +171,7 @@ RUN
 NAME=core maps linux arm64
 FILE=bins/elf/core/core-linux-arm64
 CMDS=<<EOF
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap./home/alarm/crash/crash-linux-arm64
@@ -197,7 +197,7 @@ RUN
 NAME=core regs linux arm64
 FILE=bins/elf/core/core-linux-arm64
 CMDS=<<EOF
-dr
+ar
 EOF
 EXPECT=<<EOF
 x0 = 0x00000000
@@ -232,38 +232,7 @@ x28 = 0x00000000
 x29 = 0x7ff5eb5d60
 x30 = 0x7f8bd84538
 tmp = 0x00000000
-d0 = 0x00000000
-d1 = 0x7ff5eb5ed8
-d2 = 0x7ff5eb5ee8
-d3 = 0x558ce37744
-d4 = 0x00000000
-d5 = 0x2bc88a8092e0763f
-d6 = 0x7f8bed0590
-d7 = 0x4554415649
-d8 = 0x000000d7
-d9 = 0x00000000
-d10 = 0x00000000
-d11 = 0x00000000
-d12 = 0x7f8bd67310
-d13 = 0x00000000
-d14 = 0x00000000
-d15 = 0x6fffff47
-d16 = 0x00000000
-d17 = 0x00000000
-d18 = 0x00000000
-d19 = 0x558ce37780
-d20 = 0x00000000
-d21 = 0x558ce37630
-d22 = 0x00000000
-d23 = 0x00000000
-d24 = 0x00000000
-d25 = 0x00000000
-d26 = 0x00000000
-d27 = 0x00000000
-d28 = 0x00000000
-d29 = 0x7ff5eb5d60
-d30 = 0x7f8bd84538
-dsp = 0x7ff5eb5d60
+wzr = 0x00000000
 fp = 0x7ff5eb5d60
 lr = 0x7f8bd84538
 sp = 0x7ff5eb5d60
@@ -277,7 +246,7 @@ RUN
 NAME=core maps linux arm32
 FILE=bins/elf/core/core-linux-arm32
 CMDS=<<EOF
-om
+oml
 EOF
 EXPECT=<<EOF
  1 fd: 3 +0x00001000 0x00010000 - 0x00010fff r-x fmap./home/pi/crash/crash-linux-arm32
@@ -309,7 +278,7 @@ RUN
 NAME=core regs linux arm32
 FILE=bins/elf/core/core-linux-arm32
 CMDS=<<EOF
-dr
+ar
 EOF
 EXPECT=<<EOF
 sb = 0x00000000

@@ -164,7 +164,7 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{ "invoke-super", 6, fmtopvXtBBBB },
 	{ "invoke-direct", 6, fmtopvXtBBBB }, /* 0x70 */
 	{ "invoke-static", 6, fmtopvXtBBBB },
-	{ "invoke-interface", 6, fmtopvXtBBBB }, //XXX: Maybe use opt invoke-interface ??
+	{ "invoke-interface", 6, fmtopvXtBBBB }, // XXX: Maybe use opt invoke-interface ??
 	{ "UNUSED", 2, fmt00 },
 	{ "invoke-virtual/range", 6, fmtopvCCCCmBBBB },
 	{ "invoke-super/range", 6, fmtopvCCCCmBBBB },

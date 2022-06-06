@@ -46,7 +46,7 @@ static void rot_decrypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 		if ((inbuf[i] < 'a' || inbuf[i] > 'z') && (inbuf[i] < 'A' || inbuf[i] > 'Z')) {
 			continue;
 		}
-		outbuf[i] += 26; //adding so that subtracting does not make it negative
+		outbuf[i] += 26; // adding so that subtracting does not make it negative
 		outbuf[i] -= key;
 		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
 		outbuf[i] = mod(outbuf[i], 26);
@@ -68,7 +68,7 @@ static bool rot_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int
 }
 
 static int rot_get_key_size(RzCrypto *cry) {
-	//Returning number of bytes occupied by ut8
+	// Returning number of bytes occupied by ut8
 	return 1;
 }
 

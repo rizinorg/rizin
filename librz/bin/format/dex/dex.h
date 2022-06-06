@@ -9,6 +9,10 @@
 #include <rz_util.h>
 #include <rz_bin.h>
 
+#define RZ_DEX_RELOC_TARGETS "reloc-targets"
+#define RZ_DEX_VIRT_ADDRESS  0x0100000000
+#define RZ_DEX_RELOC_ADDRESS 0x8000000000
+
 typedef enum {
 	DEX_MAP_ITEM_TYPE_HEADER_ITEM = 0x0000,
 	DEX_MAP_ITEM_TYPE_STRING_ID_ITEM = 0x0001,
@@ -125,16 +129,26 @@ typedef struct dex_encoded_method_t {
 	/*encoded_catch_handler_list handlers */
 } DexEncodedMethod;
 
+// small note: on the official documentation all the
+// variables are set as uint (aka ut32) but on their
+// libdexfile defines some fields within class_def
+// as ut16 + padding; to uniform with the real used
+// code you will find some useless _padding variables
 typedef struct dex_class_def_t {
-	ut32 class_idx;
+	ut16 class_idx;
+	ut16 _padding1;
 	ut32 access_flags;
-	ut32 superclass_idx;
+	ut16 superclass_idx;
+	ut16 _padding2;
 	ut32 interfaces_offset;
 	ut32 source_file_idx;
 	ut32 annotations_offset;
 	ut32 class_data_offset;
 	ut32 static_values_offset;
 	ut64 offset;
+
+	ut32 n_interfaces;
+	ut16 *interfaces;
 
 	RzList /*<DexEncodedField>*/ *static_fields;
 	RzList /*<DexEncodedField>*/ *instance_fields;
@@ -180,6 +194,11 @@ typedef struct dex_t {
 	RzPVector /*<DexClassDef>*/ *class_defs;
 
 	DexTypeId *types;
+
+	ut64 relocs_offset;
+	ut32 relocs_size;
+	ut8 *relocs_code;
+	RzBuffer *relocs_buffer;
 } RzBinDex;
 
 RZ_API RZ_OWN RzBinDex *rz_bin_dex_new(RZ_NONNULL RzBuffer *buf, ut64 base, RZ_NONNULL Sdb *kv);
@@ -197,12 +216,15 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex 
 RZ_API RZ_OWN RzList /*<char*>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzBinAddr *rz_bin_dex_resolve_symbol(RZ_NONNULL RzBinDex *dex, RzBinSpecialSymbol resolve);
 RZ_API RZ_OWN RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_BORROW RzBuffer *rz_bin_dex_relocations(RZ_NONNULL RzBinDex *dex);
 
 RZ_API RZ_OWN char *rz_bin_dex_resolve_method_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx);
 RZ_API RZ_OWN char *rz_bin_dex_resolve_field_by_idx(RZ_NONNULL RzBinDex *dex, ut32 field_idx);
 RZ_API RZ_OWN char *rz_bin_dex_resolve_class_by_idx(RZ_NONNULL RzBinDex *dex, ut32 class_idx);
 RZ_API RZ_OWN char *rz_bin_dex_resolve_string_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx);
 RZ_API RZ_OWN char *rz_bin_dex_resolve_proto_by_idx(RZ_NONNULL RzBinDex *dex, ut32 proto_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_type_id_by_idx(RZ_NONNULL RzBinDex *dex, ut32 type_idx);
+RZ_API RZ_OWN char *rz_bin_dex_access_flags_readable(ut32 access_flags);
 
 RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx);
 RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 type_idx);

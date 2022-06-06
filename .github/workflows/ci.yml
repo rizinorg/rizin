@@ -1,23 +1,22 @@
 name: CI
 
-
 on:
   push:
     branches:
-    - 'master'
-    - 'dev'
-    - 'stable'
-    - 'container-*'
+      - "master"
+      - "dev"
+      - "stable"
+      - "container-*"
     tags:
-    - v*
+      - v*
   schedule:
-    - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
+    - cron: "0 18 * * 1,3,5" # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
   pull_request:
     branches:
-    - master
-    - dev
-    - stable
-    - 'release-*'
+      - master
+      - dev
+      - stable
+      - "release-*"
 
 jobs:
   changes:
@@ -25,22 +24,21 @@ jobs:
     outputs:
       edited: ${{ steps.filter.outputs.edited }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: dorny/paths-filter@v2
-      id: filter
-      with:
-        base: ${{ github.ref }}
-        filters: |
-          edited:
-            - '**.c'
-            - '**.h'
-            - '**.in'
-            - '**.inc'
-            - '**/meson.build'
-            - 'shlr/rizin-shell-parser/**'
-            - 'subprojects/**'
-            - '.github/workflows/ci.yml'
-            - 'test/**'
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          base: ${{ github.ref }}
+          filters: |
+            edited:
+              - '**.c'
+              - '**.h'
+              - '**.in'
+              - '**.inc'
+              - '**/meson.build'
+              - 'subprojects/**'
+              - '.github/workflows/ci.yml'
+              - 'test/**'
 
   # TODO: build rz-bindings
   build-and-test:
@@ -52,23 +50,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [
-          linux-meson-clang-tests,
-          linux-meson-gcc-tests,
-          macos-meson-clang-tests,
-          linux-gcc-tests-asan,
-          linux-gcc-tests-codecov,
-          capstone-v3,
-          capstone-next
-        ]
+        name:
+          [
+            linux-meson-clang-tests,
+            linux-meson-gcc-tests,
+            macos-meson-clang-tests,
+            linux-gcc-tests-asan,
+            linux-clang-tests-asan,
+            linux-gcc-tests-codecov,
+            capstone-v3,
+            capstone-next,
+          ]
         include:
           - name: linux-meson-clang-tests
             os: ubuntu-20.04
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Dbuildtype=release
-            enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
+            meson_options: -Dbuildtype=release --werror
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'clang')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
             allow_failure: false
           - name: linux-meson-gcc-tests
@@ -79,14 +79,14 @@ jobs:
             meson_options: -Dbuildtype=release --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
+            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
             allow_failure: false
           - name: macos-meson-clang-tests
-            os: macos-latest
+            os: macos-11
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Dbuildtype=release -Duse_webui=true
+            meson_options: -Dbuildtype=release --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
             allow_failure: false
@@ -94,24 +94,36 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
-            meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined -Duse_webui=true --werror
+            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
+            meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror
             asan: true
-            asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
+            asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
             run_tests: true
-            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
-            timeout: 100
+            enabled: ${{ needs.changes.outputs.edited == 'true' }}
+            timeout: 120
+            allow_failure: false
+          - name: linux-clang-tests-asan
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: clang
+            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
+            meson_options: -Dbuildtype=debugoptimized -Db_lundef=false -Db_sanitize=address,undefined --werror
+            asan: true
+            asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
+            run_tests: true
+            enabled: ${{ needs.changes.outputs.edited == 'true' }}
+            timeout: 115
             allow_failure: false
           - name: linux-gcc-tests-codecov
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Dbuildtype=debug -Db_coverage=true -Duse_webui=true --werror
+            meson_options: -Dbuildtype=debug -Db_coverage=true --werror
             coverage: true
             enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 60
-            cflags: '-Wno-cpp'
+            cflags: "-Wno-cpp"
             allow_failure: false
           - name: capstone-v3
             os: ubuntu-20.04
@@ -121,7 +133,7 @@ jobs:
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: '-Wno-cpp'
+            cflags: "-Wno-cpp"
             allow_failure: false
           - name: capstone-next
             os: ubuntu-20.04
@@ -131,125 +143,158 @@ jobs:
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: '-Wno-cpp'
+            cflags: "-Wno-cpp"
             allow_failure: true
+          - name: no-gpl-code
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: gcc
+            meson_options: -Dbuildtype=release -Duse_gpl=false --werror
+            run_tests: false
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'gpl')) && needs.changes.outputs.edited == 'true' }}
+            timeout: 45
+            cflags: "-Wno-cpp"
+            allow_failure: false
 
     steps:
-    - uses: actions/checkout@v2
-      if: matrix.enabled
-      with:
+      - uses: actions/checkout@v2
+        if: matrix.enabled
+        with:
           fetch-depth: 2
-    - name: Install pkg-config and cabextract with Homebrew
-      if: matrix.os == 'macos-latest' && matrix.enabled
-      run: brew install pkg-config cabextract
-    - name: Install python and other dependencies
-      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
-      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
-    - name: Install meson and ninja
-      if: matrix.build_system == 'meson' && matrix.enabled
-      run: pip3 install --user meson ninja PyYAML
-    - name: Checkout rzpipe
-      if: matrix.enabled
-      uses: actions/checkout@v2
-      with:
+      - name: Install pkg-config and cabextract with Homebrew
+        if: matrix.os == 'macos-11' && matrix.enabled
+        run: brew install pkg-config cabextract
+      - name: Install python and other dependencies
+        if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-11' && matrix.enabled
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
+      - name: Install meson and ninja
+        if: matrix.build_system == 'meson' && matrix.enabled
+        run: pip3 install --user meson ninja PyYAML
+      - name: Checkout rzpipe
+        if: matrix.enabled
+        uses: actions/checkout@v2
+        with:
           repository: rizinorg/rz-pipe
           path: test/rz-pipe
-    - name: Install test dependencies
-      if: matrix.run_tests && matrix.enabled
-      run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
-    - name: Install gdbserver dependency
-      if: matrix.run_tests && matrix.enabled && (matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-20.04')
-      run: sudo apt-get --assume-yes install gdbserver
-    - name: Install clang
-      if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
-      run: sudo apt-get --assume-yes install clang
-    - name: Checkout our Testsuite Binaries
-      if: matrix.enabled
-      uses: actions/checkout@v2
-      with:
+      - name: Install test dependencies
+        if: matrix.run_tests && matrix.enabled
+        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
+      - name: Install Linux test dependencies
+        if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-11'
+        run: |
+          sudo apt-get update
+          sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev
+      - name: Install gdbserver dependency
+        if: matrix.run_tests && matrix.enabled && (matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-20.04')
+        run: sudo apt-get --assume-yes install gdbserver
+      - name: Install clang
+        if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
+        run: sudo apt-get --assume-yes install clang
+      - name: Build with Meson
+        if: matrix.build_system == 'meson' && matrix.enabled
+        run: |
+          export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+          if [ "$ASAN" == "true" ]; then
+            export CFLAGS="-DASAN=1 ${CFLAGS}"
+          fi
+          meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
+        env:
+          ASAN: ${{ matrix.asan }}
+          CC: ${{ matrix.compiler }}
+          CFLAGS: ${{ matrix.cflags }}
+      - name: Install with meson
+        if: matrix.build_system == 'meson' && matrix.enabled
+        run: |
+          # Install the rizin
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+          export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+          export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+          ninja -C build install
+      - name: Disable user authentication for debugging (MacOS)
+        if: matrix.os == 'macos-11' && matrix.enabled
+        run: |
+          security authorizationdb read system.privilege.taskport > taskport.plist
+          /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
+          sudo security authorizationdb write system.privilege.taskport < taskport.plist
+      - name: Run unit tests (meson)
+        continue-on-error: ${{ matrix.allow_failure }}
+        if: matrix.build_system == 'meson' && matrix.enabled
+        run: |
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+          export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+          export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+          if [ "$ASAN" == "true" ]; then
+            if [ "$CC" == "clang" ]; then
+              export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
+              export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
+            else
+              export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+            fi
+          fi
+          meson test -C build --suite unit
+        env:
+          ASAN: ${{ matrix.asan }}
+          ASAN_OPTIONS: ${{ matrix.asan_options }}
+          CC: ${{ matrix.compiler }}
+      - name: Checkout our Testsuite Binaries
+        if: matrix.enabled
+        uses: actions/checkout@v2
+        with:
           repository: rizinorg/rizin-testbins
           path: test/bins
-    - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
-      if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
-      uses: actions/checkout@v2
-      with:
+      - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
+        if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
+        uses: actions/checkout@v2
+        with:
           repository: rizinorg/rizin-fuzztargets
           path: test/fuzz/targets
-    - name: Build with Meson
-      if: matrix.build_system == 'meson' && matrix.enabled
-      run: |
-        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
-        if [ "$ASAN" == "true" ]; then
-          export CFLAGS="-DASAN=1 ${CFLAGS}"
-        fi
-        meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
-      env:
-        ASAN: ${{ matrix.asan }}
-        CC: ${{ matrix.compiler }}
-        CFLAGS: ${{ matrix.cflags }}
-    - name: Install with meson
-      if: matrix.build_system == 'meson' && matrix.enabled
-      run: |
-        # Install the rizin
-        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        ninja -C build install
-    - name: Disable user authentication for debugging (MacOS)
-      if: matrix.os == 'macos-latest' && matrix.enabled
-      run: |
-        security authorizationdb read system.privilege.taskport > taskport.plist
-        /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
-        sudo security authorizationdb write system.privilege.taskport < taskport.plist
-    - name: Run unit tests (meson)
-      continue-on-error: ${{ matrix.allow_failure }}
-      if: matrix.build_system == 'meson' && matrix.enabled
-      run: |
-        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        if [ "$ASAN" == "true" ]; then
-          export ASAN=1
-        fi
-        ninja -C build test
-      env:
-        ASAN: ${{ matrix.asan }}
-        ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Run tests
-      if: matrix.run_tests && matrix.enabled
-      run: |
-        # Running the test suite
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        if [ "$ASAN" == "true" ]; then
-          export ASAN=1
-        fi
-        cd test
-        rz-test -L -o results.json
-      env:
-        ASAN: ${{ matrix.asan }}
-        ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Upload coverage info
-      if: matrix.coverage == '1' && matrix.enabled
-      working-directory: build
-      run: bash <(curl -s https://codecov.io/bash) -Q github-action -n -F
-    - name: Run fuzz tests
-      if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
-      run: |
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        cd test
-        rz-test -LF bins/fuzzed @fuzz
-      env:
-        ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Upload test results
-      if: always() && matrix.run_tests && matrix.enabled
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-results-${{ matrix.name }}
-        path: test/results.json
+      - name: Run integration tests and rz-test
+        if: matrix.run_tests && matrix.enabled
+        run: |
+          # Running the test suite
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+          export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+          export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+          if [ "$ASAN" == "true" ]; then
+            if [ "$CC" == "clang" ]; then
+              export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
+              export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
+            else
+              export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+            fi
+          fi
+          meson test -C build --suite integration
+          cd test
+          rz-test -L -o results.json
+        env:
+          ASAN: ${{ matrix.asan }}
+          ASAN_OPTIONS: ${{ matrix.asan_options }}
+          CC: ${{ matrix.compiler }}
+      - name: Upload coverage info
+        if: matrix.coverage == '1' && matrix.enabled
+        working-directory: build
+        run: bash <(curl -s https://codecov.io/bash) -Q github-action -n -F
+      - name: Run fuzz tests
+        if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
+        run: |
+          export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+          export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+          export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+          if [ "$ASAN" == "true" ] && [ "$CC" == "clang" ]; then
+            export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
+          fi
+          cd test
+          rz-test -LF bins/fuzzed @fuzz
+        env:
+          ASAN: ${{ matrix.asan }}
+          ASAN_OPTIONS: ${{ matrix.asan_options }}
+          CC: ${{ matrix.compiler }}
+      - name: Upload test results
+        if: always() && matrix.run_tests && matrix.enabled
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results-${{ matrix.name }}
+          path: test/results.json
 
   build-centos7:
     name: Build on CentOS 7
@@ -257,185 +302,230 @@ jobs:
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     container: centos:7
     steps:
-    - name: Install tools
-      run: yum install -y patch unzip git gcc make python3-pip
-    - name: Install meson and ninja
-      run: pip3 install meson ninja PyYAML
-    - name: Checkout rizin
-      run: |
-        git clone https://github.com/${{ github.repository }}
-        cd rizin
-        git fetch origin ${{ github.ref }}
-        git checkout -b local_branch FETCH_HEAD
-    - name: Checkout our Testsuite Binaries
-      run: git clone https://github.com/rizinorg/rizin-testbins test/bins
-      working-directory: rizin
-    - name: Build
-      run: meson --prefix=/usr build && ninja -C build
-      working-directory: rizin
-    - name: Install
-      run: ninja -C build install
-      working-directory: rizin
-    - name: Run unit tests
-      run: ninja -C build test
-      working-directory: rizin
-    - name: Run tests
-      run: rz-test -L -o results.json || true
-      working-directory: rizin/test
+      - name: Install tools
+        run: yum install -y patch unzip git gcc make python3-pip
+      - name: Install meson and ninja
+        run: pip3 install meson ninja PyYAML
+      - name: Checkout rizin
+        run: |
+          git clone https://github.com/${{ github.repository }}
+          cd rizin
+          git fetch origin ${{ github.ref }}
+          git checkout -b local_branch FETCH_HEAD
+      - name: Checkout our Testsuite Binaries
+        run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+        working-directory: rizin
+      - name: Build
+        run: meson --prefix=/usr build && ninja -C build
+        working-directory: rizin
+      - name: Install
+        run: ninja -C build install
+        working-directory: rizin
+      - name: Run unit tests
+        run: ninja -C build test
+        working-directory: rizin
+      - name: Run tests
+        run: |
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
+        working-directory: rizin/test
 
   build-debian:
     name: Build on old Debian ${{ matrix.container }}
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     strategy:
-        matrix:
-            container:
-                - debian:wheezy
-                - debian:jessie
-                - debian:stretch
+      matrix:
+        container:
+          - debian:wheezy
+          - debian:jessie
+          - debian:stretch
 
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
 
     steps:
-    - name: Fix containers (Wheezy)
-      if: matrix.container == 'debian:wheezy'
-      run: |
+      - name: Fix containers (Wheezy)
+        if: matrix.container == 'debian:wheezy'
+        run: |
           echo "deb http://archive.debian.org/debian wheezy main" > /etc/apt/sources.list
           echo "deb http://archive.debian.org/debian-security wheezy/updates main" >> /etc/apt/sources.list
           echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
 
-    - name: Install tools
-      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
-    - name: Install Python source build dependcies
-      run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev libffi-dev tk-dev
-    - name: Install Python from source
-      run: |
-        curl -o Python-${PYVERSION}.tgz https://www.python.org/ftp/python/${PYVERSION}/Python-${PYVERSION}.tgz
-        tar -zxvf Python-${PYVERSION}.tgz
-        cd Python-${PYVERSION}/
-        ./configure
-        make install
-      env:
+      - name: Install tools
+        run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
+      - name: Install Python source build dependencies
+        run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev libffi-dev tk-dev
+      - name: Install Python from source
+        run: |
+          curl -o Python-${PYVERSION}.tgz https://www.python.org/ftp/python/${PYVERSION}/Python-${PYVERSION}.tgz
+          tar -zxvf Python-${PYVERSION}.tgz
+          cd Python-${PYVERSION}/
+          ./configure
+          make install
+        env:
           PYVERSION: 3.6.12
-    - name: Install Meson and Ninja
-      run: |
-        mkdir ${HOME}/.cache
-        chmod +w ${HOME}/.cache
-        python3 -m pip install ${TRUSTED} --upgrade pip setuptools
-        python3 -m pip install ${TRUSTED} meson ninja PyYAML
-      env:
-        TRUSTED: --trusted-host=pypi.org --trusted-host=files.pythonhosted.org
-    - name: Checkout rizin
-      run: |
-        git clone https://github.com/${{ github.repository }}
-        cd rizin
-        git fetch origin ${{ github.ref }}
-        git checkout -b local_branch FETCH_HEAD
-    - name: Checkout our Testsuite Binaries
-      run: git clone https://github.com/rizinorg/rizin-testbins test/bins
-      working-directory: rizin
-    - name: Build with Meson + Ninja
-      run: meson --prefix=/usr build && ninja -C build
-      working-directory: rizin
-    - name: Install with Ninja
-      run: ninja -C build install
-      working-directory: rizin
-    - name: Run unit tests
-      run: ninja -C build test
-      working-directory: rizin
-      env:
-        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
-    - name: Install test dependencies
-      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
-    - name: Run tests
-      # FIXME: debug tests fail on Debian for now, let's ignore all tests for the moment
-      run: |
-        rz-test -L -o results.json || true
-      working-directory: rizin/test
-      env:
-        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+      - name: Install Meson and Ninja
+        run: |
+          mkdir ${HOME}/.cache
+          chmod +w ${HOME}/.cache
+          python3 -m pip install ${TRUSTED} --upgrade pip setuptools
+          python3 -m pip install ${TRUSTED} meson ninja PyYAML
+        env:
+          TRUSTED: --trusted-host=pypi.org --trusted-host=files.pythonhosted.org
+      - name: Checkout rizin
+        run: |
+          git clone https://github.com/${{ github.repository }}
+          cd rizin
+          git fetch origin ${{ github.ref }}
+          git checkout -b local_branch FETCH_HEAD
+      - name: Checkout our Testsuite Binaries
+        run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+        working-directory: rizin
+      - name: Build with Meson + Ninja
+        run: meson --prefix=/usr build && ninja -C build
+        working-directory: rizin
+      - name: Install with Ninja
+        run: ninja -C build install
+        working-directory: rizin
+      - name: Run unit tests
+        run: ninja -C build test
+        working-directory: rizin
+        env:
+          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+      - name: Install test dependencies
+        run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+      - name: Run tests
+        # Debug tests fail on old Debian because of the runtime differences, ignore them
+        run: |
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
+        working-directory: rizin/test
+        env:
+          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+
+  build-gcc11:
+    name: Build on gcc 11
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'gcc11') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    container: ubuntu:hirsute
+    steps:
+      - name: Set timezone to UTC
+        run: ln -snf /usr/share/zoneinfo/UTC /etc/localtime && echo 'UTC' > /etc/timezone
+      - name: Install tools
+        run: apt-get update && apt-get install --yes patch unzip git gcc-11 make curl pkg-config libc6-i386 build-essential
+      - name: Install python and other dependencies
+        run: apt-get install --yes python3-wheel python3-setuptools python3-pip cabextract
+      - name: Install meson and ninja
+        run: pip3 install meson ninja PyYAML
+      - name: Checkout rizin
+        run: |
+          git clone https://github.com/${{ github.repository }}
+          cd rizin
+          git fetch origin ${{ github.ref }}
+          git checkout -b local_branch FETCH_HEAD
+      - name: Checkout our Testsuite Binaries
+        run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+        working-directory: rizin
+      - name: Build with Meson + Ninja
+        run: CC=gcc-11 meson --prefix=/usr -Dbuildtype=release --werror build && ninja -C build
+        working-directory: rizin
+      - name: Install with Ninja
+        run: ninja -C build install
+        working-directory: rizin
+      - name: Run unit tests
+        run: ninja -C build test
+        working-directory: rizin
+        env:
+          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+      - name: Install test dependencies
+        run: pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+      - name: Run tests
+        # Debug tests fail due to the runtime differences, ignore them
+        run: |
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
+        working-directory: rizin/test
+        env:
+          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
 
   build-static:
     name: Build static
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
     container:
-        image: alpine:edge
-        options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
+      image: alpine:edge
+      options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
-    - name: Install dependencies
-      run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz cabextract
-    - name: Checkout rizin
-      run: |
-        git clone https://github.com/${{ github.repository }}
-        cd rizin
-        git fetch origin ${{ github.ref }}
-        git checkout -b local_branch FETCH_HEAD
-    - name: Checkout our Testsuite Binaries
-      run: git clone https://github.com/rizinorg/rizin-testbins test/bins
-      working-directory: rizin
-    - name: Compile with meson
-      run: |
-        mkdir -p ${HOME}/rizin-static
-        meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dstatic_runtime=true -Dportable=true build
-        ninja -C build && ninja -C build install
-        tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
-      working-directory: rizin
-    - name: Run unit tests
-      run: |
-        export PATH=${HOME}/rizin-static/bin:${PATH}
-        ninja -C build test
-      working-directory: rizin
-    - name: Run tests
-      run: |
-        export PATH=${HOME}/rizin-static/bin:${PATH}
-        rizin -v
-        rz-test -v
-        cd test
-        rz-test -L -o results.json || true
-      working-directory: rizin
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-results-static
-        path: rizin/test/results.json
-    - name: Upload static build
-      uses: actions/upload-artifact@v2
-      with:
-        name: rizin-static.tar.xz
-        path: rizin/rizin-static.tar.xz
+      - name: Install dependencies
+        run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz cabextract
+      - name: Checkout rizin
+        run: |
+          git clone https://github.com/${{ github.repository }}
+          cd rizin
+          git fetch origin ${{ github.ref }}
+          git checkout -b local_branch FETCH_HEAD
+      - name: Checkout our Testsuite Binaries
+        run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+        working-directory: rizin
+      - name: Compile with meson
+        run: |
+          mkdir -p ${HOME}/rizin-static
+          meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dstatic_runtime=true -Dportable=true build
+          ninja -C build && ninja -C build install
+          tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
+        working-directory: rizin
+      - name: Run unit tests
+        run: |
+          export PATH=${HOME}/rizin-static/bin:${PATH}
+          ninja -C build test
+        working-directory: rizin
+      - name: Run tests
+        run: |
+          export PATH=${HOME}/rizin-static/bin:${PATH}
+          rizin -v
+          rz-test -v
+          cd test
+          rz-test -e db/archos -e db/cmd/cmd_pipe -L -o results.json
+        working-directory: rizin
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results-static
+          path: rizin/test/results.json
+      - name: Upload static build
+        uses: actions/upload-artifact@v2
+        with:
+          name: rizin-static.tar.xz
+          path: rizin/rizin-static.tar.xz
 
   create-tarball:
     name: Create source tarball
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
     runs-on: ubuntu-latest
     outputs:
-        version: ${{ steps.extract_version.outputs.version }}
+      version: ${{ steps.extract_version.outputs.version }}
     steps:
-    - name: Install python and other dependencies
-      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
-    - name: Download meson from git (temporary)
-      run: pip3 install --user git+https://github.com/mesonbuild/meson
-    - name: Install meson and ninja
-      run: pip3 install --user ninja PyYAML
-    - uses: actions/checkout@v2
-    - name: Extract rizin version
-      shell: bash
-      run: echo "##[set-output name=version;]$(python sys/version.py)"
-      id: extract_version
-    - name: Create archive
-      run: |
-        export PATH=${HOME}/.local/bin:${PATH}
-        meson build
-        cd build
-        meson dist --include-subprojects --no-tests
-        ls -l meson-dist
-        mv meson-dist/rizin-${{ steps.extract_version.outputs.version }}.tar.xz meson-dist/rizin-src.tar.xz
-    - uses: actions/upload-artifact@v2
-      with:
-        name: rizin-src.tar.xz
-        path: build/meson-dist/rizin-src.tar.xz
+      - name: Install python and other dependencies
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
+      - name: Download meson from git (temporary)
+        run: pip3 install --user git+https://github.com/mesonbuild/meson
+      - name: Install meson and ninja
+        run: pip3 install --user ninja PyYAML
+      - uses: actions/checkout@v2
+      - name: Extract rizin version
+        shell: bash
+        run: echo "##[set-output name=version;]$(python sys/version.py)"
+        id: extract_version
+      - name: Create archive
+        run: |
+          export PATH=${HOME}/.local/bin:${PATH}
+          meson build
+          cd build
+          meson dist --include-subprojects --no-tests
+          ls -l meson-dist
+          mv meson-dist/rizin-${{ steps.extract_version.outputs.version }}.tar.xz meson-dist/rizin-src.tar.xz
+      - uses: actions/upload-artifact@v2
+        with:
+          name: rizin-src.tar.xz
+          path: build/meson-dist/rizin-src.tar.xz
 
   test-tarball:
     name: Test source tarball
@@ -443,50 +533,60 @@ jobs:
     runs-on: ubuntu-latest
     needs: [create-tarball]
     steps:
-    - name: Install python and other dependencies
-      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
-    - name: Install meson and ninja
-      run: sudo pip3 install meson ninja PyYAML
-    - uses: actions/download-artifact@v2
-      with:
-        name: rizin-src.tar.xz
-    - name: Extract source tarball
-      run: |
+      - name: Install python and other dependencies
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
+      - name: Install meson and ninja
+        run: sudo pip3 install meson ninja PyYAML
+      - uses: actions/download-artifact@v2
+        with:
+          name: rizin-src.tar.xz
+      - name: Extract source tarball
+        run: |
           mkdir rizin && pwd && ls -l
           tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
-    - name: Install rizin
-      run: |
-        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
-        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
-      working-directory: rizin
-    - name: Check that installed rizin runs
-      run: rizin -qcq /bin/ls
-    - name: Check that libraries can be used
-      run: |
-        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
-        clang -o test test.c $(pkg-config --libs --cflags rz_util)
-        ./test
+      - name: Install rizin
+        run: |
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+          meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+        working-directory: rizin
+      - name: Check that installed rizin runs
+        run: rizin -qcq /bin/ls
+      - name: Check that libraries can be used with pkg-config
+        run: |
+          echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+          clang -o test test.c $(pkg-config --libs --cflags rz_util)
+          ./test
+      - name: Check CMake config files
+        run: |
+          cd .github/cmake_test
+          mkdir build && cd build
+          cmake ..
+          make
+          ./rizin_cmake_test
+        working-directory: rizin
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-latest
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    runs-on: macos-11
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
-    - uses: actions/checkout@v2
-    - name: Install pkg-config with Homebrew
-      run: brew install pkg-config
-    - name: Install meson and ninja
-      run: pip3 install meson ninja PyYAML
-    - name: Create OSX package
-      run: |
-        ./dist/osx/build_osx_package.sh
-        mv rizin-*.pkg rizin.pkg
-    - name: Upload .pkg file
-      uses: actions/upload-artifact@v2
-      with:
-        name: rizin.pkg
-        path: ./rizin.pkg
+      - uses: actions/checkout@v2
+      - name: Install pkg-config with Homebrew
+        run: brew install pkg-config
+      - name: Install meson and ninja
+        run: pip3 install meson ninja PyYAML
+      - name: Install ImageMagick
+        run: brew install imagemagick
+      - name: Create OSX package
+        run: |
+          ./dist/osx/build_osx_package.sh
+          mv rizin-*.pkg rizin.pkg
+      - name: Upload .pkg file
+        uses: actions/upload-artifact@v2
+        with:
+          name: rizin.pkg
+          path: ./rizin.pkg
 
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
@@ -511,27 +611,27 @@ jobs:
             meson_options: --default-library=shared
             bits: 32
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install meson ninja PyYAML
-    - name: Extract rizin version
-      shell: pwsh
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
-      id: extract_version
-    - name: Build and create zip/installer
-      shell: pwsh
-      run: .\dist\windows\build_windows_installer.ps1 ${{ matrix.name }} ${{ matrix.bits }} ${{ matrix.meson_options }}
-    - uses: actions/upload-artifact@v2
-      with:
-        name: rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-        path: .\dist\windows\Output\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-    - uses: actions/upload-artifact@v2
-      with:
-        name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
-        path: .\dist\windows\Output\rizin.exe
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install meson ninja PyYAML
+      - name: Extract rizin version
+        shell: pwsh
+        run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+        id: extract_version
+      - name: Build and create zip/installer
+        shell: pwsh
+        run: .\dist\windows\build_windows_installer.ps1 ${{ matrix.name }} ${{ matrix.bits }} ${{ matrix.meson_options }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
+          path: .\dist\windows\Output\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
+          path: .\dist\windows\Output\rizin.exe
 
   build-android:
     name: Build Android ${{ matrix.name }} package
@@ -543,64 +643,90 @@ jobs:
       matrix:
         name: [x86_64, arm, aarch64]
     steps:
-    - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
-    - name: Compile with meson
-      run: |
-        export PATH=${HOME}/.local/bin:${PATH}
-        meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
-        ninja -C build && ninja -C build install
-    - name: Create rizin-android-${{ matrix.name }}.tar.gz
-      run: |
-        cd /tmp
-        rm -rf android-dir/include android-dir/lib
-        tar --transform 's/android-dir/data\/data\/org.rizinorg.rizininstaller/g' -cvzf rizin-android-${{ matrix.name }}.tar.gz android-dir/
-    - uses: actions/upload-artifact@v2
-      with:
-        name: rizin-android-${{ matrix.name }}
-        path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+      - name: Compile with meson
+        run: |
+          export PATH=${HOME}/.local/bin:${PATH}
+          meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+          ninja -C build && ninja -C build install
+      - name: Create rizin-android-${{ matrix.name }}.tar.gz
+        run: |
+          cd /tmp
+          rm -rf android-dir/include android-dir/lib
+          tar --transform 's/android-dir/data\/data\/org.rizinorg.rizininstaller/g' -cvzf rizin-android-${{ matrix.name }}.tar.gz android-dir/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: rizin-android-${{ matrix.name }}
+          path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
 
-#  build-extras:
-#    name: Build rizin extras and rzpipe
-#    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
-#    needs: [test-tarball]
-#    runs-on: ubuntu-latest
-#    env:
-#      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
-#      RZPIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
-#    steps:
-#    - uses: actions/download-artifact@v2
-#      with:
-#        name: rizin-src.tar.xz
-#        path: ./
-#    - name: Extract source tarball
-#      run: mkdir rizin && tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
-#    - name: Install dependencies
-#      run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
-#    - name: Install rizin
-#      run: |
-#        export PATH=$PATH:/usr/local/bin
-#        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
-#      working-directory: rizin
-#    - name: Init rz-pm
-#      run: rz-pm init && rz-pm update
-#    - name: Compile and install plugins
-#      run: |
-#        set -e
-#        for p in $TESTS ; do
-#          echo $p
-#          rz-pm -i $p
-#        done
-#        set +e
-#    - name: Compile and install rzpipe
-#      run: |
-#        set -e
-#        for p in $RZPIPE_TESTS ; do
-#          echo $p
-#          rz-pm -i $p
-#        done
-#        set +e
+  build-cpp:
+    name: Include Rizin headers from C++ program
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
+      - name: Install meson and ninja
+        run: sudo pip3 install meson ninja PyYAML
+      - name: Compile & Install Rizin
+        run: |
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+          meson --buildtype release --prefix=/usr build
+          ninja -C build && sudo ninja -C build install
+      - name: Compile C++ test
+        run: |
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+          meson --prefix=/usr build-cpp-test ./test/unit/cpp
+          meson compile -C build-cpp-test
+      - name: Run C++ test
+        run: |
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+          meson test -C build-cpp-test --print-errorlogs
+
+  #  build-extras:
+  #    name: Build rizin extras and rzpipe
+  #    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+  #    needs: [test-tarball]
+  #    runs-on: ubuntu-latest
+  #    env:
+  #      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
+  #      RZPIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
+  #    steps:
+  #    - uses: actions/download-artifact@v2
+  #      with:
+  #        name: rizin-src.tar.xz
+  #        path: ./
+  #    - name: Extract source tarball
+  #      run: mkdir rizin && tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
+  #    - name: Install dependencies
+  #      run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+  #    - name: Install rizin
+  #      run: |
+  #        export PATH=$PATH:/usr/local/bin
+  #        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+  #      working-directory: rizin
+  #    - name: Init rz-pm
+  #      run: rz-pm init && rz-pm update
+  #    - name: Compile and install plugins
+  #      run: |
+  #        set -e
+  #        for p in $TESTS ; do
+  #          echo $p
+  #          rz-pm -i $p
+  #        done
+  #        set +e
+  #    - name: Compile and install rzpipe
+  #      run: |
+  #        set -e
+  #        for p in $RZPIPE_TESTS ; do
+  #          echo $p
+  #          rz-pm -i $p
+  #        done
+  #        set +e
 
   build-rzpipe:
     name: Build rizin rzpipe
@@ -608,32 +734,32 @@ jobs:
     needs: [test-tarball]
     runs-on: ubuntu-latest
     env:
-      RZPIPE_TESTS: 'rz-pipe-py rz-pipe-go'
+      RZPIPE_TESTS: "rz-pipe-py rz-pipe-go"
     steps:
-    - uses: actions/download-artifact@v2
-      with:
-        name: rizin-src.tar.xz
-    - name: Extract source tarball
-      run: |
+      - uses: actions/download-artifact@v2
+        with:
+          name: rizin-src.tar.xz
+      - name: Extract source tarball
+        run: |
           mkdir rizin && pwd && ls -l
           tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
-    - name: Install dependencies
-      run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
-    - name: Install rizin
-      run: |
-        export PATH=$PATH:/usr/local/bin
-        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
-      working-directory: rizin
-    - name: Init rz-pm
-      run: rz-pm init && rz-pm update
-    - name: Compile and install rzpipe
-      run: |
-        set -e
-        for p in $RZPIPE_TESTS ; do
-          echo $p
-          rz-pm -i $p
-        done
-        set +e
+      - name: Install dependencies
+        run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+      - name: Install rizin
+        run: |
+          export PATH=$PATH:/usr/local/bin
+          meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+        working-directory: rizin
+      - name: Init rz-pm
+        run: rz-pm init && rz-pm update
+      - name: Compile and install rzpipe
+        run: |
+          set -e
+          for p in $RZPIPE_TESTS ; do
+            echo $p
+            rz-pm -i $p
+          done
+          set +e
 
   test-osx-pkg:
     name: Test OSX pkg
@@ -641,25 +767,25 @@ jobs:
       matrix:
         system:
           - macos-latest
-          - macos-11.0
+          - macos-11
     runs-on: ${{ matrix.system }}
     needs: [build-osx-pkg]
     steps:
-    - name: Install pkg-config with Homebrew
-      run: brew install pkg-config
-    - uses: actions/download-artifact@v2
-      with:
-        name: rizin.pkg
-        path: ./
-    - name: Install rizin.pkg
-      run: sudo installer -pkg ./rizin.pkg -target /
-    - name: Check that installed rizin runs
-      run: rizin -qcq /bin/ls
-    - name: Check that libraries can be used
-      run: |
-        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
-        clang -o test test.c $(pkg-config --libs --cflags rz_util)
-        ./test
+      - name: Install pkg-config with Homebrew
+        run: brew install pkg-config
+      - uses: actions/download-artifact@v2
+        with:
+          name: rizin.pkg
+          path: ./
+      - name: Install rizin.pkg
+        run: sudo installer -pkg ./rizin.pkg -target /
+      - name: Check that installed rizin runs
+        run: rizin -qcq /bin/ls
+      - name: Check that libraries can be used
+        run: |
+          echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+          clang -o test test.c $(pkg-config --libs --cflags rz_util)
+          ./test
 
   test-windows-clang_cl:
     name: Test Windows installer built with ${{ matrix.name }}
@@ -674,147 +800,170 @@ jobs:
           - name: clang_cl_x86
             bits: 32
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - name: Install pkg-config
-      shell: pwsh
-      run: choco install -y pkgconfiglite
-    - name: Extract rizin version
-      shell: pwsh
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
-      id: extract_version
-    - uses: actions/download-artifact@v2
-      with:
-        name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
-        path: ./
-    - name: Install rizin.exe
-      shell: pwsh
-      run: Start-Process -Wait -FilePath .\rizin.exe -ArgumentList "/SP- /SILENT /CURRENTUSER" -PassThru
-    - name: Check that installed rizin runs
-      shell: pwsh
-      run: ~\AppData\Local\Programs\rizin\bin\rizin.exe -qcq .\rizin.exe
-    - name: Check that libraries can be used
-      shell: pwsh
-      run: |
-        .\dist\windows\vsdevenv.ps1 ${{ matrix.bits }}
-        $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\rizin\bin"
-        $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib\pkgconfig"
-        $env:PKG_CONFIG_PATH
-        pkg-config --list-all
-        echo "#include <rz_util.h>`nint main(int argc, char **argv) { return rz_str_newf (`"%s`", argv[0]) != NULL? 0: 1; }" > test.c
-        cl -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz\sdb /Fetest.exe test.c /link /libpath:C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib rz_util.lib
-        .\test.exe
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install pkg-config and cmake
+        shell: pwsh
+        run: choco install -y cmake pkgconfiglite
+      - name: Extract rizin version
+        shell: pwsh
+        run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+        id: extract_version
+      - uses: actions/download-artifact@v2
+        with:
+          name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
+          path: ./
+      - name: Install rizin.exe
+        shell: pwsh
+        run: Start-Process -Wait -FilePath .\rizin.exe -ArgumentList "/SP- /SILENT /CURRENTUSER" -PassThru
+      - name: Check that installed rizin runs
+        shell: pwsh
+        run: ~\AppData\Local\Programs\rizin\bin\rizin.exe -qcq .\rizin.exe
+      - name: Check that libraries can be used with pkg-config
+        shell: pwsh
+        run: |
+          .\dist\windows\vsdevenv.ps1 ${{ matrix.bits }}
+          $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\rizin\bin"
+          $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib\pkgconfig"
+          $env:PKG_CONFIG_PATH
+          pkg-config --list-all
+          echo "#include <rz_util.h>`nint main(int argc, char **argv) { return rz_str_newf (`"%s`", argv[0]) != NULL? 0: 1; }" > test.c
+          cl -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz\sdb /Fetest.exe test.c /link /libpath:C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib rz_util.lib
+          .\test.exe
+      - name: Check CMake config files
+        shell: pwsh
+        run: |
+          .\dist\windows\vsdevenv.ps1 ${{ matrix.bits }}
+          $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\rizin\bin"
+          $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib\pkgconfig"
+          $env:PKG_CONFIG_PATH
+          cd .github/cmake_test
+          mkdir build && cd build
+          cmake -G Ninja ..
+          ninja
+          .\rizin_cmake_test
 
   create-release:
     name: Create draft release and upload artifacts
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable')
-    needs: [
-      build-and-test,
-      build-centos7,
-      build-debian,
-      build-static,
-      build-android,
-      test-osx-pkg,
-      test-windows-clang_cl,
-      build-rzpipe
-    ]
+    needs:
+      [
+        build-and-test,
+        build-centos7,
+        build-debian,
+        build-static,
+        build-android,
+        build-cpp,
+        test-osx-pkg,
+        test-windows-clang_cl,
+        build-rzpipe,
+      ]
     steps:
-    - uses: actions/checkout@v2
-    - name: Extract rizin version
-      shell: bash
-      run: echo "##[set-output name=branch;]$(python sys/version.py)"
-      id: extract_version
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
+      - uses: actions/checkout@v2
+      - name: Extract rizin version
+        shell: bash
+        run: echo "##[set-output name=branch;]$(python sys/version.py)"
+        id: extract_version
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
           tag_name: ${{ steps.extract_version.outputs.branch }}
           release_name: Release ${{ steps.extract_version.outputs.branch }}
           draft: true
           prerelease: false
-    - uses: actions/download-artifact@v2
-    - name: Display structure of downloaded files
-      run: ls -R
-    - name: Upload rizin src tarball
-      uses: actions/upload-release-asset@v1
-      env:
+      - uses: actions/download-artifact@v2
+      - name: Display structure of downloaded files
+        run: ls -R
+      - name: Upload rizin src tarball
+        uses: actions/upload-release-asset@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin-src.tar.xz/rizin-src.tar.xz
           asset_name: rizin-src-${{ steps.extract_version.outputs.branch }}.tar.xz
           asset_content_type: application/zip
-    - name: Upload rizin static x86_64 tar.gz
-      uses: actions/upload-release-asset@v1
-      env:
+      - name: Upload rizin static x86_64 tar.gz
+        uses: actions/upload-release-asset@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin-static.tar.xz/rizin-static.tar.xz
           asset_name: rizin-${{ steps.extract_version.outputs.branch }}-static-x86_64.tar.xz
           asset_content_type: application/zip
-    - name: Upload rizin android x86_64 tar.gz
-      uses: actions/upload-release-asset@v1
-      env:
+      - name: Upload rizin android x86_64 tar.gz
+        uses: actions/upload-release-asset@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin-android-x86_64/rizin-android-x86_64.tar.gz
           asset_name: rizin-${{ steps.extract_version.outputs.branch }}-android-x86_64.tar.gz
           asset_content_type: application/zip
-    - name: Upload rizin android arm tar.gz
-      uses: actions/upload-release-asset@v1
-      env:
+      - name: Upload rizin android arm tar.gz
+        uses: actions/upload-release-asset@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin-android-arm/rizin-android-arm.tar.gz
           asset_name: rizin-${{ steps.extract_version.outputs.branch }}-android-arm.tar.gz
           asset_content_type: application/zip
-    - name: Upload rizin android aarch64 tar.gz
-      uses: actions/upload-release-asset@v1
-      env:
+      - name: Upload rizin android aarch64 tar.gz
+        uses: actions/upload-release-asset@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin-android-aarch64/rizin-android-aarch64.tar.gz
           asset_name: rizin-${{ steps.extract_version.outputs.branch }}-android-aarch64.tar.gz
           asset_content_type: application/zip
-    - name: Upload rizin OSX pkg
-      uses: actions/upload-release-asset@v1
-      env:
+      - name: Upload rizin OSX pkg
+        uses: actions/upload-release-asset@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin.pkg/rizin.pkg
           asset_name: rizin-macos-${{ steps.extract_version.outputs.branch }}.pkg
           asset_content_type: application/zip
-    - name: Upload rizin windows archive
-      uses: actions/upload-release-asset@v1
-      env:
+      - name: Upload rizin windows archive
+        uses: actions/upload-release-asset@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip/rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip
           asset_name: rizin-windows-static-${{ steps.extract_version.outputs.branch }}.zip
           asset_content_type: application/zip
-    - name: Upload rizin windows installer (x64)
-      uses: actions/upload-release-asset@v1
-      env:
+      - name: Upload rizin windows dynamic archive
+        uses: actions/upload-release-asset@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./rizin-clang_cl-${{ steps.extract_version.outputs.branch }}.zip/rizin-clang_cl-${{ steps.extract_version.outputs.branch }}.zip
+          asset_name: rizin-windows-shared64-${{ steps.extract_version.outputs.branch }}.zip
+          asset_content_type: application/zip
+      - name: Upload rizin windows installer (x64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin_installer-clang_cl-${{ steps.extract_version.outputs.branch }}/rizin.exe
           asset_name: rizin_installer-${{ steps.extract_version.outputs.branch }}-x86_64.exe
           asset_content_type: application/zip
-    - name: Upload rizin windows installer (x86)
-      uses: actions/upload-release-asset@v1
-      env:
+      - name: Upload rizin windows installer (x86)
+        uses: actions/upload-release-asset@v1
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
+        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin_installer-clang_cl_x86-${{ steps.extract_version.outputs.branch }}/rizin.exe
           asset_name: rizin_installer-${{ steps.extract_version.outputs.branch }}-x86.exe
@@ -826,34 +975,34 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
-    - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson
-    - name: Download subprojects
-      run: |
-        export PATH=${HOME}/.local/bin:${PATH}
-        meson subprojects download
-    - name: Login to DockerHub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    - name: Docker meta
-      id: docker_meta
-      uses: crazy-max/ghaction-docker-meta@v1
-      with:
-        images: ${{ secrets.DOCKERHUB_USERNAME }}/rizin
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-    - name: Publish to Registry
-      id: docker_build
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile
-        platforms: linux/amd64,linux/arm64,linux/386
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.docker_meta.outputs.tags }}
-        labels: ${{ steps.docker_meta.outputs.labels }}
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson
+      - name: Download subprojects
+        run: |
+          export PATH=${HOME}/.local/bin:${PATH}
+          meson subprojects download
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v1
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/rizin
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Publish to Registry
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/386
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}

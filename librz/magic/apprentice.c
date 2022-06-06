@@ -47,6 +47,7 @@
 #endif
 
 #ifdef _MSC_VER
+#include <rz_windows.h>
 #include <sys\stat.h>
 #define S_ISREG(m) (((m)&S_IFMT) == S_IFREG)
 #define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
@@ -219,7 +220,7 @@ static int apprentice_1(RzMagic *ms, const char *fn, int action, struct mlist *m
 	}
 
 	if ((rv = apprentice_map(ms, &magic, &nmagic, fn)) == -1) {
-		//if (ms->flags & RZ_MAGIC_CHECK)
+		// if (ms->flags & RZ_MAGIC_CHECK)
 		//	file_magwarn(ms, "using regular magic file `%s'", fn);
 		rv = apprentice_load(ms, &magic, &nmagic, fn, action);
 		if (rv != 0) {
@@ -655,7 +656,7 @@ static int apprentice_load(RzMagic *ms, struct rz_magic **magicp, ut32 *nmagicp,
 				if (stat(subfn, &st) == 0 && S_ISREG(st.st_mode)) {
 					load_1(ms, action, subfn, &errs, &marray, &marraycount);
 				}
-				//else perror (subfn);
+				// else perror (subfn);
 			}
 			closedir(dir);
 		} else {
@@ -1317,7 +1318,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 	/*
 	 * We only do this check while compiling, or if any of the magic
 	 * files were not compiled.
-         */
+	 */
 	if (ms->flags & RZ_MAGIC_CHECK) {
 		if (check_format(ms, m) == -1) {
 			return -1;
@@ -1860,7 +1861,7 @@ static int apprentice_map(RzMagic *ms, struct rz_magic **magicp, ut32 *nmagicp, 
 	}
 
 #if QUICK
-	if ((mm = mmap(0, (size_t)st.st_size, PROT_READ, //OPENBSDBUG  |PROT_WRITE,
+	if ((mm = mmap(0, (size_t)st.st_size, PROT_READ, // OPENBSDBUG  |PROT_WRITE,
 		     MAP_PRIVATE | MAP_FILE, fd, (off_t)0)) == MAP_FAILED) {
 		file_error(ms, errno, "cannot map `%s'", dbname);
 		goto error1;
@@ -1884,7 +1885,7 @@ static int apprentice_map(RzMagic *ms, struct rz_magic **magicp, ut32 *nmagicp, 
 
 	if (*ptr != MAGICNO) {
 		if (swap4(*ptr) != MAGICNO) {
-			//OPENBSDBUG file_error(ms, 0, "bad magic in `%s'");
+			// OPENBSDBUG file_error(ms, 0, "bad magic in `%s'");
 			file_error(ms, 0, "bad magic in `%s'", dbname);
 			goto error1;
 		}

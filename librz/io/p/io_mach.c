@@ -38,7 +38,7 @@ static int __get_pid(RzIODesc *desc);
 #define MACH_ERROR_STRING(ret) \
 	(mach_error_string(ret) ? mach_error_string(ret) : "(unknown)")
 
-#define RZ_MACH_MAGIC rz_str_hash("mach")
+#define RZ_MACH_MAGIC rz_str_djb2_hash("mach")
 
 typedef struct {
 	task_t task;
@@ -76,7 +76,7 @@ static task_t task_for_pid_workaround(int pid) {
 	kr = host_processor_set_priv(myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
 		//		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
-		//mach_error ("host_processor_set_priv",kr);
+		// mach_error ("host_processor_set_priv",kr);
 		return MACH_PORT_NULL;
 	}
 	numTasks = 0;
@@ -125,8 +125,8 @@ static task_t pid_to_task(RzIODesc *fd, int pid) {
 		if (old_pid == pid) {
 			return old_task;
 		}
-		//we changed the process pid so deallocate a ref from the old_task
-		//since we are going to get a new task
+		// we changed the process pid so deallocate a ref from the old_task
+		// since we are going to get a new task
 		kr = mach_port_deallocate(mach_task_self(), old_task);
 		if (kr != KERN_SUCCESS) {
 			eprintf("pid_to_task: fail to deallocate port\n");
@@ -139,8 +139,8 @@ static task_t pid_to_task(RzIODesc *fd, int pid) {
 		if (task == MACH_PORT_NULL) {
 			task = task_for_pid_ios9pangu(pid);
 			if (task != MACH_PORT_NULL) {
-				//eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-				//eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
+				// eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
+				// eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
 				return -1;
 			}
 		}
@@ -218,7 +218,7 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 	if (!io || !desc || !buf || !dd) {
 		return -1;
 	}
-	if (dd->magic != rz_str_hash("mach")) {
+	if (dd->magic != rz_str_djb2_hash("mach")) {
 		return -1;
 	}
 	memset(buf, 0xff, len);
@@ -238,13 +238,13 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 	}
 	while (copied < len) {
 		blen = RZ_MIN((len - copied), blocksize);
-		//blen = len;
+		// blen = len;
 		err = vm_read_overwrite(task,
 			(ut64)io->off + copied, blen,
 			(pointer_t)buf + copied, &size);
 		switch (err) {
 		case KERN_PROTECTION_FAILURE:
-			//eprintf ("rz_io_mach_read: kern protection failure.\n");
+			// eprintf ("rz_io_mach_read: kern protection failure.\n");
 			break;
 		case KERN_INVALID_ADDRESS:
 			if (blocksize == 1) {
@@ -420,7 +420,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	riom->task = task;
-	iodd->magic = rz_str_hash("mach");
+	iodd->magic = rz_str_djb2_hash("mach");
 	iodd->data = riom;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
 	pidpath = pid
@@ -503,7 +503,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		int pid = -1;
 		if (*pidstr) {
 			pid = __get_pid(fd);
-			//return NULL;
+			// return NULL;
 		} else {
 			eprintf("%d\n", iodd->pid);
 			return NULL;

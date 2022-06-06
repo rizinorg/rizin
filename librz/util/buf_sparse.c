@@ -98,7 +98,7 @@ static st64 sparse_write(SparsePriv *priv, ut64 addr, const ut8 *data, ut64 len)
 	c->data = newbuf;
 	c->to = newto;
 	memcpy(c->data + (addr - c->from), data, len);
-	if (in_end_chunk) {
+	if (in_end_chunk && in_end_chunk != c) {
 		memcpy(c->data + (addr - c->from) + len,
 			in_end_chunk->data + (addr + len - in_end_chunk->from),
 			in_end_chunk->to - (addr + len) + 1);
@@ -128,6 +128,9 @@ static bool buf_sparse_init(RzBuffer *b, const void *user) {
 	if (user) {
 		SparseInitConfig *cfg = (void *)user;
 		priv->base = cfg->base;
+		if (priv->base) {
+			rz_buf_ref(priv->base);
+		}
 		priv->write_mode = cfg->write_mode;
 	} else {
 		priv->write_mode = RZ_BUF_SPARSE_WRITE_MODE_SPARSE;
@@ -141,6 +144,7 @@ static bool buf_sparse_init(RzBuffer *b, const void *user) {
 static bool buf_sparse_fini(RzBuffer *b) {
 	struct buf_sparse_priv *priv = get_priv_sparse(b);
 	rz_vector_fini(&priv->chunks);
+	rz_buf_free(priv->base);
 	RZ_FREE(b->priv);
 	return true;
 }
@@ -186,6 +190,12 @@ static ut64 buf_sparse_size(RzBuffer *b) {
 	SparsePriv *priv = get_priv_sparse(b);
 	ut64 max;
 	ut64 r = sparse_limits(priv, &max) ? max : 0;
+	if (priv->base) {
+		ut64 base_sz = rz_buf_size(priv->base);
+		if (base_sz > r) {
+			r = base_sz;
+		}
+	}
 	return r;
 }
 

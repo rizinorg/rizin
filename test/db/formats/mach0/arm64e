@@ -1,7 +1,7 @@
 NAME=macOS arm64
 FILE=bins/mach0/hello-macos-arm64
 CMDS=<<EOF
-om
+oml
 ?e --
 ?e regular got
 pxQ 0x28 @ 0x100008000
@@ -16,7 +16,7 @@ pxr 0x18 @ sym._fcns
 px 8 @ reloc._objc_empty_cache
 EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x100000000 - 0x100003fff r-x fmap.__TEXT
+ 1 fd: 3 +0x00000000 0x100000000 * 0x100003fff r-x fmap.__TEXT
  2 fd: 3 +0x00004000 0x100004000 - 0x100007fff r-- fmap.__DATA_CONST
  3 fd: 3 +0x00008000 0x100008000 - 0x10000bfff r-- fmap.__DATA
  4 fd: 3 +0x0000c000 0x10000c000 - 0x10000ffff r-- fmap.__LINKEDIT
@@ -47,7 +47,7 @@ RUN
 NAME=macOS arm64e with BIND_OPCODE_THREADED
 FILE=bins/mach0/hello-macos-arm64e
 CMDS=<<EOF
-om
+oml
 ?e --
 ?e __auth_got (auth, bind)
 pxQ 0x28 @ 0x100004000
@@ -62,7 +62,7 @@ pxr 0x18 @ sym._fcns
 px 8 @ reloc._objc_empty_cache
 EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x100000000 - 0x100003fff r-x fmap.__TEXT
+ 1 fd: 3 +0x00000000 0x100000000 * 0x100003fff r-x fmap.__TEXT
  2 fd: 4 +0x00004000 0x100004000 - 0x100007fff r-- vmap.__DATA_CONST
  3 fd: 4 +0x00008000 0x100008000 - 0x10000bfff r-- vmap.__DATA
  4 fd: 3 +0x0000c000 0x10000c000 - 0x10000ffff r-- fmap.__LINKEDIT
@@ -87,5 +87,69 @@ local fcn ptr (auth, !bind)
 global (!auth, bind)
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x100008108  0400 0000 0000 1040                      .......@
+EOF
+RUN
+
+NAME=macOS arm64 with DYLD_CHAINED_PTR_64_OFFSET
+FILE=bins/mach0/hello-macos-arm64-chained
+CMDS=<<EOF
+p8 8 @ 0x100004028
+p8 8 @ 0x100004038
+pxr 8 @ 0x100004038
+ic
+icm
+icf
+EOF
+EXPECT=<<EOF
+0500000000002080
+643e000001000000
+0x100004038 0x0000000100003e64   d>...... 4294983268 3.__TEXT.__cstring str.static_method_called,section.3.__TEXT.__cstring R X 'invalid' static method called
+address     min         max         name super 
+-----------------------------------------------
+0x1000080f8 0x100003a7c 0x100003be0 Test 
+address     index class flags name                         
+-----------------------------------------------------------
+0x100003a7c 0     Test        init
+0x100003acc 1     Test        methodWithoutArgs
+0x100003b18 2     Test        methodWithOneArg:
+0x100003b68 3     Test        methodWithTwoArgs:secondArg:
+0x100003be0 4     Test        methodWithReturn
+0x100003aa0 5     Test  c     someStaticMethod
+address     index class flags name                  type                
+------------------------------------------------------------------------
+0x00000000  0     Test        isa                   struct objc_class *
+0x1000080f0 1     Test        Test::(ivar)someField i
+EOF
+RUN
+
+NAME=macOS arm64e with DYLD_CHAINED_PTR_ARM64E_USERLAND24
+FILE=bins/mach0/hello-macos-arm64e-userland24 
+CMDS=<<EOF
+p8 8 @ 0x100004020
+p8 8 @ 0x100008020
+p8 8 @ 0x1000080c8
+ic
+icm
+icf
+EOF
+EXPECT=<<EOF
+04000000000009c0
+083e000001000000
+033f000001000000
+address     min         max         name super 
+-----------------------------------------------
+0x1000080f8 0x100003a4c 0x100003bc0 Test 
+address     index class flags name                         
+-----------------------------------------------------------
+0x100003a4c 0     Test        init
+0x100003aa0 1     Test        methodWithoutArgs
+0x100003af0 2     Test        methodWithOneArg:
+0x100003b44 3     Test        methodWithTwoArgs:secondArg:
+0x100003bc0 4     Test        methodWithReturn
+0x100003a70 5     Test  c     someStaticMethod
+address     index class flags name                  type                
+------------------------------------------------------------------------
+0x00000000  0     Test        isa                   struct objc_class *
+0x1000080f0 1     Test        Test::(ivar)someField i
 EOF
 RUN

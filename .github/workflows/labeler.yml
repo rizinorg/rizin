@@ -1,14 +1,15 @@
 name: "Pull Request Labeler"
 on:
-  schedule:
-    - cron: '*/30 * * * *'
+- pull_request_target
 
 jobs:
   triage:
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-    - uses: paulfantom/periodic-labeler@v0.0.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        LABEL_MAPPINGS_FILE: .github/labeler.yml
+    - uses: actions/labeler@v4
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+  

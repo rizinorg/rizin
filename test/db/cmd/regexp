@@ -2,7 +2,7 @@ NAME=/e /test/i
 FILE=malloc://1024
 CMDS=<<EOF
 w test
-w Test@444
+w Test@ 444
 ?e
 e search.in=block
 b 777
@@ -29,30 +29,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME="/e /t\wst\d\d\d\s\w\w/i" - oldshell
-FILE=malloc://1024
-CMDS=<<EOF
-cfg.oldshell=true
-w "test123 ab"
-w "Test123 ab" @444
-?e
-e search.in=block
-b 777
-"/e /t\wst\d\d\d\s\w\w/i"
-EOF
-EXPECT=<<EOF
-
-0x00000000 hit0_0 "test123 ab"
-0x000001bc hit0_1 "Test123 ab"
-EOF
-RUN
-
 NAME="/e /t\wst\d\d\d\s\w\w/i" - rzshell
-ARGS=-ecfg.oldshell=false
 FILE=malloc://1024
 CMDS=<<EOF
 w '"test123 ab"'
-w '"Test123 ab"' @444
+w '"Test123 ab"' @ 444
 ?e
 e search.in=block
 b 777

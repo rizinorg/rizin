@@ -36,7 +36,7 @@
  * controled by the nullification bit, and conditional, which depends
  * on the direction of the branch and its success or failure.
  *
- * NONE is unfortunately #defined in the hiux system include files.  
+ * NONE is unfortunately #defined in the hiux system include files.
  * #undef it away.
  */
 #undef NONE
@@ -108,7 +108,7 @@ Also these:
    .    2 bit shift amount at 25
    *    4 bit shift amount at 25
    p    5 bit shift count at 26 (to support the SHD instruction) encoded as
-        31-p
+	31-p
    ~    6 bit shift count at 20,22:26 encoded as 63-~.
    P    5 bit bit position at 26
    q    6 bit bit position at 20,22:26
@@ -123,21 +123,21 @@ Also these:
 
    v    3 bit Special Function Unit identifier at 25
    O    20 bit Special Function Unit operation split between 15 bits at 20
-        and 5 bits at 31
+	and 5 bits at 31
    o    15 bit Special Function Unit operation at 20
    2    22 bit Special Function Unit operation split between 17 bits at 20
-        and 5 bits at 31
+	and 5 bits at 31
    1    15 bit Special Function Unit operation split between 10 bits at 20
-        and 5 bits at 31
+	and 5 bits at 31
    0    10 bit Special Function Unit operation split between 5 bits at 20
-        and 5 bits at 31
+	and 5 bits at 31
    u    3 bit coprocessor unit identifier at 25
    F    Source Floating Point Operand Format Completer encoded 2 bits at 20
    I    Source Floating Point Operand Format Completer encoded 1 bits at 20
 	(for 0xe format FP instructions)
    G    Destination Floating Point Operand Format Completer encoded 2 bits at 18
    H    Floating Point Operand Format at 26 for 'fmpyadd' and 'fmpysub'
-        (very similar to 'F')
+	(very similar to 'F')
 
    r	5 bit immediate value at 31 (for the break instruction)
 	(very similar to V above, except the value is unsigned instead of
@@ -147,7 +147,7 @@ Also these:
    U	10 bit immediate value at 15 (for SSM, RSM on pa2.0)
    Q	5 bit immediate value at 10 (a bit position specified in
 	the bb instruction. It's the same as r above, except the
-        value is in a different location)
+	value is in a different location)
    B	5 bit immediate value at 10 (a bit position specified in
 	the bb instruction. Similar to Q, but 64 bit handling is
 	different.
@@ -175,12 +175,12 @@ Completer operands all have 'c' as the prefix:
 	after in disassembler.
    cm   short load and store completer.
    cM   short load and store completer.  Like cm, but emits a space
-        after in disassembler.
+	after in disassembler.
    cq   long load and store completer (like cm, but inserted into a
 	different location in the target instruction).
    cs   store bytes short completer.
    cA   store bytes short completer.  Like cs, but emits a space
-        after in disassembler.
+	after in disassembler.
    ce   long load/store completer for LDW/STW with a different encoding
 	than the others
    cc   load cache control hint
@@ -242,7 +242,7 @@ Condition operands all have '?' as the prefix:
    ?x   shift/extract/deposit conditions
    ?X	64 bit shift/extract/deposit conditions
    ?y   shift/extract/deposit conditions followed by nullify for conditional
-        branches
+	branches
 
    ?u   unit conditions
    ?U   64 bit unit conditions
@@ -259,7 +259,7 @@ Floating point registers all have 'f' as a prefix:
    fC   operand 3 register with L/R halves at 16:18,21:23
    fe   Like fT, but encoding is different.
    fE   Same as fe, except prints a space before register during disasm.
-   fx	target register at 15 (only for PA 2.0 long format FLDD/FSTD). 
+   fx	target register at 15 (only for PA 2.0 long format FLDD/FSTD).
 
 Float registers for fmpyadd and fmpysub:
 

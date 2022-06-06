@@ -137,21 +137,27 @@ commands:
               - RZ_OUTPUT_MODE_JSON
             args: []
   - name: iD
-    cname: cmd_info_demangle
     summary: Demangle symbol for given language
-    args:
-      - name: lang
-        type: RZ_CMD_ARG_TYPE_CHOICES
-        choices:
-          - c++
-          - java
-          - objc
-          - swift
-          - dlang
-          - msvc
-          - rust
-      - name: symbol
-        type: RZ_CMD_ARG_TYPE_STRING
+    subcommands:
+      - name: iD
+        cname: cmd_info_demangle
+        summary: Demangle symbol for given language
+        args:
+          - name: lang
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices_cb: rz_cmd_info_demangle_lang_choices
+          - name: symbol
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: iDl
+        summary: Lists the available demanglers
+        cname: cmd_info_demangle_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
   - name: ie
     cname: cmd_info_entry
     summary: List entrypoints
@@ -296,8 +302,13 @@ commands:
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
       - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_STANDARD
-    args: []
+    args:
+      - name: digests
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
   - name: is
     cname: cmd_info_symbols
     summary: List symbols
@@ -359,6 +370,15 @@ commands:
         type: RZ_CMD_ARG_TYPE_STRING
         flags: RZ_CMD_ARG_FLAG_ARRAY
         optional: true
+  - name: iSS.
+    cname: cmd_info_cur_segment
+    summary: Current segment
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+    args: []
   - name: it
     cname: cmd_info_hashes
     summary: Show file hashes
@@ -428,16 +448,6 @@ commands:
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_QUIETEST
-    args: []
-  - name: izzz
-    cname: cmd_info_dump_strings
-    summary: Dump Strings from whole binary to rizin shell (for huge files)
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_TABLE
-    modes:
-      - RZ_OUTPUT_MODE_TABLE
-      - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
     args: []
   - name: iz-
     cname: cmd_info_purge_string

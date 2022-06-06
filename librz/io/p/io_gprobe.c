@@ -23,10 +23,8 @@
 #endif
 
 #if __WINDOWS__
-#include <cfgmgr32.h>
-#include <setupapi.h>
+#include <rz_windows.h>
 #include <tchar.h>
-#include <windows.h>
 #else
 
 #if __linux__ || __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__

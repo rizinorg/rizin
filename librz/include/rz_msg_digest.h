@@ -67,6 +67,7 @@ RZ_API RZ_OWN char *rz_msg_digest_get_result_string(RZ_NONNULL RzMsgDigest *md, 
 RZ_API RzMsgDigestSize rz_msg_digest_size(RZ_NONNULL RzMsgDigest *md, RZ_NONNULL const char *name);
 RZ_API RZ_OWN ut8 *rz_msg_digest_calculate_small_block(RZ_NONNULL const char *name, RZ_NONNULL const ut8 *buffer, ut64 bsize, RZ_NONNULL RzMsgDigestSize *osize);
 RZ_API RZ_OWN char *rz_msg_digest_calculate_small_block_string(RZ_NONNULL const char *name, RZ_NONNULL const ut8 *buffer, ut64 bsize, RZ_NULLABLE ut32 *size, bool invert);
+RZ_API RZ_OWN char *rz_msg_digest_randomart(RZ_NONNULL const ut8 *buffer, ut32 length, ut64 address);
 
 #endif
 

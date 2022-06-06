@@ -36,12 +36,12 @@ RUN
 
 NAME=WASM: Wasm - maps
 FILE=bins/wasm/binary.wasm
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 3 +0x0000000a 0x0000000a - 0x00000019 --- fmap.type
  2 fd: 3 +0x0000001d 0x0000001d - 0x00000048 --- fmap.function
  3 fd: 3 +0x0000004d 0x0000004d - 0x00000228 --- fmap.export
  4 fd: 3 +0x0000022d 0x0000022d - 0x00000422 --- fmap.code
- 5 fd: 3 +0x00000000 0x00000000 - 0x00000423 r-x 
+ 5 fd: 3 +0x00000000 0x00000000 * 0x00000423 r-x 
 EOF
 RUN

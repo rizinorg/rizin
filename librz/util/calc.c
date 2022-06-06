@@ -29,7 +29,7 @@ static inline RzNumCalcValue Nsetf(double v) {
 	n.n = (ut64)v;
 	return n;
 }
-//UNUSED static inline RzNumCalcValue Naddf(RzNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
+// UNUSED static inline RzNumCalcValue Naddf(RzNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
 static inline RzNumCalcValue Naddi(RzNumCalcValue n, ut64 v) {
 	n.d += (double)v;
 	n.n += v;
@@ -133,6 +133,25 @@ static inline RzNumCalcValue Ndiv(RzNumCalcValue n, RzNumCalcValue v) {
 	return n;
 }
 
+static inline RzNumCalcValue Nexp(RzNumCalcValue n, RzNumCalcValue v) {
+	RzNumCalcValue exp_n = n;
+	if (v.d - (st64)v.n) {
+		RZ_LOG_WARN("floating point powers not yet supported\n");
+	}
+	if ((st64)v.n > 0) {
+		for (st64 i = 1; i < (st64)v.n; i++) {
+			n = Nmul(exp_n, n);
+		}
+	} else if ((st64)v.n < 0) {
+		for (st64 i = 1; i > (st64)v.n; i--) {
+			n = Ndiv(n, exp_n);
+		}
+	} else {
+		n = Ndiv(n, exp_n);
+	}
+	return n;
+}
+
 static RzNumCalcValue expr(RzNum *, RzNumCalc *, int);
 static RzNumCalcValue term(RzNum *, RzNumCalc *, int);
 static void error(RzNum *, RzNumCalc *, const char *);
@@ -142,7 +161,7 @@ static RzNumCalcToken get_token(RzNum *, RzNumCalc *);
 static void error(RzNum *num, RzNumCalc *nc, const char *s) {
 	nc->errors++;
 	nc->calc_err = s;
-	//fprintf (stderr, "error: %s\n", s);
+	// fprintf (stderr, "error: %s\n", s);
 }
 
 static RzNumCalcValue expr(RzNum *num, RzNumCalc *nc, int get) {
@@ -175,7 +194,7 @@ static RzNumCalcValue term(RzNum *num, RzNumCalc *nc, int get) {
 		} else if (nc->curr_tok == RNCMOD) {
 			RzNumCalcValue d = prim(num, nc, 1);
 			if (!d.d) {
-				//error (num, nc, "divide by 0");
+				// error (num, nc, "divide by 0");
 				return d;
 			}
 			left = Nmod(left, d);
@@ -186,6 +205,8 @@ static RzNumCalcValue term(RzNum *num, RzNumCalc *nc, int get) {
 				return d;
 			}
 			left = Ndiv(left, d);
+		} else if (nc->curr_tok == RNCEXP) {
+			left = Nexp(left, prim(num, nc, 1));
 		} else {
 			return left;
 		}
@@ -203,8 +224,8 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 		get_token(num, nc);
 		return v;
 	case RNCNAME:
-		//fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
-		//double& v = table[nc->string_value];
+		// fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
+		// double& v = table[nc->string_value];
 		rz_str_trim(nc->string_value);
 		v = Nset(rz_num_get(num, nc->string_value));
 		get_token(num, nc);
@@ -220,7 +241,7 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 		return v;
 	case RNCNEG:
 		get_token(num, nc);
-		return Nneg(nc->number_value); //prim (num, nc, 1), 1);
+		return Nneg(nc->number_value); // prim (num, nc, 1), 1);
 	case RNCINC:
 		return Naddi(prim(num, nc, 1), 1);
 	case RNCDEC:
@@ -236,6 +257,7 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 		} else {
 			error(num, nc, " ')' expected");
 		}
+		return v;
 	case RNCLT:
 	case RNCGT:
 	case RNCEND:
@@ -245,6 +267,7 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 	case RNCMOD:
 	case RNCMUL:
 	case RNCDIV:
+	case RNCEXP:
 	case RNCPRINT:
 	case RNCASSIGN:
 	case RNCRIGHTP:
@@ -253,7 +276,7 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 	case RNCROL:
 	case RNCROR:
 		return v;
-		//default: error (num, nc, "primary expected");
+		// default: error (num, nc, "primary expected");
 	}
 	return v;
 }
@@ -378,13 +401,18 @@ static RzNumCalcToken get_token(RzNum *num, RzNumCalc *nc) {
 	case '^':
 	case '&':
 	case '|':
-	case '*':
 	case '%':
 	case '/':
 	case '(':
 	case ')':
 	case '=':
 		return nc->curr_tok = (RzNumCalcToken)ch;
+	case '*':
+		if (cin_get(num, nc, &c) && c == '*') {
+			return nc->curr_tok = RNCEXP;
+		}
+		cin_putback(num, nc, c);
+		return nc->curr_tok = RNCMUL;
 	case '0':
 	case '1':
 	case '2':

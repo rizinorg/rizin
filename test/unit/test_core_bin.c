@@ -118,36 +118,57 @@ bool test_map(void) {
 	mu_assert_eq(map->itv.addr, 0x403, "map addr");
 	mu_assert_eq(map->itv.size, 1, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_R, "io map perm");
+	RzCoreIOMapInfo *info = map->user;
+	mu_assert_notnull(info, "map info");
+	mu_assert_ptreq(info->cf, f, "map info corefile");
+	mu_assert_eq(info->perm_orig, RZ_PERM_R, "map info perm");
+
 	map = rz_pvector_at(&core->io->maps, 5);
 	mu_assert_streq(map->name, "vmap.vfile map with zeroes", "io map name");
 	mu_assert_eq(map->delta, 0, "map delta");
 	mu_assert_eq(map->itv.addr, 0x400, "map addr");
 	mu_assert_eq(map->itv.size, 3, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_R, "io map perm");
+
 	map = rz_pvector_at(&core->io->maps, 3);
 	mu_assert_streq(map->name, "vmap.vfile map", "io map name");
 	mu_assert_eq(map->delta, 4, "map delta");
 	mu_assert_eq(map->itv.addr, 0x300, "map addr");
 	mu_assert_eq(map->itv.size, 4, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_RWX, "io map perm");
+	info = map->user;
+	mu_assert_notnull(info, "map info");
+	mu_assert_ptreq(info->cf, f, "map info corefile");
+	mu_assert_eq(info->perm_orig, RZ_PERM_RWX, "map info perm");
+
 	map = rz_pvector_at(&core->io->maps, 1);
 	mu_assert_streq(map->name, "mmap.direct map with zeroes", "io map name");
 	mu_assert_eq(map->delta, 0, "map delta");
 	mu_assert_eq(map->itv.addr, 0x202, "map addr");
 	mu_assert_eq(map->itv.size, 0x2e, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_R, "io map perm");
+	info = map->user;
+	mu_assert_notnull(info, "map info");
+	mu_assert_ptreq(info->cf, f, "map info corefile");
+	mu_assert_eq(info->perm_orig, RZ_PERM_R, "map info perm");
+
 	map = rz_pvector_at(&core->io->maps, 2);
 	mu_assert_streq(map->name, "fmap.direct map with zeroes", "io map name");
 	mu_assert_eq(map->delta, 2, "map delta");
 	mu_assert_eq(map->itv.addr, 0x200, "map addr");
 	mu_assert_eq(map->itv.size, 2, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_R, "io map perm");
+
 	map = rz_pvector_at(&core->io->maps, 0);
 	mu_assert_streq(map->name, "fmap.direct map", "io map name");
 	mu_assert_eq(map->delta, 2, "map delta");
 	mu_assert_eq(map->itv.addr, 0x100, "map addr");
 	mu_assert_eq(map->itv.size, 2, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_RX, "io map perm");
+	info = map->user;
+	mu_assert_notnull(info, "map info");
+	mu_assert_ptreq(info->cf, f, "map info corefile");
+	mu_assert_eq(info->perm_orig, RZ_PERM_RX, "map info perm");
 
 	ut8 buf[8];
 	r = rz_io_read_at(core->io, 0, buf, sizeof(buf));

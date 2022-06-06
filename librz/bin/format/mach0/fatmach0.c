@@ -12,7 +12,7 @@ static int rz_bin_fatmach0_init(struct rz_bin_fatmach0_obj_t *bin) {
 	ut8 hdrbytes[sizeof(struct fat_header)] = { 0 };
 	int len = rz_buf_read_at(bin->b, 0, &hdrbytes[0], sizeof(struct fat_header));
 	if (len != sizeof(struct fat_header)) {
-		perror("read (fat_header)");
+		RZ_LOG_ERROR("Cannot read fat_header\n");
 		return false;
 	}
 	bin->hdr.magic = rz_read_be32(&hdrbytes[0]);
@@ -22,7 +22,7 @@ static int rz_bin_fatmach0_init(struct rz_bin_fatmach0_obj_t *bin) {
 		return false;
 	}
 	if (bin->hdr.magic != FAT_MAGIC || !bin->nfat_arch || bin->nfat_arch < 1) {
-		eprintf("Endian FAT_MAGIC failed (?)\n");
+		RZ_LOG_ERROR("Invalid FAT_MAGIC\n");
 		return false;
 	}
 	size = bin->nfat_arch * sizeof(struct fat_arch);
@@ -30,14 +30,14 @@ static int rz_bin_fatmach0_init(struct rz_bin_fatmach0_obj_t *bin) {
 		return false;
 	}
 	if (!(bin->archs = malloc(size))) {
-		perror("malloc (fat_arch)");
+		RZ_LOG_ERROR("Cannot allocate fat_arch with size %u bytes\n", size);
 		return false;
 	}
 	for (i = 0; i < bin->nfat_arch; i++) {
 		ut8 archbytes[sizeof(struct fat_arch)] = { 0 };
 		len = rz_buf_read_at(bin->b, 8 + i * sizeof(struct fat_arch), &archbytes[0], sizeof(struct fat_arch));
 		if (len != sizeof(struct fat_arch)) {
-			perror("read (fat_arch)");
+			RZ_LOG_ERROR("Cannot read fat_arch\n");
 			RZ_FREE(bin->archs);
 			return false;
 		}

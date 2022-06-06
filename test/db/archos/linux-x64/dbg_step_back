@@ -2,21 +2,24 @@ NAME=dbg.stepback
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
-db main
-db 0x004028fe
+db @ main
+db @ 0x004028fe
 dc
 dts+
 dc
 dsb
 dsb
-dr rbx,rcx,r12,rip
+dr rbx
+dr rcx
+dr r12
+dr rip
 dk 9
 EOF
 EXPECT=<<EOF
-0x00000001
-0x736c6974756572
-0x00404870
-0x004028f9
+rbx = 0x00000001
+rcx = 0x736c6974756572
+r12 = 0x00404870
+rip = 0x004028f9
 EOF
 RUN
 
@@ -24,30 +27,40 @@ NAME=debug stepback from callee
 FILE=bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
-db main
-db 0x0040052f
+db @ main
+db @ 0x0040052f
 dc
 dts+
 dc
-dr rax,rbx,rcx,r10,rbp,rip
+dr rax
+dr rbx
+dr rcx
+dr r10
+dr rbp
+dr rip
 dsb
 dsb
-dr rax,rbx,rcx,r10,rbp,rip
+dr rax
+dr rbx
+dr rcx
+dr r10
+dr rbp
+dr rip
 dk 9
 EOF
 EXPECT=<<EOF
-0x00400574
-0x00400590
-0x00400590
-0xfffffffffffff30e
-0x00000000
-0x0040052f
-0x00400574
-0x00400590
-0x00400590
-0xfffffffffffff30e
-0x00000000
-0x00400575
+rax = 0x00400574
+rbx = 0x00400590
+rcx = 0x00400590
+r10 = 0xfffffffffffff30e
+rbp = 0x00000000
+rip = 0x0040052f
+rax = 0x00400574
+rbx = 0x00400590
+rcx = 0x00400590
+r10 = 0xfffffffffffff30e
+rbp = 0x00000000
+rip = 0x00400575
 EOF
 RUN
 
@@ -55,8 +68,8 @@ NAME=debug stepback from caller
 FILE=bins/elf/analysis/calls_x64
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
-db main
-db 0x0040057c
+db @ main
+db @ 0x0040057c
 dc
 dts+
 dc
@@ -65,6 +78,6 @@ dsb
 dr rip
 EOF
 EXPECT=<<EOF
-0x0040053b
+rip = 0x0040053b
 EOF
 RUN

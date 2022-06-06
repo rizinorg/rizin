@@ -196,7 +196,7 @@ bool test_rz_buf_mmap(void) {
 	mu_end;
 }
 
-bool test_rz_buf_io(void) {
+bool test_rz_buf_io_fd(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -215,8 +215,8 @@ bool test_rz_buf_io(void) {
 	RzIOBind bnd;
 	rz_io_bind(io, &bnd);
 
-	b = rz_buf_new_with_io(&bnd, desc->fd);
-	mu_assert_notnull(b, "rz_buf_new_file failed");
+	b = rz_buf_new_with_io_fd(&bnd, desc->fd);
+	mu_assert_notnull(b, "rz_buf_new_with_io_fd");
 	rz_buf_seek(b, 0, RZ_BUF_SET);
 
 	if (test_buf(b) != MU_PASSED) {
@@ -224,6 +224,53 @@ bool test_rz_buf_io(void) {
 	}
 
 	// Cleanup
+	rz_buf_free(b);
+	rz_io_close(io);
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_rz_buf_io(void) {
+	RzIO *io = rz_io_new();
+	io->ff = true;
+	io->Oxff = 0xff;
+	io->va = true;
+	RzIODesc *desc = rz_io_open_at(io, "hex://0102030405060708", RZ_PERM_RW, 0644, 0x10, NULL);
+	mu_assert_notnull(desc, "file should be opened for writing");
+	RzIOBind bnd;
+	rz_io_bind(io, &bnd);
+
+	RzBuffer *b = rz_buf_new_with_io(&bnd);
+	rz_buf_set_overflow_byte(b, 0x42); // we don't want to see this 0x42 anywhere because the IO 0xff should be used!
+	mu_assert_notnull(b, "rz_buf_new_with_io");
+	rz_buf_seek(b, 0, RZ_BUF_SET);
+
+	ut8 data[0x20] = { 0 };
+	st64 red = rz_buf_read_at(b, 0x4, data, sizeof(data));
+	mu_assert_eq(red, sizeof(data), "read size");
+	ut8 data_expect[0x20] = {
+		0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff,
+		0x01, 0x02, 0x03, 0x04,
+		0x05, 0x06, 0x07, 0x08,
+		0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff
+	};
+	mu_assert_memeq(data, data_expect, sizeof(data), "read");
+
+	ut8 wdata[] = { 0xab, 0xcd };
+	st64 written = rz_buf_write_at(b, 0x11, wdata, sizeof(wdata));
+	mu_assert_eq(written, sizeof(wdata), "written size");
+	memset(data, 0, sizeof(data));
+	int redi = rz_io_desc_read_at(desc, 0, data, 8);
+	mu_assert_eq(redi, 8, "read size from rewritten fd");
+	ut8 data_expect1[0x8] = {
+		0x01, 0x0ab, 0xcd, 0x04, 0x05, 0x06, 0x07, 0x08
+	};
+	mu_assert_memeq(data, data_expect1, sizeof(data_expect1), "rewritten fd");
+
 	rz_buf_free(b);
 	rz_io_close(io);
 	rz_io_free(io);
@@ -937,6 +984,48 @@ bool test_rz_buf_sparse_populated_in(void) {
 	mu_end;
 }
 
+bool test_rz_buf_sparse_size(void) {
+	RzBuffer *b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_sparse failed");
+	mu_assert_eq(rz_buf_size(b), 0, "buf sz");
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Not", 3);
+	rz_buf_write_at(b, 0x14, (const ut8 *)"Naming", 6);
+	rz_buf_write_at(b, 0x1f, (const ut8 *)"Names", 5);
+	rz_buf_write_at(b, 0x1b, (const ut8 *)"Any", 3);
+	mu_assert_eq(rz_buf_size(b), 0x24, "buf sz");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_overlay_size(void) {
+	ut8 tmp[0x100];
+	for (size_t i = 0; i < sizeof(tmp); i++) {
+		tmp[i] = i;
+	}
+	RzBuffer *base = rz_buf_new_with_bytes(tmp, sizeof(tmp));
+	rz_buf_set_overflow_byte(base, 0x42);
+
+	RzBuffer *b = rz_buf_new_sparse_overlay(base, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	mu_assert_notnull(b, "rz_buf_new_sparse_overlay failed");
+	rz_buf_set_overflow_byte(b, 0x24);
+	mu_assert_eq(rz_buf_size(b), 0x100, "buf sz");
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Not", 3);
+	rz_buf_write_at(b, 0x14, (const ut8 *)"Naming", 6);
+	rz_buf_write_at(b, 0x1f, (const ut8 *)"Names", 5);
+	rz_buf_write_at(b, 0x1b, (const ut8 *)"Any", 3);
+	mu_assert_eq(rz_buf_size(b), 0x100, "buf sz");
+
+	rz_buf_write_at(b, 0x200, (const ut8 *)"Mire", 4);
+	mu_assert_eq(rz_buf_size(b), 0x204, "buf sz");
+
+	rz_buf_free(b);
+	rz_buf_free(base);
+	mu_end;
+}
+
 bool test_rz_buf_bytes_steal(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
@@ -1173,9 +1262,10 @@ bool test_rz_buf_with_methods(void) {
 
 bool test_rz_buf_whole_buf(void) {
 	RzBuffer *b = rz_buf_new_with_bytes((ut8 *)"AAA", 3);
-	const ut8 *bb1 = rz_buf_data(b, NULL);
+	ut64 size;
+	const ut8 *bb1 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb1, "buf_data is not NULL");
-	const ut8 *bb2 = rz_buf_data(b, NULL);
+	const ut8 *bb2 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb2, "buf_data is not NULL");
 	rz_buf_free(b);
 	mu_end;
@@ -1207,12 +1297,83 @@ const RzBufferMethods custom_methods2 = {
 
 bool test_rz_buf_whole_buf_alloc(void) {
 	CustomCtx ctx = { 0 };
+	ut64 size;
 	RzBuffer *b = rz_buf_new_with_methods(&custom_methods2, &ctx);
-	const ut8 *bb1 = rz_buf_data(b, NULL);
+	const ut8 *bb1 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb1, "buf_data is not NULL");
-	const ut8 *bb2 = rz_buf_data(b, NULL);
+	const ut8 *bb2 = rz_buf_data(b, &size);
 	mu_assert_notnull(bb2, "buf_data is not NULL");
 	rz_buf_free(b);
+	mu_end;
+}
+
+ut64 fwd_cmp(const ut8 *buf, ut64 sz, void *user) {
+	if (!user || !sz) {
+		return -1;
+	}
+	return memcmp(buf, user, sz) ? 0 : sz;
+}
+
+ut64 fwd_adder(const ut8 *buf, ut64 sz, void *user) {
+	if (!user || !sz) {
+		return -1;
+	}
+	ut64 *result = user;
+	ut64 i;
+	for (i = 0; i < sz; i++) {
+		*result += buf[i];
+	}
+	return sz;
+}
+
+bool test_rz_buf_fwd_scan_helper(RzBuffer *b) {
+	ut64 res = rz_buf_fwd_scan(b, 0, 4, fwd_cmp, (void *)"ABCD");
+	mu_assert_eq(res, 4, "rz_buf_fwd_scan should return 4");
+	res = rz_buf_fwd_scan(b, 0, UT64_MAX, fwd_cmp, (void *)"ABCD");
+	mu_assert_eq(res, 4, "rz_buf_fwd_scan should return 4");
+	res = rz_buf_fwd_scan(b, 1, UT64_MAX, fwd_cmp, (void *)"BCD");
+	mu_assert_eq(res, 3, "rz_buf_fwd_scan should return 3");
+	res = rz_buf_fwd_scan(b, 2, UT64_MAX, fwd_cmp, (void *)"CD");
+	mu_assert_eq(res, 2, "rz_buf_fwd_scan should return 3");
+	res = rz_buf_fwd_scan(b, 3, UT64_MAX, fwd_cmp, (void *)"D");
+	mu_assert_eq(res, 1, "rz_buf_fwd_scan should return 1");
+	res = rz_buf_fwd_scan(b, 4, UT64_MAX, fwd_cmp, NULL);
+	mu_assert_eq(res, 0, "rz_buf_fwd_scan should return 0");
+	res = rz_buf_fwd_scan(b, 5, UT64_MAX, fwd_cmp, NULL);
+	mu_assert_eq(res, 0, "rz_buf_fwd_scan should return 0");
+	res = rz_buf_fwd_scan(b, 0, 3, fwd_cmp, (void *)"ABCD");
+	mu_assert_eq(res, 3, "rz_buf_fwd_scan should return 3");
+	res = rz_buf_fwd_scan(b, 1, 2, fwd_cmp, (void *)"BC");
+	mu_assert_eq(res, 2, "rz_buf_fwd_scan should return 2");
+	res = rz_buf_fwd_scan(b, 1, 1, fwd_cmp, (void *)"B");
+	mu_assert_eq(res, 1, "rz_buf_fwd_scan should return 1");
+	res = rz_buf_fwd_scan(b, 1, 0, fwd_cmp, (void *)"B");
+	mu_assert_eq(res, 0, "rz_buf_fwd_scan should return 0");
+	res = rz_buf_fwd_scan(b, 2, 4, fwd_cmp, (void *)"CD");
+	mu_assert_eq(res, 2, "rz_buf_fwd_scan should return 2");
+	return true;
+}
+
+bool test_rz_buf_fwd_scan(void) {
+	RzBuffer *b = rz_buf_new_with_bytes((ut8 *)"ABCD", 4);
+	mu_assert_true(test_rz_buf_fwd_scan_helper(b), "rz_buf_fwd_scan with whole buffer available failed");
+	RzBufferMethods methods = *b->methods;
+	methods.get_whole_buf = NULL;
+	b->methods = &methods;
+	mu_assert_true(test_rz_buf_fwd_scan_helper(b), "rz_buf_fwd_scan with whole buffer unavailable failed");
+	ut8 zero_buf[0x1000 - 4] = { 0 };
+	rz_buf_append_bytes(b, zero_buf, 0x1000 - 4);
+	rz_buf_append_bytes(b, (ut8 *)"EFGH", 4);
+	ut64 res = rz_buf_fwd_scan(b, 0, 4, fwd_cmp, (void *)"ABCD");
+	mu_assert_eq(res, 4, "rz_buf_fwd_scan should return 4");
+	res = rz_buf_fwd_scan(b, 0x1000, UT64_MAX, fwd_cmp, (void *)"EFGH");
+	mu_assert_eq(res, 4, "rz_buf_fwd_scan should return 4");
+	res = rz_buf_fwd_scan(b, 0x1000, 3, fwd_cmp, (void *)"EFG");
+	mu_assert_eq(res, 3, "rz_buf_fwd_scan should return 3");
+	ut64 add_result = 0;
+	res = rz_buf_fwd_scan(b, 0, UT64_MAX, fwd_adder, &add_result);
+	mu_assert_eq(res, 0x1004, "rz_buf_fwd_scan should return 0x1004");
+	mu_assert_eq(add_result, 'A' + 'B' + 'C' + 'D' + 'E' + 'F' + 'G' + 'H', "add_result should return be the sum of all bytes");
 	mu_end;
 }
 
@@ -1225,6 +1386,7 @@ int all_tests() {
 	mu_run_test(test_rz_buf_mmap);
 	mu_run_test(test_rz_buf_with_buf);
 	mu_run_test(test_rz_buf_slice);
+	mu_run_test(test_rz_buf_io_fd);
 	mu_run_test(test_rz_buf_io);
 	mu_run_test(test_rz_buf_sparse_common);
 	mu_run_test(test_rz_buf_sparse_split);
@@ -1241,6 +1403,8 @@ int all_tests() {
 	mu_run_test(test_rz_buf_sparse_fuzz);
 	mu_run_test(test_rz_buf_sparse_overlay);
 	mu_run_test(test_rz_buf_sparse_populated_in);
+	mu_run_test(test_rz_buf_sparse_size);
+	mu_run_test(test_rz_buf_sparse_overlay_size);
 	mu_run_test(test_rz_buf_bytes_steal);
 	mu_run_test(test_rz_buf_format);
 	mu_run_test(test_rz_buf_get_string);
@@ -1250,6 +1414,7 @@ int all_tests() {
 	mu_run_test(test_rz_buf_with_methods);
 	mu_run_test(test_rz_buf_whole_buf);
 	mu_run_test(test_rz_buf_whole_buf_alloc);
+	mu_run_test(test_rz_buf_fwd_scan);
 	return tests_passed != tests_run;
 }
 

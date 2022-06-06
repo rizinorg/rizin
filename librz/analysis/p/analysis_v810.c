@@ -304,7 +304,7 @@ static int v810_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case V810_RETI:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
-		//rz_strbuf_appendf (&op->esil, "np,?{,fepc,fepsw,}{,eipc,eipsw,},psw,=,pc,=");
+		// rz_strbuf_appendf (&op->esil, "np,?{,fepc,fepsw,}{,eipc,eipsw,},psw,=,pc,=");
 		break;
 	case V810_JAL:
 	case V810_JR:
@@ -387,7 +387,7 @@ static int v810_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	return ret;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
@@ -441,7 +441,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"flg	s   .1 132.30 0\n"
 		"flg	z   .1 132.31 0\n";
 
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_v810 = {
@@ -452,7 +452,7 @@ RzAnalysisPlugin rz_analysis_plugin_v810 = {
 	.bits = 32,
 	.op = v810_op,
 	.esil = true,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

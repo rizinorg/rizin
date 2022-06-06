@@ -1,0 +1,171 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_shell
+type: RZ_CMD_DESC_TYPE_GROUP
+commands:
+  - name: env
+    cname: cmd_shell_env
+    summary: Get/set environment variables
+    args_str: " [<varname>[=<varvalue>]]"
+    args:
+      - name: varname
+        optional: true
+        type: RZ_CMD_ARG_TYPE_ENV
+      - name: varvalue
+        optional: true
+        type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Examples
+        entries:
+          - text: "%"
+            comment: List all environment variables
+          - text: "%"
+            arg_str: "SHELL"
+            comment: Print value of SHELL variable
+          - text: "%"
+            arg_str: "TMPDIR=/tmp"
+            comment: Set TMPDIR to "/tmp"
+          - text: "env"
+            arg_str: " SHELL"
+            comment: Same as `%SHELL`
+      - name: Environment
+        entries:
+          - text: "RZ_FILE"
+            comment: "currently opened file name"
+          - text: "RZ_OFFSET"
+            comment: "current offset (64bit value)"
+          - text: "RZ_BSIZE"
+            comment: "block size"
+          - text: "RZ_ENDIAN"
+            comment: "'big' or 'little'"
+          - text: "RZ_IOVA"
+            comment: "is io.va true? virtual addressing (1,0)"
+          - text: "RZ_DEBUG"
+            comment: "debug mode enabled? (1,0)"
+          - text: "RZ_SIZE"
+            comment: "file size"
+          - text: "RZ_ARCH"
+            comment: "value of asm.arch"
+          - text: "RZ_BITS"
+            comment: "arch reg size (8, 16, 32, 64)"
+          - text: "RZ_BIN_LANG"
+            comment: "assume this lang to demangle"
+          - text: "RZ_BIN_DEMANGLE"
+            comment: "demangle or not"
+          - text: "RZ_BIN_PDBSERVER"
+            comment: "e pdb.server"
+  - name: exit
+    cname: cmd_shell_exit
+    summary: Exit Rizin
+    args: []
+  - name: ls
+    cname: cmd_shell_ls
+    summary: List files and directories
+    args:
+      - name: arg
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+  - name: rm
+    cname: cmd_shell_rm
+    summary: Remove <file>
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: sleep
+    cname: cmd_shell_sleep
+    summary: Sleep for <seconds> seconds
+    args:
+      - name: seconds
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: uniq
+    cname: cmd_shell_uniq
+    summary: List uniq strings in <filename>
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: uname
+    cname: cmd_shell_uname
+    summary: Provide system info
+    args:
+      - name: r
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+  - name: echo
+    summary: Display a line of text
+    cname: cmd_shell_echo
+    args:
+      - name: argument
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+  - name: cp
+    summary: Copy <src> file to <dst>
+    cname: cmd_shell_cp
+    args:
+      - name: src
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: dst
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: cd
+    summary: Change directory to <dir>
+    cname: cmd_shell_cd
+    args:
+      - name: dir
+        type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
+  - name: cat
+    summary: Print contents of <file>
+    cname: cmd_shell_cat
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: mv
+    summary: Move <src> file to <dst>
+    cname: cmd_shell_mv
+    args:
+      - name: src
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: dst
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: mkdir
+    summary: Create a directory <dir>
+    cname: cmd_shell_mkdir
+    args_str: " [-p] <dir>"
+    args:
+      - name: p
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+      - name: dir
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: pwd
+    summary: Show the present working directory
+    cname: cmd_shell_pwd
+    args: []
+  - name: sort
+    summary: Sort the contents of <file>
+    cname: cmd_shell_sort
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: clear
+    summary: Clear screen/console
+    cname: cmd_shell_clear
+    args: []
+  - name: cls
+    summary: clear
+    cname: cmd_shell_cls
+    handler: cmd_shell_clear
+    args: []
+  - name: which
+    cname: cmd_shell_which
+    summary: Which shell command
+    args:
+      - name: command
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: fortune
+    summary: Show the random fortune message
+    cname: cmd_shell_fortune
+    args: []

@@ -1,9 +1,9 @@
-NAME=f?flag
+NAME=fe
 FILE==
 CMDS=<<EOF
-f foo=123
-f?foo;?? ?e hello
-f?bar;?? ?e world
+f foo @ 123
+fe foo;?? ?e hello
+fe bar;?? ?e world
 EOF
 EXPECT=<<EOF
 hello
@@ -18,7 +18,7 @@ f hidden
 fs jojo
 f visible
 fd
-f
+fl
 EOF
 EXPECT=<<EOF
 visible
@@ -29,8 +29,8 @@ RUN
 NAME=f command with space
 FILE==
 CMDS=<<EOF
-f  foobar=0x1000
-f
+f foobar @ 0x1000
+fl
 EOF
 EXPECT=<<EOF
 0x00001000 1 foobar
@@ -55,7 +55,7 @@ NAME=1: fs *
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs *
-fs~?^*
+fsl~?^*
 EOF
 EXPECT=<<EOF
 0
@@ -66,7 +66,7 @@ NAME=2: fs *
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs *
-fs~?*
+fsl~?*
 EOF
 EXPECT=<<EOF
 8
@@ -82,7 +82,7 @@ f flag_in_fs1
 fs flagspace_2
 f flag_in_fs2
 fs *
-f
+fl
 EOF
 EXPECT=<<EOF
 0x00000000 1 flag_in_fs1
@@ -94,44 +94,30 @@ NAME=fs test_flagspace
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs test_flagspace
-fs~?test_flagspace
+fsl~?test_flagspace
 EOF
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=fs-test_flagspace
+NAME=fs- test_flagspace
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs test_flagspace
-fs-test_flagspace
-fs~?test_flagspace
+fs- test_flagspace
+fsl~?test_flagspace
 EOF
 EXPECT=<<EOF
 0
 EOF
 RUN
 
-NAME=fs-test_flagspace
+NAME=fs-* test_flagspace
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs-*
-fs~?0
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
-NAME=fs-.
-FILE=malloc://1024
-CMDS=<<EOF
-fs test_flagspace
-fs test_bloh
-fs test_blah
-fs-.
-fs~?test_blah
+fsl~?0
 EOF
 EXPECT=<<EOF
 0
@@ -143,8 +129,8 @@ FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs-*
 fs test
-fsm str.Hello_World test
-fs
+fsm @ str.Hello_World
+fsl
 EOF
 EXPECT=<<EOF
     1 * test
@@ -156,44 +142,11 @@ FILE=bins/elf/analysis/main
 CMDS=<<EOF
 fs-*
 fs test
-fs test
 fsr test2
-fs
+fsl
 EOF
 EXPECT=<<EOF
     0 * test2
-EOF
-RUN
-
-NAME=fSn
-FILE=malloc://1024
-CMDS=<<EOF
-f c @ 0x00000000
-f b @ 0x00000000
-f a @ 0x00000000
-fSn
-f
-EOF
-EXPECT=<<EOF
-0x00000000 1 c
-0x00000000 1 b
-0x00000000 1 a
-EOF
-RUN
-
-NAME=fSo
-FILE=malloc://1024
-CMDS=<<EOF
-f a @ 0x00000002
-f b @ 0x00000001
-f c @ 0x00000000
-fSo
-f
-EOF
-EXPECT=<<EOF
-0x00000000 1 c
-0x00000001 1 b
-0x00000002 1 a
 EOF
 RUN
 
@@ -202,7 +155,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 f blah
 fr blah bloh
-f
+fl
 EOF
 EXPECT=<<EOF
 0x00000000 1 bloh
@@ -214,24 +167,24 @@ FILE=malloc://1024
 CMDS=<<EOF
 f blah
 fm 0x10
-f
+fl
 EOF
 EXPECT=<<EOF
 0x00000010 1 blah
 EOF
 RUN
 
-NAME=fl
+NAME=fL
 FILE=malloc://1024
 CMDS=<<EOF
 f blah 0x0000000a
-fl blah 0x00000003
-fl
-f-blah
+fL 0x00000003 @ blah
+fL
+f- blah
 f test 12 @ 33
-f
-fl test 333
-f
+fl
+fL 333 @ test
+fl
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -240,48 +193,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=fj
+NAME=flj
 FILE=malloc://1024
 CMDS=<<EOF
 f blah 0x0000000a @ 0x0000000b
 f bloh 0x00000003 @ 0x00000002
-fj
+flj
 EOF
 EXPECT=<<EOF
 [{"name":"bloh","size":3,"offset":2},{"name":"blah","size":10,"offset":11}]
 EOF
 RUN
 
-NAME=fe
-FILE=malloc://1024
+NAME=flj shows demangled symbols
+FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
-fe a
-fe a
-fe a
-fe-
-fe b
-fe b
-fe b
-f
+aaa
+flj~{241}
 EOF
 EXPECT=<<EOF
-0x00000000 1 a.0
-0x00000000 1 a.1
-0x00000000 1 a.2
-0x00000000 1 b.0
-0x00000000 1 b.1
-0x00000000 1 b.2
+{"name":"reloc.operator_delete_void","realname":"operator delete(void*)","size":8,"offset":16432}
 EOF
 RUN
 
 NAME=fd
 FILE=malloc://1024
 CMDS=<<EOF
-fe a
-fd 0x100
+f a
+fd @ 0x100
 EOF
 EXPECT=<<EOF
-a.0 + 256
+a + 256
 EOF
 RUN
 
@@ -289,10 +231,10 @@ NAME=fd. with flags
 FILE=malloc://1024
 CMDS=<<EOF
 wx 9090909090909090
-f flag1 @ 0x5
-f flag2 @ 0x5
-f flag3 @ 0x5
-fd. 0x5
+f+ flag1 @ 0x5
+f+ flag2 @ 0x5
+f+ flag3 @ 0x5
+fd. @ 0x5
 EOF
 EXPECT=<<EOF
 flag1
@@ -305,7 +247,7 @@ NAME=fd with realname
 FILE=malloc://1024
 CMDS=<<EOF
 f pingas @ 0x42
-fN pingas Snooping as usual I see...
+fN pingas "Snooping as usual I see..."
 e asm.flags.real=0
 fd @ 0x42
 fd @ 0x1337
@@ -338,7 +280,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 fb 0x100
 f a
-f
+fl
 EOF
 EXPECT=<<EOF
 0x00000100 1 a
@@ -348,11 +290,11 @@ RUN
 NAME=fb2
 FILE=malloc://1024
 CMDS=<<EOF
-fe a
-fe a
-fe a
+f+ a.0
+f+ a.1
+f+ a.2
 fb 0x100 a.*
-f
+fl
 EOF
 EXPECT=<<EOF
 0x00000100 1 a.0
@@ -361,12 +303,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=f--
+NAME=f-*
 FILE=malloc://1024
 CMDS=<<EOF
 f a
-f--
-f
+f-*
+fl
 EOF
 EXPECT=<<EOF
 EOF
@@ -376,8 +318,8 @@ NAME=f.
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 aaa
-f.blah
-f.
+f. blah
+f.l
 s 0
 ?e outside
 f.
@@ -388,57 +330,30 @@ outside
 EOF
 RUN
 
-NAME=f.*
+NAME=f.lj
 FILE=bins/elf/analysis/main
 ARGS=-e log.level=4
 CMDS=<<EOF
 af
-f.patata
-f.*
+f. patata
+f.lj
 s 0
 ?e outside
-f.*
+f.l
 ?e all
-f.**
+f.l*j
 EOF
 EXPECT=<<EOF
-f.patata@0x00400410
+[{"patata":4195344}]
 outside
 all
-f.patata@0x00400410
+["entry0":{"patata":4195344}]
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
-Cannot find function at 0x00000000
-EOF
-RUN
-
-NAME=f.j
-FILE=bins/elf/analysis/main
-ARGS=-e log.level=4
-CMDS=<<EOF
-af
-f.patata
-f.j
-s 0
-?e outside
-f.*
-?e all
-f.j*
-EOF
-EXPECT=<<EOF
-{"patata":4195344}
-outside
-all
-{"entry0":{"patata":4195344}}
-EOF
-EXPECT_ERR=<<EOF
-WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
-WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
-WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
-Cannot find function at 0x00000000
+ERROR: Cannot find function at 0x0 offset
 EOF
 RUN
 
@@ -447,10 +362,10 @@ FILE=bins/elf/analysis/main
 ARGS=-e log.level=4
 CMDS=<<EOF
 af
-f.patata
-f.
-f.-patata
-f.
+f. patata
+f.l
+f.- patata
+f.l
 EOF
 EXPECT=<<EOF
 0x00400410 patata   [entry0 + 0]
@@ -459,20 +374,6 @@ EXPECT_ERR=<<EOF
 WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
-EOF
-RUN
-
-NAME=f-.
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-af
-f.patata
-f.
-f-.patata
-f.
-EOF
-EXPECT=<<EOF
-0x00400410 patata   [entry0 + 0]
 EOF
 RUN
 
@@ -484,12 +385,11 @@ e asm.arch=x86
 e asm.bytes=true
 e asm.bits=32
 s entry0
-e asm.reflines=false
 e asm.offset=false
 e asm.functions=false
 e asm.comments=false
-f--
-f.blah
+f-*
+f. blah
 pd 1
 EOF
 EXPECT=<<EOF
@@ -502,11 +402,11 @@ NAME=Set/get
 FILE==
 CMDS=<<EOF
 f cat
-f rimmer 12
-f lister 32@666
-f kryten 32 666
-f+skutter 1 @ 12
-f
+f+ rimmer 12
+f lister 32 @ 666
+f+ kryten 32 @ 666
+f+ skutter 1 @ 12
+fl
 EOF
 EXPECT=<<EOF
 0x00000000 1 cat
@@ -522,11 +422,11 @@ FILE==
 CMDS=<<EOF
 # Add flags.
 f cat
-f rimmer 12
-f lister 32@666
-f kryten 32 666
-f+skutter 1 @ 12
-fj
+f+ rimmer 12
+f lister 32 @ 666
+f+ kryten 32 @ 666
+f+ skutter 1 @ 12
+flj
 EOF
 EXPECT=<<EOF
 [{"name":"cat","size":1,"offset":0},{"name":"rimmer","size":12,"offset":0},{"name":"skutter","size":1,"offset":12},{"name":"lister","size":32,"offset":666},{"name":"kryten","size":32,"offset":666}]
@@ -536,20 +436,8 @@ RUN
 NAME=flag alias
 FILE==
 CMDS=<<EOF
-fa foo=bar+3
-f bar=3
-?v foo
-EOF
-EXPECT=<<EOF
-0x6
-EOF
-RUN
-
-NAME=flag alias 2
-FILE==
-CMDS=<<EOF
 fa foo bar+3
-f bar=3
+f bar @ 3
 ?v foo
 EOF
 EXPECT=<<EOF
@@ -560,7 +448,7 @@ RUN
 NAME=flag alias infinite check
 FILE==
 CMDS=<<EOF
-fa foo=foo+3
+fa foo foo+3
 ?v foo
 EOF
 EXPECT=<<EOF
@@ -571,10 +459,10 @@ RUN
 NAME=rename flags from bin
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
-f~sym.__libc_csu_init
+fl~sym.__libc_csu_init
 fr sym.__libc_csu_init newname
-f~sym.__libc_csu_init
-f~newname
+fl~sym.__libc_csu_init
+fl~newname
 EOF
 EXPECT=<<EOF
 0x00400520 137 sym.__libc_csu_init
@@ -582,23 +470,44 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=f+
+NAME=f and f+ behavior
 FILE==
 CMDS=<<EOF
-f+foo=10
-f+bar=20
-f+cow=10
-f+low=20
-f~?
+f foo 10
+f bar 20
+f cow 10
+f low 20
+fl~?
+f-*
+f+ foo 10
+f+ bar 20
+f+ cow 10
+f+ low 20
+fl~?
+f-*
+f foo @ 10
+f bar @ 20
+f cow @ 10
+f low @ 20
+fl~?
+f-*
+f+ foo @ 10
+f+ bar @ 20
+f+ cow @ 10
+f+ low @ 20
+fl~?
 EOF
 EXPECT=<<EOF
+1
+4
 2
+4
 EOF
 RUN
 
 NAME=dup flags with filter
 FILE=bins/elf/ifunc_rel64
-CMDS=f~obj._IO_helper_jumps
+CMDS=fl~obj._IO_helper_jumps
 EXPECT=<<EOF
 0x0049ad40 168 obj._IO_helper_jumps
 0x0049b680 168 obj._IO_helper_jumps_1
@@ -608,26 +517,26 @@ RUN
 NAME=flag renaming and reusing the old name for something new
 FILE=malloc://1024
 CMDS=<<EOF
-f blah = 0x100
+f blah @ 0x100
 fr blah bloh
-f blah = 0x200
-f
+f blah @ 0x200
+fl
 EOF
 EXPECT=<<EOF
-0x00000100 0 bloh
-0x00000200 0 blah
+0x00000100 1 bloh
+0x00000200 1 blah
 EOF
 RUN
 
 NAME=base64 armored flags
 FILE=malloc://1024
 CMDS=<<EOF
-f direct1 1 0 verbatim
-f direct2 1 16 base64:ImJhc2U2NCBhcm1vcmVkIg==
-f indirect=32
+f direct1 1 verbatim @ 0
+f direct2 1 base64:ImJhc2U2NCBhcm1vcmVkIg== @ 16
+f indirect @ 32
 fC indirect base64:d29ya3MgdG9v
-f*
-fj
+fl*
+flj
 EOF
 EXPECT=<<EOF
 fs *
@@ -643,10 +552,103 @@ RUN
 NAME=f base64:NotB64=100
 FILE=malloc://1024
 CMDS=<<EOF
-f base64:NotB64=100
-f
+f base64:NotB64 @ 100
+fl
 EOF
 EXPECT=<<EOF
 0x00000064 1 base64:NotB64
+EOF
+RUN
+
+NAME=ft
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+ftl
+ftlj
+ftll
+ft bla "foo goo moo"
+f+ foo
+s main
+f+ goo
+ftl~bla
+ftll
+ftn bla
+EOF
+EXPECT=<<EOF
+fs
+env
+string
+threads
+network
+dylib
+alloc
+time
+process
+stdout
+["fs":[],"env":[],"string":[],"threads":[],"network":[],"dylib":[],"alloc":[],"time":[],"process":[],"stdout":[]]
+fs:
+env:
+string:
+threads:
+network:
+dylib:
+alloc:
+time:
+process:
+stdout:
+bla
+fs:
+dylib:
+process:
+stdout:
+network:
+alloc:
+env:
+string:
+time:
+bla:
+0x00400410  foo
+0x00400506  goo
+threads:
+0x00400410  foo
+0x00400506  goo
+EOF
+RUN
+
+NAME=fz
+FILE==
+CMDS=<<EOF
+fzl
+fzlj
+fz bla
+fzl
+fzlj
+fz.
+sd +5
+fz.
+fz- bla
+fzl
+fz bla
+fz-*
+fzl
+EOF
+EXPECT=<<EOF
+
+0x080  0x00000000  bla
+[{"name":"bla","from":0,"to":0}]
+bla ~
+bla ~
+EOF
+RUN
+
+NAME=no useless flags at 0
+FILE=bins/elf/ls
+CMDS=<<EOF
+fl. @ 0
+EOF
+EXPECT=<<EOF
+0x00000000 13440 segment.LOAD0
+0x00000000 0 segment.GNU_STACK
+0x00000000 64 segment.ehdr
 EOF
 RUN

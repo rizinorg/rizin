@@ -729,18 +729,18 @@ static void pic18_cond_branch(RzAnalysisOp *op, ut64 addr, const ut8 *buf, char 
 }
 
 static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
-	//TODO code should be refactored and broken into smaller chunks!!
-	//TODO complete the esil emitter
+	// TODO code should be refactored and broken into smaller chunks!!
+	// TODO complete the esil emitter
 	if (len < 2) {
 		op->size = len;
-		goto beach; //pancake style :P
+		goto beach; // pancake style :P
 	}
 	op->size = 2;
 	ut16 b = *(ut16 *)buf;
 	ut32 dword_instr = 0;
 	memcpy(&dword_instr, buf, RZ_MIN(sizeof(dword_instr), len));
 	switch (b >> 9) {
-	case 0x76: //call
+	case 0x76: // call
 		if (len < 4) {
 			goto beach;
 		}
@@ -751,24 +751,24 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		return op->size;
 	};
-	switch (b >> 11) { //NEX_T
-	case 0x1b: //rcall
+	switch (b >> 11) { // NEX_T
+	case 0x1b: // rcall
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		return op->size;
-	case 0x1a: //bra
+	case 0x1a: // bra
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->cycles = 2;
 		op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0x7ff);
 		rz_strbuf_setf(&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
 		return op->size;
 	}
-	switch (b >> 12) { //NOP,movff,BAF_T
-	case 0xf: //nop
+	switch (b >> 12) { // NOP,movff,BAF_T
+	case 0xf: // nop
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->cycles = 1;
 		rz_strbuf_setf(&op->esil, ",");
 		return op->size;
-	case 0xc: //movff
+	case 0xc: // movff
 		if (len < 4) {
 			goto beach;
 		}
@@ -778,43 +778,43 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 		op->size = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		return op->size;
-	case 0xb: //btfsc
-	case 0xa: //btfss
+	case 0xb: // btfsc
+	case 0xa: // btfss
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		return op->size;
-	case 0x9: //bcf
-	case 0x8: //bsf
-	case 0x7: //btg
+	case 0x9: // bcf
+	case 0x8: // bsf
+	case 0x7: // btg
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		return op->size;
 	};
 
-	switch (b >> 8) { //GOTO_T,N_T,K_T
-	case 0xe0: //bz
+	switch (b >> 8) { // GOTO_T,N_T,K_T
+	case 0xe0: // bz
 		pic18_cond_branch(op, addr, buf, "z");
 		return op->size;
-	case 0xe1: //bnz
+	case 0xe1: // bnz
 		pic18_cond_branch(op, addr, buf, "z,!");
 		return op->size;
-	case 0xe3: //bnc
+	case 0xe3: // bnc
 		pic18_cond_branch(op, addr, buf, "c,!");
 		return op->size;
-	case 0xe4: //bov
+	case 0xe4: // bov
 		pic18_cond_branch(op, addr, buf, "ov");
 		return op->size;
-	case 0xe5: //bnov
+	case 0xe5: // bnov
 		pic18_cond_branch(op, addr, buf, "ov,!");
 		return op->size;
-	case 0xe6: //bn
+	case 0xe6: // bn
 		pic18_cond_branch(op, addr, buf, "n");
 		return op->size;
-	case 0xe7: //bnn
+	case 0xe7: // bnn
 		pic18_cond_branch(op, addr, buf, "n,!");
 		return op->size;
-	case 0xe2: //bc
+	case 0xe2: // bc
 		pic18_cond_branch(op, addr, buf, "c");
 		return op->size;
-	case 0xef: //goto
+	case 0xef: // goto
 		if (len < 4) {
 			goto beach;
 		}
@@ -827,52 +827,52 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 		rz_strbuf_setf(&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		return op->size;
-	case 0xf: //addlw
+	case 0xf: // addlw
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->cycles = 1;
-		//TODO add support for dc flag
+		// TODO add support for dc flag
 		rz_strbuf_setf(&op->esil, "0x%x,wreg,+=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
-	case 0xe: //movlw
+	case 0xe: // movlw
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->cycles = 1;
 		rz_strbuf_setf(&op->esil, "0x%x,wreg,=,", *(ut16 *)buf & 0xff);
 		return op->size;
-	case 0xd: //mullw
+	case 0xd: // mullw
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		op->cycles = 1;
 		rz_strbuf_setf(&op->esil, "0x%x,wreg,*,prod,=", *(ut16 *)buf & 0xff);
 		return op->size;
-	case 0xc: //retlw
+	case 0xc: // retlw
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->cycles = 2;
 		rz_strbuf_setf(&op->esil, "0x%x,wreg,=,tos,pc,=,", *(ut16 *)buf & 0xff);
 		return op->size;
-	case 0xb: //andlw
+	case 0xb: // andlw
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 1;
 		rz_strbuf_setf(&op->esil, "0x%x,wreg,&=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
-	case 0xa: //xorlw
+	case 0xa: // xorlw
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		op->cycles = 1;
 		rz_strbuf_setf(&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
-	case 0x9: //iorlw
+	case 0x9: // iorlw
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 1;
 		rz_strbuf_setf(&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
-	case 0x8: //sublw
+	case 0x8: // sublw
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->cycles = 1;
-		//TODO add support for dc flag
+		// TODO add support for dc flag
 		rz_strbuf_setf(&op->esil, "wreg,0x%x,-,wreg,=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	};
 
-	switch (b >> 6) { //LFSR
-	case 0x3b8: //lfsr
+	switch (b >> 6) { // LFSR
+	case 0x3b8: // lfsr
 		if (len < 4) {
 			goto beach;
 		}
@@ -883,120 +883,120 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		return op->size;
 	};
-	switch (b >> 10) { //DAF_T
-	case 0x17: //subwf
-	case 0x16: //subwfb
-	case 0x15: //subfwb
-	case 0x13: //dcfsnz
-	case 0xb: //decfsz
-	case 0x1: //decf
+	switch (b >> 10) { // DAF_T
+	case 0x17: // subwf
+	case 0x16: // subwfb
+	case 0x15: // subfwb
+	case 0x13: // dcfsnz
+	case 0xb: // decfsz
+	case 0x1: // decf
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		return op->size;
-	case 0x14: //movf
+	case 0x14: // movf
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		return op->size;
-	case 0x12: //infsnz
-	case 0xf: //incfsz
-	case 0xa: //incf
-	case 0x8: //addwfc
+	case 0x12: // infsnz
+	case 0xf: // incfsz
+	case 0xa: // incf
+	case 0x8: // addwfc
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		return op->size;
-	case 0x9: //addwf
+	case 0x9: // addwf
 		op->cycles = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		return op->size;
-	case 0x11: //rlncf
-	case 0xd: //rlcf
+	case 0x11: // rlncf
+	case 0xd: // rlcf
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
 		return op->size;
-	case 0x10: //rrncf
-	case 0xc: //rrcf
+	case 0x10: // rrncf
+	case 0xc: // rrcf
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
 		return op->size;
-	case 0xe: //swapf
+	case 0xe: // swapf
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		return op->size;
-	case 0x7: //comf
+	case 0x7: // comf
 		op->type = RZ_ANALYSIS_OP_TYPE_CPL;
 		return op->size;
-	case 0x6: //xorwf
+	case 0x6: // xorwf
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		return op->size;
-	case 0x5: //andwf
+	case 0x5: // andwf
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		return op->size;
-	case 0x4: //iorwf
+	case 0x4: // iorwf
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		return op->size;
 	};
-	switch (b >> 9) { //AF_T
-	case 0x37: //movwf
+	switch (b >> 9) { // AF_T
+	case 0x37: // movwf
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		return op->size;
-	case 0x36: //negf
-	case 0x35: //clrf
-	case 0x34: //setf
+	case 0x36: // negf
+	case 0x35: // clrf
+	case 0x34: // setf
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		return op->size;
-	case 0x33: //tstfsz
+	case 0x33: // tstfsz
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		return op->size;
-	case 0x32: //cpfsgt
-	case 0x31: //cpfseq
-	case 0x30: //cpfslt
+	case 0x32: // cpfsgt
+	case 0x31: // cpfseq
+	case 0x30: // cpfslt
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		return op->size;
-	case 0x1: //mulwf
+	case 0x1: // mulwf
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		return op->size;
 	};
 	switch (b >> 4) {
-	case 0x10: //movlb
+	case 0x10: // movlb
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->cycles = 1;
 		rz_strbuf_setf(&op->esil, "0x%x,bsr,=,", *(ut16 *)buf & 0xf);
 		return op->size;
 	};
 	switch (b) {
-	case 0xff: //reset
-	case 0x7: //daw
-	case 0x4: //clwdt
-	case 0x3: //sleep
+	case 0xff: // reset
+	case 0x7: // daw
+	case 0x4: // clwdt
+	case 0x3: // sleep
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		return op->size;
-	case 0x13: //return
+	case 0x13: // return
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->cycles = 2;
 		rz_strbuf_setf(&op->esil, "tos,pc,=,");
 		return op->size;
-	case 0x12: //return
+	case 0x12: // return
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->cycles = 2;
 		rz_strbuf_setf(&op->esil, "tos,pc,=");
 		return op->size;
-	case 0x11: //retfie
-	case 0x10: //retfie
+	case 0x11: // retfie
+	case 0x10: // retfie
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		return op->size;
-	case 0xf: //tblwt
-	case 0xe: //tblwt
-	case 0xd: //tblwt
-	case 0xc: //tblwt
+	case 0xf: // tblwt
+	case 0xe: // tblwt
+	case 0xd: // tblwt
+	case 0xc: // tblwt
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		return op->size;
-	case 0xb: //tblrd
-	case 0xa: //tblrd
-	case 0x9: //tblrd
-	case 0x8: //tblrd
+	case 0xb: // tblrd
+	case 0xa: // tblrd
+	case 0x9: // tblrd
+	case 0x8: // tblrd
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		return op->size;
-	case 0x6: //pop
+	case 0x6: // pop
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		return op->size;
-	case 0x5: //push
+	case 0x5: // push
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		return op->size;
-	case 0x0: //nop
+	case 0x0: // nop
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->cycles = 1;
 		rz_strbuf_setf(&op->esil, ",");
@@ -1007,7 +1007,7 @@ beach:
 	return op->size;
 }
 
-static bool analysis_pic_midrange_set_reg_profile(RzAnalysis *esil) {
+static char *analysis_pic_midrange_get_reg_profile(RzAnalysis *esil) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	stkptr\n"
@@ -1034,10 +1034,10 @@ static bool analysis_pic_midrange_set_reg_profile(RzAnalysis *esil) {
 		"gpr	stkptr	.8	14	0\n"
 		"gpr	_sram	.32 15	0\n"
 		"gpr	_stack	.32 19	0\n";
-	return rz_reg_set_profile_string(esil->reg, p);
+	return strdup(p);
 }
 
-static bool analysis_pic_pic18_set_reg_profile(RzAnalysis *esil) {
+static char *analysis_pic_pic18_get_reg_profile(RzAnalysis *esil) {
 	const char *p =
 		"#pc lives in nowhere actually"
 		"=PC	pc\n"
@@ -1153,7 +1153,7 @@ static bool analysis_pic_pic18_set_reg_profile(RzAnalysis *esil) {
 		"gpr	stkptr	.8	96	0\n"
 		"gpr	tablat	.8	14	0\n";
 
-	return rz_reg_set_profile_string(esil->reg, p);
+	return strdup(p);
 }
 
 static int analysis_pic_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
@@ -1170,18 +1170,18 @@ static int analysis_pic_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	return -1;
 }
 
-static bool analysis_pic_set_reg_profile(RzAnalysis *analysis) {
+static char *analysis_pic_get_reg_profile(RzAnalysis *analysis) {
 	if (analysis->cpu && strcasecmp(analysis->cpu, "baseline") == 0) {
 		// TODO: We are using the midrange profile as the baseline
-		return analysis_pic_midrange_set_reg_profile(analysis);
+		return analysis_pic_midrange_get_reg_profile(analysis);
 	}
 	if (analysis->cpu && strcasecmp(analysis->cpu, "midrange") == 0) {
-		return analysis_pic_midrange_set_reg_profile(analysis);
+		return analysis_pic_midrange_get_reg_profile(analysis);
 	}
 	if (analysis->cpu && strcasecmp(analysis->cpu, "pic18") == 0) {
-		return analysis_pic_pic18_set_reg_profile(analysis);
+		return analysis_pic_pic18_get_reg_profile(analysis);
 	}
-	return false;
+	return NULL;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_pic = {
@@ -1191,7 +1191,7 @@ RzAnalysisPlugin rz_analysis_plugin_pic = {
 	.arch = "pic",
 	.bits = 8,
 	.op = &analysis_pic_op,
-	.set_reg_profile = &analysis_pic_set_reg_profile,
+	.get_reg_profile = &analysis_pic_get_reg_profile,
 	.esil = true
 };
 

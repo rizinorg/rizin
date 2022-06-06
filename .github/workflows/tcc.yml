@@ -8,7 +8,6 @@ on:
     - '**.in'
     - '**.inc'
     - '**/meson.build'
-    - 'shlr/rizin-shell-parser/**'
     - 'subprojects/**'
     - 'test/**'
     - '.github/workflows/tcc.yml'
@@ -25,8 +24,8 @@ on:
     - '**.in'
     - '**.inc'
     - '**/meson.build'
-    - 'shlr/rizin-shell-parser/**'
     - 'subprojects/**'
+    - 'test/**'
     - '.github/workflows/tcc.yml'
     branches:
     - 'dev'
@@ -42,7 +41,7 @@ jobs:
 
     - name: Checkout TinyCC repository
       run: |
-          git clone https://repo.or.cz/tinycc.git
+          git clone https://github.com/tinycc/tinycc
           cd tinycc
           #git checkout mob
           # Well-tested commit
@@ -87,6 +86,8 @@ jobs:
     - name: Install test dependencies
       run: |
           python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+          sudo apt-get update
+          sudo apt-get --assume-yes install libc6 libc6-i386
 
     - name: Run tests
       env:

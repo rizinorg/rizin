@@ -23,12 +23,12 @@ int test1() {
 
 	th = rz_th_new(&looper, &ctr, 0);
 	th = rz_th_new(&looper, &ctr, 0);
-	//th = rz_th_new (&looper, &ctr, 0);
+	// th = rz_th_new (&looper, &ctr, 0);
 
 #if __i386__ || __x86_64__
 	asm("int3");
 #endif
-	//rz_th_start (th, true);
+	// rz_th_start (th, true);
 	while (rz_th_wait_async(th)) {
 		printf("\nwaiting...\n");
 		fflush(stdout);

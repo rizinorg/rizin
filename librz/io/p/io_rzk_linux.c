@@ -441,8 +441,8 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 		RzPrint *print = rz_print_new();
 		switch (buf[1]) {
 		case 'l':
-			//read linear address
-			//R! rl addr len
+			// read linear address
+			// R! rl addr len
 			if (buf[2] != ' ') {
 				print_help(io, "rl", 0);
 				goto end;
@@ -458,8 +458,8 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 			ioctl_n = IOCTL_READ_KERNEL_MEMORY;
 			break;
 		case 'p':
-			//read process address
-			//R! rp pid address len
+			// read process address
+			// R! rp pid address len
 			if (buf[2] != ' ') {
 				print_help(io, "rp", 0);
 				goto end;
@@ -476,8 +476,8 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 			ioctl_n = IOCTL_READ_PROCESS_ADDR;
 			break;
 		case 'P':
-			//read physical address
-			//R! rP address len
+			// read physical address
+			// R! rP address len
 			if (buf[2] != ' ') {
 				print_help(io, "rP", 0);
 				goto end;
@@ -512,8 +512,8 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 		inphex = (buf[2] == 'x') ? 1 : 0;
 		switch (buf[1]) {
 		case 'l':
-			//write linear address
-			//R! wl addr str
+			// write linear address
+			// R! wl addr str
 			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
 				print_help(io, "wl", 0);
 				goto end;
@@ -529,8 +529,8 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 			ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
 			break;
 		case 'p':
-			//write process address
-			//R! wp pid address str
+			// write process address
+			// R! wp pid address str
 			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
 				print_help(io, "wp", 0);
 				goto end;
@@ -546,8 +546,8 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 			ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
 			break;
 		case 'P':
-			//write physical address
-			//R! wP address str
+			// write physical address
+			// R! wP address str
 			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
 				print_help(io, "wP", 0);
 				goto end;
@@ -585,8 +585,8 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 		}
 		break;
 	case 'M': {
-		//Print kernel memory map.
-		//R! M
+		// Print kernel memory map.
+		// R! M
 		int i, j;
 		struct rzk_kernel_maps map_data;
 		struct rzk_kernel_map_info *info;
@@ -624,8 +624,8 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 		}
 	} break;
 	case 'R': {
-		//Read control registers
-		//R! R[p]
+		// Read control registers
+		// R! R[p]
 		struct rzk_control_reg reg_data;
 		ioctl_n = IOCTL_READ_CONTROL_REG;
 		ret = ioctl((int)(size_t)iodesc->data, ioctl_n, &reg_data);
@@ -636,7 +636,7 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 		}
 
 #if __i386__ || __x86_64__
-		//Print cr1 as null instead of random value from kernel land.
+		// Print cr1 as null instead of random value from kernel land.
 		reg_data.cr1 = 0;
 		if (buf[1] != 0 && buf[1] == 'p') {
 			x86_ctrl_reg_pretty_print(io, reg_data);
@@ -672,8 +672,8 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 #endif
 	} break;
 	case 'p': {
-		//Print process info
-		//R! p pid
+		// Print process info
+		// R! p pid
 		ut64 i;
 		ut64 nextstart;
 		ut64 buffsize;
@@ -726,12 +726,12 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 					nextstart > 0 && nextstart - 1 < buffsize) {
 					break;
 				}
-				io->cb_printf("f pid.%d.%s.%d.start=0x%" PFMT64x "\n", proc_data.pid, (char *)&(proc_data.vmareastruct[i + 7]), j, (ut64)proc_data.vmareastruct[i]);
-				io->cb_printf("f pid.%d.%s.%d.end=0x%" PFMT64x "\n", proc_data.pid, (char *)&(proc_data.vmareastruct[i + 7]), j, (ut64)proc_data.vmareastruct[i + 1]);
+				io->cb_printf("f pid.%d.%s.%d.start @ 0x%" PFMT64x "\n", proc_data.pid, (char *)&(proc_data.vmareastruct[i + 7]), j, (ut64)proc_data.vmareastruct[i]);
+				io->cb_printf("f pid.%d.%s.%d.end @ 0x%" PFMT64x "\n", proc_data.pid, (char *)&(proc_data.vmareastruct[i + 7]), j, (ut64)proc_data.vmareastruct[i + 1]);
 				j += 1;
 				i = nextstart;
 			}
-			io->cb_printf("f pid.%d.task_struct = 0x%08zu\n", proc_data.pid, proc_data.task);
+			io->cb_printf("f pid.%d.task_struct @ 0x%08zu\n", proc_data.pid, proc_data.task);
 		} else {
 			io->cb_printf("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
 			io->cb_printf("task_struct = 0x%08zu\n", proc_data.task);

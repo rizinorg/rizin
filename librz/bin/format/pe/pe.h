@@ -17,19 +17,19 @@
 #define RZ_BIN_PE_SCN_IS_WRITABLE(x)   x &PE_IMAGE_SCN_MEM_WRITE
 
 // SECTION FLAGS FOR EXE/PE/DLL START
-#define IMAGE_SCN_TYPE_NO_PAD            0x00000008 //The section should not be padded to the next boundary. This flag is obsolete and is replaced by #define IMAGE_SCN_ALIGN_1BYTES. This is valid only for object files.
-#define IMAGE_SCN_CNT_CODE               0x00000020 //The section contains executable code.
-#define IMAGE_SCN_CNT_INITIALIZED_DATA   0x00000040 //The section contains initialized data.
-#define IMAGE_SCN_CNT_UNINITIALIZED_DATA 0x00000080 //The section contains uninitialized data.
-#define IMAGE_SCN_LNK_OTHER              0x00000100 //Reserved for future use.
-#define IMAGE_SCN_LNK_INFO               0x00000200 //The section contains comments or other information. The .drectve section has this type. This is valid for object files only.
-#define IMAGE_SCN_LNK_REMOVE             0x00000800 //The section will not become part of the image. This is valid only for object files.
-#define IMAGE_SCN_LNK_COMDAT             0x00001000 //The section contains COMDAT data. For more information, see COMDAT Sections (Object Only). This is valid only for object files.
-#define IMAGE_SCN_GPREL                  0x00008000 //The section contains data referenced through the global pointer (GP).
-#define IMAGE_SCN_MEM_PURGEABLE          0x00020000 //Reserved for future use.
-#define IMAGE_SCN_MEM_16BIT              0x00020000 //Reserved for future use.
-#define IMAGE_SCN_MEM_LOCKED             0x00040000 //Reserved for future use.
-#define IMAGE_SCN_MEM_PRELOAD            0x00080000 //Reserved for future use.
+#define IMAGE_SCN_TYPE_NO_PAD            0x00000008 // The section should not be padded to the next boundary. This flag is obsolete and is replaced by #define IMAGE_SCN_ALIGN_1BYTES. This is valid only for object files.
+#define IMAGE_SCN_CNT_CODE               0x00000020 // The section contains executable code.
+#define IMAGE_SCN_CNT_INITIALIZED_DATA   0x00000040 // The section contains initialized data.
+#define IMAGE_SCN_CNT_UNINITIALIZED_DATA 0x00000080 // The section contains uninitialized data.
+#define IMAGE_SCN_LNK_OTHER              0x00000100 // Reserved for future use.
+#define IMAGE_SCN_LNK_INFO               0x00000200 // The section contains comments or other information. The .drectve section has this type. This is valid for object files only.
+#define IMAGE_SCN_LNK_REMOVE             0x00000800 // The section will not become part of the image. This is valid only for object files.
+#define IMAGE_SCN_LNK_COMDAT             0x00001000 // The section contains COMDAT data. For more information, see COMDAT Sections (Object Only). This is valid only for object files.
+#define IMAGE_SCN_GPREL                  0x00008000 // The section contains data referenced through the global pointer (GP).
+#define IMAGE_SCN_MEM_PURGEABLE          0x00020000 // Reserved for future use.
+#define IMAGE_SCN_MEM_16BIT              0x00020000 // Reserved for future use.
+#define IMAGE_SCN_MEM_LOCKED             0x00040000 // Reserved for future use.
+#define IMAGE_SCN_MEM_PRELOAD            0x00080000 // Reserved for future use.
 #define IMAGE_SCN_ALIGN_1BYTES           0x00100000 // Align data on a 1-byte boundary. Valid only for object files.
 #define IMAGE_SCN_ALIGN_2BYTES           0x00200000 // Align data on a 2-byte boundary. Valid only for object files.
 #define IMAGE_SCN_ALIGN_4BYTES           0x00300000 // Align data on a 4-byte boundary. Valid only for object files.
@@ -44,10 +44,10 @@
 #define IMAGE_SCN_ALIGN_2048BYTES        0x00C00000 // Align data on a 2048-byte boundary. Valid only for object files.
 #define IMAGE_SCN_ALIGN_4096BYTES        0x00D00000 // Align data on a 4096-byte boundary. Valid only for object files.
 #define IMAGE_SCN_ALIGN_8192BYTES        0x00E00000 // Align data on an 8192-byte boundary. Valid only for object files.
-#define IMAGE_SCN_LNK_NRELOC_OVFL        0x01000000 //The section contains extended relocations.
-#define IMAGE_SCN_MEM_DISCARDABLE        0x02000000 //The section can be discarded as needed.
-#define IMAGE_SCN_MEM_NOT_CACHED         0x04000000 //The section cannot be cached.
-#define IMAGE_SCN_MEM_NOT_PAGED          0x08000000 //The section is not pageable.
+#define IMAGE_SCN_LNK_NRELOC_OVFL        0x01000000 // The section contains extended relocations.
+#define IMAGE_SCN_MEM_DISCARDABLE        0x02000000 // The section can be discarded as needed.
+#define IMAGE_SCN_MEM_NOT_CACHED         0x04000000 // The section cannot be cached.
+#define IMAGE_SCN_MEM_NOT_PAGED          0x08000000 // The section is not pageable.
 
 #define PE_SCN_ALIGN_MASK 0x00F00000
 
@@ -124,8 +124,8 @@ struct PE_(rz_bin_pe_obj_t) {
 	// these pointers contain a copy of the headers and sections!
 	PE_(image_dos_header) * dos_header;
 	PE_(image_nt_headers) * nt_headers;
-	PE_(image_optional_header) * optional_header; //not free this just pointer into nt_headers
-	PE_(image_data_directory) * data_directory; //not free this just pointer into nt_headers
+	PE_(image_optional_header) * optional_header; // not free this just pointer into nt_headers
+	PE_(image_data_directory) * data_directory; // not free this just pointer into nt_headers
 	PE_(image_section_header) * section_header;
 	PE_(image_export_directory) * export_directory;
 	PE_(image_import_directory) * import_directory;
@@ -159,7 +159,7 @@ struct PE_(rz_bin_pe_obj_t) {
 	int big_endian;
 	RzList *rich_entries;
 	RzList *relocs;
-	RzList *resources; //RzList of rz_pe_resources
+	RzList *resources; // RzList of rz_pe_resources
 	const char *file;
 	RzBuffer *b;
 	Sdb *kv;
@@ -199,7 +199,8 @@ struct PE_(rz_bin_pe_obj_t) * PE_(rz_bin_pe_new_buf)(RzBuffer *buf, bool verbose
 int PE_(rz_bin_pe_get_debug_data)(struct PE_(rz_bin_pe_obj_t) * bin, struct SDebugInfo *res);
 int PE_(bin_pe_get_claimed_checksum)(struct PE_(rz_bin_pe_obj_t) * bin);
 int PE_(bin_pe_get_actual_checksum)(struct PE_(rz_bin_pe_obj_t) * bin);
-const char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin);
+const char *PE_(bin_pe_get_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin);
+char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin);
 int PE_(bin_pe_is_authhash_valid)(struct PE_(rz_bin_pe_obj_t) * bin);
 int PE_(bin_pe_get_overlay)(struct PE_(rz_bin_pe_obj_t) * bin, ut64 *size);
 void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) * bin, struct rz_bin_pe_section_t **sects);

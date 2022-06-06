@@ -142,7 +142,6 @@ static int i8080_disasm(unsigned char const* const code, char* text, int text_sz
       return op->size;
     }
   }
-  snprintf(text, text_sz, "db 0x%02x", cmd);
+  snprintf(text, text_sz, "db @ 0x%02x", cmd);
   return 1;
 }
-

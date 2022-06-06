@@ -3,7 +3,7 @@
 
 /** \file core_plugin_example.c
  * This file is an example on how to write core plugins for rizin.
- * 
+ *
  * Compilation:
  * - gcc -o core_plugin_example.so -O3 -std=c99 -Wall -fPIC `pkg-config --cflags --libs rz_core` core_plugin_example.c -shared
 

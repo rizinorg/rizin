@@ -21,7 +21,7 @@ typedef enum rz_log_level {
 	RZ_LOGLVL_ERROR = 5,
 	RZ_LOGLVL_FATAL = 6, // This will call rz_sys_breakpoint() and trap the process for debugging!
 	RZ_LOGLVL_NONE = 0xFF
-} RLogLevel;
+} RzLogLevel;
 
 #if RZ_CHECKS_LEVEL >= 2
 #define RZ_DEFAULT_LOGLVL RZ_LOGLVL_WARN
@@ -29,8 +29,8 @@ typedef enum rz_log_level {
 #define RZ_DEFAULT_LOGLVL RZ_LOGLVL_ERROR
 #endif
 
-typedef void (*RLogCallback)(const char *output, const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
+typedef void (*RzLogCallback)(const char *output, const char *funcname, const char *filename,
+	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
 
 #define RZ_VLOG(lvl, tag, fmtstr, args) rz_vlog(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, lvl, tag, fmtstr, args);
@@ -64,26 +64,25 @@ extern "C" {
 #endif
 
 // Called by rz_core to set the configuration variables
-RZ_API void rz_log_set_level(RLogLevel level);
+RZ_API void rz_log_set_level(RzLogLevel level);
 RZ_API void rz_log_set_file(const char *filename);
 RZ_API void rz_log_set_srcinfo(bool show_info);
 RZ_API void rz_log_set_colors(bool show_colors);
-RZ_API void rz_log_set_traplevel(RLogLevel level);
-// TODO: rz_log_set_options(enum RLogOptions)
+RZ_API void rz_log_set_traplevel(RzLogLevel level);
 
 // Functions for adding log callbacks
-RZ_API void rz_log_add_callback(RLogCallback cbfunc);
-RZ_API void rz_log_del_callback(RLogCallback cbfunc);
+RZ_API void rz_log_add_callback(RzLogCallback cbfunc);
+RZ_API void rz_log_del_callback(RzLogCallback cbfunc);
 // TODO: rz_log_get_callbacks()
 
 /* Define rz_log as weak so it can be 'overwritten' externally
    This allows another method of output redirection on POSIX (Windows?)
    You can override this function to handle all logging logic / output yourself */
 RZ_API void rz_log(const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(6, 7);
+	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(6, 7);
 
 RZ_API void rz_vlog(const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args);
+	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, va_list args);
 
 #ifdef __cplusplus
 }

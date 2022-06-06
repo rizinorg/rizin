@@ -20,6 +20,17 @@ RZ_LIB_VERSION_HEADER(rz_config);
 #define CN_RO  0x000010
 #define CN_RW  0x000020
 
+#define NODECB(w, x, y)    rz_config_set_cb(cfg, w, x, y)
+#define NODEICB(w, x, y)   rz_config_set_i_cb(cfg, w, x, y)
+#define SETDESC(x, y)      rz_config_node_desc(x, y)
+#define SETOPTIONS(x, ...) set_options(x, __VA_ARGS__)
+#define SETI(x, y, z)      SETDESC(rz_config_set_i(cfg, x, y), z)
+#define SETB(x, y, z)      SETDESC(rz_config_set_b(cfg, x, y), z)
+#define SETICB(w, x, y, z) SETDESC(NODEICB(w, x, y), z)
+#define SETPREF(x, y, z)   SETDESC(rz_config_set(cfg, x, y), z)
+#define SETCB(w, x, y, z)  SETDESC(NODECB(w, x, y), z)
+#define SETBPREF(x, y, z)  SETDESC(NODECB(x, y, boolify_var_cb), z)
+
 typedef bool (*RzConfigCallback)(void *user, void *data);
 
 typedef struct rz_config_node_t {
@@ -58,8 +69,8 @@ typedef struct rz_config_hold_char_t {
 
 typedef struct rz_config_hold_t {
 	RzConfig *cfg;
-	RzList *list_num; //list of RzConfigHoldNum to hold numeric values
-	RzList *list_char; //list of RzConfigHoldChar to hold char values
+	RzList *list_num; // list of RzConfigHoldNum to hold numeric values
+	RzList *list_char; // list of RzConfigHoldChar to hold char values
 } RzConfigHold;
 
 #ifdef RZ_API
@@ -76,22 +87,24 @@ RZ_API RzConfig *rz_config_clone(RzConfig *cfg);
 RZ_API void rz_config_free(RzConfig *cfg);
 RZ_API void rz_config_lock(RzConfig *cfg, int l);
 RZ_API void rz_config_bump(RzConfig *cfg, const char *key);
-RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64 i);
-RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, const char *name, bool value);
+RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name, const ut64 i);
+RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name, bool value);
 RZ_API RzConfigNode *rz_config_set_cb(RzConfig *cfg, const char *name, const char *value, bool (*callback)(void *user, void *data));
 RZ_API RzConfigNode *rz_config_set_i_cb(RzConfig *cfg, const char *name, int ivalue, bool (*callback)(void *user, void *data));
-RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, const char *name, const char *value);
-RZ_API bool rz_config_rm(RzConfig *cfg, const char *name);
-RZ_API ut64 rz_config_get_i(RzConfig *cfg, const char *name);
-RZ_API bool rz_config_get_b(RzConfig *cfg, const char *name);
-RZ_API const char *rz_config_get(RzConfig *cfg, const char *name);
-RZ_API const char *rz_config_desc(RzConfig *cfg, const char *name, const char *desc);
-RZ_API const char *rz_config_node_desc(RzConfigNode *node, const char *desc);
-RZ_API RzConfigNode *rz_config_node_get(RzConfig *cfg, const char *name);
-RZ_API RzConfigNode *rz_config_node_new(const char *name, const char *value);
-RZ_API void rz_config_node_free(void *n);
+RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, const char *value);
+RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *node);
+RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name);
+RZ_API ut64 rz_config_get_i(RzConfig *cfg, RZ_NONNULL const char *name);
+RZ_API bool rz_config_get_b(RzConfig *cfg, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW const char *rz_config_get(RzConfig *cfg, RZ_NONNULL const char *name);
+RZ_API const char *rz_config_desc(RzConfig *cfg, RZ_NONNULL const char *name, RZ_NULLABLE const char *desc);
+RZ_API const char *rz_config_node_desc(RzConfigNode *node, RZ_NULLABLE const char *desc);
+RZ_API RZ_BORROW RzConfigNode *rz_config_node_get(RzConfig *cfg, RZ_NONNULL const char *name);
+RZ_API RZ_OWN RzConfigNode *rz_config_node_new(RZ_NONNULL const char *name, RZ_NONNULL const char *value);
+RZ_API RZ_OWN RzConfigNode *rz_config_node_clone(RzConfigNode *n);
+RZ_API void rz_config_node_free(RZ_NULLABLE void *n);
 RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RzConfigNode *node);
-RZ_API bool rz_config_toggle(RzConfig *cfg, const char *name);
+RZ_API bool rz_config_toggle(RzConfig *cfg, RZ_NONNULL const char *name);
 RZ_API bool rz_config_readonly(RzConfig *cfg, const char *key);
 RZ_API bool rz_config_eval(RzConfig *cfg, const char *str);
 

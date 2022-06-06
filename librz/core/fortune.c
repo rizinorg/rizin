@@ -9,8 +9,11 @@ static const char *fortunes[] = {
 
 static char *rizin_fortune_file(const char *type) {
 	if (!strncmp(type, "tips", 4) || !strncmp(type, "fun", 3)) {
-		return rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_FORTUNES, "fortunes.%s"),
-			rz_sys_prefix(NULL), type);
+		char *fortunes_dir = rz_path_system(RZ_FORTUNES);
+		char buf[100];
+		char *res = rz_file_path_join(fortunes_dir, rz_strf(buf, "fortunes.%s", type));
+		free(fortunes_dir);
+		return res;
 	}
 	return RZ_STR_DUP(type);
 }
@@ -43,7 +46,7 @@ RZ_API void rz_core_fortune_list(RzCore *core) {
 	free(file);
 }
 
-static char *getrandomline(RzCore *core) {
+RZ_API RZ_OWN char *rz_core_fortune_get_random(RzCore *core) {
 	int lines = 0;
 	const char *types = (char *)rz_config_get(core->config, "cfg.fortunes.file");
 
@@ -55,9 +58,9 @@ static char *getrandomline(RzCore *core) {
 }
 
 RZ_API void rz_core_fortune_print_random(RzCore *core) {
-	char *line = getrandomline(core);
+	char *line = rz_core_fortune_get_random(core);
 	if (!line) {
-		line = getrandomline(core);
+		line = rz_core_fortune_get_random(core);
 	}
 	if (line) {
 		if (rz_config_get_i(core->config, "cfg.fortunes.clippy")) {

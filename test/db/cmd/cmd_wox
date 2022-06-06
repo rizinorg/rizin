@@ -20,7 +20,7 @@ wox 0xabcd@!10
 p8 14
 EOF
 EXPECT=<<EOF
-a5cea1c7a2dca2d9a1cf00000000
+c3a8c7a1c4bac4bfc7a900000000
 EOF
 RUN
 
@@ -33,7 +33,7 @@ wox 0xabcdef@!10
 ps 14
 EOF
 EXPECT=<<EOF
-helloworld\x00\x00\x00\x00
+è\x83Ǣ\x98Ŀ\x83\xcf\x00\x00\x00\x00
 EOF
 RUN
 
@@ -46,7 +46,7 @@ wox 0xabcdef01@!10
 p8 14
 EOF
 EXPECT=<<EOF
-698aa1c76e98a2d96d8b00000000
+c3a8836dc4ba8073c7a900000000
 EOF
 RUN
 
@@ -59,7 +59,7 @@ wox 0xabcdef0102@!10
 ps 14
 EOF
 EXPECT=<<EOF
-helloworld\x00\x00\x00\x00
+è\x83mmܢ\x9dmf\x00\x00\x00\x00
 EOF
 RUN
 
@@ -72,7 +72,7 @@ wox 0xabcdef010203@!10
 ps 14
 EOF
 EXPECT=<<EOF
-helloworld\x00\x00\x00\x00
+è\x83mmtĿ\x83e\x00\x00\x00\x00
 EOF
 RUN
 
@@ -85,7 +85,7 @@ wox 0xabcdef01020304@!10
 ps 14
 EOF
 EXPECT=<<EOF
-helloworld\x00\x00\x00\x00
+è\x83mmtk١\x8b\x00\x00\x00\x00
 EOF
 RUN
 
@@ -98,7 +98,7 @@ wox 0xabcdef0102030405@!10
 p8 14
 EOF
 EXPECT=<<EOF
-6d616f6e6e98a2d9696000000000
+c3a8836d6d746b77c7a900000000
 EOF
 RUN
 
@@ -210,7 +210,7 @@ NAME=wo2 on woe
 FILE==
 CMDS=<<EOF
 b 32
-woe 1
+woe 0 255
 wo2
 e hex.header=false
 px

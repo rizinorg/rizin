@@ -1,164 +1,176 @@
 // SPDX-FileCopyrightText: 2014-2020 inisider <inisider@gmail.com>
+// SPDX-FileCopyrightText: 2021 Basstorm <basstorm@nyist.edu.cn>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "types.h"
-#include "dbi.h"
-#include "stream_file.h"
-#include "tpi.h"
+#include "pdb.h"
 
-#define PDB_ALIGN 4
-
-static void free_dbi_stream(void *stream) {
-	SDbiStream *t = (SDbiStream *)stream;
-	SDBIExHeader *dbi_ex_header = 0;
-
-	RzListIter *it = rz_list_iterator(t->dbiexhdrs);
-	while (rz_list_iter_next(it)) {
-		dbi_ex_header = (SDBIExHeader *)rz_list_iter_get(it);
-		free(dbi_ex_header->modName.name);
-		free(dbi_ex_header->objName.name);
-		free(dbi_ex_header);
-	}
-	rz_list_free(t->dbiexhdrs);
-}
-
-static void parse_dbi_header(SDBIHeader *dbi_header, RZ_STREAM_FILE *stream_file) {
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->magic);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->version);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->age);
-	stream_file_read(stream_file, sizeof(ut16), (char *)&dbi_header->gssymStream);
-	stream_file_read(stream_file, sizeof(ut16), (char *)&dbi_header->vers);
-	stream_file_read(stream_file, sizeof(st16), (char *)&dbi_header->pssymStream);
-	stream_file_read(stream_file, sizeof(ut16), (char *)&dbi_header->pdbver);
-	stream_file_read(stream_file, sizeof(st16), (char *)&dbi_header->symrecStream);
-	stream_file_read(stream_file, sizeof(ut16), (char *)&dbi_header->pdbver2);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->module_size);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->seccon_size);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->secmap_size);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->filinf_size);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->tsmap_size);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->mfc_index);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->dbghdr_size);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->ecinfo_size);
-	stream_file_read(stream_file, sizeof(ut16), (char *)&dbi_header->flags);
-	stream_file_read(stream_file, 2, (char *)&dbi_header->machine);
-	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->resvd);
-}
-
-static int parse_ssymbol_range(char *data, int max_len, SSymbolRange *symbol_range) {
-	int read_bytes = 0;
-
-	READ2(read_bytes, max_len, symbol_range->section, data, st16);
-	READ2(read_bytes, max_len, symbol_range->padding1, data, st16);
-	READ4(read_bytes, max_len, symbol_range->offset, data, st32);
-	READ4(read_bytes, max_len, symbol_range->size, data, st32);
-	READ4(read_bytes, max_len, symbol_range->flags, data, ut32);
-	READ4(read_bytes, max_len, symbol_range->module, data, st32);
-
-	// TODO: why not need to read this padding?
-	//	READ2(read_bytes, max_len, symbol_range->padding2, data, short);
-	READ4(read_bytes, max_len, symbol_range->data_crc, data, ut32);
-	READ4(read_bytes, max_len, symbol_range->reloc_crc, data, ut32);
-
-	return read_bytes;
-}
-
-static int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_header) {
-	ut32 read_bytes = 0, before_read_bytes = 0;
-
-	READ4(read_bytes, max_len, dbi_ex_header->opened, data, ut32);
-
-	before_read_bytes = read_bytes;
-	read_bytes += parse_ssymbol_range(data, max_len, &dbi_ex_header->range);
-	data += (read_bytes - before_read_bytes);
-
-	READ2(read_bytes, max_len, dbi_ex_header->flags, data, ut16);
-	READ2(read_bytes, max_len, dbi_ex_header->stream, data, st16);
-	READ4(read_bytes, max_len, dbi_ex_header->symSize, data, ut32);
-	READ4(read_bytes, max_len, dbi_ex_header->oldLineSize, data, ut32);
-	READ4(read_bytes, max_len, dbi_ex_header->lineSize, data, ut32);
-	READ2(read_bytes, max_len, dbi_ex_header->nSrcFiles, data, st16);
-	READ2(read_bytes, max_len, dbi_ex_header->padding1, data, st16);
-	READ4(read_bytes, max_len, dbi_ex_header->offsets, data, ut32);
-	READ4(read_bytes, max_len, dbi_ex_header->niSource, data, ut32);
-	READ4(read_bytes, max_len, dbi_ex_header->niCompiler, data, ut32);
-
-	before_read_bytes = read_bytes;
-	parse_scstring(&dbi_ex_header->modName, (unsigned char *)data, &read_bytes, max_len);
-	data += (read_bytes - before_read_bytes);
-
-	parse_scstring(&dbi_ex_header->objName, (unsigned char *)data, &read_bytes, max_len);
-
-	return read_bytes;
-}
-
-static void parse_dbg_header(SDbiDbgHeader *dbg_header, RZ_STREAM_FILE *stream_file) {
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_fpo);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_exception);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_fixup);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_omap_to_src);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_omap_from_src);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_section_hdr);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_token_rid_map);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_xdata);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_pdata);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_new_fpo);
-	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_section_hdr_orig);
-}
-
-void init_dbi_stream(SDbiStream *dbi_stream) {
-	dbi_stream->free_ = free_dbi_stream;
-}
-
-void parse_dbi_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream_file) {
-	SDbiStream *dbi_stream = (SDbiStream *)parsed_pdb_stream;
-	SDBIExHeader *dbi_ex_header = 0;
-	int pos = 0;
-	char *dbiexhdr_data = 0, *p_tmp = 0;
-	int size = 0, sz = 0;
-	int i = 0;
-
-	parse_dbi_header(&dbi_stream->dbi_header, stream_file);
-	pos += sizeof(SDBIHeader) - 2; // 2 because enum in C equal to 4, but
-		// to read just 2;
-	stream_file_seek(stream_file, pos, 0);
-
-	size = dbi_stream->dbi_header.module_size;
-	dbiexhdr_data = (char *)malloc(size);
-	if (!dbiexhdr_data) {
+RZ_IPI void free_dbi_stream(RzPdbDbiStream *stream) {
+	if (!stream) {
 		return;
 	}
-	stream_file_read(stream_file, size, dbiexhdr_data);
+	RzPdbDbiStreamExHdr *ex_hdr;
+	RzListIter *it;
+	rz_list_foreach (stream->ex_hdrs, it, ex_hdr) {
+		RZ_FREE(ex_hdr->ModuleName);
+		RZ_FREE(ex_hdr->ObjFileName);
+		RZ_FREE(ex_hdr);
+	}
+	rz_list_free(stream->ex_hdrs);
+	free(stream);
+}
 
-	dbi_stream->dbiexhdrs = rz_list_new();
-	p_tmp = dbiexhdr_data;
-	while (i < size) {
-		dbi_ex_header = (SDBIExHeader *)malloc(sizeof(SDBIExHeader));
-		if (!dbi_ex_header) {
-			break;
+static bool parse_dbi_stream_header(RzPdbDbiStream *s, RzBuffer *buf) {
+	return rz_buf_read_le32(buf, (ut32 *)&s->hdr.version_signature) &&
+		rz_buf_read_le32(buf, &s->hdr.version_header) &&
+		rz_buf_read_le32(buf, &s->hdr.age) &&
+		rz_buf_read_le16(buf, &s->hdr.global_stream_index) &&
+		rz_buf_read_le16(buf, &s->hdr.build_number) &&
+		rz_buf_read_le16(buf, &s->hdr.public_stream_index) &&
+		rz_buf_read_le16(buf, &s->hdr.pdb_dll_version) &&
+		rz_buf_read_le16(buf, &s->hdr.sym_record_stream) &&
+		rz_buf_read_le16(buf, &s->hdr.pdb_dll_rbld) &&
+		rz_buf_read_le32(buf, &s->hdr.mod_info_size) &&
+		rz_buf_read_le32(buf, &s->hdr.section_contribution_size) &&
+		rz_buf_read_le32(buf, &s->hdr.section_map_size) &&
+		rz_buf_read_le32(buf, &s->hdr.source_info_size) &&
+		rz_buf_read_le32(buf, &s->hdr.type_server_map_size) &&
+		rz_buf_read_le32(buf, &s->hdr.mfc_type_server_index) &&
+		rz_buf_read_le32(buf, &s->hdr.optional_dbg_header_size) &&
+		rz_buf_read_le32(buf, &s->hdr.ec_substream_size) &&
+		rz_buf_read_le16(buf, &s->hdr.flags) &&
+		rz_buf_read_le16(buf, &s->hdr.machine) &&
+		rz_buf_read_le32(buf, &s->hdr.padding);
+}
+
+static bool parse_dbi_stream_section_entry(RzPdbDbiStreamExHdr *hdr, RzBuffer *buf) {
+	return rz_buf_read_le16(buf, &hdr->sec_con.Section) &&
+		rz_buf_read_le16(buf, (ut16 *)&hdr->sec_con.Padding1) &&
+		rz_buf_read_le32(buf, (ut32 *)&hdr->sec_con.Offset) &&
+		rz_buf_read_le32(buf, (ut32 *)&hdr->sec_con.Size) &&
+		rz_buf_read_le32(buf, &hdr->sec_con.Characteristics) &&
+		rz_buf_read_le16(buf, &hdr->sec_con.ModuleIndex) &&
+		rz_buf_read_le16(buf, (ut16 *)&hdr->sec_con.Padding2) &&
+		rz_buf_read_le32(buf, &hdr->sec_con.DataCrc) &&
+		rz_buf_read_le32(buf, &hdr->sec_con.RelocCrc);
+}
+
+static bool parse_dbi_stream_ex_header(RzPdbDbiStream *s, RzBuffer *buf) {
+	s->ex_hdrs = rz_list_new();
+	if (!s->ex_hdrs) {
+		// free s-dbi
+		return false;
+	}
+	ut32 ex_size = s->hdr.mod_info_size;
+	ut32 read_len = 0;
+	bool result = true;
+	while (read_len < ex_size) {
+		ut32 initial_seek = rz_buf_tell(buf);
+		RzPdbDbiStreamExHdr *hdr = RZ_NEW0(RzPdbDbiStreamExHdr);
+		if (!hdr) {
+			result = false;
+			goto err;
 		}
-		// TODO: rewrite for signature where can to do chech CAN_READ true?
-		sz = parse_dbi_ex_header(p_tmp, size, dbi_ex_header);
-		if ((sz % PDB_ALIGN)) {
-			sz = sz + (PDB_ALIGN - (sz % PDB_ALIGN));
+		if (!rz_buf_read_le32(buf, &hdr->unknown)) {
+			result = false;
+			goto err;
 		}
-		i += sz;
-		p_tmp += sz;
-		rz_list_append(dbi_stream->dbiexhdrs, dbi_ex_header);
+		if (!parse_dbi_stream_section_entry(hdr, buf)) {
+			result = false;
+			goto err;
+		}
+		if (!rz_buf_read_le16(buf, &hdr->Flags) ||
+			!rz_buf_read_le16(buf, &hdr->ModuleSymStream)) {
+			result = false;
+			goto err;
+		}
+		if (!rz_buf_read_le32(buf, &hdr->SymByteSize) ||
+			!rz_buf_read_le32(buf, &hdr->C11ByteSize) ||
+			!rz_buf_read_le32(buf, &hdr->C13ByteSize)) {
+			result = false;
+			goto err;
+		}
+		if (!rz_buf_read_le16(buf, &hdr->SourceFileCount) ||
+			!rz_buf_read_le16(buf, (ut16 *)&hdr->Padding)) {
+			result = false;
+			goto err;
+		}
+		if (!rz_buf_read_le32(buf, &hdr->Unused2) ||
+			!rz_buf_read_le32(buf, &hdr->SourceFileNameIndex) ||
+			!rz_buf_read_le32(buf, &hdr->PdbFilePathNameIndex)) {
+			result = false;
+			goto err;
+		}
+
+		hdr->ModuleName = rz_buf_get_string(buf, rz_buf_tell(buf));
+		ut32 str_length = strlen(hdr->ModuleName) + 1;
+		if (str_length) {
+			rz_buf_seek(buf, str_length, RZ_BUF_CUR);
+		}
+
+		hdr->ObjFileName = rz_buf_get_string(buf, rz_buf_tell(buf));
+		str_length = strlen(hdr->ObjFileName) + 1;
+		if (str_length) {
+			rz_buf_seek(buf, str_length, RZ_BUF_CUR);
+		}
+		read_len += rz_buf_tell(buf) - initial_seek;
+		if ((read_len % 4)) {
+			ut16 remain = 4 - (read_len % 4);
+			rz_buf_seek(buf, remain, RZ_BUF_CUR);
+			read_len += remain;
+		}
+		rz_list_append(s->ex_hdrs, hdr);
+	err:
+		if (!result) {
+			free(hdr);
+			return false;
+		}
+	}
+	if (read_len != ex_size) {
+		return false;
+	}
+	return true;
+}
+
+static bool parse_dbi_dbg_header(RzPdbDbiStream *s, RzBuffer *buf) {
+	if (!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fpo) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_exception) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fixup) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_omap_to_src) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_omap_from_src) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_section_hdr) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_token_rid_map) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_xdata) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_pdata) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_new_fpo) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_section_hdr_orig)) {
+		return false;
+	}
+	return true;
+}
+
+RZ_IPI bool parse_dbi_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+	if (!pdb || !stream) {
+		return false;
+	}
+	pdb->s_dbi = RZ_NEW0(RzPdbDbiStream);
+	RzPdbDbiStream *s = pdb->s_dbi;
+	if (!s) {
+		RZ_LOG_ERROR("Error allocating memory.\n");
+		return false;
+	}
+	RzBuffer *buf = stream->stream_data;
+	// parse header
+	if (!parse_dbi_stream_header(s, buf) || !parse_dbi_stream_ex_header(s, buf)) {
+		return false;
 	}
 
-	free(dbiexhdr_data);
-
-	// "Section Contribution"
-	stream_file_seek(stream_file, dbi_stream->dbi_header.seccon_size, 1);
-	// "Section Map"
-	stream_file_seek(stream_file, dbi_stream->dbi_header.secmap_size, 1);
-	// "File Info"
-	stream_file_seek(stream_file, dbi_stream->dbi_header.filinf_size, 1);
-	// "TSM"
-	stream_file_seek(stream_file, dbi_stream->dbi_header.tsmap_size, 1);
-	// "EC"
-	stream_file_seek(stream_file, dbi_stream->dbi_header.ecinfo_size, 1);
-
-	parse_dbg_header(&dbi_stream->dbg_header, stream_file);
+	// skip these streams
+	ut64 seek = s->hdr.section_contribution_size + s->hdr.section_map_size +
+		s->hdr.source_info_size + s->hdr.type_server_map_size +
+		s->hdr.ec_substream_size;
+	rz_buf_seek(buf, seek, RZ_BUF_CUR);
+	if (!parse_dbi_dbg_header(s, buf)) {
+		return false;
+	}
+	return true;
 }

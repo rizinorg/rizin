@@ -5,7 +5,7 @@
 #include "minunit.h"
 #define BUF_LENGTH 100
 
-//TODO test rz_str_chop_path
+// TODO test rz_str_chop_path
 
 bool test_rz_table(void) {
 	RzTable *t = rz_table_new();
@@ -49,7 +49,7 @@ RzTable *__table_test_data1() {
 
 bool test_rz_table_column_type(void) {
 	RzTable *t = __table_test_data1();
-	RzTableColumn *c = rz_list_get_n(t->cols, 1);
+	RzTableColumn *c = rz_vector_index_ptr(t->cols, 1);
 	c->type = rz_table_type("NUMBER");
 	rz_table_sort(t, 1, true);
 	char *s = rz_table_tostring(t);
@@ -140,7 +140,6 @@ bool test_rz_table_uniq(void) {
 	rz_table_add_row(t, "d", "99", NULL);
 	rz_table_add_row(t, "c", "99", NULL);
 	rz_table_add_row(t, "c", "100", NULL);
-
 	rz_table_uniq(t);
 	char *stri = rz_table_tostring(t);
 	mu_assert_streq(stri,
@@ -158,38 +157,29 @@ bool test_rz_table_uniq(void) {
 }
 
 static void simple_merge(RzTableRow *acc, RzTableRow *new_row, int nth) {
-	RzList *lhs = acc->items;
-	RzList *rhs = new_row->items;
-	RzListIter *iter_lhs;
-	RzListIter *iter_rhs;
-
+	RzPVector *lhs = acc->items;
+	RzPVector *rhs = new_row->items;
 	char *item_lhs;
+	int cnt;
 
-	int i = 0;
+	for (cnt = 0; cnt < rz_pvector_len(lhs) && cnt < rz_pvector_len(rhs); cnt++) {
+		item_lhs = rz_pvector_at(lhs, cnt);
 
-	for (iter_lhs = lhs->head, iter_rhs = rhs->head;
-		iter_lhs && iter_rhs;
-		iter_lhs = iter_lhs->n, iter_rhs = iter_rhs->n) {
-
-		item_lhs = iter_lhs->data;
-
-		if (i != nth) {
+		if (cnt != nth) {
 			if (!strcmp(item_lhs, "a")) {
-				free(iter_lhs->data);
-				iter_lhs->data = rz_str_new("a | e");
+				free(item_lhs);
+				rz_pvector_set(lhs, cnt, rz_str_new("a | e"));
 			} else if (!strcmp(item_lhs, "b")) {
-				free(iter_lhs->data);
-				iter_lhs->data = rz_str_new("b | f");
+				free(item_lhs);
+				rz_pvector_set(lhs, cnt, rz_str_new("b | f"));
 			} else if (!strcmp(item_lhs, "c")) {
-				free(iter_lhs->data);
-				iter_lhs->data = rz_str_new("c | h");
+				free(item_lhs);
+				rz_pvector_set(lhs, cnt, rz_str_new("c | h"));
 			} else if (!strcmp(item_lhs, "d")) {
-				free(iter_lhs->data);
-				iter_lhs->data = rz_str_new("d | g");
+				free(item_lhs);
+				rz_pvector_set(lhs, cnt, rz_str_new("d | g"));
 			}
 		}
-
-		++i;
 	}
 }
 
@@ -325,7 +315,8 @@ bool test_rz_table_columns() {
 bool test_rz_table_transpose() {
 	RzTable *t = __table_test_data1();
 	rz_table_add_row(t, "d", "100", NULL);
-	char *table = rz_table_tostring(rz_table_transpose(t));
+	RzTable *transpose = rz_table_transpose(t);
+	char *table = rz_table_tostring(transpose);
 	mu_assert_streq(table,
 		"Name  Value1 Value2 Value3 Value4 \n"
 		"----------------------------------\n"
@@ -333,6 +324,8 @@ bool test_rz_table_transpose() {
 		"code  97     98     99     100\n",
 		"rz_table_transpose");
 	free(table);
+	rz_table_free(transpose);
+	rz_table_free(t);
 	mu_end;
 }
 
@@ -349,8 +342,9 @@ bool test_rz_table_add_row_columnsf() {
 		"b     98\n"
 		"c     99\n"
 		"e     10\n",
-		"rz_table_transpose");
+		"rz_table_add_row_columnsf");
 	free(table);
+	rz_table_free(t);
 	mu_end;
 }
 

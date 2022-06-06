@@ -2,8 +2,7 @@
 #define RZ_LIST_H
 
 #include <rz_types.h>
-#include <rz_flist.h>
-#include <sdb.h>
+#include <ht_pp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,17 +26,11 @@ typedef struct rz_list_t {
 typedef struct rz_list_range_t {
 	HtPP *h;
 	RzList *l;
-	//RzListComparator c;
+	// RzListComparator c;
 } RzListRange;
 
 // RzListComparator should return -1, 0, 1 to indicate "value < list_data", "value == list_data", "value > list_data".
 typedef int (*RzListComparator)(const void *value, const void *list_data);
-
-#define ROFList_Parent RzList
-typedef struct rz_oflist_t {
-	ROFList_Parent super; // super class
-	RFList *array; // statical readonly cache of linked list as a pointer array
-} ROFList;
 
 #ifdef RZ_API
 
@@ -71,6 +64,7 @@ RZ_API RZ_OWN RzList *rz_list_new(void);
 RZ_API RZ_OWN RzList *rz_list_newf(RzListFree f);
 RZ_API RZ_OWN RzList *rz_list_new_from_array(RZ_NONNULL const void **arr, size_t arr_size);
 RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RzListIter *list);
+RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RzListIter *list);
 RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, void *p);
 RZ_API void *rz_list_iter_get_data(RzListIter *list);
 RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, void *data);

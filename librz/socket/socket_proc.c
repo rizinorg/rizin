@@ -46,7 +46,7 @@ RZ_API struct rz_socket_proc_t *rz_socket_proc_open(char *const argv[]) {
 		perror("fork");
 		rz_socket_proc_close(sp);
 		goto error;
-		//rz_socket_block_time (sp, false, 0);
+		// rz_socket_block_time (sp, false, 0);
 	}
 	return sp;
 error:
@@ -61,13 +61,13 @@ RZ_API int rz_socket_proc_close(struct rz_socket_proc_t *sp) {
 #if __UNIX__
 	/* this is wrong */
 	kill(sp->pid, SIGKILL);
-	waitpid(sp->pid, NULL, 0); //WNOHANG);
+	waitpid(sp->pid, NULL, 0); // WNOHANG);
 	close(sp->fd0[0]);
 	close(sp->fd0[1]);
-	//close(sp->fd1[0]);
+	// close(sp->fd1[0]);
 	close(sp->fd1[1]);
-	//sp->fd[0] = -1;
-	//sp->fd[1] = -1;
+	// sp->fd[0] = -1;
+	// sp->fd[1] = -1;
 #endif
 	return 0;
 }

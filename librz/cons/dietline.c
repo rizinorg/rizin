@@ -27,8 +27,6 @@ typedef enum {
 	MAJOR_BREAK
 } BreakMode;
 
-bool enable_yank_pop = false;
-
 static inline bool is_word_break_char(char ch, bool mode) {
 	int i;
 	if (mode == MAJOR_BREAK) {
@@ -88,7 +86,7 @@ static void kill_word(BreakMode mode) {
 	I.buffer.length -= len;
 }
 
-static void paste(void) {
+static void paste(bool *enable_yank_pop) {
 	if (I.clipboard) {
 		char *cursor = I.buffer.data + I.buffer.index;
 		int dist = (I.buffer.data + I.buffer.length) - cursor;
@@ -97,7 +95,7 @@ static void paste(void) {
 		memmove(cursor + len, cursor, dist);
 		memcpy(cursor, I.clipboard, len);
 		I.buffer.index += len;
-		enable_yank_pop = true;
+		*enable_yank_pop = true;
 	}
 }
 
@@ -466,15 +464,19 @@ RZ_API void rz_line_hist_free(void) {
 	I.history.index = 0;
 }
 
-/* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
-RZ_API int rz_line_hist_load(const char *file) {
+/**
+ * \brief Load the history of commands from \p path.
+ *
+ * \param path Path of the history file, where commands executed in the shell
+ *             were saved in a previous session
+ * \return false(0) if it fails, true(!0) otherwise
+ */
+RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(path, false);
+
 	FILE *fd;
-	char buf[RZ_LINE_BUFSIZE], *path = rz_str_home(file);
-	if (!path) {
-		return false;
-	}
+	char buf[RZ_LINE_BUFSIZE];
 	if (!(fd = rz_sys_fopen(path, "r"))) {
-		free(path);
 		return false;
 	}
 	while (fgets(buf, sizeof(buf), fd) != NULL) {
@@ -482,43 +484,44 @@ RZ_API int rz_line_hist_load(const char *file) {
 		rz_line_hist_add(buf);
 	}
 	fclose(fd);
-	free(path);
 	return true;
 }
 
-RZ_API int rz_line_hist_save(const char *file) {
+/**
+ * \brief Save the history of commands executed until now to file \p path.
+ *
+ * \param path Path of the history file, where commands executed in the shell
+ *             will be saved
+ * \return false(0) if it fails, true(!0) otherwise
+ */
+RZ_API int rz_line_hist_save(const char *path) {
 	FILE *fd;
 	int i, ret = false;
-	if (!file || !*file) {
+	if (RZ_STR_ISEMPTY(path)) {
 		return false;
 	}
-	char *p, *path = rz_str_home(file);
-	if (path != NULL) {
-		p = (char *)rz_str_lastbut(path, RZ_SYS_DIR[0], NULL); // TODO: use fs
-		if (p) {
-			*p = 0;
-			if (!rz_sys_mkdirp(path)) {
-				eprintf("could not save history into %s\n", path);
-				goto end;
-			}
-			*p = RZ_SYS_DIR[0];
+	char *p = (char *)rz_str_lastbut(path, RZ_SYS_DIR[0], NULL);
+	if (p) {
+		*p = 0;
+		if (!rz_sys_mkdirp(path)) {
+			RZ_LOG_ERROR("Could not save history into %s\n", path);
+			return false;
 		}
-		fd = rz_sys_fopen(path, "w");
-		if (fd != NULL) {
-			if (I.history.data) {
-				for (i = 0; i < I.history.index; i++) {
-					fputs(I.history.data[i], fd);
-					fputs("\n", fd);
-				}
-				fclose(fd);
-				ret = true;
-			} else {
-				fclose(fd);
+		*p = RZ_SYS_DIR[0];
+	}
+	fd = rz_sys_fopen(path, "w");
+	if (fd != NULL) {
+		if (I.history.data) {
+			for (i = 0; i < I.history.index; i++) {
+				fputs(I.history.data[i], fd);
+				fputs("\n", fd);
 			}
+			fclose(fd);
+			ret = true;
+		} else {
+			fclose(fd);
 		}
 	}
-end:
-	free(path);
 	return ret;
 }
 
@@ -911,17 +914,18 @@ RZ_API const char *rz_line_readline(void) {
 	return rz_line_readline_cb(NULL, NULL);
 }
 
-static inline void rotate_kill_ring(void) {
-	if (enable_yank_pop) {
-		I.buffer.index -= strlen(rz_list_get_n(I.kill_ring, I.kill_ring_ptr));
-		I.buffer.data[I.buffer.index] = 0;
-		I.kill_ring_ptr -= 1;
-		if (I.kill_ring_ptr < 0) {
-			I.kill_ring_ptr = I.kill_ring->length - 1;
-		}
-		I.clipboard = rz_list_get_n(I.kill_ring, I.kill_ring_ptr);
-		paste();
+static inline void rotate_kill_ring(bool *enable_yank_pop) {
+	if (!*enable_yank_pop) {
+		return;
 	}
+	I.buffer.index -= strlen(rz_list_get_n(I.kill_ring, I.kill_ring_ptr));
+	I.buffer.data[I.buffer.index] = 0;
+	I.kill_ring_ptr -= 1;
+	if (I.kill_ring_ptr < 0) {
+		I.kill_ring_ptr = I.kill_ring->length - 1;
+	}
+	I.clipboard = rz_list_get_n(I.kill_ring, I.kill_ring_ptr);
+	paste(enable_yank_pop);
 }
 
 static inline void __delete_next_char(void) {
@@ -966,7 +970,7 @@ static inline void delete_till_end(void) {
 static void __print_prompt(void) {
 	RzCons *cons = rz_cons_singleton();
 	int columns = rz_cons_get_size(NULL) - 2;
-	int chars = RZ_MAX(1, strlen(I.buffer.data));
+	int chars = strlen(I.buffer.data);
 	int len, i, cols = RZ_MAX(1, columns - rz_str_ansi_len(I.prompt) - 2);
 	if (cons->line->prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		rz_cons_gotoxy(0, cons->rows);
@@ -1108,9 +1112,10 @@ static void __update_prompt_color(void) {
 	char *prompt = rz_str_escape(I.prompt); // remote the color
 	free(I.prompt);
 	I.prompt = rz_str_newf("%s%s%s", BEGIN, prompt, END);
+	free(prompt);
 }
 
-static void __vi_mode(void) {
+static void __vi_mode(bool *enable_yank_pop) {
 	char ch;
 	I.vi_mode = CONTROL_MODE;
 	__update_prompt_color();
@@ -1245,7 +1250,7 @@ static void __vi_mode(void) {
 			break;
 		case 'p':
 			while (rep--) {
-				paste();
+				paste(enable_yank_pop);
 			}
 			break;
 		case 'a':
@@ -1337,6 +1342,8 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	int ch = 0, key, i = 0; /* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
+	bool enable_yank_pop = false;
+
 	RzCons *cons = rz_cons_singleton();
 
 	if (!I.hud || (I.hud && !I.hud->activate)) {
@@ -1348,7 +1355,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	}
 	int mouse_status = cons->mouse;
 	if (I.hud && I.hud->vi) {
-		__vi_mode();
+		__vi_mode(&enable_yank_pop);
 		goto _end;
 	}
 	if (I.contents) {
@@ -1473,7 +1480,8 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		case 4: // ^D
 			if (!I.buffer.data[0]) { /* eof */
 				if (I.echo) {
-					printf("^D\n");
+					__print_prompt();
+					printf("\n");
 				}
 				rz_cons_set_raw(false);
 				rz_cons_break_pop();
@@ -1564,11 +1572,11 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			}
 			break;
 		case 25: // ^Y - paste
-			paste();
+			paste(&enable_yank_pop);
 			yank_flag = 1;
 			break;
 		case 29: // ^^ - rotate kill ring
-			rotate_kill_ring();
+			rotate_kill_ring(&enable_yank_pop);
 			yank_flag = enable_yank_pop ? 1 : 0;
 			break;
 		case 20: // ^t Kill from point to the end of the current word,
@@ -1626,12 +1634,12 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			case 127: // alt+bkspace
 				backward_kill_word(MINOR_BREAK);
 				break;
-			case -1: // escape key, goto vi mode
+			case 27: // escape key, goto vi mode
 				if (I.enable_vi_mode) {
 					if (I.hud) {
 						I.hud->vi = true;
 					}
-					__vi_mode();
+					__vi_mode(&enable_yank_pop);
 				};
 				if (I.sel_widget) {
 					selection_widget_erase();
@@ -1857,6 +1865,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 					case 0x34: // END
 					case 0x38: // END xrvt-unicode
 						rz_cons_readchar();
+						/* fall through */
 					case 0x46: // END
 						if (I.sel_widget) {
 							selection_widget_down(I.sel_widget->options_len - 1);
@@ -1878,11 +1887,6 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			__delete_prev_char();
 			break;
 		case 9: // TAB tab
-			if (I.buffer.length > 0 && I.buffer.data[I.buffer.length - 1] == '@') {
-				strcpy(I.buffer.data + I.buffer.length, " ");
-				I.buffer.length++;
-				I.buffer.index++;
-			}
 			if (I.sel_widget) {
 				selection_widget_down(1);
 				I.sel_widget->complete_common = true;

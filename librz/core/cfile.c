@@ -5,11 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "core_private.h"
+#include "core_private_base.h"
 
-#define UPDATE_TIME(a) (r->times->file_open_time = rz_time_now_mono() - (a))
-
-static int rz_core_file_do_load_for_debug(RzCore *r, ut64 loadaddr, const char *filenameuri);
-static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
+static bool core_file_do_load_for_debug(RzCore *r, ut64 loadaddr, const char *filenameuri);
+static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
 
 static RzCoreFile *core_file_new(RzCore *core, int fd) {
 	RzCoreFile *r = RZ_NEW0(RzCoreFile);
@@ -49,12 +48,12 @@ static void loadGP(RzCore *core) {
 			rz_config_set(core->config, "analysis.roregs", "zero,gp");
 			gp = rz_reg_getv(core->analysis->reg, "gp");
 		}
-		// eprintf ("[mips] gp: 0x%08"PFMT64x"\n", gp);
+		// RZ_LOG_DEBUG("[mips] gp: 0x%08"PFMT64x"\n", gp);
 		rz_config_set_i(core->config, "analysis.gp", gp);
 	}
 }
 
-static RzList *__save_old_sections(RzCore *core) {
+static RZ_OWN RzList *__save_old_sections(RzCore *core) {
 	RzList *sections = rz_bin_get_sections(core->bin);
 	RzListIter *it;
 	RzBinSection *sec;
@@ -62,7 +61,7 @@ static RzList *__save_old_sections(RzCore *core) {
 
 	// Return an empty list
 	if (!sections) {
-		eprintf("WARNING: No sections found, functions and flags won't be rebased");
+		RZ_LOG_WARN("No sections found, functions and flags won't be rebased\n");
 		return old_sections;
 	}
 
@@ -183,14 +182,14 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 	rz_debug_bp_rebase(core->dbg, old_base, new_base);
 }
 
-RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr) {
+RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr) {
 	RzCoreFile *ofile = core->file;
 	RzIODesc *desc;
 	RzCoreFile *file;
 	int fd;
 
 	if (!ofile || !(desc = rz_io_desc_get(core->io, ofile->fd)) || !desc->uri) {
-		eprintf("No file open?\n");
+		RZ_LOG_ERROR("No file open?\n");
 		return;
 	}
 
@@ -218,7 +217,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr)
 		}
 		rz_core_bin_load(core, uri, addr);
 	} else {
-		eprintf("cannot open file %s\n", uri);
+		RZ_LOG_ERROR("Cannot open file '%s'\n", uri);
 		rz_list_free(old_sections);
 		return;
 	}
@@ -235,15 +234,15 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	RzIODesc *desc;
 
 	if (!ofile || !(desc = rz_io_desc_get(core->io, ofile->fd)) || !desc->uri) {
-		eprintf("No file open?\n");
+		RZ_LOG_ERROR("No file open?\n");
 		return;
 	}
 
 	// Reopen the original file as read only since we can't open native debug while the
 	// file is open with write permissions
 	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & RZ_PERM_W)) {
-		eprintf("Cannot debug file (%s) with permissions set to 0x%x.\n"
-			"Reopening the original file in read-only mode.\n",
+		RZ_LOG_ERROR("Cannot debug file (%s) with permissions set to 0x%x.\n"
+			     "Reopening the original file in read-only mode.\n",
 			desc->name, desc->perm);
 		rz_io_reopen(core->io, ofile->fd, RZ_PERM_R, 644);
 		desc = rz_io_desc_get(core->io, ofile->fd);
@@ -283,7 +282,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	free(binpath);
 }
 
-RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loadbin) {
+RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = rz_config_get_b(core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = rz_config_get_i(core->config, "bin.laddr");
@@ -317,7 +316,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	}
 
 	if (!core->file) {
-		eprintf("No file opened to reopen\n");
+		RZ_LOG_ERROR("No file opened to reopen\n");
 		free(ofilepath);
 		free(obinfilepath);
 		return false;
@@ -333,11 +332,11 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		perm = 7;
 	} else {
 		if (!perm) {
-			perm = 4; //RZ_PERM_R;
+			perm = 4; // RZ_PERM_R;
 		}
 	}
 	if (!ofilepath) {
-		eprintf("Unknown file path");
+		RZ_LOG_ERROR("Unknown file path");
 		free(obinfilepath);
 		return false;
 	}
@@ -388,7 +387,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		ofile = NULL;
 		odesc = NULL;
 		//	core->file = file;
-		eprintf("File %s reopened in %s mode\n", path,
+		RZ_LOG_ERROR("File %s reopened in %s mode\n", path,
 			(perm & RZ_PERM_W) ? "read-write" : "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
@@ -403,41 +402,34 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 			ret = rz_core_bin_load(core, obinfilepath, baddr);
 			rz_core_bin_update_arch_bits(core);
 			if (!ret) {
-				eprintf("Error: Failed to reload rbin for: %s", path);
+				RZ_LOG_ERROR("Error: Failed to reload rbin for: '%s'", path);
 			}
 			origoff = rz_num_math(core->num, "entry0");
 		}
 
 		if (core->bin->cur && core->io && rz_io_desc_get(core->io, file->fd) && !loadbin) {
-			//force here NULL because is causing uaf look this better in future XXX @alvarofe
+			// force here NULL because is causing uaf look this better in future XXX @alvarofe
 			core->bin->cur = NULL;
 		}
 		// close old file
 	} else if (ofile) {
-		eprintf("rz_core_file_reopen: Cannot reopen file: %s with perms 0x%x,"
-			" attempting to open read-only.\n",
+		RZ_LOG_ERROR("rz_core_file_reopen: Cannot reopen file: '%s' with perms 0x%x,"
+			     " attempting to open read-only.\n",
 			path, perm);
 		// lower it down back
-		//ofile = rz_core_file_open (core, path, RZ_PERM_R, addr);
+		// ofile = rz_core_file_open (core, path, RZ_PERM_R, addr);
 		rz_core_file_set_by_file(core, ofile);
 	} else {
-		eprintf("Cannot reopen\n");
+		RZ_LOG_ERROR("Cannot reopen '%s'\n", path);
 	}
 	if (core->file) {
 		rz_io_use_fd(core->io, core->file->fd);
-		core->switch_file_view = 1;
 		rz_core_block_read(core);
-#if 0
-		else {
-			const char *name = (cf && cf->desc)? cf->desc->name: "ERROR";
-			eprintf ("Error: Unable to switch the view to file: %s\n", name);
-		}
-#endif
 	}
 	rz_core_seek(core, origoff, true);
 	if (isdebug) {
 		rz_core_cmd0(core, ".dm*");
-		rz_core_debug_regs2flags(core, 0);
+		rz_core_reg_update_flags(core);
 		rz_core_seek_to_register(core, "PC", false);
 	} else {
 		loadGP(core);
@@ -451,7 +443,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	// This is done to ensure that the file is correctly
 	// loaded into the view
 	free(obinfilepath);
-	//free (ofilepath);
+	// free (ofilepath);
 	free(path);
 	return ret;
 }
@@ -466,7 +458,7 @@ static bool file_resize(RzCore *core, ut64 newsize, st64 delta) {
 	if (grow) {
 		ret = rz_io_resize(core->io, newsize);
 		if (ret < 1) {
-			eprintf("rz_io_resize: cannot resize\n");
+			RZ_LOG_ERROR("rz_io_resize: cannot resize\n");
 			return false;
 		}
 	}
@@ -476,7 +468,7 @@ static bool file_resize(RzCore *core, ut64 newsize, st64 delta) {
 	if (!grow) {
 		ret = rz_io_resize(core->io, newsize);
 		if (ret < 1) {
-			eprintf("rz_io_resize: cannot resize\n");
+			RZ_LOG_ERROR("rz_io_resize: cannot resize\n");
 			return false;
 		}
 	}
@@ -564,7 +556,7 @@ static ut64 get_base_from_maps(RzCore *core, const char *file) {
 				return map->addr;
 			}
 			// XXX - Commented out, as this could unexpected results
-			//b = map->addr;
+			// b = map->addr;
 		}
 	}
 	// fallback resolution copied from cmd_debug.c:rz_debug_get_baddr
@@ -585,7 +577,7 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 	if (!fi) {
 		return false;
 	}
-	bp = rz_bp_add_sw(r->dbg->bp, fi->offset, 1, RZ_BP_PROT_EXEC);
+	bp = rz_bp_add_sw(r->dbg->bp, fi->offset, 1, RZ_PERM_X);
 	if (bp) {
 		bp->internal = true;
 #if __linux__
@@ -595,13 +587,13 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 #endif
 		return true;
 	}
-	eprintf("Cannot set breakpoint at %s\n", sym);
+	RZ_LOG_ERROR("Cannot set breakpoint at %s\n", sym);
 	return false;
 }
 #endif
 
 // XXX - need to handle index selection during debugging
-static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri) {
+static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri) {
 	RzCoreFile *cf = rz_core_file_cur(r);
 	RzIODesc *desc = cf ? rz_io_desc_get(r->io, cf->fd) : NULL;
 	RzBinPlugin *plugin;
@@ -635,26 +627,16 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	int fd = cf ? cf->fd : -1;
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, false);
+	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false);
 	opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
 	opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
 	opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
+	opt.obj_opts.big_endian = rz_config_get_b(r->config, "cfg.bigendian");
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open(r->bin, filenameuri, &opt);
 	if (!binfile) {
-		eprintf("RzBinLoad: Cannot open %s\n", filenameuri);
-		if (rz_config_get_i(r->config, "bin.rawstr")) {
-			rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, true);
-			opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
-			opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
-			opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
-			opt.xtr_idx = xtr_idx;
-
-			binfile = rz_bin_open(r->bin, filenameuri, &opt);
-			if (!binfile) {
-				return false;
-			}
-		}
+		RZ_LOG_ERROR("bin: debug: Cannot open '%s'\n", filenameuri);
+		return false;
 	}
 
 	if (binfile && cf) {
@@ -678,7 +660,6 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	if (plugin && !strcmp(plugin->name, "any")) {
 		// set use of raw strings
 		// rz_config_set_i (r->config, "io.va", false);
-		//\\ rz_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
 		r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
@@ -693,7 +674,7 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	return true;
 }
 
-static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr) {
+static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RzCoreFile *cf = rz_core_file_cur(r);
 	int fd = cf ? cf->fd : -1;
 	int xtr_idx = 0; // if 0, load all if xtr is used
@@ -708,7 +689,7 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open_io(r->bin, &opt);
 	if (!binfile) {
-		//eprintf ("Failed to load the bin with an IO Plugin.\n");
+		// RZ_LOG_ERROR("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
 	if (cf) {
@@ -730,7 +711,6 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 		// set use of raw strings
 		rz_core_bin_set_arch_bits(r, binfile->file, info->arch, info->bits);
 		// rz_config_set_i (r->config, "io.va", false);
-		// rz_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
 		r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
 		r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
@@ -759,12 +739,7 @@ static bool try_loadlib(RzCore *core, const char *lib, ut64 addr) {
 
 RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 	const char *dirlibs = rz_config_get(core->config, "dir.libs");
-	bool free_libdir = true;
-	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
-	if (!libdir) {
-		libdir = RZ_LIBDIR;
-		free_libdir = false;
-	}
+	char *libdir = rz_path_libdir();
 	if (!dirlibs || !*dirlibs) {
 		dirlibs = "." RZ_SYS_DIR;
 	}
@@ -803,9 +778,7 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 			libpath++;
 		}
 	}
-	if (free_libdir) {
-		free(libdir);
-	}
+	free(libdir);
 	return ret;
 }
 
@@ -824,23 +797,25 @@ RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr) {
 }
 
 static void load_scripts_for(RzCore *core, const char *name) {
-	// TODO:
 	char *file;
 	RzListIter *iter;
-	char *hdir = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_BINRC, "bin-%s"), name);
-	char *path = rz_str_home(hdir);
-	RzList *files = rz_sys_dir(path);
+	char *binrc = rz_path_home_prefix(RZ_BINRC);
+	char tmp[50];
+	char *hdir = rz_file_path_join(binrc, rz_strf(tmp, "bin-%s", name));
+	free(binrc);
+	RzList *files = rz_sys_dir(hdir);
 	if (!rz_list_empty(files)) {
-		eprintf("[binrc] path: %s\n", path);
+		RZ_LOG_INFO("[binrc] path: '%s'\n", hdir);
 	}
 	rz_list_foreach (files, iter, file) {
 		if (*file && *file != '.') {
-			eprintf("[binrc] loading %s\n", file);
-			rz_core_cmdf(core, ". %s/%s", path, file);
+			RZ_LOG_INFO("[binrc] loading '%s'\n", file);
+			char *fullpath = rz_file_path_join(hdir, file);
+			rz_core_run_script(core, fullpath);
+			free(fullpath);
 		}
 	}
 	rz_list_free(files);
-	free(path);
 	free(hdir);
 }
 
@@ -893,30 +868,43 @@ static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 	if (!rz_str_endswith(desc->name, ".dex")) {
 		return true;
 	}
+	RzCoreFile *cf = rz_core_file_cur(core);
+
+	// adds the current size and aligns next address
+	ut64 base_address = RZ_CORE_BASE_ADDRESS_DEX;
+	RzBinFile *cur = rz_pvector_empty(&cf->binfiles) ? NULL : rz_pvector_tail(&cf->binfiles);
+	if (cur) {
+		RzIODesc *iod = rz_io_desc_get(core->io, cur->fd);
+		if (iod) {
+			base_address = cur->loadaddr;
+			base_address += rz_io_desc_size(iod);
+			rz_core_align_base_address(base_address);
+		}
+	}
 
 	ut64 size = rz_io_desc_size(desc);
-	ut64 baddr = rz_io_map_next_available(core->io, 0x200000, size, 0x100000);
-	RZ_LOG_INFO("Mapping %s at 0x%" PFMT64x " with size 0x%" PFMT64x "\n", desc->name, baddr, size);
-	if (baddr != UT64_MAX) {
-		RzCoreFile *cf = rz_core_file_cur(core);
-		rz_io_use_fd(core->io, desc->fd);
-		RzBinOptions opt;
-		rz_core_bin_options_init(core, &opt, desc->fd, baddr, 0);
-		opt.xtr_idx = 0;
-		RzBinFile *binfile = rz_bin_open_io(core->bin, &opt);
-		if (!binfile) {
-			RZ_LOG_ERROR("Cannot load bin file %s.\n", desc->name);
-			return true;
-		}
+	RZ_LOG_INFO("Mapping at 0x%08" PFMT64x " with size 0x08%" PFMT64x " %s\n", base_address, size, desc->name);
 
-		rz_pvector_push(&cf->binfiles, binfile);
-		rz_core_bin_apply_all_info(core, binfile);
+	rz_io_use_fd(core->io, desc->fd);
+	RzBinOptions opt;
+	rz_core_bin_options_init(core, &opt, desc->fd, base_address, 0);
+	opt.xtr_idx = 0;
+	RzBinFile *binfile = rz_bin_open_io(core->bin, &opt);
+	if (!binfile) {
+		RZ_LOG_ERROR("Cannot load bin file %s.\n", desc->name);
+		return true;
 	}
+	binfile->loadaddr = base_address;
+
+	rz_pvector_push(&cf->binfiles, binfile);
+	rz_core_bin_apply_all_info(core, binfile);
 
 	return true;
 }
 
 RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filenameuri, ut64 baddr) {
+	rz_return_val_if_fail(r, false);
+
 	RzCoreFile *cf = rz_core_file_cur(r);
 	RzIODesc *desc = cf ? rz_io_desc_get(r->io, cf->fd) : NULL;
 	ut64 laddr = rz_config_get_i(r->config, "bin.laddr");
@@ -927,16 +915,14 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 	if (!cf) {
 		return false;
 	}
-	// NULL deref guard
-	if (desc) {
-		is_io_load = desc && desc->plugin;
-		if (!filenameuri || !*filenameuri) {
-			filenameuri = desc->name;
-		}
+
+	is_io_load = desc && desc->plugin;
+	if (desc && RZ_STR_ISEMPTY(filenameuri)) {
+		filenameuri = desc->name;
 	}
 
-	if (!filenameuri) {
-		eprintf("rz_core_bin_load: no file specified\n");
+	if (RZ_STR_ISEMPTY(filenameuri)) {
+		RZ_LOG_ERROR("rz_core_bin_load: no file specified\n");
 		return false;
 	}
 
@@ -946,9 +932,9 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 		// TODO? necessary to restore the desc back?
 		// Fix to select pid before trying to load the binary
 		if ((desc->plugin && desc->plugin->isdbg) || rz_config_get_b(r->config, "cfg.debug")) {
-			rz_core_file_do_load_for_debug(r, baddr, filenameuri);
+			core_file_do_load_for_debug(r, baddr, filenameuri);
 		} else {
-			rz_core_file_do_load_for_io_plugin(r, baddr, 0LL);
+			core_file_do_load_for_io_plugin(r, baddr, 0LL);
 			if (!strncmp(filenameuri, "apk://", 6) && r->io->files->size > 1) {
 				RZ_LOG_INFO("Found multidex APK, mapping extra files\n");
 				rz_id_storage_foreach(r->io->files, (RzIDStorageForeachCb)map_multi_dex, r);
@@ -963,7 +949,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
 	}
-	//rz_core_bin_apply_all_info (r, binfile);
+	// rz_core_bin_apply_all_info (r, binfile);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin) {
 		if (plugin->strfilter) {
@@ -990,7 +976,6 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 				rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 			}
 			// set use of raw strings
-			//rz_config_set (r->config, "bin.rawstr", "true");
 			// rz_config_set_i (r->config, "io.va", false);
 			// get bin.minstr
 			r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
@@ -1002,7 +987,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 				if (!va) {
 					rz_config_set_i(r->config, "io.va", 0);
 				}
-				//workaround to map correctly malloc:// and raw binaries
+				// workaround to map correctly malloc:// and raw binaries
 				if (rz_io_desc_is_dbg(desc) || (!obj->maps || !va)) {
 					rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 				}
@@ -1021,9 +1006,9 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 		}
 		if (binfile) {
-			rz_core_bin_set_arch_bits(r, binfile->file,
-				rz_config_get(r->config, "asm.arch"),
-				rz_config_get_i(r->config, "asm.bits"));
+			ut16 bits = rz_config_get_i(r->config, "asm.bits");
+			const char *arch = rz_config_get(r->config, "asm.arch");
+			rz_core_bin_set_arch_bits(r, binfile->file, arch, bits);
 		}
 	}
 	if (desc && rz_config_get_i(r->config, "io.exec")) {
@@ -1047,7 +1032,11 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			}
 		}
 
-		rz_core_cmd0(r, "ob 0; s entry0");
+		rz_core_bin_raise(r, 0);
+		ut64 ocurr = r->offset;
+		ut64 entry0addr = rz_num_math(r->num, "entry0");
+		rz_core_seek(r, entry0addr, true);
+
 		rz_config_set_b(r->config, "bin.at", true);
 		RZ_LOG_INFO("Linking imports...\n");
 		RzBinImport *imp;
@@ -1058,7 +1047,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 
 			RzFlagItem *flag = rz_flag_get(r->flags, name);
 			if (!flag) {
-				//RZ_LOG_DEBUG("Cannot find flag %s\n", name);
+				// RZ_LOG_DEBUG("Cannot find flag %s\n", name);
 				free(name);
 				continue;
 			}
@@ -1069,72 +1058,91 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 				RZ_LOG_INFO("Resolved %s with address 0x%08" PFMT64x "\n", name, linkdata.addr);
 				ut64 a = linkdata.addr;
 				ut64 b = imp_addr;
-				rz_analysis_xrefs_set(r->analysis, b, a, RZ_ANALYSIS_REF_TYPE_NULL);
+				rz_analysis_xrefs_set(r->analysis, b, a, RZ_ANALYSIS_XREF_TYPE_NULL);
 			} else {
 				RZ_LOG_ERROR("Cannot resolve %s\n", name);
 			}
 			free(name);
 		}
+		rz_core_seek(r, ocurr, true);
 	}
 
-	//If type == RZ_BIN_TYPE_CORE, we need to create all the maps
+	// If type == RZ_BIN_TYPE_CORE, we need to create all the maps
 	if (plugin && binfile && plugin->file_type && plugin->file_type(binfile) == RZ_BIN_TYPE_CORE) {
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {
 			RzBinInfo *inf = plugin->info(binfile);
-			eprintf("Setting up coredump arch-bits to: %s-%d\n", inf->arch, inf->bits);
+			RZ_LOG_INFO("Setting up coredump arch-bits to: %s-%d\n", inf->arch, inf->bits);
 			rz_config_set(r->config, "asm.arch", inf->arch);
 			rz_config_set_i(r->config, "asm.bits", inf->bits);
 			rz_bin_info_free(inf);
 		}
 		if (binfile->o->regstate) {
 			if (rz_reg_arena_set_bytes(r->analysis->reg, binfile->o->regstate)) {
-				eprintf("Setting up coredump: Problem while setting the registers\n");
+				RZ_LOG_WARN("Setting up coredump: Problem while setting the registers\n");
 			} else {
-				eprintf("Setting up coredump: Registers have been set\n");
+				RZ_LOG_INFO("Setting up coredump: Registers have been set\n");
 			}
 		}
 	}
 	return true;
 }
 
-RZ_API bool rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *file, int perm, ut64 loadaddr) {
-	const bool openmany = rz_config_get_i(r->config, "file.openmany");
-	int opened_count = 0;
-	RzListIter *fd_iter, *iter2;
-	RzIODesc *desc;
-
+/**
+ * \brief Open the file as a compilation of files
+ *
+ * Calls rz_io_open_many and maps all the file descriptors to an RzCoreFile
+ */
+RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *file, int perm, ut64 base_address) {
 	RzList *list_fds = rz_io_open_many(r->io, file, perm, 0644);
 
-	if (!list_fds || rz_list_length(list_fds) == 0) {
+	if (rz_list_empty(list_fds)) {
 		rz_list_free(list_fds);
-		return false;
+		return NULL;
 	}
 
-	rz_list_foreach_safe (list_fds, fd_iter, iter2, desc) {
-		opened_count++;
-		if (openmany && opened_count > 1) {
-			// XXX - Open Many should limit the number of files
-			// loaded in io plugin area this needs to be more premptive
-			// like down in the io plugin layer.
-			// start closing down descriptors
-			rz_list_delete(list_fds, fd_iter);
+	if (!base_address) {
+		base_address = RZ_CORE_BASE_ADDRESS_DEFAULT;
+	}
+
+	RzListIter *it = NULL;
+	RzIODesc *desc = NULL;
+	RzIODesc *first = NULL;
+	rz_list_foreach (list_fds, it, desc) {
+		if (!rz_io_desc_add(r->io, desc)) {
+			rz_io_desc_free(desc);
+			continue;
+		} else if (!first) {
+			first = desc;
+		}
+
+		RzCoreFile *fh = core_file_new(r, desc->fd);
+		if (!fh) {
 			continue;
 		}
-		RzCoreFile *fh = RZ_NEW0(RzCoreFile);
-		if (fh) {
-			fh->core = r;
-			fh->fd = desc->fd;
-			r->file = fh;
-			rz_list_append(r->files, fh);
-			rz_core_bin_load(r, desc->name, loadaddr);
+		r->file = fh;
+		rz_list_append(r->files, fh);
+		ut64 size = rz_io_desc_size(desc);
+		RZ_LOG_INFO("Mapping at 0x%08" PFMT64x " with size 0x08%" PFMT64x " %s\n", base_address, size, desc->name);
+		if (!rz_core_bin_load(r, desc->name, base_address)) {
+			RZ_LOG_ERROR("failed to load %s\n", desc->name);
 		}
+		// adds the current size and aligns next address
+		base_address += size;
+		rz_core_align_base_address(base_address);
 	}
-	return true;
+
+	rz_list_free(list_fds);
+	return rz_list_first(r->files);
 }
 
-/* loadaddr is rizin -m (mapaddr) */
-RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut64 loadaddr) {
+/**
+ * \brief Tries to open the file as is, otherwise tries as is a compilation of files
+ *
+ * Calls rz_io_open_nomap but if it fails, then tries with rz_core_file_open_many;
+ * Also, loadaddr is rizin -m (mapaddr)
+ */
+RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL const char *file, int flags, ut64 loadaddr) {
 	rz_return_val_if_fail(r && file, NULL);
 	ut64 prev = rz_time_now_mono();
 	const bool openmany = rz_config_get_i(r->config, "file.openmany");
@@ -1143,7 +1151,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	if (!strcmp(file, "=")) {
 		file = "malloc://512";
 	}
-	//if not flags was passed open it with -r--
+	// if not flags was passed open it with -r--
 	if (!flags) {
 		flags = RZ_PERM_R;
 	}
@@ -1153,9 +1161,10 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 		goto beach;
 	}
 	if (!fd && openmany) {
-		if (!rz_core_file_open_many(r, file, flags, loadaddr)) {
+		if (!(fh = rz_core_file_open_many(r, file, flags, loadaddr))) {
 			goto beach;
 		}
+		fd = rz_io_desc_get(r->io, fh->fd);
 	}
 	if (!fd) {
 		if (flags & RZ_PERM_W) {
@@ -1173,10 +1182,12 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 		goto beach;
 	}
 
-	fh = core_file_new(r, fd->fd);
 	if (!fh) {
-		eprintf("core/file.c: rz_core_open failed to allocate RzCoreFile.\n");
-		goto beach;
+		fh = core_file_new(r, fd->fd);
+		if (!fh) {
+			RZ_LOG_ERROR("rz_core_file_open: failed to allocate RzCoreFile.\n");
+			goto beach;
+		}
 	}
 	{
 		const char *cp = rz_config_get(r->config, "cmd.open");
@@ -1191,7 +1202,9 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	r->file = fh;
 	rz_io_use_fd(r->io, fd->fd);
 
-	rz_list_append(r->files, fh);
+	if (!rz_list_find_ptr(r->files, fh)) {
+		rz_list_append(r->files, fh);
+	}
 	if (rz_config_get_b(r->config, "cfg.debug")) {
 		bool swstep = true;
 		if (r->dbg->cur && r->dbg->cur->canstep) {
@@ -1207,8 +1220,8 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 			}
 		}
 	}
-	//used by rz_core_bin_load otherwise won't load correctly
-	//this should be argument of rz_core_bin_load <shrug>
+	// used by rz_core_bin_load otherwise won't load correctly
+	// this should be argument of rz_core_bin_load <shrug>
 	if (loadaddr != UT64_MAX) {
 		rz_config_set_i(r->config, "bin.laddr", loadaddr);
 	}
@@ -1234,6 +1247,7 @@ RZ_IPI void rz_core_file_io_map_deleted(RzCore *core, RzIOMap *map) {
 	rz_list_foreach (core->files, it, cf) {
 		rz_pvector_remove_data(&cf->maps, map);
 	}
+	rz_core_io_map_info_free(map->user);
 }
 
 RZ_IPI void rz_core_file_bin_file_deleted(RzCore *core, RzBinFile *bf) {
@@ -1285,7 +1299,40 @@ RZ_API RzCoreFile *rz_core_file_get_by_fd(RzCore *core, int fd) {
 	return NULL;
 }
 
-RZ_API int rz_core_file_list(RzCore *core, int mode) {
+RZ_API bool rz_core_raw_file_print(RzCore *core) {
+	RzCoreFile *f;
+	RzIODesc *desc;
+	RzBinFile *bf;
+	RzListIter *it1, *it2, *it3;
+	rz_list_foreach (core->files, it1, f) {
+		desc = rz_io_desc_get(core->io, f->fd);
+		if (!desc) {
+			continue;
+		}
+		bool header_loaded = false;
+		rz_list_foreach (core->bin->binfiles, it2, bf) {
+			if (bf->fd == f->fd) {
+				header_loaded = true;
+				break;
+			}
+		}
+		if (!header_loaded) {
+			RzList *maps = rz_io_map_get_for_fd(core->io, f->fd);
+			RzIOMap *current_map;
+			char *absfile = rz_file_abspath(desc->uri);
+			rz_list_foreach (maps, it3, current_map) {
+				if (current_map) {
+					rz_cons_printf("on %s 0x%" PFMT64x "\n", absfile, current_map->itv.addr);
+				}
+			}
+			rz_list_free(maps);
+			free(absfile);
+		}
+	}
+	return true;
+}
+
+RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 	int count = 0;
 	RzCoreFile *f;
 	RzIODesc *desc;
@@ -1294,10 +1341,10 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 	RzBinFile *bf;
 	RzListIter *iter;
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
-			return 0;
+			return false;
 		}
 		pj_a(pj);
 	}
@@ -1309,7 +1356,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 		}
 		from = 0LL;
 		switch (mode) {
-		case 'j': { // "oij"
+		case RZ_OUTPUT_MODE_JSON: { // "oij"
 			pj_o(pj);
 			pj_kb(pj, "raised", core->io->desc->fd == f->fd);
 			pj_ki(pj, "fd", f->fd);
@@ -1320,8 +1367,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 			pj_end(pj);
 			break;
 		}
-		case '*':
-		case 'r':
+		case RZ_OUTPUT_MODE_RIZIN:
 			// TODO: use a getter
 			{
 				bool fileHaveBin = false;
@@ -1338,28 +1384,6 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 				free(absfile);
 			}
 			break;
-		case 'n': {
-			bool header_loaded = false;
-			rz_list_foreach (core->bin->binfiles, it, bf) {
-				if (bf->fd == f->fd) {
-					header_loaded = true;
-					break;
-				}
-			}
-			if (!header_loaded) {
-				RzList *maps = rz_io_map_get_for_fd(core->io, f->fd);
-				RzListIter *iter;
-				RzIOMap *current_map;
-				char *absfile = rz_file_abspath(desc->uri);
-				rz_list_foreach (maps, iter, current_map) {
-					if (current_map) {
-						rz_cons_printf("on %s 0x%" PFMT64x "\n", absfile, current_map->itv.addr);
-					}
-				}
-				rz_list_free(maps);
-				free(absfile);
-			}
-		} break;
 		default: {
 			ut64 sz = rz_io_desc_size(desc);
 			const char *fmt;
@@ -1378,12 +1402,12 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 		}
 		count++;
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
-	return count;
+	return true;
 }
 
 // XXX - needs to account for binfile index and bin object index
@@ -1397,9 +1421,6 @@ RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 bfid) {
 			rz_io_use_fd(core->io, bf->fd);
 		}
 		res = res ? rz_core_file_set_by_fd(core, bf->fd) : res;
-		if (res) {
-			core->switch_file_view = 1;
-		}
 	}
 	return res;
 }
@@ -1427,7 +1448,7 @@ RZ_API int rz_core_file_binlist(RzCore *core) {
 		}
 	}
 	rz_core_file_set_by_file(core, cur_cf);
-	//rz_core_bin_bind (core, cur_bf);
+	// rz_core_bin_bind (core, cur_bf);
 	return count;
 }
 
@@ -1535,40 +1556,68 @@ RZ_API RzCoreFile *rz_core_file_cur(RzCore *r) {
 	return r->file;
 }
 
-/* --------------------------------------------------------------------------------- */
-
-RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && rz_file_exists(bf->file)) {
-			// Escape spaces so that o's argv parse will detect the path properly
-			char *file = rz_str_path_escape(bf->file);
-			// Backup the baddr and sections that were already rebased to
-			// revert the rebase after the debug session is closed
-			ut64 orig_baddr = core->bin->cur->o->baddr_shift;
-			RzList *orig_sections = __save_old_sections(core);
-
-			rz_core_cmd0(core, "ob-*");
-			rz_io_close_all(core->io);
-			rz_config_set_b(core->config, "cfg.debug", false);
-			rz_core_cmdf(core, "o %s", file);
-
-			rz_core_block_read(core);
-			__rebase_everything(core, orig_sections, orig_baddr);
-			rz_list_free(orig_sections);
-			free(file);
-		} else {
-			eprintf("Nothing to do.\n");
-		}
-	} else {
+/**
+ * \brief Open file use read-only Permission
+ * \param core RzCore instance
+ * \param fd File descriptor
+ */
+RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
+	rz_return_if_fail(core && fd >= 0);
+	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		rz_io_reopen(core->io, fd, RZ_PERM_R, 644);
+		return;
 	}
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!(bf && rz_file_exists(bf->file))) {
+		RZ_LOG_WARN("Cannot open current RzBinFile.\n");
+		return;
+	}
+
+	// Escape spaces so that o's argv parse will detect the path properly
+	char *file = rz_str_path_escape(bf->file);
+	// Backup the baddr and sections that were already rebased to
+	// revert the rebase after the debug session is closed
+	ut64 orig_baddr = core->bin->cur->o->baddr_shift;
+	RzList *orig_sections = __save_old_sections(core);
+
+	rz_bin_file_delete_all(core->bin);
+	rz_io_close_all(core->io);
+	rz_config_set_b(core->config, "cfg.debug", false);
+
+	RzCoreFile *cfile = rz_core_file_open(core, file, RZ_PERM_R, 0);
+	if (!cfile) {
+		rz_list_free(orig_sections);
+		RZ_LOG_ERROR("Cannot open file '%s'\n", file);
+		return;
+	}
+	core->num->value = cfile->fd;
+	// If no baddr defined, use the one provided by the file
+	if (!rz_core_bin_load(core, file, UT64_MAX)) {
+		rz_list_free(orig_sections);
+		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", file);
+		return;
+	}
+	rz_core_block_read(core);
+
+	__rebase_everything(core, orig_sections, orig_baddr);
+	rz_list_free(orig_sections);
+	free(file);
 }
 
-RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
+/**
+ * \brief Reopen file
+ * \param core RzCore instance
+ * \param fd File descriptor
+ * \param perms Permission \s RZ_PERM_R
+ */
+RZ_API void rz_core_io_file_reopen(RZ_NONNULL RzCore *core, int fd, int perms) {
+	rz_return_if_fail(core && fd >= 0);
 	if (rz_io_reopen(core->io, fd, perms, 644)) {
 		void **it;
 		RzPVector *maps = rz_io_maps(core->io);
+		if (!maps) {
+			return;
+		}
 		rz_pvector_foreach_prev(maps, it) {
 			RzIOMap *map = *it;
 			if (map->fd == fd) {
@@ -1576,4 +1625,20 @@ RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
 			}
 		}
 	}
+}
+
+/* --------------------------------------------------------------------------------- */
+
+RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig) {
+	RzCoreIOMapInfo *info = RZ_NEW(RzCoreIOMapInfo);
+	if (!info) {
+		return NULL;
+	}
+	info->cf = cf;
+	info->perm_orig = perm_orig;
+	return info;
+}
+
+RZ_IPI void rz_core_io_map_info_free(RzCoreIOMapInfo *info) {
+	free(info);
 }

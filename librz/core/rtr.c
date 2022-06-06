@@ -4,8 +4,8 @@
 
 #include "rz_core.h"
 #include "rz_socket.h"
-#include "gdb/include/libgdbr.h"
-#include "gdb/include/gdbserver/core.h"
+#include <libgdbr.h>
+#include <gdbserver/core.h>
 
 #if HAVE_LIBUV
 #include <uv.h>
@@ -29,6 +29,14 @@ static RzSocket *s = NULL;
 static RzThread *httpthread = NULL;
 static RzThread *rapthread = NULL;
 static const char *listenport = NULL;
+
+struct rz_core_rtr_host_t {
+	int proto;
+	char host[512];
+	int port;
+	char file[1024];
+	RzSocket *fd;
+};
 
 typedef struct {
 	const char *host;
@@ -354,7 +362,7 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			}
 			break;
 		case 'r': // dr
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false);
+			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 			be = rz_config_get_i(core->config, "cfg.bigendian");
 			if (isspace((ut8)cmd[2])) { // dr reg
 				const char *name, *val_ptr;
@@ -672,7 +680,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 			{ NULL, 0 }
 		};
 		char *s = rz_str_ndup(input, pikaboo - input);
-		//int nlen = pikaboo - input;
+		// int nlen = pikaboo - input;
 		for (i = 0; uris[i].name; i++) {
 			if (rz_str_endswith(s, uris[i].name)) {
 				proto = uris[i].protocol;
@@ -704,7 +712,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		} else {
 			file = "cmd/";
 			eprintf("Error: Missing '/'\n");
-			//c:wreturn;
+			// c:wreturn;
 		}
 	}
 
@@ -727,7 +735,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		free(str);
 	} break;
 	case RTR_PROTOCOL_RAP:
-		if (!rz_socket_connect_tcp(fd, host, port, timeout)) { //TODO: Use rap.ssl
+		if (!rz_socket_connect_tcp(fd, host, port, timeout)) { // TODO: Use rap.ssl
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			rz_socket_free(fd);
 			return;
@@ -747,7 +755,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		eprintf("Connected to: 'unix://%s'\n", host);
 		break;
 	case RTR_PROTOCOL_TCP:
-		if (!rz_socket_connect_tcp(fd, host, port, timeout)) { //TODO: Use rap.ssl
+		if (!rz_socket_connect_tcp(fd, host, port, timeout)) { // TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			rz_socket_free(fd);
@@ -757,7 +765,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		eprintf("Connected to: %s at port %s\n", host, port);
 		break;
 	case RTR_PROTOCOL_UDP:
-		if (!rz_socket_connect_udp(fd, host, port, timeout)) { //TODO: Use rap.ssl
+		if (!rz_socket_connect_udp(fd, host, port, timeout)) { // TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			rz_socket_free(fd);
@@ -785,7 +793,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 	}
 	core->num->value = ret;
 	// double free wtf is freed this here? rz_socket_free(fd);
-	//rz_core_rtr_list (core);
+	// rz_core_rtr_list (core);
 }
 
 RZ_API void rz_core_rtr_remove(RzCore *core, const char *input) {
@@ -824,7 +832,7 @@ static bool rz_core_rtr_rap_run(RzCore *core, const char *input) {
 			}
 			rz_io_desc_close(fd);
 			// avoid double free, we are not the owners of this fd so we can't destroy it
-			//rz_io_desc_free (fd);
+			// rz_io_desc_free (fd);
 		}
 	} else {
 		rz_cons_singleton()->context->breaked = true;
@@ -837,7 +845,7 @@ static RzThreadFunctionRet rz_core_rtr_rap_thread(RzThread *th) {
 	if (!th) {
 		return false;
 	}
-	RapThread *rt = th->user;
+	RapThread *rt = rz_th_get_user(th);
 	if (!rt || !rt->core) {
 		return false;
 	}
@@ -873,7 +881,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 			if (RT) {
 				RT->core = core;
 				RT->input = strdup(input + 1);
-				//RapThread rt = { core, strdup (input + 1) };
+				// RapThread rt = { core, strdup (input + 1) };
 				rapthread = rz_th_new(rz_core_rtr_rap_thread, RT, false);
 				int cpuaff = (int)rz_config_get_i(core->config, "cfg.cpuaffinity");
 				rz_th_setaffinity(rapthread, cpuaff);
@@ -921,7 +929,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 			return;
 		}
 		(void)rz_socket_read_block(s, (ut8 *)cmd_output, maxlen);
-		//ensure the termination
+		// ensure the termination
 		rz_socket_close(s);
 		cmd_output[maxlen] = 0;
 		rz_cons_println(cmd_output);
@@ -984,7 +992,7 @@ RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *
 	if (retries > 0) {
 		rbuf = strdup("");
 		rz_socket_write(s, (void *)cmd, strlen(cmd));
-		//rz_socket_write (s, "px\n", 3);
+		// rz_socket_write (s, "px\n", 3);
 		for (;;) {
 			int ret = rz_socket_read(s, buf, sizeof(buf));
 			if (ret < 1) {
@@ -998,6 +1006,17 @@ RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *
 	}
 	rz_socket_free(s);
 	return rbuf;
+}
+
+/**
+ * \brief Allocates core rtr structure
+ *
+ * \param core RzCore to initialize rtr structure
+ */
+RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, false);
+	rtr_host = RZ_NEWS0(RzCoreRtrHost, RTR_MAX_HOSTS);
+	return rtr_host;
 }
 
 #if HAVE_LIBUV

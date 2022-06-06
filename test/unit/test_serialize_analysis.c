@@ -3,6 +3,8 @@
 
 #include <rz_analysis.h>
 #include <rz_sign.h>
+#include <rz_util/rz_path.h>
+#include "test_config.h"
 #include "minunit.h"
 #include "test_sdb.h"
 
@@ -546,11 +548,11 @@ Sdb *vars_ref_db() {
 }
 
 bool test_analysis_var_save() {
-	const char *dir_prefix = rz_sys_prefix(NULL);
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
 
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
 
@@ -606,11 +608,11 @@ bool test_analysis_var_save() {
 }
 
 bool test_analysis_var_load() {
-	const char *dir_prefix = rz_sys_prefix(NULL);
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
 
 	Sdb *db = vars_ref_db();
 	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
@@ -715,11 +717,11 @@ Sdb *xrefs_ref_db() {
 bool test_analysis_xrefs_save() {
 	RzAnalysis *analysis = rz_analysis_new();
 
-	rz_analysis_xrefs_set(analysis, 0x1337, 4242, RZ_ANALYSIS_REF_TYPE_NULL);
-	rz_analysis_xrefs_set(analysis, 0x1337, 4243, RZ_ANALYSIS_REF_TYPE_CODE);
-	rz_analysis_xrefs_set(analysis, 1234, 4243, RZ_ANALYSIS_REF_TYPE_CALL);
-	rz_analysis_xrefs_set(analysis, 42, 4321, RZ_ANALYSIS_REF_TYPE_DATA);
-	rz_analysis_xrefs_set(analysis, 666, 333, RZ_ANALYSIS_REF_TYPE_STRING);
+	rz_analysis_xrefs_set(analysis, 0x1337, 4242, RZ_ANALYSIS_XREF_TYPE_NULL);
+	rz_analysis_xrefs_set(analysis, 0x1337, 4243, RZ_ANALYSIS_XREF_TYPE_CODE);
+	rz_analysis_xrefs_set(analysis, 1234, 4243, RZ_ANALYSIS_XREF_TYPE_CALL);
+	rz_analysis_xrefs_set(analysis, 42, 4321, RZ_ANALYSIS_XREF_TYPE_DATA);
+	rz_analysis_xrefs_set(analysis, 666, 333, RZ_ANALYSIS_XREF_TYPE_STRING);
 
 	Sdb *db = sdb_new0();
 	rz_serialize_analysis_xrefs_save(db, analysis);
@@ -745,41 +747,41 @@ bool test_analysis_xrefs_load() {
 	mu_assert_eq(rz_list_length(xrefs), 2, "xrefs from count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 0x1337, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4242, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_NULL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_NULL, "xref type");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->from, 0x1337, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->to, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_XREF_TYPE_CODE, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 1234);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 1234, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_CALL, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 42);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 42, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4321, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_DATA, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_DATA, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 666);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 666, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 333, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_STRING, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_STRING, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_to(analysis, 4243);
 	mu_assert_eq(rz_list_length(xrefs), 2, "xrefs to count");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 1234, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_CALL, "xref type");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->from, 0x1337, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->to, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_XREF_TYPE_CODE, "xref type");
 	rz_list_free(xrefs);
 
 	sdb_free(db);
@@ -793,7 +795,7 @@ Sdb *meta_ref_db() {
 	sdb_set(spaces_db, "name", "CS", 0);
 	sdb_set(spaces_db, "spacestack", "[\"*\"]", 0);
 	sdb_set(sdb_ns(spaces_db, "spaces", true), "myspace", "s", 0);
-	sdb_set(db, "0x20a0", "[{\"size\":32,\"type\":\"s\",\"subtype\":66,\"str\":\"utf32be\"}]", 0);
+	sdb_set(db, "0x20a0", "[{\"size\":32,\"type\":\"s\",\"subtype\":78,\"str\":\"utf32be\"}]", 0);
 	sdb_set(db, "0x20c0", "[{\"size\":32,\"type\":\"s\",\"subtype\":103,\"str\":\"guess\"}]", 0);
 	sdb_set(db, "0x1337",
 		"[{\"size\":16,\"type\":\"d\"},"
@@ -803,14 +805,13 @@ Sdb *meta_ref_db() {
 		"{\"size\":20,\"type\":\"m\"},"
 		"{\"size\":21,\"type\":\"h\"},"
 		"{\"type\":\"C\",\"str\":\"some comment here\"},"
-		"{\"size\":22,\"type\":\"r\"},"
 		"{\"size\":23,\"type\":\"H\"},"
 		"{\"size\":24,\"type\":\"t\"},"
 		"{\"type\":\"C\",\"str\":\"comment in space\",\"space\":\"myspace\"}]",
 		0);
-	sdb_set(db, "0x2000", "[{\"size\":32,\"type\":\"s\",\"subtype\":97,\"str\":\"latin1\"}]", 0);
+	sdb_set(db, "0x2000", "[{\"size\":32,\"type\":\"s\",\"subtype\":98,\"str\":\"8bit\"}]", 0);
 	sdb_set(db, "0x2040", "[{\"size\":32,\"type\":\"s\",\"subtype\":117,\"str\":\"utf16le\"}]", 0);
-	sdb_set(db, "0x2080", "[{\"size\":32,\"type\":\"s\",\"subtype\":98,\"str\":\"utf16be\"}]", 0);
+	sdb_set(db, "0x2080", "[{\"size\":32,\"type\":\"s\",\"subtype\":110,\"str\":\"utf16be\"}]", 0);
 	sdb_set(db, "0x2020", "[{\"size\":32,\"type\":\"s\",\"subtype\":56,\"str\":\"utf8\"}]", 0);
 	sdb_set(db, "0x2060", "[{\"size\":32,\"type\":\"s\",\"subtype\":85,\"str\":\"utf32le\"}]", 0);
 	return db;
@@ -826,11 +827,10 @@ bool test_analysis_meta_save() {
 	rz_meta_set(analysis, RZ_META_TYPE_MAGIC, 0x1337, 0x14, NULL);
 	rz_meta_set(analysis, RZ_META_TYPE_HIDE, 0x1337, 0x15, NULL);
 	rz_meta_set(analysis, RZ_META_TYPE_COMMENT, 0x1337, 1, "some comment here");
-	rz_meta_set(analysis, RZ_META_TYPE_RUN, 0x1337, 0x16, NULL);
 	rz_meta_set(analysis, RZ_META_TYPE_HIGHLIGHT, 0x1337, 0x17, NULL);
 	rz_meta_set(analysis, RZ_META_TYPE_VARTYPE, 0x1337, 0x18, NULL);
 
-	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_LATIN1, 0x2000, 0x20, "latin1");
+	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_8BIT, 0x2000, 0x20, "8bit");
 	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF8, 0x2020, 0x20, "utf8");
 	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF16LE, 0x2040, 0x20, "utf16le");
 	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF32LE, 0x2060, 0x20, "utf32le");
@@ -868,7 +868,7 @@ bool test_analysis_meta_load() {
 		(void)meta;
 		count++;
 	}
-	mu_assert_eq(count, 18, "meta count");
+	mu_assert_eq(count, 17, "meta count");
 
 	ut64 size;
 	meta = rz_meta_get_at(analysis, 0x1337, RZ_META_TYPE_DATA, &size);
@@ -906,11 +906,6 @@ bool test_analysis_meta_load() {
 	mu_assert_eq(size, 1, "meta item size");
 	mu_assert_eq(meta->subtype, 0, "meta item subtype");
 	mu_assert_streq(meta->str, "some comment here", "meta item string");
-	meta = rz_meta_get_at(analysis, 0x1337, RZ_META_TYPE_RUN, &size);
-	mu_assert_notnull(meta, "meta item");
-	mu_assert_eq(size, 0x16, "meta item size");
-	mu_assert_eq(meta->subtype, 0, "meta item subtype");
-	mu_assert_null(meta->str, "meta item string");
 	meta = rz_meta_get_at(analysis, 0x1337, RZ_META_TYPE_HIGHLIGHT, &size);
 	mu_assert_notnull(meta, "meta item");
 	mu_assert_eq(size, 0x17, "meta item size");
@@ -933,8 +928,8 @@ bool test_analysis_meta_load() {
 	meta = rz_meta_get_at(analysis, 0x2000, RZ_META_TYPE_STRING, &size);
 	mu_assert_notnull(meta, "meta item");
 	mu_assert_eq(size, 0x20, "meta item size");
-	mu_assert_eq(meta->subtype, RZ_STRING_ENC_LATIN1, "meta item subtype");
-	mu_assert_streq(meta->str, "latin1", "meta item string");
+	mu_assert_eq(meta->subtype, RZ_STRING_ENC_8BIT, "meta item subtype");
+	mu_assert_streq(meta->str, "8bit", "meta item string");
 	meta = rz_meta_get_at(analysis, 0x2020, RZ_META_TYPE_STRING, &size);
 	mu_assert_notnull(meta, "meta item");
 	mu_assert_eq(size, 0x20, "meta item size");
@@ -1351,6 +1346,7 @@ Sdb *sign_ref_db() {
 
 bool test_analysis_sign_save() {
 	RzAnalysis *analysis = rz_analysis_new();
+	rz_sign_analysis_set_hooks(analysis);
 
 	RzSignItem *item = rz_sign_item_new();
 	item->name = strdup("sym.mahboi");
@@ -1412,6 +1408,8 @@ bool test_analysis_sign_save() {
 
 bool test_analysis_sign_load() {
 	RzAnalysis *analysis = rz_analysis_new();
+	rz_sign_analysis_set_hooks(analysis);
+
 	Sdb *db = sign_ref_db();
 	bool succ = rz_serialize_analysis_sign_load(db, analysis, NULL);
 	sdb_free(db);
@@ -1540,7 +1538,7 @@ Sdb *analysis_ref_db() {
 	sdb_ns(meta_spaces, "spaces", true);
 	sdb_set(meta_spaces, "spacestack", "[\"*\"]", 0);
 	sdb_set(meta_spaces, "name", "CS", 0);
-	sdb_set(meta, "0x1337", "[{\"type\":\"C\",\"str\":\"some comment\"}]", 0);
+	sdb_set(meta, "0x1337", "[{\"type\":\"C\",\"subtype\":56,\"str\":\"some comment\"}]", 0);
 
 	Sdb *hints = sdb_ns(db, "hints", true);
 	sdb_set(hints, "0x10e1", "{\"arch\":\"arm\"}", 0);
@@ -1565,10 +1563,6 @@ Sdb *analysis_ref_db() {
 	sdb_set(imports, "dogs", "i", 0);
 	sdb_set(imports, "sheep", "i", 0);
 
-	Sdb *pins = sdb_ns(db, "pins", true);
-	sdb_set(pins, "0x1337", "!sudo rm -rf /", 0);
-	sdb_set(pins, "0xc0ffee", "pd 42", 0);
-
 	Sdb *cc = sdb_ns(db, "cc", true);
 	sdb_set(cc, "cc.sectarian.ret", "rax", 0);
 	sdb_set(cc, "cc.sectarian.arg1", "rcx", 0);
@@ -1586,6 +1580,7 @@ Sdb *analysis_ref_db() {
 
 bool test_analysis_save() {
 	RzAnalysis *analysis = rz_analysis_new();
+	rz_sign_analysis_set_hooks(analysis);
 
 	RzAnalysisBlock *ba = rz_analysis_create_block(analysis, 1337, 42);
 	RzAnalysisBlock *bb = rz_analysis_create_block(analysis, 1234, 32);
@@ -1602,8 +1597,8 @@ bool test_analysis_save() {
 
 	rz_analysis_noreturn_add(analysis, NULL, 0x800800);
 
-	rz_analysis_xrefs_set(analysis, 0x42, 1337, RZ_ANALYSIS_REF_TYPE_CALL);
-	rz_analysis_xrefs_set(analysis, 1337, 0xc0ffee, RZ_ANALYSIS_REF_TYPE_DATA);
+	rz_analysis_xrefs_set(analysis, 0x42, 1337, RZ_ANALYSIS_XREF_TYPE_CALL);
+	rz_analysis_xrefs_set(analysis, 1337, 0xc0ffee, RZ_ANALYSIS_XREF_TYPE_DATA);
 
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x1337, "some comment");
 
@@ -1627,9 +1622,6 @@ bool test_analysis_save() {
 	rz_analysis_add_import(analysis, "dogs");
 	rz_analysis_add_import(analysis, "sheep");
 
-	rz_analysis_pin(analysis, 0x1337, "!sudo rm -rf /");
-	rz_analysis_pin(analysis, 0xc0ffee, "pd 42");
-
 	rz_analysis_cc_set(analysis, "rax sectarian(rdx, rcx, stack)");
 
 	Sdb *db = sdb_new0();
@@ -1652,8 +1644,8 @@ bool test_analysis_save() {
 bool test_analysis_load() {
 	RzAnalysis *analysis = rz_analysis_new();
 
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
 
 	Sdb *db = analysis_ref_db();
 	bool succ = rz_serialize_analysis_load(db, analysis, NULL);
@@ -1702,13 +1694,6 @@ bool test_analysis_load() {
 	mu_assert_notnull(rz_list_find(analysis->imports, "pigs", (RzListComparator)strcmp), "import");
 	mu_assert_notnull(rz_list_find(analysis->imports, "dogs", (RzListComparator)strcmp), "import");
 	mu_assert_notnull(rz_list_find(analysis->imports, "sheep", (RzListComparator)strcmp), "import");
-
-	size_t pin_count = sdb_count(analysis->sdb_pins);
-	mu_assert_eq(pin_count, 2, "pins count");
-	const char *pin = rz_analysis_pin_call(analysis, 0x1337);
-	mu_assert_streq(pin, "!sudo rm -rf /", "pin");
-	pin = rz_analysis_pin_call(analysis, 0xc0ffee);
-	mu_assert_streq(pin, "pd 42", "pin");
 
 	char *cc = rz_analysis_cc_get(analysis, "sectarian");
 	mu_assert_streq(cc, "rax sectarian (rdx, rcx, stack);", "get cc");

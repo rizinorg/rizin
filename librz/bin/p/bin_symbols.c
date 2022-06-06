@@ -33,7 +33,7 @@ typedef struct symbols_metadata_t { // 0x40
 	ut32 name;
 	bool valid;
 	ut32 size;
-	//RzList *segments;
+	// RzList *segments;
 	ut32 addr;
 	int bits;
 	const char *arch;
@@ -103,7 +103,7 @@ static SymbolsMetadata parseMetadata(RzBuffer *buf, int off) {
 	// eprintf ("0x%08x  strlen   %d\n", 0x4c, sm.namelen);
 	// eprintf ("0x%08x  filename %s\n", 0x50, b + 16);
 	int delta = 16;
-	//sm.segments = parseSegments (buf, off + sm.namelen + delta, sm.n_segments);
+	// sm.segments = parseSegments (buf, off + sm.namelen + delta, sm.n_segments);
 	sm.size = (sm.n_segments * 32) + sm.namelen + delta;
 
 	// hack to detect format
@@ -194,7 +194,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 	}
 	int available = rz_buf_read_at(buf, off, b, size);
 	if (available != size) {
-		eprintf("Warning: rz_buf_read_at failed\n");
+		RZ_LOG_ERROR("bin: symbols: cannot read at 0x%08x\n", off);
 		return NULL;
 	}
 #if 0
@@ -221,23 +221,23 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 #endif
 	// eprintf ("Dragon's magic:\n");
 	int magicCombo = 0;
-	if (!memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
+	if (size > 3 && !memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
 		magicCombo++;
 	}
-	if (!memcmp("\x1a\x2b\xb2\xa1", b + 8, 4)) {
+	if (size > 11 && !memcmp("\x1a\x2b\xb2\xa1", b + 8, 4)) {
 		magicCombo++;
 	}
 	if (magicCombo != 2) {
 		// hack for C22F7494
 		available = rz_buf_read_at(buf, off - 8, b, size);
 		if (available != size) {
-			eprintf("Warning: rz_buf_read_at failed\n");
+			RZ_LOG_WARN("bin: symbols: rz_buf_read_at failed\n");
 			return NULL;
 		}
-		if (!memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
+		if (size > 3 && !memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
 			off -= 8;
 		} else {
-			eprintf("0x%08x  parsing error: invalid magic retry\n", off);
+			RZ_LOG_ERROR("bin: symbols: 0x%08x  parsing error: invalid magic retry\n", off);
 		}
 	}
 	D eprintf("0x%08x  magic  OK\n", off);

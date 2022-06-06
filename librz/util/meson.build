@@ -1,51 +1,54 @@
 
 rz_util_sources = [
-  'ascii_table.c',
-  'assert.c',
   'alloc.c',
-  'table.c',
-  'getopt.c',
-  'print_code.c',
+  'annotated_code.c',
+  'ascii_table.c',
+  'asn1.c',
+  'assert.c',
+  'astr.c',
+  'axml.c',
   'base85.c',
   'base91.c',
-  'binheap.c',
   'bitmap.c',
+  'bitvector.c',
   'buf.c',
-  'cache.c',
   'calc.c',
   'chmod.c',
   'debruijn.c',
+  'ebcdic.c',
   'event.c',
   'file.c',
-  'flist.c',
+  'getopt.c',
   'graph.c',
   'graph_drawable.c',
   'hex.c',
   'idpool.c',
-  'json_parser.c',
+  'intervaltree.c',
   'json_indent.c',
+  'json_parser.c',
+  'lang_byte_array.c',
   'lib.c',
   'list.c',
   'log.c',
+  'luhn.c',
   'mem.c',
   'name.c',
-  'pie.c',
-  'seven.c',
-  'print.c',
-  'prof.c',
-  'punycode.c',
-  'qrcode.c',
-  'queue.c',
-  'asn1.c',
-  'astr.c',
+  'path.c',
+  'pj.c',
   'pkcs7.c',
-  'x509.c',
-  'randomart.c',
+  'print.c',
+  'protobuf.c',
+  'punycode.c',
+  'queue.c',
   'range.c',
   'rbtree.c',
-  'intervaltree.c',
+  'regex/regcomp.c',
+  'regex/regerror.c',
+  'regex/regexec.c',
+  'serialize_spaces.c',
   'signal.c',
   'skiplist.c',
+  'skyline.c',
   'spaces.c',
   'stack.c',
   'str.c',
@@ -54,36 +57,29 @@ rz_util_sources = [
   'str_trim.c',
   'strbuf.c',
   'strpool.c',
+  'subprocess.c',
   'sys.c',
   'syscmd.c',
+  'table.c',
   'thread.c',
-  'thread_sem.c',
-  'thread_lock.c',
   'thread_cond.c',
+  'thread_lock.c',
+  'thread_sem.c',
   'time.c',
   'tree.c',
-  'pj.c',
   'ubase64.c',
   'uleb128.c',
   'unum.c',
-  'utf8.c',
   'utf16.c',
   'utf32.c',
+  'utf8.c',
   'vector.c',
-  'skyline.c',
   'w32-sys.c',
+  'x509.c',
   'zip.c',
-  'protobuf.c',
-  'regex/regcomp.c',
-  'regex/regexec.c',
-  'regex/regerror.c',
-  'annotated_code.c',
-  'serialize_spaces.c',
-  'subprocess.c',
-  'luhn.c'
 ]
 
-rz_util_deps = [ldl, lrt, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]
+rz_util_deps = [ldl, lrt, mth, th, utl, sdb_dep, zlib_dep] + platform_deps
 if ['freebsd', 'netbsd', 'haiku', 'dragonfly'].contains(host_machine.system())
   # backtrace_symbols_fd requires -lexecinfo
   rz_util_deps += [cc.find_library('execinfo', static: is_static_build)]
@@ -103,7 +99,11 @@ rz_util = library('rz_util', rz_util_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: rizin_libversion
+  link_args: library_linkflags,
+  soversion: rizin_libversion,
+  version: rizin_version,
+  name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_util_dep = declare_dependency(
@@ -113,12 +113,33 @@ rz_util_dep = declare_dependency(
     sdb_dep.partial_dependency(includes: true),
   ]
 )
+meson.override_dependency('rz_util', rz_util_dep)
 
 pkgconfig_mod.generate(rz_util,
   subdirs: ['librz', 'librz/sdb'],
   version: rizin_version,
-  libraries: pkgcfg_sanitize_libs,
   name: 'rz_util',
   filebase: 'rz_util',
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'datdir=@0@'.format(rizin_datdir_rz),
+  ],
 )
+
+if not is_static_libs_only
+  conf = configuration_data()
+  conf.set('RZ_VERSION', rizin_version)
+  conf.set('RIZIN_MODULE', rz_util.name())
+  conf.set('RIZIN_MODULE_DEPS', ' '.join([]))
+  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
+  conf.set('INSTALL_INCDIR', rizin_incdir)
+  conf.set('INSTALL_LIBDIR', rizin_libdir)
+  conf.set('INSTALL_PLUGDIR', rizin_plugins)
+  conf.set('rizin_libname', rz_util.name())
+  cmake_mod.configure_package_config_file(
+    name: conf.get('rizin_libname'),
+    input: '../RzModulesConfig.cmake.in',
+    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
+    configuration: conf,
+  )
+endif

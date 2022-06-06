@@ -4,7 +4,7 @@ CMDS=iS;iSS
 EXPECT=<<EOF
 paddr      size  vaddr      vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
-0x00000000 0x0   0x00000000 0x0   0x0   ----                    NULL       
+0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
 0x00000200 0x1c  0x00404500 0x1c  0x0   -r-- .interp            PROGBITS   alloc
 0x0000021c 0x20  0x0040021c 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
 0x0000023c 0x24  0x0040023c 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
@@ -30,16 +30,16 @@ paddr      size  vaddr      vsize align perm name               type       flags
 0x000008d0 0x30  0x006008d0 0x30  0x0   -rw- .got.plt           PROGBITS   write,alloc
 0x00000900 0x10  0x00600900 0x10  0x0   -rw- .data              PROGBITS   write,alloc
 0x00000910 0x0   0x00600910 0x8   0x0   -rw- .bss               NOBITS     write,alloc
-0x00000910 0x22  0x00000000 0x22  0x0   ---- .comment           PROGBITS   merge,strings
-0x00000940 0xd0  0x00000000 0xd0  0x0   ---- .debug_aranges     PROGBITS   
-0x00000a10 0x188 0x00000000 0x188 0x0   ---- .debug_info        PROGBITS   
-0x00000b98 0x76  0x00000000 0x76  0x0   ---- .debug_abbrev      PROGBITS   
-0x00000c0e 0x149 0x00000000 0x149 0x0   ---- .debug_line        PROGBITS   
-0x00000d57 0x8a  0x00000000 0x8a  0x0   ---- .debug_str         PROGBITS   merge,strings
-0x00000df0 0x80  0x00000000 0x80  0x0   ---- .debug_ranges      PROGBITS   
-0x00000e70 0x156 0x00000000 0x156 0x0   ---- .shstrtab          STRTAB     
-0x000018c8 0x6d8 0x00000000 0x6d8 0x0   ---- .symtab            SYMTAB     
-0x00001fa0 0x23a 0x00000000 0x23a 0x0   ---- .strtab            STRTAB     
+0x00000910 0x22  ---------- 0x22  0x0   ---- .comment           PROGBITS   merge,strings
+0x00000940 0xd0  ---------- 0xd0  0x0   ---- .debug_aranges     PROGBITS   
+0x00000a10 0x188 ---------- 0x188 0x0   ---- .debug_info        PROGBITS   
+0x00000b98 0x76  ---------- 0x76  0x0   ---- .debug_abbrev      PROGBITS   
+0x00000c0e 0x149 ---------- 0x149 0x0   ---- .debug_line        PROGBITS   
+0x00000d57 0x8a  ---------- 0x8a  0x0   ---- .debug_str         PROGBITS   merge,strings
+0x00000df0 0x80  ---------- 0x80  0x0   ---- .debug_ranges      PROGBITS   
+0x00000e70 0x156 ---------- 0x156 0x0   ---- .shstrtab          STRTAB     
+0x000018c8 0x6d8 ---------- 0x6d8 0x0   ---- .symtab            SYMTAB     
+0x00001fa0 0x23a ---------- 0x23a 0x0   ---- .strtab            STRTAB     
 paddr      size  vaddr      vsize align    perm name         
 -------------------------------------------------------------
 0x00000040 0x1c0 0x00400040 0x1c0 0x8      -r-x PHDR
@@ -72,15 +72,15 @@ RUN
 
 NAME=also map ehdr if ET_REL
 FILE=bins/elf/pngrutil_o
-CMDS=om
+CMDS=oml
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x0800870c - 0x080090c7 r-- vmap.reloc-targets
- 2 fd: 3 +0x00000034 0x08000034 - 0x080055c7 r-x fmap..text
+ 2 fd: 5 +0x00000034 0x08000034 * 0x080055c7 r-x vmap..text
  3 fd: 3 +0x00007328 0x08007328 - 0x0800852f --x fmap..rel.text
- 4 fd: 3 +0x000055c8 0x080055c8 - 0x0800642b r-- fmap..rodata
+ 4 fd: 5 +0x000055c8 0x080055c8 - 0x0800642b r-- vmap..rodata
  5 fd: 3 +0x00008530 0x08008530 - 0x0800858f --- fmap..rel.rodata
  6 fd: 3 +0x0000642c 0x0800642c - 0x08006461 --- fmap..comment
- 7 fd: 3 +0x00006464 0x08006464 - 0x080068cb r-- fmap..eh_frame
+ 7 fd: 5 +0x00006464 0x08006464 - 0x080068cb r-- vmap..eh_frame
  8 fd: 3 +0x00008590 0x08008590 - 0x0800869f --- fmap..rel.eh_frame
  9 fd: 3 +0x000086a0 0x080086a0 - 0x08008702 --- fmap..shstrtab
 10 fd: 3 +0x000068cc 0x080068cc - 0x08006e5b --- fmap..symtab
@@ -118,29 +118,29 @@ CMDS=iS
 EXPECT=<<EOF
 paddr      size       vaddr      vsize      align perm name      type              flags                                                                    
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
-0x67006570 0x6d007570 0x79742e6e 0x6d007570 0x0   --w- invalid0  LOPROC+0x036f706d write,strings,info,TLS
-0x6568206d 0x6c007061 0x65747379 0x6c007061 0x0   ---x invalid1  0x206b6361        execute,merge,strings,info,extra_os_processing_reqd,group,TLS,compressed
-0x61705f65 0x6e696464 0x63616672 0x6e696464 0x0   --wx invalid2  LOPROC+0x0475706d write,execute,strings,info,extra_os_processing_reqd,group,TLS,compressed
-0x65757274 0x6f207700 0x00310079 0x6f207700 0x0   --wx invalid3  0x6d5f6266        write,execute,strings,info,extra_os_processing_reqd,TLS,compressed
+0x67006570 0x6d007570 ---------- 0x6d007570 0x0   --w- invalid0  LOPROC+0x036f706d write,strings,info,TLS
+0x6568206d 0x6c007061 ---------- 0x6c007061 0x0   ---x invalid1  0x206b6361        execute,merge,strings,info,extra_os_processing_reqd,group,TLS,compressed
+0x61705f65 0x6e696464 ---------- 0x6e696464 0x0   --wx invalid2  LOPROC+0x0475706d write,execute,strings,info,extra_os_processing_reqd,group,TLS,compressed
+0x65757274 0x6f207700 ---------- 0x6f207700 0x0   --wx invalid3  0x6d5f6266        write,execute,strings,info,extra_os_processing_reqd,TLS,compressed
 0x68746469 0x20736920 0x77007461 0x20736920 0x0   -r-x invalid4  0x20323156        alloc,execute,strings,info,extra_os_processing_reqd,group,TLS,compressed
 0x66754220 0x73726566 0x3a732500 0x73726566 0x0   -r-- invalid5  0x6f662050        alloc,merge,strings,info,extra_os_processing_reqd,TLS,compressed
 0x2020424f 0x20202020 0x4c425f54 0x20202020 0x0   -rwx invalid6  0x465f4c45        write,alloc,execute,info,group
 0x313d3d74 0x6e750020 0x68676965 0x6e750020 0x0   -r-x invalid7  0x61682074        alloc,execute,merge,strings,info,extra_os_processing_reqd,TLS
-0x6c61203a 0x61636f6c 0x73250078 0x61636f6c 0x0   ---- invalid8  0x3a74616d        strings
+0x6c61203a 0x61636f6c ---------- 0x61636f6c 0x0   ---- invalid8  0x3a74616d        strings
 0x69537265 0x6e41657a 0x66667542 0x6e41657a 0x0   -r-- invalid9  0x300726f         alloc,extra_os_processing_reqd,group,TLS
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid10 LOPROC+0x02656666 
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid11 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid12 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid13 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid14 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid15 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid16 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid17 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid18 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid19 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid20 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid21 NULL              
-0x00000000 0x0        0x00000000 0x0        0x0   ---- invalid22 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid10 LOPROC+0x02656666 
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid11 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid12 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid13 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid14 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid15 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid16 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid17 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid18 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid19 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid20 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid21 NULL              
+0x00000000 0x0        ---------- 0x0        0x0   ---- invalid22 NULL              
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Invalid strtab at 0x0 (check array failed).

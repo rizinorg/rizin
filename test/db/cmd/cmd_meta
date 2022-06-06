@@ -21,10 +21,10 @@ afvb -8 var_8h uint32_t
 afvs 8 var_sp_8h uint32_t
 afvr rax var_rax uint64_t
 
-Cvb 0x8 comment for arg_8h
-Cvb -8 comment for var_8h
-Cvr var_rax comment for var_rax
-Cvs var_sp_8h comment for var_sp_8h
+Cv arg_8h comment for arg_8h
+Cv var_8h comment for var_8h
+Cv var_rax comment for var_rax
+Cv var_sp_8h comment for var_sp_8h
 
 pd1~comment
 ?e --
@@ -38,16 +38,16 @@ Cvs
 Cvs*
 ?e --
 
-Cvb- arg_8h
+Cv- arg_8h
 pd1~comment
 ?e --
-Cvb- -8
+Cv- var_8h
 pd1~comment
 ?e --
-Cvs- 8
+Cv- var_sp_8h
 pd1~comment
 ?e --
-Cvr- var_rax
+Cv- var_rax
 pd1~comment
 ?e --
 
@@ -98,13 +98,62 @@ FILE==
 CMDS=<<EOF
 CC hello @ 10
 CC.
-CC.10
-CC.@10
-CC@10
+CC. @ 10
+CCl @ 10
 EOF
 EXPECT=<<EOF
 hello
-hello
 0x0000000a CCu "hello"
+EOF
+RUN
+
+NAME=Cs
+FILE==
+CMDS=<<EOF
+w "Friendly Conversation"
+Cs
+C
+EOF
+EXPECT=<<EOF
+0x00000000 ascii[22] "Friendly Conversation"
+EOF
+RUN
+
+NAME=Cs without bin
+FILE==
+CMDS=<<EOF
+ob-*
+w "Friendly Conversation"
+Cs
+# Right now, this does nothing. We just check that it doesn't crash.
+# Later, it will be nice if it also actually detects the string.
+C
+EOF
+EXPECT=
+RUN
+
+NAME=Cs8 without bin
+FILE==
+CMDS=<<EOF
+ob-*
+w "Friendly Conversation"
+Cs8
+C
+EOF
+EXPECT=<<EOF
+0x00000000 utf8[22] "Friendly Conversation"
+EOF
+RUN
+
+NAME=Csb without bin
+FILE==
+CMDS=<<EOF
+ob-*
+w "Friendly Conversation"
+Csb
+C
+EOF
+EXPECT=<<EOF
+0x00000000 ascii[22] "Friendly Conversation"
 EOF
 RUN

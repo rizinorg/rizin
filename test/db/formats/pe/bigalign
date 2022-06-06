@@ -13,6 +13,6 @@ pi 1
 EOF
 EXPECT=<<EOF
 0x20010000
-push 0x20010018
+push str.big_alignments__10000h_20000000h
 EOF
 RUN

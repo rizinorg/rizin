@@ -3,8 +3,8 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
-#include <capstone.h>
-#include <x86.h>
+#include <capstone/capstone.h>
+#include <capstone/x86.h>
 
 #if 0
 CYCLES:
@@ -75,7 +75,7 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 		regsz = 2;
 		break;
 	default:
-		regsz = 4; //32 bit
+		regsz = 4; // 32 bit
 		break;
 	}
 
@@ -716,6 +716,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			}
 			break;
 		}
+		// fallthrough
 	case X86_INS_MOVSB:
 	case X86_INS_MOVSQ:
 	case X86_INS_MOVSW:
@@ -926,8 +927,9 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			val = 0x8000000000000000;
 			break;
 		default:
-			eprintf("Error: unknown operand size: %d\n", gop.insn->detail->x86.operands[0].size);
+			RZ_LOG_ERROR("x86: unknown operand size: %d\n", gop.insn->detail->x86.operands[0].size);
 			val = 256;
+			break;
 		}
 		ut32 bitsize;
 		src = getarg(&gop, 1, 0, NULL, SRC_AR, NULL);
@@ -965,7 +967,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		esilprintf(op, "eax,rax,=,31,rax,>>,?{,0xffffffff00000000,rax,|=,}");
 		break;
 	case X86_INS_AAA:
-		esilprintf(op, "0,cf,:=,0,af,:=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,1,af,:=,}"); //don't
+		esilprintf(op, "0,cf,:=,0,af,:=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,1,af,:=,}"); // don't
 		break;
 	case X86_INS_AAD:
 		arg0 = "0,zf,:=,0,sf,:=,0,pf,:=,10,ah,*,al,+,ax,=";
@@ -1326,9 +1328,9 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			src = getarg(&gop, 0, 0, NULL, SRC_AR, NULL);
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->reg = rz_reg_get(a->reg, src, RZ_REG_TYPE_GPR);
-			//XXX fallthrough
+			// XXX fallthrough
 		}
-		//case X86_OP_FP:
+		// case X86_OP_FP:
 		default: // other?
 			break;
 		}
@@ -1379,11 +1381,11 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		int bits = INSOP(0).size * 8;
 
 		/*
-			 * Here we first set ZF depending on the source operand
-			 * (and bail out if it's 0), then test each bit in a loop
-			 * by creating a mask on the stack and applying it, returning
-			 * result if bit is set.
-			 */
+		 * Here we first set ZF depending on the source operand
+		 * (and bail out if it's 0), then test each bit in a loop
+		 * by creating a mask on the stack and applying it, returning
+		 * result if bit is set.
+		 */
 		esilprintf(op, "%s,!,?{,1,zf,=,BREAK,},0,zf,=,"
 			       "%d,DUP,%d,-,1,<<,%s,&,?{,%d,-,%s,=,BREAK,},12,REPEAT",
 			src, bits, bits, src, bits, dst);
@@ -1394,10 +1396,10 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		int bits = INSOP(0).size * 8;
 
 		/*
-			 * Similar to BSF, except we naturally don't
-			 * need to subtract anything to create
-			 * a mask and return the result.
-			 */
+		 * Similar to BSF, except we naturally don't
+		 * need to subtract anything to create
+		 * a mask and return the result.
+		 */
 		esilprintf(op, "%s,!,?{,1,zf,=,BREAK,},0,zf,=,"
 			       "%d,DUP,1,<<,%s,&,?{,%s,=,BREAK,},12,REPEAT",
 			src, bits, src, dst);
@@ -1684,7 +1686,8 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			xor = 0xffffffffffffffff;
 			break;
 		default:
-			eprintf("Neg: Unhandled bitsize %d\n", bitsize);
+			RZ_LOG_ERROR("x86: unhandled neg bitsize %d\n", bitsize);
+			break;
 		}
 		esilprintf(op, "%s,!,!,cf,:=,%s,0x%" PFMT64x ",^,1,+,%s,$z,zf,:=,0,of,:=,%d,$s,sf,:=,%d,$o,pf,:=",
 			src, src, xor, dst, bitsize - 1, bitsize - 1);
@@ -1725,7 +1728,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				dst, src, src, // x = x ^ y
 				src, dst, dst, // y = y ^ x
 				dst, src, src); // x = x ^ y
-			//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
+			// esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
 		}
 	} break;
 	case X86_INS_XADD: /* xchg + add */
@@ -1754,7 +1757,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				src, dst, dst, // y = y ^ x
 				dst, src, src, // x = x ^ y
 				src, dstAdd);
-			//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
+			// esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
 		}
 	} break;
 	case X86_INS_FADD:
@@ -1814,8 +1817,8 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case X86_INS_STD:
 		esilprintf(op, "1,df,:=");
 		break;
-	case X86_INS_SUBSD: //cvtss2sd
-	case X86_INS_CVTSS2SD: //cvtss2sd
+	case X86_INS_SUBSD: // cvtss2sd
+	case X86_INS_CVTSS2SD: // cvtss2sd
 		break;
 	case X86_INS_BT:
 	case X86_INS_BTC:
@@ -1877,23 +1880,17 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	int i;
 	RzAnalysisValue *val;
 	int regsz;
-	x86_reg sp;
+	x86_reg sp, ip;
 	switch (mode) {
 	case CS_MODE_64:
 		regsz = 8;
 		sp = X86_REG_RSP;
-		break;
-	case CS_MODE_32:
-		regsz = 4;
-		sp = X86_REG_ESP;
-		break;
-	case CS_MODE_16:
-		regsz = 4;
-		sp = X86_REG_ESP;
+		ip = X86_REG_RIP;
 		break;
 	default:
 		regsz = 4;
 		sp = X86_REG_ESP;
+		ip = X86_REG_EIP;
 		break;
 	}
 	RzList *ret = rz_list_newf((RzListFree)rz_analysis_value_free);
@@ -1905,7 +1902,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	val = rz_analysis_value_new();
 	val->type = RZ_ANALYSIS_VAL_REG;
 	val->access = RZ_ANALYSIS_ACC_W;
-	val->reg = cs_reg2reg(reg, handle, X86_REG_RIP);
+	val->reg = cs_reg2reg(reg, handle, ip);
 	rz_list_append(ret, val);
 
 #if CS_API_MAJOR >= 4
@@ -2563,8 +2560,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		op->val = INSOP(1).imm;
 		// XXX this should be op->imm
-		//op->src[0] = rz_analysis_value_new ();
-		//op->src[0]->imm = INSOP(1).imm;
+		// op->src[0] = rz_analysis_value_new ();
+		// op->src[0]->imm = INSOP(1).imm;
 		break;
 	case X86_INS_CMP:
 	case X86_INS_CMPPD:
@@ -2576,7 +2573,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_CMPSS:
 	case X86_INS_TEST:
 		if (insn->id == X86_INS_TEST) {
-			op->type = RZ_ANALYSIS_OP_TYPE_ACMP; //compare via and
+			op->type = RZ_ANALYSIS_OP_TYPE_ACMP; // compare via and
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		}
@@ -2899,7 +2896,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			op->ptr = UT64_MAX;
 		} break;
-		//case X86_OP_FP:
+		// case X86_OP_FP:
 		default: // other?
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			op->ptr = UT64_MAX;
@@ -3110,8 +3107,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_STD:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case X86_INS_SUBSD: //cvtss2sd
-	case X86_INS_CVTSS2SD: //cvtss2sd
+	case X86_INS_SUBSD: // cvtss2sd
+	case X86_INS_CVTSS2SD: // cvtss2sd
 		break;
 	}
 	if (cs_insn_group(*handle, insn, X86_GRP_MMX)) {
@@ -3226,7 +3223,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 #endif
 		cs_free(ctx->insn, n);
 	}
-	//cs_close (&ctx->handle);
+	// cs_close (&ctx->handle);
 	return op->size;
 }
 

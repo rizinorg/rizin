@@ -169,7 +169,7 @@ typedef struct {
 #define PE_IMAGE_SUBSYSTEM_EFI_ROM                 13
 #define PE_IMAGE_SUBSYSTEM_XBOX                    14
 
-//language
+// language
 
 #define PE_LANG_NEUTRAL        0x00
 #define PE_LANG_INVARIANT      0x7f
@@ -544,7 +544,7 @@ typedef struct {
 	ut32 Reserved;
 } Pe_image_resource_data_entry;
 
-//resource types
+// resource types
 #define RZ_PE_MAX_RESOURCES            2056
 #define PE_RESOURCE_ENTRY_CURSOR       1
 #define PE_RESOURCE_ENTRY_BITMAP       2
@@ -591,56 +591,56 @@ typedef struct {
 #define VS_VERSION_INFO_UTF_16_LEN sizeof(VS_VERSION_INFO_UTF_16)
 
 typedef struct {
-	ut16 wLength; //The length, in bytes, of this String structure.
-	ut16 wValueLength; //The size, in words, of the Value member.
-	ut16 wType; //1 text; 0 binary
+	ut16 wLength; // The length, in bytes, of this String structure.
+	ut16 wValueLength; // The size, in words, of the Value member.
+	ut16 wType; // 1 text; 0 binary
 	ut16 wKeyLen;
-	ut16 *szKey; //An arbitrary Unicode string
-	//ut16 Padding;
-	ut16 *Value; //A zero-terminated string.
+	ut16 *szKey; // An arbitrary Unicode string
+	// ut16 Padding;
+	ut16 *Value; // A zero-terminated string.
 } String;
 
 typedef struct {
-	ut16 wLength; //The length, in bytes, of this StringTable structure, including all structures indicated by the Children member.
-	ut16 wValueLength; //always 0
-	ut16 wType; //1 text; 0 binary
+	ut16 wLength; // The length, in bytes, of this StringTable structure, including all structures indicated by the Children member.
+	ut16 wValueLength; // always 0
+	ut16 wType; // 1 text; 0 binary
 	ut16 *szKey;
-	//An 8-digit hexadecimal number stored as a Unicode string.
-	//The four most significant digits represent the language identifier.
-	//The four least significant digits represent the code page for which the data is formatted
-	//ut16 Padding;
+	// An 8-digit hexadecimal number stored as a Unicode string.
+	// The four most significant digits represent the language identifier.
+	// The four least significant digits represent the code page for which the data is formatted
+	// ut16 Padding;
 	ut32 numOfChildren;
-	String **Children; //An array of one or more String structures
+	String **Children; // An array of one or more String structures
 } StringTable;
 
 typedef struct {
-	ut16 wLength; //The length, in bytes, of the entire StringFileInfo block, including all structures indicated by the Children member.
-	ut16 wValueLength; //always 0
-	ut16 wType; //1 text; 0 binary
-	ut16 *szKey; //L"StringFileInfo"
-	//ut16 Padding;
+	ut16 wLength; // The length, in bytes, of the entire StringFileInfo block, including all structures indicated by the Children member.
+	ut16 wValueLength; // always 0
+	ut16 wType; // 1 text; 0 binary
+	ut16 *szKey; // L"StringFileInfo"
+	// ut16 Padding;
 	ut32 numOfChildren;
-	StringTable **Children; //An array of one or more StringTable structures
+	StringTable **Children; // An array of one or more StringTable structures
 } StringFileInfo;
 
 typedef struct {
-	ut16 wLength; //The length, in bytes, of the Var structure. (with pad)
-	ut16 wValueLength; //The length, in bytes, of the Value member.
-	ut16 wType; //1 text; 0 binary
-	ut16 *szKey; //L"Translation"
-	//ut16 Padding;
+	ut16 wLength; // The length, in bytes, of the Var structure. (with pad)
+	ut16 wValueLength; // The length, in bytes, of the Value member.
+	ut16 wType; // 1 text; 0 binary
+	ut16 *szKey; // L"Translation"
+	// ut16 Padding;
 	ut32 numOfValues;
-	ut32 *Value; //An array of one or more values that are language and code page identifier pairs
+	ut32 *Value; // An array of one or more values that are language and code page identifier pairs
 } Var;
 
 typedef struct {
-	ut16 wLength; //The length, in bytes, of the entire VarFileInfo block, including all structures indicated by the Children member. (with pad)
-	ut16 wValueLength; //always 0
-	ut16 wType; //1 text; 0 binary
-	ut16 *szKey; //L"VarFileInfo"
-	//ut16 Padding;
+	ut16 wLength; // The length, in bytes, of the entire VarFileInfo block, including all structures indicated by the Children member. (with pad)
+	ut16 wValueLength; // always 0
+	ut16 wType; // 1 text; 0 binary
+	ut16 *szKey; // L"VarFileInfo"
+	// ut16 Padding;
 	ut32 numOfChildren;
-	Var **Children; //Typically contains a list of languages that the application or DLL supports.
+	Var **Children; // Typically contains a list of languages that the application or DLL supports.
 } VarFileInfo;
 
 #define PE_VS_FF_DEBUG        0x00000001L
@@ -693,7 +693,7 @@ typedef struct {
 #define PE_VFT2_UNKNOWN       0x00000000L
 
 typedef struct {
-	ut32 dwSignature; //Contains the value 0xFEEF04BD
+	ut32 dwSignature; // Contains the value 0xFEEF04BD
 	ut32 dwStrucVersion;
 	ut32 dwFileVersionMS;
 	ut32 dwFileVersionLS;
@@ -709,15 +709,15 @@ typedef struct {
 } PE_VS_FIXEDFILEINFO;
 
 typedef struct {
-	ut16 wLength; //whole structure size (padding not included (in case of multiply version info structures))
-	ut16 wValueLength; //if 0 there is no Value
-	ut16 wType; //1 text; 0 binary
-	ut16 *szKey; //L"VS_VERSION_INFO"
-	//ut16             Padding1; //pad for 32 boundary
+	ut16 wLength; // whole structure size (padding not included (in case of multiply version info structures))
+	ut16 wValueLength; // if 0 there is no Value
+	ut16 wType; // 1 text; 0 binary
+	ut16 *szKey; // L"VS_VERSION_INFO"
+	// ut16             Padding1; //pad for 32 boundary
 	PE_VS_FIXEDFILEINFO *Value;
-	//ut16             Padding2; //pad for 32 boundary
-	VarFileInfo *varFileInfo; //0 or 1 elements
-	StringFileInfo *stringFileInfo; //0 or 1 elements
+	// ut16             Padding2; //pad for 32 boundary
+	VarFileInfo *varFileInfo; // 0 or 1 elements
+	StringFileInfo *stringFileInfo; // 0 or 1 elements
 } PE_VS_VERSIONINFO;
 
 // Specific for x64 SEH
@@ -729,7 +729,9 @@ typedef enum {
 	UWOP_SET_FPREG, /* no info, FP = RSP + UNWIND_INFO.FPRegOffset*16 */
 	UWOP_SAVE_NONVOL, /* info == register number, offset in next slot */
 	UWOP_SAVE_NONVOL_FAR, /* info == register number, offset in next 2 slots */
-	UWOP_SAVE_XMM128 = 8, /* info == XMM reg number, offset in next slot */
+	UWOP_UNKNOWN1, /* 1 extra slot */
+	UWOP_UNKNOWN2, /* 2 extra slots */
+	UWOP_SAVE_XMM128, /* info == XMM reg number, offset in next slot */
 	UWOP_SAVE_XMM128_FAR, /* info == XMM reg number, offset in next 2 slots */
 	UWOP_PUSH_MACHFRAME /* info == 0: no error-code, 1: error-code */
 } PE64_UNWIND_CODE_OPS;
@@ -785,11 +787,6 @@ typedef struct {
 	ut32 Count;
 	PE64_SCOPE_RECORD ScopeRecord[];
 } PE64_SCOPE_TABLE;
-
-bool rz_bin_pe_buffer_read_le8(RzBuffer *buf, ut64 *offset, ut8 *result);
-bool rz_bin_pe_buffer_read_le16(RzBuffer *buf, ut64 *offset, ut16 *result);
-bool rz_bin_pe_buffer_read_le32(RzBuffer *buf, ut64 *offset, ut32 *result);
-bool rz_bin_pe_buffer_read_le64(RzBuffer *buf, ut64 *offset, ut64 *result);
 
 bool Pe32_read_dos_header(RzBuffer *buf, Pe32_image_dos_header *header);
 bool Pe32_read_nt_headers(RzBuffer *buf, ut64 addr, Pe32_image_nt_headers *headers);

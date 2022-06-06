@@ -84,12 +84,12 @@ static RzBinDwarfAttrValue *find_attr(const RzBinDwarfDie *die, st32 attr_name) 
 }
 
 /**
- * @brief Pasted from rz_strbuf_*
+ * \brief Pasted from rz_strbuf_*
  *        Prepends string before a last occurence of character c
  * 	      Used to replicate proper C declaration for function pointers
- * @param sb
- * @param s
- * @param c
+ * \param sb
+ * \param s
+ * \param c
  */
 static bool strbuf_rev_prepend_char(RzStrBuf *sb, const char *s, int c) {
 	rz_return_val_if_fail(sb && s, false);
@@ -119,12 +119,12 @@ static bool strbuf_rev_prepend_char(RzStrBuf *sb, const char *s, int c) {
 	return ret;
 }
 /**
- * @brief Pasted from rz_strbuf_*
+ * \brief Pasted from rz_strbuf_*
  * 	      Appends string after a first occurence of character c
  * 	      Used to replicate proper C declaration for function pointers
- * @param sb
- * @param s
- * @param needle
+ * \param sb
+ * \param s
+ * \param needle
  */
 static bool strbuf_rev_append_char(RzStrBuf *sb, const char *s, const char *needle) {
 	rz_return_val_if_fail(sb && s, false);
@@ -159,10 +159,10 @@ static inline char *create_type_name_from_offset(ut64 offset) {
 }
 
 /**
- * @brief Get the DIE name or create unique one from its offset
+ * \brief Get the DIE name or create unique one from its offset
  *
- * @param die
- * @return char* DIEs name or NULL if error
+ * \param die
+ * \return char* DIEs name or NULL if error
  */
 static char *get_die_name(const RzBinDwarfDie *die) {
 	char *name = NULL;
@@ -175,10 +175,10 @@ static char *get_die_name(const RzBinDwarfDie *die) {
 }
 
 /**
- * @brief Get the DIE size in bits
+ * \brief Get the DIE size in bits
  *
- * @param die
- * @return ut64 size in bits or 0 if not found
+ * \param die
+ * \return ut64 size in bits or 0 if not found
  */
 static ut64 get_die_size(const RzBinDwarfDie *die) {
 	ut64 size = 0;
@@ -197,12 +197,12 @@ static ut64 get_die_size(const RzBinDwarfDie *die) {
 }
 
 /**
- * @brief Parses array type entry signature into strbuf
+ * \brief Parses array type entry signature into strbuf
  *
- * @param ctx
- * @param idx index of the current entry
- * @param strbuf strbuf to store the type into
- * @return st32 -1 if error else 0
+ * \param ctx
+ * \param idx index of the current entry
+ * \param strbuf strbuf to store the type into
+ * \return st32 -1 if error else 0
  */
 static st32 parse_array_type(Context *ctx, ut64 idx, RzStrBuf *strbuf) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx++];
@@ -381,13 +381,13 @@ static st32 parse_type_outer(Context *ctx, const ut64 offset, RzStrBuf *strbuf, 
 }
 
 /**
- * @brief Parses structured entry into *result RzTypeStructMember
+ * \brief Parses structured entry into *result RzTypeStructMember
  * http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
  *
- * @param ctx
- * @param idx index of the current entry
- * @param result ptr to result member to fill up
- * @return RzTypeStructMember* ptr to parsed Member
+ * \param ctx
+ * \param idx index of the current entry
+ * \param result ptr to result member to fill up
+ * \return RzTypeStructMember* ptr to parsed Member
  */
 static RzTypeStructMember *parse_struct_member(Context *ctx, ut64 idx, RzTypeStructMember *result) {
 	rz_return_val_if_fail(result, NULL);
@@ -457,7 +457,9 @@ static RzTypeStructMember *parse_struct_member(Context *ctx, ut64 idx, RzTypeStr
 	}
 	result->offset = offset;
 	result->size = size;
+	free(type);
 	return result;
+
 cleanup:
 	free(name);
 	free(type);
@@ -465,13 +467,13 @@ cleanup:
 }
 
 /**
- * @brief  Parses enum entry into *result RzTypeEnumCase
+ * \brief  Parses enum entry into *result RzTypeEnumCase
  * http://www.dwarfstd.org/doc/DWARF4.pdf#page=110&zoom=100,0,0
  *
- * @param ctx
- * @param idx index of the current entry
- * @param result ptr to result case to fill up
- * @return RzTypeEnumCase* Ptr to parsed enum case
+ * \param ctx
+ * \param idx index of the current entry
+ * \param result ptr to result case to fill up
+ * \return RzTypeEnumCase* Ptr to parsed enum case
  */
 static RzTypeEnumCase *parse_enumerator(Context *ctx, ut64 idx, RzTypeEnumCase *result) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
@@ -509,11 +511,11 @@ cleanup:
 }
 
 /**
- * @brief  Parses a structured entry (structs, classes, unions) into
+ * \brief  Parses a structured entry (structs, classes, unions) into
  *         RzBaseType and saves it using rz_analysis_save_base_type ()
  *
- * @param ctx
- * @param idx index of the current entry
+ * \param ctx
+ * \param idx index of the current entry
  */
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
 static void parse_structure_type(Context *ctx, ut64 idx) {
@@ -589,11 +591,11 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 }
 
 /**
- * @brief Parses a enum entry into RzBaseType and saves it
+ * \brief Parses a enum entry into RzBaseType and saves it
  *        int Sdb using rz_analysis_save_base_type ()
  *
- * @param ctx
- * @param idx index of the current entry
+ * \param ctx
+ * \param idx index of the current entry
  */
 static void parse_enum_type(Context *ctx, ut64 idx) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
@@ -659,13 +661,13 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 }
 
 /**
- * @brief Parses a typedef entry into RzBaseType and saves it
+ * \brief Parses a typedef entry into RzBaseType and saves it
  *        using rz_analysis_save_base_type ()
  *
  * http://www.dwarfstd.org/doc/DWARF4.pdf#page=96&zoom=100,0,0
  *
- * @param ctx
- * @param idx index of the current entry
+ * \param ctx
+ * \param idx index of the current entry
  */
 static void parse_typedef(Context *ctx, ut64 idx) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
@@ -711,11 +713,11 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 		goto cleanup;
 	}
 	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
-	rz_strbuf_fini(&strbuf);
-	return;
+
 cleanup:
 	free(type);
 	rz_strbuf_fini(&strbuf);
+	return;
 }
 
 static void parse_atomic_type(Context *ctx, ut64 idx) {
@@ -1389,11 +1391,11 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable*>*/ 
 }
 
 /**
- * @brief Parse function,it's arguments, variables and
+ * \brief Parse function,it's arguments, variables and
  *        save the information into the Sdb
  *
- * @param ctx
- * @param idx Current entry index
+ * \param ctx
+ * \param idx Current entry index
  */
 static void parse_function(Context *ctx, ut64 idx) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
@@ -1496,10 +1498,10 @@ cleanup:
 }
 
 /**
- * @brief Get's language from comp unit for demangling
+ * \brief Get's language from comp unit for demangling
  *
- * @param die
- * @return char* string literal language represantation for demangling BinDemangle
+ * \param die
+ * \return char* string literal language represantation for demangling BinDemangle
  */
 static char *parse_comp_unit_lang(const RzBinDwarfDie *die) {
 	rz_return_val_if_fail(die, NULL);
@@ -1555,10 +1557,10 @@ static char *parse_comp_unit_lang(const RzBinDwarfDie *die) {
 }
 
 /**
- * @brief Delegates DIE to it's proper parsing method
+ * \brief Delegates DIE to it's proper parsing method
  *
- * @param ctx
- * @param idx index of the current entry
+ * \param ctx
+ * \param idx index of the current entry
  */
 static void parse_type_entry(Context *ctx, ut64 idx) {
 	rz_return_if_fail(ctx);
@@ -1591,11 +1593,11 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
 }
 
 /**
- * @brief Parses type and function information out of DWARF entries
+ * \brief Parses type and function information out of DWARF entries
  *        and stores them to the sdb for further use
  *
- * @param analysis
- * @param ctx
+ * \param analysis
+ * \param ctx
  */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysisDwarfContext *ctx) {
 	rz_return_if_fail(ctx && analysis);
@@ -1626,11 +1628,11 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 }
 
 /**
- * @brief Use parsed DWARF function info from Sdb in the function analysis
+ * \brief Use parsed DWARF function info from Sdb in the function analysis
  *  XXX right now we only save parsed name and variables, we can't use signature now
  *  XXX refactor to be more readable
- * @param analysis
- * @param dwarf_sdb
+ * \param analysis
+ * \param dwarf_sdb
  */
 RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags, Sdb *dwarf_sdb) {
 	rz_return_if_fail(analysis && dwarf_sdb);

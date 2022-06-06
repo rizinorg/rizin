@@ -22,6 +22,10 @@
 #define RZ_TEST_ARCH "x86"
 #elif __x86_64__
 #define RZ_TEST_ARCH "x64"
+#elif __arm__
+#define RZ_TEST_ARCH "arm"
+#elif __arm64__
+#define RZ_TEST_ARCH "arm64"
 #else
 #define RZ_TEST_ARCH "unknown"
 #endif
@@ -95,9 +99,10 @@ typedef struct rz_test_asm_test_t {
 	int bits;
 	int mode;
 	ut64 offset;
-	char *disasm;
-	ut8 *bytes;
+	RZ_NONNULL char *disasm;
+	RZ_NONNULL ut8 *bytes;
 	size_t bytes_size;
+	RZ_NULLABLE char *il;
 } RzAsmTest;
 
 typedef struct rz_test_json_test_t {
@@ -145,8 +150,12 @@ typedef struct rz_test_asm_test_output_t {
 	char *disasm;
 	ut8 *bytes;
 	size_t bytes_size;
+	char *il;
+	char *il_report;
+	bool il_failed;
 	bool as_timeout;
 	bool disas_timeout;
+	bool il_timeout;
 } RzAsmTestOutput;
 
 typedef enum rz_test_test_result_t {

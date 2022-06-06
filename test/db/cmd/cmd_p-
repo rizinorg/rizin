@@ -2,7 +2,7 @@ NAME=p-h out of bounds
 FILE=bins/mach0/mach0-x86-64
 CMDS=<<EOF
 aaa
-p-h @0x100001010 @e:search.in=bin.section
+p-h @ 0x100001010 @e:search.in=bin.section
 EOF
 EXPECT=<<EOF
 
@@ -15,5 +15,256 @@ EXPECT=<<EOF
 |              | 5      | 0      | 2     | 0     | 0    |
 `-------------------------------------------------------'
 
+EOF
+RUN
+
+NAME=p-
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+s 0x8048000
+e search.in=io.map
+p-
+e search.in=io.maps
+p-
+EOF
+EXPECT=<<EOF
+0x08048000 [^._______ssss_s__ssssss_ss_ss_ss__sz_s____s] 0x0804859c
+0x08048000 [^_sssssszss_____________________________s_s] 0x080496d0
+EOF
+RUN
+
+NAME=p- without any file
+FILE=--
+CMDS=p-
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=p- with malloc://512
+FILE=malloc://512
+CMDS=p-
+EXPECT=<<EOF
+0x00000000 [^__________________________________________] 0x00000200
+EOF
+RUN
+
+NAME=p- bounds
+FILE=malloc://0x1000
+CMDS=<<EOF
+e hex.cols=0
+f test @ 0x1000
+p- 0x40 # 0x1000 % 0x40 = 0
+p- 0xa # 0x1000 % 0xa != 0
+f- test
+f test @ 0xfff
+p- 0x40 # 0x1000 % 0x40 = 0
+p- 0xa # 0x1000 % 0xa != 0
+EOF
+EXPECT=<<EOF
+0x00000000 [^_______________________________________________________________] 0x00001000
+0x00000000 [^_________] 0x00001000
+0x00000000 [^______________________________________________________________.] 0x00001000
+0x00000000 [^________.] 0x00001000
+EOF
+RUN
+
+NAME=p-j
+FILE=malloc://0x1000
+CMDS=<<EOF
+e hex.cols=0
+f test @ 0x1000
+p-j 0x4~{} # 0x1000 % 0x4 = 0
+?e -------
+p-j 0xa~{} # 0x1000 % 0xa != 0
+?e -------
+f- test
+f test @ 0xfff
+af+ hello @ 0x3ff
+afb+ 0x3ff 0x3ff 0x10
+p-j 0x4~{} # 0x1000 % 0x40 = 0
+?e -------
+p-j 0xa~{} # 0x1000 % 0xa != 0
+EOF
+EXPECT=<<EOF
+{
+  "from": 0,
+  "to": 4096,
+  "blocksize": 1024,
+  "blocks": [
+    {
+      "offset": 0,
+      "size": 1024,
+      "perm": "rwx"
+    },
+    {
+      "offset": 1024,
+      "size": 1024,
+      "perm": "rwx"
+    },
+    {
+      "offset": 2048,
+      "size": 1024,
+      "perm": "rwx"
+    },
+    {
+      "offset": 3072,
+      "size": 1024,
+      "perm": "rwx"
+    }
+  ]
+}
+-------
+{
+  "from": 0,
+  "to": 4096,
+  "blocksize": 410,
+  "blocks": [
+    {
+      "offset": 0,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 410,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 820,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 1230,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 1640,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 2050,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 2460,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 2870,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 3280,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 3690,
+      "size": 406,
+      "perm": "rwx"
+    }
+  ]
+}
+-------
+{
+  "from": 0,
+  "to": 4096,
+  "blocksize": 1024,
+  "blocks": [
+    {
+      "offset": 0,
+      "size": 1024,
+      "flags": 1,
+      "functions": 1,
+      "in_functions": 1,
+      "perm": "rwx"
+    },
+    {
+      "offset": 1024,
+      "size": 1024,
+      "in_functions": 1,
+      "perm": "rwx"
+    },
+    {
+      "offset": 2048,
+      "size": 1024,
+      "perm": "rwx"
+    },
+    {
+      "offset": 3072,
+      "size": 1024,
+      "flags": 1,
+      "perm": "rwx"
+    }
+  ]
+}
+-------
+{
+  "from": 0,
+  "to": 4096,
+  "blocksize": 410,
+  "blocks": [
+    {
+      "offset": 0,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 410,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 820,
+      "size": 410,
+      "flags": 1,
+      "functions": 1,
+      "in_functions": 1,
+      "perm": "rwx"
+    },
+    {
+      "offset": 1230,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 1640,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 2050,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 2460,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 2870,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 3280,
+      "size": 410,
+      "perm": "rwx"
+    },
+    {
+      "offset": 3690,
+      "size": 406,
+      "flags": 1,
+      "perm": "rwx"
+    }
+  ]
+}
 EOF
 RUN

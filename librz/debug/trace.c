@@ -39,7 +39,7 @@ RZ_API void rz_debug_trace_free(RzDebugTrace *trace) {
 // TODO: added overlap/mask support here...
 // TODO: think about tagged traces
 RZ_API int rz_debug_trace_tag(RzDebug *dbg, int tag) {
-	//if (tag>0 && tag<31) core->dbg->trace->tag = 1<<(sz-1);
+	// if (tag>0 && tag<31) core->dbg->trace->tag = 1<<(sz-1);
 	return (dbg->trace->tag = (tag > 0) ? tag : UT32_MAX);
 }
 
@@ -113,7 +113,7 @@ RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
 	RzAnalysisValue *val;
 
 	// Add reg/mem write change
-	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, false);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 	rz_list_foreach (dbg->cur_op->access, it, val) {
 		if (!(val->access & RZ_ANALYSIS_ACC_W)) {
 			continue;
@@ -186,7 +186,7 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 		}
 	}
 	if (oldpc != UT64_MAX) {
-		rz_debug_trace_add(dbg, oldpc, op->size); //XXX review what this line really do
+		rz_debug_trace_add(dbg, oldpc, op->size); // XXX review what this line really do
 	}
 	oldpc = op->addr;
 }
@@ -209,56 +209,41 @@ static int cmpaddr(const void *_a, const void *_b) {
 														     : 0;
 }
 
-RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset) {
+/***
+ * Get all trace info
+ * @param dbg core->dbg
+ * @param offset offset of address
+ * @return a RzList of RzListInfo
+ */
+RZ_API RZ_OWN RzList *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
+	rz_return_val_if_fail(dbg, NULL);
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
-	bool flag = false;
 	RzList *info_list = rz_list_new();
-	if (!info_list && mode == '=') {
-		return;
+	if (!info_list) {
+		return NULL;
 	}
+
 	RzDebugTracepoint *trace;
 	rz_list_foreach (dbg->trace->traces, iter, trace) {
-		if (!trace->tag || (tag & trace->tag)) {
-			switch (mode) {
-			case 'q':
-				dbg->cb_printf("0x%" PFMT64x "\n", trace->addr);
-				break;
-			case '=': {
-				RzListInfo *info = RZ_NEW0(RzListInfo);
-				if (!info) {
-					return;
-				}
-				info->pitv = (RzInterval){ trace->addr, trace->size };
-				info->vitv = info->pitv;
-				info->perm = -1;
-				info->name = rz_str_newf("%d", trace->times);
-				info->extra = rz_str_newf("%d", trace->count);
-				rz_list_append(info_list, info);
-				flag = true;
-			} break;
-			case 1:
-			case '*':
-				dbg->cb_printf("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
-				break;
-			default:
-				dbg->cb_printf("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
-					trace->addr, trace->size, trace->count, trace->times, trace->tag);
-				break;
-			}
+		if (trace->tag && !(tag & trace->tag)) {
+			continue;
 		}
+		RzListInfo *info = RZ_NEW0(RzListInfo);
+		if (!info) {
+			rz_list_free(info_list);
+			return NULL;
+		}
+		info->pitv = (RzInterval){ trace->addr, trace->size };
+		info->vitv = info->pitv;
+		info->perm = -1;
+		info->name = rz_str_newf("%d", trace->times);
+		info->extra = rz_str_newf("%d", trace->count);
+		rz_list_append(info_list, info);
 	}
-	if (flag) {
-		rz_list_sort(info_list, cmpaddr);
-		RzTable *table = rz_table_new();
-		table->cons = rz_cons_singleton();
-		RzIO *io = dbg->iob.io;
-		rz_table_visual_list(table, info_list, offset, 1,
-			rz_cons_get_size(NULL), io->va);
-		io->cb_printf("\n%s\n", rz_table_tostring(table));
-		rz_table_free(table);
-		rz_list_free(info_list);
-	}
+
+	rz_list_sort(info_list, cmpaddr);
+	return info_list;
 }
 
 // XXX: find better name, make it public?

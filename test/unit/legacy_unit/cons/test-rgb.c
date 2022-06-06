@@ -2,8 +2,8 @@
 
 int main() {
 	int i, j, k;
-	//char *str = "\x1b[38;5;231mpop\x1b[0m";
-	//char *str ="\x1b]4;%d;rgb:30/20/24pop\x1b[0m";
+	// char *str = "\x1b[38;5;231mpop\x1b[0m";
+	// char *str ="\x1b]4;%d;rgb:30/20/24pop\x1b[0m";
 	char *str = "\x1b\\pop\x1b[0m";
 	i = j = k = 0;
 

@@ -34,18 +34,19 @@ FROM debian:10
 
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=master
+# rz-ghidra version
+ARG RZ_GHIDRA_VERSION=dev
 
 ARG with_arm32_as
 ARG with_arm64_as
 ARG with_ppc_as
 
 ENV RZ_PIPE_PY_VERSION ${RZ_PIPE_PY_VERSION}
+ENV RZ_GHIDRA_VERSION ${RZ_GHIDRA_VERSION}
 
 RUN echo -e "Building versions:\n\
-	RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}"
-
-# Build rizin in a volume to minimize space used by build
-COPY . /tmp/rizin/
+	RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}\
+	RZ_GHIDRA_VERSION=${RZ_GHIDRA_VERSION}"
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
@@ -66,14 +67,22 @@ RUN apt-get install -y --no-install-recommends \
 
 RUN pip3 install meson ninja
 
+# Build rizin in a volume to minimize space used by build
+COPY . /tmp/rizin/
+
+WORKDIR /tmp/rizin
+RUN meson --prefix=/usr -Dinstall_sigdb=true /tmp/build && \
+	meson compile -C /tmp/build && \
+	meson install --destdir /tmp/rizin-install -C /tmp/build
+
 WORKDIR /tmp
 RUN git clone -b "$RZ_PIPE_PY_VERSION" https://github.com/rizinorg/rz-pipe
 RUN pip3 install --root=/tmp/rizin-install ./rz-pipe/python
 
-WORKDIR /tmp/rizin
-RUN meson --prefix=/usr /tmp/build
-RUN meson compile -C /tmp/build
-RUN meson install --destdir /tmp/rizin-install -C /tmp/build
+WORKDIR /tmp
+RUN git clone --recurse-submodules -b "$RZ_GHIDRA_VERSION" https://github.com/rizinorg/rz-ghidra
+WORKDIR /tmp/rz-ghidra
+RUN cmake -DCMAKE_PREFIX_PATH=/tmp/rizin-install/usr -DCMAKE_INSTALL_PREFIX=/usr -B build && cmake --build build && DESTDIR=/tmp/rizin-install cmake --build build --target install
 
 FROM debian:10
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}

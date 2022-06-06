@@ -2,9 +2,9 @@ NAME=asm/callflag
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
-f eax=33
+f+ eax @ 33
 pa call eax
-f test=eax
+f+ test @ eax
 pa call test
 EOF
 EXPECT=<<EOF

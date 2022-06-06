@@ -5,7 +5,7 @@
 #include <rz_util.h>
 
 #if __WINDOWS__
-#include <windows.h>
+#include <rz_windows.h>
 #include <stdio.h>
 #include <tchar.h>
 
@@ -35,88 +35,6 @@ RZ_API char *rz_sys_get_src_dir_w32(void) {
 		free(tmp);
 	}
 	return dir;
-}
-
-RZ_API bool rz_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr) {
-	HANDLE in = NULL;
-	HANDLE out = NULL;
-	HANDLE err = NULL;
-	SECURITY_ATTRIBUTES saAttr;
-
-	// Set the bInheritPlugin flag so pipe handles are inherited.
-	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-	saAttr.bInheritHandle = TRUE;
-	saAttr.lpSecurityDescriptor = NULL;
-	HANDLE fi = NULL;
-	HANDLE fo = NULL;
-	HANDLE fe = NULL;
-
-	// Create a pipe for the child process's STDOUT and STDERR.
-	// Ensure the read handle to the pipe for STDOUT and SRDERR and write handle of STDIN is not inherited.
-	if (output) {
-		if (!CreatePipe(&fo, &out, &saAttr, 0)) {
-			ErrorExit("StdOutRd CreatePipe");
-		}
-		if (!SetHandleInformation(fo, HANDLE_FLAG_INHERIT, 0)) {
-			ErrorExit("StdOut SetHandleInformation");
-		}
-	}
-	if (sterr) {
-		if (!CreatePipe(&fe, &err, &saAttr, 0)) {
-			ErrorExit("StdErrRd CreatePipe");
-		}
-		if (!SetHandleInformation(fe, HANDLE_FLAG_INHERIT, 0)) {
-			ErrorExit("StdErr SetHandleInformation");
-		}
-	}
-	if (input) {
-		if (!CreatePipe(&fi, &in, &saAttr, 0)) {
-			ErrorExit("StdInRd CreatePipe");
-		}
-		DWORD nBytesWritten;
-		WriteFile(in, input, strlen(input) + 1, &nBytesWritten, NULL);
-		if (!SetHandleInformation(in, HANDLE_FLAG_INHERIT, 0)) {
-			ErrorExit("StdIn SetHandleInformation");
-		}
-	}
-
-	if (!rz_sys_create_child_proc_w32(cmd, fi, out, err)) {
-		return false;
-	}
-
-	// Close the write end of the pipe before reading from the
-	// read end of the pipe, to control child process execution.
-	// The pipe is assumed to have enough buffer space to hold the
-	// data the child process has already written to it.
-	if (in && !CloseHandle(in)) {
-		ErrorExit("StdInWr CloseHandle");
-	}
-	if (out && !CloseHandle(out)) {
-		ErrorExit("StdOutWr CloseHandle");
-	}
-	if (err && !CloseHandle(err)) {
-		ErrorExit("StdErrWr CloseHandle");
-	}
-
-	if (output) {
-		*output = ReadFromPipe(fo, outlen);
-	}
-
-	if (sterr) {
-		*sterr = ReadFromPipe(fe, NULL);
-	}
-
-	if (fi && !CloseHandle(fi)) {
-		ErrorExit("PipeIn CloseHandle");
-	}
-	if (fo && !CloseHandle(fo)) {
-		ErrorExit("PipeOut CloseHandle");
-	}
-	if (fe && !CloseHandle(fe)) {
-		ErrorExit("PipeErr CloseHandle");
-	}
-
-	return true;
 }
 
 RZ_API bool rz_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err) {

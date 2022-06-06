@@ -3,29 +3,15 @@
 // SPDX-FileCopyrightText: 2016-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef INCLUDE_HEAP_GLIBC_C
-#define INCLUDE_HEAP_GLIBC_C
-#include "rz_config.h"
-#define HEAP32 1
-#include "linux_heap_glibc.c"
-#undef HEAP32
-#endif
+#include <rz_core.h>
+#include <rz_config.h>
+#include <rz_types.h>
+#include <math.h>
 
-#undef GH
-#undef GHT
-#undef GHT_MAX
-#undef read_le
-
-#if HEAP32
-#define GH(x)      x##_32
-#define GHT        ut32
-#define GHT_MAX    UT32_MAX
-#define read_le(x) rz_read_le##32(x)
+#ifdef HEAP64
+#include "linux_heap_glibc64.h"
 #else
-#define GH(x)      x##_64
-#define GHT        ut64
-#define GHT_MAX    UT64_MAX
-#define read_le(x) rz_read_le##64(x)
+#include "linux_heap_glibc.h"
 #endif
 
 /**
@@ -47,7 +33,7 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 	RzBinSymbol *s;
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, -1, 0, 0, false, false);
+	rz_bin_options_init(&opt, -1, 0, 0, false);
 	opt.obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
 	opt.obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
 	opt.obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
@@ -152,7 +138,7 @@ static GHT GH(tcache_chunk_size)(RzCore *core, GHT brk_start) {
 		return sz;
 	}
 	rz_io_read_at(core->io, brk_start, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-	sz = (cnk->size >> 3) << 3; //clear chunk flag
+	sz = (cnk->size >> 3) << 3; // clear chunk flag
 	return sz;
 }
 
@@ -275,27 +261,27 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
 			GHT addr = m_arena + align + SZ * i - SZ * 2;
 			GHT bina = main_arena->bins[i];
-			rz_cons_printf("f chunk.%zu.bin = 0x%" PFMT64x "\n", i, (ut64)addr);
-			rz_cons_printf("f chunk.%zu.fd = 0x%" PFMT64x "\n", i, (ut64)bina);
+			rz_cons_printf("f chunk.%zu.bin @ 0x%" PFMT64x "\n", i, (ut64)addr);
+			rz_cons_printf("f chunk.%zu.fd @ 0x%" PFMT64x "\n", i, (ut64)bina);
 			bina = main_arena->bins[i + 1];
-			rz_cons_printf("f chunk.%zu.bk = 0x%" PFMT64x "\n", i, (ut64)bina);
+			rz_cons_printf("f chunk.%zu.bk @ 0x%" PFMT64x "\n", i, (ut64)bina);
 		}
 		for (i = 0; i < BINMAPSIZE; i++) {
-			rz_cons_printf("f binmap.%zu = 0x%" PFMT64x, i, (ut64)main_arena->binmap[i]);
+			rz_cons_printf("f binmap.%zu @ 0x%" PFMT64x, i, (ut64)main_arena->binmap[i]);
 		}
 		{ /* maybe use SDB instead of flags for this? */
 			char units[8];
 			rz_num_units(units, sizeof(units), main_arena->max_system_mem);
-			rz_cons_printf("f heap.maxmem = %s\n", units);
+			rz_cons_printf("f heap.maxmem @ %s\n", units);
 
 			rz_num_units(units, sizeof(units), main_arena->system_mem);
-			rz_cons_printf("f heap.sysmem = %s\n", units);
+			rz_cons_printf("f heap.sysmem @ %s\n", units);
 
 			rz_num_units(units, sizeof(units), main_arena->next_free);
-			rz_cons_printf("f heap.nextfree = %s\n", units);
+			rz_cons_printf("f heap.nextfree @ %s\n", units);
 
 			rz_num_units(units, sizeof(units), main_arena->next);
-			rz_cons_printf("f heap.next= %s\n", units);
+			rz_cons_printf("f heap.next @ %s\n", units);
 		}
 		return;
 	}
@@ -849,7 +835,7 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 		break;
 	case ' ': // dmhb [bin_num]
 		j--; // for spaces after input
-		/* fallthu */
+		// fallthrough
 	case 'g': // dmhbg [bin_num]
 		num_bin = rz_num_get(NULL, input + j);
 		if (num_bin > NBINS - 2) {
@@ -1743,6 +1729,7 @@ RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *m
 			// thread arenas
 			item = RZ_NEW0(RzArenaListItem);
 			if (!item) {
+				free(ta);
 				break;
 			}
 			item->addr = ta_addr;
@@ -2125,7 +2112,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			rz_cons_printf("fs heap.%s\n", pos->status);
 			char *name = rz_str_newf("chunk.%06" PFMT64x, ((pos->addr >> 4) & 0xffffULL));
-			rz_cons_printf("f %s %d 0x%" PFMT64x "\n", name, (int)pos->size, (ut64)pos->addr);
+			rz_cons_printf("f %s %d @ 0x%" PFMT64x "\n", name, (int)pos->size, (ut64)pos->addr);
 			free(name);
 		} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) { // graph
 			free(node_title);
@@ -2158,9 +2145,9 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		pj_end(pj);
 	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_cons_printf("fs-\n");
-		rz_cons_printf("f heap.top = 0x%08" PFMT64x "\n", (ut64)main_arena->top);
-		rz_cons_printf("f heap.brk = 0x%08" PFMT64x "\n", (ut64)brk_start);
-		rz_cons_printf("f heap.end = 0x%08" PFMT64x "\n", (ut64)brk_end);
+		rz_cons_printf("f heap.top @ 0x%08" PFMT64x "\n", (ut64)main_arena->top);
+		rz_cons_printf("f heap.brk @ 0x%08" PFMT64x "\n", (ut64)brk_start);
+		rz_cons_printf("f heap.end @ 0x%08" PFMT64x "\n", (ut64)brk_end);
 	} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
 		top = rz_agraph_add_node(g, top_title, top_data);
 		if (!first_node) {

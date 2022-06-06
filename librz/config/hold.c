@@ -26,6 +26,17 @@ static int key_cmp_hold_i(const void *a, const void *b) {
 	return strcmp(a_s, b_s->key);
 }
 
+/**
+ * \brief Save the current values of a list of config options that have string values.
+ *
+ * Get the current values of a list of config variables (terminated by NULL) and
+ * save them in the RzConfigHold object \p h . \p rz_config_get is used to
+ * retrieve the current config values.
+ *
+ * \param h Reference to RzConfigHold instance
+ * \param ... List of config variables to save, terminated by NULL.
+ * \return true if at least one variable is correctly saved, false otherwise
+ */
 RZ_API bool rz_config_hold_s(RzConfigHold *h, ...) {
 	va_list ap;
 	char *key;
@@ -56,6 +67,17 @@ RZ_API bool rz_config_hold_s(RzConfigHold *h, ...) {
 	return true;
 }
 
+/**
+ * \brief Save the current values of a list of config options that have integer values.
+ *
+ * Get the current values of a list of config variables (terminated by NULL) and
+ * save them in the RzConfigHold object \p h . \p rz_config_get_i is used to
+ * retrieve the current config values.
+ *
+ * \param h Reference to RzConfigHold instance
+ * \param ... List of config variables to save, terminated by NULL.
+ * \return true if at least one variable is correctly saved, false otherwise
+ */
 RZ_API bool rz_config_hold_i(RzConfigHold *h, ...) {
 	va_list ap;
 	char *key;
@@ -85,6 +107,12 @@ RZ_API bool rz_config_hold_i(RzConfigHold *h, ...) {
 	return true;
 }
 
+/**
+ * \brief Create an opaque object to save/restore some configuration options
+ *
+ * \param cfg RzConfig reference
+ * \return RzConfigHold allocated object
+ */
 RZ_API RzConfigHold *rz_config_hold_new(RzConfig *cfg) {
 	if (cfg) {
 		RzConfigHold *hold = RZ_NEW0(RzConfigHold);
@@ -96,6 +124,11 @@ RZ_API RzConfigHold *rz_config_hold_new(RzConfig *cfg) {
 	return NULL;
 }
 
+/**
+ * \brief Restore whatever config options were previously saved in \p h
+ *
+ * \param h Reference to RzConfigHold
+ */
 RZ_API void rz_config_hold_restore(RzConfigHold *h) {
 	RzListIter *iter;
 	RzConfigHoldChar *hchar;
@@ -111,6 +144,11 @@ RZ_API void rz_config_hold_restore(RzConfigHold *h) {
 	}
 }
 
+/**
+ * \brief Free a RzConfigHold object \p h
+ *
+ * \param h Reference to RzConfigHold
+ */
 RZ_API void rz_config_hold_free(RzConfigHold *h) {
 	if (h) {
 		rz_list_free(h->list_num);

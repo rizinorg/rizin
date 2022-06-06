@@ -7,29 +7,25 @@
 
 RZ_API void rz_analysis_esil_sources_init(RzAnalysisEsil *esil) {
 	if (esil && !esil->sources) {
-		esil->sources = rz_id_storage_new(1, 0xffffffff); //0 is reserved for stuff from plugins
+		esil->sources = rz_id_storage_new(1, 0xffffffff); // 0 is reserved for stuff from plugins
 	}
 }
 
 RZ_API ut32 rz_analysis_esil_load_source(RzAnalysisEsil *esil, const char *path) {
+	rz_return_val_if_fail(esil && RZ_STR_ISNOTEMPTY(path), 0);
 	RzAnalysisEsilSource *src;
-
-	if (!esil) {
-		eprintf("no esil?\n");
-		return 0;
-	}
 
 	src = RZ_NEW0(RzAnalysisEsilSource);
 	src->content = rz_lib_dl_open(path);
 	if (!src->content) {
-		eprintf("no content\n");
+		RZ_LOG_ERROR("esil: cannot load library (no content)\n");
 		free(src);
 		return 0;
 	}
 
 	rz_analysis_esil_sources_init(esil);
 	if (!rz_id_storage_add(esil->sources, src, &src->id)) {
-		eprintf("cannot add to storage\n");
+		RZ_LOG_ERROR("esil: cannot add to id storage\n");
 		rz_lib_dl_close(src->content);
 		free(src);
 		return 0;

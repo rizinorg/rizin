@@ -4,10 +4,8 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 
-#if CSNEXT
-
-#include <capstone.h>
-#include <riscv.h>
+#include <capstone/capstone.h>
+#include <capstone/riscv.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/RISCVir.html
 
@@ -104,7 +102,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new();
 	if (!pj) {
-		return:
+		return;
 	}
 	pj_o(pj);
 	pj_ka(pj, "operands");
@@ -166,7 +164,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 					insn->detail->riscv.operands[n].mem.base));
 		} else {
 			sprintf(buf, "0x%" PFMT64x ",%s,+",
-				insn->detail->riscv.operands[n].mem.disp,
+				(ut64)insn->detail->riscv.operands[n].mem.disp,
 				cs_reg_name(*handle,
 					insn->detail->riscv.operands[n].mem.base));
 		}
@@ -194,7 +192,7 @@ static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	}
 
 	switch (insn->id) {
-		//case RISCV_INS_NOP:
+		// case RISCV_INS_NOP:
 		//	rz_strbuf_setf (&op->esil, ",");
 		//	break;
 	}
@@ -286,7 +284,7 @@ capstone bug
 		} else if (OPERAND(0).type == RISCV_OP_REG && OPERAND(1).type == RISCV_OP_REG) {
 			SET_SRC_DST_2_REGS(op);
 		} else {
-			eprintf("Unknown div at 0x%08" PFMT64x "\n", op->addr);
+			RZ_LOG_ERROR("riscv: unknown div opcode at 0x%08" PFMT64x "\n", op->addr);
 		}
 		break;
 	}
@@ -390,7 +388,7 @@ beach:
 		op_fillval(analysis, op, &hndl, insn);
 	}
 	cs_free(insn, n);
-	//cs_close (&handle);
+	// cs_close (&handle);
 fin:
 	return opsize;
 }
@@ -608,14 +606,4 @@ RZ_API RzLibStruct rizin_plugin = {
 	.data = &rz_analysis_plugin_riscv_cs,
 	.version = RZ_VERSION
 };
-#endif
-
-#else
-RzAnalysisPlugin rz_analysis_plugin_riscv_cs = { 0 };
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANALYSIS,
-	.version = RZ_VERSION
-};
-#endif
 #endif

@@ -67,17 +67,18 @@ RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp 
 		eprintf("TODO: use jnz or jz\n");
 		return false;
 	} else if (!strcmp(op, "ret1")) {
-		rz_core_write_assembly(core, core->offset, "mov x0, 1,,ret", false, false);
+		rz_core_write_assembly(core, core->offset, "mov x0, 1,,ret");
 	} else if (!strcmp(op, "ret0")) {
-		rz_core_write_assembly(core, core->offset, "mov x0, 0,,ret", false, false);
+		rz_core_write_assembly(core, core->offset, "mov x0, 0,,ret");
 	} else if (!strcmp(op, "retn")) {
-		rz_core_write_assembly(core, core->offset, "mov x0, -1,,ret", false, false);
+		rz_core_write_assembly(core, core->offset, "mov x0, -1,,ret");
 	} else {
 		eprintf("Invalid operation '%s'\n", op);
 		return false;
 	}
 	return true;
 }
+
 RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *analop) {
 	const int bits = core->rasm->bits;
 	const ut8 *b = core->block;
@@ -112,13 +113,13 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 		if (bits == 16) {
 			switch (b[1]) {
 			case 0xb9: // CBNZ
-				rz_core_write_hexpair(core, core->offset + 1, "b1"); //CBZ
+				rz_core_write_hexpair(core, core->offset + 1, "b1"); // CBZ
 				break;
 			case 0xbb: // CBNZ
-				rz_core_write_hexpair(core, core->offset + 1, "b3"); //CBZ
+				rz_core_write_hexpair(core, core->offset + 1, "b3"); // CBZ
 				break;
 			case 0xd1: // BNE
-				rz_core_write_hexpair(core, core->offset + 1, "d0"); //BEQ
+				rz_core_write_hexpair(core, core->offset + 1, "d0"); // BEQ
 				break;
 			default:
 				eprintf("Current opcode is not conditional\n");
@@ -132,13 +133,13 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 		if (bits == 16) {
 			switch (b[1]) {
 			case 0xb1: // CBZ
-				rz_core_write_hexpair(core, core->offset + 1, "b9"); //CBNZ
+				rz_core_write_hexpair(core, core->offset + 1, "b9"); // CBNZ
 				break;
 			case 0xb3: // CBZ
-				rz_core_write_hexpair(core, core->offset + 1, "bb"); //CBNZ
+				rz_core_write_hexpair(core, core->offset + 1, "bb"); // CBNZ
 				break;
 			case 0xd0: // BEQ
-				rz_core_write_hexpair(core, core->offset + 1, "d1"); //BNE
+				rz_core_write_hexpair(core, core->offset + 1, "d1"); // BNE
 				break;
 			default:
 				eprintf("Current opcode is not conditional\n");
@@ -158,7 +159,7 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 			case 0xb9: // CBNZ
 			case 0xbb: // CBNZ
 			case 0xd1: // BNE
-				rz_core_write_hexpair(core, core->offset + 1, "e0"); //BEQ
+				rz_core_write_hexpair(core, core->offset + 1, "e0"); // BEQ
 				break;
 			default:
 				eprintf("Current opcode is not conditional\n");
@@ -267,7 +268,18 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 	return true;
 }
 
-RZ_API int rz_core_hack(RzCore *core, const char *op) {
+/**
+ * \brief Write/Modify instructions at current offset based on \p op.
+ *
+ * See specific functions rz_core_hack_<arch> for what they accept as \p op .
+ *
+ * \param core RzCore instance
+ * \param op A string representing one of the operation that can be performed on the current offset
+ * \return true if the write was done correctly, false otherwise
+ */
+RZ_API bool rz_core_hack(RzCore *core, const char *op) {
+	// TODO: op should not be an unstructered string
+	// TODO: asm/analysis plugins should provide the operations, instead of doing this here
 	bool (*hack)(RzCore * core, const char *op, const RzAnalysisOp *analop) = NULL;
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
 	const int asmbits = core->rasm->bits;

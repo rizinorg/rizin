@@ -116,7 +116,7 @@ EOF
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
-Script 'script/missing.rz' not found.
+ERROR: Script 'script/missing.rz' not found.
 EOF
 RUN
 
@@ -124,7 +124,7 @@ NAME=rizin empty -i
 FILE==
 CMDS=!rizin -i "" =
 EXPECT_ERR=<<EOF
-Cannot open empty script path
+ERROR: Cannot open empty script path
 EOF
 RUN
 
@@ -132,7 +132,7 @@ NAME=rizin empty -I
 FILE==
 CMDS=!rizin -I "" =
 EXPECT_ERR=<<EOF
-Cannot open empty script path
+ERROR: Cannot open empty script path
 EOF
 RUN
 
@@ -148,7 +148,7 @@ FILE==
 CMDS=<<EOF
 !rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00
 ?e Same project, different file
-!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "o; pdi 3 @ easy" bins/elf/ioli/crackme0x01
+!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "ol; pdi 3 @ easy" bins/elf/ioli/crackme0x01
 !rm .crackme.rzdb
 EOF
 EXPECT=<<EOF
@@ -177,5 +177,46 @@ Reload project including file
 0x080483fe                 08e8  or al, ch
 0x08048400                   fc  cld
 0x08048401                 7bfb  jnp 0x80483fe
+EOF
+RUN
+
+NAME=b/w prompt
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \nq\n" =
+EXPECT=<<EOF
+[2K[0x00000000]> [0x00000000]> [2K[0x00000000]> 
+[2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
+EOF
+RUN
+
+NAME=prompt settings
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \ne scr.prompt.file=true\ne scr.prompt.flag=true\nsd 1\ne scr.prompt.flag.only=true\ne scr.prompt.sect=true\nq\n" ./bins/elf/hello_world
+EXPECT=<<EOF
+[2K[0x000006a0]> [0x000006a0]> [2K[0x000006a0]> 
+[2K[0x000006a0]> [0x000006a0]> [2K[2K[0x000006a0]> e[0x000006a0]> e[2K[2K[0x000006a0]> e [0x000006a0]> e [2K[2K[0x000006a0]> e s[0x000006a0]> e s[2K[2K[0x000006a0]> e sc[0x000006a0]> e sc[2K[2K[0x000006a0]> e scr[0x000006a0]> e scr[2K[2K[0x000006a0]> e scr.[0x000006a0]> e scr.[2K[2K[0x000006a0]> e scr.p[0x000006a0]> e scr.p[2K[2K[0x000006a0]> e scr.pr[0x000006a0]> e scr.pr[2K[2K[0x000006a0]> e scr.pro[0x000006a0]> e scr.pro[2K[2K[0x000006a0]> e scr.prom[0x000006a0]> e scr.prom[2K[2K[0x000006a0]> e scr.promp[0x000006a0]> e scr.promp[2K[2K[0x000006a0]> e scr.prompt[0x000006a0]> e scr.prompt[2K[2K[0x000006a0]> e scr.prompt.[0x000006a0]> e scr.prompt.[2K[2K[0x000006a0]> e scr.prompt.f[0x000006a0]> e scr.prompt.f[2K[2K[0x000006a0]> e scr.prompt.fi[0x000006a0]> e scr.prompt.fi[2K[2K[0x000006a0]> e scr.prompt.fil[0x000006a0]> e scr.prompt.fil[2K[2K[0x000006a0]> e scr.prompt.file[0x000006a0]> e scr.prompt.file[2K[2K[0x000006a0]> e scr.prompt.file=[0x000006a0]> e scr.prompt.file=[2K[2K[0x000006a0]> e scr.prompt.file=t[0x000006a0]> e scr.prompt.file=t[2K[2K[0x000006a0]> e scr.prompt.file=tr[0x000006a0]> e scr.prompt.file=tr[2K[2K[0x000006a0]> e scr.prompt.file=tru[0x000006a0]> e scr.prompt.file=tru[2K[2K[0x000006a0]> e scr.prompt.file=true[0x000006a0]> e scr.prompt.file=true[2K[0x000006a0]> e scr.prompt.file=true
+[2K[hello_world:0x000006a0]> [hello_world:0x000006a0]> [2K[2K[hello_world:0x000006a0]> e[hello_world:0x000006a0]> e[2K[2K[hello_world:0x000006a0]> e [hello_world:0x000006a0]> e [2K[2K[hello_world:0x000006a0]> e s[hello_world:0x000006a0]> e s[2K[2K[hello_world:0x000006a0]> e sc[hello_world:0x000006a0]> e sc[2K[2K[hello_world:0x000006a0]> e scr[hello_world:0x000006a0]> e scr[2K[2K[hello_world:0x000006a0]> e scr.[hello_world:0x000006a0]> e scr.[2K[2K[hello_world:0x000006a0]> e scr.p[hello_world:0x000006a0]> e scr.p[2K[2K[hello_world:0x000006a0]> e scr.pr[hello_world:0x000006a0]> e scr.pr[2K[2K[hello_world:0x000006a0]> e scr.pro[hello_world:0x000006a0]> e scr.pro[2K[2K[hello_world:0x000006a0]> e scr.prom[hello_world:0x000006a0]> e scr.prom[2K[2K[hello_world:0x000006a0]> e scr.promp[hello_world:0x000006a0]> e scr.promp[2K[2K[hello_world:0x000006a0]> e scr.prompt[hello_world:0x000006a0]> e scr.prompt[2K[2K[hello_world:0x000006a0]> e scr.prompt.[hello_world:0x000006a0]> e scr.prompt.[2K[2K[hello_world:0x000006a0]> e scr.prompt.f[hello_world:0x000006a0]> e scr.prompt.f[2K[2K[hello_world:0x000006a0]> e scr.prompt.fl[hello_world:0x000006a0]> e scr.prompt.fl[2K[2K[hello_world:0x000006a0]> e scr.prompt.fla[hello_world:0x000006a0]> e scr.prompt.fla[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag[hello_world:0x000006a0]> e scr.prompt.flag[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=[hello_world:0x000006a0]> e scr.prompt.flag=[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=t[hello_world:0x000006a0]> e scr.prompt.flag=t[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=tr[hello_world:0x000006a0]> e scr.prompt.flag=tr[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=tru[hello_world:0x000006a0]> e scr.prompt.flag=tru[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=true[hello_world:0x000006a0]> e scr.prompt.flag=true[2K[hello_world:0x000006a0]> e scr.prompt.flag=true
+[2K[hello_world:entry0:0x000006a0]> [hello_world:entry0:0x000006a0]> [2K[2K[hello_world:entry0:0x000006a0]> s[hello_world:entry0:0x000006a0]> s[2K[2K[hello_world:entry0:0x000006a0]> sd[hello_world:entry0:0x000006a0]> sd[2K[2K[hello_world:entry0:0x000006a0]> sd [hello_world:entry0:0x000006a0]> sd [2K[2K[hello_world:entry0:0x000006a0]> sd 1[hello_world:entry0:0x000006a0]> sd 1[2K[hello_world:entry0:0x000006a0]> sd 1
+[2K[hello_world:entry0 + 1:0x000006a1]> [hello_world:entry0 + 1:0x000006a1]> [2K[2K[hello_world:entry0 + 1:0x000006a1]> e[hello_world:entry0 + 1:0x000006a1]> e[2K[2K[hello_world:entry0 + 1:0x000006a1]> e [hello_world:entry0 + 1:0x000006a1]> e [2K[2K[hello_world:entry0 + 1:0x000006a1]> e s[hello_world:entry0 + 1:0x000006a1]> e s[2K[2K[hello_world:entry0 + 1:0x000006a1]> e sc[hello_world:entry0 + 1:0x000006a1]> e sc[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr[hello_world:entry0 + 1:0x000006a1]> e scr[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.[hello_world:entry0 + 1:0x000006a1]> e scr.[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.p[hello_world:entry0 + 1:0x000006a1]> e scr.p[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.pr[hello_world:entry0 + 1:0x000006a1]> e scr.pr[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.pro[hello_world:entry0 + 1:0x000006a1]> e scr.pro[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prom[hello_world:entry0 + 1:0x000006a1]> e scr.prom[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.promp[hello_world:entry0 + 1:0x000006a1]> e scr.promp[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt[hello_world:entry0 + 1:0x000006a1]> e scr.prompt[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.f[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.f[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fl[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fl[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fla[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fla[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.o[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.o[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.on[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.on[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.onl[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.onl[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=t[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=t[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tr[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tr[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tru[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tru[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=true[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=true[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=true
+[2K[hello_world:entry0 + 1]> [hello_world:entry0 + 1]> [2K[2K[hello_world:entry0 + 1]> e[hello_world:entry0 + 1]> e[2K[2K[hello_world:entry0 + 1]> e [hello_world:entry0 + 1]> e [2K[2K[hello_world:entry0 + 1]> e s[hello_world:entry0 + 1]> e s[2K[2K[hello_world:entry0 + 1]> e sc[hello_world:entry0 + 1]> e sc[2K[2K[hello_world:entry0 + 1]> e scr[hello_world:entry0 + 1]> e scr[2K[2K[hello_world:entry0 + 1]> e scr.[hello_world:entry0 + 1]> e scr.[2K[2K[hello_world:entry0 + 1]> e scr.p[hello_world:entry0 + 1]> e scr.p[2K[2K[hello_world:entry0 + 1]> e scr.pr[hello_world:entry0 + 1]> e scr.pr[2K[2K[hello_world:entry0 + 1]> e scr.pro[hello_world:entry0 + 1]> e scr.pro[2K[2K[hello_world:entry0 + 1]> e scr.prom[hello_world:entry0 + 1]> e scr.prom[2K[2K[hello_world:entry0 + 1]> e scr.promp[hello_world:entry0 + 1]> e scr.promp[2K[2K[hello_world:entry0 + 1]> e scr.prompt[hello_world:entry0 + 1]> e scr.prompt[2K[2K[hello_world:entry0 + 1]> e scr.prompt.[hello_world:entry0 + 1]> e scr.prompt.[2K[2K[hello_world:entry0 + 1]> e scr.prompt.s[hello_world:entry0 + 1]> e scr.prompt.s[2K[2K[hello_world:entry0 + 1]> e scr.prompt.se[hello_world:entry0 + 1]> e scr.prompt.se[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sec[hello_world:entry0 + 1]> e scr.prompt.sec[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect[hello_world:entry0 + 1]> e scr.prompt.sect[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=[hello_world:entry0 + 1]> e scr.prompt.sect=[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=t[hello_world:entry0 + 1]> e scr.prompt.sect=t[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=tr[hello_world:entry0 + 1]> e scr.prompt.sect=tr[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=tru[hello_world:entry0 + 1]> e scr.prompt.sect=tru[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=true[hello_world:entry0 + 1]> e scr.prompt.sect=true[2K[hello_world:entry0 + 1]> e scr.prompt.sect=true
+[2K[hello_world:.text:entry0 + 1]> [hello_world:.text:entry0 + 1]> [2K[2K[hello_world:.text:entry0 + 1]> q[hello_world:.text:entry0 + 1]> q[2K[hello_world:.text:entry0 + 1]> q
+EOF
+RUN
+
+NAME=color prompt
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=1 -c "< \nq\n" =
+EXPECT=<<EOF
+[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[33m[0x00000000]>[0m 
+[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[2K[0m[33m[0x00000000]>[0m q[33m[0x00000000]>[0m q[2K[33m[0x00000000]>[0m q
+EOF
+RUN
+
+NAME=read from stdin
+FILE=--
+CMDS=?e \r\n | rizin -e scr.color=0 -qc "px 16" -
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  0d0a 0aff ffff ffff ffff ffff ffff ffff  ................
 EOF
 RUN

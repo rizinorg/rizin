@@ -1,4 +1,4 @@
-project('mpc', version: 'd59264ae27228176f5b731871df1a87d7abbb5c8')
+project('mpc', 'c', version: 'd59264ae27228176f5b731871df1a87d7abbb5c8')
 
 mpc_files = [
   'mpc.c'

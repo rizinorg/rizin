@@ -7,6 +7,7 @@
 #include <rz_util.h>
 #include <rz_cons.h>
 #include <rz_core.h>
+#include <rz_socket.h>
 #include <rz_debug.h> /* only used for BSD PTRACE redefinitions */
 #include <string.h>
 
@@ -48,10 +49,7 @@
 #endif
 
 #if __WINDOWS__
-#include <windows.h>
-#include <tlhelp32.h>
-#include <winbase.h>
-#include <psapi.h>
+#include <rz_windows.h>
 #include <w32dbg_wrap.h>
 #endif
 
@@ -80,7 +78,7 @@ static int setup_tokens(void) {
 		goto err_enable;
 	}
 	// tp.Privileges[0].Attributes = enable ? SE_PRIVILEGE_ENABLED : 0;
-	tp.Privileges[0].Attributes = 0; //SE_PRIVILEGE_ENABLED;
+	tp.Privileges[0].Attributes = 0; // SE_PRIVILEGE_ENABLED;
 	if (!AdjustTokenPrivileges(tok, 0, &tp, sizeof(tp), NULL, NULL)) {
 		goto err_enable;
 	}
@@ -186,7 +184,7 @@ static void inferior_abort_handler(int pid) {
 
 static void trace_me(void) {
 #if __APPLE__
-	rz_sys_signal(SIGTRAP, SIG_IGN); //NEED BY STEP
+	rz_sys_signal(SIGTRAP, SIG_IGN); // NEED BY STEP
 #endif
 #if __APPLE__ || __BSD__
 	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in rz_debug.h */
@@ -509,7 +507,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			}
 			ret = _plugin->open(io, uri, rw, mode);
 #elif __APPLE__
-			sprintf(uri, "smach://%d", pid); //s is for spawn
+			sprintf(uri, "smach://%d", pid); // s is for spawn
 			_plugin = rz_io_plugin_resolve(io, (const char *)uri + 1, false);
 			if (!_plugin || !_plugin->open || !_plugin->close) {
 				return NULL;
@@ -540,7 +538,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		}
 		if (ret) {
 			ret->plugin = _plugin;
-			ret->referer = strdup(file); //kill this
+			ret->referer = strdup(file); // kill this
 		}
 	}
 	return ret;

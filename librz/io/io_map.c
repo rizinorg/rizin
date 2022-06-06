@@ -5,7 +5,6 @@
 #include <rz_io.h>
 #include <stdlib.h>
 #include <sdb.h>
-#include "rz_binheap.h"
 #include "rz_util.h"
 #include "rz_vector.h"
 
@@ -139,10 +138,10 @@ RZ_API RzIOMap *rz_io_map_resolve(RzIO *io, ut32 id) {
 }
 
 RzIOMap *io_map_add(RzIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	//check if desc exists
+	// check if desc exists
 	RzIODesc *desc = rz_io_desc_get(io, fd);
 	if (desc) {
-		//a map cannot have higher permissions than the desc belonging to it
+		// a map cannot have higher permissions than the desc belonging to it
 		return io_map_new(io, fd, (perm & desc->perm) | (perm & RZ_PERM_X),
 			delta, addr, size);
 	}
@@ -185,12 +184,6 @@ RZ_API bool rz_io_map_is_mapped(RzIO *io, ut64 addr) {
 }
 
 RZ_API void rz_io_map_reset(RzIO *io) {
-	void **it;
-	rz_pvector_foreach (&io->maps, it) {
-		RzIOMap *map = *it;
-		RzEventIOMapDel ev = { map };
-		rz_event_send(io->event, RZ_EVENT_IO_MAP_DEL, &ev);
-	}
 	rz_io_map_fini(io);
 	rz_io_map_init(io);
 	io_map_calculate_skyline(io);
@@ -211,7 +204,7 @@ RZ_API bool rz_io_map_del(RzIO *io, ut32 id) {
 	return false;
 }
 
-//delete all maps with specified fd
+// delete all maps with specified fd
 RZ_API bool rz_io_map_del_for_fd(RzIO *io, int fd) {
 	rz_return_val_if_fail(io, false);
 	bool ret = false;
@@ -234,8 +227,8 @@ RZ_API bool rz_io_map_del_for_fd(RzIO *io, int fd) {
 	return ret;
 }
 
-//brings map with specified id to the tail of of the list
-//return a boolean denoting whether is was possible to priorized
+// brings map with specified id to the tail of of the list
+// return a boolean denoting whether is was possible to priorized
 RZ_API bool rz_io_map_priorize(RzIO *io, ut32 id) {
 	rz_return_val_if_fail(io, false);
 	size_t i;
@@ -245,7 +238,7 @@ RZ_API bool rz_io_map_priorize(RzIO *io, ut32 id) {
 		if (map->id == id) {
 			rz_pvector_remove_at(&io->maps, i);
 			rz_pvector_push(&io->maps, map);
-			io_map_calculate_skyline(io);
+			rz_skyline_add(&io->map_skyline, map->itv, map);
 			return true;
 		}
 	}
@@ -270,7 +263,7 @@ RZ_API bool rz_io_map_depriorize(RzIO *io, ut32 id) {
 
 RZ_API bool rz_io_map_priorize_for_fd(RzIO *io, int fd) {
 	rz_return_val_if_fail(io, false);
-	//we need a clean list for this, or this becomes a segfault-field
+	// we need a clean list for this, or this becomes a segfault-field
 	rz_io_map_cleanup(io);
 	RzPVector temp;
 	rz_pvector_init(&temp, NULL);
@@ -290,10 +283,10 @@ RZ_API bool rz_io_map_priorize_for_fd(RzIO *io, int fd) {
 	return true;
 }
 
-//may fix some inconsistencies in io->maps
+// may fix some inconsistencies in io->maps
 RZ_API void rz_io_map_cleanup(RzIO *io) {
 	rz_return_if_fail(io);
-	//remove all maps if no descs exist
+	// remove all maps if no descs exist
 	if (!io->files) {
 		rz_io_map_fini(io);
 		rz_io_map_init(io);
@@ -309,7 +302,7 @@ RZ_API void rz_io_map_cleanup(RzIO *io) {
 			rz_pvector_remove_at(&io->maps, i);
 			del = true;
 		} else if (!rz_io_desc_get(io, map->fd)) {
-			//delete map and iter if no desc exists for map->fd in io->files
+			// delete map and iter if no desc exists for map->fd in io->files
 			map = rz_pvector_remove_at(&io->maps, i);
 			map_del(io, map);
 			del = true;
@@ -324,6 +317,12 @@ RZ_API void rz_io_map_cleanup(RzIO *io) {
 
 RZ_API void rz_io_map_fini(RzIO *io) {
 	rz_return_if_fail(io);
+	void **it;
+	rz_pvector_foreach (&io->maps, it) {
+		RzIOMap *map = *it;
+		RzEventIOMapDel ev = { map };
+		rz_event_send(io->event, RZ_EVENT_IO_MAP_DEL, &ev);
+	}
 	rz_pvector_clear(&io->maps);
 	rz_id_pool_free(io->map_ids);
 	io->map_ids = NULL;

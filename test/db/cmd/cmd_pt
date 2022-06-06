@@ -253,7 +253,7 @@ RUN
 NAME=pt print unix epoch time (UTC+7:30)
 FILE=--
 CMDS=<<EOF
-# If TZ is set using UTC, the sign must be reversed
+# When setting TZ, the sign must be reversed
 env TZ=UTC-7:30
 !rizin -c 'b 0x100;pt' -q bins/elf/ls
 EOF
@@ -328,7 +328,7 @@ RUN
 NAME=pt print unix epoch time (UTC-10)
 FILE=--
 CMDS=<<EOF
-# If TZ is set using UTC, the sign must be reversed
+# When setting TZ, the sign must be reversed
 env TZ=UTC+10
 !rizin -c 'b 0x100;pt' -q bins/elf/ls
 EOF
@@ -397,5 +397,38 @@ Fri Dec 22 13:42:43 2102 UTC-10
 Sat Feb  6 09:39:21 2106 UTC-10
 Thu Feb 11 06:42:39 2038 UTC-10
 Wed Dec 31 14:00:00 1969 UTC-10
+EOF
+RUN
+
+NAME=pt boundaries
+FILE=--
+CMDS=<<EOF
+$rz=!rizin -c '(pv4s val; wv4 $0; sd 4); ..(pv4s 0 0x7fffffff 0x80000000 0xffffffff); s 0; b 16; pt' -q =
+(TZ-rz tz; ?e; env TZ=$0; $rz)
+# When setting TZ, the sign must be reversed
+..(TZ-rz GMT GMT-2:30:17 GMT+24)
+.(TZ-rz GMT+24:0:1) # UB
+EOF
+EXPECT=<<EOF
+
+Thu Jan  1 00:00:00 1970 UTC
+Tue Jan 19 03:14:07 2038 UTC
+Tue Jan 19 03:14:08 2038 UTC
+Sun Feb  7 06:28:15 2106 UTC
+
+Thu Jan  1 02:30:17 1970 UTC+2:30:17
+Tue Jan 19 05:44:24 2038 UTC+2:30:17
+Tue Jan 19 05:44:25 2038 UTC+2:30:17
+Sun Feb  7 08:58:32 2106 UTC+2:30:17
+
+Wed Dec 31 00:00:00 1969 UTC-24
+Mon Jan 18 03:14:07 2038 UTC-24
+Mon Jan 18 03:14:08 2038 UTC-24
+Sat Feb  6 06:28:15 2106 UTC-24
+
+Tue Dec 30 23:59:59 1969 ERR
+Mon Jan 18 03:14:06 2038 UTC-24:0:1
+Mon Jan 18 03:14:07 2038 UTC-24:0:1
+Sat Feb  6 06:28:14 2106 UTC-24:0:1
 EOF
 RUN

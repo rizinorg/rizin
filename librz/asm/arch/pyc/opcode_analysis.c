@@ -93,8 +93,8 @@ static void analysis_BINARY_XOR(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut3
 }
 
 static void analysis_BREAK_LOOP(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	//op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-	// This is actually a jump, but require further analysis
+	// op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+	//  This is actually a jump, but require further analysis
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->jump = -1;
 	op->fail = -1;
@@ -251,8 +251,8 @@ static void analysis_END_ASYNC_FOR(RzAnalysisOp *op, pyc_opcode_object *op_obj, 
 }
 
 static void analysis_END_FINALLY(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	//op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-	// This is actually a jump, but require further analysis
+	// op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+	//  This is actually a jump, but require further analysis
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->jump = -1;
 	op->fail = -1;

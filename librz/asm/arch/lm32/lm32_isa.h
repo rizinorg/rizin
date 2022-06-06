@@ -100,8 +100,8 @@ typedef enum rz_asm_lm32_instr_type_t {
 	one_reg,
 	two_regs,
 	three_regs,
-	reg_csr, //wcsr
-	csr_reg, //rcsr
+	reg_csr, // wcsr
+	csr_reg, // rcsr
 	imm26,
 } RzAsmLm32InstructionType;
 
@@ -180,97 +180,97 @@ typedef struct rz_asm_lm32_opcode {
 #define RzAsmLm32OpcodeNumber 0x40
 
 static const RzAsmLm32Opcode RzAsmLm32OpcodeList[RzAsmLm32OpcodeNumber] = {
-	{ reg_imm5, "srui" }, //0x00
-	{ reg_imm16_zeroextend, "nori" }, //0x01
-	{ reg_imm16_signextend, "muli" }, //0x02
-	{ reg_imm16_signextend, "sh" }, //0x03
-	{ reg_imm16_signextend, "lb" }, //0x04
-	{ reg_imm5, "sri" }, //0x05
-	{ reg_imm16_zeroextend, "xori" }, //0x06
-	{ reg_imm16_signextend, "lh" }, //0x07
-	{ reg_imm16_zeroextend, "andi" }, //0x08
-	{ reg_imm16_zeroextend, "xnori" }, //0x09
-	{ reg_imm16_signextend, "lw" }, //0x0a
-	{ reg_imm16_signextend, "lhu" }, //0x0b
-	{ reg_imm16_signextend, "sb" }, //0x0c
-	{ reg_imm16_signextend, "addi" }, //0x0d
-	{ reg_imm16_zeroextend, "ori" }, //0x0e
-	{ reg_imm5, "sli" }, //0x0f
-	{ reg_imm16_signextend, "lbu" }, //0x10
-	{ reg_imm16_shift2_signextend, "be" }, //0x11
-	{ reg_imm16_shift2_signextend, "bg" }, //0x12
-	{ reg_imm16_shift2_signextend, "bge" }, //0x13
-	{ reg_imm16_shift2_signextend, "bgeu" }, //0x14
-	{ reg_imm16_shift2_signextend, "bgu" }, //0x15
-	{ reg_imm16_signextend, "sw" }, //0x16
-	{ reg_imm16_shift2_signextend, "bne" }, //0x17
-	{ reg_imm16_zeroextend, "andhi" }, //0x18
-	{ reg_imm16_signextend, "cmpei" }, //0x19
-	{ reg_imm16_signextend, "cmpgi" }, //0x1a
-	{ reg_imm16_signextend, "cmpgei" }, //0x1b
-	{ reg_imm16_zeroextend, "cmpgeui" }, //0x1c
-	{ reg_imm16_zeroextend, "cmpgui" }, //0x1d
-	{ reg_imm16_zeroextend, "orhi" }, //0x1e
-	{ reg_imm16_signextend, "cmpnei" }, //0x1f
-	{ three_regs, "sru" }, //0x20
-	{ three_regs, "nor" }, //0x21
-	{ three_regs, "mul" }, //0x22
-	{ three_regs, "divu" }, //0x23
-	{ csr_reg, "rcsr" }, //0x24
-	{ three_regs, "sr" }, //0x25
-	{ three_regs, "xor" }, //0x26
-	{ three_regs, "div" }, //0x27
-	{ three_regs, "and" }, //0x28
-	{ three_regs, "xnor" }, //0x29
-	{ reserved, "reserved" }, //0x2a
-	{ raise_instr, "raise" }, //0x2b (break, scall)
-	{ two_regs, "sextb" }, //0x2c
-	{ three_regs, "add" }, //0x2d
-	{ three_regs, "or" }, //0x2e
-	{ three_regs, "sl" }, //0x2f
-	{ one_reg, "b" }, //0x30
-	{ three_regs, "modu" }, //0x31
-	{ three_regs, "sub" }, //0x32
-	{ reserved, "reserved" }, //0x33
-	{ reg_csr, "wcsr" }, //0x34
-	{ three_regs, "mod" }, //0x35
-	{ one_reg, "call" }, //0x36
-	{ two_regs, "sexth" }, //0x37
-	{ imm26, "bi" }, //0x38
-	{ three_regs, "cmpe" }, //0x39
-	{ three_regs, "cmpg" }, //0x3a
-	{ three_regs, "cmpge" }, //0x3b
-	{ three_regs, "cmpgeu" }, //0x3c
-	{ three_regs, "cmpgu" }, //0x3d
-	{ imm26, "calli" }, //0x3e
-	{ three_regs, "cmpne" }, //0x3f
+	{ reg_imm5, "srui" }, // 0x00
+	{ reg_imm16_zeroextend, "nori" }, // 0x01
+	{ reg_imm16_signextend, "muli" }, // 0x02
+	{ reg_imm16_signextend, "sh" }, // 0x03
+	{ reg_imm16_signextend, "lb" }, // 0x04
+	{ reg_imm5, "sri" }, // 0x05
+	{ reg_imm16_zeroextend, "xori" }, // 0x06
+	{ reg_imm16_signextend, "lh" }, // 0x07
+	{ reg_imm16_zeroextend, "andi" }, // 0x08
+	{ reg_imm16_zeroextend, "xnori" }, // 0x09
+	{ reg_imm16_signextend, "lw" }, // 0x0a
+	{ reg_imm16_signextend, "lhu" }, // 0x0b
+	{ reg_imm16_signextend, "sb" }, // 0x0c
+	{ reg_imm16_signextend, "addi" }, // 0x0d
+	{ reg_imm16_zeroextend, "ori" }, // 0x0e
+	{ reg_imm5, "sli" }, // 0x0f
+	{ reg_imm16_signextend, "lbu" }, // 0x10
+	{ reg_imm16_shift2_signextend, "be" }, // 0x11
+	{ reg_imm16_shift2_signextend, "bg" }, // 0x12
+	{ reg_imm16_shift2_signextend, "bge" }, // 0x13
+	{ reg_imm16_shift2_signextend, "bgeu" }, // 0x14
+	{ reg_imm16_shift2_signextend, "bgu" }, // 0x15
+	{ reg_imm16_signextend, "sw" }, // 0x16
+	{ reg_imm16_shift2_signextend, "bne" }, // 0x17
+	{ reg_imm16_zeroextend, "andhi" }, // 0x18
+	{ reg_imm16_signextend, "cmpei" }, // 0x19
+	{ reg_imm16_signextend, "cmpgi" }, // 0x1a
+	{ reg_imm16_signextend, "cmpgei" }, // 0x1b
+	{ reg_imm16_zeroextend, "cmpgeui" }, // 0x1c
+	{ reg_imm16_zeroextend, "cmpgui" }, // 0x1d
+	{ reg_imm16_zeroextend, "orhi" }, // 0x1e
+	{ reg_imm16_signextend, "cmpnei" }, // 0x1f
+	{ three_regs, "sru" }, // 0x20
+	{ three_regs, "nor" }, // 0x21
+	{ three_regs, "mul" }, // 0x22
+	{ three_regs, "divu" }, // 0x23
+	{ csr_reg, "rcsr" }, // 0x24
+	{ three_regs, "sr" }, // 0x25
+	{ three_regs, "xor" }, // 0x26
+	{ three_regs, "div" }, // 0x27
+	{ three_regs, "and" }, // 0x28
+	{ three_regs, "xnor" }, // 0x29
+	{ reserved, "reserved" }, // 0x2a
+	{ raise_instr, "raise" }, // 0x2b (break, scall)
+	{ two_regs, "sextb" }, // 0x2c
+	{ three_regs, "add" }, // 0x2d
+	{ three_regs, "or" }, // 0x2e
+	{ three_regs, "sl" }, // 0x2f
+	{ one_reg, "b" }, // 0x30
+	{ three_regs, "modu" }, // 0x31
+	{ three_regs, "sub" }, // 0x32
+	{ reserved, "reserved" }, // 0x33
+	{ reg_csr, "wcsr" }, // 0x34
+	{ three_regs, "mod" }, // 0x35
+	{ one_reg, "call" }, // 0x36
+	{ two_regs, "sexth" }, // 0x37
+	{ imm26, "bi" }, // 0x38
+	{ three_regs, "cmpe" }, // 0x39
+	{ three_regs, "cmpg" }, // 0x3a
+	{ three_regs, "cmpge" }, // 0x3b
+	{ three_regs, "cmpgeu" }, // 0x3c
+	{ three_regs, "cmpgu" }, // 0x3d
+	{ imm26, "calli" }, // 0x3e
+	{ three_regs, "cmpne" }, // 0x3f
 };
 
 typedef struct rz_asm_lm32_instruction {
-	//address of this instruction
+	// address of this instruction
 	ut32 addr;
-	//instruction dword
+	// instruction dword
 	ut32 value;
 
-	//op code
+	// op code
 	ut8 op;
-	//op type and name
+	// op type and name
 	RzAsmLm32Opcode op_decode;
-	//dest is the destination register (the one right after most commands)
+	// dest is the destination register (the one right after most commands)
 	ut8 dest_reg;
 	char dest_reg_str[RzAsmLm32RegNameLength];
-	//src0 is the leftmost source register
+	// src0 is the leftmost source register
 	ut8 src0_reg;
 	char src0_reg_str[RzAsmLm32RegNameLength];
-	//src1 is the second (rightmost) source register
+	// src1 is the second (rightmost) source register
 	ut8 src1_reg;
 	char src1_reg_str[RzAsmLm32RegNameLength];
-	//control and status register number
+	// control and status register number
 	ut8 csr;
 	char csr_reg_str[RzAsmLm32RegNameLength];
-	//immediates in expanded form
+	// immediates in expanded form
 	st32 immediate;
-	//set if the command has a second string representation
+	// set if the command has a second string representation
 	bool pseudoInstruction;
 } RzAsmLm32Instruction;
 
@@ -299,7 +299,7 @@ static const ut32 RzAsmLm32InstrOneRegInvalidBitsMask = 0x001fffff;
 static const ut32 RzAsmLm32InstrTwoRegsInvalidBitsMask = 0x001f07ff;
 static const ut32 RzAsmLm32InstrWcsrInvalidBitsMask = 0x0000ffff;
 
-//common helper functions
+// common helper functions
 
 static ut8 extract_opcode(ut32 instr_dword) {
 	return (instr_dword & RzAsmLm32OpMask) >> RzAsmLm32OpShift;
@@ -329,4 +329,4 @@ static ut32 extract_imm26(ut32 instr_dword) {
 	return instr_dword & RzAsmLm32Imm26Mask;
 }
 
-#endif //INCLUDE_LM32_ISA_H
+#endif // INCLUDE_LM32_ISA_H

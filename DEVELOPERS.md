@@ -9,7 +9,7 @@ By running `doxygen` in the root of this repository, it will autodetect the
 Doxyfile and generate HTML documentation into
 [doc/doxygen/html/index.html](./doc/doxygen/html/index.html)
 
-If you're contributing code or willing to update existing code, you can use the
+If you're contributing code or willing to update existing code, you should use the
 doxygen C-style comments to improve documentation and comments in code.
 See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
 for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
@@ -30,6 +30,18 @@ for more info. Example usage can be found [here](http://www.doxygen.nl/manual/do
 static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
 ```
 
+In order to improve the documentation and help newcomers, documenting code is mandatory.
+
+You should add or update the documentation of:
+- code written by you.
+- existing Rizin code you changed.
+
+Exceptions:
+- Trivial changes.
+
+If you have not updated the documentation, explain why.
+E.g.: `Bug fix did not change the general behavior of the function. No documentation update needed.`
+
 ## Code style
 
 ### C
@@ -37,12 +49,13 @@ static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
 In order to contribute with patches or plugins, we encourage you to use the same
 coding style as the rest of the code base.
 
-* Use git-clang-format 11 to format your code. You should invoke it as below
-(after making sure that your local copy of `dev` is up-to-date and your branch
-is up-to-date with `dev`):
+* Use git-clang-format 13 to format your code. If clang-format-13 is not available on
+  your Debian-based distribution, you can install it from https://apt.llvm.org/.
+  You should invoke it as below (after making sure that your local copy of `dev`
+  is up-to-date and your branch is up-to-date with `dev`):
 
 ```bash
-git-clang-format-11 --extensions c,cpp,h,hpp,inc --style file dev
+git-clang-format-13 --extensions c,cpp,h,hpp,inc --style file dev
 ```
 
 * Lines should be at most 100 chars. A tab is considered as 8 chars. If it makes
@@ -171,6 +184,14 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 * Never ever use `%lld` or `%llx`. This is not portable. Always use the `PFMT64x`
   macros. Those are similar to the ones in GLIB. See all macroses in `librz/include/rz_types.h`.
 
+* Never use `offsetof()` macros - it's not supported by some compilers. Use `rz_offsetof()` instead.
+
+* Add a single space after the `//` when writing inline comments:
+
+```c
+int sum = 0; // set sum to 0
+```
+
 ### Shell Scripts
 
 * Use `#!/bin/sh`
@@ -235,6 +256,13 @@ There are a number of helper functions for 64, 32, 16, and 8 bit reads and write
 (Note that 8 bit reads are equivalent to casting a single byte of the buffer
 to a `ut8` value, ie endian is irrelevant).
 
+In case of the access to the `RzBuffer *buffer` type, there are also helpers like
+`rz_buf_read_bleXX()`/`rz_buf_write_bleXX()`, `rz_buf_read_bleXX_at()`/`rz_buf_write_bleXX_at()`,
+and `rz_buf_read_bleXX_offset()`/`rz_buf_write_bleXX_offset()`. In
+addition to them there are corresponding little-endian or big-endian-only functions
+like `rz_buf_read_leXX()`/`rz_buf_read_beXX()`, `rz_buf_read_leXX_at()`/`rz_buf_read_beXX()`,
+`rz_buf_read_leXX_offset()`/`rz_buf_read_beXX_offset()`, and corresponding writing functions.
+
 ## Packed structures
 
 Due to the various differences between platforms and compilers Rizin
@@ -272,7 +300,7 @@ git grep -nWG "^[^[:blank:]].*func_name("
 
 Since many places in Rizin output JSON the special API was created, **PJ** which means "Print Json".
 It allows to create nested JSON structs with a simple and short API. Full API reference is
-available in `librz/include/rz_util/pj.h`.
+available in `librz/include/rz_util/rz_pj.h`.
 
 Here is the short example of how we usually use **PJ**:
 ```c

@@ -4,7 +4,7 @@ CMDS=<<EOF
 e io.cache=true
 wx 010203
 p8 3
-wcr
+wc-*
 # Test write works after disabling the cache.
 e io.cache=false
 wx 040506
@@ -43,7 +43,7 @@ w cache-mode
 p8
 
 # Reseting cache restores original data.
-wcr
+wc-*
 p8
 w overwrite
 p8
@@ -53,7 +53,7 @@ wci
 p8
 
 # Reset cache with no pending cache entries.
-wcr
+wc-*
 wci
 p8
 EOF
@@ -160,7 +160,7 @@ FILE=malloc://32
 CMDS=<<EOF
 e io.cache=true
 wx 90
-wcr
+wc-*
 wx 90
 EOF
 EXPECT_ERR=<<EOF

@@ -1,10 +1,6 @@
 // SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#if __WINDOWS__
-#include <stdlib.h>
-#endif
-
 #include <errno.h>
 #include <math.h> /* for ceill */
 #include <rz_util.h>
@@ -263,14 +259,19 @@ RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
 	} else {
 		char *endptr;
 		int len_num = len > 0 ? len - 1 : 0;
+		// Trim separators on the right
+		while (len_num > 0 && IS_SEPARATOR(str[len_num])) {
+			len_num--;
+		}
 		int chars_read = len_num;
 		bool zero_read = false;
-		lch = str[len > 0 ? len - 1 : 0];
-		if (*str == '0' && IS_DIGIT(*(str + 1)) && lch != 'b' && lch != 'h') {
+		lch = str[len_num];
+		if (*str == '0' && IS_DIGIT(*(str + 1)) && lch != 'b' && lch != 'h' && lch != 'H') {
 			lch = 'o';
 			len_num++;
 		}
 		switch (lch) {
+		case 'H':
 		case 'h': // hexa
 			if (!sscanf(str, "%" PFMT64x "%n", &ret, &chars_read) || chars_read != len_num) {
 				error(num, "invalid hex number");

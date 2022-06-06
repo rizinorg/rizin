@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2011-2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
@@ -7,117 +8,230 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
-static size_t countChar(const ut8 *buf, int len, char ch) {
-	int i;
-	for (i = 0; i < len; i++) {
-		if (buf[i] != ch) {
-			break;
-		}
-	}
-	return i;
-}
-
 static int getid(char ch) {
 	const char *keys = "[]<>+-,.";
 	const char *cidx = strchr(keys, ch);
 	return cidx ? cidx - keys + 1 : 0;
 }
 
-#define BUFSIZE_INC 32
-static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	ut64 dst = 0LL;
-	if (!op) {
-		return 1;
+/* New IL uplift bf */
+#define BF_ADDR_MEM  0x10000
+#define BF_ADDR_SIZE 64
+#define BF_BYTE_SIZE 8
+#define BF_ID_STACK  32
+
+#define bf_il_ptr()      rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL)
+#define bf_il_set_ptr(x) rz_il_op_new_set("ptr", false, x)
+#define bf_il_one(l)     rz_il_op_new_bitv_from_ut64(l, 1)
+
+static void bf_syscall_read(RzILVM *vm, RzILOpEffect *op) {
+	ut8 c = getc(stdin);
+	RzBitVector *bv = rz_bv_new_from_ut64(BF_BYTE_SIZE, c);
+	RzILVal *ptr_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "ptr");
+	if (ptr_val->type == RZ_IL_TYPE_PURE_BITVECTOR) {
+		rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
+	} else {
+		rz_warn_if_reached();
 	}
-	/* Ayeeee! What's inside op? Do we have an initialized RzAnalysisOp? Are we going to have a leak here? :-( */
-	memset(op, 0, sizeof(RzAnalysisOp)); /* We need to refactorize this. Something like rz_analysis_op_init would be more appropriate */
-	rz_strbuf_init(&op->esil);
-	op->size = 1;
-	op->id = getid(buf[0]);
-	switch (buf[0]) {
-	case '[':
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->fail = addr + 1;
-		buf = rz_mem_dup((void *)buf, len);
-		if (!buf) {
+	rz_bv_free(bv);
+}
+
+static void bf_syscall_write(RzILVM *vm, RzILOpEffect *op) {
+	RzILVal *ptr_val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "ptr");
+	if (ptr_val->type != RZ_IL_TYPE_PURE_BITVECTOR) {
+		rz_warn_if_reached();
+		return;
+	}
+	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
+	ut32 c = rz_bv_to_ut32(bv);
+	if (c) {
+		putchar(c);
+		fflush(stdout);
+	}
+	rz_bv_free(bv);
+}
+
+RzILOpEffect *bf_right_arrow() {
+	// (set ptr (+ (val ptr) (int 1)))
+	RzILOpBitVector *add = rz_il_op_new_add(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
+	return bf_il_set_ptr(add);
+}
+
+RzILOpEffect *bf_left_arrow() {
+	// (set ptr (- (val ptr) (int 1)))
+	RzILOpBitVector *sub = rz_il_op_new_sub(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
+	return bf_il_set_ptr(sub);
+}
+
+RzILOpEffect *bf_inc() {
+	// (store mem (var ptr) (+ (load (var ptr)) (int 1)))
+	// mem == 0 because is the only mem in bf
+	RzILOpBitVector *load = rz_il_op_new_load(0, bf_il_ptr());
+	RzILOpBitVector *add = rz_il_op_new_add(load, bf_il_one(BF_BYTE_SIZE));
+	return rz_il_op_new_store(0, bf_il_ptr(), add);
+}
+
+RzILOpEffect *bf_dec() {
+	// (store mem (var ptr) (- (load (var ptr)) (int 1)))
+	// mem == 0 because is the only mem in bf
+	RzILOpBitVector *load = rz_il_op_new_load(0, bf_il_ptr());
+	RzILOpBitVector *sub = rz_il_op_new_sub(load, bf_il_one(BF_BYTE_SIZE));
+	return rz_il_op_new_store(0, bf_il_ptr(), sub);
+}
+
+RzILOpEffect *bf_out() {
+	// (goto write)
+	return rz_il_op_new_goto("write");
+}
+
+RzILOpEffect *bf_in() {
+	// (goto hook_read)
+	return rz_il_op_new_goto("read");
+}
+
+/**
+ * Search matching [ or ] starting at addr in direction given by dir (-1 or 1)
+ */
+static ut64 find_matching_bracket(RzAnalysis *analysis, ut64 addr, int dir) {
+	if (!analysis->read_at) {
+		return UT64_MAX;
+	}
+	static const ut64 max_dist = 2048; // some upper bound to avoid (almost) infinite loops
+	ut64 dist = 0;
+	int lev = dir;
+	while (dist < max_dist) {
+		dist++;
+		addr += dir;
+		if (addr == UT64_MAX) {
 			break;
 		}
-		{
-			const ut8 *p = buf + 1;
-			int lev = 0, i = 1;
-			len--;
-			while (i < len && *p) {
-				if (*p == '[') {
-					lev++;
-				}
-				if (*p == ']') {
-					lev--;
-					if (lev == -1) {
-						dst = addr + (size_t)(p - buf);
-						dst++;
-						op->jump = dst;
-						rz_strbuf_setf(&op->esil,
-							"$$,brk,=[1],brk,++=,"
-							"ptr,[1],!,?{,0x%" PFMT64x ",pc,=,brk,--=,}",
-							dst);
-						goto beach;
-					}
-				}
-				if (*p == 0x00 || *p == 0xff) {
-					op->type = RZ_ANALYSIS_OP_TYPE_ILL;
-					goto beach;
-				}
-				if (i == len - 1 && analysis->read_at) {
-					int new_buf_len = len + 1 + BUFSIZE_INC;
-					ut8 *new_buf = calloc(new_buf_len, 1);
-					if (new_buf) {
-						free((ut8 *)buf);
-						(void)analysis->read_at(analysis, addr, new_buf, new_buf_len);
-						buf = new_buf;
-						p = buf + i;
-						len += BUFSIZE_INC;
-					}
-				}
-				p++;
-				i++;
-			}
+		ut8 c;
+		analysis->read_at(analysis, addr, &c, 1);
+		switch (c) {
+		case '[':
+			lev++;
+			break;
+		case ']':
+			lev--;
+			break;
+		case 0:
+		case 0xff:
+			// invalid code
+			return UT64_MAX;
+		default:
+			continue;
 		}
-	beach:
-		free((ut8 *)buf);
+		if (lev == 0) {
+			return addr;
+		}
+	}
+	return UT64_MAX;
+}
+
+RzILOpEffect *bf_llimit(RzAnalysis *analysis, ut64 addr, ut64 target) {
+	// (perform (branch (load mem (var ptr))
+	//                  (do nothing)
+	//                  (goto ]))
+	RzILOpBitVector *var = rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL);
+	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
+	// goto ]
+	RzILOpEffect *jmp = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(64, target));
+	// branch if (load mem (var ptr)) is false then goto ]
+	return rz_il_op_new_branch(cond, NULL, jmp);
+}
+
+RzILOpEffect *bf_rlimit(RzAnalysis *analysis, ut64 addr, ut64 target) {
+	// (perform (branch (load mem (var ptr))
+	//                  (goto [)
+	//                  (do nothing))
+	RzILOpBitVector *var = rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL);
+	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
+	// goto [
+	RzILOpEffect *jmp = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(64, target));
+	// branch if (load mem (var ptr)) is true then goto ]
+	RzILOpEffect *branch = rz_il_op_new_branch(cond, jmp, NULL);
+	return branch;
+}
+
+static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(64, false, 64);
+	cfg->init_state = rz_analysis_il_init_state_new();
+	if (!cfg->init_state) {
+		rz_analysis_il_config_free(cfg);
+		return NULL;
+	}
+	rz_analysis_il_init_state_set_var(cfg->init_state, "ptr", rz_il_value_new_bitv(rz_bv_new_from_ut64(64, BF_ADDR_MEM)));
+	RzILEffectLabel *read_label = rz_il_effect_label_new("read", EFFECT_LABEL_SYSCALL);
+	read_label->hook = bf_syscall_read;
+	rz_analysis_il_config_add_label(cfg, read_label);
+	RzILEffectLabel *write_label = rz_il_effect_label_new("write", EFFECT_LABEL_HOOK);
+	write_label->hook = bf_syscall_write;
+	rz_analysis_il_config_add_label(cfg, write_label);
+	return cfg;
+}
+
+static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	rz_return_val_if_fail(analysis && op, -1);
+
+	op->size = 1;
+	op->id = getid(buf[0]);
+	op->addr = addr;
+
+	switch (buf[0]) {
+	case '[':
+		// Find the jump target, +1 because we jump directly after the matching bracket.
+		// If not found this returns UT64_MAX, so this overflows to 0, which is considered the "invalid"
+		// value for RzAnalysisOp, so it's fine.
+		op->jump = find_matching_bracket(analysis, addr, 1) + 1;
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_llimit(analysis, addr, op->jump);
+		}
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		op->fail = addr + 1;
 		break;
 	case ']':
+		// same idea for target as above
+		op->jump = find_matching_bracket(analysis, addr, -1) + 1;
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_rlimit(analysis, addr, op->jump);
+		}
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		// XXX This is wrong esil
-		rz_strbuf_set(&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
 	case '>':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		op->size = countChar(buf, len, '>');
-		rz_strbuf_setf(&op->esil, "%d,ptr,+=", op->size);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_right_arrow();
+		}
 		break;
 	case '<':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->size = countChar(buf, len, '<');
-		rz_strbuf_setf(&op->esil, "%d,ptr,-=", op->size);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_left_arrow();
+		}
 		break;
 	case '+':
-		op->size = countChar(buf, len, '+');
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		rz_strbuf_setf(&op->esil, "%d,ptr,+=[1]", op->size);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_inc();
+		}
 		break;
 	case '-':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->size = countChar(buf, len, '-');
-		rz_strbuf_setf(&op->esil, "%d,ptr,-=[1]", op->size);
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_dec();
+		}
 		break;
 	case '.':
-		// print element in stack to screen
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_out();
+		}
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		rz_strbuf_set(&op->esil, "ptr,[1],scr,=[1],scr,++=");
 		break;
 	case ',':
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = bf_in();
+		}
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		rz_strbuf_set(&op->esil, "kbd,[1],ptr,=[1],kbd,++=");
 		break;
 	case 0x00:
 	case 0xff:
@@ -125,7 +239,9 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	default:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-		rz_strbuf_set(&op->esil, ",");
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = rz_il_op_new_nop();
+		}
 		break;
 	}
 	return op->size;
@@ -134,17 +250,14 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(
 		"=PC	pc\n"
-		"=BP	brk\n"
+		"=BP	ptr\n"
 		"=SP	ptr\n"
-		"=A0	rax\n"
-		"=A1	rbx\n"
-		"=A2	rcx\n"
-		"=A3	rdx\n"
-		"gpr	ptr	.32	0	0\n" // data pointer
-		"gpr	pc	.32	4	0\n" // program counter
-		"gpr	brk	.32	8	0\n" // brackets
-		"gpr	scr	.32	12	0\n" // screen
-		"gpr	kbd	.32	16	0\n" // keyboard
+		"=A0	ptr\n"
+		"=A1	ptr\n"
+		"=A2	ptr\n"
+		"=A3	ptr\n"
+		"gpr	ptr	.64	0	0\n" // data pointer
+		"gpr	pc	.64	8	0\n" // program counter
 	);
 }
 
@@ -153,10 +266,10 @@ RzAnalysisPlugin rz_analysis_plugin_bf = {
 	.desc = "brainfuck code analysis plugin",
 	.license = "LGPL3",
 	.arch = "bf",
-	.bits = 8,
-	.esil = true,
+	.bits = 64, // RzIL emulation of bf and the reg definitions above use 64bit values
 	.op = &bf_op,
 	.get_reg_profile = get_reg_profile,
+	.il_config = il_config
 };
 
 #ifndef RZ_PLUGIN_INCORE

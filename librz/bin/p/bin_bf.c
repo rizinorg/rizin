@@ -37,27 +37,28 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->machine = strdup("brainfuck");
 	ret->arch = strdup("bf");
 	ret->has_va = 1;
-	ret->bits = 32; // 16?
+	ret->bits = 64; // RzIL emulation of bf uses 64bit values
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
-	/* TODO: move this somewhere else */
-	eprintf("f input 128 0x3000\n");
-	eprintf("o malloc://128 0x3000\n");
-	eprintf("f screen 80*25 0x4000\n");
-	eprintf("o malloc://80*25 0x4000\n");
-	eprintf("f stack 0x200 0x5000\n");
-	eprintf("o malloc://0x200 0x5000\n");
-	eprintf("f data 0x1000 0x6000\n");
-	eprintf("o malloc://0x1000 0x6000\n");
-	eprintf("ar\n"); // hack to init
-	eprintf("ar brk=stack\n");
-	eprintf("ar scr=screen\n");
-	eprintf("ar kbd=input\n");
-	eprintf("ar ptr=data\n");
-	eprintf("\"e cmd.vprompt=pxa 32@stack;pxa 32@screen;pxa 32@data\"\n");
-	eprintf("s 0\n");
-	eprintf("e asm.bits=32\n");
-	eprintf("dL bf\n");
+
+	RZ_LOG_INFO("Brainfuck debugger setup:\n"
+		    "f input 128 @ 0x3000\n"
+		    "o malloc://128 0x3000\n"
+		    "f screen 80*25 @ 0x4000\n"
+		    "o malloc://80*25 0x4000\n"
+		    "f stack 0x200 @ 0x5000\n"
+		    "o malloc://0x200 0x5000\n"
+		    "f data 0x1000 @ 0x6000\n"
+		    "o malloc://0x1000 0x6000\n"
+		    "ar\n" // hack to init
+		    "ar brk=stack\n"
+		    "ar scr=screen\n"
+		    "ar kbd=input\n"
+		    "ar ptr=data\n"
+		    "e cmd.vprompt=\"pxa 32@stack;pxa 32@screen;pxa 32@data\"\n"
+		    "s 0\n"
+		    "e asm.bits=32\n"
+		    "dL bf\n");
 	return ret;
 }
 
@@ -93,6 +94,10 @@ static bool check_buffer(RzBuffer *buf) {
 	return true;
 }
 
+static bool check_filename(const char *filename) {
+	return rz_str_endswith_icase(filename, ".bf");
+}
+
 static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
@@ -108,6 +113,40 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
+static RzList *maps(RzBinFile *bf) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+
+	RzBinMap *map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	map->paddr = 0;
+	map->vaddr = 0;
+	map->psize = bf->size;
+	map->vsize = bf->size;
+	map->perm = RZ_PERM_RWX;
+	map->name = strdup("code");
+	rz_list_append(ret, map);
+
+	map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	map->paddr = 0;
+	map->vaddr = 0x10000;
+	map->psize = 0;
+	map->vsize = 30000;
+	map->perm = RZ_PERM_RW;
+	map->name = strdup("mem");
+	rz_list_append(ret, map);
+	return ret;
+}
+
 RzBinPlugin rz_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
@@ -115,9 +154,11 @@ RzBinPlugin rz_bin_plugin_bf = {
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
+	.check_filename = &check_filename,
 	.baddr = &baddr,
 	.entries = entries,
 	.strings = &strings,
+	.maps = &maps,
 	.info = &info,
 };
 

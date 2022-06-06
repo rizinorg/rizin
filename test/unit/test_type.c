@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_type.h>
 
+#include "test_config.h"
 #include "minunit.h"
 #include "test_sdb.h"
 
@@ -373,14 +374,14 @@ static bool test_types_get_base_types_of_kind(void) {
 }
 
 static char *test_enum = "enum BLA { FOO = 0x1, BOO, GOO = 0xFFFF }";
-static char *test_enum_output = "enum BLA { FOO = 0x1, BOO = 0x2, GOO = 0xffff, }";
+static char *test_enum_output = "enum BLA { FOO = 0x1, BOO = 0x2, GOO = 0xffff }";
 
 static bool test_enum_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, test_enum, &error_msg);
@@ -417,8 +418,8 @@ static bool test_const_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
 	char *error_msg = NULL;
 	// Const identifier but not pointer
@@ -469,8 +470,8 @@ static bool test_type_as_string(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, array, &error_msg);
@@ -512,12 +513,188 @@ static bool test_type_as_string(void) {
 	mu_end;
 }
 
+static char *pretty_complex_const_pointer = "const char ** const * const c[4];";
+static char *pretty_struct_array_ptr_func_ptr = "struct alb { const char *b; int * const *a[][][][9]; wchar_t (*funk)(int a, const char *b); time_t t; };";
+static char *pretty_struct_array_ptr_func_ptr_multiline = "struct alb {\n"
+							  "\tconst char *b;\n"
+							  "\tint * const *a[][][][9];\n"
+							  "\twchar_t (*funk)(int a, const char *b);\n"
+							  "\ttime_t t;\n"
+							  "} leet;";
+static char *pretty_struct_in_struct = "struct joy { int a; char c; struct alb ania; int j; };";
+static char *pretty_struct_in_struct_multiline = "struct joy {\n"
+						 "\tint a;\n"
+						 "\tchar c;\n"
+						 "\tstruct alb ania;\n"
+						 "\tint j;\n"
+						 "} mult;";
+static char *pretty_struct_in_struct_multiline_unfold = "struct joy {\n"
+							"\tint a;\n"
+							"\tchar c;\n"
+							"\tstruct alb {\n"
+							"\t\tconst char *b;\n"
+							"\t\tint * const *a[][][][9];\n"
+							"\t\twchar_t (*funk)(int a, const char *b);\n"
+							"\t\ttime_t t;\n"
+							"\t} ania;\n"
+							"\tint j;\n"
+							"} multunfold;";
+static char *pretty_union_of_struct = "union alpha { struct joy bla; struct { int foo; char bar; } baz; };";
+static char *pretty_union_of_struct_multiline1 = "union alpha {\n"
+						 "\tstruct joy {\n"
+						 "\t\tint a;\n"
+						 "\t\tchar c;\n"
+						 "\t\tstruct alb ania;\n"
+						 "\t\tint j;\n"
+						 "\t} bla;\n"
+						 "\tstruct {\n"
+						 "\t\tint foo;\n"
+						 "\t\tchar bar;\n"
+						 "\t} baz;\n"
+						 "} mult1;";
+static char *pretty_union_of_struct_anon_multiline = "union alpha {\n"
+						     "\tstruct joy bla;\n"
+						     "\tstruct {\n"
+						     "\t\tint foo;\n"
+						     "\t\tchar bar;\n"
+						     "\t} baz;\n"
+						     "} anonmult;";
+static char *pretty_union_of_struct_max_multiline = "union alpha {\n"
+						    "\tstruct joy {\n"
+						    "\t\tint a;\n"
+						    "\t\tchar c;\n"
+						    "\t\tstruct alb {\n"
+						    "\t\t\tconst char *b;\n"
+						    "\t\t\tint * const *a[][][][9];\n"
+						    "\t\t\twchar_t (*funk)(int a, const char *b);\n"
+						    "\t\t\ttime_t t;\n"
+						    "\t\t} ania;\n"
+						    "\t\tint j;\n"
+						    "\t} bla;\n"
+						    "\tstruct {\n"
+						    "\t\tint foo;\n"
+						    "\t\tchar bar;\n"
+						    "\t} baz;\n"
+						    "} maxmult;";
+static char *pretty_enum = "enum MCU { IRON = 0x1001, HAWK = 0x337, DOCS = 0x1337, CAPM = 0x2077 };";
+static char *pretty_enum_multiline = "enum MCU {\n"
+				     "\tIRON = 0x1001,\n"
+				     "\tHAWK = 0x337,\n"
+				     "\tDOCS = 0x1337,\n"
+				     "\tCAPM = 0x2077\n"
+				     "} enumult;";
+static char *pretty_simple_typedef = "typedef long time_t;";
+
+static bool test_type_as_pretty_string(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, pretty_complex_const_pointer, &error_msg);
+	mu_assert_notnull(ttype, "complex const pointer type parse unsuccessfull");
+	mu_assert_null(error_msg, "parsing errors");
+	char *pretty_str = rz_type_as_pretty_string(typedb, ttype, "c", RZ_TYPE_PRINT_NO_OPTS, 1);
+	mu_assert_streq(pretty_str, pretty_complex_const_pointer, "complex const pointer type is ugly");
+	free(pretty_str);
+	free(ttype);
+
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, pretty_struct_array_ptr_func_ptr, &error_msg);
+	mu_assert_notnull(ttype, "struct array ptr func ptr type parse unsuccessfull");
+	mu_assert_null(error_msg, "parsing errors");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_NO_OPTS, 2); // use unfold level 2 to check whether "over-unfolding" is handled without any problems
+	mu_assert_streq(pretty_str, pretty_struct_array_ptr_func_ptr, "struct array ptr func ptr type is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "leet", RZ_TYPE_PRINT_MULTILINE, 1);
+	mu_assert_streq(pretty_str, pretty_struct_array_ptr_func_ptr_multiline, "struct array ptr func ptr type multiline is ugly");
+	free(pretty_str);
+	free(ttype);
+
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, pretty_struct_in_struct, &error_msg);
+	mu_assert_notnull(ttype, "struct in struct type parse unsuccessfull");
+	mu_assert_null(error_msg, "parsing errors");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_NO_OPTS, 1);
+	mu_assert_streq(pretty_str, pretty_struct_in_struct, "struct in struct type is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "mult", RZ_TYPE_PRINT_MULTILINE, 1);
+	mu_assert_streq(pretty_str, pretty_struct_in_struct_multiline, "struct in struct type multiline is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "multunfold", RZ_TYPE_PRINT_MULTILINE, 2);
+	mu_assert_streq(pretty_str, pretty_struct_in_struct_multiline_unfold, "struct in struct type multiline unfold is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "multunfold", RZ_TYPE_PRINT_MULTILINE, 7);
+	mu_assert_streq(pretty_str, pretty_struct_in_struct_multiline_unfold, "struct in struct type multiline 7 unfold is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "multunfold", RZ_TYPE_PRINT_MULTILINE, -1);
+	mu_assert_streq(pretty_str, pretty_struct_in_struct_multiline_unfold, "struct in struct type multiline max unfold is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "mult", RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, 5);
+	mu_assert_streq(pretty_str, pretty_struct_in_struct_multiline, "struct in struct type multiline anon unfold is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, -1);
+	mu_assert_streq(pretty_str, pretty_struct_in_struct, "struct in struct type anon unfold is ugly");
+	free(pretty_str);
+	free(ttype);
+
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, pretty_union_of_struct, &error_msg);
+	mu_assert_notnull(ttype, "union of struct type parse unsuccessfull");
+	mu_assert_null(error_msg, "parsing errors");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, 2);
+	mu_assert_streq(pretty_str, pretty_union_of_struct, "union of struct type is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "mult1", RZ_TYPE_PRINT_MULTILINE, 2);
+	mu_assert_streq(pretty_str, pretty_union_of_struct_multiline1, "union of struct type multiline 1 is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "anonmult", RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, 10);
+	mu_assert_streq(pretty_str, pretty_union_of_struct_anon_multiline, "union of struct type anon multiline is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "maxmult", RZ_TYPE_PRINT_MULTILINE, -3);
+	mu_assert_streq(pretty_str, pretty_union_of_struct_max_multiline, "union of struct type max multiline is ugly");
+	free(pretty_str);
+	free(ttype);
+
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, pretty_enum, &error_msg);
+	mu_assert_notnull(ttype, "enum type parse unsuccessfull");
+	mu_assert_null(error_msg, "parsing errors");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_NO_OPTS, 10);
+	mu_assert_streq(pretty_str, pretty_enum, "enum type is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "enumult", RZ_TYPE_PRINT_MULTILINE, -2);
+	mu_assert_streq(pretty_str, pretty_enum_multiline, "enum type multiline is ugly");
+	free(pretty_str);
+	free(ttype);
+
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, "time_t;", &error_msg);
+	mu_assert_notnull(ttype, "simple typedef type parse unsuccessfull");
+	mu_assert_null(error_msg, "parsing errors");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, 10);
+	mu_assert_streq(pretty_str, pretty_simple_typedef, "simple typedef type is ugly");
+	free(pretty_str);
+
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, "non_t existent;", &error_msg);
+	mu_assert_notnull(ttype, "unknown type parse unsuccessfull");
+	mu_assert_null(error_msg, "parsing errors");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, 10);
+	mu_assert_streq(pretty_str, "unknown_t;", "unknown type is ugly");
+	free(pretty_str);
+
+	mu_end;
+}
+
 static bool test_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
 	char *error_msg = NULL;
 	// Zero-sized array
@@ -569,8 +746,8 @@ static bool test_struct_func_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
 	char *error_msg = NULL;
 	// Sturcture type with a function pointer
@@ -659,8 +836,8 @@ static bool test_struct_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
 	char *error_msg = NULL;
 	// Structure type with a pointer to a function pointer and array
@@ -707,8 +884,8 @@ static bool test_struct_identifier_without_specifier(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
 	char *error_msg = NULL;
 	int r = rz_type_parse_string(typedb, "struct bla { int a; };", &error_msg);
@@ -735,8 +912,8 @@ static bool test_union_identifier_without_specifier(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
 	char *error_msg = NULL;
 	int r = rz_type_parse_string(typedb, "union bla { int a; };", &error_msg);
@@ -767,8 +944,8 @@ static bool test_edit_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, edit_array_old, &error_msg);
@@ -827,6 +1004,19 @@ bool test_references(void) {
 	mu_end;
 }
 
+bool test_addr_bits(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	rz_type_db_set_bits(typedb, 32);
+	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
+	rz_type_db_set_bits(typedb, 64);
+	mu_assert_eq(rz_type_db_pointer_size(typedb), 64, "ptr size");
+	rz_type_db_set_address_bits(typedb, 32); // overrided bits
+	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
+	rz_type_db_set_bits(typedb, 16);
+	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_types_get_base_type_struct);
 	mu_run_test(test_types_get_base_type_union);
@@ -837,6 +1027,7 @@ int all_tests() {
 	mu_run_test(test_types_get_base_types);
 	mu_run_test(test_types_get_base_types_of_kind);
 	mu_run_test(test_type_as_string);
+	mu_run_test(test_type_as_pretty_string);
 	mu_run_test(test_enum_types);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
@@ -846,6 +1037,7 @@ int all_tests() {
 	mu_run_test(test_union_identifier_without_specifier);
 	mu_run_test(test_edit_types);
 	mu_run_test(test_references);
+	mu_run_test(test_addr_bits);
 	return tests_passed != tests_run;
 }
 

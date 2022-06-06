@@ -26,11 +26,11 @@ static const char *level_tags[] = { // Log level to tag string lookup array
 };
 
 // cconfig.c configuration callback functions below
-RZ_API void rz_log_set_level(RLogLevel level) {
+RZ_API void rz_log_set_level(RzLogLevel level) {
 	cfg_loglvl = level;
 }
 
-RZ_API void rz_log_set_traplevel(RLogLevel level) {
+RZ_API void rz_log_set_traplevel(RzLogLevel level) {
 	cfg_logtraplvl = level;
 }
 
@@ -49,9 +49,9 @@ RZ_API void rz_log_set_colors(bool show_info) {
 
 /**
  * \brief Add a logging callback
- * \param cbfunc RLogCallback style function to be called
+ * \param cbfunc RzLogCallback style function to be called
  */
-RZ_API void rz_log_add_callback(RLogCallback cbfunc) {
+RZ_API void rz_log_add_callback(RzLogCallback cbfunc) {
 	if (!log_cbs) {
 		log_cbs = rz_list_new();
 	}
@@ -62,16 +62,16 @@ RZ_API void rz_log_add_callback(RLogCallback cbfunc) {
 
 /**
  * \brief Remove a logging callback
- * \param cbfunc RLogCallback style function to be called
+ * \param cbfunc RzLogCallback style function to be called
  */
-RZ_API void rz_log_del_callback(RLogCallback cbfunc) {
+RZ_API void rz_log_del_callback(RzLogCallback cbfunc) {
 	if (log_cbs) {
 		rz_list_delete_data(log_cbs, cbfunc);
 	}
 }
 
 RZ_API void rz_vlog(const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args) {
+	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, va_list args) {
 	va_list args_copy;
 	va_copy(args_copy, args);
 
@@ -98,7 +98,7 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 	// Actually print out the string with our callbacks
 	if (log_cbs && rz_list_length(log_cbs) > 0) {
 		RzListIter *it;
-		RLogCallback cb;
+		RzLogCallback cb;
 
 		rz_list_foreach (log_cbs, it, cb) {
 			cb(output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
@@ -141,7 +141,7 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
   This function is used by the RZ_LOG_* preprocessor macros for logging
 */
 RZ_API void rz_log(const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
+	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) {
 	va_list args;
 
 	va_start(args, fmtstr);

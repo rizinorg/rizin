@@ -118,8 +118,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	return res;
 }
 
-// TODO: Move into rz_util .. rz_print maybe? rz_cons dep is annoying
-RZ_API char *rz_syscmd_ls(const char *input) {
+RZ_API RZ_OWN char *rz_syscmd_ls(const char *input) {
 	char *res = NULL;
 	const char *path = ".";
 	char *d = NULL;
@@ -169,8 +168,8 @@ RZ_API char *rz_syscmd_ls(const char *input) {
 	}
 	if (!path || !*path) {
 		path = ".";
-	} else if (!strncmp(path, "~/", 2)) {
-		homepath = rz_str_home(path + 2);
+	} else if (rz_str_startswith(path, "~")) {
+		homepath = rz_path_home_expand(path);
 		if (homepath) {
 			path = (const char *)homepath;
 		}
@@ -252,15 +251,15 @@ static int cmpstr(const void *_a, const void *_b) {
 	return (int)strcmp(a, b);
 }
 
-RZ_API char *rz_syscmd_sort(const char *file) {
+RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file) {
+	rz_return_val_if_fail(file, NULL);
+
 	const char *p = NULL;
 	RzList *list = NULL;
-	if (file) {
-		if ((p = strchr(file, ' '))) {
-			p = p + 1;
-		} else {
-			p = file;
-		}
+	if ((p = strchr(file, ' '))) {
+		p = p + 1;
+	} else {
+		p = file;
 	}
 	if (p && *p) {
 		char *filename = strdup(p);
@@ -282,14 +281,14 @@ RZ_API char *rz_syscmd_sort(const char *file) {
 	return NULL;
 }
 
-RZ_API char *rz_syscmd_head(const char *file, int count) {
+RZ_API RZ_OWN char *rz_syscmd_head(RZ_NONNULL const char *file, int count) {
+	rz_return_val_if_fail(file, NULL);
+
 	const char *p = NULL;
-	if (file) {
-		if ((p = strchr(file, ' '))) {
-			p = p + 1;
-		} else {
-			p = file;
-		}
+	if ((p = strchr(file, ' '))) {
+		p = p + 1;
+	} else {
+		p = file;
 	}
 	if (p && *p) {
 		char *filename = strdup(p);
@@ -306,7 +305,9 @@ RZ_API char *rz_syscmd_head(const char *file, int count) {
 	return NULL;
 }
 
-RZ_API char *rz_syscmd_tail(const char *file, int count) {
+RZ_API RZ_OWN char *rz_syscmd_tail(RZ_NONNULL const char *file, int count) {
+	rz_return_val_if_fail(file, NULL);
+
 	const char *p = NULL;
 	if (file) {
 		if ((p = strchr(file, ' '))) {
@@ -330,7 +331,9 @@ RZ_API char *rz_syscmd_tail(const char *file, int count) {
 	return NULL;
 }
 
-RZ_API char *rz_syscmd_uniq(const char *file) {
+RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file) {
+	rz_return_val_if_fail(file, NULL);
+
 	const char *p = NULL;
 	RzList *list = NULL;
 	if (file) {
@@ -361,12 +364,10 @@ RZ_API char *rz_syscmd_uniq(const char *file) {
 	return NULL;
 }
 
-RZ_API char *rz_syscmd_join(const char *file1, const char *file2) {
+RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL const char *file2) {
+	rz_return_val_if_fail(file1 && file2, NULL);
+
 	const char *p1 = NULL, *p2 = NULL;
-	RzList *list1, *list2, *list = rz_list_newf(NULL);
-	if (!list) {
-		return NULL;
-	}
 	if (file1) {
 		if ((p1 = strchr(file1, ' '))) {
 			p1 = p1 + 1;
@@ -389,14 +390,20 @@ RZ_API char *rz_syscmd_join(const char *file1, const char *file2) {
 		char *data1 = rz_file_slurp(filename1, NULL);
 		char *data2 = rz_file_slurp(filename2, NULL);
 		char *data = NULL;
-		RzListIter *iter1, *iter2;
 		if (!data1 && !data2) {
 			eprintf("No such files or directory\n");
 		} else {
-			list1 = rz_str_split_list(data1, "\n", 0);
-			list2 = rz_str_split_list(data2, "\n", 0);
-
+			RzList *list = rz_list_newf(NULL);
+			RzList *list1 = rz_str_split_list(data1, "\n", 0);
+			RzList *list2 = rz_str_split_list(data2, "\n", 0);
+			if (!list || !list1 || !list2) {
+				rz_list_free(list2);
+				rz_list_free(list1);
+				rz_list_free(list);
+				return NULL;
+			}
 			char *str1, *str2;
+			RzListIter *iter1, *iter2;
 			rz_list_foreach (list1, iter1, str1) {
 				char *field = strdup(str1); // extract comman field
 				char *end = strchr(field, ' ');
@@ -419,9 +426,9 @@ RZ_API char *rz_syscmd_join(const char *file1, const char *file2) {
 				free(field);
 			}
 			data = rz_list_to_str(list, '\n');
-			rz_list_free(list);
-			rz_list_free(list1);
 			rz_list_free(list2);
+			rz_list_free(list1);
+			rz_list_free(list);
 		}
 		free(filename1);
 		free(filename2);
@@ -432,7 +439,9 @@ RZ_API char *rz_syscmd_join(const char *file1, const char *file2) {
 	return NULL;
 }
 
-RZ_API char *rz_syscmd_cat(const char *file) {
+RZ_API RZ_OWN char *rz_syscmd_cat(RZ_NONNULL const char *file) {
+	rz_return_val_if_fail(file, NULL);
+
 	const char *p = NULL;
 	if (file) {
 		if ((p = strchr(file, ' '))) {
@@ -456,7 +465,9 @@ RZ_API char *rz_syscmd_cat(const char *file) {
 	return NULL;
 }
 
-RZ_API char *rz_syscmd_mkdir(const char *dir) {
+RZ_API RZ_OWN char *rz_syscmd_mkdir(RZ_NONNULL const char *dir) {
+	rz_return_val_if_fail(dir, NULL);
+
 	const char *suffix = rz_str_trim_head_ro(strchr(dir, ' '));
 	if (!suffix || !strncmp(suffix, "-p", 3)) {
 		return rz_str_dup(NULL, "Usage: mkdir [-p] [directory]\n");
@@ -467,27 +478,11 @@ RZ_API char *rz_syscmd_mkdir(const char *dir) {
 		: strdup(suffix);
 	rz_str_trim(dirname);
 	ret = rz_sys_mkdirp(dirname);
-	if (!ret) {
-		if (rz_sys_mkdir_failed()) {
-			char *res = rz_str_newf("Cannot create \"%s\"\n", dirname);
-			free(dirname);
-			return res;
-		}
+	if (!ret && rz_sys_mkdir_failed()) {
+		char *res = rz_str_newf("Cannot create \"%s\"\n", dirname);
+		free(dirname);
+		return res;
 	}
 	free(dirname);
 	return NULL;
-}
-
-RZ_API bool rz_syscmd_mv(const char *input) {
-	if (strlen(input) < 3) {
-		eprintf("Usage: mv src dst\n");
-		return false;
-	}
-	input = input + 2;
-#if __WINDOWS__
-	rz_sys_cmdf("move %s >nul", input);
-#else
-	rz_sys_cmdf("mv %s", input);
-#endif
-	return false;
 }

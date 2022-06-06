@@ -3,7 +3,6 @@
 
 #include <rz_userconf.h>
 
-#if DEBUGGER
 #include <rz_debug.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
@@ -24,6 +23,33 @@
 #define HAVE_YMM 1
 #else
 #define HAVE_YMM 0
+#endif
+
+#if (__i386__ || __x86_64__) && defined(PTRACE_GETREGSET) && defined(NT_X86_XSTATE)
+long rz_debug_ptrace_get_x86_xstate(RzDebug *dbg, pid_t pid, struct iovec *iov) {
+	if (!dbg->nt_x86_xstate_supported) {
+		return -1;
+	}
+
+	long res = rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)NT_X86_XSTATE, iov);
+	if (res == -1) {
+		if (errno == ENODEV) {
+			// Ignore ENODEV error because it means the kernel does not support
+			// NT_X86_XSTATE.
+			dbg->nt_x86_xstate_supported = false;
+			rz_sys_perror("PTRACE_GETREGSET/NT_X86_XSTATE");
+			return -1;
+		}
+
+		rz_sys_perror("rz_debug_ptrace_get_x86_xstate");
+		return -1;
+	}
+	return res;
+}
+#else
+long rz_debug_ptrace_get_x86_xstate(RzDebug *dbg, pid_t pid, struct iovec *iov) {
+	return -1;
+}
 #endif
 
 char *linux_reg_profile(RzDebug *dbg) {
@@ -88,19 +114,19 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 	}
 
 	if (siginfo.si_signo > 0) {
-		//siginfo_t newsiginfo = {0};
-		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
+		// siginfo_t newsiginfo = {0};
+		// ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 		dbg->reason.signum = siginfo.si_signo;
-		dbg->stopaddr = (ut64)siginfo.si_addr;
-		//dbg->errno = siginfo.si_errno;
-		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
-		// TODO: DO MORE RDEBUGREASON HERE
+		dbg->stopaddr = (ut64)(size_t)siginfo.si_addr;
+		// dbg->errno = siginfo.si_errno;
+		//  siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
+		//  TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
 		case SIGTRAP: {
 			if (dbg->glob_libs || dbg->glob_unlibs) {
 				ut64 pc_addr = rz_debug_reg_get(dbg, "PC");
-				RzBreakpointItem *b = rz_bp_get_at(dbg->bp, pc_addr - dbg->bpsize);
+				RzBreakpointItem *b = rz_bp_get_ending_at(dbg->bp, pc_addr);
 				if (b && b->internal) {
 					char *p = strstr(b->data, "dbg.");
 					if (p) {
@@ -278,7 +304,7 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 			rz_sys_perror("ptrace GETEVENTMSG");
 			return RZ_DEBUG_REASON_ERROR;
 		}
-		//TODO: Check other processes exit if dbg->trace_forks is on
+		// TODO: Check other processes exit if dbg->trace_forks is on
 		if (ptid != dbg->pid) {
 			eprintf("(%d) Thread exited with status=0x%" PFMT64x "\n", ptid, (ut64)data);
 			return RZ_DEBUG_REASON_EXIT_TID;
@@ -344,7 +370,7 @@ int linux_step(RzDebug *dbg) {
 	int ret = false;
 	int pid = dbg->tid;
 	ret = rz_debug_ptrace(dbg, PTRACE_SINGLESTEP, pid, 0, 0);
-	//XXX(jjd): why?? //linux_handle_signals (dbg);
+	// XXX(jjd): why?? //linux_handle_signals (dbg);
 	if (ret == -1) {
 		perror("native-singlestep");
 		ret = false;
@@ -865,7 +891,7 @@ RzList *linux_thread_list(RzDebug *dbg, int pid, RzList *list) {
 		struct dirent *de;
 		DIR *dh = opendir(buf);
 		// Update the process' memory maps to set correct paths
-		dbg->corebind.syncDebugMaps(dbg->corebind.core);
+		rz_debug_map_sync(dbg);
 		while ((de = readdir(dh))) {
 			if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..")) {
 				continue;
@@ -1011,7 +1037,7 @@ static void print_fpu(void *f) {
 	}
 #endif // __ANDROID__
 #elif __i386__
-	int i, j;
+	int i;
 #if __ANDROID__
 	struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct *)f;
 	rz_cons_printf("---- x86-32 ----\n");
@@ -1078,7 +1104,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 #if !__ANDROID__
 	{
 		int i;
-		for (i = 0; i < 8; i++) { //DR0-DR7
+		for (i = 0; i < 8; i++) { // DR0-DR7
 			if (i == 4 || i == 5) {
 				continue;
 			}
@@ -1188,11 +1214,11 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		ret = rz_debug_ptrace(dbg, PTRACE_GETREGS, pid, NULL, &regs);
 #endif
 		/*
-			 * if perror here says 'no such process' and the
-			 * process exists still.. is because there's a missing call
-			 * to 'wait'. and the process is not yet available to accept
-			 * more ptrace queries.
-			 */
+		 * if perror here says 'no such process' and the
+		 * process exists still.. is because there's a missing call
+		 * to 'wait'. and the process is not yet available to accept
+		 * more ptrace queries.
+		 */
 		if (ret != 0) {
 			rz_sys_perror("PTRACE_GETREGS");
 			return false;
@@ -1208,9 +1234,8 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		struct iovec iov;
 		iov.iov_base = &xstate;
 		iov.iov_len = sizeof(struct _xstate);
-		ret = rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)NT_X86_XSTATE, &iov);
-		if (ret != 0) {
-			rz_sys_perror("PTRACE_GETREGSET");
+		ret = rz_debug_ptrace_get_x86_xstate(dbg, pid, &iov);
+		if (ret == -1) {
 			return false;
 		}
 		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
@@ -1301,17 +1326,16 @@ RzList *linux_desc_list(int pid) {
 	struct stat st;
 	DIR *dd = NULL;
 
-	snprintf(path, sizeof(path), "/proc/%i/fd/", pid);
+	rz_strf(path, "/proc/%i/fd/", pid);
 	if (!(dd = opendir(path))) {
 		rz_sys_perror("opendir /proc/x/fd");
 		return NULL;
 	}
-	ret = rz_list_new();
+	ret = rz_list_newf((RzListFree)rz_debug_desc_free);
 	if (!ret) {
 		closedir(dd);
 		return NULL;
 	}
-	ret->free = (RzListFree)rz_debug_desc_free;
 	while ((de = (struct dirent *)readdir(dd))) {
 		if (de->d_name[0] == '.') {
 			continue;
@@ -1319,16 +1343,15 @@ RzList *linux_desc_list(int pid) {
 		len = strlen(path);
 		len2 = strlen(de->d_name);
 		if (len + len2 + 1 >= sizeof(file)) {
-			rz_list_free(ret);
-			closedir(dd);
-			eprintf("Filename is too long");
-			return NULL;
+			RZ_LOG_ERROR("Filename is too long.\n");
+			goto fail;
 		}
 		memcpy(file, path, len);
 		memcpy(file + len, de->d_name, len2 + 1);
 		buf[0] = 0;
 		if (readlink(file, buf, sizeof(buf) - 1) == -1) {
-			return NULL;
+			RZ_LOG_ERROR("readlink %s failed.\n", file);
+			goto fail;
 		}
 		buf[sizeof(buf) - 1] = 0;
 		type = perm = 0;
@@ -1349,7 +1372,7 @@ RzList *linux_desc_list(int pid) {
 				perm |= RZ_PERM_W;
 			}
 		}
-		//TODO: Offset
+		// TODO: Offset
 		desc = rz_debug_desc_new(atoi(de->d_name), buf, perm, type, 0);
 		if (!desc) {
 			break;
@@ -1358,6 +1381,9 @@ RzList *linux_desc_list(int pid) {
 	}
 	closedir(dd);
 	return ret;
-}
 
-#endif
+fail:
+	rz_list_free(ret);
+	closedir(dd);
+	return NULL;
+}

@@ -31,14 +31,6 @@ typedef struct arc_fields_t {
 	st64 limm; /* data stored immediately following the opcode */
 } arc_fields;
 
-static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
-#if DEBUG
-	/* Quick and dirty debug print */
-	eprintf("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x fields.a=0x%x fields.b=0x%x fields.c=0x%x imm=%i limm=%lli\n",
-		addr, words[0], f->opcode, f->subopcode, f->format, f->a, f->b, f->c, f->imm, f->limm);
-#endif
-}
-
 /* For (arguably valid) reasons, the ARCompact CPU uses "middle endian"
 	encoding on Little-Endian systems
  */
@@ -242,6 +234,7 @@ static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 			op->ptr = (addr & ~3) + fields.imm;
 			op->refptr = 1; /* HACK! we don't actually know what size it is */
 		}
+		// fallthrough
 	case 0x01: /* add with carry */
 	case 0x14: /* add with left shift by 1 */
 	case 0x15: /* add with left shift by 2 */
@@ -442,7 +435,6 @@ static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 		break;
 	}
 
-	arccompact_dump_fields(addr, words, &fields);
 	return op->size;
 }
 
@@ -460,7 +452,7 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 		return 0;
 	}
 	if (len < 8) {
-		//when rz_read_me32_arc/be32 oob read
+		// when rz_read_me32_arc/be32 oob read
 		return 0;
 	}
 
@@ -484,7 +476,6 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 
 	op->size = (fields.opcode >= 0x0c) ? 2 : 4;
 	op->nopcode = op->size;
-	// eprintf ("%x\n", fields.opcode);
 
 	switch (fields.opcode) {
 	case 0:
@@ -1010,7 +1001,6 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 		arcompact_branch(op, addr, fields.imm, 0);
 		break;
 	}
-	arccompact_dump_fields(addr, words, &fields);
 	return op->size;
 }
 
@@ -1083,7 +1073,7 @@ static int archinfo(RzAnalysis *analysis, int query) {
 	}
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	if (analysis->bits != 16) {
 		return false;
 	}
@@ -1135,7 +1125,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 	/* TODO: */
 	/* Should I add the Auxiliary Register Set? */
 	/* it contains the flag bits, amongst other things */
-	return rz_reg_set_profile_string(analysis->reg, p16);
+	return strdup(p16);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_arc = {
@@ -1146,7 +1136,7 @@ RzAnalysisPlugin rz_analysis_plugin_arc = {
 	.desc = "ARC code analysis plugin",
 	.op = &arc_op,
 	.archinfo = archinfo,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

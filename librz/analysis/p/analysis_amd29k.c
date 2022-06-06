@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include "../../asm/arch/amd29k/amd29k.h"
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	gp1\n"
@@ -275,7 +275,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	lr126   .32 2024 0\n"
 		"gpr	lr127   .32 2032 0\n"
 		"gpr	lr128   .32 2040 0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *a, int q) {
@@ -294,23 +294,23 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		switch (op->type) {
 		case RZ_ANALYSIS_OP_TYPE_JMP:
 			op->jump = amd29k_instr_jump(addr, &instruction);
-			//op->delay = 1;
+			// op->delay = 1;
 			break;
 		case RZ_ANALYSIS_OP_TYPE_CJMP:
 			op->jump = amd29k_instr_jump(addr, &instruction);
 			op->fail = addr + 4;
-			//op->delay = 1;
+			// op->delay = 1;
 			break;
 		case RZ_ANALYSIS_OP_TYPE_ICALL:
 			if (amd29k_instr_is_ret(&instruction)) {
 				op->type = RZ_ANALYSIS_OP_TYPE_RET;
 				op->eob = true;
 			}
-			//op->delay = 1;
+			// op->delay = 1;
 			break;
 		case RZ_ANALYSIS_OP_TYPE_RET:
 			op->eob = true;
-			//op->delay = 1;
+			// op->delay = 1;
 			break;
 		default:
 			op->delay = 0;
@@ -330,7 +330,7 @@ RzAnalysisPlugin rz_analysis_plugin_amd29k = {
 	.bits = 32,
 	.archinfo = archinfo,
 	.op = &analop,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

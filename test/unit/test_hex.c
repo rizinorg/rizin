@@ -156,11 +156,25 @@ bool test_rz_hex_no_code() {
 	mu_end;
 }
 
+bool test_rz_str2bin(void) {
+	ut8 *buf = malloc(100);
+	mu_assert_eq(rz_hex_str2bin("41424344", buf), 4, "4 bytes are written");
+	mu_assert_memeq(buf, (ut8 *)"ABCD", 4, "ABCD has been written");
+	mu_assert_eq(rz_hex_str2bin("0x41424344", buf), 4, "4 bytes are written");
+	mu_assert_memeq(buf, (ut8 *)"ABCD", 4, "ABCD has been written");
+	mu_assert_eq(rz_hex_str2bin("616263646566", buf), 6, "6 bytes are written");
+	mu_assert_memeq(buf, (ut8 *)"abcdef", 6, "abcdef has been written");
+	mu_assert_eq(rz_hex_str2bin("61626364656", buf), -6, "error should be returned");
+	free(buf);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_hex_from_c);
 	mu_run_test(test_rz_hex_from_py);
 	mu_run_test(test_rz_hex_from_code);
 	mu_run_test(test_rz_hex_no_code);
+	mu_run_test(test_rz_str2bin);
 	return tests_passed != tests_run;
 }
 

@@ -1,0 +1,1 @@
+option('is_static_build', type: 'boolean', value: false)

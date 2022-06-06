@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
+
 #define W(y)    rz_cons_canvas_write(c, y)
 #define G(x, y) rz_cons_canvas_gotoxy(c, x, y)
 
@@ -421,7 +422,7 @@ RZ_API void rz_cons_canvas_line_square_defined(RzConsCanvas *c, int x, int y, in
 			draw_horizontal_line(c, min_x, y + bendpoint + 2, w, apex_style, style->dot_style);
 			draw_vertical_line(c, x2, y + h1 + 1 + 1, h2, style->dot_style);
 		} else {
-			//TODO: currently copy-pasted
+			// TODO: currently copy-pasted
 			if (y2 == y) {
 				draw_horizontal_line(c, min_x, y, diff_x + 1, DOT_DOT, style->dot_style);
 			} else {
@@ -437,13 +438,13 @@ RZ_API void rz_cons_canvas_line_square_defined(RzConsCanvas *c, int x, int y, in
 		} else if (x2 - x > 1) {
 			int w1 = 1 + bendpoint;
 			int w2 = diff_x - w1;
-			//int h = diff_x;// == 0 ? 0 : diff_x + 1;
-			//int style = min_x == x ? APEX_DOT : DOT_APEX;
-			//draw_vertical_line (c, x, y + 1, h1);
+			// int h = diff_x;// == 0 ? 0 : diff_x + 1;
+			// int style = min_x == x ? APEX_DOT : DOT_APEX;
+			// draw_vertical_line (c, x, y + 1, h1);
 			draw_horizontal_line(c, x + 1, y, w1 + 1, y2 > y ? NRM_DOT : NRM_APEX, style->dot_style);
-			//draw_horizontal_line (c, min_x, y + bendpoint + 2, w, style);
+			// draw_horizontal_line (c, min_x, y + bendpoint + 2, w, style);
 			draw_vertical_line(c, x + 1 + w1, min_y + 1, diff_y - 1, style->dot_style);
-			//draw_vertical_line (c, x2, y + h1 + 1 + 1, h2);
+			// draw_vertical_line (c, x2, y + h1 + 1 + 1, h2);
 			draw_horizontal_line(c, x + 1 + w1, y2, w2, y2 < y ? DOT_NRM : REV_APEX_NRM, style->dot_style);
 		}
 	}

@@ -123,6 +123,28 @@ static version_opcode version_op[] = {
 	{ "v3.9.0a1", opcode_39 },
 	{ "v3.9.0a2", opcode_39 },
 	{ "v3.9.0a3", opcode_39 },
+	{ "v3.9.0a5", opcode_39 },
+	{ "v3.9.0a6", opcode_39 },
+	{ "v3.9.0b1", opcode_39 },
+	{ "v3.9.0b2", opcode_39 },
+	{ "v3.9.0b3", opcode_39 },
+	{ "v3.9.0b4", opcode_39 },
+	{ "v3.9.0b5", opcode_39 },
+	{ "v3.9.0rc1", opcode_39 },
+	{ "v3.9.0rc2", opcode_39 },
+	{ "v3.9.0", opcode_39 },
+	{ "v3.9.1", opcode_39 },
+	{ "v3.9.2", opcode_39 },
+	{ "v3.9.3", opcode_39 },
+	{ "v3.9.4", opcode_39 },
+	{ "v3.9.5", opcode_39 },
+	{ "v3.9.6", opcode_39 },
+	{ "v3.9.7", opcode_39 },
+	{ "v3.9.8", opcode_39 },
+	{ "v3.9.9", opcode_39 },
+	{ "v3.9.10", opcode_39 },
+	{ "v3.9.11", opcode_39 },
+	{ "v3.9.12", opcode_39 },
 	{ NULL, NULL },
 };
 
@@ -260,7 +282,7 @@ void(store_opN)(struct op_parameter par) {
 		def_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 		break;
 	default:
-		eprintf("Error in store_op in opcode.c, call function %u.\n", par.func);
+		RZ_LOG_ERROR("Error in store_op in pyc/opcode.c, call function %u.\n", par.func);
 		return;
 	}
 	par.op_obj[par.op_code].type |= HASSTORE;
@@ -309,6 +331,6 @@ void(rm_op)(struct op_parameter par) {
 		op_obj->op_name = rz_str_newf("<%u>", par.op_code);
 		op_obj->type = op_obj->op_pop = op_obj->op_push = 0;
 	} else {
-		eprintf("Error in rm_op() while constructing opcodes for .pyc file: \n .op_code = %u, .op_name = %s", par.op_code, par.op_name);
+		RZ_LOG_ERROR("Error in rm_op() while constructing opcodes for .pyc file: \n .op_code = %u, .op_name = %s", par.op_code, par.op_name);
 	}
 }

@@ -66,10 +66,10 @@ ESIz
 EOF
 RUN
 
-NAME=wh
+NAME=which
 FILE==
 CMDS=<<EOF
-wh rizin~?
+which rizin~?
 EOF
 EXPECT=<<EOF
 1
@@ -166,11 +166,11 @@ hello
 EOF
 RUN
 
-NAME=wt
+NAME=write to file
 FILE==
 CMDS=<<EOF
 wx 01020304
-wt .rz-wt.test 4
+pr 4 > .rz-wt.test
 p8 4 @ 4
 wff .rz-wt.test @ 4
 rm .rz-wt.test
@@ -211,7 +211,7 @@ CMDS=<<EOF
 wx 553344
 p8 3
 s
-wxs 1111
+wx 1111 @e:cfg.wseek=true
 s
 p8 2 @ -2
 EOF
@@ -322,7 +322,6 @@ EOF
 RUN
 
 NAME=w_escape
-ARGS=-ecfg.oldshell=false
 FILE==
 CMDS=<<EOF
 wv8\@10
@@ -331,6 +330,16 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 Command 'wv8@10' does not exist.
+Displaying the help of command 'wv8'.
+
+Usage: wv8 <value>   # Write value of 8 byte
+
+Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable
+
+Examples:
+| wv 0xdeadbeef # Write the value 0xdeadbeef at current offset
+| wv2 0xdead    # Write the word 0xdead at current offset
+| wv1 0xde      # Write the byte 0xde at current offset
 EOF
 RUN
 

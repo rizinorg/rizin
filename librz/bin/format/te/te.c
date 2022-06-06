@@ -18,22 +18,42 @@ ut64 rz_bin_te_get_stripped_delta(struct rz_bin_te_obj_t *bin) {
 	return 0LL;
 }
 
+#define macro_str(s) #s
+#define rz_buf_read_le8_at(a, b, c) \
+	(rz_buf_read_at(a, b, (ut8 *)c, sizeof(ut8)) == 1)
+#define parse_header_value(off, bits, key) \
+	do { \
+		if (!rz_buf_read_le##bits##_at(bin->b, off, &bin->header->key)) { \
+			RZ_LOG_ERROR("Cannot read TE_image_file_header." macro_str(key) "\n"); \
+			return false; \
+		} \
+		off += (bits / 8); \
+	} while (0)
+
 static int rz_bin_te_init_hdr(struct rz_bin_te_obj_t *bin) {
 	if (!bin) {
 		return false;
-	}
-	if (!(bin->header = malloc(sizeof(TE_image_file_header)))) {
-		rz_sys_perror("malloc (header)");
+	} else if (!bin->kv) {
+		RZ_LOG_ERROR("Sdb instance is empty\n");
+		return false;
+	} else if (!(bin->header = malloc(sizeof(TE_image_file_header)))) {
+		RZ_LOG_ERROR("cannot allocate TE_image_file_header\n");
 		return false;
 	}
-	if (rz_buf_read_at(bin->b, 0, (ut8 *)bin->header, sizeof(TE_image_file_header)) == -1) {
-		eprintf("Error: read (header)\n");
-		return false;
-	}
-	if (!bin->kv) {
-		eprintf("Error: sdb instance is empty\n");
-		return false;
-	}
+
+	ut64 offset = 0;
+	parse_header_value(offset, 16, Signature);
+	parse_header_value(offset, 16, Machine);
+	parse_header_value(offset, 8, NumberOfSections);
+	parse_header_value(offset, 8, Subsystem);
+	parse_header_value(offset, 16, StrippedSize);
+	parse_header_value(offset, 32, AddressOfEntryPoint);
+	parse_header_value(offset, 32, BaseOfCode);
+	parse_header_value(offset, 64, ImageBase);
+	parse_header_value(offset, 32, DataDirectory[0].VirtualAddress);
+	parse_header_value(offset, 32, DataDirectory[0].Size);
+	parse_header_value(offset, 32, DataDirectory[1].VirtualAddress);
+	parse_header_value(offset, 32, DataDirectory[1].Size);
 
 	sdb_set(bin->kv, "te_machine.cparse", "enum te_machine { TE_IMAGE_FILE_MACHINE_UNKNOWN=0x0, TE_IMAGE_FILE_MACHINE_ALPHA=0x184, "
 					      "TE_IMAGE_FILE_MACHINE_ALPHA64=0x284, TE_IMAGE_FILE_MACHINE_AM33=0x1d3, TE_IMAGE_FILE_MACHINE_AMD64=0x8664, "
@@ -353,7 +373,7 @@ struct rz_bin_te_section_t *rz_bin_te_get_sections(struct rz_bin_te_obj_t *bin) 
 	for (i = 0; i < sections_count; i++) {
 		memcpy(sections[i].name, shdr[i].Name, TE_IMAGE_SIZEOF_NAME);
 		// not a null terminated string if len==buflen
-		//sections[i].name[TE_IMAGE_SIZEOF_NAME] = '\0';
+		// sections[i].name[TE_IMAGE_SIZEOF_NAME] = '\0';
 		sections[i].vaddr = shdr[i].VirtualAddress - rz_bin_te_get_stripped_delta(bin);
 		sections[i].size = shdr[i].SizeOfRawData;
 		sections[i].vsize = shdr[i].VirtualSize;

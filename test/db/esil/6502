@@ -5,11 +5,11 @@ e asm.arch=6502;e asm.bits=8; aei
 ae 0xc000,0xfffe,=[2]
 ar C=1
 wx 00ea
-aes; ar pc; ar flags; pu 3 @0x1fd
+aes; ar pc; ar flags; pu 3 @ 0x1fd
 EOF
 EXPECT=<<EOF
-0x0000c000
-0x00000005
+pc = 0x0000c000
+flags = 0x00000005
 %02%00%15
 EOF
 RUN
@@ -23,7 +23,7 @@ aes
 ar a
 EOF
 EXPECT=<<EOF
-0x00000042
+a = 0x00000042
 EOF
 RUN
 
@@ -37,7 +37,7 @@ aes
 ar a
 EOF
 EXPECT=<<EOF
-0x00000042
+a = 0x00000042
 EOF
 RUN
 
@@ -52,7 +52,7 @@ aes
 ar a
 EOF
 EXPECT=<<EOF
-0x00000042
+a = 0x00000042
 EOF
 RUN
 
@@ -66,7 +66,7 @@ aes
 ar a
 EOF
 EXPECT=<<EOF
-0x00000042
+a = 0x00000042
 EOF
 RUN
 
@@ -81,7 +81,7 @@ aes
 ar a
 EOF
 EXPECT=<<EOF
-0x00000042
+a = 0x00000042
 EOF
 RUN
 
@@ -96,7 +96,7 @@ aes
 ar a
 EOF
 EXPECT=<<EOF
-0x00000042
+a = 0x00000042
 EOF
 RUN
 
@@ -112,7 +112,7 @@ aes
 ar a
 EOF
 EXPECT=<<EOF
-0x00000042
+a = 0x00000042
 EOF
 RUN
 
@@ -128,7 +128,7 @@ aes
 ar a
 EOF
 EXPECT=<<EOF
-0x00000042
+a = 0x00000042
 EOF
 RUN
 
@@ -141,7 +141,7 @@ aes
 ar x
 EOF
 EXPECT=<<EOF
-0x00000042
+x = 0x00000042
 EOF
 RUN
 
@@ -155,7 +155,7 @@ aes
 ar x
 EOF
 EXPECT=<<EOF
-0x00000042
+x = 0x00000042
 EOF
 RUN
 
@@ -170,7 +170,7 @@ aes
 ar x
 EOF
 EXPECT=<<EOF
-0x00000042
+x = 0x00000042
 EOF
 RUN
 
@@ -184,7 +184,7 @@ aes
 ar x
 EOF
 EXPECT=<<EOF
-0x00000042
+x = 0x00000042
 EOF
 RUN
 
@@ -199,7 +199,7 @@ aes
 ar x
 EOF
 EXPECT=<<EOF
-0x00000042
+x = 0x00000042
 EOF
 RUN
 
@@ -212,7 +212,7 @@ aes
 ar y
 EOF
 EXPECT=<<EOF
-0x00000042
+y = 0x00000042
 EOF
 RUN
 
@@ -226,7 +226,7 @@ aes
 ar y
 EOF
 EXPECT=<<EOF
-0x00000042
+y = 0x00000042
 EOF
 RUN
 
@@ -241,7 +241,7 @@ aes
 ar y
 EOF
 EXPECT=<<EOF
-0x00000042
+y = 0x00000042
 EOF
 RUN
 
@@ -255,7 +255,7 @@ aes
 ar y
 EOF
 EXPECT=<<EOF
-0x00000042
+y = 0x00000042
 EOF
 RUN
 
@@ -270,7 +270,7 @@ aes
 ar y
 EOF
 EXPECT=<<EOF
-0x00000042
+y = 0x00000042
 EOF
 RUN
 
@@ -281,10 +281,10 @@ e asm.arch=6502; e asm.bits=8; aei
 ar a=0x42
 wx 8510
 aes
-pu 1 @0x10
+pu 1 @ 0x10
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -296,10 +296,10 @@ ar a=0x42
 ar x=0x08
 wx 9510
 aes
-pu 1 @0x18
+pu 1 @ 0x18
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -310,10 +310,10 @@ e asm.arch=6502; e asm.bits=8; aei
 ar a=0x42
 wx 8d0001
 aes
-pu 1 @0x0100
+pu 1 @ 0x0100
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -325,10 +325,10 @@ ar a=0x42
 ar x=0x08
 wx 9d0001
 aes
-pu 1 @0x0108
+pu 1 @ 0x0108
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -340,10 +340,10 @@ ar a=0x42
 ar y=0x08
 wx 990001
 aes
-pu 1 @0x0108
+pu 1 @ 0x0108
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -356,10 +356,10 @@ ar a=0x42
 ar x=0x08
 wx 8110
 aes
-pu 1 @0x0108
+pu 1 @ 0x0108
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -372,10 +372,10 @@ ar a=0x42
 ar y=0x08
 wx 9110
 aes
-pu 1 @0x0108
+pu 1 @ 0x0108
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -386,10 +386,10 @@ e asm.arch=6502; e asm.bits=8; aei
 ar x=0x42
 wx 8610
 aes
-pu 1 @0x10
+pu 1 @ 0x10
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -401,10 +401,10 @@ ar x=0x42
 ar y=0x08
 wx 9610
 aes
-pu 1 @0x18
+pu 1 @ 0x18
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -415,10 +415,10 @@ e asm.arch=6502; e asm.bits=8; aei
 ar x=0x42
 wx 8e0001
 aes
-pu 1 @0x0100
+pu 1 @ 0x0100
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -429,10 +429,10 @@ e asm.arch=6502; e asm.bits=8; aei
 ar y=0x42
 wx 8410
 aes
-pu 1 @0x10
+pu 1 @ 0x10
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -444,10 +444,10 @@ ar y=0x42
 ar x=0x08
 wx 9410
 aes
-pu 1 @0x18
+pu 1 @ 0x18
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -458,10 +458,10 @@ e asm.arch=6502; e asm.bits=8; aei
 ar y=0x42
 wx 8c0001
 aes
-pu 1 @0x0100
+pu 1 @ 0x0100
 EOF
 EXPECT=<<EOF
-%42
+B
 EOF
 RUN
 
@@ -471,11 +471,11 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ae 0x7f,0x80,=[1]
 wx e680
-aes; pu 1 @0x80; ar flags
+aes; pu 1 @ 0x80; ar flags
 EOF
 EXPECT=<<EOF
 %80
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -486,11 +486,11 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x7f,0x88,=[1]
 ar x=8
 wx f680
-aes; pu 1 @0x88; ar flags
+aes; pu 1 @ 0x88; ar flags
 EOF
 EXPECT=<<EOF
 %80
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -500,11 +500,11 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ae 0xff,0x0100,=[1]
 wx ee0001
-aes; pu 1 @0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
 EOF
 EXPECT=<<EOF
 %00
-0x00000002
+flags = 0x00000002
 EOF
 RUN
 
@@ -515,11 +515,11 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0xfe,0x0108,=[1]
 ar x=8
 wx fe0001
-aes; pu 1 @0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
 EOF
 EXPECT=<<EOF
 %ff
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -529,11 +529,11 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ae 0x7f,0x80,=[1]
 wx c680
-aes; pu 1 @0x80; ar flags
+aes; pu 1 @ 0x80; ar flags
 EOF
 EXPECT=<<EOF
-%7e
-0x00000000
+~
+flags = 0x00000000
 EOF
 RUN
 
@@ -544,11 +544,11 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x00,0x88,=[1]
 ar x=8
 wx d680
-aes; pu 1 @0x88; ar flags
+aes; pu 1 @ 0x88; ar flags
 EOF
 EXPECT=<<EOF
 %ff
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -558,11 +558,11 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ae 0x80,0x0100,=[1]
 wx ce0001
-aes; pu 1 @0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
 EOF
 EXPECT=<<EOF
 %7f
-0x00000000
+flags = 0x00000000
 EOF
 RUN
 
@@ -573,11 +573,11 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x01,0x0108,=[1]
 ar x=8
 wx de0001
-aes; pu 1 @0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
 EOF
 EXPECT=<<EOF
 %00
-0x00000002
+flags = 0x00000002
 EOF
 RUN
 
@@ -591,7 +591,7 @@ aes
 ar x
 EOF
 EXPECT=<<EOF
-0x00000042
+x = 0x00000042
 EOF
 RUN
 
@@ -605,7 +605,7 @@ aes
 ar x
 EOF
 EXPECT=<<EOF
-0x00000042
+x = 0x00000042
 EOF
 RUN
 
@@ -619,7 +619,7 @@ aes
 ar y
 EOF
 EXPECT=<<EOF
-0x00000042
+y = 0x00000042
 EOF
 RUN
 
@@ -633,7 +633,7 @@ aes
 ar y
 EOF
 EXPECT=<<EOF
-0x00000042
+y = 0x00000042
 EOF
 RUN
 
@@ -648,12 +648,12 @@ aes; ar a; ar flags
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000040
-0x00000000
-0x00000080
-0x00000080
-0x00000000
-0x00000003
+a = 0x00000040
+flags = 0x00000000
+a = 0x00000080
+flags = 0x00000080
+a = 0x00000000
+flags = 0x00000003
 EOF
 RUN
 
@@ -663,17 +663,17 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ae 0x20,0x10,=[1]
 wx 061006100610
-aes; pu 1 @0x10; ar flags
-aes; pu 1 @0x10; ar flags
-aes; pu 1 @0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
 EOF
 EXPECT=<<EOF
 %40
-0x00000000
+flags = 0x00000000
 %80
-0x00000080
+flags = 0x00000080
 %00
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -684,17 +684,17 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x20,0x18,=[1]
 ar x=0x08
 wx 161016101610
-aes; pu 1 @0x18; ar flags
-aes; pu 1 @0x18; ar flags
-aes; pu 1 @0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
 EOF
 EXPECT=<<EOF
 %40
-0x00000000
+flags = 0x00000000
 %80
-0x00000080
+flags = 0x00000080
 %00
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -704,17 +704,17 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ae 0x20,0x0100,=[1]
 wx 0e00010e00010e0001
-aes; pu 1 @0x0100; ar flags
-aes; pu 1 @0x0100; ar flags
-aes; pu 1 @0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
 EOF
 EXPECT=<<EOF
 %40
-0x00000000
+flags = 0x00000000
 %80
-0x00000080
+flags = 0x00000080
 %00
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -725,17 +725,17 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x20,0x0108,=[1]
 ar x=0x08
 wx 1e00011e00011e0001
-aes; pu 1 @0x0108; ar flags
-aes; pu 1 @0x0108; ar flags
-aes; pu 1 @0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
 EOF
 EXPECT=<<EOF
 %40
-0x00000000
+flags = 0x00000000
 %80
-0x00000080
+flags = 0x00000080
 %00
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -750,12 +750,12 @@ aes; ar a; ar flags
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000001
-0x00000000
-0x00000000
-0x00000003
+a = 0x00000002
+flags = 0x00000000
+a = 0x00000001
+flags = 0x00000000
+a = 0x00000000
+flags = 0x00000003
 EOF
 RUN
 
@@ -765,17 +765,17 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ae 0x04,0x10,=[1]
 wx 461046104610
-aes; pu 1 @0x10; ar flags
-aes; pu 1 @0x10; ar flags
-aes; pu 1 @0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
 EOF
 EXPECT=<<EOF
 %02
-0x00000000
+flags = 0x00000000
 %01
-0x00000000
+flags = 0x00000000
 %00
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -786,17 +786,17 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x04,0x18,=[1]
 ar x=0x08
 wx 561056105610
-aes; pu 1 @0x18; ar flags
-aes; pu 1 @0x18; ar flags
-aes; pu 1 @0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
 EOF
 EXPECT=<<EOF
 %02
-0x00000000
+flags = 0x00000000
 %01
-0x00000000
+flags = 0x00000000
 %00
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -806,17 +806,17 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ae 0x04,0x0100,=[1]
 wx 4e00014e00014e0001
-aes; pu 1 @0x0100; ar flags
-aes; pu 1 @0x0100; ar flags
-aes; pu 1 @0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
 EOF
 EXPECT=<<EOF
 %02
-0x00000000
+flags = 0x00000000
 %01
-0x00000000
+flags = 0x00000000
 %00
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -827,17 +827,17 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x04,0x0108,=[1]
 ar x=0x08
 wx 5e00015e00015e0001
-aes; pu 1 @0x0108; ar flags
-aes; pu 1 @0x0108; ar flags
-aes; pu 1 @0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
 EOF
 EXPECT=<<EOF
 %02
-0x00000000
+flags = 0x00000000
 %01
-0x00000000
+flags = 0x00000000
 %00
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -852,12 +852,12 @@ aes; ar a; ar flags
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
-0x00000081
-0x00000001
-0x00000001
-0x00000003
-0x00000000
+a = 0x00000080
+flags = 0x00000081
+a = 0x00000001
+flags = 0x00000001
+a = 0x00000003
+flags = 0x00000000
 EOF
 RUN
 
@@ -867,17 +867,17 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ae 0xc0,0x10,=[1]
 wx 261026102610
-aes; pu 1 @0x10; ar flags
-aes; pu 1 @0x10; ar flags
-aes; pu 1 @0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
 EOF
 EXPECT=<<EOF
 %80
-0x00000081
+flags = 0x00000081
 %01
-0x00000001
+flags = 0x00000001
 %03
-0x00000000
+flags = 0x00000000
 EOF
 RUN
 
@@ -889,17 +889,17 @@ ae 0x00,0x18,=[1]
 ar x=0x08
 ar C=1
 wx 361036103610
-aes; pu 1 @0x18; ar flags
-aes; pu 1 @0x18; ar flags
-aes; pu 1 @0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
 EOF
 EXPECT=<<EOF
 %01
-0x00000000
+flags = 0x00000000
 %02
-0x00000000
+flags = 0x00000000
 %04
-0x00000000
+flags = 0x00000000
 EOF
 RUN
 
@@ -910,17 +910,17 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x80,0x0100,=[1]
 ar C=1
 wx 2e00012e00012e0001
-aes; pu 1 @0x0100; ar flags
-aes; pu 1 @0x0100; ar flags
-aes; pu 1 @0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
 EOF
 EXPECT=<<EOF
 %01
-0x00000001
+flags = 0x00000001
 %03
-0x00000000
+flags = 0x00000000
 %06
-0x00000000
+flags = 0x00000000
 EOF
 RUN
 
@@ -931,17 +931,17 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x81,0x0108,=[1]
 ar x=0x08
 wx 3e00013e00013e0001
-aes; pu 1 @0x0108; ar flags
-aes; pu 1 @0x0108; ar flags
-aes; pu 1 @0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
 EOF
 EXPECT=<<EOF
 %02
-0x00000001
+flags = 0x00000001
 %05
-0x00000000
+flags = 0x00000000
 %0a
-0x00000000
+flags = 0x00000000
 EOF
 RUN
 
@@ -956,12 +956,12 @@ aes; ar a; ar flags
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000060
-0x00000000
-0x00000030
-0x00000000
-0x00000018
-0x00000000
+a = 0x00000060
+flags = 0x00000000
+a = 0x00000030
+flags = 0x00000000
+a = 0x00000018
+flags = 0x00000000
 EOF
 RUN
 
@@ -972,17 +972,17 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0x60,0x10,=[1]
 ar C=1
 wx 661066106610
-aes; pu 1 @0x10; ar flags
-aes; pu 1 @0x10; ar flags
-aes; pu 1 @0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
+aes; pu 1 @ 0x10; ar flags
 EOF
 EXPECT=<<EOF
 %b0
-0x00000080
-%58
-0x00000000
+flags = 0x00000080
+X
+flags = 0x00000000
 %2c
-0x00000000
+flags = 0x00000000
 EOF
 RUN
 
@@ -994,17 +994,17 @@ ae 0xc0,0x18,=[1]
 ar x=0x08
 ar C=1
 wx 761076107610
-aes; pu 1 @0x18; ar flags
-aes; pu 1 @0x18; ar flags
-aes; pu 1 @0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
+aes; pu 1 @ 0x18; ar flags
 EOF
 EXPECT=<<EOF
 %e0
-0x00000080
-%70
-0x00000000
-%38
-0x00000000
+flags = 0x00000080
+p
+flags = 0x00000000
+8
+flags = 0x00000000
 EOF
 RUN
 
@@ -1015,17 +1015,17 @@ e asm.arch=6502; e asm.bits=8; aei
 ae 0xff,0x0100,=[1]
 ar C=0
 wx 6e00016e00016e0001
-aes; pu 1 @0x0100; ar flags
-aes; pu 1 @0x0100; ar flags
-aes; pu 1 @0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
+aes; pu 1 @ 0x0100; ar flags
 EOF
 EXPECT=<<EOF
 %7f
-0x00000001
+flags = 0x00000001
 %bf
-0x00000081
+flags = 0x00000081
 %df
-0x00000081
+flags = 0x00000081
 EOF
 RUN
 
@@ -1037,17 +1037,17 @@ ae 0xff,0x0108,=[1]
 ar C=1
 ar x=0x08
 wx 7e00017e00017e0001
-aes; pu 1 @0x0108; ar flags
-aes; pu 1 @0x0108; ar flags
-aes; pu 1 @0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
+aes; pu 1 @ 0x0108; ar flags
 EOF
 EXPECT=<<EOF
 %ff
-0x00000081
+flags = 0x00000081
 %ff
-0x00000081
+flags = 0x00000081
 %ff
-0x00000081
+flags = 0x00000081
 EOF
 RUN
 
@@ -1060,7 +1060,7 @@ wx c942
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -1074,7 +1074,7 @@ wx c510
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1089,7 +1089,7 @@ wx d510
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000081
+flags = 0x00000081
 EOF
 RUN
 
@@ -1103,7 +1103,7 @@ wx cd0001
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1118,7 +1118,7 @@ wx dd0001
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -1133,7 +1133,7 @@ wx d90001
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -1149,7 +1149,7 @@ wx c110
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1165,7 +1165,7 @@ wx d110
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000001
+flags = 0x00000001
 EOF
 RUN
 
@@ -1178,7 +1178,7 @@ wx e042
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -1192,7 +1192,7 @@ wx e410
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1206,7 +1206,7 @@ wx ec0001
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000001
+flags = 0x00000001
 EOF
 RUN
 
@@ -1219,7 +1219,7 @@ wx c082
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000003
+flags = 0x00000003
 EOF
 RUN
 
@@ -1233,7 +1233,7 @@ wx c410
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000081
+flags = 0x00000081
 EOF
 RUN
 
@@ -1247,7 +1247,7 @@ wx cc0001
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1261,8 +1261,8 @@ wx 69ff
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000003
+a = 0x00000000
+flags = 0x00000003
 EOF
 RUN
 
@@ -1277,8 +1277,8 @@ wx 6510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000083
-0x00000080
+a = 0x00000083
+flags = 0x00000080
 EOF
 RUN
 
@@ -1293,8 +1293,8 @@ wx 7510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
+a = 0x00000002
+flags = 0x00000001
 EOF
 RUN
 
@@ -1308,8 +1308,8 @@ wx 6d0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000003
+a = 0x00000000
+flags = 0x00000003
 EOF
 RUN
 
@@ -1325,8 +1325,8 @@ wx 7d0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+a = 0x00000001
+flags = 0x00000000
 EOF
 RUN
 
@@ -1341,8 +1341,8 @@ wx 790001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000002
+a = 0x00000000
+flags = 0x00000002
 EOF
 RUN
 
@@ -1358,8 +1358,8 @@ wx 6110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
-0x00000080
+a = 0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1375,8 +1375,8 @@ wx 7110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
-0x00000080
+a = 0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1390,8 +1390,8 @@ wx e910
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000030
-0x00000001
+a = 0x00000030
+flags = 0x00000001
 EOF
 RUN
 
@@ -1406,8 +1406,8 @@ wx e510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000040
-0x00000001
+a = 0x00000040
+flags = 0x00000001
 EOF
 RUN
 
@@ -1423,8 +1423,8 @@ wx f510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
-0x00000080
+a = 0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1439,8 +1439,8 @@ wx ed0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000040
-0x00000001
+a = 0x00000040
+flags = 0x00000001
 EOF
 RUN
 
@@ -1456,8 +1456,8 @@ wx fd0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x0000003f
-0x00000001
+a = 0x0000003f
+flags = 0x00000001
 EOF
 RUN
 
@@ -1473,8 +1473,8 @@ wx f90001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x000000ff
-0x00000080
+a = 0x000000ff
+flags = 0x00000080
 EOF
 RUN
 
@@ -1491,8 +1491,8 @@ wx e110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x000000ff
-0x00000080
+a = 0x000000ff
+flags = 0x00000080
 EOF
 RUN
 
@@ -1509,8 +1509,8 @@ wx f110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000002
+a = 0x00000000
+flags = 0x00000002
 EOF
 RUN
 
@@ -1523,8 +1523,8 @@ wx 0980
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+a = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -1538,8 +1538,8 @@ wx 0510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+a = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -1554,8 +1554,8 @@ wx 1510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+a = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -1569,8 +1569,8 @@ wx 0d0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+a = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -1585,8 +1585,8 @@ wx 1d0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+a = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -1601,8 +1601,8 @@ wx 190001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+a = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -1618,8 +1618,8 @@ wx 0110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+a = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -1635,8 +1635,8 @@ wx 1110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+a = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -1649,8 +1649,8 @@ wx 2982
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+a = 0x00000002
+flags = 0x00000000
 EOF
 RUN
 
@@ -1664,8 +1664,8 @@ wx 2510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000002
+a = 0x00000000
+flags = 0x00000002
 EOF
 RUN
 
@@ -1680,8 +1680,8 @@ wx 3510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
-0x00000080
+a = 0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1695,8 +1695,8 @@ wx 2d0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+a = 0x00000002
+flags = 0x00000000
 EOF
 RUN
 
@@ -1711,8 +1711,8 @@ wx 3d0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000002
+a = 0x00000000
+flags = 0x00000002
 EOF
 RUN
 
@@ -1727,8 +1727,8 @@ wx 390001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x0000001f
-0x00000000
+a = 0x0000001f
+flags = 0x00000000
 EOF
 RUN
 
@@ -1744,8 +1744,8 @@ wx 2110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
-0x00000080
+a = 0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1761,8 +1761,8 @@ wx 3110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
-0x00000080
+a = 0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1775,8 +1775,8 @@ wx 49ff
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000002
+a = 0x00000000
+flags = 0x00000002
 EOF
 RUN
 
@@ -1790,8 +1790,8 @@ wx 4510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000002
+a = 0x00000000
+flags = 0x00000002
 EOF
 RUN
 
@@ -1806,8 +1806,8 @@ wx 5510
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
-0x00000080
+a = 0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -1821,8 +1821,8 @@ wx 4d0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x0000007f
-0x00000000
+a = 0x0000007f
+flags = 0x00000000
 EOF
 RUN
 
@@ -1837,8 +1837,8 @@ wx 5d0001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x000000f0
-0x00000080
+a = 0x000000f0
+flags = 0x00000080
 EOF
 RUN
 
@@ -1853,8 +1853,8 @@ wx 590001
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x0000000f
-0x00000000
+a = 0x0000000f
+flags = 0x00000000
 EOF
 RUN
 
@@ -1870,8 +1870,8 @@ wx 4110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+a = 0x00000002
+flags = 0x00000000
 EOF
 RUN
 
@@ -1887,8 +1887,8 @@ wx 5110
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+a = 0x00000002
+flags = 0x00000000
 EOF
 RUN
 
@@ -1901,7 +1901,7 @@ wx d040
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x00000042
+pc = 0x00000042
 EOF
 RUN
 
@@ -1914,7 +1914,7 @@ wx f040
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x00000002
+pc = 0x00000002
 EOF
 RUN
 
@@ -1927,7 +1927,7 @@ wx 9040
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x00000002
+pc = 0x00000002
 EOF
 RUN
 
@@ -1940,7 +1940,7 @@ wx b040
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x00000042
+pc = 0x00000042
 EOF
 RUN
 
@@ -1953,7 +1953,7 @@ wx 3040
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x00000042
+pc = 0x00000042
 EOF
 RUN
 
@@ -1966,7 +1966,7 @@ wx 1040
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x00000042
+pc = 0x00000042
 EOF
 RUN
 
@@ -1979,7 +1979,7 @@ wx 5040
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x00000002
+pc = 0x00000002
 EOF
 RUN
 
@@ -1992,7 +1992,7 @@ wx 7040
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x00000002
+pc = 0x00000002
 EOF
 RUN
 
@@ -2004,7 +2004,7 @@ wx 4ccdab
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x0000abcd
+pc = 0x0000abcd
 EOF
 RUN
 
@@ -2017,7 +2017,7 @@ wx 6c0001
 aes; ar pc
 EOF
 EXPECT=<<EOF
-0x0000abcd
+pc = 0x0000abcd
 EOF
 RUN
 
@@ -2028,11 +2028,11 @@ e asm.arch=6502; e asm.bits=8; aei
 ar pc=0x0180
 s 0x0180
 wx 20cdab
-aes; ar pc; ar sp; pu 2 @0x01fe
+aes; ar pc; ar sp; pu 2 @ 0x01fe
 EOF
 EXPECT=<<EOF
-0x0000abcd
-0x000000fd
+pc = 0x0000abcd
+sp = 0x000000fd
 %82%01
 EOF
 RUN
@@ -2048,8 +2048,8 @@ wx 60
 aes; ar pc; ar sp
 EOF
 EXPECT=<<EOF
-0x00000126
-0x000000ff
+pc = 0x00000126
+sp = 0x000000ff
 EOF
 RUN
 
@@ -2059,10 +2059,10 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ar a=0x81
 wx 48
-aes; ar sp; pu 1 @0x1ff
+aes; ar sp; pu 1 @ 0x1ff
 EOF
 EXPECT=<<EOF
-0x000000fe
+sp = 0x000000fe
 %81
 EOF
 RUN
@@ -2073,10 +2073,10 @@ CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
 ar flags=0x82
 wx 08
-aes; ar sp; pu 1 @0x1ff
+aes; ar sp; pu 1 @ 0x1ff
 EOF
 EXPECT=<<EOF
-0x000000fe
+sp = 0x000000fe
 %82
 EOF
 RUN
@@ -2091,9 +2091,9 @@ wx 68
 aes; ar sp; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x000000ff
-0x000000ff
-0x00000080
+sp = 0x000000ff
+a = 0x000000ff
+flags = 0x00000080
 EOF
 RUN
 
@@ -2107,8 +2107,8 @@ wx 28
 aes; ar sp; ar flags
 EOF
 EXPECT=<<EOF
-0x000000ff
-0x00000003
+sp = 0x000000ff
+flags = 0x00000003
 EOF
 RUN
 
@@ -2121,8 +2121,8 @@ wx aa
 aes; ar x; ar flags
 EOF
 EXPECT=<<EOF
-0x00000042
-0x00000000
+x = 0x00000042
+flags = 0x00000000
 EOF
 RUN
 
@@ -2135,8 +2135,8 @@ wx a8
 aes; ar y; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+y = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -2149,8 +2149,8 @@ wx 8a
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000042
-0x00000000
+a = 0x00000042
+flags = 0x00000000
 EOF
 RUN
 
@@ -2163,8 +2163,8 @@ wx 98
 aes; ar a; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+a = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -2177,8 +2177,8 @@ wx ba
 aes; ar x; ar flags
 EOF
 EXPECT=<<EOF
-0x00000082
-0x00000080
+x = 0x00000082
+flags = 0x00000080
 EOF
 RUN
 
@@ -2191,7 +2191,7 @@ wx 9a
 aes; ar sp
 EOF
 EXPECT=<<EOF
-0x00000082
+sp = 0x00000082
 EOF
 RUN
 
@@ -2205,7 +2205,7 @@ wx 2480
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000080
+flags = 0x00000080
 EOF
 RUN
 
@@ -2219,7 +2219,7 @@ wx 2480
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x000000c2
+flags = 0x000000c2
 EOF
 RUN
 
@@ -2233,7 +2233,7 @@ wx 2c0001
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000040
+flags = 0x00000040
 EOF
 RUN
 
@@ -2247,7 +2247,7 @@ wx 2c0001
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x000000c0
+flags = 0x000000c0
 EOF
 RUN
 
@@ -2259,7 +2259,7 @@ wx 78
 aes; ar I
 EOF
 EXPECT=<<EOF
-0x00000001
+I = 0x00000001
 EOF
 RUN
 
@@ -2272,7 +2272,7 @@ wx 58
 aes; ar I
 EOF
 EXPECT=<<EOF
-0x00000000
+I = 0x00000000
 EOF
 RUN
 
@@ -2284,7 +2284,7 @@ wx 38
 aes; ar C
 EOF
 EXPECT=<<EOF
-0x00000001
+C = 0x00000001
 EOF
 RUN
 
@@ -2297,7 +2297,7 @@ wx 18
 aes; ar C
 EOF
 EXPECT=<<EOF
-0x00000000
+C = 0x00000000
 EOF
 RUN
 
@@ -2309,7 +2309,7 @@ wx f8
 aes; ar D
 EOF
 EXPECT=<<EOF
-0x00000001
+D = 0x00000001
 EOF
 RUN
 
@@ -2322,7 +2322,7 @@ wx d8
 aes; ar D
 EOF
 EXPECT=<<EOF
-0x00000000
+D = 0x00000000
 EOF
 RUN
 
@@ -2335,7 +2335,7 @@ wx b8
 aes; ar V
 EOF
 EXPECT=<<EOF
-0x00000000
+V = 0x00000000
 EOF
 RUN
 
@@ -2361,19 +2361,19 @@ aes; ar flags
 aes; ar flags
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000000
-0x00000000
-0x00000080
-0x00000081
-0x00000081
-0x00000081
-0x00000003
-0x00000002
-0x00000002
-0x00000000
-0x00000000
-0x00000080
-0x00000080
+flags = 0x00000000
+flags = 0x00000000
+flags = 0x00000000
+flags = 0x00000080
+flags = 0x00000081
+flags = 0x00000081
+flags = 0x00000081
+flags = 0x00000003
+flags = 0x00000002
+flags = 0x00000002
+flags = 0x00000000
+flags = 0x00000000
+flags = 0x00000080
+flags = 0x00000080
 EOF
 RUN

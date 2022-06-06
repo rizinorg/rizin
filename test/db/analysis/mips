@@ -41,10 +41,10 @@ FILE=bins/elf/analysis/busybox-mips
 ARGS=-e bin.strings=false -e analysis.strings=true
 CMDS=<<EOF
 e asm.bytes=true
-aae @entry0
-pd 1 @0x00406228
+aae @ entry0
+pd 1 @ 0x00406228
 fs strings
-axt str.busybox
+axt @ str.busybox
 EOF
 EXPECT=<<EOF
             0x00406228      fcc38424       addiu a0, a0, -0x3c04       ; 0x44c3fc ; "busybox" ; str.busybox
@@ -52,7 +52,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Calculate GP 
+NAME=Calculate GP
 FILE=bins/elf/analysis/mips64r2-ld-2.28.so
 CMDS=<<EOF
 s 0x000023f0
@@ -67,12 +67,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mips ld(load doubleword) instruction 
+NAME=mips ld(load doubleword) instruction
 FILE=bins/elf/analysis/mips64r2-busybox-loongson
 CMDS=<<EOF
 s 0x120004460
 e asm.bytes=true
-f--
+f-*
+fs-*
 pd 1
 EOF
 EXPECT=<<EOF
@@ -83,8 +84,8 @@ RUN
 NAME=gp-based ref
 FILE=bins/elf/analysis/mips-hello
 CMDS=<<EOF
-aae @entry0
-axt str.Hello_World
+aae @ entry0
+axt @ str.Hello_World
 EOF
 EXPECT=<<EOF
 (nofunc); str.Hello_World 0x805c4 [DATA] addiu a0, v0, str.Hello_World
@@ -138,9 +139,9 @@ FILE=bins/elf/analysis/mips-hello
 ARGS=-e bin.strings=false -e analysis.strings=false
 CMDS=<<EOF
 e asm.bytes=true
-pd 1 @main+0x18
+pd 1 @ main+0x18
 e asm.pseudo=true
-pd 1 @main+0x18
+pd 1 @ main+0x18
 EOF
 EXPECT=<<EOF
             0x000805b8      21f0a003       move  fp, sp
@@ -188,7 +189,7 @@ wx 0000000000000000010000100000000000000000
 e asm.bits=32
 e asm.arch=mips
 e asm.nbytes=4
-af+ 0x80100000 fcn.test
+af+ fcn.test @ 0x80100000
 afb+ 0x80100000 0x80100000 20
 pif
 EOF
@@ -282,7 +283,7 @@ e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
 s 0x80100000
-wx 0800e0030a184400000000000000000000000
+wx 0800e0030a1844000000000000000000000000
 af 2>/dev/null
 pdf
 EOF
@@ -302,7 +303,7 @@ e asm.bytes=true
 e asm.arch=mips
 e asm.nbytes=4
 e asm.lines.fcn=false
-wx 0800e0030a184400000000000000000000000
+wx 0800e0030a1844000000000000000000000000
 af 2> /dev/null
 pdf
 EOF
@@ -328,7 +329,7 @@ e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
 s 0x80100000
-wx e0ffbd27000000000100001000000000fdff09150a1844000800e0032000bd27000000000000000000000
+wx e0ffbd27000000000100001000000000fdff09150a1844000800e0032000bd270000000000000000000000
 af 2> /dev/null
 pdf
 EOF
@@ -361,7 +362,7 @@ e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
 s 0x80100000
-wx e0ffbd27000000000100001000000000000000000a1844000800e003 2000bd27000000000000000000000
+wx e0ffbd27000000000100001000000000000000000a1844000800e003 2000bd270000000000000000000000
 af 2> /dev/null
 pdf
 EOF
@@ -393,7 +394,7 @@ e analysis.nopskip=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
-wx e0ffbd27000000000000000000000000fdff09150a1844000800e0032000bd27000000000000000000000
+wx e0ffbd27000000000000000000000000fdff09150a1844000800e0032000bd270000000000000000000000
 af 2> /dev/null
 pdf
 EOF
@@ -425,7 +426,7 @@ e analysis.nopskip=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
-wx e0ffbd27000000000000000000000000fdff09150000000001000010000000000a1844000800e0032000bd27000000000000000000000
+wx e0ffbd27000000000000000000000000fdff09150000000001000010000000000a1844000800e0032000bd270000000000000000000000
 af 2> /dev/null
 pdf
 EOF
@@ -740,5 +741,48 @@ EXPECT=<<EOF
             0x004020a4      8f888114       lw    t0, -sym._fini(gp)    ; [0x4351f4:4]=0x41eca0 sym._fini
             0x004020a8      afa80010       sw    t0, 0x10(sp)
             0x004020ac      afa20014       sw    v0, 0x14(sp)
+EOF
+RUN
+
+NAME=mips.gnu regs
+FILE=
+CMDS=<<EOF
+e asm.arch=mips.gnu
+ar
+EOF
+EXPECT=<<EOF
+zero = 0x00000000
+at = 0x00000000
+v0 = 0x00000000
+v1 = 0x00000000
+a0 = 0x00000000
+a1 = 0x00000000
+a2 = 0x00000000
+a3 = 0x00000000
+t0 = 0x00000000
+t1 = 0x00000000
+t2 = 0x00000000
+t3 = 0x00000000
+t4 = 0x00000000
+t5 = 0x00000000
+t6 = 0x00000000
+t7 = 0x00000000
+s0 = 0x00000000
+s1 = 0x00000000
+s2 = 0x00000000
+s3 = 0x00000000
+s4 = 0x00000000
+s5 = 0x00000000
+s6 = 0x00000000
+s7 = 0x00000000
+t8 = 0x00000000
+t9 = 0x00000000
+k0 = 0x00000000
+k1 = 0x00000000
+gp = 0x00000000
+sp = 0x00000000
+fp = 0x00000000
+ra = 0x00000000
+pc = 0x00000000
 EOF
 RUN

@@ -10,8 +10,8 @@ enum {
 };
 
 static char *encodings[3] = { "ascii", "cp850", NULL };
-//static int encoding = ENCODING_ASCII; // default
-//encoding = resolve_encoding(config_get("cfg.encoding"));
+// static int encoding = ENCODING_ASCII; // default
+// encoding = resolve_encoding(config_get("cfg.encoding"));
 
 RZ_API int rz_search_get_encoding(const char *name) {
 	int i;

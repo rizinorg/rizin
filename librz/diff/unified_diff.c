@@ -147,8 +147,6 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 
 	// Fill char_bounds array
 	ut32 bounds_idx = 0;
-	ut32 count = 0;
-	ut32 count_b = 0;
 	bool newline = false;
 	st32 i = a_beg;
 	st32 j = b_beg;
@@ -162,7 +160,6 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 		stringify(elem, &tmp);
 		len = rz_strbuf_length(&tmp);
 		p = rz_strbuf_get(&tmp);
-		count += len;
 		if (len > 0 && p[len - 1] == '\n') {
 			len--;
 			newline = true;
@@ -178,7 +175,6 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 			stringify(elem_b, &tmp2);
 			len_b = rz_strbuf_length(&tmp2);
 			p_b = rz_strbuf_get(&tmp2);
-			count_b += len_b;
 			if (len_b > 0 && p_b[len_b - 1] == '\n') {
 				len_b--;
 			}
@@ -209,7 +205,6 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 	char prefix = del_prefix;
 	const char *bcol = DIFF_COLOR(prefix);
 	const char *bbgcol = DIFF_BGCOLOR(prefix);
-	count = 0;
 	newline = false;
 	bounds_idx = 0;
 
@@ -225,7 +220,6 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 		stringify(elem, &tmp);
 		len = rz_strbuf_length(&tmp);
 		p = rz_strbuf_get(&tmp);
-		count += len;
 		if (len > 0 && p[len - 1] == '\n') {
 			len--;
 			newline = true;
@@ -249,7 +243,6 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 	prefix = ins_prefix;
 	bcol = DIFF_COLOR(prefix);
 	bbgcol = DIFF_BGCOLOR(prefix);
-	count = 0;
 	newline = false;
 	bounds_idx = 0;
 
@@ -265,7 +258,6 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 		stringify(elem, &tmp);
 		len = rz_strbuf_length(&tmp);
 		p = rz_strbuf_get(&tmp);
-		count += len;
 		if (len > 0 && p[len - 1] == '\n') {
 			len--;
 			newline = true;
@@ -360,7 +352,7 @@ RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE co
 	}
 
 	if (show_time) {
-		char *time = rz_time_to_string(rz_time_now());
+		char *time = rz_time_date_now_to_string();
 		rz_strbuf_appendf(sb, "--- %s %s\n+++ %s %s\n", from, (time ? time : ""), to, (time ? time : ""));
 		free(time);
 	} else {
@@ -438,7 +430,7 @@ RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE cons
 	pj_o(pj);
 
 	if (show_time) {
-		char *time = rz_time_to_string(rz_time_now());
+		char *time = rz_time_date_now_to_string();
 		if (!time) {
 			RZ_LOG_ERROR("rz_diff_unified: failed to allocate timestamp\n");
 			goto rz_diff_unified_json_fail;

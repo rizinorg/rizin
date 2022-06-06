@@ -1,0 +1,393 @@
+# SPDX-FileCopyrightText: 2022 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_flag
+commands:
+  - name: f
+    cname: flag_add
+    summary: Add the flag if there are no existing flags
+    description: >
+      Adds the flag to the current offset only if
+      no flag exists at this offset already.
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: size
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+      - name: comment
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: f+
+    cname: flag_append
+    summary: Add the flag
+    description: >
+      Add the flag like the 'f' command but in any case,
+      even if one or multiple flags already exist.
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: size
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+      - name: comment
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: f.
+    summary: Local flags (per function)
+    subcommands:
+      - name: f.
+        cname: flag_local_add
+        summary: Add the local flag
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: f.-
+        cname: flag_local_remove
+        summary: Remove the local flag
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: f.l
+        cname: flag_local_list
+        summary: List the local flags for the function
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: f.l*
+        cname: flag_local_list_all
+        summary: List the local flags for all functions
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+  - name: f-
+    cname: flag_remove
+    summary: Remove the flag
+    description: >
+      If the glob is supplied it removes just flag items matching the pattern.
+      Otherwise, it removes all flags at the current offset.
+    args:
+      - name: glob
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: f-*
+    cname: flag_remove_all
+    summary: Remove all flags
+    args: []
+  - name: fa
+    cname: flag_alias
+    summary: Alias a flag to evaluate an expression
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: alias
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: fb
+    cname: flag_base
+    summary: Set base address for flags
+    args:
+      - name: address
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: glob
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: fe
+    cname: flag_exists
+    summary: Check if flag exists
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: ff
+    cname: flag_distance
+    summary: Distance in bytes to reach the next flag
+    args:
+      - name: glob
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: fg
+    cname: flag_graph
+    summary: Show the flag graph
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+        optional: true
+  - name: fi
+    cname: flag_range
+    summary: Show the flags in the block or custom range
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args:
+      - name: size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: fl
+    cname: flag_list
+    summary: List all flags
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
+  - name: fl.
+    cname: flag_list_at
+    summary: List all flags at the current offset
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_TABLE
+    args: []
+  - name: fL
+    cname: flag_length
+    summary: Show the flag length / Set the flag length
+    args:
+      - name: size
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: fN
+    cname: flag_realname
+    summary: Show the realname of the flag / Set the realname of the flag
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+        optional: true
+      - name: realname
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: fl=
+    cname: flag_list_ascii
+    summary: List range bars with flag offsets and sizes
+    args:
+      - name: glob
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: fc
+    cname: flag_color
+    summary: Set a comment for the given flag / Show a comment for the given flag
+    args:
+      - name: flag
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: color
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: fC
+    cname: flag_comment
+    summary: Set a comment for the given flag / Show a comment for the given flag
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: comment
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: fd
+    summary: Describe flag
+    subcommands:
+      - name: fd
+        cname: flag_describe
+        summary: Describe flag + delta for the current offset
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: fd.
+        cname: flag_describe_at
+        summary: Describe flags for the current offset
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: fdw
+        cname: flag_describe_closest
+        summary: Describe closest flag by string for the current offset
+        args:
+          - name: string
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: fm
+    cname: flag_move
+    summary: Move a flag to the new address
+    args:
+      - name: newaddress
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: fO
+    cname: flag_ordinals
+    summary: Flag as ordinals (sym.* func.* method.*)
+    args:
+      - name: glob
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: fr
+    cname: flag_rename
+    summary: Rename flag
+    args:
+      - name: old
+        type: RZ_CMD_ARG_TYPE_FLAG
+      - name: new
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: fR
+    cname: flag_relocate
+    summary: Relocate flags
+    args:
+      - name: from
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: to
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: mask
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: fs
+    summary: Manage flagspaces
+    subcommands:
+      - name: fs
+        cname: flag_space_add
+        summary: Add the flagspace
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: fsl
+        cname: flag_space_list
+        summary: Display flagspaces
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: fs-
+        cname: flag_space_remove
+        summary: Remove the flagspace
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: fs-*
+        cname: flag_space_remove_all
+        summary: Remove all flagspaces
+        args: []
+      - name: fsm
+        cname: flag_space_move
+        summary: Move the flags at the current address to the current flagspace
+        args: []
+      - name: fsr
+        cname: flag_space_rename
+        summary: Rename the flag space
+        args:
+          - name: newname
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: fss
+        summary: Manage the flagspace stack
+        subcommands:
+          - name: fss+
+            cname: flag_space_stack_push
+            summary: Push the flagspace to the stack
+            args:
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: fss-
+            cname: flag_space_stack_pop
+            summary: Pop the flagspace from the stack
+            args: []
+          - name: fssl
+            cname: flag_space_stack_list
+            summary: Display flagspace stack
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            default_mode: RZ_OUTPUT_MODE_STANDARD
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+  - name: ft
+    summary: Flag tags
+    subcommands:
+      - name: ft
+        cname: flag_tag_add
+        summary: Set a list of words for the given tag
+        args:
+          - name: tag
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: words
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: ftl
+        cname: flag_tag_list
+        summary: List all flag tags
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: ftn
+        cname: flag_tag_search
+        summary: Find all matching flag names for the given tag
+        args:
+          - name: tag
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: fz
+    summary: Flag zones
+    subcommands:
+      - name: fz
+        cname: flag_zone_add
+        summary: Add new flagzone with [name]
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: fz-
+        cname: flag_zone_remove
+        summary: Remove the flag zone with [name]
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: fz-*
+        cname: flag_zone_remove_all
+        summary: Remove all flagzones
+        args: []
+      - name: fz.
+        cname: flag_zone_around
+        summary: Show around flag zone context
+        args: []
+      - name: fzl
+        cname: flag_zone_list
+        summary: List all flag zones
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+  - name: fx
+    cname: flag_hexdump
+    summary: Show hexdump of flag:flagsize
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_FLAG
+

@@ -26,6 +26,29 @@ RZ_API void rz_type_base_union_member_free(void *e, void *user) {
 }
 
 /**
+ * \brief Returns string representing the kind of base type
+ *
+ * \param kind RzBaseTypeKind to return string representation of
+ */
+RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kind) {
+	switch (kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT:
+		return "struct";
+	case RZ_BASE_TYPE_KIND_UNION:
+		return "union";
+	case RZ_BASE_TYPE_KIND_ENUM:
+		return "enum";
+	case RZ_BASE_TYPE_KIND_TYPEDEF:
+		return "typedef";
+	case RZ_BASE_TYPE_KIND_ATOMIC:
+		return "atomic";
+	default:
+		rz_warn_if_reached();
+		return "unknown";
+	}
+}
+
+/**
  * \brief Searches for the RzBaseType in the types database given the name
  *
  * \param typedb Type Database instance
@@ -37,7 +60,6 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ
 	bool found = false;
 	RzBaseType *btype = ht_pp_find(typedb->types, name, &found);
 	if (!found || !btype) {
-		eprintf("Cannot find base type \"%s\"\n", name);
 		return NULL;
 	}
 	return btype;
@@ -172,67 +194,33 @@ RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *
 }
 
 /**
+ * \brief Returns C representation as string of RzBaseType (see rz_type_db_base_type_as_pretty_string for cusom print options)
+ *
+ * \param typedb type database instance
+ * \param btype RzBaseType to convert
+ * \return char* one line C representation of the string with no semicolon at the end and no unfolding of inner types
+ */
+RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype, NULL);
+
+	RzType *type = rz_type_identifier_of_base_type(typedb, btype, false);
+	return rz_type_as_pretty_string(typedb, type, NULL, RZ_TYPE_PRINT_NO_END_SEMICOLON | RZ_TYPE_PRINT_ZERO_VLA, 1);
+}
+
+/**
  * \brief Returns C representation as string of RzBaseType
  *
- * \param typedb Type Database instance
- * \param type RzBaseType to convert
+ * \param typedb type database instance
+ * \param btype RzBaseType to convert
+ * \param opts options for pretty printing (see RzTypePrintOpts)
+ * \param unfold_level level of unfolding to do in case of nested structures/unions (any negative number means maximum unfolding, i.e. INT32_MAX. 0 means no unfolding, just the typename and identifier, if any)
+ * \return char* pretty printed form of the base string (similar to `rz_type_as_pretty_string`, but for RzBaseType)
  */
-RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type) {
-	rz_return_val_if_fail(typedb && type && type->name, NULL);
+RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, unsigned int opts, int unfold_level) {
+	rz_return_val_if_fail(typedb && btype, NULL);
 
-	RzStrBuf *buf = rz_strbuf_new("");
-	switch (type->kind) {
-	case RZ_BASE_TYPE_KIND_STRUCT: {
-		rz_strbuf_appendf(buf, "struct %s { ", type->name);
-		RzTypeStructMember *memb;
-		rz_vector_foreach(&type->struct_data.members, memb) {
-			char *declaration = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			rz_strbuf_appendf(buf, "%s; ", declaration);
-			free(declaration);
-		}
-		rz_strbuf_append(buf, "}");
-		break;
-	}
-	case RZ_BASE_TYPE_KIND_ENUM: {
-		rz_strbuf_appendf(buf, "enum %s { ", type->name);
-		RzTypeEnumCase *cas;
-		rz_vector_foreach(&type->enum_data.cases, cas) {
-			rz_strbuf_appendf(buf, "%s = 0x%" PFMT64x ", ", cas->name, cas->val);
-		}
-		rz_strbuf_append(buf, "}");
-		break;
-	}
-	case RZ_BASE_TYPE_KIND_UNION: {
-		rz_strbuf_appendf(buf, "union %s { ", type->name);
-		RzTypeUnionMember *memb;
-		rz_vector_foreach(&type->union_data.members, memb) {
-			char *declaration = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			rz_strbuf_appendf(buf, "%s; ", declaration);
-			free(declaration);
-		}
-		rz_strbuf_append(buf, "}");
-		break;
-	}
-	case RZ_BASE_TYPE_KIND_TYPEDEF: {
-		char *typestr = rz_type_as_string(typedb, type->type);
-		// Typedef of the callable is a special case
-		if (rz_type_is_callable_ptr_nested(type->type)) {
-			rz_strbuf_appendf(buf, "typedef %s;", typestr);
-		} else {
-			rz_strbuf_appendf(buf, "typedef %s %s;", typestr, type->name);
-		}
-		free(typestr);
-		break;
-	}
-	case RZ_BASE_TYPE_KIND_ATOMIC:
-		rz_strbuf_append(buf, type->name);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-	char *bufstr = rz_strbuf_drain(buf);
-	return bufstr;
+	RzType *type = rz_type_identifier_of_base_type(typedb, btype, false);
+	return rz_type_as_pretty_string(typedb, type, NULL, opts, unfold_level);
 }
 
 /**

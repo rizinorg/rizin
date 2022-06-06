@@ -4,7 +4,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-//TODO test rz_str_chop_path
+// TODO test rz_str_chop_path
 
 bool test_rz_str_replace_char_once(void) {
 	char *str = strdup("hello world");
@@ -74,7 +74,7 @@ bool test_rz_str_replace_char(void) {
 	mu_end;
 }
 
-//TODO test rz_str_bits
+// TODO test rz_str_bits
 
 bool test_rz_str_bits64(void) {
 	char buf[65];
@@ -87,7 +87,7 @@ bool test_rz_str_bits64(void) {
 	mu_end;
 }
 
-//TODO test rz_str_bits_from_string
+// TODO test rz_str_bits_from_string
 
 bool test_rz_str_rwx(void) {
 	int rwx = rz_str_rwx("rwx");
@@ -107,7 +107,7 @@ bool test_rz_str_rwx(void) {
 	mu_end;
 }
 
-//TODO test rz_str_binstr2bin
+// TODO test rz_str_binstr2bin
 
 bool test_rz_str_rwx_i(void) {
 	const char *rwx = rz_str_rwx_i(7);
@@ -137,7 +137,6 @@ bool test_rz_str_trim(void) {
 	free(two);
 	mu_end;
 }
-//TODO find a way to test rz_str_home.
 
 bool test_rz_str_bool(void) {
 	const char *one = rz_str_bool(1);
@@ -171,8 +170,8 @@ bool test_rz_str_case(void) {
 	mu_end;
 }
 
-//TODO test rz_str_hash64, rz_str_hash
-//TODO test rz_str_delta (WHAT!)
+// TODO test rz_str_hash64, rz_str_hash
+// TODO test rz_str_delta (WHAT!)
 
 bool test_rz_str_split(void) {
 	char *hi = strdup("hello world");
@@ -223,8 +222,8 @@ bool test_rz_str_split_lines(void) {
 }
 
 bool test_rz_str_tokenize(void) {
-	//XXX rz_str_word0 doesn't work on "hello      world" to
-	// tokenize into ["hello", "world"]
+	// XXX rz_str_word0 doesn't work on "hello      world" to
+	//  tokenize into ["hello", "world"]
 	char *hi = strdup("hello world");
 	int r = rz_str_word_set0(hi);
 	mu_assert_eq(r, 2, "tokenize hello world");
@@ -655,9 +654,6 @@ bool test_rz_str_nlen(void) {
 	mu_assert_eq(rz_str_nlen("A", 0), 0, "0 n should give 0");
 	mu_assert_eq(rz_str_nlen("A", 1), 1, "1 n should give 1");
 	mu_assert_eq(rz_str_nlen("A", 2), 1, "1 n should give 1 for 'A'");
-	mu_assert_eq(rz_str_nlen("A", -100), 0, "-100 n should give 0 for 'A'");
-	mu_assert_eq(rz_str_nlen("", -100), 0, "-100 n should give 0 for ''");
-	mu_assert_eq(rz_str_nlen(NULL, -100), 0, "-100 n should give 0 for NULL");
 	mu_end;
 }
 
@@ -675,6 +671,20 @@ bool test_rz_str_ndup(void) {
 	mu_assert_streq_free(rz_str_ndup("A", -100), NULL, "NULL string for 'A' with n=-100");
 	mu_assert_streq_free(rz_str_ndup("", -100), NULL, "NULL string for '' with n=-100");
 	mu_assert_streq_free(rz_str_ndup(NULL, -100), NULL, "NULL string for NULL with n=-100");
+	mu_end;
+}
+
+bool test_rz_str_filter(void) {
+	char buf[10] = "hel\x01\x02\x03lo";
+	char *buf2 = rz_str_ndup("AAA\001\002AAA", 20);
+	char *buf3 = rz_str_ndup("AAA\001\002AAA", 5);
+
+	rz_str_filter(buf);
+	mu_assert_streq(buf, "hel...lo", "static buffer should be filtered");
+	rz_str_filter(buf2);
+	mu_assert_streq_free(buf2, "AAA..AAA", "allocated buffer with ndup 20 should be filtered");
+	rz_str_filter(buf3);
+	mu_assert_streq_free(buf3, "AAA..", "allocated buffer with ndup 5 should be filtered");
 	mu_end;
 }
 
@@ -716,6 +726,7 @@ bool all_tests() {
 	mu_run_test(test_rz_strf);
 	mu_run_test(test_rz_str_nlen);
 	mu_run_test(test_rz_str_ndup);
+	mu_run_test(test_rz_str_filter);
 	return tests_passed != tests_run;
 }
 

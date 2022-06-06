@@ -726,7 +726,6 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			break;
 		case VAR_FIELD_DELTA:
 			if (child->type != RZ_JSON_INTEGER) {
-				eprintf("delta nop\n");
 				break;
 			}
 			delta = child->num.s_value;
@@ -840,7 +839,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	char *error_msg = NULL;
 	RzType *vartype = rz_type_parse_string_single(fcn->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
-		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		RZ_LOG_ERROR("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
 		RZ_FREE(error_msg);
 		goto beach;
 	}
@@ -1014,7 +1013,7 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	char *error_msg = NULL;
 	RzType *vartype = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
-		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		RZ_LOG_ERROR("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
 		RZ_FREE(error_msg);
 		goto beach;
 	}
@@ -1449,7 +1448,7 @@ static bool store_xref_cb(void *j, const ut64 k, const void *v) {
 	const RzAnalysisXRef *xref = v;
 	pj_o(j);
 	pj_kn(j, "to", k);
-	if (xref->type != RZ_ANALYSIS_REF_TYPE_NULL) {
+	if (xref->type != RZ_ANALYSIS_XREF_TYPE_NULL) {
 		char type[2] = { xref->type, '\0' };
 		pj_ks(j, "type", type);
 	}
@@ -1509,7 +1508,7 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 		}
 		ut64 to = baby->num.u_value;
 
-		RzAnalysisXRefType type = RZ_ANALYSIS_REF_TYPE_NULL;
+		RzAnalysisXRefType type = RZ_ANALYSIS_XREF_TYPE_NULL;
 		baby = rz_json_get(child, "type");
 		if (baby) {
 			// must be a 1-char string
@@ -1517,10 +1516,10 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 				goto error;
 			}
 			switch (baby->str_value[0]) {
-			case RZ_ANALYSIS_REF_TYPE_CODE:
-			case RZ_ANALYSIS_REF_TYPE_CALL:
-			case RZ_ANALYSIS_REF_TYPE_DATA:
-			case RZ_ANALYSIS_REF_TYPE_STRING:
+			case RZ_ANALYSIS_XREF_TYPE_CODE:
+			case RZ_ANALYSIS_XREF_TYPE_CALL:
+			case RZ_ANALYSIS_XREF_TYPE_DATA:
+			case RZ_ANALYSIS_XREF_TYPE_STRING:
 				type = baby->str_value[0];
 				break;
 			default:
@@ -1614,9 +1613,6 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 		case RZ_META_TYPE_COMMENT:
 			type_str[0] = 'C';
 			break;
-		case RZ_META_TYPE_RUN:
-			type_str[0] = 'r';
-			break;
 		case RZ_META_TYPE_HIGHLIGHT:
 			type_str[0] = 'H';
 			break;
@@ -1708,9 +1704,6 @@ static bool meta_load_cb(void *user, const char *k, const char *v) {
 						break;
 					case 'C':
 						type = RZ_META_TYPE_COMMENT;
-						break;
-					case 'r':
-						type = RZ_META_TYPE_RUN;
 						break;
 					case 'H':
 						type = RZ_META_TYPE_HIGHLIGHT;
@@ -2212,15 +2205,6 @@ RZ_API bool rz_serialize_analysis_imports_load(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 	return sdb_foreach(db, import_load_cb, analysis);
 }
 
-RZ_API void rz_serialize_analysis_pin_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	sdb_copy(analysis->sdb_pins, db);
-}
-
-RZ_API bool rz_serialize_analysis_pin_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
-	sdb_copy(db, analysis->sdb_pins);
-	return true;
-}
-
 RZ_API void rz_serialize_analysis_cc_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
 	sdb_copy(analysis->sdb_cc, db);
 }
@@ -2243,7 +2227,6 @@ RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	rz_serialize_analysis_typelinks_save(sdb_ns(db, "typelinks", true), analysis);
 	rz_serialize_analysis_sign_save(sdb_ns(db, "zigns", true), analysis);
 	rz_serialize_analysis_imports_save(sdb_ns(db, "imports", true), analysis);
-	rz_serialize_analysis_pin_save(sdb_ns(db, "pins", true), analysis);
 	rz_serialize_analysis_cc_save(sdb_ns(db, "cc", true), analysis);
 	rz_serialize_analysis_global_var_save(sdb_ns(db, "vars", true), analysis);
 }
@@ -2292,7 +2275,6 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	SUB("hints", rz_serialize_analysis_hints_load(subdb, analysis, res));
 	SUB("zigns", rz_serialize_analysis_sign_load(subdb, analysis, res));
 	SUB("imports", rz_serialize_analysis_imports_load(subdb, analysis, res));
-	SUB("pins", rz_serialize_analysis_pin_load(subdb, analysis, res));
 	SUB("cc", rz_serialize_analysis_cc_load(subdb, analysis, res));
 	SUB("vars", rz_serialize_analysis_global_var_load(subdb, analysis, res));
 

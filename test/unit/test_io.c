@@ -140,13 +140,13 @@ bool test_rz_io_pcache(void) {
 	io->ff = 1;
 	ut8 buf[8];
 	int fd = rz_io_fd_open(io, "malloc://3", RZ_PERM_RW, 0);
-	rz_io_map_add(io, fd, RZ_PERM_RW, 0LL, 0LL, 1); //8
+	rz_io_map_add(io, fd, RZ_PERM_RW, 0LL, 0LL, 1); // 8
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 1, 1); //=
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 2, 1); //=
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 3, 1); //=
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 4, 1); //=
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 5, 1); //=
-	rz_io_map_add(io, fd, RZ_PERM_RW, 2, 6, 1); //D
+	rz_io_map_add(io, fd, RZ_PERM_RW, 2, 6, 1); // D
 	io->p_cache = 2;
 	io->va = true;
 	rz_io_fd_write_at(io, fd, 0, (const ut8 *)"8=D", 3);
@@ -349,6 +349,7 @@ bool test_rz_io_default(void) {
 	close(fd);
 	mu_assert_memeq(buf, (ut8 *)"FEDCBA0987654321", 0x10, "data has been correctly written at 0x50");
 	rz_file_rm(filename);
+	free(filename);
 	mu_end;
 }
 
@@ -495,8 +496,12 @@ bool test_rz_io_map_del(void) {
 	mu_assert_true(red, "read after unmap");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff", 4, "read after unmap");
 
+	rz_list_push(tracker.expect, map00);
+	rz_list_push(tracker.expect, map02);
+	rz_list_push(tracker.expect, map10);
+	rz_list_push(tracker.expect, map11);
+	rz_list_push(tracker.expect, map20);
 	rz_io_free(io);
-	// free should not emit any events, we just know everything is closed
 	mu_assert_eq(rz_list_length(tracker.expect), 0, "missing del event");
 	mu_assert_false(tracker.failed_unexpected, "unexpected del event");
 	rz_list_free(tracker.expect);
@@ -534,8 +539,10 @@ bool test_rz_io_map_del_for_fd(void) {
 	mu_assert_true(red, "read after unmap");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff", 4, "read after unmap");
 
+	rz_list_push(tracker.expect, map10);
+	rz_list_push(tracker.expect, map11);
+	rz_list_push(tracker.expect, map20);
 	rz_io_free(io);
-	// free should not emit any events, we just know everything is closed
 	mu_assert_eq(rz_list_length(tracker.expect), 0, "missing del event");
 	mu_assert_false(tracker.failed_unexpected, "unexpected del event");
 	rz_list_free(tracker.expect);
@@ -573,8 +580,10 @@ bool test_rz_io_map_del_on_close(void) {
 	mu_assert_true(red, "read after unmap");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff", 4, "read after unmap");
 
+	rz_list_push(tracker.expect, map10);
+	rz_list_push(tracker.expect, map11);
+	rz_list_push(tracker.expect, map20);
 	rz_io_free(io);
-	// free should not emit any events, we just know everything is closed
 	mu_assert_eq(rz_list_length(tracker.expect), 0, "missing del event");
 	mu_assert_false(tracker.failed_unexpected, "unexpected del event");
 	rz_list_free(tracker.expect);

@@ -1,45 +1,45 @@
 NAME=iS query
 FILE=bins/elf/analysis/main
-CMDS=iS:size/sort:vaddr/cols/name
+CMDS=iS:name/sort:vaddr/cols/name
 EXPECT=<<EOF
 vaddr      name               
 ------------------------------
-0x00000000 
+---------- 
 0x00600910 .bss
-0x006006e0 .init_array
-0x006006e8 .fini_array
-0x006006f0 .jcr
-0x006008c8 .got
-0x0040031e .gnu.version
-0x004005b4 .fini
+---------- .comment
 0x00600900 .data
-0x004005c0 .rodata
-0x00400348 .rela.dyn
-0x004003a8 .init
-0x00400260 .gnu.hash
-0x00400200 .interp
-0x0040021c .note.ABI-tag
-0x00400328 .gnu.version_r
-0x00000000 .comment
-0x0040023c .note.gnu.build-id
-0x006008d0 .got.plt
-0x004005d0 .eh_frame_hdr
-0x004002e0 .dynstr
-0x004003d0 .plt
-0x00400360 .rela.plt
-0x00400280 .dynsym
-0x00000000 .debug_abbrev
-0x00000000 .debug_ranges
-0x00000000 .debug_str
-0x00000000 .debug_aranges
-0x00400608 .eh_frame
-0x00000000 .debug_line
-0x00000000 .shstrtab
-0x00000000 .debug_info
-0x00400410 .text
+---------- .debug_abbrev
+---------- .debug_aranges
+---------- .debug_info
+---------- .debug_line
+---------- .debug_ranges
+---------- .debug_str
 0x006006f8 .dynamic
-0x00000000 .strtab
-0x00000000 .symtab
+0x004002e0 .dynstr
+0x00400280 .dynsym
+0x00400608 .eh_frame
+0x004005d0 .eh_frame_hdr
+0x004005b4 .fini
+0x006006e8 .fini_array
+0x00400260 .gnu.hash
+0x0040031e .gnu.version
+0x00400328 .gnu.version_r
+0x006008c8 .got
+0x006008d0 .got.plt
+0x004003a8 .init
+0x006006e0 .init_array
+0x00400200 .interp
+0x006006f0 .jcr
+0x0040021c .note.ABI-tag
+0x0040023c .note.gnu.build-id
+0x004003d0 .plt
+0x00400348 .rela.dyn
+0x00400360 .rela.plt
+0x004005c0 .rodata
+---------- .shstrtab
+---------- .strtab
+---------- .symtab
+0x00400410 .text
 EOF
 RUN
 
@@ -76,20 +76,20 @@ NAME=ih (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ihq
 EXPECT=<<EOF
-0x00000000 0x00000000 ELF; 0x464c457f
-0x00000010 0x00000010 Type; 0x00000002
-0x00000012 0x00000012 Machine; 0x00000003
+0x00000000 0x00000000 MAGIC; 7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+0x00000010 0x00000010 Type; 0x0002
+0x00000012 0x00000012 Machine; 0x0003
 0x00000014 0x00000014 Version; 0x00000001
-0x00000018 0x00000018 Entry point; 0x08048300
+0x00000018 0x00000018 Entrypoint; 0x08048300
 0x0000001c 0x0000001c PhOff; 0x00000034
 0x00000020 0x00000020 ShOff; 0x000007cc
-0x00000024 0x00000024 Flags; 0x00000000
-0x00000028 0x00000028 EhSize; 0x00000034
-0x0000002a 0x0000002a PhentSize; 0x00000020
-0x0000002c 0x0000002c PhNum; 0x00000008
-0x0000002e 0x0000002e ShentSize; 0x00000028
-0x00000030 0x00000030 ShNum; 0x0000001e
-0x00000032 0x00000032 ShrStrndx; 0x0000001b
+0x00000024 0x00000024 Flags; 0x0000
+0x00000028 0x00000028 EhSize; 52
+0x0000002a 0x0000002a PhentSize; 32
+0x0000002c 0x0000002c PhNum; 8
+0x0000002e 0x0000002e ShentSize; 40
+0x00000030 0x00000030 ShNum; 30
+0x00000032 0x00000032 ShStrndx; 27
 EOF
 RUN
 
@@ -1182,115 +1182,115 @@ FILE=bins/elf/libmagic.so
 CMDS=ic*
 EXPECT=<<EOF
 fs classes
-"f class.public._JNIEnv = 0x6060"
-"f method._JNIEnv.FindClass_char_const = 0x6060"
-"f method._JNIEnv.DeleteLocalRef__jobject = 0x606a"
-"f method._JNIEnv.NewObject__jclass____jmethodID___... = 0x6074"
-"f method._JNIEnv.GetObjectClass__jobject = 0x608e"
-"f method._JNIEnv.GetMethodID__jclass___char_const___char_const = 0x6098"
-"f method._JNIEnv.CallObjectMethod__jobject____jmethodID___... = 0x60a4"
-"f method._JNIEnv.CallVoidMethod__jobject____jmethodID___... = 0x60c0"
-"f method._JNIEnv.GetStaticMethodID__jclass___char_const___char_const = 0x60dc"
-"f method._JNIEnv.CallStaticObjectMethod__jclass____jmethodID___... = 0x60ea"
-"f method._JNIEnv.CallStaticIntMethod__jclass____jmethodID___... = 0x695e"
-"f method._JNIEnv.CallStaticVoidMethod__jclass____jmethodID___... = 0x697c"
+"f class.public._JNIEnv @ 0x6060"
+"f method._JNIEnv.FindClass_char_const @ 0x6060"
+"f method._JNIEnv.DeleteLocalRef__jobject @ 0x606a"
+"f method._JNIEnv.NewObject__jclass____jmethodID___... @ 0x6074"
+"f method._JNIEnv.GetObjectClass__jobject @ 0x608e"
+"f method._JNIEnv.GetMethodID__jclass___char_const___char_const @ 0x6098"
+"f method._JNIEnv.CallObjectMethod__jobject____jmethodID___... @ 0x60a4"
+"f method._JNIEnv.CallVoidMethod__jobject____jmethodID___... @ 0x60c0"
+"f method._JNIEnv.GetStaticMethodID__jclass___char_const___char_const @ 0x60dc"
+"f method._JNIEnv.CallStaticObjectMethod__jclass____jmethodID___... @ 0x60ea"
+"f method._JNIEnv.CallStaticIntMethod__jclass____jmethodID___... @ 0x695e"
+"f method._JNIEnv.CallStaticVoidMethod__jclass____jmethodID___... @ 0x697c"
 td "struct _JNIEnv {};"
-"f class.public.SystemClassLoaderInjector = 0x699c"
-"f method.SystemClassLoaderInjector.inject__JNIEnv____jobject____jstring____jstring = 0x74f8"
-"f method.SystemClassLoaderInjector.findBaseDexClassloader__JNIEnv____jobject = 0x699c"
-"f method.SystemClassLoaderInjector.getField__JNIEnv____jobject____jobject____jstring = 0x6a2c"
-"f method.SystemClassLoaderInjector.getPathList__JNIEnv____jobject = 0x6abc"
-"f method.SystemClassLoaderInjector.getDexElements__JNIEnv____jobject = 0x6af4"
-"f method.SystemClassLoaderInjector.setField__JNIEnv____jobject____jobject____jstring____jobject = 0x6b1c"
-"f method.SystemClassLoaderInjector.combineArray__JNIEnv____jobject____jobject = 0x6bb0"
-"f method.SystemClassLoaderInjector.injectAboveEqualApiLevel14__JNIEnv____jobject____jstring____jstring = 0x6d00"
-"f method.SystemClassLoaderInjector.appendArray__JNIEnv____jobject____jobject = 0x6e5c"
-"f method.SystemClassLoaderInjector.injectInAliyunOs__JNIEnv____jobject____jstring____jstring = 0x6f68"
-"f method.SystemClassLoaderInjector.injectBelowApiLevel14__JNIEnv____jobject____jstring____jstring = 0x720c"
+"f class.public.SystemClassLoaderInjector @ 0x699c"
+"f method.SystemClassLoaderInjector.inject__JNIEnv____jobject____jstring____jstring @ 0x74f8"
+"f method.SystemClassLoaderInjector.findBaseDexClassloader__JNIEnv____jobject @ 0x699c"
+"f method.SystemClassLoaderInjector.getField__JNIEnv____jobject____jobject____jstring @ 0x6a2c"
+"f method.SystemClassLoaderInjector.getPathList__JNIEnv____jobject @ 0x6abc"
+"f method.SystemClassLoaderInjector.getDexElements__JNIEnv____jobject @ 0x6af4"
+"f method.SystemClassLoaderInjector.setField__JNIEnv____jobject____jobject____jstring____jobject @ 0x6b1c"
+"f method.SystemClassLoaderInjector.combineArray__JNIEnv____jobject____jobject @ 0x6bb0"
+"f method.SystemClassLoaderInjector.injectAboveEqualApiLevel14__JNIEnv____jobject____jstring____jstring @ 0x6d00"
+"f method.SystemClassLoaderInjector.appendArray__JNIEnv____jobject____jobject @ 0x6e5c"
+"f method.SystemClassLoaderInjector.injectInAliyunOs__JNIEnv____jobject____jstring____jstring @ 0x6f68"
+"f method.SystemClassLoaderInjector.injectBelowApiLevel14__JNIEnv____jobject____jstring____jstring @ 0x720c"
 td "struct SystemClassLoaderInjector {};"
-"f class.public.std = 0x886c"
-"f method.std.terminate = 0x9470"
-"f method.std.uncaught_exception = 0x886c"
-"f method.std.unexpected = 0x9494"
-"f method.std.set_terminate_void = 0x94ac"
-"f method.std.set_unexpected_void = 0x94c8"
+"f class.public.std @ 0x886c"
+"f method.std.terminate @ 0x9470"
+"f method.std.uncaught_exception @ 0x886c"
+"f method.std.unexpected @ 0x9494"
+"f method.std.set_terminate_void @ 0x94ac"
+"f method.std.set_unexpected_void @ 0x94c8"
 td "struct std {};"
-"f class.public.std::exception = 0x8884"
-"f method.std::exception._exception = 0x8884"
-"f method.std::exception.what___const = 0x88f4"
+"f class.public.std::exception @ 0x8884"
+"f method.std::exception._exception @ 0x8884"
+"f method.std::exception.what___const @ 0x88f4"
 td "struct std::exception {};"
-"f class.public.std::bad_exception = 0x889c"
-"f method.std::bad_exception._bad_exception = 0x889c"
-"f method.std::bad_exception.what___const = 0x8904"
+"f class.public.std::bad_exception @ 0x889c"
+"f method.std::bad_exception._bad_exception @ 0x889c"
+"f method.std::bad_exception.what___const @ 0x8904"
 td "struct std::bad_exception {};"
-"f class.public.__cxxabiv1::__forced_unwind = 0x88c4"
-"f method.__cxxabiv1::__forced_unwind.___forced_unwind = 0x88c4"
+"f class.public.__cxxabiv1::__forced_unwind @ 0x88c4"
+"f method.__cxxabiv1::__forced_unwind.___forced_unwind @ 0x88c4"
 td "struct __cxxabiv1::__forced_unwind {};"
-"f class.public.__cxxabiv1::__foreign_exception = 0x88dc"
-"f method.__cxxabiv1::__foreign_exception.___foreign_exception = 0x88dc"
+"f class.public.__cxxabiv1::__foreign_exception @ 0x88dc"
+"f method.__cxxabiv1::__foreign_exception.___foreign_exception @ 0x88dc"
 td "struct __cxxabiv1::__foreign_exception {};"
-"f class.public.__eh_globals_init = 0x8984"
-"f method.__eh_globals_init.___eh_globals_init = 0x8984"
+"f class.public.__eh_globals_init @ 0x8984"
+"f method.__eh_globals_init.___eh_globals_init @ 0x8984"
 td "struct __eh_globals_init {};"
-"f class.public.__cxxabiv1 = 0x943c"
-"f method.__cxxabiv1.__terminate_void = 0x943c"
-"f method.__cxxabiv1.__unexpected_void = 0x9488"
+"f class.public.__cxxabiv1 @ 0x943c"
+"f method.__cxxabiv1.__terminate_void @ 0x943c"
+"f method.__cxxabiv1.__unexpected_void @ 0x9488"
 td "struct __cxxabiv1 {};"
-"f class.public.__cxxabiv1::__fundamental_type_info = 0x94e4"
-"f method.__cxxabiv1::__fundamental_type_info.___fundamental_type_info = 0x94e4"
+"f class.public.__cxxabiv1::__fundamental_type_info @ 0x94e4"
+"f method.__cxxabiv1::__fundamental_type_info.___fundamental_type_info @ 0x94e4"
 td "struct __cxxabiv1::__fundamental_type_info {};"
-"f class.public.std::type_info = 0x97bc"
-"f method.std::type_info._type_info = 0x97bc"
-"f method.std::type_info.__is_pointer_p___const = 0x97d4"
-"f method.std::type_info.__is_function_p___const = 0x97dc"
-"f method.std::type_info.__do_catch_std::type_info_const___void____unsigned_int__const = 0x9854"
-"f method.std::type_info.__do_upcast___cxxabiv1::__class_type_info_const___void____const = 0x97e4"
-"f method.std::type_info.operator___std::type_info_const___const = 0x9808"
+"f class.public.std::type_info @ 0x97bc"
+"f method.std::type_info._type_info @ 0x97bc"
+"f method.std::type_info.__is_pointer_p___const @ 0x97d4"
+"f method.std::type_info.__is_function_p___const @ 0x97dc"
+"f method.std::type_info.__do_catch_std::type_info_const___void____unsigned_int__const @ 0x9854"
+"f method.std::type_info.__do_upcast___cxxabiv1::__class_type_info_const___void____const @ 0x97e4"
+"f method.std::type_info.operator___std::type_info_const___const @ 0x9808"
 td "struct std::type_info {};"
-"f class.public.__cxxabiv1::__pointer_type_info = 0x9528"
-"f method.__cxxabiv1::__pointer_type_info.__is_pointer_p___const = 0x9528"
-"f method.__cxxabiv1::__pointer_type_info.___pointer_type_info = 0x9530"
-"f method.__cxxabiv1::__pointer_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const___void____unsigned_int__const = 0x9574"
+"f class.public.__cxxabiv1::__pointer_type_info @ 0x9528"
+"f method.__cxxabiv1::__pointer_type_info.__is_pointer_p___const @ 0x9528"
+"f method.__cxxabiv1::__pointer_type_info.___pointer_type_info @ 0x9530"
+"f method.__cxxabiv1::__pointer_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const___void____unsigned_int__const @ 0x9574"
 td "struct __cxxabiv1::__pointer_type_info {};"
-"f class.public.__cxxabiv1::__pbase_type_info = 0x9dd0"
-"f method.__cxxabiv1::__pbase_type_info.___pbase_type_info = 0x9df0"
-"f method.__cxxabiv1::__pbase_type_info.__do_catch_std::type_info_const___void____unsigned_int__const = 0x9e34"
-"f method.__cxxabiv1::__pbase_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const___void____unsigned_int__const = 0x9dd0"
+"f class.public.__cxxabiv1::__pbase_type_info @ 0x9dd0"
+"f method.__cxxabiv1::__pbase_type_info.___pbase_type_info @ 0x9df0"
+"f method.__cxxabiv1::__pbase_type_info.__do_catch_std::type_info_const___void____unsigned_int__const @ 0x9e34"
+"f method.__cxxabiv1::__pbase_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const___void____unsigned_int__const @ 0x9dd0"
 td "struct __cxxabiv1::__pbase_type_info {};"
-"f class.public.__cxxabiv1::__si_class_type_info = 0x95f4"
-"f method.__cxxabiv1::__si_class_type_info.___si_class_type_info = 0x95f4"
-"f method.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const_____cxxabiv1::__class_type_info_const___void_const___const = 0x9638"
-"f method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__dyncast_result___const = 0x969c"
-"f method.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__upcast_result___const = 0x977c"
+"f class.public.__cxxabiv1::__si_class_type_info @ 0x95f4"
+"f method.__cxxabiv1::__si_class_type_info.___si_class_type_info @ 0x95f4"
+"f method.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const_____cxxabiv1::__class_type_info_const___void_const___const @ 0x9638"
+"f method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__dyncast_result___const @ 0x969c"
+"f method.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__upcast_result___const @ 0x977c"
 td "struct __cxxabiv1::__si_class_type_info {};"
-"f class.public.__cxxabiv1::__class_type_info = 0x9868"
-"f method.__cxxabiv1::__class_type_info.___class_type_info = 0x98d8"
-"f method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__upcast_result___const = 0x991c"
-"f method.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const___void____unsigned_int__const = 0x9948"
-"f method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void____const = 0x9868"
-"f method.__cxxabiv1::__class_type_info.__do_find_public_src_int__void_const_____cxxabiv1::__class_type_info_const___void_const___const = 0x98c4"
-"f method.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__dyncast_result___const = 0x998c"
+"f class.public.__cxxabiv1::__class_type_info @ 0x9868"
+"f method.__cxxabiv1::__class_type_info.___class_type_info @ 0x98d8"
+"f method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__upcast_result___const @ 0x991c"
+"f method.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const___void____unsigned_int__const @ 0x9948"
+"f method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void____const @ 0x9868"
+"f method.__cxxabiv1::__class_type_info.__do_find_public_src_int__void_const_____cxxabiv1::__class_type_info_const___void_const___const @ 0x98c4"
+"f method.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__dyncast_result___const @ 0x998c"
 td "struct __cxxabiv1::__class_type_info {};"
-"f class.public.__gnu_cxx = 0x9ec4"
-"f method.__gnu_cxx.__verbose_terminate_handler = 0x9ec4"
-"f method.__gnu_cxx.__throw_concurrence_lock_error = 0x12780"
-"f method.__gnu_cxx.__throw_concurrence_unlock_error = 0x127c8"
+"f class.public.__gnu_cxx @ 0x9ec4"
+"f method.__gnu_cxx.__verbose_terminate_handler @ 0x9ec4"
+"f method.__gnu_cxx.__throw_concurrence_lock_error @ 0x12780"
+"f method.__gnu_cxx.__throw_concurrence_unlock_error @ 0x127c8"
 td "struct __gnu_cxx {};"
-"f class.public.__gnu_cxx::__concurrence_lock_error = 0x126b0"
-"f method.__gnu_cxx::__concurrence_lock_error.what___const = 0x126b0"
-"f method.__gnu_cxx::__concurrence_lock_error.___concurrence_lock_error = 0x126f8"
+"f class.public.__gnu_cxx::__concurrence_lock_error @ 0x126b0"
+"f method.__gnu_cxx::__concurrence_lock_error.what___const @ 0x126b0"
+"f method.__gnu_cxx::__concurrence_lock_error.___concurrence_lock_error @ 0x126f8"
 td "struct __gnu_cxx::__concurrence_lock_error {};"
-"f class.public.__gnu_cxx::__concurrence_unlock_error = 0x126c0"
-"f method.__gnu_cxx::__concurrence_unlock_error.what___const = 0x126c0"
-"f method.__gnu_cxx::__concurrence_unlock_error.___concurrence_unlock_error = 0x126d0"
+"f class.public.__gnu_cxx::__concurrence_unlock_error @ 0x126c0"
+"f method.__gnu_cxx::__concurrence_unlock_error.what___const @ 0x126c0"
+"f method.__gnu_cxx::__concurrence_unlock_error.___concurrence_unlock_error @ 0x126d0"
 td "struct __gnu_cxx::__concurrence_unlock_error {};"
-"f class.public.std::bad_cast = 0x12bc8"
-"f method.std::bad_cast._bad_cast = 0x12bd8"
-"f method.std::bad_cast.what___const = 0x12bc8"
+"f class.public.std::bad_cast @ 0x12bc8"
+"f method.std::bad_cast._bad_cast @ 0x12bd8"
+"f method.std::bad_cast.what___const @ 0x12bc8"
 td "struct std::bad_cast {};"
-"f class.public.std::bad_typeid = 0x12c1c"
-"f method.std::bad_typeid._bad_typeid = 0x12c2c"
-"f method.std::bad_typeid.what___const = 0x12c1c"
+"f class.public.std::bad_typeid @ 0x12c1c"
+"f method.std::bad_typeid._bad_typeid @ 0x12c2c"
+"f method.std::bad_typeid.what___const @ 0x12c1c"
 td "struct std::bad_typeid {};"
 EOF
 RUN
@@ -2106,7 +2106,7 @@ pthread_mutex_unlock
 0x00005eb8 16 imp.strncpy
 0x00005ec4 16 imp.remove
 0x00005ed0 16 imp.__stack_chk_fail
-0x00000000 16 imp.__stack_chk_guard
+---------- 0 imp.__stack_chk_guard
 0x00005edc 16 imp.__gnu_Unwind_Find_exidx
 0x00005ee8 16 imp.abort
 0x00005ef4 16 operator delete(void*)
@@ -2118,7 +2118,7 @@ pthread_mutex_unlock
 0x00005f3c 16 imp.strcmp
 0x00005f48 16 imp.fputs
 0x00005f54 16 imp.fputc
-0x00000000 16 imp.__sF
+---------- 0 imp.__sF
 0x00005f60 16 imp.memcmp
 0x00005f6c 16 imp.realloc
 0x00005f78 16 imp.sprintf
@@ -2127,7 +2127,7 @@ pthread_mutex_unlock
 0x00005f9c 16 imp.pthread_mutex_unlock
 vaddr      vsize  perm name                   
 ----------------------------------------------
-0x00000000 0x0    ---- 
+---------- 0x0    ---- 
 0x00000154 0x13   -r-- .interp
 0x00000168 0x24   -r-- .note.gnu.build-id
 0x0000018c 0x1990 -r-- .dynsym
@@ -2148,10 +2148,10 @@ vaddr      vsize  perm name
 0x00016ec0 0x140  -rw- .got
 0x00017000 0x24   -rw- .data
 0x00017028 0x4f30 -rw- .bss
-0x00000000 0x10   ---- .comment
-0x00000000 0x1c   ---- .note.gnu.gold-version
-0x00000000 0x2b   ---- .ARM.attributes
-0x00000000 0xf3   ---- .shstrtab
+---------- 0x10   ---- .comment
+---------- 0x1c   ---- .note.gnu.gold-version
+---------- 0x2b   ---- .ARM.attributes
+---------- 0xf3   ---- .shstrtab
 0x139ac 15 14 getPackageName
 0x139bb 21 20 ()Ljava/lang/String;
 0x139d0 17 16 java/lang/String
@@ -2352,12 +2352,11 @@ vaddr      vsize  perm name
 EOF
 RUN
 
-NAME=iD
-FILE=bins/elf/libmagic.so
-BROKEN=1
-CMDS=iD swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
+NAME=Test iD
+FILE==
+CMDS=iD java "Fake([BCDFIJSZ)Ltest/class/name;"
 EXPECT=<<EOF
-Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
+test.class.name Fake(byte[], char, double, float, int, long, short, boolean)
 EOF
 RUN
 
@@ -3548,7 +3547,7 @@ CMDS=iS
 EXPECT=<<EOF
 paddr      size  vaddr      vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
-0x00000000 0x0   0x00000000 0x0   0x0   ----                    NULL       
+0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
 0x00000134 0x13  0x08048134 0x13  0x0   -r-- .interp            PROGBITS   alloc
 0x00000148 0x20  0x08048148 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
 0x00000168 0x24  0x08048168 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
@@ -3574,10 +3573,10 @@ paddr      size  vaddr      vsize align perm name               type       flags
 0x00000694 0x18  0x08049694 0x18  0x0   -rw- .got.plt           PROGBITS   write,alloc
 0x000006ac 0x8   0x080496ac 0x8   0x0   -rw- .data              PROGBITS   write,alloc
 0x000006b4 0x0   0x080496b4 0x4   0x0   -rw- .bss               NOBITS     write,alloc
-0x000006b4 0x11  0x00000000 0x11  0x0   ---- .comment           PROGBITS   merge,strings
-0x000006c5 0x106 0x00000000 0x106 0x0   ---- .shstrtab          STRTAB     
-0x00000c7c 0x450 0x00000000 0x450 0x0   ---- .symtab            SYMTAB     
-0x000010cc 0x257 0x00000000 0x257 0x0   ---- .strtab            STRTAB     
+0x000006b4 0x11  ---------- 0x11  0x0   ---- .comment           PROGBITS   merge,strings
+0x000006c5 0x106 ---------- 0x106 0x0   ---- .shstrtab          STRTAB     
+0x00000c7c 0x450 ---------- 0x450 0x0   ---- .symtab            SYMTAB     
+0x000010cc 0x257 ---------- 0x257 0x0   ---- .strtab            STRTAB     
 EOF
 RUN
 
@@ -3603,7 +3602,7 @@ NAME=iSj
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSj
 EXPECT=<<EOF
-[{"name":"","size":0,"vsize":0,"perm":"----","type":"NULL","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","type":"GNU_HASH","flags":["alloc"],"paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","type":"DYNSYM","flags":["alloc"],"paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","type":"STRTAB","flags":["alloc"],"paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","type":"VERSYM","flags":["alloc"],"paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","type":"VERNEED","flags":["alloc"],"paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","type":"INIT_ARRAY","flags":["write","alloc"],"paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","type":"FINI_ARRAY","flags":["write","alloc"],"paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","type":"DYNAMIC","flags":["write","alloc"],"paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","type":"NOBITS","flags":["write","alloc"],"paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","type":"PROGBITS","flags":["merge","strings"],"paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","type":"STRTAB","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","type":"SYMTAB","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","type":"STRTAB","paddr":4300,"vaddr":0}]
+[{"name":"","size":0,"vsize":0,"perm":"----","type":"NULL","paddr":0,"vaddr":-1},{"name":".interp","size":19,"vsize":19,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","type":"GNU_HASH","flags":["alloc"],"paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","type":"DYNSYM","flags":["alloc"],"paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","type":"STRTAB","flags":["alloc"],"paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","type":"VERSYM","flags":["alloc"],"paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","type":"VERNEED","flags":["alloc"],"paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","type":"INIT_ARRAY","flags":["write","alloc"],"paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","type":"FINI_ARRAY","flags":["write","alloc"],"paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","type":"DYNAMIC","flags":["write","alloc"],"paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","type":"NOBITS","flags":["write","alloc"],"paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","type":"PROGBITS","flags":["merge","strings"],"paddr":1716,"vaddr":-1},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","type":"STRTAB","paddr":1733,"vaddr":-1},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","type":"SYMTAB","paddr":3196,"vaddr":-1},{"name":".strtab","size":599,"vsize":599,"perm":"----","type":"STRTAB","paddr":4300,"vaddr":-1}]
 EOF
 RUN
 
@@ -3621,7 +3620,7 @@ CMDS=iS:paddr/cols/vaddr/perm/name
 EXPECT=<<EOF
 paddr      vaddr      perm name               
 ----------------------------------------------
-0x00000000 0x00000000 ---- 
+0x00000000 ---------- ---- 
 0x00000134 0x08048134 -r-- .interp
 0x00000148 0x08048148 -r-- .note.ABI-tag
 0x00000168 0x08048168 -r-- .note.gnu.build-id
@@ -3647,10 +3646,10 @@ paddr      vaddr      perm name
 0x00000694 0x08049694 -rw- .got.plt
 0x000006ac 0x080496ac -rw- .data
 0x000006b4 0x080496b4 -rw- .bss
-0x000006b4 0x00000000 ---- .comment
-0x000006c5 0x00000000 ---- .shstrtab
-0x00000c7c 0x00000000 ---- .symtab
-0x000010cc 0x00000000 ---- .strtab
+0x000006b4 ---------- ---- .comment
+0x000006c5 ---------- ---- .shstrtab
+0x00000c7c ---------- ---- .symtab
+0x000010cc ---------- ---- .strtab
 EOF
 RUN
 
@@ -3683,7 +3682,7 @@ EXPECT=<<EOF
             ;-- segment.DYNAMIC:
             ;-- .dynamic:
             ;-- _DYNAMIC:
-            0x080495a8      .dword 0x00000001                          ; [21] -rw- section size 232 named .dynamic
+            0x080495a8      .dword 0x00000001                          ; [20] -rw- section size 232 named .dynamic
 EOF
 RUN
 
@@ -3700,7 +3699,7 @@ EXPECT=<<EOF
             ;-- _edata:
             ;-- __bss_start:
             ;-- __TMC_END__:
-            0x080496b4      0000           add   byte [eax], al        ; [25] -rw- section size 4 named .bss
+            0x080496b4      0000           add   byte [eax], al        ; [24] -rw- section size 4 named .bss
             0x080496b6      0000           add   byte [eax], al
             ;-- _end:
             0x080496b8      ff             invalid
@@ -3884,36 +3883,36 @@ iz
 EOF
 EXPECT=<<EOF
 -- default --
-nth paddr       vaddr       len size section            type  string            
+nth paddr      vaddr       len size section             type  string            
 --------------------------------------------------------------------------------
-0   0x00000d58  0x100000d58 9   10   2.__TEXT.__cstring ascii sayHello:
-1   0x00000d62  0x100000d62 4   5    2.__TEXT.__cstring ascii init
-2   0x00000d67  0x100000d67 5   6    2.__TEXT.__cstring ascii alloc
-3   0x00000d6d  0x100000d6d 5   6    2.__TEXT.__cstring ascii Hahha
-4   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
-5   0x00000d86  0x100000d86 9   10   2.__TEXT.__cstring ascii callMeNot
-6   0x00000d90  0x100000d90 7   8    2.__TEXT.__cstring ascii v16@0:8
-7   0x00000d98  0x100000d98 9   10   2.__TEXT.__cstring ascii sayHello2
-8   0x00000da2  0x100000da2 10  11   2.__TEXT.__cstring ascii v20@0:8i16
-9   0x00000dad  0x100000dad 11  12   2.__TEXT.__cstring ascii sayHello3::
-10  0x00000db9  0x100000db9 13  14   2.__TEXT.__cstring ascii v24@0:8i16i20
-11  0x00000dc7  0x100000dc7 8   9    2.__TEXT.__cstring ascii sayLong:
-12  0x00000dd0  0x100000dd0 10  11   2.__TEXT.__cstring ascii v24@0:8Q16
-13  0x00000ddb  0x100000ddb 7   8    2.__TEXT.__cstring ascii @16@0:8
-14  0x00000de3  0x100000de3 4   5    2.__TEXT.__cstring ascii Test
-3   0x100001058 0x100001058 5   6                       ascii cstr.Hahha
-4   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+0   0x00000d58 0x100000d58 9   10   2.__TEXT.__cstring  ascii sayHello:
+1   0x00000d62 0x100000d62 4   5    2.__TEXT.__cstring  ascii init
+2   0x00000d67 0x100000d67 5   6    2.__TEXT.__cstring  ascii alloc
+3   0x00000d6d 0x100000d6d 5   6    2.__TEXT.__cstring  ascii Hahha
+4   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
+5   0x00000d86 0x100000d86 9   10   2.__TEXT.__cstring  ascii callMeNot
+6   0x00000d90 0x100000d90 7   8    2.__TEXT.__cstring  ascii v16@0:8
+7   0x00000d98 0x100000d98 9   10   2.__TEXT.__cstring  ascii sayHello2
+8   0x00000da2 0x100000da2 10  11   2.__TEXT.__cstring  ascii v20@0:8i16
+9   0x00000dad 0x100000dad 11  12   2.__TEXT.__cstring  ascii sayHello3::
+10  0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
+11  0x00000dc7 0x100000dc7 8   9    2.__TEXT.__cstring  ascii sayLong:
+12  0x00000dd0 0x100000dd0 10  11   2.__TEXT.__cstring  ascii v24@0:8Q16
+13  0x00000ddb 0x100000ddb 7   8    2.__TEXT.__cstring  ascii @16@0:8
+14  0x00000de3 0x100000de3 4   5    2.__TEXT.__cstring  ascii Test
+3   0x00001058 0x100001058 5   6    9.__DATA.__cfstring ascii cstr.Hahha
+4   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 -- geq 12 --
-nth paddr       vaddr       len size section            type  string            
+nth paddr      vaddr       len size section             type  string            
 --------------------------------------------------------------------------------
-0   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
-1   0x00000db9  0x100000db9 13  14   2.__TEXT.__cstring ascii v24@0:8i16i20
-0   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+4   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
+10  0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
+4   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 -- leq 13 --
-nth paddr       vaddr       len size section            type  string            
+nth paddr      vaddr       len size section             type  string            
 --------------------------------------------------------------------------------
-0   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
-0   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+4   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
+4   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 EOF
 RUN
 
@@ -3992,20 +3991,20 @@ NAME=iH (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iH
 EXPECT=<<EOF
-0x00000000  ELF64       0x464c457f
+0x00000000  MAGIC       7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
 0x00000010  Type        0x0002
 0x00000012  Machine     0x003e
 0x00000014  Version     0x00000001
 0x00000018  Entrypoint  0x00400410
 0x00000020  PhOff       0x00000040
 0x00000028  ShOff       0x00000a30
-0x00000030  Flags       0x00000000
+0x00000030  Flags       0x0000
 0x00000034  EhSize      64
 0x00000036  PhentSize   56
 0x00000038  PhNum       8
 0x0000003a  ShentSize   64
 0x0000003c  ShNum       30
-0x0000003e  ShrStrndx   27
+0x0000003e  ShStrndx    27
 EOF
 RUN
 
@@ -4070,7 +4069,7 @@ CMDS=iS
 EXPECT=<<EOF
 paddr      size  vaddr      vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
-0x00000000 0x0   0x00000000 0x0   0x0   ----                    NULL       
+0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
 0x00000200 0x1a  0x00400200 0x1a  0x0   -r-- .interp            PROGBITS   alloc
 0x0000021c 0x20  0x0040021c 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
 0x0000023c 0x24  0x0040023c 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
@@ -4096,10 +4095,10 @@ paddr      size  vaddr      vsize align perm name               type       flags
 0x000008d0 0x30  0x006008d0 0x30  0x0   -rw- .got.plt           PROGBITS   write,alloc
 0x00000900 0x10  0x00600900 0x10  0x0   -rw- .data              PROGBITS   write,alloc
 0x00000910 0x0   0x00600910 0x8   0x0   -rw- .bss               NOBITS     write,alloc
-0x00000910 0x11  0x00000000 0x11  0x0   ---- .comment           PROGBITS   merge,strings
-0x00000921 0x108 0x00000000 0x108 0x0   ---- .shstrtab          STRTAB     
-0x000011b0 0x648 0x00000000 0x648 0x0   ---- .symtab            SYMTAB     
-0x000017f8 0x23e 0x00000000 0x23e 0x0   ---- .strtab            STRTAB     
+0x00000910 0x11  ---------- 0x11  0x0   ---- .comment           PROGBITS   merge,strings
+0x00000921 0x108 ---------- 0x108 0x0   ---- .shstrtab          STRTAB     
+0x000011b0 0x648 ---------- 0x648 0x0   ---- .symtab            SYMTAB     
+0x000017f8 0x23e ---------- 0x23e 0x0   ---- .strtab            STRTAB     
 EOF
 RUN
 
@@ -4266,7 +4265,7 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izzq~puts
 EXPECT=<<EOF
 0x4002fa 5 4 puts
-0x15b 18 17 puts@@GLIBC_2.2.5
+---------- 18 17 puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -4290,23 +4289,6 @@ Rfh-c
 h/sh
 h/bin
 echo "" > /etc/shadow ; echo "" > /etc/passwd ; rm -Rf /
-EOF
-RUN
-
-NAME=izzz (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izzz~?
-EXPECT=<<EOF
-82
-EOF
-RUN
-
-NAME=izzzq (file x86_64)
-FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=izzzq~puts
-EXPECT=<<EOF
-0x004002fa puts
-0x0000015b puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -4339,18 +4321,7 @@ e bin.str.purge=all,!0x4002fa,!0x15b
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
-EOF
-RUN
-
-NAME=izzzj
-FILE==
-CMDS=<<EOF
-w abcd\00012345\0efghi\0
-izzzj
-EOF
-EXPECT=<<EOF
-[{"vaddr":0,"paddr":0,"ordinal":0,"size":5,"length":4,"section":"","type":"ascii","string":"abcd"},{"vaddr":5,"paddr":5,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"12345"},{"vaddr":11,"paddr":11,"ordinal":2,"size":6,"length":5,"section":"","type":"ascii","string":"efghi"}]
+[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"}]
 EOF
 RUN
 
@@ -4403,6 +4374,34 @@ EXPECT=<<EOF
 17  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
 18  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
 136 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+EOF
+RUN
+
+NAME=iz ibm037 on zos binary
+FILE=bins/zos/linklib.xmt
+CMDS=<<EOF
+iz~SRSGENER
+iz~SRSPRHEX
+iz~SRSTASK
+EOF
+EXPECT=<<EOF
+14  0x000002f6 0x000002f6 8   9            ibm037  SRSGENER
+19  0x000004dc 0x000004dc 8   9            ibm037  SRSGENER
+22  0x00000668 0x00000668 92  93           ibm037  SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
+66  0x00001682 0x00001682 30  31           ibm037  SRSGENERNO     *SRS>   NONHELD
+132 0x00002faa 0x00002faa 49  50           ibm037  SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
+10  0x0000029a 0x0000029a 8   9            ibm037  SRSPRHEX
+17  0x00000362 0x00000362 8   9            ibm037  SRSPRHEX
+67  0x000016d4 0x000016d4 8   9            ibm037  SRSPRHEX
+70  0x00001861 0x00001861 27  28           ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+74  0x0000191f 0x0000191f 9   10           ibm037  ÏSRSPRHEX
+138 0x0000315b 0x0000315b 27  28           ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+142 0x0000323f 0x0000323f 9   10           ibm037  3SRSPRHEX
+217 0x00004c0f 0x00004c0f 27  28           ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
+18  0x000003ba 0x000003ba 8   9            ibm037  SRSTASK 
+98  0x00002540 0x00002540 17  18           ibm037  ­bå0­«SRSTASK  \-
+141 0x00003230 0x00003230 8   9            ibm037  SRSTASK 
+147 0x000033e4 0x000033e4 103 104          ibm037  SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
 EOF
 RUN
 
@@ -4504,7 +4503,7 @@ wz k\0i\0abcdefgh
 (izenc enc; e bin.str.enc=$0; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
-o-*
+o--
 rm .tmp/strenc-bin
 EOF
 EXPECT=<<EOF
@@ -4516,7 +4515,7 @@ RUN
 
 NAME=ik-relro
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ik info/elf.relro
+CMDS=ik elf.relro
 EXPECT=<<EOF
 no
 EOF
@@ -4526,7 +4525,7 @@ NAME=ibk use after free
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 obR
-ik info/*~?elf.relro
+ik *~?elf.relro
 EOF
 EXPECT=<<EOF
 1
@@ -4644,7 +4643,7 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-1055 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
+1100 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
 --2--
 --3--
 0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
@@ -4730,7 +4729,7 @@ CMDS=iS entropy; iSS entropy
 EXPECT=<<EOF
 paddr      size  vaddr      vsize align perm name           type     flags         entropy    
 ----------------------------------------------------------------------------------------------
-0x00000000 0x0   0x00000000 0x0   0x0   ----                NULL     
+0x00000000 0x0   ---------- 0x0   0x0   ----                NULL     
 0x00000154 0x13  0x08048154 0x13  0x0   -r-- .interp        PROGBITS alloc         3.68188080
 0x00000168 0x20  0x08048168 0x20  0x0   -r-- .note.ABI-tag  NOTE     alloc         1.74868984
 0x00000188 0x38  0x08048188 0x38  0x0   -r-- .hash          HASH     alloc         1.23442903
@@ -4755,10 +4754,10 @@ paddr      size  vaddr      vsize align perm name           type     flags      
 0x00000ff4 0x24  0x08049ff4 0x24  0x0   -rw- .got.plt       PROGBITS write,alloc   2.98068211
 0x00001018 0xc   0x0804a018 0xc   0x0   -rw- .data          PROGBITS write,alloc   1.58496250
 0x00001024 0x0   0x0804a024 0x4   0x0   -rw- .bss           NOBITS   write,alloc
-0x00001024 0x1b9 0x00000000 0x1b9 0x0   ---- .comment       PROGBITS               4.50015849
-0x000011dd 0xdb  0x00000000 0xdb  0x0   ---- .shstrtab      STRTAB                 4.21638420
-0x00001740 0x460 0x00000000 0x460 0x0   ---- .symtab        SYMTAB                 3.06854806
-0x00001ba0 0x248 0x00000000 0x248 0x0   ---- .strtab        STRTAB                 4.85613827
+0x00001024 0x1b9 ---------- 0x1b9 0x0   ---- .comment       PROGBITS               4.50015849
+0x000011dd 0xdb  ---------- 0xdb  0x0   ---- .shstrtab      STRTAB                 4.21638420
+0x00001740 0x460 ---------- 0x460 0x0   ---- .symtab        SYMTAB                 3.06854806
+0x00001ba0 0x248 ---------- 0x248 0x0   ---- .strtab        STRTAB                 4.85613827
 paddr      size  vaddr      vsize align  perm name      entropy    
 -------------------------------------------------------------------
 0x00000034 0x120 0x08048034 0x120 0x4    -r-x PHDR      2.77947373
@@ -4776,40 +4775,35 @@ RUN
 
 NAME=is sht null
 FILE=bins/elf/sht_null_symbols
-CMDS=is; ir; f
+CMDS=is; ir; fl
 EXPECT=<<EOF
 nth paddr      vaddr      bind   type   size lib name                            
 ---------------------------------------------------------------------------------
 8   0x00000590 0x00000590 GLOBAL FUNC   60       main
 9   0x0000064c 0x0000064c GLOBAL OBJ    4        _IO_stdin_used
-1   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_deregisterTMCloneTable
-2   0x00000000 0x00000000 WEAK   FUNC   16       imp.__cxa_finalize
+1   ---------- ---------- WEAK   NOTYPE 0        imp._ITM_deregisterTMCloneTable
+2   ---------- ---------- WEAK   FUNC   0        imp.__cxa_finalize
 3   0x000003f0 0x000003f0 GLOBAL FUNC   16       imp.puts
-4   0x00000000 0x00000000 WEAK   NOTYPE 16       imp.__gmon_start__
+4   ---------- ---------- WEAK   NOTYPE 0        imp.__gmon_start__
 5   0x00000400 0x00000400 GLOBAL FUNC   16       imp.__libc_start_main
-6   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._Jv_RegisterClasses
-7   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
+6   ---------- ---------- WEAK   NOTYPE 0        imp._Jv_RegisterClasses
+7   ---------- ---------- WEAK   NOTYPE 0        imp._ITM_registerTMCloneTable
 vaddr      paddr      target     type   name                        
 --------------------------------------------------------------------
-0x00001eec 0x00000eec 0x00002030 SET_32 
-0x00001ef0 0x00000ef0 0x00002034 SET_32 
-0x00001fe8 0x00000fe8 0x00002040 SET_32 _ITM_deregisterTMCloneTable
-0x00001fec 0x00000fec 0x00002044 SET_32 __cxa_finalize
-0x00001ff0 0x00000ff0 0x00002048 SET_32 __gmon_start__
-0x00001ff4 0x00000ff4 0x00002038 SET_32 
-0x00001ff8 0x00000ff8 0x0000204c SET_32 _Jv_RegisterClasses
-0x00001ffc 0x00000ffc 0x00002050 SET_32 _ITM_registerTMCloneTable
+0x00001eec 0x00000eec 0x00000000 SET_32 
+0x00001ef0 0x00000ef0 0x00000000 SET_32 
+0x00001fe8 0x00000fe8 0x00002030 SET_32 _ITM_deregisterTMCloneTable
+0x00001fec 0x00000fec 0x00002034 SET_32 __cxa_finalize
+0x00001ff0 0x00000ff0 0x00002038 SET_32 __gmon_start__
+0x00001ff4 0x00000ff4 0x00000000 SET_32 
+0x00001ff8 0x00000ff8 0x0000203c SET_32 _Jv_RegisterClasses
+0x00001ffc 0x00000ffc 0x00002040 SET_32 _ITM_registerTMCloneTable
 0x0000200c 0x0000100c 0x00002028 SET_32 puts
 0x00002010 0x00001010 0x0000202c SET_32 __libc_start_main
-0x00002018 0x00001018 0x0000203c SET_32 
+0x00002018 0x00001018 0x00000000 SET_32 
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr
-0x00000000 16 loc.imp._ITM_deregisterTMCloneTable
-0x00000000 16 sym.imp.__cxa_finalize
-0x00000000 16 loc.imp.__gmon_start
-0x00000000 16 loc.imp._Jv_RegisterClasses
-0x00000000 16 loc.imp._ITM_registerTMCloneTable
 0x00000034 288 segment.PHDR
 0x00000154 19 segment.INTERP
 0x00000168 68 segment.NOTE
@@ -4818,6 +4812,8 @@ vaddr      paddr      target     type   name
 0x000003f0 16 sym.imp.puts
 0x00000400 16 sym.imp.__libc_start_main
 0x00000420 1 entry0
+0x00000500 1 entry.fini0
+0x00000550 1 entry.init0
 0x00000590 256 main
 0x00000590 60 sym.main
 0x0000064c 4 obj._IO_stdin_used
@@ -4835,11 +4831,11 @@ vaddr      paddr      target     type   name
 0x00002010 4 reloc.__libc_start_main
 0x00002028 4 reloc.target.puts
 0x0000202c 4 reloc.target.__libc_start_main
-0x00002040 4 reloc.target._ITM_deregisterTMCloneTable
-0x00002044 4 reloc.target.__cxa_finalize
-0x00002048 4 reloc.target.__gmon_start
-0x0000204c 4 reloc.target._Jv_RegisterClasses
-0x00002050 4 reloc.target._ITM_registerTMCloneTable
+0x00002030 4 reloc.target._ITM_deregisterTMCloneTable
+0x00002034 4 reloc.target.__cxa_finalize
+0x00002038 4 reloc.target.__gmon_start
+0x0000203c 4 reloc.target._Jv_RegisterClasses
+0x00002040 4 reloc.target._ITM_registerTMCloneTable
 EOF
 RUN
 
@@ -4907,7 +4903,7 @@ EXPECT=<<EOF
             ;-- segment.GNU_RELRO:
             ;-- .preinit_array:
             ;-- __preinit:
-            0x08049ed4      .dword 0x08048486 ; entry.preinit0 ; sym.preinit ; [18] -rw- section size 8 named .preinit_array
+            0x08049ed4      .dword 0x08048486 ; entry.preinit0 ; sym.preinit ; [17] -rw- section size 8 named .preinit_array
             ;-- __preinit2:
             0x08049ed8      .dword 0x0804849f ; entry.preinit1 ; sym.preinit2
 
@@ -4915,7 +4911,7 @@ EXPECT=<<EOF
             ;-- .init_array:
             ;-- __frame_dummy_init_array_entry:
             ;-- __init_array_start:
-            0x08049edc      .dword 0x08048480 ; entry.init0 ; sym.frame_dummy ; [19] -rw- section size 20 named .init_array
+            0x08049edc      .dword 0x08048480 ; entry.init0 ; sym.frame_dummy ; [18] -rw- section size 20 named .init_array
             0x08049ee0      .dword 0x080484b8 ; entry.init1 ; sym.constructor
             ;-- __init:
             0x08049ee4      .dword 0x080484d1 ; entry.init2 ; sym.init
@@ -4927,7 +4923,7 @@ EXPECT=<<EOF
             ;-- .fini_array:
             ;-- __do_global_dtors_aux_fini_array_entry:
             ;-- __init_array_end:
-            0x08049ef0      .dword 0x08048450 ; entry.fini0 ; sym.__do_global_dtors_aux ; [20] -rw- section size 20 named .fini_array
+            0x08049ef0      .dword 0x08048450 ; entry.fini0 ; sym.__do_global_dtors_aux ; [19] -rw- section size 20 named .fini_array
             0x08049ef4      .dword 0x0804859c ; entry.fini1 ; sym.destructor2
             ;-- __fini2:
             0x08049ef8      .dword 0x080485b5 ; entry.fini2 ; sym.fini2
@@ -4940,7 +4936,6 @@ RUN
 NAME=iee elf Cd (64-bit)
 FILE=bins/elf/analysis/ls-linux64
 CMDS=<<EOF
-e scr.interactive=true
 s section..preinit_array
 ?e
 pD $SS @ section..init_array
@@ -4952,13 +4947,13 @@ EXPECT=<<EOF
             ;-- section..init_array:
             ;-- segment.LOAD1:
             ;-- segment.GNU_RELRO:
-            0x0021bfa8      .qword 0x0000000000005d20 ; entry.init0    ; RELOC 64  ; [18] -rw- section size 8 named .init_array
+            0x0021bfa8      .qword 0x0000000000005d20 ; entry.init0    ; RELOC 64  ; [17] -rw- section size 8 named .init_array
 
             ;-- section..fini_array:
-            0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
+            0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [18] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
-Cannot seek to unknown address 'section..preinit_array'
+ERROR: Cannot seek to unknown address 'section..preinit_array'
 EOF
 RUN
 
@@ -5058,8 +5053,8 @@ CMDS=ii
 EXPECT=<<EOF
 nth vaddr      bind   type   lib name              
 ---------------------------------------------------
-1   0x00000000 GLOBAL FUNC       __libc_start_main
-2   0x00000000 WEAK   NOTYPE     __gmon_start__
+1   ---------- GLOBAL FUNC       __libc_start_main
+2   ---------- WEAK   NOTYPE     __gmon_start__
 EOF
 RUN
 
@@ -5074,7 +5069,7 @@ RUN
 
 NAME=ik-macho
 FILE=bins/mach0/fatmach0-3true
-CMDS=ik info/mach0.entry.vaddr~?0x100000ef8
+CMDS=ik mach0.entry.vaddr~?0x100000ef8
 EXPECT=<<EOF
 1
 EOF
@@ -5082,7 +5077,7 @@ RUN
 
 NAME=ikv
 FILE=bins/mach0/fatmach0-3true
-CMDS=ikv info/mach0.entry.vaddr
+CMDS=ikv mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -5090,7 +5085,7 @@ RUN
 
 NAME=ik.
 FILE=bins/mach0/fatmach0-3true
-CMDS=ik. info/mach0.entry.vaddr
+CMDS=ik. mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -5145,7 +5140,7 @@ RUN
 
 NAME=iRj
 FILE=bins/pe/standard.exe
-CMDS=iRj~{}
+CMDS=iRj sha1 md5~{}
 EXPECT=<<EOF
 [
   {
@@ -5155,7 +5150,9 @@ EXPECT=<<EOF
     "vaddr": 4198784,
     "size": 5672,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "ead6c27941988470ea241780d5f03bda35ffb023",
+    "md5": "4ca2df93b0862cc601fb4c5df46722aa"
   },
   {
     "name": "10",
@@ -5164,7 +5161,9 @@ EXPECT=<<EOF
     "vaddr": 4205072,
     "size": 76,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "ece05370137621ead05fcf468ba546e2dab83c7a",
+    "md5": "e6b62b76fb2eb2a0e0adde0c067da680"
   },
   {
     "name": "788",
@@ -5173,7 +5172,9 @@ EXPECT=<<EOF
     "vaddr": 4204464,
     "size": 20,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "6768033e216468247bd031a0a2d9876d79818f8f",
+    "md5": "441018525208457705bf09a8ee3c1093"
   },
   {
     "name": "1",
@@ -5182,7 +5183,9 @@ EXPECT=<<EOF
     "vaddr": 4204496,
     "size": 452,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6",
+    "md5": "3ce9d74193d28338494362767873ba7b"
   },
   {
     "name": "1",
@@ -5191,18 +5194,31 @@ EXPECT=<<EOF
     "vaddr": 4204960,
     "size": 74,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "1dcc0c704303ccc1729abd618f490073331e8b22",
+    "md5": "aa6672fe9e8426f8dd570c81095e1476"
   }
 ]
 EOF
 RUN
 
-NAME=izzz
-FILE=bins/mach0/fatmach0-3true
-BROKEN=1
-CMDS=izzz~http~codesigning
+NAME=iRt
+FILE=bins/pe/standard.exe
+CMDS=iRt:quiet sha1 md5
 EXPECT=<<EOF
-093 0x00002f3c 0x00002f3c  47  48 () ascii ,http://www.apple.com/appleca/codesigning.crl0\r
+0     1576 ICON       0x00401180 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ead6c27941988470ea241780d5f03bda35ffb023 4ca2df93b0862cc601fb4c5df46722aa
+1     10   STRING     0x00402a10 0x4c   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ece05370137621ead05fcf468ba546e2dab83c7a e6b62b76fb2eb2a0e0adde0c067da680
+2     788  GROUP_ICON 0x004027b0 0x14   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 6768033e216468247bd031a0a2d9876d79818f8f 441018525208457705bf09a8ee3c1093
+3     1    VERSION    0x004027d0 0x1c4  LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6 3ce9d74193d28338494362767873ba7b
+4     1    MANIFEST   0x004029a0 0x4a   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 1dcc0c704303ccc1729abd618f490073331e8b22 aa6672fe9e8426f8dd570c81095e1476
+EOF
+RUN
+
+NAME=izz
+FILE=bins/mach0/fatmach0-3true
+CMDS=izz~http~codesigning
+EXPECT=<<EOF
+97  0x00003f3c 0x100002f3c 47  48                           ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
 EOF
 RUN
 
@@ -5257,7 +5273,6 @@ File has been modified.
 + crc32 1ae319dc
 - entropy 2.959094
 + entropy 2.959088
-All core files, io, analysis and flags info purged.
 EOF
 EXPECT=<<EOF
 md5 84144530144b53a704c84d9c65ab5f92
@@ -5314,6 +5329,20 @@ address    index class   flags name
 0x0000022b 0     LHello; p     <init>(Ljava/lang/String;)V
 0x00000263 1     LHello; p     say()V
 0x000002aa 2     LHello; sp    main([Ljava/lang/String;)V
+EOF
+RUN
+
+NAME=ic json (file Java)
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+icj
+icfj
+icmj
+EOF
+EXPECT=<<EOF
+[{"classname":"LHello;","addr":0,"index":0,"visibility":"public","super":"java/lang/Object","methods":[{"name":"LHello;.<init>","flags":["public"],"addr":555},{"name":"LHello;.say","flags":["public"],"addr":611},{"name":"LHello;.main","flags":["static","public"],"addr":682}],"fields":[{"name":"who","type":"Ljava/lang/String;","flags":["private"],"addr":523}]}]
+[{"type":"Ljava/lang/String;","name":"who","class":"LHello;","flags":["private"],"addr":523}]
+[{"name":"<init>(Ljava/lang/String;)V","class":"LHello;","flags":["public"],"addr":555},{"name":"say()V","class":"LHello;","flags":["public"],"addr":611},{"name":"main([Ljava/lang/String;)V","class":"LHello;","flags":["static","public"],"addr":682}]
 EOF
 RUN
 
@@ -5398,7 +5427,7 @@ vaddr      paddr      hvaddr     haddr      type
 0x00000d28 0x00000d28 0x00000018 0x00000018 program
 EOF
 EXPECT_ERR=<<EOF
-Cannot determine entrypoint, using 0x00000d28.
+ERROR: Cannot determine entrypoint, using 0x00000d28.
 EOF
 RUN
 
@@ -5455,13 +5484,13 @@ ix
 ?e -- Everything in json
 ixj
 ?e -- Single address (exact match)
-ix.@0x00001401
+ix. @ 0x00001401
 ?e -- Single address (still covered)
-ix.@0x00001402
+ix. @ 0x00001402
 ?e -- Single address (not covered anymore)
-ix.@0x00001403
+ix. @ 0x00001403
 ?e -- Single address in json
-ix.j@0x000013a2
+ix.j @ 0x000013a2
 ?e -- File Summary
 ixf
 ?e -- File Summary in json
@@ -5555,9 +5584,9 @@ RUN
 NAME=ix same-addr samples
 FILE=bins/elf/libstdc++.so.6
 CMDS=<<EOF
-ix.@0x00091004
+ix. @ 0x00091004
 ?e --
-ix.j@0x00091004
+ix.j @ 0x00091004
 EOF
 EXPECT=<<EOF
 0x00091004	/build/gcc/src/gcc/libstdc++-v3/libsupc++/new	57

@@ -44,6 +44,7 @@ To run unit tests, just use `ninja -C build test` (or `meson test -C build`)
 from the top directory (replace `build` with the name of the directory you used
 to build Rizin).
 You can run one specific testcase category (e.g. the whole `test_bin.c` file) using `meson test -C build bin`.
+If you are using `meson test`, you should consider using the `--print-errorlogs` flag.
 
 # Failure Levels
 
@@ -58,7 +59,7 @@ A test can have one of the following results:
 Tests for the assembly and disassembly (in `db/asm/*`) have a different format:
 General format:
 ```
-type "assembly" opcode [offset]
+type "assembly" opcode [offset] [IL]
 ```
 where type can be any of:
 * **a** meaning "assemble"
@@ -78,6 +79,21 @@ d "ret" c3
 a "nop" 90 # Assembly is correct
 dB "nopppp" 90 # Disassembly test is broken
 ```
+
+#### IL
+
+To also test lifting an instruction to RzIL, you can append the readable IL
+representation like so:
+```
+d "inc ptr" 3e 0 set(v:ptr, x:add(x:var(v:ptr), y:bitv(bits:0x0000000000000001, len:64)))
+```
+
+This means that rz-test will also perform the lifting from bytes to RzIL,
+run the validation pass on the result and compare it against the given string.
+
+In this case, passing an offset is mandatory, otherwise the argument would be ambiguous.
+
+#### General hints
 
 You can merge lines:
 ```
@@ -125,15 +141,15 @@ FILE=bins/elf/analysis/pie
 ARGS=-d
 CMDS=<<EOF
 aa
-db main
-db~main
+db @ main
+dbl~main
 doc
-db~main
+dbl~main
 EOF
 REGEXP_FILTER_OUT=([a-zA-Z="]+\s+)
 EXPECT=<<EOF
-x sw break enabled valid cmd="" cond="" name="main" pie"
-x sw break enabled valid cmd="" cond="" name="main" pie"
+0x000005c5 0x000005c6 1    --x  sw    break enabled valid             main
+0x000005c5 0x000005c6 1    --x  sw    break enabled valid             main
 EOF
 RUN
 ```
@@ -170,8 +186,8 @@ Rizin, but to test new API or new code we suggest to write small unit tests.
 
 The basic structure of a unit test is the following:
 ```C
-#include "minunit.h"
 #include <rz_XXXXX.h>
+#include "minunit.h" // Place at the bottom of includes.
 
 static bool test_my_feature(void) {
 	// code to test the behaviour

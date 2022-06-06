@@ -1,8 +1,52 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_reg.h>
 #include <rz_util.h>
+
+/**
+ * Read the value of the given register as a bit vector
+ */
+RZ_API RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item) {
+	rz_return_val_if_fail(reg && item, NULL);
+	RzRegSet *regset = &reg->regset[item->arena];
+	if (reg->big_endian) {
+		return rz_bv_new_from_bytes_be(regset->arena->bytes, item->offset, item->size);
+	} else {
+		return rz_bv_new_from_bytes_le(regset->arena->bytes, item->offset, item->size);
+	}
+}
+
+/**
+ * Set the value of the given register from the given bit vector
+ * \param bv bitvector of exactly item->len bits
+ * \return wether the write succeeded
+ */
+RZ_API bool rz_reg_set_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, RZ_NONNULL const RzBitVector *bv) {
+	rz_return_val_if_fail(reg && item && bv, false);
+	if (rz_bv_len(bv) != item->size) {
+		return false;
+	}
+	if (item->offset % 8) {
+		// TODO: this needs a bit offset arg in rz_bv_set_to_bytes_be()
+		if (item->size == 1) {
+			// workaround for flags edge-case while the offset mentioned above is not implemented yet
+			rz_reg_set_value(reg, item, rz_bv_to_ut64(bv));
+			return true;
+		}
+		RZ_LOG_ERROR("rz_reg_set_bv() for non-byte-aligned regs not supported yet.\n");
+		return false;
+	}
+	RzRegSet *regset = &reg->regset[item->arena];
+	int boff = item->offset / 8;
+	if (reg->big_endian) {
+		rz_bv_set_to_bytes_be(bv, regset->arena->bytes + boff);
+	} else {
+		rz_bv_set_to_bytes_le(bv, regset->arena->bytes + boff);
+	}
+	return true;
+}
 
 typedef ut32 ut27;
 static ut27 rz_read_me27(const ut8 *buf, int boff) {
@@ -62,7 +106,6 @@ RZ_API ut64 rz_reg_get_value_big(RzReg *reg, RzRegItem *item, utX *val) {
 		ret = val->v256.Low.Low;
 		break;
 	default:
-		eprintf("rz_reg_get_value_big: Bit size %d not supported\n", item->size);
 		break;
 	}
 	return ret;
@@ -119,7 +162,7 @@ RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item) {
 		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			return rz_read_ble64(regset->arena->bytes + off, reg->big_endian);
 		}
-		//eprintf ("rz_reg_get_value: null or oob arena for current regset\n");
+		// eprintf ("rz_reg_get_value: null or oob arena for current regset\n");
 		break;
 	case 80: // long double
 	case 96: // long floating value
@@ -130,7 +173,6 @@ RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item) {
 		// XXX 128 & 256 bit
 		return (ut64)rz_reg_get_longdouble(reg, item);
 	default:
-		eprintf("rz_reg_get_value: Bit size %d not supported\n", item->size);
 		break;
 	}
 	return 0LL;
@@ -144,6 +186,7 @@ RZ_API ut64 rz_reg_get_value_by_role(RzReg *reg, RzRegisterId role) {
 RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 	ut8 bytes[12];
 	ut8 *src = bytes;
+	bool unset_src = false;
 	rz_return_val_if_fail(reg && item, false);
 
 	if (rz_reg_is_readonly(reg, item)) {
@@ -160,6 +203,7 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 	case 80:
 	case 96: // long floating value
 		rz_reg_set_longdouble(reg, item, (long double)value);
+		unset_src = true;
 		break;
 	case 64:
 		if (reg->big_endian) {
@@ -208,11 +252,11 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 		// XXX 128 & 256 bit
 		return false; // (ut64)rz_reg_get_longdouble (reg, item);
 	default:
-		eprintf("rz_reg_set_value: Bit size %d not supported\n", item->size);
+		RZ_LOG_ERROR("rz_reg_set_value: Bit size %d not supported\n", item->size);
 		return false;
 	}
 	const bool fits_in_arena = (arena->size - BITS2BYTES(item->offset) - BITS2BYTES(item->size)) >= 0;
-	if (src && fits_in_arena) {
+	if (!unset_src && fits_in_arena) {
 		rz_mem_copybits(reg->regset[item->arena].arena->bytes +
 				BITS2BYTES(item->offset),
 			src, item->size);
@@ -224,7 +268,11 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 
 RZ_API bool rz_reg_set_value_by_role(RzReg *reg, RzRegisterId role, ut64 val) {
 	// TODO use mapping from RzRegisterId to RzRegItem (via RzRegSet)
-	RzRegItem *r = rz_reg_get(reg, rz_reg_get_name(reg, role), -1);
+	const char *name = rz_reg_get_name(reg, role);
+	if (!name) {
+		return false;
+	}
+	RzRegItem *r = rz_reg_get(reg, name, -1);
 	return rz_reg_set_value(reg, r, val);
 }
 

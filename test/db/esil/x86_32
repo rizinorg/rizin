@@ -2,21 +2,20 @@ NAME=2step push x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
-.aer*
-"wa mov eax, 0x1234;push eax"
+ar esp=0x00108000
+.arf
+wa "mov eax, 0x1234;push eax"
 2aes
-.aer*
-aer?esp
+.arf
+ar esp
 ?v [esp]
 EOF
 EXPECT=<<EOF
-0x00107ffc
+esp = 0x00107ffc
 0x1234
 EOF
 RUN
@@ -25,28 +24,27 @@ NAME=movsb 1 byte x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
 wx 12 @ 0x10000000
 aeim 0x20000000 10 destination
-aer edi=0x20000000
-aer esi=0x10000000
-.aer*
-"wx a4"
+ar edi=0x20000000
+ar esi=0x10000000
+.arf
+wx a4
 2aes
-.aer*
-aer?edi
-aer?esi
-pv @0x20000000
+.arf
+ar edi
+ar esi
+pv @ 0x20000000
 EOF
 EXPECT=<<EOF
-0x20000001
-0x10000001
+edi = 0x20000001
+esi = 0x10000001
 0x00000012
 EOF
 RUN
@@ -55,19 +53,18 @@ NAME=mov eax, 1 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-.aer*
-"wx b801000000"
+.arf
+wx b801000000
 1aes
-.aer*
-aer?eax
+.arf
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000001
+eax = 0x00000001
 EOF
 RUN
 
@@ -75,32 +72,31 @@ NAME=rep movsb string x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
 wx 1234567890 @ 0x10000000
 aeim 0x20000000 10 destination
-aer edi=0x20000000
-aer esi=0x10000000
-aer ecx=10
-.aer*
-"wx f3a4"
+ar edi=0x20000000
+ar esi=0x10000000
+ar ecx=10
+.arf
+wx f3a4
 aes
-.aer*
-aer?edi
-aer?esi
-pv @0x20000000
-aer?ecx
+.arf
+ar edi
+ar esi
+pv @ 0x20000000
+ar ecx
 EOF
 EXPECT=<<EOF
-0x2000000a
-0x1000000a
+edi = 0x2000000a
+esi = 0x1000000a
 0x78563412
-0x00000000
+ecx = 0x00000000
 EOF
 RUN
 
@@ -108,19 +104,18 @@ NAME=mov byte [0x20000000], 0x64 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 wx 1234567890 @ 0x10000000
 aeim 0x20000000 10 destination
-.aer*
-"wx c6050000002064"
+.arf
+wx c6050000002064
 aes
-.aer*
-pv @0x20000000
+.arf
+pv @ 0x20000000
 EOF
 EXPECT=<<EOF
 0x00000064
@@ -131,22 +126,21 @@ NAME=mov eax, [esp + 4] x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
 aeim 0x20000000 10 destination
-aer esp=0x20000000
+ar esp=0x20000000
 wx 3713 @ 0x20000004
-.aer*
-"wx 8b442404"
+.arf
+wx 8b442404
 aes
-.aer*
-aer?eax
+.arf
+ar eax
 EOF
 EXPECT=<<EOF
-0x00001337
+eax = 0x00001337
 EOF
 RUN
 
@@ -154,18 +148,17 @@ NAME=mov [esp + 4], eax x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
 aeim 0x20000000 10 destination
-aer esp=0x20000000
-aer eax=0x1337
-.aer*
-"wx 89442404"
+ar esp=0x20000000
+ar eax=0x1337
+.arf
+wx 89442404
 aes
-.aer*
+.arf
 pv @ 0x20000004
 EOF
 EXPECT=<<EOF
@@ -178,27 +171,26 @@ FILE==
 BROKEN=1
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 0x1000 source
 aeim 0x20000000 0x1000 destination
 wr 0x1000 @ 0x10000000
-aer edi=0x20000000
-aer esi=0x10000000
-aer ecx=0x1000
-.aer*
-"wx f3a4"
+ar edi=0x20000000
+ar esi=0x10000000
+ar ecx=0x1000
+.arf
+wx f3a4
 aes
-.aer*
+.arf
 s 0x10000000
 cX 0x20000000
-aer?edi
-aer?esi
-aer?ecx
+ar?edi
+ar?esi
+ar?ecx
 EOF
 EXPECT=<<EOF
 0x20001000
@@ -211,25 +203,24 @@ NAME=lodsb ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
 wx 12 @ 0x10000000
-aer esi=0x10000000
-.aer*
-"wx fcac"
+ar esi=0x10000000
+.arf
+wx fcac
 2aes
-.aer*
-aer?esi
-aer?al
+.arf
+ar esi
+ar al
 EOF
 EXPECT=<<EOF
-0x10000001
-0x00000012
+esi = 0x10000001
+al = 0x00000012
 EOF
 RUN
 
@@ -237,25 +228,24 @@ NAME=lodsb -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
 wx 12 @ 0x10000000
-aer esi=0x10000000
-.aer*
-"wx fdac"
+ar esi=0x10000000
+.arf
+wx fdac
 2aes
-.aer*
-aer?esi
-aer?al
+.arf
+ar esi
+ar al
 EOF
 EXPECT=<<EOF
-0x0fffffff
-0x00000012
+esi = 0x0fffffff
+al = 0x00000012
 EOF
 RUN
 
@@ -263,25 +253,24 @@ NAME=lodsw ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
 wx 3412 @ 0x10000000
-aer esi=0x10000000
-.aer*
-"wx fc66ad"
+ar esi=0x10000000
+.arf
+wx fc66ad
 2aes
-.aer*
-aer?esi
-aer?ax
+.arf
+ar esi
+ar ax
 EOF
 EXPECT=<<EOF
-0x10000002
-0x00001234
+esi = 0x10000002
+ax = 0x00001234
 EOF
 RUN
 
@@ -289,25 +278,24 @@ NAME=lodsw -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
 wx 3412 @ 0x10000000
-aer esi=0x10000000
-.aer*
-"wx fd66ad"
+ar esi=0x10000000
+.arf
+wx fd66ad
 2aes
-.aer*
-aer?esi
-aer?ax
+.arf
+ar esi
+ar ax
 EOF
 EXPECT=<<EOF
-0x0ffffffe
-0x00001234
+esi = 0x0ffffffe
+ax = 0x00001234
 EOF
 RUN
 
@@ -315,25 +303,24 @@ NAME=lodsd ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
 wx 563412 @ 0x10000000
-aer esi=0x10000000
-.aer*
-"wx fcad"
+ar esi=0x10000000
+.arf
+wx fcad
 2aes
-.aer*
-aer?esi
-aer?eax
+.arf
+ar esi
+ar eax
 EOF
 EXPECT=<<EOF
-0x10000004
-0x00123456
+esi = 0x10000004
+eax = 0x00123456
 EOF
 RUN
 
@@ -341,25 +328,24 @@ NAME=lodsd -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
 wx 563412 @ 0x10000000
-aer esi=0x10000000
-.aer*
-"wx fdad"
+ar esi=0x10000000
+.arf
+wx fdad
 2aes
-.aer*
-aer?esi
-aer?eax
+.arf
+ar esi
+ar eax
 EOF
 EXPECT=<<EOF
-0x0ffffffc
-0x00123456
+esi = 0x0ffffffc
+eax = 0x00123456
 EOF
 RUN
 
@@ -367,24 +353,23 @@ NAME=stosb ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
-aer al=0x12
-aer edi=0x10000000
-.aer*
-"wx fcaa"
+ar al=0x12
+ar edi=0x10000000
+.arf
+wx fcaa
 2aes
-.aer*
-aer?edi
-pv @0x10000000
+.arf
+ar edi
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
-0x10000001
+edi = 0x10000001
 0x00000012
 EOF
 RUN
@@ -393,24 +378,23 @@ NAME=stosb -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
-aer al=0x12
-aer edi=0x10000000
-.aer*
-"wx fdaa"
+ar al=0x12
+ar edi=0x10000000
+.arf
+wx fdaa
 2aes
-.aer*
-aer?edi
-pv @0x10000000
+.arf
+ar edi
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
-0x0fffffff
+edi = 0x0fffffff
 0x00000012
 EOF
 RUN
@@ -419,24 +403,23 @@ NAME=stosw ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
-aer ax = 0x1234
-aer edi=0x10000000
-.aer*
-"wx fc66ab"
+ar ax = 0x1234
+ar edi=0x10000000
+.arf
+wx fc66ab
 2aes
-.aer*
-aer?edi
-pv @0x10000000
+.arf
+ar edi
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
-0x10000002
+edi = 0x10000002
 0x00001234
 EOF
 RUN
@@ -445,24 +428,23 @@ NAME=stosw -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
-aer ax = 0x1234
-aer edi=0x10000000
-.aer*
-"wx fd66ab"
+ar ax = 0x1234
+ar edi=0x10000000
+.arf
+wx fd66ab
 2aes
-.aer*
-aer?edi
-pv @0x10000000
+.arf
+ar edi
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
-0x0ffffffe
+edi = 0x0ffffffe
 0x00001234
 EOF
 RUN
@@ -471,24 +453,23 @@ NAME=stosd ++ x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
-aer eax = 0x123456
-aer edi=0x10000000
-.aer*
-"wx fcab"
+ar eax = 0x123456
+ar edi=0x10000000
+.arf
+wx fcab
 2aes
-.aer*
-aer?edi
-pv @0x10000000
+.arf
+ar edi
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
-0x10000004
+edi = 0x10000004
 0x00123456
 EOF
 RUN
@@ -497,24 +478,23 @@ NAME=stosd -- x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
-aer eax = 0x123456
-aer edi=0x10000000
-.aer*
-"wx fdab"
+ar eax = 0x123456
+ar edi=0x10000000
+.arf
+wx fdab
 2aes
-.aer*
-aer?edi
-pv @0x10000000
+.arf
+ar edi
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
-0x0ffffffc
+edi = 0x0ffffffc
 0x00123456
 EOF
 RUN
@@ -523,25 +503,24 @@ NAME=shr eax(9) >> 1 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
-aer eax = 9
-aer edi=0x10000000
-.aer*
-"wx d1e8"
+ar eax = 9
+ar edi=0x10000000
+.arf
+wx d1e8
 1aes
-.aer*
-aer?eax
-aer?cf
+.arf
+ar eax
+ar cf
 EOF
 EXPECT=<<EOF
-0x00000004
-0x00000001
+eax = 0x00000004
+cf = 0x00000001
 EOF
 RUN
 
@@ -549,25 +528,24 @@ NAME=shr eax(0x1b) >> 1 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
-aer eax = 0x1b
-aer edi=0x10000000
-.aer*
-"wx d1e8"
+ar eax = 0x1b
+ar edi=0x10000000
+.arf
+wx d1e8
 1aes
-.aer*
-aer?eax
-aer?cf
+.arf
+ar eax
+ar cf
 EOF
 EXPECT=<<EOF
-0x0000000d
-0x00000001
+eax = 0x0000000d
+cf = 0x00000001
 EOF
 RUN
 
@@ -575,25 +553,24 @@ NAME=shr eax(5) >> 2 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
+ar esp=0x00108000
 aeim 0x10000000 10 source
-aer eax = 5
-aer edi=0x10000000
-.aer*
-"wx c1e802"
+ar eax = 5
+ar edi=0x10000000
+.arf
+wx c1e802
 1aes
-.aer*
-aer?eax
-aer?cf
+.arf
+ar eax
+ar cf
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+eax = 0x00000001
+cf = 0x00000000
 EOF
 RUN
 
@@ -601,24 +578,23 @@ NAME=shr byte [esp + 4], 2 x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
 aeim 0x10000000 10 source
-aer esp=0x10000000
+ar esp=0x10000000
 wx 05 @ 0x10000004
-.aer*
-"wx c06c240402"
+.arf
+wx c06c240402
 1aes
-.aer*
+.arf
 pv @ 0x10000004
-aer?cf
+ar cf
 EOF
 EXPECT=<<EOF
 0x00000001
-0x00000000
+cf = 0x00000000
 EOF
 RUN
 
@@ -626,24 +602,23 @@ NAME=add byte [esp + 4], 0xa x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
 aeim 0x20000000 10 destination
-aer esp=0x20000000
+ar esp=0x20000000
 wx ff @ 0x20000004
-.aer*
-"wx 804424040a"
+.arf
+wx 804424040a
 aes
-.aer*
+.arf
 pv @ 0x20000004
-aer?cf
+ar cf
 EOF
 EXPECT=<<EOF
 0x00000009
-0x00000001
+cf = 0x00000001
 EOF
 RUN
 
@@ -651,22 +626,21 @@ NAME=add eax, [esp + 4] x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
 aeim 0x20000000 10 destination
-aer esp=0x20000000
+ar esp=0x20000000
 wx 3713 @ 0x20000004
-.aer*
-"wx 03442404"
+.arf
+wx 03442404
 aes
-.aer*
-aer?eax
+.arf
+ar eax
 EOF
 EXPECT=<<EOF
-0x00001337
+eax = 0x00001337
 EOF
 RUN
 
@@ -674,18 +648,17 @@ NAME=add dword [0x20000000], eax x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
 aeim 0x20000000 10 destination
-aer esp=0x20000000
-aer eax=0x1337
-.aer*
-"wx 010500000020"
+ar esp=0x20000000
+ar eax=0x1337
+.arf
+wx 010500000020
 aes
-.aer*
+.arf
 pv @ 0x20000000
 EOF
 EXPECT=<<EOF
@@ -697,25 +670,24 @@ NAME=add byte cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
-aer dl = 0x80
-.aer*
-"wx 00d2"
+ar esp=0x00108000
+ar dl = 0x80
+.arf
+wx 00d2
 1aes
-.aer*
-aer?dl
-aer?cf
-aer?zf
+.arf
+ar dl
+ar cf
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000001
+dl = 0x00000000
+cf = 0x00000001
+zf = 0x00000001
 EOF
 RUN
 
@@ -723,25 +695,24 @@ NAME=add word cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
-aer dx = 0x8000
-.aer*
-"wx 6601d2"
+ar esp=0x00108000
+ar dx = 0x8000
+.arf
+wx 6601d2
 1aes
-.aer*
-aer?dx
-aer?cf
-aer?zf
+.arf
+ar dx
+ar cf
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000001
+dx = 0x00000000
+cf = 0x00000001
+zf = 0x00000001
 EOF
 RUN
 
@@ -749,25 +720,24 @@ NAME=add dword cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
-aer edx = 0x80000000
-.aer*
-"wx 01d2"
+ar esp=0x00108000
+ar edx = 0x80000000
+.arf
+wx 01d2
 1aes
-.aer*
-aer?edx
-aer?cf
-aer?zf
+.arf
+ar edx
+ar cf
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000001
+edx = 0x00000000
+cf = 0x00000001
+zf = 0x00000001
 EOF
 RUN
 
@@ -775,26 +745,25 @@ NAME=adc byte cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer cf=1
-aer esp=0x00108000
-aer dl = 0x80
-.aer*
-"wx 10d2"
+ar cf=1
+ar esp=0x00108000
+ar dl = 0x80
+.arf
+wx 10d2
 1aes
-.aer*
-aer?dl
-aer?cf
-aer?zf
+.arf
+ar dl
+ar cf
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000000
+dl = 0x00000001
+cf = 0x00000001
+zf = 0x00000000
 EOF
 RUN
 
@@ -802,26 +771,25 @@ NAME=adc word cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer cf=1
-aer esp=0x00108000
-aer dx = 0x8000
-.aer*
-"wx 6611d2"
+ar cf=1
+ar esp=0x00108000
+ar dx = 0x8000
+.arf
+wx 6611d2
 1aes
-.aer*
-aer?dx
-aer?cf
-aer?zf
+.arf
+ar dx
+ar cf
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000000
+dx = 0x00000001
+cf = 0x00000001
+zf = 0x00000000
 EOF
 RUN
 
@@ -829,26 +797,25 @@ NAME=adc dword cf,zf check x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer cf=1
-aer esp=0x00108000
-aer edx = 0x80000000
-.aer*
-"wx 11d2"
+ar cf=1
+ar esp=0x00108000
+ar edx = 0x80000000
+.arf
+wx 11d2
 1aes
-.aer*
-aer?edx
-aer?cf
-aer?zf
+.arf
+ar edx
+ar cf
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000000
+edx = 0x00000001
+cf = 0x00000001
+zf = 0x00000000
 EOF
 RUN
 
@@ -856,25 +823,24 @@ NAME=dec byte [edi] check zf x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer cf=1
-aer esp=0x00108000
+ar cf=1
+ar esp=0x00108000
 aeim 0x20000000 10 mem
-aer edi = 0x20000000
+ar edi = 0x20000000
 wx 01 @ 0x20000000
-.aer*
-"wx fe0f"
+.arf
+wx fe0f
 1aes
-.aer*
-aer?zf
+.arf
+ar zf
 pv @ 0x20000000
 EOF
 EXPECT=<<EOF
-0x00000001
+zf = 0x00000001
 0x00000000
 EOF
 RUN
@@ -883,25 +849,24 @@ NAME=dec byte [edi] check sf x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer cf=1
-aer esp=0x00108000
+ar cf=1
+ar esp=0x00108000
 aeim 0x20000000 10 mem
-aer edi = 0x20000000
+ar edi = 0x20000000
 wx 00 @ 0x20000000
-.aer*
-"wx fe0f"
+.arf
+wx fe0f
 1aes
-.aer*
-aer?sf
+.arf
+ar sf
 pv @ 0x20000000
 EOF
 EXPECT=<<EOF
-0x00000001
+sf = 0x00000001
 0x000000ff
 EOF
 RUN
@@ -910,27 +875,26 @@ NAME=inc byte [edi] check zf x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer sf=1
-aer esp=0x00108000
+ar sf=1
+ar esp=0x00108000
 aeim 0x20000000 10 mem
-aer edi = 0x20000000
+ar edi = 0x20000000
 wx ff @ 0x20000000
-.aer*
-"wx fe07"
+.arf
+wx fe07
 1aes
-.aer*
-aer?zf
-aer?sf
+.arf
+ar zf
+ar sf
 pv @ 0x20000000
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+zf = 0x00000001
+sf = 0x00000000
 0x00000000
 EOF
 RUN
@@ -939,25 +903,24 @@ NAME=inc byte [edi] check sf x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer sf=1
-aer esp=0x00108000
+ar sf=1
+ar esp=0x00108000
 aeim 0x20000000 10 mem
-aer edi = 0x20000000
+ar edi = 0x20000000
 wx 00 @ 0x20000000
-.aer*
-"wx fe07"
+.arf
+wx fe07
 1aes
-.aer*
-aer?sf
+.arf
+ar sf
 pv @ 0x20000000
 EOF
 EXPECT=<<EOF
-0x00000000
+sf = 0x00000000
 0x00000001
 EOF
 RUN
@@ -966,20 +929,19 @@ NAME=adc [esi + 0x14], ecx x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
 aeim 0x20000000 130 destination
-aer cf = 1
-aer ecx = 0x10
-aer esi=0x20000000
+ar cf = 1
+ar ecx = 0x10
+ar esi=0x20000000
 wx 3713 @ 0x20000014
-.aer*
-"wx 114e14"
+.arf
+wx 114e14
 aes
-.aer*
+.arf
 pv @ 0x20000014
 EOF
 EXPECT=<<EOF
@@ -991,20 +953,19 @@ NAME=div cl x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
-.aer*
-"wx b80500fecab202f6f2"
+ar esp=0x00108000
+.arf
+wx b80500fecab202f6f2
 3aes
-.aer*
-aer?eax
+.arf
+ar eax
 EOF
 EXPECT=<<EOF
-0xcafe0102
+eax = 0xcafe0102
 EOF
 RUN
 
@@ -1012,23 +973,22 @@ NAME=pushal(pushad in intel documentation) x86_32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer eax=0x11111111
-aer ecx=0x22222222
-aer edx=0x33333333
-aer ebx=0x44444444
-aer esp=0x00108000
-aer ebp=0x55555555
-aer esi=0x66666666
-aer edi=0x77777777
-.aer*
-"wx 60"
+ar eax=0x11111111
+ar ecx=0x22222222
+ar edx=0x33333333
+ar ebx=0x44444444
+ar esp=0x00108000
+ar ebp=0x55555555
+ar esi=0x66666666
+ar edi=0x77777777
+.arf
+wx 60
 aes
-.aer*
+.arf
 pv @ 0x00107ffc
 pv @ 0x00107ff8
 pv @ 0x00107ff4
@@ -1054,52 +1014,51 @@ NAME=popal(popad in intel documentation) x86_32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer eax=0x11111111
-aer ecx=0x22222222
-aer edx=0x33333333
-aer ebx=0x44444444
-aer esp=0x00108000
-aer ebp=0x55555555
-aer esi=0x66666666
-aer edi=0x77777777
-.aer*
-"wx 6061"
+ar eax=0x11111111
+ar ecx=0x22222222
+ar edx=0x33333333
+ar ebx=0x44444444
+ar esp=0x00108000
+ar ebp=0x55555555
+ar esi=0x66666666
+ar edi=0x77777777
+.arf
+wx 6061
 aes
-.aer*
-aer eax=0x00000000
-aer ecx=0x00000000
-aer edx=0x00000000
-aer ebx=0x00000000
-aer ebp=0x00000000
-aer esi=0x00000000
-aer edi=0x00000000
-.aer*
+.arf
+ar eax=0x00000000
+ar ecx=0x00000000
+ar edx=0x00000000
+ar ebx=0x00000000
+ar ebp=0x00000000
+ar esi=0x00000000
+ar edi=0x00000000
+.arf
 aes
-.aer*
-aer?eax
-aer?ecx
-aer?edx
-aer?ebx
-aer?esp
-aer?ebp
-aer?esi
-aer?edi
-.aer*
+.arf
+ar eax
+ar ecx
+ar edx
+ar ebx
+ar esp
+ar ebp
+ar esi
+ar edi
+.arf
 EOF
 EXPECT=<<EOF
-0x11111111
-0x22222222
-0x33333333
-0x44444444
-0x00108000
-0x55555555
-0x66666666
-0x77777777
+eax = 0x11111111
+ecx = 0x22222222
+edx = 0x33333333
+ebx = 0x44444444
+esp = 0x00108000
+ebp = 0x55555555
+esi = 0x66666666
+edi = 0x77777777
 EOF
 RUN
 
@@ -1107,28 +1066,27 @@ NAME=pop x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
-aer eax=0x11111111
-.aer*
-"wx 5058"
+ar esp=0x00108000
+ar eax=0x11111111
+.arf
+wx 5058
 aes
-.aer*
-aer eax=0x00000000
-.aer*
+.arf
+ar eax=0x00000000
+.arf
 aes
-.aer*
-aer?eax
-aer?esp
-.aer*
+.arf
+ar eax
+ar esp
+.arf
 EOF
 EXPECT=<<EOF
-0x11111111
-0x00108000
+eax = 0x11111111
+esp = 0x00108000
 EOF
 RUN
 
@@ -1136,67 +1094,66 @@ NAME=pushd followed by popfd x86-32
 FILE==
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim 0 0x2000
-.aer*
-"wx 9c9d"
-aer cf = 1
-aer pf = 1
-aer af = 1
-aer zf = 1
-aer sf = 1
-aer tf = 1
-aer if = 1
-aer df = 1
-aer of = 1
-aer nt = 1
-aer rf = 1
-aer vm = 1
-.aer*
+.arf
+wx 9c9d
+ar cf = 1
+ar pf = 1
+ar af = 1
+ar zf = 1
+ar sf = 1
+ar tf = 1
+ar if = 1
+ar df = 1
+ar of = 1
+ar nt = 1
+ar rf = 1
+ar vm = 1
+.arf
 aes
-aer cf = 0
-aer pf = 0
-aer af = 0
-aer zf = 0
-aer sf = 0
-aer tf = 0
-aer if = 0
-aer df = 0
-aer of = 0
-aer nt = 0
-aer rf = 0
-aer vm = 0
+ar cf = 0
+ar pf = 0
+ar af = 0
+ar zf = 0
+ar sf = 0
+ar tf = 0
+ar if = 0
+ar df = 0
+ar of = 0
+ar nt = 0
+ar rf = 0
+ar vm = 0
 aes
-.aer*
-aer?cf
-aer?pf
-aer?af
-aer?zf
-aer?sf
-aer?tf
-aer?if
-aer?df
-aer?of
-aer?nt
-aer?rf
-aer?vm
+.arf
+ar cf
+ar pf
+ar af
+ar zf
+ar sf
+ar tf
+ar if
+ar df
+ar of
+ar nt
+ar rf
+ar vm
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000001
-0x00000001
-0x00000001
-0x00000001
-0x00000001
-0x00000001
-0x00000001
-0x00000001
-0x00000001
-0x00000001
+cf = 0x00000001
+pf = 0x00000001
+af = 0x00000001
+zf = 0x00000001
+sf = 0x00000001
+tf = 0x00000001
+if = 0x00000001
+df = 0x00000001
+of = 0x00000001
+nt = 0x00000001
+rf = 0x00000001
+vm = 0x00000001
 EOF
 RUN
 
@@ -1228,10 +1185,10 @@ aeim
 aeip
 wx b8efbeadde50ff1424
 3aes
-aer eip
+ar eip
 EOF
 EXPECT=<<EOF
-0xdeadbeef
+eip = 0xdeadbeef
 EOF
 RUN
 
@@ -1273,46 +1230,46 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmova eax, ecx
+wa "cmova eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmova eax, ecx aer zf=1
+NAME=cmova eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
+ar ecx=8
+ar zf=1
 wa cmova eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmova eax, ecx aer cf=1
+NAME=cmova eax, ecx ar cf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer cf=1
+ar ecx=8
+ar cf=1
 wa cmova eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -1321,62 +1278,62 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
+wa "cmovae eax, ecx"
+aes
+ar eax
+EOF
+EXPECT=<<EOF
+eax = 0x00000008
+EOF
+RUN
+
+NAME=cmovae eax, ecx ar cf=1
+FILE==
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+e io.va=true
+ar ecx=8
+ar cf=1
 wa cmovae eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovae eax, ecx aer cf=1
+NAME=cmovb eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer cf=1
-wa cmovae eax, ecx
-aes
-aer eax
-EOF
-EXPECT=<<EOF
-0x00000000
-EOF
-RUN
-
-NAME=cmovb eax, ecx aer zf=1
-FILE==
-ARGS=-a x86 -b 32
-CMDS=<<EOF
-e io.va=true
-aer ecx=8
-aer zf=1
+ar ecx=8
+ar zf=1
 wa cmovb eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovb eax, ecx aer cf=1
+NAME=cmovb eax, ecx ar cf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer cf=1
-wa cmovb eax, ecx
+ar ecx=8
+ar cf=1
+wa "cmovb eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1385,30 +1342,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovbe eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovbe eax, ecx aer cf=1
+NAME=cmovbe eax, ecx ar cf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer cf=1
-wa cmovbe eax, ecx
+ar ecx=8
+ar cf=1
+wa "cmovbe eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1417,30 +1374,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovc eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovc eax, ecx aer cf=1
+NAME=cmovc eax, ecx ar cf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer cf=1
-wa cmovc eax, ecx
+ar ecx=8
+ar cf=1
+wa "cmovc eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1449,30 +1406,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmove eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmove eax, ecx aer zf=1
+NAME=cmove eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
-wa cmove eax, ecx
+ar ecx=8
+ar zf=1
+wa "cmove eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1481,30 +1438,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovg eax, ecx
+wa "cmovg eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovg eax, ecx aer sf=1
+NAME=cmovg eax, ecx ar sf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer sf=1
+ar ecx=8
+ar sf=1
 wa cmovg eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -1513,46 +1470,46 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovge eax, ecx
+wa "cmovge eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovge eax, ecx aer sf=1
+NAME=cmovge eax, ecx ar sf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer sf=1
+ar ecx=8
+ar sf=1
 wa cmovge eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovl eax, ecx aer sf=1
+NAME=cmovl eax, ecx ar sf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer sf=1
-wa cmovl eax, ecx
+ar ecx=8
+ar sf=1
+wa "cmovl eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1561,46 +1518,46 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovl eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovle eax, ecx aer zf=1
+NAME=cmovle eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
-wa cmovle eax, ecx
+ar ecx=8
+ar zf=1
+wa "cmovle eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovle eax, ecx aer sf=1
+NAME=cmovle eax, ecx ar sf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer sf=1
-wa cmovle eax, ecx
+ar ecx=8
+ar sf=1
+wa "cmovle eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1609,46 +1566,46 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovle eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovna eax, ecx aer cf=1
+NAME=cmovna eax, ecx ar cf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer cf=1
-wa cmovna eax, ecx
+ar ecx=8
+ar cf=1
+wa "cmovna eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovna eax, ecx aer zf=1
+NAME=cmovna eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
-wa cmovna eax, ecx
+ar ecx=8
+ar zf=1
+wa "cmovna eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1657,30 +1614,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovna eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovnae eax, ecx aer cf=1
+NAME=cmovnae eax, ecx ar cf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer cf=1
-wa cmovnae eax, ecx
+ar ecx=8
+ar cf=1
+wa "cmovnae eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1689,14 +1646,14 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovnae eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -1705,62 +1662,62 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
+wa "cmovnb eax, ecx"
+aes
+ar eax
+EOF
+EXPECT=<<EOF
+eax = 0x00000008
+EOF
+RUN
+
+NAME=cmovnb eax, ecx ar cf=1
+FILE==
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+e io.va=true
+ar ecx=8
+ar cf=1
 wa cmovnb eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovnb eax, ecx aer cf=1
+NAME=cmovnbe eax, ecx ar cf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer cf=1
-wa cmovnb eax, ecx
-aes
-aer eax
-EOF
-EXPECT=<<EOF
-0x00000000
-EOF
-RUN
-
-NAME=cmovnbe eax, ecx aer cf=1
-FILE==
-ARGS=-a x86 -b 32
-CMDS=<<EOF
-e io.va=true
-aer ecx=8
-aer cf=1
+ar ecx=8
+ar cf=1
 wa cmovnbe eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovnbe eax, ecx aer zf=1
+NAME=cmovnbe eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
+ar ecx=8
+ar zf=1
 wa cmovnbe eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -1769,30 +1726,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovnbe eax, ecx
+wa "cmovnbe eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovnc eax, ecx aer cf=1
+NAME=cmovnc eax, ecx ar cf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer cf=1
+ar ecx=8
+ar cf=1
 wa cmovnc eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -1801,30 +1758,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovnc eax, ecx
+wa "cmovnc eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovne eax, ecx aer zf=1
+NAME=cmovne eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
+ar ecx=8
+ar zf=1
 wa cmovne eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -1833,46 +1790,46 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovne eax, ecx
+wa "cmovne eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovng eax, ecx aer zf=1
+NAME=cmovng eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
-wa cmovng eax, ecx
+ar ecx=8
+ar zf=1
+wa "cmovng eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovng eax, ecx aer sf=1
+NAME=cmovng eax, ecx ar sf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer sf=1
-wa cmovng eax, ecx
+ar ecx=8
+ar sf=1
+wa "cmovng eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1881,30 +1838,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovng eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovnge eax, ecx aer sf=1
+NAME=cmovnge eax, ecx ar sf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer sf=1
-wa cmovnge eax, ecx
+ar ecx=8
+ar sf=1
+wa "cmovnge eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1913,30 +1870,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovnge eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovnl eax, ecx aer sf=1
+NAME=cmovnl eax, ecx ar sf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer sf=1
+ar ecx=8
+ar sf=1
 wa cmovnl eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -1945,14 +1902,14 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovnl eax, ecx
+wa "cmovnl eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -1961,46 +1918,46 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovnle eax, ecx
+wa "cmovnle eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovnle eax, ecx aer zf=1
+NAME=cmovnle eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
+ar ecx=8
+ar zf=1
 wa cmovnle eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovno eax, ecx aer of=1
+NAME=cmovno eax, ecx ar of=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer of=1
+ar ecx=8
+ar of=1
 wa cmovno eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -2009,30 +1966,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovno eax, ecx
+wa "cmovno eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovnp eax, ecx aer pf=1
+NAME=cmovnp eax, ecx ar pf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer pf=1
+ar ecx=8
+ar pf=1
 wa cmovnp eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -2041,30 +1998,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovnp eax, ecx
+wa "cmovnp eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovns eax, ecx aer sf=1
+NAME=cmovns eax, ecx ar sf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer sf=1
+ar ecx=8
+ar sf=1
 wa cmovns eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -2073,30 +2030,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovns eax, ecx
+wa "cmovns eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovnz eax, ecx aer zf=1
+NAME=cmovnz eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
+ar ecx=8
+ar zf=1
 wa cmovnz eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -2105,30 +2062,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovnz eax, ecx
+wa "cmovnz eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovo eax, ecx aer of=1
+NAME=cmovo eax, ecx ar of=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer of=1
-wa cmovo eax, ecx
+ar ecx=8
+ar of=1
+wa "cmovo eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -2137,30 +2094,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovo eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovp eax, ecx aer pf=1
+NAME=cmovp eax, ecx ar pf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer pf=1
-wa cmovp eax, ecx
+ar ecx=8
+ar pf=1
+wa "cmovp eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -2169,30 +2126,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovp eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovpe eax, ecx aer pf=1
+NAME=cmovpe eax, ecx ar pf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer pf=1
-wa cmovpe eax, ecx
+ar ecx=8
+ar pf=1
+wa "cmovpe eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -2201,30 +2158,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovpe eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovpo eax, ecx aer pf=1
+NAME=cmovpo eax, ecx ar pf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer pf=1
+ar ecx=8
+ar pf=1
 wa cmovpo eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -2233,30 +2190,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
-wa cmovpo eax, ecx
+wa "cmovpo eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
-NAME=cmovs eax, ecx aer sf=1
+NAME=cmovs eax, ecx ar sf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer sf=1
-wa cmovs eax, ecx
+ar ecx=8
+ar sf=1
+wa "cmovs eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -2265,30 +2222,30 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovs eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
-NAME=cmovz eax, ecx aer zf=1
+NAME=cmovz eax, ecx ar zf=1
 FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
-aer zf=1
-wa cmovz eax, ecx
+ar ecx=8
+ar zf=1
+wa "cmovz eax, ecx"
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000008
+eax = 0x00000008
 EOF
 RUN
 
@@ -2297,14 +2254,14 @@ FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-aer ecx=8
+ar ecx=8
 
 wa cmovz eax, ecx
 aes
-aer eax
+ar eax
 EOF
 EXPECT=<<EOF
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 
@@ -2316,12 +2273,12 @@ e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-aer esp=0x00108000
-aer eax=0x111111111
-.aer*
-"wx 5450"
+ar esp=0x00108000
+ar eax=0x111111111
+.arf
+wx 5450
 2aes
-.aer*
+.arf
 pv @ 0x00107ffc
 pv @ 0x00107ff8
 EOF
@@ -2373,37 +2330,40 @@ wx 0fbcc3 # bsf eax, ebx
 #
 # BSF: test ZF
 #
-aer eax=0x00000000
-aer ebx=0x00000000
-aer zf=0
+ar eax=0x00000000
+ar ebx=0x00000000
+ar zf=0
 aes
-aer eax,zf
+ar eax
+ar zf
 #
 # BSF: test lowest bit
 #
 aeim
-aer eax=0x00000000
-aer ebx=0xffffffff
-aer zf=0
+ar eax=0x00000000
+ar ebx=0xffffffff
+ar zf=0
 aes
-aer eax,zf
+ar eax
+ar zf
 #
 # BSF: test highest bit
 #
 aeim
-aer eax=0x00000000
-aer ebx=0x80000000
-aer zf=0
+ar eax=0x00000000
+ar ebx=0x80000000
+ar zf=0
 aes
-aer eax,zf
+ar eax
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000000
-0x00000000
-0x0000001f
-0x00000000
+eax = 0x00000000
+zf = 0x00000001
+eax = 0x00000000
+zf = 0x00000000
+eax = 0x0000001f
+zf = 0x00000000
 EOF
 RUN
 
@@ -2419,56 +2379,58 @@ wx 0fbdc3 # bsr eax, ebx
 #
 # BSR: test ZF
 #
-aer eax=0x00000000
-aer ebx=0x00000000
-aer zf=0
+ar eax=0x00000000
+ar ebx=0x00000000
+ar zf=0
 aes
-aer eax,zf
+ar eax
+ar zf
 #
 # BSR: test lowest bit
 #
 aeim
-aer eax=0x00000000
-aer ebx=0x00000001
-aer zf=0
+ar eax=0x00000000
+ar ebx=0x00000001
+ar zf=0
 aes
-aer eax,zf
+ar eax
+ar zf
 #
 # BSR: test highest bit
 #
 aeim
-aer eax=0x00000000
-aer ebx=0xffffffff
-aer zf=0
+ar eax=0x00000000
+ar ebx=0xffffffff
+ar zf=0
 aes
-aer eax,zf
+ar eax
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000000
-0x00000000
-0x0000001f
-0x00000000
+eax = 0x00000000
+zf = 0x00000001
+eax = 0x00000000
+zf = 0x00000000
+eax = 0x0000001f
+zf = 0x00000000
 EOF
 RUN
 
 NAME=cmc
 FILE==
 EXPECT=<<EOF
-0x00000000
-0x00000001
+eflags = 0x00000000
+eflags = 0x00000001
 EOF
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
 aeim
-"wa cmc"
-aer?eflags
+wa cmc
+ar eflags
 aes
-aer?eflags
+ar eflags
 EOF
 RUN

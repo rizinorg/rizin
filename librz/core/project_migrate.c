@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_project.h>
-#include <rz_util/pj.h>
+#include <rz_util/rz_pj.h>
 
 /**
  * \file
@@ -239,12 +239,46 @@ RZ_API bool rz_project_migrate_v4_v5(RzProject *prj, RzSerializeResultInfo *res)
 }
 
 // --
+// Migration 5 -> 6
+//
+// Changes from 2c48a91d1332daede8d0640ce407c3abcf0abfb4
+//	Added serialization functionality for debug (only for breakpoints as of now)
+//	Used to save and load current RzDebug instance (only breakpoints) using serialization
+//	New namespaces: /core/debug, /core/debug/breakpoints
+
+RZ_API bool rz_project_migrate_v5_v6(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *debug_db = sdb_ns(core_db, "debug", true);
+	sdb_ns(debug_db, "breakpoints", true);
+
+	return true;
+}
+
+// --
+// Migration 6 -> 7
+//
+// Changes from <commit-hash>
+//	Removed esil pin feature. Namespace deleted: /core/analysis/pins
+
+RZ_API bool rz_project_migrate_v6_v7(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *analysis_db;
+	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	sdb_ns_unset(analysis_db, "pins", NULL);
+	return true;
+}
+
+// --
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
 	rz_project_migrate_v3_v4,
-	rz_project_migrate_v4_v5
+	rz_project_migrate_v4_v5,
+	rz_project_migrate_v5_v6,
+	rz_project_migrate_v6_v7
 };
 
 /// Migrate the given project to the current version in-place

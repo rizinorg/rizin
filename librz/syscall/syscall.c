@@ -30,6 +30,10 @@ RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name) {
 	return sysregitem;
 }
 
+static void free_port_kv(HtUPKv *kv) {
+	rz_sysreg_item_free(kv->value);
+}
+
 /**
  * \brief Creates a new RzSysregDB type
  */
@@ -38,7 +42,7 @@ RZ_API RzSysregsDB *rz_sysregs_db_new() {
 	if (!sysregdb) {
 		return NULL;
 	}
-	sysregdb->port = ht_up_new0();
+	sysregdb->port = ht_up_new(NULL, free_port_kv, NULL);
 	if (!sysregdb->port) {
 		free(sysregdb);
 		return NULL;
@@ -102,7 +106,7 @@ RZ_API void rz_sysreg_item_free(RzSysregItem *s) {
 
 static bool load_sdb(Sdb **db, const char *name) {
 	rz_return_val_if_fail(db, false);
-	char *sdb_path = rz_str_rz_prefix(RZ_SDB);
+	char *sdb_path = rz_path_system(RZ_SDB);
 	char *file_name = rz_str_newf("%s.sdb", name);
 	char *file = rz_file_path_join(sdb_path, file_name);
 	free(file_name);
@@ -153,11 +157,12 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			name = sdbkv_key(kv);
 			sysregitem = rz_sysreg_item_new(name);
 			argument_key = rz_str_newf("%s.address", name);
-
 			if (!argument_key) {
+				rz_sysreg_item_free(sysregitem);
 				return false;
 			}
 			ut64 address = sdb_num_get(sdb, argument_key, NULL);
+			free(argument_key);
 			if (!address) {
 				rz_sysreg_item_free(sysregitem);
 				return false;
@@ -165,13 +170,14 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 
 			argument_key = rz_str_newf("%s.comment", name);
 			comment = sdb_get(sdb, argument_key, NULL);
-			sysregitem->type = sdbkv_value(kv);
-			sysregitem->name = strdup(name);
-			sysregitem->comment = strdup(comment);
+			free(argument_key);
+			sysregitem->type = strdup(sdbkv_value(kv));
+			sysregitem->comment = comment;
 
 			ht_up_insert(sysregdb->port, address, sysregitem);
 		}
 	}
+	ls_free(l);
 	return true;
 }
 
@@ -202,19 +208,25 @@ RZ_API bool rz_sysreg_load_sdb(RzSysregsDB *sysregdb, const char *path) {
  *
  * \param s reference to RzSyscall
  * \param arch reference to value of asm.arch
- * \param dir_prefix reference to value of directory prefix or the value of dir.prefix
+ * \param regs_dir path where registers SDB files are located
  */
-RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *dir_prefix) {
-	char *path = sdb_fmt(RZ_JOIN_4_PATHS("%s", RZ_SDB, "reg", "%s-%s-%d.sdb"), dir_prefix,
-		arch, s->cpu, s->bits);
+RZ_API bool rz_sysreg_set_arch(RzSyscall *s, RZ_NONNULL const char *arch, RZ_NONNULL const char *regs_dir) {
+	rz_return_val_if_fail(s && regs_dir && arch, false);
 
-	if (path) {
-		if (!rz_sysreg_load_sdb(s->srdb, path)) {
-			rz_sysregs_db_free(s->srdb);
-			s->srdb = rz_sysregs_db_new();
-			return false;
-		}
+	char buf[60];
+	char *path = rz_file_path_join(regs_dir, rz_strf(buf, "%s-%s-%d.sdb", arch, s->cpu, s->bits));
+	if (!path) {
+		return true;
 	}
+	rz_sysregs_db_free(s->srdb);
+	s->srdb = rz_sysregs_db_new();
+	if (!rz_sysreg_load_sdb(s->srdb, path)) {
+		free(path);
+		rz_sysregs_db_free(s->srdb);
+		s->srdb = rz_sysregs_db_new();
+		return false;
+	}
+	free(path);
 	return true;
 }
 

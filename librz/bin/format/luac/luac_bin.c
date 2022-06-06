@@ -112,7 +112,7 @@ static void free_rz_addr(RzBinAddr *addr) {
 
 LuacBinInfo *luac_build_info(LuaProto *proto) {
 	if (!proto) {
-		eprintf("Warning : Broken luac file\n");
+		RZ_LOG_ERROR("Invalid luac file\n");
 		return NULL;
 	}
 

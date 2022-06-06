@@ -5,8 +5,8 @@ i
 is
 iS
 iH
-om
-pi 4@sym._what_is_cool
+oml
+pi 4@ sym._what_is_cool
 EOF
 EXPECT=<<EOF
 fd       3
@@ -86,8 +86,8 @@ i
 is
 iS
 iH
-om
-pi 4@sym._what_is_cool
+oml
+pi 4@ sym._what_is_cool
 EOF
 EXPECT=<<EOF
 fd       3
@@ -423,5 +423,15 @@ address     index class    flags name
 0x180040ebc 81    NSObject c     mutableCopy
 --
 0x182068000 0x0000000184078028   (....... @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist 6510051368 lib_libhello-1.0.dylib.18.__AUTH.__objc_data _OBJC_CLASS_$_Test R 0x184078000
+EOF
+RUN
+
+NAME=dyldcache CVE-2022-1244
+FILE=bins/dyldcache/CVE-2022-1244
+CMDS=<<EOF
+aaa
+q
+EOF
+EXPECT=<<EOF
 EOF
 RUN

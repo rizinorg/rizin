@@ -146,7 +146,7 @@ static RzBuffer *build(RzEgg *egg) {
 	const ut8 *sc = NULL;
 	int cd = 0;
 	char *port = rz_egg_option_get(egg, "port");
-	//TODO: char *udp = rz_egg_option_get (egg, "udp");
+	// TODO: char *udp = rz_egg_option_get (egg, "udp");
 	switch (egg->os) {
 	case RZ_EGG_OS_OSX:
 	case RZ_EGG_OS_DARWIN:
@@ -199,7 +199,7 @@ static RzBuffer *build(RzEgg *egg) {
 	return buf;
 }
 
-//TODO: rename plugin to run
+// TODO: rename plugin to run
 RzEggPlugin rz_egg_plugin_bind = {
 	.name = "bind",
 	.type = RZ_EGG_PLUGIN_SHELLCODE,

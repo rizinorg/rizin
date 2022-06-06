@@ -4,49 +4,9 @@
 
 #include "elf.h"
 
-static bool buffer_read_8(ELFOBJ *bin, ut64 *offset, ut8 *result) {
-	if (!rz_buf_read8_at(bin->b, *offset, result)) {
-		return false;
-	}
-
-	*offset += 1;
-
-	return true;
-}
-
-static bool buffer_read_16(ELFOBJ *bin, ut64 *offset, ut16 *result) {
-	if (!rz_buf_read_ble16_at(bin->b, *offset, bin->big_endian, result)) {
-		return false;
-	}
-
-	*offset += 2;
-
-	return true;
-}
-
-static bool buffer_read_32(ELFOBJ *bin, ut64 *offset, ut32 *result) {
-	if (!rz_buf_read_ble32_at(bin->b, *offset, bin->big_endian, result)) {
-		return false;
-	}
-
-	*offset += 4;
-
-	return true;
-}
-
-static bool buffer_read_64(ELFOBJ *bin, ut64 *offset, ut64 *result) {
-	if (!rz_buf_read_ble64_at(bin->b, *offset, bin->big_endian, result)) {
-		return false;
-	}
-
-	*offset += 8;
-
-	return true;
-}
-
 static bool buffer_read_32_signed(ELFOBJ *bin, ut64 *offset, st32 *result) {
 	ut32 tmp;
-	if (!rz_buf_read_ble32_at(bin->b, *offset, bin->big_endian, &tmp)) {
+	if (!rz_buf_read_ble32_at(bin->b, *offset, &tmp, bin->big_endian)) {
 		return false;
 	}
 
@@ -59,7 +19,7 @@ static bool buffer_read_32_signed(ELFOBJ *bin, ut64 *offset, st32 *result) {
 static bool buffer_read_64_signed(ELFOBJ *bin, ut64 *offset, st64 *result) {
 	ut64 tmp;
 
-	if (!rz_buf_read_ble64_at(bin->b, *offset, bin->big_endian, &tmp)) {
+	if (!rz_buf_read_ble64_at(bin->b, *offset, &tmp, bin->big_endian)) {
 		return false;
 	}
 
@@ -91,17 +51,17 @@ bool Elf_(rz_bin_elf_check_array)(RZ_NONNULL ELFOBJ *bin, Elf_(Off) offset, Elf_
 
 bool Elf_(rz_bin_elf_read_char)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut8 *result) {
 	rz_return_val_if_fail(bin && offset && result, false);
-	return buffer_read_8(bin, offset, result);
+	return rz_buf_read8_offset(bin->b, offset, result);
 }
 
 bool Elf_(rz_bin_elf_read_half)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Half) * result) {
 	rz_return_val_if_fail(bin && offset && result, false);
-	return buffer_read_16(bin, offset, result);
+	return rz_buf_read_ble16_offset(bin->b, offset, result, bin->big_endian);
 }
 
 bool Elf_(rz_bin_elf_read_word)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Word) * result) {
 	rz_return_val_if_fail(bin && offset && result, false);
-	return buffer_read_32(bin, offset, result);
+	return rz_buf_read_ble32_offset(bin->b, offset, result, bin->big_endian);
 }
 
 bool Elf_(rz_bin_elf_read_sword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Sword) * result) {
@@ -111,7 +71,7 @@ bool Elf_(rz_bin_elf_read_sword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut6
 
 bool Elf_(rz_bin_elf_read_xword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Xword) * result) {
 	rz_return_val_if_fail(bin && offset && result, false);
-	return buffer_read_64(bin, offset, (ut64 *)result);
+	return rz_buf_read_ble64_offset(bin->b, offset, (ut64 *)result, bin->big_endian);
 }
 
 bool Elf_(rz_bin_elf_read_sxword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Sxword) * result) {
@@ -122,24 +82,24 @@ bool Elf_(rz_bin_elf_read_sxword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut
 bool Elf_(rz_bin_elf_read_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Addr) * result) {
 	rz_return_val_if_fail(bin && offset && result, false);
 #if RZ_BIN_ELF64
-	return buffer_read_64(bin, offset, (ut64 *)result);
+	return rz_buf_read_ble64_offset(bin->b, offset, (ut64 *)result, bin->big_endian);
 #else
-	return buffer_read_32(bin, offset, (ut32 *)result);
+	return rz_buf_read_ble32_offset(bin->b, offset, (ut32 *)result, bin->big_endian);
 #endif
 }
 
 bool Elf_(rz_bin_elf_read_off)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Off) * result) {
 	rz_return_val_if_fail(bin && offset && result, false);
 #if RZ_BIN_ELF64
-	return buffer_read_64(bin, offset, (ut64 *)result);
+	return rz_buf_read_ble64_offset(bin->b, offset, (ut64 *)result, bin->big_endian);
 #else
-	return buffer_read_32(bin, offset, (ut32 *)result);
+	return rz_buf_read_ble32_offset(bin->b, offset, (ut32 *)result, bin->big_endian);
 #endif
 }
 
 bool Elf_(rz_bin_elf_read_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Section) * result) {
 	rz_return_val_if_fail(bin && offset && result, false);
-	return buffer_read_16(bin, offset, result);
+	return rz_buf_read_ble16_offset(bin->b, offset, (ut16 *)result, bin->big_endian);
 }
 
 bool Elf_(rz_bin_elf_read_versym)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Versym) * result) {

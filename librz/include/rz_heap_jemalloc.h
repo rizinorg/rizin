@@ -1,7 +1,7 @@
 #ifndef RZ_HEAP_JEMALLOC_H
 #define RZ_HEAP_JEMALLOC_H
 
-#include "rz_jemalloc/internal/jemalloc_internal.h"
+#include <rz_jemalloc/internal/jemalloc_internal.h>
 
 #define INC_HEAP32 1
 #include "rz_heap_jemalloc.h"

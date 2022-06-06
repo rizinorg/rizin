@@ -2,7 +2,7 @@ NAME=oon
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 oon
-o
+ol
 EOF
 EXPECT=<<EOF
  4 * r-- 0x00009730 bins/mach0/mac-ls2
@@ -15,7 +15,7 @@ CMDS=<<EOF
 pf.~?
 oonn
 pf.~?
-o~?
+ol~?
 EOF
 EXPECT=<<EOF
 41
@@ -24,10 +24,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=om=
+NAME=oml=
 FILE=bins/mach0/mac-ls2
 BROKEN=1
-CMDS=om=
+CMDS=oml=
 EXPECT=<<EOF
 
 0*  0x100000000 ################-------------- 0x100005000 r-x   3     fmap.TEXT
@@ -60,27 +60,13 @@ RUN
 NAME=oom
 FILE=bins/elf/libmagic.so
 CMDS=<<EOF
-o~?
+ol~?
 oom
-o~malloc?
+ol~malloc?
 EOF
 EXPECT=<<EOF
 4
 1
-EOF
-RUN
-
-NAME=oi-
-FILE=malloc://1024
-CMDS=oi-
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=oi-2
-FILE=--
-CMDS=o bins/mach0/fatmach0-3true
-EXPECT=<<EOF
 EOF
 RUN
 
@@ -98,23 +84,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=oij-pj
-FILE=<<EOF
-bins/elf/crackme0x05
-bins/elf/crackme0x00b
-EOF
-CMDS=oij
-EXPECT=<<EOF
-[{"raised":false,"fd":3,"uri":"bins/elf/crackme0x05","from":0,"writable":false,"size":7656},{"raised":true,"fd":6,"uri":"bins/elf/crackme0x00b","from":0,"writable":false,"size":7375}]
-EOF
-RUN
-
 NAME=o =
 FILE=malloc://1024
 CMDS=<<EOF
 e file.nowarn=true
 e file.loadmethod=append
-o =;o~?
+o =;ol~?
 EOF
 EXPECT=<<EOF
 2
@@ -124,8 +99,8 @@ RUN
 NAME=om
 FILE=malloc://1024
 CMDS=<<EOF
-om `o~[0]` 0x4000
-om~?
+om `ol~[0]` 0x4000
+oml~?
 EOF
 EXPECT=<<EOF
 2
@@ -135,9 +110,9 @@ RUN
 NAME=om2
 FILE=malloc://1024
 CMDS=<<EOF
-om `o~[0]` 0x4000
-om `o~[0]` 0x4000
-om~?
+om `ol~[0]` 0x4000
+om `ol~[0]` 0x4000
+oml~?
 EOF
 EXPECT=<<EOF
 3
@@ -285,7 +260,7 @@ o bins/elf/true32
 e scr.null=false
 isq~?
 # raise back
-op `o~:0[0]`
+op `ol~:0[0]`
 isq~?
 EOF
 EXPECT=<<EOF
@@ -302,7 +277,7 @@ bins/elf/libverifyPass.so
 bins/elf/libc.so.6
 EOF
 CMDS=<<EOF
-ob~[0-1]
+obl~[0-1]
 ?e
 ob 1; i~^fd
 ob 2; i~^fd
@@ -326,10 +301,10 @@ wx 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021222324252
 s 0x10
 px 16~:1
 ?e
-oC
+oC $b
 px 16~:1
 ?e
-om
+oml
 ?e
 omp 1
 px 16~:1
@@ -340,7 +315,7 @@ EXPECT=<<EOF
 0x00000010  2021 2223 2425 2627 2829 2a2b 2c2d 2e2f   !"#$%&'()*+,-./
 
  1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
- 2 fd: 4 +0x00000000 0x00000000 - 0x000000ff rwx 
+ 2 fd: 4 +0x00000000 0x00000000 * 0x000000ff rwx 
 
 0x00000010  1011 1213 1415 1617 1819 1a1b 1c1d 1e1f  ................
 EOF
@@ -352,19 +327,19 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 oC 1024
-ob
+obl
 EOF
 EXPECT=<<EOF
 0 3 x86-64 ba:0x00000000 sz:1024 malloc://1024
 EOF
 RUN
 
-NAME=obj
+NAME=oblj
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-obj~{}
+oblj~{}
 EOF
 EXPECT=<<EOF
 [
@@ -388,7 +363,7 @@ NAME=o+ writable maps fix
 FILE=--
 CMDS=<<EOF
 o+ bins/elf/ls
-om
+oml
 # Possible parallelism problem
 # ?e
 # pv1
@@ -401,25 +376,25 @@ EOF
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x00023560 - 0x00023f17 rwx vmap.reloc-targets
  2 fd: 3 +0x00000000 0x00000000 - 0x0000347f rwx fmap.LOAD0
- 3 fd: 3 +0x00004000 0x00004000 - 0x00016790 rwx fmap.LOAD1
+ 3 fd: 3 +0x00004000 0x00004000 * 0x00016790 rwx fmap.LOAD1
  4 fd: 3 +0x00017000 0x00017000 - 0x0001f7bf rwx fmap.LOAD2
  5 fd: 5 +0x00000000 0x00022268 - 0x00023557 rwx mmap.LOAD3
  6 fd: 6 +0x00020050 0x00021050 - 0x00022267 rwx vmap.LOAD3
 EOF
 RUN
 
-NAME=o-*
+NAME=o--
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 o =
-o~?
-ob
+ol~?
+obl
 ?e --
-o-*
-o~?
-ob
+o--
+ol~?
+obl
 EOF
 EXPECT=<<EOF
 2
@@ -430,15 +405,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=o-3
+NAME=o- 3
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 o =
-o-3
-o~?
-ob
+o- 3
+ol~?
+obl
 EOF
 EXPECT=<<EOF
 1
@@ -449,11 +424,11 @@ RUN
 NAME=oc
 FILE=bins/elf/true32
 CMDS=<<EOF
-ob~?
+obl~?
 i
 oc =
 ?e --
-ob~?
+obl~?
 i
 EOF
 EXPECT=<<EOF
@@ -514,5 +489,227 @@ format  any
 iorw    true
 block   0x100
 type    
+EOF
+RUN
+
+NAME=ob
+FILE=bins/elf/true32
+CMDS=<<EOF
+ob.
+obf bins/elf/ls
+ob.
+ob 0
+ob.
+EOF
+EXPECT=<<EOF
+0
+1
+0
+EOF
+RUN
+
+NAME=ox
+FILE=bins/elf/true32
+CMDS=<<EOF
+ol
+oml
+ox 3 4
+ol
+oml
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0000560c bins/elf/true32
+ 4 - r-x 0x000000b0 vfile://0/reloc-targets
+ 5 - rw- 0x00000184 null://388
+ 1 fd: 4 +0x00000000 0x0804e248 - 0x0804e2f7 r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x08048000 * 0x0804c657 r-x fmap.LOAD0
+ 3 fd: 5 +0x00000000 0x0804e0bc - 0x0804e23f rw- mmap.LOAD1
+ 4 fd: 3 +0x00004ef0 0x0804def0 - 0x0804e0bb r-- fmap.LOAD1
+ 3 - r-x 0x000000b0 vfile://0/reloc-targets
+ 4 * r-x 0x0000560c bins/elf/true32
+ 5 - rw- 0x00000184 null://388
+ 1 fd: 4 +0x00000000 0x0804e248 - 0x0804e2f7 r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x08048000 * 0x0804c657 r-x fmap.LOAD0
+ 3 fd: 5 +0x00000000 0x0804e0bc - 0x0804e23f rw- mmap.LOAD1
+ 4 fd: 3 +0x00004ef0 0x0804def0 - 0x0804e0bb r-- fmap.LOAD1
+EOF
+RUN
+
+NAME=ol quiet
+FILE=bins/elf/true32
+CMDS=<<EOF
+olq
+ol.
+ol.q
+EOF
+EXPECT=<<EOF
+3
+4
+5
+ 3 * r-x 0x0000560c bins/elf/true32
+3
+EOF
+RUN
+
+NAME=on+
+FILE=bins/elf/true32
+ARGS=-n
+CMDS=<<EOF
+cp `ol.t:uri:quiet` .true32-copy
+on+ .true32-copy
+p8 2
+wx 9090
+p8 2
+rm .true32-copy
+EOF
+EXPECT=<<EOF
+7f45
+9090
+EOF
+RUN
+
+NAME=o=
+FILE=bins/elf/true32
+CMDS=<<EOF
+o=
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0000560c [#########################] bins/elf/true32
+ 4 - r-x 0x000000b0 [-------------------------] vfile://0/reloc-targets
+ 5 - rw- 0x00000184 [-------------------------] null://388
+EOF
+RUN
+
+NAME=oa
+FILE=bins/elf/true32
+BROKEN=1
+CMDS=<<EOF
+pd 3
+oa arm 64
+pd 3
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=open priority
+FILE=bins/elf/true32
+CMDS=<<EOF
+o bins/elf/true
+op 3
+ol~*
+opn
+opn
+ol~*
+opp
+ol~*
+opr
+opr
+ol~*
+opr
+ol~*
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0000560c bins/elf/true32
+ 5 * rw- 0x00000184 null://388
+ 4 * r-x 0x000000b0 vfile://0/reloc-targets
+11 * r-x 0x000087c0 vfile://1/patched
+ 3 * r-x 0x0000560c bins/elf/true32
+EOF
+RUN
+
+NAME=open maps all VA
+FILE=bins/elf/true32
+CMDS=<<EOF
+oml~true32
+oma 3
+oml~true32
+EOF
+EXPECT=<<EOF
+ 5 fd: 3 +0x00000000 0x00000000 * 0xfffffffffffffffe r-x bins/elf/true32
+EOF
+RUN
+
+NAME=maps relocation
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 9090
+pi 2
+oml
+omb 1 0x3000
+oml
+pi 2
+pi 2 @ 0x3000
+EOF
+EXPECT=<<EOF
+nop
+nop
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx 
+ 1 fd: 3 +0x00000000 0x00003000 - 0x000031ff rwx 
+invalid
+invalid
+nop
+nop
+EOF
+RUN
+
+NAME=maps cur relocation and priority
+FILE==
+CMDS=<<EOF
+o malloc://512
+o malloc://512
+o malloc://512
+e asm.arch=x86
+e asm.bits=64
+omp 1
+wx 9090
+omp 2
+wx c3c3
+ompd 2
+pi 2
+oml
+omb. 0x3000
+omp 2
+oml
+pi 2
+pi 2 @ 0x3000
+EOF
+EXPECT=<<EOF
+nop
+nop
+ 2 fd: 4 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 3 fd: 5 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 4 fd: 6 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx 
+ 3 fd: 5 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 4 fd: 6 +0x00000000 0x00000000 - 0x000001ff rw- 
+ 1 fd: 3 +0x00000000 0x00003000 - 0x000031ff rwx 
+ 2 fd: 4 +0x00000000 0x00000000 * 0x000001ff rw- 
+ret
+ret
+nop
+nop
+EOF
+RUN
+
+NAME=maps_names
+FILE==
+CMDS=<<EOF
+omn HelloMap
+oml
+omn-
+oml
+omni 1 HelloMap1
+oml
+omni- 1
+oml
+EOF
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx HelloMap
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx 
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx HelloMap1
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff rwx 
 EOF
 RUN

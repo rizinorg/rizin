@@ -1,0 +1,61 @@
+NAME=List all traces (dtl)
+FILE=bins/elf/analysis/calls_x64
+ARGS=
+CMDS=<<EOF
+dt++ 0 1 2
+dtl
+dtlq
+EOF
+EXPECT=<<EOF
+0x00000000 size=1 count=1 times=1 tag=0
+0x00000001 size=1 count=2 times=1 tag=0
+0x00000002 size=1 count=3 times=1 tag=0
+0x0
+0x1
+0x2
+EOF
+RUN
+
+NAME=Add trace for address N times (dt+)
+FILE=bins/elf/analysis/calls_x64
+ARGS=
+CMDS=<<EOF
+dt+ @ 0
+dtl
+dt+ 3 @ 3
+dtl
+EOF
+EXPECT=<<EOF
+0x00000000 size=0 count=1 times=1 tag=0
+0x00000000 size=0 count=1 times=1 tag=0
+0x00000003 size=0 count=3 times=1 tag=0
+EOF
+RUN
+
+NAME=Reset traces (dt-)
+FILE=bins/elf/analysis/calls_x64
+ARGS=
+CMDS=<<EOF
+dt++ 0 1 2
+dt-
+dtl
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Graph call/ret trace (dtg)
+FILE=bins/elf/analysis/calls_x64
+ARGS=
+CMDS=<<EOF
+dt++ 0x00400410 0x00400412 0x00400415
+dtg
+dtg*
+EOF
+EXPECT=<<EOF
+digraph code {
+graph [bgcolor=white];
+    node [color=lightgray, style=filled shape=box fontname="Courier" fontsize="8"];
+}
+EOF
+RUN

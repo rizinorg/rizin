@@ -227,24 +227,24 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 		}
 	}
 	/* TODO: interpretation of memory location fails*/
-	//ensure imul & mul interpretations works
+	// ensure imul & mul interpretations works
 	if (strstr(w0, "mul")) {
 		if (nw == 2) {
 			rz_str_ncpy(wa[3], wa[1], sizeof(w3));
 
 			switch (wa[3][0]) {
 			case 'q':
-			case 'r': //qword, r..
+			case 'r': // qword, r..
 				rz_str_ncpy(wa[1], "rax", sizeof(w1));
 				rz_str_ncpy(wa[2], "rax", sizeof(w2));
 				break;
 			case 'd':
-			case 'e': //dword, e..
+			case 'e': // dword, e..
 				if (strlen(wa[3]) > 2) {
 					rz_str_ncpy(wa[1], "eax", sizeof(w1));
 					rz_str_ncpy(wa[2], "eax", sizeof(w2));
-					break;
 				}
+				break;
 			default: // .x, .p, .i or word
 				if (wa[3][1] == 'x' || wa[3][1] == 'p' ||
 					wa[3][1] == 'i' || wa[3][0] == 'w') {
@@ -254,6 +254,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 					rz_str_ncpy(wa[1], "al", sizeof(w1));
 					rz_str_ncpy(wa[2], "al", sizeof(w2));
 				}
+				break;
 			}
 		} else if (nw == 3) {
 			rz_str_ncpy(wa[3], wa[2], sizeof(w3));
@@ -290,7 +291,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	return true;
 }
 
-static void parse_localvar(RzParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, char *ireg, bool att) {
+static void parse_localvar(RzParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, const char *ireg, bool att) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	if (att) {
 		if (p->localvar_only) {
@@ -317,7 +318,7 @@ static void parse_localvar(RzParse *p, char *newstr, size_t newstr_len, const ch
 	rz_strbuf_free(sb);
 }
 
-static inline void mk_reg_str(const char *regname, int delta, bool sign, bool att, char *ireg, char *dest, int len) {
+static inline void mk_reg_str(const char *regname, int delta, bool sign, bool att, const char *ireg, char *dest, int len) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	if (att) {
 		if (ireg) {
@@ -345,7 +346,9 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 	rz_strbuf_free(sb);
 }
 
-static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
+	const ut64 addr = op->addr;
+	const int oplen = op->size;
 	RzList *bpargs, *spargs;
 	RzAnalysis *analysis = p->analb.analysis;
 	RzListIter *bpargiter, *spiter;
@@ -418,10 +421,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 	if (ucase && tstr[1]) {
 		ucase = tstr[1] >= 'A' && tstr[1] <= 'Z';
 	}
-	char *ireg = NULL;
-	if (p->get_op_ireg) {
-		ireg = p->get_op_ireg(p->user, addr);
-	}
+	const char *ireg = op->ireg;
 	RzAnalysisVarField *bparg, *sparg;
 	rz_list_foreach (spargs, spiter, sparg) {
 		char sign = '+';
@@ -514,6 +514,17 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 				break;
 			}
 		}
+		// Figure out the first hex digit of the delta to know if we need a leading zero
+		st64 delta_first_digit = delta;
+		while (delta_first_digit >= 16) {
+			delta_first_digit /= 16;
+		}
+		// Try with trailing-h notation (if using MASM syntax)
+		snprintf(oldstr, sizeof(oldstr) - 1, "%s %c %s%xh", reg, sign, delta_first_digit > 9 ? "0" : "", (int)delta);
+		if (rz_str_casestr(tstr, oldstr)) {
+			tstr = rz_str_replace_icase(tstr, oldstr, newstr, 1, 0);
+			break;
+		}
 		// Try with no spaces
 		snprintf(oldstr, sizeof(oldstr) - 1, "[%s%c0x%x]", reg, sign, (int)delta);
 		if (strstr(tstr, oldstr) != NULL) {
@@ -541,7 +552,6 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 		ret = false;
 	}
 	free(tstr);
-	free(ireg);
 	rz_list_free(spargs);
 	rz_list_free(bpargs);
 	return ret;

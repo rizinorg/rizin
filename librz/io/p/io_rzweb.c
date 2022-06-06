@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_io.h"
-#include "rz_lib.h"
+#include <rz_io.h>
+#include <rz_lib.h>
+#include <rz_socket.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -113,10 +114,10 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			}
 		}
 		char *url = rz_str_newf("http://%s/?V", path);
-		//eprintf  ("URL:(%s)\n", url);
+		// eprintf  ("URL:(%s)\n", url);
 		out = rz_socket_http_get(url, &code, &rlen);
-		//eprintf ("RES %d %d\n", code, rlen);
-		//eprintf ("OUT(%s)\n", out);
+		// eprintf ("RES %d %d\n", code, rlen);
+		// eprintf ("OUT(%s)\n", out);
 		if (out && rlen > 0) {
 			mal->fd = getmalfd(mal);
 			mal->url = rz_str_newf("http://%s", path);

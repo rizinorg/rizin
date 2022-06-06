@@ -32,10 +32,11 @@ RZ_API PJ *pj_new(void) {
 }
 
 RZ_API void pj_free(PJ *pj) {
-	if (pj) {
-		rz_strbuf_fini(&pj->sb);
-		free(pj);
+	if (!pj) {
+		return;
 	}
+	rz_strbuf_fini(&pj->sb);
+	free(pj);
 }
 
 RZ_API void pj_reset(PJ *j) {
@@ -208,7 +209,7 @@ RZ_API PJ *pj_s(PJ *j, const char *k) {
 	return j;
 }
 
-RZ_API PJ *pj_r(PJ *j, const unsigned char *v, size_t v_len) {
+RZ_API PJ *pj_r(PJ *j, const ut8 *v, size_t v_len) {
 	rz_return_val_if_fail(j && v, j);
 	size_t i;
 	pj_a(j);
@@ -219,7 +220,7 @@ RZ_API PJ *pj_r(PJ *j, const unsigned char *v, size_t v_len) {
 	return j;
 }
 
-RZ_API PJ *pj_kr(PJ *j, const char *k, const unsigned char *v, size_t v_len) {
+RZ_API PJ *pj_kr(PJ *j, const char *k, const ut8 *v, size_t v_len) {
 	rz_return_val_if_fail(j && k && v, j);
 	pj_k(j, k);
 	pj_r(j, v, v_len);

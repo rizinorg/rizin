@@ -314,7 +314,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_va = true;
 
 	if (!vsf_obj->maincpu) {
-		//safe to return, sdb will not be populated
+		// safe to return, sdb will not be populated
 		return ret;
 	}
 

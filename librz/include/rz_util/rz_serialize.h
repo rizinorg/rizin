@@ -132,4 +132,4 @@ static inline void rz_key_parser_add(RzKeyParser *parser, const char *key, int v
 		rip \
 	}
 
-#endif //RZ_SERIALIZE_H
+#endif // RZ_SERIALIZE_H

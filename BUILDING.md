@@ -87,7 +87,8 @@ The building steps on Windows are the same as on *NIX systems, however you
 will have to run the following commands from the Visual Studio Developer
 shell (search for "x64 Native Tools Command Prompt for VS 2019" or similar).
 To install Meson on Windows, follow instructions
-[here](https://mesonbuild.com/Getting-meson.html).
+[here](https://mesonbuild.com/Getting-meson.html). If using PowerShell, 
+replace `%CD%` with `$((Get-Item .).FullName)`
 
 ```
 $ meson --buildtype=release --prefix=%CD%\rizin-install build
@@ -95,7 +96,7 @@ $ ninja -C build
 $ ninja -C build install
 ```
 
-You can run rizin from `%CD%\rizin-install\bin`. If you don't specify any
+You can run rizin from `.\rizin-install\bin`. If you don't specify any
 `--prefix`, meson will install rizin directly under `C:\`.
 
 ## Build with ASAN/UBSAN

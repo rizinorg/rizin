@@ -60,6 +60,30 @@ bool test_rz_file_dirname(void) {
 	mu_end;
 }
 
+bool test_rz_file_basename(void) {
+	const char *s = rz_file_basename("./\\test/\\//\\abc//\\/123/\\o.txt");
+	mu_assert_notnull(s, "basename not null");
+#if __WINDOWS__
+	mu_assert_streq(s, "o.txt", "basename is supposed to be o.txt");
+#else
+	mu_assert_streq(s, "\\o.txt", "basename is supposed to be \\o.txt");
+#endif
+	s = rz_file_basename("./\\test/\\//\\abc//\\/123\\/o.txt");
+	mu_assert_notnull(s, "basename not null");
+	mu_assert_streq(s, "o.txt", "basename is supposed to be o.txt");
+	mu_end;
+}
+
+bool test_rz_file_dos_basename(void) {
+	const char *s = rz_file_dos_basename("./\\test/\\//\\abc//\\/123/\\o.txt");
+	mu_assert_notnull(s, "basename not null");
+	mu_assert_streq(s, "o.txt", "basename is supposed to be o.txt");
+	s = rz_file_basename("./\\test/\\//\\abc//\\/123\\/o.txt");
+	mu_assert_notnull(s, "basename not null");
+	mu_assert_streq(s, "o.txt", "basename is supposed to be o.txt");
+	mu_end;
+}
+
 bool test_rz_file_mmap(void) {
 	char *filename = rz_file_temp(NULL);
 	RzMmap *m = rz_file_mmap(filename, O_RDWR | O_CREAT, 0644, 0xdead0000);
@@ -93,6 +117,8 @@ int all_tests() {
 		mu_run_test(test_rz_file_relpath, relpath_cases[i].base, relpath_cases[i].path, relpath_cases[i].expect);
 	}
 	mu_run_test(test_rz_file_dirname);
+	mu_run_test(test_rz_file_basename);
+	mu_run_test(test_rz_file_dos_basename);
 	mu_run_test(test_rz_file_mmap);
 	return tests_passed != tests_run;
 }

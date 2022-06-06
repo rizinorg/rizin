@@ -3,6 +3,7 @@
 
 // Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <rz_cons.h>
+#include <rz_windows.h>
 
 #if __UNIX__
 #include <stdio.h>
@@ -192,6 +193,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 }
 #endif
 
+// \brief Checks if the console supports and is set to UTF-8-compatible locale
 RZ_API bool rz_cons_is_utf8(void) {
 	bool ret = false;
 #if UTF8_DETECT_ENV

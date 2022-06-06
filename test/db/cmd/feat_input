@@ -28,7 +28,7 @@ RUN
 NAME=w foo#bar
 FILE=malloc://1024
 CMDS=<<EOF
-"w foo#bar"
+w "foo#bar"
 psz
 EOF
 EXPECT=<<EOF
@@ -39,7 +39,7 @@ RUN
 NAME="quoted"
 FILE=malloc://1024
 CMDS=<<EOF
-"w aaaa;bbb@23"
+w "aaaa;bbb@23"
 psz
 EOF
 EXPECT=<<EOF
@@ -50,8 +50,8 @@ RUN
 NAME="quoted"@addr
 FILE=malloc://1024
 CMDS=<<EOF
-"w aaaa;bbb@23"@0x10
-psz@0x10
+w "aaaa;bbb@23"@ 0x10
+psz@ 0x10
 EOF
 EXPECT=<<EOF
 aaaa;bbb@23
@@ -69,7 +69,7 @@ RUN
 
 NAME=at3 "?vi $$"@3;"?e bar"
 FILE=malloc://1024
-CMDS="?vi $$"@3;?e bar
+CMDS="?vi $$"@ 3;?e bar
 EXPECT=<<EOF
 3
 bar
@@ -78,7 +78,7 @@ RUN
 
 NAME=at3 "?vi $$"@3;"?e bar"
 FILE=malloc://1024
-CMDS="?vi $$"@3;"?e bar"
+CMDS="?vi $$"@ 3;"?e bar"
 EXPECT=<<EOF
 3
 bar
