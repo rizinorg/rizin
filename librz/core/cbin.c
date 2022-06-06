@@ -4370,8 +4370,12 @@ static void bin_elf_versioninfo(RzCore *r, PJ *pj, int mode) {
 	bin_elf_versioninfo_verneed(r, pj, mode);
 }
 
-static void bin_mach0_versioninfo(RzCore *r) {
+static void bin_mach0_versioninfo(RzCore *r, PJ *pj, int mode) {
 	/* TODO */
+	if (IS_MODE_JSON(mode)) {
+		pj_o(pj);
+		pj_end(pj);
+	}
 }
 
 static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
@@ -4384,9 +4388,12 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	} else if (!strncmp("elf", info->rclass, 3)) {
 		bin_elf_versioninfo(r, pj, mode);
 	} else if (!strncmp("mach0", info->rclass, 5)) {
-		bin_mach0_versioninfo(r);
+		bin_mach0_versioninfo(r, pj, mode);
 	} else {
-		if (mode != RZ_MODE_JSON) {
+		if (IS_MODE_JSON(mode)) {
+			pj_o(pj);
+			pj_end(pj);
+		} else {
 			rz_cons_println("Unknown format");
 		}
 		return false;
