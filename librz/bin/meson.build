@@ -65,6 +65,7 @@ bin_xtr_plugins = [
 
 rz_bin_sources = [
   'bfile.c',
+  'bfile_string.c',
   'bin.c',
   'bin_language.c',
   'bobj.c',
