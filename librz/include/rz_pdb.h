@@ -189,6 +189,9 @@ enum pdb_stream_version {
 	VC140 = 20140508,
 };
 
+/**
+ * Like GUID in windows.h/guiddef.h
+ */
 typedef struct {
 	ut32 data1;
 	ut16 data2;
