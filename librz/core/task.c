@@ -148,8 +148,10 @@ static void task_free(RzCoreTask *task) {
 	if (task->runner_free) {
 		task->runner_free(task->runner_user);
 	}
-	rz_th_wait(task->thread);
-	rz_th_free(task->thread);
+	if (task->thread) {
+		rz_th_wait(task->thread);
+		rz_th_free(task->thread);
+	}
 	rz_th_sem_free(task->running_sem);
 	rz_th_cond_free(task->dispatch_cond);
 	rz_th_lock_free(task->dispatch_lock);
@@ -343,7 +345,7 @@ static void task_end(RzCoreTask *t) {
 	rz_core_task_schedule(t, RZ_CORE_TASK_STATE_DONE);
 }
 
-static RzThreadFunctionRet task_run(RzCoreTask *task) {
+static RzThreadStatus task_run_thread(RzCoreTask *task) {
 	RzCoreTaskScheduler *sched = task->sched;
 
 	task_wakeup(task);
@@ -366,12 +368,7 @@ nonstart:
 	}
 
 	tasks_lock_leave(sched, &old_sigset);
-	return RZ_TH_STOP;
-}
-
-static RzThreadFunctionRet task_run_thread(RzThread *th) {
-	RzCoreTask *task = (RzCoreTask *)rz_th_get_user(th);
-	return task_run(task);
+	return RZ_TH_STATUS_STOP;
 }
 
 RZ_API void rz_core_task_enqueue(RzCoreTaskScheduler *scheduler, RzCoreTask *task) {
@@ -387,7 +384,7 @@ RZ_API void rz_core_task_enqueue(RzCoreTaskScheduler *scheduler, RzCoreTask *tas
 		rz_th_sem_wait(task->running_sem);
 	}
 	rz_list_append(scheduler->tasks, task);
-	task->thread = rz_th_new(task_run_thread, task, 0);
+	task->thread = rz_th_new((RzThreadFunction)task_run_thread, task);
 	tasks_lock_leave(scheduler, &old_sigset);
 }
 
@@ -417,7 +414,7 @@ RZ_API void rz_core_task_enqueue_oneshot(RzCoreTaskScheduler *scheduler, RzCoreT
 
 RZ_API int rz_core_task_run_sync(RzCoreTaskScheduler *scheduler, RzCoreTask *task) {
 	task->thread = NULL;
-	return task_run(task);
+	return task_run_thread(task);
 }
 
 /* begin running stuff synchronously on the main task */

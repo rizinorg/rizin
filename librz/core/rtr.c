@@ -58,10 +58,18 @@ typedef struct {
 
 RZ_API void rz_core_wait(RzCore *core) {
 	rz_cons_singleton()->context->breaked = true;
-	rz_th_kill(httpthread, true);
-	rz_th_kill(rapthread, true);
-	rz_th_wait(httpthread);
-	rz_th_wait(rapthread);
+	if (httpthread) {
+		rz_th_kill(httpthread);
+	}
+	if (rapthread) {
+		rz_th_kill(rapthread);
+	}
+	if (httpthread) {
+		rz_th_wait(httpthread);
+	}
+	if (rapthread) {
+		rz_th_wait(rapthread);
+	}
 }
 
 static void http_logf(RzCore *core, const char *fmt, ...) {
@@ -841,15 +849,11 @@ static bool rz_core_rtr_rap_run(RzCore *core, const char *input) {
 	// rz_core_cmdf (core, "o rap://%s", input);
 }
 
-static RzThreadFunctionRet rz_core_rtr_rap_thread(RzThread *th) {
-	if (!th) {
-		return false;
-	}
-	RapThread *rt = rz_th_get_user(th);
+static RzThreadStatus rz_core_rtr_rap_thread(RapThread *rt) {
 	if (!rt || !rt->core) {
 		return false;
 	}
-	return rz_core_rtr_rap_run(rt->core, rt->input) ? RZ_TH_REPEAT : RZ_TH_STOP;
+	return rz_core_rtr_rap_run(rt->core, rt->input) ? RZ_TH_STATUS_LOOP : RZ_TH_STATUS_STOP;
 }
 
 RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
@@ -877,16 +881,15 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 			eprintf("This is experimental and probably buggy. Use at your own risk\n");
 		} else {
 			// TODO: use tasks
-			RapThread *RT = RZ_NEW0(RapThread);
-			if (RT) {
-				RT->core = core;
-				RT->input = strdup(input + 1);
+			RapThread *rap_th = RZ_NEW0(RapThread);
+			if (rap_th) {
+				rap_th->core = core;
+				rap_th->input = strdup(input + 1);
 				// RapThread rt = { core, strdup (input + 1) };
-				rapthread = rz_th_new(rz_core_rtr_rap_thread, RT, false);
+				rapthread = rz_th_new((RzThreadFunction)rz_core_rtr_rap_thread, rap_th);
 				int cpuaff = (int)rz_config_get_i(core->config, "cfg.cpuaffinity");
 				rz_th_setaffinity(rapthread, cpuaff);
 				rz_th_setname(rapthread, "rapthread");
-				rz_th_start(rapthread, true);
 				eprintf("Background rap server started.\n");
 			}
 		}

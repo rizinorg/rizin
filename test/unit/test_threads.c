@@ -10,14 +10,15 @@ bool test_thread_pool_cores(void) {
 
 	RzThreadPool *pool = rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES);
 	mu_assert_notnull(pool, "rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES) null check");
-	mu_assert_eq(pool->size, cores, "rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES) core count check");
+	size_t pool_size = rz_th_pool_size(pool);
+	mu_assert_eq(pool_size, cores, "rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES) core count check");
 	rz_th_pool_free(pool);
 
 	if (cores > 1) {
 		/* this can be tested only when cores are more than 1 */
 		pool = rz_th_pool_new(cores - 1);
 		mu_assert_notnull(pool, "rz_th_pool_new(cores - 1) null check");
-		mu_assert_eq(pool->size, cores - 1, "rz_th_pool_new(cores - 1) core count check");
+		mu_assert_eq(pool_size, cores - 1, "rz_th_pool_new(cores - 1) core count check");
 		rz_th_pool_free(pool);
 	}
 

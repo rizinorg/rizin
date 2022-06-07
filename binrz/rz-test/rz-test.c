@@ -51,7 +51,7 @@ typedef struct rz_test_state_t {
 	RzPVector results;
 } RzTestState;
 
-static RzThreadFunctionRet worker_th(RzThread *th);
+static RzThreadStatus worker_th(RzTestState *state);
 static void print_state(RzTestState *state, ut64 prev_completed);
 static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(RzTestState *state);
@@ -490,7 +490,7 @@ int rz_test_main(int argc, const char **argv) {
 	rz_pvector_init(&workers, NULL);
 	int i;
 	for (i = 0; i < workers_count; i++) {
-		RzThread *th = rz_th_new(worker_th, &state, 0);
+		RzThread *th = rz_th_new((RzThreadFunction)worker_th, &state);
 		if (!th) {
 			eprintf("Failed to start thread.\n");
 			rz_th_lock_leave(state.lock);
@@ -623,8 +623,7 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	pj_end(pj);
 }
 
-static RzThreadFunctionRet worker_th(RzThread *th) {
-	RzTestState *state = rz_th_get_user(th);
+static RzThreadStatus worker_th(RzTestState *state) {
 	rz_th_lock_enter(state->lock);
 	while (true) {
 		if (rz_pvector_empty(&state->queue)) {
@@ -679,7 +678,7 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 		rz_th_cond_signal(state->cond);
 	}
 	rz_th_lock_leave(state->lock);
-	return RZ_TH_STOP;
+	return RZ_TH_STATUS_STOP;
 }
 
 static void print_diff(const char *actual, const char *expected, const char *regexp) {
