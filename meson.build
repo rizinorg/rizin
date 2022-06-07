@@ -422,8 +422,6 @@ ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
 userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
-ok = cc.has_header_symbol('linux/ashmem.h', 'ASHMEM_NAME_LEN')
-userconf.set10('HAVE_DECL_ASHMEM_NAME_LEN', ok)
 userconf.set10('HAVE_THREADS', th.found())
 userconf.set10('HAVE_PTHREAD', have_pthread)
 
@@ -491,6 +489,17 @@ foreach item : [
   func = item[0]
   ok = cc.has_function(func, prefix: item[1], dependencies: item[2])
   userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
+endforeach
+
+foreach item : [
+    ['linux/ashmem.h', '', []],
+    ['sys/shm.h', '', []],
+    ['sys/ipc.h', '', []],
+    ['sys/mman.h', '', []],
+  ]
+  hdr = item[0]
+  ok = cc.has_header(hdr, prefix: item[1], dependencies: item[2])
+  userconf.set10('HAVE_HEADER_@0@'.format(hdr.underscorify().to_upper()), ok)
 endforeach
 
 if userconf.get('HAVE_PIPE2') == 1

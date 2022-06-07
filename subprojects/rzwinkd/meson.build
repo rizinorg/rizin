@@ -2,6 +2,8 @@ project('rzwinkd', 'c',
   license : [ 'LGPL']
 )
 
+cc = meson.get_compiler('c')
+
 winkd_files = [
   'iob_pipe.c',
   'iob_net.c',
