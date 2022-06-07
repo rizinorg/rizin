@@ -719,9 +719,12 @@ static int redirect_socket_to_stdio(RzSocket *sock) {
 }
 
 #if __WINDOWS__
-static RzThreadFunctionRet exit_process(RzThread *th) {
+static RzThreadStatus exit_process(void *user) {
+	int timeout = (int)(void *)user;
+	rz_sys_sleep(timeout);
 	// eprintf ("\nrz_run: Interrupted by timeout\n");
 	exit(0);
+	return RZ_TH_STATUS_STOP;
 }
 #endif
 
@@ -1065,7 +1068,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		}
 #else
 		if (p->_timeout_sig < 1 || p->_timeout_sig == 9) {
-			rz_th_new(exit_process, NULL, p->_timeout);
+			rz_th_new(exit_process, (void *)p->_timeout);
 		} else {
 			eprintf("timeout with signal not supported for this platform\n");
 		}

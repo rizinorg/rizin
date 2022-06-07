@@ -1,4 +1,6 @@
-// SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2020-2021 ret2libc <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2020-2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022 GustavoLCR <gugulcr@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -24,43 +26,34 @@
 #include <OS.h>
 #endif
 
-#if __WINDOWS__
-static DWORD WINAPI _rz_th_launcher(void *_th) {
-#else
-static void *_rz_th_launcher(void *_th) {
-#endif
-	int ret;
-	RzThread *th = _th;
-	th->ready = true;
-	if (th->delay > 0) {
-		rz_sys_sleep(th->delay);
-	} else if (th->delay < 0) {
-		rz_th_lock_wait(th->lock);
+struct rz_th_pool_t {
+	size_t size;
+	RzThread **threads;
+};
+
+struct rz_th_queue_t {
+	RzThreadLock *lock;
+	RzThreadCond *cond;
+	size_t max_size;
+	RzList *list;
+};
+
+/*
+ * Main thread function, this function is meant to be
+ * hidden from the user which is using the C APIs.
+ */
+static RZ_TH_RET_T thread_main_function(void *_th) {
+	RzThread *th = (RzThread *)_th;
+	RzThreadStatus status = RZ_TH_STATUS_LOOP;
+
+	while (status == RZ_TH_STATUS_LOOP) {
+		status = th->function(th->user);
 	}
-	rz_th_lock_enter(th->lock);
-	do {
-		rz_th_lock_leave(th->lock);
-		th->running = true;
-		ret = th->fun(th);
-		if (ret < 0) {
-			// th has been freed
-			return 0;
-		}
-		th->running = false;
-		rz_th_lock_enter(th->lock);
-	} while (ret);
-	rz_th_lock_leave(th->lock);
+
 #if HAVE_PTHREAD
-	pthread_exit(&ret);
+	pthread_exit(NULL);
 #endif
 	return 0;
-}
-
-RZ_API int rz_th_push_task(struct rz_th_t *th, void *user) {
-	int ret = true;
-	th->user = user;
-	rz_th_lock_leave(th->lock);
-	return ret;
 }
 
 RZ_IPI RZ_TH_TID rz_th_self(void) {
@@ -74,28 +67,38 @@ RZ_IPI RZ_TH_TID rz_th_self(void) {
 #endif
 }
 
-RZ_API bool rz_th_setname(RzThread *th, const char *name) {
+/**
+ * \brief Sets the name of the thread
+ *
+ * \param  th    The thread to rename
+ * \param  name  The name to assign to the thread
+ *
+ * \return On success returns true, otherwise false
+ */
+RZ_API bool rz_th_setname(RZ_NONNULL RzThread *th, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(th && name, false);
+
 #if defined(HAVE_PTHREAD_NP) && HAVE_PTHREAD_NP
 #if __linux__ || __sun
 	if (pthread_setname_np(th->tid, name) != 0) {
-		eprintf("Failed to set thread name\n");
+		RZ_LOG_ERROR("thread: Failed to set thread name\n");
 		return false;
 	}
 #elif __APPLE__ && defined(MAC_OS_X_VERSION_10_6)
 	if (pthread_setname_np(name) != 0) {
-		eprintf("Failed to set thread name\n");
+		RZ_LOG_ERROR("thread: Failed to set thread name\n");
 		return false;
 	}
 #elif __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __sun
 	pthread_set_name_np(th->tid, name);
 #elif __NetBSD__
 	if (pthread_setname_np(th->tid, "%s", (void *)name) != 0) {
-		eprintf("Failed to set thread name\n");
+		RZ_LOG_ERROR("thread: Failed to set thread name\n");
 		return false;
 	}
 #elif __HAIKU__
 	if (rename_thread((thread_id)th->tid, name) != B_OK) {
-		eprintf("Failed to set thread name\n");
+		RZ_LOG_ERROR("thread: Failed to set thread name\n");
 		return false;
 	}
 #else
@@ -105,11 +108,22 @@ RZ_API bool rz_th_setname(RzThread *th, const char *name) {
 	return true;
 }
 
-RZ_API bool rz_th_getname(RzThread *th, char *name, size_t len) {
+/**
+ * \brief Gets the name of the thread and writes it into the output buffer
+ *
+ * \param  th    The thread from which the name is taken
+ * \param  name  The output buffer name to use to copy the name
+ * \param  len   The output buffer length
+ *
+ * \return On success returns true, otherwise false
+ */
+RZ_API bool rz_th_getname(RZ_NONNULL RzThread *th, RZ_NONNULL RZ_OUT char *name, size_t len) {
+	rz_return_val_if_fail(th && name && len > 0, false);
+
 #if defined(HAVE_PTHREAD_NP) && HAVE_PTHREAD_NP
 #if __linux__ || __NetBSD__ || (__APPLE__ && defined(MAC_OS_X_VERSION_10_6)) || __sun
 	if (pthread_getname_np(th->tid, name, len) != 0) {
-		eprintf("Failed to get thread name\n");
+		RZ_LOG_ERROR("thread: Failed to get thread name\n");
 		return false;
 	}
 #elif (__FreeBSD__ && __FreeBSD_version >= 1200000) || __DragonFly__ || (__OpenBSD__ && OpenBSD >= 201905)
@@ -119,7 +133,7 @@ RZ_API bool rz_th_getname(RzThread *th, char *name, size_t len) {
 	size_t flen = len < B_OS_NAME_LENGTH ? len : B_OS_NAME_LENGTH;
 
 	if (get_thread_info((thread_id)th->tid, &ti) != B_OK) {
-		eprintf("Failed to get thread name\n");
+		RZ_LOG_ERROR("thread: Failed to get thread name\n");
 		return false;
 	}
 
@@ -131,7 +145,17 @@ RZ_API bool rz_th_getname(RzThread *th, char *name, size_t len) {
 	return true;
 }
 
-RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
+/**
+ * \brief Sets the thread cpu affinity
+ *
+ * \param  th     The thread to change the cpu affinity
+ * \param  cpuid  The cpuid to set to the thread.
+ *
+ * \return On success returns true, otherwise false.
+ */
+RZ_API bool rz_th_setaffinity(RZ_NONNULL RzThread *th, int cpuid) {
+	rz_return_val_if_fail(th, false);
+
 #if __linux__
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
 	// Old versions of GNU libc don't have this feature
@@ -142,7 +166,7 @@ RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
 	CPU_SET(cpuid, &c);
 
 	if (sched_setaffinity((pid_t)(ut64)th->tid, sizeof(c), &c) != 0) {
-		eprintf("Failed to set cpu affinity\n");
+		RZ_LOG_ERROR("thread: Failed to set cpu affinity\n");
 		return false;
 	}
 #endif
@@ -152,7 +176,7 @@ RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
 	CPU_SET(cpuid, &c);
 
 	if (pthread_setaffinity_np(th->tid, sizeof(c), &c) != 0) {
-		eprintf("Failed to set cpu affinity\n");
+		RZ_LOG_ERROR("thread: Failed to set cpu affinity\n");
 		return false;
 	}
 #elif __NetBSD__
@@ -161,7 +185,7 @@ RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
 
 	if (pthread_setaffinity_np(th->tid, cpuset_size(c), c) != 0) {
 		cpuset_destroy(c);
-		eprintf("Failed to set cpu affinity\n");
+		RZ_LOG_ERROR("thread: Failed to set cpu affinity\n");
 		return false;
 	}
 
@@ -170,12 +194,12 @@ RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
 	thread_affinity_policy_data_t c = { cpuid };
 	if (thread_policy_set(pthread_mach_thread_np(th->tid),
 		    THREAD_AFFINITY_POLICY, (thread_policy_t)&c, 1) != KERN_SUCCESS) {
-		eprintf("Failed to set cpu affinity\n");
+		RZ_LOG_ERROR("thread: Failed to set cpu affinity\n");
 		return false;
 	}
 #elif __WINDOWS__
 	if (SetThreadAffinityMask(th->tid, (DWORD_PTR)1 << cpuid) == 0) {
-		eprintf("Failed to set cpu affinity\n");
+		RZ_LOG_ERROR("thread: Failed to set cpu affinity\n");
 		return false;
 	}
 #elif __sun
@@ -186,7 +210,7 @@ RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
 
 	if (pset_bind(c, P_PID, getpid(), NULL)) {
 		pset_destroy(c);
-		eprintf("Failed to set cpu affinity\n");
+		RZ_LOG_ERROR("thread: Failed to set cpu affinity\n");
 		return false;
 	}
 
@@ -197,37 +221,48 @@ RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
 	return true;
 }
 
-RZ_API RzThread *rz_th_new(RZ_TH_FUNCTION(fun), void *user, int delay) {
+/**
+ * \brief      Creates and starts a new thread.
+ *
+ * \param      function  The callback to call when the thread starts.
+ * \param      user      A pointer to a user structure to pass to the callback function
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN RzThread *rz_th_new(RZ_NONNULL RzThreadFunction function, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(function, NULL);
+
 	RzThread *th = RZ_NEW0(RzThread);
-	if (th) {
-		th->lock = rz_th_lock_new(false);
-		th->running = false;
-		th->fun = fun;
-		th->user = user;
-		th->delay = delay;
-		th->breaked = false;
-		th->ready = false;
+	if (!th) {
+		RZ_LOG_ERROR("thread: Failed to allocate RzThread\n");
+		return NULL;
+	}
+
+	th->function = function;
+	th->user = user;
+
 #if HAVE_PTHREAD
-		pthread_create(&th->tid, NULL, _rz_th_launcher, th);
+	if (!pthread_create(&th->tid, NULL, thread_main_function, th)) {
+		return th;
+	}
 #elif __WINDOWS__
-		th->tid = CreateThread(NULL, 0, _rz_th_launcher, th, 0, 0);
+	if ((th->tid = CreateThread(NULL, 0, thread_main_function, th, 0, 0))) {
+		return th;
+	}
 #endif
-	}
-	return th;
+	RZ_LOG_ERROR("thread: Failed to start the RzThread\n");
+	free(th);
+	return NULL;
 }
 
-RZ_API void rz_th_break(RzThread *th) {
-	th->breaked = true;
-}
+/**
+ * \brief  Force-stops a thread
+ *
+ * \param  RzThread  The thread to stop
+ */
+RZ_API void rz_th_kill(RZ_NONNULL RzThread *th) {
+	rz_return_if_fail(th);
 
-RZ_API bool rz_th_kill(RzThread *th, bool force) {
-	if (!th || !th->tid || !th->running) {
-		return false;
-	}
-	th->breaked = true;
-	th->running = false;
-	rz_th_break(th);
-	rz_th_wait(th);
 #if HAVE_PTHREAD
 #ifdef __ANDROID__
 	pthread_kill(th->tid, 9);
@@ -237,67 +272,68 @@ RZ_API bool rz_th_kill(RzThread *th, bool force) {
 #elif __WINDOWS__
 	TerminateThread(th->tid, -1);
 #endif
-	return 0;
 }
 
-RZ_API bool rz_th_start(RzThread *th, int enable) {
-	bool ret = true;
-	if (enable) {
-		if (!th->running) {
-			// start thread
-			while (!th->ready) {
-				/* spinlock */
-			}
-			rz_th_lock_leave(th->lock);
-		}
-	} else {
-		if (th->running) {
-			// stop thread
-			// rz_th_kill (th, 0);
-			rz_th_lock_enter(th->lock); // deadlock?
-		}
-	}
-	th->running = enable;
-	return ret;
-}
-
-RZ_API bool rz_th_wait(RzThread *th) {
-	bool ret = false;
-	if (th) {
+/**
+ * \brief      Awaits indefinetely for a thread to join
+ *
+ * \param[in]  th  The thread to await for.
+ *
+ * \return     On graceful stop returns true, otherwise false
+ */
+RZ_API bool rz_th_wait(RZ_NONNULL RzThread *th) {
+	rz_return_val_if_fail(th, false);
 #if HAVE_PTHREAD
-		void *thret = NULL;
-		ret = pthread_join(th->tid, &thret);
+	void *thret = NULL;
+	return pthread_join(th->tid, &thret) == 0;
 #elif __WINDOWS__
-		ret = WaitForSingleObject(th->tid, INFINITE);
+	return WaitForSingleObject(th->tid, INFINITE) == 0; // WAIT_OBJECT_0
 #endif
-		th->running = false;
-	}
-	return ret;
 }
 
-RZ_API bool rz_th_wait_async(RzThread *th) {
-	return th->running;
-}
-
-RZ_API void rz_th_free(RzThread *th) {
+/**
+ * \brief  Frees a RzThread structure
+ *
+ * \param  th  The RzThread to free
+ */
+RZ_API void rz_th_free(RZ_NULLABLE RzThread *th) {
 	if (!th) {
 		return;
 	}
 #if __WINDOWS__
 	CloseHandle(th->tid);
 #endif
-	rz_th_lock_free(th->lock);
 	free(th);
 }
 
-RZ_API void rz_th_kill_free(RzThread *th) {
-	if (!th) {
-		return;
-	}
-	rz_th_kill(th, true);
+/**
+ * \brief  Stops the thread and frees the RzThread structure
+ *
+ * \param  th  The thread to stop and free.
+ */
+RZ_API void rz_th_kill_free(RZ_NONNULL RzThread *th) {
+	rz_return_if_fail(th);
+	rz_th_kill(th);
 	rz_th_free(th);
 }
 
+/**
+ * \brief Returns user pointer of thread
+ *
+ * \param  th The thread to get the user pointer from
+ *
+ * \return user pointer set by the rz_th_new user parameter
+ */
+RZ_API RZ_OWN void *rz_th_get_user(RZ_NONNULL RzThread *th) {
+	rz_return_val_if_fail(th, NULL);
+	return th->user;
+}
+
+/**
+ * \brief      Returns the number of available physical cores of the host machine
+ *
+ * \return     The number of available physical cores (always >= 1)
+ */
 RZ_API size_t rz_th_physical_core_number() {
 #ifdef __WINDOWS__
 	SYSTEM_INFO sysinfo;
@@ -411,27 +447,16 @@ RZ_API bool rz_th_pool_add_thread(RZ_NONNULL RzThreadPool *pool, RZ_NONNULL RzTh
 }
 
 /**
- * @brief Starts all the threads in the thread pool
+ * \brief  Returns the n-th thread in the thread pool.
  *
- * @param RzThreadPool  The thread pool to start
- * @param enable        Enable the thread or disables them (see rz_th_start)
+ * \param  pool   The thread pool to use
+ * \param  index  The index of the thread to get
  *
- * @return returns true if starts any thread from the pool, otherwise false
+ * \return Returns the pointer of the n-th thread in the thread pool.
  */
-RZ_API bool rz_th_pool_start(RZ_NONNULL RzThreadPool *pool, bool enable) {
-	rz_return_val_if_fail(pool, false);
-	bool started = false;
-	for (ut32 i = 0; i < pool->size; ++i) {
-		if (pool->threads[i]) {
-			RZ_LOG_DEBUG("thread: started thread %u\n", i);
-			rz_th_start(pool->threads[i], enable);
-			started = true;
-		}
-	}
-	if (!started) {
-		RZ_LOG_ERROR("thread: cannot start thread pool when there are no threads in it\n");
-	}
-	return started;
+RZ_API RZ_OWN RzThread *rz_th_pool_get_thread(RZ_NONNULL RzThreadPool *pool, size_t index) {
+	rz_return_val_if_fail(pool && index < pool->size, NULL);
+	return pool->threads[index];
 }
 
 /**
@@ -447,46 +472,26 @@ RZ_API bool rz_th_pool_wait(RZ_NONNULL RzThreadPool *pool) {
 	for (ut32 i = 0; i < pool->size; ++i) {
 		if (pool->threads[i]) {
 			RZ_LOG_DEBUG("thread: waiting for thread %u\n", i);
-			has_exited &= !rz_th_wait(pool->threads[i]);
+			has_exited = has_exited && rz_th_wait(pool->threads[i]);
 		}
 	}
 	return has_exited;
 }
 
 /**
- * \brief Waits asynchronously the end of all the threads in the thread pool
- *
- * \param  RzThreadPool The thread pool to wait for
- *
- * \return true if managed to wait all threads, otherwise false
- */
-RZ_API bool rz_th_pool_wait_async(RZ_NONNULL RzThreadPool *pool) {
-	rz_return_val_if_fail(pool, false);
-	bool has_exited = true;
-	for (ut32 i = 0; i < pool->size; ++i) {
-		if (pool->threads[i]) {
-			RZ_LOG_DEBUG("thread: waiting for thread %u (async)\n", i);
-			has_exited &= !rz_th_wait_async(pool->threads[i]);
-		}
-	}
-	return has_exited;
-}
-
-/**
- * \brief Kills all threads in the thread pool
+ * \brief Force-stops all threads in the thread pool
  *
  * \param  pool  The thread pool to kill
- * \param  force Set to true if force killing the threads
  *
  * \return true if managed to kill all threads, otherwise false
  */
-RZ_API bool rz_th_pool_kill(RZ_NONNULL RzThreadPool *pool, bool force) {
+RZ_API bool rz_th_pool_kill(RZ_NONNULL RzThreadPool *pool) {
 	rz_return_val_if_fail(pool, false);
 	bool has_exited = false;
 	for (ut32 i = 0; i < pool->size; ++i) {
 		if (pool->threads[i]) {
 			RZ_LOG_DEBUG("thread: killing thread %u\n", i);
-			rz_th_kill(pool->threads[i], force);
+			rz_th_kill(pool->threads[i]);
 			has_exited = true;
 		}
 	}
@@ -515,12 +520,128 @@ RZ_API bool rz_th_pool_kill_free(RZ_NONNULL RzThreadPool *pool) {
 }
 
 /**
- * \brief Returns user pointer of thread
+ * \brief  Returns the thread pool size
  *
- * \param  th The thread to get the user pointer from
+ * \param  pool  The RzThreadPool to use
  *
- * \return user pointer set by the rz_th_new user parameter
+ * \return The size of the thread pool (always >= 1).
  */
-RZ_API void *rz_th_get_user(RzThread *th) {
-	return th->user;
+RZ_API size_t rz_th_pool_size(RZ_NONNULL RzThreadPool *pool) {
+	rz_return_val_if_fail(pool, 1);
+	return pool->size;
+}
+
+/**
+ * \brief  Allocates and initializes a new fifo queue
+ *
+ * \param  max_size  The maximum size of the queue, use RZ_THREAD_QUEUE_UNLIMITED for an unlimited size
+ * \param  qfree     Pointer to a custom free function to free the queue if not empty.
+ *
+ * \return On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzListFree qfree) {
+	RzThreadQueue *queue = RZ_NEW0(RzThreadQueue);
+	if (!queue) {
+		return NULL;
+	}
+
+	queue->max_size = max_size;
+	queue->list = rz_list_newf(qfree);
+	queue->lock = rz_th_lock_new(false);
+	queue->cond = rz_th_cond_new();
+	if (!queue->list || !queue->lock || !queue->cond) {
+		rz_th_queue_free(queue);
+		return NULL;
+	}
+
+	return queue;
+}
+
+/**
+ * \brief  Frees a RzThreadQueue structure
+ *
+ * \param  queue The RzThreadQueue to free
+ */
+RZ_API void rz_th_queue_free(RZ_NULLABLE RzThreadQueue *queue) {
+	if (!queue) {
+		return;
+	}
+
+	rz_list_free(queue->list);
+	rz_th_lock_free(queue->lock);
+	rz_th_cond_free(queue->cond);
+	free(queue);
+}
+
+/**
+ * \brief  Pushes a new element into the queue
+ *
+ * \param  queue The RzThreadQueue to push to
+ * \param  user  The non-null pointer to push to the queue
+ * \param  tail  When true, appends the element to the tail, otherwise to the head
+ *
+ * \return On success returns true, otherwise false
+ */
+RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *user, bool tail) {
+	rz_return_val_if_fail(queue && user, false);
+
+	bool added = false;
+	rz_th_lock_enter(queue->lock);
+	if (!queue->max_size || rz_list_length(queue->list) < queue->max_size) {
+		if (tail) {
+			added = rz_list_append(queue->list, user) != NULL;
+		} else {
+			added = rz_list_prepend(queue->list, user) != NULL;
+		}
+	}
+	if (added) {
+		rz_th_cond_signal(queue->cond);
+	}
+	rz_th_lock_leave(queue->lock);
+	return added;
+}
+
+/**
+ * \brief  Removes an element from the queue
+ *
+ * \param  queue The RzThreadQueue to push to
+ * \param  tail  When true, pops the element from the tail, otherwise from the head
+ *
+ * \return On success returns a valid pointer, otherwise NULL
+ */
+RZ_API void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail) {
+	rz_return_val_if_fail(queue, NULL);
+
+	void *user = NULL;
+	rz_th_lock_enter(queue->lock);
+	if (tail) {
+		user = rz_list_pop(queue->list);
+	} else {
+		user = rz_list_pop_head(queue->list);
+	}
+	rz_th_lock_leave(queue->lock);
+	return user;
+}
+
+/**
+ * \brief  Removes an element from the queue
+ *
+ * \param  queue The RzThreadQueue to push to
+ * \param  tail  When true, pops the element from the tail, otherwise from the head
+ *
+ * \return On success returns a valid pointer, otherwise NULL
+ */
+RZ_API void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail) {
+	rz_return_val_if_fail(queue, NULL);
+
+	void *user = NULL;
+	rz_th_lock_enter(queue->lock);
+	rz_th_cond_wait(queue->cond, queue->lock);
+	if (tail) {
+		user = rz_list_pop(queue->list);
+	} else {
+		user = rz_list_pop_head(queue->list);
+	}
+	rz_th_lock_leave(queue->lock);
+	return user;
 }

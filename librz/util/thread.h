@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2022 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_THREAD_INTERNAL_H
@@ -16,8 +17,7 @@
 #define RZ_TH_LOCK_T CRITICAL_SECTION
 #define RZ_TH_COND_T CONDITION_VARIABLE
 #define RZ_TH_SEM_T  HANDLE
-// HANDLE
-
+#define RZ_TH_RET_T  DWORD WINAPI
 #elif HAVE_PTHREAD
 #define __GNU
 #include <semaphore.h>
@@ -43,13 +43,9 @@
 #define RZ_TH_LOCK_T pthread_mutex_t
 #define RZ_TH_COND_T pthread_cond_t
 #define RZ_TH_SEM_T  sem_t *
-
+#define RZ_TH_RET_T  void *
 #else
 #error Threading library only supported for pthread and w32
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 struct rz_th_sem_t {
@@ -65,16 +61,11 @@ struct rz_th_cond_t {
 };
 
 struct rz_th_t {
-	RZ_TH_TID tid;
-	RzThreadLock *lock;
-	RZ_TH_FUNCTION(fun);
-	void *user; // user pointer
-	bool running;
-	bool breaked; // thread aims to be interrupted
-	int delay; // delay the startup of the thread N seconds
-	bool ready; // thread is properly setup
+	RZ_TH_TID tid; ///< Thread identifier.
+	RzThreadFunction function; ///< User defined thread function.
+	void *user; ///< User defined thread data to pass (can be NULL).
 };
 
 RZ_IPI RZ_TH_TID rz_th_self(void);
 
-#endif
+#endif /* RZ_THREAD_INTERNAL_H */
