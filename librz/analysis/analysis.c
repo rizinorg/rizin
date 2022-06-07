@@ -190,6 +190,9 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 	RzAnalysisPlugin *h;
 
 	if (analysis) {
+		if (analysis->cur && !strcmp(analysis->cur->name, name)) {
+			return true;
+		}
 		rz_list_foreach (analysis->plugins, it, h) {
 			if (!h || !h->name || strcmp(h->name, name)) {
 				continue;
