@@ -160,6 +160,7 @@ if host_machine.system() == 'linux'
     'src/unix/linux-inotify.c',
     'src/unix/linux-syscalls.c',
     'src/unix/procfs-exepath.c',
+    'src/unix/pthread-fixes.c', # useful for e.g. Termux, identified as Linux
     'src/unix/random-getrandom.c',
     'src/unix/random-sysctl-linux.c',
     'src/unix/proctitle.c',
