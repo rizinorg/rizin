@@ -46,8 +46,8 @@
 #cmakedefine HAVE_STRINGS_H
 #cmakedefine HAVE_UNISTD_H
 #cmakedefine HAVE_WINDOWS_CRYPTO
-#cmakedefine SIZEOF_OFF_T @SIZEOF_OFF_T@
-#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
+#cmakedefine SIZEOF_OFF_T
+#cmakedefine SIZEOF_SIZE_T
 #cmakedefine HAVE_DIRENT_H
 #cmakedefine HAVE_FTS_H
 #cmakedefine HAVE_NDIR_H
