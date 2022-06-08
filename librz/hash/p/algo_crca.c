@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 
 #include "../algorithms/crc/crca.h"
@@ -24,7 +24,7 @@
 	}
 
 #define plugin_crca_preset_small_block(crcalgo, preset) \
-	static bool plugin_crca_##crcalgo##_small_block(const ut8 *data, ut64 size, ut8 **digest, RzMsgDigestSize *digest_size) { \
+	static bool plugin_crca_##crcalgo##_small_block(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size) { \
 		rz_return_val_if_fail(data &&digest, false); \
 		RzCrc ctx; \
 		crc_init_preset(&ctx, preset); \
@@ -45,7 +45,7 @@ static void plugin_crca_context_free(void *context) {
 	free(context);
 }
 
-static RzMsgDigestSize plugin_crca_digest_size(void *context) {
+static RzHashSize plugin_crca_digest_size(void *context) {
 	rz_return_val_if_fail(context, 0);
 	RzCrc *ctx = (RzCrc *)context;
 	if (ctx->size <= 8) {
@@ -61,7 +61,7 @@ static RzMsgDigestSize plugin_crca_digest_size(void *context) {
 	return 0;
 }
 
-static RzMsgDigestSize plugin_crca_block_size(void *context) {
+static RzHashSize plugin_crca_block_size(void *context) {
 	return 0;
 }
 
@@ -91,11 +91,11 @@ static bool plugin_crca_final(void *context, ut8 *digest) {
 	return true;
 }
 
-#define rz_msg_digest_plugin_crca_preset(crcalgo, preset) \
+#define rz_hash_plugin_crca_preset(crcalgo, preset) \
 	plugin_crca_preset_context_new(crcalgo, preset); \
 	plugin_crca_preset_init(crcalgo, preset); \
 	plugin_crca_preset_small_block(crcalgo, preset); \
-	RzMsgDigestPlugin rz_msg_digest_plugin_crca_##crcalgo = { \
+	RzHashPlugin rz_hash_plugin_crca_##crcalgo = { \
 		.name = #crcalgo, \
 		.license = "LGPL3", \
 		.author = "deroad", \
@@ -113,8 +113,8 @@ static bool plugin_crca_final(void *context, ut8 *digest) {
 #ifndef RZ_PLUGIN_INCORE
 #define rz_lib_plugin_crca_preset(crcalgo) \
 	RZ_API RzLibStruct rizin_plugin = { \
-		.type = RZ_LIB_TYPE_MD, \
-		.data = &rz_msg_digest_plugin_crca_##crcalgo, \
+		.type = RZ_LIB_TYPE_HASH, \
+		.data = &rz_hash_plugin_crca_##crcalgo, \
 		.version = RZ_VERSION \
 	}
 #else
@@ -122,7 +122,7 @@ static bool plugin_crca_final(void *context, ut8 *digest) {
 #endif
 
 #define rz_plugin_crca_preset_definition(crcalgo, preset) \
-	rz_msg_digest_plugin_crca_preset(crcalgo, preset); \
+	rz_hash_plugin_crca_preset(crcalgo, preset); \
 	rz_lib_plugin_crca_preset(crcalgo)
 
 rz_plugin_crca_preset_definition(crc8smbus, /*    */ CRC_PRESET_8_SMBUS);

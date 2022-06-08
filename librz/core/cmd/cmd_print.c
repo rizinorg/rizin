@@ -3052,8 +3052,8 @@ restore_conf:
 }
 
 static void handle_entropy(const char *name, const ut8 *block, int len) {
-	RzMsgDigestSize digest_size = 0;
-	ut8 *digest = rz_msg_digest_calculate_small_block(name, block, len, &digest_size);
+	RzHashSize digest_size = 0;
+	ut8 *digest = rz_hash_cfg_calculate_small_block(name, block, len, &digest_size);
 	if (!digest) {
 		return;
 	}
@@ -3072,15 +3072,15 @@ static inline void hexprint(const ut8 *data, int len) {
 	rz_cons_newline();
 }
 
-static void handle_msg_digest(const char *name, const ut8 *block, int len) {
-	RzMsgDigestSize digest_size = 0;
-	ut8 *digest = rz_msg_digest_calculate_small_block(name, block, len, &digest_size);
+static void handle_hash_cfg(const char *name, const ut8 *block, int len) {
+	RzHashSize digest_size = 0;
+	ut8 *digest = rz_hash_cfg_calculate_small_block(name, block, len, &digest_size);
 	hexprint(digest, digest_size);
 	free(digest);
 }
 
-RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_handler(RzCore *core, int argc, const char **argv) {
-	const RzMsgDigestPlugin *plugin = rz_msg_digest_plugin_by_name(argv[1]);
+RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const char **argv) {
+	const RzHashPlugin *plugin = rz_hash_plugin_by_name(argv[1]);
 
 	if (!plugin) {
 		RZ_LOG_ERROR("algorithm '%s' does not exists\n", argv[1]);
@@ -3090,13 +3090,13 @@ RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_handler(RzCore *core, int argc, const
 	if (!strncmp(plugin->name, "entropy", 7)) {
 		handle_entropy(plugin->name, core->block, core->blocksize);
 	} else {
-		handle_msg_digest(plugin->name, core->block, core->blocksize);
+		handle_hash_cfg(plugin->name, core->block, core->blocksize);
 	}
 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_algo_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_algo_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_core_hash_plugins_print(state);
 }
 
@@ -6918,7 +6918,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_list_free(pids);
 		} else if (l > 0) {
 			len = len > core->blocksize ? core->blocksize : len;
-			char *s = rz_msg_digest_randomart(block, len, core->offset);
+			char *s = rz_hash_cfg_randomart(block, len, core->offset);
 			rz_cons_println(s);
 			free(s);
 		}
@@ -6945,7 +6945,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					rz_cons_canvas_gotoxy(c, j * 20, i * 11);
 					core->offset += len;
 					rz_io_read_at(core->io, core->offset, core->block, len);
-					s = rz_msg_digest_randomart(core->block, len, core->offset);
+					s = rz_hash_cfg_randomart(core->block, len, core->offset);
 					rz_cons_canvas_write(c, s);
 					free(s);
 				}

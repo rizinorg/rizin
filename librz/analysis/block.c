@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <ht_uu.h>
 #include <assert.h>
 

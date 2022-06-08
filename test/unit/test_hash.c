@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include "minunit.h"
 
 typedef struct {
@@ -107,36 +107,36 @@ static hash_data_t hashes_to_test[] = {
 
 bool test_message_digest_configure() {
 	bool boolean;
-	RzMsgDigest *md = NULL;
+	RzHashCfg *md = NULL;
 
-	md = rz_msg_digest_new();
-	mu_assert_notnull(md, "rz_msg_digest_new");
+	md = rz_hash_cfg_new();
+	mu_assert_notnull(md, "rz_hash_cfg_new");
 
-	boolean = rz_msg_digest_configure(md, "gibberish");
-	mu_assert_false(boolean, "rz_msg_digest_configure 'gibberish'");
+	boolean = rz_hash_cfg_configure(md, "gibberish");
+	mu_assert_false(boolean, "rz_hash_cfg_configure 'gibberish'");
 
-	boolean = rz_msg_digest_configure(md, "");
-	mu_assert_false(boolean, "rz_msg_digest_configure ''");
+	boolean = rz_hash_cfg_configure(md, "");
+	mu_assert_false(boolean, "rz_hash_cfg_configure ''");
 
-	boolean = rz_msg_digest_configure(md, "md5");
-	mu_assert_true(boolean, "rz_msg_digest_configure 'md5'");
+	boolean = rz_hash_cfg_configure(md, "md5");
+	mu_assert_true(boolean, "rz_hash_cfg_configure 'md5'");
 
-	boolean = rz_msg_digest_configure(md, "sha1");
-	mu_assert_true(boolean, "rz_msg_digest_configure 'sha1'");
+	boolean = rz_hash_cfg_configure(md, "sha1");
+	mu_assert_true(boolean, "rz_hash_cfg_configure 'sha1'");
 
-	boolean = rz_msg_digest_configure(md, "sha1");
-	mu_assert_false(boolean, "rz_msg_digest_configure 'sha1' again");
+	boolean = rz_hash_cfg_configure(md, "sha1");
+	mu_assert_false(boolean, "rz_hash_cfg_configure 'sha1' again");
 
-	boolean = rz_msg_digest_configure(md, "all");
-	mu_assert_false(boolean, "rz_msg_digest_configure can't configure 'all' when other algos has been configured");
+	boolean = rz_hash_cfg_configure(md, "all");
+	mu_assert_false(boolean, "rz_hash_cfg_configure can't configure 'all' when other algos has been configured");
 
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 
-	md = rz_msg_digest_new_with_algo2("gibberish");
-	mu_assert_null(md, "rz_msg_digest_new_with_algo2 with gibberish algo");
+	md = rz_hash_cfg_new_with_algo2("gibberish");
+	mu_assert_null(md, "rz_hash_cfg_new_with_algo2 with gibberish algo");
 
-	md = rz_msg_digest_new_with_algo2("");
-	mu_assert_null(md, "rz_msg_digest_new_with_algo2 with '' algo");
+	md = rz_hash_cfg_new_with_algo2("");
+	mu_assert_null(md, "rz_hash_cfg_new_with_algo2 with '' algo");
 
 	mu_end;
 }
@@ -145,31 +145,31 @@ bool test_message_digest_hmac_stringified() {
 	char message[256];
 	char *result = NULL;
 	bool boolean;
-	RzMsgDigestSize size;
-	RzMsgDigest *md = NULL;
+	RzHashSize size;
+	RzHashCfg *md = NULL;
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(hmacs_to_test); ++i) {
 		hmac_data_t *hd = &hmacs_to_test[i];
 
-		md = rz_msg_digest_new_with_algo(hd->algo, hd->key, hd->key_size);
-		snprintf(message, sizeof(message), "rz_msg_digest_new_with_algo hmac-%s digest", hd->algo);
+		md = rz_hash_cfg_new_with_algo(hd->algo, hd->key, hd->key_size);
+		snprintf(message, sizeof(message), "rz_hash_cfg_new_with_algo hmac-%s digest", hd->algo);
 		mu_assert_notnull(md, message);
 
-		boolean = rz_msg_digest_update(md, hd->input, hd->input_size);
-		snprintf(message, sizeof(message), "rz_msg_digest_update hmac-%s digest", hd->algo);
+		boolean = rz_hash_cfg_update(md, hd->input, hd->input_size);
+		snprintf(message, sizeof(message), "rz_hash_cfg_update hmac-%s digest", hd->algo);
 		mu_assert_true(boolean, message);
 
-		boolean = rz_msg_digest_final(md);
-		snprintf(message, sizeof(message), "rz_msg_digest_final hmac-%s digest", hd->algo);
+		boolean = rz_hash_cfg_final(md);
+		snprintf(message, sizeof(message), "rz_hash_cfg_final hmac-%s digest", hd->algo);
 		mu_assert_true(boolean, message);
 
-		result = rz_msg_digest_get_result_string(md, hd->algo, &size, false);
-		snprintf(message, sizeof(message), "rz_msg_digest_get_result_string hmac-%s digest", hd->algo);
+		result = rz_hash_cfg_get_result_string(md, hd->algo, &size, false);
+		snprintf(message, sizeof(message), "rz_hash_cfg_get_result_string hmac-%s digest", hd->algo);
 		mu_assert_streq(result, hd->expected, message);
 
 		free(result);
 		result = NULL;
-		rz_msg_digest_free(md);
+		rz_hash_cfg_free(md);
 	}
 	free(result);
 
@@ -180,31 +180,31 @@ bool test_message_digest_api_stringified() {
 	char message[256];
 	char *result = NULL;
 	bool boolean;
-	RzMsgDigestSize size;
-	RzMsgDigest *md = NULL;
+	RzHashSize size;
+	RzHashCfg *md = NULL;
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(hashes_to_test); ++i) {
 		hash_data_t *hd = &hashes_to_test[i];
 
-		md = rz_msg_digest_new_with_algo2(hd->algo);
-		snprintf(message, sizeof(message), "rz_msg_digest_new_with_algo %s digest", hd->algo);
+		md = rz_hash_cfg_new_with_algo2(hd->algo);
+		snprintf(message, sizeof(message), "rz_hash_cfg_new_with_algo %s digest", hd->algo);
 		mu_assert_notnull(md, message);
 
-		boolean = rz_msg_digest_update(md, hd->input, hd->input_size);
-		snprintf(message, sizeof(message), "rz_msg_digest_update %s digest", hd->algo);
+		boolean = rz_hash_cfg_update(md, hd->input, hd->input_size);
+		snprintf(message, sizeof(message), "rz_hash_cfg_update %s digest", hd->algo);
 		mu_assert_true(boolean, message);
 
-		boolean = rz_msg_digest_final(md);
-		snprintf(message, sizeof(message), "rz_msg_digest_final %s digest", hd->algo);
+		boolean = rz_hash_cfg_final(md);
+		snprintf(message, sizeof(message), "rz_hash_cfg_final %s digest", hd->algo);
 		mu_assert_true(boolean, message);
 
-		result = rz_msg_digest_get_result_string(md, hd->algo, &size, false);
-		snprintf(message, sizeof(message), "rz_msg_digest_get_result_string %s digest", hd->algo);
+		result = rz_hash_cfg_get_result_string(md, hd->algo, &size, false);
+		snprintf(message, sizeof(message), "rz_hash_cfg_get_result_string %s digest", hd->algo);
 		mu_assert_streq(result, hd->expected, message);
 
 		free(result);
 		result = NULL;
-		rz_msg_digest_free(md);
+		rz_hash_cfg_free(md);
 	}
 	free(result);
 
@@ -214,12 +214,12 @@ bool test_message_digest_api_stringified() {
 bool test_message_digest_small_block_stringified() {
 	char message[256];
 	char *result = NULL;
-	RzMsgDigestSize size;
+	RzHashSize size;
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(hashes_to_test); ++i) {
 		hash_data_t *hd = &hashes_to_test[i];
 		snprintf(message, sizeof(message), "calculate %s digest", hd->algo);
-		result = rz_msg_digest_calculate_small_block_string(hd->algo, hd->input, hd->input_size, &size, false);
+		result = rz_hash_cfg_calculate_small_block_string(hd->algo, hd->input, hd->input_size, &size, false);
 		mu_assert_streq(result, hd->expected, message);
 		free(result);
 		result = NULL;

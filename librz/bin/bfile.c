@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_str_search.h>
 #include "i/private.h"
@@ -580,12 +580,12 @@ RZ_API bool rz_bin_file_close(RzBin *bin, int bd) {
 	return false;
 }
 
-static inline bool add_file_hash(RzMsgDigest *md, const char *name, RzList *list) {
+static inline bool add_file_hash(RzHashCfg *md, const char *name, RzList *list) {
 	char hash[128];
 	const ut8 *digest = NULL;
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 
-	digest = rz_msg_digest_get_result(md, name, &digest_size);
+	digest = rz_hash_cfg_get_result(md, name, &digest_size);
 	if (!digest) {
 		return false;
 	}
@@ -619,7 +619,7 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 	RzBinObject *o = bf->o;
 	RzList *file_hashes = NULL;
 	ut8 *buf = NULL;
-	RzMsgDigest *md = NULL;
+	RzHashCfg *md = NULL;
 	const size_t blocksize = 64000;
 
 	RzIODesc *iod = rz_io_desc_get(bin->iob.io, bf->fd);
@@ -646,19 +646,19 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	md = rz_msg_digest_new();
+	md = rz_hash_cfg_new();
 	if (!md) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	if (!rz_msg_digest_configure(md, "md5") ||
-		!rz_msg_digest_configure(md, "sha1") ||
-		!rz_msg_digest_configure(md, "sha256") ||
-		!rz_msg_digest_configure(md, "crc32") ||
-		!rz_msg_digest_configure(md, "entropy")) {
+	if (!rz_hash_cfg_configure(md, "md5") ||
+		!rz_hash_cfg_configure(md, "sha1") ||
+		!rz_hash_cfg_configure(md, "sha256") ||
+		!rz_hash_cfg_configure(md, "crc32") ||
+		!rz_hash_cfg_configure(md, "entropy")) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
-	if (!rz_msg_digest_init(md)) {
+	if (!rz_hash_cfg_init(md)) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
@@ -668,7 +668,7 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 		if (b < 0) {
 			RZ_LOG_ERROR("rz_io_desc_read: can't read\n");
 			goto rz_bin_file_compute_hashes_bad;
-		} else if (!rz_msg_digest_update(md, buf, b)) {
+		} else if (!rz_hash_cfg_update(md, buf, b)) {
 			goto rz_bin_file_compute_hashes_bad;
 		}
 		r += b;
@@ -679,12 +679,12 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 		int b = rz_io_desc_read(iod, buf, rem_len);
 		if (b < 1) {
 			RZ_LOG_ERROR("rz_io_desc_read: can't read\n");
-		} else if (!rz_msg_digest_update(md, buf, b)) {
+		} else if (!rz_hash_cfg_update(md, buf, b)) {
 			goto rz_bin_file_compute_hashes_bad;
 		}
 	}
 
-	if (!rz_msg_digest_final(md)) {
+	if (!rz_hash_cfg_final(md)) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
@@ -704,12 +704,12 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 
 	// TODO: add here more rows
 	free(buf);
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 	return file_hashes;
 
 rz_bin_file_compute_hashes_bad:
 	free(buf);
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 	rz_list_free(file_hashes);
 	return NULL;
 }

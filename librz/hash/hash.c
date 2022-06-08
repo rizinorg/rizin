@@ -1,95 +1,95 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util.h>
 #include <xxhash.h>
 
-RZ_LIB_VERSION(rz_msg_digest);
+RZ_LIB_VERSION(rz_hash);
 
-#define msg_digest_can_hmac(c)    ((c)->status == RZ_MSG_DIGEST_STATUS_ALLOC)
-#define msg_digest_can_init(c)    ((c)->status == RZ_MSG_DIGEST_STATUS_FINAL || (c)->status == RZ_MSG_DIGEST_STATUS_ALLOC)
-#define msg_digest_can_update(c)  ((c)->status == RZ_MSG_DIGEST_STATUS_INIT || (c)->status == RZ_MSG_DIGEST_STATUS_UPDATE)
-#define msg_digest_can_final(c)   ((c)->status == RZ_MSG_DIGEST_STATUS_ALLOC || (c)->status == RZ_MSG_DIGEST_STATUS_INIT || (c)->status == RZ_MSG_DIGEST_STATUS_UPDATE)
-#define msg_digest_has_finshed(c) ((c)->status == RZ_MSG_DIGEST_STATUS_FINAL)
+#define hash_cfg_can_hmac(c)    ((c)->status == RZ_MSG_DIGEST_STATUS_ALLOC)
+#define hash_cfg_can_init(c)    ((c)->status == RZ_MSG_DIGEST_STATUS_FINAL || (c)->status == RZ_MSG_DIGEST_STATUS_ALLOC)
+#define hash_cfg_can_update(c)  ((c)->status == RZ_MSG_DIGEST_STATUS_INIT || (c)->status == RZ_MSG_DIGEST_STATUS_UPDATE)
+#define hash_cfg_can_final(c)   ((c)->status == RZ_MSG_DIGEST_STATUS_ALLOC || (c)->status == RZ_MSG_DIGEST_STATUS_INIT || (c)->status == RZ_MSG_DIGEST_STATUS_UPDATE)
+#define hash_cfg_has_finshed(c) ((c)->status == RZ_MSG_DIGEST_STATUS_FINAL)
 
-typedef struct msg_digest_config_t {
+typedef struct hash_cfg_config_t {
 	void *context;
 	ut8 *digest;
 	ut8 *hmac_key;
-	RzMsgDigestSize digest_size;
-	const RzMsgDigestPlugin *plugin;
-} MsgDigestConfig;
+	RzHashSize digest_size;
+	const RzHashPlugin *plugin;
+} HashCfgConfig;
 
-const static RzMsgDigestPlugin *msg_digest_plugins[] = {
-	&rz_msg_digest_plugin_md4,
-	&rz_msg_digest_plugin_md5,
-	&rz_msg_digest_plugin_sha1,
-	&rz_msg_digest_plugin_sha256,
-	&rz_msg_digest_plugin_sha384,
-	&rz_msg_digest_plugin_sha512,
-	&rz_msg_digest_plugin_fletcher8,
-	&rz_msg_digest_plugin_fletcher16,
-	&rz_msg_digest_plugin_fletcher32,
-	&rz_msg_digest_plugin_fletcher64,
-	&rz_msg_digest_plugin_adler32,
-	&rz_msg_digest_plugin_crca_crc8smbus,
-	&rz_msg_digest_plugin_crca_crc8cdma2000,
-	&rz_msg_digest_plugin_crca_crc8darc,
-	&rz_msg_digest_plugin_crca_crc8dvbs2,
-	&rz_msg_digest_plugin_crca_crc8ebu,
-	&rz_msg_digest_plugin_crca_crc8icode,
-	&rz_msg_digest_plugin_crca_crc8itu,
-	&rz_msg_digest_plugin_crca_crc8maxim,
-	&rz_msg_digest_plugin_crca_crc8rohc,
-	&rz_msg_digest_plugin_crca_crc8wcdma,
-	&rz_msg_digest_plugin_crca_crc15can,
-	&rz_msg_digest_plugin_crca_crc16,
-	&rz_msg_digest_plugin_crca_crc16citt,
-	&rz_msg_digest_plugin_crca_crc16usb,
-	&rz_msg_digest_plugin_crca_crc16hdlc,
-	&rz_msg_digest_plugin_crca_crc16augccitt,
-	&rz_msg_digest_plugin_crca_crc16buypass,
-	&rz_msg_digest_plugin_crca_crc16cdma2000,
-	&rz_msg_digest_plugin_crca_crc16dds110,
-	&rz_msg_digest_plugin_crca_crc16dectr,
-	&rz_msg_digest_plugin_crca_crc16dectx,
-	&rz_msg_digest_plugin_crca_crc16dnp,
-	&rz_msg_digest_plugin_crca_crc16en13757,
-	&rz_msg_digest_plugin_crca_crc16genibus,
-	&rz_msg_digest_plugin_crca_crc16maxim,
-	&rz_msg_digest_plugin_crca_crc16mcrf4xx,
-	&rz_msg_digest_plugin_crca_crc16riello,
-	&rz_msg_digest_plugin_crca_crc16t10dif,
-	&rz_msg_digest_plugin_crca_crc16teledisk,
-	&rz_msg_digest_plugin_crca_crc16tms37157,
-	&rz_msg_digest_plugin_crca_crca,
-	&rz_msg_digest_plugin_crca_crc16kermit,
-	&rz_msg_digest_plugin_crca_crc16modbus,
-	&rz_msg_digest_plugin_crca_crc16x25,
-	&rz_msg_digest_plugin_crca_crc16xmodem,
-	&rz_msg_digest_plugin_crca_crc24,
-	&rz_msg_digest_plugin_crca_crc32,
-	&rz_msg_digest_plugin_crca_crc32ecma267,
-	&rz_msg_digest_plugin_crca_crc32c,
-	&rz_msg_digest_plugin_crca_crc32bzip2,
-	&rz_msg_digest_plugin_crca_crc32d,
-	&rz_msg_digest_plugin_crca_crc32mpeg2,
-	&rz_msg_digest_plugin_crca_crc32posix,
-	&rz_msg_digest_plugin_crca_crc32q,
-	&rz_msg_digest_plugin_crca_crc32jamcrc,
-	&rz_msg_digest_plugin_crca_crc32xfer,
-	&rz_msg_digest_plugin_crca_crc64,
-	&rz_msg_digest_plugin_crca_crc64ecma182,
-	&rz_msg_digest_plugin_crca_crc64we,
-	&rz_msg_digest_plugin_crca_crc64xz,
-	&rz_msg_digest_plugin_crca_crc64iso,
-	&rz_msg_digest_plugin_xor8,
-	&rz_msg_digest_plugin_xor16,
-	&rz_msg_digest_plugin_xxhash32,
-	&rz_msg_digest_plugin_parity,
-	&rz_msg_digest_plugin_entropy,
-	&rz_msg_digest_plugin_entropy_fract,
+const static RzHashPlugin *hash_cfg_plugins[] = {
+	&rz_hash_plugin_md4,
+	&rz_hash_plugin_md5,
+	&rz_hash_plugin_sha1,
+	&rz_hash_plugin_sha256,
+	&rz_hash_plugin_sha384,
+	&rz_hash_plugin_sha512,
+	&rz_hash_plugin_fletcher8,
+	&rz_hash_plugin_fletcher16,
+	&rz_hash_plugin_fletcher32,
+	&rz_hash_plugin_fletcher64,
+	&rz_hash_plugin_adler32,
+	&rz_hash_plugin_crca_crc8smbus,
+	&rz_hash_plugin_crca_crc8cdma2000,
+	&rz_hash_plugin_crca_crc8darc,
+	&rz_hash_plugin_crca_crc8dvbs2,
+	&rz_hash_plugin_crca_crc8ebu,
+	&rz_hash_plugin_crca_crc8icode,
+	&rz_hash_plugin_crca_crc8itu,
+	&rz_hash_plugin_crca_crc8maxim,
+	&rz_hash_plugin_crca_crc8rohc,
+	&rz_hash_plugin_crca_crc8wcdma,
+	&rz_hash_plugin_crca_crc15can,
+	&rz_hash_plugin_crca_crc16,
+	&rz_hash_plugin_crca_crc16citt,
+	&rz_hash_plugin_crca_crc16usb,
+	&rz_hash_plugin_crca_crc16hdlc,
+	&rz_hash_plugin_crca_crc16augccitt,
+	&rz_hash_plugin_crca_crc16buypass,
+	&rz_hash_plugin_crca_crc16cdma2000,
+	&rz_hash_plugin_crca_crc16dds110,
+	&rz_hash_plugin_crca_crc16dectr,
+	&rz_hash_plugin_crca_crc16dectx,
+	&rz_hash_plugin_crca_crc16dnp,
+	&rz_hash_plugin_crca_crc16en13757,
+	&rz_hash_plugin_crca_crc16genibus,
+	&rz_hash_plugin_crca_crc16maxim,
+	&rz_hash_plugin_crca_crc16mcrf4xx,
+	&rz_hash_plugin_crca_crc16riello,
+	&rz_hash_plugin_crca_crc16t10dif,
+	&rz_hash_plugin_crca_crc16teledisk,
+	&rz_hash_plugin_crca_crc16tms37157,
+	&rz_hash_plugin_crca_crca,
+	&rz_hash_plugin_crca_crc16kermit,
+	&rz_hash_plugin_crca_crc16modbus,
+	&rz_hash_plugin_crca_crc16x25,
+	&rz_hash_plugin_crca_crc16xmodem,
+	&rz_hash_plugin_crca_crc24,
+	&rz_hash_plugin_crca_crc32,
+	&rz_hash_plugin_crca_crc32ecma267,
+	&rz_hash_plugin_crca_crc32c,
+	&rz_hash_plugin_crca_crc32bzip2,
+	&rz_hash_plugin_crca_crc32d,
+	&rz_hash_plugin_crca_crc32mpeg2,
+	&rz_hash_plugin_crca_crc32posix,
+	&rz_hash_plugin_crca_crc32q,
+	&rz_hash_plugin_crca_crc32jamcrc,
+	&rz_hash_plugin_crca_crc32xfer,
+	&rz_hash_plugin_crca_crc64,
+	&rz_hash_plugin_crca_crc64ecma182,
+	&rz_hash_plugin_crca_crc64we,
+	&rz_hash_plugin_crca_crc64xz,
+	&rz_hash_plugin_crca_crc64iso,
+	&rz_hash_plugin_xor8,
+	&rz_hash_plugin_xor16,
+	&rz_hash_plugin_xxhash32,
+	&rz_hash_plugin_parity,
+	&rz_hash_plugin_entropy,
+	&rz_hash_plugin_entropy_fract,
 };
 
 RZ_API ut32 rz_hash_xxhash(const ut8 *input, size_t size) {
@@ -99,7 +99,7 @@ RZ_API ut32 rz_hash_xxhash(const ut8 *input, size_t size) {
 
 RZ_API double rz_hash_entropy(const ut8 *data, ut64 len) {
 	rz_return_val_if_fail(data, 0.0);
-	const RzMsgDigestPlugin *plugin = &rz_msg_digest_plugin_entropy;
+	const RzHashPlugin *plugin = &rz_hash_plugin_entropy;
 	ut8 *digest = NULL;
 	if (!plugin->small_block(data, len, &digest, NULL)) {
 		RZ_LOG_ERROR("msg digest: cannot calculate entropy\n");
@@ -112,7 +112,7 @@ RZ_API double rz_hash_entropy(const ut8 *data, ut64 len) {
 
 RZ_API double rz_hash_entropy_fraction(const ut8 *data, ut64 len) {
 	rz_return_val_if_fail(data, 0.0);
-	const RzMsgDigestPlugin *plugin = &rz_msg_digest_plugin_entropy_fract;
+	const RzHashPlugin *plugin = &rz_hash_plugin_entropy_fract;
 	ut8 *digest = NULL;
 	if (!plugin->small_block(data, len, &digest, NULL)) {
 		RZ_LOG_ERROR("msg digest: cannot calculate entropy fraction\n");
@@ -123,13 +123,13 @@ RZ_API double rz_hash_entropy_fraction(const ut8 *data, ut64 len) {
 	return e;
 }
 
-static int msg_digest_config_compare(const void *value, const void *data) {
-	const MsgDigestConfig *mdc = (const MsgDigestConfig *)data;
+static int hash_cfg_config_compare(const void *value, const void *data) {
+	const HashCfgConfig *mdc = (const HashCfgConfig *)data;
 	const char *name = (const char *)value;
 	return strcmp(name, mdc->plugin->name);
 }
 
-static void msg_digest_config_free(MsgDigestConfig *mdc) {
+static void hash_cfg_config_free(HashCfgConfig *mdc) {
 	rz_return_if_fail(mdc && mdc->plugin);
 
 	mdc->plugin->context_free(mdc->context);
@@ -138,10 +138,10 @@ static void msg_digest_config_free(MsgDigestConfig *mdc) {
 	free(mdc);
 }
 
-static MsgDigestConfig *msg_digest_config_new(const RzMsgDigestPlugin *plugin) {
+static HashCfgConfig *hash_cfg_config_new(const RzHashPlugin *plugin) {
 	rz_return_val_if_fail(plugin, NULL);
 
-	MsgDigestConfig *mdc = RZ_NEW0(MsgDigestConfig);
+	HashCfgConfig *mdc = RZ_NEW0(HashCfgConfig);
 	if (!mdc) {
 		RZ_LOG_ERROR("msg digest: cannot allocate memory for config.\n");
 		return NULL;
@@ -169,20 +169,20 @@ static MsgDigestConfig *msg_digest_config_new(const RzMsgDigestPlugin *plugin) {
 	return mdc;
 }
 
-RZ_API const RzMsgDigestPlugin *rz_msg_digest_plugin_by_index(size_t index) {
-	const size_t size = RZ_ARRAY_SIZE(msg_digest_plugins);
+RZ_API const RzHashPlugin *rz_hash_plugin_by_index(size_t index) {
+	const size_t size = RZ_ARRAY_SIZE(hash_cfg_plugins);
 	if (index >= size) {
 		return NULL;
 	}
-	return msg_digest_plugins[index];
+	return hash_cfg_plugins[index];
 }
 
-RZ_API const RzMsgDigestPlugin *rz_msg_digest_plugin_by_name(const char *name) {
+RZ_API const RzHashPlugin *rz_hash_plugin_by_name(const char *name) {
 	rz_return_val_if_fail(name, NULL);
 
-	const RzMsgDigestPlugin *plugin = NULL;
-	for (ut32 i = 0; i < RZ_ARRAY_SIZE(msg_digest_plugins); ++i) {
-		plugin = msg_digest_plugins[i];
+	const RzHashPlugin *plugin = NULL;
+	for (ut32 i = 0; i < RZ_ARRAY_SIZE(hash_cfg_plugins); ++i) {
+		plugin = hash_cfg_plugins[i];
 		if (!strcmp(plugin->name, name)) {
 			return plugin;
 		}
@@ -190,14 +190,14 @@ RZ_API const RzMsgDigestPlugin *rz_msg_digest_plugin_by_name(const char *name) {
 	return NULL;
 }
 
-RZ_API RzMsgDigest *rz_msg_digest_new() {
-	RzMsgDigest *md = RZ_NEW0(RzMsgDigest);
+RZ_API RzHashCfg *rz_hash_cfg_new() {
+	RzHashCfg *md = RZ_NEW0(RzHashCfg);
 	if (!md) {
 		RZ_LOG_ERROR("msg digest: cannot allocate memory.\n");
 		return NULL;
 	}
 
-	md->configurations = rz_list_newf((RzListFree)msg_digest_config_free);
+	md->configurations = rz_list_newf((RzListFree)hash_cfg_config_free);
 	if (!md->configurations) {
 		RZ_LOG_ERROR("msg digest: cannot allocate memory for the configurations.\n");
 		free(md);
@@ -214,32 +214,32 @@ RZ_API RzMsgDigest *rz_msg_digest_new() {
  * with the given algorithm and runs also the algo init.
  * when fails to allocate or configure or initialize, returns NULL.
  * */
-RZ_API RzMsgDigest *rz_msg_digest_new_with_algo(const char *name, const ut8 *key, ut64 key_size) {
+RZ_API RzHashCfg *rz_hash_cfg_new_with_algo(const char *name, const ut8 *key, ut64 key_size) {
 	rz_return_val_if_fail(name, NULL);
-	RzMsgDigest *md = rz_msg_digest_new();
+	RzHashCfg *md = rz_hash_cfg_new();
 	if (!md) {
 		return NULL;
 	}
 
-	if (!rz_msg_digest_configure(md, name)) {
-		rz_msg_digest_free(md);
+	if (!rz_hash_cfg_configure(md, name)) {
+		rz_hash_cfg_free(md);
 		return NULL;
 	}
 
-	if (key && !rz_msg_digest_hmac(md, key, key_size)) {
-		rz_msg_digest_free(md);
+	if (key && !rz_hash_cfg_hmac(md, key, key_size)) {
+		rz_hash_cfg_free(md);
 		return NULL;
 	}
 
-	if (!rz_msg_digest_init(md)) {
-		rz_msg_digest_free(md);
+	if (!rz_hash_cfg_init(md)) {
+		rz_hash_cfg_free(md);
 		return NULL;
 	}
 
 	return md;
 }
 
-RZ_API void rz_msg_digest_free(RzMsgDigest *md) {
+RZ_API void rz_hash_cfg_free(RzHashCfg *md) {
 	rz_return_if_fail(md);
 
 	rz_list_free(md->configurations);
@@ -249,13 +249,13 @@ RZ_API void rz_msg_digest_free(RzMsgDigest *md) {
 /**
  * \brief Allocates and configures the plugin message digest context
  *
- * message digest allocates internally a MsgDigestConfig which
+ * message digest allocates internally a HashCfgConfig which
  * contains all the needed informations to the plugin to work.
  * */
-RZ_API bool rz_msg_digest_configure(RzMsgDigest *md, const char *name) {
+RZ_API bool rz_hash_cfg_configure(RzHashCfg *md, const char *name) {
 	rz_return_val_if_fail(md && name, false);
 
-	if (rz_list_find(md->configurations, name, msg_digest_config_compare)) {
+	if (rz_list_find(md->configurations, name, hash_cfg_config_compare)) {
 		RZ_LOG_WARN("msg digest: '%s' was already configured; skipping.\n", name);
 		return false;
 	}
@@ -267,20 +267,20 @@ RZ_API bool rz_msg_digest_configure(RzMsgDigest *md, const char *name) {
 		return false;
 	}
 
-	MsgDigestConfig *mdc = NULL;
-	const RzMsgDigestPlugin *plugin = NULL;
+	HashCfgConfig *mdc = NULL;
+	const RzHashPlugin *plugin = NULL;
 
-	for (ut32 i = 0; i < RZ_ARRAY_SIZE(msg_digest_plugins); ++i) {
-		plugin = msg_digest_plugins[i];
+	for (ut32 i = 0; i < RZ_ARRAY_SIZE(hash_cfg_plugins); ++i) {
+		plugin = hash_cfg_plugins[i];
 		if (is_all || !strcmp(plugin->name, name)) {
-			mdc = msg_digest_config_new(plugin);
+			mdc = hash_cfg_config_new(plugin);
 			if (!mdc) {
 				return false;
 			}
 
 			if (!rz_list_append(md->configurations, mdc)) {
 				RZ_LOG_ERROR("msg digest: cannot allocate memory for list entry.\n");
-				msg_digest_config_free(mdc);
+				hash_cfg_config_free(mdc);
 				return false;
 			}
 
@@ -303,12 +303,12 @@ RZ_API bool rz_msg_digest_configure(RzMsgDigest *md, const char *name) {
  *
  * message digest sets the hmac key
  * */
-RZ_API bool rz_msg_digest_hmac(RzMsgDigest *md, const ut8 *key, ut64 key_size) {
-	rz_return_val_if_fail(md && key && key_size && msg_digest_can_hmac(md), false);
+RZ_API bool rz_hash_cfg_hmac(RzHashCfg *md, const ut8 *key, ut64 key_size) {
+	rz_return_val_if_fail(md && key && key_size && hash_cfg_can_hmac(md), false);
 
-	RzMsgDigestSize block_size = 0;
+	RzHashSize block_size = 0;
 	RzListIter *iter = NULL;
-	MsgDigestConfig *mdc = NULL;
+	HashCfgConfig *mdc = NULL;
 	rz_list_foreach (md->configurations, iter, mdc) {
 		if (!mdc->plugin->support_hmac) {
 			// RZ_LOG_ERROR("msg digest: hmac is not supported by %s.\n", mdc->plugin->name);
@@ -329,7 +329,7 @@ RZ_API bool rz_msg_digest_hmac(RzMsgDigest *md, const ut8 *key, ut64 key_size) {
 
 		memset(mdc->hmac_key, 0, block_size);
 		if (block_size < key_size) {
-			RzMsgDigestSize tmp_size;
+			RzHashSize tmp_size;
 			ut8 *tmp = NULL;
 			if (!mdc->plugin->small_block(key, key_size, &tmp, &tmp_size)) {
 				RZ_LOG_ERROR("msg digest: failed to call init for hmac %s key.\n", mdc->plugin->name);
@@ -348,21 +348,21 @@ RZ_API bool rz_msg_digest_hmac(RzMsgDigest *md, const ut8 *key, ut64 key_size) {
 /**
  * \brief Resets/initialize the message digest contextes
  *
- * RzMsgDigest contains a list of configurations; this method will call
+ * RzHashCfg contains a list of configurations; this method will call
  * the init method of all the plugins stored in its list.
  * */
-RZ_API bool rz_msg_digest_init(RzMsgDigest *md) {
-	rz_return_val_if_fail(md && msg_digest_can_init(md), false);
+RZ_API bool rz_hash_cfg_init(RzHashCfg *md) {
+	rz_return_val_if_fail(md && hash_cfg_can_init(md), false);
 
 	RzListIter *iter = NULL;
-	MsgDigestConfig *mdc = NULL;
+	HashCfgConfig *mdc = NULL;
 	rz_list_foreach (md->configurations, iter, mdc) {
 		if (!mdc->plugin->init(mdc->context)) {
 			RZ_LOG_ERROR("msg digest: failed to call init for %s.\n", mdc->plugin->name);
 			return false;
 		}
 		if (mdc->hmac_key) {
-			RzMsgDigestSize block_size = mdc->plugin->block_size(mdc->context);
+			RzHashSize block_size = mdc->plugin->block_size(mdc->context);
 			ut8 *i_pad = malloc(block_size);
 			if (!i_pad) {
 				RZ_LOG_ERROR("msg digest: failed to allocate memory for ipad.\n");
@@ -387,14 +387,14 @@ RZ_API bool rz_msg_digest_init(RzMsgDigest *md) {
 /**
  * \brief Inserts data into each the message digest contextes
  *
- * RzMsgDigest contains a list of configurations; this method will call
+ * RzHashCfg contains a list of configurations; this method will call
  * the update method of all the plugins stored in its list.
  * */
-RZ_API bool rz_msg_digest_update(RzMsgDigest *md, const ut8 *data, ut64 size) {
-	rz_return_val_if_fail(md && msg_digest_can_update(md), false);
+RZ_API bool rz_hash_cfg_update(RzHashCfg *md, const ut8 *data, ut64 size) {
+	rz_return_val_if_fail(md && hash_cfg_can_update(md), false);
 
 	RzListIter *iter = NULL;
-	MsgDigestConfig *mdc = NULL;
+	HashCfgConfig *mdc = NULL;
 	rz_list_foreach (md->configurations, iter, mdc) {
 		if (!mdc->plugin->update(mdc->context, data, size)) {
 			RZ_LOG_ERROR("msg digest: failed to call update for %s.\n", mdc->plugin->name);
@@ -409,14 +409,14 @@ RZ_API bool rz_msg_digest_update(RzMsgDigest *md, const ut8 *data, ut64 size) {
 /**
  * \brief Generates the final value of the message digest contextes
  *
- * RzMsgDigest contains a list of configurations; this method will call
+ * RzHashCfg contains a list of configurations; this method will call
  * the final method of all the plugins stored in its list.
  * */
-RZ_API bool rz_msg_digest_final(RzMsgDigest *md) {
-	rz_return_val_if_fail(md && msg_digest_can_final(md), false);
+RZ_API bool rz_hash_cfg_final(RzHashCfg *md) {
+	rz_return_val_if_fail(md && hash_cfg_can_final(md), false);
 
 	RzListIter *iter = NULL;
-	MsgDigestConfig *mdc = NULL;
+	HashCfgConfig *mdc = NULL;
 	rz_list_foreach (md->configurations, iter, mdc) {
 		if (!mdc->plugin->final(mdc->context, mdc->digest)) {
 			RZ_LOG_ERROR("msg digest: failed to call final for %s.\n", mdc->plugin->name);
@@ -424,7 +424,7 @@ RZ_API bool rz_msg_digest_final(RzMsgDigest *md) {
 		}
 
 		if (mdc->hmac_key) {
-			RzMsgDigestSize block_size = mdc->plugin->block_size(mdc->context);
+			RzHashSize block_size = mdc->plugin->block_size(mdc->context);
 			ut8 *o_pad = malloc(block_size);
 			if (!o_pad) {
 				RZ_LOG_ERROR("msg digest: failed to allocate memory for opad.\n");
@@ -464,14 +464,14 @@ RZ_API bool rz_msg_digest_final(RzMsgDigest *md) {
 /**
  * \brief Calculate the final hash by iterating its result N times.
  *
- * RzMsgDigest contains a list of configurations; this method will iterate N times
+ * RzHashCfg contains a list of configurations; this method will iterate N times
  * each configuration final result.
  * */
-RZ_API bool rz_msg_digest_iterate(RzMsgDigest *md, size_t iterate) {
-	rz_return_val_if_fail(md && msg_digest_has_finshed(md), false);
+RZ_API bool rz_hash_cfg_iterate(RzHashCfg *md, size_t iterate) {
+	rz_return_val_if_fail(md && hash_cfg_has_finshed(md), false);
 
 	RzListIter *iter = NULL;
-	MsgDigestConfig *mdc = NULL;
+	HashCfgConfig *mdc = NULL;
 	rz_list_foreach (md->configurations, iter, mdc) {
 		for (size_t i = 0; i < iterate; ++i) {
 			if (!mdc->plugin->init(mdc->context)) {
@@ -495,19 +495,19 @@ RZ_API bool rz_msg_digest_iterate(RzMsgDigest *md, size_t iterate) {
 /**
  * \brief Returns the digest value of the requested algorithm name
  *
- * RzMsgDigest contains a list of configurations; this method will search
+ * RzHashCfg contains a list of configurations; this method will search
  * for the configuration with the given name and if found return the digest value.
  * */
-RZ_API const ut8 *rz_msg_digest_get_result(RzMsgDigest *md, const char *name, ut32 *size) {
-	rz_return_val_if_fail(md && name && msg_digest_has_finshed(md), false);
+RZ_API const ut8 *rz_hash_cfg_get_result(RzHashCfg *md, const char *name, ut32 *size) {
+	rz_return_val_if_fail(md && name && hash_cfg_has_finshed(md), false);
 
-	RzListIter *it = rz_list_find(md->configurations, name, msg_digest_config_compare);
+	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare);
 	if (!it) {
 		RZ_LOG_ERROR("msg digest: cannot find configuration for '%s' algorithm.\n", name);
 		return NULL;
 	}
 
-	MsgDigestConfig *mdc = (MsgDigestConfig *)rz_list_iter_get_data(it);
+	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_iter_get_data(it);
 	rz_return_val_if_fail(mdc, NULL);
 
 	if (size) {
@@ -519,20 +519,20 @@ RZ_API const ut8 *rz_msg_digest_get_result(RzMsgDigest *md, const char *name, ut
 /**
  * \brief Returns the digest value of the requested algorithm name
  *
- * RzMsgDigest contains a list of configurations; this method will search
+ * RzHashCfg contains a list of configurations; this method will search
  * for the configuration with the given name and if found return the digest value.
  * */
-RZ_API char *rz_msg_digest_get_result_string(RzMsgDigest *md, const char *name, ut32 *size, bool invert) {
-	rz_return_val_if_fail(md && name && msg_digest_has_finshed(md), false);
+RZ_API char *rz_hash_cfg_get_result_string(RzHashCfg *md, const char *name, ut32 *size, bool invert) {
+	rz_return_val_if_fail(md && name && hash_cfg_has_finshed(md), false);
 
 	ut32 pos = 0;
-	RzListIter *it = rz_list_find(md->configurations, name, msg_digest_config_compare);
+	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare);
 	if (!it) {
 		RZ_LOG_ERROR("msg digest: cannot find configuration for '%s' algorithm.\n", name);
 		return NULL;
 	}
 
-	MsgDigestConfig *mdc = (MsgDigestConfig *)rz_list_iter_get_data(it);
+	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_iter_get_data(it);
 	rz_return_val_if_fail(mdc, NULL);
 
 	if (!strncmp(name, "entropy", 7)) {
@@ -563,16 +563,16 @@ RZ_API char *rz_msg_digest_get_result_string(RzMsgDigest *md, const char *name, 
  *
  * Returns the digest size of the initialized configuration.
  * */
-RZ_API RzMsgDigestSize rz_msg_digest_size(RzMsgDigest *md, const char *name) {
+RZ_API RzHashSize rz_hash_cfg_size(RzHashCfg *md, const char *name) {
 	rz_return_val_if_fail(md && name, 0);
 
-	RzListIter *it = rz_list_find(md->configurations, name, msg_digest_config_compare);
+	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare);
 	if (!it) {
 		RZ_LOG_ERROR("msg digest: cannot find configuration for '%s' algorithm.\n", name);
 		return 0;
 	}
 
-	MsgDigestConfig *mdc = (MsgDigestConfig *)rz_list_iter_get_data(it);
+	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_iter_get_data(it);
 	rz_return_val_if_fail(mdc, 0);
 	return mdc->plugin->digest_size(mdc->context);
 }
@@ -582,14 +582,14 @@ RZ_API RzMsgDigestSize rz_msg_digest_size(RzMsgDigest *md, const char *name) {
  *
  * Returns the digest size of the initialized configuration.
  * */
-RZ_API ut8 *rz_msg_digest_calculate_small_block(const char *name, const ut8 *buffer, ut64 bsize, RzMsgDigestSize *osize) {
+RZ_API ut8 *rz_hash_cfg_calculate_small_block(const char *name, const ut8 *buffer, ut64 bsize, RzHashSize *osize) {
 	rz_return_val_if_fail(name && buffer, NULL);
 
 	ut8 *result = NULL;
-	const RzMsgDigestPlugin *plugin = NULL;
+	const RzHashPlugin *plugin = NULL;
 
-	for (ut32 i = 0; i < RZ_ARRAY_SIZE(msg_digest_plugins); ++i) {
-		plugin = msg_digest_plugins[i];
+	for (ut32 i = 0; i < RZ_ARRAY_SIZE(hash_cfg_plugins); ++i) {
+		plugin = hash_cfg_plugins[i];
 		if (!strcmp(plugin->name, name)) {
 			if (!plugin->small_block(buffer, bsize, &result, osize)) {
 				RZ_LOG_ERROR("msg digest: cannot calculate small block with %s.\n", plugin->name);
@@ -602,13 +602,13 @@ RZ_API ut8 *rz_msg_digest_calculate_small_block(const char *name, const ut8 *buf
 	return NULL;
 }
 
-RZ_API char *rz_msg_digest_calculate_small_block_string(const char *name, const ut8 *buffer, ut64 bsize, ut32 *size, bool invert) {
+RZ_API char *rz_hash_cfg_calculate_small_block_string(const char *name, const ut8 *buffer, ut64 bsize, ut32 *size, bool invert) {
 	rz_return_val_if_fail(name && buffer, NULL);
 
 	ut32 pos = 0;
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 	ut8 *digest = NULL;
-	if (!(digest = rz_msg_digest_calculate_small_block(name, buffer, bsize, &digest_size))) {
+	if (!(digest = rz_hash_cfg_calculate_small_block(name, buffer, bsize, &digest_size))) {
 		return NULL;
 	}
 

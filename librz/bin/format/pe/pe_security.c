@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "pe.h"
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 
 static const char *PE_(bin_pe_get_claimed_authentihash)(RzBinPEObj *bin) {
 	if (!bin->spcinfo) {
@@ -15,7 +15,7 @@ static const char *PE_(bin_pe_get_claimed_authentihash)(RzBinPEObj *bin) {
 }
 
 static ut64 buf_fwd_hash(const ut8 *buf, ut64 size, void *user) {
-	return rz_msg_digest_update((RzMsgDigest *)user, buf, size) ? size : 0;
+	return rz_hash_cfg_update((RzHashCfg *)user, buf, size) ? size : 0;
 }
 
 char *PE_(bin_pe_compute_authentihash)(RzBinPEObj *bin) {
@@ -26,7 +26,7 @@ char *PE_(bin_pe_compute_authentihash)(RzBinPEObj *bin) {
 	char *hashtype = strdup(bin->spcinfo->messageDigest.digestAlgorithm.algorithm->string);
 	rz_str_replace_char(hashtype, '-', 0);
 
-	RzMsgDigest *md = rz_msg_digest_new_with_algo2(hashtype);
+	RzHashCfg *md = rz_hash_cfg_new_with_algo2(hashtype);
 	if (!md) {
 		free(hashtype);
 		return NULL;
@@ -41,19 +41,19 @@ char *PE_(bin_pe_compute_authentihash)(RzBinPEObj *bin) {
 	rz_buf_fwd_scan(bin->b, security_entry_offset + 8, security_dir_offset - security_entry_offset - 8, buf_fwd_hash, md);
 	rz_buf_fwd_scan(bin->b, security_dir_offset + security_dir_size, rz_buf_size(bin->b) - security_dir_offset - security_dir_size, buf_fwd_hash, md);
 
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 	const ut8 *digest = NULL;
-	if (!rz_msg_digest_final(md) ||
-		!(digest = rz_msg_digest_get_result(md, hashtype, &digest_size))) {
+	if (!rz_hash_cfg_final(md) ||
+		!(digest = rz_hash_cfg_get_result(md, hashtype, &digest_size))) {
 
 		free(hashtype);
-		rz_msg_digest_free(md);
+		rz_hash_cfg_free(md);
 		return NULL;
 	}
 
 	char *hashstr = rz_hex_bin2strdup(digest, digest_size);
 	free(hashtype);
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 	return hashstr;
 }
 

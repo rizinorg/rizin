@@ -10,7 +10,7 @@ typedef void (*DigestHandler)(const char *name, const ut8 *block, int len);
 typedef struct {
 	const char *name;
 	DigestHandler handler;
-	RzMsgDigestPlugin *plugin;
+	RzHashPlugin *plugin;
 } MsgDigestCaller;
 
 RZ_IPI RzCmdDescDetail *rz_hash_bang_details_cb(RzCore *core, int argc, const char **argv) {

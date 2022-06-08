@@ -5,7 +5,7 @@
 #include <rz_analysis.h>
 #include <rz_sign.h>
 #include <rz_search.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 
 #define SIGN_DIFF_MATCH_BYTES_THRESHOLD 1.0
 #define SIGN_DIFF_MATCH_GRAPH_THRESHOLD 1.0
@@ -2093,12 +2093,12 @@ RZ_API char *rz_sign_calc_bbhash(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	RzListIter *iter = NULL;
 	RzAnalysisBlock *bbi = NULL;
 	char *digest_hex = NULL;
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 	const ut8 *digest = NULL;
-	RzMsgDigest *md = NULL;
+	RzHashCfg *md = NULL;
 	ut8 *buf = NULL;
 
-	md = rz_msg_digest_new_with_algo2(ZIGN_HASH);
+	md = rz_hash_cfg_new_with_algo2(ZIGN_HASH);
 	if (!md) {
 		goto beach;
 	}
@@ -2112,21 +2112,21 @@ RZ_API char *rz_sign_calc_bbhash(RzAnalysis *a, RzAnalysisFunction *fcn) {
 		if (!a->iob.read_at(a->iob.io, bbi->addr, buf, bbi->size)) {
 			goto beach;
 		}
-		if (!rz_msg_digest_update(md, buf, bbi->size)) {
+		if (!rz_hash_cfg_update(md, buf, bbi->size)) {
 			goto beach;
 		}
 		RZ_FREE(buf);
 	}
 
-	if (!rz_msg_digest_final(md) ||
-		!(digest = rz_msg_digest_get_result(md, ZIGN_HASH, &digest_size))) {
+	if (!rz_hash_cfg_final(md) ||
+		!(digest = rz_hash_cfg_get_result(md, ZIGN_HASH, &digest_size))) {
 		goto beach;
 	}
 
 	digest_hex = rz_hex_bin2strdup(digest, digest_size);
 
 beach:
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 	free(buf);
 	return digest_hex;
 }

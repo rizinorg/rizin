@@ -9,7 +9,7 @@
 #include <rz_egg.h>
 #include <rz_bp.h>
 #include <rz_io.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_syscall.h>
 #include <rz_cmd.h>
 
@@ -591,7 +591,7 @@ RZ_API void rz_debug_session_free(RzDebugSession *session);
 
 RZ_API RzDebugSnap *rz_debug_snap_map(RzDebug *dbg, RzDebugMap *map);
 RZ_API bool rz_debug_snap_contains(RzDebugSnap *snap, ut64 addr);
-RZ_API ut8 *rz_debug_snap_get_hash(RzDebugSnap *snap, RzMsgDigestSize *size);
+RZ_API ut8 *rz_debug_snap_get_hash(RzDebugSnap *snap, RzHashSize *size);
 RZ_API bool rz_debug_snap_is_equal(RzDebugSnap *a, RzDebugSnap *b);
 RZ_API void rz_debug_snap_free(RzDebugSnap *snap);
 
