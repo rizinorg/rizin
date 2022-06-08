@@ -17,7 +17,7 @@ extern "C" {
  * "*"/""/NULL is reserved to indicate "all spaces".
  *
  * You can have groups of "meta" (e.g. bin meta, format meta, etc.), groups of
- * zign info, groups of flags, etc.
+ * flags, etc.
  *
  * It is possible to hook into the RzSpaces functions by using RzEvent.
  * RZ_SPACE_EVENT_COUNT: called when you need to count how many elements there are in a given RzSpace

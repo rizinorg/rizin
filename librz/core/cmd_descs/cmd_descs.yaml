@@ -212,6 +212,9 @@ commands:
   - name: f
     summary: Manage flags
     subcommands: cmd_flag
+  - name: F
+    summary: FLIRT signature management
+    subcommands: cmd_flirt
   - name: g
     summary: Generate shellcodes with rz_egg
     subcommands: cmd_egg
@@ -269,9 +272,6 @@ commands:
   - name: y
     summary: Yank/paste bytes from/to memory
     subcommands: cmd_yank
-  - name: z
-    summary: Zignatures management
-    subcommands: cmd_zign
   - name: "@"
     cname: tmp_modifiers
     options: "[?]"

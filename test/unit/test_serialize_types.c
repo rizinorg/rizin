@@ -5,7 +5,6 @@
 #include <rz_vector.h>
 #include <rz_util/rz_serialize.h>
 #include <rz_type.h>
-#include <rz_sign.h>
 #include <rz_util/rz_path.h>
 #include "test_config.h"
 #include "minunit.h"

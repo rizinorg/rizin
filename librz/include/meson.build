@@ -39,7 +39,6 @@ include_files = [
   'rz_reg.h',
   'rz_regex.h',
   'rz_search.h',
-  'rz_sign.h',
   'rz_skiplist.h',
   'rz_skyline.h',
   'rz_socket.h',

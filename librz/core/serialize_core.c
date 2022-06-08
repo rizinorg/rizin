@@ -49,7 +49,6 @@ static const char *const config_exclude[] = {
 	"dir.source",
 	"dir.tmp",
 	"dir.types",
-	"dir.zigns",
 	"http.root",
 	"pdb.symstore",
 	"scr.color",

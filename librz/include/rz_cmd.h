@@ -39,8 +39,6 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_RZNUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
-	RZ_CMD_ARG_TYPE_ZIGN, ///< Argument can be the name of an existing zignature
-	RZ_CMD_ARG_TYPE_ZIGN_SPACE, ///< Argument can be the name of an existing zignature space
 	RZ_CMD_ARG_TYPE_CHOICES, ///< Argument can be one of the provided choices
 	RZ_CMD_ARG_TYPE_FCN, ///< Argument can be the name of an existing function
 	RZ_CMD_ARG_TYPE_FILE, ///< Argument is a filename

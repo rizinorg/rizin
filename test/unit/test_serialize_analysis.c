@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
-#include <rz_sign.h>
 #include <rz_util/rz_path.h>
 #include "test_config.h"
 #include "minunit.h"
@@ -1332,140 +1331,6 @@ bool test_analysis_classes_load() {
 	mu_end;
 }
 
-Sdb *sign_ref_db() {
-	Sdb *db = sdb_new0();
-	Sdb *spaces = sdb_ns(db, "spaces", true);
-	sdb_set(spaces, "spacestack", "[\"koridai\"]", 0);
-	sdb_set(spaces, "name", "zs", 0);
-	Sdb *spaces_spaces = sdb_ns(spaces, "spaces", true);
-	sdb_set(spaces_spaces, "koridai", "s", 0);
-	sdb_set(db, "zign|*|sym.mahboi", "|s:4|b:deadbeef|m:c0ffee42|o:4919|g:123,11,12,13,42|r:gwonam,link|x:king,ganon|v:r16,s42,b13|t:func.sym.mahboi.ret=char *,func.sym.mahboi.args=2,func.sym.mahboi.arg.0=\"int,arg0\",func.sym.mahboi.arg.1=\"uint32_t,die\"|c:This peace is what all true warriors strive for|n:sym.Mah.Boi|h:7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", 0);
-	sdb_set(db, "zign|koridai|sym.boring", "|c:gee it sure is boring around here", 0);
-	return db;
-}
-
-bool test_analysis_sign_save() {
-	RzAnalysis *analysis = rz_analysis_new();
-	rz_sign_analysis_set_hooks(analysis);
-
-	RzSignItem *item = rz_sign_item_new();
-	item->name = strdup("sym.mahboi");
-	item->realname = strdup("sym.Mah.Boi");
-	item->comment = strdup("This peace is what all true warriors strive for");
-
-	item->bytes = RZ_NEW0(RzSignBytes);
-	item->bytes->size = 4;
-	item->bytes->bytes = (ut8 *)strdup("\xde\xad\xbe\xef");
-	item->bytes->mask = (ut8 *)strdup("\xc0\xff\xee\x42");
-
-	item->graph = RZ_NEW0(RzSignGraph);
-	item->graph->bbsum = 42;
-	item->graph->cc = 123;
-	item->graph->ebbs = 13;
-	item->graph->edges = 12;
-	item->graph->nbbs = 11;
-
-	item->addr = 0x1337;
-
-	item->xrefs_from = rz_list_newf(free);
-	rz_list_append(item->xrefs_from, strdup("gwonam"));
-	rz_list_append(item->xrefs_from, strdup("link"));
-
-	item->xrefs_to = rz_list_newf(free);
-	rz_list_append(item->xrefs_to, strdup("king"));
-	rz_list_append(item->xrefs_to, strdup("ganon"));
-
-	item->vars = rz_list_newf(free);
-	rz_list_append(item->vars, strdup("r16"));
-	rz_list_append(item->vars, strdup("s42"));
-	rz_list_append(item->vars, strdup("b13"));
-
-	item->types = rz_list_newf(free);
-	rz_list_append(item->types, strdup("func.sym.mahboi.ret=char *"));
-	rz_list_append(item->types, strdup("func.sym.mahboi.args=2"));
-	rz_list_append(item->types, strdup("func.sym.mahboi.arg.0=\"int,arg0\""));
-	rz_list_append(item->types, strdup("func.sym.mahboi.arg.1=\"uint32_t,die\""));
-
-	item->hash = RZ_NEW0(RzSignHash);
-	item->hash->bbhash = strdup("7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851");
-
-	rz_sign_add_item(analysis, item);
-	rz_sign_item_free(item);
-
-	rz_spaces_set(&analysis->zign_spaces, "koridai");
-	rz_sign_add_comment(analysis, "sym.boring", "gee it sure is boring around here");
-
-	Sdb *db = sdb_new0();
-	rz_serialize_analysis_sign_save(db, analysis);
-
-	Sdb *expected = sign_ref_db();
-	assert_sdb_eq(db, expected, "zignatures save");
-	sdb_free(db);
-	sdb_free(expected);
-	rz_analysis_free(analysis);
-	mu_end;
-}
-
-bool test_analysis_sign_load() {
-	RzAnalysis *analysis = rz_analysis_new();
-	rz_sign_analysis_set_hooks(analysis);
-
-	Sdb *db = sign_ref_db();
-	bool succ = rz_serialize_analysis_sign_load(db, analysis, NULL);
-	sdb_free(db);
-	mu_assert("load success", succ);
-
-	rz_spaces_set(&analysis->zign_spaces, NULL);
-	RzSignItem *item = rz_sign_get_item(analysis, "sym.mahboi");
-	mu_assert_notnull(item, "get item");
-
-	mu_assert_streq(item->name, "sym.mahboi", "name");
-	mu_assert_streq(item->realname, "sym.Mah.Boi", "realname");
-	mu_assert_streq(item->comment, "This peace is what all true warriors strive for", "comment");
-	mu_assert_notnull(item->bytes, "bytes");
-	mu_assert_eq(item->bytes->size, 4, "bytes size");
-	mu_assert_memeq(item->bytes->bytes, (ut8 *)"\xde\xad\xbe\xef", 4, "bytes bytes");
-	mu_assert_memeq(item->bytes->mask, (ut8 *)"\xc0\xff\xee\x42", 4, "bytes mask");
-	mu_assert_notnull(item->graph, "graph");
-	mu_assert_eq(item->graph->bbsum, 42, "graph bbsum");
-	mu_assert_eq(item->graph->cc, 123, "graph cc");
-	mu_assert_eq(item->graph->ebbs, 13, "graph ebbs");
-	mu_assert_eq(item->graph->edges, 12, "graph edges");
-	mu_assert_eq(item->graph->nbbs, 11, "graph nbbs");
-	mu_assert_eq(item->addr, 0x1337, "addr");
-	mu_assert_notnull(item->xrefs_from, "xrefs_from");
-	mu_assert_eq(rz_list_length(item->xrefs_from), 2, "xrefs_from count");
-	mu_assert_streq(rz_list_get_n(item->xrefs_from, 0), "gwonam", "xrefs_from");
-	mu_assert_streq(rz_list_get_n(item->xrefs_from, 1), "link", "xrefs_from");
-	mu_assert_notnull(item->xrefs_to, "xrefs_to");
-	mu_assert_eq(rz_list_length(item->xrefs_to), 2, "xrefs_to count");
-	mu_assert_streq(rz_list_get_n(item->xrefs_to, 0), "king", "xrefs_to");
-	mu_assert_streq(rz_list_get_n(item->xrefs_to, 1), "ganon", "xrefs_to");
-	mu_assert_notnull(item->vars, "vars");
-	mu_assert_eq(rz_list_length(item->vars), 3, "vars count");
-	mu_assert_streq(rz_list_get_n(item->vars, 0), "r16", "var");
-	mu_assert_streq(rz_list_get_n(item->vars, 1), "s42", "var");
-	mu_assert_streq(rz_list_get_n(item->vars, 2), "b13", "var");
-	mu_assert_notnull(item->types, "types");
-	mu_assert_eq(rz_list_length(item->types), 4, "types count");
-	mu_assert_streq(rz_list_get_n(item->types, 0), "func.sym.mahboi.ret=char *", "type");
-	mu_assert_streq(rz_list_get_n(item->types, 1), "func.sym.mahboi.args=2", "type");
-	mu_assert_streq(rz_list_get_n(item->types, 2), "func.sym.mahboi.arg.0=\"int,arg0\"", "type");
-	mu_assert_streq(rz_list_get_n(item->types, 3), "func.sym.mahboi.arg.1=\"uint32_t,die\"", "type");
-	mu_assert_notnull(item->hash, "hash");
-	mu_assert_streq(item->hash->bbhash, "7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", "hash val");
-	rz_sign_item_free(item);
-
-	rz_spaces_set(&analysis->zign_spaces, "koridai");
-	item = rz_sign_get_item(analysis, "sym.boring");
-	mu_assert_notnull(item, "get item in space");
-	mu_assert_streq(item->comment, "gee it sure is boring around here", "item in space comment");
-	rz_sign_item_free(item);
-
-	rz_analysis_free(analysis);
-	mu_end;
-}
-
 static Sdb *cc_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "cc.sectarian.ret", "rax", 0);
@@ -1550,14 +1415,6 @@ Sdb *analysis_ref_db() {
 	sdb_set(class_attrs, "attr.Aeropause.method", "some_meth", 0);
 	sdb_set(class_attrs, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth", 0);
 
-	Sdb *zigns = sdb_ns(db, "zigns", true);
-	Sdb *zign_spaces = sdb_ns(zigns, "spaces", true);
-	sdb_set(zign_spaces, "spacestack", "[\"koridai\"]", 0);
-	sdb_set(zign_spaces, "name", "zs", 0);
-	Sdb *zign_spaces_spaces = sdb_ns(zign_spaces, "spaces", true);
-	sdb_set(zign_spaces_spaces, "koridai", "s", 0);
-	sdb_set(zigns, "zign|koridai|sym.boring", "|c:gee it sure is boring around here", 0);
-
 	Sdb *imports = sdb_ns(db, "imports", true);
 	sdb_set(imports, "pigs", "i", 0);
 	sdb_set(imports, "dogs", "i", 0);
@@ -1580,7 +1437,6 @@ Sdb *analysis_ref_db() {
 
 bool test_analysis_save() {
 	RzAnalysis *analysis = rz_analysis_new();
-	rz_sign_analysis_set_hooks(analysis);
 
 	RzAnalysisBlock *ba = rz_analysis_create_block(analysis, 1337, 42);
 	RzAnalysisBlock *bb = rz_analysis_create_block(analysis, 1234, 32);
@@ -1614,9 +1470,6 @@ bool test_analysis_save() {
 	};
 	rz_analysis_class_method_set(analysis, "Aeropause", &crystal);
 	rz_analysis_class_method_fini(&crystal);
-
-	rz_spaces_set(&analysis->zign_spaces, "koridai");
-	rz_sign_add_comment(analysis, "sym.boring", "gee it sure is boring around here");
 
 	rz_analysis_add_import(analysis, "pigs");
 	rz_analysis_add_import(analysis, "dogs");
@@ -1684,12 +1537,6 @@ bool test_analysis_load() {
 	mu_assert_streq(meth->name, "some_meth", "method name");
 	rz_vector_free(vals);
 
-	rz_spaces_set(&analysis->zign_spaces, "koridai");
-	RzSignItem *item = rz_sign_get_item(analysis, "sym.boring");
-	mu_assert_notnull(item, "get item in space");
-	mu_assert_streq(item->comment, "gee it sure is boring around here", "item in space comment");
-	rz_sign_item_free(item);
-
 	mu_assert_eq(rz_list_length(analysis->imports), 3, "imports count");
 	mu_assert_notnull(rz_list_find(analysis->imports, "pigs", (RzListComparator)strcmp), "import");
 	mu_assert_notnull(rz_list_find(analysis->imports, "dogs", (RzListComparator)strcmp), "import");
@@ -1724,8 +1571,6 @@ int all_tests() {
 	mu_run_test(test_analysis_hints_load);
 	mu_run_test(test_analysis_classes_save);
 	mu_run_test(test_analysis_classes_load);
-	mu_run_test(test_analysis_sign_save);
-	mu_run_test(test_analysis_sign_load);
 	mu_run_test(test_analysis_cc_save);
 	mu_run_test(test_analysis_cc_load);
 	mu_run_test(test_analysis_save);

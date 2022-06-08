@@ -9,7 +9,6 @@ option('portable', type: 'boolean', value: false, description: 'Make rizin insta
 
 option('rizin_wwwroot', type: 'string', value: '', description: 'Install path for www files')
 option('rizin_sdb', type: 'string', value: '', description: '')
-option('rizin_zigns', type: 'string', value: '', description: 'Install path for zignatures files')
 option('rizin_sigdb', type: 'string', value: '', description: 'Install path for sigdb files')
 option('rizin_themes', type: 'string', value: '', description: 'Install path for themes (colors, etc.)')
 option('rizin_fortunes', type: 'string', value: '', description: 'Install path for fortunes displayed when starting')

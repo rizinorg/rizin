@@ -92,7 +92,6 @@ EXPECT=<<EOF
       "reg=cc",
       "stdcall=cc",
       "watcom=cc",
-      "zigns",
       "classes",
       "noreturn"
     ]
