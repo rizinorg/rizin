@@ -18,6 +18,7 @@ bool test_thread_pool_cores(void) {
 		/* this can be tested only when cores are more than 1 */
 		pool = rz_th_pool_new(cores - 1);
 		mu_assert_notnull(pool, "rz_th_pool_new(cores - 1) null check");
+		pool_size = rz_th_pool_size(pool);
 		mu_assert_eq(pool_size, cores - 1, "rz_th_pool_new(cores - 1) core count check");
 		rz_th_pool_free(pool);
 	}
