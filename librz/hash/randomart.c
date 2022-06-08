@@ -37,7 +37,7 @@
  * Else pictures would be too dense, and drawing the frame would
  * fail, too, because the key type would not fit in anymore.
  */
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util.h>
 
 #define FLDBASE   8
@@ -52,7 +52,7 @@
  * \param  addr   The location of the hash (when unknown can be set to 0).
  * \return
  */
-RZ_API RZ_OWN char *rz_msg_digest_randomart(RZ_NONNULL const ut8 *buffer, ut32 length, ut64 address) {
+RZ_API RZ_OWN char *rz_hash_cfg_randomart(RZ_NONNULL const ut8 *buffer, ut32 length, ut64 address) {
 	rz_return_val_if_fail(buffer && length > 0, NULL);
 	/*
 	 * Chars to be used after each other every time the worm

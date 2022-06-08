@@ -3,7 +3,7 @@
 
 #include <rz_core.h>
 
-RZ_API RzCmdStatus rz_core_hash_plugin_print(RzCmdStateOutput *state, const RzMsgDigestPlugin *plugin) {
+RZ_API RzCmdStatus rz_core_hash_plugin_print(RzCmdStateOutput *state, const RzHashPlugin *plugin) {
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET: {
@@ -32,13 +32,13 @@ RZ_API RzCmdStatus rz_core_hash_plugin_print(RzCmdStateOutput *state, const RzMs
 }
 
 RZ_API RzCmdStatus rz_core_hash_plugins_print(RzCmdStateOutput *state) {
-	const RzMsgDigestPlugin *plugin = NULL;
+	const RzHashPlugin *plugin = NULL;
 	RzCmdStatus status;
 	rz_cmd_state_output_array_start(state);
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_println("algorithm      license    author");
 	}
-	for (size_t j = 0; (plugin = rz_msg_digest_plugin_by_index(j)); ++j) {
+	for (size_t j = 0; (plugin = rz_hash_plugin_by_index(j)); ++j) {
 		status = rz_core_hash_plugin_print(state, plugin);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;

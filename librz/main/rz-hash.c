@@ -5,7 +5,7 @@
 #include <string.h>
 #include <rz_io.h>
 #include <rz_main.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_print.h>
 #include <rz_util.h>
 #include <rz_crypto.h>
@@ -109,8 +109,8 @@ static void rz_hash_show_algorithms() {
 
 	printf("flags  algorithm      license    author\n");
 
-	const RzMsgDigestPlugin *rmdp;
-	for (size_t i = 0; (rmdp = rz_msg_digest_plugin_by_index(i)); ++i) {
+	const RzHashPlugin *rmdp;
+	for (size_t i = 0; (rmdp = rz_hash_plugin_by_index(i)); ++i) {
 		snprintf(flags, sizeof(flags), "____h%c", rmdp->support_hmac ? 'm' : '_');
 		printf("%6s %-14s %-10s %s\n", flags, rmdp->name, rmdp->license, rmdp->author);
 	}
@@ -712,14 +712,14 @@ static void rz_hash_print_crypto(RzHashContext *ctx, const char *hname, const ut
 	free(value);
 }
 
-static void rz_hash_print_digest(RzHashContext *ctx, RzMsgDigest *md, const char *hname, ut64 from, ut64 to, const char *filename) {
-	RzMsgDigestSize len = 0;
+static void rz_hash_print_digest(RzHashContext *ctx, RzHashCfg *md, const char *hname, ut64 from, ut64 to, const char *filename) {
+	RzHashSize len = 0;
 	char *value = NULL;
 	char *rndart = NULL;
 	const ut8 *buffer;
 
-	buffer = rz_msg_digest_get_result(md, hname, &len);
-	value = rz_msg_digest_get_result_string(md, hname, NULL, ctx->little_endian);
+	buffer = rz_hash_cfg_get_result(md, hname, &len);
+	value = rz_hash_cfg_get_result_string(md, hname, NULL, ctx->little_endian);
 	if (!value || !buffer) {
 		free(value);
 		return;
@@ -741,7 +741,7 @@ static void rz_hash_print_digest(RzHashContext *ctx, RzMsgDigest *md, const char
 		printf("%s: 0x%08" PFMT64x "-0x%08" PFMT64x " %s%s: %s%s\n", filename, from, to, hmac, hname, value, has_seed ? " with seed" : "");
 		break;
 	case RZ_HASH_MODE_RANDOMART:
-		rndart = rz_msg_digest_randomart(buffer, len, from);
+		rndart = rz_hash_cfg_randomart(buffer, len, from);
 		printf("%s%s\n%s\n", hmac, hname, rndart);
 		break;
 	case RZ_HASH_MODE_QUIET:
@@ -782,12 +782,12 @@ static void rz_hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, 
 
 static RzList *parse_hash_algorithms(RzHashContext *ctx) {
 	if (!strcmp(ctx->algorithm, "all")) {
-		const RzMsgDigestPlugin *plugin;
+		const RzHashPlugin *plugin;
 		RzList *list = rz_list_newf(NULL);
 		if (!list) {
 			return NULL;
 		}
-		for (ut64 i = 0; (plugin = rz_msg_digest_plugin_by_index(i)); ++i) {
+		for (ut64 i = 0; (plugin = rz_hash_plugin_by_index(i)); ++i) {
 			rz_list_append(list, (void *)plugin->name);
 		}
 		return list;
@@ -800,13 +800,13 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 	const char *algorithm;
 	RzList *algorithms = NULL;
 	RzListIter *it;
-	RzMsgDigest *md = NULL;
+	RzHashCfg *md = NULL;
 	ut64 bsize = 0;
 	ut64 filesize;
 	ut8 *block = NULL;
 	ut8 *cmphash = NULL;
 	const ut8 *digest = NULL;
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 
 	algorithms = parse_hash_algorithms(ctx);
 	if (!algorithms || rz_list_length(algorithms) < 1) {
@@ -816,7 +816,7 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 
 	filesize = rz_io_desc_size(io->desc);
 
-	md = rz_msg_digest_new();
+	md = rz_hash_cfg_new();
 	if (!md) {
 		RZ_LOG_ERROR("rz-hash: error, cannot allocate hash context memory\n");
 		goto calculate_hash_end;
@@ -840,12 +840,12 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 	}
 
 	rz_list_foreach (algorithms, it, algorithm) {
-		if (!rz_msg_digest_configure(md, algorithm)) {
+		if (!rz_hash_cfg_configure(md, algorithm)) {
 			goto calculate_hash_end;
 		}
 	}
 
-	if (ctx->key.len > 0 && !rz_msg_digest_hmac(md, ctx->key.buf, ctx->key.len)) {
+	if (ctx->key.len > 0 && !rz_hash_cfg_hmac(md, ctx->key.buf, ctx->key.len)) {
 		goto calculate_hash_end;
 	}
 
@@ -859,33 +859,33 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 			goto calculate_hash_end;
 		}
 
-		if (!rz_msg_digest_init(md)) {
+		if (!rz_hash_cfg_init(md)) {
 			goto calculate_hash_end;
 		}
 
 		if (ctx->as_prefix && ctx->seed.buf &&
-			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
+			!rz_hash_cfg_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
 
 		for (ut64 j = ctx->offset.from; j < to; j += bsize) {
 			int read = rz_io_pread_at(io, j, block, to - j > bsize ? bsize : (to - j));
-			if (!rz_msg_digest_update(md, block, read)) {
+			if (!rz_hash_cfg_update(md, block, read)) {
 				goto calculate_hash_end;
 			}
 		}
 
 		if (!ctx->as_prefix && ctx->seed.buf &&
-			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
+			!rz_hash_cfg_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
-		if (!rz_msg_digest_final(md) ||
-			!rz_msg_digest_iterate(md, ctx->iterate)) {
+		if (!rz_hash_cfg_final(md) ||
+			!rz_hash_cfg_iterate(md, ctx->iterate)) {
 			goto calculate_hash_end;
 		}
 
 		rz_list_foreach (algorithms, it, algorithm) {
-			digest = rz_msg_digest_get_result(md, algorithm, &digest_size);
+			digest = rz_hash_cfg_get_result(md, algorithm, &digest_size);
 			if (digest_size != cmphashlen) {
 				result = false;
 			} else {
@@ -904,15 +904,15 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 		ut64 to = ctx->offset.to ? ctx->offset.to : filesize;
 		for (ut64 j = ctx->offset.from; j < to; j += bsize) {
 			int read = rz_io_pread_at(io, j, block, to - j > bsize ? bsize : (to - j));
-			if (!rz_msg_digest_init(md) ||
-				!rz_msg_digest_update(md, block, read) ||
-				!rz_msg_digest_final(md) ||
-				!rz_msg_digest_iterate(md, ctx->iterate)) {
+			if (!rz_hash_cfg_init(md) ||
+				!rz_hash_cfg_update(md, block, read) ||
+				!rz_hash_cfg_final(md) ||
+				!rz_hash_cfg_iterate(md, ctx->iterate)) {
 				goto calculate_hash_end;
 			}
 
 			rz_list_foreach (algorithms, it, algorithm) {
-				digest = rz_msg_digest_get_result(md, algorithm, &digest_size);
+				digest = rz_hash_cfg_get_result(md, algorithm, &digest_size);
 				if (ctx->mode == RZ_HASH_MODE_JSON) {
 					pj_o(ctx->pj);
 				}
@@ -924,34 +924,34 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 		}
 	} else {
 		ut64 to = ctx->offset.to ? ctx->offset.to : filesize;
-		if (!rz_msg_digest_init(md)) {
+		if (!rz_hash_cfg_init(md)) {
 			goto calculate_hash_end;
 		}
 
 		if (ctx->as_prefix && ctx->seed.buf &&
-			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
+			!rz_hash_cfg_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
 
 		for (ut64 j = ctx->offset.from; j < to; j += bsize) {
 			int read = rz_io_pread_at(io, j, block, to - j > bsize ? bsize : (to - j));
-			if (!rz_msg_digest_update(md, block, read)) {
+			if (!rz_hash_cfg_update(md, block, read)) {
 				goto calculate_hash_end;
 			}
 		}
 
 		if (!ctx->as_prefix && ctx->seed.buf &&
-			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
+			!rz_hash_cfg_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
 
-		if (!rz_msg_digest_final(md) ||
-			!rz_msg_digest_iterate(md, ctx->iterate)) {
+		if (!rz_hash_cfg_final(md) ||
+			!rz_hash_cfg_iterate(md, ctx->iterate)) {
 			goto calculate_hash_end;
 		}
 
 		rz_list_foreach (algorithms, it, algorithm) {
-			digest = rz_msg_digest_get_result(md, algorithm, &digest_size);
+			digest = rz_hash_cfg_get_result(md, algorithm, &digest_size);
 
 			if (ctx->mode == RZ_HASH_MODE_JSON) {
 				pj_o(ctx->pj);
@@ -968,7 +968,7 @@ calculate_hash_end:
 	rz_list_free(algorithms);
 	free(block);
 	free(cmphash);
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 	return result;
 }
 

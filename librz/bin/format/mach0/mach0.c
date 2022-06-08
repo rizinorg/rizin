@@ -6,7 +6,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include "mach0.h"
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 
 #include "mach0_utils.inc"
 
@@ -749,7 +749,7 @@ static void parseCodeDirectory(RzBuffer *b, int offset, int datasize) {
 	}
 
 	// computed cdhash
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 	ut8 *digest = NULL;
 
 	int fofsz = cscd.length;
@@ -761,7 +761,7 @@ static void parseCodeDirectory(RzBuffer *b, int offset, int datasize) {
 			goto parseCodeDirectory_end;
 		}
 
-		digest = rz_msg_digest_calculate_small_block(digest_algo, fofbuf, fofsz, &digest_size);
+		digest = rz_hash_cfg_calculate_small_block(digest_algo, fofbuf, fofsz, &digest_size);
 		if (!digest) {
 			goto parseCodeDirectory_end;
 		}
@@ -791,7 +791,7 @@ static void parseCodeDirectory(RzBuffer *b, int offset, int datasize) {
 		int fofsz = RZ_MIN(sizeof(fofbuf), cscd.codeLimit - fof);
 		rz_buf_read_at(b, fof, fofbuf, sizeof(fofbuf));
 
-		digest = rz_msg_digest_calculate_small_block(digest_algo, fofbuf, fofsz, &digest_size);
+		digest = rz_hash_cfg_calculate_small_block(digest_algo, fofbuf, fofsz, &digest_size);
 		if (!digest) {
 			goto parseCodeDirectory_end;
 		}

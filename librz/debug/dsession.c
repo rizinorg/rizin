@@ -183,7 +183,7 @@ RZ_API void rz_debug_session_restore_reg_mem(RzDebug *dbg, ut32 cnum) {
 }
 
 RZ_API void rz_debug_session_list_memory(RzDebug *dbg) {
-	RzMsgDigestSize dsize;
+	RzHashSize dsize;
 	RzListIter *iter;
 	RzDebugMap *map;
 	rz_debug_map_sync(dbg);
