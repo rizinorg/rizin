@@ -26,17 +26,17 @@
 #include <OS.h>
 #endif
 
-typedef struct rz_th_pool_t {
+struct rz_th_pool_t {
 	size_t size;
 	RzThread **threads;
-} RzThreadPool;
+};
 
-typedef struct rz_th_queue_t {
+struct rz_th_queue_t {
 	RzThreadLock *lock;
 	RzThreadCond *cond;
 	size_t max_size;
 	RzList *list;
-} RzThreadQueue;
+};
 
 /*
  * Main thread function, this function is meant to be
