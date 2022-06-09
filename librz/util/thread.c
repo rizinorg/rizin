@@ -361,10 +361,13 @@ RZ_API RZ_OWN void *rz_th_get_user(RZ_NONNULL RzThread *th) {
  * \return On success returns true, otherwise false
  */
 RZ_API bool rz_th_yield(void) {
-#if HAVE_PTHREAD
-	return pthread_yield() == 0;
-#elif __WINDOWS__
+#if __WINDOWS__
 	return SwitchToThread() != 0;
+#else
+	// sched_yield is not available everywhere.
+	// usleep is more portable.
+	rz_sys_usleep(1);
+	return true;
 #endif
 }
 
