@@ -65,7 +65,6 @@ RZ_API bool rz_th_pool_add_thread(RZ_NONNULL RzThreadPool *pool, RZ_NONNULL RzTh
 RZ_API RZ_OWN RzThread *rz_th_pool_get_thread(RZ_NONNULL RzThreadPool *pool, size_t index);
 RZ_API bool rz_th_pool_wait(RZ_NONNULL RzThreadPool *pool);
 RZ_API bool rz_th_pool_kill(RZ_NONNULL RzThreadPool *pool);
-RZ_API bool rz_th_pool_kill_free(RZ_NONNULL RzThreadPool *pool);
 RZ_API size_t rz_th_pool_size(RZ_NULLABLE RzThreadPool *pool);
 
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzListFree qfree);

@@ -464,7 +464,12 @@ RZ_API void rz_th_pool_free(RZ_NULLABLE RzThreadPool *pool) {
 	if (!pool) {
 		return;
 	}
-	rz_th_pool_kill_free(pool);
+	for (ut32 i = 0; i < pool->size; ++i) {
+		if (pool->threads[i]) {
+			rz_th_free(pool->threads[i]);
+			pool->threads[i] = NULL;
+		}
+	}
 	free(pool->threads);
 	free(pool);
 }
@@ -535,27 +540,6 @@ RZ_API bool rz_th_pool_kill(RZ_NONNULL RzThreadPool *pool) {
 			RZ_LOG_DEBUG("thread: killing thread %u\n", i);
 			rz_th_kill(pool->threads[i]);
 			has_exited = true;
-		}
-	}
-	return has_exited;
-}
-
-/**
- * \brief Force kills all threads in the thread pool and frees them
- *
- * \param  pool The thread pool to kill
- *
- * \return true if managed to kill all threads, otherwise false
- */
-RZ_API bool rz_th_pool_kill_free(RZ_NONNULL RzThreadPool *pool) {
-	rz_return_val_if_fail(pool, false);
-	bool has_exited = false;
-	for (ut32 i = 0; i < pool->size; ++i) {
-		if (pool->threads[i]) {
-			RZ_LOG_DEBUG("thread: killing thread %u\n", i);
-			rz_th_kill_free(pool->threads[i]);
-			has_exited = true;
-			pool->threads[i] = NULL;
 		}
 	}
 	return has_exited;
