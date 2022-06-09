@@ -51,12 +51,6 @@ RZ_API int rz_th_lock_tryenter(RzThreadLock *thl);
 RZ_API int rz_th_lock_enter(RzThreadLock *thl);
 RZ_API int rz_th_lock_leave(RzThreadLock *thl);
 RZ_API void *rz_th_lock_free(RzThreadLock *thl);
-#define rz_th_lock_guard(lock, x) \
-	do { \
-		rz_th_lock_enter(lock); \
-		x; \
-		rz_th_lock_leave(lock); \
-	} while (0)
 
 RZ_API RzThreadCond *rz_th_cond_new(void);
 RZ_API void rz_th_cond_signal(RzThreadCond *cond);
