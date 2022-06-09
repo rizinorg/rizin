@@ -43,6 +43,13 @@ struct rz_th_queue_t {
  * hidden from the user which is using the C APIs.
  */
 static RZ_TH_RET_T thread_main_function(void *_th) {
+#if HAVE_PTHREAD
+#ifndef __ANDROID__
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+#endif
+#endif
+
 	RzThread *th = (RzThread *)_th;
 	RzThreadStatus status = RZ_TH_STATUS_LOOP;
 
@@ -264,13 +271,17 @@ RZ_API void rz_th_kill(RZ_NONNULL RzThread *th) {
 	rz_return_if_fail(th);
 
 #if HAVE_PTHREAD
+	if (!pthread_kill(th->tid, 0)) {
 #ifdef __ANDROID__
-	pthread_kill(th->tid, 9);
+		pthread_kill(th->tid, 9);
 #else
-	pthread_cancel(th->tid);
+		pthread_cancel(th->tid);
 #endif
+	}
 #elif __WINDOWS__
-	TerminateThread(th->tid, -1);
+	if (WaitForSingleObject(th->tid, 0)) {
+		TerminateThread(th->tid, -1);
+	}
 #endif
 }
 
@@ -327,6 +338,19 @@ RZ_API void rz_th_kill_free(RZ_NONNULL RzThread *th) {
 RZ_API RZ_OWN void *rz_th_get_user(RZ_NONNULL RzThread *th) {
 	rz_return_val_if_fail(th, NULL);
 	return th->user;
+}
+
+/**
+ * \brief Yield the processor
+ *
+ * \return On success returns true, otherwise false
+ */
+RZ_API bool rz_th_yield(void) {
+#if HAVE_PTHREAD
+	return pthread_yield() == 0;
+#elif __WINDOWS__
+	return SwitchToThread() != 0;
+#endif
 }
 
 /**

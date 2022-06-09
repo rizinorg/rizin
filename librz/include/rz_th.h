@@ -38,6 +38,7 @@ RZ_API void rz_th_kill_free(RZ_NONNULL RzThread *th);
 RZ_API bool rz_th_setname(RZ_NONNULL RzThread *th, RZ_NONNULL const char *name);
 RZ_API bool rz_th_getname(RZ_NONNULL RzThread *th, RZ_NONNULL RZ_OUT char *name, size_t len);
 RZ_API bool rz_th_setaffinity(RZ_NONNULL RzThread *th, int cpuid);
+RZ_API bool rz_th_yield(void);
 
 RZ_API RzThreadSemaphore *rz_th_sem_new(unsigned int initial);
 RZ_API void rz_th_sem_free(RzThreadSemaphore *sem);

@@ -422,12 +422,13 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 	rz_th_pool_wait(pool);
 	if (progress) {
 		// ensure to print the 100%
-		rz_sys_usleep(300000);
+		rz_sys_usleep(100000);
 	}
 	rz_th_kill(cons_thread);
 	rz_th_free(cons_thread);
 
 	rz_list_sort(scores, (RzListComparator)basefind_score_compare);
+	rz_cons_flush();
 
 rz_basefind_end:
 	if (pool) {
