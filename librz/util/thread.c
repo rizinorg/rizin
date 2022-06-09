@@ -26,11 +26,26 @@
 #include <OS.h>
 #endif
 
+/**
+ * \brief RzThreadPool is a structure which handles n-threads threads
+ *
+ * This structure provides methods to handle multiple threads, like they were one.
+ */
 struct rz_th_pool_t {
 	size_t size;
 	RzThread **threads;
 };
 
+/**
+ * \brief RzThreadQueue is a thread-safe queue that can be listened on from multiple threads.
+ *
+ * This Queue is thread-safe and allows to perform LIFO/FIFO operations.
+ * rz_th_queue_new      Allocates a RzThreadQueue structure and allows to limit the size of the queue.
+ * rz_th_queue_push     Pushes an element to the queue unless the limit is reached.
+ * rz_th_queue_pop      Pops an element from the queue, but returns NULL when is empty.
+ * rz_th_queue_wait_pop Pops an element from the queue, but awaits for new elements when is empty.
+ * rz_th_queue_free     Frees a RzThreadQueue structure, if the queue is not empty, it frees the elements with the provided qfree function.
+ */
 struct rz_th_queue_t {
 	RzThreadLock *lock;
 	RzThreadCond *cond;
@@ -626,7 +641,7 @@ RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *u
 }
 
 /**
- * \brief  Removes an element from the queue
+ * \brief  Removes an element from the queue, but does not awaits when empty.
  *
  * \param  queue The RzThreadQueue to push to
  * \param  tail  When true, pops the element from the tail, otherwise from the head
@@ -648,7 +663,7 @@ RZ_API void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail) {
 }
 
 /**
- * \brief  Removes an element from the queue
+ * \brief  Removes an element from the queue, but yields the thread till not empty.
  *
  * \param  queue The RzThreadQueue to push to
  * \param  tail  When true, pops the element from the tail, otherwise from the head
@@ -660,7 +675,9 @@ RZ_API void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail) {
 
 	void *user = NULL;
 	rz_th_lock_enter(queue->lock);
-	rz_th_cond_wait(queue->cond, queue->lock);
+	if (rz_list_empty(queue->list)) {
+		rz_th_cond_wait(queue->cond, queue->lock);
+	}
 	if (tail) {
 		user = rz_list_pop(queue->list);
 	} else {
