@@ -393,6 +393,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 		BaseFindThreadData *bftd = RZ_NEW(BaseFindThreadData);
 		if (!bftd) {
 			RZ_LOG_ERROR("basefind: cannot allocate BaseFindThreadData.\n");
+			rz_th_pool_kill(pool);
 			goto rz_basefind_end;
 		}
 		bftd->base_inc = base_inc;
@@ -407,6 +408,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 		bftd->array = array;
 		if (!create_thread_interval(pool, bftd)) {
 			free(bftd);
+			rz_th_pool_kill(pool);
 			goto rz_basefind_end;
 		}
 	}
@@ -417,6 +419,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 
 	RzThread *cons_thread = rz_th_new((RzThreadFunction)basefind_thread_cons, &th_cons);
 	if (!cons_thread) {
+		rz_th_pool_kill(pool);
 		goto rz_basefind_end;
 	}
 	rz_th_pool_wait(pool);
@@ -428,11 +431,9 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 	rz_th_free(cons_thread);
 
 	rz_list_sort(scores, (RzListComparator)basefind_score_compare);
-	rz_cons_flush();
 
 rz_basefind_end:
 	if (pool) {
-		rz_th_pool_kill(pool);
 		for (ut32 i = 0; i < pool_size; ++i) {
 			RzThread *th = rz_th_pool_get_thread(pool, i);
 			if (!th) {
