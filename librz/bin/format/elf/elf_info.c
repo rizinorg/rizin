@@ -277,6 +277,9 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_V850, "v850" },
 	{ EM_IA_64, "ia64" },
 	{ EM_S390, "sysz" },
+	{ EM_386, "x86" },
+	{ EM_X86_64, "x86" },
+	{ EM_NONE, "No machine" }
 };
 
 static const struct ver_flags_translation ver_flags_translation_table[] = {
@@ -1402,7 +1405,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
 		}
 	}
 
-	return strdup("x86");
+	return strdup("Unknown or unsupported arch");
 }
 
 /**
