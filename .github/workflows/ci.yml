@@ -491,7 +491,6 @@ jobs:
           name: test-results-static
           path: rizin/test/results.json
       - name: Upload static build
-        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: rizin-static.tar.xz
