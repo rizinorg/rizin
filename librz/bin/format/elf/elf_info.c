@@ -218,7 +218,8 @@ static const struct machine_name_translation machine_name_translation_table[] = 
 	{ EM_VISIUM, "Controls and Data Services VISIUMcore processor" },
 	{ EM_FT32, "FTDI Chip FT32 high performance 32-bit RISC architecture" },
 	{ EM_MOXIE, "Moxie processor family" },
-	{ EM_AMDGPU, "AMD GPU architecture" }
+	{ EM_AMDGPU, "AMD GPU architecture" },
+	{ EM_BPF, "Linux BPF" }
 };
 
 static const struct class_translation class_translation_table[] = {
@@ -279,7 +280,8 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_S390, "sysz" },
 	{ EM_386, "x86" },
 	{ EM_X86_64, "x86" },
-	{ EM_NONE, "No machine" }
+	{ EM_NONE, "null" },
+	{ EM_BPF, "bpf" }
 };
 
 static const struct ver_flags_translation ver_flags_translation_table[] = {
@@ -1405,7 +1407,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
 		}
 	}
 
-	return strdup("Unknown or unsupported arch");
+	return strdup("");
 }
 
 /**
