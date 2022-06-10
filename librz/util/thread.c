@@ -64,14 +64,9 @@ static RZ_TH_RET_T thread_main_function(void *_th) {
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 #endif
 #endif
-
 	RzThread *th = (RzThread *)_th;
 	th->retv = th->function(th->user);
-
-#if HAVE_PTHREAD
-	pthread_exit(NULL);
-#endif
-	return 0;
+	return NULL;
 }
 
 RZ_IPI RZ_TH_TID rz_th_self(void) {
