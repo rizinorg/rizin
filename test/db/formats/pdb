@@ -2,6 +2,7 @@ NAME=PDB downloader check
 FILE=bins/pdb/user32.dll
 CMDS=<<EOF
 %RZ_CURL=1
+e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
 !!rz-bin -PP ${RZ_FILE} ~PDB
 EOF
 EXPECT=<<EOF
@@ -13,6 +14,7 @@ NAME=PDB downloader json
 FILE==
 CMDS=<<EOF
 %RZ_CURL=1
+e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
 !rz-bin -PPj bins/pdb/user32.dll~{}>$pdb
 $pdb~file,guid,download
 EOF
@@ -27,6 +29,7 @@ NAME=idpdj
 FILE=bins/pdb/user32.dll
 CMDS=<<EOF
 %RZ_CURL=1
+e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
 idpdj~{}>$pdb
 $pdb~file,guid,download
 EOF
