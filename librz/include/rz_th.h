@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2009-2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2021-2022 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_TH_H
 #define RZ_TH_H
 
@@ -26,7 +30,7 @@ typedef void *(*RzThreadFunction)(void *user);
 #ifdef RZ_API
 RZ_API RZ_OWN RzThread *rz_th_new(RZ_NONNULL RzThreadFunction function, RZ_NULLABLE void *user);
 RZ_API RZ_OWN void *rz_th_get_user(RZ_NONNULL RzThread *th);
-RZ_API void *rz_th_get_retv(RZ_NONNULL RzThread *th);
+RZ_API RZ_OWN void *rz_th_get_retv(RZ_NONNULL RzThread *th);
 RZ_API bool rz_th_wait(RZ_NONNULL RzThread *th);
 RZ_API void rz_th_free(RZ_NULLABLE RzThread *th);
 RZ_API void rz_th_kill(RZ_NONNULL RzThread *th);
@@ -36,29 +40,28 @@ RZ_API bool rz_th_get_name(RZ_NONNULL RzThread *th, RZ_NONNULL RZ_OUT char *name
 RZ_API bool rz_th_set_affinity(RZ_NONNULL RzThread *th, int cpuid);
 RZ_API bool rz_th_yield(void);
 
-RZ_API RzThreadSemaphore *rz_th_sem_new(unsigned int initial);
-RZ_API void rz_th_sem_free(RzThreadSemaphore *sem);
-RZ_API void rz_th_sem_post(RzThreadSemaphore *sem);
-RZ_API void rz_th_sem_wait(RzThreadSemaphore *sem);
+RZ_API RZ_OWN RzThreadSemaphore *rz_th_sem_new(unsigned int initial);
+RZ_API void rz_th_sem_free(RZ_NULLABLE RzThreadSemaphore *sem);
+RZ_API void rz_th_sem_post(RZ_NONNULL RzThreadSemaphore *sem);
+RZ_API void rz_th_sem_wait(RZ_NONNULL RzThreadSemaphore *sem);
 
-RZ_API RzThreadLock *rz_th_lock_new(bool recursive);
-RZ_API int rz_th_lock_wait(RzThreadLock *th);
-RZ_API int rz_th_lock_tryenter(RzThreadLock *thl);
-RZ_API int rz_th_lock_enter(RzThreadLock *thl);
-RZ_API int rz_th_lock_leave(RzThreadLock *thl);
-RZ_API void *rz_th_lock_free(RzThreadLock *thl);
+RZ_API RZ_OWN RzThreadLock *rz_th_lock_new(bool recursive);
+RZ_API bool rz_th_lock_tryenter(RZ_NONNULL RzThreadLock *thl);
+RZ_API void rz_th_lock_enter(RZ_NONNULL RzThreadLock *thl);
+RZ_API void rz_th_lock_leave(RZ_NONNULL RzThreadLock *thl);
+RZ_API void rz_th_lock_free(RZ_NULLABLE RzThreadLock *thl);
 
-RZ_API RzThreadCond *rz_th_cond_new(void);
-RZ_API void rz_th_cond_signal(RzThreadCond *cond);
-RZ_API void rz_th_cond_signal_all(RzThreadCond *cond);
-RZ_API void rz_th_cond_wait(RzThreadCond *cond, RzThreadLock *lock);
-RZ_API void rz_th_cond_free(RzThreadCond *cond);
+RZ_API RZ_OWN RzThreadCond *rz_th_cond_new(void);
+RZ_API void rz_th_cond_signal(RZ_NONNULL RzThreadCond *cond);
+RZ_API void rz_th_cond_signal_all(RZ_NONNULL RzThreadCond *cond);
+RZ_API void rz_th_cond_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLock *lock);
+RZ_API void rz_th_cond_free(RZ_NULLABLE RzThreadCond *cond);
 
 RZ_API size_t rz_th_physical_core_number();
 RZ_API RZ_OWN RzThreadPool *rz_th_pool_new(size_t max_threads);
 RZ_API void rz_th_pool_free(RZ_NULLABLE RzThreadPool *pool);
 RZ_API bool rz_th_pool_add_thread(RZ_NONNULL RzThreadPool *pool, RZ_NONNULL RzThread *thread);
-RZ_API RZ_OWN RzThread *rz_th_pool_get_thread(RZ_NONNULL RzThreadPool *pool, size_t index);
+RZ_API RZ_BORROW RzThread *rz_th_pool_get_thread(RZ_NONNULL RzThreadPool *pool, size_t index);
 RZ_API bool rz_th_pool_wait(RZ_NONNULL RzThreadPool *pool);
 RZ_API bool rz_th_pool_kill(RZ_NONNULL RzThreadPool *pool);
 RZ_API size_t rz_th_pool_size(RZ_NULLABLE RzThreadPool *pool);
@@ -66,8 +69,8 @@ RZ_API size_t rz_th_pool_size(RZ_NULLABLE RzThreadPool *pool);
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzListFree qfree);
 RZ_API void rz_th_queue_free(RZ_NULLABLE RzThreadQueue *queue);
 RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *user, bool tail);
-RZ_API void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
-RZ_API void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
+RZ_API RZ_OWN void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
+RZ_API RZ_OWN void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
 RZ_API bool rz_th_queue_is_empty(RZ_NULLABLE RzThreadQueue *queue);
 RZ_API bool rz_th_queue_is_full(RZ_NULLABLE RzThreadQueue *queue);
 

@@ -9,7 +9,8 @@
 #endif
 #define _GNU_SOURCE
 #include <rz_th.h>
-#include "rz_types.h"
+#include <rz_types.h>
+#include <rz_util/rz_assert.h>
 
 #if __WINDOWS__
 #include <rz_windows.h>
@@ -46,6 +47,26 @@
 #define RZ_TH_RET_T  void *
 #else
 #error Threading library only supported for pthread and w32
+#endif
+
+#if __APPLE__
+// Here to avoid polluting mach types macro redefinitions...
+#include <mach/thread_act.h>
+#include <mach/thread_policy.h>
+#endif
+
+#if __APPLE__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __sun
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#endif
+
+#if __sun
+#include <sys/pset.h>
+#endif
+
+#if __HAIKU__
+#include <kernel/scheduler.h>
+#include <OS.h>
 #endif
 
 struct rz_th_sem_t {

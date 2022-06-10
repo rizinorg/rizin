@@ -1,9 +1,10 @@
 // SPDX-FileCopyrightText: 2009-2020 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "thread.h"
 
-RZ_API RzThreadCond *rz_th_cond_new(void) {
+RZ_API RZ_OWN RzThreadCond *rz_th_cond_new(void) {
 	RzThreadCond *cond = RZ_NEW0(RzThreadCond);
 	if (!cond) {
 		return NULL;
@@ -19,7 +20,8 @@ RZ_API RzThreadCond *rz_th_cond_new(void) {
 	return cond;
 }
 
-RZ_API void rz_th_cond_signal(RzThreadCond *cond) {
+RZ_API void rz_th_cond_signal(RZ_NONNULL RzThreadCond *cond) {
+	rz_return_if_fail(cond);
 #if HAVE_PTHREAD
 	pthread_cond_signal(&cond->cond);
 #elif __WINDOWS__
@@ -27,7 +29,8 @@ RZ_API void rz_th_cond_signal(RzThreadCond *cond) {
 #endif
 }
 
-RZ_API void rz_th_cond_signal_all(RzThreadCond *cond) {
+RZ_API void rz_th_cond_signal_all(RZ_NONNULL RzThreadCond *cond) {
+	rz_return_if_fail(cond);
 #if HAVE_PTHREAD
 	pthread_cond_broadcast(&cond->cond);
 #elif __WINDOWS__
@@ -35,7 +38,8 @@ RZ_API void rz_th_cond_signal_all(RzThreadCond *cond) {
 #endif
 }
 
-RZ_API void rz_th_cond_wait(RzThreadCond *cond, RzThreadLock *lock) {
+RZ_API void rz_th_cond_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLock *lock) {
+	rz_return_if_fail(cond);
 #if HAVE_PTHREAD
 	pthread_cond_wait(&cond->cond, &lock->lock);
 #elif __WINDOWS__
@@ -43,7 +47,7 @@ RZ_API void rz_th_cond_wait(RzThreadCond *cond, RzThreadLock *lock) {
 #endif
 }
 
-RZ_API void rz_th_cond_free(RzThreadCond *cond) {
+RZ_API void rz_th_cond_free(RZ_NULLABLE RzThreadCond *cond) {
 	if (!cond) {
 		return;
 	}
