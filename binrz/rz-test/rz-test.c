@@ -51,7 +51,7 @@ typedef struct rz_test_state_t {
 	RzPVector results;
 } RzTestState;
 
-static RzThreadStatus worker_th(RzTestState *state);
+static void *worker_th(RzTestState *state);
 static void print_state(RzTestState *state, ut64 prev_completed);
 static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(RzTestState *state);
@@ -650,7 +650,7 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	pj_end(pj);
 }
 
-static RzThreadStatus worker_th(RzTestState *state) {
+static void *worker_th(RzTestState *state) {
 	rz_th_lock_enter(state->lock);
 	while (true) {
 		if (rz_pvector_empty(&state->queue)) {
@@ -705,7 +705,7 @@ static RzThreadStatus worker_th(RzTestState *state) {
 		rz_th_cond_signal(state->cond);
 	}
 	rz_th_lock_leave(state->lock);
-	return RZ_TH_STATUS_STOP;
+	return NULL;
 }
 
 static void print_diff(const char *actual, const char *expected, const char *regexp) {

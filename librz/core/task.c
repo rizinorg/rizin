@@ -345,7 +345,7 @@ static void task_end(RzCoreTask *t) {
 	rz_core_task_schedule(t, RZ_CORE_TASK_STATE_DONE);
 }
 
-static RzThreadStatus task_run_thread(RzCoreTask *task) {
+static void *task_run_thread(RzCoreTask *task) {
 	RzCoreTaskScheduler *sched = task->sched;
 
 	task_wakeup(task);
@@ -368,7 +368,7 @@ nonstart:
 	}
 
 	tasks_lock_leave(sched, &old_sigset);
-	return RZ_TH_STATUS_STOP;
+	return NULL;
 }
 
 RZ_API void rz_core_task_enqueue(RzCoreTaskScheduler *scheduler, RzCoreTask *task) {
@@ -414,7 +414,7 @@ RZ_API void rz_core_task_enqueue_oneshot(RzCoreTaskScheduler *scheduler, RzCoreT
 
 RZ_API int rz_core_task_run_sync(RzCoreTaskScheduler *scheduler, RzCoreTask *task) {
 	task->thread = NULL;
-	return task_run_thread(task);
+	return task_run_thread(task) != NULL;
 }
 
 /* begin running stuff synchronously on the main task */

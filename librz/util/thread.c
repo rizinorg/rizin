@@ -66,11 +66,7 @@ static RZ_TH_RET_T thread_main_function(void *_th) {
 #endif
 
 	RzThread *th = (RzThread *)_th;
-	RzThreadStatus status = RZ_TH_STATUS_LOOP;
-
-	while (status == RZ_TH_STATUS_LOOP) {
-		status = th->function(th->user);
-	}
+	th->retv = th->function(th->user);
 
 #if HAVE_PTHREAD
 	pthread_exit(NULL);
@@ -97,7 +93,7 @@ RZ_IPI RZ_TH_TID rz_th_self(void) {
  *
  * \return On success returns true, otherwise false
  */
-RZ_API bool rz_th_setname(RZ_NONNULL RzThread *th, RZ_NONNULL const char *name) {
+RZ_API bool rz_th_set_name(RZ_NONNULL RzThread *th, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(th && name, false);
 
 #if defined(HAVE_PTHREAD_NP) && HAVE_PTHREAD_NP
@@ -139,7 +135,7 @@ RZ_API bool rz_th_setname(RZ_NONNULL RzThread *th, RZ_NONNULL const char *name) 
  *
  * \return On success returns true, otherwise false
  */
-RZ_API bool rz_th_getname(RZ_NONNULL RzThread *th, RZ_NONNULL RZ_OUT char *name, size_t len) {
+RZ_API bool rz_th_get_name(RZ_NONNULL RzThread *th, RZ_NONNULL RZ_OUT char *name, size_t len) {
 	rz_return_val_if_fail(th && name && len > 0, false);
 
 #if defined(HAVE_PTHREAD_NP) && HAVE_PTHREAD_NP
@@ -175,7 +171,7 @@ RZ_API bool rz_th_getname(RZ_NONNULL RzThread *th, RZ_NONNULL RZ_OUT char *name,
  *
  * \return On success returns true, otherwise false.
  */
-RZ_API bool rz_th_setaffinity(RZ_NONNULL RzThread *th, int cpuid) {
+RZ_API bool rz_th_set_affinity(RZ_NONNULL RzThread *th, int cpuid) {
 	rz_return_val_if_fail(th, false);
 
 #if __linux__
@@ -353,6 +349,18 @@ RZ_API void rz_th_kill_free(RZ_NONNULL RzThread *th) {
 RZ_API RZ_OWN void *rz_th_get_user(RZ_NONNULL RzThread *th) {
 	rz_return_val_if_fail(th, NULL);
 	return th->user;
+}
+
+/**
+ * \brief Returns return value of the thread
+ *
+ * \param  th The thread to get the return value from
+ *
+ * \return returns a pointer set when the thread returns
+ */
+RZ_API RZ_OWN void *rz_th_get_retv(RZ_NONNULL RzThread *th) {
+	rz_return_val_if_fail(th, NULL);
+	return th->retv;
 }
 
 /**
@@ -672,4 +680,36 @@ RZ_API void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail) {
 	}
 	rz_th_lock_leave(queue->lock);
 	return user;
+}
+
+/**
+ * \brief  Returns true if the queue is empty (thread-safe)
+ *
+ * \param  queue The RzThreadQueue to check
+ *
+ * \return When empty returns true, otherwise false
+ */
+RZ_API bool rz_th_queue_is_empty(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_val_if_fail(queue, NULL);
+
+	rz_th_lock_enter(queue->lock);
+	bool is_empty = rz_list_empty(queue->list);
+	rz_th_lock_leave(queue->lock);
+	return is_empty;
+}
+
+/**
+ * \brief  Returns true if the queue is full and when the size is not RZ_THREAD_QUEUE_UNLIMITED (thread-safe)
+ *
+ * \param  queue The RzThreadQueue to check
+ *
+ * \return When full returns true, otherwise false
+ */
+RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_val_if_fail(queue, NULL);
+
+	rz_th_lock_enter(queue->lock);
+	bool is_full = queue->max_size != RZ_THREAD_QUEUE_UNLIMITED && rz_list_length(queue->list) >= queue->max_size;
+	rz_th_lock_leave(queue->lock);
+	return is_full;
 }

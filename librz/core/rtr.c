@@ -849,11 +849,13 @@ static bool rz_core_rtr_rap_run(RzCore *core, const char *input) {
 	// rz_core_cmdf (core, "o rap://%s", input);
 }
 
-static RzThreadStatus rz_core_rtr_rap_thread(RapThread *rt) {
+static void *rz_core_rtr_rap_thread(RapThread *rt) {
 	if (!rt || !rt->core) {
 		return false;
 	}
-	return rz_core_rtr_rap_run(rt->core, rt->input) ? RZ_TH_STATUS_LOOP : RZ_TH_STATUS_STOP;
+	while (rz_core_rtr_rap_run(rt->core, rt->input))
+		;
+	return NULL;
 }
 
 RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
@@ -888,8 +890,8 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 				// RapThread rt = { core, strdup (input + 1) };
 				rapthread = rz_th_new((RzThreadFunction)rz_core_rtr_rap_thread, rap_th);
 				int cpuaff = (int)rz_config_get_i(core->config, "cfg.cpuaffinity");
-				rz_th_setaffinity(rapthread, cpuaff);
-				rz_th_setname(rapthread, "rapthread");
+				rz_th_set_affinity(rapthread, cpuaff);
+				rz_th_set_name(rapthread, "rapthread");
 				eprintf("Background rap server started.\n");
 			}
 		}

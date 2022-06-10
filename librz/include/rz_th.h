@@ -15,29 +15,25 @@ extern "C" {
 #define RZ_THREAD_POOL_ALL_CORES  (0)
 #define RZ_THREAD_QUEUE_UNLIMITED (0)
 
-typedef enum {
-	RZ_TH_STATUS_STOP = 0, ///< To return to terminate the RzThreadFunction execution
-	RZ_TH_STATUS_LOOP = 1, ///< To return to execute multiple times the RzThreadFunction
-} RzThreadStatus;
-
 typedef struct rz_th_sem_t RzThreadSemaphore;
 typedef struct rz_th_lock_t RzThreadLock;
 typedef struct rz_th_cond_t RzThreadCond;
 typedef struct rz_th_t RzThread;
 typedef struct rz_th_pool_t RzThreadPool;
 typedef struct rz_th_queue_t RzThreadQueue;
-typedef RzThreadStatus (*RzThreadFunction)(void *user);
+typedef void *(*RzThreadFunction)(void *user);
 
 #ifdef RZ_API
 RZ_API RZ_OWN RzThread *rz_th_new(RZ_NONNULL RzThreadFunction function, RZ_NULLABLE void *user);
 RZ_API RZ_OWN void *rz_th_get_user(RZ_NONNULL RzThread *th);
+RZ_API void *rz_th_get_retv(RZ_NONNULL RzThread *th);
 RZ_API bool rz_th_wait(RZ_NONNULL RzThread *th);
 RZ_API void rz_th_free(RZ_NULLABLE RzThread *th);
 RZ_API void rz_th_kill(RZ_NONNULL RzThread *th);
 RZ_API void rz_th_kill_free(RZ_NONNULL RzThread *th);
-RZ_API bool rz_th_setname(RZ_NONNULL RzThread *th, RZ_NONNULL const char *name);
-RZ_API bool rz_th_getname(RZ_NONNULL RzThread *th, RZ_NONNULL RZ_OUT char *name, size_t len);
-RZ_API bool rz_th_setaffinity(RZ_NONNULL RzThread *th, int cpuid);
+RZ_API bool rz_th_set_name(RZ_NONNULL RzThread *th, RZ_NONNULL const char *name);
+RZ_API bool rz_th_get_name(RZ_NONNULL RzThread *th, RZ_NONNULL RZ_OUT char *name, size_t len);
+RZ_API bool rz_th_set_affinity(RZ_NONNULL RzThread *th, int cpuid);
 RZ_API bool rz_th_yield(void);
 
 RZ_API RzThreadSemaphore *rz_th_sem_new(unsigned int initial);
@@ -71,6 +67,9 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzList
 RZ_API void rz_th_queue_free(RZ_NULLABLE RzThreadQueue *queue);
 RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *user, bool tail);
 RZ_API void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
+RZ_API void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
+RZ_API bool rz_th_queue_is_empty(RZ_NULLABLE RzThreadQueue *queue);
+RZ_API bool rz_th_queue_is_full(RZ_NULLABLE RzThreadQueue *queue);
 
 #endif
 

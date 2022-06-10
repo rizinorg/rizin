@@ -64,6 +64,7 @@ struct rz_th_t {
 	RZ_TH_TID tid; ///< Thread identifier.
 	RzThreadFunction function; ///< User defined thread function.
 	void *user; ///< User defined thread data to pass (can be NULL).
+	void *retv; ///< Thread return value.
 };
 
 RZ_IPI RZ_TH_TID rz_th_self(void);

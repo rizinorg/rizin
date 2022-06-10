@@ -205,7 +205,7 @@ static int basefind_score_compare(const RzBaseFindScore *a, const RzBaseFindScor
 	return 1;
 }
 
-static RzThreadStatus basefind_thread_runner(BaseFindThreadData *bftd) {
+static void *basefind_thread_runner(BaseFindThreadData *bftd) {
 	RzBaseFindScore *pair = NULL;
 	BaseFindData bfd;
 	ut64 base;
@@ -246,12 +246,12 @@ static RzThreadStatus basefind_thread_runner(BaseFindThreadData *bftd) {
 	}
 	bftd->current = base;
 
-	return RZ_TH_STATUS_STOP;
+	return NULL;
 }
 
 // this thread does not care about thread-safety since it only prints
 // data that will always be available during its lifetime.
-static RzThreadStatus basefind_thread_cons(BaseFindThreadCons *th_cons) {
+static void *basefind_thread_cons(BaseFindThreadCons *th_cons) {
 	bool progress = th_cons->progress;
 	RzThreadPool *pool = th_cons->pool;
 	size_t pool_size = rz_th_pool_size(pool);
@@ -281,7 +281,7 @@ static RzThreadStatus basefind_thread_cons(BaseFindThreadCons *th_cons) {
 			break;
 		}
 	} while (1);
-	return RZ_TH_STATUS_STOP;
+	return NULL;
 }
 
 static inline bool create_thread_interval(RzThreadPool *pool, BaseFindThreadData *bfd) {
