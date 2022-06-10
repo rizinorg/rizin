@@ -103,6 +103,7 @@ NAME=: Triage Dump Debug x64
 FILE=dmp://bins/dmp/triage_x64.dmp
 CMDS=<<EOF
 %RZ_CURL=1
+e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
 e cfg.debug=1
 iH
 dl dmp
@@ -230,6 +231,7 @@ NAME=: Triage Dump Debug arm64
 FILE=dmp://bins/dmp/triage_arm64.dmp
 CMDS=<<EOF
 %RZ_CURL=1
+e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
 e cfg.debug=1
 iH
 dl dmp
@@ -342,6 +344,7 @@ NAME=: Bitmap Dump Debug
 FILE=dmp://bins/dmp/bmp.dmp
 CMDS=<<EOF
 %RZ_CURL=1
+e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
 iH
 dl dmp
 dpa
