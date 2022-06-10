@@ -489,20 +489,23 @@ the_end : {
 }
 
 #if 0
-static RzThreadStatus rz_core_rtr_http_thread (HttpThread *ht) {
+static void *rz_core_rtr_http_thread (HttpThread *ht) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	int ret = rz_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
-	RZ_FREE (ht->path);
-	if (ret) {
-		int p = rz_config_get_i (ht->core->config, "http.port");
-		rz_config_set_i (ht->core->config, "http.port",  p + 1);
-		if (p >= rz_config_get_i (ht->core->config, "http.maxport")) {
-			return RZ_TH_STATUS_STOP;
+	int ret = 0;
+	do {
+		ret = rz_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
+		RZ_FREE (ht->path);
+		if (ret) {
+			int p = rz_config_get_i (ht->core->config, "http.port");
+			rz_config_set_i (ht->core->config, "http.port",  p + 1);
+			if (p >= rz_config_get_i (ht->core->config, "http.maxport")) {
+				break;
+			}
 		}
-	}
-	return ret ? RZ_TH_STATUS_REPEAT : RZ_TH_STATUS_STOP;
+	} while(ret);
+	return NULL;
 }
 #endif
 

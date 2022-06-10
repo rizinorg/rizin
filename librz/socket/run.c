@@ -719,12 +719,12 @@ static int redirect_socket_to_stdio(RzSocket *sock) {
 }
 
 #if __WINDOWS__
-static RzThreadStatus exit_process(void *user) {
+static void *exit_process(void *user) {
 	int timeout = (int)(void *)user;
 	rz_sys_sleep(timeout);
 	// eprintf ("\nrz_run: Interrupted by timeout\n");
 	exit(0);
-	return RZ_TH_STATUS_STOP;
+	return NULL;
 }
 #endif
 
