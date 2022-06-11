@@ -4,6 +4,13 @@
 
 #include "thread.h"
 
+/**
+ * \brief Allocates and initialize a RzThreadLock structure.
+ *
+ * \param   recursive  Set it to true for recursive locking (on windows, all the locks are always recursive).
+ *
+ * \return  On success returns a valid pointer, otherwise NULL
+ */
 RZ_API RZ_OWN RzThreadLock *rz_th_lock_new(bool recursive) {
 	RzThreadLock *thl = RZ_NEW0(RzThreadLock);
 	if (!thl) {
@@ -30,6 +37,11 @@ RZ_API RZ_OWN RzThreadLock *rz_th_lock_new(bool recursive) {
 	return thl;
 }
 
+/**
+ * \brief  Acquires a RzThreadLock structure
+ *
+ * \param  thl   The RzThreadLock to acquire
+ */
 RZ_API void rz_th_lock_enter(RZ_NONNULL RzThreadLock *thl) {
 	rz_return_if_fail(thl);
 #if HAVE_PTHREAD
@@ -39,6 +51,13 @@ RZ_API void rz_th_lock_enter(RZ_NONNULL RzThreadLock *thl) {
 #endif
 }
 
+/**
+ * \brief  Tries to acquire a RzThreadLock structure
+ *
+ * \param  thl   The RzThreadLock to try to acquire
+ *
+ * \return  On success returns true, otherwise false
+ */
 RZ_API bool rz_th_lock_tryenter(RZ_NONNULL RzThreadLock *thl) {
 	rz_return_val_if_fail(thl, false);
 #if HAVE_PTHREAD
@@ -48,6 +67,11 @@ RZ_API bool rz_th_lock_tryenter(RZ_NONNULL RzThreadLock *thl) {
 #endif
 }
 
+/**
+ * \brief  Releases a RzThreadLock structure
+ *
+ * \param  thl   The RzThreadLock to release
+ */
 RZ_API void rz_th_lock_leave(RZ_NONNULL RzThreadLock *thl) {
 	rz_return_if_fail(thl);
 #if HAVE_PTHREAD
@@ -57,6 +81,11 @@ RZ_API void rz_th_lock_leave(RZ_NONNULL RzThreadLock *thl) {
 #endif
 }
 
+/**
+ * \brief  Frees a RzThreadLock structure
+ *
+ * \param  thl   The RzThreadLock to free
+ */
 RZ_API void rz_th_lock_free(RZ_NULLABLE RzThreadLock *thl) {
 	if (!thl) {
 		return;
