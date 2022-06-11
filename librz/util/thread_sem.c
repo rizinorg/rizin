@@ -16,6 +16,13 @@
 #include <limits.h>
 #endif
 
+/**
+ * \brief  Allocates and initialize a RzThreadSemaphore structure
+ *
+ * \param  initial  The initial status of the semaphore
+ *
+ * \return On success returns a valid RzThreadSemaphore pointer, otherwise NULL
+ */
 RZ_API RZ_OWN RzThreadSemaphore *rz_th_sem_new(unsigned int initial) {
 	RzThreadSemaphore *sem = RZ_NEW(RzThreadSemaphore);
 	if (!sem) {
@@ -58,6 +65,11 @@ RZ_API RZ_OWN RzThreadSemaphore *rz_th_sem_new(unsigned int initial) {
 	return sem;
 }
 
+/**
+ * \brief  Frees a RzThreadSemaphore struct
+ *
+ * \param  sem  The RzThreadSemaphore to free
+ */
 RZ_API void rz_th_sem_free(RZ_NULLABLE RzThreadSemaphore *sem) {
 	if (!sem) {
 		return;
@@ -77,6 +89,11 @@ RZ_API void rz_th_sem_free(RZ_NULLABLE RzThreadSemaphore *sem) {
 	free(sem);
 }
 
+/**
+ * \brief  increments (releases) a semaphore
+ *
+ * \param  sem   The RzThreadSemaphore to increment (release)
+ */
 RZ_API void rz_th_sem_post(RZ_NONNULL RzThreadSemaphore *sem) {
 	rz_return_if_fail(sem);
 #if HAVE_PTHREAD
@@ -86,6 +103,11 @@ RZ_API void rz_th_sem_post(RZ_NONNULL RzThreadSemaphore *sem) {
 #endif
 }
 
+/**
+ * \brief  Decrements (acquires) the semaphore (waits indefinetely)
+ *
+ * \param  sem   The RzThreadSemaphore to decrement (acquire)
+ */
 RZ_API void rz_th_sem_wait(RZ_NONNULL RzThreadSemaphore *sem) {
 	rz_return_if_fail(sem);
 #if HAVE_PTHREAD
