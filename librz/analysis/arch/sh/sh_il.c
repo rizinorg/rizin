@@ -1037,7 +1037,7 @@ static RzILOpEffect *sh_il_shad(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *shl = SHIFTL0(VARL("op2"), shift_amount);
 	RzILOpPure *shr = SHIFTRA(VARL("op2"), SUB(UN(5, 32), DUP(shift_amount)));
 
-	return BRANCH(SGE(VARL("op1"), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr));
+	return SEQ3(op1, op2, BRANCH(SGE(VARL("op1"), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr)));
 }
 
 /**
@@ -1066,7 +1066,7 @@ static RzILOpEffect *sh_il_shld(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *shl = SHIFTL0(VARL("op2"), shift_amount);
 	RzILOpPure *shr = SHIFTR0(VARL("op2"), SUB(UN(5, 32), DUP(shift_amount)));
 
-	return BRANCH(SGE(VARL("op1"), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr));
+	return SEQ3(op1, op2, BRANCH(SGE(VARL("op1"), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr)));
 }
 
 /**
@@ -1208,6 +1208,31 @@ static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return NOP();
 }
 
+/**
+ * LDS  Rm, REG
+ * REG := MACH/MACL/PR
+ * Rm -> REG
+ *
+ * LDS.L  @Rm+, REG
+ * REG := MACH/MACL/PR
+ * (Rm) -> REG ; Rm + 4 -> Rm
+ */
+static RzILOpEffect *sh_il_lds(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	if (op->scaling == SH_SCALING_INVALID) {
+		return sh_il_set_param(op->param[1], sh_il_get_pure_param(0), op->scaling);
+	} else if (op->scaling == SH_SCALING_L) {
+		SHParamHelper rm = sh_il_get_param(op->param[0], op->scaling);
+		return SEQ2(rm.post, sh_il_set_param(op->param[1], rm.pure, op->scaling));
+	}
+	return NOP();
+}
+
+// TODO: Implement LDTLB, MOVCA.L, OCBI, OCBP, OCBWB, PREF
+
+static RzILOpEffect *sh_il_nop(SHOp * op, ut64 pc, RzAnalysis *analysis) {
+	return NOP();
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
@@ -1270,5 +1295,7 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_clrmac,
 	sh_il_clrs,
 	sh_il_clrt,
-	sh_il_ldc
+	sh_il_ldc,
+	sh_il_lds,
+	sh_il_nop
 };
