@@ -815,8 +815,10 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 
+/* cbin.c */
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);
-
+RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile);
+RZ_API const char *rz_core_bin_get_compile_time(RzBinFile *bf);
 RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, int fd, ut64 baseaddr, ut64 loadaddr);
 RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);

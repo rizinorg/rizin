@@ -73,7 +73,6 @@ static char *__filterQuotedShell(const char *arg) {
 }
 
 #define STR(x) (x) ? (x) : ""
-RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile);
 
 static ut64 rva(RzBinObject *o, ut64 paddr, ut64 vaddr, int va) {
 	if (va == VA_TRUE) {
@@ -1692,7 +1691,8 @@ static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile
 	return rz_bin_get_strings(r->bin);
 }
 
-static const char *get_compile_time(Sdb *binFileSdb) {
+RZ_API const char *rz_core_bin_get_compile_time(RzBinFile *bf) {
+	Sdb *binFileSdb = bf->sdb;
 	Sdb *info_ns = sdb_ns(binFileSdb, "info", false);
 	const char *timeDateStamp_string = sdb_const_get(info_ns,
 		"image_file_header.TimeDateStamp_string", 0);
@@ -2994,7 +2994,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 	int bits;
 
 	havecode = is_executable(obj) | (obj->entries != NULL);
-	compiled = get_compile_time(bf->sdb);
+	compiled = rz_core_bin_get_compile_time(bf);
 	bits = (plugin && !strcmp(plugin->name, "any")) ? rz_config_get_i(core->config, "asm.bits") : info->bits;
 	const char *endian = info->big_endian ? "BE" : "LE";
 
