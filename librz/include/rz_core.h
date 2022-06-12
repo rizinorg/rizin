@@ -773,6 +773,10 @@ RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL
 RZ_API bool rz_core_analysis_continue_until_syscall(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core);
 
+RZ_API st64 rz_core_analysis_coverage_count(RzCore *core);
+RZ_API st64 rz_core_analysis_code_count(RzCore *core);
+RZ_API st64 rz_core_analysis_calls_count(RzCore *core);
+
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
 

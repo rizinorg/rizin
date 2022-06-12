@@ -3419,57 +3419,6 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 	}
 }
 
-static st64 compute_coverage(RzCore *core) {
-	RzListIter *iter;
-	RzAnalysisFunction *fcn;
-	st64 cov = 0;
-	cov += rz_meta_get_size(core->analysis, RZ_META_TYPE_DATA);
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		void **it;
-		RzPVector *maps = rz_io_maps(core->io);
-		rz_pvector_foreach (maps, it) {
-			RzIOMap *map = *it;
-			if (map->perm & RZ_PERM_X) {
-				ut64 section_end = map->itv.addr + map->itv.size;
-				ut64 s = rz_analysis_function_realsize(fcn);
-				if (fcn->addr >= map->itv.addr && (fcn->addr + s) < section_end) {
-					cov += s;
-				}
-			}
-		}
-	}
-	return cov;
-}
-
-static st64 compute_code(RzCore *core) {
-	st64 code = 0;
-	void **it;
-	RzPVector *maps = rz_io_maps(core->io);
-	rz_pvector_foreach (maps, it) {
-		RzIOMap *map = *it;
-		if (map->perm & RZ_PERM_X) {
-			code += map->itv.size;
-		}
-	}
-	return code;
-}
-
-static st64 compute_calls(RzCore *core) {
-	RzListIter *iter;
-	RzAnalysisFunction *fcn;
-	RzList *xrefs;
-	st64 cov = 0;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		xrefs = rz_analysis_function_get_xrefs_from(fcn);
-		if (xrefs) {
-			cov += rz_list_length(xrefs);
-			rz_list_free(xrefs);
-			xrefs = NULL;
-		}
-	}
-	return cov;
-}
-
 static bool analysis_fcn_data(RzCore *core, const char *input) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ANY);
 	if (fcn) {
@@ -7834,9 +7783,9 @@ RZ_IPI RzCmdStatus rz_print_analysis_details_handler(RzCore *core, int argc, con
 	st64 syms = rz_flag_count(core->flags, "sym.*");
 	st64 imps = rz_flag_count(core->flags, "sym.imp.*");
 	st64 sigs = rz_flag_count(core->flags, "flirt.*");
-	st64 code = compute_code(core);
-	st64 covr = compute_coverage(core);
-	st64 call = compute_calls(core);
+	st64 code = rz_core_analysis_code_count(core);
+	st64 covr = rz_core_analysis_coverage_count(core);
+	st64 call = rz_core_analysis_calls_count(core);
 	st64 xrfs = rz_analysis_xrefs_count(core->analysis);
 	double precentage = (code > 0) ? (covr * 100.0 / code) : 0;
 
