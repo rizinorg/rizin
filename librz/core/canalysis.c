@@ -7059,3 +7059,54 @@ RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core) {
 	rz_analysis_op_free(op);
 	return true;
 }
+
+RZ_API st64 rz_core_analysis_coverage_count(RzCore *core) {
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	st64 cov = 0;
+	cov += rz_meta_get_size(core->analysis, RZ_META_TYPE_DATA);
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		void **it;
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
+			RzIOMap *map = *it;
+			if (map->perm & RZ_PERM_X) {
+				ut64 section_end = map->itv.addr + map->itv.size;
+				ut64 s = rz_analysis_function_realsize(fcn);
+				if (fcn->addr >= map->itv.addr && (fcn->addr + s) < section_end) {
+					cov += s;
+				}
+			}
+		}
+	}
+	return cov;
+}
+
+RZ_API st64 rz_core_analysis_code_count(RzCore *core) {
+	st64 code = 0;
+	void **it;
+	RzPVector *maps = rz_io_maps(core->io);
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		if (map->perm & RZ_PERM_X) {
+			code += map->itv.size;
+		}
+	}
+	return code;
+}
+
+RZ_API st64 rz_core_analysis_calls_count(RzCore *core) {
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	RzList *xrefs;
+	st64 cov = 0;
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		xrefs = rz_analysis_function_get_xrefs_from(fcn);
+		if (xrefs) {
+			cov += rz_list_length(xrefs);
+			rz_list_free(xrefs);
+			xrefs = NULL;
+		}
+	}
+	return cov;
+}
