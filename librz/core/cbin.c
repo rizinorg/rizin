@@ -2799,8 +2799,8 @@ RZ_API bool rz_core_bin_strings_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 	return strings_print(core, state, list);
 }
 
-RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && state, false);
+RZ_API RzList *rz_core_bin_whole_strings(RzCore *core, RzBinFile *bf) {
+	rz_return_val_if_fail(core, false);
 
 	bool new_bf = false;
 	if (bf && strstr(bf->file, "malloc://")) {
@@ -2842,13 +2842,20 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 	}
 	size_t min = rz_config_get_i(core->config, "bin.minstr");
 	RzList *l = rz_bin_file_strings(bf, min, true);
-	bool res = strings_print(core, state, l);
-	rz_list_free(l);
 	if (new_bf) {
 		rz_buf_free(bf->buf);
 		free(bf->file);
 		free(bf);
 	}
+	return l;
+}
+
+RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && state, false);
+
+	RzList *l = rz_core_bin_whole_strings(core, bf);
+	bool res = strings_print(core, state, l);
+	rz_list_free(l);
 	return res;
 }
 
