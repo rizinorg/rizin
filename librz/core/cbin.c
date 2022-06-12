@@ -1312,20 +1312,7 @@ static char *construct_symbol_flagname(const char *pfx, const char *libname, con
 	return R;
 }
 
-typedef struct {
-	const char *pfx; // prefix for flags
-	char *name; // raw symbol name
-	char *libname; // name of the lib this symbol is specific to, if any
-	char *nameflag; // flag name for symbol
-	char *demname; // demangled raw symbol name
-	char *demflag; // flag name for demangled symbol
-	char *classname; // classname
-	char *classflag; // flag for classname
-	char *methname; // methods [class]::[method]
-	char *methflag; // methods flag sym.[class].[method]
-} SymName;
-
-static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
+RZ_API void rz_core_sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
 	if (!r || !sym || !sym->name) {
 		return;
 	}
@@ -1359,10 +1346,21 @@ static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *
 			sn->demflag = construct_symbol_flagname(pfx, sym->libname, sn->demname, -1);
 		}
 	}
+
+	RzStrEscOptions opt = {};
+	opt.show_asciidot = false;
+	opt.esc_bslash = true;
+	sn->rz_symbol_name = rz_str_escape_utf8(sn->demname ? sn->demname : sn->name, &opt);
+	if (r->bin->prefix) {
+		char *tmp = rz_str_newf("%s.%s", r->bin->prefix, sn->rz_symbol_name);
+		free(sn->rz_symbol_name);
+		sn->rz_symbol_name = tmp;
+	}
 }
 
-static void sym_name_fini(SymName *sn) {
+RZ_API void rz_core_sym_name_fini(SymName *sn) {
 	RZ_FREE(sn->name);
+	RZ_FREE(sn->rz_symbol_name);
 	RZ_FREE(sn->libname);
 	RZ_FREE(sn->nameflag);
 	RZ_FREE(sn->demname);
@@ -1462,7 +1460,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
 		SymName sn = { 0 };
 		count++;
-		sym_name_init(core, &sn, symbol, lang);
+		rz_core_sym_name_init(core, &sn, symbol, lang);
 		RzStrEscOptions opt = { 0 };
 		opt.show_asciidot = false;
 		opt.esc_bslash = true;
@@ -1526,7 +1524,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			}
 			rz_flag_space_pop(core->flags);
 		}
-		sym_name_fini(&sn);
+		rz_core_sym_name_fini(&sn);
 		free(rz_symbol_name);
 	}
 
@@ -1896,7 +1894,7 @@ RZ_API bool rz_core_bin_entries_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 	return entries_initfini_print(core, bf, state, false);
 }
 
-static bool isAnExport(RzBinSymbol *s) {
+RZ_API bool rz_core_sym_is_export(RzBinSymbol *s) {
 	/* workaround for some RzBinPlugins */
 	if (s->is_imported) {
 		return false;
@@ -1930,7 +1928,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 		if (!symbol->name) {
 			continue;
 		}
-		if (only_export && !isAnExport(symbol)) {
+		if (only_export && !rz_core_sym_is_export(symbol)) {
 			continue;
 		}
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
@@ -1946,16 +1944,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 		}
 
 		SymName sn = { 0 };
-		sym_name_init(core, &sn, symbol, lang);
-		RzStrEscOptions opt = { 0 };
-		opt.show_asciidot = false;
-		opt.esc_bslash = true;
-		char *rz_symbol_name = rz_str_escape_utf8(sn.demname ? sn.demname : sn.name, &opt);
-		if (core->bin->prefix) {
-			char *tmp = rz_str_newf("%s.%s", core->bin->prefix, rz_symbol_name);
-			free(rz_symbol_name);
-			rz_symbol_name = tmp;
-		}
+		rz_core_sym_name_init(core, &sn, symbol, lang);
 		ut64 size = symbol->size;
 
 		char addr_value[20];
@@ -1970,14 +1959,14 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			rz_cons_printf("%s %" PFMT64u " %s%s%s\n",
 				addr_value, size,
 				sn.libname ? sn.libname : "", sn.libname ? " " : "",
-				rz_symbol_name);
+				sn.rz_symbol_name);
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:
-			rz_cons_printf("%s\n", rz_symbol_name);
+			rz_cons_printf("%s\n", sn.rz_symbol_name);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
-			pj_ks(state->d.pj, "name", rz_symbol_name);
+			pj_ks(state->d.pj, "name", sn.rz_symbol_name);
 			if (sn.demname) {
 				pj_ks(state->d.pj, "demname", sn.demname);
 			}
@@ -2006,14 +1995,13 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 				symbol->type ? symbol->type : "NONE",
 				size,
 				rz_str_get(symbol->libname),
-				rz_str_get_null(rz_symbol_name));
+				rz_str_get_null(sn.rz_symbol_name));
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
-		sym_name_fini(&sn);
-		free(rz_symbol_name);
+		rz_core_sym_name_fini(&sn);
 	}
 	rz_cmd_state_output_array_end(state);
 	return true;

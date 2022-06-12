@@ -418,6 +418,20 @@ RZ_API void rz_core_item_free(RzCoreItem *ci);
 
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
+typedef struct sym_name_t {
+	const char *pfx; // prefix for flags
+	char *name; // raw symbol name
+	char *rz_symbol_name;
+	char *libname; // name of the lib this symbol is specific to, if any
+	char *nameflag; // flag name for symbol
+	char *demname; // demangled raw symbol name
+	char *demflag; // flag name for demangled symbol
+	char *classname; // classname
+	char *classflag; // flag for classname
+	char *methname; // methods [class]::[method]
+	char *methflag; // methods flag sym.[class].[method]
+} SymName;
+
 #ifdef RZ_API
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
 
@@ -850,6 +864,10 @@ RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 si
 
 RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzCmdStateOutput *state);
 RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzCmdStateOutput *state);
+
+RZ_API bool rz_core_sym_is_export(RzBinSymbol *s);
+RZ_API void rz_core_sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang);
+RZ_API void rz_core_sym_name_fini(SymName *sn);
 
 // bin_dwarf
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);
