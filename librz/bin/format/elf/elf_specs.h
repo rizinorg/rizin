@@ -201,6 +201,7 @@
 #define EM_MOXIE            223 /* Moxie processor family */
 #define EM_AMDGPU           224 /* AMD GPU architecture */
 #define EM_RISCV            243 /* RISC-V */
+#define EM_KVX              256 /* Kalray VLIW core of the MPPA processor family */
 
 // specific OpenBSD sections
 #ifndef PT_OPENBSD_RANDOMIZE
