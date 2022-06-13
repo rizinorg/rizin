@@ -219,7 +219,8 @@ static const struct machine_name_translation machine_name_translation_table[] = 
 	{ EM_FT32, "FTDI Chip FT32 high performance 32-bit RISC architecture" },
 	{ EM_MOXIE, "Moxie processor family" },
 	{ EM_AMDGPU, "AMD GPU architecture" },
-	{ EM_BPF, "Linux BPF" }
+	{ EM_BPF, "Linux BPF" },
+	{ EM_KVX, "Kalray VLIW core of the MPPA processor family" },
 };
 
 static const struct class_translation class_translation_table[] = {
@@ -281,7 +282,8 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_386, "x86" },
 	{ EM_X86_64, "x86" },
 	{ EM_NONE, "null" },
-	{ EM_BPF, "bpf" }
+	{ EM_BPF, "bpf" },
+	{ EM_KVX, "kvx" },
 };
 
 static const struct ver_flags_translation ver_flags_translation_table[] = {
