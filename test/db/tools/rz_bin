@@ -173,7 +173,7 @@ NAME=rz-bin -zz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rz-bin -zz ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
-102 0x00002619 0x00404019 10 11 (.rdata) ascii Password: 
+086 0x00002619 0x00404019 10 11 (.rdata) ascii Password: 
 EOF
 RUN
 
