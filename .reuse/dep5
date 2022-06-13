@@ -201,7 +201,7 @@ License: LGPL-3.0-only
 
 Files: librz/include/sflib/*
 Copyright: 2004 Philippe Biondi <phil@secdev.org>
-License: GPL-2.0-only
+License: LGPL-3.0-only
 
 Files: librz/io/README
 Copyright: pancake <pancake@nopcode.org>

@@ -4,6 +4,7 @@
 #include <ntstatus.h>
 #define WIN32_NO_STATUS
 #include "windows_debug.h"
+#include "../../common_windows.h"
 #include <w32dbg_wrap.h>
 #undef WIN32_NO_STATUS
 
@@ -274,7 +275,7 @@ int w32_step(RzDebug *dbg) {
 	if (!w32_reg_write(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
 		return false;
 	}
-	return w32_continue(dbg, dbg->pid, dbg->tid, dbg->reason.signum);
+	return w32_continue(dbg, dbg->pid, dbg->tid, 0);
 }
 
 static int get_avx(HANDLE th, ut128 xmm[16], ut128 ymm[16]) {
@@ -971,103 +972,6 @@ void w32_break_process(void *user) {
 	breaked = true;
 }
 
-static RzDebugReasonType exception_to_reason(DWORD ExceptionCode) {
-	switch (ExceptionCode) {
-	case EXCEPTION_ACCESS_VIOLATION:
-	case EXCEPTION_GUARD_PAGE:
-		return RZ_DEBUG_REASON_SEGFAULT;
-	case EXCEPTION_BREAKPOINT:
-		return RZ_DEBUG_REASON_BREAKPOINT;
-	case EXCEPTION_FLT_DENORMAL_OPERAND:
-	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-	case EXCEPTION_FLT_INEXACT_RESULT:
-	case EXCEPTION_FLT_INVALID_OPERATION:
-	case EXCEPTION_FLT_OVERFLOW:
-	case EXCEPTION_FLT_STACK_CHECK:
-	case EXCEPTION_FLT_UNDERFLOW:
-		return RZ_DEBUG_REASON_FPU;
-	case EXCEPTION_ILLEGAL_INSTRUCTION:
-		return RZ_DEBUG_REASON_ILLEGAL;
-	case EXCEPTION_INT_DIVIDE_BY_ZERO:
-		return RZ_DEBUG_REASON_DIVBYZERO;
-	case EXCEPTION_SINGLE_STEP:
-		return RZ_DEBUG_REASON_STEP;
-	default:
-		return RZ_DEBUG_REASON_TRAP;
-	}
-}
-
-static const char *get_exception_name(DWORD ExceptionCode) {
-#define EXCEPTION_STR(x) \
-	case x: return #x
-	switch (ExceptionCode) {
-		EXCEPTION_STR(EXCEPTION_ACCESS_VIOLATION);
-		EXCEPTION_STR(EXCEPTION_ARRAY_BOUNDS_EXCEEDED);
-		EXCEPTION_STR(EXCEPTION_BREAKPOINT);
-		EXCEPTION_STR(EXCEPTION_DATATYPE_MISALIGNMENT);
-		EXCEPTION_STR(EXCEPTION_FLT_DENORMAL_OPERAND);
-		EXCEPTION_STR(EXCEPTION_FLT_DIVIDE_BY_ZERO);
-		EXCEPTION_STR(EXCEPTION_FLT_INEXACT_RESULT);
-		EXCEPTION_STR(EXCEPTION_FLT_INVALID_OPERATION);
-		EXCEPTION_STR(EXCEPTION_FLT_OVERFLOW);
-		EXCEPTION_STR(EXCEPTION_FLT_STACK_CHECK);
-		EXCEPTION_STR(EXCEPTION_FLT_UNDERFLOW);
-		EXCEPTION_STR(EXCEPTION_GUARD_PAGE);
-		EXCEPTION_STR(EXCEPTION_ILLEGAL_INSTRUCTION);
-		EXCEPTION_STR(EXCEPTION_IN_PAGE_ERROR);
-		EXCEPTION_STR(EXCEPTION_INT_DIVIDE_BY_ZERO);
-		EXCEPTION_STR(EXCEPTION_INT_OVERFLOW);
-		EXCEPTION_STR(EXCEPTION_INVALID_DISPOSITION);
-		EXCEPTION_STR(EXCEPTION_INVALID_HANDLE);
-		EXCEPTION_STR(EXCEPTION_NONCONTINUABLE_EXCEPTION);
-		EXCEPTION_STR(EXCEPTION_PRIV_INSTRUCTION);
-		EXCEPTION_STR(EXCEPTION_SINGLE_STEP);
-		EXCEPTION_STR(EXCEPTION_STACK_OVERFLOW);
-		EXCEPTION_STR(STATUS_UNWIND_CONSOLIDATE);
-		EXCEPTION_STR(EXCEPTION_POSSIBLE_DEADLOCK);
-		EXCEPTION_STR(DBG_CONTROL_BREAK);
-		EXCEPTION_STR(CONTROL_C_EXIT);
-	case 0x6ba: return "FILE_DIALOG_EXCEPTION";
-	case 0x406D1388: return "MS_VC_EXCEPTION";
-	default:
-		return "Unknown";
-	}
-#undef EXCEPTION_STR
-}
-
-static bool is_exception_fatal(DWORD ExceptionCode) {
-	switch (ExceptionCode) {
-	case EXCEPTION_ACCESS_VIOLATION:
-	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
-	case EXCEPTION_ILLEGAL_INSTRUCTION:
-	case EXCEPTION_INT_DIVIDE_BY_ZERO:
-	case EXCEPTION_STACK_OVERFLOW:
-	case EXCEPTION_GUARD_PAGE:
-	case EXCEPTION_PRIV_INSTRUCTION:
-	case EXCEPTION_NONCONTINUABLE_EXCEPTION:
-	case EXCEPTION_FLT_STACK_CHECK:
-	case EXCEPTION_IN_PAGE_ERROR:
-		return true;
-	default:
-		return false;
-	}
-}
-
-static void print_exception_event(DEBUG_EVENT *de) {
-	unsigned long code = de->u.Exception.ExceptionRecord.ExceptionCode;
-	bool is_fatal = is_exception_fatal(code);
-	eprintf("(%d) %s Exception %04X (%s) in thread %d\n",
-		(int)de->dwProcessId,
-		is_fatal ? "Fatal" : "Non-fatal",
-		(ut32)code, get_exception_name(code),
-		(int)de->dwThreadId);
-	if (is_fatal && de->u.Exception.dwFirstChance) {
-		eprintf("Hint: Use 'dce' continue into exception handler\n");
-	} else if (is_fatal) {
-		eprintf("Second-chance exception!!!\n");
-	}
-}
-
 int w32_dbg_wait(RzDebug *dbg, int pid) {
 	W32DbgWInst *wrap = dbg->plugin_data;
 	DEBUG_EVENT de;
@@ -1198,6 +1102,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			// XXX unknown ret = RZ_DEBUG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
+			dbg->reason.signum = DBG_EXCEPTION_NOT_HANDLED;
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
 			case DBG_CONTROL_C:
 				eprintf("Received CTRL+C, suspending execution\n");
@@ -1224,10 +1129,11 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 					next_event = 0;
 					break;
 				}
-				print_exception_event(&de);
-				if (is_exception_fatal(de.u.Exception.ExceptionRecord.ExceptionCode)) {
+				EXCEPTION_DEBUG_INFO *exp = &de.u.Exception;
+				windows_print_exception_event(de.dwProcessId, de.dwThreadId, exp->ExceptionRecord.ExceptionCode, exp->dwFirstChance);
+				if (windows_is_exception_fatal(de.u.Exception.ExceptionRecord.ExceptionCode)) {
 					next_event = 0;
-					dbg->reason.type = exception_to_reason(de.u.Exception.ExceptionRecord.ExceptionCode);
+					dbg->reason.type = windows_exception_to_reason(de.u.Exception.ExceptionRecord.ExceptionCode);
 					dbg->reason.tid = de.dwThreadId;
 					dbg->reason.addr = (size_t)de.u.Exception.ExceptionRecord.ExceptionAddress;
 					dbg->reason.timestamp = rz_time_now();

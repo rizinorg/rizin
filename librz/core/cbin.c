@@ -4208,8 +4208,7 @@ static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
 	}
 
 	if (IS_MODE_JSON(mode)) {
-		pj_o(pj);
-		pj_ka(pj, "versym");
+		pj_ka(pj, "versym"); // "versym": [
 	}
 
 	const ut64 addr = sdb_num_get(sdb, "addr", 0);
@@ -4217,10 +4216,10 @@ static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
 	const ut64 num_entries = sdb_num_get(sdb, "num_entries", 0);
 
 	if (IS_MODE_JSON(mode)) {
-		pj_o(pj);
+		pj_o(pj); // {
 		pj_kn(pj, "address", addr);
 		pj_kn(pj, "offset", offset);
-		pj_ka(pj, "entries");
+		pj_ka(pj, "entries"); // "entries": [
 	} else {
 		rz_cons_printf("Version symbols has %" PFMT64u " entries:\n", num_entries);
 		rz_cons_printf(" Addr: 0x%08" PFMT64x "  Offset: 0x%08" PFMT64x "\n",
@@ -4247,8 +4246,9 @@ static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
 	}
 
 	if (IS_MODE_JSON(mode)) {
-		pj_end(pj);
-		pj_end(pj);
+		pj_end(pj); // ] entries
+		pj_end(pj); // }
+		pj_end(pj); // ] versym
 	} else {
 		rz_cons_printf("\n\n");
 	}
@@ -4261,18 +4261,17 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 	}
 
 	if (IS_MODE_JSON(mode)) {
-		pj_end(pj);
-		pj_ka(pj, "verneed");
+		pj_ka(pj, "verneed"); // "verneed": 1[
 	}
 
 	const ut64 address = sdb_num_get(sdb, "addr", 0);
 	const ut64 offset = sdb_num_get(sdb, "offset", 0);
 
 	if (IS_MODE_JSON(mode)) {
-		pj_o(pj);
+		pj_o(pj); // 1{
 		pj_kn(pj, "address", address);
 		pj_kn(pj, "offset", offset);
-		pj_ka(pj, "entries");
+		pj_ka(pj, "entries"); // "entries": 2[
 	} else {
 		rz_cons_printf("Version need has %d entries:\n",
 			(int)sdb_num_get(sdb, "num_entries", 0));
@@ -4294,7 +4293,7 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 		}
 
 		if (IS_MODE_JSON(mode)) {
-			pj_o(pj);
+			pj_o(pj); // 2{
 			pj_kn(pj, "idx", sdb_num_get(sdb, "idx", 0));
 			pj_ki(pj, "vn_version", (int)sdb_num_get(sdb, "vn_version", 0));
 		} else {
@@ -4319,7 +4318,7 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 		}
 
 		if (IS_MODE_JSON(mode)) {
-			pj_ka(pj, "vernaux");
+			pj_ka(pj, "vernaux"); // "vernaux": 3[
 		}
 
 		do {
@@ -4349,29 +4348,35 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 		} while (sdb);
 
 		if (IS_MODE_JSON(mode)) {
-			pj_end(pj);
-			pj_end(pj);
+			pj_end(pj); // 3] vernaux
+			pj_end(pj); // 2}
 		}
 	}
 
 	if (IS_MODE_JSON(mode)) {
-		pj_end(pj);
-		pj_end(pj);
-	}
-
-	if (IS_MODE_JSON(mode)) {
-		pj_end(pj);
-		pj_end(pj);
+		pj_end(pj); // 2] entries
+		pj_end(pj); // 1}
+		pj_end(pj); // 1] verneed
 	}
 }
 
 static void bin_elf_versioninfo(RzCore *r, PJ *pj, int mode) {
+	if (IS_MODE_JSON(mode)) {
+		pj_o(pj);
+	}
 	bin_elf_versioninfo_versym(r, pj, mode);
 	bin_elf_versioninfo_verneed(r, pj, mode);
+	if (IS_MODE_JSON(mode)) {
+		pj_end(pj);
+	}
 }
 
-static void bin_mach0_versioninfo(RzCore *r) {
+static void bin_mach0_versioninfo(RzCore *r, PJ *pj, int mode) {
 	/* TODO */
+	if (IS_MODE_JSON(mode)) {
+		pj_o(pj);
+		pj_end(pj);
+	}
 }
 
 static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
@@ -4384,9 +4389,12 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	} else if (!strncmp("elf", info->rclass, 3)) {
 		bin_elf_versioninfo(r, pj, mode);
 	} else if (!strncmp("mach0", info->rclass, 5)) {
-		bin_mach0_versioninfo(r);
+		bin_mach0_versioninfo(r, pj, mode);
 	} else {
-		if (mode != RZ_MODE_JSON) {
+		if (IS_MODE_JSON(mode)) {
+			pj_o(pj);
+			pj_end(pj);
+		} else {
 			rz_cons_println("Unknown format");
 		}
 		return false;

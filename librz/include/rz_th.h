@@ -7,16 +7,6 @@
 #define _GNU_SOURCE
 #include "rz_types.h"
 
-#define HAVE_PTHREAD 1
-
-#if __WINDOWS__
-#undef HAVE_PTHREAD
-#define HAVE_PTHREAD 0
-#elif HAVE_PTHREAD
-#else
-#error Threading library only supported for pthread and w32
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

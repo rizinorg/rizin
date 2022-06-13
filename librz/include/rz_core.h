@@ -436,7 +436,7 @@ RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
 
 //#define rz_core_ncast(x) (RzCore*)(size_t)(x)
-RZ_API RzList *rz_core_theme_list(RzCore *core);
+RZ_API RZ_OWN RzList *rz_core_theme_list(RZ_NONNULL RzCore *core);
 RZ_API char *rz_core_theme_get(RzCore *core);
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name);
 RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode);
@@ -479,7 +479,7 @@ RZ_API int rz_core_cmd_file(RzCore *core, const char *file);
 RZ_API int rz_core_cmd_lines(RzCore *core, const char *lines);
 RZ_API RzCmdStatus rz_core_cmd_lines_rzshell(RzCore *core, const char *lines);
 RZ_API int rz_core_cmd_command(RzCore *core, const char *command);
-RZ_API bool rz_core_run_script(RzCore *core, const char *file);
+RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file);
 RZ_API void rz_core_seek_item_free(RzCoreSeekItem *item);
 RZ_API bool rz_core_seek(RzCore *core, ut64 addr, bool rb);
 RZ_API bool rz_core_seek_and_save(RzCore *core, ut64 addr, bool rb);
@@ -539,7 +539,7 @@ RZ_API void rz_core_visual_asm(RzCore *core, ut64 addr);
 RZ_API void rz_core_visual_colors(RzCore *core);
 RZ_API void rz_core_visual_showcursor(RzCore *core, int x);
 RZ_API void rz_core_visual_offset(RzCore *core);
-RZ_API int rz_core_visual_hud(RzCore *core);
+RZ_API bool rz_core_visual_hud(RzCore *core);
 RZ_API void rz_core_visual_jump(RzCore *core, ut8 ch);
 RZ_API void rz_core_visual_disasm_up(RzCore *core, int *cols);
 RZ_API void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols);
@@ -596,6 +596,8 @@ RZ_API bool rz_core_raw_file_print(RzCore *core);
 RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode);
 RZ_API int rz_core_file_binlist(RzCore *core);
 RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 num);
+RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd);
+RZ_API void rz_core_io_file_reopen(RZ_NONNULL RzCore *core, int fd, int perms);
 RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, ut64 size);
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz);
@@ -608,6 +610,7 @@ RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, RZ_NONNULL const c
 RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len);
 RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen);
+RZ_API bool rz_core_write_duplicate_at(RzCore *core, ut64 addr, ut64 from, int len);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen, int *buflen);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state);
@@ -624,6 +627,7 @@ RZ_API bool rz_core_is_debug(RzCore *core);
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
 RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
 RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core);
+RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr);
 
 RZ_API void rz_core_debug_ri(RzCore *core);
 RZ_API void rz_core_debug_set_register_flags(RzCore *core);
@@ -716,6 +720,11 @@ RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut6
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 RZ_API int rz_core_esil_step_back(RzCore *core);
 RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil);
+RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_analysis_esil_step_over(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_analysis_esil_reinit(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size);
+RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core);
 
 /* canalysis.c */
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
@@ -753,13 +762,16 @@ RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
 RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
 RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
+RZ_API RZ_OWN RzList *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool with_details);
 RZ_API bool rz_core_analysis_sigdb_apply(RZ_NONNULL RzCore *core, RZ_NULLABLE int *n_applied, RZ_NULLABLE const char *filter);
 RZ_API void rz_core_analysis_sigdb_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTable *table);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
 RZ_API void rz_core_analysis_calls(RZ_NONNULL RzCore *core, bool imports_only);
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
-RZ_API bool rz_core_analysis_hint_set_offset(RzCore *core, const char *struct_member);
+RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL const char *struct_member);
+RZ_API bool rz_core_analysis_continue_until_syscall(RZ_NONNULL RzCore *core);
+RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
@@ -1001,7 +1013,7 @@ RZ_API int rz_core_visual_prompt(RzCore *core);
 RZ_API bool rz_core_visual_esil(RzCore *core);
 RZ_API int rz_core_search_preludes(RzCore *core, bool log);
 RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
-RZ_API RzList * /*<RzIOMap*>*/ rz_core_get_boundaries_prot(RzCore *core, int protection, const char *mode, const char *prefix);
+RZ_API RZ_OWN RzList * /*<RzIOMap*>*/ rz_core_get_boundaries_prot(RzCore *core, int protection, const char *mode, const char *prefix);
 
 RZ_API void rz_core_hack_help(const RzCore *core);
 RZ_API bool rz_core_hack(RzCore *core, const char *op);
@@ -1019,6 +1031,11 @@ RZ_API const char **rz_core_help_vars_get(RzCore *core);
 
 /* analysis stats */
 
+/**
+ * Single sub-range of statistics as part of an entire RzCoreAnalysisStats.
+ *
+ * The range that this covers is given by rz_core_analysis_stats_get_block_from()/to().
+ */
 typedef struct {
 	ut32 youarehere;
 	ut32 flags;
@@ -1029,15 +1046,24 @@ typedef struct {
 	ut32 symbols;
 	ut32 strings;
 	ut32 perm;
-} RzCoreAnalStatsItem;
+} RzCoreAnalysisStatsItem;
+
+/**
+ * Statistics for a range of memory, split up into smaller blocks.
+ */
 typedef struct {
-	RzCoreAnalStatsItem *block;
-} RzCoreAnalStats;
+	ut64 from;
+	ut64 to;
+	ut64 step;
+	RzVector blocks;
+} RzCoreAnalysisStats;
 
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);
-RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *a, ut64 from, ut64 to, ut64 step);
-RZ_API void rz_core_analysis_stats_free(RzCoreAnalStats *s);
+RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore *a, ut64 from, ut64 to, ut64 step);
+RZ_API void rz_core_analysis_stats_free(RzCoreAnalysisStats *s);
+RZ_API ut64 rz_core_analysis_stats_get_block_from(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
+RZ_API ut64 rz_core_analysis_stats_get_block_to(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
 
 RZ_API int rz_line_hist_offset_up(RzLine *line);
 RZ_API int rz_line_hist_offset_down(RzLine *line);

@@ -13,20 +13,20 @@ static void lua_load_block(RzBuffer *buffer, void *dest, size_t size, ut64 offse
 }
 
 static ut64 lua_load_integer(RzBuffer *buffer, ut64 offset) {
-	ut64 x;
-	rz_buf_read_at(buffer, offset, (ut8 *)&x, sizeof(ut64));
+	ut64 x = 0;
+	rz_buf_read_le64_at(buffer, offset, &x);
 	return x;
 }
 
 static double lua_load_number(RzBuffer *buffer, ut64 offset) {
-	double x;
-	rz_buf_read_at(buffer, offset, (ut8 *)&x, sizeof(double));
+	double x = 0;
+	rz_buf_read_le64_at(buffer, offset, (ut64 *)&x);
 	return x;
 }
 
 static ut32 lua_load_int(RzBuffer *buffer, ut64 offset) {
-	ut32 x;
-	rz_buf_read_at(buffer, offset, (ut8 *)&x, sizeof(ut32));
+	ut32 x = 0;
+	rz_buf_read_le32_at(buffer, offset, &x);
 	return x;
 }
 

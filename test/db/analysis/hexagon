@@ -9,6 +9,7 @@ afx
 EOF
 EXPECT=<<EOF
 c 0x00005124 -> 0x00005128 ?   jump 0x5128
+c 0x00005130 -> 0x00005134 ?   if (P0) jump:nt 0x5154
 c 0x00005130 -> 0x00005154 ?   if (P0) jump:nt 0x5154
 c 0x00005134 -> 0x00005138 [   jump 0x5138
 C 0x00005138 -> 0x000050e0 [   call sym.pHello
@@ -589,6 +590,7 @@ pd 22
 EOF
 EXPECT=<<EOF
 |       ,=< 0x00005abc      ?       if (P3) jump:nt 0x5b1c
+|       |   ; CODE XREF from sym.memcpy @ 0x5abc
 |      ,==< 0x00005ac0      /       loop0(0x5acc,R4)
 |      ||   0x00005ac4      |       P0 = cmp.gtu(R4,##0x1)
 |      ||   0x00005ac8      \       R8 = R4

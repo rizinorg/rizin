@@ -5,17 +5,17 @@
 
 #ifdef RZ_ASSERT_STDOUT
 static void stdout_log(const char *output, const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
+	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) {
 	printf("%s", output);
 }
 
-static void print_message(RLogLevel level, const char *fmt, va_list args) {
+static void print_message(RzLogLevel level, const char *fmt, va_list args) {
 	rz_log_add_callback(stdout_log);
 	RZ_VLOG(level, NULL, fmt, args);
 	rz_log_del_callback(stdout_log);
 }
 #else
-static void print_message(RLogLevel level, const char *fmt, va_list args) {
+static void print_message(RzLogLevel level, const char *fmt, va_list args) {
 	RZ_VLOG(level, NULL, fmt, args);
 }
 #endif
@@ -23,7 +23,7 @@ static void print_message(RLogLevel level, const char *fmt, va_list args) {
  * It prints a message to the log and it provides a single point of entrance in
  * case of debugging. All rz_return_* functions call this.
  */
-RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) {
+RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	print_message(level, fmt, args);

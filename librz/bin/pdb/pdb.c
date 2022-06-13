@@ -23,7 +23,7 @@ static bool parse_pdb_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 		!rz_buf_read_le32(buf, &s->hdr.unique_id.data1) ||
 		!rz_buf_read_le16(buf, &s->hdr.unique_id.data2) ||
 		!rz_buf_read_le16(buf, &s->hdr.unique_id.data3) ||
-		!rz_buf_read_le64(buf, (ut64 *)&s->hdr.unique_id.data4)) {
+		rz_buf_read(buf, s->hdr.unique_id.data4, 8) != 8) {
 		return false;
 	}
 

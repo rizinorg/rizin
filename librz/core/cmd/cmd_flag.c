@@ -602,6 +602,7 @@ RZ_IPI RzCmdStatus rz_flag_tag_list_handler(RzCore *core, int argc, const char *
 	rz_list_foreach (list, iter, tag) {
 		flag_tag_print(core, tag, state);
 	}
+	rz_list_free(list);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }

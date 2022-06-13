@@ -370,12 +370,9 @@ RZ_IPI RzCmdStatus rz_cmd_info_whole_strings_handler(RzCore *core, int argc, con
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_purge_string_handler(RzCore *core, int argc, const char **argv) {
-	bool old_tmpseek = core->tmpseek;
-	core->tmpseek = false;
 	char *strpurge = core->bin->strpurge;
-	rz_core_cmdf(core, "e bin.str.purge=%s%s0x%" PFMT64x, strpurge ? strpurge : "",
-		strpurge && *strpurge ? "," : "", core->offset);
-	core->tmpseek = old_tmpseek;
+	char tmp[2048];
+	rz_config_set(core->config, "bin.str.purge", rz_strf(tmp, "%s%s0x%" PFMT64x, strpurge ? strpurge : "", strpurge && *strpurge ? "," : "", core->offset));
 	return RZ_CMD_STATUS_OK;
 }
 

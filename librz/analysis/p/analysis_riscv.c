@@ -47,23 +47,20 @@ static void arg_p2(char *buf, unsigned long val, const char *const *array, size_
 }
 
 static struct riscv_opcode *get_opcode(insn_t word) {
-	struct riscv_opcode *op = NULL;
+	struct riscv_opcode *op;
 	static const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = { 0 };
 
 #define OP_HASH_IDX(i) ((i) & (riscv_insn_length(i) == 2 ? 3 : OP_MASK_OP))
 
 	if (!init) {
-		size_t i;
-		for (i = 0; i < OP_MASK_OP + 1; i++) {
-			riscv_hash[i] = 0;
-		}
-		for (op = riscv_opcodes; op <= &riscv_opcodes[NUMOPCODES - 1]; op++) {
+		for (op = riscv_opcodes; op < &riscv_opcodes[NUMOPCODES]; op++) {
 			if (!riscv_hash[OP_HASH_IDX(op->match)]) {
 				riscv_hash[OP_HASH_IDX(op->match)] = op;
 			}
 		}
 		init = true;
 	}
+
 	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX(word)];
 }
 
@@ -313,32 +310,29 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	}
 
 	struct riscv_opcode *o = get_opcode(word);
-	if (word == UT64_MAX) {
-		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
-		return -1;
-	}
-	if (!o || !o->name) {
-		return op->size;
-	}
-	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-		op->mnemonic = strdup(o->name);
-	}
-
-	for (; o <= &riscv_opcodes[NUMOPCODES - 1]; o++) {
+	for (; o && o < &riscv_opcodes[NUMOPCODES]; o++) {
+		if (!(o->match_func)(o, word)) {
+			continue;
+		}
 		if (no_alias && (o->pinfo & INSN_ALIAS)) {
 			continue;
 		}
-		if (isdigit((ut8)(o->subset[0])) && atoi(o->subset) != xlen) {
+		if (isdigit((ut8)o->subset[0]) && atoi(o->subset) != xlen) {
 			continue;
 		}
-		if (o->match_func && !(o->match_func)(o, word)) {
-			continue;
+		if (o->name) {
+			break;
 		}
-		break;
+		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+		return -1;
+	}
+	if (!o || o >= &riscv_opcodes[NUMOPCODES] || !o->name) {
+		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+		return -1;
 	}
 
-	if (o > &riscv_opcodes[NUMOPCODES - 1]) {
-		return -1;
+	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+		op->mnemonic = strdup(o->name);
 	}
 
 	if (o->args) {
@@ -582,6 +576,9 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// decide whether it's ret or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
 		op->type = (rd == 0) ? RZ_ANALYSIS_OP_TYPE_RET : RZ_ANALYSIS_OP_TYPE_UCALL;
+		if (rd != 0) {
+			op->val = EXTRACT_ITYPE_IMM(word);
+		}
 	} else if (is_any("c.ret")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 	} else if (is_any("c.jalr")) {
@@ -599,9 +596,23 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->jump = EXTRACT_RVC_B_IMM(word) + addr;
 		op->fail = addr + op->size;
 		// math
-	} else if (is_any("addi", "addw", "addiw", "add", "auipc", "c.addi",
-			   "c.addw", "c.add", "c.addiw", "c.addi4spn", "c.addi16sp")) {
+	} else if (is_any("c.addi", "c.addiw")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->val = EXTRACT_RVC_IMM(word);
+	} else if (is_any("addi", "addiw")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->val = EXTRACT_ITYPE_IMM(word);
+	} else if (is_any("c.addi4spn")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->val = EXTRACT_RVC_ADDI4SPN_IMM(word);
+	} else if (is_any("c.addi16sp")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->val = EXTRACT_RVC_ADDI16SP_IMM(word);
+	} else if (is_any("addw", "add", "c.addw", "c.add")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+	} else if (is_any("auipc")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->val = EXTRACT_UTYPE_IMM(word);
 	} else if (is_any("c.mv", "csrrw", "csrrc", "csrrs")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	} else if (is_any("subi", "subw", "sub", "c.sub", "c.subw")) {
@@ -630,10 +641,21 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	} else if (is_any("sd", "sb", "sh", "sw", "c.sd", "c.sw",
 			   "c.swsp", "c.sdsp")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-	} else if (is_any("ld", "lw", "lwu", "lui", "li",
-			   "lb", "lbu", "lh", "lhu", "la", "lla", "c.ld",
-			   "c.lw", "c.lwsp", "c.li", "c.lui")) {
+	} else if (is_any("ld", "lw", "lwu", "lb", "lbu", "lh",
+			   "lhu", "la", "lla", "c.ld", "c.lw", "c.lwsp")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+	} else if (is_any("lui")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->val = EXTRACT_UTYPE_IMM(word);
+	} else if (is_any("c.lui")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->val = EXTRACT_RVC_IMM(word);
+	} else if (is_any("li")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->val = EXTRACT_ITYPE_IMM(word);
+	} else if (is_any("c.li")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->val = EXTRACT_RVC_IMM(word);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL && args.num) {
 		op->dst = RZ_NEW0(RzAnalysisValue);
@@ -890,12 +912,20 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return (p && *p) ? strdup(p) : NULL;
 }
 
+static int archinfo(RzAnalysis *a, int q) {
+	if (q == RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE) {
+		return 6;
+	}
+	return 2;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_riscv = {
 	.name = "riscv",
 	.desc = "RISC-V analysis plugin",
 	.license = "LGPL",
 	.arch = "riscv",
 	.bits = 32 | 64,
+	.archinfo = archinfo,
 	.op = &riscv_op,
 	.get_reg_profile = &get_reg_profile,
 	.esil = true,

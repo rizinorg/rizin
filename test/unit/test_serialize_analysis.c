@@ -611,9 +611,8 @@ bool test_analysis_var_load() {
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
-	free(types_dir);
 
 	Sdb *db = vars_ref_db();
 	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
@@ -1645,9 +1644,8 @@ bool test_analysis_save() {
 bool test_analysis_load() {
 	RzAnalysis *analysis = rz_analysis_new();
 
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
-	free(types_dir);
 
 	Sdb *db = analysis_ref_db();
 	bool succ = rz_serialize_analysis_load(db, analysis, NULL);

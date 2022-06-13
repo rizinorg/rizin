@@ -38,8 +38,7 @@ static ut8 get_ut8(RzBuffer *buffer, bool *error) {
 static ut16 get_ut16(RzBuffer *buffer, bool *error) {
 	ut16 ret = 0;
 
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size != sizeof(ret)) {
+	if (!rz_buf_read_le16(buffer, &ret)) {
 		*error = true;
 	}
 	return ret;
@@ -47,8 +46,7 @@ static ut16 get_ut16(RzBuffer *buffer, bool *error) {
 
 static ut32 get_ut32(RzBuffer *buffer, bool *error) {
 	ut32 ret = 0;
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size != sizeof(ret)) {
+	if (!rz_buf_read_le32(buffer, &ret)) {
 		*error = true;
 	}
 	return ret;
@@ -56,8 +54,7 @@ static ut32 get_ut32(RzBuffer *buffer, bool *error) {
 
 static st32 get_st32(RzBuffer *buffer, bool *error) {
 	st32 ret = 0;
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size < sizeof(ret)) {
+	if (!rz_buf_read_le32(buffer, (ut32 *)&ret)) {
 		*error = true;
 	}
 	return ret;
@@ -65,8 +62,7 @@ static st32 get_st32(RzBuffer *buffer, bool *error) {
 
 static st64 get_st64(RzBuffer *buffer, bool *error) {
 	st64 ret = 0;
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size < sizeof(ret)) {
+	if (!rz_buf_read_le64(buffer, (ut64 *)&ret)) {
 		*error = true;
 	}
 	return ret;
@@ -74,8 +70,7 @@ static st64 get_st64(RzBuffer *buffer, bool *error) {
 
 static double get_float64(RzBuffer *buffer, bool *error) {
 	double ret = 0;
-	int size = rz_buf_read(buffer, (ut8 *)&ret, sizeof(ret));
-	if (size < sizeof(ret)) {
+	if (!rz_buf_read_le64(buffer, (ut64 *)&ret)) {
 		*error = true;
 	}
 	return ret;

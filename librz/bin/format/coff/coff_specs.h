@@ -209,12 +209,11 @@ RZ_PACKED(
 		ut8 n_numaux; /* Auxiliary Count */
 	});
 
-RZ_PACKED(
-	struct coff_reloc {
-		ut32 rz_vaddr; /* Reference Address */
-		ut32 rz_symndx; /* Symbol index */
-		ut16 rz_type; /* Type of relocation */
-	});
+struct coff_reloc {
+	ut32 rz_vaddr; /* Reference Address */
+	ut32 rz_symndx; /* Symbol index */
+	ut16 rz_type; /* Type of relocation */
+};
 
 #define COFF_SYM_GET_DTYPE(type) (((type) >> 4) & 3)
 #endif /* COFF_SPECS_H */

@@ -25,6 +25,7 @@
 struct timeval;
 int gettimeofday(struct timeval *p, void *tz);
 #endif
+#include "rz_util/rz_axml.h"
 #include "rz_util/rz_event.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_itv.h"

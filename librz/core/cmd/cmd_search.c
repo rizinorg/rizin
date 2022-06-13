@@ -349,12 +349,14 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 		keyword = malloc(strlen(prelude) + 1);
 		if (!keyword) {
 			RZ_LOG_ERROR("aap: cannot allocate 'analysis.prelude' buffer\n");
+			rz_list_free(list);
 			return -1;
 		}
 		keyword_length = rz_hex_str2bin(prelude, keyword);
 	} else {
 		arch_preludes = rz_analysis_preludes(core->analysis);
 		if (!arch_preludes) {
+			rz_list_free(list);
 			return -1;
 		}
 	}
@@ -571,7 +573,7 @@ static bool maskMatches(int perm, int mask, bool only) {
 	return false;
 }
 
-RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
+RZ_API RZ_OWN RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
 	rz_return_val_if_fail(core, NULL);
 
 	RzList *list = rz_list_newf(free); // XXX rz_io_map_free);
@@ -1978,14 +1980,22 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 					rz_cons_println(str);
 				}
 				break;
-			case 's': // "als"
-				rz_core_cmd0(core, "asl");
+			case 's': { // "/als"
+				RzListIter *iter;
+				RzSyscallItem *si;
+				RzList *list = rz_syscall_list(core->analysis->syscall);
+				rz_list_foreach (list, iter, si) {
+					rz_cons_printf("%s = 0x%02x.%s\n",
+						si->name, si->swi, syscallNumber(si->num));
+				}
+				rz_list_free(list);
 				break;
+			}
 			case 0:
 				rz_core_cmd0(core, "aoml");
 				break;
 			default:
-				eprintf("wat\n");
+				RZ_LOG_ERROR("/al%c - unknown command\n", type);
 				break;
 			}
 			return false;
@@ -2005,14 +2015,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 		input++;
 	}
 	if (type == 's') {
-		eprintf("Shouldn't reach\n");
-// ??
-#if 0
-	case 's': // "/s"
-		do_syscall_search (core, &param);
-		dosearch = false;
-		break;
-#endif
+		rz_warn_if_reached();
 		return true;
 	}
 	if (mode == 'j') {

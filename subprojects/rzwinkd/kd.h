@@ -12,6 +12,7 @@ enum {
 	KD_E_TIMEOUT = -2,
 	KD_E_MALFORMED = -3,
 	KD_E_IOERR = -4,
+	KD_E_BREAK = -5,
 };
 
 enum KD_PACKET_TYPE {
@@ -79,7 +80,17 @@ enum KD_PACKET_MANIPULATE_TYPE {
 	DbgKdFillMemoryApi = 0x0000315B,
 	DbgKdQueryMemoryApi = 0x0000315C,
 	DbgKdSwitchPartition = 0x0000315D,
-	DbgKdMaximumManipulate = 0x0000315E
+	DbgKdWriteCustomBreakpointApi = 0x0000315E,
+	DbgKdGetContextEx = 0x0000315F,
+	DbgKdSetContextEx = 0x00003160,
+	DbgKdMaximumManipulate = 0x00003161
+};
+
+enum KD_PACKET_FILE_IO_TYPE {
+	DbgKdCreateFileApi = 0x00003430,
+	DbgKdReadFileApi = 0x00003431,
+	DbgKdWriteFileApi = 0x00003432,
+	DbgKdCloseFileApi = 0x00003433
 };
 
 #define KD_PACKET_UNUSED 0x00000000
@@ -88,7 +99,7 @@ enum KD_PACKET_MANIPULATE_TYPE {
 
 #define KD_INITIAL_PACKET_ID 0x80800000
 
-#define KD_MAX_PAYLOAD     0x800
+#define KD_MAX_PAYLOAD     0x480
 #define KD_PACKET_MAX_SIZE 4000 // Not used ? What is max payload ?
 
 // http://msdn.microsoft.com/en-us/library/cc704588.aspx
@@ -107,100 +118,106 @@ enum KD_PACKET_MANIPULATE_TYPE {
 
 RZ_PACKED(
 	typedef struct kd_req_t {
-		uint32_t req;
-		uint16_t cpu_level;
-		uint16_t cpu;
-		uint32_t ret;
+		ut32 req;
+		ut16 cpu_level;
+		ut16 cpu;
+		ut32 ret;
 		// Pad to 16-byte boundary (?)
-		uint32_t pad;
+		ut32 pad;
 		union {
 			RZ_PACKED(
 				struct {
-					uint64_t addr;
-					uint32_t length;
-					uint32_t read;
+					ut64 addr;
+					ut32 length;
+					ut32 read;
 				})
 			rz_mem;
 			RZ_PACKED(
 				struct {
-					uint16_t major;
-					uint16_t minor;
-					uint8_t proto_major;
-					uint8_t proto_minor;
-					uint16_t flags;
-					uint16_t machine;
-					uint8_t misc[6];
-					uint64_t kernel_base;
-					uint64_t mod_addr;
-					uint64_t dbg_addr;
+					ut16 major;
+					ut16 minor;
+					ut8 proto_major;
+					ut8 proto_minor;
+					ut16 flags;
+					ut16 machine;
+					ut8 misc[6];
+					ut64 kernel_base;
+					ut64 mod_addr;
+					ut64 dbg_addr;
 				})
 			rz_ver;
 			struct {
-				uint32_t reason;
-				uint32_t tf;
-				uint32_t dr7;
-				uint32_t css;
-				uint32_t cse;
+				ut32 reason;
+				ut32 tf;
+				ut32 dr7;
+				ut32 css;
+				ut32 cse;
 			} rz_cont;
 			struct {
-				uint64_t addr;
-				uint32_t handle;
+				ut64 addr;
+				ut32 handle;
 			} rz_set_bp;
 			struct {
-				uint32_t handle;
+				ut32 handle;
 			} rz_del_bp;
 			struct {
-				uint64_t addr;
-				uint32_t flags;
+				ut64 addr;
+				ut32 flags;
 			} rz_set_ibp;
 			struct {
-				uint64_t addr;
-				uint32_t flags;
-				uint32_t calls;
+				ut64 addr;
+				ut32 flags;
+				ut32 calls;
 			} rz_get_ibp;
 			struct {
-				uint32_t flags;
+				ut32 flags;
 			} rz_ctx;
 			struct {
-				uint64_t addr;
-				uint64_t reserved;
-				uint32_t address_space;
-				uint32_t flags;
+				ut32 offset;
+				ut32 count;
+				ut32 copied;
+			} rz_ctx_ex;
+			struct {
+				ut64 addr;
+				ut64 reserved;
+				ut32 address_space;
+				ut32 flags;
 			} rz_query_mem;
 
 			// Pad the struct to 56 bytes
-			uint8_t raw[40];
+			ut8 raw[40];
 		};
-		uint8_t data[0];
+		ut8 data[];
 	})
 kd_req_t;
 
 #define KD_EXC_BKPT 0x80000003
 RZ_PACKED(
 	typedef struct kd_stc_64 {
-		uint32_t state;
-		uint16_t cpu_level;
-		uint16_t cpu;
-		uint32_t cpu_count;
-		uint32_t pad1;
-		uint64_t kthread;
-		uint64_t pc;
+		ut32 state;
+		ut16 cpu_level;
+		ut16 cpu;
+		ut32 cpu_count;
+		ut32 pad1;
+		ut64 kthread;
+		ut64 pc;
 		union {
 			RZ_PACKED(
 				struct {
-					uint32_t code;
-					uint32_t flags;
-					uint64_t ex_record;
-					uint64_t ex_addr;
+					ut32 code;
+					ut32 flags;
+					ut64 ex_record;
+					ut64 ex_addr;
 				})
 			exception;
 			RZ_PACKED(
 				struct {
-					uint64_t pathsize;
-					uint64_t base;
-					uint64_t unknown;
-					uint32_t checksum;
-					uint32_t size;
+					ut64 pathsize;
+					ut64 base;
+					ut64 pid;
+					ut32 checksum;
+					ut32 size;
+					ut8 unload;
 				})
 			load_symbols;
 		};
@@ -208,19 +225,19 @@ RZ_PACKED(
 kd_stc_64;
 
 typedef struct kd_ioc_t {
-	uint32_t req;
-	uint32_t ret;
-	uint64_t pad[7];
+	ut32 req;
+	ut32 ret;
+	ut64 pad[7];
 } kd_ioc_t;
 
 RZ_PACKED(
 	typedef struct kd_packet_t {
-		uint32_t leader;
-		uint16_t type;
-		uint16_t length;
-		uint32_t id;
-		uint32_t checksum;
-		uint8_t data[0];
+		ut32 leader;
+		ut16 type;
+		ut16 length;
+		ut32 id;
+		ut32 checksum;
+		ut8 data[];
 	})
 kd_packet_t;
 
@@ -257,14 +274,14 @@ ct_assert(sizeof(kd_packet_t) == 16);
 ct_assert(sizeof(kd_req_t) == 56);
 ct_assert(sizeof(kd_ioc_t) == 64);
 
-int kd_send_ctrl_packet(io_desc_t *desc, const uint32_t type, const uint32_t id);
-int kd_send_data_packet(io_desc_t *desc, const uint32_t type, const uint32_t id, const uint8_t *req, const int req_len, const uint8_t *buf, const uint32_t buf_len);
+int kd_send_ctrl_packet(io_desc_t *desc, const ut32 type, const ut32 id);
+int kd_send_data_packet(io_desc_t *desc, const ut32 type, const ut32 id, const ut8 *req, const int req_len, const ut8 *buf, const ut32 buf_len);
 
 int kd_read_packet(io_desc_t *desc, kd_packet_t **p);
 
 bool kd_packet_is_valid(const kd_packet_t *p);
 int kd_packet_is_ack(const kd_packet_t *p);
 
-uint32_t kd_data_checksum(const uint8_t *buf, const uint64_t buf_len);
+ut32 kd_data_checksum(const ut8 *buf, const ut64 buf_len);
 
 #endif

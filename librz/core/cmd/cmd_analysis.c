@@ -95,6 +95,7 @@ static const char *help_msg_ae[] = {
 	"aesuo", " [optype]", "step until given opcode type",
 	"aets", "[?]", "ESIL Trace session",
 	"aex", " [hex]", "evaluate opcode expression",
+	"aez", "[?]", "RzIL Emulation",
 	NULL
 };
 
@@ -797,8 +798,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 
 		char disasm[128] = { 0 };
 		rz_parse_subvar(core->parser, NULL,
-			core->offset + idx,
-			asmop.size, rz_asm_op_get_asm(&asmop),
+			&op, rz_asm_op_get_asm(&asmop),
 			disasm, sizeof(disasm));
 		ut64 killme = UT64_MAX;
 		if (rz_io_read_i(core->io, op.ptr, &killme, op.refptr, be)) {
@@ -819,7 +819,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		{
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
 			if (fcn) {
-				rz_parse_subvar(core->parser, fcn, addr, asmop.size,
+				rz_parse_subvar(core->parser, fcn, &op,
 					disasm, disasm, sizeof(disasm));
 			}
 		}
@@ -1827,67 +1827,12 @@ RZ_IPI RzCmdStatus rz_analysis_continue_until_breakpoint_handler(RzCore *core, i
 
 // aecs
 RZ_IPI RzCmdStatus rz_analysis_continue_until_syscall_handler(RzCore *core, int argc, const char **argv) {
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	RzAnalysisOp *op;
-	while (!rz_cons_is_breaked()) {
-		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-			break;
-		}
-		rz_core_reg_update_flags(core);
-		ut64 addr = rz_num_get(core->num, pc);
-		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-		if (!op) {
-			break;
-		}
-		if (op->type == RZ_ANALYSIS_OP_TYPE_SWI) {
-			RZ_LOG_ERROR("syscall at 0x%08" PFMT64x "\n", addr);
-			break;
-		} else if (op->type == RZ_ANALYSIS_OP_TYPE_TRAP) {
-			RZ_LOG_ERROR("trap at 0x%08" PFMT64x "\n", addr);
-			break;
-		}
-		rz_analysis_op_free(op);
-		op = NULL;
-		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-			break;
-		}
-	}
-	if (op) {
-		rz_analysis_op_free(op);
-		op = NULL;
-	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_analysis_continue_until_syscall(core));
 }
 
 // aecc
 RZ_IPI RzCmdStatus rz_analysis_continue_until_call_handler(RzCore *core, int argc, const char **argv) {
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	RzAnalysisOp *op;
-	while (!rz_cons_is_breaked()) {
-		if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
-			break;
-		}
-		rz_core_reg_update_flags(core);
-		ut64 addr = rz_num_get(core->num, pc);
-		op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
-		if (!op) {
-			break;
-		}
-		if (op->type == RZ_ANALYSIS_OP_TYPE_CALL || op->type == RZ_ANALYSIS_OP_TYPE_UCALL) {
-			RZ_LOG_ERROR("call at 0x%08" PFMT64x "\n", addr);
-			break;
-		}
-		rz_analysis_op_free(op);
-		op = NULL;
-		if (core->analysis->esil->trap || core->analysis->esil->trap_code) {
-			break;
-		}
-	}
-	if (op) {
-		rz_analysis_op_free(op);
-		op = NULL;
-	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_analysis_continue_until_call(core));
 }
 
 // aecu
@@ -2031,6 +1976,7 @@ RZ_IPI RzCmdStatus rz_il_step_until_expr_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_il_step_until_opt_handler(RzCore *core, int argc, const char **argv) {
 	RzList *optypes_list = rz_list_new_from_array((const void **)&argv[1], argc - 1);
 	step_until_optype(core, optypes_list);
+	rz_list_free(optypes_list);
 	rz_core_reg_update_flags(core);
 	return RZ_CMD_STATUS_OK;
 }
@@ -5079,7 +5025,7 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 				xref->type ? xref->type : ' ', xref->to, desc);
 
 			if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
-				RzAnalysisOp aop;
+				RzAnalysisOp aop = { 0 };
 				rz_analysis_op(core->analysis, &aop, xref->to, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 				if (aop.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
 					cmd_analysis_ucall_ref(core, xref->to);
@@ -5768,7 +5714,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_ascii_handler(RzCore *core, int arg
 	RzTable *table = rz_core_table(core);
 	rz_table_visual_list(table, flist, core->offset, core->blocksize,
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
-	rz_cons_printf("\n%s\n", rz_table_tostring(table));
+	char *tablestr = rz_table_tostring(table);
+	rz_cons_printf("\n%s\n", tablestr);
+	free(tablestr);
 	rz_table_free(table);
 	rz_list_free(flist);
 	rz_list_free(fcns);
@@ -6364,6 +6312,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_create_handler(RzCore *core, int argc, c
 	}
 	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, argv[1], core->offset, type, diff);
 	if (!fcn) {
+		rz_analysis_diff_free(diff);
 		RZ_LOG_ERROR("Cannot add function (duplicated)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
