@@ -937,3 +937,19 @@ EXPECT=<<EOF
 │       ╰─> 0x00001050      xor   eax, eax
 EOF
 RUN
+
+NAME=floating point asm.sub.names
+FILE=bins/wasm/float-constant.wasm
+CMDS=<<EOF
+aF
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- fcn.0:
+/ entry0 ();
+|           0x00000019      get_local 0
+|           0x0000001b      f64.const 3.141590
+|           0x00000024      f64.add
+\           0x00000025      end
+EOF
+RUN
