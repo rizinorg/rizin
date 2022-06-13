@@ -81,11 +81,11 @@ static inline bool is_c_escape_sequence(char ch) {
 	return strchr("\b\v\f\n\r\t\a\033\\", ch);
 }
 
-static UTF8StringInfo calculate_utf8_string_info(ut8* str, int size) {
+static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 	UTF8StringInfo res = {
-		.num_ascii          = 0,
+		.num_ascii = 0,
 		.num_ascii_extended = 0,
-		.num_chars          = 0
+		.num_chars = 0
 	};
 
 	const ut8 *str_ptr = str;
@@ -129,7 +129,7 @@ static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *op
 	case RZ_STRING_ENC_UTF16BE:
 	case RZ_STRING_ENC_UTF32BE: {
 		int num_blocks = 0;
-		int* block_list = rz_utf_block_list((const ut8 *)str, size - 1, NULL);
+		int *block_list = rz_utf_block_list((const ut8 *)str, size - 1, NULL);
 		if (block_list) {
 			for (i = 0; block_list[i] != -1; i++) {
 				num_blocks++;
