@@ -165,6 +165,7 @@ typedef enum {
 	SH_OP_SETT,
 	SH_OP_STC,
 	SH_OP_STS,
+	SH_OP_UNIMPL,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
@@ -175,6 +176,7 @@ typedef struct sh_param_t {
 } SHParam;
 
 typedef struct sh_opcode_t {
+	RzBitVector *bits;
 	SHOpMnem mnemonic;
 	SHParam param[2];
 	SHScaling scaling;

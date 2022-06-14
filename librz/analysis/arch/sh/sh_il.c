@@ -52,7 +52,7 @@
 
 #define sh_return_val_if_invalid_gpr(x, v) \
 	if (!sh_valid_gpr(x)) { \
-		RZ_LOG_ERROR("RzIL: SH: invalid register R%u\n", x); \
+		RZ_LOG_ERROR("RzIL: SuperH: invalid register R%u\n", x); \
 		return v; \
 	}
 
@@ -221,7 +221,7 @@ static inline RzILOpPure *sh_il_get_effective_addr(SHParam param, SHScaling scal
 	case SH_PC_RELATIVE_REG:
 		return ADD(ADD(VARG("pc"), SH_U_ADDR(4)), sh_il_get_reg(param.param[0]));
 	default:
-		RZ_LOG_WARN("RzIL: SH: No effective address for this mode: %u", param.mode);
+		RZ_LOG_WARN("RzIL: SuperH: No effective address for this mode: %u", param.mode);
 	}
 
 	return NULL;
@@ -277,7 +277,7 @@ static inline SHParamHelper sh_il_get_param(SHParam param, SHScaling scaling) {
 		ret.pure = SH_S_REG(param.param[0]);
 		break;
 	default:
-		RZ_LOG_ERROR("RzIL: SH: Invalid addressing mode");
+		RZ_LOG_ERROR("RzIL: SuperH: Invalid addressing mode");
 	}
 
 	return ret;
@@ -325,7 +325,7 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *va
 	case SH_IMM_U:
 	case SH_IMM_S:
 	default:
-		RZ_LOG_ERROR("RzIL: SH: Cannot set value for addressing mode: %u", param.mode);
+		RZ_LOG_ERROR("RzIL: SuperH: Cannot set value for addressing mode: %u", param.mode);
 		return NULL;
 	}
 
@@ -1187,7 +1187,7 @@ static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	ut8 state = priv_bit->bits.small_u == 0 ? 0b1 : 0b0;
 	state += op->param[1].param[0] != SH_REG_IND_GBR ? 0b10 : 0b00;
 	if ((state & 0x11) == 0x11) {
-		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SH: RESINST"));
+		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
 	}
 	if (op->scaling == SH_SCALING_INVALID) {
 		if (state & 0b10) {
@@ -1271,7 +1271,7 @@ static RzILOpEffect *sh_il_stc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	ut8 state = priv_bit->bits.small_u == 0 ? 0b1 : 0b0;
 	state += op->param[0].param[0] != SH_REG_IND_GBR ? 0b10 : 0b00;
 	if ((state & 0x11) == 0x11) {
-		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SH: RESINST"));
+		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
 	}
 	if (op->scaling == SH_SCALING_INVALID) {
 		if (state & 0b10) {
@@ -1306,6 +1306,11 @@ static RzILOpEffect *sh_il_sts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 		return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 	}
 	return NOP();
+}
+
+static RzILOpEffect *sh_il_unimpl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RZ_LOG_WARN("SuperH: Instruction with opcode %s is unimplemented", rz_bv_as_string(op->bits));
+	return EMPTY();
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
@@ -1376,5 +1381,6 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_sets,
 	sh_il_sett,
 	sh_il_stc,
-	sh_il_sts
+	sh_il_sts,
+	sh_il_unimpl
 };
