@@ -1229,7 +1229,7 @@ static RzILOpEffect *sh_il_lds(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 
 // TODO: Implement LDTLB, MOVCA.L, OCBI, OCBP, OCBWB, PREF
 
-static RzILOpEffect *sh_il_nop(SHOp * op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_nop(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return NOP();
 }
 
