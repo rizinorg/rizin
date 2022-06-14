@@ -161,6 +161,10 @@ typedef enum {
 	SH_OP_LDC,
 	SH_OP_LDS,
 	SH_OP_NOP,
+	SH_OP_SETS,
+	SH_OP_SETT,
+	SH_OP_STC,
+	SH_OP_STS,
 	/* end */
 	SH_OP_SIZE
 } SHOpMnem;
