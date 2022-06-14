@@ -414,6 +414,10 @@ static void il_opdmp_nop(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_0("nop");
 }
 
+static void il_opdmp_empty(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_0("empty");
+}
+
 static void il_opdmp_set(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsSet *opx = &op->op.set;
 	if (sb) {
@@ -641,6 +645,9 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 		return;
 	}
 	switch (op->code) {
+	case RZ_IL_OP_EMPTY:
+		il_opdmp_empty(op, sb, pj);
+		break;
 	case RZ_IL_OP_STORE:
 		il_opdmp_store(op, sb, pj);
 		return;
