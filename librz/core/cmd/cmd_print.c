@@ -7265,6 +7265,8 @@ static void core_disassembly_n_instructions(RzCore *core, int n_instrs, RzCmdSta
 			rz_core_block_size(core, new_blocksize);
 		}
 		rz_core_seek(core, new_offset, true);
+	} else {
+		rz_core_block_read(core);
 	}
 
 	switch (state->mode) {
@@ -7622,7 +7624,10 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 			rz_core_block_size(core, new_blocksize);
 		}
 		rz_core_seek(core, new_offset, true);
+	} else {
+		rz_core_block_read(core);
 	}
+
 	if (rz_cons_singleton()->is_html) {
 		rz_cons_singleton()->is_html = false;
 		rz_cons_singleton()->was_html = true;
@@ -7681,6 +7686,8 @@ RZ_IPI RzCmdStatus rz_cmd_sizes_of_n_instructions_handler(RzCore *core, int argc
 			rz_core_block_size(core, new_blocksize);
 		}
 		rz_core_seek(core, new_offset, true);
+	} else {
+		rz_core_block_read(core);
 	}
 
 	rz_cmd_state_output_array_start(state);
