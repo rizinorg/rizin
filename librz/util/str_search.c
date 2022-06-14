@@ -13,6 +13,12 @@ typedef enum {
 	STRING_OK,
 } FalsePositiveResult;
 
+typedef struct {
+	int num_ascii;
+	int num_ascii_extended;
+	int num_chars;
+} UTF8StringInfo;
+
 // clang-format off
 static const ut8 LATIN1_CLASS[256] = {
   0,0,0,0,0,0,0,0, 0,1,1,0,0,1,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
@@ -75,9 +81,35 @@ static inline bool is_c_escape_sequence(char ch) {
 	return strchr("\b\v\f\n\r\t\a\033\\", ch);
 }
 
+static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
+	UTF8StringInfo res = {
+		.num_ascii = 0,
+		.num_ascii_extended = 0,
+		.num_chars = 0
+	};
+
+	const ut8 *str_ptr = str;
+	const ut8 *str_end = str + size;
+	RzRune ch;
+	while (str_ptr < str_end) {
+		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch);
+		if (!ch_bytes)
+			break;
+
+		res.num_chars += 1;
+		if (ch < 0x80u)
+			res.num_ascii += 1;
+		if (ch < 0x100u)
+			res.num_ascii_extended += 1;
+
+		str_ptr += ch_bytes;
+	}
+
+	return res;
+}
+
 static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *opt, ut8 *str, int size, RzStrEnc str_type) {
-	int i, num_blocks, *block_list;
-	int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
+	int i;
 
 	switch (str_type) {
 	case RZ_STRING_ENC_8BIT: {
@@ -94,35 +126,32 @@ static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *op
 	case RZ_STRING_ENC_UTF8:
 	case RZ_STRING_ENC_UTF16LE:
 	case RZ_STRING_ENC_UTF32LE:
-		num_blocks = 0;
-		block_list = rz_utf_block_list((const ut8 *)str, size - 1,
-			str_type == RZ_STRING_ENC_UTF16LE ? &freq_list : NULL);
+	case RZ_STRING_ENC_UTF16BE:
+	case RZ_STRING_ENC_UTF32BE: {
+		int num_blocks = 0;
+		int *block_list = rz_utf_block_list((const ut8 *)str, size - 1, NULL);
 		if (block_list) {
 			for (i = 0; block_list[i] != -1; i++) {
 				num_blocks++;
 			}
 		}
-		if (freq_list) {
-			num_chars = 0;
-			actual_ascii = 0;
-			for (i = 0; freq_list[i] != -1; i++) {
-				num_chars += freq_list[i];
-				if (!block_list[i]) { // ASCII
-					actual_ascii = freq_list[i];
-				}
-			}
-			free(freq_list);
-			expected_ascii = num_blocks ? num_chars / num_blocks : 0;
-			if (actual_ascii > expected_ascii) {
-				free(block_list);
-				return RETRY_ASCII;
-			}
-		}
 		free(block_list);
+
+		UTF8StringInfo str_info = calculate_utf8_string_info(str, size);
+		if (str_info.num_ascii_extended == str_info.num_chars) {
+			return STRING_OK;
+		}
+
+		int expected_ascii = num_blocks ? str_info.num_chars / num_blocks : 0;
+		if (opt->check_ascii_freq && str_info.num_ascii > expected_ascii) {
+			return RETRY_ASCII;
+		}
+
 		if (num_blocks > opt->max_uni_blocks) {
 			return SKIP_STRING;
 		}
 		break;
+	}
 	default:
 		break;
 	}
@@ -252,8 +281,9 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		}
 	}
 
+	int strbuf_size = i;
 	if (runes >= opt->min_str_length) {
-		FalsePositiveResult false_positive_result = reduce_false_positives(opt, strbuf, i - 1, str_type);
+		FalsePositiveResult false_positive_result = reduce_false_positives(opt, strbuf, strbuf_size, str_type);
 		if (false_positive_result == SKIP_STRING) {
 			return NULL;
 		} else if (false_positive_result == RETRY_ASCII) {
@@ -273,7 +303,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		ds->addr -= off_adj;
 		ds->size += off_adj;
 
-		ds->string = rz_str_ndup((const char *)strbuf, i);
+		ds->string = rz_str_ndup((const char *)strbuf, strbuf_size);
 		return ds;
 	}
 

@@ -17,7 +17,7 @@ EXPECT=<<EOF
 0x0063e49b str.version
 0x0063e4ac str.HTTP_version
 0x0063e566 str.
-14145
+12879
 EOF
 RUN
 
@@ -44,7 +44,7 @@ EXPECT=<<EOF
 ;-- str.flag:
 ;-- str.sort:
 ;-- str.sync:
-13207
+12263
 EOF
 RUN
 
@@ -67,7 +67,7 @@ EXPECT=<<EOF
 0x0065de6d str.version
 0x0065de8a str.HTTP_version
 0x0065dfe6 str.
-13360
+13171
 EOF
 RUN
 
@@ -129,7 +129,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-13466
+12807
 EOF
 RUN
 
@@ -212,7 +212,7 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-15577
+14650
 EOF
 RUN
 
@@ -249,7 +249,7 @@ EOF
 EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
-9074
+8531
 compiler go1.15
 EOF
 RUN

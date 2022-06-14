@@ -93,7 +93,8 @@ static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut6
 		.buf_size = 2048,
 		.max_uni_blocks = 4,
 		.min_str_length = min,
-		.prefer_big_endian = false
+		.prefer_big_endian = false,
+		.check_ascii_freq = bf->rbin->strseach_check_ascii_freq
 	};
 
 	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, from, to, type);
