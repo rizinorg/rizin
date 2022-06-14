@@ -3595,7 +3595,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* str */
 	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
-	SETCB("str.search.check_ascii_freq", "true", &cb_strsearch_check_ascii_freq, "Skip ASCII frequency analysis when looking for false positives during string search");
+	SETCB("str.search.check_ascii_freq", "true", &cb_strsearch_check_ascii_freq,
+		"Perform ASCII frequency analysis when looking for false positives during string search");
 
 	/* search */
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
