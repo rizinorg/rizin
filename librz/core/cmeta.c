@@ -438,7 +438,8 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 		.buf_size = 2048,
 		.max_uni_blocks = 4,
 		.min_str_length = 4,
-		.prefer_big_endian = big_endian
+		.prefer_big_endian = big_endian,
+		.check_ascii_freq = bf->rbin->strseach_check_ascii_freq
 	};
 	RzList *str_list = rz_list_new();
 	if (!str_list) {
