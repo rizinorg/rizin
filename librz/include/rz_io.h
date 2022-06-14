@@ -105,7 +105,7 @@ typedef struct rz_io_desc_t {
 } RzIODesc;
 
 typedef struct {
-	ut32 magic;
+	ut64 magic;
 	int pid;
 	int tid;
 	void *data;
