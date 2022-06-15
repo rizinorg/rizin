@@ -17,6 +17,12 @@
 #define PPC_DWORD 64
 #define PPC_QWORD 128
 
+#define NOT_IMPLEMENTED \
+	do { \
+		RZ_LOG_INFO("IL instruction not implemented."); \
+		return EMPTY(); \
+	} while (0)
+
 // Un/signed value with 32/64 bits.
 #define UA(i) (IN_64BIT_MODE ? U64(i) : U32(i))
 #define SA(i) (IN_64BIT_MODE ? S64(i) : S32(i))
