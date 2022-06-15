@@ -86,9 +86,9 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		ea = ADD(base, disp);
 		RzILOpPure *loadw = LOADW(mem_acc_size, VARLP("ea"));
 		if (ppc_is_algebraic(id)) {
-			into_rt = (mem_acc_size == 64) ? VARLP("loadw") : EXTEND(PPC_ARCH_BITS, VARLP("loadw"));
+			into_rt = EXTEND(PPC_ARCH_BITS, VARLP("loadw"));
 		} else {
-			into_rt = (mem_acc_size == 64) ? VARLP("loadw") : EXTZ(VARLP("loadw"));
+			into_rt = EXTZ(VARLP("loadw"));
 		}
 		into_rt = LET("ea", ea, LET("loadw", loadw, into_rt));
 		break;
