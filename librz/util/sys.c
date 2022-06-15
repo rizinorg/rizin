@@ -1240,11 +1240,19 @@ RZ_API int rz_sys_pipe_close(int fd) {
 static RzThreadLock *sys_pipe_mutex;
 static bool is_child = false;
 
-__attribute__((constructor)) static void sys_pipe_constructor(void) {
+#ifdef RZ_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(sys_pipe_constructor)
+#endif
+RZ_DEFINE_CONSTRUCTOR(sys_pipe_constructor)
+static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new(true);
 }
 
-__attribute__((destructor)) static void sys_pipe_destructor(void) {
+#ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(sys_pipe_destructor)
+#endif
+RZ_DEFINE_DESTRUCTOR(sys_pipe_destructor)
+static void sys_pipe_destructor(void) {
 	rz_th_lock_free(sys_pipe_mutex);
 }
 
@@ -1309,12 +1317,20 @@ static HtUU *fd2close;
 static RzThreadLock *sys_pipe_mutex;
 static bool is_child = false;
 
-__attribute__((constructor)) static void sys_pipe_constructor(void) {
+#ifdef RZ_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(sys_pipe_constructor)
+#endif
+RZ_DEFINE_CONSTRUCTOR(sys_pipe_constructor)
+static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new(false);
 	fd2close = ht_uu_new0();
 }
 
-__attribute__((destructor)) static void sys_pipe_destructor(void) {
+#ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(sys_pipe_destructor)
+#endif
+RZ_DEFINE_DESTRUCTOR(sys_pipe_destructor)
+static void sys_pipe_destructor(void) {
 	ht_uu_free(fd2close);
 	rz_th_lock_free(sys_pipe_mutex);
 }

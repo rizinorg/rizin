@@ -436,7 +436,7 @@ RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
 
 //#define rz_core_ncast(x) (RzCore*)(size_t)(x)
-RZ_API RzList *rz_core_theme_list(RzCore *core);
+RZ_API RZ_OWN RzList *rz_core_theme_list(RZ_NONNULL RzCore *core);
 RZ_API char *rz_core_theme_get(RzCore *core);
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name);
 RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode);
@@ -762,6 +762,7 @@ RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
 RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
 RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
+RZ_API RZ_OWN RzList *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool with_details);
 RZ_API bool rz_core_analysis_sigdb_apply(RZ_NONNULL RzCore *core, RZ_NULLABLE int *n_applied, RZ_NULLABLE const char *filter);
 RZ_API void rz_core_analysis_sigdb_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTable *table);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
@@ -1030,6 +1031,11 @@ RZ_API const char **rz_core_help_vars_get(RzCore *core);
 
 /* analysis stats */
 
+/**
+ * Single sub-range of statistics as part of an entire RzCoreAnalysisStats.
+ *
+ * The range that this covers is given by rz_core_analysis_stats_get_block_from()/to().
+ */
 typedef struct {
 	ut32 youarehere;
 	ut32 flags;
@@ -1040,15 +1046,24 @@ typedef struct {
 	ut32 symbols;
 	ut32 strings;
 	ut32 perm;
-} RzCoreAnalStatsItem;
+} RzCoreAnalysisStatsItem;
+
+/**
+ * Statistics for a range of memory, split up into smaller blocks.
+ */
 typedef struct {
-	RzCoreAnalStatsItem *block;
-} RzCoreAnalStats;
+	ut64 from;
+	ut64 to;
+	ut64 step;
+	RzVector blocks;
+} RzCoreAnalysisStats;
 
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);
-RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *a, ut64 from, ut64 to, ut64 step);
-RZ_API void rz_core_analysis_stats_free(RzCoreAnalStats *s);
+RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore *a, ut64 from, ut64 to, ut64 step);
+RZ_API void rz_core_analysis_stats_free(RzCoreAnalysisStats *s);
+RZ_API ut64 rz_core_analysis_stats_get_block_from(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
+RZ_API ut64 rz_core_analysis_stats_get_block_to(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
 
 RZ_API int rz_line_hist_offset_up(RzLine *line);
 RZ_API int rz_line_hist_offset_down(RzLine *line);

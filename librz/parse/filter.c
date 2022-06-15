@@ -201,6 +201,19 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 	int count = 0;
 	for (count = 0; (nptr = findNextNumber(ptr)); count++) {
 		ptr = nptr;
+
+		// Skip floats
+		for (ptr2 = ptr; IS_DIGIT(*ptr2); ptr2++) { // before .
+			;
+		}
+		if (*ptr2 == '.' && IS_DIGIT(ptr2[1])) { // .
+			while (++ptr2, IS_DIGIT(*ptr2)) { // after .
+				;
+			}
+			ptr = ptr2;
+			continue;
+		}
+
 		if (x86) {
 			for (ptr2 = ptr; *ptr2 && !isx86separator(*ptr2); ptr2++) {
 				;

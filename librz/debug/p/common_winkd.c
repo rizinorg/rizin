@@ -20,7 +20,6 @@ void winkd_build_profile(WindCtx *ctx, RzTypeDB *db) {
 	O_(P_ImageBaseAddress) = rz_type_db_struct_member_offset(db, "_PEB", "ImageBaseAddress");
 	O_(P_ProcessParameters) = rz_type_db_struct_member_offset(db, "_PEB", "ProcessParameters");
 	O_(RZ_ImagePathName) = rz_type_db_struct_member_offset(db, "_RTL_USER_PROCESS_PARAMETERS", "ImagePathName");
-	O_(ET_Tcb) = rz_type_db_struct_member_offset(db, "_ETHREAD", "Tcb");
 	O_(ET_ThreadListEntry) = rz_type_db_struct_member_offset(db, "_ETHREAD", "ThreadListEntry");
 	O_(ET_Win32StartAddress) = rz_type_db_struct_member_offset(db, "_ETHREAD", "Win32StartAddress");
 	O_(ET_Cid) = rz_type_db_struct_member_offset(db, "_ETHREAD", "Cid");
@@ -35,7 +34,6 @@ void winkd_build_profile(WindCtx *ctx, RzTypeDB *db) {
 	RZ_LOG_VERBOSE("_PEB.ImageBaseAddress: 0x%" PFMT32x "\n", O_(P_ImageBaseAddress));
 	RZ_LOG_VERBOSE("_PEB.ProcessParameters: 0x%" PFMT32x "\n", O_(P_ProcessParameters));
 	RZ_LOG_VERBOSE("_RTL_USER_PROCESS_PARAMETERS.ImagePathName: 0x%" PFMT32x "\n", O_(RZ_ImagePathName));
-	RZ_LOG_VERBOSE("_ETHREAD.Tcb: 0x%" PFMT32x "\n", O_(ET_Tcb));
 	RZ_LOG_VERBOSE("_ETHREAD.ThreadListEntry: 0x%" PFMT32x "\n", O_(ET_ThreadListEntry));
 	RZ_LOG_VERBOSE("_ETHREAD.Win32StartAddress: 0x%" PFMT32x "\n", O_(ET_Win32StartAddress));
 	RZ_LOG_VERBOSE("_ETHREAD.Cid: 0x%" PFMT32x "\n", O_(ET_Cid));

@@ -578,6 +578,18 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *h
 	return ret;
 }
 
+/**
+ *  \brief oop structure for an empty effect (val empty : 'a sort -> 'a t)
+ *
+ *  empty s creates an empty effect value.
+ *  The empty effect denotes an absence of any specific knowledge about the effects produced by a term.
+ */
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_empty() {
+	RzILOpEffect *ret;
+	rz_il_op_new_0(Effect, RZ_IL_OP_EMPTY);
+	return ret;
+}
+
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_nop() {
 	RzILOpEffect *ret;
 	rz_il_op_new_0(Effect, RZ_IL_OP_NOP);
@@ -1053,6 +1065,8 @@ RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op) {
 		return;
 	}
 	switch (op->code) {
+	case RZ_IL_OP_EMPTY:
+		break;
 	case RZ_IL_OP_STORE:
 		rz_il_op_free_2(pure, store, key, value);
 		break;

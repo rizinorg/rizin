@@ -316,21 +316,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p-
-FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-s 0x8048000
-e search.in=io.map
-p-
-e search.in=io.maps
-p-
-EOF
-EXPECT=<<EOF
-0x08048000 [^._______ss_s__s_sss_ssssss_ss_ss__sz_s____] 0x0804859c
-0x08048000 [^_sssssszss_____________________________sss] 0x080496d0
-EOF
-RUN
-
 NAME=pu 10
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=pu 10

@@ -267,3 +267,28 @@ EXPECT=<<EOF
 hw
 EOF
 RUN
+
+NAME=read core->block on short move
+FILE=bins/elf/analysis/x64-loop
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0 asm.offset=false asm.flags=false asm.functions=false asm.lines=false asm.fcn.size=false asm.comments=false asm.dwarf=false asm.indent=false
+dcu main
+pd 5
+dbH @i:2
+dc
+pd 5
+EOF
+EXPECT=<<EOF
+     push  rbp
+     mov   rbp, rsp
+     sub   rsp, 0x20
+     mov   dword [rbp - 0x14], edi
+     mov   qword [rbp - 0x20], rsi
+b    sub   rsp, 0x20
+     mov   dword [rbp - 0x14], edi
+     mov   qword [rbp - 0x20], rsi
+     mov   dword [rbp - 4], 0
+     jmp   0x400523
+EOF
+RUN

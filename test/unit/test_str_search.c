@@ -8,7 +8,8 @@ static RzUtilStrScanOptions g_opt = {
 	.buf_size = 2048,
 	.max_uni_blocks = 4,
 	.min_str_length = 4,
-	.prefer_big_endian = false
+	.prefer_big_endian = false,
+	.check_ascii_freq = true
 };
 
 bool test_rz_scan_strings_detect_ascii(void) {
@@ -184,7 +185,7 @@ bool test_rz_scan_strings_detect_utf16_le_special_chars(void) {
 	mu_assert_eq(n, 1, "rz_scan_strings utf16le, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
-	mu_assert_streq(s->string, "\twide\\esc: \x1b[0m", "rz_scan_strings utf16le, different string");
+	mu_assert_streq(s->string, "\twide\\esc: \x1b[0m\xc2\xa1\r\n", "rz_scan_strings utf16le, different string");
 	mu_assert_eq(s->addr, 0, "rz_scan_strings utf16le, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
 
@@ -308,6 +309,40 @@ bool test_rz_scan_strings_utf16_be(void) {
 	mu_end;
 }
 
+bool test_rz_scan_strings_extended_ascii(void) {
+	static const unsigned char str[] =
+		"Immensità s'annega il pensier mio: E il naufragar m'è dolce in questo mare.\x00"
+		"Ich sah, wie Doris bei Damöten stand, er nahm sie zärtlich bei der Hand.\00"
+		"Dans l'éblouissante clarté de leur premier amour.\x00";
+
+	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+
+	RzList *str_list = rz_list_new();
+
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF8);
+	mu_assert_eq(n, 3, "rz_scan_strings extended_ascii, number of strings");
+
+	RzDetectedString *s_it = rz_list_get_n(str_list, 0);
+	RzDetectedString *s_de = rz_list_get_n(str_list, 1);
+	RzDetectedString *s_fr = rz_list_get_n(str_list, 2);
+
+	mu_assert_streq(s_it->string, "Immensità s'annega il pensier mio: E il naufragar m'è dolce in questo mare.",
+		"rz_scan_strings extended_ascii, different strings IT");
+	mu_assert_streq(s_de->string, "Ich sah, wie Doris bei Damöten stand, er nahm sie zärtlich bei der Hand.",
+		"rz_scan_strings extended_ascii, different strings DE");
+	mu_assert_streq(s_fr->string, "Dans l'éblouissante clarté de leur premier amour.",
+		"rz_scan_strings extended_ascii, different strings FR");
+
+	rz_detected_string_free(s_it);
+	rz_detected_string_free(s_de);
+	rz_detected_string_free(s_fr);
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_ascii);
 	mu_run_test(test_rz_scan_strings_detect_ibm037);
@@ -317,8 +352,9 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_utf16_be);
 	mu_run_test(test_rz_scan_strings_detect_utf32_le);
 	mu_run_test(test_rz_scan_strings_detect_utf32_be);
-
 	mu_run_test(test_rz_scan_strings_utf16_be);
+	mu_run_test(test_rz_scan_strings_extended_ascii);
+
 	return tests_passed != tests_run;
 }
 

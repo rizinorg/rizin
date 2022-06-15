@@ -99,7 +99,7 @@ rz_io_deps = [
   dependency('rzwinkd'),
   libzip_dep,
   dependency('rzar'),
-  pth,
+  th,
   lrt,
   rz_util_dep,
   rz_socket_dep,

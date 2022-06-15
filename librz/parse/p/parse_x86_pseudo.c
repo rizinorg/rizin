@@ -291,7 +291,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	return true;
 }
 
-static void parse_localvar(RzParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, char *ireg, bool att) {
+static void parse_localvar(RzParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, const char *ireg, bool att) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	if (att) {
 		if (p->localvar_only) {
@@ -318,7 +318,7 @@ static void parse_localvar(RzParse *p, char *newstr, size_t newstr_len, const ch
 	rz_strbuf_free(sb);
 }
 
-static inline void mk_reg_str(const char *regname, int delta, bool sign, bool att, char *ireg, char *dest, int len) {
+static inline void mk_reg_str(const char *regname, int delta, bool sign, bool att, const char *ireg, char *dest, int len) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	if (att) {
 		if (ireg) {
@@ -346,7 +346,9 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 	rz_strbuf_free(sb);
 }
 
-static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
+	const ut64 addr = op->addr;
+	const int oplen = op->size;
 	RzList *bpargs, *spargs;
 	RzAnalysis *analysis = p->analb.analysis;
 	RzListIter *bpargiter, *spiter;
@@ -419,10 +421,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 	if (ucase && tstr[1]) {
 		ucase = tstr[1] >= 'A' && tstr[1] <= 'Z';
 	}
-	char *ireg = NULL;
-	if (p->get_op_ireg) {
-		ireg = p->get_op_ireg(p->user, addr);
-	}
+	const char *ireg = op->ireg;
 	RzAnalysisVarField *bparg, *sparg;
 	rz_list_foreach (spargs, spiter, sparg) {
 		char sign = '+';
@@ -553,7 +552,6 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 		ret = false;
 	}
 	free(tstr);
-	free(ireg);
 	rz_list_free(spargs);
 	rz_list_free(bpargs);
 	return ret;

@@ -71,7 +71,9 @@ RUN pip3 install meson ninja
 COPY . /tmp/rizin/
 
 WORKDIR /tmp/rizin
-RUN meson --prefix=/usr /tmp/build && meson compile -C /tmp/build && meson install --destdir /tmp/rizin-install -C /tmp/build
+RUN meson --prefix=/usr -Dinstall_sigdb=true /tmp/build && \
+	meson compile -C /tmp/build && \
+	meson install --destdir /tmp/rizin-install -C /tmp/build
 
 WORKDIR /tmp
 RUN git clone -b "$RZ_PIPE_PY_VERSION" https://github.com/rizinorg/rz-pipe

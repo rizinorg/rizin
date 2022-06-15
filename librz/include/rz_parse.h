@@ -36,7 +36,6 @@ typedef struct rz_parse_t {
 	RzAnalysisVarList varlist;
 	st64 (*get_ptr_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
 	const char *(*get_reg_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
-	char *(*get_op_ireg)(void *user, ut64 addr);
 	RzAnalysisBind analb;
 	RzFlagGetAtAddr flag_get; // XXX
 	RzAnalysisLabelAt label_get;
@@ -50,7 +49,7 @@ typedef struct rz_parse_plugin_t {
 	bool (*parse)(RzParse *p, const char *data, RzStrBuf *sb);
 	bool (*assemble)(RzParse *p, char *data, char *str);
 	int (*filter)(RzParse *p, ut64 addr, RzFlag *f, char *data, char *str, int len, bool big_endian);
-	bool (*subvar)(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+	bool (*subvar)(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len);
 	int (*replace)(int argc, const char *argv[], char *newstr);
 } RzParsePlugin;
 
@@ -69,7 +68,7 @@ RZ_API bool rz_parse_use(RzParse *p, const char *name);
 RZ_API char *rz_parse_pseudocode(RzParse *p, const char *data);
 RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
 RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian);
-RZ_API bool rz_parse_subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+RZ_API bool rz_parse_subvar(RzParse *p, RZ_NULLABLE RzAnalysisFunction *f, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL RZ_IN char *data, RZ_BORROW RZ_NONNULL RZ_OUT char *str, int len);
 RZ_API char *rz_parse_immtrim(char *opstr);
 
 /* plugin pointers */

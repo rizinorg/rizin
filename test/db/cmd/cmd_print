@@ -155,6 +155,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=p=Aq
+FILE==
+CMDS=<<EOF
+f test @ 0
+f ulu @ 2
+f mulu @ 0x100
+p=Aq 0x10
+EOF
+EXPECT=<<EOF
+0x00000000 0 2
+0x00000020 1 0
+0x00000040 2 0
+0x00000060 3 0
+0x00000080 4 0
+0x000000a0 5 0
+0x000000c0 6 0
+0x000000e0 7 0
+0x00000100 8 1
+0x00000120 9 0
+0x00000140 10 0
+0x00000160 11 0
+0x00000180 12 0
+0x000001a0 13 0
+0x000001c0 14 0
+0x000001e0 15 0
+EOF
+RUN
+
 NAME=p8 10
 FILE=malloc://1024
 CMDS=wx 90909090909090909090 ; p8 10
@@ -659,21 +687,6 @@ nop
 nop
 nop
 nop
-EOF
-RUN
-
-NAME=p- with "r2 --"
-FILE=--
-CMDS=p-
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=p- with malloc://512
-FILE=malloc://512
-CMDS=p-
-EXPECT=<<EOF
-0x00000000 [^_____________________________________________] 0x00000200
 EOF
 RUN
 

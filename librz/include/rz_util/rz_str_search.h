@@ -28,7 +28,8 @@ typedef struct {
 	size_t buf_size; ///< Maximum size of a detected string
 	size_t max_uni_blocks; ///< Maximum number of unicode blocks
 	size_t min_str_length; ///< Minimum string length
-	bool prefer_big_endian; //< True if the preferred endianess for UTF strings is big-endian
+	bool prefer_big_endian; ///< True if the preferred endianess for UTF strings is big-endian
+	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
 } RzUtilStrScanOptions;
 
 RZ_API void rz_detected_string_free(RzDetectedString *str);

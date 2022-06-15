@@ -496,6 +496,7 @@ typedef enum {
 	RZ_IL_OP_STORE,
 	RZ_IL_OP_STOREW,
 
+	RZ_IL_OP_EMPTY,
 	RZ_IL_OP_NOP,
 	RZ_IL_OP_SET,
 	RZ_IL_OP_JMP,
@@ -526,6 +527,7 @@ struct rz_il_op_effect_t {
 
 RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op);
 
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_empty();
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_nop();
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, bool is_local, RZ_NONNULL RzILOpPure *x);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_jmp(RZ_NONNULL RzILOpBitVector *dst);
