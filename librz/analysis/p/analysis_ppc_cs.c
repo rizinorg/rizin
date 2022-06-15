@@ -958,7 +958,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
-		op->il_op = rz_il_op_new_nop();
+		op->il_op = rz_il_op_new_empty();
 	} else {
 		op->il_op = rz_ppc_cs_get_il_op(handle, insn, mode);
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
