@@ -202,11 +202,11 @@ static inline RzILOpPure *sh_il_get_effective_addr(SHParam param, SHScaling scal
 	case SH_REG_INDIRECT_DISP:
 		return ADD(sh_il_get_reg(param.param[0]), MUL(SH_U_ADDR(param.param[1]), SH_U_ADDR(sh_scaling_size[scaling])));
 	case SH_REG_INDIRECT_INDEXED:
-		return ADD(sh_il_get_reg(param.param[0]), sh_il_get_reg(param.param[1]));
+		return ADD(sh_il_get_reg(SH_REG_IND_R0), sh_il_get_reg(param.param[0]));
 	case SH_GBR_INDIRECT_DISP:
 		return ADD(VARG("gbr"), MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 	case SH_GBR_INDIRECT_INDEXED:
-		return ADD(VARG("gbr"), sh_il_get_reg(param.param[0]));
+		return ADD(VARG("gbr"), sh_il_get_reg(SH_REG_IND_R0));
 	case SH_PC_RELATIVE_DISP: {
 		RzILOpBitVector *pc = VARG("pc");
 		// mask lower 2 bits if sh_scaling_size[scaling] == 4

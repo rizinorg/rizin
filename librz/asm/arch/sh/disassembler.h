@@ -177,11 +177,12 @@ typedef struct sh_param_t {
 
 typedef struct sh_opcode_t {
 	RzBitVector *bits;
+	const char *str_mnem;
 	SHOpMnem mnemonic;
 	SHParam param[2];
 	SHScaling scaling;
 } SHOp;
 
-ut32 sh_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, SHOp *aop, RzStrBuf *sb);
+SHOp *sh_disassembler(ut16 opcode, bool be);
 
 #endif /* RZ_ASM_SH_DISASSEMBLER_H */
