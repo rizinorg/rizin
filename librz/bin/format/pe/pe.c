@@ -403,12 +403,7 @@ ut64 PE_(rz_bin_pe_get_image_base)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		return 0LL;
 	}
 	imageBase = bin->nt_headers->optional_header.ImageBase;
-	if (!imageBase) {
-		// this should only happens with messed up binaries
-		// XXX this value should be user defined by bin.baddr
-		// but from here we can not access config API
-		imageBase = 0x10000;
-	}
+
 	return imageBase;
 }
 
@@ -3256,7 +3251,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 	PE_DWord paddr = data_dir_security->VirtualAddress;
 	ut32 size = data_dir_security->Size;
 	if (size < 8 || paddr > bin->size || paddr + size > bin->size) {
-		RZ_LOG_INFO("Invalid certificate table");
+		RZ_LOG_INFO("Invalid certificate table\n");
 		return false;
 	}
 
@@ -3283,7 +3278,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 		}
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
 		if (offset + cert->dwLength > paddr + size) {
-			RZ_LOG_INFO("Invalid certificate entry");
+			RZ_LOG_INFO("Invalid certificate entry\n");
 			RZ_FREE(cert);
 			return false;
 		}
@@ -4104,13 +4099,21 @@ char *PE_(rz_bin_pe_get_os)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		return NULL;
 	}
 	switch (bin->nt_headers->optional_header.Subsystem) {
+	case PE_IMAGE_SUBSYSTEM_UNKNOWN:
+		os = strdup("unknown os");
+		break;
 	case PE_IMAGE_SUBSYSTEM_NATIVE:
 		os = strdup("native");
 		break;
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
+	case PE_IMAGE_SUBSYSTEM_NATIVE_WINDOWS:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
+	case PE_IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION:
 		os = strdup("windows");
+		break;
+	case PE_IMAGE_SUBSYSTEM_OS2_CUI:
+		os = strdup("os/2");
 		break;
 	case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
 		os = strdup("posix");
@@ -4125,8 +4128,7 @@ char *PE_(rz_bin_pe_get_os)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		os = strdup("xbox");
 		break;
 	default:
-		// XXX: this is unknown
-		os = strdup("windows");
+		os = strdup("invalid");
 	}
 	return os;
 }
