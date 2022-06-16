@@ -25,6 +25,12 @@ static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, RZ_OWN Rz
 	}
 }
 
+bool rz_il_handler_empty(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
+	RZ_LOG_WARN("Encountered an empty instruction at %s", rz_bv_as_string(vm->pc))
+	return true;
+}
+
 bool rz_il_handler_nop(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 	return true;

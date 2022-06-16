@@ -29,31 +29,31 @@ jobs:
 
     - name: Initialize CodeQL - cpp
       if: matrix.name == 'CodeQL-cpp'
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: cpp
         setup-python-dependencies: false
 
     - name: Initialize CodeQL - javascript
       if: matrix.name == 'CodeQL-javascript'
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: javascript
         setup-python-dependencies: false
 
     - name: Initialize CodeQL - python
       if: matrix.name == 'CodeQL-python'
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: python
         setup-python-dependencies: false
 
     - name: Autobuild CodeQL
       if: matrix.name == 'CodeQL-cpp'
-      uses: github/codeql-action/autobuild@v1
+      uses: github/codeql-action/autobuild@v2
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      uses: github/codeql-action/analyze@v2
       with:
         output: "reports"
         upload: false
@@ -71,6 +71,6 @@ jobs:
         jq '.runs[].tool.driver.rules[] |= . + {"defaultConfiguration": {"level": "error"}}' filtered.sarif > final.sarif
 
     - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v1
+      uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: final.sarif

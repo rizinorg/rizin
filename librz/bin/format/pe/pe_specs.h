@@ -788,11 +788,6 @@ typedef struct {
 	PE64_SCOPE_RECORD ScopeRecord[];
 } PE64_SCOPE_TABLE;
 
-bool rz_bin_pe_buffer_read_le8(RzBuffer *buf, ut64 *offset, ut8 *result);
-bool rz_bin_pe_buffer_read_le16(RzBuffer *buf, ut64 *offset, ut16 *result);
-bool rz_bin_pe_buffer_read_le32(RzBuffer *buf, ut64 *offset, ut32 *result);
-bool rz_bin_pe_buffer_read_le64(RzBuffer *buf, ut64 *offset, ut64 *result);
-
 bool Pe32_read_dos_header(RzBuffer *buf, Pe32_image_dos_header *header);
 bool Pe32_read_nt_headers(RzBuffer *buf, ut64 addr, Pe32_image_nt_headers *headers);
 bool Pe32_read_image_section_header(RzBuffer *b, ut64 addr, Pe32_image_section_header *section_header);

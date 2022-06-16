@@ -189,7 +189,7 @@ wx 0000000000000000010000100000000000000000
 e asm.bits=32
 e asm.arch=mips
 e asm.nbytes=4
-af+ 0x80100000 fcn.test
+af+ fcn.test @ 0x80100000
 afb+ 0x80100000 0x80100000 20
 pif
 EOF

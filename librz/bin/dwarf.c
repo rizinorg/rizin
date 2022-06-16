@@ -2092,6 +2092,7 @@ RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwa
 	info->lookup_table = ht_up_new_size(info->n_dwarf_dies, NULL, NULL, NULL);
 	if (!info->lookup_table) {
 		rz_bin_dwarf_debug_info_free(info);
+		info = NULL;
 		goto cave_buf;
 	}
 	// build hashtable after whole parsing because of possible relocations

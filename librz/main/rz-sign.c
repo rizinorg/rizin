@@ -47,6 +47,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	bool quiet = false;
 	RzGetopt opt;
 	int ret = 0;
+	ut32 n_nodes = 0;
 
 	int c, option = RZ_SIGN_OPT_NONE;
 	size_t complexity = 0;
@@ -57,7 +58,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		return -1;
 	}
 
-	rz_getopt_init(&opt, argc, argv, "aqdc:o:e:v");
+	rz_getopt_init(&opt, argc, argv, "aqhdc:o:e:v");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -106,6 +107,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			rz_sign_show_help();
 			goto rz_sign_end;
 		default:
+			RZ_LOG_ERROR("rz-sign: invalid option -%c\n", c);
 			rz_sign_show_help();
 			ret = -1;
 			goto rz_sign_end;
@@ -122,7 +124,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	input_file = argv[opt.ind];
 
 	if (option == RZ_SIGN_OPT_CREATE_FLIRT && complexity > 2) {
-		RZ_LOG_ERROR("rz-sign: Invalid analysis complexity (too many -a defined)\n");
+		RZ_LOG_ERROR("rz-sign: Invalid analysis complexity (too many -a defined, max -aa)\n");
 		rz_sign_show_help();
 		ret = -1;
 		goto rz_sign_end;
@@ -165,29 +167,34 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		}
 	}
 
-	if (option == RZ_SIGN_OPT_DUMP_FLIRT) {
-		// dump flirt file
-		if (!rz_core_flirt_dump_file(input_file)) {
-			ret = -1;
-		}
-	} else if (option == RZ_SIGN_OPT_CREATE_FLIRT) {
-		// run analysis to find functions
-		perform_analysis(core, complexity);
-
-		// create flirt file
-		ut32 n_nodes = 0;
-		if (!rz_core_flirt_create_file(core, output_file, &n_nodes)) {
-			ret = -1;
-		} else if (!quiet) {
-			rz_cons_printf("rz-sign: written %u signatures to %s.\n", n_nodes, output_file);
-		}
-	} else {
+	switch (option) {
+	case RZ_SIGN_OPT_CONVERT_FLIRT:
 		// convert a flirt file from .pat to .sig or viceversa
 		if (!rz_core_flirt_convert_file(core, input_file, output_file)) {
 			ret = -1;
 		} else if (!quiet) {
 			rz_cons_printf("rz-sign: %s was converted to %s.\n", input_file, output_file);
 		}
+		break;
+	case RZ_SIGN_OPT_CREATE_FLIRT:
+		// run analysis to find functions
+		perform_analysis(core, complexity);
+		// create flirt file
+		if (!rz_core_flirt_create_file(core, output_file, &n_nodes)) {
+			ret = -1;
+		} else if (!quiet) {
+			rz_cons_printf("rz-sign: written %u signatures to %s.\n", n_nodes, output_file);
+		}
+		break;
+	case RZ_SIGN_OPT_DUMP_FLIRT:
+		if (!rz_core_flirt_dump_file(input_file)) {
+			ret = -1;
+		}
+		break;
+	default:
+		RZ_LOG_ERROR("rz-sign: missing option, please set -c or -d or -o\n");
+		ret = -1;
+		break;
 	}
 	rz_cons_flush();
 

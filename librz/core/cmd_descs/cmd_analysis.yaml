@@ -3,33 +3,248 @@
 ---
 name: cmd_analysis
 commands:
-  - name: aae
-    summary: analyze references with ESIL
-    cname: analysis_all_esil
-    type: RZ_CMD_DESC_TYPE_ARGV
-    args:
-      - name: len
-        type: RZ_CMD_ARG_TYPE_RZNUM
-        optional: true
-    details:
-      - name: Examples
-        entries:
-          - text: "aae"
-            arg_str: ""
-            comment: analyze ranges given by analysis.in
-          - text: "aae"
-            arg_str: " $SS @ $S"
-            comment: analyze the whole section
-  - name: aaef
-    summary: analyze references with ESIL in all functions
-    cname: analysis_all_esil_functions
-    type: RZ_CMD_DESC_TYPE_ARGV
-    args: []
+  - name: aa
+    summary: Analysis commands
+    subcommands:
+      - name: aa
+        summary: Analyze all flags starting with sym. and entry
+        cname: analyze_simple
+        args: []
+      - name: aaa
+        summary: Analyze all calls, references, emulation and applies signatures
+        cname: analyze_everything
+        args: []
+      - name: aaaa
+        summary: Experimental analysis
+        cname: analyze_everything_experimental
+        args: []
+      - name: aac
+        summary: Analysis function calls commands
+        subcommands:
+          - name: aac
+            summary: Analyze function calls
+            cname: analyze_all_function_calls
+            args: []
+          - name: aaci
+            summary: Analyze all function calls to imports
+            cname: analyze_all_function_calls_to_imports
+            args: []
+      - name: aad
+        summary: Analyze data references to code
+        cname: analyze_all_data_references_to_code
+        args: []
+      - name: aae
+        summary: Analysis commands using ESIL
+        subcommands:
+          - name: aae
+            summary: Analyze references with ESIL
+            cname: analysis_all_esil
+            type: RZ_CMD_DESC_TYPE_ARGV
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+            details:
+              - name: Examples
+                entries:
+                  - text: "aae"
+                    arg_str: ""
+                    comment: analyze ranges given by analysis.in
+                  - text: "aae"
+                    arg_str: " $SS @ $S"
+                    comment: analyze the whole section
+          - name: aaef
+            summary: Analyze references with ESIL in all functions
+            cname: analysis_all_esil_functions
+            type: RZ_CMD_DESC_TYPE_ARGV
+            args: []
+      - name: aaf
+        summary: Analysis function commands
+        subcommands:
+          - name: aaf
+            summary: Analyze all functions
+            cname: analyze_all_functions
+            args: []
+          - name: aafe
+            summary: Analyze all functions using ESIL
+            cname: analyze_all_functions_esil
+            args: []
+          - name: aafr
+            summary: Analyze all consecutive functions in section
+            cname: analyze_all_consecutive_functions_in_section
+            args:
+              - name: length
+                type: RZ_CMD_ARG_TYPE_NUM
+          - name: aaft
+            summary: Performs recursive type matching in all functions
+            cname: analyze_recursively_all_function_types
+            args: []
+      - name: aaF
+        summary: Signature database commands
+        subcommands:
+          - name: aaF
+            summary: Apply signatures from sigdb
+            cname: apply_signatures_from_sigdb
+            args:
+              - name: filter
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aaFl
+            summary: Lists all available signatures in sigdb
+            cname: list_signatures_in_sigdb
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            default_mode: RZ_OUTPUT_MODE_TABLE
+            modes:
+              - RZ_OUTPUT_MODE_TABLE
+            args: []
+      - name: aai
+        summary: Print preformed analysis details
+        cname: print_analysis_details
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: aaj
+        summary: Analyze all unresolved jumps
+        cname: analyze_all_unresolved_jumps
+        args: []
+      - name: aal
+        summary: Language specific analysis commands
+        subcommands:
+          - name: aalg
+            summary: Recovers and analyze all Golang functions and strings
+            cname: recover_all_golang_functions_strings
+            args: []
+          - name: aalo
+            summary: Analyze all Objective-C references
+            cname: analyze_all_objc_references
+            args: []
+      - name: aan
+        summary: Automatic rename functions commands
+        subcommands:
+          - name: aan
+            summary: Renames all functions based on their strings or calls
+            cname: autoname_all_functions
+            args: []
+          - name: aanr
+            summary: Renames all functions which does not return 
+            cname: autoname_all_functions_noreturn
+            args: []
+      - name: aap
+        summary: Analyze all preludes
+        cname: analyze_all_preludes
+        args: []
+        details:
+          - name: Search a custom prelude
+            entries:
+              - text: "e analysis.prelude='90AEF630'"
+                arg_str: ""
+                comment: Set new prelude
+              - text: "aap"
+                arg_str: ""
+                comment: Search for 90AEF630 and create a new function
+      - name: aar
+        summary: Analyze xrefs in current section or by n_bytes
+        cname: analyze_xrefs_section_bytes
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aas
+        summary: Analyze only the symbols
+        cname: analyze_symbols_entries
+        args: []
+      - name: aaS
+        summary: Analyze only the flags starting as sym.* and entry*
+        cname: analyze_symbols_entries_flags
+        args: []
+      - name: aat
+        summary: Analyze all/given function to convert immediate to linked structure offsets
+        cname: analyze_function_linked_offsets
+        args:
+          - name: func_name
+            type: RZ_CMD_ARG_TYPE_FCN
+            optional: true
+      - name: aaT
+        summary: Prints commands to create functions after a trap call
+        cname: print_commands_after_traps
+        args:
+          - name: n_bytes
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aau
+        summary: Print memory areas not covered by functions
+        cname: print_areas_no_functions
+        args:
+          - name: min_len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aav
+        summary: Analyze values referencing a specific section or map
+        cname: analyze_value_to_maps
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
   - name: af
     summary: Analyze Functions commands
-    cname: cmd_analysis_fcn
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands:
+      - name: af
+        summary: Analyze functions recursively (honors `analysis.calls`)
+        cname: analysis_function_add_recu
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: afr
+        summary: Analyze functions recursively
+        cname: analysis_function_add_recu_force
+        handler: analysis_function_add_recu
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: af+
+        summary: Hand craft a function (requires `afb+`)
+        cname: analysis_function_create
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: type
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            optional: true
+            choices: ["l", "i", "s"]
+          - name: diff
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            optional: true
+            choices: ["m", "u"]
+      - name: af-
+        summary: Delete function
+        cname: analysis_function_del
+        args: []
+      - name: af-*
+        summary: Delete all function analysis data
+        cname: analysis_function_del_all
+        args: []
+      - name: afj
+        summary: Analyze function jumptable
+        cname: analysis_function_analyze_jmptable
+        args:
+          - name: tbl_addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: elements
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afa
+        summary: Analyze function arguments in a call
+        cname: analysis_function_analyze_args
+        args: []
+      - name: afal
+        summary: Analyze function arguments in a call (honors `dbg.funcarg`)
+        cname: analysis_function_analyze_args_l
+        handler: analysis_function_analyze_args
+        args: []
       - name: afb
         summary: Basic blocks commands
         subcommands:
@@ -566,6 +781,10 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
             args: []
+      - name: afd
+        summary: Show function + delta for given offset
+        cname: analysis_function_describe_offset
+        args: []
   - name: aeC
     summary: appcall in esil
     cname: analysis_appcall

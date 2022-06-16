@@ -416,6 +416,16 @@ typedef struct rz_debug_pid_t {
 	ut64 pc;
 } RzDebugPid;
 
+typedef struct rz_backtrace_t {
+	RzDebugFrame *frame;
+	RzAnalysisFunction *fcn;
+	char *desc;
+	char *pcstr;
+	char *spstr;
+	char *flagdesc;
+	char *flagdesc2;
+} RzBacktrace;
+
 #ifdef RZ_API
 RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
@@ -443,9 +453,7 @@ RZ_API int rz_debug_continue_syscall(RzDebug *dbg, int sc);
 RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc);
 RZ_API int rz_debug_continue(RzDebug *dbg);
 RZ_API int rz_debug_continue_kill(RzDebug *dbg, int signal);
-#if __WINDOWS__
 RZ_API int rz_debug_continue_pass_exception(RzDebug *dbg);
-#endif
 
 /* process/thread handling */
 RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);

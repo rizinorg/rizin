@@ -535,7 +535,6 @@ typedef struct rz_analysis_options_t {
 	int nonull;
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //
-	bool endsize; // chop function size which is known to be buggy but goodie too
 	bool delay;
 	int tailcall;
 	bool retpoline;
@@ -902,11 +901,11 @@ typedef struct rz_analysis_task_item {
 } RzAnalysisTaskItem;
 
 typedef enum {
-	RZ_ANALYSIS_REF_TYPE_NULL = 0,
-	RZ_ANALYSIS_REF_TYPE_CODE = 'c', // code ref
-	RZ_ANALYSIS_REF_TYPE_CALL = 'C', // code ref (call)
-	RZ_ANALYSIS_REF_TYPE_DATA = 'd', // mem ref
-	RZ_ANALYSIS_REF_TYPE_STRING = 's' // string ref
+	RZ_ANALYSIS_XREF_TYPE_NULL = 0,
+	RZ_ANALYSIS_XREF_TYPE_CODE = 'c', // code ref
+	RZ_ANALYSIS_XREF_TYPE_CALL = 'C', // code ref (call)
+	RZ_ANALYSIS_XREF_TYPE_DATA = 'd', // mem ref
+	RZ_ANALYSIS_XREF_TYPE_STRING = 's' // string ref
 } RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
@@ -1781,10 +1780,10 @@ RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis);
 #define RZ_ANALYSIS_THRESHOLDBB  0.7F
 
 /* diff.c */
-RZ_API RzAnalysisDiff *rz_analysis_diff_new(void);
+RZ_API RZ_OWN RzAnalysisDiff *rz_analysis_diff_new(void);
 RZ_API void rz_analysis_diff_setup(RzAnalysis *analysis, int doops, double thbb, double thfcn);
 RZ_API void rz_analysis_diff_setup_i(RzAnalysis *analysis, int doops, int thbb, int thfcn);
-RZ_API void *rz_analysis_diff_free(RzAnalysisDiff *diff);
+RZ_API void rz_analysis_diff_free(RzAnalysisDiff *diff);
 RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *analysis, RzAnalysisBlock *bb);
 RZ_API size_t rz_analysis_diff_fingerprint_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisFunction *fcn2);

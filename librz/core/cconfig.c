@@ -179,13 +179,6 @@ static bool cb_analysis_delay(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analysis_endsize(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.endsize = node->i_value;
-	return true;
-}
-
 static bool cb_analysis_vars(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -1168,6 +1161,13 @@ static bool cb_str_escbslash(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->print->esc_bslash = node->i_value;
+	return true;
+}
+
+static bool cb_strsearch_check_ascii_freq(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->bin->strseach_check_ascii_freq = node->i_value;
 	return true;
 }
 
@@ -2905,7 +2905,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.armthumb", "false", &cb_analysis_armthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB("analysis.jmp.after", "true", &cb_analysis_afterjmp, "Continue analysis after jmp/ujmp");
 	SETCB("analysis.trap.after", "false", &cb_analysis_aftertrap, "Continue analysis after trap instructions.");
-	SETCB("analysis.endsize", "true", &cb_analysis_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
 	SETCB("analysis.delay", "true", &cb_analysis_delay, "Enable delay slot analysis if supported by the architecture");
 	SETICB("analysis.depth", 64, &cb_analysis_depth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB("analysis.graph_depth", 256, &cb_analysis_graphdepth, "Max depth for path search");
@@ -3571,6 +3570,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("scr.highlight.grep", "false", &cb_scr_color_grep_highlight, "Highlight (INVERT) the grepped words");
 	SETBPREF("scr.prompt.file", "false", "Show user prompt file (used by rizin -q)");
 	SETBPREF("scr.prompt.flag", "false", "Show flag name in the prompt");
+	SETBPREF("scr.prompt.flag.only", "false", "Show the flag name only in the prompt");
 	SETBPREF("scr.prompt.sect", "false", "Show section name in the prompt");
 	SETCB("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
 	SETCB("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by rizin -q)");
@@ -3595,6 +3595,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* str */
 	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
+	SETCB("str.search.check_ascii_freq", "true", &cb_strsearch_check_ascii_freq,
+		"Perform ASCII frequency analysis when looking for false positives during string search");
 
 	/* search */
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");

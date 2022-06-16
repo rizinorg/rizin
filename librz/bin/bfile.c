@@ -80,10 +80,9 @@ static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedStr
 	free(src);
 }
 
-static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut64 from, const ut64 to, RzStrEnc type, RzBinSection *section) {
+static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut64 from, const ut64 to, RzStrEnc type) {
 	RzListIter *it;
 	RzDetectedString *str;
-	RzBinSection *s = NULL;
 
 	RzList *str_list = rz_list_new();
 	if (!str_list) {
@@ -94,7 +93,8 @@ static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut6
 		.buf_size = 2048,
 		.max_uni_blocks = 4,
 		.min_str_length = min,
-		.prefer_big_endian = false
+		.prefer_big_endian = false,
+		.check_ascii_freq = bf->rbin->strseach_check_ascii_freq
 	};
 
 	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, from, to, type);
@@ -105,31 +105,15 @@ static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut6
 
 	int ord = 0;
 	rz_list_foreach (str_list, it, str) {
-		if (!s) {
-			if (section) {
-				s = section;
-			} else if (bf->o) {
-				s = rz_bin_get_section_at(bf->o, str->addr, false);
-			}
-		}
-
 		RzBinString *bs = RZ_NEW0(RzBinString);
 		detected_string_to_bin_string(bs, str);
 		bs->ordinal = ord++;
-
-		if (s) {
-			bs->vaddr = bs->paddr - s->paddr + s->vaddr;
-		}
-
 		if (bf->o) {
+			bs->paddr += bf->o->boffset;
+			bs->vaddr = rz_bin_object_p2v(bf->o, bs->paddr);
 			ht_up_insert(bf->o->strings_db, bs->vaddr, bs);
 		}
 		rz_list_append(list, bs);
-
-		if (from == 0 && to == bf->size) {
-			/* force lookup section at the next one */
-			s = NULL;
-		}
 	}
 
 	rz_list_free(str_list);
@@ -145,7 +129,7 @@ static bool __isDataSection(RzBinFile *a, RzBinSection *s) {
 	return strstr(s->name, "_const") != NULL;
 }
 
-static void get_strings_range(RzBinFile *bf, RzList *list, size_t min, ut64 from, ut64 to, RzBinSection *section) {
+static void get_strings_range(RzBinFile *bf, RzList *list, size_t min, ut64 from, ut64 to) {
 	rz_return_if_fail(bf && bf->buf && bf->rbin);
 
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
@@ -202,27 +186,28 @@ static void get_strings_range(RzBinFile *bf, RzList *list, size_t min, ut64 from
 		RZ_LOG_ERROR("bin: encoding %s not supported\n", enc);
 		return;
 	}
-	string_scan_range(list, bf, min, from, to, type, section);
+	string_scan_range(list, bf, min, from, to, type);
 }
 
-RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
+RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, bool steal_ptr) {
 	ut32 bf_id;
 	if (!rz_id_pool_grab_id(bin->ids->pool, &bf_id)) {
 		return NULL;
 	}
 	RzBinFile *bf = RZ_NEW0(RzBinFile);
-	if (bf) {
-		bf->id = bf_id;
-		bf->rbin = bin;
-		bf->file = file ? strdup(file) : NULL;
-		bf->fd = fd;
-		bf->curxtr = xtrname ? rz_bin_get_xtrplugin_by_name(bin, xtrname) : NULL;
-		bf->sdb = sdb;
-		bf->size = file_sz;
-		bf->xtr_data = rz_list_newf((RzListFree)rz_bin_xtrdata_free);
-		bf->xtr_obj = NULL;
-		bf->sdb = sdb_new0();
+	if (!bf) {
+		return NULL;
 	}
+
+	bf->id = bf_id;
+	bf->rbin = bin;
+	bf->file = RZ_STR_DUP(file);
+	bf->fd = fd;
+	bf->curxtr = xtrname ? rz_bin_get_xtrplugin_by_name(bin, xtrname) : NULL;
+	bf->size = file_sz;
+	bf->xtr_data = rz_list_newf((RzListFree)rz_bin_xtrdata_free);
+	bf->xtr_obj = NULL;
+	bf->sdb = sdb_new0();
 	return bf;
 }
 
@@ -248,6 +233,7 @@ RZ_IPI void rz_bin_file_free(void /*RzBinFile*/ *_bf) {
 	free(bf->file);
 	rz_bin_object_free(bf->o);
 	rz_list_free(bf->xtr_data);
+	sdb_free(bf->sdb);
 	if (bf->id != -1) {
 		// TODO: use rz_storage api
 		rz_id_pool_kick_id(bf->rbin->ids->pool, bf->id);
@@ -323,21 +309,23 @@ static bool xtr_metadata_match(RzBinXtrData *xtr_data, const char *arch, int bit
 RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname) {
 	rz_return_val_if_fail(bin && file && buf, NULL);
 
-	RzBinFile *bf = rz_bin_file_new(bin, file, rz_buf_size(buf), fd, pluginname, NULL, false);
-	if (bf) {
-		RzListIter *item = rz_list_append(bin->binfiles, bf);
-		bf->buf = rz_buf_ref(buf);
-		RzBinPlugin *plugin = get_plugin_from_buffer(bin, pluginname, bf->buf);
-		RzBinObject *o = rz_bin_object_new(bf, plugin, opts, 0, rz_buf_size(bf->buf));
-		if (!o) {
-			rz_list_delete(bin->binfiles, item);
-			return NULL;
-		}
-		// size is set here because the reported size of the object depends on
-		// if loaded from xtr plugin or partially read
-		if (!o->size) {
-			o->size = rz_buf_size(buf);
-		}
+	RzBinFile *bf = rz_bin_file_new(bin, file, rz_buf_size(buf), fd, pluginname, false);
+	if (!bf) {
+		return NULL;
+	}
+
+	RzListIter *item = rz_list_append(bin->binfiles, bf);
+	bf->buf = rz_buf_ref(buf);
+	RzBinPlugin *plugin = get_plugin_from_buffer(bin, pluginname, bf->buf);
+	RzBinObject *o = rz_bin_object_new(bf, plugin, opts, 0, rz_buf_size(bf->buf));
+	if (!o) {
+		rz_list_delete(bin->binfiles, item);
+		return NULL;
+	}
+	// size is set here because the reported size of the object depends on
+	// if loaded from xtr plugin or partially read
+	if (!o->size) {
+		o->size = rz_buf_size(buf);
 	}
 	return bf;
 }
@@ -483,7 +471,7 @@ RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, c
 
 	RzBinFile *bf = rz_bin_file_find_by_name(bin, filename);
 	if (!bf) {
-		bf = rz_bin_file_new(bin, filename, rz_buf_size(buf), fd, xtr->name, bin->sdb, false);
+		bf = rz_bin_file_new(bin, filename, rz_buf_size(buf), fd, xtr->name, false);
 		if (!bf) {
 			return NULL;
 		}
@@ -552,13 +540,13 @@ RZ_API RzList *rz_bin_file_strings(RzBinFile *bf, size_t min_length, bool raw_st
 
 	if (raw_strings) {
 		// returns all the strings found on the RzBinFile
-		get_strings_range(bf, ret, min_length, 0, bf->size, NULL);
+		get_strings_range(bf, ret, min_length, 0, bf->size);
 	} else if (bf->o && bf->o->sections && !rz_list_empty(bf->o->sections)) {
 		// returns only the strings found on the RzBinFile but within the data section
 		RzBinObject *o = bf->o;
 		rz_list_foreach (o->sections, iter, section) {
 			if (__isDataSection(bf, section)) {
-				get_strings_range(bf, ret, min_length, section->paddr, section->paddr + section->size, section);
+				get_strings_range(bf, ret, min_length, section->paddr, section->paddr + section->size);
 			}
 		}
 		rz_list_foreach (o->sections, iter, section) {
@@ -604,7 +592,7 @@ RZ_API RzList *rz_bin_file_strings(RzBinFile *bf, size_t min_length, bool raw_st
 				bs->size = s->size;
 				bs->ordinal = s->ordinal;
 				bs->vaddr = cfstr_vaddr;
-				bs->paddr = cfstr_vaddr; // XXX should be paddr instead
+				bs->paddr = rz_bin_object_v2p(o, bs->vaddr);
 				bs->string = rz_str_newf("cstr.%s", s->string);
 				rz_list_append(ret, bs);
 				ht_up_insert(o->strings_db, bs->vaddr, bs);

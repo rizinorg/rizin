@@ -18,11 +18,11 @@ score candidate
 4     0x08000000
 EOF
 EXPECT_ERR=<<EOF
-INFO: basefind: located 7 strings
+INFO: basefind: located 6 strings
 INFO: basefind: located 1459 pointers
-INFO: basefind: located 7 strings
+INFO: basefind: located 6 strings
 INFO: basefind: located 1459 pointers
-INFO: basefind: located 7 strings
+INFO: basefind: located 6 strings
 INFO: basefind: located 1459 pointers
 EOF
 RUN

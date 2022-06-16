@@ -21,7 +21,7 @@ static char *get_fcn_name(RzAnalysis *analysis, ut32 fcn_id) {
 	return s;
 }
 
-static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
 	char *fcn_name = NULL;
 	str[0] = 0;
 	if (!strncmp(data, "call ", 5)) {

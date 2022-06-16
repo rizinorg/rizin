@@ -348,6 +348,17 @@ RZ_IPI RzCmdStatus rz_cmd_info_segments_handler(RzCore *core, int argc, const ch
 	return bool2status(res);
 }
 
+RZ_IPI RzCmdStatus rz_cmd_info_cur_segment_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	GET_CHECK_CUR_BINFILE(core);
+	RzList *hashes = rz_list_new_from_array((const void **)argv + 1, argc - 1);
+	if (!hashes) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool res = rz_core_bin_cur_segment_print(core, bf, state, hashes);
+	rz_list_free(hashes);
+	return bool2status(res);
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	GET_CHECK_CUR_BINFILE(core);
 	return bool2status(rz_core_bin_strings_print(core, bf, state));
@@ -358,18 +369,10 @@ RZ_IPI RzCmdStatus rz_cmd_info_whole_strings_handler(RzCore *core, int argc, con
 	return bool2status(rz_core_bin_whole_strings_print(core, bf, state));
 }
 
-RZ_IPI RzCmdStatus rz_cmd_info_dump_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	GET_CHECK_CUR_BINFILE(core);
-	return bool2status(rz_core_bin_whole_strings_print(core, bf, state));
-}
-
 RZ_IPI RzCmdStatus rz_cmd_info_purge_string_handler(RzCore *core, int argc, const char **argv) {
-	bool old_tmpseek = core->tmpseek;
-	core->tmpseek = false;
 	char *strpurge = core->bin->strpurge;
-	rz_core_cmdf(core, "e bin.str.purge=%s%s0x%" PFMT64x, strpurge ? strpurge : "",
-		strpurge && *strpurge ? "," : "", core->offset);
-	core->tmpseek = old_tmpseek;
+	char tmp[2048];
+	rz_config_set(core->config, "bin.str.purge", rz_strf(tmp, "%s%s0x%" PFMT64x, strpurge ? strpurge : "", strpurge && *strpurge ? "," : "", core->offset));
 	return RZ_CMD_STATUS_OK;
 }
 

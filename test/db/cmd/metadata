@@ -420,7 +420,6 @@ RUN
 
 NAME=Csb, Cs. and Cs.l
 FILE=bins/pe/testapp-msvc64.exe
-BROKEN=1
 CMDS=<<EOF
 e str.escbslash=true
 s 0x140016018
@@ -452,11 +451,12 @@ ascii[2] "\t"
 0x140016018 ascii[2] "\t"
             ;-- str.wide_esc:___0m:
             0x140016018     .string "\t" ; len=2
-Csw 19 @ 0x140016018 # \twide\\esc: \e[0m\xa1\r\n
-"\twide\\esc: \e[0m\xa1\r\n"
-ut16le[15] "\twide\\esc: \e[0m\xa1\r\n"
+Csw 38 @ 0x140016018 # \twide\\esc: \e[0m\u00a1\r\n
+"\twide\\esc: \e[0m\u00a1\r\n"
+utf16le[38] "\twide\\esc: \e[0m\u00a1\r\n"
+0x140016018 utf16le[38] "\twide\\esc: \e[0m\u00a1\r\n"
             ;-- str.wide_esc:___0m:
-            0x140016018     .string "\twide\\esc: \e[0m\xa1\r\n" ; len=19
+            0x140016018     .string "\twide\\esc: \e[0m\xc2\xa1\r\n" ; len=38
 0x140016018 ascii[4] "\t"
 0x140016018 ascii[4] "\t"
 EOF
@@ -479,15 +479,16 @@ Cs
 Cslj
 EOF
 EXPECT=<<EOF
-[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBt","enc":"utf16le","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtwqENCg==","enc":"utf16le","ascii":false}]
 [{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"8bit","ascii":true}]
-[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBt","enc":"utf16le","ascii":true}]
-[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBt","enc":"utf16le","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtwqENCg==","enc":"utf16le","ascii":false}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtwqENCg==","enc":"utf16le","ascii":false}]
 EOF
 RUN
 
 NAME=Cs8
 FILE=bins/elf/strenc
+ARGS=-e str.search.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 s 0x004021ff
@@ -521,7 +522,7 @@ RUN
 
 NAME=Cs8 and Cslj
 FILE=bins/elf/strenc
-ARGS=-e bin.str.purge=all,!0x004021ff
+ARGS=-e bin.str.purge=all,!0x004021ff -e str.search.check_ascii_freq=false
 CMDS=<<EOF
 s 0x004021ff
 Csl
@@ -692,7 +693,7 @@ C.
 EOF
 EXPECT=<<EOF
 0x0007a23c ascii[13] "match_symbol"
-0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
+0x00083fc4 CCu "[13] -rw- section size 4 named .init_array"
 0x00083fc4 data Cd 4
 EOF
 RUN

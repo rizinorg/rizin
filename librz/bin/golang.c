@@ -124,26 +124,9 @@ static ut64 go_string(ut8 *buffer, size_t size, char **output) {
 	return n + read;
 }
 
-// the maps are not set yet on rz_io, so we cannot use it.
-// therefore virt to phys needs to be done manually
 static st64 io_read_va_at(RzBinFile *bf, ut64 vaddr, ut8 *buffer, ut64 size) {
-	RzBinSection *section = NULL;
-	RzListIter *it = NULL;
-	ut64 paddr = 0;
-	RzList *sections = rz_bin_object_get_sections(bf->o);
-	rz_list_foreach (sections, it, section) {
-		if (!strstr(section->name, "data")) {
-			// ignore any non-data section
-			continue;
-		}
-		ut64 end = section->vaddr + section->vsize;
-		if (vaddr >= section->vaddr && vaddr < end) {
-			paddr = vaddr - section->vaddr;
-			paddr += section->paddr;
-			break;
-		}
-	}
-	if (!paddr) {
+	ut64 paddr = rz_bin_object_v2p(bf->o, vaddr);
+	if (paddr == UT64_MAX) {
 		return -1;
 	}
 	return rz_buf_read_at(bf->buf, paddr, buffer, size);
@@ -269,7 +252,7 @@ static void find_go_build_info(RzBinFile *bf, GoBuildInfo *go_info, RzBinSection
  *
  * \return  Returns a string on success, otherwise NULL
  */
-RZ_API RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
+RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	bool is_pe = false;
@@ -302,6 +285,7 @@ RZ_API RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
 			break;
 		}
 	}
+	rz_list_free(sections);
 
 	if (!go_info.version) {
 		return NULL;

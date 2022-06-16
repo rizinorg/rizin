@@ -4,16 +4,16 @@ CMDS=iS:name/sort:vaddr/cols/name
 EXPECT=<<EOF
 vaddr      name               
 ------------------------------
-0x00000000 
+---------- 
 0x00600910 .bss
-0x00000000 .comment
+---------- .comment
 0x00600900 .data
-0x00000000 .debug_abbrev
-0x00000000 .debug_aranges
-0x00000000 .debug_info
-0x00000000 .debug_line
-0x00000000 .debug_ranges
-0x00000000 .debug_str
+---------- .debug_abbrev
+---------- .debug_aranges
+---------- .debug_info
+---------- .debug_line
+---------- .debug_ranges
+---------- .debug_str
 0x006006f8 .dynamic
 0x004002e0 .dynstr
 0x00400280 .dynsym
@@ -36,9 +36,9 @@ vaddr      name
 0x00400348 .rela.dyn
 0x00400360 .rela.plt
 0x004005c0 .rodata
-0x00000000 .shstrtab
-0x00000000 .strtab
-0x00000000 .symtab
+---------- .shstrtab
+---------- .strtab
+---------- .symtab
 0x00400410 .text
 EOF
 RUN
@@ -2106,7 +2106,7 @@ pthread_mutex_unlock
 0x00005eb8 16 imp.strncpy
 0x00005ec4 16 imp.remove
 0x00005ed0 16 imp.__stack_chk_fail
-0x00000000 16 imp.__stack_chk_guard
+---------- 0 imp.__stack_chk_guard
 0x00005edc 16 imp.__gnu_Unwind_Find_exidx
 0x00005ee8 16 imp.abort
 0x00005ef4 16 operator delete(void*)
@@ -2118,7 +2118,7 @@ pthread_mutex_unlock
 0x00005f3c 16 imp.strcmp
 0x00005f48 16 imp.fputs
 0x00005f54 16 imp.fputc
-0x00000000 16 imp.__sF
+---------- 0 imp.__sF
 0x00005f60 16 imp.memcmp
 0x00005f6c 16 imp.realloc
 0x00005f78 16 imp.sprintf
@@ -2127,7 +2127,7 @@ pthread_mutex_unlock
 0x00005f9c 16 imp.pthread_mutex_unlock
 vaddr      vsize  perm name                   
 ----------------------------------------------
-0x00000000 0x0    ---- 
+---------- 0x0    ---- 
 0x00000154 0x13   -r-- .interp
 0x00000168 0x24   -r-- .note.gnu.build-id
 0x0000018c 0x1990 -r-- .dynsym
@@ -2148,10 +2148,10 @@ vaddr      vsize  perm name
 0x00016ec0 0x140  -rw- .got
 0x00017000 0x24   -rw- .data
 0x00017028 0x4f30 -rw- .bss
-0x00000000 0x10   ---- .comment
-0x00000000 0x1c   ---- .note.gnu.gold-version
-0x00000000 0x2b   ---- .ARM.attributes
-0x00000000 0xf3   ---- .shstrtab
+---------- 0x10   ---- .comment
+---------- 0x1c   ---- .note.gnu.gold-version
+---------- 0x2b   ---- .ARM.attributes
+---------- 0xf3   ---- .shstrtab
 0x139ac 15 14 getPackageName
 0x139bb 21 20 ()Ljava/lang/String;
 0x139d0 17 16 java/lang/String
@@ -3547,7 +3547,7 @@ CMDS=iS
 EXPECT=<<EOF
 paddr      size  vaddr      vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
-0x00000000 0x0   0x00000000 0x0   0x0   ----                    NULL       
+0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
 0x00000134 0x13  0x08048134 0x13  0x0   -r-- .interp            PROGBITS   alloc
 0x00000148 0x20  0x08048148 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
 0x00000168 0x24  0x08048168 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
@@ -3573,10 +3573,10 @@ paddr      size  vaddr      vsize align perm name               type       flags
 0x00000694 0x18  0x08049694 0x18  0x0   -rw- .got.plt           PROGBITS   write,alloc
 0x000006ac 0x8   0x080496ac 0x8   0x0   -rw- .data              PROGBITS   write,alloc
 0x000006b4 0x0   0x080496b4 0x4   0x0   -rw- .bss               NOBITS     write,alloc
-0x000006b4 0x11  0x00000000 0x11  0x0   ---- .comment           PROGBITS   merge,strings
-0x000006c5 0x106 0x00000000 0x106 0x0   ---- .shstrtab          STRTAB     
-0x00000c7c 0x450 0x00000000 0x450 0x0   ---- .symtab            SYMTAB     
-0x000010cc 0x257 0x00000000 0x257 0x0   ---- .strtab            STRTAB     
+0x000006b4 0x11  ---------- 0x11  0x0   ---- .comment           PROGBITS   merge,strings
+0x000006c5 0x106 ---------- 0x106 0x0   ---- .shstrtab          STRTAB     
+0x00000c7c 0x450 ---------- 0x450 0x0   ---- .symtab            SYMTAB     
+0x000010cc 0x257 ---------- 0x257 0x0   ---- .strtab            STRTAB     
 EOF
 RUN
 
@@ -3602,7 +3602,7 @@ NAME=iSj
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSj
 EXPECT=<<EOF
-[{"name":"","size":0,"vsize":0,"perm":"----","type":"NULL","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","type":"GNU_HASH","flags":["alloc"],"paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","type":"DYNSYM","flags":["alloc"],"paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","type":"STRTAB","flags":["alloc"],"paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","type":"VERSYM","flags":["alloc"],"paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","type":"VERNEED","flags":["alloc"],"paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","type":"INIT_ARRAY","flags":["write","alloc"],"paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","type":"FINI_ARRAY","flags":["write","alloc"],"paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","type":"DYNAMIC","flags":["write","alloc"],"paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","type":"NOBITS","flags":["write","alloc"],"paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","type":"PROGBITS","flags":["merge","strings"],"paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","type":"STRTAB","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","type":"SYMTAB","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","type":"STRTAB","paddr":4300,"vaddr":0}]
+[{"name":"","size":0,"vsize":0,"perm":"----","type":"NULL","paddr":0,"vaddr":-1},{"name":".interp","size":19,"vsize":19,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","type":"GNU_HASH","flags":["alloc"],"paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","type":"DYNSYM","flags":["alloc"],"paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","type":"STRTAB","flags":["alloc"],"paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","type":"VERSYM","flags":["alloc"],"paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","type":"VERNEED","flags":["alloc"],"paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","type":"INIT_ARRAY","flags":["write","alloc"],"paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","type":"FINI_ARRAY","flags":["write","alloc"],"paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","type":"DYNAMIC","flags":["write","alloc"],"paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","type":"NOBITS","flags":["write","alloc"],"paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","type":"PROGBITS","flags":["merge","strings"],"paddr":1716,"vaddr":-1},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","type":"STRTAB","paddr":1733,"vaddr":-1},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","type":"SYMTAB","paddr":3196,"vaddr":-1},{"name":".strtab","size":599,"vsize":599,"perm":"----","type":"STRTAB","paddr":4300,"vaddr":-1}]
 EOF
 RUN
 
@@ -3620,7 +3620,7 @@ CMDS=iS:paddr/cols/vaddr/perm/name
 EXPECT=<<EOF
 paddr      vaddr      perm name               
 ----------------------------------------------
-0x00000000 0x00000000 ---- 
+0x00000000 ---------- ---- 
 0x00000134 0x08048134 -r-- .interp
 0x00000148 0x08048148 -r-- .note.ABI-tag
 0x00000168 0x08048168 -r-- .note.gnu.build-id
@@ -3646,10 +3646,10 @@ paddr      vaddr      perm name
 0x00000694 0x08049694 -rw- .got.plt
 0x000006ac 0x080496ac -rw- .data
 0x000006b4 0x080496b4 -rw- .bss
-0x000006b4 0x00000000 ---- .comment
-0x000006c5 0x00000000 ---- .shstrtab
-0x00000c7c 0x00000000 ---- .symtab
-0x000010cc 0x00000000 ---- .strtab
+0x000006b4 ---------- ---- .comment
+0x000006c5 ---------- ---- .shstrtab
+0x00000c7c ---------- ---- .symtab
+0x000010cc ---------- ---- .strtab
 EOF
 RUN
 
@@ -3682,7 +3682,7 @@ EXPECT=<<EOF
             ;-- segment.DYNAMIC:
             ;-- .dynamic:
             ;-- _DYNAMIC:
-            0x080495a8      .dword 0x00000001                          ; [21] -rw- section size 232 named .dynamic
+            0x080495a8      .dword 0x00000001                          ; [20] -rw- section size 232 named .dynamic
 EOF
 RUN
 
@@ -3699,7 +3699,7 @@ EXPECT=<<EOF
             ;-- _edata:
             ;-- __bss_start:
             ;-- __TMC_END__:
-            0x080496b4      0000           add   byte [eax], al        ; [25] -rw- section size 4 named .bss
+            0x080496b4      0000           add   byte [eax], al        ; [24] -rw- section size 4 named .bss
             0x080496b6      0000           add   byte [eax], al
             ;-- _end:
             0x080496b8      ff             invalid
@@ -3883,36 +3883,36 @@ iz
 EOF
 EXPECT=<<EOF
 -- default --
-nth paddr       vaddr       len size section            type  string            
+nth paddr      vaddr       len size section             type  string            
 --------------------------------------------------------------------------------
-0   0x00000d58  0x100000d58 9   10   2.__TEXT.__cstring ascii sayHello:
-1   0x00000d62  0x100000d62 4   5    2.__TEXT.__cstring ascii init
-2   0x00000d67  0x100000d67 5   6    2.__TEXT.__cstring ascii alloc
-3   0x00000d6d  0x100000d6d 5   6    2.__TEXT.__cstring ascii Hahha
-4   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
-5   0x00000d86  0x100000d86 9   10   2.__TEXT.__cstring ascii callMeNot
-6   0x00000d90  0x100000d90 7   8    2.__TEXT.__cstring ascii v16@0:8
-7   0x00000d98  0x100000d98 9   10   2.__TEXT.__cstring ascii sayHello2
-8   0x00000da2  0x100000da2 10  11   2.__TEXT.__cstring ascii v20@0:8i16
-9   0x00000dad  0x100000dad 11  12   2.__TEXT.__cstring ascii sayHello3::
-10  0x00000db9  0x100000db9 13  14   2.__TEXT.__cstring ascii v24@0:8i16i20
-11  0x00000dc7  0x100000dc7 8   9    2.__TEXT.__cstring ascii sayLong:
-12  0x00000dd0  0x100000dd0 10  11   2.__TEXT.__cstring ascii v24@0:8Q16
-13  0x00000ddb  0x100000ddb 7   8    2.__TEXT.__cstring ascii @16@0:8
-14  0x00000de3  0x100000de3 4   5    2.__TEXT.__cstring ascii Test
-3   0x100001058 0x100001058 5   6                       ascii cstr.Hahha
-4   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+0   0x00000d58 0x100000d58 9   10   2.__TEXT.__cstring  ascii sayHello:
+1   0x00000d62 0x100000d62 4   5    2.__TEXT.__cstring  ascii init
+2   0x00000d67 0x100000d67 5   6    2.__TEXT.__cstring  ascii alloc
+3   0x00000d6d 0x100000d6d 5   6    2.__TEXT.__cstring  ascii Hahha
+4   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
+5   0x00000d86 0x100000d86 9   10   2.__TEXT.__cstring  ascii callMeNot
+6   0x00000d90 0x100000d90 7   8    2.__TEXT.__cstring  ascii v16@0:8
+7   0x00000d98 0x100000d98 9   10   2.__TEXT.__cstring  ascii sayHello2
+8   0x00000da2 0x100000da2 10  11   2.__TEXT.__cstring  ascii v20@0:8i16
+9   0x00000dad 0x100000dad 11  12   2.__TEXT.__cstring  ascii sayHello3::
+10  0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
+11  0x00000dc7 0x100000dc7 8   9    2.__TEXT.__cstring  ascii sayLong:
+12  0x00000dd0 0x100000dd0 10  11   2.__TEXT.__cstring  ascii v24@0:8Q16
+13  0x00000ddb 0x100000ddb 7   8    2.__TEXT.__cstring  ascii @16@0:8
+14  0x00000de3 0x100000de3 4   5    2.__TEXT.__cstring  ascii Test
+3   0x00001058 0x100001058 5   6    9.__DATA.__cfstring ascii cstr.Hahha
+4   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 -- geq 12 --
-nth paddr       vaddr       len size section            type  string            
+nth paddr      vaddr       len size section             type  string            
 --------------------------------------------------------------------------------
-4   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
-10  0x00000db9  0x100000db9 13  14   2.__TEXT.__cstring ascii v24@0:8i16i20
-4   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+4   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
+10  0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
+4   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 -- leq 13 --
-nth paddr       vaddr       len size section            type  string            
+nth paddr      vaddr       len size section             type  string            
 --------------------------------------------------------------------------------
-4   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
-4   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+4   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
+4   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 EOF
 RUN
 
@@ -4069,7 +4069,7 @@ CMDS=iS
 EXPECT=<<EOF
 paddr      size  vaddr      vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
-0x00000000 0x0   0x00000000 0x0   0x0   ----                    NULL       
+0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
 0x00000200 0x1a  0x00400200 0x1a  0x0   -r-- .interp            PROGBITS   alloc
 0x0000021c 0x20  0x0040021c 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
 0x0000023c 0x24  0x0040023c 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
@@ -4095,10 +4095,10 @@ paddr      size  vaddr      vsize align perm name               type       flags
 0x000008d0 0x30  0x006008d0 0x30  0x0   -rw- .got.plt           PROGBITS   write,alloc
 0x00000900 0x10  0x00600900 0x10  0x0   -rw- .data              PROGBITS   write,alloc
 0x00000910 0x0   0x00600910 0x8   0x0   -rw- .bss               NOBITS     write,alloc
-0x00000910 0x11  0x00000000 0x11  0x0   ---- .comment           PROGBITS   merge,strings
-0x00000921 0x108 0x00000000 0x108 0x0   ---- .shstrtab          STRTAB     
-0x000011b0 0x648 0x00000000 0x648 0x0   ---- .symtab            SYMTAB     
-0x000017f8 0x23e 0x00000000 0x23e 0x0   ---- .strtab            STRTAB     
+0x00000910 0x11  ---------- 0x11  0x0   ---- .comment           PROGBITS   merge,strings
+0x00000921 0x108 ---------- 0x108 0x0   ---- .shstrtab          STRTAB     
+0x000011b0 0x648 ---------- 0x648 0x0   ---- .symtab            SYMTAB     
+0x000017f8 0x23e ---------- 0x23e 0x0   ---- .strtab            STRTAB     
 EOF
 RUN
 
@@ -4265,7 +4265,7 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izzq~puts
 EXPECT=<<EOF
 0x4002fa 5 4 puts
-0x15b 18 17 puts@@GLIBC_2.2.5
+---------- 18 17 puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -4321,7 +4321,7 @@ e bin.str.purge=all,!0x4002fa,!0x15b
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"}]
 EOF
 RUN
 
@@ -4351,19 +4351,21 @@ RUN
 
 NAME=iz utf16le
 FILE=bins/elf/strenc
+ARGS=-e str.search.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~green
 iz~wall
 EOF
 EXPECT=<<EOF
-5   0x00002248 0x00402248 48  97   .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m 
-8   0x000022c8 0x004022c8 33  68   .rodata utf16le is a wall with no embedded zeros\n
+5   0x00002248 0x00402248 57  118  .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+7   0x000022c8 0x004022c8 33  68   .rodata utf16le is a wall with no embedded zeros\n
 EOF
 RUN
 
 NAME=iz/izz utf32le
 FILE=bins/elf/strenc
+ARGS=-e str.search.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~cyan
@@ -4371,9 +4373,9 @@ iz~Mountain
 izz~Linux_wide
 EOF
 EXPECT=<<EOF
-17  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
-18  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
-136 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+16  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+17  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
+135 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 RUN
 
@@ -4385,23 +4387,23 @@ iz~SRSPRHEX
 iz~SRSTASK
 EOF
 EXPECT=<<EOF
-14  0x000002f6 0x000002f6 8   9            ibm037  SRSGENER
-19  0x000004dc 0x000004dc 8   9            ibm037  SRSGENER
-22  0x00000668 0x00000668 92  93           ibm037  SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
-66  0x00001682 0x00001682 30  31           ibm037  SRSGENERNO     *SRS>   NONHELD
-132 0x00002faa 0x00002faa 49  50           ibm037  SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
-10  0x0000029a 0x0000029a 8   9            ibm037  SRSPRHEX
-17  0x00000362 0x00000362 8   9            ibm037  SRSPRHEX
-67  0x000016d4 0x000016d4 8   9            ibm037  SRSPRHEX
-70  0x00001861 0x00001861 27  28           ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
-74  0x0000191f 0x0000191f 9   10           ibm037  ÏSRSPRHEX
-138 0x0000315b 0x0000315b 27  28           ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
-142 0x0000323f 0x0000323f 9   10           ibm037  3SRSPRHEX
-217 0x00004c0f 0x00004c0f 27  28           ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
-18  0x000003ba 0x000003ba 8   9            ibm037  SRSTASK 
-98  0x00002540 0x00002540 17  18           ibm037  ­bå0­«SRSTASK  \-
-141 0x00003230 0x00003230 8   9            ibm037  SRSTASK 
-147 0x000033e4 0x000033e4 103 104          ibm037  SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
+14  0x000002f6 0x000002f6 8   9            ibm037 SRSGENER
+19  0x000004dc 0x000004dc 8   9            ibm037 SRSGENER
+22  0x00000668 0x00000668 92  93           ibm037 SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
+63  0x00001682 0x00001682 30  31           ibm037 SRSGENERNO     *SRS>   NONHELD
+114 0x00002faa 0x00002faa 49  50           ibm037 SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
+10  0x0000029a 0x0000029a 8   9            ibm037 SRSPRHEX
+17  0x00000362 0x00000362 8   9            ibm037 SRSPRHEX
+64  0x000016d4 0x000016d4 8   9            ibm037 SRSPRHEX
+67  0x00001861 0x00001861 27  28           ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
+71  0x0000191f 0x0000191f 9   10           ibm037 ÏSRSPRHEX
+120 0x0000315b 0x0000315b 27  28           ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
+124 0x0000323f 0x0000323f 9   10           ibm037 3SRSPRHEX
+190 0x00004c0f 0x00004c0f 27  28           ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
+18  0x000003ba 0x000003ba 8   9            ibm037 SRSTASK 
+90  0x00002540 0x00002540 17  18           ibm037 ­bå0­«SRSTASK  \-
+123 0x00003230 0x00003230 8   9            ibm037 SRSTASK 
+129 0x000033e4 0x000033e4 103 104          ibm037 SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
 EOF
 RUN
 
@@ -4414,8 +4416,8 @@ e str.escbslash=false
 iz~Linux_wide
 EOF
 EXPECT=<<EOF
-16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
-16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+17  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+17  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 RUN
 
@@ -4428,7 +4430,7 @@ iz~123456
 EOF
 EXPECT=<<EOF
 1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
-2   0x00000650 0x00400650 10  44   .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
+2   0x00000650 0x00400650 6   25   .rodata utf32le abcdef
 3   0x00000694 0x00400694 6   28   .rodata utf32le 123456
 EOF
 RUN
@@ -4515,7 +4517,7 @@ RUN
 
 NAME=ik-relro
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ik info/elf.relro
+CMDS=ik elf.relro
 EXPECT=<<EOF
 no
 EOF
@@ -4525,7 +4527,7 @@ NAME=ibk use after free
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 obR
-ik info/*~?elf.relro
+ik *~?elf.relro
 EOF
 EXPECT=<<EOF
 1
@@ -4574,12 +4576,13 @@ RUN
 
 NAME=izj unicode blocks
 FILE=bins/elf/strenc
+ARGS=-e str.search.check_ascii_freq=false
 CMDS=<<EOF
 e bin.str.purge=all,!4202996,!4203007,!4203208
 izj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
+[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":7,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
 EOF
 RUN
 
@@ -4590,7 +4593,7 @@ e bin.str.purge=all,!4195920
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":25,"length":6,"section":".rodata","type":"utf32le","string":"abcdef"}]
 EOF
 RUN
 
@@ -4643,7 +4646,7 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-1100 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
+1089 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
 --2--
 --3--
 0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
@@ -4729,7 +4732,7 @@ CMDS=iS entropy; iSS entropy
 EXPECT=<<EOF
 paddr      size  vaddr      vsize align perm name           type     flags         entropy    
 ----------------------------------------------------------------------------------------------
-0x00000000 0x0   0x00000000 0x0   0x0   ----                NULL     
+0x00000000 0x0   ---------- 0x0   0x0   ----                NULL     
 0x00000154 0x13  0x08048154 0x13  0x0   -r-- .interp        PROGBITS alloc         3.68188080
 0x00000168 0x20  0x08048168 0x20  0x0   -r-- .note.ABI-tag  NOTE     alloc         1.74868984
 0x00000188 0x38  0x08048188 0x38  0x0   -r-- .hash          HASH     alloc         1.23442903
@@ -4754,10 +4757,10 @@ paddr      size  vaddr      vsize align perm name           type     flags      
 0x00000ff4 0x24  0x08049ff4 0x24  0x0   -rw- .got.plt       PROGBITS write,alloc   2.98068211
 0x00001018 0xc   0x0804a018 0xc   0x0   -rw- .data          PROGBITS write,alloc   1.58496250
 0x00001024 0x0   0x0804a024 0x4   0x0   -rw- .bss           NOBITS   write,alloc
-0x00001024 0x1b9 0x00000000 0x1b9 0x0   ---- .comment       PROGBITS               4.50015849
-0x000011dd 0xdb  0x00000000 0xdb  0x0   ---- .shstrtab      STRTAB                 4.21638420
-0x00001740 0x460 0x00000000 0x460 0x0   ---- .symtab        SYMTAB                 3.06854806
-0x00001ba0 0x248 0x00000000 0x248 0x0   ---- .strtab        STRTAB                 4.85613827
+0x00001024 0x1b9 ---------- 0x1b9 0x0   ---- .comment       PROGBITS               4.50015849
+0x000011dd 0xdb  ---------- 0xdb  0x0   ---- .shstrtab      STRTAB                 4.21638420
+0x00001740 0x460 ---------- 0x460 0x0   ---- .symtab        SYMTAB                 3.06854806
+0x00001ba0 0x248 ---------- 0x248 0x0   ---- .strtab        STRTAB                 4.85613827
 paddr      size  vaddr      vsize align  perm name      entropy    
 -------------------------------------------------------------------
 0x00000034 0x120 0x08048034 0x120 0x4    -r-x PHDR      2.77947373
@@ -4781,13 +4784,13 @@ nth paddr      vaddr      bind   type   size lib name
 ---------------------------------------------------------------------------------
 8   0x00000590 0x00000590 GLOBAL FUNC   60       main
 9   0x0000064c 0x0000064c GLOBAL OBJ    4        _IO_stdin_used
-1   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_deregisterTMCloneTable
-2   0x00000000 0x00000000 WEAK   FUNC   16       imp.__cxa_finalize
+1   ---------- ---------- WEAK   NOTYPE 0        imp._ITM_deregisterTMCloneTable
+2   ---------- ---------- WEAK   FUNC   0        imp.__cxa_finalize
 3   0x000003f0 0x000003f0 GLOBAL FUNC   16       imp.puts
-4   0x00000000 0x00000000 WEAK   NOTYPE 16       imp.__gmon_start__
+4   ---------- ---------- WEAK   NOTYPE 0        imp.__gmon_start__
 5   0x00000400 0x00000400 GLOBAL FUNC   16       imp.__libc_start_main
-6   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._Jv_RegisterClasses
-7   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
+6   ---------- ---------- WEAK   NOTYPE 0        imp._Jv_RegisterClasses
+7   ---------- ---------- WEAK   NOTYPE 0        imp._ITM_registerTMCloneTable
 vaddr      paddr      target     type   name                        
 --------------------------------------------------------------------
 0x00001eec 0x00000eec 0x00000000 SET_32 
@@ -4804,11 +4807,6 @@ vaddr      paddr      target     type   name
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr
-0x00000000 16 loc.imp._ITM_deregisterTMCloneTable
-0x00000000 16 sym.imp.__cxa_finalize
-0x00000000 16 loc.imp.__gmon_start
-0x00000000 16 loc.imp._Jv_RegisterClasses
-0x00000000 16 loc.imp._ITM_registerTMCloneTable
 0x00000034 288 segment.PHDR
 0x00000154 19 segment.INTERP
 0x00000168 68 segment.NOTE
@@ -4908,7 +4906,7 @@ EXPECT=<<EOF
             ;-- segment.GNU_RELRO:
             ;-- .preinit_array:
             ;-- __preinit:
-            0x08049ed4      .dword 0x08048486 ; entry.preinit0 ; sym.preinit ; [18] -rw- section size 8 named .preinit_array
+            0x08049ed4      .dword 0x08048486 ; entry.preinit0 ; sym.preinit ; [17] -rw- section size 8 named .preinit_array
             ;-- __preinit2:
             0x08049ed8      .dword 0x0804849f ; entry.preinit1 ; sym.preinit2
 
@@ -4916,7 +4914,7 @@ EXPECT=<<EOF
             ;-- .init_array:
             ;-- __frame_dummy_init_array_entry:
             ;-- __init_array_start:
-            0x08049edc      .dword 0x08048480 ; entry.init0 ; sym.frame_dummy ; [19] -rw- section size 20 named .init_array
+            0x08049edc      .dword 0x08048480 ; entry.init0 ; sym.frame_dummy ; [18] -rw- section size 20 named .init_array
             0x08049ee0      .dword 0x080484b8 ; entry.init1 ; sym.constructor
             ;-- __init:
             0x08049ee4      .dword 0x080484d1 ; entry.init2 ; sym.init
@@ -4928,7 +4926,7 @@ EXPECT=<<EOF
             ;-- .fini_array:
             ;-- __do_global_dtors_aux_fini_array_entry:
             ;-- __init_array_end:
-            0x08049ef0      .dword 0x08048450 ; entry.fini0 ; sym.__do_global_dtors_aux ; [20] -rw- section size 20 named .fini_array
+            0x08049ef0      .dword 0x08048450 ; entry.fini0 ; sym.__do_global_dtors_aux ; [19] -rw- section size 20 named .fini_array
             0x08049ef4      .dword 0x0804859c ; entry.fini1 ; sym.destructor2
             ;-- __fini2:
             0x08049ef8      .dword 0x080485b5 ; entry.fini2 ; sym.fini2
@@ -4952,10 +4950,10 @@ EXPECT=<<EOF
             ;-- section..init_array:
             ;-- segment.LOAD1:
             ;-- segment.GNU_RELRO:
-            0x0021bfa8      .qword 0x0000000000005d20 ; entry.init0    ; RELOC 64  ; [18] -rw- section size 8 named .init_array
+            0x0021bfa8      .qword 0x0000000000005d20 ; entry.init0    ; RELOC 64  ; [17] -rw- section size 8 named .init_array
 
             ;-- section..fini_array:
-            0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
+            0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [18] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot seek to unknown address 'section..preinit_array'
@@ -5058,8 +5056,8 @@ CMDS=ii
 EXPECT=<<EOF
 nth vaddr      bind   type   lib name              
 ---------------------------------------------------
-1   0x00000000 GLOBAL FUNC       __libc_start_main
-2   0x00000000 WEAK   NOTYPE     __gmon_start__
+1   ---------- GLOBAL FUNC       __libc_start_main
+2   ---------- WEAK   NOTYPE     __gmon_start__
 EOF
 RUN
 
@@ -5074,7 +5072,7 @@ RUN
 
 NAME=ik-macho
 FILE=bins/mach0/fatmach0-3true
-CMDS=ik info/mach0.entry.vaddr~?0x100000ef8
+CMDS=ik mach0.entry.vaddr~?0x100000ef8
 EXPECT=<<EOF
 1
 EOF
@@ -5082,7 +5080,7 @@ RUN
 
 NAME=ikv
 FILE=bins/mach0/fatmach0-3true
-CMDS=ikv info/mach0.entry.vaddr
+CMDS=ikv mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -5090,7 +5088,7 @@ RUN
 
 NAME=ik.
 FILE=bins/mach0/fatmach0-3true
-CMDS=ik. info/mach0.entry.vaddr
+CMDS=ik. mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -5223,7 +5221,7 @@ NAME=izz
 FILE=bins/mach0/fatmach0-3true
 CMDS=izz~http~codesigning
 EXPECT=<<EOF
-97  0x00002f3c 0x00002f3c 47  48           ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
+93  0x00003f3c 0x100002f3c 47  48                           ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
 EOF
 RUN
 

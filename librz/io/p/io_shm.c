@@ -5,22 +5,23 @@
 #include "rz_lib.h"
 #include <sys/types.h>
 
-#if EMSCRIPTEN
-#undef __UNIX__
-#define __UNIX__ 0
-#endif
-
-#if __UNIX__ || __WINDOWS__ && !defined(__QNX__) && !defined(__HAIKU__)
-#if __UNIX__ && !defined(__QNX__) && !defined(__HAIKU__)
-#if HAVE_DECL_ASHMEM_NAME_LEN
+#if HAVE_HEADER_LINUX_ASHMEM_H || HAVE_HEADER_SYS_SHM_H || __WINDOWS__
+#if HAVE_HEADER_LINUX_ASHMEM_H
 #include <linux/ashmem.h>
 #endif
-#include <sys/ipc.h>
+#if HAVE_HEADER_SYS_SHM_H
 #include <sys/shm.h>
+#endif
+#if HAVE_HEADER_SYS_IPC_H
+#include <sys/ipc.h>
+#endif
+#if HAVE_HEADER_SYS_MMAN_H
 #include <sys/mman.h>
-#elif __WINDOWS__
+#endif
+#if __WINDOWS__
 #include <windows.h>
 #endif
+
 typedef struct {
 #if __WINDOWS__
 	HANDLE h;
@@ -77,7 +78,7 @@ static int shm__close(RzIODesc *fd) {
 	UnmapViewOfFile(shm->buf);
 	ret = CloseHandle(shm->h);
 #else
-#if HAVE_SHM_OPEN || HAVE_DECL_ASHMEM_NAME_LEN
+#if HAVE_SHM_OPEN || HAVE_HEADER_LINUX_ASHMEM_H
 	ret = close(shm->fd);
 #else
 	if (shm->buf) {
@@ -114,7 +115,7 @@ static bool shm__plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, "shm://", 6));
 }
 
-#if !HAVE_SHM_OPEN && !HAVE_DECL_ASHMEM_NAME_LEN
+#if !HAVE_SHM_OPEN && !HAVE_HEADER_LINUX_ASHMEM_H
 static inline int getshmfd(RzIOShm *shm) {
 	return (((int)(size_t)shm->buf) >> 4) & 0xfff;
 }
@@ -174,12 +175,12 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 	RZ_LOG_INFO("Connected to shared memory \"%s\" size 0x%x\n",
 		shm->name, shm->size);
 #else
-#if HAVE_SHM_OPEN || HAVE_DECL_ASHMEM_NAME_LEN
+#if HAVE_SHM_OPEN || HAVE_HEADER_LINUX_ASHMEM_H
 	shm->id = rz_str_djb2_hash(name);
 
 #if HAVE_SHM_OPEN
 	shm->fd = shm_open(shm->name, O_CREAT | (rw ? O_RDWR : O_RDONLY), 0644);
-#else // HAVE_DECL_ASHMEM_NAME_LEN
+#else // HAVE_HEADER_LINUX_ASHMEM_H
 	shm->fd = open("/dev/ashmem", O_CREAT | (rw ? O_RDWR : O_RDONLY), 0644);
 #endif
 	if (shm->fd == -1) {
@@ -205,7 +206,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 		shm->size = st.st_size;
 	}
 
-#if HAVE_DECL_ASHMEM_NAME_LEN
+#if HAVE_HEADER_LINUX_ASHMEM_H
 	if (ioctl(shm->fd, ASHMEM_SET_NAME, name) == -1 ||
 		ioctl(shm->fd, ASHMEM_SET_SIZE, shm->size) == -1) {
 		RZ_LOG_ERROR("Cannot set shared memory \"%s\"/%lu (0x%08x)\n", shm->name, (unsigned long)shm->size, shm->id);

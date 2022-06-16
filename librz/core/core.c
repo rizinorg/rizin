@@ -342,12 +342,20 @@ static void archbits(RzCore *core, ut64 addr) {
 	rz_core_seek_arch_bits(core, addr);
 }
 
-static int cfggeti(RzCore *core, const char *k) {
+static ut64 cfggeti(RzCore *core, const char *k) {
 	return rz_config_get_i(core->config, k);
 }
 
 static const char *cfgget(RzCore *core, const char *k) {
 	return rz_config_get(core->config, k);
+}
+
+static bool cfgseti(RzCore *core, const char *k, ut64 v) {
+	return rz_config_set_i(core->config, k, v);
+}
+
+static bool cfgset(RzCore *core, const char *k, const char *v) {
+	return rz_config_set(core->config, k, v);
 }
 
 static ut64 numget(RzCore *core, const char *k) {
@@ -373,6 +381,8 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->archbits = (RzCoreSeekArchBits)archbits;
 	bnd->cfggeti = (RzCoreConfigGetI)cfggeti;
 	bnd->cfgGet = (RzCoreConfigGet)cfgget;
+	bnd->cfgSetI = (RzCoreConfigSetI)cfgseti;
+	bnd->cfgSet = (RzCoreConfigSet)cfgset;
 	bnd->numGet = (RzCoreNumGet)numget;
 	bnd->flagsGet = (RzCoreFlagsGet)__flagsGet;
 	bnd->applyBinInfo = (RzCoreBinApplyInfo)rz_core_bin_apply_info;
@@ -742,7 +752,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			if (str[2] == 'B') { // $DD
 				return rz_debug_get_baddr(core->dbg, NULL);
 			} else if (IS_DIGIT(str[2])) {
-				return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_REF_TYPE_DATA);
+				return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_XREF_TYPE_DATA);
 			} else {
 				RzDebugMap *map;
 				RzListIter *iter;
@@ -768,11 +778,11 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			}
 			return core->offset;
 		case 'C': // $C nth call
-			return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_REF_TYPE_CALL);
+			return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_XREF_TYPE_CALL);
 		case 'J': // $J nth jump
-			return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_REF_TYPE_CODE);
+			return getref(core, atoi(str + 2), 'r', RZ_ANALYSIS_XREF_TYPE_CODE);
 		case 'X': // $X nth xref
-			return getref(core, atoi(str + 2), 'x', RZ_ANALYSIS_REF_TYPE_CALL);
+			return getref(core, atoi(str + 2), 'x', RZ_ANALYSIS_XREF_TYPE_CALL);
 		case 'F': // $F function size
 			fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 			if (fcn) {
@@ -892,11 +902,6 @@ static const char *rizin_argv[] = {
 	"aef", "aefa",
 	"aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc",
 	"aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
-	"af?", "af", "afr", "af+", "af-",
-	"afa", "afan",
-	"afd", "aff",
-	"afn?", "afna", "afns", "afnsj",
-	"afo", "af*",
 	"aF",
 	"ag?", "ag", "aga", "agA", "agc", "agC", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-",
 	"agn?", "agn", "agn-", "age?", "age", "age-",
@@ -2652,68 +2657,59 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_task_break_all(&c->tasks);
 	rz_core_task_join(&c->tasks, NULL, -1);
 	rz_core_wait(c);
-	/* TODO: it leaks badly */
-	// update_sdb (c);
 	//  avoid double free
-	rz_list_free(c->ropchain);
-	rz_event_free(c->ev);
-	free(c->cmdlog);
-	free(c->lastsearch);
+	RZ_FREE_CUSTOM(c->ropchain, rz_list_free);
+	RZ_FREE_CUSTOM(c->ev, rz_event_free);
+	RZ_FREE(c->cmdlog);
+	RZ_FREE(c->lastsearch);
 	RZ_FREE(c->cons->pager);
-	free(c->cmdqueue);
-	free(c->lastcmd);
-	free(c->stkcmd);
-	rz_list_free(c->visual.tabs);
-	free(c->block);
-	rz_core_autocomplete_free(c->autocomplete);
+	RZ_FREE(c->cmdqueue);
+	RZ_FREE(c->lastcmd);
+	RZ_FREE(c->stkcmd);
+	RZ_FREE_CUSTOM(c->visual.tabs, rz_list_free);
+	RZ_FREE(c->block);
+	RZ_FREE_CUSTOM(c->autocomplete, rz_core_autocomplete_free);
 
-	rz_list_free(c->gadgets);
-	rz_num_free(c->num);
-	// TODO: sync or not? sdb_sync (c->sdb);
-	// TODO: sync all dbs?
-	// rz_core_file_free (c->file);
-	// c->file = NULL;
+	RZ_FREE_CUSTOM(c->gadgets, rz_list_free);
+	RZ_FREE_CUSTOM(c->num, rz_num_free);
 	RZ_FREE(c->table_query);
-	rz_io_free(c->io);
-	rz_list_free(c->files);
-	rz_list_free(c->watchers);
-	rz_list_free(c->scriptstack);
+	RZ_FREE_CUSTOM(c->io, rz_io_free);
+	RZ_FREE_CUSTOM(c->files, rz_list_free);
+	RZ_FREE_CUSTOM(c->watchers, rz_list_free);
+	RZ_FREE_CUSTOM(c->scriptstack, rz_list_free);
 	rz_core_task_scheduler_fini(&c->tasks);
-	c->rcmd = rz_cmd_free(c->rcmd);
-	rz_list_free(c->cmd_descriptors);
-	c->analysis = rz_analysis_free(c->analysis);
-	rz_asm_free(c->rasm);
-	c->rasm = NULL;
-	c->print = rz_print_free(c->print);
-	c->bin = (rz_bin_free(c->bin), NULL);
-	c->lang = (rz_lang_free(c->lang), NULL);
-	c->dbg = (rz_debug_free(c->dbg), NULL);
-	rz_config_free(c->config);
+	RZ_FREE_CUSTOM(c->rcmd, rz_cmd_free);
+	RZ_FREE_CUSTOM(c->cmd_descriptors, rz_list_free);
+	RZ_FREE_CUSTOM(c->analysis, rz_analysis_free);
+	RZ_FREE_CUSTOM(c->rasm, rz_asm_free);
+	RZ_FREE_CUSTOM(c->print, rz_print_free);
+	RZ_FREE_CUSTOM(c->bin, rz_bin_free);
+	RZ_FREE_CUSTOM(c->lang, rz_lang_free);
+	RZ_FREE_CUSTOM(c->dbg, rz_debug_free);
+	RZ_FREE_CUSTOM(c->config, rz_config_free);
 	/* after rz_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a rz_config_free_payload callback */
 	rz_cons_free();
 	rz_cons_singleton()->teefile = NULL; // HACK
-	rz_search_free(c->search);
-	rz_flag_free(c->flags);
-	rz_egg_free(c->egg);
-	rz_lib_free(c->lib);
-	rz_buf_free(c->yank_buf);
-	rz_agraph_free(c->graph);
-	free(c->asmqjmps);
-	sdb_free(c->sdb);
-	rz_parse_free(c->parser);
-	free(c->times);
+	RZ_FREE_CUSTOM(c->search, rz_search_free);
+	RZ_FREE_CUSTOM(c->flags, rz_flag_free);
+	RZ_FREE_CUSTOM(c->egg, rz_egg_free);
+	RZ_FREE_CUSTOM(c->lib, rz_lib_free);
+	RZ_FREE_CUSTOM(c->yank_buf, rz_buf_free);
+	RZ_FREE_CUSTOM(c->graph, rz_agraph_free);
+	RZ_FREE(c->asmqjmps);
+	RZ_FREE_CUSTOM(c->sdb, sdb_free);
+	RZ_FREE_CUSTOM(c->parser, rz_parse_free);
+	RZ_FREE(c->times);
 	rz_core_seek_free(c);
-	free(c->rtr_host);
+	RZ_FREE(c->rtr_host);
 	RZ_FREE(c->curtheme);
 }
 
 RZ_API void rz_core_free(RzCore *c) {
-	if (c) {
-		rz_core_fini(c);
-		free(c);
-	}
+	rz_core_fini(c);
+	free(c);
 }
 
 RZ_API void rz_core_prompt_loop(RzCore *r) {
@@ -2735,56 +2731,70 @@ RZ_API void rz_core_prompt_loop(RzCore *r) {
 	} while (ret != RZ_CORE_CMD_EXIT);
 }
 
-static int prompt_flag(RzCore *r, char *s, size_t maxlen) {
-	const char DOTS[] = "...";
-	const RzFlagItem *f = rz_flag_get_at(r->flags, r->offset, false);
-	if (!f) {
-		return false;
+static bool prompt_add_file(RzCore *core, RzStrBuf *sb, bool add_sep) {
+	if (!rz_config_get_b(core->config, "scr.prompt.file") || !core->io->desc) {
+		return add_sep;
 	}
-	if (f->offset < r->offset) {
-		snprintf(s, maxlen, "%s + %" PFMT64u, f->name, r->offset - f->offset);
+	if (add_sep) {
+		rz_strbuf_append(sb, ":");
+	}
+	rz_strbuf_append(sb, rz_file_basename(core->io->desc->name));
+	return true;
+}
+
+static bool prompt_add_section(RzCore *core, RzStrBuf *sb, bool add_sep) {
+	if (!rz_config_get_b(core->config, "scr.prompt.sect")) {
+		return add_sep;
+	}
+	const RzBinSection *sec = rz_bin_get_section_at(rz_bin_cur_object(core->bin), core->offset, true);
+	if (!sec) {
+		return add_sep;
+	}
+	if (add_sep) {
+		rz_strbuf_append(sb, ":");
+	}
+	rz_strbuf_append(sb, sec->name);
+	return true;
+}
+
+static bool prompt_add_offset(RzCore *core, RzStrBuf *sb, bool add_sep) {
+	if (add_sep) {
+		rz_strbuf_append(sb, ":");
+	}
+	if (rz_config_get_b(core->config, "scr.prompt.flag")) {
+		const RzFlagItem *f = rz_flag_get_at(core->flags, core->offset, true);
+		if (f) {
+			if (f->offset < core->offset) {
+				rz_strbuf_appendf(sb, "%s + %" PFMT64u, f->name, core->offset - f->offset);
+			} else {
+				rz_strbuf_appendf(sb, "%s", f->name);
+			}
+			if (rz_config_get_b(core->config, "scr.prompt.flag.only")) {
+				return true;
+			}
+
+			rz_strbuf_append(sb, ":");
+		}
+	}
+
+	if (rz_config_get_b(core->config, "asm.segoff")) {
+		ut32 a, b;
+		unsigned int seggrn = rz_config_get_i(core->config, "asm.seggrn");
+
+		a = ((core->offset >> 16) << (16 - seggrn));
+		b = (core->offset & 0xffff);
+		rz_strbuf_appendf(sb, "%04x:%04x", a, b);
 	} else {
-		snprintf(s, maxlen, "%s", f->name);
-	}
-	if (strlen(s) > maxlen - sizeof(DOTS)) {
-		s[maxlen - sizeof(DOTS) - 1] = '\0';
-		strcat(s, DOTS);
+		if (core->print->wide_offsets && core->dbg->bits & RZ_SYS_BITS_64) {
+			rz_strbuf_appendf(sb, "0x%016" PFMT64x, core->offset);
+		} else {
+			rz_strbuf_appendf(sb, "0x%08" PFMT64x, core->offset);
+		}
 	}
 	return true;
 }
 
-static void prompt_sec(RzCore *r, char *s, size_t maxlen) {
-	const RzBinSection *sec = rz_bin_get_section_at(rz_bin_cur_object(r->bin), r->offset, true);
-	if (!sec) {
-		return;
-	}
-	rz_str_ncpy(s, sec->name, maxlen - 2);
-	strcat(s, ":");
-}
-
-static void chop_prompt(const char *filename, char *tmp, size_t max_tmp_size) {
-	size_t tmp_len, file_len;
-	unsigned int OTHRSCH = 3;
-	const char DOTS[] = "...";
-	int w, p_len;
-
-	w = rz_cons_get_size(NULL);
-	file_len = strlen(filename);
-	tmp_len = strlen(tmp);
-	p_len = RZ_MAX(0, w - 6);
-	if (file_len + tmp_len + OTHRSCH >= p_len) {
-		size_t dots_size = sizeof(DOTS);
-		size_t chop_point = (size_t)(p_len - OTHRSCH - file_len - dots_size - 1);
-		if (chop_point < (max_tmp_size - dots_size - 1)) {
-			tmp[chop_point] = '\0';
-			strncat(tmp, DOTS, dots_size);
-		}
-	}
-}
-
 static void set_prompt(RzCore *r) {
-	char tmp[128];
-	char *filename = strdup("");
 	const char *cmdprompt = rz_config_get(r->config, "cmd.prompt");
 	const char *BEGIN = "";
 	const char *END = "";
@@ -2794,11 +2804,6 @@ static void set_prompt(RzCore *r) {
 		rz_core_cmd(r, cmdprompt, 0);
 	}
 
-	if (rz_config_get_i(r->config, "scr.prompt.file")) {
-		free(filename);
-		filename = rz_str_newf("\"%s\"",
-			r->io->desc ? rz_file_basename(r->io->desc->name) : "");
-	}
 	if (r->cmdremote) {
 		char *s = rz_core_cmd_str(r, "s");
 		r->offset = rz_num_math(NULL, s);
@@ -2811,43 +2816,17 @@ static void set_prompt(RzCore *r) {
 		END = r->cons->context->pal.reset;
 	}
 
-	// TODO: also in visual prompt and disasm/hexdump ?
-	if (rz_config_get_i(r->config, "asm.segoff")) {
-		ut32 a, b;
-		unsigned int seggrn = rz_config_get_i(r->config, "asm.seggrn");
+	RzStrBuf prompt_ct;
+	rz_strbuf_init(&prompt_ct);
+	rz_strbuf_appendf(&prompt_ct, "%s[%s", BEGIN, remote);
+	bool added = prompt_add_file(r, &prompt_ct, false);
+	added = prompt_add_section(r, &prompt_ct, added);
+	added = prompt_add_offset(r, &prompt_ct, added);
+	rz_strbuf_appendf(&prompt_ct, "]>%s ", END);
 
-		a = ((r->offset >> 16) << (16 - seggrn));
-		b = (r->offset & 0xffff);
-		snprintf(tmp, 128, "%04x:%04x", a, b);
-	} else {
-		char p[64], sec[32];
-		int promptset = false;
-
-		sec[0] = '\0';
-		if (rz_config_get_i(r->config, "scr.prompt.flag")) {
-			promptset = prompt_flag(r, p, sizeof(p));
-		}
-		if (rz_config_get_i(r->config, "scr.prompt.sect")) {
-			prompt_sec(r, sec, sizeof(sec));
-		}
-
-		if (!promptset) {
-			if (r->print->wide_offsets && r->dbg->bits & RZ_SYS_BITS_64) {
-				snprintf(p, sizeof(p), "0x%016" PFMT64x, r->offset);
-			} else {
-				snprintf(p, sizeof(p), "0x%08" PFMT64x, r->offset);
-			}
-		}
-		snprintf(tmp, sizeof(tmp), "%s%s", sec, p);
-	}
-
-	chop_prompt(filename, tmp, 128);
-	char *prompt = rz_str_newf("%s%s[%s%s]>%s ", filename, BEGIN, remote,
-		tmp, END);
-	rz_line_set_prompt(prompt ? prompt : "");
-
-	RZ_FREE(filename);
-	RZ_FREE(prompt);
+	char *prompt = rz_strbuf_drain_nofree(&prompt_ct);
+	rz_line_set_prompt(prompt);
+	free(prompt);
 }
 
 RZ_API int rz_core_prompt(RzCore *r, int sync) {

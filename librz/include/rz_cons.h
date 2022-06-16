@@ -474,7 +474,7 @@ typedef struct rz_cons_context_t {
 	int cmd_depth;
 
 	// Used for per-task logging redirection
-	RLogCallback log_callback; // TODO: RzList of callbacks
+	RzLogCallback log_callback; // TODO: RzList of callbacks
 
 	char *lastOutput;
 	int lastLength;

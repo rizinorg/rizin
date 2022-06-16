@@ -591,6 +591,22 @@ static bool test_il_validate_effect_null() {
 	mu_end;
 }
 
+static bool test_il_validate_effect_empty() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpEffect *op = rz_il_op_new_empty();
+	RzILValidateReport report;
+	RzILTypeEffect t;
+	bool val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_NONE, "effect type");
+	mu_assert_null(report, "no report");
+	rz_il_op_effect_free(op);
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 static bool test_il_validate_effect_nop() {
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 
@@ -1320,6 +1336,7 @@ bool all_tests() {
 	mu_run_test(test_il_validate_pure_load);
 	mu_run_test(test_il_validate_pure_loadw);
 	mu_run_test(test_il_validate_effect_null);
+	mu_run_test(test_il_validate_effect_empty);
 	mu_run_test(test_il_validate_effect_nop);
 	mu_run_test(test_il_validate_effect_store);
 	mu_run_test(test_il_validate_effect_storew);

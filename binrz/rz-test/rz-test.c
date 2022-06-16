@@ -72,13 +72,15 @@ static int help(bool verbose) {
 			" -L           log mode (better printing for CI, logfiles, etc.)\n"
 			" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
 			" -j [threads] how many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")\n"
-			" -r [rizin] path to rizin executable (default is " RIZIN_CMD_DEFAULT ")\n"
-			" -m [rz-asm]   path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")\n"
+			" -r [rizin]   path to rizin executable (default is " RIZIN_CMD_DEFAULT ")\n"
+			" -m [rz-asm]  path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")\n"
 			" -f [file]    file to use for json tests (default is " JSON_TEST_FILE_DEFAULT ")\n"
 			" -C [dir]     chdir before running rz-test (default follows executable symlink + test/new\n"
 			" -t [seconds] timeout per test (default is " TIMEOUT_DEFAULT_STR ")\n"
 			" -o [file]    output test run information in JSON format to file\n"
-			" -e [dir]     exclude a particular directory while testing (this option can appear many times)"
+			" -e [dir]     exclude a particular directory while testing (this option can appear many times)\n"
+			" -s [num]     number of expected successful tests\n"
+			" -x [num]     number of expected failed tests"
 			"\n"
 			"Supported test types: @json @unit @fuzz @cmds\n"
 			"OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
@@ -196,6 +198,8 @@ int rz_test_main(int argc, const char **argv) {
 	RzPVector *except_dir = rz_pvector_new(free);
 	const char *rz_test_dir = NULL;
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
+	st64 expect_succ = -1;
+	st64 expect_fail = -1;
 	int ret = 0;
 
 	if (!except_dir) {
@@ -219,7 +223,7 @@ int rz_test_main(int argc, const char **argv) {
 #endif
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:s:x:");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -291,6 +295,21 @@ int rz_test_main(int argc, const char **argv) {
 			break;
 		case 'e':
 			rz_pvector_push(except_dir, strdup(opt.arg));
+			break;
+		case 's':
+			// rz_num_math returns 0 for both '0' and invalid str
+			expect_succ = rz_num_math(NULL, opt.arg);
+			if (!rz_num_is_valid_input(NULL, opt.arg) || expect_succ < 0) {
+				RZ_LOG_ERROR("Number of expected successful tests is invalid\n");
+				goto beach;
+			}
+			break;
+		case 'x':
+			expect_fail = rz_num_math(NULL, opt.arg);
+			if (!rz_num_is_valid_input(NULL, opt.arg) || expect_fail < 0) {
+				RZ_LOG_ERROR("Number of expected failed tests is invalid\n");
+				goto beach;
+			}
 			break;
 		default:
 			ret = help(false);
@@ -548,7 +567,15 @@ int rz_test_main(int argc, const char **argv) {
 		interact(&state);
 	}
 
-	if (state.xx_count) {
+	if (expect_succ > 0 && expect_succ != state.ok_count) {
+		ret = 1;
+	}
+
+	if (expect_fail > 0 && expect_fail != state.xx_count) {
+		ret = 1;
+	}
+
+	if (expect_fail < 0 && expect_succ < 0 && state.xx_count) {
 		ret = 1;
 	}
 

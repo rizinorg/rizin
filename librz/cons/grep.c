@@ -466,7 +466,7 @@ RZ_API void rz_cons_grepbuf(void) {
 	const int len = cons->context->buffer_len;
 	RzConsGrep *grep = &cons->context->grep;
 	const char *in = buf;
-	int ret, total_lines = 0, buffer_len = 0, l = 0, tl = 0;
+	int ret, total_lines = 0, l = 0, tl = 0;
 	bool show = false;
 	if (cons->filter) {
 		cons->context->buffer_len = 0;
@@ -648,7 +648,6 @@ RZ_API void rz_cons_grepbuf(void) {
 						rz_strbuf_append(ob, str);
 						rz_strbuf_append(ob, "\n");
 					}
-					buffer_len += ret + 1;
 					free(str);
 				}
 				if (!grep->range_line) {

@@ -219,9 +219,12 @@ static bool set_elf_section_aux(ELFOBJ *bin, RzBinElfSection *section, Elf_(Shdr
 	if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 		section->rva = bin->baddr + shdr->sh_offset;
 	} else {
-		section->rva = shdr->sh_addr;
+		if (shdr->sh_flags & SHF_ALLOC) {
+			section->rva = shdr->sh_addr;
+		} else {
+			section->rva = UT64_MAX;
+		}
 	}
-
 	return set_elf_section_name(bin, section, shdr, id);
 }
 

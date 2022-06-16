@@ -8,7 +8,7 @@
 #include <rz_util.h>
 #include <rz_types.h>
 
-RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr);
+RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, bool steal_ptr);
 RZ_IPI RzBinObject *rz_bin_file_object_find_by_id(RzBinFile *binfile, ut32 binobj_id);
 RZ_IPI RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
 RZ_IPI RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 binfile_id);
@@ -20,10 +20,11 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_any(RzBin *bin);
 RZ_IPI RzBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RzBin *bin, const char *name);
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name);
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin);
+RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *binfile);
 
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 
-RZ_IPI void rz_bin_object_free(void /*RzBinObject*/ *o_);
+RZ_IPI void rz_bin_object_free(RzBinObject *o);
 RZ_IPI ut64 rz_bin_object_get_baddr(RzBinObject *o);
 RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo);
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *binfile, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz);

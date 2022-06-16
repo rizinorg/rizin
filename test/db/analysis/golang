@@ -1,7 +1,7 @@
 NAME=Resolve all symbols on a stripped linux go1.18 binary
 FILE=bins/golang/example-server-1.18-stripped
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
@@ -15,15 +15,16 @@ EXPECT=<<EOF
 0x0063e2e4 str.Failed_reading_response_body:__s
 0x0063e3af str.Got_response__d:__s__s
 0x0063e49b str.version
-0x0063e4ac str.HT
-14310
+0x0063e4ac str.HTTP_version
+0x0063e566 str.
+12879
 EOF
 RUN
 
 NAME=Resolve all symbols on a stripped linux go1.16 binary
 FILE=bins/golang/example-server-1.16-stripped
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
@@ -37,19 +38,20 @@ EXPECT=<<EOF
 0x0066d863 str.Failed_reading_response_body:__s
 0x0066d9a3 str.Got_response__d:__s__s
 0x0066db8c str.version
-0x0066dbaa str.HT
+0x0066dbaa str.HTTP_version
+0x0066dc76 str.
 0x0066e68d str.Addr
 ;-- str.flag:
 ;-- str.sort:
 ;-- str.sync:
-13215
+12263
 EOF
 RUN
 
 NAME=Resolve all symbols on a stripped linux go1.12 binary
 FILE=bins/golang/example-server-1.12-stripped
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
@@ -63,21 +65,22 @@ EXPECT=<<EOF
 0x0065db5a str.Failed_reading_response_body:__s
 0x0065dca5 str.Got_response__d:__s__s
 0x0065de6d str.version
-0x0065de8a str.HT
-13380
+0x0065de8a str.HTTP_version
+0x0065dfe6 str.
+13171
 EOF
 RUN
 
 NAME=Resolve all symbols on a linux go1.16 binary (arm32)
 FILE=bins/golang/btcctl-linux-armv7-v0.22.0-beta
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
 EOF
 EXPECT=<<EOF
-5122
+5124
 0x00270aac str.Failed_to_read_data_from_stdin:__v
 0x00270d70 str.s_command:__v
 0x00270db8 str.1.0
@@ -89,9 +92,10 @@ EXPECT=<<EOF
 0x00271580 str.Unrecognized_command___s
 0x00271608 str.No_command_specified
 0x0027186c str.Chain_Server_Commands:DEBUG_HTTP2
-0x0027187c str.Wallet_Server_Commands____wallet_:adding_nil_Certificate_to_CertPoolbad_scalar_length:__d__expected__dchacha20:_wrong_HChaCha20_key_sizecrypto_aes:_invalid_buffer_overlapcrypto_des:_invalid_buffer_overlapcrypto_rc4:_invalid_buffer_overlapcrypto_rsa:_missing_public_modulusdoaddtimer:_P_already_set_in_timerexceeded_max_operation_limit_of__dexpected_an_RSA_public_key__got__TforEachP:_sched.safePointWait____0http2:_aborting_request_body_writehttp:_connection_has_been_hijackedhttp:_persistConn.readLoop_exitinghttp:_read_on_closed_response_bodyillegal_base64_data_at_input_byte_in__u_hexadecimal_character_escapeinvalid_descriptor_range_value:__vinvalid_nested_repetition_operatorinvalid_or_unsupported_Perl_syntaxinvalid_padding_bits_in_BIT_STRINGmalformed_signature:_R_is_negativemalformed_signature:_S_is_negativemax_hash_string_length_is__v_bytesmspan.ensureSwept:_m_is_not_lockedout_of_memory_allocating_allArenasreflect.FuncOf:_too_many_argumentsreflect:_ChanDir_of_non_chan_type_reflect:_Field_index_out_
+0x0027187c str.Wallet_Server_Commands____wallet_:
 0x00271ab4 str.PH2
 0x00271bbc str.cannot_use__wallet_with__regtest__btcwallet_not_yet_compatible_with_regtest
+0x00271e10 str.localhost
 0x00272018 str.Use__s__h_to_show_options
 0x002720ec str.btcwallet.conf
 0x00272188 str.Error_creating_a_default_config_file:__v
@@ -107,6 +111,7 @@ EXPECT=<<EOF
 0x0027347c str.:
 0x00273514 str.POST
 0x00273574 str.Content_Type
+0x002735b4 str.application_json
 0x0027373c str.error_reading_json_reply:__v
 0x00273834 str.d__s
 0x002738bc str.s
@@ -124,39 +129,60 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-13273
+12807
 EOF
 RUN
 
 NAME=Resolve all symbols on a linux go1.16 binary (arm64)
 FILE=bins/golang/btcctl-linux-arm64-v0.22.0-beta
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
 EOF
 EXPECT=<<EOF
-5069
+5070
 0x0026b000 str.s_command:__v
 0x0026b04c str.1.0
+0x0026b310 str.tls:_invalid_server_key_share
 0x0026b314 str.Failed_to_unmarshal_result:__v
 0x0026b444 str.Failed_to_format_result:__v
 0x0026b5dc str.s_command:__v__code:__s
 0x0026b730 str.Failed_to_read_data_from_stdin:__v
-0x0026b7a8 str.
+0x0026b884 str.Not_enough_lines_provided_on_stdin
 0x0026b998 str.The___s__command_can_only_be_used_via_websockets
+0x0026b9d0 str.Specify__l_to_list_available_commands
 0x0026ba70 str.Unrecognized_command___s
+0x0026baa8 str.Specify__l_to_list_available_commands
 0x0026bb00 str.No_command_specified
 0x0026bc28 str.Chain_Server_Commands:DEBUG_HTTP2
-0x0026bc3c str.Wallet_Server_Commands____wallet_:adding_nil_Certificate_to_CertPoolbad_scalar_length:__d__expected__dchacha20:_wrong_HChaCha20_key_sizecrypto_aes:_invalid_buffer_overlapcrypto_des:_invalid_buffer_overlapcrypto_rc4:_invalid_buffer_overlapcrypto_rsa:_missing_public_modulusdoaddtimer:_P_already_set_in_timerexceeded_max_operation_limit_of__dexpected_an_RSA_public_key__got__TforEachP:_sched.safePointWait____0http2:_aborting_request_body_writehttp:_connection_has_been_hijackedhttp:_persistConn.readLoop_exitinghttp:_read_on_closed_response_bodyillegal_base64_data_at_input_byte_in__u_hexadecimal_character_escapeinvalid_descriptor_range_value:__vinvalid_nested_repetition_operatorinvalid_or_unsupported_Perl_syntaxinvalid_padding_bits_in_BIT_STRINGmalformed_signature:_R_is_negativemalformed_signature:_S_is_negativemax_hash_string_length_is__v_bytesmspan.ensureSwept:_m_is_not_lockedout_of_memory_allocating_allArenasreflect.FuncOf:_too_many_argumentsreflect:_ChanDir_of_non_chan_type_reflect:_Field_index_out_of_boundsreflect:_Field_of_non_struct_type_reflect:_Method_index_out_of_rangereflect:_string_index_out_of_rangeruntime.SetFinalizer:_cannot_pass_runtime:_g_is_running_but_p_is_notruntime:_netpollBreak_write_failedruntime:_unexpected_return_pc_for_schedule:_spinning_with_local_workslice_bounds_out_of_range___x:_y:_slice_bounds_out_of_range__:_x:_y_stream_error:_stream_ID__d___v___vtestnet_seed.bitcoin.schildbach.detimeout_waiting_for_client_prefacetls:_malformed_key_share_extensiontoo_many_references:_cannot_splicetype_must_be__struct_not___s___s__unsupported_authentication_method_x509:_Ed25519_verification_failurex509:_unhandled_critical_extension_d_response_missing_Location_header____must_separate_successive_digits177635683940025046467781066894531252006_01_02T15:04:05.999999999Z07:0088817841970012523233890533447265625CONTINUATION_frame_with_stream_ID_0Failed_to_read_data_from_stdin:__v_attempt_to_clear_non_empty_span_setattempt_to_drop__d_items_from_stackchacha20:_output_smaller_than_inputcrypto_md5:_invalid_hash_sta
+0x0026bc3c str.Wallet_Server_Commands____wallet_:
+0x0026bf1c str.testnet3
+0x0026bf40 str.18334
+0x0026c030 str.simnet
+0x0026c054 str.18556
+0x0026c064 str.regtest
+0x0026c084 str.18334
 0x0026c090 str.cannot_use__wallet_with__regtest__btcwallet_not_yet_compatible_with_regtest
+0x0026c100 str.8334
+0x0026c2c8 str.localhost
+0x0026c2d0 str.localhost
 0x0026c520 str.Use__s__h_to_show_options
 0x0026c5f4 str.btcwallet.conf
 0x0026c688 str.Error_creating_a_default_config_file:__v
+0x0026c8ac str.testnet3
+0x0026c8b4 str.mainnet
+0x0026c8c4 str.simnet
+0x0026c8d4 str.regtest
+0x0026cad4 str.loadConfig
+0x0026cae0 str.profilealloc_called_without_a_P_or_outside_bootstrapping
 0x0026cae4 str.s:_Multiple_network_params_can_t_be_used_together____choose_one
+0x0026cbd0 str.tls:_invalid_server_key_share
 0x0026cbd4 str.Error_parsing_config_file:__v
 0x0026ccb8 str.btcd.conf
+0x0026cd6c str.version
+0x0026cec4 str.The_special_parameter_____indicates_that_a_parameter_should_be_read_from_the_next_unread_line_from_standard_input.
 0x0026d0a8 str.m___s_rpcuser_____s
 0x0026d0fc str.m___s_rpcpass_____s
 0x0026d150 str.m___s_notls__0_1___:_s
@@ -168,12 +194,14 @@ EXPECT=<<EOF
 0x0026d928 str.:
 0x0026d9c4 str.POST
 0x0026da28 str.Content_Type
+0x0026da70 str.application_json
 0x0026dbe8 str.error_reading_json_reply:__v
 0x0026dcec str.d__s
 0x0026dd70 str.s
 0x0026df84 str.d._d._d
 0x0026dfc0 str.beta
 0x0026e0a0 str.s__s
+0x0026e1dc str.profilealloc_called_without_a_P_or_outside_bootstrapping
 0x0026e1e0 str.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 0x0026e370 str.linux
 0x0026e384 str.btcd
@@ -184,14 +212,14 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-14828
+14650
 EOF
 RUN
 
 NAME=Resolve all symbols on a stripped mach0 go1.18 binary (arm64)
 FILE=bins/golang/hello.mach0.stripped
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ sym.go.runtime.panicwrap ~str.
 izq~?
@@ -202,7 +230,9 @@ EXPECT=<<EOF
 0x100006dd8 str.value_method
 0x100006e48 str.called_using_nil
 0x100006e64 str.pointer
-13
+0x100006eac str.panicwrap:_no___in
+0x1000076d0 str.internal_error___misuse_of_itab
+1288
 compiler go1.18 (cmd -compiler=gc CGO_ENABLED=1 CGO_CFLAGS= CGO_CPPFLAGS= CGO_CXXFLAGS= CGO_LDFLAGS= GOARCH=arm64 GOOS=darwin)
 EOF
 RUN
@@ -210,7 +240,7 @@ RUN
 NAME=Resolve all symbols on a stripped PE go1.12 binary (x64)
 FILE=bins/golang/hello_go_strip.exe
 CMDS=<<EOF
-aang
+aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
@@ -219,7 +249,7 @@ EOF
 EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
-9032
+8531
 compiler go1.15
 EOF
 RUN
@@ -229,5 +259,181 @@ FILE=bins/golang/GoReSym_118_tip_stripped
 CMDS=iI~compiler
 EXPECT=<<EOF
 compiler devel go1.18-2d1d548 Tue Dec 21 03:55:43 2021 +0000 (path github.com/stevemk14ebr/GoReSym mod github.com/stevemk14ebr/GoReSym (devel)  dep golang.org/x/arch v0.0.0-20201008161808-52c3e6f60cff h1:XmKBi9R6duxOB3lfc72wyrwiOY7X2Jl1wuI+RFOyMDE= -compiler=gc -ldflags=-s -w CGO_ENABLED=1 CGO_CFLAGS= CGO_CPPFLAGS= CGO_CXXFLAGS= CGO_LDFLAGS= GOARCH=amd64 GOOS=linux GOAMD64=v1 vcs=git vcs.revision=4bd670890aee5a14e36be1a72d19ca8573f2433b vcs.time=2021-12-06T17:40:21Z vcs.modified=true)
+EOF
+RUN
+
+
+NAME=Parse Golang 1.18 MIPS BE Strings
+FILE=bins/golang/go-re-sample-linux-mips
+CMDS=<<EOF
+aalg
+e asm.cmt.col=0
+pdr~"
+EOF
+EXPECT=<<EOF
+| 0x000be5ec      lui   v1, 0xd ; 0xd3417 ; "foogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGC"
+| 0x000be670      lui   at, 0xd ; 0xd3860 ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
+| 0x000be6a8      lui   v1, 0xd ; 0xd3503 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDograErro"
+| 0x000be700      lui   v0, 0xd ; 0xd340e ; "barendfinfoogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomCha"
+| 0x000be784      lui   at, 0xd ; 0xd360f ; "levellink lo   mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26"
+| 0x000be7dc      lui   v0, 0xf ; 0xd914e ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+| 0x000be8e4      lui   v0, 0xf ; 0xd54fc ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
+| 0x000be940      lui   v0, 0xf ; 0xd3aae ; "  level: bytes,  etypes  is not  maxpc=  mcount= minLC=  minutes nalloc= newval= nfreed= pointer stack=[ status ) errno=48828125"
+| 0x000be9d4      lui   a0, 0xf ; 0xd38af ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x000beab8      lui   v0, 0xf ; 0xd550c ; "subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABCDEFX0123456789ab"
+| 0x000beb14      lui   v0, 0xf ; 0xd3ca6 ; "  enable: (forced) B exp.)  B work ( blocked= in use)\n lockedg= lockedm= m->curg= marked   method:  ms cpu,  not in [ runtime= "
+| 0x000beb9c      lui   v0, 0xf ; 0xd38a8 ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
+| 0x000bec38      lui   a0, 0xf ; 0xd38af ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x000becbc      lui   at, 0xf ; 0xd914e ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+EOF
+RUN
+
+NAME=Parse Golang 1.18 MIPS LE Strings
+FILE=bins/golang/go-re-sample-linux-mipsle
+CMDS=<<EOF
+aalg
+e asm.cmt.col=0
+pdr~"
+EOF
+EXPECT=<<EOF
+| 0x000be5d0      lui   v1, 0xd ; 0xd3416 ; "foogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGC"
+| 0x000be654      lui   at, 0xd ; 0xd385f ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
+| 0x000be68c      lui   v1, 0xd ; 0xd3502 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDograErro"
+| 0x000be6e4      lui   v0, 0xd ; 0xd340d ; "barendfinfoogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomCha"
+| 0x000be768      lui   at, 0xd ; 0xd360e ; "levellink lo   mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26"
+| 0x000be7c0      lui   v0, 0xf ; 0xd914d ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+| 0x000be8c8      lui   v0, 0xf ; 0xd54fb ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
+| 0x000be924      lui   v0, 0xf ; 0xd3aad ; "  level: bytes,  etypes  is not  maxpc=  mcount= minLC=  minutes nalloc= newval= nfreed= pointer stack=[ status ) errno=48828125"
+| 0x000be9b8      lui   a0, 0xf ; 0xd38ae ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x000bea9c      lui   v0, 0xf ; 0xd550b ; "subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABCDEFX0123456789ab"
+| 0x000beaf8      lui   v0, 0xf ; 0xd3ca5 ; "  enable: (forced) B exp.)  B work ( blocked= in use)\n lockedg= lockedm= m->curg= marked   method:  ms cpu,  not in [ runtime= "
+| 0x000beb7c      lui   v0, 0xf ; 0xd38a7 ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
+| 0x000bec18      lui   a0, 0xf ; 0xd38ae ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x000bec9c      lui   at, 0xf ; 0xd914d ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+EOF
+RUN
+
+NAME=Parse Golang 1.18 MIPS64 BE Strings
+FILE=bins/golang/go-re-sample-linux-mips64
+CMDS=<<EOF
+aalg
+e asm.cmt.col=0
+pdr~"
+EOF
+EXPECT=<<EOF
+| 0x000c0378      lui   v1, 0xe ; 0xe7d69 ; "foogc gp in intmapmsanilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
+| 0x000c040c      lui   at, 0xf ; 0xe81b6 ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
+| 0x000c0448      lui   v1, 0xe ; 0xe7e54 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
+| 0x000c04a8      lui   v0, 0xe ; 0xe7d60 ; "barendfinfoogc gp in intmapmsanilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
+| 0x000c053c      lui   at, 0xe ; 0xe7f65 ; "levellink lo   mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26"
+| 0x000c05a0      lui   v0, 0x11 ; 0xedacb ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+| 0x000c06c4      lui   v0, 0x11 ; 0xe9e6b ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
+| 0x000c0730      lui   v0, 0x11 ; 0xe8404 ; "  level: bytes,  etypes  is not  maxpc=  mcount= minLC=  minutes nalloc= newval= nfreed= packed= pointer stack=[ status ) errno="
+| 0x000c07dc      lui   at, 0x11 ; 0xe8205 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x000c08d8      lui   v0, 0x11 ; 0xe9e7b ; "subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABCDEFX0123456789ab"
+| 0x000c0944      lui   v0, 0x11 ; 0xe8604 ; "  enable: (forced) -> node= B exp.)  B work ( blocked= in use)\n lockedg= lockedm= m->curg= marked   method:  ms cpu,  not in [ "
+| 0x000c09e4      lui   v0, 0x11 ; 0xe81fe ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
+| 0x000c0a98      lui   at, 0x11 ; 0xe8205 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x000c0b34      lui   at, 0x11 ; 0xedacb ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+EOF
+RUN
+
+NAME=Parse Golang 1.18 MIPS64 LE Strings
+FILE=bins/golang/go-re-sample-linux-mips64le
+CMDS=<<EOF
+aalg
+e asm.cmt.col=0
+pdr~"
+EOF
+EXPECT=<<EOF
+| 0x000c0360      lui   v1, 0xe ; 0xe7d6b ; "foogc gp in intmapmsanilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
+| 0x000c03f4      lui   at, 0xf ; 0xe81b8 ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
+| 0x000c0430      lui   v1, 0xe ; 0xe7e56 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
+| 0x000c0490      lui   v0, 0xe ; 0xe7d62 ; "barendfinfoogc gp in intmapmsanilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
+| 0x000c0524      lui   at, 0xe ; 0xe7f67 ; "levellink lo   mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26"
+| 0x000c0588      lui   v0, 0x11 ; 0xedacd ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+| 0x000c06ac      lui   v0, 0x11 ; 0xe9e6d ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
+| 0x000c0718      lui   v0, 0x11 ; 0xe8406 ; "  level: bytes,  etypes  is not  maxpc=  mcount= minLC=  minutes nalloc= newval= nfreed= packed= pointer stack=[ status ) errno="
+| 0x000c07c4      lui   at, 0x11 ; 0xe8207 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x000c08c0      lui   v0, 0x11 ; 0xe9e7d ; "subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABCDEFX0123456789ab"
+| 0x000c092c      lui   v0, 0x11 ; 0xe8606 ; "  enable: (forced) -> node= B exp.)  B work ( blocked= in use)\n lockedg= lockedm= m->curg= marked   method:  ms cpu,  not in [ "
+| 0x000c09c8      lui   v0, 0x11 ; 0xe8200 ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
+| 0x000c0a7c      lui   at, 0x11 ; 0xe8207 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x000c0b18      lui   at, 0x11 ; 0xedacd ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+EOF
+RUN
+
+NAME=Parse Golang 1.18 PPC64 BE Strings
+FILE=bins/golang/go-re-sample-linux-ppc64
+CMDS=<<EOF
+aalg
+e asm.cmt.col=0
+pdr~"
+EOF
+EXPECT=<<EOF
+| 0x00099f7c      lis   r5, 0xb ; 0xb7d3f ; "foogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
+| 0x00099fec      lis   r4, 0xc ; 0xb8198 ; "enableerrno objectpower9selectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs "
+| 0x0009a00c      lis   r4, 0xb ; 0xb7e32 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
+| 0x0009a050      lis   r9, 0xb ; 0xb7d36 ; "barendfinfoogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
+| 0x0009a0c0      lis   r4, 0xb ; 0xb7f48 ; "levellink mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26  r27"
+| 0x0009a108      lis   r9, 0xd ; 0xbd867 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+| 0x0009a1cc      lis   r8, 0xd ; 0xb9bf0 ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
+| 0x0009a218      lis   r8, 0xd ; 0xb83ec ; "  level: bytes,  etypes  is not  maxpc=  mcount= minLC=  minutes nalloc= newval= nfreed= packed= pointer stack=[ status ) errno="
+| 0x0009a290      lis   r7, 0xd ; 0xb81ed ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x0009a330      lis   r8, 0xd ; 0xb9c00 ; "subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABCDEFX0123456789ab"
+| 0x0009a37c      lis   r8, 0xd ; 0xb85f0 ; "  enable: (forced) -> node= B exp.)  B work ( blocked= in use)\n lockedg= lockedm= m->curg= marked   method:  ms cpu,  not in [ "
+| 0x0009a3f4      lis   r8, 0xd ; 0xb81e6 ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
+| 0x0009a470      lis   r7, 0xd ; 0xb81ed ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x0009a4cc      lis   r8, 0xd ; 0xbd867 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+EOF
+RUN
+
+NAME=Parse Golang 1.18 PPC64 LE Strings
+FILE=bins/golang/go-re-sample-linux-ppc64le
+CMDS=<<EOF
+aalg
+e asm.cmt.col=0
+pdr~"
+EOF
+EXPECT=<<EOF
+| 0x00099eac      lis   r5, 0xb ; 0xb7d60 ; "foogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
+| 0x00099f1c      lis   r4, 0xc ; 0xb81b9 ; "enableerrno objectpower9selectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs "
+| 0x00099f3c      lis   r4, 0xb ; 0xb7e53 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
+| 0x00099f80      lis   r9, 0xb ; 0xb7d57 ; "barendfinfoogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
+| 0x00099ff0      lis   r4, 0xb ; 0xb7f69 ; "levellink mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26  r27"
+| 0x0009a038      lis   r9, 0xd ; 0xbd845 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+| 0x0009a0f0      lis   r8, 0xd ; 0xb9bf3 ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
+| 0x0009a13c      lis   r8, 0xd ; 0xb840d ; "  level: bytes,  etypes  is not  maxpc=  mcount= minLC=  minutes nalloc= newval= nfreed= packed= pointer stack=[ status ) errno="
+| 0x0009a1b4      lis   r7, 0xd ; 0xb820e ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x0009a248      lis   r8, 0xd ; 0xb9c03 ; "subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABCDEFX0123456789ab"
+| 0x0009a294      lis   r8, 0xd ; 0xb8610 ; "  enable: (forced) -> node= B exp.)  B work ( blocked= in use)\n lockedg= lockedm= m->curg= marked   method:  ms cpu,  not in [ "
+| 0x0009a308      lis   r8, 0xd ; 0xb8207 ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
+| 0x0009a384      lis   r7, 0xd ; 0xb820e ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x0009a3e0      lis   r8, 0xd ; 0xbd845 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+EOF
+RUN
+
+NAME=Parse Golang 1.18 riscv64 Strings
+FILE=bins/golang/go-re-sample-linux-riscv64
+CMDS=<<EOF
+aalg
+e asm.cmt.col=0
+pdr~"
+EOF
+EXPECT=<<EOF
+| 0x00099898      auipc t2, 0x1e ; 0xb7b60 ; "foogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashGOGC"
+| 0x00099910      auipc t0, 0x1e ; 0xb7f74 ; "enableerrno objectselectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs dying="
+| 0x00099944      auipc t2, 0x1e ; 0xb7c70 ; "namepc  profra  roots + s0  s1  s10 s11 s2  s3  s4  s5  s6  s7  s8  s9  sbrksp  t0  t1  t2  t3  t4  t5  t6  tp  trueuint  -%s .."
+| 0x00099998      auipc t2, 0x1e ; 0xb7b57 ; "barendfinfoogc gp in intmapnilobjpc=ptr\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomCha"
+| 0x00099a10      auipc t0, 0x1e ; 0xb7dd8 ; "levelmheappanicscav schedsleepslicesudogsweeptracetrap:uint8valuewrite B ->  Value addr= alloc base  code= ctxt: curg= free  goi"
+| 0x00099a60      auipc t1, 0x3e ; 0xbd602 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+| 0x00099b4c      auipc t1, 0x3e ; 0xb99cd ; "subcommand 'bar'subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABC"
+| 0x00099ba4      auipc t1, 0x3e ; 0xb81c2 ; "  level: bytes,  etypes  is not  maxpc=  mcount= minLC=  minutes nalloc= newval= nfreed= packed= pointer stack=[ status ) errno="
+| 0x00099c30      auipc s0, 0x3e ; 0xb7fc3 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x00099cf8      auipc t1, 0x3e ; 0xb99dd ; "subcommand 'foo'time: bad [0-9]*workbuf is empty spinningthreads=, 0, {interval: {, p.searchAddr = 0123456789ABCDEFX0123456789ab"
+| 0x00099d50      auipc t1, 0x3e ; 0xb83c2 ; "  enable: (forced) -> node= B exp.)  B work ( blocked= in use)\n lockedg= lockedm= m->curg= marked   method:  ms cpu,  not in [ "
+| 0x00099dd0      auipc t1, 0x3e ; 0xb7fbc ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
+| 0x00099e64      auipc s0, 0x3e ; 0xb7fc3 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
+| 0x00099edc      auipc t0, 0x3e ; 0xbd602 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 EOF
 RUN

@@ -7,6 +7,7 @@
 #include <rz_type.h>
 #include <rz_sign.h>
 #include <rz_util/rz_path.h>
+#include "test_config.h"
 #include "minunit.h"
 #include "test_sdb.h"
 
@@ -46,9 +47,8 @@ bool test_types_save() {
 	rz_type_db_set_bits(typedb, 64);
 	rz_type_db_set_os(typedb, "linux");
 	// Load predefined types
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
-	free(types_dir);
 
 	// struct.junker
 	RzBaseType *type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
@@ -155,9 +155,8 @@ bool test_types_load() {
 	rz_type_db_set_bits(typedb, 64);
 	rz_type_db_set_os(typedb, "linux");
 	// Load predefined types
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
-	free(types_dir);
 
 	Sdb *db = types_ref_db();
 	bool succ = rz_serialize_types_load(db, typedb, NULL);

@@ -3,8 +3,8 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
-#include <capstone.h>
-#include <x86.h>
+#include <capstone/capstone.h>
+#include <capstone/x86.h>
 
 #if 0
 CYCLES:
@@ -1880,23 +1880,17 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	int i;
 	RzAnalysisValue *val;
 	int regsz;
-	x86_reg sp;
+	x86_reg sp, ip;
 	switch (mode) {
 	case CS_MODE_64:
 		regsz = 8;
 		sp = X86_REG_RSP;
-		break;
-	case CS_MODE_32:
-		regsz = 4;
-		sp = X86_REG_ESP;
-		break;
-	case CS_MODE_16:
-		regsz = 4;
-		sp = X86_REG_ESP;
+		ip = X86_REG_RIP;
 		break;
 	default:
 		regsz = 4;
 		sp = X86_REG_ESP;
+		ip = X86_REG_EIP;
 		break;
 	}
 	RzList *ret = rz_list_newf((RzListFree)rz_analysis_value_free);
@@ -1908,7 +1902,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	val = rz_analysis_value_new();
 	val->type = RZ_ANALYSIS_VAL_REG;
 	val->access = RZ_ANALYSIS_ACC_W;
-	val->reg = cs_reg2reg(reg, handle, X86_REG_RIP);
+	val->reg = cs_reg2reg(reg, handle, ip);
 	rz_list_append(ret, val);
 
 #if CS_API_MAJOR >= 4

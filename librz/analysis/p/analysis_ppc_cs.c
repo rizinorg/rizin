@@ -3,8 +3,8 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
-#include <capstone.h>
-#include <ppc.h>
+#include <capstone/capstone.h>
+#include <capstone/ppc.h>
 #include "../../asm/arch/ppc/libvle/vle.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
@@ -414,7 +414,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
-static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	vle_t *instr = NULL;
 	vle_handle handle = { 0 };
 	op->size = 2;
@@ -423,6 +423,9 @@ static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		op->type = instr->analysis_op;
 		// op->id = instr->type;
 
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = strdup(instr->name);
+		}
 		switch (op->type) {
 		case RZ_ANALYSIS_OP_TYPE_ILL:
 			break;
@@ -610,7 +613,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		if (!a->big_endian) {
 			return -1;
 		}
-		ret = analop_vle(a, op, addr, buf, len);
+		ret = analop_vle(a, op, addr, buf, len, mask);
 		if (ret >= 0) {
 			return op->size;
 		}
@@ -636,6 +639,9 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	} else {
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = strdup(insn->mnemonic);
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 			opex(&op->opex, handle, insn);
 		}
@@ -681,10 +687,13 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		case PPC_INS_MR:
 		case PPC_INS_LI:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+			op->val = IMM(1);
 			esilprintf(op, "%s,%s,=", ARG(1), ARG(0));
 			break;
 		case PPC_INS_LIS:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+			op->val = IMM(1);
+			op->val <<= 16;
 			esilprintf(op, "%s0000,%s,=", ARG(1), ARG(0));
 			break;
 		case PPC_INS_CLRLWI:
@@ -910,8 +919,10 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 			esilprintf(op, "%s,%s,-,%s,=", ARG(1), ARG(2), ARG(0));
 			break;
-		case PPC_INS_ADD:
 		case PPC_INS_ADDI:
+			op->val = ((st16)IMM(2));
+			// fallthrough
+		case PPC_INS_ADD:
 			op->sign = true;
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			esilprintf(op, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));

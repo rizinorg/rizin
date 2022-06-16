@@ -6,6 +6,7 @@ rz_util_sources = [
   'asn1.c',
   'assert.c',
   'astr.c',
+  'axml.c',
   'base85.c',
   'base91.c',
   'bitmap.c',
@@ -78,7 +79,7 @@ rz_util_sources = [
   'zip.c',
 ]
 
-rz_util_deps = [ldl, lrt, mth, pth, utl, sdb_dep, zlib_dep] + platform_deps
+rz_util_deps = [ldl, lrt, mth, th, utl, sdb_dep, zlib_dep] + platform_deps
 if ['freebsd', 'netbsd', 'haiku', 'dragonfly'].contains(host_machine.system())
   # backtrace_symbols_fd requires -lexecinfo
   rz_util_deps += [cc.find_library('execinfo', static: is_static_build)]
@@ -100,6 +101,7 @@ rz_util = library('rz_util', rz_util_sources,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
   soversion: rizin_libversion,
+  version: rizin_version,
   name_suffix: lib_name_suffix,
   name_prefix: lib_name_prefix,
 )

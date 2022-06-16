@@ -103,9 +103,10 @@ NAME=: Triage Dump Debug x64
 FILE=dmp://bins/dmp/triage_x64.dmp
 CMDS=<<EOF
 %RZ_CURL=1
+e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
 e cfg.debug=1
 iH
-dL dmp
+dl dmp
 dpa
 dr
 s rip
@@ -187,7 +188,7 @@ mov qword [rsp + 0x10], rdx
 mov qword [rsp + 0x18], r8
 mov qword [rsp + 0x20], r9
 0  0xfffff8047bdf5a80 sp: 0xffff850429890ee8  0    [??]  pdb.ntkrnlmp.KeBugCheckEx pdb.ntkrnlmp.KeBugCheckEx0
-1  0xfffff8047be0f4e1 sp: 0xffff850429890ef0  56   [??]  pdb.ntkrnlmp._C__1DO_NJNPPJHL___AAK__AAe__AAr__AAn__AAe__AAl__AA_9__AAM__AAU__AAI__AA_9__AAL__AAa__AAn__AAg_FNODOBFM+5649 
+1  0xfffff8047be0f4e1 sp: 0xffff850429890ef0  56   [??]  pdb.ntkrnlmp.string_::3655334267::_Kernel_MUI_Lang_::1575215452+5649 
 2  0xfffff8047bdcc052 sp: 0xffff850429890f30  104  [??]  pdb.ntkrnlmp.__C_specific_handler+162 
 3  0xfffff8047bdfe942 sp: 0xffff850429890fa0  40   [??]  pdb.ntkrnlmp.RtlpExecuteHandlerForException+18 
 4  0xfffff8047bd2bf97 sp: 0xffff850429890fd0  1816 [??]  pdb.ntkrnlmp.RtlDispatchException+663 
@@ -222,7 +223,7 @@ mov qword [rsp + 0x20], r9
 33  0xfffff8047bc25975 sp: 0xffff850429892b70  152  [??]  pdb.ntkrnlmp.ExpWorkerThread+261 
 34  0xfffff8047bd17e25 sp: 0xffff850429892c10  72   [??]  pdb.ntkrnlmp.PspSystemThreadStartup+85 
 35  0xfffff8047bdfd0d8 sp: 0xffff850429892c60  40   [??]  pdb.ntkrnlmp.KiStartSystemThread+40 
-36  0x0                sp: 0xffff850429892c90  0    [??]  str.PAGEDU64 str.PAGEDU640
+36  0x0                sp: 0xffff850429892c90  0    [??]   
 EOF
 RUN
 
@@ -230,14 +231,16 @@ NAME=: Triage Dump Debug arm64
 FILE=dmp://bins/dmp/triage_arm64.dmp
 CMDS=<<EOF
 %RZ_CURL=1
+e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
 e cfg.debug=1
 iH
-dL dmp
+dl dmp
 dpa
 dr
 s pc
 e asm.sub.names=false
 pi 4
+dbt
 EOF
 EXPECT=<<EOF
 DUMP_HEADER64:
@@ -329,6 +332,11 @@ add x0, x19, 0x40
 bl 0xfffff803f318f560
 adrp x8, 0xfffff803f3a23000
 ldr x11, [x8, 0xa40]
+0  0xfffff803f32de014 sp: 0xffffe00e0e4bc4a0  0    [??]  pdb.ntkrnlmp.KeBugCheck2+452 
+1  0xfffff803f33442a0 sp: 0xffffe00e0e4bc4b0  1632 [??]  pdb.ntkrnlmp.PopPowerButtonWorkCallback+752 
+2  0xfffff803f309ff1c sp: 0xffffe00e0e4bcb20  432  [??]  pdb.ntkrnlmp.ExpWorkerThread+460 
+3  0xfffff803f3173340 sp: 0xffffe00e0e4bcce0  80   [??]  pdb.ntkrnlmp.PspSystemThreadStartup+80 
+4  0xfffff803f3007de4 sp: 0xffffe00e0e4bcd40  0    [??]  pdb.ntkrnlmp.KiStartSystemThread+36 
 EOF
 RUN
 
@@ -336,8 +344,9 @@ NAME=: Bitmap Dump Debug
 FILE=dmp://bins/dmp/bmp.dmp
 CMDS=<<EOF
 %RZ_CURL=1
+e pdb.server=https://raw.githubusercontent.com/rizinorg/test-pdb-repository/main/
 iH
-dL dmp
+dl dmp
 dpa
 e cfg.debug=1
 dr
@@ -394,7 +403,7 @@ ret
 int3
 int3
 0  0xfffff805108776a0 sp: 0xfffff805135684f8  0    [??]  pdb.ntkrnlmp.RtlpBreakWithStatusInstruction pdb.ntkrnlmp.RtlpBreakWithStatusInstruction0
-1  0xfffff805110dd222 sp: 0xfffff80513568500  568  [??]  pdb.ntkrnlmp._C__1CG_JLJMEKNK___AA_2__AAD__AAe__AAv__AAi__AAc__AAe__AA_2__AAR__AAa__AAm__AAd__AAi__AAs__AAk_PBOPGDP+25474 
+1  0xfffff805110dd222 sp: 0xfffff80513568500  568  [??]  pdb.ntkrnlmp.string_::2500419057::__Device_Ramdisk_::253687359+25426 
 2  0xfffff80510c50204 sp: 0xfffff80513568740  776  [??]  pdb.ntkrnlmp.KiInitializeKernel+1364 
 3  0xfffff80510c45219 sp: 0xfffff80513568a50  1448 [??]  pdb.ntkrnlmp.KiSystemStartup+521 
 4  0x0                sp: 0xfffff80513569000  0    [??]   

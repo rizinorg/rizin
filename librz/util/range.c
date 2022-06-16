@@ -351,7 +351,6 @@ int rz_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
             |__|    |__|       |_|
 #endif
 RRange *rz_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
-	ut64 total = 0;
 	RzListIter *iter;
 	RRangeItem *r = NULL;
 	RRange *newrgs = rz_range_new();
@@ -361,16 +360,12 @@ RRange *rz_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	rz_list_foreach (rgs->ranges, iter, r) {
 		if (r->fr > fr && r->fr < to) {
 			rz_range_add(newrgs, fr, r->fr, 1);
-			// eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, r->fr);
-			total += (r->fr - fr);
 			fr = r->to;
 		}
 	}
 	if (fr < to) {
-		// eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, to);
 		rz_range_add(newrgs, fr, to, 1);
 	}
-	// eprintf("Total bytes: %"PFMT64d"\n", total);
 	return newrgs;
 }
 

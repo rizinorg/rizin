@@ -517,6 +517,7 @@ RZ_IPI RzCmdStatus rz_write_block_handler(RzCore *core, int argc, const char **a
 
 	int len = rz_hex_str2bin(argv[1], hex);
 	if (len <= 0) {
+		free(hex);
 		RZ_LOG_ERROR("Cannot convert '%s' to hex data.\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -541,23 +542,12 @@ RZ_IPI RzCmdStatus rz_write_mask_reset_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_write_duplicate_handler(RzCore *core, int argc, const char **argv) {
 	ut64 src = rz_num_math(core->num, argv[1]);
-	ut64 len = rz_num_math(core->num, argv[2]);
-	ut8 *data = RZ_NEWS(ut8, len);
-	if (!data) {
+	int len = (int)rz_num_math(core->num, argv[2]);
+	if (len < 0) {
+		RZ_LOG_ERROR("Negative length is not valid.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	int n = rz_io_nread_at(core->io, src, data, len);
-	if (n < 0) {
-		free(data);
-		RZ_LOG_ERROR("Cannot read data from %" PFMT64x ".\n", src);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (!rz_core_write_at(core, core->offset, data, n)) {
-		RZ_LOG_ERROR("Cannot write %d bytes to %" PFMT64x ".\n", n, core->offset);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_write_duplicate_at(core, core->offset, src, len));
 }
 
 RZ_IPI RzCmdStatus rz_write_length_string_handler(RzCore *core, int argc, const char **argv) {

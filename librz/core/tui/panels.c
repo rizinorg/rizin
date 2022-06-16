@@ -3539,7 +3539,7 @@ int __program_cb(void *user) {
 
 int __calls_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_cmd_analysis_calls(core, "", false, false);
+	rz_core_analysis_calls(core, false);
 	return 0;
 }
 
@@ -3575,7 +3575,7 @@ int __watch_points_cb(void *user) {
 
 int __references_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_analysis_refs(core, "");
+	rz_core_analysis_refs(core, 0);
 	return 0;
 }
 
@@ -4792,25 +4792,11 @@ void __do_panels_refreshOneShot(RzCore *core) {
 }
 
 void __panel_single_step_in(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		rz_core_debug_step_one(core, 1);
-		rz_core_reg_update_flags(core);
-	} else {
-		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-		rz_core_reg_update_flags(core);
-	}
+	rz_core_debug_single_step_in(core);
 }
 
 void __panel_single_step_over(RzCore *core) {
-	bool io_cache = rz_config_get_b(core->config, "io.cache");
-	rz_config_set_b(core->config, "io.cache", false);
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		rz_core_cmd(core, "dso", 0);
-		rz_core_reg_update_flags(core);
-	} else {
-		rz_core_analysis_esil_step_over(core);
-	}
-	rz_config_set_b(core->config, "io.cache", io_cache);
+	rz_core_debug_single_step_over(core);
 }
 
 void __panel_breakpoint(RzCore *core) {
@@ -5431,7 +5417,9 @@ RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
 				free(panels_config);
 				return false;
 			}
-			__set_read_only(core, p, rz_strbuf_drain(rsb));
+			char *helptxt = rz_strbuf_drain(rsb);
+			__set_read_only(core, p, helptxt);
+			free(helptxt);
 		}
 	}
 	rz_json_free(json);

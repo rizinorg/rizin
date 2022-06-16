@@ -253,7 +253,7 @@ objc_cache_opt_info *rz_dyldcache_get_objc_opt_info(RzBinFile *bf, RzDyldCache *
 			continue;
 		}
 
-		struct MACH0_(opts_t) opts;
+		struct MACH0_(opts_t) opts = { 0 };
 		opts.verbose = bf->rbin->verbose;
 		opts.header_at = bin->header_at;
 

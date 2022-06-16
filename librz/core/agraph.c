@@ -3502,7 +3502,7 @@ static int agraph_print(RzAGraph *g, int is_interactive, RzCore *core, RzAnalysi
 			mustFlush = true;
 		}
 		if (core && core->scr_gadgets) {
-			rz_core_cmd0(core, "pg");
+			rz_core_gadget_print(core);
 		}
 		if (mustFlush) {
 			rz_cons_flush();
@@ -4576,12 +4576,21 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				mousemode = 3;
 			}
 			break;
-		case '(':
-			if (fcn) {
-				rz_core_cmd0(core, "wao recj@B:-1");
-				g->need_reload_nodes = true;
+		case '(': {
+			if (!fcn) {
+				break;
 			}
+			if (!rz_core_seek_bb_instruction(core, -1)) {
+				break;
+			}
+			ut64 oldseek = core->offset;
+			core->tmpseek = true;
+			rz_core_hack(core, "recj");
+			core->tmpseek = false;
+			rz_core_seek(core, oldseek, true);
+			g->need_reload_nodes = true;
 			break;
+		}
 		case ')':
 			if (fcn) {
 				rotateAsmemu(core);

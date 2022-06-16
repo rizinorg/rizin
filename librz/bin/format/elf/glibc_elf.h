@@ -2497,7 +2497,7 @@ enum {
 /* PowerPC64 relocations defined by the ABIs */
 #define RZ_PPC64_NONE            RZ_PPC_NONE
 #define RZ_PPC64_ADDR32          RZ_PPC_ADDR32 /* 32bit absolute address */
-#define RZ_PPC64_ADDR24          RZ_PPC_ADDR24 /* 26bit address, word aligned */
+#define RZ_PPC64_ADDR24          RZ_PPC_ADDR24 /* 24bit address, word aligned */
 #define RZ_PPC64_ADDR16          RZ_PPC_ADDR16 /* 16bit absolute address */
 #define RZ_PPC64_ADDR16_LO       RZ_PPC_ADDR16_LO /* lower 16bits of address */
 #define RZ_PPC64_ADDR16_HI       RZ_PPC_ADDR16_HI /* high 16bits of address. */
@@ -4224,6 +4224,21 @@ enum {
 #define R_HEX_LD_PLT_B22_PCREL_X 97 /*  Word32_B22  (S + A - P) & 0x3f    Signed   Truncate */
 #define R_HEX_LD_PLT_B32_PCREL_X 98 /*  Word32_X26  (S + A - P) >> 6      Signed   Truncate */
 #define R_HEX_27_REG             99 /*  Word32_M25  (S + A - MB) >> 2     Unsigned Verify */
+
+#define R_HEX_BITMASK_WORD8      0xff
+#define R_HEX_BITMASK_WORD16     0xffff
+#define R_HEX_BITMASK_WORD32     0xffffffff
+#define R_HEX_BITMASK_WORD32_LO  0x00c03fff
+#define R_HEX_BITMASK_WORD32_HL  0x00c03fff
+#define R_HEX_BITMASK_WORD32_B7  0x00001f18
+#define R_HEX_BITMASK_WORD32_B9  0x003000fe
+#define R_HEX_BITMASK_WORD32_B13 0x00202ffe
+#define R_HEX_BITMASK_WORD32_B15 0x00df20fe
+#define R_HEX_BITMASK_WORD32_B22 0x01ff3ffe
+#define R_HEX_BITMASK_WORD32_M21 0x0fff3fe0
+#define R_HEX_BITMASK_WORD32_M25 0x0fff3fef
+#define R_HEX_BITMASK_WORD32_R6  0x000007e0
+#define R_HEX_BITMASK_WORD32_X26 0x0fff3fff
 
 /* Dynamic array tags */
 

@@ -80,7 +80,7 @@ static ut64 readQword(RzCoreObjc *objc, ut64 addr, bool *success) {
 static void objc_analyze(RzCore *core) {
 	const char *notify = "Analyzing code to find selfref references";
 	rz_core_notify_begin(core, "%s", notify);
-	(void)rz_core_analysis_refs(core, "");
+	(void)rz_core_analysis_refs(core, 0);
 	if (!strcmp("arm", rz_config_get(core->config, "asm.arch"))) {
 		const bool emu_lazy = rz_config_get_i(core->config, "emu.lazy");
 		rz_config_set_i(core->config, "emu.lazy", true);
@@ -275,7 +275,7 @@ static bool objc_find_refs(RzCore *core) {
 				RzListIter *iter;
 				RzAnalysisXRef *xref;
 				rz_list_foreach (list, iter, xref) {
-					rz_analysis_xrefs_set(core->analysis, xref->from, funcVA, RZ_ANALYSIS_REF_TYPE_CODE);
+					rz_analysis_xrefs_set(core->analysis, xref->from, funcVA, RZ_ANALYSIS_XREF_TYPE_CODE);
 					total_xrefs++;
 				}
 			}

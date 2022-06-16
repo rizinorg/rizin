@@ -16,12 +16,8 @@ RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b);
 
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val);
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core);
-RZ_IPI void rz_core_analysis_esil_reinit(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, ut64 addr, ut32 size);
-RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 addr, ut32 size);
 RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core);
-RZ_IPI void rz_core_analysis_esil_init_regs(RzCore *core);
-RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr);
 RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core);
@@ -129,15 +125,12 @@ RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items);
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_over(RzCore *core);
-RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_debug_continue(RzCore *core);
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid);
 RZ_IPI void rz_core_debug_print_status(RzCore *core);
 RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, bool hwbp, bool watch);
 
 /* cfile.c */
-RZ_IPI void rz_core_io_file_open(RzCore *core, int fd);
-RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms);
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
 RZ_IPI void rz_core_io_map_info_free(RzCoreIOMapInfo *info);
 
@@ -152,6 +145,7 @@ RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_si
 RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
 RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
 RZ_IPI int rz_core_seek_opcode(RzCore *core, int numinstr, bool silent);
+RZ_IPI bool rz_core_seek_bb_instruction(RzCore *core, int index);
 
 /* cmd_meta.c */
 RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 addr);
@@ -160,7 +154,6 @@ RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 add
 RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzCmdStateOutput *state);
 
 /* cmd_debug.c */
-RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core);
 RZ_IPI void rz_core_static_debug_stop(void *u);
 
 /* cmd_regs.c */

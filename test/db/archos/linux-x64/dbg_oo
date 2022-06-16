@@ -69,17 +69,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=breakpoints after double doo
+NAME=breakpoints after double ood
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=
 CMDS=<<EOF
 db @ main
 db @ main+3
-doo > $_
+ood > $_
 dc # should hit the first breakpoint
 .drf
 ?v eip-main
-doo > $_
+ood > $_
 dc # should hit the first breakpoint
 .drf
 ?v eip-main
