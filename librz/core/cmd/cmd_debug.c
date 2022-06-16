@@ -3241,16 +3241,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_execution_handler(RzCore *core, int arg
 		int old_pid = core->dbg->pid;
 		// using rz_num instead of atoi
 		int pid = rz_num_math(core->num, argv[1]);
-		rz_reg_arena_swap(core->dbg->reg, true);
 		rz_debug_select(core->dbg, pid, core->dbg->tid);
-		rz_debug_continue(core->dbg);
+		rz_core_debug_continue(core);
 		rz_debug_select(core->dbg, old_pid, core->dbg->tid);
 	} else {
-		rz_reg_arena_swap(core->dbg->reg, true);
-#if __linux__
-		core->dbg->continue_all_threads = true;
-#endif
-		rz_debug_continue(core->dbg);
+		rz_core_debug_continue(core);
 	}
 
 	rz_cons_break_pop();
