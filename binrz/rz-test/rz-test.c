@@ -299,14 +299,14 @@ int rz_test_main(int argc, const char **argv) {
 		case 's':
 			// rz_num_math returns 0 for both '0' and invalid str
 			expect_succ = rz_num_math(NULL, opt.arg);
-			if (!rz_str_isnumber(opt.arg) || expect_succ < 0) {
+			if (!rz_num_is_valid_input(NULL, opt.arg) || expect_succ < 0) {
 				RZ_LOG_ERROR("Number of expected successful tests is invalid\n");
 				goto beach;
 			}
 			break;
 		case 'x':
 			expect_fail = rz_num_math(NULL, opt.arg);
-			if (!rz_str_isnumber(opt.arg) || expect_fail < 0) {
+			if (!rz_num_is_valid_input(NULL, opt.arg) || expect_fail < 0) {
 				RZ_LOG_ERROR("Number of expected failed tests is invalid\n");
 				goto beach;
 			}
