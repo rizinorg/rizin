@@ -176,13 +176,13 @@ typedef struct sh_param_t {
 } SHParam;
 
 typedef struct sh_opcode_t {
-	RzBitVector *bits;
+	ut16 opcode;
 	const char *str_mnem;
 	SHOpMnem mnemonic;
 	SHParam param[2];
 	SHScaling scaling;
 } SHOp;
 
-SHOp *sh_disassembler(ut16 opcode, bool be);
+SHOp *sh_disassembler(ut16 opcode);
 
 #endif /* RZ_ASM_SH_DISASSEMBLER_H */
