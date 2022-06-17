@@ -67,10 +67,11 @@ RZ_IPI RzList /*<RzRegItem>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg 
 	if (!ret) {
 		return NULL;
 	}
+	RzRegItem *pc = rz_reg_get_by_role(reg, RZ_REG_NAME_PC);
 	RzListIter *iter;
 	RzRegItem *item;
 	rz_list_foreach (l, iter, item) {
-		if (size != 0 && size != item->size) {
+		if (size != 0 && size != item->size && item != pc) {
 			continue;
 		}
 		rz_list_push(ret, item);

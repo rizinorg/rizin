@@ -5313,12 +5313,10 @@ toro:
 		}
 	} else {
 		/* highlight eip */
-		const char *pc = core->analysis->reg->name[RZ_REG_NAME_PC];
+		RzReg *reg = rz_core_reg_default(core);
+		const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 		if (pc) {
-			RzFlagItem *item = rz_flag_get(core->flags, pc);
-			if (item) {
-				ds->dest = item->offset;
-			}
+			ds->dest = rz_reg_getv(reg, pc);
 		}
 	}
 
