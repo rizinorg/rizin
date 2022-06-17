@@ -4,26 +4,25 @@
 #include "disassembler.h"
 
 struct sh_param_builder_addr_t {
-	ut8 start;
-	SHAddrMode mode;
+	ut8 start; ///< start bit of the param (assuming little-endian)
+	SHAddrMode mode; ///< addressing mode being used
 };
 
 typedef struct sh_param_builder_t {
+	// either find the param using param builder or use an already provided param
 	union {
 		struct sh_param_builder_addr_t addr;
 		SHParam param;
 	};
-	bool is_param;
+	bool is_param; ///< whether a param was directly passed
 } SHParamBuilder;
 
 /**
- * \brief Get SHParam from opcode, start bit and addressing mode
+ * \brief Get SHParam from opcode
  * Make sure the opcode is passed in little-endian form
  *
  * \param opcode instruction opcode (assumed to be in little-endian)
- * \param start start bit (in little-endian)
- * \param mode addressing mode used
- * \return SHParam
+ * \param shb SHParamBuilder instance which contains the necessary info to find the param
  */
 SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
 	if (shb.is_param) {
@@ -95,12 +94,12 @@ SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
 }
 
 typedef struct sh_op_raw_t {
-	const char *str_mnem;
-	SHOpMnem mnemonic;
-	ut16 opcode;
-	ut16 mask;
-	SHScaling scaling;
-	SHParamBuilder param_builder[2];
+	const char *str_mnem; ///< string mnemonic
+	SHOpMnem mnemonic; ///< enum mnemonic
+	ut16 opcode; ///< opcode
+	ut16 mask; ///< mask for opcode to mask out param bits
+	SHScaling scaling; ///< scaling for the opcode
+	SHParamBuilder param_builder[2]; ///< param builders for the params
 } SHOpRaw;
 
 // xxxx used to denote param fields in the opcode
@@ -109,6 +108,7 @@ typedef struct sh_op_raw_t {
 #define dddd 1111
 #define mmmm 1111
 
+// to form opcode in nibbles
 #define OPCODE_(a, b, c, d) 0b##a##b##c##d
 #define OPCODE(a, b, c, d)  OPCODE_(a, b, c, d)
 
@@ -118,10 +118,13 @@ typedef struct sh_op_raw_t {
 #define NIB2 8
 #define NIB3 12
 
+// return a param builder struct
 #define ADDR(nib, addrmode) \
 	{ \
 		{ .addr = { .start = nib, .mode = addrmode } }, .is_param = false \
 	}
+
+// return a param
 #define PARAM(reg, addrmode) \
 	{ { .param = { .param = { \
 			       SH_REG_IND_##reg, \
@@ -129,8 +132,18 @@ typedef struct sh_op_raw_t {
 		    .mode = addrmode } }, \
 		.is_param = true }
 
+// opcode for "weird" movl
 #define MOVL 0b000111111111
 
+/**
+ * @brief Get params for mov.l instruction (0001nnnnmmmmdddd)
+ * A special function is required because the nibbles for the second param (@(disp:Rn)) (i.e. nnnn and dddd)
+ * are separated by the nibble for the first param (Rm) (i.e. mmmm), so sh_op_get_param cannot be used
+ *
+ * \param opcode opcode
+ * \param m if true, get Rm ; otherwise get @(disp:Rn)
+ * \return SHParam return appropriate param
+ */
 static SHParam sh_op_get_param_movl(ut16 opcode, bool m) {
 	if (m) {
 		ut16 reg = (opcode >> 4) & 0xf;
@@ -145,6 +158,7 @@ static SHParam sh_op_get_param_movl(ut16 opcode, bool m) {
 	}
 }
 
+// Opcode lookup list
 const SHOpRaw sh_op_lookup[] = {
 	{ "mov", SH_OP_MOV, OPCODE(1110, nnnn, iiii, iiii), 0x0fff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_U), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "mov.w", SH_OP_MOV, OPCODE(1001, nnnn, dddd, dddd), 0x0fff, SH_SCALING_W, { ADDR(NIB0, SH_PC_RELATIVE_DISP), ADDR(NIB2, SH_REG_DIRECT) } },
@@ -196,6 +210,12 @@ const SHOpRaw sh_op_lookup[] = {
 #undef nnnn
 #undef iiii
 
+/**
+ * \brief Disassemble \p opcode and return a SHOp
+ *
+ * \param opcode 16 bit wide opcode
+ * \return SHOp object corresponding to the opcode
+ */
 SHOp *sh_disassembler(ut16 opcode) {
 	ut32 opcode_num = sizeof(sh_op_lookup) / sizeof(SHOpRaw);
 
@@ -207,6 +227,7 @@ SHOp *sh_disassembler(ut16 opcode) {
 			op->mnemonic = raw.mnemonic;
 			op->scaling = raw.scaling;
 			op->str_mnem = raw.str_mnem;
+			// check for "weird" mov.l
 			if (raw.opcode == MOVL) {
 				op->param[0] = sh_op_get_param_movl(opcode, true);
 				op->param[1] = sh_op_get_param_movl(opcode, false);
