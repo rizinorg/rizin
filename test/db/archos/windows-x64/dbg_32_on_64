@@ -1,0 +1,15 @@
+NAME=Debug 32-bit binary on 64-bit Windows
+FILE=bins/pe/hello_world/hello_world_o232bit.exe
+ARGS=-d
+CMDS=<<EOF
+pd 1~rip
+db @ main
+3dc > NUL
+pd 1~rip,main
+EOF
+EXPECT=<<EOF
+            ;-- rip:
+            ;-- main:
+            ;-- rip:
+EOF
+RUN
