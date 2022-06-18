@@ -9,7 +9,7 @@
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, NOP);
+	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
 	// READ
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
@@ -144,7 +144,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 }
 
 static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, NOP);
+	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
 
 	// How to read instruction ids:
@@ -251,8 +251,8 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
  * NOTE: Instructions which set the 'OV' bit are not yet supported by capstone.
  */
 static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, bool add, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
-	rz_return_val_if_fail(handle && insn, NOP);
 
 	// READ
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
@@ -337,7 +337,7 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 }
 
 static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, NOP);
+	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
 	const char *crX;
 	const char *rA;
@@ -405,7 +405,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 }
 
 static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, NOP);
+	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
 	// READ
 	const char *rA = cs_reg_name(handle, INSOP(0).reg);
@@ -503,7 +503,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 }
 
 static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, NOP);
+	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
 	bool is_conditional = ppc_is_conditional(id);
 	RzILOpEffect *set_cia; // Current instruction address
@@ -533,7 +533,7 @@ static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, co
 }
 
 static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, NOP);
+	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
 
 	const char *rS = cs_reg_name(handle, INSOP(0).reg);
@@ -669,7 +669,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
  * The manual uses rotate, here we simply use SHIFT ops.
  */
 static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, NOP);
+	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
 	bool sets_cr0 = insn->detail->ppc.update_cr0;
 
@@ -842,8 +842,8 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
  * \return RzILOpEffect* Sequence of effects which emulate the instruction.
  */
 RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, NOP);
-	rz_return_val_if_fail(insn->detail, NOP);
+	rz_return_val_if_fail(handle && insn, EMPTY());
+	rz_return_val_if_fail(insn->detail, EMPTY());
 	RzILOpEffect *lop;
 	switch (insn->id) {
 	default:
