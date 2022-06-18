@@ -82,7 +82,7 @@ SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
 		break;
 	case SH_REG_INDIRECT_DISP:
 		ret_param.param[0] = nibble >> 4;
-		ret_param.param[1] = nibble & 0b1111;
+		ret_param.param[1] = nibble & 0xf;
 		break;
 	case SH_GBR_INDIRECT_INDEXED:
 		break;
@@ -103,13 +103,13 @@ typedef struct sh_op_raw_t {
 } SHOpRaw;
 
 // xxxx used to denote param fields in the opcode
-#define iiii 1111
-#define nnnn 1111
-#define dddd 1111
-#define mmmm 1111
+#define I f
+#define N f
+#define D f
+#define M f
 
 // to form opcode in nibbles
-#define OPCODE_(a, b, c, d) 0b##a##b##c##d
+#define OPCODE_(a, b, c, d) 0x##a##b##c##d
 #define OPCODE(a, b, c, d)  OPCODE_(a, b, c, d)
 
 // nibble position
@@ -133,12 +133,12 @@ typedef struct sh_op_raw_t {
 		.is_param = true }
 
 // opcode for "weird" movl
-#define MOVL 0b000111111111
+#define MOVL 0x1fff
 
 /**
- * @brief Get params for mov.l instruction (0001nnnnmmmmdddd)
- * A special function is required because the nibbles for the second param (@(disp:Rn)) (i.e. nnnn and dddd)
- * are separated by the nibble for the first param (Rm) (i.e. mmmm), so sh_op_get_param cannot be used
+ * @brief Get params for mov.l instruction (0001NMD)
+ * A special function is required because the nibbles for the second param (@(disp:Rn)) (i.e. N and D)
+ * are separated by the nibble for the first param (Rm) (i.e. M), so sh_op_get_param cannot be used
  *
  * \param opcode opcode
  * \param m if true, get Rm ; otherwise get @(disp:Rn)
@@ -160,43 +160,43 @@ static SHParam sh_op_get_param_movl(ut16 opcode, bool m) {
 
 // Opcode lookup list
 const SHOpRaw sh_op_lookup[] = {
-	{ "mov", SH_OP_MOV, OPCODE(1110, nnnn, iiii, iiii), 0x0fff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_U), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(1001, nnnn, dddd, dddd), 0x0fff, SH_SCALING_W, { ADDR(NIB0, SH_PC_RELATIVE_DISP), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(1101, nnnn, dddd, dddd), 0x0fff, SH_SCALING_L, { ADDR(NIB0, SH_PC_RELATIVE_DISP), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov", SH_OP_MOV, OPCODE(0110, nnnn, mmmm, 0011), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.b", SH_OP_MOV, OPCODE(0010, nnnn, mmmm, 0000), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(0010, nnnn, mmmm, 0001), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(0010, nnnn, mmmm, 0010), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT) } },
-	{ "mov.b", SH_OP_MOV, OPCODE(0110, nnnn, mmmm, 0000), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_INDIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(0110, nnnn, mmmm, 0001), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_INDIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(0110, nnnn, mmmm, 0010), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_INDIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.b", SH_OP_MOV, OPCODE(0010, nnnn, mmmm, 0100), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(0010, nnnn, mmmm, 0101), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(0010, nnnn, mmmm, 0110), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
-	{ "mov.b", SH_OP_MOV, OPCODE(0110, nnnn, mmmm, 0100), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_INDIRECT_I), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(0110, nnnn, mmmm, 0101), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_INDIRECT_I), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(0110, nnnn, mmmm, 0110), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_INDIRECT_I), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.b", SH_OP_MOV, OPCODE(1000, 0000, nnnn, dddd), 0x00ff, SH_SCALING_B, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_REG_INDIRECT_DISP) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(1000, 0001, nnnn, dddd), 0x00ff, SH_SCALING_W, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_REG_INDIRECT_DISP) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(0001, nnnn, mmmm, dddd), 0x0fff, SH_SCALING_L, { /*dummy values*/ ADDR(NIB0, SH_ADDR_INVALID), ADDR(NIB0, SH_ADDR_INVALID) } },
+	{ "mov", SH_OP_MOV, OPCODE(e, N, I, I), 0x0fff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_U), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(9, N, D, D), 0x0fff, SH_SCALING_W, { ADDR(NIB0, SH_PC_RELATIVE_DISP), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(d, N, D, D), 0x0fff, SH_SCALING_L, { ADDR(NIB0, SH_PC_RELATIVE_DISP), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov", SH_OP_MOV, OPCODE(6, N, M, 3), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.b", SH_OP_MOV, OPCODE(2, N, M, 0), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(2, N, M, 1), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(2, N, M, 2), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT) } },
+	{ "mov.b", SH_OP_MOV, OPCODE(6, N, M, 0), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_INDIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(6, N, M, 1), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_INDIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(6, N, M, 2), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_INDIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.b", SH_OP_MOV, OPCODE(2, N, M, 4), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(2, N, M, 5), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(2, N, M, 6), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
+	{ "mov.b", SH_OP_MOV, OPCODE(6, N, M, 4), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_INDIRECT_I), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(6, N, M, 5), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_INDIRECT_I), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(6, N, M, 6), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_INDIRECT_I), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.b", SH_OP_MOV, OPCODE(8, 0, N, D), 0x00ff, SH_SCALING_B, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_REG_INDIRECT_DISP) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(8, 1, N, D), 0x00ff, SH_SCALING_W, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_REG_INDIRECT_DISP) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(1, N, M, D), 0x0fff, SH_SCALING_L, { /*dummy values*/ ADDR(NIB0, SH_ADDR_INVALID), ADDR(NIB0, SH_ADDR_INVALID) } },
 	// ^ Just this instruction is kinda weird, so needs to be taken care by sh_op_get_param_movl
-	{ "mov.b", SH_OP_MOV, OPCODE(1000, 0100, mmmm, dddd), 0x00ff, SH_SCALING_B, { ADDR(NIB0, SH_REG_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(1000, 0101, mmmm, dddd), 0x00ff, SH_SCALING_W, { ADDR(NIB0, SH_REG_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(0101, nnnn, mmmm, dddd), 0x0fff, SH_SCALING_L, { ADDR(NIB0, SH_REG_INDIRECT_DISP), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.b", SH_OP_MOV, OPCODE(0000, nnnn, mmmm, 0100), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_INDEXED) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(0000, nnnn, mmmm, 0101), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_INDEXED) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(0000, nnnn, mmmm, 0110), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_INDEXED) } },
-	{ "mov.b", SH_OP_MOV, OPCODE(0000, nnnn, mmmm, 1100), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_INDIRECT_INDEXED), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(0000, nnnn, mmmm, 1101), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_INDIRECT_INDEXED), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(0000, nnnn, mmmm, 1110), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_INDIRECT_INDEXED), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "mov.b", SH_OP_MOV, OPCODE(1100, 0000, dddd, dddd), 0x00ff, SH_SCALING_B, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_GBR_INDIRECT_DISP) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(1100, 0001, dddd, dddd), 0x00ff, SH_SCALING_W, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_GBR_INDIRECT_DISP) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(1100, 0010, dddd, dddd), 0x00ff, SH_SCALING_L, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_GBR_INDIRECT_DISP) } },
-	{ "mov.b", SH_OP_MOV, OPCODE(1100, 0100, dddd, dddd), 0x00ff, SH_SCALING_B, { ADDR(NIB0, SH_GBR_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
-	{ "mov.w", SH_OP_MOV, OPCODE(1100, 0101, dddd, dddd), 0x00ff, SH_SCALING_W, { ADDR(NIB0, SH_GBR_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(1100, 0110, dddd, dddd), 0x00ff, SH_SCALING_L, { ADDR(NIB0, SH_GBR_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
-	{ "mova", SH_OP_MOV, OPCODE(1100, 0111, dddd, dddd), 0x00ff, SH_SCALING_L, { ADDR(NIB0, SH_PC_RELATIVE_DISP), PARAM(R0, SH_REG_DIRECT) } },
-	{ "movt", SH_OP_MOVT, OPCODE(0000, nnnn, 0010, 1001), 0x0f00, SH_SCALING_INVALID, {
+	{ "mov.b", SH_OP_MOV, OPCODE(8, 4, M, D), 0x00ff, SH_SCALING_B, { ADDR(NIB0, SH_REG_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(8, 5, M, D), 0x00ff, SH_SCALING_W, { ADDR(NIB0, SH_REG_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(5, N, M, D), 0x0fff, SH_SCALING_L, { ADDR(NIB0, SH_REG_INDIRECT_DISP), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.b", SH_OP_MOV, OPCODE(0, N, M, 4), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_INDEXED) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(0, N, M, 5), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_INDEXED) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(0, N, M, 6), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_INDEXED) } },
+	{ "mov.b", SH_OP_MOV, OPCODE(0, N, M, c), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_INDIRECT_INDEXED), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(0, N, M, d), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_INDIRECT_INDEXED), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(0, N, M, e), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_INDIRECT_INDEXED), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "mov.b", SH_OP_MOV, OPCODE(c, 0, D, D), 0x00ff, SH_SCALING_B, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_GBR_INDIRECT_DISP) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(c, 1, D, D), 0x00ff, SH_SCALING_W, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_GBR_INDIRECT_DISP) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(c, 2, D, D), 0x00ff, SH_SCALING_L, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_GBR_INDIRECT_DISP) } },
+	{ "mov.b", SH_OP_MOV, OPCODE(c, 4, D, D), 0x00ff, SH_SCALING_B, { ADDR(NIB0, SH_GBR_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
+	{ "mov.w", SH_OP_MOV, OPCODE(c, 5, D, D), 0x00ff, SH_SCALING_W, { ADDR(NIB0, SH_GBR_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(c, 6, D, D), 0x00ff, SH_SCALING_L, { ADDR(NIB0, SH_GBR_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
+	{ "mova", SH_OP_MOV, OPCODE(c, 7, D, D), 0x00ff, SH_SCALING_L, { ADDR(NIB0, SH_PC_RELATIVE_DISP), PARAM(R0, SH_REG_DIRECT) } },
+	{ "movt", SH_OP_MOVT, OPCODE(0, N, 2, 9), 0x0f00, SH_SCALING_INVALID, {
 												  ADDR(NIB2, SH_REG_DIRECT),
 											  } }
 };
@@ -205,10 +205,10 @@ const SHOpRaw sh_op_lookup[] = {
 #undef ADDR
 #undef OPCODE
 #undef OPCODE_
-#undef mmmm
-#undef dddd
-#undef nnnn
-#undef iiii
+#undef M
+#undef D
+#undef N
+#undef I
 
 /**
  * \brief Disassemble \p opcode and return a SHOp
