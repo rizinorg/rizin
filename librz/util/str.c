@@ -3289,7 +3289,7 @@ RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
  * \param r Delimiter regex used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
  */
-RZ_API RzList *rz_str_split_list_regex(char *str, const char *r, int n) {
+RZ_API RZ_OWN RzList *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n) {
 	rz_return_val_if_fail(str && r, NULL);
 	RzRegex *regex = rz_regex_new(r, "e");
 	return str_split_list_common_regex(str, regex, n, false, false);
@@ -3348,7 +3348,7 @@ RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bo
  * \param n If > 0 at most this number of delimiters are considered.
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RzList *rz_str_split_duplist_n_regex(const char *_str, const char *r, int n, bool trim) {
+RZ_API RZ_OWN RzList *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim) {
 	rz_return_val_if_fail(_str && r, NULL);
 	char *str = strdup(_str);
 	RzRegex *regex = rz_regex_new(r, "e");

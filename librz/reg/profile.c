@@ -388,7 +388,7 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
  * \return false On failure;
  * \return true On success.
  */
-RZ_API bool rz_reg_set_profile_string(RZ_BORROW RzReg *reg, const char *profile_str) {
+RZ_API bool rz_reg_set_profile_string(RZ_NONNULL RzReg *reg, RZ_NONNULL const char *profile_str) {
 	rz_return_val_if_fail(reg && profile_str, false);
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp(reg->reg_profile_str, profile_str)) {
