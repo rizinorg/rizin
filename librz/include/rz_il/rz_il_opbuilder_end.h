@@ -75,6 +75,7 @@
 #undef SEQ8
 #undef SEQ9
 
+#undef EMPTY
 #undef NOP
 #undef BRANCH
 #undef REPEAT

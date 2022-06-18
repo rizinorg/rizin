@@ -569,7 +569,7 @@ static RzILOpEffect *avr_il_unk(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 }
 
 static RzILOpEffect *avr_il_nop(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	return NOP;
+	return NOP();
 }
 
 static RzILOpEffect *avr_il_adc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
