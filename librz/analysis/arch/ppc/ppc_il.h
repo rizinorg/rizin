@@ -65,28 +65,24 @@
 // The algorithm implemented here is:
 //
 // ```
-// mask = 0
-// mask[mstart] = 1
-// mstart = (mstart + 1) % 64  // In case mstart == mstop all bits must be set.
+// m = 0
 // while (mstart != mstop) {
-//     mask[mstart] = 1
+//     m[mstart] = 1
 //     mstart = (mstart + 1) % 64
 // }
-// mask[mstop] = 1
-// mask = (PPC_ARCH_BITS) mask
+// m[mstop] = 1
+// mask = (PPC_ARCH_BITS) m
 // ```
 //
 // All computations are on 64 bit numbers.
 // In case of a 32bit CPU the result will be casted to 32bit.
 // mstart and mstop should be U6 pures.
-// The local variable "m" will hold the mask
+// The local variable "mask" will hold the mask
 
 #define SET_MASK(mstart, mstop) \
-	SEQ8(SETL("mstart", mstart), \
+	SEQ6(SETL("mstart", mstart), \
 		SETL("mstop", mstop), \
 		SETL("m", U64(0)), \
-		SET_BIT("m", 64, VARL("mstart")), \
-		SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(64))), \
 		REPEAT(INV(EQ(VARL("mstart"), VARL("mstop"))), \
 			SEQ2(SET_BIT("m", 64, VARL("mstart")), \
 				SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(64))))), \
