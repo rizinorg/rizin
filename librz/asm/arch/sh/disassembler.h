@@ -17,7 +17,8 @@ typedef enum sh_addr_mode_t {
 	SH_GBR_INDIRECT_DISP,
 	SH_GBR_INDIRECT_INDEXED,
 	SH_PC_RELATIVE_DISP,
-	SH_PC_RELATIVE,
+	SH_PC_RELATIVE8,
+	SH_PC_RELATIVE12,
 	SH_PC_RELATIVE_REG,
 	SH_IMM_U, ///< 8-bit immediate value (zero-extended)
 	SH_IMM_S, ///< 8-bit immediate value (sign-extended)
@@ -32,6 +33,64 @@ typedef enum sh_scaling_t {
 } SHScaling;
 
 const ut8 sh_scaling_size[] = { -1, 1, 2, 4, 8 };
+
+// SR register in SH
+// SR = x|D|R|B|xxxxxxxxxxxx|F|xxxxx|M|Q|IIII|xx|S|T
+// x are the reserved bits
+#define SH_SR_T_BIT 1u << 0
+#define SH_SR_T     "sr_t" ///< SR.T: True/False condition or carry/borrow bit
+#define SH_SR_S_BIT 1u << 1
+#define SH_SR_S     "sr_s" ///< SR.S: Specifies a saturation operation for a MAC instruction
+#define SH_SR_I_BIT 1u << 4
+#define SH_SR_I     "sr_i" ///< SR.I: Interrupt mask level: External interrupts of a lower level than IMASK are masked.
+#define SH_SR_Q_BIT 1u << 8
+#define SH_SR_Q     "sr_q" ///< SR.Q: State for divide step (Used by the DIV0S, DIV0U and DIV1 instructions)
+#define SH_SR_M_BIT 1u << 9
+#define SH_SR_M     "sr_m" ///< SR.M: State for divide step (Used by the DIV0S, DIV0U and DIV1 instructions)
+#define SH_SR_F_BIT 1u << 15
+#define SH_SR_F     "sr_f" ///< SR.FD: FPU disable bit (cleared to 0 by a reset)
+#define SH_SR_B_BIT 1u << 28
+#define SH_SR_B     "sr_b" ///< SR.BL: Exception/interrupt block bit (set to 1 by a reset, exception, or interrupt)
+#define SH_SR_R_BIT 1u << 29
+#define SH_SR_R     "sr_r" ///< SR.RB: General register bank specifier in privileged mode (set to 1 by a reset, exception or interrupt)
+#define SH_SR_D_BIT 1u << 30
+#define SH_SR_D     "sr_d" ///< SR.MD: Processor mode
+
+/**
+ * Registers available as global variables in the IL
+ */
+static const char *sh_global_registers[] = {
+	"r0b0", "r1b0", "r2b0", "r3b0", "r4b0", "r5b0", "r6b0", "r7b0", ///< bank 0 registers
+	"r0b1", "r1b1", "r2b1", "r3b1", "r4b1", "r5b1", "r6b1", "r7b1", ///< bank 1 registers
+	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "pc",
+	"gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl",
+	"pr", "fpul", "fpscr",
+	"fr0", "fr1", "fr2", "fr3", "fr4", "fr5", "fr6", "fr7",
+	"fr8", "fr9", "fr10", "fr11", "fr12", "fr13", "fr14", "fr15",
+	"xf0", "xf1", "xf2", "xf3", "xf4", "xf5", "xf6", "xf7",
+	"xf8", "xf9", "xf10", "xf11", "xf12", "xf13", "xf14", "xf15"
+};
+
+/**
+ * All registers
+ */
+static const char *sh_registers[] = {
+	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "pc",
+	"sr", "gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl",
+	"pr", "fpul", "fpscr",
+	"fr0", "fr1", "fr2", "fr3", "fr4", "fr5", "fr6", "fr7",
+	"fr8", "fr9", "fr10", "fr11", "fr12", "fr13", "fr14", "fr15",
+	"xf0", "xf1", "xf2", "xf3", "xf4", "xf5", "xf6", "xf7",
+	"xf8", "xf9", "xf10", "xf11", "xf12", "xf13", "xf14", "xf15"
+};
+
+/**
+ * Status bit registers
+ */
+static const char *sh_status_bit_registers[] = {
+	SH_SR_T, SH_SR_S, SH_SR_Q, SH_SR_M, SH_SR_F, SH_SR_B, SH_SR_R, SH_SR_D
+};
 
 /**
  * Enum for register indexes
