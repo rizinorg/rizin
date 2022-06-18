@@ -714,15 +714,14 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		if (id == PPC_INS_ROTLW || id == PPC_INS_ROTLWI) {
 			b = U8(32); // mb: 0 + 32
 			e = U8(63); // me: 31 + 32
-			set_mask = SET_MASK(b, e);
 		} else {
 			b = ADD(U8(mB), U8(32));
 			e = ADD(U8(mE), U8(32));
-			set_mask = SET_MASK(b, e);
 		}
-		into_rA = LOGAND(r, VARL("m"));
+		set_mask = SET_MASK(b, e);
+		into_rA = LOGAND(r, VARL("mask"));
 		if (id == PPC_INS_RLWIMI) {
-			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("m"))));
+			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("mask"))));
 		}
 		break;
 	case PPC_INS_ROTLD:
@@ -755,9 +754,9 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			}
 		}
 
-		into_rA = LOGAND(r, VARL("m"));
+		into_rA = LOGAND(r, VARL("mask"));
 		if (id == PPC_INS_RLDIMI) {
-			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("m"))));
+			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("mask"))));
 		}
 		break;
 	case PPC_INS_SLDI:
@@ -823,7 +822,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		b = (id == PPC_INS_CLRLWI) ? ADD(U8(INSOP(2).imm), U8(32)) : U8(INSOP(2).imm);
 		e = U8(63);
 		set_mask = SET_MASK(b, e);
-		into_rA = LOGAND(r, VARL("m"));
+		into_rA = LOGAND(r, VARL("mask"));
 	}
 
 	update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : NOP;

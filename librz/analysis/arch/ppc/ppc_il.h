@@ -67,27 +67,31 @@
 // ```
 // mask = 0
 // mask[mstart] = 1
-// mstart = (mstart + 1) % PPC_ARCH_BITS  // In case mstart == mstop all bits must be set.
+// mstart = (mstart + 1) % 64  // In case mstart == mstop all bits must be set.
 // while (mstart != mstop) {
 //     mask[mstart] = 1
-//     mstart = (mstart + 1) % PPC_ARCH_BITS
+//     mstart = (mstart + 1) % 64
 // }
 // mask[mstop] = 1
+// mask = (PPC_ARCH_BITS) mask
 // ```
 //
+// All computations are on 64 bit numbers.
+// In case of a 32bit CPU the result will be casted to 32bit.
 // mstart and mstop should be U6 pures.
 // The local variable "m" will hold the mask
 
 #define SET_MASK(mstart, mstop) \
-	SEQ7(SETL("mstart", mstart), \
+	SEQ8(SETL("mstart", mstart), \
 		SETL("mstop", mstop), \
-		SETL("m", UA(0)), \
-		SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
-		SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(PPC_ARCH_BITS))), \
+		SETL("m", U64(0)), \
+		SET_BIT("m", 64, VARL("mstart")), \
+		SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(64))), \
 		REPEAT(INV(EQ(VARL("mstart"), VARL("mstop"))), \
-			SEQ2(SET_BIT("m", PPC_ARCH_BITS, VARL("mstart")), \
+			SEQ2(SET_BIT("m", 64, VARL("mstart")), \
 				SETL("mstart", MOD(ADD(VARL("mstart"), U8(1)), U8(64))))), \
-		SET_BIT("m", PPC_ARCH_BITS, VARL("mstop")))
+		SET_BIT("m", 64, VARL("mstop")), \
+		SETL("mask", CAST(PPC_ARCH_BITS, IL_FALSE, VARL("m"))))
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian);
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
