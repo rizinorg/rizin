@@ -49,10 +49,11 @@ SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
 	case SH_REG_INDIRECT_DISP:
 	case SH_GBR_INDIRECT_DISP:
 	case SH_PC_RELATIVE_DISP:
+	case SH_PC_RELATIVE8:
 		len = 8;
 		break;
-	case SH_PC_RELATIVE:
-		len = 12;
+	case SH_PC_RELATIVE12:
+		len = 8;
 		break;
 	case SH_IMM_S:
 	case SH_IMM_U:
@@ -74,7 +75,8 @@ SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
 	case SH_REG_INDIRECT_INDEXED:
 	case SH_GBR_INDIRECT_DISP:
 	case SH_PC_RELATIVE_DISP:
-	case SH_PC_RELATIVE:
+	case SH_PC_RELATIVE8:
+	case SH_PC_RELATIVE12:
 	case SH_PC_RELATIVE_REG:
 	case SH_IMM_S:
 	case SH_IMM_U:
@@ -134,6 +136,8 @@ typedef struct sh_op_raw_t {
 
 // opcode for "weird" movl
 #define MOVL 0x1fff
+
+#define NOPARAM ADDR(NIB0, SH_ADDR_INVALID)
 
 /**
  * @brief Get params for mov.l instruction (0001NMD)
@@ -196,9 +200,10 @@ const SHOpRaw sh_op_lookup[] = {
 	{ "mov.w", SH_OP_MOV, OPCODE(c, 5, D, D), 0x00ff, SH_SCALING_W, { ADDR(NIB0, SH_GBR_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
 	{ "mov.l", SH_OP_MOV, OPCODE(c, 6, D, D), 0x00ff, SH_SCALING_L, { ADDR(NIB0, SH_GBR_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
 	{ "mova", SH_OP_MOV, OPCODE(c, 7, D, D), 0x00ff, SH_SCALING_L, { ADDR(NIB0, SH_PC_RELATIVE_DISP), PARAM(R0, SH_REG_DIRECT) } },
-	{ "movt", SH_OP_MOVT, OPCODE(0, N, 2, 9), 0x0f00, SH_SCALING_INVALID, {
-												  ADDR(NIB2, SH_REG_DIRECT),
-											  } }
+	{ "movt", SH_OP_MOVT, OPCODE(0, N, 2, 9), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_DIRECT), NOPARAM } },
+	{ "swap.b", SH_OP_SWAP, OPCODE(6, N, M, 8), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "swap.w", SH_OP_SWAP, OPCODE(6, N, M, 9), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "xtrct", SH_OP_XTRCT, OPCODE(2, N, M, d), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 };
 
 #undef PARAM
@@ -216,7 +221,7 @@ const SHOpRaw sh_op_lookup[] = {
  * \param opcode 16 bit wide opcode
  * \return SHOp object corresponding to the opcode
  */
-SHOp *sh_disassembler(ut16 opcode) {
+RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
 	ut32 opcode_num = sizeof(sh_op_lookup) / sizeof(SHOpRaw);
 
 	for (ut16 i = 0; i < opcode_num; i++) {
@@ -241,4 +246,74 @@ SHOp *sh_disassembler(ut16 opcode) {
 
 	RZ_LOG_WARN("SuperH: Invalid opcode encountered by disassembler")
 	return NULL;
+}
+
+RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param) {
+	if (param.mode == SH_ADDR_INVALID) {
+		return NULL;
+	}
+
+	RzStrBuf *buf = rz_strbuf_new(NULL);
+	switch (param.mode) {
+	case SH_REG_DIRECT:
+		rz_strbuf_appendf(buf, "%s", sh_registers[param.param[0]]);
+		break;
+	case SH_REG_INDIRECT:
+		rz_strbuf_appendf(buf, "@%s", sh_registers[param.param[0]]);
+		break;
+	case SH_REG_INDIRECT_I:
+		rz_strbuf_appendf(buf, "@%s+", sh_registers[param.param[0]]);
+		break;
+	case SH_REG_INDIRECT_D:
+		rz_strbuf_appendf(buf, "@-%s", sh_registers[param.param[0]]);
+		break;
+	case SH_REG_INDIRECT_DISP:
+		rz_strbuf_appendf(buf, "@(%#03x,%s)", param.param[1], sh_registers[param.param[0]]);
+		break;
+	case SH_REG_INDIRECT_INDEXED:
+		rz_strbuf_appendf(buf, "@(r0,%s)", sh_registers[param.param[0]]);
+		break;
+	case SH_GBR_INDIRECT_DISP:
+		rz_strbuf_appendf(buf, "@(%#04x,gbr)", param.param[0]);
+		break;
+	case SH_GBR_INDIRECT_INDEXED:
+		rz_strbuf_append(buf, "@(r0,gbr)");
+		break;
+	case SH_PC_RELATIVE_DISP:
+		rz_strbuf_appendf(buf, "@(%#04x,pc)", param.param[0]);
+		break;
+	case SH_PC_RELATIVE8:
+		rz_strbuf_appendf(buf, "@(%#04x:pc)", param.param[0]);
+		break;
+	case SH_PC_RELATIVE12:
+		rz_strbuf_appendf(buf, "@(%#05x:pc)", param.param[0]);
+		break;
+	case SH_PC_RELATIVE_REG:
+		rz_strbuf_appendf(buf, "@(%s:pc)", sh_registers[param.param[0]]);
+		break;
+	case SH_IMM_U:
+	case SH_IMM_S:
+		rz_strbuf_appendf(buf, "%#04x", param.param[0]);
+		break;
+	default:
+		rz_warn_if_reached();
+	}
+
+	return rz_strbuf_drain(buf);
+}
+
+RZ_API RZ_OWN char *sh_op_to_str(const SHOp *op) {
+	RzStrBuf *buf = rz_strbuf_new(op->str_mnem);
+
+	char *param = NULL;
+	if ((param = sh_op_param_to_str(op->param[0]))) {
+		rz_strbuf_appendf(buf, "  %s", param);
+		free(param);
+		if ((param = sh_op_param_to_str(op->param[1]))) {
+			rz_strbuf_appendf(buf, ", %s", param);
+			free(param);
+		}
+	}
+
+	return rz_strbuf_drain(buf);
 }

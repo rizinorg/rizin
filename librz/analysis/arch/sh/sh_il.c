@@ -28,28 +28,6 @@
 #define SH_S_REG(x)  SN(SH_REG_SIZE, (x))
 #define SH_BIT(x)    UN(1, x)
 
-// SR register in SH
-// SR = x|D|R|B|xxxxxxxxxxxx|F|xxxxx|M|Q|IIII|xx|S|T
-// x are the reserved bits
-#define SH_SR_T_BIT 1u << 0
-#define SH_SR_T     "sr_t" ///< SR.T: True/False condition or carry/borrow bit
-#define SH_SR_S_BIT 1u << 1
-#define SH_SR_S     "sr_s" ///< SR.S: Specifies a saturation operation for a MAC instruction
-#define SH_SR_I_BIT 1u << 4
-#define SH_SR_I     "sr_i" ///< SR.I: Interrupt mask level: External interrupts of a lower level than IMASK are masked.
-#define SH_SR_Q_BIT 1u << 8
-#define SH_SR_Q     "sr_q" ///< SR.Q: State for divide step (Used by the DIV0S, DIV0U and DIV1 instructions)
-#define SH_SR_M_BIT 1u << 9
-#define SH_SR_M     "sr_m" ///< SR.M: State for divide step (Used by the DIV0S, DIV0U and DIV1 instructions)
-#define SH_SR_F_BIT 1u << 15
-#define SH_SR_F     "sr_f" ///< SR.FD: FPU disable bit (cleared to 0 by a reset)
-#define SH_SR_B_BIT 1u << 28
-#define SH_SR_B     "sr_b" ///< SR.BL: Exception/interrupt block bit (set to 1 by a reset, exception, or interrupt)
-#define SH_SR_R_BIT 1u << 29
-#define SH_SR_R     "sr_r" ///< SR.RB: General register bank specifier in privileged mode (set to 1 by a reset, exception or interrupt)
-#define SH_SR_D_BIT 1u << 30
-#define SH_SR_D     "sr_d" ///< SR.MD: Processor mode
-
 #define sh_return_val_if_invalid_gpr(x, v) \
 	if (!sh_valid_gpr(x)) { \
 		RZ_LOG_ERROR("RzIL: SuperH: invalid register R%u\n", x); \
@@ -61,42 +39,6 @@
 
 #define sh_il_set_pure_param(x, val) \
 	sh_il_set_param(op->param[x], val, op->scaling)
-
-/**
- * Registers available as global variables in the IL
- */
-static const char *sh_global_registers[] = {
-	"r0b0", "r1b0", "r2b0", "r3b0", "r4b0", "r5b0", "r6b0", "r7b0", ///< bank 0 registers
-	"r0b1", "r1b1", "r2b1", "r3b1", "r4b1", "r5b1", "r6b1", "r7b1", ///< bank 1 registers
-	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "pc",
-	"gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl",
-	"pr", "fpul", "fpscr",
-	"fr0", "fr1", "fr2", "fr3", "fr4", "fr5", "fr6", "fr7",
-	"fr8", "fr9", "fr10", "fr11", "fr12", "fr13", "fr14", "fr15",
-	"xf0", "xf1", "xf2", "xf3", "xf4", "xf5", "xf6", "xf7",
-	"xf8", "xf9", "xf10", "xf11", "xf12", "xf13", "xf14", "xf15"
-};
-
-/**
- * All registers
- */
-static const char *sh_registers[] = {
-	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "pc",
-	"sr", "gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl",
-	"pr", "fpul", "fpscr",
-	"fr0", "fr1", "fr2", "fr3", "fr4", "fr5", "fr6", "fr7",
-	"fr8", "fr9", "fr10", "fr11", "fr12", "fr13", "fr14", "fr15",
-	"xf0", "xf1", "xf2", "xf3", "xf4", "xf5", "xf6", "xf7",
-	"xf8", "xf9", "xf10", "xf11", "xf12", "xf13", "xf14", "xf15"
-};
-
-/**
- * Status bit registers
- */
-static const char *sh_status_bit_registers[] = {
-	SH_SR_T, SH_SR_S, SH_SR_Q, SH_SR_M, SH_SR_F, SH_SR_B, SH_SR_R, SH_SR_D
-};
 
 /* Utilities */
 
@@ -214,8 +156,12 @@ static inline RzILOpPure *sh_il_get_effective_addr(SHParam param, SHScaling scal
 		pc = ADD(pc, SH_U_ADDR(4));
 		return ADD(pc, MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 	}
-	case SH_PC_RELATIVE: {
-		RzILOpBitVector *relative = MUL(SH_S_ADDR(param.param[0]), SH_S_ADDR(2)); // sign-extended
+	case SH_PC_RELATIVE8: {
+		RzILOpBitVector *relative = MUL(UNSIGNED(SH_ADDR_SIZE, SN(8, param.param[0])), SH_U_ADDR(2)); // sign-extended for 8 bits and multiplied by 2
+		return ADD(ADD(VARG("pc"), SH_U_ADDR(4)), relative);
+	}
+	case SH_PC_RELATIVE12: {
+		RzILOpBitVector *relative = MUL(UNSIGNED(SH_ADDR_SIZE, SN(12, param.param[0])), SH_U_ADDR(2)); // sign-extended for 12 bits and multiplied by 2
 		return ADD(ADD(VARG("pc"), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE_REG:
@@ -249,24 +195,14 @@ static inline SHParamHelper sh_il_get_param(SHParam param, SHScaling scaling) {
 		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
 		break;
 	case SH_REG_INDIRECT_DISP:
-		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, sh_scaling_size[scaling]));
-		break;
 	case SH_REG_INDIRECT_INDEXED:
-		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, sh_scaling_size[scaling]));
-		break;
-	case SH_GBR_INDIRECT_DISP: {
-		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, sh_scaling_size[scaling]));
-		break;
-	}
+	case SH_GBR_INDIRECT_DISP:
 	case SH_GBR_INDIRECT_INDEXED:
 		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, sh_scaling_size[scaling]));
 		break;
 	case SH_PC_RELATIVE_DISP:
-		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
-		break;
-	case SH_PC_RELATIVE:
-		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
-		break;
+	case SH_PC_RELATIVE8:
+	case SH_PC_RELATIVE12:
 	case SH_PC_RELATIVE_REG:
 		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
 		break;
@@ -319,7 +255,8 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *va
 	case SH_GBR_INDIRECT_DISP:
 	case SH_GBR_INDIRECT_INDEXED:
 	case SH_PC_RELATIVE_DISP:
-	case SH_PC_RELATIVE:
+	case SH_PC_RELATIVE8:
+	case SH_PC_RELATIVE12:
 	case SH_PC_RELATIVE_REG:
 		break;
 	case SH_IMM_U:
@@ -1309,7 +1246,7 @@ static RzILOpEffect *sh_il_sts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 }
 
 static RzILOpEffect *sh_il_unimpl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RZ_LOG_WARN("SuperH: Instruction with opcode %#04x is unimplemented", op->opcode);
+	RZ_LOG_WARN("SuperH: Instruction with opcode %#06x is unimplemented", op->opcode);
 	return EMPTY();
 }
 
