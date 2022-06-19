@@ -12,7 +12,6 @@
 #define SDB_KEY_BB "bb.0x%" PFMT64x ".0x%" PFMT64x
 // XXX must be configurable by the user
 #define JMPTBL_LEA_SEARCH_SZ 64
-#define JMPTBL_MAXFCNSIZE    4096
 #define BB_ALIGN             0x10
 #define MAX_SCAN_SIZE        0x7ffffff
 
@@ -164,7 +163,7 @@ static bool isSymbolNextInstruction(RzAnalysis *analysis, RzAnalysisOp *op) {
 	return (fi && fi->name && (strstr(fi->name, "imp.") || strstr(fi->name, "sym.") || strstr(fi->name, "entry") || strstr(fi->name, "main")));
 }
 
-static bool is_delta_pointer_table(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop) {
+static bool is_delta_pointer_table(RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop) {
 	int i;
 	ut64 dst;
 	st32 jmptbl[64] = { 0 };
@@ -244,12 +243,17 @@ static bool is_delta_pointer_table(RzAnalysis *analysis, RzAnalysisFunction *fcn
 	for (i = 0; i < 3; i++) {
 		dst = lea_ptr + (st32)rz_read_le32(jmptbl);
 		if (!analysis->iob.is_valid_offset(analysis->iob.io, dst, 0)) {
+			RZ_LOG_VERBOSE("Jump table target is not valid: 0x%" PFMT64x "\n", dst);
 			return false;
 		}
-		if (dst > fcn->addr + JMPTBL_MAXFCNSIZE) {
+		if (!UT64_ADD_OVFCHK(jmp_aop->addr, analysis->opt.jmptbl_maxoffset) &&
+			dst > jmp_aop->addr + analysis->opt.jmptbl_maxoffset) {
+			RZ_LOG_VERBOSE("Jump table target is too far away: 0x%" PFMT64x "\n", dst);
 			return false;
 		}
-		if (analysis->opt.jmpabove && dst < (fcn->addr < JMPTBL_MAXFCNSIZE ? 0 : fcn->addr - JMPTBL_MAXFCNSIZE)) {
+		if (analysis->opt.jmpabove && !UT64_SUB_OVFCHK(jmp_aop->addr, analysis->opt.jmptbl_maxoffset) &&
+			dst < jmp_aop->addr - analysis->opt.jmptbl_maxoffset) {
+			RZ_LOG_VERBOSE("Jump table target is too far away: 0x%" PFMT64x "\n", dst);
 			return false;
 		}
 	}
@@ -985,7 +989,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				RzAnalysisOp jmp_aop = { 0 };
 				ut64 jmptbl_addr = op.ptr;
 				ut64 casetbl_addr = op.ptr;
-				if (is_delta_pointer_table(analysis, fcn, op.addr, op.ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
+				if (is_delta_pointer_table(analysis, op.addr, op.ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
 					// we require both checks here since rz_analysis_get_jmptbl_info uses
 					// BB info of the final jmptbl jump, which is no present with
 					// is_delta_pointer_table just scanning ahead

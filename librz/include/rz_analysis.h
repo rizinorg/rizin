@@ -532,6 +532,7 @@ typedef struct rz_analysis_options_t {
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
 	int jmptbl_maxcount; // maximum amount of entries to analyse in a jump table
+	ut32 jmptbl_maxoffset; // maximum offset from the jump table jump instruction to consider it valid
 	int nonull;
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //

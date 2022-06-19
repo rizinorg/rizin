@@ -2652,6 +2652,13 @@ static bool cb_analysis_jmptblmax(void *user, void *data) {
 	return true;
 }
 
+static bool cb_analysis_jmptblmaxoffset(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->analysis->opt.jmptbl_maxoffset = node->i_value > UT32_MAX ? UT32_MAX : node->i_value;
+	return true;
+}
+
 static bool cb_analysis_cjmpref(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2938,6 +2945,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	SETCB("analysis.jmp.tbl", "true", &cb_analysis_jmptbl, "Analyze jump tables in switch statements");
 	SETICB("analysis.jmp.tblmax", 512, &cb_analysis_jmptblmax, "Maximum amount of entries to analyze in jump tables");
+	SETICB("analysis.jmp.tblmaxoffset", 4096, &cb_analysis_jmptblmaxoffset, "Maximum offset from the jump table jump instruction to consider it valid");
 
 	SETCB("analysis.jmp.cref", "false", &cb_analysis_cjmpref, "Create references for conditional jumps");
 	SETCB("analysis.jmp.ref", "true", &cb_analysis_jmpref, "Create references for unconditional jumps");
