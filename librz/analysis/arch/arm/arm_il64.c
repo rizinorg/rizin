@@ -606,7 +606,7 @@ static RzILOpEffect *branch(cs_insn *insn) {
 	}
 	RzILOpBool *c = cond(insn->detail->arm64.cc);
 	if (c) {
-		return BRANCH(c, JMP(a), NOP);
+		return BRANCH(c, JMP(a), NOP());
 	}
 	return JMP(a);
 }
@@ -1759,7 +1759,7 @@ static RzILOpEffect *rmif(cs_insn *insn) {
 	if (!eff) {
 		rz_il_op_pure_free(val);
 	}
-	return eff ? eff : NOP;
+	return eff ? eff : NOP();
 }
 #endif
 
@@ -2324,7 +2324,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_WFE:
 	case ARM64_INS_WFI:
 	case ARM64_INS_YIELD:
-		return NOP;
+		return NOP();
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC:
 	case ARM64_INS_SUB:

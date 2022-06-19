@@ -359,7 +359,7 @@ static RzILOpEffect *_6502_il_op_branch(_6502BranchCond cond, ut16 target) {
 		rz_warn_if_reached();
 		return NULL;
 	}
-	return BRANCH(c, JMP(U16(target)), NOP);
+	return BRANCH(c, JMP(U16(target)), NOP());
 }
 
 /**

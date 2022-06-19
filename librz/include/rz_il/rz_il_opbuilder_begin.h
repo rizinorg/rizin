@@ -113,7 +113,7 @@
 #define SEQ9(e0, e1, e2, e3, e4, e5, e6, e7, e8) rz_il_op_new_seqn(9, e0, e1, e2, e3, e4, e5, e6, e7, e8)
 
 #define EMPTY()         rz_il_op_new_empty()
-#define NOP             rz_il_op_new_nop()
+#define NOP()           rz_il_op_new_nop()
 #define BRANCH(c, t, f) rz_il_op_new_branch(c, t, f)
 #define REPEAT(c, b)    rz_il_op_new_repeat(c, b)
 #define JMP(tgt)        rz_il_op_new_jmp(tgt)
