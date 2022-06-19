@@ -205,6 +205,7 @@ typedef enum {
 	SH_OP_ROTCR,
 	SH_OP_SHAD,
 	SH_OP_SHAL,
+	SH_OP_SHAR,
 	SH_OP_SHLD,
 	SH_OP_SHLL,
 	SH_OP_SHLR,
