@@ -884,16 +884,25 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		} else {
 			// TODO: use tasks
 			RapThread *rap_th = RZ_NEW0(RapThread);
-			if (rap_th) {
-				rap_th->core = core;
-				rap_th->input = strdup(input + 1);
-				// RapThread rt = { core, strdup (input + 1) };
-				rapthread = rz_th_new((RzThreadFunction)rz_core_rtr_rap_thread, rap_th);
-				int cpuaff = (int)rz_config_get_i(core->config, "cfg.cpuaffinity");
-				rz_th_set_affinity(rapthread, cpuaff);
-				rz_th_set_name(rapthread, "rapthread");
-				eprintf("Background rap server started.\n");
+			if (!rap_th) {
+				RZ_LOG_ERROR("cannot allocate RapThread\n");
+				return;
 			}
+			rap_th->core = core;
+			rap_th->input = strdup(input + 1);
+			// RapThread rt = { core, strdup (input + 1) };
+			rapthread = rz_th_new((RzThreadFunction)rz_core_rtr_rap_thread, rap_th);
+			if (!rap_th) {
+				RZ_LOG_ERROR("cannot spawn the RzThread\n");
+				return;
+			}
+			int cpuaff = (int)rz_config_get_i(core->config, "cfg.cpuaffinity");
+			if (cpuaff) {
+				// modify the affinity only when the flag is actually set.
+				rz_th_set_affinity(rapthread, cpuaff);
+			}
+			rz_th_set_name(rapthread, "rapthread");
+			RZ_LOG_WARN("Background rap server started.\n");
 		}
 		return;
 	}

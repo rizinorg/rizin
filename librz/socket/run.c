@@ -722,7 +722,7 @@ static int redirect_socket_to_stdio(RzSocket *sock) {
 static void *exit_process(void *user) {
 	int timeout = (int)(void *)user;
 	rz_sys_sleep(timeout);
-	// eprintf ("\nrz_run: Interrupted by timeout\n");
+	RZ_LOG_DEBUG("rz_run: Interrupted by timeout\n");
 	exit(0);
 	return NULL;
 }
