@@ -129,3 +129,22 @@ f bb.00844 @ 0x00000844
 0x00000846
 EOF
 RUN
+
+NAME=afbet
+FILE=bins/elf/game_of_thrones
+CMDS=<<EOF
+s main
+af
+td "enum test {a=1,b,c,d=6}"
+afbet 0x00401125 test
+pd 1 @@f:case*~case
+EOF
+EXPECT=<<EOF
+|           ;-- case a:                                                ; from 0x401125
+|           ;-- case b:                                                ; from 0x401125
+|           ;-- case c:                                                ; from 0x401125
+|           ;-- case 4:                                                ; from 0x401125
+|           ;-- case 5:                                                ; from 0x401125
+|           ;-- case d:                                                ; from 0x401125
+EOF
+RUN

@@ -2306,6 +2306,8 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	bool docolon = true;
 	int nth = 0;
+	RzAnalysisBlock *switch_block = NULL;
+	const char *switch_enum_name = NULL;
 	rz_list_foreach (uniqlist, iter, flag) {
 		if (!overlapped && f && f->addr == flag->offset && !strcmp(flag->name, f->name)) {
 			// do not show non-overlapped flags that have the same name as the function
@@ -2378,19 +2380,60 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 				if (nth > 0) {
 					__preline_flag(ds, flag);
 				}
+				if (!switch_block || switch_block->switch_op->addr != switch_addr) {
+					switch_enum_name = NULL;
+					switch_block = NULL;
+					RzList *blocks = rz_analysis_get_blocks_in(core->analysis, switch_addr);
+					RzListIter *it;
+					RzAnalysisBlock *block;
+					rz_list_foreach (blocks, it, block) {
+						if (block->switch_op && block->switch_op->addr == switch_addr) {
+							switch_block = block;
+							if (block->switch_op->enum_type) {
+								switch_enum_name = rz_type_identifier(block->switch_op->enum_type);
+							}
+							break;
+						}
+					}
+					rz_list_free(blocks);
+				}
 				if (!strncmp(flag->name + 5, "default", 7)) {
 					rz_cons_printf(FLAG_PREFIX "default:"); // %s:", flag->name);
 					rz_str_ncpy(addr, flag->name + 5 + strlen("default."), sizeof(addr));
 					nth = 0;
-				} else if (case_prev != case_start) {
-					rz_cons_printf(FLAG_PREFIX "case %d...%d:", case_start, case_prev);
-					if (iter != uniqlist->head && iter != uniqlist->tail) {
-						iter = iter->p;
-					}
-					case_start = case_current;
 				} else {
-					rz_cons_printf(FLAG_PREFIX "case %d:", case_prev);
-					case_start = -1;
+					const char *case_prev_name = NULL;
+					if (switch_enum_name) {
+						case_prev_name = rz_type_db_enum_member_by_val(core->analysis->typedb, switch_enum_name, case_prev);
+					}
+					rz_cons_printf(FLAG_PREFIX "case ");
+					if (case_prev != case_start) {
+						const char *case_start_name = NULL;
+						if (switch_enum_name) {
+							case_start_name = rz_type_db_enum_member_by_val(core->analysis->typedb, switch_enum_name, case_start);
+						}
+						if (case_start_name) {
+							rz_cons_printf("%s...", case_start_name);
+						} else {
+							rz_cons_printf("%d...", case_start);
+						}
+						if (case_prev_name) {
+							rz_cons_printf("%s:", case_prev_name);
+						} else {
+							rz_cons_printf("%d:", case_prev);
+						}
+						if (iter != uniqlist->head && iter != uniqlist->tail) {
+							iter = iter->p;
+						}
+						case_start = case_current;
+					} else {
+						if (!case_prev_name) {
+							rz_cons_printf("%d:", case_prev);
+						} else {
+							rz_cons_printf("%s:", case_prev_name);
+						}
+						case_start = -1;
+					}
 				}
 				case_prev = case_current;
 				ds_align_comment(ds);

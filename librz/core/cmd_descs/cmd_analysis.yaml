@@ -295,6 +295,14 @@ commands:
                 type: RZ_CMD_ARG_TYPE_RZNUM
               - name: case_addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: afbet
+            summary: Set basic-block switch-case enum type
+            cname: analysis_function_blocks_switch_type
+            args:
+              - name: switch_addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: enum_name
+                type: RZ_CMD_ARG_TYPE_ENUM_TYPE
           - name: afbr
             summary: Show addresses of instructions which leave the function
             cname: analysis_function_returns
