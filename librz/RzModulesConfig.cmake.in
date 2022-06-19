@@ -39,11 +39,10 @@ set(_@RIZIN_MODULE@_DEPENDENCIES @RIZIN_MODULE_DEPS@)
 set(@RIZIN_MODULE@_PLUGINDIR @INSTALL_PLUGDIR@)
 
 include(CMakeFindDependencyMacro)
-get_filename_component(_rizin_cmake_path "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
 set(_@RIZIN_MODULE@_DEPENDENCY_TARGETS)
 foreach(_module_dep ${_@RIZIN_MODULE@_DEPENDENCIES})
   if (NOT ${_module_dep}_FOUND)
-    find_dependency(${_module_dep} PATHS ${_rizin_cmake_path})
+    find_dependency(${_module_dep})
   endif()
 
   if (NOT ${_module_dep}_FOUND)
