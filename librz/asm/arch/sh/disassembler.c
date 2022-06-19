@@ -50,14 +50,12 @@ SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
 	case SH_GBR_INDIRECT_DISP:
 	case SH_PC_RELATIVE_DISP:
 	case SH_PC_RELATIVE8:
-		len = 8;
-		break;
-	case SH_PC_RELATIVE12:
-		len = 8;
-		break;
 	case SH_IMM_S:
 	case SH_IMM_U:
 		len = 8;
+		break;
+	case SH_PC_RELATIVE12:
+		len = 12;
 		break;
 	default:
 		break;
@@ -164,6 +162,7 @@ static SHParam sh_op_get_param_movl(ut16 opcode, bool m) {
 
 // Opcode lookup list
 const SHOpRaw sh_op_lookup[] = {
+	/* fixed-point transfer instructions */
 	{ "mov", SH_OP_MOV, OPCODE(e, N, I, I), 0x0fff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_U), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "mov.w", SH_OP_MOV, OPCODE(9, N, D, D), 0x0fff, SH_SCALING_W, { ADDR(NIB0, SH_PC_RELATIVE_DISP), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "mov.l", SH_OP_MOV, OPCODE(d, N, D, D), 0x0fff, SH_SCALING_L, { ADDR(NIB0, SH_PC_RELATIVE_DISP), ADDR(NIB2, SH_REG_DIRECT) } },
@@ -204,6 +203,8 @@ const SHOpRaw sh_op_lookup[] = {
 	{ "swap.b", SH_OP_SWAP, OPCODE(6, N, M, 8), 0x0ff0, SH_SCALING_B, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "swap.w", SH_OP_SWAP, OPCODE(6, N, M, 9), 0x0ff0, SH_SCALING_W, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "xtrct", SH_OP_XTRCT, OPCODE(2, N, M, d), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+
+	/* arithmetic operation instructions */
 	{ "add", SH_OP_ADD, OPCODE(3, N, M, c), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "add", SH_OP_ADD, OPCODE(7, N, I, I), 0x0fff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_S), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "addc", SH_OP_ADDC, OPCODE(3, N, M, e), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
@@ -237,6 +238,22 @@ const SHOpRaw sh_op_lookup[] = {
 	{ "sub", SH_OP_SUB, OPCODE(3, N, M, 8), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "subc", SH_OP_SUBC, OPCODE(3, N, M, a), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "subv", SH_OP_SUBV, OPCODE(3, N, M, b), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+
+	/* logic operation instructions */
+	{ "and", SH_OP_AND, OPCODE(2, N, M, 9), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "and", SH_OP_AND, OPCODE(c, 9, I, I), 0x00ff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_U), PARAM(R0, SH_REG_DIRECT) } },
+	{ "and.b", SH_OP_AND, OPCODE(c, d, I, I), 0x00ff, SH_SCALING_B, { ADDR(NIB0, SH_IMM_U), PARAM(R0, SH_GBR_INDIRECT_INDEXED) } },
+	{ "not", SH_OP_NOT, OPCODE(6, N, M, 7), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "or", SH_OP_OR, OPCODE(2, N, M, b), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "or", SH_OP_OR, OPCODE(c, b, I, I), 0x00ff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_U), PARAM(R0, SH_REG_DIRECT) } },
+	{ "or.b", SH_OP_OR, OPCODE(c, f, I, I), 0x00ff, SH_SCALING_B, { ADDR(NIB0, SH_IMM_U), PARAM(R0, SH_GBR_INDIRECT_INDEXED) } },
+	{ "tas.b", SH_OP_TAS, OPCODE(4, N, 1, a), 0x0f00, SH_SCALING_B, { ADDR(NIB2, SH_REG_INDIRECT), NOPARAM } },
+	{ "tst", SH_OP_TST, OPCODE(2, N, M, 8), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "tst", SH_OP_TST, OPCODE(c, 8, I, I), 0x00ff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_U), PARAM(R0, SH_REG_DIRECT) } },
+	{ "tst.b", SH_OP_TST, OPCODE(c, c, I, I), 0x00ff, SH_SCALING_B, { ADDR(NIB0, SH_IMM_U), PARAM(R0, SH_GBR_INDIRECT_INDEXED) } },
+	{ "xor", SH_OP_XOR, OPCODE(2, N, M, a), 0x0ff0, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "xor", SH_OP_XOR, OPCODE(c, a, I, I), 0x00ff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_U), PARAM(R0, SH_REG_DIRECT) } },
+	{ "xor.b", SH_OP_XOR, OPCODE(c, e, I, I), 0x00ff, SH_SCALING_B, { ADDR(NIB0, SH_IMM_U), PARAM(R0, SH_GBR_INDIRECT_INDEXED) } },
 };
 
 #undef NOPARAM
