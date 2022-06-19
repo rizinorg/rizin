@@ -976,7 +976,7 @@ static RzILOpEffect *sh_il_shad(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 }
 
 /**
- * SHAL  RN
+ * SHAL  Rn
  * T <- Rn <- 0
  * 0100nnnn00100000
  */
@@ -984,6 +984,17 @@ static RzILOpEffect *sh_il_shal(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *msb = MSB(sh_il_get_pure_param(0));
 	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
 	return SEQ2(SETG(SH_SR_T, msb), sh_il_set_pure_param(0, shl));
+}
+
+/**
+ * SHAR  Rn
+ * MSB -> Rn -> T
+ * 0100nnnn00100001
+ */
+static RzILOpEffect *sh_il_shar(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *lsb = LSB(sh_il_get_pure_param(0));
+	RzILOpPure *shl = SHIFTRA(sh_il_get_pure_param(0), SH_U_REG(1));
+	return SEQ2(SETG(SH_SR_T, lsb), sh_il_set_pure_param(0, shl));
 }
 
 /**
@@ -1300,6 +1311,7 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	sh_il_rotcr,
 	sh_il_shad,
 	sh_il_shal,
+	sh_il_shar,
 	sh_il_shld,
 	sh_il_shll,
 	sh_il_shlr,
