@@ -3949,6 +3949,30 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_edge_handler(RzCore *core, int ar
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_switch_type_handler(RzCore *core, int argc, const char **argv) {
+	ut64 switch_addr = rz_num_math(core->num, argv[1]);
+	RzList *blocks = rz_analysis_get_blocks_in(core->analysis, switch_addr);
+	if (rz_list_empty(blocks)) {
+		RZ_LOG_ERROR("No basic block exists at '%s' (0x%" PFMT64x ")\n", argv[1], switch_addr);
+		rz_list_free(blocks);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisBlock *b = rz_list_first(blocks);
+	if (!b->switch_op) {
+		RZ_LOG_ERROR("Block does not have a switch case\n");
+		return RZ_CMD_STATUS_INVALID;
+	}
+	RzBaseType *e = rz_type_db_get_enum(core->analysis->typedb, argv[2]);
+	if (!e) {
+		RZ_LOG_ERROR("Enum '%s' does not exist\n", argv[2]);
+		return RZ_CMD_STATUS_INVALID;
+	}
+	rz_type_free(b->switch_op->enum_type);
+	b->switch_op->enum_type = rz_type_identifier_of_base_type(core->analysis->typedb, e, true);
+	rz_list_free(blocks);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_function_returns_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {

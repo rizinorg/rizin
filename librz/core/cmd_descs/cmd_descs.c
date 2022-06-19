@@ -102,6 +102,7 @@ static const RzCmdDescArg analysis_function_create_args[4];
 static const RzCmdDescArg analysis_function_analyze_jmptable_args[3];
 static const RzCmdDescArg analysis_function_blocks_add_args[7];
 static const RzCmdDescArg analysis_function_blocks_edge_args[3];
+static const RzCmdDescArg analysis_function_blocks_switch_type_args[3];
 static const RzCmdDescArg analysis_function_blocks_color_args[3];
 static const RzCmdDescArg analysis_function_setbits_args[2];
 static const RzCmdDescArg analysis_function_signature_args[2];
@@ -1732,6 +1733,24 @@ static const RzCmdDescArg analysis_function_blocks_edge_args[] = {
 static const RzCmdDescHelp analysis_function_blocks_edge_help = {
 	.summary = "Add basic-block edge for switch-cases",
 	.args = analysis_function_blocks_edge_args,
+};
+
+static const RzCmdDescArg analysis_function_blocks_switch_type_args[] = {
+	{
+		.name = "switch_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "enum_name",
+		.type = RZ_CMD_ARG_TYPE_ENUM_TYPE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_blocks_switch_type_help = {
+	.summary = "Set basic-block switch-case enum type",
+	.args = analysis_function_blocks_switch_type_args,
 };
 
 static const RzCmdDescArg analysis_function_returns_args[] = {
@@ -14511,6 +14530,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_blocks_edge_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbe", rz_analysis_function_blocks_edge_handler, &analysis_function_blocks_edge_help);
 	rz_warn_if_fail(analysis_function_blocks_edge_cd);
+
+	RzCmdDesc *analysis_function_blocks_switch_type_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbet", rz_analysis_function_blocks_switch_type_handler, &analysis_function_blocks_switch_type_help);
+	rz_warn_if_fail(analysis_function_blocks_switch_type_cd);
 
 	RzCmdDesc *analysis_function_returns_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbr", rz_analysis_function_returns_handler, &analysis_function_returns_help);
 	rz_warn_if_fail(analysis_function_returns_cd);
