@@ -65,6 +65,8 @@ rz_util_sources = [
   'thread_cond.c',
   'thread_lock.c',
   'thread_sem.c',
+  'thread_pool.c',
+  'thread_queue.c',
   'time.c',
   'tree.c',
   'ubase64.c',
