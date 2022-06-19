@@ -24,6 +24,7 @@
 #include <rz_type.h>
 #include <rz_il.h>
 #include <rz_arch.h>
+#include <rz_platform.h>
 #include <rz_cmd.h>
 
 #define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
@@ -622,8 +623,8 @@ typedef struct rz_analysis_t {
 	SetU *visited;
 	RzStrConstPool constpool;
 	RzList *leaddrs;
-	RzArchTarget *arch_target;
-	RzArchPlatformTarget *platform_target;
+	RzPlatformTarget *arch_target;
+	RzPlatformTargetIndex *platform_target;
 	HtPP *ht_global_var; // global variables
 	RBTree global_var_tree; // global variables by address. must not overlap
 } RzAnalysis;

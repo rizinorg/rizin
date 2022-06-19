@@ -431,11 +431,11 @@ static bool cb_asmcpu(void *user, void *data) {
 	rz_config_set(core->config, "analysis.cpu", node->value);
 
 	char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
-	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), cpus_dir);
+	rz_platform_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), cpus_dir);
 	free(cpus_dir);
 	const char *platform = rz_config_get(core->config, "asm.platform");
 	char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
-	rz_arch_platform_init(core->analysis->platform_target, rz_config_get(core->config, "asm.arch"), node->value, platform, platforms_dir);
+	rz_platform_target_index_init(core->analysis->platform_target, rz_config_get(core->config, "asm.arch"), node->value, platform, platforms_dir);
 	free(platforms_dir);
 
 	return true;
@@ -570,8 +570,8 @@ static bool cb_asmarch(void *user, void *data) {
 		update_syscall_ns(core);
 		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
 		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
-		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu, platform, platforms_dir);
-		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, cpus_dir);
+		rz_platform_target_index_init(core->analysis->platform_target, node->value, asmcpu, platform, platforms_dir);
+		rz_platform_profiles_init(core->analysis->arch_target, asmcpu, node->value, cpus_dir);
 		free(platforms_dir);
 		free(cpus_dir);
 	}
@@ -618,8 +618,8 @@ static bool cb_asmarch(void *user, void *data) {
 	if (asmcpu) {
 		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
 		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
-		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu->value, platform, platforms_dir);
-		rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, cpus_dir);
+		rz_platform_target_index_init(core->analysis->platform_target, node->value, asmcpu->value, platform, platforms_dir);
+		rz_platform_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, cpus_dir);
 		free(cpus_dir);
 		free(platforms_dir);
 	}
@@ -775,7 +775,7 @@ static bool cb_asmplatform(void *user, void *data) {
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
 	char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
-	rz_arch_platform_init(core->analysis->platform_target, asmarch, asmcpu, node->value, platforms_dir);
+	rz_platform_target_index_init(core->analysis->platform_target, asmarch, asmcpu, node->value, platforms_dir);
 	free(platforms_dir);
 	return 1;
 }

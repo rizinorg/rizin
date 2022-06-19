@@ -224,11 +224,11 @@ static inline RzILOpBitVector *avr_il_sreg_bit_as_imm(const char *sreg_bit, ut8 
 }
 
 static inline const char *resolve_mmio(RzAnalysis *analysis, ut16 address) {
-	RzArchProfile *profile = analysis->arch_target ? analysis->arch_target->profile : NULL;
+	RzPlatformProfile *profile = analysis->arch_target ? analysis->arch_target->profile : NULL;
 	if (!profile) {
 		return NULL;
 	}
-	return rz_arch_profile_resolve_mmio(profile, address);
+	return rz_platform_profile_resolve_mmio(profile, address);
 }
 
 static RzILOpEffect *avr_il_check_zero_flag_local(const char *local, bool and_zero) {

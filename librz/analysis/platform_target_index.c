@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_arch.h>
+#include <rz_platform.h>
 #include <string.h>
 
 /**
- * \brief Creates a new RzArchPlatformItem type
+ * \brief Creates a new RzPlatformItem type
  */
-RZ_API RZ_OWN RzArchPlatformItem *rz_arch_platform_item_new(RZ_NULLABLE const char *name) {
-	RzArchPlatformItem *item = RZ_NEW0(RzArchPlatformItem);
+RZ_API RZ_OWN RzPlatformItem *rz_platform_item_new(RZ_NULLABLE const char *name) {
+	RzPlatformItem *item = RZ_NEW0(RzPlatformItem);
 	if (!item) {
 		return NULL;
 	}
@@ -18,10 +18,10 @@ RZ_API RZ_OWN RzArchPlatformItem *rz_arch_platform_item_new(RZ_NULLABLE const ch
 }
 
 /**
- * \brief Creates a new RzArchPlatformTarget type
+ * \brief Creates a new RzPlatformTargetIndex type
  */
-RZ_API RZ_OWN RzArchPlatformTarget *rz_arch_platform_target_new() {
-	RzArchPlatformTarget *target = RZ_NEW0(RzArchPlatformTarget);
+RZ_API RZ_OWN RzPlatformTargetIndex *rz_platform_target_index_new() {
+	RzPlatformTargetIndex *target = RZ_NEW0(RzPlatformTargetIndex);
 	if (!target) {
 		return NULL;
 	}
@@ -34,9 +34,9 @@ RZ_API RZ_OWN RzArchPlatformTarget *rz_arch_platform_target_new() {
 }
 
 /**
- * \brief Frees an RzArchPlatformTarget type
+ * \brief Frees an RzPlatformTargetIndex type
  */
-RZ_API void rz_arch_platform_target_free(RzArchPlatformTarget *target) {
+RZ_API void rz_platform_target_index_free(RzPlatformTargetIndex *target) {
 	if (!target) {
 		return;
 	}
@@ -46,9 +46,9 @@ RZ_API void rz_arch_platform_target_free(RzArchPlatformTarget *target) {
 }
 
 /**
- * \brief Frees an RzArchPlatformItem type
+ * \brief Frees an RzPlatformItem type
  */
-RZ_API void rz_arch_platform_item_free(RzArchPlatformItem *item) {
+RZ_API void rz_platform_item_free(RzPlatformItem *item) {
 	if (!item) {
 		return;
 	}
@@ -57,7 +57,7 @@ RZ_API void rz_arch_platform_item_free(RzArchPlatformItem *item) {
 	free(item);
 }
 
-static bool sdb_load_platform_profile(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL Sdb *sdb) {
+static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NONNULL Sdb *sdb) {
 	rz_return_val_if_fail(t && sdb, false);
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -67,16 +67,16 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
 		if (!strcmp(sdbkv_value(kv), "name")) {
 			name = sdbkv_key(kv);
 
-			RzArchPlatformItem *item = rz_arch_platform_item_new(name);
+			RzPlatformItem *item = rz_platform_item_new(name);
 
 			argument_key = rz_str_newf("%s.address", item->name);
 			if (!argument_key) {
-				rz_arch_platform_item_free(item);
+				rz_platform_item_free(item);
 				return false;
 			}
 			ut64 address = sdb_num_get(sdb, argument_key, NULL);
 			if (!address) {
-				rz_arch_platform_item_free(item);
+				rz_platform_item_free(item);
 				return false;
 			}
 
@@ -91,7 +91,7 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
 	return true;
 }
 
-static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
+static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NONNULL const char *path) {
 	rz_return_val_if_fail(t && path, false);
 	if (!path) {
 		return false;
@@ -107,12 +107,12 @@ static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, R
 }
 
 /**
- * \brief Loads the contents of the Platform Profile to the RzArchPlatformTarget
+ * \brief Loads the contents of the Platform Profile to the RzPlatformTargetIndex
  *
- * \param t reference to RzArchPlatformTarget
+ * \param t reference to RzPlatformTargetIndex
  * \param path reference to path of the SDB file
  */
-RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
+RZ_API bool rz_platform_target_index_load_sdb(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NONNULL const char *path) {
 	rz_return_val_if_fail(t && path, false);
 	if (!path) {
 		return false;
@@ -126,12 +126,12 @@ RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
 /**
  * \brief Initialize Platform Profiles by setting the path to the corresponding SDB file
  *
- * \param t reference to RzArchPlatformTarget
+ * \param t reference to RzPlatformTargetIndex
  * \param arch reference to the selected architecture (value of `asm.arch`
  * \param platform reference to the selected platform (value of `asm.platform`)
  * \param platforms_dir reference to the directory containing platform files
  */
-RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
+RZ_API bool rz_platform_target_index_init(RzPlatformTargetIndex *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
 	const char *platform, RZ_NONNULL const char *platforms_dir) {
 	if (RZ_STR_ISEMPTY(platform)) {
 		return true;
@@ -149,5 +149,5 @@ RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char
 	}
 	free(t->path);
 	t->path = path;
-	return rz_arch_load_platform_sdb(t, path);
+	return rz_platform_target_index_load_sdb(t, path);
 }
