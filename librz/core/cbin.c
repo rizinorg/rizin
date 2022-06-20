@@ -2826,7 +2826,7 @@ RZ_API bool rz_core_bin_strings_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
  * \return On success returns RzList pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzList *rz_core_bin_whole_strings(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *bf) {
-	rz_return_val_if_fail(core, false);
+	rz_return_val_if_fail(core, NULL);
 
 	bool new_bf = false;
 	if (bf && strstr(bf->file, "malloc://")) {
