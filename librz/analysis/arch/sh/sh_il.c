@@ -1205,12 +1205,12 @@ static RzILOpEffect *sh_il_sett(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 // TODO: This needs to be fixed for banked register STC
 /**
  * STC  REG, Rn
- * REG := SR/GBR/VBR/SSR/SPC/DBR/Rn_BANK
+ * REG := SR/GBR/VBR/SSR/SPC/SGR/DBR/Rn_BANK
  * REG -> Rn
  * PRIVILEGED (Only GBR is not privileged)
  *
  * STC.L  REG, @-Rn
- * REG := SR/GBR/VBR/SSR/SPC/DBR/Rn_BANK
+ * REG := SR/GBR/VBR/SSR/SPC/SGR/DBR/Rn_BANK
  * Rn - 4 -> Rn ; REG -> (Rn)
  * PRIVILEGED (Only GBR is not privileged)
  */
