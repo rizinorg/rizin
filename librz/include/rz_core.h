@@ -418,19 +418,24 @@ RZ_API void rz_core_item_free(RzCoreItem *ci);
 
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
-typedef struct sym_name_t {
-	const char *pfx; // prefix for flags
-	char *name; // raw symbol name
-	char *rz_symbol_name;
-	char *libname; // name of the lib this symbol is specific to, if any
-	char *nameflag; // flag name for symbol
-	char *demname; // demangled raw symbol name
-	char *demflag; // flag name for demangled symbol
-	char *classname; // classname
-	char *classflag; // flag for classname
-	char *methname; // methods [class]::[method]
-	char *methflag; // methods flag sym.[class].[method]
-} SymName;
+/**
+ * \brief Store some display name from RzBinSymbol
+ * \see rz_core_sym_name_init
+ * \see rz_core_sym_name_fini
+ */
+typedef struct rz_sym_name_t {
+	const char *pfx; ///< prefix for flags
+	char *name; ///< raw symbol name
+	char *symbolname; ///< display symbol name
+	char *libname; ///< name of the lib this symbol is specific to, if any
+	char *nameflag; ///< flag name for symbol
+	char *demname; ///< demangled raw symbol name
+	char *demflag; ///< flag name for demangled symbol
+	char *classname; ///< classname
+	char *classflag; ///< flag for classname
+	char *methname; ///< methods [class]::[method]
+	char *methflag; ///< methods flag sym.[class].[method]
+} RzSymName;
 
 #ifdef RZ_API
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
@@ -471,7 +476,7 @@ RZ_API int rz_core_config_init(RzCore *core);
 RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool many);
 RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateOutput *state);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
-RZ_API RZ_OWN RzList *rz_core_config_variable_spaces(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *space);
+RZ_API RZ_OWN RzList *rz_core_config_in_space(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *space);
 RZ_API int rz_core_prompt(RzCore *core, int sync);
 RZ_API int rz_core_prompt_exec(RzCore *core);
 RZ_API void rz_core_prompt_loop(RzCore *core);
@@ -873,8 +878,8 @@ RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSource
 RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzCmdStateOutput *state);
 
 RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s);
-RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT SymName *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang);
-RZ_API void rz_core_sym_name_fini(RZ_NULLABLE SymName *sn);
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT RzSymName *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang);
+RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzSymName *sn);
 
 // bin_dwarf
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);

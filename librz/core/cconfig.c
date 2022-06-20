@@ -3784,7 +3784,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
  * \param space The config space
  * \return RzList of config variable spaces
  */
-RZ_API RZ_OWN RzList *rz_core_config_variable_spaces(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *space) {
+RZ_API RZ_OWN RzList *rz_core_config_in_space(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *space) {
 	rz_return_val_if_fail(core && core->config, NULL);
 	RzList *list = rz_list_new();
 	if (!list) {

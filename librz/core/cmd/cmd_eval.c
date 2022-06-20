@@ -422,7 +422,7 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv) {
 	const char *arg = argc > 1 ? argv[1] : NULL;
-	RzList *list = rz_core_config_variable_spaces(core, arg);
+	RzList *list = rz_core_config_in_space(core, arg);
 	if (!list) {
 		return RZ_CMD_STATUS_ERROR;
 	}

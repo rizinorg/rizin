@@ -1315,11 +1315,11 @@ static char *construct_symbol_flagname(const char *pfx, const char *libname, con
 /**
  * \brief Initlize \p sn
  * \param r The RzCore instance
- * \param sn The SymName to output
+ * \param[out] sn The RzSymName to output
  * \param sym Symbol info
  * \param lang Language info
  */
-RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT SymName *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang) {
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT RzSymName *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang) {
 	rz_return_if_fail(r && sym && sym->name);
 
 	bool demangle = rz_config_get_b(r->config, "bin.demangle");
@@ -1356,11 +1356,11 @@ RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT SymName *sn, RZ_N
 		.show_asciidot = false,
 		.esc_bslash = true,
 	};
-	sn->rz_symbol_name = rz_str_escape_utf8(sn->demname ? sn->demname : sn->name, &opt);
+	sn->symbolname = rz_str_escape_utf8(sn->demname ? sn->demname : sn->name, &opt);
 	if (r->bin->prefix) {
-		char *tmp = rz_str_newf("%s.%s", r->bin->prefix, sn->rz_symbol_name);
-		free(sn->rz_symbol_name);
-		sn->rz_symbol_name = tmp;
+		char *tmp = rz_str_newf("%s.%s", r->bin->prefix, sn->symbolname);
+		free(sn->symbolname);
+		sn->symbolname = tmp;
 	}
 }
 
@@ -1368,12 +1368,12 @@ RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT SymName *sn, RZ_N
  * \brief RZ_FREE all member of \p sn (sn->*)
  * \param sn Symbol names
  */
-RZ_API void rz_core_sym_name_fini(RZ_NULLABLE SymName *sn) {
+RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzSymName *sn) {
 	if (!sn) {
 		return;
 	}
 	RZ_FREE(sn->name);
-	RZ_FREE(sn->rz_symbol_name);
+	RZ_FREE(sn->symbolname);
 	RZ_FREE(sn->libname);
 	RZ_FREE(sn->nameflag);
 	RZ_FREE(sn->demname);
@@ -1471,13 +1471,9 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			continue;
 		}
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
-		SymName sn = { 0 };
+		RzSymName sn = { 0 };
 		count++;
 		rz_core_sym_name_init(core, &sn, symbol, lang);
-		RzStrEscOptions opt = { 0 };
-		opt.show_asciidot = false;
-		opt.esc_bslash = true;
-		char *rz_symbol_name = rz_str_escape_utf8(sn.name, &opt);
 
 		if (is_section_symbol(symbol) || is_file_symbol(symbol)) {
 			/*
@@ -1538,7 +1534,6 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			rz_flag_space_pop(core->flags);
 		}
 		rz_core_sym_name_fini(&sn);
-		free(rz_symbol_name);
 	}
 
 	// handle thumb and arm for entry point since they are not present in symbols
@@ -1962,7 +1957,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			continue;
 		}
 
-		SymName sn = { 0 };
+		RzSymName sn = { 0 };
 		rz_core_sym_name_init(core, &sn, symbol, lang);
 		ut64 size = symbol->size;
 
@@ -1978,14 +1973,14 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			rz_cons_printf("%s %" PFMT64u " %s%s%s\n",
 				addr_value, size,
 				sn.libname ? sn.libname : "", sn.libname ? " " : "",
-				sn.rz_symbol_name);
+				sn.symbolname);
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:
-			rz_cons_printf("%s\n", sn.rz_symbol_name);
+			rz_cons_printf("%s\n", sn.symbolname);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
-			pj_ks(state->d.pj, "name", sn.rz_symbol_name);
+			pj_ks(state->d.pj, "name", sn.symbolname);
 			if (sn.demname) {
 				pj_ks(state->d.pj, "demname", sn.demname);
 			}
@@ -2014,7 +2009,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 				symbol->type ? symbol->type : "NONE",
 				size,
 				rz_str_get(symbol->libname),
-				rz_str_get_null(sn.rz_symbol_name));
+				rz_str_get_null(sn.symbolname));
 			break;
 		default:
 			rz_warn_if_reached();
