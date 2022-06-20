@@ -1857,12 +1857,7 @@ RZ_IPI RzCmdStatus rz_analysis_esil_init_handler(RzCore *core, int argc, const c
 
 // aei-
 RZ_IPI RzCmdStatus rz_analysis_esil_deinit_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisEsil *esil = core->analysis->esil;
-	if (esil) {
-		sdb_reset(esil->stats);
-	}
-	rz_analysis_esil_free(esil);
-	core->analysis->esil = NULL;
+	rz_core_analysis_esil_deinit(core);
 	return RZ_CMD_STATUS_OK;
 }
 

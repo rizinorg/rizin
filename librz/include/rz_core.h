@@ -738,7 +738,9 @@ RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil);
 RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core);
 RZ_API void rz_core_analysis_esil_step_over(RZ_NONNULL RzCore *core);
 RZ_API void rz_core_analysis_esil_reinit(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_analysis_esil_deinit(RZ_NONNULL RzCore *core);
 RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size);
+RZ_API void rz_core_analysis_esil_init_mem_del(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size);
 RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core);
 
 /* canalysis.c */
