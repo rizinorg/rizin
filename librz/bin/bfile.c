@@ -31,7 +31,7 @@ static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut6
 	RzListIter *it;
 	RzDetectedString *detected;
 
-	RzList *str_list = rz_list_newf(free);
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	if (!str_list) {
 		return;
 	}
@@ -58,7 +58,7 @@ static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut6
 			break;
 		}
 
-		bstr->string = detected->string;
+		RZ_PTR_MOVE(bstr->string, detected->string);
 		bstr->size = detected->size;
 		bstr->length = detected->length;
 		bstr->type = detected->type;
