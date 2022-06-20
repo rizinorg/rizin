@@ -415,8 +415,14 @@ RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *
 	return rz_type_db_base_type_as_pretty_string(core->analysis->typedb, type, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
-RZ_IPI RZ_OWN char *rz_core_types_as_c(RzCore *core, RZ_NONNULL const char *name, bool multiline) {
-	rz_return_val_if_fail(name, NULL);
+/**
+ * \brief Get a type string by \p name (\see rz_type_db_base_type_as_pretty_string)
+ * \param core RzCore reference
+ * \param name Type name
+ * \param multiline Pretty printing with RZ_TYPE_PRINT_MULTILINE
+ */
+RZ_API RZ_OWN char *rz_core_types_as_c(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, bool multiline) {
+	rz_return_val_if_fail(core && core ->analysis && name, NULL);
 
 	RzBaseType *btype = rz_type_db_get_base_type(core->analysis->typedb, name);
 	if (!btype) {
