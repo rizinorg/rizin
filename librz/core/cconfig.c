@@ -3777,3 +3777,35 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		free(homerc);
 	}
 }
+
+RZ_API RzList *rz_core_config_variable_spaces(RzCore *core, const char *space) {
+	rz_return_val_if_fail(core && core->config, NULL);
+	RzList *list = rz_list_new();
+	if (!list) {
+		return NULL;
+	}
+	RzConfigNode *node;
+	RzListIter *iter;
+	rz_list_foreach (core->config->nodes, iter, node) {
+		char *name = strdup(node->name);
+		if (!name) {
+			continue;
+		}
+		char *dot = strchr(name, '.');
+		if (dot) {
+			*dot = 0;
+		}
+
+		if (RZ_STR_ISNOTEMPTY(space)) {
+			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp)) {
+				rz_list_append(list, strdup(dot + 1));
+			}
+		} else {
+			if (!rz_list_find(list, name, (RzListComparator)strcmp)) {
+				rz_list_append(list, strdup(name));
+			}
+		}
+		free(name);
+	}
+	return list;
+}

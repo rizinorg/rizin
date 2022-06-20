@@ -471,6 +471,7 @@ RZ_API int rz_core_config_init(RzCore *core);
 RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool many);
 RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateOutput *state);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
+RZ_API RzList *rz_core_config_variable_spaces(RzCore *core, const char *space);
 RZ_API int rz_core_prompt(RzCore *core, int sync);
 RZ_API int rz_core_prompt_exec(RzCore *core);
 RZ_API void rz_core_prompt_loop(RzCore *core);
