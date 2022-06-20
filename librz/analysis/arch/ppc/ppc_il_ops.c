@@ -190,8 +190,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {
-			RzILOpPure *imm = (mem_acc_size == 64) ? APPEND(S16(d), UN(2, 0)) : S16(d);
-			disp = EXTEND(PPC_ARCH_BITS, imm);
+			disp = EXTEND(PPC_ARCH_BITS, S16(d));
 		}
 		ea = ADD(base, disp);
 		store = STOREW(ea, CAST(mem_acc_size, IL_FALSE, VARG(rS)));
