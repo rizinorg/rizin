@@ -153,7 +153,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 
 	if (pj) {
 		const char *section_name = s ? s->name : "";
-		const char *type_string = rz_bin_string_type(string->type);
+		const char *type_string = rz_str_enc_as_string(string->type);
 		pj_o(pj);
 		pj_kn(pj, "vaddr", string->vaddr);
 		pj_kn(pj, "paddr", string->paddr);

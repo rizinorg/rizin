@@ -518,7 +518,7 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 	bstr->ordinal = rz_list_length(bf->o->strings);
 	bstr->length = bstr->size = size;
 	bstr->string = string;
-	bstr->type = RZ_BIN_STRING_ENC_UTF8;
+	bstr->type = RZ_STRING_ENC_UTF8;
 	if (!rz_list_append(bf->o->strings, bstr)) {
 		RZ_LOG_ERROR("Failed append new go string to strings list\n");
 		rz_bin_string_free(bstr);
