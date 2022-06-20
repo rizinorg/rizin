@@ -262,14 +262,14 @@ static bool parse_reg_profile_str(RZ_OUT RzList *alias_list, RZ_OUT RzList *def_
 	RzList *toks = NULL;
 	rz_list_foreach (def_lines, it, line) {
 		++l;
-		if (strcmp(line, "") == 0) {
+		if (RZ_STR_ISEMPTY(line)) {
 			continue;
 		}
 		toks = rz_str_split_duplist_n_regex(line, "[[:blank:]]+", 0, true);
-		if (!toks || rz_list_length(toks) == 0) {
+		ut32 toks_len = rz_list_length(toks);
+		if (rz_list_empty(toks)) {
 			continue;
 		}
-		ut32 toks_len = rz_list_length(toks);
 
 		const char *first_tok = rz_list_get_n(toks, 0);
 		if (first_tok[0] == '#') { // Comment line
