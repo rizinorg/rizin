@@ -9,8 +9,8 @@ RZ_API int rz_utf16_decode(const ut8 *ptr, int ptrlen, RzRune *ch, bool bigendia
 	if (ptrlen < 1) {
 		return 0;
 	}
-	int high = !bigendian;
-	int low = !high;
+	int high = bigendian ? 0 : 1;
+	int low = bigendian ? 1 : 0;
 	if (ptrlen > 3 && (ptr[high] & 0xdc) == 0xd8 && (ptr[high + 2] & 0xdc) == 0xdc) {
 		if (ch) {
 			*ch = ((ptr[high] & 3) << 24 | ptr[low] << 16 | (ptr[high + 2] & 3) << 8 | ptr[low + 2]) + 0x10000;
@@ -50,10 +50,9 @@ RZ_API int rz_utf16le_encode(ut8 *ptr, RzRune ch) {
 		return 2;
 	}
 	if (ch < 0x110000) {
-		RzRune high, low;
 		ch -= 0x10000;
-		high = 0xd800 + (ch >> 10 & 0x3ff);
-		low = 0xdc00 + (ch & 0x3ff);
+		RzRune high = 0xd800 + (ch >> 10 & 0x3ff);
+		RzRune low = 0xdc00 + (ch & 0x3ff);
 		ptr[0] = high & 0xff;
 		ptr[1] = high >> 8 & 0xff;
 		ptr[2] = low & 0xff;
