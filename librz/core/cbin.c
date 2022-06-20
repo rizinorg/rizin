@@ -1352,9 +1352,10 @@ RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT SymName *sn, RZ_N
 		}
 	}
 
-	RzStrEscOptions opt = {};
-	opt.show_asciidot = false;
-	opt.esc_bslash = true;
+	RzStrEscOptions opt = {
+		.show_asciidot = false,
+		.esc_bslash = true,
+	};
 	sn->rz_symbol_name = rz_str_escape_utf8(sn->demname ? sn->demname : sn->name, &opt);
 	if (r->bin->prefix) {
 		char *tmp = rz_str_newf("%s.%s", r->bin->prefix, sn->rz_symbol_name);
