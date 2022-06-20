@@ -30,7 +30,7 @@ RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpB
 	}
 
 	RzILOpEffect *set_ca = SETL("carry", ITE(MSB(r), IL_TRUE, IL_FALSE));
-	return IN_64BIT_MODE ? SEQ2(set_ca, SETG("ca", VARL("carry"))) : SEQ3(set_ca, SETG("ca", VARL("carry")), SETG("ca32", VARL("carry")));
+	return IN_64BIT_MODE ? SEQ3(set_ca, SETG("ca", VARL("carry")), SETG("ca32", VARL("carry"))) : SEQ2(set_ca, SETG("ca", VARL("carry")));
 }
 
 /**
