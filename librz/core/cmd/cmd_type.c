@@ -71,26 +71,7 @@ static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_val
 }
 
 static void type_list_c_all(RzCore *core) {
-	// List all unions in the C format with newlines
-	char *str = rz_core_types_union_as_c_all(core->analysis->typedb, true);
-	if (str) {
-		rz_cons_print(str);
-		free(str);
-	}
-	// List all structures in the C format with newlines
-	str = rz_core_types_struct_as_c_all(core->analysis->typedb, true);
-	if (str) {
-		rz_cons_print(str);
-		free(str);
-	}
-	// List all typedefs in the C format with newlines
-	str = rz_core_types_typedef_as_c_all(core->analysis->typedb);
-	if (str) {
-		rz_cons_print(str);
-		free(str);
-	}
-	// List all enums in the C format with newlines
-	str = rz_core_types_enum_as_c_all(core->analysis->typedb, true);
+	char *str = rz_core_types_as_c_all(core, true);
 	if (str) {
 		rz_cons_print(str);
 		free(str);
@@ -98,26 +79,7 @@ static void type_list_c_all(RzCore *core) {
 }
 
 static void type_list_c_all_nl(RzCore *core) {
-	// List all unions in the C format without newlines
-	char *str = rz_core_types_union_as_c_all(core->analysis->typedb, false);
-	if (str) {
-		rz_cons_print(str);
-		free(str);
-	}
-	// List all structures in the C format without newlines
-	str = rz_core_types_struct_as_c_all(core->analysis->typedb, false);
-	if (str) {
-		rz_cons_print(str);
-		free(str);
-	}
-	// List all typedefs in the C format without newlines
-	str = rz_core_types_typedef_as_c_all(core->analysis->typedb);
-	if (str) {
-		rz_cons_print(str);
-		free(str);
-	}
-	// List all enums in the C format without newlines
-	str = rz_core_types_enum_as_c_all(core->analysis->typedb, false);
+	char *str = rz_core_types_as_c_all(core, false);
 	if (str) {
 		rz_cons_print(str);
 		free(str);
