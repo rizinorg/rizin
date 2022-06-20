@@ -85,7 +85,7 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
 	if (!encoding || !strncmp(encoding, "guess", 5)) {
 		return RZ_STRING_ENC_GUESS;
-	} else if (!strcmp(encoding, "ascii")) {
+	} else if (!strcmp(encoding, "ascii") || !strcmp(encoding, "8bit")) {
 		return RZ_STRING_ENC_8BIT;
 	} else if (!strcmp(encoding, "mutf8")) {
 		return RZ_STRING_ENC_MUTF8;
