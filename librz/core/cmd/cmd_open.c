@@ -803,50 +803,16 @@ RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int perms, bool write_mode) {
-	RzCoreFile *cfile = rz_core_file_open(core, filepath, perms, addr);
-	if (!cfile) {
-		RZ_LOG_ERROR("Cannot open file '%s'\n", filepath);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	core->num->value = cfile->fd;
-	if (addr == 0) { // if no baddr defined, use the one provided by the file
-		addr = UT64_MAX;
-	}
-	if (!rz_core_bin_load(core, filepath, addr)) {
-		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", filepath);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (write_mode) {
-		RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
-		if (!desc || !(desc->perm & RZ_PERM_W)) {
-			RZ_LOG_WARN("Cannot make maps for %s writable.\n", filepath);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		void **it;
-		rz_pvector_foreach (&cfile->maps, it) {
-			RzIOMap *map = *it;
-			map->perm |= RZ_PERM_WX;
-		}
-	}
-
-	rz_core_block_read(core);
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_open_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : 0;
 	int perms = argc > 3 ? rz_str_rwx(argv[3]) : RZ_PERM_R;
-
-	return open_file(core, argv[1], addr, perms, false);
+	return bool2status(rz_core_file_open_load(core, argv[1], addr, perms, false));
 }
 
 RZ_IPI RzCmdStatus rz_open_write_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : 0;
 	int perms = argc > 3 ? rz_str_rwx(argv[3]) : RZ_PERM_RW;
-
-	return open_file(core, argv[1], addr, perms, true);
+	return bool2status(rz_core_file_open_load(core, argv[1], addr, perms, true));
 }
 
 RZ_IPI RzCmdStatus rz_open_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

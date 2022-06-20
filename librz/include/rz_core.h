@@ -604,6 +604,7 @@ RZ_API int rz_core_file_set_by_name(RzCore *core, const char *name);
 RZ_API int rz_core_file_set_by_file(RzCore *core, RzCoreFile *cf);
 RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool attach);
 
+RZ_API bool rz_core_file_open_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filepath, ut64 addr, int perms, bool write_mode);
 RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *core, RZ_NONNULL const char *file, int flags, ut64 loadaddr);
 RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *file, int perm, ut64 loadaddr);
 RZ_API RzCoreFile *rz_core_file_get_by_fd(RzCore *core, int fd);
