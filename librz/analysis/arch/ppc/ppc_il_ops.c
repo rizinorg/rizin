@@ -736,6 +736,9 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			// For these instruction ME is the third operand, not MB.
 			mE = INSOP(3).imm;
 			n = CAST(6, IL_FALSE, LOGAND(VARG(rB), UA(0x3f)));
+		} else if (id == PPC_INS_RLDICR) {
+			mE = INSOP(3).imm;
+			n = U8(sH);
 		} else {
 			n = U8(sH);
 		}
