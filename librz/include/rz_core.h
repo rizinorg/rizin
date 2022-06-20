@@ -471,7 +471,7 @@ RZ_API int rz_core_config_init(RzCore *core);
 RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool many);
 RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateOutput *state);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
-RZ_API RzList *rz_core_config_variable_spaces(RzCore *core, const char *space);
+RZ_API RZ_OWN RzList *rz_core_config_variable_spaces(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *space);
 RZ_API int rz_core_prompt(RzCore *core, int sync);
 RZ_API int rz_core_prompt_exec(RzCore *core);
 RZ_API void rz_core_prompt_loop(RzCore *core);
@@ -870,8 +870,6 @@ RZ_API bool rz_core_sym_is_export(RzBinSymbol *s);
 RZ_API void rz_core_sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang);
 RZ_API void rz_core_sym_name_fini(SymName *sn);
 
-RZ_API RzList *rz_core_bin_whole_strings(RzCore *core, RzBinFile *bf);
-
 // bin_dwarf
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);
 RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val);
@@ -988,6 +986,7 @@ RZ_API bool rz_core_bin_cur_section_print(RZ_NONNULL RzCore *core, RZ_NONNULL Rz
 RZ_API bool rz_core_bin_cur_segment_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state, RzList *hashes);
 RZ_API bool rz_core_bin_segments_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state, RzCoreBinFilter *filter, RzList *hashes);
 RZ_API bool rz_core_bin_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
+RZ_API RZ_OWN RzList *rz_core_bin_whole_strings(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *bf);
 RZ_API bool rz_core_bin_whole_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_file_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);

@@ -1312,10 +1312,15 @@ static char *construct_symbol_flagname(const char *pfx, const char *libname, con
 	return R;
 }
 
-RZ_API void rz_core_sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
-	if (!r || !sym || !sym->name) {
-		return;
-	}
+/**
+ * \brief Initlize \p sn
+ * \param r The RzCore instance
+ * \param sn The SymName to output
+ * \param sym Symbol info
+ * \param lang Language info
+ */
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT SymName *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang) {
+	rz_return_if_fail(r && sym && sym->name);
 
 	bool demangle = rz_config_get_b(r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_b(r->config, "bin.demangle.libs");
@@ -1358,7 +1363,14 @@ RZ_API void rz_core_sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, cons
 	}
 }
 
-RZ_API void rz_core_sym_name_fini(SymName *sn) {
+/**
+ * \brief RZ_FREE all member of \p sn (sn->*)
+ * \param sn Symbol names
+ */
+RZ_API void rz_core_sym_name_fini(RZ_NULLABLE SymName *sn) {
+	if (!sn) {
+		return;
+	}
 	RZ_FREE(sn->name);
 	RZ_FREE(sn->rz_symbol_name);
 	RZ_FREE(sn->libname);
@@ -1689,7 +1701,11 @@ static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile
 	return rz_bin_get_strings(r->bin);
 }
 
+/**
+ * \brief Get TimeDateStamp string
+ */
 RZ_API const char *rz_core_bin_get_compile_time(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->sdb, NULL);
 	Sdb *binFileSdb = bf->sdb;
 	Sdb *info_ns = sdb_ns(binFileSdb, "info", false);
 	const char *timeDateStamp_string = sdb_const_get(info_ns,
@@ -1894,7 +1910,11 @@ RZ_API bool rz_core_bin_entries_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 	return entries_initfini_print(core, bf, state, false);
 }
 
-RZ_API bool rz_core_sym_is_export(RzBinSymbol *s) {
+/**
+ * \brief Is RzBinSymbol exported?
+ */
+RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s) {
+	rz_return_val_if_fail(s, false);
 	/* workaround for some RzBinPlugins */
 	if (s->is_imported) {
 		return false;
@@ -2799,7 +2819,13 @@ RZ_API bool rz_core_bin_strings_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 	return strings_print(core, state, list);
 }
 
-RZ_API RzList *rz_core_bin_whole_strings(RzCore *core, RzBinFile *bf) {
+/***
+ * \brief Generates a RzList struct containing RzBinString from a given RzBinFile
+ * \param core The RzCore instance
+ * \param bf The RzBinFile to use for searching for strings
+ * \return On success returns RzList pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzList *rz_core_bin_whole_strings(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *bf) {
 	rz_return_val_if_fail(core, false);
 
 	bool new_bf = false;
@@ -2830,7 +2856,7 @@ RZ_API RzList *rz_core_bin_whole_strings(RzCore *core, RzBinFile *bf) {
 			return false;
 		}
 		bf->file = strdup(desc->name);
-		bf->size = rz_io_desc_size(desc);
+		bf->size = (int)rz_io_desc_size(desc);
 		if (bf->size == UT64_MAX) {
 			free(bf);
 			return false;
