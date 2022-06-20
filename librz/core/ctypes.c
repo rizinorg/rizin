@@ -422,11 +422,11 @@ RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *
  * \param multiline Pretty printing with RZ_TYPE_PRINT_MULTILINE
  */
 RZ_API RZ_OWN char *rz_core_types_as_c(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, bool multiline) {
-	rz_return_val_if_fail(core && core->analysis && name, NULL);
+	rz_return_val_if_fail(core && core->analysis, NULL);
 
 	RzBaseType *btype = rz_type_db_get_base_type(core->analysis->typedb, name);
 	if (!btype) {
-		return false;
+		return NULL;
 	}
 	return rz_core_base_type_as_c(core, btype, multiline);
 }

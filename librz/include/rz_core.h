@@ -423,7 +423,7 @@ typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
  * \see rz_core_sym_name_init
  * \see rz_core_sym_name_fini
  */
-typedef struct rz_sym_name_t {
+typedef struct rz_bin_sym_names_t {
 	const char *pfx; ///< prefix for flags
 	char *name; ///< raw symbol name
 	char *symbolname; ///< display symbol name
@@ -435,7 +435,7 @@ typedef struct rz_sym_name_t {
 	char *classflag; ///< flag for classname
 	char *methname; ///< methods [class]::[method]
 	char *methflag; ///< methods flag sym.[class].[method]
-} RzSymName;
+} RzBinSymNames;
 
 #ifdef RZ_API
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
@@ -878,8 +878,8 @@ RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSource
 RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzCmdStateOutput *state);
 
 RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s);
-RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT RzSymName *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang);
-RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzSymName *sn);
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT RzBinSymNames *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang);
+RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *sn);
 
 // bin_dwarf
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);

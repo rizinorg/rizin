@@ -1315,11 +1315,11 @@ static char *construct_symbol_flagname(const char *pfx, const char *libname, con
 /**
  * \brief Initlize \p sn
  * \param r The RzCore instance
- * \param[out] sn The RzSymName to output
+ * \param[out] sn The RzBinSymNames to output
  * \param sym Symbol info
  * \param lang Language info
  */
-RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT RzSymName *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang) {
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT RzBinSymNames *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang) {
 	rz_return_if_fail(r && sym && sym->name);
 
 	bool demangle = rz_config_get_b(r->config, "bin.demangle");
@@ -1368,7 +1368,7 @@ RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT RzSymName *sn, RZ
  * \brief RZ_FREE all member of \p sn (sn->*)
  * \param sn Symbol names
  */
-RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzSymName *sn) {
+RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *sn) {
 	if (!sn) {
 		return;
 	}
@@ -1471,7 +1471,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			continue;
 		}
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
-		RzSymName sn = { 0 };
+		RzBinSymNames sn = { 0 };
 		count++;
 		rz_core_sym_name_init(core, &sn, symbol, lang);
 
@@ -1664,6 +1664,12 @@ RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 si
 	return r;
 }
 
+/**
+ * \brief Set \p binfile as current binfile
+ * \param core The RzCore instance
+ * \param binfile RzBinFile, it will find by current fd if NULL
+ * \return Success?
+ */
 RZ_API bool rz_core_bin_set_cur(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *binfile) {
 	rz_return_val_if_fail(core && core->bin, false);
 	if (!binfile) {
@@ -1696,7 +1702,7 @@ static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile
 }
 
 /**
- * \brief Get TimeDateStamp string
+ * \brief Get TimeDateStamp string from bf->sdb with key "info.image_file_header.TimeDateStamp_string"
  */
 RZ_API RZ_BORROW const char *rz_core_bin_get_compile_time(RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->sdb, NULL);
@@ -1957,7 +1963,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			continue;
 		}
 
-		RzSymName sn = { 0 };
+		RzBinSymNames sn = { 0 };
 		rz_core_sym_name_init(core, &sn, symbol, lang);
 		ut64 size = symbol->size;
 
@@ -2874,6 +2880,9 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 	rz_return_val_if_fail(core && state, false);
 
 	RzList *l = rz_core_bin_whole_strings(core, bf);
+	if (!l) {
+		return false;
+	}
 	bool res = strings_print(core, state, l);
 	rz_list_free(l);
 	return res;
