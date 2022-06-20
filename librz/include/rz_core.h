@@ -794,9 +794,9 @@ RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL
 RZ_API bool rz_core_analysis_continue_until_syscall(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core);
 
-RZ_API st64 rz_core_analysis_coverage_count(RzCore *core);
-RZ_API st64 rz_core_analysis_code_count(RzCore *core);
-RZ_API st64 rz_core_analysis_calls_count(RzCore *core);
+RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core);
+RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core);
+RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
@@ -842,8 +842,8 @@ RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 
 /* cbin.c */
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);
-RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile);
-RZ_API const char *rz_core_bin_get_compile_time(RzBinFile *bf);
+RZ_API bool rz_core_bin_set_cur(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *binfile);
+RZ_API RZ_BORROW const char *rz_core_bin_get_compile_time(RZ_NONNULL RzBinFile *bf);
 RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, int fd, ut64 baseaddr, ut64 loadaddr);
 RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);
@@ -872,9 +872,9 @@ RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 si
 RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzCmdStateOutput *state);
 RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzCmdStateOutput *state);
 
-RZ_API bool rz_core_sym_is_export(RzBinSymbol *s);
-RZ_API void rz_core_sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang);
-RZ_API void rz_core_sym_name_fini(SymName *sn);
+RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s);
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT SymName *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang);
+RZ_API void rz_core_sym_name_fini(RZ_NULLABLE SymName *sn);
 
 // bin_dwarf
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);

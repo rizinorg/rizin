@@ -1669,10 +1669,8 @@ RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 si
 	return r;
 }
 
-RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
-	if (!core->bin) {
-		return false;
-	}
+RZ_API bool rz_core_bin_set_cur(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *binfile) {
+	rz_return_val_if_fail(core && core->bin, false);
 	if (!binfile) {
 		// Find first available binfile
 		ut32 fd = rz_core_file_cur_fd(core);
@@ -1705,7 +1703,7 @@ static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile
 /**
  * \brief Get TimeDateStamp string
  */
-RZ_API const char *rz_core_bin_get_compile_time(RzBinFile *bf) {
+RZ_API RZ_BORROW const char *rz_core_bin_get_compile_time(RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->sdb, NULL);
 	Sdb *binFileSdb = bf->sdb;
 	Sdb *info_ns = sdb_ns(binFileSdb, "info", false);
@@ -2834,14 +2832,14 @@ RZ_API RZ_OWN RzList *rz_core_bin_whole_strings(RZ_NONNULL RzCore *core, RZ_NULL
 		// sync bf->buf to search string on it
 		ut8 *tmp = RZ_NEWS(ut8, bf->size);
 		if (!tmp) {
-			return false;
+			return NULL;
 		}
 		rz_io_read_at(core->io, 0, tmp, bf->size);
 		rz_buf_write_at(bf->buf, 0, tmp, bf->size);
 	}
 	if (!core->file) {
 		RZ_LOG_ERROR("Core file not open\n");
-		return false;
+		return NULL;
 	}
 	if (!bf) {
 		// TODO: manually creating an RzBinFile like this is a hack and abuse of RzBin API
@@ -2849,18 +2847,18 @@ RZ_API RZ_OWN RzList *rz_core_bin_whole_strings(RZ_NONNULL RzCore *core, RZ_NULL
 		// should be refactored out of bin.
 		bf = RZ_NEW0(RzBinFile);
 		if (!bf) {
-			return false;
+			return NULL;
 		}
 		RzIODesc *desc = rz_io_desc_get(core->io, core->file->fd);
 		if (!desc) {
 			free(bf);
-			return false;
+			return NULL;
 		}
 		bf->file = strdup(desc->name);
 		bf->size = (int)rz_io_desc_size(desc);
 		if (bf->size == UT64_MAX) {
 			free(bf);
-			return false;
+			return NULL;
 		}
 		bf->buf = rz_buf_new_with_io_fd(&core->bin->iob, core->file->fd);
 		bf->o = NULL;

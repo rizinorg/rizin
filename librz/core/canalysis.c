@@ -7063,7 +7063,7 @@ RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core) {
 /**
  * \brief Compute analysis coverage count
  */
-RZ_API st64 rz_core_analysis_coverage_count(RzCore *core) {
+RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, ST64_MAX);
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
@@ -7089,7 +7089,7 @@ RZ_API st64 rz_core_analysis_coverage_count(RzCore *core) {
 /**
  * \brief Compute analysis code count
  */
-RZ_API st64 rz_core_analysis_code_count(RzCore *core) {
+RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, ST64_MAX);
 	st64 code = 0;
 	void **it;
@@ -7106,7 +7106,7 @@ RZ_API st64 rz_core_analysis_code_count(RzCore *core) {
 /**
  * \brief Compute analysis function xrefs count
  */
-RZ_API st64 rz_core_analysis_calls_count(RzCore *core) {
+RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, ST64_MAX);
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
