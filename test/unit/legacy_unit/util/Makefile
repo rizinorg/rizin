@@ -12,7 +12,6 @@ BINS+=test_sys
 BINS+=test_str
 BINS+=test_file_slurp_hexpairs
 BINS+=test_cmd_str
-BINS+=test_queue
 BINS+=test_tree
 BINS+=test_graph
 

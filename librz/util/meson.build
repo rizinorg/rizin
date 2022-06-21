@@ -39,7 +39,6 @@ rz_util_sources = [
   'print.c',
   'protobuf.c',
   'punycode.c',
-  'queue.c',
   'range.c',
   'rbtree.c',
   'regex/regcomp.c',
