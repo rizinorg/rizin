@@ -483,7 +483,11 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 
-	rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
+	if (rz_pvector_len(&state.db->tests) != 0) {
+		rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
+	} else {
+		eprintf("No tests discovered\n");
+	}
 
 	if (log_mode) {
 		// Log mode prints the state after every completed file.
