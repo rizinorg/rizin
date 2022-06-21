@@ -103,6 +103,7 @@ st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_LWZU:
 	case PPC_INS_LWZUX:
 	case PPC_INS_LWZX:
+	case PPC_INS_LMW:
 	case PPC_INS_STW:
 	case PPC_INS_STWBRX:
 	case PPC_INS_STWCIX:
@@ -110,6 +111,7 @@ st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_STWU:
 	case PPC_INS_STWUX:
 	case PPC_INS_STWX:
+	case PPC_INS_STMW:
 		return PPC_WORD;
 	case PPC_INS_LD:
 	case PPC_INS_LDARX:
