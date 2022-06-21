@@ -138,7 +138,7 @@ typedef struct sh_op_raw_t {
 #define NOPARAM ADDR(NIB0, SH_ADDR_INVALID)
 
 /**
- * @brief Get params for mov.l instruction (0001NMD)
+ * \brief Get params for mov.l instruction (0001NMD)
  * A special function is required because the nibbles for the second param (@(disp:Rn)) (i.e. N and D)
  * are separated by the nibble for the first param (Rm) (i.e. M), so sh_op_get_param cannot be used
  *
@@ -397,6 +397,12 @@ RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
 #define MNEM_PADLEN 10
 #define ARG_PADLEN  14
 
+/**
+ * \brief Return string representation of disassembled \p param
+ *
+ * \param SHParam to be disassembled
+ * \return char *, owned by the caller
+ */
 RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param) {
 	if (param.mode == SH_ADDR_INVALID) {
 		return NULL;
@@ -451,6 +457,12 @@ RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param) {
 	return rz_strbuf_drain(buf);
 }
 
+/**
+ * \brief Return string representation of disassembled \p op
+ *
+ * \param SHOp to be disassembled
+ * \return char *, owned by the caller
+ */
 RZ_API RZ_OWN char *sh_op_to_str(const SHOp *op) {
 	if (!op->str_mnem) {
 		return NULL;
