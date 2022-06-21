@@ -280,8 +280,8 @@ static inline RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzIL
 	// res = x + y
 	// x & y
 	RzILOpPure *xy = LOGAND(x, y);
-
 	RzILOpPure *nres = LOGNOT(res);
+
 	// !res & y
 	RzILOpPure *ry = LOGAND(nres, DUP(y));
 	// x & !res
