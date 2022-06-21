@@ -452,6 +452,9 @@ RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param) {
 }
 
 RZ_API RZ_OWN char *sh_op_to_str(const SHOp *op) {
+	if (!op->str_mnem) {
+		return NULL;
+	}
 	RzStrBuf *buf = rz_strbuf_new(rz_str_newf("%-*s", MNEM_PADLEN, op->str_mnem));
 
 	char *param = NULL;
