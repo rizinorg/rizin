@@ -73,7 +73,6 @@ static char *__filterQuotedShell(const char *arg) {
 }
 
 #define STR(x) (x) ? (x) : ""
-RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile);
 
 static ut64 rva(RzBinObject *o, ut64 paddr, ut64 vaddr, int va) {
 	if (va == VA_TRUE) {
@@ -1313,23 +1312,15 @@ static char *construct_symbol_flagname(const char *pfx, const char *libname, con
 	return R;
 }
 
-typedef struct {
-	const char *pfx; // prefix for flags
-	char *name; // raw symbol name
-	char *libname; // name of the lib this symbol is specific to, if any
-	char *nameflag; // flag name for symbol
-	char *demname; // demangled raw symbol name
-	char *demflag; // flag name for demangled symbol
-	char *classname; // classname
-	char *classflag; // flag for classname
-	char *methname; // methods [class]::[method]
-	char *methflag; // methods flag sym.[class].[method]
-} SymName;
-
-static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
-	if (!r || !sym || !sym->name) {
-		return;
-	}
+/**
+ * \brief Initlize \p sn
+ * \param r The RzCore instance
+ * \param[out] sn The RzBinSymNames to output
+ * \param sym Symbol info
+ * \param lang Language info
+ */
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT RzBinSymNames *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang) {
+	rz_return_if_fail(r && sym && sym->name);
 
 	bool demangle = rz_config_get_b(r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_b(r->config, "bin.demangle.libs");
@@ -1360,10 +1351,29 @@ static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *
 			sn->demflag = construct_symbol_flagname(pfx, sym->libname, sn->demname, -1);
 		}
 	}
+
+	RzStrEscOptions opt = {
+		.show_asciidot = false,
+		.esc_bslash = true,
+	};
+	sn->symbolname = rz_str_escape_utf8(sn->demname ? sn->demname : sn->name, &opt);
+	if (r->bin->prefix) {
+		char *tmp = rz_str_newf("%s.%s", r->bin->prefix, sn->symbolname);
+		free(sn->symbolname);
+		sn->symbolname = tmp;
+	}
 }
 
-static void sym_name_fini(SymName *sn) {
+/**
+ * \brief RZ_FREE all member of \p sn (sn->*)
+ * \param sn Symbol names
+ */
+RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *sn) {
+	if (!sn) {
+		return;
+	}
 	RZ_FREE(sn->name);
+	RZ_FREE(sn->symbolname);
 	RZ_FREE(sn->libname);
 	RZ_FREE(sn->nameflag);
 	RZ_FREE(sn->demname);
@@ -1461,13 +1471,9 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			continue;
 		}
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
-		SymName sn = { 0 };
+		RzBinSymNames sn = { 0 };
 		count++;
-		sym_name_init(core, &sn, symbol, lang);
-		RzStrEscOptions opt = { 0 };
-		opt.show_asciidot = false;
-		opt.esc_bslash = true;
-		char *rz_symbol_name = rz_str_escape_utf8(sn.name, &opt);
+		rz_core_sym_name_init(core, &sn, symbol, lang);
 
 		if (is_section_symbol(symbol) || is_file_symbol(symbol)) {
 			/*
@@ -1527,8 +1533,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 			}
 			rz_flag_space_pop(core->flags);
 		}
-		sym_name_fini(&sn);
-		free(rz_symbol_name);
+		rz_core_sym_name_fini(&sn);
 	}
 
 	// handle thumb and arm for entry point since they are not present in symbols
@@ -1659,10 +1664,14 @@ RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 si
 	return r;
 }
 
-RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
-	if (!core->bin) {
-		return false;
-	}
+/**
+ * \brief Set \p binfile as current binfile
+ * \param core The RzCore instance
+ * \param binfile RzBinFile, it will find by current fd if NULL
+ * \return Success?
+ */
+RZ_API bool rz_core_bin_set_cur(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *binfile) {
+	rz_return_val_if_fail(core && core->bin, false);
 	if (!binfile) {
 		// Find first available binfile
 		ut32 fd = rz_core_file_cur_fd(core);
@@ -1692,7 +1701,12 @@ static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile
 	return rz_bin_get_strings(r->bin);
 }
 
-static const char *get_compile_time(Sdb *binFileSdb) {
+/**
+ * \brief Get TimeDateStamp string from bf->sdb with key "info.image_file_header.TimeDateStamp_string"
+ */
+RZ_API RZ_BORROW const char *rz_core_bin_get_compile_time(RZ_NONNULL RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->sdb, NULL);
+	Sdb *binFileSdb = bf->sdb;
 	Sdb *info_ns = sdb_ns(binFileSdb, "info", false);
 	const char *timeDateStamp_string = sdb_const_get(info_ns,
 		"image_file_header.TimeDateStamp_string", 0);
@@ -1896,7 +1910,11 @@ RZ_API bool rz_core_bin_entries_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 	return entries_initfini_print(core, bf, state, false);
 }
 
-static bool isAnExport(RzBinSymbol *s) {
+/**
+ * \brief Is RzBinSymbol exported?
+ */
+RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s) {
+	rz_return_val_if_fail(s, false);
 	/* workaround for some RzBinPlugins */
 	if (s->is_imported) {
 		return false;
@@ -1930,7 +1948,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 		if (!symbol->name) {
 			continue;
 		}
-		if (only_export && !isAnExport(symbol)) {
+		if (only_export && !rz_core_sym_is_export(symbol)) {
 			continue;
 		}
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
@@ -1945,17 +1963,8 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			continue;
 		}
 
-		SymName sn = { 0 };
-		sym_name_init(core, &sn, symbol, lang);
-		RzStrEscOptions opt = { 0 };
-		opt.show_asciidot = false;
-		opt.esc_bslash = true;
-		char *rz_symbol_name = rz_str_escape_utf8(sn.demname ? sn.demname : sn.name, &opt);
-		if (core->bin->prefix) {
-			char *tmp = rz_str_newf("%s.%s", core->bin->prefix, rz_symbol_name);
-			free(rz_symbol_name);
-			rz_symbol_name = tmp;
-		}
+		RzBinSymNames sn = { 0 };
+		rz_core_sym_name_init(core, &sn, symbol, lang);
 		ut64 size = symbol->size;
 
 		char addr_value[20];
@@ -1970,14 +1979,14 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			rz_cons_printf("%s %" PFMT64u " %s%s%s\n",
 				addr_value, size,
 				sn.libname ? sn.libname : "", sn.libname ? " " : "",
-				rz_symbol_name);
+				sn.symbolname);
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:
-			rz_cons_printf("%s\n", rz_symbol_name);
+			rz_cons_printf("%s\n", sn.symbolname);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
-			pj_ks(state->d.pj, "name", rz_symbol_name);
+			pj_ks(state->d.pj, "name", sn.symbolname);
 			if (sn.demname) {
 				pj_ks(state->d.pj, "demname", sn.demname);
 			}
@@ -2006,14 +2015,13 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 				symbol->type ? symbol->type : "NONE",
 				size,
 				rz_str_get(symbol->libname),
-				rz_str_get_null(rz_symbol_name));
+				rz_str_get_null(sn.symbolname));
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
-		sym_name_fini(&sn);
-		free(rz_symbol_name);
+		rz_core_sym_name_fini(&sn);
 	}
 	rz_cmd_state_output_array_end(state);
 	return true;
@@ -2811,22 +2819,28 @@ RZ_API bool rz_core_bin_strings_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 	return strings_print(core, state, list);
 }
 
-RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && state, false);
+/***
+ * \brief Generates a RzList struct containing RzBinString from a given RzBinFile
+ * \param core The RzCore instance
+ * \param bf The RzBinFile to use for searching for strings
+ * \return On success returns RzList pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzList *rz_core_bin_whole_strings(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *bf) {
+	rz_return_val_if_fail(core, NULL);
 
 	bool new_bf = false;
 	if (bf && strstr(bf->file, "malloc://")) {
 		// sync bf->buf to search string on it
 		ut8 *tmp = RZ_NEWS(ut8, bf->size);
 		if (!tmp) {
-			return false;
+			return NULL;
 		}
 		rz_io_read_at(core->io, 0, tmp, bf->size);
 		rz_buf_write_at(bf->buf, 0, tmp, bf->size);
 	}
 	if (!core->file) {
 		RZ_LOG_ERROR("Core file not open\n");
-		return false;
+		return NULL;
 	}
 	if (!bf) {
 		// TODO: manually creating an RzBinFile like this is a hack and abuse of RzBin API
@@ -2834,18 +2848,18 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 		// should be refactored out of bin.
 		bf = RZ_NEW0(RzBinFile);
 		if (!bf) {
-			return false;
+			return NULL;
 		}
 		RzIODesc *desc = rz_io_desc_get(core->io, core->file->fd);
 		if (!desc) {
 			free(bf);
-			return false;
+			return NULL;
 		}
 		bf->file = strdup(desc->name);
-		bf->size = rz_io_desc_size(desc);
+		bf->size = (int)rz_io_desc_size(desc);
 		if (bf->size == UT64_MAX) {
 			free(bf);
-			return false;
+			return NULL;
 		}
 		bf->buf = rz_buf_new_with_io_fd(&core->bin->iob, core->file->fd);
 		bf->o = NULL;
@@ -2854,13 +2868,23 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 	}
 	size_t min = rz_config_get_i(core->config, "bin.minstr");
 	RzList *l = rz_bin_file_strings(bf, min, true);
-	bool res = strings_print(core, state, l);
-	rz_list_free(l);
 	if (new_bf) {
 		rz_buf_free(bf->buf);
 		free(bf->file);
 		free(bf);
 	}
+	return l;
+}
+
+RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && state, false);
+
+	RzList *l = rz_core_bin_whole_strings(core, bf);
+	if (!l) {
+		return false;
+	}
+	bool res = strings_print(core, state, l);
+	rz_list_free(l);
 	return res;
 }
 
@@ -2994,7 +3018,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 	int bits;
 
 	havecode = is_executable(obj) | (obj->entries != NULL);
-	compiled = get_compile_time(bf->sdb);
+	compiled = rz_core_bin_get_compile_time(bf);
 	bits = (plugin && !strcmp(plugin->name, "any")) ? rz_config_get_i(core->config, "asm.bits") : info->bits;
 	const char *endian = info->big_endian ? "BE" : "LE";
 

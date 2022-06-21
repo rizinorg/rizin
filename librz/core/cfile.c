@@ -182,6 +182,43 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 	rz_debug_bp_rebase(core->dbg, old_base, new_base);
 }
 
+/**
+ * \brief Tries to open the file, load binary info and make RzIOMap
+ * \return Success?
+ */
+RZ_API bool rz_core_file_open_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filepath, ut64 addr, int perms, bool write_mode) {
+	rz_return_val_if_fail(core && filepath, false);
+	RzCoreFile *cfile = rz_core_file_open(core, filepath, perms, addr);
+	if (!cfile) {
+		RZ_LOG_ERROR("Cannot open file '%s'\n", filepath);
+		return false;
+	}
+
+	core->num->value = cfile->fd;
+	if (addr == 0) { // if no baddr defined, use the one provided by the file
+		addr = UT64_MAX;
+	}
+	if (!rz_core_bin_load(core, filepath, addr)) {
+		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", filepath);
+		return false;
+	}
+	if (write_mode) {
+		RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
+		if (!desc || !(desc->perm & RZ_PERM_W)) {
+			RZ_LOG_WARN("Cannot make maps for %s writable.\n", filepath);
+			return false;
+		}
+		void **it;
+		rz_pvector_foreach (&cfile->maps, it) {
+			RzIOMap *map = *it;
+			map->perm |= RZ_PERM_WX;
+		}
+	}
+
+	rz_core_block_read(core);
+	return true;
+}
+
 RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr) {
 	RzCoreFile *ofile = core->file;
 	RzIODesc *desc;

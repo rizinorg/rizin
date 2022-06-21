@@ -421,35 +421,17 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv) {
-	const char *arg = argc > 1 ? argv[1] : "";
-	RzConfigNode *node;
-	RzListIter *iter;
-	char *oldSpace = NULL;
-	rz_list_foreach (core->config->nodes, iter, node) {
-		char *space = strdup(node->name);
-		char *dot = strchr(space, '.');
-		if (dot) {
-			*dot = 0;
-		}
-		if (arg && *arg) {
-			if (!strcmp(arg, space)) {
-				rz_cons_println(dot + 1);
-			}
-			free(space);
-			continue;
-		} else if (oldSpace) {
-			if (!strcmp(space, oldSpace)) {
-				free(space);
-				continue;
-			}
-			free(oldSpace);
-			oldSpace = space;
-		} else {
-			oldSpace = space;
-		}
-		rz_cons_println(space);
+	const char *arg = argc > 1 ? argv[1] : NULL;
+	RzList *list = rz_core_config_in_space(core, arg);
+	if (!list) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-	free(oldSpace);
+	RzListIter *iter;
+	char *name;
+	rz_list_foreach (list, iter, name) {
+		rz_cons_println(name);
+	}
+	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
 
