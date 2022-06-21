@@ -7,9 +7,12 @@
 #include <rz_bin.h>
 
 #include "pe_specs.h"
+#include "dotnet.h"
 
 #ifndef _INCLUDE_RZ_BIN_PE_H_
 #define _INCLUDE_RZ_BIN_PE_H_
+
+#define PE_READ_STRUCT_FIELD(var, struct_type, field, size) var->field = rz_read_le##size(buf + offsetof(struct_type, field))
 
 #define RZ_BIN_PE_SCN_IS_SHAREABLE(x)  x &PE_IMAGE_SCN_MEM_SHARED
 #define RZ_BIN_PE_SCN_IS_EXECUTABLE(x) x &PE_IMAGE_SCN_MEM_EXECUTE
@@ -134,10 +137,7 @@ struct PE_(rz_bin_pe_obj_t) {
 	PE_(image_delay_import_directory) * delay_import_directory;
 	Pe_image_security_directory *security_directory;
 
-	// these pointers pertain to the .net relevant sections
-	PE_(image_clr_header) * clr_hdr;
-	PE_(image_metadata_header) * metadata_header;
-	PE_(image_metadata_stream) * *streams;
+	Pe_image_clr *clr; // dotnet information
 
 	/* store the section information for future use */
 	struct rz_bin_pe_section_t *sections;
@@ -185,6 +185,8 @@ char *PE_(rz_bin_pe_get_machine)(struct PE_(rz_bin_pe_obj_t) * bin);
 char *PE_(rz_bin_pe_get_os)(struct PE_(rz_bin_pe_obj_t) * bin);
 char *PE_(rz_bin_pe_get_class)(struct PE_(rz_bin_pe_obj_t) * bin);
 int PE_(rz_bin_pe_get_bits)(struct PE_(rz_bin_pe_obj_t) * bin);
+RZ_OWN RzList *PE_(rz_bin_pe_get_clr_symbols)(struct PE_(rz_bin_pe_obj_t) * bin);
+ut64 PE_(rz_bin_pe_get_clr_methoddef_offset)(struct PE_(rz_bin_pe_obj_t) * bin, Pe_image_metadata_methoddef *methoddef);
 int PE_(rz_bin_pe_get_section_alignment)(struct PE_(rz_bin_pe_obj_t) * bin);
 char *PE_(rz_bin_pe_get_subsystem)(struct PE_(rz_bin_pe_obj_t) * bin);
 int PE_(rz_bin_pe_is_dll)(struct PE_(rz_bin_pe_obj_t) * bin);

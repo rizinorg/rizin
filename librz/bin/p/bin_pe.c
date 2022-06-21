@@ -480,6 +480,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.relocs = &relocs,
 	.minstrlen = 4,
 	.create = &create,
+	.get_offset = &get_offset,
 	.get_vaddr = &get_vaddr,
 	.hashes = &compute_hashes,
 	.resources = &resources,

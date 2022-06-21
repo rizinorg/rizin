@@ -202,6 +202,7 @@ rz_bin_sources = [
   'format/objc/mach0_classes.c',
   'format/omf/omf.c',
   'format/p9/p9bin.c',
+  'format/pe/dotnet.c',
   'format/pe/pe.c',
   'format/pe/pe64.c',
   'format/pe/pemixed.c',
