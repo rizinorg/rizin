@@ -1,6 +1,8 @@
 #ifndef RZ_PROTOBUF_H
 #define RZ_PROTOBUF_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

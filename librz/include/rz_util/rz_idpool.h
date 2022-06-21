@@ -4,9 +4,9 @@
 #ifndef RZ_ID_STORAGE_H
 #define RZ_ID_STORAGE_H
 
-#include <rz_util/rz_pool.h>
 #include <rz_util/rz_queue.h>
 #include <rz_types.h>
+#include <rz_list.h>
 
 #ifdef __cplusplus
 extern "C" {

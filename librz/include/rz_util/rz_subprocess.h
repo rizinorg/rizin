@@ -4,6 +4,9 @@
 #ifndef RZ_UTIL_SUBPROCESS_H
 #define RZ_UTIL_SUBPROCESS_H
 
+#include <rz_types.h>
+#include <rz_util/rz_strbuf.h>
+
 /**
  * Enum used to determine how pipes should be created, if at all, in the
  * subprocess.

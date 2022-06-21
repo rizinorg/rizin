@@ -842,7 +842,6 @@ RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile);
 RZ_API void rz_bin_map_free(RzBinMap *map);
 RZ_API RzList *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile);
 RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps);
-RZ_API ut64 rz_bin_find_free_base_addr(RzList /*<RzBinMap>*/ *maps, ut64 align);
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
@@ -908,7 +907,6 @@ RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo);
 RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo);
 RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo);
 RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json);
-RZ_API RzBinPlugin *rz_bin_get_binplugin_by_bytes(RzBin *bin, const ut8 *bytes, ut64 sz);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf);
 RZ_API const RzBinPlugin *rz_bin_plugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name);
 RZ_API const RzBinXtrPlugin *rz_bin_xtrplugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name);
@@ -946,7 +944,6 @@ RZ_API const RzList *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj);
-RZ_API const RBNode *rz_bin_object_get_relocs(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzList *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzList *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj);
@@ -986,7 +983,6 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBi
 
 // RzBinFile.get
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
-RZ_API RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
 RZ_API RzList *rz_bin_file_get_symbols(RzBinFile *bf);
 // RzBinFile.add
 RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *binfile, const char *name, const char *super, int view);
@@ -998,7 +994,6 @@ RZ_API RzBinFile *rz_bin_file_find_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API RzBinFile *rz_bin_file_find_by_name(RzBin *bin, const char *name);
 
 RZ_API bool rz_bin_file_set_cur_binfile(RzBin *bin, RzBinFile *bf);
-RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
 RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);

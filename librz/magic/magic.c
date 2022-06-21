@@ -48,6 +48,14 @@ RZ_API const char *rz_magic_error(RzMagic *m) {
 RZ_API void rz_magic_setflags(RzMagic *m, int f) {
 	magic_setflags(m, f);
 }
+RZ_API bool rz_magic_load_buffer(RzMagic *m, const char *f) {
+	if (*magicdata == '#') {
+		return magic_load(m, f) != -1;
+	} else {
+		eprintf("Magic buffers should start with #\n");
+	}
+	return false;
+}
 RZ_API bool rz_magic_load(RzMagic *m, const char *f) {
 	return magic_load(m, f) != -1;
 }

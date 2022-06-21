@@ -181,8 +181,6 @@ typedef enum {
 #include <rz_types_base.h>
 #include <rz_constructor.h>
 
-#undef _FILE_OFFSET_BITS
-#define _FILE_OFFSET_BITS 64
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 

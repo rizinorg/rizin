@@ -59,7 +59,6 @@ typedef struct rz_regmatch_t {
 #define RZ_REGEX_BACKR    02000 /* force use of backref code */
 
 RZ_API RzRegex *rz_regex_new(const char *pattern, const char *cflags);
-RZ_API int rz_regex_run(const char *pattern, const char *flags, const char *text);
 RZ_API int rz_regex_match(const char *pattern, const char *flags, const char *text);
 RZ_API RzList *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text);
 RZ_API int rz_regex_flags(const char *flags);

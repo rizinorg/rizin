@@ -51,7 +51,6 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_graph.h"
 #include "rz_util/rz_path.h"
 #include "rz_util/rz_panels.h"
-#include "rz_util/rz_pool.h"
 #include "rz_util/rz_punycode.h"
 #include "rz_util/rz_queue.h"
 #include "rz_util/rz_range.h"

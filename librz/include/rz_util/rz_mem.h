@@ -1,6 +1,8 @@
 #ifndef RZ_MEM_H
 #define RZ_MEM_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,10 +20,6 @@ typedef struct rz_mem_pool_t {
 RZ_API ut64 rz_mem_get_num(const ut8 *b, int size);
 
 /* MEMORY POOL */
-RZ_API RMemoryPool *rz_mem_pool_deinit(RMemoryPool *pool);
-RZ_API RMemoryPool *rz_mem_pool_new(int nodesize, int poolsize, int poolcount);
-RZ_API RMemoryPool *rz_mem_pool_free(RMemoryPool *pool);
-RZ_API void *rz_mem_pool_alloc(RMemoryPool *pool);
 RZ_API void *rz_mem_dup(const void *s, int l);
 RZ_API void *rz_mem_alloc(int sz);
 RZ_API void rz_mem_free(void *);

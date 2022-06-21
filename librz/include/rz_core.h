@@ -414,8 +414,6 @@ typedef struct rz_core_item_t {
 	char *fcnname;
 } RzCoreItem;
 
-RZ_API void rz_core_item_free(RzCoreItem *ci);
-
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
 /**
@@ -473,7 +471,6 @@ RZ_API RzCore *rz_core_ncast(ut64 p);
 RZ_API RzCore *rz_core_cast(void *p);
 RZ_API bool rz_core_bin_load_structs(RZ_NONNULL RzCore *core, RZ_NONNULL const char *file);
 RZ_API int rz_core_config_init(RzCore *core);
-RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool many);
 RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateOutput *state);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
 RZ_API RZ_OWN RzList *rz_core_config_in_space(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *space);
@@ -486,9 +483,7 @@ RZ_API RzCmdStatus rz_core_cmd_rzshell(RzCore *core, const char *cmd, int log);
 RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *str);
 RZ_API int rz_core_fgets(char *buf, int len, void *user);
 RZ_API RzFlagItem *rz_core_flag_get_by_spaces(RzFlag *f, ut64 off);
-RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_core_flush(RzCore *core, const char *cmd);
-RZ_API int rz_core_cmd0(RzCore *core, const char *cmd);
 RZ_API void rz_core_cmd_init(RzCore *core);
 RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd);
 RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd);
@@ -715,7 +710,6 @@ RZ_API int rz_core_cmd_buffer(RzCore *core, const char *buf);
 RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_core_cmd0(RzCore *core, const char *cmd);
 RZ_API RzCmdStatus rz_core_cmd0_rzshell(RzCore *core, const char *cmd);
-RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd);
 RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each);
 RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each);
 RZ_API char *rz_core_op_str(RzCore *core, ut64 addr);
@@ -725,7 +719,6 @@ RZ_API char *rz_core_disassemble_bytes(RzCore *core, ut64 addr, int b);
 
 /* carg.c */
 RZ_API RZ_DEPRECATE ut64 rz_core_arg_get(RzCore *core, const char *cc, int num);
-RZ_API RZ_DEPRECATE bool rz_coret_arg_set(RzCore *core, const char *cc, int num, ut64 val);
 RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *func_name);
 RZ_API void rz_core_print_func_args(RzCore *core);
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name);
@@ -871,7 +864,6 @@ RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr);
 RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
 RZ_API bool rz_core_binfiles_print(RzCore *core, RzCmdStateOutput *state);
 RZ_API bool rz_core_binfiles_delete(RzCore *core, RzBinFile *bf);
-RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name);
 RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 size, RzList *digests);
 
 RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzCmdStateOutput *state);
@@ -888,10 +880,6 @@ RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *inf);
 RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table, int addr_size);
 RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet>*/ *aranges);
 RZ_API void rz_core_bin_dwarf_print_line_units(RzList /*<RzBinDwarfLineUnit>*/ *lines);
-
-// XXX - this is kinda hacky, maybe there should be a way to
-// refresh the bin environment without specific calls?
-RZ_API int rz_core_pseudo_code(RzCore *core, const char *input);
 
 /* gdiff.c */
 RZ_API bool rz_core_gdiff_2_files(RzCore *core1, RzCore *core2);
@@ -1146,7 +1134,6 @@ struct rz_core_task_t {
 
 typedef void (*RzCoreTaskOneShot)(void *);
 
-RZ_API void rz_core_echo(RzCore *core, const char *msg);
 RZ_API RzTable *rz_core_table(RzCore *core);
 
 RZ_API void rz_core_task_scheduler_init(RzCoreTaskScheduler *sched,

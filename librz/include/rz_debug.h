@@ -478,8 +478,6 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file);
 RZ_API void rz_debug_signal_init(RzDebug *dbg);
 RZ_API int rz_debug_signal_send(RzDebug *dbg, int num);
 RZ_API int rz_debug_signal_what(RzDebug *dbg, int num);
-RZ_API int rz_debug_signal_resolve(RzDebug *dbg, const char *signame);
-RZ_API const char *rz_debug_signal_resolve_i(RzDebug *dbg, int signum);
 RZ_API void rz_debug_signal_setup(RzDebug *dbg, int num, int opt);
 RZ_API int rz_debug_signal_set(RzDebug *dbg, int num, ut64 addr);
 RZ_API void rz_debug_signal_list(RzDebug *dbg, RzOutputMode mode);
@@ -491,7 +489,6 @@ RZ_API int rz_debug_kill_setup(RzDebug *dbg, int sig, int action);
 
 /* handle.c */
 RZ_API void rz_debug_plugin_init(RzDebug *dbg);
-RZ_API int rz_debug_plugin_set(RzDebug *dbg, const char *str);
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo);
 RZ_API bool rz_debug_plugin_set_reg_profile(RzDebug *dbg, const char *str);
 

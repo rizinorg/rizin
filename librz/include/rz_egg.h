@@ -209,7 +209,6 @@ RZ_API int rz_egg_padding(RzEgg *egg, const char *pad);
 RZ_API bool rz_egg_assemble(RzEgg *egg);
 RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list);
 RZ_API void rz_egg_pattern(RzEgg *egg, int size);
-RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg);
 // RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
 RZ_API char *rz_egg_get_source(RzEgg *egg);
 RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg);

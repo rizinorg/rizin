@@ -1,6 +1,8 @@
 #ifndef RZ_PANELS_H
 #define RZ_PANELS_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
