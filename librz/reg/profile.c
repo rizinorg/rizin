@@ -63,7 +63,7 @@ static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
 	}
 	bool res = true;
 	if (def->type < 0 || def->arena_type < 0) {
-		RZ_LOG_WARN("Illegal type appreviation \"%s\"\n", s);
+		RZ_LOG_ERROR("Illegal type abbreviation \"%s\"\n", s);
 		res = false;
 	}
 	free(s);
