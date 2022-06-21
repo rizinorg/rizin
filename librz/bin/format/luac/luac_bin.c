@@ -65,6 +65,7 @@ void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size) 
 	bin_string->size = size;
 	bin_string->length = size;
 	bin_string->string = rz_str_new(string);
+	bin_string->type = RZ_STRING_ENC_UTF8;
 
 	rz_list_append(string_list, bin_string);
 }

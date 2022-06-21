@@ -43,9 +43,11 @@ static const char *rwxstr[] = {
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 	switch (enc) {
 	case RZ_STRING_ENC_8BIT:
-		return "8bit";
+		return "ascii";
 	case RZ_STRING_ENC_UTF8:
 		return "utf8";
+	case RZ_STRING_ENC_MUTF8:
+		return "mutf8";
 	case RZ_STRING_ENC_UTF16LE:
 		return "utf16le";
 	case RZ_STRING_ENC_UTF32LE:
@@ -54,22 +56,65 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 		return "utf16be";
 	case RZ_STRING_ENC_UTF32BE:
 		return "utf32be";
+	case RZ_STRING_ENC_BASE64:
+		return "base64";
 	case RZ_STRING_ENC_IBM037:
 		return "ibm037";
 	case RZ_STRING_ENC_IBM290:
 		return "ibm290";
-	case RZ_STRING_ENC_EBCDIC_UK:
-		return "ebcdic_uk";
-	case RZ_STRING_ENC_EBCDIC_US:
-		return "ebcdic_us";
 	case RZ_STRING_ENC_EBCDIC_ES:
-		return "ebcdic_es";
+		return "ebcdices";
+	case RZ_STRING_ENC_EBCDIC_UK:
+		return "ebcdicuk";
+	case RZ_STRING_ENC_EBCDIC_US:
+		return "ebcdicus";
 	case RZ_STRING_ENC_GUESS:
 		return "guessed";
 	default:
 		rz_warn_if_reached();
 		return "unknown";
 	}
+}
+
+/**
+ * \brief      converts an encoding name to RzStrEnc
+ *
+ * \param[in]  encoding Encoding name
+ * \return     Returns a RzStrEnc type.
+ */
+RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
+	if (!encoding || !strncmp(encoding, "guess", 5)) {
+		return RZ_STRING_ENC_GUESS;
+	} else if (!strcmp(encoding, "ascii") || !strcmp(encoding, "8bit")) {
+		return RZ_STRING_ENC_8BIT;
+	} else if (!strcmp(encoding, "mutf8")) {
+		return RZ_STRING_ENC_MUTF8;
+	} else if (!strcmp(encoding, "utf8")) {
+		return RZ_STRING_ENC_UTF8;
+	} else if (!strcmp(encoding, "utf16le")) {
+		return RZ_STRING_ENC_UTF16LE;
+	} else if (!strcmp(encoding, "utf32le")) {
+		return RZ_STRING_ENC_UTF32LE;
+	} else if (!strcmp(encoding, "utf16be")) {
+		return RZ_STRING_ENC_UTF16BE;
+	} else if (!strcmp(encoding, "utf32be")) {
+		return RZ_STRING_ENC_UTF32BE;
+	} else if (!strcmp(encoding, "ibm037")) {
+		return RZ_STRING_ENC_IBM037;
+	} else if (!strcmp(encoding, "ibm290")) {
+		return RZ_STRING_ENC_IBM290;
+	} else if (!strcmp(encoding, "ebcdices")) {
+		return RZ_STRING_ENC_EBCDIC_ES;
+	} else if (!strcmp(encoding, "ebcdicuk")) {
+		return RZ_STRING_ENC_EBCDIC_UK;
+	} else if (!strcmp(encoding, "ebcdicus")) {
+		return RZ_STRING_ENC_EBCDIC_US;
+	} else if (!strcmp(encoding, "base64")) {
+		return RZ_STRING_ENC_BASE64;
+	}
+
+	RZ_LOG_ERROR("rz_str: encoding %s not supported\n", encoding);
+	return RZ_STRING_ENC_GUESS;
 }
 
 RZ_API int rz_str_casecmp(const char *s1, const char *s2) {

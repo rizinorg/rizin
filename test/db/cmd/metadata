@@ -375,7 +375,7 @@ Ch 2 @ 0x00000200
 Cf 4 x @ 0x00000300
 Cm 8 wwww @ 0x00000380
 ----
-[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"8bit","ascii":true}]
+[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"ascii","ascii":true}]
 ----
 [{"offset":256,"type":"Cd","name":"3","size":3}]
 ----
@@ -387,7 +387,7 @@ Cm 8 wwww @ 0x00000380
 ----
 [{"offset":896,"type":"Cm","name":"wwww"}]
 ----
-[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"8bit","ascii":true},{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"3","size":3},{"offset":512,"type":"Ch","name":"2"},{"offset":768,"type":"Cf","name":"x"},{"offset":896,"type":"Cm","name":"wwww"}]
+[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"ascii","ascii":true},{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"3","size":3},{"offset":512,"type":"Ch","name":"2"},{"offset":768,"type":"Cf","name":"x"},{"offset":896,"type":"Cm","name":"wwww"}]
 EOF
 RUN
 
@@ -414,7 +414,7 @@ Csb @ 0x1400160b8
 Cslj
 EOF
 EXPECT=<<EOF
-[{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"8bit","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"8bit","ascii":true}]
+[{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"ascii","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"ascii","ascii":true}]
 EOF
 RUN
 
@@ -480,7 +480,7 @@ Cslj
 EOF
 EXPECT=<<EOF
 [{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtwqENCg==","enc":"utf16le","ascii":false}]
-[{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"8bit","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"ascii","ascii":true}]
 [{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtwqENCg==","enc":"utf16le","ascii":false}]
 [{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtwqENCg==","enc":"utf16le","ascii":false}]
 EOF

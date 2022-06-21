@@ -18,10 +18,12 @@ typedef enum {
 typedef enum {
 	RZ_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
 	RZ_STRING_ENC_UTF8 = '8',
+	RZ_STRING_ENC_MUTF8 = 'm', // modified utf8
 	RZ_STRING_ENC_UTF16LE = 'u',
 	RZ_STRING_ENC_UTF32LE = 'U',
 	RZ_STRING_ENC_UTF16BE = 'n',
 	RZ_STRING_ENC_UTF32BE = 'N',
+	RZ_STRING_ENC_BASE64 = '6',
 	RZ_STRING_ENC_IBM037 = 'c',
 	RZ_STRING_ENC_IBM290 = 'd',
 	RZ_STRING_ENC_EBCDIC_UK = 'k',
@@ -66,6 +68,7 @@ typedef int (*RzStrRangeCallback)(void *, int);
 #define RZ_STR_DUP(x)        ((x) ? strdup((x)) : NULL)
 #define rz_str_array(x, y)   ((y >= 0 && y < (sizeof(x) / sizeof(*x))) ? x[y] : "")
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc);
+RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *enc);
 RZ_API char *rz_str_repeat(const char *ch, int sz);
 RZ_API const char *rz_str_pad(const char ch, int len);
 RZ_API const char *rz_str_rstr(const char *base, const char *p);
