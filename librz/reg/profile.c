@@ -61,12 +61,13 @@ static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
 			def->arena_type = def->type;
 		}
 	}
-	free(s);
+	bool res = true;
 	if (def->type < 0 || def->arena_type < 0) {
 		RZ_LOG_WARN("Illegal type appreviation \"%s\"\n", s);
-		return false;
+		res = false;
 	}
-	return true;
+	free(s);
+	return res;
 }
 
 /**
