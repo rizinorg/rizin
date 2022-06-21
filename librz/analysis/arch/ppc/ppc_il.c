@@ -57,12 +57,11 @@ bool ppc_is_x_form(ut32 insn_id) {
 	}
 }
 
-ut32 ppc_get_mem_acc_size(ut32 insn_id) {
+st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	switch (insn_id) {
 	default:
-		rz_warn_if_reached();
-		RZ_LOG_WARN("Memory access size for instruction %d requested. But it is not in the switch case.\n", insn_id);
-		return 0;
+		RZ_LOG_INFO("Memory access size for instruction %d requested. But it is not in the switch case.\n", insn_id);
+		return -1;
 	case PPC_INS_LI:
 	case PPC_INS_LIS:
 		return 0; // Don't read from mem.

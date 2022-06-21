@@ -98,7 +98,7 @@ RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpB
 RZ_OWN RzILOpEffect *cmp_set_cr(RZ_BORROW RzILOpPure *left, RZ_BORROW RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode);
 
 bool ppc_is_x_form(ut32 insn_id);
-ut32 ppc_get_mem_acc_size(ut32 insn_id);
+st32 ppc_get_mem_acc_size(ut32 insn_id);
 bool ppc_updates_ra_with_ea(ut32 insn_id);
 bool ppc_is_algebraic(ut32 insn_id);
 bool ppc_sets_lr(ut32 insn_id);

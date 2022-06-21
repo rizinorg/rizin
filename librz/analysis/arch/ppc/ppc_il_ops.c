@@ -24,6 +24,10 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	RzILOpPure *ea;
 	RzILOpPure *into_rt;
 
+	if (mem_acc_size < 0) {
+		NOT_IMPLEMENTED;
+	}
+
 	// How to read instruction ids:
 	// Letter			Meaning
 	// L 				Load
@@ -168,8 +172,14 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	RzILOpPure *ea;
 	RzILOpEffect *store;
 
+	if (mem_acc_size < 0) {
+		NOT_IMPLEMENTED;
+	}
+
 	// EXEC
 	switch (id) {
+	default:
+		NOT_IMPLEMENTED;
 	case PPC_INS_STB:
 	case PPC_INS_STH:
 	case PPC_INS_STW:
@@ -241,8 +251,8 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	}
 
 	// WRITE
-	rz_return_val_if_fail(ea, NULL);
-	RzILOpEffect *update = update_ra ? SETG(rA, DUP(ea)) : NOP;
+	rz_return_val_if_fail(store, NULL);
+	RzILOpEffect *update = update_ra ? SETG(rA, DUP(ea)) : EMPTY();
 	return SEQ2(store, update);
 }
 
