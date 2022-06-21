@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_list.h>
 #include <rz_reg.h>
 #include <rz_util.h>
 
@@ -73,10 +74,15 @@ RZ_API const char *rz_reg_get_name_by_type(RzReg *reg, const char *alias_name) {
 	return (n != -1) ? rz_reg_get_name(reg, n) : NULL;
 }
 
+/**
+ * \brief Returns the register type for the given type abbreviation.
+ *
+ * \param str The type abbreviation (gpr, flg, sys etc.)
+ * \return int The register type or -1 on failure.
+ */
 RZ_API int rz_reg_type_by_name(const char *str) {
 	rz_return_val_if_fail(str, -1);
-	int i;
-	for (i = 0; i < RZ_REG_TYPE_LAST && types[i]; i++) {
+	for (ut32 i = 0; i < RZ_REG_TYPE_LAST && types[i]; i++) {
 		if (!strcmp(types[i], str)) {
 			return i;
 		}
@@ -84,6 +90,7 @@ RZ_API int rz_reg_type_by_name(const char *str) {
 	if (!strcmp(str, "all")) {
 		return RZ_REG_TYPE_ANY;
 	}
+	RZ_LOG_WARN("No register type for type abbreviation \"%s\".\n", str);
 	return -1;
 }
 
@@ -129,7 +136,7 @@ RZ_API int rz_reg_get_name_idx(const char *type) {
 	return -1;
 }
 
-RZ_API bool rz_reg_set_name(RzReg *reg, int role, const char *name) {
+RZ_API bool rz_reg_set_name(RZ_NONNULL RzReg *reg, RzRegisterId role, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(reg && name, false);
 	if (role >= 0 && role < RZ_REG_NAME_LAST) {
 		reg->name[role] = rz_str_dup(reg->name[role], name);
@@ -190,6 +197,10 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	reg->roregs = NULL;
 	RZ_FREE(reg->reg_profile_str);
 	RZ_FREE(reg->reg_profile_cmt);
+	rz_list_free(reg->reg_profile.alias);
+	rz_list_free(reg->reg_profile.defs);
+	reg->reg_profile.alias = 0;
+	reg->reg_profile.defs = 0;
 
 	for (i = 0; i < RZ_REG_NAME_LAST; i++) {
 		if (reg->name[i]) {

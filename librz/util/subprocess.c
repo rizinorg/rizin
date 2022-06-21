@@ -554,7 +554,7 @@ static void handle_sigchld(int sig) {
 	rz_xwrite(sigchld_pipe[1], &b, 1);
 }
 
-static RzThreadFunctionRet sigchld_th(RzThread *th) {
+static void *sigchld_th(void *th) {
 	while (true) {
 		ut8 b;
 		ssize_t rd = read(sigchld_pipe[0], &b, 1);
@@ -601,7 +601,7 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 			subprocess_unlock();
 		}
 	}
-	return RZ_TH_STOP;
+	return NULL;
 }
 
 RZ_API bool rz_subprocess_init(void) {
@@ -615,7 +615,7 @@ RZ_API bool rz_subprocess_init(void) {
 		rz_th_lock_free(subprocs_mutex);
 		return false;
 	}
-	sigchld_thread = rz_th_new(sigchld_th, NULL, 0);
+	sigchld_thread = rz_th_new(sigchld_th, NULL);
 	if (!sigchld_thread) {
 		rz_sys_pipe_close(sigchld_pipe[0]);
 		rz_sys_pipe_close(sigchld_pipe[1]);

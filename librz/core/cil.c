@@ -59,6 +59,20 @@ RZ_API void rz_core_analysis_esil_reinit(RZ_NONNULL RzCore *core) {
 	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, core->offset);
 }
 
+/**
+ * \brief Deinitialize ESIL
+ * \param core RzCore reference
+ */
+RZ_API void rz_core_analysis_esil_deinit(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core && core->analysis);
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (esil) {
+		sdb_reset(esil->stats);
+	}
+	rz_analysis_esil_free(esil);
+	core->analysis->esil = NULL;
+}
+
 static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
 	const char *mode = rz_config_get(core->config, "esil.fillstack");
 	if (mode && *mode && *mode != '0') {
@@ -216,11 +230,20 @@ RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core) {
 	return;
 }
 
-RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, ut64 addr, ut32 size) {
+/**
+ * \brief Remove ESIL VM stack
+ * \param core RzCore reference
+ * \param name Optional name of the memory stack region. If NULL, a name is computed automatically based on \p addr
+ *             and \p size
+ * \param addr Base address of the stack region, if UT64_MAX it is automatically computed
+ * \param size Size of the stack region, if UT32_MAX it is automatically computed
+ */
+RZ_API void rz_core_analysis_esil_init_mem_del(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size) {
+	rz_return_if_fail(core && core->analysis);
 	rz_core_analysis_esil_init(core);
 	RzAnalysisEsil *esil = core->analysis->esil;
 	char *stack_name = get_esil_stack_name(core, name, &addr, &size);
-	if (esil->stack_fd > 2) { // 0, 1, 2 are reserved for stdio/stderr
+	if (esil && esil->stack_fd > 2) { // 0, 1, 2 are reserved for stdio/stderr
 		rz_io_fd_close(core->io, esil->stack_fd);
 		// no need to kill the maps, rz_io_map_cleanup does that for us in the close
 		esil->stack_fd = 0;
@@ -231,7 +254,6 @@ RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, u
 	rz_flag_unset_name(core->flags, "aeim.stack");
 	sdb_unset(core->sdb, "aeim.fd", 0);
 	free(stack_name);
-	return;
 }
 
 /**

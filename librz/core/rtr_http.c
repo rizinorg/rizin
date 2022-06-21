@@ -489,24 +489,23 @@ the_end : {
 }
 
 #if 0
-static RzThreadFunctionRet rz_core_rtr_http_thread (RzThread *th) {
-	if (!th) {
-		return false;
-	}
-	HttpThread *ht = th->user;
+static void *rz_core_rtr_http_thread (HttpThread *ht) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	int ret = rz_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
-	RZ_FREE (ht->path);
-	if (ret) {
-		int p = rz_config_get_i (ht->core->config, "http.port");
-		rz_config_set_i (ht->core->config, "http.port",  p + 1);
-		if (p >= rz_config_get_i (ht->core->config, "http.maxport")) {
-			return RZ_TH_STOP;
+	int ret = 0;
+	do {
+		ret = rz_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
+		RZ_FREE (ht->path);
+		if (ret) {
+			int p = rz_config_get_i (ht->core->config, "http.port");
+			rz_config_set_i (ht->core->config, "http.port",  p + 1);
+			if (p >= rz_config_get_i (ht->core->config, "http.maxport")) {
+				break;
+			}
 		}
-	}
-	return ret ? RZ_TH_REPEAT : RZ_TH_STOP;
+	} while(ret);
+	return NULL;
 }
 #endif
 
@@ -546,11 +545,8 @@ RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *pa
 			ht->launch = launch;
 			ht->browse = browse;
 			ht->path = strdup (tpath);
-			httpthread = rz_th_new (rz_core_rtr_http_thread, ht, false);
-			if (httpthread) {
-				rz_th_setname (httpthread, "httpthread");
-			}
-			rz_th_start (httpthread, true);
+			httpthread = rz_th_new ((RzThreadFunction)rz_core_rtr_http_thread, ht);
+			rz_th_setname (httpthread, "httpthread");
 			eprintf ("Background http server started.\n");
 		}
 		return 0;

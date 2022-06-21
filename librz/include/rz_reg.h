@@ -92,17 +92,39 @@ typedef enum {
 #define RZ_REG_COND_LE   12
 #define RZ_REG_COND_LAST 13
 
+typedef struct {
+	RzRegisterId role; ///< Register role (PC, Argument etc.)
+	char *alias; ///< Alias of register.
+	char *reg_name; ///< Real register name of alias.
+} RzRegProfileAlias;
+
+typedef struct {
+	RzRegisterType type; ///< Reg type.
+	RzRegisterType arena_type; ///< The arena the register belongs to (e.g. flags belong to gpr; xmm into fpu).
+	char *name; ///< Register name.
+	ut32 size; ///< Register size in bits.
+	ut32 packed; ///< Packet size of register in tes.
+	ut32 offset; ///< Offset into profile in bits.
+	char *comment; ///< Comment about register.
+	char *flags; ///< String describing the flags of the register.
+} RzRegProfileDef;
+
+typedef struct {
+	RzList /* RzRegProfileAlias */ *alias;
+	RzList /* RzRegProfileDef */ *defs;
+} RzRegProfile;
+
 typedef struct rz_reg_item_t {
 	char *name;
-	int /*RzRegisterType*/ type;
-	int size; /* 8,16,32,64 ... 128/256 ??? */
-	int offset; /* offset in data structure */
-	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
-	bool is_float;
+	RzRegisterType type; ///< Register type.
+	int size; ///< in bits> 8,16,32,64 ... 128/256
+	int offset; ///< Offset into register profile in bits.
+	int packed_size; ///< 0 means no packed register, 1byte pack, 2b pack...
+	bool is_float; ///< Flag for float registers.
 	char *flags;
-	char *comment;
-	int index;
-	int arena; /* in which arena is this reg living */
+	char *comment; ///< Comment to register.
+	int index; ///< Index in register profile.
+	int arena; ///< In which arena is this reg living. Usually equals type.
 } RzRegItem;
 
 typedef struct rz_reg_arena_t {
@@ -112,17 +134,18 @@ typedef struct rz_reg_arena_t {
 
 typedef struct rz_reg_set_t {
 	RzRegArena *arena;
-	RzList *pool; /* RzRegArena */
-	RzList *regs; /* RzRegItem */
-	HtPP *ht_regs; /* name:RzRegItem */
+	RzList *pool; ///< RzRegArena
+	RzList *regs; ///< RzRegItem
+	HtPP *ht_regs; ///< name:RzRegItem
 	RzListIter *cur;
-	int maskregstype; /* which type of regs have this reg set (logic mask with RzRegisterType  RZ_REG_TYPE_XXX) */
+	int maskregstype; ///< which type of regs has this register set (logic mask with 1 << RZ_REG_TYPE_XXX)
 } RzRegSet;
 
 typedef struct rz_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
 	char *reg_profile_str;
+	RzRegProfile reg_profile;
 	char *name[RZ_REG_NAME_LAST]; // aliases
 	RzRegSet regset[RZ_REG_TYPE_LAST];
 	RzList *allregs;
@@ -148,9 +171,10 @@ typedef struct rz_reg_flags_t {
 RZ_API void rz_reg_free(RzReg *reg);
 RZ_API void rz_reg_free_internal(RzReg *reg, bool init);
 RZ_API RzReg *rz_reg_new(void);
-RZ_API bool rz_reg_set_name(RzReg *reg, int role, const char *name);
-RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *profile);
+RZ_API bool rz_reg_set_name(RZ_NONNULL RzReg *reg, RzRegisterId role, RZ_NONNULL const char *name);
+RZ_API bool rz_reg_set_profile_string(RZ_NONNULL RzReg *reg, RZ_NONNULL const char *profile);
 RZ_API char *rz_reg_profile_to_cc(RzReg *reg);
+RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg);
 RZ_API bool rz_reg_set_profile(RzReg *reg, const char *profile);
 RZ_API char *rz_reg_parse_gdb_profile(const char *profile);
 RZ_API bool rz_reg_is_readonly(RzReg *reg, RzRegItem *item);

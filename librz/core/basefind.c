@@ -37,6 +37,11 @@ typedef struct basefind_thread_data_t {
 	BaseFindArray *array;
 } BaseFindThreadData;
 
+typedef struct basefind_thread_cons_t {
+	bool progress;
+	RzThreadPool *pool;
+} BaseFindThreadCons;
+
 static RzBinFile *basefind_new_bin_file(RzCore *core) {
 	// Copied from cbin.c -> rz_core_bin_whole_strings_print
 	// TODO: manually creating an RzBinFile like this is a hack and abuse of RzBin API
@@ -200,8 +205,7 @@ static int basefind_score_compare(const RzBaseFindScore *a, const RzBaseFindScor
 	return 1;
 }
 
-static RzThreadFunctionRet basefind_thread_runner(RzThread *th) {
-	BaseFindThreadData *bftd = (BaseFindThreadData *)rz_th_get_user(th);
+static void *basefind_thread_runner(BaseFindThreadData *bftd) {
 	RzBaseFindScore *pair = NULL;
 	BaseFindData bfd;
 	ut64 base;
@@ -240,17 +244,57 @@ static RzThreadFunctionRet basefind_thread_runner(RzThread *th) {
 		RZ_LOG_DEBUG("basefind: possible candidate at 0x%016" PFMT64x " with score of %u\n", base, bfd.score);
 		rz_th_lock_leave(bftd->lock);
 	}
+	bftd->current = base;
 
-	return RZ_TH_STOP;
+	return NULL;
+}
+
+// this thread does not care about thread-safety since it only prints
+// data that will always be available during its lifetime.
+static void *basefind_thread_cons(BaseFindThreadCons *th_cons) {
+	bool progress = th_cons->progress;
+	RzThreadPool *pool = th_cons->pool;
+	size_t pool_size = rz_th_pool_size(pool);
+	rz_cons_flush();
+	int begin_line = rz_cons_get_cur_line();
+	do {
+		if (progress) {
+			rz_cons_gotoxy(1, begin_line);
+			for (ut32 i = 0; i < pool_size; ++i) {
+				RzThread *th = rz_th_pool_get_thread(pool, i);
+				if (!th) {
+					continue;
+				}
+				BaseFindThreadData *bftd = rz_th_get_user(th);
+				ut32 perc = ((bftd->current - bftd->base_start) * 100) / (bftd->base_end - bftd->base_start);
+				if (perc > 100) {
+					perc = 100;
+				}
+				rz_cons_printf("basefind: thread %u: 0x%08" PFMT64x " / 0x%08" PFMT64x " %u%%\n", i, bftd->current, bftd->base_end, perc);
+			}
+			rz_cons_flush();
+			begin_line = rz_cons_get_cur_line() - pool_size;
+		}
+		rz_sys_usleep(100000);
+		if (rz_cons_is_breaked()) {
+			rz_th_pool_kill(pool);
+			break;
+		}
+	} while (1);
+	return NULL;
 }
 
 static inline bool create_thread_interval(RzThreadPool *pool, BaseFindThreadData *bfd) {
-	RzThread *thread = rz_th_new(basefind_thread_runner, bfd, 0);
+	RzThread *thread = rz_th_new((RzThreadFunction)basefind_thread_runner, bfd);
 	if (!thread) {
-		RZ_LOG_ERROR("basefind: cannot allocate BaseFindData\n");
+		RZ_LOG_ERROR("basefind: cannot allocate RzThread\n");
+		return false;
+	} else if (!rz_th_pool_add_thread(pool, thread)) {
+		RZ_LOG_ERROR("basefind: cannot add thread to pool\n");
+		rz_th_free(thread);
 		return false;
 	}
-	return rz_th_pool_add_thread(pool, thread);
+	return true;
 }
 
 /**
@@ -275,7 +319,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 	HtUU *pointers = NULL;
 	ut64 base_start = 0, base_end = 0, base_inc = 0;
 	ut32 score_min = 0;
-	size_t max_threads = 0;
+	size_t max_threads = 0, pool_size = 1;
 	RzThreadPool *pool = NULL;
 	RzThreadLock *lock = NULL;
 	bool progress = false;
@@ -330,9 +374,10 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 
 	pool = rz_th_pool_new(max_threads);
 	if (!pool) {
-		RZ_LOG_ERROR("basefind: cannot thread pool.\n");
+		RZ_LOG_ERROR("basefind: cannot allocate thread pool.\n");
 		goto rz_basefind_end;
 	}
+	pool_size = rz_th_pool_size(pool);
 
 	lock = rz_th_lock_new(false);
 	if (!lock) {
@@ -340,14 +385,15 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 		goto rz_basefind_end;
 	}
 
-	RZ_LOG_VERBOSE("basefind: using %u threads\n", (ut32)pool->size);
+	RZ_LOG_VERBOSE("basefind: using %u threads\n", (ut32)pool_size);
 
 	ut64 io_size = rz_io_size(core->io);
-	ut64 sector_size = (((base_end - base_start) + pool->size - 1) / pool->size);
-	for (size_t i = 0; i < pool->size; ++i) {
+	ut64 sector_size = (((base_end - base_start) + pool_size - 1) / pool_size);
+	for (size_t i = 0; i < pool_size; ++i) {
 		BaseFindThreadData *bftd = RZ_NEW(BaseFindThreadData);
 		if (!bftd) {
 			RZ_LOG_ERROR("basefind: cannot allocate BaseFindThreadData.\n");
+			rz_th_pool_kill(pool);
 			goto rz_basefind_end;
 		}
 		bftd->base_inc = base_inc;
@@ -362,41 +408,38 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 		bftd->array = array;
 		if (!create_thread_interval(pool, bftd)) {
 			free(bftd);
+			rz_th_pool_kill(pool);
 			goto rz_basefind_end;
 		}
 	}
-	rz_sys_sleep(1);
 
-	int line = rz_cons_get_cur_line();
-	do {
-		if (progress) {
-			rz_cons_gotoxy(1, line);
-			for (ut32 i = 0; i < pool->size; ++i) {
-				BaseFindThreadData *bftd = rz_th_get_user(pool->threads[i]);
-				ut32 perc = ((bftd->current - bftd->base_start) * 100) / (bftd->base_end - bftd->base_start);
-				if (perc > 100) {
-					perc = 100;
-				}
-				rz_cons_printf("basefind: thread %u: 0x%08" PFMT64x " / 0x%08" PFMT64x " %u%%\n", i, bftd->current, bftd->base_end, perc);
-			}
-			rz_cons_flush();
-		}
-		rz_sys_sleep(1);
-		if (rz_cons_is_breaked()) {
-			RZ_LOG_WARN("basefind: catched CTRL-C. returning scores\n");
-			rz_th_pool_kill(pool, true);
-			break;
-		}
-	} while (!rz_th_pool_wait_async(pool));
+	BaseFindThreadCons th_cons;
+	th_cons.progress = progress;
+	th_cons.pool = pool;
+
+	RzThread *cons_thread = rz_th_new((RzThreadFunction)basefind_thread_cons, &th_cons);
+	if (!cons_thread) {
+		rz_th_pool_kill(pool);
+		goto rz_basefind_end;
+	}
+	rz_th_pool_wait(pool);
+	if (progress) {
+		// ensure to print the 100%
+		rz_sys_usleep(100000);
+	}
+	rz_th_kill(cons_thread);
+	rz_th_free(cons_thread);
 
 	rz_list_sort(scores, (RzListComparator)basefind_score_compare);
 
 rz_basefind_end:
 	if (pool) {
-		for (ut32 i = 0; i < pool->size; ++i) {
-			if (pool->threads[i]) {
-				free(rz_th_get_user(pool->threads[i]));
+		for (ut32 i = 0; i < pool_size; ++i) {
+			RzThread *th = rz_th_pool_get_thread(pool, i);
+			if (!th) {
+				continue;
 			}
+			free(rz_th_get_user(th));
 		}
 		rz_th_pool_free(pool);
 	}
