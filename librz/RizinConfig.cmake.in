@@ -80,7 +80,6 @@ set(_supported_components
 )
 
 get_filename_component(_rizin_cmake_path "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
-list(APPEND CMAKE_PREFIX_PATH "${_rizin_cmake_path}")
 
 foreach(_comp ${Rizin_FIND_COMPONENTS})
   string(TOLOWER ${_comp} _comp_lower)
@@ -94,7 +93,7 @@ foreach(_comp ${Rizin_FIND_COMPONENTS})
     # target below would be an error
     continue()
   endif()
-  find_package(rz_${_comp_lower})
+  find_package(rz_${_comp_lower} PATHS ${_rizin_cmake_path})
   if (NOT rz_${_comp_lower}_FOUND)
     set(Rizin_FOUND False)
     set(Rizin_NOT_FOUND_MESSAGE "Failed to find Rizin component ${_comp}")
