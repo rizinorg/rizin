@@ -346,6 +346,9 @@ const SHOpRaw sh_op_lookup[] = {
 	{ "sts.l", SH_OP_STS, OPCODE(4, N, 1, 2), 0x0f00, SH_SCALING_L, { PARAM(MACL, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
 	{ "sts.l", SH_OP_STS, OPCODE(4, N, 2, 2), 0x0f00, SH_SCALING_L, { PARAM(PR, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
 	{ "trapa", SH_OP_UNIMPL, OPCODE(c, 3, I, I), 0x00ff, SH_SCALING_INVALID, { ADDR(NIB0, SH_IMM_U), NOPARAM } }
+
+	/* floating-point single-precision instructions */
+	// TODO
 };
 
 #undef NOPARAM
