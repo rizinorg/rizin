@@ -541,6 +541,73 @@ static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, co
 	return SEQ5(set_cia, decr_ctr, set_lr, set_nia, JMP(VARL("NIA")));
 }
 
+/**
+ * NOTE: Instructions which set the 'OV' bit are not yet supported by capstone.
+ */
+static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, EMPTY());
+	ut32 id = insn->id;
+
+	// READ
+	const char *rT = cs_reg_name(handle, INSOP(0).reg);
+	const char *rA = cs_reg_name(handle, INSOP(1).reg);
+	const char *rB = cs_reg_name(handle, INSOP(2).reg);
+	st64 sI = INSOP(2).imm;
+	bool set_cr0 = insn->detail->ppc.update_cr0;
+
+	RzILOpPure *op0;
+	RzILOpPure *op1;
+	RzILOpPure *prod;
+
+	// How to read instruction ids:
+	// Letter			Meaning
+	// MUL/DIV 			Multiply/Divide
+	// W/D/LW/HW/LI		Word, Double WOrd, Low word, high word, low immediate
+	// O/U/E			Overflow (not supported), Unsigned, Extended
+
+	if (id == PPC_INS_MULLI) {
+		op0 = VARG(rA);
+		op1 = SA(sI);
+	} else {
+		op0 = VARG(rA);
+		op1 = VARG(rB);
+	}
+	if (!is_d_mul_div(id)) {
+		op0 = CAST(PPC_WORD, IL_FALSE, op0);
+		op1 = CAST(PPC_WORD, IL_FALSE, op1);
+	}
+	if (id == PPC_INS_MULHWU || id == PPC_INS_DIVWU || id == PPC_INS_MULHDU || id == PPC_INS_DIVDU) {
+		op0 = UNSIGNED(128, op0);
+		op1 = UNSIGNED(128, op1);
+	} else {
+		op0 = SIGNED(128, op0);
+		op1 = SIGNED(128, op1);
+	}
+
+	switch (id) {
+	default:
+		NOT_IMPLEMENTED;
+	case PPC_INS_MULHD:
+	case PPC_INS_MULHDU:
+	case PPC_INS_MULHW:
+	case PPC_INS_MULHWU:
+	case PPC_INS_MULLI:
+	case PPC_INS_MULLD:
+	case PPC_INS_MULLW:
+		prod = MUL(op0, op1);
+		break;
+	case PPC_INS_DIVWU:
+	case PPC_INS_DIVW:
+	case PPC_INS_DIVD:
+	case PPC_INS_DIVDU:
+		prod = DIV(op0, op1);
+		break;
+	}
+
+	RzILOpEffect *cr0 = set_cr0 ? cmp_set_cr(VARG(rT), UA(0), true, "cr0", mode) : EMPTY();
+	return SEQ2(SETG(rT, CAST(PPC_ARCH_BITS, IL_FALSE, prod)), cr0);
+}
+
 static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
@@ -884,6 +951,19 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_SUBFME:
 	case PPC_INS_SUBFZE:
 		lop = add_sub_op(handle, insn, false, mode);
+		break;
+	case PPC_INS_DIVD:
+	case PPC_INS_DIVDU:
+	case PPC_INS_DIVW:
+	case PPC_INS_DIVWU:
+	case PPC_INS_MULHD:
+	case PPC_INS_MULHDU:
+	case PPC_INS_MULHW:
+	case PPC_INS_MULHWU:
+	case PPC_INS_MULLD:
+	case PPC_INS_MULLI:
+	case PPC_INS_MULLW:
+		lop = div_mul_op(handle, insn, mode);
 		break;
 	case PPC_INS_LI:
 	case PPC_INS_LIS:
