@@ -637,7 +637,8 @@ RZ_API bool rz_rune_is_printable(const RzRune c) {
 
 #if __WINDOWS__
 RZ_API char *rz_utf16_to_utf8_l(const wchar_t *wc, int len) {
-	if (!wc || len < 1) {
+	// -1 is allowed on purpose.
+	if (!wc || !len || len < -1) {
 		return NULL;
 	}
 	char *rutf8 = NULL;
@@ -656,7 +657,8 @@ RZ_API char *rz_utf16_to_utf8_l(const wchar_t *wc, int len) {
 }
 
 RZ_API wchar_t *rz_utf8_to_utf16_l(const char *cstring, int len) {
-	if (!cstring || len < 1) {
+	// -1 is allowed on purpose.
+	if (!cstring || !len || len < -1) {
 		return NULL;
 	}
 	wchar_t *rutf16 = NULL;
@@ -675,7 +677,8 @@ RZ_API wchar_t *rz_utf8_to_utf16_l(const char *cstring, int len) {
 }
 
 RZ_API char *rz_utf8_to_acp_l(const char *str, int len) {
-	if (!str || len < 1) {
+	// -1 is allowed on purpose.
+	if (!str || !len || len < -1) {
 		return NULL;
 	}
 	char *acp = NULL;
@@ -704,7 +707,8 @@ RZ_API char *rz_utf8_to_acp_l(const char *str, int len) {
 }
 
 RZ_API char *rz_acp_to_utf8_l(const char *str, int len) {
-	if (!str || len < 1) {
+	// -1 is allowed on purpose.
+	if (!str || !len || len < -1) {
 		return NULL;
 	}
 	int wcsize = 0;
