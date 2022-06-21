@@ -363,12 +363,29 @@ RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStr
 			return -1;
 		}
 	}
+
+	RzLibHandler *lib_handler = rz_lib_get_handler(lib, stru->type);
+	if (!lib_handler) {
+		// the handler was not assigned for this type therefore
+		// we skip this library (this happens when not loading
+		// all the plugins types, like rz-bin does).
+		RZ_LOG_DEBUG("rz_lib_open_ptr: no handler was defined for %s with type %d\n", file, stru->type);
+		rz_lib_dl_close(handler);
+		return -1;
+	}
+
 	RzLibPlugin *p = RZ_NEW0(RzLibPlugin);
+	if (!p) {
+		RZ_LOG_ERROR("rz_lib_open_ptr: Cannot allocate RzLibPlugin\n");
+		rz_lib_dl_close(handler);
+		return -1;
+	}
+
 	p->type = stru->type;
 	p->data = stru->data;
 	p->file = strdup(file);
 	p->dl_handler = handler;
-	p->handler = rz_lib_get_handler(lib, p->type);
+	p->handler = lib_handler;
 	p->free = stru->free;
 
 	int ret = rz_lib_run_handler(lib, p, stru);
