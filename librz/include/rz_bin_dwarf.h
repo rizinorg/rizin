@@ -1,6 +1,9 @@
 #ifndef RZ_BIN_DWARF_H
 #define RZ_BIN_DWARF_H
 
+#include <rz_types.h>
+#include <rz_bin.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,8 +33,8 @@ struct rz_bin_source_line_info_builder_t;
 #define DW_LNE_set_address       0x02
 #define DW_LNE_define_file       0x03
 #define DW_LNE_set_discriminator 0x04 /* DWARF4 */
-#define DW_LNE_lo_user           0x80
-#define DW_LNE_hi_user           0xff
+#define DW_LNE_lo_user           0x80 /* DWARF3 */
+#define DW_LNE_hi_user           0xff /* DWARF3 */
 
 /* HP extensions. */
 #define DW_LNE_HP_negate_is_UV_update      0x11 /* 17 HP */
@@ -44,9 +47,6 @@ struct rz_bin_source_line_info_builder_t;
 #define DW_LNE_HP_negate_function_exit     0x18 /* 24 HP */
 #define DW_LNE_HP_negate_front_end_logical 0x19 /* 25 HP */
 #define DW_LNE_HP_define_proc              0x20 /* 32 HP */
-
-#define DW_LNE_lo_user 0x80 /* DWARF3 */
-#define DW_LNE_hi_user 0xff /* DWARF3 */
 
 /* debug_info tags */
 // this is not a real dwarf named entry, but I wanted to give it

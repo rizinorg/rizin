@@ -81,7 +81,6 @@ RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzL
 RZ_API void rz_list_init(RZ_NONNULL RzList *list);
 RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter);
 RZ_API bool rz_list_delete_data(RZ_NONNULL RzList *list, void *ptr);
-RZ_API void rz_list_iter_init(RZ_NONNULL RzListIter *iter, RZ_NONNULL RzList *list);
 RZ_API void rz_list_purge(RZ_NONNULL RzList *list);
 RZ_API void rz_list_free(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN RzListIter *rz_list_item_new(void *data);

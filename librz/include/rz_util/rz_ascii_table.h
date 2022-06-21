@@ -5,6 +5,8 @@
 #ifndef RZ_ASCII_TABLE_H
 #define RZ_ASCII_TABLE_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

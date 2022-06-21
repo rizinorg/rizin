@@ -119,7 +119,6 @@ RZ_API bool rz_lib_add_handler(RzLib *lib, int type, const char *desc, RzLibCall
 RZ_API bool rz_lib_del_handler(RzLib *lib, int type);
 RZ_API int rz_lib_close(RzLib *lib, const char *file);
 
-RZ_API const char *rz_lib_types_get(int idx);
 RZ_API int rz_lib_types_get_i(const char *str);
 #endif
 

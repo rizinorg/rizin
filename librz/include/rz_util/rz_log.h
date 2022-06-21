@@ -1,6 +1,7 @@
 #ifndef RZ_LOG_H
 #define RZ_LOG_H
 
+#include <rz_types.h>
 #include <rz_userconf.h>
 
 #if (defined(_WIN32) || defined(_WIN64)) && !defined(__GNUC__)

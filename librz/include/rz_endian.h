@@ -1,6 +1,8 @@
 #ifndef RZ_ENDIAN_H
 #define RZ_ENDIAN_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

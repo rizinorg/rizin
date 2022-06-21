@@ -2854,8 +2854,6 @@ RZ_API int rz_core_prompt(RzCore *r, int sync) {
 	return true;
 }
 
-extern void rz_core_echo(RzCore *core, const char *input);
-
 RZ_API int rz_core_prompt_exec(RzCore *r) {
 	int ret = rz_core_cmd(r, r->cmdqueue, true);
 	r->rc = r->num->value;

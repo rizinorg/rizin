@@ -1,6 +1,8 @@
 #ifndef RZ_HEX_H
 #define RZ_HEX_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

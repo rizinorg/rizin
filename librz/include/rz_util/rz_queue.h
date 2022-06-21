@@ -1,6 +1,8 @@
 #ifndef RZ_QUEUE_H
 #define RZ_QUEUE_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

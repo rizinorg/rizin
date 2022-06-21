@@ -54,11 +54,10 @@ RZ_API bool rz_lang_add(RzLang *lang, RzLangPlugin *foo);
 RZ_API bool rz_lang_use(RzLang *lang, const char *name);
 RZ_API int rz_lang_run(RzLang *lang, const char *code, int len);
 RZ_API int rz_lang_run_string(RzLang *lang, const char *code);
+RZ_API int rz_lang_run_file(RzLang *lang, const char *file);
 /* TODO: user_ptr must be deprecated */
 RZ_API void rz_lang_set_user_ptr(RzLang *lang, void *user);
 RZ_API bool rz_lang_set_argv(RzLang *lang, int argc, char **argv);
-RZ_API int rz_lang_run(RzLang *lang, const char *code, int len);
-RZ_API int rz_lang_run_file(RzLang *lang, const char *file);
 RZ_API int rz_lang_prompt(RzLang *lang);
 RZ_API void rz_lang_plugin_free(RzLangPlugin *p); // XXX
 RZ_API RzLangPlugin *rz_lang_get_by_name(RzLang *lang, const char *name);

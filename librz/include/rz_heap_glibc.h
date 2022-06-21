@@ -1,6 +1,8 @@
 #ifndef RZ_HEAP_GLIBC_H
 #define RZ_HEAP_GLIBC_H
 
+#include <rz_core.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -333,9 +335,6 @@ RZ_API RzHeapBin *rz_heap_fastbin_content_32(RzCore *core, MallocState *main_are
 
 RZ_API RzHeapBin *rz_heap_bin_content_64(RzCore *core, MallocState *main_arena, int bin_num, ut64 m_arena);
 RZ_API RzHeapBin *rz_heap_bin_content_32(RzCore *core, MallocState *main_arena, int bin_num, ut32 m_arena);
-
-RZ_API RzList *rz_heap_tcache_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena, bool main_thread_only);
-RZ_API RzList *rz_heap_tcache_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena, bool main_thread_only);
 
 RZ_API RzList *rz_heap_chunks_list_wrapper_64(RzCore *core, ut64 m_state);
 RZ_API RzList *rz_heap_chunks_list_wrapper_32(RzCore *core, ut64 m_state);

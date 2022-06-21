@@ -1,6 +1,8 @@
 #ifndef RZ_NUM_H
 #define RZ_NUM_H
 
+#include <rz_list.h>
+
 #define RZ_NUMCALC_STRSZ 1024
 
 #ifdef __cplusplus
@@ -89,7 +91,6 @@ RZ_API int rz_num_to_bits(char *out, ut64 num);
 RZ_API int rz_num_to_trits(char *out, ut64 num); // Rename this please
 RZ_API int rz_num_rand(int max);
 RZ_API void rz_num_irand(void);
-RZ_API ut16 rz_num_ntohs(ut16 foo);
 RZ_API ut64 rz_get_input_num_value(RzNum *num, const char *input_value);
 RZ_API bool rz_is_valid_input_num_value(RzNum *num, const char *input_value);
 RZ_API int rz_num_between(RzNum *num, const char *input_value);

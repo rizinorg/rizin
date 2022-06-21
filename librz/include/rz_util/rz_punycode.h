@@ -1,6 +1,8 @@
 #ifndef RZ_PUNYCODE_H
 #define RZ_PUNYCODE_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

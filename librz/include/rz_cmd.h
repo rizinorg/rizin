@@ -521,7 +521,6 @@ RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
 RZ_API void rz_cmd_batch_start(RzCmd *cmd);
 RZ_API void rz_cmd_batch_end(RzCmd *cmd);
 RZ_API int rz_cmd_add(RzCmd *cmd, const char *command, RzCmdCb callback);
-RZ_API int rz_core_del(RzCmd *cmd, const char *command);
 RZ_API int rz_cmd_call(RzCmd *cmd, const char *command);
 RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args);
 RZ_API RzCmdDesc *rz_cmd_get_root(RzCmd *cmd);

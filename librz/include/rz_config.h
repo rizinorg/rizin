@@ -108,7 +108,6 @@ RZ_API bool rz_config_toggle(RzConfig *cfg, RZ_NONNULL const char *name);
 RZ_API bool rz_config_readonly(RzConfig *cfg, const char *key);
 RZ_API bool rz_config_eval(RzConfig *cfg, const char *str);
 
-RZ_API void rz_config_set_sort_column(char *column);
 RZ_API bool rz_config_set_setter(RzConfig *cfg, const char *key, RzConfigCallback cb);
 RZ_API bool rz_config_set_getter(RzConfig *cfg, const char *key, RzConfigCallback cb);
 
