@@ -483,6 +483,49 @@ bool is_d_mul_div(ut32 id) {
 	return id == PPC_INS_MULHD || id == PPC_INS_MULLD || id == PPC_INS_MULHDU || id == PPC_INS_DIVD || id == PPC_INS_DIVDU;
 }
 
+/**
+ * \brief Assembles the current XER value by combining the values
+ * from the flag registers so, ov, ca, ov32, ca32.
+ *
+ * \param mode The capstone mode.
+ *
+ * \return RZ_OWN* The Pure containing the current XER value.
+ */
+RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode) {
+	RzILOpPure *so = SHIFTL0(EXTZ(VARG("so")), U8(31));
+	RzILOpPure *ov = SHIFTL0(EXTZ(VARG("ov")), U8(30));
+	RzILOpPure *ca = SHIFTL0(EXTZ(VARG("ca")), U8(29));
+	if (IN_64BIT_MODE) {
+		RzILOpPure *ov32 = SHIFTL0(EXTZ(VARG("ov32")), U8(19));
+		RzILOpPure *ca32 = SHIFTL0(EXTZ(VARG("ca32")), U8(18));
+		return LOGOR(LOGOR(LOGOR(LOGOR(so, ov), ca), ov32), ca32);
+	}
+	return LOGOR(LOGOR(so, ov), ca);
+}
+
+/**
+ * \brief Sets the XER register to \p val and sets the flag register so, ov, ca, ov32, ca32 accordingly.
+ *
+ * \param val The new value of XER.
+ * \param mode The capstone mode.
+ * \return RZ_OWN* The sequence of effects setting all registers to their respective values.
+ */
+RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode) {
+	RzILOpPure *v = UNSIGNED(64, val);
+	if (IN_64BIT_MODE) {
+		return SEQ6(SETG("xer", v),
+			SETG("so", BIT_IS_SET(DUP(v), 64, U8(32))),
+			SETG("ov", BIT_IS_SET(DUP(v), 64, U8(33))),
+			SETG("ca", BIT_IS_SET(DUP(v), 64, U8(34))),
+			SETG("ov32", BIT_IS_SET(DUP(v), 64, U8(44))),
+			SETG("ca32", BIT_IS_SET(DUP(v), 64, U8(45))));
+	}
+	return SEQ4(SETG("xer", v),
+		SETG("so", BIT_IS_SET(DUP(v), 64, U8(32))),
+		SETG("ov", BIT_IS_SET(DUP(v), 64, U8(33))),
+		SETG("ca", BIT_IS_SET(DUP(v), 64, U8(34))));
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 //

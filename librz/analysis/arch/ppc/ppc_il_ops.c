@@ -615,6 +615,11 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	const char *rS = cs_reg_name(handle, INSOP(0).reg);
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
 	const char *spr_name;
+	// Some registers need to assemble the value before it is read or written (e.g. XER with all its bits).
+	// Leave it NULL if the value of the SPR or RS should be used.
+	RzILOpEffect *set_val = NULL;
+	// Size of the value written to the target register (SPR or RT)
+	ut32 size = PPC_ARCH_BITS;
 
 	switch (id) {
 	default:
@@ -654,6 +659,104 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTCTR:
 		spr_name = "ctr";
 		break;
+	case PPC_INS_MFSPR:
+	case PPC_INS_MTSPR:;
+		ut32 spr = INSOP(1).imm;
+		switch (spr) {
+		default:
+			if (spr & 1) {
+				// Invoke system privileged instruction error handler
+			} else {
+				// Invoke illegal instruction handler
+			}
+			NOT_IMPLEMENTED;
+		case 808:
+		case 809:
+		case 810:
+		case 811:
+			// Reserved. Treated as No-ops
+			NOT_IMPLEMENTED;
+		case 1:
+			if (id == PPC_INS_MTSPR) {
+				return ppc_set_xer(VARG(rS), mode);
+			}
+			spr_name = "xer";
+			set_val = SETL("val", ppc_get_xer(mode));
+			break;
+		case 3:
+			spr_name = "dscr";
+			break;
+		case 8:
+			spr_name = "lr";
+			break;
+		case 9:
+			spr_name = "ctr";
+			break;
+		case 13:
+			spr_name = "amr";
+			break;
+		case 256:
+			spr_name = "vrsave";
+			break;
+		case 769:
+			spr_name = "mmcr2";
+			break;
+		case 770:
+			spr_name = "mmcra";
+			break;
+		case 771:
+			spr_name = "pmc1";
+			break;
+		case 772:
+			spr_name = "pmc2";
+			break;
+		case 773:
+			spr_name = "pmc3";
+			break;
+		case 774:
+			spr_name = "pmc4";
+			break;
+		case 775:
+			spr_name = "pmc5";
+			break;
+		case 776:
+			spr_name = "pmc6";
+			break;
+		case 779:
+			spr_name = "mmcr0";
+			break;
+		case 800:
+			spr_name = "bescrs";
+			break;
+		case 801:
+			spr_name = "bescrsu";
+			break;
+		case 802:
+			spr_name = "bescrr";
+			break;
+		case 803:
+			spr_name = "bescrru";
+			break;
+		case 804:
+			spr_name = "ebbhr";
+			break;
+		case 805:
+			spr_name = "ebbrr";
+			break;
+		case 806:
+			spr_name = "bescr";
+			break;
+		case 815:
+			spr_name = "tar";
+			break;
+		case 896:
+			spr_name = "ppr";
+			break;
+		case 898:
+			spr_name = "ppr32";
+			break;
+		}
+		break;
 	// WRITE/READ only
 	case PPC_INS_MTFSB0:
 	case PPC_INS_MTFSB1:
@@ -663,8 +766,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTMSRD:
 	case PPC_INS_MFTB:
 	case PPC_INS_MTCRF:
-	case PPC_INS_MFSPR:
-	case PPC_INS_MTSPR:
 	case PPC_INS_MFRTCU:
 	case PPC_INS_MFRTCL:
 		NOT_IMPLEMENTED;
@@ -736,7 +837,10 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTTCR:
 		NOT_IMPLEMENTED;
 	}
-	return ppc_moves_to_spr(id) ? SETG(spr_name, VARG(rS)) : SETG(rT, VARG(spr_name));
+	if (set_val) {
+		return ppc_moves_to_spr(id) ? SETG(spr_name, UNSIGNED(size, VARL("val"))) : SETG(rT, UNSIGNED(size, VARL("val")));
+	}
+	return ppc_moves_to_spr(id) ? SETG(spr_name, UNSIGNED(size, VARG(rS))) : SETG(rT, UNSIGNED(size, VARG(spr_name)));
 }
 
 /**
