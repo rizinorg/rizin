@@ -5974,13 +5974,35 @@ RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_
 	return ret;
 }
 
-RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
+typedef struct rz_analysis_disasm_result_t {
+	ut64 offset;
+	ut64 oplen;
+	char *bytes;
+	char *type;
+	char *opcode;
+	char *disasm;
+	const char *esil;
+	RzAnalysisOp *op;
+	RzAnalysisFunction *fn;
+} RzAnalysisDisasmResult;
+
+RZ_API void rz_analysis_disasm_result_free(void *p) {
+	if (!p) {
+		return;
+	}
+	RzAnalysisDisasmResult *r = p;
+	free(r->bytes);
+	free(r->type);
+	free(r->opcode);
+	free(r->disasm);
+	rz_analysis_op_free(r->op);
+	free(r);
+}
+
+RZ_API RzList *rz_core_disasm(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes) {
 	RzAsmOp asmop;
-	RzDisasmState *ds;
-	RzAnalysisFunction *f;
 	int i, j, k, ret, line;
 	ut64 old_offset = core->offset;
-	ut64 at;
 	int dis_opcodes = 0;
 	int limit_by = 'b';
 	char str[512];
@@ -5998,12 +6020,12 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 			nb_opcodes = -nb_opcodes;
 
 			if (nb_opcodes > 0xffff) {
-				eprintf("Too many backward instructions\n");
+				RZ_LOG_ERROR("too many backward instructions\n");
 				return false;
 			}
 
 			if (rz_core_prevop_addr(core, core->offset, nb_opcodes, &addr)) {
-				nbytes = old_offset - addr;
+				nbytes = (int)(old_offset - addr);
 			} else if (!rz_core_asm_bwdis_len(core, &nbytes, &addr, nb_opcodes)) {
 				/* workaround to avoid empty arrays */
 #define BWRETRY 0
@@ -6011,7 +6033,6 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 				nb_opcodes++;
 				if (!rz_core_asm_bwdis_len(core, &nbytes, &addr, nb_opcodes)) {
 #endif
-					pj_end(pj);
 					return false;
 #if BWRETRY
 				}
@@ -6054,21 +6075,22 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	// i = number of bytes
 	// j = number of instructions
 	// k = delta from addr
-	ds = ds_init(core);
-	bool result = false;
+	RzDisasmState *ds = ds_init(core);
+	RzList *result = rz_list_newf(rz_analysis_disasm_result_free);
 
 	for (;;) {
+		RzAnalysisDisasmResult *r = RZ_NEW0(RzAnalysisDisasmResult);
 		bool end_nbopcodes, end_nbbytes;
 		int skip_bytes_flag = 0, skip_bytes_bb = 0;
 
-		at = addr + k;
+		r->offset = addr + k;
 		ds->hint = rz_core_hint_begin(core, ds->hint, ds->at);
-		rz_asm_set_pc(core->rasm, at);
+		rz_asm_set_pc(core->rasm, r->offset);
 		// 32 is the biggest opcode length in intel
 		// Make sure we have room for it
 		if (dis_opcodes == 1 && i >= nb_bytes - 32) {
 			// Read another nb_bytes bytes into buf from current offset
-			rz_io_read_at(core->io, at, buf, nb_bytes);
+			rz_io_read_at(core->io, r->offset, buf, nb_bytes);
 			i = 0;
 		}
 
@@ -6082,18 +6104,12 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		memset(&asmop, 0, sizeof(RzAsmOp));
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, nb_bytes - i);
 		if (ret < 1) {
-			char *hex = rz_asm_op_get_hex(&asmop);
-			pj_o(pj);
-			pj_kn(pj, "offset", at);
-			pj_ki(pj, "size", 1);
-			pj_ks(pj, "bytes", hex);
-			pj_ks(pj, "type", "invalid");
-			pj_end(pj);
+			r->bytes = rz_asm_op_get_hex(&asmop);
+			r->type = strdup("invalid");
+			rz_list_append(result, r);
 			i++;
 			k++;
 			j++;
-			result = true;
-			free(hex);
 			continue;
 		}
 
@@ -6101,8 +6117,8 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		rz_str_ncpy(opstr, rz_asm_op_get_asm(&asmop), sizeof(opstr) - 1);
 
 		ds->has_description = false;
-		rz_analysis_op_fini(&ds->analysis_op);
-		rz_analysis_op(core->analysis, &ds->analysis_op, at, buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_ALL);
+		r->op = rz_analysis_op_new();
+		rz_analysis_op(core->analysis, r->op, r->offset, buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_ALL);
 
 		if (ds->pseudo) {
 			char *tmp = rz_parse_pseudocode(core->parser, opstr);
@@ -6111,22 +6127,21 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 			}
 			free(tmp);
 		}
+		r->opcode = strdup(opstr);
 
-		// f = rz_analysis_get_fcn_in (core->analysis, at,
-		f = fcnIn(ds, at, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM | RZ_ANALYSIS_FCN_TYPE_LOC);
-		if (ds->subvar && f) {
+		r->fn = fcnIn(ds, r->offset, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM | RZ_ANALYSIS_FCN_TYPE_LOC);
+		if (ds->subvar && r->fn) {
 			int ba_len = rz_strbuf_length(&asmop.buf_asm) + 128;
 			char *ba = malloc(ba_len);
 			if (ba) {
 				strcpy(ba, rz_asm_op_get_asm(&asmop));
-				rz_parse_subvar(core->parser, f, &ds->analysis_op,
+				rz_parse_subvar(core->parser, r->fn, &ds->analysis_op,
 					ba, ba, ba_len);
 				rz_asm_op_set_asm(&asmop, ba);
 				free(ba);
 			}
 		}
 		ds->oplen = rz_asm_op_get_size(&asmop);
-		ds->at = at;
 		skip_bytes_flag = handleMidFlags(core, ds, false);
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB(core, ds);
@@ -6137,6 +6152,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		if (skip_bytes_bb && skip_bytes_bb < ret) {
 			ds->oplen = skip_bytes_bb;
 		}
+		r->oplen = ds->oplen;
 		{
 			ut64 killme = UT64_MAX;
 			bool be = core->print->big_endian;
@@ -6146,58 +6162,94 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		}
 		{
 			char *aop = rz_asm_op_get_asm(&asmop);
-			char *buf = malloc(strlen(aop) + 128);
-			if (buf) {
-				strcpy(buf, aop);
-				buf = ds_sub_jumps(ds, buf);
-				rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, buf,
+			char *aop_buf = malloc(strlen(aop) + 128);
+			if (aop_buf) {
+				strcpy(aop_buf, aop);
+				aop_buf = ds_sub_jumps(ds, aop_buf);
+				rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, aop_buf,
 					str, sizeof(str) - 1, core->print->big_endian);
 				str[sizeof(str) - 1] = '\0';
-				rz_asm_op_set_asm(&asmop, buf);
-				free(buf);
+				rz_asm_op_set_asm(&asmop, aop_buf);
+				free(aop_buf);
 			}
 		}
+		r->esil = RZ_STRBUF_SAFEGET(&r->op->esil);
+		r->disasm = strdup(str);
+		r->bytes = rz_asm_op_get_hex(&asmop);
 
-		pj_o(pj);
-		pj_kn(pj, "offset", at);
-		if (ds->analysis_op.ptr != UT64_MAX) {
-			pj_kn(pj, "ptr", ds->analysis_op.ptr);
+		i += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign); // bytes
+		k += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign); // delta from addr
+		j++; // instructions
+		line++;
+
+		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line >= nb_opcodes;
+		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i >= nb_bytes;
+		rz_list_append(result, r);
+		if (end_nbopcodes || end_nbbytes) {
+			break;
 		}
-		if (ds->analysis_op.val != UT64_MAX) {
-			pj_kn(pj, "val", ds->analysis_op.val);
+	}
+	core->offset = old_offset;
+	rz_analysis_op_fini(&ds->analysis_op);
+	ds_free(ds);
+	return result;
+}
+
+RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
+	RzList *list = rz_core_disasm(core, addr, buf, nb_bytes, nb_opcodes);
+	if (!list) {
+		return false;
+	}
+	RzListIter *iter;
+	RzAnalysisDisasmResult *r;
+	rz_list_foreach (list, iter, r) {
+		pj_o(pj);
+		pj_kn(pj, "offset", r->offset);
+		if (!r->op) {
+			pj_ki(pj, "size", 1);
+			pj_ks(pj, "bytes", r->bytes);
+			pj_ks(pj, "type", "invalid");
+			continue;
+		}
+
+		RzAnalysisOp *op = r->op;
+		if (op->ptr != UT64_MAX) {
+			pj_kn(pj, "ptr", op->ptr);
+		}
+		if (op->val != UT64_MAX) {
+			pj_kn(pj, "val", op->val);
 		}
 		pj_k(pj, "esil"); // split key and value to allow empty strings
-		pj_s(pj, RZ_STRBUF_SAFEGET(&ds->analysis_op.esil));
-		pj_kb(pj, "refptr", ds->analysis_op.refptr);
+		pj_s(pj, r->esil);
+
+		pj_kb(pj, "refptr", op->refptr);
+
+		RzAnalysisFunction *f = r->fn;
 		pj_kn(pj, "fcn_addr", f ? f->addr : 0);
-		pj_kn(pj, "fcn_last", f ? rz_analysis_function_max_addr(f) - ds->oplen : 0);
-		pj_ki(pj, "size", ds->analysis_op.size);
-		pj_ks(pj, "opcode", opstr);
-		pj_ks(pj, "disasm", str);
-		{
-			char *hex = rz_asm_op_get_hex(&asmop);
-			pj_ks(pj, "bytes", hex);
-			free(hex);
-		}
-		pj_ks(pj, "family", rz_analysis_op_family_to_string(ds->analysis_op.family));
-		pj_ks(pj, "type", rz_analysis_optype_to_string(ds->analysis_op.type));
+		pj_kn(pj, "fcn_last", f ? rz_analysis_function_max_addr(f) - r->oplen : 0);
+		pj_ki(pj, "size", op->size);
+		pj_ks(pj, "opcode", r->opcode);
+		pj_ks(pj, "disasm", r->disasm);
+		pj_ks(pj, "bytes", r->bytes);
+		pj_ks(pj, "family", rz_analysis_op_family_to_string(op->family));
+		pj_ks(pj, "type", rz_analysis_optype_to_string(op->type));
 		// indicate a relocated address
-		RzBinReloc *rel = rz_core_getreloc(core, ds->at, ds->analysis_op.size);
+		RzBinReloc *rel = rz_core_getreloc(core, r->offset, op->size);
 		// reloc is true if address in reloc table
 		pj_kb(pj, "reloc", rel);
 		// wanted the numerical values of the type information
-		pj_kn(pj, "type_num", (ut64)(ds->analysis_op.type & UT64_MAX));
-		pj_kn(pj, "type2_num", (ut64)(ds->analysis_op.type2 & UT64_MAX));
+		pj_kn(pj, "type_num", (ut64)(op->type & UT64_MAX));
+		pj_kn(pj, "type2_num", (ut64)(op->type2 & UT64_MAX));
 		// handle switch statements
-		if (ds->analysis_op.switch_op && rz_list_length(ds->analysis_op.switch_op->cases) > 0) {
+		if (op->switch_op && rz_list_length(op->switch_op->cases) > 0) {
 			// XXX - the java caseop will still be reported in the assembly,
 			// this is an artifact to make ensure the disassembly is properly
 			// represented during the analysis
-			RzListIter *iter;
+			RzListIter *iter2;
 			RzAnalysisCaseOp *caseop;
 			pj_k(pj, "switch");
 			pj_a(pj);
-			rz_list_foreach (ds->analysis_op.switch_op->cases, iter, caseop) {
+			rz_list_foreach (op->switch_op->cases, iter2, caseop) {
 				pj_o(pj);
 				pj_kn(pj, "addr", caseop->addr);
 				pj_kN(pj, "value", (st64)caseop->value);
@@ -6206,21 +6258,21 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 			}
 			pj_end(pj);
 		}
-		if (ds->analysis_op.jump != UT64_MAX) {
-			pj_kN(pj, "jump", ds->analysis_op.jump);
-			if (ds->analysis_op.fail != UT64_MAX) {
-				pj_kn(pj, "fail", ds->analysis_op.fail);
+		if (op->jump != UT64_MAX) {
+			pj_kN(pj, "jump", op->jump);
+			if (op->fail != UT64_MAX) {
+				pj_kn(pj, "fail", op->fail);
 			}
 		}
 		/* add flags */
 		{
-			const RzList *flags = rz_flag_get_list(core->flags, at);
+			const RzList *flags = rz_flag_get_list(core->flags, r->offset);
 			RzFlagItem *flag;
-			RzListIter *iter;
+			RzListIter *iter2;
 			if (flags && !rz_list_empty(flags)) {
 				pj_k(pj, "flags");
 				pj_a(pj);
-				rz_list_foreach (flags, iter, flag) {
+				rz_list_foreach (flags, iter2, flag) {
 					pj_s(pj, flag->name);
 				}
 				pj_end(pj);
@@ -6229,7 +6281,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		/* add comments */
 		{
 			// TODO: slow because we are encoding b64
-			const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, at);
+			const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, r->offset);
 			if (comment) {
 				char *b64comment = sdb_encode((const ut8 *)comment, -1);
 				pj_ks(pj, "comment", b64comment);
@@ -6239,12 +6291,12 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		/* add xrefs from */
 		{
 			RzAnalysisXRef *xref;
-			RzListIter *iter;
-			RzList *xrefs = rz_analysis_xrefs_get_from(core->analysis, at);
+			RzListIter *iter2;
+			RzList *xrefs = rz_analysis_xrefs_get_from(core->analysis, r->offset);
 			if (xrefs && !rz_list_empty(xrefs)) {
 				pj_k(pj, "xrefs_from");
 				pj_a(pj);
-				rz_list_foreach (xrefs, iter, xref) {
+				rz_list_foreach (xrefs, iter2, xref) {
 					pj_o(pj);
 					pj_kn(pj, "addr", xref->to);
 					pj_ks(pj, "type", rz_analysis_xrefs_type_tostring(xref->type));
@@ -6257,12 +6309,12 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		/* add xrefs to */
 		{
 			RzAnalysisXRef *xref;
-			RzListIter *iter;
-			RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, at);
+			RzListIter *iter2;
+			RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, r->offset);
 			if (xrefs && !rz_list_empty(xrefs)) {
 				pj_k(pj, "xrefs_to");
 				pj_a(pj);
-				rz_list_foreach (xrefs, iter, xref) {
+				rz_list_foreach (xrefs, iter2, xref) {
 					pj_o(pj);
 					pj_kn(pj, "addr", xref->from);
 					pj_ks(pj, "type", rz_analysis_xrefs_type_tostring(xref->type));
@@ -6274,25 +6326,9 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		}
 
 		pj_end(pj);
-		i += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign); // bytes
-		k += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign); // delta from addr
-		j++; // instructions
-		line++;
-
-		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line >= nb_opcodes;
-		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i >= nb_bytes;
-		result = true;
-		if (end_nbopcodes || end_nbbytes) {
-			break;
-		}
 	}
-	core->offset = old_offset;
-	rz_analysis_op_fini(&ds->analysis_op);
-	ds_free(ds);
-	if (!result) {
-		result = true;
-	}
-	return result;
+	rz_list_free(list);
+	return true;
 }
 
 RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int mode) {
