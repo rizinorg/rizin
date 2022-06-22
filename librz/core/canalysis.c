@@ -5966,18 +5966,14 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	return true;
 }
 
-static int core_sigdb_sorter(const RzSigDBEntry *a, const RzSigDBEntry *b) {
-	return strcmp(a->short_path, b->short_path);
-}
-
-static void analysis_sigdb_add(RzList *sigs, const char *path, bool with_details) {
+static void analysis_sigdb_add(RzSigDb *sigs, const char *path, bool with_details) {
 	if (RZ_STR_ISEMPTY(path) || !rz_file_is_directory(path)) {
 		return;
 	}
-	RzList *list = rz_sign_sigdb_load_database(path, with_details);
-	if (list) {
-		rz_list_join(sigs, list);
-		rz_list_free(list);
+	RzSigDb *tmp = rz_sign_sigdb_load_database(path, with_details);
+	if (tmp) {
+		rz_sign_sigdb_merge(sigs, tmp);
+		rz_sign_sigdb_free(tmp);
 	}
 }
 
@@ -5996,7 +5992,7 @@ static void analysis_sigdb_add(RzList *sigs, const char *path, bool with_details
 RZ_API RZ_OWN RzList *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool with_details) {
 	rz_return_val_if_fail(core, NULL);
 
-	RzList *sigs = rz_list_newf((RzListFree)rz_sign_sigdb_signature_free);
+	RzSigDb *sigs = rz_sign_sigdb_new();
 	if (!sigs) {
 		return NULL;
 	}
@@ -6016,8 +6012,7 @@ RZ_API RZ_OWN RzList *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool 
 	const char *user_sigdb = rz_config_get(core->config, "flirt.sigdb.path");
 	analysis_sigdb_add(sigs, user_sigdb, with_details);
 
-	rz_list_sort(sigs, (RzListComparator)core_sigdb_sorter);
-	return sigs;
+	return rz_sign_sigdb_list(sigs);
 }
 
 /**

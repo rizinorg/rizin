@@ -21,7 +21,7 @@ RZ_API void rz_sign_sigdb_signature_free(RZ_NULLABLE RzSigDBEntry *entry) {
 	free(entry);
 }
 
-static int sigdb_signature_cmp(RzSigDBEntry *a, RzSigDBEntry *b) {
+static int sigdb_signature_cmp(const RzSigDBEntry *a, const RzSigDBEntry *b) {
 	return strcmp(a->short_path, b->short_path);
 }
 
@@ -96,13 +96,13 @@ skip_details:
 }
 
 /**
- * \brief Returns a list of entries within the signature database path
+ * \brief Returns a database of signatures loaded from the signature database path
  *
  * \param  sigdb_path    The signature database path/location
  * \param  with_details  When true, opens each signature within the db for extra details
  * \return List of entries
  */
-RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_path, bool with_details) {
+RZ_API RZ_OWN RzSigDb *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_path, bool with_details) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(sigdb_path), NULL);
 	char glob[1024];
 	if (!rz_file_is_directory(sigdb_path)) {
@@ -110,9 +110,9 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL 
 		return NULL;
 	}
 	size_t path_len = strlen(sigdb_path) + 1; // ignoring also the filesystem separator
-	RzList *sigs = rz_list_newf((RzListFree)rz_sign_sigdb_signature_free);
+	RzSigDb *sigs = rz_sign_sigdb_new();
 	if (!sigs) {
-		RZ_LOG_ERROR("cannot allocate signature list\n");
+		RZ_LOG_ERROR("cannot allocate signature database\n");
 		return NULL;
 	}
 
@@ -137,14 +137,73 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry>*/ *rz_sign_sigdb_load_database(RZ_NONNULL 
 			rz_sign_sigdb_signature_free(sig);
 			goto fail;
 		}
-		rz_list_append(sigs, sig);
+		rz_sign_sigdb_add_entry(sigs, sig);
 	}
 	rz_list_free(files);
-	rz_list_sort(sigs, (RzListComparator)sigdb_signature_cmp);
 	return sigs;
 
 fail:
 	rz_list_free(files);
-	rz_list_free(sigs);
+	rz_sign_sigdb_free(sigs);
 	return NULL;
+}
+
+/**
+ * \brief Add a new signature entry to a database
+ *
+ * \param db Database of signatures
+ * \param entry Single signature entry to add to the database
+ * \return true if the signature entry was correctly added to the database, false otherwise
+ */
+RZ_API bool rz_sign_sigdb_add_entry(RZ_NONNULL RzSigDb *db, RZ_NONNULL RzSigDBEntry *entry) {
+	rz_return_val_if_fail(db && entry, NULL);
+	return rz_list_append(db->entries, entry);
+}
+
+/**
+ * \brief Merge the signatures from \p db2 into \p db
+ *
+ * Data within \p db2 is moved into \p db, making it empty.
+ *
+ * \param db Database of signatures to extend
+ * \param db2 Database of signatures that need to be merged into \p db
+ * \return true if the databases were correctly merged, false otherwise
+ */
+RZ_API bool rz_sign_sigdb_merge(RZ_NONNULL RzSigDb *db, RZ_NONNULL RzSigDb *db2) {
+	rz_return_val_if_fail(db && db2, NULL);
+	return rz_list_join(db->entries, db2->entries);
+}
+
+/**
+ * \brief Create a new empty \p RzSigDb instance
+ */
+RZ_API RZ_OWN RzSigDb *rz_sign_sigdb_new(void) {
+	RzSigDb *db = RZ_NEW0(RzSigDb);
+	if (!db) {
+		return NULL;
+	}
+	db->entries = rz_list_newf((RzListFree)rz_sign_sigdb_signature_free);
+	return db;
+}
+
+RZ_API void rz_sign_sigdb_free(RzSigDb *db) {
+	if (!db) {
+		return;
+	}
+	rz_list_free(db->entries);
+	free(db);
+}
+
+/**
+ * \brief Return the signature database as a list of entries
+ */
+RZ_API RZ_OWN RzList /* RzSigDBEntry* */ *rz_sign_sigdb_list(RZ_NONNULL RzSigDb *db) {
+	rz_return_val_if_fail(db, NULL);
+
+	RzList *res = rz_list_clone(db->entries);
+	if (!res) {
+		return NULL;
+	}
+	rz_list_sort(res, (RzListComparator)sigdb_signature_cmp);
+	return res;
 }
