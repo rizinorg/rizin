@@ -7,16 +7,10 @@
 #if defined(__NetBSD__)
 #include <sys/param.h>
 #include <sys/sysctl.h>
-#if __NetBSD_Prereq__(7, 0, 0)
-#define NETBSD_WITH_BACKTRACE
-#endif
 #endif
 #if defined(__FreeBSD__)
 #include <sys/param.h>
 #include <sys/sysctl.h>
-#if __FreeBSD_version >= 1000000
-#define FREEBSD_WITH_BACKTRACE
-#endif
 #endif
 #if defined(__DragonFly__)
 #include <sys/param.h>
@@ -37,8 +31,7 @@
 
 static char **env = NULL;
 
-#if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
-	defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun || __HAIKU__
+#if HAVE_BACKTRACE
 #include <execinfo.h>
 #endif
 #if __APPLE__
@@ -266,21 +259,8 @@ RZ_API char *rz_sys_cmd_strf(const char *fmt, ...) {
 	return ret;
 }
 
-#ifdef __MAC_10_7
-#define APPLE_WITH_BACKTRACE 1
-#endif
-#ifdef __IPHONE_4_0
-#define APPLE_WITH_BACKTRACE 1
-#endif
-
-#if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || \
-	defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE) || \
-	__DragonFly__ || __sun || __HAIKU__
-#define HAVE_BACKTRACE 1
-#endif
-
 RZ_API void rz_sys_backtrace(void) {
-#ifdef HAVE_BACKTRACE
+#if HAVE_BACKTRACE
 	void *array[10];
 	size_t size = backtrace(array, 10);
 	eprintf("Backtrace %zd stack frames.\n", size);
@@ -291,7 +271,7 @@ RZ_API void rz_sys_backtrace(void) {
 	void *saved_fp = __builtin_frame_address(1);
 	int depth = 0;
 
-	printf("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
+	eprintf("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	fp = saved_fp;
 	while (fp) {
 		saved_fp = *fp;
@@ -300,7 +280,7 @@ RZ_API void rz_sys_backtrace(void) {
 			break;
 		}
 		saved_pc = *(fp + 2);
-		printf("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
+		eprintf("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	}
 #else
 #ifdef _MSC_VER
@@ -438,7 +418,7 @@ RZ_API int rz_sys_crash_handler(const char *cmd) {
 	if (!checkcmd(cmd)) {
 		return false;
 	}
-#ifdef HAVE_BACKTRACE
+#if HAVE_BACKTRACE
 	void *array[1];
 	/* call this outside of the signal handler to init it safely */
 	backtrace(array, 1);
