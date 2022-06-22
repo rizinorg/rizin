@@ -394,9 +394,6 @@ RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
 	return NULL;
 }
 
-#define MNEM_PADLEN 10
-#define ARG_PADLEN  14
-
 /**
  * \brief Return string representation of disassembled \p param
  *
@@ -467,14 +464,14 @@ RZ_API RZ_OWN char *sh_op_to_str(const SHOp *op) {
 	if (!op->str_mnem) {
 		return NULL;
 	}
-	RzStrBuf *buf = rz_strbuf_new(rz_str_newf("%-*s", MNEM_PADLEN, op->str_mnem));
+	RzStrBuf *buf = rz_strbuf_new(rz_str_newf("%s", op->str_mnem));
 
 	char *param = NULL;
 	if ((param = sh_op_param_to_str(op->param[0]))) {
-		rz_strbuf_appendf(buf, "%-*s", ARG_PADLEN, param);
+		rz_strbuf_appendf(buf, " %s", param);
 		free(param);
 		if ((param = sh_op_param_to_str(op->param[1]))) {
-			rz_strbuf_appendf(buf, ", %*s", ARG_PADLEN, param);
+			rz_strbuf_appendf(buf, ", %s", param);
 			free(param);
 		}
 	}
