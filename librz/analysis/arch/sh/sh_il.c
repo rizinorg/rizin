@@ -1248,6 +1248,7 @@ static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	state += op->param[1].param[0] != SH_REG_IND_GBR ? 0x2 : 0x0;
 	if (state == 0x3) {
 		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
+		return NULL;
 	}
 	if (op->scaling == SH_SCALING_INVALID) {
 		if (state & 0x2) {
@@ -1285,7 +1286,14 @@ static RzILOpEffect *sh_il_lds(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return NOP();
 }
 
-// TODO: Implement LDTLB, MOVCA.L, OCBI, OCBP, OCBWB, PREF
+/**
+ * MOVCA.L  R0, @Rn
+ * R0 -> (Rn) (without fetching cache block)
+ * 0000nnnn11000011
+ */
+static RzILOpEffect *sh_il_movca(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
+}
 
 /**
  * NOP
@@ -1294,6 +1302,22 @@ static RzILOpEffect *sh_il_lds(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_nop(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return NOP();
+}
+
+/**
+ * RTE
+ * SSR -> SR ; SPC -> PC ; delayed branch
+ * 0000000000101011
+ * PRIVILEGED
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_rte(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, VARG(SH_SR_D));
+	if (priv_bit->bits.small_u == 0) {
+		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
+		return NULL;
+	}
+	return SEQ2(sh_il_set_status_reg(VARG("ssr")), JMP(VARG("spc")));
 }
 
 /**
@@ -1314,6 +1338,21 @@ static RzILOpEffect *sh_il_sett(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, IL_TRUE);
 }
 
+/**
+ * SLEEP
+ * Sleep or standby (so effectively, just a NOP)
+ * 0000000000011011
+ * PRIVILEGED
+ */
+static RzILOpEffect *sh_il_sleep(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, VARG(SH_SR_D));
+	if (priv_bit->bits.small_u == 0) {
+		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
+		return NULL;
+	}
+	return NOP();
+}
+
 // TODO: This needs to be fixed for banked register STC
 /**
  * STC  REG, Rn
@@ -1332,6 +1371,7 @@ static RzILOpEffect *sh_il_stc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	state += op->param[0].param[0] != SH_REG_IND_GBR ? 0x2 : 0x0;
 	if (state == 0x3) {
 		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
+		return NULL;
 	}
 	if (op->scaling == SH_SCALING_INVALID) {
 		if (state & 0x2) {
@@ -1432,6 +1472,7 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	[SH_OP_SHLL8] = sh_il_shll8,
 	[SH_OP_SHLR8] = sh_il_shlr8,
 	[SH_OP_SHLL16] = sh_il_shll16,
+	[SH_OP_SHLR16] = sh_il_shlr16,
 	[SH_OP_BF] = sh_il_bf,
 	[SH_OP_BFS] = sh_il_bfs,
 	[SH_OP_BT] = sh_il_bt,
@@ -1448,9 +1489,12 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	[SH_OP_CLRT] = sh_il_clrt,
 	[SH_OP_LDC] = sh_il_ldc,
 	[SH_OP_LDS] = sh_il_lds,
+	[SH_OP_MOVCA] = sh_il_movca,
 	[SH_OP_NOP] = sh_il_nop,
+	[SH_OP_RTE] = sh_il_rte,
 	[SH_OP_SETS] = sh_il_sets,
 	[SH_OP_SETT] = sh_il_sett,
+	[SH_OP_SLEEP] = sh_il_sleep,
 	[SH_OP_STC] = sh_il_stc,
 	[SH_OP_STS] = sh_il_sts,
 	[SH_OP_UNIMPL] = sh_il_unimpl
