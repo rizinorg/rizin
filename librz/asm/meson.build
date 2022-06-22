@@ -255,7 +255,7 @@ if get_option('use_gpl')
     'arch/nios/gnu/nios2-opc.c',
     #'arch/riscv/riscv-opc.c',
     #'arch/riscv/riscv.c',
-    'arch/sh/gnu/sh-dis.c',
+    'arch/sh/disassembler.c',
     'arch/sparc/gnu/sparc-dis.c',
     'arch/sparc/gnu/sparc-opc.c',
     'arch/tricore/gnu/cpu-tricore.c',

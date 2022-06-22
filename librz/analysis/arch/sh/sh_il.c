@@ -1499,3 +1499,24 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	[SH_OP_STS] = sh_il_sts,
 	[SH_OP_UNIMPL] = sh_il_unimpl
 };
+
+RZ_IPI bool rz_sh_il_opcode(RzAnalysis *analysis, RzAnalysisOp *aop, ut64 pc, SHOp *op) {
+	rz_return_val_if_fail(analysis && aop && op, false);
+	if (op->mnemonic >= SH_OP_SIZE) {
+		RZ_LOG_ERROR("RzIL: SuperH: out of bounds op\n");
+		return false;
+	}
+
+	sh_il_op create_op = sh_ops[op->mnemonic];
+	aop->il_op = create_op(op, pc, analysis);
+
+	return true;
+}
+
+RZ_IPI RzAnalysisILConfig *rz_sh_il_config(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+
+	RzAnalysisILConfig *r = rz_analysis_il_config_new(SH_ADDR_SIZE, analysis->big_endian, SH_ADDR_SIZE);
+	r->reg_bindings = sh_global_registers;
+	return r;
+}

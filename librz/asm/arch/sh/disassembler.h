@@ -32,7 +32,7 @@ typedef enum sh_scaling_t {
 	SH_SCALING_Q ///< quad word
 } SHScaling;
 
-const ut8 sh_scaling_size[] = { -1, 1, 2, 4, 8 };
+static const ut8 sh_scaling_size[] = { -1, 1, 2, 4, 8 };
 
 // SR register in SH
 // SR = x|D|R|B|xxxxxxxxxxxx|F|xxxxx|M|Q|IIII|xx|S|T
@@ -258,5 +258,8 @@ typedef struct sh_opcode_t {
 } SHOp;
 
 SHOp *sh_disassembler(ut16 opcode);
+
+RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param);
+RZ_API RZ_OWN char *sh_op_to_str(const SHOp *op);
 
 #endif /* RZ_ASM_SH_DISASSEMBLER_H */
