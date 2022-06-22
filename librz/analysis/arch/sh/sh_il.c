@@ -349,7 +349,7 @@ static inline RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN 
 /**
  * Unknown instruction
  */
-static RzILOpEffect *sh_il_unk(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_invalid(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return NULL;
 }
 
@@ -1092,6 +1092,118 @@ static RzILOpEffect *sh_il_shlr16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 }
 
 /**
+ * BF  label
+ * if T = 0, disp * 2 + PC + 4 -> PC ; otherwise (T = 1) NOP
+ * 10001011dddddddd
+ */
+static RzILOpEffect *sh_il_bf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *new_pc = sh_il_get_pure_param(0);
+	return BRANCH(IS_ZERO(VARG(SH_SR_T)), JMP(new_pc), NOP());
+}
+
+/**
+ * BF/S  label
+ * if T = 0, disp * 2 + PC + 4 -> PC ; otherwise (T = 1) NOP ; delayed branch
+ * 10001111dddddddd
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_bfs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *new_pc = sh_il_get_pure_param(0);
+	return BRANCH(IS_ZERO(VARG(SH_SR_T)), JMP(new_pc), NOP());
+}
+
+/**
+ * BT  label
+ * if T = 1, disp * 2 + PC + 4 -> PC ; otherwise (T = 0) NOP
+ * 10001001dddddddd
+ */
+static RzILOpEffect *sh_il_bt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *new_pc = sh_il_get_pure_param(0);
+	return BRANCH(IS_ZERO(VARG(SH_SR_T)), NOP(), JMP(new_pc));
+}
+
+/**
+ * BT/S  label
+ * if T = 1, disp * 2 + PC + 4 -> PC ; otherwise (T = 0) NOP ; delayed branch
+ * 10001101dddddddd
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_bts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *new_pc = sh_il_get_pure_param(0);
+	return BRANCH(IS_ZERO(VARG(SH_SR_T)), NOP(), JMP(new_pc));
+}
+
+/**
+ * BRA  label
+ * disp * 2 + PC + 4 -> PC ; delayed branch
+ * 1010dddddddddddd
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_bra(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return JMP(sh_il_get_pure_param(0));
+}
+
+/**
+ * BRAF  Rn
+ * Rn + PC + 4 -> PC ; delayed branch
+ * 0000nnnn00100011
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_braf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return JMP(sh_il_get_pure_param(0));
+}
+
+/**
+ * BSR  label
+ * PC + 4 -> PR ; disp * 2 + PC + 4 -> PC ; delayed branch
+ * 1011dddddddddddd
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_bsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_pure_param(0)));
+}
+
+/**
+ * BSRF  Rn
+ * PC + 4 -> PR ; Rn + PC + 4 -> PC ; delayed branch
+ * 0000nnnn00000011
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_bsrf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_pure_param(0)));
+}
+
+/**
+ * JMP  @Rn
+ * Rn -> PC ; delayed branch
+ * 0100nnnn00101011
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_jmp(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return JMP(sh_il_get_pure_param(0));
+}
+
+/**
+ * JSR  @Rn
+ * PC + 4 -> PR ; Rn -> PC ; delayed branch
+ * 0100nnnn00001011
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_jsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return SEQ2(SETG("pr", ADD(SH_U_ADDR(pc), SH_U_ADDR(4))), JMP(sh_il_get_pure_param(0)));
+}
+
+/**
+ * RTS
+ * PR -> PC ; delayed branch
+ * 0000000000001011
+ * TODO: Implement delayed branch
+ */
+static RzILOpEffect *sh_il_rts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	return JMP(VARG("pr"));
+}
+
+/**
  * CLRMAC
  * 0 -> MACH, MACL
  * 0000000000101000
@@ -1266,70 +1378,80 @@ static RzILOpEffect *sh_il_unimpl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
 
 static sh_il_op sh_ops[SH_OP_SIZE] = {
-	sh_il_unk,
-	sh_il_mov,
-	sh_il_movt,
-	sh_il_swap,
-	sh_il_xtrct,
-	sh_il_add,
-	sh_il_addc,
-	sh_il_addv,
-	sh_il_cmp_eq,
-	sh_il_cmp_hs,
-	sh_il_cmp_ge,
-	sh_il_cmp_hi,
-	sh_il_cmp_gt,
-	sh_il_cmp_pz,
-	sh_il_cmp_pl,
-	sh_il_cmp_str,
-	sh_il_div1,
-	sh_il_div0s,
-	sh_il_div0u,
-	sh_il_dmuls,
-	sh_il_dmulu,
-	sh_il_dt,
-	sh_il_exts,
-	sh_il_extu,
-	sh_il_mac,
-	sh_il_mul,
-	sh_il_muls,
-	sh_il_mulu,
-	sh_il_neg,
-	sh_il_negc,
-	sh_il_sub,
-	sh_il_subc,
-	sh_il_subv,
-	sh_il_and,
-	sh_il_not,
-	sh_il_or,
-	sh_il_tas,
-	sh_il_tst,
-	sh_il_xor,
-	sh_il_rotl,
-	sh_il_rotr,
-	sh_il_rotcl,
-	sh_il_rotcr,
-	sh_il_shad,
-	sh_il_shal,
-	sh_il_shar,
-	sh_il_shld,
-	sh_il_shll,
-	sh_il_shlr,
-	sh_il_shll2,
-	sh_il_shlr2,
-	sh_il_shll8,
-	sh_il_shlr8,
-	sh_il_shll16,
-	sh_il_shlr16,
-	sh_il_clrmac,
-	sh_il_clrs,
-	sh_il_clrt,
-	sh_il_ldc,
-	sh_il_lds,
-	sh_il_nop,
-	sh_il_sets,
-	sh_il_sett,
-	sh_il_stc,
-	sh_il_sts,
-	sh_il_unimpl
+	[SH_OP_INVALID] = sh_il_invalid,
+	[SH_OP_MOV] = sh_il_mov,
+	[SH_OP_MOVT] = sh_il_movt,
+	[SH_OP_SWAP] = sh_il_swap,
+	[SH_OP_XTRCT] = sh_il_xtrct,
+	[SH_OP_ADD] = sh_il_add,
+	[SH_OP_ADDC] = sh_il_addc,
+	[SH_OP_ADDV] = sh_il_addv,
+	[SH_OP_CMP_EQ] = sh_il_cmp_eq,
+	[SH_OP_CMP_HS] = sh_il_cmp_hs,
+	[SH_OP_CMP_GE] = sh_il_cmp_ge,
+	[SH_OP_CMP_HI] = sh_il_cmp_hi,
+	[SH_OP_CMP_GT] = sh_il_cmp_gt,
+	[SH_OP_CMP_PZ] = sh_il_cmp_pz,
+	[SH_OP_CMP_PL] = sh_il_cmp_pl,
+	[SH_OP_CMP_STR] = sh_il_cmp_str,
+	[SH_OP_DIV1] = sh_il_div1,
+	[SH_OP_DIV0S] = sh_il_div0s,
+	[SH_OP_DIV0U] = sh_il_div0u,
+	[SH_OP_DMULS] = sh_il_dmuls,
+	[SH_OP_DMULU] = sh_il_dmulu,
+	[SH_OP_DT] = sh_il_dt,
+	[SH_OP_EXTS] = sh_il_exts,
+	[SH_OP_EXTU] = sh_il_extu,
+	[SH_OP_MAC] = sh_il_mac,
+	[SH_OP_MUL] = sh_il_mul,
+	[SH_OP_MULS] = sh_il_muls,
+	[SH_OP_MULU] = sh_il_mulu,
+	[SH_OP_NEG] = sh_il_neg,
+	[SH_OP_NEGC] = sh_il_negc,
+	[SH_OP_SUB] = sh_il_sub,
+	[SH_OP_SUBC] = sh_il_subc,
+	[SH_OP_SUBV] = sh_il_subv,
+	[SH_OP_AND] = sh_il_and,
+	[SH_OP_NOT] = sh_il_not,
+	[SH_OP_OR] = sh_il_or,
+	[SH_OP_TAS] = sh_il_tas,
+	[SH_OP_TST] = sh_il_tst,
+	[SH_OP_XOR] = sh_il_xor,
+	[SH_OP_ROTL] = sh_il_rotl,
+	[SH_OP_ROTR] = sh_il_rotr,
+	[SH_OP_ROTCL] = sh_il_rotcl,
+	[SH_OP_ROTCR] = sh_il_rotcr,
+	[SH_OP_SHAD] = sh_il_shad,
+	[SH_OP_SHAL] = sh_il_shal,
+	[SH_OP_SHAR] = sh_il_shar,
+	[SH_OP_SHLD] = sh_il_shld,
+	[SH_OP_SHLL] = sh_il_shll,
+	[SH_OP_SHLR] = sh_il_shlr,
+	[SH_OP_SHLL2] = sh_il_shll2,
+	[SH_OP_SHLR2] = sh_il_shlr2,
+	[SH_OP_SHLL8] = sh_il_shll8,
+	[SH_OP_SHLR8] = sh_il_shlr8,
+	[SH_OP_SHLL16] = sh_il_shll16,
+	[SH_OP_BF] = sh_il_bf,
+	[SH_OP_BFS] = sh_il_bfs,
+	[SH_OP_BT] = sh_il_bt,
+	[SH_OP_BTS] = sh_il_bts,
+	[SH_OP_BRA] = sh_il_bra,
+	[SH_OP_BRAF] = sh_il_braf,
+	[SH_OP_BSR] = sh_il_bsr,
+	[SH_OP_BSRF] = sh_il_bsrf,
+	[SH_OP_JMP] = sh_il_jmp,
+	[SH_OP_JSR] = sh_il_jsr,
+	[SH_OP_RTS] = sh_il_rts,
+	[SH_OP_CLRMAC] = sh_il_clrmac,
+	[SH_OP_CLRS] = sh_il_clrs,
+	[SH_OP_CLRT] = sh_il_clrt,
+	[SH_OP_LDC] = sh_il_ldc,
+	[SH_OP_LDS] = sh_il_lds,
+	[SH_OP_NOP] = sh_il_nop,
+	[SH_OP_SETS] = sh_il_sets,
+	[SH_OP_SETT] = sh_il_sett,
+	[SH_OP_STC] = sh_il_stc,
+	[SH_OP_STS] = sh_il_sts,
+	[SH_OP_UNIMPL] = sh_il_unimpl
 };
