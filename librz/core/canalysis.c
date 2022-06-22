@@ -5970,6 +5970,17 @@ static int core_sigdb_sorter(const RzSigDBEntry *a, const RzSigDBEntry *b) {
 	return strcmp(a->short_path, b->short_path);
 }
 
+static void analysis_sigdb_add(RzList *sigs, const char *path, bool with_details) {
+	if (RZ_STR_ISEMPTY(path) || !rz_file_is_directory(path)) {
+		return;
+	}
+	RzList *list = rz_sign_sigdb_load_database(path, with_details);
+	if (list) {
+		rz_list_join(sigs, list);
+		rz_list_free(list);
+	}
+}
+
 /**
  * \brief Returns all the signatures found in the default path.
  *
@@ -5985,44 +5996,25 @@ static int core_sigdb_sorter(const RzSigDBEntry *a, const RzSigDBEntry *b) {
 RZ_API RZ_OWN RzList *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool with_details) {
 	rz_return_val_if_fail(core, NULL);
 
-	RzList *list = NULL, *sigs = NULL;
-
-	sigs = rz_list_newf((RzListFree)rz_sign_sigdb_signature_free);
+	RzList *sigs = rz_list_newf((RzListFree)rz_sign_sigdb_signature_free);
 	if (!sigs) {
 		return NULL;
 	}
 
-	char *home_sigdb = rz_path_home_prefix(RZ_SIGDB);
-	if (RZ_STR_ISNOTEMPTY(home_sigdb) && rz_file_is_directory(home_sigdb)) {
-		list = rz_sign_sigdb_load_database(home_sigdb, with_details);
-	}
-	free(home_sigdb);
-
-	if (list) {
-		rz_list_join(sigs, list);
-		RZ_FREE_CUSTOM(list, rz_list_free);
+	if (rz_config_get_b(core->config, "flirt.sigdb.load.home")) {
+		char *home_sigdb = rz_path_home_prefix(RZ_SIGDB);
+		analysis_sigdb_add(sigs, home_sigdb, with_details);
+		free(home_sigdb);
 	}
 
-	char *system_sigdb = rz_path_system(RZ_SIGDB);
-	if (RZ_STR_ISNOTEMPTY(system_sigdb) && rz_file_is_directory(system_sigdb)) {
-		list = rz_sign_sigdb_load_database(system_sigdb, with_details);
-	}
-	free(system_sigdb);
-
-	if (list) {
-		rz_list_join(sigs, list);
-		RZ_FREE_CUSTOM(list, rz_list_free);
+	if (rz_config_get_b(core->config, "flirt.sigdb.load.system")) {
+		char *system_sigdb = rz_path_system(RZ_SIGDB);
+		analysis_sigdb_add(sigs, system_sigdb, with_details);
+		free(system_sigdb);
 	}
 
 	const char *user_sigdb = rz_config_get(core->config, "flirt.sigdb.path");
-	if (RZ_STR_ISNOTEMPTY(user_sigdb) && rz_file_is_directory(user_sigdb)) {
-		list = rz_sign_sigdb_load_database(user_sigdb, with_details);
-	}
-
-	if (list) {
-		rz_list_join(sigs, list);
-		RZ_FREE_CUSTOM(list, rz_list_free);
-	}
+	analysis_sigdb_add(sigs, user_sigdb, with_details);
 
 	rz_list_sort(sigs, (RzListComparator)core_sigdb_sorter);
 	return sigs;
