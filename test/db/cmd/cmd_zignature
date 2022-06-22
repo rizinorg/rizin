@@ -1230,6 +1230,7 @@ RUN
 
 NAME=zj producing valid types
 FILE=bins/elf/static-glibc-2.27
+ARGS=-eflirt.sigdb.load.system=false -eflirt.sigdb.load.home=false
 CMDS=<<EOF
 aaa
 zaf fcn.00484d40 fcn.00484d40
@@ -1835,8 +1836,9 @@ Found 100 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pat
 EOF
 RUN
 
-NAME=FLIRT apply pat signature
+NAME=FLIRT apply sig signature
 FILE=bins/flirt/elf-x86/curl-example
+ARGS=-eflirt.sigdb.load.system=false -eflirt.sigdb.load.home=false
 CMDS=<<EOF
 aaa
 zfs bins/flirt/elf-x86/libcurl.a.sig

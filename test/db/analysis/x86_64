@@ -1420,6 +1420,7 @@ RUN
 
 NAME=Settings global calling convention
 FILE=bins/pe/msvcfindmain.exe
+ARGS=-eflirt.sigdb.load.system=false -eflirt.sigdb.load.home=false
 CMDS=<<EOF
 e analysis.cc=pascal
 aaa
