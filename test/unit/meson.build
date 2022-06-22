@@ -68,7 +68,6 @@ if get_option('enable_tests')
     'list',
     'ovf',
     'pj',
-    'queue',
     'rbtree',
     'reg',
     'run',

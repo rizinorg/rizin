@@ -4,7 +4,7 @@
 #ifndef RZ_ID_STORAGE_H
 #define RZ_ID_STORAGE_H
 
-#include <rz_util/rz_queue.h>
+#include <rz_vector.h>
 #include <rz_types.h>
 #include <rz_list.h>
 
@@ -16,7 +16,7 @@ typedef struct rz_id_pool_t {
 	ut32 start_id;
 	ut32 last_id;
 	ut32 next_id;
-	RQueue *freed_ids;
+	RzVector *freed_ids;
 } RzIDPool;
 
 RZ_API RzIDPool *rz_id_pool_new(ut32 start_id, ut32 last_id);
