@@ -1,6 +1,8 @@
 #ifndef RZ_PKCS7_H
 #define RZ_PKCS7_H
 
+#include <rz_util/rz_x509.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

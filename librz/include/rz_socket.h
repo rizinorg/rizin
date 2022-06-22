@@ -262,17 +262,6 @@ RZ_API void rz_run_reset(RzRunProfile *p);
 RZ_API bool rz_run_parsefile(RzRunProfile *p, const char *b);
 RZ_API char *rz_run_get_environ_profile(char **env);
 
-/* rapipe */
-RZ_API RzPipe *rap_open(const char *cmd);
-RZ_API RzPipe *rap_open_corebind(RzCoreBind *coreb);
-RZ_API int rap_close(RzPipe *rap);
-
-RZ_API char *rap_cmd(RzPipe *rap, const char *str);
-RZ_API char *rap_cmdf(RzPipe *rap, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
-
-RZ_API int rap_write(RzPipe *rap, const char *str);
-RZ_API char *rap_read(RzPipe *rap);
-
 RZ_API int rzpipe_write(RzPipe *rzpipe, const char *str);
 RZ_API char *rzpipe_read(RzPipe *rzpipe);
 RZ_API int rzpipe_close(RzPipe *rzpipe);

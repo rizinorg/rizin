@@ -14,7 +14,6 @@ RZ_LIB_VERSION_HEADER(rz_bp);
 
 #define RZ_BP_MAXPIDS     10
 #define RZ_BP_CONT_NORMAL 0
-#define RZ_BP_CONT_NORMAL 0
 
 typedef struct rz_bp_arch_t {
 	int bits;
@@ -119,7 +118,6 @@ RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name);
 RZ_API int rz_bp_plugin_del(RzBreakpoint *bp, const char *name);
 RZ_API void rz_bp_plugin_list(RzBreakpoint *bp);
 
-RZ_API int rz_bp_in(RzBreakpoint *bp, ut64 addr, int perm);
 RZ_API int rz_bp_size(RZ_NONNULL RzBreakpoint *bp, int bits);
 RZ_API int rz_bp_size_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
 
@@ -145,8 +143,6 @@ RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *expr);
 RZ_API bool rz_bp_item_set_name(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *name);
 
-RZ_API int rz_bp_add_cond(RzBreakpoint *bp, const char *cond);
-RZ_API int rz_bp_del_cond(RzBreakpoint *bp, int idx);
 RZ_API int rz_bp_add_fault(RzBreakpoint *bp, ut64 addr, int size, int perm);
 
 RZ_API RZ_BORROW RzBreakpointItem *rz_bp_add_sw(RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int perm);
@@ -165,7 +161,6 @@ RZ_API int rz_bp_traptrace_free_at(RzBreakpoint *bp, ut64 from);
 RZ_API void rz_bp_traptrace_list(RzBreakpoint *bp);
 RZ_API int rz_bp_traptrace_at(RzBreakpoint *bp, ut64 from, int len);
 RZ_API RzList *rz_bp_traptrace_new(void);
-RZ_API void rz_bp_traptrace_enable(RzBreakpoint *bp, int enable);
 
 /* watchpoint */
 RZ_API RZ_BORROW RzBreakpointItem *rz_bp_watch_add(RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int hw, int perm);

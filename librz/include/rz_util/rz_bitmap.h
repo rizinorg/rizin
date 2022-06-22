@@ -1,6 +1,8 @@
 #ifndef RZ_BITMAP_H
 #define RZ_BITMAP_H
 
+#include <rz_types.h>
+
 #if RZ_SYS_BITS == 4
 #define BITWORD_BITS_SHIFT 5
 #define RBitword           ut32

@@ -1,6 +1,8 @@
 #ifndef RZ_DES_H
 #define RZ_DES_H
 
+#include <rz_types.h>
+
 #define DES_KEY_SIZE   8
 #define DES_BLOCK_SIZE 8
 

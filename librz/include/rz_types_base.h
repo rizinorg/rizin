@@ -97,7 +97,6 @@ typedef struct _utX {
 #define ST32_MAX  0x7FFFFFFF
 #define ST32_MIN  (-ST32_MAX - 1)
 #define UT32_MAX  0xFFFFFFFFU
-#define UT32_MIN  0U
 #define ST16_MAX  0x7FFF
 #define ST16_MIN  (-ST16_MAX - 1)
 #define UT16_GT0  0x8000U

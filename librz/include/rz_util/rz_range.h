@@ -1,6 +1,9 @@
 #ifndef RZ_RANGE_H
 #define RZ_RANGE_H
 
+#include <rz_types.h>
+#include <rz_list.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,7 +31,6 @@ RZ_API ut64 rz_range_size(RRange *r);
 RZ_API int rz_range_add_from_string(RRange *rgs, const char *string);
 RZ_API RRangeItem *rz_range_add(RRange *rgs, ut64 from, ut64 to, int rw);
 RZ_API int rz_range_sub(RRange *rgs, ut64 from, ut64 to);
-RZ_API void rz_range_merge(RRange *rgs, RRange *r);
 RZ_API int rz_range_contains(RRange *rgs, ut64 addr);
 RZ_API int rz_range_sort(RRange *rgs);
 RZ_API void rz_range_percent(RRange *rgs);

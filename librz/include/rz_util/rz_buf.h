@@ -1,6 +1,9 @@
 #ifndef RZ_BUF_H
 #define RZ_BUF_H
 #include <rz_util/rz_mem.h>
+#include <rz_types.h>
+#include <rz_list.h>
+#include <rz_util/rz_assert.h>
 
 #ifdef __cplusplus
 extern "C" {

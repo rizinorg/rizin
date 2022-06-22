@@ -27,64 +27,11 @@ static RzBinString *__stringAt(RzBinFile *bf, RzList *ret, ut64 addr) {
 	return NULL;
 }
 
-static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedString *src) {
-	int type = -1;
-	switch (src->type) {
-	case RZ_STRING_ENC_8BIT:
-		type = RZ_BIN_STRING_ENC_8BIT;
-		break;
-	case RZ_STRING_ENC_UTF8:
-		type = RZ_BIN_STRING_ENC_UTF8;
-		break;
-	case RZ_STRING_ENC_UTF16LE:
-		type = RZ_BIN_STRING_ENC_WIDE_LE;
-		break;
-	case RZ_STRING_ENC_UTF32LE:
-		type = RZ_BIN_STRING_ENC_WIDE32_LE;
-		break;
-	case RZ_STRING_ENC_UTF16BE:
-		type = RZ_BIN_STRING_ENC_WIDE_BE;
-		break;
-	case RZ_STRING_ENC_UTF32BE:
-		type = RZ_BIN_STRING_ENC_WIDE32_BE;
-		break;
-	case RZ_STRING_ENC_IBM037:
-		type = RZ_BIN_STRING_ENC_IBM037;
-		break;
-	case RZ_STRING_ENC_IBM290:
-		type = RZ_BIN_STRING_ENC_IBM290;
-		break;
-	case RZ_STRING_ENC_EBCDIC_ES:
-		type = RZ_BIN_STRING_ENC_EBCDIC_ES;
-		break;
-	case RZ_STRING_ENC_EBCDIC_UK:
-		type = RZ_BIN_STRING_ENC_EBCDIC_UK;
-		break;
-	case RZ_STRING_ENC_EBCDIC_US:
-		type = RZ_BIN_STRING_ENC_EBCDIC_US;
-		break;
-	case RZ_STRING_ENC_GUESS:
-		type = RZ_BIN_STRING_ENC_DETECT;
-		break;
-	default:
-		break;
-	}
-
-	dst->string = src->string;
-	dst->size = src->size;
-	dst->length = src->length;
-	dst->type = type;
-	dst->paddr = src->addr;
-	dst->vaddr = src->addr;
-
-	free(src);
-}
-
 static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut64 from, const ut64 to, RzStrEnc type) {
 	RzListIter *it;
-	RzDetectedString *str;
+	RzDetectedString *detected;
 
-	RzList *str_list = rz_list_new();
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	if (!str_list) {
 		return;
 	}
@@ -104,16 +51,26 @@ static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut6
 	}
 
 	int ord = 0;
-	rz_list_foreach (str_list, it, str) {
-		RzBinString *bs = RZ_NEW0(RzBinString);
-		detected_string_to_bin_string(bs, str);
-		bs->ordinal = ord++;
-		if (bf->o) {
-			bs->paddr += bf->o->boffset;
-			bs->vaddr = rz_bin_object_p2v(bf->o, bs->paddr);
-			ht_up_insert(bf->o->strings_db, bs->vaddr, bs);
+	rz_list_foreach (str_list, it, detected) {
+		RzBinString *bstr = RZ_NEW0(RzBinString);
+		if (!bstr) {
+			RZ_LOG_ERROR("Cannot allocate RzBinString\n");
+			break;
 		}
-		rz_list_append(list, bs);
+
+		RZ_PTR_MOVE(bstr->string, detected->string);
+		bstr->size = detected->size;
+		bstr->length = detected->length;
+		bstr->type = detected->type;
+		bstr->paddr = detected->addr;
+		bstr->vaddr = detected->addr;
+		bstr->ordinal = ord++;
+		if (bf->o) {
+			bstr->paddr += bf->o->boffset;
+			bstr->vaddr = rz_bin_object_p2v(bf->o, bstr->paddr);
+			ht_up_insert(bf->o->strings_db, bstr->vaddr, bstr);
+		}
+		rz_list_append(list, bstr);
 	}
 
 	rz_list_free(str_list);

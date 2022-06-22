@@ -657,7 +657,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, PJ *pj, int mode) {
 		string->vaddr = s->vaddr + (string->paddr - s->paddr);
 	}
 	vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
-	const char *type_string = rz_bin_string_type(string->type);
+	const char *type_string = rz_str_enc_as_string(string->type);
 	const char *section_name = s ? s->name : "";
 
 	switch (mode) {

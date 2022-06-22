@@ -123,7 +123,6 @@ RZ_API int rz_flag_unset_glob(RzFlag *f, const char *name);
 RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name);
 RZ_API int rz_flag_relocate(RzFlag *f, ut64 off, ut64 off_mask, ut64 to);
 RZ_API bool rz_flag_move(RzFlag *f, ut64 at, ut64 to);
-RZ_API const char *rz_flag_color(RzFlag *f, RzFlagItem *it, const char *color);
 RZ_API int rz_flag_count(RzFlag *f, const char *glob);
 RZ_API void rz_flag_foreach(RzFlag *f, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_prefix(RzFlag *f, const char *pfx, int pfx_len, RzFlagItemCb cb, void *user);
@@ -187,7 +186,6 @@ RZ_API void rz_flag_zone_item_free(void *a);
 RZ_API bool rz_flag_zone_add(RzFlag *fz, const char *name, ut64 addr);
 RZ_API bool rz_flag_zone_del(RzFlag *fz, const char *name);
 RZ_API bool rz_flag_zone_around(RzFlag *fz, ut64 addr, const char **prev, const char **next);
-RZ_API bool rz_flag_zone_list(RzFlag *fz, int mode);
 RZ_API bool rz_flag_zone_reset(RzFlag *f);
 RZ_API RzList *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows);
 

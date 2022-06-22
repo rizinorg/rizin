@@ -1,6 +1,8 @@
 #ifndef RZ_BASE91_H
 #define RZ_BASE91_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

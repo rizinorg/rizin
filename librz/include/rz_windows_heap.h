@@ -1,6 +1,8 @@
 #ifndef RZ_WINDOWS_HEAP_H
 #define RZ_WINDOWS_HEAP_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

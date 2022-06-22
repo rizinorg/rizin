@@ -295,7 +295,6 @@ RZ_API bool rz_io_map_priorize(RzIO *io, ut32 id);
 RZ_API bool rz_io_map_priorize_for_fd(RzIO *io, int fd);
 RZ_API void rz_io_map_cleanup(RzIO *io);
 RZ_API void rz_io_map_fini(RzIO *io);
-RZ_API bool rz_io_map_is_in_range(RzIOMap *map, ut64 from, ut64 to);
 RZ_API void rz_io_map_set_name(RzIOMap *map, const char *name);
 RZ_API void rz_io_map_del_name(RzIOMap *map);
 RZ_API RzList *rz_io_map_get_for_fd(RzIO *io, int fd);
@@ -328,7 +327,6 @@ RZ_API bool rz_io_vread_at_mapped(RzIO *io, ut64 vaddr, ut8 *buf, int len);
 RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, int len);
 RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, int len);
 RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, int len);
-RZ_API void rz_io_alprint(RzList *ls);
 RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, int len);
 RZ_API bool rz_io_read(RzIO *io, ut8 *buf, int len);
 RZ_API bool rz_io_write(RzIO *io, ut8 *buf, int len);
@@ -346,16 +344,12 @@ RZ_API void rz_io_free(RzIO *io);
 #define rz_io_bind_init(x) memset(&x, 0, sizeof(x))
 
 RZ_API bool rz_io_plugin_init(RzIO *io);
-RZ_API int rz_io_plugin_open(RzIO *io, int fd, RzIOPlugin *plugin);
-RZ_API int rz_io_plugin_close(RzIO *io, int fd, RzIOPlugin *plugin);
-RZ_API int rz_io_plugin_generate(RzIO *io);
 RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin);
 RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, int len);
 RZ_API int rz_io_plugin_write(RzIODesc *desc, const ut8 *buf, int len);
 RZ_API int rz_io_plugin_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len);
 RZ_API int rz_io_plugin_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, int len);
 RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool many);
-RZ_API RzIOPlugin *rz_io_plugin_resolve_fd(RzIO *io, int fd);
 RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool many);
 
 // desc.c
@@ -406,11 +400,6 @@ RZ_API void rz_io_desc_cache_cleanup(RzIODesc *desc);
 RZ_API void rz_io_desc_cache_fini(RzIODesc *desc);
 RZ_API void rz_io_desc_cache_fini_all(RzIO *io);
 RZ_API RzList *rz_io_desc_cache_list(RzIODesc *desc);
-
-/* io/buffer.c */
-RZ_API int rz_io_buffer_read(RzIO *io, ut64 addr, ut8 *buf, int len);
-RZ_API int rz_io_buffer_load(RzIO *io, ut64 addr, int len);
-RZ_API void rz_io_buffer_close(RzIO *io);
 
 /* io/fd.c */
 RZ_API int rz_io_fd_open(RzIO *io, const char *uri, int flags, int mode);

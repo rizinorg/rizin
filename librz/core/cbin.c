@@ -2668,7 +2668,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 
 		section = obj ? rz_bin_get_section_at(obj, paddr, 0) : NULL;
 		section_name = section ? section->name : "";
-		type_string = rz_bin_string_type(string->type);
+		type_string = rz_str_enc_as_string(string->type);
 		if (b64str) {
 			ut8 *s = rz_base64_decode_dyn(string->string, -1);
 			if (s && *s && IS_PRINTABLE(*s)) {
@@ -2702,10 +2702,10 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			pj_ks(state->d.pj, "string", escaped_string);
 
 			switch (string->type) {
-			case RZ_BIN_STRING_ENC_UTF8:
-			case RZ_BIN_STRING_ENC_MUTF8:
-			case RZ_BIN_STRING_ENC_WIDE_LE:
-			case RZ_BIN_STRING_ENC_WIDE32_LE:
+			case RZ_STRING_ENC_UTF8:
+			case RZ_STRING_ENC_MUTF8:
+			case RZ_STRING_ENC_UTF16LE:
+			case RZ_STRING_ENC_UTF32LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
@@ -2756,10 +2756,10 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 
 			RzStrBuf *buf = rz_strbuf_new(str);
 			switch (string->type) {
-			case RZ_BIN_STRING_ENC_UTF8:
-			case RZ_BIN_STRING_ENC_MUTF8:
-			case RZ_BIN_STRING_ENC_WIDE_LE:
-			case RZ_BIN_STRING_ENC_WIDE32_LE:
+			case RZ_STRING_ENC_UTF8:
+			case RZ_STRING_ENC_MUTF8:
+			case RZ_STRING_ENC_UTF16LE:
+			case RZ_STRING_ENC_UTF32LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {

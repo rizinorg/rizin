@@ -162,23 +162,6 @@ typedef enum {
 #define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x)&RZ_BIN_LANGUAGE_BLOCKS)
 
 enum {
-	RZ_BIN_STRING_ENC_DETECT = 'g',
-	RZ_BIN_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
-	RZ_BIN_STRING_ENC_UTF8 = '8',
-	RZ_BIN_STRING_ENC_MUTF8 = 'm', // modified utf8
-	RZ_BIN_STRING_ENC_WIDE_LE = 'u', // utf16 / widechar string
-	RZ_BIN_STRING_ENC_WIDE32_LE = 'U', // utf32
-	RZ_BIN_STRING_ENC_WIDE_BE = 'n', // utf16-be / widechar string
-	RZ_BIN_STRING_ENC_WIDE32_BE = 'N', // utf32-be
-	RZ_BIN_STRING_ENC_BASE64 = '6',
-	RZ_BIN_STRING_ENC_IBM037 = 'c',
-	RZ_BIN_STRING_ENC_IBM290 = 'd',
-	RZ_BIN_STRING_ENC_EBCDIC_UK = 'k',
-	RZ_BIN_STRING_ENC_EBCDIC_US = 's',
-	RZ_BIN_STRING_ENC_EBCDIC_ES = 't',
-};
-
-enum {
 	RZ_BIN_CLASS_PRIVATE,
 	RZ_BIN_CLASS_PUBLIC,
 	RZ_BIN_CLASS_FRIENDLY,
@@ -842,7 +825,6 @@ RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile);
 RZ_API void rz_bin_map_free(RzBinMap *map);
 RZ_API RzList *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile);
 RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps);
-RZ_API ut64 rz_bin_find_free_base_addr(RzList /*<RzBinMap>*/ *maps, ut64 align);
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
@@ -908,7 +890,6 @@ RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo);
 RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo);
 RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo);
 RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json);
-RZ_API RzBinPlugin *rz_bin_get_binplugin_by_bytes(RzBin *bin, const ut8 *bytes, ut64 sz);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf);
 RZ_API const RzBinPlugin *rz_bin_plugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name);
 RZ_API const RzBinXtrPlugin *rz_bin_xtrplugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name);
@@ -946,7 +927,6 @@ RZ_API const RzList *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj);
-RZ_API const RBNode *rz_bin_object_get_relocs(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzList *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzList *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj);
@@ -979,14 +959,12 @@ RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id);
 RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *name);
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 
-RZ_API RZ_BORROW const char *rz_bin_string_type(int type);
 RZ_API const char *rz_bin_entry_type_string(int etype);
 
 RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data);
 
 // RzBinFile.get
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
-RZ_API RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
 RZ_API RzList *rz_bin_file_get_symbols(RzBinFile *bf);
 // RzBinFile.add
 RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *binfile, const char *name, const char *super, int view);
@@ -998,7 +976,6 @@ RZ_API RzBinFile *rz_bin_file_find_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API RzBinFile *rz_bin_file_find_by_name(RzBin *bin, const char *name);
 
 RZ_API bool rz_bin_file_set_cur_binfile(RzBin *bin, RzBinFile *bf);
-RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
 RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
