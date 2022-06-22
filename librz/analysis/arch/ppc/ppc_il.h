@@ -49,9 +49,19 @@
 // Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead.
 #define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, DUP(x)), y) : LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(32), CAST(8, IL_FALSE, DUP(y))))))
 
+// Returns a Pure of width w with the i-th bit set.
+// Please note: The left most bit is bit 0.
+#define BIT_I(w, i) SHIFTR0(SHIFTR(IL_TRUE, UN(w, 0), U8(1)), i)
+
 // Sets bit `i` in the local variable with width `w` of the name `vn`.
 // Please note: The left most bit is bit 0.
-#define SET_BIT(vn, w, i) SETL(vn, LOGOR(VARL(vn), SHIFTR0(SHIFTR(IL_TRUE, UN(w, 0), U8(1)), i)))
+#define SET_BIT(vn, w, i) SETL(vn, LOGOR(VARL(vn), BIT_I(w, i)))
+
+// Tests bit i in Pure value v with a width of w.
+// Returns IL_TRUE if bit i is set. IL_FALSE otherwise.
+// Please note: The left most bit is bit 0.
+#define BIT_IS_SET(val, w, i) NON_ZERO(LOGAND(val, BIT_I(w, i)))
+
 // Implements the mask generation from the Reference Manual.
 //
 // if mstart ≤ mstop then
