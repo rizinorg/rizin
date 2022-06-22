@@ -156,7 +156,11 @@ static RzList *maps(RzBinFile *bf) {
 	}
 	map->name = strdup("header");
 	map->paddr = 0;
-	map->psize = RZ_MIN(bin->size, RZ_ROUND(bin->nt_headers->optional_header.SizeOfHeaders, bin->nt_headers->optional_header.FileAlignment));
+	ut32 aligned_hdr_size = UT32_MAX;
+	if (bin->nt_headers->optional_header.FileAlignment != 0) {
+		aligned_hdr_size = RZ_ROUND(bin->nt_headers->optional_header.SizeOfHeaders, bin->nt_headers->optional_header.FileAlignment);
+	}
+	map->psize = RZ_MIN(bin->size, aligned_hdr_size);
 	map->vaddr = ba;
 	map->vsize = RZ_ROUND(map->psize, 4096);
 	map->perm = RZ_PERM_R;
