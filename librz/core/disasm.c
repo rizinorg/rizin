@@ -1076,9 +1076,9 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		char number[32];
 		rz_strf(number, "0x%" PFMT64x, ds->analysis_op.mmio_address);
 
-		RzArchTarget *arch_target = core->analysis->arch_target;
+		RzPlatformTarget *arch_target = core->analysis->arch_target;
 
-		const char *resolved = rz_arch_profile_resolve_mmio(arch_target->profile, ds->analysis_op.mmio_address);
+		const char *resolved = rz_platform_profile_resolve_mmio(arch_target->profile, ds->analysis_op.mmio_address);
 		if (resolved) {
 			ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
 		}
@@ -1088,9 +1088,9 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		char number[32];
 		rz_strf(number, "0x%" PFMT64x, ds->analysis_op.ptr);
 
-		RzArchTarget *arch_target = core->analysis->arch_target;
+		RzPlatformTarget *arch_target = core->analysis->arch_target;
 
-		const char *resolved = rz_arch_profile_resolve_extended_register(arch_target->profile, ds->analysis_op.ptr);
+		const char *resolved = rz_platform_profile_resolve_extended_register(arch_target->profile, ds->analysis_op.ptr);
 		if (resolved) {
 			ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
 		}

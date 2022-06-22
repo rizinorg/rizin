@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
-#include <rz_arch.h>
+#include <rz_platform.h>
 #include <rz_project.h>
 
 #include "../unit/minunit.h"
@@ -20,10 +20,10 @@ bool test_cpu_profiles() {
 
 	const char *tempfile = rz_file_temp(".sdb");
 	rz_file_dump(tempfile, cpu_buffer, sizeof(cpu_buffer), false);
-	rz_arch_load_profile_sdb(core->analysis->arch_target, tempfile);
+	rz_platform_load_profile_sdb(core->analysis->arch_target, tempfile);
 
 	// 2. Analyse the file
-	rz_arch_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
+	rz_platform_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
 
 	RzFlagItem *item = rz_flag_get(core->flags, "DDRB");
 	mu_assert_eq(item->offset, 0x00000004, "Flag DDRB not found");
@@ -74,10 +74,10 @@ bool test_platform_profiles() {
 
 	const char *tempfile = rz_file_temp(".sdb");
 	rz_file_dump(tempfile, platform_buffer, sizeof(platform_buffer), false);
-	rz_arch_load_platform_sdb(core->analysis->platform_target, tempfile);
+	rz_platform_target_index_load_sdb(core->analysis->platform_target, tempfile);
 
 	// 2. Analyse the file
-	rz_arch_platform_add_flags_comments(core);
+	rz_platform_index_add_flags_comments(core);
 
 	RzFlagItem *item = rz_flag_get(core->flags, "AUX_MU_IER_REG");
 	mu_assert_eq(item->offset, 0x7e215044, "Flag AUX_MU_IER_REG not found");

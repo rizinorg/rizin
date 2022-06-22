@@ -1246,7 +1246,7 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
  */
 RZ_API bool rz_core_project_load_for_cli(RzCore *core, const char *file, bool load_bin_io);
 
-RZ_API bool rz_arch_platform_add_flags_comments(RzCore *core);
+RZ_API bool rz_platform_index_add_flags_comments(RzCore *core);
 
 /* regs */
 /// Callback for synchronizing register state in commands (only relevant for debug, not for analysis)

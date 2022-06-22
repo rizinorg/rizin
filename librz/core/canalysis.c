@@ -3613,8 +3613,8 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	}
 	rz_core_task_yield(&core->tasks);
 
-	rz_arch_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
-	rz_arch_platform_add_flags_comments(core);
+	rz_platform_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
+	rz_platform_index_add_flags_comments(core);
 
 	rz_cons_break_pop();
 	return true;
@@ -5220,10 +5220,10 @@ static bool add_mmio_extended_flag_cb(void *user, const ut64 addr, const void *v
 
 /**
  * \brief Adds the IO and extended IO registers from the CPU profiles as flags
- * \param profile reference to RzArchProfile
+ * \param profile reference to RzPlatformProfile
  * \param flags reference to RzFlag
  */
-RZ_API void rz_arch_profile_add_flag_every_io(RzArchProfile *profile, RzFlag *flags) {
+RZ_API void rz_platform_profile_add_flag_every_io(RzPlatformProfile *profile, RzFlag *flags) {
 	rz_flag_unset_all_in_space(flags, RZ_FLAGS_FS_MMIO_REGISTERS);
 	rz_flag_unset_all_in_space(flags, RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED);
 	ht_up_foreach(profile->registers_mmio, add_mmio_flag_cb, flags);
@@ -5234,7 +5234,7 @@ static bool add_arch_platform_flag_comment_cb(void *user, const ut64 addr, const
 	if (!v) {
 		return false;
 	}
-	RzArchPlatformItem *item = (RzArchPlatformItem *)v;
+	RzPlatformItem *item = (RzPlatformItem *)v;
 	RzCore *core = (RzCore *)user;
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_PLATFORM_PORTS);
 	rz_flag_set(core->flags, item->name, addr, 1);
@@ -5250,7 +5250,7 @@ static bool add_arch_platform_flag_comment_cb(void *user, const ut64 addr, const
  *
  * \param core reference to RzCore
  */
-RZ_API bool rz_arch_platform_add_flags_comments(RzCore *core) {
+RZ_API bool rz_platform_index_add_flags_comments(RzCore *core) {
 	rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_PLATFORM_PORTS);
 	ht_up_foreach(core->analysis->platform_target->platforms, add_arch_platform_flag_comment_cb, core);
 	return true;

@@ -1,7 +1,6 @@
 include_files = [
   'rz_agraph.h',
   'rz_analysis.h',
-  'rz_arch.h',
   'rz_asm.h',
   'rz_basefind.h',
   'rz_bin.h',
@@ -35,6 +34,7 @@ include_files = [
   'rz_msg_digest.h',
   'rz_parse.h',
   'rz_pdb.h',
+  'rz_platform.h',
   'rz_project.h',
   'rz_reg.h',
   'rz_regex.h',

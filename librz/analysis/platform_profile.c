@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_arch.h>
+#include <rz_platform.h>
 #include <string.h>
 
 /**
- * \brief Frees an RzArchProfile type
+ * \brief Frees an RzPlatformProfile type
  *
  * 	Frees the hashtables used for MMIO and extended
  * 	registers
  */
-RZ_API void rz_arch_profile_free(RzArchProfile *p) {
+RZ_API void rz_platform_profile_free(RzPlatformProfile *p) {
 	if (!p) {
 		return;
 	}
@@ -24,10 +24,10 @@ static void free_mmio_kv(HtUPKv *kv) {
 }
 
 /**
- * \brief Creates a new RzArchProfile type
+ * \brief Creates a new RzPlatformProfile type
  */
-RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
-	RzArchProfile *profile = RZ_NEW0(RzArchProfile);
+RZ_API RZ_OWN RzPlatformProfile *rz_platform_profile_new() {
+	RzPlatformProfile *profile = RZ_NEW0(RzPlatformProfile);
 	if (!profile) {
 		return NULL;
 	}
@@ -46,14 +46,14 @@ RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
 }
 
 /**
- * \brief Creates a new RzArchTarget type
+ * \brief Creates a new RzPlatformTarget type
  */
-RZ_API RZ_OWN RzArchTarget *rz_arch_target_new() {
-	RzArchTarget *profile = RZ_NEW0(RzArchTarget);
+RZ_API RZ_OWN RzPlatformTarget *rz_platform_target_new() {
+	RzPlatformTarget *profile = RZ_NEW0(RzPlatformTarget);
 	if (!profile) {
 		return NULL;
 	}
-	profile->profile = rz_arch_profile_new();
+	profile->profile = rz_platform_profile_new();
 	if (!profile->profile) {
 		free(profile);
 		return NULL;
@@ -62,15 +62,15 @@ RZ_API RZ_OWN RzArchTarget *rz_arch_target_new() {
 }
 
 /**
- * \brief Frees an RzArchTarget type
+ * \brief Frees an RzPlatformTarget type
  *
- *	Frees the pointer to the SDB and the RzArchProfile
+ *	Frees the pointer to the SDB and the RzPlatformProfile
  */
-RZ_API void rz_arch_target_free(RzArchTarget *t) {
+RZ_API void rz_platform_target_free(RzPlatformTarget *t) {
 	if (!t) {
 		return;
 	}
-	rz_arch_profile_free(t->profile);
+	rz_platform_profile_free(t->profile);
 	free(t->cpu);
 	free(t->arch);
 	free(t);
@@ -79,7 +79,7 @@ RZ_API void rz_arch_target_free(RzArchTarget *t) {
 /**
  * \brief Resolves an address and returns the linked mmio
  */
-RZ_API RZ_BORROW const char *rz_arch_profile_resolve_mmio(RZ_NONNULL RzArchProfile *profile, ut64 address) {
+RZ_API RZ_BORROW const char *rz_platform_profile_resolve_mmio(RZ_NONNULL RzPlatformProfile *profile, ut64 address) {
 	rz_return_val_if_fail(profile, NULL);
 
 	return ht_up_find(profile->registers_mmio, (ut64)address, NULL);
@@ -88,24 +88,24 @@ RZ_API RZ_BORROW const char *rz_arch_profile_resolve_mmio(RZ_NONNULL RzArchProfi
 /**
  * \brief Resolves an address and returns the linked extended register
  */
-RZ_API RZ_BORROW const char *rz_arch_profile_resolve_extended_register(RZ_NONNULL RzArchProfile *profile, ut64 address) {
+RZ_API RZ_BORROW const char *rz_platform_profile_resolve_extended_register(RZ_NONNULL RzPlatformProfile *profile, ut64 address) {
 	rz_return_val_if_fail(profile, NULL);
 
 	return ht_up_find(profile->registers_extended, (ut64)address, NULL);
 }
 
-static inline bool cpu_reload_needed(RzArchTarget *c, const char *cpu, const char *arch) {
+static inline bool cpu_reload_needed(RzPlatformTarget *c, const char *cpu, const char *arch) {
 	if (!c->arch || strcmp(c->arch, arch)) {
 		return true;
 	}
 	return !c->cpu || strcmp(c->cpu, cpu);
 }
 
-static bool sdb_load_arch_profile(RzArchTarget *t, Sdb *sdb) {
+static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 	rz_return_val_if_fail(t && sdb, false);
 	SdbKv *kv;
 	SdbListIter *iter;
-	RzArchProfile *c = rz_arch_profile_new();
+	RzPlatformProfile *c = rz_platform_profile_new();
 	if (!c) {
 		return false;
 	}
@@ -146,12 +146,12 @@ static bool sdb_load_arch_profile(RzArchTarget *t, Sdb *sdb) {
 		}
 	}
 	ls_free(l);
-	rz_arch_profile_free(t->profile);
+	rz_platform_profile_free(t->profile);
 	t->profile = c;
 	return true;
 }
 
-static bool sdb_load_arch_profile_by_path(RZ_NONNULL RzArchTarget *t, const char *path) {
+static bool sdb_load_arch_profile_by_path(RZ_NONNULL RzPlatformTarget *t, const char *path) {
 	Sdb *db = sdb_new(0, path, 0);
 	bool result = sdb_load_arch_profile(t, db);
 	sdb_close(db);
@@ -160,12 +160,12 @@ static bool sdb_load_arch_profile_by_path(RZ_NONNULL RzArchTarget *t, const char
 }
 
 /**
- * \brief Loads the contents of the CPU Profile to the RzArchProfile
+ * \brief Loads the contents of the CPU Profile to the RzPlatformProfile
  *
- * \param t reference to RzArchTarget
+ * \param t reference to RzPlatformTarget
  * \param path reference to path of the SDB file
  */
-RZ_API bool rz_arch_load_profile_sdb(RzArchTarget *t, const char *path) {
+RZ_API bool rz_platform_load_profile_sdb(RzPlatformTarget *t, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;
 	}
@@ -210,15 +210,15 @@ static bool is_cpu_valid(const char *cpu_dir, const char *cpu) {
 }
 
 /**
- * \brief Initializes RzArchProfile by loading the path to the SDB file
+ * \brief Initializes RzPlatformProfile by loading the path to the SDB file
  * 		  of the CPU profile
  *
- * \param t reference to RzArchTarget
+ * \param t reference to RzPlatformTarget
  * \param cpu reference to the selected CPU (value of `asm.cpu`)
  * \param arch reference to the selected architecture (value of `asm.arch`)
  * \param cpus_dir reference to the directory containing cpu files
  */
-RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *arch, const char *cpus_dir) {
+RZ_API bool rz_platform_profiles_init(RzPlatformTarget *t, const char *cpu, const char *arch, const char *cpus_dir) {
 	if (!cpu_reload_needed(t, cpu, arch)) {
 		return false;
 	}
@@ -240,7 +240,7 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 	free(t->arch);
 	t->cpu = strdup(cpu);
 	t->arch = strdup(arch);
-	rz_arch_load_profile_sdb(t, path);
+	rz_platform_load_profile_sdb(t, path);
 	free(path);
 	return true;
 }
