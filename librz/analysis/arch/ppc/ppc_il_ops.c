@@ -786,9 +786,15 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTBR5:
 	case PPC_INS_MTBR6:
 	case PPC_INS_MTBR7:
+		NOT_IMPLEMENTED;
 	case PPC_INS_MFXER:
 	case PPC_INS_MTXER:
-		NOT_IMPLEMENTED;
+		if (id == PPC_INS_MTXER) {
+			return ppc_set_xer(VARG(rS), mode);
+		}
+		spr_name = "xer";
+		set_val = SETL("val", ppc_get_xer(mode));
+		break;
 	case PPC_INS_MFDSCR:
 	case PPC_INS_MTDSCR:
 		NOT_IMPLEMENTED;
