@@ -316,3 +316,21 @@ struct _TP_CALLBACK_ENVIRON_V3 {
 };
 EOF
 RUN
+
+NAME=Extract pdb via idbx
+FILE==
+CMDS=<<EOF
+idpi bins/pdb/basic32.pd_
+e log.level=3
+idpx bins/pdb/basic32.pd_ .tmp
+!rz-hash -a md5 .tmp/basic32.pdb
+EOF
+REGEXP_FILTER_ERR=(ERROR:.+\nINFO:.+\n)
+EXPECT_ERR=<<EOF
+ERROR: The pdb file bins/pdb/basic32.pd_ seems to be compressed, please use idpx command to extract the contents.
+INFO: cab_extract: extracted .tmp/basic32.pdb
+EOF
+EXPECT=<<EOF
+.tmp/basic32.pdb: 0x00000000-0x00649000 md5: a6c609e6b62cd0b9fbea5400bf370891
+EOF
+RUN
