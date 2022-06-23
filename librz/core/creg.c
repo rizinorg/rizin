@@ -99,8 +99,8 @@ static void regs_to_flags(RzCore *core, RzReg *regs) {
 /**
  * \brief Update or create flags for all registers where it makes sense
  *
- * Registers are taken either from rz_core_reg_default().
- * "makes sens" currently means regs that have the same size as an address,
+ * Registers are taken from rz_core_reg_default().
+ * "makes sense" currently means regs that have the same size as an address,
  * but this may change in case a better heuristic is found.
  */
 RZ_API void rz_core_reg_update_flags(RzCore *core) {
@@ -108,6 +108,26 @@ RZ_API void rz_core_reg_update_flags(RzCore *core) {
 		return;
 	}
 	regs_to_flags(core, rz_core_reg_default(core));
+}
+
+/**
+ * \brief Update registers content of the given type from/to the registers and update/create flags
+ *
+ * Registers are taken from rz_core_reg_default(). Flags in Rizin are updated
+ * according to the current value of the registers.
+ *
+ * \param core RzCore reference
+ * \param type type of register to consider, according to \p RzRegisterType
+ * \param write when true the content of the register is written from \p RzReg
+ * into the debug plugin, if any. Otherwise the content of the register is taken
+ * from the debug plugin, if any, and written into the \p RzReg.
+ */
+RZ_API bool rz_core_reg_update_flags_type(RzCore *core, RzRegisterType type, bool write) {
+	if (rz_core_is_debug(core) && !rz_debug_reg_sync(core->dbg, type, write)) {
+		return false;
+	}
+	regs_to_flags(core, rz_core_reg_default(core));
+	return true;
 }
 
 /**
