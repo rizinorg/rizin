@@ -7757,14 +7757,12 @@ RZ_IPI RzCmdStatus rz_analyze_all_consecutive_functions_in_section_handler(RzCor
 }
 
 RZ_IPI RzCmdStatus rz_analyze_recursively_all_function_types_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_analysis_types_propagation(core);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_analysis_types_propagation(core));
 }
 
 RZ_IPI RzCmdStatus rz_apply_signatures_from_sigdb_handler(RzCore *core, int argc, const char **argv) {
 	const char *filter = argc == 2 ? argv[1] : NULL;
-	rz_core_analysis_sigdb_apply(core, NULL, filter);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_analysis_sigdb_apply(core, NULL, filter));
 }
 
 RZ_IPI RzCmdStatus rz_list_signatures_in_sigdb_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -7833,8 +7831,7 @@ RZ_IPI RzCmdStatus rz_recover_all_golang_functions_strings_handler(RzCore *core,
 }
 
 RZ_IPI RzCmdStatus rz_analyze_all_objc_references_handler(RzCore *core, int argc, const char **argv) {
-	cmd_analysis_objc(core, false);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(cmd_analysis_objc(core, false));
 }
 
 RZ_IPI RzCmdStatus rz_autoname_all_functions_handler(RzCore *core, int argc, const char **argv) {
@@ -7918,8 +7915,7 @@ RZ_IPI RzCmdStatus rz_analyze_function_linked_offsets_handler(RzCore *core, int 
 
 RZ_IPI RzCmdStatus rz_print_commands_after_traps_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n_bytes = argc == 2 ? rz_num_math(core->num, argv[1]) : 0;
-	print_cmd_analysis_after_traps_print(core, n_bytes);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(print_cmd_analysis_after_traps_print(core, n_bytes));
 }
 
 RZ_IPI RzCmdStatus rz_print_areas_no_functions_handler(RzCore *core, int argc, const char **argv) {

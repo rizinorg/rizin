@@ -1,5 +1,6 @@
 NAME=Print SigDB contents
 FILE==
+ARGS=-eflirt.sigdb.load.system=false -eflirt.sigdb.load.home=false
 CMDS=<<EOF
 e flirt.sigdb.path=bins/sigdb/fake-db
 aaFl
@@ -14,6 +15,7 @@ RUN
 
 NAME=Do analysis and apply SigDB automatically
 FILE=bins/sigdb/elf-x86-64-static-libc
+ARGS=-eflirt.sigdb.load.system=false -eflirt.sigdb.load.home=false
 CMDS=<<EOF
 e flirt.sigdb.path=bins/sigdb/fake-db
 aaa
@@ -27,6 +29,7 @@ RUN
 
 NAME=Do analysis and apply SigDB manually
 FILE=bins/sigdb/elf-x86-64-static-libc
+ARGS=-eflirt.sigdb.load.system=false -eflirt.sigdb.load.home=false
 CMDS=<<EOF
 aaa
 e flirt.sigdb.path=bins/sigdb/fake-db
