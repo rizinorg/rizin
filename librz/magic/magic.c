@@ -49,7 +49,7 @@ RZ_API void rz_magic_setflags(RzMagic *m, int f) {
 	magic_setflags(m, f);
 }
 RZ_API bool rz_magic_load_buffer(RzMagic *m, const char *f) {
-	if (*magicdata == '#') {
+	if (*f == '#') {
 		return magic_load(m, f) != -1;
 	} else {
 		eprintf("Magic buffers should start with #\n");
