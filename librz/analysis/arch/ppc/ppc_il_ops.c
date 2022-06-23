@@ -1068,6 +1068,13 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		// TODO Exception
 		NOT_IMPLEMENTED;
 	case PPC_INS_NOP:
+	// Everything is executed liniar => Sync instructions are NOPs.
+	case PPC_INS_ISYNC:
+	case PPC_INS_SYNC:
+	case PPC_INS_LWSYNC:
+	case PPC_INS_MSYNC:
+	case PPC_INS_PTESYNC:
+	case PPC_INS_TLBSYNC:
 		lop = NOP;
 		break;
 	case PPC_INS_ADD:
@@ -1263,7 +1270,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFSRIN:
 	case PPC_INS_MFTB:
 	case PPC_INS_MFVSCR:
-	case PPC_INS_MSYNC:
 	case PPC_INS_MTCRF:
 	case PPC_INS_MTCTR:
 	case PPC_INS_MTDCR:
