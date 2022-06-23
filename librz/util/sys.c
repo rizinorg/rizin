@@ -259,6 +259,9 @@ RZ_API char *rz_sys_cmd_strf(const char *fmt, ...) {
 	return ret;
 }
 
+/**
+ * \brief Print the backtrace at the point this function is called from.
+ */
 RZ_API void rz_sys_backtrace(void) {
 #if HAVE_BACKTRACE
 	void *array[10];
@@ -291,6 +294,9 @@ RZ_API void rz_sys_backtrace(void) {
 #endif
 }
 
+/**
+ * \brief Sleep for \p secs seconds
+ */
 RZ_API int rz_sys_sleep(int secs) {
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
@@ -305,6 +311,9 @@ RZ_API int rz_sys_sleep(int secs) {
 #endif
 }
 
+/**
+ * \brief Sleep for \p usecs microseconds
+ */
 RZ_API int rz_sys_usleep(int usecs) {
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
@@ -327,6 +336,13 @@ RZ_API int rz_sys_usleep(int usecs) {
 #endif
 }
 
+/**
+ * \brief Clean all environment variables in the calling process.
+ *
+ * Please note that environment variables should not be used to store sensitive
+ * info as they might be kept elsewhere and there is no access control over that
+ * data.
+ */
 RZ_API int rz_sys_clearenv(void) {
 #if __UNIX__
 #if __APPLE__ && !HAVE_ENVIRON
@@ -358,6 +374,9 @@ RZ_API int rz_sys_clearenv(void) {
 #endif
 }
 
+/**
+ * \brief Set an environment variable in the calling process
+ */
 RZ_API int rz_sys_setenv(const char *key, const char *value) {
 	if (!key) {
 		return 0;
@@ -434,6 +453,9 @@ RZ_API int rz_sys_crash_handler(const char *cmd) {
 	return true;
 }
 
+/**
+ * \brief Get the value of an environment variable named \p key or NULL if none exists.
+ */
 RZ_API char *rz_sys_getenv(const char *key) {
 #if __WINDOWS__
 	DWORD dwRet;
@@ -479,6 +501,9 @@ err_r_sys_get_env:
 #endif
 }
 
+/**
+ * \brief Return true if the environment variable has the value 1, false otherwise
+ */
 RZ_API bool rz_sys_getenv_asbool(const char *key) {
 	char *env = rz_sys_getenv(key);
 	const bool res = (env && *env == '1');
@@ -486,6 +511,9 @@ RZ_API bool rz_sys_getenv_asbool(const char *key) {
 	return res;
 }
 
+/**
+ * \brief Get current working directory
+ */
 RZ_API char *rz_sys_getdir(void) {
 #if __WINDOWS__
 	return _getcwd(NULL, 0);
@@ -494,6 +522,9 @@ RZ_API char *rz_sys_getdir(void) {
 #endif
 }
 
+/**
+ * \brief Change current directory to \p s, taking care of home expansion ~.
+ */
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(s, false);
 	char *homepath = rz_path_home_expand(s);
@@ -505,6 +536,9 @@ RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 	return chdir(s) == 0;
 }
 
+/**
+ * \brief Enable or disable ASLR for the calling process
+ */
 RZ_API bool rz_sys_aslr(int val) {
 	bool ret = true;
 #if __linux__
