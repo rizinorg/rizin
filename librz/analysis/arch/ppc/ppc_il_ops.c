@@ -80,6 +80,10 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LWA:
 	case PPC_INS_LWAX:
 	case PPC_INS_LWAUX:
+	case PPC_INS_LBZCIX:
+	case PPC_INS_LHZCIX:
+	case PPC_INS_LWZCIX:
+	case PPC_INS_LDCIX:
 		base = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
@@ -113,12 +117,6 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LFSX:
 	case PPC_INS_LFSU:
 	case PPC_INS_LFSUX:
-		NOT_IMPLEMENTED;
-	// Caching Inhibited Indexed
-	case PPC_INS_LBZCIX:
-	case PPC_INS_LHZCIX:
-	case PPC_INS_LWZCIX:
-	case PPC_INS_LDCIX:
 		NOT_IMPLEMENTED;
 	// Vector
 	case PPC_INS_LVEBX:
@@ -196,6 +194,10 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STHUX:
 	case PPC_INS_STWUX:
 	case PPC_INS_STDUX:
+	case PPC_INS_STBCIX:
+	case PPC_INS_STHCIX:
+	case PPC_INS_STWCIX:
+	case PPC_INS_STDCIX:
 		base = IFREG0(rA); // Not all instructions use the plain value 0 if (rA) == 0. But we ignore this here.
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
@@ -215,12 +217,6 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STFSU:
 	case PPC_INS_STFSUX:
 	case PPC_INS_STFSX:
-		NOT_IMPLEMENTED;
-	// Caching Inhibited Indexed
-	case PPC_INS_STBCIX:
-	case PPC_INS_STHCIX:
-	case PPC_INS_STWCIX:
-	case PPC_INS_STDCIX:
 		NOT_IMPLEMENTED;
 	case PPC_INS_STDCX:
 	case PPC_INS_STWCX:
