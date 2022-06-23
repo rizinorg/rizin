@@ -296,7 +296,7 @@ static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzList *results
  * \brief  Generates a RzList struct containing RzBinString from a given RzBinFile
  *
  * \param  bf           The RzBinFile to use for searching for strings
- * \param  min_length   The string minimum length
+ * \param  min_length   The string minimum length (when len < 1, is set to 4)
  * \param  raw_strings  When set to false, it will search for strings only in the data section
  *
  * \return On success returns RzList pointer, otherwise NULL
@@ -313,7 +313,7 @@ RZ_API RZ_OWN RzList *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_l
 	size_t pool_size = 1;
 
 	if (min_length < 1) {
-		min_length = 1;
+		min_length = 4;
 	}
 
 	if (bf->rbin) {
