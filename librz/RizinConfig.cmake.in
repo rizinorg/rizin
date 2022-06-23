@@ -93,7 +93,7 @@ foreach(_comp ${Rizin_FIND_COMPONENTS})
     # target below would be an error
     continue()
   endif()
-  find_package(rz_${_comp_lower} PATHS ${_rizin_cmake_path})
+  find_package(rz_${_comp_lower} PATHS ${_rizin_cmake_path} NO_DEFAULT_PATH)
   if (NOT rz_${_comp_lower}_FOUND)
     set(Rizin_FOUND False)
     set(Rizin_NOT_FOUND_MESSAGE "Failed to find Rizin component ${_comp}")
