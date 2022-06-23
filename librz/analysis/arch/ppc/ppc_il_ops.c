@@ -636,9 +636,42 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFOCRF:
 	case PPC_INS_MTOCRF:
 		NOT_IMPLEMENTED;
-	case PPC_INS_MTMSR:
 	case PPC_INS_MFMSR:
-		NOT_IMPLEMENTED;
+		spr_name = "msr";
+		break;
+	case PPC_INS_MTMSR:
+	case PPC_INS_MTMSRD:;
+		ut8 l = INSOP(1).imm;
+		if (l == 1) {
+			RzILOpPure *rs_48 = BIT_IS_SET(VARG(rS), PPC_ARCH_BITS, U8(48));
+			RzILOpPure *rs_49 = BIT_IS_SET(VARG(rS), PPC_ARCH_BITS, U8(49));
+			RzILOpPure *rs_58 = BIT_IS_SET(VARG(rS), PPC_ARCH_BITS, U8(58));
+			RzILOpPure *rs_59 = BIT_IS_SET(VARG(rS), PPC_ARCH_BITS, U8(59));
+			RzILOpPure *msr_3 = BIT_IS_SET(VARG("msr"), PPC_ARCH_BITS, U8(3));
+			RzILOpPure *msr_41 = BIT_IS_SET(VARG("msr"), PPC_ARCH_BITS, U8(41));
+			RzILOpEffect *set_msr_48 = BRANCH(OR(rs_48, rs_49), SET_BIT("msr", 64, U8(48)), UNSET_BIT("msr", 64, U8(48)));
+			RzILOpEffect *set_msr_58 = BRANCH(AND(OR(rs_58, DUP(rs_49)), INV(AND(msr_41, AND(msr_3, INV(DUP(rs_49)))))),
+				SET_BIT("msr", 64, U8(48)), UNSET_BIT("msr", 64, U8(48)));
+			RzILOpEffect *set_msr_59 = BRANCH(AND(OR(rs_59, DUP(rs_49)), INV(AND(DUP(msr_41), AND(DUP(msr_3), INV(DUP(rs_49)))))),
+				SET_BIT("msr", 64, U8(48)), UNSET_BIT("msr", 64, U8(48)));
+			RzILOpPure *rs_0_2 = SHIFTR0(LOGAND(EXTZ(VARG(rS)), BIT_MASK(64, U8(0), U8(2))), U8(61));
+			RzILOpPure *rs_4_40 = SHIFTR0(LOGAND(EXTZ(VARG(rS)), BIT_MASK(64, U8(4), U8(40))), U8(23));
+			RzILOpPure *rs_32_40 = SHIFTR0(LOGAND(EXTZ(VARG(rS)), BIT_MASK(64, U8(32), U8(40))), U8(23));
+			RzILOpPure *rs_42_47 = SHIFTR0(LOGAND(EXTZ(VARG(rS)), BIT_MASK(64, U8(42), U8(47))), U8(16));
+			RzILOpPure *rs_49_50 = SHIFTR0(LOGAND(EXTZ(VARG(rS)), BIT_MASK(64, U8(49), U8(50))), U8(13));
+			RzILOpPure *rs_52_57 = SHIFTR0(LOGAND(EXTZ(VARG(rS)), BIT_MASK(64, U8(52), U8(57))), U8(6));
+			RzILOpPure *rs_60_62 = SHIFTR0(LOGAND(EXTZ(VARG(rS)), BIT_MASK(64, U8(60), U8(62))), U8(1));
+			RzILOpPure *res;
+			if (IN_64BIT_MODE) {
+				res = LOGOR(rs_0_2, LOGOR(rs_4_40, LOGOR(rs_42_47, LOGOR(rs_49_50, LOGOR(rs_52_57, rs_60_62)))));
+			} else {
+				res = LOGOR(rs_32_40, LOGOR(rs_42_47, LOGOR(rs_49_50, LOGOR(rs_52_57, rs_60_62))));
+			}
+			return SEQ4(set_msr_48, set_msr_58, set_msr_59, SETG("msr", res));
+		} else {
+			RzILOpPure *rs_48_62 = SHIFTR0(LOGAND(EXTZ(VARG(rS)), BIT_MASK(64, U8(48), U8(62))), U8(1));
+			return SETG("msr", SET_RANGE(VARG("msr"), U8(48), U8(62), rs_48_62, 64));
+		}
 		break;
 	case PPC_INS_MFCR:
 	case PPC_INS_MTCR:
@@ -763,7 +796,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTFSF:
 	case PPC_INS_MTFSFI:
 	case PPC_INS_MFFS:
-	case PPC_INS_MTMSRD:
 	case PPC_INS_MFTB:
 	case PPC_INS_MTCRF:
 	case PPC_INS_MFRTCU:

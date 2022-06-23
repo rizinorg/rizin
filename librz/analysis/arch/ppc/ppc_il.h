@@ -53,9 +53,24 @@
 // Please note: The left most bit is bit 0.
 #define BIT_I(w, i) SHIFTR0(SHIFTR(IL_TRUE, UN(w, 0), U8(1)), i)
 
-// Sets bit `i` in the local variable with width `w` of the name `vn`.
+// Sets bit `i` (=IL_TRUE) in the local variable with width `w` of the name `vn`.
 // Please note: The left most bit is bit 0.
 #define SET_BIT(vn, w, i) SETL(vn, LOGOR(VARL(vn), BIT_I(w, i)))
+
+// Unsets bit `i` (=IL_FALSE) in the local variable with width `w` of the name `vn`.
+// Please note: The left most bit is bit 0.
+#define UNSET_BIT(vn, w, i) SETL(vn, LOGAND(VARL(vn), LOGNOT(BIT_MASK(w, i, i))))
+
+// Returns a Pure of length l with bit i:j (inclusive j) set to IL_TRUE.
+// i marks he left bit. j the right. l, i and j need to be U8.
+// Please note: The left most bit is bit 0.
+#define BIT_MASK(l, i, j) LOGNOT(LOGOR(SHIFTR(IL_TRUE, UN(l, 0), ADD(i, U8(1))), SHIFTL(IL_TRUE, UN(l, 0), SUB(U8(l), j))))
+
+// Sets bit i:j of the variable v to the value stored in s.
+// Both variables must be of width w.
+// i and j should be U8
+// Please note: The left most bit is bit 0.
+#define SET_RANGE(v, i, j, s, w) LOGOR(LOGAND(LOGNOT(BIT_MASK(w, i, j)), v), LOGAND(SHIFTL0(s, SUB(U8(w), j)), BIT_MASK(w, i, j)))
 
 // Tests bit i in Pure value v with a width of w.
 // Returns IL_TRUE if bit i is set. IL_FALSE otherwise.
