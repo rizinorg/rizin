@@ -879,7 +879,7 @@ RUN
 
 NAME=pdf entry0 pe
 FILE=bins/pe/ConsoleApplication1.exe
-ARGS=-A
+ARGS=-A -eflirt.sigdb.load.system=false -eflirt.sigdb.load.home=false
 CMDS=pdf
 EXPECT=<<EOF
 / entry0 ();
