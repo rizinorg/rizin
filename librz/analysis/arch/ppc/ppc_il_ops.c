@@ -84,6 +84,8 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LHZCIX:
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
+	case PPC_INS_LWARX:
+	case PPC_INS_LDARX:
 		base = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
@@ -103,8 +105,6 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	// Byte reverse and reserved indexed
 	case PPC_INS_LHBRX:
 	case PPC_INS_LDBRX:
-	case PPC_INS_LWARX:
-	case PPC_INS_LDARX:
 		NOT_IMPLEMENTED;
 	// Floats
 	case PPC_INS_LFD:
@@ -198,6 +198,8 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
+	case PPC_INS_STDCX:
+	case PPC_INS_STWCX:
 		base = IFREG0(rA); // Not all instructions use the plain value 0 if (rA) == 0. But we ignore this here.
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
@@ -217,9 +219,6 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STFSU:
 	case PPC_INS_STFSUX:
 	case PPC_INS_STFSX:
-		NOT_IMPLEMENTED;
-	case PPC_INS_STDCX:
-	case PPC_INS_STWCX:
 		NOT_IMPLEMENTED;
 	// Byte reverse and reserved indexed
 	case PPC_INS_STHBRX:

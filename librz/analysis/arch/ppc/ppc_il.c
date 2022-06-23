@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ppc_il.h"
+#include "ppc.h"
 #include "ppc_analysis.h"
 #include "rz_il/rz_il_opcodes.h"
 #include <rz_util/rz_assert.h>
@@ -53,6 +54,12 @@ bool ppc_is_x_form(ut32 insn_id) {
 	case PPC_INS_STHX:
 	case PPC_INS_STWX:
 	case PPC_INS_STDX:
+	case PPC_INS_STBCIX:
+	case PPC_INS_STHCIX:
+	case PPC_INS_STWCIX:
+	case PPC_INS_STDCIX:
+	case PPC_INS_STDCX:
+	case PPC_INS_STWCX:
 		return true;
 	}
 }
