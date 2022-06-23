@@ -178,6 +178,11 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
+	case PPC_INS_DCBZ:
+		ea = ADD(IFREG0(rA), VARG(rB));
+		//! DCACHE_LINE_SIZE is currently hardcoded. Should be replaced by config option.
+		store = STOREW(ea, UN(DCACHE_LINE_SIZE, 0));
+		break;
 	case PPC_INS_STB:
 	case PPC_INS_STH:
 	case PPC_INS_STW:
@@ -1190,6 +1195,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_STXSDX:
 	case PPC_INS_STXVD2X:
 	case PPC_INS_STXVW4X:
+	case PPC_INS_DCBZ:
 		lop = store_op(handle, insn, mode);
 		break;
 	case PPC_INS_MR:

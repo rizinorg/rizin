@@ -17,6 +17,10 @@
 #define PPC_DWORD 64
 #define PPC_QWORD 128
 
+// This value varies from implementation to implementation.
+// Should be replaced with a plugin specific config option.
+#define DCACHE_LINE_SIZE 32
+
 #define NOT_IMPLEMENTED \
 	do { \
 		RZ_LOG_INFO("IL instruction not implemented."); \
