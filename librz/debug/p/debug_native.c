@@ -324,19 +324,19 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 			bool autoload_pdb = dbg->corebind.cfggeti(core, "pdb.autoload");
 			if (autoload_pdb) {
 				PLIB_ITEM lib = r->lib;
-				dbg->corebind.cmdf(core, "\"o \\\"%s\\\" 0x%p\"", lib->Path, lib->BaseOfDll);
-				char *o_res = dbg->corebind.cmdstrf(core, "o~+%s", lib->Name);
-				int fd = atoi(o_res);
-				free(o_res);
-				if (fd) {
-					char *pdb_file = dbg->corebind.cmdstr(core, "i~dbg_file");
-					if (pdb_file && (rz_str_trim(pdb_file), *pdb_file)) {
-						if (!rz_file_exists(pdb_file + 9)) {
+				RzBinOptions opts = { 0 };
+				opts.obj_opts.baseaddr = (uintptr_t)lib->BaseOfDll;
+				RzBinFile *cur = rz_bin_cur(core->bin);
+				RzBinFile *bf = rz_bin_open(core->bin, lib->Path, &opts);
+				if (bf) {
+					const RzBinInfo *info = rz_bin_object_get_info(bf->o);
+					if (RZ_STR_ISNOTEMPTY(info->debug_file_name)) {
+						if (!rz_file_exists(info->debug_file_name)) {
 							dbg->corebind.cmdf(core, "idpd");
 						}
-						dbg->corebind.cmdf(core, "idp");
+						dbg->corebind.cmd(core, "idp");
 					}
-					dbg->corebind.cmdf(core, "o-%d", fd);
+					rz_bin_file_set_cur_binfile(core->bin, cur);
 				}
 			}
 		} else {
