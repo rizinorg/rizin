@@ -482,7 +482,33 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 			(id == PPC_INS_NAND) ? LOGAND(op0, op1) : LOGOR(op0, op1));
 		break;
 	// Compare bytes & Equivalent
-	case PPC_INS_CMPB:
+	case PPC_INS_CMPB:;
+		ut8 bits = PPC_ARCH_BITS;
+		RzILOpEffect *loop, *init_n, *ones_rA, *zeros_rA;
+		// RA[8×n:8×n+7] ← 0b1111_1111
+		ones_rA = SETG(rA, SET_RANGE(VARG(rA), VARL("n"), ADD(VARL("n"), U8(7)), BIT_MASK(bits, VARL("n"), ADD(VARL("n"), U8(7))), bits));
+		// RA[8×n:8×n+7] ← 0b0000_0000
+		zeros_rA = SETG(rA, SET_RANGE(VARG(rA), VARL("n"), ADD(VARL("n"), U8(7)), UA(0), bits));
+		RzILOpPure *bitmask_n_n7 = BIT_MASK(bits, MUL(U8(8), VARL("n")), ADD(MUL(U8(8), VARL("n")), U8(7)));
+		//  RS[8×n:8×n+7]
+		RzILOpPure *rS_8n_8n7 = LOGAND(bitmask_n_n7, VARG(rS));
+		//  RB[8×n:8×n+7]
+		RzILOpPure *rB_8n_8n7 = LOGAND(DUP(bitmask_n_n7), VARG(rB));
+		RzILOpPure *b_cond = EQ(rS_8n_8n7, rB_8n_8n7);
+
+		//	do n = 0 to (64BIT_CPU ? 7 : 3)
+		//		if RS[8×n:8×n+7] = RB[8×n:8×n+7] then
+		// 			RA[8×n:8×n+7] ← 0b1111_1111
+		//		else
+		//			RA[8×n:8×n+7] ← 0b0000_0000
+
+		init_n = SETL("n", U8(0));
+		ut8 m = IN_64BIT_MODE ? 8 : 4;
+		loop = REPEAT(ULT(VARL("n"), U8(m)),
+			SEQ2(BRANCH(b_cond,
+				     ones_rA, zeros_rA),
+				SETL("n", ADD(VARL("n"), U8(1)))));
+		return SEQ2(init_n, loop);
 	case PPC_INS_EQV:
 		NOT_IMPLEMENTED;
 	// Extend
@@ -1220,9 +1246,9 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CNTLZW:
 	case PPC_INS_POPCNTD:
 	case PPC_INS_POPCNTW:
+	case PPC_INS_CMPB:
 		lop = bitwise_op(handle, insn, mode);
 		break;
-	case PPC_INS_CMPB:
 	case PPC_INS_CMPD:
 	case PPC_INS_CMPDI:
 	case PPC_INS_CMPLD:
