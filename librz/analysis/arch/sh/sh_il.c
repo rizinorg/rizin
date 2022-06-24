@@ -50,6 +50,21 @@ static inline bool sh_banked_reg(ut16 reg) {
 	return reg < SH_BANKED_REG_COUNT;
 }
 
+/**
+ * Registers available as global variables in the IL
+ */
+static const char *sh_global_registers[] = {
+	"r0b0", "r1b0", "r2b0", "r3b0", "r4b0", "r5b0", "r6b0", "r7b0", ///< bank 0 registers
+	"r0b1", "r1b1", "r2b1", "r3b1", "r4b1", "r5b1", "r6b1", "r7b1", ///< bank 1 registers
+	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "pc",
+	"gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl",
+	"pr", "fpul", "fpscr",
+	"fr0", "fr1", "fr2", "fr3", "fr4", "fr5", "fr6", "fr7",
+	"fr8", "fr9", "fr10", "fr11", "fr12", "fr13", "fr14", "fr15",
+	"xf0", "xf1", "xf2", "xf3", "xf4", "xf5", "xf6", "xf7",
+	"xf8", "xf9", "xf10", "xf11", "xf12", "xf13", "xf14", "xf15"
+};
+
 static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
 	if (!sh_banked_reg(reg) || bank > 1) {
 		return NULL;
