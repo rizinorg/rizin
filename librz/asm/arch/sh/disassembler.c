@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "disassembler.h"
+#include "disassembler.inc"
 
 struct sh_param_builder_addr_t {
 	ut8 start; ///< start bit of the param (assuming little-endian)

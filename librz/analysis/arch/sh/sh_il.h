@@ -6,6 +6,7 @@
 
 #include <rz_analysis.h>
 #include "../../../asm/arch/sh/disassembler.h"
+#include "../../../asm/arch/sh/disassembler.inc"
 
 RZ_IPI bool rz_sh_il_opcode(RzAnalysis *analysis, RzAnalysisOp *aop, ut64 pc, SHOp *op);
 RZ_IPI RzAnalysisILConfig *rz_sh_il_config(RZ_NONNULL RzAnalysis *analysis);
