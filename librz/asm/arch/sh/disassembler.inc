@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2022 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#ifndef RZ_ASM_SH_DISASSEMBLER_INC
+#define RZ_ASM_SH_DISASSEMBLER_INC
+
 /**
  * All registers
  */
@@ -11,3 +17,5 @@ const char *sh_registers[] = {
 	"xf0", "xf1", "xf2", "xf3", "xf4", "xf5", "xf6", "xf7",
 	"xf8", "xf9", "xf10", "xf11", "xf12", "xf13", "xf14", "xf15"
 };
+
+#endif // RZ_ASM_SH_DISASSEMBLER_INC
