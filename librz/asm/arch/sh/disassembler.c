@@ -390,7 +390,7 @@ RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
 		}
 	}
 
-	RZ_LOG_WARN("SuperH: Invalid opcode encountered by disassembler")
+	RZ_LOG_DEBUG("SuperH: Invalid opcode encountered by disassembler: %#06x\n", opcode);
 	return NULL;
 }
 
@@ -460,7 +460,8 @@ RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param) {
  * \param SHOp to be disassembled
  * \return char *, owned by the caller
  */
-RZ_API RZ_OWN char *sh_op_to_str(const SHOp *op) {
+RZ_API RZ_OWN char *sh_op_to_str(RZ_NONNULL const SHOp *op) {
+	rz_return_val_if_fail(op, NULL);
 	if (!op->str_mnem) {
 		return NULL;
 	}
