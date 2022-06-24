@@ -136,6 +136,15 @@ RZ_API char *rz_sys_cmd_strf(const char *cmd, ...) RZ_PRINTF_CHECK(1, 2);
 //#define rz_sys_cmd_str(cmd, input, len) rz_sys_cmd_str_full(cmd, input, len, 0)
 RZ_API void rz_sys_backtrace(void);
 
+#ifndef __has_builtin
+#define __has_builtin(n) (0)
+#endif
+
+#if __has_builtin(__builtin_debugtrap)
+#define rz_sys_breakpoint() __builtin_debugtrap()
+#endif
+
+#ifndef rz_sys_breakpoint
 #if __WINDOWS__
 #define rz_sys_breakpoint() \
 	{ __debugbreak(); }
@@ -171,6 +180,7 @@ RZ_API void rz_sys_backtrace(void);
 		char *a = NULL; \
 		*a = 0; \
 	}
+#endif
 #endif
 #endif
 
