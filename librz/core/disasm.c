@@ -799,24 +799,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_functions = rz_config_get_b(core->config, "asm.functions");
 	ds->nbytes = rz_config_get_i(core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp(core->print->strconv_mode, "asciidot");
-	const char *strenc_str = rz_config_get(core->config, "bin.str.enc");
-	if (!strenc_str) {
-		ds->strenc = RZ_STRING_ENC_GUESS;
-	} else if (!strcmp(strenc_str, "8bit")) {
-		ds->strenc = RZ_STRING_ENC_8BIT;
-	} else if (!strcmp(strenc_str, "utf8")) {
-		ds->strenc = RZ_STRING_ENC_UTF8;
-	} else if (!strcmp(strenc_str, "utf16le")) {
-		ds->strenc = RZ_STRING_ENC_UTF16LE;
-	} else if (!strcmp(strenc_str, "utf32le")) {
-		ds->strenc = RZ_STRING_ENC_UTF32LE;
-	} else if (!strcmp(strenc_str, "utf16be")) {
-		ds->strenc = RZ_STRING_ENC_UTF16BE;
-	} else if (!strcmp(strenc_str, "utf32be")) {
-		ds->strenc = RZ_STRING_ENC_UTF32BE;
-	} else {
-		ds->strenc = RZ_STRING_ENC_GUESS;
-	}
+	ds->strenc = rz_str_enc_string_as_type(rz_config_get(core->config, "bin.str.enc"));
 	core->print->bytespace = rz_config_get_i(core->config, "asm.bytes.space");
 	ds->cursor = 0;
 	ds->nb = 0;
