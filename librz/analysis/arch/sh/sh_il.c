@@ -1180,7 +1180,8 @@ static RzILOpEffect *sh_il_bsrf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_jmp(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return JMP(sh_il_get_pure_param(0));
+	// don't use sh_il_get_param, because the register is passed in SH_REG_INDIRECT addressing mode, but we only need the direct value
+	return JMP(sh_il_get_reg(op->param[0].param[0]));
 }
 
 /**
@@ -1190,7 +1191,8 @@ static RzILOpEffect *sh_il_jmp(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_jsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return SEQ2(SETG("pr", ADD(SH_U_ADDR(pc), SH_U_ADDR(4))), JMP(sh_il_get_pure_param(0)));
+	// don't use sh_il_get_param, because the register is passed in SH_REG_INDIRECT addressing mode, but we only need the direct value
+	return SEQ2(SETG("pr", ADD(SH_U_ADDR(pc), SH_U_ADDR(4))), JMP(sh_il_get_reg(op->param[0].param[0])));
 }
 
 /**
