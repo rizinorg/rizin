@@ -1409,7 +1409,7 @@ static RzILOpEffect *sh_il_sts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 }
 
 static RzILOpEffect *sh_il_unimpl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RZ_LOG_WARN("SuperH: Instruction with opcode %#06x is unimplemented", op->opcode);
+	RZ_LOG_WARN("SuperH: Instruction with opcode 0x%04x is unimplemented", op->opcode);
 	return EMPTY();
 }
 

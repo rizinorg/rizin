@@ -14,7 +14,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!dis_op) {
 		rz_strbuf_set(&op->buf_asm, "invalid");
 	} else {
-		char *disasm = sh_op_to_str(dis_op);
+		char *disasm = sh_op_to_str(dis_op, a->pc);
 		rz_strbuf_set(&op->buf_asm, disasm);
 		free(disasm);
 	}

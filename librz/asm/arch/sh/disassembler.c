@@ -390,7 +390,7 @@ RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
 		}
 	}
 
-	RZ_LOG_DEBUG("SuperH: Invalid opcode encountered by disassembler: %#06x\n", opcode);
+	RZ_LOG_DEBUG("SuperH: Invalid opcode encountered by disassembler: 0x%06x\n", opcode);
 	return NULL;
 }
 
@@ -398,9 +398,10 @@ RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
  * \brief Return string representation of disassembled \p param
  *
  * \param SHParam to be disassembled
+ * \param SHScaling of the instruction associated with the param
  * \return char *, owned by the caller
  */
-RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param) {
+RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param, SHScaling scaling, ut64 pc) {
 	if (param.mode == SH_ADDR_INVALID) {
 		return NULL;
 	}
@@ -420,32 +421,30 @@ RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param) {
 		rz_strbuf_appendf(buf, "@-%s", sh_registers[param.param[0]]);
 		break;
 	case SH_REG_INDIRECT_DISP:
-		rz_strbuf_appendf(buf, "@(%#03x,%s)", param.param[1], sh_registers[param.param[0]]);
+		rz_strbuf_appendf(buf, "@(0x%02x,%s)", param.param[1] * sh_scaling_size[scaling], sh_registers[param.param[0]]);
 		break;
 	case SH_REG_INDIRECT_INDEXED:
 		rz_strbuf_appendf(buf, "@(r0,%s)", sh_registers[param.param[0]]);
 		break;
 	case SH_GBR_INDIRECT_DISP:
-		rz_strbuf_appendf(buf, "@(%#04x,gbr)", param.param[0]);
+		rz_strbuf_appendf(buf, "@(0x%03x,gbr)", param.param[0] * sh_scaling_size[scaling]);
 		break;
 	case SH_GBR_INDIRECT_INDEXED:
 		rz_strbuf_append(buf, "@(r0,gbr)");
 		break;
 	case SH_PC_RELATIVE_DISP:
-		rz_strbuf_appendf(buf, "@(%#04x,pc)", param.param[0]);
+		rz_strbuf_appendf(buf, "@(0x%03x,pc)", param.param[0] * sh_scaling_size[scaling]);
 		break;
 	case SH_PC_RELATIVE8:
-		rz_strbuf_appendf(buf, "@(%#04x:pc)", param.param[0]);
-		break;
 	case SH_PC_RELATIVE12:
-		rz_strbuf_appendf(buf, "@(%#05x:pc)", param.param[0]);
+		rz_strbuf_appendf(buf, "0x%08x", (ut32)pc + 4 + (st32)((st8)param.param[0]) * 2);
 		break;
 	case SH_PC_RELATIVE_REG:
-		rz_strbuf_appendf(buf, "@(%s:pc)", sh_registers[param.param[0]]);
+		rz_strbuf_appendf(buf, "%s", sh_registers[param.param[0]]);
 		break;
 	case SH_IMM_U:
 	case SH_IMM_S:
-		rz_strbuf_appendf(buf, "%#04x", param.param[0]);
+		rz_strbuf_appendf(buf, "0x%02x", param.param[0]);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -460,7 +459,7 @@ RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param) {
  * \param SHOp to be disassembled
  * \return char *, owned by the caller
  */
-RZ_API RZ_OWN char *sh_op_to_str(RZ_NONNULL const SHOp *op) {
+RZ_API RZ_OWN char *sh_op_to_str(RZ_NONNULL const SHOp *op, ut64 pc) {
 	rz_return_val_if_fail(op, NULL);
 	if (!op->str_mnem) {
 		return NULL;
@@ -468,10 +467,10 @@ RZ_API RZ_OWN char *sh_op_to_str(RZ_NONNULL const SHOp *op) {
 	RzStrBuf *buf = rz_strbuf_new(rz_str_newf("%s", op->str_mnem));
 
 	char *param = NULL;
-	if ((param = sh_op_param_to_str(op->param[0]))) {
+	if ((param = sh_op_param_to_str(op->param[0], op->scaling, pc))) {
 		rz_strbuf_appendf(buf, " %s", param);
 		free(param);
-		if ((param = sh_op_param_to_str(op->param[1]))) {
+		if ((param = sh_op_param_to_str(op->param[1], op->scaling, pc))) {
 			rz_strbuf_appendf(buf, ", %s", param);
 			free(param);
 		}
