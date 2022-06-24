@@ -9,8 +9,8 @@
 #include "../arch/sh/disassembler.h"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	SHOp *dis_op = sh_disassembler(rz_read_ble32(buf, a->big_endian));
-	op->size = 4;
+	SHOp *dis_op = sh_disassembler(rz_read_ble16(buf, a->big_endian));
+	op->size = 2;
 	if (!dis_op) {
 		rz_strbuf_set(&op->buf_asm, "invalid");
 	} else {
