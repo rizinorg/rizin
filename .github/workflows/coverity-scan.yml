@@ -29,7 +29,7 @@ jobs:
         
       - name: Installing build dependencies
         run: |
-           sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
+           sudo apt-get --assume-yes install python3-wheel python3-setuptools
            pip3 install --user meson ninja PyYAML
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
