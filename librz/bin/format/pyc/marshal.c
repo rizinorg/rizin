@@ -199,7 +199,8 @@ static pyc_object *get_long_object(RzBuffer *buffer) {
 	if (ndigits == 0) {
 		ret->data = strdup("0x0");
 	} else {
-		size = ndigits * 15;
+		// the explicit cast is safe since ndigits is positive
+		size = (size_t)ndigits * 15;
 		size = (size - 1) / 4 + 1;
 		size += 4 + (neg ? 1 : 0);
 		hexstr = malloc(size);
