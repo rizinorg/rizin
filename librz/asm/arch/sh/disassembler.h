@@ -1,10 +1,18 @@
 // SPDX-FileCopyrightText: 2022 Dhruv Maroo <dhruvmaru007@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RZ_ASM_SH_DISASSEMBLER_H
-#define RZ_ASM_SH_DISASSEMBLER_H
+#ifndef RZ_SH_DISASSEMBLER_H
+#define RZ_SH_DISASSEMBLER_H
 #include <rz_types.h>
 #include <rz_util.h>
+
+#define BITS_PER_BYTE       8
+#define SH_REG_SIZE         4 * BITS_PER_BYTE
+#define SH_ADDR_SIZE        4 * BITS_PER_BYTE
+#define SH_INSTR_SIZE       2 * BITS_PER_BYTE
+#define SH_GPR_COUNT        16
+#define SH_BANKED_REG_COUNT 8
+#define SH_REG_COUNT        61
 
 typedef enum sh_addr_mode_t {
 	SH_ADDR_INVALID = 0,
@@ -60,7 +68,7 @@ static const ut8 sh_scaling_size[] = { -1, 1, 2, 4, 8 };
  * Enum for register indexes
  */
 typedef enum sh_register_index_t {
-	SH_REG_IND_R0,
+	SH_REG_IND_R0 = 0,
 	SH_REG_IND_R1,
 	SH_REG_IND_R2,
 	SH_REG_IND_R3,
@@ -120,7 +128,7 @@ typedef enum sh_register_index_t {
 	SH_REG_IND_XF12,
 	SH_REG_IND_XF13,
 	SH_REG_IND_XF14,
-	SH_REG_IND_XF15
+	SH_REG_IND_XF15,
 } SHRegisterIndex;
 
 typedef enum {
@@ -226,4 +234,4 @@ RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode);
 RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param, SHScaling scaling, ut64 pc);
 RZ_API RZ_OWN char *sh_op_to_str(const SHOp *op, ut64 pc);
 
-#endif /* RZ_ASM_SH_DISASSEMBLER_H */
+#endif /* RZ_SH_DISASSEMBLER_H */
