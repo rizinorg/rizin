@@ -130,7 +130,7 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc) {
 
 	char *mnem = (char *)rz_list_pop_head(tokens);
 	for (ut16 i = 0; i < OPCODE_NUM; i++) {
-		if (strcpy(mnem, sh_op_lookup[i].str_mnem) == 0) {
+		if (strcmp(mnem, sh_op_lookup[i].str_mnem) == 0) {
 			SHOpRaw raw = sh_op_lookup[i];
 			opcode = raw.opcode ^ raw.mask;
 			ut8 expected_params = 0;
