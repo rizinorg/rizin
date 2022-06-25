@@ -256,6 +256,7 @@ if get_option('use_gpl')
     #'arch/riscv/riscv-opc.c',
     #'arch/riscv/riscv.c',
     'arch/sh/disassembler.c',
+    'arch/sh/assembler.c',
     'arch/sparc/gnu/sparc-dis.c',
     'arch/sparc/gnu/sparc-opc.c',
     'arch/tricore/gnu/cpu-tricore.c',

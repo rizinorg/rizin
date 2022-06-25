@@ -15,13 +15,6 @@
  * Both the above references are almost the same
  */
 
-#define BITS_PER_BYTE       8
-#define SH_REG_SIZE         4 * BITS_PER_BYTE
-#define SH_ADDR_SIZE        4 * BITS_PER_BYTE
-#define SH_INSTR_SIZE       2 * BITS_PER_BYTE
-#define SH_GPR_COUNT        16
-#define SH_BANKED_REG_COUNT 8
-
 #define SH_U_ADDR(x) UN(SH_ADDR_SIZE, x)
 #define SH_S_ADDR(x) SN(SH_ADDR_SIZE, x)
 #define SH_U_REG(x)  UN(SH_REG_SIZE, (x))

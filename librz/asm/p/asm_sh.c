@@ -7,6 +7,7 @@
 #include <rz_util.h>
 #include <rz_asm.h>
 #include "../arch/sh/disassembler.h"
+#include "../arch/sh/assembler.h"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	SHOp *dis_op = sh_disassembler(rz_read_ble16(buf, a->big_endian));
@@ -22,6 +23,14 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
+	ut16 opcode = sh_assembler(str, a->pc);
+	ut8 buffer[2];
+	rz_write_ble16(buffer, opcode, a->big_endian);
+	rz_strbuf_setbin(&ao->buf, buffer, 2);
+	return 2;
+}
+
 RzAsmPlugin rz_asm_plugin_sh = {
 	.name = "sh",
 	.arch = "sh",
@@ -30,7 +39,8 @@ RzAsmPlugin rz_asm_plugin_sh = {
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.desc = "SuperH-4 CPU",
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.assemble = &assemble
 };
 
 #ifndef RZ_PLUGIN_INCORE
