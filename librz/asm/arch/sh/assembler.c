@@ -35,7 +35,7 @@ static ut32 sh_op_reg_bits(const char *param, ut8 offset) {
 			return ((ut32)i) << offset;
 		}
 	}
-	RZ_LOG_ERROR("SuperH: Invalid register encountered by the assembler");
+	RZ_LOG_ERROR("SuperH: Invalid register encountered by the assembler\n");
 	return 0;
 }
 
@@ -106,7 +106,7 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 		opcode = d << shba.start;
 		break;
 	default:
-		RZ_LOG_ERROR("SuperH: Invalid addressing mode encountered by the assembler");
+		RZ_LOG_ERROR("SuperH: Invalid addressing mode encountered by the assembler\n");
 	}
 
 	free(reg);
@@ -119,9 +119,17 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc) {
 
 	ut16 opcode = 0;
 	char *spaced = sh_op_space_params(buffer);
-	RzList *tokens = rz_str_split_list(spaced, " ", true);
+	RzList *tokens = rz_str_split_duplist(spaced, " ", true);
+	free(spaced);
 	if (!tokens) {
 		goto bye;
+	}
+	RzListIter *itr, *tmp;
+	char *tok;
+	rz_list_foreach_safe (tokens, itr, tmp, tok) {
+		if (rz_str_is_whitespace(tok)) {
+			rz_list_delete(tokens, itr);
+		}
 	}
 	ut32 token_num = rz_list_length(tokens);
 	if (token_num == 0 || token_num > 3) {
@@ -156,10 +164,10 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc) {
 		}
 	}
 
-	RZ_LOG_ERROR("SuperH: Failed to assemble: \"%s\"", buffer);
+	RZ_LOG_ERROR("SuperH: Failed to assemble: \"%s\"\n", buffer);
 	return 0;
 
 bye:
-	RZ_LOG_ERROR("SuperH: Invalid number of arguments in the instruction")
+	RZ_LOG_ERROR("SuperH: Invalid number of arguments in the instruction\n")
 	return opcode;
 }
