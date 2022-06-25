@@ -175,7 +175,7 @@ static inline RzILOpPure *sh_il_get_effective_addr(SHParam param, SHScaling scal
 	case SH_PC_RELATIVE_REG:
 		return ADD(ADD(VARG("pc"), SH_U_ADDR(4)), sh_il_get_reg(param.param[0]));
 	default:
-		RZ_LOG_WARN("RzIL: SuperH: No effective address for this mode: %u", param.mode);
+		RZ_LOG_WARN("RzIL: SuperH: No effective address for this mode: %u\n", param.mode);
 	}
 
 	return NULL;
@@ -221,7 +221,7 @@ static inline SHParamHelper sh_il_get_param(SHParam param, SHScaling scaling) {
 		ret.pure = SH_S_REG(param.param[0]);
 		break;
 	default:
-		RZ_LOG_ERROR("RzIL: SuperH: Invalid addressing mode");
+		RZ_LOG_ERROR("RzIL: SuperH: Invalid addressing mode\n");
 	}
 
 	return ret;
@@ -270,7 +270,7 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *va
 	case SH_IMM_U:
 	case SH_IMM_S:
 	default:
-		RZ_LOG_ERROR("RzIL: SuperH: Cannot set value for addressing mode: %u", param.mode);
+		RZ_LOG_ERROR("RzIL: SuperH: Cannot set value for addressing mode: %u\n", param.mode);
 		return NULL;
 	}
 
@@ -1419,7 +1419,7 @@ static RzILOpEffect *sh_il_sts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 }
 
 static RzILOpEffect *sh_il_unimpl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RZ_LOG_WARN("SuperH: Instruction with opcode 0x%04x is unimplemented", op->opcode);
+	RZ_LOG_WARN("SuperH: Instruction with opcode 0x%04x is unimplemented\n", op->opcode);
 	return EMPTY();
 }
 
