@@ -1997,7 +1997,7 @@ RZ_API bool rz_str_is_ascii(const char *str) {
 
 /**
  * \brief Checks if the whole string is composed of whitespace
- * 
+ *
  * \param str input string
  * \return bool true if whitespace (or empty or NULL), false otherwise
  */
