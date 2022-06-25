@@ -199,7 +199,7 @@ static const char *cab_error(struct mscab_decompressor *cd) {
 }
 
 /**
- * \brief  Extracts compressed pdb files into a folder.
+ * \brief  Extracts compressed PDB files into a folder.
  *
  * \param  file_cab    The file cab
  * \param  output_dir  The output dir
