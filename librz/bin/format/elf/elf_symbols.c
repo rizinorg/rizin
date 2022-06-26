@@ -442,6 +442,20 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_compute_symbols)(ELFOBJ *bin, RzBinElfSymbolFil
 		return NULL;
 	}
 
+	/* symtab contains the symbols in dynsym, which causes the
+	   repetition in results. Thus, for the symbols with
+	   the same name, type, and vaddr, just one is enough. */
+	for (int i = 0; i < rz_vector_len(result); i++) {
+		RzBinElfSymbol *si = rz_vector_index_ptr(result, i);
+		for (int j = i + 1; j < rz_vector_len(result); j++) {
+			RzBinElfSymbol *sj = rz_vector_index_ptr(result, j);
+			if (!strcmp(si->name, sj->name) && si->vaddr == sj->vaddr && si->type == sj->type) {
+				elf_symbol_fini(sj, NULL);
+				rz_vector_remove_at(result, j, NULL);
+			}
+		}
+	}
+
 	return result;
 }
 
