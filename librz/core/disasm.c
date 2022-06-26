@@ -5813,6 +5813,7 @@ toro:
 	for (i = 0; check_end(nb_opcodes, nb_bytes, addrbytes * i, j); i += ret, j++) {
 		ds->at = address + i;
 		ds->vat = rz_core_pava(core, ds->at);
+		int len = nb_bytes - addrbytes * i;
 		hasanalysis = false;
 		rz_core_seek_arch_bits(core, ds->at);
 		if (rz_cons_is_breaked()) {
@@ -5824,7 +5825,7 @@ toro:
 		// XXX copypasta from main disassembler function
 		// rz_analysis_get_fcn_in (core->analysis, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 		ret = rz_asm_disassemble(core->rasm, &ds->asmop,
-			buf + addrbytes * i, nb_bytes - addrbytes * i);
+			buf + addrbytes * i, len);
 		ds->oplen = ret;
 		skip_bytes_flag = handleMidFlags(core, ds, true);
 		if (ds->midbb) {
@@ -5839,7 +5840,7 @@ toro:
 		rz_analysis_op_fini(&ds->analysis_op);
 		if (!hasanalysis) {
 			// XXX we probably don't need MASK_ALL
-			rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * i, nb_bytes - addrbytes * i, RZ_ANALYSIS_OP_MASK_ALL);
+			rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * i, len, RZ_ANALYSIS_OP_MASK_ALL);
 			hasanalysis = true;
 		}
 		if (ds_must_strip(ds)) {
@@ -5942,10 +5943,12 @@ toro:
 	return len;
 }
 
-static bool rz_core_handle_backwards_disasm(RzCore *core, int nb_opcodes, int nb_bytes) {
-	if (!nb_opcodes && !nb_bytes) {
+static bool rz_core_handle_backwards_disasm(RzCore *core, int *p_nb_opcodes, int *p_nb_bytes) {
+	if (!p_nb_opcodes && !p_nb_bytes) {
 		return false;
 	}
+	int nb_opcodes = *p_nb_opcodes;
+	int nb_bytes = *p_nb_bytes;
 	const ut32 abs_n_bytes = RZ_ABS(nb_bytes);
 	const ut64 old_offset = core->offset;
 	const ut32 old_blocksize = core->blocksize;
@@ -5974,6 +5977,8 @@ static bool rz_core_handle_backwards_disasm(RzCore *core, int nb_opcodes, int nb
 	} else {
 		rz_core_block_read(core);
 	}
+	*p_nb_opcodes = (int)(nb_opcodes ? nb_opcodes : bsize);
+	*p_nb_bytes = (int)bsize;
 	return true;
 }
 
@@ -5983,7 +5988,7 @@ static bool rz_core_handle_backwards_disasm(RzCore *core, int nb_opcodes, int nb
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes) {
 	const ut64 ocore_offset = core->offset;
 	int ret = -1;
-	if (rz_core_handle_backwards_disasm(core, nb_opcodes, nb_bytes)) {
+	if (rz_core_handle_backwards_disasm(core, &nb_opcodes, &nb_bytes)) {
 		ret = rz_core_print_disasm_instructions_with_buf(core, core->offset, NULL, nb_bytes, nb_opcodes);
 	}
 	rz_core_seek(core, ocore_offset, true);
@@ -5996,7 +6001,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	bool res = true;
 	core->offset = addr;
 	RzPVector *vec = NULL;
-	if (!rz_core_handle_backwards_disasm(core, nb_opcodes, nb_bytes)) {
+	if (!rz_core_handle_backwards_disasm(core, &nb_opcodes, &nb_bytes)) {
 		res = false;
 		goto clean_return;
 	}
@@ -6510,7 +6515,7 @@ toro:
 RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	const ut64 ocore_offset = core->offset;
 	int ret = -1;
-	if (rz_core_handle_backwards_disasm(core, nb_opcodes, nb_bytes)) {
+	if (rz_core_handle_backwards_disasm(core, &nb_opcodes, &nb_bytes)) {
 		ret = rz_core_disasm_pdi_with_buf(core, core->offset, NULL, nb_opcodes, nb_bytes, fmt);
 	}
 	rz_core_seek(core, ocore_offset, true);
