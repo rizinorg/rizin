@@ -917,7 +917,7 @@ static void cmd_pCd(RzCore *core, const char *input) {
 	rz_core_block_size(core, rows * 32);
 	for (i = 0; i < columns; i++) {
 		(void)rz_cons_canvas_gotoxy(c, i * (w / columns), 0);
-		char *cmd = rz_str_newf("pid %d @i:%d", rows, rows * i);
+		char *cmd = rz_str_newf("pdq %d @i:%d", rows, rows * i);
 		char *dis = rz_core_cmd_str(core, cmd);
 		rz_cons_canvas_write(c, dis);
 		free(cmd);
@@ -2246,7 +2246,7 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 		rz_core_cmdf(core, "pxw %d @ 0x%" PFMT64x, count * size, addr);
 		break;
 	case 'i':
-		rz_core_cmdf(core, "pid %d @ 0x%" PFMT64x, count, addr);
+		rz_core_cmdf(core, "pdq %d @ 0x%" PFMT64x, count, addr);
 		break;
 	}
 }
@@ -5191,7 +5191,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 							pj_end(pj);
 							rz_analysis_op_free(op);
 						} else {
-							char *s = rz_core_cmd_strf(core, "pid %i @ 0x%08" PFMT64x, 1, xrefi->from);
+							char *s = rz_core_cmd_strf(core, "pdq %i @ 0x%08" PFMT64x, 1, xrefi->from);
 							rz_cons_printf("%s", s);
 						}
 					}
