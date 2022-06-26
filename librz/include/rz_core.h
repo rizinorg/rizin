@@ -435,6 +435,12 @@ typedef struct rz_bin_sym_names_t {
 	char *methflag; ///< methods flag sym.[class].[method]
 } RzBinSymNames;
 
+typedef struct rz_analysis_disasm_text_t {
+	ut64 offset;
+	ut64 arrow;
+	char *text;
+} RzAnalysisDisasmText;
+
 #ifdef RZ_API
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
 
@@ -825,7 +831,7 @@ RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len
 RZ_API RzList *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *len, ut64 *start_addr, ut32 l);
-RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak, int nbytes, bool json, PJ *pj, RzAnalysisFunction *pdf);
+RZ_API int rz_core_print_disasm(RzCore *core, ut64 addr, ut8 *buf, int len, int nlines, int invbreak, int nbytes, bool json, PJ *pj, RzAnalysisFunction *pdf, RzList *out_list);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes);
@@ -837,6 +843,7 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj);
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
+RZ_API void rz_analysis_disasm_text_free(void *p);
 
 /* cbin.c */
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);

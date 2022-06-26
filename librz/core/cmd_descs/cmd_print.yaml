@@ -90,6 +90,19 @@ commands:
         summary: Generate a rizin commands for writing the byte array.
         cname: cmd_print_byte_array_rizin
         args: []
+  - name: pD
+    summary: Disassemble N bytes (can be negative)
+    cname: cmd_disassembly_n_bytes
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: n_bytes
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: pd
     summary: Print Disassembly
     cname: cmd_print_disassembly
