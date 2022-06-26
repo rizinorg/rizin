@@ -6792,6 +6792,7 @@ RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr) {
 	}
 	RzAnalysisBytes *ab = ptr;
 	rz_analysis_op_free(ab->op);
+	rz_analysis_hint_free(ab->hint);
 	free(ab->opcode);
 	free(ab->disasm);
 	free(ab->pseudo);

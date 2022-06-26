@@ -5946,36 +5946,33 @@ static bool rz_core_handle_backwards_disasm(RzCore *core, int nb_opcodes, int nb
 	if (!nb_opcodes && !nb_bytes) {
 		return false;
 	}
+	const ut32 abs_n_bytes = RZ_ABS(nb_bytes);
 	const ut64 old_offset = core->offset;
 	const ut32 old_blocksize = core->blocksize;
-
+	ut64 offset = old_offset;
+	ut32 bsize = old_blocksize;
 	if (!nb_bytes) {
 		if (nb_opcodes < 0) {
-			ut64 offset = old_offset;
+			offset = old_offset;
 			if (!rz_core_prevop_addr(core, old_offset, -nb_opcodes, &offset)) {
 				offset = rz_core_prevop_addr_force(core, old_offset, -nb_opcodes);
 			}
-			ut32 blocksize = offset - old_blocksize;
-			if (blocksize > old_blocksize) {
-				rz_core_block_size(core, blocksize);
-			}
-			rz_core_seek(core, offset, true);
-		} else {
-			rz_core_block_read(core);
+			bsize = RZ_MIN(offset - old_blocksize, RZ_CORE_MAX_DISASM);
 		}
 	} else {
 		if (nb_bytes < 0) {
-			ut64 offset = old_offset + nb_bytes;
-			if (-nb_bytes > old_blocksize) {
-				rz_core_block_size(core, -nb_bytes);
-			}
-			rz_core_seek(core, offset, true);
-		} else {
-			if (nb_bytes > old_blocksize) {
-				rz_core_block_size(core, nb_bytes);
-			}
-			rz_core_block_read(core);
+			offset = old_offset - abs_n_bytes;
 		}
+		bsize = RZ_MIN(abs_n_bytes, RZ_CORE_MAX_DISASM);
+	}
+
+	if (bsize > old_blocksize) {
+		rz_core_block_size(core, bsize);
+	}
+	if (offset != old_offset) {
+		rz_core_seek(core, offset, true);
+	} else {
+		rz_core_block_read(core);
 	}
 	return true;
 }

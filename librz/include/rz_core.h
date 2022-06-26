@@ -818,6 +818,8 @@ typedef struct rz_core_asm_hit {
 	ut8 valid;
 } RzCoreAsmHit;
 
+#define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
+
 RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *args);
 RZ_API RzBuffer *rz_core_syscallf(RzCore *core, const char *name, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
 RZ_API RzCoreAsmHit *rz_core_asm_hit_new(void);

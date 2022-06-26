@@ -11,7 +11,6 @@
 
 #include "../core_private.h"
 
-#define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR       "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
 static const char *help_msg_pa[] = {
