@@ -107,7 +107,7 @@ e asm.arch=ppc
 e asm.bytes=true
 e cfg.bigendian=true
 e asm.cpu=ps
-pdi 64
+pdq 64
 EOF
 EXPECT=<<EOF
 0x00000000             e003d004  psq_l fr0 0x7(r1) 0x5

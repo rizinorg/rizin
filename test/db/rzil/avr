@@ -462,8 +462,8 @@ wa "pop r16" @ 22
 wa "ret" @ 24
 
 ?e instructions
-pdi 5
-pdi 5 @ 16
+pdq 5
+pdq 5 @ 16
 ?e
 ?e initial machine status
 px 16 @ 0x70

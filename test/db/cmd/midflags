@@ -16,7 +16,7 @@ wx 554889e54157415641554154534881ec
 e asm.flags.middle=2
 f dat.sym @ 2
 pi 4
-pdi 4
+pdq 4
 EOF
 EXPECT=<<EOF
 push rbp
@@ -76,7 +76,7 @@ e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=2
 f dat.sym @ 2
-pid 4
+pdq 4
 EOF
 EXPECT=<<EOF
 0x00000000                   55  push rbp
@@ -87,7 +87,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pid asm.flags.middle=0
+NAME=pdq asm.flags.middle=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -96,7 +96,7 @@ e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
 f dat.sym @ 2
-pid 4
+pdq 4
 EOF
 EXPECT=<<EOF
 0x00000000                   55  push rbp
@@ -271,7 +271,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pid asm.flags.middle=0
+NAME=pdq asm.flags.middle=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -280,7 +280,7 @@ e asm.bits=32
 e asm.flags.middle=0
 f mid.flag @ 4
 wx 31ed4989d15e4889e2
-pid 3
+pdq 3
 EOF
 EXPECT=<<EOF
 0x00000000                 31ed  xor ebp, ebp
@@ -289,7 +289,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pid asm.flags.middle=2
+NAME=pdq asm.flags.middle=2
 FILE=malloc://1024
 BROKEN=1
 CMDS=<<EOF
@@ -298,7 +298,7 @@ e asm.bits=32
 e asm.flags.middle=1
 f mid.flag @ 4
 wx 31ed4989d15e4889e2
-pid 3
+pdq 3
 EOF
 EXPECT=<<EOF
 0x00000000               31ed  xor ebp, ebp

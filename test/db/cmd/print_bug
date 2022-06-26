@@ -1,4 +1,4 @@
-NAME=pi pdi with ahi2
+NAME=pi pdq with ahi2
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bytes=true
@@ -7,7 +7,7 @@ e asm.bits=64
 wx 48b96e74646c6c2e646c
 ahi s
 pi 1
-pdi 1
+pdq 1
 EOF
 EXPECT=<<EOF
 movabs rcx, 'ld.lldtn'
@@ -15,7 +15,7 @@ movabs rcx, 'ld.lldtn'
 EOF
 RUN
 
-NAME=uafbug pi pdi
+NAME=uafbug pi pdq
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bytes=true
@@ -26,11 +26,11 @@ ahi i
 pi 1
 ahi s
 pi 1
-pdi 1
+pdq 1
 ia > /dev/null
-pdi 1
+pdq 1
 ia > /dev/null
-pdi 1
+pdq 1
 EOF
 EXPECT=<<EOF
 movabs rcx, 110.116.100.108

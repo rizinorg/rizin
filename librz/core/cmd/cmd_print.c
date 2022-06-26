@@ -162,7 +162,7 @@ static const char *help_msg_at[] = {
 	">>", "file", "append to file",
 	"H>", "file", "pipe output of command to file in HTML",
 	"H>>", "file", "append to file with the output of command in HTML",
-	"`", "pdi~push:0[0]`", "replace output of command inside the line",
+	"`", "pdq~push:0[0]`", "replace output of command inside the line",
 	"|", "cmd", "pipe output to command (pd|less) (.dr*)",
 	NULL
 };
@@ -214,7 +214,7 @@ static const char *help_msg_at_at_at[] = {
 static const char *help_msg_p[] = {
 	"Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
 	"p", "[b|B|xb] [len] ([S])", "bindump N bits skipping S bytes",
-	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
+	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pid)",
 	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
 	"p2", " [len]", "8x8 2bpp-tiles",
@@ -226,7 +226,7 @@ static const char *help_msg_p[] = {
 	"pb", "[?] [n]", "bitstream of N bits",
 	"pB", "[?] [n]", "bitstream of N bytes",
 	"pc", "[?][p] [len]", "output C (or python) format",
-	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pdi)",
+	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pid)",
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
 	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
@@ -397,7 +397,7 @@ static const char *help_msg_pi[] = {
 	"Usage:", "pi[bdefrj] [num]", "",
 	"pia", "", "print all possible opcodes (byte per byte)",
 	"pib", "", "print instructions of basic block",
-	"pid", "", "alias for pdi",
+	"pid", "", "like 'pi', with offset and bytes",
 	"pie", "", "print offset + esil expression",
 	"pif", "[?]", "print instructions of function",
 	"pij", "", "print N instructions in JSON",
@@ -4916,7 +4916,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			if (input[2] == '?') {
 				rz_cons_printf("|Usage: paD [hex]       print assembly expression from hexpairs and show hexpairs\n");
 			} else {
-				rz_core_cmdf(core, "pdi@x:%s", input + 2);
+				rz_core_cmdf(core, "pdq @x:%s", input + 2);
 			}
 		} else if (input[1] == 'd') { // "pad*"
 			switch (input[2]) {
@@ -5072,7 +5072,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		case '?': // "pi?"
 			rz_cons_printf("|Usage: p[iI][df] [len]   print N instructions/bytes"
-				       "(f=func) (see pi? and pdi)\n");
+				       "(f=func) (see pi? and pdq)\n");
 			break;
 		default:
 			if (l) {
@@ -5191,7 +5191,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 							pj_end(pj);
 							rz_analysis_op_free(op);
 						} else {
-							char *s = rz_core_cmd_strf(core, "pdi %i @ 0x%08" PFMT64x, 1, xrefi->from);
+							char *s = rz_core_cmd_strf(core, "pid %i @ 0x%08" PFMT64x, 1, xrefi->from);
 							rz_cons_printf("%s", s);
 						}
 					}
