@@ -6766,7 +6766,7 @@ static bool core_disassembly_n_bytes(RzCore *core, int n_bytes, RzCmdStateOutput
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_print_disasm(core, core->offset, core->block, core->io->addrbytes * abs_n_bytes, abs_n_bytes, 0, abs_n_bytes, false, NULL, NULL, NULL);
+		rz_core_print_disasm(core, core->offset, core->block, abs_n_bytes, abs_n_bytes, 0, 0, false, NULL, NULL, NULL);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		disassembly_as_table(state->d.t, core, abs_n_bytes, abs_n_bytes);

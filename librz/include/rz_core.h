@@ -833,7 +833,7 @@ RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len
 RZ_API RzList *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *len, ut64 *start_addr, ut32 l);
-RZ_API int rz_core_print_disasm(RzCore *core, ut64 addr, ut8 *buf, int len, int nlines, int invbreak, int nbytes, bool json, PJ *pj, RzAnalysisFunction *pdf, RzList *out_list);
+RZ_API int rz_core_print_disasm(RzCore *core, ut64 addr, ut8 *buf, int len, int nlines, int invbreak, int cbytes, bool json, PJ *pj, RzAnalysisFunction *pdf, RzList *out_list);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes);

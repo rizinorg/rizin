@@ -5403,10 +5403,10 @@ toro:
 		ds->l = core->blocksize;
 	}
 	rz_cons_break_push(NULL, NULL);
-	ut64 addr_end = addr + cbytes;
+	ut64 addr_end = addr + len;
 	for (idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
-		if (cbytes > 0 && ds->at > addr_end) {
+		if (len > 0 && ds->at > addr_end) {
 			break;
 		}
 		ds->vat = rz_core_pava(core, ds->at);
