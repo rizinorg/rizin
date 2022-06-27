@@ -5967,6 +5967,7 @@ static bool rz_core_handle_backwards_disasm(RzCore *core, int *p_nb_opcodes, int
 			bsize = RZ_MIN(offset - old_blocksize, RZ_CORE_MAX_DISASM);
 			*p_nb_opcodes = -nb_opcodes;
 		}
+		*p_nb_bytes = (int)bsize;
 	} else {
 		bsize = RZ_MIN(abs_n_bytes, RZ_CORE_MAX_DISASM);
 		if (nb_bytes < 0) {
@@ -5992,7 +5993,9 @@ static bool rz_core_handle_backwards_disasm(RzCore *core, int *p_nb_opcodes, int
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes) {
 	const ut64 ocore_offset = core->offset;
 	int ret = -1;
+	eprintf("%d %d\n", nb_bytes, nb_opcodes);
 	if (rz_core_handle_backwards_disasm(core, &nb_opcodes, &nb_bytes)) {
+		eprintf("%d %d\n", nb_bytes, nb_opcodes);
 		ret = rz_core_print_disasm_instructions_with_buf(core, core->offset, NULL, nb_bytes, nb_opcodes);
 	}
 	rz_core_seek(core, ocore_offset, true);
