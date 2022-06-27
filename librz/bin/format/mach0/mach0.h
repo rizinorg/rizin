@@ -188,6 +188,7 @@ struct MACH0_(obj_t) {
 	RzBuffer *buf_patched;
 	ut64 reloc_targets_map_base;
 	RzPVector /* <struct reloc_t> */ *patchable_relocs; ///< weak pointers to relocs in `relocs` which should be patched
+	RzHash *hash;
 };
 
 #define MACH0_VFILE_NAME_REBASED_STRIPPED "rebased_stripped"
@@ -195,7 +196,6 @@ struct MACH0_(obj_t) {
 #define MACH0_VFILE_NAME_PATCHED          "patched"
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RzBinFile *bf);
-struct MACH0_(obj_t) * MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) * options);
 struct MACH0_(obj_t) * MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) * options);
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) * bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin);

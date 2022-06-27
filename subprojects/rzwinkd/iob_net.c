@@ -35,6 +35,7 @@ typedef struct iobnet_t {
 	RzThreadLock *key_lock;
 	// KDNet Protocol version of the debuggee
 	ut8 version;
+	RzHash *hash;
 } iobnet_t;
 
 // Constants to convert ASCII to its base36 value
@@ -87,7 +88,7 @@ static ut64 base36_decode(const char *str) {
 static bool _initializeDatakey(iobnet_t *obj, ut8 *resbuf, int size) {
 	RzHashSize digest_size = 0;
 	const ut8 *digest = NULL;
-	RzHashCfg *md = rz_hash_cfg_new_with_algo2("sha256");
+	RzHashCfg *md = rz_hash_cfg_new_with_algo2(obj->hash, "sha256");
 	if (!md) {
 		return false;
 	}
@@ -114,6 +115,7 @@ static void *iob_net_open(const char *path) {
 	if (!obj) {
 		return NULL;
 	}
+	obj->hash = rz_hash_new();
 	obj->key_lock = rz_th_lock_new(false);
 	if (!obj->key_lock) {
 		free(obj);
@@ -172,6 +174,7 @@ static bool iob_net_close(void *p) {
 	}
 
 	rz_socket_free(obj->sock);
+	rz_hash_free(obj->hash);
 	free(obj);
 	return ret;
 }
@@ -263,7 +266,7 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 	int off = sizeof(kdnet_packet_t) + KDNET_DATA_SIZE + size + padsize;
 
 	const ut8 *digest = NULL;
-	RzHashCfg *md = rz_hash_cfg_new_with_algo("sha256", obj->hmackey, KDNET_HMACKEY_SIZE);
+	RzHashCfg *md = rz_hash_cfg_new_with_algo(obj->hash, "sha256", obj->hmackey, KDNET_HMACKEY_SIZE);
 	if (!md) {
 		free(encbuf);
 		return NULL;
@@ -416,7 +419,7 @@ static bool _processControlPacket(iobnet_t *obj, const ut8 *ctrlbuf, int size) {
 
 bool _verifyhmac(iobnet_t *obj) {
 	const ut8 *digest = NULL;
-	RzHashCfg *md = rz_hash_cfg_new_with_algo("sha256", obj->hmackey, KDNET_HMACKEY_SIZE);
+	RzHashCfg *md = rz_hash_cfg_new_with_algo(obj->hash, "sha256", obj->hmackey, KDNET_HMACKEY_SIZE);
 	if (!md) {
 		return false;
 	}

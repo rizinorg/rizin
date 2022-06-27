@@ -2547,6 +2547,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	} else {
 		core->asmqjmps = RZ_NEWS(ut64, core->asmqjmps_size);
 	}
+	core->hash = rz_hash_new();
 
 	rz_bin_bind(core->bin, &(core->rasm->binb));
 	rz_bin_bind(core->bin, &(core->analysis->binb));
@@ -2658,6 +2659,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_task_join(&c->tasks, NULL, -1);
 	rz_core_wait(c);
 	//  avoid double free
+	RZ_FREE_CUSTOM(c->hash, rz_hash_free);
 	RZ_FREE_CUSTOM(c->ropchain, rz_list_free);
 	RZ_FREE_CUSTOM(c->ev, rz_event_free);
 	RZ_FREE(c->cmdlog);

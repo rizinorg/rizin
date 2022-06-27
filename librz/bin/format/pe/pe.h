@@ -169,6 +169,7 @@ struct PE_(rz_bin_pe_obj_t) {
 	char *authentihash;
 	bool is_authhash_valid;
 	bool is_signed;
+	RzHash *hash;
 };
 
 #define MAX_METADATA_STRING_LENGTH                          256

@@ -32,7 +32,7 @@ RZ_IPI RzCmdStatus rz_plugins_debug_print_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_plugins_hash_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_hash_plugins_print(state);
+	return rz_core_hash_plugins_print(core->hash, state);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_bin_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "config.h"
 #include <rz_hash.h>
 #include <rz_util.h>
 #include <xxhash.h>
@@ -21,83 +22,14 @@ typedef struct hash_cfg_config_t {
 	const RzHashPlugin *plugin;
 } HashCfgConfig;
 
-const static RzHashPlugin *hash_cfg_plugins[] = {
-	&rz_hash_plugin_md4,
-	&rz_hash_plugin_md5,
-	&rz_hash_plugin_sha1,
-	&rz_hash_plugin_sha256,
-	&rz_hash_plugin_sha384,
-	&rz_hash_plugin_sha512,
-	&rz_hash_plugin_fletcher8,
-	&rz_hash_plugin_fletcher16,
-	&rz_hash_plugin_fletcher32,
-	&rz_hash_plugin_fletcher64,
-	&rz_hash_plugin_adler32,
-	&rz_hash_plugin_crca_crc8smbus,
-	&rz_hash_plugin_crca_crc8cdma2000,
-	&rz_hash_plugin_crca_crc8darc,
-	&rz_hash_plugin_crca_crc8dvbs2,
-	&rz_hash_plugin_crca_crc8ebu,
-	&rz_hash_plugin_crca_crc8icode,
-	&rz_hash_plugin_crca_crc8itu,
-	&rz_hash_plugin_crca_crc8maxim,
-	&rz_hash_plugin_crca_crc8rohc,
-	&rz_hash_plugin_crca_crc8wcdma,
-	&rz_hash_plugin_crca_crc15can,
-	&rz_hash_plugin_crca_crc16,
-	&rz_hash_plugin_crca_crc16citt,
-	&rz_hash_plugin_crca_crc16usb,
-	&rz_hash_plugin_crca_crc16hdlc,
-	&rz_hash_plugin_crca_crc16augccitt,
-	&rz_hash_plugin_crca_crc16buypass,
-	&rz_hash_plugin_crca_crc16cdma2000,
-	&rz_hash_plugin_crca_crc16dds110,
-	&rz_hash_plugin_crca_crc16dectr,
-	&rz_hash_plugin_crca_crc16dectx,
-	&rz_hash_plugin_crca_crc16dnp,
-	&rz_hash_plugin_crca_crc16en13757,
-	&rz_hash_plugin_crca_crc16genibus,
-	&rz_hash_plugin_crca_crc16maxim,
-	&rz_hash_plugin_crca_crc16mcrf4xx,
-	&rz_hash_plugin_crca_crc16riello,
-	&rz_hash_plugin_crca_crc16t10dif,
-	&rz_hash_plugin_crca_crc16teledisk,
-	&rz_hash_plugin_crca_crc16tms37157,
-	&rz_hash_plugin_crca_crca,
-	&rz_hash_plugin_crca_crc16kermit,
-	&rz_hash_plugin_crca_crc16modbus,
-	&rz_hash_plugin_crca_crc16x25,
-	&rz_hash_plugin_crca_crc16xmodem,
-	&rz_hash_plugin_crca_crc24,
-	&rz_hash_plugin_crca_crc32,
-	&rz_hash_plugin_crca_crc32ecma267,
-	&rz_hash_plugin_crca_crc32c,
-	&rz_hash_plugin_crca_crc32bzip2,
-	&rz_hash_plugin_crca_crc32d,
-	&rz_hash_plugin_crca_crc32mpeg2,
-	&rz_hash_plugin_crca_crc32posix,
-	&rz_hash_plugin_crca_crc32q,
-	&rz_hash_plugin_crca_crc32jamcrc,
-	&rz_hash_plugin_crca_crc32xfer,
-	&rz_hash_plugin_crca_crc64,
-	&rz_hash_plugin_crca_crc64ecma182,
-	&rz_hash_plugin_crca_crc64we,
-	&rz_hash_plugin_crca_crc64xz,
-	&rz_hash_plugin_crca_crc64iso,
-	&rz_hash_plugin_xor8,
-	&rz_hash_plugin_xor16,
-	&rz_hash_plugin_xxhash32,
-	&rz_hash_plugin_parity,
-	&rz_hash_plugin_entropy,
-	&rz_hash_plugin_entropy_fract,
-};
+const static RzHashPlugin *hash_static_plugins[] = { RZ_HASH_STATIC_PLUGINS };
 
-RZ_API ut32 rz_hash_xxhash(const ut8 *input, size_t size) {
+RZ_API ut32 rz_hash_xxhash(RZ_NONNULL RzHash *rh, const ut8 *input, size_t size) {
 	rz_return_val_if_fail(input, 0);
 	return XXH32(input, size, 0);
 }
 
-RZ_API double rz_hash_entropy(const ut8 *data, ut64 len) {
+RZ_API double rz_hash_entropy(RZ_NONNULL RzHash *rh, const ut8 *data, ut64 len) {
 	rz_return_val_if_fail(data, 0.0);
 	const RzHashPlugin *plugin = &rz_hash_plugin_entropy;
 	ut8 *digest = NULL;
@@ -110,7 +42,7 @@ RZ_API double rz_hash_entropy(const ut8 *data, ut64 len) {
 	return e;
 }
 
-RZ_API double rz_hash_entropy_fraction(const ut8 *data, ut64 len) {
+RZ_API double rz_hash_entropy_fraction(RZ_NONNULL RzHash *rh, const ut8 *data, ut64 len) {
 	rz_return_val_if_fail(data, 0.0);
 	const RzHashPlugin *plugin = &rz_hash_plugin_entropy_fract;
 	ut8 *digest = NULL;
@@ -169,28 +101,39 @@ static HashCfgConfig *hash_cfg_config_new(const RzHashPlugin *plugin) {
 	return mdc;
 }
 
-RZ_API const RzHashPlugin *rz_hash_plugin_by_index(size_t index) {
-	const size_t size = RZ_ARRAY_SIZE(hash_cfg_plugins);
-	if (index >= size) {
-		return NULL;
+RZ_API const RzHashPlugin *rz_hash_plugin_by_index(RZ_NONNULL RzHash *rh, size_t index) {
+	rz_return_val_if_fail(rh, NULL);
+
+	RzListIter *it;
+	const RzHashPlugin *rhp;
+	size_t i = 0;
+
+	rz_list_foreach (rh->plugins, it, rhp) {
+		if (i == index) {
+			return rhp;
+		}
+		i++;
 	}
-	return hash_cfg_plugins[index];
+	return NULL;
 }
 
-RZ_API const RzHashPlugin *rz_hash_plugin_by_name(const char *name) {
-	rz_return_val_if_fail(name, NULL);
+RZ_API const RzHashPlugin *rz_hash_plugin_by_name(RZ_NONNULL RzHash *rh, const char *name) {
+	rz_return_val_if_fail(name && rh, NULL);
 
-	const RzHashPlugin *plugin = NULL;
-	for (ut32 i = 0; i < RZ_ARRAY_SIZE(hash_cfg_plugins); ++i) {
-		plugin = hash_cfg_plugins[i];
-		if (!strcmp(plugin->name, name)) {
-			return plugin;
+	RzListIter *it;
+	const RzHashPlugin *rhp;
+
+	rz_list_foreach (rh->plugins, it, rhp) {
+		if (!strcmp(rhp->name, name)) {
+			return rhp;
 		}
 	}
 	return NULL;
 }
 
-RZ_API RzHashCfg *rz_hash_cfg_new() {
+RZ_API RzHashCfg *rz_hash_cfg_new(RZ_NONNULL RzHash *rh) {
+	rz_return_val_if_fail(rh, NULL);
+
 	RzHashCfg *md = RZ_NEW0(RzHashCfg);
 	if (!md) {
 		RZ_LOG_ERROR("msg digest: cannot allocate memory.\n");
@@ -203,6 +146,7 @@ RZ_API RzHashCfg *rz_hash_cfg_new() {
 		free(md);
 		return NULL;
 	}
+	md->hash = rh;
 
 	return md;
 }
@@ -214,9 +158,9 @@ RZ_API RzHashCfg *rz_hash_cfg_new() {
  * with the given algorithm and runs also the algo init.
  * when fails to allocate or configure or initialize, returns NULL.
  * */
-RZ_API RzHashCfg *rz_hash_cfg_new_with_algo(const char *name, const ut8 *key, ut64 key_size) {
-	rz_return_val_if_fail(name, NULL);
-	RzHashCfg *md = rz_hash_cfg_new();
+RZ_API RzHashCfg *rz_hash_cfg_new_with_algo(RZ_NONNULL RzHash *rh, const char *name, const ut8 *key, ut64 key_size) {
+	rz_return_val_if_fail(rh && name, NULL);
+	RzHashCfg *md = rz_hash_cfg_new(rh);
 	if (!md) {
 		return NULL;
 	}
@@ -268,10 +212,10 @@ RZ_API bool rz_hash_cfg_configure(RzHashCfg *md, const char *name) {
 	}
 
 	HashCfgConfig *mdc = NULL;
-	const RzHashPlugin *plugin = NULL;
+	RzListIter *it;
+	const RzHashPlugin *plugin;
 
-	for (ut32 i = 0; i < RZ_ARRAY_SIZE(hash_cfg_plugins); ++i) {
-		plugin = hash_cfg_plugins[i];
+	rz_list_foreach (md->hash->plugins, it, plugin) {
 		if (is_all || !strcmp(plugin->name, name)) {
 			mdc = hash_cfg_config_new(plugin);
 			if (!mdc) {
@@ -582,33 +526,29 @@ RZ_API RzHashSize rz_hash_cfg_size(RzHashCfg *md, const char *name) {
  *
  * Returns the digest size of the initialized configuration.
  * */
-RZ_API ut8 *rz_hash_cfg_calculate_small_block(const char *name, const ut8 *buffer, ut64 bsize, RzHashSize *osize) {
-	rz_return_val_if_fail(name && buffer, NULL);
+RZ_API ut8 *rz_hash_cfg_calculate_small_block(RZ_NONNULL RzHash *rh, const char *name, const ut8 *buffer, ut64 bsize, RzHashSize *osize) {
+	rz_return_val_if_fail(rh && name && buffer, NULL);
 
 	ut8 *result = NULL;
-	const RzHashPlugin *plugin = NULL;
-
-	for (ut32 i = 0; i < RZ_ARRAY_SIZE(hash_cfg_plugins); ++i) {
-		plugin = hash_cfg_plugins[i];
-		if (!strcmp(plugin->name, name)) {
-			if (!plugin->small_block(buffer, bsize, &result, osize)) {
-				RZ_LOG_ERROR("msg digest: cannot calculate small block with %s.\n", plugin->name);
-				return NULL;
-			}
-			return result;
-		}
+	const RzHashPlugin *plugin = rz_hash_plugin_by_name(rh, name);
+	if (!plugin) {
+		return NULL;
 	}
 
-	return NULL;
+	if (!plugin->small_block(buffer, bsize, &result, osize)) {
+		RZ_LOG_ERROR("msg digest: cannot calculate small block with %s.\n", plugin->name);
+		return NULL;
+	}
+	return result;
 }
 
-RZ_API char *rz_hash_cfg_calculate_small_block_string(const char *name, const ut8 *buffer, ut64 bsize, ut32 *size, bool invert) {
-	rz_return_val_if_fail(name && buffer, NULL);
+RZ_API char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL RzHash *rh, const char *name, const ut8 *buffer, ut64 bsize, ut32 *size, bool invert) {
+	rz_return_val_if_fail(rh && name && buffer, NULL);
 
 	ut32 pos = 0;
 	RzHashSize digest_size = 0;
 	ut8 *digest = NULL;
-	if (!(digest = rz_hash_cfg_calculate_small_block(name, buffer, bsize, &digest_size))) {
+	if (!(digest = rz_hash_cfg_calculate_small_block(rh, name, buffer, bsize, &digest_size))) {
 		return NULL;
 	}
 
@@ -636,4 +576,48 @@ RZ_API char *rz_hash_cfg_calculate_small_block_string(const char *name, const ut
 	}
 	free(digest);
 	return string;
+}
+
+/**
+ * Create a new RzHash object where plugins can be registered and specific
+ * configurations can be created from.
+ */
+RZ_API RzHash *rz_hash_new(void) {
+	RzHash *rh = RZ_NEW0(RzHash);
+	if (!rh) {
+		return NULL;
+	}
+	rh->plugins = rz_list_new();
+	for (int i = 0; i < RZ_ARRAY_SIZE(hash_static_plugins); i++) {
+		rz_hash_plugin_add(rh, hash_static_plugins[i]);
+	}
+	return rh;
+}
+
+RZ_API void rz_hash_free(RzHash *rh) {
+	if (!rh) {
+		return;
+	}
+	rz_list_free(rh->plugins);
+	free(rh);
+}
+
+/**
+ * \brief Add a new plugin to \p rh so that \p RzHashCfg can be created using
+ * specific algorithms.
+ */
+RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN const RzHashPlugin *plugin) {
+	if (!plugin) {
+		return false;
+	}
+	RzListIter *it;
+	RzHashPlugin *p;
+
+	rz_list_foreach (rh->plugins, it, p) {
+		if (!strcmp(p->name, plugin->name)) {
+			return false;
+		}
+	}
+	rz_list_append(rh->plugins, (RzHashPlugin *)plugin);
+	return true;
 }

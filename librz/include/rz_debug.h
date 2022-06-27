@@ -300,6 +300,7 @@ typedef struct rz_debug_t {
 	bool pc_at_bp_set; /* is the pc_at_bp variable set already? */
 
 	RzEvent *ev;
+	RzHash *hash;
 
 	RzAnalysis *analysis;
 	RzList *maps; // <RzDebugMap>
@@ -591,8 +592,8 @@ RZ_API void rz_debug_session_free(RzDebugSession *session);
 
 RZ_API RzDebugSnap *rz_debug_snap_map(RzDebug *dbg, RzDebugMap *map);
 RZ_API bool rz_debug_snap_contains(RzDebugSnap *snap, ut64 addr);
-RZ_API ut8 *rz_debug_snap_get_hash(RzDebugSnap *snap, RzHashSize *size);
-RZ_API bool rz_debug_snap_is_equal(RzDebugSnap *a, RzDebugSnap *b);
+RZ_API ut8 *rz_debug_snap_get_hash(RzDebug *dbg, RzDebugSnap *snap, RzHashSize *size);
+RZ_API bool rz_debug_snap_is_equal(RzDebug *dbg, RzDebugSnap *a, RzDebugSnap *b);
 RZ_API void rz_debug_snap_free(RzDebugSnap *snap);
 
 RZ_API int rz_debug_step_back(RzDebug *dbg, int steps);

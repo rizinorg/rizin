@@ -790,6 +790,7 @@ summary({
   'Egg Plugins': egg_plugins,
   'IO Plugins': io_plugins,
   'Lang Plugins': lang_plugins,
+  'Hash Plugins': hash_plugins,
   'Parse Plugins': parse_plugins,
   'Demangler Plugins': demangler_plugins,
 }, section: 'Plugins', list_sep: ', ')

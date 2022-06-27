@@ -26,7 +26,7 @@ char *PE_(bin_pe_compute_authentihash)(RzBinPEObj *bin) {
 	char *hashtype = strdup(bin->spcinfo->messageDigest.digestAlgorithm.algorithm->string);
 	rz_str_replace_char(hashtype, '-', 0);
 
-	RzHashCfg *md = rz_hash_cfg_new_with_algo2(hashtype);
+	RzHashCfg *md = rz_hash_cfg_new_with_algo2(bin->hash, hashtype);
 	if (!md) {
 		free(hashtype);
 		return NULL;
