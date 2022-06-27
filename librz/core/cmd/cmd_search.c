@@ -213,7 +213,7 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 				if (rz_cons_is_breaked()) {
 					break;
 				}
-				char *s = rz_hash_cfg_calculate_small_block_string(hashname, buf + i, len, NULL, false);
+				char *s = rz_hash_cfg_calculate_small_block_string(core->hash, hashname, buf + i, len, NULL, false);
 				if (!s) {
 					eprintf("Hash fail\n");
 					break;
@@ -2168,7 +2168,7 @@ static void do_section_search(RzCore *core, struct search_parameters *param, con
 				begin = at;
 			}
 			rz_io_read_at(core->io, at, buf, buf_size);
-			double e = rz_hash_entropy(buf, buf_size);
+			double e = rz_hash_entropy(core->hash, buf, buf_size);
 			double diff = oe - e;
 			diff = RZ_ABS(diff);
 			end = at + buf_size;
@@ -2741,7 +2741,7 @@ static void incDigitBuffer(ut8 *buf, int bufsz) {
 
 static void search_collisions(RzCore *core, const char *hashName, const ut8 *hashValue, int hashLength, int mode) {
 	ut8 RZ_ALIGNED(8) cmphash[128];
-	const RzHashPlugin *crc32 = rz_hash_plugin_by_name("crc32");
+	const RzHashPlugin *crc32 = rz_hash_plugin_by_name(core->hash, "crc32");
 	ut8 *digest = NULL;
 
 	int i = 0;

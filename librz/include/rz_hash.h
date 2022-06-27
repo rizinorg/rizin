@@ -38,26 +38,31 @@ typedef struct rz_hash_plugin_t {
 	bool (*small_block)(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size);
 } RzHashPlugin;
 
+typedef struct rz_hash_t {
+	RzList *plugins;
+} RzHash;
+
 typedef struct rz_hash_cfg_t {
 	RzList *configurations;
 	RzHashStatus status;
+	RzHash *hash;
 } RzHashCfg;
 
 #ifdef RZ_API
 
-RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size);
-RZ_API double rz_hash_entropy(RZ_NONNULL const ut8 *data, ut64 len);
-RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API RzHash *rz_hash_new(void);
+RZ_API void rz_hash_free(RzHash *rh);
+RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN const RzHashPlugin *plugin);
+RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_index(RZ_NONNULL RzHash *rh, size_t index);
+RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_name(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name);
 
-RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_index(size_t index);
-RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_name(RZ_NONNULL const char *name);
-RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new();
-RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new_with_algo(RZ_NONNULL const char *name, RZ_NULLABLE const ut8 *key, ut64 key_size);
-#define rz_hash_cfg_new_with_algo2(name) rz_hash_cfg_new_with_algo(name, NULL, 0);
+RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new(RZ_NONNULL RzHash *rh);
+RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new_with_algo(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name, RZ_NULLABLE const ut8 *key, ut64 key_size);
+#define rz_hash_cfg_new_with_algo2(rh, name) rz_hash_cfg_new_with_algo(rh, name, NULL, 0);
 RZ_API void rz_hash_cfg_free(RZ_NULLABLE RzHashCfg *md);
+
 RZ_API bool rz_hash_cfg_configure(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name);
 RZ_API bool rz_hash_cfg_hmac(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const ut8 *key, ut64 key_size);
-
 RZ_API bool rz_hash_cfg_init(RZ_NONNULL RzHashCfg *md);
 RZ_API bool rz_hash_cfg_update(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const ut8 *data, ut64 size);
 RZ_API bool rz_hash_cfg_final(RZ_NONNULL RzHashCfg *md);
@@ -65,9 +70,13 @@ RZ_API bool rz_hash_cfg_iterate(RZ_NONNULL RzHashCfg *md, size_t iterate);
 RZ_API RZ_BORROW const ut8 *rz_hash_cfg_get_result(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name, RZ_NONNULL RzHashSize *size);
 RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name, RZ_NULLABLE ut32 *size, bool invert);
 RZ_API RzHashSize rz_hash_cfg_size(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name);
-RZ_API RZ_OWN ut8 *rz_hash_cfg_calculate_small_block(RZ_NONNULL const char *name, RZ_NONNULL const ut8 *buffer, ut64 bsize, RZ_NONNULL RzHashSize *osize);
-RZ_API RZ_OWN char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL const char *name, RZ_NONNULL const ut8 *buffer, ut64 bsize, RZ_NULLABLE ut32 *size, bool invert);
+RZ_API RZ_OWN ut8 *rz_hash_cfg_calculate_small_block(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name, RZ_NONNULL const ut8 *buffer, ut64 bsize, RZ_NONNULL RzHashSize *osize);
+RZ_API RZ_OWN char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name, RZ_NONNULL const ut8 *buffer, ut64 bsize, RZ_NULLABLE ut32 *size, bool invert);
 RZ_API RZ_OWN char *rz_hash_cfg_randomart(RZ_NONNULL const ut8 *buffer, ut32 length, ut64 address);
+
+RZ_API ut32 rz_hash_xxhash(RZ_NONNULL RzHash *rh, RZ_NONNULL const ut8 *input, size_t size);
+RZ_API double rz_hash_entropy(RZ_NONNULL RzHash *rh, RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_entropy_fraction(RZ_NONNULL RzHash *rh, RZ_NONNULL const ut8 *data, ut64 len);
 
 #endif
 

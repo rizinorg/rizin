@@ -124,6 +124,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
+	analysis->hash = rz_hash_new();
 	return analysis;
 }
 
@@ -144,6 +145,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 	plugin_fini(a);
 
+	rz_hash_free(a->hash);
 	rz_analysis_il_vm_cleanup(a);
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);

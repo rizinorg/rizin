@@ -646,7 +646,7 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	md = rz_hash_cfg_new();
+	md = rz_hash_cfg_new(bin->hash);
 	if (!md) {
 		goto rz_bin_file_compute_hashes_bad;
 	}

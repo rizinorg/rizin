@@ -482,6 +482,7 @@ RZ_API void rz_bin_free(RzBin *bin) {
 	rz_list_free(bin->binldrs);
 	sdb_free(bin->sdb);
 	rz_id_storage_free(bin->ids);
+	rz_hash_free(bin->hash);
 	rz_event_free(bin->event);
 	rz_str_constpool_fini(&bin->constpool);
 	rz_demangler_free(bin->demangler);
@@ -794,6 +795,11 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->strenc = NULL;
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
+	bin->hash = rz_hash_new();
+	if (!bin->hash) {
+		goto trashbin_event;
+	}
+
 	bin->ids = rz_id_storage_new(0, ST32_MAX);
 
 	/* bin parsers */
@@ -836,6 +842,7 @@ trashbin_binxtrs:
 	rz_list_free(bin->binxtrs);
 	rz_list_free(bin->binfiles);
 	rz_id_storage_free(bin->ids);
+trashbin_event:
 	rz_event_free(bin->event);
 trashbin_constpool:
 	rz_str_constpool_fini(&bin->constpool);

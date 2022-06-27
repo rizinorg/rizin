@@ -8,6 +8,7 @@
 #include <string.h>
 #include <rz_types.h>
 #include <rz_util.h>
+#include <rz_hash.h>
 #include "pe.h"
 #include <time.h>
 
@@ -105,35 +106,11 @@ void *PE_(rz_bin_pe_free)(RzBinPEObj *bin) {
 	rz_list_free(bin->resources);
 	rz_pkcs7_free_cms(bin->cms);
 	rz_pkcs7_free_spcinfo(bin->spcinfo);
+	rz_hash_free(bin->hash);
 	rz_buf_free(bin->b);
 	bin->b = NULL;
 	free(bin);
 	return NULL;
-}
-
-RzBinPEObj *PE_(rz_bin_pe_new)(const char *file, bool verbose) {
-	RzBinPEObj *bin = RZ_NEW0(RzBinPEObj);
-	if (!bin) {
-		return NULL;
-	}
-	bin->file = file;
-	size_t binsz;
-	ut8 *buf = (ut8 *)rz_file_slurp(file, &binsz);
-	bin->size = binsz;
-	if (!buf) {
-		return PE_(rz_bin_pe_free)(bin);
-	}
-	bin->b = rz_buf_new_with_bytes(NULL, 0);
-	if (!rz_buf_set_bytes(bin->b, buf, bin->size)) {
-		free(buf);
-		return PE_(rz_bin_pe_free)(bin);
-	}
-	bin->verbose = verbose;
-	free(buf);
-	if (!bin_pe_init(bin)) {
-		return PE_(rz_bin_pe_free)(bin);
-	}
-	return bin;
 }
 
 RzBinPEObj *PE_(rz_bin_pe_new_buf)(RzBuffer *buf, bool verbose) {
@@ -145,6 +122,7 @@ RzBinPEObj *PE_(rz_bin_pe_new_buf)(RzBuffer *buf, bool verbose) {
 	bin->b = rz_buf_ref(buf);
 	bin->verbose = verbose;
 	bin->size = rz_buf_size(buf);
+	bin->hash = rz_hash_new();
 	if (!bin_pe_init(bin)) {
 		return PE_(rz_bin_pe_free)(bin);
 	}

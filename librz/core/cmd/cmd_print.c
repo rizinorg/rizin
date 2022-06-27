@@ -1195,7 +1195,7 @@ static void cmd_p_minus_e(RzCore *core, ut64 at, ut64 ate) {
 		return;
 	}
 	if (rz_io_read_at(core->io, at, blockptr, (ate - at))) {
-		ut8 entropy = (ut8)(rz_hash_entropy_fraction(blockptr, (ate - at)) * 255);
+		ut8 entropy = (ut8)(rz_hash_entropy_fraction(core->hash, blockptr, (ate - at)) * 255);
 		entropy = 9 * entropy / 200; // normalize entropy from 0 to 9
 		if (rz_config_get_i(core->config, "scr.color")) {
 			const char *color =
@@ -3051,9 +3051,9 @@ restore_conf:
 	rz_config_set_i(core->config, "emu.str", emu_str);
 }
 
-static void handle_entropy(const char *name, const ut8 *block, int len) {
+static void handle_entropy(RzCore *core, const char *name, const ut8 *block, int len) {
 	RzHashSize digest_size = 0;
-	ut8 *digest = rz_hash_cfg_calculate_small_block(name, block, len, &digest_size);
+	ut8 *digest = rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
 	if (!digest) {
 		return;
 	}
@@ -3072,15 +3072,15 @@ static inline void hexprint(const ut8 *data, int len) {
 	rz_cons_newline();
 }
 
-static void handle_hash_cfg(const char *name, const ut8 *block, int len) {
+static void handle_hash_cfg(RzCore *core, const char *name, const ut8 *block, int len) {
 	RzHashSize digest_size = 0;
-	ut8 *digest = rz_hash_cfg_calculate_small_block(name, block, len, &digest_size);
+	ut8 *digest = rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
 	hexprint(digest, digest_size);
 	free(digest);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const char **argv) {
-	const RzHashPlugin *plugin = rz_hash_plugin_by_name(argv[1]);
+	const RzHashPlugin *plugin = rz_hash_plugin_by_name(core->hash, argv[1]);
 
 	if (!plugin) {
 		RZ_LOG_ERROR("algorithm '%s' does not exists\n", argv[1]);
@@ -3088,16 +3088,16 @@ RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const c
 	}
 
 	if (!strncmp(plugin->name, "entropy", 7)) {
-		handle_entropy(plugin->name, core->block, core->blocksize);
+		handle_entropy(core, plugin->name, core->block, core->blocksize);
 	} else {
-		handle_hash_cfg(plugin->name, core->block, core->blocksize);
+		handle_hash_cfg(core, plugin->name, core->block, core->blocksize);
 	}
 
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_algo_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_hash_plugins_print(state);
+	return rz_core_hash_plugins_print(core->hash, state);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -3893,7 +3893,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 			for (i = 0; i < nblocks; i++) {
 				ut64 off = from + (blocksize * (i + skipblocks));
 				rz_io_read_at(core->io, off, p, blocksize);
-				ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(p, blocksize));
+				ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(core->hash, p, blocksize));
 			}
 			free(p);
 			core_print_columns(core, ptr, nblocks, 14);
@@ -3992,7 +3992,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		for (i = 0; i < nblocks; i++) {
 			ut64 off = from + (blocksize * (i + skipblocks));
 			rz_io_read_at(core->io, off, p, blocksize);
-			ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(p, blocksize));
+			ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(core->hash, p, blocksize));
 		}
 		free(p);
 		print_bars = true;

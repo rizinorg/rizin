@@ -2098,7 +2098,7 @@ RZ_API char *rz_sign_calc_bbhash(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	RzHashCfg *md = NULL;
 	ut8 *buf = NULL;
 
-	md = rz_hash_cfg_new_with_algo2(ZIGN_HASH);
+	md = rz_hash_cfg_new_with_algo2(a->hash, ZIGN_HASH);
 	if (!md) {
 		goto beach;
 	}
