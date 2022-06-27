@@ -5949,6 +5949,10 @@ static bool rz_core_handle_backwards_disasm(RzCore *core, int *p_nb_opcodes, int
 	}
 	int nb_opcodes = *p_nb_opcodes;
 	int nb_bytes = *p_nb_bytes;
+	if (nb_opcodes > ST16_MAX || nb_opcodes < ST16_MIN) {
+		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
+		return false;
+	}
 	const ut32 abs_n_bytes = RZ_ABS(nb_bytes);
 	const ut64 old_offset = core->offset;
 	const ut32 old_blocksize = core->blocksize;
@@ -5961,12 +5965,14 @@ static bool rz_core_handle_backwards_disasm(RzCore *core, int *p_nb_opcodes, int
 				offset = rz_core_prevop_addr_force(core, old_offset, -nb_opcodes);
 			}
 			bsize = RZ_MIN(offset - old_blocksize, RZ_CORE_MAX_DISASM);
+			*p_nb_opcodes = -nb_opcodes;
 		}
 	} else {
+		bsize = RZ_MIN(abs_n_bytes, RZ_CORE_MAX_DISASM);
 		if (nb_bytes < 0) {
 			offset = old_offset - abs_n_bytes;
 		}
-		bsize = RZ_MIN(abs_n_bytes, RZ_CORE_MAX_DISASM);
+		*p_nb_bytes = (int)bsize;
 	}
 
 	if (bsize > old_blocksize) {
@@ -5977,8 +5983,6 @@ static bool rz_core_handle_backwards_disasm(RzCore *core, int *p_nb_opcodes, int
 	} else {
 		rz_core_block_read(core);
 	}
-	*p_nb_opcodes = (int)(nb_opcodes ? nb_opcodes : bsize);
-	*p_nb_bytes = (int)bsize;
 	return true;
 }
 
