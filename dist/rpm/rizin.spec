@@ -7,6 +7,7 @@ VCS:            https://github.com/rizinorg/rizin
 %global         gituser         rizinorg
 %global         gitname         rizin
 %global         rel             1
+%global         shortversion    %(c=%{version}; echo ${c} | cut -d'.' -f-2)
 
 Release:        0%{rel}%{?dist}
 Source0:        https://github.com/%{gituser}/%{gitname}/releases/download/v%{version}/%{name}-src-v%{version}.tar.xz
@@ -92,6 +93,7 @@ information
 %license COPYING COPYING.LESSER
 %{_bindir}/r*
 %{_libdir}/librz_*.so.%{version}*
+%{_libdir}/librz_*.so.%{shortversion}
 %{_mandir}/man1/rizin.1.*
 %{_mandir}/man1/rz*.1.*
 %{_mandir}/man7/rz-esil.7.*
