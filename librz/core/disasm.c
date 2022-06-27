@@ -5403,12 +5403,8 @@ toro:
 		ds->l = core->blocksize;
 	}
 	rz_cons_break_push(NULL, NULL);
-	ut64 addr_end = addr + len;
 	for (idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
-		if (len > 0 && ds->at > addr_end) {
-			break;
-		}
 		ds->vat = rz_core_pava(core, ds->at);
 		if (rz_cons_is_breaked()) {
 			RZ_FREE(nbuf);
@@ -5770,14 +5766,14 @@ toro:
 	return addrbytes * idx; //-ds->lastfail;
 }
 
-static inline bool check_end(int nb_opcodes, int nb_bytes, int i, int j) {
+RZ_API bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes) {
 	if (nb_opcodes > 0) {
 		if (nb_bytes > 0) {
-			return j < nb_opcodes && i < nb_bytes;
+			return i_opcodes < nb_opcodes && i_bytes < nb_bytes;
 		}
-		return j < nb_opcodes;
+		return i_opcodes < nb_opcodes;
 	}
-	return i < nb_bytes;
+	return i_bytes < nb_bytes;
 }
 
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes) {
@@ -5810,7 +5806,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	// build ranges to map addr with bits
 	j = 0;
 toro:
-	for (i = 0; check_end(nb_opcodes, nb_bytes, addrbytes * i, j); i += ret, j++) {
+	for (i = 0; rz_disasm_check_end(nb_opcodes, j, nb_bytes, addrbytes * i); i += ret, j++) {
 		ds->at = address + i;
 		ds->vat = rz_core_pava(core, ds->at);
 		int len = nb_bytes - addrbytes * i;
@@ -5943,39 +5939,39 @@ toro:
 	return len;
 }
 
-static bool rz_core_handle_backwards_disasm(RzCore *core, int *p_nb_opcodes, int *p_nb_bytes) {
-	if (!p_nb_opcodes && !p_nb_bytes) {
+RZ_API bool rz_core_handle_backwards_disasm(RzCore *core, int *pn_opcodes, int *pn_bytes) {
+	if (!pn_opcodes && !pn_bytes) {
 		return false;
 	}
-	int nb_opcodes = *p_nb_opcodes;
-	int nb_bytes = *p_nb_bytes;
-	if (nb_opcodes > ST16_MAX || nb_opcodes < ST16_MIN) {
+	int n_opcodes = *pn_opcodes;
+	int n_bytes = *pn_bytes;
+	if (n_opcodes > ST16_MAX || n_opcodes < ST16_MIN) {
 		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
 		return false;
 	}
-	const ut32 abs_n_bytes = RZ_ABS(nb_bytes);
 	const ut64 old_offset = core->offset;
 	const ut32 old_blocksize = core->blocksize;
 	ut64 offset = old_offset;
-	ut32 bsize = old_blocksize;
-	if (!nb_bytes) {
-		if (nb_opcodes < 0) {
-			offset = old_offset;
-			if (!rz_core_prevop_addr(core, old_offset, -nb_opcodes, &offset)) {
-				offset = rz_core_prevop_addr_force(core, old_offset, -nb_opcodes);
+	if (!n_bytes) {
+		if (n_opcodes < 0) {
+			*pn_opcodes = n_opcodes = -n_opcodes;
+			if (!rz_core_prevop_addr(core, old_offset, n_opcodes, &offset)) {
+				offset = rz_core_prevop_addr_force(core, old_offset, n_opcodes);
 			}
-			bsize = RZ_MIN(offset - old_blocksize, RZ_CORE_MAX_DISASM);
-			*p_nb_opcodes = -nb_opcodes;
+			*pn_bytes = n_bytes = RZ_MIN(offset - old_blocksize, RZ_CORE_MAX_DISASM);
+		} else {
+			*pn_bytes = n_bytes = (int)core->blocksize;
 		}
 	} else {
-		bsize = RZ_MIN(abs_n_bytes, RZ_CORE_MAX_DISASM);
-		if (nb_bytes < 0) {
-			offset = old_offset - abs_n_bytes;
+		if (n_bytes < 0) {
+			*pn_bytes = n_bytes = RZ_MIN(-n_bytes, RZ_CORE_MAX_DISASM);
+			offset = old_offset - n_bytes;
+		} else {
+			*pn_bytes = n_bytes = RZ_MIN(n_bytes, RZ_CORE_MAX_DISASM);
 		}
 	}
-	*p_nb_bytes = (int)bsize;
-	if (bsize > old_blocksize) {
-		rz_core_block_size(core, bsize);
+	if (n_bytes > old_blocksize) {
+		rz_core_block_size(core, n_bytes);
 	}
 	if (offset != old_offset) {
 		rz_core_seek(core, offset, true);
@@ -6158,8 +6154,8 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	}
 clean_return:
 	rz_pvector_free(vec);
+	rz_core_block_size(core, old_blocksize);
 	if (core->offset != old_offset) {
-		rz_core_block_size(core, old_blocksize);
 		rz_core_seek(core, old_offset, true);
 	}
 	return res;
@@ -6325,7 +6321,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 	j = 0;
 	RzAnalysisMetaItem *meta = NULL;
 toro:
-	for (; check_end(nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
+	for (; rz_disasm_check_end(nb_opcodes, j, nb_bytes, addrbytes * i); j++) {
 		if (rz_cons_is_breaked()) {
 			err = 1;
 			break;

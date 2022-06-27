@@ -6825,9 +6825,10 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	ut8 buffer[256];
 	bool be = rz_config_get_b(core->config, "cfg.bigendian");
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
+	const int addrbytes = (int)core->io->addrbytes;
 	RzAsmOp asmop;
 	int ret;
-	for (int i = 0, idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
+	for (int i = 0, idx = 0; rz_disasm_check_end(nops, i, len, idx * addrbytes); i++, idx += ret) {
 		RzAnalysisBytes *ab = RZ_NEW0(RzAnalysisBytes);
 		if (!ab) {
 			rz_pvector_free(vec);

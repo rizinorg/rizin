@@ -846,6 +846,8 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 RZ_API void rz_analysis_disasm_text_free(void *p);
+RZ_API bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes);
+RZ_API bool rz_core_handle_backwards_disasm(RzCore *core, int *pn_opcodes, int *pn_bytes);
 
 /* cbin.c */
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);

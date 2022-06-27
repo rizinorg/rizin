@@ -6662,16 +6662,14 @@ static void disassembly_as_table(RzTable *t, RzCore *core, int n_instrs, int n_b
 	rz_table_set_columnsf(t, "snssssss", "name", "addr", "bytes", "disasm", "comment", "esil", "refs", "xrefs");
 	const int minopsz = 1;
 	const int options = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_ESIL;
+	const int addrbytes = core->io->addrbytes;
 	ut64 offset = core->offset;
-	ut64 offset_end = offset + n_bytes;
-	for (int i = 0; i < n_instrs; i++) {
-		if (n_bytes > 0 && offset > offset_end) {
-			break;
-		}
+	ut64 inc = 0;
+	for (int i = 0, j = 0; rz_disasm_check_end(n_instrs, i, n_bytes, j * addrbytes); i++, offset += inc, j += inc) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, offset, options);
 		if (!op || op->size < 1) {
 			i += minopsz;
-			offset += minopsz;
+			inc = minopsz;
 			continue;
 		}
 		const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, offset);
@@ -6689,125 +6687,54 @@ static void disassembly_as_table(RzTable *t, RzCore *core, int n_instrs, int n_b
 		free(bytes);
 		free(xrefs);
 		free(refs);
-		offset += op->size;
+		inc = op->size;
 		rz_analysis_op_free(op);
 	}
 }
 
-static bool core_disassembly_n_instructions(RzCore *core, int n_instrs, RzCmdStateOutput *state) {
+static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state) {
 	ut32 old_blocksize = core->blocksize;
 	ut64 old_offset = core->offset;
-
-	if (n_instrs > ST16_MAX || n_instrs < ST16_MIN) {
-		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
+	int cbytes = n_bytes > 0 && !n_instrs;
+	if (!rz_core_handle_backwards_disasm(core, &n_instrs, &n_bytes)) {
 		return false;
-	}
-
-	if (n_instrs < 0) {
-		ut64 new_offset = old_offset;
-		if (!rz_core_prevop_addr(core, old_offset, -n_instrs, &new_offset)) {
-			new_offset = rz_core_prevop_addr_force(core, old_offset, -n_instrs);
-		}
-		ut32 new_blocksize = new_offset - old_blocksize;
-		if (new_blocksize > old_blocksize) {
-			rz_core_block_size(core, new_blocksize);
-		}
-		rz_core_seek(core, new_offset, true);
-	} else {
-		rz_core_block_read(core);
 	}
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_print_disasm(core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), 0, 0, false, NULL, NULL, NULL);
+		rz_core_print_disasm(core, core->offset, core->block, n_bytes, n_instrs, 0, cbytes, false, NULL, NULL, NULL);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		disassembly_as_table(state->d.t, core, RZ_ABS(n_instrs), 0);
+		disassembly_as_table(state->d.t, core, n_instrs, n_bytes);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		rz_cmd_state_output_array_start(state);
-		rz_core_print_disasm_json(core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), state->d.pj);
+		rz_core_print_disasm_json(core, core->offset, core->block, n_bytes, n_instrs, state->d.pj);
 		rz_cmd_state_output_array_end(state);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_core_disasm_pdi(core, RZ_ABS(n_instrs), 0, 0);
+		rz_core_disasm_pdi(core, n_instrs, n_bytes, 0);
 		break;
 	default:
 		rz_warn_if_reached();
 		break;
 	}
 
-	if (n_instrs < 0) {
-		rz_core_block_size(core, old_blocksize);
+	rz_core_block_size(core, old_blocksize);
+	if (core->offset != old_offset) {
 		rz_core_seek(core, old_offset, true);
 	}
-
-	return true;
-}
-
-static bool core_disassembly_n_bytes(RzCore *core, int n_bytes, RzCmdStateOutput *state) {
-	int abs_n_bytes = RZ_ABS(n_bytes);
-	if (abs_n_bytes > RZ_CORE_MAX_DISASM) {
-		RZ_LOG_ERROR("the number of bytes is too big (%d < n_bytes).\n", RZ_CORE_MAX_DISASM);
-		return false;
-	}
-
-	ut32 old_blocksize = core->blocksize;
-	ut64 old_offset = core->offset;
-	if (n_bytes < 0) {
-		ut64 new_offset = old_offset - abs_n_bytes;
-		if (abs_n_bytes > old_blocksize) {
-			rz_core_block_size(core, abs_n_bytes);
-		}
-		rz_core_seek(core, new_offset, true);
-	} else {
-		rz_core_block_read(core);
-	}
-
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_print_disasm(core, core->offset, core->block, abs_n_bytes, abs_n_bytes, 0, 0, false, NULL, NULL, NULL);
-		break;
-	case RZ_OUTPUT_MODE_TABLE:
-		disassembly_as_table(state->d.t, core, abs_n_bytes, abs_n_bytes);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		rz_cmd_state_output_array_start(state);
-		rz_core_print_disasm_json(core, core->offset, core->block, abs_n_bytes, 0, state->d.pj);
-		rz_cmd_state_output_array_end(state);
-		break;
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_core_disasm_pdi(core, 0, abs_n_bytes, 0);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-
-	if (n_bytes < 0) {
-		rz_core_block_size(core, old_blocksize);
-		rz_core_seek(core, old_offset, true);
-	}
-
 	return true;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	return bool2status(core_disassembly_n_bytes(core, n_bytes, state));
+	return bool2status(core_disassembly(core, n_bytes, 0, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	st64 n_instrs = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
-	ut32 old_blocksize = core->blocksize;
-	if (argc > 1 && !n_instrs) {
-		core->blocksize = 0;
-	}
-	bool ret = core_disassembly_n_instructions(core, n_instrs, state);
-	if (argc > 1 && !n_instrs) {
-		core->blocksize = old_blocksize;
-	}
-	return bool2status(ret);
+	return bool2status(core_disassembly(core, 0, (int)n_instrs, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -7437,7 +7364,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 			continue;
 		}
 
-		core_disassembly_n_instructions(core, 1, state);
+		core_disassembly(core, 0, 1, state);
 
 		switch (aop_type) {
 		case RZ_ANALYSIS_OP_TYPE_JMP:
