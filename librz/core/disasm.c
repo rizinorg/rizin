@@ -6034,7 +6034,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		if (op->type == RZ_ANALYSIS_OP_TYPE_ILL) {
 			pj_ki(pj, "size", 1);
 			pj_ks(pj, "bytes", ab->bytes);
-			pj_ks(pj, "opcode", ab->opcode);
+			pj_ks(pj, "opcode", "invalid");
 			pj_end(pj);
 			continue;
 		}
