@@ -5958,10 +5958,10 @@ RZ_API bool rz_core_handle_backwards_disasm(RzCore *core, int *pn_opcodes, int *
 			if (!rz_core_prevop_addr(core, old_offset, n_opcodes, &offset)) {
 				offset = rz_core_prevop_addr_force(core, old_offset, n_opcodes);
 			}
-			*pn_bytes = n_bytes = RZ_MIN(offset - old_blocksize, RZ_CORE_MAX_DISASM);
-		} else {
-			*pn_bytes = n_bytes = (int)core->blocksize;
+		} else if (n_opcodes == 0) {
+			core->blocksize = 0;
 		}
+		*pn_bytes = n_bytes = core->blocksize;
 	} else {
 		if (n_bytes < 0) {
 			*pn_bytes = n_bytes = RZ_MIN(-n_bytes, RZ_CORE_MAX_DISASM);
@@ -5970,6 +5970,7 @@ RZ_API bool rz_core_handle_backwards_disasm(RzCore *core, int *pn_opcodes, int *
 			*pn_bytes = n_bytes = RZ_MIN(n_bytes, RZ_CORE_MAX_DISASM);
 		}
 	}
+
 	if (n_bytes > old_blocksize) {
 		rz_core_block_size(core, n_bytes);
 	}
@@ -5987,9 +5988,7 @@ RZ_API bool rz_core_handle_backwards_disasm(RzCore *core, int *pn_opcodes, int *
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes) {
 	const ut64 ocore_offset = core->offset;
 	int ret = -1;
-	eprintf("%d %d\n", nb_bytes, nb_opcodes);
 	if (rz_core_handle_backwards_disasm(core, &nb_opcodes, &nb_bytes)) {
-		eprintf("%d %d\n", nb_bytes, nb_opcodes);
 		ret = rz_core_print_disasm_instructions_with_buf(core, core->offset, NULL, nb_bytes, nb_opcodes);
 	}
 	rz_core_seek(core, ocore_offset, true);

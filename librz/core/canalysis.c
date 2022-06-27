@@ -6827,7 +6827,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	const int addrbytes = (int)core->io->addrbytes;
 	RzAsmOp asmop;
 	int ret;
-	for (int i = 0, idx = 0; rz_disasm_check_end(nops, i, len, idx * addrbytes); i++, idx += ret) {
+	for (int i_ops = 0, i_offset = 0, i_delta = 0; rz_disasm_check_end(nops, i_ops, len, i_delta * addrbytes); i_ops++, i_offset += ret, i_delta += ret) {
 		RzAnalysisBytes *ab = RZ_NEW0(RzAnalysisBytes);
 		if (!ab) {
 			rz_pvector_free(vec);
@@ -6835,9 +6835,15 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		}
 
 		rz_pvector_push(vec, ab);
-		ut64 addr = core->offset + idx;
-		const ut8 *ptr = buf + idx;
+		ut64 addr = core->offset + i_offset;
+		const ut8 *ptr = buf + i_offset;
 		rz_asm_set_pc(core->rasm, addr);
+
+		if (nops > 0 && i_delta >= len - 32) {
+			rz_io_read_at(core->io, addr, (ut8 *)buf, len);
+			i_delta = 0;
+		}
+
 		ab->hint = rz_analysis_hint_get(core->analysis, addr);
 		RzAnalysisOp *op = ab->op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_ALL);
 		if (!op) {
@@ -6854,7 +6860,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		}
 
 		char *mnem;
-		if (rz_asm_disassemble(core->rasm, &asmop, ptr, len - idx) < 1) {
+		if (rz_asm_disassemble(core->rasm, &asmop, ptr, len - i_offset) < 1) {
 			ab->opcode = strdup(op->mnemonic);
 			ab->disasm = strdup(op->mnemonic);
 			ab->bytes = rz_hex_bin2strdup(ptr, op->size);
@@ -6915,7 +6921,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 
 		op->mnemonic = mnem;
 
-		ut8 *mask = rz_analysis_mask(core->analysis, len - idx, ptr, addr);
+		ut8 *mask = rz_analysis_mask(core->analysis, len - i_offset, ptr, addr);
 		ab->mask = rz_hex_bin2strdup(mask, op->size);
 		free(mask);
 

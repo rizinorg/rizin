@@ -394,13 +394,11 @@ static const char *help_detail2_pf[] = {
 };
 
 static const char *help_msg_pi[] = {
-	"Usage:", "pi[bdefrj] [num]", "",
+	"Usage:", "pi[befr] [num]", "",
 	"pia", "", "print all possible opcodes (byte per byte)",
 	"pib", "", "print instructions of basic block",
-	"pid", "", "like 'pi', with offset and bytes",
 	"pie", "", "print offset + esil expression",
 	"pif", "[?]", "print instructions of function",
-	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
 	"piu", "[q] [limit]", "disasm until ujmp or ret is found (see pdp)",
 	"pix", "  [hexpairs]", "alias for pad",
@@ -778,6 +776,8 @@ static const ut32 colormap[256] = {
 	0xffffff,
 };
 
+static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool zero_but_disasm, bool cbytes);
+
 static void __cmd_pad(RzCore *core, const char *arg) {
 	if (*arg == '?') {
 		eprintf("Usage: pad [hexpairs] # disassembly given bytes\n");
@@ -1103,42 +1103,6 @@ RZ_API void rz_core_set_asm_configs(RzCore *core, char *arch, ut32 bits, int seg
 	// XXX - this needs to be done here, because
 	// if arch == x86 and bits == 16, segoff automatically changes
 	rz_config_set_i(core->config, "asm.segoff", segoff);
-}
-
-static void cmd_pDj(RzCore *core, const char *arg) {
-	int bsize = rz_num_math(core->num, arg);
-	if (bsize < 0) {
-		bsize = -bsize;
-	}
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
-	}
-	pj_a(pj);
-	ut8 *buf = malloc(bsize);
-	if (buf) {
-		rz_io_read_at(core->io, core->offset, buf, bsize);
-		rz_core_print_disasm_json(core, core->offset, buf, bsize, 0, pj);
-		free(buf);
-	} else {
-		eprintf("cannot allocate %d byte(s)\n", bsize);
-	}
-	pj_end(pj);
-	rz_cons_println(pj_string(pj));
-	pj_free(pj);
-}
-
-static void cmd_pdj(RzCore *core, const char *arg, ut8 *block) {
-	int nblines = rz_num_math(core->num, arg);
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
-	}
-	pj_a(pj);
-	rz_core_print_disasm_json(core, core->offset, block, core->blocksize, nblines, pj);
-	pj_end(pj);
-	rz_cons_println(pj_string(pj));
-	pj_free(pj);
 }
 
 static void cmd_p_minus_e(RzCore *core, ut64 at, ut64 ate) {
@@ -5045,15 +5009,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	} break;
 	case 'I': // "pI"
 		switch (input[1]) {
-		case 'j': // "pIj" is the same as pDj
-			if (l != 0) {
-				if (input[2]) {
-					cmd_pDj(core, input + 2);
-				} else {
-					cmd_pDj(core, sdb_fmt("%d", core->blocksize));
-				}
-			}
-			break;
 		case 'f': // "pIf"
 		{
 			const RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
@@ -5065,11 +5020,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			}
 			break;
 		}
-		case 'd': // "pId" is the same as pDi
-			if (l) {
-				rz_core_disasm_pdi(core, 0, l, 0);
-			}
-			break;
 		case '?': // "pi?"
 			rz_cons_printf("|Usage: p[iI][df] [len]   print N instructions/bytes"
 				       "(f=func) (see pi? and pdq)\n");
@@ -5096,16 +5046,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			if (l != 0) {
 				rz_core_print_disasm_all(core, core->offset,
 					l, len, 'i');
-			}
-			break;
-		case 'j': // pij is the same as pdj
-			if (l != 0) {
-				cmd_pdj(core, input + 2, block);
-			}
-			break;
-		case 'd': // "pid" is the same as pdi
-			if (l != 0) {
-				rz_core_disasm_pdi(core, l, 0, 0);
 			}
 			break;
 		case 'e': // "pie"
@@ -6692,13 +6632,17 @@ static void disassembly_as_table(RzTable *t, RzCore *core, int n_instrs, int n_b
 	}
 }
 
-static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state) {
+static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool zero_but_disasm, bool cbytes) {
 	ut32 old_blocksize = core->blocksize;
 	ut64 old_offset = core->offset;
-	int cbytes = n_bytes > 0 && !n_instrs;
+	if (zero_but_disasm && !n_bytes && !n_instrs) {
+		n_bytes = (int)old_blocksize;
+	}
 	if (!rz_core_handle_backwards_disasm(core, &n_instrs, &n_bytes)) {
 		return false;
 	}
+
+	RZ_LOG_VERBOSE("disassembly at: 0x%" PFMT64x ", blocksize: %" PFMT32d " n_bytes: %" PFMT32d ", n_instrs: %" PFMT32d "\n", core->offset, core->blocksize, n_bytes, n_instrs);
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -6729,12 +6673,12 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	return bool2status(core_disassembly(core, n_bytes, 0, state));
+	return bool2status(core_disassembly(core, n_bytes, 0, state, argc == 1, true));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	st64 n_instrs = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
-	return bool2status(core_disassembly(core, 0, (int)n_instrs, state));
+	return bool2status(core_disassembly(core, 0, (int)n_instrs, state, argc == 1, false));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -7364,7 +7308,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 			continue;
 		}
 
-		core_disassembly(core, 0, 1, state);
+		core_disassembly(core, 0, 1, state, false, false);
 
 		switch (aop_type) {
 		case RZ_ANALYSIS_OP_TYPE_JMP:

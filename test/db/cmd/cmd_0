@@ -301,9 +301,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pId 0
+NAME=pDq 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pId 0
+CMDS=pDq 0
 EXPECT=<<EOF
 EOF
 RUN

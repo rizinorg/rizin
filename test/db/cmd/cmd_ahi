@@ -351,12 +351,12 @@ e asm.arch=x86
 e asm.bits=64
 e asm.bytes=false
 wx c7458843c6ff00
-pid 1
+pdq 1
 ahi 10
-pid 1
+pdq 1
 ahi-
 ahi 10 1
-pid 1
+pdq 1
 EOF
 EXPECT=<<EOF
 0x00000000 mov dword [rbp - 0x78], 0xffc643

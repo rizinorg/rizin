@@ -106,7 +106,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pij asm.flags.middle=0
+NAME=pdj asm.flags.middle=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=64
@@ -115,7 +115,7 @@ e analysis.arch=x86
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
 f dat.sym @ 2
-pij 4~{}
+pdj 4~{}
 EOF
 EXPECT=<<EOF
 [
@@ -187,7 +187,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pij asm.flags.middle=2
+NAME=pdj asm.flags.middle=2
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=64
@@ -196,7 +196,7 @@ e analysis.arch=x86
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=2
 f dat.sym @ 2
-pij 4~{}
+pdj 4~{}
 EOF
 EXPECT=<<EOF
 [

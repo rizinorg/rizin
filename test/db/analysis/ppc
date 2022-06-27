@@ -418,7 +418,7 @@ FILE=bins/elf/analysis/elf-ppc-execstack
 CMDS=<<EOF
 e asm.flags=false
 e asm.bytes=true
-pid 4
+pdq 4
 EOF
 EXPECT=<<EOF
 0x100014e0             7c290b78  mr r9, r1
@@ -434,7 +434,7 @@ CMDS=<<EOF
 ?e
 e asm.flags=true
 e asm.bytes=true
-pid 1
+pdq 1
 af
 afi~name[1]
 EOF
