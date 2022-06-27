@@ -510,7 +510,10 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 				SETL("n", ADD(VARL("n"), U8(1)))));
 		return SEQ2(init_n, loop);
 	case PPC_INS_EQV:
-		NOT_IMPLEMENTED;
+		op0 = VARG(rS);
+		op1 = VARG(rB);
+		res = LOGXOR(op0, LOGNOT(op1));
+		break;
 	// Extend
 	case PPC_INS_EXTSB:
 		res = EXTS(UNSIGNED(PPC_BYTE, VARG(rS)));
