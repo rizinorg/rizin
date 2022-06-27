@@ -90,7 +90,8 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {
-			RzILOpPure *imm = (mem_acc_size == 64 || id == PPC_INS_LWA) ? APPEND(IMM_SN(16, d), UN(2, 0)) : IMM_SN(16, d);
+			// "disp << 2" done by capstone.
+			RzILOpPure *imm = IMM_SN(16, d);
 			disp = EXTEND(PPC_ARCH_BITS, imm);
 		}
 		ea = ADD(base, disp);
