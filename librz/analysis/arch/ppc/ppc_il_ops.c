@@ -1063,7 +1063,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 				     NON_ZERO(MOD(UNSIGNED(32, VARG(rS)), UNSIGNED(32, SHIFTL0(UA(1), DUP(n)))))), // (RS % (1 << n)) != 0
 			IL_TRUE,
 			IL_FALSE);
-		set_ca = SEQ2(SETG("ca", ca_val), SETG("ca32", DUP(ca_val)));
+		set_ca = SEQ2(SETG("ca", ca_val), IN_64BIT_MODE ? SETG("ca32", DUP(ca_val)) : EMPTY());
 		break;
 	case PPC_INS_CLRLDI:
 	case PPC_INS_CLRLWI:
