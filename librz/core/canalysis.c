@@ -6822,7 +6822,6 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	min_op_size = min_op_size > 0 ? min_op_size : 1;
 
-	ut8 buffer[256];
 	bool be = rz_config_get_b(core->config, "cfg.bigendian");
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
 	const int addrbytes = (int)core->io->addrbytes;
@@ -6854,7 +6853,6 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 			continue;
 		}
 
-		rz_io_read_at(core->io, addr, buffer, RZ_MIN(op->size, sizeof(buffer)));
 		char *mnem;
 		if (rz_asm_disassemble(core->rasm, &asmop, ptr, len - idx) < 1) {
 			ab->opcode = strdup(op->mnemonic);
