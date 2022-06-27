@@ -5967,15 +5967,13 @@ static bool rz_core_handle_backwards_disasm(RzCore *core, int *p_nb_opcodes, int
 			bsize = RZ_MIN(offset - old_blocksize, RZ_CORE_MAX_DISASM);
 			*p_nb_opcodes = -nb_opcodes;
 		}
-		*p_nb_bytes = (int)bsize;
 	} else {
 		bsize = RZ_MIN(abs_n_bytes, RZ_CORE_MAX_DISASM);
 		if (nb_bytes < 0) {
 			offset = old_offset - abs_n_bytes;
 		}
-		*p_nb_bytes = (int)bsize;
 	}
-
+	*p_nb_bytes = (int)bsize;
 	if (bsize > old_blocksize) {
 		rz_core_block_size(core, bsize);
 	}
@@ -6018,6 +6016,8 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		goto clean_return;
 	}
 
+	bool asm_pseudo = rz_config_get_i(core->config, "asm.pseudo");
+
 	RzAnalysisBytes *ab;
 	void **p;
 	rz_pvector_foreach (vec, p) {
@@ -6034,7 +6034,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		if (op->type == RZ_ANALYSIS_OP_TYPE_ILL) {
 			pj_ki(pj, "size", 1);
 			pj_ks(pj, "bytes", ab->bytes);
-			pj_ks(pj, "type", ab->opcode);
+			pj_ks(pj, "opcode", ab->opcode);
 			pj_end(pj);
 			continue;
 		}
@@ -6056,7 +6056,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		pj_kn(pj, "fcn_addr", f ? f->addr : 0);
 		pj_kn(pj, "fcn_last", f ? rz_analysis_function_max_addr(f) - op->size : 0);
 		pj_ki(pj, "size", op->size);
-		pj_ks(pj, "opcode", ab->opcode);
+		pj_ks(pj, "opcode", asm_pseudo ? ab->pseudo : ab->opcode);
 		pj_ks(pj, "disasm", ab->disasm);
 		pj_k(pj, "bytes");
 		pj_s(pj, ab->bytes);
