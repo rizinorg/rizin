@@ -1079,6 +1079,23 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	return SEQ4(set_mask, SETG(rA, into_rA), update_cr0, set_ca);
 }
 
+static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, EMPTY());
+	ut32 id = insn->id;
+
+	switch (id) {
+	default:
+		NOT_IMPLEMENTED;
+	case PPC_INS_SC:
+	case PPC_INS_TRAP:
+	case PPC_INS_TW:
+	case PPC_INS_TD:
+	case PPC_INS_TWI:
+	case PPC_INS_TDI:
+		return NOP;
+	}
+}
+
 /**
  * \brief Returns the RZIL implementation of a given capstone instruction.
  * Or NOP if the instruction is not yet implemented.
@@ -1413,6 +1430,14 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_SLDI:
 	case PPC_INS_SRWI:
 		lop = shift_and_rotate(handle, insn, mode);
+		break;
+	case PPC_INS_SC:
+	case PPC_INS_TRAP:
+	case PPC_INS_TW:
+	case PPC_INS_TD:
+	case PPC_INS_TWI:
+	case PPC_INS_TDI:
+		lop = sys(handle, insn, mode);
 		break;
 	}
 
