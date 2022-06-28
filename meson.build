@@ -434,6 +434,7 @@ ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
 userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 userconf.set10('HAVE_THREADS', th.found())
 userconf.set10('HAVE_PTHREAD', have_pthread)
+userconf.set10('HAVE_LZMA', get_option('use_lzma'))
 
 if host_machine.system() == 'freebsd' or host_machine.system() == 'dragonfly'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
@@ -575,6 +576,22 @@ lz4_dep = dependency('liblz4', required: get_option('use_sys_lz4'), static: is_s
 if not lz4_dep.found()
   lz4_proj = subproject('lz4', default_options: ['default_library=static'])
   lz4_dep = lz4_proj.get_variable('lz4_dep')
+endif
+
+# handle lzma dependency
+liblzma_dep = disabler()
+if get_option('use_lzma')
+  r = run_command(py3_exe, check_meson_subproject_py, 'lzma', check: false)
+  if r.returncode() == 1 and get_option('subprojects_check')
+    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  endif
+
+  liblzma_dep = dependency('liblzma', required: get_option('use_sys_lzma'), static: is_static_build)
+  if not liblzma_dep.found()
+    liblzma_proj = subproject('liblzma', default_options: ['default_library=static'])
+    liblzma_dep = liblzma_proj.get_variable('lzma_dep')
+    meson.override_dependency('liblzma', liblzma_dep)
+  endif
 endif
 
 # handle zip dependency
@@ -766,6 +783,7 @@ summary({
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
+  'System lzma library': liblzma_dep.found() and liblzma_dep.type_name() != 'internal',
   'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
   'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
