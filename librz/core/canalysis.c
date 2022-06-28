@@ -6828,6 +6828,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	core->parser->localvar_only = rz_config_get_i(core->config, "asm.sub.varonly");
 
 	const int addrbytes = (int)core->io->addrbytes;
+	const int mask = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT;
 	RzAsmOp asmop;
 	int oplen = 0;
 	char disasm[512];
@@ -6849,14 +6850,16 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		}
 
 		ab->hint = rz_analysis_hint_get(core->analysis, addr);
-		RzAnalysisOp *op = ab->op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_ALL);
+		RzAnalysisOp *op = ab->op = rz_analysis_op_new();
+		;
 		if (!op) {
 			rz_pvector_free(vec);
 			return NULL;
 		}
 
+		int reta = rz_analysis_op(core->analysis, ab->op, addr, ptr, len - i_delta, mask);
 		int ret = rz_asm_disassemble(core->rasm, &asmop, ptr, len - i_offset);
-		if (ret < 1) {
+		if (reta < 1 || ret < 1) {
 			oplen = min_op_size;
 			ab->opcode = strdup("invalid");
 			ab->disasm = strdup("invalid");
