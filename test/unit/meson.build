@@ -66,6 +66,7 @@ if get_option('enable_tests')
     'itv',
     'json',
     'list',
+    'lzma',
     'ovf',
     'pj',
     'rbtree',
