@@ -595,37 +595,37 @@ RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr) {
 }
 
 // XXX: those accessors are redundant
-RZ_API RzList *rz_bin_get_entries(RzBin *bin) {
+RZ_DEPRECATE RZ_API RzList *rz_bin_get_entries(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_entries(o) : NULL;
 }
 
-RZ_API RzList *rz_bin_get_fields(RzBin *bin) {
+RZ_DEPRECATE RZ_API RzList *rz_bin_get_fields(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_fields(o) : NULL;
 }
 
-RZ_API RzList *rz_bin_get_imports(RzBin *bin) {
+RZ_DEPRECATE RZ_API RzList *rz_bin_get_imports(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_imports(o) : NULL;
 }
 
-RZ_API RzBinInfo *rz_bin_get_info(RzBin *bin) {
+RZ_DEPRECATE RZ_API RzBinInfo *rz_bin_get_info(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzBinInfo *)rz_bin_object_get_info(o) : NULL;
 }
 
-RZ_API RzList *rz_bin_get_libs(RzBin *bin) {
+RZ_DEPRECATE RZ_API RzList *rz_bin_get_libs(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_libs(o) : NULL;
 }
 
-RZ_API RzList *rz_bin_get_sections(RzBin *bin) {
+RZ_DEPRECATE RZ_API RzList *rz_bin_get_sections(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_sections_all(o) : NULL;
@@ -718,46 +718,31 @@ RZ_API RZ_OWN RzPVector *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, boo
 	return res;
 }
 
-RZ_API RzList *rz_bin_reset_strings(RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinFile *bf = rz_bin_cur(bin);
-	if (!bf || !bf->o) {
-		return NULL;
-	}
-	return (RzList *)rz_bin_object_reset_strings(bin, bf, bf->o);
-}
-
-RZ_API RzList *rz_bin_get_strings(RzBin *bin) {
+RZ_DEPRECATE RZ_API RzList *rz_bin_get_strings(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_strings(o) : NULL;
 }
 
-RZ_API int rz_bin_is_string(RzBin *bin, ut64 va) {
-	rz_return_val_if_fail(bin, false);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? rz_bin_object_is_string(o, va) : false;
-}
-
-RZ_API RzList *rz_bin_get_symbols(RzBin *bin) {
+RZ_DEPRECATE RZ_API RzList *rz_bin_get_symbols(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_symbols(o) : NULL;
 }
 
-RZ_API RzList *rz_bin_get_mem(RzBin *bin) {
+RZ_DEPRECATE RZ_API RzList *rz_bin_get_mem(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_mem(o) : NULL;
 }
 
-RZ_API int rz_bin_is_big_endian(RzBin *bin) {
+RZ_DEPRECATE RZ_API int rz_bin_is_big_endian(RzBin *bin) {
 	rz_return_val_if_fail(bin, false);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? rz_bin_object_is_big_endian(o) : false;
 }
 
-RZ_API int rz_bin_is_static(RzBin *bin) {
+RZ_DEPRECATE RZ_API int rz_bin_is_static(RzBin *bin) {
 	rz_return_val_if_fail(bin, false);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? rz_bin_object_is_static(o) : false;

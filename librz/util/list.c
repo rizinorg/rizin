@@ -512,7 +512,7 @@ RZ_API RzList *rz_list_clone(const RzList *list) {
 }
 
 /**
- * \brief Sorts a list via the RzListComparator
+ * \brief Adds an element to a sorted list via the RzListComparator
  *
  **/
 RZ_API RzListIter *rz_list_add_sorted(RzList *list, void *data, RzListComparator cmp) {

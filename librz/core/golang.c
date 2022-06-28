@@ -484,28 +484,25 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 }
 
 static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size) {
-	RzListIter *it;
 	RzBinString *bstr;
-	RzBinFile *bf = rz_bin_cur(core->bin);
+	RzBin *bin = core->bin;
+	RzBinFile *bf = rz_bin_cur(bin);
 	if (!bf || !bf->o || !bf->o->strings) {
 		free(string);
 		return false;
 	}
-	ut64 paddr = rz_io_v2p(core->io, vaddr);
 
-	rz_list_foreach (bf->o->strings, it, bstr) {
+	bstr = rz_bin_object_string_at(bf->o, vaddr, true);
+	if (bstr) {
 		if (bstr->vaddr == vaddr && bstr->size == size) {
 			free(string);
 			return true;
 		}
-		ut64 end = bstr->vaddr + bstr->size;
-		if (vaddr >= bstr->vaddr && (vaddr + size) < end) {
-			RzListIter *prev = it->p;
-			rz_list_delete(bf->o->strings, it);
-			it = prev ? prev : bf->o->strings->head;
-			break;
-		}
+		rz_bin_object_string_remove(bf->o, vaddr, true);
 	}
+
+	const RzList *strings = rz_bin_object_get_strings(bf->o);
+	ut64 paddr = rz_io_v2p(core->io, vaddr);
 
 	bstr = RZ_NEW0(RzBinString);
 	if (!bstr) {
@@ -515,12 +512,12 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 	}
 	bstr->paddr = paddr;
 	bstr->vaddr = vaddr;
-	bstr->ordinal = rz_list_length(bf->o->strings);
+	bstr->ordinal = rz_list_length(strings);
 	bstr->length = bstr->size = size;
 	bstr->string = string;
 	bstr->type = RZ_STRING_ENC_UTF8;
-	if (!rz_list_append(bf->o->strings, bstr)) {
-		RZ_LOG_ERROR("Failed append new go string to strings list\n");
+	if (!rz_bin_object_string_add(bin, bf->o, bstr)) {
+		RZ_LOG_ERROR("Failed append new go string to strings database\n");
 		rz_bin_string_free(bstr);
 		return false;
 	}

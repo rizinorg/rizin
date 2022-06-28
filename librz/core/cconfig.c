@@ -931,7 +931,10 @@ static bool cb_binstrenc(void *user, void *data) {
 			if (core->bin) {
 				free(core->bin->strenc);
 				core->bin->strenc = !strcmp(node->value, "guess") ? NULL : strdup(node->value);
-				rz_bin_reset_strings(core->bin);
+				RzBinFile *bf = rz_bin_cur(core->bin);
+				if (bf && bf->o) {
+					rz_bin_object_reset_strings(core->bin, bf, bf->o);
+				}
 			}
 			return true;
 		}
@@ -2485,7 +2488,10 @@ static bool cb_binmaxstrbuf(void *user, void *data) {
 		}
 		core->bin->maxstrbuf = v;
 		if (v > old_v) {
-			rz_bin_reset_strings(core->bin);
+			RzBinFile *bf = rz_bin_cur(core->bin);
+			if (bf && bf->o) {
+				rz_bin_object_reset_strings(core->bin, bf, bf->o);
+			}
 		}
 		return true;
 	}
@@ -2501,7 +2507,10 @@ static bool cb_binmaxstr(void *user, void *data) {
 			v = 0;
 		}
 		core->bin->maxstrlen = v;
-		rz_bin_reset_strings(core->bin);
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
 		return true;
 	}
 	return true;
@@ -2516,7 +2525,10 @@ static bool cb_binminstr(void *user, void *data) {
 			v = 4; // HACK
 		}
 		core->bin->minstrlen = v;
-		rz_bin_reset_strings(core->bin);
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
 		return true;
 	}
 	return true;

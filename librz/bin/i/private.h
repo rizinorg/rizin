@@ -26,7 +26,6 @@ RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 
 RZ_IPI void rz_bin_object_free(RzBinObject *o);
 RZ_IPI ut64 rz_bin_object_get_baddr(RzBinObject *o);
-RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo);
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *binfile, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz);
 RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin);
 RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *binfile, const char *arch, int bits, const char *name);
@@ -37,4 +36,15 @@ RZ_IPI void rz_bin_class_add_field(RzBinFile *binfile, const char *classname, co
 
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd);
 RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname);
+
+struct rz_bin_string_database_t {
+	RzList /*<RzBinString*>*/ *list; ///< Contains all the strings in list form
+	HtUP /*<ut64, RzBinString*>*/ *phys; ///< Contains all the strings but mapped by physical address
+	HtUP /*<ut64, RzBinString*>*/ *virt; ///< Contains all the strings but mapped by virtual address
+};
+
+RZ_IPI RZ_OWN RzBinStrDb *rz_bin_string_database_new(RzList /*<RzBinString*>*/ *list, ut64 load_address, bool decode_base64);
+RZ_IPI void rz_bin_string_database_free(RzBinStrDb *db);
+RZ_IPI bool rz_bin_string_database_add(RzBinStrDb *db, RzBinString *bstr, ut64 load_address, bool decode_base64);
+
 #endif
