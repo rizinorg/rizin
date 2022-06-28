@@ -1035,11 +1035,11 @@ RZ_IPI RZ_OWN RzBinStrDb *rz_bin_string_database_new(RzList *list, ut64 load_add
 			}
 		}
 
-		if (!ht_up_insert(db->phys, bstr->paddr, bstr)) {
+		if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
 			RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (phys)\n");
 			goto fail;
 		}
-		if (!ht_up_insert(db->virt, bstr->vaddr, bstr)) {
+		if (!ht_up_update(db->virt, bstr->vaddr, bstr)) {
 			RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (virt)\n");
 			goto fail;
 		}
@@ -1101,11 +1101,11 @@ RZ_IPI bool rz_bin_string_database_add(RzBinStrDb *db, RzBinString *bstr, ut64 l
 		RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (list)\n");
 		return false;
 	}
-	if (!ht_up_insert(db->phys, bstr->paddr, bstr)) {
+	if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
 		RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (phys)\n");
 		return false;
 	}
-	if (!ht_up_insert(db->virt, bstr->vaddr, bstr)) {
+	if (!ht_up_update(db->virt, bstr->vaddr, bstr)) {
 		RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (virt)\n");
 		return false;
 	}
