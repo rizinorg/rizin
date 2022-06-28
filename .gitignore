@@ -126,4 +126,5 @@ subprojects/tree-sitter-*/
 subprojects/zlib-*/
 subprojects/sigdb/
 subprojects/libdemangle/
+subprojects/libmspack/
 dist/windows/Output

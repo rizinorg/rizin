@@ -31,7 +31,7 @@ include_files = [
   'rz_list.h',
   'rz_magic.h',
   'rz_main.h',
-  'rz_msg_digest.h',
+  'rz_hash.h',
   'rz_parse.h',
   'rz_pdb.h',
   'rz_platform.h',

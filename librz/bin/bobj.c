@@ -162,7 +162,6 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_bin_reloc_storage_free(o->relocs);
 	rz_list_free(o->sections);
 	rz_list_free(o->strings);
-	ht_up_free(o->strings_db);
 	ht_pp_free(o->import_name_symbols);
 	rz_list_free(o->symbols);
 	rz_list_free(o->classes);
@@ -251,7 +250,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	}
 	o->obj_size = (bytes_sz >= sz + offset) ? sz : 0;
 	o->boffset = offset;
-	o->strings_db = ht_up_new0();
 	o->regstate = NULL;
 	o->classes = rz_list_newf((RzListFree)rz_bin_class_free);
 	o->classes_ht = ht_pp_new0();
@@ -825,8 +823,6 @@ RZ_API const RzList *rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBi
 		rz_list_free(obj->strings);
 		obj->strings = NULL;
 	}
-	ht_up_free(obj->strings_db);
-	obj->strings_db = ht_up_new0();
 
 	RzBinPlugin *plugin = obj->plugin;
 	if (plugin && plugin->strings) {

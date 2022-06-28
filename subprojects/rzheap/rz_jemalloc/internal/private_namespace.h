@@ -270,7 +270,7 @@
 #define	ffs_u64 JEMALLOC_N(ffs_u64)
 #define	ffs_zu JEMALLOC_N(ffs_zu)
 #define	get_errno JEMALLOC_N(get_errno)
-#define	hash JEMALLOC_N(hash)
+#define	jehash JEMALLOC_N(hash)
 #define	hash_fmix_32 JEMALLOC_N(hash_fmix_32)
 #define	hash_fmix_64 JEMALLOC_N(hash_fmix_64)
 #define	hash_get_block_32 JEMALLOC_N(hash_get_block_32)

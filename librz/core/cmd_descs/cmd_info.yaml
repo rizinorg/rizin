@@ -136,6 +136,14 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
             args: []
+          - name: idpx
+            summary: Extracts a compressed PDB file to a folder
+            cname: cmd_pdb_extract
+            args:
+              - name: file.pdb
+                type: RZ_CMD_ARG_TYPE_FILE
+              - name: output_dir
+                type: RZ_CMD_ARG_TYPE_FILE
   - name: iD
     summary: Demangle symbol for given language
     subcommands:

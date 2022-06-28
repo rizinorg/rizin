@@ -6,7 +6,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include "mach0.h"
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 
 #include "mach0_utils.inc"
 
@@ -673,7 +673,7 @@ static char *readString(ut8 *p, int off, int len) {
 	return rz_str_ndup((const char *)p + off, len - off);
 }
 
-static void parseCodeDirectory(RzBuffer *b, int offset, int datasize) {
+static void parseCodeDirectory(struct MACH0_(obj_t) * mo, RzBuffer *b, int offset, int datasize) {
 	typedef struct __CodeDirectory {
 		uint32_t magic; /* magic number (CSMAGIC_CODEDIRECTORY) */
 		uint32_t length; /* total length of CodeDirectory blob */
@@ -749,7 +749,7 @@ static void parseCodeDirectory(RzBuffer *b, int offset, int datasize) {
 	}
 
 	// computed cdhash
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 	ut8 *digest = NULL;
 
 	int fofsz = cscd.length;
@@ -761,7 +761,7 @@ static void parseCodeDirectory(RzBuffer *b, int offset, int datasize) {
 			goto parseCodeDirectory_end;
 		}
 
-		digest = rz_msg_digest_calculate_small_block(digest_algo, fofbuf, fofsz, &digest_size);
+		digest = rz_hash_cfg_calculate_small_block(mo->hash, digest_algo, fofbuf, fofsz, &digest_size);
 		if (!digest) {
 			goto parseCodeDirectory_end;
 		}
@@ -791,7 +791,7 @@ static void parseCodeDirectory(RzBuffer *b, int offset, int datasize) {
 		int fofsz = RZ_MIN(sizeof(fofbuf), cscd.codeLimit - fof);
 		rz_buf_read_at(b, fof, fofbuf, sizeof(fofbuf));
 
-		digest = rz_msg_digest_calculate_small_block(digest_algo, fofbuf, fofsz, &digest_size);
+		digest = rz_hash_cfg_calculate_small_block(mo->hash, digest_algo, fofbuf, fofsz, &digest_size);
 		if (!digest) {
 			goto parseCodeDirectory_end;
 		}
@@ -905,7 +905,7 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 			break;
 		case CSSLOT_CODEDIRECTORY:
 			if (isVerbose) {
-				parseCodeDirectory(bin->b, data + idx.offset, link.datasize);
+				parseCodeDirectory(bin, bin->b, data + idx.offset, link.datasize);
 			}
 			break;
 		case 0x1000:
@@ -2094,6 +2094,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	}
 	rz_pvector_free(mo->patchable_relocs);
 	rz_skiplist_free(mo->relocs);
+	rz_hash_free(mo->hash);
 	rz_buf_free(mo->b);
 	free(mo);
 	return NULL;
@@ -2107,51 +2108,6 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RzBinFile *bf) {
 	options->patch_relocs = true;
 }
 
-static void *duplicate_ptr(void *p) {
-	return p;
-}
-
-static void free_only_key(HtPPKv *kv) {
-	free(kv->key);
-}
-
-static size_t ptr_size(void *c) {
-	// :D
-	return 8;
-}
-
-// XXX should be deprecated its never called
-struct MACH0_(obj_t) * MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) * options) {
-	struct MACH0_(obj_t) *bin = RZ_NEW0(struct MACH0_(obj_t));
-	if (!bin) {
-		return NULL;
-	}
-	if (options) {
-		bin->options = *options;
-	}
-	bin->file = file;
-	size_t binsz;
-	ut8 *buf = (ut8 *)rz_file_slurp(file, &binsz);
-	bin->size = binsz;
-	if (!buf) {
-		return MACH0_(mach0_free)(bin);
-	}
-	bin->b = rz_buf_new_with_bytes(NULL, 0);
-	if (!rz_buf_set_bytes(bin->b, buf, bin->size)) {
-		free(buf);
-		return MACH0_(mach0_free)(bin);
-	}
-	free(buf);
-	bin->dyld_info = NULL;
-	if (!init(bin)) {
-		return MACH0_(mach0_free)(bin);
-	}
-	bin->imports_by_ord_size = 0;
-	bin->imports_by_ord = NULL;
-	bin->imports_by_name = ht_pp_new((HtPPDupValue)duplicate_ptr, free_only_key, (HtPPCalcSizeV)ptr_size);
-	return bin;
-}
-
 struct MACH0_(obj_t) * MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) * options) {
 	rz_return_val_if_fail(buf, NULL);
 	struct MACH0_(obj_t) *bin = RZ_NEW0(struct MACH0_(obj_t));
@@ -2159,6 +2115,7 @@ struct MACH0_(obj_t) * MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) * op
 		bin->b = rz_buf_ref(buf);
 		bin->main_addr = UT64_MAX;
 		bin->kv = sdb_new(NULL, "bin.mach0", 0);
+		bin->hash = rz_hash_new();
 		bin->size = rz_buf_size(bin->b);
 		if (options) {
 			bin->options = *options;

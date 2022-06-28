@@ -24,7 +24,7 @@
 #include <rz_flag.h>
 #include <rz_config.h>
 #include <rz_bin.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util.h>
 #include <ht_uu.h>
 #include <rz_util/rz_print.h>
@@ -385,6 +385,7 @@ struct rz_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RzList *ropchain;
 	RzCoreSeekHistory seek_history;
+	RzHash *hash;
 
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
@@ -674,7 +675,7 @@ RZ_API void rz_backtrace_free(RZ_NULLABLE RzBacktrace *bt);
 RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *state);
 
 /* chash.c */
-RZ_API RzCmdStatus rz_core_hash_plugins_print(RzCmdStateOutput *state);
+RZ_API RzCmdStatus rz_core_hash_plugins_print(RzHash *hash, RzCmdStateOutput *state);
 
 /* cio.c */
 RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state);

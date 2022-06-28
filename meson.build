@@ -292,6 +292,20 @@ if sys_magic_opt.enabled() or sys_magic_opt.auto()
   endif
 endif
 
+# handle libmspack library
+sys_libmspack_opt = get_option('use_sys_libmspack')
+libmspack_dep = disabler()
+if sys_libmspack_opt.enabled() or sys_libmspack_opt.auto()
+  libmspack_dep = dependency('libmspack', required: false, static: is_static_build)
+  if not libmspack_dep.found()
+    libmspack_dep = cc.find_library('mspack', required: sys_libmspack_opt, static: is_static_build)
+  endif
+endif
+if (sys_libmspack_opt.auto() and not libmspack_dep.found()) or sys_libmspack_opt.disabled()
+  libmspack_proj = subproject('libmspack', default_options: ['default_library=static'])
+  libmspack_dep = libmspack_proj.get_variable('libmspack_dep')
+endif
+
 # handle xxhash library
 r = run_command(py3_exe, check_meson_subproject_py, 'xxhash', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -751,6 +765,7 @@ summary({
   'Capstone version': capstone_dep.version(),
   'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
+  'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
   'System libuv library': libuv_dep.found() and libuv_dep.type_name() != 'internal',
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
@@ -775,6 +790,7 @@ summary({
   'Egg Plugins': egg_plugins,
   'IO Plugins': io_plugins,
   'Lang Plugins': lang_plugins,
+  'Hash Plugins': hash_plugins,
   'Parse Plugins': parse_plugins,
   'Demangler Plugins': demangler_plugins,
 }, section: 'Plugins', list_sep: ', ')

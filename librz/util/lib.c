@@ -26,7 +26,7 @@ static RzLibTypeName rz_lib_types[] = {
 	{ RZ_LIB_TYPE_SYSCALL, "syscall" },
 	{ RZ_LIB_TYPE_FASTCALL, "fastcall" },
 	{ RZ_LIB_TYPE_CRYPTO, "crypto" },
-	{ RZ_LIB_TYPE_MD, "msgdigest" },
+	{ RZ_LIB_TYPE_HASH, "msgdigest" },
 	{ RZ_LIB_TYPE_CORE, "core" },
 	{ RZ_LIB_TYPE_EGG, "egg" },
 	{ RZ_LIB_TYPE_DEMANGLER, "demangler" },

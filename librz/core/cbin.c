@@ -1653,7 +1653,7 @@ RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 si
 			return NULL;
 		}
 		rz_io_pread_at(core->io, paddr, data, size);
-		char *chkstr = rz_msg_digest_calculate_small_block_string(digest, data, size, NULL, false);
+		char *chkstr = rz_hash_cfg_calculate_small_block_string(core->hash, digest, data, size, NULL, false);
 		if (!chkstr) {
 			continue;
 		}
@@ -2462,7 +2462,7 @@ static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList
 	rz_cmd_state_output_set_columnsf(state, "XxXxssssx", "paddr", "size", "vaddr", "vsize", "align", "perm", "name", "type", "flags");
 
 	rz_list_foreach (hashes, iter, hashname) {
-		const RzMsgDigestPlugin *msg_plugin = rz_msg_digest_plugin_by_name(hashname);
+		const RzHashPlugin *msg_plugin = rz_hash_plugin_by_name(core->hash, hashname);
 		if (msg_plugin) {
 			rz_cmd_state_output_set_columnsf(state, "s", msg_plugin->name);
 		}
@@ -2609,7 +2609,7 @@ RZ_API bool rz_core_bin_segments_print(RzCore *core, RzBinFile *bf, RzCmdStateOu
 	rz_cmd_state_output_set_columnsf(state, "XxXxssx", "paddr", "size", "vaddr", "vsize", "align", "perm", "name");
 
 	rz_list_foreach (hashes, iter, hashname) {
-		const RzMsgDigestPlugin *msg_plugin = rz_msg_digest_plugin_by_name(hashname);
+		const RzHashPlugin *msg_plugin = rz_hash_plugin_by_name(core->hash, hashname);
 		if (msg_plugin) {
 			rz_cmd_state_output_set_columnsf(state, "s", msg_plugin->name);
 		}
@@ -5053,7 +5053,7 @@ RZ_API bool rz_core_bin_resources_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBi
 	rz_cmd_state_output_set_columnsf(state, "dssXxss", "index", "name", "type", "vaddr", "size", "lang", "timestamp");
 
 	rz_list_foreach (hashes, it, hashname) {
-		const RzMsgDigestPlugin *msg_plugin = rz_msg_digest_plugin_by_name(hashname);
+		const RzHashPlugin *msg_plugin = rz_hash_plugin_by_name(core->hash, hashname);
 		if (msg_plugin) {
 			rz_cmd_state_output_set_columnsf(state, "s", msg_plugin->name);
 		}

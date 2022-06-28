@@ -395,6 +395,7 @@ static const RzCmdDescArg cmd_info_class_fields_args[2];
 static const RzCmdDescArg cmd_info_class_methods_args[2];
 static const RzCmdDescArg cmd_info_pdb_load_args[2];
 static const RzCmdDescArg cmd_info_pdb_show_args[2];
+static const RzCmdDescArg cmd_pdb_extract_args[3];
 static const RzCmdDescArg cmd_info_demangle_args[3];
 static const RzCmdDescArg cmd_info_kuery_args[2];
 static const RzCmdDescArg cmd_info_plugins_args[2];
@@ -460,7 +461,7 @@ static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
 static const RzCmdDescArg cmd_disassemble_summarize_block_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
-static const RzCmdDescArg cmd_print_msg_digest_args[2];
+static const RzCmdDescArg cmd_print_hash_cfg_args[2];
 static const RzCmdDescArg cmd_print_magic_args[2];
 static const RzCmdDescArg print_utf16le_args[2];
 static const RzCmdDescArg print_utf32le_args[2];
@@ -8999,6 +9000,24 @@ static const RzCmdDescHelp cmd_info_pdb_download_help = {
 	.args = cmd_info_pdb_download_args,
 };
 
+static const RzCmdDescArg cmd_pdb_extract_args[] = {
+	{
+		.name = "file.pdb",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "output_dir",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_pdb_extract_help = {
+	.summary = "Extracts a compressed PDB file to a folder",
+	.args = cmd_pdb_extract_args,
+};
+
 static const RzCmdDescHelp iD_help = {
 	.summary = "Demangle symbol for given language",
 };
@@ -10834,7 +10853,7 @@ static const RzCmdDescHelp cmd_print_gadget_move_help = {
 static const RzCmdDescHelp cmd_print_default_help = {
 	.summary = "Print hash/message digest or entropy",
 };
-static const RzCmdDescArg cmd_print_msg_digest_args[] = {
+static const RzCmdDescArg cmd_print_hash_cfg_args[] = {
 	{
 		.name = "algo",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -10843,17 +10862,17 @@ static const RzCmdDescArg cmd_print_msg_digest_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_print_msg_digest_help = {
+static const RzCmdDescHelp cmd_print_hash_cfg_help = {
 	.summary = "Prints a hash/message digest or entropy (use @! to change the block size)",
-	.args = cmd_print_msg_digest_args,
+	.args = cmd_print_hash_cfg_args,
 };
 
-static const RzCmdDescArg cmd_print_msg_digest_algo_list_args[] = {
+static const RzCmdDescArg cmd_print_hash_cfg_algo_list_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_print_msg_digest_algo_list_help = {
+static const RzCmdDescHelp cmd_print_hash_cfg_algo_list_help = {
 	.summary = "Lists all the supported algorithms",
-	.args = cmd_print_msg_digest_algo_list_args,
+	.args = cmd_print_hash_cfg_algo_list_args,
 };
 
 static const RzCmdDescHelp cmd_print_timestamp_help = {
@@ -16136,6 +16155,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_pdb_download_cd = rz_cmd_desc_argv_state_new(core->rcmd, idp_cd, "idpd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_pdb_download_handler, &cmd_info_pdb_download_help);
 	rz_warn_if_fail(cmd_info_pdb_download_cd);
 
+	RzCmdDesc *cmd_pdb_extract_cd = rz_cmd_desc_argv_new(core->rcmd, idp_cd, "idpx", rz_cmd_pdb_extract_handler, &cmd_pdb_extract_help);
+	rz_warn_if_fail(cmd_pdb_extract_cd);
+
 	RzCmdDesc *iD_cd = rz_cmd_desc_group_new(core->rcmd, i_cd, "iD", rz_cmd_info_demangle_handler, &cmd_info_demangle_help, &iD_help);
 	rz_warn_if_fail(iD_cd);
 	RzCmdDesc *cmd_info_demangle_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, iD_cd, "iDl", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_demangle_list_handler, &cmd_info_demangle_list_help);
@@ -16588,10 +16610,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_gadget_move_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pgm", rz_cmd_print_gadget_move_handler, &cmd_print_gadget_move_help);
 	rz_warn_if_fail(cmd_print_gadget_move_cd);
 
-	RzCmdDesc *cmd_print_default_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "ph", rz_cmd_print_msg_digest_handler, &cmd_print_msg_digest_help, &cmd_print_default_help);
+	RzCmdDesc *cmd_print_default_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "ph", rz_cmd_print_hash_cfg_handler, &cmd_print_hash_cfg_help, &cmd_print_default_help);
 	rz_warn_if_fail(cmd_print_default_cd);
-	RzCmdDesc *cmd_print_msg_digest_algo_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_default_cd, "phl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_msg_digest_algo_list_handler, &cmd_print_msg_digest_algo_list_help);
-	rz_warn_if_fail(cmd_print_msg_digest_algo_list_cd);
+	RzCmdDesc *cmd_print_hash_cfg_algo_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_default_cd, "phl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_hash_cfg_algo_list_handler, &cmd_print_hash_cfg_algo_list_help);
+	rz_warn_if_fail(cmd_print_hash_cfg_algo_list_cd);
 
 	RzCmdDesc *cmd_print_timestamp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pt", rz_cmd_print_timestamp_unix_handler, &cmd_print_timestamp_unix_help, &cmd_print_timestamp_help);
 	rz_warn_if_fail(cmd_print_timestamp_cd);

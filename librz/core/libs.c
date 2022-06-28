@@ -13,7 +13,9 @@
 		rz_##x##_add(core->y, hand); \
 		return true; \
 	} \
-	static int __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { return true; }
+	static int __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { \
+		return true; \
+	}
 
 static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzCore *core = (RzCore *)user;
@@ -50,6 +52,8 @@ CB(parse, parser)
 #define rz_bin_add rz_bin_plugin_add
 CB(bin, bin)
 CB(egg, egg)
+#define rz_hash_add rz_hash_plugin_add
+CB(hash, hash)
 
 static void loadSystemPlugins(RzCore *core, int where) {
 #if RZ_LOADLIBS
@@ -97,6 +101,7 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	DF(PARSE, "parsing plugins", parse);
 	DF(BIN, "bin plugins", bin);
 	DF(EGG, "egg plugins", egg);
+	DF(HASH, "hash plugins", hash);
 	core->times->loadlibs_init_time = rz_time_now_mono() - prev;
 }
 
