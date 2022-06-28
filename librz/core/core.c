@@ -993,7 +993,7 @@ static const char *rizin_argv[] = {
 	"pg?", "pg", "pg*", "pg-*",
 	"ph?", "ph", "ph=",
 	"pi?", "pi", "pia", "pib", "pie", "pif?", "pif", "pifc", "pifcj", "pifj", "pir",
-	"pI?", "pI", "pIa", "pIb", "pIe", "pIf?", "pIf", "pIfc", "pIfcj", "pIfj", "pIj", "pIr",
+	"pI?", "pI", "pIa", "pIb", "pIe", "pIf?", "pIf", "pIfc", "pIfcj", "pIfj", "pIr",
 	"pj?", "pj", "pj.", "pj..",
 	"pk?", "pk", "pK?", "pK",
 	"pm?", "pm",

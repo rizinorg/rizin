@@ -214,7 +214,7 @@ static const char *help_msg_at_at_at[] = {
 static const char *help_msg_p[] = {
 	"Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
 	"p", "[b|B|xb] [len] ([S])", "bindump N bits skipping S bytes",
-	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pid)",
+	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdq)",
 	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
 	"p2", " [len]", "8x8 2bpp-tiles",
@@ -226,7 +226,7 @@ static const char *help_msg_p[] = {
 	"pb", "[?] [n]", "bitstream of N bits",
 	"pB", "[?] [n]", "bitstream of N bytes",
 	"pc", "[?][p] [len]", "output C (or python) format",
-	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pid)",
+	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pdq)",
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
 	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
@@ -775,8 +775,6 @@ static const ut32 colormap[256] = {
 	0xff79d2,
 	0xffffff,
 };
-
-static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool zero_but_disasm, bool cbytes);
 
 static void __cmd_pad(RzCore *core, const char *arg) {
 	if (*arg == '?') {
@@ -6632,12 +6630,9 @@ static void disassembly_as_table(RzTable *t, RzCore *core, int n_instrs, int n_b
 	}
 }
 
-static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool zero_but_disasm, bool cbytes) {
+static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool cbytes) {
 	ut32 old_blocksize = core->blocksize;
 	ut64 old_offset = core->offset;
-	if (zero_but_disasm && !n_bytes && !n_instrs) {
-		n_bytes = (int)old_blocksize;
-	}
 	if (!rz_core_handle_backwards_disasm(core, &n_instrs, &n_bytes)) {
 		return false;
 	}
@@ -6673,12 +6668,12 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	return bool2status(core_disassembly(core, n_bytes, 0, state, argc == 1, true));
+	return bool2status(core_disassembly(core, n_bytes, 0, state, true));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	st64 n_instrs = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
-	return bool2status(core_disassembly(core, 0, (int)n_instrs, state, argc == 1, false));
+	return bool2status(core_disassembly(core, argc > 1 && n_instrs == 0 ? 0 : core->blocksize, (int)n_instrs, state, false));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -7308,7 +7303,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 			continue;
 		}
 
-		core_disassembly(core, 0, 1, state, false, false);
+		core_disassembly(core, core->blocksize, 1, state, false);
 
 		switch (aop_type) {
 		case RZ_ANALYSIS_OP_TYPE_JMP:

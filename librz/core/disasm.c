@@ -5952,23 +5952,23 @@ RZ_API bool rz_core_handle_backwards_disasm(RzCore *core, int *pn_opcodes, int *
 	const ut64 old_offset = core->offset;
 	const ut32 old_blocksize = core->blocksize;
 	ut64 offset = old_offset;
-	if (!n_bytes) {
-		if (n_opcodes < 0) {
-			*pn_opcodes = n_opcodes = -n_opcodes;
-			if (!rz_core_prevop_addr(core, old_offset, n_opcodes, &offset)) {
-				offset = rz_core_prevop_addr_force(core, old_offset, n_opcodes);
-			}
-		} else if (n_opcodes == 0) {
-			core->blocksize = 0;
+	if (n_opcodes < 0) {
+		*pn_opcodes = n_opcodes = -n_opcodes;
+		if (!rz_core_prevop_addr(core, old_offset, n_opcodes, &offset)) {
+			offset = rz_core_prevop_addr_force(core, old_offset, n_opcodes);
 		}
 		*pn_bytes = n_bytes = core->blocksize;
-	} else {
+	} else if (n_opcodes == 0) {
 		if (n_bytes < 0) {
 			*pn_bytes = n_bytes = RZ_MIN(-n_bytes, RZ_CORE_MAX_DISASM);
 			offset = old_offset - n_bytes;
+		} else if (n_bytes == 0) {
+			core->blocksize = 0;
 		} else {
 			*pn_bytes = n_bytes = RZ_MIN(n_bytes, RZ_CORE_MAX_DISASM);
 		}
+	} else {
+		*pn_bytes = n_bytes = core->blocksize;
 	}
 
 	if (n_bytes > old_blocksize) {
