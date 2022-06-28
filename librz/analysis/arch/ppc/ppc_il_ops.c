@@ -597,14 +597,10 @@ static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 	if (id == PPC_INS_MULLI) {
 		op0 = VARG(rA);
-		op1 = SA(sI);
+		op1 = S16(sI);
 	} else {
 		op0 = VARG(rA);
 		op1 = VARG(rB);
-	}
-	if (!is_d_mul_div(id)) {
-		op0 = CAST(PPC_WORD, IL_FALSE, op0);
-		op1 = CAST(PPC_WORD, IL_FALSE, op1);
 	}
 	if (id == PPC_INS_MULHWU || id == PPC_INS_DIVWU || id == PPC_INS_MULHDU || id == PPC_INS_DIVDU) {
 		op0 = UNSIGNED(128, op0);
