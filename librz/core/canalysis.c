@@ -6851,7 +6851,6 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 
 		ab->hint = rz_analysis_hint_get(core->analysis, addr);
 		RzAnalysisOp *op = ab->op = rz_analysis_op_new();
-		;
 		if (!op) {
 			rz_pvector_free(vec);
 			return NULL;
