@@ -6822,12 +6822,16 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	min_op_size = min_op_size > 0 ? min_op_size : 1;
 
-	bool be = rz_config_get_b(core->config, "cfg.bigendian");
+	bool bigendian = rz_config_get_b(core->config, "cfg.bigendian");
+	bool asm_sub_var = rz_config_get_i(core->config, "asm.sub.var");
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
+	core->parser->localvar_only = rz_config_get_i(core->config, "asm.sub.varonly");
+
 	const int addrbytes = (int)core->io->addrbytes;
 	RzAsmOp asmop;
-	int ret;
-	for (int i_ops = 0, i_offset = 0, i_delta = 0; rz_disasm_check_end(nops, i_ops, len, i_delta * addrbytes); i_ops++, i_offset += ret, i_delta += ret) {
+	int oplen = 0;
+	char disasm[512];
+	for (int i_ops = 0, i_offset = 0, i_delta = 0; rz_disasm_check_end(nops, i_ops, len, i_delta * addrbytes); i_ops++, i_offset += oplen, i_delta += oplen) {
 		RzAnalysisBytes *ab = RZ_NEW0(RzAnalysisBytes);
 		if (!ab) {
 			rz_pvector_free(vec);
@@ -6850,24 +6854,28 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 			rz_pvector_free(vec);
 			return NULL;
 		}
-		ret = op->size;
-		if (op->type == RZ_ANALYSIS_OP_TYPE_ILL) {
-			ret = min_op_size;
+
+		int ret = rz_asm_disassemble(core->rasm, &asmop, ptr, len - i_offset);
+		if (ret < 1) {
+			oplen = min_op_size;
 			ab->opcode = strdup("invalid");
 			ab->disasm = strdup("invalid");
-			ab->bytes = rz_hex_bin2strdup(ptr, min_op_size);
+			ab->bytes = rz_asm_op_get_hex(&asmop);
 			continue;
 		}
 
-		char *mnem;
-		if (rz_asm_disassemble(core->rasm, &asmop, ptr, len - i_offset) < 1) {
-			ab->opcode = strdup(op->mnemonic);
-			ab->disasm = strdup(op->mnemonic);
-			ab->bytes = rz_hex_bin2strdup(ptr, op->size);
-			continue;
+		oplen = rz_asm_op_get_size(&asmop);
+
+		if (core->parser->subrel) {
+			ut64 subrel_addr = UT64_MAX;
+			if (rz_io_read_i(core->io, op->ptr, &subrel_addr, op->refptr, bigendian)) {
+				core->parser->subrel_addr = subrel_addr;
+			}
 		}
-		ab->opcode = strdup(rz_asm_op_get_asm(&asmop));
-		mnem = strdup(rz_asm_op_get_asm(&asmop));
+
+		const char *an_asm = rz_asm_op_get_asm(&asmop);
+		ab->opcode = strdup(an_asm);
+		char *mnem = strdup(an_asm);
 		char *sp = strchr(mnem, ' ');
 		if (sp) {
 			*sp = 0;
@@ -6881,37 +6889,33 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 				mnem = arg;
 			}
 		}
-
-		char strsub[128] = { 0 };
-		// pc+33
-		rz_parse_subvar(core->parser, NULL,
-			op, rz_asm_op_get_asm(&asmop),
-			strsub, sizeof(strsub));
-		ut64 subrel_addr = UT64_MAX;
-		if (rz_io_read_i(core->io, op->ptr, &subrel_addr, op->refptr, be)) {
-			core->parser->subrel_addr = subrel_addr;
-		}
-		// 0x33->sym.xx
-		char *p = strdup(strsub);
-		if (p && ab->hint) {
-			rz_parse_filter(core->parser, addr, core->flags, ab->hint, p,
-				strsub, sizeof(strsub), be);
-		}
-		free(p);
-		if (!*strsub) {
-			rz_str_ncpy(strsub, rz_asm_op_get_asm(&asmop), sizeof(strsub) - 1);
-		}
+		op->mnemonic = mnem;
 
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
-		if (fcn) {
-			rz_parse_subvar(core->parser, fcn, op, strsub, strsub, sizeof(strsub));
+		char *asm_buff = calloc(strlen(an_asm) + 128, sizeof(char));
+		strcpy(asm_buff, an_asm);
+
+		if (asm_sub_var) {
+			core->parser->get_ptr_at = rz_analysis_function_get_var_stackptr_at;
+			core->parser->get_reg_at = rz_analysis_function_get_var_reg_at;
+			rz_parse_subvar(core->parser, fcn, op,
+				asm_buff, asm_buff, sizeof(asmop.buf_asm));
 		}
-		ab->disasm = strdup(strsub);
+
+		rz_parse_filter(core->parser, addr, core->flags, ab->hint,
+			asm_buff, disasm, sizeof(disasm), bigendian);
+		rz_asm_op_set_asm(&asmop, asm_buff);
+		free(asm_buff);
+
+		ab->disasm = strdup(disasm);
+
+		rz_core_asm_bb_middle(core, addr, &oplen, &ret);
+		ab->oplen = oplen;
 
 		// apply pseudo if needed
-		ab->pseudo = rz_parse_pseudocode(core->parser, strsub);
+		ab->pseudo = rz_parse_pseudocode(core->parser, disasm);
 
-		char *opname = strdup(strsub);
+		char *opname = strdup(disasm);
 		sp = strchr(opname, ' ');
 		if (sp) {
 			*sp = 0;
@@ -6919,13 +6923,11 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		ab->description = rz_asm_describe(core->rasm, opname);
 		free(opname);
 
-		op->mnemonic = mnem;
-
 		ut8 *mask = rz_analysis_mask(core->analysis, len - i_offset, ptr, addr);
-		ab->mask = rz_hex_bin2strdup(mask, op->size);
+		ab->mask = rz_hex_bin2strdup(mask, oplen);
 		free(mask);
 
-		ab->bytes = rz_hex_bin2strdup(ptr, op->size);
+		ab->bytes = rz_asm_op_get_hex(&asmop);
 	}
 	return vec;
 }

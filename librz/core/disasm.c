@@ -1682,6 +1682,22 @@ static int handleMidBB(RzCore *core, RzDisasmState *ds) {
 	return 0;
 }
 
+RZ_API void rz_core_asm_bb_middle(RzCore *core, ut64 at, int *oplen, int *ret) {
+	bool midbb = rz_config_get_b(core->config, "asm.bb.middle");
+	RzDisasmState ds = {
+		.at = at,
+		.oplen = *oplen,
+	};
+	int skip_bytes_flag = handleMidFlags(core, &ds, false);
+	int skip_bytes_bb = midbb ? handleMidBB(core, &ds) : 0;
+	if (skip_bytes_flag && ds.midflags > RZ_MIDFLAGS_SHOW) {
+		*oplen = *ret = skip_bytes_flag;
+	}
+	if (skip_bytes_bb && skip_bytes_bb < *ret) {
+		*oplen = skip_bytes_bb;
+	}
+}
+
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags) {
 	rz_return_val_if_fail(midflags, 0);
 	RzDisasmState ds = {
@@ -6049,7 +6065,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 
 		RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, op->addr, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM | RZ_ANALYSIS_FCN_TYPE_LOC);
 		pj_kn(pj, "fcn_addr", f ? f->addr : 0);
-		pj_kn(pj, "fcn_last", f ? rz_analysis_function_max_addr(f) - op->size : 0);
+		pj_kn(pj, "fcn_last", f ? rz_analysis_function_max_addr(f) - ab->oplen : 0);
 		pj_ki(pj, "size", op->size);
 		pj_ks(pj, "opcode", asm_pseudo ? ab->pseudo : ab->opcode);
 		pj_ks(pj, "disasm", ab->disasm);

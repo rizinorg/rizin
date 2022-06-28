@@ -6641,7 +6641,7 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_print_disasm(core, core->offset, core->block, n_bytes, n_instrs, 0, cbytes, false, NULL, NULL, NULL);
+		rz_core_print_disasm(core, core->offset, core->block, n_bytes, n_bytes > 0 && !n_instrs ? n_bytes : n_instrs, 0, cbytes, false, NULL, NULL, NULL);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		disassembly_as_table(state->d.t, core, n_instrs, n_bytes);
@@ -6667,13 +6667,13 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+	int n_bytes = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
 	return bool2status(core_disassembly(core, n_bytes, 0, state, true));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	st64 n_instrs = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
-	return bool2status(core_disassembly(core, argc > 1 && n_instrs == 0 ? 0 : core->blocksize, (int)n_instrs, state, false));
+	int n_instrs = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 0;
+	return bool2status(core_disassembly(core, argc > 1 && n_instrs == 0 ? 0 : (int)core->blocksize, n_instrs, state, false));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
