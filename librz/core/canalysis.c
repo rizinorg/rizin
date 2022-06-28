@@ -6857,7 +6857,7 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 		}
 
 		int reta = rz_analysis_op(core->analysis, ab->op, addr, ptr, len - i_delta, mask);
-		int ret = rz_asm_disassemble(core->rasm, &asmop, ptr, len - i_offset);
+		int ret = rz_asm_disassemble(core->rasm, &asmop, ptr, len - i_delta);
 		if (reta < 1 || ret < 1) {
 			oplen = min_op_size;
 			ab->opcode = strdup("invalid");
