@@ -34,7 +34,9 @@ typedef struct {
 
 RZ_API void rz_detected_string_free(RzDetectedString *str);
 
-RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
+RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
+	const ut64 from, const ut64 to, RzStrEnc type);
+RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type);
 
 #ifdef __cplusplus

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <ht_uu.h>
 #include <assert.h>
 
@@ -690,7 +690,7 @@ RZ_API bool rz_analysis_block_was_modified(RzAnalysisBlock *block) {
 		free(buf);
 		return false;
 	}
-	ut32 cur_hash = rz_hash_xxhash(buf, block->size);
+	ut32 cur_hash = rz_hash_xxhash(block->analysis->hash, buf, block->size);
 	free(buf);
 	return block->bbhash != cur_hash;
 }
@@ -708,7 +708,7 @@ RZ_API void rz_analysis_block_update_hash(RzAnalysisBlock *block) {
 		free(buf);
 		return;
 	}
-	block->bbhash = rz_hash_xxhash(buf, block->size);
+	block->bbhash = rz_hash_xxhash(block->analysis->hash, buf, block->size);
 	free(buf);
 }
 

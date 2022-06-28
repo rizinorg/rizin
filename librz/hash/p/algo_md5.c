@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 
 #if HAVE_LIB_SSL
@@ -10,7 +10,7 @@
  */
 
 #include "../algorithms/openssl_common.h"
-rz_openssl_plugin_define_msg_digest(md5, EVP_md5, true);
+rz_openssl_plugin_define_hash_cfg(md5, EVP_md5, true);
 
 #else /* HAVE_LIB_SSL */
 /**
@@ -27,11 +27,11 @@ static void plugin_md5_context_free(void *context) {
 	free(context);
 }
 
-static RzMsgDigestSize plugin_md5_digest_size(void *context) {
+static RzHashSize plugin_md5_digest_size(void *context) {
 	return RZ_HASH_MD5_DIGEST_SIZE;
 }
 
-static RzMsgDigestSize plugin_md5_block_size(void *context) {
+static RzHashSize plugin_md5_block_size(void *context) {
 	return RZ_HASH_MD5_BLOCK_LENGTH;
 }
 
@@ -56,7 +56,7 @@ static bool plugin_md5_final(void *context, ut8 *digest) {
 	return true;
 }
 
-static bool plugin_md5_small_block(const ut8 *data, ut64 size, ut8 **digest, RzMsgDigestSize *digest_size) {
+static bool plugin_md5_small_block(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size) {
 	rz_return_val_if_fail(data && digest, false);
 	ut8 *dgst = malloc(RZ_HASH_MD5_DIGEST_SIZE);
 	if (!dgst) {
@@ -75,7 +75,7 @@ static bool plugin_md5_small_block(const ut8 *data, ut64 size, ut8 **digest, RzM
 	return true;
 }
 
-RzMsgDigestPlugin rz_msg_digest_plugin_md5 = {
+RzHashPlugin rz_hash_plugin_md5 = {
 	.name = "md5",
 	.license = "LGPL2",
 	.author = "Alan DeKok (md5 algorithm implementation), deroad (plugin)",
@@ -94,8 +94,8 @@ RzMsgDigestPlugin rz_msg_digest_plugin_md5 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_MD,
-	.data = &rz_msg_digest_plugin_md5,
+	.type = RZ_LIB_TYPE_HASH,
+	.data = &rz_hash_plugin_md5,
 	.version = RZ_VERSION
 };
 #endif

@@ -6,10 +6,10 @@
 
 static bool check_il_only(ut32 flags);
 
-static int rz_bin_pemixed_init(struct rz_bin_pemixed_obj_t *bin, struct PE_(rz_bin_pe_obj_t) * pe_bin) {
-	struct PE_(rz_bin_pe_obj_t) * sub_bin_dos;
-	struct PE_(rz_bin_pe_obj_t) * sub_bin_native;
-	struct PE_(rz_bin_pe_obj_t) * sub_bin_net;
+static int rz_bin_pemixed_init(struct rz_bin_pemixed_obj_t *bin, RzBinPEObj *pe_bin) {
+	RzBinPEObj *sub_bin_dos;
+	RzBinPEObj *sub_bin_native;
+	RzBinPEObj *sub_bin_net;
 
 	sub_bin_dos = rz_bin_pemixed_init_dos(pe_bin);
 	if (sub_bin_dos) {
@@ -27,7 +27,7 @@ static int rz_bin_pemixed_init(struct rz_bin_pemixed_obj_t *bin, struct PE_(rz_b
 
 // carves out dos from original pe
 // TODO: return mz file instead pe
-struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_dos(struct PE_(rz_bin_pe_obj_t) * pe_bin) {
+RzBinPEObj *rz_bin_pemixed_init_dos(RzBinPEObj *pe_bin) {
 	ut8 *tmp_buf;
 
 	ut64 pe_hdr_off = pe_bin->dos_header->e_lfanew;
@@ -43,7 +43,7 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_dos(struct PE_(rz_bin_pe_obj_t
 		return NULL;
 	}
 
-	struct PE_(rz_bin_pe_obj_t) *sub_bin_dos = RZ_NEW0(struct PE_(rz_bin_pe_obj_t));
+	RzBinPEObj *sub_bin_dos = RZ_NEW0(RzBinPEObj);
 	if (!(sub_bin_dos->b = rz_buf_new_with_bytes(tmp_buf, pe_hdr_off))) {
 		PE_(rz_bin_pe_free)
 		(sub_bin_dos);
@@ -57,11 +57,11 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_dos(struct PE_(rz_bin_pe_obj_t
 	return sub_bin_dos;
 }
 
-struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_obj_t) * pe_bin) {
+RzBinPEObj *rz_bin_pemixed_init_native(RzBinPEObj *pe_bin) {
 	ut8 *zero_out;
 
-	struct PE_(rz_bin_pe_obj_t) *sub_bin_native = RZ_NEW0(struct PE_(rz_bin_pe_obj_t));
-	memcpy(sub_bin_native, pe_bin, sizeof(struct PE_(rz_bin_pe_obj_t)));
+	RzBinPEObj *sub_bin_native = RZ_NEW0(RzBinPEObj);
+	memcpy(sub_bin_native, pe_bin, sizeof(RzBinPEObj));
 
 	// copy pe_bin->b and assign to sub_bin_native
 
@@ -107,12 +107,12 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_ob
 }
 
 // this method should just return the original pe file
-//  struct PE_(rz_bin_pe_obj_t)* rz_bin_pemixed_init_net(struct PE_(rz_bin_pe_obj_t)* pe_bin) {
+//  RzBinPEObj* rz_bin_pemixed_init_net(RzBinPEObj* pe_bin) {
 //		return pe_bin;
 //  }
 
 // not sure if this function is nessescary
-struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_extract(struct rz_bin_pemixed_obj_t *bin, int sub_bin) {
+RzBinPEObj *rz_bin_pemixed_extract(struct rz_bin_pemixed_obj_t *bin, int sub_bin) {
 	if (!bin) {
 		return NULL;
 	}
@@ -158,7 +158,7 @@ void *rz_bin_pemixed_free(struct rz_bin_pemixed_obj_t *bin) {
 
 struct rz_bin_pemixed_obj_t *rz_bin_pemixed_from_bytes_new(const ut8 *buf, ut64 size) {
 	struct rz_bin_pemixed_obj_t *bin = RZ_NEW0(struct rz_bin_pemixed_obj_t);
-	struct PE_(rz_bin_pe_obj_t) * pe_bin;
+	RzBinPEObj *pe_bin;
 	if (!bin || !buf) {
 		return rz_bin_pemixed_free(bin);
 	}

@@ -404,6 +404,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->bp->iob.init = false;
 	dbg->bp->baddr = 0;
 	dbg->nt_x86_xstate_supported = true;
+	dbg->hash = rz_hash_new();
 	return dbg;
 }
 
@@ -414,6 +415,7 @@ RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg) {
 
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 	if (dbg) {
+		rz_hash_free(dbg->hash);
 		rz_bp_free(dbg->bp);
 		free(dbg->snap_path);
 		rz_list_free(dbg->maps);

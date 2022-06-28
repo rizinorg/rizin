@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 
 #include "../algorithms/entropy/entropy.h"
@@ -14,11 +14,11 @@ static void plugin_entropy_context_free(void *context) {
 	free(context);
 }
 
-static RzMsgDigestSize plugin_entropy_digest_size(void *context) {
+static RzHashSize plugin_entropy_digest_size(void *context) {
 	return sizeof(double);
 }
 
-static RzMsgDigestSize plugin_entropy_block_size(void *context) {
+static RzHashSize plugin_entropy_block_size(void *context) {
 	return 0;
 }
 
@@ -43,7 +43,7 @@ static bool plugin_entropy_final(void *context, ut8 *digest) {
 	return true;
 }
 
-static bool plugin_entropy_small_block(const ut8 *data, ut64 size, ut8 **digest, RzMsgDigestSize *digest_size) {
+static bool plugin_entropy_small_block(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size) {
 	rz_return_val_if_fail(data && digest, false);
 	ut8 *dgst = malloc(sizeof(double));
 	if (!dgst) {
@@ -62,7 +62,7 @@ static bool plugin_entropy_small_block(const ut8 *data, ut64 size, ut8 **digest,
 	return true;
 }
 
-RzMsgDigestPlugin rz_msg_digest_plugin_entropy_fract = {
+RzHashPlugin rz_hash_plugin_entropy_fract = {
 	.name = "entropy_fract",
 	.license = "LGPL3",
 	.author = "deroad",
@@ -79,8 +79,8 @@ RzMsgDigestPlugin rz_msg_digest_plugin_entropy_fract = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_MD,
-	.data = &rz_msg_digest_plugin_entropy_fract,
+	.type = RZ_LIB_TYPE_HASH,
+	.data = &rz_hash_plugin_entropy_fract,
 	.version = RZ_VERSION
 };
 #endif

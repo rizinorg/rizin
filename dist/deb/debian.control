@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: RizinOrg <info@rizin.re>
 Build-Depends: debhelper (>= 12),
                meson,
+               ninja-build,
                pkg-config,
                python3,
                python3-setuptools,

@@ -588,12 +588,9 @@ typedef struct rz_analysis_t {
 	RzList *plugins;
 	Sdb *sdb_noret;
 	Sdb *sdb_fmts;
-	Sdb *sdb_zigns;
 	HtUP *ht_xrefs_from;
 	HtUP *ht_xrefs_to;
 	bool recursive_noreturn; // analysis.rnr
-	RzSpaces zign_spaces;
-	char *zign_path; // dir.zigns
 	// moved from RzAnalysisFcn
 	Sdb *sdb; // root
 	HtUP /*<RzVector<RzAnalysisAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
@@ -626,6 +623,7 @@ typedef struct rz_analysis_t {
 	RzPlatformTargetIndex *platform_target;
 	HtPP *ht_global_var; // global variables
 	RBTree global_var_tree; // global variables by address. must not overlap
+	RzHash *hash;
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
@@ -2006,11 +2004,6 @@ RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr);
 RZ_API bool rz_analysis_noreturn_at_addr(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr);
 RZ_API RzList *rz_analysis_noreturn_functions(RzAnalysis *analysis);
-
-/* zign spaces */
-RZ_API int rz_sign_space_count_for(RzAnalysis *a, const RzSpace *space);
-RZ_API void rz_sign_space_unset_for(RzAnalysis *a, const RzSpace *space);
-RZ_API void rz_sign_space_rename_for(RzAnalysis *a, const RzSpace *space, const char *oname, const char *nname);
 
 /* vtables */
 typedef struct {

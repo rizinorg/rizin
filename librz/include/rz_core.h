@@ -24,7 +24,7 @@
 #include <rz_flag.h>
 #include <rz_config.h>
 #include <rz_bin.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util.h>
 #include <ht_uu.h>
 #include <rz_util/rz_print.h>
@@ -33,7 +33,6 @@
 #include <rz_util/rz_annotated_code.h>
 #include <rz_heap_glibc.h>
 #include <rz_windows_heap.h>
-#include <rz_flirt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -191,7 +190,6 @@ typedef enum rz_core_autocomplete_types_t {
 	RZ_CORE_AUTOCMPLT_FLSP,
 	RZ_CORE_AUTOCMPLT_SEEK,
 	RZ_CORE_AUTOCMPLT_FCN,
-	RZ_CORE_AUTOCMPLT_ZIGN,
 	RZ_CORE_AUTOCMPLT_EVAL,
 	RZ_CORE_AUTOCMPLT_MINS,
 	RZ_CORE_AUTOCMPLT_BRKP,
@@ -385,6 +383,7 @@ struct rz_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RzList *ropchain;
 	RzCoreSeekHistory seek_history;
+	RzHash *hash;
 
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
@@ -665,7 +664,7 @@ RZ_API void rz_backtrace_free(RZ_NULLABLE RzBacktrace *bt);
 RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *state);
 
 /* chash.c */
-RZ_API RzCmdStatus rz_core_hash_plugins_print(RzCmdStateOutput *state);
+RZ_API RzCmdStatus rz_core_hash_plugins_print(RzHash *hash, RzCmdStateOutput *state);
 
 /* cio.c */
 RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state);
@@ -1031,7 +1030,6 @@ RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input);
 RZ_API void rz_core_visual_define(RzCore *core, const char *arg, int distance);
 RZ_API int rz_core_visual_trackflags(RzCore *core);
 RZ_API int rz_core_visual_view_graph(RzCore *core);
-RZ_API int rz_core_visual_view_zigns(RzCore *core);
 RZ_API int rz_core_visual_view_rop(RzCore *core);
 RZ_API int rz_core_visual_comments(RzCore *core);
 RZ_API int rz_core_visual_prompt(RzCore *core);

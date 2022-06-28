@@ -5898,14 +5898,6 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_task_yield(&core->tasks);
 	}
 
-	if (!sdb_isempty(core->analysis->sdb_zigns)) {
-		notify = "Check for zignature from zigns folder";
-		rz_core_notify_begin(core, "%s", notify);
-		rz_core_cmd0(core, "z/");
-		rz_core_notify_done(core, "%s", notify);
-		rz_core_task_yield(&core->tasks);
-	}
-
 	if (plugin_supports_esil) {
 		notify = "Type matching analysis for all functions";
 		rz_core_notify_begin(core, "%s", notify);

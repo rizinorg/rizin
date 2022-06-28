@@ -78,7 +78,6 @@ if get_option('enable_tests')
     'serialize_flag',
     'serialize_spaces',
     'serialize_types',
-    'sign',
     'skiplist',
     'skyline',
     'spaces',

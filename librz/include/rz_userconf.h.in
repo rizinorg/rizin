@@ -69,7 +69,6 @@
 #define RZ_PLUGINS  "@PLUGINS@"
 #define RZ_DATADIR  "@DATADIR_RZ@"
 #define RZ_SDB      "@SDB@"
-#define RZ_ZIGNS    "@ZIGNS@"
 #define RZ_SIGDB    "@SIGDB@"
 #define RZ_THEMES   "@THEMES@"
 #define RZ_FORTUNES "@FORTUNES@"

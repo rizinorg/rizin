@@ -42,10 +42,6 @@
  *     /attrs
  *       <direct dump of RzAnalysis.sdb_classes_attrs>
  *
- *   /zigns
- *     <direct dump of RzAnalysis.sdb_zigns>
- *     /spaces
- *       see spaces.c
  *
  *   /imports
  *     <str>=i
@@ -2169,25 +2165,6 @@ RZ_API bool rz_serialize_analysis_typelinks_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 	return rz_serialize_typelinks_load(db, analysis, res);
 }
 
-RZ_API void rz_serialize_analysis_sign_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	sdb_copy(analysis->sdb_zigns, db);
-	rz_serialize_spaces_save(sdb_ns(db, "spaces", true), &analysis->zign_spaces);
-}
-
-RZ_API bool rz_serialize_analysis_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
-	sdb_reset(analysis->sdb_zigns);
-	sdb_copy(db, analysis->sdb_zigns);
-	Sdb *spaces_db = sdb_ns(db, "spaces", false);
-	if (!spaces_db) {
-		RZ_SERIALIZE_ERR(res, "missing spaces namespace");
-		return false;
-	}
-	if (!rz_serialize_spaces_load(spaces_db, &analysis->zign_spaces, false, res)) {
-		return false;
-	}
-	return true;
-}
-
 RZ_API void rz_serialize_analysis_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
 	RzListIter *it;
 	const char *imp;
@@ -2225,7 +2202,6 @@ RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	rz_serialize_analysis_types_save(sdb_ns(db, "types", true), analysis);
 	rz_serialize_analysis_callables_save(sdb_ns(db, "callables", true), analysis);
 	rz_serialize_analysis_typelinks_save(sdb_ns(db, "typelinks", true), analysis);
-	rz_serialize_analysis_sign_save(sdb_ns(db, "zigns", true), analysis);
 	rz_serialize_analysis_imports_save(sdb_ns(db, "imports", true), analysis);
 	rz_serialize_analysis_cc_save(sdb_ns(db, "cc", true), analysis);
 	rz_serialize_analysis_global_var_save(sdb_ns(db, "vars", true), analysis);
@@ -2273,7 +2249,6 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 
 	SUB("meta", rz_serialize_analysis_meta_load(subdb, analysis, res));
 	SUB("hints", rz_serialize_analysis_hints_load(subdb, analysis, res));
-	SUB("zigns", rz_serialize_analysis_sign_load(subdb, analysis, res));
 	SUB("imports", rz_serialize_analysis_imports_load(subdb, analysis, res));
 	SUB("cc", rz_serialize_analysis_cc_load(subdb, analysis, res));
 	SUB("vars", rz_serialize_analysis_global_var_load(subdb, analysis, res));

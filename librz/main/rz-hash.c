@@ -5,10 +5,11 @@
 #include <string.h>
 #include <rz_io.h>
 #include <rz_main.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_print.h>
 #include <rz_util.h>
 #include <rz_crypto.h>
+#include <rz_lib.h>
 
 #define RZ_HASH_DEFAULT_BLOCK_SIZE 0x1000
 
@@ -44,6 +45,7 @@ typedef struct {
 } RzHashOffset;
 
 typedef struct rz_hash_context {
+	RzHash *rh;
 	bool as_prefix;
 	bool little_endian;
 	bool show_blocks;
@@ -104,13 +106,13 @@ static void rz_hash_show_help(bool usage_only) {
 		"             if 's:' prefix is specified\n");
 }
 
-static void rz_hash_show_algorithms() {
+static void rz_hash_show_algorithms(RzHashContext *ctx) {
 	char flags[7] = { 0 };
 
 	printf("flags  algorithm      license    author\n");
 
-	const RzMsgDigestPlugin *rmdp;
-	for (size_t i = 0; (rmdp = rz_msg_digest_plugin_by_index(i)); ++i) {
+	const RzHashPlugin *rmdp;
+	for (size_t i = 0; (rmdp = rz_hash_plugin_by_index(ctx->rh, i)); ++i) {
 		snprintf(flags, sizeof(flags), "____h%c", rmdp->support_hmac ? 'm' : '_');
 		printf("%6s %-14s %-10s %s\n", flags, rmdp->name, rmdp->license, rmdp->author);
 	}
@@ -217,7 +219,7 @@ static void rz_hash_show_algorithms() {
 #define rz_hash_ctx_set_op(x, o)     rz_hash_ctx_set_val(x, operation, RZ_HASH_OP_UNKNOWN, o)
 #define rz_hash_ctx_set_str(x, k, s) rz_hash_ctx_set_val(x, k, NULL, strdup(s))
 
-static bool rz_hash_parse_string(const char *option, const char *string, ut8 **buffer, size_t *bufsize) {
+static bool hash_parse_string(const char *option, const char *string, ut8 **buffer, size_t *bufsize) {
 	char *sstdin = NULL;
 	int stringlen = 0;
 	if (!strcmp(string, "-")) {
@@ -249,7 +251,7 @@ static bool rz_hash_parse_string(const char *option, const char *string, ut8 **b
 	return true;
 }
 
-static bool rz_hash_parse_hexadecimal(const char *option, const char *hexadecimal, ut8 **buffer, size_t *bufsize) {
+static bool hash_parse_hexadecimal(const char *option, const char *hexadecimal, ut8 **buffer, size_t *bufsize) {
 	char *sstdin = NULL;
 	int hexlen = 0;
 	if (!strcmp(hexadecimal, "-")) {
@@ -285,7 +287,7 @@ static bool rz_hash_parse_hexadecimal(const char *option, const char *hexadecima
 	return true;
 }
 
-static bool rz_hash_parse_any(RzHashContext *ctx, const char *option, const char *arg, RzHashBuffer *hb) {
+static bool hash_parse_any(RzHashContext *ctx, const char *option, const char *arg, RzHashBuffer *hb) {
 	ssize_t arglen = strlen(arg);
 	if (arglen < 1) {
 		rz_hash_bool_error(ctx, RZ_HASH_OP_ERROR, "option %s is empty.\n", option);
@@ -297,12 +299,12 @@ static bool rz_hash_parse_any(RzHashContext *ctx, const char *option, const char
 	} else if (arg[0] == '@') {
 		hb->buf = (ut8 *)rz_file_slurp(arg + 1, &hb->len);
 	} else if (!strncmp(arg, "s:", 2)) {
-		if (!rz_hash_parse_string(option, arg + 2, &hb->buf, &hb->len)) {
+		if (!hash_parse_string(option, arg + 2, &hb->buf, &hb->len)) {
 			ctx->operation = RZ_HASH_OP_ERROR;
 			return false;
 		}
 	} else {
-		if (!rz_hash_parse_hexadecimal(option, arg, &hb->buf, &hb->len)) {
+		if (!hash_parse_hexadecimal(option, arg, &hb->buf, &hb->len)) {
 			ctx->operation = RZ_HASH_OP_ERROR;
 			return false;
 		}
@@ -313,10 +315,9 @@ static bool rz_hash_parse_any(RzHashContext *ctx, const char *option, const char
 	return true;
 }
 
-static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ctx) {
+static void hash_parse_cmdline(int argc, const char **argv, RzHashContext *ctx) {
 	const char *seed = NULL;
 	const char *key = NULL;
-	memset((void *)ctx, 0, sizeof(RzHashContext));
 
 	RzGetopt opt;
 	int c;
@@ -471,12 +472,12 @@ static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ct
 			seed++;
 			ctx->as_prefix = true;
 		}
-		if (!rz_hash_parse_any(ctx, "-S", seed, &ctx->seed)) {
+		if (!hash_parse_any(ctx, "-S", seed, &ctx->seed)) {
 			return;
 		}
 	}
 
-	if (key && !rz_hash_parse_any(ctx, "-K", key, &ctx->key)) {
+	if (key && !hash_parse_any(ctx, "-K", key, &ctx->key)) {
 		return;
 	}
 
@@ -485,7 +486,7 @@ static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ct
 	}
 }
 
-static void rz_hash_context_fini(RzHashContext *ctx) {
+static void hash_context_fini(RzHashContext *ctx) {
 	free(ctx->algorithm);
 	free(ctx->compare);
 	free(ctx->iv);
@@ -493,9 +494,10 @@ static void rz_hash_context_fini(RzHashContext *ctx) {
 	free((char **)ctx->files);
 	free(ctx->seed.buf);
 	pj_free(ctx->pj);
+	rz_hash_free(ctx->rh);
 }
 
-static RzIODesc *rz_hash_context_create_desc_io_stdin(RzIO *io) {
+static RzIODesc *hash_context_create_desc_io_stdin(RzIO *io) {
 	RzIODesc *desc = NULL;
 	int size;
 	char *uri = NULL;
@@ -531,7 +533,7 @@ rz_hash_context_create_desc_io_stdin_end:
 	return desc;
 }
 
-static RzIODesc *rz_hash_context_create_desc_io_string(RzIO *io, const char *input) {
+static RzIODesc *hash_context_create_desc_io_string(RzIO *io, const char *input) {
 	RzIODesc *desc = NULL;
 	char *uri = NULL;
 	ut8 *buffer = NULL;
@@ -540,11 +542,11 @@ static RzIODesc *rz_hash_context_create_desc_io_string(RzIO *io, const char *inp
 	bool is_string = !strncmp(input, "s:", 2);
 
 	if (is_string) {
-		if (!rz_hash_parse_string("-s", input + 2, &buffer, &size)) {
+		if (!hash_parse_string("-s", input + 2, &buffer, &size)) {
 			goto rz_hash_context_create_desc_io_string_end;
 		}
 	} else {
-		if (!rz_hash_parse_hexadecimal("-x", input, &buffer, &size)) {
+		if (!hash_parse_hexadecimal("-x", input, &buffer, &size)) {
 			goto rz_hash_context_create_desc_io_string_end;
 		}
 	}
@@ -580,7 +582,7 @@ rz_hash_context_create_desc_io_string_end:
 	return desc;
 }
 
-static bool rz_hash_context_run(RzHashContext *ctx, RzHashRun run) {
+static bool hash_context_run(RzHashContext *ctx, RzHashRun run) {
 	bool result = false;
 	RzIODesc *desc = NULL;
 
@@ -599,7 +601,7 @@ static bool rz_hash_context_run(RzHashContext *ctx, RzHashRun run) {
 		pj_o(ctx->pj);
 	}
 	if (ctx->use_stdin) {
-		desc = rz_hash_context_create_desc_io_stdin(io);
+		desc = hash_context_create_desc_io_stdin(io);
 		if (!desc) {
 			RZ_LOG_ERROR("rz-hash: error, cannot read stdin\n");
 			goto rz_hash_context_run_end;
@@ -615,7 +617,7 @@ static bool rz_hash_context_run(RzHashContext *ctx, RzHashRun run) {
 		}
 	} else if (ctx->input) {
 		if (strlen(ctx->input) > 0) {
-			desc = rz_hash_context_create_desc_io_string(io, ctx->input);
+			desc = hash_context_create_desc_io_string(io, ctx->input);
 			if (!desc) {
 				RZ_LOG_ERROR("rz-hash: error, cannot read string\n");
 				goto rz_hash_context_run_end;
@@ -662,7 +664,7 @@ rz_hash_context_run_end:
 	return result;
 }
 
-static void rz_hash_print_crypto(RzHashContext *ctx, const char *hname, const ut8 *buffer, int len, ut64 from, ut64 to) {
+static void hash_print_crypto(RzHashContext *ctx, const char *hname, const ut8 *buffer, int len, ut64 from, ut64 to) {
 	char *value = ctx->operation == RZ_HASH_OP_ENCRYPT ? malloc(len * 2 + 1) : malloc(len + 1);
 	if (!value) {
 		RZ_LOG_ERROR("rz-hash: error, cannot allocate value memory\n");
@@ -712,14 +714,14 @@ static void rz_hash_print_crypto(RzHashContext *ctx, const char *hname, const ut
 	free(value);
 }
 
-static void rz_hash_print_digest(RzHashContext *ctx, RzMsgDigest *md, const char *hname, ut64 from, ut64 to, const char *filename) {
-	RzMsgDigestSize len = 0;
+static void hash_print_digest(RzHashContext *ctx, RzHashCfg *md, const char *hname, ut64 from, ut64 to, const char *filename) {
+	RzHashSize len = 0;
 	char *value = NULL;
 	char *rndart = NULL;
 	const ut8 *buffer;
 
-	buffer = rz_msg_digest_get_result(md, hname, &len);
-	value = rz_msg_digest_get_result_string(md, hname, NULL, ctx->little_endian);
+	buffer = rz_hash_cfg_get_result(md, hname, &len);
+	value = rz_hash_cfg_get_result_string(md, hname, NULL, ctx->little_endian);
 	if (!value || !buffer) {
 		free(value);
 		return;
@@ -741,7 +743,7 @@ static void rz_hash_print_digest(RzHashContext *ctx, RzMsgDigest *md, const char
 		printf("%s: 0x%08" PFMT64x "-0x%08" PFMT64x " %s%s: %s%s\n", filename, from, to, hmac, hname, value, has_seed ? " with seed" : "");
 		break;
 	case RZ_HASH_MODE_RANDOMART:
-		rndart = rz_msg_digest_randomart(buffer, len, from);
+		rndart = rz_hash_cfg_randomart(buffer, len, from);
 		printf("%s%s\n%s\n", hmac, hname, rndart);
 		break;
 	case RZ_HASH_MODE_QUIET:
@@ -755,7 +757,7 @@ static void rz_hash_print_digest(RzHashContext *ctx, RzMsgDigest *md, const char
 	free(rndart);
 }
 
-static void rz_hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, bool result, const char *hname, const char *filename) {
+static void hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, bool result, const char *hname, const char *filename) {
 	ut64 to = ctx->offset.to ? ctx->offset.to : filesize;
 	const char *hmac = ctx->key.len > 0 ? "hmac-" : "";
 	switch (ctx->mode) {
@@ -782,12 +784,12 @@ static void rz_hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, 
 
 static RzList *parse_hash_algorithms(RzHashContext *ctx) {
 	if (!strcmp(ctx->algorithm, "all")) {
-		const RzMsgDigestPlugin *plugin;
+		const RzHashPlugin *plugin;
 		RzList *list = rz_list_newf(NULL);
 		if (!list) {
 			return NULL;
 		}
-		for (ut64 i = 0; (plugin = rz_msg_digest_plugin_by_index(i)); ++i) {
+		for (ut64 i = 0; (plugin = rz_hash_plugin_by_index(ctx->rh, i)); ++i) {
 			rz_list_append(list, (void *)plugin->name);
 		}
 		return list;
@@ -800,13 +802,13 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 	const char *algorithm;
 	RzList *algorithms = NULL;
 	RzListIter *it;
-	RzMsgDigest *md = NULL;
+	RzHashCfg *md = NULL;
 	ut64 bsize = 0;
 	ut64 filesize;
 	ut8 *block = NULL;
 	ut8 *cmphash = NULL;
 	const ut8 *digest = NULL;
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 
 	algorithms = parse_hash_algorithms(ctx);
 	if (!algorithms || rz_list_length(algorithms) < 1) {
@@ -816,7 +818,7 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 
 	filesize = rz_io_desc_size(io->desc);
 
-	md = rz_msg_digest_new();
+	md = rz_hash_cfg_new(ctx->rh);
 	if (!md) {
 		RZ_LOG_ERROR("rz-hash: error, cannot allocate hash context memory\n");
 		goto calculate_hash_end;
@@ -840,12 +842,12 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 	}
 
 	rz_list_foreach (algorithms, it, algorithm) {
-		if (!rz_msg_digest_configure(md, algorithm)) {
+		if (!rz_hash_cfg_configure(md, algorithm)) {
 			goto calculate_hash_end;
 		}
 	}
 
-	if (ctx->key.len > 0 && !rz_msg_digest_hmac(md, ctx->key.buf, ctx->key.len)) {
+	if (ctx->key.len > 0 && !rz_hash_cfg_hmac(md, ctx->key.buf, ctx->key.len)) {
 		goto calculate_hash_end;
 	}
 
@@ -854,38 +856,38 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 		size_t cmphashlen = 0;
 		bool result = false;
 
-		if (!rz_hash_parse_hexadecimal("-c", ctx->compare, &cmphash, &cmphashlen)) {
+		if (!hash_parse_hexadecimal("-c", ctx->compare, &cmphash, &cmphashlen)) {
 			// RZ_LOG_ERROR("rz-hash: error, cannot allocate block memory\n");
 			goto calculate_hash_end;
 		}
 
-		if (!rz_msg_digest_init(md)) {
+		if (!rz_hash_cfg_init(md)) {
 			goto calculate_hash_end;
 		}
 
 		if (ctx->as_prefix && ctx->seed.buf &&
-			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
+			!rz_hash_cfg_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
 
 		for (ut64 j = ctx->offset.from; j < to; j += bsize) {
 			int read = rz_io_pread_at(io, j, block, to - j > bsize ? bsize : (to - j));
-			if (!rz_msg_digest_update(md, block, read)) {
+			if (!rz_hash_cfg_update(md, block, read)) {
 				goto calculate_hash_end;
 			}
 		}
 
 		if (!ctx->as_prefix && ctx->seed.buf &&
-			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
+			!rz_hash_cfg_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
-		if (!rz_msg_digest_final(md) ||
-			!rz_msg_digest_iterate(md, ctx->iterate)) {
+		if (!rz_hash_cfg_final(md) ||
+			!rz_hash_cfg_iterate(md, ctx->iterate)) {
 			goto calculate_hash_end;
 		}
 
 		rz_list_foreach (algorithms, it, algorithm) {
-			digest = rz_msg_digest_get_result(md, algorithm, &digest_size);
+			digest = rz_hash_cfg_get_result(md, algorithm, &digest_size);
 			if (digest_size != cmphashlen) {
 				result = false;
 			} else {
@@ -895,7 +897,7 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 			if (ctx->mode == RZ_HASH_MODE_JSON) {
 				pj_o(ctx->pj);
 			}
-			rz_hash_context_compare_hashes(ctx, filesize, result, algorithm, filename);
+			hash_context_compare_hashes(ctx, filesize, result, algorithm, filename);
 			if (ctx->mode == RZ_HASH_MODE_JSON) {
 				pj_end(ctx->pj);
 			}
@@ -904,19 +906,19 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 		ut64 to = ctx->offset.to ? ctx->offset.to : filesize;
 		for (ut64 j = ctx->offset.from; j < to; j += bsize) {
 			int read = rz_io_pread_at(io, j, block, to - j > bsize ? bsize : (to - j));
-			if (!rz_msg_digest_init(md) ||
-				!rz_msg_digest_update(md, block, read) ||
-				!rz_msg_digest_final(md) ||
-				!rz_msg_digest_iterate(md, ctx->iterate)) {
+			if (!rz_hash_cfg_init(md) ||
+				!rz_hash_cfg_update(md, block, read) ||
+				!rz_hash_cfg_final(md) ||
+				!rz_hash_cfg_iterate(md, ctx->iterate)) {
 				goto calculate_hash_end;
 			}
 
 			rz_list_foreach (algorithms, it, algorithm) {
-				digest = rz_msg_digest_get_result(md, algorithm, &digest_size);
+				digest = rz_hash_cfg_get_result(md, algorithm, &digest_size);
 				if (ctx->mode == RZ_HASH_MODE_JSON) {
 					pj_o(ctx->pj);
 				}
-				rz_hash_print_digest(ctx, md, algorithm, j, j + bsize, filename);
+				hash_print_digest(ctx, md, algorithm, j, j + bsize, filename);
 				if (ctx->mode == RZ_HASH_MODE_JSON) {
 					pj_end(ctx->pj);
 				}
@@ -924,39 +926,39 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 		}
 	} else {
 		ut64 to = ctx->offset.to ? ctx->offset.to : filesize;
-		if (!rz_msg_digest_init(md)) {
+		if (!rz_hash_cfg_init(md)) {
 			goto calculate_hash_end;
 		}
 
 		if (ctx->as_prefix && ctx->seed.buf &&
-			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
+			!rz_hash_cfg_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
 
 		for (ut64 j = ctx->offset.from; j < to; j += bsize) {
 			int read = rz_io_pread_at(io, j, block, to - j > bsize ? bsize : (to - j));
-			if (!rz_msg_digest_update(md, block, read)) {
+			if (!rz_hash_cfg_update(md, block, read)) {
 				goto calculate_hash_end;
 			}
 		}
 
 		if (!ctx->as_prefix && ctx->seed.buf &&
-			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
+			!rz_hash_cfg_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
 
-		if (!rz_msg_digest_final(md) ||
-			!rz_msg_digest_iterate(md, ctx->iterate)) {
+		if (!rz_hash_cfg_final(md) ||
+			!rz_hash_cfg_iterate(md, ctx->iterate)) {
 			goto calculate_hash_end;
 		}
 
 		rz_list_foreach (algorithms, it, algorithm) {
-			digest = rz_msg_digest_get_result(md, algorithm, &digest_size);
+			digest = rz_hash_cfg_get_result(md, algorithm, &digest_size);
 
 			if (ctx->mode == RZ_HASH_MODE_JSON) {
 				pj_o(ctx->pj);
 			}
-			rz_hash_print_digest(ctx, md, algorithm, ctx->offset.from, to, filename);
+			hash_print_digest(ctx, md, algorithm, ctx->offset.from, to, filename);
 			if (ctx->mode == RZ_HASH_MODE_JSON) {
 				pj_end(ctx->pj);
 			}
@@ -968,7 +970,7 @@ calculate_hash_end:
 	rz_list_free(algorithms);
 	free(block);
 	free(cmphash);
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 	return result;
 }
 
@@ -983,11 +985,11 @@ static bool calculate_decrypt(RzHashContext *ctx, RzIO *io, const char *filename
 
 	if (ctx->iv) {
 		if (!strncmp(ctx->iv, "s:", 2)) {
-			if (!rz_hash_parse_string("-I", ctx->iv + 2, &iv, &ivlen)) {
+			if (!hash_parse_string("-I", ctx->iv + 2, &iv, &ivlen)) {
 				goto calculate_decrypt_end;
 			}
 		} else {
-			if (!rz_hash_parse_hexadecimal("-I", ctx->iv, &iv, &ivlen)) {
+			if (!hash_parse_hexadecimal("-I", ctx->iv, &iv, &ivlen)) {
 				goto calculate_decrypt_end;
 			}
 		}
@@ -1038,7 +1040,7 @@ static bool calculate_decrypt(RzHashContext *ctx, RzIO *io, const char *filename
 	int plaintext_size = 0;
 	const ut8 *plaintext = rz_crypto_get_output(cry, &plaintext_size);
 
-	rz_hash_print_crypto(ctx, ctx->algorithm, plaintext, plaintext_size, ctx->offset.from, to);
+	hash_print_crypto(ctx, ctx->algorithm, plaintext, plaintext_size, ctx->offset.from, to);
 	result = true;
 
 calculate_decrypt_end:
@@ -1065,11 +1067,11 @@ static bool calculate_encrypt(RzHashContext *ctx, RzIO *io, const char *filename
 
 	if (ctx->iv) {
 		if (!strncmp(ctx->iv, "s:", 2)) {
-			if (!rz_hash_parse_string("-I", ctx->iv + 2, &iv, &ivlen)) {
+			if (!hash_parse_string("-I", ctx->iv + 2, &iv, &ivlen)) {
 				goto calculate_encrypt_end;
 			}
 		} else {
-			if (!rz_hash_parse_hexadecimal("-I", ctx->iv, &iv, &ivlen)) {
+			if (!hash_parse_hexadecimal("-I", ctx->iv, &iv, &ivlen)) {
 				goto calculate_encrypt_end;
 			}
 		}
@@ -1120,7 +1122,7 @@ static bool calculate_encrypt(RzHashContext *ctx, RzIO *io, const char *filename
 	int ciphertext_size = 0;
 	const ut8 *ciphertext = rz_crypto_get_output(cry, &ciphertext_size);
 
-	rz_hash_print_crypto(ctx, ctx->algorithm, ciphertext, ciphertext_size, ctx->offset.from, to);
+	hash_print_crypto(ctx, ctx->algorithm, ciphertext, ciphertext_size, ctx->offset.from, to);
 	result = true;
 
 calculate_encrypt_end:
@@ -1168,33 +1170,67 @@ static bool calculate_luhn(RzHashContext *ctx, RzIO *io, const char *filename) {
 	return true;
 }
 
+static int lib_hash_cb(RzLibPlugin *pl, void *user, void *data) {
+	RzHashPlugin *hand = (RzHashPlugin *)data;
+	RzHashContext *ctx = (RzHashContext *)user;
+	return rz_hash_plugin_add(ctx->rh, hand);
+}
+
+static void hash_load_plugins(RzHashContext *ctx) {
+	char *tmp = rz_sys_getenv("RZ_ASM_NOPLUGINS");
+	if (tmp) {
+		free(tmp);
+		return;
+	}
+	RzLib *rl = rz_lib_new(NULL, NULL);
+	rz_lib_add_handler(rl, RZ_LIB_TYPE_HASH, "hash plugins", &lib_hash_cb, NULL, ctx);
+
+	char *path = rz_sys_getenv(RZ_LIB_ENV);
+	if (!RZ_STR_ISEMPTY(path)) {
+		rz_lib_opendir(rl, path, false);
+	}
+
+	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
+	char *sysplugindir = rz_path_system(RZ_PLUGINS);
+	rz_lib_opendir(rl, homeplugindir, false);
+	rz_lib_opendir(rl, sysplugindir, false);
+	free(homeplugindir);
+	free(sysplugindir);
+
+	free(path);
+	rz_lib_free(rl);
+	free(tmp);
+}
+
 RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 	int result = 1;
-	RzHashContext ctx;
+	RzHashContext ctx = { 0 };
+	ctx.rh = rz_hash_new();
+	hash_load_plugins(&ctx);
 
-	rz_hash_parse_cmdline(argc, argv, &ctx);
+	hash_parse_cmdline(argc, argv, &ctx);
 
 	switch (ctx.operation) {
 	case RZ_HASH_OP_LIST_ALGO:
-		rz_hash_show_algorithms();
+		rz_hash_show_algorithms(&ctx);
 		break;
 	case RZ_HASH_OP_LUHN:
-		if (!rz_hash_context_run(&ctx, calculate_luhn)) {
+		if (!hash_context_run(&ctx, calculate_luhn)) {
 			goto rz_main_rz_hash_end;
 		}
 		break;
 	case RZ_HASH_OP_HASH:
-		if (!rz_hash_context_run(&ctx, calculate_hash)) {
+		if (!hash_context_run(&ctx, calculate_hash)) {
 			goto rz_main_rz_hash_end;
 		}
 		break;
 	case RZ_HASH_OP_DECRYPT:
-		if (!rz_hash_context_run(&ctx, calculate_decrypt)) {
+		if (!hash_context_run(&ctx, calculate_decrypt)) {
 			goto rz_main_rz_hash_end;
 		}
 		break;
 	case RZ_HASH_OP_ENCRYPT:
-		if (!rz_hash_context_run(&ctx, calculate_encrypt)) {
+		if (!hash_context_run(&ctx, calculate_encrypt)) {
 			goto rz_main_rz_hash_end;
 		}
 		break;
@@ -1217,6 +1253,6 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 	result = 0;
 
 rz_main_rz_hash_end:
-	rz_hash_context_fini(&ctx);
+	hash_context_fini(&ctx);
 	return result;
 }

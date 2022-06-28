@@ -49,7 +49,7 @@ static int rz_main_version_verify(int show) {
 		{ "rz_bp", rz_bp_version },
 		{ "rz_debug", rz_debug_version },
 		{ "rz_main", rz_main_version },
-		{ "rz_msg_digest", rz_msg_digest_version },
+		{ "rz_hash", rz_hash_version },
 		{ "rz_io", rz_io_version },
 #if !USE_LIB_MAGIC
 		{ "rz_magic", rz_magic_version },
@@ -156,7 +156,6 @@ static int main_help(int line) {
 		char *system_magic = rz_path_system(RZ_SDB_MAGIC);
 		char *home_plugins = rz_path_home_prefix(RZ_PLUGINS);
 		char *system_plugins = rz_path_system(RZ_PLUGINS);
-		char *home_zigns = rz_path_home_prefix(RZ_ZIGNS);
 		char *system_sigdb = rz_path_system(RZ_SIGDB);
 		char *dirPrefix = rz_path_prefix(NULL);
 		// clang-format off
@@ -169,7 +168,6 @@ static int main_help(int line) {
 			" binrc        %s (elf, elf64, mach0, ..)\n"
 			" RZ_USER_PLUGINS %s\n"
 			" RZ_LIBR_PLUGINS %s\n"
-			" RZ_USER_ZIGNS %s\n"
 			"Environment:\n"
 			" RZ_DEBUG      if defined, show error messages and crash signal\n"
 			" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
@@ -189,7 +187,6 @@ static int main_help(int line) {
 			binrc,
 			home_plugins,
 			system_plugins,
-			home_zigns,
 			system_magic,
 			home_rc,
 			datahome,
@@ -210,7 +207,6 @@ static int main_help(int line) {
 		free(system_magic);
 		free(home_plugins);
 		free(system_plugins);
-		free(home_zigns);
 		free(system_sigdb);
 		free(dirPrefix);
 	}
@@ -226,7 +222,6 @@ static int main_print_var(const char *var_name) {
 	char *datahome = rz_path_home_prefix(RZ_DATADIR);
 	char *cachehome = rz_path_home_cache();
 	char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
-	char *homezigns = rz_path_home_prefix(RZ_ZIGNS);
 	char *sigdbdir = rz_path_system(RZ_SIGDB);
 	char *plugins = rz_path_system(RZ_PLUGINS);
 	char *magicpath = rz_path_system(RZ_SDB_MAGIC);
@@ -247,7 +242,6 @@ static int main_print_var(const char *var_name) {
 		{ "RZ_RCACHEHOME", cachehome },
 		{ "RZ_LIBR_PLUGINS", plugins },
 		{ "RZ_USER_PLUGINS", homeplugins },
-		{ "RZ_USER_ZIGNS", homezigns },
 		{ "RZ_IS_PORTABLE", is_portable },
 		{ NULL, NULL }
 	};
@@ -275,7 +269,6 @@ static int main_print_var(const char *var_name) {
 	free(datahome);
 	free(cachehome);
 	free(homeplugins);
-	free(homezigns);
 	free(sigdbdir);
 	free(plugins);
 	free(magicpath);
@@ -883,27 +876,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_parse_rizinrc(r);
 	} else {
 		rz_config_set(r->config, "scr.utf8", "false");
-	}
-
-	if (rz_config_get_i(r->config, "zign.autoload")) {
-		char *path = rz_file_abspath(rz_config_get(r->config, "dir->zigns"));
-		char *complete_path = NULL;
-		RzList *list = rz_sys_dir(path);
-		RzListIter *iter;
-		char *file = NULL;
-		rz_list_foreach (list, iter, file) {
-			if (file && *file && *file != '.') {
-				complete_path = rz_str_newf("%s" RZ_SYS_DIR "%s", path, file);
-				if (rz_str_endswith(complete_path, "gz")) {
-					rz_sign_load_gz(r->analysis, complete_path);
-				} else {
-					rz_sign_load(r->analysis, complete_path);
-				}
-				free(complete_path);
-			}
-		}
-		rz_list_free(list);
-		free(path);
 	}
 
 	if (pfile && rz_file_is_directory(pfile)) {

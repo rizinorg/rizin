@@ -8,6 +8,7 @@
 #include <rz_list.h>
 #include <ht_pu.h>
 #include <rz_demangler.h>
+#include <rz_hash.h>
 
 typedef struct rz_bin_t RzBin;
 typedef struct rz_bin_file_t RzBinFile;
@@ -279,7 +280,6 @@ typedef struct rz_bin_object_t {
 	HtPP *classes_ht;
 	HtPP *methods_ht;
 	RzBinSourceLineInfo *lines;
-	HtUP *strings_db;
 	RzList /*<RzBinMem>*/ *mem;
 	char *regstate;
 	RzBinInfo *info;
@@ -362,6 +362,7 @@ struct rz_bin_t {
 	RzStrConstPool constpool;
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 	RzDemangler *demangler;
+	RzHash *hash;
 };
 
 typedef struct rz_bin_xtr_metadata_t {
@@ -904,7 +905,7 @@ RZ_API RzBinInfo *rz_bin_get_info(RzBin *bin);
 RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr);
 RZ_API ut64 rz_bin_get_laddr(RzBin *bin);
 RZ_API ut64 rz_bin_get_size(RzBin *bin);
-RZ_API RzList *rz_bin_file_strings(RzBinFile *a, size_t min_length, bool raw_strings);
+RZ_API RZ_OWN RzList *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_length, bool raw_strings);
 
 // use RzBinFile instead
 RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_entries(RZ_NONNULL RzBin *bin);

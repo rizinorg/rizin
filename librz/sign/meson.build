@@ -4,7 +4,6 @@ rz_sign_sources = [
    'pat.c',
    'sigdb.c',
    'sign.c',
-   'zignature.c',
 ]
 
 rz_sign_inc = [

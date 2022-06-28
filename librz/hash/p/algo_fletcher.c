@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 
 #include "../algorithms/fletcher/fletcher.h"
@@ -17,7 +17,7 @@
 	}
 
 #define rz_fletcher_common_plugin_digest_size(bits) \
-	static RzMsgDigestSize plugin_fletcher##bits##_digest_size(void *context) { \
+	static RzHashSize plugin_fletcher##bits##_digest_size(void *context) { \
 		return RZ_HASH_FLETCHER##bits##_DIGEST_SIZE; \
 	}
 
@@ -43,7 +43,7 @@
 	}
 
 #define rz_fletcher_common_plugin_small_block(bits) \
-	static bool plugin_fletcher##bits##_small_block(const ut8 *data, ut64 size, ut8 **digest, RzMsgDigestSize *digest_size) { \
+	static bool plugin_fletcher##bits##_small_block(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size) { \
 		rz_return_val_if_fail(data &&digest, false); \
 		ut8 *dgst = malloc(RZ_HASH_FLETCHER##bits##_DIGEST_SIZE); \
 		if (!dgst) { \
@@ -63,15 +63,15 @@
 #ifndef RZ_PLUGIN_INCORE
 #define rz_lib_fletcher_common(bits) \
 	RZ_API RzLibStruct rizin_plugin = { \
-		.type = RZ_LIB_TYPE_MD, \
-		.data = &rz_msg_digest_plugin_fletcher##bits, \
+		.type = RZ_LIB_TYPE_HASH, \
+		.data = &rz_hash_plugin_fletcher##bits, \
 		.version = RZ_VERSION \
 	}
 #else
 #define rz_lib_fletcher_common(bits)
 #endif
 
-#define rz_fletcher_common_plugin_define_msg_digest(bits) \
+#define rz_fletcher_common_plugin_define_hash_cfg(bits) \
 	rz_fletcher_common_plugin_context_new(bits); \
 	rz_fletcher_common_plugin_context_free(bits); \
 	rz_fletcher_common_plugin_digest_size(bits); \
@@ -79,7 +79,7 @@
 	rz_fletcher_common_plugin_update(bits); \
 	rz_fletcher_common_plugin_final(bits); \
 	rz_fletcher_common_plugin_small_block(bits); \
-	RzMsgDigestPlugin rz_msg_digest_plugin_fletcher##bits = { \
+	RzHashPlugin rz_hash_plugin_fletcher##bits = { \
 		.name = "fletcher" #bits, \
 		.license = "LGPL3", \
 		.author = "deroad", \
@@ -95,11 +95,11 @@
 	}; \
 	rz_lib_fletcher_common(bits)
 
-static RzMsgDigestSize plugin_fletcher_block_size(void *context) {
+static RzHashSize plugin_fletcher_block_size(void *context) {
 	return RZ_HASH_FLETCHER_BLOCK_LENGTH;
 }
 
-rz_fletcher_common_plugin_define_msg_digest(8);
-rz_fletcher_common_plugin_define_msg_digest(16);
-rz_fletcher_common_plugin_define_msg_digest(32);
-rz_fletcher_common_plugin_define_msg_digest(64);
+rz_fletcher_common_plugin_define_hash_cfg(8);
+rz_fletcher_common_plugin_define_hash_cfg(16);
+rz_fletcher_common_plugin_define_hash_cfg(32);
+rz_fletcher_common_plugin_define_hash_cfg(64);

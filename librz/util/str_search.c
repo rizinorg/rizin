@@ -71,10 +71,11 @@ static st64 score(RzRune *buff, const int len) {
  * Free a RzDetectedString
  */
 RZ_API void rz_detected_string_free(RzDetectedString *str) {
-	if (str) {
-		free(str->string);
-		free(str);
+	if (!str) {
+		return;
 	}
+	free(str->string);
+	free(str);
 }
 
 static inline bool is_c_escape_sequence(char ch) {
@@ -90,17 +91,20 @@ static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 
 	const ut8 *str_ptr = str;
 	const ut8 *str_end = str + size;
-	RzRune ch;
+	RzRune ch = 0;
 	while (str_ptr < str_end) {
 		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch);
-		if (!ch_bytes)
+		if (!ch_bytes) {
 			break;
+		}
 
 		res.num_chars += 1;
-		if (ch < 0x80u)
+		if (ch < 0x80u) {
 			res.num_ascii += 1;
-		if (ch < 0x100u)
+		}
+		if (ch < 0x100u) {
 			res.num_ascii_extended += 1;
+		}
 
 		str_ptr += ch_bytes;
 	}
@@ -109,11 +113,10 @@ static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 }
 
 static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *opt, ut8 *str, int size, RzStrEnc str_type) {
-	int i;
 
 	switch (str_type) {
 	case RZ_STRING_ENC_8BIT: {
-		for (i = 0; i < size; i++) {
+		for (int i = 0; i < size; i++) {
 			char ch = str[i];
 			if (!is_c_escape_sequence(ch)) {
 				if (!IS_PRINTABLE(str[i])) {
@@ -131,7 +134,7 @@ static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *op
 		int num_blocks = 0;
 		int *block_list = rz_utf_block_list((const ut8 *)str, size - 1, NULL);
 		if (block_list) {
-			for (i = 0; block_list[i] != -1; i++) {
+			for (int i = 0; block_list[i] != -1; i++) {
 				num_blocks++;
 			}
 		}
@@ -206,13 +209,11 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
 
 	ut64 str_addr = needle;
-	int rc, i, runes;
+	int rc = 0, i = 0, runes = 0;
 
 	/* Eat a whole C string */
-	runes = 0;
-	rc = 0;
 	for (i = 0; i < opt->buf_size - 4 && needle < to; i += rc) {
-		RzRune r = { 0 };
+		RzRune r = 0;
 
 		if (str_type == RZ_STRING_ENC_UTF32LE) {
 			rc = rz_utf32le_decode(buf + needle - from, to - needle, &r);
@@ -310,53 +311,45 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	return NULL;
 }
 
-static inline bool can_be_utf16_le(ut8 *buf, ut64 size) {
+static inline bool can_be_utf16_le(const ut8 *buf, ut64 size) {
 	int rc = rz_utf8_decode(buf, size, NULL);
-	if (!rc) {
-		return false;
-	}
-
-	if (size - rc < 5) {
+	if (!rc || (size - rc) < 5) {
 		return false;
 	}
 	char *w = (char *)buf + rc;
 	return !w[0] && w[1] && !w[2] && w[3] && !w[4];
 }
 
-static inline bool can_be_utf16_be(ut8 *buf, ut64 size) {
+static inline bool can_be_utf16_be(const ut8 *buf, ut64 size) {
 	if (size < 7) {
 		return false;
 	}
 	return !buf[0] && buf[1] && !buf[2] && buf[3] && !buf[4] && buf[5] && !buf[6];
 }
 
-static inline bool can_be_utf32_le(ut8 *buf, ut64 size) {
+static inline bool can_be_utf32_le(const ut8 *buf, ut64 size) {
 	int rc = rz_utf8_decode(buf, size, NULL);
-	if (!rc) {
-		return false;
-	}
-
-	if (size - rc < 5) {
+	if (!rc || (size - rc) < 5) {
 		return false;
 	}
 	char *w = (char *)buf + rc;
 	return !w[0] && !w[1] && !w[2] && w[3] && !w[4];
 }
 
-static inline bool can_be_utf32_be(ut8 *buf, ut64 size) {
+static inline bool can_be_utf32_be(const ut8 *buf, ut64 size) {
 	if (size < 7) {
 		return false;
 	}
 	return !buf[0] && !buf[1] && !buf[2] && buf[3] && !buf[4] && !buf[5] && !buf[6];
 }
 
-static inline bool can_be_ebcdic(ut8 *buf, ut64 size) {
+static inline bool can_be_ebcdic(const ut8 *buf, ut64 size) {
 	return buf[0] < 0x20 || buf[0] > 0x3f;
 }
 
 /**
  * \brief Look for strings in an RzBuffer.
- * \param buf_to_scan Pointer to a RzBuffer to scan
+ * \param buf Pointer to a raw buffer to scan
  * \param list Pointer to a list that will be populated with the found strings
  * \param opt Pointer to a RzUtilStrScanOptions that specifies search parameters
  * \param from Minimum address to scan
@@ -366,38 +359,29 @@ static inline bool can_be_ebcdic(ut8 *buf, ut64 size) {
  *
  * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
  */
-RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
+RZ_API int rz_scan_strings_raw(const ut8 *buf, RzList *list, const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type) {
-	rz_return_val_if_fail(opt && list && buf_to_scan, -1);
+	rz_return_val_if_fail(opt && list && buf, -1);
 
 	if (from == to) {
 		return 0;
-	}
-	if (from > to) {
-		RZ_LOG_ERROR("Invalid range to find strings 0x%" PFMT64x " .. 0x%" PFMT64x "\n", from, to);
+	} else if (from > to) {
+		RZ_LOG_ERROR("rz_scan_strings: Invalid range to find strings 0x%" PFMT64x " .. 0x%" PFMT64x "\n", from, to);
 		return -1;
 	}
 
-	ut64 needle;
+	ut64 needle = 0;
 	int count = 0;
 	RzStrEnc str_type = type;
 
-	int len = to - from;
-	ut8 *buf = calloc(len, 1);
-	if (!buf) {
-		return -1;
-	}
-	ut8 *strbuf = malloc(opt->buf_size);
+	ut8 *strbuf = calloc(opt->buf_size, 1);
 	if (!strbuf) {
-		free(buf);
 		return -1;
 	}
-
-	rz_buf_read_at(buf_to_scan, from, buf, len);
 
 	needle = from;
-	ut8 *ptr;
-	ut64 size;
+	const ut8 *ptr = NULL;
+	ut64 size = 0;
 	int skip_ibm037 = 0;
 	while (needle < to) {
 		ptr = buf + needle - from;
@@ -482,7 +466,7 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
 				ut8 sz = RZ_MIN(size, 15);
-				RzRune runes[15];
+				RzRune runes[15] = { 0 };
 				int i = 0;
 				for (; i < sz; i++) {
 					rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
@@ -523,7 +507,45 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 		rz_list_append(list, ds);
 		needle += ds->size;
 	}
-	free(buf);
 	free(strbuf);
+	return count;
+}
+/**
+ * \brief Look for strings in an RzBuffer.
+ * \param buf_to_scan Pointer to a RzBuffer to scan
+ * \param list Pointer to a list that will be populated with the found strings
+ * \param opt Pointer to a RzUtilStrScanOptions that specifies search parameters
+ * \param from Minimum address to scan
+ * \param to Maximum address to scan
+ * \param type Type of strings to search
+ * \return Number of strings found
+ *
+ * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
+ */
+RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
+	const ut64 from, const ut64 to, RzStrEnc type) {
+	rz_return_val_if_fail(opt && list && buf_to_scan, -1);
+
+	if (from == to) {
+		return 0;
+	} else if (from > to) {
+		RZ_LOG_ERROR("rz_scan_strings: Invalid range to find strings 0x%" PFMT64x " .. 0x%" PFMT64x "\n", from, to);
+		return -1;
+	} else if (type == RZ_STRING_ENC_MUTF8 || type == RZ_STRING_ENC_BASE64) {
+		RZ_LOG_ERROR("rz_scan_strings: %s search type is not supported.\n", rz_str_enc_as_string(type));
+		return -1;
+	}
+
+	ut64 len = to - from;
+	ut8 *buf = calloc(len, 1);
+	if (!buf) {
+		return -1;
+	}
+
+	rz_buf_read_at(buf_to_scan, from, buf, len);
+
+	int count = rz_scan_strings_raw(buf, list, opt, from, to, type);
+
+	free(buf);
 	return count;
 }

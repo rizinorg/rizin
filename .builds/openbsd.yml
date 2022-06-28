@@ -4,7 +4,6 @@ packages:
     - devel/pkgconf
     - devel/gmake
     - devel/llvm
-    - archivers/cabextract
     - lang/python
 environment:
     CXX: clang++

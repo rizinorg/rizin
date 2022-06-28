@@ -6,6 +6,7 @@
 #include <rz_type.h>
 #include <string.h>
 #include <rz_demangler.h>
+#include <mspack.h>
 
 #include "pdb.h"
 
@@ -271,6 +272,17 @@ error:
 	return false;
 }
 
+bool is_compressed_pdb(RzBuffer *buf) {
+	ut8 magic[4] = { 0 };
+	// avoids to seek back, when using rz_buf_read_at
+	if (rz_buf_read_at(buf, 0, magic, sizeof(magic)) != sizeof(magic)) {
+		return false;
+	} else if (memcmp(magic, CAB_SIGNATURE, sizeof(magic))) {
+		return false;
+	}
+	return true;
+}
+
 /**
  * \brief Parse PDB file given the path
  *
@@ -281,9 +293,16 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename)
 	rz_return_val_if_fail(filename, NULL);
 	RzBuffer *buf = rz_buf_new_slurp(filename);
 	if (!buf) {
-		eprintf("%s: Error reading file \"%s\"\n", __FUNCTION__, filename);
+		RZ_LOG_ERROR("%s: Error reading file \"%s\"\n", __FUNCTION__, filename);
 		return false;
 	}
+
+	if (is_compressed_pdb(buf)) {
+		rz_buf_free(buf);
+		RZ_LOG_ERROR("The pdb file %s seems to be compressed, please use idpx command to extract the contents.\n", filename);
+		return NULL;
+	}
+
 	return rz_bin_pdb_parse_from_buf(buf);
 }
 

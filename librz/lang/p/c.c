@@ -5,9 +5,9 @@
  * A plugin allowing to run "scripts" written in C language
  */
 
-#include "rz_lib.h"
-#include "rz_core.h"
-#include "rz_lang.h"
+#include <rz_lib.h>
+#include <rz_core.h>
+#include <rz_lang.h>
 
 #if __UNIX__
 static int ac = 0;
@@ -113,7 +113,7 @@ static int lang_c_run(RzLang *lang, const char *code, int len) {
 	return true;
 }
 
-static RzLangPlugin rz_lang_plugin_c = {
+RzLangPlugin rz_lang_plugin_c = {
 	.name = "c",
 	.ext = "c",
 	.desc = "C language extension",
@@ -123,6 +123,15 @@ static RzLangPlugin rz_lang_plugin_c = {
 	.run_file = (void *)lang_c_file,
 	.set_argv = (void *)lang_c_set_argv,
 };
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_LANG,
+	.data = &rz_lang_plugin_c,
+	.version = RZ_VERSION
+};
+#endif
+
 #else
 #ifdef _MSC_VER
 #pragma message("Warning: C RzLangPlugin is not implemented on this platform")
