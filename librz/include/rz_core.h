@@ -435,6 +435,9 @@ typedef struct rz_bin_sym_names_t {
 	char *methflag; ///< methods flag sym.[class].[method]
 } RzBinSymNames;
 
+/**
+ * \brief Message for `pdJ`
+ */
 typedef struct rz_analysis_disasm_text_t {
 	ut64 offset;
 	ut64 arrow;
@@ -833,7 +836,8 @@ RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len
 RZ_API RzList *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *len, ut64 *start_addr, ut32 l);
-RZ_API int rz_core_print_disasm(RzCore *core, ut64 addr, ut8 *buf, int len, int nlines, int invbreak, int cbytes, bool json, PJ *pj, RzAnalysisFunction *pdf, RzList *out_list);
+RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines,
+	int invbreak, int cbytes, bool json, RZ_NULLABLE PJ *pj, RZ_NULLABLE RzAnalysisFunction *pdf, RZ_OUT RZ_NULLABLE RzList *out_list);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes);
@@ -843,12 +847,12 @@ RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fm
 RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode);
 RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 reladdr, RZ_NULLABLE RzAnalysisFunction *fcn, bool color);
 RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj);
-RZ_API void rz_core_asm_bb_middle(RzCore *core, ut64 at, int *oplen, int *ret);
+RZ_API void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at, RZ_INOUT RZ_NONNULL int *oplen, RZ_NONNULL int *ret);
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
-RZ_API void rz_analysis_disasm_text_free(void *p);
+RZ_API void rz_analysis_disasm_text_free(RZ_NULLABLE void *p);
 RZ_API bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes);
-RZ_API bool rz_core_handle_backwards_disasm(RzCore *core, int *pn_opcodes, int *pn_bytes);
+RZ_API bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core, RZ_NONNULL int *pn_opcodes, RZ_NONNULL int *pn_bytes);
 
 /* cbin.c */
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);

@@ -1682,7 +1682,16 @@ static int handleMidBB(RzCore *core, RzDisasmState *ds) {
 	return 0;
 }
 
-RZ_API void rz_core_asm_bb_middle(RzCore *core, ut64 at, int *oplen, int *ret) {
+/**
+ * \brief Update \p oplen by "asm.bb.middle" and "asm.flags.middle"
+ * \param core RzCore reference
+ * \param at Address
+ * \param[in,out] oplen Opcode length
+ * \param ret Value by call rz_asm_disassemble
+ */
+RZ_API void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at,
+	RZ_INOUT RZ_NONNULL int *oplen, RZ_NONNULL int *ret) {
+	rz_return_if_fail(core && oplen);
 	bool midbb = rz_config_get_b(core->config, "asm.bb.middle");
 	RzDisasmState ds = {
 		.at = at,
@@ -5310,7 +5319,10 @@ static void ds_end_line_highlight(RzDisasmState *ds) {
 	}
 }
 
-void rz_analysis_disasm_text_free(void *p) {
+/**
+ * \brief Free RzAnalysisDisasmText \p p
+ */
+RZ_API void rz_analysis_disasm_text_free(RZ_NULLABLE void *p) {
 	if (!p) {
 		return;
 	}
@@ -5319,7 +5331,25 @@ void rz_analysis_disasm_text_free(void *p) {
 	free(t);
 }
 
-RZ_API int rz_core_print_disasm(RzCore *core, ut64 addr, ut8 *buf, int len, int nlines, int invbreak, int cbytes, bool json, PJ *pj, RzAnalysisFunction *pdf, RzList *out_list) {
+/**
+ * \brief Disassemble \p len bytes and \p nlines opcodes, or funitcon, restricted by \p len and \p nlines at the same time
+ * \param core RzCore reference
+ * \param addr Address
+ * \param buf Buffer
+ * \param len Bytes number
+ * \param nlines Opcode number
+ * \param invbreak ??
+ * \param cbytes ??
+ * \param json Print in json
+ * \param pj PJ instance
+ * \param pdf Disassemble a function
+ * \param out_list Not print, but append to \p out_list as RzList<RzAnalysisDisasmText>
+ * \return Disassemble bytes number
+ */
+RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines,
+	int invbreak, int cbytes, bool json, RZ_NULLABLE PJ *pj, RZ_NULLABLE RzAnalysisFunction *pdf, RZ_OUT RZ_NULLABLE RzList *out_list) {
+	rz_return_val_if_fail(core && buf, 0);
+
 	rz_list_free(disasm_texts);
 	disasm_texts = out_list;
 	RzPrint *p = core->print;
@@ -5782,6 +5812,9 @@ toro:
 	return addrbytes * idx; //-ds->lastfail;
 }
 
+/**
+ * \brief Is \p i_opcodes \< \p nb_opcodes and \p i_bytes \< \p nb_bytes ?
+ */
 RZ_API bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes) {
 	if (nb_opcodes > 0) {
 		if (nb_bytes > 0) {
@@ -5955,10 +5988,19 @@ toro:
 	return len;
 }
 
-RZ_API bool rz_core_handle_backwards_disasm(RzCore *core, int *pn_opcodes, int *pn_bytes) {
-	if (!pn_opcodes && !pn_bytes) {
-		return false;
-	}
+/**
+ * \brief Handle negative \p pn_opcodes and \p pn_bytes
+ * 	  and seek new offset
+ * 	  and read to core->block
+ * \param core RzCore reference
+ * \param pn_opcodes Pointer to n_opcodes
+ * \param pn_bytes Pointer to n_bytes
+ * \return success
+ */
+RZ_API bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
+	RZ_NONNULL int *pn_opcodes, RZ_NONNULL int *pn_bytes) {
+	rz_return_val_if_fail(core && pn_opcodes && pn_bytes, false);
+
 	int n_opcodes = *pn_opcodes;
 	int n_bytes = *pn_bytes;
 	if (n_opcodes > ST16_MAX || n_opcodes < ST16_MIN) {
