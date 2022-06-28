@@ -395,6 +395,7 @@ static const RzCmdDescArg cmd_info_class_fields_args[2];
 static const RzCmdDescArg cmd_info_class_methods_args[2];
 static const RzCmdDescArg cmd_info_pdb_load_args[2];
 static const RzCmdDescArg cmd_info_pdb_show_args[2];
+static const RzCmdDescArg cmd_pdb_extract_args[3];
 static const RzCmdDescArg cmd_info_demangle_args[3];
 static const RzCmdDescArg cmd_info_kuery_args[2];
 static const RzCmdDescArg cmd_info_plugins_args[2];
@@ -8998,6 +8999,24 @@ static const RzCmdDescHelp cmd_info_pdb_download_help = {
 	.args = cmd_info_pdb_download_args,
 };
 
+static const RzCmdDescArg cmd_pdb_extract_args[] = {
+	{
+		.name = "file.pdb",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "output_dir",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_pdb_extract_help = {
+	.summary = "Extracts a compressed PDB file to a folder",
+	.args = cmd_pdb_extract_args,
+};
+
 static const RzCmdDescHelp iD_help = {
 	.summary = "Demangle symbol for given language",
 };
@@ -16119,6 +16138,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_info_pdb_download_cd = rz_cmd_desc_argv_state_new(core->rcmd, idp_cd, "idpd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_pdb_download_handler, &cmd_info_pdb_download_help);
 	rz_warn_if_fail(cmd_info_pdb_download_cd);
+
+	RzCmdDesc *cmd_pdb_extract_cd = rz_cmd_desc_argv_new(core->rcmd, idp_cd, "idpx", rz_cmd_pdb_extract_handler, &cmd_pdb_extract_help);
+	rz_warn_if_fail(cmd_pdb_extract_cd);
 
 	RzCmdDesc *iD_cd = rz_cmd_desc_group_new(core->rcmd, i_cd, "iD", rz_cmd_info_demangle_handler, &cmd_info_demangle_help, &iD_help);
 	rz_warn_if_fail(iD_cd);

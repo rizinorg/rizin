@@ -65,6 +65,7 @@ bin_xtr_plugins = [
 
 rz_bin_sources = [
   'bfile.c',
+  'bfile_string.c',
   'bin.c',
   'bin_language.c',
   'bobj.c',
@@ -235,6 +236,7 @@ rz_bin_sources = [
   'format/wasm/wasm.c',
   'format/zimg/zimg.c',
 
+  'pdb/cab_extract.c',
   'pdb/dbi.c',
   'pdb/gdata.c',
   'pdb/omap.c',
@@ -261,6 +263,7 @@ rz_bin = library('rz_bin', rz_bin_sources,
     rz_cons_dep,
     rz_io_dep,
     rz_type_dep,
+    libmspack_dep,
   ],
   install: true,
   implicit_include_directories: false,

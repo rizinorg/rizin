@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+#define CAB_SIGNATURE     "MSCF"
 #define PDB_SIGNATURE     "Microsoft C/C++ MSF 7.00\r\n\x1a\x44\x53\x00\x00\x00"
 #define PDB_SIGNATURE_LEN 32
 
@@ -250,6 +251,7 @@ typedef struct rz_pdb_t {
 } RzPdb;
 
 // PDB
+RZ_API bool rz_bin_pdb_extract_in_folder(RZ_NONNULL const char *file_cab, RZ_NONNULL const char *output_dir);
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename);
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf);
 RZ_API void rz_bin_pdb_free(RzPdb *pdb);
