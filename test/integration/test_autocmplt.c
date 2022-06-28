@@ -9,7 +9,7 @@ static RzCmdDescArg xd_args[] = {
 	{ .name = "f1", .type = RZ_CMD_ARG_TYPE_FILE },
 	{ .name = "F2", .type = RZ_CMD_ARG_TYPE_FCN },
 	{ .name = "e3", .type = RZ_CMD_ARG_TYPE_ENV },
-	{ .name = "Z4", .type = RZ_CMD_ARG_TYPE_ZIGN_SPACE },
+	{ .name = "Z4", .type = RZ_CMD_ARG_TYPE_REG_TYPE },
 	{ .name = "E5", .type = RZ_CMD_ARG_TYPE_EVAL_FULL },
 	{ 0 },
 };

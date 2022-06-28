@@ -94,11 +94,9 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->type_links = ht_up_new0();
 	analysis->sdb_fmts = sdb_ns(analysis->sdb, "spec", 1);
 	analysis->sdb_cc = sdb_ns(analysis->sdb, "cc", 1);
-	analysis->sdb_zigns = sdb_ns(analysis->sdb, "zigns", 1);
 	analysis->sdb_classes = sdb_ns(analysis->sdb, "classes", 1);
 	analysis->sdb_classes_attrs = sdb_ns(analysis->sdb_classes, "attrs", 1);
 	analysis->sdb_noret = sdb_ns(analysis->sdb, "noreturn", 1);
-	analysis->zign_path = strdup("");
 	(void)rz_analysis_xrefs_init(analysis);
 	analysis->diff_thbb = RZ_ANALYSIS_THRESHOLDBB;
 	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
@@ -155,11 +153,9 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_interval_tree_fini(&a->meta);
 	free(a->cpu);
 	free(a->os);
-	free(a->zign_path);
 	rz_list_free(a->plugins);
 	rz_rbtree_free(a->bb_tree, __block_free_rb, NULL);
 	rz_spaces_fini(&a->meta_spaces);
-	rz_spaces_fini(&a->zign_spaces);
 	rz_syscall_free(a->syscall);
 	rz_platform_target_free(a->arch_target);
 	rz_platform_target_index_free(a->platform_target);
@@ -443,7 +439,6 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_type_db_purge(analysis->typedb);
 	ht_up_free(analysis->type_links);
 	analysis->type_links = ht_up_new0();
-	sdb_reset(analysis->sdb_zigns);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);
 	sdb_reset(analysis->sdb_cc);

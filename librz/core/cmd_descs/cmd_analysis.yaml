@@ -79,24 +79,6 @@ commands:
             summary: Performs recursive type matching in all functions
             cname: analyze_recursively_all_function_types
             args: []
-      - name: aaF
-        summary: Signature database commands
-        subcommands:
-          - name: aaF
-            summary: Apply signatures from sigdb
-            cname: apply_signatures_from_sigdb
-            args:
-              - name: filter
-                type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
-          - name: aaFl
-            summary: Lists all available signatures in sigdb
-            cname: list_signatures_in_sigdb
-            type: RZ_CMD_DESC_TYPE_ARGV_STATE
-            default_mode: RZ_OUTPUT_MODE_TABLE
-            modes:
-              - RZ_OUTPUT_MODE_TABLE
-            args: []
       - name: aai
         summary: Print preformed analysis details
         cname: print_analysis_details

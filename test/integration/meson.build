@@ -21,7 +21,6 @@ if get_option('enable_tests')
     'pdb',
     'project_migrate',
     'rzpipe',
-    'sign_integration',
   ]
 
   unit_test_env = environment()

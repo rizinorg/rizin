@@ -271,6 +271,38 @@ RZ_API bool rz_project_migrate_v6_v7(RzProject *prj, RzSerializeResultInfo *res)
 }
 
 // --
+// Migration 7 -> 8
+//
+// Changes from <commit-hash>
+//	Removed zignature feature. Namespace deleted: /core/analysis/zigns
+//	Also removed configs zign.* options.
+
+RZ_API bool rz_project_migrate_v7_v8(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *analysis_db;
+	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	sdb_ns_unset(analysis_db, "zigns", NULL);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_unset(config_db, "zign.autoload", 0);
+	sdb_unset(config_db, "zign.diff.bthresh", 0);
+	sdb_unset(config_db, "zign.diff.gthresh", 0);
+	sdb_unset(config_db, "zign.match.bytes", 0);
+	sdb_unset(config_db, "zign.match.graph", 0);
+	sdb_unset(config_db, "zign.match.hash", 0);
+	sdb_unset(config_db, "zign.match.offset", 0);
+	sdb_unset(config_db, "zign.match.refs", 0);
+	sdb_unset(config_db, "zign.match.types", 0);
+	sdb_unset(config_db, "zign.maxsz", 0);
+	sdb_unset(config_db, "zign.mincc", 0);
+	sdb_unset(config_db, "zign.minsz", 0);
+	sdb_unset(config_db, "zign.prefix", 0);
+	sdb_unset(config_db, "zign.threshold", 0);
+	return true;
+}
+
+// --
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
@@ -278,7 +310,8 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v3_v4,
 	rz_project_migrate_v4_v5,
 	rz_project_migrate_v5_v6,
-	rz_project_migrate_v6_v7
+	rz_project_migrate_v6_v7,
+	rz_project_migrate_v7_v8
 };
 
 /// Migrate the given project to the current version in-place
