@@ -522,8 +522,17 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_download_handler(RzCore *core, int argc, cons
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
-	if (r > 0) {
-		eprintf("Error while downloading pdb file\n");
+	if (r > 0 && state->mode != RZ_OUTPUT_MODE_JSON) {
+		RZ_LOG_ERROR("Error while downloading pdb file\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_pdb_extract_handler(RzCore *core, int argc, const char **argv) {
+	const char *file_cab = argv[1];
+	const char *output_dir = argv[2];
+	if (!rz_bin_pdb_extract_in_folder(file_cab, output_dir)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;

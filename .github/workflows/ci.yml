@@ -161,12 +161,12 @@ jobs:
         if: matrix.enabled
         with:
           fetch-depth: 2
-      - name: Install pkg-config and cabextract with Homebrew
+      - name: Install pkg-config with Homebrew
         if: matrix.os == 'macos-11' && matrix.enabled
-        run: brew install pkg-config cabextract
+        run: brew install pkg-config
       - name: Install python and other dependencies
         if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-11' && matrix.enabled
-        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
         run: pip3 install --user meson ninja PyYAML
@@ -412,7 +412,7 @@ jobs:
       - name: Install tools
         run: apt-get update && apt-get install --yes patch unzip git gcc-11 make curl pkg-config libc6-i386 build-essential
       - name: Install python and other dependencies
-        run: apt-get install --yes python3-wheel python3-setuptools python3-pip cabextract
+        run: apt-get install --yes python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
         run: pip3 install meson ninja PyYAML
       - name: Checkout rizin
@@ -454,7 +454,7 @@ jobs:
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
       - name: Install dependencies
-        run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz cabextract
+        run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
