@@ -831,7 +831,7 @@ typedef struct rz_core_disasm_options {
 	bool json; ///< Print in json
 	PJ *pj; ///< PJ instance
 	RzAnalysisFunction *function; ///< Disassemble a function
-	RzList *out_list; ///< Not print, but append to \p out_list as RzList<RzAnalysisDisasmText>
+	RzList *out_list; ///< Not print, but append as RzList<RzAnalysisDisasmText>
 } RzCoreDisasmOptions;
 
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)

@@ -1691,7 +1691,7 @@ static int handleMidBB(RzCore *core, RzDisasmState *ds) {
  */
 RZ_API void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at,
 	RZ_INOUT RZ_NONNULL int *oplen, RZ_NONNULL int *ret) {
-	rz_return_if_fail(core && oplen);
+	rz_return_if_fail(core && oplen && ret);
 	bool midbb = rz_config_get_b(core->config, "asm.bb.middle");
 	RzDisasmState ds = {
 		.at = at,
