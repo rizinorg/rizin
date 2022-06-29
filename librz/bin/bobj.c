@@ -789,6 +789,9 @@ RZ_API const RzList *rz_bin_object_get_classes(RzBinObject *obj) {
  */
 RZ_API const RzList *rz_bin_object_get_strings(RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
+	if (!obj->strings) {
+		return NULL;
+	}
 	return obj->strings->list;
 }
 
