@@ -301,9 +301,9 @@ typedef struct {
 	const char *strip;
 	int maxflags;
 	int asm_types;
-} RzDisasmState;
 
-static RzList *disasm_texts;
+	RzList *list;
+} RzDisasmState;
 
 static void ds_setup_print_pre(RzDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RzDisasmState *ds, bool tail, bool middle);
@@ -1263,7 +1263,7 @@ static RzAnalysisDisasmText *ds_disasm_text(RzDisasmState *ds, RzAnalysisDisasmT
 }
 
 static void ds_begin_line(RzDisasmState *ds) {
-	if (disasm_texts) {
+	if (ds->list) {
 		return;
 	}
 
@@ -1292,14 +1292,14 @@ static void ds_begin_line(RzDisasmState *ds) {
 }
 
 static void ds_newline(RzDisasmState *ds) {
-	if (disasm_texts) {
+	if (ds->list) {
 		RzAnalysisDisasmText *t = RZ_NEW0(RzAnalysisDisasmText);
 		if (!t) {
 			return;
 		}
 		ds_disasm_text(ds, t, rz_cons_get_buffer_dup());
 		rz_cons_reset();
-		rz_list_append(disasm_texts, t);
+		rz_list_append(ds->list, t);
 		return;
 	}
 
@@ -5349,8 +5349,6 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	PJ *pj = options ? options->pj : NULL;
 	bool json = options ? options->json : false;
 
-	rz_list_free(disasm_texts);
-	disasm_texts = out_list;
 	RzPrint *p = core->print;
 	int continueoninvbreak = (len == nlines) && (options ? options->invbreak : 0);
 	RzAnalysisFunction *f = NULL;
@@ -5378,6 +5376,7 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	ds->buf_line_begin = 0;
 	ds->pdf = options ? options->function : NULL;
 	ds->pj = NULL;
+	ds->list = out_list;
 
 	if (!out_list && json) {
 		ds->pj = pj ? pj : pj_new();
@@ -5385,7 +5384,6 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 			ds_free(ds);
 			rz_config_hold_restore(rch);
 			rz_config_hold_free(rch);
-			disasm_texts = NULL;
 			return 0;
 		}
 		rz_cons_push();
@@ -5460,7 +5458,6 @@ toro:
 			rz_config_hold_restore(rch);
 			rz_config_hold_free(rch);
 			ds_free(ds);
-			disasm_texts = NULL;
 			return 0; // break;
 		}
 		if (core->print->flags & RZ_PRINT_FLAGS_UNALLOC) {
@@ -5807,7 +5804,6 @@ toro:
 	p->calc_row_offsets = calc_row_offsets;
 	/* used by asm.emu */
 	rz_reg_arena_pop(core->analysis->reg);
-	disasm_texts = NULL;
 	return addrbytes * idx; //-ds->lastfail;
 }
 

@@ -6837,7 +6837,10 @@ RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONN
 	RzAsmOp asmop;
 	int oplen = 0;
 	char disasm[512];
-	for (int i_ops = 0, i_offset = 0, i_delta = 0; rz_disasm_check_end(nops, i_ops, len, i_delta * addrbytes); i_ops++, i_offset += oplen, i_delta += oplen) {
+	for (int i_ops = 0, i_offset = 0, i_delta = 0;
+		rz_disasm_check_end(nops, i_ops, len, i_delta * addrbytes);
+		i_ops++, i_offset += oplen, i_delta += oplen) {
+
 		RzAnalysisBytes *ab = RZ_NEW0(RzAnalysisBytes);
 		if (!ab) {
 			rz_pvector_free(vec);
