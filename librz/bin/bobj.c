@@ -850,7 +850,7 @@ RZ_API bool rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBinObject *
 /**
  * \brief Return RzBinString if at \p address \p there is an entry in the RzBinObject string database
  */
-RZ_API RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va) {
+RZ_API RZ_BORROW RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va) {
 	rz_return_val_if_fail(obj, false);
 	if (!obj->strings) {
 		return NULL;
