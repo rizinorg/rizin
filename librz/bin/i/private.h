@@ -43,8 +43,4 @@ struct rz_bin_string_database_t {
 	HtUP /*<ut64, RzBinString*>*/ *virt; ///< Contains all the strings but mapped by virtual address
 };
 
-RZ_IPI RZ_OWN RzBinStrDb *rz_bin_string_database_new(RzList /*<RzBinString*>*/ *list, ut64 load_address, bool decode_base64);
-RZ_IPI void rz_bin_string_database_free(RzBinStrDb *db);
-RZ_IPI bool rz_bin_string_database_add(RzBinStrDb *db, RzBinString *bstr, ut64 load_address, bool decode_base64);
-
 #endif

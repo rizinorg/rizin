@@ -7,6 +7,37 @@
 #include <rz_util.h>
 #include "i/private.h"
 
+RZ_API void rz_bin_string_decode_base64(RzBinString *bstr) {
+	char *decoded = bstr->string;
+	do {
+		// ensure to decode base64 strings encoded multiple times.
+		char *tmp = (char *)rz_base64_decode_dyn(decoded, -1);
+		if (!tmp || !rz_str_is_printable(tmp)) {
+			free(tmp);
+			break;
+		}
+		free(decoded);
+		decoded = tmp;
+	} while (1);
+
+	if (decoded == bstr->string) {
+		return;
+	}
+	free(bstr->string);
+	bstr->string = decoded;
+	bstr->type = RZ_STRING_ENC_BASE64;
+}
+
+static void bin_object_decode_all_base64_strings(RzList *strings) {
+	rz_return_if_fail(strings);
+
+	RzBinString *bstr;
+	RzListIter *iter;
+	rz_list_foreach (strings, iter, bstr) {
+		rz_bin_string_decode_base64(bstr);
+	}
+}
+
 RZ_API void rz_bin_mem_free(void *data) {
 	RzBinMem *mem = (RzBinMem *)data;
 	if (mem && mem->mirrors) {
@@ -469,8 +500,13 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			strings = rz_bin_file_strings(bf, minlen, true);
 		}
 
+		if (bin->debase64) {
+			bin_object_decode_all_base64_strings(strings);
+		}
+		REBASE_PADDR(o, strings, RzBinString);
+
 		// RzBinStrDb becomes the owner of the RzList strings
-		o->strings = rz_bin_string_database_new(strings, o->opts.loadaddr, bin->debase64);
+		o->strings = rz_bin_string_database_new(strings);
 	}
 
 	if (o->info && RZ_STR_ISEMPTY(o->info->compiler)) {
@@ -798,45 +834,28 @@ RZ_API bool rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBinObject *
 		strings = rz_bin_file_strings(bf, bin->minstrlen, true);
 	}
 
+	if (bin->debase64) {
+		bin_object_decode_all_base64_strings(strings);
+	}
+	REBASE_PADDR(obj, strings, RzBinString);
+
 	// RzBinStrDb becomes the owner of the RzList strings
-	obj->strings = rz_bin_string_database_new(strings, obj->opts.loadaddr, bin->debase64);
+	obj->strings = rz_bin_string_database_new(strings);
 	return obj->strings != NULL;
 }
 
 /**
  * \brief Return RzBinString if at \p address \p there is an entry in the RzBinObject string database
  */
-RZ_API RzBinString *rz_bin_object_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va) {
+RZ_API RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va) {
 	rz_return_val_if_fail(obj, false);
+	if (!obj->strings) {
+		return NULL;
+	}
 	if (is_va) {
 		return ht_up_find(obj->strings->virt, address, NULL);
 	}
 	return ht_up_find(obj->strings->phys, address, NULL);
-}
-
-/**
- * \brief Return true if the given \p bin_string \p has been added to the RzBinObject string database
- */
-RZ_API bool rz_bin_object_string_add(RZ_NONNULL RzBin *bin, RZ_NONNULL RzBinObject *obj, RZ_NONNULL RzBinString *bstr) {
-	rz_return_val_if_fail(bin && obj && bstr, false);
-	return rz_bin_string_database_add(obj->strings, bstr, obj->opts.loadaddr, bin->debase64);
-}
-
-/**
- * \brief Return true if the given \p address \p has been removed to the RzBinObject string database
- */
-RZ_API bool rz_bin_object_string_remove(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va) {
-	rz_return_val_if_fail(obj, false);
-	HtUP *search_map = is_va ? obj->strings->virt : obj->strings->phys;
-	RzBinString *bstr = ht_up_find(search_map, address, NULL);
-	if (!bstr) {
-		return false;
-	}
-
-	ht_up_delete(obj->strings->virt, bstr->vaddr);
-	ht_up_delete(obj->strings->phys, bstr->paddr);
-	rz_list_delete_data(obj->strings->list, bstr);
-	return true;
 }
 
 /**
@@ -996,7 +1015,14 @@ RZ_API ut64 rz_bin_object_v2p(RzBinObject *obj, ut64 vaddr) {
 	return m->paddr + delta;
 }
 
-RZ_IPI RZ_OWN RzBinStrDb *rz_bin_string_database_new(RzList *list, ut64 load_address, bool decode_base64) {
+/**
+ * \brief   Allocates and initializes the RzBinStrDb structure with the given list of strings
+ *
+ * \param   list  The list of strings to initialize the database with
+ *
+ * \return  On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RzList /*<RzBinString *>*/ *list) {
 	RzBinStrDb *db = RZ_NEW0(RzBinStrDb);
 	if (!db) {
 		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb\n");
@@ -1015,32 +1041,12 @@ RZ_IPI RZ_OWN RzBinStrDb *rz_bin_string_database_new(RzList *list, ut64 load_add
 	RzListIter *it;
 	RzBinString *bstr;
 	rz_list_foreach (list, it, bstr) {
-		bstr->paddr += load_address;
-		if (decode_base64) {
-			char *decoded = bstr->string;
-			do {
-				// ensure to decode base64 strings encoded multiple times.
-				char *tmp = (char *)rz_base64_decode_dyn(decoded, -1);
-				if (!tmp || !rz_str_is_printable(tmp)) {
-					free(tmp);
-					break;
-				}
-				free(decoded);
-				decoded = tmp;
-			} while (1);
-			if (decoded != bstr->string) {
-				free(bstr->string);
-				bstr->string = decoded;
-				bstr->type = RZ_STRING_ENC_BASE64;
-			}
-		}
-
 		if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
-			RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (phys)\n");
+			RZ_LOG_ERROR("rz_bin: Cannot insert/update RzBinString in RzBinStrDb (phys)\n");
 			goto fail;
 		}
 		if (!ht_up_update(db->virt, bstr->vaddr, bstr)) {
-			RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (virt)\n");
+			RZ_LOG_ERROR("rz_bin: Cannot insert/update RzBinString in RzBinStrDb (virt)\n");
 			goto fail;
 		}
 	}
@@ -1051,7 +1057,12 @@ fail:
 	return NULL;
 }
 
-RZ_IPI void rz_bin_string_database_free(RzBinStrDb *db) {
+/**
+ * \brief  Frees a RzBinStrDb structure
+ *
+ * \param  db    The string database to free
+ */
+RZ_IPI void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db) {
 	if (!db) {
 		return;
 	}
@@ -1061,53 +1072,47 @@ RZ_IPI void rz_bin_string_database_free(RzBinStrDb *db) {
 	free(db);
 }
 
-static int string_compare_sort(const RzBinString *a, const RzBinString *b) {
-	if (b->paddr > a->paddr) {
-		return -1;
-	} else if (b->paddr < a->paddr) {
-		return 1;
-	} else if (b->vaddr > a->vaddr) {
-		return -1;
-	} else if (b->vaddr < a->vaddr) {
-		return 1;
+/**
+ * \brief   { function_description }
+ *
+ * \param   db    The database
+ * \param   bstr  The bstr
+ *
+ * \return  { description_of_the_return_value }
+ */
+RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzBinString *bstr) {
+	rz_return_val_if_fail(db && bstr, false);
+
+	if (!rz_list_append(db->list, bstr)) {
+		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (list)\n");
+		return false;
 	}
-	return 0;
+
+	if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
+		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (phys)\n");
+		return false;
+	}
+
+	if (!ht_up_update(db->virt, bstr->vaddr, bstr)) {
+		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (virt)\n");
+		return false;
+	}
+	return true;
 }
 
-RZ_IPI bool rz_bin_string_database_add(RzBinStrDb *db, RzBinString *bstr, ut64 load_address, bool decode_base64) {
+/**
+ * \brief Return true if the given \p address \p has been removed to the RzBinObject string database
+ */
+RZ_API bool rz_bin_string_database_remove(RZ_NONNULL RzBinStrDb *db, ut64 address, bool is_va) {
 	rz_return_val_if_fail(db, false);
 
-	bstr->paddr += load_address;
-	if (decode_base64) {
-		char *decoded = bstr->string;
-		do {
-			// ensure to decode base64 strings encoded multiple times.
-			char *tmp = (char *)rz_base64_decode_dyn(decoded, -1);
-			if (!tmp || !rz_str_is_printable(tmp)) {
-				free(tmp);
-				break;
-			}
-			free(decoded);
-			decoded = tmp;
-		} while (1);
-		if (decoded != bstr->string) {
-			free(bstr->string);
-			bstr->string = decoded;
-			bstr->type = RZ_STRING_ENC_BASE64;
-		}
+	RzBinString *bstr = ht_up_find(is_va ? db->virt : db->phys, address, NULL);
+	if (!bstr) {
+		return false;
 	}
 
-	if (!rz_list_add_sorted(db->list, bstr, (RzListComparator)string_compare_sort)) {
-		RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (list)\n");
-		return false;
-	}
-	if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
-		RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (phys)\n");
-		return false;
-	}
-	if (!ht_up_update(db->virt, bstr->vaddr, bstr)) {
-		RZ_LOG_ERROR("rz_bin: Cannot insert RzBinString in RzBinStrDb (virt)\n");
-		return false;
-	}
+	ht_up_delete(db->virt, bstr->vaddr);
+	ht_up_delete(db->phys, bstr->paddr);
+	rz_list_delete_data(db->list, bstr);
 	return true;
 }

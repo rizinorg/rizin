@@ -652,7 +652,7 @@ static void rz_analysis_set_stringrefs(RzCore *core, RzAnalysisFunction *fcn) {
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	rz_list_foreach (xrefs, iter, xref) {
 		if (xref->type == RZ_ANALYSIS_XREF_TYPE_DATA &&
-			rz_bin_object_string_at(bobj, xref->to, is_va)) {
+			rz_bin_object_get_string_at(bobj, xref->to, is_va)) {
 			rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_STRING);
 		}
 	}

@@ -484,6 +484,7 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 }
 
 static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size) {
+	ut32 ordinal = 0;
 	RzBinString *bstr;
 	RzBin *bin = core->bin;
 	RzBinFile *bf = rz_bin_cur(bin);
@@ -492,16 +493,19 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 		return false;
 	}
 
-	bstr = rz_bin_object_string_at(bf->o, vaddr, true);
+	bstr = rz_bin_object_get_string_at(bf->o, vaddr, true);
 	if (bstr) {
 		if (bstr->vaddr == vaddr && bstr->size == size) {
 			free(string);
 			return true;
 		}
-		rz_bin_object_string_remove(bf->o, vaddr, true);
+		ordinal = bstr->ordinal;
+		rz_bin_string_database_remove(bf->o->strings, vaddr, true);
+	} else {
+		const RzList *strings = rz_bin_object_get_strings(bf->o);
+		ordinal = rz_list_length(strings);
 	}
 
-	const RzList *strings = rz_bin_object_get_strings(bf->o);
 	ut64 paddr = rz_io_v2p(core->io, vaddr);
 
 	bstr = RZ_NEW0(RzBinString);
@@ -512,11 +516,11 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 	}
 	bstr->paddr = paddr;
 	bstr->vaddr = vaddr;
-	bstr->ordinal = rz_list_length(strings);
+	bstr->ordinal = ordinal;
 	bstr->length = bstr->size = size;
 	bstr->string = string;
 	bstr->type = RZ_STRING_ENC_UTF8;
-	if (!rz_bin_object_string_add(bin, bf->o, bstr)) {
+	if (!rz_bin_string_database_add(bf->o->strings, bstr)) {
 		RZ_LOG_ERROR("Failed append new go string to strings database\n");
 		rz_bin_string_free(bstr);
 		return false;
