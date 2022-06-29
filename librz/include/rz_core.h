@@ -791,7 +791,6 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_importxrefs(RzCore *cor
 RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt);
 RZ_API void rz_core_analysis_resolve_jumps(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, size_t nbytes);
-RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input);
 RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
 RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name);
 RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 addr, bool analyze_recursively);
