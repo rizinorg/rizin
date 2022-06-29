@@ -5338,22 +5338,21 @@ RZ_API void rz_analysis_disasm_text_free(RZ_NULLABLE void *p) {
  * \param buf Buffer
  * \param len Bytes number
  * \param nlines Opcode number
- * \param invbreak ??
- * \param cbytes ??
- * \param json Print in json
- * \param pj PJ instance
- * \param pdf Disassemble a function
- * \param out_list Not print, but append to \p out_list as RzList<RzAnalysisDisasmText>
+ * \param options Disassemble Options
  * \return Disassemble bytes number
  */
 RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines,
-	int invbreak, int cbytes, bool json, RZ_NULLABLE PJ *pj, RZ_NULLABLE RzAnalysisFunction *pdf, RZ_OUT RZ_NULLABLE RzList *out_list) {
+	RZ_NULLABLE RzCoreDisasmOptions *options) {
 	rz_return_val_if_fail(core && buf, 0);
+
+	RzList *out_list = options ? options->out_list : NULL;
+	PJ *pj = options ? options->pj : NULL;
+	bool json = options ? options->json : false;
 
 	rz_list_free(disasm_texts);
 	disasm_texts = out_list;
 	RzPrint *p = core->print;
-	int continueoninvbreak = (len == nlines) && invbreak;
+	int continueoninvbreak = (len == nlines) && (options ? options->invbreak : 0);
 	RzAnalysisFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
 	int ret, inc = 0, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
@@ -5369,7 +5368,7 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 
 	// TODO: All those ds must be print flags
 	RzDisasmState *ds = ds_init(core);
-	ds->cbytes = cbytes;
+	ds->cbytes = options ? options->cbytes : 0;
 	ds->print = p;
 	ds->l = nlines;
 	ds->buf = buf;
@@ -5377,7 +5376,7 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	ds->addr = addr;
 	ds->hint = NULL;
 	ds->buf_line_begin = 0;
-	ds->pdf = pdf;
+	ds->pdf = options ? options->function : NULL;
 	ds->pj = NULL;
 
 	if (!out_list && json) {
@@ -6697,7 +6696,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 					rz_core_print_disasm_instructions_with_buf(core, block_start, buf, block_sz, block_instr);
 					break;
 				default:
-					rz_core_print_disasm(core, block_start, buf, block_sz, block_instr, 0, 0, false, NULL, NULL, NULL);
+					rz_core_print_disasm(core, block_start, buf, block_sz, block_instr, NULL);
 					break;
 				}
 			}

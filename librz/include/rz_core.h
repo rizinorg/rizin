@@ -822,6 +822,18 @@ typedef struct rz_core_asm_hit {
 	ut8 valid;
 } RzCoreAsmHit;
 
+/**
+ * \brief Disassemble Options, just for rz_core_print_disasm
+ */
+typedef struct rz_core_disasm_options {
+	int invbreak;
+	int cbytes;
+	bool json; ///< Print in json
+	PJ *pj; ///< PJ instance
+	RzAnalysisFunction *function; ///< Disassemble a function
+	RzList *out_list; ///< Not print, but append to \p out_list as RzList<RzAnalysisDisasmText>
+} RzCoreDisasmOptions;
+
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
 
 RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *args);
@@ -837,8 +849,7 @@ RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len
 RZ_API RzList *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *len, ut64 *start_addr, ut32 l);
-RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines,
-	int invbreak, int cbytes, bool json, RZ_NULLABLE PJ *pj, RZ_NULLABLE RzAnalysisFunction *pdf, RZ_OUT RZ_NULLABLE RzList *out_list);
+RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RzCoreDisasmOptions *options);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes);
