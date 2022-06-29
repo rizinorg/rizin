@@ -1161,10 +1161,11 @@ char *__find_cmd_str_cache(RzCore *core, RzPanel *panel) {
 }
 
 char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
-	char *out = rz_str_ndup(panel->model->cmd, strlen(panel->model->cmd) + 1024);
-	if (!panel->model->filter) {
+	char *out = malloc(strlen(panel->model->cmd) + 1024);
+	if (!out || !panel->model->filter) {
 		return out;
 	}
+	strcpy(out, panel->model->cmd);
 	int i;
 	for (i = 0; i < panel->model->n_filter; i++) {
 		char *filter = panel->model->filter[i];
