@@ -996,6 +996,157 @@ commands:
           - name: number
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+  - name: ag
+    summary: Analysis graph commands
+    details:
+      - name: "Formats"
+        entries:
+          - text: "<blank>"
+            comment: "Ascii art"
+          - text: "*"
+            comment: "rizin commands"
+          - text: "d"
+            comment: "Graphviz dot"
+          - text: "g"
+            comment: "Graph Modelling Language (gml)"
+          - text: "j"
+            comment: "json ('J' for formatted disassembly)"
+          - text: "k"
+            comment: "SDB key-value"
+          - text: "t"
+            comment: "Tiny ascii art"
+          - text: "v"
+            comment: "Interactive ascii art"
+          - text: "w [path]"
+            comment: "Write to path or display graph image (see graph.gv.format)"
+    subcommands:
+      - name: aga
+        summary: Data reference graph
+        cname: analysis_graph_dataref
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: agA
+        summary: Global data references graph
+        cname: analysis_graph_dataref_global
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: agc
+        summary: Function callgraph
+        cname: analysis_graph_callgraph_function
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: agC
+        summary: Global callgraph
+        cname: analysis_graph_callgraph_global
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: agd
+        summary: Diff graph
+        cname: analysis_graph_diff
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: agf
+        summary: Basic blocks function graph
+        cname: analysis_graph_bb_function
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: agi
+        summary: Imports graph
+        cname: analysis_graph_imports
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: agr
+        summary: References graph
+        cname: analysis_graph_refs
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: agR
+        summary: Global references graph
+        cname: analysis_graph_refs_global
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: ags
+        summary: Unknown graph
+        cname: analysis_graph_unknown
+        args:
+          - name: num
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: agx
+        summary: Cross-references graph
+        cname: analysis_graph_xrefs
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: agg
+        summary: Custom graph
+        cname: analysis_graph_custom
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: ag-
+        summary: Clear the custom graph
+        cname: analysis_graph_custom_clear
+        args: []
+      - name: agn
+        summary: Managing custom graph nodes
+        subcommands:
+          - name: agn
+            summary: Add a node to the custom graph
+            cname: analysis_graph_custom_node_add
+            args:
+              - name: title
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: body
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: agn-
+            summary: Remove a node from the custom graph
+            cname: analysis_graph_custom_node_remove
+            args:
+              - name: title
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: age
+        summary: Managing custom graph edges
+        subcommands:
+          - name: age
+            summary: Add an edge to the custom graph
+            cname: analysis_graph_custom_edge_add
+            args:
+              - name: title1
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: title2
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: age-
+            summary: Remove an edge from the custom graph
+            cname: analysis_graph_custom_edge_remove
+            args:
+              - name: title1
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: title2
+                type: RZ_CMD_ARG_TYPE_STRING
+
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
   - name: ar
