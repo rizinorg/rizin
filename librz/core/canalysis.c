@@ -647,6 +647,9 @@ static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
 static void rz_analysis_set_stringrefs(RzCore *core, RzAnalysisFunction *fcn) {
 	bool is_va = core->io->va;
 	RzBinObject *bobj = rz_bin_cur_object(core->bin);
+	if (!bobj) {
+		return;
+	}
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
