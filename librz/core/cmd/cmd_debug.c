@@ -535,7 +535,7 @@ static bool step_until_optype(RzCore *core, RzList *optypes_list) {
 		}
 		rz_io_read_at(core->io, pc, buf, sizeof(buf));
 
-		if (!rz_analysis_op(core->dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC)) {
+		if (rz_analysis_op(core->dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			RZ_LOG_ERROR("rz_analysis_op failed\n");
 			res = false;
 			goto cleanup_after_push;

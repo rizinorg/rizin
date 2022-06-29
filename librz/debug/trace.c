@@ -60,7 +60,7 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	if (!dbg->cur_op) {
 		return false;
 	}
-	if (!rz_analysis_op(dbg->analysis, dbg->cur_op, pc, buf_pc, sizeof(buf_pc), RZ_ANALYSIS_OP_MASK_VAL)) {
+	if (rz_analysis_op(dbg->analysis, dbg->cur_op, pc, buf_pc, sizeof(buf_pc), RZ_ANALYSIS_OP_MASK_VAL) < 1) {
 		rz_analysis_op_free(dbg->cur_op);
 		dbg->cur_op = NULL;
 		return false;

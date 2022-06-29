@@ -2083,7 +2083,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 					opskip = true;
 					break;
 				}
-				if (ret) {
+				if (ret > 0) {
 					if (opskip) {
 						rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, pc);
 						rz_analysis_esil_parse(core->analysis->esil, RZ_STRBUF_SAFEGET(&op.esil));
@@ -2397,7 +2397,7 @@ static bool print_cmd_analysis_after_traps_print(RZ_NONNULL RzCore *core, ut64 n
 		if (!bufi) {
 			rz_io_read_at(core->io, addr, buf, 4096);
 		}
-		if (rz_analysis_op(core->analysis, &op, addr, buf + bufi, 4096 - bufi, RZ_ANALYSIS_OP_MASK_BASIC)) {
+		if (rz_analysis_op(core->analysis, &op, addr, buf + bufi, 4096 - bufi, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 			if (op.size < 1) {
 				// XXX must be +4 on arm/mips/.. like we do in disasm.c
 				op.size = minop;
