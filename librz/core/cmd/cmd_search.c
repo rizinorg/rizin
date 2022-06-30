@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <ht_uu.h>
+#include <rz_asm.h>
 #include <rz_core.h>
 #include <rz_io.h>
 #include <rz_list.h>
@@ -1125,7 +1126,6 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 	RzCoreAsmHit *hit = NULL;
 	RzListIter *iter;
 	RzList *ropList = NULL;
-	char *buf_asm = NULL;
 	unsigned int size = 0;
 	RzAnalysisOp analop = RZ_EMPTY;
 	RzAsmOp asmop;
@@ -1204,10 +1204,10 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 			if (esil) {
 				rz_cons_printf("%s\n", opstr);
 			} else if (colorize) {
-				buf_asm = rz_print_colorize_opcode(core->print, rz_asm_op_get_asm(&asmop),
-					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
-				rz_cons_printf(" %s%s;", buf_asm, Color_RESET);
-				free(buf_asm);
+				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg), asmop.asm_toks);
+				rz_cons_printf(" %s%s;", rz_strbuf_get(colored_asm), Color_RESET);
+				rz_strbuf_free(colored_asm);
 			} else {
 				rz_cons_printf(" %s;", rz_asm_op_get_asm(&asmop));
 			}
@@ -1245,17 +1245,17 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 			}
 			char *asm_op_hex = rz_asm_op_get_hex(&asmop);
 			if (colorize) {
-				char *buf_asm = rz_print_colorize_opcode(core->print, rz_asm_op_get_asm(&asmop),
-					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
+				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg), asmop.asm_toks);
 				otype = rz_print_color_op_type(core->print, analop.type);
 				if (comment) {
 					rz_cons_printf("  0x%08" PFMT64x " %18s%s  %s%s ; %s\n",
-						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET, comment);
+						hit->addr, asm_op_hex, otype, rz_strbuf_get(colored_asm), Color_RESET, comment);
 				} else {
 					rz_cons_printf("  0x%08" PFMT64x " %18s%s  %s%s\n",
-						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET);
+						hit->addr, asm_op_hex, otype, rz_strbuf_get(colored_asm), Color_RESET);
 				}
-				free(buf_asm);
+				rz_strbuf_free(colored_asm);
 			} else {
 				if (comment) {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s ; %s\n",

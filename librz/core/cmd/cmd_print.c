@@ -10,6 +10,7 @@
 #include <limits.h>
 
 #include "../core_private.h"
+#include "rz_util/rz_strbuf.h"
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
@@ -6600,8 +6601,6 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core,
 	bool color = rz_config_get_i(core->config, "scr.color") > 0;
 	RzAsmOp asm_op = { 0 };
 	ut32 old_blocksize = core->blocksize;
-	const char *pal_reg = core->cons->context->pal.reg;
-	const char *pal_num = core->cons->context->pal.num;
 
 	if (n_bytes > old_blocksize) {
 		rz_core_block_size(core, n_bytes);
@@ -6623,9 +6622,9 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core,
 		if (color && state->mode != RZ_OUTPUT_MODE_JSON) {
 			RzAnalysisOp aop = { 0 };
 			rz_analysis_op(core->analysis, &aop, offset, buffer, length, RZ_ANALYSIS_OP_MASK_ALL);
-			char *tmp = rz_print_colorize_opcode(core->print, assembly, pal_reg, pal_num, false, 0);
-			colored = rz_str_newf("%s%s" Color_RESET, rz_print_color_op_type(core->print, aop.type), tmp);
-			free(tmp);
+			RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(assembly);
+			colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg), asm_op.asm_toks);
+			colored = rz_strbuf_drain(colored_asm);
 		}
 
 		switch (state->mode) {
@@ -6665,8 +6664,6 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCo
 	RzAsmOp asm_op = { 0 };
 	const ut32 n_bytes = 28; // uses 56 chars
 	ut32 old_blocksize = core->blocksize;
-	const char *pal_reg = core->cons->context->pal.reg;
-	const char *pal_num = core->cons->context->pal.num;
 
 	if (old_blocksize < n_bytes) {
 		rz_core_block_size(core, 256);
@@ -6691,9 +6688,9 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCo
 		if (color) {
 			RzAnalysisOp aop = { 0 };
 			rz_analysis_op(core->analysis, &aop, offset, buffer, length, RZ_ANALYSIS_OP_MASK_ALL);
-			char *tmp = rz_print_colorize_opcode(core->print, assembly, pal_reg, pal_num, false, 0);
-			colored = rz_str_newf("%s%s" Color_RESET, rz_print_color_op_type(core->print, aop.type), tmp);
-			free(tmp);
+			RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(assembly);
+			colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg), asm_op.asm_toks);
+			colored = rz_strbuf_drain(colored_asm);
 		}
 
 		int padding = position * 2;

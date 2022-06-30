@@ -88,7 +88,6 @@ static void showreg(RzAnalysisEsil *esil, const char *rn, const char *desc) {
 
 RZ_API bool rz_core_visual_esil(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
-	int analopType;
 	char *word = NULL;
 	int x = 0;
 	RzAsmOp asmop;
@@ -109,7 +108,6 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(ut64));
 		analop.type = -1;
 		(void)rz_analysis_op(core->analysis, &analop, core->offset, buf, sizeof(ut64), RZ_ANALYSIS_OP_MASK_ESIL);
-		analopType = analop.type & RZ_ANALYSIS_OP_TYPE_MASK;
 		rz_cons_printf("rizin's esil debugger:\n\n");
 		rz_cons_printf("pos: %d\n", x);
 		{
@@ -121,18 +119,9 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 		}
 		{
 			RzStrBuf *colored_asm;
-			RzAsmTokenString *toks;
-			if (asmop.asm_toks) {
-				colored_asm = rz_print_colorize_asm_str(core->print, asmop.asm_toks);
-			} else {
-				toks = rz_asm_tokenize_asm_string(&asmop.buf_asm, NULL);
-				colored_asm = rz_print_colorize_asm_str(core->print, toks);
-			}
+			colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, rz_asm_get_parse_param(core->analysis->reg), asmop.asm_toks);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, rz_strbuf_get(colored_asm));
 			rz_strbuf_free(colored_asm);
-			if (!asmop.asm_toks) {
-				rz_asm_token_string_free(toks);
-			}
 		}
 		{
 			const char *expr = rz_strbuf_get(&analop.esil);

@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_print.h"
 #include <rz_vector.h>
 #include <rz_util/rz_strbuf.h>
 #include <rz_regex.h>
@@ -66,7 +67,7 @@ static bool is_operator(const char *c) {
 	return (*c == '+' || *c == '-' || *c == '/' || *c == '>' || *c == '<' || *c == '*' || *c == '%' || *c == '|' || *c == '&' || *c == '=' || *c == '!');
 }
 
-static bool is_register(const char *name, RZ_BORROW RzRegSet *regset) {
+static bool is_register(const char *name, RZ_BORROW const RzRegSet *regset) {
 	rz_return_val_if_fail(name && regset, false);
 	if (!regset) {
 		return false;
@@ -1710,4 +1711,19 @@ rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NU
 		rz_asm_token_string_free(ts);
 	}
 	return colored_asm;
+}
+
+/**
+ * \brief Does all kinds of NULL checks on the parameters and returns an initialized RzAsmParseParam or NULL on failure.
+ * 
+ * \param reg The RzReg which holds the reg_set.
+ * \return RzAsmParseParam* Pointer to the RzAsmParseParam struct or NULL.
+ */
+RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(RZ_NULLABLE const RzReg *reg) {
+	if (!reg) {
+		return NULL;
+	}
+	RzAsmParseParam *param = RZ_NEW(RzAsmParseParam);
+	param->reg_sets = reg->regset;
+	return param;
 }
