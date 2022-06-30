@@ -652,3 +652,40 @@ EXPECT=<<EOF
 0x00000000 64 segment.ehdr
 EOF
 RUN
+
+NAME=show the flag graph
+FILE=bins/elf/ls
+CMDS=<<EOF
+fg section
+EOF
+EXPECT=<<EOF
+        ..in
+            terp
+            it
+        ..note.
+               ABI_tag
+               gnu.build_id
+        ..g
+           nu.
+              hash
+              version
+           nu.version
+           ot
+        ..d
+           yn
+             s
+              ym
+              tr
+             str
+             amic
+           ynstr
+           ata
+        ..r
+           ela.dyn
+           odata
+        ..text
+        ..fini
+        ..eh_frame
+        ..bss
+EOF
+RUN
