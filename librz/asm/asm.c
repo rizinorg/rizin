@@ -1676,8 +1676,38 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
  * DEPRECATED: Please implement your custom parsing method and set RzArchOpcode.XXX.
  *
  */
-RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE RzAsmParseParam *param) {
+RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE const RzAsmParseParam *param) {
 	rz_return_val_if_fail(asm_str, NULL);
 
 	return tokenize_asm_generic(asm_str, param);
+}
+
+/**
+ * \brief Colors a given asm string and returns it. If \p toks is not NULL it uses the tokens to color the asm string accordingly.
+ * If \p toks is NULL it parses the asm string generically into tokens and colorizes it afterwards.
+ * \p param can be set to alter the generic parsing method.
+ *
+ * DEPRECATED: This is only a helper method until all plugins generate tokenized asm strings.
+ * Please check if this is already the case before using this function.
+ *
+ * \param asm_str The plain asm string.
+ * \param p The RzPrint object which holds the color palette to use.
+ * \param param Parsing parameter for the generic parsing method (can be NULL).
+ * \param toks Already present token string for \p asm_str (can be NULL).
+ * \return RzStrBuf* String buffer with the colorized asm string.
+ */
+RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *
+rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NULLABLE const RzAsmParseParam *param, RZ_NULLABLE const RzAsmTokenString *toks) {
+	RzStrBuf *colored_asm;
+	RzAsmTokenString *ts;
+	if (toks) {
+		colored_asm = rz_print_colorize_asm_str(p, toks);
+	} else {
+		ts = rz_asm_tokenize_asm_string(asm_str, param);
+		colored_asm = rz_print_colorize_asm_str(p, toks);
+	}
+	if (!toks) {
+		rz_asm_token_string_free(ts);
+	}
+	return colored_asm;
 }
