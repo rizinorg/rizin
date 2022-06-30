@@ -17,7 +17,7 @@ EXPECT=<<EOF
 0x0063e49b str.version
 0x0063e4ac str.HTTP_version
 0x0063e566 str.
-12917
+12937
 EOF
 RUN
 
@@ -44,7 +44,7 @@ EXPECT=<<EOF
 ;-- str.flag:
 ;-- str.sort:
 ;-- str.sync:
-12297
+12321
 EOF
 RUN
 
@@ -67,7 +67,7 @@ EXPECT=<<EOF
 0x0065de6d str.version
 0x0065de8a str.HTTP_version
 0x0065dfe6 str.
-13208
+13224
 EOF
 RUN
 
@@ -129,7 +129,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-12840
+12895
 EOF
 RUN
 
@@ -212,7 +212,7 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-14683
+14736
 EOF
 RUN
 
@@ -232,7 +232,7 @@ EXPECT=<<EOF
 0x100006e64 str.pointer
 0x100006eac str.panicwrap:_no___in
 0x1000076d0 str.internal_error___misuse_of_itab
-1280
+1297
 compiler go1.18 (cmd -compiler=gc CGO_ENABLED=1 CGO_CFLAGS= CGO_CPPFLAGS= CGO_CXXFLAGS= CGO_LDFLAGS= GOARCH=arm64 GOOS=darwin)
 EOF
 RUN
@@ -249,7 +249,7 @@ EOF
 EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
-8552
+8555
 compiler go1.15
 EOF
 RUN

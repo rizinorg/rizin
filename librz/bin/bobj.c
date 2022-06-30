@@ -7,7 +7,14 @@
 #include <rz_util.h>
 #include "i/private.h"
 
-RZ_API void rz_bin_string_decode_base64(RzBinString *bstr) {
+/**
+ * \brief  Tries to decode the base64 string hold by RzBinString and overwrites it
+ *
+ * \param  bstr  The RzBinString to decode
+ */
+RZ_API void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
+	rz_return_if_fail(bstr);
+
 	char *decoded = bstr->string;
 	do {
 		// ensure to decode base64 strings encoded multiple times.
@@ -25,6 +32,7 @@ RZ_API void rz_bin_string_decode_base64(RzBinString *bstr) {
 	}
 	free(bstr->string);
 	bstr->string = decoded;
+	bstr->length = strlen(decoded);
 	bstr->type = RZ_STRING_ENC_BASE64;
 }
 

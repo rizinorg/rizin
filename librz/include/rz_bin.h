@@ -1018,7 +1018,7 @@ RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr
 
 /* bin string */
 RZ_API void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr);
-RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RzList /*<RzBinString*>*/ *list);
+RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzList /*<RzBinString*>*/ *list);
 RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db);
 RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzBinString *bstr);
 RZ_API bool rz_bin_string_database_remove(RZ_NONNULL RzBinStrDb *db, ut64 address, bool is_va);

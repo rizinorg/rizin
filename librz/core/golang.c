@@ -494,17 +494,13 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 	}
 
 	bstr = rz_bin_object_get_string_at(bf->o, vaddr, true);
-	if (bstr) {
-		if (bstr->vaddr == vaddr && bstr->size == size) {
-			free(string);
-			return true;
-		}
-		ordinal = bstr->ordinal;
-		rz_bin_string_database_remove(bf->o->strings, vaddr, true);
-	} else {
-		const RzList *strings = rz_bin_object_get_strings(bf->o);
-		ordinal = rz_list_length(strings);
+	if (bstr && bstr->vaddr == vaddr && bstr->size == size) {
+		free(string);
+		return true;
 	}
+
+	const RzList *strings = rz_bin_object_get_strings(bf->o);
+	ordinal = rz_list_length(strings);
 
 	ut64 paddr = rz_io_v2p(core->io, vaddr);
 
