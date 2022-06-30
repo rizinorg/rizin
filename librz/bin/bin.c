@@ -736,12 +736,6 @@ RZ_DEPRECATE RZ_API RzList *rz_bin_get_mem(RzBin *bin) {
 	return o ? (RzList *)rz_bin_object_get_mem(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API int rz_bin_is_big_endian(RzBin *bin) {
-	rz_return_val_if_fail(bin, false);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? rz_bin_object_is_big_endian(o) : false;
-}
-
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RzBin *bin) {
 	rz_return_val_if_fail(bin, false);
 	RzBinObject *o = rz_bin_cur_object(bin);
