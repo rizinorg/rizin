@@ -299,7 +299,7 @@ RZ_IPI RzCmdStatus rz_flag_graph_handler(RzCore *core, int argc, const char **ar
 	RzList *flags = rz_list_newf(NULL);
 	rz_flag_foreach_space(core->flags, rz_flag_space_cur(core->flags), listFlag, flags);
 	if (!argv[1]) {
-		__printRecursive(core, flags, "\0", state->mode, 0);
+		__printRecursive(core, flags, "", state->mode, 0);
 	} else {
 		__printRecursive(core, flags, argv[1], state->mode, 0);
 	}
