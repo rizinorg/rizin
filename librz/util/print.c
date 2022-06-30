@@ -1382,8 +1382,9 @@ RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int s
 	}
 }
 
-// probably move somewhere else. RzPrint doesnt needs to know about the RZ_ANALYSIS_ enums
-RZ_API const char *rz_print_color_op_type(RzPrint *p, _RzAnalysisOpType analysis_type) {
+// Probably move somewhere else. RzPrint doesn't need to know about the RZ_ANALYSIS_ enums
+RZ_API const char *rz_print_color_op_type(RZ_NONNULL RzPrint *p, ut32 /* RzAnalaysisOpType */ analysis_type) {
+	rz_return_val_if_fail(p, NULL);
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
 	switch (analysis_type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_NOP:
