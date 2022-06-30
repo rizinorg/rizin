@@ -16,6 +16,12 @@
 #define X86_BIT(x)  UN(1, x)
 #define X86_TO32(x) UNSIGNED(32, x)
 
+#define RET_NULL_IF_64BIT_OR_LOCK() \
+	if (analysis->bits == 64 || op->prefix[0] == X86_PREFIX_LOCK) { \
+		/* #UD exception */ \
+		return NULL; \
+	}
+
 /**
  * \brief X86 registers' variable names in RzIL
  */
@@ -294,7 +300,7 @@ static RzILOpPure *x86_il_get_mem(X86Mem mem, uint8_t bits) {
 	return ret;
 }
 
-static RzILOpPure *x86_il_get_param(X86Op p, uint8_t bits) {
+static RzILOpPure *x86_il_get_operand(X86Op p, uint8_t bits) {
 	RzILOpPure *ret = NULL;
 	switch (p.type) {
 	case X86_OP_INVALID:
@@ -340,29 +346,72 @@ static RzILOpEffect *x86_il_invalid(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
 
 /* 8086/8088 instructions*/
 
+/**
+ * ======== INSTRUCTION DOCUMENTATION FORMAT ========
+ *
+ * Instruction mnemonic
+ * Description
+ * | Opcode | 64-bit | Compat/Leg mode
+ */
+
+/**
+ * AAA
+ * ASCII adjust AL after addition
+ * 37 | Invalid | Valid
+ */
 static RzILOpEffect *x86_il_aaa(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
-	if (analysis->bits == 64 || op->prefix[0] == X86_PREFIX_LOCK) {
-		// #UD exception
-		return NULL;
-	} else {
-		RzILOpPure *low_al = LOGAND(VARG(x86_registers[X86_REG_AL]), U16(0x0f));
-		RzILOpPure *al_ovf = UGT(low_al, U16(9));
-		RzILOpPure *cond = OR(al_ovf, NON_ZERO(x86_il_get_eflags(X86_EFLAGS_AF)));
+	RET_NULL_IF_64BIT_OR_LOCK();
 
-		RzILOpEffect *set_ax = SETG(x86_registers[X86_REG_AX], ADD(VARG(x86_registers[X86_REG_AX]), U16(0x106)));
-		RzILOpEffect *set_af = x86_il_set_eflags(X86_EFLAGS_AF, IL_TRUE);
-		RzILOpEffect *set_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_TRUE);
-		RzILOpEffect *true_cond = SEQ3(set_ax, set_af, set_cf);
+	RzILOpPure *low_al = LOGAND(VARG(x86_registers[X86_REG_AL]), U8(0x0f));
+	RzILOpPure *al_ovf = UGT(low_al, U8(9));
+	RzILOpPure *cond = OR(al_ovf, NON_ZERO(x86_il_get_eflags(X86_EFLAGS_AF)));
 
-		set_af = x86_il_set_eflags(X86_EFLAGS_AF, IL_FALSE);
-		set_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_FALSE);
-		RzILOpEffect *false_cond = SEQ2(set_af, set_cf);
+	RzILOpEffect *set_ax = SETG(x86_registers[X86_REG_AX], ADD(VARG(x86_registers[X86_REG_AX]), U16(0x106)));
+	RzILOpEffect *set_af = x86_il_set_eflags(X86_EFLAGS_AF, IL_TRUE);
+	RzILOpEffect *set_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_TRUE);
+	RzILOpEffect *true_cond = SEQ3(set_ax, set_af, set_cf);
 
-		RzILOpEffect *final_cond = BRANCH(cond, true_cond, false_cond);
-		RzILOpEffect *set_al = SETG(x86_registers[X86_REG_AL], LOGAND(VARG(x86_registers[X86_REG_AL]), U16(0x0f)));
+	set_af = x86_il_set_eflags(X86_EFLAGS_AF, IL_FALSE);
+	set_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_FALSE);
+	RzILOpEffect *false_cond = SEQ2(set_af, set_cf);
 
-		return SEQ2(final_cond, set_al);
-	}
+	RzILOpEffect *final_cond = BRANCH(cond, true_cond, false_cond);
+	RzILOpEffect *set_al = SETG(x86_registers[X86_REG_AL], LOGAND(VARG(x86_registers[X86_REG_AL]), U8(0x0f)));
+
+	return SEQ2(final_cond, set_al);
+}
+
+/**
+ * AAD  imm8
+ * Adjust AX before division to number base imm8
+ * D5 ib | Invalid | Valid
+ */
+static RzILOpEffect *x86_il_aad(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
+	RET_NULL_IF_64BIT_OR_LOCK();
+
+	RzILOpEffect *temp_al = SETL("temp_al", VARG(x86_registers[X86_REG_AL]));
+	RzILOpEffect *temp_ah = SETL("temp_ah", VARG(x86_registers[X86_REG_AH]));
+	RzILOpPure *imm = x86_il_get_operand(op->operands[0], analysis->bits);
+
+	RzILOpPure *adjusted = ADD(VARL("temp_al"), MUL(VARL("temp_ah"), imm));
+	adjusted = LOGAND(adjusted, U8(0xff));
+
+	return SEQ4(temp_al, temp_ah, SETG(x86_registers[X86_REG_AL], adjusted), SETG(x86_registers[X86_REG_AH], U8(0)));
+}
+
+/**
+ * AAM  imm8
+ * Adjust AX after multiply to number base imm8
+ * D4 ib | Invalid | Valid
+ */
+static RzILOpEffect *x86_il_aam(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
+	RET_NULL_IF_64BIT_OR_LOCK();
+
+	RzILOpEffect *temp_al = SETL("temp_al", VARG(x86_registers[X86_REG_AL]));
+	RzILOpEffect *ah = SETG(x86_registers[X86_REG_AH], DIV(VARL("temp_al"), x86_il_get_operand(op->operands[0], analysis->bits)));
+	RzILOpEffect *al = SETG(x86_registers[X86_REG_AL], MOD(VARL("temp_al"), x86_il_get_operand(op->operands[0], analysis->bits)));
+
+	return SEQ3(temp_al, ah, al);
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(X86Ins *aop, ut64 pc, RzAnalysis *analysis);
@@ -373,6 +422,8 @@ typedef RzILOpEffect *(*x86_il_ins)(X86Ins *aop, ut64 pc, RzAnalysis *analysis);
 static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_INVALID] = x86_il_invalid,
 	[X86_INS_AAA] = x86_il_aaa,
+	[X86_INS_AAD] = x86_il_aad,
+	[X86_INS_AAM] = x86_il_aam,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
