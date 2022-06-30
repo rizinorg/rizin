@@ -254,6 +254,8 @@ typedef struct rz_bin_file_load_options_t {
 	bool elf_checks_segments; ///< ELF specific, checks or not ELF sections
 } RzBinObjectLoadOptions;
 
+typedef struct rz_bin_string_database_t RzBinStrDb;
+
 typedef struct rz_bin_object_t {
 	RzBinObjectLoadOptions opts;
 	st64 baddr_shift;
@@ -275,7 +277,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<RzBinField>*/ *fields;
 	RzList /*<char*>*/ *libs;
 	RzBinRelocStorage *relocs;
-	RzList /*<RzBinString>*/ *strings;
+	RzBinStrDb *strings;
 	RzList /*<RzBinClass>*/ *classes;
 	HtPP *classes_ht;
 	HtPP *methods_ht;
@@ -917,8 +919,6 @@ RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_classes(RZ_NONNULL RzBin *bin);
 RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_strings(RZ_NONNULL RzBin *bin);
 RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_mem(RZ_NONNULL RzBin *bin);
 RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_symbols(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_reset_strings(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE int rz_bin_is_string(RZ_NONNULL RzBin *bin, ut64 va);
 RZ_API RZ_DEPRECATE int rz_bin_is_big_endian(RZ_NONNULL RzBin *bin);
 RZ_API RZ_DEPRECATE int rz_bin_is_static(RZ_NONNULL RzBin *bin);
 RZ_API RzList *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
@@ -936,8 +936,8 @@ RZ_API const RzList *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_reset_strings(RZ_NONNULL RzBin *bin, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *obj);
-RZ_API bool rz_bin_object_is_string(RZ_NONNULL RzBinObject *obj, ut64 va);
+RZ_API bool rz_bin_object_reset_strings(RZ_NONNULL RzBin *bin, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *obj);
+RZ_API RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va);
 RZ_API bool rz_bin_object_is_big_endian(RZ_NONNULL RzBinObject *obj);
 RZ_API bool rz_bin_object_is_static(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj);
@@ -1015,6 +1015,13 @@ RZ_API char *rz_bin_filter_name(RzBinFile *bf, HtPU *db, ut64 addr, char *name);
 RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym);
 RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 addr);
 RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr);
+
+/* bin string */
+RZ_API void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr);
+RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzList /*<RzBinString*>*/ *list);
+RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db);
+RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzBinString *bstr);
+RZ_API bool rz_bin_string_database_remove(RZ_NONNULL RzBinStrDb *db, ut64 address, bool is_va);
 
 /* plugin pointers */
 extern RzBinPlugin rz_bin_plugin_any;

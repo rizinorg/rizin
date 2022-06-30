@@ -847,12 +847,12 @@ static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, strings);
+	list_a = (RzList *)rz_bin_object_get_strings(dfile_a->file->o);
 	if (!list_a) {
 		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, strings);
+	list_b = (RzList *)rz_bin_object_get_strings(dfile_b->file->o);
 	if (!list_b) {
 		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_b->dio->filename);
 	}

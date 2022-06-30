@@ -645,12 +645,17 @@ static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
 }
 
 static void rz_analysis_set_stringrefs(RzCore *core, RzAnalysisFunction *fcn) {
+	bool is_va = core->io->va;
+	RzBinObject *bobj = rz_bin_cur_object(core->bin);
+	if (!bobj) {
+		return;
+	}
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	rz_list_foreach (xrefs, iter, xref) {
 		if (xref->type == RZ_ANALYSIS_XREF_TYPE_DATA &&
-			rz_bin_is_string(core->bin, xref->to)) {
+			rz_bin_object_get_string_at(bobj, xref->to, is_va)) {
 			rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, RZ_ANALYSIS_XREF_TYPE_STRING);
 		}
 	}
