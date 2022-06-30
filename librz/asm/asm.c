@@ -1305,7 +1305,7 @@ RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks) {
 	free(toks);
 }
 
-RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RzAsmTokenString *toks) {
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAsmTokenString *toks) {
 	rz_return_val_if_fail(toks, NULL);
 
 	RzAsmTokenString *new = RZ_NEW0(RzAsmTokenString);
