@@ -8,6 +8,12 @@
 
 static ut64 rz_num_tailff(RzNum *num, const char *hex);
 
+/**
+ * \brief Checks if the first two chars of \p p equal "0x".
+ *
+ * \param p The string which potentially represents a hex number.
+ * \return bool True if p[0] == '0' && p[1] == 'x'. False otherwise.
+ */
 RZ_API bool rz_num_is_hex_prefix(const char *p) {
 	rz_return_val_if_fail(p, false);
 	if (!isascii(*p)) {
