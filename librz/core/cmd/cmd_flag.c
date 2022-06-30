@@ -136,7 +136,6 @@ static void __printRecursive(RzCore *core, RzList *flags, const char *name, RzOu
 	RzListIter *iter;
 	if (mode == RZ_OUTPUT_MODE_RIZIN && RZ_STR_ISEMPTY(name)) {
 		rz_cons_printf("agn root\n");
-		return;
 	}
 	if (rz_flag_get(core->flags, name)) {
 		return;
@@ -299,7 +298,11 @@ RZ_IPI RzCmdStatus rz_flag_local_list_all_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_flag_graph_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzList *flags = rz_list_newf(NULL);
 	rz_flag_foreach_space(core->flags, rz_flag_space_cur(core->flags), listFlag, flags);
-	__printRecursive(core, flags, argv[1], state->mode, 0);
+	if (!argv[1]) {
+		__printRecursive(core, flags, "\0", state->mode, 0);
+	} else {
+		__printRecursive(core, flags, argv[1], state->mode, 0);
+	}
 	rz_list_free(flags);
 	return RZ_CMD_STATUS_OK;
 }
