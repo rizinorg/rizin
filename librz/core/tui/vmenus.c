@@ -7,6 +7,9 @@
 #include <rz_util.h>
 
 #include "../core_private.h"
+#include <rz_asm.h>
+#include <rz_util/rz_print.h>
+#include <rz_util/rz_strbuf.h>
 
 #define MAX_FORMAT 3
 
@@ -47,39 +50,6 @@ static char *prompt(const char *str, const char *txt) {
 	rz_line_set_prompt(oprompt);
 	free(oprompt);
 	RZ_FREE(rz_cons_singleton()->line->contents);
-	return res;
-}
-
-static char *colorize_asm_string(RzCore *core, const char *buf_asm, int optype, ut64 addr) {
-	char *tmp, *spacer = NULL;
-	char *source = (char *)buf_asm;
-	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	const char *color_num = core->cons->context->pal.num;
-	const char *color_reg = core->cons->context->pal.reg;
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-
-	if (!use_color) {
-		return strdup(source);
-	}
-	// workaround dummy colorizer in case of paired commands (tms320 & friends)
-	spacer = strstr(source, "||");
-	if (spacer) {
-		char *s1 = rz_str_ndup(source, spacer - source);
-		char *s2 = strdup(spacer + 2);
-		char *scol1 = rz_print_colorize_opcode(core->print, s1, color_reg, color_num, false, fcn ? fcn->addr : 0);
-		char *scol2 = rz_print_colorize_opcode(core->print, s2, color_reg, color_num, false, fcn ? fcn->addr : 0);
-		char *source = rz_str_newf("%s||%s", rz_str_get(scol1), rz_str_get(scol2));
-		free(scol1);
-		free(scol2);
-		free(s1);
-		free(s2);
-		return source;
-	}
-	char *res = strdup("");
-	res = rz_str_append(res, rz_print_color_op_type(core->print, optype));
-	tmp = rz_print_colorize_opcode(core->print, source, color_reg, color_num, false, fcn ? fcn->addr : 0);
-	res = rz_str_append(res, tmp);
-	free(tmp);
 	return res;
 }
 
@@ -150,9 +120,19 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 			free(op_hex);
 		}
 		{
-			char *op = colorize_asm_string(core, rz_asm_op_get_asm(&asmop), analopType, core->offset);
-			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, op);
-			free(op);
+			RzStrBuf *colored_asm;
+			RzAsmTokenString *toks;
+			if (asmop.asm_toks) {
+				colored_asm = rz_print_colorize_asm_str(core->print, asmop.asm_toks);
+			} else {
+				toks = rz_asm_tokenize_asm_string(&asmop.buf_asm, NULL);
+				colored_asm = rz_print_colorize_asm_str(core->print, toks);
+			}
+			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, rz_strbuf_get(colored_asm));
+			rz_strbuf_free(colored_asm);
+			if (!asmop.asm_toks) {
+				rz_asm_token_string_free(toks);
+			}
 		}
 		{
 			const char *expr = rz_strbuf_get(&analop.esil);
@@ -263,7 +243,6 @@ beach:
 RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	bool colorBits = false;
-	int analopType;
 	int i, j, x = 0;
 	RzAsmOp asmop;
 	RzAnalysisOp analop;
@@ -284,7 +263,6 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(ut64));
 		analop.type = -1;
 		(void)rz_analysis_op(core->analysis, &analop, core->offset, buf, sizeof(ut64), RZ_ANALYSIS_OP_MASK_ESIL);
-		analopType = analop.type & RZ_ANALYSIS_OP_TYPE_MASK;
 		rz_cons_printf("rizin's bit editor:\n\n");
 		rz_cons_printf("offset: 0x%08" PFMT64x "\n" Color_RESET, core->offset + cur);
 		{
@@ -300,9 +278,19 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			rz_cons_printf("shift: >> %d << %d\n", word, (asmop.size * 8) - word - 1);
 		}
 		{
-			char *op = colorize_asm_string(core, rz_asm_op_get_asm(&asmop), analopType, core->offset);
-			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, op);
-			free(op);
+			RzStrBuf *colored_asm;
+			RzAsmTokenString *toks;
+			if (asmop.asm_toks) {
+				colored_asm = rz_print_colorize_asm_str(core->print, asmop.asm_toks);
+			} else {
+				toks = rz_asm_tokenize_asm_string(&asmop.buf_asm, NULL);
+				colored_asm = rz_print_colorize_asm_str(core->print, toks);
+			}
+			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, rz_strbuf_get(colored_asm));
+			rz_strbuf_free(colored_asm);
+			if (!asmop.asm_toks) {
+				rz_asm_token_string_free(toks);
+			}
 		}
 		rz_cons_printf(Color_RESET "esl: %s\n" Color_RESET, rz_strbuf_get(&analop.esil));
 		rz_analysis_op_fini(&analop);
