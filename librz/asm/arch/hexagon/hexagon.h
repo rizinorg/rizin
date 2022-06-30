@@ -136,7 +136,7 @@ typedef struct {
 	RzList *const_ext_l; // Constant extender values.
 	RzAsm rz_asm; // Copy of RzAsm struct. Holds certain flags of interesed for disassembly formatting.
 	RzConfig *cfg;
-	RzList /* RzAsmTokenPattern */ *token_patterns; ///< NULL terminated arry with token patterns.
+	RzPVector /* RzAsmTokenPattern* */ *token_patterns; ///< PVector with token patterns. Priority ordered.
 } HexState;
 
 typedef enum {

@@ -1456,27 +1456,27 @@ static void check_token_coverage(RzAsmTokenString *toks) {
  * \param patterns RzList<RzAsmTokenPattern> with the regex patterns describing each token type.
  * \return RzAsmTokenString* The tokens.
  */
-RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzList /* RzAsmTokenPattern */ *patterns) {
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzPVector /* RzAsmTokenPattern* */ *patterns) {
 	rz_return_val_if_fail(asm_str && patterns, NULL);
 
 	const char *str = rz_strbuf_get(asm_str);
 	RzRegexMatch m[1];
 	size_t j = 0; // Offset into str. Regex patterns are only searched in substring str[j:].
 	st64 i = 0; // Start of token in str.
-	st64 s = 0; // Start of matched token in str[j:]
+	st64 s = 0; // Start of matched token in substring str[j:]
 	st64 l = 0; // Length of token.
 	RzAsmTokenString *toks = rz_asm_token_string_new(str);
-	RzAsmTokenPattern *pat;
-	RzListIter *it;
-	rz_list_foreach (patterns, it, pat) {
+	void **it;
+	rz_pvector_foreach (patterns, it) {
+		RzAsmTokenPattern *pat = *it;
 		rz_return_val_if_fail(pat && pat->regex, NULL);
 		j = 0;
 		if (!pat->regex) {
 			continue;
 		}
 		while (rz_regex_exec(pat->regex, str + j, 1, m, 0) == 0) {
-			s = m[0].rm_so; // Token start in str[j:]
-			l = m[0].rm_eo - s; // End in str[j:] - start in str[j:] = Length of token.
+			s = m[0].rm_so; // Token start in substring str[j:]
+			l = m[0].rm_eo - s; // (End in substring str[j:]) - (start in substring str[j:]) = Length of token.
 			i = j + s; // Start of token in str.
 			if (overlaps_with_token(toks->tokens, i, i + l - 1)) {
 				// If this is true a token with higher priority was matched before.
