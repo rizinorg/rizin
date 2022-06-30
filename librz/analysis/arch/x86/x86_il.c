@@ -263,7 +263,7 @@ static const char *x86_registers[] = {
 	[X86_REG_R15W] = "r15w"
 };
 
-static RzILOpPure *x86_il_get_mem(X86Mem mem, X86Bitness bitness) {
+static RzILOpPure *x86_il_get_mem(X86Mem mem, uint8_t bits) {
 	RzILOpPure *offset = NULL;
 	if (mem.base != X86_REG_INVALID) {
 		if (!offset) {
@@ -294,7 +294,7 @@ static RzILOpPure *x86_il_get_mem(X86Mem mem, X86Bitness bitness) {
 	return ret;
 }
 
-static RzILOpPure *x86_il_get_param(X86Op p, X86Bitness bitness) {
+static RzILOpPure *x86_il_get_param(X86Op p, uint8_t bits) {
 	RzILOpPure *ret = NULL;
 	switch (p.type) {
 	case X86_OP_INVALID:
@@ -307,9 +307,28 @@ static RzILOpPure *x86_il_get_param(X86Op p, X86Bitness bitness) {
 		ret = S64(p.imm);
 		break;
 	case X86_OP_MEM:
-		ret = x86_il_get_mem(p.mem, bitness);
+		ret = x86_il_get_mem(p.mem, bits);
 	}
 	return ret;
+}
+
+RzILOpPure *x86_il_get_eflags(X86EFlags flag) {
+	RzILOpPure *bit = SHIFTR0(VARG(x86_registers[X86_REG_EFLAGS]), U8(flag));
+	if (flag == X86_EFLAGS_IOPL) {
+		bit = UNSIGNED(2, bit);
+	} else {
+		bit = UNSIGNED(1, bit);
+	}
+	return bit;
+}
+
+RzILOpEffect *x86_il_set_eflags(X86EFlags flag, RzILOpPure *value) {
+	// set the bit in EFLAGS to zero and then LOGOR with shifted value
+	RzILOpPure *shifted_one = SHIFTL0(U32(1), U8(flag));
+	RzILOpPure *shifted_val = SHIFTL0(UNSIGNED(32, value), U8(flag));
+	RzILOpPure *zeroed_eflag = LOGAND(VARG(x86_registers[X86_REG_EFLAGS]), LOGNOT(shifted_one));
+	RzILOpPure *final_eflag = LOGOR(zeroed_eflag, shifted_val);
+	return SETG(x86_registers[X86_REG_EFLAGS], final_eflag);
 }
 
 /**
@@ -319,6 +338,33 @@ static RzILOpEffect *x86_il_invalid(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
 	return EMPTY();
 }
 
+/* 8086/8088 instructions*/
+
+static RzILOpEffect *x86_il_aaa(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
+	if (analysis->bits == 64 || op->prefix[0] == X86_PREFIX_LOCK) {
+		// #UD exception
+		return NULL;
+	} else {
+		RzILOpPure *low_al = LOGAND(VARG(x86_registers[X86_REG_AL]), U16(0x0f));
+		RzILOpPure *al_ovf = UGT(low_al, U16(9));
+		RzILOpPure *cond = OR(al_ovf, NON_ZERO(x86_il_get_eflags(X86_EFLAGS_AF)));
+
+		RzILOpEffect *set_ax = SETG(x86_registers[X86_REG_AX], ADD(VARG(x86_registers[X86_REG_AX]), U16(0x106)));
+		RzILOpEffect *set_af = x86_il_set_eflags(X86_EFLAGS_AF, IL_TRUE);
+		RzILOpEffect *set_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_TRUE);
+		RzILOpEffect *true_cond = SEQ3(set_ax, set_af, set_cf);
+
+		set_af = x86_il_set_eflags(X86_EFLAGS_AF, IL_FALSE);
+		set_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_FALSE);
+		RzILOpEffect *false_cond = SEQ2(set_af, set_cf);
+
+		RzILOpEffect *final_cond = BRANCH(cond, true_cond, false_cond);
+		RzILOpEffect *set_al = SETG(x86_registers[X86_REG_AL], LOGAND(VARG(x86_registers[X86_REG_AL]), U16(0x0f)));
+
+		return SEQ2(final_cond, set_al);
+	}
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(X86Ins *aop, ut64 pc, RzAnalysis *analysis);
 
 /**
@@ -326,6 +372,7 @@ typedef RzILOpEffect *(*x86_il_ins)(X86Ins *aop, ut64 pc, RzAnalysis *analysis);
  */
 static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_INVALID] = x86_il_invalid,
+	[X86_INS_AAA] = x86_il_aaa,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
