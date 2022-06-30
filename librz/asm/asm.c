@@ -49,18 +49,21 @@ static bool is_alpha_num(const char *c) {
 	return is_num(c) || isalpha(c[0]);
 }
 
-static bool is_separator(const char c) {
-	if (!isascii(c)) {
+static bool is_separator(const char *c) {
+	if (!isascii(*c)) {
 		return false; // UTF-8
 	}
-	return (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ',' || c == '.' || c == '#' || c == ':' || c == ' ');
+	return (*c == '(' || *c == ')' || *c == '[' || *c == ']' || *c == '{' || *c == '}' || *c == ',' || *c == '.' || *c == '#' || *c == ':' || *c == ' ' ||
+		(c[0] == '|' && c[1] == '|') ||
+		(c[0] == '=' && c[1] == '=') ||
+		(c[0] == '<' && c[1] == '='));
 }
 
-static bool is_operator(const char c) {
-	if (!isascii(c)) {
+static bool is_operator(const char *c) {
+	if (!isascii(*c)) {
 		return false; // UTF-8
 	}
-	return (c == '+' || c == '-' || c == '/' || c == '>' || c == '<' || c == '*' || c == '%' || c == '|' || c == '&' || c == '=' || c == '!');
+	return (*c == '+' || *c == '-' || *c == '/' || *c == '>' || *c == '<' || *c == '*' || *c == '%' || *c == '|' || *c == '&' || *c == '=' || *c == '!');
 }
 
 static bool is_register(const char *name, RZ_BORROW RzRegSet *regset) {
@@ -1535,17 +1538,17 @@ static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType typ
 	case RZ_ASM_TOKEN_SEPARATOR:
 		do {
 			++j;
-		} while (is_separator(*(str + j)));
+		} while (is_separator(str + j));
 		break;
 	case RZ_ASM_TOKEN_OPERATOR:
 		do {
 			++j;
-		} while (is_operator(*(str + j)));
+		} while (is_operator(str + j));
 		break;
 	case RZ_ASM_TOKEN_UNKNOWN:
 		do {
 			++j;
-		} while (!isascii(*(str + j)) && !is_operator(*(str + j)) && !is_separator(*(str + j)) && !is_alpha_num(str + j));
+		} while (!isascii(*(str + j)) && !is_operator(str + j) && !is_separator(str + j) && !is_alpha_num(str + j));
 	}
 	return j - i;
 }
@@ -1650,10 +1653,10 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_MNEMONIC);
 				add_token(toks, i, l, RZ_ASM_TOKEN_MNEMONIC, 0);
 			}
-		} else if (is_operator(str[i])) {
+		} else if (is_operator(str + i)) {
 			l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_OPERATOR);
 			add_token(toks, i, l, RZ_ASM_TOKEN_OPERATOR, 0);
-		} else if (is_separator(str[i])) {
+		} else if (is_separator(str + i)) {
 			l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_SEPARATOR);
 			add_token(toks, i, l, RZ_ASM_TOKEN_SEPARATOR, 0);
 		} else { // Unknown tokens. UTF-8 and others.
