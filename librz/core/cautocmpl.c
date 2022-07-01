@@ -517,22 +517,6 @@ static void autocmplt_cmd_arg_rznum(RzCore *core, RzLineNSCompletionResult *res,
 	autocmplt_cmd_arg_help_var(core, res, s, len);
 }
 
-static void autocmplt_cmd_arg_zign_space(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	RzSpaces *zs = &core->analysis->zign_spaces;
-	RzSpace *space;
-	RzSpaceIter it;
-
-	rz_spaces_foreach(zs, it, space) {
-		if (!strncmp(space->name, s, len)) {
-			rz_line_ns_completion_result_add(res, space->name);
-		}
-	}
-
-	if (len == 0) {
-		rz_line_ns_completion_result_add(res, "*");
-	}
-}
-
 static void autocmplt_cmd_arg_choices(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len, const RzCmdDescArg *arg) {
 	char **oc, **c;
 	oc = c = arg->choices_cb ? arg->choices_cb(core) : (char **)arg->choices;
@@ -693,9 +677,6 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_ENV:
 		autocmplt_cmd_arg_env(res, s, len);
-		break;
-	case RZ_CMD_ARG_TYPE_ZIGN_SPACE:
-		autocmplt_cmd_arg_zign_space(core, res, s, len);
 		break;
 	case RZ_CMD_ARG_TYPE_CHOICES:
 		autocmplt_cmd_arg_choices(core, res, s, len, arg);

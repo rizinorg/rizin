@@ -931,7 +931,10 @@ static bool cb_binstrenc(void *user, void *data) {
 			if (core->bin) {
 				free(core->bin->strenc);
 				core->bin->strenc = !strcmp(node->value, "guess") ? NULL : strdup(node->value);
-				rz_bin_reset_strings(core->bin);
+				RzBinFile *bf = rz_bin_cur(core->bin);
+				if (bf && bf->o) {
+					rz_bin_object_reset_strings(core->bin, bf, bf->o);
+				}
 			}
 			return true;
 		}
@@ -1059,14 +1062,6 @@ static bool cb_asmsyntax(void *user, void *data) {
 		}
 		rz_asm_set_syntax(core->rasm, syntax);
 	}
-	return true;
-}
-
-static bool cb_dirzigns(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	free(core->analysis->zign_path);
-	core->analysis->zign_path = strdup(node->value);
 	return true;
 }
 
@@ -2493,7 +2488,10 @@ static bool cb_binmaxstrbuf(void *user, void *data) {
 		}
 		core->bin->maxstrbuf = v;
 		if (v > old_v) {
-			rz_bin_reset_strings(core->bin);
+			RzBinFile *bf = rz_bin_cur(core->bin);
+			if (bf && bf->o) {
+				rz_bin_object_reset_strings(core->bin, bf, bf->o);
+			}
 		}
 		return true;
 	}
@@ -2509,7 +2507,10 @@ static bool cb_binmaxstr(void *user, void *data) {
 			v = 0;
 		}
 		core->bin->maxstrlen = v;
-		rz_bin_reset_strings(core->bin);
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
 		return true;
 	}
 	return true;
@@ -2524,7 +2525,10 @@ static bool cb_binminstr(void *user, void *data) {
 			v = 4; // HACK
 		}
 		core->bin->minstrlen = v;
-		rz_bin_reset_strings(core->bin);
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
 		return true;
 	}
 	return true;
@@ -3256,26 +3260,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	SETCB("log.events", "false", &cb_log_events, "Remote HTTP server to sync events with");
 
-	// zign
-	SETPREF("zign.prefix", "sign", "Default prefix for zignatures matches");
-	SETI("zign.maxsz", 500, "Maximum zignature length");
-	SETI("zign.minsz", 16, "Minimum zignature length for matching");
-	SETI("zign.mincc", 10, "Minimum cyclomatic complexity for matching");
-	SETBPREF("zign.match.graph", "true", "Use graph metrics for matching");
-	SETBPREF("zign.match.bytes", "true", "Use bytes patterns for matching");
-	SETBPREF("zign.match.offset", "false", "Use original offset for matching");
-	SETBPREF("zign.match.refs", "true", "Use references for matching");
-	SETBPREF("zign.match.hash", "true", "Use Hash for matching");
-	SETBPREF("zign.match.types", "false", "Use types for matching");
-	char home_zigns_msg[1024];
-	char *home_zigns_dir = rz_path_home_prefix(RZ_ZIGNS);
-	rz_strf(home_zigns_msg, "Autoload all zignatures located in %s", home_zigns_dir);
-	free(home_zigns_dir);
-	SETBPREF("zign.autoload", "false", home_zigns_msg);
-	SETPREF("zign.diff.bthresh", "1.0", "Threshold for diffing zign bytes [0, 1] (see zc?)");
-	SETPREF("zign.diff.gthresh", "1.0", "Threshold for diffing zign graphs [0, 1] (see zc?)");
-	SETPREF("zign.threshold", "0.0", "Minimum similarity required for inclusion in zb output");
-
 	/* diff */
 	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
 	SETI("diff.from", 0, "Set source diffing address for px (uses cc command)");
@@ -3309,9 +3293,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("dir.projects", projects_dir, "Default path for projects");
 	free(projects_dir);
 #endif
-	home_zigns_dir = rz_path_home_prefix(RZ_ZIGNS);
-	SETCB("dir.zigns", home_zigns_dir, &cb_dirzigns, "Default path for zignatures (see zo command)");
-	free(home_zigns_dir);
 	SETPREF("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
 	SETBPREF("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETBPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");

@@ -1143,7 +1143,7 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 	for (i = 0; i < sizeof(buf); i++) {
 		ret = rz_analysis_op(core->analysis, &op, base + i,
 			buf + i, sizeof(buf) - i, RZ_ANALYSIS_OP_MASK_BASIC);
-		if (ret) {
+		if (ret > 0) {
 			len = op.size;
 			if (len < 1) {
 				len = 1;
@@ -2092,7 +2092,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		" v  vars\n"
 		" x  xrefs\n"
 		" X  refs\n"
-		" z  browse function zignatures\n"
 		" :  run command\n";
 	for (;;) {
 		rz_cons_clear00();
@@ -2109,11 +2108,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		switch (ch) {
 		case '1':
 			rz_core_visual_bit_editor(core);
-			break;
-		case 'z': // "vbz"
-			if (rz_core_visual_view_zigns(core)) {
-				return;
-			}
 			break;
 		case 'g': // "vbg"
 			if (rz_core_visual_view_graph(core)) {

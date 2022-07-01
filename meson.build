@@ -199,7 +199,6 @@ if host_machine.system() == 'windows'
   rizin_datdir_rz = rizin_datdir
   rizin_wwwroot = rizin_datdir + '\\\\' + 'www'
   rizin_sdb = rizin_datdir
-  rizin_zigns = rizin_datdir + '\\\\' + 'zigns'
   rizin_sigdb = rizin_datdir + '\\\\' + 'sigdb'
   rizin_themes = rizin_datdir + '\\\\' + 'cons'
   rizin_fortunes = rizin_datdir + '\\\\' + 'fortunes'
@@ -211,7 +210,6 @@ else
   rizin_datdir_rz = rizin_datdir / 'rizin'
   rizin_wwwroot = rizin_datdir_rz / 'www'
   rizin_sdb = rizin_datdir_rz
-  rizin_zigns = rizin_datdir_rz / 'zigns'
   rizin_sigdb = rizin_datdir_rz / 'sigdb'
   rizin_themes = rizin_datdir_rz / 'cons'
   rizin_fortunes = rizin_datdir_rz / 'fortunes'
@@ -230,7 +228,6 @@ bindir_depth = py_cmd.stdout().strip()
 opts_overwrite = [
   'rizin_wwwroot',
   'rizin_sdb',
-  'rizin_zigns',
   'rizin_sigdb',
   'rizin_themes',
   'rizin_fortunes',
@@ -416,7 +413,6 @@ userconf.set10('HAVE_JEMALLOC', host_machine.system() != 'windows' and (host_mac
 userconf.set('DATADIR', rizin_datdir)
 userconf.set('WWWROOT', rizin_wwwroot)
 userconf.set('SDB', rizin_sdb)
-userconf.set('ZIGNS', rizin_zigns)
 userconf.set('SIGDB', rizin_sigdb)
 userconf.set('THEMES', rizin_themes)
 userconf.set('FORTUNES', rizin_fortunes)
@@ -747,7 +743,6 @@ summary({
   'datadir': rizin_datdir,
   'wwwroot': rizin_wwwroot,
   'sdb': rizin_sdb,
-  'zigns': rizin_zigns,
   'sigdb': rizin_sigdb,
   'themes': rizin_themes,
   'fortunes': rizin_fortunes,

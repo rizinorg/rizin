@@ -5426,7 +5426,7 @@ toro:
 		// TODO: support in-the-middle-of-instruction too
 		rz_analysis_op_fini(&ds->analysis_op);
 		if (rz_analysis_op(core->analysis, &ds->analysis_op, core->offset + core->print->cur,
-			    buf + core->print->cur, (int)(len - core->print->cur), DS_ANALYSIS_OP_MASK)) {
+			    buf + core->print->cur, (int)(len - core->print->cur), DS_ANALYSIS_OP_MASK) > 0) {
 			// TODO: check for ds->analysis_op.type and ret
 			ds->dest = ds->analysis_op.jump;
 		}

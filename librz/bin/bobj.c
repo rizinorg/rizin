@@ -7,6 +7,45 @@
 #include <rz_util.h>
 #include "i/private.h"
 
+/**
+ * \brief  Tries to decode the base64 string hold by RzBinString and overwrites it
+ *
+ * \param  bstr  The RzBinString to decode
+ */
+RZ_API void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
+	rz_return_if_fail(bstr);
+
+	char *decoded = bstr->string;
+	do {
+		// ensure to decode base64 strings encoded multiple times.
+		char *tmp = (char *)rz_base64_decode_dyn(decoded, -1);
+		if (!tmp || !rz_str_is_printable(tmp)) {
+			free(tmp);
+			break;
+		}
+		free(decoded);
+		decoded = tmp;
+	} while (1);
+
+	if (decoded == bstr->string) {
+		return;
+	}
+	free(bstr->string);
+	bstr->string = decoded;
+	bstr->length = strlen(decoded);
+	bstr->type = RZ_STRING_ENC_BASE64;
+}
+
+static void bin_object_decode_all_base64_strings(RzList *strings) {
+	rz_return_if_fail(strings);
+
+	RzBinString *bstr;
+	RzListIter *iter;
+	rz_list_foreach (strings, iter, bstr) {
+		rz_bin_string_decode_base64(bstr);
+	}
+}
+
 RZ_API void rz_bin_mem_free(void *data) {
 	RzBinMem *mem = (RzBinMem *)data;
 	if (mem && mem->mirrors) {
@@ -161,7 +200,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_list_free(o->libs);
 	rz_bin_reloc_storage_free(o->relocs);
 	rz_list_free(o->sections);
-	rz_list_free(o->strings);
+	rz_bin_string_database_free(o->strings);
 	ht_pp_free(o->import_name_symbols);
 	rz_list_free(o->symbols);
 	rz_list_free(o->classes);
@@ -353,7 +392,6 @@ static void rz_bin_object_rebuild_classes_ht(RzBinObject *o) {
 RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	rz_return_val_if_fail(bf && o && o->plugin, false);
 
-	int i;
 	RzBin *bin = bf->rbin;
 	RzBinPlugin *p = o->plugin;
 	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
@@ -379,7 +417,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	}
 	// XXX this is expensive because is O(n^n)
 	if (p->binsym) {
-		for (i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
+		for (size_t i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 			o->binsym[i] = p->binsym(bf, i);
 			if (o->binsym[i]) {
 				o->binsym[i]->paddr += o->opts.loadaddr;
@@ -460,18 +498,23 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 		}
 	}
 	if (bin->filter_rules & RZ_BIN_REQ_STRINGS) {
+		RzList *strings;
 		if (p->strings) {
-			o->strings = p->strings(bf);
+			strings = p->strings(bf);
 		} else {
 			// when a bin plugin does not provide it's own strings
 			// we always take all the strings found in the binary
 			// the method also converts the paddrs to vaddrs
-			o->strings = rz_bin_file_strings(bf, minlen, true);
+			strings = rz_bin_file_strings(bf, minlen, true);
 		}
+
 		if (bin->debase64) {
-			rz_bin_object_filter_strings(o);
+			bin_object_decode_all_base64_strings(strings);
 		}
-		REBASE_PADDR(o, o->strings, RzBinString);
+		REBASE_PADDR(o, strings, RzBinString);
+
+		// RzBinStrDb becomes the owner of the RzList strings
+		o->strings = rz_bin_string_database_new(strings);
 	}
 
 	if (o->info && RZ_STR_ISEMPTY(o->info->compiler)) {
@@ -610,39 +653,6 @@ RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *bf, const char *a
 		}
 	}
 	return NULL;
-}
-
-RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo) {
-	rz_return_if_fail(bo && bo->strings);
-
-	RzList *strings = bo->strings;
-	RzBinString *ptr;
-	RzListIter *iter;
-	rz_list_foreach (strings, iter, ptr) {
-		char *dec = (char *)rz_base64_decode_dyn(ptr->string, -1);
-		if (dec) {
-			char *s = ptr->string;
-			for (;;) {
-				char *dec2 = (char *)rz_base64_decode_dyn(s, -1);
-				if (!dec2) {
-					break;
-				}
-				if (!rz_str_is_printable(dec2)) {
-					free(dec2);
-					break;
-				}
-				free(dec);
-				s = dec = dec2;
-			}
-			if (rz_str_is_printable(dec) && strlen(dec) > 3) {
-				free(ptr->string);
-				ptr->string = dec;
-				ptr->type = RZ_STRING_ENC_BASE64;
-			} else {
-				free(dec);
-			}
-		}
-	}
 }
 
 /**
@@ -787,7 +797,10 @@ RZ_API const RzList *rz_bin_object_get_classes(RzBinObject *obj) {
  */
 RZ_API const RzList *rz_bin_object_get_strings(RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
-	return obj->strings;
+	if (!obj->strings) {
+		return NULL;
+	}
+	return obj->strings->list;
 }
 
 /**
@@ -817,48 +830,43 @@ RZ_API const RzList *rz_bin_object_get_resources(RzBinObject *obj) {
 /**
  * \brief Remove all previously identified strings in the binary object and scan it again for strings.
  */
-RZ_API const RzList *rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
-	rz_return_val_if_fail(bin && bf && obj, NULL);
-	if (obj->strings) {
-		rz_list_free(obj->strings);
-		obj->strings = NULL;
-	}
+RZ_API bool rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
+	rz_return_val_if_fail(bin && bf && obj, false);
+	RZ_FREE_CUSTOM(obj->strings, rz_bin_string_database_free);
 
+	RzList *strings = NULL;
 	RzBinPlugin *plugin = obj->plugin;
 	if (plugin && plugin->strings) {
-		obj->strings = plugin->strings(bf);
+		strings = plugin->strings(bf);
 	} else {
 		// when a bin plugin does not provide it's own strings
 		// we always take all the strings found in the binary
 		// the method also converts the paddrs to vaddrs
-		obj->strings = rz_bin_file_strings(bf, bin->minstrlen, true);
+		strings = rz_bin_file_strings(bf, bin->minstrlen, true);
 	}
+
 	if (bin->debase64) {
-		rz_bin_object_filter_strings(obj);
+		bin_object_decode_all_base64_strings(strings);
 	}
-	return obj->strings;
+	REBASE_PADDR(obj, strings, RzBinString);
+
+	// RzBinStrDb becomes the owner of the RzList strings
+	obj->strings = rz_bin_string_database_new(strings);
+	return obj->strings != NULL;
 }
 
 /**
- * \brief Return true if at address \p va in the binary object \p obj there is a string
+ * \brief Return RzBinString if at \p address \p there is an entry in the RzBinObject string database
  */
-RZ_API bool rz_bin_object_is_string(RzBinObject *obj, ut64 va) {
+RZ_API RZ_BORROW RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va) {
 	rz_return_val_if_fail(obj, false);
-	RzBinString *string;
-	RzListIter *iter;
-	const RzList *list;
-	if (!(list = rz_bin_object_get_strings(obj))) {
-		return false;
+	if (!obj->strings) {
+		return NULL;
 	}
-	rz_list_foreach (list, iter, string) {
-		if (string->vaddr == va) {
-			return true;
-		}
-		if (string->vaddr > va) {
-			return false;
-		}
+	if (is_va) {
+		return ht_up_find(obj->strings->virt, address, NULL);
 	}
-	return false;
+	return ht_up_find(obj->strings->phys, address, NULL);
 }
 
 /**
@@ -1016,4 +1024,106 @@ RZ_API ut64 rz_bin_object_v2p(RzBinObject *obj, ut64 vaddr) {
 		return UT64_MAX;
 	}
 	return m->paddr + delta;
+}
+
+/**
+ * \brief   Allocates and initializes the RzBinStrDb structure with the given list of strings
+ *
+ * \param   list  The list of strings to initialize the database with
+ *
+ * \return  On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RzList /*<RzBinString *>*/ *list) {
+	RzBinStrDb *db = RZ_NEW0(RzBinStrDb);
+	if (!db) {
+		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb\n");
+		rz_list_free(list);
+		return NULL;
+	}
+
+	db->list = list ? list : rz_list_newf((RzListFree)rz_bin_string_free);
+	db->phys = ht_up_new0();
+	db->virt = ht_up_new0();
+	if (!db->list || !db->phys || !db->virt) {
+		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb internal data structure.\n");
+		goto fail;
+	}
+
+	RzListIter *it;
+	RzBinString *bstr;
+	rz_list_foreach (list, it, bstr) {
+		if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
+			RZ_LOG_ERROR("rz_bin: Cannot insert/update RzBinString in RzBinStrDb (phys)\n");
+			goto fail;
+		}
+		if (!ht_up_update(db->virt, bstr->vaddr, bstr)) {
+			RZ_LOG_ERROR("rz_bin: Cannot insert/update RzBinString in RzBinStrDb (virt)\n");
+			goto fail;
+		}
+	}
+	return db;
+
+fail:
+	rz_bin_string_database_free(db);
+	return NULL;
+}
+
+/**
+ * \brief  Frees a RzBinStrDb structure
+ *
+ * \param  db    The string database to free
+ */
+RZ_IPI void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db) {
+	if (!db) {
+		return;
+	}
+	rz_list_free(db->list);
+	ht_up_free(db->phys);
+	ht_up_free(db->virt);
+	free(db);
+}
+
+/**
+ * \brief   { function_description }
+ *
+ * \param   db    The database
+ * \param   bstr  The bstr
+ *
+ * \return  { description_of_the_return_value }
+ */
+RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzBinString *bstr) {
+	rz_return_val_if_fail(db && bstr, false);
+
+	if (!rz_list_append(db->list, bstr)) {
+		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (list)\n");
+		return false;
+	}
+
+	if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
+		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (phys)\n");
+		return false;
+	}
+
+	if (!ht_up_update(db->virt, bstr->vaddr, bstr)) {
+		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (virt)\n");
+		return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Return true if the given \p address \p has been removed to the RzBinObject string database
+ */
+RZ_API bool rz_bin_string_database_remove(RZ_NONNULL RzBinStrDb *db, ut64 address, bool is_va) {
+	rz_return_val_if_fail(db, false);
+
+	RzBinString *bstr = ht_up_find(is_va ? db->virt : db->phys, address, NULL);
+	if (!bstr) {
+		return false;
+	}
+
+	ht_up_delete(db->virt, bstr->vaddr);
+	ht_up_delete(db->phys, bstr->paddr);
+	rz_list_delete_data(db->list, bstr);
+	return true;
 }

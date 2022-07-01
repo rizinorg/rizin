@@ -1373,8 +1373,6 @@ static void fill_args_json(const RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 			CASE_TYPE(RZ_CMD_ARG_TYPE_RZNUM, "expression");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_STRING, "string");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_ENV, "environment_variable");
-			CASE_TYPE(RZ_CMD_ARG_TYPE_ZIGN, "zignature");
-			CASE_TYPE(RZ_CMD_ARG_TYPE_ZIGN_SPACE, "zignature_space");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_CHOICES, "choice");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_FCN, "function");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_FILE, "filename");

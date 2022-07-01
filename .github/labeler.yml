@@ -149,7 +149,6 @@ visual:
   - librz/core/visual_tabs.inc
   - librz/core/vmenus.c
   - librz/core/vmenus_graph.c
-  - librz/core/vmenus_zigns.c
 
 panel:
   - librz/core/panels.c
