@@ -2669,6 +2669,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->yank_buf, rz_buf_free);
 	RZ_FREE_CUSTOM(c->graph, rz_agraph_free);
 	RZ_FREE(c->asmqjmps);
+	RZ_FREE_CUSTOM(c->visual_filter, rz_list_free);
 	RZ_FREE_CUSTOM(c->sdb, sdb_free);
 	RZ_FREE_CUSTOM(c->parser, rz_parse_free);
 	RZ_FREE(c->times);

@@ -2238,11 +2238,13 @@ static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *t
 static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	char *var_functions;
+	char *keyword;
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
 	RzAnalysisFunction *fcn;
+	RzList * filter_fcn;
 	int window, i = 0, print_full_func;
-	RzListIter *iter;
+	RzListIter *iter, *iter1;
 
 	// Adjust the windows size automaticaly
 	(void)rz_cons_get_size(&window);
@@ -2251,7 +2253,23 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	const char *color_addr = core->cons->context->pal.offset;
 	const char *color_fcn = core->cons->context->pal.fname;
 
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	// perform filter here
+	if (core->visual_filter) {
+		filter_fcn = rz_list_newf(NULL);
+		rz_list_foreach (core->analysis->fcns, iter, fcn) {
+			bool contain = true;
+			rz_list_foreach (core->visual_filter, iter1, keyword) {
+				contain = contain && strstr(fcn->name, keyword);
+			}
+			if (contain) {
+				rz_list_append(filter_fcn, fcn);
+			}
+		}
+	} else {
+		filter_fcn = core->analysis->fcns;
+	}
+
+	rz_list_foreach (filter_fcn, iter, fcn) {
 		print_full_func = true;
 		if (i >= wdelta) {
 			if (i > window + wdelta - 1) {
@@ -2294,6 +2312,9 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 			}
 		}
 		i++;
+	}
+	if (filter_fcn != core->analysis->fcns) {
+		rz_list_free(filter_fcn);
 	}
 	return addr;
 }
@@ -2708,6 +2729,29 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 		}
 		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
+		case 'f':
+			// add new keyword
+			if (!core->visual_filter) {
+				core->visual_filter = rz_list_newf(free);
+				if (!core->visual_filter) {
+					break;
+				}
+			}
+			char *keyword = malloc(256);
+			if (!keyword) {
+				break;
+			}
+			rz_line_set_prompt("filter keyword: ");
+			rz_core_visual_showcursor(core, true);
+			if (rz_cons_fgets(keyword, 256, 0, NULL) >= 0 && *keyword) {
+				rz_str_trim(keyword);
+				rz_list_append(core->visual_filter, keyword);
+			}
+			break;
+		case 'F':
+			// reset all keywords
+			RZ_FREE_CUSTOM(core->visual_filter, rz_list_free);
+			break;
 		case '[':
 			rz_cons_singleton()->show_vals = true;
 			break;
