@@ -1317,7 +1317,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAs
 	new->str = rz_strbuf_new(rz_strbuf_get(toks->str));
 	new->op_type = toks->op_type;
 
-	rz_return_val_if_fail(new->tokens && new->str, NULL);
+	rz_return_val_if_fail(new->tokens &&new->str, NULL);
 	return new;
 }
 
@@ -1715,7 +1715,7 @@ rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NU
 
 /**
  * \brief Does all kinds of NULL checks on the parameters and returns an initialized RzAsmParseParam or NULL on failure.
- * 
+ *
  * \param reg The RzReg which holds the reg_set.
  * \return RzAsmParseParam* Pointer to the RzAsmParseParam struct or NULL.
  */
