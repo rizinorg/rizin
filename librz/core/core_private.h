@@ -137,6 +137,9 @@ RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state);
 RZ_IPI void rz_core_flag_real_name_print(RzFlag *f, RzCmdStateOutput *state);
 RZ_IPI void rz_core_flag_range_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
 
+/* cdisasm.c */
+RZ_IPI bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes);
+
 /* cmd_seek.c */
 
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);

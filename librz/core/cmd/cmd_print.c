@@ -6637,7 +6637,11 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 		return false;
 	}
 
-	RZ_LOG_VERBOSE("disassembly at: 0x%" PFMT64x ", blocksize: %" PFMT32d " n_bytes: %" PFMT32d ", n_instrs: %" PFMT32d "\n", core->offset, core->blocksize, n_bytes, n_instrs);
+	RZ_LOG_VERBOSE("disassembly at: 0x%" PFMT64x " "
+		       "blocksize: %" PFMT32d " "
+		       "n_bytes: %" PFMT32d " "
+		       "n_instrs: %" PFMT32d "\n",
+		core->offset, core->blocksize, n_bytes, n_instrs);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = cbytes,
 	};

@@ -302,7 +302,7 @@ typedef struct {
 	int maxflags;
 	int asm_types;
 
-	RzList *list;
+	RzPVector *vec;
 } RzDisasmState;
 
 static void ds_setup_print_pre(RzDisasmState *ds, bool tail, bool middle);
@@ -1263,7 +1263,7 @@ static RzAnalysisDisasmText *ds_disasm_text(RzDisasmState *ds, RzAnalysisDisasmT
 }
 
 static void ds_begin_line(RzDisasmState *ds) {
-	if (ds->list) {
+	if (ds->vec) {
 		return;
 	}
 
@@ -1292,14 +1292,14 @@ static void ds_begin_line(RzDisasmState *ds) {
 }
 
 static void ds_newline(RzDisasmState *ds) {
-	if (ds->list) {
+	if (ds->vec) {
 		RzAnalysisDisasmText *t = RZ_NEW0(RzAnalysisDisasmText);
 		if (!t) {
 			return;
 		}
 		ds_disasm_text(ds, t, rz_cons_get_buffer_dup());
 		rz_cons_reset();
-		rz_list_append(ds->list, t);
+		rz_pvector_push(ds->vec, t);
 		return;
 	}
 
@@ -5345,7 +5345,6 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	RZ_NULLABLE RzCoreDisasmOptions *options) {
 	rz_return_val_if_fail(core && buf, 0);
 
-	RzList *out_list = options ? options->out_list : NULL;
 	PJ *pj = options ? options->pj : NULL;
 	bool json = options ? options->json : false;
 
@@ -5376,9 +5375,9 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	ds->buf_line_begin = 0;
 	ds->pdf = options ? options->function : NULL;
 	ds->pj = NULL;
-	ds->list = out_list;
+	ds->vec = options ? options->vec : NULL;
 
-	if (!out_list && json) {
+	if (!ds->vec && json) {
 		ds->pj = pj ? pj : pj_new();
 		if (!ds->pj) {
 			ds_free(ds);
@@ -5415,7 +5414,7 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 			}
 		}
 	}
-	if (!out_list && ds->pj && !pj) {
+	if (!ds->vec && ds->pj && !pj) {
 		pj_a(ds->pj);
 	}
 toro:
@@ -5451,7 +5450,7 @@ toro:
 		ds->vat = rz_core_pava(core, ds->at);
 		if (rz_cons_is_breaked()) {
 			RZ_FREE(nbuf);
-			if (!out_list && ds->pj) {
+			if (!ds->vec && ds->pj) {
 				rz_cons_pop();
 			}
 			rz_cons_break_pop();
@@ -5784,7 +5783,7 @@ toro:
 		RZ_FREE(nbuf);
 	}
 #endif
-	if (!out_list && ds->pj) {
+	if (!ds->vec && ds->pj) {
 		rz_cons_pop();
 		if (!pj) {
 			pj_end(ds->pj);
@@ -5810,7 +5809,7 @@ toro:
 /**
  * \brief Is \p i_opcodes \< \p nb_opcodes and \p i_bytes \< \p nb_bytes ?
  */
-RZ_API bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes) {
+RZ_IPI bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes) {
 	if (nb_opcodes > 0) {
 		if (nb_bytes > 0) {
 			return i_opcodes < nb_opcodes && i_bytes < nb_bytes;

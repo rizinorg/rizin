@@ -831,7 +831,7 @@ typedef struct rz_core_disasm_options {
 	bool json; ///< Print in json
 	PJ *pj; ///< PJ instance
 	RzAnalysisFunction *function; ///< Disassemble a function
-	RzList *out_list; ///< Not print, but append as RzList<RzAnalysisDisasmText>
+	RzPVector *vec; ///< Not print, but append as RzList<RzAnalysisDisasmText>
 } RzCoreDisasmOptions;
 
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
@@ -863,7 +863,6 @@ RZ_API void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at, RZ_INOUT RZ_
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 RZ_API void rz_analysis_disasm_text_free(RZ_NULLABLE void *p);
-RZ_API bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes);
 RZ_API bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core, RZ_NONNULL int *pn_opcodes, RZ_NONNULL int *pn_bytes);
 
 /* cbin.c */
