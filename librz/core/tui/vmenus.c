@@ -2234,21 +2234,50 @@ static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *t
 	rz_list_free(list);
 }
 
+/**
+ * \brief Filter the functions in visual analysis mode (helper of command f)
+ *
+ * \param core
+ * \param filter_fcn store the filtered functions
+ * \return return the number of functions that conform to the keywords
+ */
+static ut32 filter_function(RzCore *core, RzList *filter_fcn) {
+	RzListIter *iter, *iter1;
+	RzAnalysisFunction *fcn;
+	size_t num = 0;
+	char *keyword;
+
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		bool contain = true;
+		rz_list_foreach (core->visual_filter, iter1, keyword) {
+			contain = contain && strstr(fcn->name, keyword);
+		}
+		if (!contain) {
+			continue;
+		}
+		if (filter_fcn) {
+			rz_list_append(filter_fcn, fcn);
+		}
+		num++;
+	}
+
+	return num;
+}
+
 // In visual mode, display function list
 static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	char *var_functions;
-	char *keyword;
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
 	RzAnalysisFunction *fcn;
-	RzList * filter_fcn;
+	RzList *filter_fcn = core->analysis->fcns;
 	int window, i = 0, print_full_func;
-	RzListIter *iter, *iter1;
+	RzListIter *iter;
 
 	// Adjust the windows size automaticaly
 	(void)rz_cons_get_size(&window);
-	window -= 8; // Size of printed things
+	window -= 9; // Size of printed things
 	bool color = rz_config_get_i(core->config, "scr.color");
 	const char *color_addr = core->cons->context->pal.offset;
 	const char *color_fcn = core->cons->context->pal.fname;
@@ -2256,17 +2285,9 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	// perform filter here
 	if (core->visual_filter) {
 		filter_fcn = rz_list_newf(NULL);
-		rz_list_foreach (core->analysis->fcns, iter, fcn) {
-			bool contain = true;
-			rz_list_foreach (core->visual_filter, iter1, keyword) {
-				contain = contain && strstr(fcn->name, keyword);
-			}
-			if (contain) {
-				rz_list_append(filter_fcn, fcn);
-			}
+		if (filter_fcn) {
+			filter_function(core, filter_fcn);
 		}
-	} else {
-		filter_fcn = core->analysis->fcns;
 	}
 
 	rz_list_foreach (filter_fcn, iter, fcn) {
@@ -2431,9 +2452,9 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 
 static const char *help_fun_visual[] = {
 	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to ", "(X)", "xrefs from\n",
-	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(v)", "vars\n",
+	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(:)", "shell ", "(v)", "vars\n",
 	"(j/k)", "next/prev ", "(tab)", "column ", "(_)", "hud ", "(?)", " help\n",
-	"(s)", "function signature ", "(:)", "shell ", "(q)", "quit\n\n",
+	"(f/F)", "set/reset filter ", "(s)", "function signature ", "(q)", "quit\n\n",
 	NULL
 };
 
@@ -2447,6 +2468,7 @@ static const char *help_var_visual[] = {
 static const char *help_vv_visual[] = {
 	"j,k", "select next/prev item or scroll if tab pressed",
 	"J,K", "scroll next/prev page \"\"",
+	"f,F", "set/reset filter keyword",
 	"h,q", "go back, quit",
 	"p,P", "switch next/prev print mode",
 	"v", "view selected function arguments and variables",
@@ -2512,6 +2534,15 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 			rz_cons_printf("-- functions -----------------[ %s ]-->>", printCmds[printMode]);
 		} else {
 			rz_cons_printf("-[ functions ]----------------- %s ---", printCmds[printMode]);
+		}
+		// hints for filtered keywords
+		if (core->visual_filter) {
+			RzListIter *iter;
+			char *keyword;
+			rz_cons_printf("\nfilter name: ");
+			rz_list_foreach(core->visual_filter, iter, keyword) {
+				rz_cons_printf("%s ", keyword);
+			}
 		}
 		if (color) {
 			rz_cons_strcat("\n" Color_RESET);
@@ -2712,7 +2743,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 	int asmbytes = rz_config_get_i(core->config, "asm.bytes");
 	rz_config_set_i(core->config, "asm.bytes", 0);
 	for (;;) {
-		nfcns = rz_list_length(core->analysis->fcns);
+		nfcns = filter_function(core, NULL);
 		addr = rz_core_visual_analysis_refresh(core);
 		if (input && *input) {
 			ch = *input;
@@ -2747,6 +2778,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 				rz_str_trim(keyword);
 				rz_list_append(core->visual_filter, keyword);
 			}
+			option = 0;
 			break;
 		case 'F':
 			// reset all keywords
