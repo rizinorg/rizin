@@ -414,6 +414,34 @@ static RzILOpEffect *x86_il_aam(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ3(temp_al, ah, al);
 }
 
+/**
+ * AAS
+ * ASCII adjust AL after subtraction
+ * 3F | Invalid | Valid
+ */
+static RzILOpEffect *x86_il_aas(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
+	RET_NULL_IF_64BIT_OR_LOCK();
+
+	RzILOpPure *low_al = LOGAND(VARG(x86_registers[X86_REG_AL]), U8(0x0f));
+	RzILOpPure *al_ovf = UGT(low_al, U8(9));
+	RzILOpPure *cond = OR(al_ovf, NON_ZERO(x86_il_get_eflags(X86_EFLAGS_AF)));
+
+	RzILOpEffect *set_ax = SETG(x86_registers[X86_REG_AX], SUB(VARG(x86_registers[X86_REG_AX]), U16(0x6)));
+	RzILOpEffect *set_ah = SETG(x86_registers[X86_REG_AH], SUB(VARG(x86_registers[X86_REG_AH]), U16(0x1)));
+	RzILOpEffect *set_af = x86_il_set_eflags(X86_EFLAGS_AF, IL_TRUE);
+	RzILOpEffect *set_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_TRUE);
+	RzILOpEffect *true_cond = SEQ4(set_ax, set_ah, set_af, set_cf);
+
+	set_af = x86_il_set_eflags(X86_EFLAGS_AF, IL_FALSE);
+	set_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_FALSE);
+	RzILOpEffect *false_cond = SEQ2(set_af, set_cf);
+
+	RzILOpEffect *final_cond = BRANCH(cond, true_cond, false_cond);
+	RzILOpEffect *set_al = SETG(x86_registers[X86_REG_AL], LOGAND(VARG(x86_registers[X86_REG_AL]), U8(0x0f)));
+
+	return SEQ2(final_cond, set_al);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(X86Ins *aop, ut64 pc, RzAnalysis *analysis);
 
 /**
@@ -424,6 +452,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_AAA] = x86_il_aaa,
 	[X86_INS_AAD] = x86_il_aad,
 	[X86_INS_AAM] = x86_il_aam,
+	[X86_INS_AAS] = x86_il_aas,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
