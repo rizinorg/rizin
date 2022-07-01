@@ -3224,7 +3224,7 @@ static bool core_search_for_xrefs_in_boundaries(RzCore *core, ut64 from, ut64 to
 		(to - from > rz_io_size(core->io))) {
 		return false;
 	}
-	return rz_core_analysis_search_xrefs(core, from, to);
+	return rz_core_analysis_search_xrefs(core, from, to) > 0;
 }
 
 /**
