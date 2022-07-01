@@ -1143,7 +1143,7 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 	for (i = 0; i < sizeof(buf); i++) {
 		ret = rz_analysis_op(core->analysis, &op, base + i,
 			buf + i, sizeof(buf) - i, RZ_ANALYSIS_OP_MASK_BASIC);
-		if (ret) {
+		if (ret > 0) {
 			len = op.size;
 			if (len < 1) {
 				len = 1;

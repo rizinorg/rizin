@@ -302,7 +302,7 @@ RZ_API bool rz_core_hack(RzCore *core, const char *op) {
 	}
 	if (hack) {
 		RzAnalysisOp analop;
-		if (!rz_analysis_op(core->analysis, &analop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
+		if (rz_analysis_op(core->analysis, &analop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf("analysis op fail\n");
 			return false;
 		}

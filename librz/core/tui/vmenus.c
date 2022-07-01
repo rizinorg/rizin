@@ -3276,7 +3276,7 @@ onemoretime:
 				RzAnalysisOp op;
 				ut64 size;
 				if (rz_analysis_op(core->analysis, &op, off, core->block + delta,
-					    core->blocksize - delta, RZ_ANALYSIS_OP_MASK_BASIC)) {
+					    core->blocksize - delta, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 					size = off - fcn->addr + op.size;
 					rz_analysis_function_resize(fcn, size);
 				}

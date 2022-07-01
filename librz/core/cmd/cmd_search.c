@@ -1738,7 +1738,7 @@ static int emulateSyscallPrelude(RzCore *core, ut64 at, ut64 curpc) {
 			rz_io_read_at(core->io, curpc, arr, bsize);
 		}
 		inslen = rz_analysis_op(core->analysis, &aop, curpc, arr + i, bsize - i, RZ_ANALYSIS_OP_MASK_BASIC);
-		if (inslen) {
+		if (inslen > 0) {
 			int incr = (core->search->align > 0) ? core->search->align - 1 : inslen - 1;
 			if (incr < 0) {
 				incr = minopcode;
@@ -2036,7 +2036,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 			ut8 bufop[32];
 			rz_io_read_at(core->io, at, bufop, sizeof(bufop));
 			ret = rz_analysis_op(core->analysis, &aop, at, bufop, sizeof(bufop), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-			if (ret) {
+			if (ret > 0) {
 				bool match = false;
 				if (type == 'm') {
 					const char *fam = aop.mnemonic;
