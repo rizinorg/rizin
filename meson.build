@@ -498,6 +498,8 @@ foreach item : [
     # copy_file_range for now disable on freebsd as it s not reliable even for small chunks
     ['copy_file_range', '#ifdef __linux__\n#define _GNU_SOURCE\n#include <unistd.h>\n#endif', []],
     ['backtrace', '', []],
+    ['getpid', '', []],
+    ['_getpid', '', []],
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1], dependencies: item[2])
@@ -628,23 +630,6 @@ endif
 
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
 yxml_dep = yxml_proj.get_variable('yxml_dep')
-
-# handle sdb dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'sdb', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-endif
-
-sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])
-sdb_dep = sdb_proj.get_variable('sdb_whole_dep')
-sdb_exe  = sdb_proj.get_variable('sdb_native_exe')
-
-sdb_gen_cmd = [
-  sdb_exe,
-  '@OUTPUT@',
-  '==',
-  '@INPUT@'
-]
 
 use_rpath = false
 use_rpath_absolute = false

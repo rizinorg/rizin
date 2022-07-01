@@ -49,6 +49,8 @@
 #define HAVE_COPYFILE               @HAVE_COPYFILE@
 #define HAVE_COPY_FILE_RANGE        @HAVE_COPY_FILE_RANGE@
 #define HAVE_BACKTRACE              @HAVE_BACKTRACE@
+#define HAVE_GETPID                 @HAVE_GETPID@
+#define HAVE__GETPID                @HAVE__GETPID@
 
 #define HAVE_HEADER_LINUX_ASHMEM_H  @HAVE_HEADER_LINUX_ASHMEM_H@
 #define HAVE_HEADER_SYS_SHM_H       @HAVE_HEADER_SYS_SHM_H@

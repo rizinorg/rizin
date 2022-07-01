@@ -1,3 +1,4 @@
+subdir('sdb')
 
 rz_util_sources = [
   'alloc.c',
