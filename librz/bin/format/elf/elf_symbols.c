@@ -364,6 +364,78 @@ static bool get_section_elf_symbols(ELFOBJ *bin, RzVector *result, RzBinElfSymbo
 	return true;
 }
 
+static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector *result, RzBinElfSymbolFilter filter, HtUU *set) {
+	// Get symbols from .gnu_debugdata according to https://sourceware.org/gdb/onlinedocs/gdb/MiniDebugInfo.html
+	bool res = false;
+	const RzBinElfSection *gnu_debugdata = Elf_(rz_bin_elf_get_section_with_name)(bin, ".gnu_debugdata");
+	if (!gnu_debugdata) {
+		return false;
+	}
+
+	RzBuffer *data_buf = rz_buf_new_slice(bin->b, gnu_debugdata->offset, gnu_debugdata->size);
+	if (!data_buf) {
+		return false;
+	}
+
+	RzBuffer *dec_buf = rz_buf_new_empty(0);
+	if (!dec_buf) {
+		goto data_buf_err;
+	}
+
+	if (!rz_lzma_dec_buf(data_buf, dec_buf, 1 << 13, NULL)) {
+		goto dec_buf_err;
+	}
+
+	RzBinObjectLoadOptions obj_opts = {
+		.baseaddr = UT64_MAX,
+		.loadaddr = 0,
+		.elf_load_sections = true,
+	};
+	ELFOBJ *debug_data_bin = Elf_(rz_bin_elf_new_buf)(dec_buf, &obj_opts);
+	if (!debug_data_bin) {
+		goto dec_buf_err;
+	}
+
+	RzVector *debug_symbols = Elf_(rz_bin_elf_compute_symbols)(debug_data_bin, filter);
+	if (!debug_symbols) {
+		goto debug_data_err;
+	}
+
+	HtPP *name_set = ht_pp_new0();
+	if (!name_set) {
+		goto debug_symbols_err;
+	}
+
+	RzBinElfSymbol *sym;
+	rz_vector_foreach(result, sym) {
+		ht_pp_insert(name_set, sym->name, sym);
+	}
+
+	rz_vector_foreach(debug_symbols, sym) {
+		bool found;
+		ht_pp_find(name_set, sym->name, &found);
+		if (found) {
+			continue;
+		}
+
+		rz_vector_push(result, sym);
+	}
+	// The ownership has been moved to `result`, no need to free the elements.
+	debug_symbols->len = 0;
+	res = true;
+
+	ht_pp_free(name_set);
+debug_symbols_err:
+	rz_vector_free(debug_symbols);
+debug_data_err:
+	Elf_(rz_bin_elf_free)(debug_data_bin);
+dec_buf_err:
+	rz_buf_free(dec_buf);
+data_buf_err:
+	rz_buf_free(data_buf);
+	return res;
+}
+
 static bool filter_symbol(RZ_UNUSED ELFOBJ *bin, Elf_(Sym) * symbol, RZ_UNUSED bool is_dynamic) {
 	return symbol->st_shndx != SHT_NULL;
 }
@@ -434,6 +506,9 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_compute_symbols)(ELFOBJ *bin, RzBinElfSymbolFil
 		ht_uu_free(set);
 		return NULL;
 	}
+
+	// Parsing .gnu_debugdata is completely optional, ignore errors if any and just continue
+	(void)get_gnu_debugdata_elf_symbols(bin, result, filter, set);
 
 	ht_uu_free(set);
 
