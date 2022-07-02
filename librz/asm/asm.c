@@ -1705,6 +1705,7 @@ rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NU
 		colored_asm = rz_print_colorize_asm_str(p, toks);
 	} else {
 		ts = rz_asm_tokenize_asm_string(asm_str, param);
+		ts->op_type = param ? param->ana_op_type : 0;
 		colored_asm = rz_print_colorize_asm_str(p, toks);
 	}
 	if (!toks) {
@@ -1719,11 +1720,12 @@ rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NU
  * \param reg The RzReg which holds the reg_set.
  * \return RzAsmParseParam* Pointer to the RzAsmParseParam struct or NULL.
  */
-RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(RZ_NULLABLE const RzReg *reg) {
+RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(RZ_NULLABLE const RzReg *reg, ut32 ana_op_type) {
 	if (!reg) {
 		return NULL;
 	}
 	RzAsmParseParam *param = RZ_NEW(RzAsmParseParam);
 	param->reg_sets = reg->regset;
+	param->ana_op_type = ana_op_type;
 	return param;
 }

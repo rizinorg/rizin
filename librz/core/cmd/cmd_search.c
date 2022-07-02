@@ -1122,7 +1122,6 @@ ret:
 }
 
 static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
-	const char *otype;
 	RzCoreAsmHit *hit = NULL;
 	RzListIter *iter;
 	RzList *ropList = NULL;
@@ -1205,7 +1204,7 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 				rz_cons_printf("%s\n", opstr);
 			} else if (colorize) {
 				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg), asmop.asm_toks);
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
 				rz_cons_printf(" %s%s;", rz_strbuf_get(colored_asm), Color_RESET);
 				rz_strbuf_free(colored_asm);
 			} else {
@@ -1246,14 +1245,13 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 			char *asm_op_hex = rz_asm_op_get_hex(&asmop);
 			if (colorize) {
 				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg), asmop.asm_toks);
-				otype = rz_print_color_op_type(core->print, analop.type);
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
 				if (comment) {
-					rz_cons_printf("  0x%08" PFMT64x " %18s%s  %s%s ; %s\n",
-						hit->addr, asm_op_hex, otype, rz_strbuf_get(colored_asm), Color_RESET, comment);
+					rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
+						hit->addr, asm_op_hex, rz_strbuf_get(colored_asm), Color_RESET, comment);
 				} else {
-					rz_cons_printf("  0x%08" PFMT64x " %18s%s  %s%s\n",
-						hit->addr, asm_op_hex, otype, rz_strbuf_get(colored_asm), Color_RESET);
+					rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s\n",
+						hit->addr, asm_op_hex, rz_strbuf_get(colored_asm), Color_RESET);
 				}
 				rz_strbuf_free(colored_asm);
 			} else {

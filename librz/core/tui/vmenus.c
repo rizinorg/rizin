@@ -119,7 +119,7 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 		}
 		{
 			RzStrBuf *colored_asm;
-			colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, rz_asm_get_parse_param(core->analysis->reg), asmop.asm_toks);
+			colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, rz_strbuf_get(colored_asm));
 			rz_strbuf_free(colored_asm);
 		}

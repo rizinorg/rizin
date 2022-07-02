@@ -77,6 +77,7 @@ typedef struct {
 
 typedef struct {
 	const RzRegSet *reg_sets; ///< Array of reg sets used to lookup register names during parsing.
+	ut32 ana_op_type; ///< Analysis op type (see: _RzAnalysisOpType) of the token string to parse.
 } RzAsmParseParam;
 
 /**

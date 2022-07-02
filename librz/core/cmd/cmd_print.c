@@ -6623,7 +6623,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core,
 			RzAnalysisOp aop = { 0 };
 			rz_analysis_op(core->analysis, &aop, offset, buffer, length, RZ_ANALYSIS_OP_MASK_ALL);
 			RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(assembly);
-			colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg), asm_op.asm_toks);
+			colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, aop.type), asm_op.asm_toks);
 			colored = rz_strbuf_drain(colored_asm);
 		}
 
@@ -6689,7 +6689,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCo
 			RzAnalysisOp aop = { 0 };
 			rz_analysis_op(core->analysis, &aop, offset, buffer, length, RZ_ANALYSIS_OP_MASK_ALL);
 			RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(assembly);
-			colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg), asm_op.asm_toks);
+			colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, aop.type), asm_op.asm_toks);
 			colored = rz_strbuf_drain(colored_asm);
 		}
 
