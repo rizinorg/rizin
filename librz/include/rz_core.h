@@ -349,7 +349,7 @@ struct rz_core_t {
 	bool keep_asmqjmps;
 	RzCoreVisual visual;
 	// visual // TODO: move them into RzCoreVisual
-	RzList *visual_filter; // store the filter keywords in visual mode
+	RzPVector *visual_filter; // store the filter keywords in Vv mode
 	int http_up;
 	int gdbserver_up;
 	RzCoreVisualMode printidx;
