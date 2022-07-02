@@ -1574,6 +1574,7 @@ RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize) 
  * \return The colorized asm string.
  */
 RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks) {
+	rz_return_val_if_fail(p && toks, NULL);
 	// Color palette.
 	RzConsPrintablePalette palette = p->cons->context->pal;
 	// Black white asm string.
