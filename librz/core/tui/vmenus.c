@@ -267,19 +267,9 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			rz_cons_printf("shift: >> %d << %d\n", word, (asmop.size * 8) - word - 1);
 		}
 		{
-			RzStrBuf *colored_asm;
-			RzAsmTokenString *toks;
-			if (asmop.asm_toks) {
-				colored_asm = rz_print_colorize_asm_str(core->print, asmop.asm_toks);
-			} else {
-				toks = rz_asm_tokenize_asm_string(&asmop.buf_asm, NULL);
-				colored_asm = rz_print_colorize_asm_str(core->print, toks);
-			}
+			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, rz_strbuf_get(colored_asm));
 			rz_strbuf_free(colored_asm);
-			if (!asmop.asm_toks) {
-				rz_asm_token_string_free(toks);
-			}
 		}
 		rz_cons_printf(Color_RESET "esl: %s\n" Color_RESET, rz_strbuf_get(&analop.esil));
 		rz_analysis_op_fini(&analop);
