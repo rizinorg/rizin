@@ -265,7 +265,7 @@ static void basefind_set_thread_info(BaseFindThreadData *bftd, RzBaseFindThreadI
 
 // this thread does not care about thread-safety since it only prints
 // data that will always be available during its lifetime.
-static void *basefind_thread_cons(BaseFindUIInfo *ui_info) {
+static void *basefind_thread_ui(BaseFindUIInfo *ui_info) {
 	RzThreadPool *pool = ui_info->pool;
 	ut32 pool_size = rz_th_pool_size(pool);
 	RzBaseFindThreadInfoCb callback = ui_info->callback;
@@ -420,7 +420,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RzBaseFindOpt *option
 		ui_info.pool = pool;
 		ui_info.user = options->user;
 		ui_info.callback = options->callback;
-		user_thread = rz_th_new((RzThreadFunction)basefind_thread_cons, &ui_info);
+		user_thread = rz_th_new((RzThreadFunction)basefind_thread_ui, &ui_info);
 		if (!user_thread) {
 			rz_th_pool_kill(pool);
 			goto rz_basefind_end;
