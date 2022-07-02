@@ -870,6 +870,14 @@ RZ_API RZ_BORROW RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject
 }
 
 /**
+ * \brief Return true if the binary object \p obj is big endian.
+ */
+RZ_API bool rz_bin_object_is_big_endian(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, false);
+	return obj->info ? obj->info->big_endian : false;
+}
+
+/**
  * \brief Return true if the binary object \p obj is detected as statically compiled.
  */
 RZ_API bool rz_bin_object_is_static(RzBinObject *obj) {
