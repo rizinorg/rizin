@@ -21,7 +21,29 @@ typedef struct rz_basefind_t {
 	ut32 score;
 } RzBaseFindScore;
 
-RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size);
+typedef struct rz_basefind_info_t {
+	ut32 thread_idx;
+	ut32 n_threads;
+	ut64 begin_address;
+	ut64 current_address;
+	ut64 end_address;
+	ut32 percentage;
+} RzBaseFindThreadInfo;
+
+typedef bool (*RzBaseFindThreadInfoCb)(const RzBaseFindThreadInfo *th_info, void *user);
+
+typedef struct rz_basefind_options_t {
+	ut32 pointer_size;
+	ut32 min_score;
+	ut64 start_address;
+	ut64 end_address;
+	ut64 increase_by;
+	size_t max_threads;
+	RzBaseFindThreadInfoCb callback;
+	void *user;
+} RzBaseFindOpt;
+
+RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RzBaseFindOpt *options);
 
 #ifdef __cplusplus
 }

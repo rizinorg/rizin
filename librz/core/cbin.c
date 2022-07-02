@@ -2554,12 +2554,49 @@ RZ_API bool rz_core_bin_cur_segment_print(RzCore *core, RzBinFile *bf, RzCmdStat
 	return rz_core_bin_segments_print(core, bf, state, &filter, hashes);
 }
 
+static bool core_basefind_progess_status(const RzBaseFindThreadInfo *th_info, void *user) {
+	rz_cons_flush();
+	rz_cons_printf("basefind: thread %u: 0x%08" PFMT64x " / 0x%08" PFMT64x " %u%%\n",
+		th_info->thread_idx, th_info->current_address,
+		th_info->end_address, th_info->percentage);
+	rz_cons_flush();
+	if ((th_info->thread_idx + 1) >= th_info->n_threads) {
+		rz_cons_gotoxy(1, rz_cons_get_cur_line() - th_info->n_threads);
+	}
+	return !rz_cons_is_breaked();
+}
+
+static bool core_basefind_check_ctrl_c(const RzBaseFindThreadInfo *th_info, void *user) {
+	return !rz_cons_is_breaked();
+}
+
 RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 	RzListIter *it = NULL;
 	RzBaseFindScore *pair = NULL;
+	RzBaseFindOpt options;
+	bool progress = rz_config_get_b(core->config, "basefind.progress");
+	int begin_line = rz_cons_get_cur_line();
 
-	RzList *scores = rz_basefind(core, pointer_size);
+	options.pointer_size = pointer_size;
+	options.min_score = rz_config_get_i(core->config, "basefind.score.min");
+	options.start_address = rz_config_get_i(core->config, "basefind.base.start");
+	options.end_address = rz_config_get_i(core->config, "basefind.base.end");
+	options.increase_by = rz_config_get_i(core->config, "basefind.base.increase");
+	options.max_threads = rz_config_get_i(core->config, "basefind.threads.max");
+	options.callback = progress ? core_basefind_progess_status : core_basefind_check_ctrl_c;
+	options.user = NULL;
+
+	RzList *scores = rz_basefind(core, &options);
+
+	if (progress) {
+		// ensure the last printed line is actually the last expected line
+		// this depends on the number of the threads requested and available
+		// this requires to be called before checking the results
+		int n_cores = (int)rz_th_request_physical_cores(options.max_threads);
+		rz_cons_gotoxy(1, begin_line + n_cores);
+	}
+
 	if (!scores) {
 		return false;
 	}
