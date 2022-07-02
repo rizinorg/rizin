@@ -344,8 +344,8 @@ static bool test_rz_colorize_generic_0(void) {
 	// "ldr w2, [x8, -256]" 020150b8
 	ut8 buf[] = "\x02\x01\x50\xb8";
 
-	rz_asm_disassemble(d, asmop, buf, 4);
-	rz_analysis_op(a, anaop, 0x0, buf, 4, RZ_ANALYSIS_OP_MASK_ALL);
+	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
+	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
@@ -369,8 +369,8 @@ static bool test_rz_colorize_generic_1(void) {
 	// "adc.w r8, sb, sl, lsl 31" 49ebca78
 	ut8 buf[] = "\x49\xeb\xca\x78";
 
-	rz_asm_disassemble(d, asmop, buf, 4);
-	rz_analysis_op(a, anaop, 0x0, buf, 4, RZ_ANALYSIS_OP_MASK_ALL);
+	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
+	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
@@ -395,8 +395,8 @@ static bool test_rz_colorize_generic_2(void) {
 	// "movabs rax, 0x1122334455667788" 48b88877665544332211
 	ut8 buf[] = "\x48\xb8\x88\x77\x66\x55\x44\x33\x22\x11";
 
-	rz_asm_disassemble(d, asmop, buf, 10);
-	rz_analysis_op(a, anaop, 0x0, buf, 10, RZ_ANALYSIS_OP_MASK_ALL);
+	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
+	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
