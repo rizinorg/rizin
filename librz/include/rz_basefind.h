@@ -17,33 +17,33 @@ extern "C" {
 #define RZ_BASEFIND_SCORE_MIN_VALUE   (1)
 
 typedef struct rz_basefind_t {
-	ut64 candidate;
-	ut32 score;
+	ut64 candidate; ///< Candidate physical base address
+	ut32 score; ///< Score of the candidate address
 } RzBaseFindScore;
 
 typedef struct rz_basefind_info_t {
-	ut32 thread_idx;
-	ut32 n_threads;
-	ut64 begin_address;
-	ut64 current_address;
-	ut64 end_address;
-	ut32 percentage;
+	ut32 thread_idx; ///< Thread number
+	ut32 n_threads; ///< Total number of threads
+	ut64 begin_address; ///< Thread begin address
+	ut64 current_address; ///< Thread current address
+	ut64 end_address; ///< Thread end address
+	ut32 percentage; ///< Current percentage of the thread scan
 } RzBaseFindThreadInfo;
 
 typedef bool (*RzBaseFindThreadInfoCb)(const RzBaseFindThreadInfo *th_info, void *user);
 
 typedef struct rz_basefind_options_t {
-	ut32 pointer_size;
-	ut32 min_score;
-	ut64 start_address;
-	ut64 end_address;
-	ut64 increase_by;
-	size_t max_threads;
-	RzBaseFindThreadInfoCb callback;
-	void *user;
+	ut32 pointer_size; ///< Pointer size in bits (32 or 64)
+	ut32 min_score; ///< Minimum score to reach to be part of the list of possible addresses
+	ut64 start_address; ///< Start physical address
+	ut64 end_address; ///< End physical address
+	ut64 increase_by; ///< Increase the area of search by N bytes (has to be at least RZ_BASEFIND_BASE_INCREASE)
+	size_t max_threads; ///< Max requested number of threads (not guaranteed).
+	RzBaseFindThreadInfoCb callback; ///< When set allows to get the thread information
+	void *user; ///< User pointer to pass to the callback function for the thread info
 } RzBaseFindOpt;
 
-RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RzBaseFindOpt *options);
+RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFindOpt *options);
 
 #ifdef __cplusplus
 }
