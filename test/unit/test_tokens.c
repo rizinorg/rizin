@@ -18,6 +18,13 @@ static RzAnalysis *setup_x86_analysis() {
 	return a;
 }
 
+static RzAnalysis *setup_arm_analysis(ut32 bits) {
+	RzAnalysis *a = rz_analysis_new();
+	rz_analysis_use(a, "arm");
+	rz_analysis_set_bits(a, bits);
+	return a;
+}
+
 static RzAnalysis *setup_hexagon_analysis() {
 	RzAnalysis *a = rz_analysis_new();
 	rz_analysis_use(a, "hexagon");
@@ -190,6 +197,41 @@ static bool test_rz_tokenize_generic_3(void) {
 	mu_end;
 }
 
+static bool test_rz_tokenize_generic_4(void) {
+	RzAnalysis *a = setup_arm_analysis(16);
+	RzStrBuf *asm_str = rz_strbuf_new("adc.w r8, sb, sl, ror 31");
+	RzAsmToken tokens[11] = {
+		{ .start = 0, .len = 5, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 },
+		{ .start = 5, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 },
+		{ .start = 6, .len = 2, .type = RZ_ASM_TOKEN_REGISTER, .val.number = 0 },
+		{ .start = 8, .len = 2, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 },
+		{ .start = 10, .len = 2, .type = RZ_ASM_TOKEN_REGISTER, .val.number = 0 },
+		{ .start = 12, .len = 2, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 },
+		{ .start = 14, .len = 2, .type = RZ_ASM_TOKEN_REGISTER, .val.number = 0 },
+		{ .start = 16, .len = 2, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 },
+		{ .start = 18, .len = 3, .type = RZ_ASM_TOKEN_UNKNOWN, .val.number = 0 },
+		{ .start = 21, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 },
+		{ .start = 22, .len = 2, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 31 }
+	};
+	RzAsmParseParam param = { .reg_sets = a->reg->regset };
+	RzAsmTokenString *toks = rz_asm_tokenize_asm_string(asm_str, &param);
+
+	mu_assert_eq(rz_vector_len(toks->tokens), 11, "Number of generated tokens");
+
+	int i = 0;
+	RzAsmToken *it;
+	rz_vector_foreach(toks->tokens, it) {
+		mu_assert_eq(it->start, tokens[i].start, "Token start");
+		mu_assert_eq(it->len, tokens[i].len, "Token length");
+		mu_assert_eq(it->type, tokens[i].type, "Token type");
+		mu_assert_eq(it->val.number, tokens[i].val.number, "Token value");
+		++i;
+	}
+
+	rz_strbuf_free(asm_str);
+	mu_end;
+}
+
 static bool test_rz_tokenize_custom_hexagon_0(void) {
 	RzAsm *a = setup_hexagon_asm();
 	const ut8 buf[] = "\x0c\xc0\x00\x54"; // "[   trap0(#0x3)"
@@ -290,6 +332,7 @@ static int all_tests() {
 	mu_run_test(test_rz_tokenize_generic_1);
 	mu_run_test(test_rz_tokenize_generic_2);
 	mu_run_test(test_rz_tokenize_generic_3);
+	mu_run_test(test_rz_tokenize_generic_4);
 	mu_run_test(test_rz_tokenize_custom_hexagon_0);
 	mu_run_test(test_rz_tokenize_custom_hexagon_1);
 

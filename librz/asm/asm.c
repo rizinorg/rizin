@@ -1618,22 +1618,27 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 	size_t i = 0;
 	// Length of token.
 	size_t l = 0;
-	// Set flag once the mnemonic was parsed (the mnemonic is always the first alphabetic token in our string).
+	// Set flag once the mnemonic was parsed
+	// The mnemonic is the first token in our string which ends with an ' '
 	bool mnemonic_parsed = false;
 
 	while (str[i]) {
 		// Alphanumeric tokens
 		if (is_alpha_num(str + i)) {
 			bool is_number = false;
-			if (isxdigit(*(str + i))) {
-				// Register/mnemonic names can be ambiguous in comparison to hex numbers.
+			if (isxdigit(*(str + i)) && mnemonic_parsed) {
+				// Registers and mnemonic names can be ambiguous in comparison to hex numbers.
 				// E.g. "eax" could be parsed as hex number token "ea".
 				// Here we check the character after the token.
 				// If this char is an alphabetic char (like the "x" in "eax"), the token isn't a number.
+
+				// Sometimes we get false positives. Some mnemonics are not at the beginning of the string
+				// and have only hexadecimal digits. It is too complicated to handle those.
+				// In this case the plugin should build its own token strings.
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_NUMBER);
 				if (!str[i + l]) { // End of asm string => token is number.
 					is_number = true;
-				} else if (!isalpha(str[i + l])) { // Next char is something non alphabetic => token is number.
+				} else if (!isalpha(str[i + l])) { // Next char is something non alphabetic => Treat as number.
 					is_number = true;
 				}
 			}
@@ -1652,6 +1657,12 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 			} else {
 				mnemonic_parsed = true;
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_MNEMONIC);
+				if (*(str + i + l) != ' ') {
+					// Mnemonics in ARM can contain dots and other separators.
+					// Example: "adc.w r8, sb, sl, ror 31"
+					// Don't stop the token at l. But expand it until the next separator.
+					l += seek_to_end_of_token(str, l + i, RZ_ASM_TOKEN_MNEMONIC);
+				}
 				add_token(toks, i, l, RZ_ASM_TOKEN_MNEMONIC, 0);
 			}
 		} else if (is_operator(str + i)) {
