@@ -53,7 +53,7 @@ static RZ_OWN RzPVector /* RzAsmTokenPattern */ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_REGISTER;
 	pat->pattern = strdup(
-		"GP|HTID|UGP|LR|FP" // Other regs
+		"GP|HTID|UGP|LR|FP|SP" // Other regs
 	);
 	rz_pvector_push(pvec, pat);
 
