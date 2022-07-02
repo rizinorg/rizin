@@ -857,11 +857,9 @@ RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fm
 RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode);
 RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 reladdr, RZ_NULLABLE RzAnalysisFunction *fcn, bool color);
 RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj);
-RZ_API void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at, RZ_INOUT RZ_NONNULL int *oplen, RZ_NONNULL int *ret);
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
-RZ_API void rz_analysis_disasm_text_free(RZ_NULLABLE void *p);
-RZ_API bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core, RZ_NONNULL int *pn_opcodes, RZ_NONNULL int *pn_bytes);
+RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t);
 
 /* cbin.c */
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);

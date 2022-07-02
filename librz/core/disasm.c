@@ -1689,7 +1689,7 @@ static int handleMidBB(RzCore *core, RzDisasmState *ds) {
  * \param[in,out] oplen Opcode length
  * \param ret Value by call rz_asm_disassemble
  */
-RZ_API void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at,
+RZ_IPI void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at,
 	RZ_INOUT RZ_NONNULL int *oplen, RZ_NONNULL int *ret) {
 	rz_return_if_fail(core && oplen && ret);
 	bool midbb = rz_config_get_b(core->config, "asm.bb.middle");
@@ -5322,11 +5322,10 @@ static void ds_end_line_highlight(RzDisasmState *ds) {
 /**
  * \brief Free RzAnalysisDisasmText \p p
  */
-RZ_API void rz_analysis_disasm_text_free(RZ_NULLABLE void *p) {
-	if (!p) {
+RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t) {
+	if (!t) {
 		return;
 	}
-	RzAnalysisDisasmText *t = p;
 	free(t->text);
 	free(t);
 }
@@ -5986,45 +5985,55 @@ toro:
  * \brief Handle negative \p pn_opcodes and \p pn_bytes
  * 	  and seek new offset
  * 	  and read to core->block
+ *
+ * if nopcodes < 0 {
+ * 	nopcodes = abs(nopcodes),
+ * 	nbytes = nbytes ? min(abs(nbytes), RZ_CORE_MAX_DISASM) : max(core->blocksize, min(abs(nbytes), RZ_CORE_MAX_DISASM))
+ * 	offset = rz_core_prevop_addr_force(...)
+ * } else {
+ * 	offset = core->offset + (nbytes>=0 ? 0 : -nbytes)
+ * 	nopcodes = nopcodes
+ *	nbytes = nbytes ? min(abs(nbytes), RZ_CORE_MAX_DISASM) : max(core->blocksize, min(abs(nbytes), RZ_CORE_MAX_DISASM))
+ * }
+ *
  * \param core RzCore reference
  * \param pn_opcodes Pointer to n_opcodes
  * \param pn_bytes Pointer to n_bytes
  * \return success
  */
-RZ_API bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
+RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
 	RZ_NONNULL int *pn_opcodes, RZ_NONNULL int *pn_bytes) {
 	rz_return_val_if_fail(core && pn_opcodes && pn_bytes, false);
 
-	int n_opcodes = *pn_opcodes;
-	int n_bytes = *pn_bytes;
-	if (n_opcodes > ST16_MAX || n_opcodes < ST16_MIN) {
+	if (*pn_opcodes > ST16_MAX || *pn_opcodes < ST16_MIN) {
 		RZ_LOG_ERROR("the number of instructions is too big (%d < n_instrs < %d).\n", ST16_MAX, ST16_MIN);
 		return false;
+	}
+	if (!*pn_opcodes && !*pn_bytes) {
+		core->blocksize = 0;
+		return true;
 	}
 	const ut64 old_offset = core->offset;
 	const ut32 old_blocksize = core->blocksize;
 	ut64 offset = old_offset;
-	if (n_opcodes < 0) {
-		*pn_opcodes = n_opcodes = -n_opcodes;
-		if (!rz_core_prevop_addr(core, old_offset, n_opcodes, &offset)) {
-			offset = rz_core_prevop_addr_force(core, old_offset, n_opcodes);
-		}
-		*pn_bytes = n_bytes = core->blocksize;
-	} else if (n_opcodes == 0) {
-		if (n_bytes < 0) {
-			*pn_bytes = n_bytes = RZ_MIN(-n_bytes, RZ_CORE_MAX_DISASM);
-			offset = old_offset - n_bytes;
-		} else if (n_bytes == 0) {
-			core->blocksize = 0;
-		} else {
-			*pn_bytes = n_bytes = RZ_MIN(n_bytes, RZ_CORE_MAX_DISASM);
+	const int max_bytes = RZ_MIN(RZ_ABS(*pn_bytes), RZ_CORE_MAX_DISASM);
+	const int x_bytes = *pn_bytes ? max_bytes : RZ_MAX(core->blocksize, max_bytes);
+
+	if (*pn_opcodes < 0) {
+		*pn_opcodes = -*pn_opcodes;
+		*pn_bytes = x_bytes;
+		if (!rz_core_prevop_addr(core, old_offset, *pn_opcodes, &offset)) {
+			offset = rz_core_prevop_addr_force(core, old_offset, *pn_opcodes);
 		}
 	} else {
-		*pn_bytes = n_bytes = core->blocksize;
+		if (*pn_bytes < 0) {
+			offset = old_offset - x_bytes;
+		}
+		*pn_bytes = x_bytes;
 	}
 
-	if (n_bytes > old_blocksize) {
-		rz_core_block_size(core, n_bytes);
+	if (*pn_bytes > old_blocksize) {
+		rz_core_block_size(core, *pn_bytes);
 	}
 	if (offset != old_offset) {
 		rz_core_seek(core, offset, true);
