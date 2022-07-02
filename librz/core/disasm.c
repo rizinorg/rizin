@@ -1114,16 +1114,16 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 				core->parser->subrel_addr = killme;
 			}
 		}
-		char *source;
+		char *source = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);
 		if (colorize_asm) {
 			core->print->colorize_opts.reset_bg = line_highlighted(ds);
-			RzStrBuf *bw_asm = rz_strbuf_new(ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop));
+			RzStrBuf *bw_asm = rz_strbuf_new(source);
 			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type), ds->asmop.asm_toks);
 			rz_strbuf_free(bw_asm);
 			rz_return_if_fail(colored_asm);
 			source = rz_strbuf_drain(colored_asm);
 		} else {
-			source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
+			source = strdup(source);
 		}
 
 		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, source,

@@ -898,7 +898,7 @@ e asm.sub.names=false
 pd 1 @ 0x0001145f
 EOF
 EXPECT=<<EOF
-            [32m0x0001145f[0m      [37mlea[0m[37m   [0m[36mrdi[0m[37m, [[0m[33mstr.A_NULL_argv_0__was_passed_through_an_exec_system_call.[0m[37m][0m[0m
+            [32m0x0001145f[0m      [37mlea[0m[37m   [0m[36mrdi[0m[37m, [33mstr.A_NULL_argv_0__was_passed_through_an_exec_system_call.[0m[0m[0m
             [32m0x0001145f[0m      [37mlea[0m[37m   [0m[36mrdi[0m[37m, [[0m[33m0x0001b5d8[0m[37m][0m[0m
 EOF
 RUN
@@ -1813,17 +1813,17 @@ e emu.str.inv=false
 pd 1 @ 0x161d
 EOF
 EXPECT=<<EOF
-            [32m0x0000161d[0m      [37mlea  [36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m               ; 0x21f7[31m ; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str.Blue_Pill[0m
-            [32m0x0000161d[0m      [37mlea  [36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m               ; 0x21f7[31m ; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str.Blue_Pill[0m
+            [32m0x0000161d[0m      [37mlea[0m[37m   [0m[36meax[0m[37m, [[0m[36mesi[0m[37m [0m[37m-[0m[37m [0m[33mabcdefghi][0m[0m[31m               ; 0x21f7[31m ; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str.Blue_Pill[0m
+            [32m0x0000161d[0m      [37mlea[0m[37m   [0m[36meax[0m[37m, [[0m[36mesi[0m[37m [0m[37m-[0m[37m [0m[33mabcdefghi][0m[0m[31m               ; 0x21f7[31m ; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str.Blue_Pill[0m
 
             [31m; 0x21f7
             [31m; "abcdefghi"
 [0m[31m[0m               [31m; [7m"\n  Blue Pill"[27m str.Blue_Pill
-[0m            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m
+[0m            [32m0x0000161d[0m      [37mlea[0m[37m [0m[36meax[0m[37m, [[0m[36mesi[0m[37m [0m[37m-[0m[37m [0m[33mabcdefghi][0m[0m
             [31m; 0x21f7
             [31m; [7m"abcdefghi"[27m
 [0m[31m[0m               [31m; "\n  Blue Pill" str.Blue_Pill
-[0m            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m
+[0m            [32m0x0000161d[0m      [37mlea[0m[37m [0m[36meax[0m[37m, [[0m[36mesi[0m[37m [0m[37m-[0m[37m [0m[33mabcdefghi][0m[0m
 EOF
 RUN
 

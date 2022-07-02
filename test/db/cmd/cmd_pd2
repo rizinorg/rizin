@@ -630,7 +630,7 @@ EXPECT=<<EOF
        [36m|[0m[36m|[0m   [32m0x00004214[0m      [1;92mcall[0m[37m  [0m[33m0x13c50[0m[0m[0m
        [36m|[0m[36m`[0m[36m-[0m[36m>[0m [32m0x0000421a[0m      [37mmov[0m[37m   [0m[37mqword[0m[37m [[0m[33m0x000232b0[0m[37m], [0m[33m0x50[0m[0m[31m             ; 'P'
        [36m|[0m    [31m                                                           ; [0x232b0:8]=0[0m
-       [36m|[0m    [32m0x00004225[0m      [37mlea[0m[37m   [0m[36mrdi[0m[37m, [[0m[33mstr.COLUMNS[0m[37m][0m[0m[31m                   ; 0x18a22[31m ; "COLUMNS"[0m
+       [36m|[0m    [32m0x00004225[0m      [37mlea[0m[37m   [0m[36mrdi[0m[37m, [33mstr.COLUMNS[0m[0m[0m[31m                     ; 0x18a22[31m ; "COLUMNS"[0m
 
             [32m0x000041ee[0m      [37mlea[0m[37m   [0m[36mrsi[0m[37m, [[0m[36mrip[0m[37m [0m[37m+[0m[37m [0m[33m0x1d84b[0m[37m][0m[0m[31m                 ; 0x21a40[0m
             [32m0x00004225[0m      [37mlea[0m[37m   [0m[36mrdi[0m[37m, [[0m[36mrip[0m[37m [0m[37m+[0m[37m [0m[33m0x147f6[0m[37m][0m[0m[31m                 ; str.COLUMNS
@@ -672,7 +672,7 @@ EXPECT=<<EOF
        [36m|[0m[36m|[0m   [32m0x00004214[0m      [1;92mcall[0m[37m  [0m[33m0x13c50[0m[0m[0m
        [36m|[0m[36m`[0m[36m-[0m[36m>[0m [32m0x0000421a[0m      [37mmov[0m[37m   [0m[37mqword[0m[37m [[0m[33m0x000232b0[0m[37m], [0m[33m0x50[0m[0m[31m             ; 'P'
        [36m|[0m    [31m                                                           ; [0x232b0:8]=0[0m
-       [36m|[0m    [32m0x00004225[0m      [37mmov[0m[37m   [0m[36mrax[0m[37m, [0m[37mqword[0m[37m [[0m[33mstr.COLUMNS[0m[37m][0m[0m[31m             ; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m ; "COLUMNS"[0m
+       [36m|[0m    [32m0x00004225[0m      [37mmov[0m[37m   [0m[36mrax[0m[37m, [0m[37mqword[0m[37m [33mstr.COLUMNS[0m[0m[0m[31m               ; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m ; "COLUMNS"[0m
 
             [32m0x000041ee[0m      [37mmov[0m[37m   [0m[36mrax[0m[37m, [0m[37mqword[0m[37m [[0m[36mrip[0m[37m [0m[37m+[0m[37m [0m[33m0x1d84b[0m[37m][0m[0m[31m           ; [[31m0x21a40[31m:8]=0x18d31 str.literal[0m
             [32m0x00004225[0m      [37mmov[0m[37m   [0m[36mrax[0m[37m, [0m[37mqword[0m[37m [[0m[36mrip[0m[37m [0m[37m+[0m[37m [0m[33m0x147f6[0m[37m][0m[0m[31m           ; str.COLUMNS
@@ -714,7 +714,7 @@ EXPECT=<<EOF
        [36m|[0m[36m|[0m   [32m0x00004214[0m      [1;92mcall[0m[37m  [0m[33m0x13c50[0m[0m[0m
        [36m|[0m[36m`[0m[36m-[0m[36m>[0m [32m0x0000421a[0m      [37mmov[0m[37m   [0m[37mqword[0m[37m [[0m[33m0x000232b0[0m[37m], [0m[33m0x50[0m[0m[31m             ; 'P'
        [36m|[0m    [31m                                                           ; [0x232b0:8]=0[0m
-       [36m|[0m    [32m0x00004225[0m      [36mcmp[0m[37m   [0m[36mrdi[0m[37m, [0m[37mqword[0m[37m [[0m[33mstr.COLUMNS[0m[37m][0m[0m[31m             ; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m ; "COLUMNS"[0m
+       [36m|[0m    [32m0x00004225[0m      [36mcmp[0m[37m   [0m[36mrdi[0m[37m, [0m[37mqword[0m[37m [33mstr.COLUMNS[0m[0m[0m[31m               ; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m ; "COLUMNS"[0m
 
             [32m0x000041ee[0m      [36mcmp[0m[37m   [0m[36mrsi[0m[37m, [0m[37mqword[0m[37m [[0m[36mrip[0m[37m [0m[37m+[0m[37m [0m[33m0x1d84b[0m[37m][0m[0m[31m           ; [[31m0x21a40[31m:8]=0x18d31 str.literal[0m
             [32m0x00004225[0m      [36mcmp[0m[37m   [0m[36mrdi[0m[37m, [0m[37mqword[0m[37m [[0m[36mrip[0m[37m [0m[37m+[0m[37m [0m[33m0x147f6[0m[37m][0m[0m[31m           ; str.COLUMNS
@@ -734,7 +734,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x00005e6e      488d3d339b01.  lea   rdi, section..fini_array ; 0x1f9a8
-            [32m0x00005e6e[0m      [33m48[37m8d[33m3d[33m33[37m9b[37m01[37m.[0m  [37mlea[0m[37m   [0m[36mrdi[0m[37m, [[0m[33msection..fini_array[0m[37m][0m[0m[31m ; 0x1f9a8[0m
+            [32m0x00005e6e[0m      [33m48[37m8d[33m3d[33m33[37m9b[37m01[37m.[0m  [37mlea[0m[37m   [0m[36mrdi[0m[37m, [33msection..fini_array[0m[0m[0m[31m ; 0x1f9a8[0m
 EOF
 RUN
 
