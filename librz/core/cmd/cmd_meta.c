@@ -478,8 +478,7 @@ RZ_IPI RzCmdStatus rz_meta_string_8bit_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_meta_string_wide16_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	RzStrEnc enc = big_endian ? RZ_STRING_ENC_UTF16BE : RZ_STRING_ENC_UTF16LE;
 	if (!rz_core_meta_string_add(core, core->offset, size, enc, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -489,8 +488,7 @@ RZ_IPI RzCmdStatus rz_meta_string_wide16_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_meta_string_wide32_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	RzStrEnc enc = big_endian ? RZ_STRING_ENC_UTF32BE : RZ_STRING_ENC_UTF32LE;
 	if (!rz_core_meta_string_add(core, core->offset, size, enc, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
