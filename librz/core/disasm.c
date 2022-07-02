@@ -5331,7 +5331,8 @@ RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t) {
 }
 
 /**
- * \brief Disassemble \p len bytes and \p nlines opcodes, or funitcon, restricted by \p len and \p nlines at the same time
+ * \brief Disassemble \p len bytes and \p nlines opcodes, or a funitcon,
+ * 	  restricted by \p len and \p nlines at the same time
  * \param core RzCore reference
  * \param addr Address
  * \param buf Buffer
@@ -5988,12 +5989,14 @@ toro:
  *
  * if nopcodes < 0 {
  * 	nopcodes = abs(nopcodes),
- * 	nbytes = nbytes ? min(abs(nbytes), RZ_CORE_MAX_DISASM) : max(core->blocksize, min(abs(nbytes), RZ_CORE_MAX_DISASM))
+ * 	nbytes = nbytes ? min(abs(nbytes), RZ_CORE_MAX_DISASM)
+ * 			: max(core->blocksize, min(abs(nbytes), RZ_CORE_MAX_DISASM))
  * 	offset = rz_core_prevop_addr_force(...)
  * } else {
  * 	offset = core->offset + (nbytes>=0 ? 0 : -nbytes)
  * 	nopcodes = nopcodes
- *	nbytes = nbytes ? min(abs(nbytes), RZ_CORE_MAX_DISASM) : max(core->blocksize, min(abs(nbytes), RZ_CORE_MAX_DISASM))
+ *	nbytes = nbytes ? min(abs(nbytes), RZ_CORE_MAX_DISASM)
+ *			: max(core->blocksize, min(abs(nbytes), RZ_CORE_MAX_DISASM))
  * }
  *
  * \param core RzCore reference
