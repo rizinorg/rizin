@@ -1,15 +1,33 @@
 // SPDX-FileCopyrightText: 2022 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_strbuf.h"
 #include <rz_asm.h>
 #include <rz_util.h>
 #include <rz_vector.h>
 #include <rz_list.h>
-#include "config.h"
-#include "minunit.h"
-#include "rz_analysis.h"
-#include "rz_util/rz_print.h"
-#include "rz_util/rz_str.h"
+#include <config.h>
+#include <minunit.h>
+#include <rz_analysis.h>
+#include <rz_cons.h>
+#include <rz_util/rz_print.h>
+#include <rz_util/rz_str.h>
+
+static RzPrint *setup_print() {
+	RzPrint *p = rz_print_new();
+	p->cons = rz_cons_new();
+	p->cons->context = RZ_NEW0(RzConsContext);
+	p->cons->context->color_mode = COLOR_MODE_16M;
+	rz_cons_pal_init(p->cons->context);
+	rz_cons_pal_update_event();
+	return p;
+}
+
+static RzAsm *setup_arm_asm(ut32 bits) {
+	RzAsm *a = rz_asm_new();
+	rz_asm_setup(a, "arm", bits, false);
+	return a;
+}
 
 static RzAnalysis *setup_x86_analysis() {
 	RzAnalysis *a = rz_analysis_new();
@@ -312,19 +330,71 @@ static bool test_rz_tokenize_custom_hexagon_1(void) {
 	mu_end;
 }
 
-// Generic
-//  - Type recognition
-//     trap0, mov, if(P0),
-//  - numbers strings -> value
-//     0x0 and 0. Hex number 64bit + >64bit, decimal number
-// Custom
-//  - Type recognition.
-//  - number strings -> value
-//  - Ambiguities with numbers in mnemonics (trap0 etc.)
-// Color
-//  - Color in ambiguities with numbers in mnemonics (trap0 etc.)
-//  - General coloring of numbers.
-// UTF8 tests
+static bool test_rz_colorize_generic_0(void) {
+	RzAnalysis *a = setup_arm_analysis(64);
+	RzAsm *d = setup_arm_asm(64);
+	RzPrint *p = setup_print();
+	RzAsmOp *asmop = rz_asm_op_new();
+	RzAnalysisOp *anaop = rz_analysis_op_new();
+	// "ldr w2, [x8, -256]" 020150b8
+	ut8 buf[] = "\x02\x01\x50\xb8";
+
+	rz_asm_disassemble(d, asmop, buf, 4);
+	rz_analysis_op(a, anaop, 0x0, buf, 4, RZ_ANALYSIS_OP_MASK_ALL);
+
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p, 
+	rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
+
+	RzStrBuf *expected = rz_strbuf_new(	"\x1b[38;2;136;23;152mldur\x1b[0m\x1b[38;2;204;204;204m"
+	" \x1b[0m\x1b[38;2;58;150;221mw2\x1b[0m\x1b[38;2;204;204;204m, [\x1b[0m\x1b[38;2;58;150;221mx8\x1b[0m\x1b[38;2;204;204;204m,"
+	" \x1b[0m\x1b[38;2;204;204;204m-\x1b[0m\x1b[38;2;193;156;0m0x100\x1b[0m\x1b[38;2;204;204;204m]\x1b[0m");
+	char err_msg[1024];
+	sprintf(err_msg, "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
+
+	mu_end;
+}
+
+static bool test_rz_colorize_generic_1(void) {
+	RzAnalysis *a = setup_arm_analysis(16);
+	RzAsm *d = setup_arm_asm(16);
+	RzPrint *p = setup_print();
+	RzAsmOp *asmop = rz_asm_op_new();
+	RzAnalysisOp *anaop = rz_analysis_op_new();
+	// "adc.w r8, sb, sl, lsl 31" 49ebca78
+	ut8 buf[] = "\x49\xeb\xca\x78";
+
+	rz_asm_disassemble(d, asmop, buf, 4);
+	rz_analysis_op(a, anaop, 0x0, buf, 4, RZ_ANALYSIS_OP_MASK_ALL);
+
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p, 
+	rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
+
+	RzStrBuf *expected = rz_strbuf_new(	"\x1b[38;2;193;156;0madc.w\x1b[0m\x1b[38;2;204;204;204m"
+	" \x1b[0m\x1b[38;2;58;150;221mr8\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;58;150;221msb\x1b[0m\x1b[38;2;204;204;204m,"
+	" \x1b[0m\x1b[38;2;58;150;221msl\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;204;204;204mlsl\x1b[0m\x1b[38;2;204;204;204m"
+	" \x1b[0m\x1b[38;2;193;156;0m31\x1b[0m");
+	char err_msg[1024];
+	sprintf(err_msg, "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
+
+	mu_end;
+}
+
+// Color tests
+
+// ARM 16
+// "adc.w r8, sb, sl, ror 31" 49ebfa78
+
+// TMS
+// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" 395102a0b411014033
+// "xccpart ac0 <= #0 || mov #0x0, t0" 3605a07bb000
+
+// Hexagon - hello loop
+// 0x00005814
+// 0x00005268
+// 0x000052a4
+// 0x00005158
 
 static int all_tests() {
 	mu_run_test(test_rz_tokenize_generic_0_no_reg_profile);
@@ -335,6 +405,8 @@ static int all_tests() {
 	mu_run_test(test_rz_tokenize_generic_4);
 	mu_run_test(test_rz_tokenize_custom_hexagon_0);
 	mu_run_test(test_rz_tokenize_custom_hexagon_1);
+	mu_run_test(test_rz_colorize_generic_0);
+	mu_run_test(test_rz_colorize_generic_1);
 
 	return tests_passed != tests_run;
 }
