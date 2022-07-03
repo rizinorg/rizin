@@ -5983,29 +5983,16 @@ toro:
 }
 
 /**
- * \brief Handle negative \p pn_opcodes and \p pn_bytes
- * 	  and seek new offset
- * 	  and read to core->block
- *
- * if nopcodes < 0 {
- * 	nopcodes = abs(nopcodes),
- * 	nbytes = nbytes ? min(abs(nbytes), RZ_CORE_MAX_DISASM)
- * 			: max(core->blocksize, min(abs(nbytes), RZ_CORE_MAX_DISASM))
- * 	offset = rz_core_prevop_addr_force(...)
- * } else {
- * 	offset = core->offset + (nbytes>=0 ? 0 : -nbytes)
- * 	nopcodes = nopcodes
- *	nbytes = nbytes ? min(abs(nbytes), RZ_CORE_MAX_DISASM)
- *			: max(core->blocksize, min(abs(nbytes), RZ_CORE_MAX_DISASM))
- * }
- *
+ * \brief Converting negative numbers n_opcodes and n_opcodes
+ * 	  to positive numbers n_opcodes and n_opcodes
+ *	  and seek the appropriate offset
  * \param core RzCore reference
  * \param pn_opcodes Pointer to n_opcodes
  * \param pn_bytes Pointer to n_bytes
  * \return success
  */
 RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
-	RZ_NONNULL int *pn_opcodes, RZ_NONNULL int *pn_bytes) {
+	RZ_NONNULL RZ_INOUT int *pn_opcodes, RZ_NONNULL RZ_INOUT int *pn_bytes) {
 	rz_return_val_if_fail(core && pn_opcodes && pn_bytes, false);
 
 	if (*pn_opcodes > ST16_MAX || *pn_opcodes < ST16_MIN) {
