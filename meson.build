@@ -790,6 +790,30 @@ summary({
   'Use RPATH': rpath_summary,
 }, section: 'Configuration', bool_yn: true)
 
+# output will be slightly degraded if there's only 1 crca_crc hash plugin and/or last hash plugin is a crca_crc plugin
+comb_hash_plugins = []
+in_crca_loop = false
+foreach plugin : hash_plugins
+  if plugin.startswith('crca_crc')
+    comb_hash_plugins += (in_crca_loop ? '' : 'crca_crc(') + plugin.substring(8)
+    in_crca_loop = true
+  else
+    if in_crca_loop
+      # add closing parenthesis to last crca_cec plugin
+      parenthesized_last = []
+      foreach item : comb_hash_plugins
+        if item not in [comb_hash_plugins[-1]]
+          parenthesized_last += item
+        endif
+      endforeach
+      parenthesized_last += comb_hash_plugins[-1] + ')'
+      comb_hash_plugins = parenthesized_last
+    endif
+    comb_hash_plugins += plugin
+    in_crca_loop = false
+  endif
+endforeach
+
 summary({
   'Analysis Plugins': analysis_plugins,
   'Assembler Plugins': asm_plugins,
@@ -803,7 +827,7 @@ summary({
   'Egg Plugins': egg_plugins,
   'IO Plugins': io_plugins,
   'Lang Plugins': lang_plugins,
-  'Hash Plugins': hash_plugins,
+  'Hash Plugins': comb_hash_plugins,
   'Parse Plugins': parse_plugins,
   'Demangler Plugins': demangler_plugins,
 }, section: 'Plugins', list_sep: ', ')
