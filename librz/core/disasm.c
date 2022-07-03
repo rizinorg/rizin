@@ -6697,7 +6697,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *st
 					rz_core_print_disasm_instructions_with_buf(core, block_start, buf, block_sz, block_instr);
 					break;
 				default:
-					rz_core_print_disasm(core, block_start, buf, block_sz, block_instr, &state, NULL);
+					rz_core_print_disasm(core, block_start, buf, block_sz, block_instr, state, NULL);
 					break;
 				}
 			}
