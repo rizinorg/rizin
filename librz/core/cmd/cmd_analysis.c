@@ -747,11 +747,14 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 	}
 
 #define PRINTF_LN_STR(k, arg) \
-	if (RZ_STR_ISNOTEMPTY(arg)) { \
-		if (use_color) \
-			rz_cons_printf("%s%s: %s\n" Color_RESET, color, k, arg); \
-		else \
-			rz_cons_printf("%s: %s", k, arg); \
+	{ \
+		const char* value = (arg); \
+		if (RZ_STR_ISNOTEMPTY(value)) { \
+			if (use_color) \
+				rz_cons_printf("%s%s: %s\n" Color_RESET, color, k, value); \
+			else \
+				rz_cons_printf("%s: %s", k, value); \
+		} \
 	}
 
 static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, int nops) {
@@ -772,7 +775,6 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		ab = *iter;
 		RzAnalysisOp *op = ab->op;
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
-		const char *opexstr = RZ_STRBUF_SAFEGET(&op->opex);
 		RzAnalysisHint *hint = ab->hint;
 
 		PRINTF_LN("address", "0x%" PFMT64x "\n", op->addr);

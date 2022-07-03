@@ -6019,8 +6019,9 @@ RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
 	const ut64 old_offset = core->offset;
 	const ut32 old_blocksize = core->blocksize;
 	ut64 offset = old_offset;
-	const int max_bytes = RZ_MIN(RZ_ABS(*pn_bytes), RZ_CORE_MAX_DISASM);
-	const int x_bytes = *pn_bytes ? max_bytes : RZ_MAX(core->blocksize, max_bytes);
+	const int x_bytes = *pn_bytes
+		? RZ_MIN(RZ_ABS(*pn_bytes), RZ_CORE_MAX_DISASM)
+		: (int)core->blocksize;
 
 	if (*pn_opcodes < 0) {
 		*pn_opcodes = -*pn_opcodes;
