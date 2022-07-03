@@ -99,6 +99,8 @@ bool test_rz_analysis_op_val() {
 
 bool test_rz_core_analysis_bytes() {
 	RzCore *core = rz_core_new();
+	RzAnalysis *analysis = core->analysis;
+	SWITCH_TO_ARCH_BITS("x86", 64);
 	ut8 buf[128];
 	int len = rz_hex_str2bin("554889e5897dfc", buf);
 	RzPVector *vec = rz_core_analysis_bytes(core, buf, len, 0);
