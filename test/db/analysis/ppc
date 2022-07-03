@@ -583,3 +583,39 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
+
+NAME=ppc vle big-endian
+FILE=bins/firmware/ppc-big-endian-vle.bin
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e asm.cpu=vle
+e cfg.bigendian=true
+pd 10
+?e ensure that the endianness is kept
+pd 10
+EOF
+EXPECT=<<EOF
+            0x00000000      se_mflr r0
+            0x00000002      e_stwu r1 0xfffffff0(r1)
+            0x00000006      se_stw r31 0xc(r1)
+            0x00000008      se_stw r0 0x14(r1)
+            0x0000000a      se_cmpi r4 0x0
+            0x0000000c      e_li  r11 0x0
+        ,=< 0x00000010      e_beq cr0 0x212
+        |   0x00000014      e_addi r10 r4 0xffffffff
+        |   0x00000018      e_srwi r10 r10 0x2
+        |   0x0000001c      e_addi r7 r10 0x2
+ensure that the endianness is kept
+            0x00000000      se_mflr r0
+            0x00000002      e_stwu r1 0xfffffff0(r1)
+            0x00000006      se_stw r31 0xc(r1)
+            0x00000008      se_stw r0 0x14(r1)
+            0x0000000a      se_cmpi r4 0x0
+            0x0000000c      e_li  r11 0x0
+        ,=< 0x00000010      e_beq cr0 0x212
+        |   0x00000014      e_addi r10 r4 0xffffffff
+        |   0x00000018      e_srwi r10 r10 0x2
+        |   0x0000001c      e_addi r7 r10 0x2
+EOF
+RUN

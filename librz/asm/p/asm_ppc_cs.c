@@ -56,13 +56,9 @@ static int decompile_ps(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1, obits = -1;
-	int n, ret;
+	int n, ret, mode;
 	ut64 off = a->pc;
 	cs_insn *insn;
-	int mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32
-								  : 0;
-	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
-
 	if (a->cpu && strncmp(a->cpu, "vle", 3) == 0) {
 		// vle is big-endian only
 		if (!a->big_endian) {
@@ -82,6 +78,18 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			return op->size;
 		}
 	}
+	switch (a->bits) {
+	case 32:
+		mode = CS_MODE_32;
+		break;
+	case 64:
+		mode = CS_MODE_64;
+		break;
+	default:
+		mode = 0;
+		break;
+	}
+	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
 		cs_close(&handle);
 		handle = 0;

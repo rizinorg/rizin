@@ -433,7 +433,7 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 		free(name);
 		return false;
 	}
-	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	RzUtilStrScanOptions scan_opt = {
 		.buf_size = 2048,
 		.max_uni_blocks = 4,

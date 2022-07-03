@@ -30,7 +30,7 @@ else
     conf_data.set10('HAVE_LIBBZ2', true)
     libzip_deps += [bzip2_dep]
   endif
-  lzma_dep = dependency('lzma', required: false, static: is_static_build)
+  lzma_dep = dependency('liblzma', required: false, static: is_static_build)
   if not lzma_dep.found()
     lzma_dep = cc.find_library('lzma', required: false, static: is_static_build)
   endif
@@ -149,7 +149,7 @@ if cc.has_header('inttypes.h')
 #include <inttypes.h>'''
   zipconf_data.set('LIBZIP_TYPES_INCLUDE', types_header_prefix)
 elif cc.has_header('stdint.h')
-  types_header_prefix = '#include <stdin.h>'
+  types_header_prefix = '#include <stdint.h>'
   zipconf_data.set('LIBZIP_TYPES_INCLUDE', types_header_prefix)
 elif cc.has_header('sys/types.h')
   types_header_prefix = '#include <sys/types.h>'

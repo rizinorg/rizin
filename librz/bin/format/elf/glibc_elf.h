@@ -21,7 +21,7 @@
    <https://www.gnu.org/licenses/>.  */
 
 #ifndef _ELF_H
-#define _ELF_H 1
+#define _ELF_H
 
 __BEGIN_DECLS
 

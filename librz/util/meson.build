@@ -14,6 +14,7 @@ rz_util_sources = [
   'buf.c',
   'calc.c',
   'chmod.c',
+  'compression.c',
   'debruijn.c',
   'ebcdic.c',
   'event.c',
@@ -77,10 +78,9 @@ rz_util_sources = [
   'vector.c',
   'w32-sys.c',
   'x509.c',
-  'zip.c',
 ]
 
-rz_util_deps = [ldl, lrt, mth, th, utl, sdb_dep, zlib_dep] + platform_deps
+rz_util_deps = [ldl, lrt, mth, th, utl, sdb_dep, zlib_dep, liblzma_dep] + platform_deps
 if ['freebsd', 'netbsd', 'haiku', 'dragonfly'].contains(host_machine.system())
   # backtrace_symbols_fd requires -lexecinfo
   rz_util_deps += [cc.find_library('execinfo', static: is_static_build)]

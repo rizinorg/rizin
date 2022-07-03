@@ -1,0 +1,11 @@
+[wrap-file]
+directory = xz-5.2.5
+source_url = https://github.com/xz-mirror/xz/archive/refs/tags/v5.2.5.tar.gz
+# source_fallback_url = https://tukaani.org/xz/xz-5.2.5.tar.gz // has different hash, let's prefer github
+source_filename = xz-5.2.5.tar.gz
+source_hash = 0d2b89629f13dd1a0602810529327195eff5f62a0142ccd65b903bc16a4ac78a
+patch_directory = xz-5.2.5
+
+[provide]
+liblzma = lzma_dep
+
