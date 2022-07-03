@@ -2241,7 +2241,7 @@ static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *t
  * \param filter_fcn store the filtered functions
  * \return return the number of functions that conform to the keywords
  */
-static ut32 filter_function(RzCore *core, RzList *filter_fcn) {
+static ut32 filter_function(RzCore *core, RzList *filter_fcn, RzPVector *keywords) {
 	rz_return_val_if_fail(core, 0);
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
@@ -2250,7 +2250,7 @@ static ut32 filter_function(RzCore *core, RzList *filter_fcn) {
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		bool contain = true;
 		void **it;
-		rz_pvector_foreach (core->visual_filter, it) {
+		rz_pvector_foreach (keywords, it) {
 			contain = contain && strstr(fcn->name, (char *)*it);
 		}
 		if (!contain) {
@@ -2278,16 +2278,23 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 
 	// Adjust the windows size automaticaly
 	(void)rz_cons_get_size(&window);
-	window -= core->visual_filter ? 9 : 8; // Size of printed things
+	window -= core->visual_filter ? 10 : core->visual_inputing ? 10 : 8;  // Size of printed things
 	bool color = rz_config_get_i(core->config, "scr.color");
 	const char *color_addr = core->cons->context->pal.offset;
 	const char *color_fcn = core->cons->context->pal.fname;
 
-	// perform filter here
-	if (core->visual_filter) {
+	if (core->visual_inputing) {
 		filter_fcn = rz_list_newf(NULL);
 		if (filter_fcn) {
-			filter_function(core, filter_fcn);
+			RzPVector *vec = rz_pvector_new(NULL);
+			rz_pvector_push(vec, core->visual_inputing);
+			filter_function(core, filter_fcn, vec);
+			rz_pvector_free(vec);
+		}
+	} else if (core->visual_filter) {
+		filter_fcn = rz_list_newf(NULL);
+		if (filter_fcn) {
+			filter_function(core, filter_fcn, core->visual_filter);
 		}
 	}
 
@@ -2536,14 +2543,6 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		} else {
 			rz_cons_printf("-[ functions ]----------------- %s ---", printCmds[printMode]);
 		}
-		// hints for filtered keywords
-		if (core->visual_filter) {
-			void **it;
-			rz_cons_printf("\nfilter name: ");
-			rz_pvector_foreach (core->visual_filter, it) {
-				rz_cons_printf("%s ", (char *)*it);
-			}
-		}
 		if (color) {
 			rz_cons_strcat("\n" Color_RESET);
 		}
@@ -2551,6 +2550,17 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		char *drained = rz_strbuf_drain(buf);
 		rz_cons_printf("%s", drained);
 		free(drained);
+		// hints for filtered keywords
+		if (core->visual_inputing) {
+			rz_cons_printf("input keyword: %s\n\n", core->visual_inputing);
+		} else if (core->visual_filter) {
+			void **it;
+			rz_cons_printf("filter name: ");
+			rz_pvector_foreach (core->visual_filter, it) {
+				rz_cons_printf("%s ", (char *)*it);
+			}
+			rz_cons_print("\n\n");
+		}
 		addr = var_functions_show(core, option, 1, cols);
 		break;
 	}
@@ -2745,11 +2755,39 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 	rz_config_set_i(core->config, "asm.bytes", 0);
 	for (;;) {
 		if (core->visual_filter) {
-			nfcns = filter_function(core, NULL);
+			nfcns = filter_function(core, NULL, core->visual_filter);
 		} else {
 			nfcns = rz_list_length(core->analysis->fcns);
 		}
 		addr = rz_core_visual_analysis_refresh(core);
+
+		// for filter on the go
+		if (core->visual_inputing) {
+			int ch = rz_cons_readchar();
+			switch (ch)
+			{
+			case 13: // CR
+				rz_pvector_push(core->visual_filter, strdup(core->visual_inputing));
+				RZ_FREE(core->visual_inputing);
+				break;
+			case 127: // Backspace
+			case 8:
+				if (strlen(core->visual_inputing) > 0) {
+					core->visual_inputing[strlen(core->visual_inputing) - 1] = '\0';
+				}
+				break;
+			default:
+				if (!IS_PRINTABLE(ch)) {
+					break;
+				}
+				core->visual_inputing = rz_str_appendch(core->visual_inputing, ch);
+				rz_str_trim(core->visual_inputing);
+				break;
+			}
+			// mute the following switch while inputing keyword
+			continue;
+		}
+
 		if (input && *input) {
 			ch = *input;
 			input++;
@@ -2764,6 +2802,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 			continue;
 		}
 		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+
 		switch (ch) {
 		case 'f':
 			// add new keyword
@@ -2773,15 +2812,8 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 					break;
 				}
 			}
-			char *keyword = malloc(KEY_LEN);
-			if (!keyword) {
-				break;
-			}
-			rz_line_set_prompt("filter keyword: ");
-			rz_core_visual_showcursor(core, true);
-			if (rz_cons_fgets(keyword, KEY_LEN, 0, NULL) >= 0 && *keyword) {
-				rz_str_trim(keyword);
-				rz_pvector_push(core->visual_filter, keyword);
+			if (!core->visual_inputing) {
+				core->visual_inputing = rz_str_new("");
 			}
 			option = 0;
 			break;

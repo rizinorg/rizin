@@ -350,6 +350,7 @@ struct rz_core_t {
 	RzCoreVisual visual;
 	// visual // TODO: move them into RzCoreVisual
 	RzPVector *visual_filter; // store the filter keywords in Vv mode
+	char *visual_inputing; // for filter on the go in Vv mode
 	int http_up;
 	int gdbserver_up;
 	RzCoreVisualMode printidx;
