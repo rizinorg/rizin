@@ -748,12 +748,12 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 
 #define PRINTF_LN_STR(k, arg) \
 	{ \
-		const char* value = (arg); \
+		const char *value = (arg); \
 		if (RZ_STR_ISNOTEMPTY(value)) { \
 			if (use_color) \
 				rz_cons_printf("%s%s: %s\n" Color_RESET, color, k, value); \
 			else \
-				rz_cons_printf("%s: %s", k, value); \
+				rz_cons_printf("%s: %s\n", k, value); \
 		} \
 	}
 
@@ -787,29 +787,29 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		PRINTF_LN("mnemonic", "%s\n", op->mnemonic);
 		PRINTF_LN_STR("description", ab->description);
 		PRINTF_LN("mask", "%s\n", ab->mask);
-		PRINTF_LN_STR("ophint", hint->opcode);
+		PRINTF_LN_STR("ophint", hint ? hint->opcode : NULL);
 		PRINTF_LN("prefix", "%u\n", op->prefix);
 		PRINTF_LN("id", "%d\n", op->id);
-		PRINTF_LN("bytes", "%s", ab->bytes);
+		PRINTF_LN_STR("bytes", ab->bytes);
 		PRINTF_LN_NOT("val", "0x%08" PFMT64x "\n", op->val, UT64_MAX);
 		PRINTF_LN_NOT("ptr", "0x%08" PFMT64x "\n", op->ptr, UT64_MAX);
 		PRINTF_LN_NOT("disp", "0x%08" PFMT64x "\n", op->disp, UT64_MAX);
 		PRINTF_LN_NOT("refptr", "%d\n", op->refptr, -1);
 		PRINTF_LN("size", "%d\n", op->size);
-		PRINTF_LN("sign", "%s\n", rz_str_bool(op->sign));
-		PRINTF_LN("type", "%s\n", rz_analysis_optype_to_string(op->type));
+		PRINTF_LN_STR("sign", rz_str_bool(op->sign));
+		PRINTF_LN_STR("type", rz_analysis_optype_to_string(op->type));
 		PRINTF_LN_STR("datatype", rz_analysis_datatype_to_string(op->datatype));
 		PRINTF_LN("cycles", "%d\n", op->cycles);
 		PRINTF_LN_NOT("failcycles", "%d\n", op->failcycles, 0);
 		PRINTF_LN_NOT("type2", "0x%x\n", op->type2, 0);
-		PRINTF_LN_NOT("reg", "%s\n", op->reg, 0);
-		PRINTF_LN_NOT("ireg", "%s\n", op->ireg, 0);
+		PRINTF_LN_STR("reg", op->reg);
+		PRINTF_LN_STR("ireg", op->ireg);
 		PRINTF_LN_NOT("scale", "%d\n", op->scale, 0);
 		PRINTF_LN_STR("esil", hint && hint->esil ? hint->esil : esilstr);
 		if (op->il_op) {
 			RzStrBuf *sbil = rz_strbuf_new("");
 			rz_il_op_effect_stringify(op->il_op, sbil);
-			PRINTF_LN("rzil", "%s\n", rz_strbuf_get(sbil));
+			PRINTF_LN_STR("rzil", rz_strbuf_get(sbil));
 			rz_strbuf_free(sbil);
 		}
 		PRINTF_LN_NOT("jump", "0x%08" PFMT64x "\n", op->jump, UT64_MAX);

@@ -826,8 +826,6 @@ typedef struct rz_core_asm_hit {
 typedef struct rz_core_disasm_options {
 	int invbreak;
 	int cbytes;
-	bool json; ///< Print in json
-	PJ *pj; ///< PJ instance
 	RzAnalysisFunction *function; ///< Disassemble a function
 	RzPVector *vec; ///< Not print, but append as RzList<RzAnalysisDisasmText>
 } RzCoreDisasmOptions;
@@ -847,14 +845,14 @@ RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len
 RZ_API RzList *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *len, ut64 *start_addr, ut32 l);
-RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RzCoreDisasmOptions *options);
+RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RZ_NULLABLE RzCmdStateOutput *state, RzCoreDisasmOptions *options);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int mode);
 RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fmt);
-RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode);
+RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *state);
 RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 reladdr, RZ_NULLABLE RzAnalysisFunction *fcn, bool color);
 RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj);
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);

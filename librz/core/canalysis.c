@@ -1669,11 +1669,6 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 	bool color_current = rz_config_get_i(core->config, "graph.gv.current");
 	char *str;
 	int nodes = 0;
-	RzCoreDisasmOptions disasm_options = {
-		.cbytes = 1,
-		.pj = pj,
-		.json = true,
-	};
 	rz_list_foreach (fcn->bbs, iter, bbi) {
 		if (is_keva) {
 			char key[128];
@@ -1727,7 +1722,14 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 			if (buf) {
 				rz_io_read_at(core->io, bbi->addr, buf, bbi->size);
 				if (is_json_format_disasm) {
-					rz_core_print_disasm(core, bbi->addr, buf, bbi->size, bbi->size, &disasm_options);
+					RzCmdStateOutput state = {
+						.mode = RZ_OUTPUT_MODE_JSON,
+						.d = { .pj = pj }
+					};
+					RzCoreDisasmOptions disasm_options = {
+						.cbytes = 1,
+					};
+					rz_core_print_disasm(core, bbi->addr, buf, bbi->size, bbi->size, &state, &disasm_options);
 				} else {
 					rz_core_print_disasm_json(core, bbi->addr, buf, bbi->size, 0, pj);
 				}

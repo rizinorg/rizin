@@ -6647,7 +6647,8 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 	};
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_print_disasm(core, core->offset, core->block, n_bytes, n_bytes > 0 && !n_instrs ? n_bytes : n_instrs, &disasm_options);
+		rz_core_print_disasm(core, core->offset, core->block, n_bytes,
+			n_bytes > 0 && !n_instrs ? n_bytes : n_instrs, state, &disasm_options);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		disassembly_as_table(state->d.t, core, n_instrs, n_bytes);
@@ -6826,7 +6827,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_basic_block_handler(RzCore *core, int argc
 	rz_cmd_state_output_array_start(state);
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		core->num->value = rz_core_print_disasm(core, b->addr, block, b->size, 9999, &disasm_options);
+		core->num->value = rz_core_print_disasm(core, b->addr, block, b->size, 9999, state, &disasm_options);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		core->num->value = 1;
@@ -6858,10 +6859,8 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_basic_block_as_text_json_handler(RzCore *c
 	rz_io_read_at(core->io, b->addr, block, b->size);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 2,
-		.pj = state->d.pj,
-		.json = state->mode == RZ_OUTPUT_MODE_JSON,
 	};
-	core->num->value = rz_core_print_disasm(core, b->addr, block, b->size, 9999, &disasm_options);
+	core->num->value = rz_core_print_disasm(core, b->addr, block, b->size, 9999, state, &disasm_options);
 
 	free(block);
 	return RZ_CMD_STATUS_OK;
@@ -6887,26 +6886,8 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_with_flow_handler(RzCore *c
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int n_instrs = parsed;
-	int mode = 0;
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		mode = RZ_MODE_PRINT;
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		mode = RZ_MODE_JSON;
-		break;
-	case RZ_OUTPUT_MODE_QUIET:
-		mode = RZ_MODE_SIMPLE;
-		break;
-	case RZ_OUTPUT_MODE_QUIETEST:
-		mode = RZ_MODE_SIMPLEST;
-		break;
-	default:
-		rz_warn_if_reached();
-		return RZ_CMD_STATUS_ERROR;
-	}
 	// this command is going to be removed when esil will be removed.
-	rz_core_disasm_pde(core, n_instrs, mode);
+	rz_core_disasm_pde(core, n_instrs, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6954,7 +6935,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 		.cbytes = 1,
 		.function = function,
 	};
-	core->num->value = rz_core_print_disasm(core, start, bytes, size, size, &disasm_options);
+	core->num->value = rz_core_print_disasm(core, start, bytes, size, size, state, &disasm_options);
 	free(bytes);
 
 	rz_core_block_size(core, old_blocksize);
@@ -7005,16 +6986,16 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 		rz_core_block_read(core);
 	}
 
+	state->mode = RZ_OUTPUT_MODE_JSON;
+
 	if (rz_cons_singleton()->is_html) {
 		rz_cons_singleton()->is_html = false;
 		rz_cons_singleton()->was_html = true;
 	}
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 1,
-		.json = true,
 	};
-	core->num->value = rz_core_print_disasm(core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), &disasm_options);
-	rz_cons_newline();
+	core->num->value = rz_core_print_disasm(core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), state, &disasm_options);
 
 	if (n_instrs < 0) {
 		rz_core_block_size(core, old_blocksize);

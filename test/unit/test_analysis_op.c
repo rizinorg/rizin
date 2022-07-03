@@ -131,7 +131,7 @@ bool test_rz_core_print_disasm() {
 		.cbytes = 1,
 	};
 	mu_assert_notnull(vec, "rz_core_print_disasm vec not null");
-	rz_core_print_disasm(core, 0, buf, len, len, &options);
+	rz_core_print_disasm(core, 0, buf, len, len, NULL, &options);
 
 	mu_assert_eq(rz_pvector_len(vec), 3, "rz_core_print_disasm len");
 	RzAnalysisDisasmText *t = rz_pvector_at(vec, 0);

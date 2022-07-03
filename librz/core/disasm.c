@@ -5341,12 +5341,12 @@ RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t) {
  * \param options Disassemble Options
  * \return Disassemble bytes number
  */
-RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines,
+RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RZ_NULLABLE RzCmdStateOutput *state,
 	RZ_NULLABLE RzCoreDisasmOptions *options) {
 	rz_return_val_if_fail(core && buf, 0);
 
-	PJ *pj = options ? options->pj : NULL;
-	bool json = options ? options->json : false;
+	PJ *pj = state ? state->d.pj : NULL;
+	bool json = state && state->mode == RZ_OUTPUT_MODE_JSON;
 
 	RzPrint *p = core->print;
 	int continueoninvbreak = (len == nlines) && (options ? options->invbreak : 0);
@@ -6602,7 +6602,7 @@ static bool read_ahead(RzIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t
 	return rz_io_read_at_mapped(io, address, *buf + offset_into_buf, bytes_to_read);
 }
 
-RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
+RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *state) {
 	if (nb_opcodes < 1) {
 		return 0;
 	}
@@ -6611,14 +6611,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 	if (!pc) {
 		return -1;
 	}
-	PJ *pj = NULL;
-	if (mode == RZ_MODE_JSON) {
-		pj = pj_new();
-		if (!pj) {
-			return -1;
-		}
-		pj_a(pj);
-	}
+	rz_cmd_state_output_array_start(state);
 	if (!core->analysis->esil) {
 		rz_core_analysis_esil_reinit(core);
 		if (!rz_config_get_b(core->config, "cfg.debug")) {
@@ -6693,18 +6686,18 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 				i += ops_to_read;
 			}
 			if (block_instr) {
-				switch (mode) {
-				case RZ_MODE_JSON:
-					rz_core_print_disasm_json(core, block_start, buf, block_sz, block_instr, pj);
+				switch (state->mode) {
+				case RZ_OUTPUT_MODE_JSON:
+					rz_core_print_disasm_json(core, block_start, buf, block_sz, block_instr, state->d.pj);
 					break;
-				case RZ_MODE_SIMPLE:
+				case RZ_OUTPUT_MODE_QUIET:
 					rz_core_disasm_pdi_with_buf(core, block_start, buf, block_instr, block_sz, 0);
 					break;
-				case RZ_MODE_SIMPLEST:
+				case RZ_OUTPUT_MODE_QUIETEST:
 					rz_core_print_disasm_instructions_with_buf(core, block_start, buf, block_sz, block_instr);
 					break;
 				default:
-					rz_core_print_disasm(core, block_start, buf, block_sz, block_instr, NULL);
+					rz_core_print_disasm(core, block_start, buf, block_sz, block_instr, &state, NULL);
 					break;
 				}
 			}
@@ -6727,11 +6720,8 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 			rz_core_seek_arch_bits(core, block_start);
 		}
 	}
-	if (mode == RZ_MODE_JSON) {
-		pj_end(pj);
-		rz_cons_print(pj_string(pj));
-		pj_free(pj);
-	}
+
+	rz_cmd_state_output_array_end(state);
 	free(buf);
 	rz_reg_arena_pop(reg);
 	int len = rz_pvector_len(&ocache);
