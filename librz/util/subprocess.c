@@ -9,6 +9,31 @@
 
 #if __WINDOWS__
 #include <rz_windows.h>
+
+#if NTDDI_VERSION >= NTDDI_VISTA
+typedef _Success_(return != FALSE) BOOL(WINAPI *InitializeProcThreadAttributeList_t)(
+	_Out_writes_bytes_to_opt_(*lpSize, *lpSize) LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList,
+	_In_ DWORD dwAttributeCount,
+	_Reserved_ DWORD dwFlags,
+	_When_(lpAttributeList == nullptr, _Out_) _When_(lpAttributeList != nullptr, _Inout_) PSIZE_T lpSize);
+
+typedef BOOL(WINAPI *UpdateProcThreadAttribute_t)(
+	_Inout_ LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList,
+	_In_ DWORD dwFlags,
+	_In_ DWORD_PTR Attribute,
+	_In_reads_bytes_opt_(cbSize) PVOID lpValue,
+	_In_ SIZE_T cbSize,
+	_Out_writes_bytes_opt_(cbSize) PVOID lpPreviousValue,
+	_In_opt_ PSIZE_T lpReturnSize);
+
+typedef VOID(WINAPI *DeleteProcThreadAttributeList_t)(
+	_Inout_ LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList);
+
+static InitializeProcThreadAttributeList_t lpInitializeProcThreadAttributeList = NULL;
+static UpdateProcThreadAttribute_t lpUpdateProcThreadAttribute = NULL;
+static DeleteProcThreadAttributeList_t lpDeleteProcThreadAttributeList = NULL;
+#endif
+
 struct rz_subprocess_t {
 	HANDLE stdin_write;
 	HANDLE stdout_read;
@@ -19,6 +44,11 @@ struct rz_subprocess_t {
 	RzStrBuf err;
 };
 
+#define INVALID_POINTER_VALUE ((void *)PTRDIFF_MAX)
+
+static RzThreadLock *subproc_mutex = NULL;
+static long refcount = 0;
+static bool has_procthreadattr = false;
 static volatile long pipe_id = 0;
 static DWORD mode_stdin;
 static DWORD mode_stdout;
@@ -45,19 +75,87 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 	return true;
 }
 
+static RzThreadLock *get_subprocess_lock(void) {
+	RzThreadLock *lock;
+	do {
+		lock = InterlockedCompareExchangePointer(&subproc_mutex, INVALID_POINTER_VALUE, INVALID_POINTER_VALUE);
+	} while (!lock);
+	return lock;
+}
+
 RZ_API bool rz_subprocess_init(void) {
+	long ref = InterlockedIncrement(&refcount);
+	RzThreadLock *lock = NULL;
+	if (ref == 1) {
+		lock = rz_th_lock_new(false);
+		if (!lock) {
+			InterlockedExchangePointer(&subproc_mutex, INVALID_POINTER_VALUE);
+			InterlockedDecrement(&refcount);
+			return false;
+		}
+		// Enter lock before making it available, so we are the first to run
+		rz_th_lock_enter(lock);
+		InterlockedExchangePointer(&subproc_mutex, lock);
+	} else {
+		// Spin until theres a lock available or lock initialization failed
+		lock = get_subprocess_lock();
+		if (lock == INVALID_POINTER_VALUE) {
+			InterlockedDecrement(&refcount);
+			return false;
+		}
+		rz_th_lock_enter(lock);
+	}
+
+	if (ref > 1) {
+		// This is not the first call to this function, just leave
+		goto leave;
+	}
+
 	// Save current console mode
 	GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &mode_stdin);
 	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode_stdout);
 	GetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), &mode_stderr);
+
+#if NTDDI_VERSION >= NTDDI_VISTA
+	if (!has_procthreadattr && IsWindowsVistaOrGreater()) {
+		HMODULE kernel32 = LoadLibraryW(L"kernel32");
+		if (!kernel32) {
+			rz_sys_perror("LoadLibraryW(L\"kernel32\")");
+			goto leave;
+		}
+		lpInitializeProcThreadAttributeList = (InitializeProcThreadAttributeList_t)GetProcAddress(kernel32, "InitializeProcThreadAttributeList");
+		lpUpdateProcThreadAttribute = (UpdateProcThreadAttribute_t)GetProcAddress(kernel32, "UpdateProcThreadAttribute");
+		lpDeleteProcThreadAttributeList = (DeleteProcThreadAttributeList_t)GetProcAddress(kernel32, "DeleteProcThreadAttributeList");
+		if (lpInitializeProcThreadAttributeList && lpUpdateProcThreadAttribute && lpDeleteProcThreadAttributeList) {
+			has_procthreadattr = true;
+		}
+		FreeLibrary(kernel32);
+	}
+#endif
+leave:
+	rz_th_lock_leave(lock);
 	return true;
 }
 RZ_API void rz_subprocess_fini(void) {
+	RzThreadLock *lock = NULL;
+	do {
+		if (InterlockedCompareExchange(&refcount, -1, -1) == 0) {
+			// Shouldn't happen, someone called this function excessively
+			rz_warn_if_reached();
+			return;
+		}
+		lock = InterlockedExchangePointer(&subproc_mutex, NULL);
+	} while (!lock);
+	if (InterlockedDecrement(&refcount) > 0) {
+		InterlockedExchangePointer(&subproc_mutex, lock);
+		return;
+	}
 	SetEnvironmentVariableW(L"RZ_PIPE_PATH", NULL);
 	// Restore console mode
 	SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), mode_stdin);
 	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode_stdout);
 	SetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), mode_stderr);
+	rz_th_lock_free(lock);
 }
 
 // Create an env block that inherits the current vars but overrides the given ones
@@ -155,6 +253,10 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	HANDLE stderr_write = GetStdHandle(STD_ERROR_HANDLE);
 	LPWSTR lpFilePart;
 	PWCHAR cmd_exe = RZ_NEWS0(WCHAR, MAX_PATH);
+#if NTDDI_VERSION >= NTDDI_VISTA
+	LPPROC_THREAD_ATTRIBUTE_LIST attr_list = NULL;
+#endif
+	RzThreadLock *lock = NULL;
 
 	PWCHAR file = rz_utf8_to_utf16(opt->file);
 	if (!file) {
@@ -256,12 +358,42 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	}
 
 	PROCESS_INFORMATION proc_info = { 0 };
-	STARTUPINFOW start_info = { 0 };
-	start_info.cb = sizeof(start_info);
-	start_info.hStdError = stderr_write;
-	start_info.hStdOutput = stdout_write;
-	start_info.hStdInput = stdin_read;
-	start_info.dwFlags = STARTF_USESTDHANDLES;
+	DWORD dwCreationFlags = CREATE_UNICODE_ENVIRONMENT;
+	STARTUPINFOW start_info_short = { .cb = sizeof(STARTUPINFOW) };
+	STARTUPINFOW *start_info = &start_info_short;
+#if NTDDI_VERSION >= NTDDI_VISTA
+	STARTUPINFOEXW start_infoex = { .StartupInfo.cb = sizeof(STARTUPINFOEXW) };
+	if (has_procthreadattr) {
+		SIZE_T attr_list_size = 0;
+		if (!lpInitializeProcThreadAttributeList(NULL, 1, 0, &attr_list_size) &&
+			GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+			goto error;
+		}
+		attr_list = malloc(attr_list_size);
+		if (!attr_list) {
+			goto error;
+		}
+		if (!lpInitializeProcThreadAttributeList(attr_list, 1, 0, &attr_list_size)) {
+			goto error;
+		}
+		HANDLE handle_list[3] = { stderr_write, stdout_write, stdin_read };
+		if (!lpUpdateProcThreadAttribute(attr_list, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handle_list, 3 * sizeof(HANDLE), NULL, NULL)) {
+			goto error;
+		}
+		start_info = (STARTUPINFOW *)&start_infoex;
+		start_infoex.lpAttributeList = attr_list;
+		dwCreationFlags |= EXTENDED_STARTUPINFO_PRESENT;
+	} else {
+		lock = get_subprocess_lock();
+	}
+#else
+	lock = get_subprocess_lock();
+#endif
+
+	start_info->hStdError = stderr_write;
+	start_info->hStdOutput = stdout_write;
+	start_info->hStdInput = stdin_read;
+	start_info->dwFlags = STARTF_USESTDHANDLES;
 
 	LPWSTR env = override_env(opt->envvars, opt->envvals, opt->env_size);
 	if (!CreateProcessW(
@@ -270,10 +402,10 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		    NULL, // process security attributes
 		    NULL, // primary thread security attributes
 		    TRUE, // handles are inherited
-		    CREATE_UNICODE_ENVIRONMENT, // creation flags
+		    dwCreationFlags, // creation flags
 		    env, // use parent's environment
 		    NULL, // use parent's current directory
-		    &start_info, // STARTUPINFO pointer
+		    start_info, // STARTUPINFO pointer
 		    &proc_info)) { // receives PROCESS_INFORMATION
 		free(env);
 		rz_sys_perror("CreateProcess");
@@ -285,6 +417,16 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	proc->proc = proc_info.hProcess;
 
 beach:
+
+	if (lock) {
+		rz_th_lock_leave(lock);
+	}
+#if NTDDI_VERSION >= NTDDI_VISTA
+	if (attr_list) {
+		lpDeleteProcThreadAttributeList(attr_list);
+		free(attr_list);
+	}
+#endif
 
 	if (stdin_read && stdin_read != GetStdHandle(STD_INPUT_HANDLE)) {
 		CloseHandle(stdin_read);
