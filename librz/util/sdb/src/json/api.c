@@ -1,5 +1,5 @@
-/* Copyleft 2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
-// XXX: this is deprecated coz its dupper for ../json.c
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
 
 #include <stdio.h>
 #include <string.h>

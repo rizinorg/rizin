@@ -1,4 +1,6 @@
-/* Public domain - author D. J. Bernstein, modified by pancake - 2014-2016 */
+// SPDX-FileCopyrightText: D. J. Bernstein
+// SPDX-FileCopyrightText: 2014-2016 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: CC-PDDC
 
 #include <stdio.h>
 #include <sys/types.h>

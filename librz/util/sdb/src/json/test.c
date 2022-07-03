@@ -1,4 +1,5 @@
-/* Copyleft 2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
 
 int test_parse_json_path() {
 	Rangstr rs = rangstr_new("ping.board[\"pop\"][1][2][\"caca\"].panda");

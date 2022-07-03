@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
+
 #ifndef _INCLUDE_RANGSTR_H_
 #define _INCLUDE_RANGSTR_H_
 

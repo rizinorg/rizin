@@ -1,4 +1,5 @@
-/* Copyleft 2012-2017 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+// SPDX-FileCopyrightText: 2012-2017 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
 
 #ifndef RANGSTR_C
 #define RANGSTR_C

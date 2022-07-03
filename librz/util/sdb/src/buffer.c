@@ -1,4 +1,5 @@
-/* Public Domain */
+// SPDX-FileCopyrightText: unknown
+// SPDX-License-Identifier: CC-PDDC
 
 #include "buffer.h"
 

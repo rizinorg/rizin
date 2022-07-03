@@ -1,4 +1,5 @@
-/* sdb - MIT - Copyright 2019 - thestr4ng3r */
+// SPDX-FileCopyrightText: 2019 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-License-Identifier: MIT
 
 #include "sdb.h"
 

@@ -1,4 +1,5 @@
-/* Public domain. */
+// SPDX-FileCopyrightText: D. J. Bernstein <djb@cr.yp.to>
+// SPDX-License-Identifier: CC-PDDC
 
 #include <stdio.h>
 #include <stdlib.h>

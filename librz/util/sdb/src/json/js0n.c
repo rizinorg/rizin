@@ -1,5 +1,5 @@
-// by jeremie miller - 2010-2018
-// public domain, contributions/improvements welcome via github
+// SPDX-FileCopyrightText: 2010-2018 Jeremie Miller
+// SPDX-License-Identifier: MIT
 
 // opportunity to further optimize would be having different jump tables for higher depths
 

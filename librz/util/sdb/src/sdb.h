@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
+
 #ifndef SDB_H
 #define SDB_H
 

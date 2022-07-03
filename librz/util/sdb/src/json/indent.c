@@ -1,4 +1,5 @@
-/* sdb - MIT - Copyright 2012-2018 - pancake */
+// SPDX-FileCopyrightText: 2012-2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
 
 #include <limits.h>
 

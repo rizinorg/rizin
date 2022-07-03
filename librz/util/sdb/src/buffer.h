@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: unknown
+// SPDX-License-Identifier: CC-PDDC
+
 #ifndef BUFFER_H
 #define BUFFER_H
 

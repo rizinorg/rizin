@@ -1,4 +1,7 @@
-/* radare2 - BSD 3 Clause License - crowell, pancake, ret2libc 2016-2018 */
+// SPDX-FileCopyrightText: 2016-2018 crowell
+// SPDX-FileCopyrightText: 2016-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016-2018 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: BSD-3-Clause
 
 #define LOAD_FACTOR     1
 #define S_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

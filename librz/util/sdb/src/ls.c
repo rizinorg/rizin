@@ -1,4 +1,6 @@
-/* sdb - MIT - Copyright 2007-2017 - pancake, alvaro */
+// SPDX-FileCopyrightText: 2007-2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2007-2017 alvaro
+// SPDX-License-Identifier: MIT
 
 #include <string.h>
 #include "ls.h"

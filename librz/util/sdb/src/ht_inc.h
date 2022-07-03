@@ -1,4 +1,7 @@
-/* radare2 - BSD 3 Clause License - 2016 - crowell */
+// SPDX-FileCopyrightText: 2016-2018 crowell
+// SPDX-FileCopyrightText: 2016-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016-2018 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef HT_TYPE
 #error HT_TYPE should be defined before including this header

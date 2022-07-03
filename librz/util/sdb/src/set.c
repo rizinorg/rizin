@@ -1,4 +1,5 @@
-/* sdb - MIT - Copyright 2019 - pancake */
+// SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
 
 #include "set.h"
 

@@ -1,4 +1,5 @@
-/* Copyleft 2012 - api (aka SimpleDB) - pancake<nopcode.org> */
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
 
 #include <stdio.h>
 #include <stdlib.h>
