@@ -1,0 +1,27 @@
+platform: linux/arm64
+
+pipeline:
+  build:
+    image: focal
+    commands:
+      - apt install build-essential git python3-pip cmake
+      - pip install -U --user meson ninja
+      - pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+      - meson build --prefix="`pwd`/prefix"
+      - ninja -C build
+      - ninja -C build install
+  fetch-testbins:
+    image: focal
+    commands:
+      - cd test
+      - make bins
+  unit-test:
+    image: focal
+    commands:
+      - ninja -C build test
+  rz-test:
+    image: focal
+    commands:
+      - export PATH="`pwd`/prefix/bin:$PATH"
+      - cd test
+      - rz-test -L
