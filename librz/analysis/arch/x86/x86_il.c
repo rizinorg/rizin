@@ -709,7 +709,16 @@ static RzILOpEffect *x86_il_aas(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
  *  - RM
  */
 static RzILOpEffect *x86_il_adc(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
-	// TODO
+	RzILOpPure *op1 = x86_il_get_operand(ins->operands[0]);
+	RzILOpPure *op2 = x86_il_get_operand(ins->operands[1]);
+	RzILOpPure *cf = x86_il_get_eflags(X86_EFLAGS_CF);
+
+	RzILOpPure *sum = ADD(ADD(op1, op2), cf);
+	RzILOpEffect *setdest = x86_il_set_operand(ins->operands[0], sum);
+	RzILOpEffect *setcf = x86_il_set_eflags(X86_EFLAGS_CF, x86_il_is_add_carry(DUP(sum), DUP(op1), DUP(op2)));
+	RzILOpEffect *setof = x86_il_set_eflags(X86_EFLAGS_OF, x86_il_is_add_overflow(DUP(sum), DUP(op1), DUP(op2)));
+
+	return SEQ3(setdest, setcf, setof);
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(X86Ins *, ut64, RzAnalysis *);
@@ -723,6 +732,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_AAD] = x86_il_aad,
 	[X86_INS_AAM] = x86_il_aam,
 	[X86_INS_AAS] = x86_il_aas,
+	[X86_INS_ADC] = x86_il_adc,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
