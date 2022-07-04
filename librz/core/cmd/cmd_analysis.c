@@ -7951,19 +7951,19 @@ RZ_IPI RzCmdStatus rz_global_imports_handler(RzCore *core, int argc, const char 
 	char *imp;
 	RzListIter *iter;
 
-	if (RZ_STR_ISEMPTY(argv[1])) {
-		rz_list_foreach (core->analysis->imports, iter, imp) {
-			switch (state->mode) {
-			case RZ_OUTPUT_MODE_STANDARD:
-				rz_cons_printf("%s\n", imp);
-				break;
-			default:
-				rz_warn_if_reached();
-				break;
-			}
-		}
-	} else {
+	if (RZ_STR_ISNOTEMPTY(argv[1])) {
 		rz_analysis_add_import(core->analysis, argv[1]);
+		return RZ_CMD_STATUS_OK;
+	}
+	rz_list_foreach (core->analysis->imports, iter, imp) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("%s\n", imp);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
 	}
 
 	return RZ_CMD_STATUS_OK;
