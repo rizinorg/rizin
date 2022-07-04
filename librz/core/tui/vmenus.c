@@ -2272,9 +2272,9 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
 	RzAnalysisFunction *fcn;
-	RzList *filter_fcn = core->analysis->fcns;
+	RzList *filter_fcn = core->analysis->fcns, *visual_filter = NULL;
 	int window, i = 0, print_full_func;
-	RzListIter *iter;
+	RzListIter *iter, *iter1;
 
 	// Adjust the windows size automaticaly
 	(void)rz_cons_get_size(&window);
@@ -2283,6 +2283,14 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	const char *color_addr = core->cons->context->pal.offset;
 	const char *color_fcn = core->cons->context->pal.fname;
 
+	if (rz_pvector_len(core->visual_filter)) {
+		visual_filter = rz_list_newf(NULL);
+		if (visual_filter) {
+			filter_function(core, visual_filter, core->visual_filter);
+		}
+		filter_fcn = visual_filter;
+	}
+
 	if (core->visual_inputing) {
 		filter_fcn = rz_list_newf(NULL);
 		if (filter_fcn) {
@@ -2290,11 +2298,14 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 			rz_pvector_push(vec, core->visual_inputing);
 			filter_function(core, filter_fcn, vec);
 			rz_pvector_free(vec);
-		}
-	} else if (core->visual_filter) {
-		filter_fcn = rz_list_newf(NULL);
-		if (filter_fcn) {
-			filter_function(core, filter_fcn, core->visual_filter);
+			// ensure filter_fcn also conform to visual_filter
+			if (rz_pvector_len(core->visual_filter)) {
+				rz_list_foreach_safe(filter_fcn, iter, iter1, fcn) {
+					if (!rz_list_contains(visual_filter, fcn)) {
+						rz_list_delete(filter_fcn, iter);
+					}
+				}
+			}
 		}
 	}
 
@@ -2552,7 +2563,14 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		free(drained);
 		// hints for filtered keywords
 		if (core->visual_inputing) {
-			rz_cons_printf("input keyword: %s\n\n", core->visual_inputing);
+			// collect already existing keywords
+			char *prev_keywords = rz_str_new("");
+			void **it;
+			rz_pvector_foreach (core->visual_filter, it) {
+				rz_str_appendf(prev_keywords, " %s", (char *)*it);
+			}
+			rz_cons_printf("input keyword:%s %s\n\n", prev_keywords, core->visual_inputing);
+			rz_free(prev_keywords);
 		} else if (core->visual_filter) {
 			void **it;
 			rz_cons_printf("filter name: ");
