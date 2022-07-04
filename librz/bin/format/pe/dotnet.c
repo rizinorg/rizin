@@ -749,7 +749,9 @@ int bin_pe_dotnet_read_method_header(Pe_image_clr *clr, RzBuffer *b, RzBinSymbol
 	}
 
 	ut8 buf[sizeof(Pe_image_clr_methodheader)];
-	rz_buf_read8(b, buf);
+	if (!rz_buf_read8(b, buf)) {
+		return -1;
+	}
 
 	if ((buf[0] & 0x03) == 0x02) { // Tiny
 		sym->paddr += 1;
