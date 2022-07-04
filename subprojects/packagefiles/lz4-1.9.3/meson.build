@@ -1,6 +1,5 @@
 project('lz4', ['c'],
   license: ['BSD', 'GPLv2'],
-  default_options : ['c_std=c99', 'buildtype=release'],
   version: '1.9.3',
   meson_version: '>=0.47.0')
 
