@@ -138,7 +138,7 @@ typedef struct rz_reg_set_t {
 	RzList *regs; ///< RzRegItem
 	HtPP *ht_regs; ///< name:RzRegItem
 	RzListIter *cur;
-	int maskregstype; ///< which type of regs has this register set (logic mask with 1 << RZ_REG_TYPE_XXX)
+	ut32 maskregstype; ///< which type of regs has this register set (logic mask with 1 << RZ_REG_TYPE_XXX)
 } RzRegSet;
 
 typedef struct rz_reg_t {
