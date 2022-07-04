@@ -276,7 +276,7 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *va
 
 	if (!ret) {
 		SHParamHelper ret_h = sh_il_get_param(param, sh_scaling_size[scaling]);
-		ret = STOREW(ret_h.pure, UNSIGNED(sh_scaling_size[scaling], val));
+		ret = STOREW(ret_h.pure, val);
 		pre = ret_h.pre;
 		post = ret_h.post;
 	}
@@ -286,70 +286,78 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *va
 
 static inline RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
+	RzILOpBool *xmsb = MSB(x);
+	RzILOpBool *ymsb = MSB(y);
+	RzILOpBool *resmsb = MSB(res);
+
 	// x & y
-	RzILOpPure *xy = LOGAND(x, y);
-	RzILOpPure *nres = LOGNOT(res);
+	RzILOpBool *xy = AND(xmsb, ymsb);
+	RzILOpBool *nres = INV(resmsb);
 
 	// !res & y
-	RzILOpPure *ry = LOGAND(nres, DUP(y));
+	RzILOpBool *ry = AND(nres, DUP(ymsb));
 	// x & !res
-	RzILOpPure *xr = LOGAND(DUP(x), nres);
+	RzILOpBool *xr = AND(DUP(xmsb), nres);
 
 	// bit = xy | ry | xr
-	RzILOpPure * or = LOGOR(xy, ry);
-	or = LOGOR(or, xr);
+	RzILOpBool * or = OR(xy, ry);
+	or = OR(or, xr);
 
-	RzILOpPure *mask = SH_U_REG(1u << 31);
-	mask = LOGAND(mask, DUP(or));
-	return NON_ZERO(mask);
+	return NON_ZERO(or);
 }
 
 static inline RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
+	RzILOpBool *xmsb = MSB(x);
+	RzILOpBool *ymsb = MSB(y);
+	RzILOpBool *resmsb = MSB(res);
+
 	// !x & y
-	RzILOpPure *nx = LOGNOT(x);
-	RzILOpPure *nxy = LOGAND(nx, y);
+	RzILOpBool *nx = INV(xmsb);
+	RzILOpBool *nxy = AND(nx, ymsb);
 
 	// y & res
-	RzILOpPure *rny = LOGAND(DUP(y), res);
+	RzILOpBool *rny = AND(DUP(ymsb), resmsb);
 	// res & !x
-	RzILOpPure *rnx = LOGAND(DUP(res), nx);
+	RzILOpBool *rnx = AND(DUP(resmsb), nx);
 
 	// bit = nxy | rny | rnx
-	RzILOpPure * or = LOGOR(nxy, rny);
-	or = LOGOR(or, rnx);
+	RzILOpBool * or = OR(nxy, rny);
+	or = OR(or, rnx);
 
-	RzILOpPure *mask = SH_U_REG(1u << 31);
-	mask = LOGAND(mask, DUP(or));
-	return NON_ZERO(mask);
+	return NON_ZERO(or);
 }
 
 static inline RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
-	// !res & x & y
-	RzILOpPure *nrxy = LOGAND(LOGAND(LOGNOT(res), x), y);
-	// res & !x & !y
-	RzILOpPure *rnxny = LOGAND(LOGAND(DUP(res), LOGNOT(DUP(x))), LOGNOT(DUP(y)));
-	// or = nrxy | rnxny
-	RzILOpPure * or = LOGOR(nrxy, rnxny);
+	RzILOpBool *xmsb = MSB(x);
+	RzILOpBool *ymsb = MSB(y);
+	RzILOpBool *resmsb = MSB(res);
 
-	RzILOpPure *mask = SH_U_REG(1u << 31);
-	mask = LOGAND(mask, or);
-	return NON_ZERO(mask);
+	// !res & x & y
+	RzILOpBool *nrxy = AND(AND(INV(resmsb), xmsb), ymsb);
+	// res & !x & !y
+	RzILOpBool *rnxny = AND(AND(DUP(resmsb), INV(DUP(xmsb))), INV(DUP(ymsb)));
+	// or = nrxy | rnxny
+	RzILOpBool * or = OR(nrxy, rnxny);
+
+	return NON_ZERO(or);
 }
 
 static inline RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
-	// !res & x & !y
-	RzILOpPure *nrxny = LOGAND(LOGAND(LOGNOT(res), x), LOGNOT(y));
-	// res & !x & y
-	RzILOpPure *rnxy = LOGAND(LOGAND(DUP(res), LOGNOT(DUP(x))), DUP(y));
-	// or = nrxny | rnxy
-	RzILOpPure * or = LOGOR(nrxny, rnxy);
+	RzILOpBool *xmsb = MSB(x);
+	RzILOpBool *ymsb = MSB(y);
+	RzILOpBool *resmsb = MSB(res);
 
-	RzILOpPure *mask = SH_U_REG(1u << 31);
-	mask = LOGAND(mask, or);
-	return NON_ZERO(mask);
+	// !res & x & !y
+	RzILOpBool *nrxny = AND(AND(INV(resmsb), xmsb), INV(ymsb));
+	// res & !x & y
+	RzILOpBool *rnxy = AND(AND(DUP(resmsb), INV(DUP(xmsb))), DUP(ymsb));
+	// or = nrxny | rnxy
+	RzILOpBool * or = OR(nrxny, rnxy);
+
+	return NON_ZERO(or);
 }
 
 /* Instruction implementations */
