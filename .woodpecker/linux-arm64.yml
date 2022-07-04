@@ -2,7 +2,7 @@ platform: linux/arm64
 
 pipeline:
   build:
-    image: focal
+    image: ubuntu
     commands:
       - apt install build-essential git python3-pip cmake
       - pip install -U --user meson ninja
@@ -11,16 +11,16 @@ pipeline:
       - ninja -C build
       - ninja -C build install
   fetch-testbins:
-    image: focal
+    image: ubuntu
     commands:
       - cd test
       - make bins
   unit-test:
-    image: focal
+    image: ubuntu
     commands:
       - ninja -C build test
   rz-test:
-    image: focal
+    image: ubuntu
     commands:
       - export PATH="`pwd`/prefix/bin:$PATH"
       - cd test
