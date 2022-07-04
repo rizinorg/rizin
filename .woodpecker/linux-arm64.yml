@@ -6,7 +6,7 @@ pipeline:
     commands:
       - apt-get update
       - DEBIAN_FRONTEND=noninteractive apt-get -qqy --no-install-recommends install build-essential git python3-pip cmake
-      - pip install -U --user meson ninja
+      - pip install meson==0.62.0 ninja==1.10.2.3
       - pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - meson build --prefix="`pwd`/prefix"
       - ninja -C build
