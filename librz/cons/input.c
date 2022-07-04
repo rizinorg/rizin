@@ -487,7 +487,7 @@ static int __cons_readchar_w32(ut32 usec) {
 						char *tmp = rz_utf16_to_utf8_l(&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
 						if (tmp) {
 							int len = strlen(tmp);
-							memcpy(&ch, tmp, R_MIN(len, sizeof(ch)));
+							memcpy(&ch, tmp, RZ_MIN(len, sizeof(ch)));
 							free(tmp);
 						}
 					} else {
