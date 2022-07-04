@@ -1,17 +1,11 @@
 # liblzma is what upstream uses for their pkg-config name
 project('liblzma', 'c',
-  default_options : ['c_std=c99', 'buildtype=release'],
   version : '5.2.5',
   license : 'pd/lgpl2/gpl2/gpl3',)
 
 cc = meson.get_compiler('c')
 
 lzma_cflags = ['-DHAVE_CONFIG_H', '-DTUKLIB_SYMBOL_PREFIX=lzma_', '-DLZMA_API_STATIC']
-if cc.has_argument('-std=gnu99')
-  lzma_cflags += ['-std=gnu99']
-elif cc.has_argument('-std=c99')
-  lzma_cflags += ['-std=c99']
-endif
 
 cdata = configuration_data()
 
