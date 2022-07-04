@@ -3760,25 +3760,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		break;
 	case 'i': cmd_analysis_info(core, input + 1); break; // "ai"
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
-	case 'L': { // aL
-		RzCmdStateOutput state = { 0 };
-		switch (input[1]) {
-		case 'j':
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
-			break;
-		case 'q':
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
-			break;
-		default:
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		}
-		rz_core_asm_plugins_print(core, NULL, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		rz_cons_flush();
-		break;
-	}
 	case 'F': // "aF"
 		rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
 		break;
@@ -7380,6 +7361,10 @@ RZ_IPI RzCmdStatus rz_list_mne_handler(RzCore *core, int argc, const char **argv
 	}
 	free(ops);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_list_plugins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_asm_plugins_print(core, NULL, state);
 }
 
 RZ_IPI RzCmdStatus rz_analyse_name_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
