@@ -1263,6 +1263,40 @@ commands:
         args: []
   # ... to here
   #####################################################
+  - name: ai
+    summary: analysis/address information/imports
+    subcommands:
+      - name: ai
+        summary: show address information
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        cname: analysis_info_show
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: aii
+        summary: global import (like afii, but global)
+        subcommands:
+        - name: aii
+          summary: global import (like afii, but global)
+          type: RZ_CMD_DESC_TYPE_ARGV_STATE
+          cname: global_imports
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+          args:
+            - name: namespace
+              type: RZ_CMD_ARG_TYPE_STRING
+              optional: true
+        - name: aii-
+          summary: delete all global imports
+          type: RZ_CMD_DESC_TYPE_ARGV_STATE
+          cname: delete_global_imports
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+          args: []
   - name: av
     summary: C++ vtables and RTTI
     subcommands:
