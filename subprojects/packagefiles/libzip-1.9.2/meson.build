@@ -1,6 +1,5 @@
 project('libzip', 'c',
-  default_options : ['c_std=c99', 'buildtype=release'],
-  version: '1.7.3')
+  version: '1.9.2')
 
 py3_exe = import('python').find_installation()
 cc = meson.get_compiler('c')
@@ -230,11 +229,12 @@ zipconf_h = configure_file(
 # Create zip_err_str.c file
 
 zip_h = files('lib/zip.h')
+zipint_h = files('lib/zipint.h')
 create_zip_err_str_py = files('./create_zip_err_str.py')
 zip_err_str_c = custom_target('zip_err_str',
   build_by_default: true,
   output: 'zip_err_str.c',
-  input: zip_h,
+  input: [zip_h, zipint_h],
   command: [
     py3_exe,
     create_zip_err_str_py,
@@ -369,7 +369,6 @@ if host_machine.system() == 'windows'
   libzip_deps += [cc.find_library('advapi32')]
 else
   zip_files += [
-    'lib/zip_mkstempm.c',
     'lib/zip_source_file_stdio_named.c',
     'lib/zip_random_unix.c'
   ]

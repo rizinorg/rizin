@@ -140,9 +140,9 @@ if is_static_build
 endif
 
 if cc.has_argument('--std=gnu99')
-  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
+  add_global_arguments('--std=gnu99', language: ['c', 'cpp'])
 elif cc.has_argument('--std=c99')
-  add_project_arguments('--std=c99', language: ['c', 'cpp'])
+  add_global_arguments('--std=c99', language: ['c', 'cpp'])
 endif
 
 # Sanitize correct usage of rz_strf()
@@ -795,7 +795,7 @@ comb_hash_plugins = []
 in_crca_loop = false
 foreach plugin : hash_plugins
   if plugin.startswith('crca_crc')
-    comb_hash_plugins += (in_crca_loop ? '' : 'crca_crc(') + plugin.substring(8)
+    comb_hash_plugins += (in_crca_loop ? '' : 'crca_crc(') + plugin.split('_')[1].split('crc')[1]
     in_crca_loop = true
   else
     if in_crca_loop
