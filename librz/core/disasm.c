@@ -79,8 +79,7 @@ static const char *rz_vline_uc[] = {
 
 // TODO: what about using bit shifting and enum for keys? see librz/util/bitmap.c
 // the problem of this is that the fields will be more opaque to bindings, but we will earn some bits
-typedef struct
-{
+typedef struct {
 	RzCore *core;
 	char str[1024], strsub[1024];
 	bool immtrim;
@@ -377,27 +376,17 @@ static RzAnalysisFunction *fcnIn(RzDisasmState *ds, ut64 at, int type) {
 
 static const char *get_utf8_char(const char line, RzDisasmState *ds) {
 	switch (line) {
-	case '<':
-		return ds->core->cons->vline[ARROW_LEFT];
-	case '>':
-		return ds->core->cons->vline[ARROW_RIGHT];
-	case ':':
-		return ds->core->cons->vline[LINE_UP];
-	case '|':
-		return ds->core->cons->vline[LINE_VERT];
+	case '<': return ds->core->cons->vline[ARROW_LEFT];
+	case '>': return ds->core->cons->vline[ARROW_RIGHT];
+	case ':': return ds->core->cons->vline[LINE_UP];
+	case '|': return ds->core->cons->vline[LINE_VERT];
 	case '=':
-	case '-':
-		return ds->core->cons->vline[LINE_HORIZ];
-	case ',':
-		return ds->core->cons->vline[CORNER_TL];
-	case '.':
-		return ds->core->cons->vline[CORNER_TR];
-	case '`':
-		return ds->core->cons->vline[CORNER_BL];
-	case '@':
-		return ds->core->cons->vline[SELF_LOOP];
-	default:
-		return " ";
+	case '-': return ds->core->cons->vline[LINE_HORIZ];
+	case ',': return ds->core->cons->vline[CORNER_TL];
+	case '.': return ds->core->cons->vline[CORNER_TR];
+	case '`': return ds->core->cons->vline[CORNER_BL];
+	case '@': return ds->core->cons->vline[SELF_LOOP];
+	default: return " ";
 	}
 }
 
@@ -447,15 +436,9 @@ static void get_bits_comment(RzCore *core, RzAnalysisFunction *f, char *cmt, int
 		const char *asm_arch = rz_config_get(core->config, "asm.arch");
 		if (asm_arch && *asm_arch && strstr(asm_arch, "arm")) {
 			switch (f->bits) {
-			case 16:
-				strcpy(cmt, " (thumb)");
-				break;
-			case 32:
-				strcpy(cmt, " (arm)");
-				break;
-			case 64:
-				strcpy(cmt, " (aarch64)");
-				break;
+			case 16: strcpy(cmt, " (thumb)"); break;
+			case 32: strcpy(cmt, " (arm)"); break;
+			case 64: strcpy(cmt, " (aarch64)"); break;
 			}
 		} else {
 			snprintf(cmt, cmt_size, " (%d bits)", f->bits);
@@ -1067,8 +1050,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 	}
 	if (ds->opstr && core->bin && core->bin->cur) {
 		RzBinPlugin *plugin = rz_bin_file_cur_plugin(core->bin->cur);
-		char *tmp =
-			plugin && plugin->enrich_asm ? plugin->enrich_asm(core->bin->cur, ds->opstr, strlen(ds->opstr)) : NULL;
+		char *tmp = plugin && plugin->enrich_asm ? plugin->enrich_asm(core->bin->cur, ds->opstr, strlen(ds->opstr)) : NULL;
 		if (tmp) {
 			free(ds->opstr);
 			ds->opstr = tmp;
@@ -1797,8 +1779,7 @@ static void ds_pre_xrefs(RzDisasmState *ds, bool no_fcnlines) {
 	ds->line_col = tmp_col;
 }
 
-static void
-ds_show_functions_argvar(RzDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var, const char *base, bool is_var, char sign) {
+static void ds_show_functions_argvar(RzDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var, const char *base, bool is_var, char sign) {
 	int delta = var->kind == 'b' ? RZ_ABS(var->delta + fcn->bp_off) : RZ_ABS(var->delta);
 	const char *pfx = is_var ? "var" : "arg";
 	char *constr = rz_analysis_var_get_constraints_readable(var);
@@ -3081,23 +3062,12 @@ static bool ds_print_data_type(RzDisasmState *ds, const ut8 *buf, int ib, int si
 	char msg[64];
 	const int isSigned = (ib == 1 || ib == 8 || ib == 10) ? 1 : 0;
 	switch (size) {
-	case 1:
-		type = isSigned ? ".char" : ".byte";
-		break;
-	case 2:
-		type = isSigned ? ".int16" : ".word";
-		break;
-	case 3:
-		type = "htons";
-		break;
-	case 4:
-		type = isSigned ? ".int32" : ".dword";
-		break;
-	case 8:
-		type = isSigned ? ".int64" : ".qword";
-		break;
-	default:
-		return false;
+	case 1: type = isSigned ? ".char" : ".byte"; break;
+	case 2: type = isSigned ? ".int16" : ".word"; break;
+	case 3: type = "htons"; break;
+	case 4: type = isSigned ? ".int32" : ".dword"; break;
+	case 8: type = isSigned ? ".int64" : ".qword"; break;
+	default: return false;
 	}
 	// adjust alignment
 	ut64 n = rz_read_ble(buf, core->print->big_endian, size * 8);
@@ -3562,7 +3532,7 @@ static void ds_print_sysregs(RzDisasmState *ds) {
 			ds->has_description = true;
 		}
 	} break;
-		// Then sysregs
+	// Then sysregs
 	case RZ_ANALYSIS_OP_TYPE_MOV:
 	case RZ_ANALYSIS_OP_TYPE_LEA:
 	case RZ_ANALYSIS_OP_TYPE_LOAD:
@@ -4007,8 +3977,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 					break;
 				}
 			}
-			escstr = (enc == RZ_STRING_ENC_UTF8 ? rz_str_escape_utf8(str, &opt)
-							    : rz_str_escape_8bit(str, is_comment, &opt));
+			escstr = (enc == RZ_STRING_ENC_UTF8 ? rz_str_escape_utf8(str, &opt) : rz_str_escape_8bit(str, is_comment, &opt));
 		}
 	}
 	if (prefix_out) {
@@ -4574,7 +4543,7 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 				const char *prefix;
 				ut32 len = sizeof(str) - 1;
 #if 0
-                                                                                                                                        RzCore *core = ds->core;
+				RzCore *core = ds->core;
 				ut32 len = core->blocksize + 256;
 				if (len < core->blocksize || len > RZ_DISASM_MAX_STR) {
 					len = RZ_DISASM_MAX_STR;
@@ -5372,8 +5341,7 @@ RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t) {
  * \param options Disassemble Options
  * \return Disassemble bytes number
  */
-RZ_API int
-rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RZ_NULLABLE RzCmdStateOutput *state,
+RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RZ_NULLABLE RzCmdStateOutput *state,
 	RZ_NULLABLE RzCoreDisasmOptions *options) {
 	rz_return_val_if_fail(core && buf, 0);
 
@@ -5452,10 +5420,7 @@ rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, in
 toro:
 	// uhm... is this necessary? imho can be removed
 	rz_asm_set_pc(core->rasm, rz_core_pava(core, ds->addr + idx));
-	core->cons->vline = rz_config_get_b(core->config, "scr.utf8") ? (rz_config_get_b(core->config, "scr.utf8.curvy")
-											? rz_vline_uc
-											: rz_vline_u)
-								      : rz_vline_a;
+	core->cons->vline = rz_config_get_b(core->config, "scr.utf8") ? (rz_config_get_b(core->config, "scr.utf8.curvy") ? rz_vline_uc : rz_vline_u) : rz_vline_a;
 
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
@@ -5518,8 +5483,7 @@ toro:
 		rz_asm_set_pc(core->rasm, ds->at);
 		ds_update_ref_lines(ds);
 		rz_analysis_op_fini(&ds->analysis_op);
-		rz_analysis_op(core->analysis, &ds->analysis_op, ds->at,
-			buf + addrbytes * idx, (int)(len - addrbytes * idx), DS_ANALYSIS_OP_MASK);
+		rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), DS_ANALYSIS_OP_MASK);
 		if (ds_must_strip(ds)) {
 			inc = ds->analysis_op.size;
 			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
@@ -5565,8 +5529,7 @@ toro:
 		ds_atabs_option(ds);
 		if (ds->analysis_op.addr != ds->at) {
 			rz_analysis_op_fini(&ds->analysis_op);
-			rz_analysis_op(core->analysis, &ds->analysis_op, ds->at,
-				buf + addrbytes * idx, (int)(len - addrbytes * idx), DS_ANALYSIS_OP_MASK);
+			rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), DS_ANALYSIS_OP_MASK);
 		}
 		if (ret < 1) {
 			rz_strbuf_fini(&ds->analysis_op.esil);
@@ -5856,8 +5819,7 @@ RZ_IPI bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int
 	return i_bytes < nb_bytes;
 }
 
-RZ_API int
-rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes) {
+RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes) {
 	RzDisasmState *ds = NULL;
 	int i, j, ret, len = 0;
 	char *tmpopstr;
@@ -5942,8 +5904,7 @@ toro:
 			if (ds->decode && !ds->immtrim) {
 				RZ_FREE(ds->opstr);
 				if (!hasanalysis) {
-					rz_analysis_op(core->analysis, &ds->analysis_op, ds->at,
-						buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_ALL);
+					rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_ALL);
 				}
 				tmpopstr = rz_analysis_op_to_string(core->analysis, &ds->analysis_op);
 				ds->opstr = (tmpopstr) ? tmpopstr : strdup(rz_asm_op_get_asm(&ds->asmop));
@@ -6138,8 +6099,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 
 		pj_kb(pj, "refptr", op->refptr);
 
-		RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, op->addr,
-			RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM | RZ_ANALYSIS_FCN_TYPE_LOC);
+		RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, op->addr, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM | RZ_ANALYSIS_FCN_TYPE_LOC);
 		pj_kn(pj, "fcn_addr", f ? f->addr : 0);
 		pj_kn(pj, "fcn_last", f ? rz_analysis_function_max_addr(f) - ab->oplen : 0);
 		pj_ki(pj, "size", op->size);
@@ -6579,8 +6539,7 @@ toro:
 					RzAnalysisOp aop = {
 						0
 					};
-					RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis,
-						core->offset + i, RZ_ANALYSIS_FCN_TYPE_NULL);
+					RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset + i, RZ_ANALYSIS_FCN_TYPE_NULL);
 					rz_analysis_op(core->analysis, &aop, core->offset + i,
 						buf + addrbytes * i, nb_bytes - addrbytes * i, RZ_ANALYSIS_OP_MASK_BASIC);
 					asm_str = rz_print_colorize_opcode(core->print, asm_str, color_reg, color_num, false, f ? f->addr : 0);
@@ -6819,8 +6778,7 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
  * \param fcn A function where the instruction located for local variables substitution (optional)
  * \param color To toggle color escape sequences in the output
  * */
-RZ_API RZ_OWN char *
-rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 reladdr, RZ_NULLABLE RzAnalysisFunction *fcn, bool color) {
+RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 reladdr, RZ_NULLABLE RzAnalysisFunction *fcn, bool color) {
 	rz_return_val_if_fail(core, NULL);
 	int has_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	char str[512];
