@@ -1302,15 +1302,13 @@ RZ_API bool rz_core_esil_continue_back(RzCore *core) {
 	return true;
 }
 
-static void cmd_address_info(RzCore *core, const char *addrstr, PJ *pj) {
-	ut64 addr, type;
-	if (!addrstr || !*addrstr) {
-		addr = core->offset;
-	} else {
-		addr = rz_num_math(core->num, addrstr);
-	}
+static void cmd_address_info(RzCore *core, const ut64 addr, RzCmdStateOutput *state) {
+	ut64 type;
+	PJ *pj;
 	type = rz_core_analysis_address(core, addr);
-	if (pj) {
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		pj = state->d.pj;
 		pj_o(pj);
 		if (type & RZ_ANALYSIS_ADDR_TYPE_PROGRAM)
 			pj_ks(pj, "program", "true");
@@ -1337,7 +1335,8 @@ static void cmd_address_info(RzCore *core, const char *addrstr, PJ *pj) {
 		if (type & RZ_ANALYSIS_ADDR_TYPE_SEQUENCE)
 			pj_ks(pj, "sequence", "true");
 		pj_end(pj);
-	} else {
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
 		if (type & RZ_ANALYSIS_ADDR_TYPE_PROGRAM)
 			rz_cons_printf("program\n");
 		if (type & RZ_ANALYSIS_ADDR_TYPE_LIBRARY)
@@ -1362,6 +1361,10 @@ static void cmd_address_info(RzCore *core, const char *addrstr, PJ *pj) {
 			rz_cons_printf("ascii\n");
 		if (type & RZ_ANALYSIS_ADDR_TYPE_SEQUENCE)
 			rz_cons_printf("sequence\n");
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
 	}
 }
 
@@ -7943,7 +7946,7 @@ RZ_IPI RzCmdStatus rz_analysis_info_show_handler(RzCore *core, int argc, const c
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 	case RZ_OUTPUT_MODE_JSON:
-		cmd_address_info(core, argv[1], state->d.pj);
+		cmd_address_info(core, core->offset, state);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -7953,24 +7956,24 @@ RZ_IPI RzCmdStatus rz_analysis_info_show_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_global_imports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		if (RZ_STR_ISEMPTY(argv[1])) {
-			if (core->analysis->imports) {
-				char *imp;
-				RzListIter *iter;
-				rz_list_foreach (core->analysis->imports, iter, imp) {
-					rz_cons_printf("%s\n", imp);
-				}
+	char *imp;
+	RzListIter *iter;
+
+	if (RZ_STR_ISEMPTY(argv[1])) {
+		rz_list_foreach (core->analysis->imports, iter, imp) {
+			switch (state->mode) {
+			case RZ_OUTPUT_MODE_STANDARD:
+				rz_cons_printf("%s\n", imp);
+				break;
+			default:
+				rz_warn_if_reached();
+				break;
 			}
-		} else {
-			rz_analysis_add_import(core->analysis, argv[1]);
 		}
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
+	} else {
+		rz_analysis_add_import(core->analysis, argv[1]);
 	}
+
 	return RZ_CMD_STATUS_OK;
 }
 

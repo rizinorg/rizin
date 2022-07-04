@@ -163,7 +163,6 @@ static const RzCmdDescArg analysis_reg_arenas_hexdump_args[2];
 static const RzCmdDescArg analysis_reg_arenas_write_hex_args[3];
 static const RzCmdDescArg analysis_reg_profile_open_args[2];
 static const RzCmdDescArg analysis_reg_profile_gdb_args[2];
-static const RzCmdDescArg analysis_info_show_args[2];
 static const RzCmdDescArg global_imports_args[2];
 static const RzCmdDescArg analysis_print_global_variable_args[2];
 static const RzCmdDescArg analysis_global_variable_add_args[4];
@@ -3318,13 +3317,6 @@ static const RzCmdDescHelp ai_help = {
 	.summary = "analysis/address information/imports",
 };
 static const RzCmdDescArg analysis_info_show_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_info_show_help = {
@@ -3346,7 +3338,7 @@ static const RzCmdDescArg global_imports_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp global_imports_help = {
-	.summary = "global import (like afii, but global)",
+	.summary = "list/add global import (like afii, but global)",
 	.args = global_imports_args,
 };
 
