@@ -31,11 +31,11 @@ bool test_cpu_profiles() {
 	mu_assert_eq(item->offset, 0x00000005, "Flag PORTB not found");
 
 	// 3. Save into the project
-	if (!rz_file_is_directory(".tmp" RZ_SYS_DIR)) {
-		mu_assert_true(rz_sys_mkdir(".tmp/"), "create tmp directory");
-	}
-	RzProjectErr err = rz_project_save_file(core, ".tmp/cpu_profile.rzdb", true);
+	char *tmpdir = rz_file_tmpdir();
+	char *project_file = rz_file_path_join(tmpdir, "cpu_profile.rzdb");
+	RzProjectErr err = rz_project_save_file(core, project_file, true);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project save err");
+	free(project_file);
 
 	// 4. Close the file
 	rz_core_file_close(file);
@@ -48,7 +48,9 @@ bool test_cpu_profiles() {
 	// 6. Load the previously saved project
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	mu_assert_notnull(res, "result info new");
-	err = rz_project_load_file(core, ".tmp/cpu_profile.rzdb", true, res);
+	project_file = rz_file_path_join(tmpdir, "cpu_profile.rzdb");
+	err = rz_project_load_file(core, project_file, true, res);
+	free(project_file);
 	rz_serialize_result_info_free(res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
 
@@ -58,6 +60,7 @@ bool test_cpu_profiles() {
 	item = rz_flag_get(core->flags, "PORTB");
 	mu_assert_eq(item->offset, 0x00000005, "Flag PORTB not found");
 
+	free(tmpdir);
 	rz_core_free(core);
 	mu_end;
 }
@@ -85,8 +88,11 @@ bool test_platform_profiles() {
 	mu_assert_streq(comment, "Broadcom Serial Controller 1 (BSC)", "Comment unequal!");
 
 	// 3. Save into the project
-	RzProjectErr err = rz_project_save_file(core, ".tmp/cpu_platform.rzdb", true);
+	char *tmpdir = rz_file_tmpdir();
+	char *project_file = rz_file_path_join(tmpdir, "cpu_platform.rzdb");
+	RzProjectErr err = rz_project_save_file(core, project_file, true);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project save err");
+	free(project_file);
 
 	// 4. Close the file
 	rz_core_file_close(file);
@@ -99,7 +105,9 @@ bool test_platform_profiles() {
 	// 6. Load the previously saved project
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	mu_assert_notnull(res, "result info new");
-	err = rz_project_load_file(core, ".tmp/cpu_platform.rzdb", true, res);
+	project_file = rz_file_path_join(tmpdir, "cpu_platform.rzdb");
+	err = rz_project_load_file(core, project_file, true, res);
+	free(project_file);
 	rz_serialize_result_info_free(res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
 
@@ -109,6 +117,7 @@ bool test_platform_profiles() {
 	item = rz_flag_get(core->flags, "AUX_MU_IER_REG");
 	mu_assert_eq(item->offset, 0x7e215044, "Flag AUX_MU_IER_REG not found");
 
+	free(tmpdir);
 	rz_core_free(core);
 	mu_end;
 }
