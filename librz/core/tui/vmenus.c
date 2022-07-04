@@ -2278,7 +2278,8 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 
 	// Adjust the windows size automaticaly
 	(void)rz_cons_get_size(&window);
-	window -= core->visual_filter ? 10 : core->visual_inputing ? 10 : 8;  // Size of printed things
+	window -= core->visual_filter ? 10 : core->visual_inputing ? 10
+								   : 8; // Size of printed things
 	bool color = rz_config_get_i(core->config, "scr.color");
 	const char *color_addr = core->cons->context->pal.offset;
 	const char *color_fcn = core->cons->context->pal.fname;
@@ -2300,7 +2301,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 			rz_pvector_free(vec);
 			// ensure filter_fcn also conform to visual_filter
 			if (rz_pvector_len(core->visual_filter)) {
-				rz_list_foreach_safe(filter_fcn, iter, iter1, fcn) {
+				rz_list_foreach_safe (filter_fcn, iter, iter1, fcn) {
 					if (!rz_list_contains(visual_filter, fcn)) {
 						rz_list_delete(filter_fcn, iter);
 					}
@@ -2782,8 +2783,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 		// for filter on the go
 		if (core->visual_inputing) {
 			int ch = rz_cons_readchar();
-			switch (ch)
-			{
+			switch (ch) {
 			case 13: // CR
 				rz_pvector_push(core->visual_filter, strdup(core->visual_inputing));
 				RZ_FREE(core->visual_inputing);
