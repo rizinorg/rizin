@@ -25,12 +25,12 @@ RZ_API const char *sdb_lock_file(const char *f) {
 	return buf;
 }
 
-#if HAVE_GETPID
-#include <unistd.h>
-#define os_getpid() getpid()
-#elif HAVE__GETPID
+#if HAVE__GETPID
 #include <process.h>
 #define os_getpid() _getpid()
+#elif HAVE_GETPID
+#include <unistd.h>
+#define os_getpid() getpid()
 #else
 #error No supported getpid() found
 #endif
