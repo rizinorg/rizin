@@ -33,33 +33,6 @@ libsdb_sources = files(
 
 libsdb_inc = [platform_inc, include_directories(['..', '.'])]
 
-libsdb = static_library('sdb', libsdb_sources,
-  include_directories: libsdb_inc,
-  implicit_include_directories: false,
-  install: false,
-)
-
-sdb_dep = declare_dependency(
-  link_whole: libsdb,
-  include_directories: libsdb_inc,
-)
-
-if meson.is_cross_build()
-  libsdb_native = static_library('sdb_native', libsdb_sources,
-    native: true,
-    include_directories: libsdb_inc,
-    implicit_include_directories: false,
-    install: false,
-  )
-
-  sdb_native_dep = declare_dependency(
-    link_with: libsdb_native,
-    include_directories: libsdb_inc,
-  )
-else
-  sdb_native_dep = sdb_dep
-endif
-
 include_files = files(
   'buffer.h',
   'cdb.h',
@@ -76,4 +49,4 @@ include_files = files(
   'set.h',
 )
 
-install_headers(include_files, install_dir: join_paths(sdb_incdir, 'sdb'))
+install_headers(include_files, install_dir: join_paths(rizin_incdir, 'sdb'))

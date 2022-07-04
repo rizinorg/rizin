@@ -2,77 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 #include "sdb.h"
-
-#define FORCE_COLLISION 0
-
-#if USE_MONOTONIC_CLOCK
-#include <time.h>
-#else
-
-#ifdef _MSC_VER
-#pragma message("gettimeofday: Windows support is ugly here")
-#include <windows.h>
-#include <winsock.h>
-#include <time.h>
-
-struct timezone {
-	int tz_minuteswest; /* minutes W of Greenwich */
-	int tz_dsttime; /* type of dst correction */
-};
-
-RZ_API int gettimeofday(struct timeval *p, struct timezone *tz) {
-	// ULARGE_INTEGER ul; // As specified on MSDN.
-	ut64 ul = 0;
-	static int tzflag = 0;
-	FILETIME ft;
-	if (p) {
-		// Returns a 64-bit value representing the number of
-		// 100-nanosecond intervals since January 1, 1601 (UTC).
-		GetSystemTimeAsFileTime(&ft);
-		// Fill ULARGE_INTEGER low and high parts.
-		// ul.LowPart = ft.dwLowDateTime;
-		// ul.HighPart = ft.dwHighDateTime;
-		ul |= ft.dwHighDateTime;
-		ul <<= 32;
-		ul |= ft.dwLowDateTime;
-		// Convert to microseconds.
-		// ul.QuadPart /= 10ULL;
-		ul /= 10;
-		// Remove Windows to UNIX Epoch delta.
-		// ul.QuadPart -= 11644473600000000ULL;
-		ul -= 11644473600000000ULL;
-		// Modulo to retrieve the microseconds.
-		// p->tv_usec = (long)(ul.QuadPart % 1000000LL);
-		// Divide to retrieve the seconds.
-		// p->tv_sec = (long)(ul.QuadPart / 1000000LL);
-		p->tv_sec = (long)(ul / 1000000LL);
-		p->tv_usec = (long)(ul % 1000000LL);
-	}
-	if (tz) {
-		if (!tzflag) {
-			_tzset();
-			tzflag++;
-		}
-		tz->tz_minuteswest = _timezone / 60;
-		tz->tz_dsttime = _daylight;
-	}
-	return 0;
-}
-
-#else
-#include <sys/time.h>
-#endif
-#endif
+#include <rz_util/rz_time.h>
 
 RZ_API ut32 sdb_hash_len(const char *s, ut32 *len) {
 	ut32 h = CDB_HASHSTART;
-#if FORCE_COLLISION
-	h = 0;
-	while (*s) {
-		h += *s;
-		s++;
-	}
-#else
 	ut32 count = 0;
 	if (s) {
 		while (*s) {
@@ -83,7 +16,6 @@ RZ_API ut32 sdb_hash_len(const char *s, ut32 *len) {
 	if (len) {
 		*len = count;
 	}
-#endif
 	return h;
 }
 
@@ -277,38 +209,8 @@ RZ_API const char *sdb_const_anext(const char *str) {
 }
 
 RZ_API ut64 sdb_now(void) {
-#if USE_MONOTONIC_CLOCK
-	struct timespec ts;
-	if (!clock_gettime(CLOCK_MONOTONIC, &ts)) {
-		return ts.tv_sec;
-	}
-#else
-	struct timeval now;
-	if (!gettimeofday(&now, NULL)) {
-		return now.tv_sec;
-	}
-#endif
-	return 0LL;
-}
-
-RZ_API ut64 sdb_unow(void) {
-	ut64 x = 0LL;
-#if USE_MONOTONIC_CLOCK
-	struct timespec ts;
-	if (!clock_gettime(CLOCK_MONOTONIC, &ts)) {
-		x = ts.tv_sec;
-		x <<= 32;
-		x += ts.tv_nsec / 1000;
-	}
-#else
-	struct timeval now;
-	if (!gettimeofday(&now, NULL)) {
-		x = now.tv_sec;
-		x <<= 32;
-		x += now.tv_usec;
-	}
-#endif
-	return x;
+	ut64 usec = rz_time_now();
+	return usec / 1000000;
 }
 
 RZ_API int sdb_isnum(const char *s) {

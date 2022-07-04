@@ -1,4 +1,4 @@
-subdir('sdb')
+subdir('sdb/src')
 
 rz_util_sources = [
   'alloc.c',
@@ -81,7 +81,7 @@ rz_util_sources = [
   'x509.c',
 ]
 
-rz_util_deps = [ldl, lrt, mth, th, utl, sdb_dep, zlib_dep, liblzma_dep] + platform_deps
+rz_util_deps = [ldl, lrt, mth, th, utl, zlib_dep, liblzma_dep] + platform_deps
 if ['freebsd', 'netbsd', 'haiku', 'dragonfly'].contains(host_machine.system())
   # backtrace_symbols_fd requires -lexecinfo
   rz_util_deps += [cc.find_library('execinfo', static: is_static_build)]
@@ -94,8 +94,10 @@ else
   rz_util_sources += ['big.c']
 endif
 
-rz_util = library('rz_util', rz_util_sources,
-  include_directories: platform_inc,
+rz_util_includes = [platform_inc, include_directories('sdb/src', 'sdb')]
+
+rz_util = library('rz_util', rz_util_sources, libsdb_sources,
+  include_directories: rz_util_includes,
   c_args: library_cflags,
   dependencies: rz_util_deps,
   install: true,
@@ -110,12 +112,29 @@ rz_util = library('rz_util', rz_util_sources,
 
 rz_util_dep = declare_dependency(
   link_with: rz_util,
-  include_directories: platform_inc,
-  dependencies: [
-    sdb_dep.partial_dependency(includes: true),
-  ]
+  include_directories: rz_util_includes,
 )
 meson.override_dependency('rz_util', rz_util_dep)
+
+if meson.is_cross_build()
+  rz_util_native = library('rz_util', rz_util_sources, libsdb_sources,
+    include_directories: platform_inc,
+    c_args: library_cflags,
+    dependencies: rz_util_deps,
+    install: false,
+    implicit_include_directories: false,
+    install_rpath: rpath_lib,
+    link_args: library_linkflags,
+    native: true,
+  )
+
+  rz_util_native_dep = declare_dependency(
+    link_with: rz_util_native,
+    include_directories: platform_inc,
+  )
+else
+  rz_util_native_dep = rz_util_dep
+endif
 
 pkgconfig_mod.generate(rz_util,
   subdirs: ['librz', 'librz/sdb'],
@@ -145,3 +164,17 @@ if not is_static_libs_only
     configuration: conf,
   )
 endif
+
+sdb_exe = executable('sdb_native', 'sdb/src/main.c',
+  dependencies: rz_util_native_dep,
+  install: false,
+  native: true,
+  implicit_include_directories: false,
+)
+
+sdb_gen_cmd = [
+  sdb_exe,
+  '@OUTPUT@',
+  '==',
+  '@INPUT@'
+]
