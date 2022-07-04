@@ -141,13 +141,15 @@ static bool parse_alias(RZ_OUT RzList *alias_list, RZ_BORROW RzList *tokens) {
 	const char *real_name = rz_list_get_n(tokens, 1);
 	const char *alias = rz_list_get_n(tokens, 0);
 	if (!alias) {
-		RZ_LOG_WARN("Failed to get alias name from token.\n")
+		RZ_LOG_WARN("Failed to get alias name from token.\n");
+		free(pa);
 		return false;
 	}
 
 	RzRegisterId role = rz_reg_get_name_idx(alias + 1);
 	if (!(role >= 0 && role < RZ_REG_NAME_LAST)) {
 		RZ_LOG_WARN("Invalid alias\n");
+		free(pa);
 		return false;
 	}
 
