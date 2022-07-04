@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include "sdb.h"
 
-#if __SDB_WINDOWS__
+#if __WINDOWS__
 #include <windows.h>
 #if UNICODE
 
@@ -56,13 +56,13 @@ static bool r_sys_mkdir(const char *path) {
 
 static inline int r_sys_mkdirp(char *dir) {
 	int ret = 1;
-	const char slash = DIRSEP;
+	const char slash = RZ_SYS_DIR[0];
 	char *path = dir;
 	char *ptr = path;
 	if (*ptr == slash) {
 		ptr++;
 	}
-#if __SDB_WINDOWS__
+#if __WINDOWS__
 	char *p = strstr(ptr, ":\\");
 	if (p) {
 		ptr = p + 2;
@@ -92,7 +92,7 @@ RZ_API bool sdb_disk_create(Sdb *s) {
 		s->dir = strdup(s->name);
 	}
 	dir = s->dir ? s->dir : "./";
-	R_FREE(s->ndump);
+	RZ_FREE(s->ndump);
 	nlen = strlen(dir);
 	str = malloc(nlen + 5);
 	if (!str) {
@@ -104,7 +104,7 @@ RZ_API bool sdb_disk_create(Sdb *s) {
 	if (s->fdump != -1) {
 		close(s->fdump);
 	}
-#if __SDB_WINDOWS__ && UNICODE
+#if __WINDOWS__ && UNICODE
 	wchar_t *wstr = r_sys_conv_utf8_to_utf16(str);
 	if (wstr) {
 		s->fdump = _wopen(wstr, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, SDB_MODE);
@@ -140,7 +140,7 @@ RZ_API bool sdb_disk_insert(Sdb *s, const char *key, const char *val) {
 RZ_API bool sdb_disk_finish(Sdb *s) {
 	bool reopen = false, ret = true;
 	IFRET(!cdb_make_finish(&s->m));
-#if USE_MMAN
+#if HAVE_HEADER_SYS_MMAN_H
 	IFRET(fsync(s->fdump));
 #endif
 	IFRET(close(s->fdump));
@@ -151,7 +151,7 @@ RZ_API bool sdb_disk_finish(Sdb *s) {
 		s->fd = -1;
 		reopen = true;
 	}
-#if __SDB_WINDOWS__
+#if __WINDOWS__
 	LPTSTR ndump_ = r_sys_conv_utf8_to_utf16(s->ndump);
 	LPTSTR dir_ = r_sys_conv_utf8_to_utf16(s->dir);
 

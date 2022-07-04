@@ -14,7 +14,7 @@ RZ_API SdbList *ls_newf(SdbListFree freefn) {
 }
 
 RZ_API SdbList *ls_new(void) {
-	SdbList *list = R_NEW0(SdbList);
+	SdbList *list = RZ_NEW0(SdbList);
 	if (!list) {
 		return NULL;
 	}
@@ -202,7 +202,7 @@ RZ_API SdbListIter *ls_append(SdbList *list, void *data) {
 	if (!list) {
 		return NULL;
 	}
-	it = R_NEW(SdbListIter);
+	it = RZ_NEW(SdbListIter);
 	if (!it) {
 		return NULL;
 	}
@@ -222,7 +222,7 @@ RZ_API SdbListIter *ls_append(SdbList *list, void *data) {
 }
 
 RZ_API SdbListIter *ls_prepend(SdbList *list, void *data) {
-	SdbListIter *it = R_NEW(SdbListIter);
+	SdbListIter *it = RZ_NEW(SdbListIter);
 	if (!it) {
 		return NULL;
 	}
@@ -309,7 +309,7 @@ RZ_API SdbListIter *ls_insert(SdbList *list, int n, void *data) {
 		}
 		for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
 			if (i == n) {
-				item = R_NEW0(SdbListIter);
+				item = RZ_NEW0(SdbListIter);
 				if (!item) {
 					return NULL;
 				}

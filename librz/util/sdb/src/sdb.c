@@ -8,16 +8,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include "sdb.h"
-
-#if 0
-static inline SdbKv *kv_at(HtPP *ht, HtPPBucket *bt, ut32 i) {
-	return (SdbKv *)((char *)bt->arr + i * ht->opt.elem_size);
-}
-
-static inline SdbKv *prev_kv(HtPP *ht, SdbKv *kv) {
-	return (SdbKv *)((char *)kv - ht->opt.elem_size);
-}
-#endif
+#include "sdb_private.h"
 
 static inline SdbKv *next_kv(HtPP *ht, SdbKv *kv) {
 	return (SdbKv *)((char *)kv + ht->opt.elem_size);
@@ -54,7 +45,7 @@ RZ_API Sdb *sdb_new0(void) {
 }
 
 RZ_API Sdb *sdb_new(const char *path, const char *name, int lock) {
-	Sdb *s = R_NEW0(Sdb);
+	Sdb *s = RZ_NEW0(Sdb);
 	if (!s) {
 		return NULL;
 	}
@@ -504,7 +495,7 @@ RZ_API SdbKv *sdbkv_new2(const char *k, int kl, const char *v, int vl) {
 	if (!v) {
 		vl = 0;
 	}
-	kv = R_NEW0(SdbKv);
+	kv = RZ_NEW0(SdbKv);
 	kv->base.key_len = kl;
 	kv->base.key = malloc(kv->base.key_len + 1);
 	if (!kv->base.key) {
@@ -534,7 +525,7 @@ RZ_API void sdbkv_free(SdbKv *kv) {
 	if (kv) {
 		free(sdbkv_key(kv));
 		free(sdbkv_value(kv));
-		R_FREE(kv);
+		RZ_FREE(kv);
 	}
 }
 
@@ -623,7 +614,7 @@ RZ_API int sdb_set(Sdb *s, const char *key, const char *val, ut32 cas) {
 
 static bool sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
-	SdbKv *kv = R_NEW0(SdbKv);
+	SdbKv *kv = RZ_NEW0(SdbKv);
 	/* seems like some k/v are constructed in the stack and cant be used after returning */
 	kv->base.key = strdup(k);
 	kv->base.value = strdup(v);
@@ -657,7 +648,7 @@ static bool sdb_foreach_list_filter_cb(void *user, const char *k, const char *v)
 	SdbKv *kv = NULL;
 
 	if (!u->filter || u->filter(u->user, k, v)) {
-		kv = R_NEW0(SdbKv);
+		kv = RZ_NEW0(SdbKv);
 		if (!kv) {
 			goto err;
 		}
@@ -705,7 +696,7 @@ static bool sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 	_match_sdb_user *o = (_match_sdb_user *)user;
 	SdbKv tkv = { .base.key = (char *)k, .base.value = (char *)v };
 	if (sdbkv_match(&tkv, o->expr)) {
-		SdbKv *kv = R_NEW0(SdbKv);
+		SdbKv *kv = RZ_NEW0(SdbKv);
 		kv->base.key = strdup(k);
 		kv->base.value = strdup(v);
 		ls_append(o->list, kv);

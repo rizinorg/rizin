@@ -6,9 +6,10 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <sys/stat.h>
-#if USE_MMAN
+#if HAVE_HEADER_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
+#include "sdb_private.h"
 
 /**
  * ********************
@@ -411,7 +412,7 @@ RZ_API bool sdb_text_load(Sdb *s, const char *file) {
 	if (fstat(fd, &st) || !st.st_size) {
 		goto beach;
 	}
-#if USE_MMAN
+#if HAVE_HEADER_SYS_MMAN_H
 	char *x = mmap(0, st.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 	if (x == MAP_FAILED) {
 		goto beach;
@@ -427,7 +428,7 @@ RZ_API bool sdb_text_load(Sdb *s, const char *file) {
 	}
 #endif
 	r = sdb_text_load_buf(s, x, st.st_size);
-#if USE_MMAN
+#if HAVE_HEADER_SYS_MMAN_H
 	munmap(x, st.st_size);
 #else
 	free(x);

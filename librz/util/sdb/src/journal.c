@@ -87,7 +87,7 @@ RZ_API bool sdb_journal_log(Sdb *s, const char *key, const char *val) {
 	if (write(s->journal, str, len) != len) {
 		return false;
 	}
-#if USE_MMAN
+#if HAVE_HEADER_SYS_MMAN_H
 	(void)fsync(s->journal);
 #endif
 	return true;

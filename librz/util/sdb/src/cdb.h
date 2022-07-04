@@ -5,7 +5,7 @@
 #define CDB_H
 
 #include <string.h>
-#include "types.h"
+#include <rz_types.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -74,7 +74,6 @@ include_files = files(
   'sdb.h',
   'sdbht.h',
   'set.h',
-  'types.h'
 )
 
 install_headers(include_files, install_dir: join_paths(sdb_incdir, 'sdb'))

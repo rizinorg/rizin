@@ -6,9 +6,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "cdb.h"
-#if USE_MMAN
+#if HAVE_HEADER_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
+#include "sdb_private.h"
 
 /* XXX: this code must be rewritten . too slow */
 bool cdb_getkvlen(struct cdb *c, ut32 *klen, ut32 *vlen, ut32 pos) {
@@ -30,7 +31,7 @@ void cdb_free(struct cdb *c) {
 	if (!c->map) {
 		return;
 	}
-#if USE_MMAN
+#if HAVE_HEADER_SYS_MMAN_H
 	(void)munmap(c->map, c->size);
 #else
 	free(c->map);
@@ -40,7 +41,7 @@ void cdb_free(struct cdb *c) {
 
 void cdb_findstart(struct cdb *c) {
 	c->loop = 0;
-#if !USE_MMAN
+#if !HAVE_HEADER_SYS_MMAN_H
 	if (c->fd != -1) {
 		lseek(c->fd, 0, SEEK_SET);
 	}
@@ -55,7 +56,7 @@ bool cdb_init(struct cdb *c, int fd) {
 	c->fd = fd;
 	cdb_findstart(c);
 	if (fd != -1 && !fstat(fd, &st) && st.st_size > 4 && st.st_size != (off_t)UT64_MAX) {
-#if USE_MMAN
+#if HAVE_HEADER_SYS_MMAN_H
 		char *x = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 		if (x == MAP_FAILED) {
 			eprintf("Cannot mmap %d\n", (int)st.st_size);

@@ -469,7 +469,7 @@ repeat:
 			}
 			// keep base
 			if (base == 16) {
-				w = snprintf(buf, len - 1, "0x%" LLFMT "x", n);
+				w = snprintf(buf, len - 1, "0x%" PFMT64x "x", n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
 						free(buf);
@@ -479,10 +479,10 @@ repeat:
 						}
 					}
 					bufset = 1;
-					snprintf(buf, 0xff, "0x%" LLFMT "x", n);
+					snprintf(buf, 0xff, "0x%" PFMT64x "x", n);
 				}
 			} else {
-				w = snprintf(buf, len - 1, "%" LLFMT "d", n);
+				w = snprintf(buf, len - 1, "%" PFMT64x "d", n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
 						free(buf);
@@ -492,7 +492,7 @@ repeat:
 						}
 					}
 					bufset = 1;
-					snprintf(buf, 0xff, "%" LLFMT "d", n);
+					snprintf(buf, 0xff, "%" PFMT64x "d", n);
 				}
 			}
 		}

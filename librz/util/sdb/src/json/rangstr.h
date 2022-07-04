@@ -5,7 +5,7 @@
 #define _INCLUDE_RANGSTR_H_
 
 #include <sys/types.h>
-#include "../types.h"
+#include <rz_types.h>
 
 #define RangstrType unsigned int
 

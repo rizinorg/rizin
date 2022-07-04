@@ -229,7 +229,7 @@ RZ_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, ut
 		// DELETE KEY
 		rs.f -= 2;
 		kidx = findkey(&rs);
-		len[0] = R_MAX(1, kidx - 1);
+		len[0] = RZ_MAX(1, kidx - 1);
 
 		// Delete quote if deleted value was a string
 		if (beg[2][0] == '"') {
@@ -308,7 +308,7 @@ RZ_API const char *sdb_json_format(SdbJsonString *s, const char *fmt, ...) {
 			case 'l':
 				JSONSTR_ALLOCATE(32);
 				arg_l = va_arg(ap, ut64);
-				snprintf(tmp, sizeof(tmp), "0x%" LLFMT "x", arg_l);
+				snprintf(tmp, sizeof(tmp), "0x%" PFMT64x "x", arg_l);
 				memcpy(s->buf + s->len, tmp, strlen(tmp));
 				s->len += strlen(tmp);
 				break;

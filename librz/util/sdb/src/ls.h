@@ -5,7 +5,7 @@
 #define LS_H
 
 #include <stdio.h>
-#include "types.h"
+#include <rz_types.h>
 
 #ifdef __cplusplus
 extern "C" {

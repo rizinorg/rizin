@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "rangstr.c"
-#include "../types.h"
+#include <rz_types.h>
 
 RZ_IPI void json_path_first(Rangstr *s) {
 	char *p;
@@ -61,55 +61,6 @@ rep:
 	}
 	return 1;
 }
-
-#if 0
-typedef int (*JSONCallback)();
-
-int json_foreach(const char *s, JSONCallback cb UNUSED) {
-	int i, len, ret;
-	unsigned short *res = NULL;
-	len = strlen (s);
-	res = malloc (len);
-	ret = sdb_js0n ((const unsigned char *)s, len, res);
-	if (!ret) return 0;
-	if (*s=='[') {
-		for (i=0; res[i]; i+=2) {
-			printf ("%d %.*s\n", i, res[i+1], s+res[i]);
-		}
-	} else {
-		for (i=0; res[i]; i+=4) {
-			printf ("%.*s = ", res[i+1], s+res[i]);
-			printf ("%.*s\n", res[i+3], s+res[i+2]);
-		}
-	}
-	return 1;
-}
-#endif
-
-#if 0 // UNUSED
-RZ_IPI int json_walk (const char *s) {
-	RangstrType *res;
-	int i, ret, len = strlen (s);
-	res = malloc (len+1);
-	ret = sdb_js0n ((const unsigned char *)s, len, res);
-	if (!ret) {
-		free (res);
-		return 0;
-	}
-	if (*s=='[' || *s=='{') {
-		for (i=0; res[i]; i+=2) {
-			printf ("%d %.*s\n", i, res[i+1], s+res[i]);
-		}
-	} else {
-		for (i=0; res[i]; i+=4) {
-			printf ("%.*s = ", res[i+1], s+res[i]);
-			printf ("%.*s\n", res[i+3], s+res[i+2]);
-		}
-	}
-	free (res);
-	return 1;
-}
-#endif
 
 RZ_IPI Rangstr json_find(const char *s, Rangstr *rs) {
 #define RESFIXSZ 1024

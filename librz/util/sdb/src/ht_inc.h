@@ -50,7 +50,7 @@
 #endif
 
 #include "ls.h"
-#include "types.h"
+#include <rz_types.h>
 
 /* Kv represents a single key/value element in the hashtable */
 typedef struct Ht_(kv) {

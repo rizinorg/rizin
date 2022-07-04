@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include <rz_types.h>
 #include "sdbht.h"
 #include "ls.h"
 #include "cdb.h"
@@ -36,7 +36,7 @@ extern "C" {
 #define SDB_PRINTF_CHECK(fmt, dots)
 #endif
 
-#if __SDB_WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__ && !__CYGWIN__
 #include <fcntl.h>
 #include <stdbool.h>
 #include <sys/types.h>
@@ -235,7 +235,7 @@ RZ_API bool sdb_lock(const char *s);
 RZ_API const char *sdb_lock_file(const char *f);
 RZ_API void sdb_unlock(const char *s);
 RZ_API bool sdb_unlink(Sdb *s);
-RZ_API int sdb_lock_wait(const char *s UNUSED);
+RZ_API int sdb_lock_wait(RZ_UNUSED const char *s);
 
 /* expiration */
 RZ_API bool sdb_expire_set(Sdb *s, const char *key, ut64 expire, ut32 cas);

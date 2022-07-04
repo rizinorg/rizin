@@ -4,7 +4,7 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "types.h"
+#include <rz_types.h>
 
 #ifdef __cplusplus
 extern "C" {

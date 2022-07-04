@@ -6,6 +6,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include "sdb.h"
+#include "sdb_private.h"
 
 #define MODE_ZERO '0'
 #define MODE_JSON 'j'
@@ -15,7 +16,7 @@ static int save = 0;
 static Sdb *s = NULL;
 static ut32 options = SDB_OPTION_FS | SDB_OPTION_NOSTAMP;
 
-static void terminate(int sig UNUSED) {
+static void terminate(RZ_UNUSED int sig) {
 	if (!s) {
 		return;
 	}
@@ -155,8 +156,8 @@ static char *slurp(FILE *f, size_t *sz) {
 	return buf;
 }
 
-#if USE_MMAN
-static void synchronize(int sig UNUSED) {
+#if HAVE_HEADER_SYS_MMAN_H
+static void synchronize(RZ_UNUSED int sig) {
 	// TODO: must be in sdb_sync() or wat?
 	sdb_sync(s);
 	Sdb *n = sdb_new(s->path, s->name, s->lock);
@@ -192,7 +193,7 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 			if (!strcmp(v, "true") || !strcmp(v, "false")) {
 				printf("%s\"%s\":%s", comma, k, v);
 			} else if (sdb_isnum(v)) {
-				printf("%s\"%s\":%" LLFMT "u", comma, k, sdb_atoi(v));
+				printf("%s\"%s\":%" PFMT64x "u", comma, k, sdb_atoi(v));
 			} else if (*v == '{' || *v == '[') {
 				printf("%s\"%s\":%s", comma, k, v);
 			} else {
@@ -487,7 +488,7 @@ int main(int argc, const char **argv) {
 		}
 		return sdb_dump(argv[db0], fmt);
 	}
-#if USE_MMAN
+#if HAVE_HEADER_SYS_MMAN_H
 	signal(SIGINT, terminate);
 	signal(SIGHUP, synchronize);
 #endif

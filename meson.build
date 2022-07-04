@@ -511,6 +511,7 @@ foreach item : [
     ['sys/shm.h', '', []],
     ['sys/ipc.h', '', []],
     ['sys/mman.h', '', []],
+    ['inttypes.h', '', []],
   ]
   hdr = item[0]
   ok = cc.has_header(hdr, prefix: item[1], dependencies: item[2])
