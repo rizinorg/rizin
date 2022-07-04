@@ -4,8 +4,8 @@ pipeline:
   build:
     image: ubuntu
     commands:
-      - apt update
-      - apt install build-essential git python3-pip cmake
+      - apt-get update
+      - DEBIAN_FRONTEND=noninteractive apt-get -qqy --no-install-recommends install build-essential git python3-pip cmake
       - pip install -U --user meson ninja
       - pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - meson build --prefix="`pwd`/prefix"
