@@ -4,8 +4,6 @@ pipeline:
   build:
     image: ubuntu-dev
     commands:
-      - pip install meson==0.62.0 ninja==1.10.2.3
-      - pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - meson build --prefix="`pwd`/prefix"
       - ninja -C build
       - ninja -C build install
@@ -17,10 +15,12 @@ pipeline:
   unit-test:
     image: ubuntu-dev
     commands:
+      - pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - ninja -C build test
   rz-test:
     image: ubuntu-dev
     commands:
+      - pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - export PATH="`pwd`/prefix/bin:$PATH"
       - cd test
       - rz-test -L
