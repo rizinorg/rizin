@@ -172,14 +172,16 @@ static bool parse_alias(RZ_OUT RzList *alias_list, RZ_BORROW RzList *tokens) {
 static bool parse_def(RZ_OUT RzList *def_list, RZ_BORROW RzList *tokens) {
 	rz_return_val_if_fail(def_list && tokens, false);
 
-	const char *name = rz_list_get_n(tokens, 1);
 	RzRegProfileDef *def = RZ_NEW0(RzRegProfileDef);
 	if (!def) {
 		RZ_LOG_WARN("Unable to allocate memory.\n");
 		return false;
 	}
+	const char *name = rz_list_get_n(tokens, 1);
+	if (!name) {
+		goto reg_parse_error;
+	}
 	def->name = strdup(name);
-	rz_return_val_if_fail(name, false);
 
 	if (!parse_type(def, rz_list_get_n(tokens, 0))) {
 		RZ_LOG_WARN("Invalid register type.\n");
@@ -206,7 +208,9 @@ static bool parse_def(RZ_OUT RzList *def_list, RZ_BORROW RzList *tokens) {
 	// Comments and flags are optional
 	if (rz_list_length(tokens) == 6) {
 		const char *comment_flag = rz_list_get_n(tokens, 5);
-		rz_return_val_if_fail(comment_flag, false);
+		if (!comment_flag) {
+			goto reg_parse_error;
+		}
 		if (comment_flag[0] == '#') {
 			// Remove # from the comment
 			def->comment = strdup(comment_flag + 1);
