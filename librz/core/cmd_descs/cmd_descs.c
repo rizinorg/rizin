@@ -4759,6 +4759,14 @@ static const RzCmdDescHelp analysis_syscall_number_help = {
 	.args = analysis_syscall_number_args,
 };
 
+static const RzCmdDescArg list_plugins_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp list_plugins_help = {
+	.summary = "List all asm/analysis plugins (e asm.arch=?)",
+	.args = list_plugins_args,
+};
+
 static const RzCmdDescHelp b_help = {
 	.summary = "Display or change the block size",
 };
@@ -14781,6 +14789,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_syscall_number_cd = rz_cmd_desc_argv_new(core->rcmd, as_cd, "asr", rz_analysis_syscall_number_handler, &analysis_syscall_number_help);
 	rz_warn_if_fail(analysis_syscall_number_cd);
+
+	RzCmdDesc *list_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_cd, "aL", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_list_plugins_handler, &list_plugins_help);
+	rz_warn_if_fail(list_plugins_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
