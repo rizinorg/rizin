@@ -2781,7 +2781,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 		addr = rz_core_visual_analysis_refresh(core);
 
 		// for filter on the go
-		if (core->visual_inputing) {
+		if (level == 0 && core->visual_inputing) {
 			int ch = rz_cons_readchar();
 			switch (ch) {
 			case 13: // CR
@@ -2823,21 +2823,25 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 
 		switch (ch) {
 		case 'f':
-			// add new keyword
-			if (!core->visual_filter) {
-				core->visual_filter = rz_pvector_new(free);
+			if (level == 0) {
+				// add new keyword
 				if (!core->visual_filter) {
-					break;
+					core->visual_filter = rz_pvector_new(free);
+					if (!core->visual_filter) {
+						break;
+					}
 				}
+				if (!core->visual_inputing) {
+					core->visual_inputing = rz_str_new("");
+				}
+				option = 0;
 			}
-			if (!core->visual_inputing) {
-				core->visual_inputing = rz_str_new("");
-			}
-			option = 0;
 			break;
 		case 'F':
-			// reset all keywords
-			RZ_FREE_CUSTOM(core->visual_filter, rz_pvector_free);
+			if (level == 0) {
+				// reset all keywords
+				RZ_FREE_CUSTOM(core->visual_filter, rz_pvector_free);
+			}
 			break;
 		case '[':
 			rz_cons_singleton()->show_vals = true;
