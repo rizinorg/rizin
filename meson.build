@@ -795,7 +795,7 @@ comb_hash_plugins = []
 in_crca_loop = false
 foreach plugin : hash_plugins
   if plugin.startswith('crca_crc')
-    comb_hash_plugins += (in_crca_loop ? '' : 'crca_crc(') + plugin.substring(8)
+    comb_hash_plugins += (in_crca_loop ? '' : 'crca_crc(') + plugin.split('_')[1].split('crc')[1]
     in_crca_loop = true
   else
     if in_crca_loop
