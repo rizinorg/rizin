@@ -324,6 +324,10 @@ static void add_item_to_regset(RZ_BORROW RzReg *reg, RZ_BORROW RzRegItem *item) 
 	ht_pp_insert(reg->regset[t].ht_regs, item->name, item);
 
 	// Update the overall type of registers into a regset
+	if (item->type == RZ_REG_TYPE_ANY) {
+		reg->regset[t].maskregstype = UT32_MAX;
+		return;
+	}
 	reg->regset[t].maskregstype |= ((int)1 << item->type);
 }
 
