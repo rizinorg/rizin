@@ -10,6 +10,8 @@
 #ifndef _MINUNIT_H_
 #define _MINUNIT_H_
 
+#include <rz_types.h>
+
 #if __WINDOWS__
 #define TRED
 #define TGREEN
