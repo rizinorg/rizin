@@ -12,6 +12,7 @@
 #ifdef _MSC_VER
 #pragma message("gettimeofday: Windows support is ugly here")
 #include <windows.h>
+#include <winsock.h>
 #include <time.h>
 
 struct timezone {
