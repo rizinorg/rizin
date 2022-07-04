@@ -594,6 +594,56 @@ static inline RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN
 	return NON_ZERO(or);
 }
 
+static RzILOpBool *x86_il_get_parity(RZ_OWN RzILOpPure *val) {
+	// assumed that val is an 8-bit wide value
+	RzILOpPure *popcnt = U8(0);
+
+	for (uint8_t i = 0; i < 8; i++) {
+		popcnt = ADD(popcnt, LSB(val));
+		val = SHIFTR0(val, U8(1));
+	}
+
+	return IS_ZERO(MOD(popcnt, U8(2)));
+}
+
+/**
+ * \brief Sets the value of PF, ZF, SF according to the \p result
+ */
+static RzILOpEffect *x86_il_set_result_flags(RZ_OWN RzILOpPure *result) {
+	RzILOpBool *pf = x86_il_get_parity(UNSIGNED(8, result));
+	RzILOpBool *zf = IS_ZERO(DUP(result));
+	RzILOpBool *sf = MSB(DUP(result));
+
+	return SEQ3(
+		x86_il_set_eflags(X86_EFLAGS_PF, pf),
+		x86_il_set_eflags(X86_EFLAGS_ZF, zf),
+		x86_il_set_eflags(X86_EFLAGS_SF, sf));
+}
+
+/**
+ * \brief Sets the value of CF, OF, AF according to the \p result
+ */
+static RzILOpEffect *x86_il_set_arithmetic_flags(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition) {
+	RzILOpBool *cf = NULL;
+	RzILOpBool *of = NULL;
+	RzILOpBool *af = NULL;
+
+	if (addition) {
+		cf = x86_il_is_add_carry(res, x, y);
+		of = x86_il_is_add_overflow(DUP(res), DUP(x), DUP(y));
+		af = x86_il_is_add_carry(UNSIGNED(4, DUP(res)), UNSIGNED(4, DUP(x)), UNSIGNED(4, DUP(y)));
+	} else {
+		cf = x86_il_is_sub_borrow(res, x, y);
+		of = x86_il_is_sub_underflow(DUP(res), DUP(x), DUP(y));
+		af = x86_il_is_sub_borrow(UNSIGNED(4, DUP(res)), UNSIGNED(4, DUP(x)), UNSIGNED(4, DUP(y)));
+	}
+
+	return SEQ3(
+		x86_il_set_eflags(X86_EFLAGS_CF, cf),
+		x86_il_set_eflags(X86_EFLAGS_OF, of),
+		x86_il_set_eflags(X86_EFLAGS_AF, af));
+}
+
 /**
  * \brief Invalid instruction
  */
@@ -653,7 +703,9 @@ static RzILOpEffect *x86_il_aad(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *adjusted = ADD(VARL("temp_al"), MUL(VARL("temp_ah"), imm));
 	adjusted = LOGAND(adjusted, U8(0xff));
 
-	return SEQ4(temp_al, temp_ah, x86_il_set_reg(X86_REG_AL, adjusted), x86_il_set_reg(X86_REG_AH, U8(0)));
+	RzILOpEffect *set_flags = x86_il_set_result_flags(adjusted);
+
+	return SEQ5(temp_al, temp_ah, x86_il_set_reg(X86_REG_AL, DUP(adjusted)), x86_il_set_reg(X86_REG_AH, U8(0)), set_flags);
 }
 
 /**
@@ -666,9 +718,11 @@ static RzILOpEffect *x86_il_aam(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 
 	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
 	RzILOpEffect *ah = x86_il_set_reg(X86_REG_AH, DIV(VARL("temp_al"), x86_il_get_operand(ins->operands[0])));
-	RzILOpEffect *al = x86_il_set_reg(X86_REG_AL, MOD(VARL("temp_al"), x86_il_get_operand(ins->operands[0])));
+	RzILOpPure *al_val = MOD(VARL("temp_al"), x86_il_get_operand(ins->operands[0]));
+	RzILOpEffect *al = x86_il_set_reg(X86_REG_AL, al_val);
+	RzILOpEffect *set_flags = x86_il_set_result_flags(DUP(al_val));
 
-	return SEQ3(temp_al, ah, al);
+	return SEQ4(temp_al, ah, al, set_flags);
 }
 
 /**
@@ -700,8 +754,10 @@ static RzILOpEffect *x86_il_aas(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 }
 
 /**
- * ADC family of instructions
- * Add with Carry
+ * ADC  dest, src
+ * (ADC family of instructions)
+ * Add with carry
+ * dest = dest + src + CF ; CF <- carry ; OF <- overflow
  * Possible encodings:
  *  - I
  *  - MI
@@ -715,10 +771,10 @@ static RzILOpEffect *x86_il_adc(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 
 	RzILOpPure *sum = ADD(ADD(op1, op2), cf);
 	RzILOpEffect *setdest = x86_il_set_operand(ins->operands[0], sum);
-	RzILOpEffect *setcf = x86_il_set_eflags(X86_EFLAGS_CF, x86_il_is_add_carry(DUP(sum), DUP(op1), DUP(op2)));
-	RzILOpEffect *setof = x86_il_set_eflags(X86_EFLAGS_OF, x86_il_is_add_overflow(DUP(sum), DUP(op1), DUP(op2)));
+	RzILOpEffect *set_res_flags = x86_il_set_result_flags(DUP(sum));
+	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(DUP(sum), DUP(op1), DUP(op2), true);
 
-	return SEQ3(setdest, setcf, setof);
+	return SEQ3(setdest, set_res_flags, set_arith_flags);
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(X86Ins *, ut64, RzAnalysis *);
