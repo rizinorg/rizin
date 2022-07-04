@@ -7943,15 +7943,7 @@ RZ_IPI RzCmdStatus rz_analyze_value_to_maps_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_analysis_info_show_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-	case RZ_OUTPUT_MODE_JSON:
-		cmd_address_info(core, core->offset, state);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
+   cmd_address_info(core, core->offset, state);
 	return RZ_CMD_STATUS_OK;
 }
 
