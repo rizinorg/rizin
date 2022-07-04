@@ -1,13 +1,16 @@
 platform: linux/arm64
 
 pipeline:
-  build:
+  dependencies:
     image: ubuntu
     commands:
       - apt-get update
-      - DEBIAN_FRONTEND=noninteractive apt-get -qqy --no-install-recommends install build-essential git python3-pip cmake
+      - DEBIAN_FRONTEND=noninteractive apt-get -qqy --no-install-recommends install build-essential git python3-pip cmake make
       - pip install meson==0.62.0 ninja==1.10.2.3
       - pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+  build:
+    image: ubuntu
+    commands:
       - meson build --prefix="`pwd`/prefix"
       - ninja -C build
       - ninja -C build install
