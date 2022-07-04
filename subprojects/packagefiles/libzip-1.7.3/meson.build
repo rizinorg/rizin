@@ -1,5 +1,4 @@
 project('libzip', 'c',
-  default_options : ['c_std=c99', 'buildtype=release'],
   version: '1.7.3')
 
 py3_exe = import('python').find_installation()
