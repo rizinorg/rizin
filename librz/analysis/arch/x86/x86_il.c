@@ -17,7 +17,7 @@
 #define X86_TO32(x) UNSIGNED(32, x)
 
 #define RET_NULL_IF_64BIT_OR_LOCK() \
-	if (analysis->bits == 64 || op->prefix[0] == X86_PREFIX_LOCK) { \
+	if (analysis->bits == 64 || ins->prefix[0] == X86_PREFIX_LOCK) { \
 		/* #UD exception */ \
 		return NULL; \
 	}
@@ -428,7 +428,7 @@ static RzILOpEffect *x86_il_set_reg(X86Reg reg, RzILOpPure *val) {
 	return entry.set_handler(entry.reg, val);
 }
 
-static RzILOpPure *x86_il_get_mem(X86Mem mem, uint8_t bits) {
+static RzILOpPure *x86_il_get_memaddr(X86Mem mem) {
 	RzILOpPure *offset = NULL;
 	if (mem.base != X86_REG_INVALID) {
 		if (!offset) {
@@ -459,20 +459,42 @@ static RzILOpPure *x86_il_get_mem(X86Mem mem, uint8_t bits) {
 	return ret;
 }
 
-static RzILOpPure *x86_il_get_operand(X86Op p, uint8_t bits) {
+static RzILOpEffect *x86_il_set_mem(X86Mem mem, RzILOpPure *val) {
+	return STOREW(x86_il_get_memaddr(mem), val);
+}
+
+static RzILOpPure *x86_il_get_operand(X86Op op) {
 	RzILOpPure *ret = NULL;
-	switch (p.type) {
+	switch (op.type) {
 	case X86_OP_INVALID:
 		RZ_LOG_ERROR("X86: RzIL: Invalid param type encountered\n");
 		break;
 	case X86_OP_REG:
-		ret = x86_il_get_reg(p.reg);
+		ret = x86_il_get_reg(op.reg);
 		break;
 	case X86_OP_IMM:
-		ret = S64(p.imm);
+		ret = S64(op.imm);
 		break;
 	case X86_OP_MEM:
-		ret = x86_il_get_mem(p.mem, bits);
+		ret = LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr(op.mem));
+	}
+	return ret;
+}
+
+static RzILOpEffect *x86_il_set_operand(X86Op op, RzILOpPure *val) {
+	RzILOpEffect *ret = NULL;
+	switch (op.type) {
+	case X86_OP_REG:
+		ret = x86_il_set_reg(op.reg, val);
+		break;
+	case X86_OP_MEM:
+		ret = x86_il_set_mem(op.mem, val);
+		break;
+	case X86_OP_IMM:
+		RZ_LOG_ERROR("X86: RzIL: Cannot set an immediate operand\n");
+	default:
+		RZ_LOG_ERROR("X86: RzIL: Invalid param type encountered\n");
+		break;
 	}
 	return ret;
 }
@@ -496,10 +518,86 @@ RzILOpEffect *x86_il_set_eflags(X86EFlags flag, RzILOpPure *value) {
 	return x86_il_set_reg(X86_REG_EFLAGS, final_eflag);
 }
 
+static inline RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+	// res = x + y
+	RzILOpBool *xmsb = MSB(x);
+	RzILOpBool *ymsb = MSB(y);
+	RzILOpBool *resmsb = MSB(res);
+
+	// x & y
+	RzILOpBool *xy = AND(xmsb, ymsb);
+	RzILOpBool *nres = INV(resmsb);
+
+	// !res & y
+	RzILOpBool *ry = AND(nres, DUP(ymsb));
+	// x & !res
+	RzILOpBool *xr = AND(DUP(xmsb), nres);
+
+	// bit = xy | ry | xr
+	RzILOpBool * or = OR(xy, ry);
+	or = OR(or, xr);
+
+	return NON_ZERO(or);
+}
+
+static inline RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+	// res = x - y
+	RzILOpBool *xmsb = MSB(x);
+	RzILOpBool *ymsb = MSB(y);
+	RzILOpBool *resmsb = MSB(res);
+
+	// !x & y
+	RzILOpBool *nx = INV(xmsb);
+	RzILOpBool *nxy = AND(nx, ymsb);
+
+	// y & res
+	RzILOpBool *rny = AND(DUP(ymsb), resmsb);
+	// res & !x
+	RzILOpBool *rnx = AND(DUP(resmsb), nx);
+
+	// bit = nxy | rny | rnx
+	RzILOpBool * or = OR(nxy, rny);
+	or = OR(or, rnx);
+
+	return NON_ZERO(or);
+}
+
+static inline RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+	// res = x + y
+	RzILOpBool *xmsb = MSB(x);
+	RzILOpBool *ymsb = MSB(y);
+	RzILOpBool *resmsb = MSB(res);
+
+	// !res & x & y
+	RzILOpBool *nrxy = AND(AND(INV(resmsb), xmsb), ymsb);
+	// res & !x & !y
+	RzILOpBool *rnxny = AND(AND(DUP(resmsb), INV(DUP(xmsb))), INV(DUP(ymsb)));
+	// or = nrxy | rnxny
+	RzILOpBool * or = OR(nrxy, rnxny);
+
+	return NON_ZERO(or);
+}
+
+static inline RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+	// res = x - y
+	RzILOpBool *xmsb = MSB(x);
+	RzILOpBool *ymsb = MSB(y);
+	RzILOpBool *resmsb = MSB(res);
+
+	// !res & x & !y
+	RzILOpBool *nrxny = AND(AND(INV(resmsb), xmsb), INV(ymsb));
+	// res & !x & y
+	RzILOpBool *rnxy = AND(AND(DUP(resmsb), INV(DUP(xmsb))), DUP(ymsb));
+	// or = nrxny | rnxy
+	RzILOpBool * or = OR(nrxny, rnxy);
+
+	return NON_ZERO(or);
+}
+
 /**
  * \brief Invalid instruction
  */
-static RzILOpEffect *x86_il_invalid(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *x86_il_invalid(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 	return EMPTY();
 }
 
@@ -518,7 +616,7 @@ static RzILOpEffect *x86_il_invalid(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
  * ASCII adjust AL after addition
  * 37 | Invalid | Valid
  */
-static RzILOpEffect *x86_il_aaa(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *x86_il_aaa(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
@@ -545,12 +643,12 @@ static RzILOpEffect *x86_il_aaa(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
  * Adjust AX before division to number base imm8
  * D5 ib | Invalid | Valid
  */
-static RzILOpEffect *x86_il_aad(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *x86_il_aad(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
 	RzILOpEffect *temp_ah = SETL("temp_ah", x86_il_get_reg(X86_REG_AH));
-	RzILOpPure *imm = x86_il_get_operand(op->operands[0], analysis->bits);
+	RzILOpPure *imm = x86_il_get_operand(ins->operands[0]);
 
 	RzILOpPure *adjusted = ADD(VARL("temp_al"), MUL(VARL("temp_ah"), imm));
 	adjusted = LOGAND(adjusted, U8(0xff));
@@ -563,12 +661,12 @@ static RzILOpEffect *x86_il_aad(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
  * Adjust AX after multiply to number base imm8
  * D4 ib | Invalid | Valid
  */
-static RzILOpEffect *x86_il_aam(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *x86_il_aam(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
-	RzILOpEffect *ah = x86_il_set_reg(X86_REG_AH, DIV(VARL("temp_al"), x86_il_get_operand(op->operands[0], analysis->bits)));
-	RzILOpEffect *al = x86_il_set_reg(X86_REG_AL, MOD(VARL("temp_al"), x86_il_get_operand(op->operands[0], analysis->bits)));
+	RzILOpEffect *ah = x86_il_set_reg(X86_REG_AH, DIV(VARL("temp_al"), x86_il_get_operand(ins->operands[0])));
+	RzILOpEffect *al = x86_il_set_reg(X86_REG_AL, MOD(VARL("temp_al"), x86_il_get_operand(ins->operands[0])));
 
 	return SEQ3(temp_al, ah, al);
 }
@@ -578,7 +676,7 @@ static RzILOpEffect *x86_il_aam(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
  * ASCII adjust AL after subtraction
  * 3F | Invalid | Valid
  */
-static RzILOpEffect *x86_il_aas(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *x86_il_aas(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
@@ -601,7 +699,20 @@ static RzILOpEffect *x86_il_aas(X86Ins *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ2(final_cond, set_al);
 }
 
-typedef RzILOpEffect *(*x86_il_ins)(X86Ins *aop, ut64 pc, RzAnalysis *analysis);
+/**
+ * ADC family of instructions
+ * Add with Carry
+ * Possible encodings:
+ *  - I
+ *  - MI
+ *  - MR
+ *  - RM
+ */
+static RzILOpEffect *x86_il_adc(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	// TODO
+}
+
+typedef RzILOpEffect *(*x86_il_ins)(X86Ins *, ut64, RzAnalysis *);
 
 /**
  * \brief RzIL handlers for x86 instructions
