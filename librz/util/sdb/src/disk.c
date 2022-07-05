@@ -7,79 +7,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <rz_util/rz_sys.h>
+#include <rz_util/rz_utf8.h>
 #include "sdb.h"
-
-#if __WINDOWS__
-#include <windows.h>
-#if UNICODE
-
-static wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
-	if (!cstring || !len || len < -1) {
-		return NULL;
-	}
-	wchar_t *rutf16 = NULL;
-	int wcsize;
-
-	if ((wcsize = MultiByteToWideChar(CP_UTF8, 0, cstring, len, NULL, 0))) {
-		wcsize += 1;
-		if ((rutf16 = (wchar_t *)calloc(wcsize, sizeof(wchar_t)))) {
-			MultiByteToWideChar(CP_UTF8, 0, cstring, len, rutf16, wcsize);
-			if (len != -1) {
-				rutf16[wcsize - 1] = L'\0';
-			}
-		}
-	}
-	return rutf16;
-}
-
-#define r_sys_conv_utf8_to_utf16(buf) r_utf8_to_utf16_l((buf), -1)
-
-static bool r_sys_mkdir(const char *path) {
-	LPTSTR path_ = r_sys_conv_utf8_to_utf16(path);
-	bool ret = CreateDirectory(path_, NULL);
-
-	free(path_);
-	return ret;
-}
-#else
-#define r_sys_conv_utf8_to_utf16(buf) strdup(buf)
-#define r_sys_mkdir(x)                CreateDirectory(x, NULL)
-#endif
-#ifndef ERROR_ALREADY_EXISTS
-#define ERROR_ALREADY_EXISTS 183
-#endif
-#define r_sys_mkdir_failed() (GetLastError() != 183)
-#else
-#define r_sys_mkdir(x)       (mkdir(x, 0755) != -1)
-#define r_sys_mkdir_failed() (errno != EEXIST)
-#endif
-
-static inline int r_sys_mkdirp(char *dir) {
-	int ret = 1;
-	const char slash = RZ_SYS_DIR[0];
-	char *path = dir;
-	char *ptr = path;
-	if (*ptr == slash) {
-		ptr++;
-	}
-#if __WINDOWS__
-	char *p = strstr(ptr, ":\\");
-	if (p) {
-		ptr = p + 2;
-	}
-#endif
-	while ((ptr = strchr(ptr, slash))) {
-		*ptr = 0;
-		if (!r_sys_mkdir(path) && r_sys_mkdir_failed()) {
-			eprintf("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
-			*ptr = slash;
-			return 0;
-		}
-		*ptr = slash;
-		ptr++;
-	}
-	return ret;
-}
 
 RZ_API bool sdb_disk_create(Sdb *s) {
 	int nlen;
@@ -99,13 +29,13 @@ RZ_API bool sdb_disk_create(Sdb *s) {
 		return false;
 	}
 	memcpy(str, dir, nlen + 1);
-	r_sys_mkdirp(str);
+	rz_sys_mkdirp(str);
 	memcpy(str + nlen, ".tmp", 5);
 	if (s->fdump != -1) {
 		close(s->fdump);
 	}
 #if __WINDOWS__ && UNICODE
-	wchar_t *wstr = r_sys_conv_utf8_to_utf16(str);
+	wchar_t *wstr = rz_utf8_to_utf16(str);
 	if (wstr) {
 		s->fdump = _wopen(wstr, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, SDB_MODE);
 		free(wstr);
@@ -152,8 +82,8 @@ RZ_API bool sdb_disk_finish(Sdb *s) {
 		reopen = true;
 	}
 #if __WINDOWS__
-	LPTSTR ndump_ = r_sys_conv_utf8_to_utf16(s->ndump);
-	LPTSTR dir_ = r_sys_conv_utf8_to_utf16(s->dir);
+	LPTSTR ndump_ = rz_utf8_to_utf16(s->ndump);
+	LPTSTR dir_ = rz_utf8_to_utf16(s->dir);
 
 	if (MoveFileEx(ndump_, dir_, MOVEFILE_REPLACE_EXISTING)) {
 		// eprintf ("Error 0x%02x\n", GetLastError ());
