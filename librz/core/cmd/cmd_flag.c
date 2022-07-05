@@ -210,7 +210,7 @@ RZ_IPI RzCmdStatus rz_flag_add_handler(RzCore *core, int argc, const char **argv
 	ut64 size = argc > 2 ? rz_num_math(core->num, argv[2]) : 1;
 	if ((item = rz_flag_get_at(core->flags, core->offset, false))) {
 		RZ_LOG_ERROR("Cannot create flag \"%s\" at 0x%" PFMT64x
-			    " because there is already \"%s\" flag\n",
+			     " because there is already \"%s\" flag\n",
 			argv[1],
 			core->offset, item->name);
 		addFlag = false;
