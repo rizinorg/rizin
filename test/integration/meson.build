@@ -8,9 +8,10 @@ if get_option('enable_tests')
   )
 
   tests = [
-    'analysis_il',
     'analysis_global_var',
+    'analysis_il',
     'autocmplt',
+    'basefind',
     'bin',
     'bin_vfiles',
     'cpu_platform_profiles',

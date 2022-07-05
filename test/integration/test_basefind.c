@@ -3,7 +3,7 @@
 
 #include <rz_core.h>
 #include <rz_basefind.h>
-#include "minunit.h"
+#include "../unit/minunit.h"
 
 static void basefind_options_set_valid(RzBaseFindOpt *options) {
 	options->start_address = 0;
