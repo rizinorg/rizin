@@ -28,7 +28,7 @@ typedef struct basefind_thread_data_t {
 	ut64 current;
 	ut64 base_start;
 	ut64 base_end;
-	ut64 base_inc;
+	ut64 alignment;
 	ut64 io_size;
 	ut32 score_min;
 	RzThreadLock *lock;
@@ -92,7 +92,7 @@ static bool basefind_array_has(const BaseFindArray *array, ut64 value) {
 	return false;
 }
 
-static BaseFindArray *basefind_create_array_of_addresses(RzCore *core) {
+static BaseFindArray *basefind_create_array_of_addresses(RzCore *core, ut32 min_string_len) {
 	RzList *strings = NULL;
 	BaseFindArray *array = NULL;
 	RzBinFile *alloc = NULL;
@@ -104,16 +104,10 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core) {
 		}
 	}
 
-	ut32 string_min_size = rz_config_get_i(core->config, "basefind.string.min");
-	if (string_min_size < 1) {
-		RZ_LOG_ERROR("basefind: cannot find strings when 'basefind.string.min' is zero.\n");
-		rz_goto_if_reached(error);
-	}
-
 	// if this list is sorted we can improve speed via half-interval search
-	strings = rz_bin_file_strings(current, string_min_size, true);
+	strings = rz_bin_file_strings(current, min_string_len, true);
 	if (!strings || rz_list_empty(strings)) {
-		RZ_LOG_ERROR("basefind: cannot find strings in binary with a minimum size of %u.\n", string_min_size);
+		RZ_LOG_ERROR("basefind: cannot find strings in binary with a minimum size of %u.\n", min_string_len);
 		rz_list_free(strings);
 		return NULL;
 	}
@@ -212,7 +206,7 @@ static void *basefind_thread_runner(BaseFindThreadData *bftd) {
 	ut64 base;
 
 	bfd.array = bftd->array;
-	for (base = bftd->base_start; base < bftd->base_end; base += bftd->base_inc) {
+	for (base = bftd->base_start; base < bftd->base_end; base += bftd->alignment) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
@@ -308,13 +302,17 @@ static inline bool create_thread_interval(RzThreadPool *pool, BaseFindThreadData
 /**
  * \brief Calculates a list of possible base addresses candidates using the strings position
  *
- * The code finds all the strings in memory with a minimum acceptable size (via basefind.string.min)
+ * The code finds all the strings in memory with a minimum acceptable size (via opt.min_string_len)
  * and calculates all possible words 32 or 64 bit large sizes (endianness via cfg.bigendian) in the
  * given binary.
- * These addresses are then compared with the strings and a variable base address (see basefind.base.start
- * and basefind.base.end) which is increased over time (see basefind.base.increase).
- * The scores are ignored if below basefind.score.min otherwise they are added to the list with the
- * associated base address.
+ * These addresses are then compared with the strings and a variable base address which is increased
+ * over time by opt.alignment.
+ *
+ * The scores are added to the result list with the associated base address if their score are higher
+ * than opt.min_score, otherwise they are ignored.
+ *
+ * It is possible via opt.callback to set a callback function that can stop the search (when returning
+ * false) or display the thread statuses (the callback will be called N-times for N spawned threads.
  *
  * \param  core     RzCore struct to use.
  * \param  options  Pointer to the RzBaseFindOpt structure.
@@ -332,39 +330,40 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFind
 
 	ut64 base_start = options->start_address;
 	ut64 base_end = options->end_address;
-	ut64 base_inc = options->increase_by;
+	ut64 alignment = options->alignment;
 
 	if (options->pointer_size != 32 && options->pointer_size != 64) {
 		RZ_LOG_ERROR("basefind: supported pointer sizes are 32 and 64 bits.\n");
 		return NULL;
-	}
-	options->pointer_size /= 8;
-
-	if (!core->file) {
-		RZ_LOG_ERROR("basefind: not file was opened via RzCore.\n");
+	} else if (!core->file) {
+		RZ_LOG_ERROR("basefind: the file was not opened via RzCore.\n");
+		return NULL;
+	} else if (base_start >= base_end) {
+		RZ_LOG_ERROR("basefind: start address is greater or equal to end address.\n");
+		return NULL;
+	} else if (alignment < 1) {
+		RZ_LOG_ERROR("basefind: the alignment is set to zero bytes.\n");
+		return NULL;
+	} else if (options->min_score < 1) {
+		RZ_LOG_ERROR("basefind: the minimum score is set to zero.\n");
+		return NULL;
+	} else if (options->min_string_len < 1) {
+		RZ_LOG_ERROR("basefind: the minimum string length is set to zero.\n");
 		return NULL;
 	}
 
-	if (base_start >= base_end) {
-		RZ_LOG_ERROR("basefind: option 'basefind.base.start' is greater or equal to 'basefind.base.end'.\n");
-		return NULL;
-	} else if (base_inc < 1) {
-		RZ_LOG_ERROR("basefind: option 'basefind.base.increase' is zero.\n");
-		return NULL;
-	} else if (base_inc < RZ_BASEFIND_BASE_INCREASE) {
-		RZ_LOG_WARN("basefind: option 'basefind.base.increase' is less than 0x%x, which may result in a very slow search.\n", RZ_BASEFIND_BASE_INCREASE);
+	if (alignment < RZ_BASEFIND_BASE_ALIGNMENT) {
+		RZ_LOG_WARN("basefind: the alignment is less than 0x%x bytes, "
+			    "which may result in a very slow search.\n",
+			RZ_BASEFIND_BASE_ALIGNMENT);
 	}
 
-	if (options->min_score < 1) {
-		RZ_LOG_WARN("basefind: option 'basefind.score.min' zero, which may result in a long list of results.\n");
-	}
-
-	array = basefind_create_array_of_addresses(core);
+	array = basefind_create_array_of_addresses(core, options->min_string_len);
 	if (!array) {
 		goto rz_basefind_end;
 	}
 
-	pointers = basefind_create_pointer_map(core, options->pointer_size);
+	pointers = basefind_create_pointer_map(core, options->pointer_size / 8);
 	if (!pointers) {
 		goto rz_basefind_end;
 	}
@@ -399,7 +398,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFind
 			rz_th_pool_kill(pool);
 			goto rz_basefind_end;
 		}
-		bftd->base_inc = base_inc;
+		bftd->alignment = alignment;
 		bftd->base_start = base_start + (sector_size * i);
 		bftd->current = bftd->base_start;
 		bftd->base_end = bftd->base_start + sector_size;

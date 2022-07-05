@@ -2579,11 +2579,12 @@ RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdSta
 	int begin_line = rz_cons_get_cur_line();
 
 	options.pointer_size = pointer_size;
-	options.min_score = rz_config_get_i(core->config, "basefind.score.min");
-	options.start_address = rz_config_get_i(core->config, "basefind.base.start");
-	options.end_address = rz_config_get_i(core->config, "basefind.base.end");
-	options.increase_by = rz_config_get_i(core->config, "basefind.base.increase");
-	options.max_threads = rz_config_get_i(core->config, "basefind.threads.max");
+	options.start_address = rz_config_get_i(core->config, "basefind.search.start");
+	options.end_address = rz_config_get_i(core->config, "basefind.search.end");
+	options.alignment = rz_config_get_i(core->config, "basefind.alignment");
+	options.max_threads = rz_config_get_i(core->config, "basefind.max.threads");
+	options.min_score = rz_config_get_i(core->config, "basefind.min.score");
+	options.min_string_len = rz_config_get_i(core->config, "basefind.min.string");
 	options.callback = progress ? core_basefind_progess_status : core_basefind_check_ctrl_c;
 	options.user = NULL;
 

@@ -23,6 +23,7 @@ if get_option('enable_tests')
     'analysis_xrefs',
     'annotated_code',
     'base64',
+    'basefind',
     'big',
     'bin_lines',
     'bitmap',
