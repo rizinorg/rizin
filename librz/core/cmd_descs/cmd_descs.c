@@ -163,6 +163,7 @@ static const RzCmdDescArg analysis_reg_arenas_hexdump_args[2];
 static const RzCmdDescArg analysis_reg_arenas_write_hex_args[3];
 static const RzCmdDescArg analysis_reg_profile_open_args[2];
 static const RzCmdDescArg analysis_reg_profile_gdb_args[2];
+static const RzCmdDescArg global_imports_args[2];
 static const RzCmdDescArg analysis_print_global_variable_args[2];
 static const RzCmdDescArg analysis_global_variable_add_args[4];
 static const RzCmdDescArg analysis_global_variable_delete_byaddr_args[2];
@@ -3312,6 +3313,43 @@ static const RzCmdDescHelp analysis_reg_roles_help = {
 	.args = analysis_reg_roles_args,
 };
 
+static const RzCmdDescHelp ai_help = {
+	.summary = "analysis/address information/imports",
+};
+static const RzCmdDescArg analysis_info_show_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_info_show_help = {
+	.summary = "show address information",
+	.args = analysis_info_show_args,
+};
+
+static const RzCmdDescHelp aii_help = {
+	.summary = "global import (like afii, but global)",
+};
+static const RzCmdDescArg global_imports_args[] = {
+	{
+		.name = "namespace",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp global_imports_help = {
+	.summary = "list/add global import (like afii, but global)",
+	.args = global_imports_args,
+};
+
+static const RzCmdDescArg delete_global_imports_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp delete_global_imports_help = {
+	.summary = "delete all global imports",
+	.args = delete_global_imports_args,
+};
+
 static const RzCmdDescHelp av_help = {
 	.summary = "C++ vtables and RTTI",
 };
@@ -4757,6 +4795,14 @@ static const RzCmdDescArg analysis_syscall_number_args[] = {
 static const RzCmdDescHelp analysis_syscall_number_help = {
 	.summary = "Returns the syscall name by the number",
 	.args = analysis_syscall_number_args,
+};
+
+static const RzCmdDescArg list_plugins_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp list_plugins_help = {
+	.summary = "List all asm/analysis plugins (e asm.arch=?)",
+	.args = list_plugins_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -14487,6 +14533,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_reg_roles_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arR", rz_analysis_reg_roles_handler, &analysis_reg_roles_help);
 	rz_warn_if_fail(analysis_reg_roles_cd);
 
+	RzCmdDesc *ai_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_info_show_handler, &analysis_info_show_help, &ai_help);
+	rz_warn_if_fail(ai_cd);
+	RzCmdDesc *aii_cd = rz_cmd_desc_group_state_new(core->rcmd, ai_cd, "aii", RZ_OUTPUT_MODE_STANDARD, rz_global_imports_handler, &global_imports_help, &aii_help);
+	rz_warn_if_fail(aii_cd);
+	RzCmdDesc *delete_global_imports_cd = rz_cmd_desc_argv_state_new(core->rcmd, aii_cd, "aii-", RZ_OUTPUT_MODE_STANDARD, rz_delete_global_imports_handler, &delete_global_imports_help);
+	rz_warn_if_fail(delete_global_imports_cd);
+
 	RzCmdDesc *av_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_cd, "av", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_list_vtables_handler, &analysis_list_vtables_help, &av_help);
 	rz_warn_if_fail(av_cd);
 	RzCmdDesc *avg_cd = rz_cmd_desc_group_state_new(core->rcmd, av_cd, "avg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_print_global_variable_handler, &analysis_print_global_variable_help, &avg_help);
@@ -14781,6 +14834,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_syscall_number_cd = rz_cmd_desc_argv_new(core->rcmd, as_cd, "asr", rz_analysis_syscall_number_handler, &analysis_syscall_number_help);
 	rz_warn_if_fail(analysis_syscall_number_cd);
+
+	RzCmdDesc *list_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_cd, "aL", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_list_plugins_handler, &list_plugins_help);
+	rz_warn_if_fail(list_plugins_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
