@@ -874,6 +874,107 @@ static RzILOpEffect *x86_il_cmc(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 	return x86_il_set_eflags(X86_EFLAGS_CF, INV(x86_il_get_eflags(X86_EFLAGS_CF)));
 }
 
+/**
+ * CMP
+ * (CMP family of instructions)
+ * Compare two operands
+ * Possible encodings:
+ *  - I
+ *  - MI
+ *  - MR
+ *  - RM
+ */
+static RzILOpEffect *x86_il_cmp(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *op1 = x86_il_get_operand(ins->operands[0]);
+	/* second operand can be an immediate value of smaller size,
+	but we need the same bitv size to use RzIL ops */
+	RzILOpPure *op2 = SIGNED(ins->operands[0].size, x86_il_get_operand(ins->operands[1]));
+
+	RzILOpPure *sub = SUB(op1, op2);
+	RzILOpEffect *arith = x86_il_set_arithmetic_flags(sub, DUP(op1), DUP(op2), false);
+	RzILOpEffect *res = x86_il_set_result_flags(DUP(sub));
+
+	return SEQ2(arith, res);
+}
+
+/**
+ * CMPSB
+ * Compare the byte at (R|E)SI and (R|E)DI
+ * A6 | Valid | Valid
+ */
+static RzILOpEffect *x86_il_cmpsb(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *op1 = x86_il_get_operand(ins->operands[0]);
+	RzILOpPure *op2 = x86_il_get_operand(ins->operands[1]);
+	RzILOpPure *res = SUB(op1, op2);
+
+	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(res, op1, op2, false);
+	RzILOpEffect *res_flags = x86_il_set_result_flags(res);
+
+	RzILOpEffect *add = x86_il_set_reg(X86_REG_RSI, ADD(x86_il_get_reg(X86_REG_RSI), U32(1)));
+	add = SEQ2(add, x86_il_set_reg(X86_REG_RDI, ADD(x86_il_get_reg(X86_REG_RDI), U32(1))));
+	RzILOpEffect *sub = x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), U32(1)));
+	sub = SEQ2(sub, x86_il_set_reg(X86_REG_RDI, SUB(x86_il_get_reg(X86_REG_RDI), U32(1))));
+
+	return SEQ3(arith_flags, res_flags, BRANCH(x86_il_get_eflags(X86_EFLAGS_DF), sub, add));
+}
+
+/**
+ * CMPSW
+ * Compare the word at (R|E)SI and (R|E)DI
+ * A7 | Valid | Valid
+ */
+static RzILOpEffect *x86_il_cmpsw(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *op1 = x86_il_get_operand(ins->operands[0]);
+	RzILOpPure *op2 = x86_il_get_operand(ins->operands[1]);
+	RzILOpPure *res = SUB(op1, op2);
+
+	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(res, op1, op2, false);
+	RzILOpEffect *res_flags = x86_il_set_result_flags(res);
+
+	RzILOpEffect *add = x86_il_set_reg(X86_REG_RSI, ADD(x86_il_get_reg(X86_REG_RSI), U32(2)));
+	add = SEQ2(add, x86_il_set_reg(X86_REG_RDI, ADD(x86_il_get_reg(X86_REG_RDI), U32(2))));
+	RzILOpEffect *sub = x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), U32(2)));
+	sub = SEQ2(sub, x86_il_set_reg(X86_REG_RDI, SUB(x86_il_get_reg(X86_REG_RDI), U32(2))));
+
+	return SEQ3(arith_flags, res_flags, BRANCH(x86_il_get_eflags(X86_EFLAGS_DF), sub, add));
+}
+
+/**
+ * DAA
+ * Decimal adjust after AL addition
+ * 2F | Invalid | Valid
+ */
+static RzILOpEffect *x86_il_daa(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	RET_NULL_IF_64BIT_OR_LOCK();
+
+	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
+	RzILOpEffect *old_cf = SETL("old_cf", x86_il_get_eflags(X86_EFLAGS_CF));
+
+	RzILOpEffect *ret = SEQ2(old_al, old_cf);
+
+	x86_il_set_eflags(X86_EFLAGS_CF, IL_FALSE);
+	
+	RzILOpPure *cond = OR(AND(x86_il_get_reg(X86_REG_AL), U8(0x0f)), x86_il_get_eflags(X86_EFLAGS_AF));
+	RzILOpPure *al = x86_il_get_reg(X86_REG_AL);
+
+	RzILOpPure *al_sum = ADD(al, U8(0x06));
+	RzILOpEffect *set_cf = x86_il_set_eflags(X86_EFLAGS_CF, OR(x86_il_is_add_carry(al_sum, DUP(al), U8(6)), VARL("old_cf")));
+	RzILOpEffect *sum = x86_il_set_reg(X86_REG_AL, DUP(al_sum));
+	RzILOpEffect *set_af = x86_il_set_eflags(X86_EFLAGS_AF, IL_TRUE);
+
+	RzILOpEffect *false_cond = x86_il_set_eflags(X86_EFLAGS_AF, IL_FALSE);
+	ret = SEQ2(ret, BRANCH(cond, SEQ3(set_cf, sum, set_af), false_cond));
+
+	cond = OR(UGE(VARL("old_al"), U8(0x99)), VARL("old_cf"));
+	sum = x86_il_set_reg(X86_REG_AL, ADD(x86_il_get_reg(X86_REG_AL), U8(0x60)));
+	set_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_TRUE);
+
+	false_cond = x86_il_set_eflags(X86_EFLAGS_CF, IL_FALSE);
+	ret = SEQ2(ret, BRANCH(cond, SEQ2(set_cf, sum), false_cond));
+
+	return SEQ2(ret, x86_il_set_result_flags(x86_il_get_reg(X86_REG_AL)));
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(X86Ins *, ut64, RzAnalysis *);
 
 /**
@@ -894,6 +995,10 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_CLD] = x86_il_cld,
 	[X86_INS_CLI] = x86_il_cli,
 	[X86_INS_CMC] = x86_il_cmc,
+	[X86_INS_CMP] = x86_il_cmp,
+	[X86_INS_CMPSB] = x86_il_cmpsb,
+	[X86_INS_CMPSW] = x86_il_cmpsw,
+	[X86_INS_DAA] = x86_il_daa,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
