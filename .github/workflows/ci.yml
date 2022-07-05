@@ -197,10 +197,7 @@ jobs:
           if [ "$ASAN" == "true" ]; then
             export CFLAGS="-DASAN=1 ${CFLAGS}"
             if [ "$CC" == "clang" ]; then
-              export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
-            else
-              export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
             fi
           fi
           meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build

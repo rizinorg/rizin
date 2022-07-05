@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <rz_util/rz_sys.h>
 #include <rz_util/rz_utf8.h>
+#include <rz_windows.h>
 #include "sdb.h"
 
 RZ_API bool sdb_disk_create(Sdb *s) {
