@@ -237,6 +237,9 @@ struct scan_go_info_s {
 
 static ut64 scan_go_build_info(const ut8 *buf, ut64 len, void *user) {
 	const int build_info_align = 16;
+	if (len < build_info_align) {
+		return len;
+	}
 	struct scan_go_info_s *ctx = user;
 	for (ut64 pos = 0; pos <= len - build_info_align; pos += build_info_align) {
 		if (is_go_build_info(buf + pos)) {
