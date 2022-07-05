@@ -170,7 +170,8 @@ sdb_exe = executable('sdb_native', 'sdb/src/main.c',
   install: false,
   native: true,
   implicit_include_directories: false,
-  link_args: executable_linkflags,
+  install_rpath: rpath_exe,
+  link_args: executable_linkflags
 )
 
 sdb_gen_cmd = [
