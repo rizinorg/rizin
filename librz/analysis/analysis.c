@@ -620,7 +620,7 @@ RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr) {
 	return false;
 }
 
-RZ_API RzList *rz_analysis_noreturn_functions(RzAnalysis *analysis) {
+RZ_API RzList /*<char *>*/ *rz_analysis_noreturn_functions(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	// At first we read all noreturn functions from the Types DB
 	RzList *noretl = rz_type_noreturn_function_names(analysis->typedb);

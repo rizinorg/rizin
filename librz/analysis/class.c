@@ -608,7 +608,7 @@ RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth) {
 	free(meth->real_name);
 }
 
-RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *cls, RzList *methods) {
+RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *cls, RzList /*<RzBinSymbol *>*/ *methods) {
 	RzListIter *iter_method;
 	RzBinSymbol *sym;
 	rz_list_sort(methods, &symbol_method_sort_by_addr);

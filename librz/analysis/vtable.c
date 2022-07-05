@@ -216,7 +216,7 @@ RZ_API RVTableInfo *rz_analysis_vtable_parse_at(RVTableContext *context, ut64 ad
 	return vtable;
 }
 
-RZ_API RzList *rz_analysis_vtable_search(RVTableContext *context) {
+RZ_API RzList /*<RVTableInfo *>*/ *rz_analysis_vtable_search(RVTableContext *context) {
 	RzAnalysis *analysis = context->analysis;
 	if (!analysis) {
 		return NULL;

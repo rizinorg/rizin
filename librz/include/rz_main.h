@@ -7,6 +7,10 @@
 #include <rz_types.h>
 #include <rz_getopt.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 RZ_LIB_VERSION_HEADER(rz_main);
 
 typedef struct rz_main_t {
@@ -45,5 +49,9 @@ RZ_API int rz_main_rz_find(int argc, const char **argv);
 RZ_API int rz_main_rz_diff(int argc, const char **argv);
 RZ_API int rz_main_rz_gg(int argc, const char **argv);
 RZ_API int rz_main_rz_sign(int argc, const char **argv);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

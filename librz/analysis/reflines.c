@@ -263,7 +263,7 @@ list_err:
 	return NULL;
 }
 
-RZ_API int rz_analysis_reflines_middle(RzAnalysis *a, RzList * /*<RzAnalysisRefline>*/ list, ut64 addr, int len) {
+RZ_API int rz_analysis_reflines_middle(RzAnalysis *a, RzList /*<RzAnalysisRefline *>*/ *list, ut64 addr, int len) {
 	if (a && list) {
 		RzAnalysisRefline *ref;
 		RzListIter *iter;
