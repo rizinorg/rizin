@@ -645,6 +645,14 @@ static RzILOpEffect *x86_il_set_arithmetic_flags(RZ_OWN RzILOpPure *res, RZ_OWN 
 }
 
 /**
+ * ======== INSTRUCTION DOCUMENTATION FORMAT ========
+ *
+ * Instruction mnemonic
+ * Description
+ * | Opcode | 64-bit | Compat/Leg mode
+ */
+
+/**
  * \brief Invalid instruction
  */
 static RzILOpEffect *x86_il_invalid(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
@@ -652,14 +660,6 @@ static RzILOpEffect *x86_il_invalid(X86Ins *ins, ut64 pc, RzAnalysis *analysis) 
 }
 
 /* 8086/8088 instructions*/
-
-/**
- * ======== INSTRUCTION DOCUMENTATION FORMAT ========
- *
- * Instruction mnemonic
- * Description
- * | Opcode | 64-bit | Compat/Leg mode
- */
 
 /**
  * AAA
@@ -791,13 +791,87 @@ static RzILOpEffect *x86_il_adc(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 static RzILOpEffect *x86_il_add(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *op1 = x86_il_get_operand(ins->operands[0]);
 	RzILOpPure *op2 = x86_il_get_operand(ins->operands[1]);
-
 	RzILOpPure *sum = ADD(op1, op2);
+
 	RzILOpEffect *set_dest = x86_il_set_operand(ins->operands[0], sum);
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(DUP(sum));
 	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(DUP(sum), DUP(op1), DUP(op2), true);
 
 	return SEQ3(set_dest, set_res_flags, set_arith_flags);
+}
+
+/**
+ * AND  dest, src
+ * (AND family of instructions)
+ * Logical and
+ * dest = dest & src
+ * Possible encodings:
+ *  - I
+ *  - MI
+ *  - MR
+ *  - RM
+ */
+static RzILOpEffect *x86_il_and(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *op1 = x86_il_get_operand(ins->operands[0]);
+	RzILOpPure *op2 = x86_il_get_operand(ins->operands[1]);
+	RzILOpPure *and = AND(op1, op2);
+
+	RzILOpEffect *set_dest = x86_il_set_operand(ins->operands[0], and);
+	RzILOpEffect *clear_of = x86_il_set_eflags(X86_EFLAGS_OF, IL_FALSE);
+	RzILOpEffect *clear_cf = x86_il_set_eflags(X86_EFLAGS_CF, IL_FALSE);
+	RzILOpEffect *set_res_flags = x86_il_set_result_flags(DUP(and));
+
+	return SEQ4(set_dest, clear_of, clear_cf, set_res_flags);
+}
+
+static RzILOpEffect *x86_il_call(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	// TODO
+	return EMPTY();
+}
+
+/**
+ * CBW
+ * Convert byte to word
+ * 98 | Valid | Valid
+ */
+static RzILOpEffect *x86_il_cbw(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	return x86_il_set_reg(X86_REG_AX, UNSIGNED(16, x86_il_get_reg(X86_REG_AL)));
+}
+
+/**
+ * CLC
+ * Clear carry flag
+ * F8 | Valid | Valid
+ */
+static RzILOpEffect *x86_il_clc(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	return x86_il_set_eflags(X86_EFLAGS_CF, IL_FALSE);
+}
+
+/**
+ * CLD
+ * Clear direction flag
+ * FC | Valid | Valid
+ */
+static RzILOpEffect *x86_il_cld(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	return x86_il_set_eflags(X86_EFLAGS_DF, IL_FALSE);
+}
+
+/**
+ * CLI
+ * Clear interrupt flag
+ * FA | Valid | Valid
+ */
+static RzILOpEffect *x86_il_cli(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	return x86_il_set_eflags(X86_EFLAGS_IF, IL_FALSE);
+}
+
+/**
+ * CMC
+ * Complement carry flag
+ * F5 | Valid | Valid
+ */
+static RzILOpEffect *x86_il_cmc(X86Ins *ins, ut64 pc, RzAnalysis *analysis) {
+	return x86_il_set_eflags(X86_EFLAGS_CF, INV(x86_il_get_eflags(X86_EFLAGS_CF)));
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(X86Ins *, ut64, RzAnalysis *);
@@ -813,6 +887,13 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_AAS] = x86_il_aas,
 	[X86_INS_ADC] = x86_il_adc,
 	[X86_INS_ADD] = x86_il_add,
+	[X86_INS_AND] = x86_il_and,
+	[X86_INS_CALL] = x86_il_call,
+	[X86_INS_CBW] = x86_il_cbw,
+	[X86_INS_CLC] = x86_il_clc,
+	[X86_INS_CLD] = x86_il_cld,
+	[X86_INS_CLI] = x86_il_cli,
+	[X86_INS_CMC] = x86_il_cmc,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
