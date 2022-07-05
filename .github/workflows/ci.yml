@@ -114,6 +114,8 @@ jobs:
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 115
             allow_failure: false
+            env:
+              LD_LIBRARY_PATH=/usr/lib/llvm-10/lib/clang/10.0.0/lib/linux/
           - name: linux-gcc-tests-codecov
             os: ubuntu-20.04
             build_system: meson

@@ -98,12 +98,10 @@ rz_util_includes = [platform_inc, include_directories('sdb/src', 'sdb')]
 
 rz_util = library('rz_util', rz_util_sources, libsdb_sources,
   include_directories: rz_util_includes,
-  c_args: library_cflags,
   dependencies: rz_util_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,
