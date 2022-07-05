@@ -196,6 +196,9 @@ jobs:
           export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
           if [ "$ASAN" == "true" ]; then
             export CFLAGS="-DASAN=1 ${CFLAGS}"
+            if [ "$CC" == "clang" ]; then
+              export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
+            fi
           fi
           meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
         env:

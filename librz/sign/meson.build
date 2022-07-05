@@ -22,12 +22,10 @@ rz_sign_deps = [
 
 rz_sign = library('rz_sign', rz_sign_sources,
   include_directories: rz_sign_inc,
-  c_args: library_cflags,
   dependencies: rz_sign_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,
