@@ -117,8 +117,8 @@ rz_util_dep = declare_dependency(
 meson.override_dependency('rz_util', rz_util_dep)
 
 if meson.is_cross_build()
-  rz_util_native = library('rz_util', rz_util_sources, libsdb_sources,
-    include_directories: platform_inc,
+  rz_util_native = static_library('rz_util_native', rz_util_sources, libsdb_sources,
+    include_directories: rz_util_includes,
     c_args: library_cflags,
     dependencies: rz_util_deps,
     install: false,
@@ -130,7 +130,7 @@ if meson.is_cross_build()
 
   rz_util_native_dep = declare_dependency(
     link_with: rz_util_native,
-    include_directories: platform_inc,
+    include_directories: rz_util_includes,
   )
 else
   rz_util_native_dep = rz_util_dep
