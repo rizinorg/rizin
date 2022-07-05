@@ -127,4 +127,5 @@ subprojects/zlib-*/
 subprojects/sigdb/
 subprojects/libdemangle/
 subprojects/libmspack/
+subprojects/xz-*/
 dist/windows/Output

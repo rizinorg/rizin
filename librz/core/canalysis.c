@@ -3041,14 +3041,14 @@ static bool opiscall(RzCore *core, RzAnalysisOp *aop, ut64 addr, const ut8 *buf,
 		}
 		// if is not bl do not analyze
 		if (buf[3] == 0x94) {
-			if (rz_analysis_op(core->analysis, aop, addr, buf, len, RZ_ANALYSIS_OP_MASK_BASIC)) {
+			if (rz_analysis_op(core->analysis, aop, addr, buf, len, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 				return true;
 			}
 		}
 		break;
 	default:
 		aop->size = 1;
-		if (rz_analysis_op(core->analysis, aop, addr, buf, len, RZ_ANALYSIS_OP_MASK_BASIC)) {
+		if (rz_analysis_op(core->analysis, aop, addr, buf, len, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 			switch (aop->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 			case RZ_ANALYSIS_OP_TYPE_CALL:
 			case RZ_ANALYSIS_OP_TYPE_CCALL:
@@ -3141,7 +3141,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 					continue;
 				} break;
 				default:
-					if (!rz_analysis_op(core->analysis, &op, at + i, buf + i, core->blocksize - i, RZ_ANALYSIS_OP_MASK_BASIC)) {
+					if (rz_analysis_op(core->analysis, &op, at + i, buf + i, core->blocksize - i, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 						rz_analysis_op_fini(&op);
 						continue;
 					}
@@ -3178,7 +3178,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 					}
 					break;
 				default: {
-					if (!rz_analysis_op(core->analysis, &op, at + i, buf + i, core->blocksize - i, RZ_ANALYSIS_OP_MASK_BASIC)) {
+					if (rz_analysis_op(core->analysis, &op, at + i, buf + i, core->blocksize - i, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 						rz_analysis_op_fini(&op);
 						continue;
 					}
@@ -3224,7 +3224,7 @@ static bool core_search_for_xrefs_in_boundaries(RzCore *core, ut64 from, ut64 to
 		(to - from > rz_io_size(core->io))) {
 		return false;
 	}
-	return rz_core_analysis_search_xrefs(core, from, to);
+	return rz_core_analysis_search_xrefs(core, from, to) > 0;
 }
 
 /**
@@ -4617,9 +4617,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 
 		rz_analysis_op_fini(&op);
 		rz_asm_set_pc(core->rasm, cur);
-		if (!rz_analysis_op(core->analysis, &op, cur, buf + i, iend - i, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT)) {
-			i += minopsize - 1; //   XXX dupe in op.size below
-		}
+		rz_analysis_op(core->analysis, &op, cur, buf + i, iend - i, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT);
 		// if (op.type & 0x80000000 || op.type == 0) {
 		if (op.type == RZ_ANALYSIS_OP_TYPE_ILL || op.type == RZ_ANALYSIS_OP_TYPE_UNK) {
 			// i += 2
@@ -5566,7 +5564,7 @@ static bool process_reference_noreturn_cb(void *u, const ut64 k, const void *v) 
 		ut8 buf[CALL_BUF_SIZE] = { 0 };
 		RzAnalysisOp op = { 0 };
 		if (core->analysis->iob.read_at(core->analysis->iob.io, addr, buf, CALL_BUF_SIZE)) {
-			if (rz_analysis_op(core->analysis, &op, addr, buf, core->blocksize, 0)) {
+			if (rz_analysis_op(core->analysis, &op, addr, buf, core->blocksize, 0) > 0) {
 				RzBinReloc *rel = rz_core_getreloc(core, addr, op.size);
 				if (rel) {
 					// Find the block that has an instruction at exactly the reference addr

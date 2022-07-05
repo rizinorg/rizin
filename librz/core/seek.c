@@ -205,7 +205,7 @@ RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save) {
 	ut64 next = UT64_MAX;
 	if (strstr(type, "opc")) {
 		RzAnalysisOp aop;
-		if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
+		if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 			next = core->offset + aop.size;
 		} else {
 			eprintf("Invalid opcode\n");

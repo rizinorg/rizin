@@ -919,7 +919,6 @@ RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_classes(RZ_NONNULL RzBin *bin);
 RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_strings(RZ_NONNULL RzBin *bin);
 RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_mem(RZ_NONNULL RzBin *bin);
 RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_symbols(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE int rz_bin_is_big_endian(RZ_NONNULL RzBin *bin);
 RZ_API RZ_DEPRECATE int rz_bin_is_static(RZ_NONNULL RzBin *bin);
 RZ_API RzList *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
 

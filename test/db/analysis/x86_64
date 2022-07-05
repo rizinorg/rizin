@@ -5,7 +5,20 @@ aap
 aflc
 EOF
 EXPECT=<<EOF
-444
+459
+EOF
+RUN
+
+NAME=.gnu_debugdata parsed
+FILE=bins/elf/fedora_32_bin_ls
+CMDS=<<EOF
+aap
+afl~x2realloc
+afl~quotearg_alloc_mem
+EOF
+EXPECT=<<EOF
+0x00016dc0    8 96   -> 83   sym.x2realloc
+0x00015d10    3 233          sym.quotearg_alloc_mem
 EOF
 RUN
 

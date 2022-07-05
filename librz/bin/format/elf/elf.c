@@ -240,7 +240,7 @@ static bool init_dt_dynamic_aux(ELFOBJ *bin) {
 
 static void init_dt_dynamic(ELFOBJ *bin) {
 	if (!init_dt_dynamic_aux(bin)) {
-		RZ_LOG_WARN("Failed to initialize ELF DT_DYNAMIC.\n");
+		RZ_LOG_INFO("Failed to initialize ELF DT_DYNAMIC.\n");
 	}
 }
 
@@ -254,13 +254,13 @@ static bool init_dynstr_aux(ELFOBJ *bin) {
 	ut64 size;
 
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRSZ, &size)) {
-		RZ_LOG_WARN("DT_STRTAB or DT_STRSZ key not found.\n");
+		RZ_LOG_INFO("DT_STRTAB or DT_STRSZ key not found.\n");
 		return false;
 	}
 
 	ut64 offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (offset == UT64_MAX) {
-		RZ_LOG_WARN("Failed to convert DT_STRTAB to a physical offset.\n");
+		RZ_LOG_INFO("Failed to convert DT_STRTAB to a physical offset.\n");
 		return false;
 	}
 
@@ -274,7 +274,7 @@ static bool init_dynstr_aux(ELFOBJ *bin) {
 
 static void init_dynstr(ELFOBJ *bin) {
 	if (!init_dynstr_aux(bin)) {
-		RZ_LOG_WARN("Failed to initialize string table for dynamic linking.\n");
+		RZ_LOG_INFO("Failed to initialize string table for dynamic linking.\n");
 	}
 }
 
@@ -289,7 +289,7 @@ static bool init_symbols_info_aux(ELFOBJ *bin) {
 
 static void init_symbols_info(ELFOBJ *bin) {
 	if (!init_symbols_info_aux(bin)) {
-		RZ_LOG_WARN("Failed to initialize GNU symbols information.\n")
+		RZ_LOG_INFO("Failed to initialize GNU symbols information.\n")
 	}
 }
 

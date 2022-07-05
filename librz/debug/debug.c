@@ -819,7 +819,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	if (!dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf))) {
 		return false;
 	}
-	if (!rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC)) {
+	if (rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		return false;
 	}
 	if (op.type == RZ_ANALYSIS_OP_TYPE_ILL) {
@@ -1077,7 +1077,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 			dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 		}
 		// Analyze the opcode
-		if (!rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC)) {
+		if (rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf("debug-step-over: Decode error at %" PFMT64x "\n", pc);
 			return steps_taken;
 		}
@@ -1377,7 +1377,7 @@ RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 			dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 		}
 		// Analyze the opcode
-		if (!rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC)) {
+		if (rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf("Decode error at %" PFMT64x "\n", pc);
 			return false;
 		}

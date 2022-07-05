@@ -578,15 +578,12 @@ static bool cb_asmarch(void *user, void *data) {
 	__setsegoff(core->config, node->value, core->rasm->bits);
 
 	// set a default endianness
-	int bigbin = rz_bin_is_big_endian(core->bin);
-	if (bigbin == -1 /* error: no endianness detected in binary */) {
-		bigbin = rz_config_get_i(core->config, "cfg.bigendian");
-	}
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 
 	// try to set endian of RzAsm to match binary
-	rz_asm_set_big_endian(core->rasm, bigbin);
+	rz_asm_set_big_endian(core->rasm, big_endian);
 	// set endian of display to match binary
-	core->print->big_endian = bigbin;
+	core->print->big_endian = big_endian;
 
 	rz_asm_set_cpu(core->rasm, asm_cpu);
 	free(asm_cpu);
@@ -611,7 +608,7 @@ static bool cb_asmarch(void *user, void *data) {
 		rz_core_analysis_type_init(core);
 	}
 	// set endian of RzAnalysis to match binary
-	rz_analysis_set_big_endian(core->analysis, bigbin);
+	rz_analysis_set_big_endian(core->analysis, big_endian);
 	rz_core_analysis_cc_init(core);
 
 	const char *platform = rz_config_get(core->config, "asm.platform");

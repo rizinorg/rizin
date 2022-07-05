@@ -378,7 +378,7 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *inst
 	}
 
 	RzAnalysisOp op = { 0 };
-	if (!rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
+	if (rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		RZ_LOG_ERROR("Invalid instruction at %" PFMT64x "\n", core->offset);
 		goto err;
 	}

@@ -1,6 +1,5 @@
 project('libzip', 'c',
-  default_options : ['c_std=c99', 'buildtype=release'],
-  version: '1.7.3')
+  version: '1.9.2')
 
 py3_exe = import('python').find_installation()
 cc = meson.get_compiler('c')
@@ -30,7 +29,7 @@ else
     conf_data.set10('HAVE_LIBBZ2', true)
     libzip_deps += [bzip2_dep]
   endif
-  lzma_dep = dependency('lzma', required: false, static: is_static_build)
+  lzma_dep = dependency('liblzma', required: false, static: is_static_build)
   if not lzma_dep.found()
     lzma_dep = cc.find_library('lzma', required: false, static: is_static_build)
   endif
@@ -149,7 +148,7 @@ if cc.has_header('inttypes.h')
 #include <inttypes.h>'''
   zipconf_data.set('LIBZIP_TYPES_INCLUDE', types_header_prefix)
 elif cc.has_header('stdint.h')
-  types_header_prefix = '#include <stdin.h>'
+  types_header_prefix = '#include <stdint.h>'
   zipconf_data.set('LIBZIP_TYPES_INCLUDE', types_header_prefix)
 elif cc.has_header('sys/types.h')
   types_header_prefix = '#include <sys/types.h>'
@@ -230,11 +229,12 @@ zipconf_h = configure_file(
 # Create zip_err_str.c file
 
 zip_h = files('lib/zip.h')
+zipint_h = files('lib/zipint.h')
 create_zip_err_str_py = files('./create_zip_err_str.py')
 zip_err_str_c = custom_target('zip_err_str',
   build_by_default: true,
   output: 'zip_err_str.c',
-  input: zip_h,
+  input: [zip_h, zipint_h],
   command: [
     py3_exe,
     create_zip_err_str_py,
@@ -369,7 +369,6 @@ if host_machine.system() == 'windows'
   libzip_deps += [cc.find_library('advapi32')]
 else
   zip_files += [
-    'lib/zip_mkstempm.c',
     'lib/zip_source_file_stdio_named.c',
     'lib/zip_random_unix.c'
   ]

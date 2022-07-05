@@ -85,6 +85,7 @@ RZ_OWN RzList /* RzBinSymbol */ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bin)
 
 		if (!(methoddef->implflags & 0x01) && methoddef->rva) { // not native
 			if (bin_pe_dotnet_read_method_header(bin->clr, bin->b, sym) < 0) {
+				free(sym);
 				break;
 			}
 		}

@@ -351,8 +351,15 @@ int rz_test_main(int argc, const char **argv) {
 	rz_sys_setenv("TZ", "UTC");
 	ut64 time_start = rz_time_now_mono();
 	RzTestState state = { 0 };
-	state.run_config.rz_cmd = rizin_cmd ? rizin_cmd : RIZIN_CMD_DEFAULT;
-	state.run_config.rz_asm_cmd = rz_asm_cmd ? rz_asm_cmd : RZ_ASM_CMD_DEFAULT;
+	// Avoid PATH search for each process launched
+	if (!rizin_cmd) {
+		rizin_cmd = rz_file_path(RIZIN_CMD_DEFAULT);
+	}
+	if (!rz_asm_cmd) {
+		rz_asm_cmd = rz_file_path(RZ_ASM_CMD_DEFAULT);
+	}
+	state.run_config.rz_cmd = rizin_cmd;
+	state.run_config.rz_asm_cmd = rz_asm_cmd;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;

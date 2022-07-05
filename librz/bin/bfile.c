@@ -397,37 +397,34 @@ static inline bool add_file_hash(RzHashCfg *md, const char *name, RzList *list) 
 	return true;
 }
 
+static ut64 buf_compute_hashes(const ut8 *buf, ut64 size, void *user) {
+	if (!rz_hash_cfg_update((RzHashCfg *)user, buf, size)) {
+		return 0;
+	}
+	return size;
+}
+
 /**
  * Return a list of RzBinFileHash structures with the hashes md5, sha1, sha256, crc32 and entropy
  * computed over the whole \p bf .
  */
 RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
 	rz_return_val_if_fail(bin && bf && bf->o, NULL);
-	ut64 buf_len = 0, r = 0;
 	RzBinObject *o = bf->o;
 	RzList *file_hashes = NULL;
-	ut8 *buf = NULL;
 	RzHashCfg *md = NULL;
-	const size_t blocksize = 64000;
-
-	RzIODesc *iod = rz_io_desc_get(bin->iob.io, bf->fd);
-	if (!iod) {
+	RzBuffer *buf = rz_buf_new_with_io_fd(&bin->iob, bf->fd);
+	const ut64 buf_size = rz_buf_size(buf);
+	if (!buf_size) {
+		rz_buf_free(buf);
 		return NULL;
 	}
-
-	buf_len = rz_io_desc_size(iod);
-	if (buf_len > limit) {
+	if (buf_size > limit) {
 		if (bin->verbose) {
 			RZ_LOG_WARN("rz_bin_file_hash: file exceeds bin.hashlimit\n");
 		}
 		return NULL;
 	}
-	buf = malloc(blocksize);
-	if (!buf) {
-		RZ_LOG_ERROR("Cannot allocate buffer for hash computation\n");
-		return NULL;
-	}
-
 	file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
 	if (!file_hashes) {
 		RZ_LOG_ERROR("Cannot allocate file hash list\n");
@@ -450,26 +447,8 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	while (r + blocksize < buf_len) {
-		rz_io_desc_seek(iod, r, RZ_IO_SEEK_SET);
-		int b = rz_io_desc_read(iod, buf, blocksize);
-		if (b < 0) {
-			RZ_LOG_ERROR("rz_io_desc_read: can't read\n");
-			goto rz_bin_file_compute_hashes_bad;
-		} else if (!rz_hash_cfg_update(md, buf, b)) {
-			goto rz_bin_file_compute_hashes_bad;
-		}
-		r += b;
-	}
-	if (r < buf_len) {
-		rz_io_desc_seek(iod, r, RZ_IO_SEEK_SET);
-		const size_t rem_len = buf_len - r;
-		int b = rz_io_desc_read(iod, buf, rem_len);
-		if (b < 1) {
-			RZ_LOG_ERROR("rz_io_desc_read: can't read\n");
-		} else if (!rz_hash_cfg_update(md, buf, b)) {
-			goto rz_bin_file_compute_hashes_bad;
-		}
+	if (rz_buf_fwd_scan(buf, 0, buf_size, buf_compute_hashes, md) != buf_size) {
+		goto rz_bin_file_compute_hashes_bad;
 	}
 
 	if (!rz_hash_cfg_final(md)) {
@@ -491,12 +470,12 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 	}
 
 	// TODO: add here more rows
-	free(buf);
+	rz_buf_free(buf);
 	rz_hash_cfg_free(md);
 	return file_hashes;
 
 rz_bin_file_compute_hashes_bad:
-	free(buf);
+	rz_buf_free(buf);
 	rz_hash_cfg_free(md);
 	rz_list_free(file_hashes);
 	return NULL;

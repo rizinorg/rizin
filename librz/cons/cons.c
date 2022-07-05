@@ -454,7 +454,6 @@ RZ_API void rz_cons_sleep_end(void *user) {
 }
 
 #if __WINDOWS__
-static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		__break_signal(2); // SIGINT
@@ -550,12 +549,37 @@ static void set_console_codepage_to_utf8(void) {
 	}
 }
 
-static void restore_console_codepage(void) {
-	if (!SetConsoleCP(I.old_cp)) {
-		rz_sys_perror("SetConsoleCP");
+static void save_console_state(void) {
+	if (rz_cons_isatty()) {
+		if (!(I.old_ocp = GetConsoleOutputCP())) {
+			rz_sys_perror("GetConsoleOutputCP");
+		}
+		if (!(I.old_cp = GetConsoleCP())) {
+			rz_sys_perror("GetConsoleCP");
+		}
+		if (!GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &I.old_output_mode)) {
+			rz_sys_perror("GetConsoleMode");
+		}
+		if (!GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &I.old_input_mode)) {
+			rz_sys_perror("GetConsoleCP");
+		}
 	}
-	if (!SetConsoleOutputCP(I.old_ocp)) {
-		rz_sys_perror("SetConsoleOutputCP");
+}
+
+static void restore_console_state(void) {
+	if (rz_cons_isatty()) {
+		if (!SetConsoleCP(I.old_cp)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+		if (!SetConsoleOutputCP(I.old_ocp)) {
+			rz_sys_perror("SetConsoleOutputCP");
+		}
+		if (!SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), I.old_output_mode)) {
+			rz_sys_perror("SetConsoleMode");
+		}
+		if (!SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), I.old_input_mode)) {
+			rz_sys_perror("SetConsoleMode");
+		}
 	}
 }
 #endif
@@ -596,8 +620,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	I.old_cp = GetConsoleCP();
-	I.old_ocp = GetConsoleOutputCP();
+	save_console_state();
 	I.vtmode = rz_cons_detect_vt_mode();
 	set_console_codepage_to_utf8();
 #else
@@ -615,9 +638,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 	rz_sys_signal(SIGWINCH, resize);
 #elif __WINDOWS__
-	h = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(h, &I.term_buf);
-	I.term_buf |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
+	I.term_buf = I.old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
 	I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)__w32_control, TRUE)) {
 		eprintf("rz_cons: Cannot set control console handler\n");
@@ -643,8 +664,7 @@ RZ_API RzCons *rz_cons_free(void) {
 		return &I;
 	}
 #if __WINDOWS__
-	rz_cons_enable_mouse(false);
-	restore_console_codepage();
+	restore_console_state();
 #endif
 	if (I.line) {
 		rz_line_free();
@@ -1341,6 +1361,11 @@ RZ_API bool rz_cons_isatty(void) {
 		return false;
 	}
 	return true;
+#elif __WINDOWS__
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (GetFileType(hOut) == FILE_TYPE_CHAR) {
+		return true;
+	}
 #endif
 	/* non-UNIX do not have ttys */
 	return false;
@@ -1608,6 +1633,7 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 	}
 #elif __WINDOWS__
 	DWORD mode;
+	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(h, &mode);
 	if (is_raw) {
 		if (I.term_xterm) {
