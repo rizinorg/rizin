@@ -8,6 +8,7 @@ project('rizin', 'c',
   ]
 )
 
+
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
