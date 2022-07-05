@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2013-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: MIT
 
+#include <rz_types.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
