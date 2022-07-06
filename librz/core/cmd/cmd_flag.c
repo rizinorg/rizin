@@ -776,10 +776,10 @@ RZ_IPI RzCmdStatus rz_flag_base_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_flag_exists_handler(RzCore *core, int argc, const char **argv) {
 	RzFlagItem *item = rz_flag_get(core->flags, argv[1]);
 	if (!item) {
-		rz_cons_printf("Cannot find flag '%s'\n", argv[1]);
+		RZ_LOG_ERROR("Cannot find flag '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("Find flag '%s' at 0x%" PFMT64x "\n", argv[1], item->offset);
+	RZ_LOG_DEBUG("Find flag '%s' at 0x%" PFMT64x "\n", argv[1], item->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
