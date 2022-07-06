@@ -176,6 +176,8 @@ b_sanitize_opt = get_option('b_sanitize')
 if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) and cc.get_id() == 'clang'
   add_global_arguments('-shared-libasan', language: 'c')
   add_global_link_arguments('-shared-libasan', language: 'c')
+  add_global_arguments('-shared-libasan', language: 'c', native: true)
+  add_global_link_arguments('-shared-libasan', language: 'c', native: true)
 endif
 
 rizin_prefix = get_option('prefix')
