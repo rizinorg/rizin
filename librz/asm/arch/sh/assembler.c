@@ -59,7 +59,6 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	case SH_REG_DIRECT:
 	case SH_PC_RELATIVE_REG:
 		// %s
-		sscanf(param, "%s", reg);
 		opcode = sh_op_reg_bits(reg, shba.start);
 		break;
 	case SH_REG_INDIRECT:
@@ -89,11 +88,10 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 		comma++;
 		char *paren = strchr(comma, ')');
 		*paren = '\0';
-		sscanf(comma, "%s", reg);
 
 		d = (rz_num_get(NULL, disp) / sh_scaling_size[scaling]) & 0xf;
 		opcode = d << shba.start;
-		opcode |= sh_op_reg_bits(reg, shba.start + 4);
+		opcode |= sh_op_reg_bits(comma, shba.start + 4);
 		break;
 	}
 	case SH_REG_INDIRECT_INDEXED: {
@@ -101,8 +99,7 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 		char *paren = strchr(dup, ')');
 		*paren = '\0';
 		paren = dup + strlen("@(r0,");
-		sscanf(paren, "%s", reg);
-		opcode = sh_op_reg_bits(reg, shba.start);
+		opcode = sh_op_reg_bits(paren, shba.start);
 		break;
 	}
 	case SH_GBR_INDIRECT_DISP: {
@@ -124,18 +121,16 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 		break;
 	}
 	case SH_PC_RELATIVE8:
-		sscanf(param, "%s", disp);
 		d = (st16)((st64)rz_num_get(NULL, disp) - (st64)pc - 4) / 2;
 		opcode = d << shba.start;
 		break;
-	case SH_PC_RELATIVE12:
-		sscanf(param, "%s", disp);
+	case SH_PC_RELATIVE12: {
 		ut16 dd = ((st16)((st64)rz_num_get(NULL, disp) - (st64)pc - 4) / 2) & 0xfff;
 		opcode = dd << shba.start;
 		break;
+	}
 	case SH_IMM_U:
 	case SH_IMM_S:
-		sscanf(param, "%s", disp);
 		d = rz_num_get(NULL, disp);
 		opcode = d << shba.start;
 		break;
@@ -146,6 +141,27 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	free(reg);
 	free(disp);
 	free(dup);
+	return opcode;
+}
+
+static ut64 sh_op_movl_param_bits(const char *reg_direct, const char *reg_disp_indirect) {
+	ut64 opcode = sh_op_reg_bits(reg_direct, NIB1);
+
+	char *const dup = strdup(reg_disp_indirect);
+	char *comma = strchr(dup, ',');
+	*comma = '\0';
+	char *reg = comma + 1;
+	char *paren = strchr(reg, ')');
+	*paren = '\0';
+
+	char *const disp = strdup(reg_disp_indirect);
+	sscanf(dup, "@(%s", disp);
+	ut8 d = (rz_num_get(NULL, disp) / sh_scaling_size[SH_SCALING_L]) & 0xf;
+	opcode |= d << NIB0;
+	opcode |= sh_op_reg_bits(reg, NIB2);
+
+	free(dup);
+	free(disp);
 	return opcode;
 }
 
@@ -234,6 +250,7 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE boo
 		*success = true;
 	}
 
+	char *mnem = NULL;
 	ut16 opcode = 0;
 	char *spaced = sh_op_space_params(buffer);
 	RzList *tokens = rz_str_split_duplist(spaced, " ", true);
@@ -254,7 +271,7 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE boo
 		goto bye;
 	}
 
-	char *mnem = (char *)rz_list_pop_head(tokens);
+	mnem = (char *)rz_list_pop_head(tokens);
 	SHAddrMode sham[2] = { SH_ADDR_INVALID, SH_ADDR_INVALID };
 	ut8 j = 0;
 	rz_list_foreach (tokens, itr, tok) {
@@ -269,6 +286,18 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE boo
 			/* Now opcode only has the bits corresponding to the instruction
 			The bits corresponding to the operands are supposed to be calculated */
 
+			// check for "weird" MOVL
+			if (raw.opcode == MOVL) {
+				char *reg_direct = rz_list_pop_head(tokens);
+				char *reg_disp_indirect = rz_list_pop_head(tokens);
+
+				opcode |= sh_op_movl_param_bits(reg_direct, reg_disp_indirect);
+
+				free(reg_direct);
+				free(reg_disp_indirect);
+				goto return_opcode;
+			}
+
 			RzListIter *itr;
 			char *param;
 			j = 0;
@@ -277,7 +306,9 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE boo
 				j++;
 			}
 
+		return_opcode:
 			rz_list_free(tokens);
+			free(mnem);
 			return opcode;
 		}
 	}
@@ -289,5 +320,6 @@ bye:
 		success = false;
 	}
 	rz_list_free(tokens);
+	free(mnem);
 	return 0;
 }
