@@ -50,25 +50,25 @@ typedef struct basefind_ui_info_t {
 	RzBaseFindThreadInfoCb callback;
 } BaseFindUIInfo;
 
-static void thread_loop_init(ThreadBool *tl) {
+static void thread_bool_init(ThreadBool *tl) {
 	tl->lock = rz_th_lock_new(false);
 	tl->value = true;
 }
 
-static bool thread_loop_get(ThreadBool *tl) {
+static bool thread_bool_get(ThreadBool *tl) {
 	rz_th_lock_enter(tl->lock);
 	bool value = tl->value;
 	rz_th_lock_leave(tl->lock);
 	return value;
 }
 
-static void thread_loop_set(ThreadBool *tl, bool value) {
+static void thread_bool_set(ThreadBool *tl, bool value) {
 	rz_th_lock_enter(tl->lock);
 	tl->value = value;
 	rz_th_lock_leave(tl->lock);
 }
 
-static void thread_loop_fini(ThreadBool *tl) {
+static void thread_bool_fini(ThreadBool *tl) {
 	rz_th_lock_free(tl->lock);
 }
 
@@ -80,7 +80,7 @@ static void basefind_stop_all_search_threads(RzThreadPool *pool) {
 			continue;
 		}
 		BaseFindThreadData *bftd = rz_th_get_user(th);
-		thread_loop_set(&bftd->loop, false);
+		thread_bool_set(&bftd->loop, false);
 	}
 }
 
@@ -249,7 +249,7 @@ static void *basefind_thread_runner(BaseFindThreadData *bftd) {
 
 	bfd.array = bftd->array;
 	for (base = bftd->base_start; base < bftd->base_end; base += bftd->alignment) {
-		if (!thread_loop_get(loop)) {
+		if (!thread_bool_get(loop)) {
 			break;
 		}
 		bftd->current = base;
@@ -323,7 +323,7 @@ static void *basefind_thread_ui(BaseFindUIInfo *ui_info) {
 			}
 		}
 		rz_sys_usleep(100000);
-	} while (thread_loop_get(&ui_info->loop));
+	} while (thread_bool_get(&ui_info->loop));
 end:
 	return NULL;
 }
@@ -450,7 +450,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFind
 		bftd->scores = scores;
 		bftd->pointers = pointers;
 		bftd->array = array;
-		thread_loop_init(&bftd->loop);
+		thread_bool_init(&bftd->loop);
 		if (!create_thread_interval(pool, bftd)) {
 			free(bftd);
 			basefind_stop_all_search_threads(pool);
@@ -462,7 +462,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFind
 		ui_info.pool = pool;
 		ui_info.user = options->user;
 		ui_info.callback = options->callback;
-		thread_loop_init(&ui_info.loop);
+		thread_bool_init(&ui_info.loop);
 		user_thread = rz_th_new((RzThreadFunction)basefind_thread_ui, &ui_info);
 		if (!user_thread) {
 			basefind_stop_all_search_threads(pool);
@@ -474,10 +474,10 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFind
 	rz_th_pool_wait(pool);
 
 	if (options->callback) {
-		thread_loop_set(&ui_info.loop, false);
+		thread_bool_set(&ui_info.loop, false);
 		rz_th_wait(user_thread);
 		rz_th_free(user_thread);
-		thread_loop_fini(&ui_info.loop);
+		thread_bool_fini(&ui_info.loop);
 
 		RzBaseFindThreadInfo th_info;
 		th_info.n_threads = pool_size;
@@ -502,7 +502,7 @@ rz_basefind_end:
 				continue;
 			}
 			BaseFindThreadData *bftd = rz_th_get_user(th);
-			thread_loop_fini(&bftd->loop);
+			thread_bool_fini(&bftd->loop);
 			free(bftd);
 		}
 		rz_th_pool_free(pool);
