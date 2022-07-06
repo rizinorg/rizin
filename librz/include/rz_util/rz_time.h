@@ -12,6 +12,11 @@
 
 #define ASCTIME_BUF_MINLEN 26
 
+#ifdef _MSC_VER
+struct timeval;
+int gettimeofday(struct timeval *p, void *tz);
+#endif
+
 // wall clock time in microseconds
 RZ_API ut64 rz_time_now(void);
 

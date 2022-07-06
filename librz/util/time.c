@@ -15,6 +15,56 @@
 #include <rz_windows.h>
 #endif
 
+#ifdef _MSC_VER
+#pragma message("gettimeofday: Windows support is ugly here")
+#include <windows.h>
+#include <time.h>
+
+struct timezone {
+	int tz_minuteswest; /* minutes W of Greenwich */
+	int tz_dsttime; /* type of dst correction */
+};
+
+RZ_API int gettimeofday(struct timeval *p, struct timezone *tz) {
+	// ULARGE_INTEGER ul; // As specified on MSDN.
+	ut64 ul = 0;
+	static int tzflag = 0;
+	FILETIME ft;
+	if (p) {
+		// Returns a 64-bit value representing the number of
+		// 100-nanosecond intervals since January 1, 1601 (UTC).
+		GetSystemTimeAsFileTime(&ft);
+		// Fill ULARGE_INTEGER low and high parts.
+		// ul.LowPart = ft.dwLowDateTime;
+		// ul.HighPart = ft.dwHighDateTime;
+		ul |= ft.dwHighDateTime;
+		ul <<= 32;
+		ul |= ft.dwLowDateTime;
+		// Convert to microseconds.
+		// ul.QuadPart /= 10ULL;
+		ul /= 10;
+		// Remove Windows to UNIX Epoch delta.
+		// ul.QuadPart -= 11644473600000000ULL;
+		ul -= 11644473600000000ULL;
+		// Modulo to retrieve the microseconds.
+		// p->tv_usec = (long)(ul.QuadPart % 1000000LL);
+		// Divide to retrieve the seconds.
+		// p->tv_sec = (long)(ul.QuadPart / 1000000LL);
+		p->tv_sec = (long)(ul / 1000000LL);
+		p->tv_usec = (long)(ul % 1000000LL);
+	}
+	if (tz) {
+		if (!tzflag) {
+			_tzset();
+			tzflag++;
+		}
+		tz->tz_minuteswest = _timezone / 60;
+		tz->tz_dsttime = _daylight;
+	}
+	return 0;
+}
+#endif
+
 /**
  * \brief Returns the current time in microseconds
  *
