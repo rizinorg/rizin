@@ -331,6 +331,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFind
 	ut64 base_start = options->start_address;
 	ut64 base_end = options->end_address;
 	ut64 alignment = options->alignment;
+	options->callback = NULL;
 
 	if (options->pointer_size != 32 && options->pointer_size != 64) {
 		RZ_LOG_ERROR("basefind: supported pointer sizes are 32 and 64 bits.\n");
