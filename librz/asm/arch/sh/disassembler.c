@@ -12,7 +12,7 @@
  * \param opcode instruction opcode (assumed to be in little-endian)
  * \param shb SHParamBuilder instance which contains the necessary info to find the param
  */
-SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
+static SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
 	if (shb.is_param) {
 		return shb.param;
 	}
