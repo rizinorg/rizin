@@ -7,6 +7,6 @@
 #include "common.h"
 #include "disassembler.h"
 
-RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc);
+RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE bool *success);
 
 #endif // RZ_SH_ASSEMBLER_H

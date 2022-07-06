@@ -24,7 +24,12 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 }
 
 static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
-	ut16 opcode = sh_assembler(str, a->pc);
+	bool success;
+	ut16 opcode = sh_assembler(str, a->pc, &success);
+	if (!success) {
+		return -1;
+	}
+
 	ut8 buffer[2];
 	rz_write_ble16(buffer, opcode, a->big_endian);
 	rz_strbuf_setbin(&ao->buf, buffer, 2);

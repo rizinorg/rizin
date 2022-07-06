@@ -181,18 +181,20 @@ static SHAddrMode sh_op_get_addr_mode(const char *param) {
 			} else {
 				return SH_REG_INDIRECT_DISP;
 			}
-		default:
-			/* If none of the above checks pass, we can assume it is a number
-			In this case, it could be any one of the following:
-			  - SH_PC_RELATIVE8
-			  - SH_PC_RELATIVE12
-			  - SH_IMM_U
-			  - SH_IMM_S
-			Again, we will just return SH_IMM_U, and take care of it in sh_op_compare
-			by considering all the above addressing modes to be equal
-			*/
-			return SH_IMM_U;
 		}
+		// unreachable
+		break;
+	default:
+		/* If none of the above checks pass, we can assume it is a number
+		In this case, it could be any one of the following:
+		  - SH_PC_RELATIVE8
+		  - SH_PC_RELATIVE12
+		  - SH_IMM_U
+		  - SH_IMM_S
+		Again, we will just return SH_IMM_U, and take care of it in sh_op_compare
+		by considering all the above addressing modes to be equal
+		*/
+		return SH_IMM_U;
 	}
 
 	// unreachable
@@ -226,8 +228,11 @@ static bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrMode modes[]) {
 	return x;
 }
 
-RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc) {
+RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE bool *success) {
 	rz_return_val_if_fail(buffer, -1);
+	if (success) {
+		*success = true;
+	}
 
 	ut16 opcode = 0;
 	char *spaced = sh_op_space_params(buffer);
@@ -280,6 +285,9 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc) {
 	RZ_LOG_ERROR("SuperH: Failed to assemble: \"%s\"\n", buffer);
 
 bye:
+	if (success) {
+		success = false;
+	}
 	rz_list_free(tokens);
 	return 0;
 }
