@@ -29,6 +29,10 @@ typedef struct sh_op_raw_t {
 	SHParamBuilder param_builder[2]; ///< param builders for the params
 } SHOpRaw;
 
+static SHAddrMode sh_pb_get_addrmode(SHParamBuilder pb) {
+	return pb.is_param ? pb.param.mode : pb.addr.mode;
+}
+
 // xxxx used to denote param fields in the opcode
 #define I f
 #define N f
