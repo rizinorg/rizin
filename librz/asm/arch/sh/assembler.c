@@ -4,6 +4,10 @@
 #include "assembler.h"
 #include "regs.h"
 
+static SHAddrMode sh_pb_get_addrmode(SHParamBuilder pb) {
+	return pb.is_param ? pb.param.mode : pb.addr.mode;
+}
+
 static char *sh_op_space_params(const char *buffer) {
 	char *spaced = strdup(buffer);
 	bool inside_paren = false;
@@ -40,7 +44,7 @@ static ut32 sh_op_reg_bits(const char *param, ut8 offset) {
 }
 
 static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling scaling, ut64 pc) {
-	if (!shb.is_param) {
+	if (shb.is_param) {
 		return 0;
 	}
 
