@@ -14,6 +14,12 @@
 
 #ifdef _MSC_VER
 struct timeval;
+
+struct timezone {
+	int tz_minuteswest; /* minutes W of Greenwich */
+	int tz_dsttime; /* type of dst correction */
+};
+
 RZ_API int gettimeofday(struct timeval *p, struct timezone *tz);
 #endif
 

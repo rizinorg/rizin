@@ -20,11 +20,6 @@
 #include <windows.h>
 #include <time.h>
 
-struct timezone {
-	int tz_minuteswest; /* minutes W of Greenwich */
-	int tz_dsttime; /* type of dst correction */
-};
-
 RZ_API int gettimeofday(struct timeval *p, struct timezone *tz) {
 	// ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
