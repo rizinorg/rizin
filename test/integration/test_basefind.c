@@ -17,30 +17,39 @@ static void basefind_options_set_valid(RzBaseFindOpt *options) {
 	options->user = NULL;
 }
 
-int test_rz_basefind_valid(void) {
+static bool test_basefind_callback_false(const RzBaseFindThreadInfo *th_info, void *user) {
+	return false;
+}
+
+static bool test_basefind_callback_true(const RzBaseFindThreadInfo *th_info, void *user) {
+	return true;
+}
+
+int test_rz_basefind_with_callbacks(void) {
 	RzBaseFindOpt options;
 	RzList *result = NULL;
 	RzCore *core = rz_core_new();
 	rz_core_file_open_load(core, "bins/firmware/stm32f103-dapboot-v1.20-bluepill.bin", 0, RZ_PERM_R, false);
 
-	// valid configuration
+	// test_basefind_callback_true
 	basefind_options_set_valid(&options);
+	options.callback = test_basefind_callback_true;
 	result = rz_basefind(core, &options);
-	mu_assert_notnull(result, "valid pointer_size 32");
+	mu_assert_notnull(result, "valid callback (true)");
 	rz_list_free(result);
 
-	// valid configuration
+	// test_basefind_callback_false
 	basefind_options_set_valid(&options);
-	options.pointer_size = 64;
+	options.callback = test_basefind_callback_false;
 	result = rz_basefind(core, &options);
-	mu_assert_notnull(result, "valid pointer_size 64");
+	mu_assert_notnull(result, "valid callback (false)");
 	rz_list_free(result);
 
 	rz_core_free(core);
 	mu_end;
 }
 
-int test_rz_basefind_error(void) {
+int test_rz_basefind_no_callback(void) {
 	RzBaseFindOpt options;
 	RzList *result = NULL;
 	RzCore *core = rz_core_new();
@@ -117,8 +126,8 @@ int test_rz_basefind_no_core_load(void) {
 
 int all_tests() {
 	mu_run_test(test_rz_basefind_no_core_load);
-	mu_run_test(test_rz_basefind_error);
-	mu_run_test(test_rz_basefind_valid);
+	mu_run_test(test_rz_basefind_no_callback);
+	mu_run_test(test_rz_basefind_with_callbacks);
 	return tests_passed != tests_run;
 }
 
