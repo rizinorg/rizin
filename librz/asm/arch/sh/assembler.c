@@ -149,7 +149,10 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	return opcode;
 }
 
-SHAddrMode sh_op_get_addr_mode(const char *param) {
+/* This function is NOT robust. It is incapable of detecting invalid operand inputs.
+If you provide an invalid operand, the behavior is, for all practical purposes, undefined.
+The resulting assembled instruction will be complete gibberish and should not be used. */
+static SHAddrMode sh_op_get_addr_mode(const char *param) {
 	switch (param[0]) {
 	case 'r':
 		/* This could also have been SH_PC_RELATIVE_REG, and we have no way to know
@@ -196,7 +199,7 @@ SHAddrMode sh_op_get_addr_mode(const char *param) {
 	return SH_ADDR_INVALID;
 }
 
-bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrMode modes[]) {
+static bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrMode modes[]) {
 	bool x = true;
 	x &= (strcmp(mnem, raw.str_mnem) == 0);
 
