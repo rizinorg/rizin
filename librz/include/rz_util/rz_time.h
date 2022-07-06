@@ -14,7 +14,7 @@
 
 #ifdef _MSC_VER
 struct timeval;
-int gettimeofday(struct timeval *p, void *tz);
+RZ_API int gettimeofday(struct timeval *p, struct timezone *tz);
 #endif
 
 // wall clock time in microseconds
