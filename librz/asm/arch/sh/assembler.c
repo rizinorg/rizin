@@ -4,10 +4,22 @@
 #include "assembler.h"
 #include "regs.h"
 
+/**
+ * \brief Get the addressing mode for \p pb
+ *
+ * @param pb SHParamBuilder
+ * @return SHAddrMode
+ */
 static SHAddrMode sh_pb_get_addrmode(SHParamBuilder pb) {
 	return pb.is_param ? pb.param.mode : pb.addr.mode;
 }
 
+/**
+ * \brief Replace all the commas outside operands with spaces (i.e. "space out" the operands)
+ *
+ * \param buffer Input instruction string
+ * \return char* Duplicated output "spaced out" string
+ */
 static char *sh_op_space_params(const char *buffer) {
 	char *spaced = strdup(buffer);
 	bool inside_paren = false;
@@ -33,6 +45,13 @@ static char *sh_op_space_params(const char *buffer) {
 	return spaced;
 }
 
+/**
+ * \brief Get the bits corresponding to the register \p param (i.e. register number shifted at \p offset)
+ *
+ * \param param Register param string
+ * \param offset Offset to shift the register number to (a.k.a. nibble position)
+ * \return ut32 Opcode bits for the given register \p param
+ */
 static ut32 sh_op_reg_bits(const char *param, ut8 offset) {
 	for (ut8 i = 0; i < SH_GPR_COUNT; i++) {
 		if (strcmp(sh_registers[i], param) == 0) {
@@ -43,6 +62,16 @@ static ut32 sh_op_reg_bits(const char *param, ut8 offset) {
 	return 0;
 }
 
+/**
+ * \brief Get the opcode bits corresponding to \p param, \p scaling, \p pc and addressing mode (shb.mode)
+ * This function does nothing if shb.is_param == true (i.e. there are no bits corresponding to it in the instruction opcode)
+ *
+ * \param shb SHParamBuilder instance to use for addressing modes
+ * \param param Param string to be assembled
+ * \param scaling Instruction scaling
+ * \param pc Program counter
+ * \return ut32 Opcode bits corresponding to the given \p param
+ */
 static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling scaling, ut64 pc) {
 	if (shb.is_param) {
 		return 0;
@@ -144,6 +173,13 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	return opcode;
 }
 
+/**
+ * \brief Special assembler functions for the operands of "weird" MOVL instruction
+ *
+ * \param reg_direct Operand string for direct register addressing mode
+ * \param reg_disp_indirect Operand string for register indirect addressing mode
+ * \return ut64 Opcode bits corresponding to the operands
+ */
 static ut64 sh_op_movl_param_bits(const char *reg_direct, const char *reg_disp_indirect) {
 	ut64 opcode = sh_op_reg_bits(reg_direct, NIB1);
 
@@ -168,6 +204,12 @@ static ut64 sh_op_movl_param_bits(const char *reg_direct, const char *reg_disp_i
 /* This function is NOT robust. It is incapable of detecting invalid operand inputs.
 If you provide an invalid operand, the behavior is, for all practical purposes, undefined.
 The resulting assembled instruction will be complete gibberish and should not be used. */
+/**
+ * \brief Get the addressing mode being used in \p param
+ *
+ * \param param Param string
+ * \return SHAddrMode
+ */
 static SHAddrMode sh_op_get_addr_mode(const char *param) {
 	switch (param[0]) {
 	case 'r':
@@ -217,6 +259,14 @@ static SHAddrMode sh_op_get_addr_mode(const char *param) {
 	return SH_ADDR_INVALID;
 }
 
+/**
+ * \brief Check whether \p raw and instruction to be formed using \p mnem and \p modes will be equivalent
+ *
+ * \param raw SHOpRaw
+ * \param mnem Mnemonic for the instruction to be formed
+ * \param modes Addressing modes to be used
+ * \return bool True if equivalent; false otherwise
+ */
 static bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrMode modes[]) {
 	bool x = true;
 	x &= (strcmp(mnem, raw.str_mnem) == 0);
@@ -244,6 +294,15 @@ static bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrMode modes[]) {
 	return x;
 }
 
+/**
+ * \brief Assemble instruction from SuperH-4 ISA
+ * FPU instructions not implemented yet
+ *
+ * \param buffer Instruction string buffer
+ * \param pc Current value of program counter
+ * \param success Store bool whether the assembler succeeded or not (RZ_NULLABLE)
+ * \return ut16 Opcode for the given instruction
+ */
 RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE bool *success) {
 	rz_return_val_if_fail(buffer, -1);
 	if (success) {
