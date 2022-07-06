@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <rz_util/rz_file.h>
 #include <rz_util/rz_sys.h>
 #include <rz_util/rz_utf8.h>
 #include <rz_windows.h>
@@ -31,7 +32,13 @@ RZ_API bool sdb_disk_create(Sdb *s) {
 		return false;
 	}
 	memcpy(str, dir, nlen + 1);
-	rz_sys_mkdirp(str);
+	char *dirname = rz_file_dirname(str);
+	if (!dirname) {
+		free(str);
+		return false;
+	}
+	rz_sys_mkdirp(dirname);
+	free(dirname);
 	memcpy(str + nlen, ".tmp", 5);
 	if (s->fdump != -1) {
 		close(s->fdump);
