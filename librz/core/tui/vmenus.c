@@ -2234,6 +2234,72 @@ static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *t
 	rz_list_free(list);
 }
 
+/**
+ * \brief Convert the string visual_inputing to RzPVector, with WHITESPACE as separators
+ *
+ * \param visual_inputing
+ * \return return the pointer of RzPVector
+ */
+static RzPVector *capture_filter_keywords(char *visual_inputing) {
+	rz_return_val_if_fail(visual_inputing, NULL);
+	char *buf, *inputing;
+	RzPVector *keywords = rz_pvector_new(free);
+
+	if (!keywords) {
+		return NULL;
+	}
+	inputing = rz_str_trim_dup(visual_inputing);
+	buf = rz_str_new("");
+	for (int i = 0; i < strlen(visual_inputing); i++) {
+		if (IS_WHITESPACE(visual_inputing[i])) {
+			if (strlen(buf)) {
+				rz_pvector_push(keywords, buf);
+				buf = rz_str_new("");
+			}
+		} else {
+			buf = rz_str_appendch(buf, visual_inputing[i]);
+		}
+	}
+	if (strlen(buf)) {
+		rz_pvector_push(keywords, buf);
+	} else {
+		RZ_FREE(buf);
+	}
+	RZ_FREE(inputing);
+	return keywords;
+}
+
+/**
+ * \brief Filter the functions in visual analysis mode (helper of command f)
+ *
+ * \param core
+ * \param filter_fcn store the filtered functions
+ * \return return the number of functions that conform to the keywords
+ */
+static ut32 filter_function(RzCore *core, RzList *filter_fcn, RzPVector *keywords) {
+	rz_return_val_if_fail(core, 0);
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	size_t num = 0;
+
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		bool contain = true;
+		void **it;
+		rz_pvector_foreach (keywords, it) {
+			contain = contain && strstr(fcn->name, (char *)*it);
+		}
+		if (!contain) {
+			continue;
+		}
+		if (filter_fcn) {
+			rz_list_append(filter_fcn, fcn);
+		}
+		num++;
+	}
+
+	return num;
+}
+
 // In visual mode, display function list
 static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	int wdelta = (idx > 5) ? idx - 5 : 0;
@@ -2241,17 +2307,30 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
 	RzAnalysisFunction *fcn;
+	RzList *filter_fcn = core->analysis->fcns, *visual_filter = NULL;
 	int window, i = 0, print_full_func;
 	RzListIter *iter;
 
 	// Adjust the windows size automaticaly
 	(void)rz_cons_get_size(&window);
-	window -= 8; // Size of printed things
+	window -= core->visual_inputing ? 10 : 8; // Size of printed things
 	bool color = rz_config_get_i(core->config, "scr.color");
 	const char *color_addr = core->cons->context->pal.offset;
 	const char *color_fcn = core->cons->context->pal.fname;
 
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	if (core->visual_inputing) {
+		visual_filter = rz_list_newf(NULL);
+		if (visual_filter) {
+			RzPVector *keywords = capture_filter_keywords(core->visual_inputing);
+			if (keywords) {
+				filter_function(core, visual_filter, keywords);
+				RZ_FREE_CUSTOM(keywords, rz_pvector_free);
+				filter_fcn = visual_filter;
+			}
+		}
+	}
+
+	rz_list_foreach (filter_fcn, iter, fcn) {
 		print_full_func = true;
 		if (i >= wdelta) {
 			if (i > window + wdelta - 1) {
@@ -2294,6 +2373,9 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 			}
 		}
 		i++;
+	}
+	if (filter_fcn != core->analysis->fcns) {
+		rz_list_free(filter_fcn);
 	}
 	return addr;
 }
@@ -2410,9 +2492,9 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 
 static const char *help_fun_visual[] = {
 	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to ", "(X)", "xrefs from\n",
-	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(v)", "vars\n",
+	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(:)", "shell ", "(v)", "vars\n",
 	"(j/k)", "next/prev ", "(tab)", "column ", "(_)", "hud ", "(?)", " help\n",
-	"(s)", "function signature ", "(:)", "shell ", "(q)", "quit\n\n",
+	"(f/F)", "set/reset filter ", "(s)", "function signature ", "(q)", "quit\n\n",
 	NULL
 };
 
@@ -2426,6 +2508,7 @@ static const char *help_var_visual[] = {
 static const char *help_vv_visual[] = {
 	"j,k", "select next/prev item or scroll if tab pressed",
 	"J,K", "scroll next/prev page \"\"",
+	"f,F", "set/reset filter keyword",
 	"h,q", "go back, quit",
 	"p,P", "switch next/prev print mode",
 	"v", "view selected function arguments and variables",
@@ -2499,6 +2582,14 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		char *drained = rz_strbuf_drain(buf);
 		rz_cons_printf("%s", drained);
 		free(drained);
+		// hints for filtered keywords
+		if (core->visual_inputing) {
+			if (core->visual_is_inputing) {
+				rz_cons_printf("input keywords: %s\n\n", core->visual_inputing);
+			} else {
+				rz_cons_printf("keywords: %s\n\n", core->visual_inputing);
+			}
+		}
 		addr = var_functions_show(core, option, 1, cols);
 		break;
 	}
@@ -2692,7 +2783,42 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 	rz_config_set_i(core->config, "asm.bytes", 0);
 	for (;;) {
 		nfcns = rz_list_length(core->analysis->fcns);
+		if (core->visual_inputing) {
+			RzPVector *keywords = capture_filter_keywords(core->visual_inputing);
+			if (keywords) {
+				nfcns = filter_function(core, NULL, keywords);
+			}
+			RZ_FREE_CUSTOM(keywords, rz_pvector_free);
+		}
 		addr = rz_core_visual_analysis_refresh(core);
+
+		// for filter on the go
+		if (level == 0 && core->visual_is_inputing) {
+			int ch = rz_cons_readchar();
+			switch (ch) {
+			case 13: // CR
+				core->visual_is_inputing = false;
+				if (!strlen(core->visual_inputing)) {
+					RZ_FREE(core->visual_inputing);
+				}
+				break;
+			case 127: // Backspace
+			case 8:
+				if (strlen(core->visual_inputing) > 0) {
+					core->visual_inputing[strlen(core->visual_inputing) - 1] = '\0';
+				}
+				break;
+			default:
+				if (!IS_PRINTABLE(ch)) {
+					continue;
+				}
+				core->visual_inputing = rz_str_appendch(core->visual_inputing, ch);
+				break;
+			}
+			// mute the following switch while inputing keyword
+			continue;
+		}
+
 		if (input && *input) {
 			ch = *input;
 			input++;
@@ -2707,7 +2833,24 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 			continue;
 		}
 		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+
 		switch (ch) {
+		case 'f':
+			if (level == 0) {
+				// add new keyword
+				core->visual_is_inputing = true;
+				if (!core->visual_inputing) {
+					core->visual_inputing = rz_str_new("");
+				}
+				option = 0;
+			}
+			break;
+		case 'F':
+			if (level == 0) {
+				// reset all keywords
+				RZ_FREE(core->visual_inputing);
+			}
+			break;
 		case '[':
 			rz_cons_singleton()->show_vals = true;
 			break;
