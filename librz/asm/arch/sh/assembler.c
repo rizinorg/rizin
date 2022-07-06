@@ -46,49 +46,79 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 
 	ut32 opcode = 0;
 	struct sh_param_builder_addr_t shba = shb.addr;
-	char *reg = strdup(param);
-	char *disp = strdup(param);
+	char *const reg = strdup(param);
+	char *const dup = strdup(param);
+	char *const disp = strdup(param);
 	ut8 d;
 
 	switch (shba.mode) {
 	case SH_REG_DIRECT:
 	case SH_PC_RELATIVE_REG:
+		// %s
 		sscanf(param, "%s", reg);
 		opcode = sh_op_reg_bits(reg, shba.start);
 		break;
 	case SH_REG_INDIRECT:
+		// @%s
 		sscanf(param, "@%s", reg);
-		opcode = sh_op_reg_bits(param, shba.start);
+		opcode = sh_op_reg_bits(reg, shba.start);
 		break;
-	case SH_REG_INDIRECT_I:
-		sscanf(param, "@%s+", reg);
-		opcode = sh_op_reg_bits(param, shba.start);
+	case SH_REG_INDIRECT_I: {
+		// @%s+
+		char *plus = strchr(dup, '+');
+		*plus = '\0';
+		sscanf(dup, "@%s", reg);
+		opcode = sh_op_reg_bits(reg, shba.start);
 		break;
+	}
 	case SH_REG_INDIRECT_D:
-		sscanf(param, "@%s+", reg);
+		// @-%s
+		sscanf(param, "@-%s", reg);
 		opcode = sh_op_reg_bits(param, shba.start);
 		break;
 	case SH_REG_INDIRECT_DISP: {
-		sscanf(param, "@(%s,%s)", disp, reg);
+		// @(%s,%s)
+		char *comma = strchr(dup, ',');
+		*comma = '\0';
+		sscanf(dup, "@(%s", disp);
+
+		comma++;
+		char *paren = strchr(comma, ')');
+		*paren = '\0';
+		sscanf(comma, "%s", reg);
+
 		d = (rz_num_get(NULL, disp) / sh_scaling_size[scaling]) & 0xf;
 		opcode = d << shba.start;
-		opcode |= sh_op_reg_bits(param, shba.start + 4);
+		opcode |= sh_op_reg_bits(reg, shba.start + 4);
 		break;
 	}
-	case SH_REG_INDIRECT_INDEXED:
-		sscanf(param, "@(r0,%s)", reg);
-		opcode = sh_op_reg_bits(param, shba.start);
+	case SH_REG_INDIRECT_INDEXED: {
+		// @(r0,%s)
+		char *paren = strchr(dup, ')');
+		*paren = '\0';
+		paren = dup + strlen("@(r0,");
+		sscanf(paren, "%s", reg);
+		opcode = sh_op_reg_bits(reg, shba.start);
 		break;
-	case SH_GBR_INDIRECT_DISP:
-		sscanf(param, "@(%s,gbr)", disp);
+	}
+	case SH_GBR_INDIRECT_DISP: {
+		// @(%s,gbr)
+		char *comma = strchr(dup, ',');
+		*comma = '\0';
+		sscanf(dup, "@(%s", disp);
 		d = rz_num_get(NULL, disp) / sh_scaling_size[scaling];
 		opcode = d << shba.start;
 		break;
-	case SH_PC_RELATIVE_DISP:
-		sscanf(param, "@(%s,pc)", disp);
+	}
+	case SH_PC_RELATIVE_DISP: {
+		// @(%s,pc)
+		char *comma = strchr(dup, ',');
+		*comma = '\0';
+		sscanf(dup, "@(%s,pc)", disp);
 		d = rz_num_get(NULL, disp) / sh_scaling_size[scaling];
 		opcode = d << shba.start;
 		break;
+	}
 	case SH_PC_RELATIVE8:
 		sscanf(param, "%s", disp);
 		d = (st16)((st64)rz_num_get(NULL, disp) - (st64)pc - 4) / 2;
@@ -111,7 +141,82 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 
 	free(reg);
 	free(disp);
+	free(dup);
 	return opcode;
+}
+
+SHAddrMode sh_op_get_addr_mode(const char *param) {
+	switch (param[0]) {
+	case 'r':
+		/* This could also have been SH_PC_RELATIVE_REG, and we have no way to know
+		But we can take care of this case in sh_op_compare, since no instruction
+		can have both SH_REG_DIRECT and SH_PC_RELATIVE_REG as its addressing modes */
+		return SH_REG_DIRECT;
+	case '@':
+		switch (param[1]) {
+		case 'r':
+			if (rz_str_endswith(param, "+")) {
+				return SH_REG_INDIRECT_I;
+			} else {
+				return SH_REG_INDIRECT;
+			}
+		case '-':
+			return SH_REG_INDIRECT_I;
+		case '(':
+			if (strcmp(param, "@(r0,gbr)") == 0) {
+				return SH_GBR_INDIRECT_INDEXED;
+			} else if (rz_str_startswith(param, "@(r0,")) {
+				return SH_REG_INDIRECT_INDEXED;
+			} else if (rz_str_endswith(param, ",gbr)")) {
+				return SH_GBR_INDIRECT_DISP;
+			} else if (rz_str_endswith(param, ",pc)")) {
+				return SH_PC_RELATIVE_DISP;
+			} else {
+				return SH_REG_INDIRECT_DISP;
+			}
+		default:
+			/* If none of the above checks pass, we can assume it is a number
+			In this case, it could be any one of the following:
+			  - SH_PC_RELATIVE8
+			  - SH_PC_RELATIVE12
+			  - SH_IMM_U
+			  - SH_IMM_S
+			Again, we will just return SH_IMM_U, and take care of it in sh_op_compare
+			by considering all the above addressing modes to be equal
+			*/
+			return SH_IMM_U;
+		}
+	}
+
+	// unreachable
+	return SH_ADDR_INVALID;
+}
+
+bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrMode modes[]) {
+	bool x = true;
+	x &= (strcmp(mnem, raw.str_mnem) == 0);
+
+	for (ut8 i = 0; i < 2; i++) {
+		SHAddrMode md = sh_pb_get_addrmode(raw.param_builder[i]);
+		switch (md) {
+		case SH_REG_DIRECT:
+		case SH_PC_RELATIVE_REG:
+			md = SH_REG_DIRECT;
+			break;
+		case SH_PC_RELATIVE8:
+		case SH_PC_RELATIVE12:
+		case SH_IMM_U:
+		case SH_IMM_S:
+			md = SH_IMM_U;
+			break;
+		default:
+			break;
+		}
+
+		x &= (modes[i] == md);
+	}
+
+	return x;
 }
 
 RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc) {
@@ -133,41 +238,41 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc) {
 	}
 	ut32 token_num = rz_list_length(tokens);
 	if (token_num == 0 || token_num > 3) {
+		RZ_LOG_ERROR("SuperH: Invalid number of operands in the instruction\n")
 		goto bye;
 	}
 
 	char *mnem = (char *)rz_list_pop_head(tokens);
+	SHAddrMode sham[2] = { SH_ADDR_INVALID, SH_ADDR_INVALID };
+	ut8 j = 0;
+	rz_list_foreach (tokens, itr, tok) {
+		sham[j] = sh_op_get_addr_mode(tok);
+		j++;
+	}
+
 	for (ut16 i = 0; i < OPCODE_NUM; i++) {
-		if (strcmp(mnem, sh_op_lookup[i].str_mnem) == 0) {
+		if (sh_op_compare(sh_op_lookup[i], mnem, sham)) {
 			SHOpRaw raw = sh_op_lookup[i];
 			opcode = raw.opcode ^ raw.mask;
-			ut8 expected_params = 0;
-
-			if (raw.param_builder[0].is_param && raw.param_builder[0].param.mode != SH_ADDR_INVALID) {
-				expected_params += 1;
-			}
-			if (raw.param_builder[1].is_param && raw.param_builder[1].param.mode != SH_ADDR_INVALID) {
-				expected_params += 1;
-			}
-			if (token_num - 1 != expected_params) {
-				goto bye;
-			}
+			/* Now opcode only has the bits corresponding to the instruction
+			The bits corresponding to the operands are supposed to be calculated */
 
 			RzListIter *itr;
 			char *param;
-			ut8 j = 0;
+			j = 0;
 			rz_list_foreach (tokens, itr, param) {
 				opcode |= sh_op_param_bits(raw.param_builder[j], param, raw.scaling, pc);
 				j++;
 			}
+
+			rz_list_free(tokens);
 			return opcode;
 		}
 	}
 
 	RZ_LOG_ERROR("SuperH: Failed to assemble: \"%s\"\n", buffer);
-	return 0;
 
 bye:
-	RZ_LOG_ERROR("SuperH: Invalid number of arguments in the instruction\n")
-	return opcode;
+	rz_list_free(tokens);
+	return 0;
 }
