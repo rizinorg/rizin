@@ -2765,7 +2765,6 @@ static void addVar(RzCore *core, int ch, const char *msg) {
 }
 
 /* Like emenu but for real */
-#define KEY_LEN 256
 RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 	char old[218];
 	int nfcns, ch, _option = 0;
