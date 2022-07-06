@@ -19,9 +19,9 @@ struct timezone {
 	int tz_minuteswest; /* minutes W of Greenwich */
 	int tz_dsttime; /* type of dst correction */
 };
-
-RZ_API int gettimeofday(struct timeval *p, struct timezone *tz);
 #endif
+
+RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz);
 
 // wall clock time in microseconds
 RZ_API ut64 rz_time_now(void);

@@ -16,11 +16,7 @@
 #endif
 
 #ifdef _MSC_VER
-#pragma message("gettimeofday: Windows support is ugly here")
-#include <windows.h>
-#include <time.h>
-
-RZ_API int gettimeofday(struct timeval *p, struct timezone *tz) {
+RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz) {
 	// ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
 	static int tzflag = 0;
@@ -58,6 +54,10 @@ RZ_API int gettimeofday(struct timeval *p, struct timezone *tz) {
 	}
 	return 0;
 }
+#else
+RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz) {
+	return gettimeofday(p, tz);
+}
 #endif
 
 /**
@@ -68,7 +68,7 @@ RZ_API int gettimeofday(struct timeval *p, struct timezone *tz) {
 RZ_API ut64 rz_time_now(void) {
 	ut64 ret;
 	struct timeval now;
-	gettimeofday(&now, NULL);
+	rz_time_gettimeofday(&now, NULL);
 	ret = now.tv_sec * RZ_USEC_PER_SEC;
 	ret += now.tv_usec;
 	return ret;
