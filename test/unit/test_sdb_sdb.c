@@ -5,6 +5,7 @@
 #include <sdb.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <rz_util/rz_file.h>
 
 static bool foreach_delete_cb(void *user, const char *key, const char *val) {
 	if (strcmp(key, "bar")) {
