@@ -19,6 +19,7 @@ struct rz_th_bool_t {
 RZ_API RZ_OWN RzThreadBool *rz_th_bool_new(bool value) {
 	RzThreadBool *tbool = RZ_NEW0(RzThreadBool);
 	if (!tbool) {
+		RZ_LOG_ERROR("rz_th_bool: Cannot allocate RzThreadBool structure\n");
 		return NULL;
 	}
 	tbool->lock = rz_th_lock_new(false);
