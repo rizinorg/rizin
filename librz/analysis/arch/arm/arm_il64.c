@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #include "arm_cs.h"
 
