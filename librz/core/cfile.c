@@ -81,22 +81,22 @@ RZ_API RZ_OWN RzList *rz_core_create_sections_backup(RzCore *core) {
 
 struct __rebase_struct {
 	RzCore *core;
-	RzList *sections_backup;
-	ut64 old_base;
+	RzList *old_sections;
+	ut64 old_baddr_shift;
 	ut64 diff;
 	int type;
 };
 
 #define __is_inside_section(item_addr, section) \
-	(item_addr >= old_base + section->vaddr && item_addr <= old_base + section->vaddr + section->vsize)
+	(item_addr >= old_baddr_shift + section->vaddr && item_addr <= old_baddr_shift + section->vaddr + section->vsize)
 
 static bool __rebase_flags(RzFlagItem *flag, void *user) {
 	struct __rebase_struct *reb = user;
-	ut64 old_base = reb->old_base;
+	ut64 old_baddr_shift = reb->old_baddr_shift;
 	RzListIter *it;
 	RzBinSection *sec;
 	// Only rebase flags that were in the rebased sections, otherwise it will take too long
-	rz_list_foreach (reb->sections_backup, it, sec) {
+	rz_list_foreach (reb->old_sections, it, sec) {
 		if (__is_inside_section(flag->offset, sec)) {
 			rz_flag_set(reb->core->flags, flag->name, flag->offset + reb->diff, flag->size);
 			break;
@@ -120,25 +120,25 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_API void rz_core_rebase_everything(RzCore *core, RzList *sections_backup, ut64 old_base) {
+RZ_API void rz_core_rebase_everything(RzCore *core, RzList *old_sections, ut64 old_baddr_shift) {
 	RzListIter *it, *itit, *ititit;
 	RzAnalysisFunction *fcn;
-	ut64 new_base = core->bin->cur->o->baddr_shift;
+	ut64 new_baddr_shift = core->bin->cur->o->baddr_shift;
 	RzBinSection *old_section;
-	ut64 diff = new_base - old_base;
+	ut64 diff = new_baddr_shift - old_baddr_shift;
 	if (!diff) {
 		return;
 	}
 	// FUNCTIONS
 	rz_list_foreach (core->analysis->fcns, it, fcn) {
-		rz_list_foreach (sections_backup, itit, old_section) {
+		rz_list_foreach (old_sections, itit, old_section) {
 			if (!__is_inside_section(fcn->addr, old_section)) {
 				continue;
 			}
 			rz_analysis_function_rebase_vars(core->analysis, fcn);
 			rz_analysis_function_relocate(fcn, fcn->addr + diff);
 			RzAnalysisBlock *bb;
-			ut64 new_sec_addr = new_base + old_section->vaddr;
+			ut64 new_sec_addr = new_baddr_shift + old_section->vaddr;
 			rz_list_foreach (fcn->bbs, ititit, bb) {
 				if (bb->addr >= new_sec_addr && bb->addr <= new_sec_addr + old_section->vsize) {
 					// Todo: Find better way to check if bb was already rebased
@@ -159,8 +159,8 @@ RZ_API void rz_core_rebase_everything(RzCore *core, RzList *sections_backup, ut6
 	// FLAGS
 	struct __rebase_struct reb = {
 		core,
-		sections_backup,
-		old_base,
+		old_sections,
+		old_baddr_shift,
 		diff
 	};
 	rz_flag_foreach(core->flags, __rebase_flags, &reb);
@@ -179,7 +179,7 @@ RZ_API void rz_core_rebase_everything(RzCore *core, RzList *sections_backup, ut6
 	ht_up_free(xrefs_to);
 
 	// BREAKPOINTS
-	rz_debug_bp_rebase(core->dbg, old_base, new_base);
+	rz_debug_bp_rebase(core->dbg, old_baddr_shift, new_baddr_shift);
 }
 
 /**
@@ -232,7 +232,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 
 	core->dbg->main_arena_resolved = false;
 	RzList *sections_backup = rz_core_create_sections_backup(core);
-	ut64 old_base = core->bin->cur->o->baddr_shift;
+	ut64 old_baddr_shift = core->bin->cur->o->baddr_shift;
 	int bits = core->rasm->bits;
 	rz_config_set_i(core->config, "asm.bits", bits);
 	rz_config_set_b(core->config, "cfg.debug", true);
@@ -260,7 +260,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 	}
 	rz_core_block_read(core);
 	if (rz_config_get_i(core->config, "dbg.rebase")) {
-		rz_core_rebase_everything(core, sections_backup, old_base);
+		rz_core_rebase_everything(core, sections_backup, old_baddr_shift);
 	}
 	rz_list_free(sections_backup);
 	rz_core_seek_to_register(core, "PC", false);
@@ -299,7 +299,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	}
 	core->dbg->main_arena_resolved = false;
 	RzList *sections_backup = rz_core_create_sections_backup(core);
-	ut64 old_base = core->bin->cur->o->baddr_shift;
+	ut64 old_baddr_shift = core->bin->cur->o->baddr_shift;
 	int bits = core->rasm->bits;
 	char *bin_abspath = rz_file_abspath(binpath);
 	char *escaped_path = rz_str_arg_escape(bin_abspath);
@@ -310,7 +310,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	rz_config_set_b(core->config, "cfg.debug", true);
 	rz_core_file_reopen(core, newfile, 0, 2);
 	if (rz_config_get_i(core->config, "dbg.rebase")) {
-		rz_core_rebase_everything(core, sections_backup, old_base);
+		rz_core_rebase_everything(core, sections_backup, old_baddr_shift);
 	}
 	rz_list_free(sections_backup);
 	rz_core_seek_to_register(core, "PC", false);
@@ -1614,8 +1614,8 @@ RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
 	char *file = rz_str_path_escape(bf->file);
 	// Backup the baddr and sections that were already rebased to
 	// revert the rebase after the debug session is closed
-	ut64 orig_baddr = core->bin->cur->o->baddr_shift;
-	RzList *sections_backup = rz_core_create_sections_backup(core);
+	ut64 orig_baddr_shift = core->bin->cur->o->baddr_shift;
+	RzList *orig_sections = rz_core_create_sections_backup(core);
 
 	rz_bin_file_delete_all(core->bin);
 	rz_io_close_all(core->io);
@@ -1623,21 +1623,21 @@ RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
 
 	RzCoreFile *cfile = rz_core_file_open(core, file, RZ_PERM_R, 0);
 	if (!cfile) {
-		rz_list_free(sections_backup);
+		rz_list_free(orig_sections);
 		RZ_LOG_ERROR("Cannot open file '%s'\n", file);
 		return;
 	}
 	core->num->value = cfile->fd;
 	// If no baddr defined, use the one provided by the file
 	if (!rz_core_bin_load(core, file, UT64_MAX)) {
-		rz_list_free(sections_backup);
+		rz_list_free(orig_sections);
 		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", file);
 		return;
 	}
 	rz_core_block_read(core);
 
-	rz_core_rebase_everything(core, sections_backup, orig_baddr);
-	rz_list_free(sections_backup);
+	rz_core_rebase_everything(core, orig_sections, orig_baddr_shift);
+	rz_list_free(orig_sections);
 	free(file);
 }
 
