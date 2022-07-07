@@ -23,24 +23,66 @@ typedef struct basefind_data_t {
 	BaseFindArray *array;
 } BaseFindData;
 
+typedef struct thread_bool_t {
+	bool value;
+	RzThreadLock *lock;
+} ThreadBool;
+
 typedef struct basefind_thread_data_t {
 	ut32 id;
 	ut64 current;
 	ut64 base_start;
 	ut64 base_end;
-	ut64 base_inc;
+	ut64 alignment;
 	ut64 io_size;
 	ut32 score_min;
 	RzThreadLock *lock;
 	RzList *scores;
 	HtUU *pointers;
 	BaseFindArray *array;
+	ThreadBool loop;
 } BaseFindThreadData;
 
-typedef struct basefind_thread_cons_t {
-	bool progress;
+typedef struct basefind_ui_info_t {
+	ThreadBool loop;
 	RzThreadPool *pool;
-} BaseFindThreadCons;
+	void *user;
+	RzBaseFindThreadInfoCb callback;
+} BaseFindUIInfo;
+
+static void thread_bool_init(ThreadBool *tl) {
+	tl->lock = rz_th_lock_new(false);
+	tl->value = true;
+}
+
+static bool thread_bool_get(ThreadBool *tl) {
+	rz_th_lock_enter(tl->lock);
+	bool value = tl->value;
+	rz_th_lock_leave(tl->lock);
+	return value;
+}
+
+static void thread_bool_set(ThreadBool *tl, bool value) {
+	rz_th_lock_enter(tl->lock);
+	tl->value = value;
+	rz_th_lock_leave(tl->lock);
+}
+
+static void thread_bool_fini(ThreadBool *tl) {
+	rz_th_lock_free(tl->lock);
+}
+
+static void basefind_stop_all_search_threads(RzThreadPool *pool) {
+	size_t pool_size = rz_th_pool_size(pool);
+	for (ut32 i = 0; i < pool_size; ++i) {
+		RzThread *th = rz_th_pool_get_thread(pool, i);
+		if (!th) {
+			continue;
+		}
+		BaseFindThreadData *bftd = rz_th_get_user(th);
+		thread_bool_set(&bftd->loop, false);
+	}
+}
 
 static RzBinFile *basefind_new_bin_file(RzCore *core) {
 	// Copied from cbin.c -> rz_core_bin_whole_strings_print
@@ -91,7 +133,7 @@ static bool basefind_array_has(const BaseFindArray *array, ut64 value) {
 	return false;
 }
 
-static BaseFindArray *basefind_create_array_of_addresses(RzCore *core) {
+static BaseFindArray *basefind_create_array_of_addresses(RzCore *core, ut32 min_string_len) {
 	RzList *strings = NULL;
 	BaseFindArray *array = NULL;
 	RzBinFile *alloc = NULL;
@@ -103,16 +145,10 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core) {
 		}
 	}
 
-	ut32 string_min_size = rz_config_get_i(core->config, "basefind.string.min");
-	if (string_min_size < 1) {
-		RZ_LOG_ERROR("basefind: cannot find strings when 'basefind.string.min' is zero.\n");
-		rz_goto_if_reached(error);
-	}
-
 	// if this list is sorted we can improve speed via half-interval search
-	strings = rz_bin_file_strings(current, string_min_size, true);
+	strings = rz_bin_file_strings(current, min_string_len, true);
 	if (!strings || rz_list_empty(strings)) {
-		RZ_LOG_ERROR("basefind: cannot find strings in binary with a minimum size of %u.\n", string_min_size);
+		RZ_LOG_ERROR("basefind: cannot find strings in binary with a minimum size of %u.\n", min_string_len);
 		rz_list_free(strings);
 		return NULL;
 	}
@@ -206,13 +242,14 @@ static int basefind_score_compare(const RzBaseFindScore *a, const RzBaseFindScor
 }
 
 static void *basefind_thread_runner(BaseFindThreadData *bftd) {
+	ThreadBool *loop = &bftd->loop;
 	RzBaseFindScore *pair = NULL;
 	BaseFindData bfd;
 	ut64 base;
 
 	bfd.array = bftd->array;
-	for (base = bftd->base_start; base < bftd->base_end; base += bftd->base_inc) {
-		if (rz_cons_is_breaked()) {
+	for (base = bftd->base_start; base < bftd->base_end; base += bftd->alignment) {
+		if (!thread_bool_get(loop)) {
 			break;
 		}
 		bftd->current = base;
@@ -249,38 +286,45 @@ static void *basefind_thread_runner(BaseFindThreadData *bftd) {
 	return NULL;
 }
 
+static void basefind_set_thread_info(BaseFindThreadData *bftd, RzBaseFindThreadInfo *th_info, ut32 thread_idx) {
+	ut32 percentage = ((bftd->current - bftd->base_start) * 100) / (bftd->base_end - bftd->base_start);
+	if (percentage > 100) {
+		percentage = 100;
+	}
+
+	th_info->thread_idx = thread_idx;
+	th_info->begin_address = bftd->base_start;
+	th_info->current_address = bftd->current;
+	th_info->end_address = bftd->base_end;
+	th_info->percentage = percentage;
+}
+
 // this thread does not care about thread-safety since it only prints
 // data that will always be available during its lifetime.
-static void *basefind_thread_cons(BaseFindThreadCons *th_cons) {
-	bool progress = th_cons->progress;
-	RzThreadPool *pool = th_cons->pool;
-	size_t pool_size = rz_th_pool_size(pool);
-	rz_cons_flush();
-	int begin_line = rz_cons_get_cur_line();
+static void *basefind_thread_ui(BaseFindUIInfo *ui_info) {
+	RzThreadPool *pool = ui_info->pool;
+	ut32 pool_size = rz_th_pool_size(pool);
+	RzBaseFindThreadInfoCb callback = ui_info->callback;
+	void *user = ui_info->user;
+	RzBaseFindThreadInfo th_info;
+	th_info.n_threads = pool_size;
+
 	do {
-		if (progress) {
-			rz_cons_gotoxy(1, begin_line);
-			for (ut32 i = 0; i < pool_size; ++i) {
-				RzThread *th = rz_th_pool_get_thread(pool, i);
-				if (!th) {
-					continue;
-				}
-				BaseFindThreadData *bftd = rz_th_get_user(th);
-				ut32 perc = ((bftd->current - bftd->base_start) * 100) / (bftd->base_end - bftd->base_start);
-				if (perc > 100) {
-					perc = 100;
-				}
-				rz_cons_printf("basefind: thread %u: 0x%08" PFMT64x " / 0x%08" PFMT64x " %u%%\n", i, bftd->current, bftd->base_end, perc);
+		for (ut32 i = 0; i < pool_size; ++i) {
+			RzThread *th = rz_th_pool_get_thread(pool, i);
+			if (!th) {
+				continue;
 			}
-			rz_cons_flush();
-			begin_line = rz_cons_get_cur_line() - pool_size;
+			BaseFindThreadData *bftd = rz_th_get_user(th);
+			basefind_set_thread_info(bftd, &th_info, i);
+			if (!callback(&th_info, user)) {
+				basefind_stop_all_search_threads(pool);
+				goto end;
+			}
 		}
 		rz_sys_usleep(100000);
-		if (rz_cons_is_breaked()) {
-			rz_th_pool_kill(pool);
-			break;
-		}
-	} while (1);
+	} while (thread_bool_get(&ui_info->loop));
+end:
 	return NULL;
 }
 
@@ -300,68 +344,68 @@ static inline bool create_thread_interval(RzThreadPool *pool, BaseFindThreadData
 /**
  * \brief Calculates a list of possible base addresses candidates using the strings position
  *
- * The code finds all the strings in memory with a minimum acceptable size (via basefind.string.min)
+ * The code finds all the strings in memory with a minimum acceptable size (via opt.min_string_len)
  * and calculates all possible words 32 or 64 bit large sizes (endianness via cfg.bigendian) in the
  * given binary.
- * These addresses are then compared with the strings and a variable base address (see basefind.base.start
- * and basefind.base.end) which is increased over time (see basefind.base.increase).
- * The scores are ignored if below basefind.score.min otherwise they are added to the list with the
- * associated base address.
+ * These addresses are then compared with the strings and a variable base address which is increased
+ * over time by opt.alignment.
  *
- * \param  core         RzCore struct to use.
- * \param  pointer_size Pointer size in bits.
- * \return RzList       Sorted list of pairs (score, address) from highest score to lowest.
+ * The scores are added to the result list with the associated base address if their score are higher
+ * than opt.min_score, otherwise they are ignored.
+ *
+ * It is possible via opt.callback to set a callback function that can stop the search (when returning
+ * false) or display the thread statuses (the callback will be called N-times for N spawned threads.
+ *
+ * \param  core     RzCore struct to use.
+ * \param  options  Pointer to the RzBaseFindOpt structure.
  */
-RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
-	rz_return_val_if_fail(core, NULL);
+RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFindOpt *options) {
+	rz_return_val_if_fail(core && options, NULL);
 	RzList *scores = NULL;
 	BaseFindArray *array = NULL;
 	HtUU *pointers = NULL;
-	ut64 base_start = 0, base_end = 0, base_inc = 0;
-	ut32 score_min = 0;
-	size_t max_threads = 0, pool_size = 1;
+	size_t pool_size = 1;
 	RzThreadPool *pool = NULL;
 	RzThreadLock *lock = NULL;
-	bool progress = false;
+	RzThread *user_thread = NULL;
+	BaseFindUIInfo ui_info = { 0 };
 
-	if (pointer_size != 32 && pointer_size != 64) {
+	ut64 base_start = options->start_address;
+	ut64 base_end = options->end_address;
+	ut64 alignment = options->alignment;
+
+	if (options->pointer_size != 32 && options->pointer_size != 64) {
 		RZ_LOG_ERROR("basefind: supported pointer sizes are 32 and 64 bits.\n");
 		return NULL;
-	}
-	pointer_size /= 8;
-
-	if (!core->file) {
-		RZ_LOG_ERROR("basefind: not file was opened via RzCore.\n");
+	} else if (!core->file) {
+		RZ_LOG_ERROR("basefind: the file was not opened via RzCore.\n");
+		return NULL;
+	} else if (base_start >= base_end) {
+		RZ_LOG_ERROR("basefind: start address is greater or equal to end address.\n");
+		return NULL;
+	} else if (alignment < 1) {
+		RZ_LOG_ERROR("basefind: the alignment is set to zero bytes.\n");
+		return NULL;
+	} else if (options->min_score < 1) {
+		RZ_LOG_ERROR("basefind: the minimum score is set to zero.\n");
+		return NULL;
+	} else if (options->min_string_len < 1) {
+		RZ_LOG_ERROR("basefind: the minimum string length is set to zero.\n");
 		return NULL;
 	}
 
-	base_start = rz_config_get_i(core->config, "basefind.base.start");
-	base_end = rz_config_get_i(core->config, "basefind.base.end");
-	base_inc = rz_config_get_i(core->config, "basefind.base.increase");
-	score_min = rz_config_get_i(core->config, "basefind.score.min");
-	max_threads = rz_config_get_i(core->config, "basefind.threads.max");
-	progress = rz_config_get_b(core->config, "basefind.progress");
-
-	if (base_start >= base_end) {
-		RZ_LOG_ERROR("basefind: option 'basefind.base.start' is greater or equal to 'basefind.base.end'.\n");
-		return NULL;
-	} else if (base_inc < 1) {
-		RZ_LOG_ERROR("basefind: option 'basefind.base.increase' is zero.\n");
-		return NULL;
-	} else if (base_inc < RZ_BASEFIND_BASE_INCREASE) {
-		RZ_LOG_WARN("basefind: option 'basefind.base.increase' is less than 0x%x, which may result in a very slow search.\n", RZ_BASEFIND_BASE_INCREASE);
+	if (alignment < RZ_BASEFIND_BASE_ALIGNMENT) {
+		RZ_LOG_WARN("basefind: the alignment is less than 0x%x bytes, "
+			    "which may result in a very slow search.\n",
+			RZ_BASEFIND_BASE_ALIGNMENT);
 	}
 
-	if (score_min < 1) {
-		RZ_LOG_WARN("basefind: option 'basefind.score.min' zero, which may result in a long list of results.\n");
-	}
-
-	array = basefind_create_array_of_addresses(core);
+	array = basefind_create_array_of_addresses(core, options->min_string_len);
 	if (!array) {
 		goto rz_basefind_end;
 	}
 
-	pointers = basefind_create_pointer_map(core, pointer_size);
+	pointers = basefind_create_pointer_map(core, options->pointer_size / 8);
 	if (!pointers) {
 		goto rz_basefind_end;
 	}
@@ -372,7 +416,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 		goto rz_basefind_end;
 	}
 
-	pool = rz_th_pool_new(max_threads);
+	pool = rz_th_pool_new(options->max_threads);
 	if (!pool) {
 		RZ_LOG_ERROR("basefind: cannot allocate thread pool.\n");
 		goto rz_basefind_end;
@@ -393,42 +437,60 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 		BaseFindThreadData *bftd = RZ_NEW(BaseFindThreadData);
 		if (!bftd) {
 			RZ_LOG_ERROR("basefind: cannot allocate BaseFindThreadData.\n");
-			rz_th_pool_kill(pool);
+			basefind_stop_all_search_threads(pool);
 			goto rz_basefind_end;
 		}
-		bftd->base_inc = base_inc;
+		bftd->alignment = alignment;
 		bftd->base_start = base_start + (sector_size * i);
 		bftd->current = bftd->base_start;
 		bftd->base_end = bftd->base_start + sector_size;
-		bftd->score_min = score_min;
+		bftd->score_min = options->min_score;
 		bftd->io_size = io_size;
 		bftd->lock = lock;
 		bftd->scores = scores;
 		bftd->pointers = pointers;
 		bftd->array = array;
+		thread_bool_init(&bftd->loop);
 		if (!create_thread_interval(pool, bftd)) {
 			free(bftd);
-			rz_th_pool_kill(pool);
+			basefind_stop_all_search_threads(pool);
 			goto rz_basefind_end;
 		}
 	}
 
-	BaseFindThreadCons th_cons;
-	th_cons.progress = progress;
-	th_cons.pool = pool;
+	if (options->callback) {
+		ui_info.pool = pool;
+		ui_info.user = options->user;
+		ui_info.callback = options->callback;
+		thread_bool_init(&ui_info.loop);
+		user_thread = rz_th_new((RzThreadFunction)basefind_thread_ui, &ui_info);
+		if (!user_thread) {
+			basefind_stop_all_search_threads(pool);
+			goto rz_basefind_end;
+		}
+	}
 
-	RzThread *cons_thread = rz_th_new((RzThreadFunction)basefind_thread_cons, &th_cons);
-	if (!cons_thread) {
-		rz_th_pool_kill(pool);
-		goto rz_basefind_end;
-	}
+	// wait the pool to finish
 	rz_th_pool_wait(pool);
-	if (progress) {
-		// ensure to print the 100%
-		rz_sys_usleep(100000);
+
+	if (options->callback) {
+		thread_bool_set(&ui_info.loop, false);
+		rz_th_wait(user_thread);
+		rz_th_free(user_thread);
+		thread_bool_fini(&ui_info.loop);
+
+		RzBaseFindThreadInfo th_info;
+		th_info.n_threads = pool_size;
+		for (ut32 i = 0; i < pool_size; ++i) {
+			RzThread *th = rz_th_pool_get_thread(pool, i);
+			if (!th) {
+				continue;
+			}
+			BaseFindThreadData *bftd = rz_th_get_user(th);
+			basefind_set_thread_info(bftd, &th_info, i);
+			options->callback(&th_info, options->user);
+		}
 	}
-	rz_th_kill(cons_thread);
-	rz_th_free(cons_thread);
 
 	rz_list_sort(scores, (RzListComparator)basefind_score_compare);
 
@@ -439,7 +501,9 @@ rz_basefind_end:
 			if (!th) {
 				continue;
 			}
-			free(rz_th_get_user(th));
+			BaseFindThreadData *bftd = rz_th_get_user(th);
+			thread_bool_fini(&bftd->loop);
+			free(bftd);
 		}
 		rz_th_pool_free(pool);
 	}

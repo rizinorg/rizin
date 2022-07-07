@@ -349,6 +349,8 @@ struct rz_core_t {
 	bool keep_asmqjmps;
 	RzCoreVisual visual;
 	// visual // TODO: move them into RzCoreVisual
+	bool visual_is_inputing; // whether the user is inputing
+	char *visual_inputing; // for filter on the go in Vv mode
 	int http_up;
 	int gdbserver_up;
 	RzCoreVisualMode printidx;

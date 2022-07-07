@@ -58,6 +58,7 @@ RZ_API void rz_th_cond_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLo
 RZ_API void rz_th_cond_free(RZ_NULLABLE RzThreadCond *cond);
 
 RZ_API size_t rz_th_physical_core_number();
+RZ_API size_t rz_th_request_physical_cores(size_t max_cores);
 RZ_API RZ_OWN RzThreadPool *rz_th_pool_new(size_t max_threads);
 RZ_API void rz_th_pool_free(RZ_NULLABLE RzThreadPool *pool);
 RZ_API bool rz_th_pool_add_thread(RZ_NONNULL RzThreadPool *pool, RZ_NONNULL RzThread *thread);

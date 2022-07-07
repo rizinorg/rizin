@@ -388,7 +388,7 @@ RZ_API bool rz_io_read(RzIO *io, ut8 *buf, int len) {
 	return false;
 }
 
-RZ_API bool rz_io_write(RzIO *io, ut8 *buf, int len) {
+RZ_API bool rz_io_write(RzIO *io, const ut8 *buf, int len) {
 	if (io && buf && len > 0 && rz_io_write_at(io, io->off, buf, len)) {
 		io->off += len;
 		return true;

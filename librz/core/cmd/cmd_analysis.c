@@ -39,15 +39,6 @@ static const char *help_msg_a[] = {
 	NULL
 };
 
-static const char *help_msg_ai[] = {
-	"Usage:", "ai", "[j*] [sz] # analysis/address information/imports",
-	"ai", " @addr", "show address information",
-	"aii", " [namespace]", "global import (like afii, but global)",
-	"aii", "-", "delete all global imports",
-	"aij", " @addr", "show address information in JSON format",
-	NULL
-};
-
 static const char *help_msg_ad[] = {
 	"Usage:", "ad", "[kt] [...]",
 	"ad", " [N] [D]", "analyze N data words at D depth",
@@ -1311,20 +1302,13 @@ RZ_API bool rz_core_esil_continue_back(RzCore *core) {
 	return true;
 }
 
-static void cmd_address_info(RzCore *core, const char *addrstr, int fmt) {
-	ut64 addr, type;
-	if (!addrstr || !*addrstr) {
-		addr = core->offset;
-	} else {
-		addr = rz_num_math(core->num, addrstr);
-	}
+static void cmd_address_info(RzCore *core, const ut64 addr, RzCmdStateOutput *state) {
+	ut64 type;
+	PJ *pj;
 	type = rz_core_analysis_address(core, addr);
-	switch (fmt) {
-	case 'j': {
-		PJ *pj = pj_new();
-		if (!pj) {
-			return;
-		}
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		pj = state->d.pj;
 		pj_o(pj);
 		if (type & RZ_ANALYSIS_ADDR_TYPE_PROGRAM)
 			pj_ks(pj, "program", "true");
@@ -1351,10 +1335,8 @@ static void cmd_address_info(RzCore *core, const char *addrstr, int fmt) {
 		if (type & RZ_ANALYSIS_ADDR_TYPE_SEQUENCE)
 			pj_ks(pj, "sequence", "true");
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	} break;
-	default:
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
 		if (type & RZ_ANALYSIS_ADDR_TYPE_PROGRAM)
 			rz_cons_printf("program\n");
 		if (type & RZ_ANALYSIS_ADDR_TYPE_LIBRARY)
@@ -1380,46 +1362,8 @@ static void cmd_address_info(RzCore *core, const char *addrstr, int fmt) {
 		if (type & RZ_ANALYSIS_ADDR_TYPE_SEQUENCE)
 			rz_cons_printf("sequence\n");
 		break;
-	}
-}
-
-static void cmd_analysis_info(RzCore *core, const char *input) {
-	switch (input[0]) {
-	case '?': // "ai?""
-		rz_core_cmd_help(core, help_msg_ai);
-		break;
-	case ' ': // "ai "
-		cmd_address_info(core, input, 0);
-		break;
-	case 'i': // "aii"
-		// global imports
-		if (input[1]) {
-			if (input[1] == ' ') {
-				char *s = rz_str_trim_dup(input + 1);
-				if (s) {
-					rz_analysis_add_import(core->analysis, s);
-					free(s);
-				}
-			} else if (input[1] == '-') {
-				rz_analysis_purge_imports(core->analysis);
-			} else {
-				eprintf("Usagae: aii [namespace] # see afii - imports\n");
-			}
-		} else {
-			if (core->analysis->imports) {
-				char *imp;
-				RzListIter *iter;
-				rz_list_foreach (core->analysis->imports, iter, imp) {
-					rz_cons_printf("%s\n", imp);
-				}
-			}
-		}
-		break;
-	case 'j': // "aij"
-		cmd_address_info(core, input + 1, 'j');
-		break;
 	default:
-		cmd_address_info(core, NULL, 0);
+		rz_warn_if_reached();
 		break;
 	}
 }
@@ -3758,27 +3702,7 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	case 'C': // "aC"
 		cmd_analysis_aC(core, input + 1);
 		break;
-	case 'i': cmd_analysis_info(core, input + 1); break; // "ai"
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
-	case 'L': { // aL
-		RzCmdStateOutput state = { 0 };
-		switch (input[1]) {
-		case 'j':
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
-			break;
-		case 'q':
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
-			break;
-		default:
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		}
-		rz_core_asm_plugins_print(core, NULL, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		rz_cons_flush();
-		break;
-	}
 	case 'F': // "aF"
 		rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
 		break;
@@ -7382,6 +7306,10 @@ RZ_IPI RzCmdStatus rz_list_mne_handler(RzCore *core, int argc, const char **argv
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_list_plugins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_asm_plugins_print(core, NULL, state);
+}
+
 RZ_IPI RzCmdStatus rz_analyse_name_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *name = NULL;
 	st32 ret = 0;
@@ -7996,5 +7924,37 @@ RZ_IPI RzCmdStatus rz_print_areas_no_functions_handler(RzCore *core, int argc, c
 
 RZ_IPI RzCmdStatus rz_analyze_value_to_maps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_core_analysis_value_pointers(core, state->mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_info_show_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	cmd_address_info(core, core->offset, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_global_imports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	char *imp;
+	RzListIter *iter;
+
+	if (RZ_STR_ISNOTEMPTY(argv[1])) {
+		rz_analysis_add_import(core->analysis, argv[1]);
+		return RZ_CMD_STATUS_OK;
+	}
+	rz_list_foreach (core->analysis->imports, iter, imp) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("%s\n", imp);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_delete_global_imports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_analysis_purge_imports(core->analysis);
 	return RZ_CMD_STATUS_OK;
 }
