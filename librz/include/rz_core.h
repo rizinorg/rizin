@@ -597,6 +597,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args);
 RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr);
 RZ_API bool rz_core_file_resize(RzCore *core, ut64 newsize);
 RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta);
+RZ_API void rz_core_rebase_everything(RzCore *core, RzList *old_sections, ut64 old_base);
 RZ_API RzCoreFile *rz_core_file_find_by_fd(RzCore *core, ut64 fd);
 RZ_API RzCoreFile *rz_core_file_find_by_name(RzCore *core, const char *name);
 RZ_API RzCoreFile *rz_core_file_cur(RzCore *r);

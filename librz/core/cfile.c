@@ -120,7 +120,7 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_base) {
+RZ_API void rz_core_rebase_everything(RzCore *core, RzList *old_sections, ut64 old_base) {
 	RzListIter *it, *itit, *ititit;
 	RzAnalysisFunction *fcn;
 	ut64 new_base = core->bin->cur->o->baddr_shift;
@@ -260,7 +260,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 	}
 	rz_core_block_read(core);
 	if (rz_config_get_i(core->config, "dbg.rebase")) {
-		__rebase_everything(core, old_sections, old_base);
+		rz_core_rebase_everything(core, old_sections, old_base);
 	}
 	rz_list_free(old_sections);
 	rz_core_seek_to_register(core, "PC", false);
@@ -310,7 +310,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	rz_config_set_b(core->config, "cfg.debug", true);
 	rz_core_file_reopen(core, newfile, 0, 2);
 	if (rz_config_get_i(core->config, "dbg.rebase")) {
-		__rebase_everything(core, old_sections, old_base);
+		rz_core_rebase_everything(core, old_sections, old_base);
 	}
 	rz_list_free(old_sections);
 	rz_core_seek_to_register(core, "PC", false);
@@ -1636,7 +1636,7 @@ RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
 	}
 	rz_core_block_read(core);
 
-	__rebase_everything(core, orig_sections, orig_baddr);
+	rz_core_rebase_everything(core, orig_sections, orig_baddr);
 	rz_list_free(orig_sections);
 	free(file);
 }
