@@ -43,7 +43,7 @@ RZ_API bool sdb_disk_create(Sdb *s) {
 	if (s->fdump != -1) {
 		close(s->fdump);
 	}
-#if __WINDOWS__ && UNICODE
+#if __WINDOWS__
 	wchar_t *wstr = rz_utf8_to_utf16(str);
 	if (wstr) {
 		s->fdump = _wopen(wstr, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, SDB_MODE);
@@ -91,11 +91,11 @@ RZ_API bool sdb_disk_finish(Sdb *s) {
 		reopen = true;
 	}
 #if __WINDOWS__
-	LPTSTR ndump_ = rz_utf8_to_utf16(s->ndump);
-	LPTSTR dir_ = rz_utf8_to_utf16(s->dir);
+	wchar_t *ndump_ = rz_utf8_to_utf16(s->ndump);
+	wchar_t *dir_ = rz_utf8_to_utf16(s->dir);
 
-	if (MoveFileEx(ndump_, dir_, MOVEFILE_REPLACE_EXISTING)) {
-		// eprintf ("Error 0x%02x\n", GetLastError ());
+	if (!MoveFileExW(ndump_, dir_, MOVEFILE_REPLACE_EXISTING)) {
+		eprintf ("Error 0x%02x\n", GetLastError ());
 	}
 	free(ndump_);
 	free(dir_);
