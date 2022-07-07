@@ -26,6 +26,7 @@ typedef struct search_thread_data_t {
 	RzStrEnc encoding;
 	bool check_ascii_freq;
 	SharedData *shared;
+	RzThreadBool *loop;
 } SearchThreadData;
 
 static st64 shared_data_read_at(SharedData *sd, ut64 addr, ut8 *buf, ut64 size) {
@@ -122,7 +123,7 @@ static void *search_string_thread_runner(SearchThreadData *std) {
 		RZ_LOG_DEBUG("[%p] searching between [0x%08" PFMT64x " : 0x%08" PFMT64x "]\n", std, paddr, paddr + psize);
 
 		RzList *list = string_scan_range(std, paddr, psize);
-		while (list) {
+		while (list && rz_th_bool_get(std->loop)) {
 			detected = rz_list_pop_head(list);
 			if (!detected) {
 				break;
@@ -145,7 +146,7 @@ static void *search_string_thread_runner(SearchThreadData *std) {
 		}
 
 		rz_list_free(list);
-	} while (loop);
+	} while (loop && rz_th_bool_get(std->loop));
 
 	RZ_LOG_DEBUG("[%p] died\n", std);
 	return NULL;
@@ -156,7 +157,25 @@ static void bin_file_string_search_free(SearchThreadData *std) {
 		return;
 	}
 	rz_list_free(std->results);
+	rz_th_bool_free(std->loop);
 	free(std);
+}
+
+static void interrupt_thread(RzThread *thread) {
+	if (!thread) {
+		return;
+	}
+	SearchThreadData *std = (SearchThreadData *)rz_th_get_user(thread);
+	rz_th_bool_set(std->loop, false);
+	rz_th_wait(thread);
+}
+
+static void interrupt_pool(RzThreadPool *pool) {
+	size_t pool_size = rz_th_pool_size(pool);
+	for (size_t i = 0; i < pool_size; ++i) {
+		RzThread *th = rz_th_pool_get_thread(pool, i);
+		interrupt_thread(th);
+	}
 }
 
 static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, RzThreadQueue *intervals, SharedData *shared) {
@@ -189,6 +208,7 @@ static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, R
 	std->encoding = encoding;
 	std->intervals = intervals;
 	std->min_length = min_length;
+	std->loop = rz_th_bool_new(true);
 
 	RzThread *thread = rz_th_new((RzThreadFunction)search_string_thread_runner, std);
 	if (!thread) {
@@ -197,6 +217,7 @@ static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, R
 		return false;
 	} else if (!rz_th_pool_add_thread(pool, thread)) {
 		RZ_LOG_ERROR("bin_file_strings: cannot add thread to pool\n");
+		interrupt_thread(thread);
 		bin_file_string_search_free(std);
 		rz_th_free(thread);
 		return false;
@@ -430,7 +451,7 @@ RZ_API RZ_OWN RzList *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_l
 	RZ_LOG_VERBOSE("bin_file_strings: using %u threads\n", (ut32)pool_size);
 	for (size_t i = 0; i < pool_size; ++i) {
 		if (!create_string_search_thread(pool, min_length, intervals, &shared)) {
-			rz_th_pool_kill(pool);
+			interrupt_pool(pool);
 			goto fail;
 		}
 	}

@@ -488,37 +488,9 @@ the_end : {
 	return ret;
 }
 
-#if 0
-static void *rz_core_rtr_http_thread (HttpThread *ht) {
-	if (!ht || !ht->core) {
-		return false;
-	}
-	int ret = 0;
-	do {
-		ret = rz_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
-		RZ_FREE (ht->path);
-		if (ret) {
-			int p = rz_config_get_i (ht->core->config, "http.port");
-			rz_config_set_i (ht->core->config, "http.port",  p + 1);
-			if (p >= rz_config_get_i (ht->core->config, "http.maxport")) {
-				break;
-			}
-		}
-	} while(ret);
-	return NULL;
-}
-#endif
-
 RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path) {
-	int ret;
+	int ret = 0;
 	if (launch == '-') {
-		if (httpthread) {
-			eprintf("Press ^C to stop the webserver\n");
-			rz_th_kill_free(httpthread);
-			httpthread = NULL;
-		} else {
-			eprintf("No webserver running\n");
-		}
 		return 0;
 	}
 	if (core->http_up) {
@@ -531,27 +503,6 @@ RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *pa
 		}
 		return rz_core_cmdf(core, "& Rh%s", path);
 	}
-#if 0
-		if (httpthread) {
-			eprintf ("HTTP Thread is already running\n");
-			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
-			eprintf ("TODO: Use different eval environ for scr. for the web\n");
-			eprintf ("TODO: Visual mode should be enabled on local\n");
-		} else {
-			const char *tpath = rz_str_trim_head_ro (path + 1);
-			//HttpThread ht = { core, launch, strdup (tpath) };
-			HttpThread *ht = calloc (sizeof (HttpThread), 1);
-			ht->core = core;
-			ht->launch = launch;
-			ht->browse = browse;
-			ht->path = strdup (tpath);
-			httpthread = rz_th_new ((RzThreadFunction)rz_core_rtr_http_thread, ht);
-			rz_th_setname (httpthread, "httpthread");
-			eprintf ("Background http server started.\n");
-		}
-		return 0;
-	}
-#endif
 	do {
 		ret = rz_core_rtr_http_run(core, launch, browse, path);
 	} while (ret == -2);

@@ -26,7 +26,6 @@ SECURITY IMPLICATIONS
 #define rtr_host core->rtr_host
 
 static RzSocket *s = NULL;
-static RzThread *httpthread = NULL;
 static RzThread *rapthread = NULL;
 static const char *listenport = NULL;
 
@@ -46,28 +45,15 @@ typedef struct {
 
 typedef struct {
 	RzCore *core;
-	int launch;
-	int browse;
-	char *path;
-} HttpThread;
-
-typedef struct {
-	RzCore *core;
 	char *input;
+	RzThreadBool *loop;
 } RapThread;
 
 RZ_API void rz_core_wait(RzCore *core) {
 	rz_cons_singleton()->context->breaked = true;
-	if (httpthread) {
-		rz_th_kill(httpthread);
-	}
 	if (rapthread) {
-		rz_th_kill(rapthread);
-	}
-	if (httpthread) {
-		rz_th_wait(httpthread);
-	}
-	if (rapthread) {
+		RapThread *rt = rz_th_get_user(rapthread);
+		rz_th_bool_set(rt->loop, false);
 		rz_th_wait(rapthread);
 	}
 }
@@ -853,8 +839,11 @@ static void *rz_core_rtr_rap_thread(RapThread *rt) {
 	if (!rt || !rt->core) {
 		return false;
 	}
-	while (rz_core_rtr_rap_run(rt->core, rt->input))
-		;
+	bool loop = true;
+	while (loop) {
+		loop = rz_th_bool_get(rt->loop) &&
+			rz_core_rtr_rap_run(rt->core, rt->input);
+	}
 	return NULL;
 }
 
@@ -890,7 +879,8 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 			}
 			rap_th->core = core;
 			rap_th->input = strdup(input + 1);
-			// RapThread rt = { core, strdup (input + 1) };
+			rap_th->loop = rz_th_bool_new(true);
+
 			rapthread = rz_th_new((RzThreadFunction)rz_core_rtr_rap_thread, rap_th);
 			if (!rap_th) {
 				RZ_LOG_ERROR("cannot spawn the RzThread\n");
