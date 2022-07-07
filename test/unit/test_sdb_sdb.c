@@ -154,6 +154,7 @@ bool test_sdb_namespace(void) {
 		unlink(dbname);
 	}
 	mu_assert("namespace sync", solved);
+	rz_file_rm(".tmp");
 	mu_end;
 }
 
