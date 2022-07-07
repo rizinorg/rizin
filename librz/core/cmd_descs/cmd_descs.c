@@ -8341,7 +8341,7 @@ static const RzCmdDescArg flag_color_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp flag_color_help = {
-	.summary = "Set a comment for the given flag / Show a comment for the given flag",
+	.summary = "Set a color for the given flag / Show the color for the given flag",
 	.args = flag_color_args,
 };
 
@@ -8361,7 +8361,7 @@ static const RzCmdDescArg flag_comment_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp flag_comment_help = {
-	.summary = "Set a comment for the given flag / Show a comment for the given flag",
+	.summary = "Set a comment for the given flag / Show the comment for the given flag",
 	.args = flag_comment_args,
 };
 

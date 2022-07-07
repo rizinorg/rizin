@@ -209,8 +209,8 @@ RZ_IPI RzCmdStatus rz_flag_add_handler(RzCore *core, int argc, const char **argv
 	bool addFlag = true;
 	ut64 size = argc > 2 ? rz_num_math(core->num, argv[2]) : 1;
 	if ((item = rz_flag_get_at(core->flags, core->offset, false))) {
-		RZ_LOG_INFO("Cannot create flag \"%s\" at 0x%" PFMT64x
-			    " because there is already \"%s\" flag\n",
+		RZ_LOG_ERROR("Cannot create flag \"%s\" at 0x%" PFMT64x
+			     " because there is already \"%s\" flag\n",
 			argv[1],
 			core->offset, item->name);
 		addFlag = false;
@@ -776,8 +776,10 @@ RZ_IPI RzCmdStatus rz_flag_base_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_flag_exists_handler(RzCore *core, int argc, const char **argv) {
 	RzFlagItem *item = rz_flag_get(core->flags, argv[1]);
 	if (!item) {
+		RZ_LOG_ERROR("Cannot find flag '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	RZ_LOG_DEBUG("Find flag '%s' at 0x%" PFMT64x "\n", argv[1], item->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
