@@ -8,6 +8,7 @@
 
 struct sh_param_builder_addr_t {
 	ut8 start; ///< start bit of the param (assuming little-endian)
+	st8 bits; ///< bits to be read (-1, if you want this to be inferred from mode)
 	SHAddrMode mode; ///< addressing mode being used
 };
 
@@ -48,7 +49,13 @@ typedef struct sh_op_raw_t {
 // return a param builder struct
 #define ADDR(nib, addrmode) \
 	{ \
-		{ .addr = { .start = nib, .mode = addrmode } }, .is_param = false \
+		{ .addr = { .start = nib, .bits = -1, .mode = addrmode } }, .is_param = false \
+	}
+
+// return a param builder struct with custom bit read length
+#define ADDRBITS(nib, addrmode, b) \
+	{ \
+		{ .addr = { .start = nib, .bits = b, .mode = addrmode } }, .is_param = false \
 	}
 
 // return a param
@@ -202,14 +209,14 @@ static const SHOpRaw sh_op_lookup[] = {
 	{ "ldc", SH_OP_LDC, OPCODE(4, M, 3, e), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_DIRECT), PARAM(SSR, SH_REG_DIRECT) } },
 	{ "ldc", SH_OP_LDC, OPCODE(4, M, 4, e), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_DIRECT), PARAM(SPC, SH_REG_DIRECT) } },
 	{ "ldc", SH_OP_LDC, OPCODE(4, M, f, a), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_DIRECT), PARAM(DBR, SH_REG_DIRECT) } },
-	{ "ldc", SH_OP_UNIMPL, OPCODE(4, M, N, e), 0x0f70, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_DIRECT), ADDR(NIB1, SH_REG_DIRECT) } },
+	{ "ldc", SH_OP_LDC, OPCODE(4, M, N, e), 0x0f70, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_DIRECT), ADDRBITS(NIB1, SH_REG_DIRECT, 3) } },
 	{ "ldc.l", SH_OP_LDC, OPCODE(4, M, 0, 7), 0x0f00, SH_SCALING_L, { ADDR(NIB2, SH_REG_INDIRECT_I), PARAM(SR, SH_REG_DIRECT) } },
 	{ "ldc.l", SH_OP_LDC, OPCODE(4, M, 1, 7), 0x0f00, SH_SCALING_L, { ADDR(NIB2, SH_REG_INDIRECT_I), PARAM(GBR, SH_REG_DIRECT) } },
 	{ "ldc.l", SH_OP_LDC, OPCODE(4, M, 2, 7), 0x0f00, SH_SCALING_L, { ADDR(NIB2, SH_REG_INDIRECT_I), PARAM(VBR, SH_REG_DIRECT) } },
 	{ "ldc.l", SH_OP_LDC, OPCODE(4, M, 3, 7), 0x0f00, SH_SCALING_L, { ADDR(NIB2, SH_REG_INDIRECT_I), PARAM(SSR, SH_REG_DIRECT) } },
 	{ "ldc.l", SH_OP_LDC, OPCODE(4, M, 4, 7), 0x0f00, SH_SCALING_L, { ADDR(NIB2, SH_REG_INDIRECT_I), PARAM(SPC, SH_REG_DIRECT) } },
 	{ "ldc.l", SH_OP_LDC, OPCODE(4, M, f, 6), 0x0f00, SH_SCALING_L, { ADDR(NIB2, SH_REG_INDIRECT_I), PARAM(DBR, SH_REG_DIRECT) } },
-	{ "ldc.l", SH_OP_UNIMPL, OPCODE(4, M, N, 7), 0x0f70, SH_SCALING_L, { ADDR(NIB2, SH_REG_INDIRECT_I), ADDR(NIB1, SH_REG_DIRECT) } },
+	{ "ldc.l", SH_OP_LDC, OPCODE(4, M, N, 7), 0x0f70, SH_SCALING_L, { ADDR(NIB2, SH_REG_INDIRECT_I), ADDRBITS(NIB1, SH_REG_DIRECT, 3) } },
 	{ "lds", SH_OP_LDS, OPCODE(4, M, 0, a), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_DIRECT), PARAM(MACH, SH_REG_DIRECT) } },
 	{ "lds", SH_OP_LDS, OPCODE(4, M, 1, a), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_DIRECT), PARAM(MACL, SH_REG_DIRECT) } },
 	{ "lds", SH_OP_LDS, OPCODE(4, M, 2, a), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_DIRECT), PARAM(PR, SH_REG_DIRECT) } },
@@ -234,7 +241,7 @@ static const SHOpRaw sh_op_lookup[] = {
 	{ "stc", SH_OP_STC, OPCODE(0, M, 4, 2), 0x0f00, SH_SCALING_INVALID, { PARAM(SPC, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "stc", SH_OP_STC, OPCODE(0, M, 3, a), 0x0f00, SH_SCALING_INVALID, { PARAM(SGR, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "stc", SH_OP_STC, OPCODE(0, M, f, a), 0x0f00, SH_SCALING_INVALID, { PARAM(DBR, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
-	{ "stc", SH_OP_UNIMPL, OPCODE(0, N, M, 2), 0x0f70, SH_SCALING_INVALID, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
+	{ "stc", SH_OP_STC, OPCODE(0, N, M, 2), 0x0f70, SH_SCALING_INVALID, { ADDRBITS(NIB1, SH_REG_DIRECT, 3), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "stc.l", SH_OP_STC, OPCODE(4, M, 0, 3), 0x0f00, SH_SCALING_L, { PARAM(SR, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
 	{ "stc.l", SH_OP_STC, OPCODE(4, M, 1, 3), 0x0f00, SH_SCALING_L, { PARAM(GBR, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
 	{ "stc.l", SH_OP_STC, OPCODE(4, M, 2, 3), 0x0f00, SH_SCALING_L, { PARAM(VBR, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
@@ -242,7 +249,7 @@ static const SHOpRaw sh_op_lookup[] = {
 	{ "stc.l", SH_OP_STC, OPCODE(4, M, 4, 3), 0x0f00, SH_SCALING_L, { PARAM(SPC, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
 	{ "stc.l", SH_OP_STC, OPCODE(4, M, 3, 2), 0x0f00, SH_SCALING_L, { PARAM(SGR, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
 	{ "stc.l", SH_OP_STC, OPCODE(4, M, f, 2), 0x0f00, SH_SCALING_L, { PARAM(DBR, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
-	{ "stc.l", SH_OP_UNIMPL, OPCODE(4, N, M, 3), 0x0f70, SH_SCALING_L, { ADDR(NIB1, SH_REG_DIRECT), ADDR(NIB2, SH_REG_INDIRECT_D) } },
+	{ "stc.l", SH_OP_STC, OPCODE(4, N, M, 3), 0x0f70, SH_SCALING_L, { ADDRBITS(NIB1, SH_REG_DIRECT, 3), ADDR(NIB2, SH_REG_INDIRECT_D) } },
 	{ "sts", SH_OP_STS, OPCODE(0, N, 0, a), 0x0f00, SH_SCALING_INVALID, { PARAM(MACH, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "sts", SH_OP_STS, OPCODE(0, N, 1, a), 0x0f00, SH_SCALING_INVALID, { PARAM(MACL, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "sts", SH_OP_STS, OPCODE(0, N, 2, a), 0x0f00, SH_SCALING_INVALID, { PARAM(PR, SH_REG_DIRECT), ADDR(NIB2, SH_REG_DIRECT) } },

@@ -25,6 +25,12 @@ static SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
 	ut16 nibble = opcode >> shb.addr.start;
 	ut8 len = 0;
 
+	if (shb.addr.bits != -1) {
+		// do not infer the bit length from mode
+		len = shb.addr.bits;
+		goto extract;
+	}
+
 	switch (shb.addr.mode) {
 	case SH_REG_DIRECT:
 	case SH_REG_INDIRECT:
@@ -48,6 +54,8 @@ static SHParam sh_op_get_param(ut16 opcode, SHParamBuilder shb) {
 	default:
 		break;
 	}
+
+extract:
 
 	nibble &= 0xffff >> (16 - len);
 
