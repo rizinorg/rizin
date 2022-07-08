@@ -370,6 +370,12 @@ commands:
         optional: true
     modes:
       - RZ_OUTPUT_MODE_JSON
+  - name: psc
+    summary: Generate a C/C++ string
+    cname: print_string_c_cpp
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args: []
   - name: psw
     summary: Print buffer as a utf16le string
     cname: print_utf16le
