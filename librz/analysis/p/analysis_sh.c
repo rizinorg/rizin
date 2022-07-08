@@ -6,6 +6,7 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
+#include "../arch/sh/sh_il.h"
 
 #define API static
 
@@ -1102,8 +1103,8 @@ static int sh_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *d
 }
 
 /* Set the profile register */
-static char *sh_get_reg_profile(RzAnalysis *analysis) {
-	// TODO Add system ( ssr, spc ) + fpu regs
+static RZ_OWN char *sh_get_reg_profile(RzAnalysis *analysis) {
+	// TODO Add fpu regs
 	const char *p =
 		"=PC	pc\n"
 		"=SN	r0\n"
@@ -1114,29 +1115,51 @@ static char *sh_get_reg_profile(RzAnalysis *analysis) {
 		"=A2	r6\n"
 		"=A3	r7\n"
 		"=R0	r0\n"
-		"gpr	r0	.32	0	0\n"
-		"gpr	r1	.32	4	0\n"
-		"gpr	r2	.32	8	0\n"
-		"gpr	r3	.32	12	0\n"
-		"gpr	r4	.32	16	0\n"
-		"gpr	r5	.32	20	0\n"
-		"gpr	r6	.32	24	0\n"
-		"gpr	r7	.32	28	0\n"
-		"gpr	r8	.32	32	0\n"
-		"gpr	r9	.32	36	0\n"
-		"gpr	r10	.32	40	0\n"
-		"gpr	r11	.32	44	0\n"
-		"gpr	r12	.32	48	0\n"
-		"gpr	r13	.32	52	0\n"
-		"gpr	r14	.32	56	0\n"
-		"gpr	r15	.32	60	0\n"
-		"gpr	pc	.32	64	0\n"
-		"gpr	pr	.32	68	0\n"
-		"gpr	sr	.32	72	0\n"
-		"gpr	gbr	.32	76	0\n"
-		"gpr	vbr	.32	80	0\n"
-		"gpr	mach	.32	84	0\n"
-		"gpr	macl	.32	88	0\n";
+		"gpr	r0		.32	0		0\n"
+		"gpr	r1		.32	4		0\n"
+		"gpr	r2		.32	8		0\n"
+		"gpr	r3		.32	12		0\n"
+		"gpr	r4		.32	16		0\n"
+		"gpr	r5		.32	20		0\n"
+		"gpr	r6		.32	24		0\n"
+		"gpr	r7		.32	28		0\n"
+		"gpr	r0b		.32	32		0\n"
+		"gpr	r1b		.32	36		0\n"
+		"gpr	r2b		.32	40		0\n"
+		"gpr	r3b		.32	44		0\n"
+		"gpr	r4b		.32	48		0\n"
+		"gpr	r5b		.32	52		0\n"
+		"gpr	r6b		.32	56		0\n"
+		"gpr	r7b		.32	60		0\n"
+		"gpr	r8		.32	64		0\n"
+		"gpr	r9		.32	68		0\n"
+		"gpr	r10		.32	72		0\n"
+		"gpr	r11		.32	76		0\n"
+		"gpr	r12		.32	80		0\n"
+		"gpr	r13		.32	84		0\n"
+		"gpr	r14		.32	88		0\n"
+		"gpr	r15		.32	92		0\n"
+		"gpr	pc		.32	96		0\n"
+		"gpr	sr		.32	100		0\n"
+		"gpr	sr_t	.1	100.0	0\n"
+		"gpr	sr_s	.1	100.1	0\n"
+		"gpr	sr_i	.4	100.4	0\n"
+		"gpr	sr_q	.1	101.0	0\n"
+		"gpr	sr_m	.1	101.1	0\n"
+		"gpr	sr_f	.1	101.7	0\n"
+		"gpr	sr_b	.1	103.4	0\n"
+		"gpr	sr_r	.1	103.5	0\n"
+		"gpr	sr_d	.1	103.6	0\n"
+		"gpr	gbr		.32	104		0\n"
+		"gpr	ssr		.32	108		0\n"
+		"gpr	spc		.32	112		0\n"
+		"gpr	sgr		.32	116		0\n"
+		"gpr	dbr		.32	120		0\n"
+		"gpr	vbr		.32	124		0\n"
+		"gpr	mach	.32	128		0\n"
+		"gpr	macl	.32	132		0\n"
+		"gpr	pr		.32	136		0\n";
+
 	return strdup(p);
 }
 
