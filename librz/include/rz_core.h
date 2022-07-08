@@ -1011,6 +1011,9 @@ RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdSta
 RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encoding, RZ_NULLABLE const char *name);
 RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
 
+// cprint.c
+RZ_API char *rz_core_print_string_c_cpp(RzCore *core);
+
 /* rtr */
 RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);
 RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port);

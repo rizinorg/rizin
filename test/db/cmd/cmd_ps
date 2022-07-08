@@ -91,3 +91,28 @@ EXPECT_ERR=<<EOF
 Error: bitness of 16 not supported
 EOF
 RUN
+
+NAME=psc define C C++ string
+FILE==
+CMDS=<<EOF
+wx 90919241424322
+psc @! 7
+EOF
+EXPECT=<<EOF
+#define STRING_SIZE 7
+const char s[STRING_SIZE] = "\x90\x91\x92\x41\x42\x43\x22";
+EOF
+RUN
+
+NAME=psc define C C++ multiline string
+FILE==
+CMDS=<<EOF
+wx 909192414243229091924142432290919241424322
+psc @! 21
+EOF
+EXPECT=<<EOF
+#define STRING_SIZE 21
+const char s[STRING_SIZE] = "\x90\x91\x92\x41\x42\x43\x22\x90\x91\x92\x41\x42\x43\x22\x90\x91"
+                            "\x92\x41\x42\x43\x22";
+EOF
+RUN

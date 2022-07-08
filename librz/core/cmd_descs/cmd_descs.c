@@ -10985,6 +10985,14 @@ static const RzCmdDescHelp cmd_print_magic_help = {
 	.args = cmd_print_magic_args,
 };
 
+static const RzCmdDescArg print_string_c_cpp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_string_c_cpp_help = {
+	.summary = "Generate a C/C++ string",
+	.args = print_string_c_cpp_args,
+};
+
 static const RzCmdDescArg print_utf16le_args[] = {
 	{
 		.name = "type",
@@ -16284,6 +16292,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
 	rz_warn_if_fail(cmd_print_magic_cd);
+
+	RzCmdDesc *print_string_c_cpp_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psc", RZ_OUTPUT_MODE_STANDARD, rz_print_string_c_cpp_handler, &print_string_c_cpp_help);
+	rz_warn_if_fail(print_string_c_cpp_cd);
 
 	RzCmdDesc *print_utf16le_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf16le_handler, &print_utf16le_help);
 	rz_warn_if_fail(print_utf16le_cd);
