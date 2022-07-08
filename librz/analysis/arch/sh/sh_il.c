@@ -21,6 +21,8 @@
 #define SH_U_REG(x)  UN(SH_REG_SIZE, (x))
 #define SH_S_REG(x)  SN(SH_REG_SIZE, (x))
 #define SH_BIT(x)    UN(1, x)
+#define SH_TRUE      SH_U_REG(1)
+#define SH_FALSE     SH_U_REG(0)
 
 #define sh_return_val_if_invalid_gpr(x, v) \
 	if (!sh_valid_gpr(x)) { \
@@ -36,11 +38,11 @@
 
 /* Utilities */
 
-static inline bool sh_valid_gpr(ut16 reg) {
+static bool sh_valid_gpr(ut16 reg) {
 	return reg < SH_GPR_COUNT;
 }
 
-static inline bool sh_banked_reg(ut16 reg) {
+static bool sh_banked_reg(ut16 reg) {
 	return reg < SH_BANKED_REG_COUNT;
 }
 
@@ -50,9 +52,9 @@ static inline bool sh_banked_reg(ut16 reg) {
 static const char *sh_global_registers[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", ///< bank 0 registers (user mode)
 	"r0b", "r1b", "r2b", "r3b", "r4b", "r5b", "r6b", "r7b", ///< bank 1 registers (privileged mode)
-	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "pc",
-	"gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl",
-	"pr"
+	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "sr",
+	SH_SR_T, SH_SR_S, SH_SR_I, SH_SR_I, SH_SR_Q, SH_SR_M, SH_SR_F, SH_SR_B, SH_SR_R, SH_SR_D, ///< status register bits
+	"gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl", "pr"
 };
 
 static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
@@ -62,30 +64,35 @@ static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
 	return sh_global_registers[reg + bank * SH_BANKED_REG_COUNT];
 }
 
-static inline RzILOpPure *sh_il_get_status_reg() {
+static RzILOpPure *sh_il_get_status_reg_bit(const char *bit) {
+	return ITE(VARG(bit), SH_TRUE, SH_FALSE);
+}
+
+static RzILOpPure *
+sh_il_get_status_reg() {
 	RzILOpPure *val = SH_U_REG(0);
-	val = LOGOR(VARG(SH_SR_D), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_D), val);
 	val = SHIFTL0(DUP(val), SH_U_REG(1));
-	val = LOGOR(VARG(SH_SR_R), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_R), val);
 	val = SHIFTL0(DUP(val), SH_U_REG(1));
-	val = LOGOR(VARG(SH_SR_B), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_B), val);
 	val = SHIFTL0(DUP(val), SH_U_REG(13));
-	val = LOGOR(VARG(SH_SR_F), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_F), val);
 	val = SHIFTL0(DUP(val), SH_U_REG(6));
-	val = LOGOR(VARG(SH_SR_M), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_M), val);
 	val = SHIFTL0(DUP(val), SH_U_REG(1));
-	val = LOGOR(VARG(SH_SR_Q), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_Q), val);
 	val = SHIFTL0(DUP(val), SH_U_REG(4));
-	val = LOGOR(VARG(SH_SR_I), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_I), val);
 	val = SHIFTL0(DUP(val), SH_U_REG(3));
-	val = LOGOR(VARG(SH_SR_S), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_S), val);
 	val = SHIFTL0(DUP(val), SH_U_REG(1));
-	val = LOGOR(VARG(SH_SR_T), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_T), val);
 
 	return val;
 }
 
-static inline RzILOpEffect *sh_il_set_status_reg(RzILOpPure *val) {
+static RzILOpEffect *sh_il_set_status_reg(RzILOpPure *val) {
 	RzILOpEffect *eff = SETG(SH_SR_T, LOGAND(SH_U_REG(0x1), val));
 	val = SHIFTR0(DUP(val), SH_U_REG(1));
 	eff = SEQ2(eff, SETG(SH_SR_S, LOGAND(SH_U_REG(0x1), val)));
@@ -107,7 +114,7 @@ static inline RzILOpEffect *sh_il_set_status_reg(RzILOpPure *val) {
 	return eff;
 }
 
-static inline RzILOpPure *sh_il_get_reg(ut16 reg) {
+static RzILOpPure *sh_il_get_reg(ut16 reg) {
 	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
 		if (reg == SH_REG_IND_SR) {
@@ -117,11 +124,11 @@ static inline RzILOpPure *sh_il_get_reg(ut16 reg) {
 	}
 
 	// check if both SR.MD = 1 and SR.RB = 1
-	RzILOpPure *condition = AND(VARG(SH_SR_D), VARG(SH_SR_R));
+	RzILOpPure *condition = AND(sh_il_get_status_reg_bit(SH_SR_D), sh_il_get_status_reg_bit(SH_SR_R));
 	return ITE(condition, VARG(sh_get_banked_reg(reg, 1)), VARG(sh_get_banked_reg(reg, 0)));
 }
 
-static inline RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
+static RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
 		if (reg == SH_REG_IND_SR) {
@@ -130,7 +137,7 @@ static inline RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 		return SETG(sh_registers[reg], val);
 	}
 
-	RzILOpPure *condition = AND(VARG(SH_SR_D), VARG(SH_SR_R));
+	RzILOpPure *condition = AND(sh_il_get_status_reg_bit(SH_SR_D), sh_il_get_status_reg_bit(SH_SR_R));
 	return BRANCH(condition, SETG(sh_get_banked_reg(reg, 1), val), SETG(sh_get_banked_reg(reg, 0), DUP(val)));
 }
 
@@ -140,7 +147,7 @@ typedef struct sh_param_helper_t {
 	RzILOpEffect *post;
 } SHParamHelper;
 
-static inline RzILOpPure *sh_il_get_effective_addr(SHParam param, SHScaling scaling) {
+static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling, ut64 pc) {
 	switch (param.mode) {
 	case SH_REG_INDIRECT:
 	case SH_REG_INDIRECT_I:
@@ -155,22 +162,22 @@ static inline RzILOpPure *sh_il_get_effective_addr(SHParam param, SHScaling scal
 	case SH_GBR_INDIRECT_INDEXED:
 		return ADD(VARG("gbr"), sh_il_get_reg(SH_REG_IND_R0));
 	case SH_PC_RELATIVE_DISP: {
-		RzILOpBitVector *pc = VARG("pc");
+		RzILOpBitVector *pcbv = UN(SH_ADDR_SIZE, pc);
 		// mask lower 2 bits if sh_scaling_size[scaling] == 4
-		pc = ITE(EQ(SH_U_ADDR(sh_scaling_size[scaling]), SH_U_ADDR(4)), LOGAND(pc, SH_U_ADDR(0xfffffffc)), DUP(pc));
-		pc = ADD(pc, SH_U_ADDR(4));
-		return ADD(pc, MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
+		pcbv = ITE(EQ(SH_U_ADDR(sh_scaling_size[scaling]), SH_U_ADDR(4)), LOGAND(pcbv, SH_U_ADDR(0xfffffffc)), DUP(pcbv));
+		pcbv = ADD(pcbv, SH_U_ADDR(4));
+		return ADD(pcbv, MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 	}
 	case SH_PC_RELATIVE8: {
 		RzILOpBitVector *relative = MUL(UNSIGNED(SH_ADDR_SIZE, SN(8, param.param[0])), SH_U_ADDR(2)); // sign-extended for 8 bits and multiplied by 2
-		return ADD(ADD(VARG("pc"), SH_U_ADDR(4)), relative);
+		return ADD(ADD(UN(SH_ADDR_SIZE, pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE12: {
 		RzILOpBitVector *relative = MUL(UNSIGNED(SH_ADDR_SIZE, SN(12, param.param[0])), SH_U_ADDR(2)); // sign-extended for 12 bits and multiplied by 2
-		return ADD(ADD(VARG("pc"), SH_U_ADDR(4)), relative);
+		return ADD(ADD(UN(SH_ADDR_SIZE, pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE_REG:
-		return ADD(ADD(VARG("pc"), SH_U_ADDR(4)), sh_il_get_reg(param.param[0]));
+		return ADD(ADD(UN(SH_ADDR_SIZE, pc), SH_U_ADDR(4)), sh_il_get_reg(param.param[0]));
 	default:
 		RZ_LOG_WARN("RzIL: SuperH: No effective address for this mode: %u\n", param.mode);
 	}
@@ -178,7 +185,9 @@ static inline RzILOpPure *sh_il_get_effective_addr(SHParam param, SHScaling scal
 	return NULL;
 }
 
-static inline SHParamHelper sh_il_get_param(SHParam param, SHScaling scaling) {
+#define sh_il_get_effective_addr(x, y) sh_il_get_effective_addr_pc(x, y, pc)
+
+static SHParamHelper sh_il_get_param_pc(SHParam param, SHScaling scaling, ut64 pc) {
 	SHParamHelper ret = {
 		.pre = NULL,
 		.pure = NULL,
@@ -224,7 +233,9 @@ static inline SHParamHelper sh_il_get_param(SHParam param, SHScaling scaling) {
 	return ret;
 }
 
-static inline RzILOpEffect *sh_apply_effects(RzILOpEffect *target, RzILOpEffect *pre, RzILOpEffect *post) {
+#define sh_il_get_param(x, y) sh_il_get_param_pc(x, y, pc)
+
+static RzILOpEffect *sh_apply_effects(RzILOpEffect *target, RzILOpEffect *pre, RzILOpEffect *post) {
 	if (!target) {
 		if (pre) {
 			target = pre;
@@ -246,7 +257,7 @@ append:
 	return target;
 }
 
-static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *val, SHScaling scaling) {
+static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, SHScaling scaling, ut64 pc) {
 	RzILOpEffect *ret = NULL, *pre = NULL, *post = NULL;
 	switch (param.mode) {
 	case SH_REG_DIRECT:
@@ -281,7 +292,9 @@ static inline RzILOpEffect *sh_il_set_param(SHParam param, RZ_OWN RzILOpPure *va
 	return sh_apply_effects(ret, pre, post);
 }
 
-static inline RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+#define sh_il_set_param(x, y, z) sh_il_set_param_pc(x, y, z, pc)
+
+static RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -303,7 +316,7 @@ static inline RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzIL
 	return NON_ZERO(or);
 }
 
-static inline RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+static RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -325,7 +338,7 @@ static inline RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzI
 	return NON_ZERO(or);
 }
 
-static inline RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+static RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -341,7 +354,7 @@ static inline RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN R
 	return NON_ZERO(or);
 }
 
-static inline RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+static RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -380,7 +393,7 @@ static RzILOpEffect *sh_il_mov(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0000nnnn00101001
  */
 static RzILOpEffect *sh_il_movt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return sh_il_set_pure_param(0, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
+	return sh_il_set_pure_param(0, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)));
 }
 
 /**
@@ -442,7 +455,7 @@ static RzILOpEffect *sh_il_add(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
-	sum = ADD(sum, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
+	sum = ADD(sum, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)));
 
 	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
 	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_add_carry(DUP(sum), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
@@ -557,41 +570,41 @@ static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Implementation details at page 162 (of 512) in https://www.renesas.com/eu/en/document/mah/sh-1sh-2sh-dsp-software-manual?language=en
  */
 static RzILOpEffect *sh_il_div1(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpEffect *old_q = SETL("old_q", VARG(SH_SR_Q));
+	RzILOpEffect *old_q = SETL("old_q", sh_il_get_status_reg_bit(SH_SR_Q));
 	RzILOpEffect *q = SETG(SH_SR_Q, MSB(sh_il_get_pure_param(1)));
 	RzILOpEffect *shl = sh_il_set_pure_param(1, SHIFTL0(sh_il_get_pure_param(1), SH_U_REG(1)));
-	RzILOpEffect *ort = sh_il_set_pure_param(1, OR(sh_il_get_pure_param(1), UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T))));
+	RzILOpEffect *ort = sh_il_set_pure_param(1, OR(sh_il_get_pure_param(1), UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T))));
 	RzILOpEffect *init = SEQ4(old_q, q, shl, ort);
 
 	RzILOpEffect *tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
 	RzILOpEffect *sub = sh_il_set_pure_param(1, SUB(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 	RzILOpEffect *tmp1 = SETL("tmp1", UGT(sh_il_get_pure_param(1), VARL("tmp0")));
-	RzILOpEffect *q_bit = BRANCH(VARG(SH_SR_Q), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))), SETG(SH_SR_Q, VARL("tmp1")));
+	RzILOpEffect *q_bit = BRANCH(sh_il_get_status_reg_bit(SH_SR_Q), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))), SETG(SH_SR_Q, VARL("tmp1")));
 	RzILOpEffect *q0m0 = SEQ4(tmp0, sub, tmp1, q_bit);
 
 	tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
 	RzILOpEffect *add = sh_il_set_pure_param(1, ADD(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 	tmp1 = SETL("tmp1", ULT(sh_il_get_pure_param(1), VARL("tmp0")));
-	q_bit = BRANCH(VARG(SH_SR_Q), SETG(SH_SR_Q, VARL("tmp1")), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))));
+	q_bit = BRANCH(sh_il_get_status_reg_bit(SH_SR_Q), SETG(SH_SR_Q, VARL("tmp1")), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))));
 	RzILOpEffect *q0m1 = SEQ4(tmp0, add, tmp1, q_bit);
 
 	tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
 	add = sh_il_set_pure_param(1, ADD(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 	tmp1 = SETL("tmp1", ULT(sh_il_get_pure_param(1), VARL("tmp0")));
-	q_bit = BRANCH(VARG(SH_SR_Q), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))), SETG(SH_SR_Q, VARL("tmp1")));
+	q_bit = BRANCH(sh_il_get_status_reg_bit(SH_SR_Q), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))), SETG(SH_SR_Q, VARL("tmp1")));
 	RzILOpEffect *q1m0 = SEQ4(tmp0, add, tmp1, q_bit);
 
 	tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
 	sub = sh_il_set_pure_param(1, SUB(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 	tmp1 = SETL("tmp1", UGT(sh_il_get_pure_param(1), VARL("tmp0")));
-	q_bit = BRANCH(VARG(SH_SR_Q), SETG(SH_SR_Q, VARL("tmp1")), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))));
+	q_bit = BRANCH(sh_il_get_status_reg_bit(SH_SR_Q), SETG(SH_SR_Q, VARL("tmp1")), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))));
 	RzILOpEffect *q1m1 = SEQ4(tmp0, sub, tmp1, q_bit);
 
-	RzILOpEffect *q0 = BRANCH(VARG(SH_SR_M), q0m1, q0m0);
-	RzILOpEffect *q1 = BRANCH(VARG(SH_SR_M), q1m1, q1m0);
+	RzILOpEffect *q0 = BRANCH(sh_il_get_status_reg_bit(SH_SR_M), q0m1, q0m0);
+	RzILOpEffect *q1 = BRANCH(sh_il_get_status_reg_bit(SH_SR_M), q1m1, q1m0);
 	RzILOpEffect *q_switch = BRANCH(VARL("old_q"), q1, q0);
 
-	return SEQ3(init, q_switch, SETG(SH_SR_T, EQ(VARG(SH_SR_Q), VARG(SH_SR_M))));
+	return SEQ3(init, q_switch, SETG(SH_SR_T, EQ(sh_il_get_status_reg_bit(SH_SR_Q), sh_il_get_status_reg_bit(SH_SR_M))));
 }
 
 /**
@@ -722,7 +735,7 @@ static RzILOpEffect *sh_il_mac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 		RzILOpPure *low = UNSIGNED(48, LOGAND(add, UN(2 * SH_REG_SIZE, 0xffffffffffff)));
 		RzILOpPure *sat = SIGNED(2 * SH_REG_SIZE, low);
 
-		eff = SEQ2(mac, BRANCH(VARG(SH_SR_S), SETL("mac", sat), SETG("mac", DUP(add))));
+		eff = SEQ2(mac, BRANCH(sh_il_get_status_reg_bit(SH_SR_S), SETL("mac", sat), SETG("mac", DUP(add))));
 		RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(VARL("mac"), UN(2 * SH_REG_SIZE, 0xffffffff)));
 		RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(VARL("mac"), SH_U_REG(SH_REG_SIZE)));
 		eff = SEQ3(eff, SETG("macl", lower_bits), SETG("mach", higher_bits));
@@ -734,7 +747,7 @@ static RzILOpEffect *sh_il_mac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 		RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(add, UN(2 * SH_REG_SIZE, 0xffffffff)));
 		RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(DUP(add), SH_U_REG(SH_REG_SIZE)));
 
-		eff = SEQ2(mac, BRANCH(VARG(SH_SR_S), SETG("macl", sat_add), SEQ2(SETG("macl", lower_bits), SETG("mach", higher_bits))));
+		eff = SEQ2(mac, BRANCH(sh_il_get_status_reg_bit(SH_SR_S), SETG("macl", sat_add), SEQ2(SETG("macl", lower_bits), SETG("mach", higher_bits))));
 	}
 
 	eff = SEQ3(eff, shp_rn.post, shp_rm.post);
@@ -789,7 +802,7 @@ static RzILOpEffect *sh_il_neg(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_negc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sub = SUB(UNSIGNED(SH_REG_SIZE, 0), sh_il_get_pure_param(0));
-	sub = SUB(sub, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
+	sub = SUB(sub, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)));
 	return SEQ2(sh_il_set_pure_param(1, sub), SETG(SH_SR_T, sh_il_is_sub_borrow(sub, UNSIGNED(SH_REG_SIZE, 0), sh_il_get_pure_param(0))));
 }
 
@@ -809,7 +822,7 @@ static RzILOpEffect *sh_il_sub(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_subc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *dif = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
-	dif = SUB(dif, UNSIGNED(SH_REG_SIZE, VARG(SH_SR_T)));
+	dif = SUB(dif, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)));
 
 	RzILOpEffect *ret = sh_il_set_pure_param(1, dif);
 	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_sub_borrow(DUP(dif), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
@@ -952,7 +965,7 @@ static RzILOpEffect *sh_il_rotr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 static RzILOpEffect *sh_il_rotcl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *msb = SETL("msb", MSB(sh_il_get_pure_param(0)));
 	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
-	RzILOpPure *lsb = ITE(VARG(SH_SR_T), OR(shl, SH_U_REG(1)), AND(DUP(shl), SH_U_REG(0xfffffffe)));
+	RzILOpPure *lsb = ITE(sh_il_get_status_reg_bit(SH_SR_T), OR(shl, SH_U_REG(1)), AND(DUP(shl), SH_U_REG(0xfffffffe)));
 	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("msb"));
 	return SEQ3(msb, sh_il_set_pure_param(0, lsb), tbit);
 }
@@ -965,7 +978,7 @@ static RzILOpEffect *sh_il_rotcl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 static RzILOpEffect *sh_il_rotcr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *lsb = SETL("lsb", LSB(sh_il_get_pure_param(0)));
 	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
-	RzILOpPure *msb = ITE(VARG(SH_SR_T), OR(shr, SH_U_REG(0x80000000)), AND(DUP(shr), SH_U_REG(0x7fffffff)));
+	RzILOpPure *msb = ITE(sh_il_get_status_reg_bit(SH_SR_T), OR(shr, SH_U_REG(0x80000000)), AND(DUP(shr), SH_U_REG(0x7fffffff)));
 	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("lsb"));
 	return SEQ3(lsb, sh_il_set_pure_param(0, msb), tbit);
 }
@@ -1111,7 +1124,7 @@ static RzILOpEffect *sh_il_shlr16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_bf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *new_pc = sh_il_get_pure_param(0);
-	return BRANCH(IS_ZERO(VARG(SH_SR_T)), JMP(new_pc), NOP());
+	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), JMP(new_pc), NOP());
 }
 
 /**
@@ -1122,7 +1135,7 @@ static RzILOpEffect *sh_il_bf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_bfs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *new_pc = sh_il_get_pure_param(0);
-	return BRANCH(IS_ZERO(VARG(SH_SR_T)), JMP(new_pc), NOP());
+	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), JMP(new_pc), NOP());
 }
 
 /**
@@ -1132,7 +1145,7 @@ static RzILOpEffect *sh_il_bfs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_bt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *new_pc = sh_il_get_pure_param(0);
-	return BRANCH(IS_ZERO(VARG(SH_SR_T)), NOP(), JMP(new_pc));
+	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), NOP(), JMP(new_pc));
 }
 
 /**
@@ -1143,7 +1156,7 @@ static RzILOpEffect *sh_il_bt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_bts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *new_pc = sh_il_get_pure_param(0);
-	return BRANCH(IS_ZERO(VARG(SH_SR_T)), NOP(), JMP(new_pc));
+	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), NOP(), JMP(new_pc));
 }
 
 /**
@@ -1257,7 +1270,7 @@ static RzILOpEffect *sh_il_clrt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * PRIVILEGED (Only GBR is not privileged)
  */
 static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, VARG(SH_SR_D));
+	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, sh_il_get_status_reg_bit(SH_SR_D));
 	ut8 state = priv_bit->bits.small_u == 0 ? 0x1 : 0x0;
 	state += op->param[1].param[0] != SH_REG_IND_GBR ? 0x2 : 0x0;
 	if (state == 0x3) {
@@ -1326,7 +1339,7 @@ static RzILOpEffect *sh_il_nop(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_rte(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, VARG(SH_SR_D));
+	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, sh_il_get_status_reg_bit(SH_SR_D));
 	if (priv_bit->bits.small_u == 0) {
 		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
 		return NULL;
@@ -1359,7 +1372,7 @@ static RzILOpEffect *sh_il_sett(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * PRIVILEGED
  */
 static RzILOpEffect *sh_il_sleep(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, VARG(SH_SR_D));
+	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, sh_il_get_status_reg_bit(SH_SR_D));
 	if (priv_bit->bits.small_u == 0) {
 		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
 		return NULL;
@@ -1379,7 +1392,7 @@ static RzILOpEffect *sh_il_sleep(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * PRIVILEGED (Only GBR is not privileged)
  */
 static RzILOpEffect *sh_il_stc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, VARG(SH_SR_D));
+	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, sh_il_get_status_reg_bit(SH_SR_D));
 	ut8 state = priv_bit->bits.small_u == 0 ? 0x1 : 0x0;
 	state += op->param[0].param[0] != SH_REG_IND_GBR ? 0x2 : 0x0;
 	if (state == 0x3) { // REG != GBR and user mode
@@ -1516,6 +1529,5 @@ RZ_IPI RzAnalysisILConfig *rz_sh_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(SH_ADDR_SIZE, analysis->big_endian, SH_ADDR_SIZE);
-	// r->reg_bindings = sh_global_registers;
 	return r;
 }
