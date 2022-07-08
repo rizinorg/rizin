@@ -5,6 +5,7 @@ project('rizin', 'c',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
+    'warning_level=1',
   ]
 )
 

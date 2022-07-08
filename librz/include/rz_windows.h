@@ -69,5 +69,6 @@ typedef int socklen_t;
 #ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
 #define ENABLE_VIRTUAL_TERMINAL_INPUT 0
 #endif
+#include <VersionHelpers.h>
 #endif
 #endif
