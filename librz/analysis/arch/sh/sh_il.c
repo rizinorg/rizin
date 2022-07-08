@@ -64,52 +64,56 @@ static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
 	return sh_global_registers[reg + bank * SH_BANKED_REG_COUNT];
 }
 
+/**
+ * \brief We need this because sometimes we would want an `RzILOpBitvector` back
+ * when we ask for a status reg bit, so this returns us an RzILOpBitvector instead
+ * of the `RzILOpBool` returned when using `VARG`
+ */
 static RzILOpPure *sh_il_get_status_reg_bit(const char *bit) {
 	return ITE(VARG(bit), SH_TRUE, SH_FALSE);
 }
 
-static RzILOpPure *
-sh_il_get_status_reg() {
+static RzILOpPure *sh_il_get_status_reg() {
 	RzILOpPure *val = SH_U_REG(0);
-	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_D), val);
-	val = SHIFTL0(DUP(val), SH_U_REG(1));
-	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_R), val);
-	val = SHIFTL0(DUP(val), SH_U_REG(1));
-	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_B), val);
-	val = SHIFTL0(DUP(val), SH_U_REG(13));
-	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_F), val);
-	val = SHIFTL0(DUP(val), SH_U_REG(6));
-	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_M), val);
-	val = SHIFTL0(DUP(val), SH_U_REG(1));
-	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_Q), val);
-	val = SHIFTL0(DUP(val), SH_U_REG(4));
-	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_I), val);
-	val = SHIFTL0(DUP(val), SH_U_REG(3));
-	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_S), val);
-	val = SHIFTL0(DUP(val), SH_U_REG(1));
-	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_T), val);
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_D)), val);
+	val = SHIFTL0(val, SH_U_REG(1));
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_R)), val);
+	val = SHIFTL0(val, SH_U_REG(1));
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_B)), val);
+	val = SHIFTL0(val, SH_U_REG(13));
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_F)), val);
+	val = SHIFTL0(val, SH_U_REG(6));
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_M)), val);
+	val = SHIFTL0(val, SH_U_REG(1));
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_Q)), val);
+	val = SHIFTL0(val, SH_U_REG(4));
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_I)), val);
+	val = SHIFTL0(val, SH_U_REG(3));
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_S)), val);
+	val = SHIFTL0(val, SH_U_REG(1));
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)), val);
 
 	return val;
 }
 
 static RzILOpEffect *sh_il_set_status_reg(RzILOpPure *val) {
-	RzILOpEffect *eff = SETG(SH_SR_T, LOGAND(SH_U_REG(0x1), val));
+	RzILOpEffect *eff = SETG(SH_SR_T, NON_ZERO(LOGAND(SH_U_REG(0x1), val)));
 	val = SHIFTR0(DUP(val), SH_U_REG(1));
-	eff = SEQ2(eff, SETG(SH_SR_S, LOGAND(SH_U_REG(0x1), val)));
+	eff = SEQ2(eff, SETG(SH_SR_S, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
 	val = SHIFTR0(DUP(val), SH_U_REG(3));
-	eff = SEQ2(eff, SETG(SH_SR_I, LOGAND(SH_U_REG(0xf), val)));
+	eff = SEQ2(eff, SETG(SH_SR_I, NON_ZERO(LOGAND(SH_U_REG(0xf), val))));
 	val = SHIFTR0(DUP(val), SH_U_REG(4));
-	eff = SEQ2(eff, SETG(SH_SR_Q, LOGAND(SH_U_REG(0x1), val)));
+	eff = SEQ2(eff, SETG(SH_SR_Q, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
 	val = SHIFTR0(DUP(val), SH_U_REG(1));
-	eff = SEQ2(eff, SETG(SH_SR_M, LOGAND(SH_U_REG(0x1), val)));
+	eff = SEQ2(eff, SETG(SH_SR_M, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
 	val = SHIFTR0(DUP(val), SH_U_REG(6));
-	eff = SEQ2(eff, SETG(SH_SR_F, LOGAND(SH_U_REG(0x1), val)));
+	eff = SEQ2(eff, SETG(SH_SR_F, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
 	val = SHIFTR0(DUP(val), SH_U_REG(13));
-	eff = SEQ2(eff, SETG(SH_SR_B, LOGAND(SH_U_REG(0x1), val)));
+	eff = SEQ2(eff, SETG(SH_SR_B, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
 	val = SHIFTR0(DUP(val), SH_U_REG(1));
-	eff = SEQ2(eff, SETG(SH_SR_R, LOGAND(SH_U_REG(0x1), val)));
+	eff = SEQ2(eff, SETG(SH_SR_R, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
 	val = SHIFTR0(DUP(val), SH_U_REG(1));
-	eff = SEQ2(eff, SETG(SH_SR_D, LOGAND(SH_U_REG(0x1), val)));
+	eff = SEQ2(eff, SETG(SH_SR_D, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
 
 	return eff;
 }
@@ -162,7 +166,7 @@ static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling,
 	case SH_GBR_INDIRECT_INDEXED:
 		return ADD(VARG("gbr"), sh_il_get_reg(SH_REG_IND_R0));
 	case SH_PC_RELATIVE_DISP: {
-		RzILOpBitVector *pcbv = UN(SH_ADDR_SIZE, pc);
+		RzILOpBitVector *pcbv = SH_U_ADDR(pc);
 		// mask lower 2 bits if sh_scaling_size[scaling] == 4
 		pcbv = ITE(EQ(SH_U_ADDR(sh_scaling_size[scaling]), SH_U_ADDR(4)), LOGAND(pcbv, SH_U_ADDR(0xfffffffc)), DUP(pcbv));
 		pcbv = ADD(pcbv, SH_U_ADDR(4));
@@ -170,14 +174,14 @@ static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling,
 	}
 	case SH_PC_RELATIVE8: {
 		RzILOpBitVector *relative = MUL(UNSIGNED(SH_ADDR_SIZE, SN(8, param.param[0])), SH_U_ADDR(2)); // sign-extended for 8 bits and multiplied by 2
-		return ADD(ADD(UN(SH_ADDR_SIZE, pc), SH_U_ADDR(4)), relative);
+		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE12: {
 		RzILOpBitVector *relative = MUL(UNSIGNED(SH_ADDR_SIZE, SN(12, param.param[0])), SH_U_ADDR(2)); // sign-extended for 12 bits and multiplied by 2
-		return ADD(ADD(UN(SH_ADDR_SIZE, pc), SH_U_ADDR(4)), relative);
+		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE_REG:
-		return ADD(ADD(UN(SH_ADDR_SIZE, pc), SH_U_ADDR(4)), sh_il_get_reg(param.param[0]));
+		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), sh_il_get_reg(param.param[0]));
 	default:
 		RZ_LOG_WARN("RzIL: SuperH: No effective address for this mode: %u\n", param.mode);
 	}
@@ -313,7 +317,7 @@ static RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure 
 	RzILOpBool * or = OR(xy, ry);
 	or = OR(or, xr);
 
-	return NON_ZERO(or);
+	return or ;
 }
 
 static RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
@@ -335,7 +339,7 @@ static RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure
 	RzILOpBool * or = OR(nxy, rny);
 	or = OR(or, rnx);
 
-	return NON_ZERO(or);
+	return or ;
 }
 
 static RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
@@ -351,7 +355,7 @@ static RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPu
 	// or = nrxy | rnxny
 	RzILOpBool * or = OR(nrxy, rnxny);
 
-	return NON_ZERO(or);
+	return or ;
 }
 
 static RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
@@ -367,7 +371,7 @@ static RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpP
 	// or = nrxny | rnxy
 	RzILOpBool * or = OR(nrxny, rnxy);
 
-	return NON_ZERO(or);
+	return or ;
 }
 
 /* Instruction implementations */
