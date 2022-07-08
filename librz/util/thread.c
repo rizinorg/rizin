@@ -222,29 +222,6 @@ RZ_API RZ_OWN RzThread *rz_th_new(RZ_NONNULL RzThreadFunction function, RZ_NULLA
 }
 
 /**
- * \brief  Force-stops a thread
- *
- * \param  RzThread  The thread to stop
- */
-RZ_API void rz_th_kill(RZ_NONNULL RzThread *th) {
-	rz_return_if_fail(th);
-
-#if HAVE_PTHREAD
-	if (!pthread_kill(th->tid, 0)) {
-#ifdef __ANDROID__
-		pthread_kill(th->tid, 9);
-#else
-		pthread_cancel(th->tid);
-#endif
-	}
-#elif __WINDOWS__
-	if (WaitForSingleObject(th->tid, 0)) {
-		TerminateThread(th->tid, -1);
-	}
-#endif
-}
-
-/**
  * \brief      Awaits indefinetely for a thread to join
  *
  * \param[in]  th  The thread to await for.
@@ -274,17 +251,6 @@ RZ_API void rz_th_free(RZ_NULLABLE RzThread *th) {
 	CloseHandle(th->tid);
 #endif
 	free(th);
-}
-
-/**
- * \brief  Stops the thread and frees the RzThread structure
- *
- * \param  th  The thread to stop and free.
- */
-RZ_API void rz_th_kill_free(RZ_NONNULL RzThread *th) {
-	rz_return_if_fail(th);
-	rz_th_kill(th);
-	rz_th_free(th);
 }
 
 /**
