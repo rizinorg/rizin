@@ -81,7 +81,7 @@ RZ_API RZ_OWN RzList *rz_core_create_sections_backup(RzCore *core) {
 
 struct __rebase_struct {
 	RzCore *core;
-	RzList *old_sections;
+	RzList *sections_backup;
 	ut64 old_baddr_shift;
 	ut64 diff;
 	int type;
@@ -96,7 +96,7 @@ static bool __rebase_flags(RzFlagItem *flag, void *user) {
 	RzListIter *it;
 	RzBinSection *sec;
 	// Only rebase flags that were in the rebased sections, otherwise it will take too long
-	rz_list_foreach (reb->old_sections, it, sec) {
+	rz_list_foreach (reb->sections_backup, it, sec) {
 		if (__is_inside_section(flag->offset, sec)) {
 			rz_flag_set(reb->core->flags, flag->name, flag->offset + reb->diff, flag->size);
 			break;
@@ -120,7 +120,7 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_API void rz_core_rebase_everything(RzCore *core, RzList *old_sections, ut64 old_baddr_shift) {
+RZ_API void rz_core_rebase_everything(RzCore *core, RzList *sections_backup, ut64 old_baddr_shift) {
 	RzListIter *it, *itit, *ititit;
 	RzAnalysisFunction *fcn;
 	ut64 new_baddr_shift = core->bin->cur->o->baddr_shift;
@@ -131,7 +131,7 @@ RZ_API void rz_core_rebase_everything(RzCore *core, RzList *old_sections, ut64 o
 	}
 	// FUNCTIONS
 	rz_list_foreach (core->analysis->fcns, it, fcn) {
-		rz_list_foreach (old_sections, itit, old_section) {
+		rz_list_foreach (sections_backup, itit, old_section) {
 			if (!__is_inside_section(fcn->addr, old_section)) {
 				continue;
 			}
@@ -159,7 +159,7 @@ RZ_API void rz_core_rebase_everything(RzCore *core, RzList *old_sections, ut64 o
 	// FLAGS
 	struct __rebase_struct reb = {
 		core,
-		old_sections,
+		sections_backup,
 		old_baddr_shift,
 		diff
 	};

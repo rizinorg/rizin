@@ -4,21 +4,34 @@
 #include <string.h>
 #include <rz_core.h>
 
-static int rebase_helper(RzCore *core, ut64 oldbase, ut64 newbase) {
-	rz_debug_bp_rebase(core->dbg, oldbase, newbase);
-	rz_bin_set_baddr(core->bin, newbase);
-	rz_flag_move(core->flags, oldbase, newbase);
-	rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
-	// TODO: rz_analysis_move :??
-	// TODO: differentiate analysis by map ranges (associated with files or memory maps)
-	return 0;
-}
 
 RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) {
-	ut64 oldbase = rz_num_math(core->num, argv[1]);
-	// old base = addr
-	// new base = core->offset
-	return rebase_helper(core, oldbase, core->offset);
+    /*RzBinObject *obj = rz_bin_cur_object(core->bin);
+    if (!obj) {
+        RZ_LOG_ERROR("Cannot open current RzBinObject.\n");
+        return RZ_CMD_STATUS_ERROR;
+    }*/
+    /*
+    RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!(bf && rz_file_exists(bf->file))) {
+		RZ_LOG_ERROR("Cannot open current RzBinFile.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+    const RzList *fields = rz_bin_object_get_fields(bf->o);
+    rz_list_free(fields);
+
+    ut64 binfile_loadaddr = 0;
+    ut64 old_baddr_shift = old_base - binfile_loadaddr;
+    
+    RZ_LOG_ERROR("old base: %x, binfile loadaddr: %x, old baddr shift: %x\n", old_base, binfile_loadaddr, old_baddr_shift);
+	*/
+    
+    ut64 user_input = rz_num_math(core->num, argv[1]);
+    RzList *sections_backup = rz_core_create_sections_backup(core);
+    rz_core_rebase_everything(core, sections_backup, user_input);
+    rz_list_free(sections_backup);
+    return 0;
 }
 
 static RzCmdStatus resize_helper(RzCore *core, st64 delta) {
