@@ -68,6 +68,22 @@ RZ_API size_t rz_th_physical_core_number() {
 }
 
 /**
+ * \brief      Returns the maximum number of cores available regardless of the number of cores requested.
+ *	When set to 0, it will be the max number of physical cores.
+ *
+ * \param[in]  max_cores  The maximum number of physical cores to request
+ *
+ * \return     The actual max number of cores available
+ */
+RZ_API size_t rz_th_request_physical_cores(size_t max_cores) {
+	size_t n_cores = rz_th_physical_core_number();
+	if (!max_cores) {
+		return n_cores;
+	}
+	return RZ_MIN(n_cores, max_cores);
+}
+
+/**
  * \brief returns a new RzThreadPool structure with a pool of thread
  *
  * Returns a new RzThreadPool structure with a pool of thread limited
@@ -83,13 +99,8 @@ RZ_API RZ_OWN RzThreadPool *rz_th_pool_new(size_t max_threads) {
 		return NULL;
 	}
 
-	size_t cores = rz_th_physical_core_number();
-	if (max_threads) {
-		cores = RZ_MIN(cores, max_threads);
-	}
-
-	pool->size = cores;
-	pool->threads = RZ_NEWS0(RzThread *, cores);
+	pool->size = rz_th_request_physical_cores(max_threads);
+	pool->threads = RZ_NEWS0(RzThread *, pool->size);
 	if (!pool->threads) {
 		free(pool);
 		return NULL;
@@ -163,26 +174,6 @@ RZ_API bool rz_th_pool_wait(RZ_NONNULL RzThreadPool *pool) {
 		if (pool->threads[i]) {
 			RZ_LOG_DEBUG("thread: waiting for thread %u\n", i);
 			has_exited = has_exited && rz_th_wait(pool->threads[i]);
-		}
-	}
-	return has_exited;
-}
-
-/**
- * \brief Force-stops all threads in the thread pool
- *
- * \param  pool  The thread pool to kill
- *
- * \return true if managed to kill all threads, otherwise false
- */
-RZ_API bool rz_th_pool_kill(RZ_NONNULL RzThreadPool *pool) {
-	rz_return_val_if_fail(pool, false);
-	bool has_exited = false;
-	for (ut32 i = 0; i < pool->size; ++i) {
-		if (pool->threads[i]) {
-			RZ_LOG_DEBUG("thread: killing thread %u\n", i);
-			rz_th_kill(pool->threads[i]);
-			has_exited = true;
 		}
 	}
 	return has_exited;

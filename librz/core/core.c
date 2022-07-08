@@ -2407,6 +2407,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->print->offname = rz_core_print_offname;
 	core->print->offsize = rz_core_print_offsize;
 	core->print->cb_printf = rz_cons_printf;
+	core->visual_is_inputing = false;
+	core->visual_inputing = NULL;
 #if __WINDOWS__
 	core->print->cb_eprintf = win_eprintf;
 #endif
@@ -2668,6 +2670,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->lib, rz_lib_free);
 	RZ_FREE_CUSTOM(c->yank_buf, rz_buf_free);
 	RZ_FREE_CUSTOM(c->graph, rz_agraph_free);
+	RZ_FREE(c->visual_inputing);
 	RZ_FREE(c->asmqjmps);
 	RZ_FREE_CUSTOM(c->sdb, sdb_free);
 	RZ_FREE_CUSTOM(c->parser, rz_parse_free);

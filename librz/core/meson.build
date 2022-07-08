@@ -33,6 +33,7 @@ rz_core_sources = [
   'cparser.c',
   'cpdb.c',
   'cplugin.c',
+  'cprint.c',
   'creg.c',
   'csign.c',
   'ctypes.c',

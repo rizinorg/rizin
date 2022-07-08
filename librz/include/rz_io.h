@@ -329,7 +329,7 @@ RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, int len);
 RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, int len);
 RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, int len);
 RZ_API bool rz_io_read(RzIO *io, ut8 *buf, int len);
-RZ_API bool rz_io_write(RzIO *io, ut8 *buf, int len);
+RZ_API bool rz_io_write(RzIO *io, const ut8 *buf, int len);
 RZ_API ut64 rz_io_size(RzIO *io);
 RZ_API bool rz_io_is_listener(RzIO *io);
 RZ_API char *rz_io_system(RzIO *io, const char *cmd);

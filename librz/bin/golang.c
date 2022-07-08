@@ -225,24 +225,34 @@ static void parse_go_build_info(RzBinFile *bf, GoBuildInfo *go_info, ut64 bi_pad
 	go_info->settings = rz_str_replace(str, "path command-line-arguments ", "cmd ", 0);
 }
 
-static bool is_go_build_info(ut8 *magic) {
+static bool is_go_build_info(const ut8 *magic) {
 	return !memcmp(magic, "\xff Go buildinf:", 14);
 }
 
-static void find_go_build_info(RzBinFile *bf, GoBuildInfo *go_info, RzBinSection *section) {
-	ut8 buffer[16]; // buildinfo is 16 bytes aligned
+struct scan_go_info_s {
+	RzBinFile *bf;
+	GoBuildInfo *go_info;
+	RzBinSection *section;
+};
 
-	for (ut32 pos = 0; pos < section->size; pos += sizeof(buffer)) {
-		if ((section->size - pos) < sizeof(buffer)) {
-			break;
-		} else if (rz_buf_read_at(bf->buf, section->paddr + pos, buffer, sizeof(buffer)) != sizeof(buffer)) {
-			RZ_LOG_ERROR("goinfo: Cannot read buffer at 0x%08" PFMT64x " (phy)\n", section->paddr + pos);
-			break;
-		} else if (is_go_build_info(buffer)) {
-			parse_go_build_info(bf, go_info, section->paddr + pos);
-			return;
+static ut64 scan_go_build_info(const ut8 *buf, ut64 len, void *user) {
+	const int build_info_align = 16;
+	if (len < build_info_align) {
+		return len;
+	}
+	struct scan_go_info_s *ctx = user;
+	for (ut64 pos = 0; pos <= len - build_info_align; pos += build_info_align) {
+		if (is_go_build_info(buf + pos)) {
+			parse_go_build_info(ctx->bf, ctx->go_info, ctx->section->paddr + pos);
+			return 0;
 		}
 	}
+	return len;
+}
+
+static void find_go_build_info(RzBinFile *bf, GoBuildInfo *go_info, RzBinSection *section) {
+	struct scan_go_info_s ctx = { bf, go_info, section };
+	rz_buf_fwd_scan(bf->buf, section->paddr, section->size, scan_go_build_info, &ctx);
 }
 
 /**

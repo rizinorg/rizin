@@ -4684,6 +4684,16 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 	}
 }
 
+RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	char *str = rz_core_print_string_c_cpp(core);
+	if (!str) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(str);
+	rz_free(str);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	st64 l;

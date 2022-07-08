@@ -349,6 +349,8 @@ struct rz_core_t {
 	bool keep_asmqjmps;
 	RzCoreVisual visual;
 	// visual // TODO: move them into RzCoreVisual
+	bool visual_is_inputing; // whether the user is inputing
+	char *visual_inputing; // for filter on the go in Vv mode
 	int http_up;
 	int gdbserver_up;
 	RzCoreVisualMode printidx;
@@ -1030,6 +1032,9 @@ RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdSta
 // cmeta.c
 RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encoding, RZ_NULLABLE const char *name);
 RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
+
+// cprint.c
+RZ_API char *rz_core_print_string_c_cpp(RzCore *core);
 
 /* rtr */
 RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);
