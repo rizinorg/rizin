@@ -827,7 +827,7 @@ typedef struct rz_core_disasm_options {
 	int invbreak;
 	int cbytes;
 	RzAnalysisFunction *function; ///< Disassemble a function
-	RzPVector *vec; ///< Not print, but append as RzList<RzAnalysisDisasmText>
+	RzPVector *vec; ///< Not print, but append as RzPVector<RzAnalysisDisasmText>
 } RzCoreDisasmOptions;
 
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)

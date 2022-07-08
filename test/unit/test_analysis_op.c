@@ -138,12 +138,24 @@ bool test_rz_core_print_disasm() {
 	mu_assert_eq(rz_pvector_len(vec), 3, "rz_core_print_disasm len");
 	RzAnalysisDisasmText *t = rz_pvector_at(vec, 0);
 	mu_assert_eq(t->offset, 0, "rz_core_print_disasm offset");
+	mu_assert_eq(t->arrow, UT64_MAX, "rz_core_print_disasm arrow");
+	mu_assert_streq_free(rz_str_trim_dup(t->text),
+		"\033[32m\033[7m0x00000000\033[0m      \033[35mpush \033[36m rbp\033[0m\033[0m\033[0m",
+		"rz_core_print_disasm text");
 
 	t = rz_pvector_at(vec, 1);
 	mu_assert_eq(t->offset, 1, "rz_core_print_disasm offset");
+	mu_assert_eq(t->arrow, UT64_MAX, "rz_core_print_disasm arrow");
+	mu_assert_streq_free(rz_str_trim_dup(t->text),
+		"\033[32m0x00000001\033[0m      \033[37mmov  \033[36m rbp\033[0m,\033[36m\033[36m rsp\033[0m\033[0m\033[0m",
+		"rz_core_print_disasm text");
 
 	t = rz_pvector_at(vec, 2);
 	mu_assert_eq(t->offset, 4, "rz_core_print_disasm offset");
+	mu_assert_eq(t->arrow, UT64_MAX, "rz_core_print_disasm arrow");
+	mu_assert_streq_free(rz_str_trim_dup(t->text),
+		"\033[32m0x00000004\033[0m      \033[37mmov   dword \033[0m[\033[36mrbp \033[0m-\033[36m\033[36m \033[33m4\033[0m]\033[36m\033[0m,\033[36m\033[36m edi\033[0m\033[0m\033[0m",
+		"rz_core_print_disasm text");
 
 	rz_core_free(core);
 	rz_pvector_free(vec);
