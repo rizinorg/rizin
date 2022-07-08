@@ -1149,7 +1149,7 @@ static RzILOpEffect *sh_il_bfs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_bt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *new_pc = sh_il_get_pure_param(0);
-	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), NOP(), JMP(new_pc));
+	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
 }
 
 /**
