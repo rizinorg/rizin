@@ -3,6 +3,7 @@
 
 #include "sh_il.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
+#include "../../../asm/arch/sh/regs.h"
 
 /**
  * \file sh_il.c
@@ -47,15 +48,11 @@ static inline bool sh_banked_reg(ut16 reg) {
  * Registers available as global variables in the IL
  */
 static const char *sh_global_registers[] = {
-	"r0b0", "r1b0", "r2b0", "r3b0", "r4b0", "r5b0", "r6b0", "r7b0", ///< bank 0 registers
-	"r0b1", "r1b1", "r2b1", "r3b1", "r4b1", "r5b1", "r6b1", "r7b1", ///< bank 1 registers
+	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", ///< bank 0 registers (user mode)
+	"r0b", "r1b", "r2b", "r3b", "r4b", "r5b", "r6b", "r7b", ///< bank 1 registers (privileged mode)
 	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "pc",
 	"gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl",
-	"pr", "fpul", "fpscr",
-	"fr0", "fr1", "fr2", "fr3", "fr4", "fr5", "fr6", "fr7",
-	"fr8", "fr9", "fr10", "fr11", "fr12", "fr13", "fr14", "fr15",
-	"xf0", "xf1", "xf2", "xf3", "xf4", "xf5", "xf6", "xf7",
-	"xf8", "xf9", "xf10", "xf11", "xf12", "xf13", "xf14", "xf15"
+	"pr"
 };
 
 static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
@@ -1248,7 +1245,6 @@ static RzILOpEffect *sh_il_clrt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, IL_FALSE);
 }
 
-// TODO: This needs to be fixed for banked register LDC
 /**
  * LDC  Rm, REG
  * REG := SR/GBR/VBR/SSR/SPC/DBR/Rn_BANK
@@ -1269,15 +1265,15 @@ static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 		return NULL;
 	}
 	if (op->scaling == SH_SCALING_INVALID) {
-		if (state & 0x2) {
-			return BRANCH(VARG(SH_SR_D), sh_il_set_pure_param(1, sh_il_get_pure_param(0)), NOP());
+		if (sh_valid_gpr(op->param[1].param[0])) {
+			return SETG(sh_get_banked_reg(op->param[1].param[0], 1), sh_il_get_pure_param(0));
 		} else {
 			return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 		}
 	} else if (op->scaling == SH_SCALING_L) {
 		SHParamHelper rm = sh_il_get_param(op->param[0], op->scaling);
-		if (state & 0x2) {
-			return BRANCH(VARG(SH_SR_D), SEQ2(sh_il_set_pure_param(1, rm.pure), rm.post), NOP());
+		if (sh_valid_gpr(op->param[1].param[0])) {
+			return SEQ2(SETG(sh_get_banked_reg(op->param[1].param[0], 1), rm.pure), rm.post);
 		} else {
 			return SEQ2(sh_il_set_pure_param(1, rm.pure), rm.post);
 		}
@@ -1371,7 +1367,6 @@ static RzILOpEffect *sh_il_sleep(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return NOP();
 }
 
-// TODO: This needs to be fixed for banked register STC
 /**
  * STC  REG, Rn
  * REG := SR/GBR/VBR/SSR/SPC/SGR/DBR/Rn_BANK
@@ -1387,23 +1382,14 @@ static RzILOpEffect *sh_il_stc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, VARG(SH_SR_D));
 	ut8 state = priv_bit->bits.small_u == 0 ? 0x1 : 0x0;
 	state += op->param[0].param[0] != SH_REG_IND_GBR ? 0x2 : 0x0;
-	if (state == 0x3) {
+	if (state == 0x3) { // REG != GBR and user mode
 		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
 		return NULL;
 	}
-	if (op->scaling == SH_SCALING_INVALID) {
-		if (state & 0x2) {
-			return BRANCH(VARG(SH_SR_D), sh_il_set_pure_param(1, sh_il_get_pure_param(0)), NOP());
-		} else {
-			return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
-		}
-	} else if (op->scaling == SH_SCALING_L) {
-		RzILOpEffect *set = sh_il_set_pure_param(1, sh_il_get_pure_param(0));
-		if (state & 0x2) {
-			return BRANCH(VARG(SH_SR_D), set, NOP());
-		} else {
-			return set;
-		}
+	if (sh_valid_gpr(op->param[0].param[0])) { // REG = Rn_BANK
+		return sh_il_set_pure_param(1, VARG(sh_get_banked_reg(op->param[0].param[0], 1)));
+	} else {
+		return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 	}
 	return NOP();
 }
@@ -1418,12 +1404,7 @@ static RzILOpEffect *sh_il_stc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn + 4 -> Rn ; REG -> (Rn)
  */
 static RzILOpEffect *sh_il_sts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	if (op->scaling == SH_SCALING_INVALID) {
-		return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
-	} else if (op->scaling == SH_SCALING_L) {
-		return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
-	}
-	return NOP();
+	return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 }
 
 static RzILOpEffect *sh_il_unimpl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
@@ -1518,7 +1499,7 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	[SH_OP_UNIMPL] = sh_il_unimpl
 };
 
-RZ_IPI bool rz_sh_il_opcode(RzAnalysis *analysis, RzAnalysisOp *aop, ut64 pc, SHOp *op) {
+RZ_IPI bool rz_sh_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL SHOp *op) {
 	rz_return_val_if_fail(analysis && aop && op, false);
 	if (op->mnemonic >= SH_OP_SIZE) {
 		RZ_LOG_ERROR("RzIL: SuperH: out of bounds op\n");
@@ -1535,6 +1516,6 @@ RZ_IPI RzAnalysisILConfig *rz_sh_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(SH_ADDR_SIZE, analysis->big_endian, SH_ADDR_SIZE);
-	r->reg_bindings = sh_global_registers;
+	// r->reg_bindings = sh_global_registers;
 	return r;
 }
