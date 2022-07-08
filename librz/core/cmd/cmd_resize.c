@@ -6,30 +6,53 @@
 
 
 RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) {
-    /*RzBinObject *obj = rz_bin_cur_object(core->bin);
-    if (!obj) {
-        RZ_LOG_ERROR("Cannot open current RzBinObject.\n");
-        return RZ_CMD_STATUS_ERROR;
-    }*/
-    /*
+    //get current object
     RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!(bf && rz_file_exists(bf->file))) {
 		RZ_LOG_ERROR("Cannot open current RzBinFile.\n");
-		return RZ_CMD_STATUS_ERROR;
+		return 1; //TODO: check correct value
 	}
 
+    //retrieve image base
     const RzList *fields = rz_bin_object_get_fields(bf->o);
-    rz_list_free(fields);
+    if (!fields) {
+		RZ_LOG_ERROR("Cannot retrieve executable fields.\n");
+        return 1; //TODO etc
+    }
 
-    ut64 binfile_loadaddr = 0;
-    ut64 old_baddr_shift = old_base - binfile_loadaddr;
+    bool found_static_base = false;
+    ut64 static_base;
+    RzListIter *iter;
+	RzBinField *field;
+    rz_list_foreach (fields, iter, field) {
+        if (strcmp(field->name,"ImageBase") == 0) {
+            found_static_base = true;
+            static_base = (int)strtol(field->comment,NULL,16);
+        }
+    }
+    if (!found_static_base) {
+		RZ_LOG_ERROR("Cannot find image base.\n");
+        return 1; //TODO etc
+    }
     
-    RZ_LOG_ERROR("old base: %x, binfile loadaddr: %x, old baddr shift: %x\n", old_base, binfile_loadaddr, old_baddr_shift);
-	*/
-    
-    ut64 user_input = rz_num_math(core->num, argv[1]);
+    // compute old vs. static base delta
+    ut64 old_base = rz_num_math(core->num, argv[1]);
+    ut64 static_old_delta = old_base - static_base;
+   
+    //perform actual rebase 
     RzList *sections_backup = rz_core_create_sections_backup(core);
-    rz_core_rebase_everything(core, sections_backup, user_input);
+    if (!sections_backup) {
+		RZ_LOG_ERROR("Cannot create sections backup.\n");
+        return 1; //TODO etc
+    }
+
+    if (argc > 2) {
+        ut64 new_base = rz_num_math(core->num, argv[2]);
+        ut64 static_new_delta = new_base - static_base;
+        rz_core_rebase_everything(core, sections_backup, false, static_old_delta, static_new_delta);
+    } else {
+        rz_core_rebase_everything(core, sections_backup, true, static_old_delta, 0);
+    }
     rz_list_free(sections_backup);
     return 0;
 }
