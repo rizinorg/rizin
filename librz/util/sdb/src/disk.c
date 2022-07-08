@@ -95,7 +95,7 @@ RZ_API bool sdb_disk_finish(Sdb *s) {
 	wchar_t *dir_ = rz_utf8_to_utf16(s->dir);
 
 	if (!MoveFileExW(ndump_, dir_, MOVEFILE_REPLACE_EXISTING)) {
-		rz_sys_perror();
+		rz_sys_perror("MoveFileExW SDB file to finale location");
 	}
 	free(ndump_);
 	free(dir_);
