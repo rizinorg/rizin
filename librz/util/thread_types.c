@@ -4,6 +4,11 @@
 #include <rz_th.h>
 #include <rz_util.h>
 
+/** \file thread_types.c
+ * The native types should actually be real atomic types but these should be
+ * falling back in similar structs in case of insupported atomic types.
+ */
+
 struct rz_atomic_bool_t {
 	bool value; ///< The value to get/set safely
 	RzThreadLock *lock; ///< The lock related to the single value
@@ -19,7 +24,6 @@ struct rz_atomic_bool_t {
 RZ_API RZ_OWN RzAtomicBool *rz_atomic_bool_new(bool value) {
 	RzAtomicBool *tbool = RZ_NEW0(RzAtomicBool);
 	if (!tbool) {
-		RZ_LOG_ERROR("rz_atomic_bool: Cannot allocate RzAtomicBool structure\n");
 		return NULL;
 	}
 	tbool->lock = rz_th_lock_new(false);
