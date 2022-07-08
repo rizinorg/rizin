@@ -120,23 +120,25 @@ static SHParam sh_op_get_param_movl(ut16 opcode, bool m) {
  */
 RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
 	for (ut16 i = 0; i < OPCODE_NUM; i++) {
-		if ((opcode | sh_op_lookup[i].mask) == sh_op_lookup[i].opcode) {
-			SHOpRaw raw = sh_op_lookup[i];
-			SHOp *op = RZ_NEW(SHOp);
-			op->opcode = opcode;
-			op->mnemonic = raw.mnemonic;
-			op->scaling = raw.scaling;
-			op->str_mnem = raw.str_mnem;
-			// check for "weird" mov.l
-			if (raw.opcode == MOVL) {
-				op->param[0] = sh_op_get_param_movl(opcode, true);
-				op->param[1] = sh_op_get_param_movl(opcode, false);
-				return op;
-			}
-			op->param[0] = sh_op_get_param(opcode, raw.param_builder[0]);
-			op->param[1] = sh_op_get_param(opcode, raw.param_builder[1]);
+		if ((opcode | sh_op_lookup[i].mask) != sh_op_lookup[i].opcode) {
+			continue;
+		}
+
+		SHOpRaw raw = sh_op_lookup[i];
+		SHOp *op = RZ_NEW(SHOp);
+		op->opcode = opcode;
+		op->mnemonic = raw.mnemonic;
+		op->scaling = raw.scaling;
+		op->str_mnem = raw.str_mnem;
+		// check for "weird" mov.l
+		if (raw.opcode == MOVL) {
+			op->param[0] = sh_op_get_param_movl(opcode, true);
+			op->param[1] = sh_op_get_param_movl(opcode, false);
 			return op;
 		}
+		op->param[0] = sh_op_get_param(opcode, raw.param_builder[0]);
+		op->param[1] = sh_op_get_param(opcode, raw.param_builder[1]);
+		return op;
 	}
 
 	RZ_LOG_DEBUG("SuperH: Invalid opcode encountered by disassembler: 0x%06x\n", opcode);
