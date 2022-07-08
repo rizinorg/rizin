@@ -1097,7 +1097,13 @@ static int sh_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *d
 
 	op_MSB = analysis->big_endian ? data[0] : data[1];
 	op_LSB = analysis->big_endian ? data[1] : data[0];
-	ret = first_nibble_decode[(op_MSB >> 4) & 0x0F](analysis, op, (ut16)(op_MSB << 8 | op_LSB));
+	ut16 opcode = (ut16)op_MSB << 8 | op_LSB;
+	ret = first_nibble_decode[(op_MSB >> 4) & 0x0F](analysis, op, opcode);
+
+	// RzIL uplifting
+	SHOp *ilop = sh_disassembler(opcode);
+	rz_sh_il_opcode(analysis, op, addr, ilop);
+	RZ_FREE(ilop);
 
 	return ret;
 }
@@ -1181,7 +1187,9 @@ RzAnalysisPlugin rz_analysis_plugin_sh = {
 	.bits = 32,
 	.op = &sh_op,
 	.get_reg_profile = &sh_get_reg_profile,
-	.esil = true
+	.esil = true,
+	.il_config = rz_sh_il_config
+
 };
 
 #ifndef RZ_PLUGIN_INCORE
