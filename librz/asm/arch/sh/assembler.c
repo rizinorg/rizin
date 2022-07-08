@@ -241,6 +241,7 @@ static SHAddrMode sh_op_get_addr_mode(const char *param) {
 			}
 		}
 		// unreachable
+		rz_warn_if_reached();
 		break;
 	default:
 		/* If none of the above checks pass, we can assume it is a number
@@ -256,6 +257,7 @@ static SHAddrMode sh_op_get_addr_mode(const char *param) {
 	}
 
 	// unreachable
+	rz_warn_if_reached();
 	return SH_ADDR_INVALID;
 }
 
@@ -339,37 +341,39 @@ RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE boo
 	}
 
 	for (ut16 i = 0; i < OPCODE_NUM; i++) {
-		if (sh_op_compare(sh_op_lookup[i], mnem, sham)) {
-			SHOpRaw raw = sh_op_lookup[i];
-			opcode = raw.opcode ^ raw.mask;
-			/* Now opcode only has the bits corresponding to the instruction
-			The bits corresponding to the operands are supposed to be calculated */
-
-			// check for "weird" MOVL
-			if (raw.opcode == MOVL) {
-				char *reg_direct = rz_list_pop_head(tokens);
-				char *reg_disp_indirect = rz_list_pop_head(tokens);
-
-				opcode |= sh_op_movl_param_bits(reg_direct, reg_disp_indirect);
-
-				free(reg_direct);
-				free(reg_disp_indirect);
-				goto return_opcode;
-			}
-
-			RzListIter *itr;
-			char *param;
-			j = 0;
-			rz_list_foreach (tokens, itr, param) {
-				opcode |= sh_op_param_bits(raw.param_builder[j], param, raw.scaling, pc);
-				j++;
-			}
-
-		return_opcode:
-			rz_list_free(tokens);
-			free(mnem);
-			return opcode;
+		if (!sh_op_compare(sh_op_lookup[i], mnem, sham)) {
+			continue;
 		}
+
+		SHOpRaw raw = sh_op_lookup[i];
+		opcode = raw.opcode ^ raw.mask;
+		/* Now opcode only has the bits corresponding to the instruction
+		The bits corresponding to the operands are supposed to be calculated */
+
+		// check for "weird" MOVL
+		if (raw.opcode == MOVL) {
+			char *reg_direct = rz_list_pop_head(tokens);
+			char *reg_disp_indirect = rz_list_pop_head(tokens);
+
+			opcode |= sh_op_movl_param_bits(reg_direct, reg_disp_indirect);
+
+			free(reg_direct);
+			free(reg_disp_indirect);
+			goto return_opcode;
+		}
+
+		RzListIter *itr;
+		char *param;
+		j = 0;
+		rz_list_foreach (tokens, itr, param) {
+			opcode |= sh_op_param_bits(raw.param_builder[j], param, raw.scaling, pc);
+			j++;
+		}
+
+	return_opcode:
+		rz_list_free(tokens);
+		free(mnem);
+		return opcode;
 	}
 
 	RZ_LOG_ERROR("SuperH: Failed to assemble: \"%s\"\n", buffer);
