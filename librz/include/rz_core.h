@@ -439,7 +439,7 @@ typedef struct rz_bin_sym_names_t {
  */
 typedef struct rz_analysis_disasm_text_t {
 	ut64 offset;
-	ut64 arrow;
+	ut64 arrow; ///< In general, arrow = UT64_MAX, if there is a jump(jmp, ...), arrow = dst offset
 	char *text;
 } RzAnalysisDisasmText;
 
