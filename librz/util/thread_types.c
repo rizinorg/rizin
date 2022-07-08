@@ -4,7 +4,7 @@
 #include <rz_th.h>
 #include <rz_util.h>
 
-struct rz_th_bool_t {
+struct rz_atomic_bool_t {
 	bool value; ///< The value to get/set safely
 	RzThreadLock *lock; ///< The lock related to the single value
 };
@@ -16,10 +16,10 @@ struct rz_th_bool_t {
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzThreadBool *rz_th_bool_new(bool value) {
-	RzThreadBool *tbool = RZ_NEW0(RzThreadBool);
+RZ_API RZ_OWN RzAtomicBool *rz_atomic_bool_new(bool value) {
+	RzAtomicBool *tbool = RZ_NEW0(RzAtomicBool);
 	if (!tbool) {
-		RZ_LOG_ERROR("rz_th_bool: Cannot allocate RzThreadBool structure\n");
+		RZ_LOG_ERROR("rz_atomic_bool: Cannot allocate RzAtomicBool structure\n");
 		return NULL;
 	}
 	tbool->lock = rz_th_lock_new(false);
@@ -28,11 +28,11 @@ RZ_API RZ_OWN RzThreadBool *rz_th_bool_new(bool value) {
 }
 
 /**
- * \brief  Frees a RzThreadBool structure
+ * \brief  Frees a RzAtomicBool structure
  *
- * \param  tbool  The RzThreadBool structure to free
+ * \param  tbool  The RzAtomicBool structure to free
  */
-RZ_API void rz_th_bool_free(RZ_NULLABLE RzThreadBool *tbool) {
+RZ_API void rz_atomic_bool_free(RZ_NULLABLE RzAtomicBool *tbool) {
 	if (!tbool) {
 		return;
 	}
@@ -41,13 +41,13 @@ RZ_API void rz_th_bool_free(RZ_NULLABLE RzThreadBool *tbool) {
 }
 
 /**
- * \brief      Gets the current value hold by the RzThreadBool structure
+ * \brief      Gets the current value hold by the RzAtomicBool structure
  *
- * \param[in]  tbool  The RzThreadBool to safely access
+ * \param[in]  tbool  The RzAtomicBool to safely access
  *
  * \return     Returns a copy of the stored value
  */
-RZ_API bool rz_th_bool_get(RZ_NONNULL RzThreadBool *tbool) {
+RZ_API bool rz_atomic_bool_get(RZ_NONNULL RzAtomicBool *tbool) {
 	rz_return_val_if_fail(tbool, false);
 	rz_th_lock_enter(tbool->lock);
 	bool value = tbool->value;
@@ -56,12 +56,12 @@ RZ_API bool rz_th_bool_get(RZ_NONNULL RzThreadBool *tbool) {
 }
 
 /**
- * \brief      Sets the value int the RzThreadBool structure
+ * \brief      Sets the value int the RzAtomicBool structure
  *
- * \param      tbool  The RzThreadBool to safely modify
+ * \param      tbool  The RzAtomicBool to safely modify
  * \param[in]  value  The new value to set
  */
-RZ_API void rz_th_bool_set(RZ_NONNULL RzThreadBool *tbool, bool value) {
+RZ_API void rz_atomic_bool_set(RZ_NONNULL RzAtomicBool *tbool, bool value) {
 	rz_return_if_fail(tbool);
 	rz_th_lock_enter(tbool->lock);
 	tbool->value = value;

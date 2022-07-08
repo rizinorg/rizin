@@ -46,14 +46,14 @@ typedef struct {
 typedef struct {
 	RzCore *core;
 	char *input;
-	RzThreadBool *loop;
+	RzAtomicBool *loop;
 } RapThread;
 
 RZ_API void rz_core_wait(RzCore *core) {
 	rz_cons_singleton()->context->breaked = true;
 	if (rapthread) {
 		RapThread *rt = rz_th_get_user(rapthread);
-		rz_th_bool_set(rt->loop, false);
+		rz_atomic_bool_set(rt->loop, false);
 		rz_th_wait(rapthread);
 	}
 }
@@ -841,7 +841,7 @@ static void *rz_core_rtr_rap_thread(RapThread *rt) {
 	}
 	bool loop = true;
 	while (loop) {
-		loop = rz_th_bool_get(rt->loop) &&
+		loop = rz_atomic_bool_get(rt->loop) &&
 			rz_core_rtr_rap_run(rt->core, rt->input);
 	}
 	return NULL;
@@ -879,7 +879,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 			}
 			rap_th->core = core;
 			rap_th->input = strdup(input + 1);
-			rap_th->loop = rz_th_bool_new(true);
+			rap_th->loop = rz_atomic_bool_new(true);
 
 			rapthread = rz_th_new((RzThreadFunction)rz_core_rtr_rap_thread, rap_th);
 			if (!rap_th) {

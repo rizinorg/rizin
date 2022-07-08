@@ -25,8 +25,9 @@ typedef struct rz_th_cond_t RzThreadCond;
 typedef struct rz_th_t RzThread;
 typedef struct rz_th_pool_t RzThreadPool;
 typedef struct rz_th_queue_t RzThreadQueue;
-typedef struct rz_th_bool_t RzThreadBool;
 typedef void *(*RzThreadFunction)(void *user);
+
+typedef struct rz_atomic_bool_t RzAtomicBool;
 
 #ifdef RZ_API
 RZ_API RZ_OWN RzThread *rz_th_new(RZ_NONNULL RzThreadFunction function, RZ_NULLABLE void *user);
@@ -74,10 +75,10 @@ RZ_API RZ_OWN void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool t
 RZ_API bool rz_th_queue_is_empty(RZ_NULLABLE RzThreadQueue *queue);
 RZ_API bool rz_th_queue_is_full(RZ_NULLABLE RzThreadQueue *queue);
 
-RZ_API RZ_OWN RzThreadBool *rz_th_bool_new(bool value);
-RZ_API void rz_th_bool_free(RZ_NULLABLE RzThreadBool *tbool);
-RZ_API bool rz_th_bool_get(RZ_NONNULL RzThreadBool *tbool);
-RZ_API void rz_th_bool_set(RZ_NONNULL RzThreadBool *tbool, bool value);
+RZ_API RZ_OWN RzAtomicBool *rz_atomic_bool_new(bool value);
+RZ_API void rz_atomic_bool_free(RZ_NULLABLE RzAtomicBool *tbool);
+RZ_API bool rz_atomic_bool_get(RZ_NONNULL RzAtomicBool *tbool);
+RZ_API void rz_atomic_bool_set(RZ_NONNULL RzAtomicBool *tbool, bool value);
 
 #endif
 
