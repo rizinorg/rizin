@@ -173,11 +173,13 @@ static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling,
 		return ADD(pcbv, MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 	}
 	case SH_PC_RELATIVE8: {
-		RzILOpBitVector *relative = MUL(UNSIGNED(SH_ADDR_SIZE, SN(8, param.param[0])), SH_U_ADDR(2)); // sign-extended for 8 bits and multiplied by 2
+		// sign-extended for 8 bits and shifted left by 1 (i.e. multiplied by 2)
+		RzILOpBitVector *relative = SIGNED(SH_ADDR_SIZE, SHIFTL0(SN(8, param.param[0]), U8(1)));
 		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE12: {
-		RzILOpBitVector *relative = MUL(UNSIGNED(SH_ADDR_SIZE, SN(12, param.param[0])), SH_U_ADDR(2)); // sign-extended for 12 bits and multiplied by 2
+		// sign-extended for 12 bits and shifted left by 1 (i.e. multiplied by 2)
+		RzILOpBitVector *relative = SIGNED(SH_ADDR_SIZE, SHIFTL0(SN(12, param.param[0]), U8(1)));
 		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE_REG:
