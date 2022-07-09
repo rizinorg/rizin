@@ -167,8 +167,8 @@ static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling,
 		return ADD(VARG("gbr"), sh_il_get_reg(SH_REG_IND_R0));
 	case SH_PC_RELATIVE_DISP: {
 		RzILOpBitVector *pcbv = SH_U_ADDR(pc);
-		// mask lower 2 bits if sh_scaling_size[scaling] == 4
-		if (sh_scaling_size[scaling] == 4) {
+		// mask lower 2 bits if long word
+		if (scaling == SH_SCALING_L) {
 			pcbv = LOGAND(pcbv, SH_U_ADDR(0xfffffffc));
 		}
 		pcbv = ADD(pcbv, SH_U_ADDR(4));
@@ -206,27 +206,27 @@ static SHParamHelper sh_il_get_param_pc(SHParam param, SHScaling scaling, ut64 p
 		ret.pure = UNSIGNED(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_reg(param.param[0]));
 		break;
 	case SH_REG_INDIRECT:
-		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
+		ret.pure = sh_il_get_effective_addr(param, scaling);
 		break;
 	case SH_REG_INDIRECT_I:
-		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
+		ret.pure = sh_il_get_effective_addr(param, scaling);
 		ret.post = sh_il_set_reg(param.param[0], ADD(sh_il_get_reg(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 		break;
 	case SH_REG_INDIRECT_D:
 		ret.pre = sh_il_set_reg(param.param[0], SUB(sh_il_get_reg(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
-		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
+		ret.pure = sh_il_get_effective_addr(param, scaling);
 		break;
 	case SH_REG_INDIRECT_DISP:
 	case SH_REG_INDIRECT_INDEXED:
 	case SH_GBR_INDIRECT_DISP:
 	case SH_GBR_INDIRECT_INDEXED:
-		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, sh_scaling_size[scaling]));
+		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, scaling));
 		break;
 	case SH_PC_RELATIVE_DISP:
 	case SH_PC_RELATIVE8:
 	case SH_PC_RELATIVE12:
 	case SH_PC_RELATIVE_REG:
-		ret.pure = sh_il_get_effective_addr(param, sh_scaling_size[scaling]);
+		ret.pure = sh_il_get_effective_addr(param, scaling);
 		break;
 	case SH_IMM_U:
 		ret.pure = SH_U_REG(param.param[0]);
@@ -291,7 +291,7 @@ static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, S
 	}
 
 	if (!ret) {
-		SHParamHelper ret_h = sh_il_get_param(param, sh_scaling_size[scaling]);
+		SHParamHelper ret_h = sh_il_get_param(param, scaling);
 		ret = STOREW(ret_h.pure, val);
 		pre = ret_h.pre;
 		post = ret_h.post;
