@@ -154,6 +154,23 @@ cdata.set('HAVE_MF_BT4', 1)
 cdata.set('HAVE_MF_HC3', 1)
 cdata.set('HAVE_MF_HC4', 1)
 
+has_sysconf_cpu = cc.compiles('''#include <unistd.h>
+int main(int argc, char *argv[]) { return sysconf(_SC_NPROCESSORS_ONLN); }''')
+if not has_sysconf_cpu
+  has_sysconf_cpu = cc.compiles('''#include <unistd.h>
+int main(int argc, char *argv[]) { return sysconf(_SC_NPROC_ONLN); }''')
+endif
+cdata.set('TUKLIB_CPUCORES_SYSCONF', has_sysconf_cpu)
+
+has_stdc_hdr = cc.compiles('''#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <float.h>
+int main(int argc, char **argv) { return 0; }
+''')
+cdata.set('STDC_HEADERS', has_stdc_hdr)
+cdata.set('WORDS_BIGENDIAN', host_machine.endian() == 'big')
+
 configure_file(input : 'config.h.meson',
   output : 'config.h',
   configuration : cdata
