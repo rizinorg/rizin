@@ -1,6 +1,11 @@
 adE "mov 0x27, r7" e727 0x0 (branch (&& (var sr_d) (var sr_r)) (set r7b (bv 32 0x27)) (set r7 (bv 32 0x27)))
-adE "mov.w @(0x1fe,pc), r9" 99ff 0x66 (set r9 (+ (+ (bv 32 0x66) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x2))))
-adE "mov.l @(0x3fc,pc), r6" d6ff 0x98 (branch (&& (var sr_d) (var sr_r)) (set r6b (+ (+ (& (bv 32 0x98) (bv 32 0xfffffffc)) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x4)))) (set r6 (+ (+ (& (bv 32 0x98) (bv 32 0xfffffffc)) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x4)))))
+adE "mov.w @(0x1fe,pc), r9" 99ff 0x66 (set r9 (cast 32 (msb (loadw 0 16 (+ (+ (bv 32 0x66) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x2))))) (loadw 0 16 (+ (+ (bv 32 0x66) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x2))))))
+adE "mov.l @(0x3fc,pc), r6" d6ff 0x98 (branch (&& (var sr_d) (var sr_r)) (set r6b (loadw 0 32 (+ (+ (& (bv 32 0x98) (bv 32 0xfffffffc)) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x4))))) (set r6 (loadw 0 32 (+ (+ (& (bv 32 0x98) (bv 32 0xfffffffc)) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x4))))))
+adE "mov r1, r11" 6b13 0x0 (set r11 (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1)))
+adE "mov.b r10, @r12" 2ca0 0x108 (storew 0 (var r12) (cast 8 false (var r10)))
+adE "mov.w r1, @r15" 2f11 0x108 (storew 0 (var r15) (cast 16 false (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1))))
+adE "mov.l r14, @r2" 22e2 0x108 (storew 0 (ite (&& (var sr_d) (var sr_r)) (var r2b) (var r2)) (var r14))
+adE "mov.b @r1, r2" 6210 0x108 (branch (&& (var sr_d) (var sr_r)) (set r2b (cast 32 (msb (loadw 0 8 (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1)))) (loadw 0 8 (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1))))) (set r2 (cast 32 (msb (loadw 0 8 (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1)))) (loadw 0 8 (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1))))))
 adE "bt 0x00000004" 0x8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0x0) (bv 8 0x1) false)) (<< (bv 8 0x0) (bv 8 0x1) false)))) nop)
 adE "bt 0xd3adb008" 89fe 0xd3adb008 (branch (var sr_t) (jmp (+ (+ (bv 32 0xd3adb008) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0xfe) (bv 8 0x1) false)) (<< (bv 8 0xfe) (bv 8 0x1) false)))) nop)
 adE "bra 0x00000004"	0xa000
