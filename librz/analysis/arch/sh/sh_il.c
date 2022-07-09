@@ -128,7 +128,7 @@ static RzILOpPure *sh_il_get_reg(ut16 reg) {
 	}
 
 	// check if both SR.MD = 1 and SR.RB = 1
-	RzILOpPure *condition = AND(sh_il_get_status_reg_bit(SH_SR_D), sh_il_get_status_reg_bit(SH_SR_R));
+	RzILOpPure *condition = AND(VARG(SH_SR_D), VARG(SH_SR_R));
 	return ITE(condition, VARG(sh_get_banked_reg(reg, 1)), VARG(sh_get_banked_reg(reg, 0)));
 }
 
@@ -141,7 +141,7 @@ static RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 		return SETG(sh_registers[reg], val);
 	}
 
-	RzILOpPure *condition = AND(sh_il_get_status_reg_bit(SH_SR_D), sh_il_get_status_reg_bit(SH_SR_R));
+	RzILOpPure *condition = AND(VARG(SH_SR_D), VARG(SH_SR_R));
 	return BRANCH(condition, SETG(sh_get_banked_reg(reg, 1), val), SETG(sh_get_banked_reg(reg, 0), DUP(val)));
 }
 
@@ -168,7 +168,9 @@ static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling,
 	case SH_PC_RELATIVE_DISP: {
 		RzILOpBitVector *pcbv = SH_U_ADDR(pc);
 		// mask lower 2 bits if sh_scaling_size[scaling] == 4
-		pcbv = ITE(EQ(SH_U_ADDR(sh_scaling_size[scaling]), SH_U_ADDR(4)), LOGAND(pcbv, SH_U_ADDR(0xfffffffc)), DUP(pcbv));
+		if (sh_scaling_size[scaling] == 4) {
+			pcbv = LOGAND(pcbv, SH_U_ADDR(0xfffffffc));
+		}
 		pcbv = ADD(pcbv, SH_U_ADDR(4));
 		return ADD(pcbv, MUL(SH_U_ADDR(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
 	}
@@ -267,7 +269,7 @@ static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, S
 	RzILOpEffect *ret = NULL, *pre = NULL, *post = NULL;
 	switch (param.mode) {
 	case SH_REG_DIRECT:
-		ret = sh_il_set_reg(param.param[0], UNSIGNED(SH_REG_SIZE, val));
+		ret = sh_il_set_reg(param.param[0], val);
 		break;
 	case SH_REG_INDIRECT:
 	case SH_REG_INDIRECT_I:

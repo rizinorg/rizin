@@ -1,5 +1,7 @@
-adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0x0) (bv 8 0x1) false)) (<< (bv 8 0x0) (bv 8 0x1) false)))) nop)
-adE "bt 0x00000000"	0x89fe
+adE "mov 0x27, r7" e727 0x0 (branch (&& (var sr_d) (var sr_r)) (set r7b (bv 32 0x27)) (set r7 (bv 32 0x27)))
+adE "mov.w @(0x1fe,pc), r9" 99ff 0x66 (set r9 (+ (+ (bv 32 0x66) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x2))))
+adE "bt 0x00000004" 0x8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0x0) (bv 8 0x1) false)) (<< (bv 8 0x0) (bv 8 0x1) false)))) nop)
+adE "bt 0xd3adb008" 89fe 0xd3adb008 (branch (var sr_t) (jmp (+ (+ (bv 32 0xd3adb008) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0xfe) (bv 8 0x1) false)) (<< (bv 8 0xfe) (bv 8 0x1) false)))) nop)
 adE "bra 0x00000004"	0xa000
 adE "bra 0x00000006"	0xa001
 adE "bsr 0x00000004"	0xb000
