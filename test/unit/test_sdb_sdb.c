@@ -51,7 +51,7 @@ bool test_sdb_list_delete(void) {
 bool test_sdb_list_big(void) {
 	Sdb *db = sdb_new0();
 	int i;
-	for (i = 0; i < 500000; i++) {
+	for (i = 0; i < 5000; i++) {
 		sdb_num_set(db, sdb_fmt("%d", i), i + 1, 0);
 	}
 	SdbList *list = sdb_foreach_list(db, true);
@@ -98,7 +98,7 @@ bool test_sdb_delete_alot(void) {
 
 bool test_sdb_milset(void) {
 	int i = 0;
-	const int MAX = 19999999;
+	const int MAX = 1999;
 	Sdb *s = sdb_new0();
 	sdb_set(s, "foo", "bar", 0);
 	for (i = 0; i < MAX; i++) {
@@ -113,7 +113,7 @@ bool test_sdb_milset(void) {
 
 bool test_sdb_milset_random(void) {
 	int i = 0;
-	const int MAX = 19999999;
+	const int MAX = 1999;
 	bool solved = true;
 	Sdb *s = sdb_new0();
 	sdb_set(s, "foo", "bar", 0);
