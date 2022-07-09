@@ -7,7 +7,7 @@ Ps .tmp_load_no_move.rzdb
 o--
 Po .tmp_load_no_move.rzdb
 rm .tmp_load_no_move.rzdb
-pdi 3 @ 0x080483d8
+pdq 3 @ 0x080483d8
 EOF
 EXPECT=<<EOF
 0x080483d8   i_do_hope_that_no_entity_knocks_over_my_beverage:
@@ -31,7 +31,7 @@ Po .tmp_load_move_project.rzdb
 rm .tmp_load_move_project.rzdb
 cd ..
 rm .tmp_load_move_project
-pdi 3 @ 0x080483d8
+pdq 3 @ 0x080483d8
 EOF
 EXPECT=<<EOF
 0x080483d8   i_do_hope_that_no_entity_knocks_over_my_beverage:
@@ -54,7 +54,7 @@ mkdir -p .tmp_load_move_both
 mv .tmp_load_move_both.rzdb .tmp_load_move_both/
 mv .tmp_load_move_both.bin .tmp_load_move_both/
 Po .tmp_load_move_both/.tmp_load_move_both.rzdb
-pdi 3 @ 0x080483d8
+pdq 3 @ 0x080483d8
 o--
 rm .tmp_load_move_both/.tmp_load_move_both.rzdb
 rm .tmp_load_move_both/.tmp_load_move_both.bin
@@ -81,7 +81,7 @@ o--
 mv .tmp_load_move_both2.rzdb .tmp_load_move_both2/
 mv .tmp_load_move_both2/somebin .tmp_load_move_both2/.tmp_load_move_both2/somebin
 Po .tmp_load_move_both2/.tmp_load_move_both2.rzdb
-pdi 3 @ 0x080483d8
+pdq 3 @ 0x080483d8
 o--
 rm .tmp_load_move_both2/.tmp_load_move_both2.rzdb
 rm .tmp_load_move_both2/.tmp_load_move_both2/somebin
@@ -109,7 +109,7 @@ o--
 mv .tmp_load_move_bin.bin .tmp_load_move_bin/.tmp_load_move_bin.bin
 cd .tmp_load_move_bin
 Po ../.tmp_load_move_bin.rzdb
-pdi 3 @ 0x080483d8
+pdq 3 @ 0x080483d8
 o--
 cd ..
 rm .tmp_load_move_bin/.tmp_load_move_bin.bin
@@ -134,13 +134,13 @@ ol
 ?e --
 o--
 ol
-pdi 3 @ 0x080483d8
+pdq 3 @ 0x080483d8
 ?e --
 Poo .tmp_load_without_file.rzdb
 rm .tmp_load_without_file.rzdb
 ol
 ?e --
-pdi 3 @ 0x080483d8
+pdq 3 @ 0x080483d8
 EOF
 EXPECT=<<EOF
  3 * r-x 0x00001de8 bins/elf/crackme0x05
@@ -169,13 +169,13 @@ ol
 ?e --
 o--
 ol
-pdi 3 @ 0x080483d8
+pdq 3 @ 0x080483d8
 ?e --
 o bins/elf/crackme0x00b
 Poo .tmp_load_on_top_of_file.rzdb
 rm .tmp_load_on_top_of_file.rzdb
 ?e --
-pdi 3 @ 0x080483d8
+pdq 3 @ 0x080483d8
 EOF
 EXPECT=<<EOF
  3 * r-x 0x00001de8 bins/elf/crackme0x05
@@ -320,7 +320,7 @@ e prj.file
 Po .tmp_remember.rzdb
 e prj.file
 rm .tmp_remember.rzdb
-pdi 1 @ 0x080483d8
+pdq 1 @ 0x080483d8
 EOF
 EXPECT=<<EOF
 .tmp_remember.rzdb

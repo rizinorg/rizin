@@ -137,10 +137,14 @@ RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state);
 RZ_IPI void rz_core_flag_real_name_print(RzFlag *f, RzCmdStateOutput *state);
 RZ_IPI void rz_core_flag_range_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
 
-/* cmd_seek.c */
+/* cdisasm.c */
+RZ_IPI bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes);
+RZ_IPI void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at, RZ_INOUT RZ_NONNULL int *oplen, RZ_NONNULL int *ret);
+RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
+	RZ_NONNULL RZ_INOUT int *pn_opcodes, RZ_NONNULL RZ_INOUT int *pn_bytes);
 
+/* cmd_seek.c */
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);
-RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
 RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
 RZ_IPI int rz_core_seek_opcode(RzCore *core, int numinstr, bool silent);
 RZ_IPI bool rz_core_seek_bb_instruction(RzCore *core, int index);

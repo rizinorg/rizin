@@ -64,13 +64,13 @@ nop
 EOF
 RUN
 
-NAME=pdi 2@x:9090@0x1000
+NAME=pdq 2@x:9090@0x1000
 FILE=malloc://128
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
-pdi 2 @x:9090 @ 0x1000
+pdq 2 @x:9090 @ 0x1000
 EOF
 EXPECT=<<EOF
 0x00001000                   90  nop
