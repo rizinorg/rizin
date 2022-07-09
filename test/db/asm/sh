@@ -1,4 +1,4 @@
-adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (* (cast 32 false (bv 8 0x0)) (bv 32 0x2)))) nop)
+adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0x0) (bv 8 0x1) false)) (<< (bv 8 0x0) (bv 8 0x1) false)))) nop)
 adE "bt 0x00000000"	0x89fe
 adE "bra 0x00000004"	0xa000
 adE "bra 0x00000006"	0xa001
