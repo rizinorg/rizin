@@ -538,26 +538,10 @@ static void json_pj_recurse(const RzJson *json, PJ *pj) {
 	}
 }
 
-static void json_pj_handler(const RzJson *json, PJ *pj) {
-	if (json->type == RZ_JSON_OBJECT) {
-		pj_o(pj);
-	} else if (json->type == RZ_JSON_ARRAY) {
-		pj_a(pj);
-	}
-	RzJson *js;
-	for (js = json->children.first; js; js = js->next) {
-		json_pj_recurse(js, pj);
-	}
-	if (json->type == RZ_JSON_OBJECT || json->type == RZ_JSON_ARRAY) {
-		pj_end(pj);
-	}
-}
-
 RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json) {
 	rz_return_val_if_fail(json, NULL);
-	rz_return_val_if_fail(json->type != RZ_JSON_NULL, NULL);
 	PJ *pj = pj_new();
-	json_pj_handler(json, pj);
+	json_pj_recurse(json, pj);
 	char *str = pj_drain(pj);
 	return str;
 }
