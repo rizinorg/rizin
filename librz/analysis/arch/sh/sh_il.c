@@ -36,6 +36,9 @@
 #define sh_il_set_pure_param(x, val) \
 	sh_il_set_param(op->param[x], val, op->scaling)
 
+#define sh_il_get_effective_addr_param(x) \
+	sh_il_get_effective_addr_pc(op->param[x], op->scaling, pc)
+
 /* Utilities */
 
 static bool sh_valid_gpr(ut16 reg) {
@@ -203,30 +206,29 @@ static SHParamHelper sh_il_get_param_pc(SHParam param, SHScaling scaling, ut64 p
 	};
 	switch (param.mode) {
 	case SH_REG_DIRECT:
-		ret.pure = UNSIGNED(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_reg(param.param[0]));
-		break;
-	case SH_REG_INDIRECT:
-		ret.pure = sh_il_get_effective_addr(param, scaling);
+		if (scaling == SH_SCALING_INVALID || scaling == SH_SCALING_L) {
+			ret.pure = sh_il_get_reg(param.param[0]);
+		} else {
+			ret.pure = UNSIGNED(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_reg(param.param[0]));
+		}
 		break;
 	case SH_REG_INDIRECT_I:
-		ret.pure = sh_il_get_effective_addr(param, scaling);
 		ret.post = sh_il_set_reg(param.param[0], ADD(sh_il_get_reg(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
-		break;
+		goto set_pure;
 	case SH_REG_INDIRECT_D:
 		ret.pre = sh_il_set_reg(param.param[0], SUB(sh_il_get_reg(param.param[0]), SH_U_ADDR(sh_scaling_size[scaling])));
-		ret.pure = sh_il_get_effective_addr(param, scaling);
-		break;
+		goto set_pure;
+	case SH_REG_INDIRECT:
 	case SH_REG_INDIRECT_DISP:
 	case SH_REG_INDIRECT_INDEXED:
 	case SH_GBR_INDIRECT_DISP:
 	case SH_GBR_INDIRECT_INDEXED:
-		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, scaling));
-		break;
 	case SH_PC_RELATIVE_DISP:
 	case SH_PC_RELATIVE8:
 	case SH_PC_RELATIVE12:
 	case SH_PC_RELATIVE_REG:
-		ret.pure = sh_il_get_effective_addr(param, scaling);
+	set_pure:
+		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, scaling));
 		break;
 	case SH_IMM_U:
 		ret.pure = SH_U_REG(param.param[0]);
@@ -269,7 +271,11 @@ static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, S
 	RzILOpEffect *ret = NULL, *pre = NULL, *post = NULL;
 	switch (param.mode) {
 	case SH_REG_DIRECT:
-		ret = sh_il_set_reg(param.param[0], val);
+		if (scaling == SH_SCALING_INVALID || scaling == SH_SCALING_L) {
+			ret = sh_il_set_reg(param.param[0], val);
+		} else {
+			ret = sh_il_set_reg(param.param[0], SIGNED(SH_REG_SIZE, val));
+		}
 		break;
 	case SH_REG_INDIRECT:
 	case SH_REG_INDIRECT_I:
@@ -292,7 +298,9 @@ static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, S
 
 	if (!ret) {
 		SHParamHelper ret_h = sh_il_get_param(param, scaling);
-		ret = STOREW(ret_h.pure, val);
+		RZ_FREE(ret_h.pure);
+		RzILOpPure *eff_addr = sh_il_get_effective_addr(param, scaling);
+		ret = STOREW(eff_addr, val);
 		pre = ret_h.pre;
 		post = ret_h.post;
 	}
@@ -1131,7 +1139,7 @@ static RzILOpEffect *sh_il_shlr16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 10001011dddddddd
  */
 static RzILOpEffect *sh_il_bf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *new_pc = sh_il_get_pure_param(0);
+	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
 	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), JMP(new_pc), NOP());
 }
 
@@ -1142,7 +1150,7 @@ static RzILOpEffect *sh_il_bf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_bfs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *new_pc = sh_il_get_pure_param(0);
+	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
 	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), JMP(new_pc), NOP());
 }
 
@@ -1152,7 +1160,7 @@ static RzILOpEffect *sh_il_bfs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 10001001dddddddd
  */
 static RzILOpEffect *sh_il_bt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *new_pc = sh_il_get_pure_param(0);
+	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
 	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
 }
 
@@ -1163,7 +1171,7 @@ static RzILOpEffect *sh_il_bt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_bts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *new_pc = sh_il_get_pure_param(0);
+	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
 	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), NOP(), JMP(new_pc));
 }
 
@@ -1174,7 +1182,7 @@ static RzILOpEffect *sh_il_bts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_bra(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return JMP(sh_il_get_pure_param(0));
+	return JMP(sh_il_get_effective_addr_param(0));
 }
 
 /**
@@ -1184,7 +1192,7 @@ static RzILOpEffect *sh_il_bra(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_braf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return JMP(sh_il_get_pure_param(0));
+	return JMP(sh_il_get_effective_addr_param(0));
 }
 
 /**
@@ -1194,7 +1202,7 @@ static RzILOpEffect *sh_il_braf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_bsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_pure_param(0)));
+	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_effective_addr_param(0)));
 }
 
 /**
@@ -1204,7 +1212,7 @@ static RzILOpEffect *sh_il_bsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_bsrf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_pure_param(0)));
+	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_effective_addr_param(0)));
 }
 
 /**
@@ -1214,8 +1222,7 @@ static RzILOpEffect *sh_il_bsrf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_jmp(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	// don't use sh_il_get_param, because the register is passed in SH_REG_INDIRECT addressing mode, but we only need the direct value
-	return JMP(sh_il_get_reg(op->param[0].param[0]));
+	return JMP(sh_il_get_effective_addr_param(0));
 }
 
 /**
@@ -1225,8 +1232,7 @@ static RzILOpEffect *sh_il_jmp(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_jsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	// don't use sh_il_get_param, because the register is passed in SH_REG_INDIRECT addressing mode, but we only need the direct value
-	return SEQ2(SETG("pr", ADD(SH_U_ADDR(pc), SH_U_ADDR(4))), JMP(sh_il_get_reg(op->param[0].param[0])));
+	return SEQ2(SETG("pr", ADD(SH_U_ADDR(pc), SH_U_ADDR(4))), JMP(sh_il_get_effective_addr_param(0)));
 }
 
 /**
