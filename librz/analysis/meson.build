@@ -176,6 +176,7 @@ rz_analysis_sources = [
   '../asm/arch/ppc/libvle/vle.c',
   '../asm/arch/propeller/propeller_disas.c',
   '../asm/arch/rsp/rsp_idec.c',
+  '../asm/arch/sh/disassembler.c',
   '../asm/arch/tms320/tms320_dasm.c',
   '../asm/arch/tms320/c55x_plus/ins.c',
   '../asm/arch/tms320/c55x_plus/c55plus.c',
