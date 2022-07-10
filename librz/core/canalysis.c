@@ -7156,6 +7156,10 @@ RZ_API void rz_analysis_name_free(RzAnalysisName *p) {
 	free(p);
 }
 
+/**
+ * \brief Rename whatever var/flag/function is used at core->offset to \p name
+ * \return success?
+ */
 RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(core && core->analysis && RZ_STR_ISNOTEMPTY(name), false);
 
@@ -7183,6 +7187,10 @@ RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 	return false;
 }
 
+/**
+ * \brief Get information on whatever var/flag/function is used at core->offset
+ * \return RzAnalysisName
+ */
 RZ_API RZ_OWN RzAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
@@ -7216,7 +7224,6 @@ RZ_API RZ_OWN RzAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core) {
 			p->realname = strdup(f->realname);
 			p->offset = tgt_addr;
 		} else {
-
 			p->type = ADDRESS;
 			p->offset = tgt_addr;
 		}
