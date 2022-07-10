@@ -35,6 +35,5 @@ rz_build_h = """#ifndef RZ_BUILD_H
     "@RZ_BIRTH@", timestamp
 )
 
-f = open("rz_build.h", "w")
-f.write(rz_build_h)
-f.close()
+with open("rz_build.h", "w", encoding="utf8") as f:
+    f.write(rz_build_h)
