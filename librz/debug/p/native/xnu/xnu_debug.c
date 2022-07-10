@@ -2,10 +2,6 @@
 // SPDX-FileCopyrightText: 2015-2019 alvaro_fe <alvaro.felipe91@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_userconf.h>
-
-// ------------------------------------
-
 #include <rz_debug.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
@@ -21,8 +17,7 @@
 
 static task_t task_dbg = 0;
 #include "xnu_debug.h"
-#include "xnu_threads.c"
-#include "xnu_excthreads.c"
+#include "xnu_threads.h"
 
 extern int proc_regionfilename(int pid, uint64_t address, void *buffer, uint32_t buffersize);
 
@@ -58,50 +53,6 @@ typedef struct {
 	ut64 image_file_path;
 	ut64 image_file_mod_date;
 } DyldImageInfo64;
-
-/* XXX: right now it just returns the first thread, not the one selected in dbg->tid */
-static thread_t getcurthread(RzDebug *dbg) {
-	thread_t th;
-	thread_array_t threads = NULL;
-	unsigned int n_threads = 0;
-	task_t t = pid_to_task(dbg->pid);
-	if (!t) {
-		return -1;
-	}
-	if (task_threads(t, &threads, &n_threads) != KERN_SUCCESS) {
-		return -1;
-	}
-	if (n_threads > 0) {
-		memcpy(&th, threads, sizeof(th));
-	} else {
-		th = -1;
-	}
-	vm_deallocate(t, (vm_address_t)threads, n_threads * sizeof(thread_act_t));
-	return th;
-}
-
-static xnu_thread_t *get_xnu_thread(RzDebug *dbg, int tid) {
-	if (!dbg || tid < 0) {
-		return NULL;
-	}
-	if (!xnu_update_thread_list(dbg)) {
-		eprintf("Failed to update thread_list xnu_udpate_thread_list\n");
-		return NULL;
-	}
-	// TODO get the current thread
-	RzListIter *it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
-		(RzListComparator)&thread_find);
-	if (!it) {
-		tid = getcurthread(dbg);
-		it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
-			(RzListComparator)&thread_find);
-		if (!it) {
-			eprintf("Thread not found get_xnu_thread\n");
-			return NULL;
-		}
-	}
-	return (xnu_thread_t *)it->data;
-}
 
 static task_t task_for_pid_workaround(int Pid) {
 	host_t myhost = mach_host_self();
@@ -154,10 +105,6 @@ static task_t task_for_pid_ios9pangu(int pid) {
 	return task;
 }
 
-int xnu_wait(RzDebug *dbg, int pid) {
-	return __xnu_wait(dbg, pid);
-}
-
 bool xnu_step(RzDebug *dbg) {
 	// we must find a way to get the current thread not just the first one
 	task_t task = pid_to_task(dbg->pid);
@@ -165,11 +112,11 @@ bool xnu_step(RzDebug *dbg) {
 		eprintf("step failed on task %d for pid %d\n", task, dbg->tid);
 		return false;
 	}
-	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		return false;
 	}
-	int ret = set_trace_bit(dbg, th);
+	int ret = xnu_set_trace_bit(dbg, th);
 	if (!ret) {
 		eprintf("xnu_step modificy_trace_bit error\n");
 		return false;
@@ -257,14 +204,14 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 		return false;
 	}
 	// TODO free refs count threads
-	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		eprintf("failed to get thread in xnu_continue\n");
 		return false;
 	}
 	// disable trace bit if enable
 	if (th->stepping) {
-		if (!clear_trace_bit(dbg, th)) {
+		if (!xnu_clear_trace_bit(dbg, th)) {
 			eprintf("error clearing trace bit in xnu_continue\n");
 			return false;
 		}
@@ -305,7 +252,7 @@ char *xnu_reg_profile(RzDebug *dbg) {
 // is not implemented yet i don't care so much
 int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	bool ret;
-	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		return 0;
 	}
@@ -324,7 +271,7 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 #elif __arm || __armv7 || __arm__ || __armv7__
 		memcpy(&th->debug.drx, buf, RZ_MIN(size, sizeof(th->debug.drx)));
 #endif
-		ret = xnu_thread_set_drx(dbg, th);
+		ret = rz_xnu_thread_set_drx(dbg, th);
 		break;
 	default:
 		// th->gpr has a header and the state we should copy on the state only
@@ -333,14 +280,14 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 #else
 		memcpy(&th->gpr.uts, buf, RZ_MIN(size, sizeof(th->gpr.uts)));
 #endif
-		ret = xnu_thread_set_gpr(dbg, th);
+		ret = rz_xnu_thread_set_gpr(dbg, th);
 		break;
 	}
 	return ret;
 }
 
 int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
-	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		return 0;
 	}
@@ -348,12 +295,12 @@ int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	case RZ_REG_TYPE_SEG:
 	case RZ_REG_TYPE_FLG:
 	case RZ_REG_TYPE_GPR:
-		if (!xnu_thread_get_gpr(dbg, th)) {
+		if (!rz_xnu_thread_get_gpr(dbg, th)) {
 			return 0;
 		}
 		break;
 	case RZ_REG_TYPE_DRX:
-		if (!xnu_thread_get_drx(dbg, th)) {
+		if (!rz_xnu_thread_get_drx(dbg, th)) {
 			return 0;
 		}
 		break;
@@ -373,7 +320,7 @@ int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 RzDebugMap *xnu_map_alloc(RzDebug *dbg, ut64 addr, int size) {
 	kern_return_t ret;
 	ut8 *base = (ut8 *)addr;
-	xnu_thread_t *th = get_xnu_thread(dbg, dbg->tid);
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, dbg->tid);
 	bool anywhere = !VM_FLAGS_ANYWHERE;
 	if (!th) {
 		return NULL;
@@ -393,7 +340,7 @@ RzDebugMap *xnu_map_alloc(RzDebug *dbg, ut64 addr, int size) {
 }
 
 int xnu_map_dealloc(RzDebug *dbg, ut64 addr, int size) {
-	xnu_thread_t *th = get_xnu_thread(dbg, dbg->tid);
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, dbg->tid);
 	if (!th) {
 		return false;
 	}
@@ -488,10 +435,10 @@ RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	RzListIter *iter;
 	xnu_thread_t *thread;
 	RZ_REG_T state;
-	xnu_update_thread_list(dbg);
+	rz_xnu_update_thread_list(dbg);
 	list->free = (RzListFree)&rz_debug_pid_free;
 	rz_list_foreach (dbg->threads, iter, thread) {
-		if (!xnu_thread_get_gpr(dbg, thread)) {
+		if (!rz_xnu_thread_get_gpr(dbg, thread)) {
 			eprintf("Failed to get gpr registers xnu_thread_list\n");
 			continue;
 		}
