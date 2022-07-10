@@ -121,6 +121,10 @@ static RzILOpEffect *sh_il_set_status_reg(RzILOpPure *val) {
 	return eff;
 }
 
+static RzILOpPure *sh_il_get_privilege() {
+	return AND(VARG(SH_SR_D), VARG(SH_SR_R));
+}
+
 static RzILOpPure *sh_il_get_reg(ut16 reg) {
 	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
@@ -131,8 +135,7 @@ static RzILOpPure *sh_il_get_reg(ut16 reg) {
 	}
 
 	// check if both SR.MD = 1 and SR.RB = 1
-	RzILOpPure *condition = AND(VARG(SH_SR_D), VARG(SH_SR_R));
-	return ITE(condition, VARG(sh_get_banked_reg(reg, 1)), VARG(sh_get_banked_reg(reg, 0)));
+	return ITE(sh_il_get_privilege(), VARG(sh_get_banked_reg(reg, 1)), VARG(sh_get_banked_reg(reg, 0)));
 }
 
 static RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
@@ -144,8 +147,7 @@ static RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 		return SETG(sh_registers[reg], val);
 	}
 
-	RzILOpPure *condition = AND(VARG(SH_SR_D), VARG(SH_SR_R));
-	return BRANCH(condition, SETG(sh_get_banked_reg(reg, 1), val), SETG(sh_get_banked_reg(reg, 0), DUP(val)));
+	return BRANCH(sh_il_get_privilege(), SETG(sh_get_banked_reg(reg, 1), val), SETG(sh_get_banked_reg(reg, 0), DUP(val)));
 }
 
 typedef struct sh_param_helper_t {
@@ -1284,26 +1286,25 @@ static RzILOpEffect *sh_il_clrt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * PRIVILEGED (Only GBR is not privileged)
  */
 static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, sh_il_get_status_reg_bit(SH_SR_D));
-	ut8 state = priv_bit->bits.small_u == 0 ? 0x1 : 0x0;
-	state += op->param[1].param[0] != SH_REG_IND_GBR ? 0x2 : 0x0;
-	if (state == 0x3) {
-		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
-		return NULL;
-	}
+	RzILOpEffect *eff = NULL;
+	bool gbr = op->param[1].param[0] == SH_REG_IND_GBR;
 	if (op->scaling == SH_SCALING_INVALID) {
 		if (sh_valid_gpr(op->param[1].param[0])) {
-			return SETG(sh_get_banked_reg(op->param[1].param[0], 1), sh_il_get_pure_param(0));
+			eff = SETG(sh_get_banked_reg(op->param[1].param[0], 1), sh_il_get_pure_param(0));
 		} else {
-			return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
+			eff = sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 		}
 	} else if (op->scaling == SH_SCALING_L) {
 		SHParamHelper rm = sh_il_get_param(op->param[0], op->scaling);
 		if (sh_valid_gpr(op->param[1].param[0])) {
-			return SEQ2(SETG(sh_get_banked_reg(op->param[1].param[0], 1), rm.pure), rm.post);
+			eff = SEQ2(SETG(sh_get_banked_reg(op->param[1].param[0], 1), rm.pure), rm.post);
 		} else {
-			return SEQ2(sh_il_set_pure_param(1, rm.pure), rm.post);
+			eff = SEQ2(sh_il_set_pure_param(1, rm.pure), rm.post);
 		}
+	}
+
+	if (op->param[1].param[0] != SH_REG_IND_GBR) {
+		eff = BRANCH(sh_il_get_privilege(), eff, NULL);
 	}
 	return NOP();
 }
@@ -1353,12 +1354,7 @@ static RzILOpEffect *sh_il_nop(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_rte(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, sh_il_get_status_reg_bit(SH_SR_D));
-	if (priv_bit->bits.small_u == 0) {
-		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
-		return NULL;
-	}
-	return SEQ2(sh_il_set_status_reg(VARG("ssr")), JMP(VARG("spc")));
+	return BRANCH(sh_il_get_privilege(), SEQ2(sh_il_set_status_reg(VARG("ssr")), JMP(VARG("spc"))), NULL);
 }
 
 /**
@@ -1386,12 +1382,7 @@ static RzILOpEffect *sh_il_sett(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * PRIVILEGED
  */
 static RzILOpEffect *sh_il_sleep(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, sh_il_get_status_reg_bit(SH_SR_D));
-	if (priv_bit->bits.small_u == 0) {
-		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
-		return NULL;
-	}
-	return NOP();
+	return BRANCH(sh_il_get_privilege(), NOP(), NULL);
 }
 
 /**
@@ -1406,19 +1397,16 @@ static RzILOpEffect *sh_il_sleep(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * PRIVILEGED (Only GBR is not privileged)
  */
 static RzILOpEffect *sh_il_stc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzBitVector *priv_bit = rz_il_evaluate_bitv(analysis->il_vm->vm, sh_il_get_status_reg_bit(SH_SR_D));
-	ut8 state = priv_bit->bits.small_u == 0 ? 0x1 : 0x0;
-	state += op->param[0].param[0] != SH_REG_IND_GBR ? 0x2 : 0x0;
-	if (state == 0x3) { // REG != GBR and user mode
-		rz_il_vm_event_add(analysis->il_vm->vm, rz_il_event_exception_new("SuperH: RESINST"));
-		return NULL;
-	}
+	RzILOpEffect *eff = NULL;
 	if (sh_valid_gpr(op->param[0].param[0])) { // REG = Rn_BANK
-		return sh_il_set_pure_param(1, VARG(sh_get_banked_reg(op->param[0].param[0], 1)));
+		eff = sh_il_set_pure_param(1, VARG(sh_get_banked_reg(op->param[0].param[0], 1)));
 	} else {
-		return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
+		eff = sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 	}
-	return NOP();
+	if (op->param[0].param[0] != SH_REG_IND_GBR) {
+		eff = BRANCH(sh_il_get_privilege(), eff, NULL);
+	}
+	return eff;
 }
 
 /**
