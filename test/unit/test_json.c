@@ -221,14 +221,14 @@ static int check_expected_4(RzJson *j) {
 static int check_expected_5(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq(j->str_value, "string value", "string value");
-	mu_assert_streq_free(rz_json_as_string(j), "\"string value\"", "string as string");
+	mu_assert_streq_free(rz_json_as_string(j, true), "\"string value\"", "string as string");
 	return MU_PASSED;
 }
 
 static int check_expected_6(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq(j->num.u_value, 1, "boolean value");
-	mu_assert_streq_free(rz_json_as_string(j), "true", "boolean as string");
+	mu_assert_streq_free(rz_json_as_string(j, true), "true", "boolean as string");
 	return MU_PASSED;
 }
 
@@ -236,13 +236,13 @@ static int check_expected_7(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert("double value",
 		j->num.dbl_value < (-1.0e-2 + 1.0e-13) && j->num.dbl_value > (-1.0e-2 - 1.0e-13));
-	mu_assert_streq_free(rz_json_as_string(j), "-0.010000", "double as string");
+	mu_assert_streq_free(rz_json_as_string(j, true), "-0.010000", "double as string");
 	return MU_PASSED;
 }
 
 static int check_expected_8(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_NULL, "null type");
-	mu_assert_streq_free(rz_json_as_string(j), "null", "null as string");
+	mu_assert_streq_free(rz_json_as_string(j, true), "null", "null as string");
 	return MU_PASSED;
 }
 
@@ -1008,7 +1008,7 @@ static int check_expected_58(RzJson *j) {
 		"\"str3\":\"text /*text*/ text\",\"str4\":\"\\\\text\\\\\","
 		"\"str5\":\"\\\\?text\\\\?\",\"str\\t6\\\\\":\"text\\ntext\\ttext\","
 		"\"obj\":{\"KEY\":\"VAL\",\"obj\":{\"KEY\":\"VAL\"}}}";
-	char *jsonstr = rz_json_as_string(j);
+	char *jsonstr = rz_json_as_string(j, true);
 	mu_assert_streq_free(jsonstr, json_str, "RzJson as string");
 	return MU_PASSED;
 }
@@ -1016,7 +1016,16 @@ static int check_expected_58(RzJson *j) {
 static int check_expected_59(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq(j->num.u_value, 42, "integer value");
-	mu_assert_streq_free(rz_json_as_string(j), "42", "integer as string");
+	mu_assert_streq_free(rz_json_as_string(j, true), "42", "integer as string");
+	return MU_PASSED;
+}
+
+static int check_expected_60(RzJson *j) {
+	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
+	const RzJson *kv = rz_json_get_path(j, ".bla");
+	mu_assert_streq(kv->str_value, "foo", "string value");
+	mu_assert_streq_free(rz_json_as_string(kv, true), "\"bla\":\"foo\"", "key-value as string");
+	mu_assert_streq_free(rz_json_as_string(kv, false), "\"foo\"", "value as string");
 	return MU_PASSED;
 }
 
@@ -1265,6 +1274,9 @@ JsonTest tests[] = {
 	{ // 59
 		"42",
 		check_expected_59 },
+	{ // 60
+		"{\n \"bla\": \"foo\"\n}\n",
+		check_expected_60 },
 };
 
 static int test_json(int test_number, char *input, int (*check)(RzJson *j)) {

@@ -516,7 +516,9 @@ RZ_API void rz_cons_grepbuf(void) {
 				excerpt = rz_json_get_path(json, grep->json_path);
 			}
 			if (excerpt) {
-				char *u = rz_json_as_string(excerpt);
+				// When we receive the path, it's fetched with the key name
+				// We should get only the value
+				char *u = rz_json_as_string(excerpt, false);
 				if (!u) {
 					RZ_FREE(grep->json_path);
 					return;
