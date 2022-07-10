@@ -323,6 +323,8 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code) {
 	int ret = RZ_DEBUG_REASON_UNKNOWN;
 	kern_return_t kr;
 	*ret_code = KERN_SUCCESS;
+	ut64 code = (ut64)msg->code[0] | ((ut64)msg->code[1] << 32);
+	ut64 subcode = (ut64)msg->code[2] | ((ut64)msg->code[3] << 32);
 	switch (msg->exception) {
 	case EXC_BAD_ACCESS:
 		ret = RZ_DEBUG_REASON_SEGFAULT;
@@ -349,7 +351,18 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code) {
 		eprintf("EXC_EMULATION\n");
 		break;
 	case EXC_SOFTWARE:
-		eprintf("EXC_SOFTWARE\n");
+		eprintf("EXC_SOFTWARE: ");
+		if (code == EXC_SOFT_SIGNAL) {
+			// standard unix signal
+			eprintf(" EXC_SOFT_SIGNAL %" PFMT64u, subcode);
+			const char *signame = rz_signal_to_string((int)subcode);
+			if (signame) {
+				eprintf(" = %s", signame);
+			}
+			eprintf("\n");
+		} else {
+			eprintf("code = 0x%" PFMT64u ", subcode = 0x%" PFMT64u "\n", code, subcode);
+		}
 		break;
 	case EXC_BREAKPOINT:
 		kr = task_suspend(msg->task.name);
@@ -380,7 +393,7 @@ RZ_IPI int xnu_wait(RzDebug *dbg, int pid) {
 	int ret_code, reason = RZ_DEBUG_REASON_UNKNOWN;
 	mig_reply_error_t reply;
 	bool ret;
-	exc_msg msg;
+	exc_msg msg = { 0 };
 	if (!dbg) {
 		return reason;
 	}
