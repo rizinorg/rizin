@@ -12,6 +12,7 @@
 #define _XNU_DEBUG_H
 
 #include <rz_util/rz_log.h>
+#include <rz_debug.h>
 
 #define LOG_MACH_ERROR(name, rc) \
 	do { \
@@ -282,7 +283,7 @@ RzDebugMap *xnu_map_alloc(RzDebug *dbg, ut64 addr, int size);
 int xnu_map_dealloc(RzDebug *dbg, ut64 addr, int size);
 int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms);
 int xnu_init(void);
-int xnu_wait(RzDebug *dbg, int pid);
+RZ_IPI int xnu_wait(RzDebug *dbg, int pid);
 RzDebugPid *xnu_get_pid(int pid);
 RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules);
 RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list);

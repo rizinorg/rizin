@@ -4,6 +4,9 @@
 #ifndef _INCLUDE_XNU_THREADS_H_
 #define _INCLUDE_XNU_THREADS_H_
 
+#include <rz_debug.h>
+#include <mach/mach_vm.h>
+
 #if __POWERPC__
 // TODO add better support for PPC
 #define RZ_REG_T        ppc_thread_state_t
@@ -90,5 +93,24 @@ typedef struct _rep_msg {
 	NDR_record_t NDR;
 	kern_return_t ret_code;
 } rep_msg;
+
+RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg);
+RZ_IPI xnu_thread_t *rz_xnu_get_thread(RzDebug *dbg, int tid);
+RZ_IPI thread_t rz_xnu_get_cur_thread(RzDebug *dbg);
+RZ_IPI bool rz_xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_get_drx(RzDebug *dbg, xnu_thread_t *thread);
+
+RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable);
+static inline bool xnu_set_trace_bit(RzDebug *dbg, xnu_thread_t *th) {
+	return xnu_modify_trace_bit(dbg, th, 1);
+}
+static inline bool xnu_clear_trace_bit(RzDebug *dbg, xnu_thread_t *th) {
+	return xnu_modify_trace_bit(dbg, th, 0);
+}
+
+RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg);
+RZ_IPI bool xnu_restore_exception_ports(int pid);
 
 #endif
