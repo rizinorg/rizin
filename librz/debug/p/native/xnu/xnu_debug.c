@@ -721,7 +721,6 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 #endif
 		if ((curr_map->perm & VM_PROT_READ) == VM_PROT_READ) {
 			vm_map_size_t tmp_size = curr_map->size;
-			off_t xfer_foffset = foffset;
 
 			while (tmp_size > 0) {
 				vm_map_size_t xfer_size = tmp_size;
@@ -757,7 +756,6 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 				}
 
 				tmp_size -= xfer_size;
-				xfer_foffset += xfer_size;
 			}
 		}
 
