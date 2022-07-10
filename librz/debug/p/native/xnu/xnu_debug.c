@@ -105,6 +105,10 @@ static task_t task_for_pid_ios9pangu(int pid) {
 	return task;
 }
 
+int xnu_wait(RzDebug *dbg, int pid) {
+	return xnu_wait_for_exception(dbg, pid, 0, false);
+}
+
 bool xnu_step(RzDebug *dbg) {
 	// we must find a way to get the current thread not just the first one
 	task_t task = pid_to_task(dbg->pid);
@@ -128,11 +132,28 @@ bool xnu_step(RzDebug *dbg) {
 
 int xnu_attach(RzDebug *dbg, int pid) {
 	dbg->pid = pid;
+	// First start listening to exceptions, which will also deliver signals to us
 	if (!xnu_create_exception_thread(dbg)) {
-		eprintf("error setting up exception thread\n");
+		RZ_LOG_ERROR("Failed to start listening to mach exceptions");
 		return -1;
 	}
-	xnu_stop(dbg, pid);
+
+	// Then do the actual attach.
+	int r = rz_debug_ptrace(dbg, PT_ATTACHEXC, pid, 0, 0);
+	if (r < 0) {
+		perror("ptrace(PT_ATTACHEXC)");
+		RZ_LOG_ERROR("Failed to attach to process");
+		return -1;
+	}
+
+	// PT_ATTACHEXC will cause a SIGSTOP in the debuggee, so wait for it
+	// Our signal handler will also suspend the task, so no need to call xnu_stop if successful
+	RzDebugReasonType reas = xnu_wait_for_exception(dbg, pid, 1000, true);
+	if (reas != RZ_DEBUG_REASON_SIGNAL || dbg->reason.signum != SIGSTOP) {
+		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed");
+		xnu_stop(dbg, pid);
+	}
+
 	return pid;
 }
 
