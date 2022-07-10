@@ -106,7 +106,7 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	case SH_REG_INDIRECT_D:
 		// @-%s
 		sscanf(param, "@-%s", reg);
-		opcode = sh_op_reg_bits(param, shba.start);
+		opcode = sh_op_reg_bits(reg, shba.start);
 		break;
 	case SH_REG_INDIRECT_DISP: {
 		// @(%s,%s)
@@ -226,7 +226,7 @@ static SHAddrMode sh_op_get_addr_mode(const char *param) {
 				return SH_REG_INDIRECT;
 			}
 		case '-':
-			return SH_REG_INDIRECT_I;
+			return SH_REG_INDIRECT_D;
 		case '(':
 			if (strcmp(param, "@(r0,gbr)") == 0) {
 				return SH_GBR_INDIRECT_INDEXED;
