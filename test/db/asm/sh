@@ -6,7 +6,12 @@ adE "mov.b r10, @r12" 2ca0 0x108 (storew 0 (var r12) (cast 8 false (var r10)))
 adE "mov.w r1, @r15" 2f11 0x108 (storew 0 (var r15) (cast 16 false (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1))))
 adE "mov.l r14, @r2" 22e2 0x108 (storew 0 (ite (&& (var sr_d) (var sr_r)) (var r2b) (var r2)) (var r14))
 adE "mov.b @r1, r2" 6210 0x108 (branch (&& (var sr_d) (var sr_r)) (set r2b (cast 32 (msb (loadw 0 8 (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1)))) (loadw 0 8 (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1))))) (set r2 (cast 32 (msb (loadw 0 8 (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1)))) (loadw 0 8 (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1))))))
-adE "bt 0x00000004" 0x8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0x0) (bv 8 0x1) false)) (<< (bv 8 0x0) (bv 8 0x1) false)))) nop)
+adE "mov.w @r14, r15" 6fe1 0x108 (set r15 (cast 32 (msb (loadw 0 16 (var r14))) (loadw 0 16 (var r14))))
+adE "mov.l @r14, r15" 6fe2 0x108 (set r15 (loadw 0 32 (var r14)))
+adE "mov.b r1, @-r2" 2214 0x0 (seq (branch (&& (var sr_d) (var sr_r)) (set r2b (- (ite (&& (var sr_d) (var sr_r)) (var r2b) (var r2)) (bv 32 0x1))) (set r2 (- (ite (&& (var sr_d) (var sr_r)) (var r2b) (var r2)) (bv 32 0x1)))) (storew 0 (ite (&& (var sr_d) (var sr_r)) (var r2b) (var r2)) (cast 8 false (ite (&& (var sr_d) (var sr_r)) (var r1b) (var r1)))))
+adE "mov.w r8, @-r9" 2985 0x0 (seq (set r9 (- (var r9) (bv 32 0x2))) (storew 0 (var r9) (cast 16 false (var r8))))
+adE "mov.l r10, @-r11" 2ba6 0x0 (seq (set r11 (- (var r11) (bv 32 0x4))) (storew 0 (var r11) (var r10)))
+adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0x0) (bv 8 0x1) false)) (<< (bv 8 0x0) (bv 8 0x1) false)))) nop)
 adE "bt 0xd3adb008" 89fe 0xd3adb008 (branch (var sr_t) (jmp (+ (+ (bv 32 0xd3adb008) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0xfe) (bv 8 0x1) false)) (<< (bv 8 0xfe) (bv 8 0x1) false)))) nop)
 adE "bra 0x00000004"	0xa000
 adE "bra 0x00000006"	0xa001
