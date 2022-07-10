@@ -757,10 +757,10 @@ RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core);
 
 /* canalysis.c */
 typedef enum rz_analysis_name_type {
-	VAR = 0,
-	FUNCTION,
-	FLAG,
-	ADDRESS,
+	RZ_ANALYSIS_NAME_TYPE_VAR = 0,
+	RZ_ANALYSIS_NAME_TYPE_FUNCTION,
+	RZ_ANALYSIS_NAME_TYPE_FLAG,
+	RZ_ANALYSIS_NAME_TYPE_ADDRESS,
 } RzAnalysisNameType;
 
 typedef struct rz_analysis_name {
@@ -820,7 +820,8 @@ RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core);
 
-RZ_API void rz_analysis_name_free(RzAnalysisName *p);
+RZ_API RZ_BORROW const char *rz_analysis_name_type_to_str(RzAnalysisNameType typ);
+RZ_API void rz_analysis_name_free(RZ_NULLABLE RzAnalysisName *p);
 RZ_API RZ_OWN RzAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name);
 

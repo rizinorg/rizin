@@ -7134,12 +7134,15 @@ static const char *RzAnalysisNameTypeStrs[] = {
 	"address",
 };
 
-RZ_IPI const char *rz_analysis_name_type_to_str(RzAnalysisNameType typ) {
+/**
+ * \brief Convert \p typ to string (const char*)
+ */
+RZ_API RZ_BORROW const char *rz_analysis_name_type_to_str(RzAnalysisNameType typ) {
 	switch (typ) {
-	case VAR:
-	case FUNCTION:
-	case FLAG:
-	case ADDRESS:
+	case RZ_ANALYSIS_NAME_TYPE_VAR:
+	case RZ_ANALYSIS_NAME_TYPE_FUNCTION:
+	case RZ_ANALYSIS_NAME_TYPE_FLAG:
+	case RZ_ANALYSIS_NAME_TYPE_ADDRESS:
 		return RzAnalysisNameTypeStrs[typ];
 	default:
 		rz_warn_if_reached();
@@ -7147,7 +7150,7 @@ RZ_IPI const char *rz_analysis_name_type_to_str(RzAnalysisNameType typ) {
 	}
 }
 
-RZ_API void rz_analysis_name_free(RzAnalysisName *p) {
+RZ_API void rz_analysis_name_free(RZ_NULLABLE RzAnalysisName *p) {
 	if (!p) {
 		return;
 	}
@@ -7209,22 +7212,22 @@ RZ_API RZ_OWN RzAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core) {
 	rz_analysis_op_fini(&op);
 	if (var) {
 		p->name = strdup(var->name);
-		p->type = VAR;
+		p->type = RZ_ANALYSIS_NAME_TYPE_VAR;
 		p->offset = tgt_addr;
 	} else if (tgt_addr != UT64_MAX) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
 		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
 		if (fcn) {
 			p->name = strdup(fcn->name);
-			p->type = FUNCTION;
+			p->type = RZ_ANALYSIS_NAME_TYPE_FUNCTION;
 			p->offset = tgt_addr;
 		} else if (f) {
-			p->type = FLAG;
+			p->type = RZ_ANALYSIS_NAME_TYPE_FLAG;
 			p->name = strdup(f->name);
 			p->realname = strdup(f->realname);
 			p->offset = tgt_addr;
 		} else {
-			p->type = ADDRESS;
+			p->type = RZ_ANALYSIS_NAME_TYPE_ADDRESS;
 			p->offset = tgt_addr;
 		}
 	}

@@ -408,7 +408,7 @@ static bool core_analysis_name_print(RzCore *core, const char *name, PJ *pj) {
 
 			pj_end(pj);
 		} else {
-			if (p->type == ADDRESS) {
+			if (p->type == RZ_ANALYSIS_NAME_TYPE_ADDRESS) {
 				rz_cons_printf("0x%" PFMT64x "\n", p->offset);
 			} else {
 				rz_cons_println(p->name);
