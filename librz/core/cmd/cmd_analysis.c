@@ -375,14 +375,14 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 
 #define PJ_KS(pj, key, value) \
 	{ \
-		char *value_tmp = (value); \
+		const char *value_tmp = (value); \
 		if (RZ_STR_ISNOTEMPTY(value_tmp)) { \
 			pj_ks(pj, key, value_tmp); \
 		} \
 	}
 #define PJ_KN(pj, key, value) \
 	{ \
-		char *value_tmp = (value); \
+		const ut64 value_tmp = (value); \
 		if (value_tmp != UT64_MAX) { \
 			pj_kn(pj, key, value_tmp); \
 		} \
