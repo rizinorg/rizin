@@ -4,11 +4,6 @@
 
 #include <rz_userconf.h>
 
-#if XNU_USE_PTRACE
-#define XNU_USE_EXCTHR 0
-#else
-#define XNU_USE_EXCTHR 1
-#endif
 // ------------------------------------
 
 #include <rz_debug.h>
@@ -27,9 +22,7 @@
 static task_t task_dbg = 0;
 #include "xnu_debug.h"
 #include "xnu_threads.c"
-#if XNU_USE_EXCTHR
 #include "xnu_excthreads.c"
-#endif
 
 extern int proc_regionfilename(int pid, uint64_t address, void *buffer, uint32_t buffersize);
 
@@ -162,22 +155,10 @@ static task_t task_for_pid_ios9pangu(int pid) {
 }
 
 int xnu_wait(RzDebug *dbg, int pid) {
-#if XNU_USE_PTRACE
-	return RZ_DEBUG_REASON_UNKNOWN;
-#else
 	return __xnu_wait(dbg, pid);
-#endif
 }
 
 bool xnu_step(RzDebug *dbg) {
-#if XNU_USE_PTRACE
-	int ret = rz_debug_ptrace(dbg, PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; // SIGINT
-	if (!ret) {
-		perror("ptrace-step");
-		RZ_LOG_ERROR("mach-error: %d, %s\n", ret, rz_str_get_null(mach_error_string(ret)));
-	}
-	return ret;
-#else
 	// we must find a way to get the current thread not just the first one
 	task_t task = pid_to_task(dbg->pid);
 	if (!task) {
@@ -196,21 +177,9 @@ bool xnu_step(RzDebug *dbg) {
 	th->stepping = true;
 	task_resume(task);
 	return ret;
-#endif
 }
 
 int xnu_attach(RzDebug *dbg, int pid) {
-#if XNU_USE_PTRACE
-#if PT_ATTACHEXC
-	if (rz_debug_ptrace(dbg, PT_ATTACHEXC, pid, 0, 0) == -1) {
-#else
-	if (rz_debug_ptrace(dbg, PT_ATTACH, pid, 0, 0) == -1) {
-#endif
-		perror("ptrace (PT_ATTACH)");
-		return -1;
-	}
-	return pid;
-#else
 	dbg->pid = pid;
 	if (!xnu_create_exception_thread(dbg)) {
 		eprintf("error setting up exception thread\n");
@@ -218,13 +187,9 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	}
 	xnu_stop(dbg, pid);
 	return pid;
-#endif
 }
 
 int xnu_detach(RzDebug *dbg, int pid) {
-#if XNU_USE_PTRACE
-	return rz_debug_ptrace(dbg, PT_DETACH, pid, NULL, 0);
-#else
 	kern_return_t kr;
 	// do the cleanup necessary
 	// XXX check for errors and ref counts
@@ -239,7 +204,6 @@ int xnu_detach(RzDebug *dbg, int pid) {
 	rz_list_free(dbg->threads);
 	dbg->threads = NULL;
 	return true;
-#endif
 }
 
 static int task_suspend_count(task_t task) {
@@ -255,10 +219,6 @@ static int task_suspend_count(task_t task) {
 }
 
 int xnu_stop(RzDebug *dbg, int pid) {
-#if XNU_USE_PTRACE
-	eprintf("xnu_stop: not implemented\n");
-	return false;
-#else
 	task_t task = pid_to_task(pid);
 	if (!task) {
 		return false;
@@ -289,16 +249,9 @@ int xnu_stop(RzDebug *dbg, int pid) {
 		return false;
 	}
 	return true;
-#endif
 }
 
 int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
-#if XNU_USE_PTRACE
-	void *data = (void *)(size_t)((sig != -1) ? sig : dbg->reason.signum);
-	task_resume(pid_to_task(pid));
-	return rz_debug_ptrace(dbg, PT_CONTINUE, pid, (void *)(size_t)1,
-		       (int)(size_t)data) == 0;
-#else
 	task_t task = pid_to_task(pid);
 	if (!task) {
 		return false;
@@ -321,7 +274,6 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 		eprintf("xnu_continue: Warning: Failed to resume task\n");
 	}
 	return true;
-#endif
 }
 
 char *xnu_reg_profile(RzDebug *dbg) {
