@@ -93,8 +93,8 @@ if has_debugger
       'p/native/xnu/xnu_debug.c',
       #'p/native/xnu/trap_arm.c',
       #'p/native/xnu/trap_x86.c',
-      #'p/native/xnu/xnu_excthreads.c',
-      #'p/native/xnu/xnu_threads.c',
+      'p/native/xnu/xnu_excthreads.c',
+      'p/native/xnu/xnu_threads.c',
     ]
   endif
 

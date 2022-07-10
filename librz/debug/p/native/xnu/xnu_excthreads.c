@@ -1,12 +1,11 @@
+// SPDX-FileCopyrightText: 2022 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2015 alvarofe <alvaro.felipe91@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // FIXME deallocate all the port when they are not longer needed
 
+#include "xnu_debug.h"
 #include "xnu_threads.h"
-
-#define set_trace_bit(dbg, thread)   modify_trace_bit(dbg, thread, 1)
-#define clear_trace_bit(dbg, thread) modify_trace_bit(dbg, thread, 0)
 
 #if defined __i386__ || __x86_64__ // intel processors
 
@@ -15,10 +14,10 @@
    ENABLE is a boolean, indicating whether to set (1) the Trap Flag
    or clear it (0).  */
 
-static bool modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
+RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 	RZ_REG_T *state;
 	int ret;
-	ret = xnu_thread_get_gpr(dbg, th);
+	ret = rz_xnu_thread_get_gpr(dbg, th);
 	if (!ret) {
 		eprintf("error to get gpr registers in trace bit intel\n");
 		return false;
@@ -36,7 +35,7 @@ static bool modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 		eprintf("Invalid bit size\n");
 		return false;
 	}
-	if (!xnu_thread_set_gpr(dbg, th)) {
+	if (!rz_xnu_thread_set_gpr(dbg, th)) {
 		eprintf("error xnu_thread_set_gpr in modify_trace_bit intel\n");
 		return false;
 	}
@@ -46,11 +45,11 @@ static bool modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 #elif __POWERPC__ // ppc processor
 // XXX poor support at this stage i don't care so much. Once intel and arm done it could be done
 // TODO add better support for ppc
-static bool modify_trace_bit(RzDebug *dbg, void *th, int enable) {
+RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, void *th, int enable) {
 	return false;
 }
 #if 0
-static bool modify_trace_bit(RzDebug *dbg, xnu_thread *th, int enable) {
+static bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread *th, int enable) {
 	return false;
 	RZ_REG_T state;
 	unsigned int state_count = RZ_REG_STATE_SZ;
@@ -115,8 +114,8 @@ static bool is_thumb_32(ut16 op) {
 }
 #endif
 
-static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
-	int ret = xnu_thread_get_drx(dbg, th);
+RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
+	int ret = rz_xnu_thread_get_drx(dbg, th);
 	if (!ret) {
 		eprintf("error to get drx registers modificy_trace_bit arm\n");
 		return false;
@@ -142,7 +141,7 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 		int i = 0;
 		arm_debug_state_t *state = &th->debug.drx;
 		RZ_REG_T *regs;
-		ret = xnu_thread_get_gpr(dbg, th);
+		ret = rz_xnu_thread_get_gpr(dbg, th);
 		if (!ret) {
 			eprintf("error to get gpr register modificy_trace_bit arm\n");
 			return false;
@@ -205,7 +204,7 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 		return false;
 	}
 	// set state
-	if (!xnu_thread_set_drx(dbg, th)) {
+	if (!rz_xnu_thread_set_drx(dbg, th)) {
 		eprintf("error to set drx modificy_trace_bit arm\n");
 		return false;
 	}
@@ -224,7 +223,7 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread *th, int enable) {
 // TODO: Tuck this into RzDebug; `void *user` seems like a good candidate.
 static xnu_exception_info ex = { { 0 } };
 
-static bool xnu_restore_exception_ports(int pid) {
+RZ_IPI bool xnu_restore_exception_ports(int pid) {
 	kern_return_t kr;
 	int i;
 	task_t task = pid_to_task(pid);
@@ -375,7 +374,7 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code) {
 }
 
 // TODO improve this code
-static int __xnu_wait(RzDebug *dbg, int pid) {
+RZ_IPI int xnu_wait(RzDebug *dbg, int pid) {
 	// here comes the important thing
 	kern_return_t kr;
 	int ret_code, reason = RZ_DEBUG_REASON_UNKNOWN;
@@ -440,7 +439,7 @@ static int __xnu_wait(RzDebug *dbg, int pid) {
 	return reason;
 }
 
-bool xnu_create_exception_thread(RzDebug *dbg) {
+RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg) {
 #if __POWERPC__
 	return false;
 #else
