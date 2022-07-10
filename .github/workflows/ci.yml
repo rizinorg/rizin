@@ -213,12 +213,10 @@ jobs:
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           ninja -C build install
-      - name: Disable user authentication for debugging (MacOS)
+      - name: Disable user authentication for debugging (macOS)
         if: matrix.os == 'macos-11' && matrix.enabled
         run: |
-          security authorizationdb read system.privilege.taskport > taskport.plist
-          /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
-          sudo security authorizationdb write system.privilege.taskport < taskport.plist
+          sudo security authorizationdb write system.privilege.taskport allow
       - name: Run unit tests (meson)
         continue-on-error: ${{ matrix.allow_failure }}
         if: matrix.build_system == 'meson' && matrix.enabled
