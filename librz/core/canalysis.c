@@ -7126,3 +7126,96 @@ RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core) {
 	}
 	return cov;
 }
+
+static const char *RzAnalysisNameTypeStrs[] = {
+	"var",
+	"function",
+	"flag",
+	"address",
+};
+
+RZ_IPI const char *rz_analysis_name_type_to_str(RzAnalysisNameType typ) {
+	switch (typ) {
+	case VAR:
+	case FUNCTION:
+	case FLAG:
+	case ADDRESS:
+		return RzAnalysisNameTypeStrs[typ];
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+}
+
+RZ_API void rz_analysis_name_free(RzAnalysisName *p) {
+	if (!p) {
+		return;
+	}
+	free(p->name);
+	free(p->realname);
+	free(p);
+}
+
+RZ_API RZ_OWN RzAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
+	RzAnalysisName *p = RZ_NEW0(RzAnalysisName);
+	if (!p) {
+		return NULL;
+	}
+
+	p->offset = UT64_MAX;
+	ut64 off = core->offset;
+	RzAnalysisOp op;
+	ut64 tgt_addr = UT64_MAX;
+
+	rz_analysis_op(core->analysis, &op, off,
+		core->block + off - core->offset, 32, RZ_ANALYSIS_OP_MASK_BASIC);
+	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
+
+	tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
+	if (var) {
+		if (name) {
+			rz_analysis_var_rename(var, name, true);
+		} else {
+			p->name = strdup(var->name);
+			p->type = VAR;
+			p->offset = tgt_addr;
+		}
+	} else if (tgt_addr != UT64_MAX) {
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
+		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
+		if (fcn) {
+			if (name) {
+				rz_analysis_function_rename(fcn, name);
+			} else {
+				p->name = strdup(fcn->name);
+				p->type = FUNCTION;
+				p->offset = tgt_addr;
+			}
+		} else if (f) {
+			if (name) {
+				rz_flag_rename(core->flags, f, name);
+			} else {
+				p->name = strdup(name);
+				p->type = FLAG;
+				p->name = f->name;
+				f->realname = f->realname;
+				p->offset = tgt_addr;
+			}
+		} else {
+			if (name) {
+				rz_flag_set(core->flags, name, tgt_addr, 1);
+			} else {
+				p->type = ADDRESS;
+				p->offset = tgt_addr;
+			}
+		}
+	}
+
+	rz_analysis_op_fini(&op);
+	if (p->offset == UT64_MAX) {
+		rz_analysis_name_free(p);
+		return NULL;
+	}
+	return p;
+}

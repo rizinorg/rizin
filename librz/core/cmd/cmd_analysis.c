@@ -373,98 +373,40 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 	}
 }
 
-static bool core_analysis_name(RzCore *core, const char *name, PJ *pj) {
-	bool ret = true;
-	ut64 off = core->offset;
-	RzAnalysisOp op;
-	ut64 tgt_addr = UT64_MAX;
+#define PJ_KS(pj, key, value) \
+	if (RZ_STR_ISNOTEMPTY(value)) { \
+		pj_ks(pj, key, value); \
+	}
+#define PJ_KN(pj, key, value) \
+	if (value != UT64_MAX) { \
+		pj_kn(pj, key, value); \
+	}
 
+static bool core_analysis_name_print(RzCore *core, const char *name, PJ *pj) {
+	RzAnalysisName *p = rz_core_analysis_name(core, name);
+	if (!p) {
+		return false;
+	}
 	if (pj) {
 		pj_a(pj);
-	}
 
-	rz_analysis_op(core->analysis, &op, off,
-		core->block + off - core->offset, 32, RZ_ANALYSIS_OP_MASK_BASIC);
-	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
-
-	tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
-	if (var) {
-		if (name) {
-			ret = rz_analysis_var_rename(var, name, true)
-				? true
-				: false;
-		} else {
-			if (pj) {
-				pj_o(pj);
-				pj_ks(pj, "name", var->name);
-				pj_ks(pj, "type", "var");
-				pj_kn(pj, "offset", tgt_addr);
-				pj_end(pj);
-			} else {
-				rz_cons_println(var->name);
-			}
-		}
-	} else if (tgt_addr != UT64_MAX) {
-		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
-		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
-		if (fcn) {
-			if (name) {
-				ret = rz_analysis_function_rename(fcn, name) ? true : false;
-			} else {
-				if (!pj) {
-					rz_cons_println(fcn->name);
-				} else {
-					pj_o(pj);
-					pj_ks(pj, "name", fcn->name);
-					pj_ks(pj, "type", "function");
-					pj_kn(pj, "offset", tgt_addr);
-					pj_end(pj);
-				}
-			}
-		} else if (f) {
-			if (name) {
-				ret = rz_flag_rename(core->flags, f, name) ? true : false;
-			} else {
-				if (!pj) {
-					rz_cons_println(f->name);
-				} else {
-					pj_o(pj);
-					if (name) {
-						pj_ks(pj, "old_name", f->name);
-						pj_ks(pj, "name", name);
-					} else {
-						pj_ks(pj, "name", f->name);
-					}
-					if (f->realname) {
-						pj_ks(pj, "realname", f->realname);
-					}
-					pj_ks(pj, "type", "flag");
-					pj_kn(pj, "offset", tgt_addr);
-					pj_end(pj);
-				}
-			}
-		} else {
-			if (name) {
-				ret = rz_flag_set(core->flags, name, tgt_addr, 1) ? true : false;
-			} else {
-				if (!pj) {
-					rz_cons_printf("0x%" PFMT64x "\n", tgt_addr);
-				} else {
-					pj_o(pj);
-					pj_ks(pj, "type", "address");
-					pj_kn(pj, "offset", tgt_addr);
-					pj_end(pj);
-				}
-			}
-		}
-	}
-
-	if (pj) {
+		pj_o(pj);
+		PJ_KS(pj, "name", p->name);
+		PJ_KS(pj, "realname", p->realname);
+		pj_ks(pj, "type", rz_analysis_name_type_to_str(p->type));
+		pj_kn(pj, "offset", p->offset);
 		pj_end(pj);
-	}
 
-	rz_analysis_op_fini(&op);
-	return ret;
+		pj_end(pj);
+	} else {
+		if (p->type == ADDRESS) {
+			rz_cons_printf("0x%" PFMT64x "\n", p->offset);
+		} else {
+			rz_cons_println(p->name);
+		}
+	}
+	rz_analysis_name_free(p);
+	return true;
 }
 
 static void print_trampolines(RzCore *core, ut64 a, ut64 b, size_t element_size) {
@@ -531,15 +473,6 @@ static int esil_cost(RzCore *core, ut64 addr, const char *expr) {
 	rz_analysis_esil_free(e);
 	return ec;
 }
-
-#define PJ_KS(pj, key, value) \
-	if (RZ_STR_ISNOTEMPTY(value)) { \
-		pj_ks(pj, key, value); \
-	}
-#define PJ_KN(pj, key, value) \
-	if (value != UT64_MAX) { \
-		pj_kn(pj, key, value); \
-	}
 
 static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int nops) {
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
@@ -7191,10 +7124,10 @@ RZ_IPI RzCmdStatus rz_analyse_name_handler(RzCore *core, int argc, const char **
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		ret = core_analysis_name(core, name, state->d.pj);
+		ret = core_analysis_name_print(core, name, state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		ret = core_analysis_name(core, name, NULL);
+		ret = core_analysis_name_print(core, name, NULL);
 		break;
 	default:
 		rz_warn_if_reached();

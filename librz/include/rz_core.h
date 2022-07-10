@@ -756,6 +756,20 @@ RZ_API void rz_core_analysis_esil_init_mem_del(RZ_NONNULL RzCore *core, RZ_NULLA
 RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core);
 
 /* canalysis.c */
+typedef enum rz_analysis_name_type {
+	VAR = 0,
+	FUNCTION,
+	FLAG,
+	ADDRESS,
+} RzAnalysisNameType;
+
+typedef struct rz_analysis_name {
+	char *name;
+	char *realname;
+	RzAnalysisNameType type;
+	ut64 offset;
+} RzAnalysisName;
+
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
 RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, bool verbose);
@@ -805,6 +819,9 @@ RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core);
+
+RZ_API void rz_analysis_name_free(RzAnalysisName *p);
+RZ_API RZ_OWN RzAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
