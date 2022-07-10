@@ -55,6 +55,7 @@ rz_util_sources = [
   'str_constpool.c',
   'str_search.c',
   'str_trim.c',
+  'str_version.c',
   'strbuf.c',
   'strpool.c',
   'subprocess.c',
@@ -94,7 +95,7 @@ else
   rz_util_sources += ['big.c']
 endif
 
-rz_util = library('rz_util', rz_util_sources,
+rz_util = library('rz_util', rz_util_sources + [rz_build_h],
   include_directories: platform_inc,
   c_args: library_cflags,
   dependencies: rz_util_deps,

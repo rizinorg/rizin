@@ -20,6 +20,7 @@ syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 cmake_package_prefix_dir_py = files('sys/meson_cmake_prefix_dir.py')
+do_build_defines_py = files('sys/do_build_defines.py')
 
 is_static_build = get_option('static_runtime')
 is_static_libs_only = get_option('default_library') == 'static'
@@ -69,23 +70,6 @@ endif
 
 if get_option('rizin_gittip') != ''
   gittip = get_option('rizin_gittip')
-endif
-
-# Get current date
-if host_machine.system() == 'windows'
-  rizinbirth = run_command('cmd', '/c', 'echo %date%__%time%', check: true)
-else
-  rizinbirth = run_command('sh', '-c', '''
-      SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}";
-      FORMAT="+%Y-%m-%d__%H:%M:%S";
-      date -u -d "@$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
-      date -u -r  "$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
-      date -u "$FORMAT"''', check: true)
-endif
-if rizinbirth.returncode() != 0
-  rizinbirth = ''
-else
-  rizinbirth = rizinbirth.stdout().strip()
 endif
 
 rizin_libversion = '@0@.@1@'.format(rizin_version_major, rizin_version_minor)
@@ -541,7 +525,6 @@ versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
 versionconf.set('RZ_VERSION_NUMBER', rizin_version_number)
 versionconf.set('RZ_VERSION', rizin_version)
 versionconf.set('RZ_GITTIP', gittip)
-versionconf.set('RZ_BIRTH', rizinbirth)
 if packager_version != ''
   versionconf.set_quoted('RZ_PACKAGER_VERSION', packager_version)
   if packager != ''
@@ -552,6 +535,15 @@ rz_version_h = configure_file(
   input: 'librz/include/rz_version.h.in',
   output: 'rz_version.h',
   configuration: versionconf,
+  install_dir: rizin_incdir
+)
+
+rz_build_h = custom_target('rz_build_h',
+  build_always_stale: true,
+  build_by_default: true,
+  output: 'rz_build.h',
+  command: [py3_exe, do_build_defines_py],
+  install: true,
   install_dir: rizin_incdir
 )
 
