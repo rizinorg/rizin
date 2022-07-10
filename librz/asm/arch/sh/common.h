@@ -92,7 +92,7 @@ static const SHOpRaw sh_op_lookup[] = {
 	{ "mov.l", SH_OP_MOV, OPCODE(6, N, M, 6), 0x0ff0, SH_SCALING_L, { ADDR(NIB1, SH_REG_INDIRECT_I), ADDR(NIB2, SH_REG_DIRECT) } },
 	{ "mov.b", SH_OP_MOV, OPCODE(8, 0, N, D), 0x00ff, SH_SCALING_B, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_REG_INDIRECT_DISP) } },
 	{ "mov.w", SH_OP_MOV, OPCODE(8, 1, N, D), 0x00ff, SH_SCALING_W, { PARAM(R0, SH_REG_DIRECT), ADDR(NIB0, SH_REG_INDIRECT_DISP) } },
-	{ "mov.l", SH_OP_MOV, OPCODE(1, N, M, D), 0x0fff, SH_SCALING_L, { /*dummy values*/ ADDR(NIB0, SH_ADDR_INVALID), ADDR(NIB0, SH_ADDR_INVALID) } },
+	{ "mov.l", SH_OP_MOV, OPCODE(1, N, M, D), 0x0fff, SH_SCALING_L, { /*dummy values*/ ADDR(NIB0, SH_REG_DIRECT), ADDR(NIB0, SH_REG_INDIRECT_DISP) } },
 	// ^ Just this instruction is kinda weird, so needs to be taken care of specially
 	{ "mov.b", SH_OP_MOV, OPCODE(8, 4, M, D), 0x00ff, SH_SCALING_B, { ADDR(NIB0, SH_REG_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },
 	{ "mov.w", SH_OP_MOV, OPCODE(8, 5, M, D), 0x00ff, SH_SCALING_W, { ADDR(NIB0, SH_REG_INDIRECT_DISP), PARAM(R0, SH_REG_DIRECT) } },

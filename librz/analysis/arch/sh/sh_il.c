@@ -1287,7 +1287,6 @@ static RzILOpEffect *sh_il_clrt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = NULL;
-	bool gbr = op->param[1].param[0] == SH_REG_IND_GBR;
 	if (op->scaling == SH_SCALING_INVALID) {
 		if (sh_valid_gpr(op->param[1].param[0])) {
 			eff = SETG(sh_get_banked_reg(op->param[1].param[0], 1), sh_il_get_pure_param(0));
