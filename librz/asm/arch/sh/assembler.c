@@ -305,7 +305,7 @@ static bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrMode modes[]) {
  * \param success Store bool whether the assembler succeeded or not (RZ_NULLABLE)
  * \return ut16 Opcode for the given instruction
  */
-RZ_API ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE bool *success) {
+RZ_IPI ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE bool *success) {
 	rz_return_val_if_fail(buffer, -1);
 	if (success) {
 		*success = true;

@@ -118,7 +118,7 @@ static SHParam sh_op_get_param_movl(ut16 opcode, bool m) {
  * \param opcode 16 bit wide opcode
  * \return SHOp object corresponding to the opcode
  */
-RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
+RZ_IPI RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
 	for (ut16 i = 0; i < OPCODE_NUM; i++) {
 		if ((opcode | sh_op_lookup[i].mask) != sh_op_lookup[i].opcode) {
 			continue;
@@ -154,7 +154,7 @@ RZ_API RZ_OWN SHOp *sh_disassembler(ut16 opcode) {
  * \param SHScaling of the instruction associated with the param
  * \return char *, owned by the caller
  */
-RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param, SHScaling scaling, ut64 pc) {
+RZ_IPI RZ_OWN char *sh_op_param_to_str(SHParam param, SHScaling scaling, ut64 pc) {
 	if (param.mode == SH_ADDR_INVALID) {
 		return NULL;
 	}
@@ -212,7 +212,7 @@ RZ_API RZ_OWN char *sh_op_param_to_str(SHParam param, SHScaling scaling, ut64 pc
  * \param SHOp to be disassembled
  * \return char *, owned by the caller
  */
-RZ_API RZ_OWN char *sh_op_to_str(RZ_NONNULL const SHOp *op, ut64 pc) {
+RZ_IPI RZ_OWN char *sh_op_to_str(RZ_NONNULL const SHOp *op, ut64 pc) {
 	rz_return_val_if_fail(op, NULL);
 	if (!op->str_mnem) {
 		return NULL;
