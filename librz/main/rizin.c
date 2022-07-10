@@ -1437,9 +1437,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 							rz_debug_can_kill(r->dbg) &&
 							rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
 							rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
-						} else {
-							rz_debug_detach(r->dbg, r->dbg->pid);
 						}
+						// Even if killed above, we must still detach, otherwise
+						// there will be a zombie on macOS!
+						rz_debug_detach(r->dbg, r->dbg->pid);
 					} else {
 						continue;
 					}
