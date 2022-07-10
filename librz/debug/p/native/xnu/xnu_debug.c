@@ -158,11 +158,16 @@ int xnu_attach(RzDebug *dbg, int pid) {
 }
 
 int xnu_detach(RzDebug *dbg, int pid) {
-	kern_return_t kr;
+	// Not calling PT_DETACH results in a zombie
+	int r = rz_debug_ptrace(dbg, PT_DETACH, pid, 0, 0);
+	if (r < 0) {
+		perror("ptrace(PT_DETACH)");
+	}
+
 	// do the cleanup necessary
 	// XXX check for errors and ref counts
 	(void)xnu_restore_exception_ports(pid);
-	kr = mach_port_deallocate(mach_task_self(), task_dbg);
+	kern_return_t kr = mach_port_deallocate(mach_task_self(), task_dbg);
 	if (kr != KERN_SUCCESS) {
 		eprintf("xnu_detach: failed to deallocate port\n");
 		return false;
