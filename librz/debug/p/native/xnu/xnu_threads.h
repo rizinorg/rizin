@@ -117,5 +117,6 @@ static inline bool xnu_clear_trace_bit(RzDebug *dbg, xnu_thread_t *th) {
 
 RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg);
 RZ_IPI bool xnu_restore_exception_ports(int pid);
+RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 timeout_ms, bool quiet_signal);
 
 #endif
