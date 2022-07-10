@@ -821,7 +821,8 @@ RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core);
 
 RZ_API void rz_analysis_name_free(RzAnalysisName *p);
-RZ_API RZ_OWN RzAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name);
+RZ_API RZ_OWN RzAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core);
+RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
