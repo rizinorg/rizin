@@ -270,7 +270,7 @@ static bool validate_mach_message(RzDebug *dbg, exc_msg *msg) {
 	if (!(msg->hdr.msgh_bits & MACH_MSGH_BITS_COMPLEX)) {
 		return false;
 	}
-	/*mach exception we are interested*/
+	/*Mach exception we are interested*/
 	// XXX for i386 this id seems to be different
 	if (msg->hdr.msgh_id > 2405 || msg->hdr.msgh_id < 2401) {
 		return false;
@@ -319,7 +319,7 @@ static bool handle_dead_notify(RzDebug *dbg, exc_msg *msg) {
 	return false;
 }
 
-static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code) {
+static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code, bool quiet_signal) {
 	int ret = RZ_DEBUG_REASON_UNKNOWN;
 	kern_return_t kr;
 	*ret_code = KERN_SUCCESS;
@@ -351,17 +351,31 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code) {
 		eprintf("EXC_EMULATION\n");
 		break;
 	case EXC_SOFTWARE:
-		eprintf("EXC_SOFTWARE: ");
+		// TODO: make these eprintfs RZ_LOG_INFO
+		// Right now we can't because the default log level is < info and the info about the
+		// signal is important to the user.
+		if (!quiet_signal) {
+			eprintf("EXC_SOFTWARE: ");
+		}
 		if (code == EXC_SOFT_SIGNAL) {
 			// standard unix signal
-			eprintf(" EXC_SOFT_SIGNAL %" PFMT64u, subcode);
-			const char *signame = rz_signal_to_string((int)subcode);
-			if (signame) {
-				eprintf(" = %s", signame);
+			ret = RZ_DEBUG_REASON_SIGNAL;
+			dbg->reason.signum = subcode;
+			if (!quiet_signal) {
+				eprintf(" EXC_SOFT_SIGNAL %" PFMT64u, subcode);
+				const char *signame = rz_signal_to_string((int)subcode);
+				if (signame) {
+					eprintf(" = %s", signame);
+				}
+				eprintf("\n");
 			}
-			eprintf("\n");
 		} else {
 			eprintf("code = 0x%" PFMT64u ", subcode = 0x%" PFMT64u "\n", code, subcode);
+		}
+		// We want to stop and examine when getting signals
+		kr = task_suspend(msg->task.name);
+		if (kr != KERN_SUCCESS) {
+			RZ_LOG_ERROR("Failed to suspend after EXC_SOFTWARE");
 		}
 		break;
 	case EXC_BREAKPOINT:
@@ -386,11 +400,17 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code) {
 	return ret;
 }
 
-// TODO improve this code
-RZ_IPI int xnu_wait(RzDebug *dbg, int pid) {
-	// here comes the important thing
+/**
+ * Wait for a Mach exception, reply to it and handle it.
+ *
+ * \param timeout_ms if zero, wait infinitely, otherwise specifies a timeout for receiving
+ * \param quiet_signal don't print when receiving a standard unix signal
+ */
+RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 timeout_ms, bool quiet_signal) {
+	rz_return_val_if_fail(dbg, RZ_DEBUG_REASON_ERROR);
 	kern_return_t kr;
-	int ret_code, reason = RZ_DEBUG_REASON_UNKNOWN;
+	int ret_code;
+	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	mig_reply_error_t reply;
 	bool ret;
 	exc_msg msg = { 0 };
@@ -402,14 +422,18 @@ RZ_IPI int xnu_wait(RzDebug *dbg, int pid) {
 	for (;;) {
 		kr = mach_msg(
 			&msg.hdr,
-			MACH_RCV_MSG | MACH_RCV_INTERRUPT, 0,
+			MACH_RCV_MSG | MACH_RCV_INTERRUPT | (timeout_ms ? MACH_RCV_TIMEOUT : 0), 0,
 			sizeof(exc_msg), ex.exception_port,
-			MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
+			timeout_ms ? timeout_ms : MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 		if (kr == MACH_RCV_INTERRUPTED) {
 			reason = RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED;
 			break;
+		} else if (kr == MACH_RCV_TIMED_OUT) {
+			RZ_LOG_ERROR("Waiting for Mach exception timed out");
+			reason = RZ_DEBUG_REASON_UNKNOWN;
+			break;
 		} else if (kr != MACH_MSG_SUCCESS) {
-			eprintf("message didn't succeeded\n");
+			RZ_LOG_ERROR("message didn't succeeded\n");
 			break;
 		}
 		ret = validate_mach_message(dbg, &msg);
@@ -435,7 +459,7 @@ RZ_IPI int xnu_wait(RzDebug *dbg, int pid) {
 			continue;
 		}
 
-		reason = handle_exception_message(dbg, &msg, &ret_code);
+		reason = handle_exception_message(dbg, &msg, &ret_code, quiet_signal);
 		encode_reply(&reply, &msg.hdr, ret_code);
 		kr = mach_msg(&reply.Head, MACH_SEND_MSG | MACH_SEND_INTERRUPT,
 			reply.Head.msgh_size, 0,
@@ -459,7 +483,7 @@ RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg) {
 	kern_return_t kr;
 	mach_port_t exception_port = MACH_PORT_NULL;
 	mach_port_t req_port;
-	// Got the mach port for the current process
+	// Got the Mach port for the current process
 	mach_port_t task_self = mach_task_self();
 	task_t task = pid_to_task(dbg->pid);
 	if (!task) {
@@ -467,7 +491,6 @@ RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg) {
 			" xnu_start_exception_thread\n");
 		return false;
 	}
-	rz_debug_ptrace(dbg, PT_ATTACHEXC, dbg->pid, 0, 0);
 	if (!MACH_PORT_VALID(task_self)) {
 		eprintf("error to get the task for the current process"
 			" xnu_start_exception_thread\n");
