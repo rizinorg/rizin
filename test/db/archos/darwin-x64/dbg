@@ -1,0 +1,19 @@
+NAME=dcu + read
+FILE=bins/mach0/hello-objc-osx
+ARGS=-d
+CMDS=<<EOF
+dcu main
+pi 8 @ rip
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+sub rsp, 0x10
+mov rax, qword [section.13.__DATA.__objc_classrefs]
+mov rdi, rax
+lea rax, reloc.objc_msgSend_fixup
+mov rax, qword [rax]
+lea rsi, reloc.objc_msgSend_fixup
+EOF
+RUN
+
