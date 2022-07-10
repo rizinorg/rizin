@@ -81,9 +81,14 @@ typedef struct _exc_msg {
 	NDR_record_t NDR;
 	exception_type_t exception;
 	mach_msg_type_number_t code_cnt;
-#if !__POWERPC__
-	mach_exception_data_t code;
-#endif
+
+	/*!
+	 * code and subcode,
+	 * two 64-bit values here because of MACH_EXCEPTION_CODES,
+	 * but not 64-bit aligned, so we use ut32.
+	 */
+	ut32 code[0x4];
+
 	/* some times RCV_TO_LARGE probs */
 	char pad[512];
 } exc_msg;
