@@ -7185,7 +7185,7 @@ RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
 		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
 		if (fcn) {
-			result = rz_core_analysis_function_rename(core, addr, name);
+			result = rz_core_analysis_function_rename(core, tgt_addr, name);
 		} else if (f) {
 			result = rz_flag_rename(core->flags, f, name);
 		} else {
