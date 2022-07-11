@@ -33,6 +33,9 @@ adE "mov.l r0, @(0x3fc,gbr)" c2ff 0x0 (storew 0 (+ (var gbr) (* (bv 32 0xff) (bv
 adE "mov.b @(0x00f,gbr), r0" c40f 0x0 (branch (&& (var sr_d) (var sr_r)) (set r0b (cast 32 (msb (loadw 0 8 (+ (var gbr) (* (bv 32 0xf) (bv 32 0x1))))) (loadw 0 8 (+ (var gbr) (* (bv 32 0xf) (bv 32 0x1)))))) (set r0 (cast 32 (msb (loadw 0 8 (+ (var gbr) (* (bv 32 0xf) (bv 32 0x1))))) (loadw 0 8 (+ (var gbr) (* (bv 32 0xf) (bv 32 0x1)))))))
 adE "mov.w @(0x0fe,gbr), r0" c57f 0x0 (branch (&& (var sr_d) (var sr_r)) (set r0b (cast 32 (msb (loadw 0 16 (+ (var gbr) (* (bv 32 0x7f) (bv 32 0x2))))) (loadw 0 16 (+ (var gbr) (* (bv 32 0x7f) (bv 32 0x2)))))) (set r0 (cast 32 (msb (loadw 0 16 (+ (var gbr) (* (bv 32 0x7f) (bv 32 0x2))))) (loadw 0 16 (+ (var gbr) (* (bv 32 0x7f) (bv 32 0x2)))))))
 adE "mov.l @(0x3fc,gbr), r0" c6ff 0x0 (branch (&& (var sr_d) (var sr_r)) (set r0b (loadw 0 32 (+ (var gbr) (* (bv 32 0xff) (bv 32 0x4))))) (set r0 (loadw 0 32 (+ (var gbr) (* (bv 32 0xff) (bv 32 0x4))))))
+adE "mova @(0x3fc,pc), r0" c7ff 0x420 (branch (&& (var sr_d) (var sr_r)) (set r0b (loadw 0 32 (+ (+ (& (bv 32 0x420) (bv 32 0xfffffffc)) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x4))))) (set r0 (loadw 0 32 (+ (+ (& (bv 32 0x420) (bv 32 0xfffffffc)) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x4))))))
+adE "movt r14" 0e29 0x100 (set r14 (cast 32 false (ite (var sr_t) (bv 32 0x1) (bv 32 0x0))))
+adE "swap.b r0, r1" 6108
 
 # Misc
 adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (cast 32 (msb (<< (bv 8 0x0) (bv 8 0x1) false)) (<< (bv 8 0x0) (bv 8 0x1) false)))) nop)
