@@ -7137,7 +7137,7 @@ static const char *RzAnalysisNameTypeStrs[] = {
 /**
  * \brief Convert \p typ to string (const char*)
  */
-RZ_API RZ_BORROW const char *rz_analysis_name_type_to_str(RzAnalysisNameType typ) {
+RZ_API RZ_BORROW const char *rz_core_analysis_name_type_to_str(RzCoreAnalysisNameType typ) {
 	switch (typ) {
 	case RZ_ANALYSIS_NAME_TYPE_VAR:
 	case RZ_ANALYSIS_NAME_TYPE_FUNCTION:
@@ -7150,7 +7150,7 @@ RZ_API RZ_BORROW const char *rz_analysis_name_type_to_str(RzAnalysisNameType typ
 	}
 }
 
-RZ_API void rz_analysis_name_free(RZ_NULLABLE RzAnalysisName *p) {
+RZ_API void rz_core_analysis_name_free(RZ_NULLABLE RzCoreAnalysisName *p) {
 	if (!p) {
 		return;
 	}
@@ -7194,10 +7194,10 @@ RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
  * \brief Get information on whatever var/flag/function is used at core->offset
  * \return RzAnalysisName
  */
-RZ_API RZ_OWN RzAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core) {
+RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
-	RzAnalysisName *p = RZ_NEW0(RzAnalysisName);
+	RzCoreAnalysisName *p = RZ_NEW0(RzCoreAnalysisName);
 	if (!p) {
 		return NULL;
 	}

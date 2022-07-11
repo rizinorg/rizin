@@ -388,35 +388,41 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 		} \
 	}
 
-static bool core_analysis_name_print(RzCore *core, const char *name, PJ *pj) {
-	if (name) {
-		return rz_core_analysis_rename(core, name);
-	} else {
-		RzAnalysisName *p = rz_core_analysis_name(core);
-		if (!p) {
-			return false;
-		}
-		if (pj) {
-			pj_a(pj);
-
-			pj_o(pj);
-			PJ_KS(pj, "name", p->name);
-			PJ_KS(pj, "realname", p->realname);
-			pj_ks(pj, "type", rz_analysis_name_type_to_str(p->type));
-			pj_kn(pj, "offset", p->offset);
-			pj_end(pj);
-
-			pj_end(pj);
-		} else {
-			if (p->type == RZ_ANALYSIS_NAME_TYPE_ADDRESS) {
-				rz_cons_printf("0x%" PFMT64x "\n", p->offset);
-			} else {
-				rz_cons_println(p->name);
-			}
-		}
-		rz_analysis_name_free(p);
-		return true;
+static bool core_analysis_name_print(RzCore *core, RzCmdStateOutput *state) {
+	RzCoreAnalysisName *p = rz_core_analysis_name(core);
+	if (!p) {
+		return false;
 	}
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_a(pj);
+
+		pj_o(pj);
+		PJ_KS(pj, "name", p->name);
+		PJ_KS(pj, "realname", p->realname);
+		pj_ks(pj, "type", rz_core_analysis_name_type_to_str(p->type));
+		pj_kn(pj, "offset", p->offset);
+		pj_end(pj);
+
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		if (p->type == RZ_ANALYSIS_NAME_TYPE_ADDRESS) {
+			rz_cons_printf("0x%" PFMT64x "\n", p->offset);
+		} else {
+			rz_cons_println(p->name);
+		}
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		return false;
+	}
+
+	rz_core_analysis_name_free(p);
+	return true;
 }
 
 static void print_trampolines(RzCore *core, ut64 a, ut64 b, size_t element_size) {
@@ -7125,31 +7131,17 @@ RZ_IPI RzCmdStatus rz_list_plugins_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_analyse_name_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *name = NULL;
-	st32 ret = 0;
-
 	if (argc > 1) {
-		name = argv[1];
+		bool ret = rz_core_analysis_rename(core, argv[1]);
+		if (!ret) {
+			// name exists when error happens
+			RZ_LOG_ERROR("Error happens while handling name: %s\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		return RZ_CMD_STATUS_OK;
 	}
 
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_JSON:
-		ret = core_analysis_name_print(core, name, state->d.pj);
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		ret = core_analysis_name_print(core, name, NULL);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-
-	if (!ret) {
-		// name exists when error happens
-		RZ_LOG_ERROR("Error happens while handling name: %s\n", name);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(core_analysis_name_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_analysis_all_esil_handler(RzCore *core, int argc, const char **argv) {
