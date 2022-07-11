@@ -7223,7 +7223,7 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 	if (var) {
 		p->type = RZ_CORE_ANALYSIS_NAME_TYPE_VAR;
 		p->name = strdup(var->name);
-		p->offset = tgt_addr;
+		p->offset = op.addr;
 	} else if (tgt_addr != UT64_MAX) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
 		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
