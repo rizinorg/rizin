@@ -424,18 +424,20 @@ static RzILOpEffect *sh_il_movt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0110nnnnmmmm1001
  */
 static RzILOpEffect *sh_il_swap(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+	/* We won't be using `sh_il_{get,set}_param_pure`, because it will cast the pure value to the scaling size,
+	but we want the whole register, which is why we need to call `sh_il_{get,set}_param directly` */
 	if (op->scaling == SH_SCALING_B) {
 		// swap lower two bytes
-		RzILOpPure *lower_byte = AND(sh_il_get_pure_param(0), SH_U_REG(0xff));
-		RzILOpPure *new_lower_byte = AND(SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(BITS_PER_BYTE)), SH_U_REG(0xff));
+		RzILOpPure *lower_byte = LOGAND(sh_il_get_param(op->param[0], SH_SCALING_L).pure, SH_U_REG(0xff));
+		RzILOpPure *new_lower_byte = LOGAND(SHIFTR0(sh_il_get_param(op->param[0], SH_SCALING_L).pure, SH_U_REG(BITS_PER_BYTE)), SH_U_REG(0xff));
 		RzILOpPure *new_upper_byte = SHIFTL0(lower_byte, SH_U_REG(BITS_PER_BYTE));
-		RzILOpPure *upper_word = LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xffff0000));
-		return sh_il_set_pure_param(1, LOGOR(upper_word, LOGOR(new_upper_byte, new_lower_byte)));
+		RzILOpPure *upper_word = LOGAND(sh_il_get_param(op->param[0], SH_SCALING_L).pure, SH_U_REG(0xffff0000));
+		return sh_il_set_param(op->param[1], LOGOR(upper_word, LOGOR(new_upper_byte, new_lower_byte)), SH_SCALING_L);
 	} else if (op->scaling == SH_SCALING_W) {
 		// swap upper and lower words and store in dst
-		RzILOpPure *high = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(BITS_PER_BYTE * 2));
-		RzILOpPure *low = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(BITS_PER_BYTE * 2));
-		return sh_il_set_pure_param(1, LOGOR(high, low));
+		RzILOpPure *high = SHIFTL0(sh_il_get_param(op->param[0], SH_SCALING_L).pure, SH_U_REG(BITS_PER_BYTE * 2));
+		RzILOpPure *low = SHIFTR0(sh_il_get_param(op->param[0], SH_SCALING_L).pure, SH_U_REG(BITS_PER_BYTE * 2));
+		return sh_il_set_param(op->param[1], LOGOR(high, low), SH_SCALING_L);
 	}
 
 	return NULL;
