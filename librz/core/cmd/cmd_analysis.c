@@ -389,7 +389,7 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 	}
 
 static bool core_analysis_name_print(RzCore *core, RzCmdStateOutput *state) {
-	RzCoreAnalysisName *p = rz_core_analysis_name(core);
+	RzCoreAnalysisName *p = rz_core_analysis_name(core, core->offset);
 	if (!p) {
 		return false;
 	}
@@ -409,7 +409,7 @@ static bool core_analysis_name_print(RzCore *core, RzCmdStateOutput *state) {
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
-		if (p->type == RZ_ANALYSIS_NAME_TYPE_ADDRESS) {
+		if (p->type == RZ_CORE_ANALYSIS_NAME_TYPE_ADDRESS) {
 			rz_cons_printf("0x%" PFMT64x "\n", p->offset);
 		} else {
 			rz_cons_println(p->name);
@@ -7132,7 +7132,7 @@ RZ_IPI RzCmdStatus rz_list_plugins_handler(RzCore *core, int argc, const char **
 
 RZ_IPI RzCmdStatus rz_analyse_name_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc > 1) {
-		bool ret = rz_core_analysis_rename(core, argv[1]);
+		bool ret = rz_core_analysis_rename(core, argv[1], core->offset);
 		if (!ret) {
 			// name exists when error happens
 			RZ_LOG_ERROR("Error happens while handling name: %s\n", argv[1]);

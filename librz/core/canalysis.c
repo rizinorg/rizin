@@ -7127,7 +7127,7 @@ RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core) {
 	return cov;
 }
 
-static const char *RzAnalysisNameTypeStrs[] = {
+static const char *RzCoreAnalysisNameTypeStrs[] = {
 	"var",
 	"function",
 	"flag",
@@ -7139,11 +7139,11 @@ static const char *RzAnalysisNameTypeStrs[] = {
  */
 RZ_API RZ_BORROW const char *rz_core_analysis_name_type_to_str(RzCoreAnalysisNameType typ) {
 	switch (typ) {
-	case RZ_ANALYSIS_NAME_TYPE_VAR:
-	case RZ_ANALYSIS_NAME_TYPE_FUNCTION:
-	case RZ_ANALYSIS_NAME_TYPE_FLAG:
-	case RZ_ANALYSIS_NAME_TYPE_ADDRESS:
-		return RzAnalysisNameTypeStrs[typ];
+	case RZ_CORE_ANALYSIS_NAME_TYPE_VAR:
+	case RZ_CORE_ANALYSIS_NAME_TYPE_FUNCTION:
+	case RZ_CORE_ANALYSIS_NAME_TYPE_FLAG:
+	case RZ_CORE_ANALYSIS_NAME_TYPE_ADDRESS:
+		return RzCoreAnalysisNameTypeStrs[typ];
 	default:
 		rz_warn_if_reached();
 		return NULL;
@@ -7160,76 +7160,101 @@ RZ_API void rz_core_analysis_name_free(RZ_NULLABLE RzCoreAnalysisName *p) {
 }
 
 /**
- * \brief Rename whatever var/flag/function is used at core->offset to \p name
+ * \brief Rename whatever var/flag/function is used at \p addr to \p name
  * \return success?
  */
-RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name) {
+RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis && RZ_STR_ISNOTEMPTY(name), false);
 
-	RzAnalysisOp op;
-	ut64 tgt_addr = UT64_MAX;
+	ut64 oldoff = core->offset;
+	if (addr != core->offset) {
+		rz_core_seek(core, addr, true);
+	}
 
+	RzAnalysisOp op;
 	rz_analysis_op(core->analysis, &op, core->offset,
 		core->block, 32, RZ_ANALYSIS_OP_MASK_BASIC);
 	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
-	tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
+	ut64 tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 	rz_analysis_op_fini(&op);
+
+	bool result = false;
 	if (var) {
-		return rz_analysis_var_rename(var, name, true);
+		result = rz_analysis_var_rename(var, name, true);
 	} else if (tgt_addr != UT64_MAX) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
 		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
 		if (fcn) {
-			return rz_analysis_function_rename(fcn, name);
+			result = rz_analysis_function_rename(fcn, name);
 		} else if (f) {
-			return rz_flag_rename(core->flags, f, name);
+			result = rz_flag_rename(core->flags, f, name);
 		} else {
-			return rz_flag_set(core->flags, name, tgt_addr, 1);
+			result = rz_flag_set(core->flags, name, tgt_addr, 1);
 		}
 	}
-	return false;
+
+	if (oldoff != core->offset) {
+		rz_core_seek(core, oldoff, true);
+	}
+
+	return result;
 }
 
 /**
- * \brief Get information on whatever var/flag/function is used at core->offset
+ * \brief Get information on whatever var/flag/function is used at \p addr
  * \return RzAnalysisName
  */
-RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core) {
+RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
 	RzCoreAnalysisName *p = RZ_NEW0(RzCoreAnalysisName);
 	if (!p) {
 		return NULL;
 	}
+	p->offset = UT64_MAX;
+
+	ut64 oldoff = core->offset;
+	if (addr != core->offset) {
+		rz_core_seek(core, addr, true);
+	}
 
 	RzAnalysisOp op;
-	ut64 tgt_addr = UT64_MAX;
-
 	rz_analysis_op(core->analysis, &op, core->offset,
 		core->block, 32, RZ_ANALYSIS_OP_MASK_BASIC);
 	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
-	tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
+	ut64 tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 	rz_analysis_op_fini(&op);
+
 	if (var) {
 		p->name = strdup(var->name);
-		p->type = RZ_ANALYSIS_NAME_TYPE_VAR;
+		p->type = RZ_CORE_ANALYSIS_NAME_TYPE_VAR;
 		p->offset = tgt_addr;
 	} else if (tgt_addr != UT64_MAX) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
 		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
 		if (fcn) {
 			p->name = strdup(fcn->name);
-			p->type = RZ_ANALYSIS_NAME_TYPE_FUNCTION;
+			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_FUNCTION;
 			p->offset = tgt_addr;
 		} else if (f) {
-			p->type = RZ_ANALYSIS_NAME_TYPE_FLAG;
+			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_FLAG;
 			p->name = strdup(f->name);
 			p->realname = strdup(f->realname);
 			p->offset = tgt_addr;
 		} else {
-			p->type = RZ_ANALYSIS_NAME_TYPE_ADDRESS;
+			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_ADDRESS;
 			p->offset = tgt_addr;
 		}
 	}
+
+	if (oldoff != core->offset) {
+		rz_core_seek(core, oldoff, true);
+	}
+
+	if (p->offset == UT64_MAX) {
+		rz_core_analysis_name_free(p);
+		return NULL;
+	}
+
 	return p;
 }
