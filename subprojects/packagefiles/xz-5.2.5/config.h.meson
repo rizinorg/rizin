@@ -427,7 +427,7 @@
 # endif
 #else
 # ifndef WORDS_BIGENDIAN
-#  undef WORDS_BIGENDIAN
+#mesondefine WORDS_BIGENDIAN
 # endif
 #endif
 
