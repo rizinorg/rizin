@@ -116,7 +116,7 @@ RUN
 
 NAME=rz-gg -v
 FILE==
-CMDS=!rz-gg -v | grep -c build
+CMDS=!rz-gg -v | grep -c commit
 EXPECT=<<EOF
 1
 EOF
