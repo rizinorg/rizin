@@ -7211,7 +7211,6 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 	if (!p) {
 		return NULL;
 	}
-	p->offset = UT64_MAX;
 
 	ut64 oldoff = core->offset;
 	if (addr != core->offset) {
@@ -7245,16 +7244,15 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_ADDRESS;
 			p->offset = tgt_addr;
 		}
+	} else {
+		rz_core_analysis_name_free(p);
+		return NULL;
 	}
 
 	if (oldoff != core->offset) {
 		rz_core_seek(core, oldoff, true);
 	}
 
-	if (p->offset == UT64_MAX) {
-		rz_core_analysis_name_free(p);
-		return NULL;
-	}
-
+	rz_core_analysis_name_free(p);
 	return p;
 }
