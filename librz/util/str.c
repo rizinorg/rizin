@@ -3932,10 +3932,6 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 #define RZ_GITTIP ""
 #endif
 
-#ifndef RZ_BIRTH
-#define RZ_BIRTH "unknown"
-#endif
-
 #ifdef RZ_PACKAGER_VERSION
 #ifdef RZ_PACKAGER
 #define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION " (" RZ_PACKAGER ")"
@@ -3958,7 +3954,7 @@ RZ_API char *rz_str_version(const char *program) {
 	}
 	if (RZ_STR_ISNOTEMPTY(RZ_GITTIP)) {
 		rz_strbuf_append(sb, "\n");
-		rz_strbuf_append(sb, "commit: " RZ_GITTIP ", build: " RZ_BIRTH);
+		rz_strbuf_append(sb, "commit: " RZ_GITTIP);
 	}
 	return rz_strbuf_drain(sb);
 }
