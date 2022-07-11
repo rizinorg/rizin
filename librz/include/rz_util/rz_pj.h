@@ -70,6 +70,8 @@ RZ_API PJ *pj_kr(PJ *j, const char *k, const ut8 *v, size_t v_len);
 
 /* string, escaped for json */
 RZ_API PJ *pj_s(PJ *j, const char *k);
+/* string, escaped for json without quotes */
+RZ_API PJ *pj_S(PJ *j, const char *k);
 /* string, raw */
 RZ_API PJ *pj_j(PJ *j, const char *k);
 

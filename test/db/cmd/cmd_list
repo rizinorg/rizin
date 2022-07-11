@@ -383,8 +383,8 @@ EXPECT=<<EOF
 {"arch":"any","name":"rap","license":"LGPL3"}
 {"arch":"x86","name":"winkd","license":"LGPL3"}
 {"arch":"x86,arm","name":"qnx","license":"LGPL3"}
-"native"
-"LGPL3"
+native
+LGPL3
 EOF
 RUN
 

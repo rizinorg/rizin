@@ -209,6 +209,19 @@ RZ_API PJ *pj_s(PJ *j, const char *k) {
 	return j;
 }
 
+RZ_API PJ *pj_S(PJ *j, const char *k) {
+	rz_return_val_if_fail(j && k, j);
+	pj_comma(j);
+	char *ek = rz_str_escape_utf8_for_json(k, -1);
+	if (ek) {
+		pj_raw(j, ek);
+		free(ek);
+	} else {
+		eprintf("cannot escape string\n");
+	}
+	return j;
+}
+
 RZ_API PJ *pj_r(PJ *j, const ut8 *v, size_t v_len) {
 	rz_return_val_if_fail(j && v, j);
 	size_t i;

@@ -5464,7 +5464,7 @@ CMDS=<<EOF
 izj~{[0].section}
 EOF
 EXPECT=<<EOF
-".rodata"
+.rodata
 EOF
 RUN
 

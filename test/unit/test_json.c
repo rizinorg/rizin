@@ -221,7 +221,7 @@ static int check_expected_4(RzJson *j) {
 static int check_expected_5(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq(j->str_value, "string value", "string value");
-	mu_assert_streq_free(rz_json_as_string(j, true), "\"string value\"", "string as string");
+	mu_assert_streq_free(rz_json_as_string(j, true), "string value", "string as string");
 	return MU_PASSED;
 }
 
@@ -1025,7 +1025,7 @@ static int check_expected_60(RzJson *j) {
 	const RzJson *kv = rz_json_get_path(j, ".bla");
 	mu_assert_streq(kv->str_value, "foo", "string value");
 	mu_assert_streq_free(rz_json_as_string(kv, true), "\"bla\":\"foo\"", "key-value as string");
-	mu_assert_streq_free(rz_json_as_string(kv, false), "\"foo\"", "value as string");
+	mu_assert_streq_free(rz_json_as_string(kv, false), "foo", "value as string");
 	return MU_PASSED;
 }
 

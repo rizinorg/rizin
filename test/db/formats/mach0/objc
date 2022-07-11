@@ -63,7 +63,7 @@ NAME=objc method flags (icj)
 FILE=bins/mach0/TestMethods
 CMDS=icj~{[0].methods[2].flags[0]}
 EXPECT=<<EOF
-"class"
+class
 EOF
 RUN
 

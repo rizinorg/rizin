@@ -129,8 +129,8 @@ icj~{[0].methods[1].flags[0]}
 icj~{[0].methods[1].flags[1]}
 EOF
 EXPECT=<<EOF
-"static"
-"public"
+static
+public
 EOF
 RUN
 
