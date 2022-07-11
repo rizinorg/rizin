@@ -1,7 +1,0 @@
-#ifndef SDB_USERCONF_H
-#define SDB_USERCONF_H
-
-#define HAVE_GETPID  @HAVE_GETPID@
-#define HAVE__GETPID @HAVE__GETPID@
-
-#endif
