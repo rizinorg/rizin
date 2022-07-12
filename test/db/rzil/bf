@@ -57,28 +57,28 @@ e asm.arch=bf
 e analysis.arch=bf
 ao @ 0x00 ~opcode
 ao @ 0x00 ~rzil
-aoj @ 0x00 ~{.rzil}
+aoj @ 0x00 ~{[0].rzil}
 ao @ 0x08 ~opcode
 ao @ 0x08 ~rzil
-aoj @ 0x08 ~{.rzil}
+aoj @ 0x08 ~{[0].rzil}
 ao @ 0x09 ~opcode
 ao @ 0x09 ~rzil
-aoj @ 0x09 ~{.rzil}
+aoj @ 0x09 ~{[0].rzil}
 ao @ 0x1c ~opcode
 ao @ 0x1c ~rzil
-aoj @ 0x1c ~{.rzil}
+aoj @ 0x1c ~{[0].rzil}
 ao @ 0x20 ~opcode
 ao @ 0x20 ~rzil
-aoj @ 0x20 ~{.rzil}
+aoj @ 0x20 ~{[0].rzil}
 ao @ 0x21 ~opcode
 ao @ 0x21 ~rzil
-aoj @ 0x21 ~{.rzil}
+aoj @ 0x21 ~{[0].rzil}
 ao @ 0x33 ~opcode
 ao @ 0x33 ~rzil
-aoj @ 0x33 ~{.rzil}
+aoj @ 0x33 ~{[0].rzil}
 ao @ 0x6a ~opcode
 ao @ 0x6a ~rzil
-aoj @ 0x6a ~{.rzil}
+aoj @ 0x6a ~{[0].rzil}
 EOF
 EXPECT=<<EOF
 opcode: inc [ptr]
