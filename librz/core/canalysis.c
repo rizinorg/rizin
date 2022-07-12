@@ -7166,14 +7166,14 @@ RZ_API void rz_core_analysis_name_free(RZ_NULLABLE RzCoreAnalysisName *p) {
 RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis && RZ_STR_ISNOTEMPTY(name), false);
 
-	ut8 buf[32];
-	if (!rz_io_read_at(core->io, addr, buf, 32)) {
+	ut8 buf[128];
+	if (!rz_io_read_at(core->io, addr, buf, sizeof(buf))) {
 		return false;
 	}
 
 	RzAnalysisOp op;
 	rz_analysis_op(core->analysis, &op, core->offset,
-		buf, 32, RZ_ANALYSIS_OP_MASK_BASIC);
+		buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
 	ut64 tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 	rz_analysis_op_fini(&op);
@@ -7203,8 +7203,8 @@ RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
-	ut8 buf[32];
-	if (!rz_io_read_at(core->io, addr, buf, 32)) {
+	ut8 buf[128];
+	if (!rz_io_read_at(core->io, addr, buf, sizeof(buf))) {
 		return NULL;
 	}
 
@@ -7215,7 +7215,7 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 
 	RzAnalysisOp op;
 	rz_analysis_op(core->analysis, &op, core->offset,
-		buf, 32, RZ_ANALYSIS_OP_MASK_BASIC);
+		buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
 	ut64 tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 	rz_analysis_op_fini(&op);
