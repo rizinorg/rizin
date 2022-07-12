@@ -7126,3 +7126,124 @@ RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core) {
 	}
 	return cov;
 }
+
+static const char *RzCoreAnalysisNameTypeStrs[] = {
+	"var",
+	"function",
+	"flag",
+	"address",
+};
+
+/**
+ * \brief Convert \p typ to string (const char*)
+ */
+RZ_API RZ_BORROW const char *rz_core_analysis_name_type_to_str(RzCoreAnalysisNameType typ) {
+	switch (typ) {
+	case RZ_CORE_ANALYSIS_NAME_TYPE_VAR:
+	case RZ_CORE_ANALYSIS_NAME_TYPE_FUNCTION:
+	case RZ_CORE_ANALYSIS_NAME_TYPE_FLAG:
+	case RZ_CORE_ANALYSIS_NAME_TYPE_ADDRESS:
+		return RzCoreAnalysisNameTypeStrs[typ];
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+}
+
+RZ_API void rz_core_analysis_name_free(RZ_NULLABLE RzCoreAnalysisName *p) {
+	if (!p) {
+		return;
+	}
+	free(p->name);
+	free(p->realname);
+	free(p);
+}
+
+/**
+ * \brief Rename whatever var/flag/function is used at \p addr to \p name
+ * \return success?
+ */
+RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis && RZ_STR_ISNOTEMPTY(name), false);
+
+	ut8 buf[128];
+	if (!rz_io_read_at(core->io, addr, buf, sizeof(buf))) {
+		return false;
+	}
+
+	RzAnalysisOp op;
+	rz_analysis_op(core->analysis, &op, core->offset,
+		buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
+	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
+	ut64 tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
+	rz_analysis_op_fini(&op);
+
+	bool result = false;
+	if (var) {
+		result = rz_analysis_var_rename(var, name, true);
+	} else if (tgt_addr != UT64_MAX) {
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
+		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
+		if (fcn) {
+			result = rz_core_analysis_function_rename(core, tgt_addr, name);
+		} else if (f) {
+			result = rz_flag_rename(core->flags, f, name);
+		} else {
+			result = rz_flag_set(core->flags, name, tgt_addr, 1);
+		}
+	}
+
+	return result;
+}
+
+/**
+ * \brief Get information on whatever var/flag/function is used at \p addr
+ * \return RzAnalysisName
+ */
+RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
+
+	ut8 buf[128];
+	if (!rz_io_read_at(core->io, addr, buf, sizeof(buf))) {
+		return NULL;
+	}
+
+	RzCoreAnalysisName *p = RZ_NEW0(RzCoreAnalysisName);
+	if (!p) {
+		return NULL;
+	}
+
+	RzAnalysisOp op;
+	rz_analysis_op(core->analysis, &op, core->offset,
+		buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
+	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
+	ut64 tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
+	rz_analysis_op_fini(&op);
+
+	if (var) {
+		p->type = RZ_CORE_ANALYSIS_NAME_TYPE_VAR;
+		p->name = strdup(var->name);
+		p->offset = op.addr;
+	} else if (tgt_addr != UT64_MAX) {
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
+		RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
+		if (fcn) {
+			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_FUNCTION;
+			p->name = strdup(fcn->name);
+			p->offset = tgt_addr;
+		} else if (f) {
+			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_FLAG;
+			p->name = strdup(f->name);
+			p->realname = strdup(f->realname);
+			p->offset = tgt_addr;
+		} else {
+			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_ADDRESS;
+			p->offset = tgt_addr;
+		}
+	} else {
+		rz_core_analysis_name_free(p);
+		return NULL;
+	}
+
+	return p;
+}
