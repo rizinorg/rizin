@@ -274,7 +274,12 @@ static bool parse_reg_profile_str(RZ_OUT RzList *alias_list, RZ_OUT RzList *def_
 		}
 		if (index(line, '#')) {
 			RzList *line_and_cmt = rz_str_split_duplist_n_regex(line, "#", 0, true);
-			char *tmp = rz_str_prepend(rz_list_get_top(line_and_cmt), "#");
+			char *raw_comment = strdup(rz_list_get_top(line_and_cmt));
+			if (!raw_comment) {
+				RZ_LOG_WARN("Comment could not be split from register definition. Line: \"%s\"\n", line);
+				continue;
+			}
+			char *tmp = rz_str_prepend(raw_comment, "#");
 			if (!tmp) {
 				RZ_LOG_WARN("Could not prepend # to comment. Line: \"%s\".\n", line);
 				continue;
