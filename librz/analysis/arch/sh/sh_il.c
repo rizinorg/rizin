@@ -123,26 +123,28 @@ static RzILOpPure *sh_il_get_status_reg() {
 	return val;
 }
 
-static RzILOpEffect *sh_il_set_status_reg(RzILOpPure *val) {
-	RzILOpEffect *eff = SETG(SH_SR_T, NON_ZERO(LOGAND(SH_U_REG(0x1), val)));
-	val = SHIFTR0(DUP(val), SH_U_REG(1));
-	eff = SEQ2(eff, SETG(SH_SR_S, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
-	val = SHIFTR0(DUP(val), SH_U_REG(3));
-	eff = SEQ2(eff, SETG(SH_SR_I, NON_ZERO(LOGAND(SH_U_REG(0xf), val))));
-	val = SHIFTR0(DUP(val), SH_U_REG(4));
-	eff = SEQ2(eff, SETG(SH_SR_Q, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
-	val = SHIFTR0(DUP(val), SH_U_REG(1));
-	eff = SEQ2(eff, SETG(SH_SR_M, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
-	val = SHIFTR0(DUP(val), SH_U_REG(6));
-	eff = SEQ2(eff, SETG(SH_SR_F, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
-	val = SHIFTR0(DUP(val), SH_U_REG(13));
-	eff = SEQ2(eff, SETG(SH_SR_B, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
-	val = SHIFTR0(DUP(val), SH_U_REG(1));
-	eff = SEQ2(eff, SETG(SH_SR_R, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
-	val = SHIFTR0(DUP(val), SH_U_REG(1));
-	eff = SEQ2(eff, SETG(SH_SR_D, NON_ZERO(LOGAND(SH_U_REG(0x1), val))));
+static RzILOpEffect *sh_il_set_status_reg(RZ_OWN RzILOpPure *val) {
+	RzILOpEffect *sreg = SETL("_sreg", val);
+	RzILOpEffect *eff = SETG(SH_SR_T, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg"))));
 
-	return eff;
+	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(1))));
+	eff = SEQ2(eff, SETG(SH_SR_S, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(3))));
+	eff = SEQ2(eff, SETG(SH_SR_I, NON_ZERO(LOGAND(SH_U_REG(0xf), VARL("_sreg")))));
+	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(4))));
+	eff = SEQ2(eff, SETG(SH_SR_Q, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(1))));
+	eff = SEQ2(eff, SETG(SH_SR_M, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(6))));
+	eff = SEQ2(eff, SETG(SH_SR_F, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(13))));
+	eff = SEQ2(eff, SETG(SH_SR_B, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(1))));
+	eff = SEQ2(eff, SETG(SH_SR_R, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(1))));
+	eff = SEQ2(eff, SETG(SH_SR_D, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+
+	return SEQ2(sreg, eff);
 }
 
 static RzILOpPure *sh_il_get_privilege() {
@@ -171,7 +173,7 @@ static RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 		return SETG(sh_registers[reg], val);
 	}
 
-	return BRANCH(sh_il_get_privilege(), SETG(sh_get_banked_reg(reg, 1), val), SETG(sh_get_banked_reg(reg, 0), DUP(val)));
+	return SEQ2(SETL("_regval", val), BRANCH(sh_il_get_privilege(), SETG(sh_get_banked_reg(reg, 1), VARL("_regval")), SETG(sh_get_banked_reg(reg, 0), VARL("_regval"))));
 }
 
 typedef struct sh_param_helper_t {
@@ -500,11 +502,11 @@ static RzILOpEffect *sh_il_add(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
-	sum = ADD(sum, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)));
+	RzILOpEffect *local_sum = SETL("sum", ADD(sum, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T))));
 
-	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
-	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_add_carry(DUP(sum), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
-	return SEQ2(ret, tbit);
+	RzILOpEffect *ret = sh_il_set_pure_param(1, VARL("sum"));
+	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_add_carry(VARL("sum"), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
+	return SEQ3(local_sum, ret, tbit);
 }
 
 /**
@@ -515,9 +517,10 @@ static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_addv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
+	RzILOpEffect *local_sum = SETL("sum", sum);
 
-	RzILOpEffect *ret = sh_il_set_pure_param(1, sum);
-	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_add_overflow(DUP(sum), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
+	RzILOpEffect *ret = sh_il_set_pure_param(1, VARL("sum"));
+	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_add_overflow(VARL("sum"), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 	return SEQ2(ret, tbit);
 }
 
@@ -594,17 +597,18 @@ static RzILOpEffect *sh_il_cmp_pl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0010nnnnmmmm1100
  */
 static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure * xor = XOR(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
+	RzILOpPure *full_xor = XOR(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
+	RzILOpEffect *eff = SETL("xor", full_xor);
 
-	RzILOpPure *eq = EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0));
-	xor = SHIFTR0(DUP(xor), SH_U_REG(BITS_PER_BYTE));
-	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
-	xor = SHIFTR0(DUP(xor), SH_U_REG(BITS_PER_BYTE));
-	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
-	xor = SHIFTR0(DUP(xor), SH_U_REG(BITS_PER_BYTE));
-	eq = OR(eq, EQ(LOGAND(xor, SH_U_REG(0xff)), SH_U_REG(0x0)));
+	RzILOpPure *eq = EQ(LOGAND(VARL("xor"), SH_U_REG(0xff)), SH_U_REG(0x0));
+	eff = SEQ2(eff, SETL("xor", SHIFTR0(VARL("xor"), SH_U_REG(BITS_PER_BYTE))));
+	eq = OR(eq, EQ(LOGAND(VARL("xor"), SH_U_REG(0xff)), SH_U_REG(0x0)));
+	eff = SEQ2(eff, SETL("xor", SHIFTR0(VARL("xor"), SH_U_REG(BITS_PER_BYTE))));
+	eq = OR(eq, EQ(LOGAND(VARL("xor"), SH_U_REG(0xff)), SH_U_REG(0x0)));
+	eff = SEQ2(eff, SETL("xor", SHIFTR0(VARL("xor"), SH_U_REG(BITS_PER_BYTE))));
+	eq = OR(eq, EQ(LOGAND(VARL("xor"), SH_U_REG(0xff)), SH_U_REG(0x0)));
 
-	return SETG(SH_SR_T, eq);
+	return SEQ2(eff, SETG(SH_SR_T, eq));
 }
 
 /**
@@ -719,13 +723,13 @@ static RzILOpEffect *sh_il_dt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 static RzILOpEffect *sh_il_exts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = NULL;
 	if (op->scaling == SH_SCALING_B) {
-		RzILOpPure *byte = LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xff));
-		RzILOpBool *msb = MSB(byte);
-		eff = BRANCH(msb, sh_il_set_pure_param(1, LOGOR(DUP(byte), SH_U_REG(0xffffff00))), sh_il_set_pure_param(1, DUP(byte)));
+		RzILOpEffect *byte = SETL("byte", LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xff)));
+		RzILOpBool *msb = MSB(VARL("byte"));
+		eff = SEQ2(byte, BRANCH(msb, sh_il_set_pure_param(1, LOGOR(VARL("byte"), SH_U_REG(0xffffff00))), sh_il_set_pure_param(1, VARL("byte"))));
 	} else if (op->scaling == SH_SCALING_W) {
-		RzILOpPure *word = LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xffff));
-		RzILOpBool *msb = MSB(word);
-		eff = BRANCH(msb, sh_il_set_pure_param(1, LOGOR(DUP(word), SH_U_REG(0xffff0000))), sh_il_set_pure_param(1, DUP(word)));
+		RzILOpEffect *word = SETL("word", LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xffff)));
+		RzILOpBool *msb = MSB(VARL("word"));
+		eff = SEQ2(word, BRANCH(msb, sh_il_set_pure_param(1, LOGOR(VARL("word"), SH_U_REG(0xffff0000))), sh_il_set_pure_param(1, VARL("word"))));
 	}
 
 	return eff;
@@ -776,23 +780,23 @@ static RzILOpEffect *sh_il_mac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	if (op->scaling == SH_SCALING_L) {
 		RzILOpEffect *mac = SETL("mac", LOGOR(SHIFTL0((UNSIGNED(2 * SH_REG_SIZE, VARG("mach"))), SH_U_REG(SH_REG_SIZE)), UNSIGNED(2 * SH_REG_SIZE, VARG("macl"))));
 		RzILOpPure *mul = MUL(SIGNED(2 * SH_REG_SIZE, shp_rm.pure), SIGNED(2 * SH_REG_SIZE, shp_rn.pure));
-		RzILOpPure *add = ADD(mul, VARL("mac"));
-		RzILOpPure *low = UNSIGNED(48, LOGAND(add, UN(2 * SH_REG_SIZE, 0xffffffffffff)));
+		RzILOpEffect *add = SETL("add", ADD(mul, VARL("mac")));
+		RzILOpPure *low = UNSIGNED(48, LOGAND(VARL("add"), UN(2 * SH_REG_SIZE, 0xffffffffffff)));
 		RzILOpPure *sat = SIGNED(2 * SH_REG_SIZE, low);
 
-		eff = SEQ2(mac, BRANCH(sh_il_get_status_reg_bit(SH_SR_S), SETL("mac", sat), SETG("mac", DUP(add))));
+		eff = SEQ2(mac, BRANCH(sh_il_get_status_reg_bit(SH_SR_S), SETL("mac", sat), SETG("mac", VARL("add"))));
 		RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(VARL("mac"), UN(2 * SH_REG_SIZE, 0xffffffff)));
 		RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(VARL("mac"), SH_U_REG(SH_REG_SIZE)));
-		eff = SEQ3(eff, SETG("macl", lower_bits), SETG("mach", higher_bits));
+		eff = SEQ4(add, eff, SETG("macl", lower_bits), SETG("mach", higher_bits));
 	} else if (op->scaling == SH_SCALING_W) {
 		RzILOpEffect *mac = SETL("mac", LOGOR(SHIFTL0((UNSIGNED(2 * SH_REG_SIZE, VARG("mach"))), SH_U_REG(SH_REG_SIZE)), UNSIGNED(2 * SH_REG_SIZE, VARG("macl"))));
-		RzILOpPure *mul = UNSIGNED(2 * SH_REG_SIZE, MUL(SIGNED(SH_REG_SIZE, shp_rm.pure), SIGNED(SH_REG_SIZE, shp_rn.pure)));
-		RzILOpPure *add = ADD(mul, VARG("mac"));
-		RzILOpPure *sat_add = ADD(UNSIGNED(SH_REG_SIZE, DUP(mul)), VARG("macl"));
-		RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(add, UN(2 * SH_REG_SIZE, 0xffffffff)));
-		RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(DUP(add), SH_U_REG(SH_REG_SIZE)));
+		RzILOpEffect *mul = SETL("mul", UNSIGNED(2 * SH_REG_SIZE, MUL(SIGNED(SH_REG_SIZE, shp_rm.pure), SIGNED(SH_REG_SIZE, shp_rn.pure))));
+		RzILOpEffect *add = SETL("add", ADD(VARL("mul"), VARG("mac")));
+		RzILOpPure *sat_add = ADD(UNSIGNED(SH_REG_SIZE, VARL("mul")), VARG("macl"));
+		RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(VARL("add"), UN(2 * SH_REG_SIZE, 0xffffffff)));
+		RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(VARL("add)"), SH_U_REG(SH_REG_SIZE)));
 
-		eff = SEQ2(mac, BRANCH(sh_il_get_status_reg_bit(SH_SR_S), SETG("macl", sat_add), SEQ2(SETG("macl", lower_bits), SETG("mach", higher_bits))));
+		eff = SEQ4(mul, add, mac, BRANCH(sh_il_get_status_reg_bit(SH_SR_S), SETG("macl", sat_add), SEQ2(SETG("macl", lower_bits), SETG("mach", higher_bits))));
 	}
 
 	eff = SEQ3(eff, shp_rn.post, shp_rm.post);
@@ -868,10 +872,11 @@ static RzILOpEffect *sh_il_sub(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 static RzILOpEffect *sh_il_subc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *dif = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 	dif = SUB(dif, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)));
+	RzILOpEffect *local_dif = SETL("dif", dif);
 
-	RzILOpEffect *ret = sh_il_set_pure_param(1, dif);
-	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_sub_borrow(DUP(dif), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
-	return SEQ2(ret, tbit);
+	RzILOpEffect *ret = sh_il_set_pure_param(1, VARL("dif"));
+	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_sub_borrow(VARL("dif"), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
+	return SEQ3(local_dif, ret, tbit);
 }
 
 /**
@@ -881,10 +886,11 @@ static RzILOpEffect *sh_il_subc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  */
 static RzILOpEffect *sh_il_subv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *dif = SUB(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
+	RzILOpEffect *local_dif = SETL("dif", dif);
 
-	RzILOpEffect *ret = sh_il_set_pure_param(1, dif);
-	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_sub_underflow(DUP(dif), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
-	return SEQ2(ret, tbit);
+	RzILOpEffect *ret = sh_il_set_pure_param(1, VARL("dif"));
+	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_sub_underflow(VARL("dif"), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
+	return SEQ3(local_dif, ret, tbit);
 }
 
 /**
