@@ -71,23 +71,6 @@ if get_option('rizin_gittip') != ''
   gittip = get_option('rizin_gittip')
 endif
 
-# Get current date
-if host_machine.system() == 'windows'
-  rizinbirth = run_command('cmd', '/c', 'echo %date%__%time%', check: true)
-else
-  rizinbirth = run_command('sh', '-c', '''
-      SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}";
-      FORMAT="+%Y-%m-%d__%H:%M:%S";
-      date -u -d "@$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
-      date -u -r  "$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
-      date -u "$FORMAT"''', check: true)
-endif
-if rizinbirth.returncode() != 0
-  rizinbirth = ''
-else
-  rizinbirth = rizinbirth.stdout().strip()
-endif
-
 rizin_libversion = '@0@.@1@'.format(rizin_version_major, rizin_version_minor)
 message('rizin lib version: ' + rizin_libversion)
 
@@ -541,7 +524,6 @@ versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
 versionconf.set('RZ_VERSION_NUMBER', rizin_version_number)
 versionconf.set('RZ_VERSION', rizin_version)
 versionconf.set('RZ_GITTIP', gittip)
-versionconf.set('RZ_BIRTH', rizinbirth)
 if packager_version != ''
   versionconf.set_quoted('RZ_PACKAGER_VERSION', packager_version)
   if packager != ''
