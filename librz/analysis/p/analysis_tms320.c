@@ -137,6 +137,7 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 		"gpr	A13	.32	52 		0\n"
 		"gpr	A14	.32	56 		0\n"
 		"gpr	A15	.32	60 		0\n"
+#ifdef CAPSTONE_TMS320C64X_H
 		"gpr	A16	.32	64 		0\n"
 		"gpr	A17	.32	68 		0\n"
 		"gpr	A18	.32	72 		0\n"
@@ -153,6 +154,7 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 		"gpr	A29	.32	116 	0\n"
 		"gpr	A30	.32	120 	0\n"
 		"gpr	A31	.32	124 	0\n"
+#endif
 		"gpr	B0	.32	128 	0\n"
 		"gpr	B1	.32	132 	0\n"
 		"gpr	B2	.32	136 	0\n"
@@ -169,6 +171,7 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 		"gpr	B13	.32	180 	0\n"
 		"gpr	B14	.32	184 	0\n"
 		"gpr	B15	.32	188 	0\n"
+#ifdef CAPSTONE_TMS320C64X_H
 		"gpr	B16	.32	192 	0\n"
 		"gpr	B17	.32	196 	0\n"
 		"gpr	B18	.32	200 	0\n"
@@ -185,6 +188,7 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 		"gpr	B29	.32	244 	0\n"
 		"gpr	B30	.32	248 	0\n"
 		"gpr	B31	.32	252 	0\n"
+#endif
 		"ctr AMR     .32 256 0  # Addressing mode register\n"
 		"ctr CSR     .32 260 0  # Control status register\n"
 		"ctr GFPGFR  .32 264 0  # Galois field multiply control register\n"
