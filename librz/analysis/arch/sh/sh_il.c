@@ -49,6 +49,8 @@ static bool sh_banked_reg(ut16 reg) {
 	return reg < SH_BANKED_REG_COUNT;
 }
 
+static bool privilege_check = false;
+
 /**
  * Registers available as global variables in the IL
  */
@@ -147,8 +149,13 @@ static RzILOpEffect *sh_il_set_status_reg(RZ_OWN RzILOpPure *val) {
 	return SEQ2(sreg, eff);
 }
 
+static RzILOpEffect *sh_il_initialize_privilege() {
+	return SETL("_privilege", AND(VARG(SH_SR_D), VARG(SH_SR_R)));
+}
+
 static RzILOpPure *sh_il_get_privilege() {
-	return AND(VARG(SH_SR_D), VARG(SH_SR_R));
+	privilege_check = true;
+	return VARL("_privilege");
 }
 
 static RzILOpPure *sh_il_get_reg(ut16 reg) {
@@ -1604,8 +1611,15 @@ RZ_IPI bool rz_sh_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalys
 	}
 
 	sh_il_op create_op = sh_ops[op->mnemonic];
-	aop->il_op = create_op(op, pc, analysis);
+	privilege_check = false;
+	RzILOpEffect *lifted = create_op(op, pc, analysis);
 
+	// If the privilege was checked, then we need to set the local variable before the IL lifting
+	if (privilege_check) {
+		lifted = sh_apply_effects(lifted, sh_il_initialize_privilege(), NULL);
+	}
+
+	aop->il_op = lifted;
 	return true;
 }
 
