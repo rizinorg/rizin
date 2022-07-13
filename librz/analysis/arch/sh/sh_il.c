@@ -60,18 +60,28 @@ static const char *sh_global_registers[] = {
 	"gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl", "pr"
 };
 
-typedef struct sh_il_signed_cast_helper_t {
-	RzILOpPure *cast;
-	RzILOpEffect *let;
-} SHSignedCast;
+/**
+ * \brief Cast \p val to \p len bits
+ * This uses a local variable "_signed" and casts the \p val to \p len bits
+ * and stores that value in the local variable "_signed"
+ *
+ * The purpose of this function is to remove the redundant IL block introduced
+ * by `SIGNED` opbuilder macro (`MSB` of \p val for fill bits, and \p val for value),
+ * and instead use a local variable to refer to \p val in both the above places,
+ * making the IL dump much more concise and readable
+ *
+ * TODO: Ideally this should be integrated in `SIGNED` itself (need to be clever about it though)
+ *
+ * \param len
+ * \param val
+ * \return RzILOpEffect* Effect corresponding to setting the local variable "_signed" to the signed cast
+ */
+RzILOpEffect *sh_il_signed(unsigned int len, RZ_OWN RzILOpPure *val) {
+	RzILOpEffect *init = SETL("_signed", val);
+	RzILOpPure *cast = rz_il_op_new_cast(len, MSB(VARL("_signed")), VARL("_signed"));
+	RzILOpEffect *set = SETL("_signed", cast);
 
-SHSignedCast sh_il_signed(unsigned int len, RzILOpPure *val) {
-	SHSignedCast help = {
-		.cast = VARL("_signed"),
-		.let = SETL("_signed", SIGNED(len, val)),
-	};
-
-	return help;
+	return SEQ2(init, set);
 }
 
 static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
@@ -290,8 +300,8 @@ static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, S
 		if (scaling == SH_SCALING_INVALID || scaling == SH_SCALING_L) {
 			ret = sh_il_set_reg(param.param[0], val);
 		} else {
-			SHSignedCast cast = sh_il_signed(SH_REG_SIZE, val);
-			ret = SEQ2(cast.let, sh_il_set_reg(param.param[0], cast.cast));
+			RzILOpEffect *cast = sh_il_signed(SH_REG_SIZE, val);
+			ret = SEQ2(cast, sh_il_set_reg(param.param[0], VARL("_signed")));
 		}
 		break;
 	case SH_REG_INDIRECT:
