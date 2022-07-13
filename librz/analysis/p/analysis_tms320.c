@@ -115,6 +115,12 @@ static bool tms320_fini(void *user) {
 static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 	const char *p =
 		"=PC	pc\n"
+		"=A0	A0\n"
+		"=A1	A1\n"
+		"=A2	A2\n"
+		"=A3	A3\n"
+		"=R0	A0\n"
+		"=R1	A1\n"
 		"gpr	A0	.32	0 		0\n"
 		"gpr	A1	.32	4 		0\n"
 		"gpr	A2	.32	8 		0\n"
