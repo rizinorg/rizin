@@ -60,6 +60,20 @@ static const char *sh_global_registers[] = {
 	"gbr", "ssr", "spc", "sgr", "dbr", "vbr", "mach", "macl", "pr"
 };
 
+typedef struct sh_il_signed_cast_helper_t {
+	RzILOpPure *cast;
+	RzILOpEffect *let;
+} SHSignedCast;
+
+SHSignedCast sh_il_signed(unsigned int len, RzILOpPure *val) {
+	SHSignedCast help = {
+		.cast = VARL("_signed"),
+		.let = SETL("_signed", SIGNED(len, val)),
+	};
+
+	return help;
+}
+
 static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
 	if (!sh_banked_reg(reg) || bank > 1) {
 		return NULL;
@@ -181,12 +195,12 @@ static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling,
 	}
 	case SH_PC_RELATIVE8: {
 		// sign-extended for 8 bits and shifted left by 1 (i.e. multiplied by 2)
-		RzILOpBitVector *relative = SIGNED(SH_ADDR_SIZE, SHIFTL0(SN(8, param.param[0]), U8(1)));
+		RzILOpBitVector *relative = SHIFTL0(SH_S_ADDR(param.param[0]), U32(1));
 		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE12: {
 		// sign-extended for 12 bits and shifted left by 1 (i.e. multiplied by 2)
-		RzILOpBitVector *relative = SIGNED(SH_ADDR_SIZE, SHIFTL0(SN(12, param.param[0]), U8(1)));
+		RzILOpBitVector *relative = SHIFTL0(SH_S_ADDR(param.param[0]), U32(1));
 		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE_REG:
@@ -276,7 +290,8 @@ static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, S
 		if (scaling == SH_SCALING_INVALID || scaling == SH_SCALING_L) {
 			ret = sh_il_set_reg(param.param[0], val);
 		} else {
-			ret = sh_il_set_reg(param.param[0], SIGNED(SH_REG_SIZE, val));
+			SHSignedCast cast = sh_il_signed(SH_REG_SIZE, val);
+			ret = SEQ2(cast.let, sh_il_set_reg(param.param[0], cast.cast));
 		}
 		break;
 	case SH_REG_INDIRECT:
@@ -789,8 +804,8 @@ static RzILOpEffect *sh_il_mul(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0010nnnnmmmm1111
  */
 static RzILOpEffect *sh_il_muls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *m = SIGNED(SH_REG_SIZE, SIGNED(16, sh_il_get_pure_param(0)));
-	RzILOpPure *n = SIGNED(SH_REG_SIZE, SIGNED(16, sh_il_get_pure_param(1)));
+	RzILOpPure *m = SIGNED(SH_REG_SIZE, UNSIGNED(16, sh_il_get_pure_param(0)));
+	RzILOpPure *n = SIGNED(SH_REG_SIZE, UNSIGNED(16, sh_il_get_pure_param(1)));
 	return SETG("macl", MUL(m, n));
 }
 
