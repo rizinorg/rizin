@@ -209,6 +209,42 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 		"ctr TSCL    .32 356 0  # (C64x+ only) Time-stamp counter (low 32) register\n"
 		"ctr TSR     .32 360 0  # (C64x+ only) Task state register\n"
 #endif
+		"gpr	A0:A1 	.64	364	0\n"
+		"gpr	A2:A3 	.64	368	0\n"
+		"gpr	A4:A5 	.64	372	0\n"
+		"gpr	A6:A7 	.64	376	0\n"
+		"gpr	A8:A9 	.64	380	0\n"
+		"gpr	A10:A11	.64	384	0\n"
+		"gpr	A12:A13	.64	388	0\n"
+		"gpr	A14:A15	.64	392	0\n"
+#ifdef CAPSTONE_TMS320C64X_H
+		"gpr	A16:A17	.64	396	0\n"
+		"gpr	A18:A19	.64	400	0\n"
+		"gpr	A20:A21	.64	404	0\n"
+		"gpr	A22:A23	.64	408	0\n"
+		"gpr	A24:A25	.64	412	0\n"
+		"gpr	A26:A27	.64	416	0\n"
+		"gpr	A28:A29	.64	420	0\n"
+		"gpr	A30:A31	.64	424	0\n"
+#endif
+		"gpr	B0:B1 	.64	428	0\n"
+		"gpr	B2:B3 	.64	432	0\n"
+		"gpr	B4:B5 	.64	436	0\n"
+		"gpr	B6:B7 	.64	440	0\n"
+		"gpr	B8:B9 	.64	444	0\n"
+		"gpr	B10:B11	.64	448	0\n"
+		"gpr	B12:B13	.64	452	0\n"
+		"gpr	B14:B15	.64	456	0\n"
+#ifdef CAPSTONE_TMS320C64X_H
+		"gpr	B16:B17	.64	460	0\n"
+		"gpr	B18:B19	.64	464	0\n"
+		"gpr	B20:B21	.64	468	0\n"
+		"gpr	B22:B23	.64	472	0\n"
+		"gpr	B24:B25	.64	476	0\n"
+		"gpr	B26:B27	.64	480	0\n"
+		"gpr	B28:B29	.64	484	0\n"
+		"gpr	B30:B31	.64	488	0\n"
+#endif
 		;
 
 	return strdup(p);
