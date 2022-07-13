@@ -14,6 +14,12 @@
  *  - https://www.renesas.com/in/en/document/mas/sh-4-software-manual?language=en (SH-4 manual by Renesas)
  *
  * Both the above references are almost the same
+ *
+ * \note Some things to know before working on this code:
+ * 	- I have used the terms "operand(s)" and "param(s)" interchangeably, and both of them refer to the arguments/params/operands of the instruction
+ *	- `op` doesn NOT mean operand. It is more akin to instruction or opcode. In majority of the places, it means the type of instruction
+ *	- I have used the term "pure" in function names very loosely and shouldn't be used in a literal sense. Refer to the Doxygen documentation to
+ * 	  know what a function does, do not infer it from the function name
  */
 
 #define SH_U_ADDR(x) UN(SH_ADDR_SIZE, x)
@@ -49,6 +55,10 @@ static bool sh_banked_reg(ut16 reg) {
 	return reg < SH_BANKED_REG_COUNT;
 }
 
+/**
+ * \brief Set to true whenever the privilege bit is calculated
+ * It is used to add a `SETL` effect for the privilege bit, in case it is used
+ */
 static bool privilege_check = false;
 
 /**
@@ -86,6 +96,13 @@ RzILOpEffect *sh_il_signed(unsigned int len, RZ_OWN RzILOpPure *val) {
 	return SEQ2(init, set);
 }
 
+/**
+ * \brief Get the register name for \p reg in bank \p bank
+ *
+ * \param reg Register index
+ * \param bank Bank number
+ * \return const char* IL global variable name
+ */
 static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
 	if (!sh_banked_reg(reg) || bank > 1) {
 		return NULL;
@@ -102,6 +119,11 @@ static RzILOpPure *sh_il_get_status_reg_bit(const char *bit) {
 	return ITE(VARG(bit), SH_TRUE, SH_FALSE);
 }
 
+/**
+ * \brief Return the status register (sr), calculated by shifting all the status register bits at the correct offsets
+ *
+ * \return RzILOpPure* The status register IL bitvector
+ */
 static RzILOpPure *sh_il_get_status_reg() {
 	RzILOpPure *val = SH_U_REG(0);
 	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_D)), val);
@@ -125,6 +147,12 @@ static RzILOpPure *sh_il_get_status_reg() {
 	return val;
 }
 
+/**
+ * \brief Set the value of the status register (sr) to \p val by setting the values of the individual status register bits
+ *
+ * \param val
+ * \return RzILOpEffect*
+ */
 static RzILOpEffect *sh_il_set_status_reg(RZ_OWN RzILOpPure *val) {
 	RzILOpEffect *sreg = SETL("_sreg", val);
 	RzILOpEffect *eff = SETG(SH_SR_T, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg"))));
@@ -149,15 +177,37 @@ static RzILOpEffect *sh_il_set_status_reg(RZ_OWN RzILOpPure *val) {
 	return SEQ2(sreg, eff);
 }
 
+/**
+ * \brief Set the value of the local variable "_privilege"
+ * This exists so that the privilege mode IL doesn't have to be duplicated everywhere,
+ * instead one can directly use the local variable
+ *
+ * \return RzILOpEffect*
+ */
 static RzILOpEffect *sh_il_initialize_privilege() {
 	return SETL("_privilege", AND(VARG(SH_SR_D), VARG(SH_SR_R)));
 }
 
+/**
+ * \brief Get the privilege mode
+ * Do NOT call this before initializing privilege through `sh_il_initialize_privilege`
+ * Otherwise, the local variable would not have been initialized
+ * For all the liftings, this is taken care of in `rz_sh_il_opcode`
+ *
+ * \return RzILOpPure* (RzILOpBool*) IL_TRUE if in privilege mode ; IL_FALSE otherwise
+ */
 static RzILOpPure *sh_il_get_privilege() {
 	privilege_check = true;
 	return VARL("_privilege");
 }
 
+/**
+ * \brief Get register corresponding to \p reg index
+ * This function is smart enough to give the correct register in case of banked registers or status register
+ *
+ * \param reg
+ * \return RzILOpPure*
+ */
 static RzILOpPure *sh_il_get_reg(ut16 reg) {
 	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
@@ -171,6 +221,14 @@ static RzILOpPure *sh_il_get_reg(ut16 reg) {
 	return ITE(sh_il_get_privilege(), VARG(sh_get_banked_reg(reg, 1)), VARG(sh_get_banked_reg(reg, 0)));
 }
 
+/**
+ * \brief Set the value of the register corresponding to index \p reg to value \p val
+ * This function is smart enough to set values correctly in case of banked registers or status register
+ *
+ * \param reg
+ * \param val
+ * \return RzILOpEffect*
+ */
 static RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
@@ -183,12 +241,23 @@ static RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 	return SEQ2(SETL("_regval", val), BRANCH(sh_il_get_privilege(), SETG(sh_get_banked_reg(reg, 1), VARL("_regval")), SETG(sh_get_banked_reg(reg, 0), VARL("_regval"))));
 }
 
+/**
+ * \brief Helper struct to take care of converting operands to IL
+ */
 typedef struct sh_param_helper_t {
-	RzILOpEffect *pre;
-	RzILOpPure *pure;
-	RzILOpEffect *post;
+	RzILOpEffect *pre; ///< pre effect for the operand
+	RzILOpPure *pure; ///< pure effect for the operand
+	RzILOpEffect *post; ///< post effect for the operand
 } SHParamHelper;
 
+/**
+ * \brief Get the effective address obtained from the given \p param and \p scaling
+ *
+ * \param param
+ * \param scaling
+ * \param pc Program counter
+ * \return RzILOpPure*
+ */
 static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling, ut64 pc) {
 	switch (param.mode) {
 	case SH_REG_INDIRECT:
@@ -233,6 +302,14 @@ static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling,
 
 #define sh_il_get_effective_addr(x, y) sh_il_get_effective_addr_pc(x, y, pc)
 
+/**
+ * \brief Convert the \p param with \p scaling to it's IL representation
+ *
+ * \param param
+ * \param scaling
+ * \param pc Program counter
+ * \return SHParamHelper Consists of the value of the param and the pre, post effects
+ */
 static SHParamHelper sh_il_get_param_pc(SHParam param, SHScaling scaling, ut64 pc) {
 	SHParamHelper ret = {
 		.pre = NULL,
@@ -280,7 +357,18 @@ static SHParamHelper sh_il_get_param_pc(SHParam param, SHScaling scaling, ut64 p
 
 #define sh_il_get_param(x, y) sh_il_get_param_pc(x, y, pc)
 
-static RzILOpEffect *sh_apply_effects(RzILOpEffect *target, RzILOpEffect *pre, RzILOpEffect *post) {
+/**
+ * \brief Apply the effects in order: \p pre, \p target, \p post
+ * The good thing about this function is that any of the arguments can be NULL
+ * which implies that they do not exist/matter, and the final effect woulds
+ * be calculated without these NULL arguments (keeping in mind the above order)
+ *
+ * \param target
+ * \param pre
+ * \param post
+ * \return RzILOpEffect*
+ */
+static RzILOpEffect *sh_apply_effects(RZ_NULLABLE RzILOpEffect *target, RZ_NULLABLE RzILOpEffect *pre, RZ_NULLABLE RzILOpEffect *post) {
 	if (!target) {
 		if (pre) {
 			target = pre;
@@ -302,6 +390,16 @@ append:
 	return target;
 }
 
+/**
+ * @brief Set the value of the \p param at \p scaling to \p val
+ * This function is smart enough to also apply any effects corresponding to the \p param
+ *
+ * \param param
+ * \param val
+ * \param scaling
+ * \param pc Program counter
+ * \return RzILOpEffect*
+ */
 static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, SHScaling scaling, ut64 pc) {
 	RzILOpEffect *ret = NULL, *pre = NULL, *post = NULL;
 	switch (param.mode) {
@@ -578,7 +676,7 @@ static RzILOpEffect *sh_il_addv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 
 	RzILOpEffect *ret = sh_il_set_pure_param(1, VARL("sum"));
 	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_add_overflow(VARL("sum"), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
-	return SEQ2(ret, tbit);
+	return SEQ3(local_sum, ret, tbit);
 }
 
 /**
@@ -1511,6 +1609,10 @@ static RzILOpEffect *sh_il_sts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 }
 
+/**
+ * \brief Unimplemented instruction/opcode
+ * To be used for valid SuperH-4 instruction which yet haven't been lifted to the IL
+ */
 static RzILOpEffect *sh_il_unimpl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RZ_LOG_WARN("SuperH: Instruction with opcode 0x%04x is unimplemented\n", op->opcode);
 	return EMPTY();
@@ -1520,6 +1622,9 @@ static RzILOpEffect *sh_il_unimpl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 
 typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
 
+/**
+ * \brief Lookup table for the IL lifting handlers for the various instructions
+ */
 static sh_il_op sh_ops[SH_OP_SIZE] = {
 	[SH_OP_INVALID] = sh_il_invalid,
 	[SH_OP_MOV] = sh_il_mov,
@@ -1603,6 +1708,16 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
 	[SH_OP_UNIMPL] = sh_il_unimpl
 };
 
+/**
+ * \brief Store the lifted IL for \p op in \p aop
+ * This function also takes care of initializing and adding the privilege mode local variable if required
+ *
+ * \param analysis RzAnalysis instance
+ * \param aop
+ * \param pc Program counter
+ * \param op
+ * \return bool True if successful ; false otherwise
+ */
 RZ_IPI bool rz_sh_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL SHOp *op) {
 	rz_return_val_if_fail(analysis && aop && op, false);
 	if (op->mnemonic >= SH_OP_SIZE) {
@@ -1623,6 +1738,12 @@ RZ_IPI bool rz_sh_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalys
 	return true;
 }
 
+/**
+ * \brief Initialize new config for the SuperH IL
+ *
+ * \param analysis RzAnalysis instance
+ * \return RzAnalysisILConfig* RzIL config for SuperH ISA
+ */
 RZ_IPI RzAnalysisILConfig *rz_sh_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
