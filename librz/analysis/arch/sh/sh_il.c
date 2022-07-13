@@ -339,6 +339,19 @@ static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, S
 
 #define sh_il_set_param(x, y, z) sh_il_set_param_pc(x, y, z, pc)
 
+/**
+ * \brief Check if there was a carry in the addition of \p x and \p y to get \p res
+ * Here \p res = \p x + \p y (+ 1, optional)
+ * This function can also be used of there was a carry bit added as well
+ *
+ * Pass in local variables to this function because otherwise the `DUP`s inside it will
+ * lead to an unnecessarily long IL
+ *
+ * \param res
+ * \param x
+ * \param y
+ * \return RzILOpBool* IL_TRUE if carry during addition ; IL_FALSE otherwise
+ */
 static RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
@@ -361,6 +374,19 @@ static RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure 
 	return or ;
 }
 
+/**
+ * \brief Check if there was a borrow in the subtraction of \p x and \p y to get \p res
+ * Here \p res = \p x - \p y (- 1, optional)
+ * This function can also be used of there was a borrow bit added as well
+ *
+ * Pass in local variables to this function because otherwise the `DUP`s inside it will
+ * lead to an unnecessarily long IL
+ *
+ * \param res
+ * \param x
+ * \param y
+ * \return RzILOpBool* IL_TRUE if borrow during subtraction ; IL_FALSE otherwise
+ */
 static RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
@@ -383,6 +409,18 @@ static RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure
 	return or ;
 }
 
+/**
+ * \brief Check if there was a overflow in the addition of \p x and \p y to get \p res
+ * Here \p res = \p x + \p y
+ *
+ * Pass in local variables to this function because otherwise the `DUP`s inside it will
+ * lead to an unnecessarily long IL
+ *
+ * \param res
+ * \param x
+ * \param y
+ * \return RzILOpBool* IL_TRUE if overflow during addition ; IL_FALSE otherwise
+ */
 static RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
@@ -399,6 +437,18 @@ static RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPu
 	return or ;
 }
 
+/**
+ * \brief Check if there was a underflow in the subtraction of \p x and \p y to get \p res
+ * Here \p res = \p x - \p y
+ *
+ * Pass in local variables to this function because otherwise the `DUP`s inside it will
+ * lead to an unnecessarily long IL
+ *
+ * \param res
+ * \param x
+ * \param y
+ * \return RzILOpBool* IL_TRUE if underflow during subtraction ; IL_FALSE otherwise
+ */
 static RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
