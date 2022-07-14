@@ -27,6 +27,7 @@ option('use_sys_libzip_openssl', type: 'boolean', value: false, description: 'Wh
 option('use_sys_zlib', type: 'feature', value: 'disabled')
 option('use_sys_lz4', type: 'feature', value: 'disabled')
 option('use_lzma', type: 'boolean', value: true, description: 'If true, liblzma is used to provide extra features (e.g. .gnu_debugdata parser)')
+option('use_zlib', type: 'boolean', value: true, description: 'If true, zlib is used to provide extra features (e.g. project compression/decompression, etc.)')
 option('use_sys_lzma', type: 'feature', value: 'disabled')
 option('use_sys_xxhash', type: 'feature', value: 'disabled')
 option('use_sys_openssl', type: 'feature', value: 'disabled')

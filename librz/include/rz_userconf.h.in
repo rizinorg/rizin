@@ -9,6 +9,7 @@
 #define HAVE_THREADS                @HAVE_THREADS@
 #define HAVE_PTHREAD                @HAVE_PTHREAD@
 #define HAVE_LZMA                   @HAVE_LZMA@
+#define HAVE_ZLIB                   @HAVE_ZLIB@
 #define HAVE_DECL_ADDR_NO_RANDOMIZE @HAVE_DECL_ADDR_NO_RANDOMIZE@
 #define HAVE_DECL_PROCCTL_ASLR_CTL  @HAVE_DECL_PROCCTL_ASLR_CTL@
 #define HAVE_ARC4RANDOM_UNIFORM     @HAVE_ARC4RANDOM_UNIFORM@
@@ -57,6 +58,8 @@
 #define HAVE_HEADER_INTTYPES_H      @HAVE_HEADER_INTTYPES_H@
 
 #define RZ_IS_PORTABLE @IS_PORTABLE@
+
+#define RZ_BINDIR_DEPTH @BINDIR_DEPTH@
 // clang-format on
 
 #define RZ_PREFIX  "@PREFIX@"
@@ -65,8 +68,6 @@
 #define RZ_INCDIR  "@INCLUDEDIR@"
 #define RZ_DATDIR  "@DATADIR@"
 #define RZ_WWWROOT "@WWWROOT@"
-
-#define RZ_BINDIR_DEPTH  @BINDIR_DEPTH@
 
 #define RZ_PLUGINS  "@PLUGINS@"
 #define RZ_DATADIR  "@DATADIR_RZ@"
