@@ -246,31 +246,6 @@ RZ_API ut32 sdb_hash(const char *key);
 RZ_API ut32 sdb_hash_len(const char *key, ut32 *len);
 RZ_API ut8 sdb_hash_byte(const char *s);
 
-/* json api */
-// RZ_API int sdb_js0n(const unsigned char *js, RangstrType len, RangstrType *out);
-RZ_API bool sdb_isjson(const char *k);
-RZ_API char *sdb_json_get_str(const char *json, const char *path);
-RZ_API bool sdb_json_get_bool(const char *json, const char *path);
-
-RZ_API char *sdb_json_get(Sdb *s, const char *key, const char *p, ut32 *cas);
-RZ_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, ut32 cas);
-RZ_API int sdb_json_num_get(Sdb *s, const char *k, const char *p, ut32 *cas);
-RZ_API int sdb_json_num_set(Sdb *s, const char *k, const char *p, int v, ut32 cas);
-RZ_API int sdb_json_num_dec(Sdb *s, const char *k, const char *p, int n, ut32 cas);
-RZ_API int sdb_json_num_inc(Sdb *s, const char *k, const char *p, int n, ut32 cas);
-
-RZ_API char *sdb_json_indent(const char *s, const char *tab);
-RZ_API char *sdb_json_unindent(const char *s);
-
-typedef struct {
-	char *buf;
-	size_t blen;
-	size_t len;
-} SdbJsonString;
-
-RZ_API const char *sdb_json_format(SdbJsonString *s, const char *fmt, ...);
-#define sdb_json_format_free(x) free((x)->buf)
-
 // namespace
 RZ_API Sdb *sdb_ns(Sdb *s, const char *name, int create);
 RZ_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create);

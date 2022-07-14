@@ -255,11 +255,3 @@ License: LGPL-3.0-only
 Files: librz/reg/p/x86-linux.regs
 Copyright: 2009 pancake <pancake@nopcode.org>
 License: LGPL-3.0-only
-
-Files: librz/util/sdb/src/json/README
-Copyright: pancake <pancake@nopcode.org>
-License: MIT
-
-Files: librz/util/sdb/src/json/test.json
-Copyright: pancake <pancake@nopcode.org>
-License: MIT
