@@ -4,11 +4,6 @@
 #ifndef SDB_H
 #define SDB_H
 
-#if !defined(O_BINARY) && !defined(_MSC_VER)
-#undef O_BINARY
-#define O_BINARY 0
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,17 +19,6 @@ extern "C" {
 #define SDB_CDB_MAX_VALUE CDB_MAX_VALUE
 #define SDB_CDB_MIN_KEY   1
 #define SDB_CDB_MAX_KEY   CDB_MAX_KEY
-
-#if !defined(SZT_ADD_OVFCHK)
-#define SZT_ADD_OVFCHK(x, y) ((SIZE_MAX - (x)) <= (y))
-#endif
-
-/* printf format check attributes */
-#if defined(__clang__) || defined(__GNUC__)
-#define SDB_PRINTF_CHECK(fmt, dots) __attribute__((format(printf, fmt, dots)))
-#else
-#define SDB_PRINTF_CHECK(fmt, dots)
-#endif
 
 #if __WINDOWS__ && !__CYGWIN__
 #include <fcntl.h>
@@ -344,7 +328,7 @@ RZ_API void sdb_encode_raw(char *bout, const ut8 *bin, int len);
 RZ_API int sdb_decode_raw(ut8 *bout, const char *bin, int len);
 
 // binfmt
-RZ_API char *sdb_fmt(const char *fmt, ...) SDB_PRINTF_CHECK(1, 2);
+RZ_API char *sdb_fmt(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API int sdb_fmt_init(void *p, const char *fmt);
 RZ_API void sdb_fmt_free(void *p, const char *fmt);
 RZ_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru);

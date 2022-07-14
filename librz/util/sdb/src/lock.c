@@ -52,12 +52,7 @@ RZ_API int sdb_lock_wait(const char *s) {
 	// wait forever here?
 	while (!sdb_lock(s)) {
 		// TODO: if waiting too much return 0
-#if __WINDOWS__
-		Sleep(500); // hack
-#else
-		// TODO use lockf() here .. flock is not much useful (fd, LOCK_EX);
-		sleep(1); // hack
-#endif
+		rz_sys_sleep(1);
 	}
 	return 1;
 }
@@ -66,16 +61,3 @@ RZ_API void sdb_unlock(const char *s) {
 	// flock (fd, LOCK_UN);
 	unlink(s);
 }
-
-#if TEST
-main() {
-	int r;
-	r = sdb_lock(".lock");
-	printf("%d\n", r);
-	r = sdb_lock(".lock");
-	printf("%d\n", r);
-	sdb_unlock(".lock");
-	r = sdb_lock(".lock");
-	printf("%d\n", r);
-}
-#endif

@@ -32,8 +32,7 @@ static void write_null(void) {
 	write_(1, "", 1);
 }
 
-#define BS          128
-#define USE_SLURPIN 1
+#define BS 128
 
 static char *slurp(FILE *f, size_t *sz) {
 	int blocksize = BS;
@@ -45,7 +44,6 @@ static char *slurp(FILE *f, size_t *sz) {
 	if (sz) {
 		*sz = 0;
 	}
-#if USE_SLURPIN
 	if (!sz) {
 		/* this is faster but have limits */
 		/* run test/add10k.sh script to benchmark */
@@ -77,7 +75,6 @@ static char *slurp(FILE *f, size_t *sz) {
 		}
 		return newbuf;
 	}
-#endif
 	buf = calloc(BS + 1, 1);
 	if (!buf) {
 		return NULL;
@@ -108,33 +105,6 @@ static char *slurp(FILE *f, size_t *sz) {
 		}
 		len += rr;
 		// buf[len] = 0;
-#if !USE_SLURPIN
-		if (!sz) {
-			char *nl = strchr(buf, '\n');
-			if (nl) {
-				*nl++ = 0;
-				int nlen = nl - buf;
-				nextlen = len - nlen;
-				if (nextlen > 0) {
-					next = malloc(nextlen + blocksize + 1);
-					if (!next) {
-						eprintf("Cannot malloc %d\n", nextlen);
-						break;
-					}
-					memcpy(next, nl, nextlen);
-					if (!*next) {
-						next = NULL;
-					} else {
-						//	continue;
-					}
-				} else {
-					next = NULL;
-					nextlen = 0; // strlen (next);;
-				}
-				break;
-			}
-		}
-#endif
 		bufsize += blocksize;
 		tmp = realloc(buf, bufsize + 1);
 		if (!tmp) {

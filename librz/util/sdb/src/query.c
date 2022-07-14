@@ -19,8 +19,6 @@ static StrBuf *strbuf_new(void) {
 	return calloc(sizeof(StrBuf), 1);
 }
 
-#define NEWLINE_AFTER_QUERY 1
-
 static StrBuf *strbuf_append(StrBuf *sb, const char *str, const int nl) {
 	if (!sb || !str || nl < 0) {
 		return sb;
@@ -40,12 +38,10 @@ static StrBuf *strbuf_append(StrBuf *sb, const char *str, const int nl) {
 		memcpy(sb->buf + sb->len, str, len);
 		sb->len += len;
 	}
-#if NEWLINE_AFTER_QUERY
 	if (sb->buf && nl) {
 		sb->buf[sb->len++] = '\n';
 		len++;
 	}
-#endif
 	if (sb->buf) {
 		sb->buf[sb->len] = 0;
 	}
@@ -525,12 +521,6 @@ repeat:
 		} else if (cmd[1] == '+' || cmd[1] == '-') {
 			if (cmd[1] == cmd[2]) {
 				// stack
-#if 0
-				[++]foo=33 # push
-				[++]foo    # <invalid>
-				[--]foo    # pop
-				[--]foo=b  # <invalid>
-#endif
 				if (cmd[1] == '-' && eq) {
 					/* invalid syntax */
 				} else if (cmd[1] == '+' && !eq) {
