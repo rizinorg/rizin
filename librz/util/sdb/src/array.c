@@ -4,9 +4,6 @@
 #include "sdb.h"
 #include <limits.h>
 
-// TODO: Push should always prepend. do not make this configurable
-#define PUSH_PREPENDS 1
-
 // TODO: missing num_{inc/dec} functions
 
 static const char *Aindexof(const char *str, int idx) {
@@ -314,9 +311,6 @@ RZ_API int sdb_array_unset(Sdb *s, const char *key, int idx, ut32 cas) {
 
 RZ_API bool sdb_array_append(Sdb *s, const char *key, const char *val,
 	ut32 cas) {
-#if SLOW
-	return sdb_array_set(s, key, -1, val, cas);
-#else
 	int str_len = 0;
 	ut32 kas = cas;
 	const char *str = sdb_const_get_len(s, key, &str_len, &kas);
@@ -339,7 +333,6 @@ RZ_API bool sdb_array_append(Sdb *s, const char *key, const char *val,
 		sdb_set(s, key, val, cas);
 	}
 	return true;
-#endif
 }
 
 RZ_API bool sdb_array_append_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
@@ -538,11 +531,7 @@ RZ_API int sdb_array_push_num(Sdb *s, const char *key, ut64 num, ut32 cas) {
 }
 
 RZ_API bool sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
-#if PUSH_PREPENDS
 	return sdb_array_prepend(s, key, val, cas);
-#else
-	return sdb_array_append(s, key, val, cas);
-#endif
 }
 
 RZ_API bool sdb_array_prepend_num(Sdb *s, const char *key, ut64 num, ut32 cas) {
@@ -598,11 +587,7 @@ RZ_API ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas) {
 }
 
 RZ_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {
-#if PUSH_PREPENDS
 	return sdb_array_pop_head(s, key, cas);
-#else
-	return sdb_array_pop_tail(s, key, cas);
-#endif
 }
 
 RZ_API char *sdb_array_pop_head(Sdb *s, const char *key, ut32 *cas) {
