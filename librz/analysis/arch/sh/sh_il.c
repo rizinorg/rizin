@@ -251,6 +251,19 @@ typedef struct sh_param_helper_t {
 } SHParamHelper;
 
 /**
+ * \brief Convert an unsigned 12 bit \p num to signed 12 bit num
+ * I have used 16 bits to represent the numbers involved here,
+ * but the 4 most significant bits are the same, so for all purposes
+ * these are basically 12 bit numbers extended to 16 bits
+ *
+ * \param num
+ * \return st16
+ */
+st16 convert_to_st12(ut16 num) {
+	return (num << 4) >> 4;
+}
+
+/**
  * \brief Get the effective address obtained from the given \p param and \p scaling
  *
  * \param param
@@ -283,12 +296,12 @@ static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling,
 	}
 	case SH_PC_RELATIVE8: {
 		// sign-extended for 8 bits and shifted left by 1 (i.e. multiplied by 2)
-		RzILOpBitVector *relative = SHIFTL0(SH_S_ADDR(param.param[0]), U32(1));
+		RzILOpBitVector *relative = SHIFTL0(SH_S_ADDR((st8) param.param[0]), U32(1));
 		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE12: {
 		// sign-extended for 12 bits and shifted left by 1 (i.e. multiplied by 2)
-		RzILOpBitVector *relative = SHIFTL0(SH_S_ADDR(param.param[0]), U32(1));
+		RzILOpBitVector *relative = SHIFTL0(SH_S_ADDR(convert_to_st12(param.param[0])), U32(1));
 		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE_REG:
