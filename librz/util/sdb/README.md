@@ -2,7 +2,7 @@ SDB (string database)
 =====================
 
 sdb is a simple string key/value database based on djb's cdb
-disk storage and supports JSON and arrays introspection.
+disk storage and supports arrays introspection.
 
 Author
 ------
@@ -14,7 +14,6 @@ Contains
 * atomic database sync (never corrupted)
 * commandline frontend for sdb databases
 * arrays support (syntax sugar)
-* json parser/getter (js0n.c)
 
 Rips
 ----
@@ -55,14 +54,6 @@ $ sdb - '[]list=1,2' '[0]list' '[0]list=foo' '[]list' '[+1]list=bar'
 1
 foo
 2
-```
-Let's play with json:
-```
-$ sdb d g='{"foo":1,"bar":{"cow":3}}'
-$ sdb d g:bar.cow
-3
-$ sdb - user='{"id":123}' user:id=99 user:id
-99
 ```
 Using the commandline without any disk database:
 ```

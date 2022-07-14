@@ -168,7 +168,7 @@ static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns,
 RZ_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
 	const char *p, *q, *val = NULL;
-	char *eq, *tmp, *json, *next, *quot, *slash, *res,
+	char *eq, *next, *quot, *slash, *res,
 		*cmd, *newcmd = NULL, *original_cmd = NULL;
 	StrBuf *out;
 	Sdb *s = r;
@@ -210,7 +210,6 @@ repeat:
 	encode = 0;
 	is_ref = 0;
 	quot = NULL;
-	json = NULL;
 	if (*p == '#') {
 		p++;
 		next = strchr(p, ';');
@@ -333,7 +332,6 @@ repeat:
 			goto fail;
 		}
 	}
-	json = strchr(cmd, ':');
 	if (*cmd == '[') {
 		char *tp = strchr(cmd, ']');
 		if (!tp) {
@@ -451,21 +449,10 @@ repeat:
 			}
 		} else {
 			int base = sdb_num_base(sdb_const_get(s, cmd + 1, 0));
-			if (json) {
-				base = 10; // NOTE: json is base10 only
-				*json = 0;
-				if (*cmd == '+') {
-					n = sdb_json_num_inc(s, cmd + 1, json + 1, d, 0);
-				} else {
-					n = sdb_json_num_dec(s, cmd + 1, json + 1, d, 0);
-				}
-				*json = ':';
+			if (*cmd == '+') {
+				n = sdb_num_inc(s, cmd + 1, d, 0);
 			} else {
-				if (*cmd == '+') {
-					n = sdb_num_inc(s, cmd + 1, d, 0);
-				} else {
-					n = sdb_num_dec(s, cmd + 1, d, 0);
-				}
+				n = sdb_num_dec(s, cmd + 1, d, 0);
 			}
 			// keep base
 			if (base == 16) {
@@ -743,28 +730,18 @@ repeat:
 	} else {
 		if (eq) {
 			// 1 0 kvpath=value
-			// 1 1 kvpath:jspath=value
 			if (encode) {
 				val = sdb_encode((const ut8 *)val, -1);
 			}
-			if (json > eq) {
-				json = NULL;
+			while (*val && isspace(*val)) {
+				val++;
 			}
-
-			if (json) {
-				*json++ = 0;
-				ok = sdb_json_set(s, cmd, json, val, 0);
-			} else {
-				while (*val && isspace(*val)) {
-					val++;
-				}
-				int i = strlen(cmd) - 1;
-				while (i >= 0 && isspace(cmd[i])) {
-					cmd[i] = '\0';
-					i--;
-				}
-				ok = sdb_set(s, cmd, val, 0);
+			int i = strlen(cmd) - 1;
+			while (i >= 0 && isspace(cmd[i])) {
+				cmd[i] = '\0';
+				i--;
 			}
+			ok = sdb_set(s, cmd, val, 0);
 			if (encode) {
 				free((void *)val);
 				val = NULL;
@@ -773,39 +750,15 @@ repeat:
 				*buf = 0;
 			}
 		} else {
-			// 0 1 kvpath:jspath
 			// 0 0 kvpath
-			if (json) {
-				*json++ = 0;
-				if (*json) {
-					// TODO: not optimized to reuse 'buf'
-					if ((tmp = sdb_json_get(s, cmd, json, 0))) {
-						if (encode) {
-							char *newtmp = (void *)sdb_decode(tmp, NULL);
-							if (!newtmp)
-								goto fail;
-							free(tmp);
-							tmp = newtmp;
-						}
-						out_concat(tmp);
-						free(tmp);
-					}
-				} else {
-					// kvpath:  -> show indented json
-					char *o = sdb_json_indent(sdb_const_get(s, cmd, 0), "  ");
-					out_concat(o);
-					free(o);
+			// sdbget
+			if ((q = sdb_const_get(s, cmd, 0))) {
+				if (encode) {
+					q = (void *)sdb_decode(q, NULL);
 				}
-			} else {
-				// sdbget
-				if ((q = sdb_const_get(s, cmd, 0))) {
-					if (encode) {
-						q = (void *)sdb_decode(q, NULL);
-					}
-					out_concat(q);
-					if (encode) {
-						free((void *)q);
-					}
+				out_concat(q);
+				if (encode) {
+					free((void *)q);
 				}
 			}
 		}
