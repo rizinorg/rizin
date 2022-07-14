@@ -408,6 +408,7 @@ userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 userconf.set10('HAVE_THREADS', th.found())
 userconf.set10('HAVE_PTHREAD', have_pthread)
 userconf.set10('HAVE_LZMA', get_option('use_lzma'))
+userconf.set10('HAVE_ZLIB', get_option('use_zlib'))
 
 if host_machine.system() == 'freebsd' or host_machine.system() == 'dragonfly'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
@@ -528,15 +529,19 @@ rz_version_h = configure_file(
 )
 
 # handle zlib dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'zlib', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-endif
+zlib_dep = disabler()
+if get_option('use_zlib')
+  r = run_command(py3_exe, check_meson_subproject_py, 'zlib', check: false)
+  if r.returncode() == 1 and get_option('subprojects_check')
+    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  endif
 
-zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
-if not zlib_dep.found()
-  zlib_proj = subproject('zlib', default_options: ['default_library=static'])
-  zlib_dep = zlib_proj.get_variable('zlib_dep')
+  zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
+  if not zlib_dep.found()
+    zlib_proj = subproject('zlib', default_options: ['default_library=static'])
+    zlib_dep = zlib_proj.get_variable('zlib_dep')
+    meson.override_dependency('zlib', zlib_dep)
+  endif
 endif
 
 # handle lz4 dependency
