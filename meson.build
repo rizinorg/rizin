@@ -49,9 +49,6 @@ if meson.is_subproject()
   endif
 endif
 
-# by default, not version commit is used
-version_commit = '0'
-
 gittip = ''
 
 fs = import('fs')
@@ -61,10 +58,6 @@ if git_exe.found() and fs.exists('.git')
   if git_rev_parse.returncode() == 0
     gittip = git_rev_parse.stdout().strip()
   endif
-endif
-
-if get_option('rizin_version_commit') != ''
-  version_commit = get_option('rizin_version_commit')
 endif
 
 if get_option('rizin_gittip') != ''
