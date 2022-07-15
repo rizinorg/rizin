@@ -7,6 +7,7 @@
 #include "rz_util.h"
 #include "rz_cons.h"
 #include "rz_bin.h"
+#include "rz_util/rz_assert.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -691,6 +692,104 @@ RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr
 		start++;
 	}
 	return str[start] == chr ? str + start : NULL;
+}
+
+/**
+ * \brief Checks if the given character string is a two byte UTF-8 character.
+ *
+ * \param c The character string to test.
+ * \return bool True if the character string is a two byte UTF-8 character. False otherwise.
+ */
+RZ_API bool rz_str_is2utf8(RZ_NULLABLE const char *c) {
+	if (!c[0] || !c[1]) {
+		return false;
+	}
+	return ((c[0] & 0xe0) == 0xc0) && ((c[1] & 0xc0) == 0x80);
+}
+
+/**
+ * \brief Checks if the given character string is a three byte UTF-8 character.
+ *
+ * \param c The character string to test.
+ * \return bool True if the character string is a three byte UTF-8 character. False otherwise.
+ */
+RZ_API bool rz_str_is3utf8(RZ_NULLABLE const char *c) {
+	if (!c[0] || !c[1] || !c[2]) {
+		return false;
+	}
+	return ((c[0] & 0xf0) == 0xe0) && ((c[1] & 0xc0) == 0x80) && ((c[2] & 0xc0) == 0x80);
+}
+
+/**
+ * \brief Checks if the given character string is a four byte UTF-8 character.
+ *
+ * \param c The character string to test.
+ * \return bool True if the character string is a four byte UTF-8 character. False otherwise.
+ */
+RZ_API bool rz_str_is4utf8(RZ_NULLABLE const char *c) {
+	if (!c[0] || !c[1] || !c[2] || !c[3]) {
+		return false;
+	}
+	return ((c[0] & 0xf8) == 0xf0) && ((c[1] & 0xc0) == 0x80) && ((c[2] & 0xc0) == 0x80) && ((c[3] & 0xc0) == 0x80);
+}
+
+/**
+ * \brief Checks if the byte string matches the criteria of a UTF-8 character of length \p x.
+ *
+ * \param c The byte string to test.
+ * \return bool True if the bytes match an UTF-8 character of length \p x. False otherwise.
+ */
+RZ_API bool rz_str_isXutf8(RZ_NULLABLE const char *c, ut8 x) {
+	if (!c) {
+		return false;
+	}
+	switch (x) {
+	default:
+		return false;
+	case 1:
+		return isascii(c[0]);
+	case 2:
+		return rz_str_is2utf8(c);
+	case 3:
+		return rz_str_is3utf8(c);
+	case 4:
+		return rz_str_is4utf8(c);
+	}
+}
+
+/**
+ * \brief Returns a pointer to the first occurrence of UTF-8 character \p c in the string \p s.
+ *
+ * \param str The string to search.
+ * \param c The UTF-8 character to search for.
+ * \return char* A pointer to the first occurrence of \p c in the string (first from the left) or NULL if \p c was not found.
+ */
+RZ_API const char *rz_str_strchr(RZ_NONNULL const char *str, RZ_NULLABLE const char *c) {
+	rz_return_val_if_fail(str, NULL);
+	ut32 i = 0;
+	ut64 str_len = strlen(str);
+	ut8 c_len = isascii(*c) ? 1 : (rz_str_is2utf8(c) ? 2 : (rz_str_is3utf8(c) ? 3 : (rz_str_is4utf8(c) ? 4 : 1)));
+	while (i <= str_len) {
+		if (c_len == 1) {
+			if (str[i] == c[0]) {
+				return str + i;
+			}
+		} else if (c_len == 2) {
+			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, 2)) {
+				return str + i;
+			}
+		} else if (c_len == 3) {
+			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, 3)) {
+				return str + i;
+			}
+		} else if (c_len == 4) {
+			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, 4)) {
+				return str + i;
+			}
+		}
+		++i;
+	}
+	return NULL;
 }
 
 RZ_API const char *rz_str_sep(const char *base, const char *sep) {

@@ -20,7 +20,7 @@ RZ_API int rz_mem_count(const ut8 **addr) {
 	return i;
 }
 
-RZ_API int rz_mem_eq(ut8 *a, ut8 *b, int len) {
+RZ_API int rz_mem_eq(const ut8 *a, const ut8 *b, int len) {
 	register int i;
 	for (i = 0; i < len; i++) {
 		if (a[i] != b[i]) {
