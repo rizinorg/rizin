@@ -740,9 +740,12 @@ RZ_API bool rz_str_is4utf8(RZ_NULLABLE const char *c) {
  * \return bool True if the bytes match an UTF-8 character of length \p x. False otherwise.
  */
 RZ_API bool rz_str_isXutf8(RZ_NULLABLE const char *c, ut8 x) {
+<<<<<<< HEAD
 	if (!c) {
 		return false;
 	}
+=======
+>>>>>>> Add utility functions to search for UTF-8 chars in strings.
 	switch (x) {
 	default:
 		return false;
