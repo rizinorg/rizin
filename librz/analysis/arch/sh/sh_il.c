@@ -74,8 +74,9 @@ static const char *sh_global_registers[] = {
 
 /**
  * \brief Cast \p val to \p len bits
- * This uses a local variable "_signed" and casts the \p val to \p len bits
- * and stores that value in the local variable "_signed"
+ * This uses a local temp variable \p temp_var to store the value \p val
+ * and then casts the local variable \p temp_var to its signed value
+ * and stores that value in the local variable \p cast_var
  *
  * The purpose of this function is to remove the redundant IL block introduced
  * by `SIGNED` opbuilder macro (`MSB` of \p val for fill bits, and \p val for value),
@@ -86,12 +87,14 @@ static const char *sh_global_registers[] = {
  *
  * \param len
  * \param val
- * \return RzILOpEffect* Effect corresponding to setting the local variable "_signed" to the signed cast
+ * \param cast_var Casted variable name ; Use this variable to access the casted value in the caller
+ * \param temp_var Temp variable name ; Do NOT use this variable outside this function
+ * \return RzILOpEffect* Effect corresponding to setting the local variables
  */
-RzILOpEffect *sh_il_signed(unsigned int len, RZ_OWN RzILOpPure *val) {
-	RzILOpEffect *init = SETL("_signed", val);
-	RzILOpPure *cast = rz_il_op_new_cast(len, MSB(VARL("_signed")), VARL("_signed"));
-	RzILOpEffect *set = SETL("_signed", cast);
+RzILOpEffect *sh_il_signed(unsigned int len, RZ_OWN RzILOpPure *val, const char *cast_var, const char *temp_var) {
+	RzILOpEffect *init = SETL(temp_var, val);
+	RzILOpPure *cast = rz_il_op_new_cast(len, MSB(VARL(temp_var)), VARL(temp_var));
+	RzILOpEffect *set = SETL(cast_var, cast);
 
 	return SEQ2(init, set);
 }
@@ -178,14 +181,14 @@ static RzILOpEffect *sh_il_set_status_reg(RZ_OWN RzILOpPure *val) {
 }
 
 /**
- * \brief Set the value of the local variable "_privilege"
+ * \brief Set the value of the local variable "_priv"
  * This exists so that the privilege mode IL doesn't have to be duplicated everywhere,
  * instead one can directly use the local variable
  *
  * \return RzILOpEffect*
  */
 static RzILOpEffect *sh_il_initialize_privilege() {
-	return SETL("_privilege", AND(VARG(SH_SR_D), VARG(SH_SR_R)));
+	return SETL("_priv", AND(VARG(SH_SR_D), VARG(SH_SR_R)));
 }
 
 /**
@@ -198,7 +201,7 @@ static RzILOpEffect *sh_il_initialize_privilege() {
  */
 static RzILOpPure *sh_il_get_privilege() {
 	privilege_check = true;
-	return VARL("_privilege");
+	return VARL("_priv");
 }
 
 /**
@@ -238,7 +241,7 @@ static RzILOpEffect *sh_il_set_reg(ut16 reg, RZ_OWN RzILOpPure *val) {
 		return SETG(sh_registers[reg], val);
 	}
 
-	return SEQ2(SETL("_regval", val), BRANCH(sh_il_get_privilege(), SETG(sh_get_banked_reg(reg, 1), VARL("_regval")), SETG(sh_get_banked_reg(reg, 0), VARL("_regval"))));
+	return SEQ2(SETL("_regv", val), BRANCH(sh_il_get_privilege(), SETG(sh_get_banked_reg(reg, 1), VARL("_regv")), SETG(sh_get_banked_reg(reg, 0), VARL("_regv"))));
 }
 
 /**
@@ -296,7 +299,7 @@ static RzILOpPure *sh_il_get_effective_addr_pc(SHParam param, SHScaling scaling,
 	}
 	case SH_PC_RELATIVE8: {
 		// sign-extended for 8 bits and shifted left by 1 (i.e. multiplied by 2)
-		RzILOpBitVector *relative = SHIFTL0(SH_S_ADDR((st8) param.param[0]), U32(1));
+		RzILOpBitVector *relative = SHIFTL0(SH_S_ADDR((st8)param.param[0]), U32(1));
 		return ADD(ADD(SH_U_ADDR(pc), SH_U_ADDR(4)), relative);
 	}
 	case SH_PC_RELATIVE12: {
@@ -420,8 +423,12 @@ static RzILOpEffect *sh_il_set_param_pc(SHParam param, RZ_OWN RzILOpPure *val, S
 		if (scaling == SH_SCALING_INVALID || scaling == SH_SCALING_L) {
 			ret = sh_il_set_reg(param.param[0], val);
 		} else {
-			RzILOpEffect *cast = sh_il_signed(SH_REG_SIZE, val);
-			ret = SEQ2(cast, sh_il_set_reg(param.param[0], VARL("_signed")));
+			/* We don't need to worry about sizes not matching up when calling `sh_il_signed` two times in an effect.
+			This is because within an effect, the scaling will stay the same, so all the time `sh_il_signed` is called,
+			it will be setting the local variables "_sign" and "_temp" to the same bitvector size.
+			Thus, there will be no IL validation errors. */
+			RzILOpEffect *cast = sh_il_signed(SH_REG_SIZE, val, "_sign", "_temp");
+			ret = SEQ2(cast, sh_il_set_reg(param.param[0], VARL("_sign")));
 		}
 		break;
 	case SH_REG_INDIRECT:
