@@ -769,21 +769,13 @@ RZ_API const char *rz_str_strchr(RZ_NONNULL const char *str, RZ_NULLABLE const c
 	ut32 i = 0;
 	ut64 str_len = strlen(str);
 	ut8 c_len = isascii(*c) ? 1 : (rz_str_is2utf8(c) ? 2 : (rz_str_is3utf8(c) ? 3 : (rz_str_is4utf8(c) ? 4 : 1)));
-	while (i <= str_len) {
+	while (i <= str_len && i + c_len <= str_len) {
 		if (c_len == 1) {
 			if (str[i] == c[0]) {
 				return str + i;
 			}
-		} else if (c_len == 2) {
-			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, 2)) {
-				return str + i;
-			}
-		} else if (c_len == 3) {
-			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, 3)) {
-				return str + i;
-			}
-		} else if (c_len == 4) {
-			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, 4)) {
+		} else {
+			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, c_len)) {
 				return str + i;
 			}
 		}
