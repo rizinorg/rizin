@@ -213,12 +213,17 @@ arp
 EOF
 EXPECT=<<EOF
 =PC	pc
-=A0	A0
-=A1	A1
-=A2	A2
-=A3	A3
-=R0	A0
-=R1	A1
+=A0	A4
+=A1	B4
+=A2	A6
+=A3	A6
+=A4	A8
+=A5	B8
+=A6	A10
+=A7	B10
+=A8	A12
+=A9	B12
+=R0	A4
 gpr	A0	.32	0 		0
 gpr	A1	.32	4 		0
 gpr	A2	.32	8 		0
