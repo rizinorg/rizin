@@ -272,7 +272,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList *alias_list, RZ_OUT RzList *def_
 		if (RZ_STR_ISEMPTY(line)) {
 			continue;
 		}
-		if (index(line, '#')) {
+		if (rz_str_strchr(line, "#")) {
 			RzList *line_and_cmt = rz_str_split_duplist_n_regex(line, "#", 0, true);
 			char *raw_comment = strdup(rz_list_get_top(line_and_cmt));
 			if (!raw_comment) {
