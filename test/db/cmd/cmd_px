@@ -103,11 +103,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd 16
+NAME=pxd 4 16
 FILE=malloc://1024
 CMDS=<<EOF
 wx 1020ffff30400000
-pxd 16
+pxd 4 16
 EOF
 EXPECT=<<EOF
 - offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
@@ -115,11 +115,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd 8
+NAME=pxd 4 8
 FILE=malloc://1024
 CMDS=<<EOF
 wx 1020ffff30400000
-pxd 8
+pxd 4 8
 EOF
 EXPECT=<<EOF
 - offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF

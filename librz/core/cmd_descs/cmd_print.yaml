@@ -477,6 +477,110 @@ commands:
       - name: type
         type: RZ_CMD_ARG_TYPE_NUM
         optional: true
+  - name: px
+    summary: Show hexdump
+    subcommands:
+      - name: px
+        summary: show hexdump
+        cname: print_hexdump
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pxd
+        summary: show signed integer dump
+        cname: print_hexdump_signed_int
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: n
+            type: RZ_CMD_ARG_TYPE_NUM
+            default_value: 4
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pxh
+        summary: show hexadecimal half-words dump (16bit)
+        cname: print_hexdump_hex2
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pxH
+        summary: same as above, but one per line (16bit)
+        cname: print_hexdump_hex2l
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pxw
+        summary: show hexadecimal words dump (32bit)
+        cname: print_hexdump_hex4
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pxW
+        summary: same as above, but one per line (32bit)
+        cname: print_hexdump_hex4l
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pxq
+        summary: show hexadecimal quad-words dump (64bit)
+        cname: print_hexdump_hex8
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pxQ
+        summary: same as above, but one per line (64bit)
+        cname: print_hexdump_hex8l
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pxo
+        summary: show octal dump
+        cname: print_hexdump_oct
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pxl
+        summary: display <N> lines (rows) of hexdump
+        cname: print_hexdump_n_lines
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
   - name: p6
     summary: Base64 decoding/encoding
     subcommands:
