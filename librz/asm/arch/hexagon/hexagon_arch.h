@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 16:20:45-04:00
+// Date of code generation: 2022-07-17 18:44:39-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -72,4 +72,5 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 RZ_API ut8 hexagon_get_pkt_index_of_addr(const ut32 addr, const HexPkt *p);
 RZ_API HexLoopAttr hex_get_loop_flag(const HexPkt *p);
 void hex_set_hic_text(RZ_INOUT HexInsnContainer *hic);
+RZ_API void hex_copy_insn_container(RZ_OUT HexInsnContainer *dest, const HexInsnContainer *src);
 #endif
