@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 17:14:54-04:00
+// Date of code generation: 2022-07-17 18:08:52-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -94,7 +94,7 @@ typedef struct {
 	_RzAnalysisOpType type;
 } HexInsnTemplate;
 
-static const HexInsnTemplate templates_sub[] = {
+static const HexInsnTemplate templates_sub_A[] = {
 	{
 		// 0000PP00iiiiiiixxxx | Rx = add(Rxin,Ii)
 		.encoding = { .mask = 0xf0001800, .op = 0x0 },
@@ -411,6 +411,23 @@ static const HexInsnTemplate templates_sub[] = {
 		.syntax = " = zxth()",
 	},
 	{
+		// 0000PP010iiiiiidddd | Rd = Ii
+		.encoding = { .mask = 0xf0001c00, .op = 0x800 },
+		.id = HEX_INS_UNDOCUMENTED_SA2_TFRSI,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x4, 0 } }, .reg_cls = HEX_REG_CLASS_GENERAL_SUB_REGS, .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_IMM | HEX_OP_TEMPLATE_FLAG_IMM_EXTENDABLE, .masks = { { 0x6, 4 } }, .syntax = 3 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " = ",
+	},
+	{ { 0 } },
+};
+
+static const HexInsnTemplate templates_sub_L1[] = {
+	{
 		// 0000PP0iiiissssdddd | Rd = memw(Rs+Ii)
 		.encoding = { .mask = 0xf0001000, .op = 0x0 },
 		.id = HEX_INS_SL1_LOADRI_IO,
@@ -438,6 +455,10 @@ static const HexInsnTemplate templates_sub[] = {
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = " = memub(+)",
 	},
+	{ { 0 } },
+};
+
+static const HexInsnTemplate templates_sub_L2[] = {
 	{
 		// 0000PP1111100000000 | deallocframe
 		.encoding = { .mask = 0xf0001fff, .op = 0x1f00 },
@@ -613,6 +634,10 @@ static const HexInsnTemplate templates_sub[] = {
 		.syntax = "if (P0.new) dealloc_return:nt",
 		.flags = HEX_INSN_TEMPLATE_FLAG_PREDICATED,
 	},
+	{ { 0 } },
+};
+
+static const HexInsnTemplate templates_sub_S1[] = {
 	{
 		// 0000PP1iiiisssstttt | memb(Rs+Ii) = Rt
 		.encoding = { .mask = 0xf0001000, .op = 0x1000 },
@@ -641,6 +666,10 @@ static const HexInsnTemplate templates_sub[] = {
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = "memw(+) = ",
 	},
+	{ { 0 } },
+};
+
+static const HexInsnTemplate templates_sub_S2[] = {
 	{
 		// 0000PP1110iiiii0000 | allocframe(Ii)
 		.encoding = { .mask = 0xf0001e0f, .op = 0x1c00 },
@@ -744,19 +773,6 @@ static const HexInsnTemplate templates_sub[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = "memw(+) = #1",
-	},
-	{
-		// 0000PP010iiiiiidddd | Rd = Ii
-		.encoding = { .mask = 0xf0001c00, .op = 0x800 },
-		.id = HEX_INS_UNDOCUMENTED_SA2_TFRSI,
-		.ops = {
-			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x4, 0 } }, .reg_cls = HEX_REG_CLASS_GENERAL_SUB_REGS, .syntax = 0 },
-			{ .info = HEX_OP_TEMPLATE_TYPE_IMM | HEX_OP_TEMPLATE_FLAG_IMM_EXTENDABLE, .masks = { { 0x6, 4 } }, .syntax = 3 },
-		},
-		.pred = HEX_NOPRED,
-		.cond = RZ_TYPE_COND_AL,
-		.type = RZ_ANALYSIS_OP_TYPE_NULL,
-		.syntax = " = ",
 	},
 	{ { 0 } },
 };
@@ -33867,6 +33883,51 @@ static const HexInsnTemplate *templates_normal[] = {
 	templates_normal_0xf
 };
 
+/**
+ * \brief Get the sub-instruction template for a given duplex IClass.
+ *
+ * \param duplex_iclass The duplex IClass.
+ * \param high True: returns the table of the high instruction. False: the table of the low instructions.
+ * \return const HexInsnTemplate* The template table of the requested instructions. Or NULL if the IClass is invalid.
+ */
+static const HexInsnTemplate *get_sub_template_table(const ut8 duplex_iclass, bool high) {
+	switch (duplex_iclass) {
+	default:
+		RZ_LOG_WARN("IClasses > 0xe are reserved.\n");
+		return NULL;
+	case 0:
+		return high ? templates_sub_L1 : templates_sub_L1;
+	case 1:
+		return high ? templates_sub_L1 : templates_sub_L2;
+	case 2:
+		return high ? templates_sub_L2 : templates_sub_L2;
+	case 3:
+		return high ? templates_sub_A : templates_sub_A;
+	case 4:
+		return high ? templates_sub_A : templates_sub_L1;
+	case 5:
+		return high ? templates_sub_A : templates_sub_L2;
+	case 6:
+		return high ? templates_sub_A : templates_sub_S1;
+	case 7:
+		return high ? templates_sub_A : templates_sub_S2;
+	case 8:
+		return high ? templates_sub_L1 : templates_sub_S1;
+	case 9:
+		return high ? templates_sub_L2 : templates_sub_S1;
+	case 0xA:
+		return high ? templates_sub_S1 : templates_sub_S1;
+	case 0xB:
+		return high ? templates_sub_S1 : templates_sub_S2;
+	case 0xC:
+		return high ? templates_sub_L1 : templates_sub_S2;
+	case 0xD:
+		return high ? templates_sub_L2 : templates_sub_S2;
+	case 0xE:
+		return high ? templates_sub_S2 : templates_sub_S2;
+	}
+}
+
 static inline bool is_last_instr(const ut8 parse_bits) {
 	// Duplex instr. (parse bits = 0) are always the last.
 	return ((parse_bits == 0x3) || (parse_bits == 0x0));
@@ -34117,9 +34178,9 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 				RZ_LOG_WARN("Reserved duplex instruction class used at: 0x%" PFMT32x ".\n", addr);
 			}
 
-			hex_disasm_with_templates(templates_sub, state, opcode_high, hi_high, hic, addr, pkt);
+			hex_disasm_with_templates(get_sub_template_table(iclass, true), state, opcode_high, hi_high, hic, addr, pkt);
 			hic->bin.sub[0] = hi_high;
-			hex_disasm_with_templates(templates_sub, state, opcode_low, hi_low, hic, addr + 2, pkt);
+			hex_disasm_with_templates(get_sub_template_table(iclass, false), state, opcode_low, hi_low, hic, addr + 2, pkt);
 			hic->bin.sub[1] = hi_low;
 
 			hic->identifier = (hi_high->identifier << 16) | (hi_low->identifier & 0xffff);
