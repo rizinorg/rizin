@@ -1053,11 +1053,24 @@ RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc
 RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
 
 // cprint.c
+typedef enum {
+	RZ_CORE_PRINT_FORMAT_TYPE_OCTAL = 0,
+	RZ_CORE_PRINT_FORMAT_TYPE_INTEGER,
+	RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL,
+	RZ_CORE_PRINT_FORMAT_TYPE_INVALID,
+} RzCorePrintFormatType;
+
 RZ_API RZ_OWN char *rz_core_print_string_c_cpp(RzCore *core);
 RZ_API RZ_OWN char *rz_core_hex_of_assembly(RzCore *core, const char *assembly);
 RZ_API RZ_OWN char *rz_core_esil_of_assembly(RzCore *core, const char *assembly);
 RZ_API RZ_OWN char *rz_core_assembly_of_hex(RzCore *core, ut8 *hex, int len);
 RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, ut8 *hex, int len);
+
+RZ_API void rz_core_print_cmp(RzCore *core, ut64 from, ut64 to);
+RZ_API bool rz_core_print_dump(RzCore *core, const RzCmdStateOutput *state, ut64 addr, ut8 n, int len, const RzCorePrintFormatType format);
+RZ_API bool rz_core_print_hexdump_(RzCore *core, ut64 addr, int len);
+RZ_API RZ_OWN char *rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state,
+	ut64 addr, int len, ut8 size);
 
 /* rtr */
 RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);
