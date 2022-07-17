@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 15:43:03-04:00
+// Date of code generation: 2022-07-17 16:20:45-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -380,6 +380,21 @@ static char *get_pkt_indicator(const bool utf8, const bool sdk, const bool prefi
 }
 
 /**
+ * \brief Sets the instruction container testual disassmebly by concatinating text prefix, infix and postfix.
+ *
+ * \param hic The instruction container.
+ */
+void hex_set_hic_text(RZ_INOUT HexInsnContainer *hic) {
+	rz_return_if_fail(hic);
+	if (hic->is_duplex) {
+		rz_return_if_fail(hic->bin.sub[0] && hic->bin.sub[1]);
+		snprintf(hic->text, sizeof(hic->text), "%s%s%s%s%s", hic->pkt_info.text_prefix, hic->bin.sub[0]->text_infix, " ; ", hic->bin.sub[1]->text_infix, hic->pkt_info.text_postfix);
+	} else {
+		snprintf(hic->text, sizeof(hic->text), "%s%s%s", hic->pkt_info.text_prefix, hic->bin.insn->text_infix, hic->pkt_info.text_postfix);
+	}
+}
+
+/**
  * \brief Sets the packet related information in an instruction.
  *
  * \param hi The instruction.
@@ -449,7 +464,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 		}
 	}
 	if (update_text) {
-		sprintf(hic->text, "%s%s%s", hi_pi->text_prefix, hic->text_infix, hi_pi->text_postfix);
+		hex_set_hic_text(hic);
 	}
 }
 

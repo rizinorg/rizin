@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 16:10:32-04:00
+// Date of code generation: 2022-07-17 16:20:45-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -34123,7 +34123,6 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 			hex_disasm_with_templates(templates_sub, state, opcode_low, hi_low, hic, addr + 2, pkt);
 			hic->bin.sub[1] = hi_low;
 
-			snprintf(hic->text, sizeof(hic->text), "%s%s%s%s%s", hic->pkt_info.text_prefix, hi_high->text_infix, " ; ", hi_low->text_infix, hic->pkt_info.text_postfix);
 			hic->identifier = (hi_high->identifier << 16) | (hi_low->identifier & 0xffff);
 			hic->ana_op.id = hic->identifier;
 		} else {
@@ -34132,7 +34131,6 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 			ut32 cat = (hi_u32 >> 28) & 0xF;
 			hex_disasm_with_templates(templates_normal[cat], state, hi_u32, hi, hic, addr, pkt);
 			hic->bin.insn = hi;
-			snprintf(hic->text, sizeof(hic->text), "%s%s%s", hic->pkt_info.text_prefix, hi->text_infix, hic->pkt_info.text_postfix);
 			hic->identifier = hi->identifier;
 		}
 	}
@@ -34145,8 +34143,8 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 		HexInsn *hi = hexagon_alloc_instr();
 		hic->bin.insn = hi;
 		snprintf(hic->bin.insn->text_infix, sizeof(hic->text), "invalid");
-		snprintf(hic->text, sizeof(hic->text), "%s%s%s", hic->pkt_info.text_prefix, hic->bin.insn->text_infix, hic->pkt_info.text_postfix);
 	}
 
+	hex_set_hic_text(hic);
 	return 4;
 }
