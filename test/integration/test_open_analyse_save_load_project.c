@@ -26,7 +26,7 @@ bool test_open_analyse_save() {
 	eprintf("functions count = %d\n", rz_list_length(functionsold));
 
 	// 3. Remove the function
-	const char* fcnname = "fcn.0000ebe0";
+	const char *fcnname = "fcn.0000ebe0";
 	RzAnalysisFunction *fcn = rz_analysis_get_function_byname(core->analysis, fcnname);
 	mu_assert_notnull(fcn, "find function");
 	rz_analysis_function_delete(fcn);
@@ -37,11 +37,11 @@ bool test_open_analyse_save() {
 	size_t functions_count_expect = rz_list_length(functions);
 
 	// 4. Save into the project
-	if (!rz_file_is_directory(".tmp" RZ_SYS_DIR)) {
-		mu_assert_true(rz_sys_mkdir(".tmp/"), "create tmp directory");
-	}
-	RzProjectErr err = rz_project_save_file(core, ".tmp/test_open_analyse.rzdb", true);
+	char *tmpdir = rz_file_tmpdir();
+	char *project_file = rz_file_path_join(tmpdir, "test_open_analyse.rzdb");
+	RzProjectErr err = rz_project_save_file(core, project_file, true);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project save err");
+	free(project_file);
 
 	// 5. Close the file
 	rz_core_file_close(file);
@@ -54,8 +54,10 @@ bool test_open_analyse_save() {
 	// 7. Load the previously saved project
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	mu_assert_notnull(res, "result info new");
-	err = rz_project_load_file(core, ".tmp/test_open_analyse.rzdb", true, res);
+	project_file = rz_file_path_join(tmpdir, "test_open_analyse.rzdb");
+	err = rz_project_load_file(core, project_file, true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
+	free(project_file);
 
 	// 8. Export the function list
 	RzList *functions_load = rz_analysis_function_list(core->analysis);
@@ -65,6 +67,7 @@ bool test_open_analyse_save() {
 	mu_assert_eq(rz_list_length(functions_load), functions_count_expect, "compare functions list");
 
 	// 10. Exit
+	free(tmpdir);
 	rz_serialize_result_info_free(res);
 	rz_core_free(core);
 	mu_end;

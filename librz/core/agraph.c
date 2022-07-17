@@ -3798,7 +3798,7 @@ RZ_API bool rz_agraph_del_node(const RzAGraph *g, const char *title) {
 	return true;
 }
 
-static bool user_node_cb(struct g_cb *user, const void *k UNUSED, const void *v) {
+static bool user_node_cb(struct g_cb *user, RZ_UNUSED const void *k, const void *v) {
 	RzANodeCallback cb = user->node_cb;
 	void *user_data = user->data;
 	RzANode *n = (RzANode *)v;
@@ -3808,7 +3808,7 @@ static bool user_node_cb(struct g_cb *user, const void *k UNUSED, const void *v)
 	return true;
 }
 
-static bool user_edge_cb(struct g_cb *user, const void *k UNUSED, const void *v) {
+static bool user_edge_cb(struct g_cb *user, RZ_UNUSED const void *k, const void *v) {
 	RAEdgeCallback cb = user->edge_cb;
 	RzAGraph *g = user->graph;
 	void *user_data = user->data;
