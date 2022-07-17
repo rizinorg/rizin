@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 13:19:50-04:00
+// Date of code generation: 2022-07-17 14:08:05-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -873,7 +873,7 @@ char *hex_get_reg_in_class(HexRegClass cls, int opcode_reg, bool get_alias) {
  * \param addr The address of the current instruction.
  * \param reg_num Bits of Nt.new reg.
  * \param p The current packet.
- * \return int The number of the general register. Or UT32_MAX if any error occured.
+ * \return int The number of the general register. Or UT32_MAX if any error occurred.
  */
 int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p) {
 	// .new values are documented in Programmers Reference Manual

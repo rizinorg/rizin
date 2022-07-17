@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 14:00:50-04:00
+// Date of code generation: 2022-07-17 15:43:03-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -826,7 +826,7 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 	}
 
 	ut32 data = rz_read_le32(buf);
-	ut8 parse_bits = (data & 0x0000c000) >> 14;
+	ut8 parse_bits = (data & HEX_PARSE_BITS_MASK) >> 14;
 	HexInsnContainer hic_new = { 0 };
 	setup_new_hic(&hic_new, rz_reverse, addr, parse_bits);
 	// Add to state

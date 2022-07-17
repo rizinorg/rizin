@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 13:12:03-04:00
+// Date of code generation: 2022-07-17 15:44:37-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -29,6 +29,16 @@ typedef enum {
 	HEX_OP_TYPE_IMM,
 	HEX_OP_TYPE_REG,
 } HexOpType;
+
+/**
+ * \brief Flags to mark which kind of predicates instructions use.
+ */
+typedef enum {
+	HEX_NOPRED, ///< no conditional execution
+	HEX_PRED_TRUE, ///< if (Pd) ...
+	HEX_PRED_FALSE, ///< if (!Pd) ...
+	HEX_PRED_NEW, ///< if (Pd.new) or if (!Pd.new)
+} HexPred;
 
 typedef enum {
 	HEX_OP_CONST_EXT = 1 << 0, // Constant extender marker for Immediate
@@ -69,7 +79,8 @@ typedef struct {
 	ut8 op_count; ///< The number of operands this instruction has.
 	ut32 addr; ///< Memory address the instruction is located (high sub-instruction is unaligned by 2 byte!).
 	ut32 opcode; ///< The instruction opcode.
-	HexInsnID instruction; ///< The instruction identifier
+	HexPred pred; ///< The instruction predicate.
+	HexInsnID identifier; ///< The instruction identifier
 	char text_infix[128]; ///< Textual disassembly of the instruction.
 	HexOp ops[HEX_MAX_OPERANDS]; ///< The operands of the instructions.
 } HexInsn;
@@ -81,21 +92,41 @@ typedef struct {
 typedef struct {
 	ut8 parse_bits; ///< Parse bits of instruction.
 	bool is_duplex; ///< DOes this container hold two sub-instructions?
-	ut32 identifier; ///< Equals instruction ID if is_duplex = false. Otherwise: (low.id << 16) | (high.id << 0)
+	ut32 identifier; ///< Equals instruction ID if is_duplex = false. Otherwise: (high.id << 16) | (low.id & 0xffff)
 	union {
-		HexInsn *sub[2]; ///< Pointer to sub-instructions if is_duplex = true. sub[0] = low, sub[1] = high
+		HexInsn *sub[2]; ///< Pointer to sub-instructions if is_duplex = true. sub[0] = high, sub[1] = low
 		HexInsn *insn; ///< Pointer to instruction if is_duplex = false.
 	} bin;
-	ut32 addr; ///< Address of container. Equals address of instruction or of the low sub-instruction if this is a duplex.
+	ut32 addr; ///< Address of container. Equals address of instruction or of the high sub-instruction if this is a duplex.
 	ut32 opcode; ///< The instruction opcode.
 	HexPktInfo pkt_info; ///< Packet related information. First/last instr., prefix and postfix for text etc.
 	RzAsmOp asm_op; ///< Private copy of AsmOp. Currently only of interest because it holds the utf8 flag.
 	RzAnalysisOp ana_op; ///< Private copy of AnalysisOp. Analysis info is written into it.
-	char text[192]; ///< Textual disassembly
+	char text[296]; ///< Textual disassembly
 } HexInsnContainer;
 
+/**
+ * \brief Represents an Hexagon instruction packet.
+ * We do not assign instructions to slots, but the order of instructions matters nonetheless.
+ * The layout of a packet is:
+ *
+ * low addr | Slot 3
+ * ---------+----------
+ *          | Slot 2
+ * ---------+----------
+ *          | Slot 1    -> High Sub-Instruction is always in Slot 1
+ * ---------+----------
+ * high addr| Slot 0    -> Low Sub-Instruction is always in Slot 0
+ *
+ * Because of this order the textual disassembly of duplex instructions is: "<high-text> ; <low-text>".
+ * Also, the high sub-instruction is located at the _lower_ memory address (aligned to 4 bytes).
+ * The low sub-instruction at <high.addr + 2>.
+ *
+ * This said: The HexPkt.bin holds only instruction container, no instructions!
+ * The container holds the instructions or sub-instructions.
+ */
 typedef struct {
-	RzList /* HexInsnContainer */ *bin; ///< List of instruction containers.
+	RzList /* HexInsnContainer */ *bin; ///< Descending by address sorted list of instruction containers.
 	bool last_instr_present; ///< Has an instruction the parsing bits 0b11 set (is last instruction).
 	bool is_valid; ///< Is it a valid packet? Do we know which instruction is the first?
 	ut32 hw_loop0_addr; ///< Start address of hardware loop 0
@@ -569,36 +600,6 @@ char *hex_get_reg_in_class(HexRegClass cls, int opcode_reg, bool get_alias);
 RZ_API RZ_BORROW RzConfig *hexagon_get_config();
 RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_new_extender, const ut32 addr);
 int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p);
-int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, HexPkt *pkt);
-void hexagon_disasm_0x0(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0x1(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0x2(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0x3(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0x4(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0x5(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0x6(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0x7(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0x8(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0x9(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0xa(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0xb(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0xc(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0xd(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_0xe(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x0(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x1(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x2(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x3(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x4(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x5(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x6(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x7(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x8(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0x9(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0xa(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0xb(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0xc(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0xd(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
-void hexagon_disasm_duplex_0xe(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsn *hi, const ut32 addr, HexPkt *pkt);
+int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsnContainer *hi, HexPkt *pkt);
 
 #endif
