@@ -6497,9 +6497,9 @@ static inline void fix_size_from_format(const RzCorePrintFormatType format, ut8 
 	*size = sizes[*size];
 }
 
-static inline ut64 len_fixup(RzCore *core, int *len) {
+static inline void len_fixup(RzCore *core, ut64 *addr, int *len) {
 	if (!len || *len >= 0) {
-		return core->offset;
+		return;
 	}
 	*len = -*len;
 	if (*len > core->blocksize_max) {
@@ -6509,15 +6509,15 @@ static inline ut64 len_fixup(RzCore *core, int *len) {
 			core->blocksize_max);
 		*len = (int)core->blocksize_max;
 	}
-	return core->offset - *len;
+	*addr = *addr - *len;
 }
 
-static inline bool print_dump(RzCore *core, const RzCmdStateOutput *state, ut8 n, int len, const RzCorePrintFormatType format) {
+static inline bool print_dump(RzCore *core, const RzCmdStateOutput *state, ut64 addr, ut8 n, int len, const RzCorePrintFormatType format) {
 	st8 base = format_type_to_base(format, n);
 	if (!base) {
 		return false;
 	}
-	ut64 addr = len_fixup(core, &len);
+	len_fixup(core, &addr, &len);
 	ut8 *buffer = malloc(len);
 	if (!buffer) {
 		return false;
@@ -6564,15 +6564,15 @@ static inline bool print_dump(RzCore *core, const RzCmdStateOutput *state, ut8 n
 RZ_IPI RzCmdStatus rz_print_hexdump_signed_int_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int n = (int)rz_num_math(core->num, argv[1]);
 	int len = argc > 2 ? (int)rz_num_math(core->num, argv[2]) : (int)core->blocksize;
-	return bool2status(print_dump(core, state, n, len, RZ_CORE_PRINT_FORMAT_TYPE_INTEGER));
+	return bool2status(print_dump(core, state, core->offset, n, len, RZ_CORE_PRINT_FORMAT_TYPE_INTEGER));
 }
 
-static inline bool print_hexdump_(RzCore *core, int len) {
+static inline bool print_hexdump_(RzCore *core, ut64 addr, int len) {
 	RZ_LOG_VERBOSE("Dump_ %d\n", len);
 	ut64 from = rz_config_get_i(core->config, "diff.from");
 	ut64 to = rz_config_get_i(core->config, "diff.to");
 	if (from == to && !from) {
-		ut64 addr = len_fixup(core, &len);
+		len_fixup(core, &addr, &len);
 		ut8 *buffer = malloc(len);
 		if (!buffer) {
 			return false;
@@ -6588,28 +6588,46 @@ static inline bool print_hexdump_(RzCore *core, int len) {
 
 RZ_IPI RzCmdStatus rz_print_hexdump_handler(RzCore *core, int argc, const char **argv) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	return bool2status(print_hexdump_(core, len));
+	return bool2status(print_hexdump_(core, core->offset, len));
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_n_lines_handler(RzCore *core, int argc, const char **argv) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	return bool2status(print_hexdump_(core, core->print->cols * len));
+	return bool2status(print_hexdump_(core, core->offset, core->print->cols * len));
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_hex2_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	return bool2status(print_dump(core, state, 2, len, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL));
+	return bool2status(print_dump(core, state, core->offset, 2, len, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL));
 }
 
-static inline void print_dump_line(RzCore *core, RzCmdStateOutput *state, int len, ut8 size) {
-	len = len - (len % size);
+static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	rz_strbuf_appendf(sb, "%" PFMT64x, x);
+	ut8 len = rz_strbuf_length(sb);
+	if (len < width - 2) {
+		rz_strbuf_prepend(sb, rz_str_pad('0', width - len - 2));
+	}
+	rz_strbuf_prepend(sb, "0x");
+	return rz_strbuf_drain(sb);
+}
+
+static inline bool print_dump_line(RzCore *core, RzCmdStateOutput *state, ut64 addr, int len, ut8 size) {
+	len_fixup(core, &addr, &len);
+	ut8 *buffer = malloc(len);
+	if (!buffer) {
+		return false;
+	}
+
+	rz_io_read_at(core->io, addr, buffer, len);
+	const int round_len = len - (len % size);
 	bool hex_offset = (state->mode != RZ_OUTPUT_MODE_QUIET && rz_config_get_i(core->config, "hex.offset"));
-	for (int i = 0; i < len; i += 2) {
+	for (int i = 0; i < round_len; i += size) {
 		const char *a, *b;
 		char *fn;
 		RzPrint *p = core->print;
 		RzFlagItem *f;
-		ut64 v = (ut64)rz_read_ble(core->block + i, p->big_endian, size);
+		ut64 v = rz_read_ble(buffer + i, p->big_endian, size * 8);
 		if (p && p->colorfor) {
 			a = p->colorfor(p->user, v, true);
 			if (a && *a) {
@@ -6632,48 +6650,51 @@ static inline void print_dump_line(RzCore *core, RzCmdStateOutput *state, int le
 				}
 			}
 		}
-		if (hex_offset) {
-			rz_print_section(core->print, core->offset + i);
-			rz_cons_printf("0x%08" PFMT64x " %s0x%016" PFMT64x "%s %s\n",
-				(ut64)core->offset + i, a, v, b, fn ? fn : "");
-		} else {
-			rz_cons_printf("%s0x%016" PFMT64x "%s\n", a, v, b);
+		char *vstr = ut64_to_hex(v, size * 2);
+		if (vstr) {
+			if (hex_offset) {
+				rz_print_section(core->print, addr + i);
+				rz_cons_printf("0x%08" PFMT64x " %s%s%s%s%s\n",
+					(ut64)addr + i, a, vstr, b, fn ? " " : "", fn ? fn : "");
+			} else {
+				rz_cons_printf("%s%s%s\n", a, vstr, b);
+			}
 		}
+		free(vstr);
 		free(fn);
 	}
+	free(buffer);
+	return true;
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_hex2l_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	print_dump_line(core, state, len, 2);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(print_dump_line(core, state, core->offset, len, 2));
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_hex4_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	return bool2status(print_dump(core, state, 4, len, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL));
+	return bool2status(print_dump(core, state, core->offset, 4, len, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL));
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_hex4l_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	print_dump_line(core, state, len, 4);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(print_dump_line(core, state, core->offset, len, 4));
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_hex8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	return bool2status(print_dump(core, state, 8, len, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL));
+	return bool2status(print_dump(core, state, core->offset, 8, len, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL));
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_hex8l_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	print_dump_line(core, state, len, 8);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(print_dump_line(core, state, core->offset, len, 8));
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_oct_handler(RzCore *core, int argc, const char **argv) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	return bool2status(print_dump(core, NULL, 1, len, RZ_CORE_PRINT_FORMAT_TYPE_OCTAL));
+	return bool2status(print_dump(core, NULL, core->offset, 1, len, RZ_CORE_PRINT_FORMAT_TYPE_OCTAL));
 }
 
 #define CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(name, type) \
