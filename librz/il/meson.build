@@ -24,7 +24,6 @@ rz_il_inc = [
 
 rz_il = library('rz_il', rz_il_sources,
   include_directories: rz_il_inc,
-  c_args: library_cflags,
   dependencies: [
     rz_util_dep,
     rz_reg_dep
@@ -32,7 +31,6 @@ rz_il = library('rz_il', rz_il_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,

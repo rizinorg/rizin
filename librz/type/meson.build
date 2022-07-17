@@ -27,7 +27,6 @@ rz_type_inc = [
 
 rz_type = library('rz_type', rz_type_sources,
   include_directories: rz_type_inc,
-  c_args: library_cflags,
   dependencies: [
     rz_util_dep,
     tree_sitter_c_dep,
@@ -36,7 +35,6 @@ rz_type = library('rz_type', rz_type_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,
