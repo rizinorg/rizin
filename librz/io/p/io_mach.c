@@ -223,6 +223,12 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 	}
 	memset(buf, 0xff, len);
 	int pid = __get_pid(desc);
+
+	char cmd[512];
+	snprintf(cmd, sizeof(cmd), "vmmap %d", pid);
+	//eprintf("\n\nBEFORE READ ----------------------------------------------------------------\n");
+	//system(cmd);
+
 	task_t task = pid_to_task(desc, pid);
 	if (task_is_dead(desc, pid)) {
 		return -1;
@@ -244,11 +250,14 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 			(pointer_t)buf + copied, &size);
 		switch (err) {
 		case KERN_PROTECTION_FAILURE:
-			// eprintf ("rz_io_mach_read: kern protection failure.\n");
+			eprintf ("rz_io_mach_read: kern protection failure.\n");
 			break;
 		case KERN_INVALID_ADDRESS:
+			eprintf ("KERN_INVALID_ADDRESS\n");
 			if (blocksize == 1) {
 				memset(buf + copied, 0xff, len - copied);
+	//eprintf("\n\nREAD INVALID ADDR ----------------------------------------------------------------\n");
+	//system(cmd);
 				return size + copied;
 			}
 			blocksize = 1;
@@ -257,6 +266,8 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 			break;
 		}
 		if (err == -1 || size < 1) {
+	//eprintf("\n\nREAD FAIL ----------------------------------------------------------------\n");
+	//system(cmd);
 			return -1;
 		}
 		if (size == 0) {
@@ -270,10 +281,13 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 		}
 		copied += blen;
 	}
+	//eprintf("\n\nAFTER READ ----------------------------------------------------------------\n");
+	//system(cmd);
 	return len;
 }
 
 static int tsk_getperm(RzIO *io, task_t task, vm_address_t addr) {
+	eprintf("tsk_getperm\n");
 	kern_return_t kr;
 	mach_port_t object;
 	vm_size_t vmsize;
@@ -302,6 +316,7 @@ static vm_address_t tsk_getpagebase(RzIODesc *desc, ut64 addr) {
 
 static bool tsk_setperm(RzIO *io, task_t task, vm_address_t addr, int len, int perm) {
 	kern_return_t kr;
+	eprintf("tsk_setperm\n");
 	kr = vm_protect(task, addr, len, 0, perm);
 	if (kr != KERN_SUCCESS) {
 		perror("tsk_setperm");
@@ -311,6 +326,7 @@ static bool tsk_setperm(RzIO *io, task_t task, vm_address_t addr, int len, int p
 }
 
 static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
+	eprintf("tsk_write\n");
 	kern_return_t kr = vm_write(task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
 	if (kr != KERN_SUCCESS) {
 		return false;

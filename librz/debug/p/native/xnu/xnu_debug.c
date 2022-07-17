@@ -138,6 +138,11 @@ int xnu_attach(RzDebug *dbg, int pid) {
 		return -1;
 	}
 
+	char cmd[512];
+	snprintf(cmd, sizeof(cmd), "vmmap %d", (int)pid);
+	eprintf("BEFORE PTRACE ---------------------------------------------------------\n");
+	system(cmd);
+
 	// Then do the actual attach.
 	int r = rz_debug_ptrace(dbg, PT_ATTACHEXC, pid, 0, 0);
 	if (r < 0) {
@@ -153,6 +158,9 @@ int xnu_attach(RzDebug *dbg, int pid) {
 		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed");
 		xnu_stop(dbg, pid);
 	}
+
+	eprintf("\n\nAFTER SIGSTOP ---------------------------------------------------------\n");
+	system(cmd);
 
 	return pid;
 }

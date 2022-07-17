@@ -1161,6 +1161,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (fh) {
 				rz_debug_use(r->dbg, is_gdb ? "gdb" : debugbackend);
 			}
+			int pid = rz_io_desc_get_pid(r->io->desc);
+			eprintf("CORE PID: %d--------------------------------------------------\n", pid);
+			char cmd[512];
+			snprintf(cmd, sizeof(cmd), "vmmap %d", pid);
+			system(cmd);
+
 			/* load symbols when doing rz -d ls */
 			// NOTE: the baddr is redefined to support PIE/ASLR
 			baddr = rz_debug_get_baddr(r->dbg, pfile);

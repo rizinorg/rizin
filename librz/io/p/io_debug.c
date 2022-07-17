@@ -312,6 +312,7 @@ static int fork_and_ptraceme_for_mac(RzIO *io, int bits, const char *cmd) {
 
 	ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
 	ps_flags |= POSIX_SPAWN_START_SUSPENDED;
+#define _POSIX_SPAWN_HIGH_BITS_ASLR     0x8000
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 	int ret;
 	argv = rz_str_argv(cmd, NULL);
@@ -330,6 +331,7 @@ static int fork_and_ptraceme_for_mac(RzIO *io, int bits, const char *cmd) {
 		if (!rp->_aslr) {
 			ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
 		}
+//		ps_flags |= _POSIX_SPAWN_HIGH_BITS_ASLR;
 #if __x86_64__
 		if (rp->_bits == 32) {
 			cpu = CPU_TYPE_I386;
@@ -339,6 +341,11 @@ static int fork_and_ptraceme_for_mac(RzIO *io, int bits, const char *cmd) {
 		posix_spawnattr_setbinpref_np(&attr, 1, &cpu, &copied);
 		ret = posix_spawnp(&p, rp->_args[0], &fileActions, &attr, rp->_args, NULL);
 		handle_posix_error(ret);
+		usleep(200000);
+		eprintf("pid: %d\n", (int)p);
+		char cmd[512] = { 0 };
+		snprintf(cmd, sizeof(cmd), "vmmap %d", (int)p);
+		system(cmd);
 	}
 	rz_str_argv_free(argv);
 	rz_run_free(rp);
