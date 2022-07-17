@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 16:49:31-04:00
+// Date of code generation: 2022-07-17 17:14:54-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -34056,12 +34056,11 @@ static void hex_disasm_with_templates(const HexInsnTemplate *tpl, HexState *stat
 			}
 		}
 	}
-	size_t i_start = !hic->is_duplex ? 0 : (hic->bin.sub[0] ? hic->bin.sub[0]->op_count : 0);
-	size_t max_ops = RZ_MIN(hi->op_count, RZ_ARRAY_SIZE(hic->ana_op.analysis_vals));
-	if (i_start + hi->op_count >= max_ops) {
-		RZ_LOG_WARN("Instruction at 0x%" PFMT64x " has too many ops. RzAnalysisOp.analysis_vals is full.\n", addr);
+	ut32 i_start = !hic->is_duplex ? 0 : (hic->bin.sub[0] ? hic->bin.sub[0]->op_count : 0);
+	if (i_start + hi->op_count >= RZ_ARRAY_SIZE(hic->ana_op.analysis_vals)) {
+		RZ_LOG_WARN("Instruction at 0x%" PFMT64x " has too many ops (%" PFMT32u "). RzAnalysisOp.analysis_vals is full.\n", addr, (i_start + hi->op_count));
 	}
-	for (size_t i = i_start; i < max_ops; i++) {
+	for (size_t i = i_start; i < i_start + RZ_MIN(hi->op_count, RZ_ARRAY_SIZE(hic->ana_op.analysis_vals)); i++) {
 		const HexOpTemplate *op = &tpl->ops[i];
 		HexOpTemplateType type = op->info & HEX_OP_TEMPLATE_TYPE_MASK;
 		if (jmp_target_imm_op_index >= 0 && type == HEX_OP_TEMPLATE_TYPE_IMM) {
