@@ -6605,8 +6605,8 @@ static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	rz_strbuf_appendf(sb, "%" PFMT64x, x);
 	ut8 len = rz_strbuf_length(sb);
-	if (len < width - 2) {
-		rz_strbuf_prepend(sb, rz_str_pad('0', width - len - 2));
+	if (len < width) {
+		rz_strbuf_prepend(sb, rz_str_pad('0', width - len));
 	}
 	rz_strbuf_prepend(sb, "0x");
 	return rz_strbuf_drain(sb);
