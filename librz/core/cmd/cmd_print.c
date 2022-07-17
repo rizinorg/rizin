@@ -5625,9 +5625,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	}
 		rz_cons_break_push(NULL, NULL);
 		switch (input[1]) {
-		case 'j': // "pxj"
-			rz_print_jsondump(core->print, core->block, core->blocksize, 8);
-			break;
 		case '/': // "px/"
 			rz_core_print_examine(core, input + 2);
 			break;
@@ -5740,12 +5737,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					core->blocksize, rz_config_get_i(core->config, "hex.cols"));
 			}
 			break;
-		case 'o': // "pxo"
-			if (l != 0) {
-				rz_print_hexdump(core->print, core->offset,
-					core->block, len, 8, 1, 1);
-			}
-			break;
 		case 't': // "pxt"
 		{
 			ut64 origin = core->offset;
@@ -5763,113 +5754,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				free(block);
 			}
 		} break;
-		case 'd': // "pxd"
-			if (input[2] == '?') {
-				rz_core_cmd_help(core, help_msg_pxd);
-			} else if (l != 0) {
-				switch (input[2]) {
-				case '1':
-					// 1 byte signed words (byte)
-					if (input[3] == 'j') {
-						rz_print_jsondump(core->print, core->block,
-							len, 8);
-					} else {
-						rz_print_hexdump(core->print, core->offset,
-							core->block, len, -1, 4, 1);
-					}
-					break;
-				case '2':
-					// 2 byte signed words (short)
-					if (input[3] == 'j') {
-						rz_print_jsondump(core->print, core->block,
-							len, 16);
-					} else {
-						rz_print_hexdump(core->print, core->offset,
-							core->block, len, -10, 2, 1);
-					}
-					break;
-				case '8':
-					if (input[3] == 'j') {
-						rz_print_jsondump(core->print, core->block,
-							len, 64);
-					} else {
-						rz_print_hexdump(core->print, core->offset,
-							core->block, len, -8, 4, 1);
-					}
-					break;
-				case '4':
-				case ' ':
-				case 'j':
-				case 0:
-					// 4 byte signed words
-					if (input[2] == 'j' || (input[2] && input[3] == 'j')) {
-						rz_print_jsondump(core->print, core->block,
-							len, 32);
-					} else {
-						rz_print_hexdump(core->print, core->offset,
-							core->block, len, 10, 4, 1);
-					}
-					break;
-				default:
-					rz_core_cmd_help(core, help_msg_pxd);
-					break;
-				}
-			}
-			break;
-		case 'w': // "pxw"
-			if (l != 0) {
-				if (input[2] == 'j') {
-					rz_print_jsondump(core->print, core->block, len, 32);
-				} else {
-					rz_print_hexdump(core->print, core->offset, core->block, len, 32, 4, 1);
-				}
-			}
-			break;
-		case 'W': // "pxW"
-			if (l) {
-				bool printOffset = (input[2] != 'q' && rz_config_get_i(core->config, "hex.offset"));
-				len = len - (len % 4);
-				for (i = 0; i < len; i += 4) {
-					const char *a, *b;
-					char *fn;
-					RzPrint *p = core->print;
-					RzFlagItem *f;
-					ut32 v = rz_read_ble32(core->block + i, core->print->big_endian);
-					if (p && p->colorfor) {
-						a = p->colorfor(p->user, v, true);
-						if (a && *a) {
-							b = Color_RESET;
-						} else {
-							a = b = "";
-						}
-					} else {
-						a = b = "";
-					}
-					f = rz_flag_get_at(core->flags, v, true);
-					fn = NULL;
-					if (f) {
-						st64 delta = (v - f->offset);
-						if (delta >= 0 && delta < 8192) {
-							if (v == f->offset) {
-								fn = strdup(f->name);
-							} else {
-								fn = rz_str_newf("%s+%" PFMT64d,
-									f->name, v - f->offset);
-							}
-						}
-					}
-					if (printOffset) {
-						rz_print_section(core->print, core->offset + i);
-						rz_cons_printf("0x%08" PFMT64x " %s0x%08" PFMT64x "%s%s%s\n",
-							(ut64)core->offset + i, a, (ut64)v,
-							b, fn ? " " : "", fn ? fn : "");
-					} else {
-						rz_cons_printf("%s0x%08" PFMT64x "%s\n", a, (ut64)v, b);
-					}
-					free(fn);
-				}
-			}
-			break;
 		case 'r': // "pxr"
 			if (l) {
 				int mode = input[2];
@@ -5893,106 +5777,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				default:
 					eprintf("Invalid word size. Use 1, 2, 4 or 8.\n");
 					break;
-				}
-			}
-			break;
-		case 'h': // "pxh"
-			if (l) {
-				if (input[2] == 'j') {
-					rz_print_jsondump(core->print, core->block, len, 16);
-				} else {
-					rz_print_hexdump(core->print, core->offset,
-						core->block, len, 32, 2, 1);
-				}
-			}
-			break;
-		case 'H': // "pxH"
-			if (l != 0) {
-				len = len - (len % 2);
-				for (i = 0; i < len; i += 2) {
-					const char *a, *b;
-					char *fn;
-					RzPrint *p = core->print;
-					RzFlagItem *f;
-					ut64 v = (ut64)rz_read_ble16(core->block + i, p->big_endian);
-					if (p && p->colorfor) {
-						a = p->colorfor(p->user, v, true);
-						if (a && *a) {
-							b = Color_RESET;
-						} else {
-							a = b = "";
-						}
-					} else {
-						a = b = "";
-					}
-					f = rz_flag_get_at(core->flags, v, true);
-					fn = NULL;
-					if (f) {
-						st64 delta = (v - f->offset);
-						if (delta >= 0 && delta < 8192) {
-							if (v == f->offset) {
-								fn = strdup(f->name);
-							} else {
-								fn = rz_str_newf("%s+%" PFMT64d, f->name, v - f->offset);
-							}
-						}
-					}
-					rz_cons_printf("0x%08" PFMT64x " %s0x%04" PFMT64x "%s %s\n",
-						(ut64)core->offset + i, a, v, b, fn ? fn : "");
-					free(fn);
-				}
-			}
-			break;
-		case 'q': // "pxq"
-			if (l) {
-				if (input[2] == 'j') {
-					rz_print_jsondump(core->print, core->block, len, 64);
-				} else {
-					rz_print_hexdump(core->print, core->offset, core->block, len, 64, 8, 1);
-				}
-			}
-			break;
-		case 'Q': // "pxQ"
-			// TODO. show if flag name, or inside function
-			if (l) {
-				bool printOffset = (input[2] != 'q' && rz_config_get_i(core->config, "hex.offset"));
-				len = len - (len % 8);
-				for (i = 0; i < len; i += 8) {
-					const char *a, *b;
-					char *fn;
-					RzPrint *p = core->print;
-					RzFlagItem *f;
-					ut64 v = rz_read_ble64(core->block + i, p->big_endian);
-					if (p && p->colorfor) {
-						a = p->colorfor(p->user, v, true);
-						if (a && *a) {
-							b = Color_RESET;
-						} else {
-							a = b = "";
-						}
-					} else {
-						a = b = "";
-					}
-					f = rz_flag_get_at(core->flags, v, true);
-					fn = NULL;
-					if (f) {
-						st64 delta = (v - f->offset);
-						if (delta >= 0 && delta < 8192) {
-							if (v == f->offset) {
-								fn = strdup(f->name);
-							} else {
-								fn = rz_str_newf("%s+%" PFMT64d, f->name, v - f->offset);
-							}
-						}
-					}
-					if (printOffset) {
-						rz_print_section(core->print, core->offset + i);
-						rz_cons_printf("0x%08" PFMT64x " %s0x%016" PFMT64x "%s %s\n",
-							(ut64)core->offset + i, a, v, b, fn ? fn : "");
-					} else {
-						rz_cons_printf("%s0x%016" PFMT64x "%s\n", a, v, b);
-					}
-					free(fn);
 				}
 			}
 			break;
@@ -6095,39 +5879,8 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'l': // "pxl"
-			len = core->print->cols * len;
-			/* fallthrough */
 		default:
-			if (l) {
-				ut64 from = rz_config_get_i(core->config, "diff.from");
-				ut64 to = rz_config_get_i(core->config, "diff.to");
-				if (from == to && !from) {
-					const char *sp = NULL;
-					if (input[1] == '.') {
-						sp = input + 2;
-					}
-					if (IS_DIGIT(input[1])) {
-						sp = input + 1;
-					}
-					if (sp) {
-						int n = (int)rz_num_math(core->num, rz_str_trim_head_ro(sp));
-						if (!n) {
-							goto beach;
-						}
-						len = n;
-					}
-					if (!rz_core_block_size(core, len)) {
-						len = core->blocksize;
-					}
-					rz_core_block_read(core);
-					rz_print_hexdump(core->print, rz_core_pava(core, core->offset),
-						core->block, len, 16, 1, 1);
-				} else {
-					rz_core_print_cmp(core, from, to);
-				}
-				core->num->value = len;
-			}
+			rz_core_cmd_help(core, help_msg_px);
 			break;
 		}
 		rz_cons_break_pop();
