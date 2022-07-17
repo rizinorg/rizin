@@ -6513,6 +6513,9 @@ static inline void len_fixup(RzCore *core, ut64 *addr, int *len) {
 }
 
 static inline bool print_dump(RzCore *core, const RzCmdStateOutput *state, ut64 addr, ut8 n, int len, const RzCorePrintFormatType format) {
+	if (!len) {
+		return true;
+	}
 	st8 base = format_type_to_base(format, n);
 	if (!base) {
 		return false;
@@ -6568,6 +6571,9 @@ RZ_IPI RzCmdStatus rz_print_hexdump_signed_int_handler(RzCore *core, int argc, c
 }
 
 static inline bool print_hexdump_(RzCore *core, ut64 addr, int len) {
+	if (!len) {
+		return true;
+	}
 	RZ_LOG_VERBOSE("Dump_ %d\n", len);
 	ut64 from = rz_config_get_i(core->config, "diff.from");
 	ut64 to = rz_config_get_i(core->config, "diff.to");
@@ -6613,6 +6619,9 @@ static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
 }
 
 static inline bool print_dump_line(RzCore *core, RzCmdStateOutput *state, ut64 addr, int len, ut8 size) {
+	if (!len) {
+		return true;
+	}
 	len_fixup(core, &addr, &len);
 	ut8 *buffer = malloc(len);
 	if (!buffer) {
