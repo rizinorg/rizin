@@ -4,7 +4,7 @@
 #include <rz_reg.h>
 #include <rz_util.h>
 
-#if __SDB_WINDOWS__
+#if __WINDOWS__
 #define CASTLDBL (double)
 #else
 #define CASTLDBL

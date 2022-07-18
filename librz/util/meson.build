@@ -81,7 +81,13 @@ rz_util_sources = [
   'x509.c',
 ]
 
-rz_util_deps = [ldl, lrt, mth, th, utl, sdb_dep, zlib_dep, liblzma_dep] + platform_deps
+rz_util_deps = [ldl, lrt, mth, th, utl, sdb_dep] + platform_deps
+if zlib_dep.found()
+  rz_util_deps += [zlib_dep]
+endif
+if liblzma_dep.found()
+  rz_util_deps += [liblzma_dep]
+endif
 if ['freebsd', 'netbsd', 'haiku', 'dragonfly'].contains(host_machine.system())
   # backtrace_symbols_fd requires -lexecinfo
   rz_util_deps += [cc.find_library('execinfo', static: is_static_build)]
@@ -96,12 +102,10 @@ endif
 
 rz_util = library('rz_util', rz_util_sources,
   include_directories: platform_inc,
-  c_args: library_cflags,
   dependencies: rz_util_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,
