@@ -250,24 +250,37 @@ RZ_API bool rz_core_print_dump(RzCore *core, const RzCmdStateOutput *state, ut64
 	return true;
 }
 
-RZ_API bool rz_core_print_hexdump_(RzCore *core, ut64 addr, int len) {
+RZ_API bool rz_core_print_hexdump_(RzCore *core, const RzCmdStateOutput *state, ut64 addr, int len) {
 	if (!len) {
 		return true;
 	}
 	RZ_LOG_VERBOSE("Dump_ %d\n", len);
-	ut64 from = rz_config_get_i(core->config, "diff.from");
-	ut64 to = rz_config_get_i(core->config, "diff.to");
-	if (from == to && !from) {
-		len_fixup(core, &addr, &len);
-		ut8 *buffer = malloc(len);
-		if (!buffer) {
-			return false;
+
+	RzOutputMode mode = state ? state->mode : RZ_OUTPUT_MODE_STANDARD;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD: {
+		ut64 from = rz_config_get_i(core->config, "diff.from");
+		ut64 to = rz_config_get_i(core->config, "diff.to");
+		if (from == to && !from) {
+			len_fixup(core, &addr, &len);
+			ut8 *buffer = malloc(len);
+			if (!buffer) {
+				return false;
+			}
+			rz_io_read_at(core->io, addr, buffer, len);
+			rz_print_hexdump(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
+			free(buffer);
+		} else {
+			rz_core_print_cmp(core, from, to);
 		}
-		rz_io_read_at(core->io, addr, buffer, len);
-		rz_print_hexdump(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
-		free(buffer);
-	} else {
-		rz_core_print_cmp(core, from, to);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON:
+		rz_print_jsondump(core->print, core->block, len, 8);
+		break;
+	default:
+		rz_warn_if_reached();
+		return false;
 	}
 	return true;
 }

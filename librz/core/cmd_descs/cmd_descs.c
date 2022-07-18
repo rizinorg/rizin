@@ -16602,7 +16602,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_utf32be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psM", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf32be_handler, &print_utf32be_help);
 	rz_warn_if_fail(print_utf32be_cd);
 
-	RzCmdDesc *px_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "px", rz_print_hexdump_handler, &print_hexdump_help, &px_help);
+	RzCmdDesc *px_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "px", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_handler, &print_hexdump_help, &px_help);
 	rz_warn_if_fail(px_cd);
 	RzCmdDesc *print_hexdump_signed_int_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_signed_int_handler, &print_hexdump_signed_int_help);
 	rz_warn_if_fail(print_hexdump_signed_int_cd);
@@ -16628,7 +16628,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_hexdump_oct_cd = rz_cmd_desc_argv_new(core->rcmd, px_cd, "pxo", rz_print_hexdump_oct_handler, &print_hexdump_oct_help);
 	rz_warn_if_fail(print_hexdump_oct_cd);
 
-	RzCmdDesc *print_hexdump_n_lines_cd = rz_cmd_desc_argv_new(core->rcmd, px_cd, "pxl", rz_print_hexdump_n_lines_handler, &print_hexdump_n_lines_help);
+	RzCmdDesc *print_hexdump_n_lines_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_n_lines_handler, &print_hexdump_n_lines_help);
 	rz_warn_if_fail(print_hexdump_n_lines_cd);
 
 	RzCmdDesc *p6_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "p6", NULL, NULL, &p6_help);

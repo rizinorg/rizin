@@ -483,6 +483,10 @@ commands:
       - name: px
         summary: show hexdump
         cname: print_hexdump
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: len
             type: RZ_CMD_ARG_TYPE_NUM
@@ -577,6 +581,10 @@ commands:
       - name: pxl
         summary: display <N> lines (rows) of hexdump
         cname: print_hexdump_n_lines
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: N
             type: RZ_CMD_ARG_TYPE_NUM
