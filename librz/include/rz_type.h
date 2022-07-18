@@ -334,7 +334,7 @@ RZ_API RzBaseType *rz_type_db_get_struct(const RzTypeDB *typedb, const char *nam
 RZ_API RzBaseType *rz_type_db_get_typedef(const RzTypeDB *typedb, RZ_NONNULL const char *name);
 
 RZ_API int rz_type_db_enum_member_by_name(const RzTypeDB *typedb, const char *name, const char *member);
-RZ_API RZ_BORROW char *rz_type_db_enum_member_by_val(const RzTypeDB *typedb, const char *name, ut64 val);
+RZ_API RZ_BORROW const char *rz_type_db_enum_member_by_val(const RzTypeDB *typedb, const char *name, ut64 val);
 RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 val);
 RZ_API char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, const char *name, ut64 val);
 
