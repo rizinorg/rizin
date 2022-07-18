@@ -213,140 +213,140 @@ arp
 EOF
 EXPECT=<<EOF
 =PC	pc
-=A0	A4
-=A1	B4
-=A2	A6
-=A3	A6
-=A4	A8
-=A5	B8
-=A6	A10
-=A7	B10
-=A8	A12
-=A9	B12
-=R0	A4
-gpr	A0	.32	0 		0
-gpr	A1	.32	4 		0
-gpr	A2	.32	8 		0
-gpr	A3	.32	12 		0
-gpr	A4	.32	16 		0
-gpr	A5	.32	20 		0
-gpr	A6	.32	24 		0
-gpr	A7	.32	28 		0
-gpr	A8	.32	32 		0
-gpr	A9	.32	36 		0
-gpr	A10	.32	40 		0
-gpr	A11	.32	44 		0
-gpr	A12	.32	48 		0
-gpr	A13	.32	52 		0
-gpr	A14	.32	56 		0
-gpr	A15	.32	60 		0
-gpr	A16	.32	64 		0
-gpr	A17	.32	68 		0
-gpr	A18	.32	72 		0
-gpr	A19	.32	76 		0
-gpr	A20	.32	80 		0
-gpr	A21	.32	84 		0
-gpr	A22	.32	88 		0
-gpr	A23	.32	92 		0
-gpr	A24	.32	96 		0
-gpr	A25	.32	100 	0
-gpr	A26	.32	104 	0
-gpr	A27	.32	108 	0
-gpr	A28	.32	112 	0
-gpr	A29	.32	116 	0
-gpr	A30	.32	120 	0
-gpr	A31	.32	124 	0
-gpr	B0	.32	128 	0
-gpr	B1	.32	132 	0
-gpr	B2	.32	136 	0
-gpr	B3	.32	140 	0
-gpr	B4	.32	144 	0
-gpr	B5	.32	148 	0
-gpr	B6	.32	152 	0
-gpr	B7	.32	156 	0
-gpr	B8	.32	160 	0
-gpr	B9	.32	164 	0
-gpr	B10	.32	168 	0
-gpr	B11	.32	172 	0
-gpr	B12	.32	176 	0
-gpr	B13	.32	180 	0
-gpr	B14	.32	184 	0
-gpr	B15	.32	188 	0
-gpr	B16	.32	192 	0
-gpr	B17	.32	196 	0
-gpr	B18	.32	200 	0
-gpr	B19	.32	204 	0
-gpr	B20	.32	208 	0
-gpr	B21	.32	212 	0
-gpr	B22	.32	216 	0
-gpr	B23	.32	220 	0
-gpr	B24	.32	224 	0
-gpr	B25	.32	228 	0
-gpr	B26	.32	232 	0
-gpr	B27	.32	236 	0
-gpr	B28	.32	240 	0
-gpr	B29	.32	244 	0
-gpr	B30	.32	248 	0
-gpr	B31	.32	252 	0
-ctr AMR     .32 256 0  # Addressing mode register
-ctr CSR     .32 260 0  # Control status register
-ctr GFPGFR  .32 264 0  # Galois field multiply control register
-ctr ICR     .32 268 0  # Interrupt clear register
-ctr IER     .32 272 0  # Interrupt enable register
-ctr IFR     .32 276 0  # Interrupt flag register
-ctr IRP     .32 280 0  # Interrupt return pointer register
-ctr ISR     .32 284 0  # Interrupt set register
-ctr ISTP    .32 288 0  # Interrupt service table pointer register
-ctr NRP     .32 292 0  # Nonmaskable interrupt return pointer register
-ctr PCE1    .32 296 0  # Program counter, E1 phase
-ctr DIER    .32 300 0  # (C64x+ only) Debug interrupt enable register
-ctr DNUM    .32 304 0  # (C64x+ only) DSP core number register
-ctr ECR     .32 308 0  # (C64x+ only) Exception clear register
-ctr EFR     .32 312 0  # (C64x+ only) Exception flag register
-ctr GPLYA   .32 316 0  # (C64x+ only) GMPY A-side polynomial register
-ctr GPLYB   .32 320 0  # (C64x+ only) GMPY B-side polynomial register
-ctr IERR    .32 324 0  # (C64x+ only) Internal exception report register
-ctr ILC     .32 328 0  # (C64x+ only) Inner loop count register
-ctr ITSR    .32 332 0  # (C64x+ only) Interrupt task state register
-ctr NTSR    .32 336 0  # (C64x+ only) NMI/Exception task state register
-ctr REP     .32 340 0  # (C64x+ only) Restricted entry point address register
-ctr RILC    .32 344 0  # (C64x+ only) Reload inner loop count register
-ctr SSR     .32 348 0  # (C64x+ only) Saturation status register
-ctr TSCH    .32 352 0  # (C64x+ only) Time-stamp counter (high 32) register
-ctr TSCL    .32 356 0  # (C64x+ only) Time-stamp counter (low 32) register
-ctr TSR     .32 360 0  # (C64x+ only) Task state register
-gpr	A0:A1 	.64	364	0
-gpr	A2:A3 	.64	368	0
-gpr	A4:A5 	.64	372	0
-gpr	A6:A7 	.64	376	0
-gpr	A8:A9 	.64	380	0
-gpr	A10:A11	.64	384	0
-gpr	A12:A13	.64	388	0
-gpr	A14:A15	.64	392	0
-gpr	A16:A17	.64	396	0
-gpr	A18:A19	.64	400	0
-gpr	A20:A21	.64	404	0
-gpr	A22:A23	.64	408	0
-gpr	A24:A25	.64	412	0
-gpr	A26:A27	.64	416	0
-gpr	A28:A29	.64	420	0
-gpr	A30:A31	.64	424	0
-gpr	B0:B1 	.64	428	0
-gpr	B2:B3 	.64	432	0
-gpr	B4:B5 	.64	436	0
-gpr	B6:B7 	.64	440	0
-gpr	B8:B9 	.64	444	0
-gpr	B10:B11	.64	448	0
-gpr	B12:B13	.64	452	0
-gpr	B14:B15	.64	456	0
-gpr	B16:B17	.64	460	0
-gpr	B18:B19	.64	464	0
-gpr	B20:B21	.64	468	0
-gpr	B22:B23	.64	472	0
-gpr	B24:B25	.64	476	0
-gpr	B26:B27	.64	480	0
-gpr	B28:B29	.64	484	0
-gpr	B30:B31	.64	488	0
+=A0	a4
+=A1	b4
+=A2	a6
+=A3	a6
+=A4	a8
+=A5	b8
+=A6	a10
+=A7	b10
+=A8	a12
+=A9	b12
+=R0	a4
+gpr	a0	.32	0 		0
+gpr	a1	.32	4 		0
+gpr	a2	.32	8 		0
+gpr	a3	.32	12 		0
+gpr	a4	.32	16 		0
+gpr	a5	.32	20 		0
+gpr	a6	.32	24 		0
+gpr	a7	.32	28 		0
+gpr	a8	.32	32 		0
+gpr	a9	.32	36 		0
+gpr	a10	.32	40 		0
+gpr	a11	.32	44 		0
+gpr	a12	.32	48 		0
+gpr	a13	.32	52 		0
+gpr	a14	.32	56 		0
+gpr	a15	.32	60 		0
+gpr	a16	.32	64 		0
+gpr	a17	.32	68 		0
+gpr	a18	.32	72 		0
+gpr	a19	.32	76 		0
+gpr	a20	.32	80 		0
+gpr	a21	.32	84 		0
+gpr	a22	.32	88 		0
+gpr	a23	.32	92 		0
+gpr	a24	.32	96 		0
+gpr	a25	.32	100 	0
+gpr	a26	.32	104 	0
+gpr	a27	.32	108 	0
+gpr	a28	.32	112 	0
+gpr	a29	.32	116 	0
+gpr	a30	.32	120 	0
+gpr	a31	.32	124 	0
+gpr	b0	.32	128 	0
+gpr	b1	.32	132 	0
+gpr	b2	.32	136 	0
+gpr	b3	.32	140 	0
+gpr	b4	.32	144 	0
+gpr	b5	.32	148 	0
+gpr	b6	.32	152 	0
+gpr	b7	.32	156 	0
+gpr	b8	.32	160 	0
+gpr	b9	.32	164 	0
+gpr	b10	.32	168 	0
+gpr	b11	.32	172 	0
+gpr	b12	.32	176 	0
+gpr	b13	.32	180 	0
+gpr	b14	.32	184 	0
+gpr	b15	.32	188 	0
+gpr	b16	.32	192 	0
+gpr	b17	.32	196 	0
+gpr	b18	.32	200 	0
+gpr	b19	.32	204 	0
+gpr	b20	.32	208 	0
+gpr	b21	.32	212 	0
+gpr	b22	.32	216 	0
+gpr	b23	.32	220 	0
+gpr	b24	.32	224 	0
+gpr	b25	.32	228 	0
+gpr	b26	.32	232 	0
+gpr	b27	.32	236 	0
+gpr	b28	.32	240 	0
+gpr	b29	.32	244 	0
+gpr	b30	.32	248 	0
+gpr	b31	.32	252 	0
+ctr amr     .32 256 0  # Addressing mode register
+ctr csr     .32 260 0  # Control status register
+ctr gfpgfr  .32 264 0  # Galois field multiply control register
+ctr icr     .32 268 0  # Interrupt clear register
+ctr ier     .32 272 0  # Interrupt enable register
+ctr ifr     .32 276 0  # Interrupt flag register
+ctr irp     .32 280 0  # Interrupt return pointer register
+ctr isr     .32 284 0  # Interrupt set register
+ctr istp    .32 288 0  # Interrupt service table pointer register
+ctr nrp     .32 292 0  # Nonmaskable interrupt return pointer register
+ctr pce1    .32 296 0  # Program counter, E1 phase
+ctr dier    .32 300 0  # (C64x+ only) Debug interrupt enable register
+ctr dnum    .32 304 0  # (C64x+ only) DSP core number register
+ctr ecr     .32 308 0  # (C64x+ only) Exception clear register
+ctr efr     .32 312 0  # (C64x+ only) Exception flag register
+ctr gplya   .32 316 0  # (C64x+ only) GMPY A-side polynomial register
+ctr gplyb   .32 320 0  # (C64x+ only) GMPY B-side polynomial register
+ctr ierr    .32 324 0  # (C64x+ only) Internal exception report register
+ctr ilc     .32 328 0  # (C64x+ only) Inner loop count register
+ctr itsr    .32 332 0  # (C64x+ only) Interrupt task state register
+ctr ntsr    .32 336 0  # (C64x+ only) NMI/Exception task state register
+ctr rep     .32 340 0  # (C64x+ only) Restricted entry point address register
+ctr rilc    .32 344 0  # (C64x+ only) Reload inner loop count register
+ctr ssr     .32 348 0  # (C64x+ only) Saturation status register
+ctr tsch    .32 352 0  # (C64x+ only) Time-stamp counter (high 32) register
+ctr tscl    .32 356 0  # (C64x+ only) Time-stamp counter (low 32) register
+ctr tsr     .32 360 0  # (C64x+ only) Task state register
+gpr	a0:a1 	.64	364	0
+gpr	a2:a3 	.64	368	0
+gpr	a4:a5 	.64	372	0
+gpr	a6:a7 	.64	376	0
+gpr	a8:a9 	.64	380	0
+gpr	a10:a11	.64	384	0
+gpr	a12:a13	.64	388	0
+gpr	a14:a15	.64	392	0
+gpr	a16:a17	.64	396	0
+gpr	a18:a19	.64	400	0
+gpr	a20:a21	.64	404	0
+gpr	a22:a23	.64	408	0
+gpr	a24:a25	.64	412	0
+gpr	a26:a27	.64	416	0
+gpr	a28:a29	.64	420	0
+gpr	a30:a31	.64	424	0
+gpr	b0:b1 	.64	428	0
+gpr	b2:b3 	.64	432	0
+gpr	b4:b5 	.64	436	0
+gpr	b6:b7 	.64	440	0
+gpr	b8:b9 	.64	444	0
+gpr	b10:b11	.64	448	0
+gpr	b12:b13	.64	452	0
+gpr	b14:b15	.64	456	0
+gpr	b16:b17	.64	460	0
+gpr	b18:b19	.64	464	0
+gpr	b20:b21	.64	468	0
+gpr	b22:b23	.64	472	0
+gpr	b24:b25	.64	476	0
+gpr	b26:b27	.64	480	0
+gpr	b28:b29	.64	484	0
+gpr	b30:b31	.64	488	0
 
 EOF
 RUN
