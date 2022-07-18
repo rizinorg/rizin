@@ -10,6 +10,9 @@
 #include <stddef.h>
 #include <assert.h>
 #include <errno.h>
+#if HAVE_HEADER_INTTYPES_H
+#include <inttypes.h>
+#endif
 
 // TODO: fix this to make it crosscompile-friendly: RZ_SYS_OSTYPE ?
 /* operating system */
@@ -345,7 +348,7 @@ static inline void *rz_new_copy(int size, void *data) {
 #if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
 #define rz_offsetof(type, member) offsetof(type, member)
 #else
-#if __SDB_WINDOWS__
+#if __WINDOWS__
 #define rz_offsetof(type, member) ((unsigned long)(ut64) & ((type *)0)->member)
 #else
 #define rz_offsetof(type, member) ((unsigned long)&((type *)0)->member)

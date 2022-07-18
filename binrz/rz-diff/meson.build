@@ -1,5 +1,4 @@
 executable('rz-diff', 'rz-diff.c',
-  c_args: executable_cflags,
   include_directories: [platform_inc],
   dependencies: [
     rz_util_dep,
@@ -17,5 +16,4 @@ executable('rz-diff', 'rz-diff.c',
   install: true,
   install_rpath: rpath_exe,
   implicit_include_directories: false,
-  link_args: executable_linkflags
 )

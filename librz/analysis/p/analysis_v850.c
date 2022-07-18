@@ -176,7 +176,7 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	ut16 word1 = 0, word2 = 0;
 	struct v850_cmd cmd;
 
-	if (len < 1 || (len > 0 && !memcmp(buf, "\xff\xff\xff\xff\xff\xff", R_MIN(len, 6)))) {
+	if (len < 1 || (len > 0 && !memcmp(buf, "\xff\xff\xff\xff\xff\xff", RZ_MIN(len, 6)))) {
 		return -1;
 	}
 

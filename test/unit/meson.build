@@ -107,7 +107,6 @@ if get_option('enable_tests')
 
   foreach test : tests
     exe = executable('test_@0@'.format(test), 'test_@0@.c'.format(test),
-      c_args: executable_cflags,
       include_directories: [platform_inc, '.'],
       dependencies: [
         rz_util_dep,
@@ -138,7 +137,6 @@ if get_option('enable_tests')
       install: false,
       install_rpath: rpath_exe,
       implicit_include_directories: false,
-      link_args: executable_linkflags
     )
     test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env, depends: [auxiliaries, types_files], suite: 'unit')
   endforeach

@@ -182,13 +182,13 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 			if (len && len_b && (p[0] == p_b[0] || p[len - 1] == p_b[len_b - 1])) {
 				// Get left bound.
 				st32 left = 0;
-				for (; left < R_MIN(len, len_b) && p[left] == p_b[left]; left++)
+				for (; left < RZ_MIN(len, len_b) && p[left] == p_b[left]; left++)
 					;
 				char_bounds[bounds_idx * 2] = left;
 				// Get right bound (offset). "- left" chops off
 				// the left portion that has already matched.
 				st32 right = 0;
-				for (; right < R_MIN(len, len_b) - left && p[len - 1 - right] == p_b[len_b - 1 - right];
+				for (; right < RZ_MIN(len, len_b) - left && p[len - 1 - right] == p_b[len_b - 1 - right];
 					right++)
 					;
 				char_bounds[bounds_idx * 2 + 1] = right;

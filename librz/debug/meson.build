@@ -93,8 +93,8 @@ if has_debugger
       'p/native/xnu/xnu_debug.c',
       #'p/native/xnu/trap_arm.c',
       #'p/native/xnu/trap_x86.c',
-      #'p/native/xnu/xnu_excthreads.c',
-      #'p/native/xnu/xnu_threads.c',
+      'p/native/xnu/xnu_excthreads.c',
+      'p/native/xnu/xnu_threads.c',
     ]
   endif
 
@@ -130,12 +130,10 @@ rz_debug_inc = [
 
 rz_debug = library('rz_debug', rz_debug_sources,
   include_directories: rz_debug_inc,
-  c_args: library_cflags,
   dependencies: rz_debug_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,

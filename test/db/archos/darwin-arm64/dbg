@@ -1,5 +1,5 @@
 NAME=spawn + attach and suspend
-FILE=bins/mach0/hello-objc-osx
+FILE=bins/mach0/hello-macos-arm64
 ARGS=-d
 CMDS=<<EOF
 # when spawning the process ourselves, it should be
@@ -7,7 +7,7 @@ CMDS=<<EOF
 # This is a bit hard to check automatically, so let's
 # just make sure pc is in a map of dyld even after sleeping.
 !sleep 0.5
-dm @ rip~*~[9]
+dm @ pc~*~[9]
 EOF
 EXPECT=<<EOF
 /usr/lib/dyld
@@ -15,21 +15,21 @@ EOF
 RUN
 
 NAME=dcu + read
-FILE=bins/mach0/hello-objc-osx
+FILE=bins/mach0/hello-macos-arm64
 ARGS=-d
 CMDS=<<EOF
 dcu main
-pi 8 @ rip
+pi 8 @ pc
 EOF
 EXPECT=<<EOF
-push rbp
-mov rbp, rsp
-sub rsp, 0x10
-mov rax, qword [section.13.__DATA.__objc_classrefs]
-mov rdi, rax
-lea rax, reloc.objc_msgSend_fixup
-mov rax, qword [rax]
-lea rsi, reloc.objc_msgSend_fixup
+sub sp, sp, 0x50
+stp x29, x30, [sp, 0x40]
+add x29, sp, 0x40
+adrp x8, reloc.NSLog
+add x8, x8, 0x180
+stur w0, [x29, -4]
+stur x1, [x29, -0x10]
+str x8, [sp, 0x10]
 EOF
 RUN
 

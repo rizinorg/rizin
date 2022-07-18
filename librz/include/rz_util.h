@@ -21,10 +21,6 @@
 #if HAVE_LIB_SSL
 #include <openssl/bn.h>
 #endif
-#ifdef _MSC_VER
-struct timeval;
-int gettimeofday(struct timeval *p, void *tz);
-#endif
 #include "rz_util/rz_axml.h"
 #include "rz_util/rz_event.h"
 #include "rz_util/rz_assert.h"

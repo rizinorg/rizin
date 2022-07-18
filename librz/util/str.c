@@ -700,7 +700,8 @@ RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr
  * \param c The character string to test.
  * \return bool True if the character string is a two byte UTF-8 character. False otherwise.
  */
-RZ_API bool rz_str_is2utf8(RZ_NULLABLE const char *c) {
+RZ_API bool rz_str_is2utf8(RZ_NONNULL const char *c) {
+	rz_return_val_if_fail(c, false);
 	if (!c[0] || !c[1]) {
 		return false;
 	}
@@ -713,7 +714,8 @@ RZ_API bool rz_str_is2utf8(RZ_NULLABLE const char *c) {
  * \param c The character string to test.
  * \return bool True if the character string is a three byte UTF-8 character. False otherwise.
  */
-RZ_API bool rz_str_is3utf8(RZ_NULLABLE const char *c) {
+RZ_API bool rz_str_is3utf8(RZ_NONNULL const char *c) {
+	rz_return_val_if_fail(c, false);
 	if (!c[0] || !c[1] || !c[2]) {
 		return false;
 	}
@@ -726,7 +728,8 @@ RZ_API bool rz_str_is3utf8(RZ_NULLABLE const char *c) {
  * \param c The character string to test.
  * \return bool True if the character string is a four byte UTF-8 character. False otherwise.
  */
-RZ_API bool rz_str_is4utf8(RZ_NULLABLE const char *c) {
+RZ_API bool rz_str_is4utf8(RZ_NONNULL const char *c) {
+	rz_return_val_if_fail(c, false);
 	if (!c[0] || !c[1] || !c[2] || !c[3]) {
 		return false;
 	}
@@ -739,10 +742,8 @@ RZ_API bool rz_str_is4utf8(RZ_NULLABLE const char *c) {
  * \param c The byte string to test.
  * \return bool True if the bytes match an UTF-8 character of length \p x. False otherwise.
  */
-RZ_API bool rz_str_isXutf8(RZ_NULLABLE const char *c, ut8 x) {
-	if (!c) {
-		return false;
-	}
+RZ_API bool rz_str_isXutf8(RZ_NONNULL const char *c, ut8 x) {
+	rz_return_val_if_fail(c, false);
 	switch (x) {
 	default:
 		return false;
@@ -764,26 +765,18 @@ RZ_API bool rz_str_isXutf8(RZ_NULLABLE const char *c, ut8 x) {
  * \param c The UTF-8 character to search for.
  * \return char* A pointer to the first occurrence of \p c in the string (first from the left) or NULL if \p c was not found.
  */
-RZ_API const char *rz_str_strchr(RZ_NONNULL const char *str, RZ_NULLABLE const char *c) {
-	rz_return_val_if_fail(str, NULL);
+RZ_API const char *rz_str_strchr(RZ_NONNULL const char *str, RZ_NONNULL const char *c) {
+	rz_return_val_if_fail(str && c, NULL);
 	ut32 i = 0;
 	ut64 str_len = strlen(str);
 	ut8 c_len = isascii(*c) ? 1 : (rz_str_is2utf8(c) ? 2 : (rz_str_is3utf8(c) ? 3 : (rz_str_is4utf8(c) ? 4 : 1)));
-	while (i <= str_len) {
+	while (i <= str_len && i + c_len <= str_len) {
 		if (c_len == 1) {
 			if (str[i] == c[0]) {
 				return str + i;
 			}
-		} else if (c_len == 2) {
-			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, 2)) {
-				return str + i;
-			}
-		} else if (c_len == 3) {
-			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, 3)) {
-				return str + i;
-			}
-		} else if (c_len == 4) {
-			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, 4)) {
+		} else {
+			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, c_len)) {
 				return str + i;
 			}
 		}

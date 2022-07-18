@@ -15,6 +15,71 @@
 #include <rz_windows.h>
 #endif
 
+#ifdef _MSC_VER
+/**
+ * \brief Get the system current time and the current time zone.
+ *
+ * See https://man7.org/linux/man-pages/man2/gettimeofday.2.html for more
+ * information.
+ *
+ * \param p Pointer to a \p timeval structure that will be filled by this function
+ * \param tz Pointer to a \p timezone structure that will be filled by this function
+ * \return 0 if the function succeeds, -1 on error
+ */
+RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz) {
+	// ULARGE_INTEGER ul; // As specified on MSDN.
+	ut64 ul = 0;
+	static int tzflag = 0;
+	FILETIME ft;
+	if (p) {
+		// Returns a 64-bit value representing the number of
+		// 100-nanosecond intervals since January 1, 1601 (UTC).
+		GetSystemTimeAsFileTime(&ft);
+		// Fill ULARGE_INTEGER low and high parts.
+		// ul.LowPart = ft.dwLowDateTime;
+		// ul.HighPart = ft.dwHighDateTime;
+		ul |= ft.dwHighDateTime;
+		ul <<= 32;
+		ul |= ft.dwLowDateTime;
+		// Convert to microseconds.
+		// ul.QuadPart /= 10ULL;
+		ul /= 10;
+		// Remove Windows to UNIX Epoch delta.
+		// ul.QuadPart -= 11644473600000000ULL;
+		ul -= 11644473600000000ULL;
+		// Modulo to retrieve the microseconds.
+		// p->tv_usec = (long)(ul.QuadPart % 1000000LL);
+		// Divide to retrieve the seconds.
+		// p->tv_sec = (long)(ul.QuadPart / 1000000LL);
+		p->tv_sec = (long)(ul / 1000000LL);
+		p->tv_usec = (long)(ul % 1000000LL);
+	}
+	if (tz) {
+		if (!tzflag) {
+			_tzset();
+			tzflag++;
+		}
+		tz->tz_minuteswest = _timezone / 60;
+		tz->tz_dsttime = _daylight;
+	}
+	return 0;
+}
+#else
+/**
+ * \brief Get the system current time and the current time zone.
+ *
+ * See https://man7.org/linux/man-pages/man2/gettimeofday.2.html for more
+ * information.
+ *
+ * \param p Pointer to a \p timeval structure that will be filled by this function
+ * \param tz Pointer to a \p timezone structure that will be filled by this function
+ * \return 0 if the function succeeds, -1 on error
+ */
+RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz) {
+	return gettimeofday(p, tz);
+}
+#endif
+
 /**
  * \brief Returns the current time in microseconds
  *
@@ -23,7 +88,7 @@
 RZ_API ut64 rz_time_now(void) {
 	ut64 ret;
 	struct timeval now;
-	gettimeofday(&now, NULL);
+	rz_time_gettimeofday(&now, NULL);
 	ret = now.tv_sec * RZ_USEC_PER_SEC;
 	ret += now.tv_usec;
 	return ret;
