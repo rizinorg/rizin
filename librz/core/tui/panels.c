@@ -1982,8 +1982,8 @@ static bool __handle_mouse_on_panel(RzCore *core, RzPanel *panel, int x, int y, 
 	if (word) {
 		const ut64 addr = rz_num_math(core->num, word);
 		if (__check_panel_type(panel, PANEL_CMD_FUNCTION) &&
-			__check_if_addr(word, strlen(word))) {
-			rz_core_seek(core, addr, true);
+			addr > 0) {
+			rz_core_seek_and_save(core, addr, true);
 			__set_addr_by_type(core, PANEL_CMD_DISASSEMBLY, addr);
 		}
 		rz_flag_set(core->flags, "panel.addr", addr, 1);
