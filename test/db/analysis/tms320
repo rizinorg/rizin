@@ -78,6 +78,8 @@ ctr st2_55 .16 558 0 # Status registers 2
 ctr st3_55 .16 559 0 # Status registers 3
 ctr t0     .16 560 0 # Temporary register 0
 ctr t1     .16 561 0 # Temporary register 1
+ctr t2     .16 562 0 # Temporary register 2
+ctr t3     .16 563 0 # Temporary register 3
 ctr trn0   .16 564 0 # Transition registers 1
 ctr trn1   .16 565 0 # Transition registers 1
 ctr xcdp   .23 566 0 # Extended coefficient data pointer
