@@ -6197,8 +6197,16 @@ RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_signed_int_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int n = (int)rz_num_math(core->num, argv[1]);
-	int len = argc > 2 ? (int)rz_num_math(core->num, argv[2]) : (int)core->blocksize;
+	int n = 4;
+	int len = (int)core->blocksize;
+	if (argc == 2) {
+		// pxd <len>
+		len = (int)rz_num_math(core->num, argv[1]);
+	} else if (argc == 3) {
+		// pxd <n> <len>
+		n = (int)rz_num_math(core->num, argv[1]);
+		len = (int)rz_num_math(core->num, argv[2]);
+	}
 	return bool2status(rz_core_print_dump(core, state, core->offset, n, len, RZ_CORE_PRINT_FORMAT_TYPE_INTEGER));
 }
 

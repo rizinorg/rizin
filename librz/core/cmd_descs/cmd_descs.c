@@ -11179,7 +11179,7 @@ static const RzCmdDescArg print_hexdump_signed_int_args[] = {
 	{
 		.name = "n",
 		.type = RZ_CMD_ARG_TYPE_NUM,
-		.default_value = "4",
+		.optional = true,
 
 	},
 	{
