@@ -4,6 +4,7 @@
 #include <rz_util.h>
 #include <rz_util/rz_str.h>
 #include "minunit.h"
+#include "rz_util/rz_str.h"
 
 // TODO test rz_str_chop_path
 
