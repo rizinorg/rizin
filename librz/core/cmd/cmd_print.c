@@ -231,15 +231,6 @@ static const char *help_msg_p[] = {
 	NULL
 };
 
-static const char *help_msg_pxd[] = {
-	"Usage:", "pxd[1248] ([len])", "show decimal byte/short/word/dword dumps",
-	"pxd", "", "show decimal hexdumps",
-	"pxd2", "", "show shorts hexdump",
-	"pxd4", "", "show dword hexdump (int)",
-	"pxd8", "", "show qword hexdump (int)",
-	NULL
-};
-
 static const char *help_msg_p_equal[] = {
 	"Usage:", "p=[=bep?][qj] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 	"e ", "zoom.in", "specify range for zoom",
@@ -6002,7 +5993,7 @@ beach:
 }
 
 RZ_IPI int rz_cmd_hexdump(void *data, const char *input) {
-	return rz_cmd_print(data, input - 1);
+	return rz_core_cmdf(data, "px%s", input);
 }
 
 static int lenof(ut64 off, int two) {

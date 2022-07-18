@@ -96,23 +96,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd1 0
+NAME=pxd 1 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pxd1 0
+CMDS=pxd 1 0
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd2 0
+NAME=pxd 2 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pxd2 0
+CMDS=pxd 2 0
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd4 0
+NAME=pxd 4 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pxd4 0
+CMDS=pxd 4 0
 EXPECT=<<EOF
 EOF
 RUN
