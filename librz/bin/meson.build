@@ -250,7 +250,7 @@ rz_bin_inc = [platform_inc, include_directories('format')]
 
 rz_bin = library('rz_bin', rz_bin_sources,
   include_directories: rz_bin_inc,
-  c_args: ['-DRZ_API_BIN_ONLY=1'] + library_cflags,
+  c_args: ['-DRZ_API_BIN_ONLY=1'],
   dependencies: [
     lz4_dep,
     yxml_dep,
@@ -268,7 +268,6 @@ rz_bin = library('rz_bin', rz_bin_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,

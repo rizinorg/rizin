@@ -20,6 +20,14 @@ RZ_API int rz_mem_count(const ut8 **addr) {
 	return i;
 }
 
+/**
+ * \brief Compares memory \p a with \p b over \p len bytes.
+ *
+ * \param a Pointer to memory \p a.
+ * \param b Pointer to memory \p b.
+ * \param len Number of bytes to compare.
+ * \return bool True if memory bytes in memory \p a and  \p b match over \p len bytes. False otherwise.
+ */
 RZ_API int rz_mem_eq(const ut8 *a, const ut8 *b, int len) {
 	register int i;
 	for (i = 0; i < len; i++) {

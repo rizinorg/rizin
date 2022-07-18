@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#include <rz_util/rz_str.h>
 #include "minunit.h"
 #include "rz_util/rz_str.h"
 
@@ -226,6 +227,7 @@ bool test_rz_str_split_list(void) {
 	mu_assert_streq(rz_list_get_n(l3, 2), "And", "third item");
 	mu_assert_streq(rz_list_get_n(l3, 3), "Everyone", "fourth item");
 	rz_list_free(l3);
+	mu_end;
 }
 
 bool test_rz_str_split_lines(void) {
