@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_userconf.h>
+#include <rz_debug.h>
 
 // TODO much work remains to be done
 #include "xnu_debug.h"
@@ -23,7 +23,7 @@ static void xnu_thread_free(xnu_thread_t *thread) {
 }
 
 // XXX this should work as long as in arm trace bit relies on this
-static bool xnu_thread_get_drx(RzDebug *dbg, xnu_thread_t *thread) {
+RZ_IPI bool rz_xnu_thread_get_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	rz_return_val_if_fail(dbg && thread, false);
 	kern_return_t rc;
 #if __x86_64__ || __i386__
@@ -67,7 +67,7 @@ static bool xnu_thread_get_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread) {
+RZ_IPI bool rz_xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	rz_return_val_if_fail(dbg && thread, false);
 	kern_return_t rc;
 #if __i386__ || __x86_64__
@@ -127,7 +127,7 @@ static bool xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
+RZ_IPI bool rz_xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	rz_return_val_if_fail(dbg && thread, false);
 	kern_return_t rc;
 	RZ_REG_T *regs = (RZ_REG_T *)&thread->gpr;
@@ -181,7 +181,7 @@ static bool xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread) {
+RZ_IPI bool rz_xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	rz_return_val_if_fail(dbg && thread, false);
 	RZ_REG_T *regs = &thread->gpr;
 	if (!regs) {
@@ -287,7 +287,7 @@ static int thread_find(thread_t *port, xnu_thread_t *a) {
 	return (a && port && (a->port == *port)) ? 0 : 1;
 }
 
-static int xnu_update_thread_list(RzDebug *dbg) {
+RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 	thread_array_t thread_list = NULL;
 	unsigned int thread_count = 0;
 	xnu_thread_t *thread;
@@ -373,4 +373,48 @@ static int xnu_update_thread_list(RzDebug *dbg) {
 	(void)vm_deallocate(mach_task_self(), (mach_vm_address_t)thread_list,
 		thread_count * sizeof(thread_t));
 	return true;
+}
+
+RZ_IPI xnu_thread_t *rz_xnu_get_thread(RzDebug *dbg, int tid) {
+	if (!dbg || tid < 0) {
+		return NULL;
+	}
+	if (!rz_xnu_update_thread_list(dbg)) {
+		eprintf("Failed to update thread_list xnu_udpate_thread_list\n");
+		return NULL;
+	}
+	// TODO get the current thread
+	RzListIter *it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
+		(RzListComparator)&thread_find);
+	if (!it) {
+		tid = rz_xnu_get_cur_thread(dbg);
+		it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
+			(RzListComparator)&thread_find);
+		if (!it) {
+			eprintf("Thread not found get_xnu_thread\n");
+			return NULL;
+		}
+	}
+	return (xnu_thread_t *)it->data;
+}
+
+/* XXX: right now it just returns the first thread, not the one selected in dbg->tid */
+RZ_IPI thread_t rz_xnu_get_cur_thread(RzDebug *dbg) {
+	thread_t th;
+	thread_array_t threads = NULL;
+	unsigned int n_threads = 0;
+	task_t t = pid_to_task(dbg->pid);
+	if (!t) {
+		return -1;
+	}
+	if (task_threads(t, &threads, &n_threads) != KERN_SUCCESS) {
+		return -1;
+	}
+	if (n_threads > 0) {
+		memcpy(&th, threads, sizeof(th));
+	} else {
+		th = -1;
+	}
+	vm_deallocate(mach_task_self(), (vm_address_t)threads, n_threads * sizeof(thread_act_t));
+	return th;
 }
