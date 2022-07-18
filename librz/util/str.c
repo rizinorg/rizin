@@ -3363,13 +3363,13 @@ static RzList *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRege
 		if (n == i && n > 0) {
 			break;
 		}
-		s = m[0].rm_so; // Match start in string str + j
-		e = m[0].rm_eo; // Match end in string str + j
+		s = m[0].rm_so; // Match start (inclusive) in string str + j
+		e = m[0].rm_eo; // Match end (exclusive) in string str + j
 		if (dup) {
 			aux = rz_str_ndup(str + j, s);
 		} else {
 			// Overwrite split chararcters.
-			memset(str + j + s, 0, e);
+			memset(str + j + s, 0, e - s);
 			aux = str + j;
 		}
 		if (trim) {
@@ -3388,7 +3388,7 @@ static RzList *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRege
 		aux = rz_str_ndup(str + j, strlen(str + j));
 	} else {
 		// Overwrite split chararcters.
-		memset(str + j + s, 0, e);
+		memset(str + j + s, 0, e - s);
 		aux = str + j;
 	}
 	if (trim) {
@@ -3420,7 +3420,7 @@ RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
  *
  * Split a string \p str according to the regex specified in \p r and it
  * considers at most \p n delimiters. The result is a \p RzList with pointers
- * to the input string \p str. Each token is trimmed as well.
+ * to the input string \p str.
  *
  * \param str Input string to split. It will be modified by this function.
  * \param r Delimiter regex used to split \p str
@@ -3429,7 +3429,9 @@ RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
 RZ_API RZ_OWN RzList *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n) {
 	rz_return_val_if_fail(str && r, NULL);
 	RzRegex *regex = rz_regex_new(r, "e");
-	return str_split_list_common_regex(str, regex, n, false, false);
+	RzList *res = str_split_list_common_regex(str, regex, n, false, false);
+	rz_regex_free(regex);
+	return res;
 }
 
 /**
