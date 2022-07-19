@@ -685,7 +685,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_blk(RZ_NONNULL const char *label, RZ_NO
 /**
  *  \brief op structure for `repeat` (bool -> data eff -> data eff)
  *
- *  repeat c data repeats data effects until the condition c holds.
+ *  repeat c data repeats data effects until the condition c evaluates to false.
  */
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_repeat(RZ_NONNULL RzILOpBool *condition, RZ_NONNULL RzILOpEffect *data_eff) {
 	rz_return_val_if_fail(condition && data_eff, NULL);
