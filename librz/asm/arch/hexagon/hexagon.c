@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 14:08:05-04:00
+// Date of code generation: 2022-07-19 04:46:14-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -906,7 +906,7 @@ int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p) {
 
 	hic = rz_list_get_n(p->bin, prod_i);
 
-	if (!hic) {
+	if (!hic || !hic->bin.insn || !hic->bin.sub[0] || !hic->bin.sub[1]) {
 		return UT32_MAX;
 	}
 	if (hic->identifier == HEX_INS_A4_EXT) {
