@@ -1,0 +1,404 @@
+
+NAME=ppc add instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+af
+s loc.add_insns
+aezi
+aezse 16~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r1, old: 0x0, new: 0x1)
+var_write(name: r2, old: 0x0, new: 0x2)
+var_write(name: r3, old: 0x0, new: 0x3)
+var_write(name: r4, old: 0x0, new: 0x4)
+var_write(name: cr0, old: 0x0, new: 0x4)
+var_write(name: r10, old: 0x0, new: 0xffffffffffffffff)
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: cr0, old: 0x4, new: 0x2)
+var_write(name: r11, old: 0x0, new: 0xffffffffffff0000)
+var_write(name: r11, old: 0xffffffffffff0000, new: 0xffffffffffffffff)
+var_write(name: r12, old: 0x0, new: 0x0)
+var_write(name: ca, old: 0x1, new: 0x1)
+var_write(name: cr0, old: 0x2, new: 0x2)
+var_write(name: r13, old: 0x0, new: 0x2)
+var_write(name: ca, old: 0x1, new: 0x0)
+var_write(name: cr0, old: 0x2, new: 0x4)
+var_write(name: r12, old: 0x0, new: 0x0)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: cr0, old: 0x4, new: 0x2)
+var_write(name: r16, old: 0x0, new: 0x0)
+var_write(name: ca, old: 0x1, new: 0x0)
+var_write(name: cr0, old: 0x2, new: 0x2)
+var_write(name: r12, old: 0x0, new: 0x0)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: cr0, old: 0x2, new: 0x2)
+var_write(name: r17, old: 0x0, new: 0x1)
+var_write(name: ca, old: 0x1, new: 0x0)
+var_write(name: cr0, old: 0x2, new: 0x2)
+var_write(name: r17, old: 0x1, new: 0xffffffffffffffff)
+var_write(name: ca, old: 0x0, new: 0x0)
+var_write(name: cr0, old: 0x2, new: 0x8)
+var_write(name: r17, old: 0xffffffffffffffff, new: 0x1)
+EOF
+RUN
+
+NAME=ppc sub instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+af
+s loc.sub_insns
+aezi
+aezse 18~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: r1, old: 0x0, new: 0x1)
+var_write(name: r2, old: 0x0, new: 0x2)
+var_write(name: r3, old: 0x0, new: 0x3)
+var_write(name: r1, old: 0x1, new: 0x1)
+var_write(name: cr0, old: 0x0, new: 0x4)
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: cr0, old: 0x4, new: 0x2)
+var_write(name: r11, old: 0x0, new: 0xffffffffffffffff)
+var_write(name: cr0, old: 0x2, new: 0x8)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: ca, old: 0x0, new: 0x0)
+var_write(name: cr0, old: 0x8, new: 0x8)
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: cr0, old: 0x8, new: 0x2)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: ca, old: 0x1, new: 0x0)
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: ca, old: 0x1, new: 0x0)
+var_write(name: cr0, old: 0x2, new: 0x8)
+var_write(name: r12, old: 0x0, new: 0xfffffffffffffffe)
+var_write(name: ca, old: 0x0, new: 0x0)
+var_write(name: cr0, old: 0x8, new: 0x8)
+var_write(name: r13, old: 0x0, new: 0xfffffffffffffffd)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: cr0, old: 0x8, new: 0x8)
+var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
+var_write(name: ca, old: 0x1, new: 0x0)
+var_write(name: cr0, old: 0x8, new: 0x8)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: ca, old: 0x0, new: 0x0)
+var_write(name: cr0, old: 0x8, new: 0x8)
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: cr0, old: 0x8, new: 0x2)
+var_write(name: r10, old: 0x0, new: 0x0)
+var_write(name: ca, old: 0x1, new: 0x1)
+var_write(name: cr0, old: 0x2, new: 0x2)
+EOF
+RUN
+
+NAME=ppc store instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+e io.cache=true
+aaa
+s loc.store_insns
+aezi
+aezse 15~mem_write
+aezse 4~var_write
+EOF
+EXPECT=<<EOF
+mem_write(addr: 0x8001010, old: 0x0, new: 0xff)
+mem_write(addr: 0x8001020, old: 0x0, new: 0xffff)
+mem_write(addr: 0x8001030, old: 0x0, new: 0xffffffff)
+mem_write(addr: 0x8001040, old: 0x0, new: 0xffffffffffffffff)
+mem_write(addr: 0x8001010, old: 0xff, new: 0xff)
+mem_write(addr: 0x8001020, old: 0xffff, new: 0xffff)
+mem_write(addr: 0x8001030, old: 0xffffffff, new: 0xffffffff)
+mem_write(addr: 0x8001040, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: r21, old: 0x8001010, new: 0x8001010)
+var_write(name: r21, old: 0x8001010, new: 0x8001020)
+var_write(name: r21, old: 0x8001020, new: 0x8001030)
+var_write(name: r21, old: 0x8001030, new: 0x8001040)
+EOF
+RUN
+
+NAME=ppc load instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+e io.cache=true
+aaa
+s loc.store_insns
+aezi
+aezs 19
+aezse 16~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r11, old: 0xffffffffffffffff, new: 0x0)
+var_write(name: r12, old: 0x10, new: 0x10)
+var_write(name: r13, old: 0x20, new: 0x20)
+var_write(name: r14, old: 0x30, new: 0x30)
+var_write(name: r21, old: 0x8001040, new: 0x8000000)
+var_write(name: r21, old: 0x8000000, new: 0x8001010)
+var_write(name: r11, old: 0x0, new: 0xff)
+var_write(name: r11, old: 0xff, new: 0xffff)
+var_write(name: r11, old: 0xffff, new: 0xffffffff)
+var_write(name: r11, old: 0xffffffff, new: 0xffffffffffffffff)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xff)
+var_write(name: r11, old: 0xff, new: 0xffff)
+var_write(name: r11, old: 0xffff, new: 0xffffffff)
+var_write(name: r11, old: 0xffffffff, new: 0xffffffffffffffff)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+EOF
+RUN
+
+NAME=ppc logical instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.logical_insns
+aezi
+aezse 17~var_write
+# EXTS tests
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r0, old: 0x0, new: 0x0)
+var_write(name: r1, old: 0x0, new: 0x1)
+var_write(name: r11, old: 0x0, new: 0xffffffffffffffff)
+var_write(name: r21, old: 0x0, new: 0x1)
+var_write(name: r12, old: 0x0, new: 0xfffffffffffffffe)
+var_write(name: r1, old: 0x1, new: 0x1)
+var_write(name: cr0, old: 0x0, new: 0x4)
+var_write(name: r30, old: 0x0, new: 0xffff0000)
+var_write(name: cr0, old: 0x4, new: 0x4)
+var_write(name: r1, old: 0x1, new: 0x1)
+var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
+var_write(name: r5, old: 0x0, new: 0x5555)
+var_write(name: r5, old: 0x5555, new: 0x55550000)
+var_write(name: r5, old: 0x55550000, new: 0xffffffffaaaaffff)
+var_write(name: r5, old: 0xffffffffaaaaffff, new: 0xffffffffaaaa3333)
+var_write(name: r5, old: 0xffffffffaaaa3333, new: 0xffffffff66663333)
+var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
+var_write(name: r12, old: 0xfffffffffffffffe, new: 0xfffffffffffffffe)
+var_write(name: r20, old: 0x0, new: 0xffffffff66663333)
+var_write(name: r10, old: 0x0, new: 0xffffffffffffff80)
+var_write(name: r10, old: 0xffffffffffffff80, new: 0x7f)
+var_write(name: r10, old: 0x7f, new: 0xffffffffffff8000)
+var_write(name: r10, old: 0xffffffffffff8000, new: 0x7fff)
+var_write(name: r10, old: 0x7fff, new: 0xffffffff80000000)
+var_write(name: r10, old: 0xffffffff80000000, new: 0x7fffffff)
+EOF
+RUN
+
+NAME=ppc compare instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.compare_insns
+aezi
+aezs 1 # li r0, 0
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezse 4~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: cr0, old: 0x0, new: 0x8)
+var_write(name: cr0, old: 0x8, new: 0x8)
+var_write(name: cr1, old: 0x0, new: 0x4)
+var_write(name: cr1, old: 0x4, new: 0x4)
+var_write(name: cr2, old: 0x0, new: 0x8)
+var_write(name: cr2, old: 0x8, new: 0x8)
+var_write(name: cr3, old: 0x0, new: 0x2)
+var_write(name: cr3, old: 0x2, new: 0x2)
+var_write(name: cr4, old: 0x0, new: 0x4)
+var_write(name: cr5, old: 0x0, new: 0x8)
+var_write(name: cr6, old: 0x0, new: 0x8)
+var_write(name: cr7, old: 0x0, new: 0x8)
+EOF
+RUN
+
+NAME=ppc branch instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.branch_insns
+aezi
+aezse 20
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x8000140, new: 0x8000144)
+var_write(name: r1, old: 0x0, new: 0x1)
+pc_write(old: 0x8000144, new: 0x8000148)
+var_write(name: r20, old: 0x0, new: 0x0)
+pc_write(old: 0x8000148, new: 0x800014c)
+var_write(name: lr, old: 0x0, new: 0x800014c)
+pc_write(old: 0x800014c, new: 0x8000178)
+pc_write(old: 0x8000178, new: 0x800017c)
+pc_write(old: 0x800017c, new: 0x800014c)
+pc_write(old: 0x800014c, new: 0x8000150)
+var_write(name: r20, old: 0x0, new: 0x8000000)
+pc_write(old: 0x8000150, new: 0x8000154)
+var_write(name: r20, old: 0x8000000, new: 0x8000178)
+pc_write(old: 0x8000154, new: 0x8000158)
+var_write(name: ctr, old: 0x0, new: 0x8000178)
+pc_write(old: 0x8000158, new: 0x800015c)
+var_write(name: lr, old: 0x800014c, new: 0x800015c)
+pc_write(old: 0x800015c, new: 0x8000178)
+pc_write(old: 0x8000178, new: 0x800017c)
+pc_write(old: 0x800017c, new: 0x800015c)
+pc_write(old: 0x800015c, new: 0x8000160)
+var_write(name: ctr, old: 0x8000178, new: 0x8000177)
+var_write(name: lr, old: 0x800015c, new: 0x8000160)
+pc_write(old: 0x8000160, new: 0x8000178)
+pc_write(old: 0x8000178, new: 0x800017c)
+pc_write(old: 0x800017c, new: 0x8000160)
+pc_write(old: 0x8000160, new: 0x8000164)
+var_write(name: ctr, old: 0x8000177, new: 0x1)
+pc_write(old: 0x8000164, new: 0x8000168)
+var_write(name: ctr, old: 0x1, new: 0x0)
+var_write(name: lr, old: 0x8000160, new: 0x8000168)
+pc_write(old: 0x8000168, new: 0x8000178)
+pc_write(old: 0x8000178, new: 0x800017c)
+pc_write(old: 0x800017c, new: 0x8000168)
+pc_write(old: 0x8000168, new: 0x800016c)
+var_write(name: lr, old: 0x8000168, new: 0x800016c)
+pc_write(old: 0x800016c, new: 0x8000178)
+pc_write(old: 0x8000178, new: 0x800017c)
+pc_write(old: 0x800017c, new: 0x800016c)
+pc_write(old: 0x800016c, new: 0x8000170)
+var_write(name: cr0, old: 0x0, new: 0x2)
+pc_write(old: 0x8000170, new: 0x8000174)
+var_write(name: lr, old: 0x800016c, new: 0x8000174)
+pc_write(old: 0x8000174, new: 0x8000178)
+pc_write(old: 0x8000178, new: 0x800017c)
+pc_write(old: 0x800017c, new: 0x8000174)
+pc_write(old: 0x8000174, new: 0x8000178)
+pc_write(old: 0x8000178, new: 0xc0ffe0)
+EOF
+RUN
+
+NAME=ppc shift instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.shift_insns
+aezi
+aezs 4
+aezse 6~var_write
+aezs 3
+aezse 4~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r10, old: 0x0, new: 0xedcba98765432100)
+var_write(name: r10, old: 0xedcba98765432100, new: 0xfedcba987654321)
+var_write(name: r10, old: 0xfedcba987654321, new: 0x65432100)
+var_write(name: r10, old: 0x65432100, new: 0x7654321)
+var_write(name: r10, old: 0x7654321, new: 0xffedcba987654321)
+var_write(name: ca, old: 0x0, new: 0x0)
+var_write(name: ca32, old: 0x0, new: 0x0)
+var_write(name: r10, old: 0xffedcba987654321, new: 0xffedcba987654321)
+var_write(name: ca, old: 0x0, new: 0x0)
+var_write(name: ca32, old: 0x0, new: 0x0)
+var_write(name: r10, old: 0xffedcba987654321, new: 0xfffffffff89abcde)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: ca32, old: 0x0, new: 0x1)
+var_write(name: r10, old: 0xfffffffff89abcde, new: 0xfffffffff89abcde)
+var_write(name: ca, old: 0x1, new: 0x1)
+var_write(name: ca32, old: 0x1, new: 0x1)
+var_write(name: r10, old: 0xfffffffff89abcde, new: 0x32100000)
+var_write(name: r10, old: 0x32100000, new: 0x7654)
+EOF
+RUN
+
+NAME=ppc rotate instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.rotate_insns
+aezi
+aezs 4
+aezse 16~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: r10, old: 0x0, new: 0x4320000)
+var_write(name: r10, old: 0x4320000, new: 0x5432107654321076)
+var_write(name: r10, old: 0x5432107654321076, new: 0x0)
+var_write(name: r10, old: 0x0, new: 0x5432107650001076)
+var_write(name: r10, old: 0x5432107650001076, new: 0x0)
+var_write(name: r10, old: 0x0, new: 0x5432107654321076)
+var_write(name: r10, old: 0x5432107654321076, new: 0xa9876543210f)
+var_write(name: r10, old: 0xa9876543210f, new: 0x0)
+var_write(name: r10, old: 0x0, new: 0xcba98765432100)
+var_write(name: r10, old: 0xcba98765432100, new: 0xedcba9876543210f)
+var_write(name: r10, old: 0xedcba9876543210f, new: 0x65432107)
+var_write(name: r10, old: 0x65432107, new: 0xcba9876543210)
+var_write(name: r10, old: 0xcba9876543210, new: 0x43210)
+var_write(name: r10, old: 0x43210, new: 0x7edcba9876543210)
+var_write(name: cr0, old: 0x0, new: 0x4)
+var_write(name: r10, old: 0x7edcba9876543210, new: 0xfedcba9876543210)
+var_write(name: cr0, old: 0x4, new: 0x8)
+var_write(name: r10, old: 0xfedcba9876543210, new: 0x0)
+var_write(name: cr0, old: 0x8, new: 0x2)
+EOF
+RUN
+
+NAME=ppc special instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.special_insns
+aezi
+aezse 1
+EOF
+EXPECT=<<EOF
+pc_write(old: 0x800017c, new: 0x8000180)
+EOF
+RUN
+
+NAME=ppc move to from spr instructions
+FILE=bins/elf/ppc/ppc64_fp
+ARGS=-appc
+CMDS=<<EOF
+s loc.read_set_spr
+aezi
+aezs 5
+aezse 4~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: ctr, old: 0x0, new: 0xffffffffffffffff)
+var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: lr, old: 0x8000184, new: 0xffffffffffffffff)
+var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+EOF
+RUN

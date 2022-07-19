@@ -6,6 +6,8 @@
 #include <capstone/capstone.h>
 #include <capstone/ppc.h>
 #include "../../asm/arch/ppc/libvle/vle.h"
+#include "../arch/ppc/ppc_analysis.h"
+#include "../arch/ppc/ppc_il.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */
@@ -19,10 +21,6 @@ struct Getarg {
 	cs_insn *insn;
 	int bits;
 };
-
-#define INSOPS   insn->detail->ppc.op_count
-#define INSOP(n) insn->detail->ppc.operands[n]
-#define IMM(x)   (ut64)(insn->detail->ppc.operands[x].imm)
 
 #ifndef PFMT32x
 #define PFMT32x "lx"
@@ -960,7 +958,9 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+		op->il_op = rz_il_op_new_empty();
 	} else {
+		op->il_op = rz_ppc_cs_get_il_op(handle, insn, mode);
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = strdup(insn->mnemonic);
 		}
@@ -1636,6 +1636,13 @@ static RzList *analysis_preludes(RzAnalysis *analysis) {
 	return l;
 }
 
+static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+	if (analysis->bits == 64) {
+		return rz_ppc_cs_64_il_config(analysis->big_endian);
+	}
+	return rz_ppc_cs_32_il_config(analysis->big_endian);
+}
+
 RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.name = "ppc",
 	.desc = "Capstone PowerPC analysis",
@@ -1647,6 +1654,7 @@ RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.preludes = analysis_preludes,
 	.op = &analop,
 	.get_reg_profile = &get_reg_profile,
+	.il_config = il_config,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -550,6 +550,177 @@ EXPECT=<<EOF
     "mnemonic": "stwu",
     "mask": "ffffffff",
     "esil": "r1,-16,r1,+,=[4],-16,r1,+=",
+    "rzil": {
+      "opcode": "seq",
+      "x": {
+        "opcode": "storew",
+        "mem": 0,
+        "key": {
+          "opcode": "+",
+          "x": {
+            "opcode": "ite",
+            "condition": {
+              "opcode": "==",
+              "x": {
+                "opcode": "var",
+                "value": "r1"
+              },
+              "y": {
+                "opcode": "bitv",
+                "bits": "0x0",
+                "len": 64
+              }
+            },
+            "x": {
+              "opcode": "bitv",
+              "bits": "0x0",
+              "len": 64
+            },
+            "y": {
+              "opcode": "var",
+              "value": "r1"
+            }
+          },
+          "y": {
+            "opcode": "let",
+            "dst": "v",
+            "exp": {
+              "opcode": "bitv",
+              "bits": "0xfff0",
+              "len": 16
+            },
+            "body": {
+              "opcode": "ite",
+              "condition": {
+                "opcode": "msb",
+                "bv": {
+                  "opcode": "bitv",
+                  "bits": "0xfff0",
+                  "len": 16
+                }
+              },
+              "x": {
+                "opcode": "cast",
+                "value": {
+                  "opcode": "var",
+                  "value": "v"
+                },
+                "length": 64,
+                "fill": {
+                  "opcode": "msb",
+                  "bv": {
+                    "opcode": "var",
+                    "value": "v"
+                  }
+                }
+              },
+              "y": {
+                "opcode": "cast",
+                "value": {
+                  "opcode": "var",
+                  "value": "v"
+                },
+                "length": 64,
+                "fill": {
+                  "opcode": "bool",
+                  "value": false
+                }
+              }
+            }
+          }
+        },
+        "value": {
+          "opcode": "cast",
+          "value": {
+            "opcode": "var",
+            "value": "r1"
+          },
+          "length": 32,
+          "fill": {
+            "opcode": "bool",
+            "value": false
+          }
+        }
+      },
+      "y": {
+        "opcode": "set",
+        "dst": "r1",
+        "src": {
+          "opcode": "+",
+          "x": {
+            "opcode": "ite",
+            "condition": {
+              "opcode": "==",
+              "x": {
+                "opcode": "var",
+                "value": "r1"
+              },
+              "y": {
+                "opcode": "bitv",
+                "bits": "0x0",
+                "len": 64
+              }
+            },
+            "x": {
+              "opcode": "bitv",
+              "bits": "0x0",
+              "len": 64
+            },
+            "y": {
+              "opcode": "var",
+              "value": "r1"
+            }
+          },
+          "y": {
+            "opcode": "let",
+            "dst": "v",
+            "exp": {
+              "opcode": "bitv",
+              "bits": "0xfff0",
+              "len": 16
+            },
+            "body": {
+              "opcode": "ite",
+              "condition": {
+                "opcode": "msb",
+                "bv": {
+                  "opcode": "bitv",
+                  "bits": "0xfff0",
+                  "len": 16
+                }
+              },
+              "x": {
+                "opcode": "cast",
+                "value": {
+                  "opcode": "var",
+                  "value": "v"
+                },
+                "length": 64,
+                "fill": {
+                  "opcode": "msb",
+                  "bv": {
+                    "opcode": "var",
+                    "value": "v"
+                  }
+                }
+              },
+              "y": {
+                "opcode": "cast",
+                "value": {
+                  "opcode": "var",
+                  "value": "v"
+                },
+                "length": 64,
+                "fill": {
+                  "opcode": "bool",
+                  "value": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "sign": false,
     "prefix": 0,
     "id": 594,
