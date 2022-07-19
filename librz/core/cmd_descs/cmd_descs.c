@@ -11329,16 +11329,16 @@ static const RzCmdDescArg rebase_args[] = {
 	{
 		.name = "oldbase",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
 	},
 	{
 		.name = "newbase",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-        .optional = true,
+		.optional = true,
 
 	},
-
-    { 0 },
+	{ 0 },
 };
 static const RzCmdDescHelp rebase_help = {
 	.summary = "Rebase all flags, binary information, breakpoints, and analysis",

@@ -32,6 +32,9 @@ commands:
     args:
       - name: oldbase
         type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: newbase
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: rh
     cname: resize_human
     summary: Display size in human-friendly format
