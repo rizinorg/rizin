@@ -6,35 +6,22 @@
 
 
 RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) {
-    //get current object
+    
+    //get current file and current object
     RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!(bf && rz_file_exists(bf->file))) {
 		RZ_LOG_ERROR("Cannot open current RzBinFile.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-    //retrieve image base
-    const RzList *fields = rz_bin_object_get_fields(bf->o);
-    if (!fields) {
-		RZ_LOG_ERROR("Cannot retrieve executable fields.\n");
-        return RZ_CMD_STATUS_ERROR;
-    }
+    RzBinObject *obj = rz_bin_cur_object(core->bin);
+    if (!obj) {
+		RZ_LOG_ERROR("Cannot retrieve current object.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 
-    bool found_static_base = false;
-    ut64 static_base;
-    RzListIter *iter;
-	RzBinField *field;
-    rz_list_foreach (fields, iter, field) {
-        if (strcmp(field->name,"ImageBase") == 0) {
-            found_static_base = true;
-            static_base = (int)strtol(field->comment,NULL,16);
-        }
-    }
-    if (!found_static_base) {
-		RZ_LOG_ERROR("Cannot find image base.\n");
-        return RZ_CMD_STATUS_ERROR;
-    }
-    
+    ut64 static_base = obj->plugin->baddr(bf);
+        
     // compute old vs. static base delta
     ut64 old_base = rz_num_math(core->num, argv[1]);
     ut64 static_old_delta = old_base - static_base;
