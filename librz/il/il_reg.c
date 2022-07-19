@@ -108,8 +108,9 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 		RzRegItem *prev = NULL;
 		rz_list_foreach (items, iter, item) {
 			if (prev && prev->offset + prev->size > item->offset) {
-				// overlap where one reg is not fully contained in another.
-				// this is not supported yet.
+				RZ_LOG_WARN("Could not bind register \"%s\"\n"
+					    "\t It is not fully contained in another but overlaps with one.\n",
+					item->name);
 				continue;
 			}
 			if (pc && !strcmp(item->name, pc)) {
