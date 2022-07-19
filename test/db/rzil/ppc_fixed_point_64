@@ -123,7 +123,7 @@ FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
 e io.cache=true
-aaa
+wc-*
 s loc.store_insns
 aezi
 aezse 15~mem_write
@@ -150,10 +150,10 @@ FILE=bins/elf/ppc/ppc64_fp
 ARGS=-appc
 CMDS=<<EOF
 e io.cache=true
-aaa
-s loc.store_insns
+wc-*
+s loc.test_loads
 aezi
-aezs 19
+aezs 22
 aezse 16~var_write
 EOF
 EXPECT=<<EOF
