@@ -1,0 +1,21 @@
+NAME=p6 base64 decode
+FILE==
+CMDS=<<EOF
+w cml6aW4=
+p6d @! 8
+EOF
+EXPECT=<<EOF
+rizin
+EOF
+RUN
+
+NAME=p6 base64 encode
+FILE==
+CMDS=<<EOF
+w rizin
+p6e @! 5
+EOF
+EXPECT=<<EOF
+cml6aW4=
+EOF
+RUN
