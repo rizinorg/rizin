@@ -248,9 +248,12 @@ error:
 
 RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	RzSubprocess *proc = NULL;
-	HANDLE stdin_read = GetStdHandle(STD_INPUT_HANDLE);
-	HANDLE stdout_write = GetStdHandle(STD_OUTPUT_HANDLE);
-	HANDLE stderr_write = GetStdHandle(STD_ERROR_HANDLE);
+	const HANDLE curr_stdin_handle = (HANDLE)_get_osfhandle(fileno(stdin));
+	const HANDLE curr_stdout_handle = (HANDLE)_get_osfhandle(fileno(stdout));
+	const HANDLE curr_stderr_handle = (HANDLE)_get_osfhandle(fileno(stderr));
+	HANDLE stdin_read = curr_stdin_handle;
+	HANDLE stdout_write = curr_stdout_handle;
+	HANDLE stderr_write = curr_stderr_handle;
 	LPWSTR lpFilePart;
 	PWCHAR cmd_exe = RZ_NEWS0(WCHAR, MAX_PATH);
 #if NTDDI_VERSION >= NTDDI_VISTA
@@ -432,13 +435,13 @@ beach:
 	}
 #endif
 
-	if (stdin_read && stdin_read != GetStdHandle(STD_INPUT_HANDLE)) {
+	if (stdin_read && stdin_read != curr_stdin_handle) {
 		CloseHandle(stdin_read);
 	}
-	if (stderr_write && stderr_write != GetStdHandle(STD_ERROR_HANDLE) && stderr_write != stdout_write) {
+	if (stderr_write && stderr_write != curr_stderr_handle && stderr_write != stdout_write) {
 		CloseHandle(stderr_write);
 	}
-	if (stdout_write && stdout_write != GetStdHandle(STD_OUTPUT_HANDLE)) {
+	if (stdout_write && stdout_write != curr_stdout_handle) {
 		CloseHandle(stdout_write);
 	}
 	free(cmd_exe);
@@ -472,6 +475,19 @@ static bool do_read(HANDLE *f, char *buf, size_t buf_size, size_t n_bytes, OVERL
 		}
 	}
 	return false;
+}
+
+static void cancel_read(HANDLE *f, RzStrBuf *sb, char *buf, OVERLAPPED *overlapped) {
+	if (!CancelIo(f)) {
+		rz_sys_perror("CancelIo");
+	}
+	DWORD bytes_transferred;
+	if (GetOverlappedResult(f, overlapped, &bytes_transferred, TRUE) || GetLastError() == ERROR_OPERATION_ABORTED) {
+		rz_strbuf_append_n(sb, buf, bytes_transferred);
+	} else {
+		rz_sys_perror("GetOverlappedResult");
+	}
+	CloseHandle(overlapped->hEvent);
 }
 
 static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_ms, int pipe_fd, size_t n_bytes) {
@@ -510,8 +526,11 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	if (stderr_enabled) {
 		stderr_eof = do_read(proc->stderr_read, stderr_buf, sizeof(stderr_buf) - 1, n_bytes, &stderr_overlapped);
 	}
-
+	DWORD timeout = timeout_us_abs == UT64_MAX
+		? INFINITE
+		: (DWORD)(timeout_us_abs / RZ_USEC_PER_MSEC);
 	RzVector handles;
+	bool did_once = false;
 	rz_vector_init(&handles, sizeof(HANDLE), NULL, NULL);
 	while ((!bytes_enabled || n_bytes) && !child_dead) {
 		rz_vector_clear(&handles);
@@ -531,14 +550,25 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 			rz_vector_push(&handles, &proc->proc);
 		}
 
-		DWORD timeout = INFINITE;
 		if (timeout_us_abs != UT64_MAX) {
 			ut64 now = rz_time_now_mono();
 			if (now >= timeout_us_abs) {
-				return RZ_SUBPROCESS_TIMEDOUT;
+				if (did_once) {
+					rz_vector_clear(&handles);
+					if (stdout_enabled) {
+						cancel_read(proc->stderr_read, &proc->out, stdout_buf, &stderr_overlapped);
+					}
+					if (stderr_enabled) {
+						cancel_read(proc->stderr_read, &proc->err, stderr_buf, &stderr_overlapped);
+					}
+					return RZ_SUBPROCESS_TIMEDOUT;
+				}
+				timeout = 0;
+			} else {
+				timeout = (DWORD)((timeout_us_abs - now) / RZ_USEC_PER_MSEC);
 			}
-			timeout = (DWORD)((timeout_us_abs - now) / RZ_USEC_PER_MSEC);
 		}
+		did_once = true;
 		DWORD signaled = WaitForMultipleObjects(handles.len, handles.a, FALSE, timeout);
 		if (stdout_enabled && !stdout_eof && signaled == stdout_index) {
 			DWORD r;
@@ -587,8 +617,12 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 		break;
 	}
 	rz_vector_clear(&handles);
-	CloseHandle(stdout_overlapped.hEvent);
-	CloseHandle(stderr_overlapped.hEvent);
+	if (stdout_overlapped.hEvent) {
+		CloseHandle(stdout_overlapped.hEvent);
+	}
+	if (stderr_overlapped.hEvent) {
+		CloseHandle(stderr_overlapped.hEvent);
+	}
 	return child_dead ? RZ_SUBPROCESS_DEAD : RZ_SUBPROCESS_BYTESREAD;
 }
 
