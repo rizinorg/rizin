@@ -1066,9 +1066,9 @@ RZ_API RZ_OWN char *rz_core_esil_of_assembly(RzCore *core, const char *assembly)
 RZ_API RZ_OWN char *rz_core_assembly_of_hex(RzCore *core, ut8 *hex, int len);
 RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, ut8 *hex, int len);
 
-RZ_API bool rz_core_print_cmp(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len);
+RZ_API bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len);
 RZ_API bool rz_core_print_dump(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, ut8 n, int len, RzCorePrintFormatType format);
-RZ_API bool rz_core_print_hexdump_(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len);
+RZ_API bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len);
 RZ_API RZ_OWN char *rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len, ut8 size);
 
 /* rtr */

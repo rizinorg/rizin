@@ -158,12 +158,10 @@ fail:
 	return NULL;
 }
 
-RZ_API void rz_core_print_cmp(RzCore *core, ut64 from, ut64 to) {
-	long int delta = 0;
 /**
  * \brief Print hexdump diff between \p aa and \p ba with \p len
  */
-RZ_API bool rz_core_print_cmp(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
+RZ_API bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
 	rz_return_val_if_fail(core && core->cons && len > 0, false);
 	ut8 *a = malloc(len);
 	if (!a) {
@@ -175,19 +173,16 @@ RZ_API bool rz_core_print_cmp(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 le
 		return false;
 	}
 
-	RZ_LOG_VERBOSE("diff 0x%" PFMT64x " 0x%" PFMT64x " with len:%" PFMT64d "\n", aa, ba, len);
+	RZ_LOG_VERBOSE("print hexdump diff 0x%" PFMT64x " 0x%" PFMT64x " with len:%" PFMT64d "\n", aa, ba, len);
 
 	rz_io_read_at(core->io, aa, a, (int)len);
 	rz_io_read_at(core->io, ba, b, (int)len);
 	int col = core->cons->columns > 123;
-	ut8 *b = malloc(core->blocksize);
-	ut64 addr = core->offset;
-	memset(b, 0xff, core->blocksize);
-	delta = addr - from;
-	rz_io_read_at(core->io, to + delta, b, core->blocksize);
-	rz_print_hexdiff(core->print, core->offset, core->block,
-		to + delta, b, core->blocksize, col);
+	rz_print_hexdiff(core->print, aa, a,
+		ba, b, (int)len, col);
+	free(a);
 	free(b);
+	return true;
 }
 
 static inline st8 format_type_to_base(const RzCorePrintFormatType format, const ut8 n) {
@@ -216,21 +211,34 @@ static inline void fix_size_from_format(const RzCorePrintFormatType format, ut8 
 }
 
 static inline void len_fixup(RzCore *core, ut64 *addr, int *len) {
-	if (!len || *len >= 0) {
+	if (!len) {
 		return;
 	}
-	*len = -*len;
-	if (*len > core->blocksize_max) {
-		RZ_LOG_ERROR("this block size is too big (0x%" PFMT32x
+	bool is_positive = *len > 0;
+	if (RZ_ABS(*len) > core->blocksize_max) {
+		RZ_LOG_ERROR("this <len> is too big (0x%" PFMT32x
 			     " < 0x%" PFMT32x ").",
-			*len,
-			core->blocksize_max);
+			*len, core->blocksize_max);
 		*len = (int)core->blocksize_max;
 	}
-	*addr = *addr - *len;
+	if (is_positive) {
+		return;
+	}
+	*len = RZ_ABS(*len);
+	if (addr) {
+		*addr = *addr - *len;
+	}
 }
 
-RZ_API bool rz_core_print_dump(RzCore *core, const RzCmdStateOutput *state, ut64 addr, ut8 n, int len, const RzCorePrintFormatType format) {
+/**
+ * \brief Print dump at \p addr
+ * \param n Word size by bytes (1,2,4,8)
+ * \param len Dump bytes length
+ * \param format Print format, such as RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL
+ */
+RZ_API bool rz_core_print_dump(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state,
+	ut64 addr, ut8 n, int len, const RzCorePrintFormatType format) {
+	rz_return_val_if_fail(core, false);
 	if (!len) {
 		return true;
 	}
@@ -243,10 +251,8 @@ RZ_API bool rz_core_print_dump(RzCore *core, const RzCmdStateOutput *state, ut64
 	if (!buffer) {
 		return false;
 	}
+
 	rz_io_read_at(core->io, addr, buffer, len);
-
-	RZ_LOG_VERBOSE("Print dump 0x%" PFMT64x " %d %d %d\n", addr, n, len, base);
-
 	rz_print_init_rowoffsets(core->print);
 	core->print->use_comments = false;
 	RzOutputMode mode = state ? state->mode : RZ_OUTPUT_MODE_STANDARD;
@@ -269,11 +275,15 @@ RZ_API bool rz_core_print_dump(RzCore *core, const RzCmdStateOutput *state, ut64
 	return true;
 }
 
-RZ_API bool rz_core_print_hexdump_(RzCore *core, const RzCmdStateOutput *state, ut64 addr, int len) {
+/**
+ * \brief Print hexdump at \p addr, but maybe print hexdiff if (diff.from or diff.to), \see "el diff"
+ * \param len Dump bytes length
+ */
+RZ_API bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len) {
+	rz_return_val_if_fail(core, false);
 	if (!len) {
 		return true;
 	}
-	RZ_LOG_VERBOSE("Dump_ %d\n", len);
 
 	RzOutputMode mode = state ? state->mode : RZ_OUTPUT_MODE_STANDARD;
 	switch (mode) {
@@ -290,7 +300,7 @@ RZ_API bool rz_core_print_hexdump_(RzCore *core, const RzCmdStateOutput *state, 
 			rz_print_hexdump(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
 			free(buffer);
 		} else {
-			rz_core_print_cmp(core, from, to);
+			rz_core_print_hexdump_diff(core, addr, addr + to - from, len);
 		}
 		break;
 	}
@@ -315,8 +325,15 @@ static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
 	return rz_strbuf_drain(sb);
 }
 
+/**
+ * \brief Hexdump at \p addr
+ * \param len Dump bytes length
+ * \param size Word size by bytes (1,2,4,8)
+ * \return Hexdump string
+ */
 RZ_API RZ_OWN char *rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state,
 	ut64 addr, int len, ut8 size) {
+	rz_return_val_if_fail(core, false);
 	if (!len) {
 		return NULL;
 	}
@@ -325,6 +342,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, RZ_NUL
 	if (!buffer) {
 		return NULL;
 	}
+
 	rz_io_read_at(core->io, addr, buffer, len);
 	const int round_len = len - (len % size);
 	bool hex_offset = (!(state && state->mode == RZ_OUTPUT_MODE_QUIET) && rz_config_get_i(core->config, "hex.offset"));

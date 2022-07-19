@@ -11164,7 +11164,8 @@ static const RzCmdDescHelp px_help = {
 static const RzCmdDescArg print_hexdump_args[] = {
 	{
 		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -11178,13 +11179,14 @@ static const RzCmdDescHelp print_hexdump_help = {
 static const RzCmdDescArg print_hexdump_signed_int_args[] = {
 	{
 		.name = "n",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.optional = true,
 
 	},
 	{
 		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -11198,7 +11200,8 @@ static const RzCmdDescHelp print_hexdump_signed_int_help = {
 static const RzCmdDescArg print_hexdump_hex2_args[] = {
 	{
 		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -11212,7 +11215,8 @@ static const RzCmdDescHelp print_hexdump_hex2_help = {
 static const RzCmdDescArg print_hexdump_hex2l_args[] = {
 	{
 		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -11226,7 +11230,8 @@ static const RzCmdDescHelp print_hexdump_hex2l_help = {
 static const RzCmdDescArg print_hexdump_hex4_args[] = {
 	{
 		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -11240,7 +11245,8 @@ static const RzCmdDescHelp print_hexdump_hex4_help = {
 static const RzCmdDescArg print_hexdump_hex4l_args[] = {
 	{
 		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -11254,7 +11260,8 @@ static const RzCmdDescHelp print_hexdump_hex4l_help = {
 static const RzCmdDescArg print_hexdump_hex8_args[] = {
 	{
 		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -11268,7 +11275,8 @@ static const RzCmdDescHelp print_hexdump_hex8_help = {
 static const RzCmdDescArg print_hexdump_hex8l_args[] = {
 	{
 		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -11282,7 +11290,8 @@ static const RzCmdDescHelp print_hexdump_hex8l_help = {
 static const RzCmdDescArg print_hexdump_oct_args[] = {
 	{
 		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -11296,7 +11305,8 @@ static const RzCmdDescHelp print_hexdump_oct_help = {
 static const RzCmdDescArg print_hexdump_n_lines_args[] = {
 	{
 		.name = "N",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
