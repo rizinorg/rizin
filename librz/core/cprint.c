@@ -160,6 +160,25 @@ fail:
 
 RZ_API void rz_core_print_cmp(RzCore *core, ut64 from, ut64 to) {
 	long int delta = 0;
+/**
+ * \brief Print hexdump diff between \p aa and \p ba with \p len
+ */
+RZ_API bool rz_core_print_cmp(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
+	rz_return_val_if_fail(core && core->cons && len > 0, false);
+	ut8 *a = malloc(len);
+	if (!a) {
+		return false;
+	}
+	ut8 *b = malloc(len);
+	if (!b) {
+		free(a);
+		return false;
+	}
+
+	RZ_LOG_VERBOSE("diff 0x%" PFMT64x " 0x%" PFMT64x " with len:%" PFMT64d "\n", aa, ba, len);
+
+	rz_io_read_at(core->io, aa, a, (int)len);
+	rz_io_read_at(core->io, ba, b, (int)len);
 	int col = core->cons->columns > 123;
 	ut8 *b = malloc(core->blocksize);
 	ut64 addr = core->offset;

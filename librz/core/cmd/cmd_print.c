@@ -5715,7 +5715,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					rz_print_hexdump(core->print, core->offset,
 						core->block, core->blocksize, 16, 1, 1);
 				} else {
-					rz_core_print_cmp(core, from, to);
+					rz_core_print_cmp(core, core->offset, core->offset + to - from, l);
 				}
 				core->num->value = len;
 			}
