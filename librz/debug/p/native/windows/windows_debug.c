@@ -44,36 +44,17 @@ int w32_init(RzDebug *dbg) {
 	// escalate privs (required for win7/vista)
 	setup_debug_privileges(true);
 
-	HMODULE lib = GetModuleHandle(TEXT("kernel32")); // Always loaded
+	HMODULE lib = GetModuleHandleW(L"kernel32"); // Always loaded
 	if (!lib) {
 		return false;
 	}
 	// lookup function pointers for portability
-	w32_DebugActiveProcessStop = (BOOL(WINAPI *)(DWORD))
-		GetProcAddress(lib, "DebugActiveProcessStop");
-
-	w32_OpenThread = (HANDLE(WINAPI *)(DWORD, BOOL, DWORD))
-		GetProcAddress(lib, "OpenThread");
-
-	w32_OpenProcess = (HANDLE(WINAPI *)(DWORD, BOOL, DWORD))
-		GetProcAddress(lib, "OpenProcess");
-
-	w32_DebugBreakProcess = (BOOL(WINAPI *)(HANDLE))
-		GetProcAddress(lib, "DebugBreakProcess");
-
-	w32_CreateToolhelp32Snapshot = (HANDLE(WINAPI *)(DWORD, DWORD))
-		GetProcAddress(lib, "CreateToolhelp32Snapshot");
-
 	// only windows vista :(
-	w32_GetThreadId = (DWORD(WINAPI *)(HANDLE))
-		GetProcAddress(lib, "GetThreadId");
+	w32_ProcessIdToSessionId = (BOOL(WINAPI *)(DWORD, DWORD *))
+		GetProcAddress(lib, "ProcessIdToSessionId");
 
-	// from xp1
-	w32_GetProcessId = (DWORD(WINAPI *)(HANDLE))
-		GetProcAddress(lib, "GetProcessId");
-
-	w32_QueryFullProcessImageName = (BOOL(WINAPI *)(HANDLE, DWORD, LPTSTR, PDWORD))
-		GetProcAddress(lib, W32_TCALL("QueryFullProcessImageName"));
+	w32_QueryFullProcessImageNameW = (BOOL(WINAPI *)(HANDLE, DWORD, LPWSTR, PDWORD))
+		GetProcAddress(lib, "QueryFullProcessImageNameW");
 
 	// api to retrieve YMM from w7 sp1
 	w32_GetEnabledXStateFeatures = (ut64(WINAPI *)())
@@ -91,24 +72,7 @@ int w32_init(RzDebug *dbg) {
 	w32_SetXStateFeaturesMask = (BOOL(WINAPI *)(PCONTEXT Context, DWORD64))
 		GetProcAddress(lib, "SetXStateFeaturesMask");
 
-	lib = LoadLibrary(TEXT("psapi.dll"));
-	if (!lib) {
-		eprintf("Cannot load psapi.dll. Aborting\n");
-		return false;
-	}
-	w32_GetMappedFileName = (DWORD(WINAPI *)(HANDLE, LPVOID, LPTSTR, DWORD))
-		GetProcAddress(lib, W32_TCALL("GetMappedFileName"));
-
-	w32_GetModuleBaseName = (DWORD(WINAPI *)(HANDLE, HMODULE, LPTSTR, DWORD))
-		GetProcAddress(lib, W32_TCALL("GetModuleBaseName"));
-
-	w32_GetModuleInformation = (BOOL(WINAPI *)(HANDLE, HMODULE, LPMODULEINFO, DWORD))
-		GetProcAddress(lib, "GetModuleInformation");
-
-	w32_GetModuleFileNameEx = (DWORD(WINAPI *)(HANDLE, HMODULE, LPTSTR, DWORD))
-		GetProcAddress(lib, W32_TCALL("GetModuleFileNameEx"));
-
-	lib = LoadLibrary(TEXT("ntdll.dll"));
+	lib = GetModuleHandleW(L"ntdll.dll");
 	if (!lib) {
 		eprintf("Cannot load ntdll.dll. Aborting\n");
 		return false;
@@ -124,18 +88,6 @@ int w32_init(RzDebug *dbg) {
 
 	w32_NtQueryInformationThread = (NTSTATUS(WINAPI *)(HANDLE, ULONG, PVOID, ULONG, PULONG))
 		GetProcAddress(lib, "NtQueryInformationThread");
-
-	if (!w32_DebugActiveProcessStop || !w32_OpenThread || !w32_DebugBreakProcess ||
-		!w32_GetModuleBaseName || !w32_GetModuleInformation) {
-		// OOPS!
-		eprintf("debug_init_calls:\n"
-			"DebugActiveProcessStop: 0x%p\n"
-			"OpenThread: 0x%p\n"
-			"DebugBreakProcess: 0x%p\n"
-			"GetThreadId: 0x%p\n",
-			w32_DebugActiveProcessStop, w32_OpenThread, w32_DebugBreakProcess, w32_GetThreadId);
-		return false;
-	}
 
 	return true;
 }
@@ -696,7 +648,7 @@ int w32_detach(RzDebug *dbg, int pid) {
 
 static char *get_file_name_from_handle(HANDLE handle_file) {
 	HANDLE handle_file_map = NULL;
-	LPTSTR filename = NULL;
+	LPWSTR filename = NULL;
 	DWORD file_size_high = 0;
 	LPVOID map = NULL;
 	DWORD file_size_low = GetFileSize(handle_file, &file_size_high);
@@ -704,42 +656,42 @@ static char *get_file_name_from_handle(HANDLE handle_file) {
 	if (file_size_low == 0 && file_size_high == 0) {
 		return NULL;
 	}
-	handle_file_map = CreateFileMapping(handle_file, NULL, PAGE_READONLY, 0, 1, NULL);
+	handle_file_map = CreateFileMappingW(handle_file, NULL, PAGE_READONLY, 0, 1, NULL);
 	if (!handle_file_map) {
 		goto err_get_file_name_from_handle;
 	}
-	filename = malloc((MAX_PATH + 1) * sizeof(TCHAR));
+	filename = malloc((MAX_PATH + 1) * sizeof(WCHAR));
 	if (!filename) {
 		goto err_get_file_name_from_handle;
 	}
 	/* Create a file mapping to get the file name. */
 	map = MapViewOfFile(handle_file_map, FILE_MAP_READ, 0, 0, 1);
-	if (!map || !GetMappedFileName(GetCurrentProcess(), map, filename, MAX_PATH)) {
+	if (!map || !GetMappedFileNameW(GetCurrentProcess(), map, filename, MAX_PATH)) {
 		RZ_FREE(filename);
 		goto err_get_file_name_from_handle;
 	}
-	TCHAR temp_buffer[512];
+	WCHAR temp_buffer[512];
 	/* Translate path with device name to drive letters. */
-	if (!GetLogicalDriveStrings(_countof(temp_buffer) - 1, temp_buffer)) {
+	if (!GetLogicalDriveStringsW(_countof(temp_buffer) - 1, temp_buffer)) {
 		goto err_get_file_name_from_handle;
 	}
-	TCHAR name[MAX_PATH];
-	TCHAR drive[3] = TEXT(" :");
-	LPTSTR cur_drive = temp_buffer;
+	WCHAR name[MAX_PATH];
+	WCHAR drive[3] = L" :";
+	LPWSTR cur_drive = temp_buffer;
 	while (*cur_drive) {
 		/* Look up each device name */
 		*drive = *cur_drive;
-		if (QueryDosDevice(drive, name, MAX_PATH)) {
-			size_t name_length = _tcslen(name);
+		if (QueryDosDeviceW(drive, name, MAX_PATH)) {
+			size_t name_length = wcslen(name);
 
 			if (name_length < MAX_PATH) {
-				if (_tcsnicmp(filename, name, name_length) == 0 && *(filename + name_length) == TEXT('\\')) {
-					TCHAR temp_filename[MAX_PATH];
-					_sntprintf_s(temp_filename, MAX_PATH, _TRUNCATE, TEXT("%s%s"),
+				if (wcsnicmp(filename, name, name_length) == 0 && *(filename + name_length) == L'\\') {
+					WCHAR temp_filename[MAX_PATH];
+					_snwprintf_s(temp_filename, MAX_PATH, _TRUNCATE, L"%s%s",
 						drive, filename + name_length);
-					_tcsncpy(filename, temp_filename,
-						_tcslen(temp_filename) + 1);
-					filename[MAX_PATH] = (TCHAR)'\0';
+					wcsncpy(filename, temp_filename,
+						wcslen(temp_filename) + 1);
+					filename[MAX_PATH] = L'\0';
 					break;
 				}
 			}
@@ -764,38 +716,38 @@ err_get_file_name_from_handle:
 static char *resolve_path(HANDLE ph, HANDLE mh) {
 	// TODO: add maximum path length support
 	const DWORD maxlength = MAX_PATH;
-	TCHAR filename[MAX_PATH];
-	DWORD length = GetModuleFileNameEx(ph, mh, filename, maxlength);
+	WCHAR filename[MAX_PATH];
+	DWORD length = GetModuleFileNameExW(ph, mh, filename, maxlength);
 	if (length > 0) {
-		return rz_sys_conv_win_to_utf8(filename);
+		return rz_utf16_to_utf8(filename);
 	}
 	char *name = get_file_name_from_handle(mh);
 	if (name) {
 		return name;
 	}
 	// Upon failure fallback to GetProcessImageFileName
-	length = GetProcessImageFileName(mh, filename, maxlength);
+	length = GetProcessImageFileNameW(mh, filename, maxlength);
 	if (length == 0) {
 		return NULL;
 	}
 	// Convert NT path to win32 path
-	TCHAR *tmp = _tcschr(filename + 1, '\\');
+	WCHAR *tmp = wcschr(filename + 1, L'\\');
 	if (!tmp) {
 		return NULL;
 	}
-	tmp = _tcschr(tmp + 1, '\\');
+	tmp = wcschr(tmp + 1, L'\\');
 	if (!tmp) {
 		return NULL;
 	}
 	length = tmp - filename;
-	TCHAR device[MAX_PATH];
+	WCHAR device[MAX_PATH];
 	char *ret = NULL;
-	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
-		if (QueryDosDevice(drv, device, maxlength) > 0) {
-			if (!_tcsncmp(filename, device, length)) {
-				TCHAR path[MAX_PATH];
-				_sntprintf(path, maxlength, TEXT("%s%s"), drv, tmp);
-				ret = rz_sys_conv_win_to_utf8(path);
+	for (WCHAR drv[] = L"A:"; drv[0] <= L'Z'; drv[0]++) {
+		if (QueryDosDeviceW(drv, device, maxlength) > 0) {
+			if (!wcsncmp(filename, device, length)) {
+				WCHAR path[MAX_PATH];
+				_snwprintf(path, maxlength, L"%s%s", drv, tmp);
+				ret = rz_utf16_to_utf8(path);
 				break;
 			}
 		}
@@ -963,7 +915,7 @@ void w32_break_process(void *user) {
 	if (dbg->corebind.cfggeti(dbg->corebind.core, "dbg.threads")) {
 		w32_select(dbg, wrap->pi.dwProcessId, -1); // Suspend all threads
 	} else {
-		if (!w32_DebugBreakProcess(wrap->pi.hProcess)) {
+		if (!DebugBreakProcess(wrap->pi.hProcess)) {
 			rz_sys_perror("DebugBreakProcess");
 			eprintf("Could not interrupt program, attempt to press Ctrl-C in the program's console.\n");
 		}
@@ -1080,7 +1032,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			break;
 		}
 		case OUTPUT_DEBUG_STRING_EVENT: {
-			char *str = calloc(de.u.DebugString.nDebugStringLength, sizeof(TCHAR));
+			char *str = calloc(de.u.DebugString.nDebugStringLength, sizeof(WCHAR));
 			ReadProcessMemory(wrap->pi.hProcess, de.u.DebugString.lpDebugStringData, str, de.u.DebugString.nDebugStringLength, NULL);
 			char *tmp = de.u.DebugString.fUnicode
 				? rz_utf16_to_utf8((wchar_t *)str)
@@ -1294,24 +1246,55 @@ static inline ut64 pc_from_context(CONTEXT *ctx) {
 #endif
 }
 
+static char *get_process_path(HANDLE ph, int pid) {
+	bool close_handle = false;
+	char *path = NULL;
+	if (!ph) {
+		ph = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+		if (!ph) {
+			ph = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+			if (!ph) {
+				ph = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+				if (!ph) {
+					return NULL;
+				}
+			}
+		}
+		close_handle = true;
+	}
+	if (w32_QueryFullProcessImageNameW) {
+		WCHAR tmp[MAX_PATH + 1];
+		DWORD sz = MAX_PATH;
+		if (w32_QueryFullProcessImageNameW(ph, 0, tmp, &sz)) {
+			path = rz_utf16_to_utf8(tmp);
+		}
+	} else {
+		path = resolve_path(ph, NULL);
+	}
+	if (close_handle) {
+		CloseHandle(ph);
+	}
+	return path;
+}
+
 RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	// pid is not respected for TH32CS_SNAPTHREAD flag
-	HANDLE th = w32_CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+	HANDLE th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 	if (th == INVALID_HANDLE_VALUE) {
 		rz_sys_perror("CreateToolhelp32Snapshot");
 		return list;
 	}
 	THREADENTRY32 te;
 	te.dwSize = sizeof(te);
-	HANDLE ph = w32_OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+	HANDLE ph = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (Thread32First(th, &te)) {
 		// TODO: export this code to its own function?
 		char *path = NULL;
 		int uid = -1;
 		if (!te.th32ThreadID) {
-			path = resolve_path(ph, NULL);
+			path = get_process_path(ph, pid);
 			DWORD sid;
-			if (ProcessIdToSessionId(pid, &sid)) {
+			if (w32_ProcessIdToSessionId && w32_ProcessIdToSessionId(pid, &sid)) {
 				uid = sid;
 			}
 		}
@@ -1357,7 +1340,7 @@ static void w32_info_user(RzDebug *dbg, RzDebugInfo *rdi) {
 	HANDLE h_tok = NULL;
 	DWORD tok_len = 0;
 	PTOKEN_USER tok_usr = NULL;
-	LPTSTR usr = NULL, usr_dom = NULL;
+	LPWSTR usr = NULL, usr_dom = NULL;
 	DWORD usr_len = 512;
 	DWORD usr_dom_len = 512;
 	SID_NAME_USE snu = { 0 };
@@ -1382,24 +1365,24 @@ static void w32_info_user(RzDebug *dbg, RzDebugInfo *rdi) {
 		rz_sys_perror("GetTokenInformation");
 		goto err_w32_info_user;
 	}
-	usr = (LPTSTR)malloc(usr_len * sizeof(TCHAR));
+	usr = (LPWSTR)malloc(usr_len * sizeof(WCHAR));
 	if (!usr) {
 		goto err_w32_info_user;
 	}
 	*usr = '\0';
-	usr_dom = (LPTSTR)malloc(usr_dom_len * sizeof(TCHAR));
+	usr_dom = (LPWSTR)malloc(usr_dom_len * sizeof(WCHAR));
 	if (!usr_dom) {
 		goto err_w32_info_user;
 	}
 	*usr_dom = '\0';
-	if (!LookupAccountSid(NULL, tok_usr->User.Sid, usr, &usr_len, usr_dom, &usr_dom_len, &snu)) {
+	if (!LookupAccountSidW(NULL, tok_usr->User.Sid, usr, &usr_len, usr_dom, &usr_dom_len, &snu)) {
 		rz_sys_perror("LookupAccountSid");
 		goto err_w32_info_user;
 	}
 	if (*usr_dom) {
-		rdi->usr = rz_str_newf(W32_TCHAR_FSTR "\\" W32_TCHAR_FSTR, usr_dom, usr);
+		rdi->usr = rz_str_newf("%S\\%S", usr_dom, usr);
 	} else {
-		rdi->usr = rz_sys_conv_win_to_utf8(usr);
+		rdi->usr = rz_utf16_to_utf8(usr);
 	}
 err_w32_info_user:
 	if (h_tok) {
@@ -1439,30 +1422,16 @@ RzDebugInfo *w32_info(RzDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-static RzDebugPid *build_debug_pid(int pid, int ppid, HANDLE ph, const TCHAR *name) {
-	char *path = NULL;
+static RzDebugPid *build_debug_pid(int pid, int ppid, HANDLE ph, const WCHAR *name) {
+	char *path = get_process_path(ph, pid);
 	int uid = -1;
-	if (!ph) {
-		ph = w32_OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-		if (ph) {
-			path = resolve_path(ph, NULL);
-			DWORD sid;
-			if (ProcessIdToSessionId(pid, &sid)) {
-				uid = sid;
-			}
-			CloseHandle(ph);
-		} else {
-			return NULL;
-		}
-	} else {
-		path = resolve_path(ph, NULL);
-		DWORD sid;
-		if (ProcessIdToSessionId(pid, &sid)) {
-			uid = sid;
-		}
+
+	DWORD sid;
+	if (w32_ProcessIdToSessionId && w32_ProcessIdToSessionId(pid, &sid)) {
+		uid = sid;
 	}
 	if (!path) {
-		path = rz_sys_conv_win_to_utf8(name);
+		path = rz_utf16_to_utf8(name);
 	}
 	// it is possible to get pc for a non debugged process but the operation is expensive and might be risky
 	RzDebugPid *ret = rz_debug_pid_new(path, pid, uid, 's', 0);
@@ -1473,14 +1442,14 @@ static RzDebugPid *build_debug_pid(int pid, int ppid, HANDLE ph, const TCHAR *na
 
 RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list) {
 	W32DbgWInst *wrap = dbg->plugin_data;
-	HANDLE sh = w32_CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, pid);
+	HANDLE sh = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, pid);
 	if (sh == INVALID_HANDLE_VALUE) {
 		rz_sys_perror("CreateToolhelp32Snapshot");
 		return list;
 	}
-	PROCESSENTRY32 pe;
+	PROCESSENTRY32W pe;
 	pe.dwSize = sizeof(pe);
-	if (Process32First(sh, &pe)) {
+	if (Process32FirstW(sh, &pe)) {
 		bool all = pid == 0;
 		do {
 			if (all || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
@@ -1491,7 +1460,7 @@ RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list) {
 					rz_list_append(list, dbg_pid);
 				}
 			}
-		} while (Process32Next(sh, &pe));
+		} while (Process32NextW(sh, &pe));
 	} else {
 		rz_sys_perror("Process32First");
 	}
@@ -1501,7 +1470,7 @@ RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list) {
 
 RzList *w32_desc_list(int pid) {
 	HANDLE ph;
-	if (!(ph = w32_OpenProcess(PROCESS_DUP_HANDLE, FALSE, pid))) {
+	if (!(ph = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pid))) {
 		return NULL;
 	}
 	ULONG handleInfoSize = 0x10000;

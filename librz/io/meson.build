@@ -112,6 +112,7 @@ rz_io_deps = [
   rz_hash_dep,
   rz_crypto_dep,
   rz_cons_dep,
+  platform_deps,
 ]
 
 if get_option('use_gpl')

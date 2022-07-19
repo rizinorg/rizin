@@ -80,7 +80,7 @@ RZ_API RzList *rz_w32_dbg_modules(RzDebug *dbg) {
 	MODULEENTRY32 me;
 	RzList *list = rz_list_newf((RzListFree)rz_debug_map_free);
 	DWORD flags = TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32;
-	HANDLE h_mod_snap = w32_CreateToolhelp32Snapshot(flags, dbg->pid);
+	HANDLE h_mod_snap = CreateToolhelp32Snapshot(flags, dbg->pid);
 
 	if (h_mod_snap == INVALID_HANDLE_VALUE) {
 		// Suppress if process is still initializing
@@ -230,11 +230,11 @@ static void proc_mem_img(HANDLE h_proc, RzList *map_list, RzList *mod_list, RWin
 }
 
 static void proc_mem_map(HANDLE h_proc, RzList *map_list, MEMORY_BASIC_INFORMATION *mbi) {
-	TCHAR f_name[MAX_PATH + 1];
+	WCHAR f_name[MAX_PATH + 1];
 
-	DWORD len = GetMappedFileName(h_proc, mbi->BaseAddress, f_name, MAX_PATH);
+	DWORD len = GetMappedFileNameW(h_proc, mbi->BaseAddress, f_name, MAX_PATH);
 	if (len > 0) {
-		char *f_name_ = rz_sys_conv_win_to_utf8(f_name);
+		char *f_name_ = rz_utf16_to_utf8(f_name);
 		add_map_reg(map_list, f_name_, mbi);
 		free(f_name_);
 	} else {
