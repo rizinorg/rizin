@@ -560,6 +560,7 @@ on+ .true32-copy
 p8 2
 wx 9090
 p8 2
+o--
 rm .true32-copy
 EOF
 EXPECT=<<EOF
