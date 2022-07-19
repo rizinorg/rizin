@@ -6,6 +6,7 @@ e io.va=0
 w jeje
 i~size[1]
 p8 4
+o--
 rm ./.newfile
 EOF
 EXPECT=<<EOF

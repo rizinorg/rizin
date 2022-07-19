@@ -322,6 +322,7 @@ FILE==
 CMDS=<<EOF
 idpi bins/pdb/basic32.pd_
 e log.level=3
+mkdir .tmp
 idpx bins/pdb/basic32.pd_ .tmp
 !rz-hash -a md5 .tmp/basic32.pdb
 EOF
