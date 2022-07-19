@@ -913,9 +913,9 @@ int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p) {
 		return UT32_MAX;
 	}
 	HexInsn *hi = !hic->is_duplex ? hic->bin.insn : (hic->bin.sub[0]->addr == addr ? hic->bin.sub[0] : hic->bin.sub[1]);
-	for (ut8 i = 0; i < hi->op_count; ++i) {
-		if (hi->ops[i].attr & HEX_OP_REG_OUT) {
-			return hi->ops[i].op.reg;
+	for (ut8 k = 0; k < hi->op_count; ++k) {
+		if (hi->ops[k].attr & HEX_OP_REG_OUT) {
+			return hi->ops[k].op.reg;
 		}
 	}
 	return UT32_MAX;
