@@ -226,7 +226,7 @@ static int update_self_regions(RzIO *io, int pid) {
 	PVOID to = NULL;
 	MEMORY_BASIC_INFORMATION mbi;
 	HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
-	LPTSTR name = calloc(name_size, sizeof(TCHAR));
+	LPWSTR name = calloc(name_size, sizeof(WCHAR));
 	if (!name) {
 		RZ_LOG_ERROR("io_self/update_self_regions: Failed to allocate memory.\n");
 		CloseHandle(h);
@@ -241,15 +241,15 @@ static int update_self_regions(RzIO *io, int pid) {
 		perm |= mbi.Protect & PAGE_EXECUTE_READ ? RZ_PERM_RX : 0;
 		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? RZ_PERM_RWX : 0;
 		perm = mbi.Protect & PAGE_NOACCESS ? 0 : perm;
-		if (perm && !GetMappedFileName(h, (LPVOID)mbi.BaseAddress, name, name_size)) {
-			name[0] = '\0';
+		if (perm && !GetMappedFileNameW(h, (LPVOID)mbi.BaseAddress, name, name_size)) {
+			name[0] = L'\0';
 		}
 		self_sections[self_sections_count].from = (ut64)mbi.BaseAddress;
 		self_sections[self_sections_count].to = (ut64)to;
-		self_sections[self_sections_count].name = rz_sys_conv_win_to_utf8(name);
+		self_sections[self_sections_count].name = rz_utf16_to_utf8(name);
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
-		name[0] = '\0';
+		name[0] = L'\0';
 	}
 	free(name);
 	CloseHandle(h);

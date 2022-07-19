@@ -5,7 +5,7 @@
 #include <DbgHelp.h>
 #include <w32dbg_wrap.h>
 
-#define DEF_PROC(proc) proc##_t *w32_##proc
+#define DEF_PROC(proc) static proc##_t *w32_##proc
 #define GET_PROC(proc) \
 	w32_##proc = (proc##_t *)GetProcAddress(dbghelp, #proc); \
 	if (!w32_##proc) { \

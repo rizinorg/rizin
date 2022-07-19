@@ -922,7 +922,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	// TODO: add maximum path length support
 	HANDLE processHandle;
 	const DWORD maxlength = MAX_PATH;
-	TCHAR filename[MAX_PATH];
+	WCHAR filename[MAX_PATH];
 	char *result = NULL;
 
 	processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
@@ -930,17 +930,17 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		eprintf("rz_sys_pid_to_path: Cannot open process.\n");
 		return NULL;
 	}
-	DWORD length = GetModuleFileNameEx(processHandle, NULL, filename, maxlength);
+	DWORD length = GetModuleFileNameExW(processHandle, NULL, filename, maxlength);
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
-		length = GetProcessImageFileName(processHandle, filename, maxlength);
+		length = GetProcessImageFileNameW(processHandle, filename, maxlength);
 		CloseHandle(processHandle);
 		if (length == 0) {
 			eprintf("rz_sys_pid_to_path: Error calling GetProcessImageFileName\n");
 			return NULL;
 		}
 		// Convert NT path to win32 path
-		char *name = rz_sys_conv_win_to_utf8(filename);
+		char *name = rz_utf16_to_utf8(filename);
 		if (!name) {
 			eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
 			return NULL;
@@ -966,10 +966,10 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		}
 		strncpy(tmp, name, length);
 		tmp[length] = '\0';
-		TCHAR device[MAX_PATH];
-		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
-			if (QueryDosDevice(drv, device, maxlength) > 0) {
-				char *dvc = rz_sys_conv_win_to_utf8(device);
+		WCHAR device[MAX_PATH];
+		for (WCHAR drv[] = L"A:"; drv[0] <= L'Z'; drv[0]++) {
+			if (QueryDosDeviceW(drv, device, maxlength) > 0) {
+				char *dvc = rz_utf16_to_utf8(device);
 				if (!dvc) {
 					free(name);
 					free(tmp);
@@ -979,7 +979,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 				if (!strcmp(tmp, dvc)) {
 					free(tmp);
 					free(dvc);
-					char *d = rz_sys_conv_win_to_utf8(drv);
+					char *d = rz_utf16_to_utf8(drv);
 					if (!d) {
 						free(name);
 						eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
@@ -1002,7 +1002,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		free(tmp);
 	} else {
 		CloseHandle(processHandle);
-		result = rz_sys_conv_win_to_utf8(filename);
+		result = rz_utf16_to_utf8(filename);
 	}
 	return result;
 #elif __APPLE__
