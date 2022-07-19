@@ -7331,8 +7331,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_block_handler(RzCore *core, int 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_base64_encode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut32 malen = (core->blocksize * 4) + 1;
-	ut8 *buf = malloc(malen);
+	ut8 *buf = calloc(1, (core->blocksize * 4) + 1);
 
 	if (!buf) {
 		RZ_LOG_ERROR("Fail to allocate memory\n");
@@ -7345,14 +7344,12 @@ RZ_IPI RzCmdStatus rz_cmd_base64_encode_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_cmd_base64_decode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut32 malen = (core->blocksize * 4) + 1;
-	ut8 *buf = malloc(malen);
+	ut8 *buf = calloc(1, (core->blocksize * 4) + 1);
 
 	if (!buf) {
 		RZ_LOG_ERROR("Fail to allocate memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	memset(buf, 0, malen);
 	if (rz_base64_decode(buf, (const char *)core->block, core->blocksize) < 0) {
 		RZ_LOG_ERROR("rz_base64_decode: invalid stream\n");
 		rz_free(buf);
