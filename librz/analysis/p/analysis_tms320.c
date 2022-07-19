@@ -113,7 +113,9 @@ static bool tms320_fini(void *user) {
 }
 
 static bool is_c5000(const char *cpu) {
-	rz_return_val_if_fail(cpu, false);
+	if (!cpu) {
+		return false;
+	}
 	return (rz_str_casecmp(cpu, "c55x+") == 0) || (rz_str_casecmp(cpu, "c55x") == 0);
 }
 
