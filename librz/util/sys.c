@@ -1426,6 +1426,14 @@ RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 RZ_API int rz_sys_pipe_close(int fd) {
 	return close(fd);
 }
+#elif __WINDOWS__
+RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
+	return _pipe(pipefd, 0x1000, O_TEXT);
+}
+
+RZ_API int rz_sys_pipe_close(int fd) {
+	return _close(fd);
+}
 #else
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 	return -1;
