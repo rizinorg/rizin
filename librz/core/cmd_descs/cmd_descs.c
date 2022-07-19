@@ -451,6 +451,10 @@ static const RzCmdDescArg open_maps_prioritize_binid_args[2];
 static const RzCmdDescArg open_maps_deprioritize_args[2];
 static const RzCmdDescArg open_maps_prioritize_fd_args[2];
 static const RzCmdDescArg open_exchange_args[3];
+static const RzCmdDescArg hex_of_assembly_args[2];
+static const RzCmdDescArg esil_of_assembly_args[2];
+static const RzCmdDescArg assembly_of_hex_args[2];
+static const RzCmdDescArg esil_of_hex_args[2];
 static const RzCmdDescArg cmd_disassembly_n_bytes_args[2];
 static const RzCmdDescArg cmd_disassembly_n_instructions_args[2];
 static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_args[2];
@@ -10417,6 +10421,69 @@ static const RzCmdDescHelp open_exchange_help = {
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
 };
+static const RzCmdDescHelp pa_help = {
+	.summary = "Print (dis)assembly of given hexpairs/assembly",
+};
+static const RzCmdDescArg hex_of_assembly_args[] = {
+	{
+		.name = "assembly",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp hex_of_assembly_help = {
+	.summary = "Print hexpairs of the given assembly expression",
+	.args = hex_of_assembly_args,
+};
+
+static const RzCmdDescArg esil_of_assembly_args[] = {
+	{
+		.name = "assembly",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp esil_of_assembly_help = {
+	.summary = "Print ESIL expression of the given assembly expression",
+	.args = esil_of_assembly_args,
+};
+
+static const RzCmdDescArg assembly_of_hex_args[] = {
+	{
+		.name = "hexpair",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp assembly_of_hex_help = {
+	.summary = "Print assembly expression from hexpairs (alias for pix)",
+	.args = assembly_of_hex_args,
+};
+
+static const RzCmdDescArg esil_of_hex_args[] = {
+	{
+		.name = "hexpair",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp esil_of_hex_help = {
+	.summary = "Print ESIL expression from hexpairs",
+	.args = esil_of_hex_args,
+};
+
 static const RzCmdDescDetailEntry cmd_print_byte_array_Useful_space_modifiers_detail_entries[] = {
 	{ .text = "pch @e:cfg.bigendian=<true|false>", .arg_str = NULL, .comment = "Change endianness for pch, pcw and pcd commands" },
 	{ .text = "pc @! <n>", .arg_str = NULL, .comment = "Change the N of bytes (i.e. block size)." },
@@ -16175,6 +16242,17 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
+	RzCmdDesc *pa_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_print_cd, "pa", RZ_OUTPUT_MODE_STANDARD, rz_hex_of_assembly_handler, &hex_of_assembly_help, &pa_help);
+	rz_warn_if_fail(pa_cd);
+	RzCmdDesc *esil_of_assembly_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pa_cd, "pae", RZ_OUTPUT_MODE_STANDARD, rz_esil_of_assembly_handler, &esil_of_assembly_help);
+	rz_warn_if_fail(esil_of_assembly_cd);
+
+	RzCmdDesc *assembly_of_hex_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pa_cd, "pad", RZ_OUTPUT_MODE_STANDARD, rz_assembly_of_hex_handler, &assembly_of_hex_help);
+	rz_warn_if_fail(assembly_of_hex_cd);
+
+	RzCmdDesc *esil_of_hex_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pa_cd, "pade", RZ_OUTPUT_MODE_STANDARD, rz_esil_of_hex_handler, &esil_of_hex_help);
+	rz_warn_if_fail(esil_of_hex_cd);
+
 	RzCmdDesc *cmd_print_byte_array_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pc", rz_cmd_print_byte_array_c_cpp_bytes_handler, &cmd_print_byte_array_c_cpp_bytes_help, &cmd_print_byte_array_help);
 	rz_warn_if_fail(cmd_print_byte_array_cd);
 	RzCmdDesc *cmd_print_byte_array_c_cpp_half_word_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pch", rz_cmd_print_byte_array_c_cpp_half_word_handler, &cmd_print_byte_array_c_cpp_half_word_help);

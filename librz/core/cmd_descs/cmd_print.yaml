@@ -3,6 +3,45 @@
 ---
 name: cmd_print
 commands:
+  - name: pa
+    summary: Print (dis)assembly of given hexpairs/assembly
+    subcommands:
+      - name: pa
+        summary: Print hexpairs of the given assembly expression
+        cname: hex_of_assembly
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: assembly
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+      - name: pae
+        summary: Print ESIL expression of the given assembly expression
+        cname: esil_of_assembly
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: assembly
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+      - name: pad
+        summary: Print assembly expression from hexpairs (alias for pix)
+        cname: assembly_of_hex
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: hexpair
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: false
+      - name: pade
+        summary: Print ESIL expression from hexpairs
+        cname: esil_of_hex
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: hexpair
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: false
   - name: pc
     summary: Print bytes as code byte arrays.
     cname: cmd_print_byte_array
