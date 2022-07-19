@@ -365,8 +365,33 @@ RZ_API int rz_sys_clearenv(void) {
 #endif
 	return 0;
 #else
-#ifdef _MSC_VER
-#pragma message("rz_sys_clearenv : unimplemented for this platform")
+#ifdef __WINDOWS__
+	LPWCH env = GetEnvironmentStringsW();
+	LPWCH var = env;
+	while (*var) {
+		wchar_t *eq = wcschr(var, L'=');
+		if (!eq) {
+			FreeEnvironmentStringsW(env);
+			return -1;
+		}
+		const size_t len = eq - var;
+		if (!len) {
+			var += wcslen(var) + 1;
+			continue;
+		}
+		wchar_t *v = RZ_NEWS0(wchar_t, len + 1);
+		if (!v) {
+			return -1;
+		}
+		wcsncpy(v, var, len);
+		if (_wputenv_s(v, L"")) {
+			free(v);
+			break;
+		}
+		free(v);
+		var += wcslen(var) + 1;
+	}
+	FreeEnvironmentStringsW(env);
 #else
 #warning rz_sys_clearenv : unimplemented for this platform
 #endif
@@ -388,14 +413,13 @@ RZ_API int rz_sys_setenv(const char *key, const char *value) {
 	}
 	return setenv(key, value, 1);
 #elif __WINDOWS__
-	LPTSTR key_ = rz_sys_conv_utf8_to_win(key);
-	LPTSTR value_ = rz_sys_conv_utf8_to_win(value);
-	int ret = SetEnvironmentVariable(key_, value_);
-	if (!ret) {
-		rz_sys_perror("rz_sys_setenv/SetEnvironmentVariable");
-	}
+	LPWSTR key_ = rz_utf8_to_utf16(key);
+	LPWSTR value_ = value ? rz_utf8_to_utf16(value) : L"";
+	bool ret = !_wputenv_s(key_, value_);
 	free(key_);
-	free(value_);
+	if (value) {
+		free(value_);
+	}
 	return ret ? 0 : -1;
 #else
 #warning rz_sys_setenv : unimplemented for this platform
@@ -458,39 +482,19 @@ RZ_API int rz_sys_crash_handler(const char *cmd) {
  */
 RZ_API char *rz_sys_getenv(const char *key) {
 #if __WINDOWS__
-	DWORD dwRet;
-	LPTSTR envbuf = NULL, key_ = NULL, tmp_ptr;
-	char *val = NULL;
-
 	if (!key) {
 		return NULL;
 	}
-	envbuf = (LPTSTR)malloc(sizeof(TCHAR) * TMP_BUFSIZE);
-	if (!envbuf) {
-		goto err_r_sys_get_env;
+	wchar_t *val;
+	wchar_t *wkey = rz_utf8_to_utf16(key);
+	if (_wdupenv_s(&val, NULL, wkey) || !val) {
+		free(wkey);
+		return NULL;
 	}
-	key_ = rz_sys_conv_utf8_to_win(key);
-	dwRet = GetEnvironmentVariable(key_, envbuf, TMP_BUFSIZE);
-	if (dwRet == 0) {
-		if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
-			goto err_r_sys_get_env;
-		}
-	} else if (TMP_BUFSIZE < dwRet) {
-		tmp_ptr = (LPTSTR)realloc(envbuf, dwRet * sizeof(TCHAR));
-		if (!tmp_ptr) {
-			goto err_r_sys_get_env;
-		}
-		envbuf = tmp_ptr;
-		dwRet = GetEnvironmentVariable(key_, envbuf, dwRet);
-		if (!dwRet) {
-			goto err_r_sys_get_env;
-		}
-	}
-	val = rz_sys_conv_win_to_utf8_l(envbuf, (int)dwRet);
-err_r_sys_get_env:
-	free(key_);
-	free(envbuf);
-	return val;
+	free(wkey);
+	char *ret = rz_utf16_to_utf8(val);
+	free(val);
+	return ret;
 #else
 	char *b;
 	if (!key) {
@@ -1111,7 +1115,7 @@ RZ_API void rz_sys_env_init(void) {
 RZ_API char **rz_sys_get_environ(void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	env = *_NSGetEnviron();
-#else
+#elif HAVE_ENVIRON
 	env = environ;
 #endif
 	// return environ if available??
@@ -1125,6 +1129,22 @@ RZ_API void rz_sys_set_environ(char **e) {
 	env = e;
 #if __APPLE__ && !HAVE_ENVIRON
 	*_NSGetEnviron() = e;
+#elif __WINDOWS__
+	char **oe = e;
+	rz_sys_clearenv();
+	while (*e) {
+		char *var = *e;
+		char *val = strchr(var, '=');
+		wchar_t *val_utf16 = NULL;
+		if (*val) {
+			*val++ = '\0';
+		}
+		rz_sys_setenv(var, val);
+		free(*e);
+		e++;
+	}
+	free(oe);
+	env = environ;
 #elif HAVE_ENVIRON
 	environ = e;
 #endif

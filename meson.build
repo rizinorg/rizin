@@ -445,6 +445,9 @@ foreach it : ccs
     # But in fact, even the environ(7) man page on macOS 11.6 still claims that environ is not avaliable for
     # shared libs (even though it seems to work) and suggests using _NSGetEnviron(), so let's just do this always.
     have_environ = false
+  elif host_machine.system() == 'windows'
+    code = '#include <stdlib.h>\n\nint main() { char **env = environ; }'
+    have_environ = cc.links(code, name: 'have environ')
   else
     code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
     have_environ = it_cc.links(code, name: 'have extern char **environ')
