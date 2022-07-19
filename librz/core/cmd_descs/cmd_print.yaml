@@ -429,3 +429,18 @@ commands:
       - name: type
         type: RZ_CMD_ARG_TYPE_NUM
         optional: true
+  - name: p6
+    summary: Base64 decoding/encoding
+    subcommands:
+      - name: p6e
+        summary: Base64 encoding
+        cname: cmd_base64_encode
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: p6d
+        summary: Base64 decoding
+        cname: cmd_base64_decode
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []

@@ -11065,6 +11065,25 @@ static const RzCmdDescHelp print_utf32be_help = {
 	.args = print_utf32be_args,
 };
 
+static const RzCmdDescHelp p6_help = {
+	.summary = "Base64 decoding/encoding",
+};
+static const RzCmdDescArg cmd_base64_encode_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_base64_encode_help = {
+	.summary = "Base64 encoding",
+	.args = cmd_base64_encode_args,
+};
+
+static const RzCmdDescArg cmd_base64_decode_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_base64_decode_help = {
+	.summary = "Base64 decoding",
+	.args = cmd_base64_decode_args,
+};
+
 static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
@@ -16326,6 +16345,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_utf32be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psM", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf32be_handler, &print_utf32be_help);
 	rz_warn_if_fail(print_utf32be_cd);
+
+	RzCmdDesc *p6_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "p6", NULL, NULL, &p6_help);
+	rz_warn_if_fail(p6_cd);
+	RzCmdDesc *cmd_base64_encode_cd = rz_cmd_desc_argv_modes_new(core->rcmd, p6_cd, "p6e", RZ_OUTPUT_MODE_STANDARD, rz_cmd_base64_encode_handler, &cmd_base64_encode_help);
+	rz_warn_if_fail(cmd_base64_encode_cd);
+
+	RzCmdDesc *cmd_base64_decode_cd = rz_cmd_desc_argv_modes_new(core->rcmd, p6_cd, "p6d", RZ_OUTPUT_MODE_STANDARD, rz_cmd_base64_decode_handler, &cmd_base64_decode_help);
+	rz_warn_if_fail(cmd_base64_decode_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);
