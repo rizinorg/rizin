@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
-#include <rz_util/rz_str.h>
 #include "minunit.h"
-#include "rz_util/rz_str.h"
 
 // TODO test rz_str_chop_path
 
@@ -217,7 +215,6 @@ bool test_rz_str_split_list(void) {
 	mu_assert_streq(rz_list_get_n(l2, 0), "Hello", "first item");
 	mu_assert_streq(rz_list_get_n(l2, 1), "World=Everyone", "second item");
 	rz_list_free(l2);
-	mu_end;
 
 	char s3[] = "Hello  World\tAnd \t Everyone\t";
 	RzList *l3 = rz_str_split_list_regex(s3, "[[:blank:]]+", 0);
