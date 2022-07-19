@@ -43,13 +43,12 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, const char *enum_value) {
 	rz_return_val_if_fail(enum_name || enum_value, RZ_CMD_STATUS_ERROR);
 	ut64 value = rz_num_math(core->num, enum_value);
-	char *enum_member = rz_type_db_enum_member_by_val(core->analysis->typedb, enum_name, value);
+	const char *enum_member = rz_type_db_enum_member_by_val(core->analysis->typedb, enum_name, value);
 	if (!enum_member) {
 		RZ_LOG_ERROR("Cannot find matching enum member");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_println(enum_member);
-	free(enum_member);
 	return RZ_CMD_STATUS_OK;
 }
 
