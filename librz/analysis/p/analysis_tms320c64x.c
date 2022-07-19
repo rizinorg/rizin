@@ -186,38 +186,3 @@ static int tms320c64x_analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const u
 	return op->size;
 }
 #endif
-
-/*
-
-static int archinfo(RzAnalysis *analysis, int q) {
-	return 4; // :D
-}
-
-RzAnalysisPlugin rz_analysis_plugin_tms320c64x = {
-	.name = "tms320c64x",
-	.desc = "Capstone TMS320C64X analysis",
-	.license = "BSD",
-	.arch = "tms320c64x",
-	.bits = 32,
-	.archinfo = archinfo,
-	.op = &analop
-};
-
-#else
-RzAnalysisPlugin rz_analysis_plugin_tms320c64x = {
-	.name = "tms320c64x",
-	.desc = "Capstone TMS320C64X analysis (unsupported)",
-	.license = "BSD",
-	.arch = "tms320c64x",
-	.bits = 32
-};
-#endif
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANALYSIS,
-	.data = &rz_analysis_plugin_tms320c64x,
-	.version = RZ_VERSION
-};
-#endif
-*/
