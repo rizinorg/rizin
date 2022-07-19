@@ -10,14 +10,14 @@ RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) 
     RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!(bf && rz_file_exists(bf->file))) {
 		RZ_LOG_ERROR("Cannot open current RzBinFile.\n");
-		return 1; //TODO: check correct value
+		return RZ_CMD_STATUS_ERROR;
 	}
 
     //retrieve image base
     const RzList *fields = rz_bin_object_get_fields(bf->o);
     if (!fields) {
 		RZ_LOG_ERROR("Cannot retrieve executable fields.\n");
-        return 1; //TODO etc
+        return RZ_CMD_STATUS_ERROR;
     }
 
     bool found_static_base = false;
@@ -32,7 +32,7 @@ RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) 
     }
     if (!found_static_base) {
 		RZ_LOG_ERROR("Cannot find image base.\n");
-        return 1; //TODO etc
+        return RZ_CMD_STATUS_ERROR;
     }
     
     // compute old vs. static base delta
@@ -43,7 +43,7 @@ RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) 
     RzList *sections_backup = rz_core_create_sections_backup(core);
     if (!sections_backup) {
 		RZ_LOG_ERROR("Cannot create sections backup.\n");
-        return 1; //TODO etc
+        return RZ_CMD_STATUS_ERROR;
     }
 
     if (argc > 2) {
@@ -54,7 +54,7 @@ RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) 
         rz_core_rebase_everything(core, sections_backup, true, static_old_delta, 0);
     }
     rz_list_free(sections_backup);
-    return 0;
+    return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus resize_helper(RzCore *core, st64 delta) {
