@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 18:47:03-04:00
+// Date of code generation: 2022-07-19 03:56:30-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -33994,6 +33994,7 @@ static void hex_disasm_with_templates(const HexInsnTemplate *tpl, HexState *stat
 		// unknown/invalid
 		return;
 	}
+	hi->addr = addr;
 	hi->identifier = tpl->id;
 	hi->opcode = hi_u32;
 	hi->pred = tpl->pred;
@@ -34077,7 +34078,7 @@ static void hex_disasm_with_templates(const HexInsnTemplate *tpl, HexState *stat
 			// textual disasm
 			int regidx = hi->ops[i].op.reg;
 			if (op->info & HEX_OP_TEMPLATE_FLAG_REG_N_REG) {
-				regidx = resolve_n_register(hi->ops[i].op.reg, hi->addr, pkt);
+				regidx = resolve_n_register(hi->ops[i].op.reg, hic->addr, pkt);
 			}
 			rz_strbuf_append(&sb, hex_get_reg_in_class(op->reg_cls, regidx, print_reg_alias));
 			break;
