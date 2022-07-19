@@ -1685,6 +1685,7 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 	}
 	{
 		DWORD flags = 0;
+		DWORD sharing = FILE_SHARE_READ;
 		if (perm & O_RANDOM) {
 			flags = FILE_FLAG_RANDOM_ACCESS;
 		} else if (perm & O_SEQUENTIAL) {
@@ -1692,6 +1693,7 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 		}
 		if (perm & O_TEMPORARY) {
 			flags |= FILE_FLAG_DELETE_ON_CLOSE | FILE_ATTRIBUTE_TEMPORARY;
+			sharing |= FILE_SHARE_DELETE;
 		} else if (perm & _O_SHORT_LIVED) {
 			flags |= FILE_ATTRIBUTE_TEMPORARY;
 		} else {
@@ -1726,13 +1728,16 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 		if (perm & O_APPEND) {
 			permission |= FILE_APPEND_DATA;
 		}
+		if (!read_only) {
+			sharing |= FILE_SHARE_WRITE;
+		}
 
 		wchar_t *wepath = rz_utf8_to_utf16(epath);
 		if (!wepath) {
 			free(epath);
 			return -1;
 		}
-		HANDLE h = CreateFileW(wepath, permission, FILE_SHARE_READ | (read_only ? 0 : FILE_SHARE_WRITE), NULL, creation, flags, NULL);
+		HANDLE h = CreateFileW(wepath, permission, sharing, NULL, creation, flags, NULL);
 		if (h != INVALID_HANDLE_VALUE) {
 			ret = _open_osfhandle((intptr_t)h, perm);
 		}
