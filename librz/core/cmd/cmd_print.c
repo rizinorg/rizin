@@ -7331,31 +7331,23 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_block_handler(RzCore *core, int 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_base64_encode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut8 *buf = calloc(1, (core->blocksize * 4) + 1);
-
+	char *buf = rz_base64_encode_dyn((const unsigned char *)core->block, core->blocksize);
 	if (!buf) {
-		RZ_LOG_ERROR("Fail to allocate memory\n");
+		RZ_LOG_ERROR("rz_base64_encode_dyn: error\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_base64_encode((char *)buf, (const unsigned char *)core->block, core->blocksize);
 	rz_cons_println((const char *)buf);
-	rz_free(buf);
+	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_base64_decode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut8 *buf = calloc(1, (core->blocksize * 4) + 1);
-
+	ut8 *buf = rz_base64_decode_dyn((const char *)core->block, core->blocksize);
 	if (!buf) {
-		RZ_LOG_ERROR("Fail to allocate memory\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (rz_base64_decode(buf, (const char *)core->block, core->blocksize) < 0) {
-		RZ_LOG_ERROR("rz_base64_decode: invalid stream\n");
-		rz_free(buf);
+		RZ_LOG_ERROR("rz_base64_decode_dyn: error\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_println((const char *)buf);
-	rz_free(buf);
+	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
