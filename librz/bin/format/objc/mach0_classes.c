@@ -134,7 +134,6 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 	mach0_ut r;
 	mach0_ut addr;
 
-	static RzList *sctns = NULL;
 	RzListIter *iter = NULL;
 	RzBinSection *s = NULL;
 	RzBinObject *obj = bf->o;
@@ -144,6 +143,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 		return bin->va2pa(p, offset, left, bf);
 	}
 
+	const RzList *sctns = bin->sections_cache;
 	if (!sctns) {
 		sctns = rz_bin_plugin_mach.sections(bf);
 		if (!sctns) {

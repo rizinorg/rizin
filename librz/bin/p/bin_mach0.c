@@ -135,7 +135,6 @@ static void process_constructors(RzBinFile *bf, RzList *ret, int bits) {
 			free(buf);
 		}
 	}
-	rz_list_free(secs);
 }
 
 static RzList *entries(RzBinFile *bf) {
