@@ -181,6 +181,7 @@ struct MACH0_(obj_t) {
 	struct symbol_t *symbols;
 	ut64 main_addr;
 
+	RzList *sections_cache;
 	RzSkipList *relocs; ///< lazily loaded, use only MACH0_(get_relocs)() to access this
 	bool relocs_parsed; ///< whether relocs have already been parsed and relocs is filled (or NULL on error)
 	bool reloc_targets_map_base_calculated;
