@@ -368,8 +368,8 @@ static bool test_rz_colorize_generic_0(void) {
 	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;136;23;152mldur\x1b[0m\x1b[38;2;204;204;204m"
 					   " \x1b[0m\x1b[38;2;58;150;221mw2\x1b[0m\x1b[38;2;204;204;204m, [\x1b[0m\x1b[38;2;58;150;221mx8\x1b[0m\x1b[38;2;204;204;204m,"
 					   " \x1b[0m\x1b[38;2;204;204;204m-\x1b[0m\x1b[38;2;193;156;0m0x100\x1b[0m\x1b[38;2;204;204;204m]\x1b[0m");
-	char err_msg[1024];
-	sprintf(err_msg, "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+	char err_msg[2048];
+	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
 	mu_end;
@@ -394,8 +394,8 @@ static bool test_rz_colorize_generic_1(void) {
 					   " \x1b[0m\x1b[38;2;58;150;221mr8\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;58;150;221msb\x1b[0m\x1b[38;2;204;204;204m,"
 					   " \x1b[0m\x1b[38;2;58;150;221msl\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;204;204;204mlsl\x1b[0m\x1b[38;2;204;204;204m"
 					   " \x1b[0m\x1b[38;2;193;156;0m31\x1b[0m");
-	char err_msg[1024];
-	sprintf(err_msg, "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+	char err_msg[2048];
+	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
 	mu_end;
@@ -418,8 +418,8 @@ static bool test_rz_colorize_generic_2(void) {
 
 	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;204;204;204mmovabs\x1b[0m\x1b[38;2;204;204;204m"
 					   " \x1b[0m\x1b[38;2;58;150;221mrax\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;193;156;0m0x1122334455667788\x1b[0m");
-	char err_msg[1024];
-	sprintf(err_msg, "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+	char err_msg[2048];
+	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
 	mu_end;
@@ -449,7 +449,7 @@ static bool test_rz_colorize_generic_3(void) {
 					   "\x1b[0m\x1b[38;2;58;150;221mt3\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;58;150;221mac1\x1b[0m");
 
 	char err_msg[2048];
-	sprintf(err_msg, "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
 	mu_end;
@@ -479,7 +479,7 @@ static bool test_rz_colorize_generic_4(void) {
 					   "\x1b[0m\x1b[38;2;58;150;221mcdp\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;58;150;221mac0\x1b[0m");
 
 	char err_msg[2048];
-	sprintf(err_msg, "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
 	mu_end;
@@ -506,8 +506,8 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 					   "\x1b[0m\x1b[38;2;204;204;204m,\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x0\x1b[0m"
 					   "\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;19;161;14mjump"
 					   "\x1b[0m\x1b[38;2;118;118;118m:nt\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;193;156;0m0x40\x1b[0m");
-	char err_msg[1024];
-	sprintf(err_msg, "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+	char err_msg[2048];
+	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
 	mu_end;
@@ -532,8 +532,8 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 					   "\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m"
 					   " \x1b[0m\x1b[38;2;197;15;31mdealloc_return\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mFP"
 					   "\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;118;118;118m:raw\x1b[0m");
-	char err_msg[1024];
-	sprintf(err_msg, "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+	char err_msg[2048];
+	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 
 	mu_end;
