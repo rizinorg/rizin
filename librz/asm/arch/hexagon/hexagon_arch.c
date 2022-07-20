@@ -78,9 +78,6 @@ static inline bool is_endloop01_pkt(const ut8 pb_hi_0, const ut8 pb_hi_1) {
  * \return Pointer to instruction or NULL if none was found.
  */
 static HexInsn *hex_get_instr_at_addr(HexState *state, const ut32 addr) {
-	if (addr == 0) {
-		return NULL;
-	}
 	HexPkt *p;
 	for (ut8 i = 0; i < HEXAGON_STATE_PKTS; ++i) {
 		p = &state->pkts[i];
