@@ -13,16 +13,6 @@
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
-static const char *help_msg_pa[] = {
-	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
-	"pa", " [assembly]", "print hexpairs of the given assembly expression",
-	"paD", " [hexpairs]", "print assembly expression from hexpairs and show hexpairs",
-	"pad", " [hexpairs]", "print assembly expression from hexpairs (alias for pix)",
-	"pade", " [hexpairs]", "print ESIL expression from hexpairs",
-	"pae", " [assembly]", "print ESIL expression of the given assembly expression",
-	NULL
-};
-
 static const char *help_msg_pp[] = {
 	"Usage: pp[d]", "", "print patterns",
 	"pp0", "", "print buffer filled with zeros",
@@ -768,22 +758,6 @@ static const ut32 colormap[256] = {
 	0xff79d2,
 	0xffffff,
 };
-
-static void __cmd_pad(RzCore *core, const char *arg) {
-	if (*arg == '?') {
-		eprintf("Usage: pad [hexpairs] # disassembly given bytes\n");
-		return;
-	}
-	rz_asm_set_pc(core->rasm, core->offset);
-	bool is_pseudo = rz_config_get_i(core->config, "asm.pseudo");
-	RzAsmCode *acode = rz_asm_mdisassemble_hexstr(core->rasm, is_pseudo ? core->parser : NULL, arg);
-	if (acode) {
-		rz_cons_print(acode->assembly);
-		rz_asm_code_free(acode);
-	} else {
-		eprintf("Invalid hexstr\n");
-	}
-}
 
 // colordump
 static void cmd_prc(RzCore *core, const ut8 *block, int len) {
@@ -4687,6 +4661,76 @@ RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_hex_of_assembly_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	char *buf = rz_core_hex_of_assembly(core, argv[1]);
+	if (!buf) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(buf);
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_esil_of_assembly_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	char *buf = rz_core_esil_of_assembly(core, argv[1]);
+	if (!buf) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(buf);
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_assembly_of_hex_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut8 *hex = calloc(1, strlen(argv[1]) + 1);
+	if (!hex) {
+		RZ_LOG_ERROR("Fail to allocate memory\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int len = rz_hex_str2bin(argv[1], hex);
+	if (len < 1) {
+		RZ_LOG_ERROR("rz_hex_str2bin: invalid hexstr\n");
+		free(hex);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *buf = rz_core_assembly_of_hex(core, hex, len);
+	if (!buf) {
+		free(hex);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(buf);
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_assembly_of_hex_alias_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return rz_assembly_of_hex_handler(core, argc, argv, mode);
+}
+
+RZ_IPI RzCmdStatus rz_esil_of_hex_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut8 *hex = calloc(1, strlen(argv[1]) + 1);
+	if (!hex) {
+		RZ_LOG_ERROR("Fail to allocate memory\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int len = rz_hex_str2bin(argv[1], hex);
+	if (len < 1) {
+		RZ_LOG_ERROR("rz_hex_str2bin: invalid hexstr\n");
+		free(hex);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *buf = rz_core_esil_of_hex(core, hex, len);
+	if (!buf) {
+		// rz_core_esil_of_hex outputs the error message
+		free(hex);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(buf);
+	free(buf);
+	free(hex);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	st64 l;
@@ -4841,109 +4885,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_config_set_i(core->config, "search.to", saved_to);
 		}
 	} break;
-	case 'a': // "pa"
-	{
-		const char *arg = NULL;
-		if (input[1] != '\0') {
-			arg = rz_str_trim_head_ro(input + 2);
-		}
-		if (input[1] == 'e') { // "pae"
-			if (input[2] == '?') {
-				rz_cons_printf("|Usage: pae [asm]       print ESIL expression of the given assembly expression\n");
-			} else {
-				int printed = 0;
-				int bufsz;
-				RzAnalysisOp aop = { 0 };
-				rz_asm_set_pc(core->rasm, core->offset);
-				RzAsmCode *acode = rz_asm_massemble(core->rasm, input + 2);
-				if (acode) {
-					bufsz = acode->len;
-					while (printed < bufsz) {
-						aop.size = 0;
-						if (rz_analysis_op(core->analysis, &aop, core->offset,
-							    (const ut8 *)acode->bytes + printed, bufsz - printed, RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
-							const char *str = RZ_STRBUF_SAFEGET(&aop.esil);
-							rz_cons_println(str);
-						} else {
-							eprintf("Cannot decode instruction\n");
-							break;
-						}
-						if (aop.size < 1) {
-							eprintf("Cannot decode instruction\n");
-							break;
-						}
-						printed += aop.size;
-						rz_analysis_op_fini(&aop);
-					}
-				}
-			}
-		} else if (input[1] == 'D') { // "paD"
-			if (input[2] == '?') {
-				rz_cons_printf("|Usage: paD [hex]       print assembly expression from hexpairs and show hexpairs\n");
-			} else {
-				rz_core_cmdf(core, "pdq @x:%s", input + 2);
-			}
-		} else if (input[1] == 'd') { // "pad*"
-			switch (input[2]) {
-			case 'e': // "pade"
-				if (input[3] == '?') {
-					rz_cons_printf("|Usage: pade [hex]       print ESIL expression from hexpairs\n");
-				} else {
-					int printed = 0;
-					int bufsz;
-					RzAnalysisOp aop = { 0 };
-					char *hex_arg = calloc(1, strlen(arg) + 1);
-					if (hex_arg) {
-						bufsz = rz_hex_str2bin(arg + 1, (ut8 *)hex_arg);
-						while (printed < bufsz) {
-							aop.size = 0;
-							if (rz_analysis_op(core->analysis, &aop, core->offset,
-								    (const ut8 *)hex_arg + printed, bufsz - printed, RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
-								const char *str = RZ_STRBUF_SAFEGET(&aop.esil);
-								rz_cons_println(str);
-							} else {
-								eprintf("Cannot decode instruction\n");
-								break;
-							}
-							if (aop.size < 1) {
-								eprintf("Cannot decode instruction\n");
-								break;
-							}
-							printed += aop.size;
-							rz_analysis_op_fini(&aop);
-						}
-						free(hex_arg);
-					}
-				}
-				break;
-			case ' ': // "pad"
-				__cmd_pad(core, arg);
-				break;
-			case '?': // "pad?"
-				rz_cons_printf("|Usage: pad [hex]       print assembly expression from hexpairs\n");
-				break;
-			default:
-				rz_cons_printf("|Usage: pa[edD] [asm|hex]  print (dis)assembled\n");
-				break;
-			}
-		} else if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_pa);
-		} else {
-			int i;
-			int bytes;
-			rz_asm_set_pc(core->rasm, core->offset);
-			RzAsmCode *acode = rz_asm_massemble(core->rasm, input + 1);
-			if (acode) {
-				bytes = acode->len;
-				for (i = 0; i < bytes; i++) {
-					ut8 b = acode->bytes[i]; // core->print->big_endian? (bytes - 1 - i): i ];
-					rz_cons_printf("%02x", b);
-				}
-				rz_cons_newline();
-				rz_asm_code_free(acode);
-			}
-		}
-	} break;
 	case 'b': { // "pb"
 		if (input[1] == '?') {
 			rz_cons_printf("|Usage: p[bB] [len] ([skip])  ; see also pB and pxb\n");
@@ -5039,9 +4980,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		case 'u': // "piu" disasm until ret/jmp . todo: accept arg to specify type
 			disasm_until_ret(core, core->offset, input[2], input + 2);
-			break;
-		case 'x': // "pix"
-			__cmd_pad(core, rz_str_trim_head_ro(input + 2));
 			break;
 		case 'a': // "pia" is like "pda", but with "pi" output
 			if (l != 0) {
