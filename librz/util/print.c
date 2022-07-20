@@ -499,17 +499,20 @@ RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr) {
 	}
 }
 
-RZ_API void rz_print_section(RzPrint *p, ut64 at) {
+RZ_API const char *rz_print_section(RzPrint *p, ut64 at) {
 	bool use_section = p && p->flags & RZ_PRINT_FLAGS_SECTION;
-	if (use_section) {
-		const char *s = p->get_section_name(p->user, at);
-		if (!s) {
-			s = "";
-		}
-		char *tail = rz_str_ndup(s, 19);
-		p->cb_printf("%20s ", tail);
-		free(tail);
+	if (!use_section) {
+		return "";
 	}
+	static char section[22];
+	const char *s = p->get_section_name(p->user, at);
+	if (!s) {
+		s = "";
+	}
+	const int sps = RZ_MAX(sizeof(section) - 1 - strlen(s), 1);
+	memset(section, ' ', sps);
+	rz_str_ncpy(section + sps, s, 19);
+	return section;
 }
 
 RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
@@ -766,7 +769,7 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 		}
 		ut64 at = addr + (j * zoomsz);
 		if (use_offset && (!isPxr || inc < 4)) {
-			rz_print_section(p, at);
+			print(rz_print_section(p, at));
 			rz_print_addr(p, at);
 		}
 		int row_have_cursor = -1;
@@ -855,7 +858,7 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					}
 					if (printValue) {
 						if (use_offset && !hasNull && isPxr) {
-							rz_print_section(p, at);
+							print(rz_print_section(p, at));
 							rz_print_addr(p, addr + j * zoomsz);
 						}
 						if (base == 64) {
@@ -868,7 +871,7 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					} else {
 						if (hasNull) {
 							const char *n = p->offname(p->user, addr + j);
-							rz_print_section(p, at);
+							print(rz_print_section(p, at));
 							rz_print_addr(p, addr + j * zoomsz);
 							printfmt("..[ null bytes ]..   00000000 %s\n", n ? n : "");
 						}

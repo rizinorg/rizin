@@ -119,6 +119,25 @@ U...
 EOF
 RUN
 
+NAME=pxW
+FILE=bins/elf/sse2-add
+CMDS=<<EOF
+s 0x00000760
+pxW 0xc
+e hex.section=true
+s 0x00000724
+pxW 0xc
+EOF
+EXPECT=<<EOF
+0x00000760 0x00000014 segment.LOAD0+20
+0x00000764 0x00000000 segment.LOAD0
+0x00000768 0x00527a01
+       .eh_frame_hdr 0x00000724 0x3b031b01
+       .eh_frame_hdr 0x00000728 0x00000038 segment.LOAD0+56
+       .eh_frame_hdr 0x0000072c 0x00000006 segment.LOAD0+6
+EOF
+RUN
+
 NAME=pxq foo-bar
 FILE==
 CMDS=<<EOF

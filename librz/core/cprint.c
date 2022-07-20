@@ -378,7 +378,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, RZ_NUL
 		char *vstr = ut64_to_hex(v, size * 2);
 		if (vstr) {
 			if (hex_offset) {
-				rz_print_section(core->print, addr + i);
+				rz_strbuf_append(sb, rz_print_section(core->print, addr + i));
 				rz_strbuf_appendf(sb, "0x%08" PFMT64x " %s%s%s%s%s\n",
 					(ut64)addr + i, a, vstr, b, fn ? " " : "", fn ? fn : "");
 			} else {

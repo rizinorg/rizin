@@ -127,6 +127,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pxH
+FILE=bins/elf/sse2-add
+CMDS=<<EOF
+s 0x00000708
+pxH 0x6
+e hex.section=true
+s 0x00000720
+pxH 0x6
+EOF
+EXPECT=<<EOF
+0x00000708 0x1f0f obj.__FRAME_END+5799
+0x0000070a 0x0084 segment.PHDR+68
+0x0000070c 0x0000 segment.LOAD0
+             .rodata 0x00000720 0x0001 segment.LOAD0+1
+             .rodata 0x00000722 0x0002 segment.LOAD0+2
+       .eh_frame_hdr 0x00000724 0x1b01 obj.__FRAME_END+4761
+EOF
+RUN
+
 NAME=io.unalloc, io.unalloc.ch and pxc
 FILE=bins/elf/analysis/tiny.elf
 CMDS=<<EOF
