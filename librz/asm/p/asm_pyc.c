@@ -21,7 +21,7 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 
 	if (plugin) {
 		if (!strcmp(plugin->name, "pyc")) {
-			shared = bin->cur->o->bin_obj;
+			shared = ((RzBinPycObj *)bin->cur->o->bin_obj)->shared;
 		}
 	}
 

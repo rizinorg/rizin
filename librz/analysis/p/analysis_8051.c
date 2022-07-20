@@ -21,7 +21,7 @@ typedef struct {
 	ut32 map_pdata;
 } i8051_cpu_model;
 
-static i8051_cpu_model cpu_models[] = {
+static const i8051_cpu_model cpu_models[] = {
 	{ .name = "8051-generic",
 		.map_code = 0,
 		.map_idata = 0x10000000,
@@ -38,9 +38,6 @@ static i8051_cpu_model cpu_models[] = {
 		.name = NULL // last entry
 	}
 };
-
-static bool i8051_is_init = false;
-static const i8051_cpu_model *cpu_curr_model = NULL;
 
 static bool i8051_reg_write(RzReg *reg, const char *regname, ut32 num) {
 	if (reg) {
@@ -73,16 +70,22 @@ static const int I8051_IDATA = 0;
 static const int I8051_SFR = 1;
 static const int I8051_XDATA = 2;
 
-static i8051_map_entry mem_map[3] = {
+static const i8051_map_entry init_mem_map[3] = {
 	{ NULL, UT32_MAX, "idata" },
 	{ NULL, UT32_MAX, "sfr" },
 	{ NULL, UT32_MAX, "xdata" }
 };
 
+typedef struct {
+	const i8051_cpu_model *cpu_curr_model;
+	i8051_map_entry mem_map[3];
+} i8051_plugin_context;
+
 static void map_cpu_memory(RzAnalysis *analysis, int entry, ut32 addr, ut32 size, bool force) {
-	RzIODesc *desc = mem_map[entry].desc;
+	i8051_plugin_context *ctx = analysis->plugin_data;
+	RzIODesc *desc = ctx->mem_map[entry].desc;
 	if (desc && analysis->iob.fd_get_name(analysis->iob.io, desc->fd)) {
-		if (force || addr != mem_map[entry].addr) {
+		if (force || addr != ctx->mem_map[entry].addr) {
 			// reallocate mapped memory if address changed
 			analysis->iob.fd_remap(analysis->iob.io, desc->fd, addr);
 		}
@@ -97,15 +100,15 @@ static void map_cpu_memory(RzAnalysis *analysis, int entry, ut32 addr, ut32 size
 			RzIOMap *current_map;
 			RzListIter *iter;
 			rz_list_foreach (maps, iter, current_map) {
-				char *cmdstr = rz_str_newf("omni %d %s", current_map->id, mem_map[entry].name);
+				char *cmdstr = rz_str_newf("omni %d %s", current_map->id, ctx->mem_map[entry].name);
 				analysis->coreb.cmd(analysis->coreb.core, cmdstr);
 				free(cmdstr);
 			}
 			rz_list_free(maps);
 		}
 	}
-	mem_map[entry].desc = desc;
-	mem_map[entry].addr = addr;
+	ctx->mem_map[entry].desc = desc;
+	ctx->mem_map[entry].addr = addr;
 }
 
 static void set_cpu_model(RzAnalysis *analysis, bool force) {
@@ -119,9 +122,9 @@ static void set_cpu_model(RzAnalysis *analysis, bool force) {
 	if (!cpu || !cpu[0]) {
 		cpu = cpu_models[0].name;
 	}
-
+	i8051_plugin_context *ctx = analysis->plugin_data;
 	// if cpu model changed, reinitialize emulation
-	if (force || !cpu_curr_model || rz_str_casecmp(cpu, cpu_curr_model->name)) {
+	if (force || !ctx->cpu_curr_model || rz_str_casecmp(cpu, ctx->cpu_curr_model->name)) {
 		// find model by name
 		int i = 0;
 		while (cpu_models[i].name && rz_str_casecmp(cpu, cpu_models[i].name)) {
@@ -130,7 +133,7 @@ static void set_cpu_model(RzAnalysis *analysis, bool force) {
 		if (!cpu_models[i].name) {
 			i = 0; // if not found, default to generic 8051
 		}
-		cpu_curr_model = &cpu_models[i];
+		ctx->cpu_curr_model = &cpu_models[i];
 
 		// TODO: Add flags as needed - seek using pseudo registers works w/o flags
 
@@ -158,7 +161,7 @@ static void set_cpu_model(RzAnalysis *analysis, bool force) {
 	}
 }
 
-static ut8 bitindex[] = {
+static const ut8 bitindex[] = {
 	// bit 'i' can be found in (ram[bitindex[i>>3]] >> (i&7)) & 1
 	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, // 0x00
 	0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, // 0x40
@@ -939,8 +942,6 @@ static void analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	}
 }
 
-static RzAnalysisEsilCallbacks ocbs = { 0 };
-
 #if 0
 // custom reg read/write temporarily disabled - see r2 issue #9242
 static int i8051_hook_reg_read(RzAnalysisEsil *, const char *, ut64 *, int *);
@@ -1018,23 +1019,23 @@ static int esil_i8051_init(RzAnalysisEsil *esil) {
 	if (esil->cb.user) {
 		return true;
 	}
-	ocbs = esil->cb;
+	RzAnalysisEsilCallbacks *ocbs = RZ_NEW0(RzAnalysisEsilCallbacks);
+	if (!ocbs) {
+		return 0;
+	}
+	*ocbs = esil->cb;
+	esil->cb.user = ocbs;
 	/* these hooks break esil emulation */
 	/* pc is not read properly, mem mapped registers are not shown in ar, ... */
 	/* all 8051 regs are mem mapped, and reg access via mem is very common */
 	//  disabled to make esil work, before digging deeper
 	//	esil->cb.hook_reg_read = i8051_hook_reg_read;
 	//	esil->cb.hook_reg_write = i8051_hook_reg_write;
-	i8051_is_init = true;
 	return true;
 }
 
 static int esil_i8051_fini(RzAnalysisEsil *esil) {
-	if (!i8051_is_init) {
-		return false;
-	}
-	RZ_FREE(ocbs.user);
-	i8051_is_init = false;
+	RZ_FREE(esil->cb.user);
 	return true;
 }
 
@@ -1267,6 +1268,23 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	return op->size;
 }
 
+static bool i8051_init(void **user) {
+	i8051_plugin_context *ctx = RZ_NEW0(i8051_plugin_context);
+	if (!ctx) {
+		return false;
+	}
+	ctx->mem_map[I8051_IDATA] = init_mem_map[I8051_IDATA];
+	ctx->mem_map[I8051_SFR] = init_mem_map[I8051_SFR];
+	ctx->mem_map[I8051_XDATA] = init_mem_map[I8051_XDATA];
+	*user = ctx;
+	return true;
+}
+
+static bool i8051_fini(void *user) {
+	free(user);
+	return true;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
@@ -1277,7 +1295,9 @@ RzAnalysisPlugin rz_analysis_plugin_8051 = {
 	.op = &i8051_op,
 	.get_reg_profile = &get_reg_profile,
 	.esil_init = esil_i8051_init,
-	.esil_fini = esil_i8051_fini
+	.esil_fini = esil_i8051_fini,
+	.init = &i8051_init,
+	.fini = &i8051_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

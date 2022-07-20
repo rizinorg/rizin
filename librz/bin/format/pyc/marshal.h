@@ -7,6 +7,7 @@
 
 #include <rz_util.h>
 #include <rz_types.h>
+#include "pyc_magic.h"
 
 typedef enum {
 	TYPE_ASCII = 'a',
@@ -72,7 +73,19 @@ typedef struct {
 	st64 end_offset;
 } pyc_code_object;
 
-bool get_sections_symbols_from_code_objects(RzBuffer *buffer, RzList *sections, RzList *symbols, RzList *objs, ut32 magic);
-ut64 get_code_object_addr(RzBuffer *buffer, ut32 magic);
+typedef struct pyc_context {
+	ut64 code_start_offset;
+	struct pyc_version version;
+	/* used from marshall.c */
+	RzList *interned_table;
+	RzList *sections_cache;
+	RzList *shared;
+	RzList *refs; // If you don't have a good reason, do not change this. And also checkout !refs in get_code_object()
+	ut32 magic_int;
+	ut32 symbols_ordinal;
+} RzBinPycObj;
+
+bool get_sections_symbols_from_code_objects(RzBinPycObj *pyc, RzBuffer *buffer, RzList *sections, RzList *symbols, RzList *objs, ut32 magic);
+ut64 get_code_object_addr(RzBinPycObj *pyc, RzBuffer *buffer, ut32 magic);
 
 #endif

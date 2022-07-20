@@ -300,7 +300,6 @@ NAME=wci should commit the changes to the file
 FILE=malloc://1024
 BROKEN=1
 CMDS=<<EOF
-!rm -rf .tmp
 mkdir .tmp
 cp -f bins/pe/b.exe .tmp/.b.exe.orig
 cp -f bins/pe/b.exe .tmp/.b.exe.new
@@ -309,6 +308,9 @@ wx ff
 wci
 e.src.null=true
 !!rz-diff .tmp/.b.exe.orig .tmp/.b.exe.new
+o--
+rm .tmp/.b.exe.orig
+rm .tmp/.b.exe.new
 EOF
 EXPECT=<<EOF
 File size
@@ -397,6 +399,7 @@ r
 s 0x200
 wen 1
 r
+o--
 rm .b.exe
 EOF
 EXPECT=<<EOF

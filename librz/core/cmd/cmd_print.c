@@ -52,13 +52,6 @@ static const char *help_msg_pc[] = {
 	NULL
 };
 
-static const char *help_msg_p6[] = {
-	"Usage: p6[de]", "[len]", "base64 decoding/encoding",
-	"p6d", "[len]", "decode base64",
-	"p6e", "[len]", "encode base64",
-	NULL
-};
-
 static const char *help_msg_pF[] = {
 	"Usage: pF[apdbA]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
 	"pFa", "[len]", "decode ASN1 from current block",
@@ -6162,35 +6155,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			}
 		}
 		break;
-	case '6': // "p6"
-		if (l) {
-			int malen = (core->blocksize * 4) + 1;
-			ut8 *buf = malloc(malen);
-			if (!buf) {
-				break;
-			}
-			memset(buf, 0, malen);
-			switch (input[1]) {
-			case 'd': // "p6d"
-				if (rz_base64_decode(buf, (const char *)block, len)) {
-					rz_cons_println((const char *)buf);
-				} else {
-					eprintf("rz_base64_decode: invalid stream\n");
-				}
-				break;
-			case 'e': // "p6e"
-				len = len > core->blocksize ? core->blocksize : len;
-				rz_base64_encode((char *)buf, block, len);
-				rz_cons_println((const char *)buf);
-				break;
-			case '?':
-			default:
-				rz_core_cmd_help(core, help_msg_p6);
-				break;
-			}
-			free(buf);
-		}
-		break;
 	case '8': // "p8"
 		if (input[1] == '?') {
 			rz_cons_printf("|Usage: p8[fj] [len]     8bit hexpair list of bytes (see pcj)\n");
@@ -7301,5 +7265,27 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_block_handler(RzCore *core, int 
 	char input_cmd[256];
 	rz_strf(input_cmd, "dsb 0x%" PFMT64x, n_bytes);
 	disasm_strings(core, input_cmd, NULL);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_base64_encode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	char *buf = rz_base64_encode_dyn((const unsigned char *)core->block, core->blocksize);
+	if (!buf) {
+		RZ_LOG_ERROR("rz_base64_encode_dyn: error\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println((const char *)buf);
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_base64_decode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut8 *buf = rz_base64_decode_dyn((const char *)core->block, core->blocksize);
+	if (!buf) {
+		RZ_LOG_ERROR("rz_base64_decode_dyn: error\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println((const char *)buf);
+	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
