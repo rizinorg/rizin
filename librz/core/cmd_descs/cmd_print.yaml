@@ -3,6 +3,27 @@
 ---
 name: cmd_print
 commands:
+  - name: pb
+    summary: Print bitstream of N bits
+    cname: print_bitstream
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: n_bits
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: false
+      - name: skip
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: pB
+    summary: Print bitstream of N bytes
+    cname: print_byte_bitstream
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: n_bytes
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: false
   - name: pa
     summary: Print (dis)assembly of given hexpairs/assembly
     subcommands:
