@@ -17,7 +17,6 @@ static const char *help_msg_a[] = {
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[?] [addr]", "analyze block",
-	"aC", "[?]", "analyze function call",
 	"ad", "[?]", "analyze data trampoline (wip)",
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
@@ -3356,137 +3355,6 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 	return RZ_CMD_STATUS_OK;
 }
 
-static void show_reg_args(RzCore *core, int nargs, RzStrBuf *sb) {
-	int i;
-	char regname[8];
-	if (nargs < 0) {
-		nargs = 4; // default args if not defined
-	}
-	for (i = 0; i < nargs; i++) {
-		snprintf(regname, sizeof(regname), "A%d", i);
-		ut64 v = rz_reg_getv(core->analysis->reg, regname);
-		if (sb) {
-			rz_strbuf_appendf(sb, "%s0x%08" PFMT64x, i ? ", " : "", v);
-		} else {
-			rz_cons_printf("A%d 0x%08" PFMT64x "\n", i, v);
-		}
-	}
-}
-
-// ripped from disasm.c: dupe code from there
-// TODO: Implement aC* and aCj
-static void cmd_analysis_aC(RzCore *core, const char *input) {
-	const char *cc = rz_analysis_cc_default(core->analysis);
-	RzAnalysisFuncArg *arg;
-	RzListIter *iter;
-	RzListIter *nextele;
-	const char *iarg = strchr(input, ' ');
-	if (iarg) {
-		iarg++;
-	}
-	if (!iarg) {
-		eprintf("Usage: aC [addr-of-call] # analyze call args\n");
-		return;
-	}
-	RzStrBuf *sb = rz_strbuf_new("");
-	ut64 pcv = rz_num_math(core->num, iarg);
-	RzAnalysisOp *op = rz_core_analysis_op(core, pcv, -1);
-	if (!op) {
-		rz_strbuf_free(sb);
-		return;
-	}
-	bool go_on = true;
-	if (op->type != RZ_ANALYSIS_OP_TYPE_CALL) {
-		show_reg_args(core, -1, sb);
-		go_on = false;
-	}
-	const char *fcn_name = NULL;
-	RzAnalysisFunction *fcn;
-	if (go_on) {
-		fcn = rz_analysis_get_function_at(core->analysis, pcv);
-		if (fcn) {
-			fcn_name = fcn->name;
-		} else {
-			RzFlagItem *item = rz_flag_get_i(core->flags, op->jump);
-			if (item) {
-				fcn_name = item->name;
-			}
-		}
-		char *key = (fcn_name) ? resolve_fcn_name(core->analysis, fcn_name) : NULL;
-		if (key) {
-			RzType *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
-			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
-			// remove other comments
-			char *fcn_type_str = NULL;
-			if (fcn_type) {
-				fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
-			}
-			const char *sp = fcn_type && fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-			rz_strbuf_appendf(sb, "%s%s%s(",
-				fcn_type_str ? fcn_type_str : "", sp,
-				rz_str_get_null(key));
-			if (!nargs) {
-				rz_strbuf_appendf(sb, "void)\n");
-			}
-			free(fcn_type_str);
-		} else {
-			show_reg_args(core, -1, NULL);
-			go_on = false;
-		}
-	}
-	if (go_on) {
-		ut64 s_width = (core->analysis->bits == 64) ? 8 : 4;
-		const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-		ut64 spv = rz_reg_getv(core->analysis->reg, sp);
-		rz_reg_setv(core->analysis->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
-		RzList *list = rz_core_get_func_args(core, fcn_name);
-		if (!rz_list_empty(list)) {
-			rz_list_foreach (list, iter, arg) {
-				nextele = rz_list_iter_get_next(iter);
-				if (!arg->fmt) {
-					rz_strbuf_appendf(sb, "?%s", nextele ? ", " : "");
-				} else {
-					// print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, 0);
-					// const char *fmt = arg->orig_c_type;
-					ut64 addr = arg->src;
-					char *res = rz_core_cmd_strf(core, "pfq %s @ 0x%08" PFMT64x, arg->fmt, addr);
-					// rz_cons_printf ("pfq *%s @ 0x%08" PFMT64x"\n", arg->fmt, addr);
-					rz_str_trim(res);
-					rz_strbuf_appendf(sb, "%s", res);
-					free(res);
-				}
-			}
-			rz_strbuf_appendf(sb, ")");
-		} else {
-			// function name not resolved
-			int i, nargs = 4; // DEFAULT_NARGS;
-			if (fcn) {
-				// @TODO: fcn->nargs should be updated somewhere and used here instead
-				nargs = rz_analysis_var_count(core->analysis, fcn, 's', 1) +
-					rz_analysis_var_count(core->analysis, fcn, 'b', 1) +
-					rz_analysis_var_count(core->analysis, fcn, 'r', 1);
-			}
-			if (nargs > 0) {
-				if (fcn_name) {
-					rz_strbuf_appendf(sb, "; %s(", fcn_name);
-				} else {
-					rz_strbuf_appendf(sb, "; 0x%" PFMT64x "(", pcv);
-				}
-				for (i = 0; i < nargs; i++) {
-					ut64 v = rz_core_arg_get(core, cc, i);
-					rz_strbuf_appendf(sb, "%s0x%" PFMT64x, i ? ", " : "", v);
-				}
-				rz_strbuf_appendf(sb, ")");
-			}
-		}
-		rz_reg_setv(core->analysis->reg, sp, spv); // reset stack ptr
-		rz_list_free(list);
-	}
-	char *s = rz_strbuf_drain(sb);
-	rz_cons_printf("%s\n", s);
-	free(s);
-}
-
 RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	const char *r;
 	RzCore *core = (RzCore *)data;
@@ -3519,9 +3387,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		}
 		free(buf);
 	} break;
-	case 'C': // "aC"
-		cmd_analysis_aC(core, input + 1);
-		break;
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
 	case 'F': // "aF"
 		rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
