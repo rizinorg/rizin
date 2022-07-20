@@ -86,41 +86,5 @@ int main() {
 	show_regs(reg, 1); // 32);
 
 	exit(0);
-	show_regs(reg, 32);
-	/* --- */
-	rz_reg_set_profile(reg, "../p/x86-linux.regs");
-	printf("Program counter is named: %s\n", rz_reg_get_name(reg, RZ_REG_NAME_PC));
-	show_regs(reg, 32);
-	rz_reg_set_value(reg, rz_reg_get(reg, "eax", -1), 0x414141);
-	rz_reg_set_value(reg, rz_reg_get(reg, "ecx", -1), 666);
-	show_regs(reg, 32);
-	rz_reg_set_value(reg, rz_reg_get(reg, "al", -1), 0x22);
-	show_regs(reg, 33);
-
-	rz_reg_set_value(reg, rz_reg_get(reg, "zero", -1), 0);
-	show_regs(reg, 1);
-	rz_reg_set_value(reg, rz_reg_get(reg, "zero", -1), 1);
-	show_regs(reg, 1);
-
-	for (i = 0; (type = rz_reg_get_type(i)); i++)
-		printf(" - %s\n", type);
-
-	rz_reg_arena_push(reg);
-	rz_reg_arena_pop(reg);
-
-	rz_reg_arena_push(reg);
-	rz_reg_arena_push(reg);
-	rz_reg_arena_push(reg);
-	rz_reg_arena_pop(reg);
-	rz_reg_arena_pop(reg);
-	rz_reg_arena_push(reg);
-	rz_reg_arena_pop(reg);
-	rz_reg_arena_pop(reg);
-	/*
-	rz_reg_arena_pop(reg);
-	rz_reg_arena_pop(reg);
-	rz_reg_arena_pop(reg);
-	rz_reg_arena_pop(reg);
-*/
 	return 0;
 }
