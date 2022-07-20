@@ -823,21 +823,21 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				}
 			}
 		} else {
-			if (REGBASE(1) == ARM_REG_PC) {
+			if (ISMEM(1) && REGBASE(1) == ARM_REG_PC) {
 				const char *pc = "$$";
-				op->refptr = 4;
-				op->ptr = addr + pcdelta + MEMDISP(1);
-				if (ISMEM(1) && LSHIFT2(1)) {
-					rz_strbuf_appendf(&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
-						pcdelta, pc, LSHIFT2(1), MEMINDEX(1), mask, REG(0));
-				} else {
-					if (ISREG(1)) {
+				if (HASMEMINDEX(1)) {
+					if (LSHIFT2(1)) {
+						rz_strbuf_appendf(&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
+							pcdelta, pc, LSHIFT2(1), MEMINDEX(1), mask, REG(0));
+					} else {
 						rz_strbuf_appendf(&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
 							pcdelta, pc, MEMINDEX(1), mask, REG(0));
-					} else {
-						rz_strbuf_appendf(&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,0xffffffff,&,[4],0x%x,&,%s,=",
-							pcdelta, pc, MEMDISP(1), mask, REG(0));
 					}
+				} else {
+					op->refptr = 4;
+					op->ptr = addr + pcdelta + MEMDISP(1);
+					rz_strbuf_appendf(&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,0xffffffff,&,[4],0x%x,&,%s,=",
+						pcdelta, pc, MEMDISP(1), mask, REG(0));
 				}
 			} else {
 				if (ISMEM(1) && LSHIFT2(1)) {

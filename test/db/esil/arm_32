@@ -589,6 +589,27 @@ r2 = 0xffeeddcc
 EOF
 RUN
 
+NAME=ldr r0, [pc, r0]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+s 0x20
+wx 00009fe7 # ldr r0, [pc, r0]
+ar r0=0x20
+wx 01000000 @ 0x48
+wx 02000000 @ 0x28
+pd 1
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+            ;-- r0:
+            0x00000020      ldr   r0, [pc, r0]                         ; [0x28:4]=2
+r0 = 0x00000001
+EOF
+RUN
+
 NAME=ldrb r1, [r3, r2, lsl 2]
 FILE=malloc://0x200
 CMDS=<<EOF
