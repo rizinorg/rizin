@@ -4699,7 +4699,7 @@ RZ_IPI RzCmdStatus rz_esil_of_assembly_handler(RzCore *core, int argc, const cha
 	if (!buf) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(buf);
+	rz_cons_print(buf);
 	free(buf);
 	return RZ_CMD_STATUS_OK;
 }

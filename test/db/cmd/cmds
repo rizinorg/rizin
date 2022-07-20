@@ -123,7 +123,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"pa nop;nop"
+pa "nop;nop"
 EOF
 EXPECT=<<EOF
 9090
