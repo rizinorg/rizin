@@ -1,4 +1,4 @@
-asm_plugins = [
+asm_plugins_list = [
   '6502',
   '8051',
   'amd29k',
@@ -52,13 +52,12 @@ asm_plugins = [
   'xap',
   'xcore_cs',
 ]
-
 if capstone_dep.version().split('.')[0].to_int() > 4
-  asm_plugins += 'riscv_cs'
+  asm_plugins_list += 'riscv_cs'
 endif
 
 if get_option('use_gpl')
-  asm_plugins += [
+  asm_plugins_list += [
     'arc',
     'cris_gnu',
     'hppa_gnu',
@@ -74,6 +73,12 @@ if get_option('use_gpl')
     'z80',
   ]
 endif
+
+asm_plugins = {
+  'conf_name': 'plugins_asm',
+  'base_cname': 'rz_asm_plugin_',
+  'list': asm_plugins_list,
+}
 
 rz_asm_sources = [
   'asm.c',

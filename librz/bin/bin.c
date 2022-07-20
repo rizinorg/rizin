@@ -22,15 +22,8 @@ RZ_LIB_VERSION(rz_bin);
 
 #define ARCHS_KEY "archs"
 
-#if !defined(RZ_BIN_STATIC_PLUGINS)
-#define RZ_BIN_STATIC_PLUGINS 0
-#endif
-#if !defined(RZ_BIN_XTR_STATIC_PLUGINS)
-#define RZ_BIN_XTR_STATIC_PLUGINS 0
-#endif
-
-static RzBinPlugin *bin_static_plugins[] = { RZ_BIN_STATIC_PLUGINS, NULL };
-static RzBinXtrPlugin *bin_xtr_static_plugins[] = { RZ_BIN_XTR_STATIC_PLUGINS, NULL };
+static RzBinPlugin *bin_static_plugins[] = { RZ_BIN_STATIC_PLUGINS };
+static RzBinXtrPlugin *bin_xtr_static_plugins[] = { RZ_BIN_XTR_STATIC_PLUGINS };
 
 static ut64 __getoffset(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
@@ -758,13 +751,13 @@ RZ_API RzBin *rz_bin_new(void) {
 
 	/* bin parsers */
 	bin->binfiles = rz_list_newf((RzListFree)rz_bin_file_free);
-	for (i = 0; bin_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(bin_static_plugins); i++) {
 		rz_bin_plugin_add(bin, bin_static_plugins[i]);
 	}
 	/* extractors */
 	bin->binxtrs = rz_list_new();
 	bin->binxtrs->free = free;
-	for (i = 0; bin_xtr_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(bin_xtr_static_plugins); i++) {
 		static_xtr_plugin = RZ_NEW0(RzBinXtrPlugin);
 		if (!static_xtr_plugin) {
 			goto trashbin_binxtrs;

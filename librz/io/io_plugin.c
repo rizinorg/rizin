@@ -7,9 +7,7 @@
 
 static volatile RzIOPlugin *default_plugin = NULL;
 
-static RzIOPlugin *io_static_plugins[] = {
-	RZ_IO_STATIC_PLUGINS
-};
+static RzIOPlugin *io_static_plugins[] = { RZ_IO_STATIC_PLUGINS };
 
 RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
 	if (!io || !io->plugins || !plugin || !plugin->name) {
@@ -37,7 +35,7 @@ RZ_API bool rz_io_plugin_init(RzIO *io) {
 		return false;
 	}
 	io->plugins = rz_list_newf(free);
-	for (i = 0; io_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(io_static_plugins); i++) {
 		if (!io_static_plugins[i]->name) {
 			continue;
 		}

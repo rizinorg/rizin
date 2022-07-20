@@ -7,9 +7,7 @@
 #include <rz_list.h>
 #include <stdio.h>
 
-static RzCorePlugin *core_static_plugins[] = {
-	RZ_CORE_STATIC_PLUGINS
-};
+static RzCorePlugin *core_static_plugins[] = { RZ_CORE_STATIC_PLUGINS };
 
 RZ_API bool rz_core_plugin_fini(RzCore *core) {
 	rz_return_val_if_fail(core->plugins, false);
@@ -39,7 +37,7 @@ RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin) {
 RZ_API bool rz_core_plugin_init(RzCore *core) {
 	int i;
 	core->plugins = rz_list_newf(NULL); // memleak or dblfree
-	for (i = 0; core_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(core_static_plugins); i++) {
 		if (!rz_core_plugin_add(core, core_static_plugins[i])) {
 			eprintf("Error loading core plugin\n");
 			return false;
