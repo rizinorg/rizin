@@ -124,8 +124,8 @@ RZ_API void rz_core_rebase_everything(RzCore *core, RzList *sections_backup, boo
 	RzListIter *it, *itit, *ititit;
 	RzAnalysisFunction *fcn;
 	if (infer_new_baddr_shift) {
-        new_baddr_shift = core->bin->cur->o->baddr_shift;
-    }
+		new_baddr_shift = core->bin->cur->o->baddr_shift;
+	}
 	RzBinSection *old_section;
 	ut64 diff = new_baddr_shift - old_baddr_shift;
 	if (!diff) {

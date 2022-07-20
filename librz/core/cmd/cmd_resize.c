@@ -6,42 +6,42 @@
 
 
 RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) {
-    
-    //get current file and current object
-    RzBinFile *bf = rz_bin_cur(core->bin);
+
+	// get current file and current object
+	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!(bf && rz_file_exists(bf->file))) {
 		RZ_LOG_ERROR("Cannot open current RzBinFile.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-    RzBinObject *obj = rz_bin_cur_object(core->bin);
-    if (!obj) {
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj) {
 		RZ_LOG_ERROR("Cannot retrieve current object.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-    ut64 static_base = obj->plugin->baddr(bf);
-        
-    // compute old vs. static base delta
-    ut64 old_base = rz_num_math(core->num, argv[1]);
-    ut64 static_old_delta = old_base - static_base;
-   
-    //perform actual rebase 
-    RzList *sections_backup = rz_core_create_sections_backup(core);
-    if (!sections_backup) {
-		RZ_LOG_ERROR("Cannot create sections backup.\n");
-        return RZ_CMD_STATUS_ERROR;
-    }
+	ut64 static_base = obj->plugin->baddr(bf);
 
-    if (argc > 2) {
-        ut64 new_base = rz_num_math(core->num, argv[2]);
-        ut64 static_new_delta = new_base - static_base;
-        rz_core_rebase_everything(core, sections_backup, false, static_old_delta, static_new_delta);
-    } else {
-        rz_core_rebase_everything(core, sections_backup, true, static_old_delta, 0);
-    }
-    rz_list_free(sections_backup);
-    return RZ_CMD_STATUS_OK;
+	// compute old vs. static base delta
+	ut64 old_base = rz_num_math(core->num, argv[1]);
+	ut64 static_old_delta = old_base - static_base;
+
+	// perform actual rebase
+	RzList *sections_backup = rz_core_create_sections_backup(core);
+	if (!sections_backup) {
+		RZ_LOG_ERROR("Cannot create sections backup.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (argc > 2) {
+		ut64 new_base = rz_num_math(core->num, argv[2]);
+		ut64 static_new_delta = new_base - static_base;
+		rz_core_rebase_everything(core, sections_backup, false, static_old_delta, static_new_delta);
+	} else {
+		rz_core_rebase_everything(core, sections_backup, true, static_old_delta, 0);
+	}
+	rz_list_free(sections_backup);
+	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus resize_helper(RzCore *core, st64 delta) {
