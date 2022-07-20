@@ -1,4 +1,4 @@
-io_plugins = [
+io_plugins_list = [
   'ar',
   'fd',
   'bfdbg',
@@ -31,16 +31,22 @@ io_plugins = [
 ]
 
 if get_option('use_gpl')
-  io_plugins += 'qnx'
+  io_plugins_list += 'qnx'
 endif
 
 if host_machine.system() == 'windows'
-  io_plugins += [
+  io_plugins_list+= [
     'windbg',
     'w32dbg',
     'w32',
   ]
 endif
+
+io_plugins = {
+  'conf_name': 'plugins_io',
+  'base_cname': 'rz_io_plugin_',
+  'list': io_plugins_list,
+}
 
 rz_io_sources = [
   'io.c',

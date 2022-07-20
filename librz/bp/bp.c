@@ -38,7 +38,7 @@ RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	bp->bps = rz_list_newf((RzListFree)rz_bp_item_free);
 	bp->plugins = rz_list_newf((RzListFree)free);
 	bp->nhwbps = 0;
-	for (i = 0; bp_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(bp_static_plugins); i++) {
 		rz_bp_plugin_add(bp, bp_static_plugins[i]);
 	}
 	memset(&bp->iob, 0, sizeof(bp->iob));

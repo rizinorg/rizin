@@ -784,7 +784,7 @@ summary({
 # output will be slightly degraded if there's only 1 crca_crc hash plugin and/or last hash plugin is a crca_crc plugin
 comb_hash_plugins = []
 in_crca_loop = false
-foreach plugin : hash_plugins
+foreach plugin : hash_plugins.get('list')
   if plugin.startswith('crca_crc')
     comb_hash_plugins += (in_crca_loop ? '' : 'crca_crc(') + plugin.split('_')[1].split('crc')[1]
     in_crca_loop = true
@@ -806,18 +806,18 @@ foreach plugin : hash_plugins
 endforeach
 
 summary({
-  'Analysis Plugins': analysis_plugins,
-  'Assembler Plugins': asm_plugins,
-  'Binary Plugins': bin_plugins,
-  'BinXtr Plugins': bin_xtr_plugins,
-  'Breakpoint Plugins': bp_plugins,
-  'Core Plugins': core_plugins,
-  'Crypto Plugins': crypto_plugins,
-  'Debug Plugins': debug_plugins,
-  'Egg Plugins': egg_plugins,
-  'IO Plugins': io_plugins,
-  'Lang Plugins': lang_plugins,
+  'Analysis Plugins': analysis_plugins.get('list'),
+  'Assembler Plugins': asm_plugins.get('list'),
+  'Binary Plugins': bin_plugins.get('list'),
+  'BinXtr Plugins': bin_xtr_plugins.get('list'),
+  'Breakpoint Plugins': bp_plugins.get('list'),
+  'Core Plugins': core_plugins.get('list'),
+  'Crypto Plugins': crypto_plugins.get('list'),
+  'Debug Plugins': debug_plugins.get('list'),
+  'Egg Plugins': egg_plugins.get('list'),
+  'IO Plugins': io_plugins.get('list'),
+  'Lang Plugins': lang_plugins.get('list'),
   'Hash Plugins': comb_hash_plugins,
-  'Parse Plugins': parse_plugins,
-  'Demangler Plugins': demangler_plugins,
+  'Parse Plugins': parse_plugins.get('list'),
+  'Demangler Plugins': demangler_plugins.get('list'),
 }, section: 'Plugins', list_sep: ', ')

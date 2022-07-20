@@ -1,4 +1,4 @@
-parse_plugins = [
+parse_plugins_list = [
   '6502_pseudo',
   'arm_pseudo',
   'att2intel',
@@ -13,14 +13,19 @@ parse_plugins = [
   'wasm_pseudo',
   'x86_pseudo',
 ]
-
 if get_option('use_gpl')
-  parse_plugins += [
+  parse_plugins_list += [
     'sh_pseudo',
     'riscv_pseudo',
     'z80_pseudo'
   ]
 endif
+
+parse_plugins = {
+  'conf_name': 'plugins_parse',
+  'base_cname': 'rz_parse_plugin_',
+  'list': parse_plugins_list,
+}
 
 rz_parse_sources = [
   'filter.c',

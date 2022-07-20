@@ -1,4 +1,4 @@
-analysis_plugins = [
+analysis_plugins_list = [
   '6502',
   '8051',
   'amd29k',
@@ -43,13 +43,12 @@ analysis_plugins = [
   'xap',
   'xcore_cs',
 ]
-
 if capstone_dep.version().split('.')[0].to_int() > 4
-  analysis_plugins += 'riscv_cs'
+  analysis_plugins_list += 'riscv_cs'
 endif
 
 if get_option('use_gpl')
-  analysis_plugins += [
+  analysis_plugins_list += [
     'arc',
     'cris',
     'mips_gnu',
@@ -63,6 +62,12 @@ if get_option('use_gpl')
     'z80',
   ]
 endif
+
+analysis_plugins = {
+  'conf_name': 'plugins_analysis',
+  'base_cname': 'rz_analysis_plugin_',
+  'list': analysis_plugins_list,
+}
 
 rz_analysis_sources = [
   'analysis.c',

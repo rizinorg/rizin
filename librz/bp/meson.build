@@ -1,11 +1,15 @@
-bp_plugins = [
-  'arm',
-  'bf',
-  'mips',
-  'ppc',
-  'sh',
-  'x86'
-]
+bp_plugins = {
+  'conf_name': 'plugins_bp',
+  'base_cname': 'rz_bp_plugin_',
+  'list': [
+    'arm',
+    'bf',
+    'mips',
+    'ppc',
+    'sh',
+    'x86'
+  ],
+}
 
 rz_bp_sources = [
   'bp.c',
