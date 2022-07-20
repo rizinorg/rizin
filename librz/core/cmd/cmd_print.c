@@ -6196,10 +6196,22 @@ RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_print_hexdump_signed_int_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int n = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 4;
-	int len = argc > 2 ? (int)rz_num_math(core->num, argv[2]) : (int)core->blocksize;
+RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer_common_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, ut8 n) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
 	return bool2status(rz_core_print_dump(core, state, core->offset, n, len, RZ_CORE_PRINT_FORMAT_TYPE_INTEGER));
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexdump_signed_integer_common_handler(core, argc, argv, state, 1);
+}
+RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer2_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexdump_signed_integer_common_handler(core, argc, argv, state, 2);
+}
+RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer4_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexdump_signed_integer_common_handler(core, argc, argv, state, 4);
+}
+RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexdump_signed_integer_common_handler(core, argc, argv, state, 8);
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

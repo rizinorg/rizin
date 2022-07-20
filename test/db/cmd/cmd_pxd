@@ -1,8 +1,8 @@
-NAME=pxd 1
+NAME=pxd
 FILE==
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
-pxd 1 0x10
+pxd 0x10
 EOF
 EXPECT=<<EOF
 - offset -     0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F  0123456789ABCDEF
@@ -10,11 +10,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd2
+NAME=pxdh
 FILE==
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
-pxd 2 0x10
+pxdh 0x10
 EOF
 EXPECT=<<EOF
 - offset -    0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F  0123456789ABCDEF
@@ -22,11 +22,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd4
+NAME=pxdw
 FILE==
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
-pxd 4 0x10
+pxdw 0x10
 EOF
 EXPECT=<<EOF
 - offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
@@ -34,11 +34,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd8
+NAME=pxdq
 FILE==
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
-pxd 8 0x10
+pxdq 0x10
 EOF
 EXPECT=<<EOF
 - offset -   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  0123456789ABCDEF
@@ -46,11 +46,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd arg
+NAME=pxdw arg
 FILE==
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
-pxd 4 0x10
+pxdw 0x10
 EOF
 EXPECT=<<EOF
 - offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
@@ -58,12 +58,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd no arg
+NAME=pxdw no arg
 FILE==
 CMDS=<<EOF
 b 0x10
 wx 554889e54157415641554154534881ec
-pxd
+pxdw
 EOF
 EXPECT=<<EOF
 - offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
@@ -81,12 +81,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd negative arg
+NAME=pxdw negative arg
 FILE==
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
 s 8
-pxd 4 -8
+pxdw -8
 EOF
 EXPECT=<<EOF
 - offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF

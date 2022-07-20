@@ -493,18 +493,51 @@ commands:
             optional: true
       - name: pxd
         summary: show signed integer dump
-        cname: print_hexdump_signed_int
-        type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        modes:
-          - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_JSON
-        args:
-          - name: n
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-          - name: len
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
+        subcommands:
+          - name: pxd
+            summary: show signed integer dump
+            cname: print_hexdump_signed_integer
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxdh
+            summary: show signed integer dump
+            cname: print_hexdump_signed_integer2
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxdw
+            summary: show signed integer dump
+            cname: print_hexdump_signed_integer4
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxdq
+            summary: show signed integer dump
+            cname: print_hexdump_signed_integer8
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
       - name: pxh
         summary: show hexadecimal half-words dump (16bit)
         cname: print_hexdump_hex2
