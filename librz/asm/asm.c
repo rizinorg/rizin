@@ -1621,37 +1621,55 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 	size_t l = 0;
 	// Set flag once the mnemonic was parsed
 	// The mnemonic is the first token in our string which ends with an ' '
+	// Some mnemonics are not at the beginning of the string
+	// and have only hexadecimal digits. It is too complicated to handle those.
+	// In this case the plugin should build its own token strings.
 	bool mnemonic_parsed = false;
 
 	while (str[i]) {
 		// Alphanumeric tokens
 		if (is_alpha_num(str + i)) {
 			bool is_number = false;
+			bool prefix_less_hex = false;
 			if (isxdigit(*(str + i)) && mnemonic_parsed) {
-				// Registers and mnemonic names can be ambiguous in comparison to hex numbers.
+				// Registers, mnemonics and hexadecimal numbers can be ambiguous.
 				// E.g. "eax" could be parsed as hex number token "ea".
-				// Here we check the character after the token.
-				// If this char is an alphabetic char (like the "x" in "eax"), the token isn't a number.
+				//      "ac0" could be a prefixless hexnumber or a register.
+				// To solve this we do:
+				//
+				// Step 1:
+				// Here we check try to parse a number and check:
+				//    A. the character after the number token
+				//    B. if the number token starts with the hex prefix "0x"
+				// Step 2:
+				// A: If the char after the number token is an alphabetic char (like the "x" in "eax"),
+				//    the token isn't a number.
+				// B: If it could be a hex number but has no prefix, a flag is set.
+				//    In this case we only mark it as number if it is not in the register profile.
 
-				// Sometimes we get false positives. Some mnemonics are not at the beginning of the string
-				// and have only hexadecimal digits. It is too complicated to handle those.
-				// In this case the plugin should build its own token strings.
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_NUMBER);
 				if (!str[i + l]) { // End of asm string => token is number.
+					prefix_less_hex = !rz_num_is_hex_prefix(str + i);
 					is_number = true;
 				} else if (!isalpha(str[i + l])) { // Next char is something non alphabetic => Treat as number.
+					prefix_less_hex = !rz_num_is_hex_prefix(str + i);
 					is_number = true;
 				}
 			}
 
-			if (is_number) {
+			if (is_number && !prefix_less_hex) {
+				// Parse numbers which are defintly a number.
 				add_token(toks, i, l, RZ_ASM_TOKEN_NUMBER, strtoull(str + i, NULL, 0));
 			} else if (mnemonic_parsed) {
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_REGISTER);
 				char *op_name = rz_str_ndup(str + i, l);
 				if (param && is_register(op_name, param->reg_sets)) {
 					add_token(toks, i, l, RZ_ASM_TOKEN_REGISTER, 0);
+				} else if (prefix_less_hex) {
+					// It wasn't a register but still could be a prefixless hex number.
+					add_token(toks, i, l, RZ_ASM_TOKEN_NUMBER, strtoull(str + i, NULL, 0));
 				} else {
+					// Didn't match any of the before. Mark as unknown.
 					add_token(toks, i, l, RZ_ASM_TOKEN_UNKNOWN, 0);
 				}
 				free(op_name);
@@ -1659,9 +1677,9 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 				mnemonic_parsed = true;
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_MNEMONIC);
 				if (*(str + i + l) != ' ') {
-					// Mnemonics in ARM can contain dots and other separators.
-					// Example: "adc.w r8, sb, sl, ror 31"
-					// Don't stop the token at l. But expand it until the next separator.
+					// Mnemonics can contain dots and other separators.
+					// Example ARM asm string: "adc.w r8, sb, sl, ror 31"
+					// Here we seek past the first separator.
 					l += seek_to_end_of_token(str, l + i, RZ_ASM_TOKEN_MNEMONIC);
 				}
 				add_token(toks, i, l, RZ_ASM_TOKEN_MNEMONIC, 0);
@@ -1672,7 +1690,8 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 		} else if (is_separator(str + i)) {
 			l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_SEPARATOR);
 			add_token(toks, i, l, RZ_ASM_TOKEN_SEPARATOR, 0);
-		} else { // Unknown tokens. UTF-8 and others.
+		} else {
+			// Unknown tokens. UTF-8 and others.
 			l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_UNKNOWN);
 			add_token(toks, i, l, RZ_ASM_TOKEN_UNKNOWN, 0);
 		}
