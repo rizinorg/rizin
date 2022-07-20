@@ -49,9 +49,6 @@ if meson.is_subproject()
   endif
 endif
 
-# by default, not version commit is used
-version_commit = '0'
-
 gittip = ''
 
 fs = import('fs')
@@ -63,29 +60,8 @@ if git_exe.found() and fs.exists('.git')
   endif
 endif
 
-if get_option('rizin_version_commit') != ''
-  version_commit = get_option('rizin_version_commit')
-endif
-
 if get_option('rizin_gittip') != ''
   gittip = get_option('rizin_gittip')
-endif
-
-# Get current date
-if host_machine.system() == 'windows'
-  rizinbirth = run_command('cmd', '/c', 'echo %date%__%time%', check: true)
-else
-  rizinbirth = run_command('sh', '-c', '''
-      SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}";
-      FORMAT="+%Y-%m-%d__%H:%M:%S";
-      date -u -d "@$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
-      date -u -r  "$SOURCE_DATE_EPOCH" "$FORMAT" 2>/dev/null ||
-      date -u "$FORMAT"''', check: true)
-endif
-if rizinbirth.returncode() != 0
-  rizinbirth = ''
-else
-  rizinbirth = rizinbirth.stdout().strip()
 endif
 
 rizin_libversion = '@0@.@1@'.format(rizin_version_major, rizin_version_minor)
@@ -93,17 +69,7 @@ message('rizin lib version: ' + rizin_libversion)
 
 # system dependencies
 cc = meson.get_compiler('c')
-# required for linux
-ldl = cc.find_library('dl', required: false, static: is_static_build)
-th = dependency('threads', required: false, static: is_static_build)
-have_pthread = th.found() and host_machine.system() != 'windows'
-utl = cc.find_library('util', required: false, static: is_static_build)
-if host_machine.system() == 'sunos'
-  # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
-  mth = declare_dependency(link_args: '-lm')
-else
-  mth = cc.find_library('m', required: false, static: is_static_build)
-endif
+cc_native = meson.get_compiler('c', native: true)
 
 platform_deps = []
 platform_inc = ['.', 'librz', 'librz/include']
@@ -171,18 +137,14 @@ if get_option('default_library') == 'shared'
   endif
 endif
 
-executable_cflags = []
-executable_linkflags = []
-library_cflags = ['-DRZ_PLUGIN_INCORE=1']
-library_linkflags = []
+add_project_arguments(['-DRZ_PLUGIN_INCORE=1'], language: 'c')
 b_sanitize_opt = get_option('b_sanitize')
 if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) and cc.get_id() == 'clang'
-  executable_cflags += '-shared-libasan'
-  executable_linkflags += '-shared-libasan'
-  library_cflags += '-shared-libasan'
-  library_linkflags += '-shared-libasan'
+  add_global_arguments('-shared-libasan', language: 'c')
+  add_global_link_arguments('-shared-libasan', language: 'c')
+  add_global_arguments('-shared-libasan', language: 'c', native: true)
+  add_global_link_arguments('-shared-libasan', language: 'c', native: true)
 endif
-
 
 rizin_prefix = get_option('prefix')
 rizin_bindir = get_option('bindir')
@@ -396,131 +358,173 @@ endif
 message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
 
 userconf = configuration_data()
-userconf.set('RZ_CHECKS_LEVEL', checks_level)
-userconf.set10('IS_PORTABLE', get_option('portable'))
-userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
-userconf.set10('USE_LIB_MAGIC', sys_magic.found())
-userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
-userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
-userconf.set10('DEBUGGER', has_debugger)
-userconf.set('PREFIX', rizin_prefix)
-userconf.set('BINDIR', rizin_bindir)
-userconf.set('BINDIR_DEPTH', bindir_depth)
-userconf.set('LIBDIR', rizin_libdir)
-userconf.set('INCLUDEDIR', rizin_incdir)
-userconf.set('DATADIR_RZ', rizin_datdir_rz)
-is_ppc = host_machine.cpu_family() == 'ppc' or host_machine.cpu_family() == 'ppc64'
-userconf.set10('HAVE_JEMALLOC', host_machine.system() != 'windows' and (host_machine.system() != 'darwin' or not is_ppc))
-userconf.set('DATADIR', rizin_datdir)
-userconf.set('WWWROOT', rizin_wwwroot)
-userconf.set('SDB', rizin_sdb)
-userconf.set('SIGDB', rizin_sigdb)
-userconf.set('THEMES', rizin_themes)
-userconf.set('FORTUNES', rizin_fortunes)
-userconf.set('FLAGS', rizin_flags)
-userconf.set('HUD', rizin_hud)
-userconf.set('PLUGINS', rizin_plugins)
-userconf.set('BINDINGS', rizin_bindings)
-userconf.set10('HAVE_OPENSSL', sys_openssl.found())
-userconf.set10('HAVE_LIBUV', libuv_dep.found())
-userconf.set10('WANT_DYLINK', true)
-userconf.set10('HAVE_PTRACE', have_ptrace)
-userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
-userconf.set10('WITH_GPL', get_option('use_gpl'))
-userconf.set10('WITH_SWIFT_DEMANGLER', get_option('use_swift_demangler'))
-userconf.set10('RZ_BUILD_DEBUG', get_option('buildtype').startswith('debug'))
-ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
-userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
-ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
-userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
-userconf.set10('HAVE_THREADS', th.found())
-userconf.set10('HAVE_PTHREAD', have_pthread)
-userconf.set10('HAVE_LZMA', get_option('use_lzma'))
-
-if host_machine.system() == 'freebsd' or host_machine.system() == 'dragonfly'
-  add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
-  add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c')
+ccs = [[cc, userconf, host_machine, false]]
+if meson.is_cross_build()
+  userconf_native = configuration_data()
+  ccs += [[cc_native, userconf_native, build_machine, true]]
 endif
+userconfs = []
 
-lrt = dependency('', required: false)
-if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
-  lrt = cc.find_library('rt', required: true, static: is_static_build)
-endif
+foreach it : ccs
+  it_cc = it[0]
+  it_userconf = it[1]
+  it_machine = it[2]
+  it_native = it[3]
 
-have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku'].contains(host_machine.system())
-if have_lrt and not lrt.found()
-  lrt = cc.find_library('rt', required: true, static: is_static_build)
-endif
+  # required for linux
+  it_utl = it_cc.find_library('util', required: false, static: is_static_build)
+  it_ldl = it_cc.find_library('dl', required: false, static: is_static_build)
+  it_th = dependency('threads', required: false, static: is_static_build, native: it_native)
+  have_pthread = it_th.found() and it_machine.system() != 'windows'
+  if it_machine.system() == 'sunos'
+    # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
+    it_mth = declare_dependency(link_args: '-lm', native: it_native)
+  else
+    it_mth = it_cc.find_library('m', required: false, static: is_static_build)
+  endif
+  it_lrt = dependency('', required: false, native: it_native)
+  if not it_cc.has_function('clock_gettime', prefix: '#include <time.h>') and it_cc.has_header_symbol('features.h', '__GLIBC__')
+    it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
+  endif
+  have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku'].contains(it_machine.system())
+  if have_lrt and not it_lrt.found()
+    it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
+  endif
 
-if host_machine.system() == 'darwin'
-  # On older Mac OS X versions (at least Lion and older), environ is only available when compiling an executable,
-  # but we will use is primarily in shared libs. Unfortunately, cc.links() only checks for executable compiling,
-  # so this does not help us.
-  # But in fact, even the environ(7) man page on macOS 11.6 still claims that environ is not avaliable for
-  # shared libs (even though it seems to work) and suggests using _NSGetEnviron(), so let's just do this always.
-  have_environ = false
-else
-  code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
-  have_environ = cc.links(code, name: 'have extern char **environ')
-endif
-userconf.set10('HAVE_ENVIRON', have_environ)
-message('HAVE_ENVIRON: @0@'.format(have_environ))
+  it_userconf.set('RZ_CHECKS_LEVEL', checks_level)
+  it_userconf.set10('IS_PORTABLE', get_option('portable'))
+  it_userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
+  it_userconf.set10('USE_LIB_MAGIC', sys_magic.found())
+  it_userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
+  it_userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
+  it_userconf.set10('DEBUGGER', has_debugger)
+  it_userconf.set('PREFIX', rizin_prefix)
+  it_userconf.set('BINDIR', rizin_bindir)
+  it_userconf.set('BINDIR_DEPTH', bindir_depth)
+  it_userconf.set('LIBDIR', rizin_libdir)
+  it_userconf.set('INCLUDEDIR', rizin_incdir)
+  it_userconf.set('DATADIR_RZ', rizin_datdir_rz)
+  is_ppc = it_machine.cpu_family() == 'ppc' or it_machine.cpu_family() == 'ppc64'
+  it_userconf.set10('HAVE_JEMALLOC', it_machine.system() != 'windows' and (it_machine.system() != 'darwin' or not is_ppc))
+  it_userconf.set('DATADIR', rizin_datdir)
+  it_userconf.set('WWWROOT', rizin_wwwroot)
+  it_userconf.set('SDB', rizin_sdb)
+  it_userconf.set('SIGDB', rizin_sigdb)
+  it_userconf.set('THEMES', rizin_themes)
+  it_userconf.set('FORTUNES', rizin_fortunes)
+  it_userconf.set('FLAGS', rizin_flags)
+  it_userconf.set('HUD', rizin_hud)
+  it_userconf.set('PLUGINS', rizin_plugins)
+  it_userconf.set('BINDINGS', rizin_bindings)
+  it_userconf.set10('HAVE_OPENSSL', sys_openssl.found())
+  it_userconf.set10('HAVE_LIBUV', libuv_dep.found())
+  it_userconf.set10('WANT_DYLINK', true)
+  it_userconf.set10('HAVE_PTRACE', have_ptrace)
+  it_userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
+  it_userconf.set10('WITH_GPL', get_option('use_gpl'))
+  it_userconf.set10('WITH_SWIFT_DEMANGLER', get_option('use_swift_demangler'))
+  it_userconf.set10('RZ_BUILD_DEBUG', get_option('buildtype').startswith('debug'))
+  ok = it_cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
+  it_userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
+  ok = it_cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
+  it_userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
+  it_userconf.set10('HAVE_THREADS', it_th.found())
+  it_userconf.set10('HAVE_PTHREAD', have_pthread)
+  it_userconf.set10('HAVE_LZMA', get_option('use_lzma'))
+  it_userconf.set10('HAVE_ZLIB', get_option('use_zlib'))
 
-code = '#if __is_target_os(ios)\nint x = 0;\n#endif\nint main() { x++; }'
-is_ios = cc.links(code, name: 'target is ios')
-userconf.set10('IS_IOS', is_ios)
-message('IS_IOS: @0@'.format(is_ios))
+  if it_machine.system() == 'freebsd' or it_machine.system() == 'dragonfly'
+    add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c', native: it_native)
+    add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c', native: it_native)
+  endif
 
-foreach item : [
-    ['arc4random_uniform', '#include <stdlib.h>', []],
-    ['explicit_bzero', '#include <string.h>', []],
-    ['explicit_memset', '#include <string.h>', []],
-    ['clock_nanosleep', '#include <time.h>', []],
-    ['clock_gettime', '#include <time.h>', [lrt]],
-    ['sigaction', '#include <signal.h>', []],
-    ['pipe', '#include <unistd.h>', []],
-    ['execv', '#include <unistd.h>', []],
-    ['execve', '#include <unistd.h>', []],
-    ['execvp', '#include <unistd.h>', []],
-    ['execl', '#include <unistd.h>', []],
-    ['system', '#include <stdlib.h>', []],
-    ['realpath', '#include <stdlib.h>', []],
-    ['fork', '#include <unistd.h>', []],
-    ['nice', '#include <unistd.h>', []],
-    ['copyfile', '#include <copyfile.h>', []],
-    ['strlcpy', '#include <string.h>', []],
-    ['strnlen', '#include <string.h>', []],
-    ['shm_open', '#include <sys/mman.h>', [lrt]],
-    ['openpty', '', [utl]],
-    ['forkpty', '', [utl]],
-    ['login_tty', '', [utl]],
-    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []],
-    # copy_file_range for now disable on freebsd as it s not reliable even for small chunks
-    ['copy_file_range', '#ifdef __linux__\n#define _GNU_SOURCE\n#include <unistd.h>\n#endif', []],
-    ['backtrace', '', []],
-  ]
-  func = item[0]
-  ok = cc.has_function(func, prefix: item[1], dependencies: item[2])
-  userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
+  if it_machine.system() == 'darwin'
+    # On older Mac OS X versions (at least Lion and older), environ is only available when compiling an executable,
+    # but we will use is primarily in shared libs. Unfortunately, it_cc.links() only checks for executable compiling,
+    # so this does not help us.
+    # But in fact, even the environ(7) man page on macOS 11.6 still claims that environ is not avaliable for
+    # shared libs (even though it seems to work) and suggests using _NSGetEnviron(), so let's just do this always.
+    have_environ = false
+  else
+    code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
+    have_environ = it_cc.links(code, name: 'have extern char **environ')
+  endif
+  it_userconf.set10('HAVE_ENVIRON', have_environ)
+  message('HAVE_ENVIRON: @0@'.format(have_environ))
+
+  code = '#if __is_target_os(ios)\nint x = 0;\n#endif\nint main() { x++; }'
+  is_ios = it_cc.links(code, name: 'target is ios')
+  it_userconf.set10('IS_IOS', is_ios)
+  message('IS_IOS: @0@'.format(is_ios))
+
+  foreach item : [
+      ['arc4random_uniform', '#include <stdlib.h>', []],
+      ['explicit_bzero', '#include <string.h>', []],
+      ['explicit_memset', '#include <string.h>', []],
+      ['clock_nanosleep', '#include <time.h>', []],
+      ['clock_gettime', '#include <time.h>', [it_lrt]],
+      ['sigaction', '#include <signal.h>', []],
+      ['pipe', '#include <unistd.h>', []],
+      ['execv', '#include <unistd.h>', []],
+      ['execve', '#include <unistd.h>', []],
+      ['execvp', '#include <unistd.h>', []],
+      ['execl', '#include <unistd.h>', []],
+      ['system', '#include <stdlib.h>', []],
+      ['realpath', '#include <stdlib.h>', []],
+      ['fork', '#include <unistd.h>', []],
+      ['nice', '#include <unistd.h>', []],
+      ['copyfile', '#include <copyfile.h>', []],
+      ['strlcpy', '#include <string.h>', []],
+      ['strnlen', '#include <string.h>', []],
+      ['shm_open', '#include <sys/mman.h>', [it_lrt]],
+      ['openpty', '', [it_utl]],
+      ['forkpty', '', [it_utl]],
+      ['login_tty', '', [it_utl]],
+      ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []],
+      # copy_file_range for now disable on freebsd as it s not reliable even for small chunks
+      ['copy_file_range', '#ifdef __linux__\n#define _GNU_SOURCE\n#include <unistd.h>\n#endif', []],
+      ['backtrace', '', []],
+    ]
+    func = item[0]
+    ok = it_cc.has_function(func, prefix: item[1], dependencies: item[2])
+    it_userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
+  endforeach
+
+  foreach item : [
+      ['linux/ashmem.h', '', []],
+      ['sys/shm.h', '', []],
+      ['sys/ipc.h', '', []],
+      ['sys/mman.h', '', []],
+      ['inttypes.h', '', []],
+    ]
+    hdr = item[0]
+    ok = it_cc.has_header(hdr, prefix: item[1], dependencies: item[2])
+    it_userconf.set10('HAVE_HEADER_@0@'.format(hdr.underscorify().to_upper()), ok)
+  endforeach
+
+  if it_userconf.get('HAVE_PIPE2') == 1
+    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'], native: it_native)
+  endif
+  userconfs += [[it_userconf, it_lrt, it_utl, it_ldl, it_mth, it_th]]
 endforeach
-
-foreach item : [
-    ['linux/ashmem.h', '', []],
-    ['sys/shm.h', '', []],
-    ['sys/ipc.h', '', []],
-    ['sys/mman.h', '', []],
-  ]
-  hdr = item[0]
-  ok = cc.has_header(hdr, prefix: item[1], dependencies: item[2])
-  userconf.set10('HAVE_HEADER_@0@'.format(hdr.underscorify().to_upper()), ok)
-endforeach
-
-if userconf.get('HAVE_PIPE2') == 1
-  add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
+userconf = userconfs[0][0]
+lrt = userconfs[0][1]
+utl = userconfs[0][2]
+ldl = userconfs[0][3]
+mth = userconfs[0][4]
+th = userconfs[0][5]
+if meson.is_cross_build()
+  userconf_native = userconfs[1][0]
+  lrt_native = userconfs[1][1]
+  utl_native = userconfs[1][2]
+  ldl_native = userconfs[1][3]
+  mth_native = userconfs[1][4]
+  th_native = userconfs[1][5]
 endif
 
+rz_userconf_h_in = files('librz/include/rz_userconf.h.in')
 rz_userconf_h = configure_file(
-  input: 'librz/include/rz_userconf.h.in',
+  input: rz_userconf_h_in,
   output: 'rz_userconf.h',
   configuration: userconf,
   install_dir: rizin_incdir
@@ -541,7 +545,6 @@ versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
 versionconf.set('RZ_VERSION_NUMBER', rizin_version_number)
 versionconf.set('RZ_VERSION', rizin_version)
 versionconf.set('RZ_GITTIP', gittip)
-versionconf.set('RZ_BIRTH', rizinbirth)
 if packager_version != ''
   versionconf.set_quoted('RZ_PACKAGER_VERSION', packager_version)
   if packager != ''
@@ -556,15 +559,19 @@ rz_version_h = configure_file(
 )
 
 # handle zlib dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'zlib', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-endif
+zlib_dep = disabler()
+if get_option('use_zlib')
+  r = run_command(py3_exe, check_meson_subproject_py, 'zlib', check: false)
+  if r.returncode() == 1 and get_option('subprojects_check')
+    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  endif
 
-zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
-if not zlib_dep.found()
-  zlib_proj = subproject('zlib', default_options: ['default_library=static'])
-  zlib_dep = zlib_proj.get_variable('zlib_dep')
+  zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
+  if not zlib_dep.found()
+    zlib_proj = subproject('zlib', default_options: ['default_library=static'])
+    zlib_dep = zlib_proj.get_variable('zlib_dep')
+    meson.override_dependency('zlib', zlib_dep)
+  endif
 endif
 
 # handle lz4 dependency
@@ -628,23 +635,6 @@ endif
 
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
 yxml_dep = yxml_proj.get_variable('yxml_dep')
-
-# handle sdb dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'sdb', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-endif
-
-sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])
-sdb_dep = sdb_proj.get_variable('sdb_whole_dep')
-sdb_exe  = sdb_proj.get_variable('sdb_native_exe')
-
-sdb_gen_cmd = [
-  sdb_exe,
-  '@OUTPUT@',
-  '==',
-  '@INPUT@'
-]
 
 use_rpath = false
 use_rpath_absolute = false

@@ -36,9 +36,9 @@ FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 e asm.bytes=0
 so
-pdi 2
+pdq 2
 Cd 4
-pdi 2
+pdq 2
 EOF
 EXPECT=<<EOF
 0x1000013d9 mov rbp, rsp

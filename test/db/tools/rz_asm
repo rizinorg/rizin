@@ -434,7 +434,7 @@ RUN
 
 NAME=rz-asm -v
 FILE==
-CMDS=!rz-asm -v  | grep -c build
+CMDS=!rz-asm -v  | grep -c commit
 EXPECT=<<EOF
 1
 EOF

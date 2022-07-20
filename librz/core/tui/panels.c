@@ -339,7 +339,6 @@ static bool __check_panel_num(RzCore *core);
 static bool __check_func(RzCore *core);
 static bool __check_func_diff(RzCore *core, RzPanel *p);
 static bool __check_root_state(RzCore *core, RzPanelsRootState state);
-static bool __check_if_addr(const char *c, int len);
 static bool __check_if_cur_panel(RzCore *core, RzPanel *panel);
 static bool __check_if_mouse_x_illegal(RzCore *core, int x);
 static bool __check_if_mouse_y_illegal(RzCore *core, int y);
@@ -708,20 +707,6 @@ bool __check_if_mouse_y_on_edge(RzCore *core, int x, int y) {
 
 bool __check_if_cur_panel(RzCore *core, RzPanel *panel) {
 	return __get_cur_panel(core->panels) == panel;
-}
-
-bool __check_if_addr(const char *c, int len) {
-	if (len < 2) {
-		return false;
-	}
-	int i = 0;
-	for (; i < len; i++) {
-		if (RZ_STR_ISNOTEMPTY(c + i) && RZ_STR_ISNOTEMPTY(c + i + 1) &&
-			c[i] == '0' && c[i + 1] == 'x') {
-			return true;
-		}
-	}
-	return false;
 }
 
 void __check_edge(RzCore *core) {
@@ -1982,8 +1967,8 @@ static bool __handle_mouse_on_panel(RzCore *core, RzPanel *panel, int x, int y, 
 	if (word) {
 		const ut64 addr = rz_num_math(core->num, word);
 		if (__check_panel_type(panel, PANEL_CMD_FUNCTION) &&
-			__check_if_addr(word, strlen(word))) {
-			rz_core_seek(core, addr, true);
+			addr > 0) {
+			rz_core_seek_and_save(core, addr, true);
 			__set_addr_by_type(core, PANEL_CMD_DISASSEMBLY, addr);
 		}
 		rz_flag_set(core->flags, "panel.addr", addr, 1);

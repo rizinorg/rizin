@@ -519,7 +519,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.middle and pdi
+NAME=asm.bb.middle and pdq
 FILE==
 CMDS=<<EOF
 e asm.bytes=true
@@ -530,10 +530,10 @@ e analysis.jmp.mid=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true
-pdi 6
+pdq 6
 ?e
 e asm.bb.middle=false
-pdi 6
+pdq 6
 EOF
 EXPECT=<<EOF
 0x00000000   fcn.00000000:

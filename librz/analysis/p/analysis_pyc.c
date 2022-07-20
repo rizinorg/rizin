@@ -39,7 +39,10 @@ static RzList *get_pyc_code_obj(RzAnalysis *analysis) {
 	RzBin *b = analysis->binb.bin;
 	RzBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
 	bool is_pyc = (plugin && strcmp(plugin->name, "pyc") == 0);
-	return is_pyc ? b->cur->o->bin_obj : NULL;
+	if (!is_pyc) {
+		return NULL;
+	}
+	return ((RzBinPycObj *)b->cur->o->bin_obj)->shared;
 }
 
 static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {

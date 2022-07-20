@@ -243,9 +243,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdi 0
+NAME=pdq 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pdi 0
+CMDS=pdq 0
 EXPECT=<<EOF
 EOF
 RUN
@@ -280,9 +280,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pid 0
+NAME=pdq 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pid 0
+CMDS=pdq 0
 EXPECT=<<EOF
 EOF
 RUN
@@ -301,9 +301,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pId 0
+NAME=pDq 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pId 0
+CMDS=pDq 0
 EXPECT=<<EOF
 EOF
 RUN

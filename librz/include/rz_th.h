@@ -27,14 +27,14 @@ typedef struct rz_th_pool_t RzThreadPool;
 typedef struct rz_th_queue_t RzThreadQueue;
 typedef void *(*RzThreadFunction)(void *user);
 
+typedef struct rz_atomic_bool_t RzAtomicBool;
+
 #ifdef RZ_API
 RZ_API RZ_OWN RzThread *rz_th_new(RZ_NONNULL RzThreadFunction function, RZ_NULLABLE void *user);
 RZ_API RZ_OWN void *rz_th_get_user(RZ_NONNULL RzThread *th);
 RZ_API RZ_OWN void *rz_th_get_retv(RZ_NONNULL RzThread *th);
 RZ_API bool rz_th_wait(RZ_NONNULL RzThread *th);
 RZ_API void rz_th_free(RZ_NULLABLE RzThread *th);
-RZ_API void rz_th_kill(RZ_NONNULL RzThread *th);
-RZ_API void rz_th_kill_free(RZ_NONNULL RzThread *th);
 RZ_API bool rz_th_set_name(RZ_NONNULL RzThread *th, RZ_NONNULL const char *name);
 RZ_API bool rz_th_get_name(RZ_NONNULL RzThread *th, RZ_NONNULL RZ_OUT char *name, size_t len);
 RZ_API bool rz_th_set_affinity(RZ_NONNULL RzThread *th, int cpuid);
@@ -59,12 +59,12 @@ RZ_API void rz_th_cond_free(RZ_NULLABLE RzThreadCond *cond);
 
 RZ_API size_t rz_th_physical_core_number();
 RZ_API size_t rz_th_request_physical_cores(size_t max_cores);
+
 RZ_API RZ_OWN RzThreadPool *rz_th_pool_new(size_t max_threads);
 RZ_API void rz_th_pool_free(RZ_NULLABLE RzThreadPool *pool);
 RZ_API bool rz_th_pool_add_thread(RZ_NONNULL RzThreadPool *pool, RZ_NONNULL RzThread *thread);
 RZ_API RZ_BORROW RzThread *rz_th_pool_get_thread(RZ_NONNULL RzThreadPool *pool, size_t index);
 RZ_API bool rz_th_pool_wait(RZ_NONNULL RzThreadPool *pool);
-RZ_API bool rz_th_pool_kill(RZ_NONNULL RzThreadPool *pool);
 RZ_API size_t rz_th_pool_size(RZ_NULLABLE RzThreadPool *pool);
 
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzListFree qfree);
@@ -74,6 +74,11 @@ RZ_API RZ_OWN void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
 RZ_API RZ_OWN void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
 RZ_API bool rz_th_queue_is_empty(RZ_NULLABLE RzThreadQueue *queue);
 RZ_API bool rz_th_queue_is_full(RZ_NULLABLE RzThreadQueue *queue);
+
+RZ_API RZ_OWN RzAtomicBool *rz_atomic_bool_new(bool value);
+RZ_API void rz_atomic_bool_free(RZ_NULLABLE RzAtomicBool *tbool);
+RZ_API bool rz_atomic_bool_get(RZ_NONNULL RzAtomicBool *tbool);
+RZ_API void rz_atomic_bool_set(RZ_NONNULL RzAtomicBool *tbool, bool value);
 
 #endif
 

@@ -128,7 +128,7 @@ ARGS=-a x86 -b 32
 FILE==
 CMDS=<<EOF
 wx 31c0c700ffff0000ffe0
-pdeqq
+pdeQ
 pi 1
 ar eax
 EOF
@@ -151,7 +151,7 @@ wx 20 @ 0x30
 wx ff @ 0x40
 wx ffff @ 0x20
 wx 31C0C60020C64040008A484038C90F85FC0F0000A030000000FFE0
-pdeqq
+pdeQ
 s
 pi 1
 p8 1 @ 0x40

@@ -1,6 +1,6 @@
 NAME=rz-run -v 
 FILE==
-CMDS=!rz-run -v | grep -c build
+CMDS=!rz-run -v | grep -c commit
 EXPECT=<<EOF
 1
 EOF

@@ -532,7 +532,7 @@ RUN
 
 NAME=rz-ax -v
 FILE==
-CMDS=!rz-ax -v | grep -c build
+CMDS=!rz-ax -v | grep -c commit
 EXPECT=<<EOF
 1
 EOF

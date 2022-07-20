@@ -180,26 +180,6 @@ RZ_API bool rz_th_pool_wait(RZ_NONNULL RzThreadPool *pool) {
 }
 
 /**
- * \brief Force-stops all threads in the thread pool
- *
- * \param  pool  The thread pool to kill
- *
- * \return true if managed to kill all threads, otherwise false
- */
-RZ_API bool rz_th_pool_kill(RZ_NONNULL RzThreadPool *pool) {
-	rz_return_val_if_fail(pool, false);
-	bool has_exited = false;
-	for (ut32 i = 0; i < pool->size; ++i) {
-		if (pool->threads[i]) {
-			RZ_LOG_DEBUG("thread: killing thread %u\n", i);
-			rz_th_kill(pool->threads[i]);
-			has_exited = true;
-		}
-	}
-	return has_exited;
-}
-
-/**
  * \brief  Returns the thread pool size
  *
  * \param  pool  The RzThreadPool to use

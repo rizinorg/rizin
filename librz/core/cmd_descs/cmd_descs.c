@@ -451,6 +451,7 @@ static const RzCmdDescArg open_maps_prioritize_binid_args[2];
 static const RzCmdDescArg open_maps_deprioritize_args[2];
 static const RzCmdDescArg open_maps_prioritize_fd_args[2];
 static const RzCmdDescArg open_exchange_args[3];
+static const RzCmdDescArg cmd_disassembly_n_bytes_args[2];
 static const RzCmdDescArg cmd_disassembly_n_instructions_args[2];
 static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_args[2];
 static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_treeview_args[2];
@@ -10573,6 +10574,21 @@ static const RzCmdDescHelp cmd_print_byte_array_rizin_help = {
 	.args = cmd_print_byte_array_rizin_args,
 };
 
+static const RzCmdDescArg cmd_disassembly_n_bytes_args[] = {
+	{
+		.name = "n_bytes",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_disassembly_n_bytes_help = {
+	.summary = "Disassemble N bytes (can be negative)",
+	.args = cmd_disassembly_n_bytes_args,
+};
+
 static const RzCmdDescHelp cmd_print_disassembly_help = {
 	.summary = "Print Disassembly",
 };
@@ -10985,6 +11001,14 @@ static const RzCmdDescHelp cmd_print_magic_help = {
 	.args = cmd_print_magic_args,
 };
 
+static const RzCmdDescArg print_string_c_cpp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_string_c_cpp_help = {
+	.summary = "Generate a C/C++ string",
+	.args = print_string_c_cpp_args,
+};
+
 static const RzCmdDescArg print_utf16le_args[] = {
 	{
 		.name = "type",
@@ -11039,6 +11063,25 @@ static const RzCmdDescArg print_utf32be_args[] = {
 static const RzCmdDescHelp print_utf32be_help = {
 	.summary = "Print buffer as a utf32be string",
 	.args = print_utf32be_args,
+};
+
+static const RzCmdDescHelp p6_help = {
+	.summary = "Base64 decoding/encoding",
+};
+static const RzCmdDescArg cmd_base64_encode_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_base64_encode_help = {
+	.summary = "Base64 encoding",
+	.args = cmd_base64_encode_args,
+};
+
+static const RzCmdDescArg cmd_base64_decode_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_base64_decode_help = {
+	.summary = "Base64 decoding",
+	.args = cmd_base64_decode_args,
 };
 
 static const RzCmdDescHelp P_help = {
@@ -16207,6 +16250,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_byte_array_rizin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pc*", rz_cmd_print_byte_array_rizin_handler, &cmd_print_byte_array_rizin_help);
 	rz_warn_if_fail(cmd_print_byte_array_rizin_cd);
 
+	RzCmdDesc *cmd_disassembly_n_bytes_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_cd, "pD", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_n_bytes_handler, &cmd_disassembly_n_bytes_help);
+	rz_warn_if_fail(cmd_disassembly_n_bytes_cd);
+
 	RzCmdDesc *cmd_print_disassembly_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "pd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_n_instructions_handler, &cmd_disassembly_n_instructions_help, &cmd_print_disassembly_help);
 	rz_warn_if_fail(cmd_print_disassembly_cd);
 	RzCmdDesc *cmd_disassembly_all_opcodes_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_disassembly_cd, "pda", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_all_possible_opcodes_handler, &cmd_disassembly_all_possible_opcodes_help, &cmd_disassembly_all_opcodes_help);
@@ -16291,6 +16337,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
 	rz_warn_if_fail(cmd_print_magic_cd);
 
+	RzCmdDesc *print_string_c_cpp_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psc", RZ_OUTPUT_MODE_STANDARD, rz_print_string_c_cpp_handler, &print_string_c_cpp_help);
+	rz_warn_if_fail(print_string_c_cpp_cd);
+
 	RzCmdDesc *print_utf16le_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf16le_handler, &print_utf16le_help);
 	rz_warn_if_fail(print_utf16le_cd);
 
@@ -16302,6 +16351,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_utf32be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psM", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf32be_handler, &print_utf32be_help);
 	rz_warn_if_fail(print_utf32be_cd);
+
+	RzCmdDesc *p6_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "p6", NULL, NULL, &p6_help);
+	rz_warn_if_fail(p6_cd);
+	RzCmdDesc *cmd_base64_encode_cd = rz_cmd_desc_argv_modes_new(core->rcmd, p6_cd, "p6e", RZ_OUTPUT_MODE_STANDARD, rz_cmd_base64_encode_handler, &cmd_base64_encode_help);
+	rz_warn_if_fail(cmd_base64_encode_cd);
+
+	RzCmdDesc *cmd_base64_decode_cd = rz_cmd_desc_argv_modes_new(core->rcmd, p6_cd, "p6d", RZ_OUTPUT_MODE_STANDARD, rz_cmd_base64_decode_handler, &cmd_base64_decode_help);
+	rz_warn_if_fail(cmd_base64_decode_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

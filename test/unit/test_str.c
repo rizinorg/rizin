@@ -215,7 +215,6 @@ bool test_rz_str_split_list(void) {
 	mu_assert_streq(rz_list_get_n(l2, 0), "Hello", "first item");
 	mu_assert_streq(rz_list_get_n(l2, 1), "World=Everyone", "second item");
 	rz_list_free(l2);
-	mu_end;
 
 	char s3[] = "Hello  World\tAnd \t Everyone\t";
 	RzList *l3 = rz_str_split_list_regex(s3, "[[:blank:]]+", 0);
@@ -225,6 +224,7 @@ bool test_rz_str_split_list(void) {
 	mu_assert_streq(rz_list_get_n(l3, 2), "And", "third item");
 	mu_assert_streq(rz_list_get_n(l3, 3), "Everyone", "fourth item");
 	rz_list_free(l3);
+	mu_end;
 }
 
 bool test_rz_str_split_lines(void) {
@@ -706,6 +706,49 @@ bool test_rz_str_filter(void) {
 	mu_end;
 }
 
+bool test_rz_str_strchr(void) {
+	const char *a = "xzx";
+	const char *b = "🍍";
+	const char *c = "xx🍍xx";
+	const char *d = "xx\xffggg";
+	const char *e = "xx\xe1";
+	const char *f = "xx\xe1gg";
+
+	mu_assert_eq(rz_str_strchr(a, "z"), a + 1, "Simple search.");
+	mu_assert_eq(rz_str_strchr(a, "a"), NULL, "Simple search. Char not present.");
+	mu_assert_eq(rz_str_strchr(b, "🍍"), b, "Simple UTF-8 search.");
+	mu_assert_eq(rz_str_strchr(b, "x"), NULL, "Simple UTF-8 search. Char not present.");
+	mu_assert_eq(rz_str_strchr(c, "🍍"), c + 2, "Simple UTF-8 search. UTF-8 char within string.");
+	mu_assert_eq(rz_str_strchr(d, "g"), d + 3, "Non printable character in string.");
+	mu_assert_eq(rz_str_strchr(e, "🍍"), NULL, "Start UTF-8 byte present, but string terminates afterwards.");
+	mu_assert_eq(rz_str_strchr(f, "🍍"), NULL, "Start UTF-8 byte present, but invalid chars follow.");
+
+	mu_end;
+}
+
+bool test_rz_str_isXutf8(void) {
+
+	const char *ascii = "a";
+	const char *utf8 = "🍍";
+	const char *null = "\x00";
+	const char *broken_u2 = "\xc0"; // Last byte missing
+	const char *broken_u3 = "\xe0\x8\xff"; // Last byte not an UTF-8 byte.
+	const char *broken_u4 = "\xf0\x80\x80g"; // Last byte is ascii byte.
+
+	mu_assert_true(rz_str_isXutf8(ascii, 1), "Is ascii byte");
+	mu_assert_false(rz_str_isXutf8(ascii, 4), "ASCII is not 4 byte UTF-8");
+	mu_assert_false(rz_str_isXutf8(utf8, 2), "Is not a 2 byte UTF-8");
+	mu_assert_false(rz_str_isXutf8(utf8, 3), "Is not a 3 byte UTF-8");
+	mu_assert_true(rz_str_isXutf8(utf8, 4), "Is a 4 byte UTF-8");
+	mu_assert_false(rz_str_isXutf8(broken_u2, 2), "Broken 2 byte UTF-8");
+	mu_assert_false(rz_str_isXutf8(broken_u3, 3), "Broken 3 byte UTF-8");
+	mu_assert_false(rz_str_isXutf8(broken_u4, 4), "Broken 4 byte UTF-8");
+	mu_assert_false(rz_str_isXutf8(null, 4), "0x00 checks");
+	mu_assert_false(rz_str_isXutf8(ascii, 5), "Invalid UTF-8 length");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
@@ -745,6 +788,8 @@ bool all_tests() {
 	mu_run_test(test_rz_str_nlen);
 	mu_run_test(test_rz_str_ndup);
 	mu_run_test(test_rz_str_filter);
+	mu_run_test(test_rz_str_strchr);
+	mu_run_test(test_rz_str_isXutf8);
 	return tests_passed != tests_run;
 }
 

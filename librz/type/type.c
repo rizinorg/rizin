@@ -505,7 +505,7 @@ RZ_API RzBaseType *rz_type_db_get_enum(const RzTypeDB *typedb, RZ_NONNULL const 
  * \param name The name of the enum to search in
  * \param val The value to search for
  */
-RZ_API RZ_BORROW char *rz_type_db_enum_member_by_val(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
+RZ_API RZ_BORROW const char *rz_type_db_enum_member_by_val(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype) {

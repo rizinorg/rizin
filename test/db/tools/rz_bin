@@ -927,7 +927,7 @@ RUN
 
 NAME=rz-bin -v
 FILE==
-CMDS=!rz-bin -v | grep -c build
+CMDS=!rz-bin -v | grep -c commit
 EXPECT=<<EOF
 1
 EOF

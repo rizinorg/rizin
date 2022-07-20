@@ -436,6 +436,15 @@ typedef struct rz_bin_sym_names_t {
 	char *methflag; ///< methods flag sym.[class].[method]
 } RzBinSymNames;
 
+/**
+ * \brief Message for `pdJ`
+ */
+typedef struct rz_analysis_disasm_text_t {
+	ut64 offset;
+	ut64 arrow; ///< In general, arrow = UT64_MAX, if there is a jump(jmp, ...), arrow = dst offset
+	char *text;
+} RzAnalysisDisasmText;
+
 #ifdef RZ_API
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
 
@@ -749,6 +758,20 @@ RZ_API void rz_core_analysis_esil_init_mem_del(RZ_NONNULL RzCore *core, RZ_NULLA
 RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core);
 
 /* canalysis.c */
+typedef enum rz_core_analysis_name_type {
+	RZ_CORE_ANALYSIS_NAME_TYPE_VAR = 0,
+	RZ_CORE_ANALYSIS_NAME_TYPE_FUNCTION,
+	RZ_CORE_ANALYSIS_NAME_TYPE_FLAG,
+	RZ_CORE_ANALYSIS_NAME_TYPE_ADDRESS,
+} RzCoreAnalysisNameType;
+
+typedef struct rz_core_analysis_name {
+	char *name;
+	char *realname;
+	RzCoreAnalysisNameType type;
+	ut64 offset;
+} RzCoreAnalysisName;
+
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
 RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, bool verbose);
@@ -799,6 +822,11 @@ RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core);
 
+RZ_API RZ_BORROW const char *rz_core_analysis_name_type_to_str(RzCoreAnalysisNameType typ);
+RZ_API void rz_core_analysis_name_free(RZ_NULLABLE RzCoreAnalysisName *p);
+RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, ut64 addr);
+
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
 
@@ -815,6 +843,18 @@ typedef struct rz_core_asm_hit {
 	ut8 valid;
 } RzCoreAsmHit;
 
+/**
+ * \brief Disassemble Options, just for rz_core_print_disasm
+ */
+typedef struct rz_core_disasm_options {
+	int invbreak;
+	int cbytes;
+	RzAnalysisFunction *function; ///< Disassemble a function
+	RzPVector *vec; ///< Not print, but append as RzPVector<RzAnalysisDisasmText>
+} RzCoreDisasmOptions;
+
+#define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
+
 RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *args);
 RZ_API RzBuffer *rz_core_syscallf(RzCore *core, const char *name, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
 RZ_API RzCoreAsmHit *rz_core_asm_hit_new(void);
@@ -828,18 +868,19 @@ RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len
 RZ_API RzList *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *len, ut64 *start_addr, ut32 l);
-RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak, int nbytes, bool json, PJ *pj, RzAnalysisFunction *pdf);
+RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL ut8 *buf, int len, int nlines, RZ_NULLABLE RzCmdStateOutput *state, RzCoreDisasmOptions *options);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int mode);
 RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fmt);
-RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode);
+RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *state);
 RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 reladdr, RZ_NULLABLE RzAnalysisFunction *fcn, bool color);
 RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj);
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
+RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t);
 
 /* cbin.c */
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);
@@ -1012,6 +1053,9 @@ RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdSta
 // cmeta.c
 RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encoding, RZ_NULLABLE const char *name);
 RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
+
+// cprint.c
+RZ_API char *rz_core_print_string_c_cpp(RzCore *core);
 
 /* rtr */
 RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);

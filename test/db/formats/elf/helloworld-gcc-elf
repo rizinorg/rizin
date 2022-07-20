@@ -329,7 +329,7 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 e asm.bytes=true
 e scr.color=0
-pDi 10
+pDq 10
 EOF
 EXPECT=<<EOF
 0x08048300   sym._start:

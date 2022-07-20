@@ -1,0 +1,35 @@
+NAME=spawn + attach and suspend
+FILE=bins/mach0/hello-objc-osx
+ARGS=-d
+CMDS=<<EOF
+# when spawning the process ourselves, it should be
+# suspended right away and stop at the entry in dyld.
+# This is a bit hard to check automatically, so let's
+# just make sure pc is in a map of dyld even after sleeping.
+!sleep 0.5
+dm @ rip~*~[9]
+EOF
+EXPECT=<<EOF
+/usr/lib/dyld
+EOF
+RUN
+
+NAME=dcu + read
+FILE=bins/mach0/hello-objc-osx
+ARGS=-d
+CMDS=<<EOF
+dcu main
+pi 8 @ rip
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+sub rsp, 0x10
+mov rax, qword [section.13.__DATA.__objc_classrefs]
+mov rdi, rax
+lea rax, reloc.objc_msgSend_fixup
+mov rax, qword [rax]
+lea rsi, reloc.objc_msgSend_fixup
+EOF
+RUN
+

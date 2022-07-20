@@ -8,22 +8,6 @@
 // set a maximum output buffer of 50MB
 #define MAXOUT 50000000
 
-static const char *gzerr(int n) {
-	const char *errors[] = {
-		"",
-		"file error", /* Z_ERRNO         (-1) */
-		"stream error", /* Z_STREAM_ERROR  (-2) */
-		"data error", /* Z_DATA_ERROR    (-3) */
-		"insufficient memory", /* Z_MEM_ERROR     (-4) */
-		"buffer error", /* Z_BUF_ERROR     (-5) */
-		"incompatible version", /* Z_VERSION_ERROR (-6) */
-	};
-	if (n < 1 || n > 6) {
-		return "unknown";
-	}
-	return errors[n];
-}
-
 /**
  * \brief inflate zlib compressed or gzipped, automatically accepts either the zlib or gzip format, and use MAX_WBITS as the window size logarithm.
  * \see rz_inflatew()
@@ -42,6 +26,23 @@ RZ_API ut8 *rz_inflate_ignore_header(RZ_NONNULL const ut8 *src, int srcLen, int 
 	rz_return_val_if_fail(src, NULL);
 	rz_return_val_if_fail(srcLen > 0, NULL);
 	return rz_inflatew(src, srcLen, srcConsumed, dstLen, -MAX_WBITS);
+}
+
+#if HAVE_ZLIB
+static const char *gzerr(int n) {
+	const char *errors[] = {
+		"",
+		"file error", /* Z_ERRNO         (-1) */
+		"stream error", /* Z_STREAM_ERROR  (-2) */
+		"data error", /* Z_DATA_ERROR    (-3) */
+		"insufficient memory", /* Z_MEM_ERROR     (-4) */
+		"buffer error", /* Z_BUF_ERROR     (-5) */
+		"incompatible version", /* Z_VERSION_ERROR (-6) */
+	};
+	if (n < 1 || n > 6) {
+		return "unknown";
+	}
+	return errors[n];
 }
 
 /**
@@ -113,16 +114,6 @@ err_exit:
 }
 
 /**
- * \brief deflate uncompressed data to zlib or gzipped, use MAX_WBITS as the window size logarithm.
- * \see rz_deflatew()
- */
-RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
-	rz_return_val_if_fail(src, NULL);
-	rz_return_val_if_fail(srcLen > 0, NULL);
-	return rz_deflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 16);
-}
-
-/**
  * \brief compress/deflate data to zlib or gzip
  * \param src source uncompressed bytes
  * \param srcLen source bytes length
@@ -188,16 +179,6 @@ err_exit:
 	deflateEnd(&stream);
 	free(dst);
 	return NULL;
-}
-
-/**
- * \brief deflate uncompressed data in RzBbuffer to zlib or gzipped, use MAX_WBITS as the window size logarithm.
- * \see rz_deflatew_buf()
- */
-RZ_API bool rz_deflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed) {
-	rz_return_val_if_fail(src && dst, false);
-	rz_return_val_if_fail(block_size > 0, false);
-	return rz_deflatew_buf(src, dst, block_size, src_consumed, MAX_WBITS + 16);
 }
 
 /**
@@ -267,16 +248,6 @@ return_goto:
 }
 
 /**
- * \brief inflate compressed data in RzBbuffer, use MAX_WBITS as the window size logarithm.
- * \see rz_inflatew_buf()
- */
-RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed) {
-	rz_return_val_if_fail(src && dst, false);
-	rz_return_val_if_fail(block_size > 0, false);
-	return rz_inflatew_buf(src, dst, block_size, src_consumed, MAX_WBITS + 32);
-}
-
-/**
  * \brief inflate data contained in a RzBuffer using zlib
  * \param src source buffer
  * \param dst destination buffer
@@ -339,6 +310,54 @@ return_goto:
 	free(dst_tmpbuf);
 
 	return ret;
+}
+
+#else
+RZ_API ut8 *rz_inflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
+	return NULL;
+}
+
+RZ_API ut8 *rz_deflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
+	return NULL;
+}
+
+RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, int wbits) {
+	return false;
+}
+
+RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, int wbits) {
+	return false;
+}
+#endif
+
+/**
+ * \brief deflate uncompressed data to zlib or gzipped, use MAX_WBITS as the window size logarithm.
+ * \see rz_deflatew()
+ */
+RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+	rz_return_val_if_fail(src, NULL);
+	rz_return_val_if_fail(srcLen > 0, NULL);
+	return rz_deflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 16);
+}
+
+/**
+ * \brief deflate uncompressed data in RzBbuffer to zlib or gzipped, use MAX_WBITS as the window size logarithm.
+ * \see rz_deflatew_buf()
+ */
+RZ_API bool rz_deflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed) {
+	rz_return_val_if_fail(src && dst, false);
+	rz_return_val_if_fail(block_size > 0, false);
+	return rz_deflatew_buf(src, dst, block_size, src_consumed, MAX_WBITS + 16);
+}
+
+/**
+ * \brief inflate compressed data in RzBbuffer, use MAX_WBITS as the window size logarithm.
+ * \see rz_inflatew_buf()
+ */
+RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed) {
+	rz_return_val_if_fail(src && dst, false);
+	rz_return_val_if_fail(block_size > 0, false);
+	return rz_inflatew_buf(src, dst, block_size, src_consumed, MAX_WBITS + 32);
 }
 
 #if HAVE_LZMA

@@ -89,10 +89,12 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 wx 2f6c642d
-aoj~{opex}
+aoj~{[0].disasm}
+aoj~{[0].opex}
 EOF
 EXPECT=<<EOF
-{"opcode":"stclhs p12, c6, [r4, -0xbc]!","disasm":"stclhs p12, c6, [r4, -0xbc]!","pseudo":"asm(\"stclhs p12, c6, [r4, -0xbc]!\")","mnemonic":"stclhs","mask":"ffffffff","esil":"cf,?{,,}","sign":false,"prefix":0,"id":191,"opex":{"operands":[{"type":"pimm","value":12},{"type":"cimm","value":6},{"type":"mem","base":"r4","scale":1,"disp":-188}],"writeback":true,"cc":"hs"},"addr":0,"bytes":"2f6c642d","size":4,"type":"null","esilcost":0,"scale":0,"refptr":0,"cycles":1,"failcycles":0,"delay":0,"stackptr":0,"family":"cpu"}
+stclhs p12, c6, [r4, -0xbc]!
+{"operands":[{"type":"pimm","value":12},{"type":"cimm","value":6},{"type":"mem","base":"r4","scale":1,"disp":-188}],"writeback":true,"cc":"hs"}
 EOF
 RUN
 

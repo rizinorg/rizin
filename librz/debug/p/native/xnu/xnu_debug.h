@@ -12,6 +12,7 @@
 #define _XNU_DEBUG_H
 
 #include <rz_util/rz_log.h>
+#include <rz_debug.h>
 
 #define LOG_MACH_ERROR(name, rc) \
 	do { \

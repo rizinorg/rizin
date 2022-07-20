@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_core.h>
 #include "minunit.h"
 
 #define SWITCH_TO_ARCH_BITS(arch, bits) \
@@ -96,8 +97,75 @@ bool test_rz_analysis_op_val() {
 	mu_end;
 }
 
+bool test_rz_core_analysis_bytes() {
+	RzCore *core = rz_core_new();
+	rz_core_set_asm_configs(core, "x86", 64, 0);
+	ut8 buf[128];
+	int len = rz_hex_str2bin("554889e5897dfc", buf);
+	RzPVector *vec = rz_core_analysis_bytes(core, buf, len, 0);
+	mu_assert_notnull(vec, "rz_core_analysis_bytes");
+	mu_assert_eq(rz_pvector_len(vec), 3, "rz_core_analysis_bytes len");
+
+	RzAnalysisBytes *ab = rz_pvector_at(vec, 0);
+	mu_assert_streq(ab->opcode, "push rbp", "rz_core_analysis_bytes opcode");
+
+	ab = rz_pvector_at(vec, 1);
+	mu_assert_streq(ab->opcode, "mov rbp, rsp", "rz_core_analysis_bytes opcode");
+	mu_assert_streq(ab->pseudo, "rbp = rsp", "rz_core_analysis_bytes pseudo");
+
+	ab = rz_pvector_at(vec, 2);
+	mu_assert_streq(ab->opcode, "mov dword [rbp - 4], edi", "rz_core_analysis_bytes opcode");
+	mu_assert_streq(ab->pseudo, "dword [rbp - 4] = edi", "rz_core_analysis_bytes pseudo");
+
+	rz_core_free(core);
+	rz_pvector_free(vec);
+	mu_end;
+}
+
+bool test_rz_core_print_disasm() {
+	RzCore *core = rz_core_new();
+	rz_core_set_asm_configs(core, "x86", 64, 0);
+	ut8 buf[128];
+	int len = rz_hex_str2bin("554889e5897dfc", buf);
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_analysis_disasm_text_free);
+	RzCoreDisasmOptions options = {
+		.vec = vec,
+		.cbytes = 1,
+	};
+	mu_assert_notnull(vec, "rz_core_print_disasm vec not null");
+	rz_core_print_disasm(core, 0, buf, len, len, NULL, &options);
+
+	mu_assert_eq(rz_pvector_len(vec), 3, "rz_core_print_disasm len");
+	RzAnalysisDisasmText *t = rz_pvector_at(vec, 0);
+	mu_assert_eq(t->offset, 0, "rz_core_print_disasm offset");
+	mu_assert_eq(t->arrow, UT64_MAX, "rz_core_print_disasm arrow");
+	mu_assert_streq_free(rz_str_trim_dup(t->text),
+		"\033[32m\033[7m0x00000000\033[0m      \033[35mpush \033[36m rbp\033[0m\033[0m\033[0m",
+		"rz_core_print_disasm text");
+
+	t = rz_pvector_at(vec, 1);
+	mu_assert_eq(t->offset, 1, "rz_core_print_disasm offset");
+	mu_assert_eq(t->arrow, UT64_MAX, "rz_core_print_disasm arrow");
+	mu_assert_streq_free(rz_str_trim_dup(t->text),
+		"\033[32m0x00000001\033[0m      \033[37mmov  \033[36m rbp\033[0m,\033[36m\033[36m rsp\033[0m\033[0m\033[0m",
+		"rz_core_print_disasm text");
+
+	t = rz_pvector_at(vec, 2);
+	mu_assert_eq(t->offset, 4, "rz_core_print_disasm offset");
+	mu_assert_eq(t->arrow, UT64_MAX, "rz_core_print_disasm arrow");
+	mu_assert_streq_free(rz_str_trim_dup(t->text),
+		"\033[32m0x00000004\033[0m      \033[37mmov   dword \033[0m[\033[36mrbp \033[0m-\033[36m\033[36m \033[33m4\033[0m]\033[36m\033[0m,\033[36m\033[36m edi\033[0m\033[0m\033[0m",
+		"rz_core_print_disasm text");
+
+	rz_core_free(core);
+	rz_pvector_free(vec);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_op_val);
+	mu_run_test(test_rz_core_analysis_bytes);
+	mu_run_test(test_rz_core_print_disasm);
 	return tests_passed != tests_run;
 }
 

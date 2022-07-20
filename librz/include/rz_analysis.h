@@ -2180,6 +2180,7 @@ typedef struct analysis_bytes_t {
 	char *description;
 	char *mask;
 	char *bytes;
+	int oplen;
 } RzAnalysisBytes;
 
 RZ_API void rz_serialize_analysis_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);

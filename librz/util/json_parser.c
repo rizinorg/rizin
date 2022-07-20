@@ -467,11 +467,11 @@ RZ_API const RzJson *rz_json_get_path(const RzJson *json, const char *path) {
 	return (js == json) ? NULL : js;
 }
 
-static void json_pj_recurse(const RzJson *json, PJ *pj) {
+static void json_pj_recurse(const RzJson *json, PJ *pj, bool with_key) {
 	rz_return_if_fail(json && pj);
 	switch (json->type) {
 	case RZ_JSON_NULL: {
-		if (json->key) {
+		if (with_key && json->key) {
 			pj_knull(pj, json->key);
 		} else {
 			pj_null(pj);
@@ -479,33 +479,35 @@ static void json_pj_recurse(const RzJson *json, PJ *pj) {
 		break;
 	}
 	case RZ_JSON_OBJECT: {
-		if (json->key) {
+		if (with_key && json->key) {
 			pj_ko(pj, json->key);
 		} else {
 			pj_o(pj);
 		}
 		RzJson *baby;
 		for (baby = json->children.first; baby; baby = baby->next) {
-			json_pj_recurse(baby, pj);
+			// Always print keys for children
+			json_pj_recurse(baby, pj, true);
 		}
 		pj_end(pj);
 		break;
 	}
 	case RZ_JSON_ARRAY: {
-		if (json->key) {
+		if (with_key && json->key) {
 			pj_ka(pj, json->key);
 		} else {
 			pj_a(pj);
 		}
 		RzJson *baby;
 		for (baby = json->children.first; baby; baby = baby->next) {
-			json_pj_recurse(baby, pj);
+			// Always print keys for children
+			json_pj_recurse(baby, pj, true);
 		}
 		pj_end(pj);
 		break;
 	}
 	case RZ_JSON_STRING: {
-		if (json->key) {
+		if (with_key && json->key) {
 			pj_ks(pj, json->key, json->str_value);
 		} else {
 			pj_s(pj, json->str_value);
@@ -513,15 +515,15 @@ static void json_pj_recurse(const RzJson *json, PJ *pj) {
 		break;
 	}
 	case RZ_JSON_INTEGER: {
-		if (json->key) {
-			pj_ki(pj, json->key, json->num.u_value);
+		if (with_key && json->key) {
+			pj_kN(pj, json->key, json->num.u_value);
 		} else {
-			pj_i(pj, json->num.u_value);
+			pj_N(pj, json->num.u_value);
 		}
 		break;
 	}
 	case RZ_JSON_DOUBLE: {
-		if (json->key) {
+		if (with_key && json->key) {
 			pj_kd(pj, json->key, json->num.dbl_value);
 		} else {
 			pj_d(pj, json->num.dbl_value);
@@ -529,7 +531,7 @@ static void json_pj_recurse(const RzJson *json, PJ *pj) {
 		break;
 	}
 	case RZ_JSON_BOOLEAN: {
-		if (json->key) {
+		if (with_key && json->key) {
 			pj_kb(pj, json->key, (bool)json->num.u_value);
 		} else {
 			pj_b(pj, (bool)json->num.u_value);
@@ -538,26 +540,22 @@ static void json_pj_recurse(const RzJson *json, PJ *pj) {
 	}
 }
 
-static void json_pj_handler(const RzJson *json, PJ *pj) {
-	if (json->type == RZ_JSON_OBJECT) {
-		pj_o(pj);
-	} else if (json->type == RZ_JSON_ARRAY) {
-		pj_a(pj);
-	}
-	RzJson *js;
-	for (js = json->children.first; js; js = js->next) {
-		json_pj_recurse(js, pj);
-	}
-	if (json->type == RZ_JSON_OBJECT || json->type == RZ_JSON_ARRAY) {
-		pj_end(pj);
-	}
-}
-
-RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json) {
+/* \brief returns the string representation of RzJson object
+ * \param with_key choose if include the object key name in the output
+ */
+RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json, bool with_key) {
 	rz_return_val_if_fail(json, NULL);
-	rz_return_val_if_fail(json->type != RZ_JSON_NULL, NULL);
 	PJ *pj = pj_new();
-	json_pj_handler(json, pj);
+	if (json->type == RZ_JSON_STRING) {
+		if (with_key && json->key) {
+			pj_ks(pj, json->key, json->str_value);
+		} else {
+			// Printing string without surrounding quotes
+			pj_S(pj, json->str_value);
+		}
+	} else {
+		json_pj_recurse(json, pj, with_key);
+	}
 	char *str = pj_drain(pj);
 	return str;
 }

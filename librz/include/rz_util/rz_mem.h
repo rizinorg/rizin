@@ -27,7 +27,7 @@ RZ_API void rz_mem_memzero(void *, size_t);
 RZ_API void rz_mem_reverse(ut8 *b, int l);
 RZ_API int rz_mem_protect(void *ptr, int size, const char *prot);
 RZ_API int rz_mem_set_num(ut8 *dest, int dest_size, ut64 num);
-RZ_API int rz_mem_eq(ut8 *a, ut8 *b, int len);
+RZ_API int rz_mem_eq(const ut8 *a, const ut8 *b, int len);
 RZ_API void rz_mem_copybits(ut8 *dst, const ut8 *src, int bits);
 RZ_API void rz_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits);
 RZ_API void rz_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize);

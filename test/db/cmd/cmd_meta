@@ -26,7 +26,7 @@ Cv var_8h comment for var_8h
 Cv var_rax comment for var_rax
 Cv var_sp_8h comment for var_sp_8h
 
-pd1~comment
+pd 1 ~comment
 ?e --
 Cvb
 Cvb*
@@ -39,16 +39,16 @@ Cvs*
 ?e --
 
 Cv- arg_8h
-pd1~comment
+pd 1 ~comment
 ?e --
 Cv- var_8h
-pd1~comment
+pd 1 ~comment
 ?e --
 Cv- var_sp_8h
-pd1~comment
+pd 1 ~comment
 ?e --
 Cv- var_rax
-pd1~comment
+pd 1 ~comment
 ?e --
 
 EOF

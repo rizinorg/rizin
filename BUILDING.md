@@ -232,6 +232,7 @@ If you are a developer, it might not be necessary to run the `install` step
 
 If you encounter issues while re-building Rizin, try to remove the existing
 build directory (e.g. `rm -r ./build`) and clean the subproject files
-downloaded by meson (e.g. `git clean -dxff subprojects/`).
+downloaded by meson (e.g. `git clean -dxff subprojects/`). Note that changing
+a `meson.build` file does *not* guarantee a full rebuild.
 
 [doc/PACKAGERS.md]: https://github.com/rizinorg/rizin/blob/dev/doc/PACKAGERS.md

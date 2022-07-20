@@ -90,6 +90,19 @@ commands:
         summary: Generate a rizin commands for writing the byte array.
         cname: cmd_print_byte_array_rizin
         args: []
+  - name: pD
+    summary: Disassemble N bytes (can be negative)
+    cname: cmd_disassembly_n_bytes
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: n_bytes
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: pd
     summary: Print Disassembly
     cname: cmd_print_disassembly
@@ -370,6 +383,12 @@ commands:
         optional: true
     modes:
       - RZ_OUTPUT_MODE_JSON
+  - name: psc
+    summary: Generate a C/C++ string
+    cname: print_string_c_cpp
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args: []
   - name: psw
     summary: Print buffer as a utf16le string
     cname: print_utf16le
@@ -410,3 +429,18 @@ commands:
       - name: type
         type: RZ_CMD_ARG_TYPE_NUM
         optional: true
+  - name: p6
+    summary: Base64 decoding/encoding
+    subcommands:
+      - name: p6e
+        summary: Base64 encoding
+        cname: cmd_base64_encode
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: p6d
+        summary: Base64 decoding
+        cname: cmd_base64_decode
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []

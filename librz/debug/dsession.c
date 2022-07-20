@@ -397,7 +397,7 @@ static void serialize_checkpoints(Sdb *db, RzVector *checkpoints) {
  *  "data":"<base64>", "perm":<int>, "user":<int>, "shared":<bool>}
  *
  * Notes:
- * - This mostly follows rz-db-style serialization and uses sdb_json as the parser.
+ * - This mostly follows rz-db-style serialization
  */
 RZ_API void rz_debug_session_serialize(RzDebugSession *session, Sdb *db) {
 	sdb_num_set(db, "maxcnum", session->maxcnum, 0);
