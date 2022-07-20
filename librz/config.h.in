@@ -4,16 +4,16 @@
 #ifndef _INCLUDE_CONFIG_H_
 #define _INCLUDE_CONFIG_H_
 
-#define RZ_DEBUG 0
+#define RZ_DEBUG   0
 #define RZ_RTDEBUG 1
 
 /* inlined APIs */
-#define RZ_INLINE 0
+#define RZ_INLINE   0
 #define RZ_LOADLIBS 1
 
+// clang-format off
 #define RZ_EGG_STATIC_PLUGINS @plugins_egg@
 #define RZ_BIN_STATIC_PLUGINS @plugins_bin@
-#define RZ_BIN_LDR_STATIC_PLUGINS @plugins_bin_ldr@
 #define RZ_BIN_XTR_STATIC_PLUGINS @plugins_bin_xtr@
 #define RZ_IO_STATIC_PLUGINS @plugins_io@
 #define RZ_DEBUG_STATIC_PLUGINS @plugins_debug@
@@ -26,5 +26,6 @@
 #define RZ_PARSE_STATIC_PLUGINS @plugins_parse@
 #define RZ_CRYPTO_STATIC_PLUGINS @plugins_crypto@
 #define RZ_DEMANGLER_STATIC_PLUGINS @plugins_demangler@
+// clang-format on
 
 #endif

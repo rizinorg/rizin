@@ -809,7 +809,6 @@ summary({
   'Analysis Plugins': analysis_plugins,
   'Assembler Plugins': asm_plugins,
   'Binary Plugins': bin_plugins,
-  'BinLdr Plugins': bin_ldr_plugins,
   'BinXtr Plugins': bin_xtr_plugins,
   'Breakpoint Plugins': bp_plugins,
   'Core Plugins': core_plugins,
