@@ -1066,10 +1066,15 @@ RZ_API RZ_OWN char *rz_core_esil_of_assembly(RzCore *core, const char *assembly)
 RZ_API RZ_OWN char *rz_core_assembly_of_hex(RzCore *core, ut8 *hex, int len);
 RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, ut8 *hex, int len);
 
-RZ_API bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len);
-RZ_API bool rz_core_print_dump(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, ut8 n, int len, RzCorePrintFormatType format);
-RZ_API bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len);
-RZ_API RZ_OWN char *rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len, ut8 size);
+RZ_API RZ_OWN char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len);
+RZ_API RZ_OWN char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, ut8 n, int len, RzCorePrintFormatType format);
+RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len);
+RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len, ut8 size);
+
+#define rz_core_print_hexdump_diff(...)       rz_cons_print_own(rz_core_print_hexdump_diff_str(__VA_ARGS__))
+#define rz_core_print_dump(...)               rz_cons_print_own(rz_core_print_dump_str(__VA_ARGS__))
+#define rz_core_print_hexdump_or_hexdiff(...) rz_cons_print_own(rz_core_print_hexdump_or_hexdiff_str(__VA_ARGS__))
+#define rz_core_print_hexdump_byline(...)     rz_cons_print_own(rz_core_print_hexdump_byline_str(__VA_ARGS__))
 
 /* rtr */
 RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);

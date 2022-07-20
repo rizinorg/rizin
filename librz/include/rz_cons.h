@@ -896,6 +896,7 @@ RZ_API void rz_cons_printf_list(const char *format, va_list ap);
 RZ_API void rz_cons_strcat(const char *str);
 RZ_API void rz_cons_strcat_at(const char *str, int x, char y, int w, int h);
 #define rz_cons_print(x) rz_cons_strcat(x)
+RZ_API bool rz_cons_print_own(RZ_NULLABLE char *str);
 RZ_API void rz_cons_println(const char *str);
 
 RZ_API void rz_cons_strcat_justify(const char *str, int j, char c);

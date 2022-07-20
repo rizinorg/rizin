@@ -28,6 +28,15 @@ static int libc_eprintf(const char *format, ...) {
 	return 0;
 }
 
+#define sb_printf(fmt, ...) rz_strbuf_appendf(sb, (fmt), __VA_ARGS__)
+#define sb_print(x)         rz_strbuf_append(sb, rz_str_get(x))
+#define sb_print_own(x) \
+	{ \
+		char *own_string_temp = (x); \
+		rz_strbuf_append(sb, rz_str_get(own_string_temp)); \
+		free(own_string_temp); \
+	}
+
 static RzPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 RZ_API bool rz_print_is_interrupted(void) {
@@ -151,20 +160,26 @@ RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len) {
 	return false;
 }
 
-RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set) {
+RZ_API const char *rz_print_cursor_str(RzPrint *p, int cur, int len, int set) {
 	if (rz_print_have_cursor(p, cur, len)) {
-		p->cb_printf("%s", RZ_CONS_INVERT(set, 1));
+		static char c[12];
+		memset(c, 0, sizeof(c));
+		rz_str_cat(c, RZ_CONS_INVERT(set, 1));
+		return c;
 	}
+	return NULL;
 }
 
-RZ_API void rz_print_addr(RzPrint *p, ut64 addr) {
+RZ_API char *rz_print_addr_str(RzPrint *p, ut64 addr) {
 	char space[32] = {
 		0
 	};
 	const char *white = "";
 #define PREOFF(x) (p && p->cons && p->cons->context && p->cons->context->pal.x) ? p->cons->context->pal.x
-	PrintfCallback printfmt = (PrintfCallback)(p ? p->cb_printf : libc_printf);
-#define print(x) printfmt("%s", x)
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return NULL;
+	}
 	bool use_segoff = p ? (p->flags & RZ_PRINT_FLAGS_SEGOFF) : false;
 	bool use_color = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
 	bool dec = p ? (p->flags & RZ_PRINT_FLAGS_ADDRDEC) : false;
@@ -192,15 +207,15 @@ RZ_API void rz_print_addr(RzPrint *p, ut64 addr) {
 			    : Color_GREEN;
 			const char *fin = Color_RESET;
 			if (dec) {
-				printfmt("%s%s%s%s%c", pre, white, space, fin, ch);
+				sb_printf("%s%s%s%s%c", pre, white, space, fin, ch);
 			} else {
-				printfmt("%s%04x:%04x%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
+				sb_printf("%s%04x:%04x%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
 			}
 		} else {
 			if (dec) {
-				printfmt("%s%s%c", white, space, ch);
+				sb_printf("%s%s%c", white, space, ch);
 			} else {
-				printfmt("%04x:%04x%c", s & 0xffff, a & 0xffff, ch);
+				sb_printf("%04x:%04x%c", s & 0xffff, a & 0xffff, ch);
 			}
 		}
 	} else {
@@ -221,28 +236,29 @@ RZ_API void rz_print_addr(RzPrint *p, ut64 addr) {
 				}
 			}
 			if (dec) {
-				printfmt("%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
+				sb_printf("%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
 			} else {
 				if (p && p->wide_offsets) {
 					// TODO: make %016 depend on asm.bits
-					printfmt("%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
+					sb_printf("%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
 				} else {
-					printfmt("%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
+					sb_printf("%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
 				}
 			}
 		} else {
 			if (dec) {
-				printfmt("%s%" PFMT64d "%c", white, addr, ch);
+				sb_printf("%s%" PFMT64d "%c", white, addr, ch);
 			} else {
 				if (p && p->wide_offsets) {
 					// TODO: make %016 depend on asm.bits
-					printfmt("0x%016" PFMT64x "%c", addr, ch);
+					sb_printf("0x%016" PFMT64x "%c", addr, ch);
 				} else {
-					printfmt("0x%08" PFMT64x "%c", addr, ch);
+					sb_printf("0x%08" PFMT64x "%c", addr, ch);
 				}
 			}
 		}
 	}
+	return rz_strbuf_drain(sb);
 }
 
 RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
@@ -366,27 +382,30 @@ RZ_API const char *rz_print_byte_color(RzPrint *p, int ch) {
 	return NULL;
 }
 
-RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch) {
-	PrintfCallback printfmt = (PrintfCallback)(p ? p->cb_printf : libc_printf);
-#define print(x) printfmt("%s", x)
+RZ_API char *rz_print_byte_str(RzPrint *p, const char *fmt, int idx, ut8 ch) {
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return NULL;
+	}
 	ut8 rch = ch;
 	if (!IS_PRINTABLE(ch) && fmt[0] == '%' && fmt[1] == 'c') {
 		rch = '.';
 	}
-	rz_print_cursor(p, idx, 1, 1);
+	sb_print(rz_print_cursor_str(p, idx, 1, 1));
 	if (p && p->flags & RZ_PRINT_FLAGS_COLOR) {
 		const char *bytecolor = rz_print_byte_color(p, ch);
 		if (bytecolor) {
-			print(bytecolor);
+			sb_print(bytecolor);
 		}
-		printfmt(fmt, rch);
+		sb_printf(fmt, rch);
 		if (bytecolor) {
-			print(Color_RESET);
+			sb_print(Color_RESET);
 		}
 	} else {
-		printfmt(fmt, rch);
+		sb_printf(fmt, rch);
 	}
-	rz_print_cursor(p, idx, 1, 0);
+	sb_print(rz_print_cursor_str(p, idx, 1, 0));
+	return rz_strbuf_drain(sb);
 }
 
 static bool checkSparse(const ut8 *p, int len, int ch) {
@@ -515,10 +534,12 @@ RZ_API const char *rz_print_section(RzPrint *p, ut64 at) {
 	return section;
 }
 
-RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
-	rz_return_if_fail(p && buf && len > 0);
-	PrintfCallback printfmt = (PrintfCallback)printf;
-#define print(x) printfmt("%s", x)
+RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
+	rz_return_val_if_fail(p && buf && len > 0, NULL);
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return NULL;
+	}
 	bool c = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
 	const char *color_title = c ? (Pal(p, offset)
 					      : Color_MAGENTA)
@@ -562,7 +583,6 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 		compact = p->flags & RZ_PRINT_FLAGS_COMPACT;
 		inc = p->cols; // row width
 		col = p->col;
-		printfmt = (PrintfCallback)p->cb_printf;
 		stride = p->stride;
 	}
 	if (!use_hexa) {
@@ -628,18 +648,18 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 	}
 	if (use_header) {
 		if (c) {
-			print(color_title);
+			sb_print(color_title);
 		}
 		if (base < 32) {
 			{ // XXX: use rz_print_addr_header
 				int i, delta;
 				char soff[32];
 				if (hex_style) {
-					print("..offset..");
+					sb_print("..offset..");
 				} else {
-					print("- offset -");
+					sb_print("- offset -");
 					if (p->wide_offsets) {
-						print("       ");
+						sb_print("       ");
 					}
 				}
 				if (use_segoff) {
@@ -656,11 +676,11 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					delta--;
 				}
 				for (i = 0; i < delta; i++) {
-					print(space);
+					sb_print(space);
 				}
 			}
 			/* column after number, before hex data */
-			print((col == 1) ? "|" : space);
+			sb_print((col == 1) ? "|" : space);
 			if (use_hdroff) {
 				k = addr & 0xf;
 				K = (addr >> 4) & 0xf;
@@ -670,59 +690,59 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 			if (use_hexa) {
 				/* extra padding for offsets > 8 digits */
 				for (i = 0; i < inc; i++) {
-					print(pre);
+					sb_print(pre);
 					if (base < 0) {
 						if (i & 1) {
-							print(space);
+							sb_print(space);
 						}
 					}
 					if (use_hdroff) {
 						if (use_pair) {
-							printfmt("%c%c",
+							sb_printf("%c%c",
 								hex[(((i + k) >> 4) + K) % 16],
 								hex[(i + k) % 16]);
 						} else {
-							printfmt(" %c", hex[(i + k) % 16]);
+							sb_printf(" %c", hex[(i + k) % 16]);
 						}
 					} else {
-						printfmt(" %c", hex[(i + k) % 16]);
+						sb_printf(" %c", hex[(i + k) % 16]);
 					}
 					if (i & 1 || !pairs) {
 						if (!compact) {
-							print(col != 1 ? space : ((i + 1) < inc) ? space
-												 : "|");
+							sb_print(col != 1 ? space : ((i + 1) < inc) ? space
+												    : "|");
 						}
 					}
 				}
 			}
 			/* ascii column */
 			if (compact) {
-				print(col > 0 ? "|" : space);
+				sb_print(col > 0 ? "|" : space);
 			} else {
-				print(col == 2 ? "|" : space);
+				sb_print(col == 2 ? "|" : space);
 			}
 			if (!p || !(p->flags & RZ_PRINT_FLAGS_NONASCII)) {
 				for (i = 0; i < inc; i++) {
-					printfmt("%c", hex[(i + k) % 16]);
+					sb_printf("%c", hex[(i + k) % 16]);
 				}
 			}
 			if (col == 2) {
-				printfmt("|");
+				sb_print("|");
 			}
 			/* print comment header*/
 			if (p && p->use_comments && !compact) {
 				if (col != 2) {
-					print(" ");
+					sb_print(" ");
 				}
 				if (!hex_style) {
-					print(" comment");
+					sb_print(" comment");
 				}
 			}
-			print("\n");
+			sb_print("\n");
 		}
 
 		if (c) {
-			print(Color_RESET);
+			sb_print(Color_RESET);
 		}
 	}
 
@@ -755,7 +775,7 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 						sparse_char = buf[j];
 						last_sparse++;
 						if (last_sparse == 2) {
-							print(" ...\n");
+							sb_print(" ...\n");
 							continue;
 						}
 						if (last_sparse > 2) {
@@ -769,14 +789,14 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 		}
 		ut64 at = addr + (j * zoomsz);
 		if (use_offset && (!isPxr || inc < 4)) {
-			print(rz_print_section(p, at));
-			rz_print_addr(p, at);
+			sb_print(rz_print_section(p, at));
+			sb_print(rz_print_addr_str(p, at));
 		}
 		int row_have_cursor = -1;
 		ut64 row_have_addr = UT64_MAX;
 		if (use_hexa) {
 			if (!compact && !isPxr) {
-				print((col == 1) ? "|" : " ");
+				sb_print((col == 1) ? "|" : " ");
 			}
 			for (j = i; j < i + inc; j++) {
 				if (j != i && use_align && rowbytes == inc) {
@@ -794,24 +814,24 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 				if (!compact && ((j >= len) || bytes >= rowbytes)) {
 					if (col == 1) {
 						if (j + 1 >= inc + i) {
-							print(j % 2 ? "  |" : "| ");
+							sb_print(j % 2 ? "  |" : "| ");
 						} else {
-							print(j % 2 ? "   " : "  ");
+							sb_print(j % 2 ? "   " : "  ");
 						}
 					} else {
 						if (base == 32) {
-							print((j % 4) ? "   " : "  ");
+							sb_print((j % 4) ? "   " : "  ");
 						} else if (base == 10) {
-							print(j % 2 ? "     " : "  ");
+							sb_print(j % 2 ? "     " : "  ");
 						} else {
-							print(j % 2 ? "   " : "  ");
+							sb_print(j % 2 ? "   " : "  ");
 						}
 					}
 					continue;
 				}
 				const char *hl = (hex_style && p && p->offname(p->user, addr + j)) ? Color_INVERT : NULL;
 				if (hl) {
-					print(hl);
+					sb_print(hl);
 				}
 				if (p && (base == 32 || base == 64)) {
 					int left = len - i;
@@ -830,7 +850,7 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 						continue;
 					}
 					rz_mem_swaporcopy((ut8 *)&n, buf + j, sz_n, p && p->big_endian);
-					rz_print_cursor(p, j, sz_n, 1);
+					sb_print(rz_print_cursor_str(p, j, sz_n, 1));
 					// stub for colors
 					if (p && p->colorfor) {
 						if (!p->iob.addr_is_mapped(p->iob.io, addr + j)) {
@@ -858,52 +878,52 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					}
 					if (printValue) {
 						if (use_offset && !hasNull && isPxr) {
-							print(rz_print_section(p, at));
-							rz_print_addr(p, addr + j * zoomsz);
+							sb_print(rz_print_section(p, at));
+							sb_print(rz_print_addr_str(p, addr + j * zoomsz));
 						}
 						if (base == 64) {
-							printfmt("%s0x%016" PFMT64x "%s  ", a, (ut64)n, b);
+							sb_printf("%s0x%016" PFMT64x "%s  ", a, (ut64)n, b);
 						} else if (step == 2) {
-							printfmt("%s0x%04x%s ", a, (ut16)n, b);
+							sb_printf("%s0x%04x%s ", a, (ut16)n, b);
 						} else {
-							printfmt("%s0x%08x%s ", a, (ut32)n, b);
+							sb_printf("%s0x%08x%s ", a, (ut32)n, b);
 						}
 					} else {
 						if (hasNull) {
 							const char *n = p->offname(p->user, addr + j);
-							print(rz_print_section(p, at));
-							rz_print_addr(p, addr + j * zoomsz);
-							printfmt("..[ null bytes ]..   00000000 %s\n", n ? n : "");
+							sb_print(rz_print_section(p, at));
+							sb_print(rz_print_addr_str(p, addr + j * zoomsz));
+							sb_printf("..[ null bytes ]..   00000000 %s\n", n ? n : "");
 						}
 					}
-					rz_print_cursor(p, j, sz_n, 0);
+					sb_print(rz_print_cursor_str(p, j, sz_n, 0));
 					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
 					long long w = rz_read_ble64(buf + j, p && p->big_endian);
-					rz_print_cursor(p, j, 8, 1);
-					printfmt("%23" PFMT64d " ", w);
-					rz_print_cursor(p, j, 8, 0);
+					sb_print(rz_print_cursor_str(p, j, 8, 1));
+					sb_printf("%23" PFMT64d " ", w);
+					sb_print(rz_print_cursor_str(p, j, 8, 0));
 					j += 7;
 				} else if (base == -1) {
 					st8 w = rz_read_ble8(buf + j);
-					rz_print_cursor(p, j, 1, 1);
-					printfmt("%4d ", w);
-					rz_print_cursor(p, j, 1, 0);
+					sb_print(rz_print_cursor_str(p, j, 1, 1));
+					sb_printf("%4d ", w);
+					sb_print(rz_print_cursor_str(p, j, 1, 0));
 				} else if (base == -10) {
 					if (j + 1 < len) {
 						st16 w = rz_read_ble16(buf + j, p && p->big_endian);
-						rz_print_cursor(p, j, 2, 1);
-						printfmt("%7d ", w);
-						rz_print_cursor(p, j, 2, 0);
+						sb_print(rz_print_cursor_str(p, j, 2, 1));
+						sb_printf("%7d ", w);
+						sb_print(rz_print_cursor_str(p, j, 2, 0));
 					}
 					j += 1;
 				} else if (base == 10) { // "pxd"
 					if (j + 3 < len) {
 						int w = rz_read_ble32(buf + j, p && p->big_endian);
-						rz_print_cursor(p, j, 4, 1);
-						printfmt("%13d ", w);
-						rz_print_cursor(p, j, 4, 0);
+						sb_print(rz_print_cursor_str(p, j, 4, 1));
+						sb_printf("%13d ", w);
+						sb_print(rz_print_cursor_str(p, j, 4, 0));
 					}
 					j += 3;
 				} else {
@@ -913,33 +933,33 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					if (use_unalloc && !p->iob.is_valid_offset(p->iob.io, addr + j, false)) {
 						char ch = p->io_unalloc_ch;
 						char dbl_ch_str[] = { ch, ch, 0 };
-						p->cb_printf("%s", dbl_ch_str);
+						sb_printf("%s", dbl_ch_str);
 					} else {
-						rz_print_byte(p, bytefmt, j, buf[j]);
+						sb_print_own(rz_print_byte_str(p, bytefmt, j, buf[j]));
 					}
 					if (pairs && !compact && (inc & 1)) {
 						bool mustspace = (rows % 2) ? !(j & 1) : (j & 1);
 						if (mustspace) {
-							print(" ");
+							sb_print(" ");
 						}
 					} else if (bytes % 2 || !pairs) {
 						if (col == 1) {
 							if (j + 1 < inc + i) {
 								if (!compact) {
-									print(" ");
+									sb_print(" ");
 								}
 							} else {
-								print("|");
+								sb_print("|");
 							}
 						} else {
 							if (!compact) {
-								print(" ");
+								sb_print(" ");
 							}
 						}
 					}
 				}
 				if (hl) {
-					print(Color_RESET);
+					sb_print(Color_RESET);
 				}
 				bytes++;
 			}
@@ -947,14 +967,14 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 		if (printValue) {
 			if (compact) {
 				if (col == 0) {
-					print(" ");
+					sb_print(" ");
 				} else if (col == 1) {
 					// print (" ");
 				} else {
-					print((col == 2) ? "|" : "");
+					sb_print((col == 2) ? "|" : "");
 				}
 			} else {
-				print((col == 2) ? "|" : " ");
+				sb_print((col == 2) ? "|" : " ");
 			}
 			if (!p || !(p->flags & RZ_PRINT_FLAGS_NONASCII)) {
 				bytes = 0;
@@ -963,7 +983,7 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					if (j != i && use_align && bytes >= rowbytes) {
 						int sz = (p && p->offsize) ? p->offsize(p->user, addr + j) : -1;
 						if (sz >= 0) {
-							print(" ");
+							sb_print(" ");
 							break;
 						}
 					}
@@ -973,13 +993,13 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset(p->iob.io, addr + j, false))
 						? ' '
 						: buf[j];
-					rz_print_byte(p, "%c", j, ch);
+					sb_print_own(rz_print_byte_str(p, "%c", j, ch));
 					bytes++;
 				}
 			}
 			/* ascii column */
 			if (col == 2) {
-				print("|");
+				sb_print("|");
 			}
 			bool eol = false;
 			if (!eol && p && p->flags & RZ_PRINT_FLAGS_REFS) {
@@ -1003,19 +1023,19 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 				if (p->hasrefs && off != UT64_MAX) {
 					char *rstr = p->hasrefs(p->user, addr + i, false);
 					if (rstr && *rstr) {
-						printfmt(" @ %s", rstr);
+						sb_printf(" @ %s", rstr);
 					}
 					free(rstr);
 					rstr = p->hasrefs(p->user, off, true);
 					if (rstr && *rstr) {
-						printfmt(" %s", rstr);
+						sb_printf(" %s", rstr);
 					}
 					free(rstr);
 				}
 			}
 			if (!eol && p && p->use_comments) {
 				for (; j < i + inc; j++) {
-					print(" ");
+					sb_print(" ");
 				}
 				for (j = i; j < i + inc; j++) {
 					if (use_align && (j - i) >= rowbytes) {
@@ -1025,7 +1045,7 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 						a = p->offname(p->user, addr + j);
 						if (p->colorfor && a && *a) {
 							const char *color = p->colorfor(p->user, addr + j, true);
-							printfmt("%s  ; %s%s", color ? color : "", a,
+							sb_printf("%s  ; %s%s", color ? color : "", a,
 								color ? Color_RESET : "");
 						}
 					}
@@ -1039,7 +1059,7 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 						} else {
 							a = "";
 						}
-						printfmt("%s  ; %s", a, comment);
+						sb_printf("%s  ; %s", a, comment);
 						free(comment);
 					}
 				}
@@ -1047,31 +1067,32 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 			if (use_align && rowbytes < inc && bytes >= rowbytes) {
 				i -= (inc - bytes);
 			}
-			print("\n");
+			sb_print("\n");
 		}
 		rows++;
 		bytes = 0;
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
 				int i = 0;
-				print(" _________");
+				sb_print(" _________");
 				if (!compact) {
-					print("_");
+					sb_print("_");
 				}
 				for (i = 0; i < row_have_cursor; i++) {
 					if (!pairs || (!compact && i % 2)) {
-						print("___");
+						sb_print("___");
 					} else {
-						print("__");
+						sb_print("__");
 					}
 				}
-				print("__|\n");
-				printfmt("| cmd.hexcursor = %s\n", p->cfmt);
+				sb_print("__|\n");
+				sb_printf("| cmd.hexcursor = %s\n", p->cfmt);
 				p->coreb.cmdf(p->coreb.core,
 					"%s @ 0x%08" PFMT64x, p->cfmt, row_have_addr);
 			}
 		}
 	}
+	return rz_strbuf_drain(sb);
 }
 
 static const char *getbytediff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
@@ -1115,18 +1136,19 @@ static ut8 *M(const ut8 *b, int len) {
 }
 
 // TODO: add support for cursor
-RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol) {
+RZ_API char *rz_print_hexdiff_str(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol) {
 	ut8 *a, *b;
 	char linediff, fmt[64];
 	int color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	int diffskip = p->flags & RZ_PRINT_FLAGS_DIFFOUT;
 	int i, j, min;
+	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!((a = M(_a, len)))) {
-		return;
+		return NULL;
 	}
 	if (!((b = M(_b, len)))) {
 		free(a);
-		return;
+		return NULL;
 	}
 	for (i = 0; i < len; i += 16) {
 		min = RZ_MIN(16, len - i);
@@ -1134,42 +1156,43 @@ RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const 
 		if (diffskip && linediff == '|') {
 			continue;
 		}
-		p->cb_printf("0x%08" PFMT64x " ", aa + i);
+		sb_printf("0x%08" PFMT64x " ", aa + i);
 		for (j = 0; j < min; j++) {
 			*fmt = color;
-			rz_print_cursor(p, i + j, 1, 1);
-			p->cb_printf("%s", BD(a, b));
-			rz_print_cursor(p, i + j, 1, 0);
+			sb_print(rz_print_cursor_str(p, i + j, 1, 1));
+			sb_printf("%s", BD(a, b));
+			sb_print(rz_print_cursor_str(p, i + j, 1, 0));
 		}
-		p->cb_printf(" ");
+		sb_print(" ");
 		for (j = 0; j < min; j++) {
 			*fmt = color;
-			rz_print_cursor(p, i + j, 1, 1);
-			p->cb_printf("%s", CD(a, b));
-			rz_print_cursor(p, i + j, 1, 0);
+			sb_print(rz_print_cursor_str(p, i + j, 1, 1));
+			sb_printf("%s", CD(a, b));
+			sb_print(rz_print_cursor_str(p, i + j, 1, 0));
 		}
 		if (scndcol) {
-			p->cb_printf(" %c 0x%08" PFMT64x " ", linediff, ba + i);
+			sb_printf(" %c 0x%08" PFMT64x " ", linediff, ba + i);
 			for (j = 0; j < min; j++) {
 				*fmt = color;
-				rz_print_cursor(p, i + j, 1, 1);
-				p->cb_printf("%s", BD(b, a));
-				rz_print_cursor(p, i + j, 1, 0);
+				sb_print(rz_print_cursor_str(p, i + j, 1, 1));
+				sb_printf("%s", BD(b, a));
+				sb_print(rz_print_cursor_str(p, i + j, 1, 0));
 			}
-			p->cb_printf(" ");
+			sb_print(" ");
 			for (j = 0; j < min; j++) {
 				*fmt = color;
-				rz_print_cursor(p, i + j, 1, 1);
-				p->cb_printf("%s", CD(b, a));
-				rz_print_cursor(p, i + j, 1, 0);
+				sb_print(rz_print_cursor_str(p, i + j, 1, 1));
+				sb_printf("%s", CD(b, a));
+				sb_print(rz_print_cursor_str(p, i + j, 1, 0));
 			}
-			p->cb_printf("\n");
+			sb_print("\n");
 		} else {
-			p->cb_printf(" %c\n", linediff);
+			sb_printf(" %c\n", linediff);
 		}
 	}
 	free(a);
 	free(b);
+	return rz_strbuf_drain(sb);
 }
 
 RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt) {
@@ -1729,43 +1752,44 @@ RZ_API int rz_print_get_cursor(RzPrint *p) {
 	return p->cur_enabled ? p->cur : 0;
 }
 
-RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize) {
+RZ_API char *rz_print_jsondump_str(RzPrint *p, const ut8 *buf, int len, int wordsize) {
 	ut16 *buf16 = (ut16 *)buf;
 	ut32 *buf32 = (ut32 *)buf;
 	ut64 *buf64 = (ut64 *)buf;
 	// TODDO: support p==NULL too
 	if (!p || !buf || len < 1 || wordsize < 1) {
-		return 0;
+		return NULL;
 	}
 	int bytesize = wordsize / 8;
 	if (bytesize < 1) {
 		bytesize = 8;
 	}
 	int i, words = (len / bytesize);
-	p->cb_printf("[");
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	sb_print("[");
 	for (i = 0; i < words; i++) {
 		switch (wordsize) {
 		case 8: {
-			p->cb_printf("%s%d", i ? "," : "", buf[i]);
+			sb_printf("%s%d", i ? "," : "", buf[i]);
 			break;
 		}
 		case 16: {
 			ut16 w16 = rz_read_ble16(&buf16[i], p->big_endian);
-			p->cb_printf("%s%hd", i ? "," : "", w16);
+			sb_printf("%s%hd", i ? "," : "", w16);
 			break;
 		}
 		case 32: {
 			ut32 w32 = rz_read_ble32(&buf32[i], p->big_endian);
-			p->cb_printf("%s%d", i ? "," : "", w32);
+			sb_printf("%s%d", i ? "," : "", w32);
 			break;
 		}
 		case 64: {
 			ut64 w64 = rz_read_ble64(&buf64[i], p->big_endian);
-			p->cb_printf("%s%" PFMT64d, i ? "," : "", w64);
+			sb_printf("%s%" PFMT64d, i ? "," : "", w64);
 			break;
 		}
 		}
 	}
-	p->cb_printf("]\n");
-	return words;
+	sb_print("]\n");
+	return rz_strbuf_drain(sb);
 }

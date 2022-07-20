@@ -161,16 +161,16 @@ fail:
 /**
  * \brief Print hexdump diff between \p aa and \p ba with \p len
  */
-RZ_API bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
+RZ_API char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
 	rz_return_val_if_fail(core && core->cons && len > 0, false);
 	ut8 *a = malloc(len);
 	if (!a) {
-		return false;
+		return NULL;
 	}
 	ut8 *b = malloc(len);
 	if (!b) {
 		free(a);
-		return false;
+		return NULL;
 	}
 
 	RZ_LOG_VERBOSE("print hexdump diff 0x%" PFMT64x " 0x%" PFMT64x " with len:%" PFMT64d "\n", aa, ba, len);
@@ -178,11 +178,11 @@ RZ_API bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba
 	rz_io_read_at(core->io, aa, a, (int)len);
 	rz_io_read_at(core->io, ba, b, (int)len);
 	int col = core->cons->columns > 123;
-	rz_print_hexdiff(core->print, aa, a,
+	char *pstr = rz_print_hexdiff_str(core->print, aa, a,
 		ba, b, (int)len, col);
 	free(a);
 	free(b);
-	return true;
+	return pstr;
 }
 
 static inline st8 format_type_to_base(const RzCorePrintFormatType format, const ut8 n) {
@@ -236,22 +236,23 @@ static inline void len_fixup(RzCore *core, ut64 *addr, int *len) {
  * \param len Dump bytes length
  * \param format Print format, such as RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL
  */
-RZ_API bool rz_core_print_dump(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state,
-	ut64 addr, ut8 n, int len, const RzCorePrintFormatType format) {
+RZ_API char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state,
+	ut64 addr, ut8 n, int len, RzCorePrintFormatType format) {
 	rz_return_val_if_fail(core, false);
 	if (!len) {
-		return true;
+		return NULL;
 	}
 	st8 base = format_type_to_base(format, n);
 	if (!base) {
-		return false;
+		return NULL;
 	}
 	len_fixup(core, &addr, &len);
 	ut8 *buffer = malloc(len);
 	if (!buffer) {
-		return false;
+		return NULL;
 	}
 
+	char *pstr = NULL;
 	rz_io_read_at(core->io, addr, buffer, len);
 	rz_print_init_rowoffsets(core->print);
 	core->print->use_comments = false;
@@ -259,33 +260,34 @@ RZ_API bool rz_core_print_dump(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOu
 
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		rz_print_jsondump(core->print, buffer, len, n * 8);
+		pstr = rz_print_jsondump_str(core->print, buffer, len, n * 8);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		fix_size_from_format(format, &n);
-		rz_print_hexdump(core->print, addr,
+		pstr = rz_print_hexdump_str(core->print, addr,
 			buffer, len, base, (int)n, 1);
 		break;
 	default:
 		rz_warn_if_reached();
 		free(buffer);
-		return false;
+		return NULL;
 	}
 	free(buffer);
-	return true;
+	return pstr;
 }
 
 /**
  * \brief Print hexdump at \p addr, but maybe print hexdiff if (diff.from or diff.to), \see "el diff"
  * \param len Dump bytes length
  */
-RZ_API bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len) {
+RZ_API char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len) {
 	rz_return_val_if_fail(core, false);
 	if (!len) {
-		return true;
+		return NULL;
 	}
 
 	RzOutputMode mode = state ? state->mode : RZ_OUTPUT_MODE_STANDARD;
+	char *pstr = NULL;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD: {
 		ut64 from = rz_config_get_i(core->config, "diff.from");
@@ -294,24 +296,24 @@ RZ_API bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABL
 			len_fixup(core, &addr, &len);
 			ut8 *buffer = malloc(len);
 			if (!buffer) {
-				return false;
+				return NULL;
 			}
 			rz_io_read_at(core->io, addr, buffer, len);
-			rz_print_hexdump(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
+			pstr = rz_print_hexdump_str(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
 			free(buffer);
 		} else {
-			rz_core_print_hexdump_diff(core, addr, addr + to - from, len);
+			pstr = rz_core_print_hexdump_diff_str(core, addr, addr + to - from, len);
 		}
 		break;
 	}
 	case RZ_OUTPUT_MODE_JSON:
-		rz_print_jsondump(core->print, core->block, len, 8);
+		pstr = rz_print_jsondump_str(core->print, core->block, len, 8);
 		break;
 	default:
 		rz_warn_if_reached();
-		return false;
+		return NULL;
 	}
-	return true;
+	return pstr;
 }
 
 static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
@@ -331,7 +333,7 @@ static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
  * \param size Word size by bytes (1,2,4,8)
  * \return Hexdump string
  */
-RZ_API RZ_OWN char *rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state,
+RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state,
 	ut64 addr, int len, ut8 size) {
 	rz_return_val_if_fail(core, false);
 	if (!len) {
@@ -353,7 +355,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, RZ_NUL
 		RzPrint *p = core->print;
 		RzFlagItem *f;
 		ut64 v = rz_read_ble(buffer + i, p->big_endian, size * 8);
-		if (p && p->colorfor) {
+		if (p->colorfor) {
 			a = p->colorfor(p->user, v, true);
 			if (a && *a) {
 				b = Color_RESET;

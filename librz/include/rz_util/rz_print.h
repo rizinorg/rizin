@@ -137,24 +137,31 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int idx);
 RZ_API RzPrint *rz_print_new(void);
 RZ_API RzPrint *rz_print_free(RzPrint *p);
 RZ_API void rz_print_set_flags(RzPrint *p, int _flags);
-RZ_API void rz_print_addr(RzPrint *p, ut64 addr);
+RZ_API RZ_OWN char *rz_print_addr_str(RZ_NONNULL RzPrint *p, ut64 addr);
 RZ_API const char *rz_print_section(RzPrint *p, ut64 at);
 RZ_API void rz_print_hexii(RzPrint *p, ut64 addr, const ut8 *buf, int len, int step);
-RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
-RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize);
-RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8 *a, ut64 ba, const ut8 *b, int len, int scndcol);
+RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
+RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, const ut8 *buf, int len, int wordsize);
+RZ_API RZ_OWN char *rz_print_hexdiff_str(RZ_NONNULL RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol);
 RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt);
 RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int step);
-RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch);
+RZ_API RZ_OWN char *rz_print_byte_str(RZ_NONNULL RzPrint *p, const char *fmt, int idx, ut8 ch);
 RZ_API const char *rz_print_byte_color(RzPrint *p, int ch);
 RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len);
 RZ_API bool rz_print_have_cursor(RzPrint *p, int cur, int len);
 RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len);
-RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set);
+RZ_API RZ_BORROW const char *rz_print_cursor_str(RZ_NONNULL RzPrint *p, int cur, int len, int set);
 RZ_API int rz_print_get_cursor(RzPrint *p);
 RZ_API void rz_print_set_cursor(RzPrint *p, int curset, int ocursor, int cursor);
 #define SEEFLAG    -2
 #define JSONOUTPUT -3
+
+#define rz_print_hexdump(...)  rz_cons_print_own(rz_print_hexdump_str(__VA_ARGS__))
+#define rz_print_jsondump(...) rz_cons_print_own(rz_print_jsondump_str(__VA_ARGS__))
+#define rz_print_hexdiff(...)  rz_cons_print_own(rz_print_hexdiff_str(__VA_ARGS__))
+#define rz_print_cursor(...)   rz_cons_print(rz_print_cursor_str(__VA_ARGS__))
+#define rz_print_addr(...)     rz_cons_print_own(rz_print_addr_str(__VA_ARGS__))
+#define rz_print_byte(...)     rz_cons_print_own(rz_print_byte_str(__VA_ARGS__))
 
 /* mode values for rz_print_format_* API */
 #define RZ_PRINT_MUSTSEE   (1) // enable printing of data in specified fmt
