@@ -469,6 +469,7 @@ static const RzCmdDescArg cmd_disassemble_summarize_block_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_hash_cfg_args[2];
+static const RzCmdDescArg assembly_of_hex_alias_args[2];
 static const RzCmdDescArg cmd_print_magic_args[2];
 static const RzCmdDescArg print_utf16le_args[2];
 static const RzCmdDescArg print_utf32le_args[2];
@@ -10457,7 +10458,7 @@ static const RzCmdDescHelp esil_of_assembly_help = {
 static const RzCmdDescArg assembly_of_hex_args[] = {
 	{
 		.name = "hexpair",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = false,
 
@@ -10472,7 +10473,7 @@ static const RzCmdDescHelp assembly_of_hex_help = {
 static const RzCmdDescArg esil_of_hex_args[] = {
 	{
 		.name = "hexpair",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = false,
 
@@ -11008,6 +11009,21 @@ static const RzCmdDescArg cmd_print_hash_cfg_algo_list_args[] = {
 static const RzCmdDescHelp cmd_print_hash_cfg_algo_list_help = {
 	.summary = "Lists all the supported algorithms",
 	.args = cmd_print_hash_cfg_algo_list_args,
+};
+
+static const RzCmdDescArg assembly_of_hex_alias_args[] = {
+	{
+		.name = "hexpair",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp assembly_of_hex_alias_help = {
+	.summary = "Print assembly expression from hexpairs (alias for pad)",
+	.args = assembly_of_hex_alias_args,
 };
 
 static const RzCmdDescHelp cmd_print_timestamp_help = {
@@ -16372,6 +16388,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_print_default_cd);
 	RzCmdDesc *cmd_print_hash_cfg_algo_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_default_cd, "phl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_hash_cfg_algo_list_handler, &cmd_print_hash_cfg_algo_list_help);
 	rz_warn_if_fail(cmd_print_hash_cfg_algo_list_cd);
+
+	RzCmdDesc *assembly_of_hex_alias_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pix", RZ_OUTPUT_MODE_STANDARD, rz_assembly_of_hex_alias_handler, &assembly_of_hex_alias_help);
+	rz_warn_if_fail(assembly_of_hex_alias_cd);
 
 	RzCmdDesc *cmd_print_timestamp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pt", rz_cmd_print_timestamp_unix_handler, &cmd_print_timestamp_unix_help, &cmd_print_timestamp_help);
 	rz_warn_if_fail(cmd_print_timestamp_cd);

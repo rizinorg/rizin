@@ -1056,8 +1056,8 @@ RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc enc
 RZ_API RZ_OWN char *rz_core_print_string_c_cpp(RzCore *core);
 RZ_API RZ_OWN char *rz_core_hex_of_assembly(RzCore *core, const char *assembly);
 RZ_API RZ_OWN char *rz_core_esil_of_assembly(RzCore *core, const char *assembly);
-RZ_API RZ_OWN char *rz_core_assembly_of_hex(RzCore *core, const char *hexstr);
-RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, const char *hexstr);
+RZ_API RZ_OWN char *rz_core_assembly_of_hex(RzCore *core, ut8 *hex, int len);
+RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, ut8 *hex, int len);
 
 /* rtr */
 RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);

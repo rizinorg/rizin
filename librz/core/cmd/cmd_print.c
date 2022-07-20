@@ -766,22 +766,6 @@ static const ut32 colormap[256] = {
 	0xffffff,
 };
 
-static void __cmd_pad(RzCore *core, const char *arg) {
-	if (*arg == '?') {
-		eprintf("Usage: pad [hexpairs] # disassembly given bytes\n");
-		return;
-	}
-	rz_asm_set_pc(core->rasm, core->offset);
-	bool is_pseudo = rz_config_get_i(core->config, "asm.pseudo");
-	RzAsmCode *acode = rz_asm_mdisassemble_hexstr(core->rasm, is_pseudo ? core->parser : NULL, arg);
-	if (acode) {
-		rz_cons_print(acode->assembly);
-		rz_asm_code_free(acode);
-	} else {
-		eprintf("Invalid hexstr\n");
-	}
-}
-
 // colordump
 static void cmd_prc(RzCore *core, const ut8 *block, int len) {
 	const char *chars = " .,:;!O@#";
@@ -4705,8 +4689,20 @@ RZ_IPI RzCmdStatus rz_esil_of_assembly_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_assembly_of_hex_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	char *buf = rz_core_assembly_of_hex(core, argv[1]);
+	ut8 *hex = calloc(1, strlen(argv[1]) + 1);
+	if (!hex) {
+		RZ_LOG_ERROR("Fail to allocate memory\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int len = rz_hex_str2bin(argv[1], hex);
+	if (len < 1) {
+		RZ_LOG_ERROR("rz_hex_str2bin: invalid hexstr\n");
+		free(hex);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *buf = rz_core_assembly_of_hex(core, hex, len);
 	if (!buf) {
+		free(hex);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_print(buf);
@@ -4714,13 +4710,31 @@ RZ_IPI RzCmdStatus rz_assembly_of_hex_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_assembly_of_hex_alias_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return rz_assembly_of_hex_handler(core, argc, argv, mode);
+}
+
 RZ_IPI RzCmdStatus rz_esil_of_hex_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	char *buf = rz_core_esil_of_hex(core, argv[1]);
+	ut8 *hex = calloc(1, strlen(argv[1]) + 1);
+	if (!hex) {
+		RZ_LOG_ERROR("Fail to allocate memory\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int len = rz_hex_str2bin(argv[1], hex);
+	if (len < 1) {
+		RZ_LOG_ERROR("rz_hex_str2bin: invalid hexstr\n");
+		free(hex);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *buf = rz_core_esil_of_hex(core, hex, len);
 	if (!buf) {
+		// rz_core_esil_of_hex outputs the error message
+		free(hex);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_print(buf);
 	free(buf);
+	free(hex);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4973,9 +4987,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		case 'u': // "piu" disasm until ret/jmp . todo: accept arg to specify type
 			disasm_until_ret(core, core->offset, input[2], input + 2);
-			break;
-		case 'x': // "pix"
-			__cmd_pad(core, rz_str_trim_head_ro(input + 2));
 			break;
 		case 'a': // "pia" is like "pda", but with "pi" output
 			if (l != 0) {

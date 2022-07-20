@@ -804,6 +804,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_gadget_remove_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_move_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_algo_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_assembly_of_hex_alias_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_current_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_dos_handler(RzCore *core, int argc, const char **argv);

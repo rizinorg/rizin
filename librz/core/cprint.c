@@ -102,18 +102,18 @@ RZ_API RZ_OWN char *rz_core_esil_of_assembly(RzCore *core, const char *assembly)
 /**
  * \brief Get the assembly of the hexstr
  * \param core RzCore
- * \param hexstr hexstr
+ * \param hex hex
+ * \param len length of hex
  * \return a string containing the assembly of the hexstr
  */
-RZ_API RZ_OWN char *rz_core_assembly_of_hex(RzCore *core, const char *hexstr) {
+RZ_API RZ_OWN char *rz_core_assembly_of_hex(RzCore *core, ut8 *hex, int len) {
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
 		RZ_LOG_ERROR("Fail to allocate memory\n");
 		return NULL;
 	}
 	rz_asm_set_pc(core->rasm, core->offset);
-	bool is_pseudo = rz_config_get_i(core->config, "asm.pseudo");
-	RzAsmCode *acode = rz_asm_mdisassemble_hexstr(core->rasm, is_pseudo ? core->parser : NULL, hexstr);
+	RzAsmCode *acode = rz_asm_mdisassemble(core->rasm, hex, len);
 	if (!acode) {
 		RZ_LOG_ERROR("Invalid hexstr\n");
 		rz_strbuf_free(buf);
@@ -127,27 +127,22 @@ RZ_API RZ_OWN char *rz_core_assembly_of_hex(RzCore *core, const char *hexstr) {
 /**
  * \brief Get the esil of the hexstr
  * \param core RzCore
- * \param hexstr hexstr
+ * \param hex hex
+ * \param len length of hex
  * \return a string containing the esil of the hexstr
  */
-RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, const char *hexstr) {
+RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, ut8 *hex, int len) {
 	RzStrBuf *buf = rz_strbuf_new("");
-	char *hex_arg = calloc(1, strlen(hexstr) + 1);
-	if (!buf || !hex_arg) {
+	if (!buf) {
 		RZ_LOG_ERROR("Fail to allocate memory\n");
-		goto fail;
-	}
-	int bufsz = rz_hex_str2bin(hexstr, (ut8 *)hex_arg);
-	if (bufsz < 1) {
-		RZ_LOG_ERROR("Invalid hexstr\n");
 		goto fail;
 	}
 	int printed = 0;
 	RzAnalysisOp aop = { 0 };
-	while (printed < bufsz) {
+	while (printed < len) {
 		aop.size = 0;
 		if (rz_analysis_op(core->analysis, &aop, core->offset,
-			    (const ut8 *)hex_arg + printed, bufsz - printed, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
+			    (const ut8 *)hex + printed, len - printed, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
 			aop.size < 1) {
 			RZ_LOG_ERROR("Cannot decode instruction\n");
 			rz_analysis_op_fini(&aop);
@@ -157,10 +152,8 @@ RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, const char *hexstr) {
 		printed += aop.size;
 		rz_analysis_op_fini(&aop);
 	}
-	free(hex_arg);
 	return rz_strbuf_drain(buf);
 fail:
 	rz_strbuf_free(buf);
-	free(hex_arg);
 	return NULL;
 }

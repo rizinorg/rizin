@@ -31,7 +31,7 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
         args:
           - name: hexpair
-            type: RZ_CMD_ARG_TYPE_RZNUM
+            type: RZ_CMD_ARG_TYPE_STRING
             optional: false
       - name: pade
         summary: Print ESIL expression from hexpairs
@@ -40,7 +40,7 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
         args:
           - name: hexpair
-            type: RZ_CMD_ARG_TYPE_RZNUM
+            type: RZ_CMD_ARG_TYPE_STRING
             optional: false
   - name: pc
     summary: Print bytes as code byte arrays.
@@ -389,6 +389,15 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args: []
+  - name: pix
+    summary: Print assembly expression from hexpairs (alias for pad)
+    cname: assembly_of_hex_alias
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: hexpair
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: false
   - name: pt
     summary: Print timestamps
     cname: cmd_print_timestamp
