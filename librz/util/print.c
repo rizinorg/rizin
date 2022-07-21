@@ -373,6 +373,7 @@ RZ_API const char *rz_print_byte_color(RzPrint *p, int ch) {
 }
 
 RZ_API char *rz_print_byte_str(RzPrint *p, const char *fmt, int idx, ut8 ch) {
+	rz_return_val_if_fail(fmt, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
 		return NULL;
@@ -940,7 +941,7 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 						rz_strbuf_appendf(sb, "%s", dbl_ch_str);
 					} else {
 						char *string = rz_print_byte_str(p, bytefmt, j, buf[j]);
-						rz_strbuf_append(sb, string);
+						rz_strbuf_append(sb, rz_str_get(string));
 						free(string);
 					}
 					if (pairs && !compact && (inc & 1)) {
@@ -1000,7 +1001,7 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 						? ' '
 						: buf[j];
 					char *string = rz_print_byte_str(p, "%c", j, ch);
-					rz_strbuf_append(sb, string);
+					rz_strbuf_append(sb, rz_str_get(string));
 					free(string);
 					bytes++;
 				}
@@ -1156,6 +1157,7 @@ static ut8 *M(const ut8 *b, int len) {
  */
 // TODO: add support for cursor
 RZ_API char *rz_print_hexdiff_str(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol) {
+	rz_return_val_if_fail(p && _a && _b && len > 0, NULL);
 	ut8 *a, *b;
 	char linediff, fmt[64];
 	int color = p->flags & RZ_PRINT_FLAGS_COLOR;
@@ -1781,13 +1783,11 @@ RZ_API int rz_print_get_cursor(RzPrint *p) {
  * \return Dump JSON string
  */
 RZ_API char *rz_print_jsondump_str(RzPrint *p, const ut8 *buf, int len, int wordsize) {
+	rz_return_val_if_fail(p && buf && len > 0 && wordsize > 0, NULL);
 	ut16 *buf16 = (ut16 *)buf;
 	ut32 *buf32 = (ut32 *)buf;
 	ut64 *buf64 = (ut64 *)buf;
 	// TODDO: support p==NULL too
-	if (!p || !buf || len < 1 || wordsize < 1) {
-		return NULL;
-	}
 	int bytesize = wordsize / 8;
 	if (bytesize < 1) {
 		bytesize = 8;
