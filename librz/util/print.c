@@ -28,15 +28,6 @@ static int libc_eprintf(const char *format, ...) {
 	return 0;
 }
 
-#define sb_printf(fmt, ...) rz_strbuf_appendf(sb, (fmt), __VA_ARGS__)
-#define sb_print(x)         rz_strbuf_append(sb, rz_str_get(x))
-#define sb_print_own(x) \
-	{ \
-		char *own_string_temp = (x); \
-		rz_strbuf_append(sb, rz_str_get(own_string_temp)); \
-		free(own_string_temp); \
-	}
-
 static RzPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 RZ_API bool rz_print_is_interrupted(void) {
@@ -167,7 +158,7 @@ RZ_API const char *rz_print_cursor_str(RzPrint *p, int cur, int len, int set) {
 		rz_str_cat(c, RZ_CONS_INVERT(set, 1));
 		return c;
 	}
-	return NULL;
+	return "";
 }
 
 RZ_API char *rz_print_addr_str(RzPrint *p, ut64 addr) {
@@ -207,15 +198,15 @@ RZ_API char *rz_print_addr_str(RzPrint *p, ut64 addr) {
 			    : Color_GREEN;
 			const char *fin = Color_RESET;
 			if (dec) {
-				sb_printf("%s%s%s%s%c", pre, white, space, fin, ch);
+				rz_strbuf_appendf(sb, "%s%s%s%s%c", pre, white, space, fin, ch);
 			} else {
-				sb_printf("%s%04x:%04x%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
+				rz_strbuf_appendf(sb, "%s%04x:%04x%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
 			}
 		} else {
 			if (dec) {
-				sb_printf("%s%s%c", white, space, ch);
+				rz_strbuf_appendf(sb, "%s%s%c", white, space, ch);
 			} else {
-				sb_printf("%04x:%04x%c", s & 0xffff, a & 0xffff, ch);
+				rz_strbuf_appendf(sb, "%04x:%04x%c", s & 0xffff, a & 0xffff, ch);
 			}
 		}
 	} else {
@@ -236,24 +227,24 @@ RZ_API char *rz_print_addr_str(RzPrint *p, ut64 addr) {
 				}
 			}
 			if (dec) {
-				sb_printf("%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
+				rz_strbuf_appendf(sb, "%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
 			} else {
 				if (p && p->wide_offsets) {
 					// TODO: make %016 depend on asm.bits
-					sb_printf("%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
+					rz_strbuf_appendf(sb, "%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
 				} else {
-					sb_printf("%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
+					rz_strbuf_appendf(sb, "%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
 				}
 			}
 		} else {
 			if (dec) {
-				sb_printf("%s%" PFMT64d "%c", white, addr, ch);
+				rz_strbuf_appendf(sb, "%s%" PFMT64d "%c", white, addr, ch);
 			} else {
 				if (p && p->wide_offsets) {
 					// TODO: make %016 depend on asm.bits
-					sb_printf("0x%016" PFMT64x "%c", addr, ch);
+					rz_strbuf_appendf(sb, "0x%016" PFMT64x "%c", addr, ch);
 				} else {
-					sb_printf("0x%08" PFMT64x "%c", addr, ch);
+					rz_strbuf_appendf(sb, "0x%08" PFMT64x "%c", addr, ch);
 				}
 			}
 		}
@@ -391,20 +382,20 @@ RZ_API char *rz_print_byte_str(RzPrint *p, const char *fmt, int idx, ut8 ch) {
 	if (!IS_PRINTABLE(ch) && fmt[0] == '%' && fmt[1] == 'c') {
 		rch = '.';
 	}
-	sb_print(rz_print_cursor_str(p, idx, 1, 1));
+	rz_strbuf_append(sb, rz_print_cursor_str(p, idx, 1, 1));
 	if (p && p->flags & RZ_PRINT_FLAGS_COLOR) {
 		const char *bytecolor = rz_print_byte_color(p, ch);
 		if (bytecolor) {
-			sb_print(bytecolor);
+			rz_strbuf_append(sb, bytecolor);
 		}
-		sb_printf(fmt, rch);
+		rz_strbuf_appendf(sb, fmt, rch);
 		if (bytecolor) {
-			sb_print(Color_RESET);
+			rz_strbuf_append(sb, Color_RESET);
 		}
 	} else {
-		sb_printf(fmt, rch);
+		rz_strbuf_appendf(sb, fmt, rch);
 	}
-	sb_print(rz_print_cursor_str(p, idx, 1, 0));
+	rz_strbuf_append(sb, rz_print_cursor_str(p, idx, 1, 0));
 	return rz_strbuf_drain(sb);
 }
 
@@ -518,19 +509,21 @@ RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr) {
 	}
 }
 
-RZ_API const char *rz_print_section(RzPrint *p, ut64 at) {
+RZ_API const char *rz_print_section_str(RzPrint *p, ut64 at) {
 	bool use_section = p && p->flags & RZ_PRINT_FLAGS_SECTION;
 	if (!use_section) {
 		return "";
 	}
 	static char section[22];
+	static const int len = sizeof(section) - 1;
 	const char *s = p->get_section_name(p->user, at);
 	if (!s) {
 		s = "";
 	}
-	const int sps = RZ_MAX(sizeof(section) - 1 - strlen(s), 1);
+	const int sps = RZ_MAX(len - strlen(s), 1);
 	memset(section, ' ', sps);
-	rz_str_ncpy(section + sps, s, 19);
+	strncpy(section + sps, s, RZ_MIN(strlen(s), len - sps));
+	section[len] = '\0';
 	return section;
 }
 
@@ -648,18 +641,18 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 	}
 	if (use_header) {
 		if (c) {
-			sb_print(color_title);
+			rz_strbuf_append(sb, color_title);
 		}
 		if (base < 32) {
 			{ // XXX: use rz_print_addr_header
 				int i, delta;
 				char soff[32];
 				if (hex_style) {
-					sb_print("..offset..");
+					rz_strbuf_append(sb, "..offset..");
 				} else {
-					sb_print("- offset -");
+					rz_strbuf_append(sb, "- offset -");
 					if (p->wide_offsets) {
-						sb_print("       ");
+						rz_strbuf_append(sb, "       ");
 					}
 				}
 				if (use_segoff) {
@@ -676,11 +669,11 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 					delta--;
 				}
 				for (i = 0; i < delta; i++) {
-					sb_print(space);
+					rz_strbuf_append(sb, space);
 				}
 			}
 			/* column after number, before hex data */
-			sb_print((col == 1) ? "|" : space);
+			rz_strbuf_append(sb, (col == 1) ? "|" : space);
 			if (use_hdroff) {
 				k = addr & 0xf;
 				K = (addr >> 4) & 0xf;
@@ -690,59 +683,59 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 			if (use_hexa) {
 				/* extra padding for offsets > 8 digits */
 				for (i = 0; i < inc; i++) {
-					sb_print(pre);
+					rz_strbuf_append(sb, pre);
 					if (base < 0) {
 						if (i & 1) {
-							sb_print(space);
+							rz_strbuf_append(sb, space);
 						}
 					}
 					if (use_hdroff) {
 						if (use_pair) {
-							sb_printf("%c%c",
+							rz_strbuf_appendf(sb, "%c%c",
 								hex[(((i + k) >> 4) + K) % 16],
 								hex[(i + k) % 16]);
 						} else {
-							sb_printf(" %c", hex[(i + k) % 16]);
+							rz_strbuf_appendf(sb, " %c", hex[(i + k) % 16]);
 						}
 					} else {
-						sb_printf(" %c", hex[(i + k) % 16]);
+						rz_strbuf_appendf(sb, " %c", hex[(i + k) % 16]);
 					}
 					if (i & 1 || !pairs) {
 						if (!compact) {
-							sb_print(col != 1 ? space : ((i + 1) < inc) ? space
-												    : "|");
+							rz_strbuf_append(sb, col != 1 ? space : ((i + 1) < inc) ? space
+														: "|");
 						}
 					}
 				}
 			}
 			/* ascii column */
 			if (compact) {
-				sb_print(col > 0 ? "|" : space);
+				rz_strbuf_append(sb, col > 0 ? "|" : space);
 			} else {
-				sb_print(col == 2 ? "|" : space);
+				rz_strbuf_append(sb, col == 2 ? "|" : space);
 			}
 			if (!p || !(p->flags & RZ_PRINT_FLAGS_NONASCII)) {
 				for (i = 0; i < inc; i++) {
-					sb_printf("%c", hex[(i + k) % 16]);
+					rz_strbuf_appendf(sb, "%c", hex[(i + k) % 16]);
 				}
 			}
 			if (col == 2) {
-				sb_print("|");
+				rz_strbuf_append(sb, "|");
 			}
 			/* print comment header*/
 			if (p && p->use_comments && !compact) {
 				if (col != 2) {
-					sb_print(" ");
+					rz_strbuf_append(sb, " ");
 				}
 				if (!hex_style) {
-					sb_print(" comment");
+					rz_strbuf_append(sb, " comment");
 				}
 			}
-			sb_print("\n");
+			rz_strbuf_append(sb, "\n");
 		}
 
 		if (c) {
-			sb_print(Color_RESET);
+			rz_strbuf_append(sb, Color_RESET);
 		}
 	}
 
@@ -775,7 +768,7 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 						sparse_char = buf[j];
 						last_sparse++;
 						if (last_sparse == 2) {
-							sb_print(" ...\n");
+							rz_strbuf_append(sb, " ...\n");
 							continue;
 						}
 						if (last_sparse > 2) {
@@ -789,14 +782,14 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 		}
 		ut64 at = addr + (j * zoomsz);
 		if (use_offset && (!isPxr || inc < 4)) {
-			sb_print(rz_print_section(p, at));
-			sb_print(rz_print_addr_str(p, at));
+			rz_strbuf_append(sb, rz_print_section_str(p, at));
+			rz_strbuf_append(sb, rz_print_addr_str(p, at));
 		}
 		int row_have_cursor = -1;
 		ut64 row_have_addr = UT64_MAX;
 		if (use_hexa) {
 			if (!compact && !isPxr) {
-				sb_print((col == 1) ? "|" : " ");
+				rz_strbuf_append(sb, (col == 1) ? "|" : " ");
 			}
 			for (j = i; j < i + inc; j++) {
 				if (j != i && use_align && rowbytes == inc) {
@@ -814,24 +807,24 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 				if (!compact && ((j >= len) || bytes >= rowbytes)) {
 					if (col == 1) {
 						if (j + 1 >= inc + i) {
-							sb_print(j % 2 ? "  |" : "| ");
+							rz_strbuf_append(sb, j % 2 ? "  |" : "| ");
 						} else {
-							sb_print(j % 2 ? "   " : "  ");
+							rz_strbuf_append(sb, j % 2 ? "   " : "  ");
 						}
 					} else {
 						if (base == 32) {
-							sb_print((j % 4) ? "   " : "  ");
+							rz_strbuf_append(sb, (j % 4) ? "   " : "  ");
 						} else if (base == 10) {
-							sb_print(j % 2 ? "     " : "  ");
+							rz_strbuf_append(sb, j % 2 ? "     " : "  ");
 						} else {
-							sb_print(j % 2 ? "   " : "  ");
+							rz_strbuf_append(sb, j % 2 ? "   " : "  ");
 						}
 					}
 					continue;
 				}
 				const char *hl = (hex_style && p && p->offname(p->user, addr + j)) ? Color_INVERT : NULL;
 				if (hl) {
-					sb_print(hl);
+					rz_strbuf_append(sb, hl);
 				}
 				if (p && (base == 32 || base == 64)) {
 					int left = len - i;
@@ -850,7 +843,7 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 						continue;
 					}
 					rz_mem_swaporcopy((ut8 *)&n, buf + j, sz_n, p && p->big_endian);
-					sb_print(rz_print_cursor_str(p, j, sz_n, 1));
+					rz_strbuf_append(sb, rz_print_cursor_str(p, j, sz_n, 1));
 					// stub for colors
 					if (p && p->colorfor) {
 						if (!p->iob.addr_is_mapped(p->iob.io, addr + j)) {
@@ -878,52 +871,52 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 					}
 					if (printValue) {
 						if (use_offset && !hasNull && isPxr) {
-							sb_print(rz_print_section(p, at));
-							sb_print(rz_print_addr_str(p, addr + j * zoomsz));
+							rz_strbuf_append(sb, rz_print_section_str(p, at));
+							rz_strbuf_append(sb, rz_print_addr_str(p, addr + j * zoomsz));
 						}
 						if (base == 64) {
-							sb_printf("%s0x%016" PFMT64x "%s  ", a, (ut64)n, b);
+							rz_strbuf_appendf(sb, "%s0x%016" PFMT64x "%s  ", a, (ut64)n, b);
 						} else if (step == 2) {
-							sb_printf("%s0x%04x%s ", a, (ut16)n, b);
+							rz_strbuf_appendf(sb, "%s0x%04x%s ", a, (ut16)n, b);
 						} else {
-							sb_printf("%s0x%08x%s ", a, (ut32)n, b);
+							rz_strbuf_appendf(sb, "%s0x%08x%s ", a, (ut32)n, b);
 						}
 					} else {
 						if (hasNull) {
 							const char *n = p->offname(p->user, addr + j);
-							sb_print(rz_print_section(p, at));
-							sb_print(rz_print_addr_str(p, addr + j * zoomsz));
-							sb_printf("..[ null bytes ]..   00000000 %s\n", n ? n : "");
+							rz_strbuf_append(sb, rz_print_section_str(p, at));
+							rz_strbuf_append(sb, rz_print_addr_str(p, addr + j * zoomsz));
+							rz_strbuf_appendf(sb, "..[ null bytes ]..   00000000 %s\n", n ? n : "");
 						}
 					}
-					sb_print(rz_print_cursor_str(p, j, sz_n, 0));
+					rz_strbuf_append(sb, rz_print_cursor_str(p, j, sz_n, 0));
 					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
 					long long w = rz_read_ble64(buf + j, p && p->big_endian);
-					sb_print(rz_print_cursor_str(p, j, 8, 1));
-					sb_printf("%23" PFMT64d " ", w);
-					sb_print(rz_print_cursor_str(p, j, 8, 0));
+					rz_strbuf_append(sb, rz_print_cursor_str(p, j, 8, 1));
+					rz_strbuf_appendf(sb, "%23" PFMT64d " ", w);
+					rz_strbuf_append(sb, rz_print_cursor_str(p, j, 8, 0));
 					j += 7;
 				} else if (base == -1) {
 					st8 w = rz_read_ble8(buf + j);
-					sb_print(rz_print_cursor_str(p, j, 1, 1));
-					sb_printf("%4d ", w);
-					sb_print(rz_print_cursor_str(p, j, 1, 0));
+					rz_strbuf_append(sb, rz_print_cursor_str(p, j, 1, 1));
+					rz_strbuf_appendf(sb, "%4d ", w);
+					rz_strbuf_append(sb, rz_print_cursor_str(p, j, 1, 0));
 				} else if (base == -10) {
 					if (j + 1 < len) {
 						st16 w = rz_read_ble16(buf + j, p && p->big_endian);
-						sb_print(rz_print_cursor_str(p, j, 2, 1));
-						sb_printf("%7d ", w);
-						sb_print(rz_print_cursor_str(p, j, 2, 0));
+						rz_strbuf_append(sb, rz_print_cursor_str(p, j, 2, 1));
+						rz_strbuf_appendf(sb, "%7d ", w);
+						rz_strbuf_append(sb, rz_print_cursor_str(p, j, 2, 0));
 					}
 					j += 1;
 				} else if (base == 10) { // "pxd"
 					if (j + 3 < len) {
 						int w = rz_read_ble32(buf + j, p && p->big_endian);
-						sb_print(rz_print_cursor_str(p, j, 4, 1));
-						sb_printf("%13d ", w);
-						sb_print(rz_print_cursor_str(p, j, 4, 0));
+						rz_strbuf_append(sb, rz_print_cursor_str(p, j, 4, 1));
+						rz_strbuf_appendf(sb, "%13d ", w);
+						rz_strbuf_append(sb, rz_print_cursor_str(p, j, 4, 0));
 					}
 					j += 3;
 				} else {
@@ -933,33 +926,35 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 					if (use_unalloc && !p->iob.is_valid_offset(p->iob.io, addr + j, false)) {
 						char ch = p->io_unalloc_ch;
 						char dbl_ch_str[] = { ch, ch, 0 };
-						sb_printf("%s", dbl_ch_str);
+						rz_strbuf_appendf(sb, "%s", dbl_ch_str);
 					} else {
-						sb_print_own(rz_print_byte_str(p, bytefmt, j, buf[j]));
+						char *string = rz_print_byte_str(p, bytefmt, j, buf[j]);
+						rz_strbuf_append(sb, string);
+						free(string);
 					}
 					if (pairs && !compact && (inc & 1)) {
 						bool mustspace = (rows % 2) ? !(j & 1) : (j & 1);
 						if (mustspace) {
-							sb_print(" ");
+							rz_strbuf_append(sb, " ");
 						}
 					} else if (bytes % 2 || !pairs) {
 						if (col == 1) {
 							if (j + 1 < inc + i) {
 								if (!compact) {
-									sb_print(" ");
+									rz_strbuf_append(sb, " ");
 								}
 							} else {
-								sb_print("|");
+								rz_strbuf_append(sb, "|");
 							}
 						} else {
 							if (!compact) {
-								sb_print(" ");
+								rz_strbuf_append(sb, " ");
 							}
 						}
 					}
 				}
 				if (hl) {
-					sb_print(Color_RESET);
+					rz_strbuf_append(sb, Color_RESET);
 				}
 				bytes++;
 			}
@@ -967,14 +962,14 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 		if (printValue) {
 			if (compact) {
 				if (col == 0) {
-					sb_print(" ");
+					rz_strbuf_append(sb, " ");
 				} else if (col == 1) {
 					// print (" ");
 				} else {
-					sb_print((col == 2) ? "|" : "");
+					rz_strbuf_append(sb, (col == 2) ? "|" : "");
 				}
 			} else {
-				sb_print((col == 2) ? "|" : " ");
+				rz_strbuf_append(sb, (col == 2) ? "|" : " ");
 			}
 			if (!p || !(p->flags & RZ_PRINT_FLAGS_NONASCII)) {
 				bytes = 0;
@@ -983,7 +978,7 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 					if (j != i && use_align && bytes >= rowbytes) {
 						int sz = (p && p->offsize) ? p->offsize(p->user, addr + j) : -1;
 						if (sz >= 0) {
-							sb_print(" ");
+							rz_strbuf_append(sb, " ");
 							break;
 						}
 					}
@@ -993,13 +988,15 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset(p->iob.io, addr + j, false))
 						? ' '
 						: buf[j];
-					sb_print_own(rz_print_byte_str(p, "%c", j, ch));
+					char *string = rz_print_byte_str(p, "%c", j, ch);
+					rz_strbuf_append(sb, string);
+					free(string);
 					bytes++;
 				}
 			}
 			/* ascii column */
 			if (col == 2) {
-				sb_print("|");
+				rz_strbuf_append(sb, "|");
 			}
 			bool eol = false;
 			if (!eol && p && p->flags & RZ_PRINT_FLAGS_REFS) {
@@ -1023,19 +1020,19 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 				if (p->hasrefs && off != UT64_MAX) {
 					char *rstr = p->hasrefs(p->user, addr + i, false);
 					if (rstr && *rstr) {
-						sb_printf(" @ %s", rstr);
+						rz_strbuf_appendf(sb, " @ %s", rstr);
 					}
 					free(rstr);
 					rstr = p->hasrefs(p->user, off, true);
 					if (rstr && *rstr) {
-						sb_printf(" %s", rstr);
+						rz_strbuf_appendf(sb, " %s", rstr);
 					}
 					free(rstr);
 				}
 			}
 			if (!eol && p && p->use_comments) {
 				for (; j < i + inc; j++) {
-					sb_print(" ");
+					rz_strbuf_append(sb, " ");
 				}
 				for (j = i; j < i + inc; j++) {
 					if (use_align && (j - i) >= rowbytes) {
@@ -1045,7 +1042,7 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 						a = p->offname(p->user, addr + j);
 						if (p->colorfor && a && *a) {
 							const char *color = p->colorfor(p->user, addr + j, true);
-							sb_printf("%s  ; %s%s", color ? color : "", a,
+							rz_strbuf_appendf(sb, "%s  ; %s%s", color ? color : "", a,
 								color ? Color_RESET : "");
 						}
 					}
@@ -1059,7 +1056,7 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 						} else {
 							a = "";
 						}
-						sb_printf("%s  ; %s", a, comment);
+						rz_strbuf_appendf(sb, "%s  ; %s", a, comment);
 						free(comment);
 					}
 				}
@@ -1067,26 +1064,26 @@ RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len
 			if (use_align && rowbytes < inc && bytes >= rowbytes) {
 				i -= (inc - bytes);
 			}
-			sb_print("\n");
+			rz_strbuf_append(sb, "\n");
 		}
 		rows++;
 		bytes = 0;
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
 				int i = 0;
-				sb_print(" _________");
+				rz_strbuf_append(sb, " _________");
 				if (!compact) {
-					sb_print("_");
+					rz_strbuf_append(sb, "_");
 				}
 				for (i = 0; i < row_have_cursor; i++) {
 					if (!pairs || (!compact && i % 2)) {
-						sb_print("___");
+						rz_strbuf_append(sb, "___");
 					} else {
-						sb_print("__");
+						rz_strbuf_append(sb, "__");
 					}
 				}
-				sb_print("__|\n");
-				sb_printf("| cmd.hexcursor = %s\n", p->cfmt);
+				rz_strbuf_append(sb, "__|\n");
+				rz_strbuf_appendf(sb, "| cmd.hexcursor = %s\n", p->cfmt);
 				p->coreb.cmdf(p->coreb.core,
 					"%s @ 0x%08" PFMT64x, p->cfmt, row_have_addr);
 			}
@@ -1156,38 +1153,38 @@ RZ_API char *rz_print_hexdiff_str(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, c
 		if (diffskip && linediff == '|') {
 			continue;
 		}
-		sb_printf("0x%08" PFMT64x " ", aa + i);
+		rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", aa + i);
 		for (j = 0; j < min; j++) {
 			*fmt = color;
-			sb_print(rz_print_cursor_str(p, i + j, 1, 1));
-			sb_printf("%s", BD(a, b));
-			sb_print(rz_print_cursor_str(p, i + j, 1, 0));
+			rz_strbuf_append(sb, rz_print_cursor_str(p, i + j, 1, 1));
+			rz_strbuf_appendf(sb, "%s", BD(a, b));
+			rz_strbuf_append(sb, rz_print_cursor_str(p, i + j, 1, 0));
 		}
-		sb_print(" ");
+		rz_strbuf_append(sb, " ");
 		for (j = 0; j < min; j++) {
 			*fmt = color;
-			sb_print(rz_print_cursor_str(p, i + j, 1, 1));
-			sb_printf("%s", CD(a, b));
-			sb_print(rz_print_cursor_str(p, i + j, 1, 0));
+			rz_strbuf_append(sb, rz_print_cursor_str(p, i + j, 1, 1));
+			rz_strbuf_appendf(sb, "%s", CD(a, b));
+			rz_strbuf_append(sb, rz_print_cursor_str(p, i + j, 1, 0));
 		}
 		if (scndcol) {
-			sb_printf(" %c 0x%08" PFMT64x " ", linediff, ba + i);
+			rz_strbuf_appendf(sb, " %c 0x%08" PFMT64x " ", linediff, ba + i);
 			for (j = 0; j < min; j++) {
 				*fmt = color;
-				sb_print(rz_print_cursor_str(p, i + j, 1, 1));
-				sb_printf("%s", BD(b, a));
-				sb_print(rz_print_cursor_str(p, i + j, 1, 0));
+				rz_strbuf_append(sb, rz_print_cursor_str(p, i + j, 1, 1));
+				rz_strbuf_appendf(sb, "%s", BD(b, a));
+				rz_strbuf_append(sb, rz_print_cursor_str(p, i + j, 1, 0));
 			}
-			sb_print(" ");
+			rz_strbuf_append(sb, " ");
 			for (j = 0; j < min; j++) {
 				*fmt = color;
-				sb_print(rz_print_cursor_str(p, i + j, 1, 1));
-				sb_printf("%s", CD(b, a));
-				sb_print(rz_print_cursor_str(p, i + j, 1, 0));
+				rz_strbuf_append(sb, rz_print_cursor_str(p, i + j, 1, 1));
+				rz_strbuf_appendf(sb, "%s", CD(b, a));
+				rz_strbuf_append(sb, rz_print_cursor_str(p, i + j, 1, 0));
 			}
-			sb_print("\n");
+			rz_strbuf_append(sb, "\n");
 		} else {
-			sb_printf(" %c\n", linediff);
+			rz_strbuf_appendf(sb, " %c\n", linediff);
 		}
 	}
 	free(a);
@@ -1487,7 +1484,7 @@ static bool issymbol(char c) {
 	switch (c) {
 	case '+':
 	case '-':
-	/* case '/': not good for dalvik */
+		/* case '/': not good for dalvik */
 	case '>':
 	case '<':
 	case '(':
@@ -1525,7 +1522,8 @@ static bool ishexprefix(char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
-RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
+RZ_API char *
+rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
 	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
 	ut32 c_reset = strlen(reset);
@@ -1569,8 +1567,8 @@ RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, 
 			return strdup(p);
 		}
 		switch (p[i]) {
-		// We dont need to skip ansi codes.
-		// original colors must be preserved somehow
+			// We dont need to skip ansi codes.
+			// original colors must be preserved somehow
 		case 0x1b:
 #define STRIP_ANSI 1
 #if STRIP_ANSI
@@ -1766,30 +1764,30 @@ RZ_API char *rz_print_jsondump_str(RzPrint *p, const ut8 *buf, int len, int word
 	}
 	int i, words = (len / bytesize);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	sb_print("[");
+	rz_strbuf_append(sb, "[");
 	for (i = 0; i < words; i++) {
 		switch (wordsize) {
 		case 8: {
-			sb_printf("%s%d", i ? "," : "", buf[i]);
+			rz_strbuf_appendf(sb, "%s%d", i ? "," : "", buf[i]);
 			break;
 		}
 		case 16: {
 			ut16 w16 = rz_read_ble16(&buf16[i], p->big_endian);
-			sb_printf("%s%hd", i ? "," : "", w16);
+			rz_strbuf_appendf(sb, "%s%hd", i ? "," : "", w16);
 			break;
 		}
 		case 32: {
 			ut32 w32 = rz_read_ble32(&buf32[i], p->big_endian);
-			sb_printf("%s%d", i ? "," : "", w32);
+			rz_strbuf_appendf(sb, "%s%d", i ? "," : "", w32);
 			break;
 		}
 		case 64: {
 			ut64 w64 = rz_read_ble64(&buf64[i], p->big_endian);
-			sb_printf("%s%" PFMT64d, i ? "," : "", w64);
+			rz_strbuf_appendf(sb, "%s%" PFMT64d, i ? "," : "", w64);
 			break;
 		}
 		}
 	}
-	sb_print("]\n");
+	rz_strbuf_append(sb, "]\n");
 	return rz_strbuf_drain(sb);
 }

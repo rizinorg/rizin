@@ -5677,7 +5677,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 								ea = va;
 							}
 						}
-						rz_cons_print(rz_print_section(core->print, ea));
+						rz_cons_print(rz_print_section_str(core->print, ea));
 						rz_print_offset(core->print, ea, 0, 0, 0, 0, NULL);
 					}
 					rz_str_bits(buf, core->block + i, 8, NULL);

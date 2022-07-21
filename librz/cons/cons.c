@@ -1271,6 +1271,9 @@ RZ_API void rz_cons_strcat(const char *str) {
 	}
 }
 
+/**
+ * \brief Prints \p str to the RzCons, and ownership is transferred into.
+ */
 RZ_API bool rz_cons_print_own(RZ_NULLABLE char *str) {
 	if (!str) {
 		return false;

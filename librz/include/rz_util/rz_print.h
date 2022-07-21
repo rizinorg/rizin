@@ -138,7 +138,7 @@ RZ_API RzPrint *rz_print_new(void);
 RZ_API RzPrint *rz_print_free(RzPrint *p);
 RZ_API void rz_print_set_flags(RzPrint *p, int _flags);
 RZ_API RZ_OWN char *rz_print_addr_str(RZ_NONNULL RzPrint *p, ut64 addr);
-RZ_API const char *rz_print_section(RzPrint *p, ut64 at);
+RZ_API const char *rz_print_section_str(RzPrint *p, ut64 at);
 RZ_API void rz_print_hexii(RzPrint *p, ut64 addr, const ut8 *buf, int len, int step);
 RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
 RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, const ut8 *buf, int len, int wordsize);
