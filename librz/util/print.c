@@ -515,15 +515,16 @@ RZ_API const char *rz_print_section_str(RzPrint *p, ut64 at) {
 		return "";
 	}
 	static char section[22];
-	static const int len = sizeof(section) - 1;
 	const char *s = p->get_section_name(p->user, at);
 	if (!s) {
 		s = "";
 	}
-	const int sps = RZ_MAX(len - strlen(s), 1);
-	memset(section, ' ', sps);
-	strncpy(section + sps, s, RZ_MIN(strlen(s), len - sps));
-	section[len] = '\0';
+	int ret = snprintf(section, sizeof(section), "%21s", s);
+	if (ret < 0 || ret >= sizeof(section)) {
+		section[sizeof(section) - 1] = 0;
+	} else if (strlen(s) > 21) {
+		section[20] = ' ';
+	}
 	return section;
 }
 
