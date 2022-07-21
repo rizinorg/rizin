@@ -29,8 +29,8 @@ RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) 
 	// The file's "default" loading address, that baddr_shift is computed relative to. 
     ut64 static_base = obj->plugin->baddr(bf);
 
-	//Compute current baddr_shift of analysis.
-    //Requires user input of the base address.
+	// Compute current baddr_shift of analysis.
+    // Requires user input of the base address.
 	ut64 old_base = rz_num_math(core->num, argv[1]);
 	ut64 static_old_delta = old_base - static_base;
 
@@ -42,13 +42,13 @@ RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv) 
 	}
 
 	if (argc > 2) {
-        //User has supplied manual new base address
+        // User has supplied manual new base address
 		ut64 new_base = rz_num_math(core->num, argv[2]);
 		ut64 static_new_delta = new_base - static_base;
 		
         rz_core_rebase_everything(core, sections_backup, false, static_old_delta, static_new_delta);
 	} else {
-        //Rebase to file's current baddr_shift
+        // Rebase to file's current baddr_shift
 		rz_core_rebase_everything(core, sections_backup, true, static_old_delta, 0);
 	}
 	rz_list_free(sections_backup);
