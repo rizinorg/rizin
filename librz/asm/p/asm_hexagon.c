@@ -30,8 +30,8 @@ static RZ_OWN RzPVector /* RzAsmTokenPattern */ *get_token_patterns() {
 	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_META;
 	pat->pattern = strdup(
-		"(^[\\[\\?\\/\\|\\\\┌│└\\{])|" // Packet prefix
-		"([∎<\\}][ :]endloop[01]{1,2})" // Endloop markers
+		"(^[\\[\\?\\/\\|\\\\\\{])|(┌)|(│)|(└)|" // Packet prefix
+		"((∎)|[<\\}])([ :])(endloop[01]{1,2})" // Endloop markers
 	);
 	rz_pvector_push(pvec, pat);
 

@@ -558,6 +558,64 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 	mu_end;
 }
 
+static bool test_rz_colorize_custom_hexagon_2(void) {
+	RzAnalysis *a = setup_hexagon_analysis();
+	RzAsm *d = setup_hexagon_asm();
+	d->utf8 = true;
+
+	RzPrint *p = setup_print();
+	RzAsmOp *asmop;
+	RzAnalysisOp *anaop;
+	RzStrBuf *colored_asm;
+	RzStrBuf *expected;
+	char err_msg[2048];
+	// └   memd(R0++#0x8) = R7:6     ∎ endloop0
+	ut8 buf[] = "\x08\xd2\xc0\xab\x46\x8c\x0a\xc2\x20\x40\x84\x75\x2a\x40\xc1\x9b\x08\xc6\xc0\xab";
+
+	const char *expected_str[] = {
+		"\x1b[38;2;118;118;118m[\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;204;204;204mmemd"
+		"\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR0\x1b[0m\x1b[38;2;204;204;204m+"
+		"\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x8"
+		"\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m="
+		"\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;58;150;221mR19:18\x1b[0m",
+		"\x1b[38;2;118;118;118m┌\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;58;150;221mR7:6\x1b"
+		"[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m "
+		"\x1b[0m\x1b[38;2;204;204;204mvalignb\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR13:12"
+		"\x1b[0m\x1b[38;2;204;204;204m,\x1b[0m\x1b[38;2;58;150;221mR11:10\x1b[0m\x1b[38;2;204;204;204m,"
+		"\x1b[0m\x1b[38;2;58;150;221mP2\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m",
+		"\x1b[38;2;118;118;118m│\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;58;150;221mP0\x1b[0m"
+		"\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m \x1b[0m"
+		"\x1b[38;2;204;204;204mcmp\x1b[0m\x1b[38;2;204;204;204m.\x1b[0m\x1b[38;2;204;204;204mgtu"
+		"\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR4\x1b[0m\x1b[38;2;204;204;204m,"
+		"\x1b[0m\x1b[38;2;118;118;118m##\x1b[0m\x1b[38;2;193;156;0m0x1\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m",
+		"\x1b[38;2;118;118;118m│\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;58;150;221mR11:10"
+		"\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m "
+		"\x1b[0m\x1b[38;2;204;204;204mmemd\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR1"
+		"\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;118;118;118m#"
+		"\x1b[0m\x1b[38;2;193;156;0m0x8\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m",
+		"\x1b[38;2;118;118;118m└\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;19;161;14mmemd"
+		"\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR0\x1b[0m\x1b[38;2;204;204;204m+"
+		"\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x8"
+		"\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m="
+		"\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;58;150;221mR7:6\x1b[0m\x1b[38;2;204;204;204m"
+		"     \x1b[0m\x1b[38;2;118;118;118m∎ endloop0\x1b[0m"
+	};
+
+	for (int i = 0; i < 0x14; i += 4) {
+		ut32 pc = hexagon_set_next_pc(d);
+		asmop = rz_asm_op_new();
+		anaop = rz_analysis_op_new();
+		rz_asm_disassemble(d, asmop, buf + i, 4);
+		rz_analysis_op(a, anaop, pc, buf + i, 4, RZ_ANALYSIS_OP_MASK_ALL);
+		colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
+		expected = rz_strbuf_new(expected_str[i / 4]);
+		snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+		mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
+	}
+
+	mu_end;
+}
+
 static int all_tests() {
 	mu_run_test(test_rz_tokenize_generic_0_no_reg_profile);
 	mu_run_test(test_rz_tokenize_generic_0);
@@ -574,6 +632,7 @@ static int all_tests() {
 	mu_run_test(test_rz_colorize_generic_4);
 	mu_run_test(test_rz_colorize_custom_hexagon_0);
 	mu_run_test(test_rz_colorize_custom_hexagon_1);
+	mu_run_test(test_rz_colorize_custom_hexagon_2);
 
 	return tests_passed != tests_run;
 }
