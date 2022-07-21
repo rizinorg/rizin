@@ -527,6 +527,17 @@ RZ_API const char *rz_print_section_str(RzPrint *p, ut64 at) {
 	return section;
 }
 
+/**
+ * \brief Prints a hexdump of \p buf at \p addr.
+ * \param p RzPrint instance
+ * \param addr Address of the buffer
+ * \param buf Buffer to print
+ * \param len Print only this many bytes
+ * \param base Byte print format ? (-10,-1,8,10,16,32,64)
+ * \param step Word size ?
+ * \param zoomsz Zoom size ?
+ * \return Hexdump string
+ */
 RZ_API char *rz_print_hexdump_str(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
 	rz_return_val_if_fail(p && buf && len > 0, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
@@ -1132,6 +1143,17 @@ static ut8 *M(const ut8 *b, int len) {
 	return r;
 }
 
+/**
+ * \brief Print hexdump diff between \p _a and \p _b.
+ * \param p RzPrint instance.
+ * \param aa Address of first buffer.
+ * \param _a First buffer.
+ * \param ba Address of second buffer.
+ * \param _b Second buffer.
+ * \param len Diff length.
+ * \param scndcol True If core->cons->columns > 123 ?
+ * \return Hexdump diff string.
+ */
 // TODO: add support for cursor
 RZ_API char *rz_print_hexdiff_str(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol) {
 	ut8 *a, *b;
@@ -1750,6 +1772,14 @@ RZ_API int rz_print_get_cursor(RzPrint *p) {
 	return p->cur_enabled ? p->cur : 0;
 }
 
+/**
+ * \brief Print dump in json format
+ * \param p RzPrint instance
+ * \param buf Buffer to print to
+ * \param len Print only this many bytes
+ * \param wordsize Size of a word in bits
+ * \return Dump JSON string
+ */
 RZ_API char *rz_print_jsondump_str(RzPrint *p, const ut8 *buf, int len, int wordsize) {
 	ut16 *buf16 = (ut16 *)buf;
 	ut32 *buf32 = (ut32 *)buf;
