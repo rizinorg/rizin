@@ -53,7 +53,6 @@ static void loadGP(RzCore *core) {
 	}
 }
 
-
 /**
  * \brief Create a backup of binary's sections.
  * \param core Rizin core.
@@ -125,7 +124,6 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 	ht_up_foreach(ht, __rebase_xrefs_i, user);
 	return true;
 }
-
 
 /**
  * \brief rebase all flags, binary, information, breakpoints, and analysis.
