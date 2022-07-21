@@ -223,7 +223,7 @@ typedef struct rz_bin_info_t {
 	char *debug_file_name;
 	const char *lang;
 	char *default_cc;
-	RzList /*<RzBinFileHash>*/ *file_hashes;
+	RzList /*<RzBinFileHash *>*/ *file_hashes;
 	int bits;
 	int has_va;
 	int has_pi; // pic/pie
@@ -311,7 +311,7 @@ struct rz_bin_file_t {
 	int narch;
 	struct rz_bin_xtr_plugin_t *curxtr;
 	// struct rz_bin_plugin_t *curplugin; // use o->plugin
-	RzList *xtr_data;
+	RzList /*<RzBinXtrData *>*/ *xtr_data;
 	RZ_DEPRECATE Sdb *sdb; ///< deprecated, put info in C structures instead of this
 	struct rz_bin_t *rbin;
 }; // RzBinFile
@@ -339,9 +339,9 @@ struct rz_bin_t {
 	int rawstr;
 	RZ_DEPRECATE Sdb *sdb;
 	RzIDStorage *ids;
-	RzList /*<RzBinPlugin>*/ *plugins;
-	RzList /*<RzBinXtrPlugin>*/ *binxtrs;
-	RzList /*<RzBinFile>*/ *binfiles;
+	RzList /*<RzBinPlugin *>*/ *plugins;
+	RzList /*<RzBinXtrPlugin *>*/ *binxtrs;
+	RzList /*<RzBinFile *>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;
 	RzIOBind iob;
@@ -520,25 +520,25 @@ typedef struct rz_bin_plugin_t {
 	bool (*check_filename)(const char *filename);
 	ut64 (*baddr)(RzBinFile *bf);
 	ut64 (*boffset)(RzBinFile *bf);
-	RzList /*<RzBinVirtualFile>*/ *(*virtual_files)(RzBinFile *bf);
-	RzList /*<RzBinMap>*/ *(*maps)(RzBinFile *bf);
+	RzList /*<RzBinVirtualFile *>*/ *(*virtual_files)(RzBinFile *bf);
+	RzList /*<RzBinMap *>*/ *(*maps)(RzBinFile *bf);
 	RzBinAddr *(*binsym)(RzBinFile *bf, RzBinSpecialSymbol num);
-	RzList /*<RzBinAddr>*/ *(*entries)(RzBinFile *bf);
-	RzList /*<RzBinSection>*/ *(*sections)(RzBinFile *bf);
+	RzList /*<RzBinAddr *>*/ *(*entries)(RzBinFile *bf);
+	RzList /*<RzBinSection *>*/ *(*sections)(RzBinFile *bf);
 	RZ_OWN RzBinSourceLineInfo *(*lines)(RzBinFile *bf); //< only called once on load, ownership is transferred to the caller
-	RzList /*<RzBinSymbol>*/ *(*symbols)(RzBinFile *bf);
-	RzList /*<RzBinImport>*/ *(*imports)(RzBinFile *bf);
-	RzList /*<RzBinString>*/ *(*strings)(RzBinFile *bf);
-	RzBinInfo /*<RzBinInfo>*/ *(*info)(RzBinFile *bf);
-	RzList /*<RzBinField>*/ *(*fields)(RzBinFile *bf);
+	RzList /*<RzBinSymbol *>*/ *(*symbols)(RzBinFile *bf);
+	RzList /*<RzBinImport *>*/ *(*imports)(RzBinFile *bf);
+	RzList /*<RzBinString *>*/ *(*strings)(RzBinFile *bf);
+	RzBinInfo /*<RzBinInfo *>*/ *(*info)(RzBinFile *bf);
+	RzList /*<RzBinField *>*/ *(*fields)(RzBinFile *bf);
 	RzList /*<char *>*/ *(*libs)(RzBinFile *bf);
-	RzList /*<RzBinReloc>*/ *(*relocs)(RzBinFile *bf);
-	RzList /*<RzBinTrycatch>*/ *(*trycatch)(RzBinFile *bf);
-	RzList /*<RzBinClass>*/ *(*classes)(RzBinFile *bf);
-	RzList /*<RzBinMem>*/ *(*mem)(RzBinFile *bf);
-	RzList /*<RzBinReloc>*/ *(*patch_relocs)(RzBinFile *bf);
-	RzList /*<RzBinFileHash>*/ *(*hashes)(RzBinFile *bf);
-	RzList /*<RzBinResource>*/ *(*resources)(RzBinFile *bf);
+	RzList /*<RzBinReloc *>*/ *(*relocs)(RzBinFile *bf);
+	RzList /*<RzBinTrycatch *>*/ *(*trycatch)(RzBinFile *bf);
+	RzList /*<RzBinClass *>*/ *(*classes)(RzBinFile *bf);
+	RzList /*<RzBinMem *>*/ *(*mem)(RzBinFile *bf);
+	RzList /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
+	RzList /*<RzBinFileHash *>*/ *(*hashes)(RzBinFile *bf);
+	RzList /*<RzBinResource *>*/ *(*resources)(RzBinFile *bf);
 	void (*header)(RzBinFile *bf);
 	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
@@ -547,7 +547,7 @@ typedef struct rz_bin_plugin_t {
 	char *(*get_name)(RzBinFile *bf, int type, int idx);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	char *(*section_type_to_string)(ut64 type);
-	RzList *(*section_flag_to_rzlist)(ut64 flag);
+	RzList /*<char *>*/ *(*section_flag_to_rzlist)(ut64 flag);
 	RzBuffer *(*create)(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 	char *(*demangle)(const char *str);
 	char *(*regstate)(RzBinFile *bf);
@@ -736,7 +736,7 @@ struct rz_bin_reloc_storage_t {
 	size_t target_relocs_count;
 }; // RzBinRelocStorage
 
-RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList *relocs);
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList /*<RzBinReloc *>*/ *relocs);
 RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage);
 RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_in(RzBinRelocStorage *storage, ut64 vaddr, ut64 size);
 
@@ -774,7 +774,7 @@ typedef struct rz_bin_field_t {
 } RzBinField;
 
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
-RZ_API void rz_bin_field_free(RzBinField *);
+RZ_API void rz_bin_field_free(RzBinField *field);
 
 typedef struct rz_bin_mem_t {
 	char *name;
@@ -815,12 +815,12 @@ typedef struct rz_bin_bind_t {
 
 RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile);
 RZ_API void rz_bin_map_free(RzBinMap *map);
-RZ_API RzList *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile);
-RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps);
+RZ_API RzList /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile);
+RZ_API RzList /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzList /*<RzBinMap *>*/ *maps);
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
-RZ_API RZ_OWN RzList *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RzBinImport *imp);
 RZ_API void rz_bin_resource_free(RzBinResource *res);
@@ -852,14 +852,14 @@ RZ_API const char *rz_bin_symbol_name(RzBinSymbol *s);
 typedef void (*RzBinSymbolCallback)(RzBinObject *obj, RzBinSymbol *symbol);
 
 // common functionality for patching relocs
-RZ_API ut64 rz_bin_relocs_patch_find_targets_map_base(RzList /*<RzBinMap>*/ *maps, ut64 target_sz);
+RZ_API ut64 rz_bin_relocs_patch_find_targets_map_base(RzList /*<RzBinMap *>*/ *maps, ut64 target_sz);
 
 typedef struct rz_bin_reloc_target_builder RzBinRelocTargetBuilder;
 RZ_API RzBinRelocTargetBuilder *rz_bin_reloc_target_builder_new(ut64 target_size, ut64 target_base);
 RZ_API void rz_bin_reloc_target_builder_free(RzBinRelocTargetBuilder *builder);
 RZ_API ut64 rz_bin_reloc_target_builder_get_target(RzBinRelocTargetBuilder *builder, ut64 sym);
 
-RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzList /* <RzBinMap> */ *maps,
+RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzList /*<RzBinMap *>*/ *maps,
 	RZ_NULLABLE RzBuffer *buf_patched, ut64 buf_patched_offset,
 	ut64 target_vfile_base, ut64 target_vfile_size,
 	RZ_NONNULL const char *vfile_name_patched, RZ_NONNULL const char *vfile_name_reloc_targets);
@@ -894,43 +894,43 @@ RZ_API RzBinInfo *rz_bin_get_info(RzBin *bin);
 RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr);
 RZ_API ut64 rz_bin_get_laddr(RzBin *bin);
 RZ_API ut64 rz_bin_get_size(RzBin *bin);
-RZ_API RZ_OWN RzList *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_length, bool raw_strings);
+RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_length, bool raw_strings);
 
 // use RzBinFile instead
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_entries(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_fields(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_imports(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_libs(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_sections(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_classes(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_strings(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_mem(RZ_NONNULL RzBin *bin);
-RZ_API RZ_DEPRECATE RZ_BORROW RzList *rz_bin_get_symbols(RZ_NONNULL RzBin *bin);
+RZ_API RZ_DEPRECATE RZ_BORROW RzList /*<RzBinAddr *>*/ *rz_bin_get_entries(RZ_NONNULL RzBin *bin);
+RZ_API RZ_DEPRECATE RZ_BORROW RzList /*<RzBinField *>*/ *rz_bin_get_fields(RZ_NONNULL RzBin *bin);
+RZ_API RZ_DEPRECATE RZ_BORROW RzList /*<RzBinImport *>*/ *rz_bin_get_imports(RZ_NONNULL RzBin *bin);
+RZ_API RZ_DEPRECATE RZ_BORROW RzList /*<char *>*/ *rz_bin_get_libs(RZ_NONNULL RzBin *bin);
+RZ_API RZ_DEPRECATE RZ_BORROW RzList /*<RzBinSection *>*/ *rz_bin_get_sections(RZ_NONNULL RzBin *bin);
+RZ_API RZ_DEPRECATE RZ_BORROW RzList /*<RzBinClass *>*/ *rz_bin_get_classes(RZ_NONNULL RzBin *bin);
+RZ_API RZ_DEPRECATE RZ_BORROW RzList /*<RzBinString *>*/ *rz_bin_get_strings(RZ_NONNULL RzBin *bin);
+RZ_API RZ_DEPRECATE RZ_BORROW RzList /*<RzBinMem *>*/ *rz_bin_get_mem(RZ_NONNULL RzBin *bin);
+RZ_API RZ_DEPRECATE RZ_BORROW RzList /*<RzBinSymbol *>*/ *rz_bin_get_symbols(RZ_NONNULL RzBin *bin);
 RZ_API RZ_DEPRECATE int rz_bin_is_static(RZ_NONNULL RzBin *bin);
-RZ_API RzList *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
+RZ_API RzList /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
 
-RZ_API const RzList *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj);
-RZ_API RZ_OWN RzList *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj);
-RZ_API RZ_OWN RzList *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzBinInfo /*<RzBinInfo *>*/ *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj);
+RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj);
+RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<RzBinResource *>*/ *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzList /*<RzBinSymbol *>*/ *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj);
 RZ_API bool rz_bin_object_reset_strings(RZ_NONNULL RzBin *bin, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *obj);
 RZ_API RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va);
 RZ_API bool rz_bin_object_is_big_endian(RZ_NONNULL RzBinObject *obj);
 RZ_API bool rz_bin_object_is_static(RZ_NONNULL RzBinObject *obj);
-RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj);
-RZ_API RZ_OWN RzPVector *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, bool va);
+RZ_API RZ_OWN RzVector /*<RzBinSectionMap>*/ *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj);
+RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, bool va);
 RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va);
 RZ_API ut64 rz_bin_object_p2v(RZ_NONNULL RzBinObject *obj, ut64 paddr);
-RZ_API RzVector *rz_bin_object_p2v_all(RZ_NONNULL RzBinObject *obj, ut64 paddr);
+RZ_API RzVector /*<ut64>*/ *rz_bin_object_p2v_all(RZ_NONNULL RzBinObject *obj, ut64 paddr);
 RZ_API ut64 rz_bin_object_v2p(RZ_NONNULL RzBinObject *obj, ut64 vaddr);
 
 RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile);
@@ -952,7 +952,7 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBi
 
 // RzBinFile.get
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
-RZ_API RzList *rz_bin_file_get_symbols(RzBinFile *bf);
+RZ_API RzList /*<RzBinSymbol *>*/ *rz_bin_file_get_symbols(RzBinFile *bf);
 // RzBinFile.add
 RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *binfile, const char *name, const char *super, int view);
 RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *classname, const char *name, int nargs);
@@ -968,8 +968,8 @@ RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
 RZ_API ut64 rz_bin_file_delete_all(RzBin *bin);
 RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf);
-RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit);
-RZ_API RzList *rz_bin_file_set_hashes(RzBin *bin, RzList *new_hashes);
+RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit);
+RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_set_hashes(RzBin *bin, RZ_OWN RzList /*<RzBinFileHash *>*/ *new_hashes);
 RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *binfile);
 RZ_API void rz_bin_file_hash_free(RzBinFileHash *fhash);
 
@@ -995,8 +995,8 @@ RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin);
 
 /* filter.c */
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules);
-RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList *list);
-RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList *list);
+RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList /*<RzBinSymbol *>*/ *list);
+RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList /*<RzBinSection *>*/ *list);
 RZ_API char *rz_bin_filter_name(RzBinFile *bf, HtPU *db, ut64 addr, char *name);
 RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym);
 RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 addr);
@@ -1004,7 +1004,7 @@ RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr
 
 /* bin string */
 RZ_API void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr);
-RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzList /*<RzBinString*>*/ *list);
+RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzList /*<RzBinString *>*/ *list);
 RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db);
 RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzBinString *bstr);
 RZ_API bool rz_bin_string_database_remove(RZ_NONNULL RzBinStrDb *db, ut64 address, bool is_va);

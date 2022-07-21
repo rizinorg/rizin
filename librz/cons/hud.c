@@ -199,7 +199,7 @@ static void mht_free_kv(HtPPKv *kv) {
 // Display a list of entries in the hud, filtered and emphasized based on the user input.
 
 #define HUD_CACHE 0
-RZ_API char *rz_cons_hud(RzList *list, const char *prompt) {
+RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 	char user_input[HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RzListIter *iter;

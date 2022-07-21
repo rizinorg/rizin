@@ -2542,7 +2542,7 @@ static int typecmp(const void *a, const void *b) {
 	return !rz_types_equal(t1, t2);
 }
 
-RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
+RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzAnalysisVar *var;
 	RzList *list = rz_analysis_var_all_list(analysis, fcn);
