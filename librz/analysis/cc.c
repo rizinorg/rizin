@@ -223,7 +223,7 @@ RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_na
 	return cc ? cc : rz_analysis_cc_default(analysis);
 }
 
-RZ_API RzList *rz_analysis_calling_conventions(RzAnalysis *analysis) {
+RZ_API RzList /*<char *>*/ *rz_analysis_calling_conventions(RzAnalysis *analysis) {
 	RzList *ccl = rz_list_new();
 	SdbKv *kv;
 	SdbListIter *iter;

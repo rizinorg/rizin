@@ -38,7 +38,7 @@ RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, c
 RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname);
 
 struct rz_bin_string_database_t {
-	RzList /*<RzBinString*>*/ *list; ///< Contains all the strings in list form
+	RzList /*<RzBinString *>*/ *list; ///< Contains all the strings in list form
 	HtUP /*<ut64, RzBinString*>*/ *phys; ///< Contains all the strings but mapped by physical address
 	HtUP /*<ut64, RzBinString*>*/ *virt; ///< Contains all the strings but mapped by virtual address
 };

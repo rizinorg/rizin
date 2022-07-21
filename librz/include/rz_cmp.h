@@ -48,4 +48,8 @@ RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr);
 RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzOutputMode mode);
 RZ_API bool rz_core_cmpwatch_revert(RzCore *core, ut64 addr);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* RZ_CMP_H */

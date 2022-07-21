@@ -737,7 +737,7 @@ RZ_API const RzBinInfo *rz_bin_object_get_info(RzBinObject *obj) {
 }
 
 /**
- * \brief Get list of \p RzBinLib representing the libraries used by the binary object.
+ * \brief Get list of \p char* representing the libraries used by the binary object.
  */
 RZ_API const RzList *rz_bin_object_get_libs(RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);

@@ -949,7 +949,7 @@ RZ_API void rz_cons_rainbow_free(RzConsContext *ctx);
 RZ_API void rz_cons_rainbow_new(RzConsContext *ctx, int sz);
 
 RZ_API int rz_cons_fgets(char *buf, int len, int argc, const char **argv);
-RZ_API char *rz_cons_hud(RzList *list, const char *prompt);
+RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt);
 RZ_API char *rz_cons_hud_path(const char *path, int dir);
 RZ_API char *rz_cons_hud_string(const char *s);
 RZ_API char *rz_cons_hud_file(const char *f);

@@ -963,7 +963,7 @@ void str_value_free(HtUPKv *kv) {
 	free(kv->value);
 }
 
-RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList *vtables) {
+RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables) {
 	RRTTIMSVCAnalContext context;
 	context.vt_context = vt_context;
 	rz_pvector_init(&context.vtables, (RzPVectorFree)rz_analysis_vtable_info_free);

@@ -481,8 +481,11 @@ rz_bin_file_compute_hashes_bad:
 	return NULL;
 }
 
-// Set new hashes to current RzBinInfo, caller should free the returned RzList
-RZ_API RzList *rz_bin_file_set_hashes(RzBin *bin, RzList /*<RzBinFileHash*/ *new_hashes) {
+/**
+ * \brief Set \p file_hashes on current RzBinInfo
+ * \return RzList of previous file_hashes
+ */
+RZ_API RZ_OWN RzList *rz_bin_file_set_hashes(RzBin *bin, RZ_OWN RzList /*<RzBinFileHash *>*/ *new_hashes) {
 	rz_return_val_if_fail(bin && bin->cur && bin->cur->o && bin->cur->o->info, NULL);
 	RzBinFile *bf = bin->cur;
 	RzBinInfo *info = bf->o->info;

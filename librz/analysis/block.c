@@ -889,7 +889,7 @@ static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *
 
 // Try to find the contiguous predecessors of all given blocks and merge them if possible,
 // i.e. if there are no other blocks that have this block as one of their successors
-RZ_API void rz_analysis_block_automerge(RzList *blocks) {
+RZ_API void rz_analysis_block_automerge(RzList /*<RzAnalysisBlock *>*/ *blocks) {
 	rz_return_if_fail(blocks);
 	AutomergeCtx ctx = {
 		.predecessors = ht_up_new0(),
