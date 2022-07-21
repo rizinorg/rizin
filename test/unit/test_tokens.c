@@ -342,12 +342,11 @@ static bool test_rz_tokenize_custom_hexagon_1(void) {
 		{ .start = 32, .len = 4, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 }, // jump
 		{ .start = 36, .len = 3, .type = RZ_ASM_TOKEN_META, .val.number = 0 }, // :nt
 		{ .start = 39, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
-		{ .start = 40, .len = 5, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x2ac } // 0x2a4
+		{ .start = 40, .len = 5, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x2a8 } // 0x2a8
 	};
 
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->pc += 4;
-	a->cur->disassemble(a, op, buf, 4);
+	rz_asm_disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -516,13 +515,13 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;118;118;118m?\x1b[0m\x1b[38;2;204;204;204m"
+	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;118;118;118m[\x1b[0m\x1b[38;2;204;204;204m"
 					   "   \x1b[0m\x1b[38;2;19;161;14mif\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m("
 					   "\x1b[0m\x1b[38;2;19;161;14mcmp\x1b[0m\x1b[38;2;204;204;204m.\x1b[0m\x1b[38;2;19;161;14meq"
 					   "\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;118;118;118m<err>\x1b[0m\x1b[38;2;118;118;118m.new"
 					   "\x1b[0m\x1b[38;2;204;204;204m,\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x0\x1b[0m"
 					   "\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;19;161;14mjump"
-					   "\x1b[0m\x1b[38;2;118;118;118m:nt\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;193;156;0m0x2ac\x1b[0m");
+					   "\x1b[0m\x1b[38;2;118;118;118m:nt\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;193;156;0m0x4c\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
