@@ -4,14 +4,12 @@
 #include <rz_debug.h>
 #include <config.h>
 
-static RzDebugPlugin *debug_static_plugins[] = {
-	RZ_DEBUG_STATIC_PLUGINS
-};
+static RzDebugPlugin *debug_static_plugins[] = { RZ_DEBUG_STATIC_PLUGINS };
 
 RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
 	int i;
 	dbg->plugins = rz_list_newf(free);
-	for (i = 0; debug_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(debug_static_plugins); i++) {
 		rz_debug_plugin_add(dbg, debug_static_plugins[i]);
 	}
 }

@@ -202,7 +202,7 @@ RZ_API RzAsm *rz_asm_new(void) {
 		free(a);
 		return NULL;
 	}
-	for (i = 0; asm_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(asm_static_plugins); i++) {
 		rz_asm_add(a, asm_static_plugins[i]);
 	}
 	return a;

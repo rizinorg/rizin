@@ -606,19 +606,6 @@ static int __lib_bin_xtr_dt(RzLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
-/* binldr callback */
-static int __lib_bin_ldr_cb(RzLibPlugin *pl, void *user, void *data) {
-	struct rz_bin_ldr_plugin_t *hand = (struct rz_bin_ldr_plugin_t *)data;
-	RzBin *bin = user;
-	// printf(" * Added (dis)assembly plugin\n");
-	rz_bin_ldr_add(bin, hand);
-	return true;
-}
-
-static int __lib_bin_ldr_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
-}
-
 static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) {
 	int format = 0;
 	RzCmdStateOutput state = { 0 };
@@ -732,8 +719,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			&__lib_bin_cb, &__lib_bin_dt, bin);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN_XTR, "bin xtr plugins",
 			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, bin);
-		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN_LDR, "bin ldr plugins",
-			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
 		/* load plugins everywhere */
 		char *path = rz_sys_getenv(RZ_LIB_ENV);
 		if (!RZ_STR_ISEMPTY(path)) {

@@ -3056,7 +3056,6 @@ bin.rawstr=false
 bin.relocs=true
 bin.str.enc=guess
 bin.strings=true
-bin.useldr=true
 bin.usextr=true
 bin.verbose=false
 cfg.bigendian=false

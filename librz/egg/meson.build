@@ -1,8 +1,12 @@
-egg_plugins = [
-  'exec',
-  #'shya',
-  'xor'
-]
+egg_plugins = {
+  'conf_name': 'plugins_egg',
+  'base_cname': 'rz_egg_plugin_',
+  'list': [
+    'exec',
+    #'shya',
+    'xor'
+  ],
+}
 
 rz_egg_sources = [
   'egg.c',

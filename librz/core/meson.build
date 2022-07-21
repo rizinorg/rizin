@@ -1,7 +1,11 @@
-core_plugins = [
-  'java',
-  'dex',
-]
+core_plugins = {
+  'conf_name': 'plugins_core',
+  'base_cname': 'rz_core_plugin_',
+  'list': [
+    'java',
+    'dex',
+  ],
+}
 
 subdir('cmd_descs')
 

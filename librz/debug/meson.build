@@ -1,4 +1,4 @@
-debug_plugins = [
+debug_plugins_list = [
   'bf',
   'bochs',
   'dmp',
@@ -7,12 +7,23 @@ debug_plugins = [
   'io',
   'null',
   'rap',
-  'winkd'
+  'winkd',
 ]
-
 if get_option('use_gpl')
-  debug_plugins += 'qnx'
+  debug_plugins_list += 'qnx'
 endif
+if has_debugger
+  debug_plugins_list += ['native']
+endif
+if host_machine.system() == 'windows'
+  debug_plugins_list += 'windbg'
+endif
+
+debug_plugins = {
+  'conf_name': 'plugins_debug',
+  'base_cname': 'rz_debug_plugin_',
+  'list': debug_plugins_list,
+}
 
 rz_debug_sources = [
   'ddesc.c',
@@ -72,7 +83,6 @@ if get_option('use_gpl')
 endif
 
 if has_debugger
-  debug_plugins += ['native']
   rz_debug_sources += ['p/debug_native.c']
 
   if host_machine.system() == 'linux' or host_machine.system() == 'android'
@@ -114,8 +124,6 @@ if host_machine.system() == 'windows'
     'p/native/windows/windows_message.c',
   ]
   rz_debug_deps += dependency('rzw32dbg_wrap')
-
-  debug_plugins += 'windbg'
 endif
 
 rz_debug_inc = [

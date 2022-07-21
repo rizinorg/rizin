@@ -1,14 +1,19 @@
-lang_plugins = [
+lang_plugins_list = [
   'lib',
   'pipe',
 ]
-
 if host_machine.system() != 'windows'
-  lang_plugins += [
+  lang_plugins_list += [
     'c',
     'cpipe'
   ]
 endif
+
+lang_plugins = {
+  'conf_name': 'plugins_lang',
+  'base_cname': 'rz_lang_plugin_',
+  'list': lang_plugins_list,
+}
 
 rz_lang_sources = [
   'lang.c',

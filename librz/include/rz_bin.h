@@ -341,7 +341,6 @@ struct rz_bin_t {
 	RzIDStorage *ids;
 	RzList /*<RzBinPlugin>*/ *plugins;
 	RzList /*<RzBinXtrPlugin>*/ *binxtrs;
-	RzList /*<RzBinLdrPlugin>*/ *binldrs;
 	RzList /*<RzBinFile>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;
@@ -359,7 +358,6 @@ struct rz_bin_t {
 	ut64 filter_rules;
 	bool verbose;
 	bool use_xtr; // use extract plugins when loading a file?
-	bool use_ldr; // use loader plugins when loading a file?
 	bool strseach_check_ascii_freq; // str.search.check_ascii_freq
 	RzStrConstPool constpool;
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
@@ -411,15 +409,6 @@ typedef struct rz_bin_xtr_plugin_t {
 	void (*destroy)(RzBin *bin);
 	void (*free_xtr)(void *xtr_obj);
 } RzBinXtrPlugin;
-
-typedef struct rz_bin_ldr_plugin_t {
-	char *name;
-	char *desc;
-	char *license;
-	int (*init)(void *user);
-	int (*fini)(void *user);
-	bool (*load)(RzBin *bin);
-} RzBinLdrPlugin;
 
 typedef struct rz_bin_arch_options_t {
 	const char *arch;
@@ -891,12 +880,10 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr);
 RZ_API void rz_bin_bind(RzBin *b, RzBinBind *bnd);
 RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo);
 RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo);
-RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo);
 RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf);
 RZ_API const RzBinPlugin *rz_bin_plugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name);
 RZ_API const RzBinXtrPlugin *rz_bin_xtrplugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name);
-RZ_API const RzBinLdrPlugin *rz_bin_ldrplugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name);
 RZ_API void rz_bin_force_plugin(RzBin *bin, const char *pname);
 
 // get/set various bin information
@@ -1056,7 +1043,6 @@ extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_fatmach0;
 extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_dyldcache;
 extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed;
 extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64;
-extern RzBinLdrPlugin rz_bin_ldr_plugin_ldr_linux;
 extern RzBinPlugin rz_bin_plugin_zimg;
 extern RzBinPlugin rz_bin_plugin_omf;
 extern RzBinPlugin rz_bin_plugin_art;

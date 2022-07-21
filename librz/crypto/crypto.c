@@ -9,9 +9,7 @@
 
 RZ_LIB_VERSION(rz_crypto);
 
-static RzCryptoPlugin *crypto_static_plugins[] = {
-	RZ_CRYPTO_STATIC_PLUGINS
-};
+static RzCryptoPlugin *crypto_static_plugins[] = { RZ_CRYPTO_STATIC_PLUGINS };
 
 static const struct {
 	const char *name;
@@ -99,7 +97,7 @@ RZ_API RzCrypto *rz_crypto_new(void) {
 		goto rz_crypto_new_bad;
 	}
 
-	for (ut32 i = 0; crypto_static_plugins[i]; i++) {
+	for (ut32 i = 0; i < RZ_ARRAY_SIZE(crypto_static_plugins); i++) {
 		RzCryptoPlugin *p = RZ_NEW0(RzCryptoPlugin);
 		if (!p) {
 			goto rz_crypto_new_bad;

@@ -30,22 +30,32 @@ subdir('core')
 
 subdir('main')
 
+plugins = [
+  core_plugins,
+  analysis_plugins,
+  asm_plugins,
+  bp_plugins,
+  bin_plugins,
+  bin_xtr_plugins,
+  crypto_plugins,
+  io_plugins,
+  debug_plugins,
+  egg_plugins,
+  lang_plugins,
+  hash_plugins,
+  parse_plugins,
+  demangler_plugins,
+]
+
 conf_data = configuration_data()
-conf_data.set('plugins_core', '&rz_core_plugin_' + ', &rz_core_plugin_'.join(core_plugins) + ', 0')
-conf_data.set('plugins_analysis', '&rz_analysis_plugin_' + ', &rz_analysis_plugin_'.join(analysis_plugins) + ', 0')
-conf_data.set('plugins_asm', '&rz_asm_plugin_' + ', &rz_asm_plugin_'.join(asm_plugins) + ', 0')
-conf_data.set('plugins_bp', '&rz_bp_plugin_' + ', &rz_bp_plugin_'.join(bp_plugins) + ', 0')
-conf_data.set('plugins_bin', '&rz_bin_plugin_' + ', &rz_bin_plugin_'.join(bin_plugins) + ', 0')
-conf_data.set('plugins_bin_ldr', '&rz_bin_ldr_plugin_' + ', &rz_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
-conf_data.set('plugins_bin_xtr', '&rz_bin_xtr_plugin_' + ', &rz_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
-conf_data.set('plugins_crypto', '&rz_crypto_plugin_' + ', &rz_crypto_plugin_'.join(crypto_plugins) + ', 0')
-conf_data.set('plugins_io', '&rz_io_plugin_' + ', &rz_io_plugin_'.join(io_plugins) + ', 0')
-conf_data.set('plugins_debug', '&rz_debug_plugin_' + ', &rz_debug_plugin_'.join(debug_plugins) + ', 0')
-conf_data.set('plugins_egg', '&rz_egg_plugin_' + ', &rz_egg_plugin_'.join(egg_plugins) + ', 0')
-conf_data.set('plugins_lang', '&rz_lang_plugin_' + ', &rz_lang_plugin_'.join(lang_plugins) + ', 0')
-conf_data.set('plugins_hash', '&rz_hash_plugin_' + ', &rz_hash_plugin_'.join(hash_plugins) + ', 0')
-conf_data.set('plugins_parse', '&rz_parse_plugin_' + ', &rz_parse_plugin_'.join(parse_plugins) + ', 0')
-conf_data.set('plugins_demangler', '&rz_demangler_plugin_' + ', &rz_demangler_plugin_'.join(demangler_plugins))
+foreach plugin : plugins
+  l = []
+  foreach p : plugin.get('list')
+    l += ['&' + plugin.get('base_cname') + p]
+  endforeach
+  conf_data.set(plugin.get('conf_name'), ', '.join(l))
+endforeach
+
 config_h = configure_file(
   input: 'config.h.in',
   output: 'config.h',
