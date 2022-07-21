@@ -154,8 +154,7 @@ RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len) {
 RZ_API const char *rz_print_cursor_str(RzPrint *p, int cur, int len, int set) {
 	if (rz_print_have_cursor(p, cur, len)) {
 		static char c[12];
-		memset(c, 0, sizeof(c));
-		rz_str_cat(c, RZ_CONS_INVERT(set, 1));
+		snprintf(c, sizeof(c), "%s", RZ_CONS_INVERT(set, 1));
 		return c;
 	}
 	return "";
