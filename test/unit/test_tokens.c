@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2022 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_strbuf.h"
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_strbuf.h>
 #include <rz_asm.h>
 #include <rz_util.h>
 #include <rz_vector.h>
@@ -60,6 +61,16 @@ static RzAsm *setup_hexagon_asm() {
 	RzAsm *a = rz_asm_new();
 	rz_asm_setup(a, "hexagon", 32, false);
 	return a;
+}
+
+static ut32 hexagon_set_next_pc(RZ_BORROW RzAsm *a) {
+	static ut32 pc = 0;
+	if (a) {
+		rz_asm_set_pc(a, pc);
+	}
+	ut32 tmp = pc;
+	pc += 4;
+	return tmp;
 }
 
 static RzAnalysis *setup_tms_analysis(const char *cpu) {
@@ -135,6 +146,7 @@ static bool test_rz_tokenize_generic_0(void) {
 
 static bool test_rz_tokenize_generic_1(void) {
 	RzAnalysis *a = setup_hexagon_analysis();
+	hexagon_set_next_pc(NULL);
 	RzStrBuf *asm_str = rz_strbuf_new("if (!P0) R5:4 = memd(R0+Q2<<#0x1)");
 	RzAsmToken tokens[20] = {
 		{ .start = 0, .len = 2, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 }, // if
@@ -272,6 +284,8 @@ static bool test_rz_tokenize_generic_4(void) {
 
 static bool test_rz_tokenize_custom_hexagon_0(void) {
 	RzAsm *a = setup_hexagon_asm();
+	hexagon_set_next_pc(a);
+
 	const ut8 buf[] = "\x0c\xc0\x00\x54"; // "[   trap0(#0x3)"
 	RzAsmToken tokens[7] = {
 		{ .start = 0, .len = 1, .type = RZ_ASM_TOKEN_META, .val.number = 0 }, // [
@@ -283,7 +297,7 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 		{ .start = 14, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 } // )
 	};
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
-	a->cur->disassemble(a, op, buf, 4);
+	a->cur->disassemble(a, op, buf, sizeof(buf));
 	if (!op->asm_toks) {
 		mu_fail("NULL check failed.\n");
 	}
@@ -304,6 +318,7 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 
 static bool test_rz_tokenize_custom_hexagon_1(void) {
 	RzAsm *a = setup_hexagon_asm();
+	hexagon_set_next_pc(a);
 
 	const ut8 buf[] = "\x50\xc7\x14\x24"; // [       if (cmp.eq(<err>.new,#0x7)) jump:nt 0x2a4
 	RzAsmToken tokens[21] = {
@@ -327,7 +342,7 @@ static bool test_rz_tokenize_custom_hexagon_1(void) {
 		{ .start = 32, .len = 4, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 }, // jump
 		{ .start = 36, .len = 3, .type = RZ_ASM_TOKEN_META, .val.number = 0 }, // :nt
 		{ .start = 39, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
-		{ .start = 40, .len = 5, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x2a4 } // 0x2a4
+		{ .start = 40, .len = 5, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x2ac } // 0x2a4
 	};
 
 	RzAsmOp *op = RZ_NEW0(RzAsmOp);
@@ -488,14 +503,16 @@ static bool test_rz_colorize_generic_4(void) {
 static bool test_rz_colorize_custom_hexagon_0(void) {
 	RzAnalysis *a = setup_hexagon_analysis();
 	RzAsm *d = setup_hexagon_asm();
+	ut32 pc = hexagon_set_next_pc(d);
+
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "?   if (cmp.eq(<err>.new,#0x0)) jump:nt 0x40" 20c00224
+	// "?   if (cmp.eq(<err>.new,#0x0)) jump:nt 0x2ac" 20c00224
 	ut8 buf[] = "\x20\xc0\x02\x24";
 
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
-	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
+	rz_analysis_op(a, anaop, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
@@ -505,7 +522,7 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 					   "\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;118;118;118m<err>\x1b[0m\x1b[38;2;118;118;118m.new"
 					   "\x1b[0m\x1b[38;2;204;204;204m,\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x0\x1b[0m"
 					   "\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;19;161;14mjump"
-					   "\x1b[0m\x1b[38;2;118;118;118m:nt\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;193;156;0m0x40\x1b[0m");
+					   "\x1b[0m\x1b[38;2;118;118;118m:nt\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;193;156;0m0x2ac\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -516,18 +533,20 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 static bool test_rz_colorize_custom_hexagon_1(void) {
 	RzAnalysis *a = setup_hexagon_analysis();
 	RzAsm *d = setup_hexagon_asm();
+	ut32 pc = hexagon_set_next_pc(d);
+
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "?   LR:FP = dealloc_return(FP):raw" 1ec01e96
+	// "[   LR:FP = dealloc_return(FP):raw" 1ec01e96
 	ut8 buf[] = "\x1e\xc0\x1e\x96";
 
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
-	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
+	rz_analysis_op(a, anaop, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;118;118;118m?\x1b[0m\x1b[38;2;204;204;204m"
+	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;118;118;118m[\x1b[0m\x1b[38;2;204;204;204m"
 					   "   \x1b[0m\x1b[38;2;58;150;221mLR\x1b[0m\x1b[38;2;204;204;204m:\x1b[0m\x1b[38;2;58;150;221mFP"
 					   "\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m"
 					   " \x1b[0m\x1b[38;2;197;15;31mdealloc_return\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mFP"
