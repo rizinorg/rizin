@@ -407,7 +407,7 @@ append:
 }
 
 /**
- * @brief Set the value of the \p param at \p scaling to \p val
+ * \brief Set the value of the \p param at \p scaling to \p val
  * This function is smart enough to also apply any effects corresponding to the \p param
  *
  * \param param
