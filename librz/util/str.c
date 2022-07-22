@@ -1999,7 +1999,7 @@ RZ_API bool rz_str_is_ascii(const char *str) {
  * \brief Checks if the whole string is composed of whitespace
  *
  * \param str input string
- * \return bool true if whitespace (or empty or NULL), false otherwise
+ * \return bool true if whitespace (or empty), false otherwise
  */
 RZ_API bool rz_str_is_whitespace(RZ_NONNULL const char *str) {
 	rz_return_val_if_fail(str, false);
@@ -3989,8 +3989,8 @@ RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *pr
  * space. Spaces at the beginning of \p string will be maintained, trailing
  * whitespaces at the end of each split line is removed.
  *
- * @param string a writable string, it will be modified by the function
- * @param width the maximum size of each line. It will be respected only if
+ * \param string a writable string, it will be modified by the function
+ * \param width the maximum size of each line. It will be respected only if
  *              possible, as the function won't split words.
  */
 RZ_API RzList *rz_str_wrap(char *str, size_t width) {
