@@ -35,7 +35,9 @@ adE "mov.w @(0x0fe,gbr), r0" c57f 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))
 adE "mov.l @(0x3fc,gbr), r0" c6ff 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (loadw 0 32 (+ (var gbr) (* (bv 32 0xff) (bv 32 0x4))))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
 adE "mova @(0x3fc,pc), r0" c7ff 0x420 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (loadw 0 32 (+ (+ (& (bv 32 0x420) (bv 32 0xfffffffc)) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x4))))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
 adE "movt r14" 0e29 0x100 (set r14 (cast 32 false (ite (var sr_t) (bv 32 0x1) (bv 32 0x0))))
-adE "swap.b r0, r1" 6108
+adE "swap.b r0, r1" 6108 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (| (& (ite (var _priv) (var r0b) (var r0)) (bv 32 0xffff0000)) (| (<< (& (ite (var _priv) (var r0b) (var r0)) (bv 32 0xff)) (bv 32 0x8) false) (& (>> (ite (var _priv) (var r0b) (var r0)) (bv 32 0x8) false) (bv 32 0xff))))) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))))
+adE "swap.w r15, r7" 67f9 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (| (<< (var r15) (bv 32 0x10) false) (>> (var r15) (bv 32 0x10) false))) (branch (var _priv) (set r7b (var _regv)) (set r7 (var _regv))))
+adE "xtrct r9, r10" 2a9d 0x0 (set r10 (| (<< (var r9) (bv 32 0x10) false) (>> (var r10) (bv 32 0x10) false)))
 
 # Misc
 adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (<< (bv 32 0x0) (bv 32 0x1) false))) nop)
