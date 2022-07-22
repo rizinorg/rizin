@@ -7227,20 +7227,14 @@ RZ_IPI RzCmdStatus rz_cmd_base64_decode_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_print_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	st32 len = (st32)rz_num_math(core->num, argv[1]), skip = 0;
-	if (!rz_str_isnumber(argv[1]) || len < 0) {
-		RZ_LOG_ERROR("len is not a positive number\n");
+	int len = (int)rz_num_math(core->num, argv[1]);
+	int skip = (int)rz_num_math(core->num, argv[2]);
+	if (len < 0 || skip < 0) {
+		RZ_LOG_ERROR("len and skip should be positive numbers\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (argv[2]) {
-		skip = (st32)rz_num_math(core->num, argv[2]);
-		if (!rz_str_isnumber(argv[2]) || skip < 0) {
-			RZ_LOG_ERROR("skip is not a positive number\n");
-			return RZ_CMD_STATUS_ERROR;
-		}
-	}
 	// `pb len skip` means skip <skip> bits then print <len> bits
-	char *buf = calloc(1, len + skip + 1);
+	char *buf = RZ_NEWS0(char, len + skip + 1);
 	if (!buf) {
 		RZ_LOG_ERROR("Fail to allocate memory\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -7254,18 +7248,14 @@ RZ_IPI RzCmdStatus rz_print_bitstream_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_print_byte_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (!rz_str_isnumber(argv[1])) {
-		RZ_LOG_ERROR("len is not a number\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
 	ut64 cur_off = core->offset;
-	int len = (st32)rz_num_math(core->num, argv[1]);
+	int len = (int)rz_num_math(core->num, argv[1]);
 	if (len < 0) {
 		len *= -1;
 		rz_core_seek(core, cur_off - len, SEEK_SET);
 		rz_core_block_read(core);
 	}
-	char *buf = calloc(1, len * 8 + 1);
+	char *buf = RZ_NEWS0(char, len * 8 + 1);
 	if (!buf) {
 		RZ_LOG_ERROR("Fail to allocate memory\n");
 		return RZ_CMD_STATUS_ERROR;

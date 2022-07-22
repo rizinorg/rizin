@@ -4,26 +4,24 @@
 name: cmd_print
 commands:
   - name: pb
-    summary: Print bitstream of N bits
+    summary: Print bitstream of <n> bits, skipping the first <skip> bits.
     cname: print_bitstream
     modes:
       - RZ_OUTPUT_MODE_STANDARD
     args:
-      - name: n_bits
+      - name: n
         type: RZ_CMD_ARG_TYPE_RZNUM
-        optional: false
       - name: skip
         type: RZ_CMD_ARG_TYPE_RZNUM
-        optional: true
+        default_value: 0
   - name: pB
-    summary: Print bitstream of N bytes
+    summary: Print bitstream of <n> bytes
     cname: print_byte_bitstream
     modes:
       - RZ_OUTPUT_MODE_STANDARD
     args:
-      - name: n_bytes
+      - name: n
         type: RZ_CMD_ARG_TYPE_RZNUM
-        optional: false
   - name: pa
     summary: Print (dis)assembly of given hexpairs/assembly
     subcommands:

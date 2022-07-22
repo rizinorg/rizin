@@ -10426,37 +10426,35 @@ static const RzCmdDescHelp cmd_print_help = {
 };
 static const RzCmdDescArg print_bitstream_args[] = {
 	{
-		.name = "n_bits",
+		.name = "n",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.optional = false,
 
 	},
 	{
 		.name = "skip",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = "0",
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp print_bitstream_help = {
-	.summary = "Print bitstream of N bits",
+	.summary = "Print bitstream of <n> bits, skipping the first <skip> bits.",
 	.args = print_bitstream_args,
 };
 
 static const RzCmdDescArg print_byte_bitstream_args[] = {
 	{
-		.name = "n_bytes",
+		.name = "n",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = false,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp print_byte_bitstream_help = {
-	.summary = "Print bitstream of N bytes",
+	.summary = "Print bitstream of <n> bytes",
 	.args = print_byte_bitstream_args,
 };
 
