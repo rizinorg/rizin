@@ -18,7 +18,7 @@ static RzPrint *setup_print() {
 	RzPrint *p = rz_print_new();
 	p->cons = rz_cons_new();
 	p->cons->context = RZ_NEW0(RzConsContext);
-	p->cons->context->color_mode = COLOR_MODE_16M;
+	p->cons->context->color_mode = COLOR_MODE_16;
 	rz_cons_pal_init(p->cons->context);
 	rz_cons_pal_update_event();
 	return p;
@@ -379,9 +379,7 @@ static bool test_rz_colorize_generic_0(void) {
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;136;23;152mldur\x1b[0m\x1b[38;2;204;204;204m"
-					   " \x1b[0m\x1b[38;2;58;150;221mw2\x1b[0m\x1b[38;2;204;204;204m, [\x1b[0m\x1b[38;2;58;150;221mx8\x1b[0m\x1b[38;2;204;204;204m,"
-					   " \x1b[0m\x1b[38;2;204;204;204m-\x1b[0m\x1b[38;2;193;156;0m0x100\x1b[0m\x1b[38;2;204;204;204m]\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[35mldur\x1b[0m\x1b[37m \x1b[0m\x1b[36mw2\x1b[0m\x1b[37m, [\x1b[0m\x1b[36mx8\x1b[0m\x1b[37m, \x1b[0m\x1b[37m-\x1b[0m\x1b[33m0x100\x1b[0m\x1b[37m]\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -404,10 +402,7 @@ static bool test_rz_colorize_generic_1(void) {
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;193;156;0madc.w\x1b[0m\x1b[38;2;204;204;204m"
-					   " \x1b[0m\x1b[38;2;58;150;221mr8\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;58;150;221msb\x1b[0m\x1b[38;2;204;204;204m,"
-					   " \x1b[0m\x1b[38;2;58;150;221msl\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;204;204;204mlsl\x1b[0m\x1b[38;2;204;204;204m"
-					   " \x1b[0m\x1b[38;2;193;156;0m31\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[33madc.w\x1b[0m\x1b[37m \x1b[0m\x1b[36mr8\x1b[0m\x1b[37m, \x1b[0m\x1b[36msb\x1b[0m\x1b[37m, \x1b[0m\x1b[36msl\x1b[0m\x1b[37m, \x1b[0m\x1b[37mlsl\x1b[0m\x1b[37m \x1b[0m\x1b[33m31\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -430,8 +425,7 @@ static bool test_rz_colorize_generic_2(void) {
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;204;204;204mmovabs\x1b[0m\x1b[38;2;204;204;204m"
-					   " \x1b[0m\x1b[38;2;58;150;221mrax\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;193;156;0m0x1122334455667788\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmovabs\x1b[0m\x1b[37m \x1b[0m\x1b[36mrax\x1b[0m\x1b[37m, \x1b[0m\x1b[33m0x1122334455667788\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -453,14 +447,7 @@ static bool test_rz_colorize_generic_3(void) {
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;204;204;204mmov\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;58;150;221mac0"
-					   "\x1b[0m\x1b[38;2;204;204;204m.\x1b[0m\x1b[38;2;204;204;204ml\x1b[0m\x1b[38;2;204;204;204m, "
-					   "\x1b[0m\x1b[38;2;204;204;204m*\x1b[0m\x1b[38;2;58;150;221mar2\x1b[0m\x1b[38;2;204;204;204m |"
-					   "\x1b[0m\x1b[38;2;204;204;204m|\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204mmov"
-					   "\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m*\x1b[0m\x1b[38;2;204;204;204m("
-					   "\x1b[0m\x1b[38;2;58;150;221mar1\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;204;204;204mt0b"
-					   "\x1b[0m\x1b[38;2;204;204;204m) \x1b[0m\x1b[38;2;204;204;204m<<\x1b[0m\x1b[38;2;204;204;204m "
-					   "\x1b[0m\x1b[38;2;58;150;221mt3\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;58;150;221mac1\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[36mac0\x1b[0m\x1b[37m.\x1b[0m\x1b[37ml\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar2\x1b[0m\x1b[37m |\x1b[0m\x1b[37m|\x1b[0m\x1b[37m \x1b[0m\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[37m(\x1b[0m\x1b[36mar1\x1b[0m\x1b[37m+\x1b[0m\x1b[37mt0b\x1b[0m\x1b[37m) \x1b[0m\x1b[37m<<\x1b[0m\x1b[37m \x1b[0m\x1b[36mt3\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac1\x1b[0m");
 
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
@@ -483,14 +470,7 @@ static bool test_rz_colorize_generic_4(void) {
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;204;204;204mmac\x1b[0m\x1b[38;2;204;204;204m "
-					   "\x1b[0m\x1b[38;2;204;204;204m*\x1b[0m\x1b[38;2;58;150;221mar0\x1b[0m\x1b[38;2;204;204;204m, "
-					   "\x1b[0m\x1b[38;2;204;204;204m*\x1b[0m\x1b[38;2;58;150;221mcdp\x1b[0m\x1b[38;2;204;204;204m, "
-					   "\x1b[0m\x1b[38;2;58;150;221mac0\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m>>"
-					   "\x1b[0m\x1b[38;2;204;204;204m #\x1b[0m\x1b[38;2;193;156;0m16\x1b[0m\x1b[38;2;204;204;204m :: "
-					   "\x1b[0m\x1b[38;2;204;204;204mmac\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m*"
-					   "\x1b[0m\x1b[38;2;58;150;221mar0\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;204;204;204m*"
-					   "\x1b[0m\x1b[38;2;58;150;221mcdp\x1b[0m\x1b[38;2;204;204;204m, \x1b[0m\x1b[38;2;58;150;221mac0\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmac\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar0\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mcdp\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac0\x1b[0m\x1b[37m \x1b[0m\x1b[37m>>\x1b[0m\x1b[37m #\x1b[0m\x1b[33m16\x1b[0m\x1b[37m :: \x1b[0m\x1b[37mmac\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar0\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mcdp\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac0\x1b[0m");
 
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
@@ -515,13 +495,7 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;118;118;118m[\x1b[0m\x1b[38;2;204;204;204m"
-					   "   \x1b[0m\x1b[38;2;19;161;14mif\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m("
-					   "\x1b[0m\x1b[38;2;19;161;14mcmp\x1b[0m\x1b[38;2;204;204;204m.\x1b[0m\x1b[38;2;19;161;14meq"
-					   "\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;118;118;118m<err>\x1b[0m\x1b[38;2;118;118;118m.new"
-					   "\x1b[0m\x1b[38;2;204;204;204m,\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x0\x1b[0m"
-					   "\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;19;161;14mjump"
-					   "\x1b[0m\x1b[38;2;118;118;118m:nt\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;193;156;0m0x4c\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[32mcmp\x1b[0m\x1b[37m.\x1b[0m\x1b[32meq\x1b[0m\x1b[37m(\x1b[0m\x1b[90m<err>\x1b[0m\x1b[90m.new\x1b[0m\x1b[37m,\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x0\x1b[0m\x1b[37m)\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x4c\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -545,11 +519,7 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[38;2;118;118;118m[\x1b[0m\x1b[38;2;204;204;204m"
-					   "   \x1b[0m\x1b[38;2;58;150;221mLR\x1b[0m\x1b[38;2;204;204;204m:\x1b[0m\x1b[38;2;58;150;221mFP"
-					   "\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m"
-					   " \x1b[0m\x1b[38;2;197;15;31mdealloc_return\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mFP"
-					   "\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;118;118;118m:raw\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[36mLR\x1b[0m\x1b[37m:\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[31mdealloc_return\x1b[0m\x1b[37m(\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m)\x1b[0m\x1b[90m:raw\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -572,59 +542,17 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	ut8 buf[] = "\x08\xd2\xc0\xab\x46\x8c\x0a\xc2\x20\x40\x84\x75\x2a\x40\xc1\x9b\x08\xc6\xc0\xab";
 	const char *expected_str[] = {
 #if __WINDOWS__
-		"\x1b[38;2;118;118;118m[\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;204;204;204mmemd"
-		"\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR0\x1b[0m\x1b[38;2;204;204;204m+"
-		"\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x8"
-		"\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m="
-		"\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;58;150;221mR19:18\x1b[0m",
-		"\x1b[38;2;118;118;118m/\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;58;150;221mR7:6\x1b"
-		"[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m "
-		"\x1b[0m\x1b[38;2;204;204;204mvalignb\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR13:12"
-		"\x1b[0m\x1b[38;2;204;204;204m,\x1b[0m\x1b[38;2;58;150;221mR11:10\x1b[0m\x1b[38;2;204;204;204m,"
-		"\x1b[0m\x1b[38;2;58;150;221mP2\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m",
-		"\x1b[38;2;118;118;118m|\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;58;150;221mP0\x1b[0m"
-		"\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m \x1b[0m"
-		"\x1b[38;2;204;204;204mcmp\x1b[0m\x1b[38;2;204;204;204m.\x1b[0m\x1b[38;2;204;204;204mgtu"
-		"\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR4\x1b[0m\x1b[38;2;204;204;204m,"
-		"\x1b[0m\x1b[38;2;118;118;118m##\x1b[0m\x1b[38;2;193;156;0m0x1\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m",
-		"\x1b[38;2;118;118;118m|\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;58;150;221mR11:10"
-		"\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m "
-		"\x1b[0m\x1b[38;2;204;204;204mmemd\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR1"
-		"\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;118;118;118m#"
-		"\x1b[0m\x1b[38;2;193;156;0m0x8\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m",
-		"\x1b[38;2;118;118;118m\\\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;19;161;14mmemd"
-		"\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR0\x1b[0m\x1b[38;2;204;204;204m+"
-		"\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x8"
-		"\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m="
-		"\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;58;150;221mR7:6\x1b[0m\x1b[38;2;204;204;204m"
-		"     \x1b[0m\x1b[38;2;118;118;118m< endloop0\x1b[0m"
+		"\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m+\x1b[0m\x1b[37m+\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR19:18\x1b[0m",
+		"\x1b[90m/\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR7:6\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mvalignb\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR13:12\x1b[0m\x1b[37m,\x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m,\x1b[0m\x1b[36mP2\x1b[0m\x1b[37m)\x1b[0m",
+		"\x1b[90m|\x1b[0m\x1b[37m   \x1b[0m\x1b[36mP0\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mcmp\x1b[0m\x1b[37m.\x1b[0m\x1b[37mgtu\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR4\x1b[0m\x1b[37m,\x1b[0m\x1b[90m##\x1b[0m\x1b[33m0x1\x1b[0m\x1b[37m)\x1b[0m",
+		"\x1b[90m|\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1\x1b[0m\x1b[37m+\x1b[0m\x1b[37m+\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m",
+		"\x1b[90m\\\x1b[0m\x1b[37m   \x1b[0m\x1b[32mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m+\x1b[0m\x1b[37m+\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR7:6\x1b[0m\x1b[37m     \x1b[0m\x1b[90m< endloop0\x1b[0m"
 #else
-		"\x1b[38;2;118;118;118m[\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;204;204;204mmemd"
-		"\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR0\x1b[0m\x1b[38;2;204;204;204m+"
-		"\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x8"
-		"\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m="
-		"\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;58;150;221mR19:18\x1b[0m",
-		"\x1b[38;2;118;118;118m┌\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;58;150;221mR7:6\x1b"
-		"[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m "
-		"\x1b[0m\x1b[38;2;204;204;204mvalignb\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR13:12"
-		"\x1b[0m\x1b[38;2;204;204;204m,\x1b[0m\x1b[38;2;58;150;221mR11:10\x1b[0m\x1b[38;2;204;204;204m,"
-		"\x1b[0m\x1b[38;2;58;150;221mP2\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m",
-		"\x1b[38;2;118;118;118m│\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;58;150;221mP0\x1b[0m"
-		"\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m \x1b[0m"
-		"\x1b[38;2;204;204;204mcmp\x1b[0m\x1b[38;2;204;204;204m.\x1b[0m\x1b[38;2;204;204;204mgtu"
-		"\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR4\x1b[0m\x1b[38;2;204;204;204m,"
-		"\x1b[0m\x1b[38;2;118;118;118m##\x1b[0m\x1b[38;2;193;156;0m0x1\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m",
-		"\x1b[38;2;118;118;118m│\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;58;150;221mR11:10"
-		"\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m=\x1b[0m\x1b[38;2;204;204;204m "
-		"\x1b[0m\x1b[38;2;204;204;204mmemd\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR1"
-		"\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;118;118;118m#"
-		"\x1b[0m\x1b[38;2;193;156;0m0x8\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m",
-		"\x1b[38;2;118;118;118m└\x1b[0m\x1b[38;2;204;204;204m   \x1b[0m\x1b[38;2;19;161;14mmemd"
-		"\x1b[0m\x1b[38;2;204;204;204m(\x1b[0m\x1b[38;2;58;150;221mR0\x1b[0m\x1b[38;2;204;204;204m+"
-		"\x1b[0m\x1b[38;2;204;204;204m+\x1b[0m\x1b[38;2;118;118;118m#\x1b[0m\x1b[38;2;193;156;0m0x8"
-		"\x1b[0m\x1b[38;2;204;204;204m)\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;204;204;204m="
-		"\x1b[0m\x1b[38;2;204;204;204m \x1b[0m\x1b[38;2;58;150;221mR7:6\x1b[0m\x1b[38;2;204;204;204m"
-		"     \x1b[0m\x1b[38;2;118;118;118m∎ endloop0\x1b[0m"
+		"\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m+\x1b[0m\x1b[37m+\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR19:18\x1b[0m",
+		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR7:6\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mvalignb\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR13:12\x1b[0m\x1b[37m,\x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m,\x1b[0m\x1b[36mP2\x1b[0m\x1b[37m)\x1b[0m",
+		"\x1b[90m│\x1b[0m\x1b[37m   \x1b[0m\x1b[36mP0\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mcmp\x1b[0m\x1b[37m.\x1b[0m\x1b[37mgtu\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR4\x1b[0m\x1b[37m,\x1b[0m\x1b[90m##\x1b[0m\x1b[33m0x1\x1b[0m\x1b[37m)\x1b[0m",
+		"\x1b[90m│\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1\x1b[0m\x1b[37m+\x1b[0m\x1b[37m+\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m",
+		"\x1b[90m└\x1b[0m\x1b[37m   \x1b[0m\x1b[32mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m+\x1b[0m\x1b[37m+\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR7:6\x1b[0m\x1b[37m     \x1b[0m\x1b[90m∎ endloop0\x1b[0m"
 #endif
 	};
 
