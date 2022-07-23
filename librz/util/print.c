@@ -1843,12 +1843,12 @@ RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL cons
 		return NULL;
 	}
 	pj_a(j);
-	for (ut64 i = 0, end = (ut64)i + len * bytesize; i < end; i += bytesize) {
+	for (ut64 i = 0, end = i + (ut64)len * bytesize; i < end; i += bytesize) {
 		ut64 word = rz_read_ble(buf + i, p->big_endian, wordsize);
 		pj_n(j, word);
 	}
 	pj_end(j);
-	const char *str = pj_string(j);
+	char *str = strdup(pj_string(j));
 	pj_free(j);
-	return strdup(str);
+	return str;
 }
