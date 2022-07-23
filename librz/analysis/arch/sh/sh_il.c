@@ -490,7 +490,7 @@ static RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure 
 	// !res & y
 	RzILOpBool *ry = AND(nres, DUP(ymsb));
 	// x & !res
-	RzILOpBool *xr = AND(DUP(xmsb), nres);
+	RzILOpBool *xr = AND(DUP(xmsb), DUP(nres));
 
 	// bit = xy | ry | xr
 	RzILOpBool * or = OR(xy, ry);
@@ -525,7 +525,7 @@ static RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure
 	// y & res
 	RzILOpBool *rny = AND(DUP(ymsb), resmsb);
 	// res & !x
-	RzILOpBool *rnx = AND(DUP(resmsb), nx);
+	RzILOpBool *rnx = AND(DUP(resmsb), DUP(nx));
 
 	// bit = nxy | rny | rnx
 	RzILOpBool * or = OR(nxy, rny);
@@ -679,9 +679,9 @@ static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 	RzILOpEffect *local_sum = SETL("sum", ADD(sum, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T))));
 
-	RzILOpEffect *ret = sh_il_set_pure_param(1, VARL("sum"));
 	RzILOpEffect *tbit = SETG(SH_SR_T, sh_il_is_add_carry(VARL("sum"), sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
-	return SEQ3(local_sum, ret, tbit);
+	RzILOpEffect *ret = sh_il_set_pure_param(1, VARL("sum"));
+	return SEQ3(local_sum, tbit, ret);
 }
 
 /**
