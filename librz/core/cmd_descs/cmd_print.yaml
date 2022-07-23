@@ -495,7 +495,7 @@ commands:
         summary: show signed integer dump
         subcommands:
           - name: pxd
-            summary: show signed integer dump
+            summary: show 1-byte integer dump
             cname: print_hexdump_signed_integer
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
