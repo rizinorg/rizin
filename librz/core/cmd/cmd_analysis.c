@@ -5060,7 +5060,7 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_to_graph_cmd_handler(RzCore *core, int argc
 	ut64 addr = core->offset;
 	RzList *list = rz_analysis_xrefs_get_to(core->analysis, addr);
 	rz_list_foreach (list, iter, xref) {
-		char *str = rz_core_cmd_strf(core, "fd 0x%" PFMT64x, xref->from);
+		char *str = rz_core_cmd_strf(core, "fd @ 0x%" PFMT64x, xref->from);
 		if (!str) {
 			str = strdup("?\n");
 		}
