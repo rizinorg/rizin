@@ -1538,7 +1538,7 @@ static bool issymbol(char c) {
 	switch (c) {
 	case '+':
 	case '-':
-		/* case '/': not good for dalvik */
+	/* case '/': not good for dalvik */
 	case '>':
 	case '<':
 	case '(':
@@ -1576,8 +1576,7 @@ static bool ishexprefix(char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
-RZ_API char *
-rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
+RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
 	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
 	ut32 c_reset = strlen(reset);
@@ -1621,8 +1620,8 @@ rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *n
 			return strdup(p);
 		}
 		switch (p[i]) {
-			// We dont need to skip ansi codes.
-			// original colors must be preserved somehow
+		// We dont need to skip ansi codes.
+		// original colors must be preserved somehow
 		case 0x1b:
 #define STRIP_ANSI 1
 #if STRIP_ANSI
