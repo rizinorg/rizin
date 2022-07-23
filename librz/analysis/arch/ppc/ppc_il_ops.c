@@ -3,6 +3,7 @@
 
 #include "ppc_il.h"
 #include "ppc_analysis.h"
+#include "rz_types_base.h"
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_util/rz_assert.h>
 #include <capstone.h>
@@ -658,10 +659,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTVSCR:
 		NOT_IMPLEMENTED;
 		break;
-	// IBM POWER specific: One Condition Register Field
-	case PPC_INS_MFOCRF:
-	case PPC_INS_MTOCRF:
-		NOT_IMPLEMENTED;
 	case PPC_INS_MFMSR:
 		spr_name = "msr";
 		break;
@@ -699,9 +696,43 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 			return SETG("msr", SET_RANGE(VARG("msr"), U8(48), U8(62), rs_48_62, 64));
 		}
 		break;
-	case PPC_INS_MFCR:
 	case PPC_INS_MTCR:
+	case PPC_INS_MTCRF:;
+		ut32 mask = 0xffffffff;
+		if (id == PPC_INS_MTCRF) {
+			ut8 fxm = INSOP(0).imm;
+			rS = cs_reg_name(handle, INSOP(1).reg);
+			mask = ppc_fmx_to_mask(fxm);
+		}
+		RzILOpEffect *set_cr = SETG("cr", LOGOR(LOGAND(UNSIGNED(32, VARG(rS)), U32(mask)), LOGAND(VARG("cr"), LOGNOT(U32(mask)))));
+		return SEQ2(set_cr, sync_crx_cr(false, mask));
 
+	case PPC_INS_MFCR:
+		return SEQ2(sync_crx_cr(true, 0x0), SETG(rT, EXTZ(VARG(rT))));
+
+	// Note: We do not update CR after the OCRF operations.
+	case PPC_INS_MTOCRF:
+	case PPC_INS_MFOCRF:;
+		//! Untested code. Capstone < v5 does not store the fxm value in the operands.
+		// See: https://github.com/capstone-engine/capstone/issues/1903
+		rS = cs_reg_name(handle, INSOP(1).reg);
+		ut8 fxm = INSOP(0).imm;
+		ut8 tmp = fxm;
+		ut8 x = 0;
+		// Convert fxm to CRx number. fxm bit 7 set, means cr7
+		while (tmp & UT8_MAX) {
+			tmp >>= 1;
+			++x;
+		}
+		spr_name = (id == PPC_INS_MFOCRF) ? rT : ppc_get_cr_name(x);
+		RzILOpPure *crx = ppc_get_cr(x);
+		if (!crx) {
+			RZ_LOG_WARN("Invalid instruction encountered. fxm = %" PFMT32d " has more than one bit set.\n", fxm);
+			set_val = SETL("val", UA(0));
+			break;
+		}
+		set_val = (id == PPC_INS_MFOCRF) ? SETL("val", SHIFTL0(EXTZ(crx), U8(x * 4))) : SETL("val", UNSIGNED(4, SHIFTR0(VARG(rT), U8(x * 4))));
+		break;
 	// IBM POWER specific Segment Register
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MFSRIN:
@@ -824,7 +855,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTFSFI:
 	case PPC_INS_MFFS:
 	case PPC_INS_MFTB:
-	case PPC_INS_MTCRF:
 	case PPC_INS_MFRTCU:
 	case PPC_INS_MFRTCL:
 		NOT_IMPLEMENTED;
@@ -903,7 +933,8 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		NOT_IMPLEMENTED;
 	}
 	if (set_val) {
-		return ppc_moves_to_spr(id) ? SETG(spr_name, UNSIGNED(size, VARL("val"))) : SETG(rT, UNSIGNED(size, VARL("val")));
+		RzILOpEffect *write_spr = ppc_moves_to_spr(id) ? SETG(spr_name, UNSIGNED(size, VARL("val"))) : SETG(rT, UNSIGNED(size, VARL("val")));
+		return SEQ2(set_val, write_spr);
 	}
 	return ppc_moves_to_spr(id) ? SETG(spr_name, UNSIGNED(size, VARG(rS))) : SETG(rT, UNSIGNED(size, VARG(spr_name)));
 }

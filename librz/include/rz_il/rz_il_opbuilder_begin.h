@@ -116,6 +116,7 @@
 #define SEQ7(e0, e1, e2, e3, e4, e5, e6)         rz_il_op_new_seqn(7, e0, e1, e2, e3, e4, e5, e6)
 #define SEQ8(e0, e1, e2, e3, e4, e5, e6, e7)     rz_il_op_new_seqn(8, e0, e1, e2, e3, e4, e5, e6, e7)
 #define SEQ9(e0, e1, e2, e3, e4, e5, e6, e7, e8) rz_il_op_new_seqn(9, e0, e1, e2, e3, e4, e5, e6, e7, e8)
+#define SEQN(n, ...)                             rz_il_op_new_seqn(n, __VA_ARGS__)
 
 #define EMPTY()         rz_il_op_new_empty()
 #define NOP()           rz_il_op_new_nop()

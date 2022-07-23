@@ -284,6 +284,7 @@ bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTSR:
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MTVSCR:
+	case PPC_INS_MTCR:
 		return true;
 	}
 }
@@ -392,7 +393,7 @@ static RZ_OWN RzILOpBool *get_cr_bit(const ut8 pos) {
  * \param x The number of the CR register.
  * \return RzILOpPure* The CR register. Or NULL on failure.
  */
-static RZ_OWN RzILOpPure *get_cr(const ut8 x) {
+RZ_IPI RZ_OWN RzILOpPure *ppc_get_cr(const ut8 x) {
 	switch (x) {
 	default:
 		RZ_LOG_WARN("Cannot return CR%" PFMT32d ". THere exists no such register.", x);
@@ -414,6 +415,93 @@ static RZ_OWN RzILOpPure *get_cr(const ut8 x) {
 	case 7:
 		return VARG("cr7");
 	}
+}
+
+/**
+ * \brief Get the CRx register name.
+ * 
+ * \param x The number of the CR register.
+ * \return const char* The CRx register name. Or NULL on failure.
+ */
+RZ_IPI const char *ppc_get_cr_name(const ut8 x) {
+	switch (x) {
+	default:
+		RZ_LOG_WARN("Cannot return CR%" PFMT32d ". THere exists no such register.", x);
+		return NULL;
+	case 0:
+		return "cr0";
+	case 1:
+		return "cr1";
+	case 2:
+		return "cr2";
+	case 3:
+		return "cr3";
+	case 4:
+		return "cr4";
+	case 5:
+		return "cr5";
+	case 6:
+		return "cr6";
+	case 7:
+		return "cr7";
+	}
+}
+
+/**
+ * \brief Synchronizes the CR register with the CR0-CR7 registers.
+ * Since CR contains CR0-CR7 but are separated in the register profile
+ * this function should be called before CR as a whole is read and after it was written.
+ * 
+ * \param to_cr True: CR0-CR7 are copied to CR. False: CR is copied to CR0-CR7 according to \p cr_mask.
+ * \param cr_mask Masks the bits which are copied from CR to CR0-CR7. Ignored if \p crx_to_cr == true.
+ * \return RzILOpEffect* Sequence of effects to sync the CR/CRx registers.
+ */
+RZ_IPI RZ_OWN RzILOpEffect *sync_crx_cr(const bool crx_to_cr, const ut32 cr_mask) {
+	RzILOpEffect *sync;
+	if (crx_to_cr) {
+		sync = SEQ9(
+			SETG("cr", U32(0)),
+			SETG("cr", UNSIGNED(32, VARG("cr0"))),
+			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr1")), U8(0x4)))),
+			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr2")), U8(0x8)))),
+			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr3")), U8(0xc)))),
+			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr4")), U8(0x10)))),
+			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr5")), U8(0x14)))),
+			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr6")), U8(0x18)))),
+			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr7")), U8(0x1c)))));
+		return sync;
+	}
+	sync = SEQN(10,
+		SETL("cr_mask", U32(cr_mask)),
+		SETL("crm", LOGAND(VARG("cr"), U32(cr_mask))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf))), EMPTY(), SETG("cr0", UNSIGNED(4, VARL("crm")))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0))), EMPTY(), SETG("cr1", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x4))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf00))), EMPTY(), SETG("cr2", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x8))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf000))), EMPTY(), SETG("cr3", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0xc))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0000))), EMPTY(), SETG("cr4", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x10))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf00000))), EMPTY(), SETG("cr5", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x14))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf000000))), EMPTY(), SETG("cr6", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x18))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0000000))), EMPTY(), SETG("cr7", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x1c))))));
+	return sync;
+}
+
+/**
+ * \brief Returns the mask for a given fxm operand.
+ * For details look up the "mtcrf" instruction in the Power ISA
+ * 
+ * \param fmx The fmx value.
+ * \return ut32 The mask for writing to the CR register. 
+ */
+RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
+	return (
+		(fmx & 0x80 ? 0xf << 0x1c : 0) |
+		(fmx & 0x40 ? 0xf << 0x18 : 0) |
+		(fmx & 0x20 ? 0xf << 0x14 : 0) |
+		(fmx & 0x10 ? 0xf << 0x10 : 0) |
+		(fmx & 0x08 ? 0xf << 0xc : 0) |
+		(fmx & 0x04 ? 0xf << 0x8 : 0) |
+		(fmx & 0x02 ? 0xf << 0x4 : 0) |
+		(fmx & 0x01 ? 0xf : 0));
 }
 
 /**
@@ -490,25 +578,25 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTA:
 	case PPC_INS_BDNZTLA:
-		return AND(NON_ZERO(VARG("ctr")), EQ(get_cr(bi), UN(4, 1)));
+		return AND(NON_ZERO(VARG("ctr")), EQ(ppc_get_cr(bi), UN(4, 1)));
 	// ctr != 0 && cr_bi == 0
 	case PPC_INS_BDNZF:
 	case PPC_INS_BDNZFL:
 	case PPC_INS_BDNZFA:
 	case PPC_INS_BDNZFLA:
-		return AND(NON_ZERO(VARG("ctr")), IS_ZERO(get_cr(bi)));
+		return AND(NON_ZERO(VARG("ctr")), IS_ZERO(ppc_get_cr(bi)));
 	// ctr == 0 && cr_bi == 1
 	case PPC_INS_BDZT:
 	case PPC_INS_BDZTL:
 	case PPC_INS_BDZTA:
 	case PPC_INS_BDZTLA:
-		return AND(IS_ZERO(VARG("ctr")), EQ(get_cr(bi), UN(4, 1)));
+		return AND(IS_ZERO(VARG("ctr")), EQ(ppc_get_cr(bi), UN(4, 1)));
 	// ctr == 0 && cr_bi == 0
 	case PPC_INS_BDZF:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFA:
 	case PPC_INS_BDZFLA:
-		return AND(IS_ZERO(VARG("ctr")), IS_ZERO(get_cr(bi)));
+		return AND(IS_ZERO(VARG("ctr")), IS_ZERO(ppc_get_cr(bi)));
 	}
 }
 

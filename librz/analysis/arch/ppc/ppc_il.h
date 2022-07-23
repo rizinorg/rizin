@@ -135,10 +135,14 @@ bool ppc_is_conditional(ut32 insn_id);
 bool ppc_moves_to_spr(ut32 insn_id);
 bool is_d_mul_div(ut32 id);
 bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode);
+RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx);
+RZ_IPI RZ_OWN RzILOpPure *ppc_get_cr(const ut8 x);
+RZ_IPI const char *ppc_get_cr_name(const ut8 x);
 
 RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode);
 RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode);
 RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode);
 RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mode);
+RZ_IPI RZ_OWN RzILOpEffect *sync_crx_cr(const bool to_cr, const ut32 cr_mask);
 
 #endif /* PPC_IL_H */

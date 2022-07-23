@@ -79,6 +79,7 @@
 #undef SEQ7
 #undef SEQ8
 #undef SEQ9
+#undef SEQN
 
 #undef EMPTY
 #undef NOP
