@@ -1843,7 +1843,7 @@ RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL cons
 		return NULL;
 	}
 	pj_a(j);
-	for (ut64 i = 0, end = i + (ut64)len * bytesize; i < end; i += bytesize) {
+	for (int i = 0 ; i < len; i += bytesize) {
 		ut64 word = rz_read_ble(buf + i, p->big_endian, wordsize);
 		pj_n(j, word);
 	}
