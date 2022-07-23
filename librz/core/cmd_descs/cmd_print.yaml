@@ -506,7 +506,7 @@ commands:
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
           - name: pxdh
-            summary: show signed integer dump
+            summary: show 2-bytes integer dump
             cname: print_hexdump_signed_integer2
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
