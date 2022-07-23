@@ -208,6 +208,15 @@ bool ppc_sets_lr(ut32 insn_id) {
 	case PPC_INS_BL:
 	case PPC_INS_BLA:
 	case PPC_INS_BLRL:
+	case PPC_INS_BCLA:
+	case PPC_INS_BDNZTL:
+	case PPC_INS_BDNZTLA:
+	case PPC_INS_BDNZFL:
+	case PPC_INS_BDNZFLA:
+	case PPC_INS_BDZTL:
+	case PPC_INS_BDZTLA:
+	case PPC_INS_BDZFL:
+	case PPC_INS_BDZFLA:
 		return true;
 	}
 }
@@ -222,7 +231,8 @@ bool ppc_is_conditional(ut32 insn_id) {
 	case PPC_INS_BCL:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
-	case PPC_INS_BCT:
+	case PPC_INS_BCA:
+	case PPC_INS_BCLA:
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZL:
@@ -235,6 +245,22 @@ bool ppc_is_conditional(ut32 insn_id) {
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
+	case PPC_INS_BDNZT:
+	case PPC_INS_BDNZTL:
+	case PPC_INS_BDNZTA:
+	case PPC_INS_BDNZTLA:
+	case PPC_INS_BDNZF:
+	case PPC_INS_BDNZFL:
+	case PPC_INS_BDNZFA:
+	case PPC_INS_BDNZFLA:
+	case PPC_INS_BDZT:
+	case PPC_INS_BDZTA:
+	case PPC_INS_BDZTL:
+	case PPC_INS_BDZTLA:
+	case PPC_INS_BDZF:
+	case PPC_INS_BDZFA:
+	case PPC_INS_BDZFL:
+	case PPC_INS_BDZFLA:
 		return true;
 	}
 }
@@ -271,6 +297,8 @@ bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 		return false;
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
+	case PPC_INS_BCA:
+	case PPC_INS_BCLA:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
 	case PPC_INS_BDNZ:
@@ -287,6 +315,23 @@ bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	case PPC_INS_BDZLRL:
 	case PPC_INS_BCT:
 		return !(0x4 & PPC_READ_BO_FIELD); // not BO_2
+	case PPC_INS_BDNZT:
+	case PPC_INS_BDNZTL:
+	case PPC_INS_BDNZTA:
+	case PPC_INS_BDNZTLA:
+	case PPC_INS_BDNZF:
+	case PPC_INS_BDNZFL:
+	case PPC_INS_BDNZFA:
+	case PPC_INS_BDNZFLA:
+	case PPC_INS_BDZT:
+	case PPC_INS_BDZTA:
+	case PPC_INS_BDZTL:
+	case PPC_INS_BDZTLA:
+	case PPC_INS_BDZF:
+	case PPC_INS_BDZFA:
+	case PPC_INS_BDZFL:
+	case PPC_INS_BDZFLA:
+		return true;
 	}
 }
 
@@ -342,6 +387,36 @@ static RZ_OWN RzILOpBool *get_cr_bit(const ut8 pos) {
 }
 
 /**
+ * \brief Get the CRx register.
+ * 
+ * \param x The number of the CR register.
+ * \return RzILOpPure* The CR register. Or NULL on failure.
+ */
+static RZ_OWN RzILOpPure *get_cr(const ut8 x) {
+	switch (x) {
+	default:
+		RZ_LOG_WARN("Cannot return CR%" PFMT32d ". THere exists no such register.", x);
+		return NULL;
+	case 0:
+		return VARG("cr0");
+	case 1:
+		return VARG("cr1");
+	case 2:
+		return VARG("cr2");
+	case 3:
+		return VARG("cr3");
+	case 4:
+		return VARG("cr4");
+	case 5:
+		return VARG("cr5");
+	case 6:
+		return VARG("cr6");
+	case 7:
+		return VARG("cr7");
+	}
+}
+
+/**
  * \brief Get the branch condition for a given instruction.
  * Checkout the "Simple Branch Mnemonics" in Appendix C in PowerISA v3.1B and
  * the chapter about branch instructions for an overview of possible conditions.
@@ -370,8 +445,12 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	default:
 		RZ_LOG_WARN("Instruction %d has no condition implemented.\n", id);
 		return IL_FALSE;
+	// For learning how the conditons of BCxxx branch instructions are
+	// formed see the Power ISA
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
+	case PPC_INS_BCA:
+	case PPC_INS_BCLA:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
 		bo_2 = NON_ZERO(LOGAND(UN(5, 0b00100), VARLP("bo")));
@@ -406,9 +485,30 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
 		return IS_ZERO(VARG("ctr"));
-	// ???
-	case PPC_INS_BCT:
-		return IL_FALSE;
+	// ctr != 0 && cr_bi == 1
+	case PPC_INS_BDNZT:
+	case PPC_INS_BDNZTL:
+	case PPC_INS_BDNZTA:
+	case PPC_INS_BDNZTLA:
+		return AND(NON_ZERO(VARG("ctr")), EQ(get_cr(bi), UN(4, 1)));
+	// ctr != 0 && cr_bi == 0
+	case PPC_INS_BDNZF:
+	case PPC_INS_BDNZFL:
+	case PPC_INS_BDNZFA:
+	case PPC_INS_BDNZFLA:
+		return AND(NON_ZERO(VARG("ctr")), IS_ZERO(get_cr(bi)));
+	// ctr == 0 && cr_bi == 1
+	case PPC_INS_BDZT:
+	case PPC_INS_BDZTL:
+	case PPC_INS_BDZTA:
+	case PPC_INS_BDZTLA:
+		return AND(IS_ZERO(VARG("ctr")), EQ(get_cr(bi), UN(4, 1)));
+	// ctr == 0 && cr_bi == 0
+	case PPC_INS_BDZF:
+	case PPC_INS_BDZFL:
+	case PPC_INS_BDZFA:
+	case PPC_INS_BDZFLA:
+		return AND(IS_ZERO(VARG("ctr")), IS_ZERO(get_cr(bi)));
 	}
 }
 
@@ -438,13 +538,33 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 	default:
 		RZ_LOG_WARN("Target address of branch instruction %d can not be resolved.\n", id);
 		return UA(0);
+	// Target address is pre-calculated by Capstone and stored in INSOP().imm
+	// The comments show only the TA calculation according to the ISA.
 	// Banch to absolute address
 	case PPC_INS_BA:
 	case PPC_INS_BLA:
+	case PPC_INS_BCA:
+	case PPC_INS_BCLA:
+	case PPC_INS_BDNZTA:
+	case PPC_INS_BDNZTLA:
+	case PPC_INS_BDNZFA:
+	case PPC_INS_BDNZFLA:
+	case PPC_INS_BDZTA:
+	case PPC_INS_BDZTLA:
+	case PPC_INS_BDZFA:
+	case PPC_INS_BDZFLA:
 		// EXTS(LI || 0b00)
 	// Branch to relative address
 	case PPC_INS_B:
 	case PPC_INS_BL:
+	case PPC_INS_BDZF:
+	case PPC_INS_BDZFL:
+	case PPC_INS_BDZT:
+	case PPC_INS_BDZTL:
+	case PPC_INS_BDNZF:
+	case PPC_INS_BDNZFL:
+	case PPC_INS_BDNZT:
+	case PPC_INS_BDNZTL:
 		// CIA + EXTS(LI || 0b00)
 		return UA(INSOP(0).imm);
 	case PPC_INS_BDZA:
