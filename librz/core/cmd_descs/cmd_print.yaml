@@ -517,7 +517,7 @@ commands:
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
           - name: pxdw
-            summary: show signed integer dump
+            summary: show 4-bytes integer dump
             cname: print_hexdump_signed_integer4
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
@@ -528,7 +528,7 @@ commands:
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
           - name: pxdq
-            summary: show signed integer dump
+            summary: show 8-bytes integer dump
             cname: print_hexdump_signed_integer8
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
@@ -539,7 +539,7 @@ commands:
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
       - name: pxh
-        summary: show hexadecimal half-words dump (16bit)
+        summary: show 2-bytes hexadecimal integers dump
         cname: print_hexdump_hex2
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -550,7 +550,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pxH
-        summary: same as above, but one per line (16bit)
+        summary: show 2-bytes hexadecimal integers dump, one per line
         cname: print_hexdump_hex2l
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -561,7 +561,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pxw
-        summary: show hexadecimal words dump (32bit)
+        summary: show 4-bytes hexadecimal integers dump
         cname: print_hexdump_hex4
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -572,7 +572,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pxW
-        summary: same as above, but one per line (32bit)
+        summary: show 4-bytes hexadecimal integers dump, one per line
         cname: print_hexdump_hex4l
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -583,7 +583,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pxq
-        summary: show hexadecimal quad-words dump (64bit)
+        summary: show 8-bytes hexadecimal integers dump
         cname: print_hexdump_hex8
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -594,7 +594,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pxQ
-        summary: same as above, but one per line (64bit)
+        summary: show 8-bytes hexadecimal integers dump, one per line
         cname: print_hexdump_hex8l
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -605,14 +605,14 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pxo
-        summary: show octal dump
+        summary: show 1-byte octal integers dump
         cname: print_hexdump_oct
         args:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pxl
-        summary: display <N> lines (rows) of hexdump
+        summary: display <N> lines of hexdump
         cname: print_hexdump_n_lines
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
