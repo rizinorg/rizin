@@ -39,6 +39,11 @@ adE "swap.b r0, r1" 6108 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _r
 adE "swap.w r15, r7" 67f9 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (| (<< (var r15) (bv 32 0x10) false) (>> (var r15) (bv 32 0x10) false))) (branch (var _priv) (set r7b (var _regv)) (set r7 (var _regv))))
 adE "xtrct r9, r10" 2a9d 0x0 (set r10 (| (<< (var r9) (bv 32 0x10) false) (>> (var r10) (bv 32 0x10) false)))
 
+# Arithmetic operation instructions
+adE "add r0, r1" 310c 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (+ (ite (var _priv) (var r0b) (var r0)) (ite (var _priv) (var r1b) (var r1)))) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))))
+adE "add 0x42, r9" 7942 0x0 (set r9 (+ (bv 32 0x42) (var r9)))
+adE "addc r10, r11" 3bae 0x100 (seq (set sum (+ (+ (var r10) (var r11)) (cast 32 false (ite (var sr_t) (bv 32 0x1) (bv 32 0x0))))) (set sr_t (|| (|| (&& (msb (var r10)) (msb (var r11))) (&& (! (msb (var sum))) (msb (var r11)))) (&& (msb (var r10)) (! (msb (var sum)))))) (set r11 (var sum)))
+
 # Misc
 adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (<< (bv 32 0x0) (bv 32 0x1) false))) nop)
 adE "bt 0xd3adb008" 89fe 0xd3adb008 (branch (var sr_t) (jmp (+ (+ (bv 32 0xd3adb008) (bv 32 0x4)) (<< (bv 32 0xfffffffe) (bv 32 0x1) false))) nop)
