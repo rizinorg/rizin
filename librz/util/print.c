@@ -151,6 +151,12 @@ RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len) {
 	return false;
 }
 
+/**
+ * \brief Get the cursor string at \p cur.
+ * \param p The print instance.
+ * \param len The length of the byte.
+ * \param set (set ? '[' : ']') is used.
+ */
 RZ_API RZ_BORROW const char *rz_print_cursor_str(RZ_NULLABLE RzPrint *p, int cur, int len, int set) {
 	if (rz_print_have_cursor(p, cur, len)) {
 		static char c[12];
@@ -160,6 +166,9 @@ RZ_API RZ_BORROW const char *rz_print_cursor_str(RZ_NULLABLE RzPrint *p, int cur
 	return "";
 }
 
+/**
+ * \brief Get a address string at \p addr
+ */
 RZ_API RZ_OWN char *rz_print_addr_str(RZ_NULLABLE RzPrint *p, ut64 addr) {
 	char space[32] = {
 		0
@@ -251,6 +260,7 @@ RZ_API RZ_OWN char *rz_print_addr_str(RZ_NULLABLE RzPrint *p, ut64 addr) {
 	return rz_strbuf_drain(sb);
 }
 
+/// \see rz_print_addr_str
 RZ_API void rz_print_addr(RZ_NONNULL RzPrint *p, ut64 addr) {
 	rz_return_if_fail(p);
 	char *string = rz_print_addr_str(p, addr);
@@ -382,6 +392,12 @@ RZ_API const char *rz_print_byte_color(RzPrint *p, int ch) {
 	return NULL;
 }
 
+/**
+ * \brief Get byte string of \p ch.
+ * \param p RzPrint instance.
+ * \param fmt Format string.
+ * \param idx Index of byte.
+ */
 RZ_API RZ_OWN char *rz_print_byte_str(RZ_NULLABLE RzPrint *p, RZ_NONNULL const char *fmt, int idx, ut8 ch) {
 	rz_return_val_if_fail(fmt, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
@@ -519,6 +535,9 @@ RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr) {
 	}
 }
 
+/**
+ * \brief Get a padding section name at \p at.
+ */
 RZ_API RZ_BORROW const char *rz_print_section_str(RZ_NULLABLE RzPrint *p, ut64 at) {
 	bool use_section = p && p->flags & RZ_PRINT_FLAGS_SECTION;
 	if (!use_section) {
@@ -1114,6 +1133,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 	return rz_strbuf_drain(sb);
 }
 
+/// \see rz_print_hexdump_str
 RZ_API void rz_print_hexdump(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NONNULL const ut8 *buf, int len, int base, int step, size_t zoomsz) {
 	rz_return_if_fail(p && buf);
 	char *str = rz_print_hexdump_str(p, addr, buf, len, base, step, zoomsz);
@@ -1236,6 +1256,7 @@ RZ_API RZ_OWN char *rz_print_hexdiff_str(RZ_NONNULL RzPrint *p, ut64 aa, RZ_NONN
 	return rz_strbuf_drain(sb);
 }
 
+/// \see rz_print_hexdiff_str
 RZ_API void rz_print_hexdiff(RZ_NONNULL RzPrint *p, ut64 aa, RZ_NONNULL const ut8 *_a, ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol) {
 	rz_return_if_fail(p && _a && _b);
 	char *str = rz_print_hexdiff_str(p, aa, _a, ba, _b, len, scndcol);
