@@ -1733,7 +1733,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						break;
 					case '9': // handle mouse wheel
 						key = rz_cons_readchar();
-						cons->mouse_event = 1;
+						cons->mouse_event = MOUSE_DEFAULT;
 						if (key == '6') { // up
 							if (I.hud && I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
 								I.hud->top_entry_n--;
