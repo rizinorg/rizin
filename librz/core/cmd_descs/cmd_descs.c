@@ -11193,7 +11193,7 @@ static const RzCmdDescArg print_hexdump_signed_integer_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_signed_integer_help = {
-	.summary = "show signed integer dump",
+	.summary = "show 1-byte integer dump",
 	.args = print_hexdump_signed_integer_args,
 };
 
@@ -11208,7 +11208,7 @@ static const RzCmdDescArg print_hexdump_signed_integer2_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_signed_integer2_help = {
-	.summary = "show signed integer dump",
+	.summary = "show 2-bytes integer dump",
 	.args = print_hexdump_signed_integer2_args,
 };
 
@@ -11223,7 +11223,7 @@ static const RzCmdDescArg print_hexdump_signed_integer4_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_signed_integer4_help = {
-	.summary = "show signed integer dump",
+	.summary = "show 4-bytes integer dump",
 	.args = print_hexdump_signed_integer4_args,
 };
 
@@ -11238,7 +11238,7 @@ static const RzCmdDescArg print_hexdump_signed_integer8_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_signed_integer8_help = {
-	.summary = "show signed integer dump",
+	.summary = "show 8-bytes integer dump",
 	.args = print_hexdump_signed_integer8_args,
 };
 
@@ -11253,7 +11253,7 @@ static const RzCmdDescArg print_hexdump_hex2_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_hex2_help = {
-	.summary = "show hexadecimal half-words dump (16bit)",
+	.summary = "show 2-bytes hexadecimal integers dump",
 	.args = print_hexdump_hex2_args,
 };
 
@@ -11268,7 +11268,7 @@ static const RzCmdDescArg print_hexdump_hex2l_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_hex2l_help = {
-	.summary = "same as above, but one per line (16bit)",
+	.summary = "show 2-bytes hexadecimal integers dump, one per line",
 	.args = print_hexdump_hex2l_args,
 };
 
@@ -11283,7 +11283,7 @@ static const RzCmdDescArg print_hexdump_hex4_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_hex4_help = {
-	.summary = "show hexadecimal words dump (32bit)",
+	.summary = "show 4-bytes hexadecimal integers dump",
 	.args = print_hexdump_hex4_args,
 };
 
@@ -11298,7 +11298,7 @@ static const RzCmdDescArg print_hexdump_hex4l_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_hex4l_help = {
-	.summary = "same as above, but one per line (32bit)",
+	.summary = "show 4-bytes hexadecimal integers dump, one per line",
 	.args = print_hexdump_hex4l_args,
 };
 
@@ -11313,7 +11313,7 @@ static const RzCmdDescArg print_hexdump_hex8_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_hex8_help = {
-	.summary = "show hexadecimal quad-words dump (64bit)",
+	.summary = "show 8-bytes hexadecimal integers dump",
 	.args = print_hexdump_hex8_args,
 };
 
@@ -11328,7 +11328,7 @@ static const RzCmdDescArg print_hexdump_hex8l_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_hex8l_help = {
-	.summary = "same as above, but one per line (64bit)",
+	.summary = "show 8-bytes hexadecimal integers dump, one per line",
 	.args = print_hexdump_hex8l_args,
 };
 
@@ -11343,7 +11343,7 @@ static const RzCmdDescArg print_hexdump_oct_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_oct_help = {
-	.summary = "show octal dump",
+	.summary = "show 1-byte octal integers dump",
 	.args = print_hexdump_oct_args,
 };
 
@@ -11358,7 +11358,7 @@ static const RzCmdDescArg print_hexdump_n_lines_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_hexdump_n_lines_help = {
-	.summary = "display <N> lines (rows) of hexdump",
+	.summary = "display <N> lines of hexdump",
 	.args = print_hexdump_n_lines_args,
 };
 

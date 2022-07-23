@@ -1271,18 +1271,6 @@ RZ_API void rz_cons_strcat(const char *str) {
 	}
 }
 
-/**
- * \brief Prints \p str to the RzCons, and ownership is transferred into.
- */
-RZ_API bool rz_cons_print_own(RZ_NULLABLE char *str) {
-	if (!str) {
-		return false;
-	}
-	rz_cons_print(str);
-	free(str);
-	return true;
-}
-
 RZ_API void rz_cons_newline(void) {
 	if (!I.null) {
 		rz_cons_strcat("\n");

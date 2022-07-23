@@ -185,6 +185,22 @@ RZ_API char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64 aa, ut
 	return pstr;
 }
 
+/**
+ * \brief Prints \p str to the RzCons, and ownership is transferred into.
+ */
+static inline bool rz_cons_print_own(char *str) {
+	if (!str) {
+		return false;
+	}
+	rz_cons_print(str);
+	free(str);
+	return true;
+}
+
+RZ_IPI bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
+	return rz_cons_print_own(rz_core_print_hexdump_diff_str(core, aa, ba, len));
+}
+
 static inline st8 format_type_to_base(const RzCorePrintFormatType format, const ut8 n) {
 	static const st8 bases[][9] = {
 		{ 0, 8 },
@@ -236,7 +252,7 @@ static inline void len_fixup(RzCore *core, ut64 *addr, int *len) {
  * \param len Dump bytes length
  * \param format Print format, such as RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL
  */
-RZ_API char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state,
+RZ_API char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode mode,
 	ut64 addr, ut8 n, int len, RzCorePrintFormatType format) {
 	rz_return_val_if_fail(core, false);
 	if (!len) {
@@ -256,7 +272,6 @@ RZ_API char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdSt
 	rz_io_read_at(core->io, addr, buffer, len);
 	rz_print_init_rowoffsets(core->print);
 	core->print->use_comments = false;
-	RzOutputMode mode = state ? state->mode : RZ_OUTPUT_MODE_STANDARD;
 
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON:
@@ -276,17 +291,20 @@ RZ_API char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdSt
 	return pstr;
 }
 
+RZ_IPI bool rz_core_print_dump(RZ_NONNULL RzCore *core, RZ_NULLABLE RzOutputMode mode, ut64 addr, ut8 n, int len, RzCorePrintFormatType format) {
+	return rz_cons_print_own(rz_core_print_dump_str(core, mode, addr, n, len, format));
+}
+
 /**
  * \brief Print hexdump at \p addr, but maybe print hexdiff if (diff.from or diff.to), \see "el diff"
  * \param len Dump bytes length
  */
-RZ_API char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state, ut64 addr, int len) {
+RZ_API char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len) {
 	rz_return_val_if_fail(core, false);
 	if (!len) {
 		return NULL;
 	}
 
-	RzOutputMode mode = state ? state->mode : RZ_OUTPUT_MODE_STANDARD;
 	char *pstr = NULL;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD: {
@@ -316,6 +334,10 @@ RZ_API char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RZ_NU
 	return pstr;
 }
 
+RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABLE RzOutputMode mode, ut64 addr, int len) {
+	return rz_cons_print_own(rz_core_print_hexdump_or_hexdiff_str(core, mode, addr, len));
+}
+
 static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	rz_strbuf_appendf(sb, "%" PFMT64x, x);
@@ -333,7 +355,7 @@ static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
  * \param size Word size by bytes (1,2,4,8)
  * \return Hexdump string
  */
-RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, RZ_NULLABLE RzCmdStateOutput *state,
+RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bool hex_offset,
 	ut64 addr, int len, ut8 size) {
 	rz_return_val_if_fail(core, false);
 	if (!len) {
@@ -347,7 +369,6 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, RZ
 
 	rz_io_read_at(core->io, addr, buffer, len);
 	const int round_len = len - (len % size);
-	bool hex_offset = (!(state && state->mode == RZ_OUTPUT_MODE_QUIET) && rz_config_get_i(core->config, "hex.offset"));
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	for (int i = 0; i < round_len; i += size) {
 		const char *a, *b;
@@ -392,4 +413,8 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, RZ
 	}
 	free(buffer);
 	return rz_strbuf_drain(sb);
+}
+
+RZ_IPI bool rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, bool hexoffset, ut64 addr, int len, ut8 size) {
+	return rz_cons_print_own(rz_core_print_hexdump_byline_str(core, hexoffset, addr, len, size));
 }
