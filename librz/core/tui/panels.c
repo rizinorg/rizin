@@ -1147,10 +1147,14 @@ char *__find_cmd_str_cache(RzCore *core, RzPanel *panel) {
 
 char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
 	char *out = malloc(strlen(panel->model->cmd) + 1024);
-	if (!out || !panel->model->filter) {
+	if (!out) {
+		RZ_LOG_ERROR("Fail to allocate the memory\n");
 		return out;
 	}
 	strcpy(out, panel->model->cmd);
+	if (!panel->model->filter) {
+		return out;
+	}
 	int i;
 	for (i = 0; i < panel->model->n_filter; i++) {
 		char *filter = panel->model->filter[i];
