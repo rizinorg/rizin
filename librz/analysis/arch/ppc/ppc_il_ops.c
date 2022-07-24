@@ -1149,6 +1149,8 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		NOT_IMPLEMENTED;
 	case PPC_INS_NOP:
 	case PPC_INS_XNOP:
+	case PPC_INS_DCBT:
+	case PPC_INS_DCBTST:
 	// Everything is executed liniar => Sync instructions are NOP()s.
 	case PPC_INS_ISYNC:
 	case PPC_INS_SYNC:
