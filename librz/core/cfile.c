@@ -138,6 +138,7 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
  * \brief rebase all flags, binary, information, breakpoints, and analysis.
  * \param core Rizin core.
  * \param sections_backup Backup of original file sections.
+<<<<<<< HEAD
  * \param infer_new_baddr_shift Should the object's current baddr_shift be used
  * to compute a new base address. \return void
  */
@@ -151,6 +152,57 @@ RZ_API void rz_core_rebase_everything(
     RZ_LOG_ERROR("Function called with null core.");
     return;
   }
+=======
+ * \param infer_new_baddr_shift Should the object's current baddr_shift be used to compute a new base address.
+ * \return void
+ */
+RZ_API void rz_core_rebase_everything(RZ_BORROW RzCore *core, RZ_BORROW RzList *sections_backup, bool infer_new_baddr_shift, ut64 old_baddr_shift, ut64 new_baddr_shift) {
+	RzListIter *it, *itit, *ititit;
+	RzAnalysisFunction *fcn;
+	if (infer_new_baddr_shift) {
+		new_baddr_shift = core->bin->cur->o->baddr_shift;
+	}
+	RzBinSection *old_section;
+	ut64 diff = new_baddr_shift - old_baddr_shift;
+	if (!diff) {
+		return;
+	}
+	// FUNCTIONS
+	rz_list_foreach (core->analysis->fcns, it, fcn) {
+		rz_list_foreach (sections_backup, itit, old_section) {
+			if (!__is_inside_section(fcn->addr, old_section)) {
+				continue;
+			}
+			rz_analysis_function_rebase_vars(core->analysis, fcn);
+			rz_analysis_function_relocate(fcn, fcn->addr + diff);
+			RzAnalysisBlock *bb;
+			ut64 new_sec_addr = new_baddr_shift + old_section->vaddr;
+			rz_list_foreach (fcn->bbs, ititit, bb) {
+				if (bb->addr >= new_sec_addr && bb->addr <= new_sec_addr + old_section->vsize) {
+					// Todo: Find better way to check if bb was already rebased
+					continue;
+				}
+				rz_analysis_block_relocate(bb, bb->addr + diff, bb->size);
+				if (bb->jump != UT64_MAX) {
+					bb->jump += diff;
+				}
+				if (bb->fail != UT64_MAX) {
+					bb->fail += diff;
+				}
+			}
+			break;
+		}
+	}
+
+	// FLAGS
+	struct __rebase_struct reb = {
+		core,
+		sections_backup,
+		old_baddr_shift,
+		diff
+	};
+	rz_flag_foreach(core->flags, __rebase_flags, &reb);
+>>>>>>> github_benh11235/rb_rebase_everything
 
   if (!sections_backup) {
     RZ_LOG_ERROR("Function called with null sections backup.");
@@ -193,6 +245,7 @@ RZ_API void rz_core_rebase_everything(
     }
   }
 
+<<<<<<< HEAD
   // FLAGS
   struct __rebase_struct reb = {core, sections_backup, old_baddr_shift, diff};
   rz_flag_foreach(core->flags, __rebase_flags, &reb);
@@ -212,6 +265,10 @@ RZ_API void rz_core_rebase_everything(
 
   // BREAKPOINTS
   rz_debug_bp_rebase(core->dbg, old_baddr_shift, new_baddr_shift);
+=======
+	// BREAKPOINTS
+	rz_debug_bp_rebase(core->dbg, old_baddr_shift, new_baddr_shift);
+>>>>>>> github_benh11235/rb_rebase_everything
 }
 
 /**
@@ -266,6 +323,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core,
     return;
   }
 
+<<<<<<< HEAD
   core->dbg->main_arena_resolved = false;
   RzList *sections_backup = rz_core_create_sections_backup(core);
 
@@ -306,6 +364,42 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core,
   }
   rz_list_free(sections_backup);
   rz_core_seek_to_register(core, "PC", false);
+=======
+	core->dbg->main_arena_resolved = false;
+	RzList *sections_backup = rz_core_create_sections_backup(core);
+	ut64 old_baddr_shift = core->bin->cur->o->baddr_shift;
+	int bits = core->rasm->bits;
+	rz_config_set_i(core->config, "asm.bits", bits);
+	rz_config_set_b(core->config, "cfg.debug", true);
+	// Set referer as the original uri so we could return to it with `oo`
+	desc->referer = desc->uri;
+	desc->uri = strdup(uri);
+
+	if ((file = rz_core_file_open(core, uri, RZ_PERM_R | RZ_PERM_W, addr))) {
+		fd = file->fd;
+		core->num->value = fd;
+		// if no baddr is defined, use the one provided by the file
+		if (addr == 0) {
+			desc = rz_io_desc_get(core->io, file->fd);
+			if (desc->plugin->isdbg) {
+				addr = rz_debug_get_baddr(core->dbg, desc->name);
+			} else {
+				addr = rz_bin_get_baddr(core->bin);
+			}
+		}
+		rz_core_bin_load(core, uri, addr);
+	} else {
+		RZ_LOG_ERROR("Cannot open file '%s'\n", uri);
+		rz_list_free(sections_backup);
+		return;
+	}
+	rz_core_block_read(core);
+	if (rz_config_get_i(core->config, "dbg.rebase")) {
+		rz_core_rebase_everything(core, sections_backup, true, old_baddr_shift, 0);
+	}
+	rz_list_free(sections_backup);
+	rz_core_seek_to_register(core, "PC", false);
+>>>>>>> github_benh11235/rb_rebase_everything
 }
 
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
@@ -318,6 +412,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
   RzCoreFile *ofile = core->file;
   RzIODesc *desc;
 
+<<<<<<< HEAD
   if (!ofile || !(desc = rz_io_desc_get(core->io, ofile->fd)) || !desc->uri) {
     RZ_LOG_ERROR("No file open?\n");
     return;
@@ -371,6 +466,40 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
   free(bin_abspath);
   free(escaped_path);
   free(binpath);
+=======
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, ofile->fd);
+	char *binpath = (bf && bf->file) ? strdup(bf->file) : NULL;
+	if (!binpath) {
+		if (rz_file_exists(desc->name)) {
+			binpath = strdup(desc->name);
+		}
+	}
+	if (!binpath) {
+		/* fallback to oo */
+		rz_core_io_file_open(core, core->io->desc->fd);
+		return;
+	}
+	core->dbg->main_arena_resolved = false;
+	RzList *sections_backup = rz_core_create_sections_backup(core);
+	ut64 old_baddr_shift = core->bin->cur->o->baddr_shift;
+	int bits = core->rasm->bits;
+	char *bin_abspath = rz_file_abspath(binpath);
+	char *escaped_path = rz_str_arg_escape(bin_abspath);
+	char *newfile = rz_str_newf("dbg://%s %s", escaped_path, args);
+	desc->uri = newfile;
+	desc->referer = NULL;
+	rz_config_set_i(core->config, "asm.bits", bits);
+	rz_config_set_b(core->config, "cfg.debug", true);
+	rz_core_file_reopen(core, newfile, 0, 2);
+	if (rz_config_get_i(core->config, "dbg.rebase")) {
+		rz_core_rebase_everything(core, sections_backup, true, old_baddr_shift, 0);
+	}
+	rz_list_free(sections_backup);
+	rz_core_seek_to_register(core, "PC", false);
+	free(bin_abspath);
+	free(escaped_path);
+	free(binpath);
+>>>>>>> github_benh11235/rb_rebase_everything
 }
 
 RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm,
@@ -1691,12 +1820,21 @@ RZ_API void rz_core_io_file_open(RzCore *core, int fd) {
     return;
   }
 
+<<<<<<< HEAD
   // Escape spaces so that o's argv parse will detect the path properly
   char *file = rz_str_path_escape(bf->file);
   // Backup the baddr and sections that were already rebased to
   // revert the rebase after the debug session is closed
   ut64 orig_baddr_shift = core->bin->cur->o->baddr_shift;
   RzList *orig_sections = rz_core_create_sections_backup(core);
+=======
+	// Escape spaces so that o's argv parse will detect the path properly
+	char *file = rz_str_path_escape(bf->file);
+	// Backup the baddr and sections that were already rebased to
+	// revert the rebase after the debug session is closed
+	ut64 orig_baddr_shift = core->bin->cur->o->baddr_shift;
+	RzList *orig_sections = rz_core_create_sections_backup(core);
+>>>>>>> github_benh11235/rb_rebase_everything
 
   if (!orig_sections) {
     RZ_LOG_ERROR("Cannot create orig sections backup.");
@@ -1707,6 +1845,7 @@ RZ_API void rz_core_io_file_open(RzCore *core, int fd) {
   rz_io_close_all(core->io);
   rz_config_set_b(core->config, "cfg.debug", false);
 
+<<<<<<< HEAD
   RzCoreFile *cfile = rz_core_file_open(core, file, RZ_PERM_R, 0);
   if (!cfile) {
     rz_list_free(orig_sections);
@@ -1725,6 +1864,11 @@ RZ_API void rz_core_io_file_open(RzCore *core, int fd) {
   rz_core_rebase_everything(core, orig_sections, true, orig_baddr_shift, 0);
   rz_list_free(orig_sections);
   free(file);
+=======
+	rz_core_rebase_everything(core, orig_sections, true, orig_baddr_shift, 0);
+	rz_list_free(orig_sections);
+	free(file);
+>>>>>>> github_benh11235/rb_rebase_everything
 }
 
 /**
