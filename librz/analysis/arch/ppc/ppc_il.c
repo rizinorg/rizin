@@ -654,7 +654,11 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
 		// CIA + EXTS(LI || 0b00)
-		return UA(INSOP(0).imm);
+		if (insn->detail->ppc.op_count == 2) {
+			return UA(INSOP(1).imm);
+		} else {
+			return UA(INSOP(0).imm);
+		}
 	case PPC_INS_BDZA:
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDNZA:
