@@ -30,27 +30,15 @@ static RZ_OWN RzPVector /* RzAsmTokenPattern */ *get_token_patterns() {
 	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_META;
 	pat->pattern = strdup(
-#if __WINDOWS__
-		// regex matching doesn't work on Windows with UTF-8 characters
-		"(^[\\[\\?\\/\\|\\\\\\{])|"
-		"[<\\}][ :](endloop[01]{1,2})"
-#else
 		"(^[\\[\\?\\/\\|\\\\\\{])|(┌)|(│)|(└)|" // Packet prefix
 		"((∎)|[<\\}])([ :])(endloop[01]{1,2})" // Endloop markers
-#endif
 	);
 	rz_pvector_push(pvec, pat);
 
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_META;
 	pat->pattern = strdup(
-		"(#{1,2})|(\\}$)" // Immediate prefix, Closing packet bracket
-	);
-	rz_pvector_push(pvec, pat);
-
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_META;
-	pat->pattern = strdup(
+		"(#{1,2})|(\\}$)|" // Immediate prefix, Closing packet bracket
 		"\\.new|:n?t|:raw|<err>" // .new and jump hints
 	);
 	rz_pvector_push(pvec, pat);
