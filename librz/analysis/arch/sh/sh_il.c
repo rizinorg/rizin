@@ -114,12 +114,25 @@ static const char *sh_get_banked_reg(ut16 reg, ut8 bank) {
 }
 
 /**
+ * \brief Convert \p b to SH_TRUE or SH_FALSE (bool zero-extended to SH_REG_SIZE)
+ *
+ * \param b RzILOpBool to be converted
+ * \return RzILOpBitVector* Zero extended bitvector value
+ */
+static RzILOpBitVector *sh_il_bool_to_bv(RzILOpBool *b) {
+	return ITE(b, SH_TRUE, SH_FALSE);
+}
+
+/**
  * \brief We need this because sometimes we would want an `RzILOpBitvector` back
  * when we ask for a status reg bit, so this returns us an RzILOpBitvector instead
  * of the `RzILOpBool` returned when using `VARG`
+ *
+ * \param bit The status register bit global variable name
+ * \return RzILOpBitVector* Zero extended bitvector value
  */
-static RzILOpPure *sh_il_get_status_reg_bit(const char *bit) {
-	return ITE(VARG(bit), SH_TRUE, SH_FALSE);
+static RzILOpBitVector *sh_il_get_status_reg_bit(const char *bit) {
+	return sh_il_bool_to_bv(VARG(bit));
 }
 
 /**
