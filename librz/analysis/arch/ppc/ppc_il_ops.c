@@ -1357,8 +1357,10 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_BDZFLA:
 		lop = branch_op(handle, insn, mode);
 		break;
-	case PPC_INS_BRINC: // These instruction are not in the ISA manual v3.1B.
+	// These instruction are not in the ISA manual v3.1B.
+	case PPC_INS_BRINC:
 	case PPC_INS_BCT:
+	case PPC_INS_ATTN:
 		NOT_IMPLEMENTED;
 	case PPC_INS_MFCR:
 	case PPC_INS_MFCTR:
