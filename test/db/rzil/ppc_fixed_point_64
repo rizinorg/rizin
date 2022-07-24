@@ -474,10 +474,11 @@ ARGS=-appc
 CMDS=<<EOF
 s loc.special_insns
 aezi
-aezse 1
+aezse 2
 EOF
 EXPECT=<<EOF
 pc_write(old: 0x8000258, new: 0x800025c)
+pc_write(old: 0x800025c, new: 0x8000260)
 EOF
 RUN
 
@@ -493,7 +494,7 @@ EOF
 EXPECT=<<EOF
 var_write(name: ctr, old: 0x0, new: 0xffffffffffffffff)
 var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
-var_write(name: lr, old: 0x8000260, new: 0xffffffffffffffff)
+var_write(name: lr, old: 0x8000264, new: 0xffffffffffffffff)
 var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
 EOF
 RUN
