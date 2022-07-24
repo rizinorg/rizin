@@ -728,7 +728,7 @@ RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_open_binary_show_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_binary_add_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_binary_file_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_open_binary_rebase_handler(RZ_BORROW RzCore *core, int argc, RZ_BORROW const char **argv);
+RZ_IPI RzCmdStatus rz_open_binary_rebase_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_use_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_prioritize_handler(RzCore *core, int argc, const char **argv);
