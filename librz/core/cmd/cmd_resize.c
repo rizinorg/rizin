@@ -15,7 +15,7 @@ RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, RZ_NONNULL RZ_BORRO
 
 	// get current file and current object
 	RzBinFile *bf = rz_bin_cur(core->bin);
-	if (!(bf && rz_file_exists(bf->file))) {
+	if (!bf) {
 		RZ_LOG_ERROR("Cannot open current RzBinFile.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
