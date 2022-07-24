@@ -803,45 +803,40 @@ static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * DIV1  Rm, Rn
  * 1-step division (Rn ÷ Rm) ; Calculation result -> T
  * 0011nnnnmmmm0100
- *
- * Implementation details at page 162 (of 512) in https://www.renesas.com/eu/en/document/mah/sh-1sh-2sh-dsp-software-manual?language=en
  */
 static RzILOpEffect *sh_il_div1(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpEffect *old_q = SETL("old_q", sh_il_get_status_reg_bit(SH_SR_Q));
-	RzILOpEffect *q = SETG(SH_SR_Q, MSB(sh_il_get_pure_param(1)));
-	RzILOpEffect *shl = sh_il_set_pure_param(1, SHIFTL0(sh_il_get_pure_param(1), SH_U_REG(1)));
-	RzILOpEffect *ort = sh_il_set_pure_param(1, OR(sh_il_get_pure_param(1), UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T))));
-	RzILOpEffect *init = SEQ4(old_q, q, shl, ort);
+	RzILOpEffect *ret = NULL;
+	RzILOpEffect *q = SETL("q", VARG(SH_SR_Q));
+	RzILOpEffect *m = SETL("m", VARG(SH_SR_M));
+	RzILOpEffect *t = SETL("t", VARG(SH_SR_T));
+	ret = SEQ3(q, m, t);
 
-	RzILOpEffect *tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
-	RzILOpEffect *sub = sh_il_set_pure_param(1, SUB(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
-	RzILOpEffect *tmp1 = SETL("tmp1", UGT(sh_il_get_pure_param(1), VARL("tmp0")));
-	RzILOpEffect *q_bit = BRANCH(sh_il_get_status_reg_bit(SH_SR_Q), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))), SETG(SH_SR_Q, VARL("tmp1")));
-	RzILOpEffect *q0m0 = SEQ4(tmp0, sub, tmp1, q_bit);
+	RzILOpEffect *op1 = SETL("op1", sh_il_get_pure_param(0));
+	RzILOpEffect *op2 = SETL("op2", sh_il_get_pure_param(1));
+	RzILOpEffect *old_q = SETL("old_q", VARL("q"));
+	ret = SEQ4(ret, op1, op2, old_q);
 
-	tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
-	RzILOpEffect *add = sh_il_set_pure_param(1, ADD(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
-	tmp1 = SETL("tmp1", ULT(sh_il_get_pure_param(1), VARL("tmp0")));
-	q_bit = BRANCH(sh_il_get_status_reg_bit(SH_SR_Q), SETG(SH_SR_Q, VARL("tmp1")), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))));
-	RzILOpEffect *q0m1 = SEQ4(tmp0, add, tmp1, q_bit);
+	// Get 31st bit of var q
+	q = SETL("q", NON_ZERO(LOGAND(VARL("op2"), SH_U_REG(0x80000000))));
+	op2 = SETL("op2", LOGOR(SHIFTL0(VARL("op2"), SH_U_REG(1)), sh_il_bool_to_bv(VARL("t"))));
+	ret = SEQ3(ret, q, op2);
 
-	tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
-	add = sh_il_set_pure_param(1, ADD(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
-	tmp1 = SETL("tmp1", ULT(sh_il_get_pure_param(1), VARL("tmp0")));
-	q_bit = BRANCH(sh_il_get_status_reg_bit(SH_SR_Q), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))), SETG(SH_SR_Q, VARL("tmp1")));
-	RzILOpEffect *q1m0 = SEQ4(tmp0, add, tmp1, q_bit);
+	RzILOpEffect *true_eff = SETL("op2", SUB(VARL("op2"), VARL("op1")));
+	RzILOpEffect *false_eff = SETL("op2", ADD(VARL("op2"), VARL("op1")));
+	RzILOpEffect *cond = BRANCH(EQ(sh_il_bool_to_bv(VARL("old_q")), sh_il_bool_to_bv(VARL("m"))), true_eff, false_eff);
+	ret = SEQ2(ret, cond);
 
-	tmp0 = SETL("tmp0", sh_il_get_pure_param(1));
-	sub = sh_il_set_pure_param(1, SUB(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
-	tmp1 = SETL("tmp1", UGT(sh_il_get_pure_param(1), VARL("tmp0")));
-	q_bit = BRANCH(sh_il_get_status_reg_bit(SH_SR_Q), SETG(SH_SR_Q, VARL("tmp1")), SETG(SH_SR_Q, IS_ZERO(VARL("tmp1"))));
-	RzILOpEffect *q1m1 = SEQ4(tmp0, sub, tmp1, q_bit);
+	// q = q ^ m ^ msb(op2)
+	q = SETL("q", XOR(XOR(VARL("q"), VARL("m")), MSB(VARL("op2"))));
+	t = SETL("t", NON_ZERO(SUB(SH_U_REG(1), LOGXOR(sh_il_bool_to_bv(VARL("q")), sh_il_bool_to_bv(VARL("m"))))));
+	ret = SEQ3(ret, q, t);
 
-	RzILOpEffect *q0 = BRANCH(sh_il_get_status_reg_bit(SH_SR_M), q0m1, q0m0);
-	RzILOpEffect *q1 = BRANCH(sh_il_get_status_reg_bit(SH_SR_M), q1m1, q1m0);
-	RzILOpEffect *q_switch = BRANCH(VARL("old_q"), q1, q0);
+	RzILOpEffect *rn = sh_il_set_pure_param(1, VARL("op2"));
+	q = SETG(SH_SR_Q, VARL("q"));
+	t = SETG(SH_SR_T, VARL("t"));
+	ret = SEQ4(ret, rn, q, t);
 
-	return SEQ3(init, q_switch, SETG(SH_SR_T, EQ(sh_il_get_status_reg_bit(SH_SR_Q), sh_il_get_status_reg_bit(SH_SR_M))));
+	return ret;
 }
 
 /**
