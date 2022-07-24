@@ -58,7 +58,7 @@ static void loadGP(RzCore *core) {
  * \param core Rizin core.
  * \return RzList<RzBinSection>
  */
-RZ_API RZ_OWN RzList *rz_core_create_sections_backup(RZ_BORROW RzCore *core) {
+RZ_API RZ_OWN RzList *rz_core_create_sections_backup(RzCore *core) {
 	RzList *sections = rz_bin_get_sections(core->bin);
 	RzListIter *it;
 	RzBinSection *sec;
@@ -135,7 +135,7 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
  * \param infer_new_baddr_shift Should the object's current baddr_shift be used to compute a new base address.
  * \return void
  */
-RZ_API void rz_core_rebase_everything(RZ_BORROW RzCore *core, RZ_BORROW RzList *sections_backup, bool infer_new_baddr_shift, ut64 old_baddr_shift, ut64 new_baddr_shift) {
+RZ_API void rz_core_rebase_everything(RzCore *core, RZ_BORROW RzList *sections_backup, bool infer_new_baddr_shift, ut64 old_baddr_shift, ut64 new_baddr_shift) {
 	RzListIter *it, *itit, *ititit;
 	RzAnalysisFunction *fcn;
 
