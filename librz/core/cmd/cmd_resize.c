@@ -11,7 +11,7 @@
  * \param argv Vector containing command arguments.
  * \return RZ_CMD_STATUS_OK or RZ_CMD_STATUS_ERROR.
  */
-RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, RZ_BORROW const char **argv) {
+RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, RZ_NONNULL RZ_BORROW const char **argv) {
 
 	// get current file and current object
 	RzBinFile *bf = rz_bin_cur(core->bin);

@@ -60,10 +60,11 @@ static void loadGP(RzCore *core) {
  */
 RZ_API RZ_OWN RzList *rz_core_create_sections_backup(RzCore *core) {
 	RzList *sections = rz_bin_get_sections(core->bin);
+
 	RzListIter *it;
 	RzBinSection *sec;
 
-    rz_return_val_if_fail(core, NULL);
+	rz_return_val_if_fail(core, NULL);
 
 	RzList *sections_backup = rz_list_new();
 
@@ -135,12 +136,19 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
  * \param infer_new_baddr_shift Should the object's current baddr_shift be used to compute a new base address.
  * \return void
  */
-RZ_API void rz_core_rebase_everything(RzCore *core, RZ_BORROW RzList *sections_backup, bool infer_new_baddr_shift, ut64 old_baddr_shift, ut64 new_baddr_shift) {
+RZ_API void rz_core_rebase_everything(RzCore *core, RZ_NONNULL RZ_BORROW RzList *sections_backup, bool infer_new_baddr_shift, ut64 old_baddr_shift, ut64 new_baddr_shift) {
 	RzListIter *it, *itit, *ititit;
 	RzAnalysisFunction *fcn;
 
-    rz_return_val_if_fail(core, NULL);
-    rz_return_val_if_fail(sections_backup, NULL);
+	if (!core) {
+		RZ_LOG_ERROR("Function called with null core.");
+		return;
+	}
+
+	if (!sections_backup) {
+		RZ_LOG_ERROR("Function called with null sections backup.");
+		return;
+	}
 
 	if (infer_new_baddr_shift) {
 		new_baddr_shift = core->bin->cur->o->baddr_shift;
@@ -240,7 +248,7 @@ RZ_API bool rz_core_file_open_load(RZ_NONNULL RzCore *core, RZ_NONNULL const cha
 	return true;
 }
 
-RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr) {
+RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, RZ_NONNULL const char *uri, ut64 addr) {
 	RzCoreFile *ofile = core->file;
 	RzIODesc *desc;
 	RzCoreFile *file;
@@ -253,6 +261,12 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 
 	core->dbg->main_arena_resolved = false;
 	RzList *sections_backup = rz_core_create_sections_backup(core);
+
+	if (!sections_backup) {
+		RZ_LOG_ERROR("Cannot create sections backup.");
+		return;
+	}
+
 	ut64 old_baddr_shift = core->bin->cur->o->baddr_shift;
 	int bits = core->rasm->bits;
 	rz_config_set_i(core->config, "asm.bits", bits);
@@ -288,6 +302,12 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 }
 
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
+
+	if (!core) {
+		RZ_LOG_ERROR("Function called with null core.");
+		return;
+	}
+
 	RzCoreFile *ofile = core->file;
 	RzIODesc *desc;
 
@@ -320,6 +340,12 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	}
 	core->dbg->main_arena_resolved = false;
 	RzList *sections_backup = rz_core_create_sections_backup(core);
+
+	if (!sections_backup) {
+		RZ_LOG_ERROR("Could not create sections backup.");
+		return;
+	}
+
 	ut64 old_baddr_shift = core->bin->cur->o->baddr_shift;
 	int bits = core->rasm->bits;
 	char *bin_abspath = rz_file_abspath(binpath);
@@ -1619,7 +1645,7 @@ RZ_API RzCoreFile *rz_core_file_cur(RzCore *r) {
  * \param core RzCore instance
  * \param fd File descriptor
  */
-RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
+RZ_API void rz_core_io_file_open(RzCore *core, int fd) {
 	rz_return_if_fail(core && fd >= 0);
 	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		rz_io_reopen(core->io, fd, RZ_PERM_R, 644);
@@ -1637,6 +1663,11 @@ RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
 	// revert the rebase after the debug session is closed
 	ut64 orig_baddr_shift = core->bin->cur->o->baddr_shift;
 	RzList *orig_sections = rz_core_create_sections_backup(core);
+
+	if (!orig_sections) {
+		RZ_LOG_ERROR("Cannot create orig sections backup.");
+		return;
+	}
 
 	rz_bin_file_delete_all(core->bin);
 	rz_io_close_all(core->io);
