@@ -53,27 +53,27 @@
 #include "regex2.h"
 
 /* macros for manipulating states, small version */
-#define states           long
-#define states1          states /* for later use in regexec() decision */
+#define states1          long long /* for later use in regexec() decision */
+#define states           states1
 #define CLEAR(v)         ((v) = 0)
-#define SET0(v, n)       ((v) &= ~((unsigned long)1 << (n)))
-#define SET1(v, n)       ((v) |= (unsigned long)1 << (n))
-#define ISSET(v, n)      (((v) & ((unsigned long)1 << (n))) != 0)
+#define SET0(v, n)       ((v) &= ~((unsigned states)1 << (n)))
+#define SET1(v, n)       ((v) |= (unsigned states)1 << (n))
+#define ISSET(v, n)      (((v) & ((unsigned states)1 << (n))) != 0)
 #define ASSIGN(d, s)     ((d) = (s))
 #define EQ(a, b)         ((a) == (b))
-#define STATEVARS        long dummy /* dummy version */
+#define STATEVARS        states dummy /* dummy version */
 #define STATESETUP(m, n) /* nothing */
 #define STATETEARDOWN(m) /* nothing */
 #define SETUP(v)         ((v) = 0)
-#define onestate         long
-#define INIT(o, n)       ((o) = (unsigned long)1 << (n))
+#define onestate         states
+#define INIT(o, n)       ((o) = (unsigned states)1 << (n))
 #define INC(o)           ((o) <<= 1)
 #define ISSTATEIN(v, o)  (((v) & (o)) != 0)
 /* some abbreviations; note that some of these know variable names! */
 /* do "if I'm here, I can also be there" etc without branches */
-#define FWD(dst, src, n)  ((dst) |= ((unsigned long)(src) & (here)) << (n))
-#define BACK(dst, src, n) ((dst) |= ((unsigned long)(src) & (here)) >> (n))
-#define ISSETBACK(v, n)   (((v) & ((unsigned long)here >> (n))) != 0)
+#define FWD(dst, src, n)  ((dst) |= ((unsigned states)(src) & (here)) << (n))
+#define BACK(dst, src, n) ((dst) |= ((unsigned states)(src) & (here)) >> (n))
+#define ISSETBACK(v, n)   (((v) & ((unsigned states)here >> (n))) != 0)
 /* function names */
 #define SNAMES /* engine.c looks after details */
 
@@ -109,7 +109,7 @@
 #define ASSIGN(d, s) memcpy(d, s, m->g->nstates)
 #define EQ(a, b)     (memcmp(a, b, m->g->nstates) == 0)
 #define STATEVARS \
-	long vn; \
+	states1 vn; \
 	char *space
 #define STATESETUP(m, nv) \
 	{ \
@@ -121,7 +121,7 @@
 #define STATETEARDOWN(m) \
 	{ free((m)->space); }
 #define SETUP(v)        ((v) = &m->space[m->vn++ * m->g->nstates])
-#define onestate        long
+#define onestate        states1
 #define INIT(o, n)      ((o) = (n))
 #define INC(o)          ((o)++)
 #define ISSTATEIN(v, o) ((v)[o])
@@ -152,7 +152,7 @@ rz_regex_exec(const RzRegex *preg, const char *string, size_t nmatch,
 #ifdef REDEBUG
 #define GOODFLAGS(f) (f)
 #else
-#define GOODFLAGS(f) ((f) & (RZ_REGEX_NOTBOL | RZ_REGEX_NOTEOL | RZ_REGEX_STARTEND))
+#define GOODFLAGS(f) ((f) & (RZ_REGEX_NOTBOL | RZ_REGEX_NOTEOL | RZ_REGEX_STARTEND | RZ_REGEX_LARGE))
 #endif
 	if (!preg || !string) {
 		return RZ_REGEX_ASSERT;
