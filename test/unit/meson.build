@@ -71,6 +71,7 @@ if get_option('enable_tests')
     'pj',
     'rbtree',
     'reg',
+    'regex',
     'run',
     'rz_test',
     'sdb_array',
