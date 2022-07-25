@@ -263,6 +263,10 @@ aezse 1~var_write
 aezs 5
 aezse 1~var_write
 aezse 4~var_write
+# aezs 4
+# aezse 1~var_write
+# aezs 1
+# aezse 1~var_write
 EOF
 EXPECT=<<EOF
 var_write(name: cr0, old: 0x0, new: 0x8)
