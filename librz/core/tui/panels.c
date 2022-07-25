@@ -1152,9 +1152,6 @@ char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
 		return out;
 	}
 	strcpy(out, panel->model->cmd);
-	if (!panel->model->filter) {
-		return out;
-	}
 	int i;
 	for (i = 0; i < panel->model->n_filter; i++) {
 		char *filter = panel->model->filter[i];
