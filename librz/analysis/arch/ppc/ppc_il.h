@@ -138,7 +138,6 @@
  * 
  * All computations are on 64 bit numbers.
  * In case of a 32bit CPU the result will be casted to 32bit.
- * mstart and mstop should be U6 pures.
  * The local variable "mask" will hold the mask
  */
 #define SET_MASK(mstart, mstop) \
