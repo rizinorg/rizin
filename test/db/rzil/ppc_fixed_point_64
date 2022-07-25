@@ -155,6 +155,9 @@ s loc.test_loads
 aezi
 aezs 22
 aezse 16~var_write
+aezs 2
+aezse 2~var_write
+# aezse 1~var_write -> ldbrx instruction
 EOF
 EXPECT=<<EOF
 var_write(name: r11, old: 0xffffffffffffffff, new: 0x0)
@@ -173,6 +176,8 @@ var_write(name: r11, old: 0xffff, new: 0xffffffff)
 var_write(name: r11, old: 0xffffffff, new: 0xffffffffffffffff)
 var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
 var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: r11, old: 0xffffffffffffffff, new: 0x2301)
+var_write(name: r11, old: 0x2301, new: 0x67452301)
 EOF
 RUN
 
