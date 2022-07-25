@@ -196,6 +196,14 @@ aezs 5
 aezse 1~var_write
 aezs 5
 aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 1~var_write
+aezs 5
+aezse 2~var_write
+aezs 5
+aezse 1~var_write
 EOF
 EXPECT=<<EOF
 var_write(name: r0, old: 0x0, new: 0x0)
@@ -223,6 +231,11 @@ var_write(name: r10, old: 0x7f, new: 0xffffffffffff8000)
 var_write(name: r10, old: 0xffffffffffff8000, new: 0x7fff)
 var_write(name: r10, old: 0x7fff, new: 0xffffffff80000000)
 var_write(name: r10, old: 0xffffffff80000000, new: 0x7fffffff)
+var_write(name: r13, old: 0x0, new: 0x40)
+var_write(name: r13, old: 0x40, new: 0x0)
+var_write(name: r13, old: 0x0, new: 0x20)
+var_write(name: r13, old: 0x20, new: 0x0)
+var_write(name: r13, old: 0x0, new: 0x20)
 EOF
 RUN
 

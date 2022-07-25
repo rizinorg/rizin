@@ -529,8 +529,16 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		break;
 	// Count leading zeros
 	case PPC_INS_CNTLZD:
-	case PPC_INS_CNTLZW:
-		NOT_IMPLEMENTED;
+	case PPC_INS_CNTLZW:;
+		RzILOpEffect *n;
+		if (!IN_64BIT_MODE || (id == PPC_INS_CNTLZD)) {
+			n = SETL("n", UA(0));
+		} else {
+			n = SETL("n", UA(32));
+		}
+		RzILOpPure *cond = AND(ULT(VARL("n"), UA(PPC_ARCH_BITS)), INV(BIT_IS_SET(VARG(rS), PPC_ARCH_BITS, VARL("n"))));
+		RzILOpEffect *cloop = REPEAT(cond, SETL("n", ADD(VARL("n"), UA(1))));
+		return SEQ4(SETL("m", UA(IN_64BIT_MODE && (id == PPC_INS_CNTLZD) ? 0 : 32)), n, cloop, SETG(rA, SUB(VARL("n"), VARL("m"))));
 	// Population count
 	case PPC_INS_POPCNTD:
 	case PPC_INS_POPCNTW:
