@@ -118,8 +118,7 @@ int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		op->size = blen;
 		return -1;
 	}
-	ut16 instr = 0; // instruction
-	memcpy(&instr, b, sizeof(instr));
+	ut16 instr = rz_read_le16(b); // instruction
 	// if still redundan code is reported think of this of instr=0x2
 	const char *buf_asm = "invalid";
 	strcpy(opbuf, buf_asm);
@@ -159,7 +158,7 @@ int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		}
 		op->size = 4;
 		{
-			ut32 dword_instr = *(ut32 *)b;
+			ut32 dword_instr = rz_read_le32(b);
 			// I dont even know how the bits are arranged but it works !!!
 			//`the wierdness of little endianess`
 			if (dword_instr >> 28 != 0xf) {
@@ -175,7 +174,7 @@ int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		}
 		{
 			op->size = 4;
-			ut32 dword_instr = *(ut32 *)b;
+			ut32 dword_instr = rz_read_le32(b);
 			if (dword_instr >> 28 != 0xf) {
 				return -1;
 			}
@@ -189,7 +188,7 @@ int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		}
 		op->size = 4;
 		{
-			ut32 dword_instr = *(ut32 *)b;
+			ut32 dword_instr = rz_read_le32(b);
 			if (dword_instr >> 28 != 0xf) {
 				return -1;
 			}
@@ -204,8 +203,11 @@ int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		buf_asm = sdb_fmt("%s %d", ops[i].name, instr & 0x1);
 		break;
 	case LFSR_T: {
+		if (blen < 4) {
+			return -1;
+		}
 		op->size = 4;
-		ut32 dword_instr = *(ut32 *)b;
+		ut32 dword_instr = rz_read_le32(b);
 		if (dword_instr >> 28 != 0xf) {
 			return -1;
 		}
