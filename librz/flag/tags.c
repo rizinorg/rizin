@@ -50,7 +50,7 @@ static bool iter_glob_flag(RzFlagItem *fi, void *user) {
 	return true;
 }
 
-RZ_API RzList /* <RzFlagItem> */ *rz_flag_tags_get(RzFlag *f, const char *name) {
+RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_tags_get(RzFlag *f, const char *name) {
 	rz_return_val_if_fail(f && name, NULL);
 	const char *k = sdb_fmt("tag.%s", name);
 	RzList *res = rz_list_newf(NULL);
