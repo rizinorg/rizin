@@ -157,13 +157,13 @@ jobs:
             allow_failure: false
 
     steps:
+      - name: Show available memory on Linux
+        if: matrix.os != 'macos-11' && matrix.enabled
+        run: free -h
       - uses: actions/checkout@v2
         if: matrix.enabled
         with:
           fetch-depth: 2
-      - name: Show available memory on Linux
-        if: matrix.os != 'macos-11' && matrix.enabled
-        run: free -h
       - name: Install pkg-config with Homebrew
         if: matrix.os == 'macos-11' && matrix.enabled
         run: brew install pkg-config
