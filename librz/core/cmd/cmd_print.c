@@ -7240,9 +7240,7 @@ RZ_IPI RzCmdStatus rz_print_bitstream_handler(RzCore *core, int argc, const char
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_str_bits(buf, core->block, len + skip, NULL);
-	if (!RZ_STR_ISEMPTY(buf + skip)) {
-		rz_cons_println(buf + skip);
-	}
+	rz_cons_println(buf + skip);
 	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
@@ -7261,9 +7259,7 @@ RZ_IPI RzCmdStatus rz_print_byte_bitstream_handler(RzCore *core, int argc, const
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_str_bits(buf, core->block, len * 8, NULL);
-	if (!RZ_STR_ISEMPTY(buf)) {
-		rz_cons_println(buf);
-	}
+	rz_cons_println(buf);
 	rz_core_seek(core, cur_off, SEEK_SET);
 	rz_core_block_read(core);
 	free(buf);
