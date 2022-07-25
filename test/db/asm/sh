@@ -54,6 +54,7 @@ adE "cmp/pz r1" 4111 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (
 adE "cmp/pl r15" 4f15 0x0 (set sr_t (! (sle (var r15) (bv 32 0x0))))
 adE "cmp/str r9, r10" 2a9c 0x0 (seq (set xor (^ (var r9) (var r10))) (set eq (== (& (var xor) (bv 32 0xff)) (bv 32 0x0))) (set xor (>> (var xor) (bv 32 0x8) false)) (set eq (|| (var eq) (== (& (var xor) (bv 32 0xff)) (bv 32 0x0)))) (set xor (>> (var xor) (bv 32 0x8) false)) (set eq (|| (var eq) (== (& (var xor) (bv 32 0xff)) (bv 32 0x0)))) (set xor (>> (var xor) (bv 32 0x8) false)) (set eq (|| (var eq) (== (& (var xor) (bv 32 0xff)) (bv 32 0x0)))) (set sr_t (var eq)))
 adE "div1 r15, r10" 3af4 0x90 (seq (set q (var sr_q)) (set m (var sr_m)) (set t (var sr_t)) (set op1 (var r15)) (set op2 (var r10)) (set old_q (var q)) (set q (! (is_zero (& (var op2) (bv 32 0x80000000))))) (set op2 (| (<< (var op2) (bv 32 0x1) false) (ite (var t) (bv 32 0x1) (bv 32 0x0)))) (branch (== (ite (var old_q) (bv 32 0x1) (bv 32 0x0)) (ite (var m) (bv 32 0x1) (bv 32 0x0))) (set op2 (- (var op2) (var op1))) (set op2 (+ (var op2) (var op1)))) (set q (^^ (^^ (var q) (var m)) (msb (var op2)))) (set t (! (is_zero (- (bv 32 0x1) (^ (ite (var q) (bv 32 0x1) (bv 32 0x0)) (ite (var m) (bv 32 0x1) (bv 32 0x0))))))) (set r10 (var op2)) (set sr_q (var q)) (set sr_t (var t)))
+adE "div0s r13, r14" 2ed7 0x0 (seq (set sr_q (msb (var r14))) (set sr_m (msb (var r13))) (set sr_t (^^ (var sr_m) (var sr_q))))
 
 # Misc
 adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (<< (bv 32 0x0) (bv 32 0x1) false))) nop)

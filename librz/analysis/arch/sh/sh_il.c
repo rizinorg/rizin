@@ -845,11 +845,11 @@ static RzILOpEffect *sh_il_div1(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0010nnnnmmmm0111
  */
 static RzILOpEffect *sh_il_div0s(SHOp *op, ut64 pc, RzAnalysis *analysis) {
-	RzILOpEffect *setm = SETG(SH_SR_M, MSB(sh_il_get_pure_param(0)));
 	RzILOpEffect *setq = SETG(SH_SR_Q, MSB(sh_il_get_pure_param(1)));
-	RzILOpEffect *sett = SETG(SH_SR_T, XOR(MSB(sh_il_get_pure_param(0)), MSB(sh_il_get_pure_param(1))));
+	RzILOpEffect *setm = SETG(SH_SR_M, MSB(sh_il_get_pure_param(0)));
+	RzILOpEffect *sett = SETG(SH_SR_T, XOR(VARG(SH_SR_M), VARG(SH_SR_Q)));
 
-	return SEQ3(setm, setq, sett);
+	return SEQ3(setq, setm, sett);
 }
 
 /**
