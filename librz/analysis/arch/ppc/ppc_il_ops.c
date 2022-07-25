@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "ppc.h"
 #include "ppc_il.h"
 #include "ppc_analysis.h"
 #include "rz_types_base.h"
@@ -1128,6 +1129,23 @@ static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs
 	}
 }
 
+// TODO
+//! Untested. Musl and gnu compile did not recognized isel as instruction.
+static RzILOpEffect *iselect(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, EMPTY());
+	if (insn->id != PPC_INS_ISEL) {
+		NULL;
+	}
+	const char *rT = cs_reg_name(handle, INSOP(0).reg);
+	const char *rA = cs_reg_name(handle, INSOP(1).reg);
+	const char *rB = cs_reg_name(handle, INSOP(2).reg);
+	ut8 bc = INSOP(3).imm;
+	const char *crx = ppc_get_cr_name(bc / 4);
+	ut8 crx_bit = bc % 4;
+	RzILOpBool *bit_set = BIT_IS_SET(VARG(crx), 4, U8(crx_bit));
+	return SETG(rT, ITE(bit_set, VARG(rA), VARG(rB)));
+}
+
 /**
  * \brief Returns the RZIL implementation of a given capstone instruction.
  * Or NOP() if the instruction is not yet implemented.
@@ -1456,6 +1474,9 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTSPEFSCR:
 	case PPC_INS_MTTCR:
 		lop = move_from_to_spr_op(handle, insn, mode);
+		break;
+	case PPC_INS_ISEL:
+		lop = iselect(handle, insn, mode);
 		break;
 	// Rotate and rotate
 	case PPC_INS_RLDCL:
