@@ -76,7 +76,7 @@ static RzCore *fake_core_new(void) {
 	mu_assert_notnull(cf, "file should be opened");
 	rz_core_bin_load(core, "bins/elf/hello_world", 0);
 	rz_cmd_free(core->rcmd);
-	RzCmd *cmd = rz_core_cmd_new(true);
+	RzCmd *cmd = rz_core_cmd_new(core, true);
 	mu_assert_notnull(cmd, "cmd should be created");
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	mu_assert_notnull(root, "root should be present");
