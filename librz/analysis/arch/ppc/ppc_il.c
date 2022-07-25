@@ -5,11 +5,13 @@
 #include "ppc.h"
 #include "ppc_analysis.h"
 #include "rz_il/rz_il_opcodes.h"
+#include "rz_util/rz_log.h"
 #include <rz_util/rz_assert.h>
 #include <rz_endian.h>
 #include <rz_analysis.h>
 #include <rz_il.h>
 #include <rz_types.h>
+#include <errno.h>
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian) {
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(64, big_endian, 64);
@@ -426,7 +428,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_cr(const ut8 x) {
 RZ_IPI const char *ppc_get_cr_name(const ut8 x) {
 	switch (x) {
 	default:
-		RZ_LOG_WARN("Cannot return CR%" PFMT32d ". THere exists no such register.", x);
+		RZ_LOG_WARN("Cannot return cr%" PFMT32d ". There exists no such register.\n", x);
 		return NULL;
 	case 0:
 		return "cr0";
@@ -502,6 +504,47 @@ RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
 		(fmx & 0x04 ? 0xf << 0x8 : 0) |
 		(fmx & 0x02 ? 0xf << 0x4 : 0) |
 		(fmx & 0x01 ? 0xf : 0));
+}
+
+/**
+ * \brief Translates a Capstone CRx flag to the index in the CR register.
+ * E.g.: "cr2lt" -> 55 
+ * 
+ * \param cr_flag The Capstone flag name.
+ * \return ut8 Index of bit in CR register or UT8_MAX on failure.
+ */
+RZ_IPI ut8 ppc_translate_cs_cr_flag(const char *flag) {
+	rz_return_val_if_fail(flag, UT8_MAX);
+	if (strlen(flag) != 5) {
+		goto parse_err;
+	}
+	const ut8 x = strtol(flag + 2, NULL, 10);
+	if (errno == EINVAL || errno == ERANGE) {
+		goto parse_err;
+	}
+	ut8 res = 0;
+	ut8 base = 60 - (4 * x);
+	switch (flag[3]) {
+	default:
+		goto parse_err;
+	case 'l':
+		res = base + 0;
+		break;
+	case 'g':
+		res = base + 1;
+		break;
+	case 'e':
+		res = base + 2;
+		break;
+	case 'u':
+		res = base + 3;
+		break;
+	}
+	return res;
+
+parse_err:
+	RZ_LOG_WARN("Malformed CR flag \"%s\"\n", flag);
+	return UT8_MAX;
 }
 
 /**

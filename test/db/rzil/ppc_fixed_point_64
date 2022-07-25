@@ -498,3 +498,22 @@ var_write(name: lr, old: 0x8000264, new: 0xffffffffffffffff)
 var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
 EOF
 RUN
+
+NAME=ppc CR logical instructions
+FILE=bins/elf/ppc/ppc64_fp
+BROKEN=1
+ARGS=-appc
+CMDS=<<EOF
+s loc.cr_logical_insns
+aezi
+aezs 3
+aezse 5~var_write
+EOF
+EXPECT=<<EOF
+var_write(name: cr2, old: 0x1, new: 0x0)
+var_write(name: cr2, old: 0x0, new: 0x1)
+var_write(name: cr2, old: 0x1, new: 0x1)
+var_write(name: cr2, old: 0x1, new: 0x0)
+var_write(name: cr5, old: 0x1, new: 0x0)
+EOF
+RUN

@@ -1129,8 +1129,7 @@ static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs
 	}
 }
 
-// TODO
-//! Untested. Musl and gnu compile did not recognized isel as instruction.
+//! Untested! Musl and gnu compile did not recognized isel as instruction.
 static RzILOpEffect *iselect(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
 	if (insn->id != PPC_INS_ISEL) {
@@ -1144,6 +1143,45 @@ static RzILOpEffect *iselect(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	ut8 crx_bit = bc % 4;
 	RzILOpBool *bit_set = BIT_IS_SET(VARG(crx), 4, U8(crx_bit));
 	return SETG(rT, ITE(bit_set, VARG(rA), VARG(rB)));
+}
+
+//! Untested! Capstone v4 sets incorrect register ids for CR fields.
+static RzILOpEffect *cr_logical(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, EMPTY());
+	ut32 id = insn->id;
+
+	ut8 bt = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(0).crx.reg)) - 32;
+	ut8 ba = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(1).crx.reg)) - 32;
+	ut8 bb = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(2).crx.reg)) - 32;
+	const char *crt = ppc_get_cr_name(bt / 4);
+	ut8 crt_bit = bt % 4;
+	const char *cra = ppc_get_cr_name(ba / 4);
+	ut8 cra_bit = ba % 4;
+	const char *crb = ppc_get_cr_name(bb / 4);
+	ut8 crb_bit = bb % 4;
+
+	switch (id) {
+	default:
+		NOT_IMPLEMENTED;
+	case PPC_INS_CREQV:
+	case PPC_INS_CRXOR:
+	case PPC_INS_CRAND:
+	case PPC_INS_CRANDC:
+	case PPC_INS_CRNAND:
+	case PPC_INS_CRNOR:
+	case PPC_INS_CRORC:
+	case PPC_INS_CRNOT:
+	case PPC_INS_CRMOVE:
+		NOT_IMPLEMENTED;
+	case PPC_INS_CRSET:;
+		return SET_BIT(crt, 4, U8(crt_bit));
+	case PPC_INS_CRCLR:
+		return UNSET_BIT(crt, 4, U8(crt_bit));
+	case PPC_INS_CROR:;
+		RzILOpBool *cra_set = BIT_IS_SET(VARG(cra), 4, U8(cra_bit));
+		RzILOpBool *crb_set = BIT_IS_SET(VARG(crb), 4, U8(crb_bit));
+		return BRANCH(OR(cra_set, crb_set), SET_BIT(crt, 4, U8(crt_bit)), UNSET_BIT(crt, 4, U8(crt_bit)));
+	}
 }
 
 /**
@@ -1477,6 +1515,20 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		break;
 	case PPC_INS_ISEL:
 		lop = iselect(handle, insn, mode);
+		break;
+	case PPC_INS_CREQV:
+	case PPC_INS_CRXOR:
+	case PPC_INS_CRAND:
+	case PPC_INS_CRANDC:
+	case PPC_INS_CRNAND:
+	case PPC_INS_CRNOR:
+	case PPC_INS_CROR:
+	case PPC_INS_CRORC:
+	case PPC_INS_CRSET:
+	case PPC_INS_CRNOT:
+	case PPC_INS_CRMOVE:
+	case PPC_INS_CRCLR:
+		lop = cr_logical(handle, insn, mode);
 		break;
 	// Rotate and rotate
 	case PPC_INS_RLDCL:
