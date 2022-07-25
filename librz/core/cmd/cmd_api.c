@@ -187,7 +187,7 @@ RZ_API void rz_cmd_alias_init(RzCmd *cmd) {
 	cmd->aliases.values = NULL;
 }
 
-RZ_API RzCmd *rz_cmd_new(bool has_cons) {
+RZ_API RzCmd *rz_cmd_new(RzCore *core, bool has_cons) {
 	int i;
 	RzCmd *cmd = RZ_NEW0(RzCmd);
 	if (!cmd) {
@@ -197,7 +197,8 @@ RZ_API RzCmd *rz_cmd_new(bool has_cons) {
 	for (i = 0; i < NCMDS; i++) {
 		cmd->cmds[i] = NULL;
 	}
-	cmd->nullcallback = cmd->data = NULL;
+	cmd->core = core;
+	cmd->nullcallback = NULL;
 	cmd->ht_cmds = ht_pp_new0();
 	cmd->root_cmd_desc = create_cmd_desc(cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
 	rz_cmd_macro_init(&cmd->macro);
@@ -520,11 +521,6 @@ RZ_API char *rz_cmd_alias_get(RzCmd *cmd, const char *k, int remote) {
 	return NULL;
 }
 
-RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data) {
-	cmd->data = data;
-	return 1;
-}
-
 RZ_API int rz_cmd_add(RzCmd *c, const char *cmd, RzCmdCb cb) {
 	int idx = (ut8)cmd[0];
 	RzCmdItem *item = c->cmds[idx];
@@ -549,7 +545,7 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 	rz_return_val_if_fail(cmd && input, -1);
 	if (!*input) {
 		if (cmd->nullcallback) {
-			ret = cmd->nullcallback(cmd->data);
+			ret = cmd->nullcallback(cmd->core);
 		}
 	} else {
 		char *nstr = NULL;
@@ -570,7 +566,7 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 		c = cmd->cmds[((ut8)input[0]) & 0xff];
 		if (c && c->callback) {
 			const char *inp = (*input) ? input + 1 : "";
-			ret = c->callback(cmd->data, inp);
+			ret = c->callback(cmd->core, inp);
 		} else {
 			ret = -1;
 		}
@@ -720,7 +716,7 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		if (args->argc < cd->d.argv_data.min_argc || args->argc > cd->d.argv_data.max_argc) {
 			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
-		return cd->d.argv_data.cb(cmd->data, args->argc, (const char **)args->argv);
+		return cd->d.argv_data.cb(cmd->core, args->argc, (const char **)args->argv);
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
 		mode = cd_suffix2mode(cd, rz_cmd_parsed_args_cmd(args));
 		if (!mode) {
@@ -729,7 +725,7 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		if (args->argc < cd->d.argv_modes_data.min_argc || args->argc > cd->d.argv_modes_data.max_argc) {
 			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
-		return cd->d.argv_modes_data.cb(cmd->data, args->argc, (const char **)args->argv, mode);
+		return cd->d.argv_modes_data.cb(cmd->core, args->argc, (const char **)args->argv, mode);
 	case RZ_CMD_DESC_TYPE_ARGV_STATE:
 		mode = cd_suffix2mode(cd, rz_cmd_parsed_args_cmd(args));
 		if (!mode) {
@@ -742,7 +738,7 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		if (!rz_cmd_state_output_init(&state, mode)) {
 			return RZ_CMD_STATUS_INVALID;
 		}
-		RzCmdStatus res = cd->d.argv_state_data.cb(cmd->data, args->argc, (const char **)args->argv, &state);
+		RzCmdStatus res = cd->d.argv_state_data.cb(cmd->core, args->argc, (const char **)args->argv, &state);
 		if (args->extra && state.mode == RZ_OUTPUT_MODE_TABLE) {
 			bool res = rz_table_query(state.d.t, args->extra);
 			if (!res) {
@@ -782,7 +778,7 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 		return argv_call_cb(cmd, cd, args);
 	case RZ_CMD_DESC_TYPE_OLDINPUT:
 		exec_string = rz_cmd_parsed_args_execstr(args);
-		res = int2cmdstatus(cd->d.oldinput_data.cb(cmd->data, exec_string + strlen(cd->name)));
+		res = int2cmdstatus(cd->d.oldinput_data.cb(cmd->core, exec_string + strlen(cd->name)));
 		RZ_FREE(exec_string);
 		return res;
 	default:
@@ -1179,7 +1175,7 @@ static RzCmdDescDetail *get_cd_details_cb(RzCmd *cmd, RzCmdDesc *cd) {
 	do {
 		if (cd->help->details || cd->help->details_cb) {
 			const char *argv[] = { cd->name, NULL };
-			return cd->help->details_cb ? cd->help->details_cb(cmd->data, 1, argv) : NULL;
+			return cd->help->details_cb ? cd->help->details_cb(cmd->core, 1, argv) : NULL;
 		}
 		cd = cd->parent;
 	} while (cd);
@@ -1410,7 +1406,7 @@ static void fill_args_json(const RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 		}
 		if (arg->type == RZ_CMD_ARG_TYPE_CHOICES) {
 			pj_ka(j, "choices");
-			char **ochoice = arg->choices.choices_cb ? arg->choices.choices_cb(cmd->data) : (char **)arg->choices.choices;
+			char **ochoice = arg->choices.choices_cb ? arg->choices.choices_cb(cmd->core) : (char **)arg->choices.choices;
 			for (char **choice = ochoice; *choice; choice++) {
 				pj_s(j, *choice);
 			}

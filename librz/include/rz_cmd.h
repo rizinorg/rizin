@@ -479,7 +479,7 @@ typedef struct rz_cmd_desc_t {
 } RzCmdDesc;
 
 typedef struct rz_cmd_t {
-	void *data;
+	RzCore *core;
 	RzCmdNullCb nullcallback;
 	RzCmdItem *cmds[UT8_MAX];
 	RzCmdMacro macro;
@@ -515,7 +515,7 @@ typedef struct rz_cmd_descriptor_t {
 typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const RzCmdDesc *desc, void *user);
 
 #ifdef RZ_API
-RZ_API RzCmd *rz_cmd_new(bool has_cons);
+RZ_API RzCmd *rz_cmd_new(RzCore *core, bool has_cons);
 RZ_API RzCmd *rz_cmd_free(RzCmd *cmd);
 RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
 RZ_API void rz_cmd_batch_start(RzCmd *cmd);

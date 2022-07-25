@@ -5217,8 +5217,8 @@ struct ts_data_symbol_map map_ts_symbols[] = {
 /**
  * \brief Create an instance of RzCmd for the Rizin language
  */
-RZ_API RzCmd *rz_core_cmd_new(bool has_cons) {
-	RzCmd *res = rz_cmd_new(has_cons);
+RZ_API RzCmd *rz_core_cmd_new(RzCore *core, bool has_cons) {
+	RzCmd *res = rz_cmd_new(core, has_cons);
 	if (!res) {
 		return NULL;
 	}
@@ -5578,13 +5578,12 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "x", "alias for px", rz_cmd_hexdump },
 	};
 
-	core->rcmd = rz_core_cmd_new(!!core->cons);
+	core->rcmd = rz_core_cmd_new(core, !!core->cons);
 	core->rcmd->macro.user = core;
 	core->rcmd->macro.num = core->num;
 	core->rcmd->macro.cmd = core_cmd0_wrapper;
 	core->rcmd->nullcallback = rz_core_cmd_nullcallback;
 	core->rcmd->macro.cb_printf = (PrintfCallback)rz_cons_printf;
-	rz_cmd_set_data(core->rcmd, core);
 	core->cmd_descriptors = rz_list_newf(free);
 
 	size_t i;
