@@ -45,16 +45,16 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	default:
 		NOT_IMPLEMENTED;
 	case PPC_INS_LI: // RT = sI
-		into_rt = EXTEND(PPC_ARCH_BITS, IMM_SN(16, sI));
+		into_rt = EXTEND(PPC_ARCH_BITS, SN(16, sI));
 		update_ra = false;
 		break;
 	case PPC_INS_LIS: // RT = SI << 16
-		into_rt = EXTEND(PPC_ARCH_BITS, APPEND(IMM_SN(16, sI), U16(0)));
+		into_rt = EXTEND(PPC_ARCH_BITS, APPEND(SN(16, sI), U16(0)));
 		update_ra = false;
 		break;
 	case PPC_INS_LA: // RT = EA
 		base = IFREG0(rA);
-		disp = EXTEND(PPC_ARCH_BITS, IMM_SN(16, d));
+		disp = EXTEND(PPC_ARCH_BITS, SN(16, d));
 		ea = ADD(base, disp);
 		into_rt = ea;
 		update_ra = false;
@@ -93,7 +93,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 			disp = VARG(rB);
 		} else {
 			// "disp << 2" done by capstone.
-			RzILOpPure *imm = IMM_SN(16, d);
+			RzILOpPure *imm = SN(16, d);
 			disp = EXTEND(PPC_ARCH_BITS, imm);
 		}
 		ea = ADD(base, disp);
@@ -311,9 +311,9 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	case PPC_INS_SUBFIC:
 		op0 = add ? ((id == PPC_INS_ADDIS) ? IFREG0(rA) : VARG(rA)) : ADD(LOGNOT(VARG(rA)), UA(1));
 		if (id == PPC_INS_ADDIS) {
-			op1 = EXTEND(PPC_ARCH_BITS, APPEND(IMM_SN(16, sI), U16(0))); // Shift immediate << 16
+			op1 = EXTEND(PPC_ARCH_BITS, APPEND(SN(16, sI), U16(0))); // Shift immediate << 16
 		} else {
-			op1 = EXTEND(PPC_ARCH_BITS, IMM_SN(16, sI));
+			op1 = EXTEND(PPC_ARCH_BITS, SN(16, sI));
 		}
 		res = ADD(op0, op1);
 		break;
