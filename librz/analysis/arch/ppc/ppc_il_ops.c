@@ -1158,6 +1158,10 @@ static RzILOpEffect *cr_logical(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
 
+	if (id == PPC_INS_MCRF) {
+		return SETG(cs_reg_name(handle, INSOP(0).reg), VARG(cs_reg_name(handle, INSOP(1).reg)));
+	}
+
 	ut8 bt = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(0).crx.reg)) - 32;
 	ut8 ba = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(1).crx.reg)) - 32;
 	ut8 bb = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(2).crx.reg)) - 32;
@@ -1536,6 +1540,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CRNOT:
 	case PPC_INS_CRMOVE:
 	case PPC_INS_CRCLR:
+	case PPC_INS_MCRF:
 		lop = cr_logical(handle, insn, mode);
 		break;
 	// Rotate and rotate
