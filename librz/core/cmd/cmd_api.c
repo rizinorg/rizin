@@ -1535,8 +1535,6 @@ RZ_API void rz_cmd_macro_item_free(RzCmdMacroItem *item) {
 
 RZ_API void rz_cmd_macro_init(RzCmdMacro *mac) {
 	mac->counter = 0;
-	mac->_brk_value = 0;
-	mac->brk_value = &mac->_brk_value;
 	mac->cb_printf = (void *)printf;
 	mac->num = NULL;
 	mac->user = NULL;
@@ -1912,7 +1910,7 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 				rz_cons_break_pop();
 				return false;
 			}
-			mac->brk = 0;
+			int brk = 0;
 			int args_processed = 0;
 			do {
 				if (end) {
@@ -1970,8 +1968,8 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 					ptr = init_ptr;
 					end = init_end;
 				}
-			} while (!mac->brk);
-			if (mac->brk) {
+			} while (!brk);
+			if (brk) {
 				macro_level--;
 				free(str);
 				goto out_clean;
@@ -1992,16 +1990,6 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 
 RZ_API int rz_cmd_macro_call_multiple(RzCmdMacro *mac, const char *name) {
 	return macro_call(mac, name, true);
-}
-
-RZ_API int rz_cmd_macro_break(RzCmdMacro *mac, const char *value) {
-	mac->brk = 1;
-	mac->brk_value = NULL;
-	mac->_brk_value = (ut64)rz_num_math(mac->num, value);
-	if (value && *value) {
-		mac->brk_value = &mac->_brk_value;
-	}
-	return 0;
 }
 
 /* RzCmdParsedArgs */

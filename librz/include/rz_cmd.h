@@ -133,9 +133,6 @@ typedef struct rz_cmd_macro_item_t {
 
 typedef struct rz_cmd_macro_t {
 	int counter;
-	ut64 *brk_value;
-	ut64 _brk_value;
-	int brk;
 	// 	int (*cmd)(void *user, const char *cmd);
 	RzCoreCmd cmd;
 	PrintfCallback cb_printf;
@@ -612,7 +609,6 @@ RZ_API void rz_cmd_macro_list(RzCmdMacro *mac);
 RZ_API void rz_cmd_macro_meta(RzCmdMacro *mac);
 RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name);
 RZ_API int rz_cmd_macro_call_multiple(RzCmdMacro *mac, const char *name);
-RZ_API int rz_cmd_macro_break(RzCmdMacro *mac, const char *value);
 
 RZ_API bool rz_cmd_alias_del(RzCmd *cmd, const char *k);
 RZ_API char **rz_cmd_alias_keys(RzCmd *cmd, int *sz);

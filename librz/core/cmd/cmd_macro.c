@@ -24,9 +24,6 @@ RZ_IPI int rz_cmd_macro(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 
 	switch (*input) {
-	case ')':
-		rz_cmd_macro_break(&core->rcmd->macro, input + 1);
-		break;
 	case '-':
 		rz_cmd_macro_rm(&core->rcmd->macro, input + 1);
 		break;
