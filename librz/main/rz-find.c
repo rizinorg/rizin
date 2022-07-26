@@ -135,9 +135,8 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			printf("0x%" PFMT64x "\n", addr);
 			if (ro->pr) {
 				char *dump = rz_print_hexdump_str(ro->pr, addr, (ut8 *)ro->buf + delta, 78, 16, 1, 1);
-				rz_cons_print(dump);
+				printf("%s", dump);
 				free(dump);
-				rz_cons_flush();
 			}
 		}
 	}
