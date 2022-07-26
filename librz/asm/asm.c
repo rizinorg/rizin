@@ -1435,12 +1435,12 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 		pi = prev ? prev->start : 0;
 		pj = prev ? prev->start + prev->len : 0;
 		if (i > cur->start) {
-			RZ_LOG_WARN("i = %d Token at %d:%d overlaps with token %d:%d\n",
+			RZ_LOG_WARN("i = %" PFMT32d " Token at %" PFMT32d ":%" PFMT32d " overlaps with token %" PFMT32d ":%" PFMT32d "\n",
 				i, pi, pj, ci, cj);
 			error = true;
 		} else {
-			RZ_LOG_WARN("i = %d, Part of asm string is not covered by a token."
-				    " Empty range between token %d:%d and token %d:%d\n",
+			RZ_LOG_WARN("i = %" PFMT32d ", Part of asm string is not covered by a token."
+				    " Empty range between token %" PFMT32d ":%" PFMT32d " and token %" PFMT32d ":%" PFMT32d "\n",
 				i, pi, pj, ci, cj);
 			error = true;
 		}
