@@ -661,50 +661,30 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 	if (!sb) {
 		return NULL;
 	}
-	bool c = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
-	const char *color_title = c ? (Pal(p, offset)
-					      : Color_MAGENTA)
-				    : "";
-	int inc = p ? p->cols : 16;
-	size_t i, j, k;
+	bool pairs = p->pairs;
+	bool use_sparse = p->flags & RZ_PRINT_FLAGS_SPARSE;
+	bool use_header = p->flags & RZ_PRINT_FLAGS_HEADER;
+	bool use_hdroff = p->flags & RZ_PRINT_FLAGS_HDROFF;
+	bool use_segoff = p->flags & RZ_PRINT_FLAGS_SEGOFF;
+	bool use_align = p->flags & RZ_PRINT_FLAGS_ALIGN;
+	bool use_offset = p->flags & RZ_PRINT_FLAGS_OFFSET;
+	bool hex_style = p->flags & RZ_PRINT_FLAGS_STYLE;
+	bool use_hexa = !(p->flags & RZ_PRINT_FLAGS_NONHEX);
+	bool use_unalloc = p->flags & RZ_PRINT_FLAGS_UNALLOC;
+	bool compact = p->flags & RZ_PRINT_FLAGS_COMPACT;
+	int inc = p->cols; // row width
+	int col = p->col; // selected column (0=none, 1=hex, 2=ascii)
+	int stride = p->stride;
+
+	size_t i, j;
 	int sparse_char = 0;
-	int stride = 0;
-	int col = 0; // selected column (0=none, 1=hex, 2=ascii)
-	int use_sparse = 0;
-	bool use_header = true;
-	bool use_hdroff = true;
-	bool use_pair = true;
-	bool use_offset = true;
-	bool compact = false;
-	bool use_segoff = false;
-	bool pairs = false;
 	const char *bytefmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
-	bool use_hexa = true;
-	bool use_align = false;
-	bool use_unalloc = false;
 	const char *a, *b;
-	int K = 0;
-	bool hex_style = false;
+
 	if (step < len) {
 		len = len - (len % step);
-	}
-	if (p) {
-		pairs = p->pairs;
-		use_sparse = p->flags & RZ_PRINT_FLAGS_SPARSE;
-		use_header = p->flags & RZ_PRINT_FLAGS_HEADER;
-		use_hdroff = p->flags & RZ_PRINT_FLAGS_HDROFF;
-		use_segoff = p->flags & RZ_PRINT_FLAGS_SEGOFF;
-		use_align = p->flags & RZ_PRINT_FLAGS_ALIGN;
-		use_offset = p->flags & RZ_PRINT_FLAGS_OFFSET;
-		hex_style = p->flags & RZ_PRINT_FLAGS_STYLE;
-		use_hexa = !(p->flags & RZ_PRINT_FLAGS_NONHEX);
-		use_unalloc = p->flags & RZ_PRINT_FLAGS_UNALLOC;
-		compact = p->flags & RZ_PRINT_FLAGS_COMPACT;
-		inc = p->cols; // row width
-		col = p->col;
-		stride = p->stride;
 	}
 	if (!use_hexa) {
 		inc *= 4;
@@ -768,7 +748,10 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 		use_header = false;
 	}
 	if (use_header) {
+		bool c = p->flags & RZ_PRINT_FLAGS_COLOR;
 		if (c) {
+			const char *color_title = Pal(p, offset)
+			    : Color_MAGENTA;
 			rz_strbuf_append(sb, color_title);
 		}
 		if (base < 32) {
@@ -800,6 +783,8 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					rz_strbuf_append(sb, space);
 				}
 			}
+			ut32 K = 0;
+			ut32 k = 0;
 			/* column after number, before hex data */
 			rz_strbuf_append(sb, (col == 1) ? "|" : space);
 			if (use_hdroff) {
@@ -818,7 +803,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 						}
 					}
 					if (use_hdroff) {
-						if (use_pair) {
+						if (pairs) {
 							rz_strbuf_appendf(sb, "%c%c",
 								hex[(((i + k) >> 4) + K) % 16],
 								hex[(i + k) % 16]);
@@ -842,7 +827,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 			} else {
 				rz_strbuf_append(sb, col == 2 ? "|" : space);
 			}
-			if (!p || !(p->flags & RZ_PRINT_FLAGS_NONASCII)) {
+			if (!(p->flags & RZ_PRINT_FLAGS_NONASCII)) {
 				for (i = 0; i < inc; i++) {
 					rz_strbuf_appendf(sb, "%c", hex[(i + k) % 16]);
 				}
@@ -851,7 +836,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 				rz_strbuf_append(sb, "|");
 			}
 			/* print comment header*/
-			if (p && p->use_comments && !compact) {
+			if (p->use_comments && !compact) {
 				if (col != 2) {
 					rz_strbuf_append(sb, " ");
 				}
@@ -874,15 +859,15 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 	int bytes = 0;
 	bool printValue = true;
 	bool oPrintValue = true;
-	bool isPxr = (p && p->flags & RZ_PRINT_FLAGS_REFS);
+	bool isPxr = p->flags & RZ_PRINT_FLAGS_REFS;
 
 	for (i = j = 0; i < len; i += (stride ? stride : inc)) {
-		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
+		if (p->cons && p->cons->context && p->cons->context->breaked) {
 			break;
 		}
 		rowbytes = inc;
 		if (use_align) {
-			int sz = (p && p->offsize) ? p->offsize(p->user, addr + j) : -1;
+			int sz = p->offsize ? p->offsize(p->user, addr + j) : -1;
 			if (sz > 0) { // flags with size 0 dont work
 				rowbytes = sz;
 			}
@@ -921,7 +906,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 			}
 			for (j = i; j < i + inc; j++) {
 				if (j != i && use_align && rowbytes == inc) {
-					int sz = (p && p->offsize) ? p->offsize(p->user, addr + j) : -1;
+					int sz = p->offsize ? p->offsize(p->user, addr + j) : -1;
 					if (sz >= 0) {
 						rowbytes = bytes;
 					}
@@ -950,11 +935,11 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					}
 					continue;
 				}
-				const char *hl = (hex_style && p && p->offname(p->user, addr + j)) ? Color_INVERT : NULL;
+				const char *hl = (hex_style && p->offname(p->user, addr + j)) ? Color_INVERT : NULL;
 				if (hl) {
 					rz_strbuf_append(sb, hl);
 				}
-				if (p && (base == 32 || base == 64)) {
+				if ((base == 32 || base == 64)) {
 					int left = len - i;
 					/* TODO: check step. it should be 2/4 for base(32) and 8 for
 					 *       base(64) */
@@ -970,10 +955,10 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 						j += sz_n;
 						continue;
 					}
-					rz_mem_swaporcopy((ut8 *)&n, buf + j, sz_n, p && p->big_endian);
+					rz_mem_swaporcopy((ut8 *)&n, buf + j, sz_n, p->big_endian);
 					print_cursor_l(sb, p, j, sz_n);
 					// stub for colors
-					if (p && p->colorfor) {
+					if (p->colorfor) {
 						if (!p->iob.addr_is_mapped(p->iob.io, addr + j)) {
 							a = p->cons->context->pal.ai_unmap;
 						} else {
@@ -1021,7 +1006,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
-					long long w = rz_read_ble64(buf + j, p && p->big_endian);
+					long long w = rz_read_ble64(buf + j, p->big_endian);
 					print_cursor_l(sb, p, j, 8);
 					rz_strbuf_appendf(sb, "%23" PFMT64d " ", w);
 					print_cursor_r(sb, p, j, 8);
@@ -1033,7 +1018,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					print_cursor_r(sb, p, j, 1);
 				} else if (base == -10) {
 					if (j + 1 < len) {
-						st16 w = rz_read_ble16(buf + j, p && p->big_endian);
+						st16 w = rz_read_ble16(buf + j, p->big_endian);
 						print_cursor_l(sb, p, j, 2);
 						rz_strbuf_appendf(sb, "%7d ", w);
 						print_cursor_r(sb, p, j, 2);
@@ -1041,7 +1026,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					j += 1;
 				} else if (base == 10) { // "pxd"
 					if (j + 3 < len) {
-						int w = rz_read_ble32(buf + j, p && p->big_endian);
+						int w = rz_read_ble32(buf + j, p->big_endian);
 						print_cursor_l(sb, p, j, 4);
 						rz_strbuf_appendf(sb, "%13d ", w);
 						print_cursor_r(sb, p, j, 4);
@@ -1102,7 +1087,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 				size_t end = i + inc;
 				for (j = i; j < end; j++) {
 					if (j != i && use_align && bytes >= rowbytes) {
-						int sz = (p && p->offsize) ? p->offsize(p->user, addr + j) : -1;
+						int sz = (p->offsize) ? p->offsize(p->user, addr + j) : -1;
 						if (sz >= 0) {
 							rz_strbuf_append(sb, " ");
 							break;
@@ -1111,7 +1096,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					if (j >= len || (use_align && bytes >= rowbytes)) {
 						break;
 					}
-					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset(p->iob.io, addr + j, false))
+					ut8 ch = (use_unalloc && !p->iob.is_valid_offset(p->iob.io, addr + j, false))
 						? ' '
 						: buf[j];
 					print_byte(sb, p, "%c", j, ch);
@@ -1123,7 +1108,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 				rz_strbuf_append(sb, "|");
 			}
 			bool eol = false;
-			if (!eol && p && p->flags & RZ_PRINT_FLAGS_REFS) {
+			if (!eol && p->flags & RZ_PRINT_FLAGS_REFS) {
 				ut64 off = UT64_MAX;
 				if (inc == 8) {
 					if (i + sizeof(ut64) - 1 < len) {
@@ -1154,7 +1139,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					free(rstr);
 				}
 			}
-			if (!eol && p && p->use_comments) {
+			if (!eol && p->use_comments) {
 				for (; j < i + inc; j++) {
 					rz_strbuf_append(sb, " ");
 				}
@@ -1162,7 +1147,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					if (use_align && (j - i) >= rowbytes) {
 						break;
 					}
-					if (p && p->offname) {
+					if (p->offname) {
 						a = p->offname(p->user, addr + j);
 						if (p->colorfor && a && *a) {
 							const char *color = p->colorfor(p->user, addr + j, true);
@@ -1172,7 +1157,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					}
 					char *comment = p->get_comments(p->user, addr + j);
 					if (comment) {
-						if (p && p->colorfor) {
+						if (p->colorfor) {
 							a = p->colorfor(p->user, addr + j, true);
 							if (!a || !*a) {
 								a = "";
@@ -1192,7 +1177,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 		}
 		rows++;
 		bytes = 0;
-		if (p && p->cfmt && *p->cfmt) {
+		if (p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
 				int i = 0;
 				rz_strbuf_append(sb, " _________");
