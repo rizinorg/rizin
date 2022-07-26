@@ -1004,7 +1004,9 @@ static int gprobe_getinformation(struct gport *port) {
 
 	ut64 tmpsz;
 	const ut8 *tmp = rz_buf_data(reply, &tmpsz);
-	rz_print_hexdump(NULL, 0, tmp, tmpsz, 16, 1, 1);
+	char *dump = rz_print_hexdump_str(NULL, 0, tmp, tmpsz, 16, 1, 1);
+	rz_cons_print(dump);
+	free(dump);
 
 	rz_buf_free(request);
 	rz_buf_free(reply);

@@ -277,8 +277,10 @@ RZ_API bool rz_core_yank_print_hexdump(RzCore *core, ut64 pos) {
 		return false;
 	}
 	rz_buf_read_at(core->yank_buf, pos, buf, ybl - pos);
-	rz_print_hexdump(core->print, pos,
+	char *dump = rz_print_hexdump_str(core->print, pos,
 		buf, ybl - pos, 16, 1, 1);
+	rz_cons_print(dump);
+	free(dump);
 	return true;
 }
 

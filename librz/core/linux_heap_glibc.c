@@ -541,7 +541,9 @@ void GH(print_heap_chunk)(RzCore *core, GHT chunk) {
 	if (data) {
 		rz_io_read_at(core->io, chunk + SZ * 2, (ut8 *)data, size);
 		PRINT_GA("chunk data = \n");
-		rz_print_hexdump(core->print, chunk + SZ * 2, (ut8 *)data, size, SZ * 8, SZ, 1);
+		char *dump = rz_print_hexdump_str(core->print, chunk + SZ * 2, (ut8 *)data, size, SZ * 8, SZ, 1);
+		rz_cons_print(dump);
+		free(dump);
 		free(data);
 	}
 	free(cnk);
@@ -2097,7 +2099,9 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 					core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
 					core->print->pairs = false;
 					rz_cons_printf("   ");
-					rz_print_hexdump(core->print, (ut64)(pos->addr + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
+					char *dump = rz_print_hexdump_str(core->print, (ut64)(pos->addr + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
+					rz_cons_print(dump);
+					free(dump);
 					core->print->flags |= RZ_PRINT_FLAGS_HEADER;
 					core->print->pairs = true;
 					free(data);
