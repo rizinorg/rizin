@@ -3021,49 +3021,29 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case '.': // "@@."
-		if (each[1] == '(') {
-			char cmd2[1024];
-			// XXX what's this 999 ?
-			i = 0;
-			for (core->rcmd->macro.counter = 0; i < 999; core->rcmd->macro.counter++) {
-				if (rz_cons_is_breaked()) {
+	{
+		char buf[1024];
+		char cmd2[1024];
+		FILE *fd = rz_sys_fopen(each + 1, "r");
+		if (fd) {
+			core->rcmd->macro.counter = 0;
+			while (!feof(fd)) {
+				buf[0] = '\0';
+				if (!fgets(buf, sizeof(buf), fd)) {
 					break;
 				}
-				rz_cmd_macro_call(&core->rcmd->macro, each + 2);
-				if (!core->rcmd->macro.brk_value) {
-					break;
-				}
-				addr = core->rcmd->macro._brk_value;
+				addr = rz_num_math(core->num, buf);
+				eprintf("0x%08" PFMT64x ": %s\n", addr, cmd);
 				sprintf(cmd2, "%s @ 0x%08" PFMT64x "", cmd, addr);
-				eprintf("0x%08" PFMT64x " (%s)\n", addr, cmd2);
-				rz_core_seek(core, addr, true);
+				rz_core_seek(core, addr, true); // XXX
 				rz_core_cmd(core, cmd2, 0);
-				i++;
+				core->rcmd->macro.counter++;
 			}
+			fclose(fd);
 		} else {
-			char buf[1024];
-			char cmd2[1024];
-			FILE *fd = rz_sys_fopen(each + 1, "r");
-			if (fd) {
-				core->rcmd->macro.counter = 0;
-				while (!feof(fd)) {
-					buf[0] = '\0';
-					if (!fgets(buf, sizeof(buf), fd)) {
-						break;
-					}
-					addr = rz_num_math(core->num, buf);
-					eprintf("0x%08" PFMT64x ": %s\n", addr, cmd);
-					sprintf(cmd2, "%s @ 0x%08" PFMT64x "", cmd, addr);
-					rz_core_seek(core, addr, true); // XXX
-					rz_core_cmd(core, cmd2, 0);
-					core->rcmd->macro.counter++;
-				}
-				fclose(fd);
-			} else {
-				eprintf("cannot open file '%s' to read offsets\n", each + 1);
-			}
+			eprintf("cannot open file '%s' to read offsets\n", each + 1);
 		}
-		break;
+	} break;
 	default:
 		core->rcmd->macro.counter = 0;
 		for (; *each == ' '; each++) {
