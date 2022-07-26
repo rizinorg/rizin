@@ -608,14 +608,14 @@ static RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpP
 /**
  * Unknown instruction
  */
-static RzILOpEffect *sh_il_invalid(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_invalid(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return NULL;
 }
 
 /**
  * MOV family instructions
  */
-static RzILOpEffect *sh_il_mov(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_mov(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	SHParamHelper shp = sh_il_get_param(op->param[0], op->scaling);
 	return sh_apply_effects(sh_il_set_pure_param(1, shp.pure), shp.pre, shp.post);
 }
@@ -625,7 +625,7 @@ static RzILOpEffect *sh_il_mov(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * T -> Rn
  * 0000nnnn00101001
  */
-static RzILOpEffect *sh_il_movt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_movt(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(0, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)));
 }
 
@@ -638,7 +638,7 @@ static RzILOpEffect *sh_il_movt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rm -> swap upper/lower words -> Rn
  * 0110nnnnmmmm1001
  */
-static RzILOpEffect *sh_il_swap(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_swap(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	/* We won't be using `sh_il_{get,set}_param_pure`, because it will cast the pure value to the scaling size,
 	but we want the whole register, which is why we need to call `sh_il_{get,set}_param directly` */
 	if (op->scaling == SH_SCALING_B) {
@@ -663,7 +663,7 @@ static RzILOpEffect *sh_il_swap(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rm:Rn middle 32 bits -> Rn
  * 0010nnnnmmmm1101
  */
-static RzILOpEffect *sh_il_xtrct(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_xtrct(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *high = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(BITS_PER_BYTE * 2));
 	RzILOpPure *low = SHIFTR0(sh_il_get_pure_param(1), SH_U_REG(BITS_PER_BYTE * 2));
 	return sh_il_set_pure_param(1, LOGOR(high, low));
@@ -678,7 +678,7 @@ static RzILOpEffect *sh_il_xtrct(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn + imm -> Rn
  * 0111nnnniiiiiiii
  */
-static RzILOpEffect *sh_il_add(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_add(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(1, ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 }
 
@@ -688,7 +688,7 @@ static RzILOpEffect *sh_il_add(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * carry -> T
  * 0011nnnnmmmm1110
  */
-static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_addc(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 	RzILOpEffect *local_sum = SETL("sum", ADD(sum, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T))));
 
@@ -703,7 +703,7 @@ static RzILOpEffect *sh_il_addc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * overflow -> T
  * 0011nnnnmmmm1111
  */
-static RzILOpEffect *sh_il_addv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_addv(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sum = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 	RzILOpEffect *local_sum = SETL("sum", sum);
 
@@ -721,7 +721,7 @@ static RzILOpEffect *sh_il_addv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * When Rn = Rm, 1 -> T ; Otherwise, 0 -> T
  * 0011nnnnmmmm0000
  */
-static RzILOpEffect *sh_il_cmp_eq(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_cmp_eq(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, EQ(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 }
 
@@ -730,7 +730,7 @@ static RzILOpEffect *sh_il_cmp_eq(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * When Rn >= Rm (unsigned), 1 -> T ; Otherwise, 0 -> T
  * 0011nnnnmmmm0010
  */
-static RzILOpEffect *sh_il_cmp_hs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_cmp_hs(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, UGE(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 }
 
@@ -739,7 +739,7 @@ static RzILOpEffect *sh_il_cmp_hs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * When Rn >= Rm (signed), 1 -> T ; Otherwise, 0 -> T
  * 0011nnnnmmmm0011
  */
-static RzILOpEffect *sh_il_cmp_ge(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_cmp_ge(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, SGE(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 }
 
@@ -748,7 +748,7 @@ static RzILOpEffect *sh_il_cmp_ge(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * When Rn > Rm (unsigned), 1 -> T ; Otherwise, 0 -> T
  * 0011nnnnmmmm0110
  */
-static RzILOpEffect *sh_il_cmp_hi(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_cmp_hi(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, UGT(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 }
 
@@ -757,7 +757,7 @@ static RzILOpEffect *sh_il_cmp_hi(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * When Rn > Rm (signed), 1 -> T ; Otherwise, 0 -> T
  * 0011nnnnmmmm0111
  */
-static RzILOpEffect *sh_il_cmp_gt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_cmp_gt(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, SGT(sh_il_get_pure_param(1), sh_il_get_pure_param(0)));
 }
 
@@ -766,7 +766,7 @@ static RzILOpEffect *sh_il_cmp_gt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * When Rn >= 0, 1 -> T ; Otherwise, 0 -> T
  * 0100nnnn00010001
  */
-static RzILOpEffect *sh_il_cmp_pz(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_cmp_pz(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, SGE(sh_il_get_pure_param(0), SH_S_REG(0)));
 }
 
@@ -775,7 +775,7 @@ static RzILOpEffect *sh_il_cmp_pz(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * When Rn > 0, 1 -> T ; Otherwise, 0 -> T
  * 0100nnnn00010101
  */
-static RzILOpEffect *sh_il_cmp_pl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_cmp_pl(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, SGT(sh_il_get_pure_param(0), SH_S_REG(0)));
 }
 
@@ -784,7 +784,7 @@ static RzILOpEffect *sh_il_cmp_pl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * When any bytes are equal, 1 -> T ; Otherwise, 0 -> T
  * 0010nnnnmmmm1100
  */
-static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_cmp_str(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *full_xor = LOGXOR(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 	RzILOpEffect *eff = SETL("xor", full_xor);
 
@@ -804,7 +804,7 @@ static RzILOpEffect *sh_il_cmp_str(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 1-step division (Rn ÷ Rm) ; Calculation result -> T
  * 0011nnnnmmmm0100
  */
-static RzILOpEffect *sh_il_div1(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_div1(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *ret = NULL;
 	RzILOpEffect *q = SETL("q", VARG(SH_SR_Q));
 	RzILOpEffect *m = SETL("m", VARG(SH_SR_M));
@@ -844,7 +844,7 @@ static RzILOpEffect *sh_il_div1(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * MSB of Rn -> Q ; MSB of Rm -> M, M^Q -> T
  * 0010nnnnmmmm0111
  */
-static RzILOpEffect *sh_il_div0s(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_div0s(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *setq = SETG(SH_SR_Q, MSB(sh_il_get_pure_param(1)));
 	RzILOpEffect *setm = SETG(SH_SR_M, MSB(sh_il_get_pure_param(0)));
 	RzILOpEffect *sett = SETG(SH_SR_T, XOR(VARG(SH_SR_M), VARG(SH_SR_Q)));
@@ -857,7 +857,7 @@ static RzILOpEffect *sh_il_div0s(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0 -> M/Q/T
  * 0000000000011001
  */
-static RzILOpEffect *sh_il_div0u(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_div0u(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ3(SETG(SH_SR_M, SH_BIT(0)), SETG(SH_SR_Q, SH_BIT(0)), SETG(SH_SR_T, SH_BIT(0)));
 }
 
@@ -866,7 +866,7 @@ static RzILOpEffect *sh_il_div0u(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Signed, Rn * Rm -> MAC ; 32 * 32 -> 64 bits
  * 0011nnnnmmmm1101
  */
-static RzILOpEffect *sh_il_dmuls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_dmuls(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = SETL("res_wide", MUL(SIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(0)), SIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(1))));
 	RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(VARL("res_wide"), UN(2 * SH_REG_SIZE, 0xffffffff)));
 	RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(VARL("res_wide"), SH_U_REG(SH_REG_SIZE)));
@@ -878,7 +878,7 @@ static RzILOpEffect *sh_il_dmuls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Unsigned, Rn * Rm -> MAC ; 32 * 32 -> 64 bits
  * 0011nnnnmmmm0101
  */
-static RzILOpEffect *sh_il_dmulu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_dmulu(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = SETL("res_wide", MUL(UNSIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(0)), UNSIGNED(2 * SH_REG_SIZE, sh_il_get_pure_param(1))));
 	RzILOpPure *lower_bits = UNSIGNED(SH_REG_SIZE, LOGAND(VARL("res_wide"), UN(2 * SH_REG_SIZE, 0xffffffff)));
 	RzILOpPure *higher_bits = UNSIGNED(SH_REG_SIZE, SHIFTR0(VARL("res_wide"), SH_U_REG(SH_REG_SIZE)));
@@ -890,7 +890,7 @@ static RzILOpEffect *sh_il_dmulu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn - 1 -> Rn ; When Rn = 0, 1 -> T ; Otherwise 0 -> T
  * 0100nnnn00010000
  */
-static RzILOpEffect *sh_il_dt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_dt(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ2(sh_il_set_pure_param(0, SUB(sh_il_get_pure_param(0), SH_U_REG(1))), SETG(SH_SR_T, NON_ZERO(sh_il_get_pure_param(0))));
 }
 
@@ -903,7 +903,7 @@ static RzILOpEffect *sh_il_dt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rm sign-extended from word -> Rn
  * 0110nnnnmmmm1111
  */
-static RzILOpEffect *sh_il_exts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_exts(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = NULL;
 	if (op->scaling == SH_SCALING_B) {
 		RzILOpEffect *byte = SETL("byte", LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xff)));
@@ -927,7 +927,7 @@ static RzILOpEffect *sh_il_exts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rm zero-extended from word -> Rn
  * 0110nnnnmmmm1101
  */
-static RzILOpEffect *sh_il_extu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_extu(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = NULL;
 	if (op->scaling == SH_SCALING_B) {
 		eff = sh_il_set_pure_param(1, LOGAND(sh_il_get_pure_param(0), SH_U_REG(0xff)));
@@ -955,7 +955,7 @@ static RzILOpEffect *sh_il_extu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * When S bit is enabled, the MAC addition is a saturation operation of 32 bits
  * So only the lower 32 bits of result and MAC are considered (which is basically MACL register)
  */
-static RzILOpEffect *sh_il_mac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_mac(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	SHParamHelper shp_rm = sh_il_get_param(op->param[0], op->scaling);
 	SHParamHelper shp_rn = sh_il_get_param(op->param[1], op->scaling);
 	RzILOpEffect *eff = NULL;
@@ -991,7 +991,7 @@ static RzILOpEffect *sh_il_mac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn * Rm -> MACL (32 * 32 -> 32 bits)
  * 0000nnnnmmmm0111
  */
-static RzILOpEffect *sh_il_mul(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_mul(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG("macl", MUL(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 }
 
@@ -1000,7 +1000,7 @@ static RzILOpEffect *sh_il_mul(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn * Rm -> MACL (Signed) (16 * 16 -> 32 bits)
  * 0010nnnnmmmm1111
  */
-static RzILOpEffect *sh_il_muls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_muls(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *m = SIGNED(SH_REG_SIZE, UNSIGNED(16, sh_il_get_pure_param(0)));
 	RzILOpPure *n = SIGNED(SH_REG_SIZE, UNSIGNED(16, sh_il_get_pure_param(1)));
 	return SETG("macl", MUL(m, n));
@@ -1011,7 +1011,7 @@ static RzILOpEffect *sh_il_muls(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn * Rm -> MACL (Unsigned) (16 * 16 -> 32 bits)
  * 0010nnnnmmmm1110
  */
-static RzILOpEffect *sh_il_mulu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_mulu(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *m = UNSIGNED(SH_REG_SIZE, UNSIGNED(16, sh_il_get_pure_param(0)));
 	RzILOpPure *n = UNSIGNED(SH_REG_SIZE, UNSIGNED(16, sh_il_get_pure_param(1)));
 	return SETG("macl", MUL(m, n));
@@ -1022,7 +1022,7 @@ static RzILOpEffect *sh_il_mulu(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0 - Rm -> Rn
  * 0110nnnnmmmm1011
  */
-static RzILOpEffect *sh_il_neg(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_neg(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sub = SUB(UNSIGNED(SH_REG_SIZE, 0), sh_il_get_pure_param(0));
 	return sh_il_set_pure_param(1, sub);
 }
@@ -1032,7 +1032,7 @@ static RzILOpEffect *sh_il_neg(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0 - Rm - T -> Rn ; borrow -> T
  * 0110nnnnmmmm1010
  */
-static RzILOpEffect *sh_il_negc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_negc(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *sub = SUB(UNSIGNED(SH_REG_SIZE, 0), sh_il_get_pure_param(0));
 	sub = SUB(sub, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)));
 	return SEQ2(sh_il_set_pure_param(1, sub), SETG(SH_SR_T, sh_il_is_sub_borrow(sub, UNSIGNED(SH_REG_SIZE, 0), sh_il_get_pure_param(0))));
@@ -1043,7 +1043,7 @@ static RzILOpEffect *sh_il_negc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn - Rm -> Rn
  * 0011nnnnmmmm1000
  */
-static RzILOpEffect *sh_il_sub(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_sub(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(1, SUB(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 }
 
@@ -1052,7 +1052,7 @@ static RzILOpEffect *sh_il_sub(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn - Rm - T -> Rn ; borrow -> T
  * 0011nnnnmmmm1010
  */
-static RzILOpEffect *sh_il_subc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_subc(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *dif = ADD(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 	dif = SUB(dif, UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)));
 	RzILOpEffect *local_dif = SETL("dif", dif);
@@ -1067,7 +1067,7 @@ static RzILOpEffect *sh_il_subc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn - Rm -> Rn ; underflow -> T
  * 0011nnnnmmmm1011
  */
-static RzILOpEffect *sh_il_subv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_subv(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *dif = SUB(sh_il_get_pure_param(0), sh_il_get_pure_param(1));
 	RzILOpEffect *local_dif = SETL("dif", dif);
 
@@ -1089,7 +1089,7 @@ static RzILOpEffect *sh_il_subv(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * (R0 + GBR) & imm -> (R0 + GBR)
  * 11001101iiiiiiii
  */
-static RzILOpEffect *sh_il_and(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_and(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(1, LOGAND(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 }
 
@@ -1098,7 +1098,7 @@ static RzILOpEffect *sh_il_and(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * ~Rm -> Rn
  * 0110nnnnmmmm0111
  */
-static RzILOpEffect *sh_il_not(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_not(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(1, LOGNOT(sh_il_get_pure_param(0)));
 }
 
@@ -1115,7 +1115,7 @@ static RzILOpEffect *sh_il_not(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * (R0 + GBR) | imm -> (R0 + GBR)
  * 11001111iiiiiiii
  */
-static RzILOpEffect *sh_il_or(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_or(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(1, LOGOR(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 }
 
@@ -1125,7 +1125,7 @@ static RzILOpEffect *sh_il_or(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 1 -> MSB of (Rn)
  * 0110nnnnmmmm0111
  */
-static RzILOpEffect *sh_il_tas(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_tas(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *mem = sh_il_get_pure_param(0);
 	RzILOpEffect *tbit = SETG(SH_SR_T, IS_ZERO(mem));
 	return SEQ2(tbit, sh_il_set_pure_param(0, LOGOR(DUP(mem), UN(8, 0x80))));
@@ -1144,7 +1144,7 @@ static RzILOpEffect *sh_il_tas(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * If (R0 + GBR) & imm = 0, 1 -> T ; Otherwise 0 -> T
  * 11001100iiiiiiii
  */
-static RzILOpEffect *sh_il_tst(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_tst(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, IS_ZERO(LOGAND(sh_il_get_pure_param(0), sh_il_get_pure_param(1))));
 }
 
@@ -1161,7 +1161,7 @@ static RzILOpEffect *sh_il_tst(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * (R0 + GBR) ^ imm -> (R0 + GBR)
  * 11001110iiiiiiii
  */
-static RzILOpEffect *sh_il_xor(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_xor(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(1, LOGXOR(sh_il_get_pure_param(0), sh_il_get_pure_param(1)));
 }
 
@@ -1170,7 +1170,7 @@ static RzILOpEffect *sh_il_xor(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * T <- Rn <- MSB
  * 0100nnnn00000100
  */
-static RzILOpEffect *sh_il_rotl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_rotl(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpBool *msb = MSB(sh_il_get_pure_param(0));
 	RzILOpEffect *tbit = SETG(SH_SR_T, msb);
 	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
@@ -1183,7 +1183,7 @@ static RzILOpEffect *sh_il_rotl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * LSB -> Rn -> T
  * 0100nnnn00000101
  */
-static RzILOpEffect *sh_il_rotr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_rotr(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpBool *lsb = LSB(sh_il_get_pure_param(0));
 	RzILOpEffect *tbit = SETG(SH_SR_T, lsb);
 	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
@@ -1196,7 +1196,7 @@ static RzILOpEffect *sh_il_rotr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * T <- Rn <- T
  * 0100nnnn00100100
  */
-static RzILOpEffect *sh_il_rotcl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_rotcl(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *msb = SETL("msb", MSB(sh_il_get_pure_param(0)));
 	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
 	RzILOpPure *lsb = ITE(sh_il_get_status_reg_bit(SH_SR_T), OR(shl, SH_U_REG(1)), AND(DUP(shl), SH_U_REG(0xfffffffe)));
@@ -1209,7 +1209,7 @@ static RzILOpEffect *sh_il_rotcl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * T -> Rn -> T
  * 0100nnnn00100101
  */
-static RzILOpEffect *sh_il_rotcr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_rotcr(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *lsb = SETL("lsb", LSB(sh_il_get_pure_param(0)));
 	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
 	RzILOpPure *msb = ITE(sh_il_get_status_reg_bit(SH_SR_T), OR(shr, SH_U_REG(0x80000000)), AND(DUP(shr), SH_U_REG(0x7fffffff)));
@@ -1224,7 +1224,7 @@ static RzILOpEffect *sh_il_rotcr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * MSB -> Rn
  * 0100nnnnmmmm1100
  */
-static RzILOpEffect *sh_il_shad(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shad(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *op1 = SETL("op1", SIGNED(32, sh_il_get_pure_param(0)));
 	RzILOpEffect *op2 = SETL("op2", SIGNED(32, sh_il_get_pure_param(1)));
 	RzILOpPure *shift_amount = UNSIGNED(5, VARL("op1"));
@@ -1240,7 +1240,7 @@ static RzILOpEffect *sh_il_shad(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * T <- Rn <- 0
  * 0100nnnn00100000
  */
-static RzILOpEffect *sh_il_shal(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shal(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *msb = MSB(sh_il_get_pure_param(0));
 	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
 	return SEQ2(SETG(SH_SR_T, msb), sh_il_set_pure_param(0, shl));
@@ -1251,7 +1251,7 @@ static RzILOpEffect *sh_il_shal(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * MSB -> Rn -> T
  * 0100nnnn00100001
  */
-static RzILOpEffect *sh_il_shar(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shar(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *lsb = LSB(sh_il_get_pure_param(0));
 	RzILOpPure *shl = SHIFTRA(sh_il_get_pure_param(0), SH_U_REG(1));
 	return SEQ2(SETG(SH_SR_T, lsb), sh_il_set_pure_param(0, shl));
@@ -1264,7 +1264,7 @@ static RzILOpEffect *sh_il_shar(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * MSB -> Rn
  * 0100nnnnmmmm1101
  */
-static RzILOpEffect *sh_il_shld(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shld(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *op1 = SETL("op1", SIGNED(32, sh_il_get_pure_param(0)));
 	RzILOpEffect *op2 = SETL("op2", UNSIGNED(32, sh_il_get_pure_param(1)));
 	RzILOpPure *shift_amount = UNSIGNED(5, VARL("op1"));
@@ -1280,7 +1280,7 @@ static RzILOpEffect *sh_il_shld(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * T <- Rn <- 0
  * 0100nnnn00000000
  */
-static RzILOpEffect *sh_il_shll(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shll(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *msb = MSB(sh_il_get_pure_param(0));
 	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
 	return SEQ2(SETG(SH_SR_T, msb), sh_il_set_pure_param(0, shl));
@@ -1291,7 +1291,7 @@ static RzILOpEffect *sh_il_shll(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0 -> Rn -> T
  * 0100nnnn00000001
  */
-static RzILOpEffect *sh_il_shlr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shlr(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *lsb = LSB(sh_il_get_pure_param(0));
 	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
 	return SEQ2(SETG(SH_SR_T, lsb), sh_il_set_pure_param(0, shr));
@@ -1302,7 +1302,7 @@ static RzILOpEffect *sh_il_shlr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn << 2 -> Rn
  * 0100nnnn00001000
  */
-static RzILOpEffect *sh_il_shll2(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shll2(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(0, SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(2)));
 }
 
@@ -1311,7 +1311,7 @@ static RzILOpEffect *sh_il_shll2(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn >> 2 -> Rn
  * 0100nnnn00001001
  */
-static RzILOpEffect *sh_il_shlr2(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shlr2(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(0, SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(2)));
 }
 
@@ -1320,7 +1320,7 @@ static RzILOpEffect *sh_il_shlr2(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn << 8 -> Rn
  * 0100nnnn00011000
  */
-static RzILOpEffect *sh_il_shll8(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shll8(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(0, SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(8)));
 }
 
@@ -1329,7 +1329,7 @@ static RzILOpEffect *sh_il_shll8(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn >> 8 -> Rn
  * 0100nnnn00011001
  */
-static RzILOpEffect *sh_il_shlr8(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shlr8(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(0, SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(8)));
 }
 
@@ -1338,7 +1338,7 @@ static RzILOpEffect *sh_il_shlr8(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn << 16 -> Rn
  * 0100nnnn00101000
  */
-static RzILOpEffect *sh_il_shll16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shll16(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(0, SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(16)));
 }
 
@@ -1347,7 +1347,7 @@ static RzILOpEffect *sh_il_shll16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn >> 16 -> Rn
  * 0100nnnn00101001
  */
-static RzILOpEffect *sh_il_shlr16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_shlr16(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(0, SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(16)));
 }
 
@@ -1356,7 +1356,7 @@ static RzILOpEffect *sh_il_shlr16(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * if T = 0, disp * 2 + PC + 4 -> PC ; otherwise (T = 1) NOP
  * 10001011dddddddd
  */
-static RzILOpEffect *sh_il_bf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_bf(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
 	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), JMP(new_pc), NOP());
 }
@@ -1367,7 +1367,7 @@ static RzILOpEffect *sh_il_bf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 10001111dddddddd
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_bfs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_bfs(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
 	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), JMP(new_pc), NOP());
 }
@@ -1377,7 +1377,7 @@ static RzILOpEffect *sh_il_bfs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * if T = 1, disp * 2 + PC + 4 -> PC ; otherwise (T = 0) NOP
  * 10001001dddddddd
  */
-static RzILOpEffect *sh_il_bt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_bt(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
 	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
 }
@@ -1388,7 +1388,7 @@ static RzILOpEffect *sh_il_bt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 10001101dddddddd
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_bts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_bts(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
 	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), NOP(), JMP(new_pc));
 }
@@ -1399,7 +1399,7 @@ static RzILOpEffect *sh_il_bts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 1010dddddddddddd
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_bra(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_bra(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return JMP(sh_il_get_effective_addr_param(0));
 }
 
@@ -1409,7 +1409,7 @@ static RzILOpEffect *sh_il_bra(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0000nnnn00100011
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_braf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_braf(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return JMP(sh_il_get_effective_addr_param(0));
 }
 
@@ -1419,7 +1419,7 @@ static RzILOpEffect *sh_il_braf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 1011dddddddddddd
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_bsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_bsr(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_effective_addr_param(0)));
 }
 
@@ -1429,7 +1429,7 @@ static RzILOpEffect *sh_il_bsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0000nnnn00000011
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_bsrf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_bsrf(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_effective_addr_param(0)));
 }
 
@@ -1439,7 +1439,7 @@ static RzILOpEffect *sh_il_bsrf(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0100nnnn00101011
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_jmp(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_jmp(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return JMP(sh_il_get_effective_addr_param(0));
 }
 
@@ -1449,7 +1449,7 @@ static RzILOpEffect *sh_il_jmp(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0100nnnn00001011
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_jsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_jsr(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ2(SETG("pr", ADD(SH_U_ADDR(pc), SH_U_ADDR(4))), JMP(sh_il_get_effective_addr_param(0)));
 }
 
@@ -1459,7 +1459,7 @@ static RzILOpEffect *sh_il_jsr(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0000000000001011
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_rts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_rts(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return JMP(VARG("pr"));
 }
 
@@ -1468,7 +1468,7 @@ static RzILOpEffect *sh_il_rts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0 -> MACH, MACL
  * 0000000000101000
  */
-static RzILOpEffect *sh_il_clrmac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_clrmac(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SEQ2(SETG("mach", UN(SH_REG_SIZE, 0)), SETG("macl", UN(SH_REG_SIZE, 0)));
 }
 
@@ -1477,7 +1477,7 @@ static RzILOpEffect *sh_il_clrmac(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0 -> S
  * 0000000001001000
  */
-static RzILOpEffect *sh_il_clrs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_clrs(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_S, IL_FALSE);
 }
 
@@ -1486,7 +1486,7 @@ static RzILOpEffect *sh_il_clrs(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0 -> T
  * 0000000000001000
  */
-static RzILOpEffect *sh_il_clrt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_clrt(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, IL_FALSE);
 }
 
@@ -1501,7 +1501,7 @@ static RzILOpEffect *sh_il_clrt(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * (Rm) -> REG ; Rm + 4 -> Rm
  * PRIVILEGED (Only GBR is not privileged)
  */
-static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_ldc(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = NULL;
 	if (op->scaling == SH_SCALING_INVALID) {
 		if (sh_valid_gpr(op->param[1].param[0])) {
@@ -1533,7 +1533,7 @@ static RzILOpEffect *sh_il_ldc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * REG := MACH/MACL/PR
  * (Rm) -> REG ; Rm + 4 -> Rm
  */
-static RzILOpEffect *sh_il_lds(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_lds(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	if (op->scaling == SH_SCALING_INVALID) {
 		return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 	} else if (op->scaling == SH_SCALING_L) {
@@ -1548,7 +1548,7 @@ static RzILOpEffect *sh_il_lds(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * R0 -> (Rn) (without fetching cache block)
  * 0000nnnn11000011
  */
-static RzILOpEffect *sh_il_movca(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_movca(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 }
 
@@ -1557,7 +1557,7 @@ static RzILOpEffect *sh_il_movca(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * No operation
  * 0000000000001001
  */
-static RzILOpEffect *sh_il_nop(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_nop(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return NOP();
 }
 
@@ -1568,7 +1568,7 @@ static RzILOpEffect *sh_il_nop(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * PRIVILEGED
  * TODO: Implement delayed branch
  */
-static RzILOpEffect *sh_il_rte(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_rte(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return BRANCH(sh_il_get_privilege(), SEQ2(sh_il_set_status_reg(VARG("ssr")), JMP(VARG("spc"))), NULL);
 }
 
@@ -1577,7 +1577,7 @@ static RzILOpEffect *sh_il_rte(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 1 -> S
  * 0000000001011000
  */
-static RzILOpEffect *sh_il_sets(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_sets(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_S, IL_TRUE);
 }
 
@@ -1586,7 +1586,7 @@ static RzILOpEffect *sh_il_sets(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 1 -> T
  * 0000000000011000
  */
-static RzILOpEffect *sh_il_sett(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_sett(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return SETG(SH_SR_T, IL_TRUE);
 }
 
@@ -1596,7 +1596,7 @@ static RzILOpEffect *sh_il_sett(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * 0000000000011011
  * PRIVILEGED
  */
-static RzILOpEffect *sh_il_sleep(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_sleep(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return BRANCH(sh_il_get_privilege(), NOP(), NULL);
 }
 
@@ -1611,7 +1611,7 @@ static RzILOpEffect *sh_il_sleep(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * Rn - 4 -> Rn ; REG -> (Rn)
  * PRIVILEGED (Only GBR is not privileged)
  */
-static RzILOpEffect *sh_il_stc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_stc(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *eff = NULL;
 	if (sh_valid_gpr(op->param[0].param[0])) { // REG = Rn_BANK
 		eff = sh_il_set_pure_param(1, VARG(sh_get_banked_reg(op->param[0].param[0], 1)));
@@ -1633,7 +1633,7 @@ static RzILOpEffect *sh_il_stc(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * REG := MACH/MACL/PR
  * Rn + 4 -> Rn ; REG -> (Rn)
  */
-static RzILOpEffect *sh_il_sts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_sts(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	return sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 }
 
@@ -1641,19 +1641,19 @@ static RzILOpEffect *sh_il_sts(SHOp *op, ut64 pc, RzAnalysis *analysis) {
  * \brief Unimplemented instruction/opcode
  * To be used for valid SuperH-4 instruction which yet haven't been lifted to the IL
  */
-static RzILOpEffect *sh_il_unimpl(SHOp *op, ut64 pc, RzAnalysis *analysis) {
+static RzILOpEffect *sh_il_unimpl(const SHOp *op, ut64 pc, RzAnalysis *analysis) {
 	RZ_LOG_WARN("SuperH: Instruction with opcode 0x%04x is unimplemented\n", op->opcode);
 	return EMPTY();
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
 
-typedef RzILOpEffect *(*sh_il_op)(SHOp *aop, ut64 pc, RzAnalysis *analysis);
+typedef RzILOpEffect *(*sh_il_op)(const SHOp *op, ut64 pc, RzAnalysis *analysis);
 
 /**
  * \brief Lookup table for the IL lifting handlers for the various instructions
  */
-static sh_il_op sh_ops[SH_OP_SIZE] = {
+static const sh_il_op sh_ops[SH_OP_SIZE] = {
 	[SH_OP_INVALID] = sh_il_invalid,
 	[SH_OP_MOV] = sh_il_mov,
 	[SH_OP_MOVT] = sh_il_movt,
@@ -1746,7 +1746,7 @@ static sh_il_op sh_ops[SH_OP_SIZE] = {
  * \param op
  * \return bool True if successful ; false otherwise
  */
-RZ_IPI bool rz_sh_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL SHOp *op) {
+RZ_IPI bool rz_sh_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const SHOp *op) {
 	rz_return_val_if_fail(analysis && aop && op, false);
 	if (op->mnemonic >= SH_OP_SIZE) {
 		RZ_LOG_ERROR("RzIL: SuperH: out of bounds op\n");
