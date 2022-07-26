@@ -1294,7 +1294,9 @@ RZ_API RzAsmCode *rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp) 
 
 RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_new(const char *asm_str) {
 	RzAsmTokenString *s = RZ_NEW0(RzAsmTokenString);
-	rz_return_val_if_fail(s, NULL);
+	if (!s) {
+		return NULL;
+	}
 	s->tokens = rz_vector_new(sizeof(RzAsmToken), NULL, NULL);
 	s->str = rz_strbuf_new(asm_str);
 	rz_return_val_if_fail(s->tokens && s->str, NULL);
@@ -1314,6 +1316,9 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAs
 	rz_return_val_if_fail(toks, NULL);
 
 	RzAsmTokenString *new = RZ_NEW0(RzAsmTokenString);
+	if (!new) {
+		return NULL;
+	}
 	new->tokens = rz_vector_clone(toks->tokens);
 	new->str = rz_strbuf_new(rz_strbuf_get(toks->str));
 	new->op_type = toks->op_type;
@@ -1344,7 +1349,9 @@ RZ_API void rz_asm_token_pattern_free(void *p) {
 static RZ_OWN RzAsmToken *asm_token_create(const size_t start, const size_t len, const RzAsmTokenType type, const ut64 val) {
 	rz_return_val_if_fail(len > 0, NULL);
 	RzAsmToken *t = RZ_NEW0(RzAsmToken);
-	rz_return_val_if_fail(t, NULL);
+	if (!t) {
+		return NULL;
+	}
 
 	t->start = start;
 	t->type = type;
