@@ -1722,7 +1722,7 @@ RZ_API void rz_cmd_macro_meta(RzCmdMacro *mac) {
 .(define patata 3)
 #endif
 
-RZ_API int rz_cmd_macro_cmd_args(RzCmdMacro *mac, const char *ptr, const char *args, int nargs) {
+static int cmd_macro_cmd_args(RzCmdMacro *mac, const char *ptr, const char *args, int nargs) {
 	int i, j;
 	char *pcmd, cmd[RZ_CMD_MAXLEN];
 	const char *arg = args;
@@ -1773,7 +1773,7 @@ RZ_API int rz_cmd_macro_cmd_args(RzCmdMacro *mac, const char *ptr, const char *a
 	return xx;
 }
 
-RZ_API char *rz_cmd_macro_label_process(RzCmdMacro *mac, RzCmdMacroLabel *labels, int *labels_n, char *ptr) {
+static char *cmd_macro_label_process(RzCmdMacro *mac, RzCmdMacroLabel *labels, int *labels_n, char *ptr) {
 	int i;
 	for (; *ptr == ' '; ptr++) {
 		;
@@ -1929,7 +1929,7 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 				}
 				rz_cons_flush();
 				/* Label handling */
-				ptr2 = rz_cmd_macro_label_process(mac, &(labels[0]), &labels_n, ptr);
+				ptr2 = cmd_macro_label_process(mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {
 					RZ_LOG_ERROR("Oops. invalid label name\n");
 					break;
@@ -1944,7 +1944,7 @@ static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
 				/* Command execution */
 				if (*ptr) {
 					mac->num->value = value;
-					int r = rz_cmd_macro_cmd_args(mac, ptr, args, nargs);
+					int r = cmd_macro_cmd_args(mac, ptr, args, nargs);
 					// TODO: handle quit? r == 0??
 					// quit, exits the macro. like a break
 					value = mac->num->value;
