@@ -7,8 +7,8 @@
 /**
  * \brief Get the addressing mode for \p pb
  *
- * @param pb SHParamBuilder
- * @return SHAddrMode
+ * \param pb SHParamBuilder
+ * \return SHAddrMode
  */
 static SHAddrMode sh_pb_get_addrmode(SHParamBuilder pb) {
 	return pb.is_param ? pb.param.mode : pb.addr.mode;
