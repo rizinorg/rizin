@@ -481,7 +481,7 @@ static const RzCmdDescArg project_open_no_bin_io_args[2];
 static const RzCmdDescArg resize_args[2];
 static const RzCmdDescArg resize_remove_args[2];
 static const RzCmdDescArg resize_insert_args[2];
-static const RzCmdDescArg rebase_args[2];
+static const RzCmdDescArg rebase_args[3];
 static const RzCmdDescArg seek_args[2];
 static const RzCmdDescArg seek_padded_args[2];
 static const RzCmdDescArg seek_base_args[2];
@@ -11329,7 +11329,13 @@ static const RzCmdDescArg rebase_args[] = {
 	{
 		.name = "oldbase",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "newbase",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
