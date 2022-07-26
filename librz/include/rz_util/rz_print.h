@@ -43,13 +43,13 @@ typedef const char *(*RzPrintColorFor)(void *user, ut64 addr, bool verbose);
 typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, int mode);
 
 typedef enum {
+	RZ_ASM_TOKEN_UNKNOWN = 0, //< Does not fit to any token below.
 	RZ_ASM_TOKEN_MNEMONIC, //< Asm mnemonics like: mov, push, lea...
 	RZ_ASM_TOKEN_OPERATOR, //< Arithmetic operators: +,-,<< etc.
 	RZ_ASM_TOKEN_NUMBER, //< Numbers
 	RZ_ASM_TOKEN_REGISTER, //< Registers
 	RZ_ASM_TOKEN_SEPARATOR, //< Brackets, comma etc.
 	RZ_ASM_TOKEN_META, //< Meta information (e.g Hexagon packet prefix, ARM & Hexagon number prefix).
-	RZ_ASM_TOKEN_UNKNOWN, //< Does not fit to any token above.
 
 	RZ_ASM_TOKEN_LAST,
 } RzAsmTokenType;
