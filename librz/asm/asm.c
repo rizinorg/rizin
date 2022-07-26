@@ -1413,7 +1413,6 @@ static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
 	return 0;
 }
 
-#if RZ_CHECKS_LEVEL == 2
 static void check_token_coverage(RzAsmTokenString *toks) {
 	rz_return_if_fail(toks);
 	if (rz_vector_len(toks->tokens) == 0) {
@@ -1452,7 +1451,6 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 		RZ_LOG_WARN("Parsing errors in asm str: %s\n", rz_strbuf_get(toks->str));
 	}
 }
-#endif
 
 /**
  * \brief Splits an asm string into tokens by using the given regex patterns.
@@ -1499,9 +1497,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 	}
 
 	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false);
-#if RZ_CHECKS_LEVEL == 2
 	check_token_coverage(toks);
-#endif
 
 	return toks;
 }
