@@ -66,3 +66,16 @@ CMDS=q!
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=xbe library versions
+FILE=bins/xbe/nxdk-hello-dummy-libs.xbe
+CMDS=il
+EXPECT=<<EOF
+library       
+--------------
+RIZIN0 42.5.0
+RIZIN1 42.6.1
+RIZIN2 42.7.2
+RIZIN3 42.8.3
+EOF
+RUN
