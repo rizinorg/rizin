@@ -1506,7 +1506,9 @@ extern const struct bfd_symbol *const bfd_ind_symbol;
 			(struct bfd_symbol **)SYM_PTR, \
 \
 			/* map_head, map_tail                                            */ \
-			{ NULL }, { NULL } \
+			{ NULL }, { \
+			NULL \
+		} \
 	}
 
 void bfd_section_list_clear(bfd *);
