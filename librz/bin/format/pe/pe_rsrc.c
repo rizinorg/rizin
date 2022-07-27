@@ -612,20 +612,31 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(RzBinPEObj *bin, PE_DWo
 			goto out_error;
 		}
 
-		vs_VersionInfo->Value = (PE_VS_FIXEDFILEINFO *)malloc(sizeof(*vs_VersionInfo->Value));
-		if (!vs_VersionInfo->Value) {
+		PE_VS_FIXEDFILEINFO *ffi = vs_VersionInfo->Value = (PE_VS_FIXEDFILEINFO *)malloc(sizeof(*vs_VersionInfo->Value));
+		if (!ffi) {
 			RZ_LOG_INFO("malloc (VS_VERSIONINFO Value)\n");
 			goto out_error;
 		}
 		sz = sizeof(PE_VS_FIXEDFILEINFO);
 		EXIT_ON_OVERFLOW(sz);
-		if (rz_buf_read_at(bin->b, curAddr, (ut8 *)vs_VersionInfo->Value, sz) != sz) {
+		if (!rz_buf_read_le32_at(bin->b, curAddr, &ffi->dwSignature) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32), &ffi->dwStrucVersion) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 2, &ffi->dwFileVersionMS) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 3, &ffi->dwFileVersionLS) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 4, &ffi->dwProductVersionMS) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 5, &ffi->dwProductVersionLS) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 6, &ffi->dwFileFlagsMask) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 7, &ffi->dwFileFlags) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 8, &ffi->dwFileOS) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 9, &ffi->dwFileType) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 10, &ffi->dwFileSubtype) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 11, &ffi->dwFileDateMS) ||
+			!rz_buf_read_le32_at(bin->b, curAddr + sizeof(ut32) * 12, &ffi->dwFileDateLS)) {
 			RZ_LOG_INFO("read (VS_VERSIONINFO Value)\n");
 			goto out_error;
 		}
-
-		if (vs_VersionInfo->Value->dwSignature != 0xFEEF04BD) {
-			RZ_LOG_INFO("check (PE_VS_FIXEDFILEINFO signature) 0x%08x\n", vs_VersionInfo->Value->dwSignature);
+		if (ffi->dwSignature != 0xFEEF04BD) {
+			RZ_LOG_INFO("check (PE_VS_FIXEDFILEINFO signature) 0x%08x\n", ffi->dwSignature);
 			goto out_error;
 		}
 		curAddr += sz;
