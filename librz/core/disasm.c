@@ -5929,20 +5929,10 @@ toro:
 				free(ds->opstr);
 				ds->opstr = strdup(ds->str);
 
-				char *source;
-				if (ds->show_color && ds->colorop) {
-					core->print->colorize_opts.reset_bg = line_highlighted(ds);
-					RzStrBuf *bw_asm = rz_strbuf_new(ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop));
-					RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type), ds->asmop.asm_toks);
-					rz_strbuf_free(bw_asm);
-					rz_return_val_if_fail(colored_asm, 0);
-					source = rz_strbuf_drain(colored_asm);
-				} else {
-					source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
+				if (!(ds->show_color && ds->colorop) && !ds->opstr) {
+					ds->opstr = strdup(rz_asm_op_get_asm(&ds->asmop));
 				}
 
-				free(ds->opstr);
-				ds->opstr = source;
 				core->parser->flagspace = ofs;
 			} else {
 				ds->opstr = strdup(rz_asm_op_get_asm(&ds->asmop));
@@ -5955,7 +5945,7 @@ toro:
 		}
 		if (ds->asm_instr) {
 			if (ds->show_color) {
-				rz_cons_printf("%s" Color_RESET "\n", ds->opstr);
+				rz_cons_printf("%s\n", ds->opstr);
 			} else {
 				rz_cons_println(ds->opstr);
 			}
