@@ -194,7 +194,6 @@ RZ_API RzCmd *rz_cmd_new(bool has_cons) {
 		return cmd;
 	}
 	cmd->has_cons = has_cons;
-	cmd->lcmds = rz_list_new();
 	for (i = 0; i < NCMDS; i++) {
 		cmd->cmds[i] = NULL;
 	}
@@ -215,7 +214,6 @@ RZ_API RzCmd *rz_cmd_free(RzCmd *cmd) {
 	rz_cmd_alias_free(cmd);
 	rz_cmd_macro_fini(&cmd->macro);
 	ht_pp_free(cmd->ht_cmds);
-	rz_list_free(cmd->lcmds);
 	for (i = 0; i < NCMDS; i++) {
 		if (cmd->cmds[i]) {
 			RZ_FREE(cmd->cmds[i]);
