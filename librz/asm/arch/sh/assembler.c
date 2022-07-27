@@ -4,6 +4,9 @@
 #include "assembler.h"
 #include "regs.h"
 
+extern const SHOpRaw sh_op_lookup[];
+extern const ut32 OPCODE_NUM;
+
 /**
  * \brief Get the addressing mode for \p pb
  *

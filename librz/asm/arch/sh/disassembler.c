@@ -5,6 +5,9 @@
 #include "common.h"
 #include "regs.h"
 
+extern const SHOpRaw sh_op_lookup[];
+extern const ut32 OPCODE_NUM;
+
 /**
  * \brief Get SHParam from opcode
  * Make sure the opcode is passed in little-endian form
