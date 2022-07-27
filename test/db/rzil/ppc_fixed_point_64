@@ -557,13 +557,29 @@ ARGS=-appc
 CMDS=<<EOF
 s loc.div_mul_insns
 aezi
-aezs 5 # max into r28
 aezs 4 # -1 into r11
+aezs 5 # max into r28
 aezse 1~var_write
 aezs 5 # max into r28
 aezse 2~var_write
+# High words/double words
+aezs 5 # min into r27
+aezse 1~var_write
+aezs 5 # min into r27
+aezs 5 # max into r28
+aezse 1~var_write
+aezs 6 # r2 = 2 & max into r28
+aezse 1~var_write
+aezs 5 # max into r28
+aezse 1~var_write
 EOF
 EXPECT=<<EOF
-
+var_write(name: r30, old: 0x0, new: 0xffffffff80000001)
+var_write(name: r30, old: 0xffffffff80000001, new: 0x8000000000000001)
+var_write(name: r30, old: 0x8000000000000001, new: 0x8000000000000001)
+var_write(name: r30, old: 0x8000000000000001, new: 0xc000000000000000)
+var_write(name: r30, old: 0xc000000000000000, new: 0xc0000000)
+var_write(name: r30, old: 0xc0000000, new: 0x1)
+var_write(name: r30, old: 0x1, new: 0x1)
 EOF
 RUN

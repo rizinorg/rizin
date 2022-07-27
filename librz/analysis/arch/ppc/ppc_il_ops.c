@@ -684,9 +684,11 @@ static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		break;
 	}
 
+	// Get high word/double word of product.
 	if (id == PPC_INS_MULHW || id == PPC_INS_MULHWU) {
-		// Get high word of product. Bits 0:32 are undefined.
 		prod = SHIFTR0(prod, U8(32));
+	} else if (id == PPC_INS_MULHD || id == PPC_INS_MULHDU) {
+		prod = SHIFTR0(prod, U8(64));
 	}
 
 	RzILOpEffect *cr0 = set_cr0 ? cmp_set_cr(VARG(rT), UA(0), true, "cr0", mode) : EMPTY();
