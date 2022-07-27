@@ -33,3 +33,38 @@ str x8, [sp, 0x10]
 EOF
 RUN
 
+NAME=maps
+FILE=bins/mach0/hello-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+dm~hello~[3-]
+EOF
+REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
+EXPECT=<<EOF
+- usr 16K u r-x hello-macos-arm64 hello-macos-arm64 hello_macos_arm64.r_x
+- usr 16K u rw- hello-macos-arm64 hello-macos-arm64 hello_macos_arm64.rw
+- usr 16K u rw- hello-macos-arm64 hello-macos-arm64 hello_macos_arm64.rw.0
+- usr 16K u r-- hello-macos-arm64 hello-macos-arm64 hello_macos_arm64.r
+EOF
+RUN
+
+NAME=maps as flags
+FILE=bins/mach0/hello-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+fl@F:maps~hello~[1-]
+?e --
+dm*~hello~[0-2]
+EOF
+EXPECT=<<EOF
+16384 hello_macos_arm64.r_x
+16384 hello_macos_arm64.rw
+16384 hello_macos_arm64.rw.0
+16384 hello_macos_arm64.r
+--
+f+ map.hello_macos_arm64.r_x 0x00004000
+f+ map.hello_macos_arm64.rw 0x00004000
+f+ map.hello_macos_arm64.rw 0x00004000
+f+ map.hello_macos_arm64.r 0x00004000
+EOF
+RUN

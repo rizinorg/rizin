@@ -465,7 +465,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 	}
 	rz_core_seek(core, origoff, true);
 	if (isdebug) {
-		rz_core_cmd0(core, ".dm*");
+		rz_core_debug_map_update_flags(core);
 		rz_core_reg_update_flags(core);
 		rz_core_seek_to_register(core, "PC", false);
 	} else {

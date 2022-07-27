@@ -22,6 +22,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=debug map flags count
+FILE=bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EOF
+fl@F:maps~?
+dm*~?
+dk 9
+EOF
+EXPECT=<<EOF
+9
+11
+EOF
+RUN
+
 NAME=dbg.maps.count.after.map
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d

@@ -1188,7 +1188,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 				}
 			}
-			rz_core_cmd0(r, ".dm*");
+			rz_core_debug_map_update_flags(r);
 			// Set Thumb Mode if necessary
 			RzRegItem *thumb_reg = rz_reg_get(r->dbg->reg, "thumb", RZ_REG_TYPE_ANY);
 			if (thumb_reg && rz_reg_get_value(r->dbg->reg, thumb_reg)) {

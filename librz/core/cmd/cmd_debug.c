@@ -1021,7 +1021,7 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj,
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	CMD_CHECK_DEBUG_DEAD(core);
 	rz_debug_map_sync(core->dbg); // update process memory maps
-	rz_debug_map_print(core->dbg, core->offset, state);
+	rz_core_debug_map_print(core, core->offset, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1081,7 +1081,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, cons
 	// RZ_OUTPUT_MODE_LONG is workaround for '.'
 	RzCmdStateOutput state = { 0 };
 	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG);
-	rz_debug_map_print(core->dbg, addr, &state);
+	rz_core_debug_map_print(core, addr, &state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
 	rz_cons_flush();
