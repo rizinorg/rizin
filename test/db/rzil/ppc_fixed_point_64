@@ -519,12 +519,22 @@ s loc.read_set_spr
 aezi
 aezs 5
 aezse 4~var_write
+aezs 5 # max into r28
+aezse 1~var_write
+aezse 1~var_write
 EOF
 EXPECT=<<EOF
 var_write(name: ctr, old: 0x0, new: 0xffffffffffffffff)
 var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
 var_write(name: lr, old: 0x8000280, new: 0xffffffffffffffff)
 var_write(name: r28, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
+var_write(name: xer, old: 0x0, new: 0xffffffffffffffff)
+var_write(name: so, old: 0x0, new: 0x1)
+var_write(name: ov, old: 0x0, new: 0x1)
+var_write(name: ca, old: 0x0, new: 0x1)
+var_write(name: ov32, old: 0x0, new: 0x1)
+var_write(name: ca32, old: 0x0, new: 0x1)
+var_write(name: r0, old: 0x0, new: 0xe00c0000)
 EOF
 RUN
 
