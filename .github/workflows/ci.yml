@@ -3,10 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - "master"
-      - "dev"
-      - "stable"
-      - "container-*"
+      - "*"
     tags:
       - v*
   schedule:
