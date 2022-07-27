@@ -196,10 +196,22 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
-	case PPC_INS_DCBZ:
+	case PPC_INS_DCBZ:;
+		// Determine log_2(dcache_line_size)
+		// See: https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious
+		ut32 v = DCACHE_LINE_SIZE;
+		ut32 r = 0; // r will be lg(v)
+		while (v >>= 1) {
+			r++;
+		}
+		rA = cs_reg_name(handle, INSOP(0).reg);
+		rB = cs_reg_name(handle, INSOP(1).reg);
+
 		ea = ADD(IFREG0(rA), VARG(rB));
+		// Align EA
+		ea = LOGAND(ea, SHIFTL0(UA(-1), U8(r)));
 		//! DCACHE_LINE_SIZE is currently hardcoded. Should be replaced by config option.
-		store = STOREW(ea, UN(DCACHE_LINE_SIZE, 0));
+		store = STOREW(ea, UN(DCACHE_LINE_SIZE * 8, 0));
 		break;
 	case PPC_INS_STB:
 	case PPC_INS_STH:
