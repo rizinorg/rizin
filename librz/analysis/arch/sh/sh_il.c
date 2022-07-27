@@ -32,7 +32,7 @@
 
 #define sh_return_val_if_invalid_gpr(x, v) \
 	if (!sh_valid_gpr(x)) { \
-		RZ_LOG_ERROR("RzIL: SuperH: invalid register R%u\n", x); \
+		RZ_LOG_ERROR("RzIL: SuperH: Invalid register r%u\n", x); \
 		return v; \
 	}
 
