@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2022 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "common.h"
 
 // Opcode lookup list
