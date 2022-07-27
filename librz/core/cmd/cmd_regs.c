@@ -557,7 +557,7 @@ RZ_IPI RzCmdStatus rz_reg_arenas_hexdump_handler(RzCore *core, RzReg *reg, RzCmd
 	int len = 0;
 	ut8 *buf = rz_reg_get_bytes(reg, t, &len);
 	if (buf) {
-		rz_print_hexdump(core->print, 0LL, buf, len, 32, 4, 1);
+		rz_core_print_hexdump(core, 0LL, buf, len, 32, 4, 1);
 		free(buf);
 	}
 	return RZ_CMD_STATUS_OK;

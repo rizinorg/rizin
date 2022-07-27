@@ -501,7 +501,9 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 		if (databuf) {
 			ret = ReadMemory(io, iodesc, ioctl_n, pid, addr, databuf, len);
 			if (ret > 0) {
-				rz_print_hexdump(print, addr, (const ut8 *)databuf, ret, 16, 1, 1);
+				char *dump = rz_print_hexdump_str(print, addr, (const ut8 *)databuf, ret, 16, 1, 1);
+				rz_cons_print(dump);
+				free(dump);
 			}
 		} else {
 			io->cb_printf("Failed to allocate buffer\n");

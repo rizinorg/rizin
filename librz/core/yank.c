@@ -6,6 +6,8 @@
 #include <rz_util.h>
 #include <rz_io.h>
 
+#include "core_private.h"
+
 /* \brief Maps in a file and yank from \p offset the number of \p len bytes from \p filename.
  *
  * If the len is -1, the all the bytes are mapped into the yank buffer.
@@ -277,8 +279,7 @@ RZ_API bool rz_core_yank_print_hexdump(RzCore *core, ut64 pos) {
 		return false;
 	}
 	rz_buf_read_at(core->yank_buf, pos, buf, ybl - pos);
-	rz_print_hexdump(core->print, pos,
-		buf, ybl - pos, 16, 1, 1);
+	rz_core_print_hexdump(core, pos, buf, ybl - pos, 16, 1, 1);
 	return true;
 }
 

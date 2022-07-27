@@ -157,3 +157,10 @@ fail:
 	rz_strbuf_free(buf);
 	return NULL;
 }
+
+RZ_IPI void rz_core_print_hexdump(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL const ut8 *buf,
+	int len, int base, int step, size_t zoomsz) {
+	char *string = rz_print_hexdump_str(core->print, addr, buf, len, base, step, zoomsz);
+	rz_cons_print(string);
+	free(string);
+}

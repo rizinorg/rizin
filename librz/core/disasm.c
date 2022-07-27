@@ -3240,7 +3240,7 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 			if (!ds_print_data_type(ds, buf + idx, ds->hint ? ds->hint->immbase : 0, size)) {
 				if (size > delta && hexlen > delta) {
 					rz_cons_printf("hex length=%d delta=%d\n", size, delta);
-					rz_print_hexdump(core->print, ds->at, buf + idx, hexlen - delta, 16, 1, 1);
+					rz_core_print_hexdump(core, ds->at, buf + idx, hexlen - delta, 16, 1, 1);
 				} else {
 					rz_cons_printf("hex size=%d hexlen=%d delta=%d", size, hexlen, delta);
 				}
@@ -6406,7 +6406,7 @@ toro:
 					ds.core = core;
 					if (!ds_print_data_type(&ds, buf + i, 0, size)) {
 						rz_cons_printf("hex length=%d delta=%d\n", size, delta);
-						rz_print_hexdump(core->print, at, buf + idx, hexlen - delta, 16, 1, 1);
+						rz_core_print_hexdump(core, at, buf + idx, hexlen - delta, 16, 1, 1);
 					} else {
 						rz_cons_newline();
 					}

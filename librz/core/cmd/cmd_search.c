@@ -2815,7 +2815,7 @@ static void search_collisions(RzCore *core, const char *hashName, const ut8 *has
 		eprintf(" (%d h/s)  \r", mount);
 		if (!memcmp(hashValue, digest, hashLength)) {
 			eprintf("\nCOLLISION FOUND!\n");
-			rz_print_hexdump(core->print, core->offset, buf, bufsz, 0, 16, 0);
+			rz_core_print_hexdump(core, core->offset, buf, bufsz, 0, 16, 0);
 			rz_cons_flush();
 		}
 		RZ_FREE(digest);

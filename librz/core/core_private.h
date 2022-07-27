@@ -185,6 +185,8 @@ RZ_IPI RzCmdStatus rz_regs_diff_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 RZ_IPI RzCmdStatus rz_regs_prev_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
 
+RZ_IPI void rz_core_print_hexdump(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL const ut8 *buf, int len, int base, int step, size_t zoomsz);
+
 #if __WINDOWS__
 /* windows_heap.c */
 RZ_IPI RzList *rz_heap_blocks_list(RzCore *core);
