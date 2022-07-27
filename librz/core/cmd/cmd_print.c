@@ -2523,13 +2523,6 @@ static ut8 *old_transform_op(RzCore *core, const char *val, char op, int *buflen
 	return result;
 }
 
-static void print_hexdump(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NONNULL const ut8 *buf,
-	int len, int base, int step, size_t zoomsz) {
-	char *string = rz_print_hexdump_str(p, addr, buf, len, base, step, zoomsz);
-	rz_cons_print(string);
-	free(string);
-}
-
 static void cmd_print_op(RzCore *core, const char *input) {
 	ut8 *buf;
 	int buflen = -1;
@@ -2564,7 +2557,7 @@ static void cmd_print_op(RzCore *core, const char *input) {
 		return;
 	}
 	if (buf) {
-		print_hexdump(core->print, core->offset, buf,
+		rz_core_print_hexdump(core, core->offset, buf,
 			buflen, 16, 1, 1);
 		free(buf);
 	}
@@ -4592,7 +4585,7 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 		core->print->cols = 1;
 		core->print->flags |= RZ_PRINT_FLAGS_REFS;
 		rz_cons_break_push(NULL, NULL);
-		print_hexdump(core->print, core->offset,
+		rz_core_print_hexdump(core, core->offset,
 			core->block, RZ_MIN(len, core->blocksize),
 			wordsize * 8, bitsize / 8, 1);
 		rz_cons_break_pop();
@@ -5671,7 +5664,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'x': // "pxx"
 			if (l != 0) {
 				core->print->flags |= RZ_PRINT_FLAGS_NONHEX;
-				print_hexdump(core->print, core->offset,
+				rz_core_print_hexdump(core, core->offset,
 					core->block, len, 8, 1, 1);
 				core->print->flags &= ~RZ_PRINT_FLAGS_NONHEX;
 			}
@@ -5682,7 +5675,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				if (buf) {
 					rz_io_read_at(core->io, core->offset, buf, len * 4);
 					core->print->flags |= RZ_PRINT_FLAGS_NONHEX;
-					print_hexdump(core->print, core->offset, buf, len * 4, 8, 1, 1);
+					rz_core_print_hexdump(core, core->offset, buf, len * 4, 8, 1, 1);
 					core->print->flags &= ~RZ_PRINT_FLAGS_NONHEX;
 					free(buf);
 				}
@@ -5744,7 +5737,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				if (from == to && !from) {
 					rz_core_block_size(core, len);
 					len = core->blocksize;
-					print_hexdump(core->print, core->offset,
+					rz_core_print_hexdump(core, core->offset,
 						core->block, core->blocksize, 16, 1, 1);
 				} else {
 					rz_core_print_cmp(core, from, to);
@@ -5762,7 +5755,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		case 'o': // "pxo"
 			if (l != 0) {
-				print_hexdump(core->print, core->offset,
+				rz_core_print_hexdump(core, core->offset,
 					core->block, len, 8, 1, 1);
 			}
 			break;
@@ -5794,7 +5787,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 						rz_print_jsondump(core->print, core->block,
 							len, 8);
 					} else {
-						print_hexdump(core->print, core->offset,
+						rz_core_print_hexdump(core, core->offset,
 							core->block, len, -1, 4, 1);
 					}
 					break;
@@ -5804,7 +5797,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 						rz_print_jsondump(core->print, core->block,
 							len, 16);
 					} else {
-						print_hexdump(core->print, core->offset,
+						rz_core_print_hexdump(core, core->offset,
 							core->block, len, -10, 2, 1);
 					}
 					break;
@@ -5813,7 +5806,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 						rz_print_jsondump(core->print, core->block,
 							len, 64);
 					} else {
-						print_hexdump(core->print, core->offset,
+						rz_core_print_hexdump(core, core->offset,
 							core->block, len, -8, 4, 1);
 					}
 					break;
@@ -5826,7 +5819,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 						rz_print_jsondump(core->print, core->block,
 							len, 32);
 					} else {
-						print_hexdump(core->print, core->offset,
+						rz_core_print_hexdump(core, core->offset,
 							core->block, len, 10, 4, 1);
 					}
 					break;
@@ -5841,7 +5834,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				if (input[2] == 'j') {
 					rz_print_jsondump(core->print, core->block, len, 32);
 				} else {
-					print_hexdump(core->print, core->offset, core->block, len, 32, 4, 1);
+					rz_core_print_hexdump(core, core->offset, core->block, len, 32, 4, 1);
 				}
 			}
 			break;
@@ -5921,7 +5914,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				if (input[2] == 'j') {
 					rz_print_jsondump(core->print, core->block, len, 16);
 				} else {
-					print_hexdump(core->print, core->offset,
+					rz_core_print_hexdump(core, core->offset,
 						core->block, len, 32, 2, 1);
 				}
 			}
@@ -5968,7 +5961,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				if (input[2] == 'j') {
 					rz_print_jsondump(core->print, core->block, len, 64);
 				} else {
-					print_hexdump(core->print, core->offset, core->block, len, 64, 8, 1);
+					rz_core_print_hexdump(core, core->offset, core->block, len, 64, 8, 1);
 				}
 			}
 			break;
@@ -6019,7 +6012,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 's': // "pxs"
 			if (l) {
 				core->print->flags |= RZ_PRINT_FLAGS_SPARSE;
-				print_hexdump(core->print, core->offset, core->block, len, 16, 1, 1);
+				rz_core_print_hexdump(core, core->offset, core->block, len, 16, 1, 1);
 				core->print->flags &= (((ut32)-1) & (~RZ_PRINT_FLAGS_SPARSE));
 			}
 			break;
@@ -6141,7 +6134,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 						len = core->blocksize;
 					}
 					rz_core_block_read(core);
-					print_hexdump(core->print, rz_core_pava(core, core->offset),
+					rz_core_print_hexdump(core, rz_core_pava(core, core->offset),
 						core->block, len, 16, 1, 1);
 				} else {
 					rz_core_print_cmp(core, from, to);
