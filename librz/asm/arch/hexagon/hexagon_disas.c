@@ -14,6 +14,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_util/rz_hex.h>
+#include <rz_util/rz_strbuf.h>
 #include <rz_analysis.h>
 #include "hexagon.h"
 #include "hexagon_insn.h"
@@ -53661,5 +53662,6 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 		sprintf(hi->mnem_infix, "invalid");
 		sprintf(hi->mnem, "%s%s%s", hi->pkt_info.mnem_prefix, hi->mnem_infix, hi->pkt_info.mnem_postfix);
 	}
+
 	return 4;
 }

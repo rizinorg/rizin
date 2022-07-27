@@ -5,6 +5,7 @@
 #ifndef RZ_ASM_H
 #define RZ_ASM_H
 
+#include <rz_util/rz_print.h>
 #include <rz_types.h>
 #include <rz_bin.h> // only for binding, no hard dep required
 #include <rz_util.h>
@@ -70,6 +71,7 @@ typedef struct rz_asm_op_t {
 	RzStrBuf buf;
 	RzStrBuf buf_asm;
 	RzBuffer *buf_inc; // must die
+	RzAsmTokenString *asm_toks; ///< Tokenized asm string.
 } RzAsmOp;
 
 typedef struct rz_asm_code_t {
@@ -116,6 +118,7 @@ typedef struct rz_asm_t {
 	int pcalign;
 	int dataalign;
 	int bitshift;
+	bool immsign; // Print signed immediates as negative values, not their unsigned representation.
 	bool immdisp; // Display immediates with # symbol (for arm architectures). false = show hashs
 	bool utf8; // Flag for plugins: Use utf-8 characters.
 	HtPP *flags;
@@ -197,6 +200,16 @@ RZ_API int rz_asm_op_set_hex(RzAsmOp *op, const char *str);
 RZ_API int rz_asm_op_set_hexbuf(RzAsmOp *op, const ut8 *buf, int len);
 RZ_API void rz_asm_op_set_buf(RzAsmOp *op, const ut8 *str, int len);
 RZ_API ut8 *rz_asm_op_get_buf(RzAsmOp *op);
+
+// String tokenizing
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_new(const char *asm_str);
+RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks);
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAsmTokenString *toks);
+RZ_API void rz_asm_token_pattern_free(void *p);
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzPVector /* RzAsmTokenPattern* */ *patterns);
+RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(RZ_NULLABLE const RzReg *reg, ut32 ana_op_type);
+RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE const RzAsmParseParam *param);
+RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NULLABLE const RzAsmParseParam *param, RZ_NULLABLE const RzAsmTokenString *toks);
 
 /* plugin pointers */
 extern RzAsmPlugin rz_asm_plugin_6502;

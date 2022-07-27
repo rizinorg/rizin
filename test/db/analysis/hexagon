@@ -686,28 +686,28 @@ EXPECT=<<EOF
 ?   nop
 {   loop0(0x8,#0x3) }
 {   P0 = R13
-   immext(##0x0)
-   R23:22 = memb_fifo(R27=##0x3) }
+    immext(##0x0)
+    R23:22 = memb_fifo(R27=##0x3) }
 {   loop1(0x18,#0x2) }
 {   nop
-   R7 = R28
-   immext(##0x0)
-   memb(R10=##0x7) = R4 }
+    R7 = R28
+    immext(##0x0)
+    memb(R10=##0x7) = R4 }
 {   R4 = R3
-   nop
-   nop }:endloop01
+    nop
+    nop }:endloop01
 {   nop }
 {   loop1(0x3c,#0x3) }
 {   P0 = R13
-   immext(##0x0)
-   R23:22 = memb_fifo(R27=##0x3) }
+    immext(##0x0)
+    R23:22 = memb_fifo(R27=##0x3) }
 {   jump 0x48 }
 {   loop0(0x50,#0x2) }
 {   R7 = R28
-   nop }:endloop0
+    nop }:endloop0
 {   R4 = R3
-   nop
-   nop }:endloop1
+    nop
+    nop }:endloop1
 EOF
 RUN
 

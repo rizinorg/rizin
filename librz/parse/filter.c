@@ -3,6 +3,8 @@
 // SPDX-FileCopyrightText: 2009-2019 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_str.h"
+#include <rz_regex.h>
 #include <stdio.h>
 
 #include <rz_types.h>
@@ -164,6 +166,22 @@ static void __replaceRegisters(RzReg *reg, char *s, bool x86) {
 	}
 }
 
+/**
+ * \brief Checks if the given asm string is an x86 "lea" instruction.
+ *
+ * \param asm_str The asm string.
+ * \return true The asm string represents a "lea" instruction.
+ * \return false Otherwise.
+ */
+static bool is_lea(const char *asm_str) {
+	rz_return_val_if_fail(asm_str, false);
+	bool colored = asm_str[0] == '\x1b';
+	if (!colored) {
+		return strlen(asm_str) > 4 && rz_str_startswith_icase(asm_str, "lea") && asm_str[3] == ' ';
+	}
+	return rz_regex_match("(^\x1b\\[[[:digit:]]{1,3}mlea\x1b\\[0m.+)", "ei", asm_str) != RZ_REGEX_NOMATCH;
+}
+
 static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2, *ptr_backup;
 	RzAnalysisFunction *fcn;
@@ -247,7 +265,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			}
 			if (f) {
 				RzFlagItem *flag2;
-				bool lea = x86 && rz_str_startswith_icase(data, "lea") && (data[3] == ' ' || data[3] == 0x1b);
+				bool lea = x86 && is_lea(data);
 				bool remove_brackets = false;
 				flag = p->flag_get(f, off);
 				if ((!flag || arm) && p->subrel_addr) {

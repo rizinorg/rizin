@@ -9,3 +9,11 @@ tbnz x0, 0x20, 0x100004008
 tbnz x0, 0x20, 0xffff800c
 EOF
 RUN
+
+NAME=color pi
+FILE=bins/elf/analysis/x64-loop
+CMDS=e scr.color=1 ; pi 1
+EXPECT=<<EOF
+[36mxor[0m[37m [0m[36mebp[0m[37m, [0m[36mebp[0m
+EOF
+RUN

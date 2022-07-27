@@ -49,6 +49,7 @@ ec func_var_type rgb:805000
 ec func_var_addr rgb:906000
 ec widget_bg rgb:d0b070 rgb:000000
 ec widget_sel rgb:000000 rgb:f0e0c0
+ec meta rgb:767676
 ec ai.read rgb:c0b070
 ec ai.write rgb:c0a060
 ec ai.exec rgb:d0b070
@@ -161,6 +162,7 @@ EXPECT=<<EOF
  [36m##[0m  func_var_addr
  [40m##[0m  widget_bg
  [41m##[0m  widget_sel
+ [90m##[0m  meta
  [32m##[0m  ai.read
  [34m##[0m  ai.write
  [31m##[0m  ai.exec
@@ -231,6 +233,7 @@ EXPECT=<<EOF
  [96m##[0m  func_var_addr
  [40m##[0m  widget_bg
  [101m##[0m  widget_sel
+ [90m##[0m  meta
  [92m##[0m  ai.read
  [94m##[0m  ai.write
  [91m##[0m  ai.exec
