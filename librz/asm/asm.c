@@ -1708,7 +1708,8 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
  * Every <op> (which is not a number) is parsed as a register. Unless a register profile is given.
  * In this case <op> is only parsed as register if it occurs in the register profile. Otherwise as UNKNOWN.
  *
- * DEPRECATED: Please implement your custom parsing method and set RzArchOpcode.XXX.
+ * DEPRECATED: Please implement your custom parsing method and set RzAsmOp.asm_toks.
+ * Check out the Hexagon plugin for an example implementation.
  *
  */
 RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE const RzAsmParseParam *param) {
@@ -1722,8 +1723,10 @@ RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_string(RZ_BORRO
  * If \p toks is NULL it parses the asm string generically into tokens and colorizes it afterwards.
  * \p param can be set to alter the generic parsing method.
  *
- * DEPRECATED: This is only a helper method until all plugins generate tokenized asm strings.
+ * DEPRECATED: This is only a helper method until all plugins set RzAsmOp.asm_toks.
  * Please check if this is already the case before using this function.
+ * If you want to implement the token parsing of the asm string take a look at the Hexagon plugin
+ * for an example.
  *
  * \param asm_str The plain asm string.
  * \param p The RzPrint object which holds the color palette to use.
