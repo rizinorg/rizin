@@ -215,6 +215,7 @@ rz_asm_sources = [
   'arch/rsp/rsp_idec.c',
   'arch/sh/disassembler.c',
   'arch/sh/assembler.c',
+  'arch/sh/lookup.c',
   #'arch/snes/snesdis.c',
   #'arch/spc700/spc700dis.c',
   'arch/tms320/c55x_plus/c55plus.c',
