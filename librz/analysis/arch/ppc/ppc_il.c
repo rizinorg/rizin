@@ -751,7 +751,7 @@ bool is_mul_div_u(const ut32 id) {
 
 /**
  * \brief Assembles the current XER value by combining the values
- * from the flag registers so, ov, ca, ov32, ca32.
+ * from the flag registers so, ov, ca.
  *
  * \param mode The capstone mode.
  *
@@ -761,16 +761,14 @@ RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode) {
 	RzILOpPure *so = SHIFTL0(EXTZ(BOOL_TO_BV(VARG("so"), 1)), U8(31));
 	RzILOpPure *ov = SHIFTL0(EXTZ(BOOL_TO_BV(VARG("ov"), 1)), U8(30));
 	RzILOpPure *ca = SHIFTL0(EXTZ(BOOL_TO_BV(VARG("ca"), 1)), U8(29));
-	if (IN_64BIT_MODE) {
-		RzILOpPure *ov32 = SHIFTL0(EXTZ(BOOL_TO_BV(VARG("ov32"), 1)), U8(19));
-		RzILOpPure *ca32 = SHIFTL0(EXTZ(BOOL_TO_BV(VARG("ca32"), 1)), U8(18));
-		return LOGOR(LOGOR(LOGOR(LOGOR(so, ov), ca), ov32), ca32);
-	}
+	// For ISA v3 CPUs register ca32 and ov32 should be handled here as well.
+	// Currently they are ignored. If you want to add them take a look at:
+	// https://github.com/Rot127/rizin/tree/Examples-ppc-rzil-isav3-regs
 	return LOGOR(LOGOR(so, ov), ca);
 }
 
 /**
- * \brief Sets the XER register to \p val and sets the flag register so, ov, ca, ov32, ca32 accordingly.
+ * \brief Sets the XER register to \p val and sets the flag register so, ov, ca accordingly.
  *
  * \param val The new value of XER.
  * \param mode The capstone mode.
@@ -779,18 +777,13 @@ RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode) {
 RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode) {
 	rz_return_val_if_fail(val, NULL);
 	RzILOpPure *v = UNSIGNED(64, val);
-	if (IN_64BIT_MODE) {
-		return SEQ7(SETL("v", v), SETG("xer", VARL("v")),
-			SETG("so", BIT_IS_SET(VARL("v"), 64, U8(32))),
-			SETG("ov", BIT_IS_SET(VARL("v"), 64, U8(33))),
-			SETG("ca", BIT_IS_SET(VARL("v"), 64, U8(34))),
-			SETG("ov32", BIT_IS_SET(VARL("v"), 64, U8(44))),
-			SETG("ca32", BIT_IS_SET(VARL("v"), 64, U8(45))));
-	}
 	return SEQ5(SETL("v", v), SETG("xer", VARL("v")),
 		SETG("so", BIT_IS_SET(VARL("v"), 64, U8(32))),
 		SETG("ov", BIT_IS_SET(VARL("v"), 64, U8(33))),
 		SETG("ca", BIT_IS_SET(VARL("v"), 64, U8(34))));
+	// For ISA v3 CPUs register ca32 and ov32 should be handled here as well.
+	// Currently they are ignored. If you want to add them take a look at:
+	// https://github.com/Rot127/rizin/tree/Examples-ppc-rzil-isav3-regs
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

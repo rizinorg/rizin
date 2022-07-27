@@ -465,9 +465,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"ctr	ppr32	.32	2580	0	# Process Priority Register 32-bit\n"
 			"flg	so	.1	2584	0	# Summary Overflow\n"
 			"flg	ov	.1	2585	0	# Overflow\n"
-			"flg	ca	.1	2586	0	# Carry\n"
-			"flg	ov32	.1	2587	0	# Overflow 32\n"
-			"flg	ca32	.1	2588	0	# Carry 32\n";
+			"flg	ca	.1	2586	0	# Carry\n";
 		return strdup(p);
 	} else {
 		p =
@@ -727,9 +725,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"ctr	ppr32	.32	2580	0	# Process Priority Register 32-bit\n"
 			"flg	so	.1	2584	0	# Summary Overflow\n"
 			"flg	ov	.1	2585	0	# Overflow\n"
-			"flg	ca	.1	2586	0	# Carry\n"
-			"flg	ov32	.1	2587	0	# Overflow 32\n"
-			"flg	ca32	.1	2588	0	# Carry 32\n";
+			"flg	ca	.1	2586	0	# Carry\n";
 		return strdup(p);
 	}
 }
