@@ -609,7 +609,7 @@ static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, co
 }
 
 /**
- * NOTE: Instructions which set the 'OV' bit are not yet supported by capstone.
+ * NOTE: Instructions which set the 'OV' bit are not yet supported by Capstone.
  */
 static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
@@ -626,10 +626,10 @@ static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	RzILOpPure *op1;
 	RzILOpPure *prod;
 
-	// How to read instruction ids:
+	// How to read instruction IDs:
 	// Letter			Meaning
-	// MUL/DIV 			Multiply/Divide
-	// W/D/LW/HW/LI		Word, Double WOrd, Low word, high word, low immediate
+	// MUL/DIV 			Multiply, Divide
+	// W/D/LW/HW/LI		Word, double word, low word, high word, Low immediate
 	// O/U/E			Overflow (not supported), Unsigned, Extended
 
 	if (id == PPC_INS_MULLI) {
