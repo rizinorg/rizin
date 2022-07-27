@@ -30,12 +30,6 @@
 #define SH_TRUE      SH_U_REG(1)
 #define SH_FALSE     SH_U_REG(0)
 
-#define sh_return_val_if_invalid_gpr(x, v) \
-	if (!sh_valid_gpr(x)) { \
-		RZ_LOG_ERROR("RzIL: SuperH: Invalid register r%u\n", x); \
-		return v; \
-	}
-
 #define sh_il_get_pure_param(x) \
 	sh_il_get_param(op->param[x], op->scaling).pure
 
@@ -225,7 +219,6 @@ static RzILOpPure *sh_il_get_privilege_ctx(SHILContext *ctx) {
  * \return RzILOpPure*
  */
 static RzILOpPure *sh_il_get_reg_ctx(ut16 reg, SHILContext *ctx) {
-	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
 		if (reg == SH_REG_IND_SR) {
 			return sh_il_get_status_reg();
@@ -249,7 +242,6 @@ static RzILOpPure *sh_il_get_reg_ctx(ut16 reg, SHILContext *ctx) {
  * \return RzILOpEffect*
  */
 static RzILOpEffect *sh_il_set_reg_ctx(ut16 reg, RZ_OWN RzILOpPure *val, SHILContext *ctx) {
-	sh_return_val_if_invalid_gpr(reg, NULL);
 	if (!sh_banked_reg(reg)) {
 		if (reg == SH_REG_IND_SR) {
 			return sh_il_set_status_reg(val);

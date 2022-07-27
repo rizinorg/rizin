@@ -127,9 +127,7 @@ const SHOpRaw sh_op_lookup[] = {
 	{ "bsrf", SH_OP_BSRF, OPCODE(0, N, 0, 3), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_PC_RELATIVE_REG), NOPARAM } },
 	{ "jmp", SH_OP_JMP, OPCODE(4, N, 2, b), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_INDIRECT), NOPARAM } },
 	{ "jsr", SH_OP_JSR, OPCODE(4, N, 0, b), 0x0f00, SH_SCALING_INVALID, { ADDR(NIB2, SH_REG_INDIRECT), NOPARAM } },
-	// ^ jmp and jsr disassembly should ideally print @Rn (indirect access), but that doesn't make sense from the analysis POV
-	// so for the sake of simplicity, only Rn (direct access) will be printed
-	{ "rts", SH_OP_JSR, OPCODE(0, 0, 0, b), 0x0000, SH_SCALING_INVALID, { NOPARAM, NOPARAM } },
+	{ "rts", SH_OP_RTS, OPCODE(0, 0, 0, b), 0x0000, SH_SCALING_INVALID, { NOPARAM, NOPARAM } },
 
 	/* system control instructions */
 	{ "clrmac", SH_OP_CLRMAC, OPCODE(0, 0, 2, 8), 0x0000, SH_SCALING_INVALID, { NOPARAM, NOPARAM } },
