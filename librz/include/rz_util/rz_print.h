@@ -6,6 +6,7 @@
 #include "rz_bind.h"
 #include "rz_io.h"
 #include "rz_reg.h"
+#include <rz_util/rz_strbuf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +41,62 @@ typedef char *(*RzPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RzPrintSectionGet)(void *user, ut64 addr);
 typedef const char *(*RzPrintColorFor)(void *user, ut64 addr, bool verbose);
 typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, int mode);
+
+typedef enum {
+	RZ_ASM_TOKEN_UNKNOWN = 0, //< Does not fit to any token below.
+	RZ_ASM_TOKEN_MNEMONIC, //< Asm mnemonics like: mov, push, lea...
+	RZ_ASM_TOKEN_OPERATOR, //< Arithmetic operators: +,-,<< etc.
+	RZ_ASM_TOKEN_NUMBER, //< Numbers
+	RZ_ASM_TOKEN_REGISTER, //< Registers
+	RZ_ASM_TOKEN_SEPARATOR, //< Brackets, comma etc.
+	RZ_ASM_TOKEN_META, //< Meta information (e.g Hexagon packet prefix, ARM & Hexagon number prefix).
+
+	RZ_ASM_TOKEN_LAST,
+} RzAsmTokenType;
+
+/**
+ *  \brief A token of an asm string holding meta data.
+ */
+typedef struct {
+	size_t start; //< byte-offset into `str` where this token starts. Must be exactly at a utf-8 codepoint boundary.
+	size_t len; //< `str` length of token in bytes.
+	RzAsmTokenType type;
+	union {
+		ut64 number; //< Number of RZ_ASM_TOKEN_NUMBER
+	} val;
+} RzAsmToken;
+
+/**
+ * \brief An tokenized asm string.
+ */
+typedef struct {
+	ut32 op_type; ///< RzAnalysisOpType. Mnemonic color depends on this.
+	RzStrBuf *str; //< Contains the raw asm string
+	RzVector /* <RzAsmToken> */ *tokens; //< Contains only the tokenization meta-info without strings, ordered by start for log2(n) access
+} RzAsmTokenString;
+
+typedef struct {
+	const RzRegSet *reg_sets; ///< Array of reg sets used to lookup register names during parsing.
+	ut32 ana_op_type; ///< Analysis op type (see: _RzAnalysisOpType) of the token string to parse.
+} RzAsmParseParam;
+
+/**
+ * \brief Pattern for a asm string token.
+ */
+typedef struct {
+	RzAsmTokenType type; //< Asm token type.
+	char *pattern; //< The regex pattern describing the tokens.
+	RzRegex *regex; //< Compiled regex pattern.
+} RzAsmTokenPattern;
+
+/**
+ * \brief Holds certain options to alter the colorizing of asm strings.
+ *
+ */
+typedef struct {
+	bool reset_bg; // Reset the background color?
+	ut64 hl_addr; // Address which should be highlighted. Usually the function address.
+} RzPrintAsmColorOpts;
 
 typedef struct rz_print_zoom_t {
 	ut8 *buf;
@@ -122,6 +179,7 @@ typedef struct rz_print_t {
 	ut64 screen_bounds;
 	// Memoized current row number to calculate screen_bounds
 	int rows;
+	RzPrintAsmColorOpts colorize_opts; ///< Coloize options for asm strings.
 } RzPrint;
 
 #ifdef RZ_API
@@ -172,8 +230,7 @@ RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, 
 RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
 RZ_API void rz_print_progressbar(RzPrint *pr, int pc, int _cols);
 RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
-RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
-RZ_API const char *rz_print_color_op_type(RzPrint *p, ut32 analysis_type);
+RZ_API const char *rz_print_color_op_type(RZ_NONNULL RzPrint *p, ut32 /* RzAnalaysisOpType */ analysis_type);
 RZ_API void rz_print_init_rowoffsets(RzPrint *p);
 RZ_API ut32 rz_print_rowoff(RzPrint *p, int i);
 RZ_API void rz_print_set_rowoff(RzPrint *p, int i, ut32 offset, bool overwrite);
@@ -185,6 +242,7 @@ RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, co
 RZ_API char *rz_print_json_human(const char *s);
 RZ_API char *rz_print_json_path(const char *s, int pos);
 
+RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks);
 #endif
 
 #ifdef __cplusplus

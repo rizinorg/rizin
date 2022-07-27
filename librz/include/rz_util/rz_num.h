@@ -103,6 +103,7 @@ RZ_API size_t rz_num_base_of_string(RzNum *num, RZ_NONNULL const char *str);
 RZ_API double rz_num_cos(double a);
 RZ_API double rz_num_sin(double a);
 RZ_API double rz_num_get_float(RzNum *num, const char *str);
+RZ_API bool rz_num_is_hex_prefix(const char *p);
 
 static inline st64 rz_num_abs(st64 num) {
 	return num < 0 ? -num : num;

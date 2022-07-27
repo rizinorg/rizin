@@ -16,6 +16,7 @@
 #include <rz_config.h>
 #include <rz_list.h>
 #include <rz_types.h>
+#include <rz_util/rz_print.h>
 
 #define HEX_MAX_OPERANDS    6
 #define HEX_PARSE_BITS_MASK 0xc000
@@ -135,6 +136,7 @@ typedef struct {
 	RzList *const_ext_l; // Constant extender values.
 	RzAsm rz_asm; // Copy of RzAsm struct. Holds certain flags of interesed for disassembly formatting.
 	RzConfig *cfg;
+	RzPVector /* RzAsmTokenPattern* */ *token_patterns; ///< PVector with token patterns. Priority ordered.
 } HexState;
 
 typedef enum {

@@ -246,6 +246,7 @@ typedef struct rz_cons_palette_t {
 	RzColor func_var_addr;
 	RzColor widget_bg;
 	RzColor widget_sel;
+	RzColor meta;
 
 	/* Graph colors */
 	RzColor graph_box;
@@ -322,6 +323,7 @@ typedef struct rz_cons_printable_palette_t {
 	char *func_var_addr;
 	char *widget_bg;
 	char *widget_sel;
+	char *meta;
 
 	/* graph colors */
 	char *graph_box;

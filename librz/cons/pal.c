@@ -57,6 +57,7 @@ static struct {
 	{ "func_var_addr", rz_offsetof(RzConsPrintablePalette, func_var_addr), rz_offsetof(RzConsPalette, func_var_addr) },
 	{ "widget_bg", rz_offsetof(RzConsPrintablePalette, widget_bg), rz_offsetof(RzConsPalette, widget_bg) },
 	{ "widget_sel", rz_offsetof(RzConsPrintablePalette, widget_sel), rz_offsetof(RzConsPalette, widget_sel) },
+	{ "meta", rz_offsetof(RzConsPrintablePalette, meta), rz_offsetof(RzConsPalette, meta) },
 
 	{ "ai.read", rz_offsetof(RzConsPrintablePalette, ai_read), rz_offsetof(RzConsPalette, ai_read) },
 	{ "ai.write", rz_offsetof(RzConsPrintablePalette, ai_write), rz_offsetof(RzConsPalette, ai_write) },
@@ -209,6 +210,7 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.gui_alt_background = (RzColor)RzColor_WHITE;
 	ctx->cpal.gui_border = (RzColor)RzColor_BLACK;
 	ctx->cpal.wordhl = (RzColor)RzColor_BGRED;
+	ctx->cpal.meta = (RzColor)RzColor_GRAY;
 	// No good choice for fallback ansi16 color
 #if __WINDOWS__
 	ctx->cpal.linehl = (RzColor)RZCOLOR(ALPHA_BG, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 4);

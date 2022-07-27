@@ -1,8 +1,20 @@
 // SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <ctype.h>
+#include <rz_util/rz_str.h>
+#include <rz_list.h>
+#include <rz_regex.h>
+#include <rz_types.h>
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_strbuf.h>
+#include <rz_vector.h>
 #include <rz_util/rz_print.h>
 #include <rz_analysis.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define DFLT_ROWS 16
 
@@ -1406,8 +1418,9 @@ RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int s
 	}
 }
 
-// probably move somewhere else. RzPrint doesnt needs to know about the RZ_ANALYSIS_ enums
-RZ_API const char *rz_print_color_op_type(RzPrint *p, ut32 analysis_type) {
+// Probably move somewhere else. RzPrint doesn't need to know about the RZ_ANALYSIS_ enums
+RZ_API const char *rz_print_color_op_type(RZ_NONNULL RzPrint *p, ut32 /* RzAnalaysisOpType */ analysis_type) {
+	rz_return_val_if_fail(p, NULL);
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
 	switch (analysis_type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_NOP:
@@ -1487,222 +1500,6 @@ RZ_API const char *rz_print_color_op_type(RzPrint *p, ut32 analysis_type) {
 	default:
 		return pal->invalid;
 	}
-}
-
-// Global buffer to speed up colorizing performance
-#define COLORIZE_BUFSIZE 1024
-static char o[COLORIZE_BUFSIZE];
-
-static bool issymbol(char c) {
-	switch (c) {
-	case '+':
-	case '-':
-	/* case '/': not good for dalvik */
-	case '>':
-	case '<':
-	case '(':
-	case ')':
-	case '*':
-	case '%':
-	case ']':
-	case '[':
-	case ',':
-	case ' ':
-	case '{':
-	case '}':
-		return true;
-	default:
-		return false;
-	}
-}
-
-static bool check_arg_name(RzPrint *print, char *p, ut64 func_addr) {
-	if (func_addr && print->exists_var) {
-		int z;
-		for (z = 0; p[z] && (isalpha((int)p[z]) || isdigit((int)p[z]) || p[z] == '_'); z++) {
-			;
-		}
-		char tmp = p[z];
-		p[z] = '\0';
-		bool ret = print->exists_var(print, func_addr, p);
-		p[z] = tmp;
-		return ret;
-	}
-	return false;
-}
-
-static bool ishexprefix(char *p) {
-	return (p[0] == '0' && p[1] == 'x');
-}
-
-RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
-	int i, j, k, is_mod, is_float = 0, is_arg = 0;
-	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
-	ut32 c_reset = strlen(reset);
-	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a'))) ? 1 : 0;
-	ut32 opcode_sz = p && *p ? strlen(p) * 10 + 1 : 0;
-	char previous = '\0';
-	const char *color_flag = print->cons->context->pal.flag;
-
-	if (!p || !*p) {
-		return NULL;
-	}
-	if (is_jmp) {
-		return strdup(p);
-	}
-	if (opcode_sz > COLORIZE_BUFSIZE) {
-		/* return same string in case of error */
-		return strdup(p);
-	}
-
-	memset(o, 0, COLORIZE_BUFSIZE);
-	for (i = j = 0; p[i]; i++, j++) {
-		/* colorize numbers */
-		if ((ishexprefix(&p[i]) && previous != ':') || (isdigit((ut8)p[i]) && issymbol(previous))) {
-			const char *num2 = num;
-			ut64 n = rz_num_get(NULL, p + i);
-			const char *name = print->offname(print->user, n) ? color_flag : NULL;
-			if (name) {
-				num2 = name;
-			}
-			int nlen = strlen(num2);
-			if (nlen + j >= sizeof(o)) {
-				eprintf("Colorize buffer is too small\n");
-				break;
-			}
-			memcpy(o + j, num2, nlen + 1);
-			j += nlen;
-		}
-		previous = p[i];
-		if (j + 100 >= COLORIZE_BUFSIZE) {
-			eprintf("rz_print_colorize_opcode(): buffer overflow!\n");
-			return strdup(p);
-		}
-		switch (p[i]) {
-		// We dont need to skip ansi codes.
-		// original colors must be preserved somehow
-		case 0x1b:
-#define STRIP_ANSI 1
-#if STRIP_ANSI
-			/* skip until 'm' */
-			for (++i; p[i] && p[i] != 'm'; i++) {
-				o[j] = p[i];
-			}
-			j--;
-			continue;
-#else
-			/* copy until 'm' */
-			for (; p[i] && p[i] != 'm'; i++) {
-				o[j++] = p[i];
-			}
-			o[j++] = p[i++];
-#endif
-		case '+':
-		case '-':
-		case '/':
-		case '>':
-		case '<':
-		case '(':
-		case ')':
-		case '*':
-		case '%':
-		case ']':
-		case '[':
-		case ',':
-			/* ugly trick for dalvik */
-			if (is_float) {
-				/* do nothing, keep going until next */
-				is_float = 0;
-			} else if (is_arg) {
-				if (c_reset + j + 10 >= COLORIZE_BUFSIZE) {
-					eprintf("rz_print_colorize_opcode(): buffer overflow!\n");
-					return strdup(p);
-				}
-
-				bool found_var = check_arg_name(print, p + i + 1, func_addr);
-				strcpy(o + j, reset);
-				j += strlen(reset);
-				o[j] = p[i];
-				if (!(p[i + 1] == '$' || ((p[i + 1] > '0') && (p[i + 1] < '9')))) {
-					const char *color = found_var ? print->cons->context->pal.func_var_type : reg;
-					ut32 color_len = strlen(color);
-					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
-						eprintf("rz_print_colorize_opcode(): buffer overflow!\n");
-						return strdup(p);
-					}
-					strcpy(o + j + 1, color);
-					j += strlen(color);
-				}
-				continue;
-			}
-			break;
-		case ' ':
-			is_arg = 1;
-			// find if next ',' before ' ' is found
-			is_mod = 0;
-			is_float = 0;
-			for (k = i + 1; p[k]; k++) {
-				if (p[k] == 'e' && p[k + 1] == '+') {
-					is_float = 1;
-					break;
-				}
-				if (p[k] == ' ') {
-					break;
-				}
-				if (p[k] == ',') {
-					is_mod = 1;
-					break;
-				}
-			}
-			if (is_float) {
-				strcpy(o + j, num);
-				j += strlen(num);
-			}
-			if (!p[k]) {
-				is_mod = 1;
-			}
-			if (is_mod) {
-				// COLOR FOR REGISTER
-				ut32 reg_len = strlen(reg);
-				/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
-				if (reg_len + j + 10 >= COLORIZE_BUFSIZE) {
-					eprintf("rz_print_colorize_opcode(): buffer overflow!\n");
-					return strdup(p);
-				}
-				strcpy(o + j, reg);
-				j += strlen(reg);
-			}
-			break;
-		case '0': /* address */
-			if (p[i + 1] == 'x') {
-				if (print->flags & RZ_PRINT_FLAGS_SECSUB) {
-					RzIOMap *map = print->iob.map_get(print->iob.io, rz_num_get(NULL, p + i));
-					if (map && map->name) {
-						if (strlen(map->name) + j + 1 >= COLORIZE_BUFSIZE) {
-							eprintf("stop before overflow\n");
-							break;
-						}
-						strcpy(o + j, map->name);
-						j += strlen(o + j);
-						strcpy(o + j, ".");
-						j++;
-					}
-				}
-			}
-			break;
-		}
-		o[j] = p[i];
-	}
-	// decolorize at the end
-	if (j + 20 >= opcode_sz) {
-		char *t_o = o;
-		/* o = malloc (opcode_sz+21); */
-		memmove(o, t_o, opcode_sz);
-		/* free (t_o); */
-	}
-	strcpy(o + j, reset);
-	// strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
-	return strdup(o);
 }
 
 // reset the status of row_offsets
@@ -1801,4 +1598,67 @@ RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize) 
 	}
 	p->cb_printf("]\n");
 	return words;
+}
+
+/**
+ * \brief Colorizes a tokenized asm string.
+ *
+ * \param p The RzPrint struct. Used to retrieve the color palette.
+ * \param toks The tokenized asm string.
+ * \param opt Options for colorizing. E.g. reset background color, an address to highlight etc.
+ *
+ * \return The colorized asm string.
+ */
+RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks) {
+	rz_return_val_if_fail(p && toks, NULL);
+	// Color palette.
+	RzConsPrintablePalette palette = p->cons->context->pal;
+	// Black white asm string.
+	char *bw_str = rz_strbuf_get(toks->str);
+	rz_return_val_if_fail(bw_str, NULL);
+	char *reset = p->colorize_opts.reset_bg ? Color_RESET_NOBG : Color_RESET;
+	// mnemonic color
+	const char *mnem_col = rz_print_color_op_type(p, toks->op_type);
+
+	RzStrBuf *out = rz_strbuf_new("");
+	rz_return_val_if_fail(out, NULL);
+
+	const char *color;
+	RzAsmToken *tok;
+	rz_vector_foreach(toks->tokens, tok) {
+		switch (tok->type) {
+		default:
+			rz_warn_if_reached();
+			return NULL;
+		case RZ_ASM_TOKEN_UNKNOWN:
+			color = palette.other;
+			break;
+		case RZ_ASM_TOKEN_MNEMONIC:
+			color = mnem_col;
+			break;
+		case RZ_ASM_TOKEN_NUMBER:
+			if (tok->val.number == p->colorize_opts.hl_addr && tok->val.number != 0) {
+				color = palette.func_var_type;
+			} else {
+				color = palette.num;
+			}
+			break;
+		case RZ_ASM_TOKEN_OPERATOR:
+		case RZ_ASM_TOKEN_SEPARATOR:
+			color = palette.other;
+			break;
+		case RZ_ASM_TOKEN_REGISTER:
+			color = palette.reg;
+			break;
+		case RZ_ASM_TOKEN_META:
+			color = palette.meta;
+			break;
+		}
+
+		rz_strbuf_append(out, color);
+		rz_strbuf_append_n(out, bw_str + tok->start, tok->len);
+		rz_strbuf_append(out, reset);
+	}
+	rz_strbuf_append(out, "\0");
+	return out;
 }
