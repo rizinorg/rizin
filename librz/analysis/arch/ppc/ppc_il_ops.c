@@ -639,12 +639,27 @@ static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		op0 = VARG(rA);
 		op1 = VARG(rB);
 	}
-	if (id == PPC_INS_MULHWU || id == PPC_INS_DIVWU || id == PPC_INS_MULHDU || id == PPC_INS_DIVDU) {
+
+	if (id == PPC_INS_MULHW || id == PPC_INS_MULLW || id == PPC_INS_DIVW) {
+		op0 = UNSIGNED(32, op0);
+		op1 = UNSIGNED(32, op1);
+	} else if (id == PPC_INS_DIVWU || id == PPC_INS_MULHWU) {
+		op0 = SIGNED(32, op0);
+		op1 = SIGNED(32, op1);
+	}
+
+	if (is_mul_div_u(id) && is_mul_div_d(id)) {
 		op0 = UNSIGNED(128, op0);
 		op1 = UNSIGNED(128, op1);
-	} else {
+	} else if (is_mul_div_u(id) && !is_mul_div_d(id)) {
+		op0 = UNSIGNED(64, op0);
+		op1 = UNSIGNED(64, op1);
+	} else if (!is_mul_div_u(id) && is_mul_div_d(id)) {
 		op0 = SIGNED(128, op0);
 		op1 = SIGNED(128, op1);
+	} else {
+		op0 = SIGNED(64, op0);
+		op1 = SIGNED(64, op1);
 	}
 
 	switch (id) {
@@ -660,11 +675,18 @@ static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		prod = MUL(op0, op1);
 		break;
 	case PPC_INS_DIVWU:
-	case PPC_INS_DIVW:
-	case PPC_INS_DIVD:
 	case PPC_INS_DIVDU:
 		prod = DIV(op0, op1);
 		break;
+	case PPC_INS_DIVW:
+	case PPC_INS_DIVD:
+		prod = SDIV(op0, op1);
+		break;
+	}
+
+	if (id == PPC_INS_MULHW || id == PPC_INS_MULHWU) {
+		// Get high word of product. Bits 0:32 are undefined.
+		prod = SHIFTR0(prod, U8(32));
 	}
 
 	RzILOpEffect *cr0 = set_cr0 ? cmp_set_cr(VARG(rT), UA(0), true, "cr0", mode) : EMPTY();
