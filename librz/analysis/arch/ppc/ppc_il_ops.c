@@ -365,7 +365,7 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 
 	// WRITE
 	RzILOpEffect *set;
-	RzILOpEffect *set_carry = set_ca ? set_carry_add_sub(DUP(op0), DUP(op1), mode, true) : NOP();
+	RzILOpEffect *set_carry = set_ca ? set_carry_add_sub(DUP(op0), DUP(op1), mode) : NOP();
 
 	// Instructions which set the OV bit are not supported in capstone.
 	// See: https://github.com/capstone-engine/capstone/issues/944
