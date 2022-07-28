@@ -7246,22 +7246,24 @@ RZ_IPI RzCmdStatus rz_print_bitstream_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_print_byte_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 cur_off = core->offset;
+	ut64 start = core->offset;
 	int len = (int)rz_num_math(core->num, argv[1]);
 	if (len < 0) {
+		start = core->offset + len;
 		len *= -1;
-		rz_core_seek(core, cur_off - len, SEEK_SET);
-		rz_core_block_read(core);
 	}
-	char *buf = RZ_NEWS0(char, len * 8 + 1);
-	if (!buf) {
+	ut8 *bit_buf = RZ_NEWS0(ut8, len);
+	char *str_buf = RZ_NEWS0(char, len * 8 + 1);
+	if (!bit_buf || !str_buf) {
 		RZ_LOG_ERROR("Fail to allocate memory\n");
+		free(bit_buf);
+		free(str_buf);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_str_bits(buf, core->block, len * 8, NULL);
-	rz_cons_println(buf);
-	rz_core_seek(core, cur_off, SEEK_SET);
-	rz_core_block_read(core);
-	free(buf);
+	rz_io_read_at(core->io, start, bit_buf, len);
+	rz_str_bits(str_buf, (const ut8 *)bit_buf, len * 8, NULL);
+	rz_cons_println(str_buf);
+	free(bit_buf);
+	free(str_buf);
 	return RZ_CMD_STATUS_OK;
 }
