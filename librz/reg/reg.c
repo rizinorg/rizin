@@ -90,7 +90,6 @@ RZ_API int rz_reg_type_by_name(const char *str) {
 	if (!strcmp(str, "all")) {
 		return RZ_REG_TYPE_ANY;
 	}
-	RZ_LOG_WARN("No register type for type abbreviation \"%s\".\n", str);
 	return -1;
 }
 

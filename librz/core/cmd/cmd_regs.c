@@ -66,6 +66,7 @@ static RzList *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
 	if (type >= 0) {
 		return rz_list_clone(reg->regset[type].regs);
 	}
+	// role
 	int role = rz_reg_role_by_name(filter);
 	if (role >= 0) {
 		const char *itemname = rz_reg_get_name(reg, role);

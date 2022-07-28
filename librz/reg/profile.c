@@ -30,6 +30,17 @@ static void rz_reg_profile_alias_free(RzRegProfileAlias *alias) {
 }
 
 /**
+ * Like rz_reg_type_by_name, but warn if non-existent
+ */
+static int expect_reg_type_by_name(const char *str) {
+	int r = rz_reg_type_by_name(str);
+	if (r < 0) {
+		RZ_LOG_WARN("No register type for type abbreviation \"%s\".\n", str);
+	}
+	return r;
+}
+
+/**
  * \brief Parses a register type string.
  *
  * The type string must be of the following form:
@@ -49,11 +60,11 @@ static bool parse_type(RZ_OUT RzRegProfileDef *def, const char *type_str) {
 	char *at = strchr(s, '@');
 	if (at) {
 		// This register has a secondary type e.g. xmm@fpu
-		def->arena_type = rz_reg_type_by_name(at + 1);
+		def->arena_type = expect_reg_type_by_name(at + 1);
 		s[at - s] = '\0';
-		def->type = rz_reg_type_by_name(s);
+		def->type = expect_reg_type_by_name(s);
 	} else {
-		def->type = rz_reg_type_by_name(s);
+		def->type = expect_reg_type_by_name(s);
 		def->arena_type = def->type;
 		if (def->type == RZ_REG_TYPE_FLG) { // Hack to put flgs into gpr arena.
 			def->arena_type = RZ_REG_TYPE_GPR;
