@@ -95,6 +95,6 @@ RZ_API RzList *rz_debug_map_list_new(void) {
  * \param user_map Boolean value, if true return memory maps belonging to user space else return memory maps belonging to kernel space
  * \return
  */
-RZ_API RzList *rz_debug_map_list(RzDebug *dbg, bool user_map) {
+RZ_API RZ_BORROW RzList *rz_debug_map_list(RzDebug *dbg, bool user_map) {
 	return user_map ? dbg->maps_user : dbg->maps;
 }

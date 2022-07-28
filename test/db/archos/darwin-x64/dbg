@@ -33,3 +33,37 @@ lea rsi, reloc.objc_msgSend_fixup
 EOF
 RUN
 
+NAME=maps
+FILE=bins/mach0/hello-objc-osx
+ARGS=-d
+CMDS=<<EOF
+dm~hello
+EOF
+REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
+EXPECT=<<EOF
+0x0000000100000000 - 0x0000000100001000 - usr     4K u r-x hello-objc-osx hello-objc-osx hello_objc_osx.r_x
+0x0000000100001000 - 0x0000000100002000 - usr     4K u rw- hello-objc-osx hello-objc-osx hello_objc_osx.rw
+0x0000000100002000 - 0x0000000100003000 - usr     4K u r-- hello-objc-osx hello-objc-osx hello_objc_osx.r
+EOF
+RUN
+
+NAME=maps as flags
+FILE=bins/mach0/hello-objc-osx
+ARGS=-d
+CMDS=<<EOF
+fl@F:maps~hello
+?e --
+dm*~hello,fss
+EOF
+EXPECT=<<EOF
+0x100000000 4096 hello_objc_osx.r_x
+0x100001000 4096 hello_objc_osx.rw
+0x100002000 4096 hello_objc_osx.r
+--
+fss+ maps
+f+ map.hello_objc_osx.r_x 0x00001000 @ 0x100000000
+f+ map.hello_objc_osx.rw 0x00001000 @ 0x100001000
+f+ map.hello_objc_osx.r 0x00001000 @ 0x100002000
+fss-
+EOF
+RUN

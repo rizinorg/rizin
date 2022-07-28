@@ -71,6 +71,7 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED "registers.extended"
 #define RZ_FLAGS_FS_PLATFORM_PORTS          "platform.ports"
 #define RZ_FLAGS_FS_GLOBALS                 "globals"
+#define RZ_FLAGS_FS_DEBUG_MAPS              "maps"
 
 #define RZ_GRAPH_FORMAT_NO     0
 #define RZ_GRAPH_FORMAT_GMLFCN 1
@@ -673,6 +674,8 @@ RZ_API RZ_OWN RzList /*<RzBacktrace *>*/ *rz_core_debug_backtraces(RzCore *core)
 RZ_API void rz_backtrace_free(RZ_NULLABLE RzBacktrace *bt);
 
 RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_debug_map_update_flags(RzCore *core);
+RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *state);
 
 /* chash.c */
 RZ_API RzCmdStatus rz_core_hash_plugins_print(RzHash *hash, RzCmdStateOutput *state);

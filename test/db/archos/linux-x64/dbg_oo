@@ -95,6 +95,21 @@ Hello world!
 EOF
 RUN
 
+NAME=dm flags after ood
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-e log.level=5
+CMDS=<<EOF
+ood
+fl@F:maps~?
+dm*~?
+dk 9
+EOF
+EXPECT=<<EOF
+9
+11
+EOF
+RUN
+
 NAME=ood check for ptrace errors
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-e log.level=5
@@ -104,6 +119,5 @@ EOF
 REGEXP_FILTER_ERR=([a-zA-Z-]+\s+)
 EXPECT_ERR=<<EOF
 Process with PID File -helloworld-gcc  reopened in read-write mode
-Cannot create flag at because there is already flag
 EOF
 RUN

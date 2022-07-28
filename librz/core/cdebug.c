@@ -434,33 +434,79 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, RzOut
 	}
 }
 
-RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzCmdStateOutput *state) {
+static void apply_maps_as_flags(RzCore *core, RzList /* <RzDebugMap> */ *maps, bool print_only) {
+	RzListIter *iter;
+	RzDebugMap *map;
+	rz_list_foreach (maps, iter, map) {
+		char *name = (map->name && *map->name)
+			? rz_str_newf("%s.%s", map->name, rz_str_rwx_i(map->perm))
+			: rz_str_newf("%08" PFMT64x ".%s", map->addr, rz_str_rwx_i(map->perm));
+		if (!name) {
+			continue;
+		}
+		rz_name_filter(name, 0, true);
+		ut64 size = map->addr_end - map->addr;
+		if (print_only) {
+			rz_cons_printf("f+ map.%s 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n",
+				name, size, map->addr);
+		} else {
+			rz_flag_set_next(core->flags, name, map->addr, size);
+		}
+		free(name);
+	}
+}
+
+/**
+ * Create or update flags for all current debug maps in the "maps" flagspace
+ */
+RZ_API void rz_core_debug_map_update_flags(RzCore *core) {
+	rz_return_if_fail(core);
+	rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_DEBUG_MAPS);
+	if (rz_debug_is_dead(core->dbg)) {
+		return;
+	}
+	rz_debug_map_sync(core->dbg);
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_DEBUG_MAPS);
+	RzList *maps = rz_debug_map_list(core->dbg, false);
+	if (maps) {
+		apply_maps_as_flags(core, maps, false);
+	}
+	maps = rz_debug_map_list(core->dbg, true);
+	if (maps) {
+		apply_maps_as_flags(core, maps, false);
+	}
+	rz_flag_space_pop(core->flags);
+}
+
+RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *state) {
+	rz_return_if_fail(core);
 	int i;
 	RzListIter *iter;
 	RzDebugMap *map;
 	PJ *pj = state->d.pj;
+	RzDebug *dbg = core->dbg;
 	if (!dbg) {
 		return;
 	}
 	RzOutputMode mode = state->mode;
 	rz_cmd_state_output_array_start(state);
+	if (mode == RZ_OUTPUT_MODE_RIZIN) {
+		rz_cons_print("fss+ " RZ_FLAGS_FS_DEBUG_MAPS "\n");
+	}
 	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
 		RzList *maps = rz_debug_map_list(dbg, (bool)i);
+		if (!maps) {
+			continue;
+		}
+		if (mode == RZ_OUTPUT_MODE_RIZIN) { // "dm*"
+			apply_maps_as_flags(core, maps, true);
+			continue;
+		}
 		rz_list_foreach (maps, iter, map) {
 			switch (mode) {
 			case RZ_OUTPUT_MODE_JSON: // "dmj"
 				print_debug_map_json(map, pj);
 				break;
-			case RZ_OUTPUT_MODE_RIZIN: // "dm*"
-			{
-				char *name = (map->name && *map->name)
-					? rz_str_newf("%s.%s", map->name, rz_str_rwx_i(map->perm))
-					: rz_str_newf("%08" PFMT64x ".%s", map->addr, rz_str_rwx_i(map->perm));
-				rz_name_filter(name, 0, true);
-				rz_cons_printf("f map.%s 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n",
-					name, map->addr_end - map->addr + 1, map->addr);
-				free(name);
-			} break;
 			case RZ_OUTPUT_MODE_QUIET: // "dmq"
 				print_debug_map_line(dbg, map, addr, mode);
 				break;
@@ -474,6 +520,9 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzCmdStateOutput *state)
 				break;
 			}
 		}
+	}
+	if (mode == RZ_OUTPUT_MODE_RIZIN) {
+		rz_cons_print("fss-\n");
 	}
 	rz_cmd_state_output_array_end(state);
 }
