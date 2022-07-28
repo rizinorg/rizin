@@ -767,7 +767,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 			rS = cs_reg_name(handle, INSOP(1).reg);
 			mask = ppc_fmx_to_mask(fxm);
 		}
-		RzILOpEffect *set_cr = SETL("cr", LOGOR(LOGAND(UNSIGNED(32, VARG(rS)), U32(mask)), LOGAND(VARL("cr"), LOGNOT(U32(mask)))));
+		RzILOpEffect *set_cr = SETL("cr", LOGAND(UNSIGNED(32, VARG(rS)), U32(mask)));
 		return SEQ2(set_cr, sync_crx_cr(false, mask));
 
 	case PPC_INS_MFCR:
