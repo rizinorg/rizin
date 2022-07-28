@@ -480,7 +480,6 @@ typedef struct rz_cmd_t {
 	RzCmdNullCb nullcallback;
 	RzCmdItem *cmds[UT8_MAX];
 	RzCmdMacro macro;
-	RzList *lcmds;
 	RzCmdAlias aliases;
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
