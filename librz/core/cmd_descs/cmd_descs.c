@@ -451,6 +451,8 @@ static const RzCmdDescArg open_maps_prioritize_binid_args[2];
 static const RzCmdDescArg open_maps_deprioritize_args[2];
 static const RzCmdDescArg open_maps_prioritize_fd_args[2];
 static const RzCmdDescArg open_exchange_args[3];
+static const RzCmdDescArg print_bitstream_args[3];
+static const RzCmdDescArg print_byte_bitstream_args[2];
 static const RzCmdDescArg hex_of_assembly_args[2];
 static const RzCmdDescArg esil_of_assembly_args[2];
 static const RzCmdDescArg assembly_of_hex_args[2];
@@ -10422,6 +10424,40 @@ static const RzCmdDescHelp open_exchange_help = {
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
 };
+static const RzCmdDescArg print_bitstream_args[] = {
+	{
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.default_value = "0",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_bitstream_help = {
+	.summary = "Print bitstream of <n> bits, skipping the first <skip> bits.",
+	.args = print_bitstream_args,
+};
+
+static const RzCmdDescArg print_byte_bitstream_args[] = {
+	{
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_byte_bitstream_help = {
+	.summary = "Print bitstream of <n> bytes",
+	.args = print_byte_bitstream_args,
+};
+
 static const RzCmdDescHelp pa_help = {
 	.summary = "Print (dis)assembly of given hexpairs/assembly",
 };
@@ -16277,6 +16313,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
+	RzCmdDesc *print_bitstream_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pb", RZ_OUTPUT_MODE_STANDARD, rz_print_bitstream_handler, &print_bitstream_help);
+	rz_warn_if_fail(print_bitstream_cd);
+
+	RzCmdDesc *print_byte_bitstream_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pB", RZ_OUTPUT_MODE_STANDARD, rz_print_byte_bitstream_handler, &print_byte_bitstream_help);
+	rz_warn_if_fail(print_byte_bitstream_cd);
+
 	RzCmdDesc *pa_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_print_cd, "pa", RZ_OUTPUT_MODE_STANDARD, rz_hex_of_assembly_handler, &hex_of_assembly_help, &pa_help);
 	rz_warn_if_fail(pa_cd);
 	RzCmdDesc *esil_of_assembly_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pa_cd, "pae", RZ_OUTPUT_MODE_STANDARD, rz_esil_of_assembly_handler, &esil_of_assembly_help);

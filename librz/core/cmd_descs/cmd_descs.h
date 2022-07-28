@@ -757,6 +757,8 @@ RZ_IPI RzCmdStatus rz_open_maps_prioritize_binid_handler(RzCore *core, int argc,
 RZ_IPI RzCmdStatus rz_open_maps_deprioritize_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_maps_prioritize_fd_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_exchange_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_print_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_print_byte_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_hex_of_assembly_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_esil_of_assembly_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_assembly_of_hex_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);

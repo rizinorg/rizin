@@ -4886,70 +4886,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_config_set_i(core->config, "search.to", saved_to);
 		}
 	} break;
-	case 'b': { // "pb"
-		if (input[1] == '?') {
-			rz_cons_printf("|Usage: p[bB] [len] ([skip])  ; see also pB and pxb\n");
-		} else if (l != 0) {
-			int from, to;
-			const int size = len * 8;
-			char *spc, *buf = malloc(size + 1);
-			spc = strchr(input, ' ');
-			if (spc) {
-				len = rz_num_math(core->num, spc + 1);
-				if (len < 1) {
-					len = 1;
-				}
-				spc = strchr(spc + 1, ' ');
-				if (spc) {
-					from = rz_num_math(core->num, spc + 1);
-				} else {
-					from = 0;
-				}
-				to = from + len;
-			} else {
-				from = 0;
-				to = size;
-			}
-			if (buf) {
-				int buf_len;
-				rz_str_bits(buf, block, size, NULL);
-				buf_len = strlen(buf);
-				if (from >= 0 && to >= 0) {
-					if (from >= buf_len) {
-						from = buf_len;
-					}
-					if (to < buf_len) {
-						buf[to] = 0;
-						// buf[buf_len - 1] = 0;
-					}
-					rz_cons_println(buf + from);
-				}
-				free(buf);
-			} else {
-				eprintf("ERROR: Cannot malloc %d byte(s)\n", size);
-			}
-		}
-	} break;
-	case 'B': { // "pB"
-		if (input[1] == '?') {
-			rz_cons_printf("|Usage: p[bB] [len]       bitstream of N bytes\n");
-		} else if (l != 0) {
-			int size;
-			char *buf;
-			if (!rz_core_block_size(core, len)) {
-				len = core->blocksize;
-			}
-			size = len * 8;
-			buf = malloc(size + 1);
-			if (buf) {
-				rz_str_bits(buf, core->block, size, NULL);
-				rz_cons_println(buf);
-				free(buf);
-			} else {
-				eprintf("ERROR: Cannot malloc %d byte(s)\n", size);
-			}
-		}
-	} break;
 	case 'I': // "pI"
 		switch (input[1]) {
 		case 'f': // "pIf"
@@ -7284,5 +7220,47 @@ RZ_IPI RzCmdStatus rz_cmd_base64_decode_handler(RzCore *core, int argc, const ch
 	}
 	rz_cons_println((const char *)buf);
 	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	int len = (int)rz_num_math(core->num, argv[1]);
+	int skip = (int)rz_num_math(core->num, argv[2]);
+	if (len < 0 || skip < 0) {
+		RZ_LOG_ERROR("len and skip should be positive numbers\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// `pb len skip` means skip <skip> bits then print <len> bits
+	char *buf = RZ_NEWS0(char, len + skip + 1);
+	if (!buf) {
+		RZ_LOG_ERROR("Fail to allocate memory\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_str_bits(buf, core->block, len + skip, NULL);
+	rz_cons_println(buf + skip);
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_byte_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 start = core->offset;
+	int len = (int)rz_num_math(core->num, argv[1]);
+	if (len < 0) {
+		start = core->offset + len;
+		len *= -1;
+	}
+	ut8 *bit_buf = RZ_NEWS0(ut8, len);
+	char *str_buf = RZ_NEWS0(char, len * 8 + 1);
+	if (!bit_buf || !str_buf) {
+		RZ_LOG_ERROR("Fail to allocate memory\n");
+		free(bit_buf);
+		free(str_buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_read_at(core->io, start, bit_buf, len);
+	rz_str_bits(str_buf, (const ut8 *)bit_buf, len * 8, NULL);
+	rz_cons_println(str_buf);
+	free(bit_buf);
+	free(str_buf);
 	return RZ_CMD_STATUS_OK;
 }
