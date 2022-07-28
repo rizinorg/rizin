@@ -1159,19 +1159,32 @@ static ut8 *M(const ut8 *b, int len) {
 	return r;
 }
 
+/**
+ * \brief Print hexdump diff between \p _a and \p _b.
+ * \param p RzPrint instance.
+ * \param aa Address of first buffer.
+ * \param _a First buffer.
+ * \param ba Address of second buffer.
+ * \param _b Second buffer.
+ * \param len Diff length.
+ * \param scndcol True If core->cons->columns > 123 ?
+ * \return Hexdump diff string.
+ */
 // TODO: add support for cursor
-RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol) {
+RZ_API RZ_OWN char *rz_print_hexdiff_str(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol) {
+	rz_return_val_if_fail(p && _a && _b && len > 0, NULL);
 	ut8 *a, *b;
 	char linediff, fmt[64];
 	int color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	int diffskip = p->flags & RZ_PRINT_FLAGS_DIFFOUT;
 	int i, j, min;
+	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!((a = M(_a, len)))) {
-		return;
+		return NULL;
 	}
 	if (!((b = M(_b, len)))) {
 		free(a);
-		return;
+		return NULL;
 	}
 	for (i = 0; i < len; i += 16) {
 		min = RZ_MIN(16, len - i);
@@ -1179,42 +1192,43 @@ RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const 
 		if (diffskip && linediff == '|') {
 			continue;
 		}
-		p->cb_printf("0x%08" PFMT64x " ", aa + i);
+		rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", aa + i);
 		for (j = 0; j < min; j++) {
 			*fmt = color;
-			rz_print_cursor(p, i + j, 1, 1);
-			p->cb_printf("%s", BD(a, b));
-			rz_print_cursor(p, i + j, 1, 0);
+			print_cursor_l(sb, p, i + j, 1);
+			rz_strbuf_appendf(sb, "%s", BD(a, b));
+			print_cursor_r(sb, p, i + j, 1);
 		}
-		p->cb_printf(" ");
+		rz_strbuf_append(sb, " ");
 		for (j = 0; j < min; j++) {
 			*fmt = color;
-			rz_print_cursor(p, i + j, 1, 1);
-			p->cb_printf("%s", CD(a, b));
-			rz_print_cursor(p, i + j, 1, 0);
+			print_cursor_l(sb, p, i + j, 1);
+			rz_strbuf_appendf(sb, "%s", CD(a, b));
+			print_cursor_r(sb, p, i + j, 1);
 		}
 		if (scndcol) {
-			p->cb_printf(" %c 0x%08" PFMT64x " ", linediff, ba + i);
+			rz_strbuf_appendf(sb, " %c 0x%08" PFMT64x " ", linediff, ba + i);
 			for (j = 0; j < min; j++) {
 				*fmt = color;
-				rz_print_cursor(p, i + j, 1, 1);
-				p->cb_printf("%s", BD(b, a));
-				rz_print_cursor(p, i + j, 1, 0);
+				print_cursor_r(sb, p, i + j, 1);
+				rz_strbuf_appendf(sb, "%s", BD(b, a));
+				print_cursor_r(sb, p, i + j, 1);
 			}
-			p->cb_printf(" ");
+			rz_strbuf_append(sb, " ");
 			for (j = 0; j < min; j++) {
 				*fmt = color;
-				rz_print_cursor(p, i + j, 1, 1);
-				p->cb_printf("%s", CD(b, a));
-				rz_print_cursor(p, i + j, 1, 0);
+				print_cursor_r(sb, p, i + j, 1);
+				rz_strbuf_appendf(sb, "%s", CD(b, a));
+				print_cursor_r(sb, p, i + j, 1);
 			}
-			p->cb_printf("\n");
+			rz_strbuf_append(sb, "\n");
 		} else {
-			p->cb_printf(" %c\n", linediff);
+			rz_strbuf_appendf(sb, " %c\n", linediff);
 		}
 	}
 	free(a);
 	free(b);
+	return rz_strbuf_drain(sb);
 }
 
 RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt) {
@@ -1559,6 +1573,14 @@ RZ_API int rz_print_get_cursor(RzPrint *p) {
 	return p->cur_enabled ? p->cur : 0;
 }
 
+/**
+ * \brief Print dump in json format
+ * \param p RzPrint instance
+ * \param buf Buffer to print to
+ * \param len Print only this many bytes
+ * \param wordsize Size of a word in bits
+ * \return Dump JSON string
+ */
 RZ_API char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL const ut8 *buf, int len, int wordsize) {
 	rz_return_val_if_fail(p && buf && len > 0 && wordsize > 0, 0);
 	int bytesize = wordsize / 8;

@@ -2189,7 +2189,7 @@ RZ_API void rz_core_print_cmp(RzCore *core, ut64 from, ut64 to) {
 	memset(b, 0xff, core->blocksize);
 	delta = addr - from;
 	rz_io_read_at(core->io, to + delta, b, core->blocksize);
-	rz_print_hexdiff(core->print, core->offset, core->block,
+	rz_core_print_hexdiff(core, core->offset, core->block,
 		to + delta, b, core->blocksize, col);
 	free(b);
 }
