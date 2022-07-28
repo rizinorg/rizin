@@ -164,3 +164,9 @@ RZ_IPI void rz_core_print_hexdump(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL
 	rz_cons_print(string);
 	free(string);
 }
+
+RZ_IPI void rz_core_print_jsondump(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int wordsize) {
+	char *string = rz_print_jsondump_str(core->print, buf, len, wordsize);
+	rz_cons_print(string);
+	free(string);
+}

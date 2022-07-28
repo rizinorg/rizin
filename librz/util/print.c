@@ -1559,45 +1559,25 @@ RZ_API int rz_print_get_cursor(RzPrint *p) {
 	return p->cur_enabled ? p->cur : 0;
 }
 
-RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize) {
-	ut16 *buf16 = (ut16 *)buf;
-	ut32 *buf32 = (ut32 *)buf;
-	ut64 *buf64 = (ut64 *)buf;
-	// TODDO: support p==NULL too
-	if (!p || !buf || len < 1 || wordsize < 1) {
-		return 0;
-	}
+RZ_API char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL const ut8 *buf, int len, int wordsize) {
+	rz_return_val_if_fail(p && buf && len > 0 && wordsize > 0, 0);
 	int bytesize = wordsize / 8;
 	if (bytesize < 1) {
 		bytesize = 8;
 	}
-	int i, words = (len / bytesize);
-	p->cb_printf("[");
-	for (i = 0; i < words; i++) {
-		switch (wordsize) {
-		case 8: {
-			p->cb_printf("%s%d", i ? "," : "", buf[i]);
-			break;
-		}
-		case 16: {
-			ut16 w16 = rz_read_ble16(&buf16[i], p->big_endian);
-			p->cb_printf("%s%hd", i ? "," : "", w16);
-			break;
-		}
-		case 32: {
-			ut32 w32 = rz_read_ble32(&buf32[i], p->big_endian);
-			p->cb_printf("%s%d", i ? "," : "", w32);
-			break;
-		}
-		case 64: {
-			ut64 w64 = rz_read_ble64(&buf64[i], p->big_endian);
-			p->cb_printf("%s%" PFMT64d, i ? "," : "", w64);
-			break;
-		}
-		}
+	PJ *j = pj_new();
+	if (!j) {
+		return NULL;
 	}
-	p->cb_printf("]\n");
-	return words;
+	pj_a(j);
+	for (int i = 0; i + bytesize < len; i += bytesize) {
+		ut64 word = rz_read_ble(buf + i, p->big_endian, wordsize);
+		pj_n(j, word);
+	}
+	pj_end(j);
+	char *str = strdup(pj_string(j));
+	pj_free(j);
+	return str;
 }
 
 /**

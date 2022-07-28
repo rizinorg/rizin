@@ -5640,7 +5640,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		rz_cons_break_push(NULL, NULL);
 		switch (input[1]) {
 		case 'j': // "pxj"
-			rz_print_jsondump(core->print, core->block, core->blocksize, 8);
+			rz_core_print_jsondump(core, core->block, core->blocksize, 8);
 			break;
 		case '/': // "px/"
 			rz_core_print_examine(core, input + 2);
@@ -5785,7 +5785,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				case '1':
 					// 1 byte signed words (byte)
 					if (input[3] == 'j') {
-						rz_print_jsondump(core->print, core->block,
+						rz_core_print_jsondump(core, core->block,
 							len, 8);
 					} else {
 						rz_core_print_hexdump(core, core->offset,
@@ -5795,7 +5795,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				case '2':
 					// 2 byte signed words (short)
 					if (input[3] == 'j') {
-						rz_print_jsondump(core->print, core->block,
+						rz_core_print_jsondump(core, core->block,
 							len, 16);
 					} else {
 						rz_core_print_hexdump(core, core->offset,
@@ -5804,7 +5804,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					break;
 				case '8':
 					if (input[3] == 'j') {
-						rz_print_jsondump(core->print, core->block,
+						rz_core_print_jsondump(core, core->block,
 							len, 64);
 					} else {
 						rz_core_print_hexdump(core, core->offset,
@@ -5817,7 +5817,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				case 0:
 					// 4 byte signed words
 					if (input[2] == 'j' || (input[2] && input[3] == 'j')) {
-						rz_print_jsondump(core->print, core->block,
+						rz_core_print_jsondump(core, core->block,
 							len, 32);
 					} else {
 						rz_core_print_hexdump(core, core->offset,
@@ -5833,7 +5833,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'w': // "pxw"
 			if (l != 0) {
 				if (input[2] == 'j') {
-					rz_print_jsondump(core->print, core->block, len, 32);
+					rz_core_print_jsondump(core, core->block, len, 32);
 				} else {
 					rz_core_print_hexdump(core, core->offset, core->block, len, 32, 4, 1);
 				}
@@ -5913,7 +5913,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'h': // "pxh"
 			if (l) {
 				if (input[2] == 'j') {
-					rz_print_jsondump(core->print, core->block, len, 16);
+					rz_core_print_jsondump(core, core->block, len, 16);
 				} else {
 					rz_core_print_hexdump(core, core->offset,
 						core->block, len, 32, 2, 1);
@@ -5960,7 +5960,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'q': // "pxq"
 			if (l) {
 				if (input[2] == 'j') {
-					rz_print_jsondump(core->print, core->block, len, 64);
+					rz_core_print_jsondump(core, core->block, len, 64);
 				} else {
 					rz_core_print_hexdump(core, core->offset, core->block, len, 64, 8, 1);
 				}
