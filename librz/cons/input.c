@@ -473,7 +473,7 @@ static int __cons_readchar_w32(ut32 usec) {
 				case FROM_LEFT_1ST_BUTTON_PRESSED:
 					GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 					int rel_y = irInBuf.Event.MouseEvent.dwMousePosition.Y - info.srWindow.Top;
-					rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1, MOUSE_DEFAULT);
+					rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1, LEFT_PRESS);
 					ch = UT8_MAX;
 					break;
 				} // TODO: Handle more buttons?

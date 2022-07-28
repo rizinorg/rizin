@@ -474,6 +474,12 @@ void resizeWin(void) {
 	}
 }
 
+/**
+ * \brief Set the property of the click event
+ * \param x The x coordinate of the position
+ * \param y The y coordinate of the position
+ * \param event The type of the click
+ */
 RZ_API void rz_cons_set_click(int x, int y, MouseEvent event) {
 	I.click_x = x;
 	I.click_y = y;
