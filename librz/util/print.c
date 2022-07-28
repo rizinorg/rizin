@@ -1171,7 +1171,8 @@ static ut8 *M(const ut8 *b, int len) {
  * \return Hexdump diff string.
  */
 // TODO: add support for cursor
-RZ_API RZ_OWN char *rz_print_hexdiff_str(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol) {
+RZ_API RZ_OWN char *rz_print_hexdiff_str(RZ_NONNULL RzPrint *p, ut64 aa, RZ_NONNULL const ut8 *_a,
+	ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol) {
 	rz_return_val_if_fail(p && _a && _b && len > 0, NULL);
 	ut8 *a, *b;
 	char linediff, fmt[64];

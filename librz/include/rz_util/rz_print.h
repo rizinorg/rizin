@@ -200,7 +200,7 @@ RZ_API void rz_print_section(RzPrint *p, ut64 at);
 RZ_API void rz_print_hexii(RzPrint *p, ut64 addr, const ut8 *buf, int len, int step);
 RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NONNULL const ut8 *buf, int len, int base, int step, size_t zoomsz);
 RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL const ut8 *buf, int len, int wordsize);
-RZ_API RZ_OWN char *rz_print_hexdiff_str(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol);
+RZ_API RZ_OWN char *rz_print_hexdiff_str(RZ_NONNULL RzPrint *p, ut64 aa, RZ_NONNULL const ut8 *_a, ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol);
 RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt);
 RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int step);
 RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch);

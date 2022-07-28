@@ -171,7 +171,7 @@ RZ_IPI void rz_core_print_jsondump(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8
 	free(string);
 }
 
-RZ_IPI void rz_core_print_hexdiff(RzCore *core, ut64 aa, RZ_NONNULL const ut8 *_a, ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol) {
+RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL const ut8 *_a, ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol) {
 	char *string = rz_print_hexdiff_str(core->print, aa, _a, ba, _b, len, scndcol);
 	rz_cons_print(string);
 	free(string);
