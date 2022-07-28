@@ -93,10 +93,10 @@
 
 /**
  * \brief Returns a Pure of length \p l with bit \p i to \p j (inclusive \p j) set to IL_TRUE.
- * \p i marks he left bit. \p j the right. \p l, \p i and \p j need to be U8.
+ * \p i marks the left bit. \p j the right. \p i and \p j need to be U8.
  * Please note: The left most bit is bit 0.
  */
-#define BIT_MASK(l, i, j) LOGNOT(LOGOR(SHIFTR(IL_TRUE, UN(l, 0), ADD(i, U8(1))), SHIFTL(IL_TRUE, UN(l, 0), SUB(U8(l), j))))
+#define BIT_MASK(l, i, j) LOGNOT(LOGOR(SHIFTR(IL_TRUE, UN(l, 0), i), SHIFTL(IL_TRUE, UN(l, 0), SUB(U8(l - 1), j))))
 
 /** 
  * \brief Sets bit \p i to \p j of the variable \p v to the value stored in \p s.
