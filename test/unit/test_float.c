@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2022 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 
@@ -15,7 +18,7 @@ bool f32_ieee_format_test(void) {
 	RzBitVector *mantissa_stretched = rz_float_get_mantissa_stretched(f);
 	bool sign = rz_float_get_sign(f);
 
-	/// 1.5f, 32-bit float
+	// 1.5f, 32-bit float
 	mu_assert_streq_free(rz_bv_as_string(f->s), "00111111110000000000000000000000", "string bit value of 32-bit float");
 
 	mu_assert_streq_free(rz_bv_as_string(exp_squashed), "01111111", "string bit value of exponent field only");
@@ -49,7 +52,7 @@ bool f32_ieee_add_test(void) {
 
 	RzFloat *f0 = rz_float_new_from_single(1.5f);
 
-	/// no rounding needed 1.5f + 0.25f -> precise result
+	// no rounding needed 1.5f + 0.25f -> precise result
 	RzFloat *f1 = rz_float_new_from_single(0.25f);
 	RzFloat *f2 = rz_float_new_from_single(1.5f + 0.25f);
 	RzFloat *f2_calc = rz_float_add_ieee_bin(f0, f1, RZ_FLOAT_RMODE_RNE);
@@ -73,7 +76,7 @@ bool f32_ieee_add_test(void) {
 	RzFloat *subf2 = rz_float_new_from_single(7.29e-43f);
 	RzFloat *subf3 = rz_float_new_from_single(1.14514f);
 
-	/// subf1 + subf2 = 6.961E-41f
+	// subf1 + subf2 = 6.961E-41f
 	RzFloat *res1 = rz_float_new_from_single(6.961E-41f);
 	RzFloat *res1_calc = rz_float_add_ieee_bin(subf1, subf2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(res1->s, res1_calc->s), "test subnormal add 6.8881E-41f + 7.29e-43f");
@@ -108,7 +111,7 @@ bool f32_ieee_add_test(void) {
 bool f32_ieee_sub_test(void) {
 	RzFloat *f0 = rz_float_new_from_single(1.5f);
 
-	/// no rounding needed 1.5f + 0.25f -> precise result
+	// no rounding needed 1.5f + 0.25f -> precise result
 	RzFloat *f1 = rz_float_new_from_single(0.25f);
 	RzFloat *f2 = rz_float_new_from_single(1.5f - 0.25f);
 	RzFloat *f2_calc = rz_float_sub_ieee_bin(f0, f1, RZ_FLOAT_RMODE_RNE);
@@ -132,7 +135,7 @@ bool f32_ieee_sub_test(void) {
 	RzFloat *subf2 = rz_float_new_from_single(7.29e-43f);
 	RzFloat *subf3 = rz_float_new_from_single(1.14514f);
 
-	/// subf1 + subf2 = 6.961E-41f
+	// subf1 + subf2 = 6.961E-41f
 	RzFloat *res1 = rz_float_new_from_single(6.8152E-41f);
 	RzFloat *res1_calc = rz_float_sub_ieee_bin(subf1, subf2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(res1->s, res1_calc->s), "test subnormal add 6.8881E-41f - 7.29e-43f");
@@ -435,8 +438,8 @@ bool f32_ieee_special_num_test(void) {
 	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32);
 	RzFloat *cst_num = rz_float_new_from_single(2.0f);
 
-	/// Basic Operations
-	/// 1. Add
+	// Basic Operations
+	// 1. Add
 	RzFloat *add1 = rz_float_add_ieee_bin(nan, cst_num, RZ_FLOAT_RMODE_RNE);
 	RzFloat *add2 = rz_float_add_ieee_bin(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
 	RzFloat *add3 = rz_float_add_ieee_bin(nan, pinf, RZ_FLOAT_RMODE_RNE);
@@ -454,7 +457,7 @@ bool f32_ieee_special_num_test(void) {
 	rz_float_free(add4);
 	rz_float_free(add5);
 
-	/// 2. Sub
+	// 2. Sub
 	RzFloat *sub1 = rz_float_sub_ieee_bin(nan, cst_num, RZ_FLOAT_RMODE_RNE);
 	RzFloat *sub2 = rz_float_sub_ieee_bin(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
 	RzFloat *sub3 = rz_float_sub_ieee_bin(nan, pinf, RZ_FLOAT_RMODE_RNE);
@@ -472,7 +475,7 @@ bool f32_ieee_special_num_test(void) {
 	rz_float_free(sub4);
 	rz_float_free(sub5);
 
-	/// 3. MUL
+	// 3. MUL
 	RzFloat *mul1 = rz_float_mul_ieee_bin(nan, cst_num, RZ_FLOAT_RMODE_RNE);
 	RzFloat *mul2 = rz_float_mul_ieee_bin(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
 	RzFloat *mul3 = rz_float_mul_ieee_bin(zero, cst_num, RZ_FLOAT_RMODE_RNE);
@@ -487,7 +490,7 @@ bool f32_ieee_special_num_test(void) {
 	rz_float_free(mul3);
 	rz_float_free(mul4);
 
-	/// 4. DIV
+	// 4. DIV
 	RzFloat *div1 = rz_float_div_ieee_bin(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
 	RzFloat *div2 = rz_float_div_ieee_bin(pinf, ninf, RZ_FLOAT_RMODE_RNE);
 	RzFloat *div3 = rz_float_div_ieee_bin(zero, zero, RZ_FLOAT_RMODE_RNE);

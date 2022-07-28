@@ -1,9 +1,28 @@
+// SPDX-FileCopyrightText: 2022 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+/**
+ * \file float.c
+ * This file implements IEEE-754 binary float number operations (32/64/128)
+ * IEEE binary representations, use binary digits to represent float. machine-friendly
+ * binary32 format (single) : use a 32 bits bitvector to represent float
+ * 	32 bits = 1 (sign bit) + 8 (exponent bits) + 23 (mantissa bits)
+ * 	exponent value range : -126 ~ 127
+ * binary64 format (double) : use a 64 bits bitvector to represent float
+ *  	64 bits = 1 (sign bit) + 11 (exponent bits) + 52 (mantissa bits)
+ * 	exponent value range : -1022 ~ 1023
+ * binary128 format, use a 128 bits bitvector to represent float
+ *  	128 bits = 1 (sign bit) + 15 (exponent bits) + 112 (mantissa bits)
+ * 	exponent value range : -16382 ~ 16383
+ **/
+
 #include "float_internal.c"
 
 /**
- * This file implements IEEE-754 binary float number (32/64/128)
+ * \breif return the bitvector string of a float
+ * \param f float
+ * \return char* string of bitvector
  */
-
 RZ_API RZ_OWN char *rz_float_bv_as_string(RZ_NULLABLE RzFloat *f) {
 	if (!f || !f->s) {
 		return strdup("NULL");
@@ -11,6 +30,12 @@ RZ_API RZ_OWN char *rz_float_bv_as_string(RZ_NULLABLE RzFloat *f) {
 	return rz_bv_as_string(f->s);
 }
 
+/**
+ * \brief return the bitvector hex string of a float
+ * \param f float
+ * \param use_pad use padding before the hex string
+ * \return char* hex string of bitvector
+ */
 RZ_API RZ_OWN char *rz_float_bv_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_pad) {
 	if (!f || !f->s) {
 		return strdup("NULL");
@@ -18,6 +43,12 @@ RZ_API RZ_OWN char *rz_float_bv_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_p
 	return rz_bv_as_hex_string(f->s, use_pad);
 }
 
+/**
+ * \brief return a human-readable string of float
+ * \param f float
+ * \return a human-readable string of float.
+ * exponent part and mantissa part would be spilit
+ */
 RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f && f->s, NULL);
 
@@ -74,10 +105,10 @@ static void print_float_bv(RzBitVector *bv, const char *mark) {
 #define PROC_SPECIAL_FLOAT_END }
 
 /**
- * Get const attribute from float
- * @param format RzFloatFormat, format of a float
- * @param which_info Specify an attribute
- * @return ut32 const value bind with `which_info`
+ * Get const attributes from float
+ * \param format RzFloatFormat, format of a float
+ * \param which_info Specify an attribute
+ * \return ut32 const value bind with `which_info`
  */
 RZ_API ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info) {
 	switch (format) {
@@ -90,14 +121,15 @@ RZ_API ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_inf
 	case RZ_FLOAT_IEEE754_DEC_64:
 	case RZ_FLOAT_IEEE754_DEC_128:
 	default:
-		RZ_LOG_ERROR("TODO");
+		RZ_LOG_ERROR("FORMAT NOT IMPLEMENTED YET");
+		rz_warn_if_reached();
 		return 0;
 	}
 }
 
 /**
  * Finish the bv inside the float, and set all to NULL
- * @param f float
+ * \param f float
  */
 RZ_API void rz_float_fini(RZ_NONNULL RzFloat *f) {
 	rz_return_if_fail(f);
@@ -107,7 +139,7 @@ RZ_API void rz_float_fini(RZ_NONNULL RzFloat *f) {
 
 /**
  * Destroy the float structure
- * @param f float
+ * \param f float
  */
 RZ_API void rz_float_free(RZ_NULLABLE RzFloat *f) {
 	if (!f) {
@@ -119,14 +151,13 @@ RZ_API void rz_float_free(RZ_NULLABLE RzFloat *f) {
 
 /**
  * Init the bv inside float
- * @param f float
- * @return return true if init success else return false
+ * \param f float
+ * \return return true if init success else return false
  */
-RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f) {
+RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f, RzFloatFormat format) {
 	rz_return_val_if_fail(f, false);
 	rz_float_fini(f);
 
-	RzFloatFormat format = f->r;
 	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 
@@ -140,8 +171,8 @@ RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f) {
 
 /**
  * Create float and init it
- * @param format float format
- * @return return an RzFloat instance with zero value
+ * \param format float format
+ * \return return an RzFloat instance with zero value
  */
 RZ_API RZ_OWN RzFloat *rz_float_new(RzFloatFormat format) {
 	RzFloat *f = RZ_NEW(RzFloat);
@@ -151,7 +182,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new(RzFloatFormat format) {
 	f->r = format;
 	f->s = NULL;
 
-	if (!rz_float_init(f)) {
+	if (!rz_float_init(f, format)) {
 		free(f);
 		return NULL;
 	}
@@ -161,8 +192,8 @@ RZ_API RZ_OWN RzFloat *rz_float_new(RzFloatFormat format) {
 
 /**
  * Duplicate a float
- * @param f float
- * @return a copy of float
+ * \param f float
+ * \return a copy of float
  */
 RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
@@ -174,66 +205,65 @@ RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f) {
 
 	cp->r = f->r;
 	cp->s = rz_bv_dup(f->s);
+	cp->exception = f->exception;
 
 	return cp;
 }
 
 /**
  * Set float bv from C type `float`
- * @param f a normal float
- * @param value value of type `float`
- * @return true if success
+ * \param f a normal float
+ * \param value value of type `float`
+ * \return true if success
  */
+ // TODO : a better way to deal with the different physical implementation
 RZ_API bool rz_float_set_from_single(RZ_NONNULL RzFloat *f, float value) {
 	rz_return_val_if_fail(f, false);
 
-	/// TODO : should we support single float -> a given format float ?
-	/// NOTE: Implement set a single float from single only
+	// TODO : should we support single float -> a given format float ?
+	// NOTE: Implement set a single float from single only
 	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
-	/// check if given RzFloat is a IEEE754-binary32
+	// check if given RzFloat is a IEEE754-binary32
 	if (exp_len != 8 || man_len != 23) {
 		RZ_LOG_WARN("Do not support single to other float conversion in set_from");
 		return false;
 	}
 
-	rz_bv_set_from_bytes_le(
-		f->s,
-		(ut8 *)&value,
-		0,
-		exp_len + man_len + 1);
-
+	rz_bv_set_from_bytes_le(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
 	return f;
 }
 
 /**
  * Set float bv from C type `double`
- * @param f a normal float
- * @param value value of type `double`
- * @return true if success
+ * \param f a normal float
+ * \param value value of type `double`
+ * \return true if success
  */
+// TODO : a better way to deal with the different physical implementation
 RZ_API bool rz_float_set_from_double(RZ_NONNULL RzFloat *f, double value) {
 	rz_return_val_if_fail(f, false);
 
-	/// TODO : should we support double float -> a given format float ?
-	/// NOTE: Implement set a single float from single only
+	// TODO : should we support double float -> a given format float ?
+	// NOTE: Implement set a single float from single only
 	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
-	/// check if given RzFloat is a IEEE754-binary32
+	// check if given RzFloat is a IEEE754-binary32
 	if (exp_len != 11 || man_len != 52) {
 		RZ_LOG_WARN("Do not support double to other float conversion in set_from");
 		return false;
 	}
 
-	rz_bv_set_from_bytes_le(
-		f->s,
-		(ut8 *)&value,
-		0,
-		exp_len + man_len + 1);
-
+	rz_bv_set_from_bytes_le(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
 	return f;
 }
 
+/**
+ * \brief create a float by given the single float value
+ * \param value single float value
+ * \return RzFloat representation of single float
+ */
+// TODO : a better way to deal with the different physical implementation
 RZ_API RZ_OWN RzFloat *rz_float_new_from_single(float value) {
 	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
 	if (!f) {
@@ -249,6 +279,12 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_single(float value) {
 	return f;
 }
 
+/**
+ * \brief create a float by given the double float value
+ * \param value double float value
+ * \return RzFloat representation of double float
+ */
+// TODO : a better way to deal with the different physical implementation
 RZ_API RZ_OWN RzFloat *rz_float_new_from_double(double value) {
 	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
 	if (!f) {
@@ -265,6 +301,13 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_double(double value) {
 	return f;
 }
 
+/**
+ * \brief create RzFloat by giving hex value, most used in writing testcases
+ * ref : http://www.jhauser.us/arithmetic/TestFloat-3/doc/TestFloat-general.html
+ * \param hex_value 32-bit/64-bit hex value to represent 32-bit/64-bit bitvector
+ * \param format float format
+ * \return new RzFloat
+ */
 static RZ_OWN RzFloat *rz_float_new_from_hex(ut64 hex_value, RzFloatFormat format) {
 	if ((format == RZ_FLOAT_IEEE754_BIN_32) || (format == RZ_FLOAT_IEEE754_BIN_64)) {
 		RzFloat *ret = RZ_NEW(RzFloat);
@@ -278,44 +321,94 @@ static RZ_OWN RzFloat *rz_float_new_from_hex(ut64 hex_value, RzFloatFormat forma
 	}
 }
 
+/**
+ * \brief create RzFloat by giving 64-bit hex value, most used in writing testcases
+ * \param hex_value 64-bit hex_value
+ * \return RzFloat-binary64
+ */
 RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f64(ut64 hex_value) {
 	return rz_float_new_from_hex(hex_value, RZ_FLOAT_IEEE754_BIN_64);
 }
 
-RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f32(ut64 hex_value) {
+/**
+ * \brief create RzFloat by giving 32-bit hex value, most used in writing testcases
+ * \param hex_value 32-bit hex_value
+ * \return RzFloat-binary32
+ */
+RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f32(ut32 hex_value) {
 	return rz_float_new_from_hex(hex_value, RZ_FLOAT_IEEE754_BIN_32);
 }
 
+
+/**
+ * \brief Cut out the exponent part of float bitvector, get a bitvector representation of exponent.
+ * 	The length is depending on the exponent width (specified by `format`)
+ * \param f float
+ * \return bitvector representation of exponent part
+ */
 RZ_API RZ_OWN RzBitVector *rz_float_get_exponent_squashed(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	return get_exp_squashed(f->s, f->r);
 }
 
+/**
+ * \brief Cut out the mantissa part of float bitvector, get a bitvector representation of mantissa part.
+ * 	The length is depending on the mantissa width (specified by `format`)
+ * \param f float
+ * \return bitvector representation of mantissa part
+ */
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_squashed(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	return get_man_squashed(f->s, f->r);
 }
 
+/**
+ * \brief  Get a bitvector representation of mantissa, twice as long as `bv` length.
+ * 	   padding zero before mantissa bits.
+ * \param f float number
+ * \return bitvector representation of mantissa part with twice the length
+ */
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_stretched(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	return get_man_stretched(f->s, f->r);
 }
 
+/**
+ * \brief Get a bitvector representation of exponent, as long as `bv` length
+ * 	  padding zero before squashed exponent bits
+ * \param f float number
+ * \return bitvector representation of exponent part with the same length of float `bv`
+ */
 RZ_API RZ_OWN RzBitVector *rz_float_get_exponent(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	return get_exp(f->s, f->r);
 }
 
+/**
+ * \brief Get a bitvector representation of mantissa, as long as `bv` length
+ * \param f float number
+ * \return bitvector representation of mantissa part with the same length of float `bv`
+ */
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	return get_man(f->s, f->r);
 }
 
+/**
+ * \brief Get sign bit of float
+ * \param f float num
+ * \return bool value of sign bit
+ */
 RZ_API bool rz_float_get_sign(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, false);
 	return get_sign(f->s, f->r);
 }
 
+/**
+ * \brief detect special num type of a float
+ * \param f float
+ * \return RZ_FLOAT_SPEC_NOT if f is not NaN/Zero/Infinity, else return a RzFloatSpec enum
+ */
 RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, RZ_FLOAT_SPEC_NOT);
 
@@ -325,11 +418,11 @@ RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f) {
 	bool sign = get_sign(f->s, f->r);
 
 	if (rz_bv_is_full_vector(exp_squashed)) {
-		/// full exp with 0 mantissa -> inf
+		// full exp with 0 mantissa -> inf
 		if (rz_bv_is_zero_vector(mantissa_squashed)) {
 			ret = sign ? RZ_FLOAT_SPEC_PINF : RZ_FLOAT_SPEC_NINF;
 		} else {
-			/// detect signal or quiet nan
+			// detect signal or quiet nan
 			bool is_quiet = rz_bv_msb(mantissa_squashed);
 			ret = is_quiet ? RZ_FLOAT_SPEC_QNAN : RZ_FLOAT_SPEC_SNAN;
 		}
@@ -346,6 +439,11 @@ RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f) {
 	return ret;
 }
 
+/**
+ * detect if the float number is infinite
+ * \param f float
+ * \return true if it's an infinity, else false
+ */
 RZ_API bool rz_float_is_inf(RZ_NONNULL RzFloat *f) {
 	RzFloatSpec type = rz_float_detect_spec(f);
 	if ((type == RZ_FLOAT_SPEC_PINF) || (type == RZ_FLOAT_SPEC_NINF))
@@ -353,6 +451,11 @@ RZ_API bool rz_float_is_inf(RZ_NONNULL RzFloat *f) {
 	return false;
 }
 
+/**
+ * detect if the float number is NaN
+ * \param f float
+ * \return true if it's NaN, else false
+ */
 RZ_API bool rz_float_is_nan(RZ_NONNULL RzFloat *f) {
 	RzFloatSpec type = rz_float_detect_spec(f);
 	if ((type == RZ_FLOAT_SPEC_SNAN) || (type == RZ_FLOAT_SPEC_QNAN))
@@ -360,9 +463,19 @@ RZ_API bool rz_float_is_nan(RZ_NONNULL RzFloat *f) {
 	return false;
 }
 
+/**
+ * Generate a infinity float and specify the sign bit
+ * \param format format of float to generate
+ * \param sign sign bit of infinity
+ * \return an infinity float
+ */
 RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool sign) {
-	/// gen an Infinite num for return
+	// gen an Infinite num for return
 	RzFloat *ret = rz_float_new(format);
+	if (!ret || !ret->s) {
+		rz_float_free(ret);
+		return NULL;
+	}
 	RzBitVector *bv = ret->s;
 	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
@@ -370,39 +483,57 @@ RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool sign) {
 		rz_bv_set(bv, i, true);
 	}
 
-	/// set sign bit (MSB), keep mantissa as zero-bv
+	// set sign bit (MSB), keep mantissa as zero-bv
 	rz_bv_set(bv, bv->len - 1, sign);
 
 	return ret;
 }
 
+/**
+ * Generate a positive zero
+ * \param format float format
+ * \return zero float
+ */
 RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format) {
 	return rz_float_new(format);
 }
 
+/**
+ * Generate a quiet NaN
+ * \param format float format
+ * \return Quiet NaN float
+ */
 RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format) {
-	/// gen a quiet NaN for return
+	// gen a quiet NaN for return
 	RzFloat *ret = rz_float_new(format);
+	if (!ret || !ret->s) {
+		rz_float_free(ret);
+		return NULL;
+	}
 	RzBitVector *bv = ret->s;
 	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
 	for (ut32 i = exp_start; i < exp_end; ++i) {
 		rz_bv_set(bv, i, true);
 	}
-	/// set is_quiet to 1
+	// set is_quiet to 1
 	rz_bv_set(bv, exp_start - 1, true);
 
-	/// set sig as non-zero
+	// set sig as non-zero
 	rz_bv_set(bv, 0, true);
 
 	return ret;
 }
 
+/**
+ * \brief propagate NaN and trigger signal (set exception for a NaN),
+ * used in float arithmetic to deal with NaN operand
+ */
 static RZ_OWN RzFloat *propagate_float_nan(RZ_NONNULL RzFloat *left, RzFloatSpec ltype, RZ_NONNULL RzFloat *right, RzFloatSpec rtype) {
 	bool l_is_sig_nan = ltype == RZ_FLOAT_SPEC_SNAN;
 	bool r_is_sig_nan = rtype == RZ_FLOAT_SPEC_SNAN;
 
-	/// gen a quiet NaN for return
+	// gen a quiet NaN for return
 	RzFloatFormat format = left->r;
 	RzFloat *ret = rz_float_new(left->r);
 	RzBitVector *bv = ret->s;
@@ -411,10 +542,10 @@ static RZ_OWN RzFloat *propagate_float_nan(RZ_NONNULL RzFloat *left, RzFloatSpec
 	for (ut32 i = exp_start; i < exp_end; ++i) {
 		rz_bv_set(bv, i, true);
 	}
-	/// set is_quiet to 1
+	// set is_quiet to 1
 	rz_bv_set(bv, exp_start - 1, true);
 
-	/// signal an exception
+	// signal an exception
 	if (l_is_sig_nan || r_is_sig_nan) {
 		ret->exception |= RZ_FLOAT_E_INVALID_OP;
 	}
@@ -422,12 +553,15 @@ static RZ_OWN RzFloat *propagate_float_nan(RZ_NONNULL RzFloat *left, RzFloatSpec
 	return ret;
 }
 
+/**
+ * \brief add magnitude (absolute value)
+ */
 static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, bool sign, RzFloatRMode mode) {
 	RzFloat *result = NULL;
 
 	/* Process NaN and Inf cases */
 	PROC_SPECIAL_FLOAT_START(left, right)
-	/// propagate NaN
+	// propagate NaN
 	if (l_is_nan || r_is_nan) {
 		return propagate_float_nan(left, l_type, right, r_type);
 	}
@@ -443,16 +577,21 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	PROC_SPECIAL_FLOAT_END
 
 	/* Process normal cases */
-	/// Extract attribute from format
+	// Extract attribute from format
 	RzFloatFormat format = left->r;
 	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 
-	/// Extract fields from num
+	// Extract fields from num
 	RzBitVector *l_exp_squashed = get_exp_squashed(left->s, left->r);
 	RzBitVector *r_exp_squashed = get_exp_squashed(right->s, right->r);
 	RzBitVector *l_mantissa = get_man(left->s, left->r);
 	RzBitVector *r_mantissa = get_man(right->s, right->r);
+
+	if (!l_exp_squashed || !r_exp_squashed || !l_mantissa || !r_mantissa) {
+		RZ_LOG_ERROR("Error when parsing rz-float")
+		return NULL;
+	}
 
 	RzBitVector *l_borrowed_sig = l_mantissa;
 	RzBitVector *r_borrowed_sig = r_mantissa;
@@ -460,7 +599,7 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	RzBitVector *exp_one = rz_bv_new_one(exp_len);
 	bool unused;
 
-	/// Handle normal float add
+	// Handle normal float add
 	ut32 l_exp_val = rz_bv_to_ut32(l_exp_squashed);
 	ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
 	st32 exp_diff = (st32)(l_exp_val - r_exp_val);
@@ -468,40 +607,40 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	ut32 l_borrow_exp_val = l_exp_val;
 	ut32 r_borrow_exp_val = r_exp_val;
 
-	/// left shift to prevent some tail bits being discard during calculating
-	/// should reserve 3 bits before mantissa : ABCM MMMM MMMM MMMM ...
-	/// C : for the hidden significant bit
-	/// B : carry bit
-	/// A : a space for possible overflow during rounding
-	/// M : represent for mantissa bits
-	ut32 shift_dist = (exp_len + 1) - 3; /// mantissa have (exp_len + sign_len) free bits, and then reserve 3 bits
-	ut32 hidden_bit_pos = total_len - 3; /// the 3rd bit counted from MSB
-	ut32 carry_bit_pos = total_len - 2; /// the 2nd bit counted from MSB
+	// left shift to prevent some tail bits being discard during calculating
+	// should reserve 3 bits before mantissa : ABCM MMMM MMMM MMMM ...
+	// C : for the hidden significant bit
+	// B : carry bit
+	// A : a space for possible overflow during rounding
+	// M : represent for mantissa bits
+	ut32 shift_dist = (exp_len + 1) - 3; // mantissa have (exp_len + sign_len) free bits, and then reserve 3 bits
+	ut32 hidden_bit_pos = total_len - 3; // the 3rd bit counted from MSB
+	ut32 carry_bit_pos = total_len - 2; // the 2nd bit counted from MSB
 
 	if (exp_diff == 0) {
-		/// normalized float, hidden bit is 1, recover it in significant
-		/// 1.MMMM MMMM ...
+		// normalized float, hidden bit is 1, recover it in significant
+		// 1.MMMM MMMM ...
 		if (l_borrow_exp_val != 0) {
 			rz_bv_lshift(l_mantissa, shift_dist);
 			rz_bv_lshift(r_mantissa, shift_dist);
 			rz_bv_set(l_borrowed_sig, hidden_bit_pos, true);
 			rz_bv_set(r_borrowed_sig, hidden_bit_pos, true);
 		} else {
-			/// sub-normal + sub-normal
-			/// sub-normal float, hidden bit is 0, so we do nothing to sigs
-			/// 0.MMMM MMMM ...
-			/// calculate and then pack to return
+			// sub-normal + sub-normal
+			// sub-normal float, hidden bit is 0, so we do nothing to sigs
+			// 0.MMMM MMMM ...
+			// calculate and then pack to return
 			result = RZ_NEW0(RzFloat);
 			result->r = format;
 			result->s = rz_bv_add(left->s, r_mantissa, &unused);
 			goto clean;
 		}
-	} else { /// exp_diff != 0
+	} else { // exp_diff != 0
 		rz_bv_lshift(l_mantissa, shift_dist);
 		rz_bv_lshift(r_mantissa, shift_dist);
-		/// should align exponent, chose the max(l_exp, r_exp) as final exp
+		// should align exponent, chose the max(l_exp, r_exp) as final exp
 		if (exp_diff < 0) {
-			/// swap to keep l_exp > r_exp
+			// swap to keep l_exp > r_exp
 			l_borrowed_sig = r_mantissa;
 			r_borrowed_sig = l_mantissa;
 			l_borrow_exp_val = r_exp_val;
@@ -509,51 +648,51 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 			abs_exp_diff = -exp_diff;
 		}
 
-		/// check if the small one (right) is normalized ?
+		// check if the small one (right) is normalized ?
 		if (r_borrow_exp_val != 0) {
-			/// normalized, and then we recover the leading bit 1
-			/// 1.MMMM MMMM ...
+			// normalized, and then we recover the leading bit 1
+			// 1.MMMM MMMM ...
 			rz_bv_set(r_borrowed_sig, hidden_bit_pos, true);
 		} else {
-			/// sub-normal (or denormalized float) case
-			/// in IEEE, the value of exp is (1 - bias) for sub-normal, instead of (0 - bias)
-			/// but we considered it as (0 - bias) when calculate the exp_diff = l_exp_field - r_exp_field
-			/// we should r-shift (l_exp_field - bias) - (1 - bias) = l_exp_field - 1,
-			/// but we r-shift (l_exp_field - bias) - (0 - bias) = l_exp_filed
-			/// thus we need to l-shift 1 bit to fix this incompatible
+			// sub-normal (or denormalized float) case
+			// in IEEE, the value of exp is (1 - bias) for sub-normal, instead of (0 - bias)
+			// but we considered it as (0 - bias) when calculate the exp_diff = l_exp_field - r_exp_field
+			// we should r-shift (l_exp_field - bias) - (1 - bias) = l_exp_field - 1,
+			// but we r-shift (l_exp_field - bias) - (0 - bias) = l_exp_filed
+			// thus we need to l-shift 1 bit to fix this incompatible
 			rz_bv_lshift(r_borrowed_sig, 1);
 		}
 
-		/// revealed the hidden bit of the bigger one : 1.MMMM
+		// revealed the hidden bit of the bigger one : 1.MMMM
 		rz_bv_set(l_borrowed_sig, hidden_bit_pos, true);
-		/// aligned exponent, and generate sticky bit
+		// aligned exponent, and generate sticky bit
 		rz_bv_shift_right_jammed(r_borrowed_sig, abs_exp_diff);
 	}
 
-	/// set result exponent
+	// set result exponent
 	ut32 result_exp_val = l_borrow_exp_val;
 
-	/// now l_exp == r_exp
-	/// calculate significant
+	// now l_exp == r_exp
+	// calculate significant
 	result_sig = rz_bv_add(l_borrowed_sig, r_borrowed_sig, &unused);
 
-	/// if it produce a carry bit, we should normalize it (rshift 1 and exp + 1)
-	/// but we do nothing, instead, we makes every non-carry number have the same
-	/// form : 01X.M MMMM MMMM ... = 01.XM MMMM MMMM ... * (0b10)
-	///           ^------- point
-	/// we don't need to ++exp explicitly,
-	/// because after rounding, if the bit before point (carry bit) is 1
-	/// we could add sig and exp directly, to represent (exp + 1) operation
-	/// since the leading sig bit is an overlapping bit of exp part and sig part
+	// if it produce a carry bit, we should normalize it (rshift 1 and exp + 1)
+	// but we do nothing, instead, we makes every non-carry number have the same
+	// form : 01X.M MMMM MMMM ... = 01.XM MMMM MMMM ... * (0b10)
+	//           ^------- point
+	// we don't need to ++exp explicitly,
+	// because after rounding, if the bit before point (carry bit) is 1
+	// we could add sig and exp directly, to represent (exp + 1) operation
+	// since the leading sig bit is an overlapping bit of exp part and sig part
 	if (!rz_bv_get(result_sig, carry_bit_pos) && !rz_bv_msb(result_sig)) {
 		result_exp_val -= 1;
 		rz_bv_lshift(result_sig, 1);
 	}
 
-	/// round
+	// round
 	result = round_float_bv(sign, result_exp_val, result_sig, format, mode);
 
-/// clean
+// clean
 clean:
 	rz_bv_free(l_exp_squashed);
 	rz_bv_free(l_mantissa);
@@ -564,12 +703,15 @@ clean:
 	return result;
 }
 
+/**
+ * \brief sub magnitude (absolute value)
+ */
 static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, bool sign, RzFloatRMode mode) {
 	RzFloat *result = NULL;
 
 	/* Process NaN and Inf cases */
 	PROC_SPECIAL_FLOAT_START(left, right)
-	/// propagate NaN
+	// propagate NaN
 	if (l_is_nan || r_is_nan) {
 		return propagate_float_nan(left, l_type, right, r_type);
 	}
@@ -593,22 +735,32 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	}
 	PROC_SPECIAL_FLOAT_END
 
-	/// Extract attribute from format
+	// Extract attribute from format
 	RzFloatFormat format = left->r;
 	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 
-	/// Extract fields from num
+	// Extract fields from num
 	RzBitVector *l_exp_squashed = get_exp_squashed(left->s, left->r);
 	RzBitVector *r_exp_squashed = get_exp_squashed(right->s, right->r);
 	RzBitVector *l_mantissa = get_man(left->s, left->r);
 	RzBitVector *r_mantissa = get_man(right->s, right->r);
+
+	if (!l_exp_squashed || !r_exp_squashed || !l_mantissa || !r_mantissa) {
+		RZ_LOG_ERROR("Error when parsing rz-float")
+		rz_bv_free(l_exp_squashed);
+		rz_bv_free(r_exp_squashed);
+		rz_bv_free(l_mantissa);
+		rz_bv_free(r_mantissa);
+		return NULL;
+	}
+
 	RzBitVector *l_borrowed_sig = l_mantissa;
 	RzBitVector *r_borrowed_sig = r_mantissa;
 	RzBitVector *result_sig = NULL, *result_exp_squashed = NULL;
 	bool unused;
 
-	/// Handle normal float add
+	// Handle normal float add
 	ut32 l_exp_val = rz_bv_to_ut32(l_exp_squashed);
 	ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
 	st32 exp_diff = (st32)(l_exp_val - r_exp_val);
@@ -617,22 +769,22 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	ut32 r_borrow_exp_val = r_exp_val;
 	st32 res_exp_val;
 
-	/// similar to `add`, but remember that sub would never produce a carry bit
-	/// we create ABMM MMMM MMMM MMMM ...
-	/// B : for the leading significant bit
-	/// A : space
-	ut32 shift_dist = (exp_len + 1) - 2; /// mantissa have (exp_len + sign_len) free bits, and then reserve 2 bits
-	ut32 hidden_bit_pos = total_len - 2; /// the 2nd bit counted from MSB
+	// similar to `add`, but remember that sub would never produce a carry bit
+	// we create ABMM MMMM MMMM MMMM ...
+	// B : for the leading significant bit
+	// A : space
+	ut32 shift_dist = (exp_len + 1) - 2; // mantissa have (exp_len + sign_len) free bits, and then reserve 2 bits
+	ut32 hidden_bit_pos = total_len - 2; // the 2nd bit counted from MSB
 
-	/// if l_exp = r_exp
+	// if l_exp = r_exp
 	if (exp_diff == 0) {
-		/// compare result
+		// compare result
 		ut8 sdiff_neg = rz_bv_ule(l_mantissa, r_mantissa);
 		ut8 sdiff_pos = rz_bv_ule(r_mantissa, l_mantissa);
 		ut8 sig_diff_is_zero = sdiff_neg && sdiff_pos;
 		RzBitVector *sig_diff = NULL;
 		if (sig_diff_is_zero) {
-			/// pack to return, exp = 0, sig = 0
+			// pack to return, exp = 0, sig = 0
 			result = RZ_NEW0(RzFloat);
 			result->r = format;
 			result->s = rz_bv_new_zero(total_len);
@@ -640,7 +792,7 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 			goto clean;
 		}
 
-		/// calculate the correct sig diff
+		// calculate the correct sig diff
 		if (sdiff_neg) {
 			sign = !sign;
 			sig_diff = rz_bv_sub(r_mantissa, l_mantissa, &unused);
@@ -648,16 +800,16 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 			sig_diff = rz_bv_sub(l_mantissa, r_mantissa, &unused);
 		}
 
-		/// normalize sig
-		/// clz - exp_len - sign_len + 1 (reserve the leading bit) = clz - exp_len
+		// normalize sig
+		// clz - exp_len - sign_len + 1 (reserve the leading bit) = clz - exp_len
 		shift_dist = rz_bv_clz(sig_diff) - exp_len;
 		res_exp_val = (st32)(l_exp_val - shift_dist);
 		if (res_exp_val < 0) {
-			/// too tiny after shifting, limit to exp_A
+			// too tiny after shifting, limit to exp_A
 			shift_dist = l_exp_val;
 			res_exp_val = 0;
 		}
-		/// normalize sig diff, reveal the hidden bit pos
+		// normalize sig diff, reveal the hidden bit pos
 		rz_bv_lshift(sig_diff, shift_dist);
 
 		result_exp_squashed = rz_bv_new_from_ut64(l_exp_squashed->len, res_exp_val);
@@ -668,9 +820,9 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	} else {
 		rz_bv_lshift(l_mantissa, shift_dist);
 		rz_bv_lshift(r_mantissa, shift_dist);
-		/// l_exp != r_exp
+		// l_exp != r_exp
 		if (exp_diff < 0) {
-			/// swap to keep l_exp > r_exp
+			// swap to keep l_exp > r_exp
 			l_borrow_exp_val = r_exp_val;
 			r_borrow_exp_val = l_exp_val;
 			l_borrowed_sig = r_mantissa;
@@ -679,28 +831,28 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 			sign = !sign;
 		}
 
-		/// check if the small one (right) is normalized ?
+		// check if the small one (right) is normalized ?
 		if (r_borrow_exp_val != 0) {
-			/// normalized, and then we recover the leading bit 1
-			/// 1.MMMM MMMM ...
+			// normalized, and then we recover the leading bit 1
+			// 1.MMMM MMMM ...
 			rz_bv_set(r_borrowed_sig, hidden_bit_pos, true);
 		} else {
-			/// r_borrow << 1;
+			// r_borrow << 1;
 			rz_bv_lshift(r_borrowed_sig, 1);
 		}
 
-		/// revealed the hidden bit of the bigger one : 1.MMMM
+		// revealed the hidden bit of the bigger one : 1.MMMM
 		rz_bv_set(l_borrowed_sig, hidden_bit_pos, true);
-		/// aligned exponent, and generate sticky bit
+		// aligned exponent, and generate sticky bit
 		rz_bv_shift_right_jammed(r_borrowed_sig, abs_exp_diff);
 	}
 
-	/// result_exp = bigger_exp
+	// result_exp = bigger_exp
 	res_exp_val = l_borrow_exp_val - 1;
-	/// result_sig = bigger_sig - small_sig
+	// result_sig = bigger_sig - small_sig
 	result_sig = rz_bv_sub(l_borrowed_sig, r_borrowed_sig, &unused);
 
-	/// normalize, already shifted free bits, reserve 1 will be fine
+	// normalize, already shifted free bits, reserve 1 will be fine
 	shift_dist = rz_bv_clz(result_sig) - 1;
 	res_exp_val -= shift_dist;
 	rz_bv_lshift(result_sig, shift_dist);
@@ -718,7 +870,17 @@ clean:
 	return result;
 }
 
-/// for 32/64/128
+/**
+ * \defgroup rz_float_arithmetic_group Arithmetic Operations
+ * implements add, sub, mul, div, fma, rem, sqrt for binary32/binary64/binary128
+ * \{
+ */
+
+/**
+ * calculate \p left + \p right and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
 RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	bool l_sign = rz_float_get_sign(left);
 	bool r_sign = rz_float_get_sign(right);
@@ -728,6 +890,11 @@ RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	return fsub_mag(left, right, l_sign, mode);
 }
 
+/**
+ * calculate \p left - \p right and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
 RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	bool l_sign = rz_float_get_sign(left);
 	bool r_sign = rz_float_get_sign(right);
@@ -737,12 +904,17 @@ RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	return fadd_mag(left, right, l_sign, mode);
 }
 
+/**
+ * calculate \p left * \p right and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
 RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	RzFloat *result = NULL;
 
 	/* Process NaN and Inf cases */
 	PROC_SPECIAL_FLOAT_START(left, right)
-	/// propagate NaN
+	// propagate NaN
 	if (l_is_nan || r_is_nan) {
 		return propagate_float_nan(left, l_type, right, r_type);
 	}
@@ -760,19 +932,19 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	}
 
 	if (l_is_zero || r_is_zero) {
-		/// 0 * x = 0
+		// 0 * x = 0
 		return rz_float_new(left->r);
 	}
 	PROC_SPECIAL_FLOAT_END
 
-	/// Extract attribute from format
+	// Extract attribute from format
 	RzFloatFormat format = left->r;
 	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
 	ut32 extra_len = total_len;
 
-	/// Extract fields from num
+	// Extract fields from num
 	RzBitVector *l_exp_squashed = get_exp_squashed(left->s, left->r);
 	RzBitVector *r_exp_squashed = get_exp_squashed(right->s, right->r);
 	RzBitVector *l_mantissa = get_man_stretched(left->s, left->r);
@@ -782,28 +954,28 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	bool r_sign = get_sign(right->s, right->r);
 	bool result_sign = l_sign ^ r_sign;
 
-	/// Handle normal float multiply
+	// Handle normal float multiply
 	ut32 l_exp_val = rz_bv_to_ut32(l_exp_squashed);
 	ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
 	ut32 shift_dist;
 
-	/// normalize sub-normal num
+	// normalize sub-normal num
 	if (l_exp_val == 0) {
-		/// is sub-normal
-		/// shift_dist = ctz - (sign + exponent width) + 1 (the leading sig bit) - extra bits
-		/// note that stretched bv has 2 * total_len long, the extra bits has (total_len) long
+		// is sub-normal
+		// shift_dist = ctz - (sign + exponent width) + 1 (the leading sig bit) - extra bits
+		// note that stretched bv has 2 * total_len long, the extra bits has (total_len) long
 		shift_dist = rz_bv_clz(l_mantissa) - (1 + exp_len) + 1 - extra_len;
 
-		/// sub_nor_exp = 1 - bias
-		/// normalized_exp = sub_nor_exp - shift_dist = 1 - bias - shift_dist
-		/// = (1 - shift_dist) - bias
-		/// so the value of exponent field is (1 - shift_dist)
+		// sub_nor_exp = 1 - bias
+		// normalized_exp = sub_nor_exp - shift_dist = 1 - bias - shift_dist
+		// = (1 - shift_dist) - bias
+		// so the value of exponent field is (1 - shift_dist)
 		l_exp_val = 1 - shift_dist;
 		rz_bv_lshift(l_mantissa, shift_dist);
 	}
 
 	if (r_exp_val == 0) {
-		/// is sub-normal
+		// is sub-normal
 		shift_dist = rz_bv_clz(r_mantissa) - (1 + exp_len) + 1 - extra_len;
 		r_exp_val = 1 - shift_dist;
 		rz_bv_lshift(r_mantissa, shift_dist);
@@ -811,29 +983,29 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 
 	ut32 result_exp_val = l_exp_val + r_exp_val - bias;
 
-	/// remember we would like to make 01.MM MMMM ... (but leave higher extra bits empty)
+	// remember we would like to make 01.MM MMMM ... (but leave higher extra bits empty)
 	shift_dist = (exp_len + 1) - 2;
 	ut32 hiddent_bit_pos = total_len - 2;
 
 	rz_bv_lshift(l_mantissa, shift_dist);
-	rz_bv_lshift(r_mantissa, shift_dist + 1); /// +1 due to leading 0 will accumulate
+	rz_bv_lshift(r_mantissa, shift_dist + 1); // +1 due to leading 0 will accumulate
 
-	/// set leading bit
+	// set leading bit
 	rz_bv_set(l_mantissa, hiddent_bit_pos, true);
 	rz_bv_set(r_mantissa, hiddent_bit_pos + 1, true);
 
-	/// multiplication
+	// multiplication
 	result_sig = rz_bv_mul(l_mantissa, r_mantissa);
-	/// recovered to lower bits
+	// recovered to lower bits
 	rz_bv_shift_right_jammed(result_sig, extra_len);
-	/// cut extra bits from MSB
+	// cut extra bits from MSB
 	RzBitVector *tmp = rz_bv_cut_head(result_sig, extra_len);
 	rz_bv_free(result_sig);
 	result_sig = tmp;
 	tmp = NULL;
 
-	/// check if a carry happen, if not, l-shift to force a leading 1
-	/// check MSB and the bit after MSB
+	// check if a carry happen, if not, l-shift to force a leading 1
+	// check MSB and the bit after MSB
 	if (!rz_bv_get(result_sig, total_len - 2) && !rz_bv_msb(result_sig)) {
 		result_exp_val -= 1;
 		rz_bv_lshift(result_sig, 1);
@@ -851,17 +1023,21 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	return result;
 }
 
+/**
+ * \brief calculate \p left / \p right and round the result after, return the result
+ * \details
+ * Inf / not Inf -> Inf
+ * non-0 / 0 -> Inf
+ * Inf / Inf -> invalid
+ * 0 / 0 -> invalid
+ * 0 / not 0 -> 0
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
 RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	RzFloat *result = NULL;
 
 	PROC_SPECIAL_FLOAT_START(left, right)
-	/**
-	 * Inf / not Inf -> Inf
-	 * non-0 / 0 -> Inf
-	 * Inf / Inf -> invalid
-	 * 0 / 0 -> invalid
-	 * 0 / not 0 -> 0
-	 **/
 	bool l_sign = rz_float_get_sign(left);
 	bool r_sign = rz_float_get_sign(right);
 	bool sign = l_sign ^ r_sign;
@@ -900,14 +1076,14 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	}
 	PROC_SPECIAL_FLOAT_END
 
-	/// Extract attribute from format
+	// Extract attribute from format
 	RzFloatFormat format = left->r;
 	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
 	ut32 extra_len = total_len;
 
-	/// Extract fields from num
+	// Extract fields from num
 	RzBitVector *l_exp_squashed = get_exp_squashed(left->s, left->r);
 	RzBitVector *r_exp_squashed = get_exp_squashed(right->s, right->r);
 	RzBitVector *l_mantissa = get_man_stretched(left->s, left->r);
@@ -917,22 +1093,22 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	bool r_sign = get_sign(right->s, right->r);
 	bool result_sign = l_sign ^ r_sign;
 
-	/// Handle normal float multiply
+	// Handle normal float multiply
 	ut32 l_exp_val = rz_bv_to_ut32(l_exp_squashed);
 	ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
 	ut32 shift_dist;
 
-	/// normalize sub-normal num
-	/// similar to multiplication
+	// normalize sub-normal num
+	// similar to multiplication
 	if (l_exp_val == 0) {
-		/// is sub-normal
+		// is sub-normal
 		shift_dist = rz_bv_clz(l_mantissa) - (1 + exp_len) + 1 - extra_len;
 		l_exp_val = 1 - shift_dist;
 		rz_bv_lshift(l_mantissa, shift_dist);
 	}
 
 	if (r_exp_val == 0) {
-		/// is sub-normal
+		// is sub-normal
 		shift_dist = rz_bv_clz(r_mantissa) - (1 + exp_len) + 1 - extra_len;
 		r_exp_val = 1 - shift_dist;
 		rz_bv_lshift(r_mantissa, shift_dist);
@@ -940,50 +1116,50 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 
 	ut32 result_exp_val = l_exp_val - r_exp_val + bias;
 
-	/// remember we would like to make the pattern 01.MM MMMM ...
+	// remember we would like to make the pattern 01.MM MMMM ...
 	shift_dist = (exp_len + 1) - 2;
 	ut32 hiddent_bit_pos = total_len - (1 + exp_len);
 
-	/// set leading bit
+	// set leading bit
 	rz_bv_set(l_mantissa, hiddent_bit_pos, true);
 	rz_bv_set(r_mantissa, hiddent_bit_pos, true);
 
-	/// shift to make sure left is large enough to div
-	/// Fx = Mx * 2^x, Fy = My * 2^y
-	/// we have Mx as 01MM MMMM MMMM ...
-	/// now expand left operand to have more bits
-	/// dividend 01MM ..MM 0000 0000 0000 ...
-	/// divisor  00...0000 01MM MMMM MMMM ...
+	// shift to make sure left is large enough to div
+	// Fx = Mx * 2^x, Fy = My * 2^y
+	// we have Mx as 01MM MMMM MMMM ...
+	// now expand left operand to have more bits
+	// dividend 01MM ..MM 0000 0000 0000 ...
+	// divisor  00...0000 01MM MMMM MMMM ...
 	rz_bv_lshift(l_mantissa, shift_dist + extra_len);
 	rz_bv_lshift(r_mantissa, shift_dist);
 
-	/// both dividend and divisor have the form 1.MM...
-	/// and thus the first bit-1 must be set in
-	/// a. LSB of extra bits (dividend sig >= divisor sig)
-	/// b. MSB of original bits (dividend sig < divisor sig)
-	/// the clz should be 31 or 32 respectively
+	// both dividend and divisor have the form 1.MM...
+	// and thus the first bit-1 must be set in
+	// a. LSB of extra bits (dividend sig >= divisor sig)
+	// b. MSB of original bits (dividend sig < divisor sig)
+	// the clz should be 31 or 32 respectively
 	result_sig = rz_bv_div(l_mantissa, r_mantissa);
 	ut32 clz = rz_bv_clz(result_sig);
 
-	/// check if normalization needed
+	// check if normalization needed
 	shift_dist = clz == extra_len ? 1 : 0;
 
-	/// Convert to original length bitvector
-	/// normalize it
-	/// and make 01MM MMMM MMMM ... format
+	// Convert to original length bitvector
+	// normalize it
+	// and make 01MM MMMM MMMM ... format
 	rz_bv_shift_right_jammed(result_sig, 2 - shift_dist);
 	RzBitVector *tmp = rz_bv_cut_head(result_sig, extra_len);
 	rz_bv_free(result_sig);
 	result_sig = tmp;
 	tmp = NULL;
 
-	/// dec exp according to normalization
-	/// exp -= shift
-	/// exp -= 1 for rounding
+	// dec exp according to normalization
+	// exp -= shift
+	// exp -= 1 for rounding
 	result_exp_val -= shift_dist + 1;
 
 	if ((st32)result_exp_val < 0) {
-		/// underflow ?
+		// underflow ?
 		result_exp_val = 0;
 	}
 
@@ -998,14 +1174,18 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	return result;
 }
 
+/**
+ * \brief calculate \p left % \p right and round the result after, return the result
+ * \details
+ * Any % 0 => NaN
+ * Inf % Any => NaN, invalid
+ * Any % Inf -> Any
+ * 0 % Any -> 0
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
 RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	PROC_SPECIAL_FLOAT_START(left, right)
-	/**
-	 * Any % 0 => NaN
-	 * Inf % Any => NaN, invalid
-	 * Any % Inf -> Any
-	 * 0 % Any -> 0
-	 **/
 	RzFloat *spec_ret = NULL;
 
 	if (l_is_nan || r_is_nan) {
@@ -1027,7 +1207,7 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	}
 	PROC_SPECIAL_FLOAT_END
 
-	/// r = fma(-trunc(f / n), n, f);
+	// r = fma(-trunc(f / n), n, f);
 	RzFloat *div = rz_float_div_ieee_bin(left, right, mode);
 	RzFloat *trunc = rz_float_trunc(div);
 	rz_bv_toggle(trunc->s, trunc->s->len - 1);
@@ -1039,15 +1219,12 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 }
 
 /**
- * calculate a + b * c, and then round the result
- * @param a
- * @param b
- * @param c
- * @param mode
- * @return
+ * calculate \p a * \p b + \p c, and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
  */
 RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode) {
-	/// process NaN / Inf
+	// process NaN / Inf
 	{
 		RzFloatSpec a_type, b_type, c_type;
 		a_type = rz_float_detect_spec(a);
@@ -1075,14 +1252,14 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 		}
 	}
 
-	/// Extract attribute from format
+	// Extract attribute from format
 	RzFloatFormat format = a->r;
 	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
 	ut32 extra_len = total_len;
 
-	/// extra fields from a and b for multiply
+	// extra fields from a and b for multiply
 	RzBitVector *a_exp_squashed = get_exp_squashed(a->s, a->r);
 	RzBitVector *b_exp_squashed = get_exp_squashed(b->s, b->r);
 	RzBitVector *a_mantissa = get_man_stretched(a->s, a->r);
@@ -1096,28 +1273,28 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 	RzBitVector *res_sig;
 	RzFloat *ret_f;
 
-	/// Handle normal float multiply
+	// Handle normal float multiply
 	ut32 a_exp_val = rz_bv_to_ut32(a_exp_squashed);
 	ut32 b_exp_val = rz_bv_to_ut32(b_exp_squashed);
 	ut32 shift_dist;
 
-	/// normalize sub-normal num
+	// normalize sub-normal num
 	if (a_exp_val == 0) {
-		/// is sub-normal
-		/// shift_dist = ctz - (sign + exponent width) + 1 (the leading sig bit) - extra bits
-		/// note that stretched bv has 2 * total_len long, the extra bits has (total_len) long
+		// is sub-normal
+		// shift_dist = ctz - (sign + exponent width) + 1 (the leading sig bit) - extra bits
+		// note that stretched bv has 2 * total_len long, the extra bits has (total_len) long
 		shift_dist = rz_bv_clz(a_mantissa) - (1 + exp_len) + 1 - extra_len;
 
-		/// sub_nor_exp = 1 - bias
-		/// normalized_exp = sub_nor_exp - shift_dist = 1 - bias - shift_dist
-		/// = (1 - shift_dist) - bias
-		/// so the value of exponent field is (1 - shift_dist)
+		// sub_nor_exp = 1 - bias
+		// normalized_exp = sub_nor_exp - shift_dist = 1 - bias - shift_dist
+		// = (1 - shift_dist) - bias
+		// so the value of exponent field is (1 - shift_dist)
 		a_exp_val = 1 - shift_dist;
 		rz_bv_lshift(a_mantissa, shift_dist);
 	}
 
 	if (b_exp_val == 0) {
-		/// is sub-normal
+		// is sub-normal
 		shift_dist = rz_bv_clz(b_mantissa) - (1 + exp_len) + 1 - extra_len;
 		b_exp_val = 1 - shift_dist;
 		rz_bv_lshift(b_mantissa, shift_dist);
@@ -1125,21 +1302,21 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 
 	ut32 mul_exp_val = a_exp_val + b_exp_val - bias + 1;
 
-	/// remember we would like to make 01.MM MMMM ... (but leave higher extra bits empty)
+	// remember we would like to make 01.MM MMMM ... (but leave higher extra bits empty)
 	shift_dist = (exp_len + 1) - 2;
 	ut32 hiddent_bit_pos = total_len - 2;
 
 	rz_bv_lshift(a_mantissa, shift_dist);
 	rz_bv_lshift(b_mantissa, shift_dist);
 
-	/// set leading bit
+	// set leading bit
 	rz_bv_set(a_mantissa, hiddent_bit_pos, true);
 	rz_bv_set(b_mantissa, hiddent_bit_pos, true);
-	/// multiplication
+	// multiplication
 	mul_sig = rz_bv_mul(a_mantissa, b_mantissa);
 
-	/// check if a carry happen, if not, l-shift to force a leading 1
-	/// check MSB and the bit after MSB
+	// check if a carry happen, if not, l-shift to force a leading 1
+	// check MSB and the bit after MSB
 	ut64 new_total_len = total_len + extra_len;
 	if (!rz_bv_get(mul_sig, new_total_len - 3) &&
 		!rz_bv_get(mul_sig, new_total_len - 2) &&
@@ -1148,7 +1325,7 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 		rz_bv_lshift(mul_sig, 1);
 	}
 
-	/// calculating addition
+	// calculating addition
 	RzBitVector *c_exp_squashed = get_exp_squashed(c->s, c->r);
 	ut32 c_exp_val = rz_bv_to_ut32(c_exp_squashed);
 	bool c_sign = get_sign(c->s, c->r);
@@ -1163,15 +1340,15 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 			goto round;
 		}
 
-		/// normalize sub-normal c
-		/// TODO : create a function - normalize_subnorm
+		// normalize sub-normal c
+		// TODO : create a function - normalize_subnorm
 		shift_dist = rz_bv_clz(c_mantissa) - (1 + exp_len) + 1;
 		res_exp_val = 1 - shift_dist;
 		rz_bv_lshift(c_mantissa, shift_dist);
 	}
 
-	/// prepare c_sig for addition
-	/// set hidden bit 1 and shift (001.M MMMM ...)
+	// prepare c_sig for addition
+	// set hidden bit 1 and shift (001.M MMMM ...)
 	hiddent_bit_pos = total_len - 3;
 	rz_bv_lshift(c_mantissa, exp_len - 2);
 	rz_bv_set(c_mantissa, hiddent_bit_pos, true);
@@ -1180,7 +1357,7 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 	st32 exp_diff_val = (st32)(mul_exp_val - c_exp_val);
 	st32 abs_exp_diff_val = exp_diff_val > 0 ? exp_diff_val : -exp_diff_val;
 	if (mul_sign == c_sign) {
-		/// addition
+		// addition
 		if (exp_diff_val <= 0) {
 			res_exp_val = c_exp_val;
 			rz_bv_shift_right_jammed(mul_sig, abs_exp_diff_val);
@@ -1189,17 +1366,17 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 			rz_bv_shift_right_jammed(c_mantissa, abs_exp_diff_val);
 		}
 
-		/// calc
+		// calc
 		res_sig = rz_bv_add(mul_sig, c_mantissa, NULL);
 
-		/// check if we should normalize
+		// check if we should normalize
 		if (!rz_bv_get(res_sig, new_total_len - 1) &&
 			!rz_bv_get(res_sig, new_total_len - 2)) {
 			res_exp_val -= 1;
 			rz_bv_lshift(res_sig, 1);
 		}
 	} else {
-		/// sub
+		// sub
 		if (exp_diff_val < 0) {
 			res_sign = c_sign;
 			res_exp_val = c_exp_val;
@@ -1212,7 +1389,7 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 				goto zero;
 			}
 			if (rz_bv_msb(res_sig)) {
-				/// if negative, turn to (+/- absolute val) from 2's complement
+				// if negative, turn to (+/- absolute val) from 2's complement
 				res_sign = !res_sign;
 				RzBitVector *tmp = rz_bv_complement_2(res_sig);
 				rz_bv_free(res_sig);
@@ -1221,7 +1398,7 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 			}
 
 		} else {
-			/// exp_diff > 0
+			// exp_diff > 0
 			res_exp_val = mul_exp_val;
 			rz_bv_shift_right_jammed(c_mantissa, abs_exp_diff_val);
 			res_sig = rz_bv_sub(mul_sig, c_mantissa, NULL);
@@ -1236,8 +1413,8 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 		}
 	}
 
-	/// drop extra length
-	/// recovered to original length
+	// drop extra length
+	// recovered to original length
 	rz_bv_shift_right_jammed(res_sig, extra_len);
 	RzBitVector *tmp = rz_bv_cut_head(res_sig, extra_len);
 	rz_bv_free(res_sig);
@@ -1247,7 +1424,7 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 	goto round;
 
 zero:
-	/// complete zero
+	// complete zero
 	ret_f = rz_float_new(format);
 	ret_f->s = rz_bv_new(total_len);
 	rz_bv_set(ret_f->s, total_len - 1, mode == RZ_FLOAT_RMODE_RTN);
@@ -1267,18 +1444,13 @@ clean:
 	return ret_f;
 }
 
-RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f) {
-	rz_return_val_if_fail(f, NULL);
-	RzFloat *abs = rz_float_dup(f);
-	if (rz_float_get_sign(f)) {
-		/// change sign if negative
-		rz_make_fabs(abs);
-	}
-	return abs;
-}
-
+/**
+ * calculate the root of \p n, and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
 RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode) {
-	/// Use Newton method now, May Optimize
+	// Use Newton method now, May Optimize
 	RzFloat *eps = rz_float_new_zero(n->r);
 	ut32 bias = rz_float_get_format_info(n->r, RZ_FLOAT_INFO_BIAS);
 	ut32 man_len = rz_float_get_format_info(n->r, RZ_FLOAT_INFO_MAN_LEN);
@@ -1295,7 +1467,7 @@ RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMod
 		RzFloat *sum_half = rz_half_float(sum);
 		RzFloat *abs = rz_float_sub_ieee_bin(x, sum_half, mode);
 		rz_make_fabs(abs);
-		/// abs <= eps, both are positive
+		// abs <= eps, both are positive
 		if (rz_bv_ule(abs->s, eps->s))
 			break;
 		rz_float_free(x);
@@ -1313,8 +1485,29 @@ RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMod
 	return x;
 }
 
+/** \} */ // end rz_float_arithmetic_group
+
+/**
+ * get the absolute value of given float
+ * \param f float
+ */
+RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzFloat *abs = rz_float_dup(f);
+	if (rz_float_get_sign(f)) {
+		// change sign if negative
+		rz_make_fabs(abs);
+	}
+	return abs;
+}
+
+/**
+ * Truncate the float and convert to an integer (discard decimal bits)
+ * \param f float
+ * \return an integer with float type
+ */
 RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
-	/// Round to zero
+	// Round to zero
 	rz_return_val_if_fail(f, NULL);
 	RzBitVector *exp_bv = get_exp_squashed(f->s, f->r);
 	ut32 exp_val = rz_bv_to_ut32(exp_bv);
@@ -1323,7 +1516,7 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
 	ut32 bias = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_BIAS);
 
 	if (exp_val < bias) {
-		/// magnitude < 1.0
+		// magnitude < 1.0
 		return rz_float_new_zero(f->r);
 	}
 
@@ -1331,7 +1524,7 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
 	ut32 shift_dist = exp_val - bias;
 	pt_pos = max_pt_pos <= shift_dist ? max_pt_pos : shift_dist;
 
-	/// set mantissa bits after pt_pos as zero
+	// set mantissa bits after pt_pos as zero
 	RzFloat *ret = rz_float_dup(f);
 	for (ut32 i = 0; i < max_pt_pos - pt_pos; ++i) {
 		rz_bv_set(ret->s, i, false);
