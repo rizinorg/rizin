@@ -764,11 +764,11 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 			rS = cs_reg_name(handle, INSOP(1).reg);
 			mask = ppc_fmx_to_mask(fxm);
 		}
-		RzILOpEffect *set_cr = SETG("cr", LOGOR(LOGAND(UNSIGNED(32, VARG(rS)), U32(mask)), LOGAND(VARG("cr"), LOGNOT(U32(mask)))));
+		RzILOpEffect *set_cr = SETL("cr", LOGOR(LOGAND(UNSIGNED(32, VARG(rS)), U32(mask)), LOGAND(VARL("cr"), LOGNOT(U32(mask)))));
 		return SEQ2(set_cr, sync_crx_cr(false, mask));
 
 	case PPC_INS_MFCR:
-		return SEQ2(sync_crx_cr(true, 0x0), SETG(rT, EXTZ(VARG(rT))));
+		return SEQ2(sync_crx_cr(true, 0x0), SETG(rT, EXTZ(VARL("cr"))));
 
 	// Note: We do not update CR after the OCRF operations.
 	case PPC_INS_MTOCRF:
@@ -791,7 +791,12 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 			set_val = SETL("val", UA(0));
 			break;
 		}
-		set_val = (id == PPC_INS_MFOCRF) ? SETL("val", SHIFTL0(EXTZ(crx), U8(x * 4))) : SETL("val", UNSIGNED(4, SHIFTR0(VARG(rT), U8(x * 4))));
+		if (id == PPC_INS_MFOCRF) {
+			set_val = SETL("val", SHIFTL0(EXTZ(crx), U8(x * 4)));
+		} else {
+			size = 4;
+			set_val = SETL("val", SHIFTR0(VARG(rT), U8(x * 4)));
+		}
 		break;
 	// IBM POWER specific Segment Register
 	case PPC_INS_MTSRIN:

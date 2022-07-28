@@ -461,29 +461,20 @@ RZ_IPI const char *ppc_get_cr_name(const ut8 x) {
 RZ_IPI RZ_OWN RzILOpEffect *sync_crx_cr(const bool crx_to_cr, const ut32 cr_mask) {
 	RzILOpEffect *sync;
 	if (crx_to_cr) {
-		sync = SEQ9(
-			SETG("cr", U32(0)),
-			SETG("cr", UNSIGNED(32, VARG("cr0"))),
-			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr1")), U8(0x4)))),
-			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr2")), U8(0x8)))),
-			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr3")), U8(0xc)))),
-			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr4")), U8(0x10)))),
-			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr5")), U8(0x14)))),
-			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr6")), U8(0x18)))),
-			SETG("cr", LOGOR(VARG("cr"), SHIFTL0(UNSIGNED(32, VARG("cr7")), U8(0x1c)))));
+		sync = SETL("cr", LOGOR(UNSIGNED(32, VARG("cr7")), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr6")), U8(0x4)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr5")), U8(0x8)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr4")), U8(0xc)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr3")), U8(0x10)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr2")), U8(0x14)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr1")), U8(0x18)), SHIFTL0(UNSIGNED(32, VARG("cr0")), U8(0x1c))))))))));
 		return sync;
 	}
 	sync = SEQN(10,
 		SETL("cr_mask", U32(cr_mask)),
-		SETL("crm", LOGAND(VARG("cr"), U32(cr_mask))),
-		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf))), EMPTY(), SETG("cr0", UNSIGNED(4, VARL("crm")))),
-		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0))), EMPTY(), SETG("cr1", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x4))))),
-		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf00))), EMPTY(), SETG("cr2", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x8))))),
-		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf000))), EMPTY(), SETG("cr3", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0xc))))),
-		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0000))), EMPTY(), SETG("cr4", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x10))))),
-		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf00000))), EMPTY(), SETG("cr5", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x14))))),
-		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf000000))), EMPTY(), SETG("cr6", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x18))))),
-		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0000000))), EMPTY(), SETG("cr7", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x1c))))));
+		SETL("crm", LOGAND(VARL("cr"), U32(cr_mask))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf))), EMPTY(), SETG("cr7", UNSIGNED(4, VARL("crm")))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0))), EMPTY(), SETG("cr6", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x4))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf00))), EMPTY(), SETG("cr5", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x8))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf000))), EMPTY(), SETG("cr4", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0xc))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0000))), EMPTY(), SETG("cr3", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x10))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf00000))), EMPTY(), SETG("cr2", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x14))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf000000))), EMPTY(), SETG("cr1", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x18))))),
+		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0000000))), EMPTY(), SETG("cr0", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x1c))))));
 	return sync;
 }
 
