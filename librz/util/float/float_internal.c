@@ -220,38 +220,6 @@ static RZ_OWN bool get_sign(RZ_NONNULL RzBitVector *bv, RzFloatFormat format) {
 	return rz_bv_get(bv, bv->len - 1);
 }
 
-static bool is_signal_nan_bv(RzBitVector *float_bv, RzFloatFormat format) {
-	RzBitVector *exp = get_exp_squashed(float_bv, format);
-	RzBitVector *sig = get_man_squashed(float_bv, format);
-	bool ret = false;
-
-	if (!rz_bv_is_full_vector(exp) || !rz_bv_is_zero_vector(sig)) {
-		ret = false;
-	} else {
-		ret = rz_bv_msb(sig) ? false : true;
-	}
-
-	rz_bv_free(exp);
-	rz_bv_free(sig);
-	return ret;
-}
-
-static bool is_nan_bv(RzBitVector *float_bv, RzFloatFormat format) {
-	RzBitVector *exp = get_exp_squashed(float_bv, format);
-	RzBitVector *sig = get_man_squashed(float_bv, format);
-	bool ret = false;
-
-	if (!rz_bv_is_full_vector(exp) || !rz_bv_is_zero_vector(sig)) {
-		ret = false;
-	} else {
-		ret = true;
-	}
-
-	rz_bv_free(exp);
-	rz_bv_free(sig);
-	return ret;
-}
-
 /**
  * make a float becomes positive, would changed the float itself
  * \param f float to be converted

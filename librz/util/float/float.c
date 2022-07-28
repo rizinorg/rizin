@@ -216,7 +216,7 @@ RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f) {
  * \param value value of type `float`
  * \return true if success
  */
- // TODO : a better way to deal with the different physical implementation
+// TODO : a better way to deal with the different physical implementation
 RZ_API bool rz_float_set_from_single(RZ_NONNULL RzFloat *f, float value) {
 	rz_return_val_if_fail(f, false);
 
@@ -338,7 +338,6 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f64(ut64 hex_value) {
 RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f32(ut32 hex_value) {
 	return rz_float_new_from_hex(hex_value, RZ_FLOAT_IEEE754_BIN_32);
 }
-
 
 /**
  * \brief Cut out the exponent part of float bitvector, get a bitvector representation of exponent.

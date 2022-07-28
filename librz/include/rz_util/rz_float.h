@@ -14,22 +14,22 @@ typedef enum float_format_enum {
 	/// basic IEEE 754 float format enums
 	/// ref : https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats
 	/// 1. IEEE binary representations, use binary digits to represent float. machine-friendly
-	RZ_FLOAT_IEEE754_BIN_32,	///< IEEE-754 binary 32 format (single)
-	RZ_FLOAT_IEEE754_BIN_64,	///< IEEE-754 binary64 format (double)
-	RZ_FLOAT_IEEE754_BIN_128,	///< IEEE-754 binary128 format
+	RZ_FLOAT_IEEE754_BIN_32, ///< IEEE-754 binary 32 format (single)
+	RZ_FLOAT_IEEE754_BIN_64, ///< IEEE-754 binary64 format (double)
+	RZ_FLOAT_IEEE754_BIN_128, ///< IEEE-754 binary128 format
 
 	/// 2. IEEE decimal representations, use decimal digits to represent float precisely
 	/// the standard doesn't give an encoding to store decimal digits in binary.
 	/// two encoding ways in real-world : Binary integer decimal (BID) and Densely packed decimal (DPD)
-	RZ_FLOAT_IEEE754_DEC_64,	///< IEEE-754 decimal64 format, not implemented
-	RZ_FLOAT_IEEE754_DEC_128,	///< IEEE-754 decimal128 format, not implemented
+	RZ_FLOAT_IEEE754_DEC_64, ///< IEEE-754 decimal64 format, not implemented
+	RZ_FLOAT_IEEE754_DEC_128, ///< IEEE-754 decimal128 format, not implemented
 
 	/// may add others in the future
-	RZ_FLOAT_UNK	///< End of enums
+	RZ_FLOAT_UNK ///< End of enums
 } RzFloatFormat;
 
 typedef enum float_format_info {
-	RZ_FLOAT_INFO_BASE,	///< base of float representation, 2 for binary, 10 for decimal representation
+	RZ_FLOAT_INFO_BASE, ///< base of float representation, 2 for binary, 10 for decimal representation
 	RZ_FLOAT_INFO_EXP_LEN, ///< info about width of exponent field, in bits
 	RZ_FLOAT_INFO_MAN_LEN, ///< info about width of mantissa field, in bits
 	RZ_FLOAT_INFO_TOTAL_LEN, ///< info of length of format bv
@@ -46,11 +46,11 @@ typedef enum float_round_enum {
 } RzFloatRMode; ///< Rounding Mode
 
 typedef enum float_exception_enum {
-	RZ_FLOAT_E_INVALID_OP = 1,	///< Invalid operation
-	RZ_FLOAT_E_DIV_ZERO = 2,	///< Divide zero
-	RZ_FLOAT_E_OVERFLOW = 4,	///< overflow exception
-	RZ_FLOAT_E_UNDERFLOW = 8,	///< underflow exception
-	RZ_FLOAT_E_INEXACT = 16		///< calculated result is inexact
+	RZ_FLOAT_E_INVALID_OP = 1, ///< Invalid operation
+	RZ_FLOAT_E_DIV_ZERO = 2, ///< Divide zero
+	RZ_FLOAT_E_OVERFLOW = 4, ///< overflow exception
+	RZ_FLOAT_E_UNDERFLOW = 8, ///< underflow exception
+	RZ_FLOAT_E_INEXACT = 16 ///< calculated result is inexact
 } RzFloatException;
 
 /** IEEE-754-2008 special num in float (NaN, Infinity)
@@ -60,9 +60,9 @@ typedef enum float_exception_enum {
  */
 typedef enum float_speciality_enum {
 	RZ_FLOAT_SPEC_NOT = 0, ///< not a special num
-	RZ_FLOAT_SPEC_ZERO = 1,	///< zero float
-	RZ_FLOAT_SPEC_PINF = 2,	///< positive infinity
-	RZ_FLOAT_SPEC_NINF = 3,	///< negative infinity
+	RZ_FLOAT_SPEC_ZERO = 1, ///< zero float
+	RZ_FLOAT_SPEC_PINF = 2, ///< positive infinity
+	RZ_FLOAT_SPEC_NINF = 3, ///< negative infinity
 	RZ_FLOAT_SPEC_QNAN = 4, ///< Quiet NaN
 	RZ_FLOAT_SPEC_SNAN = 5, ///< Signaling NaN
 } RzFloatSpec;
