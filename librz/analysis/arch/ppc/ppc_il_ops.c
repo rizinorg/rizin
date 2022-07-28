@@ -511,34 +511,37 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		res = LOGNOT(
 			(id == PPC_INS_NAND) ? LOGAND(op0, op1) : LOGOR(op0, op1));
 		break;
-	// Compare bytes & Equivalent
+	// Compare bytes
 	case PPC_INS_CMPB:;
-		ut8 bits = PPC_ARCH_BITS;
-		RzILOpEffect *loop, *init_n, *ones_rA, *zeros_rA;
-		// RA[8×n:8×n+7] ← 0b1111_1111
-		ones_rA = SETG(rA, SET_RANGE(VARG(rA), VARL("n"), ADD(VARL("n"), U8(7)), BIT_MASK(bits, VARL("n"), ADD(VARL("n"), U8(7))), bits));
-		// RA[8×n:8×n+7] ← 0b0000_0000
-		zeros_rA = SETG(rA, SET_RANGE(VARG(rA), VARL("n"), ADD(VARL("n"), U8(7)), UA(0), bits));
-		RzILOpPure *bitmask_n_n7 = BIT_MASK(bits, MUL(U8(8), VARL("n")), ADD(MUL(U8(8), VARL("n")), U8(7)));
-		//  RS[8×n:8×n+7]
-		RzILOpPure *rS_8n_8n7 = LOGAND(bitmask_n_n7, VARG(rS));
-		//  RB[8×n:8×n+7]
-		RzILOpPure *rB_8n_8n7 = LOGAND(DUP(bitmask_n_n7), VARG(rB));
-		RzILOpPure *b_cond = EQ(rS_8n_8n7, rB_8n_8n7);
-
 		//	do n = 0 to (64BIT_CPU ? 7 : 3)
 		//		if RS[8×n:8×n+7] = RB[8×n:8×n+7] then
 		// 			RA[8×n:8×n+7] ← 0b1111_1111
 		//		else
 		//			RA[8×n:8×n+7] ← 0b0000_0000
 
+		ut8 bits = PPC_ARCH_BITS;
+		RzILOpEffect *loop, *init_n, *init_bitmask, *ones_rA;
+
+		RzILOpPure *bitmask_n_n7 = BIT_MASK(bits, MUL(U8(8), VARL("n")), ADD(MUL(U8(8), VARL("n")), U8(7)));
+		//  RS[8×n:8×n+7]
+		RzILOpPure *rS_8n_8n7 = LOGAND(VARL("bitmask_n_n7"), VARG(rS));
+		//  RB[8×n:8×n+7]
+		RzILOpPure *rB_8n_8n7 = LOGAND(VARL("bitmask_n_n7"), VARG(rB));
+		RzILOpPure *b_cond = EQ(rS_8n_8n7, rB_8n_8n7);
+
 		init_n = SETL("n", U8(0));
+		init_bitmask = SETL("bitmask_n_n7", bitmask_n_n7);
+		// RA[8×n:8×n+7] ← 0b1111_1111
+		ones_rA = SETL("res", LOGOR(VARL("res"), LOGAND(UA(-1), VARL("bitmask_n_n7"))));
 		ut8 m = IN_64BIT_MODE ? 8 : 4;
+
 		loop = REPEAT(ULT(VARL("n"), U8(m)),
-			SEQ2(BRANCH(b_cond,
-				     ones_rA, zeros_rA),
-				SETL("n", ADD(VARL("n"), U8(1)))));
-		return SEQ2(init_n, loop);
+			SEQ3(BRANCH(b_cond,
+				     ones_rA, EMPTY()),
+				SETL("n", ADD(VARL("n"), U8(1))),
+				SETL("bitmask_n_n7", DUP(bitmask_n_n7))));
+
+		return SEQ5(SETL("res", UA(0)), init_n, init_bitmask, loop, SETG(rA, VARL("res")));
 	case PPC_INS_EQV:
 		op0 = VARG(rS);
 		op1 = VARG(rB);
