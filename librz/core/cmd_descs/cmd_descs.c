@@ -477,6 +477,19 @@ static const RzCmdDescArg print_utf16le_args[2];
 static const RzCmdDescArg print_utf32le_args[2];
 static const RzCmdDescArg print_utf16be_args[2];
 static const RzCmdDescArg print_utf32be_args[2];
+static const RzCmdDescArg print_hexdump_args[2];
+static const RzCmdDescArg print_hexdump_signed_integer_args[2];
+static const RzCmdDescArg print_hexdump_signed_integer2_args[2];
+static const RzCmdDescArg print_hexdump_signed_integer4_args[2];
+static const RzCmdDescArg print_hexdump_signed_integer8_args[2];
+static const RzCmdDescArg print_hexdump_hex2_args[2];
+static const RzCmdDescArg print_hexdump_hex2l_args[2];
+static const RzCmdDescArg print_hexdump_hex4_args[2];
+static const RzCmdDescArg print_hexdump_hex4l_args[2];
+static const RzCmdDescArg print_hexdump_hex8_args[2];
+static const RzCmdDescArg print_hexdump_hex8l_args[2];
+static const RzCmdDescArg print_hexdump_oct_args[2];
+static const RzCmdDescArg print_hexdump_n_lines_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -11184,6 +11197,207 @@ static const RzCmdDescHelp print_utf32be_help = {
 	.args = print_utf32be_args,
 };
 
+static const RzCmdDescHelp px_help = {
+	.summary = "Show hexdump",
+};
+static const RzCmdDescArg print_hexdump_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_help = {
+	.summary = "show hexdump",
+	.args = print_hexdump_args,
+};
+
+static const RzCmdDescHelp pxd_help = {
+	.summary = "show signed integer dump",
+};
+static const RzCmdDescArg print_hexdump_signed_integer_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_signed_integer_help = {
+	.summary = "show 1-byte integer dump",
+	.args = print_hexdump_signed_integer_args,
+};
+
+static const RzCmdDescArg print_hexdump_signed_integer2_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_signed_integer2_help = {
+	.summary = "show 2-bytes integer dump",
+	.args = print_hexdump_signed_integer2_args,
+};
+
+static const RzCmdDescArg print_hexdump_signed_integer4_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_signed_integer4_help = {
+	.summary = "show 4-bytes integer dump",
+	.args = print_hexdump_signed_integer4_args,
+};
+
+static const RzCmdDescArg print_hexdump_signed_integer8_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_signed_integer8_help = {
+	.summary = "show 8-bytes integer dump",
+	.args = print_hexdump_signed_integer8_args,
+};
+
+static const RzCmdDescArg print_hexdump_hex2_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_hex2_help = {
+	.summary = "show 2-bytes hexadecimal integers dump",
+	.args = print_hexdump_hex2_args,
+};
+
+static const RzCmdDescArg print_hexdump_hex2l_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_hex2l_help = {
+	.summary = "show 2-bytes hexadecimal integers dump, one per line",
+	.args = print_hexdump_hex2l_args,
+};
+
+static const RzCmdDescArg print_hexdump_hex4_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_hex4_help = {
+	.summary = "show 4-bytes hexadecimal integers dump",
+	.args = print_hexdump_hex4_args,
+};
+
+static const RzCmdDescArg print_hexdump_hex4l_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_hex4l_help = {
+	.summary = "show 4-bytes hexadecimal integers dump, one per line",
+	.args = print_hexdump_hex4l_args,
+};
+
+static const RzCmdDescArg print_hexdump_hex8_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_hex8_help = {
+	.summary = "show 8-bytes hexadecimal integers dump",
+	.args = print_hexdump_hex8_args,
+};
+
+static const RzCmdDescArg print_hexdump_hex8l_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_hex8l_help = {
+	.summary = "show 8-bytes hexadecimal integers dump, one per line",
+	.args = print_hexdump_hex8l_args,
+};
+
+static const RzCmdDescArg print_hexdump_oct_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_oct_help = {
+	.summary = "show 1-byte octal integers dump",
+	.args = print_hexdump_oct_args,
+};
+
+static const RzCmdDescArg print_hexdump_n_lines_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_n_lines_help = {
+	.summary = "display <N> lines of hexdump",
+	.args = print_hexdump_n_lines_args,
+};
+
 static const RzCmdDescHelp p6_help = {
 	.summary = "Base64 decoding/encoding",
 };
@@ -16484,6 +16698,43 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_utf32be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psM", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf32be_handler, &print_utf32be_help);
 	rz_warn_if_fail(print_utf32be_cd);
+
+	RzCmdDesc *px_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "px", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_handler, &print_hexdump_help, &px_help);
+	rz_warn_if_fail(px_cd);
+	RzCmdDesc *pxd_cd = rz_cmd_desc_group_state_new(core->rcmd, px_cd, "pxd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_signed_integer_handler, &print_hexdump_signed_integer_help, &pxd_help);
+	rz_warn_if_fail(pxd_cd);
+	RzCmdDesc *print_hexdump_signed_integer2_cd = rz_cmd_desc_argv_state_new(core->rcmd, pxd_cd, "pxdh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_signed_integer2_handler, &print_hexdump_signed_integer2_help);
+	rz_warn_if_fail(print_hexdump_signed_integer2_cd);
+
+	RzCmdDesc *print_hexdump_signed_integer4_cd = rz_cmd_desc_argv_state_new(core->rcmd, pxd_cd, "pxdw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_signed_integer4_handler, &print_hexdump_signed_integer4_help);
+	rz_warn_if_fail(print_hexdump_signed_integer4_cd);
+
+	RzCmdDesc *print_hexdump_signed_integer8_cd = rz_cmd_desc_argv_state_new(core->rcmd, pxd_cd, "pxdq", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_signed_integer8_handler, &print_hexdump_signed_integer8_help);
+	rz_warn_if_fail(print_hexdump_signed_integer8_cd);
+
+	RzCmdDesc *print_hexdump_hex2_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_hex2_handler, &print_hexdump_hex2_help);
+	rz_warn_if_fail(print_hexdump_hex2_cd);
+
+	RzCmdDesc *print_hexdump_hex2l_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxH", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_hex2l_handler, &print_hexdump_hex2l_help);
+	rz_warn_if_fail(print_hexdump_hex2l_cd);
+
+	RzCmdDesc *print_hexdump_hex4_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_hex4_handler, &print_hexdump_hex4_help);
+	rz_warn_if_fail(print_hexdump_hex4_cd);
+
+	RzCmdDesc *print_hexdump_hex4l_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxW", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_hex4l_handler, &print_hexdump_hex4l_help);
+	rz_warn_if_fail(print_hexdump_hex4l_cd);
+
+	RzCmdDesc *print_hexdump_hex8_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxq", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_hex8_handler, &print_hexdump_hex8_help);
+	rz_warn_if_fail(print_hexdump_hex8_cd);
+
+	RzCmdDesc *print_hexdump_hex8l_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxQ", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_hex8l_handler, &print_hexdump_hex8l_help);
+	rz_warn_if_fail(print_hexdump_hex8l_cd);
+
+	RzCmdDesc *print_hexdump_oct_cd = rz_cmd_desc_argv_new(core->rcmd, px_cd, "pxo", rz_print_hexdump_oct_handler, &print_hexdump_oct_help);
+	rz_warn_if_fail(print_hexdump_oct_cd);
+
+	RzCmdDesc *print_hexdump_n_lines_cd = rz_cmd_desc_argv_state_new(core->rcmd, px_cd, "pxl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_n_lines_handler, &print_hexdump_n_lines_help);
+	rz_warn_if_fail(print_hexdump_n_lines_cd);
 
 	RzCmdDesc *p6_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "p6", NULL, NULL, &p6_help);
 	rz_warn_if_fail(p6_cd);

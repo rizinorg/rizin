@@ -142,6 +142,12 @@ RZ_IPI void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at, RZ_INOUT RZ_
 RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
 	RZ_NONNULL RZ_INOUT int *pn_opcodes, RZ_NONNULL RZ_INOUT int *pn_bytes);
 
+/* cprint.c */
+RZ_IPI bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len);
+RZ_IPI bool rz_core_print_dump(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, ut8 n, int len, RzCorePrintFormatType format);
+RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len);
+RZ_IPI bool rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, bool hex_offset, ut64 addr, int len, ut8 size);
+
 /* cmd_seek.c */
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);
 RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
