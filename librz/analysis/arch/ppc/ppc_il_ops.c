@@ -601,7 +601,7 @@ static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, co
 	if (!is_conditional) {
 		set_nia = SETL("NIA", ppc_get_branch_ta(insn, mode));
 	} else {
-		set_nia = SETL("NIA", ITE(ppc_get_branch_cond(insn, mode), ppc_get_branch_ta(insn, mode), ADD(VARL("CIA"), UA(4))));
+		set_nia = SETL("NIA", ITE(ppc_get_branch_cond(handle, insn, mode), ppc_get_branch_ta(insn, mode), ADD(VARL("CIA"), UA(4))));
 	}
 
 	set_cia = SETL("CIA", UA(insn->address));

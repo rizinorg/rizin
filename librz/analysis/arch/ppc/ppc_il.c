@@ -550,7 +550,7 @@ parse_err:
  * \param mode The capstone mode.
  * \return RzILOpPure* The condition the branch occurs as a Pure.
  */
-RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mode) {
+RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, NULL);
 	ut32 id = insn->id;
 
@@ -562,6 +562,8 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	RzILOpPure *bo_1;
 	RzILOpPure *bo_2;
 	RzILOpPure *bo_3;
+	RzILOpPure *cr;
+	RzILOpPure *cr_bit;
 
 	switch (id) {
 	default:
@@ -611,26 +613,48 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mo
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTA:
-	case PPC_INS_BDNZTLA:
-		return AND(NON_ZERO(VARG("ctr")), EQ(ppc_get_cr(bi), UN(4, 1)));
-	// ctr != 0 && cr_bi == 0
-	case PPC_INS_BDNZF:
-	case PPC_INS_BDNZFL:
-	case PPC_INS_BDNZFA:
-	case PPC_INS_BDNZFLA:
-		return AND(NON_ZERO(VARG("ctr")), IS_ZERO(ppc_get_cr(bi)));
+	case PPC_INS_BDNZTLA:;
 	// ctr == 0 && cr_bi == 1
 	case PPC_INS_BDZT:
 	case PPC_INS_BDZTL:
 	case PPC_INS_BDZTA:
-	case PPC_INS_BDZTLA:
-		return AND(IS_ZERO(VARG("ctr")), EQ(ppc_get_cr(bi), UN(4, 1)));
+	case PPC_INS_BDZTLA:;
+		if (insn->detail->ppc.op_count == 1) {
+			cr = VARG("cr0");
+			cr_bit = UN(4, 8); // LT bit
+		} else {
+			cr = VARG(cs_reg_name(handle, INSOP(0).crx.reg));
+			ut32 cond = INSOP(0).crx.cond;
+			cr_bit = UN(4, ((cond & PPC_BC_SO) ? 1 : ((cond & PPC_BC_EQ) ? 2 : ((cond & PPC_BC_GT) ? 4 : 8))));
+		}
+		if (id == PPC_INS_BDZT || id == PPC_INS_BDZTL || id == PPC_INS_BDZTA || id == PPC_INS_BDZTLA) {
+			return AND(IS_ZERO(VARG("ctr")), NON_ZERO(LOGAND(cr, cr_bit)));
+		}
+		return AND(NON_ZERO(VARG("ctr")), NON_ZERO(LOGAND(cr, cr_bit)));
+
+	// ctr != 0 && cr_bi == 0
+	case PPC_INS_BDNZF:
+	case PPC_INS_BDNZFL:
+	case PPC_INS_BDNZFA:
+	case PPC_INS_BDNZFLA:;
 	// ctr == 0 && cr_bi == 0
 	case PPC_INS_BDZF:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFA:
-	case PPC_INS_BDZFLA:
-		return AND(IS_ZERO(VARG("ctr")), IS_ZERO(ppc_get_cr(bi)));
+	case PPC_INS_BDZFLA:;
+		if (insn->detail->ppc.op_count == 1) {
+			cr = VARG("cr0");
+			cr_bit = UN(4, 8); // LT bit
+		} else {
+			cr = VARG(cs_reg_name(handle, INSOP(0).crx.reg));
+			ut32 cond = INSOP(0).crx.cond;
+			cr_bit = UN(4, ((cond & PPC_BC_SO) ? 1 : ((cond & PPC_BC_EQ) ? 2 : ((cond & PPC_BC_GT) ? 4 : 8))));
+		}
+		cr = insn->detail->ppc.op_count == 1 ? VARG("cr0") : VARG(cs_reg_name(handle, INSOP(0).crx.reg));
+		if (id == PPC_INS_BDZF || id == PPC_INS_BDZFL || id == PPC_INS_BDZFA || id == PPC_INS_BDZFLA) {
+			return AND(IS_ZERO(VARG("ctr")), IS_ZERO(LOGAND(cr, cr_bit)));
+		}
+		return AND(NON_ZERO(VARG("ctr")), IS_ZERO(LOGAND(cr, cr_bit)));
 	}
 }
 

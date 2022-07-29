@@ -176,7 +176,7 @@ RZ_IPI ut8 ppc_translate_cs_cr_flag(const char *flag);
 RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode);
 RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode);
 RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode);
-RZ_OWN RzILOpPure *ppc_get_branch_cond(RZ_BORROW cs_insn *insn, const cs_mode mode);
+RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode);
 RZ_IPI RZ_OWN RzILOpEffect *sync_crx_cr(const bool to_cr, const ut32 cr_mask);
 
 #endif /* PPC_IL_H */
