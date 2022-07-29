@@ -1139,7 +1139,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		}
 		into_rA = SHIFTRA(VARG(rS), n);
 		// Set ca to 1 if RS is negative and 1s were shifted out.
-		ca_val = ITE(AND(SLT(VARG(rS), UA(0)),
+		ca_val = ITE(AND(MSB(VARG(rS)),
 				     NON_ZERO(MOD(VARG(rS), EXTZ(SHIFTL0(UA(1), DUP(n)))))), // (RS % (1 << n)) != 0
 			IL_TRUE,
 			IL_FALSE);
@@ -1172,11 +1172,11 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		into_rA = LOGAND(r, VARL("mask"));
 	}
 
-	update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : NOP();
-	set_mask = set_mask ? set_mask : NOP();
-	set_ca = set_ca ? set_ca : NOP();
+	update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : EMPTY();
+	set_mask = set_mask ? set_mask : EMPTY();
+	set_ca = set_ca ? set_ca : EMPTY();
 
-	return SEQ4(set_mask, SETG(rA, into_rA), update_cr0, set_ca);
+	return SEQ4(set_mask, set_ca, SETG(rA, into_rA), update_cr0);
 }
 
 static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
