@@ -5614,7 +5614,9 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 								ea = va;
 							}
 						}
-						rz_print_section(core->print, ea);
+						char *string = rz_print_section_str(core->print, ea);
+						rz_cons_print(string);
+						free(string);
 						rz_print_offset(core->print, ea, 0, 0, 0, 0, NULL);
 					}
 					rz_str_bits(buf, core->block + i, 8, NULL);
@@ -5641,22 +5643,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		case 'c': // "pxc"
 		{
-			int ocomments = core->print->use_comments;
-			core->print->use_comments = core->print->flags & RZ_PRINT_FLAGS_COMMENT;
-			if (l) {
-				ut64 from = rz_config_get_i(core->config, "diff.from");
-				ut64 to = rz_config_get_i(core->config, "diff.to");
-				if (from == to && !from) {
-					rz_core_block_size(core, len);
-					len = core->blocksize;
-					rz_core_print_hexdump(core, core->offset,
-						core->block, core->blocksize, 16, 1, 1);
-				} else {
-					rz_core_print_hexdump_diff(core, core->offset, core->offset + to - from, l);
-				}
-				core->num->value = len;
-			}
-			core->print->use_comments = ocomments;
+			rz_core_print_hexdump_or_hexdiff(core, RZ_OUTPUT_MODE_STANDARD, core->offset, l, true);
 		} break;
 		case 'i': // "pxi"
 			if (l != 0) {

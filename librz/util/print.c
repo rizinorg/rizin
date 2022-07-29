@@ -508,14 +508,12 @@ static inline void print_section(RzStrBuf *sb, RzPrint *p, ut64 at) {
 	rz_strbuf_appendf(sb, "%20s ", s);
 }
 
-RZ_API void rz_print_section(RzPrint *p, ut64 at) {
-	rz_return_if_fail(p);
+RZ_API char *rz_print_section_str(RzPrint *p, ut64 at) {
+	rz_return_val_if_fail(p, NULL);
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
 	print_section(&sb, p, at);
-	char *s = rz_strbuf_drain_nofree(&sb);
-	p->cb_printf("%s", s);
-	free(s);
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 static inline void print_cursor_l(RzStrBuf *sb, RzPrint *p, int cur, int len) {

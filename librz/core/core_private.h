@@ -145,7 +145,7 @@ RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
 /* cprint.c */
 RZ_IPI bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len);
 RZ_IPI bool rz_core_print_dump(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, ut8 n, int len, RzCorePrintFormatType format);
-RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len);
+RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len, bool use_comments);
 RZ_IPI bool rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, bool hex_offset, ut64 addr, int len, ut8 size);
 
 /* cmd_seek.c */

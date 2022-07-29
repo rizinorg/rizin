@@ -158,23 +158,32 @@ fail:
 	return NULL;
 }
 
+/**
+ * \brief Prints \p str to the RzCons, and ownership is transferred into.
+ */
+static inline bool rz_cons_print_own(char *str) {
+	if (!str) {
+		return false;
+	}
+	rz_cons_print(str);
+	free(str);
+	return true;
+}
+
 RZ_IPI void rz_core_print_hexdump(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL const ut8 *buf,
 	int len, int base, int step, size_t zoomsz) {
 	char *string = rz_print_hexdump_str(core->print, addr, buf, len, base, step, zoomsz);
-	rz_cons_print(string);
-	free(string);
+	rz_cons_print_own(string);
 }
 
 RZ_IPI void rz_core_print_jsondump(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int wordsize) {
 	char *string = rz_print_jsondump_str(core->print, buf, len, wordsize);
-	rz_cons_print(string);
-	free(string);
+	rz_cons_print_own(string);
 }
 
 RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL const ut8 *_a, ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol) {
 	char *string = rz_print_hexdiff_str(core->print, aa, _a, ba, _b, len, scndcol);
-	rz_cons_print(string);
-	free(string);
+	rz_cons_print_own(string);
 }
 
 /**
@@ -202,18 +211,6 @@ RZ_API char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64 aa, ut
 	free(a);
 	free(b);
 	return pstr;
-}
-
-/**
- * \brief Prints \p str to the RzCons, and ownership is transferred into.
- */
-static inline bool rz_cons_print_own(char *str) {
-	if (!str) {
-		return false;
-	}
-	rz_cons_print(str);
-	free(str);
-	return true;
 }
 
 RZ_IPI bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
@@ -287,44 +284,46 @@ RZ_API char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode mode,
 		return NULL;
 	}
 
-	char *pstr = NULL;
+	char *string = NULL;
 	rz_io_read_at(core->io, addr, buffer, len);
-	rz_print_init_rowoffsets(core->print);
-	core->print->use_comments = false;
+	RzPrint *print = core->print;
+	rz_print_init_rowoffsets(print);
+	bool old_use_comments = print->use_comments;
+	print->use_comments = false;
 
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		pstr = rz_print_jsondump_str(core->print, buffer, len, n * 8);
+		string = rz_print_jsondump_str(print, buffer, len, n * 8);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		fix_size_from_format(format, &n);
-		pstr = rz_print_hexdump_str(core->print, addr,
-			buffer, len, base, (int)n, 1);
+		string = rz_print_hexdump_str(print, addr, buffer, len, base, (int)n, 1);
 		break;
 	default:
 		rz_warn_if_reached();
-		free(buffer);
-		return NULL;
+		break;
 	}
-	free(buffer);
-	return pstr;
-}
 
-RZ_IPI bool rz_core_print_dump(RZ_NONNULL RzCore *core, RZ_NULLABLE RzOutputMode mode, ut64 addr, ut8 n, int len, RzCorePrintFormatType format) {
-	return rz_cons_print_own(rz_core_print_dump_str(core, mode, addr, n, len, format));
+	print->use_comments = old_use_comments;
+	free(buffer);
+	return string;
 }
 
 /**
  * \brief Print hexdump at \p addr, but maybe print hexdiff if (diff.from or diff.to), \see "el diff"
  * \param len Dump bytes length
  */
-RZ_API char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len) {
+RZ_API char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len,
+	bool use_comment) {
 	rz_return_val_if_fail(core, false);
 	if (!len) {
 		return NULL;
 	}
 
-	char *pstr = NULL;
+	char *string = NULL;
+	RzPrint *print = core->print;
+	bool old_use_comments = print->use_comments;
+	print->use_comments = use_comment ? print->flags & RZ_PRINT_FLAGS_COMMENT : false;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD: {
 		ut64 from = rz_config_get_i(core->config, "diff.from");
@@ -336,25 +335,28 @@ RZ_API char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOut
 				return NULL;
 			}
 			rz_io_read_at(core->io, addr, buffer, len);
-			pstr = rz_print_hexdump_str(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
+			string = rz_print_hexdump_str(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
 			free(buffer);
 		} else {
-			pstr = rz_core_print_hexdump_diff_str(core, addr, addr + to - from, len);
+			string = rz_core_print_hexdump_diff_str(core, addr, addr + to - from, len);
 		}
+		core->num->value = len;
 		break;
 	}
 	case RZ_OUTPUT_MODE_JSON:
-		pstr = rz_print_jsondump_str(core->print, core->block, len, 8);
+		string = rz_print_jsondump_str(core->print, core->block, len, 8);
 		break;
 	default:
 		rz_warn_if_reached();
-		return NULL;
+		break;
 	}
-	return pstr;
+	print->use_comments = old_use_comments;
+	return string;
 }
 
-RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABLE RzOutputMode mode, ut64 addr, int len) {
-	return rz_cons_print_own(rz_core_print_hexdump_or_hexdiff_str(core, mode, addr, len));
+RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABLE RzOutputMode mode, ut64 addr, int len,
+	bool use_comment) {
+	return rz_cons_print_own(rz_core_print_hexdump_or_hexdiff_str(core, mode, addr, len, use_comment));
 }
 
 static inline char *ut64_to_hex(const ut64 x, const ut8 width) {

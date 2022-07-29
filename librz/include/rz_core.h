@@ -463,7 +463,7 @@ RZ_API bool rz_core_plugin_init(RzCore *core);
 RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
 
-//#define rz_core_ncast(x) (RzCore*)(size_t)(x)
+// #define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core);
 RZ_API char *rz_core_theme_get(RzCore *core);
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name);
@@ -1071,7 +1071,7 @@ RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, ut8 *hex, int len);
 
 RZ_API RZ_OWN char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len);
 RZ_API RZ_OWN char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, ut8 n, int len, RzCorePrintFormatType format);
-RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len);
+RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len, bool use_comment);
 RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bool hex_offset, ut64 addr, int len, ut8 size);
 
 /* rtr */
