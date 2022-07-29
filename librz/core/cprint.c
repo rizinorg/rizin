@@ -309,6 +309,11 @@ RZ_API char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode mode,
 	return string;
 }
 
+RZ_IPI bool rz_core_print_dump(RZ_NONNULL RzCore *core, RzOutputMode mode,
+	ut64 addr, ut8 n, int len, RzCorePrintFormatType format) {
+	return rz_cons_print_own(rz_core_print_dump_str(core, mode, addr, n, len, format));
+}
+
 /**
  * \brief Print hexdump at \p addr, but maybe print hexdiff if (diff.from or diff.to), \see "el diff"
  * \param len Dump bytes length
