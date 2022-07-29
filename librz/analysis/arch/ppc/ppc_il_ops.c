@@ -834,8 +834,10 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		switch (spr) {
 		default:
 			if (spr & 1) {
+				// TODO
 				// Invoke system privileged instruction error handler
 			} else {
+				// TODO
 				// Invoke illegal instruction handler
 			}
 			NOT_IMPLEMENTED;
@@ -866,6 +868,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 			spr_name = "amr";
 			break;
 		case 256:
+			size = 32;
 			spr_name = "vrsave";
 			break;
 		case 769:
@@ -923,6 +926,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 			spr_name = "ppr";
 			break;
 		case 898:
+			size = 32;
 			spr_name = "ppr32";
 			break;
 		}
@@ -1012,10 +1016,10 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		NOT_IMPLEMENTED;
 	}
 	if (set_val) {
-		RzILOpEffect *write_spr = ppc_moves_to_spr(id) ? SETG(spr_name, UNSIGNED(size, VARL("val"))) : SETG(rT, UNSIGNED(size, VARL("val")));
+		RzILOpEffect *write_spr = ppc_moves_to_spr(id) ? SETG(spr_name, UNSIGNED(size, VARL("val"))) : SETG(rT, EXTZ(VARL("val")));
 		return SEQ2(set_val, write_spr);
 	}
-	return ppc_moves_to_spr(id) ? SETG(spr_name, UNSIGNED(size, VARG(rS))) : SETG(rT, UNSIGNED(size, VARG(spr_name)));
+	return ppc_moves_to_spr(id) ? SETG(spr_name, UNSIGNED(size, VARG(rS))) : SETG(rT, EXTZ(VARG(spr_name)));
 }
 
 /**
