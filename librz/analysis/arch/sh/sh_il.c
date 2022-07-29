@@ -344,9 +344,16 @@ static SHParamHelper sh_il_get_param_pc_ctx(SHParam param, SHScaling scaling, ut
 		.pure = NULL,
 		.post = NULL
 	};
+
+	/* In case of invalid scaling, just default to `SH_SCALING_L`, and assume param width of 32 bits (4 bytes)
+	This makes the param calculation process simpler and doesn't lead to any functional difference */
+	if (scaling == SH_SCALING_INVALID) {
+		scaling = SH_SCALING_L;
+	}
+
 	switch (param.mode) {
 	case SH_REG_DIRECT:
-		if (scaling == SH_SCALING_INVALID || scaling == SH_SCALING_L) {
+		if (scaling == SH_SCALING_L) {
 			ret.pure = sh_il_get_reg(param.param[0]);
 		} else {
 			ret.pure = UNSIGNED(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_reg(param.param[0]));
@@ -371,10 +378,10 @@ static SHParamHelper sh_il_get_param_pc_ctx(SHParam param, SHScaling scaling, ut
 		ret.pure = LOADW(BITS_PER_BYTE * sh_scaling_size[scaling], sh_il_get_effective_addr(param, scaling));
 		break;
 	case SH_IMM_U:
-		ret.pure = SH_U_REG(param.param[0]);
+		ret.pure = UN(sh_scaling_size[scaling] * BITS_PER_BYTE, param.param[0]);
 		break;
 	case SH_IMM_S:
-		ret.pure = SH_S_REG(param.param[0]);
+		ret.pure = SN(sh_scaling_size[scaling] * BITS_PER_BYTE, param.param[0]);
 		break;
 	default:
 		RZ_LOG_ERROR("RzIL: SuperH: Invalid addressing mode\n");

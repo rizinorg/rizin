@@ -73,6 +73,22 @@ adE "sub r10, r7" 37a8 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _reg
 adE "subc r13, r11" 3bda 0x0 (seq (set dif (- (- (var r11) (var r13)) (ite (var sr_t) (bv 32 0x1) (bv 32 0x0)))) (set r11 (var dif)) (set sr_t (|| (|| (&& (! (msb (var r13))) (msb (var r11))) (&& (msb (var r11)) (msb (var dif)))) (&& (msb (var dif)) (! (msb (var r13)))))))
 adE "subv r13, r11" 3bdb 0x0 (seq (set dif (- (var r11) (var r13))) (set r11 (var dif)) (set sr_t (|| (&& (&& (! (msb (var dif))) (msb (var r13))) (! (msb (var r11)))) (&& (&& (msb (var dif)) (! (msb (var r13)))) (msb (var r11))))))
 
+# Logic operation instructions
+adE "and r14, r10" 2ae9 0x0 (set r10 (& (var r14) (var r10)))
+adE "and 0xf7, r0" c9f7 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (& (bv 32 0xf7) (ite (var _priv) (var r0b) (var r0)))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "and.b 0x67, @(r0,gbr)" cd67 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var gbr) (ite (var _priv) (var r0b) (var r0))) (& (bv 8 0x67) (loadw 0 8 (+ (var gbr) (ite (var _priv) (var r0b) (var r0)))))))
+adE "not r14, r15" 6fe7 0x0 (set r15 (~ (var r14)))
+adE "or r1, r0" 201b 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (| (ite (var _priv) (var r1b) (var r1)) (ite (var _priv) (var r0b) (var r0)))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "or 0x79, r0" cb79 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (| (bv 32 0x79) (ite (var _priv) (var r0b) (var r0)))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "or.b 0x08, @(r0,gbr)" cf08 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var gbr) (ite (var _priv) (var r0b) (var r0))) (| (bv 8 0x8) (loadw 0 8 (+ (var gbr) (ite (var _priv) (var r0b) (var r0)))))))
+adE "tas.b @r14" 4e1b 0x0 (seq (set sr_t (is_zero (loadw 0 8 (var r14)))) (storew 0 (var r14) (| (loadw 0 8 (var r14)) (bv 8 0x80))))
+adE "tst r3, r7" 2738 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (is_zero (& (ite (var _priv) (var r3b) (var r3)) (ite (var _priv) (var r7b) (var r7))))))
+adE "tst 0x63, r0" c863 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (is_zero (& (bv 32 0x63) (ite (var _priv) (var r0b) (var r0))))))
+adE "tst.b 0x64, @(r0,gbr)" cc64 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (is_zero (& (bv 8 0x64) (loadw 0 8 (+ (var gbr) (ite (var _priv) (var r0b) (var r0))))))))
+adE "xor r12, r8" 28ca 0x0 (set r8 (^ (var r12) (var r8)))
+adE "xor 0x37, r0" ca37 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (^ (bv 32 0x37) (ite (var _priv) (var r0b) (var r0)))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "xor.b 0x99, @(r0,gbr)" ce99 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var gbr) (ite (var _priv) (var r0b) (var r0))) (^ (bv 8 0x99) (loadw 0 8 (+ (var gbr) (ite (var _priv) (var r0b) (var r0)))))))
+
 # Misc
 adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (<< (bv 32 0x0) (bv 32 0x1) false))) nop)
 adE "bt 0xd3adb008" 89fe 0xd3adb008 (branch (var sr_t) (jmp (+ (+ (bv 32 0xd3adb008) (bv 32 0x4)) (<< (bv 32 0xfffffffe) (bv 32 0x1) false))) nop)
