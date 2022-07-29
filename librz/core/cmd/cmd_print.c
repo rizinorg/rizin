@@ -5641,10 +5641,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'c': // "pxc"
-		{
-			rz_core_print_hexdump_or_hexdiff(core, RZ_OUTPUT_MODE_STANDARD, core->offset, l, true);
-		} break;
 		case 'i': // "pxi"
 			if (l != 0) {
 				core->print->show_offset = rz_config_get_i(core->config, "hex.offset");
@@ -6124,6 +6120,11 @@ RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char *
 		rz_core_block_size(core, oldsize);
 	}
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_comments_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	return bool2status(rz_core_print_hexdump_or_hexdiff(core, RZ_OUTPUT_MODE_STANDARD, core->offset, len, true));
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer_common_handler(RzCore *core, int argc, const char **argv,

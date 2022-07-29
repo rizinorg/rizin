@@ -510,6 +510,13 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: pxc
+        summary: show hexdump with comments
+        cname: print_hexdump_comments
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: pxd
         summary: show signed integer dump
         subcommands:
