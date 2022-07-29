@@ -605,8 +605,8 @@ static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, co
 	}
 
 	set_cia = SETL("CIA", UA(insn->address));
-	set_lr = ppc_sets_lr(id) ? SETG("lr", ADD(VARL("CIA"), UA(4))) : NOP();
-	decr_ctr = ppc_decrements_ctr(insn, mode) ? SETG("ctr", SUB(VARG("ctr"), UA(1))) : NOP();
+	set_lr = ppc_sets_lr(id) ? SETG("lr", ADD(VARL("CIA"), UA(4))) : EMPTY();
+	decr_ctr = ppc_decrements_ctr(insn, mode) ? SETG("ctr", SUB(VARG("ctr"), UA(1))) : EMPTY();
 
 	return SEQ5(set_cia, decr_ctr, set_lr, set_nia, JMP(VARL("NIA")));
 }

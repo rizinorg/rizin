@@ -577,11 +577,21 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn
 	case PPC_INS_BCLA:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
+		// BO_2 == 0: Decrement CTR
+		// BO_2 == 1: Don't decr. CTR
 		bo_2 = NON_ZERO(LOGAND(UN(5, 0b00100), VARLP("bo")));
+
+		// BO_3 == 0: Check CTR != 0
+		// BO_3 == 1: Check CTR == 0
 		bo_3 = NON_ZERO(LOGAND(UN(5, 0b00010), VARLP("bo")));
 		ctr_ok = OR(bo_2, XOR(NON_ZERO(VARG("ctr")), bo_3)); // BO_2 | (CTR_M:63 ≠ 0) ⊕ BO_3
 
+		// BO_0 == 0: Check CR_bi
+		// BO_0 == 1: Don't check CR_bi
 		bo_0 = NON_ZERO(LOGAND(UN(5, 0b10000), VARLP("bo")));
+
+		// BO_1 == 0: Check CR_bi == 0
+		// BO_1 == 1: Check CR_bi == 1
 		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));
 		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
 
@@ -631,7 +641,6 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn
 			return AND(IS_ZERO(VARG("ctr")), NON_ZERO(LOGAND(cr, cr_bit)));
 		}
 		return AND(NON_ZERO(VARG("ctr")), NON_ZERO(LOGAND(cr, cr_bit)));
-
 	// ctr != 0 && cr_bi == 0
 	case PPC_INS_BDNZF:
 	case PPC_INS_BDNZFL:
