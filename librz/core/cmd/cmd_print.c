@@ -1742,7 +1742,10 @@ stage_left:
 		strcat(x, y); \
 		x += strlen(y); \
 	}
-static void annotated_hexdump(RzCore *core, const char *str, int len) {
+static void annotated_hexdump(RzCore *core, int len) {
+	if (!len) {
+		return;
+	}
 	const int usecolor = rz_config_get_i(core->config, "scr.color");
 	int nb_cols = rz_config_get_i(core->config, "hex.cols");
 	core->print->use_comments = rz_config_get_i(core->config, "hex.comments");
@@ -2100,9 +2103,6 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 	if (!str[0]) {
 		return;
 	}
-#if 0
-	Size letters are b(byte), h (halfword), w (word), g (giant, 8 bytes).
-#endif
 	switch (str[1]) {
 	case 'b': size = 1; break;
 	case 'h': size = 2; break;
@@ -2172,7 +2172,10 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 	}
 }
 
-static int cmd_print_pxA(RzCore *core, int len, const char *input) {
+static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
+	if (!len) {
+		return true;
+	}
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	int show_offset = true;
 	int cols = rz_config_get_i(core->config, "hex.cols");
@@ -2187,21 +2190,27 @@ static int cmd_print_pxA(RzCore *core, int len, const char *input) {
 	RzAnalysisOp op;
 	ut8 *data;
 	int datalen;
-	if (*input == 'v') {
+	switch (mode) {
+	case RZ_OUTPUT_MODE_LONG:
 		datalen = cols * 8 * core->cons->rows;
 		data = malloc(datalen);
 		rz_io_read_at(core->io, core->offset, data, datalen);
 		len = datalen;
-	} else {
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
 		data = core->block;
 		datalen = core->blocksize;
+		break;
+	default:
+		rz_warn_if_reached();
+		return false;
 	}
 	if (len < 1) {
 		len = datalen;
 	}
 	if (len < 0 || len > datalen) {
 		eprintf("Invalid length\n");
-		return 0;
+		return false;
 	}
 	if (onechar) {
 		cols *= 4;
@@ -3991,10 +4000,7 @@ static int bbcmp(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 }
 
 /* TODO: integrate this into rz_analysis */
-static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *buf, int len, int step, int mode) {
-	int i;
-	ut64 addr;
-	st32 *delta; // only for step == 4
+static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *buf, int len, int step, RzOutputMode mode) {
 	if (step < 1) {
 		step = 4;
 	}
@@ -4003,29 +4009,16 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		return;
 	}
 	if (origin != offset) {
-		switch (mode) {
-		case '*':
+		if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			rz_cons_printf("CC-@ 0x%08" PFMT64x "\n", origin);
 			rz_cons_printf("CC switch table @ 0x%08" PFMT64x "\n", origin);
 			rz_cons_printf("axd 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", origin, offset);
-			break;
-		case '.':
-			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
-			rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, origin, "switch table");
-			rz_core_cmdf(core, "f switch.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", origin, origin);
-			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", offset, offset); // origin, origin);
-			rz_analysis_xrefs_set(core->analysis, offset, origin, RZ_ANALYSIS_XREF_TYPE_DATA);
-			break;
 		}
-	} else if (mode == '.') {
-		rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
-		rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, offset, "switch basic block");
-		rz_core_cmdf(core, "f switch.0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", offset, offset); // basic block @ 0x%08"PFMT64x "\n", offset);
 	}
 	int n = 0;
-	for (i = 0; (i + sizeof(st32)) <= len; i += step, n++) {
-		delta = (st32 *)(buf + i);
-		addr = offset + *delta;
+	for (int i = 0; (i + sizeof(st32)) <= len; i += step, n++) {
+		st32 *delta = (st32 *)(buf + i);
+		ut64 addr = offset + *delta;
 		if (!rz_io_is_valid_offset(core->io, addr, 0)) {
 			// Lets check for jmptbl with not relative addresses
 			// Like: jmp dword [eax*4 + jmptbl.0x5435345]
@@ -4034,22 +4027,13 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 			}
 			addr = *delta;
 		}
-		if (mode == '*') {
+		if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			rz_cons_printf("af case.%d.0x%" PFMT64x " 0x%08" PFMT64x "\n", n, offset, addr);
 			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", offset, addr);
 			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
 			// FIXME: "aho" doesn't accept anything here after the "case" word
 			rz_cons_printf("aho case 0x%" PFMT64x " 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", (ut64)i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
 			rz_cons_printf("ahs %d @ 0x%08" PFMT64x "\n", step, offset + i);
-		} else if (mode == '.') {
-			const char *case_name = rz_str_newf("case.%d.0x%" PFMT64x, n, offset);
-			rz_core_analysis_function_add(core, case_name, addr, false);
-			rz_analysis_xrefs_set(core->analysis, addr, offset, RZ_ANALYSIS_XREF_TYPE_NULL);
-			rz_analysis_xrefs_set(core->analysis, offset, addr, RZ_ANALYSIS_XREF_TYPE_NULL); // wrong, but useful because forward xrefs dont work :?
-			const char *case_comment = rz_str_newf("case %d:", n);
-			rz_core_meta_comment_add(core, case_comment, addr);
-			rz_analysis_hint_set_type(core->analysis, offset + i, RZ_ANALYSIS_OP_TYPE_CASE); // wrong, but useful because forward xrefs dont work :?
-			rz_analysis_hint_set_size(core->analysis, offset + i, step);
 		} else {
 			rz_cons_printf("0x%08" PFMT64x " -> 0x%08" PFMT64x "\n", offset + i, addr);
 		}
@@ -4471,90 +4455,85 @@ static char *__op_refs(RzCore *core, RzAnalysisOp *op, int n) {
 	return res;
 }
 
-static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *arg) {
-	PJ *pj = NULL;
-	RzTable *t = NULL;
-	if (mode == ',') {
-		t = rz_table_new();
+static inline char *__refs(RzCore *core, ut64 x) {
+	char *refs = NULL;
+	if (core->print->hasrefs) {
+		refs = core->print->hasrefs(core->print->user, x, true);
+		if (RZ_STR_ISNOTEMPTY(refs)) {
+			rz_str_trim(refs);
+		} else {
+			RZ_FREE(refs);
+		}
+	}
+	return refs;
+}
+
+static bool cmd_pxr(RzCore *core, int len, RzCmdStateOutput *state, int wordsize, const char *query) {
+	if (!len) {
+		return true;
+	}
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return false;
+	}
+
+	const ut8 *buf = core->block;
+	PJ *pj = state->d.pj;
+	RzTable *t = state->d.t;
+	const int hex_depth = (int)rz_config_get_i(core->config, "hex.depth");
+	bool be = core->analysis->big_endian;
+	int end = RZ_MIN(core->blocksize, len);
+	int bitsize = wordsize * 8;
+	RzOutputMode mode = state->mode;
+
+	if (mode == RZ_OUTPUT_MODE_TABLE) {
 		RzTableColumnType *n = rz_table_type("number");
 		RzTableColumnType *s = rz_table_type("string");
 		rz_table_add_column(t, n, "addr", 0);
 		rz_table_add_column(t, n, "value", 0);
 		rz_table_add_column(t, s, "refs", 0);
-	}
-	if (mode == 'j') {
-		pj = pj_new();
-		if (!pj) {
-			return;
-		}
-	}
-	if (mode == 'j' || mode == ',' || mode == '*' || mode == 'q') {
-		size_t i;
-		const int be = core->analysis->big_endian;
-		if (pj) {
-			pj_a(pj);
-		}
-		const ut8 *buf = core->block;
-
-		bool withref = false;
-		int end = RZ_MIN(core->blocksize, len);
-		int bitsize = wordsize * 8;
-		for (i = 0; i + wordsize < end; i += wordsize) {
+		for (ut64 i = 0; i + wordsize < end; i += wordsize) {
 			ut64 addr = core->offset + i;
 			ut64 val = rz_read_ble(buf + i, be, bitsize);
-			if (pj) {
-				pj_o(pj);
-				pj_kn(pj, "addr", addr);
-				pj_kn(pj, "value", val);
-			}
-
-			// XXX: this only works in little endian
-			withref = false;
-			char *refs = NULL;
-			if (core->print->hasrefs) {
-				char *rstr = core->print->hasrefs(core->print->user, val, true);
-				if (RZ_STR_ISNOTEMPTY(rstr)) {
-					rz_str_trim(rstr);
-					if (pj) {
-						char *ns = rz_str_escape(rstr);
-						pj_ks(pj, "refstr", rz_str_trim_head_ro(ns));
-						pj_k(pj, "ref");
-						const int hex_depth = rz_config_get_i(core->config, "hex.depth");
-						free(rz_core_analysis_hasrefs_to_depth(core, val, pj, hex_depth));
-						pj_end(pj);
-						free(ns);
-					}
-					withref = true;
-				}
-				refs = rstr;
-			}
-			if (mode == '*' && RZ_STR_ISNOTEMPTY(refs)) {
-				// Show only the mapped ones?
-				rz_cons_printf("f pxr.%" PFMT64x " @ 0x%" PFMT64x "\n", val, addr);
-			} else if (mode == 'q' && RZ_STR_ISNOTEMPTY(refs)) {
-				rz_cons_printf("%s\n", refs);
-			}
-			if (t) {
-				rz_table_add_rowf(t, "xxs", addr, val, refs);
-			}
+			char *refs = __refs(core, val);
+			rz_table_add_rowf(t, "xxs", addr, val, refs);
 			RZ_FREE(refs);
-			if (!withref && pj) {
-				pj_end(pj);
+		}
+		rz_table_query(t, query);
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_a(pj);
+		for (ut64 i = 0; i + wordsize < end; i += wordsize) {
+			ut64 addr = core->offset + i;
+			ut64 val = rz_read_ble(buf + i, be, bitsize);
+			pj_o(pj);
+			pj_kn(pj, "addr", addr);
+			pj_kn(pj, "value", val);
+			char *refs = __refs(core, val);
+			if (refs) {
+				char *refstr = rz_str_escape(refs);
+				pj_ks(pj, "refstr", rz_str_trim_head_ro(refstr));
+				free(refstr);
+
+				pj_k(pj, "ref");
+				free(rz_core_analysis_hasrefs_to_depth(core, val, pj, hex_depth));
 			}
-		}
-		if (t) {
-			rz_table_query(t, arg ? arg + 1 : NULL);
-			char *s = rz_table_tostring(t);
-			rz_cons_println(s);
-			free(s);
-			rz_table_free(t);
-		}
-		if (pj) {
 			pj_end(pj);
-			rz_cons_println(pj_string(pj));
-			pj_free(pj);
 		}
-	} else {
+		pj_end(pj);
+	} else if (mode == RZ_OUTPUT_MODE_QUIET) {
+		for (ut64 i = 0; i + wordsize < end; i += wordsize) {
+			//			ut64 addr = core->offset + i;
+			ut64 val = rz_read_ble(buf + i, be, bitsize);
+			char *refs = __refs(core, val);
+			rz_strbuf_appendf(sb, "%s\n", refs);
+		}
+	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
+		for (ut64 i = 0; i + wordsize < end; i += wordsize) {
+			ut64 addr = core->offset + i;
+			ut64 val = rz_read_ble(buf + i, be, bitsize);
+			rz_strbuf_appendf(sb, "f pxr.%" PFMT64x " @ 0x%" PFMT64x "\n", val, addr);
+		}
+	} else if (mode == RZ_OUTPUT_MODE_STANDARD) {
 		const int ocols = core->print->cols;
 		int bitsize = core->rasm->bits;
 		/* Thumb is 16bit arm but handles 32bit data */
@@ -4563,14 +4542,22 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 		}
 		core->print->cols = 1;
 		core->print->flags |= RZ_PRINT_FLAGS_REFS;
-		rz_cons_break_push(NULL, NULL);
-		rz_core_print_hexdump(core, core->offset,
-			core->block, RZ_MIN(len, core->blocksize),
-			wordsize * 8, bitsize / 8, 1);
-		rz_cons_break_pop();
+		rz_strbuf_append(sb, rz_print_hexdump_str(core->print, core->offset, core->block, RZ_MIN(len, core->blocksize), wordsize * 8, bitsize / 8, 1));
 		core->print->flags &= ~RZ_PRINT_FLAGS_REFS;
 		core->print->cols = ocols;
+	} else {
+		rz_warn_if_reached();
+		rz_strbuf_free(sb);
+		return false;
 	}
+	if (mode == RZ_OUTPUT_MODE_RIZIN || mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_QUIET) {
+		char *res = rz_strbuf_drain(sb);
+		rz_cons_print(res);
+		free(res);
+	} else {
+		rz_strbuf_free(sb);
+	}
+	return true;
 }
 
 static void core_print_2bpp_row(const ut8 *buf, bool useColor) {
@@ -5557,245 +5544,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_core_print_examine(core, input + 2);
 			break;
 		case '?':
-			rz_core_cmd_help(core, help_msg_px);
-			break;
-		case '0': // "px0"
-			if (l) {
-				int len = rz_str_nlen((const char *)core->block, core->blocksize);
-				rz_print_bytes(core->print, core->block, len, "%02x");
-			}
-			break;
-		case 'a': // "pxa"
-			if (l != 0) {
-				if (len % 16) {
-					len += 16 - (len % 16);
-				}
-				annotated_hexdump(core, input + 2, len);
-			}
-			break;
-		case 'x': // "pxx"
-			if (l != 0) {
-				core->print->flags |= RZ_PRINT_FLAGS_NONHEX;
-				rz_core_print_hexdump(core, core->offset,
-					core->block, len, 8, 1, 1);
-				core->print->flags &= ~RZ_PRINT_FLAGS_NONHEX;
-			}
-			break;
-		case 'X': // "pxX"
-			if (l != 0) {
-				ut8 *buf = calloc(len, 4);
-				if (buf) {
-					rz_io_read_at(core->io, core->offset, buf, len * 4);
-					core->print->flags |= RZ_PRINT_FLAGS_NONHEX;
-					rz_core_print_hexdump(core, core->offset, buf, len * 4, 8, 1, 1);
-					core->print->flags &= ~RZ_PRINT_FLAGS_NONHEX;
-					free(buf);
-				}
-			}
-			break;
-		case 'A': // "pxA"
-			if (input[2] == '?') {
-				rz_core_cmd_help(core, help_msg_pxA);
-			} else if (l) {
-				cmd_print_pxA(core, len, input + 2);
-			}
-			break;
-		case 'b': // "pxb"
-			if (l) {
-				ut32 n;
-				int i, c;
-				char buf[32];
-				for (i = c = 0; i < len; i++, c++) {
-					if (c == 0) {
-						ut64 ea = core->offset + i;
-						if (core->print->pava) {
-							ut64 va = rz_io_p2v(core->io, ea);
-							if (va != UT64_MAX) {
-								ea = va;
-							}
-						}
-						char *string = rz_print_section_str(core->print, ea);
-						rz_cons_print(string);
-						free(string);
-						rz_print_offset(core->print, ea, 0, 0, 0, 0, NULL);
-					}
-					rz_str_bits(buf, core->block + i, 8, NULL);
-
-					// split bits
-					memmove(buf + 5, buf + 4, 5);
-					buf[4] = 0;
-
-					rz_print_cursor(core->print, i, 1, 1);
-					rz_cons_printf("%s.%s  ", buf, buf + 5);
-					rz_print_cursor(core->print, i, 1, 0);
-					if (c == 3) {
-						const ut8 *b = core->block + i - 3;
-						int (*k)(const ut8 *, int) = cmd_pxb_k;
-						char (*p)(char) = cmd_pxb_p;
-
-						n = k(b, 0) | k(b, 1) | k(b, 2) | k(b, 3);
-						rz_cons_printf("0x%08x  %c%c%c%c\n",
-							n, p(b[0]), p(b[1]), p(b[2]), p(b[3]));
-						c = -1;
-					}
-				}
-			}
-			break;
-		case 'i': // "pxi"
-			if (l != 0) {
-				core->print->show_offset = rz_config_get_i(core->config, "hex.offset");
-				rz_print_hexii(core->print, core->offset, core->block,
-					core->blocksize, rz_config_get_i(core->config, "hex.cols"));
-			}
-			break;
-		case 'o': // "pxo"
-			if (l != 0) {
-				rz_core_print_hexdump(core, core->offset,
-					core->block, len, 8, 1, 1);
-			}
-			break;
-		case 't': // "pxt"
-		{
-			ut64 origin = core->offset;
-			const char *arg = strchr(input, ' ');
-			if (arg) {
-				origin = rz_num_math(core->num, arg + 1);
-			}
-			// _pointer_table does rz_core_cmd with @, so it modifies core->block
-			// and this results in an UAF access when iterating over the jmptable
-			// so we do a new allocation to avoid that issue
-			ut8 *block = calloc(len, 1);
-			if (block) {
-				memcpy(block, core->block, len);
-				_pointer_table(core, origin, core->offset, block, len, 4, input[2]);
-				free(block);
-			}
-		} break;
-		case 'r': // "pxr"
-			if (l) {
-				int mode = input[2];
-				int wordsize = rz_analysis_get_address_bits(core->analysis) / 8;
-				if (mode == '?') {
-					eprintf("Usage: pxr[1248][*,jq] [length]\n");
-					break;
-				}
-				if (mode && isdigit(mode)) {
-					char tmp[2] = { input[2], 0 };
-					wordsize = atoi(tmp);
-					mode = input[3];
-				}
-				switch (wordsize) {
-				case 1:
-				case 2:
-				case 4:
-				case 8:
-					cmd_pxr(core, len, mode, wordsize, mode ? strchr(input, mode) : NULL);
-					break;
-				default:
-					eprintf("Invalid word size. Use 1, 2, 4 or 8.\n");
-					break;
-				}
-			}
-			break;
-		case 's': // "pxs"
-			if (l) {
-				core->print->flags |= RZ_PRINT_FLAGS_SPARSE;
-				rz_core_print_hexdump(core, core->offset, core->block, len, 16, 1, 1);
-				core->print->flags &= (((ut32)-1) & (~RZ_PRINT_FLAGS_SPARSE));
-			}
-			break;
-		case 'e': // "pxe" // emoji dump
-			if (l != 0) {
-				int j;
-				char emoji[] = {
-					'\x8c', '\x80', '\x8c', '\x82', '\x8c', '\x85', '\x8c', '\x88',
-					'\x8c', '\x99', '\x8c', '\x9e', '\x8c', '\x9f', '\x8c', '\xa0',
-					'\x8c', '\xb0', '\x8c', '\xb1', '\x8c', '\xb2', '\x8c', '\xb3',
-					'\x8c', '\xb4', '\x8c', '\xb5', '\x8c', '\xb7', '\x8c', '\xb8',
-					'\x8c', '\xb9', '\x8c', '\xba', '\x8c', '\xbb', '\x8c', '\xbc',
-					'\x8c', '\xbd', '\x8c', '\xbe', '\x8c', '\xbf', '\x8d', '\x80',
-					'\x8d', '\x81', '\x8d', '\x82', '\x8d', '\x83', '\x8d', '\x84',
-					'\x8d', '\x85', '\x8d', '\x86', '\x8d', '\x87', '\x8d', '\x88',
-					'\x8d', '\x89', '\x8d', '\x8a', '\x8d', '\x8b', '\x8d', '\x8c',
-					'\x8d', '\x8d', '\x8d', '\x8e', '\x8d', '\x8f', '\x8d', '\x90',
-					'\x8d', '\x91', '\x8d', '\x92', '\x8d', '\x93', '\x8d', '\x94',
-					'\x8d', '\x95', '\x8d', '\x96', '\x8d', '\x97', '\x8d', '\x98',
-					'\x8d', '\x9c', '\x8d', '\x9d', '\x8d', '\x9e', '\x8d', '\x9f',
-					'\x8d', '\xa0', '\x8d', '\xa1', '\x8d', '\xa2', '\x8d', '\xa3',
-					'\x8d', '\xa4', '\x8d', '\xa5', '\x8d', '\xa6', '\x8d', '\xa7',
-					'\x8d', '\xa8', '\x8d', '\xa9', '\x8d', '\xaa', '\x8d', '\xab',
-					'\x8d', '\xac', '\x8d', '\xad', '\x8d', '\xae', '\x8d', '\xaf',
-					'\x8d', '\xb0', '\x8d', '\xb1', '\x8d', '\xb2', '\x8d', '\xb3',
-					'\x8d', '\xb4', '\x8d', '\xb5', '\x8d', '\xb6', '\x8d', '\xb7',
-					'\x8d', '\xb8', '\x8d', '\xb9', '\x8d', '\xba', '\x8d', '\xbb',
-					'\x8d', '\xbc', '\x8e', '\x80', '\x8e', '\x81', '\x8e', '\x82',
-					'\x8e', '\x83', '\x8e', '\x84', '\x8e', '\x85', '\x8e', '\x88',
-					'\x8e', '\x89', '\x8e', '\x8a', '\x8e', '\x8b', '\x8e', '\x8c',
-					'\x8e', '\x8d', '\x8e', '\x8e', '\x8e', '\x8f', '\x8e', '\x92',
-					'\x8e', '\x93', '\x8e', '\xa0', '\x8e', '\xa1', '\x8e', '\xa2',
-					'\x8e', '\xa3', '\x8e', '\xa4', '\x8e', '\xa5', '\x8e', '\xa6',
-					'\x8e', '\xa7', '\x8e', '\xa8', '\x8e', '\xa9', '\x8e', '\xaa',
-					'\x8e', '\xab', '\x8e', '\xac', '\x8e', '\xad', '\x8e', '\xae',
-					'\x8e', '\xaf', '\x8e', '\xb0', '\x8e', '\xb1', '\x8e', '\xb2',
-					'\x8e', '\xb3', '\x8e', '\xb4', '\x8e', '\xb5', '\x8e', '\xb7',
-					'\x8e', '\xb8', '\x8e', '\xb9', '\x8e', '\xba', '\x8e', '\xbb',
-					'\x8e', '\xbd', '\x8e', '\xbe', '\x8e', '\xbf', '\x8f', '\x80',
-					'\x8f', '\x81', '\x8f', '\x82', '\x8f', '\x83', '\x8f', '\x84',
-					'\x8f', '\x86', '\x8f', '\x87', '\x8f', '\x88', '\x8f', '\x89',
-					'\x8f', '\x8a', '\x90', '\x80', '\x90', '\x81', '\x90', '\x82',
-					'\x90', '\x83', '\x90', '\x84', '\x90', '\x85', '\x90', '\x86',
-					'\x90', '\x87', '\x90', '\x88', '\x90', '\x89', '\x90', '\x8a',
-					'\x90', '\x8b', '\x90', '\x8c', '\x90', '\x8d', '\x90', '\x8e',
-					'\x90', '\x8f', '\x90', '\x90', '\x90', '\x91', '\x90', '\x92',
-					'\x90', '\x93', '\x90', '\x94', '\x90', '\x95', '\x90', '\x96',
-					'\x90', '\x97', '\x90', '\x98', '\x90', '\x99', '\x90', '\x9a',
-					'\x90', '\x9b', '\x90', '\x9c', '\x90', '\x9d', '\x90', '\x9e',
-					'\x90', '\x9f', '\x90', '\xa0', '\x90', '\xa1', '\x90', '\xa2',
-					'\x90', '\xa3', '\x90', '\xa4', '\x90', '\xa5', '\x90', '\xa6',
-					'\x90', '\xa7', '\x90', '\xa8', '\x90', '\xa9', '\x90', '\xaa',
-					'\x90', '\xab', '\x90', '\xac', '\x90', '\xad', '\x90', '\xae',
-					'\x90', '\xaf', '\x90', '\xb0', '\x90', '\xb1', '\x90', '\xb2',
-					'\x90', '\xb3', '\x90', '\xb4', '\x90', '\xb5', '\x90', '\xb6',
-					'\x90', '\xb7', '\x90', '\xb8', '\x90', '\xb9', '\x90', '\xba',
-					'\x90', '\xbb', '\x90', '\xbc', '\x90', '\xbd', '\x90', '\xbe',
-					'\x91', '\x80', '\x91', '\x82', '\x91', '\x83', '\x91', '\x84',
-					'\x91', '\x85', '\x91', '\x86', '\x91', '\x87', '\x91', '\x88',
-					'\x91', '\x89', '\x91', '\x8a', '\x91', '\x8b', '\x91', '\x8c',
-					'\x91', '\x8d', '\x91', '\x8e', '\x91', '\x8f', '\x91', '\x90',
-					'\x91', '\x91', '\x91', '\x92', '\x91', '\x93', '\x91', '\x94',
-					'\x91', '\x95', '\x91', '\x96', '\x91', '\x97', '\x91', '\x98',
-					'\x91', '\x99', '\x91', '\x9a', '\x91', '\x9b', '\x91', '\x9c',
-					'\x91', '\x9d', '\x91', '\x9e', '\x91', '\x9f', '\x91', '\xa0',
-					'\x91', '\xa1', '\x91', '\xa2', '\x91', '\xa3', '\x91', '\xa4',
-					'\x91', '\xa5', '\x91', '\xa6', '\x91', '\xa7', '\x91', '\xa8',
-					'\x91', '\xa9', '\x91', '\xaa', '\x91', '\xae', '\x91', '\xaf',
-					'\x91', '\xba', '\x91', '\xbb', '\x91', '\xbc', '\x91', '\xbd',
-					'\x91', '\xbe', '\x91', '\xbf', '\x92', '\x80', '\x92', '\x81',
-					'\x92', '\x82', '\x92', '\x83', '\x92', '\x84', '\x92', '\x85'
-				};
-				int cols = core->print->cols;
-				if (cols < 1) {
-					cols = 1;
-				}
-				for (i = 0; i < len; i += cols) {
-					rz_print_addr(core->print, core->offset + i);
-					for (j = i; j < i + cols; j += 1) {
-						ut8 *p = (ut8 *)core->block + j;
-						if (j < len) {
-							rz_cons_printf("\xf0\x9f%c%c ", emoji[*p * 2], emoji[*p * 2 + 1]);
-						} else {
-							rz_cons_print("  ");
-						}
-					}
-					rz_cons_print(" ");
-					for (j = i; j < len && j < i + cols; j += 1) {
-						ut8 *p = (ut8 *)core->block + j;
-						rz_print_byte(core->print, "%c", j, *p);
-					}
-					rz_cons_newline();
-				}
-			}
-			break;
 		default:
 			rz_core_cmd_help(core, help_msg_px);
 			break;
@@ -6122,6 +5870,64 @@ RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_print_hexdump_annotated_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	if (len % 16) {
+		len += 16 - (len % 16);
+	}
+	annotated_hexdump(core, len);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_op_analysis_color_map_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	return bool2status(cmd_print_pxA(core, len, state->mode));
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_bits_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	if (!len) {
+		return RZ_CMD_STATUS_OK;
+	}
+
+	char buf[32];
+	for (int i = 0, c = 0; i < len; i++, c++) {
+		if (c == 0) {
+			ut64 ea = core->offset + i;
+			if (core->print->pava) {
+				ut64 va = rz_io_p2v(core->io, ea);
+				if (va != UT64_MAX) {
+					ea = va;
+				}
+			}
+			char *string = rz_print_section_str(core->print, ea);
+			rz_cons_print(string);
+			free(string);
+			rz_print_offset(core->print, ea, 0, 0, 0, 0, NULL);
+		}
+		rz_str_bits(buf, core->block + i, 8, NULL);
+
+		// split bits
+		memmove(buf + 5, buf + 4, 5);
+		buf[4] = 0;
+
+		rz_print_cursor(core->print, i, 1, 1);
+		rz_cons_printf("%s.%s  ", buf, buf + 5);
+		rz_print_cursor(core->print, i, 1, 0);
+		if (c == 3) {
+			const ut8 *b = core->block + i - 3;
+			int (*k)(const ut8 *, int) = cmd_pxb_k;
+			char (*p)(char) = cmd_pxb_p;
+
+			int n = k(b, 0) | k(b, 1) | k(b, 2) | k(b, 3);
+			rz_cons_printf("0x%08x  %c%c%c%c\n",
+				n, p(b[0]), p(b[1]), p(b[2]), p(b[3]));
+			c = -1;
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_print_hexdump_comments_handler(RzCore *core, int argc, const char **argv) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
 	return bool2status(rz_core_print_hexdump_or_hexdiff(core, RZ_OUTPUT_MODE_STANDARD, core->offset, len, true));
@@ -6144,6 +5950,215 @@ RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer4_handler(RzCore *core, int ar
 }
 RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_signed_integer_common_handler(core, argc, argv, state, 8);
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_emoji_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	if (!len) {
+		return RZ_CMD_STATUS_OK;
+	}
+	static const char emoji[] = {
+		'\x8c', '\x80', '\x8c', '\x82', '\x8c', '\x85', '\x8c', '\x88',
+		'\x8c', '\x99', '\x8c', '\x9e', '\x8c', '\x9f', '\x8c', '\xa0',
+		'\x8c', '\xb0', '\x8c', '\xb1', '\x8c', '\xb2', '\x8c', '\xb3',
+		'\x8c', '\xb4', '\x8c', '\xb5', '\x8c', '\xb7', '\x8c', '\xb8',
+		'\x8c', '\xb9', '\x8c', '\xba', '\x8c', '\xbb', '\x8c', '\xbc',
+		'\x8c', '\xbd', '\x8c', '\xbe', '\x8c', '\xbf', '\x8d', '\x80',
+		'\x8d', '\x81', '\x8d', '\x82', '\x8d', '\x83', '\x8d', '\x84',
+		'\x8d', '\x85', '\x8d', '\x86', '\x8d', '\x87', '\x8d', '\x88',
+		'\x8d', '\x89', '\x8d', '\x8a', '\x8d', '\x8b', '\x8d', '\x8c',
+		'\x8d', '\x8d', '\x8d', '\x8e', '\x8d', '\x8f', '\x8d', '\x90',
+		'\x8d', '\x91', '\x8d', '\x92', '\x8d', '\x93', '\x8d', '\x94',
+		'\x8d', '\x95', '\x8d', '\x96', '\x8d', '\x97', '\x8d', '\x98',
+		'\x8d', '\x9c', '\x8d', '\x9d', '\x8d', '\x9e', '\x8d', '\x9f',
+		'\x8d', '\xa0', '\x8d', '\xa1', '\x8d', '\xa2', '\x8d', '\xa3',
+		'\x8d', '\xa4', '\x8d', '\xa5', '\x8d', '\xa6', '\x8d', '\xa7',
+		'\x8d', '\xa8', '\x8d', '\xa9', '\x8d', '\xaa', '\x8d', '\xab',
+		'\x8d', '\xac', '\x8d', '\xad', '\x8d', '\xae', '\x8d', '\xaf',
+		'\x8d', '\xb0', '\x8d', '\xb1', '\x8d', '\xb2', '\x8d', '\xb3',
+		'\x8d', '\xb4', '\x8d', '\xb5', '\x8d', '\xb6', '\x8d', '\xb7',
+		'\x8d', '\xb8', '\x8d', '\xb9', '\x8d', '\xba', '\x8d', '\xbb',
+		'\x8d', '\xbc', '\x8e', '\x80', '\x8e', '\x81', '\x8e', '\x82',
+		'\x8e', '\x83', '\x8e', '\x84', '\x8e', '\x85', '\x8e', '\x88',
+		'\x8e', '\x89', '\x8e', '\x8a', '\x8e', '\x8b', '\x8e', '\x8c',
+		'\x8e', '\x8d', '\x8e', '\x8e', '\x8e', '\x8f', '\x8e', '\x92',
+		'\x8e', '\x93', '\x8e', '\xa0', '\x8e', '\xa1', '\x8e', '\xa2',
+		'\x8e', '\xa3', '\x8e', '\xa4', '\x8e', '\xa5', '\x8e', '\xa6',
+		'\x8e', '\xa7', '\x8e', '\xa8', '\x8e', '\xa9', '\x8e', '\xaa',
+		'\x8e', '\xab', '\x8e', '\xac', '\x8e', '\xad', '\x8e', '\xae',
+		'\x8e', '\xaf', '\x8e', '\xb0', '\x8e', '\xb1', '\x8e', '\xb2',
+		'\x8e', '\xb3', '\x8e', '\xb4', '\x8e', '\xb5', '\x8e', '\xb7',
+		'\x8e', '\xb8', '\x8e', '\xb9', '\x8e', '\xba', '\x8e', '\xbb',
+		'\x8e', '\xbd', '\x8e', '\xbe', '\x8e', '\xbf', '\x8f', '\x80',
+		'\x8f', '\x81', '\x8f', '\x82', '\x8f', '\x83', '\x8f', '\x84',
+		'\x8f', '\x86', '\x8f', '\x87', '\x8f', '\x88', '\x8f', '\x89',
+		'\x8f', '\x8a', '\x90', '\x80', '\x90', '\x81', '\x90', '\x82',
+		'\x90', '\x83', '\x90', '\x84', '\x90', '\x85', '\x90', '\x86',
+		'\x90', '\x87', '\x90', '\x88', '\x90', '\x89', '\x90', '\x8a',
+		'\x90', '\x8b', '\x90', '\x8c', '\x90', '\x8d', '\x90', '\x8e',
+		'\x90', '\x8f', '\x90', '\x90', '\x90', '\x91', '\x90', '\x92',
+		'\x90', '\x93', '\x90', '\x94', '\x90', '\x95', '\x90', '\x96',
+		'\x90', '\x97', '\x90', '\x98', '\x90', '\x99', '\x90', '\x9a',
+		'\x90', '\x9b', '\x90', '\x9c', '\x90', '\x9d', '\x90', '\x9e',
+		'\x90', '\x9f', '\x90', '\xa0', '\x90', '\xa1', '\x90', '\xa2',
+		'\x90', '\xa3', '\x90', '\xa4', '\x90', '\xa5', '\x90', '\xa6',
+		'\x90', '\xa7', '\x90', '\xa8', '\x90', '\xa9', '\x90', '\xaa',
+		'\x90', '\xab', '\x90', '\xac', '\x90', '\xad', '\x90', '\xae',
+		'\x90', '\xaf', '\x90', '\xb0', '\x90', '\xb1', '\x90', '\xb2',
+		'\x90', '\xb3', '\x90', '\xb4', '\x90', '\xb5', '\x90', '\xb6',
+		'\x90', '\xb7', '\x90', '\xb8', '\x90', '\xb9', '\x90', '\xba',
+		'\x90', '\xbb', '\x90', '\xbc', '\x90', '\xbd', '\x90', '\xbe',
+		'\x91', '\x80', '\x91', '\x82', '\x91', '\x83', '\x91', '\x84',
+		'\x91', '\x85', '\x91', '\x86', '\x91', '\x87', '\x91', '\x88',
+		'\x91', '\x89', '\x91', '\x8a', '\x91', '\x8b', '\x91', '\x8c',
+		'\x91', '\x8d', '\x91', '\x8e', '\x91', '\x8f', '\x91', '\x90',
+		'\x91', '\x91', '\x91', '\x92', '\x91', '\x93', '\x91', '\x94',
+		'\x91', '\x95', '\x91', '\x96', '\x91', '\x97', '\x91', '\x98',
+		'\x91', '\x99', '\x91', '\x9a', '\x91', '\x9b', '\x91', '\x9c',
+		'\x91', '\x9d', '\x91', '\x9e', '\x91', '\x9f', '\x91', '\xa0',
+		'\x91', '\xa1', '\x91', '\xa2', '\x91', '\xa3', '\x91', '\xa4',
+		'\x91', '\xa5', '\x91', '\xa6', '\x91', '\xa7', '\x91', '\xa8',
+		'\x91', '\xa9', '\x91', '\xaa', '\x91', '\xae', '\x91', '\xaf',
+		'\x91', '\xba', '\x91', '\xbb', '\x91', '\xbc', '\x91', '\xbd',
+		'\x91', '\xbe', '\x91', '\xbf', '\x92', '\x80', '\x92', '\x81',
+		'\x92', '\x82', '\x92', '\x83', '\x92', '\x84', '\x92', '\x85'
+	};
+	int cols = core->print->cols;
+	if (cols < 1) {
+		cols = 1;
+	}
+	for (int i = 0; i < len; i += cols) {
+		rz_print_addr(core->print, core->offset + i);
+		for (int j = i; j < i + cols; j += 1) {
+			ut8 *p = (ut8 *)core->block + j;
+			if (j < len) {
+				rz_cons_printf("\xf0\x9f%c%c ", emoji[*p * 2], emoji[*p * 2 + 1]);
+			} else {
+				rz_cons_print("  ");
+			}
+		}
+		rz_cons_print(" ");
+		for (int j = i; j < len && j < i + cols; j += 1) {
+			ut8 *p = (ut8 *)core->block + j;
+			rz_print_byte(core->print, "%c", j, *p);
+		}
+		rz_cons_newline();
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_function_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_hexii_handler(RzCore *core, int argc, const char **argv) {
+	core->print->show_offset = rz_config_get_i(core->config, "hex.offset");
+	rz_print_hexii(core->print, core->offset, core->block,
+		(int)core->blocksize, rz_config_get_i(core->config, "hex.cols"));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_hexword_references_common_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state, int wordsize) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	const char *query = argc > 2 ? argv[2] : NULL;
+	switch (wordsize) {
+	case 1:
+	case 2:
+	case 4:
+	case 8:
+		cmd_pxr(core, len, state, wordsize, query);
+		break;
+	default:
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_hexword_references_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	int wordsize = rz_analysis_get_address_bits(core->analysis) / 8;
+	return rz_print_hexword_references_common_handler(core, argc, argv, state, wordsize);
+}
+
+RZ_IPI RzCmdStatus rz_print_hexword_references_1_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexword_references_common_handler(core, argc, argv, state, 1);
+}
+
+RZ_IPI RzCmdStatus rz_print_hexword_references_2_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexword_references_common_handler(core, argc, argv, state, 2);
+}
+
+RZ_IPI RzCmdStatus rz_print_hexword_references_4_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexword_references_common_handler(core, argc, argv, state, 4);
+}
+
+RZ_IPI RzCmdStatus rz_print_hexword_references_8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_print_hexword_references_common_handler(core, argc, argv, state, 8);
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_sparse_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	if (!len) {
+		return RZ_CMD_STATUS_OK;
+	}
+	core->print->flags |= RZ_PRINT_FLAGS_SPARSE;
+	rz_core_print_hexdump(core, core->offset, core->block, len, 16, 1, 1);
+	core->print->flags &= (int)(((ut32)-1) & (~RZ_PRINT_FLAGS_SPARSE));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_delta_pointer_table_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	if (!len) {
+		return RZ_CMD_STATUS_OK;
+	}
+	ut64 origin = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
+	// _pointer_table does rz_core_cmd with @, so it modifies core->block
+	// and this results in an UAF access when iterating over the jmptable
+	// so we do a new allocation to avoid that issue
+	ut8 *block = calloc(len, 1);
+	if (!block) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	memcpy(block, core->block, len);
+	_pointer_table(core, origin, core->offset, block, len, 4, state->mode);
+	free(block);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_hexless_bytes_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	core->print->flags |= RZ_PRINT_FLAGS_NONHEX;
+	rz_core_print_hexdump(core, core->offset,
+		core->block, len, 8, 1, 1);
+	core->print->flags &= ~RZ_PRINT_FLAGS_NONHEX;
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_hexless_words_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	if (!len) {
+		return RZ_CMD_STATUS_OK;
+	}
+	ut8 *buf = calloc(len, 4);
+	if (!buf) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_read_at(core->io, core->offset, buf, len * 4);
+	core->print->flags |= RZ_PRINT_FLAGS_NONHEX;
+	rz_core_print_hexdump(core, core->offset, buf, len * 4, 8, 1, 1);
+	core->print->flags &= ~RZ_PRINT_FLAGS_NONHEX;
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_hexdump_hexpair_bytes_handler(RzCore *core, int argc, const char **argv) {
+	int len = (int)rz_str_nlen((const char *)core->block, core->blocksize);
+	if (!len) {
+		return RZ_CMD_STATUS_OK;
+	}
+	rz_print_bytes(core->print, core->block, len, "%02x");
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_hexdump_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
