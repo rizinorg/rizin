@@ -40,12 +40,37 @@ bool f32_ieee_format_test(void) {
 	mu_end;
 }
 
-static void print_float(RzFloat *f) {
-	puts("\n");
-	const char *f_str = rz_float_as_string(f);
-	puts(f_str);
-	free((char *)f_str);
-	putchar('\n');
+bool rz_float_detect_spec_test(void) {
+	RzFloatFormat format = RZ_FLOAT_IEEE754_BIN_64;
+	RzFloat *qnan = rz_float_new_qnan(format);
+	RzFloat *pinf = rz_float_new_inf(format, false);
+	RzFloat *ninf = rz_float_new_inf(format, true);
+	RzFloat *zero = rz_float_new_zero(format);
+	RzFloat *snan = rz_float_new_snan(format);
+	RzFloat *cst = rz_float_new_from_double(42.0);
+
+	RzFloatSpec qnan_type = rz_float_detect_spec(qnan);
+	RzFloatSpec pinf_type = rz_float_detect_spec(pinf);
+	RzFloatSpec ninf_type = rz_float_detect_spec(ninf);
+	RzFloatSpec zero_type = rz_float_detect_spec(zero);
+	RzFloatSpec cst_type = rz_float_detect_spec(cst);
+	RzFloatSpec snan_type = rz_float_detect_spec(snan);
+
+	mu_assert_true(qnan_type == RZ_FLOAT_SPEC_QNAN, "detect quiet NaN test");
+	mu_assert_true(pinf_type == RZ_FLOAT_SPEC_PINF, "detect positive infinity test");
+	mu_assert_true(ninf_type == RZ_FLOAT_SPEC_NINF, "detect negative infinity test");
+	mu_assert_true(zero_type == RZ_FLOAT_SPEC_ZERO, "detect zero test");
+	mu_assert_true(cst_type == RZ_FLOAT_SPEC_NOT, "detect normal float num test");
+	mu_assert_true(snan_type == RZ_FLOAT_SPEC_SNAN, "detect signal NaN test");
+
+	rz_float_free(qnan);
+	rz_float_free(pinf);
+	rz_float_free(ninf);
+	rz_float_free(zero);
+	rz_float_free(cst);
+	rz_float_free(snan);
+
+	mu_end;
 }
 
 bool f32_ieee_add_test(void) {
@@ -564,6 +589,7 @@ bool f32_ieee_rem_test(void) {
 bool all_tests() {
 	mu_run_test(rz_float_new_from_hex_test);
 	mu_run_test(f32_ieee_format_test);
+	mu_run_test(rz_float_detect_spec_test);
 	mu_run_test(f32_ieee_add_test);
 	mu_run_test(f32_ieee_sub_test);
 	mu_run_test(f32_ieee_mul_test);

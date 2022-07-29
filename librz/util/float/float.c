@@ -23,9 +23,9 @@
  * \param f float
  * \return char* string of bitvector
  */
-RZ_API RZ_OWN char *rz_float_bv_as_string(RZ_NULLABLE RzFloat *f) {
+RZ_API RZ_OWN char *rz_float_as_bit_string(RZ_NULLABLE RzFloat *f) {
 	if (!f || !f->s) {
-		return strdup("NULL");
+		return NULL;
 	}
 	return rz_bv_as_string(f->s);
 }
@@ -36,9 +36,9 @@ RZ_API RZ_OWN char *rz_float_bv_as_string(RZ_NULLABLE RzFloat *f) {
  * \param use_pad use padding before the hex string
  * \return char* hex string of bitvector
  */
-RZ_API RZ_OWN char *rz_float_bv_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_pad) {
+RZ_API RZ_OWN char *rz_float_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_pad) {
 	if (!f || !f->s) {
-		return strdup("NULL");
+		return NULL;
 	}
 	return rz_bv_as_hex_string(f->s, use_pad);
 }
@@ -52,6 +52,7 @@ RZ_API RZ_OWN char *rz_float_bv_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_p
 RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f && f->s, NULL);
 
+	printf("format %d\n", f->r);
 	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 total = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_TOTAL_LEN);
@@ -76,15 +77,8 @@ RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f) {
 		str[exp_len + 2 + i] = rz_bv_get(f->s, pos - exp_len - i) ? '1' : '0';
 	}
 
-	str[total + 2] = '\0';
+	str[total + 1] = '\0';
 	return str;
-}
-
-// TODO : remove after finish pr
-static void print_float_bv(RzBitVector *bv, const char *mark) {
-	char *bvstr = rz_bv_as_string(bv);
-	printf("%s : %s\n", mark, bvstr);
-	free(bvstr);
 }
 
 /*
@@ -158,10 +152,8 @@ RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f, RzFloatFormat format) {
 	rz_return_val_if_fail(f, false);
 	rz_float_fini(f);
 
-	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
-
-	f->s = rz_bv_new(1 + exp_len + man_len);
+	ut32 total = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+	f->s = rz_bv_new(total);
 	if (!f->s) {
 		return false;
 	}
@@ -179,13 +171,14 @@ RZ_API RZ_OWN RzFloat *rz_float_new(RzFloatFormat format) {
 	if (!f) {
 		return NULL;
 	}
-	f->r = format;
 	f->s = NULL;
 
 	if (!rz_float_init(f, format)) {
 		free(f);
 		return NULL;
 	}
+
+	f->r = format;
 
 	return f;
 }
@@ -221,7 +214,6 @@ RZ_API bool rz_float_set_from_single(RZ_NONNULL RzFloat *f, float value) {
 	rz_return_val_if_fail(f, false);
 
 	// TODO : should we support single float -> a given format float ?
-	// NOTE: Implement set a single float from single only
 	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
 	// check if given RzFloat is a IEEE754-binary32
@@ -245,10 +237,8 @@ RZ_API bool rz_float_set_from_double(RZ_NONNULL RzFloat *f, double value) {
 	rz_return_val_if_fail(f, false);
 
 	// TODO : should we support double float -> a given format float ?
-	// NOTE: Implement set a single float from single only
 	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
-	// check if given RzFloat is a IEEE754-binary32
 	if (exp_len != 11 || man_len != 52) {
 		RZ_LOG_WARN("Do not support double to other float conversion in set_from");
 		return false;
@@ -419,7 +409,7 @@ RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f) {
 	if (rz_bv_is_full_vector(exp_squashed)) {
 		// full exp with 0 mantissa -> inf
 		if (rz_bv_is_zero_vector(mantissa_squashed)) {
-			ret = sign ? RZ_FLOAT_SPEC_PINF : RZ_FLOAT_SPEC_NINF;
+			ret = sign ? RZ_FLOAT_SPEC_NINF : RZ_FLOAT_SPEC_PINF;
 		} else {
 			// detect signal or quiet nan
 			bool is_quiet = rz_bv_msb(mantissa_squashed);
@@ -465,7 +455,7 @@ RZ_API bool rz_float_is_nan(RZ_NONNULL RzFloat *f) {
 /**
  * Generate a infinity float and specify the sign bit
  * \param format format of float to generate
- * \param sign sign bit of infinity
+ * \param sign sign bit of infinity, is_negative flag
  * \return an infinity float
  */
 RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool sign) {
@@ -517,6 +507,33 @@ RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format) {
 	}
 	// set is_quiet to 1
 	rz_bv_set(bv, exp_start - 1, true);
+
+	// set sig as non-zero
+	rz_bv_set(bv, 0, true);
+
+	return ret;
+}
+
+/**
+ * Generate a signal NaN
+ * \param format float format
+ * \return Signal NaN float
+ */
+RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format) {
+	// gen a signal NaN for return
+	RzFloat *ret = rz_float_new(format);
+	if (!ret || !ret->s) {
+		rz_float_free(ret);
+		return NULL;
+	}
+	RzBitVector *bv = ret->s;
+	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
+	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
+	for (ut32 i = exp_start; i < exp_end; ++i) {
+		rz_bv_set(bv, i, true);
+	}
+	// set is_quiet to 0 (msb of mantissa part)
+	rz_bv_set(bv, exp_start - 1, false);
 
 	// set sig as non-zero
 	rz_bv_set(bv, 0, true);

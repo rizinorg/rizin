@@ -80,6 +80,7 @@ RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f, RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_new_from_single(float value);
+RZ_API RZ_OWN RzFloat *rz_float_new_from_double(double value);
 RZ_API bool rz_float_set_from_double(RZ_NONNULL RzFloat *f, double value);
 RZ_API RZ_OWN RzBitVector *rz_float_get_exponent_squashed(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_squashed(RZ_NONNULL RzFloat *f);
@@ -102,10 +103,11 @@ RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f64(ut64 hex_value);
 RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f32(ut32 hex_value);
 RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f);
-RZ_API RZ_OWN char *rz_float_bv_as_string(RZ_NONNULL RzFloat *f);
-RZ_API RZ_OWN char *rz_float_bv_as_hex_string(RZ_NONNULL RzFloat *f, bool use_pad);
+RZ_API RZ_OWN char *rz_float_as_bit_string(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN char *rz_float_as_hex_string(RZ_NONNULL RzFloat *f, bool use_pad);
 RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool sign);
 RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format);
+RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format);
 
 #endif // RZ_FLOAT_H
