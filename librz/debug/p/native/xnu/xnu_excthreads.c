@@ -148,7 +148,7 @@ RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 		}
 		regs = (RZ_REG_T *)&th->gpr;
 		if (enable) {
-			static ut64 chained_address = 0;
+			static ut64 chained_address = 0; // TODO: static is bad, move this into RzXnuDebug or handle differently somehow
 			RzIOBind *bio = &dbg->iob;
 			// set a breakpoint that will stop when the PC doesn't
 			// match the current one
@@ -220,24 +220,21 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread *th, int enable) {
 #error "unknown architecture"
 #endif
 
-// TODO: Tuck this into RzDebug; `void *user` seems like a good candidate.
-static xnu_exception_info ex = { { 0 } };
-
-RZ_IPI bool xnu_restore_exception_ports(int pid) {
+RZ_IPI bool xnu_restore_exception_ports(RzXnuDebug *ctx, int pid) {
 	kern_return_t kr;
 	int i;
-	task_t task = pid_to_task(pid);
+	task_t task = pid_to_task(ctx, pid);
 	if (!task)
 		return false;
-	for (i = 0; i < ex.count; i++) {
-		kr = task_set_exception_ports(task, ex.masks[i], ex.ports[i],
-			ex.behaviors[i], ex.flavors[i]);
+	for (i = 0; i < ctx->ex.count; i++) {
+		kr = task_set_exception_ports(task, ctx->ex.masks[i], ctx->ex.ports[i],
+			ctx->ex.behaviors[i], ctx->ex.flavors[i]);
 		if (kr != KERN_SUCCESS) {
 			eprintf("fail to restore exception ports\n");
 			return false;
 		}
 	}
-	kr = mach_port_deallocate(mach_task_self(), ex.exception_port);
+	kr = mach_port_deallocate(mach_task_self(), ctx->ex.exception_port);
 	if (kr != KERN_SUCCESS) {
 		eprintf("failed to deallocate exception port\n");
 		return false;
@@ -257,13 +254,13 @@ static void encode_reply(mig_reply_error_t *reply, mach_msg_header_t *hdr, int c
 	reply->RetCode = code;
 }
 
-static bool validate_mach_message(RzDebug *dbg, exc_msg *msg) {
+static bool validate_mach_message(RzXnuDebug *ctx, int pid, exc_msg *msg) {
 	kern_return_t kr;
 #if __POWERPC__
 	return false;
 #else
 	/*check if the message is for us*/
-	if (msg->hdr.msgh_local_port != ex.exception_port) {
+	if (msg->hdr.msgh_local_port != ctx->ex.exception_port) {
 		return false;
 	}
 	/*gdb from apple check this so why not us*/
@@ -292,7 +289,7 @@ static bool validate_mach_message(RzDebug *dbg, exc_msg *msg) {
 		msg->NDR.float_rep != NDR_record.float_rep) {
 		return false;
 	}
-	if (pid_to_task(dbg->pid) != msg->task.name) {
+	if (pid_to_task(ctx, pid) != msg->task.name) {
 		// we receive a exception from an unknown process this could
 		// happen if the child fork, as the created process will inherit
 		// its exception port
@@ -407,7 +404,8 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code, b
  * \param quiet_signal don't print when receiving a standard unix signal
  */
 RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 timeout_ms, bool quiet_signal) {
-	rz_return_val_if_fail(dbg, RZ_DEBUG_REASON_ERROR);
+	rz_return_val_if_fail(dbg && dbg->plugin_data, RZ_DEBUG_REASON_ERROR);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	kern_return_t kr;
 	int ret_code;
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
@@ -417,13 +415,13 @@ RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 time
 	if (!dbg) {
 		return reason;
 	}
-	msg.hdr.msgh_local_port = ex.exception_port;
+	msg.hdr.msgh_local_port = ctx->ex.exception_port;
 	msg.hdr.msgh_size = sizeof(exc_msg);
 	for (;;) {
 		kr = mach_msg(
 			&msg.hdr,
 			MACH_RCV_MSG | MACH_RCV_INTERRUPT | (timeout_ms ? MACH_RCV_TIMEOUT : 0), 0,
-			sizeof(exc_msg), ex.exception_port,
+			sizeof(exc_msg), ctx->ex.exception_port,
 			timeout_ms ? timeout_ms : MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 		if (kr == MACH_RCV_INTERRUPTED) {
 			reason = RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED;
@@ -436,7 +434,7 @@ RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 time
 			RZ_LOG_ERROR("message didn't succeeded\n");
 			break;
 		}
-		ret = validate_mach_message(dbg, &msg);
+		ret = validate_mach_message(ctx, dbg->pid, &msg);
 		if (!ret) {
 			ret = handle_dead_notify(dbg, &msg);
 			if (ret) {
@@ -480,12 +478,14 @@ RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg) {
 #if __POWERPC__
 	return false;
 #else
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	kern_return_t kr;
 	mach_port_t exception_port = MACH_PORT_NULL;
 	mach_port_t req_port;
 	// Got the Mach port for the current process
 	mach_port_t task_self = mach_task_self();
-	task_t task = pid_to_task(dbg->pid);
+	task_t task = pid_to_task(ctx, dbg->pid);
 	if (!task) {
 		eprintf("error to get task for the debuggee process"
 			" xnu_start_exception_thread\n");
@@ -506,10 +506,10 @@ RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg) {
 	RETURN_ON_MACH_ERROR("error to allocate insert right\n", false);
 	// Atomically swap out (and save) the child process's exception ports
 	// for the one we just created. We'll want to receive all exceptions.
-	ex.count = (sizeof(ex.ports) / sizeof(*ex.ports));
+	ctx->ex.count = (sizeof(ctx->ex.ports) / sizeof(*ctx->ex.ports));
 	kr = task_swap_exception_ports(task, EXC_MASK_ALL, exception_port,
 		EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES, THREAD_STATE_NONE,
-		ex.masks, &ex.count, ex.ports, ex.behaviors, ex.flavors);
+		ctx->ex.masks, &ctx->ex.count, ctx->ex.ports, ctx->ex.behaviors, ctx->ex.flavors);
 	RETURN_ON_MACH_ERROR("failed to swap exception ports\n", false);
 	// get notification when process die
 	kr = mach_port_request_notification(task_self, task, MACH_NOTIFY_DEAD_NAME,
@@ -517,7 +517,7 @@ RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg) {
 	if (kr != KERN_SUCCESS) {
 		eprintf("Termination notification request failed\n");
 	}
-	ex.exception_port = exception_port;
+	ctx->ex.exception_port = exception_port;
 	return true;
 #endif
 }

@@ -288,6 +288,8 @@ static int thread_find(thread_t *port, xnu_thread_t *a) {
 }
 
 RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	thread_array_t thread_list = NULL;
 	unsigned int thread_count = 0;
 	xnu_thread_t *thread;
@@ -303,7 +305,7 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 	}
 	// ok we have the list that will hold our threads, now is time to get
 	// them
-	task = pid_to_task(dbg->pid);
+	task = pid_to_task(ctx, dbg->pid);
 	if (!task) {
 		return false;
 	}
@@ -400,10 +402,12 @@ RZ_IPI xnu_thread_t *rz_xnu_get_thread(RzDebug *dbg, int tid) {
 
 /* XXX: right now it just returns the first thread, not the one selected in dbg->tid */
 RZ_IPI thread_t rz_xnu_get_cur_thread(RzDebug *dbg) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, -1);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	thread_t th;
 	thread_array_t threads = NULL;
 	unsigned int n_threads = 0;
-	task_t t = pid_to_task(dbg->pid);
+	task_t t = pid_to_task(ctx, dbg->pid);
 	if (!t) {
 		return -1;
 	}

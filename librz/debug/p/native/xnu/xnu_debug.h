@@ -267,8 +267,27 @@ typedef struct {
 	coredump_thread_state_flavor_t *flavors;
 } tir_t;
 
-task_t pid_to_task(int pid);
-int xnu_get_vmmap_entries_for_pid(pid_t pid);
+typedef struct _exception_info {
+	exception_mask_t masks[EXC_TYPES_COUNT];
+	mach_port_t ports[EXC_TYPES_COUNT];
+	exception_behavior_t behaviors[EXC_TYPES_COUNT];
+	thread_state_flavor_t flavors[EXC_TYPES_COUNT];
+	mach_msg_type_number_t count;
+	pthread_t thread;
+	mach_port_t exception_port;
+} xnu_exception_info;
+
+typedef struct rz_xnu_debug_t {
+	task_t task_dbg;
+	int old_pid;
+	xnu_exception_info ex;
+} RzXnuDebug;
+
+RZ_IPI bool rz_xnu_debug_init(RzDebug *dbg, void **user);
+RZ_IPI void rz_xnu_debug_fini(RzDebug *dbg, void *user);
+
+task_t pid_to_task(RzXnuDebug *ctx, int pid);
+int xnu_get_vmmap_entries_for_pid(RzXnuDebug *ctx, pid_t pid);
 char *xnu_corefile_default_location(void);
 bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest);
 int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size);
@@ -282,7 +301,6 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig);
 RzDebugMap *xnu_map_alloc(RzDebug *dbg, ut64 addr, int size);
 int xnu_map_dealloc(RzDebug *dbg, ut64 addr, int size);
 int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms);
-int xnu_init(void);
 int xnu_wait(RzDebug *dbg, int pid);
 RzDebugPid *xnu_get_pid(int pid);
 RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules);
