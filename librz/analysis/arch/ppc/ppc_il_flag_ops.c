@@ -9,20 +9,27 @@
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 /**
- * \brief Set "ca" bit if, after an add or sub operation on \p a and \p b , the M+1 bit is set
+ * \brief Set "ca" bit if, after an add operation on \p a and \p b , the M+1 bit is set.
+ * If \p c is given the ca bit is set if the result of ( \p b + \p c ) or ( \p a + ( \p b + \p c )) has bit M+1 set.
  *
  * \param a Value a.
  * \param b Value b.
+ * \param c Value c. Is optional and can be NULL
  * \param mode Capstone mode.
- * \param add True: \p a + \p b False: \p a - \p b
  * \return RZ_OWN* Effect which sets the carry bits.
  */
-RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, cs_mode mode) {
+RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, RZ_OWN RZ_NULLABLE RzILOpBitVector *c, cs_mode mode) {
 	rz_return_val_if_fail(a && b, NULL);
 	ut32 bits = PPC_ARCH_BITS;
-	RzILOpBitVector *r = ADD(UNSIGNED(bits + 1, a), UNSIGNED(bits + 1, b));
+	RzILOpPure *r0, *r2;
+	if (c) {
+		r2 = ADD(UNSIGNED(bits + 1, a), VARLP("r1"));
+		r0 = LET("r1", ADD(UNSIGNED(bits + 1, b), UNSIGNED(bits + 1, c)), OR(MSB(VARLP("r1")), MSB(r2)));
+	} else {
+		r0 = MSB(ADD(UNSIGNED(bits + 1, a), UNSIGNED(bits + 1, b)));
+	}
 	// For ISA v3 CPU register ca32 should be handled here as well.
-	return SETG("ca", ITE(MSB(r), IL_TRUE, IL_FALSE));
+	return SETG("ca", r0);
 }
 
 /**

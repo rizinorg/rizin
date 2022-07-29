@@ -302,10 +302,10 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	bool set_ca = (id != PPC_INS_ADD && id != PPC_INS_ADDI && id != PPC_INS_ADDIS && id != PPC_INS_SUBF && id != PPC_INS_NEG);
 	bool cr0 = insn->detail->ppc.update_cr0;
 
-	RzILOpPure *op0;
-	RzILOpPure *op1;
-	RzILOpPure *op2;
-	RzILOpPure *res;
+	RzILOpPure *a = NULL;
+	RzILOpPure *b = NULL;
+	RzILOpPure *c = NULL;
+	RzILOpPure *res = NULL;
 
 	// How to read instruction ids:
 	// Letter		Meaning
@@ -321,58 +321,69 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	case PPC_INS_ADDC:
 	case PPC_INS_SUBF:
 	case PPC_INS_SUBFC:
-		op0 = add ? VARG(rA) : ADD(LOGNOT(VARG(rA)), UA(1));
-		op1 = VARG(rB);
-		res = ADD(op0, op1);
+		a = add ? VARG(rA) : ADD(LOGNOT(VARG(rA)), UA(1));
+		b = VARG(rB);
+		res = ADD(VARL("a"), VARL("b"));
 		break;
 	case PPC_INS_ADDE:
 	case PPC_INS_SUBFE:
-		op0 = add ? VARG(rA) : LOGNOT(VARG(rA));
-		op2 = VARG(rB);
-		op1 = ADD(op2, BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS));
-		res = ADD(op0, op1);
+		a = add ? VARG(rA) : LOGNOT(VARG(rA));
+		b = VARG(rB);
+		c = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
+		res = ADD(VARL("a"), ADD(VARL("b"), VARL("c")));
 		break;
 	case PPC_INS_ADDI:
 	case PPC_INS_ADDIC:
 	case PPC_INS_ADDIS:
 	case PPC_INS_SUBFIC:
-		op0 = add ? ((id == PPC_INS_ADDIS) ? IFREG0(rA) : VARG(rA)) : ADD(LOGNOT(VARG(rA)), UA(1));
+		a = add ? VARG(rA) : LOGNOT(VARG(rA));
 		if (id == PPC_INS_ADDIS) {
-			op1 = EXTEND(PPC_ARCH_BITS, APPEND(SN(16, sI), U16(0))); // Shift immediate << 16
+			b = EXTEND(PPC_ARCH_BITS, APPEND(SN(16, sI), U16(0)));
+		} else if (id == PPC_INS_SUBFIC) {
+			b = EXTEND(PPC_ARCH_BITS, SN(16, sI));
+			c = UA(1);
 		} else {
-			op1 = EXTEND(PPC_ARCH_BITS, SN(16, sI));
+			b = EXTEND(PPC_ARCH_BITS, SN(16, sI));
 		}
-		res = ADD(op0, op1);
+
+		if (c) {
+			res = ADD(VARL("a"), ADD(VARL("b"), VARL("c")));
+			break;
+		}
+		res = ADD(VARL("a"), VARL("b"));
 		break;
 	case PPC_INS_ADDME:
 	case PPC_INS_ADDZE:
 	case PPC_INS_SUBFME:
 	case PPC_INS_SUBFZE:
-		op0 = add ? VARG(rA) : LOGNOT(VARG(rA));
+		a = add ? VARG(rA) : LOGNOT(VARG(rA));
+		b = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
 		if (id == PPC_INS_ADDME || id == PPC_INS_SUBFME) {
-			op1 = ADD(BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS), SA(-1)); // Minus 1
+			c = UA(-1);
+			res = ADD(VARL("a"), ADD(VARL("b"), VARL("c")));
 		} else {
-			op1 = BOOL_TO_BV(VARG("ca"), PPC_ARCH_BITS);
+			res = ADD(VARL("a"), VARL("b"));
 		}
-		res = ADD(op0, op1);
 		break;
 	case PPC_INS_NEG:
-		op0 = LOGNOT(VARG(rA));
-		op1 = UA(1);
-		res = ADD(op0, op1);
+		a = LOGNOT(VARG(rA));
+		b = UA(1);
+		res = ADD(VARL("a"), VARL("b"));
 	}
-	rz_return_val_if_fail(op0 && op1, NULL);
+	if (!(a && b)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
 
-	// WRITE
-	RzILOpEffect *set;
-	RzILOpEffect *set_carry = set_ca ? set_carry_add_sub(DUP(op0), DUP(op1), mode) : NOP();
+	RzILOpEffect *set_carry = set_ca ? set_carry_add_sub(VARL("a"), VARL("b"), c ? VARL("c") : NULL, mode) : EMPTY();
 
 	// Instructions which set the OV bit are not supported in capstone.
 	// See: https://github.com/capstone-engine/capstone/issues/944
-	RzILOpEffect *overflow = NOP();
-	RzILOpEffect *update_cr0 = cr0 ? cmp_set_cr(res, UA(0), true, "cr0", mode) : NOP();
-	set = SETG(rT, res);
-	return SEQ4(set, set_carry, overflow, update_cr0);
+	RzILOpEffect *overflow = EMPTY();
+	RzILOpEffect *update_cr0 = cr0 ? cmp_set_cr(res, UA(0), true, "cr0", mode) : EMPTY();
+	RzILOpEffect *set = SETG(rT, res);
+	RzILOpEffect *set_ops = SEQ3(SETL("a", a), SETL("b", b), c ? SETL("c", c) : EMPTY());
+	return SEQ5(set_ops, set, set_carry, overflow, update_cr0);
 }
 
 static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
