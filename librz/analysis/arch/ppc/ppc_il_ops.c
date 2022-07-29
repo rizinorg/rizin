@@ -1183,11 +1183,11 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		into_rA = LOGAND(r, VARL("mask"));
 	}
 
-	update_cr0 = sets_cr0 ? cmp_set_cr(DUP(into_rA), UA(0), true, "cr0", mode) : EMPTY();
+	update_cr0 = sets_cr0 ? cmp_set_cr(VARL("result"), UA(0), true, "cr0", mode) : EMPTY();
 	set_mask = set_mask ? set_mask : EMPTY();
 	set_ca = set_ca ? set_ca : EMPTY();
 
-	return SEQ4(set_mask, set_ca, SETG(rA, into_rA), update_cr0);
+	return SEQ5(set_mask, set_ca, SETL("result", into_rA), SETG(rA, VARL("result")), update_cr0);
 }
 
 static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
