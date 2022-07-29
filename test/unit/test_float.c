@@ -265,13 +265,13 @@ bool rz_float_trunc_test(void) {
 	RzFloat *f2 = rz_float_new_from_single(234.12345f);
 	RzFloat *f3 = rz_float_new_from_single(2.9998f);
 	RzFloat *f4 = rz_float_new_from_single(0.9754f);
-	RzFloat *f5 = rz_float_new_from_single(3.4028235E38f);
+	RzFloat *f5 = rz_float_new_from_single(3.4028236E25f);
 
 	RzFloat *expect1 = rz_float_new_from_single(1.0f);
 	RzFloat *expect2 = rz_float_new_from_single(234.0f);
 	RzFloat *expect3 = rz_float_new_from_single(2.0f);
 	RzFloat *expect4 = rz_float_new_from_single(0.0f);
-	RzFloat *expect5 = rz_float_new_from_single(3.4028235E38f);
+	RzFloat *expect5 = rz_float_new_from_single(3.4028236E25f);
 
 	RzFloat *trunc1 = rz_float_trunc(f1);
 	RzFloat *trunc2 = rz_float_trunc(f2);
