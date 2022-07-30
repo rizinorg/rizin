@@ -457,20 +457,20 @@ static bool test_rz_colorize_generic_3(void) {
 }
 
 static bool test_rz_colorize_generic_4(void) {
-	RzAnalysis *a = setup_tms_analysis("c55x");
-	RzAsm *d = setup_tms_asm("c55x");
+	RzAnalysis *a = setup_tms_analysis("c55x+");
+	RzAsm *d = setup_tms_asm("c55x+");
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "mac *ar0, *cdp, ac0 >> #16 :: mac *ar0, *cdp, ac0" - 83000800
-	ut8 buf[] = "\x83\x00\x08\x00";
+	// "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" - 395102a0b411014033
+	ut8 buf[] = "\x39\x51\x02\xa0\xb4\x11\x01\x40\x33";
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
 
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmac\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar0\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mcdp\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac0\x1b[0m\x1b[37m \x1b[0m\x1b[37m>>\x1b[0m\x1b[37m #\x1b[0m\x1b[33m16\x1b[0m\x1b[37m :: \x1b[0m\x1b[37mmac\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar0\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mcdp\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac0\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[36mac0\x1b[0m\x1b[37m.\x1b[0m\x1b[37ml\x1b[0m\x1b[37m, \x1b[0m\x1b[37m*\x1b[0m\x1b[36mar2\x1b[0m\x1b[37m |\x1b[0m\x1b[37m|\x1b[0m\x1b[37m \x1b[0m\x1b[37mmov\x1b[0m\x1b[37m \x1b[0m\x1b[37m*\x1b[0m\x1b[37m(\x1b[0m\x1b[36mar1\x1b[0m\x1b[37m+\x1b[0m\x1b[37mt0b\x1b[0m\x1b[37m) \x1b[0m\x1b[37m<<\x1b[0m\x1b[37m \x1b[0m\x1b[36mt3\x1b[0m\x1b[37m, \x1b[0m\x1b[36mac1\x1b[0m");
 
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
