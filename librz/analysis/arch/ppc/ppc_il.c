@@ -579,7 +579,7 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
 		// BO_2 == 0: Decrement CTR
-		// BO_2 == 1: Don't decr. CTR
+		// BO_2 == 1: Don't use CTR
 		bo_2 = NON_ZERO(LOGAND(UN(5, 0b00100), VARLP("bo")));
 
 		// BO_3 == 0: Check CTR != 0
