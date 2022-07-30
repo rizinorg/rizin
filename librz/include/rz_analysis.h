@@ -624,6 +624,8 @@ typedef struct rz_analysis_t {
 	HtPP *ht_global_var; // global variables
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
+	RBItvTree /*<RzBinTrycatch *>*/ exception_scopes_tree;
+	HtUP /*<ut64, RzList<RzBinTrycatch *> *>*/ *exception_scopes_ht;
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {

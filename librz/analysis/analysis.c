@@ -60,6 +60,10 @@ static void global_kv_free(HtPPKv *kv) {
 	rz_analysis_var_global_free(kv->value);
 }
 
+static void exception_scope_kv_free(HtUPKv *kv) {
+	rz_list_free(kv->value);
+}
+
 RZ_API RzAnalysis *rz_analysis_new(void) {
 	int i;
 	RzAnalysis *analysis = RZ_NEW0(RzAnalysis);
@@ -121,6 +125,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
+	analysis->exception_scopes_ht = ht_up_new(NULL, exception_scope_kv_free, NULL);
 	return analysis;
 }
 
@@ -172,6 +177,8 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);
 	ht_pp_free(a->ht_global_var);
+	rz_rbtree_itv_free(&a->exception_scopes_tree);
+	ht_up_free(a->exception_scopes_ht);
 	free(a);
 	return NULL;
 }
