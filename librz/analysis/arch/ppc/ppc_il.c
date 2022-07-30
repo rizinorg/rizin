@@ -486,15 +486,16 @@ RZ_IPI RZ_OWN RzILOpEffect *sync_crx_cr(const bool crx_to_cr, const ut32 cr_mask
  * \return ut32 The mask for writing to the CR register. 
  */
 RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
+	ut32 x = 0xf;
 	return (
-		(fmx & 0x80 ? 0xf << 0x1c : 0) |
-		(fmx & 0x40 ? 0xf << 0x18 : 0) |
-		(fmx & 0x20 ? 0xf << 0x14 : 0) |
-		(fmx & 0x10 ? 0xf << 0x10 : 0) |
-		(fmx & 0x08 ? 0xf << 0xc : 0) |
-		(fmx & 0x04 ? 0xf << 0x8 : 0) |
-		(fmx & 0x02 ? 0xf << 0x4 : 0) |
-		(fmx & 0x01 ? 0xf : 0));
+		(fmx & 0x80 ? x << 0x1c : 0) |
+		(fmx & 0x40 ? x << 0x18 : 0) |
+		(fmx & 0x20 ? x << 0x14 : 0) |
+		(fmx & 0x10 ? x << 0x10 : 0) |
+		(fmx & 0x08 ? x << 0xc : 0) |
+		(fmx & 0x04 ? x << 0x8 : 0) |
+		(fmx & 0x02 ? x << 0x4 : 0) |
+		(fmx & 0x01 ? x : 0));
 }
 
 /**
