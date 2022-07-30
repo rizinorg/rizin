@@ -370,8 +370,8 @@ static bool test_rz_colorize_generic_0(void) {
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "ldr w2, [x8, -256]" 020150b8
-	ut8 buf[] = "\x02\x01\x50\xb8";
+	// "ldr x4, [x6, 0x14]" c44041f8
+	ut8 buf[] = "\xc4\x40\x41\xf8";
 
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 	rz_analysis_op(a, anaop, 0x0, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL);
@@ -379,7 +379,7 @@ static bool test_rz_colorize_generic_0(void) {
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[35mldur\x1b[0m\x1b[37m \x1b[0m\x1b[36mw2\x1b[0m\x1b[37m, [\x1b[0m\x1b[36mx8\x1b[0m\x1b[37m, \x1b[0m\x1b[37m-\x1b[0m\x1b[33m0x100\x1b[0m\x1b[37m]\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[35mldur\x1b[0m\x1b[37m \x1b[0m\x1b[36mx4\x1b[0m\x1b[37m, [\x1b[0m\x1b[36mx6\x1b[0m\x1b[37m, \x1b[0m\x1b[33m0x14\x1b[0m\x1b[37m]\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
