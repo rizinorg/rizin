@@ -69,7 +69,7 @@ static bool is_operator(const char *c) {
 }
 
 static bool is_register(const char *name, RZ_BORROW const RzRegSet *regset) {
-	rz_return_val_if_fail(name && regset, false);
+	rz_return_val_if_fail(name, false);
 	if (!regset) {
 		return false;
 	}
@@ -1315,16 +1315,19 @@ RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks) {
 RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAsmTokenString *toks) {
 	rz_return_val_if_fail(toks, NULL);
 
-	RzAsmTokenString *new = RZ_NEW0(RzAsmTokenString);
-	if (!new) {
+	RzAsmTokenString *newt = RZ_NEW0(RzAsmTokenString);
+	if (!newt) {
 		return NULL;
 	}
-	new->tokens = rz_vector_clone(toks->tokens);
-	new->str = rz_strbuf_new(rz_strbuf_get(toks->str));
-	new->op_type = toks->op_type;
+	newt->tokens = rz_vector_clone(toks->tokens);
+	newt->str = rz_strbuf_new(rz_strbuf_get(toks->str));
+	newt->op_type = toks->op_type;
 
-	rz_return_val_if_fail(new->tokens &&new->str, NULL);
-	return new;
+	if (!(newt->tokens && newt->str)) {
+		free(newt);
+		return NULL;
+	}
+	return newt;
 }
 
 RZ_API void rz_asm_token_pattern_free(void *p) {

@@ -119,7 +119,9 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 		}
 		{
 			RzStrBuf *colored_asm;
-			colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
+			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, analop.type);
+			colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
+			free(param);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, rz_strbuf_get(colored_asm));
 			rz_strbuf_free(colored_asm);
 		}
@@ -267,7 +269,9 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			rz_cons_printf("shift: >> %d << %d\n", word, (asmop.size * 8) - word - 1);
 		}
 		{
-			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
+			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, analop.type);
+			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
+			free(param);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, rz_strbuf_get(colored_asm));
 			rz_strbuf_free(colored_asm);
 		}
