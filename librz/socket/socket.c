@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2006-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -590,7 +591,13 @@ RZ_API RzSocket *rz_socket_accept(RzSocket *s) {
 		return NULL;
 	}
 	// signal (SIGPIPE, SIG_DFL);
-	sock->fd = accept(s->fd, (struct sockaddr *)&s->sa, &salen);
+	do {
+		sock->fd = accept(s->fd, (struct sockaddr *)&s->sa, &salen);
+#if __WINDOWS__
+	} while (false);
+#else
+	} while (sock->fd < 0 && errno == EINTR);
+#endif
 	if (sock->fd == RZ_INVALID_SOCKET) {
 		if (errno != EWOULDBLOCK) {
 			// not just a timeout
@@ -663,7 +670,8 @@ RZ_API bool rz_socket_block_time(RzSocket *s, bool block, int sec, int usec) {
 		return false;
 	}
 #elif __WINDOWS__
-	ioctlsocket(s->fd, FIONBIO, (u_long FAR *)&block);
+	u_long winblock = block ? 0 : 1; // 0 = blocking, 1 = non-blocking on windows
+	ioctlsocket(s->fd, FIONBIO, &winblock);
 #endif
 	if (sec > 0 || usec > 0) {
 		struct timeval tv = { sec, usec };
@@ -716,7 +724,7 @@ RZ_API char *rz_socket_to_string(RzSocket *s) {
 	}
 	return str;
 #else
-	return NULL;
+		return NULL;
 #endif
 }
 
@@ -792,8 +800,14 @@ RZ_API int rz_socket_read(RzSocket *s, unsigned char *buf, int len) {
 		return SSL_read(s->sfd, buf, len);
 	}
 #endif
-	// int r = read (s->fd, buf, len);
-	int r = recv(s->fd, (char *)buf, len, 0);
+	int r;
+	do {
+		r = recv(s->fd, (char *)buf, len, 0);
+#if __WINDOWS__
+	} while (false);
+#else
+	} while (r < 0 && errno == EINTR);
+#endif
 	D {
 		eprintf("READ ");
 		int i;
@@ -896,6 +910,162 @@ RZ_API ut8 *rz_socket_slurp(RzSocket *s, int *len) {
 		*len = copied;
 	}
 	return buf;
+}
+
+struct rz_stop_pipe_t {
+#if __WINDOWS__
+	WSAEVENT event;
+#else
+	int fds[2];
+#endif
+}; // RzStopPipe
+
+RZ_API RzStopPipe *rz_stop_pipe_new(void) {
+	RzStopPipe *stop_pipe = RZ_NEW0(RzStopPipe);
+	if (!stop_pipe) {
+		return NULL;
+	}
+#if __WINDOWS__
+	stop_pipe->event = WSACreateEvent();
+	if (stop_pipe->event == WSA_INVALID_EVENT) {
+		free(stop_pipe);
+		return NULL;
+	}
+#else
+	int r = pipe(stop_pipe->fds);
+	if (r < 0) {
+		free(stop_pipe);
+		return NULL;
+	}
+	r = fcntl(stop_pipe->fds[0], F_SETFL, O_NONBLOCK);
+	if (r == -1) {
+		close(stop_pipe->fds[0]);
+		close(stop_pipe->fds[1]);
+		free(stop_pipe);
+		return NULL;
+	}
+#endif
+	return stop_pipe;
+}
+
+RZ_API void rz_stop_pipe_free(RzStopPipe *stop_pipe) {
+	if (!stop_pipe) {
+		return;
+	}
+#if __WINDOWS__
+	WSACloseEvent(stop_pipe->event);
+#else
+	close(stop_pipe->fds[0]);
+	close(stop_pipe->fds[1]);
+#endif
+	free(stop_pipe);
+}
+
+/**
+ * Trigger a stop on the stop pipe, causing rz_stop_pipe_select_single() on
+ * it to return with RZ_STOP_PIPE_STOPPED.
+ * This function is async-signal-safe.
+ */
+RZ_API void rz_stop_pipe_stop(RzStopPipe *stop_pipe) {
+	// No rz_return_if_fail because that would not be async-signal-safe!
+#if __WINDOWS__
+	WSASetEvent(stop_pipe->event);
+#else
+	(void)!write(stop_pipe->fds[1], "\x00", 1); // no print on err for async-signal-safety
+#endif
+}
+
+/**
+ * Block until one of the following events has happened and return:
+ * * \p stop_pipe has been stopped with `rz_stop_pipe_stop()` => `RZ_STOP_PIPE_STOPPED`
+ * * \p sock is ready for read or write (depending on \p sock_write) => `RZ_STOP_PIPE_SOCKET_READY`
+ * * \p timeout_ms milliseconds have passed => `RZ_STOP_PIPE_TIMEOUT`
+ *
+ * This is only supported for non-ssl sockets.
+ *
+ * \param timeout_ms optional timeout in milliseconds, disabled if UT64_MAX is passed.
+ */
+RZ_API RzStopPipeSelectResult rz_stop_pipe_select_single(RzStopPipe *stop_pipe, RzSocket *sock, bool sock_write, ut64 timeout_ms) {
+	rz_return_val_if_fail(stop_pipe && sock && !sock->is_ssl, RZ_STOP_PIPE_ERROR);
+#if __WINDOWS__
+	WSAEVENT events[2];
+	DWORD events_count = 2;
+	events[0] = stop_pipe->event;
+
+	events[1] = WSACreateEvent();
+	if (events[1] == WSA_INVALID_EVENT) {
+		return RZ_STOP_PIPE_ERROR;
+	}
+	int sr = WSAEventSelect(sock->fd, events[1], sock_write ? FD_WRITE : FD_READ | FD_ACCEPT);
+	if (sr == SOCKET_ERROR) {
+		WSACloseEvent(events[1]);
+		return RZ_STOP_PIPE_ERROR;
+	}
+
+	DWORD r = WSAWaitForMultipleEvents(events_count, events, FALSE, timeout_ms == UT64_MAX ? WSA_INFINITE : (DWORD)timeout_ms, FALSE);
+
+	WSAEventSelect(sock->fd, events[1], 0); // must reset, otherwise WSACloseEvent may close the socket
+	WSACloseEvent(events[1]);
+
+	switch (r) {
+	case WSA_WAIT_EVENT_0:
+		return RZ_STOP_PIPE_STOPPED;
+	case WSA_WAIT_EVENT_0 + 1:
+		return RZ_STOP_PIPE_SOCKET_READY;
+	case WSA_WAIT_TIMEOUT:
+		return RZ_STOP_PIPE_TIMEOUT;
+	default:
+		return RZ_STOP_PIPE_ERROR;
+	}
+#else
+	fd_set rfds;
+	FD_ZERO(&rfds);
+	int stop_fd = stop_pipe->fds[0];
+	FD_SET(stop_fd, &rfds);
+	int nfds = stop_fd;
+
+	fd_set wfds;
+	FD_ZERO(&wfds);
+	FD_SET(sock->fd, sock_write ? &wfds : &rfds);
+	if (sock->fd > nfds) {
+		nfds = sock->fd;
+	}
+	nfds++;
+
+	ut64 timeout_abs_us = timeout_ms != UT64_MAX ? rz_time_now_mono() + timeout_ms * 1000 : UT64_MAX;
+	int r;
+	do {
+		// Must always recalculate the timeout to not start over at 0 on EINTR
+		struct timeval timeout_s;
+		struct timeval *timeout = NULL;
+		if (timeout_abs_us != UT64_MAX) {
+			ut64 now_us = rz_time_now_mono();
+			if (now_us >= timeout_abs_us) {
+				return RZ_STOP_PIPE_TIMEOUT;
+			}
+			ut64 rest_us = timeout_abs_us - now_us;
+			timeout_s.tv_sec = rest_us / 1000000;
+			timeout_s.tv_usec = rest_us % 1000000;
+			timeout = &timeout_s;
+		}
+
+		r = select(nfds, &rfds, sock_write ? &wfds : NULL, NULL, timeout);
+	} while (r < 0 && errno == EINTR);
+
+	if (r < 0) {
+		return RZ_STOP_PIPE_ERROR;
+	}
+
+	if (FD_ISSET(stop_fd, &rfds)) {
+		return RZ_STOP_PIPE_STOPPED;
+	}
+
+	if (FD_ISSET(sock->fd, sock_write ? &wfds : &rfds)) {
+		return RZ_STOP_PIPE_SOCKET_READY;
+	}
+
+	return RZ_STOP_PIPE_TIMEOUT;
+#endif
 }
 
 #endif // EMSCRIPTEN
