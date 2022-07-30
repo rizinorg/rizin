@@ -261,9 +261,9 @@ typedef struct rz_analysis_function_t {
 	int argnum; // number of arguments;
 	size_t fingerprint_size;
 	RzAnalysisDiff *diff;
-	RzList *bbs; // TODO: should be RzPVector
+	RzList /*<RzAnalysisBlock *>*/ *bbs; // TODO: should be RzPVector
 	RzAnalysisFcnMeta meta;
-	RzList *imports; // maybe bound to class?
+	RzList /*<char *>*/ *imports; // maybe bound to class?
 	struct rz_analysis_t *analysis; // this function is associated with this instance
 } RzAnalysisFunction;
 

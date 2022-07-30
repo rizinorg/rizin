@@ -51,7 +51,7 @@ typedef struct rz_flag_t {
 	RzNum *num;
 	RzSkipList *by_off; /* flags sorted by offset, value=RzFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RzFlagItem * */
-	RzList *zones;
+	RzList /*<RzFlagZoneItem *>*/ *zones;
 } RzFlag;
 
 /* compile time dependency */
@@ -102,8 +102,8 @@ RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name);
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off);
 RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...);
 RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest);
-RZ_API RzList * /*<RzFlagItem*>*/ rz_flag_all_list(RzFlag *f, bool by_space);
-RZ_API const RzList * /*<RzFlagItem*>*/ rz_flag_get_list(RzFlag *f, ut64 off);
+RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_all_list(RzFlag *f, bool by_space);
+RZ_API const RzList /*<RzFlagItem *>*/ *rz_flag_get_list(RzFlag *f, ut64 off);
 RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off);
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item);
 RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name);
@@ -175,10 +175,10 @@ static inline bool rz_flag_space_is_empty(RzFlag *f) {
 #define rz_flag_space_foreach(f, it, s) rz_spaces_foreach(&(f)->spaces, (it), (s))
 
 /* tags */
-RZ_API RZ_OWN RzList *rz_flag_tags_list(RzFlag *f);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_tags_list(RzFlag *f);
 RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words);
 RZ_API void rz_flag_tags_reset(RzFlag *f, const char *name);
-RZ_API RzList *rz_flag_tags_get(RzFlag *f, const char *name);
+RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_tags_get(RzFlag *f, const char *name);
 
 /* zones */
 
@@ -187,7 +187,7 @@ RZ_API bool rz_flag_zone_add(RzFlag *fz, const char *name, ut64 addr);
 RZ_API bool rz_flag_zone_del(RzFlag *fz, const char *name);
 RZ_API bool rz_flag_zone_around(RzFlag *fz, ut64 addr, const char **prev, const char **next);
 RZ_API bool rz_flag_zone_reset(RzFlag *f);
-RZ_API RzList *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows);
+RZ_API RzList /*<char *>*/ *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows);
 
 /* serialize */
 

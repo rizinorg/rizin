@@ -1105,7 +1105,7 @@ RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps) {
 	return ret;
 }
 
-RZ_IPI RzBinSection *rz_bin_section_new(const char *name) {
+RZ_API RzBinSection *rz_bin_section_new(const char *name) {
 	RzBinSection *s = RZ_NEW0(RzBinSection);
 	if (s) {
 		s->name = name ? strdup(name) : NULL;
@@ -1113,7 +1113,7 @@ RZ_IPI RzBinSection *rz_bin_section_new(const char *name) {
 	return s;
 }
 
-RZ_IPI void rz_bin_section_free(RzBinSection *bs) {
+RZ_API void rz_bin_section_free(RzBinSection *bs) {
 	if (bs) {
 		free(bs->name);
 		free(bs->format);
