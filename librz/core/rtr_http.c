@@ -2,6 +2,27 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // included from rtr.c
 
+static int rtr_http_stop(RzCore *u) {
+	RzCore *core = (RzCore *)u;
+	const int timeout = 1; // 1 second
+	const char *port;
+	RzSocket *sock;
+
+#if __WINDOWS__
+	rz_socket_http_server_set_breaked(&rz_cons_singleton()->context->breaked);
+#endif
+	if (((size_t)u) > 0xff) {
+		port = rz_config_get(core->config, "http.port");
+		sock = rz_socket_new(0);
+		(void)rz_socket_connect(sock, "localhost",
+			port, RZ_SOCKET_PROTO_TCP, timeout);
+		rz_socket_free(sock);
+	}
+	rz_socket_free(s);
+	s = NULL;
+	return 0;
+}
+
 // return 1 on error
 static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char *path) {
 	RzConfig *newcfg = NULL, *origcfg = NULL;
@@ -138,7 +159,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 	core->block = newblk;
 	// TODO: handle mutex lock/unlock here
-	rz_cons_break_push((RzConsBreak)rz_core_rtr_http_stop, core);
+	rz_cons_break_push((RzConsBreak)rtr_http_stop, core);
 	while (!rz_cons_is_breaked()) {
 		/* restore environment */
 		core->config = origcfg;

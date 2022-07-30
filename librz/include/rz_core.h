@@ -1076,7 +1076,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 
 /* rtr */
 RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);
-RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port);
+RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port);
 RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *port, const char *cmd);
 RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_list(RzCore *core);
@@ -1085,7 +1085,6 @@ RZ_API void rz_core_rtr_remove(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_session(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input);
 RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path);
-RZ_API int rz_core_rtr_http_stop(RzCore *u);
 RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path);
 
 RZ_API int rz_core_visual_prevopsz(RzCore *core, ut64 addr);
