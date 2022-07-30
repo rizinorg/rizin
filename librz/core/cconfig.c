@@ -3454,6 +3454,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("graph.trace", "false", "Fold all non-traced basic blocks");
 	SETBPREF("graph.dummy", "true", "Create dummy nodes in the graph for better layout (20% slower)");
 	SETBPREF("graph.few", "false", "Show few basic blocks in the graph");
+	SETBPREF("graph.trycatch", "true", "Draw exception handling related basic blocks in the function graph");
 	SETBPREF("graph.comments", "true", "Show disasm comments in graph");
 	SETBPREF("graph.cmtright", "false", "Show comments at right");
 	SETCB("graph.gv.format", "gif", &cb_graphformat, "Graph image extension when using 'w' format (png, jpg, pdf, ps, svg, json)");
