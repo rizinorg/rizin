@@ -29,7 +29,7 @@
 #define NOT_IMPLEMENTED \
 	do { \
 		RZ_LOG_INFO("IL instruction not implemented."); \
-		return EMPTY(); \
+		return NULL; \
 	} while (0)
 
 /**

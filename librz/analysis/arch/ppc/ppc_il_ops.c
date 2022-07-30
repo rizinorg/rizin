@@ -159,7 +159,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 
 	rz_return_val_if_fail(into_rt, NULL);
 	RzILOpEffect *res = SETG(rT, into_rt);
-	RzILOpEffect *update = update_ra ? SETG(rA, DUP(ea)) : NOP();
+	RzILOpEffect *update = update_ra ? SETG(rA, DUP(ea)) : EMPTY();
 	return SEQ2(res, update);
 }
 
@@ -587,7 +587,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	}
 
 	// WRITE
-	RzILOpEffect *update_cr0 = cr0 ? cmp_set_cr(res, UA(0), true, "cr0", mode) : NOP();
+	RzILOpEffect *update_cr0 = cr0 ? cmp_set_cr(res, UA(0), true, "cr0", mode) : EMPTY();
 	RzILOpEffect *set = SETG(rA, res);
 	return SEQ2(set, update_cr0);
 }
@@ -816,7 +816,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		case 811:
 			// Reserved. Treated as No-ops
 			RZ_LOG_WARN("Reserved SPR instruction encountered at 0x%" PFMTSZx "\n", insn->address);
-			return NOP();
+			return EMPTY();
 		case 1:
 			if (id == PPC_INS_MTSPR) {
 				return ppc_set_xer(VARG(rS), mode);
@@ -1241,7 +1241,7 @@ static RzILOpEffect *cr_logical(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 /**
  * \brief Returns the RZIL implementation of a given capstone instruction.
- * Or NOP() if the instruction is not yet implemented.
+ * Or NULL if the instruction is not yet implemented.
  *
  * \param handle The capstone handle.
  * \param insn The capstone instruction.
