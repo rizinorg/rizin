@@ -801,7 +801,7 @@ RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode) {
  */
 RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode) {
 	rz_return_val_if_fail(val, NULL);
-	RzILOpPure *v = UNSIGNED(64, val);
+	RzILOpPure *v = LOGAND(BIT_MASK(64, U8(32), U8(34)), UNSIGNED(64, val));
 	return SEQ5(SETL("v", v), SETG("xer", VARL("v")),
 		SETG("so", BIT_IS_SET(VARL("v"), 64, U8(32))),
 		SETG("ov", BIT_IS_SET(VARL("v"), 64, U8(33))),
