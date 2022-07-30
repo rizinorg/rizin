@@ -2948,7 +2948,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.jmp.mid", "true", &cb_analysis_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
 	SETCB("analysis.refstr", "false", &cb_analysis_searchstringrefs, "Search string references in data references");
-	SETCB("analysis.trycatch", "false", &cb_analysis_trycatch, "Honor try.X.Y.{from,to,catch} flags");
+	SETCB("analysis.trycatch", "true", &cb_analysis_trycatch, "Honor try.X.Y.{from,to,catch} flags");
 	SETCB("analysis.bb.maxsize", "512K", &cb_analysis_bb_max_size, "Maximum basic block size");
 	SETCB("analysis.pushret", "false", &cb_analysis_pushret, "Analyze push+ret as jmp");
 

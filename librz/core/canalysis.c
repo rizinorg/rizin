@@ -2015,6 +2015,9 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
 	if (fcn->addr == addr) {
 		return true;
 	}
+	if (ht_up_find(core->analysis->exception_scopes_ht, addr, NULL)) {
+		return false;
+	}
 	const RzList *flags = rz_flag_get_list(core->flags, addr);
 	return !(flags && rz_list_find(flags, fcn, find_sym_flag));
 }
@@ -5772,6 +5775,17 @@ static bool is_apple_target(RzCore *core) {
 	return bo ? strstr(bo->plugin->name, "mach") : false;
 }
 
+static bool analyze_exception_source(void *user, const ut64 key, const void *value) {
+	RzCore *core = user;
+	const RzList *scopes = value;
+	RzListIter *it;
+	RzBinTrycatch *trycatch;
+	rz_list_foreach (scopes, it, trycatch) {
+		rz_core_analysis_fcn(core, trycatch->source, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, core->analysis->opt.depth);
+	}
+	return true;
+}
+
 /**
  * Runs all the steps of the deep analysis.
  *
@@ -5808,9 +5822,17 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
+	if (core->analysis->exception_scopes_ht->count) {
+		notify = "Analyze exception sources as functions";
+		rz_core_notify_begin(core, "%s", notify);
+		ht_up_foreach(core->analysis->exception_scopes_ht, analyze_exception_source, core);
+		rz_core_notify_done(core, "%s", notify);
+		rz_core_task_yield(&core->tasks);
+	}
+
 	notify = "Analyze function calls";
 	rz_core_notify_begin(core, "%s", notify);
-	(void)rz_core_analysis_calls(core, false); // "aac"
+	rz_core_analysis_calls(core, false); // "aac"
 	rz_core_seek(core, curseek, true);
 	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);

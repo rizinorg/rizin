@@ -788,37 +788,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			rz_analysis_block_set_size(bb, newbbsize);
 			fcn->ninstr++;
 		}
-		if (analysis->opt.trycatch) {
-			const char *name = analysis->coreb.getName(analysis->coreb.core, at);
-			if (name) {
-				if (rz_str_startswith(name, "try.") && rz_str_endswith(name, ".from")) {
-					char *handle = strdup(name);
-					// handle = rz_str_replace (handle, ".from", ".to", 0);
-					ut64 from_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
-					handle = rz_str_replace(handle, ".from", ".catch", 0);
-					ut64 handle_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
-					handle = rz_str_replace(handle, ".catch", ".filter", 0);
-					ut64 filter_addr = analysis->coreb.numGet(analysis->coreb.core, handle);
-					if (filter_addr) {
-						rz_analysis_xrefs_set(analysis, op.addr, filter_addr, RZ_ANALYSIS_XREF_TYPE_CALL);
-					}
-					bb->jump = at + oplen;
-					if (from_addr != bb->addr) {
-						bb->fail = handle_addr;
-						ret = analyze_function_locally(analysis, fcn, handle_addr);
-						if (bb->size == 0) {
-							rz_analysis_function_remove_block(fcn, bb);
-						}
-						rz_analysis_block_update_hash(bb);
-						rz_analysis_block_unref(bb);
-						bb = fcn_append_basic_block(analysis, fcn, bb->jump);
-						if (!bb) {
-							gotoBeach(RZ_ANALYSIS_RET_ERROR);
-						}
-					}
-				}
-			}
-		}
 		idx += oplen;
 		delay.un_idx = idx;
 		if (analysis->opt.delay && op.delay > 0 && !delay.pending) {
@@ -1648,6 +1617,17 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 	RzVector tasks;
 	rz_vector_init(&tasks, sizeof(RzAnalysisTaskItem), NULL, NULL);
 	rz_analysis_task_item_new(analysis, &tasks, fcn, NULL, addr);
+	if (analysis->opt.trycatch) {
+		RzBinTrycatch *tc;
+		RzListIter *it;
+		RzList *scopes = ht_up_find(analysis->exception_scopes_ht, fcn->addr, NULL);
+		rz_list_foreach (scopes, it, tc) {
+			if (tc->filter) {
+				rz_analysis_xrefs_set(analysis, tc->from, tc->filter, RZ_ANALYSIS_XREF_TYPE_CALL);
+			}
+			rz_analysis_task_item_new(analysis, &tasks, fcn, NULL, tc->handler);
+		}
+	}
 	int ret = rz_analysis_run_tasks(&tasks);
 	rz_vector_fini(&tasks);
 	return ret;
