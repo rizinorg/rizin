@@ -1182,7 +1182,6 @@ static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs
 	}
 }
 
-//! Untested! Musl and gnu compile did not recognized isel as instruction.
 static RzILOpEffect *iselect(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
 	if (insn->id != PPC_INS_ISEL) {
@@ -1191,7 +1190,7 @@ static RzILOpEffect *iselect(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).reg);
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
-	ut8 bc = INSOP(3).imm;
+	ut8 bc = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(2).crx.reg)) - 32;
 	const char *crx = ppc_get_cr_name(bc / 4);
 	ut8 crx_bit = bc % 4;
 	RzILOpBool *bit_set = BIT_IS_SET(VARG(crx), 4, U8(crx_bit));
