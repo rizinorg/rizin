@@ -86,8 +86,6 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LHZCIX:
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
-	case PPC_INS_LWARX:
-	case PPC_INS_LDARX:
 		base = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
@@ -105,6 +103,8 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		}
 		into_rt = LET("ea", ea, LET("loadw", loadw, into_rt));
 		break;
+	case PPC_INS_LWARX:
+	case PPC_INS_LDARX:
 	// Byte reverse and reserved indexed
 	case PPC_INS_LHBRX:
 	case PPC_INS_LWBRX:
@@ -233,8 +233,6 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
-	case PPC_INS_STDCX:
-	case PPC_INS_STWCX:
 		base = IFREG0(rA); // Not all instructions use the plain value 0 if (rA) == 0. But we ignore this here.
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
@@ -244,6 +242,8 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		ea = ADD(base, disp);
 		store = STOREW(ea, CAST(mem_acc_size, IL_FALSE, VARG(rS)));
 		break;
+	case PPC_INS_STDCX:
+	case PPC_INS_STWCX:
 	// Float
 	case PPC_INS_STFD:
 	case PPC_INS_STFDU:
