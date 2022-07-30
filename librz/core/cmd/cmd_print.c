@@ -4456,14 +4456,15 @@ static char *__op_refs(RzCore *core, RzAnalysisOp *op, int n) {
 }
 
 static inline char *__refs(RzCore *core, ut64 x) {
-	char *refs = NULL;
-	if (core->print->hasrefs) {
-		refs = core->print->hasrefs(core->print->user, x, true);
-		if (RZ_STR_ISNOTEMPTY(refs)) {
-			rz_str_trim(refs);
-		} else {
-			RZ_FREE(refs);
-		}
+	if (!core->print->hasrefs) {
+		return NULL;
+	}
+
+	char *refs = core->print->hasrefs(core->print->user, x, true);
+	if (RZ_STR_ISNOTEMPTY(refs)) {
+		rz_str_trim(refs);
+	} else {
+		RZ_FREE(refs);
 	}
 	return refs;
 }
@@ -4478,15 +4479,13 @@ static bool cmd_pxr(RzCore *core, int len, RzCmdStateOutput *state, int wordsize
 	}
 
 	const ut8 *buf = core->block;
-	PJ *pj = state->d.pj;
-	RzTable *t = state->d.t;
-	const int hex_depth = (int)rz_config_get_i(core->config, "hex.depth");
+
 	bool be = core->analysis->big_endian;
 	int end = RZ_MIN(core->blocksize, len);
 	int bitsize = wordsize * 8;
 	RzOutputMode mode = state->mode;
-
 	if (mode == RZ_OUTPUT_MODE_TABLE) {
+		RzTable *t = state->d.t;
 		RzTableColumnType *n = rz_table_type("number");
 		RzTableColumnType *s = rz_table_type("string");
 		rz_table_add_column(t, n, "addr", 0);
@@ -4501,6 +4500,8 @@ static bool cmd_pxr(RzCore *core, int len, RzCmdStateOutput *state, int wordsize
 		}
 		rz_table_query(t, query);
 	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *pj = state->d.pj;
+		const int hex_depth = (int)rz_config_get_i(core->config, "hex.depth");
 		pj_a(pj);
 		for (ut64 i = 0; i + wordsize < end; i += wordsize) {
 			ut64 addr = core->offset + i;
@@ -4522,7 +4523,6 @@ static bool cmd_pxr(RzCore *core, int len, RzCmdStateOutput *state, int wordsize
 		pj_end(pj);
 	} else if (mode == RZ_OUTPUT_MODE_QUIET) {
 		for (ut64 i = 0; i + wordsize < end; i += wordsize) {
-			//			ut64 addr = core->offset + i;
 			ut64 val = rz_read_ble(buf + i, be, bitsize);
 			char *refs = __refs(core, val);
 			rz_strbuf_appendf(sb, "%s\n", refs);
@@ -5667,6 +5667,7 @@ beach:
 }
 
 RZ_IPI int rz_cmd_hexdump(void *data, const char *input) {
+	// TODO: Use the API directly
 	return rz_core_cmdf(data, "px%s", input);
 }
 
