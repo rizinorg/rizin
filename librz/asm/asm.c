@@ -69,7 +69,7 @@ static bool is_operator(const char *c) {
 }
 
 static bool is_register(const char *name, RZ_BORROW const RzRegSet *regset) {
-	rz_return_val_if_fail(name && regset, false);
+	rz_return_val_if_fail(name, false);
 	if (!regset) {
 		return false;
 	}
