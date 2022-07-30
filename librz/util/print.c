@@ -1631,6 +1631,7 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	rz_vector_foreach(toks->tokens, tok) {
 		switch (tok->type) {
 		default:
+			rz_strbuf_free(out);
 			rz_warn_if_reached();
 			return NULL;
 		case RZ_ASM_TOKEN_UNKNOWN:

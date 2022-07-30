@@ -1323,7 +1323,10 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAs
 	new->str = rz_strbuf_new(rz_strbuf_get(toks->str));
 	new->op_type = toks->op_type;
 
-	rz_return_val_if_fail(new->tokens &&new->str, NULL);
+	if (!(new->tokens && new->str)) {
+		free(new);
+		return NULL;
+	}
 	return new;
 }
 
