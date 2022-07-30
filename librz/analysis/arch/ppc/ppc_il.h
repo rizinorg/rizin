@@ -21,7 +21,7 @@
  * \brief This value varies from implementation to implementation.
  * Should be replaced with a plugin specific config option.
  */
-#define DCACHE_LINE_SIZE 32
+#define DCACHE_LINE_SIZE 128
 
 /**
  * \brief Writes to the info log that an unimplemented instruction was encountered and returns an EMPTY() effect.
