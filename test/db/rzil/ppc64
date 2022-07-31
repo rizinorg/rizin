@@ -529,6 +529,7 @@ var_write(name: lr, old: 0x1009ec, new: 0x0)
 pc_write(old: 0x1009f0, new: 0x1009f4)
 pc_write(old: 0x1009f4, new: 0x0)
 EOF
+BROKEN=1
 RUN
 
 NAME=ppc special instructions

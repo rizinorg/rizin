@@ -925,16 +925,14 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFXER:
 	case PPC_INS_MTXER:
 		if (id == PPC_INS_MTXER) {
-			// This instruction is already implemented but was broken at the time.
-			// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
-			//
-			// MFXER currently produces a mismatch in rz-tracetest if the binary is an ISAv3 one.
-			// Because register ca32 and ov32 are not implemented in Rizin.
-			NOT_IMPLEMENTED;
+			return ppc_set_xer(VARG(rS), mode);
 		}
-		spr_name = "xer";
-		set_val = SETL("val", ppc_get_xer(mode));
-		break;
+		// This instruction is already implemented but was broken at the time.
+		// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
+		//
+		// MFXER currently produces a mismatch in rz-tracetest if the binary is an ISAv3 one.
+		// Because register ca32 and ov32 are not implemented in Rizin.
+		NOT_IMPLEMENTED;
 	case PPC_INS_MFDSCR:
 	case PPC_INS_MTDSCR:
 		NOT_IMPLEMENTED;
@@ -1181,6 +1179,22 @@ static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs
 	case PPC_INS_TDI:
 		return NOP();
 	}
+}
+
+static RzILOpEffect *cr_logical(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+	rz_return_val_if_fail(handle && insn, EMPTY());
+	ut32 id = insn->id;
+
+	if (id == PPC_INS_MCRF) {
+		return SETG(cs_reg_name(handle, INSOP(0).reg), VARG(cs_reg_name(handle, INSOP(1).reg)));
+	}
+
+	// This instruction is already implemented but was broken at the time.
+	// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
+	//
+	// Bug:
+	// Capstone v4 isntructions hold GPRs instead of CR registers.
+	NOT_IMPLEMENTED;
 }
 
 /**
@@ -1529,13 +1543,15 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CRNOT:
 	case PPC_INS_CRMOVE:
 	case PPC_INS_CRCLR:
-	case PPC_INS_MCRF:
 		// This instruction is already implemented but was broken at the time.
 		// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
 		//
 		// Bug:
 		// Capstone v4 isntructions hold GPRs instead of CR registers.
 		NOT_IMPLEMENTED;
+	case PPC_INS_MCRF:
+		lop = cr_logical(handle, insn, mode);
+		break;
 	// Rotate and rotate
 	case PPC_INS_RLDCL:
 	case PPC_INS_RLDCR:
