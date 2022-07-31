@@ -66,8 +66,6 @@ information
 %ifarch s390x
     -Ddebugger=false \
 %endif
-    -Duse_sys_libuv=disabled \
-    -Duse_libuv=true \
     -Denable_tests=false \
     -Denable_rz_test=false \
     -Dlocal=disabled \
