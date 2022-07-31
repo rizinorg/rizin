@@ -558,28 +558,8 @@ EXPECT=<<EOF
         "key": {
           "opcode": "+",
           "x": {
-            "opcode": "ite",
-            "condition": {
-              "opcode": "==",
-              "x": {
-                "opcode": "var",
-                "value": "r1"
-              },
-              "y": {
-                "opcode": "bitv",
-                "bits": "0x0",
-                "len": 64
-              }
-            },
-            "x": {
-              "opcode": "bitv",
-              "bits": "0x0",
-              "len": 64
-            },
-            "y": {
-              "opcode": "var",
-              "value": "r1"
-            }
+            "opcode": "var",
+            "value": "r1"
           },
           "y": {
             "opcode": "let",
@@ -594,9 +574,8 @@ EXPECT=<<EOF
               "condition": {
                 "opcode": "msb",
                 "bv": {
-                  "opcode": "bitv",
-                  "bits": "0xfff0",
-                  "len": 16
+                  "opcode": "var",
+                  "value": "v"
                 }
               },
               "x": {
@@ -648,28 +627,8 @@ EXPECT=<<EOF
         "src": {
           "opcode": "+",
           "x": {
-            "opcode": "ite",
-            "condition": {
-              "opcode": "==",
-              "x": {
-                "opcode": "var",
-                "value": "r1"
-              },
-              "y": {
-                "opcode": "bitv",
-                "bits": "0x0",
-                "len": 64
-              }
-            },
-            "x": {
-              "opcode": "bitv",
-              "bits": "0x0",
-              "len": 64
-            },
-            "y": {
-              "opcode": "var",
-              "value": "r1"
-            }
+            "opcode": "var",
+            "value": "r1"
           },
           "y": {
             "opcode": "let",
@@ -684,9 +643,8 @@ EXPECT=<<EOF
               "condition": {
                 "opcode": "msb",
                 "bv": {
-                  "opcode": "bitv",
-                  "bits": "0xfff0",
-                  "len": 16
+                  "opcode": "var",
+                  "value": "v"
                 }
               },
               "x": {
