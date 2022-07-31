@@ -219,7 +219,7 @@ static RzILOpPure *sh_il_get_privilege_ctx(SHILContext *ctx) {
  * \return RzILOpPure*
  */
 static RzILOpPure *sh_il_get_reg_ctx(ut16 reg, SHILContext *ctx) {
-	if (!sh_banked_reg(reg)) {
+	if (!sh_banked_reg(reg) || !ctx->use_banked) {
 		if (reg == SH_REG_IND_SR) {
 			return sh_il_get_status_reg();
 		}
@@ -242,7 +242,7 @@ static RzILOpPure *sh_il_get_reg_ctx(ut16 reg, SHILContext *ctx) {
  * \return RzILOpEffect*
  */
 static RzILOpEffect *sh_il_set_reg_ctx(ut16 reg, RZ_OWN RzILOpPure *val, SHILContext *ctx) {
-	if (!sh_banked_reg(reg)) {
+	if (!sh_banked_reg(reg) || !ctx->use_banked) {
 		if (reg == SH_REG_IND_SR) {
 			return sh_il_set_status_reg(val);
 		}
@@ -1496,6 +1496,13 @@ static RzILOpEffect *sh_il_clrt(const SHOp *op, ut64 pc, RzAnalysis *analysis, S
  * PRIVILEGED (Only GBR is not privileged)
  */
 static RzILOpEffect *sh_il_ldc(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
+	/* We won't be using banked registers for these instructions (except for unprivileged GBR) */
+	// TODO: Check what the correct implementation is
+	ctx->use_banked = false;
+	if (op->param[1].param[0] == SH_REG_IND_GBR) {
+		ctx->use_banked = true;
+	}
+
 	RzILOpEffect *eff = NULL;
 	if (op->scaling == SH_SCALING_INVALID) {
 		if (sh_valid_gpr(op->param[1].param[0])) {
@@ -1606,6 +1613,13 @@ static RzILOpEffect *sh_il_sleep(const SHOp *op, ut64 pc, RzAnalysis *analysis, 
  * PRIVILEGED (Only GBR is not privileged)
  */
 static RzILOpEffect *sh_il_stc(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
+	/* We won't be using banked registers for these instructions (except for unprivileged GBR) */
+	// TODO: Check what the correct implementation is
+	ctx->use_banked = false;
+	if (op->param[1].param[0] == SH_REG_IND_GBR) {
+		ctx->use_banked = true;
+	}
+
 	RzILOpEffect *eff = NULL;
 	if (sh_valid_gpr(op->param[0].param[0])) { // REG = Rn_BANK
 		eff = sh_il_set_pure_param(1, VARG(sh_get_banked_reg(op->param[0].param[0], 1)));
