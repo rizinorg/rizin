@@ -68,6 +68,7 @@ static const ut8 sh_scaling_size[] = { -1, 1, 2, 4, 8 };
  * Enum for register indexes
  */
 typedef enum sh_register_index_t {
+	// General purpose registers
 	SH_REG_IND_R0 = 0,
 	SH_REG_IND_R1,
 	SH_REG_IND_R2,
@@ -84,6 +85,8 @@ typedef enum sh_register_index_t {
 	SH_REG_IND_R13,
 	SH_REG_IND_R14,
 	SH_REG_IND_R15,
+
+	// System registers
 	SH_REG_IND_PC,
 	SH_REG_IND_SR,
 	SH_REG_IND_GBR,
@@ -95,6 +98,8 @@ typedef enum sh_register_index_t {
 	SH_REG_IND_MACH,
 	SH_REG_IND_MACL,
 	SH_REG_IND_PR,
+
+	// Floating point registers
 	SH_REG_IND_FPUL,
 	SH_REG_IND_FPSCR,
 	SH_REG_IND_FR0,
@@ -129,6 +134,19 @@ typedef enum sh_register_index_t {
 	SH_REG_IND_XF13,
 	SH_REG_IND_XF14,
 	SH_REG_IND_XF15,
+
+	// Banked registers
+	SH_REG_IND_R0B,
+	SH_REG_IND_R1B,
+	SH_REG_IND_R2B,
+	SH_REG_IND_R3B,
+	SH_REG_IND_R4B,
+	SH_REG_IND_R5B,
+	SH_REG_IND_R6B,
+	SH_REG_IND_R7B,
+
+	// Size
+	SH_REG_IND_SIZE
 } SHRegisterIndex;
 
 typedef enum {

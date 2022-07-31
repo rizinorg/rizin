@@ -159,24 +159,24 @@ static RzILOpPure *sh_il_get_status_reg() {
  */
 static RzILOpEffect *sh_il_set_status_reg(RZ_OWN RzILOpPure *val) {
 	RzILOpEffect *sreg = SETL("_sreg", val);
-	RzILOpEffect *eff = SETG(SH_SR_T, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg"))));
+	RzILOpEffect *eff = SETG(SH_SR_T, LSB(VARL("_sreg")));
 
 	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(1))));
-	eff = SEQ2(eff, SETG(SH_SR_S, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETG(SH_SR_S, LSB(VARL("_sreg"))));
 	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(3))));
-	eff = SEQ2(eff, SETG(SH_SR_I, NON_ZERO(LOGAND(SH_U_REG(0xf), VARL("_sreg")))));
+	eff = SEQ2(eff, SETG(SH_SR_I, LOGAND(UN(4, 0xf), UNSIGNED(4, VARL("_sreg")))));
 	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(4))));
-	eff = SEQ2(eff, SETG(SH_SR_Q, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETG(SH_SR_Q, LSB(VARL("_sreg"))));
 	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(1))));
-	eff = SEQ2(eff, SETG(SH_SR_M, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETG(SH_SR_M, LSB(VARL("_sreg"))));
 	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(6))));
-	eff = SEQ2(eff, SETG(SH_SR_F, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETG(SH_SR_F, LSB(VARL("_sreg"))));
 	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(13))));
-	eff = SEQ2(eff, SETG(SH_SR_B, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETG(SH_SR_B, LSB(VARL("_sreg"))));
 	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(1))));
-	eff = SEQ2(eff, SETG(SH_SR_R, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETG(SH_SR_R, LSB(VARL("_sreg"))));
 	eff = SEQ2(eff, SETL("_sreg", SHIFTR0(VARL("_sreg"), SH_U_REG(1))));
-	eff = SEQ2(eff, SETG(SH_SR_D, NON_ZERO(LOGAND(SH_U_REG(0x1), VARL("_sreg")))));
+	eff = SEQ2(eff, SETG(SH_SR_D, LSB(VARL("_sreg"))));
 
 	return SEQ2(sreg, eff);
 }
@@ -1513,9 +1513,9 @@ static RzILOpEffect *sh_il_ldc(const SHOp *op, ut64 pc, RzAnalysis *analysis, SH
 	}
 
 	if (op->param[1].param[0] != SH_REG_IND_GBR) {
-		eff = BRANCH(sh_il_get_privilege(), eff, NULL);
+		eff = BRANCH(sh_il_get_privilege(), eff, NOP());
 	}
-	return NOP();
+	return eff;
 }
 
 /**

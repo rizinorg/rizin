@@ -124,7 +124,13 @@ adE "rts" 000b 0x20 (jmp (var pr))
 adE "clrmac" 0028 0x0 (seq (set mach (bv 32 0x0)) (set macl (bv 32 0x0)))
 adE "clrs" 0048 0x0 (set sr_s false)
 adE "clrt" 0008 0x0 (set sr_t false)
-adE "ldc r10, sr" 4a0e 0x0 hjh
+adE "ldc r10, sr" 4a0e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set _sreg (var r10)) (set sr_t (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_s (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x3) false)) (set sr_i (& (bv 4 0xf) (cast 4 false (var _sreg)))) (set _sreg (>> (var _sreg) (bv 32 0x4) false)) (set sr_q (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_m (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x6) false)) (set sr_f (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0xd) false)) (set sr_b (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_r (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_d (lsb (var _sreg)))) nop))
+adE "ldc r11, gbr" 4b1e 0x0 (set gbr (var r11))
+adE "ldc r1, vbr" 412e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set vbr (ite (var _priv) (var r1b) (var r1))) nop))
+adE "ldc r11, ssr" 4b3e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set ssr (var r11)) nop))
+adE "ldc r11, spc" 4b4e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set spc (var r11)) nop))
+adE "ldc r11, dbr" 4bfa 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set dbr (var r11)) nop))
+adE "ldc r4, r3b" 44be 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r3b (ite (var _priv) (var r4b) (var r4))) nop))
 
 # Misc
 adE "bsr 0x00000002"	0xbfff
