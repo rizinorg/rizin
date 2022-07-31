@@ -283,21 +283,6 @@ libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
-# handle libuv library
-libuv_dep = disabler()
-if get_option('use_libuv')
-  r = run_command(py3_exe, check_meson_subproject_py, 'libuv', check: false)
-  if r.returncode() == 1 and get_option('subprojects_check')
-    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-  endif
-
-  libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
-  if not libuv_dep.found()
-    libuv_proj = subproject('libuv', default_options: ['default_library=static'])
-    libuv_dep = libuv_proj.get_variable('libuv_dep')
-  endif
-endif
-
 # handle tree-sitter
 r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -392,7 +377,6 @@ foreach it : ccs
   it_userconf.set('PLUGINS', rizin_plugins)
   it_userconf.set('BINDINGS', rizin_bindings)
   it_userconf.set10('HAVE_OPENSSL', sys_openssl.found())
-  it_userconf.set10('HAVE_LIBUV', libuv_dep.found())
   it_userconf.set10('WANT_DYLINK', true)
   it_userconf.set10('HAVE_PTRACE', have_ptrace)
   it_userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
@@ -758,7 +742,6 @@ summary({
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
-  'System libuv library': libuv_dep.found() and libuv_dep.type_name() != 'internal',
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
