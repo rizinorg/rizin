@@ -287,6 +287,38 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MTVSCR:
 	case PPC_INS_MTCR:
+	case PPC_INS_MTBR0:
+	case PPC_INS_MTBR1:
+	case PPC_INS_MTBR2:
+	case PPC_INS_MTBR3:
+	case PPC_INS_MTBR4:
+	case PPC_INS_MTBR5:
+	case PPC_INS_MTBR6:
+	case PPC_INS_MTBR7:
+	case PPC_INS_MTXER:
+	case PPC_INS_MTDSCR:
+	case PPC_INS_MTDSISR:
+	case PPC_INS_MTDAR:
+	case PPC_INS_MTSRR2:
+	case PPC_INS_MTSRR3:
+	case PPC_INS_MTCFAR:
+	case PPC_INS_MTAMR:
+	case PPC_INS_MTPID:
+	case PPC_INS_MTTBL:
+	case PPC_INS_MTTBU:
+	case PPC_INS_MTTBLO:
+	case PPC_INS_MTTBHI:
+	case PPC_INS_MTDBATU:
+	case PPC_INS_MTDBATL:
+	case PPC_INS_MTIBATU:
+	case PPC_INS_MTIBATL:
+	case PPC_INS_MTDCCR:
+	case PPC_INS_MTICCR:
+	case PPC_INS_MTDEAR:
+	case PPC_INS_MTESR:
+	case PPC_INS_MTSPEFSCR:
+	case PPC_INS_MTTCR:
+	case PPC_INS_MFSRIN:
 		return true;
 	}
 }
