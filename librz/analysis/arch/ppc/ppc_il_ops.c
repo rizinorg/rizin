@@ -590,9 +590,9 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	}
 
 	// WRITE
-	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(res, UA(0), true, "cr0", mode) : EMPTY();
-	RzILOpEffect *set = SETG(rA, res);
-	return SEQ2(set, update_cr0);
+	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(VARL("res"), UA(0), true, "cr0", mode) : EMPTY();
+	RzILOpEffect *set = SETG(rA, VARL("res"));
+	return SEQ3(SETL("res", res), set, update_cr0);
 }
 
 static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
