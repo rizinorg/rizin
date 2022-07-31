@@ -69,7 +69,7 @@
 #define ROTL64(x, y) (LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(64), CAST(8, IL_FALSE, DUP(y))))))
 
 /**
- * \brief Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead. 
+ * \brief Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead.
  */
 #define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, DUP(x)), y) : LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(32), CAST(8, IL_FALSE, DUP(y))))))
 
@@ -98,7 +98,7 @@
  */
 #define BIT_MASK(l, i, j) LOGNOT(LOGOR(SHIFTR(IL_TRUE, UN(l, 0), i), SHIFTL(IL_TRUE, UN(l, 0), SUB(U8(l - 1), j))))
 
-/** 
+/**
  * \brief Sets bit \p i to \p j of the variable \p v to the value stored in \p s.
  * Both variables must be of width w.
  * \p i and \p j should be U8
@@ -106,7 +106,7 @@
  */
 #define SET_RANGE(v, i, j, s, w) LOGOR(LOGAND(LOGNOT(BIT_MASK(w, i, j)), v), LOGAND(SHIFTL0(s, SUB(U8(w), j)), BIT_MASK(w, i, j)))
 
-/** 
+/**
  * \brief Tests bit i in Pure value v with a width of w.
  * Returns IL_TRUE if bit i is set. IL_FALSE otherwise.
  * Please note: The left most bit is bit 0.
@@ -115,7 +115,7 @@
 
 /**
  * \brief Implements the mask generation from the Reference Manual.
- * 
+ *
  * if mstart ≤ mstop then
  *      mask[mstart:mstop] = ones
  *      mask[all other bits] = zeros
@@ -123,9 +123,9 @@
  *      mask[mstart:63] = ones
  *      mask[0:mstop] = ones
  *      mask[all other bits] = zeros
- * 
+ *
  * The algorithm implemented here is:
- * 
+ *
  * ```
  * m = 0
  * while (mstart != mstop) {
@@ -135,7 +135,7 @@
  * m[mstop] = 1
  * mask = (PPC_ARCH_BITS) m
  * ```
- * 
+ *
  * All computations are on 64 bit numbers.
  * In case of a 32bit CPU the result will be casted to 32bit.
  * The local variable "mask" will hold the mask

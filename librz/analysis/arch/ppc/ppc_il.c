@@ -25,7 +25,7 @@ RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian) {
 
 /**
  * \brief Returns true if the given load/store instruction is in X form (uses register RB as second operand).
- * 
+ *
  * \param insn_id The instruction id.
  * \return bool True if the load/store instruction is in X form. False otherwise.
  */
@@ -74,7 +74,7 @@ RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 
 /**
  * \brief Returns the memory access size in bytes for a given load/store instruction.
- * 
+ *
  * \param insn_id The instruction id.
  * \return st32 The memory access size in bytes.
  * Or 0 if the load instruction does not access the memory.
@@ -157,7 +157,7 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 
 /**
  * \brief Returns true if the given load/store instruction updates the RA register with EA after memory access.
- * 
+ *
  * \param insn_id The instruction id.
  * \return bool True if RA is set to EA after the instruction executed. False otherwise.
  */
@@ -198,9 +198,9 @@ RZ_IPI bool ppc_updates_ra_with_ea(ut32 insn_id) {
 
 /**
  * \brief Returns true if the given load instruction is algebraic.
- * 
+ *
  * \param insn_id The instruction id.
- * \return bool True if the load instruction is algebraic. False otherwise. 
+ * \return bool True if the load instruction is algebraic. False otherwise.
  */
 RZ_IPI bool ppc_is_algebraic(ut32 insn_id) {
 	switch (insn_id) {
@@ -222,7 +222,7 @@ RZ_IPI bool ppc_is_algebraic(ut32 insn_id) {
 
 /**
  * \brief Returns true if the given branch instruction sets the LR register.
- * 
+ *
  * \param insn_id The instruction id.
  * \return bool True if the branch instruction writes the LR register. False otherwise.
  */
@@ -258,7 +258,7 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 
 /**
  * \brief Returns true if the given branch instruction is conditional.
- * 
+ *
  * \param insn_id The instruction id.
  * \return bool True if the branch instruction only branches if a condition is met. False otherwise.
  */
@@ -308,7 +308,7 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 
 /**
  * \brief Returns true if the given instruction sets a SPR register.
- * 
+ *
  * \param insn_id The instruction id.
  * \return bool True if the instructions moves a value to a SPR. False otherwise.
  */
@@ -370,7 +370,7 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 
 /**
  * \brief Returns true if the given branch instruction decrements the CTR register.
- * 
+ *
  * \param insn Instruction id.
  * \param mode Capstone mode.
  * \return bool True if the instruction decrements the counter. False otherwise.
@@ -475,7 +475,7 @@ static RZ_OWN RzILOpBool *get_cr_bit(const ut8 pos) {
 
 /**
  * \brief Get the CRx register.
- * 
+ *
  * \param x The number of the CR register.
  * \return RzILOpPure* The CR register. Or NULL on failure.
  */
@@ -505,7 +505,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_cr(const ut8 x) {
 
 /**
  * \brief Get the CRx register name.
- * 
+ *
  * \param x The number of the CR register.
  * \return const char* The CRx register name. Or NULL on failure.
  */
@@ -537,7 +537,7 @@ RZ_IPI const char *ppc_get_cr_name(const ut8 x) {
  * \brief Synchronizes the CR register with the CR0-CR7 registers.
  * Since CR contains CR0-CR7 but are separated in the register profile
  * this function should be called before CR as a whole is read and after it was written.
- * 
+ *
  * \param to_cr True: CR0-CR7 are copied to CR. False: CR is copied to CR0-CR7 according to \p cr_mask.
  * \param cr_mask Masks the bits which are copied from CR to CR0-CR7. Ignored if \p crx_to_cr == true.
  * \return RzILOpEffect* Sequence of effects to sync the CR/CRx registers.
@@ -565,9 +565,9 @@ RZ_IPI RZ_OWN RzILOpEffect *ppc_sync_crx_cr(const bool crx_to_cr, const ut32 cr_
 /**
  * \brief Returns the mask for a given fxm operand.
  * For details look up the "mtcrf" instruction in the Power ISA
- * 
+ *
  * \param fmx The fmx value.
- * \return ut32 The mask for writing to the CR register. 
+ * \return ut32 The mask for writing to the CR register.
  */
 RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
 	ut32 x = 0xf;
@@ -584,8 +584,8 @@ RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
 
 /**
  * \brief Translates a Capstone CRx flag to the index in the CR register.
- * E.g.: "cr2lt" -> 55 
- * 
+ * E.g.: "cr2lt" -> 55
+ *
  * \param cr_flag The Capstone flag name.
  * \return ut8 Index of bit in CR register or UT8_MAX on failure.
  */
@@ -854,18 +854,18 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 
 /**
  * \brief Returns true if the multiplication instruction operates on double words.
- * 
+ *
  * \param id The instruction id.
  * \param mode The Capstone mode.
  * \return bool True if the instruction operates on double words. False otherwise;
  */
 RZ_IPI bool ppc_is_mul_div_d(const ut32 id, const cs_mode mode) {
-	return id == PPC_INS_MULHD || id == PPC_INS_MULLD || id == PPC_INS_MULHDU || id == PPC_INS_DIVD || id == PPC_INS_DIVDU || ((id == PPC_INS_MULLI) && IN_64BIT_MODE );
+	return id == PPC_INS_MULHD || id == PPC_INS_MULLD || id == PPC_INS_MULHDU || id == PPC_INS_DIVD || id == PPC_INS_DIVDU || ((id == PPC_INS_MULLI) && IN_64BIT_MODE);
 }
 
 /**
  * \brief Returns true if the division instruction operates on double words.
- * 
+ *
  * \param id The instruction id.
  * \param mode The Capstone mode.
  * \return bool True if the instruction operates on double words. False otherwise;
