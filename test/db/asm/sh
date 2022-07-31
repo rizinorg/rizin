@@ -107,14 +107,21 @@ adE "shlr8 r13" 4d19 0x0 (set r13 (>> (var r13) (bv 32 0x8) false))
 adE "shll16 r13" 4d28 0x0 (set r13 (<< (var r13) (bv 32 0x10) false))
 adE "shlr16 r13" 4d29 0x0 (set r13 (>> (var r13) (bv 32 0x10) false))
 
-# Misc
+# Branch instructions
+adE "bf 0x00000072" 8b27 0x20 (branch (var sr_t) (jmp (+ (+ (bv 32 0x20) (bv 32 0x4)) (<< (bv 32 0x27) (bv 32 0x1) false))) nop)
+adE "bf/s 0x00000072" 8f27 0x20 (branch (var sr_t) (jmp (+ (+ (bv 32 0x20) (bv 32 0x4)) (<< (bv 32 0x27) (bv 32 0x1) false))) nop)
 adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (<< (bv 32 0x0) (bv 32 0x1) false))) nop)
-adE "bt 0xd3adb008" 89fe 0xd3adb008 (branch (var sr_t) (jmp (+ (+ (bv 32 0xd3adb008) (bv 32 0x4)) (<< (bv 32 0xfffffffe) (bv 32 0x1) false))) nop)
-adE "bra 0x00000004"	0xa000
-adE "bra 0x00000006"	0xa001
-adE "bsr 0x00000004"	0xb000
+adE "bt/s 0xd3adb008" 8dfe 0xd3adb008 (branch (var sr_t) (jmp (+ (+ (bv 32 0xd3adb008) (bv 32 0x4)) (<< (bv 32 0xfffffffe) (bv 32 0x1) false))) nop)
+adE "bra 0x00000004" a000 0x0 (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (<< (bv 32 0x0) (bv 32 0x1) false)))
+adE "braf r0" 0023 0x42 (seq (set _priv (&& (var sr_d) (var sr_r))) (jmp (+ (+ (bv 32 0x42) (bv 32 0x4)) (ite (var _priv) (var r0b) (var r0)))))
+adE "bsr 0x0000000e" bffd 0x10 (seq (set pr (+ (bv 32 0x10) (bv 32 0x4))) (jmp (+ (+ (bv 32 0x10) (bv 32 0x4)) (<< (bv 32 0xffd) (bv 32 0x1) false))))
+adE "bsrf r15" 0f03 0x42 (seq (set pr (+ (bv 32 0x42) (bv 32 0x4))) (jmp (+ (+ (bv 32 0x42) (bv 32 0x4)) (var r15))))
+adE "jmp @r11" 4b2b 0x18 (jmp (var r11))
+adE "jsr @r12" 4c0b 0x18 (seq (set pr (+ (bv 32 0x18) (bv 32 0x4))) (jmp (var r12)))
+adE "rts" 000b 0x20 (jmp (var pr))
+
+# Misc
 adE "bsr 0x00000002"	0xbfff
-adE "bsr 0x0000000e"	0xbffd 0x10
 adE "tst 0xff, r0"	0xc8ff
 adE "mov.w @(0x000,pc), r0"	0x9000
 adE "mov.w @(0x1fe,pc), r0"	0x90ff
