@@ -798,8 +798,8 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	}
 }
 
-RZ_IPI bool ppc_is_mul_div_d(const ut32 id) {
-	return id == PPC_INS_MULHD || id == PPC_INS_MULLD || id == PPC_INS_MULHDU || id == PPC_INS_DIVD || id == PPC_INS_DIVDU || id == PPC_INS_MULLI;
+RZ_IPI bool ppc_is_mul_div_d(const ut32 id, const cs_mode mode) {
+	return id == PPC_INS_MULHD || id == PPC_INS_MULLD || id == PPC_INS_MULHDU || id == PPC_INS_DIVD || id == PPC_INS_DIVDU || ((id == PPC_INS_MULLI) && IN_64BIT_MODE );
 }
 
 RZ_IPI bool ppc_is_mul_div_u(const ut32 id) {

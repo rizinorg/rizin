@@ -664,13 +664,13 @@ static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		op1 = SIGNED(32, op1);
 	}
 
-	if (ppc_is_mul_div_u(id) && ppc_is_mul_div_d(id)) {
+	if (ppc_is_mul_div_u(id) && ppc_is_mul_div_d(id, mode)) {
 		op0 = UNSIGNED(128, op0);
 		op1 = UNSIGNED(128, op1);
-	} else if (ppc_is_mul_div_u(id) && !ppc_is_mul_div_d(id)) {
+	} else if (ppc_is_mul_div_u(id) && !ppc_is_mul_div_d(id, mode)) {
 		op0 = UNSIGNED(64, op0);
 		op1 = UNSIGNED(64, op1);
-	} else if (!ppc_is_mul_div_u(id) && ppc_is_mul_div_d(id)) {
+	} else if (!ppc_is_mul_div_u(id) && ppc_is_mul_div_d(id, mode)) {
 		op0 = SIGNED(128, op0);
 		op1 = SIGNED(128, op1);
 	} else {
