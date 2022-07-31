@@ -582,46 +582,11 @@ RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
 		(fmx & 0x01 ? x : 0));
 }
 
-/**
- * \brief Translates a Capstone CRx flag to the index in the CR register.
- * E.g.: "cr2lt" -> 55
- *
- * \param cr_flag The Capstone flag name.
- * \return ut8 Index of bit in CR register or UT8_MAX on failure.
- */
-RZ_IPI ut8 ppc_translate_cs_cr_flag(const char *flag) {
-	rz_return_val_if_fail(flag, UT8_MAX);
-	if (strlen(flag) != 5) {
-		goto parse_err;
-	}
-	const ut8 x = strtol(flag + 2, NULL, 10);
-	if (errno == EINVAL || errno == ERANGE) {
-		goto parse_err;
-	}
-	ut8 res = 0;
-	ut8 base = 60 - (4 * x);
-	switch (flag[3]) {
-	default:
-		goto parse_err;
-	case 'l':
-		res = base + 0;
-		break;
-	case 'g':
-		res = base + 1;
-		break;
-	case 'e':
-		res = base + 2;
-		break;
-	case 'u':
-		res = base + 3;
-		break;
-	}
-	return res;
-
-parse_err:
-	RZ_LOG_WARN("Malformed CR flag \"%s\"\n", flag);
-	return UT8_MAX;
-}
+// This function is a prerequisite for a broken insruciton implementation.
+// It has been already implemented.
+// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
+//
+// RZ_IPI ut8 ppc_translate_cs_cr_flag(const char *flag);
 
 /**
  * \brief Get the branch condition for a given instruction.

@@ -220,7 +220,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		ea = ADD(VARG(rA), VARG(rB));
 		// Align EA
 		ea = LOGAND(ea, SHIFTL0(UA(-1), U8(r)));
-		//! DCACHE_LINE_SIZE is currently hardcoded. Should be replaced by config option.
+		//! DCACHE_LINE_SIZE is currently hard coded. Should be replaced by config option.
 		store = STOREW(ea, UN(DCACHE_LINE_SIZE * 8, 0));
 		break;
 	case PPC_INS_STB:
@@ -768,31 +768,13 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	// Note: We do not update CR after the OCRF operations.
 	case PPC_INS_MTOCRF:
 	case PPC_INS_MFOCRF:;
-		//! Untested code. Capstone v5 does not store the fxm value in the operands.
+		// This instruction is already implemented but was broken at the time.
+		// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
+		//
+		// Bug:
+		// Capstone v5 does not store the fxm value in the operands.
 		// See: https://github.com/capstone-engine/capstone/issues/1903
-		rS = cs_reg_name(handle, INSOP(1).reg);
-		ut8 fxm = INSOP(0).imm;
-		ut8 tmp = fxm;
-		ut8 x = 0;
-		// Convert fxm to CRx number. fxm bit 7 set, means cr7
-		while (tmp & UT8_MAX) {
-			tmp >>= 1;
-			++x;
-		}
-		spr_name = (id == PPC_INS_MFOCRF) ? rT : ppc_get_cr_name(x);
-		RzILOpPure *crx = ppc_get_cr(x);
-		if (!crx) {
-			RZ_LOG_WARN("Invalid instruction encountered. fxm = %" PFMT32d " has more than one bit set.\n", fxm);
-			set_val = SETL("val", UA(0));
-			break;
-		}
-		if (id == PPC_INS_MFOCRF) {
-			set_val = SETL("val", SHIFTL0(EXTZ(crx), U8(x * 4)));
-		} else {
-			size = 4;
-			set_val = SETL("val", SHIFTR0(VARG(rT), U8(x * 4)));
-		}
-		break;
+		NOT_IMPLEMENTED;
 	// IBM POWER specific Segment Register
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MFSRIN:
@@ -942,10 +924,13 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		NOT_IMPLEMENTED;
 	case PPC_INS_MFXER:
 	case PPC_INS_MTXER:
-		//! MTFXER currently produces a mismatch in rz-tracetest if the binary is an ISAv3 one.
-		// Because ca32 and ov32 are not implemented in Rizin.
 		if (id == PPC_INS_MTXER) {
-			return ppc_set_xer(VARG(rS), mode);
+			// This instruction is already implemented but was broken at the time.
+			// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
+			//
+			// MFXER currently produces a mismatch in rz-tracetest if the binary is an ISAv3 one.
+			// Because register ca32 and ov32 are not implemented in Rizin.
+			NOT_IMPLEMENTED;
 		}
 		spr_name = "xer";
 		set_val = SETL("val", ppc_get_xer(mode));
@@ -1198,65 +1183,6 @@ static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs
 	}
 }
 
-//! Untested! Capstone v4 sets incorrect register ids for CR fields.
-static RzILOpEffect *iselect(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, EMPTY());
-	if (insn->id != PPC_INS_ISEL) {
-		NULL;
-	}
-	const char *rT = cs_reg_name(handle, INSOP(0).reg);
-	const char *rA = cs_reg_name(handle, INSOP(1).reg);
-	const char *rB = cs_reg_name(handle, INSOP(2).reg);
-	ut8 bc = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(2).crx.reg)) - 32;
-	const char *crx = ppc_get_cr_name(bc / 4);
-	ut8 crx_bit = bc % 4;
-	RzILOpBool *bit_set = BIT_IS_SET(VARG(crx), 4, U8(crx_bit));
-	return SETG(rT, ITE(bit_set, VARG(rA), VARG(rB)));
-}
-
-//! Untested! Capstone v4 sets incorrect register ids for CR fields.
-static RzILOpEffect *cr_logical(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(handle && insn, EMPTY());
-	ut32 id = insn->id;
-
-	if (id == PPC_INS_MCRF) {
-		return SETG(cs_reg_name(handle, INSOP(0).reg), VARG(cs_reg_name(handle, INSOP(1).reg)));
-	}
-
-	ut8 bt = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(0).crx.reg)) - 32;
-	ut8 ba = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(1).crx.reg)) - 32;
-	ut8 bb = ppc_translate_cs_cr_flag(cs_reg_name(handle, INSOP(2).crx.reg)) - 32;
-	const char *crt = ppc_get_cr_name(bt / 4);
-	ut8 crt_bit = bt % 4;
-	const char *cra = ppc_get_cr_name(ba / 4);
-	ut8 cra_bit = ba % 4;
-	const char *crb = ppc_get_cr_name(bb / 4);
-	ut8 crb_bit = bb % 4;
-
-	switch (id) {
-	default:
-		NOT_IMPLEMENTED;
-	case PPC_INS_CREQV:
-	case PPC_INS_CRXOR:
-	case PPC_INS_CRAND:
-	case PPC_INS_CRANDC:
-	case PPC_INS_CRNAND:
-	case PPC_INS_CRNOR:
-	case PPC_INS_CRORC:
-	case PPC_INS_CRNOT:
-	case PPC_INS_CRMOVE:
-		NOT_IMPLEMENTED;
-	case PPC_INS_CRSET:;
-		return SET_BIT(crt, 4, U8(crt_bit));
-	case PPC_INS_CRCLR:
-		return UNSET_BIT(crt, 4, U8(crt_bit));
-	case PPC_INS_CROR:;
-		RzILOpBool *cra_set = BIT_IS_SET(VARG(cra), 4, U8(cra_bit));
-		RzILOpBool *crb_set = BIT_IS_SET(VARG(crb), 4, U8(crb_bit));
-		return BRANCH(OR(cra_set, crb_set), SET_BIT(crt, 4, U8(crt_bit)), UNSET_BIT(crt, 4, U8(crt_bit)));
-	}
-}
-
 /**
  * \brief Returns the RZIL implementation of a given capstone instruction.
  * Or NULL if the instruction is not yet implemented.
@@ -1280,7 +1206,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_XNOP:
 	case PPC_INS_DCBT:
 	case PPC_INS_DCBTST:
-	// Everything is executed liniar => Sync instructions are NOP()s.
+	// Everything is executed linear => Sync instructions are NOP()s.
 	case PPC_INS_ISYNC:
 	case PPC_INS_SYNC:
 	case PPC_INS_LWSYNC:
@@ -1587,7 +1513,9 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		lop = move_from_to_spr_op(handle, insn, mode);
 		break;
 	case PPC_INS_ISEL:
-		lop = iselect(handle, insn, mode);
+		// This instruction is already implemented but was broken at the time.
+		// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
+		NOT_IMPLEMENTED;
 		break;
 	case PPC_INS_CREQV:
 	case PPC_INS_CRXOR:
@@ -1602,8 +1530,12 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CRMOVE:
 	case PPC_INS_CRCLR:
 	case PPC_INS_MCRF:
-		lop = cr_logical(handle, insn, mode);
-		break;
+		// This instruction is already implemented but was broken at the time.
+		// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
+		//
+		// Bug:
+		// Capstone v4 isntructions hold GPRs instead of CR registers.
+		NOT_IMPLEMENTED;
 	// Rotate and rotate
 	case PPC_INS_RLDCL:
 	case PPC_INS_RLDCR:
