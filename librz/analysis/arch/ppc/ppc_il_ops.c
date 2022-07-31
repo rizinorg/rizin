@@ -53,7 +53,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		update_ra = false;
 		break;
 	case PPC_INS_LA: // RT = EA
-		base = IFREG0(rA);
+		base = VARG(rA);
 		disp = EXTEND(PPC_ARCH_BITS, SN(16, d));
 		ea = ADD(base, disp);
 		into_rt = ea;
@@ -86,7 +86,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LHZCIX:
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
-		base = IFREG0(rA); // Not all instructions use the plain value 0 if rA = 0. But we ignore this here.
+		base = VARG(rA);
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {
@@ -110,7 +110,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LHBRX:
 	case PPC_INS_LWBRX:
 	case PPC_INS_LDBRX:
-		base = IFREG0(rA);
+		base = VARG(rA);
 		disp = VARG(rB);
 		ea = ADD(base, disp);
 
@@ -217,7 +217,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		rA = cs_reg_name(handle, INSOP(0).reg);
 		rB = cs_reg_name(handle, INSOP(1).reg);
 
-		ea = ADD(IFREG0(rA), VARG(rB));
+		ea = ADD(VARG(rA), VARG(rB));
 		// Align EA
 		ea = LOGAND(ea, SHIFTL0(UA(-1), U8(r)));
 		//! DCACHE_LINE_SIZE is currently hardcoded. Should be replaced by config option.
@@ -243,7 +243,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
-		base = IFREG0(rA); // Not all instructions use the plain value 0 if (rA) == 0. But we ignore this here.
+		base = VARG(rA);
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {

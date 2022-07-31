@@ -58,11 +58,6 @@
 #define EXTZ(v) UNSIGNED(PPC_ARCH_BITS, v)
 
 /**
- * \brief If the \p rX is 0 it returns the value 0. Otherwise the value stored in \p rX.
- */
-#define IFREG0(rX) ITE(EQ(VARG(rX), UA(0)), UA(0), VARG(rX))
-
-/**
  * \brief Rotates a 64bit value. Rotate \p x left by \p y bits.
  * \p y should be U8, \p x should be U32 and U64 respectively.
  */
