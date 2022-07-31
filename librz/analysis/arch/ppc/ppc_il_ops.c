@@ -115,13 +115,22 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		ea = ADD(base, disp);
 
 #define LB(i) LOADW(8, ADD(VARLP("ea"), UA(i)))
-
-		if (id == PPC_INS_LHBRX) {
-			into_rt = LET("ea", ea, APPEND(LB(1), LB(0)));
-		} else if (id == PPC_INS_LWBRX) {
-			into_rt = LET("ea", ea, APPEND(LB(3), APPEND(LB(2), APPEND(LB(1), LB(0)))));
+		if (IN_BE_MODE) {
+			if (id == PPC_INS_LHBRX) {
+				into_rt = LET("ea", ea, APPEND(LB(0), LB(1)));
+			} else if (id == PPC_INS_LWBRX) {
+				into_rt = LET("ea", ea, APPEND(LB(0), APPEND(LB(1), APPEND(LB(2), LB(3)))));
+			} else {
+				into_rt = LET("ea", ea, APPEND(LB(0), APPEND(LB(1), APPEND(LB(2), APPEND(LB(3), APPEND(LB(4), APPEND(LB(5), APPEND(LB(6), LB(7)))))))));
+			}
 		} else {
-			into_rt = LET("ea", ea, APPEND(LB(7), APPEND(LB(6), APPEND(LB(5), APPEND(LB(4), APPEND(LB(3), APPEND(LB(2), APPEND(LB(1), LB(0)))))))));
+			if (id == PPC_INS_LHBRX) {
+				into_rt = LET("ea", ea, APPEND(LB(1), LB(0)));
+			} else if (id == PPC_INS_LWBRX) {
+				into_rt = LET("ea", ea, APPEND(LB(3), APPEND(LB(2), APPEND(LB(1), LB(0)))));
+			} else {
+				into_rt = LET("ea", ea, APPEND(LB(7), APPEND(LB(6), APPEND(LB(5), APPEND(LB(4), APPEND(LB(3), APPEND(LB(2), APPEND(LB(1), LB(0)))))))));
+			}
 		}
 		into_rt = EXTZ(into_rt);
 		break;
