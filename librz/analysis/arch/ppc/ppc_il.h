@@ -66,12 +66,17 @@
  * \brief Rotates a 64bit value. Rotate \p x left by \p y bits.
  * \p y should be U8, \p x should be U32 and U64 respectively.
  */
-#define ROTL64(x, y) (LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(64), CAST(8, IL_FALSE, DUP(y))))))
+#define ROTL64(x, y) LET("rotl64_x", x, \
+					 LET("rotl64_y", y, \
+					 (LOGOR(SHIFTL0(VARLP("rotl64_x"), VARLP("rotl64_y")), SHIFTR0(VARLP("rotl64_x"), SUB(U8(64), UNSIGNED(8, VARLP("rotl64_y"))))))))
 
 /**
  * \brief Rotates a 32bit value. If the the VM is in 64bit mode "ROTL64(x||x, y)" is executed instead.
  */
-#define ROTL32(x, y) (IN_64BIT_MODE ? ROTL64(APPEND(x, DUP(x)), y) : LOGOR(SHIFTL0(x, y), SHIFTR0(DUP(x), SUB(U8(32), CAST(8, IL_FALSE, DUP(y))))))
+#define ROTL32(x, y) LET("rotl32_x", x, \
+					 LET("rotl32_y", y, \
+					 (IN_64BIT_MODE ? ROTL64(APPEND(VARLP("rotl32_x"), VARLP("rotl32_x")), VARLP("rotl32_y")) \
+					 : LOGOR(SHIFTL0(VARLP("rotl32_x"), VARLP("rotl32_y")), SHIFTR0(VARLP("rotl32_x"), SUB(U8(32), UNSIGNED(8, VARLP("rotl32_y"))))))))
 
 /**
  * \brief Returns a Pure of width \p w with the \p i bit set.
