@@ -818,7 +818,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		case 810:
 		case 811:
 			// Reserved. Treated as No-ops
-			RZ_LOG_WARN("Reserved SPR instruction encountered at 0x%" PFMTSZx "\n", insn->address);
+			RZ_LOG_WARN("Reserved SPR instruction encountered at 0x%" PFMT64x "\n", (ut64)insn->address);
 			return EMPTY();
 		case 1:
 			if (id == PPC_INS_MTSPR) {
