@@ -1115,8 +1115,9 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		if (id == PPC_INS_SLD || id == PPC_INS_SRD) {
 			n = VARG(rB);
 		} else {
-			n = U8(sH);
+			n = UA(sH);
 		}
+		n = LOGAND(UA(0x3f), n);
 		if (id == PPC_INS_SRD) {
 			into_rA = SHIFTR0(VARG(rS), n);
 		} else if (id == PPC_INS_SRWI) {
