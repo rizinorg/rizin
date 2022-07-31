@@ -1185,6 +1185,7 @@ static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs
 	}
 }
 
+//! Untested! Capstone v4 sets incorrect register ids for CR fields.
 static RzILOpEffect *iselect(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
 	if (insn->id != PPC_INS_ISEL) {
