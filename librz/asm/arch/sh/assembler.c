@@ -56,8 +56,13 @@ static char *sh_op_space_params(const char *buffer) {
  * \return ut32 Opcode bits for the given register \p param
  */
 static ut32 sh_op_reg_bits(const char *param, ut8 offset) {
-	for (ut8 i = 0; i < SH_GPR_COUNT; i++) {
-		if (strcmp(sh_registers[i], param) == 0) {
+	const int reg_num = sizeof(sh_registers) / sizeof(char *);
+	for (ut8 i = 0; i < reg_num; i++) {
+		if (!strcmp(sh_registers[i], param)) {
+			if (i >= SH_REG_IND_R0B) {
+				/* In case we encounter a banked register, we should just decode it as it's un-banked counterpart */
+				i -= SH_REG_IND_R0B;
+			}
 			return ((ut32)i) << offset;
 		}
 	}
@@ -204,6 +209,11 @@ static ut64 sh_op_movl_param_bits(const char *reg_direct, const char *reg_disp_i
 	return opcode;
 }
 
+typedef struct sh_addr_dissassembler_helper_t {
+	SHAddrMode mode;
+	SHRegisterIndex reg;
+} SHAddrHelper;
+
 /* This function is NOT robust. It is incapable of detecting invalid operand inputs.
 If you provide an invalid operand, the behavior is, for all practical purposes, undefined.
 The resulting assembled instruction will be complete gibberish and should not be used. */
@@ -211,40 +221,65 @@ The resulting assembled instruction will be complete gibberish and should not be
  * \brief Get the addressing mode being used in \p param
  *
  * \param param Param string
- * \return SHAddrMode
+ * \return SHAddrHelper
  */
-static SHAddrMode sh_op_get_addr_mode(const char *param) {
+static SHAddrHelper sh_op_get_addr_mode(const char *param) {
+	SHAddrHelper ret;
+	// Assume that we don't care about the register index
+	ret.reg = SH_REG_IND_SIZE;
+
+	const ut8 reg_num = sizeof(sh_registers) / sizeof(char *);
+	/* Check if it is a register or not by iterating through all the register names.
+	This could also have been SH_PC_RELATIVE_REG, and we have no way to know.
+	But we can take care of this case in sh_op_compare, since no instruction
+	can have both SH_REG_DIRECT and SH_PC_RELATIVE_REG as its addressing modes */
+	for (ut8 i = 0; i < reg_num; i++) {
+		if (!strcmp(param, sh_registers[i])) {
+			ret.mode = SH_REG_DIRECT;
+			/* Well in case of `SH_REG_DIRECT` addressing mode, we do care about the register index.
+			This is because there are instructions (like `LDC` and `STC`) which have different
+			opcodes for the same addressing mode but different registers.
+			But, such ambiguous instructions have different opcodes only for non-gpr registers
+			(like sr, gbr, vbr, ssr, spc, dbr), hence we will only set ret.reg if the index is really non-gpr.
+			We will also store if we found a banked register, since we can that way find the correct instruction
+			which corresponds to banked register as a param */
+			if ((i > SH_REG_IND_PC && i < SH_REG_IND_FR0) || i >= SH_REG_IND_R0B) {
+				ret.reg = i;
+			}
+			return ret;
+		}
+	}
+
 	switch (param[0]) {
-	case 'r':
-		/* This could also have been SH_PC_RELATIVE_REG, and we have no way to know
-		But we can take care of this case in sh_op_compare, since no instruction
-		can have both SH_REG_DIRECT and SH_PC_RELATIVE_REG as its addressing modes */
-		return SH_REG_DIRECT;
 	case '@':
 		switch (param[1]) {
 		case 'r':
 			if (rz_str_endswith(param, "+")) {
-				return SH_REG_INDIRECT_I;
+				ret.mode = SH_REG_INDIRECT_I;
 			} else {
-				return SH_REG_INDIRECT;
+				ret.mode = SH_REG_INDIRECT;
 			}
+			break;
 		case '-':
-			return SH_REG_INDIRECT_D;
+			ret.mode = SH_REG_INDIRECT_D;
+			break;
 		case '(':
 			if (strcmp(param, "@(r0,gbr)") == 0) {
-				return SH_GBR_INDIRECT_INDEXED;
+				ret.mode = SH_GBR_INDIRECT_INDEXED;
 			} else if (rz_str_startswith(param, "@(r0,")) {
-				return SH_REG_INDIRECT_INDEXED;
+				ret.mode = SH_REG_INDIRECT_INDEXED;
 			} else if (rz_str_endswith(param, ",gbr)")) {
-				return SH_GBR_INDIRECT_DISP;
+				ret.mode = SH_GBR_INDIRECT_DISP;
 			} else if (rz_str_endswith(param, ",pc)")) {
-				return SH_PC_RELATIVE_DISP;
+				ret.mode = SH_PC_RELATIVE_DISP;
 			} else {
-				return SH_REG_INDIRECT_DISP;
+				ret.mode = SH_REG_INDIRECT_DISP;
 			}
+			break;
+		default:
+			// unreachable
+			rz_warn_if_reached();
 		}
-		// unreachable
-		rz_warn_if_reached();
 		break;
 	default:
 		/* If none of the above checks pass, we can assume it is a number
@@ -256,12 +291,10 @@ static SHAddrMode sh_op_get_addr_mode(const char *param) {
 		Again, we will just return SH_IMM_U, and take care of it in sh_op_compare
 		by considering all the above addressing modes to be equal
 		*/
-		return SH_IMM_U;
+		ret.mode = SH_IMM_U;
 	}
 
-	// unreachable
-	rz_warn_if_reached();
-	return SH_ADDR_INVALID;
+	return ret;
 }
 
 /**
@@ -269,12 +302,17 @@ static SHAddrMode sh_op_get_addr_mode(const char *param) {
  *
  * \param raw SHOpRaw
  * \param mnem Mnemonic for the instruction to be formed
- * \param modes Addressing modes to be used
+ * \param modes Addressing modes and register to be used
  * \return bool True if equivalent; false otherwise
  */
-static bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrMode modes[]) {
+static bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrHelper modes[]) {
 	bool x = true;
 	x &= (strcmp(mnem, raw.str_mnem) == 0);
+
+	// Quick return
+	if (!x) {
+		return x;
+	}
 
 	for (ut8 i = 0; i < 2; i++) {
 		SHAddrMode md = sh_pb_get_addrmode(raw.param_builder[i]);
@@ -293,7 +331,35 @@ static bool sh_op_compare(SHOpRaw raw, const char *mnem, SHAddrMode modes[]) {
 			break;
 		}
 
-		x &= (modes[i] == md);
+		x &= (modes[i].mode == md);
+
+		/* We also need to make sure that we got the instruction corresponding
+		to the correct register by checking the register index in the SHAddrHelper
+		and the register in the SHOpRaw */
+		if (modes[i].reg < SH_REG_IND_R0B) {
+			/* We can only compare the registers if the param_builder is a param, and not an an addr
+			Also, the addressing mode has to be SH_REG_DIRECT, since the ambiguous instructions (`LDC` and `STC`)
+			are only ambiguous for params with direct register addressing */
+			if (raw.param_builder[i].is_param && raw.param_builder[i].param.mode == SH_REG_DIRECT) {
+				x &= (modes[i].reg == raw.param_builder[i].param.param[0]);
+			} else {
+				/* In any other case, we did not get what we expected, so we can conclude that the instructions are not the same */
+				x &= false;
+			}
+		}
+
+		/* Check whether this instruction really has banked register as its param */
+		if (modes[i].reg >= SH_REG_IND_R0B && modes[i].reg != SH_REG_IND_SIZE) {
+			/* If it has a banked register, then it must be a addr
+			(at least in case of all implemented instructions) */
+			if (!raw.param_builder[i].is_param) {
+				/* The number of bits to be used for a banked register must be 3
+				(at least in case of all implemented instructions) */
+				x &= (raw.param_builder[i].addr.bits == 3);
+			} else {
+				x &= false;
+			}
+		}
 	}
 
 	return x;
@@ -336,7 +402,7 @@ RZ_IPI ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE boo
 	}
 
 	mnem = (char *)rz_list_pop_head(tokens);
-	SHAddrMode sham[2] = { SH_ADDR_INVALID, SH_ADDR_INVALID };
+	SHAddrHelper sham[2] = { { SH_ADDR_INVALID, SH_REG_IND_SIZE }, { SH_ADDR_INVALID, SH_REG_IND_SIZE } };
 	ut8 j = 0;
 	rz_list_foreach (tokens, itr, tok) {
 		sham[j] = sh_op_get_addr_mode(tok);

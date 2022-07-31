@@ -89,6 +89,12 @@ extract:
 		break;
 	}
 
+	/* For the special case of banked registers in `LDC` and `STC`, the bit length is 3
+	In such case, we can modify the param found to correspond to its banked counterpart */
+	if (len == 3) {
+		ret_param.param[0] += SH_REG_IND_R0B;
+	}
+
 	return ret_param;
 }
 
