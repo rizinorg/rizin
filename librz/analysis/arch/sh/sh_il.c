@@ -1351,7 +1351,7 @@ static RzILOpEffect *sh_il_shlr16(const SHOp *op, ut64 pc, RzAnalysis *analysis,
  */
 static RzILOpEffect *sh_il_bf(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
-	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), JMP(new_pc), NOP());
+	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
 }
 
 /**
@@ -1362,7 +1362,7 @@ static RzILOpEffect *sh_il_bf(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHI
  */
 static RzILOpEffect *sh_il_bfs(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
-	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), JMP(new_pc), NOP());
+	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
 }
 
 /**
@@ -1383,7 +1383,7 @@ static RzILOpEffect *sh_il_bt(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHI
  */
 static RzILOpEffect *sh_il_bts(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
 	RzILOpPure *new_pc = sh_il_get_effective_addr_param(0);
-	return BRANCH(IS_ZERO(sh_il_get_status_reg_bit(SH_SR_T)), NOP(), JMP(new_pc));
+	return BRANCH(VARG(SH_SR_T), JMP(new_pc), NOP());
 }
 
 /**
@@ -1413,7 +1413,7 @@ static RzILOpEffect *sh_il_braf(const SHOp *op, ut64 pc, RzAnalysis *analysis, S
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_bsr(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_effective_addr_param(0)));
+	return SEQ2(SETG("pr", ADD(SH_U_ADDR(pc), SH_U_ADDR(4))), JMP(sh_il_get_effective_addr_param(0)));
 }
 
 /**
@@ -1423,7 +1423,7 @@ static RzILOpEffect *sh_il_bsr(const SHOp *op, ut64 pc, RzAnalysis *analysis, SH
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_bsrf(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	return SEQ2(SETG("pr", SH_U_ADDR(pc)), JMP(sh_il_get_effective_addr_param(0)));
+	return SEQ2(SETG("pr", ADD(SH_U_ADDR(pc), SH_U_ADDR(4))), JMP(sh_il_get_effective_addr_param(0)));
 }
 
 /**
