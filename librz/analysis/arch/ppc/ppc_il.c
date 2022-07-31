@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ppc_il.h"
-#include "ppc.h"
 #include "ppc_analysis.h"
-#include "rz_il/rz_il_opcodes.h"
-#include "rz_util/rz_log.h"
+#include <capstone/ppc.h>
+#include <rz_il/rz_il_opcodes.h>
+#include <rz_util/rz_log.h>
 #include <rz_util/rz_assert.h>
 #include <rz_endian.h>
 #include <rz_analysis.h>
@@ -23,6 +23,12 @@ RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian) {
 	return r;
 }
 
+/**
+ * \brief Returns true if the given load/store instruction is in X form (uses register RB as second operand).
+ * 
+ * \param insn_id The instruction id.
+ * \return bool True if the load/store instruction is in X form. False otherwise.
+ */
 RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 	switch (insn_id) {
 	default:
@@ -66,6 +72,14 @@ RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 	}
 }
 
+/**
+ * \brief Returns the memory access size in bytes for a given load/store instruction.
+ * 
+ * \param insn_id The instruction id.
+ * \return st32 The memory access size in bytes.
+ * Or 0 if the load instruction does not access the memory.
+ * Or -1 if the instruction is no load/store instruction.
+ */
 RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	switch (insn_id) {
 	default:
@@ -73,7 +87,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 		return -1;
 	case PPC_INS_LI:
 	case PPC_INS_LIS:
-		return 0; // Don't read from mem.
+		// Doesn't read from memory.
+		return 0;
 	case PPC_INS_LBZ:
 	case PPC_INS_LBZCIX:
 	case PPC_INS_LBZU:
@@ -140,6 +155,12 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	}
 }
 
+/**
+ * \brief Returns true if the given load/store instruction updates the RA register with EA after memory access.
+ * 
+ * \param insn_id The instruction id.
+ * \return bool True if RA is set to EA after the instruction executed. False otherwise.
+ */
 RZ_IPI bool ppc_updates_ra_with_ea(ut32 insn_id) {
 	switch (insn_id) {
 	default:
@@ -175,6 +196,12 @@ RZ_IPI bool ppc_updates_ra_with_ea(ut32 insn_id) {
 	}
 }
 
+/**
+ * \brief Returns true if the given load instruction is algebraic.
+ * 
+ * \param insn_id The instruction id.
+ * \return bool True if the load instruction is algebraic. False otherwise. 
+ */
 RZ_IPI bool ppc_is_algebraic(ut32 insn_id) {
 	switch (insn_id) {
 	default:
@@ -193,6 +220,12 @@ RZ_IPI bool ppc_is_algebraic(ut32 insn_id) {
 	}
 }
 
+/**
+ * \brief Returns true if the given branch instruction sets the LR register.
+ * 
+ * \param insn_id The instruction id.
+ * \return bool True if the branch instruction writes the LR register. False otherwise.
+ */
 RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
@@ -223,6 +256,12 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	}
 }
 
+/**
+ * \brief Returns true if the given branch instruction is conditional.
+ * 
+ * \param insn_id The instruction id.
+ * \return bool True if the branch instruction only branches if a condition is met. False otherwise.
+ */
 RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	switch (insn_id) {
 	default:
@@ -267,6 +306,12 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	}
 }
 
+/**
+ * \brief Returns true if the given instruction sets a SPR register.
+ * 
+ * \param insn_id The instruction id.
+ * \return bool True if the instructions moves a value to a SPR. False otherwise.
+ */
 RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
@@ -323,8 +368,15 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	}
 }
 
+/**
+ * \brief Returns true if the given branch instruction decrements the CTR register.
+ * 
+ * \param insn Instruction id.
+ * \param mode Capstone mode.
+ * \return bool True if the instruction decrements the counter. False otherwise.
+ */
 RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
-	rz_return_val_if_fail(insn, NULL);
+	rz_return_val_if_fail(insn, false);
 	ut32 id = insn->id;
 
 	switch (id) {
@@ -371,7 +423,7 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 }
 
 //
-// IL helper BEGINN
+// IL helper BEGIN
 //
 
 #include <rz_il/rz_il_opbuilder_begin.h>
@@ -602,7 +654,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	default:
 		RZ_LOG_WARN("Instruction %d has no condition implemented.\n", id);
 		return IL_FALSE;
-	// For learning how the conditons of BCxxx branch instructions are
+	// For learning how the conditions of BCxxx branch instructions are
 	// formed see the Power ISA
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
@@ -663,8 +715,10 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BDZTA:
 	case PPC_INS_BDZTLA:;
 		if (insn->detail->ppc.op_count == 1) {
+			// If Capstone doesn't provide a CR register it means that the LT bit in cr0 is checked.
 			cr = VARG("cr0");
-			cr_bit = UN(4, 8); // LT bit
+			// LT bit
+			cr_bit = UN(4, 8);
 		} else {
 			cr = VARG(cs_reg_name(handle, INSOP(0).crx.reg));
 			ut32 cond = INSOP(0).crx.cond;
@@ -686,7 +740,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BDZFLA:;
 		if (insn->detail->ppc.op_count == 1) {
 			cr = VARG("cr0");
-			cr_bit = UN(4, 8); // LT bit
+			cr_bit = UN(4, 8);
 		} else {
 			cr = VARG(cs_reg_name(handle, INSOP(0).crx.reg));
 			ut32 cond = INSOP(0).crx.cond;
@@ -702,7 +756,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 
 /**
  * \brief Get the branch instruction's target address.
- * In case of conditional branches it returns the address if the condition would be fullfilled.
+ * In case of conditional branches it returns the address if the condition would be fulfilled.
  *
  * There are five types of target addresses:
  * * Absolute address
@@ -798,20 +852,33 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	}
 }
 
+/**
+ * \brief Returns true if the multiplication instruction operates on double words.
+ * 
+ * \param id The instruction id.
+ * \param mode The Capstone mode.
+ * \return bool True if the instruction operates on double words. False otherwise;
+ */
 RZ_IPI bool ppc_is_mul_div_d(const ut32 id, const cs_mode mode) {
 	return id == PPC_INS_MULHD || id == PPC_INS_MULLD || id == PPC_INS_MULHDU || id == PPC_INS_DIVD || id == PPC_INS_DIVDU || ((id == PPC_INS_MULLI) && IN_64BIT_MODE );
 }
 
+/**
+ * \brief Returns true if the division instruction operates on double words.
+ * 
+ * \param id The instruction id.
+ * \param mode The Capstone mode.
+ * \return bool True if the instruction operates on double words. False otherwise;
+ */
 RZ_IPI bool ppc_is_mul_div_u(const ut32 id) {
 	return id == PPC_INS_MULHDU || id == PPC_INS_MULHWU || id == PPC_INS_DIVWU || id == PPC_INS_DIVDU;
 }
 
 /**
  * \brief Assembles the current XER value by combining the values
- * from the flag registers so, ov, ca.
+ * from the flag registers "so", "ov", "ca".
  *
  * \param mode The capstone mode.
- *
  * \return RzILOpPure* The Pure containing the current XER value.
  */
 RZ_IPI RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode) {
@@ -825,7 +892,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode) {
 }
 
 /**
- * \brief Sets the XER register to \p val and sets the flag register so, ov, ca accordingly.
+ * \brief Sets the XER register to \p val and updates the flag register "so", "ov", "ca" accordingly.
  *
  * \param val The new value of XER.
  * \param mode The capstone mode.

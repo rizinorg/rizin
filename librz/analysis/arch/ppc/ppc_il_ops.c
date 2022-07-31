@@ -105,6 +105,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		break;
 	case PPC_INS_LWARX:
 	case PPC_INS_LDARX:
+		NOT_IMPLEMENTED;
 	// Byte reverse and reserved indexed
 	case PPC_INS_LHBRX:
 	case PPC_INS_LWBRX:
@@ -758,7 +759,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	// Note: We do not update CR after the OCRF operations.
 	case PPC_INS_MTOCRF:
 	case PPC_INS_MFOCRF:;
-		//! Untested code. Capstone < v5 does not store the fxm value in the operands.
+		//! Untested code. Capstone v5 does not store the fxm value in the operands.
 		// See: https://github.com/capstone-engine/capstone/issues/1903
 		rS = cs_reg_name(handle, INSOP(1).reg);
 		ut8 fxm = INSOP(0).imm;
@@ -932,6 +933,8 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		NOT_IMPLEMENTED;
 	case PPC_INS_MFXER:
 	case PPC_INS_MTXER:
+		//! MTFXER currently produces a mismatch in rz-tracetest if the binary is an ISAv3 one.
+		// Because ca32 and ov32 are not implemented in Rizin.
 		if (id == PPC_INS_MTXER) {
 			return ppc_set_xer(VARG(rS), mode);
 		}
