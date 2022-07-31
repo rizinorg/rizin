@@ -120,6 +120,12 @@ adE "jmp @r11" 4b2b 0x18 (jmp (var r11))
 adE "jsr @r12" 4c0b 0x18 (seq (set pr (+ (bv 32 0x18) (bv 32 0x4))) (jmp (var r12)))
 adE "rts" 000b 0x20 (jmp (var pr))
 
+# System control instructions
+adE "clrmac" 0028 0x0 (seq (set mach (bv 32 0x0)) (set macl (bv 32 0x0)))
+adE "clrs" 0048 0x0 (set sr_s false)
+adE "clrt" 0008 0x0 (set sr_t false)
+adE "ldc r10, sr" 4a0e 0x0 hjh
+
 # Misc
 adE "bsr 0x00000002"	0xbfff
 adE "tst 0xff, r0"	0xc8ff
