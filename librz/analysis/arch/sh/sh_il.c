@@ -130,23 +130,24 @@ static RzILOpBitVector *sh_il_get_status_reg_bit(const char *bit) {
  */
 static RzILOpPure *sh_il_get_status_reg() {
 	RzILOpPure *val = SH_U_REG(0);
-	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_D)), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_D), val);
 	val = SHIFTL0(val, SH_U_REG(1));
-	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_R)), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_R), val);
 	val = SHIFTL0(val, SH_U_REG(1));
-	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_B)), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_B), val);
 	val = SHIFTL0(val, SH_U_REG(13));
-	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_F)), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_F), val);
 	val = SHIFTL0(val, SH_U_REG(6));
-	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_M)), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_M), val);
 	val = SHIFTL0(val, SH_U_REG(1));
-	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_Q)), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_Q), val);
 	val = SHIFTL0(val, SH_U_REG(4));
-	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_I)), val);
+	// VARG(SH_SR_I) is of 4 bits
+	val = LOGOR(UNSIGNED(SH_REG_SIZE, VARG(SH_SR_I)), val);
 	val = SHIFTL0(val, SH_U_REG(3));
-	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_S)), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_S), val);
 	val = SHIFTL0(val, SH_U_REG(1));
-	val = LOGOR(UNSIGNED(SH_REG_SIZE, sh_il_get_status_reg_bit(SH_SR_T)), val);
+	val = LOGOR(sh_il_get_status_reg_bit(SH_SR_T), val);
 
 	return val;
 }
@@ -1520,7 +1521,7 @@ static RzILOpEffect *sh_il_ldc(const SHOp *op, ut64 pc, RzAnalysis *analysis, SH
 	}
 
 	if (op->param[1].param[0] != SH_REG_IND_GBR) {
-		eff = BRANCH(sh_il_get_privilege(), eff, NOP());
+		eff = BRANCH(sh_il_get_privilege(), eff, EMPTY());
 	}
 	return eff;
 }
@@ -1570,7 +1571,7 @@ static RzILOpEffect *sh_il_nop(const SHOp *op, ut64 pc, RzAnalysis *analysis, SH
  * TODO: Implement delayed branch
  */
 static RzILOpEffect *sh_il_rte(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	return BRANCH(sh_il_get_privilege(), SEQ2(sh_il_set_status_reg(VARG("ssr")), JMP(VARG("spc"))), NULL);
+	return BRANCH(sh_il_get_privilege(), SEQ2(sh_il_set_status_reg(VARG("ssr")), JMP(VARG("spc"))), EMPTY());
 }
 
 /**
@@ -1598,7 +1599,7 @@ static RzILOpEffect *sh_il_sett(const SHOp *op, ut64 pc, RzAnalysis *analysis, S
  * PRIVILEGED
  */
 static RzILOpEffect *sh_il_sleep(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	return BRANCH(sh_il_get_privilege(), NOP(), NULL);
+	return BRANCH(sh_il_get_privilege(), NOP(), EMPTY());
 }
 
 /**
@@ -1616,7 +1617,7 @@ static RzILOpEffect *sh_il_stc(const SHOp *op, ut64 pc, RzAnalysis *analysis, SH
 	/* We won't be using banked registers for these instructions (except for unprivileged GBR) */
 	// TODO: Check what the correct implementation is
 	ctx->use_banked = false;
-	if (op->param[1].param[0] == SH_REG_IND_GBR) {
+	if (op->param[0].param[0] == SH_REG_IND_GBR) {
 		ctx->use_banked = true;
 	}
 
@@ -1627,7 +1628,7 @@ static RzILOpEffect *sh_il_stc(const SHOp *op, ut64 pc, RzAnalysis *analysis, SH
 		eff = sh_il_set_pure_param(1, sh_il_get_pure_param(0));
 	}
 	if (op->param[0].param[0] != SH_REG_IND_GBR) {
-		eff = BRANCH(sh_il_get_privilege(), eff, NULL);
+		eff = BRANCH(sh_il_get_privilege(), eff, EMPTY());
 	}
 	return eff;
 }
