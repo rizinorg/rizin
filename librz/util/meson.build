@@ -150,7 +150,6 @@ if meson.is_cross_build()
   userconf_native.set10('HAVE_LIB_XXHASH', false)
   userconf_native.set10('USE_LIB_XXHASH', false)
   userconf_native.set10('HAVE_OPENSSL', false)
-  userconf_native.set10('HAVE_LIBUV', false)
   userconf_native.set10('HAVE_LZMA', false)
   userconf_native.set10('HAVE_ZLIB', false)
 
