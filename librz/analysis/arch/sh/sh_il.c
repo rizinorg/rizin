@@ -1168,11 +1168,11 @@ static RzILOpEffect *sh_il_xor(const SHOp *op, ut64 pc, RzAnalysis *analysis, SH
  * 0100nnnn00000100
  */
 static RzILOpEffect *sh_il_rotl(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	RzILOpBool *msb = MSB(sh_il_get_pure_param(0));
-	RzILOpEffect *tbit = SETG(SH_SR_T, msb);
-	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
-	RzILOpPure *lsb = ITE(DUP(msb), OR(shl, SH_U_REG(1)), AND(DUP(shl), SH_U_REG(0xfffffffe)));
-	return SEQ2(tbit, sh_il_set_pure_param(0, lsb));
+	RzILOpEffect *msb = SETL("msb_", MSB(sh_il_get_pure_param(0)));
+	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("msb_"));
+	RzILOpEffect *shl = SETL("shl_", SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1)));
+	RzILOpPure *lsb = ITE(VARL("msb_"), LOGOR(VARL("shl_"), SH_U_REG(1)), VARL("shl_"));
+	return SEQ4(msb, tbit, shl, sh_il_set_pure_param(0, lsb));
 }
 
 /**
@@ -1181,11 +1181,11 @@ static RzILOpEffect *sh_il_rotl(const SHOp *op, ut64 pc, RzAnalysis *analysis, S
  * 0100nnnn00000101
  */
 static RzILOpEffect *sh_il_rotr(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	RzILOpBool *lsb = LSB(sh_il_get_pure_param(0));
-	RzILOpEffect *tbit = SETG(SH_SR_T, lsb);
-	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
-	RzILOpPure *msb = ITE(DUP(lsb), OR(shr, SH_U_REG(0x80000000)), AND(DUP(shr), SH_U_REG(0x7fffffff)));
-	return SEQ2(tbit, sh_il_set_pure_param(0, msb));
+	RzILOpEffect *lsb = SETL("lsb_", LSB(sh_il_get_pure_param(0)));
+	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("lsb_"));
+	RzILOpEffect *shr = SETL("shr_", SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1)));
+	RzILOpPure *msb = ITE(VARL("lsb_"), LOGOR(VARL("shr_"), SH_U_REG(0x80000000)), VARL("shr_"));
+	return SEQ4(lsb, tbit, shr, sh_il_set_pure_param(0, msb));
 }
 
 /**
@@ -1194,11 +1194,11 @@ static RzILOpEffect *sh_il_rotr(const SHOp *op, ut64 pc, RzAnalysis *analysis, S
  * 0100nnnn00100100
  */
 static RzILOpEffect *sh_il_rotcl(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	RzILOpEffect *msb = SETL("msb", MSB(sh_il_get_pure_param(0)));
-	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1));
-	RzILOpPure *lsb = ITE(sh_il_get_status_reg_bit(SH_SR_T), OR(shl, SH_U_REG(1)), AND(DUP(shl), SH_U_REG(0xfffffffe)));
-	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("msb"));
-	return SEQ3(msb, sh_il_set_pure_param(0, lsb), tbit);
+	RzILOpEffect *msb = SETL("msb_", MSB(sh_il_get_pure_param(0)));
+	RzILOpEffect *shl = SETL("shl_", SHIFTL0(sh_il_get_pure_param(0), SH_U_REG(1)));
+	RzILOpPure *lsb = ITE(VARG(SH_SR_T), LOGOR(VARL("shl_"), SH_U_REG(1)), VARL("shl_"));
+	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("msb_"));
+	return SEQ4(msb, shl, sh_il_set_pure_param(0, lsb), tbit);
 }
 
 /**
@@ -1207,11 +1207,11 @@ static RzILOpEffect *sh_il_rotcl(const SHOp *op, ut64 pc, RzAnalysis *analysis, 
  * 0100nnnn00100101
  */
 static RzILOpEffect *sh_il_rotcr(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	RzILOpEffect *lsb = SETL("lsb", LSB(sh_il_get_pure_param(0)));
-	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1));
-	RzILOpPure *msb = ITE(sh_il_get_status_reg_bit(SH_SR_T), OR(shr, SH_U_REG(0x80000000)), AND(DUP(shr), SH_U_REG(0x7fffffff)));
-	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("lsb"));
-	return SEQ3(lsb, sh_il_set_pure_param(0, msb), tbit);
+	RzILOpEffect *lsb = SETL("lsb_", LSB(sh_il_get_pure_param(0)));
+	RzILOpEffect *shr = SETL("shr_", SHIFTR0(sh_il_get_pure_param(0), SH_U_REG(1)));
+	RzILOpPure *msb = ITE(VARG(SH_SR_T), LOGOR(VARL("shr_"), SH_U_REG(0x80000000)), VARL("shr_"));
+	RzILOpEffect *tbit = SETG(SH_SR_T, VARL("lsb_"));
+	return SEQ4(lsb, shr, sh_il_set_pure_param(0, msb), tbit);
 }
 
 /**
@@ -1222,14 +1222,12 @@ static RzILOpEffect *sh_il_rotcr(const SHOp *op, ut64 pc, RzAnalysis *analysis, 
  * 0100nnnnmmmm1100
  */
 static RzILOpEffect *sh_il_shad(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	RzILOpEffect *op1 = SETL("op1", SIGNED(32, sh_il_get_pure_param(0)));
-	RzILOpEffect *op2 = SETL("op2", SIGNED(32, sh_il_get_pure_param(1)));
-	RzILOpPure *shift_amount = UNSIGNED(5, VARL("op1"));
+	RzILOpEffect *shift_amount = SETL("shift_", UNSIGNED(5, sh_il_get_pure_param(0)));
 
-	RzILOpPure *shl = SHIFTL0(VARL("op2"), shift_amount);
-	RzILOpPure *shr = SHIFTRA(VARL("op2"), SUB(UN(5, 32), DUP(shift_amount)));
+	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(1), VARL("shift_"));
+	RzILOpPure *shr = SHIFTRA(sh_il_get_pure_param(1), NEG(VARL("shift_")));
 
-	return SEQ3(op1, op2, BRANCH(SGE(VARL("op1"), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr)));
+	return SEQ2(shift_amount, BRANCH(SGE(sh_il_get_pure_param(0), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr)));
 }
 
 /**
@@ -1262,14 +1260,12 @@ static RzILOpEffect *sh_il_shar(const SHOp *op, ut64 pc, RzAnalysis *analysis, S
  * 0100nnnnmmmm1101
  */
 static RzILOpEffect *sh_il_shld(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	RzILOpEffect *op1 = SETL("op1", SIGNED(32, sh_il_get_pure_param(0)));
-	RzILOpEffect *op2 = SETL("op2", UNSIGNED(32, sh_il_get_pure_param(1)));
-	RzILOpPure *shift_amount = UNSIGNED(5, VARL("op1"));
+	RzILOpEffect *shift_amount = SETL("shift_", UNSIGNED(5, sh_il_get_pure_param(0)));
 
-	RzILOpPure *shl = SHIFTL0(VARL("op2"), shift_amount);
-	RzILOpPure *shr = SHIFTR0(VARL("op2"), SUB(UN(5, 32), DUP(shift_amount)));
+	RzILOpPure *shl = SHIFTL0(sh_il_get_pure_param(1), VARL("shift_"));
+	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(1), NEG(VARL("shift_")));
 
-	return SEQ3(op1, op2, BRANCH(SGE(VARL("op1"), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr)));
+	return SEQ2(shift_amount, BRANCH(SGE(sh_il_get_pure_param(0), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr)));;
 }
 
 /**
