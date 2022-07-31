@@ -18,7 +18,7 @@
  * \param mode Capstone mode.
  * \return RZ_OWN* Effect which sets the carry bits.
  */
-RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, RZ_OWN RZ_NULLABLE RzILOpBitVector *c, cs_mode mode) {
+RZ_IPI RZ_OWN RzILOpEffect *ppc_set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, RZ_OWN RZ_NULLABLE RzILOpBitVector *c, cs_mode mode) {
 	rz_return_val_if_fail(a && b, NULL);
 	ut32 bits = PPC_ARCH_BITS;
 	RzILOpPure *r0, *r2;
@@ -42,7 +42,7 @@ RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpB
  * \param mode Capstone mode.
  * \return RzILOpEffect* Sequence of effects which set the cr field accordingly.
  */
-RZ_OWN RzILOpEffect *cmp_set_cr(RZ_BORROW RzILOpPure *left, RZ_BORROW RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode) {
+RZ_IPI RZ_OWN RzILOpEffect *ppc_cmp_set_cr(RZ_BORROW RzILOpPure *left, RZ_BORROW RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode) {
 	rz_return_val_if_fail(left && right && crX, NULL);
 
 	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), 1));

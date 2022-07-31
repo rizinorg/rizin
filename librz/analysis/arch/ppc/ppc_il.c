@@ -23,7 +23,7 @@ RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian) {
 	return r;
 }
 
-bool ppc_is_x_form(ut32 insn_id) {
+RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
@@ -66,7 +66,7 @@ bool ppc_is_x_form(ut32 insn_id) {
 	}
 }
 
-st32 ppc_get_mem_acc_size(ut32 insn_id) {
+RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		RZ_LOG_INFO("Memory access size for instruction %d requested. But it is not in the switch case.\n", insn_id);
@@ -140,7 +140,7 @@ st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	}
 }
 
-bool ppc_updates_ra_with_ea(ut32 insn_id) {
+RZ_IPI bool ppc_updates_ra_with_ea(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
@@ -175,7 +175,7 @@ bool ppc_updates_ra_with_ea(ut32 insn_id) {
 	}
 }
 
-bool ppc_is_algebraic(ut32 insn_id) {
+RZ_IPI bool ppc_is_algebraic(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
@@ -193,7 +193,7 @@ bool ppc_is_algebraic(ut32 insn_id) {
 	}
 }
 
-bool ppc_sets_lr(ut32 insn_id) {
+RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
@@ -223,7 +223,7 @@ bool ppc_sets_lr(ut32 insn_id) {
 	}
 }
 
-bool ppc_is_conditional(ut32 insn_id) {
+RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
@@ -267,7 +267,7 @@ bool ppc_is_conditional(ut32 insn_id) {
 	}
 }
 
-bool ppc_moves_to_spr(ut32 insn_id) {
+RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
@@ -291,7 +291,7 @@ bool ppc_moves_to_spr(ut32 insn_id) {
 	}
 }
 
-bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
+RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, NULL);
 	ut32 id = insn->id;
 
@@ -458,7 +458,7 @@ RZ_IPI const char *ppc_get_cr_name(const ut8 x) {
  * \param cr_mask Masks the bits which are copied from CR to CR0-CR7. Ignored if \p crx_to_cr == true.
  * \return RzILOpEffect* Sequence of effects to sync the CR/CRx registers.
  */
-RZ_IPI RZ_OWN RzILOpEffect *sync_crx_cr(const bool crx_to_cr, const ut32 cr_mask) {
+RZ_IPI RZ_OWN RzILOpEffect *ppc_sync_crx_cr(const bool crx_to_cr, const ut32 cr_mask) {
 	RzILOpEffect *sync;
 	if (crx_to_cr) {
 		sync = SETL("cr", LOGOR(UNSIGNED(32, VARG("cr7")), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr6")), U8(0x4)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr5")), U8(0x8)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr4")), U8(0xc)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr3")), U8(0x10)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr2")), U8(0x14)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr1")), U8(0x18)), SHIFTL0(UNSIGNED(32, VARG("cr0")), U8(0x1c))))))))));
@@ -551,7 +551,7 @@ parse_err:
  * \param mode The capstone mode.
  * \return RzILOpPure* The condition the branch occurs as a Pure.
  */
-RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
+RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, NULL);
 	ut32 id = insn->id;
 
@@ -686,7 +686,7 @@ RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn
  * \param mode The capstone mode.
  * \return RzILOpPure* The target address of the jump.
  */
-RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode) {
+RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, NULL);
 	ut32 id = insn->id;
 
@@ -766,11 +766,11 @@ RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode
 	}
 }
 
-bool is_mul_div_d(const ut32 id) {
+RZ_IPI bool ppc_is_mul_div_d(const ut32 id) {
 	return id == PPC_INS_MULHD || id == PPC_INS_MULLD || id == PPC_INS_MULHDU || id == PPC_INS_DIVD || id == PPC_INS_DIVDU || id == PPC_INS_MULLI;
 }
 
-bool is_mul_div_u(const ut32 id) {
+RZ_IPI bool ppc_is_mul_div_u(const ut32 id) {
 	return id == PPC_INS_MULHDU || id == PPC_INS_MULHWU || id == PPC_INS_DIVWU || id == PPC_INS_DIVDU;
 }
 
@@ -782,7 +782,7 @@ bool is_mul_div_u(const ut32 id) {
  *
  * \return RzILOpPure* The Pure containing the current XER value.
  */
-RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode) {
+RZ_IPI RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode) {
 	RzILOpPure *so = SHIFTL0(EXTZ(BOOL_TO_BV(VARG("so"), 1)), U8(31));
 	RzILOpPure *ov = SHIFTL0(EXTZ(BOOL_TO_BV(VARG("ov"), 1)), U8(30));
 	RzILOpPure *ca = SHIFTL0(EXTZ(BOOL_TO_BV(VARG("ca"), 1)), U8(29));
@@ -799,7 +799,7 @@ RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode) {
  * \param mode The capstone mode.
  * \return RzILOpEffect* The sequence of effects setting all registers to their respective values.
  */
-RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode) {
+RZ_IPI RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode) {
 	rz_return_val_if_fail(val, NULL);
 	RzILOpPure *v = LOGAND(BIT_MASK(64, U8(32), U8(34)), UNSIGNED(64, val));
 	return SEQ5(SETL("v", v), SETG("xer", VARL("v")),

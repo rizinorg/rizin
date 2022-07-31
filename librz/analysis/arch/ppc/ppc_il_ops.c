@@ -375,12 +375,12 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 		return NULL;
 	}
 
-	RzILOpEffect *set_carry = set_ca ? set_carry_add_sub(VARL("a"), VARL("b"), c ? VARL("c") : NULL, mode) : EMPTY();
+	RzILOpEffect *set_carry = set_ca ? ppc_set_carry_add_sub(VARL("a"), VARL("b"), c ? VARL("c") : NULL, mode) : EMPTY();
 
 	// Instructions which set the OV bit are not supported in capstone.
 	// See: https://github.com/capstone-engine/capstone/issues/944
 	RzILOpEffect *overflow = EMPTY();
-	RzILOpEffect *update_cr0 = cr0 ? cmp_set_cr(res, UA(0), true, "cr0", mode) : EMPTY();
+	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(res, UA(0), true, "cr0", mode) : EMPTY();
 	RzILOpEffect *set = SETG(rT, res);
 	RzILOpEffect *set_ops = SEQ3(SETL("a", a), SETL("b", b), c ? SETL("c", c) : EMPTY());
 	return SEQ5(set_ops, set, set_carry, overflow, update_cr0);
@@ -451,7 +451,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		right = (id == PPC_INS_CMPDI) ? EXTEND(64, S16(imm)) : APPEND(U48(0), U16(imm));
 		break;
 	}
-	return cmp_set_cr(left, right, signed_cmp, crX, mode);
+	return ppc_cmp_set_cr(left, right, signed_cmp, crX, mode);
 }
 
 static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
@@ -589,7 +589,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	}
 
 	// WRITE
-	RzILOpEffect *update_cr0 = cr0 ? cmp_set_cr(res, UA(0), true, "cr0", mode) : EMPTY();
+	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(res, UA(0), true, "cr0", mode) : EMPTY();
 	RzILOpEffect *set = SETG(rA, res);
 	return SEQ2(set, update_cr0);
 }
@@ -664,13 +664,13 @@ static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		op1 = SIGNED(32, op1);
 	}
 
-	if (is_mul_div_u(id) && is_mul_div_d(id)) {
+	if (ppc_is_mul_div_u(id) && ppc_is_mul_div_d(id)) {
 		op0 = UNSIGNED(128, op0);
 		op1 = UNSIGNED(128, op1);
-	} else if (is_mul_div_u(id) && !is_mul_div_d(id)) {
+	} else if (ppc_is_mul_div_u(id) && !ppc_is_mul_div_d(id)) {
 		op0 = UNSIGNED(64, op0);
 		op1 = UNSIGNED(64, op1);
-	} else if (!is_mul_div_u(id) && is_mul_div_d(id)) {
+	} else if (!ppc_is_mul_div_u(id) && ppc_is_mul_div_d(id)) {
 		op0 = SIGNED(128, op0);
 		op1 = SIGNED(128, op1);
 	} else {
@@ -707,7 +707,7 @@ static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		prod = SHIFTR0(prod, U8(64));
 	}
 
-	RzILOpEffect *cr0 = set_cr0 ? cmp_set_cr(VARG(rT), UA(0), true, "cr0", mode) : EMPTY();
+	RzILOpEffect *cr0 = set_cr0 ? ppc_cmp_set_cr(VARG(rT), UA(0), true, "cr0", mode) : EMPTY();
 	return SEQ2(SETG(rT, CAST(PPC_ARCH_BITS, IL_FALSE, prod)), cr0);
 }
 
@@ -750,10 +750,10 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 			mask = ppc_fmx_to_mask(fxm);
 		}
 		RzILOpEffect *set_cr = SETL("cr", LOGAND(UNSIGNED(32, VARG(rS)), U32(mask)));
-		return SEQ2(set_cr, sync_crx_cr(false, mask));
+		return SEQ2(set_cr, ppc_sync_crx_cr(false, mask));
 
 	case PPC_INS_MFCR:
-		return SEQ2(sync_crx_cr(true, 0x0), SETG(rT, EXTZ(VARL("cr"))));
+		return SEQ2(ppc_sync_crx_cr(true, 0x0), SETG(rT, EXTZ(VARL("cr"))));
 
 	// Note: We do not update CR after the OCRF operations.
 	case PPC_INS_MTOCRF:
@@ -1158,7 +1158,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		into_rA = LOGAND(r, VARL("mask"));
 	}
 
-	update_cr0 = sets_cr0 ? cmp_set_cr(VARL("result"), UA(0), true, "cr0", mode) : EMPTY();
+	update_cr0 = sets_cr0 ? ppc_cmp_set_cr(VARL("result"), UA(0), true, "cr0", mode) : EMPTY();
 	set_mask = set_mask ? set_mask : EMPTY();
 	set_ca = set_ca ? set_ca : EMPTY();
 

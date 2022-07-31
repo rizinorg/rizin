@@ -155,28 +155,28 @@ RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
 
 RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode);
 
-RZ_OWN RzILOpEffect *set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, RZ_OWN RZ_NULLABLE RzILOpBitVector *c, cs_mode mode);
-RZ_OWN RzILOpEffect *cmp_set_cr(RZ_BORROW RzILOpPure *left, RZ_BORROW RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode);
+RZ_IPI RZ_OWN RzILOpEffect *ppc_set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, RZ_OWN RZ_NULLABLE RzILOpBitVector *c, cs_mode mode);
+RZ_IPI RZ_OWN RzILOpEffect *ppc_cmp_set_cr(RZ_BORROW RzILOpPure *left, RZ_BORROW RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode);
 
-bool ppc_is_x_form(ut32 insn_id);
-st32 ppc_get_mem_acc_size(ut32 insn_id);
-bool ppc_updates_ra_with_ea(ut32 insn_id);
-bool ppc_is_algebraic(ut32 insn_id);
-bool ppc_sets_lr(ut32 insn_id);
-bool ppc_is_conditional(ut32 insn_id);
-bool ppc_moves_to_spr(ut32 insn_id);
-bool is_mul_div_d(const ut32 id);
-bool is_mul_div_u(const ut32 id);
-bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode);
+RZ_IPI bool ppc_is_x_form(ut32 insn_id);
+RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id);
+RZ_IPI bool ppc_updates_ra_with_ea(ut32 insn_id);
+RZ_IPI bool ppc_is_algebraic(ut32 insn_id);
+RZ_IPI bool ppc_sets_lr(ut32 insn_id);
+RZ_IPI bool ppc_is_conditional(ut32 insn_id);
+RZ_IPI bool ppc_moves_to_spr(ut32 insn_id);
+RZ_IPI bool ppc_is_mul_div_d(const ut32 id);
+RZ_IPI bool ppc_is_mul_div_u(const ut32 id);
+RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode);
 RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx);
 RZ_IPI RZ_OWN RzILOpPure *ppc_get_cr(const ut8 x);
 RZ_IPI const char *ppc_get_cr_name(const ut8 x);
 RZ_IPI ut8 ppc_translate_cs_cr_flag(const char *flag);
 
-RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode);
-RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode);
-RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode);
-RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode);
-RZ_IPI RZ_OWN RzILOpEffect *sync_crx_cr(const bool to_cr, const ut32 cr_mask);
+RZ_IPI RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode);
+RZ_IPI RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode);
+RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode);
+RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode);
+RZ_IPI RZ_OWN RzILOpEffect *ppc_sync_crx_cr(const bool to_cr, const ut32 cr_mask);
 
 #endif /* PPC_IL_H */
