@@ -12,7 +12,8 @@
  * Other context variables *may* be added in the future when the rest of the instructions are lifted
  */
 typedef struct sh_il_context_t {
-	bool privilege_check; ///< Set to true whenever the privilege mode is calculated (used to add a `SETL` effect for the privilege bit, in case it is used)
+	bool privilege_check; ///< Set to true whenever the privilege mode is calculated (used to add a `SETL` effect for the privilege bit, in case it is used) ; Set to false (by default)
+	bool use_banked; ///< Set to true (default) whenever the IL should use banked registers in case of privileged mode ; Setting to false means only un-banked gpr will be used
 } SHILContext;
 
 RZ_IPI bool rz_sh_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const SHOp *op, RZ_NULLABLE SHILContext *ctx);
