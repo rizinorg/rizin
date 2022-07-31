@@ -1077,13 +1077,14 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		if (id == PPC_INS_RLDCR || id == PPC_INS_RLDCL || id == PPC_INS_ROTLD) {
 			// For these instruction ME is the third operand, not MB.
 			mE = INSOP(3).imm;
-			n = CAST(6, IL_FALSE, LOGAND(VARG(rB), UA(0x3f)));
+			n = UNSIGNED(8, VARG(rB));
 		} else if (id == PPC_INS_RLDICR) {
 			mE = INSOP(3).imm;
 			n = U8(sH);
 		} else {
 			n = U8(sH);
 		}
+		n = LOGAND(U8(0x3f), n);
 		r = ROTL64(VARG(rS), n);
 		if (id == PPC_INS_RLDICR || id == PPC_INS_RLDCR) {
 			e = U8(mE);
@@ -1094,8 +1095,10 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 				set_mask = SET_MASK(b, U8(63));
 			} else if (id == PPC_INS_ROTLDI || id == PPC_INS_ROTLD) {
 				set_mask = SET_MASK(U8(0), U8(63));
+			} else if (id == PPC_INS_RLDIMI) {
+				set_mask = SET_MASK(b, UNSIGNED(8, LOGNOT(UNSIGNED(6, DUP(n)))));
 			} else {
-				set_mask = SET_MASK(b, LOGAND(U8(0x3f), LOGNOT(DUP(n)))); // AND with 0x3f since n is a 6bit number.
+				set_mask = SET_MASK(b, DUP(n));
 			}
 		}
 
