@@ -138,6 +138,12 @@ adE "ldc.l @r11+, ssr" 4b37 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (bra
 adE "ldc.l @r11+, spc" 4b47 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set spc (loadw 0 32 (var r11))) (set r11 (+ (var r11) (bv 32 0x4)))) nop))
 adE "ldc.l @r11+, dbr" 4bf6 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set dbr (loadw 0 32 (var r11))) (set r11 (+ (var r11) (bv 32 0x4)))) nop))
 adE "ldc.l @r4+, r3b" 44b7 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r3b (loadw 0 32 (var r4))) (set r4 (+ (var r4) (bv 32 0x4)))) nop))
+adE "lds r10, mach" 4a0a 0x0 (set mach (var r10))
+adE "lds r1, macl" 411a 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set macl (ite (var _priv) (var r1b) (var r1))))
+adE "lds r15, pr" 4f2a 0x0 (set pr (var r15))
+adE "lds.l @r10+, mach" 4a06 0x0 (seq (set mach (loadw 0 32 (var r10))) (set r10 (+ (var r10) (bv 32 0x4))))
+adE "lds.l @r1+, macl" 4116 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set macl (loadw 0 32 (ite (var _priv) (var r1b) (var r1)))) (set _regv (+ (ite (var _priv) (var r1b) (var r1)) (bv 32 0x4))) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))))
+adE "lds.l @r15+, pr" 4f26 0x0 (seq (set pr (loadw 0 32 (var r15))) (set r15 (+ (var r15) (bv 32 0x4))))
 
 # Misc
 adE "bsr 0x00000002"	0xbfff
