@@ -212,7 +212,7 @@ RZ_API bool rz_type_func_exist(RzTypeDB *typedb, RZ_NONNULL const char *name) {
  * \param typedb Type Database instance
  * \param name Name of the callable to search
  */
-RZ_API RZ_BORROW RzType *rz_type_func_ret(RzTypeDB *typedb, const char *name) {
+RZ_API RZ_BORROW RzType *rz_type_func_ret(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
@@ -227,7 +227,7 @@ RZ_API RZ_BORROW RzType *rz_type_func_ret(RzTypeDB *typedb, const char *name) {
  * \param typedb Type Database instance
  * \param name Name of the callable to search
  */
-RZ_API RZ_BORROW const char *rz_type_func_cc(RzTypeDB *typedb, const char *name) {
+RZ_API RZ_BORROW const char *rz_type_func_cc(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
@@ -259,7 +259,7 @@ RZ_API bool rz_type_func_cc_set(RzTypeDB *typedb, const char *name, const char *
  * \param typedb Type Database instance
  * \param name Name of the callable to search
  */
-RZ_API int rz_type_func_args_count(RzTypeDB *typedb, const char *name) {
+RZ_API int rz_type_func_args_count(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, 0);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {

@@ -60,7 +60,7 @@ static void rz_coresym_cache_element_line_info_fini(RzCoreSymCacheElementLineInf
 	}
 }
 
-void rz_coresym_cache_element_free(RzCoreSymCacheElement *element) {
+RZ_API void rz_coresym_cache_element_free(RzCoreSymCacheElement *element) {
 	if (!element) {
 		return;
 	}
@@ -101,7 +101,7 @@ void rz_coresym_cache_element_free(RzCoreSymCacheElement *element) {
 	free(element);
 }
 
-ut64 rz_coresym_cache_element_pa2va(RzCoreSymCacheElement *element, ut64 pa) {
+RZ_API ut64 rz_coresym_cache_element_pa2va(RzCoreSymCacheElement *element, ut64 pa) {
 	size_t i;
 	for (i = 0; i < element->hdr->n_segments; i++) {
 		RzCoreSymCacheElementSegment *seg = &element->segments[i];
@@ -136,7 +136,7 @@ static char *str_dup_safe_fixed(const ut8 *b, const ut8 *str, ut64 len, const ut
 	return NULL;
 }
 
-RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf, ut64 off, int bits, char *file_name) {
+RZ_API RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf, ut64 off, int bits, RZ_OWN char *file_name) {
 	RzCoreSymCacheElement *result = NULL;
 	ut8 *b = NULL;
 	RzCoreSymCacheElementHdr *hdr = rz_coresym_cache_element_header_new(buf, off, bits);

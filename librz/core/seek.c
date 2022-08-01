@@ -408,7 +408,7 @@ RZ_API void rz_core_seek_free(RzCore *core) {
  * current state, followed by some items with positive idx which are Redos
  * items.
  */
-RZ_API RzList *rz_core_seek_list(RzCore *core) {
+RZ_API RzList /*<RzCoreSeekItem *>*/ *rz_core_seek_list(RzCore *core) {
 	RzList *res = rz_list_newf((RzListFree)rz_core_seek_item_free);
 	if (!res) {
 		return NULL;

@@ -486,7 +486,7 @@ static bool foreach_reg_cb(RzIntervalNode *node, void *user) {
  * \brief Filter out all register items that are smaller than but covered entirely by some other register
  * \param regs list of RzRegItem
  */
-RZ_API RZ_OWN RzList *rz_reg_filter_items_covered(RZ_BORROW RZ_NONNULL const RzList /* <RzRegItem> */ *regs) {
+RZ_API RZ_OWN RzList *rz_reg_filter_items_covered(RZ_BORROW RZ_NONNULL const RzList /*<RzRegItem *>*/ *regs) {
 	rz_return_val_if_fail(regs, NULL);
 	RzList *ret = rz_list_new();
 	if (!ret) {

@@ -1369,7 +1369,7 @@ RZ_API void rz_bv_set_to_bytes_be(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NO
  * \param x BitVector
  * \return ut32 bitvector hash
  */
-ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x) {
+RZ_API ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x) {
 	ut32 h = 5381;
 	if (!x) {
 		return h;

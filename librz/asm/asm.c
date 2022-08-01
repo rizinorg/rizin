@@ -1399,7 +1399,7 @@ static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_
  * \return true Overlaps with token from token vector.
  * \return false Does not overap with other token.
  */
-static bool overlaps_with_token(RZ_BORROW RzVector /* RzAsmTokenString */ *toks, const size_t s, const size_t e) {
+static bool overlaps_with_token(RZ_BORROW RzVector /*<RzAsmTokenString>*/ *toks, const size_t s, const size_t e) {
 	rz_return_val_if_fail(toks, false);
 	size_t x, y; // Other tokens start/end
 	RzAsmToken *it;
@@ -1469,7 +1469,7 @@ static void check_token_coverage(RzAsmTokenString *toks) {
  * \param patterns RzList<RzAsmTokenPattern> with the regex patterns describing each token type.
  * \return RzAsmTokenString* The tokens.
  */
-RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzPVector /* RzAsmTokenPattern* */ *patterns) {
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
 	rz_return_val_if_fail(asm_str && patterns, NULL);
 
 	const char *str = rz_strbuf_get(asm_str);

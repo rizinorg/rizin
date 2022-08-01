@@ -12,7 +12,7 @@ RZ_API RzAnalysisOp *rz_analysis_op_new(void) {
 	return op;
 }
 
-RZ_API RzList *rz_analysis_op_list_new(void) {
+RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void) {
 	RzList *list = rz_list_new();
 	if (list) {
 		list->free = &rz_analysis_op_free;

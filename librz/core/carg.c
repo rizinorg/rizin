@@ -10,7 +10,7 @@
  *
  * Warning: this function contains hacks. Rewrite it before using it in new code.
  */
-RZ_API RZ_DEPRECATE ut64 rz_core_arg_get(RzCore *core, const char *cc, int num) {
+RZ_DEPRECATE RZ_API ut64 rz_core_arg_get(RzCore *core, const char *cc, int num) {
 	rz_return_val_if_fail(core, UT64_MAX);
 	if (!cc) {
 		cc = rz_analysis_syscc_default(core->analysis);
@@ -52,7 +52,7 @@ RZ_API RZ_DEPRECATE ut64 rz_core_arg_get(RzCore *core, const char *cc, int num) 
  *
  * Warning: this function contains hacks. Rewrite it before using it in new code.
  */
-RZ_API RZ_DEPRECATE bool rz_core_arg_set(RzCore *core, const char *cc, int num, ut64 val) {
+RZ_DEPRECATE RZ_API bool rz_core_arg_set(RzCore *core, const char *cc, int num, ut64 val) {
 	rz_return_val_if_fail(core, false);
 	if (!RZ_STR_ISEMPTY(cc)) {
 		cc = rz_analysis_syscc_default(core->analysis);
@@ -273,8 +273,7 @@ static void rz_analysis_fcn_arg_free(RzAnalysisFuncArg *arg) {
 	free(arg);
 }
 
-/* Returns a list of RzAnalysisFuncArg */
-RZ_API RZ_OWN RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
+RZ_API RZ_OWN RzList /*<RzAnalysisFuncArg *>*/ *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	if (!fcn_name || !core->analysis) {
 		return NULL;
 	}

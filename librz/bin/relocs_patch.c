@@ -5,7 +5,7 @@
 #include <ht_uu.h>
 
 /// Finm a suitable location for putting the artificial reloc targets map
-RZ_API ut64 rz_bin_relocs_patch_find_targets_map_base(RzList /*<RzBinMap>*/ *maps, ut64 target_sz) {
+RZ_API ut64 rz_bin_relocs_patch_find_targets_map_base(RzList /*<RzBinMap *>*/ *maps, ut64 target_sz) {
 	// find the lowest unmapped address
 	ut64 max = 0;
 	if (maps) {
@@ -83,7 +83,7 @@ RZ_API ut64 rz_bin_reloc_target_builder_get_target(RzBinRelocTargetBuilder *buil
  * \param buf_patched_offset the offset of the data in buf_patched inside the real file.
  *        This is especially relevant for fatmach0 where the buf starts further into the fat file.
  */
-RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzList /* <RzBinMap> */ *maps,
+RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzList /*<RzBinMap *>*/ *maps,
 	RZ_NULLABLE RzBuffer *buf_patched, ut64 buf_patched_offset,
 	ut64 target_vfile_base, ut64 target_vfile_size,
 	RZ_NONNULL const char *vfile_name_patched, RZ_NONNULL const char *vfile_name_reloc_targets) {

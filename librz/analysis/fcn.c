@@ -1485,7 +1485,7 @@ beach:
  * \param block Pointer to RzAnalysisBlock in which analysis will be performed on. If null, analysis will take care of block creation.
  * \param address Address where analysis will start from
  */
-RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address) {
+RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address) {
 	rz_return_val_if_fail(analysis && tasks && fcn, false);
 	RzAnalysisTaskItem item = { fcn, block, fcn->stack, address };
 	RzAnalysisTaskItem *it;
@@ -1506,7 +1506,7 @@ RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNUL
  *
  * \param tasks Pointer to RzVector of RzAnalysisTaskItem to be performed analysis on.
  */
-RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector *tasks) {
+RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks) {
 	rz_return_val_if_fail(tasks, RZ_ANALYSIS_RET_ERROR);
 	int ret = RZ_ANALYSIS_RET_ERROR;
 	while (!rz_vector_empty(tasks)) {
@@ -1684,7 +1684,7 @@ RZ_API int rz_analysis_fcn_del(RzAnalysis *a, ut64 addr) {
 	return true;
 }
 
-RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in(RzAnalysis *analysis, ut64 addr, int type) {
+RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in(RzAnalysis *analysis, ut64 addr, int type) {
 	RzList *list = rz_analysis_get_functions_in(analysis, addr);
 	RzAnalysisFunction *ret = NULL;
 	if (list && !rz_list_empty(list)) {
@@ -1705,7 +1705,7 @@ RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in(RzAnalysis *analysis, ut64 add
 	return ret;
 }
 
-RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in_bounds(RzAnalysis *analysis, ut64 addr, int type) {
+RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in_bounds(RzAnalysis *analysis, ut64 addr, int type) {
 	RzAnalysisFunction *fcn, *ret = NULL;
 	RzListIter *iter;
 	if (type == RZ_ANALYSIS_FCN_TYPE_ROOT) {
@@ -2478,7 +2478,7 @@ RZ_API size_t rz_analysis_function_arg_count(RzAnalysis *a, RzAnalysisFunction *
  * \param a RzAnalysis instance
  * \param f Function
  */
-RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn) {
+RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	if (!a || !fcn) {
 		return NULL;
 	}

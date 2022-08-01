@@ -191,7 +191,7 @@ RZ_API const RzBinSourceLineSample *rz_bin_source_line_info_get_next(const RzBin
 	return next;
 }
 
-RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line) {
+RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line) {
 	rz_return_val_if_fail(bin, false);
 	if (!bin->cur || !bin->cur->o || !bin->cur->o->lines) {
 		return false;
@@ -214,7 +214,7 @@ RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *li
 	return false;
 }
 
-RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin) {
+RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin) {
 	rz_return_val_if_fail(bin, NULL);
 	if (!bin->cur || !bin->cur->o || !bin->cur->o->lines) {
 		return NULL;

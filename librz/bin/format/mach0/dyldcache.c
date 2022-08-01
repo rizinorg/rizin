@@ -244,7 +244,7 @@ static cache_accel_t *read_cache_accel(RzBuffer *cache_buf, cache_hdr_t *hdr, ca
 	return accel;
 }
 
-objc_cache_opt_info *rz_dyldcache_get_objc_opt_info(RzBinFile *bf, RzDyldCache *cache) {
+RZ_API objc_cache_opt_info *rz_dyldcache_get_objc_opt_info(RzBinFile *bf, RzDyldCache *cache) {
 	objc_cache_opt_info *result = NULL;
 	RzListIter *iter;
 	RzDyldBinImage *bin;

@@ -87,7 +87,7 @@ typedef RZ_NULLABLE RzILVal *RzILLocalPurePrev;
 RZ_API RzILLocalPurePrev rz_il_vm_push_local_pure_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILVal *val);
 RZ_API void rz_il_vm_pop_local_pure_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILLocalPurePrev prev);
 RZ_API RZ_BORROW RzILVar *rz_il_vm_get_var(RZ_NONNULL RzILVM *vm, RzILVarKind kind, const char *name);
-RZ_API RZ_OWN RzPVector /* <RzILVar> */ *rz_il_vm_get_all_vars(RZ_NONNULL RzILVM *vm, RzILVarKind kind);
+RZ_API RZ_OWN RzPVector /*<RzILVar *>*/ *rz_il_vm_get_all_vars(RZ_NONNULL RzILVM *vm, RzILVarKind kind);
 RZ_API RZ_BORROW RzILVal *rz_il_vm_get_var_value(RZ_NONNULL RzILVM *vm, RzILVarKind kind, const char *name);
 
 // Evaluation (Emulation)

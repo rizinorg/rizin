@@ -581,7 +581,7 @@ RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 
  * \param name The name of the bitfield enum
  * \param val The value to search for
  */
-RZ_OWN RZ_API char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
+RZ_API RZ_OWN char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	char *res = NULL;
 	int i;

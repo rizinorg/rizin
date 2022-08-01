@@ -1280,9 +1280,9 @@ RZ_API const char *rz_analysis_datatype_to_string(RzAnalysisDataType t);
 RZ_API bool rz_analysis_op_nonlinear(int t);
 RZ_API bool rz_analysis_op_ismemref(int t);
 RZ_API const char *rz_analysis_optype_to_string(int t);
-RZ_API int rz_analysis_optype_from_string(const char *type);
+RZ_API int rz_analysis_optype_from_string(RZ_NONNULL const char *type);
 RZ_API const char *rz_analysis_op_family_to_string(int n);
-RZ_API int rz_analysis_op_family_from_string(const char *f);
+RZ_API int rz_analysis_op_family_from_string(RZ_NONNULL const char *f);
 RZ_API int rz_analysis_op_hint(RzAnalysisOp *op, RzAnalysisHint *hint);
 
 /* block.c */
@@ -1595,9 +1595,9 @@ RZ_API bool rz_analysis_il_vm_setup(RzAnalysis *analysis);
 RZ_API void rz_analysis_il_vm_cleanup(RzAnalysis *analysis);
 
 /* trace */
-RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzAnalysisILVM *rzil);
+RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil);
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisILVM *rzil, RzAnalysisLiftedILOp op);
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil, RZ_NONNULL RzAnalysisLiftedILOp op);
 
 RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis);
 
@@ -1640,7 +1640,7 @@ RZ_API void rz_analysis_trim_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *f
 RZ_API void rz_analysis_del_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function);
 RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr);
-RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *function);
+RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunction *function);
 RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL RzCallable *callable);
 RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL const char *sig);
 RZ_API int rz_analysis_fcn_count(RzAnalysis *a, ut64 from, ut64 to);
@@ -1656,7 +1656,7 @@ RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type);
 RZ_API RzAnalysisXRefType rz_analysis_xrefs_type(char ch);
 RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr);
 RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr);
-RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_list(RzAnalysis *analysis);
+RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_list(RzAnalysis *analysis);
 RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn);
 RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
@@ -1680,7 +1680,7 @@ RZ_API const char *rz_analysis_function_get_var_reg_at(RzAnalysisFunction *fcn, 
 RZ_API RZ_BORROW RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_get_vars_used_at(RzAnalysisFunction *fcn, ut64 op_addr);
 
 // There could be multiple vars used in multiple functions. Use rz_analysis_get_functions_in()+rz_analysis_function_get_vars_used_at() instead.
-RZ_API RZ_DEPRECATE RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr);
+RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr);
 
 RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, bool verbose);
 RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var);
@@ -1809,8 +1809,8 @@ RZ_API int rz_analysis_reflines_middle(RzAnalysis *analysis, RzList /*<RzAnalysi
 RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *core, ut64 addr, int opts);
 RZ_API void rz_analysis_reflines_str_free(RzAnalysisRefStr *refstr);
 RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RzAnalysis *analysis, RzAnalysisFunction *fcn, int kind);
-RZ_API RZ_DEPRECATE RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction *fcn);
-RZ_API RZ_DEPRECATE RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, int kind);
+RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction *fcn);
+RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, int kind);
 
 // calling conventions API
 RZ_API bool rz_analysis_cc_exist(RzAnalysis *analysis, const char *convention);
@@ -2121,7 +2121,7 @@ RZ_API RzVector /*<RzAnalysisVTable>*/ *rz_analysis_class_vtable_get_all(RzAnaly
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, const char *class_name, RzAnalysisVTable *vtable);
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, const char *class_name, const char *vtable_id);
 
-RZ_API RzGraph /*<RzGraphNodeInfo>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
+RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
 
 RZ_API size_t rz_analysis_function_arg_count(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn);

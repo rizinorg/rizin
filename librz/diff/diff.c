@@ -494,7 +494,7 @@ static int cmp_matches(RzDiffMatch *m0, RzDiffMatch *m1) {
  * Generates a list of matching blocks that are found in both inputs.
  * If non are found it returns a match result with size of 0
  * */
-RZ_API RZ_OWN RzList /*<RzDiffMatch>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff *diff) {
+RZ_API RZ_OWN RzList /*<RzDiffMatch *>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	RzList *stack = NULL;
 	RzList *matches = NULL;
@@ -628,7 +628,7 @@ static void opcode_set(RzDiffOp *op, RzDiffOpType type, st32 a_beg, st32 a_end, 
  *
  * Generates a list of opcodes that are needed to convert A to B.
  * */
-RZ_API RZ_OWN RzList /*<RzDiffOp>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *diff) {
+RZ_API RZ_OWN RzList /*<RzDiffOp *>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	ut32 a = 0, b = 0;
 	RzDiffOpType type = RZ_DIFF_OP_INVALID;
@@ -709,7 +709,7 @@ static void group_op_free(RzList *ops) {
  * each group will end with N common EQUAL ops (if possible).
  * default is 3 equals ops before splitting the group.
  * */
-RZ_API RZ_OWN RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RZ_NONNULL RzDiff *diff, ut32 n_groups) {
+RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_opcodes_grouped_new(RZ_NONNULL RzDiff *diff, ut32 n_groups) {
 	rz_return_val_if_fail(diff && n_groups > 1, NULL);
 	RzDiffOp *op = NULL;
 	RzListIter *it = NULL;

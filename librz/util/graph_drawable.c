@@ -38,7 +38,7 @@ RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph *graph, const char *title, co
 	return node;
 }
 
-RZ_API char *rz_graph_drawable_to_dot(RzGraph /*RzGraphNodeInfo*/ *graph, const char *node_properties, const char *edge_properties) {
+RZ_API char *rz_graph_drawable_to_dot(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *node_properties, const char *edge_properties) {
 	RzList *nodes = graph->nodes;
 	RzListIter *it, *itt;
 	RzGraphNode *node = NULL, *target = NULL;
@@ -70,7 +70,7 @@ RZ_API char *rz_graph_drawable_to_dot(RzGraph /*RzGraphNodeInfo*/ *graph, const 
 	return rz_strbuf_drain_nofree(&buf);
 }
 
-RZ_API void rz_graph_drawable_to_json(RzGraph /*RzGraphNodeInfo*/ *graph, PJ *pj, bool use_offset) {
+RZ_API void rz_graph_drawable_to_json(RzGraph /*<RzGraphNodeInfo *>*/ *graph, PJ *pj, bool use_offset) {
 	RzList *nodes = graph->nodes, *neighbours = NULL;
 	RzListIter *it, *itt;
 	RzGraphNode *node = NULL, *neighbour = NULL;

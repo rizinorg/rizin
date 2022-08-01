@@ -250,6 +250,6 @@ typedef struct sh_opcode_t {
 RZ_IPI RZ_OWN SHOp *sh_disassembler(ut16 opcode);
 
 RZ_IPI RZ_OWN char *sh_op_param_to_str(SHParam param, SHScaling scaling, ut64 pc);
-RZ_IPI RZ_OWN char *sh_op_to_str(const SHOp *op, ut64 pc);
+RZ_IPI RZ_OWN char *sh_op_to_str(RZ_NONNULL const SHOp *op, ut64 pc);
 
 #endif /* RZ_SH_DISASSEMBLER_H */

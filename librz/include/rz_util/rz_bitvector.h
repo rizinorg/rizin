@@ -95,7 +95,7 @@ RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL
 RZ_API void rz_bv_set_from_bytes_be(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);
 RZ_API void rz_bv_set_to_bytes_le(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf);
 RZ_API void rz_bv_set_to_bytes_be(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf);
-RZ_API char *rz_bv_as_string(RZ_NONNULL RzBitVector *bv);
+RZ_API RZ_OWN char *rz_bv_as_string(RZ_NONNULL RzBitVector *bv);
 RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv, bool pad);
 
 RZ_API ut32 rz_bv_len(RZ_NONNULL const RzBitVector *bv);

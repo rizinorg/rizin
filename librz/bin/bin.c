@@ -564,37 +564,37 @@ RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr) {
 }
 
 // XXX: those accessors are redundant
-RZ_DEPRECATE RZ_API RzList *rz_bin_get_entries(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinAddr *>*/ *rz_bin_get_entries(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_entries(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API RzList *rz_bin_get_fields(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinField *>*/ *rz_bin_get_fields(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_fields(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API RzList *rz_bin_get_imports(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinImport *>*/ *rz_bin_get_imports(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_imports(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API RzBinInfo *rz_bin_get_info(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzBinInfo *rz_bin_get_info(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzBinInfo *)rz_bin_object_get_info(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API RzList *rz_bin_get_libs(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<char *>*/ *rz_bin_get_libs(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_libs(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API RzList *rz_bin_get_sections(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSection *>*/ *rz_bin_get_sections(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_sections_all(o) : NULL;
@@ -608,7 +608,7 @@ RZ_DEPRECATE RZ_API RzList *rz_bin_get_sections(RzBin *bin) {
  * \param va When 0 the offset \p off is considered a physical address, otherwise a virtual address
  * \return Pointer to a \p RzBinSection containing the address
  */
-RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
+RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 	RzBinSection *section;
 	RzListIter *iter;
 	ut64 from, to;
@@ -640,7 +640,7 @@ RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
  * \param va When false the offset \p off is considered a physical address, otherwise a virtual address
  * \return Pointer to a \p RzBinMap containing the address
  */
-RZ_API RzBinMap *rz_bin_object_get_map_at(RzBinObject *o, ut64 off, bool va) {
+RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va) {
 	rz_return_val_if_fail(o, NULL);
 
 	RzBinMap *map;
@@ -665,7 +665,7 @@ RZ_API RzBinMap *rz_bin_object_get_map_at(RzBinObject *o, ut64 off, bool va) {
  * \param va When false the offset \p off is considered a physical address, otherwise a virtual address
  * \return Vector of \p RzBinMap pointers
  */
-RZ_API RZ_OWN RzPVector *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, bool va) {
+RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, bool va) {
 	rz_return_val_if_fail(o, NULL);
 
 	RzBinMap *map;
@@ -687,25 +687,25 @@ RZ_API RZ_OWN RzPVector *rz_bin_object_get_maps_at(RzBinObject *o, ut64 off, boo
 	return res;
 }
 
-RZ_DEPRECATE RZ_API RzList *rz_bin_get_strings(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinString *>*/ *rz_bin_get_strings(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_strings(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API RzList *rz_bin_get_symbols(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSymbol *>*/ *rz_bin_get_symbols(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_symbols(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API RzList *rz_bin_get_mem(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinMem *>*/ *rz_bin_get_mem(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_mem(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API int rz_bin_is_static(RzBin *bin) {
+RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, false);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? rz_bin_object_is_static(o) : false;
@@ -880,7 +880,7 @@ RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *p,
 	return plugin->create(bin, code, codelen, data, datalen, opt);
 }
 
-RZ_API RzList * /*<RzBinClass>*/ rz_bin_get_classes(RzBin *bin) {
+RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinClass *>*/ *rz_bin_get_classes(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? o->classes : NULL;
@@ -1037,7 +1037,7 @@ RZ_API void rz_bin_map_free(RzBinMap *map) {
  * but if it is, plugins can use this function as their maps callback,
  * which will generate mappings for sections.
  * */
-RZ_API RZ_OWN RzList *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile) {
+RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
 	if (!binfile->o || !binfile->o->plugin || !binfile->o->plugin->sections) {
 		return NULL;
@@ -1081,7 +1081,7 @@ hcf:
  * See also rz_bin_maps_of_file_sections() for the inverse, when no additional
  * sections should be added.
  * */
-RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps) {
+RZ_API RzList /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzList /*<RzBinMap *>*/ *maps) {
 	rz_return_val_if_fail(maps, NULL);
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
 	if (!ret) {
@@ -1148,7 +1148,7 @@ RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type) {
  * \param bin RzBin instance
  * \param flag A flag field of the RzBinSection (differs between formats)
  * */
-RZ_API RZ_OWN RzList *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->section_flag_to_rzlist) {
@@ -1194,7 +1194,7 @@ RZ_API void rz_bin_trycatch_free(RzBinTrycatch *tc) {
 /**
  * \brief Get a RzBinPlugin by name
  */
-RZ_API const RzBinPlugin *rz_bin_plugin_get(RzBin *bin, const char *name) {
+RZ_API const RzBinPlugin *rz_bin_plugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(bin && name, NULL);
 
 	RzListIter *iter;
@@ -1211,7 +1211,7 @@ RZ_API const RzBinPlugin *rz_bin_plugin_get(RzBin *bin, const char *name) {
 /**
  * \brief Get a RzBinXtrPlugin by name
  */
-RZ_API const RzBinXtrPlugin *rz_bin_xtrplugin_get(RzBin *bin, const char *name) {
+RZ_API const RzBinXtrPlugin *rz_bin_xtrplugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(bin && name, NULL);
 
 	RzListIter *iter;

@@ -37,7 +37,7 @@ RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph *graph, const char *title, co
  * @param node_properties List node styling attributes. Can be set to NULL.
  * @param edge_properties List edge styling attributes. Can be set to NULL.
  */
-RZ_API char *rz_graph_drawable_to_dot(RzGraph /*RzGraphNodeInfo*/ *graph, const char *node_properties, const char *edge_properties);
+RZ_API char *rz_graph_drawable_to_dot(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *node_properties, const char *edge_properties);
 /**
  * @brief Convert graph to JSON.
  *
@@ -45,7 +45,7 @@ RZ_API char *rz_graph_drawable_to_dot(RzGraph /*RzGraphNodeInfo*/ *graph, const 
  * @param[out] pj Json output structure. Can be used to include the resulting JSON value inside bigger JSON.
  * @param[in] use_offset Set this to true if graph uses \ref RzGraphNodeInfo::offset offset field.
  */
-RZ_API void rz_graph_drawable_to_json(RzGraph /*RzGraphNodeInfo*/ *graph, PJ *pj, bool use_offset);
+RZ_API void rz_graph_drawable_to_json(RzGraph /*<RzGraphNodeInfo *>*/ *graph, PJ *pj, bool use_offset);
 
 #ifdef __cplusplus
 }

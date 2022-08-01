@@ -1111,7 +1111,7 @@ RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set) {
 	free(set);
 }
 
-static RzList /*<RzBinDwarfARangeSet>*/ *parse_aranges_raw(const ut8 *obuf, size_t obuf_sz, bool big_endian) {
+static RzList /*<RzBinDwarfARangeSet *>*/ *parse_aranges_raw(const ut8 *obuf, size_t obuf_sz, bool big_endian) {
 	rz_return_val_if_fail(obuf, NULL);
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = buf + obuf_sz;
@@ -2129,7 +2129,7 @@ RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RzBinFile *binfile, RZ_NULLAB
 	return r;
 }
 
-RZ_API RzList /*<RzBinDwarfARangeSet>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile) {
+RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
 	size_t len;
 	ut8 *buf = get_section_bytes(binfile, "debug_aranges", &len);
@@ -2256,7 +2256,7 @@ static HtUP *parse_loc_raw(HtUP /*<offset, List *<LocListEntry>*/ *loc_table, co
  * @param addr_size machine address size used in executable (necessary for parsing)
  * @return RZ_API*
  */
-RZ_API HtUP /*<offset, RzBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RzBinFile *binfile, int addr_size) {
+RZ_API HtUP /*<offset, RzBinDwarfLocList *>*/ *rz_bin_dwarf_parse_loc(RzBinFile *binfile, int addr_size) {
 	rz_return_val_if_fail(binfile, NULL);
 	/* The standarparse_loc_raw_frame, not sure why is that */
 	size_t len = 0;
@@ -2280,7 +2280,7 @@ static void free_loc_table_entry(HtUPKv *kv) {
 	}
 }
 
-RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table) {
+RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table) {
 	rz_return_if_fail(loc_table);
 	loc_table->opt.freefn = free_loc_table_entry;
 	ht_up_free(loc_table);

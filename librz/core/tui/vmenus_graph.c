@@ -6,7 +6,7 @@
 #define SORT_NAME    1
 
 // find a better name and move to rz_util or rz_cons?
-RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, PrintItemCallback cb) {
+RZ_API char *rz_str_widget_list(void *user, RzList /*<void *>*/ *list, int rows, int cur, PrintItemCallback cb) {
 	void *item;
 	RzStrBuf *sb = rz_strbuf_new("");
 	RzListIter *iter;

@@ -145,8 +145,8 @@ RZ_API bool rz_regex_check(const RzRegex *rr, const char *str) {
  * when choosing which matcher to call.  Also, by this point the matchers
  * have been prototyped.
  */
-int /* 0 success, RZ_REGEX_NOMATCH failure */
-rz_regex_exec(const RzRegex *preg, const char *string, size_t nmatch,
+/* 0 success, RZ_REGEX_NOMATCH failure */
+RZ_API int rz_regex_exec(const RzRegex *preg, const char *string, size_t nmatch,
 	RzRegexMatch pmatch[], int eflags) {
 	struct re_guts *g;
 #ifdef REDEBUG

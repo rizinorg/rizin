@@ -125,7 +125,7 @@ RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *
 	}
 }
 
-RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList *list) {
+RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList /*<RzBinSymbol *>*/ *list) {
 	HtPP *ht = ht_pp_new0();
 	if (!ht) {
 		return;
@@ -141,7 +141,7 @@ RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList *list) {
 	ht_pp_free(ht);
 }
 
-RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList *list) {
+RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList /*<RzBinSection *>*/ *list) {
 	RzBinSection *sec;
 	HtPU *db = ht_pu_new0();
 	RzListIter *iter;

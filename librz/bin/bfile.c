@@ -185,7 +185,7 @@ RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, in
 	return binfile;
 }
 
-RZ_IPI RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bf_id) {
+RZ_API RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bf_id) {
 	RzBinFile *bf;
 	RzListIter *iter;
 	rz_list_foreach (bin->binfiles, iter, bf) {
@@ -408,7 +408,7 @@ static ut64 buf_compute_hashes(const ut8 *buf, ut64 size, void *user) {
  * Return a list of RzBinFileHash structures with the hashes md5, sha1, sha256, crc32 and entropy
  * computed over the whole \p bf .
  */
-RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
+RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
 	rz_return_val_if_fail(bin && bf && bf->o, NULL);
 	RzBinObject *o = bf->o;
 	RzList *file_hashes = NULL;
@@ -485,7 +485,7 @@ rz_bin_file_compute_hashes_bad:
  * \brief Set \p file_hashes on current RzBinInfo
  * \return RzList of previous file_hashes
  */
-RZ_API RZ_OWN RzList *rz_bin_file_set_hashes(RzBin *bin, RZ_OWN RzList /*<RzBinFileHash *>*/ *new_hashes) {
+RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_set_hashes(RzBin *bin, RZ_OWN RzList /*<RzBinFileHash *>*/ *new_hashes) {
 	rz_return_val_if_fail(bin && bin->cur && bin->cur->o && bin->cur->o->info, NULL);
 	RzBinFile *bf = bin->cur;
 	RzBinInfo *info = bf->o->info;
@@ -561,7 +561,7 @@ RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *klass, con
 	return sym;
 }
 
-RZ_API RzList *rz_bin_file_get_trycatch(RzBinFile *bf) {
+RZ_API RzList /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->plugin, NULL);
 	if (bf->o->plugin->trycatch) {
 		return bf->o->plugin->trycatch(bf);
@@ -569,7 +569,7 @@ RZ_API RzList *rz_bin_file_get_trycatch(RzBinFile *bf) {
 	return NULL;
 }
 
-RZ_API RzList *rz_bin_file_get_symbols(RzBinFile *bf) {
+RZ_API RzList /*<RzBinSymbol *>*/ *rz_bin_file_get_symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBinObject *o = bf->o;
 	return o ? (RzList *)rz_bin_object_get_symbols(o) : NULL;
