@@ -220,11 +220,11 @@ RZ_API RzPVector /*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnalysi
 	return collect_nodes_at(a, RZ_META_TYPE_ANY, rz_spaces_current(&a->meta_spaces), at);
 }
 
-RZ_API RzPVector *rz_meta_get_all_in(RzAnalysis *a, ut64 at, RzAnalysisMetaType type) {
+RZ_API RzPVector /*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_in(RzAnalysis *a, ut64 at, RzAnalysisMetaType type) {
 	return collect_nodes_in(a, type, rz_spaces_current(&a->meta_spaces), at);
 }
 
-RZ_API RzPVector *rz_meta_get_all_intersect(RzAnalysis *a, ut64 start, ut64 size, RzAnalysisMetaType type) {
+RZ_API RzPVector /*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_intersect(RzAnalysis *a, ut64 start, ut64 size, RzAnalysisMetaType type) {
 	rz_return_val_if_fail(size, NULL);
 	ut64 end = start + size - 1;
 	if (end < start) {

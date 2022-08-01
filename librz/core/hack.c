@@ -8,7 +8,7 @@
  * have several modes/alignment requirements.
  */
 
-void rz_core_hack_help(const RzCore *core) {
+RZ_API void rz_core_hack_help(const RzCore *core) {
 	const char *help_msg[] = {
 		"wao", " [op]", "performs a modification on current opcode",
 		"wao", " nop", "nop current opcode",

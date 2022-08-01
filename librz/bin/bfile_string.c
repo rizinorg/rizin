@@ -322,7 +322,7 @@ static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzList *results
  *
  * \return On success returns RzList pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzList *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_length, bool raw_strings) {
+RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_length, bool raw_strings) {
 	rz_return_val_if_fail(bf, NULL);
 
 	HtUP *strings_db = NULL;

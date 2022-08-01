@@ -1083,7 +1083,7 @@ RZ_API int rz_core_esil_step_back(RzCore *core) {
 	return 0;
 }
 
-RZ_API bool rz_core_esil_continue_back(RzCore *core) {
+RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core->analysis->esil && core->analysis->esil->trace, false);
 	RzAnalysisEsil *esil = core->analysis->esil;
 	if (esil->trace->idx == 0) {
@@ -2676,7 +2676,7 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 	}
 }
 
-static void print_graph_agg(RzGraph /*RzGraphNodeInfo*/ *graph) {
+static void print_graph_agg(RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	RzGraphNodeInfo *print_node;
 	RzGraphNode *node, *target;
 	RzListIter *it, *edge_it;
@@ -2705,7 +2705,7 @@ static void print_graph_agg(RzGraph /*RzGraphNodeInfo*/ *graph) {
 	}
 }
 
-static char *print_graph_dot(RzCore *core, RzGraph /*<RzGraphNodeInfo>*/ *graph) {
+static char *print_graph_dot(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	const char *font = rz_config_get(core->config, "graph.font");
 	char *node_properties = rz_str_newf("fontname=\"%s\"", font);
 	char *result = rz_graph_drawable_to_dot(graph, node_properties, NULL);
@@ -2713,7 +2713,7 @@ static char *print_graph_dot(RzCore *core, RzGraph /*<RzGraphNodeInfo>*/ *graph)
 	return result;
 }
 
-static void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input) {
+static void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, int use_utf, bool use_offset, const char *input) {
 	RzAGraph *agraph = NULL;
 	RzListIter *it;
 	RzListIter *edge_it;

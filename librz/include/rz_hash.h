@@ -59,7 +59,7 @@ RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_name(RZ_NONNULL RzHash *r
 RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new(RZ_NONNULL RzHash *rh);
 RZ_API RZ_OWN RzHashCfg *rz_hash_cfg_new_with_algo(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name, RZ_NULLABLE const ut8 *key, ut64 key_size);
 #define rz_hash_cfg_new_with_algo2(rh, name) rz_hash_cfg_new_with_algo(rh, name, NULL, 0);
-RZ_API void rz_hash_cfg_free(RZ_NULLABLE RzHashCfg *md);
+RZ_API void rz_hash_cfg_free(RZ_NONNULL RzHashCfg *md);
 
 RZ_API bool rz_hash_cfg_configure(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name);
 RZ_API bool rz_hash_cfg_hmac(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const ut8 *key, ut64 key_size);

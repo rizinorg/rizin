@@ -389,7 +389,7 @@ RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr) {
 	}
 }
 
-RZ_API RzList *rz_analysis_get_fcns(RzAnalysis *analysis) {
+RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_fcns(RzAnalysis *analysis) {
 	// avoid received to free this thing
 	analysis->fcns->free = NULL;
 	return analysis->fcns;
@@ -666,7 +666,7 @@ RZ_API void rz_analysis_bind(RzAnalysis *analysis, RzAnalysisBind *b) {
 	}
 }
 
-RZ_API RzList *rz_analysis_preludes(RzAnalysis *analysis) {
+RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis) {
 	if (analysis->cur && analysis->cur->preludes) {
 		return analysis->cur->preludes(analysis);
 	}

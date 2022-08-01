@@ -375,7 +375,7 @@ RZ_API ut64 rz_bin_java_class_debug_info(RZ_NONNULL RzBinJavaClass *bin) {
 	return RZ_BIN_DBG_SYMS;
 }
 
-RZ_API RZ_OWN const char *rz_bin_java_class_language(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_BORROW const char *rz_bin_java_class_language(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	const char *language = "java";
 	char *string = NULL;
@@ -463,7 +463,7 @@ RZ_API RZ_OWN char *rz_bin_java_class_name(RZ_NONNULL RzBinJavaClass *bin) {
 /**
  * \brief Returns the class super name
  */
-RZ_OWN RZ_OWN char *rz_bin_java_class_super(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN char *rz_bin_java_class_super(RZ_NONNULL RzBinJavaClass *bin) {
 	ut16 index;
 	rz_return_val_if_fail(bin, NULL);
 	const ConstPool *cpool = java_class_constant_pool_at(bin, bin->super_class);

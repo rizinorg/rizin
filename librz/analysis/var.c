@@ -108,7 +108,7 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 	rz_pvector_free(cloned_vars);
 }
 
-RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_BORROW RZ_NULLABLE const RzType *type, int size, bool isarg, RZ_NONNULL const char *name) {
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_BORROW RZ_NULLABLE const RzType *type, int size, bool isarg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
 	RzAnalysisVar *existing = rz_analysis_function_get_var_byname(fcn, name);
 	if (existing && (existing->kind != kind || existing->delta != delta)) {
@@ -256,7 +256,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_byname(RzAnalysisFu
 	return NULL;
 }
 
-RZ_API RzAnalysisVar *rz_analysis_function_get_var(RzAnalysisFunction *fcn, char kind, int delta) {
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var(RzAnalysisFunction *fcn, char kind, int delta) {
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
@@ -390,12 +390,12 @@ RZ_API int rz_analysis_var_get_argnum(RzAnalysisVar *var) {
 	return -1;
 }
 
-RZ_API RZ_BORROW RzPVector *rz_analysis_function_get_vars_used_at(RzAnalysisFunction *fcn, ut64 op_addr) {
+RZ_API RZ_BORROW RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_get_vars_used_at(RzAnalysisFunction *fcn, ut64 op_addr) {
 	rz_return_val_if_fail(fcn, NULL);
 	return ht_up_find(fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
 }
 
-RZ_API RZ_DEPRECATE RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr) {
+RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr) {
 	RzList *fcns = rz_analysis_get_functions_in(analysis, addr);
 	if (!fcns) {
 		return NULL;
@@ -1132,7 +1132,7 @@ static RzList *var_generate_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kin
 	return list;
 }
 
-RZ_API RzList *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
+RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	// rz_analysis_var_list if there are not vars with that kind returns a list with
 	// zero element.. which is an unnecessary loss of cpu time
 	RzList *list = rz_list_new();
@@ -1151,7 +1151,7 @@ RZ_API RzList *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction
 	return list;
 }
 
-RZ_API RzList *rz_analysis_var_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kind) {
+RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kind) {
 	return var_generate_list(a, fcn, kind);
 }
 
@@ -1163,7 +1163,7 @@ static void var_field_free(RzAnalysisVarField *field) {
 	free(field);
 }
 
-RZ_API RzList *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, int kind) {
+RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, int kind) {
 	if (!fcn) {
 		return NULL;
 	}

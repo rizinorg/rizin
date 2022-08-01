@@ -902,7 +902,7 @@ RZ_API int rz_num_str_split(char *str) {
 	return count;
 }
 
-RZ_API RzList *rz_num_str_split_list(char *str) {
+RZ_API RzList /*<char *>*/ *rz_num_str_split_list(char *str) {
 	int i, count = rz_num_str_split(str);
 	RzList *list = rz_list_new();
 	for (i = 0; i < count; i++) {

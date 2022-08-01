@@ -2746,7 +2746,7 @@ beach:
 	return i;
 }
 
-RZ_API char *rz_type_format_data(const RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
+RZ_API RZ_OWN char *rz_type_format_data(const RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield) {
 	RzStrBuf *outbuf = rz_strbuf_new("");
 	rz_type_format_data_internal(typedb, p, outbuf, seek, b, len, formatname, mode, setval, ofield);
@@ -2962,7 +2962,7 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
  * \param typedb Types Database instance
  * \param name RzBaseType type name
  */
-RZ_API RZ_OWN char *rz_type_format(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
+RZ_API RZ_OWN char *rz_type_format(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype) {

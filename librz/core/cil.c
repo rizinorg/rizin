@@ -266,7 +266,7 @@ RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core) {
 	rz_core_analysis_set_reg(core, "PC", core->offset);
 }
 
-RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core) {
+RZ_API void rz_core_analysis_esil_step_over(RZ_NONNULL RzCore *core) {
 	RzAnalysisOp *op = rz_core_analysis_op(core, rz_reg_getv(core->analysis->reg, rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC)), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 	ut64 until_addr = UT64_MAX;
 	if (op && op->type == RZ_ANALYSIS_OP_TYPE_CALL) {

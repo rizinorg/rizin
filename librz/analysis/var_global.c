@@ -256,7 +256,7 @@ static bool global_var_collect_cb(void *user, const void *k, const void *v) {
  * \param analysis RzAnalysis
  * \return RzList *
  */
-RZ_API RZ_OWN RzList *rz_analysis_var_global_get_all(RzAnalysis *analysis) {
+RZ_API RZ_OWN RzList /*<RzAnalysisVarGlobal *>*/ *rz_analysis_var_global_get_all(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzList *globals = rz_list_new();
 	if (!globals) {

@@ -276,7 +276,7 @@ RZ_API void rz_analysis_hint_set_val(RzAnalysis *a, ut64 addr, ut64 v) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_VAL, r->val = v;);
 }
 
-RZ_API void rz_analysis_hint_set_arch(RzAnalysis *a, ut64 addr, const char *arch) {
+RZ_API void rz_analysis_hint_set_arch(RzAnalysis *a, ut64 addr, RZ_NULLABLE const char *arch) {
 	RzAnalysisArchHintRecord *record = (RzAnalysisArchHintRecord *)ensure_ranged_hint_record(&a->arch_hints, addr, sizeof(RzAnalysisArchHintRecord));
 	if (!record) {
 		return;

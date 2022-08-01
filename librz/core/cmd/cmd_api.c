@@ -2600,7 +2600,7 @@ RZ_API void rz_cmd_state_output_set_columnsf(RzCmdStateOutput *state, const char
 /**
  * \brief Clear the inner fields of RzCmdStateOutput structure, but do not free it.
  */
-RZ_API void rz_cmd_state_output_fini(RzCmdStateOutput *state) {
+RZ_API void rz_cmd_state_output_fini(RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_if_fail(state);
 
 	switch (state->mode) {
@@ -2621,7 +2621,7 @@ RZ_API void rz_cmd_state_output_fini(RzCmdStateOutput *state) {
 /**
  * \brief Free the RzCmdStateOutput structure and its inner fields appropriately
  */
-RZ_API void rz_cmd_state_output_free(RzCmdStateOutput *state) {
+RZ_API void rz_cmd_state_output_free(RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_if_fail(state);
 
 	rz_cmd_state_output_fini(state);
@@ -2631,7 +2631,7 @@ RZ_API void rz_cmd_state_output_free(RzCmdStateOutput *state) {
 /**
  * \brief Initialize a RzCmdStateOutput structure and its inner fields based on the provided mode
  */
-RZ_API bool rz_cmd_state_output_init(RzCmdStateOutput *state, RzOutputMode mode) {
+RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutputMode mode) {
 	rz_return_val_if_fail(state, false);
 
 	state->mode = mode;
@@ -2665,7 +2665,7 @@ RZ_API bool rz_cmd_state_output_init(RzCmdStateOutput *state, RzOutputMode mode)
  * output was already printed to console for those types that output as they go
  * (e.g. STANDARD, QUIET).
  */
-RZ_API void rz_cmd_state_output_print(RzCmdStateOutput *state) {
+RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_if_fail(state);
 
 	char *s;

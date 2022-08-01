@@ -127,7 +127,7 @@ RZ_API bool rz_flag_zone_around(RzFlag *f, ut64 addr, const char **prev, const c
 	return true;
 }
 
-RZ_API RzList *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows) {
+RZ_API RzList /*<char *>*/ *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows) {
 	RzList *list = rz_list_newf(NULL);
 	int i;
 	for (i = 0; i < rows; i++) {

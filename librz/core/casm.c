@@ -35,7 +35,7 @@ RZ_API RzCoreAsmHit *rz_core_asm_hit_new(void) {
 	return hit;
 }
 
-RZ_API RzList *rz_core_asm_hit_list_new(void) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_hit_list_new(void) {
 	RzList *list = rz_list_new();
 	if (list) {
 		list->free = &rz_core_asm_hit_free;
@@ -182,7 +182,7 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzC
 }
 
 // TODO: add support for byte-per-byte opcode search
-RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	RzCoreAsmHit *hit;
 	RzAsmOp op;
 	RzList *hits;
@@ -609,7 +609,7 @@ static int is_hit_inrange(RzCoreAsmHit *hit, ut64 start_range, ut64 end_range) {
 	return result;
 }
 
-RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len) {
 	RzAsmOp op;
 	// if (n > core->blocksize) n = core->blocksize;
 	ut64 at;
@@ -873,13 +873,13 @@ static RzList *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut
 	return hits;
 }
 
-RZ_API RzList *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
 	// extra padding to allow for additional disassembly on border buffer cases
 	ut8 disassmble_each_addr = false;
 	return rz_core_asm_back_disassemble(core, addr, len, hit_count, disassmble_each_addr, extra_padding);
 }
 
-RZ_API RzList *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
 	// extra padding to allow for additional disassembly on border buffer cases
 	ut8 disassmble_each_addr = true;
 	return rz_core_asm_back_disassemble(core, addr, len, hit_count, disassmble_each_addr, extra_padding);

@@ -4913,7 +4913,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
  * @param graph <RzGraphNodeInfo>
  * @return RzAGraph* NULL if failure
  */
-RZ_API RzAGraph *create_agraph_from_graph(const RzGraph /*<RzGraphNodeInfo>*/ *graph) {
+RZ_API RzAGraph *create_agraph_from_graph(const RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	rz_return_val_if_fail(graph, NULL);
 
 	RzAGraph *result_agraph = rz_agraph_new(rz_cons_canvas_new(1, 1));

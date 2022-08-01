@@ -434,7 +434,7 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, RzOut
 	}
 }
 
-static void apply_maps_as_flags(RzCore *core, RzList /* <RzDebugMap> */ *maps, bool print_only) {
+static void apply_maps_as_flags(RzCore *core, RzList /*<RzDebugMap *>*/ *maps, bool print_only) {
 	RzListIter *iter;
 	RzDebugMap *map;
 	rz_list_foreach (maps, iter, map) {
@@ -923,7 +923,7 @@ static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
  * \param core The RzCore instance
  * \return A list of RzBacktrace
  */
-RZ_API RZ_OWN RzList *rz_core_debug_backtraces(RzCore *core) {
+RZ_API RZ_OWN RzList /*<RzBacktrace *>*/ *rz_core_debug_backtraces(RzCore *core) {
 	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
 	if (!list) {
 		return NULL;

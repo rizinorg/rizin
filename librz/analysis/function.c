@@ -17,7 +17,7 @@ static bool get_functions_block_cb(RzAnalysisBlock *block, void *user) {
 	return true;
 }
 
-RZ_API RzList *rz_analysis_get_functions_in(RzAnalysis *analysis, ut64 addr) {
+RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_functions_in(RzAnalysis *analysis, ut64 addr) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;
@@ -375,7 +375,7 @@ RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn) {
 	return false;
 }
 
-RZ_API RZ_BORROW RzList *rz_analysis_function_list(RzAnalysis *analysis) {
+RZ_API RZ_BORROW RzList /*<RzAnalysisFunction *>*/ *rz_analysis_function_list(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	return analysis->fcns;
 }
