@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-typedef struct rz_core_t RzCore;
-
 // RZ_LIB_VERSION_HEADER (rz_cmd);
 
 #define MACRO_LIMIT   1024
