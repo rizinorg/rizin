@@ -4022,10 +4022,6 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 #include <rz_userconf.h>
 #include <rz_util.h>
 
-#ifndef RZ_GITTIP
-#define RZ_GITTIP ""
-#endif
-
 #ifdef RZ_PACKAGER_VERSION
 #ifdef RZ_PACKAGER
 #define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION " (" RZ_PACKAGER ")"
@@ -4046,10 +4042,20 @@ RZ_API char *rz_str_version(const char *program) {
 	if (RZ_STR_ISNOTEMPTY(RZ_STR_PKG_VERSION_STRING)) {
 		rz_strbuf_append(sb, RZ_STR_PKG_VERSION_STRING);
 	}
-	if (RZ_STR_ISNOTEMPTY(RZ_GITTIP)) {
-		rz_strbuf_append(sb, "\n");
-		rz_strbuf_append(sb, "commit: " RZ_GITTIP);
+	char *gittip_pathname = rz_str_newf("%s" RZ_SYS_DIR "gittip", rz_path_bindir());
+	char *gittip = NULL;
+	if (!gittip_pathname) {
+		goto done;
 	}
+	gittip = rz_file_slurp(gittip_pathname, NULL);
+	if (!gittip || !*rz_str_trim_head_ro(gittip)) {
+		goto done;
+	}
+	rz_strbuf_append(sb, "\n");
+	rz_strbuf_appendf(sb, "commit: %s", gittip);
+done:
+	free(gittip_pathname);
+	free(gittip);
 	return rz_strbuf_drain(sb);
 }
 
