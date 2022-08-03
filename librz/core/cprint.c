@@ -158,32 +158,35 @@ fail:
 	return NULL;
 }
 
-/**
- * \brief Prints \p str to the RzCons, and ownership is transferred into.
- */
-static inline bool rz_cons_print_own(char *str) {
-	if (!str) {
-		return false;
-	}
-	rz_cons_print(str);
-	free(str);
-	return true;
-}
-
 RZ_IPI void rz_core_print_hexdump(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL const ut8 *buf,
 	int len, int base, int step, size_t zoomsz) {
 	char *string = rz_print_hexdump_str(core->print, addr, buf, len, base, step, zoomsz);
-	rz_cons_print_own(string);
+	if (!string) {
+		RZ_LOG_ERROR("fail to print hexdump at 0x%" PFMT64x "\n", addr);
+		return;
+	}
+	rz_cons_print(string);
+	free(string);
 }
 
 RZ_IPI void rz_core_print_jsondump(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int wordsize) {
 	char *string = rz_print_jsondump_str(core->print, buf, len, wordsize);
-	rz_cons_print_own(string);
+	if (!string) {
+		RZ_LOG_ERROR("fail to print json hexdump\n");
+		return;
+	}
+	rz_cons_print(string);
+	free(string);
 }
 
 RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL const ut8 *_a, ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol) {
 	char *string = rz_print_hexdiff_str(core->print, aa, _a, ba, _b, len, scndcol);
-	rz_cons_print_own(string);
+	if (!string) {
+		RZ_LOG_ERROR("fail to print hexdiff between 0x%" PFMT64x " and 0x%" PFMT64x "\n", aa, ba);
+		return;
+	}
+	rz_cons_print(string);
+	free(string);
 }
 
 /**
@@ -214,7 +217,14 @@ RZ_API char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64 aa, ut
 }
 
 RZ_IPI bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
-	return rz_cons_print_own(rz_core_print_hexdump_diff_str(core, aa, ba, len));
+	char *string = rz_core_print_hexdump_diff_str(core, aa, ba, len);
+	if (!string) {
+		RZ_LOG_ERROR("fail to print hexdump diff between 0x%" PFMT64x " and 0x%" PFMT64x "\n", aa, ba);
+		return false;
+	}
+	rz_cons_print(string);
+	free(string);
+	return true;
 }
 
 static inline st8 format_type_to_base(const RzCorePrintFormatType format, const ut8 n) {
@@ -311,7 +321,13 @@ RZ_API char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode mode,
 
 RZ_IPI bool rz_core_print_dump(RZ_NONNULL RzCore *core, RzOutputMode mode,
 	ut64 addr, ut8 n, int len, RzCorePrintFormatType format) {
-	return rz_cons_print_own(rz_core_print_dump_str(core, mode, addr, n, len, format));
+	char *string = rz_core_print_dump_str(core, mode, addr, n, len, format);
+	if (!string) {
+		RZ_LOG_ERROR("fail to print dump at 0x%" PFMT64x "\n", addr);
+		return false;
+	}
+	rz_cons_print(string);
+	return true;
 }
 
 /**
@@ -361,7 +377,13 @@ RZ_API char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOut
 
 RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABLE RzOutputMode mode, ut64 addr, int len,
 	bool use_comment) {
-	return rz_cons_print_own(rz_core_print_hexdump_or_hexdiff_str(core, mode, addr, len, use_comment));
+	char *string = rz_core_print_hexdump_or_hexdiff_str(core, mode, addr, len, use_comment);
+	if (!string) {
+		RZ_LOG_ERROR("fail to print hexdump at 0x%" PFMT64x "\n", addr);
+		return false;
+	}
+	rz_cons_print(string);
+	return true;
 }
 
 static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
@@ -442,5 +464,12 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 }
 
 RZ_IPI bool rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, bool hexoffset, ut64 addr, int len, ut8 size) {
-	return rz_cons_print_own(rz_core_print_hexdump_byline_str(core, hexoffset, addr, len, size));
+	char *string = rz_core_print_hexdump_byline_str(core, hexoffset, addr, len, size);
+	if (!string) {
+		RZ_LOG_ERROR("fail to print hexdump by line at 0x%" PFMT64x "\n", addr);
+		return false;
+	}
+	rz_cons_print(string);
+	free(string);
+	return true;
 }
