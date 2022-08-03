@@ -193,9 +193,15 @@ static ut64 sh_op_movl_param_bits(const char *reg_direct, const char *reg_disp_i
 
 	char *const dup = strdup(reg_disp_indirect);
 	char *comma = strchr(dup, ',');
+	if (!comma) {
+		goto fail;
+	}
 	*comma = '\0';
 	char *reg = comma + 1;
 	char *paren = strchr(reg, ')');
+	if (!paren) {
+		goto fail;
+	}
 	*paren = '\0';
 
 	char *const disp = strdup(reg_disp_indirect);
@@ -204,8 +210,9 @@ static ut64 sh_op_movl_param_bits(const char *reg_direct, const char *reg_disp_i
 	opcode |= d << NIB0;
 	opcode |= sh_op_reg_bits(reg, NIB2);
 
-	free(dup);
 	free(disp);
+fail:
+	free(dup);
 	return opcode;
 }
 
