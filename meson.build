@@ -35,19 +35,7 @@ rizin_version_minor = rizin_version_split[1].to_int()
 rizin_version_patch = rizin_version_split[2].split('-')[0].to_int()
 rizin_version_number = 1000000 * rizin_version_major + 1000 * rizin_version_minor + rizin_version_patch
 
-
-repo = '.'
-if meson.is_subproject()
-  repo = meson.current_source_dir()
-  if host_machine.system() == 'windows'
-    py_cmd = 'print(__import__("os").readlink(r"@0@"))'.format(repo)
-    py_cmd = run_command(py3_exe, '-c', py_cmd, check: true)
-    if py_cmd.returncode() == 0
-      repo = py_cmd.stdout().strip()
-      message('rizin real path: ' + repo)
-    endif
-  endif
-endif
+repo = meson.current_source_dir()
 
 rizin_libversion = '@0@.@1@'.format(rizin_version_major, rizin_version_minor)
 message('rizin lib version: ' + rizin_libversion)
