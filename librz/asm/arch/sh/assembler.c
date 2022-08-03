@@ -106,6 +106,9 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	case SH_REG_INDIRECT_I: {
 		// @%s+
 		char *plus = strchr(dup, '+');
+		if (!plus) {
+			break;
+		}
 		*plus = '\0';
 		sscanf(dup, "@%s", reg);
 		opcode = sh_op_reg_bits(reg, shba.start);
@@ -119,11 +122,17 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	case SH_REG_INDIRECT_DISP: {
 		// @(%s,%s)
 		char *comma = strchr(dup, ',');
+		if (!comma) {
+			break;
+		}
 		*comma = '\0';
 		sscanf(dup, "@(%s", disp);
 
 		comma++;
 		char *paren = strchr(comma, ')');
+		if (!paren) {
+			break;
+		}
 		*paren = '\0';
 
 		d = (rz_num_get(NULL, disp) / sh_scaling_size[scaling]) & 0xf;
@@ -134,6 +143,9 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	case SH_REG_INDIRECT_INDEXED: {
 		// @(r0,%s)
 		char *paren = strchr(dup, ')');
+		if (!paren) {
+			break;
+		}
 		*paren = '\0';
 		paren = dup + strlen("@(r0,");
 		opcode = sh_op_reg_bits(paren, shba.start);
@@ -142,6 +154,9 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	case SH_GBR_INDIRECT_DISP: {
 		// @(%s,gbr)
 		char *comma = strchr(dup, ',');
+		if (!comma) {
+			break;
+		}
 		*comma = '\0';
 		sscanf(dup, "@(%s", disp);
 		d = rz_num_get(NULL, disp) / sh_scaling_size[scaling];
@@ -151,6 +166,9 @@ static ut32 sh_op_param_bits(SHParamBuilder shb, const char *param, SHScaling sc
 	case SH_PC_RELATIVE_DISP: {
 		// @(%s,pc)
 		char *comma = strchr(dup, ',');
+		if (!comma) {
+			break;
+		}
 		*comma = '\0';
 		sscanf(dup, "@(%s,pc)", disp);
 		d = rz_num_get(NULL, disp) / sh_scaling_size[scaling];
