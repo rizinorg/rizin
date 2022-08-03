@@ -35,7 +35,7 @@ static void rz_analysis_xref_free(RzAnalysisXRef *xref) {
 	free(xref);
 }
 
-RZ_API RzList *rz_analysis_xref_list_new() {
+RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xref_list_new() {
 	return rz_list_newf((RzListFree)free);
 }
 
@@ -170,7 +170,7 @@ RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to) {
 	return res;
 }
 
-RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr) {
+RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr) {
 	RzList *list = rz_analysis_xref_list_new();
 	if (!list) {
 		return NULL;
@@ -184,7 +184,7 @@ RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr) {
 	return list;
 }
 
-RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr) {
+RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr) {
 	RzList *list = rz_analysis_xref_list_new();
 	if (!list) {
 		return NULL;
@@ -203,7 +203,7 @@ RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr) {
  * \param analysis RzAnalysis instance
  * \return RzList <RzAnalysisXRef *>
  */
-RZ_API RZ_OWN RzList *rz_analysis_xrefs_list(RzAnalysis *analysis) {
+RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_list(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzList *list = rz_analysis_xref_list_new();
 	if (list) {
@@ -294,12 +294,12 @@ static RzList *fcn_get_refs(RzAnalysisFunction *fcn, HtUP *ht) {
 	return list;
 }
 
-RZ_API RzList *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn) {
+RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(fcn, NULL);
 	return fcn_get_refs(fcn, fcn->analysis->ht_xrefs_from);
 }
 
-RZ_API RzList *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn) {
+RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(fcn, NULL);
 	return fcn_get_refs(fcn, fcn->analysis->ht_xrefs_to);
 }

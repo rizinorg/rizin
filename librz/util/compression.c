@@ -3,7 +3,10 @@
 
 #include <rz_util.h>
 #include <zlib.h>
+
+#if HAVE_LZMA
 #include <lzma.h>
+#endif
 
 // set a maximum output buffer of 50MB
 #define MAXOUT 50000000

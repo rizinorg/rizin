@@ -69,7 +69,7 @@ static bool is_operator(const char *c) {
 }
 
 static bool is_register(const char *name, RZ_BORROW const RzRegSet *regset) {
-	rz_return_val_if_fail(name && regset, false);
+	rz_return_val_if_fail(name, false);
 	if (!regset) {
 		return false;
 	}
@@ -1315,16 +1315,19 @@ RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks) {
 RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAsmTokenString *toks) {
 	rz_return_val_if_fail(toks, NULL);
 
-	RzAsmTokenString *new = RZ_NEW0(RzAsmTokenString);
-	if (!new) {
+	RzAsmTokenString *newt = RZ_NEW0(RzAsmTokenString);
+	if (!newt) {
 		return NULL;
 	}
-	new->tokens = rz_vector_clone(toks->tokens);
-	new->str = rz_strbuf_new(rz_strbuf_get(toks->str));
-	new->op_type = toks->op_type;
+	newt->tokens = rz_vector_clone(toks->tokens);
+	newt->str = rz_strbuf_new(rz_strbuf_get(toks->str));
+	newt->op_type = toks->op_type;
 
-	rz_return_val_if_fail(new->tokens &&new->str, NULL);
-	return new;
+	if (!(newt->tokens && newt->str)) {
+		free(newt);
+		return NULL;
+	}
+	return newt;
 }
 
 RZ_API void rz_asm_token_pattern_free(void *p) {
@@ -1396,7 +1399,7 @@ static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_
  * \return true Overlaps with token from token vector.
  * \return false Does not overap with other token.
  */
-static bool overlaps_with_token(RZ_BORROW RzVector /* RzAsmTokenString */ *toks, const size_t s, const size_t e) {
+static bool overlaps_with_token(RZ_BORROW RzVector /*<RzAsmTokenString>*/ *toks, const size_t s, const size_t e) {
 	rz_return_val_if_fail(toks, false);
 	size_t x, y; // Other tokens start/end
 	RzAsmToken *it;
@@ -1466,7 +1469,7 @@ static void check_token_coverage(RzAsmTokenString *toks) {
  * \param patterns RzList<RzAsmTokenPattern> with the regex patterns describing each token type.
  * \return RzAsmTokenString* The tokens.
  */
-RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzPVector /* RzAsmTokenPattern* */ *patterns) {
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
 	rz_return_val_if_fail(asm_str && patterns, NULL);
 
 	const char *str = rz_strbuf_get(asm_str);

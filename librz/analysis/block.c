@@ -130,7 +130,7 @@ static bool block_list_cb(RzAnalysisBlock *block, void *user) {
 	return true;
 }
 
-RZ_API RzList *rz_analysis_get_blocks_in(RzAnalysis *analysis, ut64 addr) {
+RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_analysis_get_blocks_in(RzAnalysis *analysis, ut64 addr) {
 	RzList *list = rz_list_newf((RzListFree)rz_analysis_block_unref);
 	if (list) {
 		rz_analysis_blocks_foreach_in(analysis, addr, block_list_cb, list);
@@ -162,7 +162,7 @@ RZ_API void rz_analysis_blocks_foreach_intersect(RzAnalysis *analysis, ut64 addr
 	all_intersect(unwrap(analysis->bb_tree), addr, size, cb, user);
 }
 
-RZ_API RzList *rz_analysis_get_blocks_intersect(RzAnalysis *analysis, ut64 addr, ut64 size) {
+RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_analysis_get_blocks_intersect(RzAnalysis *analysis, ut64 addr, ut64 size) {
 	RzList *list = rz_list_newf((RzListFree)rz_analysis_block_unref);
 	if (!list) {
 		return NULL;
@@ -564,7 +564,7 @@ static bool recurse_list_cb(RzAnalysisBlock *block, void *user) {
 	return true;
 }
 
-RZ_API RzList *rz_analysis_block_recurse_list(RzAnalysisBlock *block) {
+RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_analysis_block_recurse_list(RzAnalysisBlock *block) {
 	RzList *ret = rz_list_newf((RzListFree)rz_analysis_block_unref);
 	if (ret) {
 		rz_analysis_block_recurse(block, recurse_list_cb, ret);

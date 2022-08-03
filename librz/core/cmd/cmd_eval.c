@@ -116,7 +116,7 @@ static bool dict2keylist(void *user, const void *key, const ut64 value) {
  * \param      core  The RzCore struct to use
  * \return     On success, an RzList pointer, otherwise NULL.
  */
-RZ_API RZ_OWN RzList *rz_core_theme_list(RZ_NONNULL RzCore *core) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, NULL);
 
 	HtPU *themes = ht_pu_new0();
@@ -145,7 +145,7 @@ RZ_API RZ_OWN RzList *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 	return list;
 }
 
-RZ_IPI void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
+RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
 	RzListIter *iter;
 	const char *fn;
 	RzList *files = rz_core_theme_list(core);

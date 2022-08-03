@@ -384,6 +384,22 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
 		} \
 	} while (0)
 
+/**
+ * \brief Find an element elem in the \p array,
+ * lying within \p start and \p stop index such that \p cmp(x, elem) == 0
+ * The index of the element elem is stored in \p itr
+ * If \p itr == \p stop, then no such element was found
+ */
+#define rz_array_find(array, x, itr, start, stop, cmp) \
+	do { \
+		for (itr = start; itr < stop; itr++) { \
+			if (cmp((array[itr]), x) == 0) { \
+				break; \
+			} \
+		} \
+		return itr; \
+	} while (0)
+
 /*
  * example:
  *

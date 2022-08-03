@@ -123,7 +123,7 @@ RZ_API st64 rz_type_offset_by_path(const RzTypeDB *typedb, RZ_NONNULL const char
 }
 
 // TODO: Handle arrays
-static bool structured_member_walker(const RzTypeDB *typedb, RzList /* RzTypePath */ *list, RzType *parent, RzType *type, char *path, ut64 offset) {
+static bool structured_member_walker(const RzTypeDB *typedb, RzList /*<RzTypePath *>*/ *list, RzType *parent, RzType *type, char *path, ut64 offset) {
 	rz_return_val_if_fail(list && type, false);
 	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return false;
@@ -173,7 +173,7 @@ static bool structured_member_walker(const RzTypeDB *typedb, RzList /* RzTypePat
  * \param btype The base type
  * \param offset The offset of the path to match against
  */
-RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset) {
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset) {
 	RzList *list = rz_list_newf((RzListFree)rz_type_path_free);
 	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
 		RzType *t = rz_type_identifier_of_base_type(typedb, btype, false);
@@ -216,7 +216,7 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *ty
  * \param typedb Types Database instance
  * \param offset The offset of the member to match against
  */
-RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset) {
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_type_db_get_base_types(typedb);
 	RzList *result = rz_list_newf((RzListFree)rz_type_path_free);

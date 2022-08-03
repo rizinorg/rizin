@@ -75,8 +75,7 @@ static struct rerr {
  = extern size_t regerror(int, const regex_t *, char *, size_t);
  */
 /* ARGSUSED */
-size_t
-rz_regex_error(int errcode, const RzRegex *preg, char *errbuf, size_t errbuf_size) {
+RZ_API size_t rz_regex_error(int errcode, const RzRegex *preg, char *errbuf, size_t errbuf_size) {
 	struct rerr *r;
 	size_t len;
 	int target = errcode & ~RZ_REGEX_ITOA;

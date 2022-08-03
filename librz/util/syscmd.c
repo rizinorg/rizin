@@ -118,7 +118,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	return res;
 }
 
-RZ_API RZ_OWN char *rz_syscmd_ls(const char *input) {
+RZ_API RZ_OWN char *rz_syscmd_ls(RZ_NONNULL const char *input) {
 	char *res = NULL;
 	const char *path = ".";
 	char *d = NULL;

@@ -49,21 +49,6 @@ if meson.is_subproject()
   endif
 endif
 
-gittip = ''
-
-fs = import('fs')
-if git_exe.found() and fs.exists('.git')
-  # Get gittip
-  git_rev_parse = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD', check: true)
-  if git_rev_parse.returncode() == 0
-    gittip = git_rev_parse.stdout().strip()
-  endif
-endif
-
-if get_option('rizin_gittip') != ''
-  gittip = get_option('rizin_gittip')
-endif
-
 rizin_libversion = '@0@.@1@'.format(rizin_version_major, rizin_version_minor)
 message('rizin lib version: ' + rizin_libversion)
 
@@ -147,6 +132,7 @@ if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) 
   add_global_link_arguments('-shared-libasan', language: 'c', native: true)
 endif
 
+fs = import('fs')
 rizin_prefix = get_option('prefix')
 rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
@@ -540,7 +526,6 @@ packager_version = get_option('packager_version')
 message('Version Major: @0@0'.format(rizin_version_major))
 message('Version Minor: @0@0'.format(rizin_version_minor))
 message('Version Patch: @0@0'.format(rizin_version_patch))
-message('Version GitTip: @0@0'.format(gittip))
 
 versionconf = configuration_data()
 versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
@@ -548,7 +533,6 @@ versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
 versionconf.set('RZ_VERSION_NUMBER', rizin_version_number)
 versionconf.set('RZ_VERSION', rizin_version)
-versionconf.set('RZ_GITTIP', gittip)
 if packager_version != ''
   versionconf.set_quoted('RZ_PACKAGER_VERSION', packager_version)
   if packager != ''
@@ -561,6 +545,17 @@ rz_version_h = configure_file(
   configuration: versionconf,
   install_dir: rizin_incdir
 )
+
+if git_exe.found() and fs.exists('.git')
+  gittip_file = custom_target('gittip_file',
+    build_always_stale: true,
+    build_by_default: true,
+    output: 'gittip',
+    command: [py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD'],
+    install: true,
+    install_dir: rizin_bindir
+  )
+endif
 
 # handle zlib dependency
 zlib_dep = disabler()

@@ -494,7 +494,7 @@ RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
  *             will be saved
  * \return false(0) if it fails, true(!0) otherwise
  */
-RZ_API int rz_line_hist_save(const char *path) {
+RZ_API int rz_line_hist_save(RZ_NONNULL const char *path) {
 	FILE *fd;
 	int i, ret = false;
 	if (RZ_STR_ISEMPTY(path)) {

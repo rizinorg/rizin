@@ -200,7 +200,7 @@ static const char *get_reg_role_name(RzReg *reg, RzRegItem *item) {
  * \param filter Filter registers
  * \return List of RzRegItem
  */
-RZ_API RZ_OWN RzList *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter) {
+RZ_API RZ_OWN RzList /*<RzRegItem *>*/ *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter) {
 	rz_return_val_if_fail(core && reg, NULL);
 	RzList *ritems = filter_reg_items(reg, filter);
 	if (!ritems) {

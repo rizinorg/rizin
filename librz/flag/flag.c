@@ -460,7 +460,7 @@ static bool append_to_list(RzFlagItem *fi, void *user) {
 	return true;
 }
 
-RZ_API RzList *rz_flag_all_list(RzFlag *f, bool by_space) {
+RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_all_list(RzFlag *f, bool by_space) {
 	RzList *ret = rz_list_new();
 	if (!ret) {
 		return NULL;
@@ -472,7 +472,7 @@ RZ_API RzList *rz_flag_all_list(RzFlag *f, bool by_space) {
 }
 
 /* return the list of flag items that are associated with a given offset */
-RZ_API const RzList * /*<RzFlagItem*>*/ rz_flag_get_list(RzFlag *f, ut64 off) {
+RZ_API const RzList /*<RzFlagItem *>*/ *rz_flag_get_list(RzFlag *f, ut64 off) {
 	const RzFlagsAtOffset *item = rz_flag_get_nearest_list(f, off, 0);
 	return item ? item->flags : NULL;
 }

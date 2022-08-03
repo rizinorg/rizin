@@ -231,7 +231,7 @@ ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 bool Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_thumb_addr)(ut64 addr);
 void Elf_(rz_bin_elf_fix_arm_thumb_addr)(ut64 *addr);
-void Elf_(rz_bin_elf_fix_arm_thumb_object)(ut64 *paddr, ut64 *vaddr, int *bits);
+void Elf_(rz_bin_elf_fix_arm_thumb_object)(RZ_NONNULL ut64 *paddr, RZ_NONNULL ut64 *vaddr, RZ_NONNULL int *bits);
 void Elf_(rz_bin_elf_fix_arm_thumb_symbol)(RZ_NONNULL RzBinSymbol *symbol);
 
 // elf_corefile.c

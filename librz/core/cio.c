@@ -324,7 +324,7 @@ err:
  * \param instructions List of instructions to assemble as a string
  * \return Returns the length of the written data or -1 in case of error
  */
-RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions) {
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions) {
 	rz_return_val_if_fail(core && instructions, -1);
 
 	int ret = -1;
@@ -362,7 +362,7 @@ err:
  * \param instructions List of instructions to assemble as a string
  * \return Returns the length of the written data or -1 in case of error (e.g. the new instruction does not fit)
  */
-RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *instructions) {
+RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions) {
 	rz_return_val_if_fail(core && instructions, -1);
 
 	int ret = -1;
@@ -602,7 +602,7 @@ RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int 
  * \param addr Address where to write the string
  * \param s String to write. The string is unescaped, meaning that if there is `\n` it becomes 0x0a
  */
-RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, const char *s) {
+RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
 	char *str = strdup(s);
@@ -697,7 +697,7 @@ RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *
  * \param addr Address where to write the string
  * \param s String to encode as base64 and then written.
  */
-RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, const char *s) {
+RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
 	bool res = false;
@@ -742,7 +742,7 @@ err:
  * \param addr Address where to write the string
  * \param s String to decode from base64 and then written
  */
-RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, const char *s) {
+RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
 	bool res = false;

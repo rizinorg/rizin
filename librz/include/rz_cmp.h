@@ -23,9 +23,9 @@ typedef struct {
 RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_mem(RzCore *core, ut64 addr1, ut64 addr2, ut32 len);
 RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_data(RzCore *core, ut64 addr, RZ_NONNULL const ut8 *data, ut32 len);
 RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzCmdStateOutput *state);
-RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_core_cmp_disasm(RzCore *core, ut64 addr1, ut64 addr2, ut32 len);
+RZ_API RZ_OWN RzList /*<RzCompareData *>*/ *rz_core_cmp_disasm(RzCore *core, ut64 addr1, ut64 addr2, ut32 len);
 RZ_API void rz_core_cmp_free(RzCompareData *cmp);
-RZ_API bool rz_core_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData>*/ *compare, bool unified);
+RZ_API bool rz_core_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData *>*/ *compare, bool unified);
 
 /**
  * \struct RzCoreCmpWatcher

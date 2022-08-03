@@ -260,11 +260,11 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_compound_type(const RzTypeDB *typedb
 RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type);
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
 
-RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind);
-RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(const RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind);
+RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeDB *typedb);
 
 RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype);
-RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, unsigned int opts, int unfold_level);
+RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, unsigned int opts, int unfold_level);
 RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *typestr);
 
 // Compound types
@@ -276,9 +276,9 @@ RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const R
 RZ_API RZ_OWN char *rz_type_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_identifier_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier);
 RZ_API RZ_OWN char *rz_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NULLABLE const char *identifier, unsigned int opts, int unfold_level);
-RZ_API void rz_type_free(RzType *type);
+RZ_API void rz_type_free(RZ_NULLABLE RzType *type);
 RZ_API bool rz_type_exists(RzTypeDB *typedb, RZ_NONNULL const char *name);
-RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
+RZ_API int rz_type_kind(RzTypeDB *typedb, RZ_NONNULL const char *name);
 
 // Type classes
 RZ_API RZ_BORROW const char *rz_type_typeclass_as_string(RzTypeTypeclass typeclass);
@@ -303,8 +303,8 @@ RZ_API RZ_OWN RzBaseType *rz_type_typeclass_get_default_sized(const RzTypeDB *ty
 RZ_API RZ_OWN RzTypePath *rz_type_path_new(RZ_BORROW RZ_NONNULL RzType *type, RZ_OWN RZ_NONNULL char *path);
 RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath);
 RZ_API st64 rz_type_offset_by_path(const RzTypeDB *typedb, RZ_NONNULL const char *path);
-RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset);
-RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset);
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset);
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset);
 RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
 RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
 
@@ -312,8 +312,8 @@ RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, R
 
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_new(void);
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtPP *types, HtPP *callables);
-RZ_API void rz_type_parser_free(RzTypeParser *parser);
-RZ_API void rz_type_parser_free_purge(RzTypeParser *parser);
+RZ_API void rz_type_parser_free(RZ_NONNULL RzTypeParser *parser);
+RZ_API void rz_type_parser_free_purge(RZ_NONNULL RzTypeParser *parser);
 
 RZ_API int rz_type_parse_string_stateless(RzTypeParser *parser, const char *code, char **error_msg);
 RZ_API int rz_type_parse_file_stateless(RzTypeParser *parser, const char *path, const char *dir, char **error_msg);
@@ -328,15 +328,15 @@ RZ_API void rz_type_parse_reset(RzTypeDB *typedb);
 
 // Type-specific APIs
 
-RZ_API RzBaseType *rz_type_db_get_enum(const RzTypeDB *typedb, const char *name);
-RZ_API RzBaseType *rz_type_db_get_union(const RzTypeDB *typedb, const char *name);
-RZ_API RzBaseType *rz_type_db_get_struct(const RzTypeDB *typedb, const char *name);
+RZ_API RzBaseType *rz_type_db_get_enum(const RzTypeDB *typedb, RZ_NONNULL const char *name);
+RZ_API RzBaseType *rz_type_db_get_union(const RzTypeDB *typedb, RZ_NONNULL const char *name);
+RZ_API RzBaseType *rz_type_db_get_struct(const RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API RzBaseType *rz_type_db_get_typedef(const RzTypeDB *typedb, RZ_NONNULL const char *name);
 
-RZ_API int rz_type_db_enum_member_by_name(const RzTypeDB *typedb, const char *name, const char *member);
-RZ_API RZ_BORROW const char *rz_type_db_enum_member_by_val(const RzTypeDB *typedb, const char *name, ut64 val);
+RZ_API int rz_type_db_enum_member_by_name(const RzTypeDB *typedb, RZ_NONNULL const char *name, const char *member);
+RZ_API RZ_BORROW const char *rz_type_db_enum_member_by_val(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val);
 RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 val);
-RZ_API char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, const char *name, ut64 val);
+RZ_API RZ_OWN char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val);
 
 // Type size calculation
 RZ_API ut64 rz_type_db_atomic_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
@@ -383,7 +383,7 @@ RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_format_purge(RzTypeDB *typedb);
 
 RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
-RZ_API RZ_OWN char *rz_type_format(const RzTypeDB *typedb, const char *type);
+RZ_API RZ_OWN char *rz_type_format(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *type);
 RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n);
 RZ_API RZ_OWN char *rz_type_format_data(const RzTypeDB *t, RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield);
@@ -432,11 +432,11 @@ RZ_API RZ_OWN RzList *rz_type_function_names(RzTypeDB *typedb);
 RZ_API RZ_OWN RzList *rz_type_noreturn_function_names(RzTypeDB *typedb);
 
 // Listing API
-RZ_API RzList *rz_type_db_enum_names(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_struct_names(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_union_names(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_typedef_names(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_all(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList *rz_type_db_enum_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList *rz_type_db_struct_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList *rz_type_db_union_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList *rz_type_db_typedef_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList *rz_type_db_all(RzTypeDB *typedb);
 
 // Serialization API
 RZ_API void rz_serialize_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb);

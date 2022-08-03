@@ -93,7 +93,7 @@ RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path);
-RZ_IPI bool rz_types_open_editor(RzCore *core, const char *typename);
+RZ_IPI bool rz_types_open_editor(RzCore *core, RZ_NONNULL const char *typename);
 
 /* agraph.c */
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
@@ -115,7 +115,7 @@ RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOut
 RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state);
 
 /* creg.c */
-RZ_IPI RzList /*<RzRegItem>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
+RZ_IPI RzList /*<RzRegItem *>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
 RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items);
 
 /* cdebug.c */

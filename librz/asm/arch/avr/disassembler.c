@@ -7,7 +7,7 @@
 /** \file disassembler.c
  * Disassembles AVR instructions
  * Each instruction is decoded comparing the applied bitmask result with constants bits
- * legenda for function decoders names:
+ * Legend for function decoders names:
  * - r = Rr
  * - d = Rd
  * - K, k = immediate value

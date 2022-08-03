@@ -1580,7 +1580,7 @@ RZ_API int rz_print_get_cursor(RzPrint *p) {
  * \param wordsize Size of a word in bits
  * \return Dump JSON string
  */
-RZ_API char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL const ut8 *buf, int len, int wordsize) {
+RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL const ut8 *buf, int len, int wordsize) {
 	rz_return_val_if_fail(p && buf && len > 0 && wordsize > 0, 0);
 	int bytesize = wordsize / 8;
 	if (bytesize < 1) {
@@ -1629,6 +1629,7 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	rz_vector_foreach(toks->tokens, tok) {
 		switch (tok->type) {
 		default:
+			rz_strbuf_free(out);
 			rz_warn_if_reached();
 			return NULL;
 		case RZ_ASM_TOKEN_UNKNOWN:

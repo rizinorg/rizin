@@ -142,7 +142,7 @@ static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, 
 	rz_cons_printf("    |");
 }
 
-RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_offsets) {
+RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector /*<ut64>*/ *line_offsets) {
 	if (code->annotations.len == 0) {
 		rz_cons_printf("%s\n", code->code);
 		return;

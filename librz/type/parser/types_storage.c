@@ -147,7 +147,7 @@ RZ_OWN ParserTypePair *c_parser_new_unspecified_naked_type(CParserState *state, 
  * \param name Name of the primitive C type to create
  * \param is_const If the primitive type is const
  */
-RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, const char *name, bool is_const) {
+RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, RZ_NONNULL const char *name, bool is_const) {
 	rz_return_val_if_fail(state && name, NULL);
 
 	if (c_parser_base_type_exists(state, name)) {
@@ -878,7 +878,7 @@ RZ_OWN ParserTypePair *c_parser_type_wrap_to_array(CParserState *state, ParserTy
 	return newtpair;
 }
 
-bool c_parser_pointer_set_subtype(CParserState *state, ParserTypePair *tpair, ParserTypePair *subpair) {
+bool c_parser_pointer_set_subtype(CParserState *state, RZ_BORROW ParserTypePair *tpair, RZ_OWN ParserTypePair *subpair) {
 	rz_return_val_if_fail(state && tpair, false);
 	rz_return_val_if_fail(tpair->type->kind == RZ_TYPE_KIND_POINTER, false);
 	tpair->type->pointer.type = subpair->type;
@@ -886,7 +886,7 @@ bool c_parser_pointer_set_subtype(CParserState *state, ParserTypePair *tpair, Pa
 	return true;
 }
 
-bool c_parser_array_set_subtype(CParserState *state, ParserTypePair *tpair, ParserTypePair *subpair) {
+bool c_parser_array_set_subtype(CParserState *state, RZ_BORROW ParserTypePair *tpair, RZ_OWN ParserTypePair *subpair) {
 	rz_return_val_if_fail(state && tpair, false);
 	rz_return_val_if_fail(tpair->type->kind == RZ_TYPE_KIND_ARRAY, false);
 	tpair->type->array.type = subpair->type;

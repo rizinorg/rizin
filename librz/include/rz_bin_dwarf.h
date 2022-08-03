@@ -947,12 +947,12 @@ RZ_API const char *rz_bin_dwarf_get_attr_form_name(ut64 form_code);
 RZ_API const char *rz_bin_dwarf_get_unit_type_name(ut64 unit_type);
 RZ_API const char *rz_bin_dwarf_get_lang_name(ut64 lang);
 
-RZ_API RzList /*<RzBinDwarfARangeSet>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile);
+RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwarfDebugAbbrev *da);
-RZ_API HtUP /*<offset, RzBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RzBinFile *binfile, int addr_size);
+RZ_API HtUP /*<offset, RzBinDwarfLocList *>*/ *rz_bin_dwarf_parse_loc(RzBinFile *binfile, int addr_size);
 RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set);
-RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table);
+RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table);
 RZ_API void rz_bin_dwarf_debug_info_free(RzBinDwarfDebugInfo *inf);
 RZ_API void rz_bin_dwarf_debug_abbrev_free(RzBinDwarfDebugAbbrev *da);
 

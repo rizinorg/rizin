@@ -65,7 +65,7 @@ static void rz_cf_value_bool_print(RCFValueBool *bool_value);
 
 static void rz_cf_value_free(RCFValue *value);
 
-RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size, int options) {
+RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size, int options) {
 	RCFValueDict *result = NULL;
 	yxml_t x;
 	int i, depth = 0;
@@ -349,7 +349,7 @@ static RCFValueDict *rz_cf_value_dict_new(void) {
 	return dict;
 }
 
-void rz_cf_value_dict_free(RCFValueDict *dict) {
+RZ_API void rz_cf_value_dict_free(RCFValueDict *dict) {
 	rz_return_if_fail(dict);
 
 	if (dict->pairs) {
@@ -610,7 +610,7 @@ static void rz_cf_value_free(RCFValue *value) {
 	}
 }
 
-void rz_cf_value_print(RCFValue *value) {
+RZ_API void rz_cf_value_print(RCFValue *value) {
 	if (!value) {
 		return;
 	}

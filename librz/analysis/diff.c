@@ -173,7 +173,7 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 	return true;
 }
 
-RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcns2) {
+RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *fcns1, RzList /*<RzAnalysisFunction *>*/ *fcns2) {
 	RzAnalysisFunction *fcn, *fcn2, *mfcn, *mfcn2;
 	RzListIter *iter, *iter2;
 	double t, ot, sizes_div;

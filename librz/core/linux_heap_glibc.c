@@ -1385,7 +1385,7 @@ char *GH(rz_bin_num_to_type)(int bin_num) {
 	return NULL;
 }
 
-void GH(rz_heap_bin_free)(RzHeapBin *bin) {
+RZ_API void GH(rz_heap_bin_free)(RzHeapBin *bin) {
 	if (!bin) {
 		return;
 	}

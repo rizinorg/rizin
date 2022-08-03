@@ -82,9 +82,9 @@ RZ_API void rz_diff_free(RZ_NULLABLE RzDiff *diff);
 RZ_API RZ_BORROW const void *rz_diff_get_a(RZ_NONNULL RzDiff *diff);
 RZ_API RZ_BORROW const void *rz_diff_get_b(RZ_NONNULL RzDiff *diff);
 
-RZ_API RZ_OWN RzList /*<RzDiffMatch>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff *diff);
-RZ_API RZ_OWN RzList /*<RzDiffOp>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *diff);
-RZ_API RZ_OWN RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RZ_NONNULL RzDiff *diff, ut32 n_groups);
+RZ_API RZ_OWN RzList /*<RzDiffMatch *>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff *diff);
+RZ_API RZ_OWN RzList /*<RzDiffOp *>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *diff);
+RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_opcodes_grouped_new(RZ_NONNULL RzDiff *diff, ut32 n_groups);
 RZ_API bool rz_diff_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result);
 RZ_API bool rz_diff_sizes_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result);
 
