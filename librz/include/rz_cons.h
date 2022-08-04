@@ -497,7 +497,7 @@ typedef struct rz_cons_context_t {
 #define HUD_BUF_SIZE 512
 
 typedef enum {
-	MOUSE_NONE,
+	MOUSE_NONE = 0,
 	MOUSE_DEFAULT, // indicate an event with no consideration of specific type
 	LEFT_PRESS,
 	LEFT_RELEASE,
