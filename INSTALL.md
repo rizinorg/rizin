@@ -32,6 +32,15 @@ whole directory anywhere.
 ## MacOS
 On MacOS systems you can install Rizin in one of three ways.
 
+Bear in mind the formula offered by Homebrew and the port offered by MacPorts
+are not provided by Rizin: they are offered and actively maintained and updated
+by their respective communities. Rizin *might* help with maintenance and fixes
+in a punctual fashion, but it cannot guarantee these two installation methods
+offer the latest available version.
+
+You can always find the latest version in the package offered on the GitHub
+release.
+
 ### Homebrew
 Rizin offers a Homebrew [formula](https://formulae.brew.sh/formula/rizin)
 through which you can install Rizin with a single command:
