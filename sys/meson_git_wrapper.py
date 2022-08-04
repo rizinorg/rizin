@@ -25,9 +25,7 @@ def isCArgSupported(executable, path):
 
 def simple_git_execution(args):
     try:
-        called = subprocess.run(args, check=True, capture_output=True)
-        with open("gittip", "w", encoding="utf8") as f:
-            f.write(called.stdout.decode("utf8").strip())
+        called = subprocess.run(args, check=True)
         sys.exit(called.returncode)
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
