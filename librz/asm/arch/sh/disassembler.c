@@ -226,7 +226,7 @@ RZ_IPI RZ_OWN char *sh_op_to_str(RZ_NONNULL const SHOp *op, ut64 pc) {
 	if (!op->str_mnem) {
 		return NULL;
 	}
-	RzStrBuf *buf = rz_strbuf_new(rz_str_newf("%s", op->str_mnem));
+	RzStrBuf *buf = rz_strbuf_new(op->str_mnem);
 
 	char *param = NULL;
 	if ((param = sh_op_param_to_str(op->param[0], op->scaling, pc))) {
