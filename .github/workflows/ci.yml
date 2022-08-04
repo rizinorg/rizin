@@ -366,7 +366,7 @@ jobs:
           ./configure
           make install
         env:
-          PYVERSION: 3.6.12
+          PYVERSION: 3.7.13
       - name: Install Meson and Ninja
         run: |
           mkdir ${HOME}/.cache
