@@ -3692,11 +3692,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, co
 	ut64 oaddr = core->offset;
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		xref_list_print_to_json(core, xrefs, state->d.pj);
-		status = RZ_CMD_STATUS_WRONG_ARGS;
-		goto exit;
-	}
+	rz_cmd_state_output_array_start(state);
+
 	RzAnalysisXRef *xref;
 	RzListIter *iter;
 	rz_list_foreach (xrefs, iter, xref) {
@@ -3726,6 +3723,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, co
 			}
 			}
 			break;
+		case RZ_OUTPUT_MODE_JSON:
+			xref_print_to_json(core, xref, state->d.pj);
+			break;
 		default:
 			rz_warn_if_reached();
 			status = RZ_CMD_STATUS_WRONG_ARGS;
@@ -3735,6 +3735,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, co
 	rz_core_seek(core, oaddr, 1);
 exit:
 	rz_list_free(xrefs);
+	rz_cmd_state_output_array_end(state);
 	return status;
 }
 
