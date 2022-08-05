@@ -140,7 +140,7 @@ aezse 3~var_write
 EOF
 EXPECT=<<EOF
 var_write(name: r30, old: 0x0, new: 0x0)
-var_write(name: lr, old: 0x0, new: 0x100a48)
+var_write(name: lr, old: 0x0, new: 0x100a44)
 var_write(name: r4, old: 0x0, new: 0x4)
 var_write(name: r11, old: 0x0, new: 0xffffffffffffffff)
 var_write(name: r12, old: 0x0, new: 0x10)
@@ -221,7 +221,7 @@ var_write(name: r13, old: 0x20, new: 0x0)
 var_write(name: r13, old: 0x0, new: 0x20)
 var_write(name: r11, old: 0xffffffffffffffff, new: 0xffffffffffffffff)
 var_write(name: r19, old: 0xffff0000, new: 0xfffffffffffffffe)
-var_write(name: lr, old: 0x100c24, new: 0x0)
+var_write(name: lr, old: 0x100c20, new: 0x0)
 EOF
 RUN
 
@@ -557,7 +557,7 @@ aezs 1
 aezs 5
 aezse 4~var_write
 aezs 5 # max into r28
-aezse 2~var_write
+aezse 1~var_write
 EOF
 EXPECT=<<EOF
 var_write(name: ctr, old: 0x0, new: 0xffffffffffffffff)
@@ -568,7 +568,6 @@ var_write(name: xer, old: 0x0, new: 0xe0000000)
 var_write(name: so, old: 0x0, new: 0x1)
 var_write(name: ov, old: 0x0, new: 0x1)
 var_write(name: ca, old: 0x0, new: 0x1)
-var_write(name: r0, old: 0x0, new: 0xe0000000)
 EOF
 RUN
 
