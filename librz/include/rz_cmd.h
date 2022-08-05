@@ -133,9 +133,6 @@ typedef struct rz_cmd_macro_item_t {
 
 typedef struct rz_cmd_macro_t {
 	int counter;
-	// 	int (*cmd)(void *user, const char *cmd);
-	RzCoreCmd cmd;
-	PrintfCallback cb_printf;
 	void *user;
 	RzNum *num;
 	int labels_n;
