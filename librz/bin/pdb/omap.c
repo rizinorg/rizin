@@ -45,7 +45,9 @@ RZ_IPI void free_omap_stream(RzPdbOmapStream *stream) {
 	}
 	OmapEntry *entry;
 	RzListIter *it;
-	rz_list_foreach (stream->entries, it, entry) { RZ_FREE(entry); }
+	rz_list_foreach (stream->entries, it, entry) {
+		RZ_FREE(entry);
+	}
 	rz_list_free(stream->entries);
 	free(stream);
 }

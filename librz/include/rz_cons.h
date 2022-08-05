@@ -659,7 +659,9 @@ typedef struct rz_cons_t {
 	{ 0, a, r, g, b, bgr, bgg, bgb, id16 }
 #else
 #define RZCOLOR(a, r, g, b, bgr, bgg, bgb, id16) \
-	(RzColor) { 0, a, r, g, b, bgr, bgg, bgb, id16 }
+	(RzColor) { \
+		0, a, r, g, b, bgr, bgg, bgb, id16 \
+	}
 #endif
 #define RzColor_NULL RZCOLOR(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, -1)
 #if __WINDOWS__
