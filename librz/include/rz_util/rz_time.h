@@ -13,6 +13,7 @@
 #define ASCTIME_BUF_MINLEN 26
 
 #ifdef _MSC_VER
+#include <rz_windows.h>
 struct timeval;
 
 struct timezone {
