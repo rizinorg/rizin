@@ -540,7 +540,6 @@ if git_exe.found() and fs.exists('.git')
     build_by_default: true,
     output: 'gittip',
     command: [py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD'],
-    capture: true,
     install: true,
     install_dir: rizin_bindir
   )
