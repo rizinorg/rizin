@@ -4067,6 +4067,7 @@ RZ_API char *rz_str_version(const char *program) {
 	if (!gittip || !*rz_str_trim_head_ro(gittip)) {
 		goto done;
 	}
+	rz_str_trim(gittip);
 	rz_strbuf_append(sb, "\n");
 	rz_strbuf_appendf(sb, "commit: %s", gittip);
 done:
