@@ -9,9 +9,6 @@
 #ifndef _INCLUDE_RZ_BIN_MACH0_H_
 #define _INCLUDE_RZ_BIN_MACH0_H_
 
-// 20% faster loading times for macho if enabled
-#define FEATURE_SYMLIST 0
-
 #define RZ_BIN_MACH0_STRING_LENGTH 256
 
 #define CSMAGIC_CODEDIRECTORY      0xfade0c02
@@ -207,7 +204,6 @@ RzList *MACH0_(get_maps_unpatched)(RzBinFile *bf);
 RzList *MACH0_(get_maps)(RzBinFile *bf);
 RzList *MACH0_(get_segments)(RzBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
-const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);
 struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) * bin);
 RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);

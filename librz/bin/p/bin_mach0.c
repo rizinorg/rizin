@@ -184,12 +184,6 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) * bin, RzBinSymbol **p) {
 	}
 }
 
-#if FEATURE_SYMLIST
-static RzList *symbols(RzBinFile *bf) {
-	RzBinObject *obj = bf ? bf->o : NULL;
-	return (RzList *)MACH0_(get_symbols_list)(obj->bin_obj);
-}
-#else
 static RzList *symbols(RzBinFile *bf) {
 	struct MACH0_(obj_t) * bin;
 	int i;
@@ -315,7 +309,6 @@ static RzList *symbols(RzBinFile *bf) {
 	set_u_free(symcache);
 	return ret;
 }
-#endif // FEATURE_SYMLIST
 
 static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *imports_by_name) {
 	if (imports_by_name) {
