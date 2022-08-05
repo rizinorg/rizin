@@ -815,10 +815,12 @@ typedef struct rz_bin_bind_t {
 
 RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile);
 RZ_API void rz_bin_map_free(RzBinMap *map);
+RZ_API bool rz_bin_map_is_data(RZ_NONNULL RzBinMap *map);
 RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile);
 RZ_API RzList /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzList /*<RzBinMap *>*/ *maps);
 RZ_API RzBinSection *rz_bin_section_new(const char *name);
 RZ_API void rz_bin_section_free(RzBinSection *bs);
+RZ_API bool rz_bin_section_is_data(RZ_NONNULL RzBinSection *section);
 RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
@@ -917,6 +919,7 @@ RZ_API const RzList /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject 
 RZ_API const RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj);
+RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj);
