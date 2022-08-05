@@ -33,6 +33,8 @@ def simple_git_execution(args):
             print("before write")
             f.write(called.stdout.decode("utf8").strip())
         print("before sys.exit")
+        print(os.listdir())
+        print(os.getcwd())
         sys.exit(called.returncode)
     except subprocess.CalledProcessError as e:
         traceback.print_exc()
