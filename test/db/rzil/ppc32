@@ -12,7 +12,7 @@ e cfg.bigendian=1
 w AnyColourYouLike @ 0x500000
 ar r1=0x400000
 ar r3=0x500000
-aezsu 0x00100500
+aezsu 0x0010057c
 ps @ obj.seckrit
 EOF
 EXPECT=<<EOF
