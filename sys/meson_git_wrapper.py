@@ -26,9 +26,13 @@ def isCArgSupported(executable, path):
 
 def simple_git_execution(args):
     try:
+        print("before subprocess.run")
         called = subprocess.run(args, check=True, stdout=subprocess.PIPE)
+        print("before with open")
         with open("gittip", "w", encoding="utf8") as f:
+            print("before write")
             f.write(called.stdout.decode("utf8").strip())
+        print("before sys.exit")
         sys.exit(called.returncode)
     except subprocess.CalledProcessError as e:
         traceback.print_exc()
