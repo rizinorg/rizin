@@ -8,6 +8,7 @@
 import os
 import subprocess
 import sys
+import traceback
 
 
 def isCArgSupported(executable, path):
@@ -30,6 +31,7 @@ def simple_git_execution(args):
             f.write(called.stdout.decode("utf8").strip())
         sys.exit(called.returncode)
     except subprocess.CalledProcessError as e:
+        traceback.print_exc()
         sys.exit(e.returncode)
 
 
