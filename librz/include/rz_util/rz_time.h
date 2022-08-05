@@ -4,6 +4,10 @@
 #include <rz_types.h>
 #include <time.h>
 
+#ifdef _MSC_VER
+#include <rz_windows.h>
+#endif
+
 #define RZ_NSEC_PER_SEC  1000000000ULL
 #define RZ_NSEC_PER_MSEC 1000000ULL
 #define RZ_USEC_PER_SEC  1000000ULL
@@ -12,8 +16,11 @@
 
 #define ASCTIME_BUF_MINLEN 26
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _MSC_VER
-#include <rz_windows.h>
 struct timeval;
 
 struct timezone {
@@ -57,6 +64,10 @@ RZ_API struct tm *rz_gmtime_r(RZ_NONNULL const time_t *time, RZ_NONNULL struct t
 #define RZ_TIME_PROFILE_END \
 	do { \
 	} while (0)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
