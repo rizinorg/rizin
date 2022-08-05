@@ -1,0 +1,46 @@
+NAME=emulateme-big-endian
+FILE=bins/elf/ppc/emulateme-ppc32be
+TIMEOUT=30
+CMDS=<<EOF
+s sym.decrypt
+ps @ obj.seckrit
+aezi
+o malloc://0x1000 0x400000
+o malloc://0x10 0x500000
+e io.cache=1
+e cfg.bigendian=1
+w AnyColourYouLike @ 0x500000
+ar r1=0x400000
+ar r3=0x500000
+aezsu 0x00100500
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+QSMwX\x14Q_El\x17\x7fnx\x7f\x1c
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=emulateme-little-endian
+FILE=bins/elf/ppc/emulateme-ppc32le
+TIMEOUT=30
+CMDS=<<EOF
+s sym.decrypt
+ps @ obj.seckrit
+aezi
+o malloc://0x1000 0x400000
+o malloc://0x10 0x500000
+e io.cache=1
+w AnyColourYouLike @ 0x500000
+ar r1=0x400000
+ar r3=0x500000
+aezsu 0x00100504
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+QSMwX\x14Q_El\x17\x7fnx\x7f\x1c
+Hello from RzIL!
+EOF
+EXPECT_ERR=
+RUN
