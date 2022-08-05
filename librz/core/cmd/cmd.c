@@ -5535,10 +5535,6 @@ static void cmd_descriptor_init(RzCore *core) {
 	}
 }
 
-static int core_cmd0_wrapper(void *core, const char *cmd) {
-	return rz_core_cmd0((RzCore *)core, cmd);
-}
-
 RZ_API void rz_core_cmd_init(RzCore *core) {
 	struct {
 		const char *cmd;
@@ -5561,9 +5557,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	core->rcmd = rz_core_cmd_new(core, !!core->cons);
 	core->rcmd->macro.user = core;
 	core->rcmd->macro.num = core->num;
-	core->rcmd->macro.cmd = core_cmd0_wrapper;
 	core->rcmd->nullcallback = rz_core_cmd_nullcallback;
-	core->rcmd->macro.cb_printf = (PrintfCallback)rz_cons_printf;
 	core->cmd_descriptors = rz_list_newf(free);
 
 	size_t i;

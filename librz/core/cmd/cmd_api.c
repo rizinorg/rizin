@@ -1535,10 +1535,8 @@ RZ_API void rz_cmd_macro_item_free(RzCmdMacroItem *item) {
 
 RZ_API void rz_cmd_macro_init(RzCmdMacro *mac) {
 	mac->counter = 0;
-	mac->cb_printf = (void *)printf;
 	mac->num = NULL;
 	mac->user = NULL;
-	mac->cmd = NULL;
 	mac->macros = rz_list_newf((RzListFree)rz_cmd_macro_item_free);
 }
 
@@ -1670,40 +1668,38 @@ RZ_API int rz_cmd_macro_rm(RzCmdMacro *mac, const char *_name) {
 	return ret;
 }
 
-// TODO: use mac->cb_printf which is rz_cons_printf at the end
 RZ_API void rz_cmd_macro_list(RzCmdMacro *mac) {
 	RzCmdMacroItem *m;
 	int j, idx = 0;
 	RzListIter *iter;
 	rz_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf("%d (%s %s; ", idx, m->name, m->args);
+		rz_cons_printf("%d (%s %s; ", idx, m->name, m->args);
 		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf("; ");
+				rz_cons_printf("; ");
 			} else {
-				mac->cb_printf("%c", m->code[j]);
+				rz_cons_printf("%c", m->code[j]);
 			}
 		}
-		mac->cb_printf(")\n");
+		rz_cons_printf(")\n");
 		idx++;
 	}
 }
 
-// TODO: use mac->cb_printf which is rz_cons_printf at the end
 RZ_API void rz_cmd_macro_meta(RzCmdMacro *mac) {
 	RzCmdMacroItem *m;
 	int j;
 	RzListIter *iter;
 	rz_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf("(%s %s, ", m->name, m->args);
+		rz_cons_printf("(%s %s, ", m->name, m->args);
 		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf("; ");
+				rz_cons_printf("; ");
 			} else {
-				mac->cb_printf("%c", m->code[j]);
+				rz_cons_printf("%c", m->code[j]);
 			}
 		}
-		mac->cb_printf(")\n");
+		rz_cons_printf(")\n");
 	}
 }
 
@@ -1765,9 +1761,7 @@ static int cmd_macro_cmd_args(RzCmdMacro *mac, const char *ptr, const char *args
 	for (pcmd = cmd; *pcmd && (*pcmd == ' ' || *pcmd == '\t'); pcmd++) {
 		;
 	}
-	// eprintf ("-pre %d\n", (int)mac->num->value);
-	int xx = (*pcmd == ')') ? 0 : mac->cmd(mac->user, pcmd);
-	// eprintf ("-pos %p %d\n", mac->num, (int)mac->num->value);
+	int xx = (*pcmd == ')') ? 0 : rz_core_cmd0_rzshell(mac->user, pcmd);
 	return xx;
 }
 
