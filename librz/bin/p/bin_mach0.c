@@ -191,9 +191,6 @@ static RzList *symbols(RzBinFile *bf) {
 	RzBinSymbol *ptr = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
-#if 0
-	const char *lang = "c"; // XXX deprecate this
-#endif
 	int wordsize = 0;
 	if (!ret) {
 		return NULL;
@@ -252,16 +249,6 @@ static RzList *symbols(RzBinFile *bf) {
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp(ptr->name, "radr://", 7) ? 0 : 1;
 		set_u_add(symcache, ptr->vaddr);
-#if 0
-		if (!strncmp (ptr->name, "__Z", 3)) {
-			lang = "c++";
-		}
-		if (!strncmp (ptr->name, "type.", 5)) {
-			lang = "go";
-		} else if (!strcmp (ptr->name, "_rust_oom")) {
-			lang = "rust";
-		}
-#endif
 		rz_list_append(ret, ptr);
 	}
 	// functions from LC_FUNCTION_STARTS
@@ -296,13 +283,6 @@ static RzList *symbols(RzBinFile *bf) {
 			}
 		}
 	}
-#if 0
-// this must be done in bobj.c not here
-	if (bin->has_blocks_ext) {
-		lang = !strcmp (lang, "c++") ? "c++ blocks ext." : "c blocks ext.";
-	}
-	bin->lang = lang;
-#endif
 	if (isStripped) {
 		bin->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	}
