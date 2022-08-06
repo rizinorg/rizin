@@ -90,10 +90,10 @@ typedef struct _rep_msg {
 RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg);
 RZ_IPI xnu_thread_t *rz_xnu_get_thread(RzDebug *dbg, int tid);
 RZ_IPI thread_t rz_xnu_get_cur_thread(RzDebug *dbg);
-RZ_IPI bool rz_xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread);
-RZ_IPI bool rz_xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread);
-RZ_IPI bool rz_xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread);
-RZ_IPI bool rz_xnu_thread_get_drx(RzDebug *dbg, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_set_gpr(RzXnuDebug *ctx, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_get_gpr(RzXnuDebug *ctx, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_get_drx(RzXnuDebug *ctx, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_set_drx(RzXnuDebug *ctx, xnu_thread_t *thread);
 
 RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable);
 static inline bool xnu_set_trace_bit(RzDebug *dbg, xnu_thread_t *th) {

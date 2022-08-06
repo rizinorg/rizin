@@ -240,7 +240,7 @@ typedef struct rz_debug_tracepoint_t {
 
 typedef struct rz_debug_t {
 	char *arch;
-	int bits; /// XXX: MUST SET ///
+	RZ_DEPRECATE int bits; ///< bad indicator for the bitness of the debuggee
 	int hitinfo;
 
 	int main_pid;
