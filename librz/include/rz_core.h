@@ -72,6 +72,7 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_PLATFORM_PORTS          "platform.ports"
 #define RZ_FLAGS_FS_GLOBALS                 "globals"
 #define RZ_FLAGS_FS_DEBUG_MAPS              "maps"
+#define RZ_FLAGS_FS_POINTERS                "pointers"
 
 #define RZ_GRAPH_FORMAT_NO     0
 #define RZ_GRAPH_FORMAT_GMLFCN 1

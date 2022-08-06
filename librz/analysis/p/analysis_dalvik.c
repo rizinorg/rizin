@@ -757,6 +757,23 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 32;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return -1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return false;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
@@ -766,6 +783,7 @@ RzAnalysisPlugin rz_analysis_plugin_dalvik = {
 	.esil = false,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
 	.op = &dalvik_op,
+	.archinfo = archinfo,
 };
 
 #ifndef RZ_PLUGIN_INCORE

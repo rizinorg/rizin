@@ -1141,7 +1141,7 @@ static bool is_data_permission(ut32 permissions) {
  *
  * \return     Returns false on error or if is not a data section, otherwise true
  */
-RZ_API bool rz_bin_section_is_data(RZ_NONNULL RzBinSection *section) {
+RZ_API bool rz_bin_section_is_data(RZ_NONNULL const RzBinSection *section) {
 	rz_return_val_if_fail(section, false);
 	if (section->size < 1) {
 		return false;
@@ -1158,7 +1158,7 @@ RZ_API bool rz_bin_section_is_data(RZ_NONNULL RzBinSection *section) {
  *
  * \return     Returns false on error or if is not a data map, otherwise true
  */
-RZ_API bool rz_bin_map_is_data(RZ_NONNULL RzBinMap *map) {
+RZ_API bool rz_bin_map_is_data(RZ_NONNULL const RzBinMap *map) {
 	rz_return_val_if_fail(map, false);
 	if (map->psize < 1) {
 		return false;
