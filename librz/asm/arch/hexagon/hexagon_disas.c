@@ -34202,7 +34202,7 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 		hic->ana_op.type = RZ_ANALYSIS_OP_TYPE_ILL;
 		HexInsn *hi = hexagon_alloc_instr();
 		hic->bin.insn = hi;
-		snprintf(hic->bin.insn->text_infix, sizeof(hic->text), "invalid");
+		snprintf(hic->bin.insn->text_infix, sizeof(hic->bin.insn->text_infix), "invalid");
 	}
 	hex_set_hic_text(hic);
 	return 4;
