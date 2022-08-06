@@ -30,8 +30,6 @@ def simple_git_execution(args, gittip_dir=None):
             os.chdir(gittip_dir)
         with open("gittip", "w", encoding="utf8") as f:
             f.write(called.stdout.decode("utf8").strip())
-        print(os.listdir())
-        print(os.getcwd())
         sys.exit(called.returncode)
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
