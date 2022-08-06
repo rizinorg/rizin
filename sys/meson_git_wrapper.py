@@ -23,9 +23,13 @@ def isCArgSupported(executable, path):
         return False
 
 
-def simple_git_execution(args):
+def simple_git_execution(args, gittip_dir=None):
     try:
-        called = subprocess.run(args, check=True)
+        called = subprocess.run(args, check=True, stdout=subprocess.PIPE)
+        if gittip_dir is not None:
+            os.chdir(gittip_dir)
+        with open("gittip", "w", encoding="utf8") as f:
+            f.write(called.stdout.decode("utf8").strip())
         sys.exit(called.returncode)
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
@@ -53,8 +57,9 @@ def main():
     if isCArgSupported(git_exe, repo_path):
         simple_git_execution([git_exe, "-C", repo_path] + args)
     else:
+        gittip_dir = os.getcwd()
         os.chdir(repo_path)
-        simple_git_execution([git_exe] + args)
+        simple_git_execution([git_exe] + args, gittip_dir)
 
 
 if __name__ == "__main__":
