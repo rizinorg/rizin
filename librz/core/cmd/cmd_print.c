@@ -2568,24 +2568,28 @@ static void _handle_call(RzCore *core, char *line, char **str) {
 // TODO: this is just a PoC, the disasm loop should be rewritten
 // TODO: this is based on string matching, it should be written upon RzAnalysisOp to know
 // when we have a call and such
-static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *fcn) {
-	const char *linecolor = NULL;
-	char *ox, *qo, *string = NULL;
-	char *line, *s, *str, *string2 = NULL;
-	char *switchcmp = NULL;
-	int i, count, use_color = rz_config_get_i(core->config, "scr.color");
+static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *fcn) {
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	if (!hc) {
+		return;
+	}
+	rz_config_hold_i(hc,
+		"asm.offset",
+		"asm.dwarf",
+		"asm.tabs",
+		"asm.emu",
+		"emu.str",
+		"asm.cmt.right",
+		"scr.html",
+		"scr.color");
+
+	int use_color = rz_config_get_i(core->config, "scr.color");
 	bool show_comments = rz_config_get_i(core->config, "asm.comments");
 	bool show_offset = rz_config_get_i(core->config, "asm.offset");
-	bool asm_tabs = rz_config_get_i(core->config, "asm.tabs");
-	bool scr_html = rz_config_get_i(core->config, "scr.html");
-	bool asm_dwarf = rz_config_get_i(core->config, "asm.dwarf");
 	bool asm_flags = rz_config_get_i(core->config, "asm.flags");
-	bool asm_cmt_right = rz_config_get_i(core->config, "asm.cmt.right");
-	bool asm_emu = rz_config_get_i(core->config, "asm.emu");
-	bool emu_str = rz_config_get_i(core->config, "emu.str");
-	rz_config_set_i(core->config, "emu.str", true);
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	// force defaults
+	rz_config_set_i(core->config, "emu.str", true);
 	rz_config_set_i(core->config, "asm.offset", true);
 	rz_config_set_i(core->config, "asm.dwarf", true);
 	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -2593,54 +2597,55 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 	rz_config_set_i(core->config, "scr.html", 0);
 	rz_config_set_i(core->config, "asm.cmt.right", true);
 
-	line = NULL;
-	s = NULL;
+	char *dump_string = NULL;
+	RzList *lines = NULL;
 	if (!strncmp(input, "dsb", 3)) {
 		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 		if (bb) {
-			line = s = rz_core_cmd_strf(core, "pD %" PFMT64u " @ 0x%08" PFMT64x, bb->size, bb->addr);
+			dump_string = rz_core_cmd_strf(core, "pD %" PFMT64u " @ 0x%08" PFMT64x, bb->size, bb->addr);
 		}
 	} else if (!strncmp(input, "dsf", 3) || !strncmp(input, "dsr", 3)) {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
 		if (fcn) {
-			line = s = rz_core_cmd_str(core, "pdr");
+			dump_string = rz_core_cmd_str(core, "pdr");
 		} else {
 			eprintf("Cannot find function.\n");
-			rz_config_set_i(core->config, "scr.color", use_color);
-			rz_config_set_i(core->config, "asm.cmt.right", asm_cmt_right);
 			goto restore_conf;
 		}
 	} else if (!strncmp(input, "ds ", 3)) {
-		line = s = rz_core_cmd_strf(core, "pD %s", input + 3);
+		dump_string = rz_core_cmd_strf(core, "pD %dump_string", input + 3);
 	} else {
-		line = s = rz_core_cmd_str(core, "pd");
+		dump_string = rz_core_cmd_str(core, "pd");
 	}
 
-	rz_config_set_i(core->config, "scr.html", scr_html);
-	rz_config_set_i(core->config, "scr.color", use_color);
-	rz_config_set_i(core->config, "asm.cmt.right", asm_cmt_right);
-	count = rz_str_split(s, '\n');
-	if (!line || !*line || count < 1) {
-		//	RZ_FREE (s);
+	lines = rz_str_split_duplist(dump_string, "\n", true);
+	if (!lines) {
 		goto restore_conf;
 	}
-	for (i = 0; i < count; i++) {
+	int count = (int)rz_list_length(lines);
+	if (count < 1) {
+		goto restore_conf;
+	}
+	RzListIter *iter;
+	char *line;
+	rz_list_foreach (lines, iter, line) {
 		ut64 addr = UT64_MAX;
-		ox = strstr(line, "0x");
-		qo = strchr(line, '\"');
-		RZ_FREE(string);
+		const char *ox = strstr(line, "0x");
 		if (ox) {
 			addr = rz_num_get(NULL, ox);
 		}
+		const char *qo = strchr(line, '\"');
+		const char *linecolor = NULL;
+		char *string = NULL;
 		if (qo) {
 			char *qoe = strrchr(qo + 1, '"');
 			if (qoe) {
 				int raw_len = qoe - qo - 1;
 				int actual_len = 0;
-				char *ptr = qo + 1;
+				const char *ptr = qo + 1;
 				for (; ptr < qoe; ptr++) {
 					if (*ptr == '\\' && ptr + 1 < qoe) {
-						int i, body_len;
+						int body_len;
 						switch (*(ptr + 1)) {
 						case 'x':
 							body_len = 3;
@@ -2654,7 +2659,7 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 						default:
 							body_len = 1;
 						}
-						for (i = 0; i < body_len && ptr < qoe; i++) {
+						for (int i = 0; i < body_len && ptr < qoe; i++) {
 							ptr++;
 						}
 					}
@@ -2670,6 +2675,7 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 		if (!ox) {
 			ox = strstr(line, "@ 0x");
 		}
+		char *string2 = NULL;
 		if (ox) {
 			char *qoe = strchr(ox + 3, ' ');
 			if (!qoe) {
@@ -2681,11 +2687,12 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 				RZ_FREE(string2);
 			}
 		}
+		char *str = NULL;
 		if (asm_flags) {
 			str = strstr(line, ";-- ");
 			if (str) {
 				if (!rz_str_startswith(str + 4, "case")) {
-					rz_cons_printf("%s\n", str);
+					rz_cons_printf("%dump_string\n", str);
 				}
 			}
 		}
@@ -2713,7 +2720,7 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 				if (o) {
 					str = (char *)o;
 				} else {
-					eprintf("Warning: missing summary reference: %s\n", dot);
+					eprintf("Warning: missing summary reference: %dump_string\n", dot);
 				}
 			}
 		}
@@ -2771,8 +2778,8 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 		if (strstr(line, "XREF")) {
 			addr = UT64_MAX;
 		}
+		char *switchcmp = NULL;
 		if (addr != UT64_MAX) {
-			const char *str = NULL;
 			if (show_comments) {
 				char *comment = rz_core_analysis_get_comments(core, addr);
 				if (comment) {
@@ -2781,13 +2788,13 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 							if (show_offset) {
 								rz_cons_printf("%s0x%08" PFMT64x " ", use_color ? pal->offset : "", addr);
 							}
-							rz_cons_printf("%s%s\n", use_color ? pal->comment : "", comment);
+							rz_cons_printf("%dump_string%dump_string\n", use_color ? pal->comment : "", comment);
 						}
 					} else {
 						if (show_offset) {
 							rz_cons_printf("%s0x%08" PFMT64x " ", use_color ? pal->offset : "", addr);
 						}
-						rz_cons_printf("%s%s\n", use_color ? pal->comment : "", comment);
+						rz_cons_printf("%dump_string%dump_string\n", use_color ? pal->comment : "", comment);
 					}
 					if (rz_str_startswith(comment, "switch table")) {
 						switchcmp = strdup(comment);
@@ -2795,7 +2802,6 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 					RZ_FREE(comment);
 				}
 			}
-
 			if (fcn) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
@@ -2825,7 +2831,7 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 							if (show_offset) {
 								rz_cons_printf("%s0x%08" PFMT64x " " Color_RESET, use_color ? pal->offset : "", addr);
 							}
-							rz_cons_printf("%s 0x%08" PFMT64x "%s\n",
+							rz_cons_printf("%dump_string 0x%08" PFMT64x "%dump_string\n",
 								op, bb->jump, use_color ? Color_RESET : "");
 							break;
 						}
@@ -2858,12 +2864,12 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 						rz_str_trim(string2);
 					}
 					//// TODO implememnt avoid duplicated strings
-					// eprintf ("---> %s\n", string);
+					// eprintf ("---> %dump_string\n", string);
 					if (use_color) {
 						if (show_offset) {
 							rz_cons_printf("%s0x%08" PFMT64x " " Color_RESET, use_color ? pal->offset : "", addr);
 						}
-						rz_cons_printf("%s%s%s%s%s%s%s\n",
+						rz_cons_printf("%dump_string%dump_string%dump_string%dump_string%dump_string%dump_string%dump_string\n",
 							linecolor ? linecolor : "",
 							string2 ? string2 : "", string2 ? " " : "", string,
 							flag ? " " : "", flag ? flag->name : "", Color_RESET);
@@ -2871,7 +2877,7 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 						if (show_offset) {
 							rz_cons_printf("0x%08" PFMT64x " ", addr);
 						}
-						rz_cons_printf("%s%s%s%s%s\n",
+						rz_cons_printf("%dump_string%dump_string%dump_string%dump_string%dump_string\n",
 							string2 ? string2 : "", string2 ? " " : "", string,
 							flag ? " " : "", flag ? flag->name : "");
 					}
@@ -2880,19 +2886,11 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 		}
 		line += strlen(line) + 1;
 	}
-	// rz_cons_printf ("%s", s);
-	free(string2);
-	free(string);
-	free(s);
-	free(str);
-	free(switchcmp);
 restore_conf:
-	rz_config_set_i(core->config, "asm.offset", show_offset);
-	rz_config_set_i(core->config, "asm.dwarf", asm_dwarf);
-	rz_config_set_i(core->config, "asm.tabs", asm_tabs);
-	rz_config_set_i(core->config, "scr.html", scr_html);
-	rz_config_set_i(core->config, "asm.emu", asm_emu);
-	rz_config_set_i(core->config, "emu.str", emu_str);
+	free(dump_string);
+	rz_list_free(lines);
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
 }
 
 static void handle_entropy(RzCore *core, const char *name, const ut8 *block, int len) {
@@ -6502,7 +6500,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_summary_handler(RzCore *core, int
 	ut32 fs = rz_analysis_function_linear_size(function);
 	rz_core_seek(core, old_offset, SEEK_SET);
 	rz_core_block_size(core, RZ_MAX(rs, fs));
-	disasm_strings(core, "dfs", function);
+	rz_core_print_disasm_strings(core, "dfs", function);
 
 	rz_core_block_size(core, old_blocksize);
 	rz_core_seek(core, old_offset, SEEK_SET);
@@ -6876,16 +6874,16 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
 
-	// small patch to reuse disasm_strings which
+	// small patch to reuse rz_core_print_disasm_strings which
 	// needs to be rewritten entirely
 	char input_cmd[256];
 	rz_strf(input_cmd, "ds 0x%" PFMT64x, n_bytes);
-	disasm_strings(core, argc > 1 ? input_cmd : "ds", NULL);
+	rz_core_print_disasm_strings(core, argc > 1 ? input_cmd : "ds", NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_function_handler(RzCore *core, int argc, const char **argv) {
-	disasm_strings(core, "dsf", NULL);
+	rz_core_print_disasm_strings(core, "dsf", NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6896,11 +6894,11 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_block_handler(RzCore *core, int 
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	// small patch to reuse disasm_strings which
+	// small patch to reuse rz_core_print_disasm_strings which
 	// needs to be rewritten entirely
 	char input_cmd[256];
 	rz_strf(input_cmd, "dsb 0x%" PFMT64x, n_bytes);
-	disasm_strings(core, input_cmd, NULL);
+	rz_core_print_disasm_strings(core, input_cmd, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
