@@ -5,7 +5,7 @@
 #include <time.h>
 
 #ifdef _MSC_VER
-#include "rz_windows.h"
+#include <rz_windows.h>
 #endif
 
 #define RZ_NSEC_PER_SEC  1000000000ULL
