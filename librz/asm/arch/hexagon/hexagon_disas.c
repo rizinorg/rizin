@@ -34204,7 +34204,6 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 		hic->bin.insn = hi;
 		snprintf(hic->bin.insn->text_infix, sizeof(hic->text), "invalid");
 	}
-
 	hex_set_hic_text(hic);
 	return 4;
 }
