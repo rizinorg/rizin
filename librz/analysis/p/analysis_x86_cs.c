@@ -5,6 +5,7 @@
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/x86.h>
+#include "../arch/x86/x86_il.h"
 
 #if 0
 CYCLES:
@@ -3214,6 +3215,14 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			op_fillval(a, op, &ctx->handle, ctx->insn, mode);
 		}
 	}
+
+	// x86 RzIL uplifting
+	X86ILIns x86_il_ins = {
+		.structure = &ctx->insn->detail->x86,
+		.mnem = ctx->insn->id
+	};
+	rz_x86_il_opcode(a, op, addr, &x86_il_ins);
+
 	//#if X86_GRP_PRIVILEGE>0
 	if (ctx->insn) {
 #if HAVE_CSGRP_PRIVILEGE
@@ -3743,6 +3752,7 @@ RzAnalysisPlugin rz_analysis_plugin_x86_cs = {
 	.fini = x86_fini,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
+	.il_config = rz_x86_il_config,
 	//	.esil_intr = esil_x86_cs_intr,
 };
 

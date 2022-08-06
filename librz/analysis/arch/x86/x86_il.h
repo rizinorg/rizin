@@ -17,6 +17,11 @@ typedef x86_op_mem X86Mem;
 typedef cs_x86 X86Ins;
 typedef x86_insn X86InsMnem;
 
+typedef struct x86_il_instruction_t {
+	const X86Ins *structure;
+	X86InsMnem mnem;
+} X86ILIns;
+
 typedef enum x86_eflags_t {
 	X86_EFLAGS_CF = 0,
 	X86_EFLAGS_PF = 2,
@@ -36,5 +41,8 @@ typedef enum x86_eflags_t {
 	X86_EFLAGS_VIP = 20,
 	X86_EFLAGS_ID = 21
 } X86EFlags;
+
+RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins);
+RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 #endif /* RZIL_ANALYSIS_X86_IL_H */
