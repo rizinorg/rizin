@@ -494,7 +494,7 @@ RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NO
 			sz = 1;
 		}
 		rz_strbuf_appendf(sb, " .byte ");
-		for (int j = 0; j < sz; j++) {
+		for (int j = 0; j < sz && i < len; j++) {
 			rz_strbuf_appendf(sb, "%s0x%02x", j ? ", " : "", buf[i]);
 			i++;
 		}
