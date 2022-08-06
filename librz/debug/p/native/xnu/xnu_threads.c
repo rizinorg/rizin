@@ -152,8 +152,7 @@ RZ_IPI bool rz_xnu_thread_set_gpr(RzXnuDebug *ctx, xnu_thread_t *thread) {
 	thread->flavor = ARM_UNIFIED_THREAD_STATE;
 	thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
 #endif
-	// thread->state = regs;
-	thread->state = &regs->uts;
+	thread->state = &regs;
 	if (ctx->cpu == CPU_TYPE_ARM64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;
@@ -189,8 +188,7 @@ RZ_IPI bool rz_xnu_thread_get_gpr(RzXnuDebug *ctx, xnu_thread_t *thread) {
 #if __POWERPC__
 	thread->state = regs;
 #elif __arm64 || __aarch64 || __aarch64__ || __arm64__
-	// thread->state = regs;
-	thread->state = &regs->uts;
+	thread->state = regs;
 	if (ctx->cpu == CPU_TYPE_ARM64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;

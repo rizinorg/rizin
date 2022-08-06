@@ -338,7 +338,11 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 #if __POWERPC__
 #warning TODO powerpc support here
 #else
-		memcpy(&th->gpr.uts, buf, RZ_MIN(size, sizeof(th->gpr.uts)));
+#if __x86_64__ || __i386__
+		memcpy(&th->gpr.uts, buf, RZ_MIN(size, sizeof(th->gpr)));
+#else
+		memcpy(&th->gpr, buf, RZ_MIN(size, sizeof(th->gpr)));
+#endif
 #endif
 		ret = rz_xnu_thread_set_gpr(ctx, th);
 		break;
@@ -490,7 +494,7 @@ RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
 	RzXnuDebug *ctx = dbg->plugin_data;
 #if __arm__ || __arm64__ || __aarch_64__
-#define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.ts_64.__pc : state.ts_32.__pc
+#define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.arm64.__pc : state.arm32.__pc
 #elif __POWERPC__
 #define CPU_PC state.srr0
 #elif __x86_64__ || __i386__

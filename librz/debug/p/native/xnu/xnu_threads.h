@@ -20,7 +20,12 @@
 #ifndef ARM_THREAD_STATE64
 #define ARM_THREAD_STATE64 6
 #endif
-#define RZ_REG_T        arm_unified_thread_state_t
+typedef union rz_xnu_arm_reg_state_t {
+	// which one is used here is determined by RzXnuDebug.cpu
+	arm_thread_state32_t arm32;
+	arm_thread_state64_t arm64;
+} RzXnuArmRegState;
+#define RZ_REG_T        RzXnuArmRegState
 #define RZ_REG_STATE_T  MACHINE_THREAD_STATE
 #define RZ_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
 #elif __x86_64__ || __i386__

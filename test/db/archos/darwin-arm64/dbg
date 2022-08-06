@@ -80,18 +80,21 @@ ARGS=-d
 CMDS=<<EOF
 dcu main
 5 ds
-# TODO: also check x8 here (currently broken, the value appears in x7)
 dr pc
+dr x8
 ?e --
 ds
 dr pc
+dr x8
 dk 9
 EOF
-REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
 EXPECT=<<EOF
 pc = f44
+x8 = 0x00000000
 --
 pc = f48
+x8 = 0x00000064
 EOF
 REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
 EXPECT_ERR=<<EOF
@@ -106,23 +109,56 @@ ARGS=-d
 CMDS=<<EOF
 db @ main
 db @ main + 20
+db @ main + 24
 dc
 dr pc
 ?e --
 dc
 dr pc
-# TODO: here too check x8
+dr x8
+?e --
+dc
+dr pc
+dr x8
 dk 9
 EOF
-REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
 EXPECT=<<EOF
 pc = f30
 --
 pc = f44
+x8 = 0x00000000
+--
+pc = f48
+x8 = 0x00000064
 EOF
 REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
 EXPECT_ERR=<<EOF
 hit breakpoint at: f30
 hit breakpoint at: f44
+hit breakpoint at: f48
+EOF
+RUN
+
+NAME=write gpr
+FILE=bins/mach0/calculate-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+db @ main + 64
+dc
+dr x8
+dr x8 = 1337
+dc
+EOF
+EXPECT=<<EOF
+x8 = 0x0000002a
+Result = 1337
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+hit breakpoint at: f70
+
+Process finished
+
 EOF
 RUN
