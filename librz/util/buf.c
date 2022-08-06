@@ -582,7 +582,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg) {
  * length depends on the first '\0' found and the arguments size in the buffer.
  * If there is no '\0' in the buffer, there is no string, thus NULL is returned.
  */
-RZ_API RZ_OWN char *rz_buf_get_nstring(RzBuffer *b, ut64 addr, size_t size) {
+RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size) {
 	rz_return_val_if_fail(b, NULL);
 
 	RzStrBuf *buf = rz_strbuf_new(NULL);
@@ -1194,7 +1194,7 @@ RZ_API st64 rz_buf_write(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64
  *
  * ...
  */
-RZ_API st64 rz_buf_write_at(RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len) {
+RZ_API st64 rz_buf_write_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len) {
 	rz_return_val_if_fail(b && buf && !b->readonly, -1);
 
 	st64 tmp = rz_buf_tell(b);

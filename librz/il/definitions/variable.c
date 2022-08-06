@@ -157,7 +157,7 @@ static bool vars_collect_cb(void *user, const void *k, const void *v) {
 /**
  * Get a list of all variable definitions in the given set
  */
-RZ_API RZ_OWN RzPVector /* <RzILVar> */ *rz_il_var_set_get_all(RzILVarSet *vs) {
+RZ_API RZ_OWN RzPVector /*<RzILVar *>*/ *rz_il_var_set_get_all(RzILVarSet *vs) {
 	rz_return_val_if_fail(vs, NULL);
 	RzPVector *r = rz_pvector_new(NULL);
 	if (!r) {

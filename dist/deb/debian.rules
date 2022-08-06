@@ -16,7 +16,6 @@ EXTRA_FLAGS+= -Duse_sys_libzip=disabled
 EXTRA_FLAGS+= -Duse_sys_zlib=disabled
 EXTRA_FLAGS+= -Duse_sys_lz4=disabled
 EXTRA_FLAGS+= -Duse_sys_xxhash=disabled
-EXTRA_FLAGS+= -Duse_sys_libuv=disabled
 EXTRA_FLAGS+= -Duse_sys_openssl=disabled
 
 # architectures with debugging support

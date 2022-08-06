@@ -150,10 +150,6 @@ rz_core_deps = [
   mth,
 ]
 
-if libuv_dep.found()
-  rz_core_deps += libuv_dep
-endif
-
 rz_core = library('rz_core', rz_core_sources,
   include_directories: rz_core_inc,
   dependencies: rz_core_deps,

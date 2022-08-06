@@ -65,15 +65,15 @@ RZ_API void rz_th_pool_free(RZ_NULLABLE RzThreadPool *pool);
 RZ_API bool rz_th_pool_add_thread(RZ_NONNULL RzThreadPool *pool, RZ_NONNULL RzThread *thread);
 RZ_API RZ_BORROW RzThread *rz_th_pool_get_thread(RZ_NONNULL RzThreadPool *pool, size_t index);
 RZ_API bool rz_th_pool_wait(RZ_NONNULL RzThreadPool *pool);
-RZ_API size_t rz_th_pool_size(RZ_NULLABLE RzThreadPool *pool);
+RZ_API size_t rz_th_pool_size(RZ_NONNULL RzThreadPool *pool);
 
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzListFree qfree);
 RZ_API void rz_th_queue_free(RZ_NULLABLE RzThreadQueue *queue);
 RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *user, bool tail);
 RZ_API RZ_OWN void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
 RZ_API RZ_OWN void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
-RZ_API bool rz_th_queue_is_empty(RZ_NULLABLE RzThreadQueue *queue);
-RZ_API bool rz_th_queue_is_full(RZ_NULLABLE RzThreadQueue *queue);
+RZ_API bool rz_th_queue_is_empty(RZ_NONNULL RzThreadQueue *queue);
+RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue);
 
 RZ_API RZ_OWN RzAtomicBool *rz_atomic_bool_new(bool value);
 RZ_API void rz_atomic_bool_free(RZ_NULLABLE RzAtomicBool *tbool);

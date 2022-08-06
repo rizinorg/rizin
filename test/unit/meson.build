@@ -88,6 +88,7 @@ if get_option('enable_tests')
     'serialize_types',
     'skiplist',
     'skyline',
+    'socket',
     'spaces',
     'sparse',
     'stack',

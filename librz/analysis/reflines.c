@@ -79,7 +79,7 @@ RZ_API void rz_analysis_reflines_free(RzAnalysisRefline *rl) {
  * nlines - max number of lines of code to consider
  * linesout - true if you want to display lines that go outside of the scope [addr;addr+len)
  * linescall - true if you want to display call lines */
-RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
+RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	RzList *list, *sten;
 	RzListIter *iter;
 	RzAnalysisOp op;

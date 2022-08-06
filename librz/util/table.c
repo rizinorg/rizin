@@ -1289,7 +1289,7 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
  *
  * This function returns the transpose of the RzTable passed to the table.
  */
-RZ_OWN RZ_API RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
+RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
 	RzListIter *iter;
 	RzList *row_name = rz_list_new();

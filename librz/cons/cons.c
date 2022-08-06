@@ -824,7 +824,7 @@ RZ_API const char *rz_cons_get_buffer(void) {
 /**
  * \brief Return a newly allocated buffer containing what's currently in RzCons buffer
  */
-RZ_API char *rz_cons_get_buffer_dup(void) {
+RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void) {
 	const char *s = rz_cons_get_buffer();
 	return s ? strdup(s) : NULL;
 }

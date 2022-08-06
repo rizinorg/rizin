@@ -117,7 +117,6 @@ peda-session-*
 .cache/
 test/.tmp/*
 subprojects/capstone-*/
-subprojects/libuv-*/
 subprojects/libzip-*/
 subprojects/lz4-*/
 subprojects/packagecache/

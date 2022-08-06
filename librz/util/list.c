@@ -17,7 +17,7 @@ RZ_API void rz_list_iter_free(RzListIter *list) {
  * \brief returns the next RzList iterator in the list
  *
  **/
-RZ_API RzListIter *rz_list_iter_get_next(RzListIter *list) {
+RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RzListIter *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->n;
 }
@@ -26,7 +26,7 @@ RZ_API RzListIter *rz_list_iter_get_next(RzListIter *list) {
  * \brief returns the value stored in the next RzList iterator
  *
  **/
-RZ_API void *rz_list_iter_get_next_data(RzListIter *list) {
+RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RzListIter *list) {
 	rz_return_val_if_fail(list, NULL);
 	RzListIter *n = list->n;
 	if (!n) {
@@ -48,7 +48,7 @@ RZ_API void *rz_list_iter_get_data(RzListIter *list) {
  * \brief returns the first RzList iterator int the list
  *
  **/
-RZ_API RzListIter *rz_list_iterator(const RzList *list) {
+RZ_API RZ_BORROW RzListIter *rz_list_iterator(const RzList *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->head;
 }
@@ -57,7 +57,7 @@ RZ_API RzListIter *rz_list_iterator(const RzList *list) {
  * \brief Alias for rz_list_append
  *
  **/
-RZ_API RzListIter *rz_list_push(RzList *list, void *item) {
+RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item) {
 	return rz_list_append(list, item);
 }
 
@@ -74,7 +74,7 @@ RZ_API RzListIter *rz_list_get_next(RzListIter *list) {
  * \brief Returns the first element of the list
  *
  **/
-RZ_API void *rz_list_first(const RzList *list) {
+RZ_API RZ_BORROW void *rz_list_first(RZ_NONNULL const RzList *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->head ? list->head->data : NULL;
 }
@@ -83,7 +83,7 @@ RZ_API void *rz_list_first(const RzList *list) {
  * \brief Returns the last element of the list.
  *
  **/
-RZ_API void *rz_list_last(const RzList *list) {
+RZ_API RZ_BORROW void *rz_list_last(RZ_NONNULL const RzList *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->tail ? list->tail->data : NULL;
 }
@@ -92,7 +92,7 @@ RZ_API void *rz_list_last(const RzList *list) {
  * \brief Initializes the RzList pointer
  *
  **/
-RZ_API void rz_list_init(RzList *list) {
+RZ_API void rz_list_init(RZ_NONNULL RzList *list) {
 	rz_return_if_fail(list);
 
 	list->head = NULL;
@@ -106,7 +106,7 @@ RZ_API void rz_list_init(RzList *list) {
  * \brief Returns the length of the list
  *
  **/
-RZ_API ut32 rz_list_length(const RzList *list) {
+RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 	if (!list) {
 		return 0;
 	}
@@ -117,7 +117,7 @@ RZ_API ut32 rz_list_length(const RzList *list) {
  * \brief Empties the list without freeing the list pointer
  *
  **/
-RZ_API void rz_list_purge(RzList *list) {
+RZ_API void rz_list_purge(RZ_NONNULL RzList *list) {
 	rz_return_if_fail(list);
 
 	RzListIter *it = list->head;
@@ -134,7 +134,7 @@ RZ_API void rz_list_purge(RzList *list) {
  * \brief Empties the list and frees the list pointer
  *
  **/
-RZ_API void rz_list_free(RzList *list) {
+RZ_API void rz_list_free(RZ_NONNULL RzList *list) {
 	if (list) {
 		rz_list_purge(list);
 		free(list);
@@ -145,7 +145,7 @@ RZ_API void rz_list_free(RzList *list) {
  * \brief Deletes an entry in the list by searching for a pointer
  *
  **/
-RZ_API bool rz_list_delete_data(RzList *list, void *ptr) {
+RZ_API bool rz_list_delete_data(RZ_NONNULL RzList *list, void *ptr) {
 	rz_return_val_if_fail(list, false);
 	RzListIter *iter = rz_list_find_ptr(list, ptr);
 	if (!iter) {
@@ -159,7 +159,7 @@ RZ_API bool rz_list_delete_data(RzList *list, void *ptr) {
  * \brief Removes an entry in the list by using the RzListIter pointer
  *
  **/
-RZ_API void rz_list_delete(RzList *list, RzListIter *iter) {
+RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter) {
 	rz_return_if_fail(list && iter);
 	rz_list_split_iter(list, iter);
 	if (list->free && iter->data) {
@@ -169,7 +169,7 @@ RZ_API void rz_list_delete(RzList *list, RzListIter *iter) {
 	free(iter);
 }
 
-RZ_API void rz_list_split(RzList *list, void *ptr) {
+RZ_API void rz_list_split(RZ_NONNULL RzList *list, void *ptr) {
 	rz_return_if_fail(list);
 
 	RzListIter *iter = rz_list_iterator(list);
@@ -184,7 +184,7 @@ RZ_API void rz_list_split(RzList *list, void *ptr) {
 	}
 }
 
-RZ_API void rz_list_split_iter(RzList *list, RzListIter *iter) {
+RZ_API void rz_list_split_iter(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter) {
 	rz_return_if_fail(list);
 
 	if (list->head == iter) {
@@ -206,7 +206,7 @@ RZ_API void rz_list_split_iter(RzList *list, RzListIter *iter) {
  * \brief Joins 2 list into one (list2 pointer needs to be freed by the user)
  *
  **/
-RZ_API bool rz_list_join(RzList *list1, RzList *list2) {
+RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2) {
 	rz_return_val_if_fail(list1 && list2, 0);
 
 	if (!(list2->length)) {
@@ -232,7 +232,7 @@ RZ_API bool rz_list_join(RzList *list1, RzList *list2) {
  * \brief Returns a new initialized RzList pointer (free method is not initialized)
  *
  **/
-RZ_API RzList *rz_list_new(void) {
+RZ_API RZ_OWN RzList *rz_list_new(void) {
 	RzList *list = RZ_NEW0(RzList);
 	if (!list) {
 		return NULL;
@@ -245,7 +245,7 @@ RZ_API RzList *rz_list_new(void) {
  * \brief Returns a new initialized RzList pointer and sets the free method
  *
  **/
-RZ_API RzList *rz_list_newf(RzListFree f) {
+RZ_API RZ_OWN RzList *rz_list_newf(RzListFree f) {
 	RzList *l = rz_list_new();
 	if (l) {
 		l->free = f;
@@ -257,7 +257,7 @@ RZ_API RzList *rz_list_newf(RzListFree f) {
  * \brief Allocates a new RzList and adds an array elements to it
  *
  **/
-RZ_API RzList *rz_list_new_from_array(const void **arr, size_t arr_size) {
+RZ_API RZ_OWN RzList *rz_list_new_from_array(RZ_NONNULL const void **arr, size_t arr_size) {
 	RzList *l = rz_list_new();
 	if (!l) {
 		return NULL;
@@ -273,7 +273,7 @@ RZ_API RzList *rz_list_new_from_array(const void **arr, size_t arr_size) {
  * \brief Creates a RzListIter element that can be inserted into a RzList
  *
  **/
-RZ_API RzListIter *rz_list_item_new(void *data) {
+RZ_API RZ_OWN RzListIter *rz_list_item_new(void *data) {
 	RzListIter *item = RZ_NEW0(RzListIter);
 	if (item) {
 		item->data = data;
@@ -285,7 +285,7 @@ RZ_API RzListIter *rz_list_item_new(void *data) {
  * \brief Appends at the end of the list a new element
  *
  **/
-RZ_API RzListIter *rz_list_append(RzList *list, void *data) {
+RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, void *data) {
 	RzListIter *item = NULL;
 
 	rz_return_val_if_fail(list, NULL);
@@ -313,7 +313,7 @@ RZ_API RzListIter *rz_list_append(RzList *list, void *data) {
  * \brief Appends at the beginning of the list a new element
  *
  **/
-RZ_API RzListIter *rz_list_prepend(RzList *list, void *data) {
+RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, void *data) {
 	rz_return_val_if_fail(list, NULL);
 
 	RzListIter *item = RZ_NEW0(RzListIter);
@@ -339,7 +339,7 @@ RZ_API RzListIter *rz_list_prepend(RzList *list, void *data) {
  * \brief Inserts a new element at the N-th position
  *
  **/
-RZ_API RzListIter *rz_list_insert(RzList *list, ut32 n, void *data) {
+RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, void *data) {
 	RzListIter *it, *item;
 	ut32 i;
 
@@ -373,7 +373,7 @@ RZ_API RzListIter *rz_list_insert(RzList *list, ut32 n, void *data) {
  * \brief Removes and returns the last element of the list
  *
  **/
-RZ_API void *rz_list_pop(RzList *list) {
+RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list) {
 	void *data = NULL;
 	RzListIter *iter;
 
@@ -398,7 +398,7 @@ RZ_API void *rz_list_pop(RzList *list) {
  * \brief Removes and returns the first element of the list
  *
  **/
-RZ_API void *rz_list_pop_head(RzList *list) {
+RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list) {
 	void *data = NULL;
 
 	rz_return_val_if_fail(list, NULL);
@@ -422,7 +422,7 @@ RZ_API void *rz_list_pop_head(RzList *list) {
  * \brief Removes the N-th element of the list
  *
  **/
-RZ_API ut32 rz_list_del_n(RzList *list, ut32 n) {
+RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
 	RzListIter *it;
 	ut32 i;
 
@@ -454,7 +454,7 @@ RZ_API ut32 rz_list_del_n(RzList *list, ut32 n) {
  * \brief Returns the last element of the list
  *
  **/
-RZ_API void *rz_list_get_top(const RzList *list) {
+RZ_API RZ_BORROW void *rz_list_get_top(RZ_NONNULL const RzList *list) {
 	rz_return_val_if_fail(list, NULL);
 
 	return list->tail ? list->tail->data : NULL;
@@ -464,7 +464,7 @@ RZ_API void *rz_list_get_top(const RzList *list) {
  * \brief Returns the first element of the list
  *
  **/
-RZ_API void *rz_list_get_bottom(const RzList *list) {
+RZ_API RZ_BORROW void *rz_list_get_bottom(RZ_NONNULL const RzList *list) {
 	rz_return_val_if_fail(list, NULL);
 
 	return list->head ? list->head->data : NULL;
@@ -474,7 +474,7 @@ RZ_API void *rz_list_get_bottom(const RzList *list) {
  * \brief Reverses the list
  *
  **/
-RZ_API void rz_list_reverse(RzList *list) {
+RZ_API void rz_list_reverse(RZ_NONNULL RzList *list) {
 	RzListIter *it, *tmp;
 
 	rz_return_if_fail(list);
@@ -493,7 +493,7 @@ RZ_API void rz_list_reverse(RzList *list) {
  * \brief Shallow copies of the list (but doesn't free its elements)
  *
  **/
-RZ_API RzList *rz_list_clone(const RzList *list) {
+RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list) {
 	RzListIter *iter;
 	void *data;
 
@@ -515,7 +515,7 @@ RZ_API RzList *rz_list_clone(const RzList *list) {
  * \brief Adds an element to a sorted list via the RzListComparator
  *
  **/
-RZ_API RzListIter *rz_list_add_sorted(RzList *list, void *data, RzListComparator cmp) {
+RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, void *data, RZ_NONNULL RzListComparator cmp) {
 	RzListIter *it, *item = NULL;
 
 	rz_return_val_if_fail(list && data && cmp, NULL);
@@ -549,7 +549,7 @@ RZ_API RzListIter *rz_list_add_sorted(RzList *list, void *data, RzListComparator
  * \brief Sets the N-th element of the list
  *
  **/
-RZ_API ut32 rz_list_set_n(RzList *list, ut32 n, void *p) {
+RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, void *p) {
 	RzListIter *it;
 	ut32 i;
 
@@ -571,7 +571,7 @@ RZ_API ut32 rz_list_set_n(RzList *list, ut32 n, void *p) {
  * \brief Returns the N-th element of the list
  *
  **/
-RZ_API void *rz_list_get_n(const RzList *list, ut32 n) {
+RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
 	RzListIter *it;
 	ut32 i;
 
@@ -589,7 +589,7 @@ RZ_API void *rz_list_get_n(const RzList *list, ut32 n) {
  * \brief Returns the RzListIter of the given pointer, if found
  *
  **/
-RZ_API RzListIter *rz_list_contains(const RzList *list, const void *ptr) {
+RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr) {
 	return rz_list_find_ptr(list, ptr);
 }
 
@@ -597,7 +597,7 @@ RZ_API RzListIter *rz_list_contains(const RzList *list, const void *ptr) {
  * \brief Returns the RzListIter of the given pointer, if found
  *
  **/
-RZ_API RzListIter *rz_list_find_ptr(const RzList *list, const void *ptr) {
+RZ_API RZ_BORROW RzListIter *rz_list_find_ptr(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr) {
 	rz_return_val_if_fail(list, NULL);
 	void *p;
 	RzListIter *iter;
@@ -617,7 +617,7 @@ RZ_API RzListIter *rz_list_find_ptr(const RzList *list, const void *ptr) {
  *
  * \return the first RzListIter that is equall to p w.r.t. cmp.
  */
-RZ_API RzListIter *rz_list_find(const RzList *list, const void *p, RzListComparator cmp) {
+RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *p, RZ_NONNULL RzListComparator cmp) {
 	void *q;
 	RzListIter *iter;
 
@@ -695,7 +695,7 @@ static RzListIter *_merge_sort(RzListIter *head, RzListComparator cmp) {
  * \brief Merge sorts the list via the RzListComparator
  *
  **/
-RZ_API void rz_list_merge_sort(RzList *list, RzListComparator cmp) {
+RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp) {
 	rz_return_if_fail(list);
 
 	if (!list->sorted && list->head && cmp) {
@@ -715,7 +715,7 @@ RZ_API void rz_list_merge_sort(RzList *list, RzListComparator cmp) {
  * \brief Insertion sorts the list via the RzListComparator
  *
  **/
-RZ_API void rz_list_insertion_sort(RzList *list, RzListComparator cmp) {
+RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp) {
 	rz_return_if_fail(list);
 
 	if (!list->sorted) {
@@ -740,7 +740,7 @@ RZ_API void rz_list_insertion_sort(RzList *list, RzListComparator cmp) {
  * \brief Sorts via merge sort or via insertion sort a list
  *
  **/
-RZ_API void rz_list_sort(RzList *list, RzListComparator cmp) {
+RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp) {
 	rz_return_if_fail(list);
 	if (list->length > 43) {
 		rz_list_merge_sort(list, cmp);
@@ -753,7 +753,7 @@ RZ_API void rz_list_sort(RzList *list, RzListComparator cmp) {
  * \brief Returns a new RzList which contains only unique values
  *
  **/
-RZ_API RzList *rz_list_uniq(const RzList *list, RzListComparator cmp) {
+RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzListComparator cmp) {
 	RzListIter *iter, *iter2;
 	void *item, *item2;
 
@@ -782,7 +782,7 @@ RZ_API RzList *rz_list_uniq(const RzList *list, RzListComparator cmp) {
  * \brief Casts a RzList containg strings into a concatenated string
  *
  **/
-RZ_API char *rz_list_to_str(RzList *list, char ch) {
+RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch) {
 	RzListIter *iter;
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
@@ -799,7 +799,7 @@ RZ_API char *rz_list_to_str(RzList *list, char ch) {
  * \brief Converts a SdbList into a RzList
  *
  **/
-RZ_API RzList *rz_list_of_sdblist(SdbList *sl) {
+RZ_API RZ_OWN RzList *rz_list_of_sdblist(SdbList *sl) {
 	RzList *l = rz_list_newf(free);
 	SdbKv *kv;
 	SdbListIter *iter;

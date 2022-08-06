@@ -49,13 +49,13 @@ E.g.: `Bug fix did not change the general behavior of the function. No documenta
 In order to contribute with patches or plugins, we encourage you to use the same
 coding style as the rest of the code base.
 
-* Use git-clang-format 13 to format your code. If clang-format-13 is not available on
+* Use git-clang-format 14 to format your code. If clang-format-14 is not available on
   your Debian-based distribution, you can install it from https://apt.llvm.org/.
   You should invoke it as below (after making sure that your local copy of `dev`
   is up-to-date and your branch is up-to-date with `dev`):
 
 ```bash
-git-clang-format-13 --extensions c,cpp,h,hpp,inc --style file dev
+git-clang-format-14 --extensions c,cpp,h,hpp,inc --style file dev
 ```
 
 * Lines should be at most 100 chars. A tab is considered as 8 chars. If it makes

@@ -1217,7 +1217,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr
 	return location;
 }
 
-static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args, RzList /*<Variable*>*/ *variables) {
+static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args, RzList /*<Variable *>*/ *variables) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx++];
 
 	if (die->has_children) {
@@ -1305,7 +1305,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 	return 0;
 }
 
-static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable*>*/ *variables, Sdb *sdb) {
+static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/ *variables, Sdb *sdb) {
 	char *sname = rz_str_sanitize_sdb_key(dwarf_fcn->name);
 	sdb_set(sdb, sname, "fcn", 0);
 

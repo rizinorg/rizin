@@ -2384,7 +2384,7 @@ static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
 	rz_list_free(list);
 }
 
-RZ_API RzGraph *rz_core_analysis_importxrefs(RzCore *core) {
+RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_importxrefs(RzCore *core) {
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	bool va = core->io->va || core->bin->is_debugger;
 
@@ -2409,7 +2409,7 @@ RZ_API RzGraph *rz_core_analysis_importxrefs(RzCore *core) {
 	return graph;
 }
 
-RZ_API RzGraph *rz_core_analysis_codexrefs(RzCore *core, ut64 addr) {
+RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_codexrefs(RzCore *core, ut64 addr) {
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
@@ -2660,7 +2660,7 @@ RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn) {
 }
 
 // for a given function returns an RzList of all functions that were called in it
-RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn) {
+RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisXRef *xrefi;
 	RzListIter *iter, *iter2;
 
@@ -2892,7 +2892,7 @@ static RzList *analysis_graph_to(RzCore *core, ut64 addr, int depth, HtUP *avoid
 	return NULL;
 }
 
-RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n) {
+RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n) {
 	int depth = rz_config_get_i(core->config, "analysis.graph_depth");
 	RzList *path, *paths = rz_list_new();
 	HtUP *avoid = ht_up_new0();
@@ -3844,7 +3844,7 @@ RZ_API ut64 rz_core_analysis_stats_get_block_to(RZ_NONNULL const RzCoreAnalysisS
 	return rz_core_analysis_stats_get_block_from(s, i + 1) - 1;
 }
 
-RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl) {
+RZ_API RzList /*<RzAnalysisCycleHook *>*/ *rz_core_analysis_cycles(RzCore *core, int ccl) {
 	ut64 addr = core->offset;
 	int depth = 0;
 	RzAnalysisOp *op = NULL;
@@ -5991,7 +5991,7 @@ static void analysis_sigdb_add(RzSigDb *sigs, const char *path, bool with_detail
  * \param[in]  with_details  The reads the signature details and sets them in RzSigDBEntry
  * \return     On success a RzList containing RzSigDBEntry entries, otherwise NULL.
  */
-RZ_API RZ_OWN RzList *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool with_details) {
+RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_core_analysis_sigdb_list(RZ_NONNULL RzCore *core, bool with_details) {
 	rz_return_val_if_fail(core, NULL);
 
 	RzSigDb *sigs = rz_sign_sigdb_new();
@@ -6814,7 +6814,7 @@ RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr) {
  * \param nops analysis n ops
  * \return list of RzAnalysisBytes
  */
-RZ_API RZ_OWN RzPVector *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops) {
+RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops) {
 	rz_return_val_if_fail(core && buf, NULL);
 	RzPVector *vec = rz_pvector_new(rz_analysis_bytes_free);
 	if (!vec) {

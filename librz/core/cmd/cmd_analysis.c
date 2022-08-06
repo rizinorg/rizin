@@ -1083,7 +1083,7 @@ RZ_API int rz_core_esil_step_back(RzCore *core) {
 	return 0;
 }
 
-RZ_API bool rz_core_esil_continue_back(RzCore *core) {
+RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core->analysis->esil && core->analysis->esil->trace, false);
 	RzAnalysisEsil *esil = core->analysis->esil;
 	if (esil->trace->idx == 0) {
@@ -2676,7 +2676,7 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 	}
 }
 
-static void print_graph_agg(RzGraph /*RzGraphNodeInfo*/ *graph) {
+static void print_graph_agg(RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	RzGraphNodeInfo *print_node;
 	RzGraphNode *node, *target;
 	RzListIter *it, *edge_it;
@@ -2705,7 +2705,7 @@ static void print_graph_agg(RzGraph /*RzGraphNodeInfo*/ *graph) {
 	}
 }
 
-static char *print_graph_dot(RzCore *core, RzGraph /*<RzGraphNodeInfo>*/ *graph) {
+static char *print_graph_dot(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	const char *font = rz_config_get(core->config, "graph.font");
 	char *node_properties = rz_str_newf("fontname=\"%s\"", font);
 	char *result = rz_graph_drawable_to_dot(graph, node_properties, NULL);
@@ -2713,7 +2713,7 @@ static char *print_graph_dot(RzCore *core, RzGraph /*<RzGraphNodeInfo>*/ *graph)
 	return result;
 }
 
-static void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input) {
+static void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, int use_utf, bool use_offset, const char *input) {
 	RzAGraph *agraph = NULL;
 	RzListIter *it;
 	RzListIter *edge_it;
@@ -3692,11 +3692,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, co
 	ut64 oaddr = core->offset;
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		xref_list_print_to_json(core, xrefs, state->d.pj);
-		status = RZ_CMD_STATUS_WRONG_ARGS;
-		goto exit;
-	}
+	rz_cmd_state_output_array_start(state);
+
 	RzAnalysisXRef *xref;
 	RzListIter *iter;
 	rz_list_foreach (xrefs, iter, xref) {
@@ -3726,6 +3723,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, co
 			}
 			}
 			break;
+		case RZ_OUTPUT_MODE_JSON:
+			xref_print_to_json(core, xref, state->d.pj);
+			break;
 		default:
 			rz_warn_if_reached();
 			status = RZ_CMD_STATUS_WRONG_ARGS;
@@ -3735,6 +3735,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, co
 	rz_core_seek(core, oaddr, 1);
 exit:
 	rz_list_free(xrefs);
+	rz_cmd_state_output_array_end(state);
 	return status;
 }
 

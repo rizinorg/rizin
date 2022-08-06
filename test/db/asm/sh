@@ -1,16 +1,191 @@
-dE "bt 0x00000004"	0x8900
-dE "bt 0x00000000"	0x89fe
-dE "bra 0x00000004"	0xa000
-dE "bra 0x00000006"	0xa001
-dE "bsr 0x00000004"	0xb000
-dE "bsr 0x00000002"	0xbfff
-dE "bsr 0x0000000e"	0xbffd 0x10
-dE "tst 0xFF, r0"	0xc8ff
-dE "mov.w @(0x0,pc), r0"	0x9000
-dE "mov.w @(0x1fe,pc), r0"	0x90ff
-dE "mov.l @(0x0,pc), r0"	0xd000
-dE "mov.l @(0x3fc,pc), r0"	0xd0ff
-dE "mov.w @(0x0,gbr), r0"	0xc500
-dE "mov.w @(0x1fe,gbr), r0"	0xc5ff
-dE "mov.l @(0x0,gbr), r0"	0xc600
-dE "mov.l @(0x3fc,gbr), r0"	0xc6ff
+# Fixed point transfer instructions
+adE "mov 0x27, r7" e727 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (bv 32 0x27)) (branch (var _priv) (set r7b (var _regv)) (set r7 (var _regv))))
+adE "mov.w @(0x1fe,pc), r9" 99ff 0x66 (seq (set _temp (loadw 0 16 (+ (+ (bv 32 0x66) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x2))))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set r9 (var _sign)))
+adE "mov.l @(0x3fc,pc), r6" d6ff 0x98 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (loadw 0 32 (+ (+ (& (bv 32 0x98) (bv 32 0xfffffffc)) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x4))))) (branch (var _priv) (set r6b (var _regv)) (set r6 (var _regv))))
+adE "mov r1, r11" 6b13 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set r11 (ite (var _priv) (var r1b) (var r1))))
+adE "mov.b r10, @r12" 2ca0 0x108 (storew 0 (var r12) (cast 8 false (var r10)))
+adE "mov.w r1, @r15" 2f11 0x108 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (var r15) (cast 16 false (ite (var _priv) (var r1b) (var r1)))))
+adE "mov.l r14, @r2" 22e2 0x108 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (ite (var _priv) (var r2b) (var r2)) (var r14)))
+adE "mov.b @r1, r2" 6210 0x108 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _temp (loadw 0 8 (ite (var _priv) (var r1b) (var r1)))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set _regv (var _sign)) (branch (var _priv) (set r2b (var _regv)) (set r2 (var _regv))))
+adE "mov.w @r14, r15" 6fe1 0x108 (seq (set _temp (loadw 0 16 (var r14))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set r15 (var _sign)))
+adE "mov.l @r14, r15" 6fe2 0x108 (set r15 (loadw 0 32 (var r14)))
+adE "mov.b r1, @-r2" 2214 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (- (ite (var _priv) (var r2b) (var r2)) (bv 32 0x1))) (branch (var _priv) (set r2b (var _regv)) (set r2 (var _regv))) (storew 0 (ite (var _priv) (var r2b) (var r2)) (cast 8 false (ite (var _priv) (var r1b) (var r1)))))
+adE "mov.w r8, @-r9" 2985 0x0 (seq (set r9 (- (var r9) (bv 32 0x2))) (storew 0 (var r9) (cast 16 false (var r8))))
+adE "mov.l r10, @-r11" 2ba6 0x0 (seq (set r11 (- (var r11) (bv 32 0x4))) (storew 0 (var r11) (var r10)))
+adE "mov.b @r0+, r1" 6104 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _temp (loadw 0 8 (ite (var _priv) (var r0b) (var r0)))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set _regv (var _sign)) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))) (set _regv (+ (ite (var _priv) (var r0b) (var r0)) (bv 32 0x1))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "mov.w @r11+, r12" 6cb5 0x0 (seq (set _temp (loadw 0 16 (var r11))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set r12 (var _sign)) (set r11 (+ (var r11) (bv 32 0x2))))
+adE "mov.l @r11+, r12" 6cb6 0x0 (seq (set r12 (loadw 0 32 (var r11))) (set r11 (+ (var r11) (bv 32 0x4))))
+adE "mov.b r0, @(0x0f,r15)" 80ff 0x10 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var r15) (* (bv 32 0xf) (bv 32 0x1))) (cast 8 false (ite (var _priv) (var r0b) (var r0)))))
+adE "mov.w r0, @(0x1e,r0)" 810f 0x10 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (ite (var _priv) (var r0b) (var r0)) (* (bv 32 0xf) (bv 32 0x2))) (cast 16 false (ite (var _priv) (var r0b) (var r0)))))
+adE "mov.l r9, @(0x38,r15)" 1f9e 0x0 (storew 0 (+ (var r15) (* (bv 32 0xe) (bv 32 0x4))) (var r9))
+adE "mov.b @(0x0f,r1), r0" 841f 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _temp (loadw 0 8 (+ (ite (var _priv) (var r1b) (var r1)) (* (bv 32 0xf) (bv 32 0x1))))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set _regv (var _sign)) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "mov.w @(0x00,r9), r0" 8590 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _temp (loadw 0 16 (+ (var r9) (* (bv 32 0x0) (bv 32 0x2))))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set _regv (var _sign)) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "mov.l @(0x10,r15), r15" 5ff4 0x0 (set r15 (loadw 0 32 (+ (var r15) (* (bv 32 0x4) (bv 32 0x4)))))
+adE "mov.b r2, @(r0,r1)" 0124 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (ite (var _priv) (var r0b) (var r0)) (ite (var _priv) (var r1b) (var r1))) (cast 8 false (ite (var _priv) (var r2b) (var r2)))))
+adE "mov.w r15, @(r0,r0)" 00f5 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (ite (var _priv) (var r0b) (var r0)) (ite (var _priv) (var r0b) (var r0))) (cast 16 false (var r15))))
+adE "mov.l r15, @(r0,r14)" 0ef6 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (ite (var _priv) (var r0b) (var r0)) (var r14)) (var r15)))
+adE "mov.b @(r0,r1), r2" 021c 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _temp (loadw 0 8 (+ (ite (var _priv) (var r0b) (var r0)) (ite (var _priv) (var r1b) (var r1))))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set _regv (var _sign)) (branch (var _priv) (set r2b (var _regv)) (set r2 (var _regv))))
+adE "mov.w @(r0,r0), r15" 0f0d 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _temp (loadw 0 16 (+ (ite (var _priv) (var r0b) (var r0)) (ite (var _priv) (var r0b) (var r0))))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set r15 (var _sign)))
+adE "mov.l @(r0,r14), r15" 0fee 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set r15 (loadw 0 32 (+ (ite (var _priv) (var r0b) (var r0)) (var r14)))))
+adE "mov.b r0, @(0x00f,gbr)" c00f 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var gbr) (* (bv 32 0xf) (bv 32 0x1))) (cast 8 false (ite (var _priv) (var r0b) (var r0)))))
+adE "mov.w r0, @(0x0fe,gbr)" c17f 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var gbr) (* (bv 32 0x7f) (bv 32 0x2))) (cast 16 false (ite (var _priv) (var r0b) (var r0)))))
+adE "mov.l r0, @(0x3fc,gbr)" c2ff 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var gbr) (* (bv 32 0xff) (bv 32 0x4))) (ite (var _priv) (var r0b) (var r0))))
+adE "mov.b @(0x00f,gbr), r0" c40f 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _temp (loadw 0 8 (+ (var gbr) (* (bv 32 0xf) (bv 32 0x1))))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set _regv (var _sign)) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "mov.w @(0x0fe,gbr), r0" c57f 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _temp (loadw 0 16 (+ (var gbr) (* (bv 32 0x7f) (bv 32 0x2))))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set _regv (var _sign)) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "mov.l @(0x3fc,gbr), r0" c6ff 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (loadw 0 32 (+ (var gbr) (* (bv 32 0xff) (bv 32 0x4))))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "mova @(0x3fc,pc), r0" c7ff 0x420 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (loadw 0 32 (+ (+ (& (bv 32 0x420) (bv 32 0xfffffffc)) (bv 32 0x4)) (* (bv 32 0xff) (bv 32 0x4))))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "movt r14" 0e29 0x100 (set r14 (cast 32 false (ite (var sr_t) (bv 32 0x1) (bv 32 0x0))))
+adE "swap.b r0, r1" 6108 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (| (& (ite (var _priv) (var r0b) (var r0)) (bv 32 0xffff0000)) (| (<< (& (ite (var _priv) (var r0b) (var r0)) (bv 32 0xff)) (bv 32 0x8) false) (& (>> (ite (var _priv) (var r0b) (var r0)) (bv 32 0x8) false) (bv 32 0xff))))) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))))
+adE "swap.w r15, r7" 67f9 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (| (<< (var r15) (bv 32 0x10) false) (>> (var r15) (bv 32 0x10) false))) (branch (var _priv) (set r7b (var _regv)) (set r7 (var _regv))))
+adE "xtrct r9, r10" 2a9d 0x0 (set r10 (| (<< (var r9) (bv 32 0x10) false) (>> (var r10) (bv 32 0x10) false)))
+
+# Arithmetic operation instructions
+adE "add r0, r1" 310c 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (+ (ite (var _priv) (var r0b) (var r0)) (ite (var _priv) (var r1b) (var r1)))) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))))
+adE "add 0x42, r9" 7942 0x0 (set r9 (+ (bv 32 0x42) (var r9)))
+adE "addc r10, r11" 3bae 0x100 (seq (set sum (+ (+ (var r10) (var r11)) (cast 32 false (ite (var sr_t) (bv 32 0x1) (bv 32 0x0))))) (set sr_t (|| (|| (&& (msb (var r10)) (msb (var r11))) (&& (! (msb (var sum))) (msb (var r11)))) (&& (msb (var r10)) (! (msb (var sum)))))) (set r11 (var sum)))
+adE "addv r1, r0" 301f 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sum (+ (ite (var _priv) (var r1b) (var r1)) (ite (var _priv) (var r0b) (var r0)))) (set sr_t (|| (&& (&& (! (msb (var sum))) (msb (ite (var _priv) (var r1b) (var r1)))) (msb (ite (var _priv) (var r0b) (var r0)))) (&& (&& (msb (var sum)) (! (msb (ite (var _priv) (var r1b) (var r1))))) (! (msb (ite (var _priv) (var r0b) (var r0))))))) (set _regv (var sum)) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "cmp/eq 0x99, r0" 8899 0x10 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (== (bv 32 0x99) (ite (var _priv) (var r0b) (var r0)))))
+adE "cmp/eq r9, r14" 3e90 0x0 (set sr_t (== (var r9) (var r14)))
+adE "cmp/hs r13, r11" 3bd2 0x10 (set sr_t (|| (! (ule (var r11) (var r13))) (== (var r11) (var r13))))
+adE "cmp/ge r1, r10" 3a13 0x44 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (|| (! (sle (var r10) (ite (var _priv) (var r1b) (var r1)))) (== (var r10) (ite (var _priv) (var r1b) (var r1))))))
+adE "cmp/hi r6, r3" 3366 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (! (ule (ite (var _priv) (var r3b) (var r3)) (ite (var _priv) (var r6b) (var r6))))))
+adE "cmp/gt r10, r12" 3ca7 0x0 (set sr_t (! (sle (var r12) (var r10))))
+adE "cmp/pz r1" 4111 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (|| (! (sle (ite (var _priv) (var r1b) (var r1)) (bv 32 0x0))) (== (ite (var _priv) (var r1b) (var r1)) (bv 32 0x0)))))
+adE "cmp/pl r15" 4f15 0x0 (set sr_t (! (sle (var r15) (bv 32 0x0))))
+adE "cmp/str r9, r10" 2a9c 0x0 (seq (set xor (^ (var r9) (var r10))) (set eq (== (& (var xor) (bv 32 0xff)) (bv 32 0x0))) (set xor (>> (var xor) (bv 32 0x8) false)) (set eq (|| (var eq) (== (& (var xor) (bv 32 0xff)) (bv 32 0x0)))) (set xor (>> (var xor) (bv 32 0x8) false)) (set eq (|| (var eq) (== (& (var xor) (bv 32 0xff)) (bv 32 0x0)))) (set xor (>> (var xor) (bv 32 0x8) false)) (set eq (|| (var eq) (== (& (var xor) (bv 32 0xff)) (bv 32 0x0)))) (set sr_t (var eq)))
+adE "div1 r15, r10" 3af4 0x90 (seq (set q (var sr_q)) (set m (var sr_m)) (set t (var sr_t)) (set op1 (var r15)) (set op2 (var r10)) (set old_q (var q)) (set q (! (is_zero (& (var op2) (bv 32 0x80000000))))) (set op2 (| (<< (var op2) (bv 32 0x1) false) (ite (var t) (bv 32 0x1) (bv 32 0x0)))) (branch (== (ite (var old_q) (bv 32 0x1) (bv 32 0x0)) (ite (var m) (bv 32 0x1) (bv 32 0x0))) (set op2 (- (var op2) (var op1))) (set op2 (+ (var op2) (var op1)))) (set q (^^ (^^ (var q) (var m)) (msb (var op2)))) (set t (! (is_zero (- (bv 32 0x1) (^ (ite (var q) (bv 32 0x1) (bv 32 0x0)) (ite (var m) (bv 32 0x1) (bv 32 0x0))))))) (set r10 (var op2)) (set sr_q (var q)) (set sr_t (var t)))
+adE "div0s r13, r14" 2ed7 0x0 (seq (set sr_q (msb (var r14))) (set sr_m (msb (var r13))) (set sr_t (^^ (var sr_m) (var sr_q))))
+adE "div0u" 0019 0x0 (seq (set sr_m false) (set sr_q false) (set sr_t false))
+adE "dmuls.l r13, r11" 3bdd 0x0 (seq (set res_wide (* (cast 64 (msb (var r13)) (var r13)) (cast 64 (msb (var r11)) (var r11)))) (set macl (cast 32 false (& (var res_wide) (bv 64 0xffffffff)))) (set mach (cast 32 false (>> (var res_wide) (bv 32 0x20) false))))
+adE "dmulu.l r7, r15" 3f75 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set res_wide (* (cast 64 false (ite (var _priv) (var r7b) (var r7))) (cast 64 false (var r15)))) (set macl (cast 32 false (& (var res_wide) (bv 64 0xffffffff)))) (set mach (cast 32 false (>> (var res_wide) (bv 32 0x20) false))))
+adE "dt r0" 4010 0x12 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (- (ite (var _priv) (var r0b) (var r0)) (bv 32 0x1))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))) (set sr_t (is_zero (ite (var _priv) (var r0b) (var r0)))))
+adE "exts.b r11, r13" 6dbe 0x18 (seq (set _temp (cast 8 false (var r11))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set r13 (var _sign)))
+adE "exts.w r1, r2" 621f 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _temp (cast 16 false (ite (var _priv) (var r1b) (var r1)))) (set _sign (cast 32 (msb (var _temp)) (var _temp))) (set _regv (var _sign)) (branch (var _priv) (set r2b (var _regv)) (set r2 (var _regv))))
+adE "extu.b r1, r2" 621c 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (cast 32 false (cast 8 false (ite (var _priv) (var r1b) (var r1))))) (branch (var _priv) (set r2b (var _regv)) (set r2 (var _regv))))
+adE "mac.l @r0+, @r7+" 070f 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set rm (loadw 0 32 (ite (var _priv) (var r0b) (var r0)))) (set rn (loadw 0 32 (ite (var _priv) (var r7b) (var r7)))) (set mac (| (<< (cast 64 false (var mach)) (bv 32 0x20) false) (cast 64 false (var macl)))) (set mul (* (cast 64 (msb (var rm)) (var rm)) (cast 64 (msb (var rn)) (var rn)))) (set add (+ (var mul) (var mac))) (set macl (cast 32 false (& (var add) (bv 64 0xffffffff)))) (set high (cast 32 false (>> (var add) (bv 32 0x20) false))) (branch (var sr_s) (set mach (& (var high) (bv 32 0xffff))) (set mach (var high))) (set _regv (+ (ite (var _priv) (var r7b) (var r7)) (bv 32 0x4))) (branch (var _priv) (set r7b (var _regv)) (set r7 (var _regv))) (set _regv (+ (ite (var _priv) (var r0b) (var r0)) (bv 32 0x4))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "mac.w @r13+, @r15+" 4fdf 0x0 (seq (set rm (loadw 0 16 (var r13))) (set rn (loadw 0 16 (var r15))) (set mac (| (<< (cast 64 false (var mach)) (bv 32 0x20) false) (cast 64 false (var macl)))) (set mul (cast 64 false (* (cast 32 (msb (var rm)) (var rm)) (cast 32 (msb (var rn)) (var rn))))) (set add (+ (var mul) (var mac))) (set low (cast 32 false (& (var add) (bv 64 0xffffffff)))) (branch (var sr_s) (set macl (var low)) (seq (set macl (var low)) (set mach (cast 32 false (>> (var add) (bv 32 0x20) false))))) (set r15 (+ (var r15) (bv 32 0x2))) (set r13 (+ (var r13) (bv 32 0x2))))
+adE "mul.l r13, r14" 0ed7 0x0 (set macl (* (var r13) (var r14)))
+adE "muls.w r15, r1" 21ff 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set rm (cast 16 false (var r15))) (set rn (cast 16 false (ite (var _priv) (var r1b) (var r1)))) (set macl (* (cast 32 (msb (var rm)) (var rm)) (cast 32 (msb (var rn)) (var rn)))))
+adE "mulu.w r12, r11" 2bce 0x0 (set macl (* (cast 32 false (cast 16 false (var r12))) (cast 32 false (cast 16 false (var r11)))))
+adE "neg r0, r15" 6f0b 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set r15 (- (bv 32 0x0) (ite (var _priv) (var r0b) (var r0)))))
+adE "negc r8, r9" 698a 0x0 (seq (set sub (- (- (bv 32 0x0) (var r8)) (ite (var sr_t) (bv 32 0x1) (bv 32 0x0)))) (set r9 (var sub)) (set sr_t (|| (|| (&& (! (msb (bv 32 0x0))) (msb (var r8))) (&& (msb (var r8)) (msb (var sub)))) (&& (msb (var sub)) (! (msb (bv 32 0x0)))))))
+adE "sub r10, r7" 37a8 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (- (ite (var _priv) (var r7b) (var r7)) (var r10))) (branch (var _priv) (set r7b (var _regv)) (set r7 (var _regv))))
+adE "subc r13, r11" 3bda 0x0 (seq (set dif (- (- (var r11) (var r13)) (ite (var sr_t) (bv 32 0x1) (bv 32 0x0)))) (set r11 (var dif)) (set sr_t (|| (|| (&& (! (msb (var r13))) (msb (var r11))) (&& (msb (var r11)) (msb (var dif)))) (&& (msb (var dif)) (! (msb (var r13)))))))
+adE "subv r13, r11" 3bdb 0x0 (seq (set dif (- (var r11) (var r13))) (set r11 (var dif)) (set sr_t (|| (&& (&& (! (msb (var dif))) (msb (var r13))) (! (msb (var r11)))) (&& (&& (msb (var dif)) (! (msb (var r13)))) (msb (var r11))))))
+
+# Logic operation instructions
+adE "and r14, r10" 2ae9 0x0 (set r10 (& (var r14) (var r10)))
+adE "and 0xf7, r0" c9f7 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (& (bv 32 0xf7) (ite (var _priv) (var r0b) (var r0)))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "and.b 0x67, @(r0,gbr)" cd67 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var gbr) (ite (var _priv) (var r0b) (var r0))) (& (bv 8 0x67) (loadw 0 8 (+ (var gbr) (ite (var _priv) (var r0b) (var r0)))))))
+adE "not r14, r15" 6fe7 0x0 (set r15 (~ (var r14)))
+adE "or r1, r0" 201b 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (| (ite (var _priv) (var r1b) (var r1)) (ite (var _priv) (var r0b) (var r0)))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "or 0x79, r0" cb79 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (| (bv 32 0x79) (ite (var _priv) (var r0b) (var r0)))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "or.b 0x08, @(r0,gbr)" cf08 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var gbr) (ite (var _priv) (var r0b) (var r0))) (| (bv 8 0x8) (loadw 0 8 (+ (var gbr) (ite (var _priv) (var r0b) (var r0)))))))
+adE "tas.b @r14" 4e1b 0x0 (seq (set sr_t (is_zero (loadw 0 8 (var r14)))) (storew 0 (var r14) (| (loadw 0 8 (var r14)) (bv 8 0x80))))
+adE "tst r3, r7" 2738 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (is_zero (& (ite (var _priv) (var r3b) (var r3)) (ite (var _priv) (var r7b) (var r7))))))
+adE "tst 0x63, r0" c863 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (is_zero (& (bv 32 0x63) (ite (var _priv) (var r0b) (var r0))))))
+adE "tst.b 0x64, @(r0,gbr)" cc64 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (is_zero (& (bv 8 0x64) (loadw 0 8 (+ (var gbr) (ite (var _priv) (var r0b) (var r0))))))))
+adE "xor r12, r8" 28ca 0x0 (set r8 (^ (var r12) (var r8)))
+adE "xor 0x37, r0" ca37 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (^ (bv 32 0x37) (ite (var _priv) (var r0b) (var r0)))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "xor.b 0x99, @(r0,gbr)" ce99 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (+ (var gbr) (ite (var _priv) (var r0b) (var r0))) (^ (bv 8 0x99) (loadw 0 8 (+ (var gbr) (ite (var _priv) (var r0b) (var r0)))))))
+
+# Shift instructions
+adE "rotl r1" 4104 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set msb_ (msb (ite (var _priv) (var r1b) (var r1)))) (set sr_t (var msb_)) (set shl_ (<< (ite (var _priv) (var r1b) (var r1)) (bv 32 0x1) false)) (set _regv (ite (var msb_) (| (var shl_) (bv 32 0x1)) (var shl_))) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))))
+adE "rotr r15" 4f05 0x0 (seq (set lsb_ (lsb (var r15))) (set sr_t (var lsb_)) (set shr_ (>> (var r15) (bv 32 0x1) false)) (set r15 (ite (var lsb_) (| (var shr_) (bv 32 0x80000000)) (var shr_))))
+adE "rotcl r10" 4a24 0x0 (seq (set msb_ (msb (var r10))) (set shl_ (<< (var r10) (bv 32 0x1) false)) (set r10 (ite (var sr_t) (| (var shl_) (bv 32 0x1)) (var shl_))) (set sr_t (var msb_)))
+adE "rotcr r10" 4a25 0x0 (seq (set lsb_ (lsb (var r10))) (set shr_ (>> (var r10) (bv 32 0x1) false)) (set r10 (ite (var sr_t) (| (var shr_) (bv 32 0x80000000)) (var shr_))) (set sr_t (var lsb_)))
+adE "shad r8, r9" 498c 0x0 (seq (set shift_ (cast 5 false (var r8))) (branch (|| (! (sle (var r8) (bv 32 0x0))) (== (var r8) (bv 32 0x0))) (set r9 (<< (var r9) (var shift_) false)) (set r9 (>> (var r9) (~- (var shift_)) (msb (var r9))))))
+adE "shal r0" 4020 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (msb (ite (var _priv) (var r0b) (var r0)))) (set _regv (<< (ite (var _priv) (var r0b) (var r0)) (bv 32 0x1) false)) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "shar r15" 4f21 0x0 (seq (set sr_t (lsb (var r15))) (set r15 (>> (var r15) (bv 32 0x1) (msb (var r15)))))
+adE "shld r10, r11" 4bad 0x0 (seq (set shift_ (cast 5 false (var r10))) (branch (|| (! (sle (var r10) (bv 32 0x0))) (== (var r10) (bv 32 0x0))) (set r11 (<< (var r11) (var shift_) false)) (set r11 (>> (var r11) (~- (var shift_)) false))))
+adE "shll r13" 4d00 0x0 (seq (set sr_t (msb (var r13))) (set r13 (<< (var r13) (bv 32 0x1) false)))
+adE "shlr r13" 4d01 0x0 (seq (set sr_t (lsb (var r13))) (set r13 (>> (var r13) (bv 32 0x1) false)))
+adE "shll2 r13" 4d08 0x0 (set r13 (<< (var r13) (bv 32 0x2) false))
+adE "shlr2 r13" 4d09 0x0 (set r13 (>> (var r13) (bv 32 0x2) false))
+adE "shll8 r13" 4d18 0x0 (set r13 (<< (var r13) (bv 32 0x8) false))
+adE "shlr8 r13" 4d19 0x0 (set r13 (>> (var r13) (bv 32 0x8) false))
+adE "shll16 r13" 4d28 0x0 (set r13 (<< (var r13) (bv 32 0x10) false))
+adE "shlr16 r13" 4d29 0x0 (set r13 (>> (var r13) (bv 32 0x10) false))
+
+# Branch instructions
+adE "bf 0x00000072" 8b27 0x20 (branch (var sr_t) (jmp (+ (+ (bv 32 0x20) (bv 32 0x4)) (<< (bv 32 0x27) (bv 32 0x1) false))) nop)
+adE "bf/s 0x00000072" 8f27 0x20 (branch (var sr_t) (jmp (+ (+ (bv 32 0x20) (bv 32 0x4)) (<< (bv 32 0x27) (bv 32 0x1) false))) nop)
+adE "bt 0x00000004" 8900 0x0 (branch (var sr_t) (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (<< (bv 32 0x0) (bv 32 0x1) false))) nop)
+adE "bt/s 0xd3adb008" 8dfe 0xd3adb008 (branch (var sr_t) (jmp (+ (+ (bv 32 0xd3adb008) (bv 32 0x4)) (<< (bv 32 0xfffffffe) (bv 32 0x1) false))) nop)
+adE "bra 0x00000004" a000 0x0 (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (<< (bv 32 0x0) (bv 32 0x1) false)))
+adE "braf r0" 0023 0x42 (seq (set _priv (&& (var sr_d) (var sr_r))) (jmp (+ (+ (bv 32 0x42) (bv 32 0x4)) (ite (var _priv) (var r0b) (var r0)))))
+adE "bsr 0x0000000e" bffd 0x10 (seq (set pr (+ (bv 32 0x10) (bv 32 0x4))) (jmp (+ (+ (bv 32 0x10) (bv 32 0x4)) (<< (bv 32 0xffd) (bv 32 0x1) false))))
+adE "bsrf r15" 0f03 0x42 (seq (set pr (+ (bv 32 0x42) (bv 32 0x4))) (jmp (+ (+ (bv 32 0x42) (bv 32 0x4)) (var r15))))
+adE "jmp @r11" 4b2b 0x18 (jmp (var r11))
+adE "jsr @r12" 4c0b 0x18 (seq (set pr (+ (bv 32 0x18) (bv 32 0x4))) (jmp (var r12)))
+adE "rts" 000b 0x20 (jmp (var pr))
+
+# System control instructions
+adE "clrmac" 0028 0x0 (seq (set mach (bv 32 0x0)) (set macl (bv 32 0x0)))
+adE "clrs" 0048 0x0 (set sr_s false)
+adE "clrt" 0008 0x0 (set sr_t false)
+adE "ldc r10, sr" 4a0e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set _sreg (var r10)) (set sr_t (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_s (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x3) false)) (set sr_i (& (bv 4 0xf) (cast 4 false (var _sreg)))) (set _sreg (>> (var _sreg) (bv 32 0x4) false)) (set sr_q (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_m (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x6) false)) (set sr_f (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0xd) false)) (set sr_b (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_r (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_d (lsb (var _sreg)))) empty))
+adE "ldc r11, gbr" 4b1e 0x0 (set gbr (var r11))
+adE "ldc r1, vbr" 412e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set vbr (var r1)) empty))
+adE "ldc r11, ssr" 4b3e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set ssr (var r11)) empty))
+adE "ldc r11, spc" 4b4e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set spc (var r11)) empty))
+adE "ldc r11, dbr" 4bfa 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set dbr (var r11)) empty))
+adE "ldc r4, r3b" 44be 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r3b (var r4)) empty))
+adE "ldc.l @r10+, sr" 4a07 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set _sreg (loadw 0 32 (var r10))) (set sr_t (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_s (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x3) false)) (set sr_i (& (bv 4 0xf) (cast 4 false (var _sreg)))) (set _sreg (>> (var _sreg) (bv 32 0x4) false)) (set sr_q (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_m (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x6) false)) (set sr_f (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0xd) false)) (set sr_b (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_r (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_d (lsb (var _sreg))) (set r10 (+ (var r10) (bv 32 0x4)))) empty))
+adE "ldc.l @r11+, gbr" 4b17 0x0 (seq (set gbr (loadw 0 32 (var r11))) (set r11 (+ (var r11) (bv 32 0x4))))
+adE "ldc.l @r1+, vbr" 4127 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set vbr (loadw 0 32 (var r1))) (set r1 (+ (var r1) (bv 32 0x4)))) empty))
+adE "ldc.l @r11+, ssr" 4b37 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set ssr (loadw 0 32 (var r11))) (set r11 (+ (var r11) (bv 32 0x4)))) empty))
+adE "ldc.l @r11+, spc" 4b47 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set spc (loadw 0 32 (var r11))) (set r11 (+ (var r11) (bv 32 0x4)))) empty))
+adE "ldc.l @r11+, dbr" 4bf6 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set dbr (loadw 0 32 (var r11))) (set r11 (+ (var r11) (bv 32 0x4)))) empty))
+adE "ldc.l @r4+, r3b" 44b7 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r3b (loadw 0 32 (var r4))) (set r4 (+ (var r4) (bv 32 0x4)))) empty))
+adE "lds r10, mach" 4a0a 0x0 (set mach (var r10))
+adE "lds r1, macl" 411a 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set macl (ite (var _priv) (var r1b) (var r1))))
+adE "lds r15, pr" 4f2a 0x0 (set pr (var r15))
+adE "lds.l @r10+, mach" 4a06 0x0 (seq (set mach (loadw 0 32 (var r10))) (set r10 (+ (var r10) (bv 32 0x4))))
+adE "lds.l @r1+, macl" 4116 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set macl (loadw 0 32 (ite (var _priv) (var r1b) (var r1)))) (set _regv (+ (ite (var _priv) (var r1b) (var r1)) (bv 32 0x4))) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))))
+adE "lds.l @r15+, pr" 4f26 0x0 (seq (set pr (loadw 0 32 (var r15))) (set r15 (+ (var r15) (bv 32 0x4))))
+adE "ldtlb" 0038 0x0
+adE "movca.l r0, @r6" 06c3 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (storew 0 (ite (var _priv) (var r6b) (var r6)) (ite (var _priv) (var r0b) (var r0))))
+adE "nop" 0009 0x0 nop
+adE "ocbi @r11" 0b93
+adE "ocbp @r11" 0ba3
+adE "ocbwb @r11" 0bb3
+adE "pref @r15" 0f83
+adE "rte" 002b 0x6 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set _sreg (var ssr)) (set sr_t (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_s (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x3) false)) (set sr_i (& (bv 4 0xf) (cast 4 false (var _sreg)))) (set _sreg (>> (var _sreg) (bv 32 0x4) false)) (set sr_q (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_m (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x6) false)) (set sr_f (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0xd) false)) (set sr_b (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_r (lsb (var _sreg))) (set _sreg (>> (var _sreg) (bv 32 0x1) false)) (set sr_d (lsb (var _sreg))) (jmp (var spc))) empty))
+adE "sets" 0058 0x0 (set sr_s true)
+adE "sett" 0018 0x0 (set sr_t true)
+adE "sleep" 001b 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) nop empty))
+adE "stc sr, r10" 0a02 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r10 (| (ite (var sr_t) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_s) (bv 32 0x1) (bv 32 0x0)) (<< (| (cast 32 false (var sr_i)) (<< (| (ite (var sr_q) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_m) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_f) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_b) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_r) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_d) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0)) (bv 32 0x1) false)) (bv 32 0x1) false)) (bv 32 0xd) false)) (bv 32 0x6) false)) (bv 32 0x1) false)) (bv 32 0x4) false)) (bv 32 0x3) false)) (bv 32 0x1) false))) empty))
+adE "stc gbr, r0" 0012 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (var gbr)) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "stc vbr, r0" 0022 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r0 (var vbr)) empty))
+adE "stc ssr, r11" 0b32 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r11 (var ssr)) empty))
+adE "stc spc, r11" 0b42 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r11 (var spc)) empty))
+adE "stc sgr, r11" 0b3a 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r11 (var sgr)) empty))
+adE "stc dbr, r11" 0bfa 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r11 (var dbr)) empty))
+adE "stc r7b, r14" 0ef2 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r14 (var r7b)) empty))
+adE "stc.l sr, @-r10" 4a03 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r10 (- (var r10) (bv 32 0x4))) (storew 0 (var r10) (| (ite (var sr_t) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_s) (bv 32 0x1) (bv 32 0x0)) (<< (| (cast 32 false (var sr_i)) (<< (| (ite (var sr_q) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_m) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_f) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_b) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_r) (bv 32 0x1) (bv 32 0x0)) (<< (| (ite (var sr_d) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0)) (bv 32 0x1) false)) (bv 32 0x1) false)) (bv 32 0xd) false)) (bv 32 0x6) false)) (bv 32 0x1) false)) (bv 32 0x4) false)) (bv 32 0x3) false)) (bv 32 0x1) false)))) empty))
+adE "stc.l gbr, @-r0" 4013 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (- (ite (var _priv) (var r0b) (var r0)) (bv 32 0x4))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))) (storew 0 (ite (var _priv) (var r0b) (var r0)) (var gbr)))
+adE "stc.l vbr, @-r0" 4023 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r0 (- (var r0) (bv 32 0x4))) (storew 0 (var r0) (var vbr))) empty))
+adE "stc.l ssr, @-r11" 4b33 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r11 (- (var r11) (bv 32 0x4))) (storew 0 (var r11) (var ssr))) empty))
+adE "stc.l spc, @-r11" 4b43 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r11 (- (var r11) (bv 32 0x4))) (storew 0 (var r11) (var spc))) empty))
+adE "stc.l sgr, @-r11" 4b32 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r11 (- (var r11) (bv 32 0x4))) (storew 0 (var r11) (var sgr))) empty))
+adE "stc.l dbr, @-r11" 4bf2 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r11 (- (var r11) (bv 32 0x4))) (storew 0 (var r11) (var dbr))) empty))
+adE "stc.l r5b, @-r15" 4fd3 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r15 (- (var r15) (bv 32 0x4))) (storew 0 (var r15) (var r5b))) empty))
+adE "sts mach, r1" 010a 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (var mach)) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))))
+adE "sts macl, r14" 0e1a 0x0 (set r14 (var macl))
+adE "sts pr, r14" 0e2a 0x0 (set r14 (var pr))
+adE "sts.l mach, @-r1" 4102 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (- (ite (var _priv) (var r1b) (var r1)) (bv 32 0x4))) (branch (var _priv) (set r1b (var _regv)) (set r1 (var _regv))) (storew 0 (ite (var _priv) (var r1b) (var r1)) (var mach)))
+adE "sts.l macl, @-r14" 4e12 0x0 (seq (set r14 (- (var r14) (bv 32 0x4))) (storew 0 (var r14) (var macl)))
+adE "sts.l pr, @-r14" 4e22 0x0 (seq (set r14 (- (var r14) (bv 32 0x4))) (storew 0 (var r14) (var pr)))
+
+# Misc (Legacy)
+adE "bsr 0x00000002"	0xbfff
+adE "tst 0xff, r0"	0xc8ff
+adE "mov.w @(0x000,pc), r0"	0x9000
+adE "mov.w @(0x1fe,pc), r0"	0x90ff
+adE "mov.l @(0x000,pc), r0"	0xd000
+adE "mov.l @(0x3fc,pc), r0"	0xd0ff
+adE "mov.w @(0x000,gbr), r0"	0xc500
+adE "mov.w @(0x1fe,gbr), r0"	0xc5ff
+adE "mov.l @(0x000,gbr), r0"	0xc600
+adE "mov.l @(0x3fc,gbr), r0"	0xc6ff

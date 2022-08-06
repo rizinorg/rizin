@@ -1118,7 +1118,9 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		if (colorize_asm) {
 			core->print->colorize_opts.reset_bg = line_highlighted(ds);
 			RzStrBuf *bw_asm = rz_strbuf_new(source);
-			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type), ds->asmop.asm_toks);
+			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
+			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
+			free(param);
 			rz_strbuf_free(bw_asm);
 			rz_return_if_fail(colored_asm);
 			source = rz_strbuf_drain(colored_asm);
@@ -1156,7 +1158,9 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		if (colorize_asm) {
 			core->print->colorize_opts.reset_bg = line_highlighted(ds);
 			RzStrBuf *bw_asm = rz_strbuf_new(ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop));
-			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type), ds->asmop.asm_toks);
+			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
+			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
+			free(param);
 			rz_strbuf_free(bw_asm);
 			rz_return_if_fail(colored_asm);
 			source = rz_strbuf_drain(colored_asm);
@@ -6251,7 +6255,9 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 					RzAnalysisOp aop;
 					rz_analysis_op(core->analysis, &aop, addr, buf + i, l - i, RZ_ANALYSIS_OP_MASK_ALL);
 					RzStrBuf *colored_asm;
-					colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, rz_asm_get_parse_param(core->analysis->reg, aop.type), asmop.asm_toks);
+					RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+					colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
+					free(param);
 					if (colored_asm) {
 						rz_cons_printf("%s\n", rz_strbuf_get(colored_asm));
 						rz_strbuf_free(colored_asm);
@@ -6525,7 +6531,9 @@ toro:
 					rz_analysis_op(core->analysis, &aop, core->offset + i,
 						buf + addrbytes * i, nb_bytes - addrbytes * i, RZ_ANALYSIS_OP_MASK_BASIC);
 					RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(asm_str);
-					colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, aop.type), asmop.asm_toks);
+					RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+					colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
+					free(param);
 					rz_cons_printf("%s" Color_RESET "\n", rz_strbuf_get(colored_asm));
 					rz_strbuf_free(colored_asm);
 					rz_analysis_op_fini(&aop);
@@ -6798,7 +6806,9 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	free(ba);
 	if (color && has_color) {
 		RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(str);
-		colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, op.type), asmop.asm_toks);
+		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, op.type);
+		colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
+		free(param);
 		return rz_strbuf_drain(colored_asm);
 	} else {
 		buf_asm = rz_str_new(str);

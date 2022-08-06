@@ -82,7 +82,9 @@ static inline void rz_key_parser_add(RzKeyParser *parser, const char *key, int v
 #define RZ_KEY_PARSER_JSON(parser, json, child, body) \
 	if (json->type == RZ_JSON_OBJECT) { \
 		for (RzJson *child = json->children.first; child; child = child->next) { \
-			RZ_KEY_PARSER_SWITCH(parser, child->key) { body } \
+			RZ_KEY_PARSER_SWITCH(parser, child->key) { \
+				body \
+			} \
 		} \
 	}
 

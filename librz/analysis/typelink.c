@@ -93,7 +93,7 @@ static bool type_collect_cb(void *user, ut64 k, const void *v) {
  *
  * \param analysis RzAnalysis instance
  */
-RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_type_links(RzAnalysis *analysis) {
+RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_type_links(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzList *types = rz_list_new();
 	ht_up_foreach(analysis->type_links, type_collect_cb, types);
@@ -139,7 +139,7 @@ static bool type_paths_collect_by_offset_cb(void *user, ut64 k, const void *v) {
  * \param analysis RzAnalysis instance
  * \param offset The offset of the member to match against
  */
-RZ_API RZ_OWN RzList /* RzTypePath */ *rz_analysis_type_links_by_offset(RzAnalysis *analysis, ut64 offset) {
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_analysis_type_links_by_offset(RzAnalysis *analysis, ut64 offset) {
 	rz_return_val_if_fail(analysis, NULL);
 	if (offset == UT64_MAX) {
 		return NULL;
@@ -198,7 +198,7 @@ static bool type_paths_collect_by_address_cb(void *user, ut64 k, const void *v) 
  * \param analysis RzAnalysis instance
  * \param addr The address to check against possible matches
  */
-RZ_API RZ_OWN RzList /* RzTypePath */ *rz_analysis_type_paths_by_address(RzAnalysis *analysis, ut64 addr) {
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_analysis_type_paths_by_address(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, NULL);
 	if (addr == UT64_MAX) {
 		return NULL;

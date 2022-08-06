@@ -106,7 +106,7 @@ RZ_API void rz_config_node_free(RZ_NULLABLE void *n);
 RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RzConfigNode *node);
 RZ_API bool rz_config_toggle(RzConfig *cfg, RZ_NONNULL const char *name);
 RZ_API bool rz_config_readonly(RzConfig *cfg, const char *key);
-RZ_API bool rz_config_eval(RzConfig *cfg, const char *str);
+RZ_API bool rz_config_eval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *str);
 
 RZ_API bool rz_config_set_setter(RzConfig *cfg, const char *key, RzConfigCallback cb);
 RZ_API bool rz_config_set_getter(RzConfig *cfg, const char *key, RzConfigCallback cb);

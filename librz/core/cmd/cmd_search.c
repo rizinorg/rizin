@@ -574,7 +574,7 @@ static bool maskMatches(int perm, int mask, bool only) {
 	return false;
 }
 
-RZ_API RZ_OWN RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
 	rz_return_val_if_fail(core, NULL);
 
 	RzList *list = rz_list_newf(free); // XXX rz_io_map_free);
@@ -3051,7 +3051,7 @@ reread:
 					int mode = 0;
 
 					// Options, like JSON, linear, ...
-					if (input + 1) {
+					if (*(input + 1)) {
 						mode = *(input + 1);
 					}
 

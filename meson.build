@@ -35,34 +35,7 @@ rizin_version_minor = rizin_version_split[1].to_int()
 rizin_version_patch = rizin_version_split[2].split('-')[0].to_int()
 rizin_version_number = 1000000 * rizin_version_major + 1000 * rizin_version_minor + rizin_version_patch
 
-
-repo = '.'
-if meson.is_subproject()
-  repo = meson.current_source_dir()
-  if host_machine.system() == 'windows'
-    py_cmd = 'print(__import__("os").readlink(r"@0@"))'.format(repo)
-    py_cmd = run_command(py3_exe, '-c', py_cmd, check: true)
-    if py_cmd.returncode() == 0
-      repo = py_cmd.stdout().strip()
-      message('rizin real path: ' + repo)
-    endif
-  endif
-endif
-
-gittip = ''
-
-fs = import('fs')
-if git_exe.found() and fs.exists('.git')
-  # Get gittip
-  git_rev_parse = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD', check: true)
-  if git_rev_parse.returncode() == 0
-    gittip = git_rev_parse.stdout().strip()
-  endif
-endif
-
-if get_option('rizin_gittip') != ''
-  gittip = get_option('rizin_gittip')
-endif
+repo = meson.current_source_dir()
 
 rizin_libversion = '@0@.@1@'.format(rizin_version_major, rizin_version_minor)
 message('rizin lib version: ' + rizin_libversion)
@@ -147,6 +120,7 @@ if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) 
   add_global_link_arguments('-shared-libasan', language: 'c', native: true)
 endif
 
+fs = import('fs')
 rizin_prefix = get_option('prefix')
 rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
@@ -309,21 +283,6 @@ libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
-# handle libuv library
-libuv_dep = disabler()
-if get_option('use_libuv')
-  r = run_command(py3_exe, check_meson_subproject_py, 'libuv', check: false)
-  if r.returncode() == 1 and get_option('subprojects_check')
-    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-  endif
-
-  libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
-  if not libuv_dep.found()
-    libuv_proj = subproject('libuv', default_options: ['default_library=static'])
-    libuv_dep = libuv_proj.get_variable('libuv_dep')
-  endif
-endif
-
 # handle tree-sitter
 r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -418,7 +377,6 @@ foreach it : ccs
   it_userconf.set('PLUGINS', rizin_plugins)
   it_userconf.set('BINDINGS', rizin_bindings)
   it_userconf.set10('HAVE_OPENSSL', sys_openssl.found())
-  it_userconf.set10('HAVE_LIBUV', libuv_dep.found())
   it_userconf.set10('WANT_DYLINK', true)
   it_userconf.set10('HAVE_PTRACE', have_ptrace)
   it_userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
@@ -540,7 +498,6 @@ packager_version = get_option('packager_version')
 message('Version Major: @0@0'.format(rizin_version_major))
 message('Version Minor: @0@0'.format(rizin_version_minor))
 message('Version Patch: @0@0'.format(rizin_version_patch))
-message('Version GitTip: @0@0'.format(gittip))
 
 versionconf = configuration_data()
 versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
@@ -548,7 +505,6 @@ versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
 versionconf.set('RZ_VERSION_NUMBER', rizin_version_number)
 versionconf.set('RZ_VERSION', rizin_version)
-versionconf.set('RZ_GITTIP', gittip)
 if packager_version != ''
   versionconf.set_quoted('RZ_PACKAGER_VERSION', packager_version)
   if packager != ''
@@ -561,6 +517,17 @@ rz_version_h = configure_file(
   configuration: versionconf,
   install_dir: rizin_incdir
 )
+
+if git_exe.found() and fs.exists('.git')
+  gittip_file = custom_target('gittip_file',
+    build_always_stale: true,
+    build_by_default: true,
+    output: 'gittip',
+    command: [py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD'],
+    install: true,
+    install_dir: rizin_bindir
+  )
+endif
 
 # handle zlib dependency
 zlib_dep = disabler()
@@ -774,7 +741,6 @@ summary({
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
-  'System libuv library': libuv_dep.found() and libuv_dep.type_name() != 'internal',
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',

@@ -102,7 +102,7 @@ static int reloc_target_cmp(const void *a, const void *b) {
 
 #undef CMP_CHECK
 
-RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList *relocs) {
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList /*<RzBinReloc *>*/ *relocs) {
 	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
 	if (!ret) {
 		return NULL;
@@ -707,7 +707,7 @@ RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSp
 /**
  * \brief Get list of \p RzBinAddr representing the entry points of the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_entries(RzBinObject *obj) {
+RZ_API const RzList /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->entries;
 }
@@ -715,7 +715,7 @@ RZ_API const RzList *rz_bin_object_get_entries(RzBinObject *obj) {
 /**
  * \brief Get list of \p RzBinField representing the fields of the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_fields(RzBinObject *obj) {
+RZ_API const RzList /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->fields;
 }
@@ -723,7 +723,7 @@ RZ_API const RzList *rz_bin_object_get_fields(RzBinObject *obj) {
 /**
  * \brief Get list of \p RzBinImport representing the imports of the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_imports(RzBinObject *obj) {
+RZ_API const RzList /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->imports;
 }
@@ -731,7 +731,7 @@ RZ_API const RzList *rz_bin_object_get_imports(RzBinObject *obj) {
 /**
  * \brief Get the \p RzBinInfo of the binary object.
  */
-RZ_API const RzBinInfo *rz_bin_object_get_info(RzBinObject *obj) {
+RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->info;
 }
@@ -739,7 +739,7 @@ RZ_API const RzBinInfo *rz_bin_object_get_info(RzBinObject *obj) {
 /**
  * \brief Get list of \p char* representing the libraries used by the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_libs(RzBinObject *obj) {
+RZ_API const RzList /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->libs;
 }
@@ -747,7 +747,7 @@ RZ_API const RzList *rz_bin_object_get_libs(RzBinObject *obj) {
 /**
  * \brief Get list of \p RzBinSection representing both the sections and the segments of the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_sections_all(RzBinObject *obj) {
+RZ_API const RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->sections;
 }
@@ -771,7 +771,7 @@ static RzList *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
 /**
  * \brief Get list of \p RzBinSection representing only the sections of the binary object.
  */
-RZ_API RzList *rz_bin_object_get_sections(RzBinObject *obj) {
+RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return get_sections_or_segment(obj, false);
 }
@@ -779,7 +779,7 @@ RZ_API RzList *rz_bin_object_get_sections(RzBinObject *obj) {
 /**
  * \brief Get list of \p RzBinSection representing only the segments of the binary object.
  */
-RZ_API RzList *rz_bin_object_get_segments(RzBinObject *obj) {
+RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return get_sections_or_segment(obj, true);
 }
@@ -787,7 +787,7 @@ RZ_API RzList *rz_bin_object_get_segments(RzBinObject *obj) {
 /**
  * \brief Get list of \p RzBinClass representing the classes (e.g. C++ classes) defined in the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_classes(RzBinObject *obj) {
+RZ_API const RzList /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->classes;
 }
@@ -795,7 +795,7 @@ RZ_API const RzList *rz_bin_object_get_classes(RzBinObject *obj) {
 /**
  * \brief Get list of \p RzBinString representing the strings identified in the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_strings(RzBinObject *obj) {
+RZ_API const RzList /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	if (!obj->strings) {
 		return NULL;
@@ -806,7 +806,7 @@ RZ_API const RzList *rz_bin_object_get_strings(RzBinObject *obj) {
 /**
  * \brief Get list of \p RzBinMem representing the memory regions identified in the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_mem(RzBinObject *obj) {
+RZ_API const RzList /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->mem;
 }
@@ -814,7 +814,7 @@ RZ_API const RzList *rz_bin_object_get_mem(RzBinObject *obj) {
 /**
  * \brief Get list of \p RzBinSymbol representing the symbols in the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_symbols(RzBinObject *obj) {
+RZ_API const RzList /*<RzBinSymbol *>*/ *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->symbols;
 }
@@ -822,7 +822,7 @@ RZ_API const RzList *rz_bin_object_get_symbols(RzBinObject *obj) {
 /**
  * \brief Get a list of \p RzBinResource representing the resources in the binary object.
  */
-RZ_API const RzList *rz_bin_object_get_resources(RzBinObject *obj) {
+RZ_API const RzList /*<RzBinResource *>*/ *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->resources;
 }
@@ -830,7 +830,7 @@ RZ_API const RzList *rz_bin_object_get_resources(RzBinObject *obj) {
 /**
  * \brief Remove all previously identified strings in the binary object and scan it again for strings.
  */
-RZ_API bool rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
+RZ_API bool rz_bin_object_reset_strings(RZ_NONNULL RzBin *bin, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(bin && bf && obj, false);
 	RZ_FREE_CUSTOM(obj->strings, rz_bin_string_database_free);
 
@@ -872,7 +872,7 @@ RZ_API RZ_BORROW RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject
 /**
  * \brief Return true if the binary object \p obj is big endian.
  */
-RZ_API bool rz_bin_object_is_big_endian(RzBinObject *obj) {
+RZ_API bool rz_bin_object_is_big_endian(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, false);
 	return obj->info ? obj->info->big_endian : false;
 }
@@ -880,7 +880,7 @@ RZ_API bool rz_bin_object_is_big_endian(RzBinObject *obj) {
 /**
  * \brief Return true if the binary object \p obj is detected as statically compiled.
  */
-RZ_API bool rz_bin_object_is_static(RzBinObject *obj) {
+RZ_API bool rz_bin_object_is_static(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, false);
 	if (obj->libs && rz_list_length(obj->libs) > 0) {
 		return RZ_BIN_DBG_STATIC & obj->info->dbg_info;
@@ -899,7 +899,7 @@ static void bin_section_map_fini(void *e, void *user) {
  *
  * \return A RzVector* with RzBinSectionMap structure inside.
  **/
-RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RzBinObject *obj) {
+RZ_API RZ_OWN RzVector /*<RzBinSectionMap>*/ *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 
 	const RzList *all = rz_bin_object_get_sections_all(obj);
@@ -967,7 +967,7 @@ static ut64 map_p2v(RzBinMap *m, ut64 paddr) {
  * \param paddr Offset in the file
  * \return Converted offset to virtual address or UT64_MAX if the conversion cannot be done
  */
-RZ_API ut64 rz_bin_object_p2v(RzBinObject *obj, ut64 paddr) {
+RZ_API ut64 rz_bin_object_p2v(RZ_NONNULL RzBinObject *obj, ut64 paddr) {
 	rz_return_val_if_fail(obj, UT64_MAX);
 	RzBinMap *m = rz_bin_object_get_map_at(obj, paddr, false);
 	if (!m) {
@@ -984,7 +984,7 @@ RZ_API ut64 rz_bin_object_p2v(RzBinObject *obj, ut64 paddr) {
  * \param paddr Offset in the file
  * \return Vector containing \p ut64 values of all possible virtual addresses
  */
-RZ_API RzVector *rz_bin_object_p2v_all(RzBinObject *obj, ut64 paddr) {
+RZ_API RzVector /*<ut64>*/ *rz_bin_object_p2v_all(RZ_NONNULL RzBinObject *obj, ut64 paddr) {
 	rz_return_val_if_fail(obj, NULL);
 	RzPVector *maps = rz_bin_object_get_maps_at(obj, paddr, false);
 	if (!maps) {
@@ -1012,7 +1012,7 @@ RZ_API RzVector *rz_bin_object_p2v_all(RzBinObject *obj, ut64 paddr) {
  * \param paddr Virtual address
  * \return Converted virtual address to offset in the file or UT64_MAX if the conversion cannot be done
  */
-RZ_API ut64 rz_bin_object_v2p(RzBinObject *obj, ut64 vaddr) {
+RZ_API ut64 rz_bin_object_v2p(RZ_NONNULL RzBinObject *obj, ut64 vaddr) {
 	rz_return_val_if_fail(obj, UT64_MAX);
 	RzBinMap *m = rz_bin_object_get_map_at(obj, vaddr, true);
 	if (!m) {
@@ -1033,7 +1033,7 @@ RZ_API ut64 rz_bin_object_v2p(RzBinObject *obj, ut64 vaddr) {
  *
  * \return  On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RzList /*<RzBinString *>*/ *list) {
+RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzList /*<RzBinString *>*/ *list) {
 	RzBinStrDb *db = RZ_NEW0(RzBinStrDb);
 	if (!db) {
 		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb\n");
@@ -1073,7 +1073,7 @@ fail:
  *
  * \param  db    The string database to free
  */
-RZ_IPI void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db) {
+RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db) {
 	if (!db) {
 		return;
 	}

@@ -41,7 +41,7 @@ static inline bool is_oid_object(RASN1Object *object) {
 		object->list.objects[0]->tag == TAG_OID;
 }
 
-bool rz_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object *object) {
+RZ_API bool rz_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object *object) {
 	rz_return_val_if_fail(ai && object, false);
 
 	if (object->list.length < 1 || !object->list.objects || !is_oid_object(object)) {
@@ -54,7 +54,7 @@ bool rz_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object
 	return true;
 }
 
-bool rz_x509_parse_subjectpublickeyinfo(RX509SubjectPublicKeyInfo *spki, RASN1Object *object) {
+RZ_API bool rz_x509_parse_subjectpublickeyinfo(RX509SubjectPublicKeyInfo *spki, RASN1Object *object) {
 	RASN1Object *o;
 	if (!spki || !object || object->list.length != 2) {
 		return false;
@@ -76,7 +76,7 @@ bool rz_x509_parse_subjectpublickeyinfo(RX509SubjectPublicKeyInfo *spki, RASN1Ob
 	return true;
 }
 
-bool rz_x509_parse_name(RX509Name *name, RASN1Object *object) {
+RZ_API bool rz_x509_parse_name(RX509Name *name, RASN1Object *object) {
 	ut32 i;
 	if (!name || !object || !object->list.length) {
 		return false;
@@ -119,7 +119,7 @@ bool rz_x509_parse_name(RX509Name *name, RASN1Object *object) {
 	return true;
 }
 
-bool rz_x509_parse_extension(RX509Extension *ext, RASN1Object *object) {
+RZ_API bool rz_x509_parse_extension(RX509Extension *ext, RASN1Object *object) {
 	RASN1Object *o;
 	if (!ext || !object || object->list.length < 2) {
 		return false;
@@ -140,7 +140,7 @@ bool rz_x509_parse_extension(RX509Extension *ext, RASN1Object *object) {
 	return true;
 }
 
-bool rz_x509_parse_extensions(RX509Extensions *ext, RASN1Object *object) {
+RZ_API bool rz_x509_parse_extensions(RX509Extensions *ext, RASN1Object *object) {
 	ut32 i;
 	if (!ext || !object || object->list.length != 1 || !object->list.objects[0]->length) {
 		return false;
@@ -161,7 +161,7 @@ bool rz_x509_parse_extensions(RX509Extensions *ext, RASN1Object *object) {
 	return true;
 }
 
-bool rz_x509_parse_tbscertificate(RX509TBSCertificate *tbsc, RASN1Object *object) {
+RZ_API bool rz_x509_parse_tbscertificate(RX509TBSCertificate *tbsc, RASN1Object *object) {
 	RASN1Object **elems;
 	ut32 i;
 	ut32 shift = 0;
@@ -214,7 +214,7 @@ bool rz_x509_parse_tbscertificate(RX509TBSCertificate *tbsc, RASN1Object *object
 	return true;
 }
 
-RX509Certificate *rz_x509_parse_certificate(RASN1Object *object) {
+RZ_API RX509Certificate *rz_x509_parse_certificate(RASN1Object *object) {
 	if (!object) {
 		return NULL;
 	}
@@ -246,7 +246,7 @@ fail:
 	return cert;
 }
 
-RX509Certificate *rz_x509_parse_certificate2(const ut8 *buffer, ut32 length) {
+RZ_API RX509Certificate *rz_x509_parse_certificate2(const ut8 *buffer, ut32 length) {
 	RX509Certificate *certificate;
 	RASN1Object *object;
 	if (!buffer || !length) {
@@ -258,7 +258,7 @@ RX509Certificate *rz_x509_parse_certificate2(const ut8 *buffer, ut32 length) {
 	return certificate;
 }
 
-RX509CRLEntry *rz_x509_parse_crlentry(RASN1Object *object) {
+RZ_API RX509CRLEntry *rz_x509_parse_crlentry(RASN1Object *object) {
 	RX509CRLEntry *entry;
 	if (!object || object->list.length != 2) {
 		return NULL;
@@ -303,7 +303,7 @@ RZ_API RX509CertificateRevocationList *rz_x509_parse_crl(RASN1Object *object) {
 	return crl;
 }
 
-void rz_x509_free_algorithmidentifier(RX509AlgorithmIdentifier *ai) {
+RZ_API void rz_x509_free_algorithmidentifier(RX509AlgorithmIdentifier *ai) {
 	if (ai) {
 		// no need to free ai, since this functions is used internally
 		rz_asn1_free_string(ai->algorithm);
@@ -319,7 +319,7 @@ static void rz_x509_free_validity(RX509Validity *validity) {
 	}
 }
 
-void rz_x509_free_name(RX509Name *name) {
+RZ_API void rz_x509_free_name(RX509Name *name) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -335,7 +335,7 @@ void rz_x509_free_name(RX509Name *name) {
 	// not freeing name since it's not allocated dinamically
 }
 
-void rz_x509_free_extension(RX509Extension *ex) {
+RZ_API void rz_x509_free_extension(RX509Extension *ex) {
 	if (ex) {
 		rz_asn1_free_string(ex->extnID);
 		rz_asn1_free_binary(ex->extnValue);
@@ -344,7 +344,7 @@ void rz_x509_free_extension(RX509Extension *ex) {
 	}
 }
 
-void rz_x509_free_extensions(RX509Extensions *ex) {
+RZ_API void rz_x509_free_extensions(RX509Extensions *ex) {
 	ut32 i;
 	if (!ex) {
 		return;
@@ -358,7 +358,7 @@ void rz_x509_free_extensions(RX509Extensions *ex) {
 	// no need to free ex, since this functions is used internally
 }
 
-void rz_x509_free_subjectpublickeyinfo(RX509SubjectPublicKeyInfo *spki) {
+RZ_API void rz_x509_free_subjectpublickeyinfo(RX509SubjectPublicKeyInfo *spki) {
 	if (spki) {
 		rz_x509_free_algorithmidentifier(&spki->algorithm);
 		rz_asn1_free_binary(spki->subjectPublicKey);
@@ -368,7 +368,7 @@ void rz_x509_free_subjectpublickeyinfo(RX509SubjectPublicKeyInfo *spki) {
 	}
 }
 
-void rz_x509_free_tbscertificate(RX509TBSCertificate *tbsc) {
+RZ_API void rz_x509_free_tbscertificate(RX509TBSCertificate *tbsc) {
 	if (tbsc) {
 		//  version is ut32
 		rz_asn1_free_string(tbsc->serialNumber);
@@ -384,7 +384,7 @@ void rz_x509_free_tbscertificate(RX509TBSCertificate *tbsc) {
 	}
 }
 
-void rz_x509_free_certificate(RX509Certificate *certificate) {
+RZ_API void rz_x509_free_certificate(RX509Certificate *certificate) {
 	if (certificate) {
 		rz_asn1_free_binary(certificate->signature);
 		rz_x509_free_algorithmidentifier(&certificate->algorithmIdentifier);
@@ -431,7 +431,7 @@ static void rz_x509_validity_dump(RX509Validity *validity, const char *pad, RzSt
 	rz_strbuf_appendf(sb, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
 }
 
-void rz_x509_name_dump(RX509Name *name, const char *pad, RzStrBuf *sb) {
+RZ_API void rz_x509_name_dump(RX509Name *name, const char *pad, RzStrBuf *sb) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -543,7 +543,7 @@ static void rz_x509_tbscertificate_dump(RX509TBSCertificate *tbsc, const char *p
 	free(pad2);
 }
 
-void rz_x509_certificate_dump(RX509Certificate *cert, const char *pad, RzStrBuf *sb) {
+RZ_API void rz_x509_certificate_dump(RX509Certificate *cert, const char *pad, RzStrBuf *sb) {
 	RASN1String *algo = NULL;
 	char *pad2;
 	if (!cert) {

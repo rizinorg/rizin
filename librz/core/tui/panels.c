@@ -542,7 +542,7 @@ static void __create_panel_input(void *user, RzPanel *panel, const RzPanelLayout
 static void __replace_current_panel_input(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
 static void __search_strings_data_create(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
 static void __search_strings_bin_create(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
-static char *__search_strings(RzCore *core, bool whole);
+RZ_OWN static char *__search_strings(RzCore *core, bool whole);
 static void __put_breakpoints_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED const RzPanelLayout dir, RZ_UNUSED RZ_NULLABLE const char *title);
 static void __continue_almighty_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED const RzPanelLayout dir, RZ_UNUSED RZ_NULLABLE const char *title);
 static void __step_almighty_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED const RzPanelLayout dir, RZ_UNUSED RZ_NULLABLE const char *title);

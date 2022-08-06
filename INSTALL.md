@@ -30,14 +30,34 @@ anywhere because Rizin is compiled in a "portable" way, allowing moving the
 whole directory anywhere.
 
 ## MacOS
-On MacOS systems, Rizin can be installed through .pkg files attached to the
+On MacOS systems you can install Rizin in one of three ways.
+
+Bear in mind the formula offered by Homebrew and the port offered by MacPorts
+are not provided by Rizin: they are offered and actively maintained and updated
+by their respective communities. Rizin *might* help with maintenance and fixes
+in a punctual fashion, but it cannot guarantee these two installation methods
+offer the latest available version.
+
+You can always find the latest version in the package offered on the GitHub
+release.
+
+### Homebrew
+Rizin offers a Homebrew [formula](https://formulae.brew.sh/formula/rizin)
+through which you can install Rizin with a single command:
+
+    brew install rizin
+
+### MacPorts
+Rizin offers a MacPorts [port](https://ports.macports.org/port/rizin/) too.
+We can leverage it by running:
+
+    sudo port install rizin
+
+### Package file
+Rizin can also be installed through .pkg files attached to the
 GitHub release at https://github.com/rizinorg/rizin/releases/.
 
 It is named as `rizin-macos-<version>.pkg`.
-
-If you would like to help us configure an homebrew tap for Rizin, please get in
-touch! We would love to make the process of installing and keeping Rizin updated
-as easy as possible for all our users.
 
 ## Android
 Statically compiled binaries for some common architectures where Android runs
@@ -52,5 +72,5 @@ anywhere.
 
 ## Others
 If you are interested in providing Rizin in your distribution/system or in
-adding support for other distribution formats (e.g. snap, homebrew, etc.),
+adding support for other distribution formats (e.g. snap, flatpak, etc.),
 please let us know and we would be glad to help you.

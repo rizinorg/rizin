@@ -80,6 +80,3 @@ parts:
       - libssl-dev
       - libbsd-dev
       - libcapstone-dev
-      - libuv1-dev
-    stage-packages:
-      - libuv1

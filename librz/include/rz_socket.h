@@ -59,12 +59,14 @@ typedef struct {
 	RzCoreBind coreb;
 } RzPipe;
 
-typedef struct rz_socket_t {
 #ifdef _MSC_VER
-	SOCKET fd;
+typedef SOCKET RzSocketFd;
 #else
-	int fd;
+typedef int RzSocketFd;
 #endif
+
+typedef struct rz_socket_t {
+	RzSocketFd fd;
 	bool is_ssl;
 	int proto;
 	int local; // TODO: merge ssl with local -> flags/options
@@ -122,6 +124,24 @@ RZ_API int rz_socket_read_block(RzSocket *s, unsigned char *buf, int len);
 RZ_API int rz_socket_gets(RzSocket *s, char *buf, int size);
 RZ_API ut8 *rz_socket_slurp(RzSocket *s, int *len);
 RZ_API bool rz_socket_is_connected(RzSocket *);
+
+/**
+ * Utility to interrupt blocking calls on an RzSocket from e.g.
+ * other threads or signal handlers.
+ */
+typedef struct rz_stop_pipe_t RzStopPipe;
+
+typedef enum {
+	RZ_STOP_PIPE_ERROR,
+	RZ_STOP_PIPE_STOPPED,
+	RZ_STOP_PIPE_SOCKET_READY,
+	RZ_STOP_PIPE_TIMEOUT
+} RzStopPipeSelectResult;
+
+RZ_API RzStopPipe *rz_stop_pipe_new(void);
+RZ_API void rz_stop_pipe_free(RzStopPipe *stop_pipe);
+RZ_API void rz_stop_pipe_stop(RzStopPipe *stop_pipe);
+RZ_API RzStopPipeSelectResult rz_stop_pipe_select_single(RzStopPipe *stop_pipe, RzSocket *sock, bool sock_write, ut64 timeout_ms);
 
 /* process */
 typedef struct rz_socket_proc_t {

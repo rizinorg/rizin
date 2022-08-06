@@ -659,7 +659,9 @@ typedef struct rz_cons_t {
 	{ 0, a, r, g, b, bgr, bgg, bgb, id16 }
 #else
 #define RZCOLOR(a, r, g, b, bgr, bgg, bgb, id16) \
-	(RzColor) { 0, a, r, g, b, bgr, bgg, bgb, id16 }
+	(RzColor) { \
+		0, a, r, g, b, bgr, bgg, bgb, id16 \
+	}
 #endif
 #define RzColor_NULL RZCOLOR(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, -1)
 #if __WINDOWS__
@@ -839,7 +841,7 @@ RZ_API void rz_cons_sleep_end(void *user);
 RZ_API void rz_cons_break_push(RzConsBreak cb, void *user);
 RZ_API void rz_cons_break_pop(void);
 RZ_API void rz_cons_break_clear(void);
-RZ_API void rz_cons_breakword(const char *s);
+RZ_API void rz_cons_breakword(RZ_NULLABLE const char *s);
 RZ_API void rz_cons_break_end(void);
 RZ_API void rz_cons_break_timeout(int timeout);
 

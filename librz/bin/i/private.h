@@ -11,7 +11,6 @@
 RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, bool steal_ptr);
 RZ_IPI RzBinObject *rz_bin_file_object_find_by_id(RzBinFile *binfile, ut32 binobj_id);
 RZ_IPI RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
-RZ_IPI RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 binfile_id);
 RZ_IPI bool rz_bin_file_set_obj(RzBin *bin, RzBinFile *bf, RzBinObject *obj);
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_bytes(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd);
 RZ_IPI bool rz_bin_file_set_bytes(RzBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
@@ -21,8 +20,6 @@ RZ_IPI RzBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RzBin *bin, const char *name
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name);
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin);
 RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *binfile);
-
-RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 
 RZ_IPI void rz_bin_object_free(RzBinObject *o);
 RZ_IPI ut64 rz_bin_object_get_baddr(RzBinObject *o);
