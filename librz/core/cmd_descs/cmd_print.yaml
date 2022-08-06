@@ -100,6 +100,10 @@ commands:
         summary: Generate a byte array in GAS assembly.
         cname: cmd_print_byte_array_asm
         args: []
+      - name: pcA
+        summary: Generate a byte array in GAS assembly with instructions in comments
+        cname: cmd_print_byte_array_with_inst
+        args: []
       - name: pcb
         summary: Generate a bash script with the byte array.
         cname: cmd_print_byte_array_bash

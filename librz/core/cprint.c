@@ -501,6 +501,6 @@ RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NO
 		rz_strbuf_appendf(sb, "  // %s\n", rz_strbuf_get(&asmop.buf_asm));
 		i--;
 	}
-	rz_strbuf_appendf(sb, ".equ shellcode_len, %d\n", len);
+	rz_strbuf_appendf(sb, ".equ shellcode_len, %d", len);
 	return rz_strbuf_drain(sb);
 }

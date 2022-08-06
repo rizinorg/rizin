@@ -28,31 +28,6 @@ static const char *help_msg_pp[] = {
 	NULL
 };
 
-static const char *help_msg_pc[] = {
-	"Usage:", "pc", " # Print in code",
-	"pc", "", "C",
-	"pc*", "", "print 'wx' rizin commands",
-	"pcA", "", ".bytes with instructions in comments",
-	"pca", "", "GAS .byte blob",
-	"pcd", "", "C dwords (8 byte)",
-	"pch", "", "C half-words (2 byte)",
-	"pci", "", "C array of bytes with instructions",
-	"pcJ", "", "javascript",
-	"pcj", "", "json",
-	"pck", "", "kotlin",
-	"pco", "", "Objective-C",
-	"pcp", "", "python",
-	"pcr", "", "rust",
-	"pcS", "", "shellscript that reconstructs the bin",
-	"pcs", "", "string",
-	"pcv", "", "JaVa",
-	"pcV", "", "V (vlang.io)",
-	"pcw", "", "C words (4 byte)",
-	"pcy", "", "yara",
-	"pcz", "", "Swift",
-	NULL
-};
-
 static const char *help_msg_pF[] = {
 	"Usage: pF[apdbA]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
 	"pFa", "[len]", "decode ASN1 from current block",
@@ -5335,74 +5310,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'c': // "pc"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_pc);
-		} else if (l) {
-			char *str = NULL;
-			bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
-			switch (input[1]) {
-			case 'A': // "pcA" .bytes with instructions in comments
-				str = rz_core_print_bytes_with_inst(core, core->block, core->offset, len < 0 ? 0 : len);
-				break;
-			case '*': // "pc*" // rizin commands
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RIZIN);
-				break;
-			case 'a': // "pca" // GAS asm
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_ASM);
-				break;
-			case 'b': // "pcb" // bash shellscript
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_BASH);
-				break;
-			case 'n': // "pcn" // nodejs
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_NODEJS);
-				break;
-			case 'g': // "pcg" // golang
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_GOLANG);
-				break;
-			case 'k': // "pck" kotlin
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_KOTLIN);
-				break;
-			case 's': // "pcs" // swift
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_SWIFT);
-				break;
-			case 'r': // "pcr" // Rust
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RUST);
-				break;
-			case 'o': // "pco" // Objective-C
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_OBJECTIVE_C);
-				break;
-			case 'J': // "pcJ" // java
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JAVA);
-				break;
-			case 'y': // "pcy" // yara
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_YARA);
-				break;
-			case 'j': // "pcj" // json
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JSON);
-				break;
-			case 'p': // "pcp" // python
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_PYTHON);
-				break;
-			case 'h': // "pch" // C half words with asm
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_HALFWORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_HALFWORDS_LE);
-				break;
-			case 'w': // "pcw" // C words with asm
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_WORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_WORDS_LE);
-				break;
-			case 'd': // "pcd" // C double-words with asm
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_DOUBLEWORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_DOUBLEWORDS_LE);
-				break;
-			default: // "pc" // C bytes
-				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_C_CPP_BYTES);
-				break;
-			}
-			if (str) {
-				rz_cons_println(str);
-				free(str);
-			}
-		}
-		break;
 	case 'C': // "pC"
 		switch (input[1]) {
 		case 0:
@@ -6228,6 +6135,17 @@ CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_swift_handler, RZ_LA
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_yara_handler, RZ_LANG_BYTE_ARRAY_YARA);
 #undef CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL
 #undef CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN
+
+RZ_IPI RzCmdStatus rz_cmd_print_byte_array_with_inst_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_block_read(core);
+	char *code = rz_core_print_bytes_with_inst(core, core->block, core->offset, (int)core->blocksize);
+	if (!code) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(code);
+	free(code);
+	return RZ_CMD_STATUS_OK;
+}
 
 static void disassembly_as_table(RzTable *t, RzCore *core, int n_instrs, int n_bytes) {
 	ut8 buffer[256];

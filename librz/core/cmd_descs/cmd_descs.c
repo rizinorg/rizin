@@ -10610,6 +10610,14 @@ static const RzCmdDescHelp cmd_print_byte_array_asm_help = {
 	.args = cmd_print_byte_array_asm_args,
 };
 
+static const RzCmdDescArg cmd_print_byte_array_with_inst_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_with_inst_help = {
+	.summary = "Generate a byte array in GAS assembly with instructions in comments",
+	.args = cmd_print_byte_array_with_inst_args,
+};
+
 static const RzCmdDescArg cmd_print_byte_array_bash_args[] = {
 	{ 0 },
 };
@@ -16816,6 +16824,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_byte_array_asm_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pca", rz_cmd_print_byte_array_asm_handler, &cmd_print_byte_array_asm_help);
 	rz_warn_if_fail(cmd_print_byte_array_asm_cd);
+
+	RzCmdDesc *cmd_print_byte_array_with_inst_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcA", rz_cmd_print_byte_array_with_inst_handler, &cmd_print_byte_array_with_inst_help);
+	rz_warn_if_fail(cmd_print_byte_array_with_inst_cd);
 
 	RzCmdDesc *cmd_print_byte_array_bash_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcb", rz_cmd_print_byte_array_bash_handler, &cmd_print_byte_array_bash_help);
 	rz_warn_if_fail(cmd_print_byte_array_bash_cd);
