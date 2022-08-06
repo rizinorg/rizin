@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-07-17 18:44:56-04:00
+// Date of code generation: 2022-08-06 14:13:29-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -15,6 +15,7 @@
 #include "hexagon.h"
 #include "hexagon_insn.h"
 #include "hexagon_arch.h"
+
 static inline bool is_last_instr(const ut8 parse_bits) {
 	// Duplex instr. (parse bits = 0) are always the last.
 	return ((parse_bits == 0x3) || (parse_bits == 0x0));
@@ -764,6 +765,12 @@ static void setup_new_hic(HexInsnContainer *hic, const HexReversedOpcode *rz_rev
 
 	hic->asm_op.size = 4;
 	hic->ana_op.size = 4;
+	if (parse_bits == 0b00) {
+		hic->bin.sub[0] = hexagon_alloc_instr();
+		hic->bin.sub[1] = hexagon_alloc_instr();
+	} else {
+		hic->bin.insn = hexagon_alloc_instr();
+	}
 }
 
 static inline bool imm_is_scaled(const HexOpAttr attr) {
