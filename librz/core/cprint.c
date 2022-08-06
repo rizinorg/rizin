@@ -473,3 +473,33 @@ RZ_IPI bool rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, bool hexoffset
 	free(string);
 	return true;
 }
+
+/**
+ * \brief Bytes string at \p addr with instructions in comments
+ */
+RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, ut64 addr, int len) {
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return NULL;
+	}
+	rz_strbuf_appendf(sb, "sub_0x%08" PFMT64x ":\n", addr);
+	for (int i = 0; i < len; i++) {
+		RzAsmOp asmop = {
+			0
+		};
+		(void)rz_asm_disassemble(core->rasm, &asmop, buf + i, len - i);
+		int sz = asmop.size;
+		if (sz < 1) {
+			sz = 1;
+		}
+		rz_strbuf_appendf(sb, " .byte ");
+		for (int j = 0; j < sz; j++) {
+			rz_strbuf_appendf(sb, "%s0x%02x", j ? ", " : "", buf[i]);
+			i++;
+		}
+		rz_strbuf_appendf(sb, "  // %s\n", rz_strbuf_get(&asmop.buf_asm));
+		i--;
+	}
+	rz_strbuf_appendf(sb, ".equ shellcode_len, %d\n", len);
+	return rz_strbuf_drain(sb);
+}

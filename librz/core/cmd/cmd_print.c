@@ -5339,89 +5339,67 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_pc);
 		} else if (l) {
-			const ut8 *buf = core->block;
-			int i = 0;
-			int j = 0;
-			if (input[1] == 'A') { // "pcA"
-				rz_cons_printf("sub_0x%08" PFMT64x ":\n", core->offset);
-				for (i = 0; i < len; i++) {
-					RzAsmOp asmop = {
-						0
-					};
-					(void)rz_asm_disassemble(core->rasm, &asmop, buf + i, len - i);
-					int sz = asmop.size;
-					if (sz < 1) {
-						sz = 1;
-					}
-					rz_cons_printf(" .byte ");
-					for (j = 0; j < sz; j++) {
-						rz_cons_printf("%s0x%02x", j ? ", " : "", buf[i]);
-						i++;
-					}
-					rz_cons_printf("  // %s\n", rz_strbuf_get(&asmop.buf_asm));
-					i--;
-				}
-				rz_cons_printf(".equ shellcode_len, %d\n", len);
-			} else {
-				char *str = NULL;
-				bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
-				switch (input[1]) {
-				case '*': // "pc*" // rizin commands
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RIZIN);
-					break;
-				case 'a': // "pca" // GAS asm
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_ASM);
-					break;
-				case 'b': // "pcb" // bash shellscript
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_BASH);
-					break;
-				case 'n': // "pcn" // nodejs
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_NODEJS);
-					break;
-				case 'g': // "pcg" // golang
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_GOLANG);
-					break;
-				case 'k': // "pck" kotlin
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_KOTLIN);
-					break;
-				case 's': // "pcs" // swift
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_SWIFT);
-					break;
-				case 'r': // "pcr" // Rust
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RUST);
-					break;
-				case 'o': // "pco" // Objective-C
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_OBJECTIVE_C);
-					break;
-				case 'J': // "pcJ" // java
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JAVA);
-					break;
-				case 'y': // "pcy" // yara
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_YARA);
-					break;
-				case 'j': // "pcj" // json
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JSON);
-					break;
-				case 'p': // "pcp" // python
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_PYTHON);
-					break;
-				case 'h': // "pch" // C half words with asm
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_HALFWORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_HALFWORDS_LE);
-					break;
-				case 'w': // "pcw" // C words with asm
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_WORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_WORDS_LE);
-					break;
-				case 'd': // "pcd" // C double-words with asm
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_DOUBLEWORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_DOUBLEWORDS_LE);
-					break;
-				default: // "pc" // C bytes
-					str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_C_CPP_BYTES);
-					break;
-				}
-				if (str) {
-					rz_cons_println(str);
-					free(str);
-				}
+			char *str = NULL;
+			bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+			switch (input[1]) {
+			case 'A': // "pcA" .bytes with instructions in comments
+				str = rz_core_print_bytes_with_inst(core, core->block, core->offset, len < 0 ? 0 : len);
+				break;
+			case '*': // "pc*" // rizin commands
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RIZIN);
+				break;
+			case 'a': // "pca" // GAS asm
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_ASM);
+				break;
+			case 'b': // "pcb" // bash shellscript
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_BASH);
+				break;
+			case 'n': // "pcn" // nodejs
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_NODEJS);
+				break;
+			case 'g': // "pcg" // golang
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_GOLANG);
+				break;
+			case 'k': // "pck" kotlin
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_KOTLIN);
+				break;
+			case 's': // "pcs" // swift
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_SWIFT);
+				break;
+			case 'r': // "pcr" // Rust
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_RUST);
+				break;
+			case 'o': // "pco" // Objective-C
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_OBJECTIVE_C);
+				break;
+			case 'J': // "pcJ" // java
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JAVA);
+				break;
+			case 'y': // "pcy" // yara
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_YARA);
+				break;
+			case 'j': // "pcj" // json
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_JSON);
+				break;
+			case 'p': // "pcp" // python
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_PYTHON);
+				break;
+			case 'h': // "pch" // C half words with asm
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_HALFWORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_HALFWORDS_LE);
+				break;
+			case 'w': // "pcw" // C words with asm
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_WORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_WORDS_LE);
+				break;
+			case 'd': // "pcd" // C double-words with asm
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, big_endian ? RZ_LANG_BYTE_ARRAY_C_CPP_DOUBLEWORDS_BE : RZ_LANG_BYTE_ARRAY_C_CPP_DOUBLEWORDS_LE);
+				break;
+			default: // "pc" // C bytes
+				str = rz_lang_byte_array(core->block, len < 0 ? 0 : len, RZ_LANG_BYTE_ARRAY_C_CPP_BYTES);
+				break;
+			}
+			if (str) {
+				rz_cons_println(str);
+				free(str);
 			}
 		}
 		break;
