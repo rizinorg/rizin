@@ -162,9 +162,8 @@ RUN
 
 NAME=Print bytes as assembly with instructions in comments.
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pca @! 30
+CMDS=pcA @! 30
 EXPECT=<<EOF
-byte_array:
 sub_0x000101c0:
  .byte 0x80, 0x40, 0x2d, 0xe9  // push {r7, lr}
  .byte 0x00, 0x70, 0x8d, 0xe2  // add r7, sp, 0
