@@ -20,6 +20,8 @@
 
 extern int proc_regionfilename(int pid, uint64_t address, void *buffer, uint32_t buffersize);
 
+static cpu_type_t xnu_get_cpu_type(pid_t pid);
+
 #define MAX_MACH_HEADER_SIZE    (64 * 1024)
 #define DYLD_INFO_COUNT         5
 #define DYLD_INFO_LEGACY_COUNT  1
@@ -146,7 +148,16 @@ bool xnu_step(RzDebug *dbg) {
 }
 
 int xnu_attach(RzDebug *dbg, int pid) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, -1);
+	RzXnuDebug *ctx = dbg->plugin_data;
+
 	dbg->pid = pid;
+
+	ctx->cpu = xnu_get_cpu_type(pid);
+	if (!ctx->cpu) {
+		RZ_LOG_ERROR("xnu_attach failed to determine cpu type of pid %d", pid);
+	}
+
 	// First start listening to exceptions, which will also deliver signals to us
 	if (!xnu_create_exception_thread(dbg)) {
 		RZ_LOG_ERROR("Failed to start listening to mach exceptions");
@@ -298,6 +309,8 @@ char *xnu_reg_profile(RzDebug *dbg) {
 // the thread you want to write or read from. but how that feature
 // is not implemented yet i don't care so much
 int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, 0);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	bool ret;
 	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
@@ -318,7 +331,7 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 #elif __arm || __armv7 || __arm__ || __armv7__
 		memcpy(&th->debug.drx, buf, RZ_MIN(size, sizeof(th->debug.drx)));
 #endif
-		ret = rz_xnu_thread_set_drx(dbg, th);
+		ret = rz_xnu_thread_set_drx(ctx, th);
 		break;
 	default:
 		// th->gpr has a header and the state we should copy on the state only
@@ -327,13 +340,15 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 #else
 		memcpy(&th->gpr.uts, buf, RZ_MIN(size, sizeof(th->gpr.uts)));
 #endif
-		ret = rz_xnu_thread_set_gpr(dbg, th);
+		ret = rz_xnu_thread_set_gpr(ctx, th);
 		break;
 	}
 	return ret;
 }
 
 int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, 0);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		return 0;
@@ -342,12 +357,12 @@ int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	case RZ_REG_TYPE_SEG:
 	case RZ_REG_TYPE_FLG:
 	case RZ_REG_TYPE_GPR:
-		if (!rz_xnu_thread_get_gpr(dbg, th)) {
+		if (!rz_xnu_thread_get_gpr(ctx, th)) {
 			return 0;
 		}
 		break;
 	case RZ_REG_TYPE_DRX:
-		if (!rz_xnu_thread_get_drx(dbg, th)) {
+		if (!rz_xnu_thread_get_drx(ctx, th)) {
 			return 0;
 		}
 		break;
@@ -472,6 +487,8 @@ static void xnu_free_threads_ports (RzDebugPid *p) {
 */
 
 RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
+	RzXnuDebug *ctx = dbg->plugin_data;
 #if __arm__ || __arm64__ || __aarch_64__
 #define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.ts_64.__pc : state.ts_32.__pc
 #elif __POWERPC__
@@ -485,7 +502,7 @@ RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	rz_xnu_update_thread_list(dbg);
 	list->free = (RzListFree)&rz_debug_pid_free;
 	rz_list_foreach (dbg->threads, iter, thread) {
-		if (!rz_xnu_thread_get_gpr(dbg, thread)) {
+		if (!rz_xnu_thread_get_gpr(ctx, thread)) {
 			eprintf("Failed to get gpr registers xnu_thread_list\n");
 			continue;
 		}
@@ -607,6 +624,12 @@ static void get_mach_header_sizes(size_t *mach_header_sz,
 	// XXX: What about arm?
 }
 
+/**
+ * Determine the cpu/arch/bits a process is running under.
+ * See constants like CPU_TYPE_ARM, CPU_TYPE_ARM64, CPU_TYPE_ARM64_32, etc.
+ *
+ * \return the cpu type of the process with given pid or 0 on error
+ */
 static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 	int mib[CTL_MAXNAME];
 	size_t len = CTL_MAXNAME;
@@ -615,16 +638,16 @@ static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 
 	if (sysctlnametomib("sysctl.proc_cputype", mib, &len) == -1) {
 		perror("sysctlnametomib");
-		return -1;
+		return 0;
 	}
 	mib[len++] = pid;
 	if (sysctl(mib, len, &cpu_type, &cpu_type_len, NULL, 0) == -1) {
 		perror("sysctl");
-		return -1;
+		return 0;
 	}
 	if (cpu_type_len > 0)
 		return cpu_type;
-	return -1;
+	return 0;
 }
 
 static cpu_subtype_t xnu_get_cpu_subtype(void) {

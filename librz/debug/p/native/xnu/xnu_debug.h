@@ -278,6 +278,7 @@ typedef struct _exception_info {
 } xnu_exception_info;
 
 typedef struct rz_xnu_debug_t {
+	cpu_type_t cpu; ///< CPU/Architecture of the debuggee, determined and set once after attach
 	task_t task_dbg;
 	int old_pid;
 	xnu_exception_info ex;

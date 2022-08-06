@@ -15,9 +15,11 @@
    or clear it (0).  */
 
 RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	RZ_REG_T *state;
 	int ret;
-	ret = rz_xnu_thread_get_gpr(dbg, th);
+	ret = rz_xnu_thread_get_gpr(ctx, th);
 	if (!ret) {
 		eprintf("error to get gpr registers in trace bit intel\n");
 		return false;
@@ -35,7 +37,7 @@ RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 		eprintf("Invalid bit size\n");
 		return false;
 	}
-	if (!rz_xnu_thread_set_gpr(dbg, th)) {
+	if (!rz_xnu_thread_set_gpr(ctx, th)) {
 		eprintf("error xnu_thread_set_gpr in modify_trace_bit intel\n");
 		return false;
 	}
@@ -115,7 +117,9 @@ static bool is_thumb_32(ut16 op) {
 #endif
 
 RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
-	int ret = rz_xnu_thread_get_drx(dbg, th);
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
+	int ret = rz_xnu_thread_get_drx(ctx, th);
 	if (!ret) {
 		eprintf("error to get drx registers modificy_trace_bit arm\n");
 		return false;
@@ -204,7 +208,7 @@ RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 		return false;
 	}
 	// set state
-	if (!rz_xnu_thread_set_drx(dbg, th)) {
+	if (!rz_xnu_thread_set_drx(ctx, th)) {
 		eprintf("error to set drx modificy_trace_bit arm\n");
 		return false;
 	}
