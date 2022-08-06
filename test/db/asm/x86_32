@@ -2316,3 +2316,6 @@ a "dec ebx" 4b
 a "dec ecx" 49
 a "dec edi" 4f
 a "dec edx" 4a
+
+# RzIL asm tests
+ad "aaa" 37 0x0 jkje
