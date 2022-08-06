@@ -2405,7 +2405,7 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 	}
 	RzList *fcns = rz_list_new();
 	HtUP *reachable = ht_up_new(NULL, free_ht_up, NULL);
-	const int align = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	const int align = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	const ut64 end_write = addr + size;
 
 	rz_list_foreach (blocks, it, bb) {

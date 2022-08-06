@@ -277,7 +277,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 		if (analysis->bits != bits) {
 			bool is_hack = is_arm_thumb_hack(analysis, bits);
 			analysis->bits = bits;
-			int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+			int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 			analysis->pcalign = RZ_MAX(0, v);
 			rz_type_db_set_bits(analysis->typedb, bits);
 			rz_type_db_set_address_bits(analysis->typedb, rz_analysis_get_address_bits(analysis));
@@ -311,7 +311,7 @@ RZ_API int rz_analysis_get_address_bits(RzAnalysis *analysis) {
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	free(analysis->cpu);
 	analysis->cpu = cpu ? strdup(cpu) : NULL;
-	int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	if (v != -1) {
 		analysis->pcalign = v;
 	}
@@ -446,18 +446,37 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_analysis_purge_imports(analysis);
 }
 
-RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, int query) {
-	rz_return_val_if_fail(analysis, -1);
+/**
+ * \brief      Returns the queried information regarding the current architecture
+ *
+ * \param      analysis  The RzAnalysis object to use
+ * \param[in]  query     The architecture detail to query
+ *
+ * \return     Negative when fails.
+ */
+RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
+	rz_return_val_if_fail(analysis && query < RZ_ANALYSIS_ARCHINFO_ENUM_SIZE, -1);
+	if (!analysis->cur || !analysis->cur->archinfo) {
+		switch (query) {
+		case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+			return true;
+		default:
+			return -1;
+		}
+	}
+
+	int value = analysis->cur->archinfo(analysis, query);
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
-	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
-	case RZ_ANALYSIS_ARCHINFO_ALIGN:
-		if (analysis->cur && analysis->cur->archinfo) {
-			return analysis->cur->archinfo(analysis, query);
-		}
-		break;
+		// Always consume at least 1 byte
+		return value > 0 ? value : 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		// When negative (i.e. error) we assume the architecture does use them.
+		return value < 0 ? true : value;
+	default:
+		return value;
 	}
-	return -1;
+	return value;
 }
 
 #define K_NORET_ADDR(x) sdb_fmt("addr.%" PFMT64x ".noreturn", x)

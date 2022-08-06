@@ -1618,11 +1618,19 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	return op->size;
 }
 
-static int archinfo(RzAnalysis *a, int q) {
-	if (a->cpu && !strncmp(a->cpu, "vle", 3)) {
-		return 2;
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	bool is_vle = a && a->cpu && !strncmp(a->cpu, "vle", 3);
+
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return is_vle ? 2 : 4;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-	return 4;
 }
 
 static RzList *analysis_preludes(RzAnalysis *analysis) {

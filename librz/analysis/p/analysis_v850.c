@@ -563,16 +563,21 @@ static RzList *analysis_preludes(RzAnalysis *analysis) {
 	return l;
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-	switch (q) {
-	case RZ_ANALYSIS_ARCHINFO_ALIGN:
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return 2;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 8;
-	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		return 2;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 0;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-	return 0;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_v850 = {

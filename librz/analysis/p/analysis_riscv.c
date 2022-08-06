@@ -912,11 +912,23 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return (p && *p) ? strdup(p) : NULL;
 }
 
-static int archinfo(RzAnalysis *a, int q) {
-	if (q == RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE) {
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	bool is_64_bits = a && a->bits == 64;
+
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return is_64_bits ? 4 : 2;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 6;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-	return 2;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_riscv = {

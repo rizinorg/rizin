@@ -886,7 +886,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		break;
 	}
 
-	const int align = rz_analysis_archinfo(dbg->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	const int align = rz_analysis_archinfo(dbg->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	for (i = 0; i < br; i++) {
 		if (align > 1) {
 			next[i] = next[i] - (next[i] % align);

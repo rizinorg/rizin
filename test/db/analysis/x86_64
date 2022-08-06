@@ -69,9 +69,9 @@ EXPECT=<<EOF
 0x000048f4 0x00004901 00:0000 13 j 0x000045b1 f 0x00004901
 0x00004901 0x0000491a 00:0000 25 j 0x000045ba f 0x0000491a
 
-|           0x000039c2      mov   dword [0x0021f558], 2                ; [0x21f558:4]=1
+|           0x000039c2      mov   dword [data.0021f558], 2             ; [0x21f558:4]=1
 |           0x000039cc      call  fcn.00015960
-|           0x000039d1      mov   byte [0x00220618], 1                 ; [0x220618:1]=0
+|           0x000039d1      mov   byte [data.00220618], 1              ; [0x220618:1]=0
 EOF
 RUN
 
@@ -1061,8 +1061,8 @@ EXPECT=<<EOF
 |    ||||   0x000113f6      mov   ecx, 3
 |    ||||   0x000113fb      mov   rsi, rdx
 |    ||||   0x000113fe      mov   rbx, rdx
-|    ||||   0x00011401      lea   rdi, [rip + 0x7ead]                  ; "lt-"
-|    ||||                                                              ; 0x192b5
+|    ||||   0x00011401      lea   rdi, [rip + 0x7ead]                  ; data.000192b5
+|    ||||                                                              ; 0x192b5 ; "lt-"
 |    ||||   0x00011408      repe  cmpsb byte [rsi], byte ptr [rdi]
 |    ||||   0x0001140a      seta  sil
 |    ||||   0x0001140e      setb  cl
@@ -1073,7 +1073,8 @@ EXPECT=<<EOF
 |   |||||                                                              ; [0x1f2d0:8]=0x21ba0 reloc.target.program_invocation_short_name
 |   |||||   0x00011421      mov   qword [rax], rbx
 |   |||||   ; CODE XREFS from fcn.00011390 @ 0x113d0, 0x113e0, 0x113f4, 0x11414
-|   ````--> 0x00011424      mov   rax, qword [rip + 0xde3d]            ; [0x1f268:8]=0x21680
+|   ````--> 0x00011424      mov   rax, qword [rip + 0xde3d]            ; data.0001f268
+|       |                                                              ; [0x1f268:8]=0x21680
 EOF
 RUN
 
@@ -1106,13 +1107,16 @@ EXPECT=<<EOF
 |      ||   0x00003cc3      call  sym.imp.isatty                       ; int isatty(int fd)
 |      ||   0x00003cc8      test  eax, eax
 |     ,===< 0x00003cca      je    0x4c2e
-|     |||   0x00003cd0      mov   dword [rip + 0x1d626], 2             ; [0x21300:4]=0
-|     |||   0x00003cda      mov   byte [rip + 0x1d33f], 1              ; [0x21020:1]=0
+|     |||   0x00003cd0      mov   dword [rip + 0x1d626], 2             ; data.00021300
+|     |||                                                              ; [0x21300:4]=0
+|     |||   0x00003cda      mov   byte [rip + 0x1d33f], 1              ; data.00021020
+|     |||                                                              ; [0x21020:1]=0
 |    ,====< 0x00003ce1      jmp   0x3cf9
 |    ||||   ; CODE XREF from main @ 0x3cb2
 |    ||`--> 0x00003ce3      mov   esi, 5                               ; int64_t arg2
 |    || |   0x00003ce8      xor   edi, edi                             ; int64_t arg1
-|    || |   0x00003cea      mov   dword [rip + 0x1d60c], 0             ; [0x21300:4]=0
+|    || |   0x00003cea      mov   dword [rip + 0x1d60c], 0             ; data.00021300
+|    || |                                                              ; [0x21300:4]=0
 |    || |   0x00003cf4      call  fcn.00012740
 |    || |   ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
 |    `----> 0x00003cf9      lea   rdi, [rip + 0x14fb4]                 ; str.QUOTING_STYLE
@@ -1150,13 +1154,16 @@ EXPECT=<<EOF
 |    | |    0x00003cc3      call  sym.imp.isatty                       ; int isatty(int fd)
 |    | |    0x00003cc8      test  eax, eax
 |  ,======< 0x00003cca      je    0x4c2e
-|  | | |    0x00003cd0      mov   dword [rip + 0x1d626], 2             ; [0x21300:4]=0
-|  | | |    0x00003cda      mov   byte [rip + 0x1d33f], 1              ; [0x21020:1]=0
+|  | | |    0x00003cd0      mov   dword [rip + 0x1d626], 2             ; data.00021300
+|  | | |                                                               ; [0x21300:4]=0
+|  | | |    0x00003cda      mov   byte [rip + 0x1d33f], 1              ; data.00021020
+|  | | |                                                               ; [0x21020:1]=0
 | ========< 0x00003ce1      jmp   0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2
 |  | `----> 0x00003ce3      mov   esi, 5                               ; int64_t arg2
 |  |   |    0x00003ce8      xor   edi, edi                             ; int64_t arg1
-|  |   |    0x00003cea      mov   dword [rip + 0x1d60c], 0             ; [0x21300:4]=0
+|  |   |    0x00003cea      mov   dword [rip + 0x1d60c], 0             ; data.00021300
+|  |   |                                                               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call  fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
 | --------> 0x00003cf9      lea   rdi, [rip + 0x14fb4]                 ; str.QUOTING_STYLE
@@ -1193,13 +1200,16 @@ EXPECT=<<EOF
 |    | |    0x00003cc3      call  sym.imp.isatty                       ; int isatty(int fd)
 |    | |    0x00003cc8      test  eax, eax
 |  ,======< 0x00003cca      je    0x4c2e
-|  | | |    0x00003cd0      mov   dword [rip + 0x1d626], 2             ; [0x21300:4]=0
-|  | | |    0x00003cda      mov   byte [rip + 0x1d33f], 1              ; [0x21020:1]=0
+|  | | |    0x00003cd0      mov   dword [rip + 0x1d626], 2             ; data.00021300
+|  | | |                                                               ; [0x21300:4]=0
+|  | | |    0x00003cda      mov   byte [rip + 0x1d33f], 1              ; data.00021020
+|  | | |                                                               ; [0x21020:1]=0
 | ========< 0x00003ce1      jmp   0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2
 |  | `----> 0x00003ce3      mov   esi, 5                               ; int64_t arg2
 |  |   |    0x00003ce8      xor   edi, edi                             ; int64_t arg1
-|  |   |    0x00003cea      mov   dword [rip + 0x1d60c], 0             ; [0x21300:4]=0
+|  |   |    0x00003cea      mov   dword [rip + 0x1d60c], 0             ; data.00021300
+|  |   |                                                               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call  fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
 | --------> 0x00003cf9      lea   rdi, [rip + 0x14fb4]                 ; str.QUOTING_STYLE

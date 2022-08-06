@@ -35,6 +35,7 @@ RUN
 NAME=aap
 FILE=bins/pe/NoREpls.exe
 CMDS=<<EOF
+e analysis.resolve.pointers=false
 aaa
 s 0x00401e80
 afl.

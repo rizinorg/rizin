@@ -1173,13 +1173,21 @@ static RZ_OWN char *sh_get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-#if 0
-	if (q == RZ_ANALYSIS_ARCHINFO_ALIGN) {
-		return 4;
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-#endif
-	return 2; /* :) */
 }
 
 RzAnalysisPlugin rz_analysis_plugin_sh = {

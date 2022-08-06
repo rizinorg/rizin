@@ -3688,16 +3688,21 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return (p && *p) ? strdup(p) : NULL;
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-	switch (q) {
-	case RZ_ANALYSIS_ARCHINFO_ALIGN:
-		return 0;
-	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
-		return 16;
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return 1;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 16;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 0;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-	return 0;
 }
 
 static RzList *analysis_preludes(RzAnalysis *analysis) {

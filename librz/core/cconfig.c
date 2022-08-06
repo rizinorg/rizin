@@ -288,7 +288,7 @@ static bool cb_analysis_cpu(void *user, void *data) {
 	rz_analysis_set_cpu(core->analysis, node->value);
 	/* set pcalign */
 	{
-		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 0);
 	}
 	return true;
@@ -592,7 +592,7 @@ static bool cb_asmarch(void *user, void *data) {
 		update_asmcpu_options(core, asmcpu);
 	}
 	{
-		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 		if (v != -1) {
 			rz_config_set_i(core->config, "asm.pcalign", v);
 		} else {
@@ -686,7 +686,7 @@ static bool cb_asmbits(void *user, void *data) {
 			rz_bp_use(core->dbg->bp, asmarch);
 		}
 		/* set pcalign */
-		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 0);
 	}
 	return ret;
@@ -2956,6 +2956,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Select C++ ABI (Compiler)");
 	SETOPTIONS(n, "itanium", "msvc", NULL);
 	SETB("analysis.apply.signature", true, "enables/disables auto-applying signatures to the loaded binary (see also flirt.sigdb.path)");
+	SETB("analysis.resolve.pointers", true, "enables/disables analysis of pointers to data sections.");
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 	SETCB("dbg.malloc", "glibc", &cb_malloc, "Choose malloc structure parser");
