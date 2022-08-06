@@ -2581,7 +2581,8 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 		"emu.str",
 		"asm.cmt.right",
 		"scr.html",
-		"scr.color");
+		"scr.color",
+		NULL);
 
 	int use_color = rz_config_get_i(core->config, "scr.color");
 	bool show_comments = rz_config_get_i(core->config, "asm.comments");
@@ -2613,7 +2614,7 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 			goto restore_conf;
 		}
 	} else if (!strncmp(input, "ds ", 3)) {
-		dump_string = rz_core_cmd_strf(core, "pD %dump_string", input + 3);
+		dump_string = rz_core_cmd_strf(core, "pD %s", input + 3);
 	} else {
 		dump_string = rz_core_cmd_str(core, "pd");
 	}
@@ -2692,7 +2693,7 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 			str = strstr(line, ";-- ");
 			if (str) {
 				if (!rz_str_startswith(str + 4, "case")) {
-					rz_cons_printf("%dump_string\n", str);
+					rz_cons_printf("%s\n", str);
 				}
 			}
 		}
@@ -2720,7 +2721,7 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 				if (o) {
 					str = (char *)o;
 				} else {
-					eprintf("Warning: missing summary reference: %dump_string\n", dot);
+					eprintf("Warning: missing summary reference: %s\n", dot);
 				}
 			}
 		}
@@ -2788,13 +2789,13 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 							if (show_offset) {
 								rz_cons_printf("%s0x%08" PFMT64x " ", use_color ? pal->offset : "", addr);
 							}
-							rz_cons_printf("%dump_string%dump_string\n", use_color ? pal->comment : "", comment);
+							rz_cons_printf("%s%s\n", use_color ? pal->comment : "", comment);
 						}
 					} else {
 						if (show_offset) {
 							rz_cons_printf("%s0x%08" PFMT64x " ", use_color ? pal->offset : "", addr);
 						}
-						rz_cons_printf("%dump_string%dump_string\n", use_color ? pal->comment : "", comment);
+						rz_cons_printf("%s%s\n", use_color ? pal->comment : "", comment);
 					}
 					if (rz_str_startswith(comment, "switch table")) {
 						switchcmp = strdup(comment);
@@ -2831,7 +2832,7 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 							if (show_offset) {
 								rz_cons_printf("%s0x%08" PFMT64x " " Color_RESET, use_color ? pal->offset : "", addr);
 							}
-							rz_cons_printf("%dump_string 0x%08" PFMT64x "%dump_string\n",
+							rz_cons_printf("%s 0x%08" PFMT64x "%s\n",
 								op, bb->jump, use_color ? Color_RESET : "");
 							break;
 						}
@@ -2864,12 +2865,12 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 						rz_str_trim(string2);
 					}
 					//// TODO implememnt avoid duplicated strings
-					// eprintf ("---> %dump_string\n", string);
+					// eprintf ("---> %s\n", string);
 					if (use_color) {
 						if (show_offset) {
 							rz_cons_printf("%s0x%08" PFMT64x " " Color_RESET, use_color ? pal->offset : "", addr);
 						}
-						rz_cons_printf("%dump_string%dump_string%dump_string%dump_string%dump_string%dump_string%dump_string\n",
+						rz_cons_printf("%s%s%s%s%s%s%s\n",
 							linecolor ? linecolor : "",
 							string2 ? string2 : "", string2 ? " " : "", string,
 							flag ? " " : "", flag ? flag->name : "", Color_RESET);
@@ -2877,14 +2878,13 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 						if (show_offset) {
 							rz_cons_printf("0x%08" PFMT64x " ", addr);
 						}
-						rz_cons_printf("%dump_string%dump_string%dump_string%dump_string%dump_string\n",
+						rz_cons_printf("%s%s%s%s%s\n",
 							string2 ? string2 : "", string2 ? " " : "", string,
 							flag ? " " : "", flag ? flag->name : "");
 					}
 				}
 			}
 		}
-		line += strlen(line) + 1;
 	}
 restore_conf:
 	free(dump_string);
@@ -6878,7 +6878,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, in
 	// needs to be rewritten entirely
 	char input_cmd[256];
 	rz_strf(input_cmd, "ds 0x%" PFMT64x, n_bytes);
-	rz_core_print_disasm_strings(core, argc > 1 ? input_cmd : "ds", NULL);
+	rz_core_print_disasm_strings(core, /*ds [n_bytes]*/ argc > 1 ? input_cmd : "ds", NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6898,7 +6898,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_block_handler(RzCore *core, int 
 	// needs to be rewritten entirely
 	char input_cmd[256];
 	rz_strf(input_cmd, "dsb 0x%" PFMT64x, n_bytes);
-	rz_core_print_disasm_strings(core, input_cmd, NULL);
+	rz_core_print_disasm_strings(core, /*dsb [n_bytes]*/ input_cmd, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
