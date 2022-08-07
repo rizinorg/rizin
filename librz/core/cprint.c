@@ -327,6 +327,7 @@ RZ_IPI bool rz_core_print_dump(RZ_NONNULL RzCore *core, RzOutputMode mode,
 		return false;
 	}
 	rz_cons_print(string);
+	free(string);
 	return true;
 }
 
@@ -383,6 +384,7 @@ RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABL
 		return false;
 	}
 	rz_cons_print(string);
+	free(string);
 	return true;
 }
 
