@@ -22,26 +22,6 @@ typedef struct x86_il_instruction_t {
 	X86InsMnem mnem;
 } X86ILIns;
 
-typedef enum x86_eflags_t {
-	X86_EFLAGS_CF = 0,
-	X86_EFLAGS_PF = 2,
-	X86_EFLAGS_AF = 4,
-	X86_EFLAGS_ZF = 6,
-	X86_EFLAGS_SF = 7,
-	X86_EFLAGS_TF = 8,
-	X86_EFLAGS_IF = 9,
-	X86_EFLAGS_DF = 10,
-	X86_EFLAGS_OF = 11,
-	X86_EFLAGS_IOPL = 12,
-	X86_EFLAGS_NT = 14,
-	X86_EFLAGS_RF = 16,
-	X86_EFLAGS_VM = 17,
-	X86_EFLAGS_AC = 18,
-	X86_EFLAGS_VIF = 19,
-	X86_EFLAGS_VIP = 20,
-	X86_EFLAGS_ID = 21
-} X86EFlags;
-
 RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins);
 RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis);
 
