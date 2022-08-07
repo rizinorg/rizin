@@ -160,6 +160,23 @@ byte_array:
 EOF
 RUN
 
+NAME=Print bytes as assembly with instructions in comments.
+FILE=bins/elf/analysis/hello-arm32
+CMDS=pcA @! 30
+EXPECT=<<EOF
+sub_0x000101c0:
+ .byte 0x80, 0x40, 0x2d, 0xe9  // push {r7, lr}
+ .byte 0x00, 0x70, 0x8d, 0xe2  // add r7, sp, 0
+ .byte 0x00, 0x02, 0x00, 0xe3  // movw r0, 0x200
+ .byte 0x01, 0x00, 0x40, 0xe3  // movt r0, 1
+ .byte 0xf1, 0xff, 0xff, 0xeb  // bl 0xffffffcc
+ .byte 0x00, 0x30, 0xb0, 0xe3  // movs r3, 0
+ .byte 0x03, 0x00, 0xa0, 0xe1  // mov r0, r3
+ .byte 0xf1, 0xff  // invalid
+.equ shellcode_len, 30
+EOF
+RUN
+
 NAME=Print bytes as a bash command.
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pcb @! 30
