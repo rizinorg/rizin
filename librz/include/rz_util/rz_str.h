@@ -262,6 +262,7 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width);
 
 RZ_API const char *rz_str_sep(const char *base, const char *sep);
 RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep);
+RZ_API RZ_OWN char *rz_str_gittip();
 RZ_API char *rz_str_version(const char *program);
 
 typedef struct rz_str_stringify_opt_t {
