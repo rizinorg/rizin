@@ -815,6 +815,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 				}
 			}
 			if (string && *string) {
+				str = NULL;
 				if (string && !strncmp(string, "0x", 2)) {
 					str = string;
 				}
