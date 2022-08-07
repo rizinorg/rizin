@@ -11,7 +11,7 @@ pipeline:
     image: /bin/bash
     commands:
       - cd test
-      - git clone --depth=0 https://github.com/rizinorg/rizin-testbins bins
+      - git clone --depth=1 https://github.com/rizinorg/rizin-testbins bins
   unit-test:
     image: /bin/bash
     commands:
