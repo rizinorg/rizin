@@ -344,9 +344,7 @@ commands:
           - name: pdsb
             summary: Summarize current block
             cname: cmd_disassemble_summarize_block
-            args:
-              - name: n_bytes
-                type: RZ_CMD_ARG_TYPE_RZNUM
+            args: []
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget

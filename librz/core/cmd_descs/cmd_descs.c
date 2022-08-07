@@ -467,7 +467,6 @@ static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[2];
 static const RzCmdDescArg cmd_sizes_of_n_instructions_args[2];
 static const RzCmdDescArg cmd_disassemble_ropchain_args[2];
 static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
-static const RzCmdDescArg cmd_disassemble_summarize_block_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_hash_cfg_args[2];
@@ -10954,12 +10953,6 @@ static const RzCmdDescHelp cmd_disassemble_summarize_function_help = {
 };
 
 static const RzCmdDescArg cmd_disassemble_summarize_block_args[] = {
-	{
-		.name = "n_bytes",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_disassemble_summarize_block_help = {

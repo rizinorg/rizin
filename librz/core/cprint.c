@@ -506,7 +506,7 @@ RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NO
 	return rz_strbuf_drain(sb);
 }
 
-static void _handle_call(RzCore *core, char *line, char **str) {
+static void core_handle_call(RzCore *core, char *line, char **str) {
 	rz_return_if_fail(core && line && str && core->rasm && core->rasm->cur);
 	if (strstr(core->rasm->cur->arch, "x86")) {
 		*str = strstr(line, "call ");
@@ -529,16 +529,13 @@ static void _handle_call(RzCore *core, char *line, char **str) {
 }
 
 /**
- * \brief Get string in disassembly line (pd, pD, pdr)
- * \param core RzCore instance
- * \param input dsb | dsf | ds | NULL
- * \param fcn function
- * \return strings
+ * \brief Get string in disassembly line for \p mode
+ * \param n_bytes Number of bytes to disassemble, just used for RZ_CORE_DISASM_STRINGS_MODE_BYTES
  */
 // TODO: this is just a PoC, the disasm loop should be rewritten
 // TODO: this is based on string matching, it should be written upon RzAnalysisOp to know
 // when we have a call and such
-RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *input, RZ_NULLABLE RzAnalysisFunction *fcn) {
+RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCorePrintDisasmStringsMode mode, ut64 n_bytes, RZ_NULLABLE RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(core, NULL);
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 	if (!hc) {
@@ -560,7 +557,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 		"scr.color",
 		NULL);
 
-	int use_color = rz_config_get_i(core->config, "scr.color");
+	int use_color = (int)rz_config_get_i(core->config, "scr.color");
 	bool show_comments = rz_config_get_i(core->config, "asm.comments");
 	bool show_offset = rz_config_get_i(core->config, "asm.offset");
 	bool asm_flags = rz_config_get_i(core->config, "asm.flags");
@@ -576,24 +573,34 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 
 	char *dump_string = NULL;
 	RzList *lines = NULL;
-	if (!strncmp(input, "dsb", 3)) {
+	switch (mode) {
+	case RZ_CORE_DISASM_STRINGS_MODE_BLOCK: {
 		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 		if (bb) {
 			dump_string = rz_core_cmd_strf(core, "pD %" PFMT64u " @ 0x%08" PFMT64x, bb->size, bb->addr);
-		}
-	} else if (!strncmp(input, "dsf", 3) || !strncmp(input, "dsr", 3)) {
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-		if (fcn) {
-			dump_string = rz_core_cmd_str(core, "pdr");
 		} else {
-			eprintf("Cannot find function.\n");
+			RZ_LOG_ERROR("cannot find block %" PFMT64x ".\n", core->offset);
 			goto restore_conf;
 		}
-	} else if (!strncmp(input, "ds ", 3)) {
-		dump_string = rz_core_cmd_strf(core, "pD %s", input + 3);
-	} else {
-		dump_string = rz_core_cmd_str(core, "pd");
+		break;
 	}
+	case RZ_CORE_DISASM_STRINGS_MODE_FUNCTION: {
+		RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
+		if (f) {
+			dump_string = rz_core_cmd_str(core, "pdr");
+		} else {
+			RZ_LOG_ERROR("cannot find function %" PFMT64x ".\n", core->offset);
+			goto restore_conf;
+		}
+		break;
+	}
+	case RZ_CORE_DISASM_STRINGS_MODE_BYTES:
+	default:
+		dump_string = n_bytes != UT64_MAX ? rz_core_cmd_strf(core, "pD %" PFMT64d, n_bytes)
+						  : rz_core_cmd_str(core, "pd");
+		break;
+	}
+	rz_config_hold_restore(hc);
 
 	lines = rz_str_split_duplist(dump_string, "\n", true);
 	if (!lines) {
@@ -712,7 +719,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 			}
 		}
 		RZ_FREE(string2);
-		_handle_call(core, line, &str);
+		core_handle_call(core, line, &str);
 		if (!str) {
 			str = strstr(line, "sym.");
 			if (!str) {
@@ -766,8 +773,8 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
 				RzAnalysisBlock *bb;
-				RzListIter *iter;
-				rz_list_foreach (fcn->bbs, iter, bb) {
+				RzListIter *iterb;
+				rz_list_foreach (fcn->bbs, iterb, bb) {
 					if (addr == bb->jump) {
 						if (show_offset) {
 							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
@@ -780,11 +787,11 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 					rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
 				}
 				if (strstr(line, "=<")) {
-					rz_list_foreach (fcn->bbs, iter, bb) {
+					rz_list_foreach (fcn->bbs, iterb, bb) {
 						if (addr >= bb->addr && addr < bb->addr + bb->size) {
 							const char *op;
 							if (use_color) {
-								op = (bb->fail == UT64_MAX) ? Color_GREEN "jmp" : "cjmp";
+								op = (bb->fail == UT64_MAX) ? Color_GREEN "jmp" : Color_GREEN "cjmp";
 							} else {
 								op = (bb->fail == UT64_MAX) ? "jmp" : "cjmp";
 							}
@@ -800,7 +807,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 			}
 			if (string && *string) {
 				str = NULL;
-				if (string && !strncmp(string, "0x", 2)) {
+				if (!strncmp(string, "0x", 2)) {
 					str = string;
 				}
 				if (string2 && !strncmp(string2, "0x", 2)) {
@@ -812,14 +819,14 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 					flag = rz_core_flag_get_by_spaces(core->flags, ptr);
 				}
 				if (!flag) {
-					if (string && !strncmp(string, "0x", 2)) {
+					if (!strncmp(string, "0x", 2)) {
 						RZ_FREE(string);
 					}
 					if (string2 && !strncmp(string2, "0x", 2)) {
 						RZ_FREE(string2);
 					}
 				}
-				if (string && addr != UT64_MAX && addr != UT32_MAX) {
+				if (addr != UT32_MAX) {
 					rz_str_trim(string);
 					if (string2) {
 						rz_str_trim(string2);
@@ -828,7 +835,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 					// eprintf ("---> %s\n", string);
 					if (use_color) {
 						if (show_offset) {
-							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x " " Color_RESET, use_color ? pal->offset : "", addr);
+							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x " " Color_RESET, pal->offset, addr);
 						}
 						rz_strbuf_appendf(sb, "%s%s%s%s%s%s%s\n",
 							linecolor ? linecolor : "",
@@ -848,6 +855,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 		free(string);
 		free(string2);
 	}
+	free(switchcmp);
 restore_conf:
 	free(dump_string);
 	rz_list_free(lines);

@@ -6139,29 +6139,21 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_function_summary_handler(RzCore *core, int argc, const char **argv) {
-	ut64 old_offset = core->offset;
-	ut32 old_blocksize = core->blocksize;
 	RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 	if (!function) {
-		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		RZ_LOG_ERROR("cannot find function at 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut32 rs = rz_analysis_function_realsize(function);
 	ut32 fs = rz_analysis_function_linear_size(function);
-	rz_core_seek(core, old_offset, SEEK_SET);
-	rz_core_block_size(core, RZ_MAX(rs, fs));
-	char *string = rz_core_print_disasm_strings(core, "dfs", function);
-	RzCmdStatus ret = RZ_CMD_STATUS_OK;
+	char *string = rz_core_print_disasm_strings(core, RZ_CORE_DISASM_STRINGS_MODE_BYTES, RZ_MAX(rs, fs), function);
 	if (!string) {
 		RZ_LOG_ERROR("failed summarize %" PFMT64x "\n", core->offset);
-		ret = RZ_CMD_STATUS_ERROR;
-	} else {
-		rz_cons_print(string);
-		free(string);
+		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_block_size(core, old_blocksize);
-	rz_core_seek(core, old_offset, SEEK_SET);
-	return ret;
+	rz_cons_print(string);
+	free(string);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -6529,13 +6521,11 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : UT64_MAX;
 
 	// small patch to reuse rz_core_print_disasm_strings which
 	// needs to be rewritten entirely
-	char input_cmd[256];
-	rz_strf(input_cmd, "ds 0x%" PFMT64x, n_bytes);
-	char *string = rz_core_print_disasm_strings(core, /*ds [n_bytes]*/ argc > 1 ? input_cmd : "ds", NULL);
+	char *string = rz_core_print_disasm_strings(core, RZ_CORE_DISASM_STRINGS_MODE_BYTES, n_bytes, NULL);
 	if (!string) {
 		RZ_LOG_ERROR("failed summarize bytes %" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
@@ -6546,7 +6536,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, in
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_function_handler(RzCore *core, int argc, const char **argv) {
-	char *string = rz_core_print_disasm_strings(core, "dsf", NULL);
+	char *string = rz_core_print_disasm_strings(core, RZ_CORE_DISASM_STRINGS_MODE_FUNCTION, 0, NULL);
 	if (!string) {
 		RZ_LOG_ERROR("failed summarize function %" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
@@ -6557,17 +6547,9 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_function_handler(RzCore *core, i
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_block_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	if (!n_bytes) {
-		RZ_LOG_ERROR("Invalid number of bytes\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
 	// small patch to reuse rz_core_print_disasm_strings which
 	// needs to be rewritten entirely
-	char input_cmd[256];
-	rz_strf(input_cmd, "dsb 0x%" PFMT64x, n_bytes);
-	char *string = rz_core_print_disasm_strings(core, /*dsb [n_bytes]*/ input_cmd, NULL);
+	char *string = rz_core_print_disasm_strings(core, RZ_CORE_DISASM_STRINGS_MODE_BLOCK, 0, NULL);
 	if (!string) {
 		RZ_LOG_ERROR("failed summarize block %" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
