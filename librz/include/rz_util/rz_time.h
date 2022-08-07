@@ -4,10 +4,6 @@
 #include <rz_types.h>
 #include <time.h>
 
-#ifdef _MSC_VER
-#include <rz_windows.h>
-#endif
-
 #define RZ_NSEC_PER_SEC  1000000000ULL
 #define RZ_NSEC_PER_MSEC 1000000ULL
 #define RZ_USEC_PER_SEC  1000000ULL
