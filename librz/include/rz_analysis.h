@@ -269,7 +269,7 @@ typedef struct rz_analysis_function_t {
 
 typedef struct rz_analysis_func_arg_t {
 	const char *name;
-	const char *fmt;
+	char *fmt;
 	const char *cc_source;
 	RzType *orig_c_type;
 	RzType *c_type;
