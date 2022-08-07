@@ -4048,6 +4048,25 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 #define RZ_STR_PKG_VERSION_STRING ""
 #endif
 
+/**
+ * \brief Returns the saved git commit hash of the build.
+ *
+ * \return The saved git commit hash as a string, or NULL if it's not available.
+ */
+RZ_API RZ_OWN char *rz_str_gittip() {
+	char *gittip_pathname = rz_str_newf("%s" RZ_SYS_DIR "gittip", rz_path_bindir());
+	if (!gittip_pathname) {
+		return NULL;
+	}
+	char *gittip = rz_file_slurp(gittip_pathname, NULL);
+	free(gittip_pathname);
+	if (!gittip || !*rz_str_trim_head_ro(gittip)) {
+		free(gittip);
+		return NULL;
+	}
+	return gittip;
+}
+
 RZ_API char *rz_str_version(const char *program) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (program) {
@@ -4058,20 +4077,12 @@ RZ_API char *rz_str_version(const char *program) {
 	if (RZ_STR_ISNOTEMPTY(RZ_STR_PKG_VERSION_STRING)) {
 		rz_strbuf_append(sb, RZ_STR_PKG_VERSION_STRING);
 	}
-	char *gittip_pathname = rz_str_newf("%s" RZ_SYS_DIR "gittip", rz_path_bindir());
-	char *gittip = NULL;
-	if (!gittip_pathname) {
-		goto done;
+	char *gittip = rz_str_gittip();
+	if (gittip) {
+		rz_strbuf_append(sb, "\n");
+		rz_strbuf_appendf(sb, "commit: %s", gittip);
+		free(gittip);
 	}
-	gittip = rz_file_slurp(gittip_pathname, NULL);
-	if (!gittip || !*rz_str_trim_head_ro(gittip)) {
-		goto done;
-	}
-	rz_strbuf_append(sb, "\n");
-	rz_strbuf_appendf(sb, "commit: %s", gittip);
-done:
-	free(gittip_pathname);
-	free(gittip);
 	return rz_strbuf_drain(sb);
 }
 
