@@ -674,9 +674,6 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 				}
 			}
 		}
-#define USE_PREFIXES 1
-#if USE_PREFIXES
-		// XXX leak
 		str = strstr(line, " obj.");
 		if (!str) {
 			str = strstr(line, " str.");
@@ -690,19 +687,6 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NUL
 				}
 			}
 		}
-#else
-		if (strchr(line, ';')) {
-			const char *dot = rz_str_rchr(line, NULL, '.');
-			if (dot) {
-				const char *o = rz_str_rchr(line, dot, ' ');
-				if (o) {
-					str = (char *)o;
-				} else {
-					eprintf("Warning: missing summary reference: %s\n", dot);
-				}
-			}
-		}
-#endif
 		if (str) {
 			char *qoe = NULL;
 			if (!qoe) {
