@@ -505,3 +505,368 @@ RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NO
 	rz_strbuf_appendf(sb, ".equ shellcode_len, %d", len);
 	return rz_strbuf_drain(sb);
 }
+
+static void _handle_call(RzCore *core, char *line, char **str) {
+	rz_return_if_fail(core && line && str && core->rasm && core->rasm->cur);
+	if (strstr(core->rasm->cur->arch, "x86")) {
+		*str = strstr(line, "call ");
+	} else if (strstr(core->rasm->cur->arch, "arm")) {
+		*str = strstr(line, " b ");
+		if (*str && strstr(*str, " 0x")) {
+			/*
+			 * avoid treating branches to
+			 * non-symbols as calls
+			 */
+			*str = NULL;
+		}
+		if (!*str) {
+			*str = strstr(line, "bl ");
+		}
+		if (!*str) {
+			*str = strstr(line, "bx ");
+		}
+	}
+}
+
+/**
+ * \brief Get string in disassembly line (pd, pD, pdr)
+ * \param core RzCore instance
+ * \param input dsb | dsf | ds | NULL
+ * \param fcn function
+ * \return strings
+ */
+// TODO: this is just a PoC, the disasm loop should be rewritten
+// TODO: this is based on string matching, it should be written upon RzAnalysisOp to know
+// when we have a call and such
+RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *input, RZ_NULLABLE RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(core, NULL);
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	if (!hc) {
+		return NULL;
+	}
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		rz_config_hold_free(hc);
+		return NULL;
+	}
+	rz_config_hold_i(hc,
+		"asm.offset",
+		"asm.dwarf",
+		"asm.tabs",
+		"asm.emu",
+		"emu.str",
+		"asm.cmt.right",
+		"scr.html",
+		"scr.color",
+		NULL);
+
+	int use_color = rz_config_get_i(core->config, "scr.color");
+	bool show_comments = rz_config_get_i(core->config, "asm.comments");
+	bool show_offset = rz_config_get_i(core->config, "asm.offset");
+	bool asm_flags = rz_config_get_i(core->config, "asm.flags");
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
+	// force defaults
+	rz_config_set_i(core->config, "emu.str", true);
+	rz_config_set_i(core->config, "asm.offset", true);
+	rz_config_set_i(core->config, "asm.dwarf", true);
+	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
+	rz_config_set_i(core->config, "asm.tabs", 0);
+	rz_config_set_i(core->config, "scr.html", 0);
+	rz_config_set_i(core->config, "asm.cmt.right", true);
+
+	char *dump_string = NULL;
+	RzList *lines = NULL;
+	if (!strncmp(input, "dsb", 3)) {
+		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
+		if (bb) {
+			dump_string = rz_core_cmd_strf(core, "pD %" PFMT64u " @ 0x%08" PFMT64x, bb->size, bb->addr);
+		}
+	} else if (!strncmp(input, "dsf", 3) || !strncmp(input, "dsr", 3)) {
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
+		if (fcn) {
+			dump_string = rz_core_cmd_str(core, "pdr");
+		} else {
+			eprintf("Cannot find function.\n");
+			goto restore_conf;
+		}
+	} else if (!strncmp(input, "ds ", 3)) {
+		dump_string = rz_core_cmd_strf(core, "pD %s", input + 3);
+	} else {
+		dump_string = rz_core_cmd_str(core, "pd");
+	}
+
+	lines = rz_str_split_duplist(dump_string, "\n", true);
+	if (!lines) {
+		goto restore_conf;
+	}
+	int count = (int)rz_list_length(lines);
+	if (count < 1) {
+		goto restore_conf;
+	}
+	RzListIter *iter;
+	char *line;
+	char *switchcmp = NULL;
+	rz_list_foreach (lines, iter, line) {
+		ut64 addr = UT64_MAX;
+		const char *ox = strstr(line, "0x");
+		if (ox) {
+			addr = rz_num_get(NULL, ox);
+		}
+		const char *qo = strchr(line, '\"');
+		const char *linecolor = NULL;
+		char *string = NULL;
+		if (qo) {
+			char *qoe = strrchr(qo + 1, '"');
+			if (qoe) {
+				int raw_len = qoe - qo - 1;
+				int actual_len = 0;
+				const char *ptr = qo + 1;
+				for (; ptr < qoe; ptr++) {
+					if (*ptr == '\\' && ptr + 1 < qoe) {
+						int body_len;
+						switch (*(ptr + 1)) {
+						case 'x':
+							body_len = 3;
+							break;
+						case 'u':
+							body_len = 5;
+							break;
+						case 'U':
+							body_len = 9;
+							break;
+						default:
+							body_len = 1;
+						}
+						for (int i = 0; i < body_len && ptr < qoe; i++) {
+							ptr++;
+						}
+					}
+					actual_len++;
+				}
+				if (actual_len > 2) {
+					string = rz_str_ndup(qo, raw_len + 2);
+				}
+				linecolor = RZ_CONS_COLOR(comment);
+			}
+		}
+		ox = strstr(line, "; 0x");
+		if (!ox) {
+			ox = strstr(line, "@ 0x");
+		}
+		char *string2 = NULL;
+		if (ox) {
+			char *qoe = strchr(ox + 3, ' ');
+			if (!qoe) {
+				qoe = strchr(ox + 3, '\x1b');
+			}
+			int len = qoe ? qoe - ox : strlen(ox + 3);
+			string2 = rz_str_ndup(ox + 2, len - 1);
+			if (rz_num_get(NULL, string2) < 0x100) {
+				RZ_FREE(string2);
+			}
+		}
+		char *str = NULL;
+		if (asm_flags) {
+			str = strstr(line, ";-- ");
+			if (str) {
+				if (!rz_str_startswith(str + 4, "case")) {
+					rz_strbuf_appendf(sb, "%s\n", str);
+				}
+			}
+		}
+#define USE_PREFIXES 1
+#if USE_PREFIXES
+		// XXX leak
+		str = strstr(line, " obj.");
+		if (!str) {
+			str = strstr(line, " str.");
+			if (!str) {
+				str = strstr(line, " imp.");
+				if (!str) {
+					str = strstr(line, " fcn.");
+					if (!str) {
+						str = strstr(line, " sub.");
+					}
+				}
+			}
+		}
+#else
+		if (strchr(line, ';')) {
+			const char *dot = rz_str_rchr(line, NULL, '.');
+			if (dot) {
+				const char *o = rz_str_rchr(line, dot, ' ');
+				if (o) {
+					str = (char *)o;
+				} else {
+					eprintf("Warning: missing summary reference: %s\n", dot);
+				}
+			}
+		}
+#endif
+		if (str) {
+			char *qoe = NULL;
+			if (!qoe) {
+				qoe = strchr(str + 1, '\x1b');
+			}
+			if (!qoe) {
+				qoe = strchr(str + 1, ';');
+			}
+			if (!qoe) {
+				qoe = strchr(str + 1, ' ');
+			}
+			if (qoe) {
+				free(string2);
+				string2 = rz_str_ndup(str + 1, qoe - str - 1);
+			} else {
+				free(string2);
+				string2 = strdup(str + 1);
+			}
+			if (string2) {
+				RZ_FREE(string);
+				string = string2;
+				string2 = NULL;
+			}
+		}
+		RZ_FREE(string2);
+		_handle_call(core, line, &str);
+		if (!str) {
+			str = strstr(line, "sym.");
+			if (!str) {
+				str = strstr(line, "fcn.");
+			}
+		}
+		bool mark_malloc = false;
+		if (str) {
+			char *qoe = strchr(str, ';');
+			if (qoe) {
+				str = rz_str_ndup(str, qoe - str);
+				mark_malloc = true;
+			}
+		}
+		if (str) {
+			string2 = mark_malloc ? str : strdup(str);
+			linecolor = RZ_CONS_COLOR(call);
+		}
+		if (!string && string2) {
+			string = string2;
+			string2 = NULL;
+		}
+		if (strstr(line, "XREF")) {
+			addr = UT64_MAX;
+		}
+		if (addr != UT64_MAX) {
+			if (show_comments) {
+				char *comment = rz_core_analysis_get_comments(core, addr);
+				if (comment) {
+					if (switchcmp) {
+						if (strcmp(comment, switchcmp)) {
+							if (show_offset) {
+								rz_strbuf_appendf(sb, "%s0x%08" PFMT64x " ", use_color ? pal->offset : "", addr);
+							}
+							rz_strbuf_appendf(sb, "%s%s\n", use_color ? pal->comment : "", comment);
+						}
+					} else {
+						if (show_offset) {
+							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x " ", use_color ? pal->offset : "", addr);
+						}
+						rz_strbuf_appendf(sb, "%s%s\n", use_color ? pal->comment : "", comment);
+					}
+					if (rz_str_startswith(comment, "switch table")) {
+						free(switchcmp);
+						switchcmp = strdup(comment);
+					}
+					RZ_FREE(comment);
+				}
+			}
+			if (fcn) {
+				bool label = false;
+				/* show labels, basic blocks and (conditional) branches */
+				RzAnalysisBlock *bb;
+				RzListIter *iter;
+				rz_list_foreach (fcn->bbs, iter, bb) {
+					if (addr == bb->jump) {
+						if (show_offset) {
+							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
+						}
+						label = true;
+						break;
+					}
+				}
+				if (!label && strstr(line, "->")) {
+					rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
+				}
+				if (strstr(line, "=<")) {
+					rz_list_foreach (fcn->bbs, iter, bb) {
+						if (addr >= bb->addr && addr < bb->addr + bb->size) {
+							const char *op;
+							if (use_color) {
+								op = (bb->fail == UT64_MAX) ? Color_GREEN "jmp" : "cjmp";
+							} else {
+								op = (bb->fail == UT64_MAX) ? "jmp" : "cjmp";
+							}
+							if (show_offset) {
+								rz_strbuf_appendf(sb, "%s0x%08" PFMT64x " " Color_RESET, use_color ? pal->offset : "", addr);
+							}
+							rz_strbuf_appendf(sb, "%s 0x%08" PFMT64x "%s\n",
+								op, bb->jump, use_color ? Color_RESET : "");
+							break;
+						}
+					}
+				}
+			}
+			if (string && *string) {
+				if (string && !strncmp(string, "0x", 2)) {
+					str = string;
+				}
+				if (string2 && !strncmp(string2, "0x", 2)) {
+					str = string2;
+				}
+				ut64 ptr = rz_num_math(NULL, str);
+				RzFlagItem *flag = NULL;
+				if (str) {
+					flag = rz_core_flag_get_by_spaces(core->flags, ptr);
+				}
+				if (!flag) {
+					if (string && !strncmp(string, "0x", 2)) {
+						RZ_FREE(string);
+					}
+					if (string2 && !strncmp(string2, "0x", 2)) {
+						RZ_FREE(string2);
+					}
+				}
+				if (string && addr != UT64_MAX && addr != UT32_MAX) {
+					rz_str_trim(string);
+					if (string2) {
+						rz_str_trim(string2);
+					}
+					//// TODO implememnt avoid duplicated strings
+					// eprintf ("---> %s\n", string);
+					if (use_color) {
+						if (show_offset) {
+							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x " " Color_RESET, use_color ? pal->offset : "", addr);
+						}
+						rz_strbuf_appendf(sb, "%s%s%s%s%s%s%s\n",
+							linecolor ? linecolor : "",
+							string2 ? string2 : "", string2 ? " " : "", string,
+							flag ? " " : "", flag ? flag->name : "", Color_RESET);
+					} else {
+						if (show_offset) {
+							rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", addr);
+						}
+						rz_strbuf_appendf(sb, "%s%s%s%s%s\n",
+							string2 ? string2 : "", string2 ? " " : "", string,
+							flag ? " " : "", flag ? flag->name : "");
+					}
+				}
+			}
+		}
+		free(string);
+		free(string2);
+	}
+restore_conf:
+	free(dump_string);
+	rz_list_free(lines);
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
+	return rz_strbuf_drain(sb);
+}
