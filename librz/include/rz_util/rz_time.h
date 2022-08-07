@@ -18,7 +18,12 @@ extern "C" {
 
 #ifdef _MSC_VER
 struct timeval;
-struct timezone;
+
+#undef timezone
+struct timezone {
+	int tz_minuteswest; /* minutes W of Greenwich */
+	int tz_dsttime; /* type of dst correction */
+};
 #endif
 
 RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz);
